@@ -24,13 +24,14 @@ using namespace dolfin;
 using namespace dolfin::fem;
 
 //-----------------------------------------------------------------------------
-Form::Form(const std::vector<std::shared_ptr<const function::FunctionSpace>>&
-               function_spaces,
-           const FormIntegrals& integrals, const FormCoefficients& coefficients,
-           const std::vector<
-               std::pair<std::string, std::shared_ptr<const function::Constant>>>
-               constants,
-           std::shared_ptr<const CoordinateMapping> coord_mapping)
+Form::Form(
+    const std::vector<std::shared_ptr<const function::FunctionSpace>>&
+        function_spaces,
+    const FormIntegrals& integrals, const FormCoefficients& coefficients,
+    const std::vector<
+        std::pair<std::string, std::shared_ptr<const function::Constant>>>
+        constants,
+    std::shared_ptr<const CoordinateMapping> coord_mapping)
     : _integrals(integrals), _coefficients(coefficients), _constants(constants),
       _function_spaces(function_spaces), _coord_mapping(coord_mapping)
 {
@@ -132,8 +133,7 @@ std::shared_ptr<const mesh::Mesh> Form::mesh() const
 //-----------------------------------------------------------------------------
 std::shared_ptr<const function::FunctionSpace> Form::function_space(int i) const
 {
-  assert(i < (int)_function_spaces.size());
-  return _function_spaces[i];
+  return _function_spaces.at(i);
 }
 //-----------------------------------------------------------------------------
 void Form::register_tabulate_tensor_cell(

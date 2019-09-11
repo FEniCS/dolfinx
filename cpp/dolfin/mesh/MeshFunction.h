@@ -247,30 +247,30 @@ void MeshFunction<T>::mark(
             x)>& mark,
     T value)
 {
-  // First fetch all vertices of the mesh
+  // Get all vertices of the mesh
   const Eigen::Array<double, Eigen::Dynamic, 3, Eigen::RowMajor>& x
       = _mesh->geometry().points();
 
-  // Evaluate the marking function on all vertices
+  // Evaluate the marker function at each vertex
   EigenArrayXb marked = mark(x);
 
-  for (const auto& entity :
-       mesh::MeshRange(*_mesh.get(), _dim))
+  // Iterate over all mesh entities of the dimension of this
+  // MeshFunction
+  for (const auto& entity : mesh::MeshRange(*_mesh.get(), _dim))
   {
-    // Run over all entities of the dimension of this MeshFunction
 
-    // By default, all vertices are marked
+    // By default, assume maker is 'true' at all vertices of this entity
     bool all_marked = true;
 
-    // And run over all vertices of this mesh entity
+    // Iterate over all vertices of this mesh entity
     for (const auto& v : mesh::EntityRange(entity, 0))
     {
       const std::int32_t idx = v.index();
       all_marked = (marked[idx] && all_marked);
     }
 
-    // If all vertices belonging to this mesh entity are marked
-    // then also this mesh entity is marked
+    // If all vertices belonging to this mesh entity are marked, then
+    // mark this mesh entity
     if (all_marked)
       _values[entity.index()] = value;
   }
