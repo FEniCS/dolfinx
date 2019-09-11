@@ -113,9 +113,11 @@ std::vector<std::int32_t> marked_facets(
     const std::function<EigenArrayXb(
         const Eigen::Ref<
             const Eigen::Array<double, Eigen::Dynamic, 3, Eigen::RowMajor>>&,
-        bool only_boundary)>& mark)
+        bool only_boundary)>& marker)
 {
   const int tdim = mesh.topology().dim();
+
+  // Create facets
   mesh.create_entities(tdim - 1);
 
   // Marked facet indices
@@ -133,10 +135,10 @@ std::vector<std::int32_t> marked_facets(
     mesh.create_connectivity(tdim - 1, tdim);
   }
 
-  // Find all vertices on boundary
-  // Set all to -1 (interior) to start with
-  // If a vertex is on the boundary, give it an index from [0, count)
-  std::vector<std::int32_t> boundary_vertex(mesh.num_entities(0), -1);
+  // Find all vertices on boundary. Set all to -1 (interior) to start
+  // with. If a vertex is on the boundary, give it an index from [0,
+  // count)
+  std::vector<std::int32_t> is_boundary_vertex(mesh.num_entities(0), -1);
   std::size_t count = 0;
   assert(mesh.topology().connectivity(dim, tdim));
   std::shared_ptr<const mesh::Connectivity> connectivity_facet_cell
@@ -150,70 +152,95 @@ std::vector<std::int32_t> marked_facets(
       const std::int32_t* v = facet.entities(0);
       for (int i = 0; i < num_facet_vertices; ++i)
       {
-        if (boundary_vertex[v[i]] == -1)
+        if (is_boundary_vertex[v[i]] == -1)
         {
-          boundary_vertex[v[i]] = count;
+          is_boundary_vertex[v[i]] = count;
           ++count;
         }
       }
     }
   }
 
+  // FIXME: Does this make sense for non-affine elements?
+  // Get all points
   const Eigen::Array<double, Eigen::Dynamic, 3, Eigen::RowMajor>& x_all
       = mesh.geometry().points();
 
-  // Run marker function on all vertices
-  EigenArrayXb all_marked = mark(x_all, false);
-  assert(all_marked.rows() == x_all.rows());
-
+  // Pack coordinates of all boundary vertices
   EigenRowArrayXXd x_boundary(count, 3);
-
-  // Pack boundary vertices for vectorised marking
-  // function
   for (std::int32_t i = 0; i < mesh.num_entities(0); ++i)
   {
-    if (boundary_vertex[i] != -1)
-      x_boundary.row(boundary_vertex[i]) = x_all.row(i);
+    if (is_boundary_vertex[i] != -1)
+      x_boundary.row(is_boundary_vertex[i]) = x_all.row(i);
   }
 
   // Run marker function on boundary vertices
-  EigenArrayXb boundary_marked = mark(x_boundary, true);
+  const EigenArrayXb boundary_marked = marker(x_boundary, true);
   assert(boundary_marked.rows() == x_boundary.rows());
 
+  // Iterate over facets
   for (auto& facet : mesh::MeshRange(mesh, tdim - 1))
   {
-    // By default, all vertices on this facet are marked
-    bool all_vertices_marked = true;
-
-    for (const auto& v : mesh::EntityRange(facet, 0))
+    // Consider boundary facets only
+    if (connectivity_facet_cell->size_global(facet.index()) == 1)
     {
-      const std::int32_t idx = v.index();
+      // Assume all vertices on this facet are marked
+      bool all_vertices_marked = true;
 
-      // The vertex is not marked (marked as false) in two cases:
-      // 1. It is a boundary vertex and both evaluations of mark function
-      //    (only_boundary=true and only_boundary=false)
-      //    marked it as false
-      // or
-      // 2. It is not a boundary vertex and only_boundary=false marked it
-      // as false
-      //
-      if ((boundary_vertex[idx] != -1
-           and (all_marked[idx] == false
-                and boundary_marked[boundary_vertex[idx]] == false))
-          or (boundary_vertex[idx] == -1 and all_marked[idx] == false))
+      // Iterate over facet vertices
+      for (const auto& v : mesh::EntityRange(facet, 0))
       {
-        all_vertices_marked = false;
-        break;
+        const std::int32_t idx = v.index();
+        if (is_boundary_vertex[idx] == -1)
+        {
+          all_vertices_marked = false;
+          break;
+        }
       }
-    }
 
-    // Mark facet with all vertices marked
-    if (all_vertices_marked)
-      facets.push_back(facet.index());
+      // Mark facet with all vertices marked
+      if (all_vertices_marked)
+        facets.push_back(facet.index());
+    }
   }
 
+  //   // Iterate over facet vertices
+  //   for (const auto& v : mesh::EntityRange(facet, 0))
+  //   {
+  //     const std::int32_t idx = v.index();
+
+  //     // The vertex is not marked (marked as false) in two cases:
+  //     //
+  //     // 1. It is a boundary vertex and both evaluations of mark
+  //     //    function (only_boundary=true and only_boundary=false) marked
+  //     //    it as false
+  //     //
+  //     // or
+  //     //
+  //     // 2. It is not a boundary vertex and only_boundary=false marked
+  //     //    it as false
+  //     //
+  //     // if ((boundary_vertex[idx] != -1
+  //     //      and (all_marked[idx] == false
+  //     //           and boundary_marked[boundary_vertex[idx]] == false))
+  //     //     or (boundary_vertex[idx] == -1 and all_marked[idx] == false))
+  //     if ((boundary_vertex[idx] != -1
+  //          and (all_marked[idx] == false
+  //               and boundary_marked[boundary_vertex[idx]] == false))
+  //         or (boundary_vertex[idx] == -1 and all_marked[idx] == false))
+  //     {
+  //       all_vertices_marked = false;
+  //       break;
+  //     }
+  //   }
+
+  //   // Mark facet with all vertices marked
+  //   if (all_vertices_marked)
+  //     facets.push_back(facet.index());
+  // }
+
   return facets;
-}
+} // namespace
 //-----------------------------------------------------------------------------
 // bool on_facet(
 //     const Eigen::Ref<const Eigen::Array<double, Eigen::Dynamic, 1>>
