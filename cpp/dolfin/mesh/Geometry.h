@@ -22,7 +22,7 @@ namespace mesh
 {
 
 /// Geometry stores the geometry imposed on a mesh.
-
+///
 /// Currently, the geometry is represented by the set of coordinates for
 /// the vertices of a mesh, but other representations are possible.
 
@@ -74,9 +74,7 @@ public:
 
   /// Hash of coordinate values
   ///
-  /// @returns std::size_t
-  ///    A tree-hashed value of the coordinates over all MPI processes
-  ///
+  /// @returns A tree-hashed value of the coordinates over all MPI processes
   std::size_t hash() const;
 
   /// Return informal string representation (pretty-print)

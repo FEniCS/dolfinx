@@ -18,14 +18,14 @@ namespace dolfin
 namespace mesh
 {
 
-/// The MeshValueCollection class can be used to store data
-/// associated with a subset of the entities of a mesh of a given
-/// topological dimension. It differs from the MeshFunction class in
-/// two ways. First, data does not need to be associated with all
-/// entities (only a subset). Second, data is associated with
-/// entities through the corresponding cell index and local entity
-/// number (relative to the cell), not by global entity index, which
-/// means that data may be stored robustly to file.
+/// The MeshValueCollection class can be used to store data associated
+/// with a subset of the entities of a mesh of a given topological
+/// dimension. It differs from the MeshFunction class in two ways.
+/// First, data does not need to be associated with all entities (only a
+/// subset). Second, data is associated with entities through the
+/// corresponding cell index and local entity number (relative to the
+/// cell), not by global entity index, which means that data may be
+/// stored robustly to file.
 
 template <typename T>
 class MeshValueCollection
@@ -39,17 +39,16 @@ public:
 
   /// Create a mesh value collection from a MeshFunction
   ///
-  /// @param    mesh_function (MeshFunction<T>)
-  ///         The mesh function for creating a MeshValueCollection.
+  /// @param[in] mesh_function The mesh function for creating a
+  /// MeshValueCollection
   explicit MeshValueCollection(const MeshFunction<T>& mesh_function);
 
-  /// Create a mesh value collection of entities of given dimension
-  /// on a given mesh
+  /// Create a mesh value collection of entities of given dimension on a
+  /// given mesh
   ///
-  /// @param    mesh (_Mesh_)
-  ///         The mesh associated with the collection.
-  /// @param    dim (std::size_t)
-  ///         The mesh entity dimension for the mesh value collection.
+  /// @param[in] mesh The mesh associated with the collection
+  /// @param[in] dim The mesh entity dimension for the mesh value
+  /// collection
   MeshValueCollection(std::shared_ptr<const Mesh> mesh, std::size_t dim);
 
   /// Destructor
@@ -57,71 +56,52 @@ public:
 
   /// Assignment operator
   ///
-  /// @param    mesh_value_collection (_MeshValueCollection_)
-  ///         A _MeshValueCollection_ object used to construct a
-  ///         MeshValueCollection.
+  /// @param[in] mesh_value_collection A MeshValueCollection object
   MeshValueCollection<T>&
   operator=(const MeshValueCollection<T>& mesh_value_collection)
       = default;
 
   /// Assignment operator
   ///
-  /// @param    mesh_function (_MeshFunction_)
-  ///         A _MeshFunction_ object used to construct a
-  ///         MeshValueCollection.
+  /// @param[in] mesh_function A MeshFunction object used to construct a
+  /// MeshValueCollection
   MeshValueCollection<T>& operator=(const MeshFunction<T>& mesh_function);
 
   /// Return topological dimension
-  ///
-  /// @return   std::size_t
-  ///         The dimension.
+  /// @return The dimension.
   std::size_t dim() const;
 
   /// Return associated mesh
-  ///
-  /// @return    _Mesh_
-  ///         The mesh.
+  /// @return The mesh
   std::shared_ptr<const Mesh> mesh() const;
 
   /// Return true if the subset is empty
-  ///
-  /// @return   bool
-  ///         True if the subset is empty.
+  /// @return True if the subset is empty
   bool empty() const;
 
   /// Return size (number of entities in subset)
-  ///
-  /// @return    std::size_t
-  ///         The size.
+  /// @return The size
   std::size_t size() const;
 
   // FIXME: remove
-  /// Set marker value for given entity defined by a cell index and
-  /// a local entity index
+  /// Set marker value for given entity defined by a cell index and a
+  /// local entity index
   ///
-  /// @param    cell_index (std::size_t)
-  ///         The index of the cell.
-  /// @param    local_entity (std::size_t)
-  ///         The local index of the entity relative to the cell.
-  /// @param    value (T)
-  ///         The value of the marker.
-  ///
-  /// @return    bool
-  ///         True is a new value is inserted, false if overwriting
-  ///         an existing value.
+  /// @param[in] cell_index The index of the cell
+  /// @param[in] local_entity The local index of the entity relative to
+  /// the cell
+  /// @param[in] value The value of the marker.
+  /// @return True is a new value is inserted, false if overwriting an
+  /// existing value.
   bool set_value(std::size_t cell_index, std::size_t local_entity,
                  const T& value);
 
   /// Set value for given entity index
   ///
-  /// @param    entity_index (std::size_t)
-  ///         Index of the entity.
-  /// @param    value (T).
-  ///         The value of the marker.
-  ///
-  /// @return    bool
-  ///         True is a new value is inserted, false if overwriting
-  ///         an existing value.
+  /// @param[in] entity_index Index of the entity
+  /// @param[in] value The value of the marker
+  /// @return True is a new value is inserted, false if overwriting an
+  /// existing value
   bool set_value(std::size_t entity_index, const T& value);
 
   /// Get marker value for given entity defined by a cell index and

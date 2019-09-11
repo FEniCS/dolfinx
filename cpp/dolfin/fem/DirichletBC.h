@@ -85,16 +85,13 @@ public:
 
   /// Create boundary condition with marking method
   ///
-  /// @param[in] V (FunctionSpace)
-  ///         The function space
-  /// @param[in] g (Function)
-  ///         The value
-  /// @param[in] mark (std::function)
-  ///         The marking method (applied to all boundary vertices)
-  /// @param[in] method (std::string)
-  ///         Optional argument: A string specifying
-  ///         the method to identify dofs
-  /// @param[in] check_midpoint (bool)
+  /// @param[in] V The function space
+  /// @param[in] g The value
+  /// @param[in] marker The marking method (marks facets by checking marker at
+  /// all vertices)
+  /// @param[in] method Optional argument: A string specifying the method to
+  /// identify dofs
+  /// @param[in] check_midpoint
   DirichletBC(std::shared_ptr<const function::FunctionSpace> V,
               std::shared_ptr<const function::Function> g,
               const std::function<Eigen::Array<bool, Eigen::Dynamic, 1>(
@@ -104,15 +101,11 @@ public:
 
   /// Create boundary condition with facet indices
   ///
-  /// @param[in] V (FunctionSpace)
-  ///         The function space.
-  /// @param[in] g (Function)
-  ///         The value.
-  /// @param[in] markers (std::vector<std:size_t>&)
-  ///         Boundary markers (facet index local to process)
-  /// @param[in] method (std::string)
-  ///         Optional argument: A string specifying the
-  ///         method to identify dofs.
+  /// @param[in] V The function space.
+  /// @param[in] g The value.
+  /// @param[in] markers Boundary markers (facet index local to process)
+  /// @param[in] method Optional argument: A string specifying the method to
+  /// identify dofs.
   DirichletBC(std::shared_ptr<const function::FunctionSpace> V,
               std::shared_ptr<const function::Function> g,
               const std::vector<std::int32_t>& facet_indices,
@@ -120,8 +113,7 @@ public:
 
   /// Copy constructor. Either cached DOF data are copied.
   ///
-  /// @param[in] bc (DirichletBC&)
-  ///         The object to be copied.
+  /// @param[in] bc The object to be copied.
   DirichletBC(const DirichletBC& bc) = default;
 
   /// Move constructor
@@ -132,8 +124,7 @@ public:
 
   /// Assignment operator. Either cached DOF data are assigned.
   ///
-  /// @param[in] bc (DirichletBC)
-  ///         Another DirichletBC object.
+  /// @param[in] bc Another DirichletBC object.
   DirichletBC& operator=(const DirichletBC& bc) = default;
 
   /// Move assignment operator
@@ -141,15 +132,12 @@ public:
 
   /// Return function space V
   ///
-  /// @return FunctionSpace
-  ///         The function space to which boundary conditions are applied.
+  /// @return The function space to which boundary conditions are applied.
   std::shared_ptr<const function::FunctionSpace> function_space() const;
 
   /// Return boundary value g
   ///
-  /// @return Function
-  ///         The boundary values Function. Returns null if it does not
-  ///         exist.
+  /// @return The boundary values Function. Returns null if it does not exist.
   std::shared_ptr<const function::Function> value() const;
 
   // FIXME: clarify  w.r.t ghosts

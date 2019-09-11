@@ -73,22 +73,18 @@ public:
   /// the end of the list of cells, and the number of ghost cells must
   /// be provided.
   ///
-  /// @param comm (MPI_Comm)
-  ///         MPI Communicator
-  /// @param type (CellType)
-  ///         Cell type
-  /// @param points
-  ///         Array of geometric points, arranged in global index order
-  /// @param cells
-  ///         Array of cells (containing the global point indices for each
-  ///         cell)
-  /// @param global_cell_indices
-  ///         Array of global cell indices. If not empty, this must be same size
-  ///         as the number of rows in cells. If empty, global cell indices will
-  ///         be constructed, beginning from 0 on process 0.
-  /// @param num_ghost_cells
-  ///         Number of ghost cells on this process (must be at end of list of
-  ///         cells)
+  /// @param comm MPI Communicator
+  /// @param type Cell type
+  /// @param points Array of geometric points, arranged in global index
+  /// order
+  /// @param cells Array of cells (containing the global point indices
+  ///              for each cell)
+  /// @param global_cell_indices Array of global cell indices. If not
+  ///         empty, this must be same size as the number of rows in
+  ///         cells. If empty, global cell indices will be constructed,
+  ///         beginning from 0 on process 0.
+  /// @param num_ghost_cells Number of ghost cells on this process (must
+  /// be at end of list of cells)
   // FIXME: What about global vertex indices?
   // FIXME: Be explicit in passing geometry degree/type
   Mesh(MPI_Comm comm, mesh::CellType type,
@@ -97,16 +93,10 @@ public:
        const std::vector<std::int64_t>& global_cell_indices,
        const GhostMode ghost_mode, std::int32_t num_ghost_cells = 0);
 
-  /// Copy constructor.
-  ///
-  /// @param mesh (Mesh)
-  ///         Object to be copied.
+  /// Copy constructor
   Mesh(const Mesh& mesh);
 
-  /// Move constructor.
-  ///
-  /// @param mesh (Mesh)
-  ///         Object to be moved.
+  /// Move constructor
   Mesh(Mesh&& mesh);
 
   /// Destructor
@@ -116,74 +106,49 @@ public:
   Mesh& operator=(const Mesh& mesh) = delete;
 
   /// Assignment move operator
-  ///
-  /// @param mesh (Mesh)
-  ///         Another Mesh object.
   Mesh& operator=(Mesh&& mesh) = default;
 
   /// Get number of entities of given topological dimension.
   ///
-  /// @param d (std::size_t)
-  ///         Topological dimension.
-  ///
-  /// @return std::size_t
-  ///         Number of entities of topological dimension d.
-  ///
+  /// @param[in] d Topological dimension.
+  /// @return Number of entities of topological dimension d.
   std::int32_t num_entities(int d) const;
 
   /// Get global number of entities of given topological dimension.
   ///
-  /// @param dim (std::size_t)
-  ///         Topological dimension.
-  ///
-  /// @return std::int64_t
-  ///         Global number of entities of topological dimension d.
-  ///
+  /// @param[in] dim Topological dimension.
+  /// @return Global number of entities of topological dimension d.
   std::int64_t num_entities_global(std::size_t dim) const;
 
   /// Get mesh topology.
-  ///
-  /// @return Topology
-  ///         The topology object associated with the mesh.
+  /// @return The topology object associated with the mesh.
   Topology& topology();
 
   /// Get mesh topology (const version).
-  ///
-  /// @return Topology
-  ///         The topology object associated with the mesh.
+  /// @return The topology object associated with the mesh.
   const Topology& topology() const;
 
   /// Get mesh geometry.
-  ///
-  /// @return Geometry
-  ///         The geometry object associated with the mesh.
+  /// @return The geometry object associated with the mesh.
   Geometry& geometry();
 
   /// Get mesh geometry (const version).
-  ///
-  /// @return Geometry
-  ///         The geometry object associated with the mesh.
+  /// @return The geometry object associated with the mesh.
   const Geometry& geometry() const;
 
   /// Create entities of given topological dimension.
   ///
-  /// @param  dim (int)
-  ///         Topological dimension.
-  ///
-  /// @return std::size_t
-  ///         Number of created entities.
+  /// @param[in] dim Topological dimension.
+  /// @return Number of created entities.
   std::size_t create_entities(int dim) const;
 
-  /// Create connectivity between given pair of dimensions.
+  /// Create connectivity between given pair of dimensions
   ///
-  /// @param    d0 (std::size_t)
-  ///         Topological dimension.
-  ///
-  /// @param    d1 (std::size_t)
-  ///         Topological dimension.
+  /// @param[in] d0 Topological dimension.
+  /// @param[in] d1 Topological dimension.
   void create_connectivity(std::size_t d0, std::size_t d1) const;
 
-  /// Compute all entities and connectivity.
+  /// Compute all entities and connectivity
   void create_connectivity_all() const;
 
   /// Compute global indices for entity dimension dim
@@ -193,64 +158,42 @@ public:
   /// data, except the connectivity between cells and vertices.
   void clean();
 
-  /// Compute minimum cell size in mesh, measured greatest distance
-  /// between any two vertices of a cell.
-  ///
-  /// @return double
-  ///         The minimum cell size. The size is computed using
-  ///         Cell::h()
-  ///
+  /// Compute minimum cell size in mesh. The size is computed using
+  /// mesh::h().
+  /// @return The minimum cell size.
   double hmin() const;
 
-  /// Compute maximum cell size in mesh, measured greatest distance
-  /// between any two vertices of a cell.
-  ///
-  /// @return double
-  ///         The maximum cell size. The size is computed using
-  ///         Cell::h()
-  ///
+  /// Compute maximum cell size in mesh. The size is computed using
+  /// mesh::h().
+  /// @return The maximum cell size.
   double hmax() const;
 
   /// Compute minimum cell inradius.
-  ///
-  /// @return double
-  ///         The minimum of cells' inscribed sphere radii
-  ///
+  /// @return The minimum of cells' inscribed sphere radii
   double rmin() const;
 
   /// Compute maximum cell inradius.
-  ///
-  /// @return double
-  ///         The maximum of cells' inscribed sphere radii
-  ///
+  /// @return The maximum of cells' inscribed sphere radii
   double rmax() const;
 
   /// Compute hash of mesh, currently based on the has of the mesh
   /// geometry and mesh topology.
   ///
-  /// @return std::size_t
-  ///         A tree-hashed value of the coordinates over all MPI processes
-  ///
+  /// @return A tree-hashed value of the coordinates over all MPI
+  /// processes
   std::size_t hash() const;
 
   /// Get unique identifier.
-  ///
-  /// @returns _std::size_t_
-  ///         The unique integer identifier associated with the object.
+  /// @returns The unique integer identifier associated with the object
   std::size_t id() const { return _unique_id; }
 
-  /// Informal string representation.
+  /// Informal string representation
   ///
-  /// @param verbose (bool)
-  ///         Flag to turn on additional output.
-  ///
-  /// @return std::string
-  ///         An informal representation of the mesh.
-  ///
+  /// @param verbose Flag to turn on additional output.
+  /// @return An informal representation of the mesh.
   std::string str(bool verbose) const;
 
   /// Mesh MPI communicator
-  /// @return MPI_Comm
   MPI_Comm mpi_comm() const;
 
   /// Ghost mode used for partitioning. Possible values are
@@ -269,8 +212,8 @@ public:
   // FIXME: This should be with Geometry
   std::int32_t degree() const;
 
-  /// Cell type
-  const mesh::CellType cell_type;
+  /// Cell type for this Mesh.
+  mesh::CellType cell_type;
 
 private:
   // Mesh topology
