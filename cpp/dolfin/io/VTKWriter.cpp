@@ -153,7 +153,7 @@ void write_ascii_mesh(const mesh::Mesh& mesh, std::size_t cell_dim,
        << "ascii"
        << "\">";
 
-  mesh::CellType celltype = mesh::cell_entity_type(mesh.cell_type, cell_dim);
+  // mesh::CellType celltype = mesh::cell_entity_type(mesh.cell_type, cell_dim);
   const std::vector<std::uint8_t> perm = mesh.cell_permutation();
   // const int num_vertices = mesh::cell_num_entities(celltype, 0);
 
