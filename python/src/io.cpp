@@ -9,6 +9,7 @@
 #include <dolfin/function/Function.h>
 #include <dolfin/function/FunctionSpace.h>
 #include <dolfin/io/HDF5File.h>
+#include <dolfin/io/VTKFile.h>
 #include <dolfin/io/XDMFFile.h>
 #include <dolfin/la/PETScVector.h>
 #include <dolfin/mesh/Mesh.h>
@@ -132,6 +133,20 @@ void io(py::module& m)
       .def_readwrite("chunking", &dolfin::io::HDF5File::chunking)
       // others
       .def("has_dataset", &dolfin::io::HDF5File::has_dataset);
+
+  // dolfin::io::VTKFile
+  py::class_<dolfin::io::VTKFile, std::shared_ptr<dolfin::io::VTKFile>>
+	vtk_file(m, "VTKFile");
+
+  vtk_file
+	  .def(py::init([](std::string filename) {
+			return std::make_unique<dolfin::io::VTKFile>(filename);
+		  }),
+		py::arg("filename"))
+      .def("write",
+           py::overload_cast<const dolfin::mesh::Mesh&>(
+               &dolfin::io::VTKFile::write),
+           py::arg("mesh"));
 
   // dolfin::io::XDMFFile
   py::class_<dolfin::io::XDMFFile, std::shared_ptr<dolfin::io::XDMFFile>>

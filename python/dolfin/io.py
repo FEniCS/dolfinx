@@ -12,8 +12,7 @@ import numpy
 
 from dolfin import cpp, fem, function
 
-
-__all__ = ["HDF5File", "XDMFFile"]
+__all__ = ["HDF5File", "XDMFFile", "VTKFile"]
 
 
 class HDF5File:
@@ -268,3 +267,22 @@ class XDMFFile:
 
         o_cpp = getattr(u, "_cpp_object", u)
         self._cpp_object.write_checkpoint(o_cpp, name, time_step)
+
+
+class VTKFile:
+    """Interface to VTK files"""
+
+    def __init__(self, filename: str):
+        """Open VTK file
+
+        Parameters
+        ----------
+        filename
+            Name of the file
+        """
+        self._cpp_object = cpp.io.VTKFile(filename)
+
+    def write(self, o) -> None:
+        """Write object to file"""
+        o_cpp = getattr(o, "_cpp_object", o)
+        self._cpp_object.write(o_cpp)
