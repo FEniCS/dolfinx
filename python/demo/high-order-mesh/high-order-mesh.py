@@ -1,4 +1,6 @@
 # Higher-order mesh with VTK visualization
+# ========================================
+
 from pygmsh.built_in import Geometry
 from pygmsh import generate_mesh
 
