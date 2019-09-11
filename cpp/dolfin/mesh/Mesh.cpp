@@ -141,7 +141,7 @@ Mesh::Mesh(MPI_Comm comm, mesh::CellType type,
   // Permutation from VTK to DOLFIN order for cell geometric nodes
   // FIXME: should do this also for quad/hex
   // FIXME: remove duplication in mesh::vtk_mapping()
-  std::vector<std::uint8_t> cell_permutation = {0, 1, 2, 3, 4, 5, 6, 7};
+  _cell_permutation = {0, 1, 2, 3, 4, 5, 6, 7};
 
   // Infer if the mesh has P2 geometry (P1 has num_vertices_per_cell ==
   // cells.cols())
@@ -150,12 +150,12 @@ Mesh::Mesh(MPI_Comm comm, mesh::CellType type,
     if (type == mesh::CellType::triangle and cells.cols() == 6)
     {
       _degree = 2;
-      cell_permutation = {0, 1, 2, 5, 3, 4};
+      _cell_permutation = {0, 1, 2, 5, 3, 4};
     }
     else if (type == mesh::CellType::tetrahedron and cells.cols() == 10)
     {
       _degree = 2;
-      cell_permutation = {0, 1, 2, 3, 9, 6, 8, 7, 5, 4};
+      _cell_permutation = {0, 1, 2, 3, 9, 6, 8, 7, 5, 4};
     }
     else
     {
@@ -179,12 +179,12 @@ Mesh::Mesh(MPI_Comm comm, mesh::CellType type,
   // cell topology using new local indices.
   std::int32_t num_vertices_local;
   std::vector<std::int64_t> node_indices_global;
-  Eigen::Array<std::int32_t, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
-      coordinate_nodes;
+
   std::tie(num_vertices_local, node_indices_global, coordinate_nodes)
-      = compute_cell_node_map(num_vertices_per_cell, cells, cell_permutation);
+      = compute_cell_node_map(num_vertices_per_cell, cells, _cell_permutation);
+  coordinate_nodes = coordinate_nodes;
   _coordinate_dofs
-      = std::make_unique<CoordinateDofs>(coordinate_nodes, cell_permutation);
+      = std::make_unique<CoordinateDofs>(coordinate_nodes, _cell_permutation);
 
   // Distribute the points across processes and calculate shared nodes
   EigenRowArrayXXd points_received;
@@ -464,3 +464,4 @@ const CoordinateDofs& Mesh::coordinate_dofs() const
 //-----------------------------------------------------------------------------
 std::int32_t Mesh::degree() const { return _degree; }
 //-----------------------------------------------------------------------------
+const std::vector<std::uint8_t>& Mesh::cell_permutation() const {return _cell_permutation;}

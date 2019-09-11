@@ -31,7 +31,7 @@ namespace
 {
 //-----------------------------------------------------------------------------
 // Get VTK cell type
-std::uint8_t vtk_cell_type(const mesh::Mesh& mesh, std::size_t cell_dim)
+std::uint8_t vtk_cell_type(const mesh::Mesh& mesh, std::size_t cell_dim, std::size_t cell_order)
 {
   // Get cell type
   mesh::CellType cell_type = mesh::cell_entity_type(mesh.cell_type, cell_dim);
@@ -45,7 +45,10 @@ std::uint8_t vtk_cell_type(const mesh::Mesh& mesh, std::size_t cell_dim)
   else if (cell_type == mesh::CellType::quadrilateral)
     vtk_cell_type = 9;
   else if (cell_type == mesh::CellType::triangle)
-    vtk_cell_type = 5;
+	if (cell_order == 1)
+	  vtk_cell_type = 5;
+	else if (cell_order == 2)
+	  vtk_cell_type = 22;
   else if (cell_type == mesh::CellType::interval)
     vtk_cell_type = 3;
   else if (cell_type == mesh::CellType::point)
@@ -109,9 +112,10 @@ void write_ascii_mesh(const mesh::Mesh& mesh, std::size_t cell_dim,
   const std::size_t num_cells = mesh.topology().ghost_offset(cell_dim);
   const std::size_t num_cell_vertices = mesh::num_cell_vertices(
       mesh::cell_entity_type(mesh.cell_type, cell_dim));
+  const int element_degree = mesh.degree();
 
   // Get VTK cell type
-  const std::size_t _vtk_cell_type = vtk_cell_type(mesh, cell_dim);
+  const std::size_t _vtk_cell_type = vtk_cell_type(mesh, cell_dim, element_degree);
 
   // Open file
   std::ofstream file(filename.c_str(), std::ios::app);
@@ -126,11 +130,17 @@ void write_ascii_mesh(const mesh::Mesh& mesh, std::size_t cell_dim,
   file << "<DataArray  type=\"Float64\"  NumberOfComponents=\"3\"  format=\""
        << "ascii"
        << "\">";
-  for (auto& v : mesh::MeshRange(mesh, 0))
-  {
-    Eigen::Vector3d p = mesh.geometry().x(v.index());
-    file << p[0] << " " << p[1] << " " << p[2] << "  ";
-  }
+  // for (auto& v : mesh::MeshRange(mesh, 0))
+  // {
+    // Eigen::Vector3d p = mesh.geometry().x(v.index());
+    // file << p[0] << " " << p[1] << " " << p[2] << "  ";
+  // }
+  const Eigen::Array<double, Eigen::Dynamic, 3, Eigen::RowMajor> points = mesh.geometry().points();
+  for (int i = 0; i < points.rows(); ++i)
+	{
+	  Eigen::Vector3d p = points.row(i).matrix().transpose();
+	  file << p[0] << " " << p[1] << " " << p[2] << "  ";
+	}
   file << "</DataArray>" << std::endl << "</Points>" << std::endl;
 
   // Write cell connectivity
@@ -140,14 +150,26 @@ void write_ascii_mesh(const mesh::Mesh& mesh, std::size_t cell_dim,
        << "\">";
 
   mesh::CellType celltype = mesh::cell_entity_type(mesh.cell_type, cell_dim);
-  const std::vector<std::int8_t> perm = mesh::vtk_mapping(celltype);
+  const std::vector<std::uint8_t> perm = mesh.cell_permutation();
   const int num_vertices = mesh::cell_num_entities(celltype, 0);
-  for (auto& c : mesh::MeshRange(mesh, cell_dim))
-  {
-    for (int i = 0; i < num_vertices; ++i)
-      file << c.entities(0)[perm[i]] << " ";
-    file << " ";
-  }
+  // Only correct for triangles
+  const int num_nodes = (element_degree+1)*(element_degree+2)/2;
+  for (int j=0; j < mesh.num_entities(mesh.topology().dim()); ++j)
+	{
+	  for (int i = 0; i < num_nodes; ++i)
+		{
+		  file << mesh.coordinate_nodes(j,perm[i]) << " ";
+		  std::cout  << mesh.coordinate_nodes(j,perm[i]) << " ";
+		}
+	  std::cout << std::endl;
+	  file << " ";
+	}
+  // for (auto& c : mesh::MeshRange(mesh, cell_dim))
+  // {
+  //   for (int i = 0; i < num_vertices; ++i)
+  //     file << c.entities(0)[perm[i]] << " ";
+  //   file << " ";
+  // }
   file << "</DataArray>" << std::endl;
 
   // Write offset into connectivity array for the end of each cell
@@ -155,7 +177,9 @@ void write_ascii_mesh(const mesh::Mesh& mesh, std::size_t cell_dim,
        << "ascii"
        << "\">";
   for (std::size_t offsets = 1; offsets <= num_cells; offsets++)
-    file << offsets * num_cell_vertices << " ";
+    // file << offsets * num_cell_vertices << " ";
+    file << offsets * num_nodes << " ";
+
   file << "</DataArray>" << std::endl;
 
   // Write cell type
