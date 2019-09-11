@@ -98,9 +98,8 @@ public:
   DirichletBC(std::shared_ptr<const function::FunctionSpace> V,
               std::shared_ptr<const function::Function> g,
               const std::function<Eigen::Array<bool, Eigen::Dynamic, 1>(
-                  const Eigen::Ref<const Eigen::Array<double, Eigen::Dynamic, 3,
-                                                      Eigen::RowMajor>>&,
-                  bool only_boundary)>& mark,
+                  const Eigen::Ref<const Eigen::Array<
+                      double, Eigen::Dynamic, 3, Eigen::RowMajor>>&)>& marker,
               Method method = Method::topological);
 
   /// Create boundary condition with facet indices

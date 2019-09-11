@@ -125,7 +125,7 @@ mesh.geometry.coord_mapping = cmap
 # Define Dirichlet boundary (x = 0 or x = 1)
 
 
-def boundary(x, only_boundary):
+def boundary(x):
     return np.logical_or(x[:, 0] < np.finfo(float).eps,
                          x[:, 0] > 1.0 - np.finfo(float).eps)
 

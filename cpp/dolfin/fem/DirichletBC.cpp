@@ -111,9 +111,8 @@ get_remote_bcs(const common::IndexMap& map, const common::IndexMap& map_g,
 std::vector<std::int32_t> marked_facets(
     const mesh::Mesh& mesh,
     const std::function<EigenArrayXb(
-        const Eigen::Ref<
-            const Eigen::Array<double, Eigen::Dynamic, 3, Eigen::RowMajor>>&,
-        bool only_boundary)>& marker)
+        const Eigen::Ref<const Eigen::Array<double, Eigen::Dynamic, 3,
+                                            Eigen::RowMajor>>&)>& marker)
 {
   const int tdim = mesh.topology().dim();
 
@@ -175,7 +174,7 @@ std::vector<std::int32_t> marked_facets(
   }
 
   // Run marker function on boundary vertices
-  const EigenArrayXb boundary_marked = marker(x_boundary, true);
+  const EigenArrayXb boundary_marked = marker(x_boundary);
   assert(boundary_marked.rows() == x_boundary.rows());
 
   // Iterate over facets
@@ -203,41 +202,6 @@ std::vector<std::int32_t> marked_facets(
         facets.push_back(facet.index());
     }
   }
-
-  //   // Iterate over facet vertices
-  //   for (const auto& v : mesh::EntityRange(facet, 0))
-  //   {
-  //     const std::int32_t idx = v.index();
-
-  //     // The vertex is not marked (marked as false) in two cases:
-  //     //
-  //     // 1. It is a boundary vertex and both evaluations of mark
-  //     //    function (only_boundary=true and only_boundary=false) marked
-  //     //    it as false
-  //     //
-  //     // or
-  //     //
-  //     // 2. It is not a boundary vertex and only_boundary=false marked
-  //     //    it as false
-  //     //
-  //     // if ((boundary_vertex[idx] != -1
-  //     //      and (all_marked[idx] == false
-  //     //           and boundary_marked[boundary_vertex[idx]] == false))
-  //     //     or (boundary_vertex[idx] == -1 and all_marked[idx] == false))
-  //     if ((boundary_vertex[idx] != -1
-  //          and (all_marked[idx] == false
-  //               and boundary_marked[boundary_vertex[idx]] == false))
-  //         or (boundary_vertex[idx] == -1 and all_marked[idx] == false))
-  //     {
-  //       all_vertices_marked = false;
-  //       break;
-  //     }
-  //   }
-
-  //   // Mark facet with all vertices marked
-  //   if (all_vertices_marked)
-  //     facets.push_back(facet.index());
-  // }
 
   return facets;
 } // namespace
@@ -384,9 +348,8 @@ DirichletBC::DirichletBC(
     std::shared_ptr<const function::FunctionSpace> V,
     std::shared_ptr<const function::Function> g,
     const std::function<Eigen::Array<bool, Eigen::Dynamic, 1>(
-        const Eigen::Ref<
-            const Eigen::Array<double, Eigen::Dynamic, 3, Eigen::RowMajor>>&,
-        bool only_boundary)>& mark,
+        const Eigen::Ref<const Eigen::Array<double, Eigen::Dynamic, 3,
+                                            Eigen::RowMajor>>&)>& mark,
     Method method)
     : DirichletBC(V, g, marked_facets(*V->mesh, mark), method)
 {
