@@ -138,9 +138,10 @@ std::vector<std::int32_t> marked_facets(
   // If a vertex is on the boundary, give it an index from [0, count)
   std::vector<std::int32_t> boundary_vertex(mesh.num_entities(0), -1);
   std::size_t count = 0;
-  assert(mesh.topology().connectivity(dim, tdim));
   std::shared_ptr<const mesh::Connectivity> connectivity_facet_cell
       = mesh.topology().connectivity(dim, tdim);
+  if (!connectivity_facet_cell)
+    throw std::runtime_error("Cell-facet connectivity has not been computed.");
   const int num_facet_vertices = mesh::cell_num_entities(
       mesh::cell_entity_type(mesh.cell_type, tdim - 1), 0);
   for (const auto& facet : mesh::MeshRange(mesh, tdim - 1))

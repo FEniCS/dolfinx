@@ -44,9 +44,11 @@ void SparsityPatternBuilder::interior_facets(
 
   // Array to store macro-dofs, if required (for interior facets)
   std::array<Eigen::Array<PetscInt, Eigen::Dynamic, 1>, 2> macro_dofs;
-  assert(mesh.topology().connectivity(D - 1, D));
   std::shared_ptr<const mesh::Connectivity> connectivity_facet_cell
       = mesh.topology().connectivity(D - 1, D);
+  if (!connectivity_facet_cell)
+    throw std::runtime_error("Facet-cell connectivity has not been computed.");
+
   for (auto& facet : mesh::MeshRange(mesh, D - 1))
   {
     // Continue if facet is exterior facet
@@ -84,9 +86,10 @@ void SparsityPatternBuilder::exterior_facets(
   mesh.create_entities(D - 1);
   mesh.create_connectivity(D - 1, D);
 
-  assert(mesh.topology().connectivity(D - 1, D));
   std::shared_ptr<const mesh::Connectivity> connectivity_facet_cell
       = mesh.topology().connectivity(D - 1, D);
+  if (!connectivity_facet_cell)
+    throw std::runtime_error("Facet-cell connectivity has not been computed.");
   for (auto& facet : mesh::MeshRange(mesh, D - 1))
   {
     // Skip interior facets
