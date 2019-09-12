@@ -10,7 +10,7 @@ from dolfin import Mesh, cpp, MPI
 from dolfin.io import VTKFile
 
 # Generate high order gmsh
-for order in range(1,4):
+for order in range(1, 4):
     lcar = 0.9
     geo = Geometry()
     geo.add_raw_code("Mesh.ElementOrder={0};".format(order))
