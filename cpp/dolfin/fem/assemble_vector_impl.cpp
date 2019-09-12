@@ -247,13 +247,13 @@ void _lift_bc_exterior_facets(
   }
 
   // Iterate over all cells
-  assert(mesh.topology().connectivity(tdim - 1, tdim));
-  std::shared_ptr<const mesh::Connectivity> connectivity_facet_cell
+  std::shared_ptr<const mesh::Connectivity> connectivity
       = mesh.topology().connectivity(tdim - 1, tdim);
+  assert(connectivity);
   for (const mesh::MeshEntity& facet : mesh::MeshRange(mesh, tdim - 1))
   {
     // Move to next facet if this one is an interior facet
-    if (connectivity_facet_cell->size_global(facet.index()) != 1)
+    if (connectivity->size_global(facet.index()) != 1)
       continue;
 
     // FIXME: sort out ghosts

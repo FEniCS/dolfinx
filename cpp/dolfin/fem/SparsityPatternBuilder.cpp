@@ -44,19 +44,21 @@ void SparsityPatternBuilder::interior_facets(
 
   // Array to store macro-dofs, if required (for interior facets)
   std::array<Eigen::Array<PetscInt, Eigen::Dynamic, 1>, 2> macro_dofs;
-  assert(mesh.topology().connectivity(D - 1, D));
-  std::shared_ptr<const mesh::Connectivity> connectivity_facet_cell
+  std::shared_ptr<const mesh::Connectivity> connectivity
       = mesh.topology().connectivity(D - 1, D);
+  if (!connectivity)
+    throw std::runtime_error("Facet-cell connectivity has not been computed.");
+
   for (auto& facet : mesh::MeshRange(mesh, D - 1))
   {
     // Continue if facet is exterior facet
-    if (connectivity_facet_cell->size_global(facet.index()) == 1)
+    if (connectivity->size_global(facet.index()) == 1)
       continue;
 
     // FIXME: sort out ghosting
 
     // Get cells incident with facet
-    assert(connectivity_facet_cell->size(facet.index()) == 2);
+    assert(connectivity->size(facet.index()) == 2);
     const mesh::MeshEntity cell0(mesh, D, facet.entities(D)[0]);
     const mesh::MeshEntity cell1(mesh, D, facet.entities(D)[1]);
 
@@ -84,18 +86,19 @@ void SparsityPatternBuilder::exterior_facets(
   mesh.create_entities(D - 1);
   mesh.create_connectivity(D - 1, D);
 
-  assert(mesh.topology().connectivity(D - 1, D));
-  std::shared_ptr<const mesh::Connectivity> connectivity_facet_cell
+  std::shared_ptr<const mesh::Connectivity> connectivity
       = mesh.topology().connectivity(D - 1, D);
+  if (!connectivity)
+    throw std::runtime_error("Facet-cell connectivity has not been computed.");
   for (auto& facet : mesh::MeshRange(mesh, D - 1))
   {
     // Skip interior facets
-    if (connectivity_facet_cell->size_global(facet.index()) > 1)
+    if (connectivity->size_global(facet.index()) > 1)
       continue;
 
     // FIXME: sort out ghosting
 
-    assert(connectivity_facet_cell->size(facet.index()) == 1);
+    assert(connectivity->size(facet.index()) == 1);
     mesh::MeshEntity cell(mesh, D, facet.entities(D)[0]);
     pattern.insert_local(dofmaps[0]->cell_dofs(cell.index()),
                          dofmaps[1]->cell_dofs(cell.index()));
