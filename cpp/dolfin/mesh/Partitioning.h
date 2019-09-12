@@ -41,6 +41,13 @@ enum class GhostMode : int
   shared_vertex
 };
 
+/// Enum for different external graph partitioners
+enum class Partitioner
+{
+  scotch,
+  parmetis
+};
+
 /// This class partitions and distributes a mesh based on partitioned
 /// local mesh data.The local mesh data will also be repartitioned and
 /// redistributed during the computation of the mesh partitioning.
@@ -74,7 +81,8 @@ public:
                          const Eigen::Ref<const EigenRowArrayXXi64> cells,
                          const std::vector<std::int64_t>& global_cell_indices,
                          const mesh::GhostMode ghost_mode,
-                         std::string graph_partitioner = "SCOTCH");
+                         const mesh::Partitioner graph_partitioner
+                         = mesh::Partitioner::scotch);
 
   /// Build distributed mesh from a set of points and cells on each local
   /// process with a pre-computed partition
@@ -95,8 +103,8 @@ public:
   ///     Cell partition data (PartitionData object)
   static mesh::Mesh
   build_from_partition(const MPI_Comm& comm, mesh::CellType type,
-                       const Eigen::Ref<const EigenRowArrayXXi64> cell_vertices,
                        const Eigen::Ref<const EigenRowArrayXXd> points,
+                       const Eigen::Ref<const EigenRowArrayXXi64> cell_vertices,
                        const std::vector<std::int64_t>& global_cell_indices,
                        const mesh::GhostMode ghost_mode,
                        const PartitionData& cell_partition);
@@ -121,7 +129,7 @@ public:
   partition_cells(const MPI_Comm& mpi_comm, int nparts,
                   const mesh::CellType cell_type,
                   const Eigen::Ref<const EigenRowArrayXXi64> cell_vertices,
-                  const std::string partitioner);
+                  const mesh::Partitioner graph_partitioner);
 
   /// Redistribute points to the processes that need them.
   /// @param mpi_comm

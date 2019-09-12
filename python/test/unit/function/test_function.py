@@ -133,7 +133,7 @@ def test_assign(V, W):
                 uu.assign(4 * u * u1)
 
 
-def test_call(R, V, W, Q, mesh):
+def test_eval(R, V, W, Q, mesh):
     u0 = Function(R)
     u1 = Function(V)
     u2 = Function(W)
@@ -165,12 +165,12 @@ def test_call(R, V, W, Q, mesh):
 
     x0 = (mesh.geometry.x(0) + mesh.geometry.x(1)) / 2.0
     tree = cpp.geometry.BoundingBoxTree(mesh, mesh.geometry.dim)
-    assert np.allclose(u3(x0, tree)[:3], u2(x0, tree), rtol=1e-15, atol=1e-15)
+    assert np.allclose(u3.eval(x0, tree)[:3], u2.eval(x0, tree), rtol=1e-15, atol=1e-15)
 
     with pytest.raises(ValueError):
-        u0([0, 0, 0, 0], tree)
+        u0.eval([0, 0, 0, 0], tree)
     with pytest.raises(ValueError):
-        u0([0, 0], tree)
+        u0.eval([0, 0], tree)
 
 
 def test_scalar_conditions(R):
@@ -246,12 +246,12 @@ def test_near_evaluations(R, mesh):
     offset = 0.99 * np.finfo(float).eps
 
     a_shift_x = np.array([a[0] - offset, a[1], a[2]])
-    assert round(u0(a, bb_tree)[0] - u0(a_shift_x, bb_tree)[0], 7) == 0
+    assert u0.eval(a, bb_tree)[0] == pytest.approx(u0.eval(a_shift_x, bb_tree)[0])
 
     a_shift_xyz = np.array([a[0] - offset / math.sqrt(3),
                             a[1] - offset / math.sqrt(3),
                             a[2] - offset / math.sqrt(3)])
-    assert round(u0(a, bb_tree)[0] - u0(a_shift_xyz, bb_tree)[0], 7) == 0
+    assert u0.eval(a, bb_tree)[0] == pytest.approx(u0.eval(a_shift_xyz, bb_tree)[0])
 
 
 def test_interpolation_rank1(W):

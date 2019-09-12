@@ -83,32 +83,33 @@ class Function(ufl.Coefficient):
             # Scalar evaluation
             return self(*x)
 
-    def __call__(self, x: np.ndarray, bb_tree: cpp.geometry.BoundingBoxTree) -> np.ndarray:
+    def eval_cell(self, x: np.ndarray, cell, u):
+        u = self._cpp_object.eval_cell(x, cell, u)
+        return u
+
+    def eval(self, x: np.ndarray, bb_tree: cpp.geometry.BoundingBoxTree, u=None) -> np.ndarray:
         """Evaluate Function at points x, where x has shape (num_points, gdim)"""
-        _x = np.asarray(x, dtype=np.float)
-        num_points = _x.shape[0] if len(_x.shape) > 1 else 1
-        _x = np.reshape(_x, (num_points, -1))
-        if _x.shape[1] != self.geometric_dimension():
+
+        # Make sure input coordinates are a NumPy array
+        x = np.asarray(x, dtype=np.float)
+        assert x.ndim < 2
+        num_points = x.shape[0] if x.ndim > 1 else 1
+        x = np.reshape(x, (num_points, -1))
+        if x.shape[1] != self.geometric_dimension():
             raise ValueError("Wrong geometric dimension for coordinate(s).")
 
-        value_size = ufl.product(self.ufl_element().value_shape())
-        if common.has_petsc_complex:
-            values = np.empty((num_points, value_size), dtype=np.complex128)
-        else:
-            values = np.empty((num_points, value_size))
+        # Allocate memory for return value is not provided
+        if u is None:
+            value_size = ufl.product(self.ufl_element().value_shape())
+            if common.has_petsc_complex:
+                u = np.empty((num_points, value_size), dtype=np.complex128)
+            else:
+                u = np.empty((num_points, value_size))
 
-        # Call the evaluation
-        self._cpp_object.eval(values, _x, bb_tree)
+        self._cpp_object.eval(x, bb_tree, u)
         if num_points == 1:
-            values = np.reshape(values, (-1, ))
-
-        return values
-
-    def eval_cell(self, u, x, cell):
-        return self._cpp_object.eval(u, x, cell)
-
-    def eval(self, u, x, bb_tree: cpp.geometry.BoundingBoxTree):
-        return self._cpp_object.eval(u, x, bb_tree)
+            u = np.reshape(u, (-1, ))
+        return u
 
     def interpolate(self, u) -> None:
         """Interpolate an expression"""

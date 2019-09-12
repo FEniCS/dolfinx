@@ -127,8 +127,8 @@ PetscScalar fem::impl::assemble_cells(
     // Update coefficients
     for (std::size_t i = 0; i < coefficients.size(); ++i)
     {
-      coefficients[i]->restrict(coeff_array.data() + offsets[i], cell,
-                                coordinate_dofs);
+      coefficients[i]->restrict(cell, coordinate_dofs,
+                                coeff_array.data() + offsets[i]);
     }
 
     fn(&value, coeff_array.data(), constant_values.data(),
@@ -193,8 +193,8 @@ PetscScalar fem::impl::assemble_exterior_facets(
     // Update coefficients
     for (std::size_t i = 0; i < coefficients.size(); ++i)
     {
-      coefficients[i]->restrict(coeff_array.data() + offsets[i], cell,
-                                coordinate_dofs);
+      coefficients[i]->restrict(cell, coordinate_dofs,
+                                coeff_array.data() + offsets[i]);
     }
 
     fn(&value, coeff_array.data(), constant_values.data(),
@@ -273,11 +273,11 @@ PetscScalar fem::impl::assemble_interior_facets(
                          gdim);
     for (std::size_t i = 0; i < coefficients.size(); ++i)
     {
-      coefficients[i]->restrict(coeff_array.data() + offsets[i], cell0,
-                                coordinate_dofs0);
-      coefficients[i]->restrict(coeff_array.data() + offsets.back()
-                                    + offsets[i],
-                                cell1, coordinate_dofs1);
+      coefficients[i]->restrict(cell0, coordinate_dofs0,
+                                coeff_array.data() + offsets[i]);
+      coefficients[i]->restrict(cell1, coordinate_dofs1,
+                                coeff_array.data() + offsets.back()
+                                    + offsets[i]);
     }
 
     fn(&value, coeff_array.data(), constant_values.data(),

@@ -77,25 +77,21 @@ int ElementDofLayout::num_dofs() const { return _num_dofs; }
 //-----------------------------------------------------------------------------
 int ElementDofLayout::num_entity_dofs(int dim) const
 {
-  assert(dim < (int)_num_entity_dofs.size());
-  return _num_entity_dofs[dim];
+  return _num_entity_dofs.at(dim);
 }
 //-----------------------------------------------------------------------------
 int ElementDofLayout::num_entity_closure_dofs(int dim) const
 {
-  assert(dim < (int)_num_entity_closure_dofs.size());
-  return _num_entity_closure_dofs[dim];
+  return _num_entity_closure_dofs.at(dim);
 }
 //-----------------------------------------------------------------------------
 Eigen::Array<int, Eigen::Dynamic, 1>
 ElementDofLayout::entity_dofs(int entity_dim, int cell_entity_index) const
 {
-  assert(entity_dim < (int)_entity_dofs.size());
-  assert(cell_entity_index < (int)_entity_dofs[entity_dim].size());
-  Eigen::Array<int, Eigen::Dynamic, 1> dofs(
-      _entity_dofs[entity_dim][cell_entity_index].size());
-  std::copy(_entity_dofs[entity_dim][cell_entity_index].begin(),
-            _entity_dofs[entity_dim][cell_entity_index].end(), dofs.data());
+  const std::set<int>& edofs
+      = _entity_dofs.at(entity_dim).at(cell_entity_index);
+  Eigen::Array<int, Eigen::Dynamic, 1> dofs(edofs.size());
+  std::copy(edofs.begin(), edofs.end(), dofs.data());
   return dofs;
 }
 //-----------------------------------------------------------------------------
@@ -103,13 +99,10 @@ Eigen::Array<int, Eigen::Dynamic, 1>
 ElementDofLayout::entity_closure_dofs(int entity_dim,
                                       int cell_entity_index) const
 {
-  assert(entity_dim < (int)_entity_closure_dofs.size());
-  assert(cell_entity_index < (int)_entity_closure_dofs[entity_dim].size());
-  Eigen::Array<int, Eigen::Dynamic, 1> dofs(
-      _entity_closure_dofs[entity_dim][cell_entity_index].size());
-  std::copy(_entity_closure_dofs[entity_dim][cell_entity_index].begin(),
-            _entity_closure_dofs[entity_dim][cell_entity_index].end(),
-            dofs.data());
+  const std::set<int>& edofs
+      = _entity_closure_dofs.at(entity_dim).at(cell_entity_index);
+  Eigen::Array<int, Eigen::Dynamic, 1> dofs(edofs.size());
+  std::copy(edofs.begin(), edofs.end(), dofs.data());
   return dofs;
 }
 //-----------------------------------------------------------------------------
@@ -132,16 +125,11 @@ ElementDofLayout::sub_dofmap(const std::vector<int>& component) const
 {
   if (component.size() == 0)
     throw std::runtime_error("No sub dofmap specified");
-  if (component[0] >= (int)_sub_dofmaps.size())
-    throw std::runtime_error("Invalid sub dofmap specified");
-
-  std::shared_ptr<const ElementDofLayout> current = _sub_dofmaps[component[0]];
+  std::shared_ptr<const ElementDofLayout> current = _sub_dofmaps.at(component[0]);
   for (std::size_t i = 1; i < component.size(); ++i)
   {
     const int idx = component[i];
-    if (idx >= (int)current->_sub_dofmaps.size())
-      throw std::runtime_error("Invalid component");
-    current = _sub_dofmaps[idx];
+    current = _sub_dofmaps.at(idx);
   }
   return current;
 }
@@ -160,7 +148,7 @@ ElementDofLayout::sub_view(const std::vector<int>& component) const
     assert(element_dofmap_current);
     if (i >= (int)element_dofmap_current->_sub_dofmaps.size())
       throw std::runtime_error("Invalid component");
-    element_dofmap_current = _sub_dofmaps[i].get();
+    element_dofmap_current = _sub_dofmaps.at(i).get();
 
     std::vector<int> dof_list_new(element_dofmap_current->_num_dofs);
     for (unsigned int j = 0; j < dof_list_new.size(); ++j)

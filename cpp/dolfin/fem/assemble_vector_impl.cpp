@@ -139,8 +139,8 @@ void _lift_bc_cells(
     // Update coefficients
     for (int i = 0; i < coefficients.size(); ++i)
     {
-      coefficients_ptr[i]->restrict(coeff_array.data() + n[i], cell,
-                                    coordinate_dofs);
+      coefficients_ptr[i]->restrict(cell, coordinate_dofs,
+                                    coeff_array.data() + n[i]);
     }
 
     Ae.setZero(dmap0.size(), dmap1.size());
@@ -247,13 +247,13 @@ void _lift_bc_exterior_facets(
   }
 
   // Iterate over all cells
-  assert(mesh.topology().connectivity(tdim - 1, tdim));
-  std::shared_ptr<const mesh::Connectivity> connectivity_facet_cell
+  std::shared_ptr<const mesh::Connectivity> connectivity
       = mesh.topology().connectivity(tdim - 1, tdim);
+  assert(connectivity);
   for (const mesh::MeshEntity& facet : mesh::MeshRange(mesh, tdim - 1))
   {
     // Move to next facet if this one is an interior facet
-    if (connectivity_facet_cell->size_global(facet.index()) != 1)
+    if (connectivity->size_global(facet.index()) != 1)
       continue;
 
     // FIXME: sort out ghosts
@@ -298,8 +298,8 @@ void _lift_bc_exterior_facets(
     // Update coefficients
     for (int i = 0; i < coefficients.size(); ++i)
     {
-      coefficients_ptr[i]->restrict(coeff_array.data() + n[i], cell,
-                                    coordinate_dofs);
+      coefficients_ptr[i]->restrict(cell, coordinate_dofs,
+                                    coeff_array.data() + n[i]);
     }
 
     Ae.setZero(dmap0.size(), dmap1.size());
@@ -445,8 +445,8 @@ void fem::impl::assemble_cells(
     // Update coefficients
     for (std::size_t i = 0; i < coefficients.size(); ++i)
     {
-      coefficients[i]->restrict(coeff_array.data() + offsets[i], cell,
-                                coordinate_dofs);
+      coefficients[i]->restrict(cell, coordinate_dofs,
+                                coeff_array.data() + offsets[i]);
     }
 
     // Tabulate vector for cell
@@ -520,8 +520,8 @@ void fem::impl::assemble_exterior_facets(
     // Update coefficients
     for (std::size_t i = 0; i < coefficients.size(); ++i)
     {
-      coefficients[i]->restrict(coeff_array.data() + offsets[i], cell,
-                                coordinate_dofs);
+      coefficients[i]->restrict(cell, coordinate_dofs,
+                                coeff_array.data() + offsets[i]);
     }
 
     // Tabulate element vector
@@ -615,11 +615,11 @@ void fem::impl::assemble_interior_facets(
                          gdim);
     for (std::size_t i = 0; i < coefficients.size(); ++i)
     {
-      coefficients[i]->restrict(coeff_array.data() + offsets[i], cell0,
-                                coordinate_dofs0);
-      coefficients[i]->restrict(coeff_array.data() + offsets.back()
-                                    + offsets[i],
-                                cell1, coordinate_dofs1);
+      coefficients[i]->restrict(cell0, coordinate_dofs0,
+                                coeff_array.data() + offsets[i]);
+      coefficients[i]->restrict(cell1, coordinate_dofs1,
+                                coeff_array.data() + offsets.back()
+                                    + offsets[i]);
     }
 
     // Tabulate element vector

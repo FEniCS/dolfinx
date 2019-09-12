@@ -147,49 +147,49 @@ public:
 
   /// Evaluate at given point in given cell
   ///
-  /// @param    values (Eigen::Ref<Eigen::VectorXd>)
-  ///         The values at the point.
   /// @param   x (Eigen::Ref<const Eigen::VectorXd>
   ///         The coordinates of the point.
   /// @param    cell (mesh::Cell)
   ///         The cell which contains the given point.
+  /// @param    u (Eigen::Ref<Eigen::VectorXd>)
+  ///         The values at the point.
   void
-  eval(Eigen::Ref<Eigen::Array<PetscScalar, Eigen::Dynamic, Eigen::Dynamic,
-                               Eigen::RowMajor>>
-           values,
-       const Eigen::Ref<const Eigen::Array<double, Eigen::Dynamic,
+  eval(const Eigen::Ref<const Eigen::Array<double, Eigen::Dynamic,
                                            Eigen::Dynamic, Eigen::RowMajor>>
            x,
-       const mesh::MeshEntity& cell) const;
+       const mesh::MeshEntity& cell,
+       Eigen::Ref<Eigen::Array<PetscScalar, Eigen::Dynamic, Eigen::Dynamic,
+                               Eigen::RowMajor>>
+           u) const;
 
   /// Evaluate function at given coordinates
   ///
-  /// @param    values (Eigen::Ref<Eigen::VectorXd> values)
-  ///         The values.
   /// @param    x (Eigen::Ref<const Eigen::VectorXd> x)
   ///         The coordinates.
+  /// @param    u (Eigen::Ref<Eigen::VectorXd> u)
+  ///         The values.
   void
-  eval(Eigen::Ref<Eigen::Array<PetscScalar, Eigen::Dynamic, Eigen::Dynamic,
-                               Eigen::RowMajor>>
-           values,
-       const Eigen::Ref<const Eigen::Array<double, Eigen::Dynamic,
+  eval(const Eigen::Ref<const Eigen::Array<double, Eigen::Dynamic,
                                            Eigen::Dynamic, Eigen::RowMajor>>
            x,
-       const geometry::BoundingBoxTree& bb_tree) const;
+       const geometry::BoundingBoxTree& bb_tree,
+       Eigen::Ref<Eigen::Array<PetscScalar, Eigen::Dynamic, Eigen::Dynamic,
+                               Eigen::RowMajor>>
+           u) const;
 
   /// Restrict function to local cell (compute expansion coefficients w)
   ///
-  /// @param    w (list of PetscScalars)
-  ///         Expansion coefficients.
   /// @param    element (_FiniteElement_)
   ///         The element.
   /// @param    cell (_Cell_)
   ///         The cell.
   /// @param  coordinate_dofs (double *)
   ///         The coordinates
-  void
-  restrict(PetscScalar* w, const mesh::MeshEntity& cell,
-           const Eigen::Ref<const EigenRowArrayXXd>& coordinate_dofs) const;
+  /// @param    w (list of PetscScalars)
+  ///         Expansion coefficients.
+  void restrict(const mesh::MeshEntity& cell,
+                const Eigen::Ref<const EigenRowArrayXXd>& coordinate_dofs,
+                PetscScalar* w) const;
 
   /// Compute values at all mesh points
   ///
