@@ -50,9 +50,7 @@ std::uint8_t vtk_cell_type(const mesh::Mesh& mesh, std::size_t cell_dim, std::si
 	else if (cell_order == 2)
 	  vtk_cell_type = 22;
 	else
-	  {
-		throw std::runtime_error("Meshes higher order than 2 not implemented");
-	  }
+	  vtk_cell_type = 69;
   else if (cell_type == mesh::CellType::interval)
     vtk_cell_type = 3;
   else if (cell_type == mesh::CellType::point)
@@ -174,6 +172,7 @@ void write_ascii_mesh(const mesh::Mesh& mesh, std::size_t cell_dim,
 	{
 	  num_nodes = 0;
 	}
+
   if (num_nodes == num_vertices)
 	{
 	  const std::vector<std::int8_t> perm = mesh::vtk_mapping(celltype);

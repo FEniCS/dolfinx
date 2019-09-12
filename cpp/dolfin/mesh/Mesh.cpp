@@ -152,6 +152,11 @@ Mesh::Mesh(MPI_Comm comm, mesh::CellType type,
       _degree = 2;
       _cell_permutation = {0, 1, 2, 5, 3, 4};
     }
+	else if (type == mesh::CellType::triangle and cells.cols() == 10)
+	  {
+		_degree = 3;
+		_cell_permutation = {0,1,2,3,4,9,5,6,7,8};
+	  }
     else if (type == mesh::CellType::tetrahedron and cells.cols() == 10)
     {
       _degree = 2;
