@@ -214,7 +214,8 @@ void fem(py::module& m)
                     const std::vector<std::int32_t>&,
                     dolfin::fem::DirichletBC::Method>(),
            py::arg("V"), py::arg("g"), py::arg("facets"), py::arg("method"))
-      .def("function_space", &dolfin::fem::DirichletBC::function_space);
+      .def("function_space", &dolfin::fem::DirichletBC::function_space)
+      .def("value", &dolfin::fem::DirichletBC::value);
 
   // dolfin::fem::assemble
   m.def("assemble_scalar", &dolfin::fem::assemble_scalar,
