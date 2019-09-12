@@ -155,13 +155,13 @@ std::tuple<EigenRowArrayXXi64, std::vector<std::int64_t>, std::vector<int>,
 distribute_cells(const MPI_Comm mpi_comm,
                  const Eigen::Ref<const EigenRowArrayXXi64> cell_vertices,
                  const std::vector<std::int64_t>& global_cell_indices,
-                 const PartitionData& mp)
+                 const PartitionData& cell_partition)
 {
   // This function takes the partition computed by the partitioner
-  // stored in PartitionData mp. Some cells go to multiple destinations.
-  // Each cell is transmitted to its final destination(s) including its
-  // global index, and the cell owner (for ghost cells this will be
-  // different from the destination)
+  // stored in PartitionData cell_partition. Some cells go to multiple
+  // destinations. Each cell is transmitted to its final destination(s)
+  // including its global index, and the cell owner (for ghost cells this will
+  // be different from the destination)
 
   LOG(INFO) << "Distribute cells during distributed mesh construction";
 
@@ -178,7 +178,7 @@ distribute_cells(const MPI_Comm mpi_comm,
   // Get dimensions
   const std::int32_t num_local_cells = cell_vertices.rows();
   const std::int32_t num_cell_vertices = cell_vertices.cols();
-  assert(mp.size() == num_local_cells);
+  assert(cell_partition.size() == num_local_cells);
 
   // Send all cells to their destinations including their global
   // indices.  First element of vector is cell count of un-ghosted
@@ -186,10 +186,10 @@ distribute_cells(const MPI_Comm mpi_comm,
   std::vector<std::vector<std::size_t>> send_cell_vertices(
       mpi_size, std::vector<std::size_t>(2, 0));
 
-  for (std::int32_t i = 0; i < mp.size(); ++i)
+  for (std::int32_t i = 0; i < cell_partition.size(); ++i)
   {
-    std::int32_t num_procs = mp.num_procs(i);
-    const std::int32_t* sharing_procs = mp.procs(i);
+    std::int32_t num_procs = cell_partition.num_procs(i);
+    const std::int32_t* sharing_procs = cell_partition.procs(i);
     for (std::int32_t j = 0; j < num_procs; ++j)
     {
       // Create reference to destination vector
@@ -507,7 +507,7 @@ void distribute_cell_layer(
 PartitionData Partitioning::partition_cells(
     const MPI_Comm& mpi_comm, int nparts, const mesh::CellType cell_type,
     const Eigen::Ref<const EigenRowArrayXXi64> cell_vertices,
-    const std::string partitioner)
+    const mesh::Partitioner graph_partitioner)
 {
   LOG(INFO) << "Compute partition of cells across processes";
 
@@ -535,7 +535,7 @@ PartitionData Partitioning::partition_cells(
     }
 
     // Compute cell partition using partitioner from parameter system
-    if (partitioner == "SCOTCH")
+    if (graph_partitioner == mesh::Partitioner::scotch)
     {
       graph::CSRGraph<SCOTCH_Num> csr_graph(mpi_comm, local_graph);
       std::vector<std::size_t> weights;
@@ -543,7 +543,7 @@ PartitionData Partitioning::partition_cells(
       return PartitionData(graph::SCOTCH::partition(
           mpi_comm, (SCOTCH_Num)nparts, csr_graph, weights, num_ghost_nodes));
     }
-    else if (partitioner == "ParMETIS")
+    else if (graph_partitioner == mesh::Partitioner::parmetis)
     {
 #ifdef HAS_PARMETIS
       graph::CSRGraph<idx_t> csr_graph(mpi_comm, local_graph);
@@ -564,8 +564,8 @@ PartitionData Partitioning::partition_cells(
 // partition
 mesh::Mesh Partitioning::build_from_partition(
     const MPI_Comm& comm, mesh::CellType cell_type,
-    const Eigen::Ref<const EigenRowArrayXXi64> cell_vertices,
     const Eigen::Ref<const EigenRowArrayXXd> points,
+    const Eigen::Ref<const EigenRowArrayXXi64> cell_vertices,
     const std::vector<std::int64_t>& global_cell_indices,
     const mesh::GhostMode ghost_mode, const PartitionData& cell_partition)
 {
@@ -661,7 +661,7 @@ mesh::Mesh Partitioning::build_distributed_mesh(
     const Eigen::Ref<const EigenRowArrayXXd> points,
     const Eigen::Ref<const EigenRowArrayXXi64> cells,
     const std::vector<std::int64_t>& global_cell_indices,
-    const mesh::GhostMode ghost_mode, std::string graph_partitioner)
+    const mesh::GhostMode ghost_mode, const mesh::Partitioner graph_partitioner)
 {
 
   // By default all processes are used to partition the mesh
@@ -674,7 +674,7 @@ mesh::Mesh Partitioning::build_distributed_mesh(
 
   // Build mesh from local mesh data and provided cell partition
   mesh::Mesh mesh = Partitioning::build_from_partition(
-      comm, cell_type, cells, points, global_cell_indices, ghost_mode,
+      comm, cell_type, points, cells, global_cell_indices, ghost_mode,
       cell_partition);
 
   // Initialise number of globally connected cells to each facet. This
