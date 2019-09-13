@@ -551,9 +551,9 @@ la::PETScMatrix PETScDMCollection::create_transfer_matrix(
 
     // Get dofs coordinates of the coarse cell
     const int cell_index = coarse_cell.index();
-    for (int i = 0; i < num_dofs_g; ++i)
-      for (int j = 0; j < gdim; ++j)
-        coordinate_dofs(i, j) = x_g(cell_g[pos_g[cell_index] + i], j);
+    for (int j = 0; j < num_dofs_g; ++j)
+      for (int k = 0; k < gdim; ++k)
+        coordinate_dofs(j, k) = x_g(cell_g[pos_g[cell_index] + j], k);
 
     // Evaluate the basis functions of the coarse cells at the fine
     // point and store the values into temp_values
