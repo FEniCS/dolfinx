@@ -65,7 +65,7 @@ public:
   // Assignment operator (delete)
   FunctionSpace& operator=(const FunctionSpace& V) = delete;
 
-  // Move assignment operator (delete)
+  /// Move assignment operator
   FunctionSpace& operator=(FunctionSpace&& V) = default;
 
   /// Equality operator
