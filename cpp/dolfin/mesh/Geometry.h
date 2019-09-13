@@ -73,10 +73,8 @@ public:
   const std::vector<std::int64_t>& global_indices() const;
 
   /// Hash of coordinate values
-  ///
-  /// @returns std::size_t
-  ///    A tree-hashed value of the coordinates over all MPI processes
-  ///
+  /// @return A tree-hashed value of the coordinates over all MPI
+  ///         processes
   std::size_t hash() const;
 
   /// Return informal string representation (pretty-print)

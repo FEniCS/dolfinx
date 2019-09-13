@@ -16,7 +16,7 @@ PartitionData::PartitionData(
     : _offset(1)
 
 {
-  for (std::size_t i = 0; i != cell_partition.size(); ++i)
+  for (std::size_t i : cell_partition)
   {
     const auto it = ghost_procs.find(i);
     if (it == ghost_procs.end())

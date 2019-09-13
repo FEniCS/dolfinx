@@ -7,7 +7,6 @@
 #pragma once
 
 #include "PartitionData.h"
-
 #include <cstdint>
 #include <dolfin/common/types.h>
 #include <dolfin/mesh/cell_types.h>
@@ -58,23 +57,19 @@ enum class Partitioner
 class Partitioning
 {
 public:
-  /// Build distributed mesh from a set of points and cells on each local
-  /// process
-  /// @param comm
-  ///     MPI Communicator
-  /// @param type
-  ///     Cell type
-  /// @param points
-  ///     Geometric points on each process, numbered from process 0 upwards.
-  /// @param cells
-  ///     Topological cells with global vertex indexing. Each cell appears once
-  ///     only.
-  /// @param global_cell_indices
-  ///     Global index for each cell
-  /// @param ghost_mode
-  ///     Ghost mode
-  /// @param graph_partitioner
-  ///     External Graph Partitioner (SCOTCH, PARMETIS)
+  /// Build distributed mesh from a set of points and cells on each
+  /// local process
+  /// @param[in] comm MPI Communicator
+  /// @param[in] type Cell type
+  /// @param[in] points Geometric points on each process, numbered from
+  ///                   process 0 upwards.
+  /// @param[in] cells Topological cells with global vertex indexing.
+  ///                  Each cell appears once only.
+  /// @param[in] global_cell_indices Global index for each cell
+  /// @param[in] ghost_mode Ghost mode
+  /// @param[in] graph_partitioner External Graph Partitioner (SCOTCH,
+  ///                              PARMETIS, etc)
+  /// @return A distributed mesh
   static mesh::Mesh
   build_distributed_mesh(const MPI_Comm& comm, mesh::CellType cell_type,
                          const Eigen::Ref<const EigenRowArrayXXd> points,
@@ -84,23 +79,19 @@ public:
                          const mesh::Partitioner graph_partitioner
                          = mesh::Partitioner::scotch);
 
-  /// Build distributed mesh from a set of points and cells on each local
-  /// process with a pre-computed partition
-  /// @param comm
-  ///     MPI Communicator
-  /// @param type
-  ///     Cell type
-  /// @param points
-  ///     Geometric points on each process, numbered from process 0 upwards.
-  /// @param cells
-  ///     Topological cells with global vertex indexing. Each cell appears once
-  ///     only.
-  /// @param global_cell_indices
-  ///     Global index for each cell
-  /// @param ghost_mode
-  ///     Ghost mode
-  /// @param PartitionData
-  ///     Cell partition data (PartitionData object)
+  /// Build distributed mesh from a set of points and cells on each
+  /// local process with a pre-computed partition
+  /// @param[in] comm MPI Communicator
+  /// @param[in] type Cell type
+  /// @param[in] points Geometric points on each process, numbered from
+  ///                    process 0 upwards.
+  /// @param[in] cells Topological cells with global vertex indexing.
+  ///                  Each cell appears once only.
+  /// @param[in] global_cell_indices Global index for each cell
+  /// @param[in] ghost_mode Ghost mode
+  /// @param[in] cell_partition Cell partition data (PartitionData
+  ///                           object)
+  /// @return A distributed mesh
   static mesh::Mesh
   build_from_partition(const MPI_Comm& comm, mesh::CellType type,
                        const Eigen::Ref<const EigenRowArrayXXd> points,
@@ -110,39 +101,30 @@ public:
                        const PartitionData& cell_partition);
 
   /// Partition mesh cells using an external Graph Partitioner
-  /// @param comm
-  ///     MPI Communicator
-  /// @param nparts
-  ///     Number of partitions
-  /// @param cell_type
-  ///     Cell type
-  /// @param cells
-  ///     Topological cells with global vertex indexing. Each cell appears once
-  ///     only.
-  /// @param global_cell_indices
-  ///     Global index for each cell
-  /// @param ghost_mode
-  ///     Ghost mode
-  /// @return PartitionData
-  ///     Cell partition data (PartitionData object)
+  /// @param[in] comm MPI Communicator
+  /// @param[in] nparts Number of partitions
+  /// @param[in] cell_type Cell type
+  /// @param[in] cells Topological cells with global vertex indexing.
+  ///                  Each cell appears once only.
+  /// @param[in] global_cell_indices Global index for each cell
+  /// @param[in] ghost_mode Ghost mode
+  /// @return Cell partition data
   static PartitionData
   partition_cells(const MPI_Comm& mpi_comm, int nparts,
                   const mesh::CellType cell_type,
                   const Eigen::Ref<const EigenRowArrayXXi64> cell_vertices,
                   const mesh::Partitioner graph_partitioner);
 
-  /// Redistribute points to the processes that need them.
-  /// @param mpi_comm
-  ///   MPI Communicator
-  /// @param points
-  ///   Existing vertex coordinates array on each process before
-  ///   distribution
-  /// @param global_point_indices
-  ///   Global indices for vertices required on this process
-  /// @return
-  ///   vertex_coordinates (array of coordinates on this process after
-  ///   distribution) and shared_vertices_local (map from local index to set
-  ///   of sharing processes for each shared vertex)
+  /// Redistribute points to the processes that need them
+  /// @param[in] mpi_comm MPI Communicator
+  /// @param[in] points Existing vertex coordinates array on each
+  ///                   process before distribution
+  /// @param[in] global_point_indices Global indices for vertices
+  ///                                 required on this process
+  /// @return vertex_coordinates (array of coordinates on this process
+  ///         after distribution) and shared_vertices_local (map from
+  ///         local index to set of sharing processes for each shared
+  ///         vertex)
   static std::pair<EigenRowArrayXXd,
                    std::map<std::int32_t, std::set<std::int32_t>>>
   distribute_points(const MPI_Comm mpi_comm,

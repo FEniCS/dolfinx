@@ -19,23 +19,20 @@ namespace mesh
 
 class Connectivity;
 
-/// Topology stores the topology of a mesh, consisting of mesh
-/// entities and connectivity (incidence relations for the mesh
-/// entities). Note that the mesh entities don't need to be stored,
-/// only the number of entities and the connectivity. Any numbering
-/// scheme for the mesh entities is stored separately in a
-/// MeshFunction over the entities.
+/// Topology stores the topology of a mesh, consisting of mesh entities
+/// and connectivity (incidence relations for the mesh entities). Note
+/// that the mesh entities don't need to be stored, only the number of
+/// entities and the connectivity. Any numbering scheme for the mesh
+/// entities is stored separately in a MeshFunction over the entities.
 ///
-/// A mesh entity e may be identified globally as a pair e = (dim,
-/// i), where dim is the topological dimension and i is the index of
-/// the entity within that topological dimension.
+/// A mesh entity e may be identified globally as a pair e = (dim, i),
+/// where dim is the topological dimension and i is the index of the
+/// entity within that topological dimension.
 
 class Topology
 {
 public:
   /// Create empty mesh topology
-  /// @param dim
-  ///   Topological dimension
   Topology(std::size_t dim, std::int32_t num_vertices,
            std::int64_t num_vertices_global);
 
@@ -60,8 +57,8 @@ public:
   /// Return global number of entities for given dimension
   std::int64_t size_global(int dim) const;
 
-  /// Return number of regular (non-ghost) entities or equivalently,
-  /// the offset of where ghost entities begin
+  /// Return number of regular (non-ghost) entities or equivalently, the
+  /// offset of where ghost entities begin
   std::int32_t ghost_offset(int dim) const;
 
   /// Clear data for given pair of topological dimensions
