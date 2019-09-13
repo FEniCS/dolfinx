@@ -482,26 +482,77 @@ mesh::cell_entity_closure(mesh::CellType cell_type)
   return entity_closure;
 }
 //-----------------------------------------------------------------------------
-std::vector<std::int8_t> mesh::vtk_mapping(mesh::CellType type)
+std::vector<std::uint8_t> mesh::vtk_mapping(mesh::CellType type, int num_nodes)
 {
-  switch (type)
-  {
-  case mesh::CellType::point:
-    return {0};
-  case mesh::CellType::interval:
-    return {0, 1};
-  case mesh::CellType::triangle:
-    return {0, 1, 2};
-  case mesh::CellType::tetrahedron:
-    return {0, 1, 2, 3};
-  case mesh::CellType::quadrilateral:
-    return {0, 1, 3, 2};
-  case mesh::CellType::hexahedron:
-    return {0, 1, 3, 2, 4, 5, 7, 6};
-  default:
-    throw std::runtime_error("Unknown cell type.");
+ switch (type)
+	{
+     case mesh::CellType::point:
+       return {0};
+     case mesh::CellType::interval:
+       return  {0, 1};
+     case mesh::CellType::triangle:
+       if (num_nodes == 3)
+		 return {0, 1, 2};
+	   else if (num_nodes == 6)
+		 return {0, 1, 2, 5, 3, 4};
+	   else if (num_nodes == 10)
+		 return {0, 1, 2, 3, 4, 9, 5, 6, 7, 8};
+	   else
+		 throw std::runtime_error("Unknown cell type.");
+     case mesh::CellType::tetrahedron:
+       if (num_nodes == 4)
+		 return {0, 1, 2, 3};
+	   else
+		 throw std::runtime_error("Higher order tetrahedron not supported");
+     case mesh::CellType::quadrilateral:
+       if (num_nodes == 4)
+		 return {0, 1, 3, 2};
+	   else
+		 throw std::runtime_error("Higher order quadrilateral not supported");
+     case mesh::CellType::hexahedron:
+       if (num_nodes == 8)
+		 return {0, 1, 3, 2, 4, 5, 7, 6};
+	   else
+	     throw std::runtime_error("Higher order hexahedron not supported");
+	 default:
+       throw std::runtime_error("Unknown cell type.");
+}
+}
+//-----------------------------------------------------------------------------
+int mesh::cell_degree(mesh::CellType type, int num_nodes)
+{
+ switch (type)
+   {
+    case mesh::CellType::point:
+      return 1;
+    case mesh::CellType::interval:
+      return  1;
+    case mesh::CellType::triangle:
+      if (num_nodes == 3)
+		return 1;
+	  else if (num_nodes == 6)
+		return 2;
+	  else if (num_nodes == 10)
+		return 3;
+	  else
+        throw std::runtime_error("Unknown cell type.");
+    case mesh::CellType::tetrahedron:
+      if (num_nodes == 4)
+		return 1;
+	  else
+		throw std::runtime_error("Higher order tetrahedron not supported");
+    case mesh::CellType::quadrilateral:
+      if (num_nodes == 4)
+		return 1;
+	  else
+		throw std::runtime_error("Higher order quadrilateral not supported");
+    case mesh::CellType::hexahedron:
+      if (num_nodes == 8)
+		return 1;
+	  else
+		throw std::runtime_error("Higher order hexahedron not supported");
+    default:
+      throw std::runtime_error("Unknown cell type.");
   }
-
-  return std::vector<std::int8_t>();
 }
 //-----------------------------------------------------------------------------

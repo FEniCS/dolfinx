@@ -73,8 +73,12 @@ int num_cell_vertices(CellType type);
 std::map<std::array<int, 2>, std::vector<std::set<int>>>
 cell_entity_closure(mesh::CellType cell_type);
 
+/// Find the order of a cell given the number of nodes in the element.
+int cell_degree(CellType type, int num_nodes);
+
 /// Mapping of DOLFIN/UFC vertex ordering to VTK/XDMF ordering
-std::vector<std::int8_t> vtk_mapping(CellType type);
+std::vector<std::uint8_t> vtk_mapping(CellType type, int num_nodes);
+
 
 } // namespace mesh
 } // namespace dolfin

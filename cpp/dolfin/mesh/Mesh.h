@@ -269,9 +269,6 @@ public:
   // FIXME: This should be with Geometry
   std::int32_t degree() const;
 
-  // Get cell permutation
-  const std::vector<std::uint8_t>& cell_permutation() const;
-
   /// Cell type
   const mesh::CellType cell_type;
 
@@ -281,9 +278,6 @@ private:
 
   // Mesh geometry
   std::unique_ptr<Geometry> _geometry;
-
-  // Cell permutation
-  std::vector<std::uint8_t> _cell_permutation;
 
   // FIXME: This should be in geometry!
   // Coordinate dofs

@@ -132,11 +132,6 @@ void write_ascii_mesh(const mesh::Mesh& mesh, std::size_t cell_dim,
   file << "<DataArray  type=\"Float64\"  NumberOfComponents=\"3\"  format=\""
        << "ascii"
        << "\">";
-  // for (auto& v : mesh::MeshRange(mesh, 0))
-  // {
-    // Eigen::Vector3d p = mesh.geometry().x(v.index());
-    // file << p[0] << " " << p[1] << " " << p[2] << "  ";
-  // }
   const Eigen::Array<double, Eigen::Dynamic, 3, Eigen::RowMajor> points = mesh.geometry().points();
   for (int i = 0; i < points.rows(); ++i)
 	{
@@ -153,51 +148,22 @@ void write_ascii_mesh(const mesh::Mesh& mesh, std::size_t cell_dim,
 
   mesh::CellType celltype = mesh::cell_entity_type(mesh.cell_type, cell_dim);
   const int num_vertices = mesh::cell_num_entities(celltype, 0);
-  int num_nodes = 0;
-  if (celltype == mesh::CellType::triangle)
+
+  const mesh::Connectivity& connectivity_g
+	= mesh.coordinate_dofs().entity_points();
+  Eigen::Ref<const Eigen::Array<std::int32_t, Eigen::Dynamic, 1>>
+	cell_connections = connectivity_g.connections();
+  const Eigen::Ref<const Eigen::Array<std::int32_t, Eigen::Dynamic, 1>> pos_g
+	= connectivity_g.entity_positions();
+  const std::vector<std::uint8_t> perm = mesh.coordinate_dofs().cell_permutation();
+  const int num_nodes = perm.size();
+  for (int j=0; j < mesh.num_entities(mesh.topology().dim()); ++j)
 	{
-	 num_nodes = (element_degree+1)*(element_degree+2)/2;
+	  for (int i = 0; i < num_nodes; ++i)
+		file << cell_connections(pos_g(j)+perm[i]) << " ";
+	  file << " ";
 	}
-  else if (celltype == mesh::CellType::quadrilateral)
-	{
-	 num_nodes = (element_degree+1)*(element_degree+1);
-	}
-  else if (celltype == mesh::CellType::tetrahedron)
-	{
-	  // Assume element order 1
-	  num_nodes = 4;
-	}
-  else
-	{
-	  num_nodes = 0;
-	}
-  // FIXME: Remove this if-test when the generation meshes are rewritten to use the structure of the same mesh constructor
-  if (num_nodes == num_vertices)
-	{
-	  const std::vector<std::int8_t> perm = mesh::vtk_mapping(celltype);
-	  for (auto& c : mesh::MeshRange(mesh, cell_dim))
-		{
-		  for (int i = 0; i < num_vertices; ++i)
-			file << c.entities(0)[perm[i]] << " ";
-		  file << " ";
-		}
-	}
-  else
-	{
-	  const mesh::Connectivity& connectivity_g
-		= mesh.coordinate_dofs().entity_points();
-	  Eigen::Ref<const Eigen::Array<std::int32_t, Eigen::Dynamic, 1>>
-		cell_connections = connectivity_g.connections();
-	  const Eigen::Ref<const Eigen::Array<std::int32_t, Eigen::Dynamic, 1>> pos_g
-		= connectivity_g.entity_positions();
-	  const std::vector<std::uint8_t> perm = mesh.cell_permutation();
-	  for (int j=0; j < mesh.num_entities(mesh.topology().dim()); ++j)
-		{
-		  for (int i = 0; i < num_nodes; ++i)
-			file << cell_connections(pos_g(j)+perm[i]) << " ";
-		  file << " ";
-		}
-	}
+  // }
   file << "</DataArray>" << std::endl;
 
   // Write offset into connectivity array for the end of each cell

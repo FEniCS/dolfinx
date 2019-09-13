@@ -211,7 +211,7 @@ std::vector<std::int64_t> compute_topology_data(const mesh::Mesh& mesh,
   // Get mesh communicator
   MPI_Comm comm = mesh.mpi_comm();
 
-  const std::vector<std::int8_t> perm = mesh::vtk_mapping(mesh.cell_type);
+  const std::vector<std::uint8_t> perm = mesh.coordinate_dofs().cell_permutation();
   const int tdim = mesh.topology().dim();
   const auto& global_vertices = mesh.topology().global_indices(0);
   if (dolfin::MPI::size(comm) == 1 or cell_dim == tdim)

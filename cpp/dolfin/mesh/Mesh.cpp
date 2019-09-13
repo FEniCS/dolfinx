@@ -8,6 +8,7 @@
 #include "Connectivity.h"
 #include "CoordinateDofs.h"
 #include "DistributedMeshTools.h"
+#include <dolfin/mesh/cell_types.h>
 #include "Geometry.h"
 #include "MeshEntity.h"
 #include "MeshIterator.h"
@@ -118,13 +119,14 @@ compute_cell_node_map(std::int32_t num_vertices_per_cell,
 //-----------------------------------------------------------------------------
 } // namespace
 
+
 //-----------------------------------------------------------------------------
 Mesh::Mesh(MPI_Comm comm, mesh::CellType type,
            const Eigen::Ref<const EigenRowArrayXXd> points,
            const Eigen::Ref<const EigenRowArrayXXi64> cells,
            const std::vector<std::int64_t>& global_cell_indices,
            const GhostMode ghost_mode, std::int32_t num_ghost_cells)
-    : cell_type(type), _degree(1), _mpi_comm(comm), _ghost_mode(ghost_mode),
+  : cell_type(type), _degree(1), _mpi_comm(comm), _ghost_mode(ghost_mode),
       _unique_id(common::UniqueIdGenerator::id())
 {
   const int tdim = mesh::cell_dim(cell_type);
@@ -139,35 +141,12 @@ Mesh::Mesh(MPI_Comm comm, mesh::CellType type,
   }
 
   // Permutation from VTK to DOLFIN order for cell geometric nodes
-  // FIXME: should do this also for quad/hex
-  // FIXME: remove duplication in mesh::vtk_mapping()
-  _cell_permutation = {0, 1, 2, 3, 4, 5, 6, 7};
+  std::vector<std::uint8_t> cell_permutation;
+  cell_permutation = mesh::vtk_mapping(type, cells.cols());
 
-  // Infer if the mesh has P2 geometry (P1 has num_vertices_per_cell ==
-  // cells.cols())
-  if (num_vertices_per_cell != cells.cols())
-  {
-    if (type == mesh::CellType::triangle and cells.cols() == 6)
-    {
-      _degree = 2;
-      _cell_permutation = {0, 1, 2, 5, 3, 4};
-    }
-	else if (type == mesh::CellType::triangle and cells.cols() == 10)
-	  {
-		_degree = 3;
-		_cell_permutation = {0,1,2,3,4,9,5,6,7,8};
-	  }
-    else if (type == mesh::CellType::tetrahedron and cells.cols() == 10)
-    {
-      _degree = 2;
-      _cell_permutation = {0, 1, 2, 3, 9, 6, 8, 7, 5, 4};
-    }
-    else
-    {
-      throw std::runtime_error(
-          "Mismatch between cell type and number of vertices per cell");
-    }
-  }
+  // Find degree of mesh
+  // FIXME: degree should probably be in MeshGeometry
+  _degree = mesh::cell_degree(type, cells.cols());
 
   // Get number of nodes (global)
   const std::uint64_t num_points_global = MPI::sum(comm, points.rows());
@@ -187,10 +166,10 @@ Mesh::Mesh(MPI_Comm comm, mesh::CellType type,
   Eigen::Array<std::int32_t, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
       coordinate_nodes;
   std::tie(num_vertices_local, node_indices_global, coordinate_nodes)
-      = compute_cell_node_map(num_vertices_per_cell, cells, _cell_permutation);
+      = compute_cell_node_map(num_vertices_per_cell, cells, cell_permutation);
 
   _coordinate_dofs
-      = std::make_unique<CoordinateDofs>(coordinate_nodes, _cell_permutation);
+      = std::make_unique<CoordinateDofs>(coordinate_nodes, cell_permutation);
 
   // Distribute the points across processes and calculate shared nodes
   EigenRowArrayXXd points_received;
@@ -469,5 +448,3 @@ const CoordinateDofs& Mesh::coordinate_dofs() const
 }
 //-----------------------------------------------------------------------------
 std::int32_t Mesh::degree() const { return _degree; }
-//-----------------------------------------------------------------------------
-const std::vector<std::uint8_t>& Mesh::cell_permutation() const {return _cell_permutation;}
