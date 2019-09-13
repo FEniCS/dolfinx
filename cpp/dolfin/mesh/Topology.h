@@ -105,6 +105,12 @@ public:
   /// this is just a vector over those cells
   const std::vector<std::int32_t>& cell_owner() const;
 
+  /// Marker for surface entities of dimension dim. An entity is considered a
+  /// surface entity, if it is connected to a surface Facet of a Mesh.
+  /// Returns a list of bool, set to True where they are on the
+  /// surface of the mesh.
+  std::vector<bool> surface_entity_marker(int dim) const;
+
   /// Return connectivity for given pair of topological dimensions
   std::shared_ptr<Connectivity> connectivity(std::size_t d0, std::size_t d1);
 

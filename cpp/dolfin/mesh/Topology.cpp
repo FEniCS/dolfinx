@@ -135,6 +135,59 @@ const std::vector<std::int32_t>& Topology::cell_owner() const
   return _cell_owner;
 }
 //-----------------------------------------------------------------------------
+std::vector<bool> Topology::surface_entity_marker(int dim) const
+{
+  const int tdim = this->dim();
+
+  if (dim >= tdim or dim < 0)
+  {
+    throw std::runtime_error("Invalid entity dimension: "
+                             + std::to_string(dim));
+  }
+
+  std::shared_ptr<const Connectivity> connectivity_facet_cell
+      = connectivity(tdim - 1, tdim);
+
+  if (!connectivity_facet_cell)
+    throw std::runtime_error("Facet-cell connectivity missing");
+
+  std::vector<bool> marker(size(dim), false);
+
+  const int num_facets = size(tdim - 1);
+  // Special case for facets
+  if (dim == tdim - 1)
+  {
+    for (int i = 0; i < num_facets; ++i)
+    {
+      if (connectivity_facet_cell->size_global(i) == 1)
+        marker[i] = true;
+    }
+    return marker;
+  }
+
+  // Get connectivity from facet to entities of interest (vertices or edges)
+  std::shared_ptr<const Connectivity> connectivity_facet_entity
+      = connectivity(tdim - 1, dim);
+  if (!connectivity_facet_entity)
+    throw std::runtime_error("Facet-entity connectivity missing");
+
+  const Eigen::Array<std::int32_t, Eigen::Dynamic, 1>& fe_offsets
+      = connectivity_facet_entity->entity_positions();
+  const Eigen::Array<std::int32_t, Eigen::Dynamic, 1>& fe_indices
+      = connectivity_facet_entity->connections();
+
+  // Iterate over all facets, selecting only those with one cell attached
+  for (int i = 0; i < num_facets; ++i)
+  {
+    if (connectivity_facet_cell->size_global(i) == 1)
+    {
+      for (int j = fe_offsets[i]; j < fe_offsets[i + 1]; ++j)
+        marker[fe_indices[j]] = true;
+    }
+  }
+  return marker;
+}
+//-----------------------------------------------------------------------------
 std::shared_ptr<Connectivity> Topology::connectivity(std::size_t d0,
                                                      std::size_t d1)
 {
