@@ -121,6 +121,7 @@ W = FunctionSpace(mesh, TH)
 # No-slip boundary condition for velocity
 # x1 = 0, x1 = 1 and around the dolphin
 
+
 def noslip_expr(values, x):
     values[:, :] = 0.0
 
