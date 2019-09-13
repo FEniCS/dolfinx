@@ -20,6 +20,10 @@ from dolfin import function, jit
 import ffc
 import ufl
 
+# Load ffi import-time, needed to be binded
+# into numba compiled code for interpolation
+ffi = cffi.FFI()
+
 
 def interpolate(v, V):
     """Return interpolation of a given function into a given finite
@@ -139,35 +143,38 @@ def compiled_interpolation(expr, V, target):
     local_b_size = V.element.space_dimension()
     num_coeffs = len(coeffs_vectors)
 
-    @numba.njit
-    def assemble_vector_ufc(b, kernel, topology, geometry, dofmap, coeffs_vectors, coeffs_dofmaps, const_vector):
-        connections, pos = topology
-        coordinate_dofs = np.zeros(reference_geometry.shape)
-        coeffs = np.zeros(local_coeffs_size, dtype=PETSc.ScalarType)
-        b_local = np.zeros(local_b_size, dtype=PETSc.ScalarType)
-
-        for i, cell in enumerate(pos[:-1]):
-            num_vertices = pos[i + 1] - pos[i]
-            c = connections[cell:cell + num_vertices]
-            for j in range(reference_geometry.shape[0]):
-                for k in range(reference_geometry.shape[1]):
-                    coordinate_dofs[j, k] = geometry[c[j], k]
-            b_local.fill(0.0)
-
-            offset = 0
-            for j in range(num_coeffs):
-                local_dofsize = local_coeffs_sizes[j]
-                for k in range(local_dofsize):
-                    coeffs[offset + k] = coeffs_vectors[j][coeffs_dofmaps[j][i * local_dofsize + k]]
-                offset += local_dofsize
-
-            kernel(ffi.from_buffer(b_local), ffi.from_buffer(coeffs),
-                   ffi.from_buffer(const_vector), ffi.from_buffer(coordinate_dofs))
-
-            for j in range(local_b_size):
-                b[dofmap[i * local_b_size + j]] = b_local[j]
 
     with target.vector.localForm() as b:
         b.set(0.0)
-        assemble_vector_ufc(np.asarray(b), kernel, (c, pos), geom,
-                            dofmap, coeffs_vectors, coeffs_dofmaps, constants_vector)
+        assemble_vector_ufc(np.asarray(b), kernel, (c, pos), geom, dofmap, coeffs_vectors, coeffs_dofmaps,
+                            constants_vector, reference_geometry, local_coeffs_sizes, local_coeffs_size, local_b_size)
+
+
+@numba.njit
+def assemble_vector_ufc(b, kernel, topology, geometry, dofmap, coeffs_vectors, coeffs_dofmaps,
+                        const_vector, reference_geometry, local_coeffs_sizes, local_coeffs_size, local_b_size):
+    connections, pos = topology
+    coordinate_dofs = np.zeros(reference_geometry.shape)
+    coeffs = np.zeros(local_coeffs_size, dtype=PETSc.ScalarType)
+    b_local = np.zeros(local_b_size, dtype=PETSc.ScalarType)
+
+    for i, cell in enumerate(pos[:-1]):
+        num_vertices = pos[i + 1] - pos[i]
+        c = connections[cell:cell + num_vertices]
+        for j in range(reference_geometry.shape[0]):
+            for k in range(reference_geometry.shape[1]):
+                coordinate_dofs[j, k] = geometry[c[j], k]
+        b_local.fill(0.0)
+
+        offset = 0
+        for j in range(len(coeffs_vectors)):
+            local_dofsize = local_coeffs_sizes[j]
+            for k in range(local_dofsize):
+                coeffs[offset + k] = coeffs_vectors[j][coeffs_dofmaps[j][i * local_dofsize + k]]
+            offset += local_dofsize
+
+        kernel(ffi.from_buffer(b_local), ffi.from_buffer(coeffs),
+                ffi.from_buffer(const_vector), ffi.from_buffer(coordinate_dofs))
+
+        for j in range(local_b_size):
+            b[dofmap[i * local_b_size + j]] = b_local[j]
