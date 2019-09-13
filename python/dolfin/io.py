@@ -13,7 +13,6 @@ import numpy
 from dolfin import cpp, fem, function
 
 __all__ = ["HDF5File", "XDMFFile", "VTKFile"]
-=======
 
 
 class HDF5File:
