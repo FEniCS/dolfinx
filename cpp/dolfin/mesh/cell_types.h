@@ -79,6 +79,5 @@ int cell_degree(CellType type, int num_nodes);
 /// Mapping of DOLFIN/UFC vertex ordering to VTK/XDMF ordering
 std::vector<std::uint8_t> vtk_mapping(CellType type, int num_nodes);
 
-
 } // namespace mesh
 } // namespace dolfin

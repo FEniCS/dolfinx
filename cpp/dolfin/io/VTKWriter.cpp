@@ -147,8 +147,6 @@ void write_ascii_mesh(const mesh::Mesh& mesh, std::size_t cell_dim,
        << "\">";
 
   mesh::CellType celltype = mesh::cell_entity_type(mesh.cell_type, cell_dim);
-  const int num_vertices = mesh::cell_num_entities(celltype, 0);
-
   const mesh::Connectivity& connectivity_g
 	= mesh.coordinate_dofs().entity_points();
   Eigen::Ref<const Eigen::Array<std::int32_t, Eigen::Dynamic, 1>>
@@ -163,7 +161,6 @@ void write_ascii_mesh(const mesh::Mesh& mesh, std::size_t cell_dim,
 		file << cell_connections(pos_g(j)+perm[i]) << " ";
 	  file << " ";
 	}
-  // }
   file << "</DataArray>" << std::endl;
 
   // Write offset into connectivity array for the end of each cell
@@ -174,7 +171,6 @@ void write_ascii_mesh(const mesh::Mesh& mesh, std::size_t cell_dim,
     file << offsets * num_nodes << " ";
 
   file << "</DataArray>" << std::endl;
-
   // Write cell type
   file << "<DataArray  type=\"UInt8\"  Name=\"types\"  format=\""
        << "ascii"

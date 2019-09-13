@@ -119,7 +119,6 @@ compute_cell_node_map(std::int32_t num_vertices_per_cell,
 //-----------------------------------------------------------------------------
 } // namespace
 
-
 //-----------------------------------------------------------------------------
 Mesh::Mesh(MPI_Comm comm, mesh::CellType type,
            const Eigen::Ref<const EigenRowArrayXXd> points,
@@ -167,7 +166,6 @@ Mesh::Mesh(MPI_Comm comm, mesh::CellType type,
       coordinate_nodes;
   std::tie(num_vertices_local, node_indices_global, coordinate_nodes)
       = compute_cell_node_map(num_vertices_per_cell, cells, cell_permutation);
-
   _coordinate_dofs
       = std::make_unique<CoordinateDofs>(coordinate_nodes, cell_permutation);
 
@@ -448,3 +446,4 @@ const CoordinateDofs& Mesh::coordinate_dofs() const
 }
 //-----------------------------------------------------------------------------
 std::int32_t Mesh::degree() const { return _degree; }
+//-----------------------------------------------------------------------------
