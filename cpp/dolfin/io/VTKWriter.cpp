@@ -18,6 +18,8 @@
 #include <dolfin/mesh/MeshFunction.h>
 #include <dolfin/mesh/MeshIterator.h>
 #include <dolfin/mesh/cell_types.h>
+#include <dolfin/mesh/Connectivity.h>
+#include <dolfin/mesh/CoordinateDofs.h>
 #include <fstream>
 #include <iomanip>
 #include <ostream>
@@ -169,7 +171,7 @@ void write_ascii_mesh(const mesh::Mesh& mesh, std::size_t cell_dim,
 	{
 	  num_nodes = 0;
 	}
-
+  // FIXME: Remove this if-test when the generation meshes are rewritten to use the structure of the same mesh constructor
   if (num_nodes == num_vertices)
 	{
 	  const std::vector<std::int8_t> perm = mesh::vtk_mapping(celltype);
@@ -182,11 +184,17 @@ void write_ascii_mesh(const mesh::Mesh& mesh, std::size_t cell_dim,
 	}
   else
 	{
+	  const mesh::Connectivity& connectivity_g
+		= mesh.coordinate_dofs().entity_points();
+	  Eigen::Ref<const Eigen::Array<std::int32_t, Eigen::Dynamic, 1>>
+		cell_connections = connectivity_g.connections();
+	  const Eigen::Ref<const Eigen::Array<std::int32_t, Eigen::Dynamic, 1>> pos_g
+		= connectivity_g.entity_positions();
 	  const std::vector<std::uint8_t> perm = mesh.cell_permutation();
 	  for (int j=0; j < mesh.num_entities(mesh.topology().dim()); ++j)
 		{
 		  for (int i = 0; i < num_nodes; ++i)
-			file << mesh.coordinate_nodes(j,perm[i]) << " ";
+			file << cell_connections(pos_g(j)+perm[i]) << " ";
 		  file << " ";
 		}
 	}

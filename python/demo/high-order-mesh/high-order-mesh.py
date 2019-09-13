@@ -9,16 +9,17 @@ import meshio
 from dolfin import Mesh, cpp, MPI
 from dolfin.io import VTKFile
 
+
 # Generate high order gmsh
 for order in range(1, 4):
-    lcar = 0.9
+    lcar = 0.1
     geo = Geometry()
     geo.add_raw_code("Mesh.ElementOrder={0};".format(order))
     small_circle = geo.add_circle([0, 0, 0], 0.2, lcar=lcar)
     circle = geo.add_circle([0, 0, 0], 1, lcar=lcar, holes=[small_circle.plane_surface])
     geo.add_physical(circle.plane_surface, 1)
 
-    pygmsh = generate_mesh(geo, prune_z_0=True, verbose=False, geo_filename="test.geo")
+    pygmsh = generate_mesh(geo, prune_z_0=True, verbose=False)
 
     if order == 1:
         element = "triangle"
@@ -33,5 +34,8 @@ for order in range(1, 4):
     mesh = Mesh(MPI.comm_world, cpp.mesh.CellType.triangle, pygmsh.points,
                 pygmsh.cells[element], [], cpp.mesh.GhostMode.none)
 
-    # mesh.create_connectivity(1, 2)
+    # from dolfin.cpp.mesh import Ordering
+    # Ordering.order_simplex(mesh)
+
+    mesh.create_connectivity(1, 2)
     VTKFile("mesh_order{0}.pvd".format(order)).write(mesh)

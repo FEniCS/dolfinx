@@ -184,10 +184,11 @@ Mesh::Mesh(MPI_Comm comm, mesh::CellType type,
   // cell topology using new local indices.
   std::int32_t num_vertices_local;
   std::vector<std::int64_t> node_indices_global;
-
+  Eigen::Array<std::int32_t, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
+      coordinate_nodes;
   std::tie(num_vertices_local, node_indices_global, coordinate_nodes)
       = compute_cell_node_map(num_vertices_per_cell, cells, _cell_permutation);
-  coordinate_nodes = coordinate_nodes;
+
   _coordinate_dofs
       = std::make_unique<CoordinateDofs>(coordinate_nodes, _cell_permutation);
 

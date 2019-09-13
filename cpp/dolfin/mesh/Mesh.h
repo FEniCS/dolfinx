@@ -272,9 +272,6 @@ public:
   // Get cell permutation
   const std::vector<std::uint8_t>& cell_permutation() const;
 
-  Eigen::Array<std::int32_t, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
-	coordinate_nodes;
-
   /// Cell type
   const mesh::CellType cell_type;
 
