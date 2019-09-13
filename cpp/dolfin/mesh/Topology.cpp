@@ -148,6 +148,9 @@ std::vector<bool> Topology::surface_entity_marker(int dim) const
   std::shared_ptr<const Connectivity> connectivity_facet_cell
       = connectivity(tdim - 1, tdim);
 
+  if (!connectivity_facet_cell)
+    throw std::runtime_error("Facet-cell connectivity missing");
+
   std::vector<bool> marker(size(dim), false);
 
   const int num_facets = size(tdim - 1);
@@ -165,7 +168,9 @@ std::vector<bool> Topology::surface_entity_marker(int dim) const
   // Get connectivity from facet to entities of interest (vertices or edges)
   std::shared_ptr<const Connectivity> connectivity_facet_entity
       = connectivity(tdim - 1, dim);
-  assert(connectivity_facet_entity);
+  if (!connectivity_facet_entity)
+    throw std::runtime_error("Facet-entity connectivity missing");
+
   const Eigen::Array<std::int32_t, Eigen::Dynamic, 1>& fe_offsets
       = connectivity_facet_entity->entity_positions();
   const Eigen::Array<std::int32_t, Eigen::Dynamic, 1>& fe_indices
