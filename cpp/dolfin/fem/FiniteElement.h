@@ -27,23 +27,19 @@ class FiniteElement
 {
 public:
   /// Create finite element from UFC finite element
-  /// @param element (ufc::finite_element)
-  ///  UFC finite element
+  /// @param[in] ufc_element UFC finite element
   FiniteElement(const ufc_finite_element& ufc_element);
 
   /// Destructor
   virtual ~FiniteElement() = default;
 
   /// Return a string identifying the finite element
-  /// @return std::string
   std::string signature() const;
 
   /// Return the cell shape
-  /// @return CellShape
   mesh::CellType cell_shape() const;
 
   /// Return the dimension of the finite element function space
-  /// @return std::size_t
   std::size_t space_dimension() const;
 
   /// Return the value size, e.g. 1 for a scalar function, 2 for a 2D
@@ -93,9 +89,7 @@ public:
       const Eigen::Tensor<double, 3, Eigen::RowMajor>& K) const;
 
   /// Tabulate the reference coordinates of all dofs on an element
-  ///
-  /// @return    reference_coordinates (EigenRowArrayXXd)
-  ///         The coordinates of all dofs on the reference cell.
+  /// @return The coordinates of all dofs on the reference cell
   const EigenRowArrayXXd& dof_reference_coordinates() const;
 
   /// Map values of field from physical to reference space which has
@@ -108,8 +102,6 @@ public:
       const Eigen::Ref<const EigenRowArrayXXd>& coordinate_dofs) const;
 
   /// Return the number of sub elements (for a mixed element)
-  /// @return int
-  ///   number of sub-elements
   int num_sub_elements() const;
 
   /// Return simple hash of the signature string
