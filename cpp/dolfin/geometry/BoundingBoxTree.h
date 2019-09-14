@@ -135,8 +135,8 @@ private:
 
   //--- Recursive search functions ---
 
-  // Note that these functions are made static for consistency as
-  // some of them need to deal with more than one tree.
+  // Note that these functions are made static for consistency as some
+  // of them need to deal with more than one tree.
 
   // Compute collisions with point (recursive)
   static void _compute_collisions_point(const BoundingBoxTree& tree,
