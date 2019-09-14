@@ -32,42 +32,32 @@ class NewtonSolver
 {
 public:
   /// Create nonlinear solver
-  /// @param comm (MPI_Comm)
+  /// @param[in] comm The MPI communicator for the solver
   explicit NewtonSolver(MPI_Comm comm);
 
   /// Destructor
   virtual ~NewtonSolver();
 
-  /// Solve abstract nonlinear problem \f$`F(x) = 0\f$ for given
-  /// \f$F\f$ and Jacobian \f$\dfrac{\partial F}{\partial x}\f$.
+  /// Solve abstract nonlinear problem \f$`F(x) = 0\f$ for given \f$F\f$
+  /// and Jacobian \f$\dfrac{\partial F}{\partial x}\f$.
   ///
-  /// @param    nonlinear_function (_NonlinearProblem_)
-  ///         The nonlinear problem.
-  /// @param    x (_Vec_)
-  ///         The vector.
-  ///
-  /// @returns    std::pair<std::size_t, bool>
-  ///         Pair of number of Newton iterations, and whether
-  ///         iteration converged)
+  /// @param[in] nonlinear_function The nonlinear problem
+  /// @param[in,out] x The vector
+  /// @return Pair of number of Newton iterations, and whether iteration
+  ///         converged)
   std::pair<int, bool> solve(NonlinearProblem& nonlinear_function, Vec x);
 
   /// Return number of Krylov iterations elapsed since
   /// solve started
-  ///
-  /// @returns    std::size_t
-  ///         The number of iterations.
+  /// @return Number of iterations.
   int krylov_iterations() const;
 
   /// Return current residual
-  ///
-  /// @returns double
-  ///         Current residual.
+  /// @return Current residual
   double residual() const;
 
   /// Return initial residual
-  ///
-  /// @returns double
-  ///         Initial residual.
+  /// @returns Initial residual
   double residual0() const;
 
   /// Maximum number of iterations
@@ -93,36 +83,27 @@ public:
   double relaxation_parameter = 1.0;
 
 protected:
-  /// Convergence test. It may be overloaded using virtual inheritance and
-  /// this base criterion may be called from derived, both in C++ and Python.
+  /// Convergence test. It may be overloaded using virtual inheritance
+  /// and this base criterion may be called from derived, both in C++
+  /// and Python.
   ///
-  /// @param r (_Vec_)
-  ///         Residual for criterion evaluation.
-  /// @param nonlinear_problem (_NonlinearProblem_)
-  ///         The nonlinear problem.
-  /// @param iteration (std::size_t)
-  ///         Newton iteration number.
-  ///
-  /// @returns  bool
-  ///         Whether convergence occurred.
+  /// @param r Residual for criterion evaluation
+  /// @param nonlinear_problem The nonlinear problem
+  /// @param iteration Newton iteration number
+  /// @returns  True if convergence achieved
   virtual bool converged(const Vec r, const NonlinearProblem& nonlinear_problem,
                          std::size_t iteration);
 
-  /// Update solution vector by computed Newton step. Default
-  /// update is given by formula::
+  /// Update solution vector by computed Newton step. Default update is
+  /// given by formula::
   ///
   ///   x -= relaxation_parameter*dx
   ///
-  ///  @param x (_Vec_)
-  ///         The solution vector to be updated.
-  ///  @param dx (_Vec_)
-  ///         The update vector computed by Newton step.
-  ///  @param relaxation_parameter (double)
-  ///         Newton relaxation parameter.
-  ///  @param nonlinear_problem (_NonlinearProblem_)
-  ///         The nonlinear problem.
-  ///  @param iteration (std::size_t)
-  ///         Newton iteration number.
+  ///  @param[in,out] x The solution vector to be updated
+  ///  @param dx The update vector computed by Newton step
+  ///  @param[in] relaxation_parameter Newton relaxation parameter
+  ///  @param nonlinear_problem The nonlinear problem
+  ///  @param[in] iteration Newton iteration number
   virtual void update_solution(Vec x, const Vec dx, double relaxation_parameter,
                                const NonlinearProblem& nonlinear_problem,
                                std::size_t iteration);
