@@ -46,8 +46,8 @@ public:
 
   /// Compute reordering (map[old] -> new) using Gibbs-Poole-Stockmeyer
   /// (GPS) re-ordering
-  /// @param graph Input graph
-  /// @param num_passes Number of passes to use in GPS algorithm
+  /// @param[in] graph Input graph
+  /// @param[in] num_passes Number of passes to use in GPS algorithm
   /// @return (mapping from old to new nodes, mapping from new to old
   ///          nodes (inverse map))
   static std::pair<std::vector<int>, std::vector<int>>

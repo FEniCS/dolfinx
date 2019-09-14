@@ -34,10 +34,11 @@ public:
   /// @param[in] p Points of box
   /// @param[in] n Number of cells in each direction.
   /// @param[in] cell_type Tetrahedron or hexahedron
-  /// @code{.cpp} // Mesh with 8 cells in each direction on the // set
-  ///         [-1,2] x [-1,2] x [-1,2]. geometry::Point p0(-1, -1, -1);
-  ///         geometry::Point p1(2, 2, 2); auto mesh =
-  ///         BoxMesh::create({p0, p1}, {8, 8, 8});
+  /// @code{.cpp} // Mesh with 8 cells in each direction on the
+  ///             // set [-1,2] x [-1,2] x [-1,2].
+  ///                geometry::Point p0(-1, -1, -1);
+  ///                geometry::Point p1(2, 2, 2);
+  ///                mesh::Mesh mesh = BoxMesh::create({p0, p1}, {8, 8, 8});
   /// @endcode
   static mesh::Mesh create(MPI_Comm comm,
                            const std::array<Eigen::Vector3d, 2>& p,

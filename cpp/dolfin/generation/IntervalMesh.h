@@ -23,18 +23,13 @@ class IntervalMesh
 {
 public:
   /// Factory
-  ///
-  /// @param    comm (MPI_Comm)
-  ///         MPI communicator
-  /// @param    n (std::size_t)
-  ///         The number of cells.
-  /// @param    x (std::array<double, 2>)
-  ///         The end points
-  ///
+  /// @param[in] comm MPI communicator to build the mesh on
+  /// @param[in] n The number of cells.
+  /// @param[in] x The end points
+  /// @param[in] ghost_mode Ghosting mode
   /// @code{.cpp}
-  ///
   ///         // Create a mesh of 25 cells in the interval [-1,1]
-  ///         IntervalMesh mesh(MPI_COMM_WORLD, 25, -1.0, 1.0);
+  ///         IntervalMesh mesh(MPI_COMM_WORLD, 25, {-1.0, 1.0});
   /// @endcode
   static mesh::Mesh create(MPI_Comm comm, std::size_t n,
                            std::array<double, 2> x,
