@@ -60,9 +60,9 @@ std::size_t hash_local(const T& x)
   return hash(x);
 }
 
-/// Return a hash for a distributed (MPI) object. A hash is computed
-/// on each process, and the hash of the std::vector of all local hash
-/// keys is returned. This function is collective.
+/// Return a hash for a distributed (MPI) object. A hash is computed on
+/// each process, and the hash of the std::vector of all local hash keys
+/// is returned. This function is collective.
 template <class T>
 std::size_t hash_global(const MPI_Comm mpi_comm, const T& x)
 {
