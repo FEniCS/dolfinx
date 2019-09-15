@@ -68,7 +68,7 @@ public:
   /// dimension dim
   void set_num_entities_global(int dim, std::int64_t global_size);
 
-  // Set the global indices for entities of dimension dim
+  /// Set the global indices for entities of dimension dim
   void set_global_indices(int dim,
                           const std::vector<std::int64_t>& global_indices);
 
