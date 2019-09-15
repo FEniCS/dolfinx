@@ -57,7 +57,7 @@ public:
   double residual() const;
 
   /// Return initial residual
-  /// @returns Initial residual
+  /// @return Initial residual
   double residual0() const;
 
   /// Maximum number of iterations
