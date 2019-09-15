@@ -56,7 +56,7 @@ public:
 
   /// Mark all edges incident on entities indicated by refinement marker
   /// @param[in] refinement_marker Value 1 means "refine", any other
-  /// value means "do not refine"
+  ///                              value means "do not refine"
   void mark(const mesh::MeshFunction<int>& refinement_marker);
 
   /// Mark all incident edges of an entity
@@ -90,7 +90,7 @@ public:
   mesh::Mesh partition(bool redistribute) const;
 
   /// Build local mesh from internal data when not running in parallel
-  /// @return mesh::Mesh
+  /// @return A Mesh
   mesh::Mesh build_local() const;
 
 private:
