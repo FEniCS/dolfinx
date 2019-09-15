@@ -49,7 +49,7 @@ public:
   ///                              "refine", any other value means "do
   ///                              not refine".
   /// @param[in] redistribute Flag to call the Mesh Partitioner to
-  ///     redistribute after refinement
+  ///                         redistribute after refinement
   /// @return New Mesh
   static mesh::Mesh refine(const mesh::Mesh& mesh,
                            const mesh::MeshFunction<int>& refinement_marker,
@@ -68,7 +68,7 @@ public:
   ///                         tdim=3, four entries.
   /// @param[in] tdim Topological dimension (2 or 3)
   /// @param[in] uniform Make a "uniform" subdivision with all triangles
-  ///   being similar shape
+  ///                    being similar shape
   static std::vector<std::int32_t>
   get_simplices(const std::vector<bool>& marked_edges,
                 const std::vector<std::int32_t>& longest_edge,
