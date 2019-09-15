@@ -40,8 +40,8 @@ class HDF5File
 {
 
 public:
-  /// Constructor. file_mode should be "a" (append),
-  /// "w" (write) or "r" (read).
+  /// Constructor. file_mode should be "a" (append), "w" (write) or "r"
+  /// (read).
   HDF5File(MPI_Comm comm, const std::string filename,
            const std::string file_mode);
 
@@ -64,8 +64,8 @@ public:
   /// Write Vector to file in a format suitable for re-reading
   void write(const la::PETScVector& x, const std::string name);
 
-  /// Read vector from file and optionally re-use any partitioning
-  /// that is available in the file
+  /// Read vector from file and optionally re-use any partitioning that
+  /// is available in the file
   la::PETScVector read_vector(MPI_Comm comm, const std::string dataset_name,
                               const bool use_partition_from_file) const;
 

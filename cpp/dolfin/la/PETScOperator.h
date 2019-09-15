@@ -49,8 +49,8 @@ public:
   /// Initialize vector to be compatible with the matrix-vector product
   /// y = Ax. In the parallel case, size and layout are both important.
   ///
-  /// @param      dim (std::size_t) The dimension (axis): dim = 0 --> z
-  ///         = y, dim = 1 --> z = x
+  /// @param[in] dim The dimension (axis): dim = 0 --> z = y, dim = 1
+  ///                --> z = x
   PETScVector create_vector(std::size_t dim) const;
 
   /// Return the MPI communicator

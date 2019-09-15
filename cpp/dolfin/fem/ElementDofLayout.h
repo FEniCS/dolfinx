@@ -59,50 +59,33 @@ public:
   /// Move assignment
   ElementDofLayout& operator=(ElementDofLayout&& dofmap) = default;
 
-  /// Return the dimension of the local finite element function
-  /// space on a cell (number of dofs on element)
-  ///
-  /// @return     int
-  ///         Dimension of the local finite element function space.
+  /// Return the dimension of the local finite element function space on
+  /// a cell (number of dofs on element)
+  /// @return Dimension of the local finite element function space.
   int num_dofs() const;
 
   /// Return the number of dofs for a given entity dimension
-  ///
-  /// @param     entity_dim (int)
-  ///         Entity dimension
-  ///
-  /// @return     int
-  ///         Number of dofs associated with given entity dimension
+  /// @param[in] entity_dim Entity dimension
+  /// @return Number of dofs associated with given entity dimension
   int num_entity_dofs(int dim) const;
 
   /// Return the number of closure dofs for a given entity dimension
-  ///
-  /// @param     entity_dim (int)
-  ///         Entity dimension
-  ///
-  /// @return     int
-  ///         Number of dofs associated with closure of given entity dimension
+  /// @param[in] entity_dim Entity dimension
+  /// @return Number of dofs associated with closure of given entity
+  ///         dimension
   int num_entity_closure_dofs(int dim) const;
 
   /// Local-local mapping of dofs on entity of cell
-  ///
-  /// @param   entity_dim (std::size_t)
-  ///         The entity dimension.
-  /// @param    cell_entity_index (std::size_t)
-  ///         The local entity index on the cell.
-  /// @return     Eigen::Array<int, Eigen::Dynamic, 1>
-  ///         Degrees of freedom on a single element.
+  /// @param[in] entity_dim The entity dimension
+  /// @param[in] cell_entity_index The local entity index on the cell
+  /// @return Degrees of freedom on a single element.
   Eigen::Array<int, Eigen::Dynamic, 1> entity_dofs(int entity_dim,
                                                    int cell_entity_index) const;
 
   /// Local-local closure dofs on entity of cell
-  ///
-  /// @param   entity_dim (std::size_t)
-  ///         The entity dimension.
-  /// @param    cell_entity_index (std::size_t)
-  ///         The local entity index on the cell.
-  /// @return     Eigen::Array<int, Eigen::Dynamic, 1>
-  ///         Degrees of freedom on a single element.
+  /// @param[in] entity_dim The entity dimension
+  /// @param[in] cell_entity_index The local entity index on the cell
+  /// @return Degrees of freedom on a single element
   Eigen::Array<int, Eigen::Dynamic, 1>
   entity_closure_dofs(int entity_dim, int cell_entity_index) const;
 

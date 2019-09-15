@@ -44,31 +44,28 @@ public:
   const mesh::Mesh& mesh() const;
 
   /// Return marked status of edge
-  /// @param edge_index (std::int32_t)
+  /// @param[in] edge_index
   bool is_marked(std::int32_t edge_index) const;
 
   /// Mark edge by index
-  /// @param edge_index (std::int32_t)
-  ///  Index of edge to mark
+  /// @param[in] edge_index Index of edge to mark
   void mark(std::int32_t edge_index);
 
   /// Mark all edges in mesh
   void mark_all();
 
-  /// Mark all edges incident on entities indicated by refinement
-  /// marker
-  /// @param refinement_marker (const mesh::MeshFunction<int>)
-  ///   Value 1 means "refine",
-  ///   any other value means "do not refine".
+  /// Mark all edges incident on entities indicated by refinement marker
+  /// @param[in] refinement_marker Value 1 means "refine", any other
+  /// value means "do not refine"
   void mark(const mesh::MeshFunction<int>& refinement_marker);
 
   /// Mark all incident edges of an entity
-  /// @param cell (mesh::MeshEntity)
+  /// @param[in] cell
   void mark(const mesh::MeshEntity& cell);
 
   /// Return list of marked edges incident on this mesh::MeshEntity -
   /// usually a cell
-  /// @param cell (const _mesh::MeshEntity_)
+  /// @param[in] cell
   std::vector<std::size_t> marked_edge_list(const mesh::MeshEntity& cell) const;
 
   /// Transfer marked edges between processes
@@ -84,16 +81,16 @@ public:
   const std::map<std::size_t, std::size_t>& edge_to_new_vertex() const;
 
   /// Add new cells with vertex indices
-  /// @param idx (const std::vector<std::size_t>)
+  /// @param[in] idx
   void new_cells(const std::vector<std::int64_t>& idx);
 
   /// Use vertex and topology data to partition new mesh across processes
-  /// @param redistribute (bool)
-  /// @returns mesh::Mesh
+  /// @param[in] redistribute
+  /// @return New mesh
   mesh::Mesh partition(bool redistribute) const;
 
   /// Build local mesh from internal data when not running in parallel
-  /// @returns mesh::Mesh
+  /// @return mesh::Mesh
   mesh::Mesh build_local() const;
 
 private:
@@ -113,7 +110,8 @@ private:
   // Management of marked edges
   std::vector<bool> _marked_edges;
 
-  // Temporary storage for edges that have been recently marked (global index)
+  // Temporary storage for edges that have been recently marked (global
+  // index)
   std::vector<std::vector<std::int64_t>> _marked_for_update;
 
   // Mapping from global to local index (only for shared edges)

@@ -35,9 +35,8 @@ private:
   MPI_Info info;
 };
 
-/// This class provides utility functions for easy communication
-/// with MPI and handles cases when DOLFIN is not configured with
-/// MPI.
+/// This class provides utility functions for easy communication with
+/// MPI and handles cases when DOLFIN is not configured with MPI.
 class MPI
 {
 public:
@@ -71,9 +70,9 @@ public:
     /// Return process rank for the communicator
     std::uint32_t rank() const;
 
-    /// Return size of the group (number of processes) associated
-    /// with the communicator. This function will also initialise MPI
-    /// if it hasn't already been initialised.
+    /// Return size of the group (number of processes) associated with
+    /// the communicator. This function will also initialise MPI if it
+    /// hasn't already been initialised.
     std::uint32_t size() const;
 
     /// Create a new comm with a subset of processes
@@ -96,16 +95,16 @@ public:
   /// Create a new comm with a subset of processes
   static MPI_Comm SubsetComm(MPI_Comm comm, int num_processes);
 
-  /// Return size of the group (number of processes) associated with
-  /// the communicator
+  /// Return size of the group (number of processes) associated with the
+  /// communicator
   static std::uint32_t size(MPI_Comm comm);
 
   /// Set a barrier (synchronization point)
   static void barrier(MPI_Comm comm);
 
 private:
-  // Implementation of all_to_all, common for both cases,
-  // whether returning a flat array, or in separate vectors by sending process.
+  // Implementation of all_to_all, common for both cases, whether
+  // returning a flat array, or in separate vectors by sending process.
   template <typename T>
   static void all_to_all_common(MPI_Comm comm,
                                 const std::vector<std::vector<T>>& in_values,
@@ -113,15 +112,15 @@ private:
                                 std::vector<std::int32_t>& offsets);
 
 public:
-  /// Send in_values[p0] to process p0 and receive values from
-  /// process p1 in out_values[p1]
+  /// Send in_values[p0] to process p0 and receive values from process
+  /// p1 in out_values[p1]
   template <typename T>
   static void all_to_all(MPI_Comm comm,
                          const std::vector<std::vector<T>>& in_values,
                          std::vector<std::vector<T>>& out_values);
 
-  /// Send in_values[p0] to process p0 and receive values from
-  /// all processes in out_values
+  /// Send in_values[p0] to process p0 and receive values from all
+  /// processes in out_values
   template <typename T>
   static void all_to_all(MPI_Comm comm,
                          const std::vector<std::vector<T>>& in_values,
@@ -175,7 +174,7 @@ public:
                          std::vector<T>& out_values);
 
   /// Gather values, one primitive from each process (MPI_Allgather).
-  /// Specialization for std::string
+  /// Specialization for std::string.
   static void all_gather(MPI_Comm comm, const std::string& in_values,
                          std::vector<std::string>& out_values);
 

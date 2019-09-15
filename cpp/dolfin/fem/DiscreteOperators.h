@@ -26,11 +26,11 @@ namespace fem
 
 /// Discrete gradient operators providing derivatives of functions
 
-/// This class computes discrete gradient operators (matrices) that
-/// map derivatives of finite element functions into other finite
-/// element spaces. An example of where discrete gradient operators
-/// are required is the creation of algebraic multigrid solvers for
-/// H(curl) and H(div) problems.
+/// This class computes discrete gradient operators (matrices) that map
+/// derivatives of finite element functions into other finite element
+/// spaces. An example of where discrete gradient operators are required
+/// is the creation of algebraic multigrid solvers for H(curl) and
+/// H(div) problems.
 
 /// NOTE: This class is highly experimental and likely to change. It
 /// will eventually be expanded to provide the discrete curl and
@@ -39,17 +39,14 @@ namespace fem
 class DiscreteOperators
 {
 public:
-  /// Build the discrete gradient operator A that takes a \f$w \in H^1\f$
-  /// (P1, nodal Lagrange) to \f$v \in H(curl)\f$ (lowest order Nedelec),
-  /// i.e. v = Aw. V0 is the H(curl) space, and V1 is the P1
+  /// Build the discrete gradient operator A that takes a \f$w \in
+  /// H^1\f$ (P1, nodal Lagrange) to \f$v \in H(curl)\f$ (lowest order
+  /// Nedelec), i.e. v = Aw. V0 is the H(curl) space, and V1 is the P1
   /// Lagrange space.
   ///
-  /// @param[in] V0 (function::FunctionSpace&)
-  ///  H(curl) space
-  /// @param[in] V1 (function::FunctionSpace&)
-  ///  P1 Lagrange space
-  ///
-  /// @return la::PETScMatrix
+  /// @param[in] V0 H(curl) space
+  /// @param[in] V1 P1 Lagrange space
+  /// @return The discrete operator matrix
   static la::PETScMatrix build_gradient(const function::FunctionSpace& V0,
                                         const function::FunctionSpace& V1);
 };
