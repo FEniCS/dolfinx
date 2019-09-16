@@ -72,13 +72,18 @@ void petsc_error(int error_code, std::string filename,
 class VecWrapper
 {
 public:
+  /// Wrap PETSc Vec y
   VecWrapper(Vec y, bool ghosted = true);
   VecWrapper(const VecWrapper& w) = delete;
+  /// Move constructor
   VecWrapper(VecWrapper&& w);
   VecWrapper& operator=(const VecWrapper& w) = delete;
+  /// Move assignment
   VecWrapper& operator=(VecWrapper&& w);
   ~VecWrapper();
+  /// Restore PETSc Vec object
   void restore();
+  /// Eigen Map into PETSc Vec
   Eigen::Map<Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1>> x;
 
 private:
@@ -92,13 +97,18 @@ private:
 class VecReadWrapper
 {
 public:
+  /// Wrap PETSc Vec y
   VecReadWrapper(const Vec y, bool ghosted = true);
   VecReadWrapper(const VecReadWrapper& w) = delete;
+  /// Move constructor
   VecReadWrapper(VecReadWrapper&& w);
   VecReadWrapper& operator=(const VecReadWrapper& w) = delete;
+  /// Move assignment
   VecReadWrapper& operator=(VecReadWrapper&& w);
   ~VecReadWrapper();
+  /// Restore PETSc Vec
   void restore();
+  /// Eigen Map into PETSc Vec
   Eigen::Map<const Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1>> x;
 
 private:

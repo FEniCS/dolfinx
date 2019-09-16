@@ -185,7 +185,7 @@ public:
   /// Get the file ID
   hid_t h5_id() const { return _hdf5_file_id; }
 
-  // FIXME: document
+  /// Chunking parameter - partition data into fixed size blocks for efficiency
   bool chunking = false;
 
 private:

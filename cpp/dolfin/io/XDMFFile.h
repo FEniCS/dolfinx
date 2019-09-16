@@ -169,7 +169,6 @@ public:
   /// storing the data inline as XML.
   ///
   /// @param[in] meshfunction The meshfunction to save
-  /// @param[in] encoding Encoding to use: HDF5 or ASCII
   void write(const mesh::MeshFunction<std::size_t>& meshfunction);
 
   /// Save mesh::MeshFunction to file using an associated HDF5 file, or
@@ -303,17 +302,17 @@ public:
   read_mvc_double(std::shared_ptr<const mesh::Mesh> mesh,
                   std::string name = "") const;
 
-  // Rewrite the mesh at every time step in a time series. Should be
-  // turned off if the mesh remains constant.
+  /// Rewrite the mesh at every time step in a time series. Should be
+  /// turned off if the mesh remains constant.
   bool rewrite_function_mesh = true;
 
-  // function::Functions share the same mesh for the same time step. The
-  // files produced are smaller and work better in Paraview
+  /// function::Functions share the same mesh for the same time step. The
+  /// files produced are smaller and work better in Paraview
   bool functions_share_mesh = false;
 
-  // FIXME: This is only relevant to HDF5
-  // Flush datasets to disk at each timestep. Allows inspection of the
-  // HDF5 file whilst running, at some performance cost.
+  /// FIXME: This is only relevant to HDF5
+  /// Flush datasets to disk at each timestep. Allows inspection of the
+  /// HDF5 file whilst running, at some performance cost.
   bool flush_output = false;
 
 private:

@@ -42,6 +42,9 @@ namespace fem
 class DofMap
 {
 public:
+  /// Create a DofMap from the layout of dofs on a reference element, an
+  /// IndexMap defining the distribtion of dofs across processes and a vector of
+  /// indices.
   DofMap(std::shared_ptr<const ElementDofLayout> element_dof_layout,
          std::shared_ptr<const common::IndexMap> index_map,
          const Eigen::Array<PetscInt, Eigen::Dynamic, 1>& dofmap);
@@ -56,6 +59,7 @@ public:
   /// Destructor
   virtual ~DofMap() = default;
 
+  // Copy assignment
   DofMap& operator=(const DofMap& dofmap) = delete;
 
   /// Move assignment

@@ -113,9 +113,9 @@ public:
   /// Print out for debugging
   std::string str(bool verbose = false);
 
-  // Bounding box data structure. Leaf nodes are indicated by setting
-  // child_0 equal to the node itself. For leaf nodes, child_1 is set to
-  // the index of the entity contained in the leaf bounding box.
+  /// Bounding box data structure. Leaf nodes are indicated by setting
+  /// child_0 equal to the node itself. For leaf nodes, child_1 is set to
+  /// the index of the entity contained in the leaf bounding box.
   using BBox = std::array<unsigned int, 2>;
 
 private:
