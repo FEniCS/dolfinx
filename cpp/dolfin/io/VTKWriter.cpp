@@ -152,7 +152,6 @@ void write_ascii_mesh(const mesh::Mesh& mesh, std::size_t cell_dim,
 	cell_connections = connectivity_g.connections();
   const Eigen::Ref<const Eigen::Array<std::int32_t, Eigen::Dynamic, 1>> pos_g
 	= connectivity_g.entity_positions();
-  mesh::CellType celltype = mesh::cell_entity_type(mesh.cell_type, cell_dim);
   int num_nodes = mesh.coordinate_dofs().cell_permutation().size();
 
   for (int j=0; j < mesh.num_entities(mesh.topology().dim()); ++j)
