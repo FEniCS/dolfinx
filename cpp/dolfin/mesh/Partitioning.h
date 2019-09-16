@@ -60,7 +60,7 @@ public:
   /// Build distributed mesh from a set of points and cells on each
   /// local process
   /// @param[in] comm MPI Communicator
-  /// @param[in] type Cell type
+  /// @param[in] cell_type Cell type
   /// @param[in] points Geometric points on each process, numbered from
   ///                   process 0 upwards.
   /// @param[in] cells Topological cells with global vertex indexing.
@@ -85,8 +85,8 @@ public:
   /// @param[in] type Cell type
   /// @param[in] points Geometric points on each process, numbered from
   ///                    process 0 upwards.
-  /// @param[in] cells Topological cells with global vertex indexing.
-  ///                  Each cell appears once only.
+  /// @param[in] cell_vertices Topological cells with global vertex
+  ///                          indexing. Each cell appears once only.
   /// @param[in] global_cell_indices Global index for each cell
   /// @param[in] ghost_mode Ghost mode
   /// @param[in] cell_partition Cell partition data (PartitionData
@@ -104,19 +104,18 @@ public:
   /// @param[in] comm MPI Communicator
   /// @param[in] nparts Number of partitions
   /// @param[in] cell_type Cell type
-  /// @param[in] cells Topological cells with global vertex indexing.
-  ///                  Each cell appears once only.
-  /// @param[in] global_cell_indices Global index for each cell
-  /// @param[in] ghost_mode Ghost mode
+  /// @param[in] cell_vertices Topological cells with global vertex
+  ///                          indexing. Each cell appears once only.
+  /// @param[in] graph_partitioner The graph partitioner
   /// @return Cell partition data
   static PartitionData
-  partition_cells(const MPI_Comm& mpi_comm, int nparts,
+  partition_cells(const MPI_Comm& comm, int nparts,
                   const mesh::CellType cell_type,
                   const Eigen::Ref<const EigenRowArrayXXi64> cell_vertices,
                   const mesh::Partitioner graph_partitioner);
 
   /// Redistribute points to the processes that need them
-  /// @param[in] mpi_comm MPI Communicator
+  /// @param[in] comm MPI Communicator
   /// @param[in] points Existing vertex coordinates array on each
   ///                   process before distribution
   /// @param[in] global_point_indices Global indices for vertices
@@ -127,16 +126,16 @@ public:
   ///         vertex)
   static std::pair<EigenRowArrayXXd,
                    std::map<std::int32_t, std::set<std::int32_t>>>
-  distribute_points(const MPI_Comm mpi_comm,
+  distribute_points(const MPI_Comm comm,
                     const Eigen::Ref<const EigenRowArrayXXd> points,
                     const std::vector<std::int64_t>& global_point_indices);
 
-  // Utility to create global vertex indices, needed for higher order
-  // meshes, where there are geometric points which are not at the
-  // vertex nodes
+  /// Utility to create global vertex indices, needed for higher order
+  /// meshes, where there are geometric points which are not at the
+  /// vertex nodes
   static std::pair<std::int64_t, std::vector<std::int64_t>>
   build_global_vertex_indices(
-      MPI_Comm mpi_comm, std::int32_t num_vertices,
+      MPI_Comm comm, std::int32_t num_vertices,
       const std::vector<std::int64_t>& global_point_indices,
       const std::map<std::int32_t, std::set<std::int32_t>>& shared_points);
 };

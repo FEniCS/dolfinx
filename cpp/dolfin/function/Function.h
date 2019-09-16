@@ -6,6 +6,7 @@
 
 #pragma once
 
+#include "FunctionSpace.h"
 #include <Eigen/Dense>
 #include <dolfin/common/types.h>
 #include <dolfin/fem/FiniteElement.h>
@@ -29,8 +30,6 @@ class Mesh;
 
 namespace function
 {
-class FunctionSpace;
-
 /// This class represents a function \f$ u_h \f$ in a finite
 /// element function space \f$ V_h \f$, given by
 ///
@@ -95,12 +94,7 @@ public:
 
   /// Interpolate expression
   /// @param[in] f The expression to be interpolated.
-  void interpolate(
-      const std::function<void(
-          Eigen::Ref<Eigen::Array<PetscScalar, Eigen::Dynamic, Eigen::Dynamic,
-                                  Eigen::RowMajor>>,
-          const Eigen::Ref<const Eigen::Array<
-              double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>>)>& f);
+  void interpolate(const FunctionSpace::interpolation_function& f);
 
   /// Return value rank
   int value_rank() const;

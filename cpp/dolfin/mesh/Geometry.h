@@ -29,6 +29,7 @@ namespace mesh
 class Geometry
 {
 public:
+  /// Constructor
   Geometry(std::int64_t num_points_global,
            const Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic,
                               Eigen::RowMajor>& coordinates,

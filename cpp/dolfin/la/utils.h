@@ -62,22 +62,28 @@ MatNullSpace create_petsc_nullspace(MPI_Comm comm,
 /// Compute IndexSets (IS) for stacked index maps. Caller is responsible
 /// for destruction of each IS.
 std::vector<IS>
-compute_petsc_index_sets(std::vector<const common::IndexMap*> maps);
+  compute_petsc_index_sets(std::vector<const dolfin::common::IndexMap*> maps);
 
 /// Print error message for PETSc calls that return an error
 void petsc_error(int error_code, std::string filename,
                  std::string petsc_function);
 
+/// Wrapper around a PETSc Vec object, to simplify direct access to data.
 class VecWrapper
 {
 public:
+  /// Wrap PETSc Vec y
   VecWrapper(Vec y, bool ghosted = true);
   VecWrapper(const VecWrapper& w) = delete;
+  /// Move constructor
   VecWrapper(VecWrapper&& w);
   VecWrapper& operator=(const VecWrapper& w) = delete;
+  /// Move assignment
   VecWrapper& operator=(VecWrapper&& w);
   ~VecWrapper();
+  /// Restore PETSc Vec object
   void restore();
+  /// Eigen Map into PETSc Vec
   Eigen::Map<Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1>> x;
 
 private:
@@ -87,16 +93,22 @@ private:
   bool _ghosted;
 };
 
+/// Read-only wrapper around a PETSc Vec object, to simplify direct access to data.
 class VecReadWrapper
 {
 public:
+  /// Wrap PETSc Vec y
   VecReadWrapper(const Vec y, bool ghosted = true);
   VecReadWrapper(const VecReadWrapper& w) = delete;
+  /// Move constructor
   VecReadWrapper(VecReadWrapper&& w);
   VecReadWrapper& operator=(const VecReadWrapper& w) = delete;
+  /// Move assignment
   VecReadWrapper& operator=(VecReadWrapper&& w);
   ~VecReadWrapper();
+  /// Restore PETSc Vec
   void restore();
+  /// Eigen Map into PETSc Vec
   Eigen::Map<const Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1>> x;
 
 private:

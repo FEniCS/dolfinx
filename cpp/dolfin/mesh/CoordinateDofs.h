@@ -57,6 +57,8 @@ public:
   /// @return Connections from cells to points
   const Connectivity& entity_points() const;
 
+  /// Permutation required to transform vertex order between dolfin/gmsh/vtk
+  /// formats
   const std::vector<std::uint8_t>& cell_permutation() const;
 
 private:

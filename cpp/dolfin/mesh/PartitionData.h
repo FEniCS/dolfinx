@@ -33,10 +33,7 @@ public:
                 const std::map<std::int64_t, std::vector<int>>& ghost_procs);
 
   /// Build CSR list of processes for each cell from legacy data
-  /// @param[in] cell_partition Owning process of each cell
-  /// @param[in] ghost_procs Map of cell_index to vector of sharing
-  ///                        processes for those cells that have
-  ///                        multiple owners
+  /// @param[in] data Input data
   PartitionData(
       const std::pair<std::vector<int>,
                       std::map<std::int64_t, std::vector<int>>>& data);

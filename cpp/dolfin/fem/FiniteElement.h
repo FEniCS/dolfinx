@@ -22,7 +22,8 @@ namespace dolfin
 
 namespace fem
 {
-
+/// Finite Element, containing the dof layout on a reference element, and
+/// various methods for evaluating and transforming the basis.
 class FiniteElement
 {
 public:

@@ -60,6 +60,8 @@ class Topology;
 class Mesh
 {
 public:
+  // FIXME: What about global vertex indices?
+  // FIXME: Be explicit in passing geometry degree/type
   /// Construct a Mesh from topological and geometric data.
   ///
   /// In parallel, geometric points must be arranged in global index
@@ -85,10 +87,9 @@ public:
   ///                                empty, global cell indices will be
   ///                                constructed, beginning from 0 on
   ///                                process 0.
+  /// @param[in] ghost_mode The ghost mode
   /// @param[in] num_ghost_cells Number of ghost cells on this process
   ///                            (must be at end of list of cells)
-  // FIXME: What about global vertex indices?
-  // FIXME: Be explicit in passing geometry degree/type
   Mesh(MPI_Comm comm, mesh::CellType type,
        const Eigen::Ref<const EigenRowArrayXXd> points,
        const Eigen::Ref<const EigenRowArrayXXi64> cells,
@@ -210,7 +211,8 @@ public:
   /// Get coordinate dofs for all local cells (const version)
   const CoordinateDofs& coordinate_dofs() const;
 
-  // FIXME: This should be with Geometry
+  /// FIXME: This should be with Geometry
+  /// Polynomial degree of the mesh geometry
   std::int32_t degree() const;
 
   /// Cell type

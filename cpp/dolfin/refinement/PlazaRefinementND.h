@@ -59,8 +59,6 @@ public:
   /// for a given set of marked edges, and the longest edge of each
   /// facet (cell local indexing). A flag indicates if a uniform
   /// subdivision is preferable in 2D.
-  /// @param[in] simplex_set Returned set of triangles/tets topological
-  ///                        description
   /// @param[in] marked_edges Vector indicating which edges are to be
   ///                         split
   /// @param[in] longest_edge Vector indicating the longest edge for
@@ -69,6 +67,7 @@ public:
   /// @param[in] tdim Topological dimension (2 or 3)
   /// @param[in] uniform Make a "uniform" subdivision with all triangles
   ///                    being similar shape
+  /// @return
   static std::vector<std::int32_t>
   get_simplices(const std::vector<bool>& marked_edges,
                 const std::vector<std::int32_t>& longest_edge,

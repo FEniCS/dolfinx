@@ -24,17 +24,6 @@
 namespace dolfin
 {
 
-class MPIInfo
-{
-public:
-  MPIInfo();
-  ~MPIInfo();
-  MPI_Info& operator*();
-
-private:
-  MPI_Info info;
-};
-
 /// This class provides utility functions for easy communication with
 /// MPI and handles cases when DOLFIN is not configured with MPI.
 class MPI
@@ -238,7 +227,7 @@ public:
   /// all_reduce(MPI_Comm, Table&, MPI_Op)
   static MPI_Op MPI_AVG();
 
-  // Return MPI data type
+  /// Return MPI data type
   template <typename T>
   struct dependent_false : std::false_type
   {
@@ -251,7 +240,7 @@ public:
     return MPI_CHAR;
   }
 
-  // Maps some MPI_Op values to string
+  /// Maps some MPI_Op values to string
   static std::map<MPI_Op, std::string> operation_map;
 };
 
@@ -795,7 +784,7 @@ void dolfin::MPI::send_recv(MPI_Comm comm, const std::vector<T>& send_value,
 }
 //---------------------------------------------------------------------------
 // Specialization for dolfin::log::Table class
-// NOTE: This function is not trully "all_reduce", it reduces to rank 0
+// NOTE: This function is not truly "all_reduce", it reduces to rank 0
 //       and returns zero Table on other ranks.
 template <>
 Table dolfin::MPI::all_reduce(MPI_Comm, const Table&, MPI_Op);

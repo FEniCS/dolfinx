@@ -42,6 +42,9 @@ namespace fem
 class DofMap
 {
 public:
+  /// Create a DofMap from the layout of dofs on a reference element, an
+  /// IndexMap defining the distribtion of dofs across processes and a vector of
+  /// indices.
   DofMap(std::shared_ptr<const ElementDofLayout> element_dof_layout,
          std::shared_ptr<const common::IndexMap> index_map,
          const Eigen::Array<PetscInt, Eigen::Dynamic, 1>& dofmap);
@@ -56,6 +59,7 @@ public:
   /// Destructor
   virtual ~DofMap() = default;
 
+  // Copy assignment
   DofMap& operator=(const DofMap& dofmap) = delete;
 
   /// Move assignment
@@ -77,7 +81,7 @@ public:
   }
 
   /// Extract subdofmap component
-  /// @param[in] The component
+  /// @param[in] component The component indices
   /// @param[in] mesh The mesh the the dofmap is defined on
   /// @return The dofmap for the component
   DofMap extract_sub_dofmap(const std::vector<int>& component,
@@ -95,7 +99,7 @@ public:
   /// matrix operator.
   ///
   /// @param[in,out] x The vector to set
-  /// @param value[in] The value to set on the vector
+  /// @param[in] value The value to set on the vector
   void set(Eigen::Ref<Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1>> x,
            PetscScalar value) const;
 
