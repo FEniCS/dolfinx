@@ -62,7 +62,7 @@ MatNullSpace create_petsc_nullspace(MPI_Comm comm,
 /// Compute IndexSets (IS) for stacked index maps. Caller is responsible
 /// for destruction of each IS.
 std::vector<IS>
-compute_petsc_index_sets(std::vector<const common::IndexMap*> maps);
+  compute_petsc_index_sets(std::vector<const dolfin::common::IndexMap*> maps);
 
 /// Print error message for PETSc calls that return an error
 void petsc_error(int error_code, std::string filename,

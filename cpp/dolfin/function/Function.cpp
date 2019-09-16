@@ -148,11 +148,14 @@ la::PETScVector& Function::vector()
 //-----------------------------------------------------------------------------
 const la::PETScVector& Function::vector() const { return _vector; }
 //-----------------------------------------------------------------------------
-void Function::eval(const Eigen::Ref<const EigenRowArrayXXd> x,
-                    const geometry::BoundingBoxTree& bb_tree,
-                    Eigen::Ref<Eigen::Array<PetscScalar, Eigen::Dynamic,
-                                            Eigen::Dynamic, Eigen::RowMajor>>
-                        u) const
+void Function::eval(
+    const Eigen::Ref<const Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic,
+                                        Eigen::RowMajor>>
+        x,
+    const geometry::BoundingBoxTree& bb_tree,
+    Eigen::Ref<Eigen::Array<PetscScalar, Eigen::Dynamic, Eigen::Dynamic,
+                            Eigen::RowMajor>>
+        u) const
 {
   assert(_function_space);
   assert(_function_space->mesh);
