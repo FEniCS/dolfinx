@@ -5,7 +5,6 @@
 // SPDX-License-Identifier:    LGPL-3.0-or-later
 
 #include "Function.h"
-#include "FunctionSpace.h"
 #include <algorithm>
 #include <cfloat>
 #include <dolfin/common/IndexMap.h>
@@ -308,13 +307,7 @@ void Function::interpolate(const Function& v)
   _function_space->interpolate(x.x, v);
 }
 //-----------------------------------------------------------------------------
-void Function::interpolate(
-    const std::function<
-        void(Eigen::Ref<Eigen::Array<PetscScalar, Eigen::Dynamic,
-                                     Eigen::Dynamic, Eigen::RowMajor>>,
-             const Eigen::Ref<const Eigen::Array<
-                 double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>>)>& f)
-
+void Function::interpolate(const FunctionSpace::interpolation_function& f)
 {
   la::VecWrapper x(_vector.vec());
   _function_space->interpolate(x.x, f);
