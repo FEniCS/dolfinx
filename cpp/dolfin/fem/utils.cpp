@@ -498,7 +498,7 @@ fem::create_element_dof_layout(const ufc_dofmap& dofmap,
   for (int i = 0; i < dofmap.num_sub_dofmaps; ++i)
   {
     auto ufc_sub_dofmap
-        = std::shared_ptr<ufc_dofmap>(dofmap.create_sub_dofmap(i));
+        = std::shared_ptr<ufc_dofmap>(dofmap.create_sub_dofmap(i), std::free);
     ufc_sub_dofmaps.push_back(ufc_sub_dofmap);
     const int num_dofs = ufc_sub_dofmap->num_element_support_dofs;
     offsets.push_back(offsets.back() + num_dofs);
