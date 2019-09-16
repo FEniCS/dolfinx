@@ -16,8 +16,11 @@ namespace dolfin
 namespace function
 {
 
+/// A constant value which can be attached to a Form.
+/// Constants may be scalar (rank 0), vector (rank 1), or tensor valued.
 class Constant
 {
+
 public:
   /// Create a rank-0 (scalar-valued) constant
   Constant(PetscScalar c);
@@ -30,13 +33,13 @@ public:
                                          Eigen::Dynamic, Eigen::RowMajor>>
                c);
 
-  /// The arbitrary rank constant. Data layout is row-major (C style).
+  /// Create an arbitrary rank constant. Data layout is row-major (C style).
   Constant(std::vector<int> shape, std::vector<PetscScalar> value);
 
   /// Shape
   std::vector<int> shape;
 
-  /// Values
+  /// Values, stored as a flattened array.
   std::vector<PetscScalar> value;
 };
 } // namespace function

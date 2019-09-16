@@ -36,8 +36,8 @@ class CSRGraph;
 class SCOTCH
 {
 public:
-  // Compute cell partitions from distributed dual graph. Returns
-  // (partition, ghost_proc)
+  /// Compute cell partitions from distributed dual graph. Returns
+  /// (partition, ghost_proc)
   static std::pair<std::vector<int>, std::map<std::int64_t, std::vector<int>>>
   partition(const MPI_Comm mpi_comm, const SCOTCH_Num nparts,
             const CSRGraph<SCOTCH_Num>& local_graph,

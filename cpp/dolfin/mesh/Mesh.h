@@ -211,7 +211,8 @@ public:
   /// Get coordinate dofs for all local cells (const version)
   const CoordinateDofs& coordinate_dofs() const;
 
-  // FIXME: This should be with Geometry
+  /// FIXME: This should be with Geometry
+  /// Polynomial degree of the mesh geometry
   std::int32_t degree() const;
 
   /// Cell type

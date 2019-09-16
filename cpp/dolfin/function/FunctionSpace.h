@@ -84,19 +84,20 @@ public:
                        expansion_coefficients,
                    const Function& v) const;
 
+  /// Interpolation function
+  using interpolation_function = std::function<void(
+      Eigen::Ref<Eigen::Array<PetscScalar, Eigen::Dynamic, Eigen::Dynamic,
+                              Eigen::RowMajor>>,
+      const Eigen::Ref<const Eigen::Array<double, Eigen::Dynamic,
+                                          Eigen::Dynamic, Eigen::RowMajor>>)>;
+
   /// Interpolate expression into function space, returning the vector
   /// of expansion coefficients
   /// @param[in] expansion_coefficients The expansion coefficients
   /// @param[in] f The function to be interpolated
-  void interpolate(
-      Eigen::Ref<Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1>>
-          expansion_coefficients,
-      const std::function<void(
-          Eigen::Ref<Eigen::Array<PetscScalar, Eigen::Dynamic, Eigen::Dynamic,
-                                  Eigen::RowMajor>>,
-          const Eigen::Ref<const Eigen::Array<
-              double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>>)>& f)
-      const;
+  void interpolate(Eigen::Ref<Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1>>
+                       expansion_coefficients,
+                   const interpolation_function& f) const;
 
   /// Extract subspace for component
   /// @param[in] component The component

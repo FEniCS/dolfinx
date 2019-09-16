@@ -34,7 +34,7 @@ class MeshValueCollection;
 /// may for example be used to store a global numbering scheme for the
 /// entities of a (parallel) mesh, marking sub domains or boolean
 /// markers for mesh refinement.
-
+/// @tparam Type
 template <typename T>
 class MeshFunction
 {
@@ -89,17 +89,18 @@ public:
   /// @return The mesh function values
   Eigen::Ref<Eigen::Array<T, Eigen::Dynamic, 1>> values();
 
+  /// Marking function used to identify mesh entities
+  using marking_function = std::function<Eigen::Array<bool, Eigen::Dynamic, 1>(
+      const Eigen::Ref<
+          const Eigen::Array<double, Eigen::Dynamic, 3, Eigen::RowMajor>>
+          x)>;
+
   /// Set values. If all vertices of a mesh entity satisfy the marking
   /// function then the entity is marked with the given value.
   /// @param[in] mark Marking function used to identify which mesh
   ///                 entities to set value to.
   /// @param[in] value The value to set for marked mesh entities
-  void
-  mark(const std::function<Eigen::Array<bool, Eigen::Dynamic, 1>(
-           const Eigen::Ref<
-               const Eigen::Array<double, Eigen::Dynamic, 3, Eigen::RowMajor>>
-               x)>& mark,
-       T value);
+  void mark(const marking_function& mark, T value);
 
   /// Name
   std::string name = "m";

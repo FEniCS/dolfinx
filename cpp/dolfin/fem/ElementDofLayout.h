@@ -40,11 +40,11 @@ public:
       const std::vector<std::shared_ptr<const ElementDofLayout>> sub_dofmaps,
       const mesh::CellType cell_type);
 
-  // Copy-like constructor with option to reset (clear) parent map
+  /// Copy-like constructor with option to reset (clear) parent map
   ElementDofLayout(const ElementDofLayout& element_dof_layout,
                    bool reset_parent);
 
-  // Copy constructor
+  /// Copy constructor
   ElementDofLayout(const ElementDofLayout& dofmap) = default;
 
   /// Move constructor
@@ -53,7 +53,7 @@ public:
   /// Destructor
   ~ElementDofLayout() = default;
 
-  // Copy assignment
+  /// Copy assignment
   ElementDofLayout& operator=(const ElementDofLayout& dofmap) = default;
 
   /// Move assignment
@@ -65,12 +65,12 @@ public:
   int num_dofs() const;
 
   /// Return the number of dofs for a given entity dimension
-  /// @param[in] entity_dim Entity dimension
+  /// @param[in] dim Entity dimension
   /// @return Number of dofs associated with given entity dimension
   int num_entity_dofs(int dim) const;
 
   /// Return the number of closure dofs for a given entity dimension
-  /// @param[in] entity_dim Entity dimension
+  /// @param[in] dim Entity dimension
   /// @return Number of dofs associated with closure of given entity
   ///         dimension
   int num_entity_closure_dofs(int dim) const;

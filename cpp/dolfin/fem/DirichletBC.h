@@ -83,6 +83,12 @@ public:
     pointwise
   };
 
+  /// Marking function to define facets when DirichletBC applies
+  using marking_function = std::function<Eigen::Array<bool, Eigen::Dynamic, 1>(
+      const Eigen::Ref<
+          const Eigen::Array<double, Eigen::Dynamic, 3, Eigen::RowMajor>>&,
+      bool only_boundary)>;
+
   /// Create boundary condition with marking method
   ///
   /// @param[in] V The function (sub)space on which the boundary
@@ -91,13 +97,9 @@ public:
   /// @param[in] mark The marking method
   /// @param[in] method Optional argument: A string specifying the
   ///                   method to identify dofs
-  /// @param[in] check_midpoint (bool)
   DirichletBC(std::shared_ptr<const function::FunctionSpace> V,
               std::shared_ptr<const function::Function> g,
-              const std::function<Eigen::Array<bool, Eigen::Dynamic, 1>(
-                  const Eigen::Ref<const Eigen::Array<double, Eigen::Dynamic, 3,
-                                                      Eigen::RowMajor>>&,
-                  bool only_boundary)>& mark,
+              const marking_function& mark,
               Method method = Method::topological);
 
   /// Create boundary condition with facet indices
@@ -105,7 +107,7 @@ public:
   /// @param[in] V The function (sub)space on which the boundary
   ///              condition is applied
   /// @param[in] g The boundary condition value
-  /// @param[in] markers Facets on which the boundary condition is
+  /// @param[in] facet_indices Facets on which the boundary condition is
   ///                    applied (facet index local to process)
   /// @param[in] method Optional argument: A string specifying the
   ///                   method to identify dofs.

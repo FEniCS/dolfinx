@@ -30,15 +30,9 @@ public:
   /// @param[in] n Number of cells in each direction
   /// @param[in] cell_type The mesh cell type
   /// @param[in] ghost_mode Mesh ghosting mode
-  /// @param[in  diagonal Direction of diagonals: "left", "right",
+  /// @param[in] diagonal Direction of diagonals: "left", "right",
   ///                     "left/right", "crossed"
-  ///
-  /// @code{.cpp}
-  ///         // Mesh with 8 cells in each direction on the set [-1,2] x [-1,2]
-  ///         geometry::Point p0(-1, -1);
-  ///         geometry::Point p1(2, 2);
-  ///         mesh::mesh mesh = Rectanglemesh::Mesh::create(MPI_COMM_WORLD, {p0, p1}, {8, 8});
-  /// @endcode
+  /// @return Mesh
   static mesh::Mesh
     create(MPI_Comm comm, const std::array<Eigen::Vector3d, 2>& p,
          std::array<std::size_t, 2> n, mesh::CellType cell_type,
