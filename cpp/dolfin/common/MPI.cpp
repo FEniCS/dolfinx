@@ -97,12 +97,6 @@ void dolfin::MPI::Comm::reset(MPI_Comm comm)
 //-----------------------------------------------------------------------------
 MPI_Comm dolfin::MPI::Comm::comm() const { return _comm; }
 //-----------------------------------------------------------------------------
-dolfin::MPIInfo::MPIInfo() { MPI_Info_create(&info); }
-//-----------------------------------------------------------------------------
-dolfin::MPIInfo::~MPIInfo() { MPI_Info_free(&info); }
-//-----------------------------------------------------------------------------
-MPI_Info& dolfin::MPIInfo::operator*() { return info; }
-//-----------------------------------------------------------------------------
 std::uint32_t dolfin::MPI::rank(const MPI_Comm comm)
 {
   int rank;

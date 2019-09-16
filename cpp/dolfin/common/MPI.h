@@ -24,17 +24,6 @@
 namespace dolfin
 {
 
-class MPIInfo
-{
-public:
-  MPIInfo();
-  ~MPIInfo();
-  MPI_Info& operator*();
-
-private:
-  MPI_Info info;
-};
-
 /// This class provides utility functions for easy communication with
 /// MPI and handles cases when DOLFIN is not configured with MPI.
 class MPI

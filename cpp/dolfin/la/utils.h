@@ -68,6 +68,7 @@ std::vector<IS>
 void petsc_error(int error_code, std::string filename,
                  std::string petsc_function);
 
+/// Wrapper around a PETSc Vec object, to simplify direct access to data.
 class VecWrapper
 {
 public:
@@ -87,6 +88,7 @@ private:
   bool _ghosted;
 };
 
+/// Read-only wrapper around a PETSc Vec object, to simplify direct access to data.
 class VecReadWrapper
 {
 public:
