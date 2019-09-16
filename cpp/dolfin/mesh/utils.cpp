@@ -155,8 +155,8 @@ T volume_quadrilateral(const mesh::Mesh& mesh,
     const std::int32_t* vertices = connectivity.connections(entities[i]);
     const Eigen::Vector3d p0 = geometry.x(vertices[0]);
     const Eigen::Vector3d p1 = geometry.x(vertices[1]);
-    const Eigen::Vector3d p2 = geometry.x(vertices[2]);
-    const Eigen::Vector3d p3 = geometry.x(vertices[3]);
+    const Eigen::Vector3d p3 = geometry.x(vertices[2]);
+    const Eigen::Vector3d p2 = geometry.x(vertices[3]);
 
     const Eigen::Vector3d c = (p0 - p3).cross(p1 - p2);
     const double volume = 0.5 * c.norm();

@@ -152,12 +152,13 @@ void write_ascii_mesh(const mesh::Mesh& mesh, std::size_t cell_dim,
 	cell_connections = connectivity_g.connections();
   const Eigen::Ref<const Eigen::Array<std::int32_t, Eigen::Dynamic, 1>> pos_g
 	= connectivity_g.entity_positions();
-  const std::vector<std::uint8_t> perm = mesh.coordinate_dofs().cell_permutation();
-  const int num_nodes = perm.size();
+  mesh::CellType celltype = mesh::cell_entity_type(mesh.cell_type, cell_dim);
+  int num_nodes = mesh.coordinate_dofs().cell_permutation().size();
+
   for (int j=0; j < mesh.num_entities(mesh.topology().dim()); ++j)
 	{
 	  for (int i = 0; i < num_nodes; ++i)
-		file << cell_connections(pos_g(j)+perm[i]) << " ";
+		file << cell_connections(pos_g(j)+i) << " ";
 	  file << " ";
 	}
   file << "</DataArray>" << std::endl;

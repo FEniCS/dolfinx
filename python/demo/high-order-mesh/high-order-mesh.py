@@ -12,7 +12,7 @@ from dolfin.io import VTKFile
 
 # Generate high order gmsh
 for order in range(1, 4):
-    lcar = 0.1
+    lcar = 0.9
     geo = Geometry()
     geo.add_raw_code("Mesh.ElementOrder={0};".format(order))
     small_circle = geo.add_circle([0, 0, 0], 0.2, lcar=lcar)
