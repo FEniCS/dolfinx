@@ -227,13 +227,14 @@ public:
   /// all_reduce(MPI_Comm, Table&, MPI_Op)
   static MPI_Op MPI_AVG();
 
-  /// Return MPI data type
   template <typename T>
   struct dependent_false : std::false_type
   {
   };
   template <typename T>
-  static MPI_Datatype mpi_type()
+
+    /// MPI Type
+    static MPI_Datatype mpi_type()
   {
     static_assert(dependent_false<T>::value, "Unknown MPI type");
     throw std::runtime_error("MPI data type unknown");
@@ -244,6 +245,7 @@ public:
   static std::map<MPI_Op, std::string> operation_map;
 };
 
+#ifndef DOXYGEN_IGNORE
 // Specialisations for MPI_Datatypes
 template <>
 inline MPI_Datatype MPI::mpi_type<float>()
@@ -290,6 +292,7 @@ inline MPI_Datatype MPI::mpi_type<long long>()
 {
   return MPI_LONG_LONG;
 }
+#endif
 //---------------------------------------------------------------------------
 template <typename T>
 void dolfin::MPI::broadcast(MPI_Comm comm, std::vector<T>& value,
@@ -715,6 +718,7 @@ void dolfin::MPI::all_gather(MPI_Comm comm, const T in_value,
                 1, mpi_type<T>(), comm);
 }
 //---------------------------------------------------------------------------
+/// All reduce table
 template <typename T, typename X>
 T dolfin::MPI::all_reduce(MPI_Comm comm, const T& value, X op)
 {
@@ -783,14 +787,14 @@ void dolfin::MPI::send_recv(MPI_Comm comm, const std::vector<T>& send_value,
   MPI::send_recv(comm, send_value, dest, 0, recv_value, source, 0);
 }
 //---------------------------------------------------------------------------
-// Specialization for dolfin::log::Table class
-// NOTE: This function is not truly "all_reduce", it reduces to rank 0
-//       and returns zero Table on other ranks.
+/// Specialization for dolfin::log::Table class
+/// NOTE: This function is not truly "all_reduce", it reduces to rank 0
+///       and returns zero Table on other ranks.
 template <>
-Table dolfin::MPI::all_reduce(MPI_Comm, const Table&, MPI_Op);
+dolfin::Table dolfin::MPI::all_reduce(MPI_Comm, const Table&, MPI_Op);
 //---------------------------------------------------------------------------
-// Specialization for dolfin::log::Table class
+/// Specialization for dolfin::log::Table class
 template <>
-Table dolfin::MPI::avg(MPI_Comm, const Table&);
+dolfin::Table dolfin::MPI::avg(MPI_Comm, const Table&);
 //---------------------------------------------------------------------------
 } // namespace dolfin
