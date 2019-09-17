@@ -186,6 +186,7 @@ void FunctionSpace::interpolate(
                                          1, std::multiplies<>());
   Eigen::Array<PetscScalar, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
       values(x.rows(), value_size);
+  values = 0;
   assert(values.rows() == x.rows());
   f(values, x);
 
