@@ -350,8 +350,7 @@ void HDF5File::write(const mesh::Mesh& mesh, int cell_dim,
         const std::int32_t ghost_offset_c = mesh.topology().ghost_offset(tdim);
         const std::int32_t ghost_offset_e
             = mesh.topology().ghost_offset(cell_dim);
-        for (auto& c : mesh::MeshRange(
-                 mesh, tdim, mesh::MeshRangeType::GHOST))
+        for (auto& c : mesh::MeshRange(mesh, tdim, mesh::MeshRangeType::GHOST))
         {
           assert(c.index() >= ghost_offset_c);
           const int cell_owner = cell_owners[c.index() - ghost_offset_c];
@@ -428,6 +427,11 @@ void HDF5File::write(const mesh::Mesh& mesh, int cell_dim,
     std::vector<std::size_t> topology_offset_tmp(1, topology_offset);
     MPI::gather(_mpi_comm.comm(), topology_offset_tmp, partitions);
     MPI::broadcast(_mpi_comm.comm(), partitions);
+
+    std::cout << std::endl;
+    for (auto i : partitions) // access by value, the type of i is int
+      std::cout << i << ' ';
+
     HDF5Interface::add_attribute(_hdf5_file_id, topology_dataset, "partition",
                                  partitions);
   }
@@ -584,8 +588,7 @@ HDF5File::read_mesh_function(std::shared_ptr<const mesh::Mesh> mesh,
   const std::size_t process_number = _mpi_comm.rank();
   const std::vector<std::int64_t>& global_indices
       = mesh->topology().global_indices(0);
-  for (auto& cell :
-       mesh::MeshRange(*mesh, dim, mesh::MeshRangeType::ALL))
+  for (auto& cell : mesh::MeshRange(*mesh, dim, mesh::MeshRangeType::ALL))
   {
     std::vector<std::size_t> cell_topology;
     for (auto& v : mesh::EntityRange(cell, 0))
@@ -730,8 +733,7 @@ void HDF5File::write_mesh_function(const mesh::MeshFunction<T>& meshfunction,
       const std::int32_t ghost_offset_c = mesh.topology().ghost_offset(tdim);
       const std::int32_t ghost_offset_e
           = mesh.topology().ghost_offset(cell_dim);
-      for (auto& c : mesh::MeshRange(
-               mesh, tdim, mesh::MeshRangeType::GHOST))
+      for (auto& c : mesh::MeshRange(mesh, tdim, mesh::MeshRangeType::GHOST))
       {
         assert(c.index() >= ghost_offset_c);
         const int cell_owner = cell_owners[c.index() - ghost_offset_c];
@@ -1331,6 +1333,31 @@ mesh::Mesh HDF5File::read_mesh(const std::string data_path,
                                bool use_partition_from_file,
                                const mesh::GhostMode ghost_mode) const
 {
+  mesh::CellType cell_type;
+  EigenRowArrayXXd points;
+  EigenRowArrayXXi64 cells;
+  std::vector<std::int64_t> global_cell_indices;
+
+  // Read local mesh data
+  std::tie(cell_type, points, cells, global_cell_indices)
+      = read_mesh_data(data_path);
+
+  if (use_partition_from_file)
+  {
+    throw std::runtime_error("cannot read partition");
+  }
+  else
+  {
+    return mesh::Partitioning::build_distributed_mesh(
+        _mpi_comm.comm(), cell_type, points, cells, global_cell_indices,
+        ghost_mode);
+  }
+}
+//-----------------------------------------------------------------------------
+std::tuple<mesh::CellType, EigenRowArrayXXd, EigenRowArrayXXi64,
+           std::vector<std::int64_t>>
+HDF5File::read_mesh_data(const std::string data_path) const
+{
   assert(_hdf5_file_id > 0);
 
   // Check that topology data set is found in HDF5 file
@@ -1341,6 +1368,8 @@ mesh::Mesh HDF5File::read_mesh(const std::string data_path,
                              "Dataset \""
                              + topology_path + "\" not found");
   }
+
+  // --- Topology ---
 
   // Get topology data
   std::string cell_type_str;
@@ -1380,46 +1409,12 @@ mesh::Mesh HDF5File::read_mesh(const std::string data_path,
   // Extract geometric dimension
   int gdim = coords_shape[1];
 
-  // Build mesh from data in HDF5 file
-  return read_mesh(topology_path, geometry_path, gdim, cell_type, -1,
-                   coords_shape[0], use_partition_from_file, ghost_mode);
-}
-//-----------------------------------------------------------------------------
-mesh::Mesh HDF5File::read_mesh(const std::string topology_path,
-                               const std::string geometry_path, const int gdim,
-                               const mesh::CellType cell_type,
-                               const std::int64_t expected_num_global_cells,
-                               const std::int64_t expected_num_global_points,
-                               bool use_partition_from_file,
-                               const mesh::GhostMode ghost_mode) const
-{
-  // FIXME: This function is too big. Split up.
-
-  common::Timer t("HDF5: read mesh");
-  assert(_hdf5_file_id > 0);
-
-  // --- Topology ---
-
   // Get number of vertices per cell from CellType
   const int num_vertices_per_cell = mesh::cell_num_entities(cell_type, 0);
 
   // Discover shape of the topology data set in HDF5 file
   std::vector<std::int64_t> topology_shape
       = HDF5Interface::get_dataset_shape(_hdf5_file_id, topology_path);
-
-  // If cell type is encoded in HDF5, then check for consistency with cell
-  // type passed into this function
-  if (HDF5Interface::has_attribute(_hdf5_file_id, topology_path, "celltype"))
-  {
-    std::string cell_type_str = HDF5Interface::get_attribute<std::string>(
-        _hdf5_file_id, topology_path, "celltype");
-    if (cell_type != mesh::to_type(cell_type_str))
-    {
-      throw std::runtime_error(
-          "Inconsistency between expected cell type and cell type "
-          "attribute in HDF file");
-    }
-  }
 
   // Compute number of global cells (handle case that topology may be
   // arranged a 1D or 2D array)
@@ -1442,46 +1437,8 @@ mesh::Mesh HDF5File::read_mesh(const std::string topology_path,
     throw std::runtime_error("Topology in HDF5 file has wrong shape");
   }
 
-  // Check number of cells (global)
-  if (expected_num_global_cells >= 0)
-  {
-    // Check number of cells for consistency with expected number of cells
-    if (num_global_cells != expected_num_global_cells)
-    {
-      throw std::runtime_error(
-          "Inconsistentcy between expected number of cells and number "
-          "of cells in topology in HDF5 file");
-    }
-  }
-
-  // FIXME: 'partition' is a poor descriptor
-  // Get partition from file, if available
-  std::vector<std::int64_t> cell_partitions;
-  if (HDF5Interface::has_attribute(_hdf5_file_id, topology_path, "partition"))
-  {
-    cell_partitions = HDF5Interface::get_attribute<std::vector<std::int64_t>>(
-        _hdf5_file_id, topology_path, "partition");
-  }
-
-  // Prepare range of cells to read on this process
-  std::array<std::int64_t, 2> cell_range;
-
-  // Check whether number of MPI processes matches partitioning, and
-  // restore if possible
-  if (_mpi_comm.size() == cell_partitions.size())
-  {
-    cell_partitions.push_back(num_global_cells);
-    const std::size_t proc = _mpi_comm.rank();
-    cell_range = {{cell_partitions[proc], cell_partitions[proc + 1]}};
-  }
-  else
-  {
-    if (use_partition_from_file)
-      LOG(WARNING) << "Could not use partition from file: wrong size";
-
-    // Divide up cells approximately equally between processes
-    cell_range = MPI::local_range(_mpi_comm.comm(), num_global_cells);
-  }
+  std::array<std::int64_t, 2> cell_range
+      = MPI::local_range(_mpi_comm.comm(), num_global_cells);
 
   // Get number of cells to read on this process
   const int num_local_cells = cell_range[1] - cell_range[0];
@@ -1527,9 +1484,6 @@ mesh::Mesh HDF5File::read_mesh(const std::string topology_path,
   // --- Coordinates ---
 
   // Get dimensions of coordinate dataset
-  std::vector<std::int64_t> coords_shape
-      = HDF5Interface::get_dataset_shape(_hdf5_file_id, geometry_path);
-
   std::int64_t num_global_points = 0;
   if (coords_shape.size() == 1)
   {
@@ -1544,15 +1498,6 @@ mesh::Mesh HDF5File::read_mesh(const std::string topology_path,
   else
   {
     throw std::runtime_error("Topology in HDF5 file has wrong shape");
-  }
-
-  // Check number of vertices (global) against expected number
-  if (expected_num_global_points >= 0
-      and num_global_points != expected_num_global_points)
-  {
-    throw std::runtime_error(
-        "Inconsistentcy between expected number of vertices and "
-        "number of vertices in geometry in HDF5 file");
   }
 
   // Divide point range into equal blocks for each process
@@ -1575,11 +1520,8 @@ mesh::Mesh HDF5File::read_mesh(const std::string topology_path,
   Eigen::Map<EigenRowArrayXXd> points(coordinates_data.data(), num_local_points,
                                       gdim);
 
-  t.stop();
-
-  return mesh::Partitioning::build_distributed_mesh(
-      _mpi_comm.comm(), cell_type, points, cells, global_cell_indices,
-      ghost_mode);
+  return std::make_tuple(cell_type, std::move(points), std::move(cells),
+                         std::move(global_cell_indices));
 }
 //-----------------------------------------------------------------------------
 bool HDF5File::has_dataset(const std::string dataset_name) const

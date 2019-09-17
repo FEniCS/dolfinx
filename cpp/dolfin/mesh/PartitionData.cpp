@@ -6,6 +6,8 @@
 
 #include "PartitionData.h"
 
+#include <iostream>
+
 using namespace dolfin;
 using namespace dolfin::mesh;
 
@@ -16,6 +18,14 @@ PartitionData::PartitionData(
     : _offset(1)
 
 {
+  for (auto& map : ghost_procs)
+  {
+    std::cout << "Cell " << map.first << " is shared by processes: ";
+    for (auto& proc : map.second)
+      std::cout << proc << " ";
+    std::cout << std::endl;
+  }
+
   for (std::size_t i = 0; i != cell_partition.size(); ++i)
   {
     const auto it = ghost_procs.find(i);
