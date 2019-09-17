@@ -9,6 +9,7 @@
 #include "PartitionData.h"
 #include <cstdint>
 #include <dolfin/common/types.h>
+#include <dolfin/graph/CSRGraph.h>
 #include <dolfin/mesh/cell_types.h>
 #include <map>
 #include <set>
@@ -138,6 +139,14 @@ public:
       MPI_Comm comm, std::int32_t num_vertices,
       const std::vector<std::int64_t>& global_point_indices,
       const std::map<std::int32_t, std::set<std::int32_t>>& shared_points);
+
+  /// Utility to create global vertex indices, needed for higher order
+  /// meshes, where there are geometric points which are not at the
+  /// vertex nodes
+  static std::map<std::int64_t, std::vector<int>>
+  compute_halo_cells(MPI_Comm comm, std::vector<int> part,
+                     const mesh::CellType cell_type,
+                     const Eigen::Ref<const EigenRowArrayXXi64> cell_vertices);
 };
 } // namespace mesh
 } // namespace dolfin
