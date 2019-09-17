@@ -317,7 +317,7 @@ EigenRowArrayXXd FunctionSpace::tabulate_dof_coordinates() const
   // Dof coordinate on reference element
   const EigenRowArrayXXd& X = element->dof_reference_coordinates();
 
-  // Arrray to hold coordinates and return
+  // Array to hold coordinates and return
   EigenRowArrayXXd x(local_size, gdim);
 
   // Get coordinate mapping

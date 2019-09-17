@@ -1367,7 +1367,7 @@ XDMFFile::read_mesh_data(MPI_Comm comm) const
   if (degree == 2)
     LOG(WARNING) << "Caution: reading quadratic mesh";
 
-  // Get toplogical dimensions
+  // Get topological dimensions
   mesh::CellType cell_type = mesh::to_type(cell_type_str.first);
 
   // Get geometry node
