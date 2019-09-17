@@ -12,7 +12,7 @@ from dolfin.io import VTKFile
 
 # Generate high order gmsh
 for order in range(1, 4):
-    lcar = 0.9
+    lcar = 0.05
     geo = Geometry()
     geo.add_raw_code("Mesh.ElementOrder={0};".format(order))
     small_circle = geo.add_circle([0, 0, 0], 0.2, lcar=lcar)
@@ -33,6 +33,11 @@ for order in range(1, 4):
 
     mesh = Mesh(MPI.comm_world, cpp.mesh.CellType.triangle, pygmsh.points,
                 pygmsh.cells[element], [], cpp.mesh.GhostMode.none)
+
+    # from dolfin.fem import assemble_scalar
+    # from ufl import dx
+    # from dolfin import Constant
+    # print(assemble_scalar(Constant(mesh, 1)*dx))
 
     # from dolfin.cpp.mesh import Ordering
     # Ordering.order_simplex(mesh)

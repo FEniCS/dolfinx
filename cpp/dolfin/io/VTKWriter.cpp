@@ -45,12 +45,13 @@ std::uint8_t vtk_cell_type(const mesh::Mesh& mesh, std::size_t cell_dim, std::si
   else if (cell_type == mesh::CellType::hexahedron)
     vtk_cell_type = 12;
   else if (cell_type == mesh::CellType::quadrilateral)
-    vtk_cell_type = 9;
+	if (cell_order == 1)
+	  vtk_cell_type = 9;
+	else
+	  vtk_cell_type = 70;
   else if (cell_type == mesh::CellType::triangle)
 	if (cell_order == 1)
 	  vtk_cell_type = 5;
-	else if (cell_order == 2)
-	  vtk_cell_type = 22;
 	else
 	  vtk_cell_type = 69;
   else if (cell_type == mesh::CellType::interval)
@@ -152,12 +153,13 @@ void write_ascii_mesh(const mesh::Mesh& mesh, std::size_t cell_dim,
 	cell_connections = connectivity_g.connections();
   const Eigen::Ref<const Eigen::Array<std::int32_t, Eigen::Dynamic, 1>> pos_g
 	= connectivity_g.entity_positions();
-  int num_nodes = mesh.coordinate_dofs().cell_permutation().size();
+  const std::vector<std::uint8_t> perm = mesh.coordinate_dofs().cell_permutation();
+  int num_nodes = perm.size();
 
   for (int j=0; j < mesh.num_entities(mesh.topology().dim()); ++j)
 	{
 	  for (int i = 0; i < num_nodes; ++i)
-		file << cell_connections(pos_g(j)+i) << " ";
+		file << cell_connections(pos_g(j)+perm[i]) << " ";
 	  file << " ";
 	}
   file << "</DataArray>" << std::endl;

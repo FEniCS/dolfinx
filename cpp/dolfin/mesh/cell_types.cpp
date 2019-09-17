@@ -494,9 +494,9 @@ std::vector<std::uint8_t> mesh::vtk_mapping(mesh::CellType type, int num_nodes)
        if (num_nodes == 3)
 		 return {0, 1, 2};
 	   else if (num_nodes == 6)
-		 return {0, 1, 2, 3, 4, 5};
+		 return {0, 1, 2, 5, 3, 4};
 	   else if (num_nodes == 10)
-		 return {0, 1, 2, 3, 4, 5, 6, 7, 8, 9};
+		 return {0, 1, 2, 7, 8, 3, 4, 5, 6, 9};
 	   else
 		 throw std::runtime_error("Unknown cell type.");
      case mesh::CellType::tetrahedron:
@@ -506,7 +506,7 @@ std::vector<std::uint8_t> mesh::vtk_mapping(mesh::CellType type, int num_nodes)
 		 throw std::runtime_error("Higher order tetrahedron not supported");
      case mesh::CellType::quadrilateral:
        if (num_nodes == 4)
-		 return {0, 1, 3, 2};
+		 return {0, 1, 2, 3};
 	   else
 		 throw std::runtime_error("Higher order quadrilateral not supported");
      case mesh::CellType::hexahedron:
