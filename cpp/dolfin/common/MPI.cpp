@@ -59,11 +59,6 @@ std::uint32_t dolfin::MPI::Comm::rank() const
   return dolfin::MPI::rank(_comm);
 }
 //-----------------------------------------------------------------------------
-MPI_Comm dolfin::MPI::Comm::SubsetComm(int num_processes) const
-{
-  return dolfin::MPI::SubsetComm(_comm, num_processes);
-}
-//-----------------------------------------------------------------------------
 std::uint32_t dolfin::MPI::Comm::size() const
 {
   int size;

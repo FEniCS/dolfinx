@@ -64,9 +64,6 @@ public:
     /// hasn't already been initialised.
     std::uint32_t size() const;
 
-    /// Create a new comm with a subset of processes
-    MPI_Comm SubsetComm(int num_processes) const;
-
     /// Set a barrier (synchronization point)
     void barrier() const;
 
@@ -233,8 +230,8 @@ public:
   };
   template <typename T>
 
-    /// MPI Type
-    static MPI_Datatype mpi_type()
+  /// MPI Type
+  static MPI_Datatype mpi_type()
   {
     static_assert(dependent_false<T>::value, "Unknown MPI type");
     throw std::runtime_error("MPI data type unknown");
@@ -245,7 +242,8 @@ public:
   static std::map<MPI_Op, std::string> operation_map;
 };
 
-#ifndef DOXYGEN_IGNORE
+// Turn off doxygen for these template specialisations
+/// @cond
 // Specialisations for MPI_Datatypes
 template <>
 inline MPI_Datatype MPI::mpi_type<float>()
@@ -292,7 +290,7 @@ inline MPI_Datatype MPI::mpi_type<long long>()
 {
   return MPI_LONG_LONG;
 }
-#endif
+/// @endcond
 //---------------------------------------------------------------------------
 template <typename T>
 void dolfin::MPI::broadcast(MPI_Comm comm, std::vector<T>& value,
@@ -456,49 +454,6 @@ void dolfin::MPI::all_to_all(MPI_Comm comm,
   all_to_all_common(comm, in_values, out_values, offsets);
 }
 //---------------------------------------------------------------------------
-#ifndef DOXYGEN_IGNORE
-template <>
-inline void
-dolfin::MPI::all_to_all(MPI_Comm comm,
-                        const std::vector<std::vector<bool>>& in_values,
-                        std::vector<std::vector<bool>>& out_values)
-{
-  // Copy to short int
-  std::vector<std::vector<short int>> send(in_values.size());
-  for (std::size_t i = 0; i < in_values.size(); ++i)
-    send[i].assign(in_values[i].begin(), in_values[i].end());
-
-  // Communicate data
-  std::vector<std::vector<short int>> recv;
-  all_to_all(comm, send, recv);
-
-  // Copy back to bool
-  out_values.resize(recv.size());
-  for (std::size_t i = 0; i < recv.size(); ++i)
-    out_values[i].assign(recv[i].begin(), recv[i].end());
-}
-
-template <>
-inline void
-dolfin::MPI::all_to_all(MPI_Comm comm,
-                        const std::vector<std::vector<bool>>& in_values,
-                        std::vector<bool>& out_values)
-{
-  // Copy to short int
-  std::vector<std::vector<short int>> send(in_values.size());
-  for (std::size_t i = 0; i < in_values.size(); ++i)
-    send[i].assign(in_values[i].begin(), in_values[i].end());
-
-  // Communicate data
-  std::vector<short int> recv;
-  all_to_all(comm, send, recv);
-
-  // Copy back to bool
-  out_values.assign(recv.begin(), recv.end());
-}
-
-#endif
-//---------------------------------------------------------------------------
 template <typename T>
 void dolfin::MPI::scatter(MPI_Comm comm,
                           const std::vector<std::vector<T>>& in_values,
@@ -545,25 +500,6 @@ void dolfin::MPI::scatter(MPI_Comm comm,
                offsets.data(), mpi_type<T>(), out_value.data(), my_num_values,
                mpi_type<T>(), sending_process, comm);
 }
-//---------------------------------------------------------------------------
-#ifndef DOXYGEN_IGNORE
-template <>
-inline void dolfin::MPI::scatter(
-    MPI_Comm comm, const std::vector<std::vector<bool>>& in_values,
-    std::vector<bool>& out_value, std::uint32_t sending_process)
-{
-  // Copy data
-  std::vector<std::vector<short int>> in(in_values.size());
-  for (std::size_t i = 0; i < in_values.size(); ++i)
-    in[i] = std::vector<short int>(in_values[i].begin(), in_values[i].end());
-
-  std::vector<short int> out;
-  scatter(comm, in, out, sending_process);
-
-  out_value.resize(out.size());
-  std::copy(out.begin(), out.end(), out_value.begin());
-}
-#endif
 //---------------------------------------------------------------------------
 template <typename T>
 void dolfin::MPI::scatter(MPI_Comm comm, const std::vector<T>& in_values,
