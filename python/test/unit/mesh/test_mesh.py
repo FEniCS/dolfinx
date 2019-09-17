@@ -436,6 +436,23 @@ def test_small_mesh():
     assert mesh1d.num_entities_global(gdim) == 2
 
 
+def test_topology_surface(cube):
+
+    surface_vertex_markers = cube.topology.surface_entity_marker(0)
+    assert surface_vertex_markers
+
+    n = 3
+    cube.create_entities(1)
+    cube.create_connectivity(2, 1)
+    surface_edge_markers = cube.topology.surface_entity_marker(1)
+    assert surface_edge_markers
+
+    surface_facet_markers = cube.topology.surface_entity_marker(2)
+    sf_count = numpy.count_nonzero(numpy.array(surface_facet_markers))
+
+    assert MPI.sum(cube.mpi_comm(), sf_count) == n * n * 12
+
+
 @pytest.mark.parametrize("mesh_factory", mesh_factories)
 @pytest.mark.parametrize("subset_comm", [MPI.comm_world, new_comm(MPI.comm_world)])
 def test_distribute_mesh(subset_comm, tempdir, mesh_factory):

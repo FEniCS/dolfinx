@@ -19,23 +19,20 @@ namespace mesh
 
 class Connectivity;
 
-/// Topology stores the topology of a mesh, consisting of mesh
-/// entities and connectivity (incidence relations for the mesh
-/// entities). Note that the mesh entities don't need to be stored,
-/// only the number of entities and the connectivity. Any numbering
-/// scheme for the mesh entities is stored separately in a
-/// MeshFunction over the entities.
+/// Topology stores the topology of a mesh, consisting of mesh entities
+/// and connectivity (incidence relations for the mesh entities). Note
+/// that the mesh entities don't need to be stored, only the number of
+/// entities and the connectivity. Any numbering scheme for the mesh
+/// entities is stored separately in a MeshFunction over the entities.
 ///
-/// A mesh entity e may be identified globally as a pair e = (dim,
-/// i), where dim is the topological dimension and i is the index of
-/// the entity within that topological dimension.
+/// A mesh entity e may be identified globally as a pair e = (dim, i),
+/// where dim is the topological dimension and i is the index of the
+/// entity within that topological dimension.
 
 class Topology
 {
 public:
   /// Create empty mesh topology
-  /// @param dim
-  ///   Topological dimension
   Topology(std::size_t dim, std::int32_t num_vertices,
            std::int64_t num_vertices_global);
 
@@ -60,8 +57,8 @@ public:
   /// Return global number of entities for given dimension
   std::int64_t size_global(int dim) const;
 
-  /// Return number of regular (non-ghost) entities or equivalently,
-  /// the offset of where ghost entities begin
+  /// Return number of regular (non-ghost) entities or equivalently, the
+  /// offset of where ghost entities begin
   std::int32_t ghost_offset(int dim) const;
 
   /// Clear data for given pair of topological dimensions
@@ -71,7 +68,7 @@ public:
   /// dimension dim
   void set_num_entities_global(int dim, std::int64_t global_size);
 
-  // Set the global indices for entities of dimension dim
+  /// Set the global indices for entities of dimension dim
   void set_global_indices(int dim,
                           const std::vector<std::int64_t>& global_indices);
 
@@ -104,6 +101,12 @@ public:
   /// (const version). Since ghost cells are at the end of the range,
   /// this is just a vector over those cells
   const std::vector<std::int32_t>& cell_owner() const;
+
+  /// Marker for surface entities of dimension dim. An entity is considered a
+  /// surface entity, if it is connected to a surface Facet of a Mesh.
+  /// Returns a list of bool, set to True where they are on the
+  /// surface of the mesh.
+  std::vector<bool> surface_entity_marker(int dim) const;
 
   /// Return connectivity for given pair of topological dimensions
   std::shared_ptr<Connectivity> connectivity(std::size_t d0, std::size_t d1);
