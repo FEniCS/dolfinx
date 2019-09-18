@@ -53,7 +53,7 @@ def test_triangle_order_2(L, H):
 
     assert(vol == pytest.approx(L * H / 2, rel=1e-9))
 
-    
+
 def test_triangle_order_3():
     H, L = 1, 1
     #  *---*---*---*   3--11--10--2
