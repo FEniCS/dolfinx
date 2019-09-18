@@ -104,7 +104,7 @@ public:
                        const mesh::GhostMode ghost_mode) const;
 
   std::tuple<mesh::CellType, EigenRowArrayXXd, EigenRowArrayXXi64,
-             std::vector<std::int64_t>>
+             std::vector<std::int64_t>, std::vector<std::int64_t>>
   read_mesh_data(const std::string data_path) const;
 
   /// Write mesh::MeshFunction to file in a format suitable for re-reading
