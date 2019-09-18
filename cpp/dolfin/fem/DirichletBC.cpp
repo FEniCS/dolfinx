@@ -159,6 +159,18 @@ std::vector<std::int32_t> marked_facets(
     }
   }
 
+  // Testing
+  std::vector<bool> test = mesh.topology().on_boundary(0);
+  if (test.size() != boundary_vertex.size())
+    throw std::runtime_error("Size mis-match.");
+  for (std::size_t i = 0; i < test.size(); ++i)
+  {
+    if (test[i] and boundary_vertex[i] < 0)
+      throw std::runtime_error("Value mis-match (0).");
+    if (!test[i] and boundary_vertex[i] != -1)
+      throw std::runtime_error("Value mis-match (1).");
+  }
+
   // FIXME: Does this make sense for non-affine elements?
   // Get all points
   const Eigen::Array<double, Eigen::Dynamic, 3, Eigen::RowMajor>& x_all
