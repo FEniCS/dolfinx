@@ -35,7 +35,7 @@ dolfin::graph::KaHIP::partition(MPI_Comm mpi_comm, int nparts,
   unsigned long long* adjcwgt{nullptr};
 
   // TODO: Allow the user to set the parameters
-  int mode = 0;
+  int mode = 4; // Fast Mode
   int seed = 0;
 
   // The amount of imbalance that is allowed. (3%)

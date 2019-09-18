@@ -17,7 +17,6 @@
 #include <vector>
 
 #define MPICH_IGNORE_CXX_SEEK 1
-#define DOLFIN_MPI_USE_PUT_GET
 #include <mpi.h>
 
 #include <dolfin/common/Table.h>
