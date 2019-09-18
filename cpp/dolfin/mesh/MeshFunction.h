@@ -34,44 +34,46 @@ class MeshValueCollection;
 /// may for example be used to store a global numbering scheme for the
 /// entities of a (parallel) mesh, marking sub domains or boolean
 /// markers for mesh refinement.
-
+/// @tparam Type
 template <typename T>
 class MeshFunction
 {
 public:
   /// Create MeshFunction of given dimension on given mesh and
   /// initialize to a value
-  ///
-  /// @param[in] The mesh to create mesh function on
-  /// @param[in] dim The mesh entity dimension
-  /// @param[in] value The value
+  /// @param[in] mesh The mesh to create mesh function on
+  /// @param[in] dim (std::size_t) The mesh entity dimension
+  /// @param[in] value The initial value of the MeshFunction
   MeshFunction(std::shared_ptr<const Mesh> mesh, std::size_t dim,
                const T& value);
 
-  /// Create mesh function from a MeshValueCollecion
-  ///
-  /// @param[in] The mesh to create mesh function on.
+  /// Create mesh function from a MeshValueCollection
+  /// @param[in] mesh The mesh to create mesh function on
   /// @param[in] value_collection The mesh value collection for the mesh
-  /// function data
-  /// @param[in[] default_value The default value, if unset in
-  /// value_collection
+  ///                             function data.
+  /// @param[in] default_value The default value if unset in
+  ///                          value_collection
   MeshFunction(std::shared_ptr<const Mesh> mesh,
                const MeshValueCollection<T>& value_collection,
                const T& default_value);
 
   /// Copy constructor
+  /// @param[in] f The object to be copied
   MeshFunction(const MeshFunction<T>& f) = default;
 
   /// Move constructor
+  /// @param f The object to be moved
   MeshFunction(MeshFunction<T>&& f) = default;
 
   /// Destructor
   ~MeshFunction() = default;
 
-  /// Assignment operator
+  /// Assign MeshFunction to other mesh function
+  /// @param[in] f A MeshFunction object to assign to another
+  ///              MeshFunction
   MeshFunction<T>& operator=(const MeshFunction<T>& f) = default;
 
-  /// Return mesh associated with the mesh function
+  /// Return mesh associated with mesh function
   /// @return The mesh
   std::shared_ptr<const Mesh> mesh() const;
 
@@ -80,32 +82,30 @@ public:
   int dim() const;
 
   /// Return array of values (const. version)
-  /// @return The values
+  /// @return The mesh function values
   Eigen::Ref<const Eigen::Array<T, Eigen::Dynamic, 1>> values() const;
 
   /// Return array of values
-  /// @return The values
+  /// @return The mesh function values
   Eigen::Ref<Eigen::Array<T, Eigen::Dynamic, 1>> values();
 
-  /// Set values
-  ///
-  /// If all vertices of a mesh entity satisfy the marking function then
-  /// the entity is marked with the given value.
-  ///
+  /// Marking function used to identify mesh entities
+  using marking_function = std::function<Eigen::Array<bool, Eigen::Dynamic, 1>(
+      const Eigen::Ref<
+          const Eigen::Array<double, Eigen::Dynamic, 3, Eigen::RowMajor>>
+          x)>;
+
+  /// Set values. If all vertices of a mesh entity satisfy the marking
+  /// function then the entity is marked with the given value.
   /// @param[in] mark Marking function used to identify which mesh
-  /// entities to set value to
-  /// @param[in] value Value to set
-  void
-  mark(const std::function<Eigen::Array<bool, Eigen::Dynamic, 1>(
-           const Eigen::Ref<
-               const Eigen::Array<double, Eigen::Dynamic, 3, Eigen::RowMajor>>
-               x)>& mark,
-       T value);
+  ///                 entities to set value to.
+  /// @param[in] value The value to set for marked mesh entities
+  void mark(const marking_function& mark, T value);
 
   /// Name
   std::string name = "m";
 
-  /// ID
+  /// Unique ID
   const std::size_t id = common::UniqueIdGenerator::id();
 
 private:

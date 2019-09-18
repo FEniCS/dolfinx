@@ -44,7 +44,7 @@ public:
   /// Create VTK file
   VTKFile(const std::string filename);
 
-  // Destructor
+  /// Destructor
   ~VTKFile() = default;
 
   /// Output mesh

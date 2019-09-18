@@ -5,7 +5,6 @@
 // SPDX-License-Identifier:    LGPL-3.0-or-later
 
 #include "Function.h"
-#include "FunctionSpace.h"
 #include <algorithm>
 #include <cfloat>
 #include <dolfin/common/IndexMap.h>
@@ -127,7 +126,6 @@ Function Function::collapse() const
 //-----------------------------------------------------------------------------
 std::shared_ptr<const FunctionSpace> Function::function_space() const
 {
-  assert(_function_space);
   return _function_space;
 }
 //-----------------------------------------------------------------------------
@@ -149,11 +147,14 @@ la::PETScVector& Function::vector()
 //-----------------------------------------------------------------------------
 const la::PETScVector& Function::vector() const { return _vector; }
 //-----------------------------------------------------------------------------
-void Function::eval(const Eigen::Ref<const EigenRowArrayXXd> x,
-                    const geometry::BoundingBoxTree& bb_tree,
-                    Eigen::Ref<Eigen::Array<PetscScalar, Eigen::Dynamic,
-                                            Eigen::Dynamic, Eigen::RowMajor>>
-                        u) const
+void Function::eval(
+    const Eigen::Ref<const Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic,
+                                        Eigen::RowMajor>>
+        x,
+    const geometry::BoundingBoxTree& bb_tree,
+    Eigen::Ref<Eigen::Array<PetscScalar, Eigen::Dynamic, Eigen::Dynamic,
+                            Eigen::RowMajor>>
+        u) const
 {
   assert(_function_space);
   assert(_function_space->mesh);
@@ -306,13 +307,7 @@ void Function::interpolate(const Function& v)
   _function_space->interpolate(x.x, v);
 }
 //-----------------------------------------------------------------------------
-void Function::interpolate(
-    const std::function<
-        void(Eigen::Ref<Eigen::Array<PetscScalar, Eigen::Dynamic,
-                                     Eigen::Dynamic, Eigen::RowMajor>>,
-             const Eigen::Ref<const Eigen::Array<
-                 double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>>)>& f)
-
+void Function::interpolate(const FunctionSpace::interpolation_function& f)
 {
   la::VecWrapper x(_vector.vec());
   _function_space->interpolate(x.x, f);

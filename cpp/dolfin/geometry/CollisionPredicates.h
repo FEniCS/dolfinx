@@ -19,8 +19,8 @@ class MeshEntity;
 namespace geometry
 {
 
-/// This class implements algorithms for detecting pairwise
-/// collisions between mesh entities of varying dimensions.
+/// This class implements algorithms for detecting pairwise collisions
+/// between mesh entities of varying dimensions.
 
 class CollisionPredicates
 {
@@ -29,25 +29,17 @@ public:
 
   /// Check whether entity collides with point.
   ///
-  /// @param     entity (_MeshEntity_)
-  ///         The entity.
-  /// @param    point (_Point_)
-  ///         The point.
-  ///
-  /// @returns    bool
-  ///         True iff entity collides with cell.
+  /// @param[in] entity The entity
+  /// @param[in] point The point
+  /// @return True iff entity collides with cell.
   static bool collides(const mesh::MeshEntity& entity,
                        const Eigen::Vector3d& point);
 
   /// Check whether two entities collide.
   ///
-  /// @param     entity_0 (_MeshEntity_)
-  ///         The first entity.
-  /// @param    entity_1 (_MeshEntity_)
-  ///         The second entity.
-  ///
-  /// @returns    bool
-  ///         True iff entity collides with cell.
+  /// @param[in] entity_0 The first entity
+  /// @param[in] entity_1 The second entity
+  /// @return True iff entity collides with cell.
   static bool collides(const mesh::MeshEntity& entity_0,
                        const mesh::MeshEntity& entity_1);
 
@@ -79,17 +71,20 @@ public:
                                        const Eigen::Vector3d& q1,
                                        std::size_t gdim);
 
-  /// Check whether segment p0-p1 collides with segment q0-q1 (1D version)
+  /// Check whether segment p0-p1 collides with segment q0-q1 (1D
+  /// version)
   static bool collides_segment_segment_1d(double p0, double p1, double q0,
                                           double q1);
 
-  /// Check whether segment p0-p1 collides with segment q0-q1 (2D version)
+  /// Check whether segment p0-p1 collides with segment q0-q1 (2D
+  /// version)
   static bool collides_segment_segment_2d(const Eigen::Vector3d& p0,
                                           const Eigen::Vector3d& p1,
                                           const Eigen::Vector3d& q0,
                                           const Eigen::Vector3d& q1);
 
-  /// Check whether segment p0-p1 collides with segment q0-q1 (3D version)
+  /// Check whether segment p0-p1 collides with segment q0-q1 (3D
+  /// version)
   static bool collides_segment_segment_3d(const Eigen::Vector3d& p0,
                                           const Eigen::Vector3d& p1,
                                           const Eigen::Vector3d& q0,
@@ -122,14 +117,16 @@ public:
                                         const Eigen::Vector3d& q1,
                                         std::size_t gdim);
 
-  /// Check whether triangle p0-p1-p2 collides with segment q0-q1 (2D version)
+  /// Check whether triangle p0-p1-p2 collides with segment q0-q1 (2D
+  /// version)
   static bool collides_triangle_segment_2d(const Eigen::Vector3d& p0,
                                            const Eigen::Vector3d& p1,
                                            const Eigen::Vector3d& p2,
                                            const Eigen::Vector3d& q0,
                                            const Eigen::Vector3d& q1);
 
-  /// Check whether triangle p0-p1-p2 collides with segment q0-q1 (3D version)
+  /// Check whether triangle p0-p1-p2 collides with segment q0-q1 (3D
+  /// version)
   static bool collides_triangle_segment_3d(const Eigen::Vector3d& p0,
                                            const Eigen::Vector3d& p1,
                                            const Eigen::Vector3d& p2,
@@ -142,8 +139,8 @@ public:
       const Eigen::Vector3d& p2, const Eigen::Vector3d& q0,
       const Eigen::Vector3d& q1, const Eigen::Vector3d& q2, std::size_t gdim);
 
-  /// Check whether triangle p0-p1-p2 collides with triangle q0-q1-q2 (2D
-  /// version)
+  /// Check whether triangle p0-p1-p2 collides with triangle q0-q1-q2
+  /// (2D version)
   static bool collides_triangle_triangle_2d(const Eigen::Vector3d& p0,
                                             const Eigen::Vector3d& p1,
                                             const Eigen::Vector3d& p2,
@@ -151,8 +148,8 @@ public:
                                             const Eigen::Vector3d& q1,
                                             const Eigen::Vector3d& q2);
 
-  /// Check whether triangle p0-p1-p2 collides with triangle q0-q1-q2 (3D
-  /// version)
+  /// Check whether triangle p0-p1-p2 collides with triangle q0-q1-q2
+  /// (3D version)
   static bool collides_triangle_triangle_3d(const Eigen::Vector3d& p0,
                                             const Eigen::Vector3d& p1,
                                             const Eigen::Vector3d& p2,
@@ -175,7 +172,8 @@ public:
                                               const Eigen::Vector3d& q0,
                                               const Eigen::Vector3d& q1);
 
-  /// Check whether tetrahedron p0-p1-p2-p3 collides with triangle q0-q1-q2
+  /// Check whether tetrahedron p0-p1-p2-p3 collides with triangle
+  /// q0-q1-q2
   static bool collides_tetrahedron_triangle_3d(const Eigen::Vector3d& p0,
                                                const Eigen::Vector3d& p1,
                                                const Eigen::Vector3d& p2,
@@ -184,7 +182,8 @@ public:
                                                const Eigen::Vector3d& q1,
                                                const Eigen::Vector3d& q2);
 
-  /// Check whether tetrahedron p0-p1-p2-p3 collides with tetrahedron q0-q1-q2
+  /// Check whether tetrahedron p0-p1-p2-p3 collides with tetrahedron
+  /// q0-q1-q2
   static bool collides_tetrahedron_tetrahedron_3d(
       const Eigen::Vector3d& p0, const Eigen::Vector3d& p1,
       const Eigen::Vector3d& p2, const Eigen::Vector3d& p3,

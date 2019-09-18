@@ -6,6 +6,7 @@
 
 import math
 import sys
+import os
 
 import numpy
 import pytest
@@ -15,8 +16,11 @@ import FIAT
 from dolfin import (MPI, BoxMesh, MeshEntity, MeshFunction, RectangleMesh,
                     UnitCubeMesh, UnitIntervalMesh, UnitSquareMesh, cpp)
 from dolfin.cpp.mesh import CellType, is_simplex
-from dolfin_utils.test.fixtures import fixture
+from dolfin.io import XDMFFile
+from dolfin_utils.test.fixtures import fixture, tempdir
 from dolfin_utils.test.skips import skip_in_parallel
+
+assert (tempdir)
 
 
 @fixture
@@ -103,6 +107,12 @@ def mesh():
 @fixture
 def f(mesh):
     return MeshFunction('int', mesh, 0, 0)
+
+
+def new_comm(comm):
+    new_group = comm.group.Incl([0])
+    new_comm = comm.Create_group(new_group)
+    return new_comm
 
 
 def test_UFLCell(interval, square, rectangle, cube, box):
@@ -412,7 +422,7 @@ def test_mesh_topology_lifetime():
 
 @pytest.mark.xfail(condition=MPI.size(MPI.comm_world) > 1,
                    reason="Small meshes fail in parallel")
-def test_small_mesh(interval):
+def test_small_mesh():
     mesh3d = UnitCubeMesh(MPI.comm_world, 1, 1, 1)
     gdim = mesh3d.geometry.dim
     assert mesh3d.num_entities_global(gdim) == 6
@@ -424,6 +434,61 @@ def test_small_mesh(interval):
     mesh1d = UnitIntervalMesh(MPI.comm_world, 2)
     gdim = mesh1d.geometry.dim
     assert mesh1d.num_entities_global(gdim) == 2
+
+
+def test_topology_surface(cube):
+
+    surface_vertex_markers = cube.topology.surface_entity_marker(0)
+    assert surface_vertex_markers
+
+    n = 3
+    cube.create_entities(1)
+    cube.create_connectivity(2, 1)
+    surface_edge_markers = cube.topology.surface_entity_marker(1)
+    assert surface_edge_markers
+
+    surface_facet_markers = cube.topology.surface_entity_marker(2)
+    sf_count = numpy.count_nonzero(numpy.array(surface_facet_markers))
+
+    assert MPI.sum(cube.mpi_comm(), sf_count) == n * n * 12
+
+
+@pytest.mark.parametrize("mesh_factory", mesh_factories)
+@pytest.mark.parametrize("subset_comm", [MPI.comm_world, new_comm(MPI.comm_world)])
+def test_distribute_mesh(subset_comm, tempdir, mesh_factory):
+    func, args = mesh_factory
+    mesh = func(*args)
+
+    if not is_simplex(mesh.cell_type):
+        return
+
+    # Order mesh
+    cpp.mesh.Ordering.order_simplex(mesh)
+
+    encoding = XDMFFile.Encoding.HDF5
+    ghost_mode = cpp.mesh.GhostMode.none
+    filename = os.path.join(tempdir, "mesh.xdmf")
+    comm = mesh.mpi_comm()
+    parts = comm.size
+    partitioner = cpp.mesh.Partitioner.scotch
+
+    with XDMFFile(mesh.mpi_comm(), filename, encoding) as file:
+        file.write(mesh)
+
+    # Use the subset_comm to read and partition mesh, then distribute to all
+    # available processes
+    with XDMFFile(subset_comm, filename) as file:
+        cell_type, points, cells, indices = file.read_mesh_data(subset_comm)
+    partition_data = cpp.mesh.partition_cells(subset_comm, parts, cell_type,
+                                              cells, partitioner)
+    dist_mesh = cpp.mesh.build_from_partition(MPI.comm_world, cell_type, points,
+                                              cells, indices, ghost_mode,
+                                              partition_data)
+
+    assert(mesh.cell_type == dist_mesh.cell_type)
+    assert mesh.num_entities_global(0) == dist_mesh.num_entities_global(0)
+    dim = dist_mesh.topology.dim
+    assert mesh.num_entities_global(dim) == dist_mesh.num_entities_global(dim)
 
 
 def test_coords():

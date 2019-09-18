@@ -139,14 +139,16 @@ std::vector<std::int32_t> marked_facets(
   // count)
   std::vector<std::int32_t> boundary_vertex(mesh.num_entities(0), -1);
   int pos = 0;
-  assert(mesh.topology().connectivity(dim, tdim));
-  std::shared_ptr<const mesh::Connectivity> connectivity_facet_cell
+  std::shared_ptr<const mesh::Connectivity> connectivity
       = mesh.topology().connectivity(dim, tdim);
+  if (!connectivity)
+    throw std::runtime_error("Cell-facet connectivity has not been computed.");
+
   const int num_facet_vertices = mesh::cell_num_entities(
       mesh::cell_entity_type(mesh.cell_type, tdim - 1), 0);
   for (const auto& facet : mesh::MeshRange(mesh, tdim - 1))
   {
-    if (connectivity_facet_cell->size_global(facet.index()) == 1)
+    if (connectivity->size_global(facet.index()) == 1)
     {
       const std::int32_t* v = facet.entities(0);
       for (int i = 0; i < num_facet_vertices; ++i)
@@ -345,13 +347,9 @@ compute_bc_dofs_topological(const function::FunctionSpace& V,
 } // namespace
 
 //-----------------------------------------------------------------------------
-DirichletBC::DirichletBC(
-    std::shared_ptr<const function::FunctionSpace> V,
-    std::shared_ptr<const function::Function> g,
-    const std::function<Eigen::Array<bool, Eigen::Dynamic, 1>(
-        const Eigen::Ref<const Eigen::Array<double, Eigen::Dynamic, 3,
-                                            Eigen::RowMajor>>&)>& mark,
-    Method method)
+DirichletBC::DirichletBC(std::shared_ptr<const function::FunctionSpace> V,
+                         std::shared_ptr<const function::Function> g,
+                         const marking_function& mark, Method method)
     : DirichletBC(V, g, marked_facets(*V->mesh, mark), method)
 {
   // Do nothing

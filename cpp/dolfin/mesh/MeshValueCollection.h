@@ -38,37 +38,35 @@ public:
   MeshValueCollection(MeshValueCollection<T>&& mvc) = default;
 
   /// Create a mesh value collection from a MeshFunction
-  ///
   /// @param[in] mesh_function The mesh function for creating a
-  /// MeshValueCollection
+  ///                          MeshValueCollection
   explicit MeshValueCollection(const MeshFunction<T>& mesh_function);
 
   /// Create a mesh value collection of entities of given dimension on a
   /// given mesh
-  ///
   /// @param[in] mesh The mesh associated with the collection
   /// @param[in] dim The mesh entity dimension for the mesh value
-  /// collection
+  ///                collection.
   MeshValueCollection(std::shared_ptr<const Mesh> mesh, std::size_t dim);
 
   /// Destructor
   ~MeshValueCollection() = default;
 
   /// Assignment operator
-  ///
-  /// @param[in] mesh_value_collection A MeshValueCollection object
+  /// @param[in] mesh_value_collection A MeshValueCollection object used
+  ///                                  to construct a
+  ///                                  MeshValueCollection.
   MeshValueCollection<T>&
   operator=(const MeshValueCollection<T>& mesh_value_collection)
       = default;
 
-  /// Assignment operator
-  ///
-  /// @param[in] mesh_function A MeshFunction object used to construct a
-  /// MeshValueCollection
+  /// Assignment operator from a MeshFunction
+  /// @param[in] mesh_function A MeshFunction used to construct a
+  ///                          MeshValueCollection.
   MeshValueCollection<T>& operator=(const MeshFunction<T>& mesh_function);
 
   /// Return topological dimension
-  /// @return The dimension.
+  /// @return  The dimension
   std::size_t dim() const;
 
   /// Return associated mesh
@@ -76,11 +74,11 @@ public:
   std::shared_ptr<const Mesh> mesh() const;
 
   /// Return true if the subset is empty
-  /// @return True if the subset is empty
+  /// @return True if the subset is empty.
   bool empty() const;
 
   /// Return size (number of entities in subset)
-  /// @return The size
+  /// @return  Number of mesh entities
   std::size_t size() const;
 
   // FIXME: remove
@@ -97,47 +95,34 @@ public:
                  const T& value);
 
   /// Set value for given entity index
-  ///
   /// @param[in] entity_index Index of the entity
-  /// @param[in] value The value of the marker
-  /// @return True is a new value is inserted, false if overwriting an
-  /// existing value
+  /// @param[in] value The value of the marker.
+  /// @return True if a new value is inserted, false if overwriting an
+  ///         existing value
   bool set_value(std::size_t entity_index, const T& value);
 
-  /// Get marker value for given entity defined by a cell index and
-  /// a local entity index
-  ///
-  /// @param    cell_index (std::size_t)
-  ///         The index of the cell.
-  /// @param    local_entity (std::size_t)
-  ///         The local index of the entity relative to the cell.
-  ///
-  /// @return    marker_value (T)
-  ///         The value of the marker.
+  /// Get marker value for given entity defined by a cell index and a
+  /// local entity index
+  /// @param[in] cell_index The index of the cell
+  /// @param[in] local_entity The local index of the entity relative to
+  ///                         the cell.
+  /// @return marker_value The value of the marker
   T get_value(std::size_t cell_index, std::size_t local_entity);
 
   /// Get all values
-  ///
-  /// @return    std::map<std::pair<std::size_t, std::size_t>, T>
-  ///         A map from positions to values.
+  /// @return A map from positions to values.
   std::map<std::pair<std::size_t, std::size_t>, T>& values();
 
   /// Get all values (const version)
-  ///
-  /// @return    std::map<std::pair<std::size_t, std::size_t>, T>
-  ///         A map from positions to values.
+  /// @return Map from positions to values.
   const std::map<std::pair<std::size_t, std::size_t>, T>& values() const;
 
   /// Clear all values
   void clear();
 
   /// Return informal string representation (pretty-print)
-  ///
-  /// @param   verbose (bool)
-  ///         Flag to turn on additional output.
-  ///
-  /// @return    std::string
-  ///         An informal representation.
+  /// @param[in] verbose Flag to turn on additional output
+  /// @return An informal representation
   std::string str(bool verbose) const;
 
   /// Name

@@ -30,6 +30,8 @@ class VectorSpaceBasis;
 class PETScMatrix : public PETScOperator
 {
 public:
+
+  /// Create holder of a PETSc Mat object from a sparsity pattern
   PETScMatrix(MPI_Comm comm, const SparsityPattern& sparsity_pattern);
 
   /// Create holder of a PETSc Mat object/pointer. The Mat A object

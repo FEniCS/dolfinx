@@ -27,7 +27,7 @@ class MeshQuality
 public:
   /// Compute the minimum and maximum radius ratio of cells (across all
   /// processes)
-  /// @param[in] mesh
+  /// @param[in] mesh The mesh
   /// @return The [minimum, maximum] cell radii ratio
   ///         (geometric_dimension * * inradius / circumradius,
   ///         geometric_dimension is normalization factor). It has range

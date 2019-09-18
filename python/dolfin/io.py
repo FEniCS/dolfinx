@@ -6,7 +6,12 @@
 # SPDX-License-Identifier:    LGPL-3.0-or-later
 """IO module for input data, post-processing and checkpointing"""
 
+import typing
+
+import numpy
+
 from dolfin import cpp, fem, function
+
 
 __all__ = ["HDF5File", "XDMFFile"]
 
@@ -205,6 +210,27 @@ class XDMFFile:
         mesh = self._cpp_object.read_mesh(ghost_mode)
         mesh.geometry.coord_mapping = fem.create_coordinate_map(mesh)
         return mesh
+
+    def read_mesh_data(self, mpi_comm) -> typing.Tuple[cpp.mesh.CellType, numpy.ndarray,
+                                                       numpy.ndarray, typing.List[int]]:
+        """Read in mesh data
+
+        Parameters
+        ----------
+        mpi_comm:
+            MPI communicator
+        Returns
+        -------
+        cell_type
+            Cell type
+        points
+            Geometric points on each process
+        cells
+            Topological cells with global vertex indexing
+        global_cell_indices
+            List of global cell indices
+        """
+        return self._cpp_object.read_mesh_data(mpi_comm)
 
     def read_checkpoint(self, V, name: str,
                         counter: int = -1) -> function.Function:

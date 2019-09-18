@@ -34,9 +34,11 @@ public:
   static void number_entities(const Mesh& mesh, int d);
 
   /// Create global entity indices for entities of dimension d for given
-  /// global vertex indices.
-  /// @returns (global_entity_indices, shared_entities,
-  /// number_of_global_entities)
+  /// global vertex indices
+  /// @param[in] mesh The mesh
+  /// @param[in] d The dimension
+  /// @return (global_entity_indices, shared_entities,
+  ///          number_of_global_entities)
   static std::tuple<std::vector<std::int64_t>,
                     std::map<std::int32_t, std::set<std::int32_t>>, std::size_t>
   compute_entity_numbering(const Mesh& mesh, int d);
@@ -46,9 +48,8 @@ public:
   /// cells residing on neighboring processes)
   static void init_facet_cell_connections(Mesh& mesh);
 
-  /// Reorder the values according to explicit global indices, distributing
-  /// evenly across processes
-  ///
+  /// Reorder the values according to explicit global indices,
+  /// distributing evenly across processes
   /// @param[in] mpi_comm MPI Communicator
   /// @param[in] values Values to reorder
   /// @param[in] global_indices Global index for each row of values
@@ -61,10 +62,10 @@ public:
 
   /// Reorder the values according to explicit global indices,
   /// distributing evenly across processes
-  ///
   /// @param[in] mpi_comm MPI Communicator
   /// @param[in] values Complex values to reorder
   /// @param[in] global_indices Global index for each row of values
+  /// @return
   static Eigen::Array<std::complex<double>, Eigen::Dynamic, Eigen::Dynamic,
                       Eigen::RowMajor>
   reorder_by_global_indices(

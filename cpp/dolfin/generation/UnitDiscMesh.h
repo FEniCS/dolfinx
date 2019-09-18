@@ -14,15 +14,16 @@ namespace dolfin
 namespace generation
 {
 
-/// A mesh consisting of a circular domain with quadratic geometry.
-/// This class is useful for testing.
+/// A mesh consisting of a circular domain with quadratic geometry. This
+/// class is useful for testing.
 
 class UnitDiscMesh
 {
 public:
   /// Create mesh of unit disc for testing quadratic geometry
-  /// @param n
-  ///   number of layers
+  /// @param[in] comm MPI communicator to build the mesh on
+  /// @param[in] n Number of layers
+  /// @param[in] ghost_mode Mesh ghosting mode
   static mesh::Mesh create(MPI_Comm comm, std::size_t n,
                            const mesh::GhostMode ghost_mode);
 };

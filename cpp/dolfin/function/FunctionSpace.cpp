@@ -162,12 +162,7 @@ void FunctionSpace::interpolate(
 void FunctionSpace::interpolate(
     Eigen::Ref<Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1>>
         expansion_coefficients,
-    const std::function<void(
-        Eigen::Ref<Eigen::Array<PetscScalar, Eigen::Dynamic, Eigen::Dynamic,
-                                Eigen::RowMajor>>,
-        const Eigen::Ref<const Eigen::Array<double, Eigen::Dynamic,
-                                            Eigen::Dynamic, Eigen::RowMajor>>)>&
-        f) const
+    const interpolation_function& f) const
 {
   assert(mesh);
   assert(element);
