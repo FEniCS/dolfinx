@@ -228,9 +228,9 @@ public:
   struct dependent_false : std::false_type
   {
   };
-  template <typename T>
 
   /// MPI Type
+  template <typename T>
   static MPI_Datatype mpi_type()
   {
     static_assert(dependent_false<T>::value, "Unknown MPI type");

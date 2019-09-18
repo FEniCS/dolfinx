@@ -24,8 +24,6 @@ dolfin::MPI::Comm::Comm(MPI_Comm comm)
   }
   else
     _comm = MPI_COMM_NULL;
-
-  std::vector<double> x = {{1.0, 3.0}};
 }
 //-----------------------------------------------------------------------------
 dolfin::MPI::Comm::Comm(const Comm& comm) : Comm(comm._comm)
