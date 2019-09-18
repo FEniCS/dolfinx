@@ -1353,19 +1353,25 @@ mesh::Mesh HDF5File::read_mesh(const std::string data_path,
 
   if (use_partition_from_file)
   {
+    int n = global_cell_indices.size();
     std::vector<int> part(global_cell_indices.size());
-    for (std::int64_t index : global_cell_indices)
+    for (std::int64_t i = 0; i < n; ++i)
     {
-      auto p = std::lower_bound(cell_partitions.begin(), cell_partitions.end(),
-                                index);
-      part[i] = p;
+      auto it = std::lower_bound(cell_partitions.begin(), cell_partitions.end(),
+                                 global_cell_indices[i]);
+      part[i] = int(it - cell_partitions.begin());
     }
-    std::map<std::int64_t, std::vector<int>> ghost_procs;
-    mesh::PartitionData cell_partition(part, ghost_procs);
 
-    return mesh::Partitioning::build_distributed_mesh(
+    std::map<std::int64_t, std::vector<int>> ghost_procs;
+    ghost_procs = mesh::Partitioning::compute_halo_cells(_mpi_comm.comm(), part,
+                                                         cell_type, cells);
+
+    mesh::PartitionData cell_partition(std::make_pair(
+        std::vector<int>(part.begin(), part.end()), std::move(ghost_procs)));
+
+    return mesh::Partitioning::build_from_partition(
         _mpi_comm.comm(), cell_type, points, cells, global_cell_indices,
-        ghost_mode);
+        ghost_mode, cell_partition);
   }
   else
   {
