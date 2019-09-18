@@ -496,7 +496,7 @@ std::vector<std::uint8_t> mesh::vtk_mapping(mesh::CellType type, int num_nodes)
 	   else if (num_nodes == 6)
 		 return {0, 1, 2, 5, 3, 4};
 	   else if (num_nodes == 10)
-		 return {0, 1, 2, 7, 8, 3, 4, 5, 6, 9};
+		 return {0, 1, 2, 7, 8, 3, 4, 6, 5, 9};
 	   else
 		 throw std::runtime_error("Unknown cell type.");
      case mesh::CellType::tetrahedron:
