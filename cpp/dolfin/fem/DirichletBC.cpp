@@ -183,7 +183,7 @@ std::vector<std::int32_t> marked_facets(
   for (auto& facet : mesh::MeshRange(mesh, tdim - 1))
   {
     // Consider boundary facets only
-    if (connectivity_facet_cell->size_global(facet.index()) == 1)
+    if (connectivity->size_global(facet.index()) == 1)
     {
       // Assume all vertices on this facet are marked
       bool all_vertices_marked = true;
