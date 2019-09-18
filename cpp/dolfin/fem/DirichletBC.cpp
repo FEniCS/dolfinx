@@ -111,11 +111,12 @@ get_remote_bcs(const common::IndexMap& map, const common::IndexMap& map_g,
 std::vector<std::int32_t> marked_facets(
     const mesh::Mesh& mesh,
     const std::function<EigenArrayXb(
-        const Eigen::Ref<
-            const Eigen::Array<double, Eigen::Dynamic, 3, Eigen::RowMajor>>&,
-        bool only_boundary)>& mark)
+        const Eigen::Ref<const Eigen::Array<double, Eigen::Dynamic, 3,
+                                            Eigen::RowMajor>>&)>& marker)
 {
   const int tdim = mesh.topology().dim();
+
+  // Create facets
   mesh.create_entities(tdim - 1);
 
   // Marked facet indices
@@ -133,43 +134,26 @@ std::vector<std::int32_t> marked_facets(
     mesh.create_connectivity(tdim - 1, tdim);
   }
 
-  // Find all vertices on boundary
-  // Set all to -1 (interior) to start with
-  // If a vertex is on the boundary, give it an index from [0, count)
+  // Find all vertices on boundary. Set all to -1 (interior) to start
+  // with. If a vertex is on the boundary, give it an index from [0,
+  // count)
+  const std::vector<bool> on_boundary0 = mesh.topology().on_boundary(0);
   std::vector<std::int32_t> boundary_vertex(mesh.num_entities(0), -1);
-  std::size_t count = 0;
-  assert(mesh.topology().connectivity(dim, tdim));
-  std::shared_ptr<const mesh::Connectivity> connectivity_facet_cell
-      = mesh.topology().connectivity(dim, tdim);
-  const int num_facet_vertices = mesh::cell_num_entities(
-      mesh::cell_entity_type(mesh.cell_type, tdim - 1), 0);
-  for (const auto& facet : mesh::MeshRange(mesh, tdim - 1))
+  assert(on_boundary0.size() == boundary_vertex.size());
+  int count = 0;
+  for (std::size_t i = 0; i < on_boundary0.size(); ++i)
   {
-    if (connectivity_facet_cell->size_global(facet.index()) == 1)
-    {
-      const std::int32_t* v = facet.entities(0);
-      for (int i = 0; i < num_facet_vertices; ++i)
-      {
-        if (boundary_vertex[v[i]] == -1)
-        {
-          boundary_vertex[v[i]] = count;
-          ++count;
-        }
-      }
-    }
+    if (on_boundary0[i])
+      boundary_vertex[i] = count++;
   }
 
+  // FIXME: Does this make sense for non-affine elements?
+  // Get all points
   const Eigen::Array<double, Eigen::Dynamic, 3, Eigen::RowMajor>& x_all
       = mesh.geometry().points();
 
-  // Run marker function on all vertices
-  EigenArrayXb all_marked = mark(x_all, false);
-  assert(all_marked.rows() == x_all.rows());
-
-  EigenRowArrayXXd x_boundary(count, 3);
-
-  // Pack boundary vertices for vectorised marking
-  // function
+  // Pack coordinates of all boundary vertices
+  Eigen::Array<double, Eigen::Dynamic, 3, Eigen::RowMajor> x_boundary(count, 3);
   for (std::int32_t i = 0; i < mesh.num_entities(0); ++i)
   {
     if (boundary_vertex[i] != -1)
@@ -177,43 +161,40 @@ std::vector<std::int32_t> marked_facets(
   }
 
   // Run marker function on boundary vertices
-  EigenArrayXb boundary_marked = mark(x_boundary, true);
+  const EigenArrayXb boundary_marked = marker(x_boundary);
   assert(boundary_marked.rows() == x_boundary.rows());
 
+  // Iterate over facets
+  const std::vector<bool> boundary_facet
+      = mesh.topology().on_boundary(tdim - 1);
   for (auto& facet : mesh::MeshRange(mesh, tdim - 1))
   {
-    // By default, all vertices on this facet are marked
-    bool all_vertices_marked = true;
-
-    for (const auto& v : mesh::EntityRange(facet, 0))
+    // Consider boundary facets only
+    if (boundary_facet[facet.index()])
     {
-      const std::int32_t idx = v.index();
+      // Assume all vertices on this facet are marked
+      bool all_vertices_marked = true;
 
-      // The vertex is not marked (marked as false) in two cases:
-      // 1. It is a boundary vertex and both evaluations of mark function
-      //    (only_boundary=true and only_boundary=false)
-      //    marked it as false
-      // or
-      // 2. It is not a boundary vertex and only_boundary=false marked it
-      // as false
-      //
-      if ((boundary_vertex[idx] != -1
-           and (all_marked[idx] == false
-                and boundary_marked[boundary_vertex[idx]] == false))
-          or (boundary_vertex[idx] == -1 and all_marked[idx] == false))
+      // Iterate over facet vertices
+      for (const auto& v : mesh::EntityRange(facet, 0))
       {
-        all_vertices_marked = false;
-        break;
+        const std::int32_t idx = v.index();
+        assert(boundary_vertex[idx] < boundary_marked.size());
+        if (!boundary_marked[boundary_vertex[idx]])
+        {
+          all_vertices_marked = false;
+          break;
+        }
       }
-    }
 
-    // Mark facet with all vertices marked
-    if (all_vertices_marked)
-      facets.push_back(facet.index());
+      // Mark facet with all vertices marked
+      if (all_vertices_marked)
+        facets.push_back(facet.index());
+    }
   }
 
   return facets;
-}
+} // namespace
 //-----------------------------------------------------------------------------
 // bool on_facet(
 //     const Eigen::Ref<const Eigen::Array<double, Eigen::Dynamic, 1>>
@@ -353,14 +334,9 @@ compute_bc_dofs_topological(const function::FunctionSpace& V,
 } // namespace
 
 //-----------------------------------------------------------------------------
-DirichletBC::DirichletBC(
-    std::shared_ptr<const function::FunctionSpace> V,
-    std::shared_ptr<const function::Function> g,
-    const std::function<Eigen::Array<bool, Eigen::Dynamic, 1>(
-        const Eigen::Ref<
-            const Eigen::Array<double, Eigen::Dynamic, 3, Eigen::RowMajor>>&,
-        bool only_boundary)>& mark,
-    Method method)
+DirichletBC::DirichletBC(std::shared_ptr<const function::FunctionSpace> V,
+                         std::shared_ptr<const function::Function> g,
+                         const marking_function& mark, Method method)
     : DirichletBC(V, g, marked_facets(*V->mesh, mark), method)
 {
   // Do nothing

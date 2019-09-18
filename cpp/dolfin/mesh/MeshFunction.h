@@ -28,107 +28,84 @@ class MeshEntity;
 template <typename T>
 class MeshValueCollection;
 
-/// A MeshFunction is a function that can be evaluated at a set of
-/// mesh entities. A MeshFunction is discrete and is only defined at
-/// the set of mesh entities of a fixed topological dimension.  A
-/// MeshFunction may for example be used to store a global numbering
-/// scheme for the entities of a (parallel) mesh, marking sub
-/// domains or boolean markers for mesh refinement.
-
+/// A MeshFunction is a function that can be evaluated at a set of mesh
+/// entities. A MeshFunction is discrete and is only defined at the set
+/// of mesh entities of a fixed topological dimension.  A MeshFunction
+/// may for example be used to store a global numbering scheme for the
+/// entities of a (parallel) mesh, marking sub domains or boolean
+/// markers for mesh refinement.
+/// @tparam Type
 template <typename T>
 class MeshFunction
 {
 public:
-  /// Create MeshFunction of given dimension on given mesh and initialize
-  /// to a value
-  ///
-  /// @param     mesh (_Mesh_)
-  ///         The mesh to create mesh function on.
-  /// @param     dim (std::size_t)
-  ///         The mesh entity dimension.
-  /// @param     value (T)
-  ///         The value.
+  /// Create MeshFunction of given dimension on given mesh and
+  /// initialize to a value
+  /// @param[in] mesh The mesh to create mesh function on
+  /// @param[in] dim (std::size_t) The mesh entity dimension
+  /// @param[in] value The initial value of the MeshFunction
   MeshFunction(std::shared_ptr<const Mesh> mesh, std::size_t dim,
                const T& value);
 
-  /// Create mesh function from a MeshValueCollecion
-  ///
-  /// @param mesh (_Mesh_)
-  ///         The mesh to create mesh function on.
-  /// @param value_collection (_MeshValueCollection_)
-  ///         The mesh value collection for the mesh function data.
-  /// @param default_value (T)
-  ///         The default value, if unset in value_collection
+  /// Create mesh function from a MeshValueCollection
+  /// @param[in] mesh The mesh to create mesh function on
+  /// @param[in] value_collection The mesh value collection for the mesh
+  ///                             function data.
+  /// @param[in] default_value The default value if unset in
+  ///                          value_collection
   MeshFunction(std::shared_ptr<const Mesh> mesh,
                const MeshValueCollection<T>& value_collection,
                const T& default_value);
 
   /// Copy constructor
-  ///
-  /// @param f (_MeshFunction_)
-  ///         The object to be copied.
+  /// @param[in] f The object to be copied
   MeshFunction(const MeshFunction<T>& f) = default;
 
   /// Move constructor
-  ///
-  /// @param f (_MeshFunction_)
-  ///         The object to be moved.
+  /// @param f The object to be moved
   MeshFunction(MeshFunction<T>&& f) = default;
 
   /// Destructor
   ~MeshFunction() = default;
 
   /// Assign MeshFunction to other mesh function
-  /// Assignment operator
-  ///
-  /// @param f (_MeshFunction_)
-  ///         A _MeshFunction_ object to assign to another MeshFunction.
+  /// @param[in] f A MeshFunction object to assign to another
+  ///              MeshFunction
   MeshFunction<T>& operator=(const MeshFunction<T>& f) = default;
 
   /// Return mesh associated with mesh function
-  ///
-  /// @return _Mesh_
-  ///         The mesh.
+  /// @return The mesh
   std::shared_ptr<const Mesh> mesh() const;
 
   /// Return topological dimension
-  ///
-  /// @return int
-  ///         The dimension.
+  /// @return The dimension.
   int dim() const;
 
   /// Return array of values (const. version)
-  ///
-  /// return T
-  ///         The values.
+  /// @return The mesh function values
   Eigen::Ref<const Eigen::Array<T, Eigen::Dynamic, 1>> values() const;
 
   /// Return array of values
-  ///
-  /// return T
-  ///         The values.
+  /// @return The mesh function values
   Eigen::Ref<Eigen::Array<T, Eigen::Dynamic, 1>> values();
 
-  /// Set values
-  ///
-  /// If all vertices of a mesh entity satisfy the marking
+  /// Marking function used to identify mesh entities
+  using marking_function = std::function<Eigen::Array<bool, Eigen::Dynamic, 1>(
+      const Eigen::Ref<
+          const Eigen::Array<double, Eigen::Dynamic, 3, Eigen::RowMajor>>
+          x)>;
+
+  /// Set values. If all vertices of a mesh entity satisfy the marking
   /// function then the entity is marked with the given value.
-  ///
-  /// @param mark (std::function)
-  ///          Marking function used to identify which
-  ///          mesh entities to set value to.
-  /// @param value (T)
-  void
-  mark(const std::function<Eigen::Array<bool, Eigen::Dynamic, 1>(
-           const Eigen::Ref<
-               const Eigen::Array<double, Eigen::Dynamic, 3, Eigen::RowMajor>>
-               x)>& mark,
-       T value);
+  /// @param[in] mark Marking function used to identify which mesh
+  ///                 entities to set value to.
+  /// @param[in] value The value to set for marked mesh entities
+  void mark(const marking_function& mark, T value);
 
   /// Name
   std::string name = "m";
 
-  /// ID
+  /// Unique ID
   const std::size_t id = common::UniqueIdGenerator::id();
 
 private:
@@ -247,30 +224,30 @@ void MeshFunction<T>::mark(
             x)>& mark,
     T value)
 {
-  // First fetch all vertices of the mesh
+  // Get all vertices of the mesh
   const Eigen::Array<double, Eigen::Dynamic, 3, Eigen::RowMajor>& x
       = _mesh->geometry().points();
 
-  // Evaluate the marking function on all vertices
+  // Evaluate the marker function at each vertex
   EigenArrayXb marked = mark(x);
 
-  for (const auto& entity :
-       mesh::MeshRange(*_mesh.get(), _dim))
+  // Iterate over all mesh entities of the dimension of this
+  // MeshFunction
+  for (const auto& entity : mesh::MeshRange(*_mesh.get(), _dim))
   {
-    // Run over all entities of the dimension of this MeshFunction
 
-    // By default, all vertices are marked
+    // By default, assume maker is 'true' at all vertices of this entity
     bool all_marked = true;
 
-    // And run over all vertices of this mesh entity
+    // Iterate over all vertices of this mesh entity
     for (const auto& v : mesh::EntityRange(entity, 0))
     {
       const std::int32_t idx = v.index();
       all_marked = (marked[idx] && all_marked);
     }
 
-    // If all vertices belonging to this mesh entity are marked
-    // then also this mesh entity is marked
+    // If all vertices belonging to this mesh entity are marked, then
+    // mark this mesh entity
     if (all_marked)
       _values[entity.index()] = value;
   }

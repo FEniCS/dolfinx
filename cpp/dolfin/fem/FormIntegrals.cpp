@@ -20,8 +20,8 @@ FormIntegrals::FormIntegrals()
   // Do nothing
 }
 //-----------------------------------------------------------------------------
-const std::function<void(PetscScalar*, const PetscScalar*, const double*,
-                         const int*, const int*)>&
+const std::function<void(PetscScalar*, const PetscScalar*, const PetscScalar*,
+                         const double*, const int*, const int*)>&
 FormIntegrals::get_tabulate_tensor_function(FormIntegrals::Type type,
                                             unsigned int i) const
 {
@@ -35,11 +35,10 @@ FormIntegrals::get_tabulate_tensor_function(FormIntegrals::Type type,
   return integrals[i].tabulate;
 }
 //-----------------------------------------------------------------------------
-void FormIntegrals::register_tabulate_tensor(FormIntegrals::Type type, int i,
-                                             void (*fn)(PetscScalar*,
-                                                        const PetscScalar*,
-                                                        const double*,
-                                                        const int*, const int*))
+void FormIntegrals::register_tabulate_tensor(
+    FormIntegrals::Type type, int i,
+    void (*fn)(PetscScalar*, const PetscScalar*, const PetscScalar*,
+               const double*, const int*, const int*))
 {
   const int type_index = static_cast<int>(type);
   std::vector<struct FormIntegrals::Integral>& integrals
@@ -158,13 +157,17 @@ void FormIntegrals::set_default_domains(const mesh::Mesh& mesh)
   {
     // If there is a default integral, define it only on surface facets
     exf_integrals[0].active_entities.clear();
-    assert(mesh.topology().connectivity(tdim - 1, tdim));
-    std::shared_ptr<const mesh::Connectivity> connectivity_facet_cell
+    std::shared_ptr<const mesh::Connectivity> connectivity
         = mesh.topology().connectivity(tdim - 1, tdim);
-    for (const mesh::MeshEntity& facet : mesh::MeshRange(
-             mesh, tdim - 1, mesh::MeshRangeType::REGULAR))
+    if (!connectivity)
     {
-      if (connectivity_facet_cell->size_global(facet.index()) == 1)
+      throw std::runtime_error(
+          "Facet-cell connectivity has not been computed.");
+    }
+    for (const mesh::MeshEntity& facet :
+         mesh::MeshRange(mesh, tdim - 1, mesh::MeshRangeType::REGULAR))
+    {
+      if (connectivity->size_global(facet.index()) == 1)
         exf_integrals[0].active_entities.push_back(facet.index());
     }
   }
@@ -176,9 +179,7 @@ void FormIntegrals::set_default_domains(const mesh::Mesh& mesh)
     // If there is a default integral, define it only on interior facets
     inf_integrals[0].active_entities.clear();
     inf_integrals[0].active_entities.reserve(mesh.num_entities(tdim - 1));
-
     const int rank = MPI::rank(mesh.mpi_comm());
-
     if (MPI::size(mesh.mpi_comm()) > 1)
     {
       // Get owner (MPI ranks) of ghost cells
@@ -186,10 +187,16 @@ void FormIntegrals::set_default_domains(const mesh::Mesh& mesh)
           = mesh.topology().cell_owner();
       const std::int32_t ghost_offset = mesh.topology().ghost_offset(tdim);
 
-      assert(mesh.topology().connectivity(tdim - 1, tdim));
-      auto connectivity = mesh.topology().connectivity(tdim - 1, tdim);
-      for (const mesh::MeshEntity& facet : mesh::MeshRange(
-               mesh, tdim - 1, mesh::MeshRangeType::ALL))
+      std::shared_ptr<const mesh::Connectivity> connectivity
+          = mesh.topology().connectivity(tdim - 1, tdim);
+      if (!connectivity)
+      {
+        throw std::runtime_error(
+            "Facet-cell connectivity has not been computed.");
+      }
+
+      for (const mesh::MeshEntity& facet :
+           mesh::MeshRange(mesh, tdim - 1, mesh::MeshRangeType::ALL))
       {
         if (connectivity->size(facet.index()) == 2)
         {
@@ -207,13 +214,18 @@ void FormIntegrals::set_default_domains(const mesh::Mesh& mesh)
     }
     else
     {
-      assert(mesh.topology().connectivity(tdim - 1, tdim));
-      std::shared_ptr<const mesh::Connectivity> connectivity_facet_cell
+      std::shared_ptr<const mesh::Connectivity> connectivity
           = mesh.topology().connectivity(tdim - 1, tdim);
-      for (const mesh::MeshEntity& facet : mesh::MeshRange(
-               mesh, tdim - 1, mesh::MeshRangeType::REGULAR))
+      if (!connectivity)
       {
-        if (connectivity_facet_cell->size_global(facet.index()) != 1)
+        throw std::runtime_error(
+            "Facet-cell connectivity has not been computed.");
+      }
+
+      for (const mesh::MeshEntity& facet :
+           mesh::MeshRange(mesh, tdim - 1, mesh::MeshRangeType::REGULAR))
+      {
+        if (connectivity->size_global(facet.index()) != 1)
           inf_integrals[0].active_entities.push_back(facet.index());
       }
     }

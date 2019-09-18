@@ -5,7 +5,6 @@
 // SPDX-License-Identifier:    LGPL-3.0-or-later
 
 #include "Function.h"
-#include "FunctionSpace.h"
 #include <algorithm>
 #include <cfloat>
 #include <dolfin/common/IndexMap.h>
@@ -127,7 +126,6 @@ Function Function::collapse() const
 //-----------------------------------------------------------------------------
 std::shared_ptr<const FunctionSpace> Function::function_space() const
 {
-  assert(_function_space);
   return _function_space;
 }
 //-----------------------------------------------------------------------------
@@ -149,11 +147,14 @@ la::PETScVector& Function::vector()
 //-----------------------------------------------------------------------------
 const la::PETScVector& Function::vector() const { return _vector; }
 //-----------------------------------------------------------------------------
-void Function::eval(Eigen::Ref<Eigen::Array<PetscScalar, Eigen::Dynamic,
-                                            Eigen::Dynamic, Eigen::RowMajor>>
-                        values,
-                    const Eigen::Ref<const EigenRowArrayXXd> x,
-                    const geometry::BoundingBoxTree& bb_tree) const
+void Function::eval(
+    const Eigen::Ref<const Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic,
+                                        Eigen::RowMajor>>
+        x,
+    const geometry::BoundingBoxTree& bb_tree,
+    Eigen::Ref<Eigen::Array<PetscScalar, Eigen::Dynamic, Eigen::Dynamic,
+                            Eigen::RowMajor>>
+        u) const
 {
   assert(_function_space);
   assert(_function_space->mesh);
@@ -191,18 +192,18 @@ void Function::eval(Eigen::Ref<Eigen::Array<PetscScalar, Eigen::Dynamic,
     const mesh::MeshEntity cell(mesh, tdim, id);
 
     // Call evaluate function
-    eval(values.row(i), x.row(i), cell);
+    eval(x.row(i), cell, u.row(i));
   }
 }
 //-----------------------------------------------------------------------------
 void Function::eval(
-    Eigen::Ref<Eigen::Array<PetscScalar, Eigen::Dynamic, Eigen::Dynamic,
-                            Eigen::RowMajor>>
-        values,
     const Eigen::Ref<const Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic,
                                         Eigen::RowMajor>>
         x,
-    const mesh::MeshEntity& cell) const
+    const mesh::MeshEntity& cell,
+    Eigen::Ref<Eigen::Array<PetscScalar, Eigen::Dynamic, Eigen::Dynamic,
+                            Eigen::RowMajor>>
+        u) const
 {
   // FIXME: This function needs to be changed to handle an arbitrary
   // number of points for efficiency
@@ -220,7 +221,7 @@ void Function::eval(
   const int tdim = mesh.topology().dim();
   assert(cell.dim() == tdim);
 
-  assert(x.rows() == values.rows());
+  assert(x.rows() == u.rows());
   assert(_function_space->element);
   const fem::FiniteElement& element = *_function_space->element;
 
@@ -247,7 +248,7 @@ void Function::eval(
     for (int j = 0; j < gdim; ++j)
       coordinate_dofs(i, j) = x_g(cell_g[pos_g[cell_index] + i], j);
 
-  restrict(coefficients.data(), cell, coordinate_dofs);
+  restrict(cell, coordinate_dofs, coefficients.data());
 
   // Get coordinate mapping
   std::shared_ptr<const fem::CoordinateMapping> cmap
@@ -285,7 +286,7 @@ void Function::eval(
                                     detJ, K);
 
   // Compute expansion
-  values.setZero();
+  u.setZero();
   for (std::size_t p = 0; p < num_points; ++p)
   {
     for (std::size_t i = 0; i < space_dimension; ++i)
@@ -293,7 +294,7 @@ void Function::eval(
       for (std::size_t j = 0; j < value_size; ++j)
       {
         // TODO: Find an Eigen shortcut fot this operation
-        values.row(p)[j] += coefficients[i] * basis_values(p, i, j);
+        u.row(p)[j] += coefficients[i] * basis_values(p, i, j);
       }
     }
   }
@@ -306,13 +307,7 @@ void Function::interpolate(const Function& v)
   _function_space->interpolate(x.x, v);
 }
 //-----------------------------------------------------------------------------
-void Function::interpolate(
-    const std::function<
-        void(Eigen::Ref<Eigen::Array<PetscScalar, Eigen::Dynamic,
-                                     Eigen::Dynamic, Eigen::RowMajor>>,
-             const Eigen::Ref<const Eigen::Array<
-                 double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>>)>& f)
-
+void Function::interpolate(const FunctionSpace::interpolation_function& f)
 {
   la::VecWrapper x(_vector.vec());
   _function_space->interpolate(x.x, f);
@@ -351,8 +346,9 @@ std::vector<int> Function::value_shape() const
 }
 //-----------------------------------------------------------------------------
 void Function::restrict(
-    PetscScalar* w, const mesh::MeshEntity& cell,
-    const Eigen::Ref<const EigenRowArrayXXd>& coordinate_dofs) const
+    const mesh::MeshEntity& cell,
+    const Eigen::Ref<const EigenRowArrayXXd>& coordinate_dofs,
+    PetscScalar* w) const
 {
   assert(w);
   assert(_function_space);
@@ -418,7 +414,7 @@ Function::compute_point_values() const
     values.resize(x.rows(), value_size_loc);
 
     // Call evaluate function
-    eval(values, x, cell);
+    eval(x, cell, values);
 
     // Copy values to array of point values
     const std::int32_t* dofs = cell_dofs.connections(cell.index());
@@ -427,6 +423,5 @@ Function::compute_point_values() const
   }
 
   return point_values;
-
 }
 //-----------------------------------------------------------------------------

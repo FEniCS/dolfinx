@@ -23,12 +23,9 @@ class MeshEntity
 public:
   /// Constructor
   ///
-  /// @param   mesh (_Mesh_)
-  ///         The mesh.
-  /// @param     dim (std::size_t)
-  ///         The topological dimension.
-  /// @param     index (std::size_t)
-  ///         The index.
+  /// @param[in] mesh The mesh
+  /// @param[in] dim The topological dimension
+  /// @param[in] index The entity index
   MeshEntity(const Mesh& mesh, int dim, std::int32_t index)
       : _mesh(&mesh), _dim(dim), _local_index(index)
   {
@@ -44,19 +41,16 @@ public:
   /// Destructor
   ~MeshEntity() = default;
 
-  /// Assignement operator
+  /// Assignment operator
   MeshEntity& operator=(const MeshEntity& e) = default;
 
-  /// Move assignement operator
+  /// Move assignment operator
   MeshEntity& operator=(MeshEntity&& e) = default;
 
   /// Comparison Operator
   ///
-  /// @param e (MeshEntity)
-  ///         Another mesh entity
-  ///
-  ///  @return    bool
-  ///         True if the two mesh entities are equal.
+  /// @param e Another mesh entity
+  ///  @return True if the two mesh entities are equal.
   bool operator==(const MeshEntity& e) const
   {
     return (_mesh == e._mesh and _dim == e._dim
@@ -65,39 +59,30 @@ public:
 
   /// Comparison Operator
   ///
-  /// @param e (MeshEntity)
-  ///         Another mesh entity.
-  ///
-  /// @return     bool
-  ///         True if the two mesh entities are NOT equal.
+  /// @param e Another mesh entity.
+  /// @return rue if the two mesh entities are NOT equal.
   bool operator!=(const MeshEntity& e) const { return !operator==(e); }
 
   /// Return mesh associated with mesh entity
   ///
-  /// @return Mesh
-  ///         The mesh.
+  /// @return The mesh.
   const Mesh& mesh() const { return *_mesh; }
 
   /// Return topological dimension
   ///
-  /// @return     std::size_t
-  ///         The dimension.
+  /// @return The dimension
   int dim() const { return _dim; }
 
   /// Return index of mesh entity
   ///
-  /// @return     std::size_t
-  ///         The index.
+  /// @return The index
   std::int32_t index() const { return _local_index; }
 
   /// Return array of indices for incident mesh entities of given
   /// topological dimension
   ///
-  /// @param     dim (std::size_t)
-  ///         The topological dimension.
-  ///
-  /// @return     std::size_t
-  ///         The index for incident mesh entities of given dimension.
+  /// @param dim The topological dimension
+  /// @return The index for incident mesh entities of given dimension
   const std::int32_t* entities(int dim) const
   {
     if (dim == _dim)
@@ -116,20 +101,14 @@ public:
   /// Compute local index of given incident entity (error if not
   /// found)
   ///
-  /// @param     entity (_MeshEntity_)
-  ///         The mesh entity.
-  ///
-  /// @return     std::size_t
-  ///         The local index of given entity.
+  /// @param[in] entity The mesh entity.
+  /// @return The local index of given entity.
   int index(const MeshEntity& entity) const;
 
   /// Return informal string representation (pretty-print)
   ///
-  /// @param      verbose (bool)
-  ///         Flag to turn on additional output.
-  ///
-  /// @return      std::string
-  ///         An informal representation of the function space.
+  /// @param[in] verbose Flag to turn on additional output
+  /// @return An informal representation of the function space
   std::string str(bool verbose) const;
 
 protected:

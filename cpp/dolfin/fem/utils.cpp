@@ -498,7 +498,7 @@ fem::create_element_dof_layout(const ufc_dofmap& dofmap,
   for (int i = 0; i < dofmap.num_sub_dofmaps; ++i)
   {
     auto ufc_sub_dofmap
-        = std::shared_ptr<ufc_dofmap>(dofmap.create_sub_dofmap(i));
+        = std::shared_ptr<ufc_dofmap>(dofmap.create_sub_dofmap(i), std::free);
     ufc_sub_dofmaps.push_back(ufc_sub_dofmap);
     const int num_dofs = ufc_sub_dofmap->num_element_support_dofs;
     offsets.push_back(offsets.back() + num_dofs);
@@ -545,6 +545,21 @@ fem::get_coeffs_from_ufc_form(const ufc_form& ufc_form)
             ufc_form.original_coefficient_position(i), names[i], nullptr));
   }
   return coeffs;
+}
+//-----------------------------------------------------------------------------
+std::vector<std::pair<std::string, std::shared_ptr<const function::Constant>>>
+fem::get_constants_from_ufc_form(const ufc_form& ufc_form)
+{
+  std::vector<std::pair<std::string, std::shared_ptr<const function::Constant>>>
+      constants;
+  const char** names = ufc_form.constant_name_map();
+  for (int i = 0; i < ufc_form.num_constants; ++i)
+  {
+    constants.push_back(
+        std::make_pair<std::string, std::shared_ptr<const function::Constant>>(
+            names[i], nullptr));
+  }
+  return constants;
 }
 //-----------------------------------------------------------------------------
 fem::Form fem::create_form(
@@ -626,7 +641,7 @@ fem::Form fem::create_form(
 
   return fem::Form(spaces, integrals,
                    FormCoefficients(fem::get_coeffs_from_ufc_form(ufc_form)),
-                   coord_mapping);
+                   fem::get_constants_from_ufc_form(ufc_form), coord_mapping);
 }
 //-----------------------------------------------------------------------------
 std::shared_ptr<const fem::CoordinateMapping>

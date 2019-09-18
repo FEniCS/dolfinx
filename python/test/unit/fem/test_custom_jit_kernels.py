@@ -18,13 +18,14 @@ from dolfin_utils.test.skips import skip_if_complex
 c_signature = numba.types.void(
     numba.types.CPointer(numba.typeof(PETSc.ScalarType())),
     numba.types.CPointer(numba.typeof(PETSc.ScalarType())),
+    numba.types.CPointer(numba.typeof(PETSc.ScalarType())),
     numba.types.CPointer(numba.types.double),
     numba.types.CPointer(numba.types.int32),
     numba.types.CPointer(numba.types.int32))
 
 
 @numba.cfunc(c_signature, nopython=True)
-def tabulate_tensor_A(A_, w_, coords_, entity_local_index, cell_orientation):
+def tabulate_tensor_A(A_, w_, c_, coords_, entity_local_index, cell_orientation):
     A = numba.carray(A_, (3, 3), dtype=PETSc.ScalarType)
     coordinate_dofs = numba.carray(coords_, (3, 2), dtype=np.float64)
 
@@ -42,7 +43,7 @@ def tabulate_tensor_A(A_, w_, coords_, entity_local_index, cell_orientation):
 
 
 @numba.cfunc(c_signature, nopython=True)
-def tabulate_tensor_b(b_, w_, coords_, local_index, orientation):
+def tabulate_tensor_b(b_, w_, c_, coords_, local_index, orientation):
     b = numba.carray(b_, (3), dtype=PETSc.ScalarType)
     coordinate_dofs = numba.carray(coords_, (3, 2), dtype=np.float64)
     x0, y0 = coordinate_dofs[0, :]
@@ -55,7 +56,7 @@ def tabulate_tensor_b(b_, w_, coords_, local_index, orientation):
 
 
 @numba.cfunc(c_signature, nopython=True)
-def tabulate_tensor_b_coeff(b_, w_, coords_, local_index, orientation):
+def tabulate_tensor_b_coeff(b_, w_, c_, coords_, local_index, orientation):
     b = numba.carray(b_, (3), dtype=PETSc.ScalarType)
     w = numba.carray(w_, (1), dtype=PETSc.ScalarType)
     coordinate_dofs = numba.carray(coords_, (3, 2), dtype=np.float64)
@@ -124,6 +125,7 @@ def test_cffi_assembly():
         #include <math.h>
         #include <stdalign.h>
         void tabulate_tensor_poissonA(double* restrict A, const double* w,
+                                    const double* c,
                                     const double* restrict coordinate_dofs,
                                     const int* entity_local_index,
                                     const int* cell_orientation)
@@ -172,6 +174,7 @@ def test_cffi_assembly():
         }
 
         void tabulate_tensor_poissonL(double* restrict A, const double* w,
+                                     const double* c,
                                      const double* restrict coordinate_dofs,
                                      const int* entity_local_index,
                                      const int* cell_orientation)
@@ -199,10 +202,12 @@ def test_cffi_assembly():
         """)
         ffibuilder.cdef("""
         void tabulate_tensor_poissonA(double* restrict A, const double* w,
+                                    const double* c,
                                     const double* restrict coordinate_dofs,
                                     const int* entity_local_index,
                                     const int* cell_orientation);
         void tabulate_tensor_poissonL(double* restrict A, const double* w,
+                                    const double* c,
                                     const double* restrict coordinate_dofs,
                                     const int* entity_local_index,
                                     const int* cell_orientation);

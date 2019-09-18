@@ -122,11 +122,8 @@ W = FunctionSpace(mesh, TH)
 # x1 = 0, x1 = 1 and around the dolphin
 
 
-class NoSlip:
-    """Evaluate the no-slip condition"""
-
-    def eval(self, values, x):
-        values[:, :] = 0.0
+def noslip_expr(values, x):
+    values[:, :] = 0.0
 
 
 # Extract subdomain facet arrays
@@ -134,9 +131,7 @@ mf = sub_domains.values
 mf0 = np.where(mf == 0)
 mf1 = np.where(mf == 1)
 
-# noslip_expr = Expression(noslip_eval, shape=(2,))
-noslip_expr = NoSlip()
-noslip = interpolate(noslip_expr.eval, W.sub(0).collapse())
+noslip = interpolate(noslip_expr, W.sub(0).collapse())
 
 bc0 = DirichletBC(W.sub(0), noslip, mf0[0])
 
@@ -203,8 +198,7 @@ print("Norm of velocity coefficient vector: %.15g" % u.vector.norm())
 print("Norm of pressure coefficient vector: %.15g" % p.vector.norm())
 
 # Check pressure norm
-pnorm = p.vector.norm()
-assert np.isclose(pnorm, 4147.69457577)
+assert np.isclose(p.vector.norm(), 4147.69457577)
 
 # Finally, we can save and plot the solutions::
 

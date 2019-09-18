@@ -50,7 +50,7 @@ with u_bc.vector.localForm() as loc:
     loc.set(0.0)
 
 # Displacement BC is applied to the right side
-bc = dolfin.fem.DirichletBC(U, u_bc, lambda x, only_bndry: numpy.isclose(x[:, 0], 0.0))
+bc = dolfin.fem.DirichletBC(U, u_bc, lambda x: numpy.isclose(x[:, 0], 0.0))
 
 
 def free_end(x):
@@ -100,25 +100,26 @@ numba.cffi_support.register_type(ffi.typeof('double _Complex'),
 c_signature = numba.types.void(
     numba.types.CPointer(numba.typeof(PETSc.ScalarType())),
     numba.types.CPointer(numba.typeof(PETSc.ScalarType())),
+    numba.types.CPointer(numba.typeof(PETSc.ScalarType())),
     numba.types.CPointer(numba.types.double),
     numba.types.CPointer(numba.types.int32),
     numba.types.CPointer(numba.types.int32))
 
 
 @numba.cfunc(c_signature, nopython=True)
-def tabulate_condensed_tensor_A(A_, w_, coords_, entity_local_index, cell_orientation):
+def tabulate_condensed_tensor_A(A_, w_, c_, coords_, entity_local_index, cell_orientation):
     # Prepare target condensed local elem tensor
     A = numba.carray(A_, (Usize, Usize), dtype=PETSc.ScalarType)
 
     # Tabulate all sub blocks locally
     A00 = numpy.zeros((Ssize, Ssize), dtype=PETSc.ScalarType)
-    kernel00(ffi.from_buffer(A00), w_, coords_, entity_local_index, cell_orientation)
+    kernel00(ffi.from_buffer(A00), w_, c_, coords_, entity_local_index, cell_orientation)
 
     A01 = numpy.zeros((Ssize, Usize), dtype=PETSc.ScalarType)
-    kernel01(ffi.from_buffer(A01), w_, coords_, entity_local_index, cell_orientation)
+    kernel01(ffi.from_buffer(A01), w_, c_, coords_, entity_local_index, cell_orientation)
 
     A10 = numpy.zeros((Usize, Ssize), dtype=PETSc.ScalarType)
-    kernel10(ffi.from_buffer(A10), w_, coords_, entity_local_index, cell_orientation)
+    kernel10(ffi.from_buffer(A10), w_, c_, coords_, entity_local_index, cell_orientation)
 
     # A = - A10 * A00^{-1} * A01
     A[:, :] = - A10 @ numpy.linalg.solve(A00, A01)
@@ -152,7 +153,7 @@ bb_tree = dolfin.cpp.geometry.BoundingBoxTree(mesh, 2)
 
 # Check against standard table value
 if bb_tree.collides([48.0, 52.0, 0.0]):
-    value = uc([48.0, 52.0], bb_tree)
+    value = uc.eval([48.0, 52.0], bb_tree)
     assert(numpy.isclose(value[1], 23.95, rtol=1.e-2))
 
 # Check the equality of displacement based and mixed condensed

@@ -90,6 +90,7 @@
 #include "poisson.h"
 #include <cfloat>
 #include <dolfin.h>
+#include <dolfin/function/Constant.h>
 #include <dolfin/mesh/Ordering.h>
 
 using namespace dolfin;
@@ -150,10 +151,10 @@ int main(int argc, char* argv[])
   // Define boundary condition
   auto u0 = std::make_shared<function::Function>(V);
 
-  std::vector<std::shared_ptr<const fem::DirichletBC>> bc = {
-      std::make_shared<fem::DirichletBC>(V, u0, [](auto x, bool only_boundary) {
-        return (x.col(0) < DBL_EPSILON or x.col(0) > 1.0 - DBL_EPSILON);
-      })};
+  std::vector<std::shared_ptr<const fem::DirichletBC>> bc
+      = {std::make_shared<fem::DirichletBC>(V, u0, [](auto x) {
+          return (x.col(0) < DBL_EPSILON or x.col(0) > 1.0 - DBL_EPSILON);
+        })};
 
   // Next, we define the variational formulation by initializing the
   // bilinear and linear forms (:math:`a`, :math:`L`) using the previously
@@ -188,6 +189,10 @@ int main(int argc, char* argv[])
   g->interpolate(
       [](auto values, auto x) { values = Eigen::sin(5 * x.col(0)); });
   L->set_coefficients({{"f", f}, {"g", g}});
+
+  // Prepare and set Constants for the bilinear form
+  auto kappa = std::make_shared<function::Constant>(2.0);
+  a->set_constants({{"kappa", kappa}});
 
   // Now, we have specified the variational forms and can consider the
   // solution of the variational problem. First, we need to define a
