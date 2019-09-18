@@ -102,11 +102,14 @@ public:
   /// this is just a vector over those cells
   const std::vector<std::int32_t>& cell_owner() const;
 
-  /// Marker for surface entities of dimension dim. An entity is considered a
-  /// surface entity, if it is connected to a surface Facet of a Mesh.
-  /// Returns a list of bool, set to True where they are on the
-  /// surface of the mesh.
-  std::vector<bool> surface_entity_marker(int dim) const;
+  /// Marker for entities of dimension dim on the boundary. An entity of
+  /// co-dimension < 0 is on the boundary if it is connected to boundary
+  /// facet. It i not defined for codimension 0.
+  /// @param[in] dim Toplogical dimension of the entities to check. It
+  /// must be less than the topological dimension.
+  /// @return Vector of length equal to number of local entities, with
+  ///          'true' for enties on the boundary and otherwise 'false'.
+  std::vector<bool> on_boundary(int dim) const;
 
   /// Return connectivity for given pair of topological dimensions
   std::shared_ptr<Connectivity> connectivity(std::size_t d0, std::size_t d1);

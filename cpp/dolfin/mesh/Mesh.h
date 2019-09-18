@@ -215,7 +215,7 @@ public:
   /// Polynomial degree of the mesh geometry
   std::int32_t degree() const;
 
-  /// Cell type
+  /// Cell type for this Mesh.
   const mesh::CellType cell_type;
 
 private:

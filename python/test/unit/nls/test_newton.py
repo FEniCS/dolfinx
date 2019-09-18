@@ -96,7 +96,7 @@ def test_linear_pde():
     v = function.TestFunction(V)
     F = inner(10.0, v) * dx - inner(grad(u), grad(v)) * dx
 
-    def boundary(x, only_boundary):
+    def boundary(x):
         """Define Dirichlet boundary (x = 0 or x = 1)."""
         return np.logical_or(x[:, 0] < 1.0e-8, x[:, 0] > 1.0 - 1.0e-8)
 
@@ -132,7 +132,7 @@ def test_nonlinear_pde():
     F = inner(5.0, v) * dx - ufl.sqrt(u * u) * inner(
         grad(u), grad(v)) * dx - inner(u, v) * dx
 
-    def boundary(x, only_boundary):
+    def boundary(x):
         """Define Dirichlet boundary (x = 0 or x = 1)."""
         return np.logical_or(x[:, 0] < 1.0e-8, x[:, 0] > 1.0 - 1.0e-8)
 
@@ -170,7 +170,7 @@ def test_nonlinear_pde_snes():
     F = inner(5.0, v) * dx - ufl.sqrt(u * u) * inner(
         grad(u), grad(v)) * dx - inner(u, v) * dx
 
-    def boundary(x, only_boundary):
+    def boundary(x):
         """Define Dirichlet boundary (x = 0 or x = 1)."""
         return np.logical_or(x[:, 0] < 1.0e-8, x[:, 0] > 1.0 - 1.0e-8)
 

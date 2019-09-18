@@ -22,7 +22,7 @@ namespace mesh
 {
 
 /// Geometry stores the geometry imposed on a mesh.
-
+///
 /// Currently, the geometry is represented by the set of coordinates for
 /// the vertices of a mesh, but other representations are possible.
 

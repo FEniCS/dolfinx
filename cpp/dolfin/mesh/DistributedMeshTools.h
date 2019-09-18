@@ -41,7 +41,7 @@ public:
   ///          number_of_global_entities)
   static std::tuple<std::vector<std::int64_t>,
                     std::map<std::int32_t, std::set<std::int32_t>>, std::size_t>
-    compute_entity_numbering(const Mesh& mesh, int d);
+  compute_entity_numbering(const Mesh& mesh, int d);
 
   /// Compute number of cells connected to each facet (globally). Facets
   /// on internal boundaries will be connected to two cells (with the
