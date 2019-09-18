@@ -149,20 +149,10 @@ int main(int argc, char* argv[])
   // Create Dirichlet boundary conditions
   auto u0 = std::make_shared<function::Function>(V);
   std::vector<std::shared_ptr<const fem::DirichletBC>> bcs
-      = {std::make_shared<fem::DirichletBC>(V, u_clamp,
-                                            [](auto x) {
-                                              EigenArrayXb flags(x.rows());
-                                              for (int i = 0; i < x.rows(); ++i)
-                                                flags[i] = (std::abs(x(i, 0))
-                                                            < DBL_EPSILON);
-
-                                              return flags;
-                                            }),
+      = {std::make_shared<fem::DirichletBC>(
+             V, u_clamp, [](auto x) { return x.col(0) < DBL_EPSILON; }),
          std::make_shared<fem::DirichletBC>(V, u_rotation, [](auto x) {
-           EigenArrayXb flags(x.rows());
-           for (int i = 0; i < x.rows(); ++i)
-             flags[i] = (std::abs(x(i, 0) - 1.0) < DBL_EPSILON);
-           return flags;
+           return (x.col(0) - 1.0).abs() < DBL_EPSILON;
          })};
 
   HyperElasticProblem problem(u, L, a, bcs);
