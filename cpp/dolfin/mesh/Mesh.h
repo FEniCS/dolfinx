@@ -216,7 +216,7 @@ public:
   std::int32_t degree() const;
 
   /// Cell type for this Mesh.
-  mesh::CellType cell_type;
+  const mesh::CellType cell_type;
 
 private:
   // Mesh topology

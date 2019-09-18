@@ -1,4 +1,4 @@
-// Copyright (C) 2007-2018 Anders Logg and Garth N. Wells
+// Copyright (C) 2007-2019 Anders Logg and Garth N. Wells
 //
 // This file is part of DOLFIN (https://www.fenicsproject.org)
 //
@@ -7,6 +7,7 @@
 #pragma once
 
 #include <Eigen/Dense>
+#include <functional>
 #include <memory>
 #include <petscsys.h>
 #include <vector>
@@ -42,9 +43,8 @@ namespace fem
 /// The boundary indicators may be specified in a number of different
 /// ways:
 ///
-/// 1. Providing a marking function, mark(x, only_boundary), to
-///    specify on which facets the boundary conditions should be
-///    applied.
+/// 1. Providing a marking function, mark(x, only_boundary), to specify
+///    on which facets the boundary conditions should be applied.
 /// 2. Providing list of facets (by index, local to a process).
 ///
 /// The degrees-of-freedom to which boundary conditions are applied are
@@ -69,7 +69,7 @@ namespace fem
 ///
 /// 3. (not yet implemented) pointwise approach.
 ///
-///    For pointwise boundary conditions e.g. pointloads..
+///    For pointwise boundary conditions e.g. pointloads.
 
 class DirichletBC
 {
@@ -93,7 +93,8 @@ public:
   /// @param[in] V The function (sub)space on which the boundary
   ///              condition is applied
   /// @param[in] g The boundary condition value
-  /// @param[in] mark The marking method
+  /// @param[in] mark The marking function. Only boundary facet are
+  ///                 tested.
   /// @param[in] method Optional argument: A string specifying the
   ///                   method to identify dofs
   DirichletBC(std::shared_ptr<const function::FunctionSpace> V,
@@ -107,7 +108,7 @@ public:
   ///              condition is applied
   /// @param[in] g The boundary condition value
   /// @param[in] facet_indices Facets on which the boundary condition is
-  ///                    applied (facet index local to process)
+  ///                           applied (facet index local to process)
   /// @param[in] method Optional argument: A string specifying the
   ///                   method to identify dofs.
   DirichletBC(std::shared_ptr<const function::FunctionSpace> V,

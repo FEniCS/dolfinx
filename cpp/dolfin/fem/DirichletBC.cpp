@@ -138,7 +138,6 @@ std::vector<std::int32_t> marked_facets(
   // with. If a vertex is on the boundary, give it an index from [0,
   // count)
   std::vector<std::int32_t> boundary_vertex(mesh.num_entities(0), -1);
-  int pos = 0;
   std::shared_ptr<const mesh::Connectivity> connectivity
       = mesh.topology().connectivity(dim, tdim);
   if (!connectivity)
@@ -146,6 +145,7 @@ std::vector<std::int32_t> marked_facets(
 
   const int num_facet_vertices = mesh::cell_num_entities(
       mesh::cell_entity_type(mesh.cell_type, tdim - 1), 0);
+  int pos = 0;
   for (const auto& facet : mesh::MeshRange(mesh, tdim - 1))
   {
     if (connectivity->size_global(facet.index()) == 1)
@@ -154,10 +154,7 @@ std::vector<std::int32_t> marked_facets(
       for (int i = 0; i < num_facet_vertices; ++i)
       {
         if (boundary_vertex[v[i]] == -1)
-        {
-          boundary_vertex[v[i]] = pos;
-          ++pos;
-        }
+          boundary_vertex[v[i]] = pos++;
       }
     }
   }

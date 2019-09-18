@@ -87,7 +87,7 @@ public:
   ///
   /// @param[in] cell_index The index of the cell
   /// @param[in] local_entity The local index of the entity relative to
-  /// the cell
+  ///                         the cell
   /// @param[in] value The value of the marker.
   /// @return True is a new value is inserted, false if overwriting an
   /// existing value.
