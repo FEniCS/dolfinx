@@ -453,10 +453,10 @@ def test_topology_surface(cube):
 @pytest.mark.parametrize("mesh_factory", mesh_factories)
 @pytest.mark.parametrize("subset_comm", [MPI.comm_world, new_comm(MPI.comm_world)])
 @pytest.mark.parametrize(
-        "graph_partitioner",
-        [Partitioner.scotch,
-         pytest.param(Partitioner.kahip,
-                      marks=pytest.mark.skipif(not has_kahip, reason="KaHIP is not available"))])
+    "graph_partitioner",
+    [Partitioner.scotch,
+     pytest.param(Partitioner.kahip,
+                  marks=pytest.mark.skipif(not has_kahip, reason="KaHIP is not available"))])
 def test_distribute_mesh(subset_comm, tempdir, mesh_factory, graph_partitioner):
     func, args = mesh_factory
     mesh = func(*args)
