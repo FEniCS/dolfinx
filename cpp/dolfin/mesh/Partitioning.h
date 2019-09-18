@@ -78,7 +78,7 @@ public:
                          const std::vector<std::int64_t>& global_cell_indices,
                          const mesh::GhostMode ghost_mode,
                          const mesh::Partitioner graph_partitioner
-                         = mesh::Partitioner::kahip);
+                         = mesh::Partitioner::scotch);
 
   /// Build distributed mesh from a set of points and cells on each
   /// local process with a pre-computed partition

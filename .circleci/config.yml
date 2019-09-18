@@ -14,14 +14,6 @@ flake8-python-code: &flake8-python-code
             python3 -m flake8 python/demo
             python3 -m flake8 python/test
 
-install-kahip: &install-kahip
-  name: Install KaHIP partitioner
-  command: |
-            git clone https://github.com/IgorBaratta/KaHIP.git
-            cd KaHIP
-            ./compile_withcmake.sh
-            cd .. && cp -r ./KaHIP /usr/local/KaHIP
-
 build-documentation-cpp: &build-documentation-cpp
   name: Build documentation (C++)
   command: cd cpp/doc && doxygen
@@ -107,7 +99,6 @@ jobs:
       - checkout
       - run: *install-python-components
       - run: *flake8-python-code
-      - run: *install-kahip
       - run: *build-documentation-cpp
       - run: *configure-cpp
       - run: *build-install-cpp
@@ -139,7 +130,6 @@ jobs:
       - checkout
       - run: *install-python-components
       - run: *flake8-python-code
-      - run: *install-kahip
       - run: *build-documentation-cpp
       - run: *configure-cpp
       - run: *build-install-cpp
