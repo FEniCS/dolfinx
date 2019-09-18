@@ -444,7 +444,7 @@ def test_topology_surface(cube):
     cube.create_connectivity(2, 1)
     surface_edge_markers = cube.topology.on_boundary(1)
     assert surface_edge_markers
-    surface_facet_markers = cube.topology.surface_entity_marker(2)
+    surface_facet_markers = cube.topology.on_boundary(2)
     sf_count = numpy.count_nonzero(numpy.array(surface_facet_markers))
     assert MPI.sum(cube.mpi_comm(), sf_count) == n * n * 12
 
