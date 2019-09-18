@@ -68,7 +68,7 @@ public:
   Function& operator=(const Function& v) = delete;
 
   /// Extract subfunction (view into the Function)
-  /// @param[i] i Index of subfunction
+  /// @param[in] i Index of subfunction
   /// @return The subfunction
   Function sub(int i) const;
 
