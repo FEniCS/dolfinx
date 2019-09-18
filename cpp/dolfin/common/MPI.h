@@ -296,6 +296,7 @@ inline MPI_Datatype MPI::mpi_type<unsigned long long>()
 {
   return MPI_UNSIGNED_LONG_LONG;
 }
+/// @endcond
 //---------------------------------------------------------------------------
 template <typename T>
 void dolfin::MPI::broadcast(MPI_Comm comm, std::vector<T>& value,

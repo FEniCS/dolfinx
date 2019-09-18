@@ -553,7 +553,7 @@ PartitionData Partitioning::partition_cells(
       throw std::runtime_error("ParMETIS not available");
 #endif
     }
-    else if (partitioner == "KaHIP")
+    else if (graph_partitioner == mesh::Partitioner::kahip)
     {
 #ifdef HAS_KAHIP
       graph::CSRGraph<unsigned long long> csr_graph(mpi_comm, local_graph);
