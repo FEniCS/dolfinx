@@ -162,7 +162,7 @@ std::string init(const mesh::Mesh& mesh, const std::string filename,
   // Number of cells
   const std::size_t num_cells = mesh.topology().ghost_offset(cell_dim);
 
-  // Number of points in mesh (can be more than then number of vertices)
+  // Number of points in mesh (can be more than the number of vertices)
   const int num_nodes = mesh.geometry().points().rows();
 
   // Write headers
