@@ -429,10 +429,6 @@ void HDF5File::write(const mesh::Mesh& mesh, int cell_dim,
     MPI::gather(_mpi_comm.comm(), topology_offset_tmp, partitions);
     MPI::broadcast(_mpi_comm.comm(), partitions);
 
-    std::cout << std::endl;
-    for (auto i : partitions) // access by value, the type of i is int
-      std::cout << i << ' ';
-
     HDF5Interface::add_attribute(_hdf5_file_id, topology_dataset, "partition",
                                  partitions);
   }
@@ -1338,36 +1334,44 @@ mesh::Mesh HDF5File::read_mesh(const std::string data_path,
   EigenRowArrayXXd points;
   EigenRowArrayXXi64 cells;
   std::vector<std::int64_t> global_cell_indices;
-  std::vector<std::int64_t> cell_partitions;
+  std::vector<std::int64_t> cell_distribution;
 
   // Read local mesh data
-  std::tie(cell_type, points, cells, global_cell_indices, cell_partitions)
+  std::tie(cell_type, points, cells, global_cell_indices, cell_distribution)
       = read_mesh_data(data_path);
-
-  std::cout << "------------------------" << std::endl;
-  for (auto i : global_cell_indices)
-  {
-    std::cout << i << " ";
-  }
-  std::cout << "------------------------" << std::endl;
 
   if (use_partition_from_file)
   {
-    int n = global_cell_indices.size();
-    std::vector<int> part(global_cell_indices.size());
-    for (std::int64_t i = 0; i < n; ++i)
+
+    // Check that number of MPI processes matches partitioning
+    if (_mpi_comm.size() != (cell_distribution.size() - 1))
     {
-      auto it = std::lower_bound(cell_partitions.begin(), cell_partitions.end(),
-                                 global_cell_indices[i]);
-      part[i] = int(it - cell_partitions.begin());
+      throw std::runtime_error("Different number of processes used when "
+                               "writing. Cannot restore partitioning");
+    }
+
+    const std::int32_t num_local_cells = global_cell_indices.size();
+    std::vector<int> part(num_local_cells);
+
+    // Get offset for this process
+    const std::int64_t offset
+        = dolfin::MPI::global_offset(_mpi_comm.comm(), num_local_cells, true);
+
+    // Convert cell distribution to an array of proces destination for each
+    // local cell
+    for (std::int32_t i = 0; i < num_local_cells; ++i)
+    {
+      auto it = std::upper_bound(cell_distribution.begin(),
+                                 cell_distribution.end(), i + offset);
+
+      part[i] = static_cast<int>(it - cell_distribution.begin() - 1);
     }
 
     std::map<std::int64_t, std::vector<int>> ghost_procs;
     ghost_procs = mesh::Partitioning::compute_halo_cells(_mpi_comm.comm(), part,
                                                          cell_type, cells);
 
-    mesh::PartitionData cell_partition(std::make_pair(
-        std::vector<int>(part.begin(), part.end()), std::move(ghost_procs)));
+    mesh::PartitionData cell_partition(part, ghost_procs);
 
     return mesh::Partitioning::build_from_partition(
         _mpi_comm.comm(), cell_type, points, cells, global_cell_indices,
@@ -1385,6 +1389,7 @@ std::tuple<mesh::CellType, EigenRowArrayXXd, EigenRowArrayXXi64,
            std::vector<std::int64_t>, std::vector<std::int64_t>>
 HDF5File::read_mesh_data(const std::string data_path) const
 {
+
   assert(_hdf5_file_id > 0);
 
   // Check that topology data set is found in HDF5 file
@@ -1465,10 +1470,10 @@ HDF5File::read_mesh_data(const std::string data_path) const
   }
 
   // Get partition from file, if available
-  std::vector<std::int64_t> cell_partitions;
+  std::vector<std::int64_t> cell_distribution;
   if (HDF5Interface::has_attribute(_hdf5_file_id, topology_path, "partition"))
   {
-    cell_partitions = HDF5Interface::get_attribute<std::vector<std::int64_t>>(
+    cell_distribution = HDF5Interface::get_attribute<std::vector<std::int64_t>>(
         _hdf5_file_id, topology_path, "partition");
   }
 
@@ -1477,11 +1482,11 @@ HDF5File::read_mesh_data(const std::string data_path) const
 
   // Check whether number of MPI processes matches partitioning, and
   // restore if possible
-  if (_mpi_comm.size() == cell_partitions.size())
+  if (_mpi_comm.size() == cell_distribution.size())
   {
-    cell_partitions.push_back(num_global_cells);
+    cell_distribution.push_back(num_global_cells);
     const std::size_t proc = _mpi_comm.rank();
-    cell_range = {{cell_partitions[proc], cell_partitions[proc + 1]}};
+    cell_range = {{cell_distribution[proc], cell_distribution[proc + 1]}};
   }
   else
   {
@@ -1571,7 +1576,7 @@ HDF5File::read_mesh_data(const std::string data_path) const
 
   return std::make_tuple(cell_type, std::move(points), std::move(cells),
                          std::move(global_cell_indices),
-                         std::move(cell_partitions));
+                         std::move(cell_distribution));
 }
 //-----------------------------------------------------------------------------
 bool HDF5File::has_dataset(const std::string dataset_name) const

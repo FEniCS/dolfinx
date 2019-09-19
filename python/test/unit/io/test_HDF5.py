@@ -196,6 +196,15 @@ def test_save_and_read_mesh_2D(tempdir):
     dim = mesh0.topology.dim
     assert mesh0.num_entities_global(dim) == mesh1.num_entities_global(dim)
 
+    # Read from file, and use partition from file
+    mesh_file = HDF5File(mesh0.mpi_comm(), filename, "r")
+    mesh2 = mesh_file.read_mesh("/my_mesh", True, cpp.mesh.GhostMode.none)
+    mesh_file.close()
+
+    assert mesh0.num_cells(0) == mesh2.num_cells(0)
+    dim = mesh0.topology.dim
+    assert mesh0.num_entities_global(dim) == mesh1.num_entities_global(dim)
+
 
 def test_save_and_read_mesh_3D(tempdir):
     filename = os.path.join(tempdir, "mesh3d.h5")
@@ -212,6 +221,15 @@ def test_save_and_read_mesh_3D(tempdir):
     mesh_file.close()
 
     assert mesh0.num_entities_global(0) == mesh1.num_entities_global(0)
+    dim = mesh0.topology.dim
+    assert mesh0.num_entities_global(dim) == mesh1.num_entities_global(dim)
+
+    # Read from file, and use partition from file
+    mesh_file = HDF5File(mesh0.mpi_comm(), filename, "r")
+    mesh2 = mesh_file.read_mesh("/my_mesh", True, cpp.mesh.GhostMode.none)
+    mesh_file.close()
+
+    assert mesh0.num_cells(0) == mesh2.num_cells(0)
     dim = mesh0.topology.dim
     assert mesh0.num_entities_global(dim) == mesh1.num_entities_global(dim)
 

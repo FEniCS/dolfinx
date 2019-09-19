@@ -140,11 +140,15 @@ public:
       const std::vector<std::int64_t>& global_point_indices,
       const std::map<std::int32_t, std::set<std::int32_t>>& shared_points);
 
-  /// Utility to create global vertex indices, needed for higher order
-  /// meshes, where there are geometric points which are not at the
-  /// vertex nodes
+  /// Utility to compute halo cells for a given custom cell partition
+  /// @param[in] comm MPI Communicator
+  /// @param[in] parttition Array of destination process for each local cell
+  /// @param[in] cell_type Cell type
+  /// @param[in] cell_vertices Topological cells with global vertex indexing.
+  /// @return ghost_procs Map of cell_index to vector of sharing processes
+  ///                     for those cells that have multiple owners
   static std::map<std::int64_t, std::vector<int>>
-  compute_halo_cells(MPI_Comm comm, std::vector<int> part,
+  compute_halo_cells(MPI_Comm comm, std::vector<int> parttition,
                      const mesh::CellType cell_type,
                      const Eigen::Ref<const EigenRowArrayXXi64> cell_vertices);
 };
