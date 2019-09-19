@@ -4,7 +4,6 @@
 # This file is part of DOLFIN (https://www.fenicsproject.org)
 #
 # SPDX-License-Identifier:    LGPL-3.0-or-later
-"""Finite element functions"""
 
 import typing
 from functools import singledispatch
@@ -14,7 +13,7 @@ from petsc4py import PETSc
 
 import ufl
 from dolfin import common, cpp, function
-from dolfin.function import functionspace
+from dolfin import functionspace
 
 
 class Function(ufl.Coefficient):
@@ -189,3 +188,65 @@ class Function(ufl.Coefficient):
         V_collapsed = functionspace.FunctionSpace(None, self.ufl_element(),
                                                   u_collapsed.function_space)
         return Function(V_collapsed, u_collapsed.vector)
+
+
+# # TODO: Update this message to clarify dolfin.FunctionSpace vs
+# # ufl.FunctionSpace
+# _ufl_dolfin_difference_message = """\ When constructing an Argument, TestFunction or TrialFunction, you
+# must to provide a FunctionSpace and not a FiniteElement.  The
+# FiniteElement class provided by ufl only represents an abstract finite
+# element space and is only used in standalone .ufl files, while the
+# FunctionSpace provides a full discrete function space over a given
+# mesh and should be used in dolfin programs in Python.  """
+
+class Argument(ufl.Argument):
+    """Representation of an argument to a form"""
+
+    def __init__(self, V: functionspace.FunctionSpace, number: int, part: int = None):
+        """Create a UFL/DOLFIN Argument"""
+        ufl.Argument.__init__(self, V.ufl_function_space(), number, part)
+        self._V = V
+
+    def function_space(self):
+        """Return the FunctionSpace"""
+        return self._V
+
+    def __eq__(self, other: 'Argument'):
+        """Extending UFL __eq__ here to distinguish test and trial functions
+        in different function spaces with same ufl element.
+
+        """
+        return (isinstance(other, Argument)
+                and self.number() == other.number()
+                and self.part() == other.part() and self._V == other._V)
+
+    def __hash__(self):
+        return ufl.Argument.__hash__(self)
+
+
+def TestFunction(V: functionspace.FunctionSpace, part: int = None):
+    """Create a test function argument to a form"""
+    return Argument(V, 0, part)
+
+
+def TrialFunction(V: functionspace.FunctionSpace, part: int = None):
+    """UFL value: Create a trial function argument to a form."""
+    return Argument(V, 1, part)
+
+
+def TestFunctions(V: functionspace.FunctionSpace):
+    """Create a TestFunction in a mixed space, and return a
+    tuple with the function components corresponding to the
+    subelements.
+
+    """
+    return ufl.split(TestFunction(V))
+
+
+def TrialFunctions(V: functionspace.FunctionSpace):
+    """Create a TrialFunction in a mixed space, and return a
+    tuple with the function components corresponding to the
+    subelements.
+
+    """
+    return ufl.split(TrialFunction(V))

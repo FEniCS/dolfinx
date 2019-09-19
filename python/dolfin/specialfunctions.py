@@ -7,7 +7,6 @@
 """Some special functions"""
 
 import ufl
-
 from dolfin import cpp
 
 

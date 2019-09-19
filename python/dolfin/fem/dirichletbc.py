@@ -13,15 +13,14 @@ import types
 import typing
 
 import ufl
-from dolfin import cpp, function
+from dolfin import cpp, function, functionspace
 
 
 class DirichletBC(cpp.fem.DirichletBC):
     def __init__(
             self,
-            V: typing.Union[function.FunctionSpace, cpp.function.
-                            FunctionSpace],
-            value: typing.Union[ufl.Coefficient, cpp.function.Function],
+            V: typing.Union[functionspace.FunctionSpace],
+            value: typing.Union[ufl.Coefficient, function.Function, cpp.function.Function],
             domain: typing.Union[types.FunctionType, typing.List[int]],
             method: cpp.fem.DirichletBC.Method = cpp.fem.DirichletBC.Method.topological):
         """Representation of Dirichlet boundary condition which is imposed on
@@ -43,6 +42,8 @@ class DirichletBC(cpp.fem.DirichletBC):
             _value = value._cpp_object
         elif isinstance(value, cpp.function.Function):
             _value = value
+        elif isinstance(value, function.Function):
+            _value = value._cpp_object
         else:
             raise NotImplementedError
 

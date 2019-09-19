@@ -6,15 +6,14 @@
 """Unit tests for assembly"""
 
 import pytest
-
-from dolfin import fem
-from dolfin import MPI
-from dolfin.function import FunctionSpace, TrialFunction, TestFunction, Function
-from dolfin.generation import UnitSquareMesh
-from dolfin.cpp.mesh import GhostMode
-
 from petsc4py import PETSc
-from ufl import ds, dx, dS, inner, avg
+
+from dolfin import MPI, fem
+from dolfin.cpp.mesh import GhostMode
+from dolfin.function import Function, TestFunction, TrialFunction
+from dolfin.functionspace import FunctionSpace
+from dolfin.generation import UnitSquareMesh
+from ufl import avg, ds, dS, dx, inner
 
 
 @pytest.mark.parametrize("mode",
