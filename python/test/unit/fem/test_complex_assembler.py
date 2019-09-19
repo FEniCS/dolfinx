@@ -25,8 +25,8 @@ def test_complex_assembly():
     P2 = ufl.FiniteElement("Lagrange", mesh.ufl_cell(), 2)
     V = dolfin.functionspace.FunctionSpace(mesh, P2)
 
-    u = dolfin.function.argument.TrialFunction(V)
-    v = dolfin.function.argument.TestFunction(V)
+    u = dolfin.function.TrialFunction(V)
+    v = dolfin.function.TestFunction(V)
 
     g = -2 + 3.0j
     j = 1.0j
