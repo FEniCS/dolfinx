@@ -10,8 +10,8 @@ from petsc4py import PETSc
 
 import dolfin
 import dolfin.fem as fem
-import dolfin.function as function
 import ufl
+from dolfin import function, functionspace
 from ufl import derivative, dx, grad, inner
 
 
@@ -91,8 +91,8 @@ def test_linear_pde():
     """Test Newton solver for a linear PDE"""
     # Create mesh and function space
     mesh = dolfin.generation.UnitSquareMesh(dolfin.MPI.comm_world, 12, 12)
-    V = dolfin.function.FunctionSpace(mesh, ("Lagrange", 1))
-    u = dolfin.function.Function(V)
+    V = functionspace.FunctionSpace(mesh, ("Lagrange", 1))
+    u = function.Function(V)
     v = function.TestFunction(V)
     F = inner(10.0, v) * dx - inner(grad(u), grad(v)) * dx
 
@@ -126,7 +126,7 @@ def test_nonlinear_pde():
     """Test Newton solver for a simple nonlinear PDE"""
     # Create mesh and function space
     mesh = dolfin.generation.UnitSquareMesh(dolfin.MPI.comm_world, 12, 5)
-    V = dolfin.function.FunctionSpace(mesh, ("Lagrange", 1))
+    V = functionspace.FunctionSpace(mesh, ("Lagrange", 1))
     u = dolfin.function.Function(V)
     v = function.TestFunction(V)
     F = inner(5.0, v) * dx - ufl.sqrt(u * u) * inner(
@@ -164,8 +164,8 @@ def test_nonlinear_pde_snes():
     """Test Newton solver for a simple nonlinear PDE"""
     # Create mesh and function space
     mesh = dolfin.generation.UnitSquareMesh(dolfin.MPI.comm_world, 12, 15)
-    V = dolfin.function.FunctionSpace(mesh, ("Lagrange", 1))
-    u = dolfin.function.Function(V)
+    V = functionspace.FunctionSpace(mesh, ("Lagrange", 1))
+    u = function.Function(V)
     v = function.TestFunction(V)
     F = inner(5.0, v) * dx - ufl.sqrt(u * u) * inner(
         grad(u), grad(v)) * dx - inner(u, v) * dx

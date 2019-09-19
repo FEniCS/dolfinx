@@ -11,7 +11,7 @@ from petsc4py import PETSc
 
 import dolfin
 import ufl
-from dolfin.function.specialfunctions import SpatialCoordinate
+from dolfin.specialfunctions import SpatialCoordinate
 from ufl import dx, grad, inner
 
 pytestmark = pytest.mark.skipif(
