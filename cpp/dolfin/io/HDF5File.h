@@ -103,6 +103,13 @@ public:
                        bool use_partition_from_file,
                        const mesh::GhostMode ghost_mode) const;
 
+  /// Read in the data from the first mesh in HDF file
+  ///
+  /// @param[in] data_path Path to topology and geometry datasets
+  /// @return Cell type (mesh::CellType),
+  ///         Geometric points on each process (EigenRowArrayXXd),
+  ///         Topological cells with global vertex indexing (EigenRowArrayXXi64)
+  ///         Global cell distribution
   std::tuple<mesh::CellType, EigenRowArrayXXd, EigenRowArrayXXi64,
              std::vector<std::int64_t>, std::vector<std::int64_t>>
   read_mesh_data(const std::string data_path) const;
