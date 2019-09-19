@@ -51,14 +51,14 @@ from .fem.dirichletbc import DirichletBC
 from .fem.interpolation import interpolate
 from .fem.solving import solve
 
-from .function.functionspace import (FunctionSpace, VectorFunctionSpace,
-                                     TensorFunctionSpace)
-from .function.function import Function
-from .function.constant import Constant
-from .function.argument import (TestFunction, TrialFunction, TestFunctions,
-                                TrialFunctions)
-from .function.specialfunctions import (FacetNormal, CellVolume, CellNormal,
-                                        CellDiameter, Circumradius)
+from .functionspace import (FunctionSpace, VectorFunctionSpace,
+                            TensorFunctionSpace)
+from .function import Function
+from .constant import Constant
+from .function import (TestFunction, TrialFunction, TestFunctions,
+                       TrialFunctions)
+from .specialfunctions import (FacetNormal, CellVolume, CellNormal,
+                               CellDiameter, Circumradius)
 
 from .mesh import MeshFunction
 from .mesh import MeshValueCollection

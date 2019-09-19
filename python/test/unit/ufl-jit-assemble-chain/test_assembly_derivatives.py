@@ -11,7 +11,7 @@ import numpy
 import pytest
 
 from dolfin import MPI, FacetNormal, RectangleMesh, UnitIntervalMesh
-from dolfin.function.specialfunctions import SpatialCoordinate
+from dolfin.specialfunctions import SpatialCoordinate
 from ufl import (acos, as_matrix, as_vector, asin, atan, cos, cross, det, dev,
                  diff, div, dot, ds, dx, elem_div, elem_mult, elem_op,
                  elem_pow, erf, exp, grad, inner, ln, outer, sin, skew, sym,

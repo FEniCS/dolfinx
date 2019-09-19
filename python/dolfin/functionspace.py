@@ -44,15 +44,12 @@ class FunctionSpace(ufl.FunctionSpace):
             super().__init__(mesh.ufl_domain(), element)
         else:
             e = ElementMetaData(*element)
-            ufl_element = ufl.FiniteElement(
-                e.family, mesh.ufl_cell(), e.degree, form_degree=e.form_degree)
+            ufl_element = ufl.FiniteElement(e.family, mesh.ufl_cell(), e.degree, form_degree=e.form_degree)
             super().__init__(mesh.ufl_domain(), ufl_element)
 
         # Compile dofmap and element and create DOLFIN objects
         ufc_element, ufc_dofmap_ptr = jit.ffc_jit(
-            self.ufl_element(),
-            form_compiler_parameters=None,
-            mpi_comm=mesh.mpi_comm())
+            self.ufl_element(), form_compiler_parameters=None, mpi_comm=mesh.mpi_comm())
 
         ffi = cffi.FFI()
         ufc_element = dofmap.make_ufc_finite_element(ffi.cast("uintptr_t", ufc_element))
@@ -171,12 +168,7 @@ def VectorFunctionSpace(mesh: cpp.mesh.Mesh,
     """Create vector finite element (composition of scalar elements) function space."""
 
     e = ElementMetaData(*element)
-    ufl_element = ufl.VectorElement(
-        e.family,
-        mesh.ufl_cell(),
-        e.degree,
-        form_degree=e.form_degree,
-        dim=dim)
+    ufl_element = ufl.VectorElement(e.family, mesh.ufl_cell(), e.degree, form_degree=e.form_degree, dim=dim)
     return FunctionSpace(mesh, ufl_element)
 
 
@@ -188,6 +180,5 @@ def TensorFunctionSpace(mesh: cpp.mesh.Mesh,
     """Create tensor finite element (composition of scalar elements) function space."""
 
     e = ElementMetaData(*element)
-    ufl_element = ufl.TensorElement(e.family, mesh.ufl_cell(), e.degree, shape,
-                                    symmetry)
+    ufl_element = ufl.TensorElement(e.family, mesh.ufl_cell(), e.degree, shape, symmetry)
     return FunctionSpace(mesh, ufl_element)
