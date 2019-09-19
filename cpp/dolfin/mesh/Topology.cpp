@@ -135,10 +135,9 @@ const std::vector<std::int32_t>& Topology::cell_owner() const
   return _cell_owner;
 }
 //-----------------------------------------------------------------------------
-std::vector<bool> Topology::surface_entity_marker(int dim) const
+std::vector<bool> Topology::on_boundary(int dim) const
 {
   const int tdim = this->dim();
-
   if (dim >= tdim or dim < 0)
   {
     throw std::runtime_error("Invalid entity dimension: "
@@ -147,13 +146,12 @@ std::vector<bool> Topology::surface_entity_marker(int dim) const
 
   std::shared_ptr<const Connectivity> connectivity_facet_cell
       = connectivity(tdim - 1, tdim);
-
   if (!connectivity_facet_cell)
     throw std::runtime_error("Facet-cell connectivity missing");
 
-  std::vector<bool> marker(size(dim), false);
+  std::vector<bool> marker(this->size(dim), false);
+  const int num_facets = this->size(tdim - 1);
 
-  const int num_facets = size(tdim - 1);
   // Special case for facets
   if (dim == tdim - 1)
   {
@@ -185,6 +183,7 @@ std::vector<bool> Topology::surface_entity_marker(int dim) const
         marker[fe_indices[j]] = true;
     }
   }
+
   return marker;
 }
 //-----------------------------------------------------------------------------

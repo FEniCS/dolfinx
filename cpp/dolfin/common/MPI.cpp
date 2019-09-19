@@ -24,8 +24,6 @@ dolfin::MPI::Comm::Comm(MPI_Comm comm)
   }
   else
     _comm = MPI_COMM_NULL;
-
-  std::vector<double> x = {{1.0, 3.0}};
 }
 //-----------------------------------------------------------------------------
 dolfin::MPI::Comm::Comm(const Comm& comm) : Comm(comm._comm)
@@ -57,11 +55,6 @@ void dolfin::MPI::Comm::free()
 std::uint32_t dolfin::MPI::Comm::rank() const
 {
   return dolfin::MPI::rank(_comm);
-}
-//-----------------------------------------------------------------------------
-MPI_Comm dolfin::MPI::Comm::SubsetComm(int num_processes) const
-{
-  return dolfin::MPI::SubsetComm(_comm, num_processes);
 }
 //-----------------------------------------------------------------------------
 std::uint32_t dolfin::MPI::Comm::size() const

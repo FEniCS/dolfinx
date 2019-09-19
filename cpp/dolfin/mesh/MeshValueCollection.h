@@ -82,19 +82,15 @@ public:
   std::size_t size() const;
 
   // FIXME: remove
-  /// Set marker value for given entity defined by a cell index and
-  /// a local entity index
+  /// Set marker value for given entity defined by a cell index and a
+  /// local entity index
   ///
-  /// @param    cell_index (std::size_t)
-  ///         The index of the cell.
-  /// @param    local_entity (std::size_t)
-  ///         The local index of the entity relative to the cell.
-  /// @param    value (T)
-  ///         The value of the marker.
-  ///
-  /// @return    bool
-  ///         True is a new value is inserted, false if overwriting
-  ///         an existing value.
+  /// @param[in] cell_index The index of the cell
+  /// @param[in] local_entity The local index of the entity relative to
+  ///                         the cell
+  /// @param[in] value The value of the marker.
+  /// @return True is a new value is inserted, false if overwriting an
+  /// existing value.
   bool set_value(std::size_t cell_index, std::size_t local_entity,
                  const T& value);
 
