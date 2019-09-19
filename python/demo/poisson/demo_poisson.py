@@ -80,11 +80,11 @@ import numpy as np
 import dolfin
 import dolfin.plotting
 import ufl
-from dolfin import (MPI, DirichletBC, Function, FunctionSpace,
-                    RectangleMesh, TestFunction, TrialFunction, solve)
-from dolfin.function.specialfunctions import SpatialCoordinate
-from dolfin.io import XDMFFile
+from dolfin import (MPI, DirichletBC, Function, FunctionSpace, RectangleMesh,
+                    TestFunction, TrialFunction, solve)
 from dolfin.cpp.mesh import CellType
+from dolfin.io import XDMFFile
+from dolfin.specialfunctions import SpatialCoordinate
 from ufl import ds, dx, grad, inner
 
 # We begin by defining a mesh of the domain and a finite element
@@ -125,7 +125,7 @@ mesh.geometry.coord_mapping = cmap
 # Define Dirichlet boundary (x = 0 or x = 1)
 
 
-def boundary(x, only_boundary):
+def boundary(x):
     return np.logical_or(x[:, 0] < np.finfo(float).eps,
                          x[:, 0] > 1.0 - np.finfo(float).eps)
 

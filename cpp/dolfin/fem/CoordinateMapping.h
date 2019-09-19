@@ -25,13 +25,12 @@ class CoordinateMapping
 {
 public:
   /// Create a CoordinateMapping object
-  /// @param cell_type
-  /// @param topological_dimension
-  /// @param geometric_dimension
-  /// @param signature
-  /// @param compute_physical_coordinates
-  /// @param compute_reference_geometry
-  ///
+  /// @param[in] cell_type
+  /// @param[in] topological_dimension
+  /// @param[in] geometric_dimension
+  /// @param[in] signature
+  /// @param[in] compute_physical_coordinates
+  /// @param[in] compute_reference_geometry
   CoordinateMapping(
       mesh::CellType cell_type, int topological_dimension, int geometric_dimension,
       std::string signature,
@@ -45,19 +44,15 @@ public:
   virtual ~CoordinateMapping() = default;
 
   /// Return a string identifying the finite element
-  /// @return std::string
   std::string signature() const;
 
   /// Return the cell shape
-  /// @return CellType
   mesh::CellType cell_shape() const;
 
   /// Return the topological dimension of the cell shape
-  /// @return std::size_t
   std::uint32_t topological_dimension() const;
 
   /// Return the geometric dimension of the cell shape
-  /// @return std::uint32_t
   std::uint32_t geometric_dimension() const;
 
   /// Compute physical coordinates x for points X  in the reference

@@ -762,7 +762,7 @@ WARN_NO_PARAMDOC       = NO
 # a warning is encountered.
 # The default value is: NO.
 
-WARN_AS_ERROR          = NO
+WARN_AS_ERROR          = YES
 
 # The WARN_FORMAT tag determines the format of the warning messages that doxygen
 # can produce. The string should contain the $file, $line, and $text tags, which
@@ -874,7 +874,9 @@ RECURSIVE              = YES
 # run.
 
 EXCLUDE                = ../dolfin/io/pugixml.hpp \
-                         ../dolfin/io/pugixml.cpp
+                         ../dolfin/io/pugixml.cpp \
+                         ../dolfin/common/loguru.hpp \
+                         ../dolfin/common/loguru.cpp
 
 # The EXCLUDE_SYMLINKS tag can be used to select whether or not files or
 # directories that are symbolic links (a Unix file system feature) are excluded
@@ -2081,7 +2083,7 @@ INCLUDE_FILE_PATTERNS  =
 # recursively expanded use the := operator instead of the = operator.
 # This tag requires that the tag ENABLE_PREPROCESSING is set to YES.
 
-PREDEFINED             = protected=private DOXYGEN_IGNORE
+PREDEFINED             = protected=private
 
 # If the MACRO_EXPANSION and EXPAND_ONLY_PREDEF tags are set to YES then this
 # tag can be used to specify a list of macro names that should be expanded. The

@@ -20,9 +20,10 @@ namespace mesh
 class Mesh;
 class MeshEntity;
 
+/// Cell type identifier
 enum class CellType : int
 {
-  // NOTE: Simplex cell have index > 0, see mesh::is_simplex.
+  // NOTE: Simplex cells have index > 0, see mesh::is_simplex.
   point = 1,
   interval = 2,
   triangle = 3,
@@ -49,14 +50,18 @@ CellType cell_facet_type(CellType type);
 Eigen::Array<int, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
 get_entity_vertices(CellType type, int dim);
 
-// Get entities of dimsion dim1 and that make up entities of dimension
-// dim0
+/// Get entities of dimsion dim1 and that make up entities of dimension
+/// dim0
 Eigen::Array<int, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
 get_sub_entities(CellType type, int dim0, int dim1);
 
 /// Return topological dimension of cell type
 int cell_dim(CellType type);
 
+/// Number of entities of dimension dim
+/// @param[in] dim Entity dimension
+/// @param[in] type Cell type
+/// @return Number of entities in cell
 int cell_num_entities(mesh::CellType type, int dim);
 
 /// Check if cell is a simplex

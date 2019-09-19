@@ -82,18 +82,14 @@ ElementDofLayout create_element_dof_layout(const ufc_dofmap& dofmap,
 
 /// Create dof map on mesh from a ufc_dofmap
 ///
-/// @param[in] ufc_dofmap (ufc_dofmap)
-///         The ufc_dofmap.
-/// @param[in] mesh (mesh::Mesh&)
-///         The mesh.
+/// @param[in] dofmap The ufc_dofmap.
+/// @param[in] mesh The mesh.
 DofMap create_dofmap(const ufc_dofmap& dofmap, const mesh::Mesh& mesh);
 
 /// Create form (shared data)
 ///
-/// @param[in] ufc_form (ufc_form)
-///         The UFC form.
-/// @param[in] function_spaces (std::vector<_function::FunctionSpace_>)
-///         Vector of function spaces.
+/// @param[in] ufc_form The UFC form.
+/// @param[in] spaces Vector of function spaces.
 Form create_form(
     const ufc_form& ufc_form,
     const std::vector<std::shared_ptr<const function::FunctionSpace>>& spaces);
