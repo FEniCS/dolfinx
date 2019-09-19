@@ -201,7 +201,7 @@ def test_save_and_read_mesh_2D(tempdir):
     mesh2 = mesh_file.read_mesh("/my_mesh", True, cpp.mesh.GhostMode.none)
     mesh_file.close()
 
-    assert mesh0.num_cells(0) == mesh2.num_cells(0)
+    assert mesh0.num_cells() == mesh2.num_cells()
     dim = mesh0.topology.dim
     assert mesh0.num_entities_global(dim) == mesh1.num_entities_global(dim)
 
@@ -229,7 +229,7 @@ def test_save_and_read_mesh_3D(tempdir):
     mesh2 = mesh_file.read_mesh("/my_mesh", True, cpp.mesh.GhostMode.none)
     mesh_file.close()
 
-    assert mesh0.num_cells(0) == mesh2.num_cells(0)
+    assert mesh0.num_cells() == mesh2.num_cells()
     dim = mesh0.topology.dim
     assert mesh0.num_entities_global(dim) == mesh1.num_entities_global(dim)
 

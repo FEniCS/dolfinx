@@ -6,8 +6,6 @@
 
 #include "PartitionData.h"
 
-#include <iostream>
-
 using namespace dolfin;
 using namespace dolfin::mesh;
 
