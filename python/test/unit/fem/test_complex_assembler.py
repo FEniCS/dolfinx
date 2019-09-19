@@ -23,7 +23,7 @@ def test_complex_assembly():
 
     mesh = dolfin.generation.UnitSquareMesh(dolfin.MPI.comm_world, 10, 10)
     P2 = ufl.FiniteElement("Lagrange", mesh.ufl_cell(), 2)
-    V = dolfin.function.functionspace.FunctionSpace(mesh, P2)
+    V = dolfin.functionspace.FunctionSpace(mesh, P2)
 
     u = dolfin.function.argument.TrialFunction(V)
     v = dolfin.function.argument.TestFunction(V)
@@ -79,7 +79,7 @@ def test_complex_assembly_solve():
     degree = 3
     mesh = dolfin.generation.UnitSquareMesh(dolfin.MPI.comm_world, 20, 20)
     P = ufl.FiniteElement("Lagrange", mesh.ufl_cell(), degree)
-    V = dolfin.function.functionspace.FunctionSpace(mesh, P)
+    V = dolfin.functionspace.FunctionSpace(mesh, P)
 
     x = SpatialCoordinate(mesh)
 
@@ -88,8 +88,8 @@ def test_complex_assembly_solve():
     f = (1. + 1j) * A * ufl.cos(2 * np.pi * x[0]) * ufl.cos(2 * np.pi * x[1])
 
     # Variational problem
-    u = dolfin.function.argument.TrialFunction(V)
-    v = dolfin.function.argument.TestFunction(V)
+    u = dolfin.function.TrialFunction(V)
+    v = dolfin.function.TestFunction(V)
     C = 1 + 1j
     a = C * inner(grad(u), grad(v)) * dx + C * inner(u, v) * dx
     L = inner(f, v) * dx
