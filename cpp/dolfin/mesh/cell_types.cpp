@@ -506,11 +506,13 @@ std::vector<std::uint8_t> mesh::vtk_mapping(mesh::CellType type, int num_nodes)
 		 throw std::runtime_error("Higher order tetrahedron not supported");
      case mesh::CellType::quadrilateral:
        if (num_nodes == 4)
-		 // FIXME: Note that this is not counter clockwise ordering (CC),
-		 // as performed by vtk (used by gmsh and other mesh generators),
-		 // but lexicographic (LG). A convert function from (CC) to (LG) will
-		 // be created in a future PR.
-		 return {0, 1, 3, 2};
+		 {
+		   // FIXME: Note that this is not counter clockwise ordering (CC),
+		   // as performed by vtk (used by gmsh and other mesh generators),
+		   // but lexicographic (LG). A convert function from (CC) to (LG) will
+		   // be created in a future PR.
+		   return {0, 1, 3, 2};
+		 }
 	   else
 		 throw std::runtime_error("Higher order quadrilateral not supported");
      case mesh::CellType::hexahedron:

@@ -392,22 +392,23 @@ void write_point_data(const function::Function& u, const mesh::Mesh& mesh,
   std::ostringstream ss;
   ss << std::scientific;
   ss << std::setprecision(16);
-  for (auto& vertex : mesh::MeshRange(mesh, 0))
+  const Eigen::Array<double, Eigen::Dynamic, 3, Eigen::RowMajor> points = mesh.geometry().points();
+  for (int i = 0; i < points.rows(); ++i)
   {
     if (rank == 1 && dim == 2)
     {
       // Append 0.0 to 2D vectors to make them 3D
-      for (std::size_t i = 0; i < 2; i++)
-        ss << values(vertex.index(), i) << " ";
+      for (std::size_t j = 0; j < 2; j++)
+        ss << values(i, j) << " ";
       ss << 0.0 << "  ";
     }
     else if (rank == 2 && dim == 4)
     {
       // Pad 2D tensors with 0.0 to make them 3D
-      for (std::size_t i = 0; i < 2; i++)
+      for (std::size_t j = 0; j < 2; j++)
       {
-        ss << values(vertex.index(), (2 * i + 0)) << " ";
-        ss << values(vertex.index(), (2 * i + 1)) << " ";
+        ss << values(i, (2 * j + 0)) << " ";
+        ss << values(i, (2 * j + 1)) << " ";
         ss << 0.0 << " ";
       }
       ss << 0.0 << " ";
@@ -417,8 +418,8 @@ void write_point_data(const function::Function& u, const mesh::Mesh& mesh,
     else
     {
       // Write all components
-      for (std::size_t i = 0; i < dim; i++)
-        ss << values(vertex.index(), i) << " ";
+      for (std::size_t j = 0; j < dim; j++)
+        ss << values(i, j) << " ";
       ss << " ";
     }
   }

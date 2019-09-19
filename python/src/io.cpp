@@ -143,6 +143,10 @@ void io(py::module& m)
 			return std::make_unique<dolfin::io::VTKFile>(filename);
 		  }),
 		py::arg("filename"))
+	  .def("write",
+		   py::overload_cast<const dolfin::function::Function&>(
+               &dolfin::io::VTKFile::write),
+           py::arg("u"))
       .def("write",
            py::overload_cast<const dolfin::mesh::Mesh&>(
                &dolfin::io::VTKFile::write),
