@@ -8,6 +8,7 @@
 from dolfin import Mesh, MPI, Constant
 from dolfin.cpp.mesh import CellType, GhostMode
 from dolfin.fem import assemble_scalar
+from dolfin_utils.test.skips import skip_in_parallel
 from ufl import dx, SpatialCoordinate, sin
 
 
@@ -15,6 +16,7 @@ import numpy as np
 import pytest
 
 
+@skip_in_parallel
 @pytest.mark.parametrize('L', [1, 1, 2, 3])
 @pytest.mark.parametrize('H', [0.5, 1, 2, 3])
 def test_triangle_order_2(L, H):
@@ -54,6 +56,7 @@ def test_triangle_order_2(L, H):
     assert(vol == pytest.approx(L * H / 2, rel=1e-9))
 
 
+@skip_in_parallel
 def test_triangle_order_3():
     H, L = 1, 1
     #  *---*---*---*   3--11--10--2
