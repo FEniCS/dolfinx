@@ -170,8 +170,8 @@ void write_ascii_mesh(const mesh::Mesh& mesh, std::size_t cell_dim,
        << "\">";
   for (std::size_t offsets = 1; offsets <= num_cells; offsets++)
     file << offsets * num_nodes << " ";
-
   file << "</DataArray>" << std::endl;
+
   // Write cell type
   file << "<DataArray  type=\"UInt8\"  Name=\"types\"  format=\""
        << "ascii"

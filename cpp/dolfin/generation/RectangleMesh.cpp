@@ -243,8 +243,8 @@ mesh::Mesh build_quad(MPI_Comm comm, const std::array<Eigen::Vector3d, 2>& p,
       const std::size_t i0 = iy * (nx + 1);
       topo(cell, 0) = i0 + ix;
       topo(cell, 1) = i0 + ix + 1;
-      topo(cell, 3) = i0 + ix + nx + 1;
-      topo(cell, 2) = i0 + ix + nx + 2;
+      topo(cell, 2) = i0 + ix + nx + 1;
+      topo(cell, 3) = i0 + ix + nx + 2;
       ++cell;
     }
 

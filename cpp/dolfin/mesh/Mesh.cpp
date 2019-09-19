@@ -125,7 +125,7 @@ Mesh::Mesh(MPI_Comm comm, mesh::CellType type,
            const Eigen::Ref<const EigenRowArrayXXi64> cells,
            const std::vector<std::int64_t>& global_cell_indices,
            const GhostMode ghost_mode, std::int32_t num_ghost_cells)
-  : cell_type(type), _degree(1), _mpi_comm(comm), _ghost_mode(ghost_mode),
+    : cell_type(type), _degree(1), _mpi_comm(comm), _ghost_mode(ghost_mode),
       _unique_id(common::UniqueIdGenerator::id())
 {
   const int tdim = mesh::cell_dim(cell_type);

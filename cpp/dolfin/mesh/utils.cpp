@@ -158,7 +158,7 @@ T volume_quadrilateral(const mesh::Mesh& mesh,
     const Eigen::Vector3d p2 = geometry.x(vertices[2]);
     const Eigen::Vector3d p3 = geometry.x(vertices[3]);
 
-    const Eigen::Vector3d c = (p0 - p2).cross(p1 - p3);
+    const Eigen::Vector3d c = (p0 - p3).cross(p1 - p2);
     const double volume = 0.5 * c.norm();
 
     if (gdim == 3)

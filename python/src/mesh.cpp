@@ -202,8 +202,6 @@ void mesh(py::module& m)
           "topology", py::overload_cast<>(&dolfin::mesh::Mesh::topology),
           "Mesh topology", py::return_value_policy::reference_internal)
       .def_readonly("cell_type", &dolfin::mesh::Mesh::cell_type)
-	  // .def_readonly("coordinate_nodes", &dolfin::mesh::Mesh::coordinate_nodes)
-	  // .def("cell_permutation", &dolfin::mesh::Mesh::cell_permutation)
       .def("ufl_id", &dolfin::mesh::Mesh::id)
       .def_property_readonly("id", &dolfin::mesh::Mesh::id)
       .def("cell_name", [](const dolfin::mesh::Mesh& self) {
