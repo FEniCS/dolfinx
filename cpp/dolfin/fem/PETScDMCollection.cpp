@@ -497,7 +497,7 @@ la::PETScMatrix PETScDMCollection::create_transfer_matrix(
 
   // m_owned is the number of rows the current processor needs to set
   // note that the processor might not own these rows
-  const std::size_t m_owned = global_row_indices.size();
+  const int m_owned = global_row_indices.size();
 
   // Initialise row and column indices and values of the transfer
   // matrix
@@ -644,7 +644,7 @@ la::PETScMatrix PETScDMCollection::create_transfer_matrix(
   }
 
   // Setting transfer matrix values row by row
-  for (unsigned int fine_row = 0; fine_row < m_owned; ++fine_row)
+  for (int fine_row = 0; fine_row < m_owned; ++fine_row)
   {
     PetscInt fine_dof = global_row_indices[fine_row];
     ierr
@@ -674,31 +674,31 @@ void PETScDMCollection::find_exterior_points(
       const Eigen::Array<int, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>>
       send_indices_arr(send_indices.data(), send_indices.size() / data_size,
                        data_size);
-  unsigned int mpi_rank = MPI::rank(mpi_comm);
-  unsigned int mpi_size = MPI::size(mpi_comm);
+  int mpi_rank = MPI::rank(mpi_comm);
+  int mpi_size = MPI::size(mpi_comm);
 
   // Get all points on all processes
   std::vector<std::vector<double>> recv_points(mpi_size);
   MPI::all_gather(mpi_comm, send_points, recv_points);
 
-  unsigned int num_recv_points = 0;
+  int num_recv_points = 0;
   for (auto& p : recv_points)
     num_recv_points += p.size();
   num_recv_points /= dim;
 
   // Save distances and ids of nearest cells on this process
   std::vector<double> send_distance;
-  std::vector<unsigned int> ids;
+  std::vector<int> ids;
 
   send_distance.reserve(num_recv_points);
   ids.reserve(num_recv_points);
   for (const auto& p : recv_points)
   {
-    unsigned int n_points = p.size() / dim;
-    for (unsigned int i = 0; i < n_points; ++i)
+    int n_points = p.size() / dim;
+    for (int i = 0; i < n_points; ++i)
     {
       Eigen::Map<const Eigen::Vector3d> curr_point(&p[i * dim]);
-      std::pair<unsigned int, double> find_point
+      std::pair<int, double> find_point
           = treec.compute_closest_entity(curr_point, meshc);
       send_distance.push_back(find_point.second);
       ids.push_back(find_point.first);
@@ -712,20 +712,19 @@ void PETScDMCollection::find_exterior_points(
   // Determine which process has closest cell for each point, and send
   // the global indices to that process
   int ct = 0;
-  std::vector<std::vector<unsigned int>> send_global_indices(mpi_size);
+  std::vector<std::vector<int>> send_global_indices(mpi_size);
 
-  for (unsigned int p = 0; p != mpi_size; ++p)
+  for (int p = 0; p < mpi_size; ++p)
   {
-    unsigned int n_points = recv_points[p].size() / dim;
-
+    int n_points = recv_points[p].size() / dim;
     Eigen::Map<const Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic,
                                   Eigen::RowMajor>>
         point_arr(recv_points[p].data(), n_points, dim);
-    for (unsigned int i = 0; i < n_points; ++i)
+    for (int i = 0; i < n_points; ++i)
     {
-      unsigned int min_proc = 0;
+      int min_proc = 0;
       double min_val = recv_distance[ct];
-      for (unsigned int q = 1; q != mpi_size; ++q)
+      for (int q = 1; q < mpi_size; ++q)
       {
         const double val = recv_distance[q * num_recv_points + ct];
         if (val < min_val)
@@ -753,7 +752,7 @@ void PETScDMCollection::find_exterior_points(
   }
 
   // Send out global indices for the points provided by this process
-  std::vector<unsigned int> recv_global_indices;
+  std::vector<int> recv_global_indices;
   MPI::all_to_all(mpi_comm, send_global_indices, recv_global_indices);
 
   indices.insert(indices.end(), recv_global_indices.begin(),
