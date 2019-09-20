@@ -106,9 +106,9 @@ public:
   /// Read in the data from the first mesh in HDF file
   ///
   /// @param[in] data_path Path to topology and geometry datasets
-  /// @return Cell type (mesh::CellType),
-  ///         Geometric points on each process (EigenRowArrayXXd),
-  ///         Topological cells with global vertex indexing (EigenRowArrayXXi64)
+  /// @return Cell type,
+  ///         Geometric points on each process,
+  ///         Topological cells with global vertex indexing
   ///         Global cell distribution
   std::tuple<mesh::CellType, EigenRowArrayXXd, EigenRowArrayXXi64,
              std::vector<std::int64_t>, std::vector<std::int64_t>>

@@ -916,9 +916,9 @@ std::map<std::int64_t, std::vector<int>> Partitioning::compute_halo_cells(
   std::map<std::int64_t, std::vector<int>> ghost_procs;
 
   // Work out halo cells for current division of dual graph
-  const auto& elmdist = csr_graph.node_distribution();
-  const auto& xadj = csr_graph.nodes();
-  const auto& adjncy = csr_graph.edges();
+  const std::vector<std::int64_t>& elmdist = csr_graph.node_distribution();
+  const std::vector<std::int64_t>& xadj = csr_graph.nodes();
+  const std::vector<std::int64_t>& adjncy = csr_graph.edges();
   const std::int32_t num_processes = dolfin::MPI::size(mpi_comm);
   const std::int32_t process_number = dolfin::MPI::rank(mpi_comm);
   const std::int32_t elm_begin = elmdist[process_number];
@@ -938,9 +938,7 @@ std::map<std::int64_t, std::vector<int>> Partitioning::compute_halo_cells(
               - elmdist.begin() - 1;
         assert(remote < num_processes);
         if (halo_cell_to_remotes.find(i) == halo_cell_to_remotes.end())
-        {
           halo_cell_to_remotes[i] = std::set<std::int32_t>();
-        }
         halo_cell_to_remotes[i].insert(remote);
       }
     }

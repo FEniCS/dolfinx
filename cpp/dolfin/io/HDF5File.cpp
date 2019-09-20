@@ -1342,7 +1342,6 @@ mesh::Mesh HDF5File::read_mesh(const std::string data_path,
 
   if (use_partition_from_file)
   {
-
     // Check that number of MPI processes matches partitioning
     if (_mpi_comm.size() != (cell_distribution.size() - 1))
     {
