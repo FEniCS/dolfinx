@@ -83,7 +83,7 @@ BoundingBoxTree::BoundingBoxTree(const mesh::Mesh& mesh, int tdim)
             << " nodes for " << num_leaves << " entities.";
 
   // Build tree for each process
-  const std::size_t mpi_size = MPI::size(mesh.mpi_comm());
+  const int mpi_size = MPI::size(mesh.mpi_comm());
   if (mpi_size > 1)
   {
     // Send root node coordinates to all processes
