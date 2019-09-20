@@ -154,11 +154,10 @@ private:
                                              const Eigen::Vector3d& point,
                                              int node, const mesh::Mesh& mesh);
 
-  // Compute closest entity (recursive)
-  static void _compute_closest_entity(const BoundingBoxTree& tree,
-                                      const Eigen::Vector3d& point, int node,
-                                      const mesh::Mesh& mesh,
-                                      int& closest_entity, double& R2);
+  // Compute closest entity {closest_entity, R2} (recursive)
+  static std::pair<int, double> _compute_closest_entity(
+      const BoundingBoxTree& tree, const Eigen::Vector3d& point, int node,
+      const mesh::Mesh& mesh, int closest_entity, double R2);
 
   // Compute closest point (recursive)
   static void _compute_closest_point(const BoundingBoxTree& tree,

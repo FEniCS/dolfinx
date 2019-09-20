@@ -236,21 +236,18 @@ BoundingBoxTree::compute_closest_entity(const Eigen::Vector3d& point,
   double r = guess.second;
 
   // Return if we have found the point
-  if (r == 0.)
+  if (r == 0.0)
     return guess;
 
-  // Initialize index and distance to closest entity
-  int closest_entity = -1;
-  double R2 = r * r;
-
   // Call recursive find function
-  _compute_closest_entity(*this, point, num_bboxes() - 1, mesh, closest_entity,
-                          R2);
+  std::pair<int, double> p = _compute_closest_entity(
+      *this, point, num_bboxes() - 1, mesh, -1, r * r);
 
   // Sanity check
-  assert(closest_entity >= 0);
+  assert(p.first >= 0);
 
-  return {closest_entity, sqrt(R2)};
+  p.second = sqrt(p.second);
+  return p;
 }
 //-----------------------------------------------------------------------------
 std::pair<int, double>
@@ -556,10 +553,9 @@ int BoundingBoxTree::_compute_first_entity_collision(
   return -1;
 }
 //-----------------------------------------------------------------------------
-void BoundingBoxTree::_compute_closest_entity(const BoundingBoxTree& tree,
-                                              const Eigen::Vector3d& point,
-                                              int node, const mesh::Mesh& mesh,
-                                              int& closest_entity, double& R2)
+std::pair<int, double> BoundingBoxTree::_compute_closest_entity(
+    const BoundingBoxTree& tree, const Eigen::Vector3d& point, int node,
+    const mesh::Mesh& mesh, int closest_entity, double R2)
 {
   // Get bounding box for current node
   const BBox& bbox = tree._bboxes[node];
@@ -567,7 +563,7 @@ void BoundingBoxTree::_compute_closest_entity(const BoundingBoxTree& tree,
   // If bounding box is outside radius, then don't search further
   const double r2 = tree.compute_squared_distance_bbox(point.data(), node);
   if (r2 > R2)
-    return;
+    return {closest_entity, R2};
 
   // If box is leaf (which we know is inside radius), then shrink radius
   else if (is_leaf(bbox, node))
@@ -584,13 +580,18 @@ void BoundingBoxTree::_compute_closest_entity(const BoundingBoxTree& tree,
       closest_entity = entity_index;
       R2 = r2;
     }
+
+    return {closest_entity, R2};
   }
 
   // Check both children
   else
   {
-    _compute_closest_entity(tree, point, bbox[0], mesh, closest_entity, R2);
-    _compute_closest_entity(tree, point, bbox[1], mesh, closest_entity, R2);
+    std::pair<int, double> p = _compute_closest_entity(
+        tree, point, bbox[0], mesh, closest_entity, R2);
+    std::pair<int, double> p1 = _compute_closest_entity(
+        tree, point, bbox[1], mesh, p.first, p.second);
+    return p1;
   }
 }
 //-----------------------------------------------------------------------------
