@@ -64,10 +64,12 @@ BoundingBoxTree::BoundingBoxTree(const mesh::Mesh& mesh, int tdim)
   // Create bounding boxes for all entities (leaves)
   const int num_leaves = mesh.num_entities(tdim);
   std::vector<double> leaf_bboxes(2 * _gdim * num_leaves);
-  for (auto& it : mesh::MeshRange(mesh, tdim))
+  for (auto& e : mesh::MeshRange(mesh, tdim))
   {
-    compute_bbox_of_entity(leaf_bboxes.data() + 2 * _gdim * it.index(), it,
-                           _gdim);
+    Eigen::Array<double, 2, 3, Eigen::RowMajor> b = compute_bbox_of_entity(e);
+    for (int i = 0; i < 2; ++i)
+      for (int j = 0; j < _gdim; ++j)
+        leaf_bboxes[2 * _gdim * e.index() + _gdim * i + j] = b(i, j);
   }
 
   // Create leaf partition (to be sorted)
@@ -655,14 +657,9 @@ void BoundingBoxTree::build_point_search_tree(const mesh::Mesh& mesh) const
       = std::make_unique<BoundingBoxTree>(points, mesh.geometry().dim());
 }
 //-----------------------------------------------------------------------------
-void BoundingBoxTree::compute_bbox_of_entity(double* b,
-                                             const mesh::MeshEntity& entity,
-                                             int gdim)
+Eigen::Array<double, 2, 3, Eigen::RowMajor>
+BoundingBoxTree::compute_bbox_of_entity(const mesh::MeshEntity& entity)
 {
-  // Get bounding box coordinates
-  double* xmin = b;
-  double* xmax = b + gdim;
-
   // Get mesh entity data
   const mesh::Geometry& geometry = entity.mesh().geometry();
   const mesh::CellType entity_type
@@ -671,22 +668,20 @@ void BoundingBoxTree::compute_bbox_of_entity(double* b,
   const std::int32_t* vertices = entity.entities(0);
   assert(num_vertices >= 2);
 
-  // Get coordinates for first vertex
-  const Eigen::Ref<const EigenVectorXd> x = geometry.x(vertices[0]);
-  for (int j = 0; j < gdim; ++j)
-    xmin[j] = xmax[j] = x[j];
+  const Eigen::Ref<const EigenVectorXd> x0 = geometry.x(vertices[0]);
+
+  Eigen::Array<double, 2, 3, Eigen::RowMajor> b;
+  b.row(0) = x0;
+  b.row(1) = x0;
 
   // Compute min and max over remaining vertices
   for (int i = 1; i < num_vertices; ++i)
   {
-    // const double* x = geometry.x(vertices[i]);
     const Eigen::Ref<const EigenVectorXd> x = geometry.x(vertices[i]);
-    for (int j = 0; j < gdim; ++j)
-    {
-      xmin[j] = std::min(xmin[j], x[j]);
-      xmax[j] = std::max(xmax[j], x[j]);
-    }
+    b.row(0) = b.row(0).min(x.transpose().array());
+    b.row(1) = b.row(1).max(x.transpose().array());
   }
+  return b;
 }
 //-----------------------------------------------------------------------------
 void BoundingBoxTree::sort_points(std::size_t axis,

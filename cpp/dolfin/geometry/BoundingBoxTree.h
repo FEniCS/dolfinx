@@ -171,8 +171,8 @@ private:
   void build_point_search_tree(const mesh::Mesh& mesh) const;
 
   // Compute bounding box of mesh entity
-  static void compute_bbox_of_entity(double* b, const mesh::MeshEntity& entity,
-                                     int gdim);
+  static Eigen::Array<double, 2, 3, Eigen::RowMajor>
+  compute_bbox_of_entity(const mesh::MeshEntity& entity);
 
   // Sort points along given axis
   static void sort_points(std::size_t axis,
