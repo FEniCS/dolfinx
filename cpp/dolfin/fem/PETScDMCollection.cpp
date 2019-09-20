@@ -242,7 +242,7 @@ la::PETScMatrix PETScDMCollection::create_transfer_matrix(
 
   // MPI communicator, size and rank
   const MPI_Comm mpi_comm = meshc.mpi_comm();
-  const unsigned int mpi_size = MPI::size(mpi_comm);
+  const int mpi_size = MPI::size(mpi_comm);
 
   // Initialise bounding box tree and dofmaps
   geometry::BoundingBoxTree treec(meshc, meshc.topology().dim());
@@ -299,7 +299,7 @@ la::PETScMatrix PETScDMCollection::create_transfer_matrix(
   std::size_t eldim = el->space_dimension();
 
   // Number of dofs associated with each fine point
-  unsigned int data_size = 1;
+  int data_size = 1;
   for (int data_dim = 0; data_dim < el->value_rank(); data_dim++)
     data_size *= el->value_dimension(data_dim);
 
@@ -340,7 +340,7 @@ la::PETScMatrix PETScDMCollection::create_transfer_matrix(
   std::vector<std::vector<int>> send_found_global_row_indices(mpi_size);
 
   std::vector<int> proc_list;
-  std::vector<unsigned int> found_ranks;
+  std::vector<int> found_ranks;
   // Iterate through fine points on this process
   for (const auto& map_it : coords_to_dofs)
   {
@@ -381,18 +381,18 @@ la::PETScMatrix PETScDMCollection::create_transfer_matrix(
   // if any.  Send back the result to the originating process. In the
   // case that the point is found inside cells on more than one
   // process, the originating process will arbitrate.
-  std::vector<std::vector<unsigned int>> send_ids(mpi_size);
-  for (unsigned int p = 0; p < mpi_size; ++p)
+  std::vector<std::vector<int>> send_ids(mpi_size);
+  for (int p = 0; p < mpi_size; ++p)
   {
-    unsigned int n_points = recv_found[p].size() / gdim;
-    for (unsigned int i = 0; i < n_points; ++i)
+    int n_points = recv_found[p].size() / gdim;
+    for (int i = 0; i < n_points; ++i)
     {
       Eigen::Map<const Eigen::Vector3d> curr_point(&recv_found[p][i * gdim]);
       send_ids[p].push_back(
           treec.compute_first_entity_collision(curr_point, meshc));
     }
   }
-  std::vector<std::vector<unsigned int>> recv_ids(mpi_size);
+  std::vector<std::vector<int>> recv_ids(mpi_size);
   MPI::all_to_all(mpi_comm, send_ids, recv_ids);
 
   // 3. Revisit original list of sent points in the same order as
@@ -400,14 +400,14 @@ la::PETScMatrix PETScDMCollection::create_transfer_matrix(
   std::vector<int> count(mpi_size, 0);
   for (auto p = proc_list.begin(); p != proc_list.end(); p += (*p + 1))
   {
-    unsigned int nprocs = *p;
+    int nprocs = *p;
     int owner = -1;
     // Find first process which owns a cell containing the point
-    for (unsigned int j = 1; j != (nprocs + 1); ++j)
+    for (int j = 1; j < (nprocs + 1); ++j)
     {
       const int proc = *(p + j);
-      const unsigned int id = recv_ids[proc][count[proc]];
-      if (id != std::numeric_limits<unsigned int>::max())
+      const int id = recv_ids[proc][count[proc]];
+      if (id >= 0)
       {
         owner = proc;
         break;
@@ -430,12 +430,12 @@ la::PETScMatrix PETScDMCollection::create_transfer_matrix(
     {
       // If point is found on multiple processes, send -1 as the index
       // to the remote processes which are not the "owner"
-      for (unsigned int j = 1; j != (nprocs + 1); ++j)
+      for (int j = 1; j < (nprocs + 1); ++j)
       {
         const int proc = *(p + j);
         if (proc != owner)
         {
-          for (unsigned int k = 0; k != data_size; ++k)
+          for (int k = 0; k < data_size; ++k)
             send_found_global_row_indices[proc][count[proc] * data_size + k]
                 = -1;
         }
@@ -443,7 +443,7 @@ la::PETScMatrix PETScDMCollection::create_transfer_matrix(
     }
 
     // Move to next point
-    for (unsigned int j = 1; j != (nprocs + 1); ++j)
+    for (int j = 1; j < (nprocs + 1); ++j)
       ++count[*(p + j)];
   }
 
@@ -453,12 +453,12 @@ la::PETScMatrix PETScDMCollection::create_transfer_matrix(
                   recv_found_global_row_indices);
 
   // Flatten results ready for insertion
-  for (unsigned int p = 0; p != mpi_size; ++p)
+  for (int p = 0; p < mpi_size; ++p)
   {
-    const auto& id_p = send_ids[p];
-    const unsigned int npoints = id_p.size();
-    assert(npoints == recv_found[p].size() / gdim);
-    assert(npoints == recv_found_global_row_indices[p].size() / data_size);
+    const std::vector<int>& id_p = send_ids[p];
+    const int npoints = id_p.size();
+    assert(npoints == (int)recv_found[p].size() / gdim);
+    assert(npoints == (int)recv_found_global_row_indices[p].size() / data_size);
 
     Eigen::Map<const Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic,
                                   Eigen::RowMajor>>
@@ -468,10 +468,9 @@ la::PETScMatrix PETScDMCollection::create_transfer_matrix(
                                   Eigen::RowMajor>>
         global_idx_p(recv_found_global_row_indices[p].data(), npoints,
                      data_size);
-    for (unsigned int i = 0; i < npoints; ++i)
+    for (int i = 0; i < npoints; ++i)
     {
-      if (id_p[i] != std::numeric_limits<unsigned int>::max()
-          and global_idx_p(i, 0) != -1)
+      if (id_p[i] >= 0 and global_idx_p(i, 0) != -1)
       {
         found_ids.push_back(id_p[i]);
         global_row_indices.insert(
@@ -565,9 +564,9 @@ la::PETScMatrix PETScDMCollection::create_transfer_matrix(
     auto temp_dofs = coarsemap->cell_dofs(id);
 
     // Loop over the fine dofs associated with this collision
-    for (unsigned k = 0; k < data_size; k++)
+    for (int k = 0; k < data_size; k++)
     {
-      const unsigned int fine_row = i * data_size + k;
+      const int fine_row = i * data_size + k;
       const std::size_t global_fine_dof = global_row_indices[fine_row];
       int p = finemap->index_map->owner(global_fine_dof / data_size);
 

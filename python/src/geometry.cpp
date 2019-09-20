@@ -32,20 +32,20 @@ void geometry(py::module& m)
       .def(py::init<const dolfin::mesh::Mesh&, std::size_t>())
       .def(py::init<const std::vector<Eigen::Vector3d>&, std::size_t>())
       .def("compute_collisions",
-           (std::vector<unsigned int>(dolfin::geometry::BoundingBoxTree::*)(
+           (std::vector<int>(dolfin::geometry::BoundingBoxTree::*)(
                const Eigen::Vector3d&) const)
                & dolfin::geometry::BoundingBoxTree::compute_collisions)
       .def("compute_collisions",
-           (std::pair<std::vector<unsigned int>, std::vector<unsigned int>>(
+           (std::pair<std::vector<int>, std::vector<int>>(
                dolfin::geometry::BoundingBoxTree::*)(
                const dolfin::geometry::BoundingBoxTree&) const)
                & dolfin::geometry::BoundingBoxTree::compute_collisions)
       .def("compute_entity_collisions",
-           (std::vector<unsigned int>(dolfin::geometry::BoundingBoxTree::*)(
+           (std::vector<int>(dolfin::geometry::BoundingBoxTree::*)(
                const Eigen::Vector3d&, const dolfin::mesh::Mesh&) const)
                & dolfin::geometry::BoundingBoxTree::compute_entity_collisions)
       .def("compute_entity_collisions",
-           (std::pair<std::vector<unsigned int>, std::vector<unsigned int>>(
+           (std::pair<std::vector<int>, std::vector<int>>(
                dolfin::geometry::BoundingBoxTree::*)(
                const dolfin::geometry::BoundingBoxTree&,
                const dolfin::mesh::Mesh&, const dolfin::mesh::Mesh&) const)
