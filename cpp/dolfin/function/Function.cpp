@@ -164,20 +164,20 @@ void Function::eval(
   // Find the cell that contains x
   const int gdim = x.cols();
   Eigen::Vector3d point = Eigen::Vector3d::Zero();
-  for (unsigned int i = 0; i < x.rows(); ++i)
+  for (int i = 0; i < x.rows(); ++i)
   {
     // Pad the input point to size 3 (bounding box requires 3d point)
     point.head(gdim) = x.row(i);
 
     // Get index of first cell containing point
-    unsigned int id = bb_tree.compute_first_entity_collision(point, mesh);
+    int id = bb_tree.compute_first_entity_collision(point, mesh);
 
     // If not found, use the closest cell
-    if (id == std::numeric_limits<unsigned int>::max())
+    if (id < 0)
     {
       // Check if the closest cell is within 2*DBL_EPSILON. This we can
       // allow without _allow_extrapolation
-      std::pair<unsigned int, double> close
+      std::pair<int, double> close
           = bb_tree.compute_closest_entity(point, mesh);
       if (close.second < 2.0 * DBL_EPSILON)
         id = close.first;
@@ -418,7 +418,7 @@ Function::compute_point_values() const
 
     // Copy values to array of point values
     const std::int32_t* dofs = cell_dofs.connections(cell.index());
-    for (unsigned int i = 0; i < x.rows(); ++i)
+    for (int i = 0; i < x.rows(); ++i)
       point_values.row(dofs[i]) = values.row(i);
   }
 

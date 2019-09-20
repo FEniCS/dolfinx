@@ -540,10 +540,10 @@ la::PETScMatrix PETScDMCollection::create_transfer_matrix(
   EigenRowArrayXXd coordinate_dofs(num_dofs_g, gdim);
   ; // cell dofs coordinates vector
 
-  for (unsigned int i = 0; i < found_ids.size(); ++i)
+  for (std::size_t i = 0; i < found_ids.size(); ++i)
   {
     // Get coarse cell id and point
-    unsigned int id = found_ids[i];
+    std::size_t id = found_ids[i];
 
     // Create coarse cell
     mesh::MeshEntity coarse_cell(meshc, tdim, static_cast<std::size_t>(id));

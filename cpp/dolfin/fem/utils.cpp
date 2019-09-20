@@ -431,8 +431,7 @@ la::PETScVector fem::create_vector_nest(std::vector<const fem::Form*> L)
 //-----------------------------------------------------------------------------
 std::size_t
 dolfin::fem::get_global_index(const std::vector<const common::IndexMap*> maps,
-                              const unsigned int field,
-                              const unsigned int index)
+                              const int field, const int index)
 {
   // FIXME: handle/check block size > 1
 
@@ -446,13 +445,13 @@ dolfin::fem::get_global_index(const std::vector<const common::IndexMap*> maps,
   {
     for (std::size_t j = 0; j < maps.size(); ++j)
     {
-      if (j != field)
+      if ((int)j != field)
         offset += maps[j]->_all_ranges[owner] * maps[j]->block_size;
     }
   }
 
   // Local (process) offset
-  for (unsigned int i = 0; i < field; ++i)
+  for (int i = 0; i < field; ++i)
   {
     offset += (maps[i]->_all_ranges[owner + 1] - maps[i]->_all_ranges[owner])
               * maps[i]->block_size;

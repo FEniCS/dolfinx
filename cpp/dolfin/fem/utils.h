@@ -72,7 +72,7 @@ la::PETScVector create_vector_nest(std::vector<const fem::Form*> L);
 
 /// Get new global index in 'spliced' indices
 std::size_t get_global_index(const std::vector<const common::IndexMap*> maps,
-                             const unsigned int field, const unsigned int n);
+                             const int field, const int n);
 
 /// Create an ElementDofLayout from a ufc_dofmap
 ElementDofLayout create_element_dof_layout(const ufc_dofmap& dofmap,

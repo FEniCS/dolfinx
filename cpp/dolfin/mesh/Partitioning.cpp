@@ -81,7 +81,8 @@ std::map<std::int32_t, std::set<std::int32_t>> build_shared_points(
   // received_point_indices to send back to originating process
   std::vector<std::int32_t> process_list(index);
   for (std::int32_t p = 0; p < mpi_size; ++p)
-    for (unsigned int i = 0; i < received_point_indices[p].size(); ++i)
+  {
+    for (std::size_t i = 0; i < received_point_indices[p].size(); ++i)
     {
       // Convert global to local index
       const std::size_t q = received_point_indices[p][i];
@@ -95,13 +96,14 @@ std::map<std::int32_t, std::set<std::int32_t>> build_shared_points(
         ++location;
       }
     }
+  }
 
   // Reset offsets to original positions
-  for (unsigned int i = 0; i != offset.size(); ++i)
+  for (std::size_t i = 0; i < offset.size(); ++i)
     offset[i] -= 2 * n_sharing[i];
 
   std::vector<std::vector<std::size_t>> send_sharing(mpi_size);
-  for (unsigned int i = 0; i != n_sharing.size(); ++i)
+  for (std::size_t i = 0; i < n_sharing.size(); ++i)
   {
     if (n_sharing[i] > 0)
     {
@@ -111,8 +113,10 @@ std::map<std::int32_t, std::set<std::int32_t>> build_shared_points(
         ss.push_back(n_sharing[i] - 1);
         ss.push_back(process_list[offset[i] + j * 2 + 1]);
         for (int k = 0; k < n_sharing[i]; ++k)
+        {
           if (j != k)
             ss.push_back(process_list[offset[i] + k * 2]);
+        }
       }
     }
   }
@@ -724,7 +728,7 @@ Partitioning::distribute_points(
   // in local_indexing the original position on this process
   std::vector<std::vector<std::size_t>> send_point_indices(mpi_size);
   std::vector<std::vector<std::int32_t>> local_indexing(mpi_size);
-  for (unsigned int i = 0; i != global_point_indices.size(); ++i)
+  for (std::size_t i = 0; i < global_point_indices.size(); ++i)
   {
     const std::size_t required_point = global_point_indices[i];
     const int location
