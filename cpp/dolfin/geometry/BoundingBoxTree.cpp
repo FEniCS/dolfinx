@@ -587,18 +587,18 @@ std::pair<int, double> BoundingBoxTree::_compute_closest_entity(
   // Check both children
   else
   {
-    std::pair<int, double> p = _compute_closest_entity(
+    std::pair<int, double> p0 = _compute_closest_entity(
         tree, point, bbox[0], mesh, closest_entity, R2);
     std::pair<int, double> p1 = _compute_closest_entity(
-        tree, point, bbox[1], mesh, p.first, p.second);
+        tree, point, bbox[1], mesh, p0.first, p0.second);
     return p1;
   }
 }
 //-----------------------------------------------------------------------------
-void BoundingBoxTree::_compute_closest_point(const BoundingBoxTree& tree,
-                                             const Eigen::Vector3d& point,
-                                             int node, int& closest_point,
-                                             double& R2)
+std::pair<int, double>
+BoundingBoxTree::_compute_closest_point(const BoundingBoxTree& tree,
+                                        const Eigen::Vector3d& point, int node,
+                                        int closest_point, double R2)
 {
   // Get bounding box for current node
   const BBox& bbox = tree._bboxes[node];
@@ -612,17 +612,22 @@ void BoundingBoxTree::_compute_closest_point(const BoundingBoxTree& tree,
       closest_point = bbox[1];
       R2 = r2;
     }
+
+    return {closest_point, R2};
   }
   else
   {
     // If bounding box is outside radius, then don't search further
     const double r2 = tree.compute_squared_distance_bbox(point.data(), node);
     if (r2 > R2)
-      return;
+      return {closest_point, R2};
 
     // Check both children
-    _compute_closest_point(tree, point, bbox[0], closest_point, R2);
-    _compute_closest_point(tree, point, bbox[1], closest_point, R2);
+    std::pair<int, double> p0
+        = _compute_closest_point(tree, point, bbox[0], closest_point, R2);
+    std::pair<int, double> p1
+        = _compute_closest_point(tree, point, bbox[1], p0.first, p0.second);
+    return p1;
   }
 }
 //-----------------------------------------------------------------------------
