@@ -821,26 +821,13 @@ double BoundingBoxTree::compute_squared_distance_point(const Eigen::Vector3d& x,
 double BoundingBoxTree::compute_squared_distance_bbox(const Eigen::Vector3d& x,
                                                       int node) const
 {
-  // Note: Some else-if might be in order here but I assume the
-  // compiler can do a better job at optimizing/parallelizing this
-  // version. This is also the way the algorithm is presented in
-  // Ericsson.
-
-  Eigen::Map<const Eigen::Array<double, Eigen::Dynamic, 3, Eigen::RowMajor>> b(
-      _bbox_coordinates.data() + 6 * node, 2, 3);
-  double r2 = 0.0;
-  for (int i = 0; i < 3; ++i)
-  {
-    if (x[i] < b(0, i))
-      r2 += (x[i] - b(0, i)) * (x[i] - b(0, i));
-  }
-  for (int i = 0; i < 3; ++i)
-  {
-    if (x[i] > b(1, i))
-      r2 += (x[i] - b(1, i)) * (x[i] - b(1, i));
-  }
-
-  return r2;
+  Eigen::Map<const Eigen::Vector3d> b0(_bbox_coordinates.data() + 6 * node, 3);
+  Eigen::Map<const Eigen::Vector3d> b1(_bbox_coordinates.data() + 6 * node + 3,
+                                       3);
+  auto d0 = (x - b0).array();
+  auto d1 = (x - b1).array();
+  return (d0 > 0.0).select(0, d0).matrix().squaredNorm()
+         + (d1 < 0.0).select(0, d1).matrix().squaredNorm();
 }
 //-----------------------------------------------------------------------------
 bool BoundingBoxTree::bbox_in_bbox(
