@@ -140,10 +140,10 @@ private:
   // Compute collisions with tree (recursive)
   static void _compute_collisions_tree(const BoundingBoxTree& A,
                                        const BoundingBoxTree& B, int node_A,
-                                       int node_B, std::vector<int>& entities_A,
-                                       std::vector<int>& entities_B,
-                                       const mesh::Mesh* mesh_A,
-                                       const mesh::Mesh* mesh_B);
+                                       int node_B, const mesh::Mesh* mesh_A,
+                                       const mesh::Mesh* mesh_B,
+                                       std::vector<int>& entities_A,
+                                       std::vector<int>& entities_B);
 
   // Compute first collision (recursive)
   static int _compute_first_collision(const BoundingBoxTree& tree,

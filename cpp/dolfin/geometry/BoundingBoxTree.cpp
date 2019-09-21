@@ -139,7 +139,7 @@ BoundingBoxTree::compute_collisions(const BoundingBoxTree& tree) const
 
   // Call recursive find function
   _compute_collisions_tree(A, B, A.num_bboxes() - 1, B.num_bboxes() - 1,
-                           entities_A, entities_B, 0, 0);
+                           nullptr, nullptr, entities_A, entities_B);
 
   return std::make_pair(entities_A, entities_B);
 }
@@ -191,7 +191,7 @@ BoundingBoxTree::compute_entity_collisions(const BoundingBoxTree& tree,
 
   // Call recursive find function
   _compute_collisions_tree(A, B, A.num_bboxes() - 1, B.num_bboxes() - 1,
-                           entities_A, entities_B, &mesh_A, &mesh_B);
+                           &mesh_A, &mesh_B, entities_A, entities_B);
 
   return std::make_pair(entities_A, entities_B);
 }
@@ -396,8 +396,8 @@ void BoundingBoxTree::_compute_collisions_point(const BoundingBoxTree& tree,
 //-----------------------------------------------------------------------------
 void BoundingBoxTree::_compute_collisions_tree(
     const BoundingBoxTree& A, const BoundingBoxTree& B, int node_A, int node_B,
-    std::vector<int>& entities_A, std::vector<int>& entities_B,
-    const mesh::Mesh* mesh_A, const mesh::Mesh* mesh_B)
+    const mesh::Mesh* mesh_A, const mesh::Mesh* mesh_B,
+    std::vector<int>& entities_A, std::vector<int>& entities_B)
 {
   // Get bounding boxes for current nodes
   const BBox& bbox_A = A._bboxes[node_A];
@@ -444,19 +444,19 @@ void BoundingBoxTree::_compute_collisions_tree(
   // If we reached the leaf in A, then descend B
   else if (is_leaf_A)
   {
-    _compute_collisions_tree(A, B, node_A, bbox_B[0], entities_A, entities_B,
-                             mesh_A, mesh_B);
-    _compute_collisions_tree(A, B, node_A, bbox_B[1], entities_A, entities_B,
-                             mesh_A, mesh_B);
+    _compute_collisions_tree(A, B, node_A, bbox_B[0], mesh_A, mesh_B,
+                             entities_A, entities_B);
+    _compute_collisions_tree(A, B, node_A, bbox_B[1], mesh_A, mesh_B,
+                             entities_A, entities_B);
   }
 
   // If we reached the leaf in B, then descend A
   else if (is_leaf_B)
   {
-    _compute_collisions_tree(A, B, bbox_A[0], node_B, entities_A, entities_B,
-                             mesh_A, mesh_B);
-    _compute_collisions_tree(A, B, bbox_A[1], node_B, entities_A, entities_B,
-                             mesh_A, mesh_B);
+    _compute_collisions_tree(A, B, bbox_A[0], node_B, mesh_A, mesh_B,
+                             entities_A, entities_B);
+    _compute_collisions_tree(A, B, bbox_A[1], node_B, mesh_A, mesh_B,
+                             entities_A, entities_B);
   }
 
   // At this point, we know neither is a leaf so descend the largest
@@ -465,17 +465,17 @@ void BoundingBoxTree::_compute_collisions_tree(
   // the most boxes left to traverse) has the largest node number.
   else if (node_A > node_B)
   {
-    _compute_collisions_tree(A, B, bbox_A[0], node_B, entities_A, entities_B,
-                             mesh_A, mesh_B);
-    _compute_collisions_tree(A, B, bbox_A[1], node_B, entities_A, entities_B,
-                             mesh_A, mesh_B);
+    _compute_collisions_tree(A, B, bbox_A[0], node_B, mesh_A, mesh_B,
+                             entities_A, entities_B);
+    _compute_collisions_tree(A, B, bbox_A[1], node_B, mesh_A, mesh_B,
+                             entities_A, entities_B);
   }
   else
   {
-    _compute_collisions_tree(A, B, node_A, bbox_B[0], entities_A, entities_B,
-                             mesh_A, mesh_B);
-    _compute_collisions_tree(A, B, node_A, bbox_B[1], entities_A, entities_B,
-                             mesh_A, mesh_B);
+    _compute_collisions_tree(A, B, node_A, bbox_B[0], mesh_A, mesh_B,
+                             entities_A, entities_B);
+    _compute_collisions_tree(A, B, node_A, bbox_B[1], mesh_A, mesh_B,
+                             entities_A, entities_B);
   }
 
   // Note that cases above can be collected in fewer cases but this
