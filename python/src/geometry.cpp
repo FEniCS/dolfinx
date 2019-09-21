@@ -29,8 +29,8 @@ void geometry(py::module& m)
   py::class_<dolfin::geometry::BoundingBoxTree,
              std::shared_ptr<dolfin::geometry::BoundingBoxTree>>(
       m, "BoundingBoxTree")
-      .def(py::init<const dolfin::mesh::Mesh&, std::size_t>())
-      .def(py::init<const std::vector<Eigen::Vector3d>&, std::size_t>())
+      .def(py::init<const dolfin::mesh::Mesh&, int>())
+      .def(py::init<const std::vector<Eigen::Vector3d>&>())
       .def("compute_collisions",
            (std::vector<int>(dolfin::geometry::BoundingBoxTree::*)(
                const Eigen::Vector3d&) const)

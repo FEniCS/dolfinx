@@ -118,15 +118,13 @@ compute_bbox_of_bboxes(const std::vector<double>& leaf_bboxes,
 //-----------------------------------------------------------------------------
 BoundingBoxTree::BoundingBoxTree(const std::vector<double>& leaf_bboxes,
                                  const std::vector<int>::iterator& begin,
-                                 const std::vector<int>::iterator& end,
-                                 int gdim)
-    : _tdim(0), _gdim(gdim)
+                                 const std::vector<int>::iterator& end)
+    : _tdim(0)
 {
   _build_from_leaf(leaf_bboxes, begin, end);
 }
 //-----------------------------------------------------------------------------
-BoundingBoxTree::BoundingBoxTree(const mesh::Mesh& mesh, int tdim)
-    : _tdim(tdim), _gdim(mesh.geometry().dim())
+BoundingBoxTree::BoundingBoxTree(const mesh::Mesh& mesh, int tdim) : _tdim(tdim)
 {
   // Check dimension
   if (tdim < 1 or tdim > mesh.topology().dim())
@@ -172,15 +170,14 @@ BoundingBoxTree::BoundingBoxTree(const mesh::Mesh& mesh, int tdim)
     std::vector<int> global_leaves(mpi_size);
     std::iota(global_leaves.begin(), global_leaves.end(), 0);
     _global_tree.reset(new BoundingBoxTree(recv_bbox, global_leaves.begin(),
-                                           global_leaves.end(), _gdim));
+                                           global_leaves.end()));
     LOG(INFO) << "Computed global bounding box tree with "
               << _global_tree->num_bboxes() << " boxes.";
   }
 }
 //-----------------------------------------------------------------------------
-BoundingBoxTree::BoundingBoxTree(const std::vector<Eigen::Vector3d>& points,
-                                 int gdim)
-    : _tdim(0), _gdim(gdim)
+BoundingBoxTree::BoundingBoxTree(const std::vector<Eigen::Vector3d>& points)
+    : _tdim(0)
 {
   // Create leaf partition (to be sorted)
   const int num_leaves = points.size();
@@ -388,7 +385,6 @@ int BoundingBoxTree::_build_from_leaf(const std::vector<double>& leaf_bboxes,
       = compute_bbox_of_bboxes(leaf_bboxes, begin, end);
   Eigen::Array<double, 2, 3, Eigen::RowMajor>::Index axis;
   (b.row(1) - b.row(0)).maxCoeff(&axis);
-  assert(axis < _gdim);
 
   // Sort bounding boxes along longest axis
   std::vector<int>::iterator middle = begin + (end - begin) / 2;
@@ -740,8 +736,7 @@ void BoundingBoxTree::build_point_search_tree(const mesh::Mesh& mesh) const
     points[i] = midpoints.row(i);
 
   // Build tree
-  _point_search_tree
-      = std::make_unique<BoundingBoxTree>(points, mesh.geometry().dim());
+  _point_search_tree = std::make_unique<BoundingBoxTree>(points);
 }
 //-----------------------------------------------------------------------------
 Eigen::Array<double, 2, 3, Eigen::RowMajor>
@@ -834,40 +829,11 @@ bool BoundingBoxTree::bbox_in_bbox(
     const Eigen::Array<double, 2, 3, Eigen::RowMajor>& a, int node,
     double rtol) const
 {
-  // std::cout << "Data" << std::endl;
-  // for (auto x : _bbox_coordinates)
-  //   std::cout << "  " << x << std::endl;
-
   Eigen::Map<const Eigen::Array<double, Eigen::Dynamic, 3, Eigen::RowMajor>> b(
       _bbox_coordinates.data() + 6 * node, 2, 3);
   auto eps0 = rtol * (b.row(1) - b.row(0));
-  // std::cout << "eps0: " << std::endl;
-  // std::cout << eps0 << std::endl;
-  // std::cout << "b0, b1 " << std::endl;
-  // std::cout << b.row(0) << std::endl;
-  // std::cout << b.row(1) << std::endl;
-  // std::cout << "a0, a1 " << std::endl;
-  // std::cout << a.row(0) << std::endl;
-  // std::cout << a.row(1) << std::endl;
-
-  bool test = (b.row(0) - eps0 <= a.row(1)).all()
-              and (b.row(1) + eps0 >= a.row(0)).all();
-  // std::cout << "Check 1: " << ((b.row(0) - eps0) <= a.row(1)).all()
-  //           << std::endl;
-  // std::cout << "Check 2: " << ((b.row(1) + eps0) >= a.row(0)).all()
-  //           << std::endl;
-
-  for (int i = 0; i < _gdim; ++i)
-  {
-    const double eps = rtol * (b(1, i) - b(0, i));
-    if (b(0, i) - eps > a(1, i) or a(0, i) > b(1, i) + eps)
-    {
-      assert(!test);
-      return false;
-    }
-  }
-  assert(test);
-  return true;
+  return (b.row(0) - eps0 <= a.row(1)).all()
+         and (b.row(1) + eps0 >= a.row(0)).all();
 }
 //-----------------------------------------------------------------------------
 int BoundingBoxTree::add_point(const BBox& bbox, const Eigen::Vector3d& point)

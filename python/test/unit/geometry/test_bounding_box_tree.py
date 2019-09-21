@@ -6,6 +6,7 @@
 """Unit tests for BoundingBoxTree"""
 
 import numpy
+import pytest
 
 from dolfin import MPI, UnitCubeMesh, UnitIntervalMesh, UnitSquareMesh
 from dolfin.geometry import BoundingBoxTree
@@ -42,13 +43,11 @@ def test_compute_collisions_point_1d():
 
 @skip_in_parallel
 def test_compute_collisions_point_3d():
-
     reference = {
         1: set([1364]),
         2: set([1967, 1968, 1970, 1972, 1974, 1976]),
         3: set([876, 877, 878, 879, 880, 881])
     }
-
     p = numpy.array([0.3, 0.3, 0.3])
     mesh = UnitCubeMesh(MPI.comm_world, 8, 8, 8)
     tree = BoundingBoxTree(mesh, mesh.topology.dim)
@@ -66,55 +65,41 @@ def test_compute_collisions_point_3d():
 
 
 @skip_in_parallel
-def test_compute_collisions_tree_1d():
+@pytest.mark.parametrize("point,cells", [(numpy.array([0.52, 0, 0]), [
+    set([8, 9, 10, 11, 12, 13, 14, 15]),
+    set([0, 1, 2, 3, 4, 5, 6, 7])]),
+    (numpy.array([0.9, 0, 0]), [set([14, 15]), set([0, 1])])])
+def test_compute_collisions_tree_1d(point, cells):
+    mesh_A = UnitIntervalMesh(MPI.comm_world, 16)
+    mesh_B = UnitIntervalMesh(MPI.comm_world, 16)
 
-    references = [[
-        set([8, 9, 10, 11, 12, 13, 14, 15]),
-        set([0, 1, 2, 3, 4, 5, 6, 7])
-    ], [set([14, 15]), set([0, 1])]]
+    bgeom = mesh_B.geometry.points
+    bgeom += point
 
-    points = [numpy.array([0.52, 0, 0]), numpy.array([0.9, 0, 0])]
+    tree_A = BoundingBoxTree(mesh_A, mesh_A.topology.dim)
+    tree_B = BoundingBoxTree(mesh_B, mesh_B.topology.dim)
 
-    for i, point in enumerate(points):
-        mesh_A = UnitIntervalMesh(MPI.comm_world, 16)
-        mesh_B = UnitIntervalMesh(MPI.comm_world, 16)
+    entities_A, entities_B = tree_A.compute_collisions_bb(tree_B)
 
-        bgeom = mesh_B.geometry.points
-        bgeom[:] += point
-
-        tree_A = BoundingBoxTree(mesh_A, mesh_A.topology.dim)
-        tree_B = BoundingBoxTree(mesh_B, mesh_B.topology.dim)
-
-        entities_A, entities_B = tree_A.compute_collisions_bb(tree_B)
-
-        assert set(entities_A) == references[i][0]
-        assert set(entities_B) == references[i][1]
+    assert set(entities_A) == cells[0]
+    assert set(entities_B) == cells[1]
 
 
 @skip_in_parallel
-def test_compute_collisions_tree_2d():
-    references = [[
-        set([20, 21, 22, 23, 28, 29, 30, 31]),
-        set([0, 1, 2, 3, 8, 9, 10, 11])
-    ], [set([6, 7]), set([24, 25])]]
-
-    points = [numpy.array([0.52, 0.51, 0.0]), numpy.array([0.9, -0.9, 0.0])]
-
-    for i, point in enumerate(points):
-
-        mesh_A = UnitSquareMesh(MPI.comm_world, 4, 4)
-        mesh_B = UnitSquareMesh(MPI.comm_world, 4, 4)
-
-        bgeom = mesh_B.geometry.points
-        bgeom += point
-
-        tree_A = BoundingBoxTree(mesh_A, mesh_A.topology.dim)
-        tree_B = BoundingBoxTree(mesh_B, mesh_B.topology.dim)
-
-        entities_A, entities_B = tree_A.compute_collisions_bb(tree_B)
-
-        assert set(entities_A) == references[i][0]
-        assert set(entities_B) == references[i][1]
+@pytest.mark.parametrize("point,cells", [(numpy.array([0.52, 0.51, 0.0]), [
+    [20, 21, 22, 23, 28, 29, 30, 31],
+    [0, 1, 2, 3, 8, 9, 10, 11]]),
+    (numpy.array([0.9, -0.9, 0.0]), [[6, 7], [24, 25]])])
+def test_compute_collisions_tree_2d(point, cells):
+    mesh_A = UnitSquareMesh(MPI.comm_world, 4, 4)
+    mesh_B = UnitSquareMesh(MPI.comm_world, 4, 4)
+    bgeom = mesh_B.geometry.points
+    bgeom += point
+    tree_A = BoundingBoxTree(mesh_A, mesh_A.topology.dim)
+    tree_B = BoundingBoxTree(mesh_B, mesh_B.topology.dim)
+    entities_A, entities_B = tree_A.compute_collisions_bb(tree_B)
+    assert set(entities_A) == set(cells[0])
+    assert set(entities_B) == set(cells[1])
 
 
 @skip_in_parallel
@@ -185,30 +170,25 @@ def test_compute_entity_collisions_3d():
 
 
 @skip_in_parallel
-def test_compute_entity_collisions_tree_1d():
-    references = [[
-        set([8, 9, 10, 11, 12, 13, 14, 15]),
-        set([0, 1, 2, 3, 4, 5, 6, 7])
-    ], [set([14, 15]), set([0, 1])]]
+@pytest.mark.parametrize("point,cells", [(numpy.array([0.52, 0, 0]), [
+    set([8, 9, 10, 11, 12, 13, 14, 15]),
+    set([0, 1, 2, 3, 4, 5, 6, 7])]),
+    (numpy.array([0.9, 0, 0]), [set([14, 15]), set([0, 1])])])
+def test_compute_entity_collisions_tree_1d(point, cells):
+    mesh_A = UnitIntervalMesh(MPI.comm_world, 16)
+    mesh_B = UnitIntervalMesh(MPI.comm_world, 16)
 
-    points = [numpy.array([0.52, 0, 0]), numpy.array([0.9, 0, 0])]
+    bgeom = mesh_B.geometry.points
+    bgeom += point
 
-    for i, point in enumerate(points):
+    tree_A = BoundingBoxTree(mesh_A, mesh_A.topology.dim)
+    tree_B = BoundingBoxTree(mesh_B, mesh_B.topology.dim)
 
-        mesh_A = UnitIntervalMesh(MPI.comm_world, 16)
-        mesh_B = UnitIntervalMesh(MPI.comm_world, 16)
+    entities_A, entities_B = tree_A.compute_entity_collisions_bb_mesh(
+        tree_B, mesh_A, mesh_B)
 
-        bgeom = mesh_B.geometry.points
-        bgeom += point
-
-        tree_A = BoundingBoxTree(mesh_A, mesh_A.topology.dim)
-        tree_B = BoundingBoxTree(mesh_B, mesh_B.topology.dim)
-
-        entities_A, entities_B = tree_A.compute_entity_collisions_bb_mesh(
-            tree_B, mesh_A, mesh_B)
-
-        assert set(entities_A) == references[i][0]
-        assert set(entities_B) == references[i][1]
+    assert set(entities_A) == cells[0]
+    assert set(entities_B) == cells[1]
 
 
 @skip_in_parallel

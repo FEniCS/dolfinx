@@ -34,14 +34,14 @@ class BoundingBoxTree
 private:
   BoundingBoxTree(const std::vector<double>& leaf_bboxes,
                   const std::vector<int>::iterator& begin,
-                  const std::vector<int>::iterator& end, int gdim);
+                  const std::vector<int>::iterator& end);
 
 public:
   /// Constructor
   BoundingBoxTree(const mesh::Mesh& mesh, int tdim);
 
   /// Constructor
-  BoundingBoxTree(const std::vector<Eigen::Vector3d>& points, int gdim);
+  BoundingBoxTree(const std::vector<Eigen::Vector3d>& points);
 
   /// Move constructor
   BoundingBoxTree(BoundingBoxTree&& tree) = default;
@@ -209,9 +209,6 @@ private:
 
   // Topological dimension of leaf entities
   int _tdim;
-
-  // Geometric dimension of the BBT
-  int _gdim;
 
   // List of bounding boxes (parent-child-entity relations)
   std::vector<BBox> _bboxes;
