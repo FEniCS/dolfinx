@@ -133,10 +133,6 @@ BoundingBoxTree::BoundingBoxTree(const mesh::Mesh& mesh, int tdim) : _tdim(tdim)
                              + std::to_string(mesh.topology().dim()));
   }
 
-  // Store topological dimension (only used for checking that entity
-  // collisions can only be computed with cells)
-  _tdim = tdim;
-
   // Initialize entities of given dimension if they don't exist
   mesh.create_entities(tdim);
 
