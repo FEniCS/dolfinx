@@ -300,45 +300,26 @@ int BoundingBoxTree::_build_from_leaf(const std::vector<double>& leaf_bboxes,
   }
 
   // Compute bounding box of all bounding boxes
-  // double b[MAX_DIM];
-  // std::size_t axis;
-  // compute_bbox_of_bboxes(b, axis, leaf_bboxes, begin, end, _gdim);
-
-  // std::cout << "Old boxes:" << std::endl;
-  // for (int i = 0; i < _gdim; ++i)
-  //   std::cout << "  " << b[i] << std::endl;
-  // std::cout << "  --- " << std::endl;
-  // for (int i = 0; i < _gdim; ++i)
-  //   std::cout << "  " << b[i + _gdim] << std::endl;
-
-  Eigen::Array<double, 2, 3, Eigen::RowMajor> b_new
-      = compute_bbox_of_bboxes_new(leaf_bboxes, begin, end, _gdim);
-  Eigen::Array<double, 2, 3, Eigen::RowMajor>::Index axis_new;
-  // auto tmp = b_new.row(1) - b_new.row(0);
-  // std::cout << "Diif: " << tmp << std::endl;
-  // tmp.maxCoeff(&axis_new);
-  (b_new.row(1) - b_new.row(0)).maxCoeff(&axis_new);
-
-  // std::cout << "New boxes:" << std::endl;
-  // std::cout << "  " << b_new.row(0) << std::endl;
-  // std::cout << "  " << b_new.row(1) << std::endl;
-
-  // std::cout << "Test axis: " << axis << ", " << axis_new << std::endl;
+  Eigen::Array<double, 2, 3, Eigen::RowMajor> b
+      = compute_bbox_of_bboxes(leaf_bboxes, begin, end, _gdim);
+  Eigen::Array<double, 2, 3, Eigen::RowMajor>::Index axis;
+  (b.row(1) - b.row(0)).maxCoeff(&axis);
+  assert(axis < _gdim);
 
   // Sort bounding boxes along longest axis
   std::vector<int>::iterator middle = begin + (end - begin) / 2;
-  sort_bboxes(axis_new, leaf_bboxes, begin, middle, end, _gdim);
+  sort_bboxes(axis, leaf_bboxes, begin, middle, end, _gdim);
 
   // Split bounding boxes into two groups and call recursively
   bbox[0] = _build_from_leaf(leaf_bboxes, begin, middle);
   bbox[1] = _build_from_leaf(leaf_bboxes, middle, end);
 
-  // Store bounding box data. Note that root box will be added last.
+  // Store bounding box data. Note that root box will be added last
   double _b[6];
   for (int i = 0; i < _gdim; ++i)
   {
-    _b[i] = b_new(0, i);
-    _b[i + _gdim] = b_new(1, i);
+    _b[i] = b(0, i);
+    _b[i + _gdim] = b(1, i);
   }
   return add_bbox(bbox, _b);
 }
@@ -800,58 +781,11 @@ BoundingBoxTree::compute_bbox_of_points(
   return b;
 }
 //-----------------------------------------------------------------------------
-void BoundingBoxTree::compute_bbox_of_bboxes(
-    double* bbox, std::size_t& axis, const std::vector<double>& leaf_bboxes,
-    const std::vector<int>::iterator& begin,
-    const std::vector<int>::iterator& end, int gdim)
-{
-  // Get coordinates for first box
-  auto it = begin;
-  const double* b = leaf_bboxes.data() + 2 * gdim * (*it);
-  std::copy(b, b + 2 * gdim, bbox);
-
-  // Compute min and max over remaining boxes
-  for (; it != end; ++it)
-  {
-    const double* b = leaf_bboxes.data() + 2 * gdim * (*it);
-    for (int i = 0; i < gdim; ++i)
-      bbox[i] = std::min(bbox[i], b[i]);
-    for (int i = gdim; i < 2 * gdim; ++i)
-      bbox[i] = std::max(bbox[i], b[i]);
-  }
-
-  // Compute longest axis
-  axis = 0;
-  if (gdim == 1)
-    return;
-
-  if (gdim == 2)
-  {
-    const double x = bbox[2] - bbox[0];
-    const double y = bbox[3] - bbox[1];
-    if (y > x)
-      axis = 1;
-  }
-  else
-  {
-    const double x = bbox[3] - bbox[0];
-    const double y = bbox[4] - bbox[1];
-    const double z = bbox[5] - bbox[2];
-
-    if (x > y && x > z)
-      return;
-    else if (y > z)
-      axis = 1;
-    else
-      axis = 2;
-  }
-}
-//-----------------------------------------------------------------------------
 Eigen::Array<double, 2, 3, Eigen::RowMajor>
-BoundingBoxTree::compute_bbox_of_bboxes_new(
-    const std::vector<double>& leaf_bboxes,
-    const std::vector<int>::iterator& begin,
-    const std::vector<int>::iterator& end, int gdim)
+BoundingBoxTree::compute_bbox_of_bboxes(const std::vector<double>& leaf_bboxes,
+                                        const std::vector<int>::iterator& begin,
+                                        const std::vector<int>::iterator& end,
+                                        int gdim)
 {
   Eigen::Array<double, 2, 3, Eigen::RowMajor> b
       = Eigen::Array<double, 2, 3, Eigen::RowMajor>::Zero();

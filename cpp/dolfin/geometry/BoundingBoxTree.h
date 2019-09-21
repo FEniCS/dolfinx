@@ -227,15 +227,10 @@ private:
   double compute_squared_distance_point(const double* x, int node) const;
 
   // Compute bounding box of bounding boxes
-  static void compute_bbox_of_bboxes(double* bbox, std::size_t& axis,
-                                     const std::vector<double>& leaf_bboxes,
-                                     const std::vector<int>::iterator& begin,
-                                     const std::vector<int>::iterator& end,
-                                     int gdim);
   static Eigen::Array<double, 2, 3, Eigen::RowMajor>
-  compute_bbox_of_bboxes_new(const std::vector<double>& leaf_bboxes,
-                             const std::vector<int>::iterator& begin,
-                             const std::vector<int>::iterator& end, int gdim);
+  compute_bbox_of_bboxes(const std::vector<double>& leaf_bboxes,
+                         const std::vector<int>::iterator& begin,
+                         const std::vector<int>::iterator& end, int gdim);
 
   // Compute bounding box of points
   static Eigen::Array<double, 2, 3, Eigen::RowMajor>
