@@ -174,13 +174,6 @@ private:
   static Eigen::Array<double, 2, 3, Eigen::RowMajor>
   compute_bbox_of_entity(const mesh::MeshEntity& entity);
 
-  // Sort points along given axis
-  static void sort_points(std::size_t axis,
-                          const std::vector<Eigen::Vector3d>& points,
-                          const std::vector<int>::iterator& begin,
-                          const std::vector<int>::iterator& middle,
-                          const std::vector<int>::iterator& end);
-
   // Add bounding box and coordinates
   int add_bbox(const BBox& bbox,
                const Eigen::Array<double, 2, 3, Eigen::RowMajor>& b);
@@ -211,29 +204,8 @@ private:
   double compute_squared_distance_point(const Eigen::Vector3d& x,
                                         int node) const;
 
-  // Compute bounding box of bounding boxes
-  static Eigen::Array<double, 2, 3, Eigen::RowMajor>
-  compute_bbox_of_bboxes(const std::vector<double>& leaf_bboxes,
-                         const std::vector<int>::iterator& begin,
-                         const std::vector<int>::iterator& end, int gdim);
-
-  // Compute bounding box of points
-  static Eigen::Array<double, 2, 3, Eigen::RowMajor>
-  compute_bbox_of_points(const std::vector<Eigen::Vector3d>& points,
-                         const std::vector<int>::iterator& begin,
-                         const std::vector<int>::iterator& end);
-
-  // Sort leaf bounding boxes along given axis
-  static void sort_bboxes(std::size_t axis,
-                          const std::vector<double>& leaf_bboxes,
-                          const std::vector<int>::iterator& begin,
-                          const std::vector<int>::iterator& middle,
-                          const std::vector<int>::iterator& end, int gdim);
-
   // Print out recursively, for debugging
   void tree_print(std::stringstream& s, int i);
-
-  //-----------------------------------------------------------------------------
 
   // Topological dimension of leaf entities
   int _tdim;

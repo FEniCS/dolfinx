@@ -4,11 +4,6 @@
 //
 // SPDX-License-Identifier:    LGPL-3.0-or-later
 
-// Define a maximum dimension used for a local array in the recursive
-// build function. Speeds things up compared to allocating it in each
-// recursion and is more convenient than sending it around.
-#define MAX_DIM 6
-
 #include "BoundingBoxTree.h"
 #include "CollisionPredicates.h"
 #include "utils.h"
@@ -25,12 +20,98 @@ using namespace dolfin::geometry;
 
 namespace
 {
+//-----------------------------------------------------------------------------
 // Check whether bounding box is a leaf node
 bool is_leaf(const BoundingBoxTree::BBox& bbox, int node)
 {
   // Leaf nodes are marked by setting child_0 equal to the node itself
   return bbox[0] == node;
 }
+//-----------------------------------------------------------------------------
+// Sort points along given axis
+void sort_points(int axis, const std::vector<Eigen::Vector3d>& points,
+                 const std::vector<int>::iterator& begin,
+                 const std::vector<int>::iterator& middle,
+                 const std::vector<int>::iterator& end)
+{
+  // Comparison lambda function with capture
+  auto cmp = [&points, &axis](int i, int j) -> bool {
+    const double* pi = points[i].data();
+    const double* pj = points[j].data();
+    return pi[axis] < pj[axis];
+  };
+
+  std::nth_element(begin, middle, end, cmp);
+}
+//-----------------------------------------------------------------------------
+// Sort leaf bounding boxes along given axis
+void sort_bboxes(int axis, const std::vector<double>& leaf_bboxes,
+                 const std::vector<int>::iterator& begin,
+                 const std::vector<int>::iterator& middle,
+                 const std::vector<int>::iterator& end, int gdim)
+{
+  // Comparison lambda function with capture
+  auto cmp = [& dim = gdim, &leaf_bboxes, &axis](int i, int j) -> bool {
+    const double* bi = leaf_bboxes.data() + 2 * dim * i + axis;
+    const double* bj = leaf_bboxes.data() + 2 * dim * j + axis;
+    return (bi[0] + bi[dim]) < (bj[0] + bj[dim]);
+  };
+
+  std::nth_element(begin, middle, end, cmp);
+}
+//-----------------------------------------------------------------------------
+// Compute bounding box of points
+Eigen::Array<double, 2, 3, Eigen::RowMajor>
+compute_bbox_of_points(const std::vector<Eigen::Vector3d>& points,
+                       const std::vector<int>::iterator& begin,
+                       const std::vector<int>::iterator& end)
+{
+  Eigen::Array<double, 2, 3, Eigen::RowMajor> b;
+  b.row(0) = points[*begin];
+  b.row(1) = points[*begin];
+  for (auto it = begin; it != end; ++it)
+  {
+    const Eigen::Vector3d& p = points[*it];
+    b.row(0) = b.row(0).min(p.transpose().array());
+    b.row(1) = b.row(1).max(p.transpose().array());
+  }
+
+  return b;
+}
+//-----------------------------------------------------------------------------
+// Compute bounding box of bounding boxes
+Eigen::Array<double, 2, 3, Eigen::RowMajor>
+compute_bbox_of_bboxes(const std::vector<double>& leaf_bboxes,
+                       const std::vector<int>::iterator& begin,
+                       const std::vector<int>::iterator& end, int gdim)
+{
+  Eigen::Array<double, 2, 3, Eigen::RowMajor> b
+      = Eigen::Array<double, 2, 3, Eigen::RowMajor>::Zero();
+
+  for (int i = 0; i < gdim; ++i)
+  {
+    b(0, i) = leaf_bboxes[2 * gdim * (*begin) + i];
+    b(1, i) = leaf_bboxes[2 * gdim * (*begin) + gdim + i];
+  }
+
+  // Compute min and max over remaining boxes
+  for (auto it = begin; it != end; ++it)
+  {
+    Eigen::Vector3d p0 = Eigen::Vector3d::Zero();
+    Eigen::Vector3d p1 = Eigen::Vector3d::Zero();
+    for (int i = 0; i < gdim; ++i)
+    {
+      p0(i) = leaf_bboxes[2 * gdim * (*it) + i];
+      p1(i) = leaf_bboxes[2 * gdim * (*it) + gdim + i];
+    }
+
+    b.row(0) = b.row(0).min(p0.transpose().array());
+    b.row(1) = b.row(1).max(p1.transpose().array());
+  }
+
+  return b;
+}
+//-----------------------------------------------------------------------------
 
 } // namespace
 
@@ -346,8 +427,6 @@ int BoundingBoxTree::_build_from_point(
   }
 
   // Compute bounding box of all points
-  // double b[MAX_DIM];
-  // std::size_t axis;
   Eigen::Array<double, 2, 3, Eigen::RowMajor> b
       = compute_bbox_of_points(points, begin, end);
   Eigen::Array<double, 2, 3, Eigen::RowMajor>::Index axis;
@@ -472,9 +551,9 @@ void BoundingBoxTree::_compute_collisions_tree(
   }
 
   // At this point, we know neither is a leaf so descend the largest
-  // tree first. Note that nodes are added in reverse order with the
-  // top bounding box at the end so the largest tree (the one with the
-  // the most boxes left to traverse) has the largest node number.
+  // tree first. Note that nodes are added in reverse order with the top
+  // bounding box at the end so the largest tree (the one with the the
+  // most boxes left to traverse) has the largest node number.
   else if (node_A > node_B)
   {
     _compute_collisions_tree(A, B, bbox_A[0], node_B, mesh_A, mesh_B,
@@ -490,8 +569,8 @@ void BoundingBoxTree::_compute_collisions_tree(
                              entities_A, entities_B);
   }
 
-  // Note that cases above can be collected in fewer cases but this
-  // way the logic is easier to follow.
+  // Note that cases above can be collected in fewer cases but this way
+  // the logic is easier to follow.
 }
 //-----------------------------------------------------------------------------
 int BoundingBoxTree::_compute_first_collision(const BoundingBoxTree& tree,
@@ -696,22 +775,6 @@ BoundingBoxTree::compute_bbox_of_entity(const mesh::MeshEntity& entity)
   return b;
 }
 //-----------------------------------------------------------------------------
-void BoundingBoxTree::sort_points(std::size_t axis,
-                                  const std::vector<Eigen::Vector3d>& points,
-                                  const std::vector<int>::iterator& begin,
-                                  const std::vector<int>::iterator& middle,
-                                  const std::vector<int>::iterator& end)
-{
-  // Comparison lambda function with capture
-  auto cmp = [&points, &axis](int i, int j) -> bool {
-    const double* pi = points[i].data();
-    const double* pj = points[j].data();
-    return pi[axis] < pj[axis];
-  };
-
-  std::nth_element(begin, middle, end, cmp);
-}
-//-----------------------------------------------------------------------------
 int BoundingBoxTree::add_bbox(
     const BBox& bbox, const Eigen::Array<double, 2, 3, Eigen::RowMajor>& b)
 {
@@ -751,75 +814,6 @@ void BoundingBoxTree::tree_print(std::stringstream& s, int i)
     tree_print(s, _bboxes[i][1]);
     s << "}\n";
   }
-}
-//-----------------------------------------------------------------------------
-void BoundingBoxTree::sort_bboxes(std::size_t axis,
-                                  const std::vector<double>& leaf_bboxes,
-                                  const std::vector<int>::iterator& begin,
-                                  const std::vector<int>::iterator& middle,
-                                  const std::vector<int>::iterator& end,
-                                  int gdim)
-{
-  // Comparison lambda function with capture
-  auto cmp = [& dim = gdim, &leaf_bboxes, &axis](int i, int j) -> bool {
-    const double* bi = leaf_bboxes.data() + 2 * dim * i + axis;
-    const double* bj = leaf_bboxes.data() + 2 * dim * j + axis;
-    return (bi[0] + bi[dim]) < (bj[0] + bj[dim]);
-  };
-
-  std::nth_element(begin, middle, end, cmp);
-}
-//-----------------------------------------------------------------------------
-Eigen::Array<double, 2, 3, Eigen::RowMajor>
-BoundingBoxTree::compute_bbox_of_points(
-    const std::vector<Eigen::Vector3d>& points,
-    const std::vector<int>::iterator& begin,
-    const std::vector<int>::iterator& end)
-{
-  Eigen::Array<double, 2, 3, Eigen::RowMajor> b;
-  b.row(0) = points[*begin];
-  b.row(1) = points[*begin];
-  for (auto it = begin; it != end; ++it)
-  {
-    const Eigen::Vector3d& p = points[*it];
-    b.row(0) = b.row(0).min(p.transpose().array());
-    b.row(1) = b.row(1).max(p.transpose().array());
-  }
-
-  return b;
-}
-//-----------------------------------------------------------------------------
-Eigen::Array<double, 2, 3, Eigen::RowMajor>
-BoundingBoxTree::compute_bbox_of_bboxes(const std::vector<double>& leaf_bboxes,
-                                        const std::vector<int>::iterator& begin,
-                                        const std::vector<int>::iterator& end,
-                                        int gdim)
-{
-  Eigen::Array<double, 2, 3, Eigen::RowMajor> b
-      = Eigen::Array<double, 2, 3, Eigen::RowMajor>::Zero();
-
-  for (int i = 0; i < gdim; ++i)
-  {
-    b(0, i) = leaf_bboxes[2 * gdim * (*begin) + i];
-    b(1, i) = leaf_bboxes[2 * gdim * (*begin) + gdim + i];
-  }
-
-  // Compute min and max over remaining boxes
-  for (auto it = begin; it != end; ++it)
-  {
-    Eigen::Vector3d p0 = Eigen::Vector3d::Zero();
-    Eigen::Vector3d p1 = Eigen::Vector3d::Zero();
-    for (int i = 0; i < gdim; ++i)
-    {
-      p0(i) = leaf_bboxes[2 * gdim * (*it) + i];
-      p1(i) = leaf_bboxes[2 * gdim * (*it) + gdim + i];
-    }
-
-    b.row(0) = b.row(0).min(p0.transpose().array());
-    b.row(1) = b.row(1).max(p1.transpose().array());
-  }
-
-  return b;
 }
 //-----------------------------------------------------------------------------
 double BoundingBoxTree::compute_squared_distance_point(const Eigen::Vector3d& x,
