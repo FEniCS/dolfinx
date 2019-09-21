@@ -183,47 +183,25 @@ private:
 
   // Add bounding box and coordinates
   int add_bbox(const BBox& bbox,
-               const Eigen::Array<double, 2, 3, Eigen::RowMajor>& b)
-  {
-    // Add bounding box and coordinates
-    _bboxes.push_back(bbox);
-    _bbox_coordinates.insert(_bbox_coordinates.end(), b.data(),
-                             b.data() + _gdim);
-    _bbox_coordinates.insert(_bbox_coordinates.end(), b.data() + 3,
-                             b.data() + 3 + _gdim);
-    return _bboxes.size() - 1;
-  }
+               const Eigen::Array<double, 2, 3, Eigen::RowMajor>& b);
 
   // Return number of bounding boxes
-  int num_bboxes() const { return _bboxes.size(); }
+  int num_bboxes() const;
 
   // Add bounding box and point coordinates
-  int add_point(const BBox& bbox, const Eigen::Vector3d& point)
-  {
-    // Add bounding box
-    _bboxes.push_back(bbox);
-
-    // Add point coordinates (twice)
-    for (int i = 0; i < _gdim; ++i)
-      _bbox_coordinates.push_back(point[i]);
-    for (int i = 0; i < _gdim; ++i)
-      _bbox_coordinates.push_back(point[i]);
-
-    return _bboxes.size() - 1;
-  }
+  int add_point(const BBox& bbox, const Eigen::Vector3d& point);
 
   // Return bounding box coordinates for node
-  const double* get_bbox_coordinates(int node) const
-  {
-    return _bbox_coordinates.data() + 2 * _gdim * node;
-  }
+  Eigen::Array<double, 2, 3, Eigen::RowMajor>
+  get_bbox_coordinates(int node) const;
 
   // Check whether point (x) is in bounding box (node)
   bool point_in_bbox(const Eigen::Vector3d& x, int node,
                      double rtol = 1e-14) const;
 
   // Check whether bounding box (a) collides with bounding box (node)
-  bool bbox_in_bbox(const double* a, int node, double rtol = 1e-14) const;
+  bool bbox_in_bbox(const Eigen::Array<double, 2, 3, Eigen::RowMajor>& a,
+                    int node, double rtol = 1e-14) const;
 
   // Compute squared distance between point and bounding box
   double compute_squared_distance_bbox(const Eigen::Vector3d& x,

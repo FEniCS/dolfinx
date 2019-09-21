@@ -712,6 +712,19 @@ void BoundingBoxTree::sort_points(std::size_t axis,
   std::nth_element(begin, middle, end, cmp);
 }
 //-----------------------------------------------------------------------------
+int BoundingBoxTree::add_bbox(
+    const BBox& bbox, const Eigen::Array<double, 2, 3, Eigen::RowMajor>& b)
+{
+  // Add bounding box and coordinates
+  _bboxes.push_back(bbox);
+  _bbox_coordinates.insert(_bbox_coordinates.end(), b.data(), b.data() + _gdim);
+  _bbox_coordinates.insert(_bbox_coordinates.end(), b.data() + 3,
+                           b.data() + 3 + _gdim);
+  return _bboxes.size() - 1;
+}
+//-----------------------------------------------------------------------------
+int BoundingBoxTree::num_bboxes() const { return _bboxes.size(); }
+//-----------------------------------------------------------------------------
 std::string BoundingBoxTree::str(bool verbose)
 {
   std::stringstream s;
@@ -845,16 +858,45 @@ double BoundingBoxTree::compute_squared_distance_bbox(const Eigen::Vector3d& x,
   return r2;
 }
 //-----------------------------------------------------------------------------
-bool BoundingBoxTree::bbox_in_bbox(const double* a, int node, double rtol) const
+bool BoundingBoxTree::bbox_in_bbox(
+    const Eigen::Array<double, 2, 3, Eigen::RowMajor>& a, int node,
+    double rtol) const
 {
   const double* b = _bbox_coordinates.data() + 2 * _gdim * node;
   for (int i = 0; i < _gdim; ++i)
   {
     const double eps = rtol * (b[i + _gdim] - b[i]);
-    if (b[i] - eps > a[i + _gdim] or a[i] > b[i + _gdim] + eps)
+    if (b[i] - eps > a(1, i) or a(0, i) > b[i + _gdim] + eps)
       return false;
   }
   return true;
+}
+//-----------------------------------------------------------------------------
+int BoundingBoxTree::add_point(const BBox& bbox, const Eigen::Vector3d& point)
+{
+  // Add bounding box
+  _bboxes.push_back(bbox);
+
+  // Add point coordinates (twice)
+  for (int i = 0; i < _gdim; ++i)
+    _bbox_coordinates.push_back(point[i]);
+  for (int i = 0; i < _gdim; ++i)
+    _bbox_coordinates.push_back(point[i]);
+
+  return _bboxes.size() - 1;
+}
+//-----------------------------------------------------------------------------
+Eigen::Array<double, 2, 3, Eigen::RowMajor>
+BoundingBoxTree::get_bbox_coordinates(int node) const
+{
+  Eigen::Array<double, 2, 3, Eigen::RowMajor> b
+      = Eigen::Array<double, 2, 3, Eigen::RowMajor>::Zero();
+  for (int i = 0; i < _gdim; ++i)
+  {
+    b(0, i) = _bbox_coordinates[2 * _gdim * node + i];
+    b(1, i) = _bbox_coordinates[2 * _gdim * node + _gdim + i];
+  }
+  return b;
 }
 //-----------------------------------------------------------------------------
 bool BoundingBoxTree::point_in_bbox(const Eigen::Vector3d& x, const int node,
