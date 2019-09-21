@@ -226,10 +226,12 @@ private:
   bool bbox_in_bbox(const double* a, int node, double rtol = 1e-14) const;
 
   // Compute squared distance between point and bounding box
-  double compute_squared_distance_bbox(const double* x, int node) const;
+  double compute_squared_distance_bbox(const Eigen::Vector3d& x,
+                                       int node) const;
 
   // Compute squared distance between point and point
-  double compute_squared_distance_point(const double* x, int node) const;
+  double compute_squared_distance_point(const Eigen::Vector3d& x,
+                                        int node) const;
 
   // Compute bounding box of bounding boxes
   static Eigen::Array<double, 2, 3, Eigen::RowMajor>

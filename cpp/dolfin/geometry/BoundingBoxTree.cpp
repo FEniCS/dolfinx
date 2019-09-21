@@ -267,7 +267,7 @@ BoundingBoxTree::compute_closest_point(const Eigen::Vector3d& point) const
 
   // Get initial guess by picking the distance to a "random" point
   int closest_point = 0;
-  double R2 = compute_squared_distance_point(point.data(), closest_point);
+  double R2 = compute_squared_distance_point(point, closest_point);
 
   // Call recursive find function
   _compute_closest_point(*this, point, num_bboxes() - 1, closest_point, R2);
@@ -575,7 +575,7 @@ std::pair<int, double> BoundingBoxTree::_compute_closest_entity(
   const BBox& bbox = tree._bboxes[node];
 
   // If bounding box is outside radius, then don't search further
-  const double r2 = tree.compute_squared_distance_bbox(point.data(), node);
+  const double r2 = tree.compute_squared_distance_bbox(point, node);
   if (r2 > R2)
     return {closest_entity, R2};
 
@@ -620,7 +620,7 @@ BoundingBoxTree::_compute_closest_point(const BoundingBoxTree& tree,
   // If box is leaf, then compute distance and shrink radius
   if (is_leaf(bbox, node))
   {
-    const double r2 = tree.compute_squared_distance_point(point.data(), node);
+    const double r2 = tree.compute_squared_distance_point(point, node);
     if (r2 < R2)
     {
       closest_point = bbox[1];
@@ -632,7 +632,7 @@ BoundingBoxTree::_compute_closest_point(const BoundingBoxTree& tree,
   else
   {
     // If bounding box is outside radius, then don't search further
-    const double r2 = tree.compute_squared_distance_bbox(point.data(), node);
+    const double r2 = tree.compute_squared_distance_bbox(point, node);
     if (r2 > R2)
       return {closest_point, R2};
 
@@ -809,7 +809,7 @@ BoundingBoxTree::compute_bbox_of_bboxes(const std::vector<double>& leaf_bboxes,
   return b;
 }
 //-----------------------------------------------------------------------------
-double BoundingBoxTree::compute_squared_distance_point(const double* x,
+double BoundingBoxTree::compute_squared_distance_point(const Eigen::Vector3d& x,
                                                        int node) const
 {
   const double* p = _bbox_coordinates.data() + 2 * _gdim * node;
@@ -820,7 +820,7 @@ double BoundingBoxTree::compute_squared_distance_point(const double* x,
   return d;
 }
 //-----------------------------------------------------------------------------
-double BoundingBoxTree::compute_squared_distance_bbox(const double* x,
+double BoundingBoxTree::compute_squared_distance_bbox(const Eigen::Vector3d& x,
                                                       int node) const
 {
   // Note: Some else-if might be in order here but I assume the
