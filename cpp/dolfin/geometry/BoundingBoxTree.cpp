@@ -300,20 +300,47 @@ int BoundingBoxTree::_build_from_leaf(const std::vector<double>& leaf_bboxes,
   }
 
   // Compute bounding box of all bounding boxes
-  double b[MAX_DIM];
-  std::size_t axis;
-  compute_bbox_of_bboxes(b, axis, leaf_bboxes, begin, end, _gdim);
+  // double b[MAX_DIM];
+  // std::size_t axis;
+  // compute_bbox_of_bboxes(b, axis, leaf_bboxes, begin, end, _gdim);
+
+  // std::cout << "Old boxes:" << std::endl;
+  // for (int i = 0; i < _gdim; ++i)
+  //   std::cout << "  " << b[i] << std::endl;
+  // std::cout << "  --- " << std::endl;
+  // for (int i = 0; i < _gdim; ++i)
+  //   std::cout << "  " << b[i + _gdim] << std::endl;
+
+  Eigen::Array<double, 2, 3, Eigen::RowMajor> b_new
+      = compute_bbox_of_bboxes_new(leaf_bboxes, begin, end, _gdim);
+  Eigen::Array<double, 2, 3, Eigen::RowMajor>::Index axis_new;
+  // auto tmp = b_new.row(1) - b_new.row(0);
+  // std::cout << "Diif: " << tmp << std::endl;
+  // tmp.maxCoeff(&axis_new);
+  (b_new.row(1) - b_new.row(0)).maxCoeff(&axis_new);
+
+  // std::cout << "New boxes:" << std::endl;
+  // std::cout << "  " << b_new.row(0) << std::endl;
+  // std::cout << "  " << b_new.row(1) << std::endl;
+
+  // std::cout << "Test axis: " << axis << ", " << axis_new << std::endl;
 
   // Sort bounding boxes along longest axis
   std::vector<int>::iterator middle = begin + (end - begin) / 2;
-  sort_bboxes(axis, leaf_bboxes, begin, middle, end, _gdim);
+  sort_bboxes(axis_new, leaf_bboxes, begin, middle, end, _gdim);
 
   // Split bounding boxes into two groups and call recursively
   bbox[0] = _build_from_leaf(leaf_bboxes, begin, middle);
   bbox[1] = _build_from_leaf(leaf_bboxes, middle, end);
 
   // Store bounding box data. Note that root box will be added last.
-  return add_bbox(bbox, b);
+  double _b[6];
+  for (int i = 0; i < _gdim; ++i)
+  {
+    _b[i] = b_new(0, i);
+    _b[i + _gdim] = b_new(1, i);
+  }
+  return add_bbox(bbox, _b);
 }
 //-----------------------------------------------------------------------------
 int BoundingBoxTree::_build_from_point(
@@ -818,6 +845,39 @@ void BoundingBoxTree::compute_bbox_of_bboxes(
     else
       axis = 2;
   }
+}
+//-----------------------------------------------------------------------------
+Eigen::Array<double, 2, 3, Eigen::RowMajor>
+BoundingBoxTree::compute_bbox_of_bboxes_new(
+    const std::vector<double>& leaf_bboxes,
+    const std::vector<int>::iterator& begin,
+    const std::vector<int>::iterator& end, int gdim)
+{
+  Eigen::Array<double, 2, 3, Eigen::RowMajor> b
+      = Eigen::Array<double, 2, 3, Eigen::RowMajor>::Zero();
+
+  for (int i = 0; i < gdim; ++i)
+  {
+    b(0, i) = leaf_bboxes[2 * gdim * (*begin) + i];
+    b(1, i) = leaf_bboxes[2 * gdim * (*begin) + gdim + i];
+  }
+
+  // Compute min and max over remaining boxes
+  for (auto it = begin; it != end; ++it)
+  {
+    Eigen::Vector3d p0 = Eigen::Vector3d::Zero();
+    Eigen::Vector3d p1 = Eigen::Vector3d::Zero();
+    for (int i = 0; i < gdim; ++i)
+    {
+      p0(i) = leaf_bboxes[2 * gdim * (*it) + i];
+      p1(i) = leaf_bboxes[2 * gdim * (*it) + gdim + i];
+    }
+
+    b.row(0) = b.row(0).min(p0.transpose().array());
+    b.row(1) = b.row(1).max(p1.transpose().array());
+  }
+
+  return b;
 }
 //-----------------------------------------------------------------------------
 double BoundingBoxTree::compute_squared_distance_point(const double* x,

@@ -232,6 +232,10 @@ private:
                                      const std::vector<int>::iterator& begin,
                                      const std::vector<int>::iterator& end,
                                      int gdim);
+  static Eigen::Array<double, 2, 3, Eigen::RowMajor>
+  compute_bbox_of_bboxes_new(const std::vector<double>& leaf_bboxes,
+                             const std::vector<int>::iterator& begin,
+                             const std::vector<int>::iterator& end, int gdim);
 
   // Compute bounding box of points
   static Eigen::Array<double, 2, 3, Eigen::RowMajor>
