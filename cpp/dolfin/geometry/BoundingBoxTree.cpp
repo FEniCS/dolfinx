@@ -90,8 +90,8 @@ compute_bbox_of_bboxes(const std::vector<double>& leaf_bboxes,
 
   for (int i = 0; i < 3; ++i)
   {
-    b(0, i) = leaf_bboxes[2 * 3 * (*begin) + i];
-    b(1, i) = leaf_bboxes[2 * 3 * (*begin) + 3 + i];
+    b(0, i) = leaf_bboxes[6 * (*begin) + i];
+    b(1, i) = leaf_bboxes[6 * (*begin) + 3 + i];
   }
 
   // Compute min and max over remaining boxes
@@ -101,8 +101,8 @@ compute_bbox_of_bboxes(const std::vector<double>& leaf_bboxes,
     Eigen::Vector3d p1 = Eigen::Vector3d::Zero();
     for (int i = 0; i < 3; ++i)
     {
-      p0(i) = leaf_bboxes[2 * 3 * (*it) + i];
-      p1(i) = leaf_bboxes[2 * 3 * (*it) + 3 + i];
+      p0(i) = leaf_bboxes[6 * (*it) + i];
+      p1(i) = leaf_bboxes[6 * (*it) + 3 + i];
     }
 
     b.row(0) = b.row(0).min(p0.transpose().array());
@@ -373,8 +373,8 @@ int BoundingBoxTree::_build_from_leaf(const std::vector<double>& leaf_bboxes,
         = Eigen::Array<double, 2, 3, Eigen::RowMajor>::Zero();
     for (int i = 0; i < 3; ++i)
     {
-      b(0, i) = leaf_bboxes[2 * 3 * entity_index + i];
-      b(1, i) = leaf_bboxes[2 * 3 * entity_index + 3 + i];
+      b(0, i) = leaf_bboxes[6 * entity_index + i];
+      b(1, i) = leaf_bboxes[6 * entity_index + 3 + i];
     }
 
     // Store bounding box data
@@ -755,8 +755,7 @@ BoundingBoxTree::compute_bbox_of_entity(const mesh::MeshEntity& entity)
   const std::int32_t* vertices = entity.entities(0);
   assert(num_vertices >= 2);
 
-  const Eigen::Ref<const EigenVectorXd> x0 = geometry.x(vertices[0]);
-
+  const Eigen::Vector3d x0 = geometry.x(vertices[0]);
   Eigen::Array<double, 2, 3, Eigen::RowMajor> b;
   b.row(0) = x0;
   b.row(1) = x0;
@@ -764,10 +763,11 @@ BoundingBoxTree::compute_bbox_of_entity(const mesh::MeshEntity& entity)
   // Compute min and max over remaining vertices
   for (int i = 1; i < num_vertices; ++i)
   {
-    const Eigen::Ref<const EigenVectorXd> x = geometry.x(vertices[i]);
+    const Eigen::Vector3d x = geometry.x(vertices[i]);
     b.row(0) = b.row(0).min(x.transpose().array());
     b.row(1) = b.row(1).max(x.transpose().array());
   }
+
   return b;
 }
 //-----------------------------------------------------------------------------
@@ -834,14 +834,39 @@ bool BoundingBoxTree::bbox_in_bbox(
     const Eigen::Array<double, 2, 3, Eigen::RowMajor>& a, int node,
     double rtol) const
 {
+  // std::cout << "Data" << std::endl;
+  // for (auto x : _bbox_coordinates)
+  //   std::cout << "  " << x << std::endl;
+
   Eigen::Map<const Eigen::Array<double, Eigen::Dynamic, 3, Eigen::RowMajor>> b(
       _bbox_coordinates.data() + 6 * node, 2, 3);
+  auto eps0 = rtol * (b.row(1) - b.row(0));
+  // std::cout << "eps0: " << std::endl;
+  // std::cout << eps0 << std::endl;
+  // std::cout << "b0, b1 " << std::endl;
+  // std::cout << b.row(0) << std::endl;
+  // std::cout << b.row(1) << std::endl;
+  // std::cout << "a0, a1 " << std::endl;
+  // std::cout << a.row(0) << std::endl;
+  // std::cout << a.row(1) << std::endl;
+
+  bool test = (b.row(0) - eps0 <= a.row(1)).all()
+              and (b.row(1) + eps0 >= a.row(0)).all();
+  // std::cout << "Check 1: " << ((b.row(0) - eps0) <= a.row(1)).all()
+  //           << std::endl;
+  // std::cout << "Check 2: " << ((b.row(1) + eps0) >= a.row(0)).all()
+  //           << std::endl;
+
   for (int i = 0; i < _gdim; ++i)
   {
     const double eps = rtol * (b(1, i) - b(0, i));
     if (b(0, i) - eps > a(1, i) or a(0, i) > b(1, i) + eps)
+    {
+      assert(!test);
       return false;
+    }
   }
+  assert(test);
   return true;
 }
 //-----------------------------------------------------------------------------
@@ -872,7 +897,6 @@ bool BoundingBoxTree::point_in_bbox(const Eigen::Vector3d& x, const int node,
   Eigen::Map<const Eigen::Vector3d> b0(_bbox_coordinates.data() + 6 * node, 3);
   Eigen::Map<const Eigen::Vector3d> b1(_bbox_coordinates.data() + 6 * node + 3,
                                        3);
-  // rtol = 1.0e-10;
   auto eps0 = rtol * (b1 - b0);
   return (x.array() >= (b0 - eps0).array()).all()
          and (x.array() <= (b1 + eps0).array()).all();

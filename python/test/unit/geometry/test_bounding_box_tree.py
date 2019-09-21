@@ -80,7 +80,7 @@ def test_compute_collisions_tree_1d():
         mesh_B = UnitIntervalMesh(MPI.comm_world, 16)
 
         bgeom = mesh_B.geometry.points
-        bgeom += point[0]
+        bgeom[:] += point
 
         tree_A = BoundingBoxTree(mesh_A, mesh_A.topology.dim)
         tree_B = BoundingBoxTree(mesh_B, mesh_B.topology.dim)
@@ -199,7 +199,7 @@ def test_compute_entity_collisions_tree_1d():
         mesh_B = UnitIntervalMesh(MPI.comm_world, 16)
 
         bgeom = mesh_B.geometry.points
-        bgeom += point[0]
+        bgeom += point
 
         tree_A = BoundingBoxTree(mesh_A, mesh_A.topology.dim)
         tree_B = BoundingBoxTree(mesh_B, mesh_B.topology.dim)
