@@ -144,14 +144,11 @@ BoundingBoxTree::BoundingBoxTree(const mesh::Mesh& mesh, int tdim)
 
   // Create bounding boxes for all entities (leaves)
   const int num_leaves = mesh.num_entities(tdim);
-  std::vector<double> leaf_bboxes(2 * 3 * num_leaves);
+  std::vector<double> leaf_bboxes(6 * num_leaves);
+  Eigen::Map<Eigen::Array<double, Eigen::Dynamic, 3, Eigen::RowMajor>>
+      _leaf_bboxes(leaf_bboxes.data(), 2 * num_leaves, 3);
   for (auto& e : mesh::MeshRange(mesh, tdim))
-  {
-    Eigen::Array<double, 2, 3, Eigen::RowMajor> b = compute_bbox_of_entity(e);
-    for (int i = 0; i < 2; ++i)
-      for (int j = 0; j < 3; ++j)
-        leaf_bboxes[2 * 3 * e.index() + 3 * i + j] = b(i, j);
-  }
+    _leaf_bboxes.block<2, 3>(2 * e.index(), 0) = compute_bbox_of_entity(e);
 
   // Create leaf partition (to be sorted)
   std::vector<int> leaf_partition(num_leaves);
