@@ -901,3 +901,118 @@ Partitioning::build_global_vertex_indices(
   return {num_vertices_global, std::move(global_vertex_indices)};
 }
 //-----------------------------------------------------------------------------
+std::map<std::int64_t, std::vector<int>> Partitioning::compute_halo_cells(
+    MPI_Comm mpi_comm, std::vector<int> part, const mesh::CellType cell_type,
+    const Eigen::Ref<const EigenRowArrayXXi64> cell_vertices)
+{
+  // Compute dual graph (for this partition)
+  std::vector<std::vector<std::size_t>> local_graph;
+  std::tuple<std::int32_t, std::int32_t, std::int32_t> graph_info;
+  std::tie(local_graph, graph_info) = graph::GraphBuilder::compute_dual_graph(
+      mpi_comm, cell_vertices, cell_type);
+
+  graph::CSRGraph<std::int64_t> csr_graph(mpi_comm, local_graph);
+
+  std::map<std::int64_t, std::vector<int>> ghost_procs;
+
+  // Work out halo cells for current division of dual graph
+  const std::vector<std::int64_t>& elmdist = csr_graph.node_distribution();
+  const std::vector<std::int64_t>& xadj = csr_graph.nodes();
+  const std::vector<std::int64_t>& adjncy = csr_graph.edges();
+  const std::int32_t num_processes = dolfin::MPI::size(mpi_comm);
+  const std::int32_t process_number = dolfin::MPI::rank(mpi_comm);
+  const std::int32_t elm_begin = elmdist[process_number];
+  const std::int32_t elm_end = elmdist[process_number + 1];
+  const std::int32_t ncells = elm_end - elm_begin;
+
+  std::map<std::int32_t, std::set<std::int32_t>> halo_cell_to_remotes;
+
+  for (int i = 0; i < ncells; i++)
+  {
+    for (auto other_cell : csr_graph[i])
+    {
+      if (other_cell < elm_begin || other_cell >= elm_end)
+      {
+        const int remote
+            = std::upper_bound(elmdist.begin(), elmdist.end(), other_cell)
+              - elmdist.begin() - 1;
+        assert(remote < num_processes);
+        if (halo_cell_to_remotes.find(i) == halo_cell_to_remotes.end())
+          halo_cell_to_remotes[i] = std::set<std::int32_t>();
+        halo_cell_to_remotes[i].insert(remote);
+      }
+    }
+  }
+
+  // Do halo exchange of cell partition data
+  std::vector<std::vector<std::int64_t>> send_cell_partition(num_processes);
+  std::vector<std::int64_t> recv_cell_partition;
+
+  for (const auto& hcell : halo_cell_to_remotes)
+  {
+    for (auto proc : hcell.second)
+    {
+      assert(proc < num_processes);
+
+      // global cell number
+      send_cell_partition[proc].push_back(hcell.first + elm_begin);
+
+      // partitioning
+      send_cell_partition[proc].push_back(part[hcell.first]);
+    }
+  }
+
+  // Actual halo exchange
+  dolfin::MPI::all_to_all(mpi_comm, send_cell_partition, recv_cell_partition);
+
+  // Construct a map from all currently foreign cells to their new
+  // partition number
+  std::map<std::int64_t, std::int32_t> cell_ownership;
+  for (auto p = recv_cell_partition.begin(); p != recv_cell_partition.end();
+       p += 2)
+  {
+    cell_ownership[*p] = *(p + 1);
+  }
+
+  // Generate mapping for where new boundary cells need to be sent
+  for (std::int32_t i = 0; i < ncells; i++)
+  {
+    const std::size_t proc_this = part[i];
+    for (std::int32_t j = xadj[i]; j < xadj[i + 1]; ++j)
+    {
+      const std::int32_t other_cell = adjncy[j];
+      std::size_t proc_other;
+
+      if (other_cell < elm_begin || other_cell >= elm_end)
+      { // remote cell - should be in map
+        const auto find_other_proc = cell_ownership.find(other_cell);
+        assert(find_other_proc != cell_ownership.end());
+        proc_other = find_other_proc->second;
+      }
+      else
+        proc_other = part[other_cell - elm_begin];
+
+      if (proc_this != proc_other)
+      {
+        auto map_it = ghost_procs.find(i);
+        if (map_it == ghost_procs.end())
+        {
+          std::vector<std::int32_t> sharing_processes;
+          sharing_processes.push_back(proc_this);
+          sharing_processes.push_back(proc_other);
+          ghost_procs.insert({i, sharing_processes});
+        }
+        else
+        {
+          // Add to vector if not already there
+          auto it = std::find(map_it->second.begin(), map_it->second.end(),
+                              proc_other);
+          if (it == map_it->second.end())
+            map_it->second.push_back(proc_other);
+        }
+      }
+    }
+  }
+
+  return ghost_procs;
+}
