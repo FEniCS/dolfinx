@@ -869,14 +869,12 @@ BoundingBoxTree::get_bbox_coordinates(int node) const
 bool BoundingBoxTree::point_in_bbox(const Eigen::Vector3d& x, const int node,
                                     double rtol) const
 {
-  Eigen::Map<const Eigen::Array<double, Eigen::Dynamic, 3, Eigen::RowMajor>> b(
-      _bbox_coordinates.data() + 6 * node, 2, 3);
-  for (int i = 0; i < 3; ++i)
-  {
-    const double eps = rtol * (b(1, i) - b(0, i));
-    if (b(0, i) - eps > x[i] or x[i] > b(1, i) + eps)
-      return false;
-  }
-  return true;
+  Eigen::Map<const Eigen::Vector3d> b0(_bbox_coordinates.data() + 6 * node, 3);
+  Eigen::Map<const Eigen::Vector3d> b1(_bbox_coordinates.data() + 6 * node + 3,
+                                       3);
+  // rtol = 1.0e-10;
+  auto eps0 = rtol * (b1 - b0);
+  return (x.array() >= (b0 - eps0).array()).all()
+         and (x.array() <= (b1 + eps0).array()).all();
 }
 //-----------------------------------------------------------------------------
