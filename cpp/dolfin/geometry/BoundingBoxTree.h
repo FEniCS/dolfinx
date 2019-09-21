@@ -134,8 +134,8 @@ private:
   // Compute collisions with point (recursive)
   static void _compute_collisions_point(const BoundingBoxTree& tree,
                                         const Eigen::Vector3d& point, int node,
-                                        std::vector<int>& entities,
-                                        const mesh::Mesh* mesh);
+                                        const mesh::Mesh* mesh,
+                                        std::vector<int>& entities);
 
   // Compute collisions with tree (recursive)
   static void _compute_collisions_tree(const BoundingBoxTree& A,

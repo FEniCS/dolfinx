@@ -121,7 +121,7 @@ BoundingBoxTree::compute_collisions(const Eigen::Vector3d& point) const
 {
   // Call recursive find function
   std::vector<int> entities;
-  _compute_collisions_point(*this, point, num_bboxes() - 1, entities, nullptr);
+  _compute_collisions_point(*this, point, num_bboxes() - 1, nullptr, entities);
 
   return entities;
 }
@@ -158,7 +158,7 @@ BoundingBoxTree::compute_entity_collisions(const Eigen::Vector3d& point,
 
   // Call recursive find function to compute bounding box candidates
   std::vector<int> entities;
-  _compute_collisions_point(*this, point, num_bboxes() - 1, entities, &mesh);
+  _compute_collisions_point(*this, point, num_bboxes() - 1, &mesh, entities);
 
   return entities;
 }
@@ -356,8 +356,8 @@ int BoundingBoxTree::_build_from_point(
 void BoundingBoxTree::_compute_collisions_point(const BoundingBoxTree& tree,
                                                 const Eigen::Vector3d& point,
                                                 int node,
-                                                std::vector<int>& entities,
-                                                const mesh::Mesh* mesh)
+                                                const mesh::Mesh* mesh,
+                                                std::vector<int>& entities)
 {
   // Get bounding box for current node
   const BBox& bbox = tree._bboxes[node];
@@ -389,8 +389,8 @@ void BoundingBoxTree::_compute_collisions_point(const BoundingBoxTree& tree,
   // Check both children
   else
   {
-    _compute_collisions_point(tree, point, bbox[0], entities, mesh);
-    _compute_collisions_point(tree, point, bbox[1], entities, mesh);
+    _compute_collisions_point(tree, point, bbox[0], mesh, entities);
+    _compute_collisions_point(tree, point, bbox[1], mesh, entities);
   }
 }
 //-----------------------------------------------------------------------------
