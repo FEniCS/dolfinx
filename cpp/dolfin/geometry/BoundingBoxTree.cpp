@@ -48,12 +48,12 @@ void sort_points(int axis, const std::vector<Eigen::Vector3d>& points,
 void sort_bboxes(int axis, const std::vector<double>& leaf_bboxes,
                  const std::vector<int>::iterator& begin,
                  const std::vector<int>::iterator& middle,
-                 const std::vector<int>::iterator& end, int gdim)
+                 const std::vector<int>::iterator& end)
 {
   // Comparison lambda function with capture
-  auto cmp = [& dim = gdim, &leaf_bboxes, &axis](int i, int j) -> bool {
-    const double* bi = leaf_bboxes.data() + 2 * 3 * i + axis;
-    const double* bj = leaf_bboxes.data() + 2 * 3 * j + axis;
+  auto cmp = [&leaf_bboxes, &axis](int i, int j) -> bool {
+    const double* bi = leaf_bboxes.data() + 6 * i + axis;
+    const double* bj = leaf_bboxes.data() + 6 * j + axis;
     return (bi[0] + bi[3]) < (bj[0] + bj[3]);
   };
 
@@ -83,7 +83,7 @@ compute_bbox_of_points(const std::vector<Eigen::Vector3d>& points,
 Eigen::Array<double, 2, 3, Eigen::RowMajor>
 compute_bbox_of_bboxes(const std::vector<double>& leaf_bboxes,
                        const std::vector<int>::iterator& begin,
-                       const std::vector<int>::iterator& end, int gdim)
+                       const std::vector<int>::iterator& end)
 {
   Eigen::Array<double, 2, 3, Eigen::RowMajor> b
       = Eigen::Array<double, 2, 3, Eigen::RowMajor>::Zero();
@@ -168,7 +168,7 @@ BoundingBoxTree::BoundingBoxTree(const mesh::Mesh& mesh, int tdim)
   if (mpi_size > 1)
   {
     // Send root node coordinates to all processes
-    std::vector<double> send_bbox(_bbox_coordinates.end() - 3 * 2,
+    std::vector<double> send_bbox(_bbox_coordinates.end() - 6,
                                   _bbox_coordinates.end());
     std::vector<double> recv_bbox;
     MPI::all_gather(mesh.mpi_comm(), send_bbox, recv_bbox);
@@ -372,7 +372,6 @@ int BoundingBoxTree::_build_from_leaf(const std::vector<double>& leaf_bboxes,
   {
     // Get bounding box coordinates for leaf
     const int entity_index = *begin;
-    // const double* b = leaf_bboxes.data() + 2 * _gdim * entity_index;
     Eigen::Array<double, 2, 3, Eigen::RowMajor> b
         = Eigen::Array<double, 2, 3, Eigen::RowMajor>::Zero();
     for (int i = 0; i < 3; ++i)
@@ -389,14 +388,14 @@ int BoundingBoxTree::_build_from_leaf(const std::vector<double>& leaf_bboxes,
 
   // Compute bounding box of all bounding boxes
   Eigen::Array<double, 2, 3, Eigen::RowMajor> b
-      = compute_bbox_of_bboxes(leaf_bboxes, begin, end, _gdim);
+      = compute_bbox_of_bboxes(leaf_bboxes, begin, end);
   Eigen::Array<double, 2, 3, Eigen::RowMajor>::Index axis;
   (b.row(1) - b.row(0)).maxCoeff(&axis);
   assert(axis < _gdim);
 
   // Sort bounding boxes along longest axis
   std::vector<int>::iterator middle = begin + (end - begin) / 2;
-  sort_bboxes(axis, leaf_bboxes, begin, middle, end, _gdim);
+  sort_bboxes(axis, leaf_bboxes, begin, middle, end);
 
   // Split bounding boxes into two groups and call recursively
   bbox[0] = _build_from_leaf(leaf_bboxes, begin, middle);
@@ -781,8 +780,7 @@ int BoundingBoxTree::add_bbox(
   // Add bounding box and coordinates
   _bboxes.push_back(bbox);
   _bbox_coordinates.insert(_bbox_coordinates.end(), b.data(), b.data() + 3);
-  _bbox_coordinates.insert(_bbox_coordinates.end(), b.data() + 3,
-                           b.data() + 3 + 3);
+  _bbox_coordinates.insert(_bbox_coordinates.end(), b.data() + 3, b.data() + 6);
   return _bboxes.size() - 1;
 }
 //-----------------------------------------------------------------------------
@@ -797,10 +795,10 @@ std::string BoundingBoxTree::str(bool verbose)
 //-----------------------------------------------------------------------------
 void BoundingBoxTree::tree_print(std::stringstream& s, int i)
 {
-  int dim = _bbox_coordinates.size() / _bboxes.size();
-  int idx = i * dim;
+  assert(_bbox_coordinates.size() / _bboxes.size() == 3);
+  int idx = i * 3;
   s << "[";
-  for (int j = idx; j < idx + dim; ++j)
+  for (int j = idx; j < idx + 3; ++j)
     s << _bbox_coordinates[j] << " ";
   s << "]\n";
 
@@ -819,12 +817,8 @@ void BoundingBoxTree::tree_print(std::stringstream& s, int i)
 double BoundingBoxTree::compute_squared_distance_point(const Eigen::Vector3d& x,
                                                        int node) const
 {
-  const double* p = _bbox_coordinates.data() + 2 * 3 * node;
-  double d = 0.0;
-  for (int i = 0; i < 3; ++i)
-    d += (x[i] - p[i]) * (x[i] - p[i]);
-
-  return d;
+  Eigen::Map<const Eigen::Vector3d> p(_bbox_coordinates.data() + 6 * node, 3);
+  return (x - p).squaredNorm();
 }
 //-----------------------------------------------------------------------------
 double BoundingBoxTree::compute_squared_distance_bbox(const Eigen::Vector3d& x,
@@ -835,18 +829,18 @@ double BoundingBoxTree::compute_squared_distance_bbox(const Eigen::Vector3d& x,
   // version. This is also the way the algorithm is presented in
   // Ericsson.
 
-  const double* b = _bbox_coordinates.data() + 2 * 3 * node;
+  Eigen::Map<const Eigen::Array<double, Eigen::Dynamic, 3, Eigen::RowMajor>> b(
+      _bbox_coordinates.data() + 6 * node, 2, 3);
   double r2 = 0.0;
-
-  for (int i = 0; i < _gdim; ++i)
+  for (int i = 0; i < 3; ++i)
   {
-    if (x[i] < b[i])
-      r2 += (x[i] - b[i]) * (x[i] - b[i]);
+    if (x[i] < b(0, i))
+      r2 += (x[i] - b(0, i)) * (x[i] - b(0, i));
   }
-  for (int i = 0; i < _gdim; ++i)
+  for (int i = 0; i < 3; ++i)
   {
-    if (x[i] > b[i + 3])
-      r2 += (x[i] - b[i + 3]) * (x[i] - b[i + 3]);
+    if (x[i] > b(1, i))
+      r2 += (x[i] - b(1, i)) * (x[i] - b(1, i));
   }
 
   return r2;
@@ -856,11 +850,12 @@ bool BoundingBoxTree::bbox_in_bbox(
     const Eigen::Array<double, 2, 3, Eigen::RowMajor>& a, int node,
     double rtol) const
 {
-  const double* b = _bbox_coordinates.data() + 2 * 3 * node;
+  Eigen::Map<const Eigen::Array<double, Eigen::Dynamic, 3, Eigen::RowMajor>> b(
+      _bbox_coordinates.data() + 6 * node, 2, 3);
   for (int i = 0; i < _gdim; ++i)
   {
-    const double eps = rtol * (b[i + 3] - b[i]);
-    if (b[i] - eps > a(1, i) or a(0, i) > b[i + 3] + eps)
+    const double eps = rtol * (b(1, i) - b(0, i));
+    if (b(0, i) - eps > a(1, i) or a(0, i) > b(1, i) + eps)
       return false;
   }
   return true;
@@ -872,35 +867,30 @@ int BoundingBoxTree::add_point(const BBox& bbox, const Eigen::Vector3d& point)
   _bboxes.push_back(bbox);
 
   // Add point coordinates (twice)
-  for (int i = 0; i < 3; ++i)
-    _bbox_coordinates.push_back(point[i]);
-  for (int i = 0; i < 3; ++i)
-    _bbox_coordinates.push_back(point[i]);
-
+  _bbox_coordinates.insert(_bbox_coordinates.end(), point.data(),
+                           point.data() + 3);
+  _bbox_coordinates.insert(_bbox_coordinates.end(), point.data(),
+                           point.data() + 3);
   return _bboxes.size() - 1;
 }
 //-----------------------------------------------------------------------------
 Eigen::Array<double, 2, 3, Eigen::RowMajor>
 BoundingBoxTree::get_bbox_coordinates(int node) const
 {
-  Eigen::Array<double, 2, 3, Eigen::RowMajor> b
-      = Eigen::Array<double, 2, 3, Eigen::RowMajor>::Zero();
-  for (int i = 0; i < _gdim; ++i)
-  {
-    b(0, i) = _bbox_coordinates[2 * 3 * node + i];
-    b(1, i) = _bbox_coordinates[2 * 3 * node + 3 + i];
-  }
+  Eigen::Map<const Eigen::Array<double, Eigen::Dynamic, 3, Eigen::RowMajor>> b(
+      _bbox_coordinates.data() + 6 * node, 2, 3);
   return b;
 }
 //-----------------------------------------------------------------------------
 bool BoundingBoxTree::point_in_bbox(const Eigen::Vector3d& x, const int node,
                                     double rtol) const
 {
-  const double* b = _bbox_coordinates.data() + 2 * 3 * node;
-  for (int i = 0; i < _gdim; ++i)
+  Eigen::Map<const Eigen::Array<double, Eigen::Dynamic, 3, Eigen::RowMajor>> b(
+      _bbox_coordinates.data() + 6 * node, 2, 3);
+  for (int i = 0; i < 3; ++i)
   {
-    const double eps = rtol * (b[i + 3] - b[i]);
-    if (b[i] - eps > x[i] or x[i] > b[i + 3] + eps)
+    const double eps = rtol * (b(1, i) - b(0, i));
+    if (b(0, i) - eps > x[i] or x[i] > b(1, i) + eps)
       return false;
   }
   return true;
