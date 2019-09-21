@@ -182,11 +182,15 @@ private:
                           const std::vector<int>::iterator& end);
 
   // Add bounding box and coordinates
-  int add_bbox(const BBox& bbox, const double* b)
+  int add_bbox(const BBox& bbox,
+               const Eigen::Array<double, 2, 3, Eigen::RowMajor>& b)
   {
     // Add bounding box and coordinates
     _bboxes.push_back(bbox);
-    _bbox_coordinates.insert(_bbox_coordinates.end(), b, b + 2 * _gdim);
+    _bbox_coordinates.insert(_bbox_coordinates.end(), b.data(),
+                             b.data() + _gdim);
+    _bbox_coordinates.insert(_bbox_coordinates.end(), b.data() + 3,
+                             b.data() + 3 + _gdim);
     return _bboxes.size() - 1;
   }
 
@@ -215,7 +219,8 @@ private:
   }
 
   // Check whether point (x) is in bounding box (node)
-  bool point_in_bbox(const double* x, int node, double rtol = 1e-14) const;
+  bool point_in_bbox(const Eigen::Vector3d& x, int node,
+                     double rtol = 1e-14) const;
 
   // Check whether bounding box (a) collides with bounding box (node)
   bool bbox_in_bbox(const double* a, int node, double rtol = 1e-14) const;

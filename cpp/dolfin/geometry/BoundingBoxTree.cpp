@@ -170,7 +170,7 @@ BoundingBoxTree::compute_process_collisions(const Eigen::Vector3d& point) const
     return _global_tree->compute_collisions(point);
 
   std::vector<int> collision;
-  if (point_in_bbox(point.data(), num_bboxes() - 1))
+  if (point_in_bbox(point, num_bboxes() - 1))
     collision.push_back(0);
 
   return collision;
@@ -291,7 +291,14 @@ int BoundingBoxTree::_build_from_leaf(const std::vector<double>& leaf_bboxes,
   {
     // Get bounding box coordinates for leaf
     const int entity_index = *begin;
-    const double* b = leaf_bboxes.data() + 2 * _gdim * entity_index;
+    // const double* b = leaf_bboxes.data() + 2 * _gdim * entity_index;
+    Eigen::Array<double, 2, 3, Eigen::RowMajor> b
+        = Eigen::Array<double, 2, 3, Eigen::RowMajor>::Zero();
+    for (int i = 0; i < _gdim; ++i)
+    {
+      b(0, i) = leaf_bboxes[2 * _gdim * entity_index + i];
+      b(1, i) = leaf_bboxes[2 * _gdim * entity_index + _gdim + i];
+    }
 
     // Store bounding box data
     bbox[0] = num_bboxes(); // child_0 == node denotes a leaf
@@ -315,13 +322,7 @@ int BoundingBoxTree::_build_from_leaf(const std::vector<double>& leaf_bboxes,
   bbox[1] = _build_from_leaf(leaf_bboxes, middle, end);
 
   // Store bounding box data. Note that root box will be added last
-  double _b[6];
-  for (int i = 0; i < _gdim; ++i)
-  {
-    _b[i] = b(0, i);
-    _b[i + _gdim] = b(1, i);
-  }
-  return add_bbox(bbox, _b);
+  return add_bbox(bbox, b);
 }
 //-----------------------------------------------------------------------------
 int BoundingBoxTree::_build_from_point(
@@ -361,13 +362,7 @@ int BoundingBoxTree::_build_from_point(
   bbox[1] = _build_from_point(points, middle, end);
 
   // Store bounding box data. Note that root box will be added last
-  double _b[6];
-  for (int i = 0; i < _gdim; ++i)
-  {
-    _b[i] = b(0, i);
-    _b[i + _gdim] = b(1, i);
-  }
-  return add_bbox(bbox, _b);
+  return add_bbox(bbox, b);
 }
 //-----------------------------------------------------------------------------
 void BoundingBoxTree::_compute_collisions_point(const BoundingBoxTree& tree,
@@ -380,7 +375,7 @@ void BoundingBoxTree::_compute_collisions_point(const BoundingBoxTree& tree,
   const BBox& bbox = tree._bboxes[node];
 
   // If point is not in bounding box, then don't search further
-  if (!tree.point_in_bbox(point.data(), node))
+  if (!tree.point_in_bbox(point, node))
     return;
 
   // If box is a leaf (which we know contains the point), then add it
@@ -507,7 +502,7 @@ int BoundingBoxTree::_compute_first_collision(const BoundingBoxTree& tree,
   const BBox& bbox = tree._bboxes[node];
 
   // If point is not in bounding box, then don't search further
-  if (!tree.point_in_bbox(point.data(), node))
+  if (!tree.point_in_bbox(point, node))
     return -1;
 
   // If box is a leaf (which we know contains the point), then return it
@@ -539,7 +534,7 @@ int BoundingBoxTree::_compute_first_entity_collision(
   const BBox& bbox = tree._bboxes[node];
 
   // If point is not in bounding box, then don't search further
-  if (!tree.point_in_bbox(point.data(), node))
+  if (!tree.point_in_bbox(point, node))
     return -1;
 
   // If box is a leaf (which we know contains the point), then check entity
@@ -862,7 +857,7 @@ bool BoundingBoxTree::bbox_in_bbox(const double* a, int node, double rtol) const
   return true;
 }
 //-----------------------------------------------------------------------------
-bool BoundingBoxTree::point_in_bbox(const double* x, const int node,
+bool BoundingBoxTree::point_in_bbox(const Eigen::Vector3d& x, const int node,
                                     double rtol) const
 {
   const double* b = _bbox_coordinates.data() + 2 * _gdim * node;
