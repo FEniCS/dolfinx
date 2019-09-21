@@ -32,24 +32,23 @@ void geometry(py::module& m)
       .def(py::init<const dolfin::mesh::Mesh&, int>())
       .def(py::init<const std::vector<Eigen::Vector3d>&>())
       .def("compute_collisions",
-           (std::vector<int>(dolfin::geometry::BoundingBoxTree::*)(
-               const Eigen::Vector3d&) const)
-               & dolfin::geometry::BoundingBoxTree::compute_collisions)
+           py::overload_cast<const Eigen::Vector3d&>(
+               &dolfin::geometry::BoundingBoxTree::compute_collisions,
+               py::const_))
       .def("compute_collisions",
-           (std::pair<std::vector<int>, std::vector<int>>(
-               dolfin::geometry::BoundingBoxTree::*)(
-               const dolfin::geometry::BoundingBoxTree&) const)
-               & dolfin::geometry::BoundingBoxTree::compute_collisions)
+           py::overload_cast<const dolfin::geometry::BoundingBoxTree&>(
+               &dolfin::geometry::BoundingBoxTree::compute_collisions,
+               py::const_))
       .def("compute_entity_collisions",
-           (std::vector<int>(dolfin::geometry::BoundingBoxTree::*)(
-               const Eigen::Vector3d&, const dolfin::mesh::Mesh&) const)
-               & dolfin::geometry::BoundingBoxTree::compute_entity_collisions)
+           py::overload_cast<const Eigen::Vector3d&, const dolfin::mesh::Mesh&>(
+               &dolfin::geometry::BoundingBoxTree::compute_entity_collisions,
+               py::const_))
       .def("compute_entity_collisions",
-           (std::pair<std::vector<int>, std::vector<int>>(
-               dolfin::geometry::BoundingBoxTree::*)(
-               const dolfin::geometry::BoundingBoxTree&,
-               const dolfin::mesh::Mesh&, const dolfin::mesh::Mesh&) const)
-               & dolfin::geometry::BoundingBoxTree::compute_entity_collisions)
+           py::overload_cast<const dolfin::geometry::BoundingBoxTree&,
+                             const dolfin::mesh::Mesh&,
+                             const dolfin::mesh::Mesh&>(
+               &dolfin::geometry::BoundingBoxTree::compute_entity_collisions,
+               py::const_))
       .def("compute_first_collision",
            &dolfin::geometry::BoundingBoxTree::compute_first_collision)
       .def("collides", &dolfin::geometry::BoundingBoxTree::collides)
