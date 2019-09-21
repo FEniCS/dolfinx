@@ -337,9 +337,12 @@ int BoundingBoxTree::_build_from_point(
   }
 
   // Compute bounding box of all points
-  double b[MAX_DIM];
-  std::size_t axis;
-  compute_bbox_of_points(b, axis, points, begin, end, _gdim);
+  // double b[MAX_DIM];
+  // std::size_t axis;
+  Eigen::Array<double, 2, 3, Eigen::RowMajor> b
+      = compute_bbox_of_points(points, begin, end);
+  Eigen::Array<double, 2, 3, Eigen::RowMajor>::Index axis;
+  (b.row(1) - b.row(0)).maxCoeff(&axis);
 
   // Sort bounding boxes along longest axis
   std::vector<int>::iterator middle = begin + (end - begin) / 2;
@@ -349,8 +352,14 @@ int BoundingBoxTree::_build_from_point(
   bbox[0] = _build_from_point(points, begin, middle);
   bbox[1] = _build_from_point(points, middle, end);
 
-  // Store bounding box data. Note that root box will be added last.
-  return add_bbox(bbox, b);
+  // Store bounding box data. Note that root box will be added last
+  double _b[6];
+  for (int i = 0; i < _gdim; ++i)
+  {
+    _b[i] = b(0, i);
+    _b[i + _gdim] = b(1, i);
+  }
+  return add_bbox(bbox, _b);
 }
 //-----------------------------------------------------------------------------
 void BoundingBoxTree::_compute_collisions_point(const BoundingBoxTree& tree,
@@ -745,42 +754,23 @@ void BoundingBoxTree::sort_bboxes(std::size_t axis,
   std::nth_element(begin, middle, end, cmp);
 }
 //-----------------------------------------------------------------------------
-void BoundingBoxTree::compute_bbox_of_points(
-    double* bbox, std::size_t& axis, const std::vector<Eigen::Vector3d>& points,
+Eigen::Array<double, 2, 3, Eigen::RowMajor>
+BoundingBoxTree::compute_bbox_of_points(
+    const std::vector<Eigen::Vector3d>& points,
     const std::vector<int>::iterator& begin,
-    const std::vector<int>::iterator& end, int gdim)
+    const std::vector<int>::iterator& end)
 {
-  // Get coordinates for first point
-  auto it = begin;
-  const double* p = points[*it].data();
-  for (int i = 0; i < gdim; ++i)
+  Eigen::Array<double, 2, 3, Eigen::RowMajor> b;
+  b.row(0) = points[*begin];
+  b.row(1) = points[*begin];
+  for (auto it = begin; it != end; ++it)
   {
-    bbox[i] = p[i];
-    bbox[i + gdim] = p[i];
+    const Eigen::Vector3d& p = points[*it];
+    b.row(0) = b.row(0).min(p.transpose().array());
+    b.row(1) = b.row(1).max(p.transpose().array());
   }
 
-  // Compute min and max over remaining points
-  for (; it != end; ++it)
-  {
-    const double* p = points[*it].data();
-    for (int i = 0; i < gdim; ++i)
-    {
-      bbox[i] = std::min(p[i], bbox[i]);
-      bbox[i + gdim] = std::max(p[i], bbox[i + gdim]);
-    }
-  }
-
-  // Compute longest axis
-  axis = 0;
-  double max_axis = bbox[gdim] - bbox[0];
-  for (int i = 1; i < gdim; ++i)
-  {
-    if ((bbox[gdim + i] - bbox[i]) > max_axis)
-    {
-      max_axis = bbox[gdim + i] - bbox[i];
-      axis = i;
-    }
-  }
+  return b;
 }
 //-----------------------------------------------------------------------------
 void BoundingBoxTree::compute_bbox_of_bboxes(

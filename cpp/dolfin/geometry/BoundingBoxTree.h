@@ -234,11 +234,10 @@ private:
                                      int gdim);
 
   // Compute bounding box of points
-  static void compute_bbox_of_points(double* bbox, std::size_t& axis,
-                                     const std::vector<Eigen::Vector3d>& points,
-                                     const std::vector<int>::iterator& begin,
-                                     const std::vector<int>::iterator& end,
-                                     int gdim);
+  static Eigen::Array<double, 2, 3, Eigen::RowMajor>
+  compute_bbox_of_points(const std::vector<Eigen::Vector3d>& points,
+                         const std::vector<int>::iterator& begin,
+                         const std::vector<int>::iterator& end);
 
   // Sort leaf bounding boxes along given axis
   static void sort_bboxes(std::size_t axis,
