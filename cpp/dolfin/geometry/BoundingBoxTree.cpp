@@ -52,9 +52,9 @@ void sort_bboxes(int axis, const std::vector<double>& leaf_bboxes,
 {
   // Comparison lambda function with capture
   auto cmp = [& dim = gdim, &leaf_bboxes, &axis](int i, int j) -> bool {
-    const double* bi = leaf_bboxes.data() + 2 * dim * i + axis;
-    const double* bj = leaf_bboxes.data() + 2 * dim * j + axis;
-    return (bi[0] + bi[dim]) < (bj[0] + bj[dim]);
+    const double* bi = leaf_bboxes.data() + 2 * 3 * i + axis;
+    const double* bj = leaf_bboxes.data() + 2 * 3 * j + axis;
+    return (bi[0] + bi[3]) < (bj[0] + bj[3]);
   };
 
   std::nth_element(begin, middle, end, cmp);
@@ -88,10 +88,10 @@ compute_bbox_of_bboxes(const std::vector<double>& leaf_bboxes,
   Eigen::Array<double, 2, 3, Eigen::RowMajor> b
       = Eigen::Array<double, 2, 3, Eigen::RowMajor>::Zero();
 
-  for (int i = 0; i < gdim; ++i)
+  for (int i = 0; i < 3; ++i)
   {
-    b(0, i) = leaf_bboxes[2 * gdim * (*begin) + i];
-    b(1, i) = leaf_bboxes[2 * gdim * (*begin) + gdim + i];
+    b(0, i) = leaf_bboxes[2 * 3 * (*begin) + i];
+    b(1, i) = leaf_bboxes[2 * 3 * (*begin) + 3 + i];
   }
 
   // Compute min and max over remaining boxes
@@ -99,10 +99,10 @@ compute_bbox_of_bboxes(const std::vector<double>& leaf_bboxes,
   {
     Eigen::Vector3d p0 = Eigen::Vector3d::Zero();
     Eigen::Vector3d p1 = Eigen::Vector3d::Zero();
-    for (int i = 0; i < gdim; ++i)
+    for (int i = 0; i < 3; ++i)
     {
-      p0(i) = leaf_bboxes[2 * gdim * (*it) + i];
-      p1(i) = leaf_bboxes[2 * gdim * (*it) + gdim + i];
+      p0(i) = leaf_bboxes[2 * 3 * (*it) + i];
+      p1(i) = leaf_bboxes[2 * 3 * (*it) + 3 + i];
     }
 
     b.row(0) = b.row(0).min(p0.transpose().array());
@@ -126,7 +126,7 @@ BoundingBoxTree::BoundingBoxTree(const std::vector<double>& leaf_bboxes,
 }
 //-----------------------------------------------------------------------------
 BoundingBoxTree::BoundingBoxTree(const mesh::Mesh& mesh, int tdim)
-    : _tdim(tdim), _gdim(mesh.topology().dim())
+    : _tdim(tdim), _gdim(mesh.geometry().dim())
 {
   // Check dimension
   if (tdim < 1 or tdim > mesh.topology().dim())
@@ -144,13 +144,13 @@ BoundingBoxTree::BoundingBoxTree(const mesh::Mesh& mesh, int tdim)
 
   // Create bounding boxes for all entities (leaves)
   const int num_leaves = mesh.num_entities(tdim);
-  std::vector<double> leaf_bboxes(2 * _gdim * num_leaves);
+  std::vector<double> leaf_bboxes(2 * 3 * num_leaves);
   for (auto& e : mesh::MeshRange(mesh, tdim))
   {
     Eigen::Array<double, 2, 3, Eigen::RowMajor> b = compute_bbox_of_entity(e);
     for (int i = 0; i < 2; ++i)
-      for (int j = 0; j < _gdim; ++j)
-        leaf_bboxes[2 * _gdim * e.index() + _gdim * i + j] = b(i, j);
+      for (int j = 0; j < 3; ++j)
+        leaf_bboxes[2 * 3 * e.index() + 3 * i + j] = b(i, j);
   }
 
   // Create leaf partition (to be sorted)
@@ -168,7 +168,7 @@ BoundingBoxTree::BoundingBoxTree(const mesh::Mesh& mesh, int tdim)
   if (mpi_size > 1)
   {
     // Send root node coordinates to all processes
-    std::vector<double> send_bbox(_bbox_coordinates.end() - _gdim * 2,
+    std::vector<double> send_bbox(_bbox_coordinates.end() - 3 * 2,
                                   _bbox_coordinates.end());
     std::vector<double> recv_bbox;
     MPI::all_gather(mesh.mpi_comm(), send_bbox, recv_bbox);
@@ -375,10 +375,10 @@ int BoundingBoxTree::_build_from_leaf(const std::vector<double>& leaf_bboxes,
     // const double* b = leaf_bboxes.data() + 2 * _gdim * entity_index;
     Eigen::Array<double, 2, 3, Eigen::RowMajor> b
         = Eigen::Array<double, 2, 3, Eigen::RowMajor>::Zero();
-    for (int i = 0; i < _gdim; ++i)
+    for (int i = 0; i < 3; ++i)
     {
-      b(0, i) = leaf_bboxes[2 * _gdim * entity_index + i];
-      b(1, i) = leaf_bboxes[2 * _gdim * entity_index + _gdim + i];
+      b(0, i) = leaf_bboxes[2 * 3 * entity_index + i];
+      b(1, i) = leaf_bboxes[2 * 3 * entity_index + 3 + i];
     }
 
     // Store bounding box data
@@ -780,9 +780,9 @@ int BoundingBoxTree::add_bbox(
 {
   // Add bounding box and coordinates
   _bboxes.push_back(bbox);
-  _bbox_coordinates.insert(_bbox_coordinates.end(), b.data(), b.data() + _gdim);
+  _bbox_coordinates.insert(_bbox_coordinates.end(), b.data(), b.data() + 3);
   _bbox_coordinates.insert(_bbox_coordinates.end(), b.data() + 3,
-                           b.data() + 3 + _gdim);
+                           b.data() + 3 + 3);
   return _bboxes.size() - 1;
 }
 //-----------------------------------------------------------------------------
@@ -819,9 +819,9 @@ void BoundingBoxTree::tree_print(std::stringstream& s, int i)
 double BoundingBoxTree::compute_squared_distance_point(const Eigen::Vector3d& x,
                                                        int node) const
 {
-  const double* p = _bbox_coordinates.data() + 2 * _gdim * node;
+  const double* p = _bbox_coordinates.data() + 2 * 3 * node;
   double d = 0.0;
-  for (int i = 0; i < _gdim; ++i)
+  for (int i = 0; i < 3; ++i)
     d += (x[i] - p[i]) * (x[i] - p[i]);
 
   return d;
@@ -835,7 +835,7 @@ double BoundingBoxTree::compute_squared_distance_bbox(const Eigen::Vector3d& x,
   // version. This is also the way the algorithm is presented in
   // Ericsson.
 
-  const double* b = _bbox_coordinates.data() + 2 * _gdim * node;
+  const double* b = _bbox_coordinates.data() + 2 * 3 * node;
   double r2 = 0.0;
 
   for (int i = 0; i < _gdim; ++i)
@@ -845,8 +845,8 @@ double BoundingBoxTree::compute_squared_distance_bbox(const Eigen::Vector3d& x,
   }
   for (int i = 0; i < _gdim; ++i)
   {
-    if (x[i] > b[i + _gdim])
-      r2 += (x[i] - b[i + _gdim]) * (x[i] - b[i + _gdim]);
+    if (x[i] > b[i + 3])
+      r2 += (x[i] - b[i + 3]) * (x[i] - b[i + 3]);
   }
 
   return r2;
@@ -856,11 +856,11 @@ bool BoundingBoxTree::bbox_in_bbox(
     const Eigen::Array<double, 2, 3, Eigen::RowMajor>& a, int node,
     double rtol) const
 {
-  const double* b = _bbox_coordinates.data() + 2 * _gdim * node;
+  const double* b = _bbox_coordinates.data() + 2 * 3 * node;
   for (int i = 0; i < _gdim; ++i)
   {
-    const double eps = rtol * (b[i + _gdim] - b[i]);
-    if (b[i] - eps > a(1, i) or a(0, i) > b[i + _gdim] + eps)
+    const double eps = rtol * (b[i + 3] - b[i]);
+    if (b[i] - eps > a(1, i) or a(0, i) > b[i + 3] + eps)
       return false;
   }
   return true;
@@ -872,9 +872,9 @@ int BoundingBoxTree::add_point(const BBox& bbox, const Eigen::Vector3d& point)
   _bboxes.push_back(bbox);
 
   // Add point coordinates (twice)
-  for (int i = 0; i < _gdim; ++i)
+  for (int i = 0; i < 3; ++i)
     _bbox_coordinates.push_back(point[i]);
-  for (int i = 0; i < _gdim; ++i)
+  for (int i = 0; i < 3; ++i)
     _bbox_coordinates.push_back(point[i]);
 
   return _bboxes.size() - 1;
@@ -887,8 +887,8 @@ BoundingBoxTree::get_bbox_coordinates(int node) const
       = Eigen::Array<double, 2, 3, Eigen::RowMajor>::Zero();
   for (int i = 0; i < _gdim; ++i)
   {
-    b(0, i) = _bbox_coordinates[2 * _gdim * node + i];
-    b(1, i) = _bbox_coordinates[2 * _gdim * node + _gdim + i];
+    b(0, i) = _bbox_coordinates[2 * 3 * node + i];
+    b(1, i) = _bbox_coordinates[2 * 3 * node + 3 + i];
   }
   return b;
 }
@@ -896,11 +896,11 @@ BoundingBoxTree::get_bbox_coordinates(int node) const
 bool BoundingBoxTree::point_in_bbox(const Eigen::Vector3d& x, const int node,
                                     double rtol) const
 {
-  const double* b = _bbox_coordinates.data() + 2 * _gdim * node;
+  const double* b = _bbox_coordinates.data() + 2 * 3 * node;
   for (int i = 0; i < _gdim; ++i)
   {
-    const double eps = rtol * (b[i + _gdim] - b[i]);
-    if (b[i] - eps > x[i] or x[i] > b[i + _gdim] + eps)
+    const double eps = rtol * (b[i + 3] - b[i]);
+    if (b[i] - eps > x[i] or x[i] > b[i + 3] + eps)
       return false;
   }
   return true;
