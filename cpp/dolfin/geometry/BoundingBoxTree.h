@@ -133,6 +133,7 @@ public:
   /// the index of the entity contained in the leaf bounding box.
   using BBox = std::array<int, 2>;
 
+  /// Return bounding box
   BBox bbox(int node) const
   {
     assert(node < (int)_bboxes.size());
