@@ -23,7 +23,6 @@ namespace dolfin_wrappers
 {
 void geometry(py::module& m)
 {
-  m.def("collides", &dolfin::geometry::collides);
   m.def("compute_first_collision", &dolfin::geometry::compute_first_collision);
   m.def("compute_first_entity_collision",
         &dolfin::geometry::compute_first_entity_collision);

@@ -18,14 +18,14 @@ namespace
 //-----------------------------------------------------------------------------
 // Check whether point is outside region defined by facet ABC. The
 // fourth vertex is needed to define the orientation.
-bool point_outside_of_plane(const Eigen::Vector3d& point,
-                            const Eigen::Vector3d& a, const Eigen::Vector3d& b,
-                            const Eigen::Vector3d& c, const Eigen::Vector3d& d)
+bool point_outside_of_plane(const Eigen::Vector3d& p, const Eigen::Vector3d& a,
+                            const Eigen::Vector3d& b, const Eigen::Vector3d& c,
+                            const Eigen::Vector3d& d)
 {
   // Algorithm from Real-time collision detection by Christer Ericson:
   // PointOutsideOfPlane on page 144, Section 5.1.6.
   const Eigen::Vector3d v = (b - a).cross(c - a);
-  const double signp = v.dot(point - a);
+  const double signp = v.dot(p - a);
   const double signd = v.dot(d - a);
   return signp * signd < 0.0;
 }
@@ -39,14 +39,14 @@ bool is_leaf(const geometry::BoundingBoxTree::BBox& bbox, int node)
 //-----------------------------------------------------------------------------
 // Compute collisions with point (recursive)
 void _compute_collisions_point(const geometry::BoundingBoxTree& tree,
-                               const Eigen::Vector3d& point, int node,
+                               const Eigen::Vector3d& p, int node,
                                const mesh::Mesh* mesh,
                                std::vector<int>& entities)
 {
   // Get bounding box for current node
   const geometry::BoundingBoxTree::BBox bbox = tree.bbox(node);
 
-  if (!tree.point_in_bbox(point, node))
+  if (!tree.point_in_bbox(p, node))
   {
     // If point is not in bounding box, then don't search further
     return;
@@ -63,30 +63,31 @@ void _compute_collisions_point(const geometry::BoundingBoxTree& tree,
     {
       // Get cell
       mesh::MeshEntity cell(*mesh, mesh->topology().dim(), entity_index);
-      if (geometry::CollisionPredicates::collides(cell, point))
+      if (geometry::CollisionPredicates::collides(cell, p))
         entities.push_back(entity_index);
     }
-
-    // Otherwise, add the candidate
     else
+    {
+      // Otherwise, add the candidate
       entities.push_back(entity_index);
+    }
   }
   else
   {
     // Check both children
-    _compute_collisions_point(tree, point, bbox[0], mesh, entities);
-    _compute_collisions_point(tree, point, bbox[1], mesh, entities);
+    _compute_collisions_point(tree, p, bbox[0], mesh, entities);
+    _compute_collisions_point(tree, p, bbox[1], mesh, entities);
   }
 }
 //-----------------------------------------------------------------------------
 // Compute first collision (recursive)
 int _compute_first_collision(const geometry::BoundingBoxTree& tree,
-                             const Eigen::Vector3d& point, int node)
+                             const Eigen::Vector3d& p, int node)
 {
   // Get bounding box for current node
   const geometry::BoundingBoxTree::BBox bbox = tree.bbox(node);
 
-  if (!tree.point_in_bbox(point, node))
+  if (!tree.point_in_bbox(p, node))
   {
     // If point is not in bounding box, then don't search further
     return -1;
@@ -99,12 +100,12 @@ int _compute_first_collision(const geometry::BoundingBoxTree& tree,
   else
   {
     // Check both children
-    int c0 = _compute_first_collision(tree, point, bbox[0]);
+    int c0 = _compute_first_collision(tree, p, bbox[0]);
     if (c0 >= 0)
       return c0;
 
     // Check second child
-    int c1 = _compute_first_collision(tree, point, bbox[1]);
+    int c1 = _compute_first_collision(tree, p, bbox[1]);
     if (c1 >= 0)
       return c1;
   }
@@ -115,14 +116,14 @@ int _compute_first_collision(const geometry::BoundingBoxTree& tree,
 //-----------------------------------------------------------------------------
 // Compute first entity collision (recursive)
 int _compute_first_entity_collision(const geometry::BoundingBoxTree& tree,
-                                    const Eigen::Vector3d& point, int node,
+                                    const Eigen::Vector3d& p, int node,
                                     const mesh::Mesh& mesh)
 {
   // Get bounding box for current node
   const geometry::BoundingBoxTree::BBox bbox = tree.bbox(node);
 
   // If point is not in bounding box, then don't search further
-  if (!tree.point_in_bbox(point, node))
+  if (!tree.point_in_bbox(p, node))
   {
     // If point is not in bounding box, then don't search further
     return -1;
@@ -137,17 +138,17 @@ int _compute_first_entity_collision(const geometry::BoundingBoxTree& tree,
     mesh::MeshEntity cell(mesh, mesh.topology().dim(), entity_index);
 
     // Check entity
-    if (geometry::CollisionPredicates::collides(cell, point))
+    if (geometry::CollisionPredicates::collides(cell, p))
       return entity_index;
   }
   else
   {
     // Check both children
-    const int c0 = _compute_first_entity_collision(tree, point, bbox[0], mesh);
+    const int c0 = _compute_first_entity_collision(tree, p, bbox[0], mesh);
     if (c0 >= 0)
       return c0;
 
-    const int c1 = _compute_first_entity_collision(tree, point, bbox[1], mesh);
+    const int c1 = _compute_first_entity_collision(tree, p, bbox[1], mesh);
     if (c1 >= 0)
       return c1;
   }
@@ -269,11 +270,9 @@ geometry::compute_entity_collisions(const BoundingBoxTree& tree0,
                                     const mesh::Mesh& mesh0,
                                     const mesh::Mesh& mesh1)
 {
-  // Create data structures for storing collisions
+  // Call recursive find function
   std::vector<int> entities_0;
   std::vector<int> entities_1;
-
-  // Call recursive find function
   _compute_collisions_tree(tree0, tree1, tree0.num_bboxes() - 1,
                            tree1.num_bboxes() - 1, &mesh0, &mesh1, entities_0,
                            entities_1);
@@ -282,21 +281,19 @@ geometry::compute_entity_collisions(const BoundingBoxTree& tree0,
 }
 //-----------------------------------------------------------------------------
 std::vector<int> geometry::compute_collisions(const BoundingBoxTree& tree,
-                                              const Eigen::Vector3d& point)
+                                              const Eigen::Vector3d& p)
 {
-  // Call recursive find function
   std::vector<int> entities;
-  _compute_collisions_point(tree, point, tree.num_bboxes() - 1, nullptr,
-                            entities);
+  _compute_collisions_point(tree, p, tree.num_bboxes() - 1, nullptr, entities);
   return entities;
 }
 //-----------------------------------------------------------------------------
 std::vector<int>
 geometry::compute_entity_collisions(const BoundingBoxTree& tree,
-                                    const Eigen::Vector3d& point,
+                                    const Eigen::Vector3d& p,
                                     const mesh::Mesh& mesh)
 {
-  // Point in entity only implemented for cells. Consider extending this.
+  // Point in entity only implemented for cells. Consider extending.
   if (tree.tdim != mesh.topology().dim())
   {
     throw std::runtime_error(
@@ -306,21 +303,18 @@ geometry::compute_entity_collisions(const BoundingBoxTree& tree,
 
   // Call recursive find function to compute bounding box candidates
   std::vector<int> entities;
-  _compute_collisions_point(tree, point, tree.num_bboxes() - 1, &mesh,
-                            entities);
-
+  _compute_collisions_point(tree, p, tree.num_bboxes() - 1, &mesh, entities);
   return entities;
 }
 //-----------------------------------------------------------------------------
 int geometry::compute_first_collision(const BoundingBoxTree& tree,
-                                      const Eigen::Vector3d& point)
+                                      const Eigen::Vector3d& p)
 {
-  // Call recursive find function
-  return _compute_first_collision(tree, point, tree.num_bboxes() - 1);
+  return _compute_first_collision(tree, p, tree.num_bboxes() - 1);
 }
 //-----------------------------------------------------------------------------
 int geometry::compute_first_entity_collision(const BoundingBoxTree& tree,
-                                             const Eigen::Vector3d& point,
+                                             const Eigen::Vector3d& p,
                                              const mesh::Mesh& mesh)
 {
   // Point in entity only implemented for cells. Consider extending this.
@@ -332,40 +326,26 @@ int geometry::compute_first_entity_collision(const BoundingBoxTree& tree,
   }
 
   // Call recursive find function
-  return _compute_first_entity_collision(tree, point, tree.num_bboxes() - 1,
-                                         mesh);
-}
-//-----------------------------------------------------------------------------
-bool geometry::collides(const geometry::BoundingBoxTree& tree,
-                        const Eigen::Vector3d& point)
-{
-  return geometry::compute_first_collision(tree, point) >= 0;
-}
-//-----------------------------------------------------------------------------
-bool geometry::collides_entity(const geometry::BoundingBoxTree& tree,
-                               const Eigen::Vector3d& point,
-                               const mesh::Mesh& mesh)
-{
-  return geometry::compute_first_entity_collision(tree, point, mesh) >= 0;
+  return _compute_first_entity_collision(tree, p, tree.num_bboxes() - 1, mesh);
 }
 //-----------------------------------------------------------------------------
 std::vector<int>
 geometry::compute_process_collisions(const geometry::BoundingBoxTree& tree,
-                                     const Eigen::Vector3d& point)
+                                     const Eigen::Vector3d& p)
 {
   if (tree.global_tree)
-    return geometry::compute_collisions(*tree.global_tree, point);
+    return geometry::compute_collisions(*tree.global_tree, p);
   else
   {
     std::vector<int> collision;
-    if (tree.point_in_bbox(point, tree.num_bboxes() - 1))
+    if (tree.point_in_bbox(p, tree.num_bboxes() - 1))
       collision.push_back(0);
     return collision;
   }
 }
 //-----------------------------------------------------------------------------
 double geometry::squared_distance(const mesh::MeshEntity& entity,
-                                  const Eigen::Vector3d& point)
+                                  const Eigen::Vector3d& p)
 {
   const mesh::CellType type = entity.mesh().cell_type;
   const mesh::Geometry& geometry = entity.mesh().geometry();
@@ -376,7 +356,7 @@ double geometry::squared_distance(const mesh::MeshEntity& entity,
     const std::int32_t* vertices = entity.entities(0);
     const Eigen::Vector3d a = geometry.x(vertices[0]);
     const Eigen::Vector3d b = geometry.x(vertices[1]);
-    return geometry::squared_distance_interval(point, a, b);
+    return geometry::squared_distance_interval(p, a, b);
   }
   case (mesh::CellType::triangle):
   {
@@ -384,7 +364,7 @@ double geometry::squared_distance(const mesh::MeshEntity& entity,
     const Eigen::Vector3d a = geometry.x(vertices[0]);
     const Eigen::Vector3d b = geometry.x(vertices[1]);
     const Eigen::Vector3d c = geometry.x(vertices[2]);
-    return geometry::squared_distance_triangle(point, a, b, c);
+    return geometry::squared_distance_triangle(p, a, b, c);
   }
   case (mesh::CellType::tetrahedron):
   {
@@ -405,20 +385,20 @@ double geometry::squared_distance(const mesh::MeshEntity& entity,
     double r2 = std::numeric_limits<double>::max();
 
     // Check face ABC
-    if (point_outside_of_plane(point, a, b, c, d))
-      r2 = std::min(r2, geometry::squared_distance_triangle(point, a, b, c));
+    if (point_outside_of_plane(p, a, b, c, d))
+      r2 = std::min(r2, geometry::squared_distance_triangle(p, a, b, c));
 
     // Check face ACD
-    if (point_outside_of_plane(point, a, c, d, b))
-      r2 = std::min(r2, geometry::squared_distance_triangle(point, a, c, d));
+    if (point_outside_of_plane(p, a, c, d, b))
+      r2 = std::min(r2, geometry::squared_distance_triangle(p, a, c, d));
 
     // Check face ADB
-    if (point_outside_of_plane(point, a, d, b, c))
-      r2 = std::min(r2, geometry::squared_distance_triangle(point, a, d, b));
+    if (point_outside_of_plane(p, a, d, b, c))
+      r2 = std::min(r2, geometry::squared_distance_triangle(p, a, d, b));
 
     // Check facet BDC
-    if (point_outside_of_plane(point, b, d, c, a))
-      r2 = std::min(r2, geometry::squared_distance_triangle(point, b, d, c));
+    if (point_outside_of_plane(p, b, d, c, a))
+      r2 = std::min(r2, geometry::squared_distance_triangle(p, b, d, c));
 
     // Point is inside tetrahedron so distance is zero
     if (r2 == std::numeric_limits<double>::max())

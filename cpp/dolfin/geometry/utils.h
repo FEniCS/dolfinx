@@ -33,41 +33,46 @@ compute_entity_collisions(const BoundingBoxTree& tree0,
                           const BoundingBoxTree& tree1, const mesh::Mesh& mesh0,
                           const mesh::Mesh& mesh1);
 
-/// Compute all collisions between bounding boxes and Point
+/// Compute all collisions between bounding boxes and point
+/// @param[in] tree The bounding box tree
+/// @param[in] p The point
+/// @return Bounding box leaves that contain the point
 std::vector<int> compute_collisions(const BoundingBoxTree& tree,
-                                    const Eigen::Vector3d& point);
+                                    const Eigen::Vector3d& p);
 
-/// Compute all collisions between entities and Point
+/// Compute all collisions between mesh entities and point
+/// @param[in] tree The bounding box tree
+/// @param[in] p The point
+/// @param[in] mesh The mesh
+/// @return Mesh entities that contain the point
 std::vector<int> compute_entity_collisions(const BoundingBoxTree& tree,
-                                           const Eigen::Vector3d& point,
+                                           const Eigen::Vector3d& p,
                                            const mesh::Mesh& mesh);
 
 /// Compute first collision between bounding boxes and Point
+/// @param[in] tree The bounding box tree
+/// @param[in] p The point
+/// @return Index of the first found box that contains the point
 int compute_first_collision(const BoundingBoxTree& tree,
-                            const Eigen::Vector3d& point);
+                            const Eigen::Vector3d& p);
 
-/// Compute first collision between entities and Point
+/// Compute first collision between entities and point
+/// @param[in] tree The bounding box tree
+/// @param[in] p The point
+/// @return Index of the first found mesh entity that contains the point
 int compute_first_entity_collision(const BoundingBoxTree& tree,
-                                   const Eigen::Vector3d& point,
+                                   const Eigen::Vector3d& p,
                                    const mesh::Mesh& mesh);
-
-/// Determine if a point collides with a BoundingBox of the tree
-bool collides(const BoundingBoxTree& tree, const Eigen::Vector3d& point);
-
-/// Determine if a point collides with an entity of the mesh (usually
-/// a cell)
-bool collides_entity(const BoundingBoxTree& tree, const Eigen::Vector3d& point,
-                     const mesh::Mesh& mesh);
 
 /// Compute all collisions between processes and Point returning a
 /// list of process ranks
 std::vector<int> compute_process_collisions(const BoundingBoxTree& tree,
-                                            const Eigen::Vector3d& point);
+                                            const Eigen::Vector3d& p);
 
 /// Compute squared distance from a given point to the nearest point on
 /// a cell (only simplex cells are supported at this stage)
 double squared_distance(const mesh::MeshEntity& entity,
-                        const Eigen::Vector3d& point);
+                        const Eigen::Vector3d& p);
 
 /// Compute squared distance to given point. This version takes the
 /// three vertex coordinates as 3D points. This makes it possible to
