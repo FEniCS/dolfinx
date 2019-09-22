@@ -28,6 +28,246 @@ bool is_leaf(const BoundingBoxTree::BBox& bbox, int node)
   return bbox[0] == node;
 }
 //-----------------------------------------------------------------------------
+// Compute bounding box of mesh entity
+Eigen::Array<double, 2, 3, Eigen::RowMajor>
+compute_bbox_of_entity(const mesh::MeshEntity& entity)
+{
+  // Get mesh entity data
+  const mesh::Geometry& geometry = entity.mesh().geometry();
+  const mesh::CellType entity_type
+      = mesh::cell_entity_type(entity.mesh().cell_type, entity.dim());
+  const int num_vertices = mesh::cell_num_entities(entity_type, 0);
+  const std::int32_t* vertices = entity.entities(0);
+  assert(num_vertices >= 2);
+
+  const Eigen::Vector3d x0 = geometry.x(vertices[0]);
+  Eigen::Array<double, 2, 3, Eigen::RowMajor> b;
+  b.row(0) = x0;
+  b.row(1) = x0;
+
+  // Compute min and max over remaining vertices
+  for (int i = 1; i < num_vertices; ++i)
+  {
+    const Eigen::Vector3d x = geometry.x(vertices[i]);
+    b.row(0) = b.row(0).min(x.transpose().array());
+    b.row(1) = b.row(1).max(x.transpose().array());
+  }
+
+  return b;
+}
+//-----------------------------------------------------------------------------
+// Compute closest entity {closest_entity, R2} (recursive)
+std::pair<int, double> _compute_closest_entity(const BoundingBoxTree& tree,
+                                               const Eigen::Vector3d& point,
+                                               int node, const mesh::Mesh& mesh,
+                                               int closest_entity, double R2)
+{
+  // Get bounding box for current node
+  const BoundingBoxTree::BBox bbox = tree.bbox(node);
+
+  // If bounding box is outside radius, then don't search further
+  const double r2 = tree.compute_squared_distance_bbox(point, node);
+  if (r2 > R2)
+  {
+    // If bounding box is outside radius, then don't search further
+    return {closest_entity, R2};
+  }
+  else if (is_leaf(bbox, node))
+  {
+    // If box is leaf (which we know is inside radius), then shrink radius
+
+    // Get entity (child_1 denotes entity index for leaves)
+    assert(tree.tdim == mesh.topology().dim());
+    const int entity_index = bbox[1];
+    mesh::MeshEntity cell(mesh, mesh.topology().dim(), entity_index);
+
+    // If entity is closer than best result so far, then return it
+    const double r2 = squared_distance(cell, point);
+    if (r2 < R2)
+    {
+      closest_entity = entity_index;
+      R2 = r2;
+    }
+
+    return {closest_entity, R2};
+  }
+  else
+  {
+    // Check both children
+    std::pair<int, double> p0 = _compute_closest_entity(
+        tree, point, bbox[0], mesh, closest_entity, R2);
+    std::pair<int, double> p1 = _compute_closest_entity(
+        tree, point, bbox[1], mesh, p0.first, p0.second);
+    return p1;
+  }
+}
+//-----------------------------------------------------------------------------
+// Compute closest point {closest_point, R2} (recursive)
+std::pair<int, double> _compute_closest_point(const BoundingBoxTree& tree,
+                                              const Eigen::Vector3d& point,
+                                              int node, int closest_point,
+                                              double R2)
+{
+  // Get bounding box for current node
+  const BoundingBoxTree::BBox bbox = tree.bbox(node);
+
+  // If box is leaf, then compute distance and shrink radius
+  if (is_leaf(bbox, node))
+  {
+    const double r2 = tree.compute_squared_distance_point(point, node);
+    if (r2 < R2)
+    {
+      closest_point = bbox[1];
+      R2 = r2;
+    }
+
+    return {closest_point, R2};
+  }
+  else
+  {
+    // If bounding box is outside radius, then don't search further
+    const double r2 = tree.compute_squared_distance_bbox(point, node);
+    if (r2 > R2)
+      return {closest_point, R2};
+
+    // Check both children
+    std::pair<int, double> p0
+        = _compute_closest_point(tree, point, bbox[0], closest_point, R2);
+    std::pair<int, double> p1
+        = _compute_closest_point(tree, point, bbox[1], p0.first, p0.second);
+    return p1;
+  }
+}
+//-----------------------------------------------------------------------------
+// Compute collisions with tree (recursive)
+void _compute_collisions_tree(const BoundingBoxTree& A,
+                              const BoundingBoxTree& B, int node_A, int node_B,
+                              const mesh::Mesh* mesh_A,
+                              const mesh::Mesh* mesh_B,
+                              std::vector<int>& entities_A,
+                              std::vector<int>& entities_B)
+{
+  // Get bounding boxes for current nodes
+  const BoundingBoxTree::BBox bbox_A = A.bbox(node_A);
+  const BoundingBoxTree::BBox bbox_B = B.bbox(node_B);
+
+  // If bounding boxes don't collide, then don't search further
+  if (!B.bbox_in_bbox(A.get_bbox_coordinates(node_A), node_B))
+    return;
+
+  // Check whether we've reached a leaf in A or B
+  const bool is_leaf_A = is_leaf(bbox_A, node_A);
+  const bool is_leaf_B = is_leaf(bbox_B, node_B);
+  if (is_leaf_A and is_leaf_B)
+  {
+    // If both boxes are leaves (which we know collide), then add them
+
+    // child_1 denotes entity for leaves
+    const int entity_index_A = bbox_A[1];
+    const int entity_index_B = bbox_B[1];
+
+    // If we have a mesh, check that the candidate is really a collision
+    if (mesh_A)
+    {
+      assert(mesh_B);
+      mesh::MeshEntity cell_A(*mesh_A, mesh_A->topology().dim(),
+                              entity_index_A);
+      mesh::MeshEntity cell_B(*mesh_B, mesh_B->topology().dim(),
+                              entity_index_B);
+      if (CollisionPredicates::collides(cell_A, cell_B))
+      {
+        entities_A.push_back(entity_index_A);
+        entities_B.push_back(entity_index_B);
+      }
+    }
+    else
+    {
+      // Otherwise, add the candidate
+      entities_A.push_back(entity_index_A);
+      entities_B.push_back(entity_index_B);
+    }
+  }
+  else if (is_leaf_A)
+  {
+    // If we reached the leaf in A, then descend B
+    _compute_collisions_tree(A, B, node_A, bbox_B[0], mesh_A, mesh_B,
+                             entities_A, entities_B);
+    _compute_collisions_tree(A, B, node_A, bbox_B[1], mesh_A, mesh_B,
+                             entities_A, entities_B);
+  }
+  else if (is_leaf_B)
+  {
+    // If we reached the leaf in B, then descend A
+    _compute_collisions_tree(A, B, bbox_A[0], node_B, mesh_A, mesh_B,
+                             entities_A, entities_B);
+    _compute_collisions_tree(A, B, bbox_A[1], node_B, mesh_A, mesh_B,
+                             entities_A, entities_B);
+  }
+  else if (node_A > node_B)
+  {
+    // At this point, we know neither is a leaf so descend the largest
+    // tree first. Note that nodes are added in reverse order with the top
+    // bounding box at the end so the largest tree (the one with the the
+    // most boxes left to traverse) has the largest node number.
+    _compute_collisions_tree(A, B, bbox_A[0], node_B, mesh_A, mesh_B,
+                             entities_A, entities_B);
+    _compute_collisions_tree(A, B, bbox_A[1], node_B, mesh_A, mesh_B,
+                             entities_A, entities_B);
+  }
+  else
+  {
+    _compute_collisions_tree(A, B, node_A, bbox_B[0], mesh_A, mesh_B,
+                             entities_A, entities_B);
+    _compute_collisions_tree(A, B, node_A, bbox_B[1], mesh_A, mesh_B,
+                             entities_A, entities_B);
+  }
+
+  // Note that cases above can be collected in fewer cases but this way
+  // the logic is easier to follow.
+}
+//-----------------------------------------------------------------------------
+// Compute collisions with point (recursive)
+void _compute_collisions_point(const BoundingBoxTree& tree,
+                               const Eigen::Vector3d& point, int node,
+                               const mesh::Mesh* mesh,
+                               std::vector<int>& entities)
+{
+  // Get bounding box for current node
+  const BoundingBoxTree::BBox bbox = tree.bbox(node);
+
+  if (!tree.point_in_bbox(point, node))
+  {
+    // If point is not in bounding box, then don't search further
+    return;
+  }
+  else if (is_leaf(bbox, node))
+  {
+    // If box is a leaf (which we know contains the point), then add it
+
+    // child_1 denotes entity for leaves
+    const int entity_index = bbox[1];
+
+    // If we have a mesh, check that the candidate is really a collision
+    if (mesh)
+    {
+      // Get cell
+      mesh::MeshEntity cell(*mesh, mesh->topology().dim(), entity_index);
+      if (CollisionPredicates::collides(cell, point))
+        entities.push_back(entity_index);
+    }
+
+    // Otherwise, add the candidate
+    else
+      entities.push_back(entity_index);
+  }
+  else
+  {
+    // Check both children
+    _compute_collisions_point(tree, point, bbox[0], mesh, entities);
+    _compute_collisions_point(tree, point, bbox[1], mesh, entities);
+  }
+}
+//-----------------------------------------------------------------------------
 // Compute first collision (recursive)
 int _compute_first_collision(const BoundingBoxTree& tree,
                              const Eigen::Vector3d& point, int node)
@@ -511,213 +751,6 @@ int BoundingBoxTree::_build_from_point(
   return add_bbox(bbox, b);
 }
 //-----------------------------------------------------------------------------
-void BoundingBoxTree::_compute_collisions_point(const BoundingBoxTree& tree,
-                                                const Eigen::Vector3d& point,
-                                                int node,
-                                                const mesh::Mesh* mesh,
-                                                std::vector<int>& entities)
-{
-  // Get bounding box for current node
-  const BBox& bbox = tree._bboxes[node];
-
-  // If point is not in bounding box, then don't search further
-  if (!tree.point_in_bbox(point, node))
-    return;
-
-  // If box is a leaf (which we know contains the point), then add it
-  else if (is_leaf(bbox, node))
-  {
-    // child_1 denotes entity for leaves
-    const int entity_index = bbox[1];
-
-    // If we have a mesh, check that the candidate is really a collision
-    if (mesh)
-    {
-      // Get cell
-      mesh::MeshEntity cell(*mesh, mesh->topology().dim(), entity_index);
-      if (CollisionPredicates::collides(cell, point))
-        entities.push_back(entity_index);
-    }
-
-    // Otherwise, add the candidate
-    else
-      entities.push_back(entity_index);
-  }
-
-  // Check both children
-  else
-  {
-    _compute_collisions_point(tree, point, bbox[0], mesh, entities);
-    _compute_collisions_point(tree, point, bbox[1], mesh, entities);
-  }
-}
-//-----------------------------------------------------------------------------
-void BoundingBoxTree::_compute_collisions_tree(
-    const BoundingBoxTree& A, const BoundingBoxTree& B, int node_A, int node_B,
-    const mesh::Mesh* mesh_A, const mesh::Mesh* mesh_B,
-    std::vector<int>& entities_A, std::vector<int>& entities_B)
-{
-  // Get bounding boxes for current nodes
-  const BBox& bbox_A = A._bboxes[node_A];
-  const BBox& bbox_B = B._bboxes[node_B];
-
-  // If bounding boxes don't collide, then don't search further
-  if (!B.bbox_in_bbox(A.get_bbox_coordinates(node_A), node_B))
-    return;
-
-  // Check whether we've reached a leaf in A or B
-  const bool is_leaf_A = is_leaf(bbox_A, node_A);
-  const bool is_leaf_B = is_leaf(bbox_B, node_B);
-
-  // If both boxes are leaves (which we know collide), then add them
-  if (is_leaf_A && is_leaf_B)
-  {
-    // child_1 denotes entity for leaves
-    const int entity_index_A = bbox_A[1];
-    const int entity_index_B = bbox_B[1];
-
-    // If we have a mesh, check that the candidate is really a collision
-    if (mesh_A)
-    {
-      assert(mesh_B);
-      mesh::MeshEntity cell_A(*mesh_A, mesh_A->topology().dim(),
-                              entity_index_A);
-      mesh::MeshEntity cell_B(*mesh_B, mesh_B->topology().dim(),
-                              entity_index_B);
-      if (CollisionPredicates::collides(cell_A, cell_B))
-      {
-        entities_A.push_back(entity_index_A);
-        entities_B.push_back(entity_index_B);
-      }
-    }
-
-    // Otherwise, add the candidate
-    else
-    {
-      entities_A.push_back(entity_index_A);
-      entities_B.push_back(entity_index_B);
-    }
-  }
-
-  // If we reached the leaf in A, then descend B
-  else if (is_leaf_A)
-  {
-    _compute_collisions_tree(A, B, node_A, bbox_B[0], mesh_A, mesh_B,
-                             entities_A, entities_B);
-    _compute_collisions_tree(A, B, node_A, bbox_B[1], mesh_A, mesh_B,
-                             entities_A, entities_B);
-  }
-
-  // If we reached the leaf in B, then descend A
-  else if (is_leaf_B)
-  {
-    _compute_collisions_tree(A, B, bbox_A[0], node_B, mesh_A, mesh_B,
-                             entities_A, entities_B);
-    _compute_collisions_tree(A, B, bbox_A[1], node_B, mesh_A, mesh_B,
-                             entities_A, entities_B);
-  }
-
-  // At this point, we know neither is a leaf so descend the largest
-  // tree first. Note that nodes are added in reverse order with the top
-  // bounding box at the end so the largest tree (the one with the the
-  // most boxes left to traverse) has the largest node number.
-  else if (node_A > node_B)
-  {
-    _compute_collisions_tree(A, B, bbox_A[0], node_B, mesh_A, mesh_B,
-                             entities_A, entities_B);
-    _compute_collisions_tree(A, B, bbox_A[1], node_B, mesh_A, mesh_B,
-                             entities_A, entities_B);
-  }
-  else
-  {
-    _compute_collisions_tree(A, B, node_A, bbox_B[0], mesh_A, mesh_B,
-                             entities_A, entities_B);
-    _compute_collisions_tree(A, B, node_A, bbox_B[1], mesh_A, mesh_B,
-                             entities_A, entities_B);
-  }
-
-  // Note that cases above can be collected in fewer cases but this way
-  // the logic is easier to follow.
-}
-//-----------------------------------------------------------------------------
-std::pair<int, double> BoundingBoxTree::_compute_closest_entity(
-    const BoundingBoxTree& tree, const Eigen::Vector3d& point, int node,
-    const mesh::Mesh& mesh, int closest_entity, double R2)
-{
-  // Get bounding box for current node
-  const BBox& bbox = tree._bboxes[node];
-
-  // If bounding box is outside radius, then don't search further
-  const double r2 = tree.compute_squared_distance_bbox(point, node);
-  if (r2 > R2)
-    return {closest_entity, R2};
-
-  // If box is leaf (which we know is inside radius), then shrink radius
-  else if (is_leaf(bbox, node))
-  {
-    // Get entity (child_1 denotes entity index for leaves)
-    assert(tree.tdim == mesh.topology().dim());
-    const int entity_index = bbox[1];
-    mesh::MeshEntity cell(mesh, mesh.topology().dim(), entity_index);
-
-    // If entity is closer than best result so far, then return it
-    const double r2 = squared_distance(cell, point);
-    if (r2 < R2)
-    {
-      closest_entity = entity_index;
-      R2 = r2;
-    }
-
-    return {closest_entity, R2};
-  }
-
-  // Check both children
-  else
-  {
-    std::pair<int, double> p0 = _compute_closest_entity(
-        tree, point, bbox[0], mesh, closest_entity, R2);
-    std::pair<int, double> p1 = _compute_closest_entity(
-        tree, point, bbox[1], mesh, p0.first, p0.second);
-    return p1;
-  }
-}
-//-----------------------------------------------------------------------------
-std::pair<int, double>
-BoundingBoxTree::_compute_closest_point(const BoundingBoxTree& tree,
-                                        const Eigen::Vector3d& point, int node,
-                                        int closest_point, double R2)
-{
-  // Get bounding box for current node
-  const BBox& bbox = tree._bboxes[node];
-
-  // If box is leaf, then compute distance and shrink radius
-  if (is_leaf(bbox, node))
-  {
-    const double r2 = tree.compute_squared_distance_point(point, node);
-    if (r2 < R2)
-    {
-      closest_point = bbox[1];
-      R2 = r2;
-    }
-
-    return {closest_point, R2};
-  }
-  else
-  {
-    // If bounding box is outside radius, then don't search further
-    const double r2 = tree.compute_squared_distance_bbox(point, node);
-    if (r2 > R2)
-      return {closest_point, R2};
-
-    // Check both children
-    std::pair<int, double> p0
-        = _compute_closest_point(tree, point, bbox[0], closest_point, R2);
-    std::pair<int, double> p1
-        = _compute_closest_point(tree, point, bbox[1], p0.first, p0.second);
-    return p1;
-  }
-}
-//-----------------------------------------------------------------------------
 void BoundingBoxTree::build_point_search_tree(const mesh::Mesh& mesh) const
 {
   // Don't build search tree if it already exists
@@ -741,33 +774,33 @@ void BoundingBoxTree::build_point_search_tree(const mesh::Mesh& mesh) const
   _point_search_tree = std::make_unique<BoundingBoxTree>(points);
 }
 //-----------------------------------------------------------------------------
-Eigen::Array<double, 2, 3, Eigen::RowMajor>
-BoundingBoxTree::compute_bbox_of_entity(const mesh::MeshEntity& entity)
-{
-  // Get mesh entity data
-  const mesh::Geometry& geometry = entity.mesh().geometry();
-  const mesh::CellType entity_type
-      = mesh::cell_entity_type(entity.mesh().cell_type, entity.dim());
-  const int num_vertices = mesh::cell_num_entities(entity_type, 0);
-  const std::int32_t* vertices = entity.entities(0);
-  assert(num_vertices >= 2);
+// Eigen::Array<double, 2, 3, Eigen::RowMajor>
+// BoundingBoxTree::compute_bbox_of_entity(const mesh::MeshEntity& entity)
+// {
+//   // Get mesh entity data
+//   const mesh::Geometry& geometry = entity.mesh().geometry();
+//   const mesh::CellType entity_type
+//       = mesh::cell_entity_type(entity.mesh().cell_type, entity.dim());
+//   const int num_vertices = mesh::cell_num_entities(entity_type, 0);
+//   const std::int32_t* vertices = entity.entities(0);
+//   assert(num_vertices >= 2);
 
-  const Eigen::Vector3d x0 = geometry.x(vertices[0]);
-  Eigen::Array<double, 2, 3, Eigen::RowMajor> b;
-  b.row(0) = x0;
-  b.row(1) = x0;
+//   const Eigen::Vector3d x0 = geometry.x(vertices[0]);
+//   Eigen::Array<double, 2, 3, Eigen::RowMajor> b;
+//   b.row(0) = x0;
+//   b.row(1) = x0;
 
-  // Compute min and max over remaining vertices
-  for (int i = 1; i < num_vertices; ++i)
-  {
-    const Eigen::Vector3d x = geometry.x(vertices[i]);
-    b.row(0) = b.row(0).min(x.transpose().array());
-    b.row(1) = b.row(1).max(x.transpose().array());
-  }
+//   // Compute min and max over remaining vertices
+//   for (int i = 1; i < num_vertices; ++i)
+//   {
+//     const Eigen::Vector3d x = geometry.x(vertices[i]);
+//     b.row(0) = b.row(0).min(x.transpose().array());
+//     b.row(1) = b.row(1).max(x.transpose().array());
+//   }
 
-  return b;
-}
-//-----------------------------------------------------------------------------
+//   return b;
+// }
+// //-----------------------------------------------------------------------------
 int BoundingBoxTree::add_bbox(
     const BBox& bbox, const Eigen::Array<double, 2, 3, Eigen::RowMajor>& b)
 {

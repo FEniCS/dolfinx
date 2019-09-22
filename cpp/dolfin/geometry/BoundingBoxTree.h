@@ -105,6 +105,26 @@ public:
     return compute_first_entity_collision(point, mesh) >= 0;
   }
 
+  /// Return bounding box coordinates for node
+  Eigen::Array<double, 2, 3, Eigen::RowMajor>
+  get_bbox_coordinates(int node) const;
+
+  /// Check whether point (x) is in bounding box (node)
+  bool point_in_bbox(const Eigen::Vector3d& x, int node,
+                     double rtol = 1e-14) const;
+
+  /// Check whether bounding box (a) collides with bounding box (node)
+  bool bbox_in_bbox(const Eigen::Array<double, 2, 3, Eigen::RowMajor>& a,
+                    int node, double rtol = 1e-14) const;
+
+  /// Compute squared distance between point and bounding box
+  double compute_squared_distance_bbox(const Eigen::Vector3d& x,
+                                       int node) const;
+
+  /// Compute squared distance between point and point
+  double compute_squared_distance_point(const Eigen::Vector3d& x,
+                                        int node) const;
+
   /// Print out for debugging
   std::string str(bool verbose = false);
 
@@ -119,6 +139,9 @@ public:
     return _bboxes[node];
   }
 
+  /// Topological dimension of leaf entities
+  const int tdim;
+
 private:
   //--- Recursive build functions ---
 
@@ -132,44 +155,10 @@ private:
                         const std::vector<int>::iterator& begin,
                         const std::vector<int>::iterator& end);
 
-  //--- Recursive search functions ---
-
-  // Note that these functions are made static for consistency as some
-  // of them need to deal with more than one tree.
-
-  // Compute collisions with point (recursive)
-  static void _compute_collisions_point(const BoundingBoxTree& tree,
-                                        const Eigen::Vector3d& point, int node,
-                                        const mesh::Mesh* mesh,
-                                        std::vector<int>& entities);
-
-  // Compute collisions with tree (recursive)
-  static void _compute_collisions_tree(const BoundingBoxTree& A,
-                                       const BoundingBoxTree& B, int node_A,
-                                       int node_B, const mesh::Mesh* mesh_A,
-                                       const mesh::Mesh* mesh_B,
-                                       std::vector<int>& entities_A,
-                                       std::vector<int>& entities_B);
-
-  // Compute closest entity {closest_entity, R2} (recursive)
-  static std::pair<int, double> _compute_closest_entity(
-      const BoundingBoxTree& tree, const Eigen::Vector3d& point, int node,
-      const mesh::Mesh& mesh, int closest_entity, double R2);
-
-  // Compute closest point {closest_point, R2} (recursive)
-  static std::pair<int, double>
-  _compute_closest_point(const BoundingBoxTree& tree,
-                         const Eigen::Vector3d& point, int node,
-                         int closest_point, double R2);
-
   //--- Utility functions ---
 
   // Compute point search tree if not already done
   void build_point_search_tree(const mesh::Mesh& mesh) const;
-
-  // Compute bounding box of mesh entity
-  static Eigen::Array<double, 2, 3, Eigen::RowMajor>
-  compute_bbox_of_entity(const mesh::MeshEntity& entity);
 
   // Add bounding box and coordinates
   int add_bbox(const BBox& bbox,
@@ -181,36 +170,9 @@ private:
   // Add bounding box and point coordinates
   int add_point(const BBox& bbox, const Eigen::Vector3d& point);
 
-  // Return bounding box coordinates for node
-  Eigen::Array<double, 2, 3, Eigen::RowMajor>
-  get_bbox_coordinates(int node) const;
-
-public:
-  // Check whether point (x) is in bounding box (node)
-  bool point_in_bbox(const Eigen::Vector3d& x, int node,
-                     double rtol = 1e-14) const;
-
-private:
-  // Check whether bounding box (a) collides with bounding box (node)
-  bool bbox_in_bbox(const Eigen::Array<double, 2, 3, Eigen::RowMajor>& a,
-                    int node, double rtol = 1e-14) const;
-
-  // Compute squared distance between point and bounding box
-  double compute_squared_distance_bbox(const Eigen::Vector3d& x,
-                                       int node) const;
-
-  // Compute squared distance between point and point
-  double compute_squared_distance_point(const Eigen::Vector3d& x,
-                                        int node) const;
-
   // Print out recursively, for debugging
   void tree_print(std::stringstream& s, int i);
 
-public:
-  // Topological dimension of leaf entities
-  const int tdim;
-
-private:
   // List of bounding boxes (parent-child-entity relations)
   std::vector<BBox> _bboxes;
 
