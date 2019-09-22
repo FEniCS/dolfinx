@@ -27,6 +27,14 @@ void geometry(py::module& m)
   m.def("compute_first_collision", &dolfin::geometry::compute_first_collision);
   m.def("compute_first_entity_collision",
         &dolfin::geometry::compute_first_entity_collision);
+  m.def("compute_collisions",
+        py::overload_cast<const dolfin::geometry::BoundingBoxTree&,
+                          const Eigen::Vector3d&>(
+            &dolfin::geometry::compute_collisions));
+  m.def("compute_entity_collisions",
+        py::overload_cast<const dolfin::geometry::BoundingBoxTree&,
+                          const Eigen::Vector3d&, const dolfin::mesh::Mesh&>(
+            &dolfin::geometry::compute_entity_collisions));
   m.def("squared_distance", &dolfin::geometry::squared_distance);
 
   // dolfin::geometry::BoundingBoxTree
@@ -36,23 +44,9 @@ void geometry(py::module& m)
       .def(py::init<const dolfin::mesh::Mesh&, int>())
       .def(py::init<const std::vector<Eigen::Vector3d>&>())
       .def("compute_collisions",
-           py::overload_cast<const Eigen::Vector3d&>(
-               &dolfin::geometry::BoundingBoxTree::compute_collisions,
-               py::const_))
-      .def("compute_collisions",
-           py::overload_cast<const dolfin::geometry::BoundingBoxTree&>(
-               &dolfin::geometry::BoundingBoxTree::compute_collisions,
-               py::const_))
+           &dolfin::geometry::BoundingBoxTree::compute_collisions)
       .def("compute_entity_collisions",
-           py::overload_cast<const Eigen::Vector3d&, const dolfin::mesh::Mesh&>(
-               &dolfin::geometry::BoundingBoxTree::compute_entity_collisions,
-               py::const_))
-      .def("compute_entity_collisions",
-           py::overload_cast<const dolfin::geometry::BoundingBoxTree&,
-                             const dolfin::mesh::Mesh&,
-                             const dolfin::mesh::Mesh&>(
-               &dolfin::geometry::BoundingBoxTree::compute_entity_collisions,
-               py::const_))
+           &dolfin::geometry::BoundingBoxTree::compute_entity_collisions)
       .def("compute_closest_entity",
            &dolfin::geometry::BoundingBoxTree::compute_closest_entity)
       .def("str", &dolfin::geometry::BoundingBoxTree::str);

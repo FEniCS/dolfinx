@@ -54,16 +54,9 @@ public:
 
   ~BoundingBoxTree() = default;
 
-  /// Compute all collisions between bounding boxes and Point
-  std::vector<int> compute_collisions(const Eigen::Vector3d& point) const;
-
   /// Compute all collisions between bounding boxes and BoundingBoxTree
   std::pair<std::vector<int>, std::vector<int>>
   compute_collisions(const BoundingBoxTree& tree) const;
-
-  /// Compute all collisions between entities and Point
-  std::vector<int> compute_entity_collisions(const Eigen::Vector3d& point,
-                                             const mesh::Mesh& mesh) const;
 
   /// Compute all collisions between processes and Point returning a
   /// list of process ranks
