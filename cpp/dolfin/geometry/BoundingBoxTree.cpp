@@ -364,10 +364,10 @@ BoundingBoxTree::BoundingBoxTree(const mesh::Mesh& mesh, int tdim) : tdim(tdim)
     MPI::all_gather(mesh.mpi_comm(), send_bbox, recv_bbox);
     std::vector<int> global_leaves(mpi_size);
     std::iota(global_leaves.begin(), global_leaves.end(), 0);
-    _global_tree.reset(new BoundingBoxTree(recv_bbox, global_leaves.begin(),
-                                           global_leaves.end()));
+    global_tree.reset(new BoundingBoxTree(recv_bbox, global_leaves.begin(),
+                                          global_leaves.end()));
     LOG(INFO) << "Computed global bounding box tree with "
-              << _global_tree->num_bboxes() << " boxes.";
+              << global_tree->num_bboxes() << " boxes.";
   }
 }
 //-----------------------------------------------------------------------------
@@ -384,19 +384,6 @@ BoundingBoxTree::BoundingBoxTree(const std::vector<Eigen::Vector3d>& points)
 
   LOG(INFO) << "Computed bounding box tree with " << num_bboxes()
             << " nodes for " << num_leaves << " points.";
-}
-//-----------------------------------------------------------------------------
-std::vector<int>
-BoundingBoxTree::compute_process_collisions(const Eigen::Vector3d& point) const
-{
-  if (_global_tree)
-    return geometry::compute_collisions(*_global_tree, point);
-
-  std::vector<int> collision;
-  if (point_in_bbox(point, num_bboxes() - 1))
-    collision.push_back(0);
-
-  return collision;
 }
 //-----------------------------------------------------------------------------
 std::pair<int, double>

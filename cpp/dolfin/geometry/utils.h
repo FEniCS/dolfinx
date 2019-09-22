@@ -59,6 +59,11 @@ bool collides(const BoundingBoxTree& tree, const Eigen::Vector3d& point);
 bool collides_entity(const BoundingBoxTree& tree, const Eigen::Vector3d& point,
                      const mesh::Mesh& mesh);
 
+/// Compute all collisions between processes and Point returning a
+/// list of process ranks
+std::vector<int> compute_process_collisions(const BoundingBoxTree& tree,
+                                            const Eigen::Vector3d& point);
+
 /// Compute squared distance from a given point to the nearest point on
 /// a cell (only simplex cells are supported at this stage)
 double squared_distance(const mesh::MeshEntity& entity,

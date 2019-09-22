@@ -54,10 +54,10 @@ public:
 
   ~BoundingBoxTree() = default;
 
-  /// Compute all collisions between processes and Point returning a
-  /// list of process ranks
-  std::vector<int>
-  compute_process_collisions(const Eigen::Vector3d& point) const;
+  // /// Compute all collisions between processes and Point returning a
+  // /// list of process ranks
+  // std::vector<int>
+  // compute_process_collisions(const Eigen::Vector3d& point) const;
 
   /// Compute closest entity and distance to Point
   std::pair<int, double> compute_closest_entity(const Eigen::Vector3d& point,
@@ -147,9 +147,10 @@ private:
   // Point search tree used to accelerate distance queries
   mutable std::unique_ptr<BoundingBoxTree> _point_search_tree;
 
-  // Global tree for mesh ownership of each process (same on all
-  // processes)
-  std::unique_ptr<BoundingBoxTree> _global_tree;
+public:
+  /// Global tree for mesh ownership of each process (same on all
+  /// processes)
+  std::unique_ptr<BoundingBoxTree> global_tree;
 };
 } // namespace geometry
 } // namespace dolfin

@@ -349,6 +349,21 @@ bool geometry::collides_entity(const geometry::BoundingBoxTree& tree,
   return geometry::compute_first_entity_collision(tree, point, mesh) >= 0;
 }
 //-----------------------------------------------------------------------------
+std::vector<int>
+geometry::compute_process_collisions(const geometry::BoundingBoxTree& tree,
+                                     const Eigen::Vector3d& point)
+{
+  if (tree.global_tree)
+    return geometry::compute_collisions(*tree.global_tree, point);
+  else
+  {
+    std::vector<int> collision;
+    if (tree.point_in_bbox(point, tree.num_bboxes() - 1))
+      collision.push_back(0);
+    return collision;
+  }
+}
+//-----------------------------------------------------------------------------
 double geometry::squared_distance(const mesh::MeshEntity& entity,
                                   const Eigen::Vector3d& point)
 {

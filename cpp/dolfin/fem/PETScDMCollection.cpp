@@ -349,7 +349,7 @@ la::PETScMatrix PETScDMCollection::create_transfer_matrix(
     Eigen::Map<const Eigen::Vector3d> curr_point(_x.data());
 
     // Compute which processes' BBoxes contain the fine point
-    found_ranks = treec.compute_process_collisions(curr_point);
+    found_ranks = geometry::compute_process_collisions(treec, curr_point);
 
     if (found_ranks.empty())
     {
