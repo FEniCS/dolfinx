@@ -59,6 +59,7 @@ int compute_first_collision(const BoundingBoxTree& tree,
 /// Compute first collision between entities and point
 /// @param[in] tree The bounding box tree
 /// @param[in] p The point
+/// @param[in] mesh The mesh
 /// @return Index of the first found mesh entity that contains the point
 int compute_first_entity_collision(const BoundingBoxTree& tree,
                                    const Eigen::Vector3d& p,
