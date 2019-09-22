@@ -13,6 +13,7 @@
 #include <dolfin/function/Function.h>
 #include <dolfin/function/FunctionSpace.h>
 #include <dolfin/geometry/BoundingBoxTree.h>
+#include <dolfin/geometry/utils.h>
 #include <dolfin/la/PETScMatrix.h>
 #include <dolfin/mesh/CoordinateDofs.h>
 #include <dolfin/mesh/Geometry.h>
@@ -389,7 +390,7 @@ la::PETScMatrix PETScDMCollection::create_transfer_matrix(
     {
       Eigen::Map<const Eigen::Vector3d> curr_point(&recv_found[p][i * gdim]);
       send_ids[p].push_back(
-          treec.compute_first_entity_collision(curr_point, meshc));
+          geometry::compute_first_entity_collision(treec, curr_point, meshc));
     }
   }
   std::vector<std::vector<int>> recv_ids(mpi_size);

@@ -5,6 +5,8 @@
 // SPDX-License-Identifier:    LGPL-3.0-or-later
 
 #include "utils.h"
+#include "BoundingBoxTree.h"
+#include "CollisionPredicates.h"
 #include <dolfin/mesh/Geometry.h>
 #include <dolfin/mesh/Mesh.h>
 #include <dolfin/mesh/MeshEntity.h>
@@ -13,8 +15,9 @@ using namespace dolfin;
 
 namespace
 {
-// Check whether point is outside region defined by facet ABC.
-// The fourth vertex is needed to define the orientation.
+//-----------------------------------------------------------------------------
+// Check whether point is outside region defined by facet ABC. The
+// fourth vertex is needed to define the orientation.
 bool point_outside_of_plane(const Eigen::Vector3d& point,
                             const Eigen::Vector3d& a, const Eigen::Vector3d& b,
                             const Eigen::Vector3d& c, const Eigen::Vector3d& d)
@@ -26,9 +29,131 @@ bool point_outside_of_plane(const Eigen::Vector3d& point,
   const double signd = v.dot(d - a);
   return signp * signd < 0.0;
 }
+//-----------------------------------------------------------------------------
+// Check whether bounding box is a leaf node
+bool is_leaf(const geometry::BoundingBoxTree::BBox& bbox, int node)
+{
+  // Leaf nodes are marked by setting child_0 equal to the node itself
+  return bbox[0] == node;
+}
+//-----------------------------------------------------------------------------
+// Compute first collision (recursive)
+int _compute_first_collision(const geometry::BoundingBoxTree& tree,
+                             const Eigen::Vector3d& point, int node)
+{
+  // Get bounding box for current node
+  const geometry::BoundingBoxTree::BBox bbox = tree.bbox(node);
+
+  if (!tree.point_in_bbox(point, node))
+  {
+    // If point is not in bounding box, then don't search further
+    return -1;
+  }
+  else if (is_leaf(bbox, node))
+  {
+    // If box is a leaf (which we know contains the point), then return it
+    return bbox[1]; // child_1 denotes entity for leaves
+  }
+  else
+  {
+    // Check both children
+    int c0 = _compute_first_collision(tree, point, bbox[0]);
+    if (c0 >= 0)
+      return c0;
+
+    // Check second child
+    int c1 = _compute_first_collision(tree, point, bbox[1]);
+    if (c1 >= 0)
+      return c1;
+  }
+
+  // Point not found
+  return -1;
+}
+//-----------------------------------------------------------------------------
+// Compute first entity collision (recursive)
+int _compute_first_entity_collision(const geometry::BoundingBoxTree& tree,
+                                    const Eigen::Vector3d& point, int node,
+                                    const mesh::Mesh& mesh)
+{
+  // Get bounding box for current node
+  const geometry::BoundingBoxTree::BBox bbox = tree.bbox(node);
+
+  // If point is not in bounding box, then don't search further
+  if (!tree.point_in_bbox(point, node))
+  {
+    // If point is not in bounding box, then don't search further
+    return -1;
+  }
+  else if (is_leaf(bbox, node))
+  {
+    // If box is a leaf (which we know contains the point), then check entity
+
+    // Get entity (child_1 denotes entity index for leaves)
+    assert(tree.tdim == mesh.topology().dim());
+    const int entity_index = bbox[1];
+    mesh::MeshEntity cell(mesh, mesh.topology().dim(), entity_index);
+
+    // Check entity
+    if (geometry::CollisionPredicates::collides(cell, point))
+      return entity_index;
+  }
+  else
+  {
+    // Check both children
+    const int c0 = _compute_first_entity_collision(tree, point, bbox[0], mesh);
+    if (c0 >= 0)
+      return c0;
+
+    const int c1 = _compute_first_entity_collision(tree, point, bbox[1], mesh);
+    if (c1 >= 0)
+      return c1;
+  }
+
+  // Point not found
+  return -1;
+}
+//-----------------------------------------------------------------------------
 
 } // namespace
 
+//-----------------------------------------------------------------------------
+int geometry::compute_first_collision(const BoundingBoxTree& tree,
+                                      const Eigen::Vector3d& point)
+{
+  // Call recursive find function
+  return _compute_first_collision(tree, point, tree.num_bboxes() - 1);
+}
+//-----------------------------------------------------------------------------
+int geometry::compute_first_entity_collision(const BoundingBoxTree& tree,
+                                             const Eigen::Vector3d& point,
+                                             const mesh::Mesh& mesh)
+{
+  // Point in entity only implemented for cells. Consider extending this.
+  if (tree.tdim != mesh.topology().dim())
+  {
+    throw std::runtime_error(
+        "Cannot compute collision between point and mesh entities. "
+        "Point-in-entity is only implemented for cells");
+  }
+
+  // Call recursive find function
+  return _compute_first_entity_collision(tree, point, tree.num_bboxes() - 1,
+                                         mesh);
+}
+//-----------------------------------------------------------------------------
+bool geometry::collides(const geometry::BoundingBoxTree& tree,
+                        const Eigen::Vector3d& point)
+{
+  return geometry::compute_first_collision(tree, point) >= 0;
+}
+//-----------------------------------------------------------------------------
+bool geometry::collides_entity(const geometry::BoundingBoxTree& tree,
+                               const Eigen::Vector3d& point,
+                               const mesh::Mesh& mesh)
+{
+  return geometry::compute_first_entity_collision(tree, point, mesh) >= 0;
+}
 //-----------------------------------------------------------------------------
 double geometry::squared_distance(const mesh::MeshEntity& entity,
                                   const Eigen::Vector3d& point)

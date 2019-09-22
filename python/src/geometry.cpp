@@ -23,6 +23,10 @@ namespace dolfin_wrappers
 {
 void geometry(py::module& m)
 {
+  m.def("collides", &dolfin::geometry::collides);
+  m.def("compute_first_collision", &dolfin::geometry::compute_first_collision);
+  m.def("compute_first_entity_collision",
+        &dolfin::geometry::compute_first_entity_collision);
   m.def("squared_distance", &dolfin::geometry::squared_distance);
 
   // dolfin::geometry::BoundingBoxTree
@@ -49,11 +53,6 @@ void geometry(py::module& m)
                              const dolfin::mesh::Mesh&>(
                &dolfin::geometry::BoundingBoxTree::compute_entity_collisions,
                py::const_))
-      .def("compute_first_collision",
-           &dolfin::geometry::BoundingBoxTree::compute_first_collision)
-      .def("collides", &dolfin::geometry::BoundingBoxTree::collides)
-      .def("compute_first_entity_collision",
-           &dolfin::geometry::BoundingBoxTree::compute_first_entity_collision)
       .def("compute_closest_entity",
            &dolfin::geometry::BoundingBoxTree::compute_closest_entity)
       .def("str", &dolfin::geometry::BoundingBoxTree::str);

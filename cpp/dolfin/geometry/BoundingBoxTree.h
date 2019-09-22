@@ -54,14 +54,14 @@ public:
 
   ~BoundingBoxTree() = default;
 
-  /// Compute all collisions between bounding boxes and _Point_
+  /// Compute all collisions between bounding boxes and Point
   std::vector<int> compute_collisions(const Eigen::Vector3d& point) const;
 
   /// Compute all collisions between bounding boxes and BoundingBoxTree
   std::pair<std::vector<int>, std::vector<int>>
   compute_collisions(const BoundingBoxTree& tree) const;
 
-  /// Compute all collisions between entities and _Point_
+  /// Compute all collisions between entities and Point
   std::vector<int> compute_entity_collisions(const Eigen::Vector3d& point,
                                              const mesh::Mesh& mesh) const;
 
@@ -76,13 +76,6 @@ public:
                             const mesh::Mesh& mesh_A,
                             const mesh::Mesh& mesh_B) const;
 
-  /// Compute first collision between bounding boxes and Point
-  int compute_first_collision(const Eigen::Vector3d& point) const;
-
-  /// Compute first collision between entities and Point
-  int compute_first_entity_collision(const Eigen::Vector3d& point,
-                                     const mesh::Mesh& mesh) const;
-
   /// Compute closest entity and distance to Point
   std::pair<int, double> compute_closest_entity(const Eigen::Vector3d& point,
                                                 const mesh::Mesh& mesh) const;
@@ -90,20 +83,6 @@ public:
   /// Compute closest point and distance to Point
   std::pair<int, double>
   compute_closest_point(const Eigen::Vector3d& point) const;
-
-  /// Determine if a point collides with a BoundingBox of the tree
-  bool collides(const Eigen::Vector3d& point) const
-  {
-    return compute_first_collision(point) >= 0;
-  }
-
-  /// Determine if a point collides with an entity of the mesh (usually
-  /// a cell)
-  bool collides_entity(const Eigen::Vector3d& point,
-                       const mesh::Mesh& mesh) const
-  {
-    return compute_first_entity_collision(point, mesh) >= 0;
-  }
 
   /// Return bounding box coordinates for node
   Eigen::Array<double, 2, 3, Eigen::RowMajor>
@@ -165,9 +144,11 @@ private:
   int add_bbox(const BBox& bbox,
                const Eigen::Array<double, 2, 3, Eigen::RowMajor>& b);
 
-  // Return number of bounding boxes
+public:
+  /// Return number of bounding boxes
   int num_bboxes() const;
 
+private:
   // Add bounding box and point coordinates
   int add_point(const BBox& bbox, const Eigen::Vector3d& point);
 

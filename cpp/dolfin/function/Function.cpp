@@ -15,6 +15,7 @@
 #include <dolfin/fem/DofMap.h>
 #include <dolfin/fem/FiniteElement.h>
 #include <dolfin/geometry/BoundingBoxTree.h>
+#include <dolfin/geometry/utils.h>
 #include <dolfin/la/PETScVector.h>
 #include <dolfin/la/utils.h>
 #include <dolfin/mesh/CoordinateDofs.h>
@@ -170,7 +171,7 @@ void Function::eval(
     point.head(gdim) = x.row(i);
 
     // Get index of first cell containing point
-    int id = bb_tree.compute_first_entity_collision(point, mesh);
+    int id = geometry::compute_first_entity_collision(bb_tree, point, mesh);
 
     // If not found, use the closest cell
     if (id < 0)

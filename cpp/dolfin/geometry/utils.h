@@ -12,11 +12,31 @@ namespace dolfin
 {
 namespace mesh
 {
+class Mesh;
 class MeshEntity;
-}
+} // namespace mesh
 
 namespace geometry
 {
+class BoundingBoxTree;
+
+/// Compute first collision between bounding boxes and Point
+int compute_first_collision(const BoundingBoxTree& tree,
+                            const Eigen::Vector3d& point);
+
+/// Compute first collision between entities and Point
+int compute_first_entity_collision(const BoundingBoxTree& tree,
+                                   const Eigen::Vector3d& point,
+                                   const mesh::Mesh& mesh);
+
+/// Determine if a point collides with a BoundingBox of the tree
+bool collides(const BoundingBoxTree& tree, const Eigen::Vector3d& point);
+
+/// Determine if a point collides with an entity of the mesh (usually
+/// a cell)
+bool collides_entity(const BoundingBoxTree& tree, const Eigen::Vector3d& point,
+                     const mesh::Mesh& mesh);
+
 /// Compute squared distance from a given point to the nearest point on
 /// a cell (only simplex cells are supported at this stage)
 double squared_distance(const mesh::MeshEntity& entity,
