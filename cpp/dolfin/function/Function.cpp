@@ -62,7 +62,7 @@ la::PETScVector create_vector(const function::FunctionSpace& V)
 
 //-----------------------------------------------------------------------------
 Function::Function(std::shared_ptr<const FunctionSpace> V)
-    : id(common::UniqueIdGenerator::id()), _function_space(V),
+    : _id(common::UniqueIdGenerator::id()), _function_space(V),
       _vector(create_vector(*V))
 {
   // Check that we don't have a subspace
@@ -74,7 +74,7 @@ Function::Function(std::shared_ptr<const FunctionSpace> V)
 }
 //-----------------------------------------------------------------------------
 Function::Function(std::shared_ptr<const FunctionSpace> V, Vec x)
-    : id(common::UniqueIdGenerator::id()), _function_space(V), _vector(x)
+    : _id(common::UniqueIdGenerator::id()), _function_space(V), _vector(x)
 {
   // We do not check for a subspace since this constructor is used for
   // creating subfunctions
@@ -173,14 +173,14 @@ void Function::eval(
     unsigned int id = bb_tree.compute_first_entity_collision(point, mesh);
 
     // If not found, use the closest cell
-    if (id == std::numeric_limits<unsigned int>::max())
+    if (_id == std::numeric_limits<unsigned int>::max())
     {
       // Check if the closest cell is within 2*DBL_EPSILON. This we can
       // allow without _allow_extrapolation
       std::pair<unsigned int, double> close
           = bb_tree.compute_closest_entity(point, mesh);
       if (close.second < 2.0 * DBL_EPSILON)
-        id = close.first;
+        _id = close.first;
       else
       {
         throw std::runtime_error("Cannot evaluate function at point. The point "
@@ -424,4 +424,6 @@ Function::compute_point_values() const
 
   return point_values;
 }
+//-----------------------------------------------------------------------------
+std::size_t Function::id() const { return _id; }
 //-----------------------------------------------------------------------------

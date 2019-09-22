@@ -164,9 +164,12 @@ public:
   const std::shared_ptr<const fem::DofMap> dofmap;
 
   /// Unique identifier
-  const std::size_t id;
+  std::size_t id() const;
 
 private:
+  // Unique identifier
+  std::size_t _id;
+
   // General interpolation from any Function on any mesh
   void interpolate_from_any(
       Eigen::Ref<Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1>>

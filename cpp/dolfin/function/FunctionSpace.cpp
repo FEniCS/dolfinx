@@ -434,6 +434,8 @@ void FunctionSpace::set_x(
   }
 }
 //-----------------------------------------------------------------------------
+std::size_t FunctionSpace::id() const { return _id; }
+//-----------------------------------------------------------------------------
 bool FunctionSpace::contains(const FunctionSpace& V) const
 {
   // Is the root space same?
