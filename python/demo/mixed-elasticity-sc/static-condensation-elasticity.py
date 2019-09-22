@@ -1,4 +1,4 @@
-# Copyright (C) 2019 Michal Habera, Andreas Zilian
+# Copyright (C) 2019 Michal Habera and Andreas Zilian
 #
 # This file is part of DOLFIN (https://www.fenicsproject.org)
 #
@@ -152,10 +152,10 @@ A.assemble()
 bb_tree = dolfin.cpp.geometry.BoundingBoxTree(mesh, 2)
 
 # Check against standard table value
-if bb_tree.collides([48.0, 52.0, 0.0]):
+if dolfin.cpp.geometry.collides(bb_tree, [48.0, 52.0, 0.0]):
     value = uc.eval([48.0, 52.0], bb_tree)
     assert(numpy.isclose(value[1], 23.95, rtol=1.e-2))
 
-# Check the equality of displacement based and mixed condensed
-# global matrices, i.e. check that condensation is exact
+# Check the equality of displacement based and mixed condensed global
+# matrices, i.e. check that condensation is exact
 assert(numpy.isclose((A - A_cond).norm(), 0.0))
