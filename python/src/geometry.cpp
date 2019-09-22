@@ -31,9 +31,18 @@ void geometry(py::module& m)
         py::overload_cast<const dolfin::geometry::BoundingBoxTree&,
                           const Eigen::Vector3d&>(
             &dolfin::geometry::compute_collisions));
+  m.def("compute_collisions",
+        py::overload_cast<const dolfin::geometry::BoundingBoxTree&,
+                          const dolfin::geometry::BoundingBoxTree&>(
+            &dolfin::geometry::compute_collisions));
   m.def("compute_entity_collisions",
         py::overload_cast<const dolfin::geometry::BoundingBoxTree&,
                           const Eigen::Vector3d&, const dolfin::mesh::Mesh&>(
+            &dolfin::geometry::compute_entity_collisions));
+  m.def("compute_entity_collisions",
+        py::overload_cast<const dolfin::geometry::BoundingBoxTree&,
+                          const dolfin::geometry::BoundingBoxTree&,
+                          const dolfin::mesh::Mesh&, const dolfin::mesh::Mesh&>(
             &dolfin::geometry::compute_entity_collisions));
   m.def("squared_distance", &dolfin::geometry::squared_distance);
 
@@ -43,10 +52,8 @@ void geometry(py::module& m)
       m, "BoundingBoxTree")
       .def(py::init<const dolfin::mesh::Mesh&, int>())
       .def(py::init<const std::vector<Eigen::Vector3d>&>())
-      .def("compute_collisions",
-           &dolfin::geometry::BoundingBoxTree::compute_collisions)
-      .def("compute_entity_collisions",
-           &dolfin::geometry::BoundingBoxTree::compute_entity_collisions)
+      //   .def("compute_collisions",
+      //        &dolfin::geometry::BoundingBoxTree::compute_collisions)
       .def("compute_closest_entity",
            &dolfin::geometry::BoundingBoxTree::compute_closest_entity)
       .def("str", &dolfin::geometry::BoundingBoxTree::str);

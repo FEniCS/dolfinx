@@ -81,7 +81,8 @@ def test_compute_collisions_tree_1d(point, cells):
     tree_A = BoundingBoxTree(mesh_A, mesh_A.topology.dim)
     tree_B = BoundingBoxTree(mesh_B, mesh_B.topology.dim)
 
-    entities_A, entities_B = tree_A.compute_collisions_bb(tree_B)
+    # entities_A, entities_B = tree_A.compute_collisions_bb(tree_B)
+    entities_A, entities_B = cpp.geometry.compute_collisions(tree_A._cpp_object, tree_B._cpp_object)
 
     assert set(entities_A) == cells[0]
     assert set(entities_B) == cells[1]
@@ -99,7 +100,8 @@ def test_compute_collisions_tree_2d(point, cells):
     bgeom += point
     tree_A = BoundingBoxTree(mesh_A, mesh_A.topology.dim)
     tree_B = BoundingBoxTree(mesh_B, mesh_B.topology.dim)
-    entities_A, entities_B = tree_A.compute_collisions_bb(tree_B)
+    # entities_A, entities_B = tree_A.compute_collisions_bb(tree_B)
+    entities_A, entities_B = cpp.geometry.compute_collisions(tree_A._cpp_object, tree_B._cpp_object)
     assert set(entities_A) == set(cells[0])
     assert set(entities_B) == set(cells[1])
 
@@ -129,7 +131,8 @@ def test_compute_collisions_tree_3d():
         tree_A = BoundingBoxTree(mesh_A, mesh_A.topology.dim)
         tree_B = BoundingBoxTree(mesh_B, mesh_B.topology.dim)
 
-        entities_A, entities_B = tree_A.compute_collisions_bb(tree_B)
+        # entities_A, entities_B = tree_A.compute_collisions_bb(tree_B)
+        entities_A, entities_B = cpp.geometry.compute_collisions(tree_A._cpp_object, tree_B._cpp_object)
 
         assert set(entities_A) == references[i][0]
         assert set(entities_B) == references[i][1]
@@ -189,8 +192,10 @@ def test_compute_entity_collisions_tree_1d(point, cells):
     tree_A = BoundingBoxTree(mesh_A, mesh_A.topology.dim)
     tree_B = BoundingBoxTree(mesh_B, mesh_B.topology.dim)
 
-    entities_A, entities_B = tree_A.compute_entity_collisions_bb_mesh(
-        tree_B, mesh_A, mesh_B)
+    # entities_A, entities_B = tree_A.compute_entity_collisions_bb_mesh(
+    #     tree_B, mesh_A, mesh_B)
+    entities_A, entities_B = cpp.geometry.compute_entity_collisions(
+        tree_A._cpp_object, tree_B._cpp_object, mesh_A, mesh_B)
 
     assert set(entities_A) == cells[0]
     assert set(entities_B) == cells[1]
@@ -214,8 +219,10 @@ def test_compute_entity_collisions_tree_2d():
         tree_A = BoundingBoxTree(mesh_A, mesh_A.topology.dim)
         tree_B = BoundingBoxTree(mesh_B, mesh_B.topology.dim)
 
-        entities_A, entities_B = tree_A.compute_entity_collisions_bb_mesh(
-            tree_B, mesh_A, mesh_B)
+        # entities_A, entities_B = tree_A.compute_entity_collisions_bb_mesh(
+        #     tree_B, mesh_A, mesh_B)
+        entities_A, entities_B = cpp.geometry.compute_entity_collisions(
+            tree_A._cpp_object, tree_B._cpp_object, mesh_A, mesh_B)
 
         assert set(entities_A) == references[i][0]
         assert set(entities_B) == references[i][1]
@@ -241,8 +248,10 @@ def test_compute_entity_collisions_tree_3d():
         tree_A = BoundingBoxTree(mesh_A, mesh_A.topology.dim)
         tree_B = BoundingBoxTree(mesh_B, mesh_B.topology.dim)
 
-        entities_A, entities_B = tree_A.compute_entity_collisions_bb_mesh(
-            tree_B, mesh_A, mesh_B)
+        # entities_A, entities_B = tree_A.compute_entity_collisions_bb_mesh(
+        #     tree_B, mesh_A, mesh_B)
+        entities_A, entities_B = cpp.geometry.compute_entity_collisions(
+            tree_A._cpp_object, tree_B._cpp_object, mesh_A, mesh_B)
 
         assert set(entities_A) == references[i][0]
         assert set(entities_B) == references[i][1]

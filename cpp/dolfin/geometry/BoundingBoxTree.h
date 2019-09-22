@@ -54,20 +54,10 @@ public:
 
   ~BoundingBoxTree() = default;
 
-  /// Compute all collisions between bounding boxes and BoundingBoxTree
-  std::pair<std::vector<int>, std::vector<int>>
-  compute_collisions(const BoundingBoxTree& tree) const;
-
   /// Compute all collisions between processes and Point returning a
   /// list of process ranks
   std::vector<int>
   compute_process_collisions(const Eigen::Vector3d& point) const;
-
-  /// Compute all collisions between entities and BoundingBoxTree
-  std::pair<std::vector<int>, std::vector<int>>
-  compute_entity_collisions(const BoundingBoxTree& tree,
-                            const mesh::Mesh& mesh_A,
-                            const mesh::Mesh& mesh_B) const;
 
   /// Compute closest entity and distance to Point
   std::pair<int, double> compute_closest_entity(const Eigen::Vector3d& point,

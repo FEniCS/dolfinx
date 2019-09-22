@@ -7,6 +7,7 @@
 #pragma once
 
 #include <Eigen/Dense>
+#include <utility>
 #include <vector>
 
 namespace dolfin
@@ -20,6 +21,17 @@ class MeshEntity;
 namespace geometry
 {
 class BoundingBoxTree;
+
+// FIXME: document properly
+/// Compute all collisions between bounding boxes and BoundingBoxTree
+std::pair<std::vector<int>, std::vector<int>>
+compute_collisions(const BoundingBoxTree& tree0, const BoundingBoxTree& tree1);
+
+/// Compute all collisions between entities and BoundingBoxTree
+std::pair<std::vector<int>, std::vector<int>>
+compute_entity_collisions(const BoundingBoxTree& tree0,
+                          const BoundingBoxTree& tree1, const mesh::Mesh& mesh0,
+                          const mesh::Mesh& mesh1);
 
 /// Compute all collisions between bounding boxes and Point
 std::vector<int> compute_collisions(const BoundingBoxTree& tree,
