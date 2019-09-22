@@ -113,6 +113,12 @@ public:
   /// the index of the entity contained in the leaf bounding box.
   using BBox = std::array<int, 2>;
 
+  BBox bbox(int node) const
+  {
+    assert(node < (int)_bboxes.size());
+    return _bboxes[node];
+  }
+
 private:
   //--- Recursive build functions ---
 
@@ -144,15 +150,6 @@ private:
                                        const mesh::Mesh* mesh_B,
                                        std::vector<int>& entities_A,
                                        std::vector<int>& entities_B);
-
-  // Compute first collision (recursive)
-  static int _compute_first_collision(const BoundingBoxTree& tree,
-                                      const Eigen::Vector3d& point, int node);
-
-  // Compute first entity collision (recursive)
-  static int _compute_first_entity_collision(const BoundingBoxTree& tree,
-                                             const Eigen::Vector3d& point,
-                                             int node, const mesh::Mesh& mesh);
 
   // Compute closest entity {closest_entity, R2} (recursive)
   static std::pair<int, double> _compute_closest_entity(
@@ -188,10 +185,12 @@ private:
   Eigen::Array<double, 2, 3, Eigen::RowMajor>
   get_bbox_coordinates(int node) const;
 
+public:
   // Check whether point (x) is in bounding box (node)
   bool point_in_bbox(const Eigen::Vector3d& x, int node,
                      double rtol = 1e-14) const;
 
+private:
   // Check whether bounding box (a) collides with bounding box (node)
   bool bbox_in_bbox(const Eigen::Array<double, 2, 3, Eigen::RowMajor>& a,
                     int node, double rtol = 1e-14) const;
@@ -207,9 +206,11 @@ private:
   // Print out recursively, for debugging
   void tree_print(std::stringstream& s, int i);
 
+public:
   // Topological dimension of leaf entities
-  int _tdim;
+  const int tdim;
 
+private:
   // List of bounding boxes (parent-child-entity relations)
   std::vector<BBox> _bboxes;
 
