@@ -39,7 +39,6 @@ std::uint8_t vtk_cell_type(const mesh::Mesh &mesh, std::size_t cell_dim,
   mesh::CellType cell_type = mesh::cell_entity_type(mesh.cell_type, cell_dim);
 
   // Determine VTK cell type
-  std::uint8_t vtk_cell_type = 0;
   switch (cell_type) {
   case mesh::CellType::tetrahedron:
     return 10;
