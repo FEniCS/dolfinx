@@ -9,7 +9,6 @@
 #include <dolfin/function/Function.h>
 #include <dolfin/function/FunctionSpace.h>
 #include <dolfin/io/HDF5File.h>
-#include <dolfin/io/VTKFile.h>
 #include <dolfin/io/XDMFFile.h>
 #include <dolfin/la/PETScVector.h>
 #include <dolfin/mesh/Mesh.h>
