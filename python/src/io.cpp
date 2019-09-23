@@ -134,24 +134,6 @@ void io(py::module& m)
       // others
       .def("has_dataset", &dolfin::io::HDF5File::has_dataset);
 
-  // dolfin::io::VTKFile
-  py::class_<dolfin::io::VTKFile, std::shared_ptr<dolfin::io::VTKFile>>
-	vtk_file(m, "VTKFile");
-
-  vtk_file
-	  .def(py::init([](std::string filename) {
-			return std::make_unique<dolfin::io::VTKFile>(filename);
-		  }),
-		py::arg("filename"))
-	  .def("write",
-		   py::overload_cast<const dolfin::function::Function&>(
-               &dolfin::io::VTKFile::write),
-           py::arg("u"))
-      .def("write",
-           py::overload_cast<const dolfin::mesh::Mesh&>(
-               &dolfin::io::VTKFile::write),
-           py::arg("mesh"));
-
   // dolfin::io::XDMFFile
   py::class_<dolfin::io::XDMFFile, std::shared_ptr<dolfin::io::XDMFFile>>
       xdmf_file(m, "XDMFFile");

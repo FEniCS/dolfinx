@@ -13,13 +13,13 @@
 #include <dolfin/function/FunctionSpace.h>
 #include <dolfin/la/PETScVector.h>
 #include <dolfin/la/utils.h>
+#include <dolfin/mesh/Connectivity.h>
+#include <dolfin/mesh/CoordinateDofs.h>
 #include <dolfin/mesh/Mesh.h>
 #include <dolfin/mesh/MeshEntity.h>
 #include <dolfin/mesh/MeshFunction.h>
 #include <dolfin/mesh/MeshIterator.h>
 #include <dolfin/mesh/cell_types.h>
-#include <dolfin/mesh/Connectivity.h>
-#include <dolfin/mesh/CoordinateDofs.h>
 #include <fstream>
 #include <iomanip>
 #include <ostream>
@@ -33,37 +33,47 @@ namespace
 {
 //-----------------------------------------------------------------------------
 // Get VTK cell type
-std::uint8_t vtk_cell_type(const mesh::Mesh& mesh, std::size_t cell_dim, std::size_t cell_order)
-{
+std::uint8_t vtk_cell_type(const mesh::Mesh &mesh, std::size_t cell_dim,
+                           std::size_t cell_order) {
   // Get cell type
   mesh::CellType cell_type = mesh::cell_entity_type(mesh.cell_type, cell_dim);
 
   // Determine VTK cell type
   std::uint8_t vtk_cell_type = 0;
-  if (cell_type == mesh::CellType::tetrahedron)
-    vtk_cell_type = 10;
-  else if (cell_type == mesh::CellType::hexahedron)
-    vtk_cell_type = 12;
-  else if (cell_type == mesh::CellType::quadrilateral)
-	if (cell_order == 1)
-	  vtk_cell_type = 9;
-	else
-	  vtk_cell_type = 70;
-  else if (cell_type == mesh::CellType::triangle)
-	if (cell_order == 1)
-	  vtk_cell_type = 5;
-	else
-	  vtk_cell_type = 69;
-  else if (cell_type == mesh::CellType::interval)
-    vtk_cell_type = 3;
-  else if (cell_type == mesh::CellType::point)
-    vtk_cell_type = 1;
-  else
-  {
-    throw std::runtime_error("Unknown cell type");
-  }
-
-  return vtk_cell_type;
+  switch (cell_type)
+	{
+	case mesh::CellType::tetrahedron:
+	  return 10;
+	case mesh::CellType::hexahedron:
+	  return 12;
+	case mesh::CellType::quadrilateral:
+	  {
+		switch (cell_order)
+		  {
+		  case 1:
+			return 9;
+		  default:
+			return 70;
+		  }
+	  }
+	case mesh::CellType::triangle:
+	  {
+		switch (cell_order)
+		  {
+		  case 1:
+			return 5;
+		  default:
+			return 69;
+		  }
+	  }
+	case mesh::CellType::interval:
+	  return 3;
+	case mesh::CellType::point:
+	  return 1;
+	default:
+	  throw std::runtime_error("Unknown cell type");
+	  return 0;
+	}
 }
 //----------------------------------------------------------------------------
 // Write cell data (ascii)
@@ -118,7 +128,8 @@ void write_ascii_mesh(const mesh::Mesh& mesh, std::size_t cell_dim,
   const int element_degree = mesh.degree();
 
   // Get VTK cell type
-  const std::size_t _vtk_cell_type = vtk_cell_type(mesh, cell_dim, element_degree);
+  const std::size_t _vtk_cell_type =
+      vtk_cell_type(mesh, cell_dim, element_degree);
 
   // Open file
   std::ofstream file(filename.c_str(), std::ios::app);
@@ -133,12 +144,10 @@ void write_ascii_mesh(const mesh::Mesh& mesh, std::size_t cell_dim,
   file << "<DataArray  type=\"Float64\"  NumberOfComponents=\"3\"  format=\""
        << "ascii"
        << "\">";
-  const Eigen::Array<double, Eigen::Dynamic, 3, Eigen::RowMajor> points = mesh.geometry().points();
+  const Eigen::Array<double, Eigen::Dynamic, 3, Eigen::RowMajor> points =
+      mesh.geometry().points();
   for (int i = 0; i < points.rows(); ++i)
-	{
-	  Eigen::Vector3d p = points.row(i).matrix().transpose();
-	  file << p[0] << " " << p[1] << " " << p[2] << "  ";
-	}
+    file << points(i, 0) << " " << points(i, 1) << " " << points(i, 2) << "  ";
   file << "</DataArray>" << std::endl << "</Points>" << std::endl;
 
   // Write cell connectivity
@@ -147,21 +156,21 @@ void write_ascii_mesh(const mesh::Mesh& mesh, std::size_t cell_dim,
        << "ascii"
        << "\">";
 
-  const mesh::Connectivity& connectivity_g
-	= mesh.coordinate_dofs().entity_points();
+  const mesh::Connectivity &connectivity_g =
+      mesh.coordinate_dofs().entity_points();
   Eigen::Ref<const Eigen::Array<std::int32_t, Eigen::Dynamic, 1>>
-	cell_connections = connectivity_g.connections();
-  const Eigen::Ref<const Eigen::Array<std::int32_t, Eigen::Dynamic, 1>> pos_g
-	= connectivity_g.entity_positions();
-  const std::vector<std::uint8_t> perm = mesh.coordinate_dofs().cell_permutation();
+      cell_connections = connectivity_g.connections();
+  const Eigen::Ref<const Eigen::Array<std::int32_t, Eigen::Dynamic, 1>> pos_g =
+      connectivity_g.entity_positions();
+  const std::vector<std::uint8_t> perm =
+      mesh.coordinate_dofs().cell_permutation();
   int num_nodes = perm.size();
 
-  for (int j=0; j < mesh.num_entities(mesh.topology().dim()); ++j)
-	{
-	  for (int i = 0; i < num_nodes; ++i)
-		file << cell_connections(pos_g(j)+perm[i]) << " ";
-	  file << " ";
-	}
+  for (int j = 0; j < mesh.num_entities(mesh.topology().dim()); ++j) {
+    for (int i = 0; i < num_nodes; ++i)
+      file << cell_connections(pos_g(j) + perm[i]) << " ";
+    file << " ";
+  }
   file << "</DataArray>" << std::endl;
 
   // Write offset into connectivity array for the end of each cell

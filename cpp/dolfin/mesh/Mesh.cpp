@@ -8,7 +8,6 @@
 #include "Connectivity.h"
 #include "CoordinateDofs.h"
 #include "DistributedMeshTools.h"
-#include <dolfin/mesh/cell_types.h>
 #include "Geometry.h"
 #include "MeshEntity.h"
 #include "MeshIterator.h"
@@ -19,6 +18,7 @@
 #include <dolfin/common/MPI.h>
 #include <dolfin/common/Timer.h>
 #include <dolfin/common/utils.h>
+#include <dolfin/mesh/cell_types.h>
 
 using namespace dolfin;
 using namespace dolfin::mesh;
