@@ -40,40 +40,35 @@ std::uint8_t vtk_cell_type(const mesh::Mesh &mesh, std::size_t cell_dim,
 
   // Determine VTK cell type
   std::uint8_t vtk_cell_type = 0;
-  switch (cell_type)
-	{
-	case mesh::CellType::tetrahedron:
-	  return 10;
-	case mesh::CellType::hexahedron:
-	  return 12;
-	case mesh::CellType::quadrilateral:
-	  {
-		switch (cell_order)
-		  {
-		  case 1:
-			return 9;
-		  default:
-			return 70;
-		  }
-	  }
-	case mesh::CellType::triangle:
-	  {
-		switch (cell_order)
-		  {
-		  case 1:
-			return 5;
-		  default:
-			return 69;
-		  }
-	  }
-	case mesh::CellType::interval:
-	  return 3;
-	case mesh::CellType::point:
-	  return 1;
-	default:
-	  throw std::runtime_error("Unknown cell type");
-	  return 0;
-	}
+  switch (cell_type) {
+  case mesh::CellType::tetrahedron:
+    return 10;
+  case mesh::CellType::hexahedron:
+    return 12;
+  case mesh::CellType::quadrilateral: {
+    switch (cell_order) {
+    case 1:
+      return 9;
+    default:
+      return 70;
+    }
+  }
+  case mesh::CellType::triangle: {
+    switch (cell_order) {
+    case 1:
+      return 5;
+    default:
+      return 69;
+    }
+  }
+  case mesh::CellType::interval:
+    return 3;
+  case mesh::CellType::point:
+    return 1;
+  default:
+    throw std::runtime_error("Unknown cell type");
+    return 0;
+  }
 }
 //----------------------------------------------------------------------------
 // Write cell data (ascii)

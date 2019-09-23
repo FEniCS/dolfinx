@@ -392,18 +392,15 @@ void write_point_data(const function::Function& u, const mesh::Mesh& mesh,
   std::ostringstream ss;
   ss << std::scientific;
   ss << std::setprecision(16);
-  const Eigen::Array<double, Eigen::Dynamic, 3, Eigen::RowMajor>& points =
+  const Eigen::Array<double, Eigen::Dynamic, 3, Eigen::RowMajor> &points =
       mesh.geometry().points();
   for (int i = 0; i < points.rows(); ++i) {
-    if (rank == 1 and dim == 2)
-    {
+    if (rank == 1 and dim == 2) {
       // Append 0.0 to 2D vectors to make them 3D
       for (std::size_t j = 0; j < 2; j++)
         ss << values(i, j) << " ";
       ss << 0.0 << "  ";
-    }
-    else if (rank == 2 and dim == 4)
-    {
+    } else if (rank == 2 and dim == 4) {
       // Pad 2D tensors with 0.0 to make them 3D
       for (std::size_t j = 0; j < 2; j++) {
         ss << values(i, (2 * j + 0)) << " ";

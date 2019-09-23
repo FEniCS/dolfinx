@@ -490,47 +490,42 @@ std::vector<std::uint8_t> mesh::vtk_mapping(mesh::CellType type,
   case mesh::CellType::interval:
     return {0, 1};
   case mesh::CellType::triangle:
-	switch (num_nodes)
-	  {
-	  case 3:
-		return {0, 1, 2};
-	  case 6:
-		return {0, 1, 2, 5, 3, 4};
-	  case 10:
-		return {0, 1, 2, 7, 8, 3, 4, 6, 5, 9};
-	  default:
-		throw std::runtime_error("Unknown cell type.");
-	  }
+    switch (num_nodes) {
+    case 3:
+      return {0, 1, 2};
+    case 6:
+      return {0, 1, 2, 5, 3, 4};
+    case 10:
+      return {0, 1, 2, 7, 8, 3, 4, 6, 5, 9};
+    default:
+      throw std::runtime_error("Unknown cell type.");
+    }
   case mesh::CellType::tetrahedron:
-    switch (num_nodes)
-	  {
-	  case 4:
-		return {0, 1, 2, 3};
-	  default:
-		throw std::runtime_error("Higher order tetrahedron not supported");
-	  }
+    switch (num_nodes) {
+    case 4:
+      return {0, 1, 2, 3};
+    default:
+      throw std::runtime_error("Higher order tetrahedron not supported");
+    }
   case mesh::CellType::quadrilateral:
-	switch (num_nodes)
-	  {
-	  case 4:
-		{
-		  // FIXME: Note that this is not counter clockwise ordering (CC),
-		  // as performed by vtk (used by gmsh and other mesh generators),
-		  // but lexicographic (LG). A convert function from (CC) to (LG) will
-		  // be created in a future PR.
-		  return {0, 1, 3, 2};
-		}
-	  default:
-		throw std::runtime_error("Higher order quadrilateral not supported");
-	  }
+    switch (num_nodes) {
+    case 4: {
+      // FIXME: Note that this is not counter clockwise ordering (CC),
+      // as performed by vtk (used by gmsh and other mesh generators),
+      // but lexicographic (LG). A convert function from (CC) to (LG) will
+      // be created in a future PR.
+      return {0, 1, 3, 2};
+    }
+    default:
+      throw std::runtime_error("Higher order quadrilateral not supported");
+    }
   case mesh::CellType::hexahedron:
-    switch (num_nodes)
-	  {
-	  case 8:
-		return {0, 1, 3, 2, 4, 5, 7, 6};
-	  default:
-		throw std::runtime_error("Higher order hexahedron not supported");
-	  }
+    switch (num_nodes) {
+    case 8:
+      return {0, 1, 3, 2, 4, 5, 7, 6};
+    default:
+      throw std::runtime_error("Higher order hexahedron not supported");
+    }
   default:
     throw std::runtime_error("Unknown cell type.");
   }
