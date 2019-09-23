@@ -9,7 +9,7 @@ import numpy as np
 import pytest
 
 from dolfin import MPI, UnitCubeMesh
-from dolfin.function import Constant
+from dolfin import Constant
 
 
 def test_scalar_constant():

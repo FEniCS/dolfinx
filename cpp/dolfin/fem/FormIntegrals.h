@@ -42,11 +42,11 @@ public:
   /// Construct empty object
   FormIntegrals();
 
-  /// Get the function for 'tabulate_tensor' for integral i of given type
-  /// @param i
-  ///    Integral number
-  /// @returns std::function
-  ///    Function to call for tabulate_tensor
+  /// Get the function for 'tabulate_tensor' for integral i of given
+  /// type
+  /// @param[in] type Integral type
+  /// @param[in] i Integral number
+  /// @return Function to call for tabulate_tensor
   const std::function<void(PetscScalar*, const PetscScalar*, const PetscScalar*, const double*,
                            const int*, const int*)>&
   get_tabulate_tensor_function(FormIntegrals::Type type, unsigned int i) const;

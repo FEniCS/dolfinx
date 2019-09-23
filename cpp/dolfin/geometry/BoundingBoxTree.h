@@ -58,7 +58,7 @@ public:
   std::vector<unsigned int>
   compute_collisions(const Eigen::Vector3d& point) const;
 
-  /// Compute all collisions between bounding boxes and _BoundingBoxTree_
+  /// Compute all collisions between bounding boxes and BoundingBoxTree
   std::pair<std::vector<unsigned int>, std::vector<unsigned int>>
   compute_collisions(const BoundingBoxTree& tree) const;
 
@@ -67,43 +67,42 @@ public:
   compute_entity_collisions(const Eigen::Vector3d& point,
                             const mesh::Mesh& mesh) const;
 
-  /// Compute all collisions between processes and _Point_
-  /// returning a list of process ranks
+  /// Compute all collisions between processes and Point returning a
+  /// list of process ranks
   std::vector<unsigned int>
   compute_process_collisions(const Eigen::Vector3d& point) const;
 
-  /// Compute all collisions between entities and _BoundingBoxTree_
+  /// Compute all collisions between entities and BoundingBoxTree
   std::pair<std::vector<unsigned int>, std::vector<unsigned int>>
   compute_entity_collisions(const BoundingBoxTree& tree,
                             const mesh::Mesh& mesh_A,
                             const mesh::Mesh& mesh_B) const;
 
-  /// Compute first collision between bounding boxes and _Point_
+  /// Compute first collision between bounding boxes and Point
   unsigned int compute_first_collision(const Eigen::Vector3d& point) const;
 
-  /// Compute first collision between entities and _Point_
+  /// Compute first collision between entities and Point
   unsigned int compute_first_entity_collision(const Eigen::Vector3d& point,
                                               const mesh::Mesh& mesh) const;
 
-  /// Compute closest entity and distance to _Point_
+  /// Compute closest entity and distance to Point
   std::pair<unsigned int, double>
   compute_closest_entity(const Eigen::Vector3d& point,
                          const mesh::Mesh& mesh) const;
 
-  /// Compute closest point and distance to _Point_
+  /// Compute closest point and distance to Point
   std::pair<unsigned int, double>
   compute_closest_point(const Eigen::Vector3d& point) const;
 
-  /// Determine if a point collides with a BoundingBox of
-  /// the tree
+  /// Determine if a point collides with a BoundingBox of the tree
   bool collides(const Eigen::Vector3d& point) const
   {
     return compute_first_collision(point)
            != std::numeric_limits<unsigned int>::max();
   }
 
-  /// Determine if a point collides with an entity of the mesh
-  /// (usually a cell)
+  /// Determine if a point collides with an entity of the mesh (usually
+  /// a cell)
   bool collides_entity(const Eigen::Vector3d& point,
                        const mesh::Mesh& mesh) const
   {
@@ -114,17 +113,11 @@ public:
   /// Print out for debugging
   std::string str(bool verbose = false);
 
-  // Bounding box data structure. Leaf nodes are indicated by setting child_0
-  // equal to the node itself. For leaf nodes, child_1 is set to the
-  // index of the entity contained in the leaf bounding box.
+  /// Bounding box data structure. Leaf nodes are indicated by setting
+  /// child_0 equal to the node itself. For leaf nodes, child_1 is set to
+  /// the index of the entity contained in the leaf bounding box.
   using BBox = std::array<unsigned int, 2>;
-  // struct BBox
-  // {
-  //   // Child 0
-  //   unsigned int child_0;
-  //   // Child 1
-  //   unsigned int child_1;
-  // };
+
 private:
   //--- Recursive build functions ---
 
@@ -142,8 +135,8 @@ private:
 
   //--- Recursive search functions ---
 
-  // Note that these functions are made static for consistency as
-  // some of them need to deal with more than one tree.
+  // Note that these functions are made static for consistency as some
+  // of them need to deal with more than one tree.
 
   // Compute collisions with point (recursive)
   static void _compute_collisions_point(const BoundingBoxTree& tree,

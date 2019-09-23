@@ -169,9 +169,9 @@ enum class MeshRangeType
 };
 
 
-/// Representation of a collection of entities of given dimension
-/// over a mesh. Provides begin() and end() methods for
-/// iterating over entities of the Mesh
+/// Representation of a collection of entities of given dimension over a
+/// mesh. Provides begin() and end() methods for iterating over entities
+/// of the Mesh
 class MeshRange
 {
 public:
@@ -224,21 +224,23 @@ private:
 
 // FIXME: Add method 'entities MeshEntity::items(std::size_t dim);'
 
-/// Class with begin() and end() methods for iterating over
-/// entities incident to a MeshEntity
+/// Class with begin() and end() methods for iterating over entities
+/// incident to a MeshEntity
 class EntityRange
 {
 public:
   /// Constructor
   EntityRange(const MeshEntity& e, int dim) : _entity(e), _dim(dim) {}
 
-  /// MeshEntityIterator of MeshEntity pointing to start of range (const)
+  /// MeshEntityIterator of MeshEntity pointing to start of range
+  /// (const)
   const MeshEntityIterator begin() const
   {
     return MeshEntityIterator(_entity, _dim, 0);
   }
 
-  /// MeshEntityIterator of MeshEntity pointing to start of range (non-const)
+  /// MeshEntityIterator of MeshEntity pointing to start of range
+  /// (non-const)
   MeshEntityIterator begin()
   {
     return MeshEntityIterator(_entity, _dim, 0);

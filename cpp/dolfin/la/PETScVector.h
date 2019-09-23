@@ -61,7 +61,7 @@ public:
   /// Move Assignment operator
   PETScVector& operator=(PETScVector&& x);
 
-  // Copy vector
+  /// Copy vector
   PETScVector copy() const;
 
   /// Return global size of vector

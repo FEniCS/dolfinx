@@ -24,20 +24,8 @@
 namespace dolfin
 {
 
-class MPIInfo
-{
-public:
-  MPIInfo();
-  ~MPIInfo();
-  MPI_Info& operator*();
-
-private:
-  MPI_Info info;
-};
-
-/// This class provides utility functions for easy communication
-/// with MPI and handles cases when DOLFIN is not configured with
-/// MPI.
+/// This class provides utility functions for easy communication with
+/// MPI and handles cases when DOLFIN is not configured with MPI.
 class MPI
 {
 public:
@@ -71,13 +59,10 @@ public:
     /// Return process rank for the communicator
     std::uint32_t rank() const;
 
-    /// Return size of the group (number of processes) associated
-    /// with the communicator. This function will also initialise MPI
-    /// if it hasn't already been initialised.
+    /// Return size of the group (number of processes) associated with
+    /// the communicator. This function will also initialise MPI if it
+    /// hasn't already been initialised.
     std::uint32_t size() const;
-
-    /// Create a new comm with a subset of processes
-    MPI_Comm SubsetComm(int num_processes) const;
 
     /// Set a barrier (synchronization point)
     void barrier() const;
@@ -96,16 +81,16 @@ public:
   /// Create a new comm with a subset of processes
   static MPI_Comm SubsetComm(MPI_Comm comm, int num_processes);
 
-  /// Return size of the group (number of processes) associated with
-  /// the communicator
+  /// Return size of the group (number of processes) associated with the
+  /// communicator
   static std::uint32_t size(MPI_Comm comm);
 
   /// Set a barrier (synchronization point)
   static void barrier(MPI_Comm comm);
 
 private:
-  // Implementation of all_to_all, common for both cases,
-  // whether returning a flat array, or in separate vectors by sending process.
+  // Implementation of all_to_all, common for both cases, whether
+  // returning a flat array, or in separate vectors by sending process.
   template <typename T>
   static void all_to_all_common(MPI_Comm comm,
                                 const std::vector<std::vector<T>>& in_values,
@@ -113,15 +98,15 @@ private:
                                 std::vector<std::int32_t>& offsets);
 
 public:
-  /// Send in_values[p0] to process p0 and receive values from
-  /// process p1 in out_values[p1]
+  /// Send in_values[p0] to process p0 and receive values from process
+  /// p1 in out_values[p1]
   template <typename T>
   static void all_to_all(MPI_Comm comm,
                          const std::vector<std::vector<T>>& in_values,
                          std::vector<std::vector<T>>& out_values);
 
-  /// Send in_values[p0] to process p0 and receive values from
-  /// all processes in out_values
+  /// Send in_values[p0] to process p0 and receive values from all
+  /// processes in out_values
   template <typename T>
   static void all_to_all(MPI_Comm comm,
                          const std::vector<std::vector<T>>& in_values,
@@ -175,7 +160,7 @@ public:
                          std::vector<T>& out_values);
 
   /// Gather values, one primitive from each process (MPI_Allgather).
-  /// Specialization for std::string
+  /// Specialization for std::string.
   static void all_gather(MPI_Comm comm, const std::string& in_values,
                          std::vector<std::string>& out_values);
 
@@ -239,11 +224,12 @@ public:
   /// all_reduce(MPI_Comm, Table&, MPI_Op)
   static MPI_Op MPI_AVG();
 
-  // Return MPI data type
   template <typename T>
   struct dependent_false : std::false_type
   {
   };
+
+  /// MPI Type
   template <typename T>
   static MPI_Datatype mpi_type()
   {
@@ -252,10 +238,12 @@ public:
     return MPI_CHAR;
   }
 
-  // Maps some MPI_Op values to string
+  /// Maps some MPI_Op values to string
   static std::map<MPI_Op, std::string> operation_map;
 };
 
+// Turn off doxygen for these template specialisations
+/// @cond
 // Specialisations for MPI_Datatypes
 template <>
 inline MPI_Datatype MPI::mpi_type<float>()
@@ -302,6 +290,7 @@ inline MPI_Datatype MPI::mpi_type<long long>()
 {
   return MPI_LONG_LONG;
 }
+/// @endcond
 //---------------------------------------------------------------------------
 template <typename T>
 void dolfin::MPI::broadcast(MPI_Comm comm, std::vector<T>& value,
@@ -465,49 +454,6 @@ void dolfin::MPI::all_to_all(MPI_Comm comm,
   all_to_all_common(comm, in_values, out_values, offsets);
 }
 //---------------------------------------------------------------------------
-#ifndef DOXYGEN_IGNORE
-template <>
-inline void
-dolfin::MPI::all_to_all(MPI_Comm comm,
-                        const std::vector<std::vector<bool>>& in_values,
-                        std::vector<std::vector<bool>>& out_values)
-{
-  // Copy to short int
-  std::vector<std::vector<short int>> send(in_values.size());
-  for (std::size_t i = 0; i < in_values.size(); ++i)
-    send[i].assign(in_values[i].begin(), in_values[i].end());
-
-  // Communicate data
-  std::vector<std::vector<short int>> recv;
-  all_to_all(comm, send, recv);
-
-  // Copy back to bool
-  out_values.resize(recv.size());
-  for (std::size_t i = 0; i < recv.size(); ++i)
-    out_values[i].assign(recv[i].begin(), recv[i].end());
-}
-
-template <>
-inline void
-dolfin::MPI::all_to_all(MPI_Comm comm,
-                        const std::vector<std::vector<bool>>& in_values,
-                        std::vector<bool>& out_values)
-{
-  // Copy to short int
-  std::vector<std::vector<short int>> send(in_values.size());
-  for (std::size_t i = 0; i < in_values.size(); ++i)
-    send[i].assign(in_values[i].begin(), in_values[i].end());
-
-  // Communicate data
-  std::vector<short int> recv;
-  all_to_all(comm, send, recv);
-
-  // Copy back to bool
-  out_values.assign(recv.begin(), recv.end());
-}
-
-#endif
-//---------------------------------------------------------------------------
 template <typename T>
 void dolfin::MPI::scatter(MPI_Comm comm,
                           const std::vector<std::vector<T>>& in_values,
@@ -554,25 +500,6 @@ void dolfin::MPI::scatter(MPI_Comm comm,
                offsets.data(), mpi_type<T>(), out_value.data(), my_num_values,
                mpi_type<T>(), sending_process, comm);
 }
-//---------------------------------------------------------------------------
-#ifndef DOXYGEN_IGNORE
-template <>
-inline void dolfin::MPI::scatter(
-    MPI_Comm comm, const std::vector<std::vector<bool>>& in_values,
-    std::vector<bool>& out_value, std::uint32_t sending_process)
-{
-  // Copy data
-  std::vector<std::vector<short int>> in(in_values.size());
-  for (std::size_t i = 0; i < in_values.size(); ++i)
-    in[i] = std::vector<short int>(in_values[i].begin(), in_values[i].end());
-
-  std::vector<short int> out;
-  scatter(comm, in, out, sending_process);
-
-  out_value.resize(out.size());
-  std::copy(out.begin(), out.end(), out_value.begin());
-}
-#endif
 //---------------------------------------------------------------------------
 template <typename T>
 void dolfin::MPI::scatter(MPI_Comm comm, const std::vector<T>& in_values,
@@ -727,6 +654,7 @@ void dolfin::MPI::all_gather(MPI_Comm comm, const T in_value,
                 1, mpi_type<T>(), comm);
 }
 //---------------------------------------------------------------------------
+/// All reduce table
 template <typename T, typename X>
 T dolfin::MPI::all_reduce(MPI_Comm comm, const T& value, X op)
 {
@@ -795,14 +723,14 @@ void dolfin::MPI::send_recv(MPI_Comm comm, const std::vector<T>& send_value,
   MPI::send_recv(comm, send_value, dest, 0, recv_value, source, 0);
 }
 //---------------------------------------------------------------------------
-// Specialization for dolfin::log::Table class
-// NOTE: This function is not trully "all_reduce", it reduces to rank 0
-//       and returns zero Table on other ranks.
+/// Specialization for dolfin::log::Table class
+/// NOTE: This function is not truly "all_reduce", it reduces to rank 0
+///       and returns zero Table on other ranks.
 template <>
-Table dolfin::MPI::all_reduce(MPI_Comm, const Table&, MPI_Op);
+dolfin::Table dolfin::MPI::all_reduce(MPI_Comm, const Table&, MPI_Op);
 //---------------------------------------------------------------------------
-// Specialization for dolfin::log::Table class
+/// Specialization for dolfin::log::Table class
 template <>
-Table dolfin::MPI::avg(MPI_Comm, const Table&);
+dolfin::Table dolfin::MPI::avg(MPI_Comm, const Table&);
 //---------------------------------------------------------------------------
 } // namespace dolfin

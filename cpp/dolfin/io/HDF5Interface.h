@@ -175,7 +175,7 @@ private:
     return 0;
   }
 };
-#ifndef DOXYGEN_IGNORE
+/// @cond
 //---------------------------------------------------------------------------
 template <>
 inline hid_t HDF5Interface::hdf5_type<float>()
@@ -652,6 +652,6 @@ inline void HDF5Interface::get_attribute_value(const hid_t attr_type,
   assert(status != HDF5_FAIL);
 }
 //---------------------------------------------------------------------------
-#endif
+/// @endcond
 } // namespace io
 } // namespace dolfin

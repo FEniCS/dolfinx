@@ -22,13 +22,14 @@ namespace mesh
 {
 
 /// Geometry stores the geometry imposed on a mesh.
-
+///
 /// Currently, the geometry is represented by the set of coordinates for
 /// the vertices of a mesh, but other representations are possible.
 
 class Geometry
 {
 public:
+  /// Constructor
   Geometry(std::int64_t num_points_global,
            const Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic,
                               Eigen::RowMajor>& coordinates,
@@ -73,10 +74,8 @@ public:
   const std::vector<std::int64_t>& global_indices() const;
 
   /// Hash of coordinate values
-  ///
-  /// @returns std::size_t
-  ///    A tree-hashed value of the coordinates over all MPI processes
-  ///
+  /// @return A tree-hashed value of the coordinates over all MPI
+  ///         processes
   std::size_t hash() const;
 
   /// Return informal string representation (pretty-print)
