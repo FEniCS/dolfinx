@@ -43,34 +43,17 @@ public:
     /// Move constructor
     Comm(Comm&& comm);
 
-    /// Disable assignment operator
+    /// Disable copy assignment operator
     Comm& operator=(const Comm& comm) = delete;
 
     /// Destructor (frees wrapped communicator)
     ~Comm();
 
-    /// Free (destroy) communicator. Calls function 'MPI_Comm_free'.
-    void free();
-
-    /// Duplicate communicator, and free any previously created
-    /// communicator
-    void reset(MPI_Comm comm);
-
-    /// Return process rank for the communicator
-    std::uint32_t rank() const;
-
-    /// Return size of the group (number of processes) associated with
-    /// the communicator. This function will also initialise MPI if it
-    /// hasn't already been initialised.
-    std::uint32_t size() const;
-
-    /// Set a barrier (synchronization point)
-    void barrier() const;
-
     /// Return the underlying MPI_Comm object
     MPI_Comm comm() const;
 
   private:
+
     // MPI communicator
     MPI_Comm _comm;
   };

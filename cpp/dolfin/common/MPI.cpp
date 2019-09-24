@@ -37,10 +37,9 @@ dolfin::MPI::Comm::Comm(Comm&& comm)
   comm._comm = MPI_COMM_NULL;
 }
 //-----------------------------------------------------------------------------
-dolfin::MPI::Comm::~Comm() { free(); }
-//-----------------------------------------------------------------------------
-void dolfin::MPI::Comm::free()
+dolfin::MPI::Comm::~Comm()
 {
+  // Free the comm
   if (_comm != MPI_COMM_NULL)
   {
     int err = MPI_Comm_free(&_comm);
@@ -49,42 +48,6 @@ void dolfin::MPI::Comm::free()
       std::cout << "Error when destroying communicator (MPI_Comm_free)."
                 << std::endl;
     }
-  }
-}
-//-----------------------------------------------------------------------------
-std::uint32_t dolfin::MPI::Comm::rank() const
-{
-  return dolfin::MPI::rank(_comm);
-}
-//-----------------------------------------------------------------------------
-std::uint32_t dolfin::MPI::Comm::size() const
-{
-  int size;
-  MPI_Comm_size(_comm, &size);
-  return size;
-}
-//-----------------------------------------------------------------------------
-void dolfin::MPI::Comm::barrier() const { MPI_Barrier(_comm); }
-//-----------------------------------------------------------------------------
-void dolfin::MPI::Comm::reset(MPI_Comm comm)
-{
-  if (_comm != MPI_COMM_NULL)
-  {
-    int err = 0;
-    if (_comm != MPI_COMM_NULL)
-      err = MPI_Comm_free(&_comm);
-
-    if (err != MPI_SUCCESS)
-    {
-      // Raise error
-    }
-  }
-
-  // Duplicate communicator
-  int err = MPI_Comm_dup(comm, &_comm);
-  if (err != MPI_SUCCESS)
-  {
-    // Raise error
   }
 }
 //-----------------------------------------------------------------------------

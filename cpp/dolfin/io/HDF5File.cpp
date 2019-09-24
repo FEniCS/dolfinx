@@ -47,7 +47,7 @@ HDF5File::HDF5File(MPI_Comm comm, const std::string filename,
   // _hdf5_file_id(0)
 
   // Create directory, if required (create on rank 0)
-  if (_mpi_comm.rank() == 0)
+  if (MPI::rank(_mpi_comm.comm()) == 0)
   {
     const boost::filesystem::path path(filename);
     if (path.has_parent_path()
@@ -63,10 +63,10 @@ HDF5File::HDF5File(MPI_Comm comm, const std::string filename,
   }
 
   // Wait until directory has been created
-  _mpi_comm.barrier();
+  MPI::barrier(_mpi_comm.comm());
 
   // Open HDF5 file
-  const bool mpi_io = _mpi_comm.size() > 1 ? true : false;
+  const bool mpi_io = MPI::size(_mpi_comm.comm()) > 1 ? true : false;
 #ifndef H5_HAVE_PARALLEL
   if (mpi_io)
   {
@@ -108,7 +108,7 @@ void HDF5File::write(const std::vector<Eigen::Vector3d>& points,
     for (std::size_t j = 0; j < 3; ++j)
       x(i, j) = points[i][j];
 
-  const bool mpi_io = _mpi_comm.size() > 1 ? true : false;
+  const bool mpi_io = MPI::size(_mpi_comm.comm()) > 1 ? true : false;
   write_data(dataset_name, x, mpi_io);
 }
 //-----------------------------------------------------------------------------
@@ -117,7 +117,7 @@ void HDF5File::write(const std::vector<double>& values,
 {
   std::vector<std::int64_t> global_size(
       1, MPI::sum(_mpi_comm.comm(), values.size()));
-  const bool mpi_io = _mpi_comm.size() > 1 ? true : false;
+  const bool mpi_io = MPI::size(_mpi_comm.comm()) > 1 ? true : false;
   write_data(dataset_name, values, global_size, mpi_io);
 }
 //-----------------------------------------------------------------------------
@@ -136,7 +136,7 @@ void HDF5File::write(const la::PETScVector& x, const std::string dataset_name)
   // Write data to file
   const auto local_range = x.local_range();
   const std::vector<std::int64_t> global_size(1, x.size());
-  const bool mpi_io = _mpi_comm.size() > 1 ? true : false;
+  const bool mpi_io = MPI::size(_mpi_comm.comm()) > 1 ? true : false;
   HDF5Interface::write_dataset(_hdf5_file_id, dataset_name, x_ptr, local_range,
                                global_size, mpi_io, chunking);
 
@@ -192,7 +192,7 @@ la::PETScVector HDF5File::read_vector(MPI_Comm comm,
             _hdf5_file_id, dataset_name, "partition");
 
     // Check that number of MPI processes matches partitioning
-    if (_mpi_comm.size() != partitions.size())
+    if (MPI::size(_mpi_comm.comm()) != partitions.size())
     {
       throw std::runtime_error("Different number of processes used when "
                                "writing. Cannot restore partitioning");
@@ -202,7 +202,7 @@ la::PETScVector HDF5File::read_vector(MPI_Comm comm,
     partitions.push_back(data_shape[0]);
 
     // Initialise vector
-    const std::size_t process_num = _mpi_comm.rank();
+    const std::size_t process_num = MPI::rank(_mpi_comm.comm());
     range = {{(std::int64_t)partitions[process_num],
               (std::int64_t)partitions[process_num + 1]}};
   }
@@ -249,7 +249,7 @@ void HDF5File::write(const mesh::Mesh& mesh, int cell_dim,
   const int tdim = mesh.topology().dim();
   const int gdim = mesh.geometry().dim();
 
-  const bool mpi_io = _mpi_comm.size() > 1 ? true : false;
+  const bool mpi_io = MPI::size(_mpi_comm.comm()) > 1 ? true : false;
   assert(_hdf5_file_id > 0);
 
   mesh::CellType cell_type = mesh::cell_entity_type(mesh.cell_type, cell_dim);
@@ -324,7 +324,7 @@ void HDF5File::write(const mesh::Mesh& mesh, int cell_dim,
       // Drop duplicate topology for shared entities of less than mesh
       // dimension
 
-      const int mpi_rank = _mpi_comm.rank();
+      const int mpi_rank = MPI::rank(_mpi_comm.comm());
       const std::map<std::int32_t, std::set<std::int32_t>>& shared_entities
           = mesh.topology().shared_entities(cell_dim);
 
@@ -550,7 +550,7 @@ HDF5File::read_mesh_function(std::shared_ptr<const mesh::Mesh> mesh,
 
   // Now send the read data to each process on the basis of the first
   // vertex of the entity, since we do not know the global_index
-  const std::size_t num_processes = _mpi_comm.size();
+  const std::size_t num_processes = MPI::size(_mpi_comm.comm());
   const std::size_t max_vertex = mesh->num_entities_global(0);
 
   std::vector<std::vector<std::size_t>> send_topology(num_processes);
@@ -582,7 +582,7 @@ HDF5File::read_mesh_function(std::shared_ptr<const mesh::Mesh> mesh,
   // Send our process number, and our local index, so it can come back
   // directly to the right place
   std::vector<std::vector<std::size_t>> send_requests(num_processes);
-  const std::size_t process_number = _mpi_comm.rank();
+  const std::size_t process_number = MPI::rank(_mpi_comm.comm());
   const std::vector<std::int64_t>& global_indices
       = mesh->topology().global_indices(0);
   for (auto& cell : mesh::MeshRange(*mesh, dim, mesh::MeshRangeType::ALL))
@@ -690,7 +690,7 @@ void HDF5File::write_mesh_function(const mesh::MeshFunction<T>& meshfunction,
   // Storage for output values
   std::vector<T> data_values;
 
-  if (cell_dim == mesh.topology().dim() || _mpi_comm.size() == 1)
+  if (cell_dim == mesh.topology().dim() || MPI::size(_mpi_comm.comm()) == 1)
   {
     // No duplicates - ignore ghost cells if present
     data_values.assign(meshfunction.values().data(),
@@ -704,7 +704,7 @@ void HDF5File::write_mesh_function(const mesh::MeshFunction<T>& meshfunction,
 
     // Drop duplicate data
     const int tdim = mesh.topology().dim();
-    const int mpi_rank = _mpi_comm.rank();
+    const int mpi_rank = MPI::rank(_mpi_comm.comm());
     const std::map<std::int32_t, std::set<std::int32_t>>& shared_entities
         = mesh.topology().shared_entities(cell_dim);
 
@@ -757,7 +757,7 @@ void HDF5File::write_mesh_function(const mesh::MeshFunction<T>& meshfunction,
   // Write values to HDF5
   std::vector<std::int64_t> global_size(
       1, MPI::sum(_mpi_comm.comm(), data_values.size()));
-  const bool mpi_io = _mpi_comm.size() > 1 ? true : false;
+  const bool mpi_io = MPI::size(_mpi_comm.comm()) > 1 ? true : false;
   write_data(name + "/values", data_values, global_size, mpi_io);
 }
 //-----------------------------------------------------------------------------
@@ -860,13 +860,13 @@ void HDF5File::write(const function::Function& u, const std::string name)
   std::transform(x_cell_dofs.begin(), x_cell_dofs.end(), x_cell_dofs.begin(),
                  std::bind2nd(std::plus<std::size_t>(), offset));
 
-  const bool mpi_io = _mpi_comm.size() > 1 ? true : false;
+  const bool mpi_io = MPI::size(_mpi_comm.comm()) > 1 ? true : false;
 
   // Save DOFs on each cell
   std::vector<std::int64_t> global_size(
       1, MPI::sum(_mpi_comm.comm(), cell_dofs.size()));
   write_data(name + "/cell_dofs", cell_dofs, global_size, mpi_io);
-  if (_mpi_comm.rank() == _mpi_comm.size() - 1)
+  if (MPI::rank(_mpi_comm.comm()) == MPI::size(_mpi_comm.comm()) - 1)
     x_cell_dofs.push_back(global_size[0]);
   global_size[0] = mesh.num_entities_global(tdim) + 1;
   write_data(name + "/x_cell_dofs", x_cell_dofs, global_size, mpi_io);
@@ -1132,7 +1132,7 @@ void HDF5File::write_mesh_value_collection(
     value_data.push_back(p.second);
   }
 
-  const bool mpi_io = _mpi_comm.size() > 1 ? true : false;
+  const bool mpi_io = MPI::size(_mpi_comm.comm()) > 1 ? true : false;
   std::vector<std::int64_t> global_size(2);
 
   global_size[0] = MPI::sum(_mpi_comm.comm(), values.size());
@@ -1212,7 +1212,7 @@ HDF5File::read_mesh_value_collection(std::shared_ptr<const mesh::Mesh> mesh,
   mesh->create_entities(dim);
   std::size_t global_vertex_range = mesh->num_entities_global(0);
   std::vector<std::size_t> v(num_verts_per_entity);
-  const std::size_t num_processes = _mpi_comm.size();
+  const std::size_t num_processes = MPI::size(_mpi_comm.comm());
 
   // Calculate map from entity vertices to {process, local index}
   std::map<std::vector<std::size_t>, std::vector<std::size_t>> entity_map;
@@ -1343,7 +1343,7 @@ mesh::Mesh HDF5File::read_mesh(const std::string data_path,
   if (use_partition_from_file)
   {
     // Check that number of MPI processes matches partitioning
-    if (_mpi_comm.size() != (cell_distribution.size() - 1))
+    if (MPI::size(_mpi_comm.comm()) != (cell_distribution.size() - 1))
     {
       throw std::runtime_error("Different number of processes used when "
                                "writing. Cannot restore partitioning");
@@ -1481,10 +1481,10 @@ HDF5File::read_mesh_data(const std::string data_path) const
 
   // Check whether number of MPI processes matches partitioning, and
   // restore if possible
-  if (_mpi_comm.size() == cell_distribution.size())
+  if (MPI::size(_mpi_comm.comm()) == cell_distribution.size())
   {
     cell_distribution.push_back(num_global_cells);
-    const std::size_t proc = _mpi_comm.rank();
+    const std::size_t proc = MPI::rank(_mpi_comm.comm());
     cell_range = {{cell_distribution[proc], cell_distribution[proc + 1]}};
   }
   else
