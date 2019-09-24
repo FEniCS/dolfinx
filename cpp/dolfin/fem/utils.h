@@ -18,6 +18,7 @@
 struct ufc_dofmap;
 struct ufc_form;
 struct ufc_coordinate_mapping;
+struct ufc_function_space;
 
 namespace dolfin
 {
@@ -105,6 +106,13 @@ get_constants_from_ufc_form(const ufc_form& ufc_form);
 /// Get dolfin::fem::CoordinateMapping from ufc
 std::shared_ptr<const fem::CoordinateMapping>
 get_cmap_from_ufc_cmap(const ufc_coordinate_mapping& ufc_cmap);
+
+/// Create FunctionSpace from UFC
+/// @param fptr Function Pointer to a ufc_function_space_create function
+/// @param mesh Mesh
+/// @return The created FunctionSpace
+std::shared_ptr<function::FunctionSpace>
+create_functionspace(ufc_function_space* (*fptr)(void), std::shared_ptr<mesh::Mesh> mesh);
 
 } // namespace fem
 } // namespace dolfin
