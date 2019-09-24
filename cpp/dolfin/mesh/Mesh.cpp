@@ -279,7 +279,8 @@ Mesh::Mesh(const Mesh& mesh)
 }
 //-----------------------------------------------------------------------------
 Mesh::Mesh(Mesh&& mesh)
-    : _cell_type(std::move(mesh._cell_type)), _topology(std::move(mesh._topology)),
+    : _cell_type(std::move(mesh._cell_type)),
+      _topology(std::move(mesh._topology)),
       _geometry(std::move(mesh._geometry)),
       _coordinate_dofs(std::move(mesh._coordinate_dofs)),
       _degree(std::move(mesh._degree)), _mpi_comm(std::move(mesh._mpi_comm)),
@@ -399,17 +400,13 @@ void Mesh::clean()
   }
 }
 //-----------------------------------------------------------------------------
-double Mesh::hmin() const {
-  return cell_h(*this).minCoeff(); }
+double Mesh::hmin() const { return cell_h(*this).minCoeff(); }
 //-----------------------------------------------------------------------------
-double Mesh::hmax() const {
-  return cell_h(*this).maxCoeff(); }
+double Mesh::hmax() const { return cell_h(*this).maxCoeff(); }
 //-----------------------------------------------------------------------------
-double Mesh::rmin() const {
-  return cell_r(*this).minCoeff(); }
+double Mesh::rmin() const { return cell_r(*this).minCoeff(); }
 //-----------------------------------------------------------------------------
-double Mesh::rmax() const {
-  return cell_r(*this).maxCoeff(); }
+double Mesh::rmax() const { return cell_r(*this).maxCoeff(); }
 //-----------------------------------------------------------------------------
 std::size_t Mesh::hash() const
 {
@@ -450,11 +447,9 @@ std::string Mesh::str(bool verbose) const
   return s.str();
 }
 //-----------------------------------------------------------------------------
-MPI_Comm Mesh::mpi_comm() const {
-  return _mpi_comm.comm(); }
+MPI_Comm Mesh::mpi_comm() const { return _mpi_comm.comm(); }
 //-----------------------------------------------------------------------------
-mesh::GhostMode Mesh::get_ghost_mode() const {
-  return _ghost_mode; }
+mesh::GhostMode Mesh::get_ghost_mode() const { return _ghost_mode; }
 //-----------------------------------------------------------------------------
 CoordinateDofs& Mesh::coordinate_dofs()
 {
@@ -468,9 +463,7 @@ const CoordinateDofs& Mesh::coordinate_dofs() const
   return *_coordinate_dofs;
 }
 //-----------------------------------------------------------------------------
-std::int32_t Mesh::degree() const {
-  return _degree; }
+std::int32_t Mesh::degree() const { return _degree; }
 //-----------------------------------------------------------------------------
-mesh::CellType Mesh::cell_type() const {
-  return _cell_type; }
+mesh::CellType Mesh::cell_type() const { return _cell_type; }
 //-----------------------------------------------------------------------------

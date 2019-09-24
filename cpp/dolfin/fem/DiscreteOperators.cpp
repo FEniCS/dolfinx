@@ -33,7 +33,7 @@ DiscreteOperators::build_gradient(const function::FunctionSpace& V0,
 
   // Check that mesh is the same for both function spaces
   assert(V1.mesh());
-if (&mesh != V1.mesh().get())
+  if (&mesh != V1.mesh().get())
   {
     throw std::runtime_error(
         "Ccompute discrete gradient operator. Function spaces "

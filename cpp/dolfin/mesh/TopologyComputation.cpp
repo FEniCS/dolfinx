@@ -75,7 +75,8 @@ compute_entities_by_key_matching(const Mesh& mesh, int dim)
   common::Timer timer("Compute entities of dim = " + std::to_string(dim));
 
   // Initialize local array of entities
-  const std::int8_t num_entities = mesh::cell_num_entities(mesh.cell_type(), dim);
+  const std::int8_t num_entities
+      = mesh::cell_num_entities(mesh.cell_type(), dim);
   const int num_vertices
       = mesh::num_cell_vertices(mesh::cell_entity_type(mesh.cell_type(), dim));
 

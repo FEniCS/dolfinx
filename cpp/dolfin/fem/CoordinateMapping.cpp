@@ -13,8 +13,8 @@ using namespace dolfin::fem;
 
 //-----------------------------------------------------------------------------
 CoordinateMapping::CoordinateMapping(
-    mesh::CellType cell_type, int topological_dimension, int geometric_dimension,
-    std::string signature,
+    mesh::CellType cell_type, int topological_dimension,
+    int geometric_dimension, std::string signature,
     std::function<void(double*, int, const double*, const double*)>
         compute_physical_coordinates,
     std::function<void(double*, double*, double*, double*, int, const double*,

@@ -70,7 +70,7 @@ bool is_simplex(CellType type);
 /// Num vertices for a cell type
 int num_cell_vertices(CellType type);
 
-  // [dim, entity] -> closure{sub_dim, (sub_entities)}
+// [dim, entity] -> closure{sub_dim, (sub_entities)}
 
 /// Closure entities for a cell, i.e., all lower-dimensional entities
 /// attached to a cell entity. Map from entity {dim_e, entity_e} to

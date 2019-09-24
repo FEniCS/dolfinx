@@ -459,8 +459,7 @@ compute_sharing_markers(const DofMapStructure& dofmap,
   // Mark nodes on inter-process boundary
   const std::map<std::int32_t, std::set<std::int32_t>>& sharing_map_f
       = mesh.topology().shared_entities(D - 1);
-  for (auto& f :
-       mesh::MeshRange(mesh, D - 1, mesh::MeshRangeType::ALL))
+  for (auto& f : mesh::MeshRange(mesh, D - 1, mesh::MeshRangeType::ALL))
   {
     // Skip if facet is not shared
     // NOTE: second test is for periodic problems

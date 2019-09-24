@@ -91,7 +91,8 @@ void sort_2_0(mesh::Connectivity& connect_2_0, const mesh::MeshEntity& cell,
 //-----------------------------------------------------------------------------
 void sort_2_1(mesh::Connectivity& connect_2_1,
               const mesh::Connectivity& connect_2_0,
-              const mesh::Connectivity& connect_1_0, const mesh::MeshEntity& cell,
+              const mesh::Connectivity& connect_1_0,
+              const mesh::MeshEntity& cell,
               const std::vector<std::int64_t>& global_vertex_indices,
               const int num_faces)
 {
@@ -144,7 +145,8 @@ void sort_3_0(mesh::Connectivity& connect_3_0, const mesh::MeshEntity& cell,
 }
 //-----------------------------------------------------------------------------
 void sort_3_1(mesh::Connectivity& connect_3_1,
-              const mesh::Connectivity& connect_1_0, const mesh::MeshEntity& cell,
+              const mesh::Connectivity& connect_1_0,
+              const mesh::MeshEntity& cell,
               const std::vector<std::int64_t>& global_vertex_indices)
 {
   // Get cell vertices and edge numbers
@@ -184,7 +186,8 @@ void sort_3_1(mesh::Connectivity& connect_3_1,
 }
 //-----------------------------------------------------------------------------
 void sort_3_2(mesh::Connectivity& connect_3_2,
-              const mesh::Connectivity& connect_2_0, const mesh::MeshEntity& cell,
+              const mesh::Connectivity& connect_2_0,
+              const mesh::MeshEntity& cell,
               const std::vector<std::int64_t>& global_vertex_indices)
 {
   // Get cell vertices and facet numbers
