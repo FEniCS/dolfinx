@@ -201,8 +201,8 @@ public:
 
   /// Ghost mode used for partitioning. Possible values are same as
   /// `parameters["ghost_mode"]`.
-  /// WARNING: the interface may change in future without deprecation;
-  /// the method is now intended for internal library use.
+  /// @warning The interface may change in future without deprecation;
+  ///          the method is now intended for internal library use.
   mesh::GhostMode get_ghost_mode() const;
 
   /// Get coordinate dofs for all local cells
