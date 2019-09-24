@@ -201,8 +201,8 @@ public:
 
   /// Ghost mode used for partitioning. Possible values are same as
   /// `parameters["ghost_mode"]`.
-  /// WARNING: the interface may change in future without deprecation;
-  /// the method is now intended for internal library use.
+  /// @warning The interface may change in future without deprecation;
+  ///          the method is now intended for internal library use.
   mesh::GhostMode get_ghost_mode() const;
 
   /// Get coordinate dofs for all local cells
@@ -215,10 +215,13 @@ public:
   /// Polynomial degree of the mesh geometry
   std::int32_t degree() const;
 
-  /// Cell type for this Mesh.
-  const mesh::CellType cell_type;
+  /// Cell type for this Mesh
+  mesh::CellType cell_type() const;
 
 private:
+  // Cell type
+  mesh::CellType _cell_type;
+
   // Mesh topology
   std::unique_ptr<Topology> _topology;
 

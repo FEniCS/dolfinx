@@ -47,11 +47,12 @@ public:
   BoundingBoxTree(BoundingBoxTree&& tree) = default;
 
   /// Copy constructor
-  BoundingBoxTree(const BoundingBoxTree& tree) = default;
+  BoundingBoxTree(const BoundingBoxTree& tree) = delete;
 
   /// Move assignment
   BoundingBoxTree& operator=(BoundingBoxTree&& other) = default;
 
+  /// Destructor
   ~BoundingBoxTree() = default;
 
   /// Compute all collisions between bounding boxes and _Point_

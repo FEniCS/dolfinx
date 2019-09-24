@@ -127,6 +127,5 @@ protected:
   std::int32_t _local_index;
 };
 
-
 } // namespace mesh
 } // namespace dolfin
