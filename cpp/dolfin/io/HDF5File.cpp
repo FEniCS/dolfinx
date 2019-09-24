@@ -855,10 +855,10 @@ void HDF5File::write(const function::Function& u, const std::string name)
   }
 
   // Add offset to CSR index to be seamless in parallel
-  std::size_t offset
+  const std::size_t offset
       = MPI::global_offset(_mpi_comm.comm(), cell_dofs.size(), true);
-  std::for_each(x_cell_dofs.begin(), x_cell_dofs.end(),
-                [offset](std::size_t& d) { d += offset; });
+  for (auto& x : x_cell_dofs)
+    x += offset;
 
   const bool mpi_io = _mpi_comm.size() > 1 ? true : false;
 

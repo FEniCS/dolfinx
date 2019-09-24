@@ -1620,8 +1620,8 @@ XDMFFile::read_checkpoint(std::shared_ptr<const function::FunctionSpace> V,
   // Compose complex function vector
   std::vector<PetscScalar> vector;
   vector.reserve(real_vector.size());
-  std::transform(begin(real_vector), end(real_vector), begin(imag_vector),
-                 std::back_inserter(vector),
+  std::transform(std::begin(real_vector), std::end(real_vector),
+                 std::begin(imag_vector), std::back_inserter(vector),
                  [](double r, double i) { return r + i * PETSC_i; });
 #else
   // Read function vector
