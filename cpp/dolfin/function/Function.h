@@ -152,7 +152,7 @@ public:
   /// Name
   std::string name = "u";
 
-  // ID
+  /// ID
   std::size_t id() const;
 
 private:
