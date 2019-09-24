@@ -34,7 +34,7 @@ namespace
 std::uint8_t vtk_cell_type(const mesh::Mesh& mesh, std::size_t cell_dim)
 {
   // Get cell type
-  mesh::CellType cell_type = mesh::cell_entity_type(mesh.cell_type, cell_dim);
+  mesh::CellType cell_type = mesh::cell_entity_type(mesh.cell_type(), cell_dim);
 
   // Determine VTK cell type
   std::uint8_t vtk_cell_type = 0;
@@ -108,7 +108,7 @@ void write_ascii_mesh(const mesh::Mesh& mesh, std::size_t cell_dim,
 {
   const std::size_t num_cells = mesh.topology().ghost_offset(cell_dim);
   const std::size_t num_cell_vertices = mesh::num_cell_vertices(
-      mesh::cell_entity_type(mesh.cell_type, cell_dim));
+      mesh::cell_entity_type(mesh.cell_type(), cell_dim));
 
   // Get VTK cell type
   const std::size_t _vtk_cell_type = vtk_cell_type(mesh, cell_dim);
@@ -139,7 +139,7 @@ void write_ascii_mesh(const mesh::Mesh& mesh, std::size_t cell_dim,
        << "ascii"
        << "\">";
 
-  mesh::CellType celltype = mesh::cell_entity_type(mesh.cell_type, cell_dim);
+  mesh::CellType celltype = mesh::cell_entity_type(mesh.cell_type(), cell_dim);
   const std::vector<std::int8_t> perm = mesh::vtk_mapping(celltype);
   const int num_vertices = mesh::cell_num_entities(celltype, 0);
   for (auto& c : mesh::MeshRange(mesh, cell_dim))
@@ -185,10 +185,10 @@ void VTKWriter::write_cell_data(const function::Function& u,
                                 std::string filename)
 {
   // For brevity
-  assert(u.function_space()->mesh);
-  assert(u.function_space()->dofmap);
-  const mesh::Mesh& mesh = *u.function_space()->mesh;
-  const fem::DofMap& dofmap = *u.function_space()->dofmap;
+  assert(u.function_space()->mesh());
+  assert(u.function_space()->dofmap());
+  const mesh::Mesh& mesh = *u.function_space()->mesh();
+  const fem::DofMap& dofmap = *u.function_space()->dofmap();
   const std::size_t tdim = mesh.topology().dim();
   const std::size_t num_cells = mesh.topology().ghost_offset(tdim);
 

@@ -84,7 +84,7 @@ void get_cell_entities(
       const std::vector<std::int64_t>& global_indices
           = topology.global_indices(d);
       const int cell_num_entities
-          = mesh::cell_num_entities(cell.mesh().cell_type, d);
+          = mesh::cell_num_entities(cell.mesh().cell_type(), d);
       const std::int32_t* entities = cell.entities(d);
       for (int i = 0; i < cell_num_entities; ++i)
       {
@@ -333,7 +333,7 @@ DofMapStructure build_basic_dofmap(const mesh::Mesh& mesh,
   std::vector<std::vector<int64_t>> entity_indices_global(D + 1);
   for (int d = 0; d <= D; ++d)
   {
-    const int num_entities = mesh::cell_num_entities(mesh.cell_type, d);
+    const int num_entities = mesh::cell_num_entities(mesh.cell_type(), d);
     entity_indices_local[d].resize(num_entities);
     entity_indices_global[d].resize(num_entities);
   }
@@ -459,8 +459,7 @@ compute_sharing_markers(const DofMapStructure& dofmap,
   // Mark nodes on inter-process boundary
   const std::map<std::int32_t, std::set<std::int32_t>>& sharing_map_f
       = mesh.topology().shared_entities(D - 1);
-  for (auto& f :
-       mesh::MeshRange(mesh, D - 1, mesh::MeshRangeType::ALL))
+  for (auto& f : mesh::MeshRange(mesh, D - 1, mesh::MeshRangeType::ALL))
   {
     // Skip if facet is not shared
     // NOTE: second test is for periodic problems
@@ -671,7 +670,7 @@ DofMapBuilder::build(const mesh::Mesh& mesh,
                      std::shared_ptr<const ElementDofLayout> element_dof_layout)
 {
   assert(element_dof_layout);
-  const int bs = element_dof_layout->block_size;
+  const int bs = element_dof_layout->block_size();
   std::shared_ptr<common::IndexMap> index_map;
   Eigen::Array<PetscInt, Eigen::Dynamic, 1> dofmap;
   if (bs == 1)
@@ -727,7 +726,7 @@ DofMapBuilder::build(const mesh::Mesh& mesh,
 {
   common::Timer t0("Init dofmap");
 
-  if (element_dof_layout.block_size != 1)
+  if (element_dof_layout.block_size() != 1)
     throw std::runtime_error("Block size of 1 expected when building dofmap.");
 
   const int D = mesh.topology().dim();

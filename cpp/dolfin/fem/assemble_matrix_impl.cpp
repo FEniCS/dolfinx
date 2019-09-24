@@ -29,8 +29,8 @@ void fem::impl::assemble_matrix(Mat A, const Form& a,
   const mesh::Mesh& mesh = *a.mesh();
 
   // Get dofmap data
-  const fem::DofMap& dofmap0 = *a.function_space(0)->dofmap;
-  const fem::DofMap& dofmap1 = *a.function_space(1)->dofmap;
+  const fem::DofMap& dofmap0 = *a.function_space(0)->dofmap();
+  const fem::DofMap& dofmap1 = *a.function_space(1)->dofmap();
   Eigen::Ref<const Eigen::Array<PetscInt, Eigen::Dynamic, 1>> dof_array0
       = dofmap0.dof_array();
   Eigen::Ref<const Eigen::Array<PetscInt, Eigen::Dynamic, 1>> dof_array1
