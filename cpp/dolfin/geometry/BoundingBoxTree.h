@@ -52,6 +52,7 @@ public:
   /// Move assignment
   BoundingBoxTree& operator=(BoundingBoxTree&& other) = default;
 
+  /// Destructor
   ~BoundingBoxTree() = default;
 
   /// Compute all collisions between bounding boxes and _Point_
