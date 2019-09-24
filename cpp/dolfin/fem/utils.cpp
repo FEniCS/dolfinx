@@ -667,7 +667,7 @@ fem::get_cmap_from_ufc_cmap(const ufc_coordinate_mapping& ufc_cmap)
 }
 //-----------------------------------------------------------------------------
 std::shared_ptr<function::FunctionSpace>
-fem::create_functionspace(fem::ufc_fs_ptr fptr,
+fem::create_functionspace(ufc_function_space* (*fptr)(void),
                           std::shared_ptr<mesh::Mesh> mesh)
 {
   ufc_function_space* space = fptr();
