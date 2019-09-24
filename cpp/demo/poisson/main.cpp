@@ -206,7 +206,7 @@ int main(int argc, char* argv[])
   // Compute solution
   function::Function u(V);
   la::PETScMatrix A = fem::create_matrix(*a);
-  la::PETScVector b(*L->function_space(0)->dofmap->index_map);
+  la::PETScVector b(*L->function_space(0)->dofmap()->index_map);
 
   MatZeroEntries(A.mat());
   dolfin::fem::assemble_matrix(A.mat(), *a, bc);

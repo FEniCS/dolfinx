@@ -72,12 +72,12 @@ bool has_cell_centred_data(const function::Function& u)
 {
   int cell_based_dim = 1;
   for (int i = 0; i < u.value_rank(); i++)
-    cell_based_dim *= u.function_space()->mesh->topology().dim();
+    cell_based_dim *= u.function_space()->mesh()->topology().dim();
 
   assert(u.function_space());
-  assert(u.function_space()->dofmap);
-  assert(u.function_space()->dofmap->element_dof_layout);
-  return (u.function_space()->dofmap->element_dof_layout->num_dofs()
+  assert(u.function_space()->dofmap());
+  assert(u.function_space()->dofmap()->element_dof_layout);
+  return (u.function_space()->dofmap()->element_dof_layout->num_dofs()
           == cell_based_dim);
 }
 //-----------------------------------------------------------------------------
@@ -412,7 +412,7 @@ void XDMFFile::write_checkpoint(const function::Function& u,
   std::string function_time_name
       = function_name + "_" + std::to_string(counter);
 
-  const mesh::Mesh& mesh = *u.function_space()->mesh;
+  const mesh::Mesh& mesh = *u.function_space()->mesh();
   xdmf_write::add_mesh(_mpi_comm.comm(), func_temporal_grid_node, h5_id, mesh,
                        function_name + "/" + function_time_name);
 
@@ -475,7 +475,7 @@ void XDMFFile::write(const function::Function& u)
                              "Not writing a time series");
   }
 
-  const mesh::Mesh& mesh = *u.function_space()->mesh;
+  const mesh::Mesh& mesh = *u.function_space()->mesh();
 
   // Clear pugi doc
   _xml_doc->reset();
@@ -583,7 +583,7 @@ void XDMFFile::write(const function::Function& u, double time_step)
         "Cannot write ASCII XDMF in parallel (use HDF5 encoding).");
   }
 
-  const mesh::Mesh& mesh = *u.function_space()->mesh;
+  const mesh::Mesh& mesh = *u.function_space()->mesh();
 
   // Clear the pugi doc the first time
   if (_counter == 0)
@@ -926,9 +926,9 @@ void XDMFFile::write_mesh_value_collection(
   const std::size_t cell_dim = mvc.dim();
   const std::size_t degree = 1;
   const std::string vtk_cell_str = xdmf_utils::vtk_cell_type_str(
-      mesh::cell_entity_type(mesh->cell_type, cell_dim), degree);
+      mesh::cell_entity_type(mesh->cell_type(), cell_dim), degree);
   const std::int32_t num_vertices_per_cell
-      = mesh::num_cell_vertices(cell_entity_type(mesh->cell_type, cell_dim));
+      = mesh::num_cell_vertices(cell_entity_type(mesh->cell_type(), cell_dim));
 
   const std::map<std::pair<std::size_t, std::size_t>, T>& values = mvc.values();
   const std::int64_t num_cells = values.size();
@@ -1557,10 +1557,10 @@ XDMFFile::read_checkpoint(std::shared_ptr<const function::FunctionSpace> V,
   // Get existing mesh and dofmap - these should be pre-existing
   // and set up by user when defining the function::Function
   assert(V);
-  assert(V->mesh);
-  const mesh::Mesh& mesh = *V->mesh;
-  assert(V->dofmap);
-  const fem::DofMap& dofmap = *V->dofmap;
+  assert(V->mesh());
+  const mesh::Mesh& mesh = *V->mesh();
+  assert(V->dofmap());
+  const fem::DofMap& dofmap = *V->dofmap();
 
   // Read cell ordering
   std::vector<std::size_t> cells = xdmf_read::get_dataset<std::size_t>(
@@ -1825,7 +1825,7 @@ void XDMFFile::write_mesh_function(const mesh::MeshFunction<T>& meshfunction)
     assert(topology_node);
     std::pair<std::string, int> cell_type_str
         = xdmf_utils::get_cell_type(topology_node);
-    if (mesh::to_string(mesh->cell_type) != cell_type_str.first)
+    if (mesh::to_string(mesh->cell_type()) != cell_type_str.first)
     {
       throw std::runtime_error(
           "Incompatible Mesh type. Try writing the Mesh to XDMF first");

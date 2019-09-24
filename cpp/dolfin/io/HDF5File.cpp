@@ -252,7 +252,7 @@ void HDF5File::write(const mesh::Mesh& mesh, int cell_dim,
   const bool mpi_io = _mpi_comm.size() > 1 ? true : false;
   assert(_hdf5_file_id > 0);
 
-  mesh::CellType cell_type = mesh::cell_entity_type(mesh.cell_type, cell_dim);
+  mesh::CellType cell_type = mesh::cell_entity_type(mesh.cell_type(), cell_dim);
   std::size_t num_cell_points = mesh::cell_num_entities(cell_type, 0);
 
   // ---------- Vertices (coordinates)
@@ -305,7 +305,7 @@ void HDF5File::write(const mesh::Mesh& mesh, int cell_dim,
       else
       {
         const int num_vertices = mesh::cell_num_entities(
-            mesh::cell_entity_type(mesh.cell_type, cell_dim), 0);
+            mesh::cell_entity_type(mesh.cell_type(), cell_dim), 0);
         for (auto& c : mesh::MeshRange(mesh, cell_dim))
         {
           for (int i = 0; i < num_vertices; ++i)
@@ -376,7 +376,7 @@ void HDF5File::write(const mesh::Mesh& mesh, int cell_dim,
       else
       {
         const int num_vertices = mesh::cell_num_entities(
-            mesh::cell_entity_type(mesh.cell_type, cell_dim), 0);
+            mesh::cell_entity_type(mesh.cell_type(), cell_dim), 0);
         for (auto& ent : mesh::MeshRange(mesh, cell_dim))
         {
           // If not excluded, add to topology
@@ -821,11 +821,11 @@ void HDF5File::write(const function::Function& u, const std::string name)
   assert(_hdf5_file_id > 0);
 
   // Get mesh and dofmap
-  assert(u.function_space()->mesh);
-  const mesh::Mesh& mesh = *u.function_space()->mesh;
+  assert(u.function_space()->mesh());
+  const mesh::Mesh& mesh = *u.function_space()->mesh();
 
-  assert(u.function_space()->dofmap);
-  const fem::DofMap& dofmap = *u.function_space()->dofmap;
+  assert(u.function_space()->dofmap());
+  const fem::DofMap& dofmap = *u.function_space()->dofmap();
 
   // FIXME:
   // Possibly sort cell_dofs into global cell order before writing?
@@ -880,7 +880,7 @@ void HDF5File::write(const function::Function& u, const std::string name)
   write_data(name + "/cells", cells, global_size, mpi_io);
 
   HDF5Interface::add_attribute(_hdf5_file_id, name, "signature",
-                               u.function_space()->element->signature());
+                               u.function_space()->element()->signature());
 
   // Save vector
   write(u.vector(), name + "/vector_0");
@@ -966,10 +966,10 @@ HDF5File::read(std::shared_ptr<const function::FunctionSpace> V,
 
   // Get existing mesh and dofmap - these should be pre-existing
   // and set up by user when defining the function::Function
-  assert(u.function_space()->mesh);
-  const mesh::Mesh& mesh = *u.function_space()->mesh;
-  assert(u.function_space()->dofmap);
-  const fem::DofMap& dofmap = *u.function_space()->dofmap;
+  assert(u.function_space()->mesh());
+  const mesh::Mesh& mesh = *u.function_space()->mesh();
+  assert(u.function_space()->dofmap());
+  const fem::DofMap& dofmap = *u.function_space()->dofmap();
 
   // Get dimension of dataset
   const std::vector<std::int64_t> dataset_shape
@@ -1105,7 +1105,7 @@ void HDF5File::write_mesh_value_collection(
       = mesh_values.values();
 
   const mesh::CellType entity_type
-      = mesh::cell_entity_type(mesh->cell_type, dim);
+      = mesh::cell_entity_type(mesh->cell_type(), dim);
   const std::size_t num_vertices_per_entity
       = (dim == 0) ? 1 : mesh::num_cell_vertices(entity_type);
 
@@ -1165,7 +1165,7 @@ HDF5File::read_mesh_value_collection(std::shared_ptr<const mesh::Mesh> mesh,
       _hdf5_file_id, name, "dimension");
   assert(mesh);
   const mesh::CellType entity_type
-      = mesh::cell_entity_type(mesh->cell_type, dim);
+      = mesh::cell_entity_type(mesh->cell_type(), dim);
   const std::size_t num_verts_per_entity
       = mesh::cell_num_entities(entity_type, 0);
 

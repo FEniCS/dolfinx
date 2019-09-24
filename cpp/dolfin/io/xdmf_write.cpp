@@ -203,7 +203,7 @@ std::vector<std::int64_t> compute_topology_data(const mesh::Mesh& mesh,
 {
   // Create vector to store topology data
   const int num_vertices_per_cell = mesh::num_cell_vertices(
-      mesh::cell_entity_type(mesh.cell_type, cell_dim));
+      mesh::cell_entity_type(mesh.cell_type(), cell_dim));
 
   std::vector<std::int64_t> topology_data;
   topology_data.reserve(mesh.num_entities(cell_dim) * (num_vertices_per_cell));
@@ -211,7 +211,7 @@ std::vector<std::int64_t> compute_topology_data(const mesh::Mesh& mesh,
   // Get mesh communicator
   MPI_Comm comm = mesh.mpi_comm();
 
-  const std::vector<std::int8_t> perm = mesh::vtk_mapping(mesh.cell_type);
+  const std::vector<std::int8_t> perm = mesh::vtk_mapping(mesh.cell_type());
   const int tdim = mesh.topology().dim();
   const auto& global_vertices = mesh.topology().global_indices(0);
   if (dolfin::MPI::size(comm) == 1 or cell_dim == tdim)
@@ -225,7 +225,7 @@ std::vector<std::int64_t> compute_topology_data(const mesh::Mesh& mesh,
     else
     {
       const int num_vertices = mesh::cell_num_entities(
-          mesh::cell_entity_type(mesh.cell_type, cell_dim), 0);
+          mesh::cell_entity_type(mesh.cell_type(), cell_dim), 0);
       for (auto& c : mesh::MeshRange(mesh, cell_dim))
       {
         const std::int32_t* entities = c.entities(0);
@@ -253,7 +253,7 @@ std::vector<std::int64_t> compute_topology_data(const mesh::Mesh& mesh,
     {
       // Local-to-global map for point indices
       const int num_vertices = mesh::cell_num_entities(
-          mesh::cell_entity_type(mesh.cell_type, cell_dim), 0);
+          mesh::cell_entity_type(mesh.cell_type(), cell_dim), 0);
       for (auto& e : mesh::MeshRange(mesh, cell_dim))
       {
         // If not excluded, add to topology
@@ -527,12 +527,12 @@ void xdmf_write::add_topology_data(MPI_Comm comm, pugi::xml_node& xml_node,
   // Get number of cells (global) and vertices per cell from mesh
   const std::int64_t num_cells = mesh.topology().size_global(cell_dim);
   int num_nodes_per_cell = mesh::num_cell_vertices(
-      mesh::cell_entity_type(mesh.cell_type, cell_dim));
+      mesh::cell_entity_type(mesh.cell_type(), cell_dim));
 
   // Get VTK string for cell type and degree (linear or quadratic)
   const std::size_t degree = mesh.degree();
   const std::string vtk_cell_str = xdmf_utils::vtk_cell_type_str(
-      mesh::cell_entity_type(mesh.cell_type, cell_dim), degree);
+      mesh::cell_entity_type(mesh.cell_type(), cell_dim), degree);
 
   pugi::xml_node topology_node = xml_node.append_child("Topology");
   assert(topology_node);
@@ -659,10 +659,10 @@ void xdmf_write::add_function(MPI_Comm mpi_comm, pugi::xml_node& xml_node,
 {
   LOG(INFO) << "Adding function to node \"" << xml_node.path('/') << "\"";
 
-  std::string element_family = u.function_space()->element->family();
-  const std::size_t element_degree = u.function_space()->element->degree();
+  std::string element_family = u.function_space()->element()->family();
+  const std::size_t element_degree = u.function_space()->element()->degree();
   const mesh::CellType element_cell_type
-      = u.function_space()->element->cell_shape();
+      = u.function_space()->element()->cell_shape();
 
   // Map of standard UFL family abbreviations for visualisation
   const std::map<std::string, std::string> family_abbr
@@ -719,8 +719,8 @@ void xdmf_write::add_function(MPI_Comm mpi_comm, pugi::xml_node& xml_node,
   // Prepare and save number of dofs per cell (x_cell_dofs) and cell
   // dofmaps (cell_dofs)
 
-  assert(u.function_space()->dofmap);
-  const fem::DofMap& dofmap = *u.function_space()->dofmap;
+  assert(u.function_space()->dofmap());
+  const fem::DofMap& dofmap = *u.function_space()->dofmap();
 
   const std::size_t tdim = mesh.topology().dim();
   std::vector<PetscInt> cell_dofs;

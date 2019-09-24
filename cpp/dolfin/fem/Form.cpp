@@ -37,10 +37,10 @@ Form::Form(
 {
   // Set _mesh from function::FunctionSpace, and check they are the same
   if (!function_spaces.empty())
-    _mesh = function_spaces[0]->mesh;
+    _mesh = function_spaces[0]->mesh();
   for (auto& V : function_spaces)
   {
-    if (_mesh != V->mesh)
+    if (_mesh != V->mesh())
       throw std::runtime_error("Incompatible mesh");
   }
 

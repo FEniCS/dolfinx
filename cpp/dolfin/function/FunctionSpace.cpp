@@ -27,8 +27,8 @@ using namespace dolfin::function;
 FunctionSpace::FunctionSpace(std::shared_ptr<const mesh::Mesh> mesh,
                              std::shared_ptr<const fem::FiniteElement> element,
                              std::shared_ptr<const fem::DofMap> dofmap)
-    : mesh(mesh), element(element), dofmap(dofmap),
-      id(common::UniqueIdGenerator::id()), _root_space_id(id)
+    : _mesh(mesh), _element(element), _dofmap(dofmap),
+      _id(common::UniqueIdGenerator::id()), _root_space_id(_id)
 {
   // Do nothing
 }
@@ -250,7 +250,7 @@ FunctionSpace::sub(const std::vector<int>& component) const
 
   // Extract sub dofmap
   auto dofmap = std::make_shared<fem::DofMap>(
-      this->dofmap->extract_sub_dofmap(component, *mesh));
+      _dofmap->extract_sub_dofmap(component, *mesh));
 
   // Create new sub space
   auto sub_space = std::make_shared<FunctionSpace>(mesh, element, dofmap);
@@ -436,6 +436,19 @@ void FunctionSpace::set_x(
 //-----------------------------------------------------------------------------
 std::size_t FunctionSpace::id() const { return _id; }
 //-----------------------------------------------------------------------------
+std::shared_ptr<const mesh::Mesh> FunctionSpace::mesh() const { return _mesh; }
+//-----------------------------------------------------------------------------
+std::shared_ptr<const fem::FiniteElement> FunctionSpace::element() const
+{
+  return _element;
+}
+//-----------------------------------------------------------------------------
+std::shared_ptr<const fem::DofMap> FunctionSpace::dofmap() const
+{
+  return _dofmap;
+}
+//-----------------------------------------------------------------------------
+
 bool FunctionSpace::contains(const FunctionSpace& V) const
 {
   // Is the root space same?

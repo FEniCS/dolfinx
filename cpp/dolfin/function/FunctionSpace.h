@@ -120,7 +120,7 @@ public:
   /// @return True if the function space has the given cell
   bool has_cell(const mesh::MeshEntity& cell) const
   {
-    return &cell.mesh() == mesh.get();
+    return &cell.mesh() == _mesh.get();
   }
 
   /// Check if function space has given element
@@ -128,7 +128,7 @@ public:
   /// @return  True if the function space has the given element
   bool has_element(const fem::FiniteElement& element) const
   {
-    return element.hash() == this->element->hash();
+    return element.hash() == this->_element->hash();
   }
 
   /// Return component w.r.t. to root superspace, i.e. W.sub(1).sub(0)
@@ -154,21 +154,31 @@ public:
   void set_x(Eigen::Ref<Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1>> x,
              PetscScalar value, int component) const;
 
-  /// The mesh
-  const std::shared_ptr<const mesh::Mesh> mesh;
-
-  /// The finite element
-  const std::shared_ptr<const fem::FiniteElement> element;
-
-  /// The dofmap
-  const std::shared_ptr<const fem::DofMap> dofmap;
 
   /// Unique identifier
   std::size_t id() const;
 
+  /// The mesh
+  std::shared_ptr<const mesh::Mesh> mesh() const;
+
+  /// The finite element
+  std::shared_ptr<const fem::FiniteElement> element() const;
+
+  /// The dofmap
+  std::shared_ptr<const fem::DofMap> dofmap() const;
+
 private:
   // Unique identifier
   std::size_t _id;
+
+  // The mesh
+  std::shared_ptr<const mesh::Mesh> _mesh;
+
+  // The finite element
+  std::shared_ptr<const fem::FiniteElement> _element;
+
+  // The dofmap
+  std::shared_ptr<const fem::DofMap> _dofmap;
 
   // General interpolation from any Function on any mesh
   void interpolate_from_any(

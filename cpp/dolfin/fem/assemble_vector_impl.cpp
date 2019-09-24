@@ -45,8 +45,8 @@ void _lift_bc_cells(
   assert(a.function_space(0)->dofmap);
   assert(a.function_space(1));
   assert(a.function_space(1)->dofmap);
-  const fem::DofMap& dofmap0 = *a.function_space(0)->dofmap;
-  const fem::DofMap& dofmap1 = *a.function_space(1)->dofmap;
+  const fem::DofMap& dofmap0 = *a.function_space(0)->dofmap();
+  const fem::DofMap& dofmap1 = *a.function_space(1)->dofmap();
 
   // TODO: simplify and move elsewhere
   // Manage coefficients
@@ -191,8 +191,8 @@ void _lift_bc_exterior_facets(
   assert(a.function_space(0)->dofmap);
   assert(a.function_space(1));
   assert(a.function_space(1)->dofmap);
-  const fem::DofMap& dofmap0 = *a.function_space(0)->dofmap;
-  const fem::DofMap& dofmap1 = *a.function_space(1)->dofmap;
+  const fem::DofMap& dofmap0 = *a.function_space(0)->dofmap();
+  const fem::DofMap& dofmap1 = *a.function_space(1)->dofmap();
 
   // TODO: simplify and move elsewhere
   // Manage coefficients
@@ -335,7 +335,7 @@ void fem::impl::assemble_vector(
   const mesh::Mesh& mesh = *L.mesh();
 
   // Get dofmap data
-  const fem::DofMap& dofmap = *L.function_space(0)->dofmap;
+  const fem::DofMap& dofmap = *L.function_space(0)->dofmap();
   Eigen::Ref<const Eigen::Array<PetscInt, Eigen::Dynamic, 1>> dof_array
       = dofmap.dof_array();
 
@@ -661,7 +661,7 @@ void fem::impl::apply_lifting(
     {
       auto V1 = a[j]->function_space(1);
       assert(V1);
-      auto map1 = V1->dofmap->index_map;
+      auto map1 = V1->dofmap()->index_map;
       assert(map1);
       const int crange
           = map1->block_size * (map1->size_local() + map1->num_ghosts());
