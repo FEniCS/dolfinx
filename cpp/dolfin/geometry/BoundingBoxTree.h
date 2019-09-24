@@ -98,7 +98,7 @@ public:
     return _bboxes[node];
   }
 
-  // Topological dimension of leaf entities
+  /// Topological dimension of leaf entities
   int tdim() const;
 
 private:
