@@ -24,13 +24,13 @@ configure-cpp: &configure-cpp
 
 build-install-cpp: &build-install-cpp
   name: Build and install (C++)
-  command: cd build && ninja -j3 install
+  command: cd build && ninja install
 
 unit-tests-cpp: &unit-tests-cpp
   name: Build and run C++ unit tests (serial and MPI)
   command: |
     cd build
-    ninja -j3 unittests
+    ninja unittests
     ctest -R unittests
     mpirun -np 3 ctest -R unittests
 
@@ -38,14 +38,14 @@ regression-tests-cpp: &regression-tests-cpp
   name: Build and run C++ regressions tests (serial)
   command: |
     cd build
-    ninja -j3 demos
+    ninja demos
     ctest -j3 -R demo -R serial
 
 regression-tests-cpp-mpi: &regression-tests-cpp-mpi
   name: Run C++ regression tests (MPI)
   command: |
     cd build
-    ninja -j3 demos
+    ninja demos
     ctest --verbose -R demo -R mpi
 
 build-python-interface: &build-python-interface
