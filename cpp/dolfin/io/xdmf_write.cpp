@@ -747,8 +747,6 @@ void xdmf_write::add_function(MPI_Comm mpi_comm, pugi::xml_node& xml_node,
   std::size_t offset = MPI::global_offset(mpi_comm, cell_dofs.size(), true);
   std::for_each(x_cell_dofs.begin(), x_cell_dofs.end(),
                 [offset](std::size_t& d) { d += offset; });
-  // std::transform(x_cell_dofs.begin(), x_cell_dofs.end(), x_cell_dofs.begin(),
-  //                std::bind2nd(std::plus<std::size_t>(), offset));
 
   const std::int64_t num_cell_dofs_global
       = MPI::sum(mpi_comm, cell_dofs.size());
