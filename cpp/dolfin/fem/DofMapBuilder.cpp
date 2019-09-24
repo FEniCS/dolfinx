@@ -84,7 +84,7 @@ void get_cell_entities(
       const std::vector<std::int64_t>& global_indices
           = topology.global_indices(d);
       const int cell_num_entities
-          = mesh::cell_num_entities(cell.mesh().cell_type, d);
+          = mesh::cell_num_entities(cell.mesh().cell_type(), d);
       const std::int32_t* entities = cell.entities(d);
       for (int i = 0; i < cell_num_entities; ++i)
       {
@@ -671,7 +671,7 @@ DofMapBuilder::build(const mesh::Mesh& mesh,
                      std::shared_ptr<const ElementDofLayout> element_dof_layout)
 {
   assert(element_dof_layout);
-  const int bs = element_dof_layout->block_size;
+  const int bs = element_dof_layout->block_size();
   std::shared_ptr<common::IndexMap> index_map;
   Eigen::Array<PetscInt, Eigen::Dynamic, 1> dofmap;
   if (bs == 1)
@@ -727,7 +727,7 @@ DofMapBuilder::build(const mesh::Mesh& mesh,
 {
   common::Timer t0("Init dofmap");
 
-  if (element_dof_layout.block_size != 1)
+  if (element_dof_layout.block_size() != 1)
     throw std::runtime_error("Block size of 1 expected when building dofmap.");
 
   const int D = mesh.topology().dim();

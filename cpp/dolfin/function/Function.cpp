@@ -38,8 +38,8 @@ la::PETScVector create_vector(const function::FunctionSpace& V)
   common::Timer timer("Init dof vector");
 
   // Get dof map
-  assert(V.dofmap);
-  const fem::DofMap& dofmap = *(V.dofmap);
+  assert(V.dofmap());
+  const fem::DofMap& dofmap = *(V.dofmap());
 
   // Check that function space is not a subspace (view)
   assert(dofmap.element_dof_layout);
@@ -317,8 +317,8 @@ void Function::interpolate(const FunctionSpace::interpolation_function& f)
 int Function::value_rank() const
 {
   assert(_function_space);
-  assert(_function_space->element);
-  return _function_space->element->value_rank();
+  assert(_function_space->element());
+  return _function_space->element()->value_rank();
 }
 //-----------------------------------------------------------------------------
 int Function::value_size() const
@@ -332,14 +332,12 @@ int Function::value_size() const
 int Function::value_dimension(int i) const
 {
   assert(_function_space);
-  assert(_function_space->element);
-  return _function_space->element->value_dimension(i);
+  assert(_function_space->element());
+  return _function_space->element()->value_dimension(i);
 }
 //-----------------------------------------------------------------------------
 std::vector<int> Function::value_shape() const
 {
-  assert(_function_space);
-  assert(_function_space->element);
   std::vector<int> _shape(this->value_rank(), 1);
   for (std::size_t i = 0; i < _shape.size(); ++i)
     _shape[i] = this->value_dimension(i);

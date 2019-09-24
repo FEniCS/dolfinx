@@ -154,7 +154,6 @@ public:
   void set_x(Eigen::Ref<Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1>> x,
              PetscScalar value, int component) const;
 
-
   /// Unique identifier
   std::size_t id() const;
 
@@ -168,9 +167,6 @@ public:
   std::shared_ptr<const fem::DofMap> dofmap() const;
 
 private:
-  // Unique identifier
-  std::size_t _id;
-
   // The mesh
   std::shared_ptr<const mesh::Mesh> _mesh;
 
@@ -188,6 +184,9 @@ private:
 
   // The component w.r.t. to root space
   std::vector<int> _component;
+
+  // Unique identifier
+  std::size_t _id;
 
   // The identifier of root space
   std::size_t _root_space_id;

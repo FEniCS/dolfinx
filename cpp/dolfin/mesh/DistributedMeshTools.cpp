@@ -209,7 +209,7 @@ DistributedMeshTools::compute_entity_numbering(const Mesh& mesh, int d)
     std::map<std::vector<std::int64_t>, std::int32_t> entity_to_local_index;
 
     // Get number of vertices in this entity type
-    const mesh::CellType& ct = mesh.cell_type;
+    const mesh::CellType& ct = mesh.cell_type();
     const mesh::CellType& et = mesh::cell_entity_type(ct, d);
     const int num_entity_vertices = mesh::num_cell_vertices(et);
 

@@ -443,7 +443,7 @@ std::string Mesh::str(bool verbose) const
   {
     const int tdim = _topology->dim();
     s << "<Mesh of topological dimension " << tdim << " ("
-      << mesh::to_string(cell_type) << ") with " << num_entities(0)
+      << mesh::to_string(_cell_type) << ") with " << num_entities(0)
       << " vertices and " << num_entities(tdim) << " cells >";
   }
 

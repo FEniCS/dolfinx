@@ -375,7 +375,7 @@ Eigen::ArrayXd mesh::inradius(const mesh::Mesh& mesh,
                               const Eigen::Ref<const Eigen::ArrayXi> entities)
 {
   // Cell type
-  const mesh::CellType type = mesh.cell_type;
+  const mesh::CellType type = mesh.cell_type();
 
   // Check cell type
   if (!mesh::is_simplex(type))
@@ -424,11 +424,11 @@ Eigen::ArrayXd
 mesh::radius_ratio(const mesh::Mesh& mesh,
                    const Eigen::Ref<const Eigen::ArrayXi> entities)
 {
-  const mesh::CellType type = mesh.cell_type;
+  const mesh::CellType type = mesh.cell_type();
   const int dim = mesh::cell_dim(type);
   Eigen::ArrayXd r = mesh::inradius(mesh, entities);
   Eigen::ArrayXd cr = mesh::circumradius(mesh, entities, dim);
-  return mesh::cell_dim(mesh.cell_type) * r / cr;
+  return mesh::cell_dim(mesh.cell_type()) * r / cr;
 }
 //-----------------------------------------------------------------------------
 Eigen::Array<double, Eigen::Dynamic, 3, Eigen::RowMajor>
@@ -508,7 +508,7 @@ mesh::cell_normals(const mesh::Mesh& mesh, int dim)
 Eigen::Vector3d mesh::normal(const mesh::MeshEntity& cell, int facet_local)
 {
   const mesh::Geometry& geometry = cell.mesh().geometry();
-  const mesh::CellType type = cell.mesh().cell_type;
+  const mesh::CellType type = cell.mesh().cell_type();
   const int tdim = cell.mesh().topology().dim();
   assert(cell.dim() == tdim);
 

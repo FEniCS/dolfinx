@@ -42,9 +42,9 @@ void _lift_bc_cells(
 
   // Get dofmap for columns and rows of a
   assert(a.function_space(0));
-  assert(a.function_space(0)->dofmap);
+  assert(a.function_space(0)->dofmap());
   assert(a.function_space(1));
-  assert(a.function_space(1)->dofmap);
+  assert(a.function_space(1)->dofmap());
   const fem::DofMap& dofmap0 = *a.function_space(0)->dofmap();
   const fem::DofMap& dofmap1 = *a.function_space(1)->dofmap();
 
@@ -58,7 +58,7 @@ void _lift_bc_cells(
     coefficients_ptr[i] = coefficients.get(i).get();
     n.push_back(
         n.back()
-        + coefficients_ptr[i]->function_space()->element->space_dimension());
+        + coefficients_ptr[i]->function_space()->element()->space_dimension());
   }
   Eigen::Array<PetscScalar, Eigen::Dynamic, 1> coeff_array(n.back());
 
@@ -188,9 +188,9 @@ void _lift_bc_exterior_facets(
 
   // Get dofmap for columns and rows of a
   assert(a.function_space(0));
-  assert(a.function_space(0)->dofmap);
+  assert(a.function_space(0)->dofmap());
   assert(a.function_space(1));
-  assert(a.function_space(1)->dofmap);
+  assert(a.function_space(1)->dofmap());
   const fem::DofMap& dofmap0 = *a.function_space(0)->dofmap();
   const fem::DofMap& dofmap1 = *a.function_space(1)->dofmap();
 
@@ -204,7 +204,7 @@ void _lift_bc_exterior_facets(
     coefficients_ptr[i] = coefficients.get(i).get();
     n.push_back(
         n.back()
-        + coefficients_ptr[i]->function_space()->element->space_dimension());
+        + coefficients_ptr[i]->function_space()->element()->space_dimension());
   }
   Eigen::Array<PetscScalar, Eigen::Dynamic, 1> coeff_array(n.back());
 

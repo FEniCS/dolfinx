@@ -104,8 +104,7 @@ void remap_meshfunction_data(mesh::MeshFunction<T>& meshfunction,
   const std::size_t rank = dolfin::MPI::rank(comm);
   const std::vector<std::int64_t>& global_indices
       = mesh->topology().global_indices(0);
-  for (auto& cell : mesh::MeshRange(*mesh, cell_dim,
-                                                      mesh::MeshRangeType::ALL))
+  for (auto& cell : mesh::MeshRange(*mesh, cell_dim, mesh::MeshRangeType::ALL))
   {
     std::vector<std::int64_t> cell_topology;
     if (cell_dim == 0)
@@ -462,8 +461,7 @@ xdmf_write::compute_nonlocal_entities(const mesh::Mesh& mesh, int cell_dim)
     const std::vector<std::int32_t>& cell_owners = topology.cell_owner();
     const std::int32_t ghost_offset_c = topology.ghost_offset(tdim);
     const std::int32_t ghost_offset_e = topology.ghost_offset(cell_dim);
-    for (auto& c : mesh::MeshRange(
-             mesh, tdim, mesh::MeshRangeType::GHOST))
+    for (auto& c : mesh::MeshRange(mesh, tdim, mesh::MeshRangeType::GHOST))
     {
       assert(c.index() >= ghost_offset_c);
       const int cell_owner = cell_owners[c.index() - ghost_offset_c];
@@ -747,8 +745,10 @@ void xdmf_write::add_function(MPI_Comm mpi_comm, pugi::xml_node& xml_node,
 
   // Add offset to CSR index to be seamless in parallel
   std::size_t offset = MPI::global_offset(mpi_comm, cell_dofs.size(), true);
-  std::transform(x_cell_dofs.begin(), x_cell_dofs.end(), x_cell_dofs.begin(),
-                 std::bind2nd(std::plus<std::size_t>(), offset));
+  std::for_each(x_cell_dofs.begin(), x_cell_dofs.end(),
+                [offset](std::size_t& d) { d += offset; });
+  // std::transform(x_cell_dofs.begin(), x_cell_dofs.end(), x_cell_dofs.begin(),
+  //                std::bind2nd(std::plus<std::size_t>(), offset));
 
   const std::int64_t num_cell_dofs_global
       = MPI::sum(mpi_comm, cell_dofs.size());
