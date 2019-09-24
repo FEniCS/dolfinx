@@ -1,4 +1,3 @@
-// Copyright (C) 2013 Anders Logg
 //
 // This file is part of DOLFIN (https://www.fenicsproject.org)
 //
@@ -35,7 +34,7 @@ compute_bbox_of_entity(const mesh::MeshEntity& entity)
   // Get mesh entity data
   const mesh::Geometry& geometry = entity.mesh().geometry();
   const mesh::CellType entity_type
-      = mesh::cell_entity_type(entity.mesh().cell_type, entity.dim());
+      = mesh::cell_entity_type(entity.mesh().cell_type(), entity.dim());
   const int num_vertices = mesh::cell_num_entities(entity_type, 0);
   const std::int32_t* vertices = entity.entities(0);
   assert(num_vertices >= 2);
@@ -77,7 +76,7 @@ std::pair<int, double> _compute_closest_entity(const BoundingBoxTree& tree,
     // If box is leaf (which we know is inside radius), then shrink radius
 
     // Get entity (child_1 denotes entity index for leaves)
-    assert(tree.tdim == mesh.topology().dim());
+    assert(tree.tdim() == mesh.topology().dim());
     const int entity_index = bbox[1];
     mesh::MeshEntity cell(mesh, mesh.topology().dim(), entity_index);
 
@@ -232,12 +231,12 @@ compute_bbox_of_bboxes(const std::vector<double>& leaf_bboxes,
 BoundingBoxTree::BoundingBoxTree(const std::vector<double>& leaf_bboxes,
                                  const std::vector<int>::iterator& begin,
                                  const std::vector<int>::iterator& end)
-    : tdim(0)
+    : _tdim(0)
 {
   _build_from_leaf(leaf_bboxes, begin, end);
 }
 //-----------------------------------------------------------------------------
-BoundingBoxTree::BoundingBoxTree(const mesh::Mesh& mesh, int tdim) : tdim(tdim)
+BoundingBoxTree::BoundingBoxTree(const mesh::Mesh& mesh, int tdim) : _tdim(tdim)
 {
   // Check dimension
   if (tdim < 1 or tdim > mesh.topology().dim())
@@ -286,7 +285,7 @@ BoundingBoxTree::BoundingBoxTree(const mesh::Mesh& mesh, int tdim) : tdim(tdim)
 }
 //-----------------------------------------------------------------------------
 BoundingBoxTree::BoundingBoxTree(const std::vector<Eigen::Vector3d>& points)
-    : tdim(0)
+    : _tdim(0)
 {
   // Create leaf partition (to be sorted)
   const int num_leaves = points.size();
@@ -305,7 +304,7 @@ BoundingBoxTree::compute_closest_entity(const Eigen::Vector3d& point,
                                         const mesh::Mesh& mesh) const
 {
   // Closest entity only implemented for cells. Consider extending this.
-  if (this->tdim != mesh.topology().dim())
+  if (this->_tdim != mesh.topology().dim())
   {
     throw std::runtime_error("Cannot compute closest entity of point. "
                              "Closest-entity is only implemented for cells");
@@ -339,7 +338,7 @@ std::pair<int, double>
 BoundingBoxTree::compute_closest_point(const Eigen::Vector3d& point) const
 {
   // Closest point only implemented for point cloud
-  if (this->tdim != 0)
+  if (this->_tdim != 0)
   {
     throw std::runtime_error("Cannot compute closest point. "
                              "Search tree has not been built for point cloud");
@@ -485,6 +484,8 @@ std::string BoundingBoxTree::str(bool verbose)
   tree_print(s, _bboxes.size() - 1);
   return s.str();
 }
+//-----------------------------------------------------------------------------
+int BoundingBoxTree::tdim() const { return _tdim; }
 //-----------------------------------------------------------------------------
 void BoundingBoxTree::tree_print(std::stringstream& s, int i)
 {

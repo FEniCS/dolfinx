@@ -39,8 +39,8 @@ la::PETScVector create_vector(const function::FunctionSpace& V)
   common::Timer timer("Init dof vector");
 
   // Get dof map
-  assert(V.dofmap);
-  const fem::DofMap& dofmap = *(V.dofmap);
+  assert(V.dofmap());
+  const fem::DofMap& dofmap = *(V.dofmap());
 
   // Check that function space is not a subspace (view)
   assert(dofmap.element_dof_layout);
@@ -63,7 +63,7 @@ la::PETScVector create_vector(const function::FunctionSpace& V)
 
 //-----------------------------------------------------------------------------
 Function::Function(std::shared_ptr<const FunctionSpace> V)
-    : id(common::UniqueIdGenerator::id()), _function_space(V),
+    : _id(common::UniqueIdGenerator::id()), _function_space(V),
       _vector(create_vector(*V))
 {
   // Check that we don't have a subspace
@@ -75,14 +75,15 @@ Function::Function(std::shared_ptr<const FunctionSpace> V)
 }
 //-----------------------------------------------------------------------------
 Function::Function(std::shared_ptr<const FunctionSpace> V, Vec x)
-    : id(common::UniqueIdGenerator::id()), _function_space(V), _vector(x)
+    : _id(common::UniqueIdGenerator::id()), _function_space(V), _vector(x)
 {
   // We do not check for a subspace since this constructor is used for
   // creating subfunctions
 
   // Assertion uses '<=' to deal with sub-functions
-  assert(V->dofmap);
-  assert(V->dofmap->index_map->size_global() * V->dofmap->index_map->block_size
+  assert(V->dofmap());
+  assert(V->dofmap()->index_map->size_global()
+             * V->dofmap()->index_map->block_size
          <= _vector.size());
 }
 //-----------------------------------------------------------------------------
@@ -133,11 +134,11 @@ std::shared_ptr<const FunctionSpace> Function::function_space() const
 la::PETScVector& Function::vector()
 {
   // Check that this is not a sub function.
-  assert(_function_space->dofmap);
-  assert(_function_space->dofmap->index_map);
+  assert(_function_space->dofmap());
+  assert(_function_space->dofmap()->index_map);
   if (_vector.size()
-      != _function_space->dofmap->index_map->size_global()
-             * _function_space->dofmap->index_map->block_size)
+      != _function_space->dofmap()->index_map->size_global()
+             * _function_space->dofmap()->index_map->block_size)
   {
     throw std::runtime_error(
         "Cannot access a non-const vector from a subfunction");
@@ -158,8 +159,8 @@ void Function::eval(
         u) const
 {
   assert(_function_space);
-  assert(_function_space->mesh);
-  const mesh::Mesh& mesh = *_function_space->mesh;
+  assert(_function_space->mesh());
+  const mesh::Mesh& mesh = *_function_space->mesh();
   const int tdim = mesh.topology().dim();
 
   // Find the cell that contains x
@@ -171,17 +172,17 @@ void Function::eval(
     point.head(gdim) = x.row(i);
 
     // Get index of first cell containing point
-    int id = geometry::compute_first_entity_collision(bb_tree, point, mesh);
+    int index = geometry::compute_first_entity_collision(bb_tree, point, mesh);
 
     // If not found, use the closest cell
-    if (id < 0)
+    if (index < 0)
     {
       // Check if the closest cell is within 2*DBL_EPSILON. This we can
       // allow without _allow_extrapolation
       std::pair<int, double> close
           = bb_tree.compute_closest_entity(point, mesh);
       if (close.second < 2.0 * DBL_EPSILON)
-        id = close.first;
+        index = close.first;
       else
       {
         throw std::runtime_error("Cannot evaluate function at point. The point "
@@ -190,7 +191,7 @@ void Function::eval(
     }
 
     // Create cell that contains point
-    const mesh::MeshEntity cell(mesh, tdim, id);
+    const mesh::MeshEntity cell(mesh, tdim, index);
 
     // Call evaluate function
     eval(x.row(i), cell, u.row(i));
@@ -210,8 +211,8 @@ void Function::eval(
   // number of points for efficiency
 
   assert(_function_space);
-  assert(_function_space->mesh);
-  const mesh::Mesh& mesh = *_function_space->mesh;
+  assert(_function_space->mesh());
+  const mesh::Mesh& mesh = *_function_space->mesh();
   if (cell.mesh().id() != mesh.id())
   {
     throw std::runtime_error(
@@ -223,8 +224,8 @@ void Function::eval(
   assert(cell.dim() == tdim);
 
   assert(x.rows() == u.rows());
-  assert(_function_space->element);
-  const fem::FiniteElement& element = *_function_space->element;
+  assert(_function_space->element());
+  const fem::FiniteElement& element = *_function_space->element();
 
   // Create work vector for expansion coefficients
   Eigen::Matrix<PetscScalar, 1, Eigen::Dynamic> coefficients(
@@ -317,8 +318,8 @@ void Function::interpolate(const FunctionSpace::interpolation_function& f)
 int Function::value_rank() const
 {
   assert(_function_space);
-  assert(_function_space->element);
-  return _function_space->element->value_rank();
+  assert(_function_space->element());
+  return _function_space->element()->value_rank();
 }
 //-----------------------------------------------------------------------------
 int Function::value_size() const
@@ -332,14 +333,12 @@ int Function::value_size() const
 int Function::value_dimension(int i) const
 {
   assert(_function_space);
-  assert(_function_space->element);
-  return _function_space->element->value_dimension(i);
+  assert(_function_space->element());
+  return _function_space->element()->value_dimension(i);
 }
 //-----------------------------------------------------------------------------
 std::vector<int> Function::value_shape() const
 {
-  assert(_function_space);
-  assert(_function_space->element);
   std::vector<int> _shape(this->value_rank(), 1);
   for (std::size_t i = 0; i < _shape.size(); ++i)
     _shape[i] = this->value_dimension(i);
@@ -353,12 +352,12 @@ void Function::restrict(
 {
   assert(w);
   assert(_function_space);
-  assert(_function_space->dofmap);
-  assert(_function_space->mesh);
-  assert(_function_space->mesh->topology().dim() == cell.dim());
+  assert(_function_space->dofmap());
+  assert(_function_space->mesh());
+  assert(_function_space->mesh()->topology().dim() == cell.dim());
 
   // Get dofmap for cell
-  const fem::DofMap& dofmap = *_function_space->dofmap;
+  const fem::DofMap& dofmap = *_function_space->dofmap();
   auto dofs = dofmap.cell_dofs(cell.index());
 
   // Pick values from vector(s)
@@ -372,8 +371,8 @@ Eigen::Array<PetscScalar, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
 Function::compute_point_values() const
 {
   assert(_function_space);
-  assert(_function_space->mesh);
-  const mesh::Mesh& mesh = *_function_space->mesh;
+  assert(_function_space->mesh());
+  const mesh::Mesh& mesh = *_function_space->mesh();
 
   const int tdim = mesh.topology().dim();
 
@@ -425,4 +424,6 @@ Function::compute_point_values() const
 
   return point_values;
 }
+//-----------------------------------------------------------------------------
+std::size_t Function::id() const { return _id; }
 //-----------------------------------------------------------------------------

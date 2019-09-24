@@ -64,12 +64,12 @@ tabulate_coordinates_to_dofs(const function::FunctionSpace& V)
       coords_to_dofs(lt_coordinate(1.0e-12));
 
   // Extract mesh, dofmap and element
-  assert(V.dofmap);
-  assert(V.element);
-  assert(V.mesh);
-  const fem::DofMap& dofmap = *V.dofmap;
-  const fem::FiniteElement& element = *V.element;
-  const mesh::Mesh& mesh = *V.mesh;
+  assert(V.dofmap());
+  assert(V.element());
+  assert(V.mesh());
+  const fem::DofMap& dofmap = *V.dofmap();
+  const fem::FiniteElement& element = *V.element();
+  const mesh::Mesh& mesh = *V.mesh();
   Eigen::Array<std::int64_t, Eigen::Dynamic, 1> local_to_global
       = dofmap.index_map->indices(true);
 
@@ -164,8 +164,8 @@ PETScDMCollection::PETScDMCollection(
     assert(_spaces[i].get());
 
     // Get MPI communicator from mesh::Mesh
-    assert(_spaces[i]->mesh);
-    MPI_Comm comm = _spaces[i]->mesh->mpi_comm();
+    assert(_spaces[i]->mesh());
+    MPI_Comm comm = _spaces[i]->mesh()->mpi_comm();
 
     // Create DM
     DMShellCreate(comm, &_dms[i]);
@@ -236,8 +236,8 @@ la::PETScMatrix PETScDMCollection::create_transfer_matrix(
   // FIXME: refactor and split up
 
   // Get coarse mesh and dimension of the domain
-  assert(coarse_space.mesh);
-  const mesh::Mesh& meshc = *coarse_space.mesh;
+  assert(coarse_space.mesh());
+  const mesh::Mesh& meshc = *coarse_space.mesh();
   const int gdim = meshc.geometry().dim();
   const int tdim = meshc.topology().dim();
 
@@ -247,8 +247,8 @@ la::PETScMatrix PETScDMCollection::create_transfer_matrix(
 
   // Initialise bounding box tree and dofmaps
   geometry::BoundingBoxTree treec(meshc, meshc.topology().dim());
-  std::shared_ptr<const fem::DofMap> coarsemap = coarse_space.dofmap;
-  std::shared_ptr<const fem::DofMap> finemap = fine_space.dofmap;
+  std::shared_ptr<const fem::DofMap> coarsemap = coarse_space.dofmap();
+  std::shared_ptr<const fem::DofMap> finemap = fine_space.dofmap();
 
   // Create map from coordinates to dofs sharing that coordinate
   std::map<std::vector<double>, std::vector<std::int64_t>, lt_coordinate>
@@ -270,11 +270,12 @@ la::PETScMatrix PETScDMCollection::create_transfer_matrix(
 
   // Get finite element for the coarse space. This will be needed to
   // evaluate the basis functions for each cell.
-  std::shared_ptr<const fem::FiniteElement> el = coarse_space.element;
+  std::shared_ptr<const fem::FiniteElement> el = coarse_space.element();
 
   // Check that it is the same kind of element on each space.
   {
-    std::shared_ptr<const fem::FiniteElement> elf = fine_space.element;
+    std::shared_ptr<const fem::FiniteElement> elf = fine_space.element();
+    assert(elf);
     // Check that function ranks match
     if (el->value_rank() != elf->value_rank())
     {

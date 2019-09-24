@@ -121,7 +121,7 @@ public:
   /// @param n Number of data items per index
   /// @return Remote data
   std::vector<std::int64_t>
-    scatter_fwd(const std::vector<std::int64_t>& local_data, int n) const;
+  scatter_fwd(const std::vector<std::int64_t>& local_data, int n) const;
 
   /// Send n values for each index that is owned to processes that have
   /// the index as a ghost. The size of the input array local_data must
@@ -130,7 +130,7 @@ public:
   /// @param n Number of data items per index
   /// @return Remote data
   std::vector<std::int32_t>
-    scatter_fwd(const std::vector<std::int32_t>& local_data, int n) const;
+  scatter_fwd(const std::vector<std::int32_t>& local_data, int n) const;
 
   /// Send n values for each ghost index to owning to processes. The size
   /// of the input array remote_data must be the same as num_ghosts().

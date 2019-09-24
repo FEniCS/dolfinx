@@ -43,8 +43,11 @@ public:
     /// Move constructor
     Comm(Comm&& comm);
 
-    /// Disable assignment operator
+    // Disable assignment operator
     Comm& operator=(const Comm& comm) = delete;
+
+    /// Move assignment operator
+    Comm& operator=(Comm&& comm) = default;
 
     /// Destructor (frees wrapped communicator)
     ~Comm();

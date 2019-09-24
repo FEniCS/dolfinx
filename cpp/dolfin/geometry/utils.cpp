@@ -133,7 +133,7 @@ int _compute_first_entity_collision(const geometry::BoundingBoxTree& tree,
     // If box is a leaf (which we know contains the point), then check entity
 
     // Get entity (child_1 denotes entity index for leaves)
-    assert(tree.tdim == mesh.topology().dim());
+    assert(tree.tdim() == mesh.topology().dim());
     const int entity_index = bbox[1];
     mesh::MeshEntity cell(mesh, mesh.topology().dim(), entity_index);
 
@@ -294,7 +294,7 @@ geometry::compute_entity_collisions(const BoundingBoxTree& tree,
                                     const mesh::Mesh& mesh)
 {
   // Point in entity only implemented for cells. Consider extending.
-  if (tree.tdim != mesh.topology().dim())
+  if (tree.tdim() != mesh.topology().dim())
   {
     throw std::runtime_error(
         "Cannot compute collision between point and mesh entities. "
@@ -318,7 +318,7 @@ int geometry::compute_first_entity_collision(const BoundingBoxTree& tree,
                                              const mesh::Mesh& mesh)
 {
   // Point in entity only implemented for cells. Consider extending this.
-  if (tree.tdim != mesh.topology().dim())
+  if (tree.tdim() != mesh.topology().dim())
   {
     throw std::runtime_error(
         "Cannot compute collision between point and mesh entities. "
@@ -347,7 +347,7 @@ geometry::compute_process_collisions(const geometry::BoundingBoxTree& tree,
 double geometry::squared_distance(const mesh::MeshEntity& entity,
                                   const Eigen::Vector3d& p)
 {
-  const mesh::CellType type = entity.mesh().cell_type;
+  const mesh::CellType type = entity.mesh().cell_type();
   const mesh::Geometry& geometry = entity.mesh().geometry();
   switch (type)
   {

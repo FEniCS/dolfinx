@@ -47,11 +47,12 @@ public:
   BoundingBoxTree(BoundingBoxTree&& tree) = default;
 
   /// Copy constructor
-  BoundingBoxTree(const BoundingBoxTree& tree) = default;
+  BoundingBoxTree(const BoundingBoxTree& tree) = delete;
 
   /// Move assignment
   BoundingBoxTree& operator=(BoundingBoxTree&& other) = default;
 
+  /// Destructor
   ~BoundingBoxTree() = default;
 
   /// Compute closest entity and distance to Point
@@ -97,10 +98,13 @@ public:
     return _bboxes[node];
   }
 
-  /// Topological dimension of leaf entities
-  const int tdim;
+  // Topological dimension of leaf entities
+  int tdim() const;
 
 private:
+  // Topological dimension of leaf entities
+  int _tdim;
+
   //--- Recursive build functions ---
 
   // Build bounding box tree for entities (recursive)
