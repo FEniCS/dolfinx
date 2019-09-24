@@ -666,3 +666,20 @@ fem::get_cmap_from_ufc_cmap(const ufc_coordinate_mapping& ufc_cmap)
       ufc_cmap.compute_reference_geometry);
 }
 //-----------------------------------------------------------------------------
+std::shared_ptr<function::FunctionSpace>
+fem::create_functionspace(ufc_function_space* (*fptr)(void),
+                          std::shared_ptr<mesh::Mesh> mesh)
+{
+  ufc_function_space* space = fptr();
+  ufc_dofmap* ufc_map = space->create_dofmap();
+  ufc_finite_element* ufc_element = space->create_element();
+  std::shared_ptr<function::FunctionSpace> V
+      = std::make_shared<function::FunctionSpace>(
+          mesh, std::make_shared<fem::FiniteElement>(*ufc_element),
+          std::make_shared<fem::DofMap>(fem::create_dofmap(*ufc_map, *mesh)));
+  std::free(ufc_element);
+  std::free(ufc_map);
+  std::free(space);
+  return V;
+}
+//-----------------------------------------------------------------------------
