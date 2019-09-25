@@ -101,19 +101,30 @@ double Table::get_value(std::string row, std::string col) const
 //-----------------------------------------------------------------------------
 Table Table::reduce(MPI_Comm comm, Table::Reduction reduction)
 {
-  MPI_Op op = MPI_OP_NULL;
   std::string new_title;
+
+  // Prepare reduction operation y := op(y, x)
+  void (*op_impl)(double&, const double&) = nullptr;
   switch (reduction)
   {
   case Table::Reduction::average:
-    op = MPI_SUM;
     new_title = "[MPI_AVG] ";
-  case Table::Reduction::max:
-    op = MPI_MAX;
-    new_title = "[MPI_MAX] ";
+    op_impl = [](double& y, const double& x) { y += x; };
   case Table::Reduction::min:
-    op = MPI_MIN;
     new_title = "[MPI_MIN] ";
+    op_impl = [](double& y, const double& x) {
+      if (x < y)
+        y = x;
+    };
+  case Table::Reduction::max:
+    new_title = "[MPI_MAX] ";
+    op_impl = [](double& y, const double& x) {
+      if (x > y)
+        y = x;
+    };
+  default:
+    throw std::runtime_error("Cannot perform reduction of Table. Requested "
+                             "reduction not implemented");
   }
   new_title += name;
 
@@ -146,26 +157,6 @@ Table Table::reduce(MPI_Comm comm, Table::Reduction reduction)
   if (MPI::rank(comm) > 0)
     return Table(new_title);
 
-  // Prepare reduction operation y := op(y, x)
-  void (*op_impl)(double&, const double&) = NULL;
-  if (op == MPI_SUM)
-    op_impl = [](double& y, const double& x) { y += x; };
-  else if (op == MPI_MIN)
-    op_impl = [](double& y, const double& x) {
-      if (x < y)
-        y = x;
-    };
-  else if (op == MPI_MAX)
-    op_impl = [](double& y, const double& x) {
-      if (x > y)
-        y = x;
-    };
-  else
-  {
-    throw std::runtime_error("Cannot perform reduction of Table. Requested "
-                             "MPI_Op not implemented");
-  }
-
   // Construct dvalues map from obtained data
   std::map<std::array<std::string, 2>, double> dvalues_all;
   std::map<std::array<std::string, 2>, double>::iterator it;
@@ -189,7 +180,7 @@ Table Table::reduce(MPI_Comm comm, Table::Reduction reduction)
   assert(values_ptr == values_all.data() + values_all.size());
 
   // Weight by MPI size when averaging
-  if (op == MPI_SUM)
+  if (reduction == Table::Reduction::average)
   {
     const double w = 1.0 / static_cast<double>(MPI::size(comm));
     for (auto& it : dvalues_all)
