@@ -140,22 +140,6 @@ std::pair<int, double> _compute_closest_point(const BoundingBoxTree& tree,
 //-----------------------------------------------------------------------------
 
 //-----------------------------------------------------------------------------
-// Sort points along given axis
-void sort_points(int axis, const std::vector<Eigen::Vector3d>& points,
-                 const std::vector<int>::iterator& begin,
-                 const std::vector<int>::iterator& middle,
-                 const std::vector<int>::iterator& end)
-{
-  // Comparison lambda function with capture
-  auto cmp = [&points, &axis](int i, int j) -> bool {
-    const double* pi = points[i].data();
-    const double* pj = points[j].data();
-    return pi[axis] < pj[axis];
-  };
-
-  std::nth_element(begin, middle, end, cmp);
-}
-//-----------------------------------------------------------------------------
 // Compute bounding box of points
 Eigen::Array<double, 2, 3, Eigen::RowMajor>
 compute_bbox_of_points(const std::vector<Eigen::Vector3d>& points,
@@ -374,12 +358,11 @@ int BoundingBoxTree::_build_from_leaf(const std::vector<double>& leaf_bboxes,
     // Compute bounding box of all bounding boxes
     Eigen::Array<double, 2, 3, Eigen::RowMajor> b
         = compute_bbox_of_bboxes(leaf_bboxes, begin, end);
-    Eigen::Array<double, 2, 3, Eigen::RowMajor>::Index axis;
-    (b.row(1) - b.row(0)).maxCoeff(&axis);
 
     // Sort bounding boxes along longest axis
+    Eigen::Array<double, 2, 3, Eigen::RowMajor>::Index axis;
+    (b.row(1) - b.row(0)).maxCoeff(&axis);
     std::vector<int>::iterator middle = begin + (end - begin) / 2;
-    // sort_bboxes(axis, leaf_bboxes, begin, middle, end);
     std::nth_element(begin, middle, end,
                      [&leaf_bboxes, axis](int i, int j) -> bool {
                        const double* bi = leaf_bboxes.data() + 6 * i + axis;
@@ -420,12 +403,16 @@ int BoundingBoxTree::_build_from_point(
   // Compute bounding box of all points
   Eigen::Array<double, 2, 3, Eigen::RowMajor> b
       = compute_bbox_of_points(points, begin, end);
-  Eigen::Array<double, 2, 3, Eigen::RowMajor>::Index axis;
-  (b.row(1) - b.row(0)).maxCoeff(&axis);
 
   // Sort bounding boxes along longest axis
   std::vector<int>::iterator middle = begin + (end - begin) / 2;
-  sort_points(axis, points, begin, middle, end);
+  Eigen::Array<double, 2, 3, Eigen::RowMajor>::Index axis;
+  (b.row(1) - b.row(0)).maxCoeff(&axis);
+  std::nth_element(begin, middle, end, [&points, &axis](int i, int j) -> bool {
+    const double* pi = points[i].data();
+    const double* pj = points[j].data();
+    return pi[axis] < pj[axis];
+  });
 
   // Split bounding boxes into two groups and call recursively
   bbox[0] = _build_from_point(points, begin, middle);
