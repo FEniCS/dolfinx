@@ -24,7 +24,7 @@ void test_distributed_mesh()
   PetscInitialize(&argc, &argv, nullptr, nullptr);
 
   auto mpi_comm = dolfin::MPI::Comm(MPI_COMM_WORLD);
-  int mpi_size = mpi_comm.size();
+  int mpi_size = dolfin::MPI::size(mpi_comm.comm());
 
   // Create sub-communicator
   int subset_size = (mpi_size > 1) ? ceil(mpi_size / 2) : 1;

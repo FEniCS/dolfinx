@@ -118,7 +118,7 @@ dolfin::nls::NewtonSolver::solve(NonlinearProblem& nonlinear_problem, Vec x)
 
   if (newton_converged)
   {
-    if (_mpi_comm.rank() == 0)
+    if (MPI::rank(_mpi_comm.comm()) == 0)
     {
       LOG(INFO) << "Newton solver finished in " << newton_iteration
                 << " iterations and " << _krylov_iterations
@@ -165,7 +165,7 @@ bool nls::NewtonSolver::converged(const Vec r,
   const double relative_residual = _residual / _residual0;
 
   // Output iteration number and residual
-  if (report && _mpi_comm.rank() == 0)
+  if (report && MPI::rank(_mpi_comm.comm()) == 0)
   {
     LOG(INFO) << "Newton iteration " << newton_iteration
               << ": r (abs) = " << _residual << " (tol = " << atol
