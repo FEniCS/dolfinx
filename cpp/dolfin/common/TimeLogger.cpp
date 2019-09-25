@@ -50,7 +50,7 @@ void TimeLogger::list_timings(std::set<TimingType> type)
 {
   // Format and reduce to rank 0
   Table timings = this->timings(type);
-  timings = MPI::avg(_mpi_comm, timings);
+  timings = timings.reduce(_mpi_comm, Table::Reduction::average);
   const std::string str = "\n" + timings.str(true);
 
   // Print just on rank 0

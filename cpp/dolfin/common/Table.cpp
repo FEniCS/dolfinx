@@ -99,6 +99,111 @@ double Table::get_value(std::string row, std::string col) const
   return it->second;
 }
 //-----------------------------------------------------------------------------
+Table Table::reduce(MPI_Comm comm, Table::Reduction reduction)
+{
+  MPI_Op op = MPI_OP_NULL;
+  std::string new_title;
+  switch (reduction)
+  {
+  case Table::Reduction::average:
+    op = MPI_SUM;
+    new_title = "[MPI_AVG] ";
+  case Table::Reduction::max:
+    op = MPI_MAX;
+    new_title = "[MPI_MAX] ";
+  case Table::Reduction::min:
+    op = MPI_MIN;
+    new_title = "[MPI_MIN] ";
+  }
+  new_title += name;
+
+  // Handle trivial reduction
+  if (MPI::size(comm) == 1)
+  {
+    Table table_all(*this);
+    table_all.name = new_title;
+    return table_all;
+  }
+
+  // Get keys, values into containers
+  std::string keys;
+  std::vector<double> values;
+  keys.reserve(128 * dvalues.size());
+  values.reserve(dvalues.size());
+  for (const auto& it : dvalues)
+  {
+    keys += it.first.first + '\0' + it.first.second + '\0';
+    values.push_back(it.second);
+  }
+
+  // Gather to rank zero
+  std::vector<std::string> keys_all;
+  std::vector<double> values_all;
+  MPI::gather(comm, keys, keys_all, 0);
+  MPI::gather(comm, values, values_all, 0);
+
+  // Return empty table on rank > 0
+  if (MPI::rank(comm) > 0)
+    return Table(new_title);
+
+  // Prepare reduction operation y := op(y, x)
+  void (*op_impl)(double&, const double&) = NULL;
+  if (op == MPI_SUM)
+    op_impl = [](double& y, const double& x) { y += x; };
+  else if (op == MPI_MIN)
+    op_impl = [](double& y, const double& x) {
+      if (x < y)
+        y = x;
+    };
+  else if (op == MPI_MAX)
+    op_impl = [](double& y, const double& x) {
+      if (x > y)
+        y = x;
+    };
+  else
+  {
+    throw std::runtime_error("Cannot perform reduction of Table. Requested "
+                             "MPI_Op not implemented");
+  }
+
+  // Construct dvalues map from obtained data
+  std::map<std::array<std::string, 2>, double> dvalues_all;
+  std::map<std::array<std::string, 2>, double>::iterator it;
+  std::array<std::string, 2> key;
+  key[0].reserve(128);
+  key[1].reserve(128);
+  double* values_ptr = values_all.data();
+  for (std::size_t i = 0; i < MPI::size(comm); ++i)
+  {
+    std::stringstream keys_stream(keys_all[i]);
+    while (std::getline(keys_stream, key[0], '\0'),
+           std::getline(keys_stream, key[1], '\0'))
+    {
+      it = dvalues_all.find(key);
+      if (it != dvalues_all.end())
+        op_impl(it->second, *(values_ptr++));
+      else
+        dvalues_all[key] = *(values_ptr++);
+    }
+  }
+  assert(values_ptr == values_all.data() + values_all.size());
+
+  // Weight by MPI size when averaging
+  if (op == MPI_SUM)
+  {
+    const double w = 1.0 / static_cast<double>(MPI::size(comm));
+    for (auto& it : dvalues_all)
+      it.second *= w;
+  }
+
+  // Construct table to return
+  Table table_all(new_title);
+  for (const auto& it : dvalues_all)
+    table_all(it.first[0], it.first[1]) = it.second;
+
+  return table_all;
+}
+//-----------------------------------------------------------------------------
 std::string Table::str(bool verbose) const
 {
   std::stringstream s;
