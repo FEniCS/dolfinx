@@ -130,7 +130,7 @@ void common(py::module& m)
                   &dolfin::common::SubSystemsManager::mpi_initialized)
       .def_static("mpi_finalized",
                   &dolfin::common::SubSystemsManager::mpi_finalized);
-} // namespace dolfin_wrappers
+}
 
 // Interface for MPI
 void mpi(py::module& m)
@@ -216,6 +216,5 @@ void mpi(py::module& m)
                   [](const MPICommWrapper comm, std::complex<double> value) {
                     return dolfin::MPI::sum(comm.get(), value);
                   });
-
-} // namespace dolfin_wrappers
+}
 } // namespace dolfin_wrappers
