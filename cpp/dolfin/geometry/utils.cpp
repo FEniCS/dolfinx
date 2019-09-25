@@ -85,6 +85,43 @@ _compute_closest_entity(const geometry::BoundingBoxTree& tree,
   }
 }
 //-----------------------------------------------------------------------------
+// Compute closest point {closest_point, R2} (recursive)
+std::pair<int, double>
+_compute_closest_point(const geometry::BoundingBoxTree& tree,
+                       const Eigen::Vector3d& point, int node,
+                       int closest_point, double R2)
+{
+  // Get bounding box for current node
+  const geometry::BoundingBoxTree::BBox bbox = tree.bbox(node);
+
+  // If box is leaf, then compute distance and shrink radius
+  if (is_leaf(bbox, node))
+  {
+    const double r2 = tree.compute_squared_distance_point(point, node);
+    if (r2 < R2)
+    {
+      closest_point = bbox[1];
+      R2 = r2;
+    }
+
+    return {closest_point, R2};
+  }
+  else
+  {
+    // If bounding box is outside radius, then don't search further
+    const double r2 = tree.compute_squared_distance_bbox(point, node);
+    if (r2 > R2)
+      return {closest_point, R2};
+
+    // Check both children
+    std::pair<int, double> p0
+        = _compute_closest_point(tree, point, bbox[0], closest_point, R2);
+    std::pair<int, double> p1
+        = _compute_closest_point(tree, point, bbox[1], p0.first, p0.second);
+    return p1;
+  }
+}
+//-----------------------------------------------------------------------------
 // Compute collisions with point (recursive)
 void _compute_collisions_point(const geometry::BoundingBoxTree& tree,
                                const Eigen::Vector3d& p, int node,
@@ -94,7 +131,7 @@ void _compute_collisions_point(const geometry::BoundingBoxTree& tree,
   // Get bounding box for current node
   const geometry::BoundingBoxTree::BBox bbox = tree.bbox(node);
 
-  if (!tree.point_in_bbox(p, node))
+  if (!geometry::point_in_bbox(tree.get_bbox(node), p))
   {
     // If point is not in bounding box, then don't search further
     return;
@@ -135,7 +172,7 @@ int _compute_first_collision(const geometry::BoundingBoxTree& tree,
   // Get bounding box for current node
   const geometry::BoundingBoxTree::BBox bbox = tree.bbox(node);
 
-  if (!tree.point_in_bbox(p, node))
+  if (!geometry::point_in_bbox(tree.get_bbox(node), p))
   {
     // If point is not in bounding box, then don't search further
     return -1;
@@ -171,7 +208,7 @@ int _compute_first_entity_collision(const geometry::BoundingBoxTree& tree,
   const geometry::BoundingBoxTree::BBox bbox = tree.bbox(node);
 
   // If point is not in bounding box, then don't search further
-  if (!tree.point_in_bbox(p, node))
+  if (!geometry::point_in_bbox(tree.get_bbox(node), p))
   {
     // If point is not in bounding box, then don't search further
     return -1;
@@ -405,7 +442,7 @@ geometry::compute_process_collisions(const geometry::BoundingBoxTree& tree,
   else
   {
     std::vector<int> collision;
-    if (tree.point_in_bbox(p, tree.num_bboxes() - 1))
+    if (point_in_bbox(tree.get_bbox(tree.num_bboxes() - 1), p))
       collision.push_back(0);
     return collision;
   }
@@ -432,7 +469,7 @@ std::pair<int, double> geometry::compute_closest_entity(
   }
 
   // Search point cloud to get a good starting guess
-  std::pair<int, double> guess = tree_midpoint.compute_closest_point(p);
+  std::pair<int, double> guess = compute_closest_point(tree_midpoint, p);
   double r = guess.second;
 
   // Return if we have found the point
@@ -448,6 +485,39 @@ std::pair<int, double> geometry::compute_closest_entity(
 
   e.second = sqrt(e.second);
   return e;
+}
+//-----------------------------------------------------------------------------
+std::pair<int, double>
+geometry::compute_closest_point(const BoundingBoxTree& tree,
+                                const Eigen::Vector3d& p)
+{
+  // Closest point only implemented for point cloud
+  if (tree.tdim() != 0)
+  {
+    throw std::runtime_error("Cannot compute closest point. "
+                             "Search tree has not been built for point cloud");
+  }
+
+  // Note that we don't compute a point search tree here... That would
+  // be weird.
+
+  // Get initial guess by picking the distance to a "random" point
+  int closest_point = 0;
+  double R2 = tree.compute_squared_distance_point(p, closest_point);
+
+  // Call recursive find function
+  _compute_closest_point(tree, p, tree.num_bboxes() - 1, closest_point, R2);
+
+  return {closest_point, sqrt(R2)};
+}
+//-----------------------------------------------------------------------------
+bool geometry::point_in_bbox(
+    const Eigen::Array<double, 2, 3, Eigen::RowMajor>& b,
+    const Eigen::Vector3d& x, double rtol)
+{
+  auto eps0 = rtol * (b.row(1) - b.row(0));
+  return (x.transpose().array() >= (b.row(0) - eps0).array()).all()
+         and (x.transpose().array() <= (b.row(1) + eps0).array()).all();
 }
 //-----------------------------------------------------------------------------
 double geometry::squared_distance(const mesh::MeshEntity& entity,

@@ -22,6 +22,7 @@ namespace geometry
 {
 class BoundingBoxTree;
 
+/// Create a boundary box tree for cell midpoints
 BoundingBoxTree create_midpoint_tree(const mesh::Mesh& mesh);
 
 // FIXME: document properly
@@ -83,6 +84,15 @@ std::pair<int, double>
 compute_closest_entity(const BoundingBoxTree& tree,
                        const BoundingBoxTree& tree_midpoint,
                        const Eigen::Vector3d& p, const mesh::Mesh& mesh);
+
+/// Compute closest point and distance to point. The tree must have
+/// been initialised with topological dimension 0.
+std::pair<int, double> compute_closest_point(const BoundingBoxTree& tree,
+                                             const Eigen::Vector3d& p);
+
+/// Check whether point (x) is in bounding box
+bool point_in_bbox(const Eigen::Array<double, 2, 3, Eigen::RowMajor>& b,
+                   const Eigen::Vector3d& x, double rtol = 1e-14);
 
 /// Compute squared distance from a given point to the nearest point on
 /// a cell (only simplex cells are supported at this stage)

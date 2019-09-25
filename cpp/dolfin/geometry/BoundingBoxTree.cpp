@@ -20,13 +20,6 @@ using namespace dolfin::geometry;
 namespace
 {
 //-----------------------------------------------------------------------------
-// Check whether bounding box is a leaf node
-bool is_leaf(const BoundingBoxTree::BBox& bbox, int node)
-{
-  // Leaf nodes are marked by setting child_0 equal to the node itself
-  return bbox[0] == node;
-}
-//-----------------------------------------------------------------------------
 // Compute bounding box of mesh entity
 Eigen::Array<double, 2, 3, Eigen::RowMajor>
 compute_bbox_of_entity(const mesh::MeshEntity& entity)
@@ -53,43 +46,6 @@ compute_bbox_of_entity(const mesh::MeshEntity& entity)
   }
 
   return b;
-}
-//-----------------------------------------------------------------------------
-// Compute closest point {closest_point, R2} (recursive)
-std::pair<int, double> _compute_closest_point(const BoundingBoxTree& tree,
-                                              const Eigen::Vector3d& point,
-                                              int node, int closest_point,
-                                              double R2)
-{
-  // Get bounding box for current node
-  const BoundingBoxTree::BBox bbox = tree.bbox(node);
-
-  // If box is leaf, then compute distance and shrink radius
-  if (is_leaf(bbox, node))
-  {
-    const double r2 = tree.compute_squared_distance_point(point, node);
-    if (r2 < R2)
-    {
-      closest_point = bbox[1];
-      R2 = r2;
-    }
-
-    return {closest_point, R2};
-  }
-  else
-  {
-    // If bounding box is outside radius, then don't search further
-    const double r2 = tree.compute_squared_distance_bbox(point, node);
-    if (r2 > R2)
-      return {closest_point, R2};
-
-    // Check both children
-    std::pair<int, double> p0
-        = _compute_closest_point(tree, point, bbox[0], closest_point, R2);
-    std::pair<int, double> p1
-        = _compute_closest_point(tree, point, bbox[1], p0.first, p0.second);
-    return p1;
-  }
 }
 //-----------------------------------------------------------------------------
 
@@ -219,29 +175,6 @@ BoundingBoxTree::BoundingBoxTree(const std::vector<Eigen::Vector3d>& points)
 
   LOG(INFO) << "Computed bounding box tree with " << num_bboxes()
             << " nodes for " << num_leaves << " points.";
-}
-//-----------------------------------------------------------------------------
-std::pair<int, double>
-BoundingBoxTree::compute_closest_point(const Eigen::Vector3d& point) const
-{
-  // Closest point only implemented for point cloud
-  if (this->_tdim != 0)
-  {
-    throw std::runtime_error("Cannot compute closest point. "
-                             "Search tree has not been built for point cloud");
-  }
-
-  // Note that we don't compute a point search tree here... That would
-  // be weird.
-
-  // Get initial guess by picking the distance to a "random" point
-  int closest_point = 0;
-  double R2 = compute_squared_distance_point(point, closest_point);
-
-  // Call recursive find function
-  _compute_closest_point(*this, point, num_bboxes() - 1, closest_point, R2);
-
-  return {closest_point, sqrt(R2)};
 }
 //-----------------------------------------------------------------------------
 // Implementation of private functions
@@ -449,14 +382,14 @@ BoundingBoxTree::get_bbox(int node) const
   return b;
 }
 //-----------------------------------------------------------------------------
-bool BoundingBoxTree::point_in_bbox(const Eigen::Vector3d& x, const int node,
-                                    double rtol) const
-{
-  Eigen::Map<const Eigen::Vector3d> b0(_bbox_coordinates.data() + 6 * node, 3);
-  Eigen::Map<const Eigen::Vector3d> b1(_bbox_coordinates.data() + 6 * node + 3,
-                                       3);
-  auto eps0 = rtol * (b1 - b0);
-  return (x.array() >= (b0 - eps0).array()).all()
-         and (x.array() <= (b1 + eps0).array()).all();
-}
-//-----------------------------------------------------------------------------
+// bool BoundingBoxTree::point_in_bbox(const Eigen::Vector3d& x, const int node,
+//                                     double rtol) const
+// {
+//   Eigen::Map<const Eigen::Vector3d> b0(_bbox_coordinates.data() + 6 * node, 3);
+//   Eigen::Map<const Eigen::Vector3d> b1(_bbox_coordinates.data() + 6 * node + 3,
+//                                        3);
+//   auto eps0 = rtol * (b1 - b0);
+//   return (x.array() >= (b0 - eps0).array()).all()
+//          and (x.array() <= (b1 + eps0).array()).all();
+// }
+// //-----------------------------------------------------------------------------
