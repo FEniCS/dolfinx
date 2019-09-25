@@ -341,14 +341,6 @@ void BoundingBoxTree::tree_print(std::stringstream& s, int i)
   }
 }
 //-----------------------------------------------------------------------------
-double BoundingBoxTree::compute_squared_distance_point(const Eigen::Vector3d& x,
-                                                       int node) const
-{
-  assert(this->_tdim == 0);
-  Eigen::Map<const Eigen::Vector3d> p(_bbox_coordinates.data() + 6 * node, 3);
-  return (x - p).squaredNorm();
-}
-//-----------------------------------------------------------------------------
 double BoundingBoxTree::compute_squared_distance_bbox(const Eigen::Vector3d& x,
                                                       int node) const
 {
@@ -382,14 +374,3 @@ BoundingBoxTree::get_bbox(int node) const
   return b;
 }
 //-----------------------------------------------------------------------------
-// bool BoundingBoxTree::point_in_bbox(const Eigen::Vector3d& x, const int node,
-//                                     double rtol) const
-// {
-//   Eigen::Map<const Eigen::Vector3d> b0(_bbox_coordinates.data() + 6 * node, 3);
-//   Eigen::Map<const Eigen::Vector3d> b1(_bbox_coordinates.data() + 6 * node + 3,
-//                                        3);
-//   auto eps0 = rtol * (b1 - b0);
-//   return (x.array() >= (b0 - eps0).array()).all()
-//          and (x.array() <= (b1 + eps0).array()).all();
-// }
-// //-----------------------------------------------------------------------------

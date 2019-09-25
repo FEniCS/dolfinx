@@ -97,7 +97,10 @@ _compute_closest_point(const geometry::BoundingBoxTree& tree,
   // If box is leaf, then compute distance and shrink radius
   if (is_leaf(bbox, node))
   {
-    const double r2 = tree.compute_squared_distance_point(point, node);
+    // const double r2 = tree.compute_squared_distance_point(point, node);
+    const double r2 = (tree.get_bbox(node).row(0).transpose().matrix() - point)
+                          .squaredNorm();
+
     if (r2 < R2)
     {
       closest_point = bbox[1];
@@ -503,7 +506,9 @@ geometry::compute_closest_point(const BoundingBoxTree& tree,
 
   // Get initial guess by picking the distance to a "random" point
   int closest_point = 0;
-  double R2 = tree.compute_squared_distance_point(p, closest_point);
+  // double R2 = tree.compute_squared_distance_point(p, closest_point);
+  const double R2
+      = (tree.get_bbox(closest_point).row(0).transpose().matrix() - p).squaredNorm();
 
   // Call recursive find function
   _compute_closest_point(tree, p, tree.num_bboxes() - 1, closest_point, R2);

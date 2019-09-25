@@ -58,20 +58,10 @@ public:
   /// Return bounding box coordinates for a given node in the tree
   Eigen::Array<double, 2, 3, Eigen::RowMajor> get_bbox(int node) const;
 
-  // /// Check whether point (x) is in bounding box (node)
-  // bool point_in_bbox(const Eigen::Vector3d& x, int node,
-  //                    double rtol = 1e-14) const;
-
   /// Compute squared distance between point and bounding box wih index
   /// "node". Returns zero if point is inside box.
   double compute_squared_distance_bbox(const Eigen::Vector3d& x,
                                        int node) const;
-
-  /// Compute squared distance between point x and point and point
-  /// "node" in tree. The tree must have been initialised with
-  /// topological dimension 0.
-  double compute_squared_distance_point(const Eigen::Vector3d& x,
-                                        int node) const;
 
   /// Print out for debugging
   std::string str(bool verbose = false);
