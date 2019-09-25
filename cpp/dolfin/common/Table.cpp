@@ -110,18 +110,21 @@ Table Table::reduce(MPI_Comm comm, Table::Reduction reduction)
   case Table::Reduction::average:
     new_title = "[MPI_AVG] ";
     op_impl = [](double& y, const double& x) { y += x; };
+    break;
   case Table::Reduction::min:
     new_title = "[MPI_MIN] ";
     op_impl = [](double& y, const double& x) {
       if (x < y)
         y = x;
     };
+    break;
   case Table::Reduction::max:
     new_title = "[MPI_MAX] ";
     op_impl = [](double& y, const double& x) {
       if (x > y)
         y = x;
     };
+    break;
   default:
     throw std::runtime_error("Cannot perform reduction of Table. Requested "
                              "reduction not implemented");
