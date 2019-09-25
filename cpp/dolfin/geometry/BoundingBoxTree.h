@@ -33,8 +33,8 @@ class BoundingBoxTree
 {
 private:
   BoundingBoxTree(const std::vector<double>& leaf_bboxes,
-                  const std::vector<int>::iterator begin,
-                  const std::vector<int>::iterator end);
+                  const std::vector<int>::iterator partition_begin,
+                  const std::vector<int>::iterator partition_end);
 
 public:
   /// Constructor

@@ -327,18 +327,19 @@ BoundingBoxTree::compute_closest_point(const Eigen::Vector3d& point) const
 //-----------------------------------------------------------------------------
 // Implementation of private functions
 //-----------------------------------------------------------------------------
-int BoundingBoxTree::_build_from_leaf(const std::vector<double>& leaf_bboxes,
-                                      const std::vector<int>::iterator begin,
-                                      const std::vector<int>::iterator end)
+int BoundingBoxTree::_build_from_leaf(
+    const std::vector<double>& leaf_bboxes,
+    const std::vector<int>::iterator partition_begin,
+    const std::vector<int>::iterator partition_end)
 {
-  assert(begin < end);
+  assert(partition_begin < partition_end);
 
-  if (end - begin == 1)
+  if (partition_end - partition_begin == 1)
   {
     // Reached leaf
 
     // Get bounding box coordinates for leaf
-    const int entity_index = *begin;
+    const int entity_index = *partition_begin;
     Eigen::Array<double, 2, 3, Eigen::RowMajor> b
         = Eigen::Array<double, 2, 3, Eigen::RowMajor>::Zero();
     for (int i = 0; i < 3; ++i)
@@ -357,13 +358,14 @@ int BoundingBoxTree::_build_from_leaf(const std::vector<double>& leaf_bboxes,
   {
     // Compute bounding box of all bounding boxes
     Eigen::Array<double, 2, 3, Eigen::RowMajor> b
-        = compute_bbox_of_bboxes(leaf_bboxes, begin, end);
+        = compute_bbox_of_bboxes(leaf_bboxes, partition_begin, partition_end);
 
     // Sort bounding boxes along longest axis
     Eigen::Array<double, 2, 3, Eigen::RowMajor>::Index axis;
     (b.row(1) - b.row(0)).maxCoeff(&axis);
-    std::vector<int>::iterator middle = begin + (end - begin) / 2;
-    std::nth_element(begin, middle, end,
+    std::vector<int>::iterator partition_middle
+        = partition_begin + (partition_end - partition_begin) / 2;
+    std::nth_element(partition_begin, partition_middle, partition_end,
                      [&leaf_bboxes, axis](int i, int j) -> bool {
                        const double* bi = leaf_bboxes.data() + 6 * i + axis;
                        const double* bj = leaf_bboxes.data() + 6 * j + axis;
@@ -372,8 +374,8 @@ int BoundingBoxTree::_build_from_leaf(const std::vector<double>& leaf_bboxes,
 
     // Split bounding boxes into two groups and call recursively
     BBox bbox;
-    bbox[0] = _build_from_leaf(leaf_bboxes, begin, middle);
-    bbox[1] = _build_from_leaf(leaf_bboxes, middle, end);
+    bbox[0] = _build_from_leaf(leaf_bboxes, partition_begin, partition_middle);
+    bbox[1] = _build_from_leaf(leaf_bboxes, partition_middle, partition_end);
 
     // Store bounding box data. Note that root box will be added last.
     return add_bbox(bbox, b);
