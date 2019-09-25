@@ -628,6 +628,14 @@ void dolfin::MPI::all_gather(MPI_Comm comm, const T in_value,
                 1, mpi_type<T>(), comm);
 }
 //---------------------------------------------------------------------------
+template <typename T, typename X>
+T dolfin::MPI::all_reduce(MPI_Comm comm, const T& value, X op)
+{
+  T out;
+  MPI_Allreduce(const_cast<T*>(&value), &out, 1, mpi_type<T>(), op, comm);
+  return out;
+}
+//-----------------------------------------------------------------------------
 template <typename T>
 T dolfin::MPI::max(MPI_Comm comm, const T& value)
 {
