@@ -55,28 +55,17 @@ public:
   /// Destructor
   ~BoundingBoxTree() = default;
 
-  /// Compute closest mesh entity and distance to point. The tree must
-  /// have been initialised with topological co-dimension 0.
-  std::pair<int, double> compute_closest_entity(const Eigen::Vector3d& point,
-                                                const mesh::Mesh& mesh) const;
-
   /// Compute closest point and distance to point. The tree must have
   /// been initialised with topological dimension 0.
   std::pair<int, double>
   compute_closest_point(const Eigen::Vector3d& point) const;
 
   /// Return bounding box coordinates for a given node in the tree
-  Eigen::Array<double, 2, 3, Eigen::RowMajor>
-  get_bbox(int node) const;
+  Eigen::Array<double, 2, 3, Eigen::RowMajor> get_bbox(int node) const;
 
   /// Check whether point (x) is in bounding box (node)
   bool point_in_bbox(const Eigen::Vector3d& x, int node,
                      double rtol = 1e-14) const;
-
-  // /// Check whether bounding box (a) collides with bounding box in the
-  // /// tree (node)
-  // bool bbox_in_bbox(const Eigen::Array<double, 2, 3, Eigen::RowMajor>& a,
-  //                   int node, double rtol = 1e-14) const;
 
   /// Compute squared distance between point and bounding box wih index
   /// "node". Returns zero if point is inside box.

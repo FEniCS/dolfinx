@@ -55,52 +55,6 @@ compute_bbox_of_entity(const mesh::MeshEntity& entity)
   return b;
 }
 //-----------------------------------------------------------------------------
-// Compute closest entity {closest_entity, R2} (recursive)
-std::pair<int, double> _compute_closest_entity(const BoundingBoxTree& tree,
-                                               const Eigen::Vector3d& point,
-                                               int node, const mesh::Mesh& mesh,
-                                               int closest_entity, double R2)
-{
-  // Get bounding box for current node
-  const BoundingBoxTree::BBox bbox = tree.bbox(node);
-
-  // If bounding box is outside radius, then don't search further
-  const double r2 = tree.compute_squared_distance_bbox(point, node);
-  if (r2 > R2)
-  {
-    // If bounding box is outside radius, then don't search further
-    return {closest_entity, R2};
-  }
-  else if (is_leaf(bbox, node))
-  {
-    // If box is leaf (which we know is inside radius), then shrink radius
-
-    // Get entity (child_1 denotes entity index for leaves)
-    assert(tree.tdim() == mesh.topology().dim());
-    const int entity_index = bbox[1];
-    mesh::MeshEntity cell(mesh, mesh.topology().dim(), entity_index);
-
-    // If entity is closer than best result so far, then return it
-    const double r2 = squared_distance(cell, point);
-    if (r2 < R2)
-    {
-      closest_entity = entity_index;
-      R2 = r2;
-    }
-
-    return {closest_entity, R2};
-  }
-  else
-  {
-    // Check both children
-    std::pair<int, double> p0 = _compute_closest_entity(
-        tree, point, bbox[0], mesh, closest_entity, R2);
-    std::pair<int, double> p1 = _compute_closest_entity(
-        tree, point, bbox[1], mesh, p0.first, p0.second);
-    return p1;
-  }
-}
-//-----------------------------------------------------------------------------
 // Compute closest point {closest_point, R2} (recursive)
 std::pair<int, double> _compute_closest_point(const BoundingBoxTree& tree,
                                               const Eigen::Vector3d& point,
@@ -265,41 +219,6 @@ BoundingBoxTree::BoundingBoxTree(const std::vector<Eigen::Vector3d>& points)
 
   LOG(INFO) << "Computed bounding box tree with " << num_bboxes()
             << " nodes for " << num_leaves << " points.";
-}
-//-----------------------------------------------------------------------------
-std::pair<int, double>
-BoundingBoxTree::compute_closest_entity(const Eigen::Vector3d& point,
-                                        const mesh::Mesh& mesh) const
-{
-  // Closest entity only implemented for cells. Consider extending this.
-  if (this->_tdim != mesh.topology().dim())
-  {
-    throw std::runtime_error("Cannot compute closest entity of point. "
-                             "Closest-entity is only implemented for cells");
-  }
-
-  // Compute point search tree if not already done
-  build_point_search_tree(mesh);
-
-  // Search point cloud to get a good starting guess
-  assert(_point_search_tree);
-  std::pair<int, double> guess
-      = _point_search_tree->compute_closest_point(point);
-  double r = guess.second;
-
-  // Return if we have found the point
-  if (r == 0.0)
-    return guess;
-
-  // Call recursive find function
-  std::pair<int, double> p = _compute_closest_entity(
-      *this, point, num_bboxes() - 1, mesh, -1, r * r);
-
-  // Sanity check
-  assert(p.first >= 0);
-
-  p.second = sqrt(p.second);
-  return p;
 }
 //-----------------------------------------------------------------------------
 std::pair<int, double>

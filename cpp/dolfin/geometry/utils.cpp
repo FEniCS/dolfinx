@@ -7,9 +7,11 @@
 #include "utils.h"
 #include "BoundingBoxTree.h"
 #include "CollisionPredicates.h"
+#include <dolfin/common/log.h>
 #include <dolfin/mesh/Geometry.h>
 #include <dolfin/mesh/Mesh.h>
 #include <dolfin/mesh/MeshEntity.h>
+#include <dolfin/mesh/utils.h>
 
 using namespace dolfin;
 
@@ -35,6 +37,52 @@ bool is_leaf(const geometry::BoundingBoxTree::BBox& bbox, int node)
 {
   // Leaf nodes are marked by setting child_0 equal to the node itself
   return bbox[0] == node;
+}
+//-----------------------------------------------------------------------------
+// Compute closest entity {closest_entity, R2} (recursive)
+std::pair<int, double>
+_compute_closest_entity(const geometry::BoundingBoxTree& tree,
+                        const Eigen::Vector3d& point, int node,
+                        const mesh::Mesh& mesh, int closest_entity, double R2)
+{
+  // Get bounding box for current node
+  const geometry::BoundingBoxTree::BBox bbox = tree.bbox(node);
+
+  // If bounding box is outside radius, then don't search further
+  const double r2 = tree.compute_squared_distance_bbox(point, node);
+  if (r2 > R2)
+  {
+    // If bounding box is outside radius, then don't search further
+    return {closest_entity, R2};
+  }
+  else if (is_leaf(bbox, node))
+  {
+    // If box is leaf (which we know is inside radius), then shrink radius
+
+    // Get entity (child_1 denotes entity index for leaves)
+    assert(tree.tdim() == mesh.topology().dim());
+    const int entity_index = bbox[1];
+    mesh::MeshEntity cell(mesh, mesh.topology().dim(), entity_index);
+
+    // If entity is closer than best result so far, then return it
+    const double r2 = geometry::squared_distance(cell, point);
+    if (r2 < R2)
+    {
+      closest_entity = entity_index;
+      R2 = r2;
+    }
+
+    return {closest_entity, R2};
+  }
+  else
+  {
+    // Check both children
+    std::pair<int, double> p0 = _compute_closest_entity(
+        tree, point, bbox[0], mesh, closest_entity, R2);
+    std::pair<int, double> p1 = _compute_closest_entity(
+        tree, point, bbox[1], mesh, p0.first, p0.second);
+    return p1;
+  }
 }
 //-----------------------------------------------------------------------------
 // Compute collisions with point (recursive)
@@ -248,6 +296,25 @@ void _compute_collisions_tree(const geometry::BoundingBoxTree& A,
 } // namespace
 
 //-----------------------------------------------------------------------------
+geometry::BoundingBoxTree geometry::create_midpoint_tree(const mesh::Mesh& mesh)
+{
+  LOG(INFO) << "Building point search tree to accelerate distance queries.";
+
+  // Create list of midpoints for all cells
+  const int dim = mesh.topology().dim();
+  Eigen::Array<int, Eigen::Dynamic, 1> entities(mesh.num_entities(dim));
+  std::iota(entities.data(), entities.data() + entities.rows(), 0);
+  Eigen::Array<double, Eigen::Dynamic, 3, Eigen::RowMajor> midpoints
+      = mesh::midpoints(mesh, dim, entities);
+
+  std::vector<Eigen::Vector3d> points(entities.rows());
+  for (std::size_t i = 0; i < points.size(); ++i)
+    points[i] = midpoints.row(i);
+
+  // Build tree
+  return geometry::BoundingBoxTree(points);
+}
+//-----------------------------------------------------------------------------
 std::pair<std::vector<int>, std::vector<int>>
 geometry::compute_collisions(const BoundingBoxTree& tree0,
                              const BoundingBoxTree& tree1)
@@ -351,6 +418,36 @@ bool geometry::bbox_in_bbox(
   auto eps0 = rtol * (b.row(1) - b.row(0));
   return (b.row(0) - eps0 <= a.row(1)).all()
          and (b.row(1) + eps0 >= a.row(0)).all();
+}
+//-----------------------------------------------------------------------------
+std::pair<int, double> geometry::compute_closest_entity(
+    const BoundingBoxTree& tree, const BoundingBoxTree& tree_midpoint,
+    const Eigen::Vector3d& p, const mesh::Mesh& mesh)
+{
+  // Closest entity only implemented for cells. Consider extending this.
+  if (tree.tdim() != mesh.topology().dim())
+  {
+    throw std::runtime_error("Cannot compute closest entity of point. "
+                             "Closest-entity is only implemented for cells");
+  }
+
+  // Search point cloud to get a good starting guess
+  std::pair<int, double> guess = tree_midpoint.compute_closest_point(p);
+  double r = guess.second;
+
+  // Return if we have found the point
+  if (r == 0.0)
+    return guess;
+
+  // Call recursive find function
+  std::pair<int, double> e = _compute_closest_entity(
+      tree, p, tree.num_bboxes() - 1, mesh, -1, r * r);
+
+  // Sanity check
+  assert(e.first >= 0);
+
+  e.second = sqrt(e.second);
+  return e;
 }
 //-----------------------------------------------------------------------------
 double geometry::squared_distance(const mesh::MeshEntity& entity,

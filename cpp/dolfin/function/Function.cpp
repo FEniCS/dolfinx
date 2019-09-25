@@ -177,17 +177,22 @@ void Function::eval(
     // If not found, use the closest cell
     if (index < 0)
     {
-      // Check if the closest cell is within 2*DBL_EPSILON. This we can
-      // allow without _allow_extrapolation
-      std::pair<int, double> close
-          = bb_tree.compute_closest_entity(point, mesh);
-      if (close.second < 2.0 * DBL_EPSILON)
-        index = close.first;
-      else
-      {
-        throw std::runtime_error("Cannot evaluate function at point. The point "
-                                 "is not inside the domain.");
-      }
+      throw std::runtime_error("Cannot evaluate function at point. The point "
+                               "is not inside the domain.");
+
+      // // Check if the closest cell is within 2*DBL_EPSILON. This we can
+      // // allow without _allow_extrapolation
+      // std::pair<int, double> close;
+      // // std::pair<int, double> close
+      // //     = compute_closest_entity(bb_tree, point, mesh);
+      // if (close.second < 2.0 * DBL_EPSILON)
+      //   index = close.first;
+      // else
+      // {
+      //   throw std::runtime_error("Cannot evaluate function at point. The
+      //   point "
+      //                            "is not inside the domain.");
+      // }
     }
 
     // Create cell that contains point

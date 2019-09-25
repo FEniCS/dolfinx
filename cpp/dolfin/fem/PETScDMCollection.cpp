@@ -692,6 +692,10 @@ void PETScDMCollection::find_exterior_points(
   std::vector<double> send_distance;
   std::vector<int> ids;
 
+  // FIXME: move outside of function
+  geometry::BoundingBoxTree treec_midpoint
+      = geometry::create_midpoint_tree(meshc);
+
   send_distance.reserve(num_recv_points);
   ids.reserve(num_recv_points);
   for (const auto& p : recv_points)
@@ -700,8 +704,8 @@ void PETScDMCollection::find_exterior_points(
     for (int i = 0; i < n_points; ++i)
     {
       Eigen::Map<const Eigen::Vector3d> curr_point(&p[i * dim]);
-      std::pair<int, double> find_point
-          = treec.compute_closest_entity(curr_point, meshc);
+      std::pair<int, double> find_point = geometry::compute_closest_entity(
+          treec, treec_midpoint, curr_point, meshc);
       send_distance.push_back(find_point.second);
       ids.push_back(find_point.first);
     }

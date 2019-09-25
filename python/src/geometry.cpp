@@ -23,6 +23,9 @@ namespace dolfin_wrappers
 {
 void geometry(py::module& m)
 {
+  m.def("create_midpoint_tree", &dolfin::geometry::create_midpoint_tree);
+
+  m.def("compute_closest_entity", &dolfin::geometry::compute_closest_entity);
   m.def("compute_first_collision", &dolfin::geometry::compute_first_collision);
   m.def("compute_first_entity_collision",
         &dolfin::geometry::compute_first_entity_collision);
@@ -51,10 +54,6 @@ void geometry(py::module& m)
       m, "BoundingBoxTree")
       .def(py::init<const dolfin::mesh::Mesh&, int>())
       .def(py::init<const std::vector<Eigen::Vector3d>&>())
-      //   .def("compute_collisions",
-      //        &dolfin::geometry::BoundingBoxTree::compute_collisions)
-      .def("compute_closest_entity",
-           &dolfin::geometry::BoundingBoxTree::compute_closest_entity)
       .def("str", &dolfin::geometry::BoundingBoxTree::str);
 
   // These classes are wrapped only to be able to write tests in python.

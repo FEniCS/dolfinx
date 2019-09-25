@@ -353,8 +353,9 @@ def test_compute_closest_entity_1d():
     reference = (0, 1.0)
     p = numpy.array([-1.0, 0, 0])
     mesh = UnitIntervalMesh(MPI.comm_world, 16)
+    tree_mid = cpp.geometry.create_midpoint_tree(mesh)
     tree = BoundingBoxTree(mesh, mesh.topology.dim)
-    entity, distance = tree.compute_closest_entity(p, mesh)
+    entity, distance = cpp.geometry.compute_closest_entity(tree._cpp_object, tree_mid, p, mesh)
     assert entity == reference[0]
     assert round(distance - reference[1], 7) == 0
 
@@ -364,8 +365,9 @@ def test_compute_closest_entity_2d():
     reference = (1, 1.0)
     p = numpy.array([-1.0, 0.01, 0.0])
     mesh = UnitSquareMesh(MPI.comm_world, 16, 16)
+    tree_mid = cpp.geometry.create_midpoint_tree(mesh)
     tree = BoundingBoxTree(mesh, mesh.topology.dim)
-    entity, distance = tree.compute_closest_entity(p, mesh)
+    entity, distance = cpp.geometry.compute_closest_entity(tree._cpp_object, tree_mid, p, mesh)
     assert entity == reference[0]
     assert round(distance - reference[1], 7) == 0
 
@@ -376,6 +378,7 @@ def test_compute_closest_entity_3d():
     p = numpy.array([0.1, 0.05, -0.1])
     mesh = UnitCubeMesh(MPI.comm_world, 8, 8, 8)
     tree = BoundingBoxTree(mesh, mesh.topology.dim)
-    entity, distance = tree.compute_closest_entity(p, mesh)
+    tree_mid = cpp.geometry.create_midpoint_tree(mesh)
+    entity, distance = cpp.geometry.compute_closest_entity(tree._cpp_object, tree_mid, p, mesh)
     assert entity == reference[0]
     assert round(distance - reference[1], 7) == 0
