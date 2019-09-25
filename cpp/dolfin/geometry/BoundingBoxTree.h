@@ -55,7 +55,7 @@ public:
   /// Destructor
   ~BoundingBoxTree() = default;
 
-  /// Compute closest entity and distance to Point
+  /// Compute closest entity and distance to point
   std::pair<int, double> compute_closest_entity(const Eigen::Vector3d& point,
                                                 const mesh::Mesh& mesh) const;
 
@@ -87,8 +87,9 @@ public:
   std::string str(bool verbose = false);
 
   /// Bounding box data structure. Leaf nodes are indicated by setting
-  /// child_0 equal to the node itself. For leaf nodes, child_1 is set to
-  /// the index of the entity contained in the leaf bounding box.
+  /// child_0 equal to the node itself. For leaf nodes, child_1 is set
+  /// to the index of the entity, e.g. a cell,  contained in the leaf
+  /// bounding box.
   using BBox = std::array<int, 2>;
 
   /// Return bounding box
