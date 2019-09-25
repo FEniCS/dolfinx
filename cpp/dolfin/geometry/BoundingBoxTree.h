@@ -33,8 +33,8 @@ class BoundingBoxTree
 {
 private:
   BoundingBoxTree(const std::vector<double>& leaf_bboxes,
-                  const std::vector<int>::iterator& begin,
-                  const std::vector<int>::iterator& end);
+                  const std::vector<int>::iterator begin,
+                  const std::vector<int>::iterator end);
 
 public:
   /// Constructor
@@ -102,6 +102,9 @@ public:
   /// Topological dimension of leaf entities
   int tdim() const;
 
+  /// Return number of bounding boxes
+  int num_bboxes() const;
+
 private:
   // Topological dimension of leaf entities
   int _tdim;
@@ -110,13 +113,13 @@ private:
 
   // Build bounding box tree for entities (recursive)
   int _build_from_leaf(const std::vector<double>& leaf_bboxes,
-                       const std::vector<int>::iterator& begin,
-                       const std::vector<int>::iterator& end);
+                       std::vector<int>::iterator begin,
+                       std::vector<int>::iterator end);
 
   // Build bounding box tree for points (recursive)
   int _build_from_point(const std::vector<Eigen::Vector3d>& points,
-                        const std::vector<int>::iterator& begin,
-                        const std::vector<int>::iterator& end);
+                        const std::vector<int>::iterator begin,
+                        const std::vector<int>::iterator end);
 
   //--- Utility functions ---
 
@@ -126,10 +129,6 @@ private:
   // Add bounding box and coordinates
   int add_bbox(const BBox& bbox,
                const Eigen::Array<double, 2, 3, Eigen::RowMajor>& b);
-
-public:
-  /// Return number of bounding boxes
-  int num_bboxes() const;
 
 private:
   // Add bounding box and point coordinates

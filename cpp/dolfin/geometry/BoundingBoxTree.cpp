@@ -197,8 +197,8 @@ compute_bbox_of_bboxes(const std::vector<double>& leaf_bboxes,
 
 //-----------------------------------------------------------------------------
 BoundingBoxTree::BoundingBoxTree(const std::vector<double>& leaf_bboxes,
-                                 const std::vector<int>::iterator& begin,
-                                 const std::vector<int>::iterator& end)
+                                 const std::vector<int>::iterator begin,
+                                 const std::vector<int>::iterator end)
     : _tdim(0)
 {
   _build_from_leaf(leaf_bboxes, begin, end);
@@ -328,8 +328,8 @@ BoundingBoxTree::compute_closest_point(const Eigen::Vector3d& point) const
 // Implementation of private functions
 //-----------------------------------------------------------------------------
 int BoundingBoxTree::_build_from_leaf(const std::vector<double>& leaf_bboxes,
-                                      const std::vector<int>::iterator& begin,
-                                      const std::vector<int>::iterator& end)
+                                      const std::vector<int>::iterator begin,
+                                      const std::vector<int>::iterator end)
 {
   assert(begin < end);
 
@@ -382,8 +382,8 @@ int BoundingBoxTree::_build_from_leaf(const std::vector<double>& leaf_bboxes,
 //-----------------------------------------------------------------------------
 int BoundingBoxTree::_build_from_point(
     const std::vector<Eigen::Vector3d>& points,
-    const std::vector<int>::iterator& begin,
-    const std::vector<int>::iterator& end)
+    const std::vector<int>::iterator begin,
+    const std::vector<int>::iterator end)
 {
   assert(begin < end);
 
