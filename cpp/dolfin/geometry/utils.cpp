@@ -165,13 +165,13 @@ void _compute_collisions_tree(const geometry::BoundingBoxTree& A,
                               std::vector<int>& entities_A,
                               std::vector<int>& entities_B)
 {
+  // If bounding boxes don't collide, then don't search further
+  if (!geometry::bbox_in_bbox(A.get_bbox(node_A), B.get_bbox(node_B)))
+    return;
+
   // Get bounding boxes for current nodes
   const geometry::BoundingBoxTree::BBox bbox_A = A.bbox(node_A);
   const geometry::BoundingBoxTree::BBox bbox_B = B.bbox(node_B);
-
-  // If bounding boxes don't collide, then don't search further
-  if (!B.bbox_in_bbox(A.get_bbox_coordinates(node_A), node_B))
-    return;
 
   // Check whether we've reached a leaf in A or B
   const bool is_leaf_A = is_leaf(bbox_A, node_A);
@@ -342,6 +342,15 @@ geometry::compute_process_collisions(const geometry::BoundingBoxTree& tree,
       collision.push_back(0);
     return collision;
   }
+}
+//-----------------------------------------------------------------------------
+bool geometry::bbox_in_bbox(
+    const Eigen::Array<double, 2, 3, Eigen::RowMajor>& a,
+    const Eigen::Array<double, 2, 3, Eigen::RowMajor>& b, double rtol)
+{
+  auto eps0 = rtol * (b.row(1) - b.row(0));
+  return (b.row(0) - eps0 <= a.row(1)).all()
+         and (b.row(1) + eps0 >= a.row(0)).all();
 }
 //-----------------------------------------------------------------------------
 double geometry::squared_distance(const mesh::MeshEntity& entity,

@@ -70,6 +70,11 @@ int compute_first_entity_collision(const BoundingBoxTree& tree,
 std::vector<int> compute_process_collisions(const BoundingBoxTree& tree,
                                             const Eigen::Vector3d& p);
 
+/// Check whether bounding box a collides with bounding box (b)
+bool bbox_in_bbox(const Eigen::Array<double, 2, 3, Eigen::RowMajor>& a,
+                  const Eigen::Array<double, 2, 3, Eigen::RowMajor>& b,
+                  double rtol = 1e-14);
+
 /// Compute squared distance from a given point to the nearest point on
 /// a cell (only simplex cells are supported at this stage)
 double squared_distance(const mesh::MeshEntity& entity,

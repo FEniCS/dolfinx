@@ -55,31 +55,37 @@ public:
   /// Destructor
   ~BoundingBoxTree() = default;
 
-  /// Compute closest entity and distance to point
+  /// Compute closest mesh entity and distance to point. The tree must
+  /// have been initialised with topological co-dimension 0.
   std::pair<int, double> compute_closest_entity(const Eigen::Vector3d& point,
                                                 const mesh::Mesh& mesh) const;
 
-  /// Compute closest point and distance to Point
+  /// Compute closest point and distance to point. The tree must have
+  /// been initialised with topological dimension 0.
   std::pair<int, double>
   compute_closest_point(const Eigen::Vector3d& point) const;
 
-  /// Return bounding box coordinates for node
+  /// Return bounding box coordinates for a given node in the tree
   Eigen::Array<double, 2, 3, Eigen::RowMajor>
-  get_bbox_coordinates(int node) const;
+  get_bbox(int node) const;
 
   /// Check whether point (x) is in bounding box (node)
   bool point_in_bbox(const Eigen::Vector3d& x, int node,
                      double rtol = 1e-14) const;
 
-  /// Check whether bounding box (a) collides with bounding box (node)
-  bool bbox_in_bbox(const Eigen::Array<double, 2, 3, Eigen::RowMajor>& a,
-                    int node, double rtol = 1e-14) const;
+  // /// Check whether bounding box (a) collides with bounding box in the
+  // /// tree (node)
+  // bool bbox_in_bbox(const Eigen::Array<double, 2, 3, Eigen::RowMajor>& a,
+  //                   int node, double rtol = 1e-14) const;
 
-  /// Compute squared distance between point and bounding box
+  /// Compute squared distance between point and bounding box wih index
+  /// "node". Returns zero if point is inside box.
   double compute_squared_distance_bbox(const Eigen::Vector3d& x,
                                        int node) const;
 
-  /// Compute squared distance between point and point
+  /// Compute squared distance between point x and point and point
+  /// "node" in tree. The tree must have been initialised with
+  /// topological dimension 0.
   double compute_squared_distance_point(const Eigen::Vector3d& x,
                                         int node) const;
 
@@ -130,7 +136,6 @@ private:
   int add_bbox(const BBox& bbox,
                const Eigen::Array<double, 2, 3, Eigen::RowMajor>& b);
 
-private:
   // Add bounding box and point coordinates
   int add_point(const BBox& bbox, const Eigen::Vector3d& point);
 
