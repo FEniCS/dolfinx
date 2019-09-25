@@ -8,9 +8,7 @@
 
 #include <Eigen/Dense>
 #include <array>
-#include <limits>
 #include <memory>
-#include <sstream>
 #include <vector>
 
 namespace dolfin

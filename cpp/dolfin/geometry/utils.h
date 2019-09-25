@@ -6,6 +6,7 @@
 
 #pragma once
 
+#include "BoundingBoxTree.h"
 #include <Eigen/Dense>
 #include <utility>
 #include <vector>
@@ -20,8 +21,6 @@ class MeshEntity;
 
 namespace geometry
 {
-class BoundingBoxTree;
-
 /// Create a boundary box tree for cell midpoints
 BoundingBoxTree create_midpoint_tree(const mesh::Mesh& mesh);
 
