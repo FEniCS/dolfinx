@@ -215,22 +215,7 @@ void mpi(py::module& m)
       .def_static("sum",
                   [](const MPICommWrapper comm, std::complex<double> value) {
                     return dolfin::MPI::sum(comm.get(), value);
-                  })
-      // templated for dolfin::Table
-      .def_static("max",
-                  [](const MPICommWrapper comm, dolfin::Table value) {
-                    return dolfin::MPI::max(comm.get(), value);
-                  })
-      .def_static("min",
-                  [](const MPICommWrapper comm, dolfin::Table value) {
-                    return dolfin::MPI::min(comm.get(), value);
-                  })
-      .def_static("sum",
-                  [](const MPICommWrapper comm, dolfin::Table value) {
-                    return dolfin::MPI::sum(comm.get(), value);
-                  })
-      .def_static("avg", [](const MPICommWrapper comm, dolfin::Table value) {
-        return dolfin::MPI::avg(comm.get(), value);
-      });
-}
+                  });
+
+} // namespace dolfin_wrappers
 } // namespace dolfin_wrappers
