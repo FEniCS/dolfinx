@@ -253,7 +253,7 @@ void XDMFFile::close()
 void XDMFFile::write(const mesh::Mesh& mesh)
 {
   // Check that encoding
-  if (_encoding == Encoding::ASCII and _mpi_comm.size() != 1)
+  if (_encoding == Encoding::ASCII and MPI::size(_mpi_comm.comm()) != 1)
   {
     throw std::runtime_error(
         "Cannot write ASCII XDMF in parallel (use HDF5 encoding).");
@@ -292,14 +292,14 @@ void XDMFFile::write(const mesh::Mesh& mesh)
   xdmf_write::add_mesh(_mpi_comm.comm(), domain_node, h5_id, mesh, "/Mesh");
 
   // Save XML file (on process 0 only)
-  if (_mpi_comm.rank() == 0)
+  if (MPI::rank(_mpi_comm.comm()) == 0)
     _xml_doc->save_file(_filename.c_str(), "  ");
 }
 //-----------------------------------------------------------------------------
 void XDMFFile::write_checkpoint(const function::Function& u,
                                 std::string function_name, double time_step)
 {
-  if (_encoding == Encoding::ASCII and _mpi_comm.size() != 1)
+  if (_encoding == Encoding::ASCII and MPI::size(_mpi_comm.comm()) != 1)
   {
     throw std::runtime_error(
         "Cannot write ASCII XDMF in parallel (use HDF5 encoding).");
@@ -443,7 +443,7 @@ void XDMFFile::write_checkpoint(const function::Function& u,
   }
 
   // Save XML file (on process 0 only)
-  if (_mpi_comm.rank() == 0)
+  if (MPI::rank(_mpi_comm.comm()) == 0)
   {
     LOG(INFO) << "Saving XML file \"" << _filename << "\" (only on rank = 0)";
     _xml_doc->save_file(_filename.c_str(), "  ");
@@ -462,7 +462,7 @@ void XDMFFile::write_checkpoint(const function::Function& u,
 void XDMFFile::write(const function::Function& u)
 {
   // Check that encoding
-  if (_encoding == Encoding::ASCII and _mpi_comm.size() != 1)
+  if (_encoding == Encoding::ASCII and MPI::size(_mpi_comm.comm()) != 1)
   {
     throw std::runtime_error(
         "Cannot write ASCII XDMF in parallel (use HDF5 encoding).");
@@ -570,14 +570,14 @@ void XDMFFile::write(const function::Function& u)
   }
 
   // Save XML file (on process 0 only)
-  if (_mpi_comm.rank() == 0)
+  if (MPI::rank(_mpi_comm.comm()) == 0)
     _xml_doc->save_file(_filename.c_str(), "  ");
 }
 //-----------------------------------------------------------------------------
 void XDMFFile::write(const function::Function& u, double time_step)
 {
   // Check that encoding
-  if (_encoding == Encoding::ASCII and _mpi_comm.size() != 1)
+  if (_encoding == Encoding::ASCII and MPI::size(_mpi_comm.comm()) != 1)
   {
     throw std::runtime_error(
         "Cannot write ASCII XDMF in parallel (use HDF5 encoding).");
@@ -769,7 +769,7 @@ void XDMFFile::write(const function::Function& u, double time_step)
   }
 
   // Save XML file (on process 0 only)
-  if (_mpi_comm.rank() == 0)
+  if (MPI::rank(_mpi_comm.comm()) == 0)
     _xml_doc->save_file(_filename.c_str(), "  ");
 
   // Close the HDF5 file if in "flush" mode
@@ -817,7 +817,7 @@ void XDMFFile::write_mesh_value_collection(
     const mesh::MeshValueCollection<T>& mvc)
 {
   // Check that encoding
-  if (_encoding == Encoding::ASCII and _mpi_comm.size() != 1)
+  if (_encoding == Encoding::ASCII and MPI::size(_mpi_comm.comm()) != 1)
   {
     throw std::runtime_error(
         "Cannot write ASCII XDMF in parallel (use HDF5 encoding).");
@@ -998,7 +998,7 @@ void XDMFFile::write_mesh_value_collection(
                             {num_values, 1}, "");
 
   // Save XML file (on process 0 only)
-  if (_mpi_comm.rank() == 0)
+  if (MPI::rank(_mpi_comm.comm()) == 0)
     _xml_doc->save_file(_filename.c_str(), "  ");
 
   ++_counter;
@@ -1087,7 +1087,7 @@ XDMFFile::read_mesh_value_collection(std::shared_ptr<const mesh::Mesh> mesh,
   // Ensure the mesh dimension is initialised
   mesh->create_entities(dim);
   const std::size_t global_vertex_range = mesh->num_entities_global(0);
-  const std::int32_t num_processes = _mpi_comm.size();
+  const std::int32_t num_processes = MPI::size(_mpi_comm.comm());
 
   // Send entities to processes based on the lowest vertex index
   std::vector<std::vector<std::int32_t>> send_entities(num_processes);
@@ -1209,7 +1209,7 @@ void XDMFFile::write(
         points)
 {
   // Check that encoding
-  if (_encoding == Encoding::ASCII and _mpi_comm.size() != 1)
+  if (_encoding == Encoding::ASCII and MPI::size(_mpi_comm.comm()) != 1)
   {
     throw std::runtime_error(
         "Cannot write ASCII XDMF in parallel (use HDF5 encoding).");
@@ -1240,7 +1240,7 @@ void XDMFFile::write(
   xdmf_write::add_points(_mpi_comm.comm(), xdmf_node, h5_id, points);
 
   // Save XML file (on process 0 only)
-  if (_mpi_comm.rank() == 0)
+  if (MPI::rank(_mpi_comm.comm()) == 0)
     _xml_doc->save_file(_filename.c_str(), "  ");
 }
 //-----------------------------------------------------------------------------
@@ -1253,7 +1253,7 @@ void XDMFFile::write(const Eigen::Ref<const Eigen::Array<double, Eigen::Dynamic,
   assert((std::size_t)points.rows() == values.size());
 
   // Check that encoding is supported
-  if (_encoding == Encoding::ASCII and _mpi_comm.size() != 1)
+  if (_encoding == Encoding::ASCII and MPI::size(_mpi_comm.comm()) != 1)
   {
     throw std::runtime_error(
         "Cannot write ASCII XDMF in parallel (use HDF5 encoding).");
@@ -1301,7 +1301,7 @@ void XDMFFile::write(const Eigen::Ref<const Eigen::Array<double, Eigen::Dynamic,
                             "/Points/values", values, {num_values, 1}, "");
 
   // Save XML file (on process 0 only)
-  if (_mpi_comm.rank() == 0)
+  if (MPI::rank(_mpi_comm.comm()) == 0)
     _xml_doc->save_file(_filename.c_str(), "  ");
 }
 //----------------------------------------------------------------------------
@@ -1750,7 +1750,7 @@ template <typename T>
 void XDMFFile::write_mesh_function(const mesh::MeshFunction<T>& meshfunction)
 {
   // Check that encoding
-  if (_encoding == Encoding::ASCII and _mpi_comm.size() != 1)
+  if (_encoding == Encoding::ASCII and MPI::size(_mpi_comm.comm()) != 1)
   {
     throw std::runtime_error(
         "Cannot write ASCII XDMF in parallel (use HDF5 encoding).");
@@ -1883,7 +1883,7 @@ void XDMFFile::write_mesh_function(const mesh::MeshFunction<T>& meshfunction)
                             mf_name + "/values", values, {num_values, 1}, "");
 
   // Save XML file (on process 0 only)
-  if (_mpi_comm.rank() == 0)
+  if (MPI::rank(_mpi_comm.comm()) == 0)
     _xml_doc->save_file(_filename.c_str(), "  ");
 
   // Increment the counter, so we can save multiple mesh::MeshFunctions in one
