@@ -94,6 +94,12 @@ std::pair<int, double> compute_closest_point(const BoundingBoxTree& tree,
 bool point_in_bbox(const Eigen::Array<double, 2, 3, Eigen::RowMajor>& b,
                    const Eigen::Vector3d& x, double rtol = 1e-14);
 
+/// Compute squared distance between point and bounding box wih index
+/// "node". Returns zero if point is inside box.
+double compute_squared_distance_bbox(
+    const Eigen::Array<double, 2, 3, Eigen::RowMajor>& b,
+    const Eigen::Vector3d& x);
+
 /// Compute squared distance from a given point to the nearest point on
 /// a cell (only simplex cells are supported at this stage)
 double squared_distance(const mesh::MeshEntity& entity,

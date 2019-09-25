@@ -341,18 +341,6 @@ void BoundingBoxTree::tree_print(std::stringstream& s, int i)
   }
 }
 //-----------------------------------------------------------------------------
-double BoundingBoxTree::compute_squared_distance_bbox(const Eigen::Vector3d& x,
-                                                      int node) const
-{
-  Eigen::Map<const Eigen::Vector3d> b0(_bbox_coordinates.data() + 6 * node, 3);
-  Eigen::Map<const Eigen::Vector3d> b1(_bbox_coordinates.data() + 6 * node + 3,
-                                       3);
-  auto d0 = (x - b0).array();
-  auto d1 = (x - b1).array();
-  return (d0 > 0.0).select(0, d0).matrix().squaredNorm()
-         + (d1 < 0.0).select(0, d1).matrix().squaredNorm();
-}
-//-----------------------------------------------------------------------------
 int BoundingBoxTree::add_point(const BBox& bbox, const Eigen::Vector3d& point)
 {
   // Add bounding box

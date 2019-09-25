@@ -49,7 +49,8 @@ _compute_closest_entity(const geometry::BoundingBoxTree& tree,
   const geometry::BoundingBoxTree::BBox bbox = tree.bbox(node);
 
   // If bounding box is outside radius, then don't search further
-  const double r2 = tree.compute_squared_distance_bbox(point, node);
+  const double r2
+      = geometry::compute_squared_distance_bbox(tree.get_bbox(node), point);
   if (r2 > R2)
   {
     // If bounding box is outside radius, then don't search further
@@ -112,7 +113,8 @@ _compute_closest_point(const geometry::BoundingBoxTree& tree,
   else
   {
     // If bounding box is outside radius, then don't search further
-    const double r2 = tree.compute_squared_distance_bbox(point, node);
+    const double r2
+        = geometry::compute_squared_distance_bbox(tree.get_bbox(node), point);
     if (r2 > R2)
       return {closest_point, R2};
 
@@ -460,6 +462,16 @@ bool geometry::bbox_in_bbox(
          and (b.row(1) + eps0 >= a.row(0)).all();
 }
 //-----------------------------------------------------------------------------
+double geometry::compute_squared_distance_bbox(
+    const Eigen::Array<double, 2, 3, Eigen::RowMajor>& b,
+    const Eigen::Vector3d& x)
+{
+  auto d0 = x.array() - b.row(0).transpose();
+  auto d1 = x.array() - b.row(1).transpose();
+  return (d0 > 0.0).select(0, d0).matrix().squaredNorm()
+         + (d1 < 0.0).select(0, d1).matrix().squaredNorm();
+}
+//-----------------------------------------------------------------------------
 std::pair<int, double> geometry::compute_closest_entity(
     const BoundingBoxTree& tree, const BoundingBoxTree& tree_midpoint,
     const Eigen::Vector3d& p, const mesh::Mesh& mesh)
@@ -508,7 +520,8 @@ geometry::compute_closest_point(const BoundingBoxTree& tree,
   int closest_point = 0;
   // double R2 = tree.compute_squared_distance_point(p, closest_point);
   const double R2
-      = (tree.get_bbox(closest_point).row(0).transpose().matrix() - p).squaredNorm();
+      = (tree.get_bbox(closest_point).row(0).transpose().matrix() - p)
+            .squaredNorm();
 
   // Call recursive find function
   _compute_closest_point(tree, p, tree.num_bboxes() - 1, closest_point, R2);
