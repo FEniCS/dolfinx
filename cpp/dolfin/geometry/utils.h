@@ -22,6 +22,8 @@ class MeshEntity;
 namespace geometry
 {
 /// Create a boundary box tree for cell midpoints
+/// @param[in] mesh The mesh build tree of cell midpoints from
+/// @return Bounding box tree for mesh cell midpoints
 BoundingBoxTree create_midpoint_tree(const mesh::Mesh& mesh);
 
 // FIXME: document properly
@@ -51,7 +53,7 @@ std::vector<int> compute_entity_collisions(const BoundingBoxTree& tree,
                                            const Eigen::Vector3d& p,
                                            const mesh::Mesh& mesh);
 
-/// Compute first collision between bounding boxes and Point
+/// Compute first collision between bounding boxes and point
 /// @param[in] tree The bounding box tree
 /// @param[in] p The point
 /// @return Index of the first found box that contains the point
@@ -77,19 +79,27 @@ bool bbox_in_bbox(const Eigen::Array<double, 2, 3, Eigen::RowMajor>& a,
                   const Eigen::Array<double, 2, 3, Eigen::RowMajor>& b,
                   double rtol = 1e-14);
 
-/// Compute closest mesh entity and distance to point. The tree must
+/// Compute closest mesh entity and distance to the point. The tree must
 /// have been initialised with topological co-dimension 0.
 std::pair<int, double>
 compute_closest_entity(const BoundingBoxTree& tree,
                        const BoundingBoxTree& tree_midpoint,
                        const Eigen::Vector3d& p, const mesh::Mesh& mesh);
 
-/// Compute closest point and distance to point. The tree must have
-/// been initialised with topological dimension 0.
+/// Compute closest point and distance to a given point
+/// @param[in] tree The bounding box tree. It must have been initialised
+///                  with topological dimension 0.
+/// @param[in] p The point to compute the distance from
+/// @return (point index, distance)
 std::pair<int, double> compute_closest_point(const BoundingBoxTree& tree,
                                              const Eigen::Vector3d& p);
 
 /// Check whether point (x) is in bounding box
+/// @param[in] b The bounding box
+/// @param[in] x The point to check
+/// @param[in] rtol Relative tolerance for checking if x is inside the
+///                 bounding box
+/// @return (point index, distance)
 bool point_in_bbox(const Eigen::Array<double, 2, 3, Eigen::RowMajor>& b,
                    const Eigen::Vector3d& x, double rtol = 1e-14);
 

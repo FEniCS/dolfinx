@@ -56,14 +56,13 @@ public:
   /// Return bounding box coordinates for a given node in the tree
   Eigen::Array<double, 2, 3, Eigen::RowMajor> get_bbox(int node) const;
 
-
   /// Print out for debugging
   std::string str(bool verbose = false);
 
-  /// Bounding box data structure. Leaf nodes are indicated by setting
-  /// child_0 equal to the node itself. For leaf nodes, child_1 is set
-  /// to the index of the entity, e.g. a cell,  contained in the leaf
-  /// bounding box.
+  /// Bounding box data structure for storing the index of the two
+  /// children. Leaf nodes are indicated by setting child_0 equal to the
+  /// node itself. For leaf nodes, child_1 is set to the index of the
+  /// entity, e.g. a cell,  contained in the leaf bounding box.
   using BBox = std::array<int, 2>;
 
   /// Return bounding box
