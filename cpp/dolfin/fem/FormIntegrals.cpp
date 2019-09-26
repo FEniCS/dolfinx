@@ -134,7 +134,7 @@ void FormIntegrals::set_domains(FormIntegrals::Type type,
     const int num_cells_per_facet = (type == Type::exterior_facet) ? 1 : 2;
 
     std::shared_ptr<const mesh::Connectivity> connectivity
-        = mesh.topology().connectivity(tdim - 1, tdim);
+        = mesh->topology().connectivity(tdim - 1, tdim);
     if (!connectivity)
     {
       throw std::runtime_error(
@@ -142,7 +142,7 @@ void FormIntegrals::set_domains(FormIntegrals::Type type,
     }
     for (Eigen::Index i = 0; i < mf_values.size(); ++i)
     {
-      if (connectivity->size_global(i) == num_cells_per_facet)
+      if ((int)connectivity->size_global(i) == num_cells_per_facet)
       {
         auto it = id_to_integral.find(mf_values[i]);
         if (it != id_to_integral.end())
