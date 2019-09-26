@@ -101,12 +101,13 @@ void FormIntegrals::set_domains(FormIntegrals::Type type,
 
   std::shared_ptr<const mesh::Mesh> mesh = marker.mesh();
   int tdim = mesh->topology().dim();
+  int dim = tdim;
   if (type == Type::exterior_facet or type == Type::interior_facet)
-    --tdim;
+    dim = tdim - 1;
   else if (type == Type::vertex)
-    tdim = 1;
+    dim = 0;
 
-  if (tdim != marker.dim())
+  if (dim != marker.dim())
   {
     throw std::runtime_error("Invalid MeshFunction dimension:"
                              + std::to_string(marker.dim()));
