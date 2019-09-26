@@ -156,7 +156,6 @@ void write_ascii_mesh(const mesh::Mesh& mesh, std::size_t cell_dim,
        << "ascii"
        << "\">";
 
-<<<<<<< HEAD
   const mesh::Connectivity& connectivity_g
       = mesh.coordinate_dofs().entity_points();
   Eigen::Ref<const Eigen::Array<std::int32_t, Eigen::Dynamic, 1>>
@@ -171,15 +170,6 @@ void write_ascii_mesh(const mesh::Mesh& mesh, std::size_t cell_dim,
   {
     for (int i = 0; i < num_nodes; ++i)
       file << cell_connections(pos_g(j) + perm[i]) << " ";
-=======
-  mesh::CellType celltype = mesh::cell_entity_type(mesh.cell_type(), cell_dim);
-  const std::vector<std::int8_t> perm = mesh::vtk_mapping(celltype);
-  const int num_vertices = mesh::cell_num_entities(celltype, 0);
-  for (auto& c : mesh::MeshRange(mesh, cell_dim))
-  {
-    for (int i = 0; i < num_vertices; ++i)
-      file << c.entities(0)[perm[i]] << " ";
->>>>>>> origin
     file << " ";
   }
   file << "</DataArray>" << std::endl;
