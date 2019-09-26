@@ -64,7 +64,7 @@ unit-tests-python: &unit-tests-python
   name: Run unit tests (Python, serial)
   command: |
     cd python/test/unit
-    python3 -m pytest -n3 .
+    python3 -m pytest --junitxml=test-results.xml -n3 .
 
 unit-tests-python-mpi: &unit-tests-python-mpi
   name: Run unit tests (Python, MPI)
@@ -77,7 +77,7 @@ demos-python: &demos-python
   command: |
     cd python/demo
     python3 ./generate-demo-files.py
-    python3 -m pytest -n3 -v -m serial test.py
+    python3 -m pytest --junitxml=demo-results.xml -n3 -v -m serial test.py
 
 demos-python-mpi: &demos-python-mpi
   name: Run demos (Python, MPI)
@@ -119,6 +119,8 @@ jobs:
           paths:
             - python/doc/build/html/
             - cpp/doc/html/
+      - store_test_results:
+         path: python/test/unit
 
   build-complex:
     docker:
