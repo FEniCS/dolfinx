@@ -482,15 +482,17 @@ mesh::cell_entity_closure(mesh::CellType cell_type)
   return entity_closure;
 }
 //-----------------------------------------------------------------------------
-std::vector<std::uint8_t> mesh::vtk_mapping(mesh::CellType type,
-                                            int num_nodes) {
-  switch (type) {
+std::vector<std::uint8_t> mesh::vtk_mapping(mesh::CellType type, int num_nodes)
+{
+  switch (type)
+  {
   case mesh::CellType::point:
     return {0};
   case mesh::CellType::interval:
     return {0, 1};
   case mesh::CellType::triangle:
-    switch (num_nodes) {
+    switch (num_nodes)
+    {
     case 3:
       return {0, 1, 2};
     case 6:
@@ -501,15 +503,18 @@ std::vector<std::uint8_t> mesh::vtk_mapping(mesh::CellType type,
       throw std::runtime_error("Unknown cell type.");
     }
   case mesh::CellType::tetrahedron:
-    switch (num_nodes) {
+    switch (num_nodes)
+    {
     case 4:
       return {0, 1, 2, 3};
     default:
       throw std::runtime_error("Higher order tetrahedron not supported");
     }
   case mesh::CellType::quadrilateral:
-    switch (num_nodes) {
-    case 4: {
+    switch (num_nodes)
+    {
+    case 4:
+    {
       // FIXME: Note that this is not counter clockwise ordering (CC),
       // as performed by vtk (used by gmsh and other mesh generators),
       // but lexicographic (LG). A convert function from (CC) to (LG) will
@@ -520,7 +525,8 @@ std::vector<std::uint8_t> mesh::vtk_mapping(mesh::CellType type,
       throw std::runtime_error("Higher order quadrilateral not supported");
     }
   case mesh::CellType::hexahedron:
-    switch (num_nodes) {
+    switch (num_nodes)
+    {
     case 8:
       return {0, 1, 3, 2, 4, 5, 7, 6};
     default:
@@ -531,8 +537,10 @@ std::vector<std::uint8_t> mesh::vtk_mapping(mesh::CellType type,
   }
 }
 //-----------------------------------------------------------------------------
-int mesh::cell_degree(mesh::CellType type, int num_nodes) {
-  switch (type) {
+int mesh::cell_degree(mesh::CellType type, int num_nodes)
+{
+  switch (type)
+  {
   case mesh::CellType::point:
     return 1;
   case mesh::CellType::interval:
