@@ -126,11 +126,39 @@ void FormIntegrals::set_domains(FormIntegrals::Type type,
   // Get reference to mesh function data array
   Eigen::Ref<const Eigen::Array<std::size_t, Eigen::Dynamic, 1>> mf_values
       = marker.values();
-  for (Eigen::Index i = 0; i < mf_values.size(); ++i)
+
+  if (type == Type::exterior_facet or type == Type::interior_facet)
   {
-    auto it = id_to_integral.find(mf_values[i]);
-    if (it != id_to_integral.end())
-      integrals[it->second].active_entities.push_back(i);
+    // For facet integrals, only use markers on exterior or interior
+    // respectively
+    const int num_cells_per_facet = (type == Type::exterior_facet) ? 1 : 2;
+
+    std::shared_ptr<const mesh::Connectivity> connectivity
+        = mesh.topology().connectivity(tdim - 1, tdim);
+    if (!connectivity)
+    {
+      throw std::runtime_error(
+          "Facet-cell connectivity has not been computed.");
+    }
+    for (Eigen::Index i = 0; i < mf_values.size(); ++i)
+    {
+      if (connectivity->size_global(i) == num_cells_per_facet)
+      {
+        auto it = id_to_integral.find(mf_values[i]);
+        if (it != id_to_integral.end())
+          integrals[it->second].active_entities.push_back(i);
+      }
+    }
+  }
+  else
+  {
+    // For cell and vertex integrals use all markers
+    for (Eigen::Index i = 0; i < mf_values.size(); ++i)
+    {
+      auto it = id_to_integral.find(mf_values[i]);
+      if (it != id_to_integral.end())
+        integrals[it->second].active_entities.push_back(i);
+    }
   }
 }
 //-----------------------------------------------------------------------------
