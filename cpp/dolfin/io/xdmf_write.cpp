@@ -773,7 +773,7 @@ void xdmf_write::add_function(MPI_Comm mpi_comm, pugi::xml_node& xml_node,
 #ifdef PETSC_USE_COMPLEX
   // FIXME: Avoid copies by writing directly a compound data
   std::vector<double> component_data_values(local_data.size());
-  for (unsigned int i = 0; i < local_data.size(); i++)
+  for (std::size_t i = 0; i < local_data.size(); i++)
   {
     if (component == "real")
       component_data_values[i] = local_data[i].real();

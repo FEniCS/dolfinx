@@ -550,7 +550,7 @@ void XDMFFile::write(const function::Function& u)
 #ifdef PETSC_USE_COMPLEX
     // FIXME: Avoid copies by writing directly a compound data
     std::vector<double> component_data_values(data_values.size());
-    for (unsigned int i = 0; i < data_values.size(); i++)
+    for (std::size_t i = 0; i < data_values.size(); i++)
     {
       if (component == components[0])
         component_data_values[i] = data_values[i].real();
@@ -749,7 +749,7 @@ void XDMFFile::write(const function::Function& u, double time_step)
 #ifdef PETSC_USE_COMPLEX
     // FIXME: Avoid copies by writing directly a compound data
     std::vector<double> component_data_values(data_values.size());
-    for (unsigned int i = 0; i < data_values.size(); i++)
+    for (std::size_t i = 0; i < data_values.size(); i++)
     {
       if (component == components[0])
         component_data_values[i] = data_values[i].real();

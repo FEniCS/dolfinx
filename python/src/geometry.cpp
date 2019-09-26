@@ -23,40 +23,37 @@ namespace dolfin_wrappers
 {
 void geometry(py::module& m)
 {
+  m.def("create_midpoint_tree", &dolfin::geometry::create_midpoint_tree);
+
+  m.def("compute_closest_entity", &dolfin::geometry::compute_closest_entity);
+  m.def("compute_first_collision", &dolfin::geometry::compute_first_collision);
+  m.def("compute_first_entity_collision",
+        &dolfin::geometry::compute_first_entity_collision);
+  m.def("compute_collisions",
+        py::overload_cast<const dolfin::geometry::BoundingBoxTree&,
+                          const Eigen::Vector3d&>(
+            &dolfin::geometry::compute_collisions));
+  m.def("compute_collisions",
+        py::overload_cast<const dolfin::geometry::BoundingBoxTree&,
+                          const dolfin::geometry::BoundingBoxTree&>(
+            &dolfin::geometry::compute_collisions));
+  m.def("compute_entity_collisions",
+        py::overload_cast<const dolfin::geometry::BoundingBoxTree&,
+                          const Eigen::Vector3d&, const dolfin::mesh::Mesh&>(
+            &dolfin::geometry::compute_entity_collisions));
+  m.def("compute_entity_collisions",
+        py::overload_cast<const dolfin::geometry::BoundingBoxTree&,
+                          const dolfin::geometry::BoundingBoxTree&,
+                          const dolfin::mesh::Mesh&, const dolfin::mesh::Mesh&>(
+            &dolfin::geometry::compute_entity_collisions));
   m.def("squared_distance", &dolfin::geometry::squared_distance);
 
   // dolfin::geometry::BoundingBoxTree
   py::class_<dolfin::geometry::BoundingBoxTree,
              std::shared_ptr<dolfin::geometry::BoundingBoxTree>>(
       m, "BoundingBoxTree")
-      .def(py::init<const dolfin::mesh::Mesh&, std::size_t>())
-      .def(py::init<const std::vector<Eigen::Vector3d>&, std::size_t>())
-      .def("compute_collisions",
-           (std::vector<unsigned int>(dolfin::geometry::BoundingBoxTree::*)(
-               const Eigen::Vector3d&) const)
-               & dolfin::geometry::BoundingBoxTree::compute_collisions)
-      .def("compute_collisions",
-           (std::pair<std::vector<unsigned int>, std::vector<unsigned int>>(
-               dolfin::geometry::BoundingBoxTree::*)(
-               const dolfin::geometry::BoundingBoxTree&) const)
-               & dolfin::geometry::BoundingBoxTree::compute_collisions)
-      .def("compute_entity_collisions",
-           (std::vector<unsigned int>(dolfin::geometry::BoundingBoxTree::*)(
-               const Eigen::Vector3d&, const dolfin::mesh::Mesh&) const)
-               & dolfin::geometry::BoundingBoxTree::compute_entity_collisions)
-      .def("compute_entity_collisions",
-           (std::pair<std::vector<unsigned int>, std::vector<unsigned int>>(
-               dolfin::geometry::BoundingBoxTree::*)(
-               const dolfin::geometry::BoundingBoxTree&,
-               const dolfin::mesh::Mesh&, const dolfin::mesh::Mesh&) const)
-               & dolfin::geometry::BoundingBoxTree::compute_entity_collisions)
-      .def("compute_first_collision",
-           &dolfin::geometry::BoundingBoxTree::compute_first_collision)
-      .def("collides", &dolfin::geometry::BoundingBoxTree::collides)
-      .def("compute_first_entity_collision",
-           &dolfin::geometry::BoundingBoxTree::compute_first_entity_collision)
-      .def("compute_closest_entity",
-           &dolfin::geometry::BoundingBoxTree::compute_closest_entity)
+      .def(py::init<const dolfin::mesh::Mesh&, int>())
+      .def(py::init<const std::vector<Eigen::Vector3d>&>())
       .def("str", &dolfin::geometry::BoundingBoxTree::str);
 
   // These classes are wrapped only to be able to write tests in python.

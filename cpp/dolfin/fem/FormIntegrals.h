@@ -49,7 +49,7 @@ public:
   /// @return Function to call for tabulate_tensor
   const std::function<void(PetscScalar*, const PetscScalar*, const PetscScalar*,
                            const double*, const int*, const int*)>&
-  get_tabulate_tensor_function(FormIntegrals::Type type, unsigned int i) const;
+  get_tabulate_tensor_function(FormIntegrals::Type type, int i) const;
 
   /// Register the function for 'tabulate_tensor' for integral i of
   /// given type
@@ -72,7 +72,7 @@ public:
   /// integrals, a list of cells. For facet integrals, a list of facets
   /// etc.
   const std::vector<std::int32_t>& integral_domains(FormIntegrals::Type t,
-                                                    unsigned int i) const;
+                                                    int i) const;
 
   /// Set the valid domains for the integrals of a given type from a
   /// MeshFunction "marker". The MeshFunction should have a value for

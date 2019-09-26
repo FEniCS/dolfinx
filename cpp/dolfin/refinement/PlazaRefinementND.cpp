@@ -334,7 +334,7 @@ face_long_edge(const mesh::Mesh& mesh)
     double max_len = 0.0;
     double min_len = std::numeric_limits<double>::max();
 
-    for (unsigned int i = 0; i < 3; ++i)
+    for (int i = 0; i < 3; ++i)
     {
       const double e_len = edge_length[face_edges[i]];
 

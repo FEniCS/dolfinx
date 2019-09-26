@@ -152,7 +152,7 @@ ElementDofLayout::sub_view(const std::vector<int>& component) const
     element_dofmap_current = _sub_dofmaps.at(i).get();
 
     std::vector<int> dof_list_new(element_dofmap_current->_num_dofs);
-    for (unsigned int j = 0; j < dof_list_new.size(); ++j)
+    for (std::size_t j = 0; j < dof_list_new.size(); ++j)
       dof_list_new[j] = dof_list[element_dofmap_current->_parent_map[j]];
     dof_list = dof_list_new;
   }

@@ -24,7 +24,7 @@ public:
   /// @param[in] comm MPI communicator to build the mesh on
   /// @param[in] n Number of layers
   /// @param[in] ghost_mode Mesh ghosting mode
-  static mesh::Mesh create(MPI_Comm comm, std::size_t n,
+  static mesh::Mesh create(MPI_Comm comm, int n,
                            const mesh::GhostMode ghost_mode);
 };
 } // namespace generation
