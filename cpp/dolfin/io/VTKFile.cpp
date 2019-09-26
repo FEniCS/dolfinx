@@ -159,12 +159,14 @@ std::string init(const mesh::Mesh& mesh, const std::string filename,
                                       counter, filename, ".vtu");
   clear_file(vtu_filename);
 
-  // Number of cells and vertices
+  // Number of cells
   const std::size_t num_cells = mesh.topology().ghost_offset(cell_dim);
-  const std::size_t num_vertices = mesh.topology().ghost_offset(0);
+
+  // Number of points in mesh (can be more than the number of vertices)
+  const int num_nodes = mesh.geometry().points().rows();
 
   // Write headers
-  vtk_header_open(num_vertices, num_cells, vtu_filename);
+  vtk_header_open(num_nodes, num_cells, vtu_filename);
 
   return vtu_filename;
 }
@@ -390,22 +392,24 @@ void write_point_data(const function::Function& u, const mesh::Mesh& mesh,
   std::ostringstream ss;
   ss << std::scientific;
   ss << std::setprecision(16);
-  for (auto& vertex : mesh::MeshRange(mesh, 0))
+  const Eigen::Array<double, Eigen::Dynamic, 3, Eigen::RowMajor>& points
+      = mesh.geometry().points();
+  for (int i = 0; i < points.rows(); ++i)
   {
-    if (rank == 1 && dim == 2)
+    if (rank == 1 and dim == 2)
     {
       // Append 0.0 to 2D vectors to make them 3D
-      for (std::size_t i = 0; i < 2; i++)
-        ss << values(vertex.index(), i) << " ";
+      for (std::size_t j = 0; j < 2; j++)
+        ss << values(i, j) << " ";
       ss << 0.0 << "  ";
     }
-    else if (rank == 2 && dim == 4)
+    else if (rank == 2 and dim == 4)
     {
       // Pad 2D tensors with 0.0 to make them 3D
-      for (std::size_t i = 0; i < 2; i++)
+      for (std::size_t j = 0; j < 2; j++)
       {
-        ss << values(vertex.index(), (2 * i + 0)) << " ";
-        ss << values(vertex.index(), (2 * i + 1)) << " ";
+        ss << values(i, (2 * j + 0)) << " ";
+        ss << values(i, (2 * j + 1)) << " ";
         ss << 0.0 << " ";
       }
       ss << 0.0 << " ";
@@ -415,8 +419,8 @@ void write_point_data(const function::Function& u, const mesh::Mesh& mesh,
     else
     {
       // Write all components
-      for (std::size_t i = 0; i < dim; i++)
-        ss << values(vertex.index(), i) << " ";
+      for (std::size_t j = 0; j < dim; j++)
+        ss << values(i, j) << " ";
       ss << " ";
     }
   }
