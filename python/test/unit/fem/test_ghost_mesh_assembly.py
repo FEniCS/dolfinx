@@ -16,42 +16,52 @@ from dolfin.functionspace import FunctionSpace
 from dolfin.generation import UnitSquareMesh
 from ufl import avg, inner, Measure
 
+
 def dx_from_ufl(mesh):
     return ufl.dx
+
 
 def dx_from_measure(mesh):
     subdomains = MeshFunction("size_t", mesh, mesh.topology.dim, 1)
     dx = Measure("dx")(subdomain_data=subdomains, domain=mesh)
     dx = dx(1)
     return dx
-    
+
+
 def dx_from_measure_and_subdomain(mesh):
     dx = dx_from_measure(mesh)
     return dx(1)
-    
+
+
 def ds_from_ufl(mesh):
     return ufl.ds
-    
+
+
 def ds_from_measure(mesh):
     boundaries = MeshFunction("size_t", mesh, mesh.topology.dim - 1, 1)
     ds = Measure("ds")(subdomain_data=boundaries, domain=mesh)
     return ds
-    
+
+
 def ds_from_measure_and_subdomain(mesh):
     ds = ds_from_measure(mesh)
     return ds(1)
-    
+
+
 def dS_from_ufl(mesh):
     return ufl.dS
-    
+
+
 def dS_from_measure(mesh):
     boundaries = MeshFunction("size_t", mesh, mesh.topology.dim - 1, 1)
     dS = Measure("dS")(subdomain_data=boundaries, domain=mesh)
     return dS
-    
+
+
 def dS_from_measure_and_subdomain(mesh):
     dS = dS_from_measure(mesh)
     return dS(1)
+
 
 @pytest.mark.parametrize("mode",
                          [pytest.param(GhostMode.none),
