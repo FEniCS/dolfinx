@@ -26,9 +26,33 @@ void geometry(py::module& m)
   m.def("create_midpoint_tree", &dolfin::geometry::create_midpoint_tree);
 
   m.def("compute_closest_entity", &dolfin::geometry::compute_closest_entity);
-  m.def("compute_first_collision", &dolfin::geometry::compute_first_collision);
+  m.def("compute_first_collision",
+        [](const dolfin::geometry::BoundingBoxTree& tree,
+           const Eigen::Ref<
+               const Eigen::Array<double, Eigen::Dynamic, 3, Eigen::RowMajor>>
+               p) {
+          Eigen::VectorXi entities(p.rows());
+          for (Eigen::Index i = 0; i < p.rows(); ++i)
+          {
+            entities(i) = dolfin::geometry::compute_first_collision(
+                tree, p.row(i).transpose());
+          }
+          return entities;
+        });
   m.def("compute_first_entity_collision",
-        &dolfin::geometry::compute_first_entity_collision);
+        [](const dolfin::geometry::BoundingBoxTree& tree,
+           const dolfin::mesh::Mesh& mesh,
+           const Eigen::Ref<
+               const Eigen::Array<double, Eigen::Dynamic, 3, Eigen::RowMajor>>
+               p) {
+          Eigen::VectorXi entities(p.rows());
+          for (Eigen::Index i = 0; i < p.rows(); ++i)
+          {
+            entities(i) = dolfin::geometry::compute_first_entity_collision(
+                tree, p.row(i).transpose(), mesh);
+          }
+          return entities;
+        });
   m.def("compute_collisions",
         py::overload_cast<const dolfin::geometry::BoundingBoxTree&,
                           const Eigen::Vector3d&>(

@@ -8,6 +8,16 @@
 from dolfin import cpp
 
 
+def compute_first_collision(tree, x):
+    """Compute first collision with the points"""
+    return cpp.geometry.compute_first_collision(tree._cpp_object, x)
+
+
+def compute_first_entity_collision(tree, mesh, x):
+    """Compute fist collision between entities of mesh and the point"""
+    return  cpp.geometry.compute_first_entity_collision(tree._cpp_object, mesh, x)
+
+
 class BoundingBoxTree:
     def __init__(self, obj, dim):
         """Create bounding box tree"""
@@ -31,15 +41,6 @@ class BoundingBoxTree:
         """Compute collisions between the bounding box and entities of meshes"""
         return self._cpp_object.compute_entity_collisions(
             bb._cpp_object, mesh1, mesh2)
-
-    def compute_first_collision(self, point):
-        """Compute first collision with the point"""
-        return self._cpp_object.compute_first_collision(point)
-
-    def compute_first_entity_collision(self, point, mesh):
-        """Compute fist collision between entities of mesh and the point"""
-        return self._cpp_object.compute_first_entity_collision(
-            point, mesh)
 
     def compute_closest_entity(self, point, mesh):
         """Compute closest entity of the mesh to the point"""

@@ -8,7 +8,8 @@
 import numpy
 import pytest
 
-from dolfin import MPI, UnitCubeMesh, UnitIntervalMesh, UnitSquareMesh, cpp
+from dolfin import (MPI, UnitCubeMesh, UnitIntervalMesh, UnitSquareMesh, cpp,
+                    geometry)
 from dolfin.geometry import BoundingBoxTree
 from dolfin_utils.test.skips import skip_in_parallel
 
@@ -267,7 +268,7 @@ def test_compute_first_collision_1d():
     mesh = UnitIntervalMesh(MPI.comm_world, 16)
     for dim in range(1, 2):
         tree = BoundingBoxTree(mesh, dim)
-        first = cpp.geometry.compute_first_collision(tree._cpp_object, p)
+        first = geometry.compute_first_collision(tree, p)
         assert first in reference[dim]
 
 
@@ -281,7 +282,7 @@ def test_compute_first_collision_2d():
     mesh = UnitSquareMesh(MPI.comm_world, 16, 16)
     for dim in range(1, 3):
         tree = BoundingBoxTree(mesh, dim)
-        first = cpp.geometry.compute_first_collision(tree._cpp_object, p)
+        first = geometry.compute_first_collision(tree, p)
 
         # FIXME: Facet test is excluded because it mistakenly relies in
         # the facet indices
@@ -321,7 +322,9 @@ def test_compute_first_entity_collision_1d():
     p = numpy.array([0.3, 0, 0])
     mesh = UnitIntervalMesh(MPI.comm_world, 16)
     tree = BoundingBoxTree(mesh, mesh.topology.dim)
-    first = cpp.geometry.compute_first_entity_collision(tree._cpp_object, p, mesh)
+    first = geometry.compute_first_entity_collision(tree, mesh, p)
+    # first = geometry.compute_first_entity_collision(tree, mesh, p)
+    # # first = cpp.geometry.compute_first_entity_collision(tree._cpp_object, p, mesh)
     assert first in reference
 
 
@@ -331,7 +334,7 @@ def test_compute_first_entity_collision_2d():
     p = numpy.array([0.3, 0.3, 0.0])
     mesh = UnitSquareMesh(MPI.comm_world, 16, 16)
     tree = BoundingBoxTree(mesh, mesh.topology.dim)
-    first = cpp.geometry.compute_first_entity_collision(tree._cpp_object, p, mesh)
+    first = geometry.compute_first_entity_collision(tree, mesh, p)
     assert first in reference
 
 
@@ -341,7 +344,7 @@ def test_compute_first_entity_collision_3d():
     p = numpy.array([0.3, 0.3, 0.3])
     mesh = UnitCubeMesh(MPI.comm_world, 8, 8, 8)
     tree = BoundingBoxTree(mesh, mesh.topology.dim)
-    first = cpp.geometry.compute_first_entity_collision(tree._cpp_object, p, mesh)
+    first = geometry.compute_first_entity_collision(tree, mesh, p)
     assert first in reference
 
 
