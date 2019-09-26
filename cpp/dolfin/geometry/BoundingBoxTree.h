@@ -89,27 +89,6 @@ private:
   // Topological dimension of leaf entities
   int _tdim;
 
-  //--- Recursive build functions ---
-
-  // Build bounding box tree for entities (recursive)
-  int _build_from_leaf(const std::vector<double>& leaf_bboxes,
-                       std::vector<int>::iterator begin,
-                       std::vector<int>::iterator end);
-
-  // Build bounding box tree for points (recursive)
-  int _build_from_point(const std::vector<Eigen::Vector3d>& points,
-                        const std::vector<int>::iterator begin,
-                        const std::vector<int>::iterator end);
-
-  //--- Utility functions ---
-
-  // Add bounding box and coordinates
-  int add_bbox(const std::array<int, 2>& bbox,
-               const Eigen::Array<double, 2, 3, Eigen::RowMajor>& b);
-
-  // Add bounding box and point coordinates
-  int add_point(const std::array<int, 2>& bbox, const Eigen::Vector3d& point);
-
   // Print out recursively, for debugging
   void tree_print(std::stringstream& s, int i);
 
