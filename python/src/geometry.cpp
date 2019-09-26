@@ -91,17 +91,31 @@ void geometry(py::module& m)
               py::array_t<int>(entities.size(), entities.data()),
               py::array_t<int>(offset.size(), offset.data()));
         });
-  // py::overload_cast<const dolfin::geometry::BoundingBoxTree&,
-  //                   const Eigen::Vector3d&>(
-  //     &dolfin::geometry::compute_collisions));
   m.def("compute_collisions",
         py::overload_cast<const dolfin::geometry::BoundingBoxTree&,
                           const dolfin::geometry::BoundingBoxTree&>(
             &dolfin::geometry::compute_collisions));
-  m.def("compute_entity_collisions",
-        py::overload_cast<const dolfin::geometry::BoundingBoxTree&,
-                          const Eigen::Vector3d&, const dolfin::mesh::Mesh&>(
-            &dolfin::geometry::compute_entity_collisions));
+  m.def("compute_entity_collisions_mesh",
+        [](const dolfin::geometry::BoundingBoxTree& tree,
+           const dolfin::mesh::Mesh& mesh,
+           const Eigen::Ref<
+               const Eigen::Array<double, Eigen::Dynamic, 3, Eigen::RowMajor>>
+               p) {
+          std::vector<int> entities;
+          std::vector<int> offset(p.rows() + 1, 0);
+          for (Eigen::Index i = 0; i < p.rows(); ++i)
+          {
+            const std::vector<int> collisions
+                = dolfin::geometry::compute_entity_collisions(
+                    tree, p.row(i).transpose(), mesh);
+            entities.insert(entities.end(), collisions.begin(),
+                            collisions.end());
+            offset[i + 1] = offset[i + 1] + collisions.size();
+          }
+          return py::make_tuple(
+              py::array_t<int>(entities.size(), entities.data()),
+              py::array_t<int>(offset.size(), offset.data()));
+        });
   m.def("compute_entity_collisions",
         py::overload_cast<const dolfin::geometry::BoundingBoxTree&,
                           const dolfin::geometry::BoundingBoxTree&,

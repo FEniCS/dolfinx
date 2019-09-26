@@ -28,7 +28,18 @@ def compute_collisions_point(tree, x):
     return cpp.geometry.compute_collisions_point(tree._cpp_object, x)
 
 
+def compute_collisions_bb(tree0: "BoundingBoxTree", tree1: "BoundingBoxTree"):
+    """Compute collisions with the bounding box"""
+    return cpp.geometry.compute_collisions(tree0._cpp_object, tree1._cpp_object)
+
+
+def compute_entity_collisions_mesh(tree, mesh, x):
+    """Compute collisions between the point and entities of the mesh"""
+    return cpp.geometry.compute_entity_collisions_mesh(tree._cpp_object, mesh, x)
+
+
 def create_midpoint_tree(mesh):
+    """Create a BoundingBoxTree using cell midpoints"""
     return BoundingBoxTree(cpp.geometry.create_midpoint_tree(mesh))
 
 
@@ -39,15 +50,6 @@ class BoundingBoxTree:
             self._cpp_object = obj
         else:
             self._cpp_object = cpp.geometry.BoundingBoxTree(obj, dim)
-
-    def compute_collisions_bb(self, bb: "BoundingBoxTree"):
-        """Compute collisions with the bounding box"""
-        return self._cpp_object.compute_collisions(bb._cpp_object)
-
-    def compute_entity_collisions_mesh(self, point, mesh):
-        """Compute collisions between the point and entities of the mesh"""
-        return self._cpp_object.compute_entity_collisions(
-            point, mesh)
 
     def compute_entity_collisions_bb_mesh(self, bb: "BoundingBoxTree", mesh1,
                                           mesh2):
