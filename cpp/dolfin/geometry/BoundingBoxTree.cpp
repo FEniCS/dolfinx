@@ -102,6 +102,7 @@ compute_bbox_of_bboxes(const std::vector<double>& leaf_bboxes,
   return b;
 }
 //-----------------------------------------------------------------------------
+// Build bounding box tree for entities (recursive)
 int _build_from_leaf(const std::vector<double>& leaf_bboxes,
                      const std::vector<int>::iterator partition_begin,
                      const std::vector<int>::iterator partition_end,
@@ -167,6 +168,7 @@ int _build_from_leaf(const std::vector<double>& leaf_bboxes,
   }
 }
 //-----------------------------------------------------------------------------
+// Build bounding box tree for points (recursive)
 int _build_from_point(const std::vector<Eigen::Vector3d>& points,
                       const std::vector<int>::iterator begin,
                       const std::vector<int>::iterator end,
@@ -225,7 +227,20 @@ BoundingBoxTree::BoundingBoxTree(const std::vector<double>& leaf_bboxes,
                                  const std::vector<int>::iterator end)
     : _tdim(0)
 {
-  _build_from_leaf(leaf_bboxes, begin, end, _bboxes, _bbox_coordinates);
+  std::vector<std::array<int, 2>> bboxes;
+  _build_from_leaf(leaf_bboxes, begin, end, bboxes, _bbox_coordinates);
+
+  _bboxes
+      = Eigen::Array<int, Eigen::Dynamic, 2, Eigen::RowMajor>(bboxes.size(), 2);
+  for (std::size_t i = 0; i < bboxes.size(); ++i)
+  {
+    _bboxes(i, 0) = bboxes[i][0];
+    _bboxes(i, 1) = bboxes[i][1];
+  }
+
+  _bbox_coordinates_new
+      = Eigen::Map<Eigen::Array<double, Eigen::Dynamic, 3, Eigen::RowMajor>>(
+          _bbox_coordinates.data(), _bbox_coordinates.size() / 3, 3);
 }
 //-----------------------------------------------------------------------------
 BoundingBoxTree::BoundingBoxTree(const mesh::Mesh& mesh, int tdim) : _tdim(tdim)
@@ -253,11 +268,23 @@ BoundingBoxTree::BoundingBoxTree(const mesh::Mesh& mesh, int tdim) : _tdim(tdim)
   std::iota(leaf_partition.begin(), leaf_partition.end(), 0);
 
   // Recursively build the bounding box tree from the leaves
+  std::vector<std::array<int, 2>> bboxes;
   _build_from_leaf(leaf_bboxes, leaf_partition.begin(), leaf_partition.end(),
-                   _bboxes, _bbox_coordinates);
+                   bboxes, _bbox_coordinates);
 
   LOG(INFO) << "Computed bounding box tree with " << num_bboxes()
             << " nodes for " << num_leaves << " entities.";
+
+  _bboxes
+      = Eigen::Array<int, Eigen::Dynamic, 2, Eigen::RowMajor>(bboxes.size(), 2);
+  for (std::size_t i = 0; i < _bboxes.size(); ++i)
+  {
+    _bboxes(i, 0) = bboxes[i][0];
+    _bboxes(i, 1) = bboxes[i][1];
+  }
+  _bbox_coordinates_new
+      = Eigen::Map<Eigen::Array<double, Eigen::Dynamic, 3, Eigen::RowMajor>>(
+          _bbox_coordinates.data(), _bbox_coordinates.size() / 3, 3);
 
   // Build tree for each process
   const int mpi_size = MPI::size(mesh.mpi_comm());
@@ -286,8 +313,20 @@ BoundingBoxTree::BoundingBoxTree(const std::vector<Eigen::Vector3d>& points)
   std::iota(leaf_partition.begin(), leaf_partition.end(), 0);
 
   // Recursively build the bounding box tree from the leaves
+  std::vector<std::array<int, 2>> bboxes;
   _build_from_point(points, leaf_partition.begin(), leaf_partition.end(),
-                    _bboxes, _bbox_coordinates);
+                    bboxes, _bbox_coordinates);
+  _bboxes
+      = Eigen::Array<int, Eigen::Dynamic, 2, Eigen::RowMajor>(bboxes.size(), 2);
+  for (std::size_t i = 0; i < bboxes.size(); ++i)
+  {
+    _bboxes(i, 0) = bboxes[i][0];
+    _bboxes(i, 1) = bboxes[i][1];
+  }
+
+  _bbox_coordinates_new
+      = Eigen::Map<Eigen::Array<double, Eigen::Dynamic, 3, Eigen::RowMajor>>(
+          _bbox_coordinates.data(), _bbox_coordinates.size() / 3, 3);
 
   LOG(INFO) << "Computed bounding box tree with " << num_bboxes()
             << " nodes for " << num_leaves << " points.";
@@ -315,14 +354,14 @@ void BoundingBoxTree::tree_print(std::stringstream& s, int i)
     s << _bbox_coordinates[j] << " ";
   s << "]\n";
 
-  if (_bboxes[i][0] == i)
-    s << "leaf containing entity (" << _bboxes[i][1] << ")";
+  if (_bboxes(i, 0) == i)
+    s << "leaf containing entity (" << _bboxes(i, 1) << ")";
   else
   {
     s << "{";
-    tree_print(s, _bboxes[i][0]);
+    tree_print(s, _bboxes(i, 0));
     s << ", \n";
-    tree_print(s, _bboxes[i][1]);
+    tree_print(s, _bboxes(i, 1));
     s << "}\n";
   }
 }
