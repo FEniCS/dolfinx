@@ -25,8 +25,7 @@ def test_compute_collisions_point_1d():
     mesh = UnitIntervalMesh(MPI.comm_world, 16)
     for dim in range(1, 2):
         tree = BoundingBoxTree(mesh, mesh.topology.dim)
-        # entities = tree.compute_collisions_point(p)
-        entities = cpp.geometry.compute_collisions(tree._cpp_object, p)
+        entities, _ = geometry.compute_collisions_point(tree, p)
         assert set(entities) == reference[dim]
 
 
@@ -54,11 +53,10 @@ def test_compute_collisions_point_3d():
     mesh = UnitCubeMesh(MPI.comm_world, 8, 8, 8)
     tree = BoundingBoxTree(mesh, mesh.topology.dim)
     for dim in range(1, 4):
-        # entities = tree.compute_collisions_point(p)
-        entities = cpp.geometry.compute_collisions(tree._cpp_object, p)
+        entities, _ = geometry.compute_collisions_point(tree, p)
 
         # FIXME: Face and edges tests are excluded because test
-        # mistakingly relies on the face and edge indices
+        # mistakenly relies on the face and edge indices
         tdim = mesh.topology.dim
         if dim != tdim - 1 and dim != tdim - 2:
             assert set(entities) == reference[dim]
@@ -356,11 +354,11 @@ def test_compute_closest_entity_1d():
     reference = (0, 1.0)
     p = numpy.array([-1.0, 0, 0])
     mesh = UnitIntervalMesh(MPI.comm_world, 16)
-    tree_mid = cpp.geometry.create_midpoint_tree(mesh)
+    tree_mid = geometry.create_midpoint_tree(mesh)
     tree = BoundingBoxTree(mesh, mesh.topology.dim)
-    entity, distance = cpp.geometry.compute_closest_entity(tree._cpp_object, tree_mid, p, mesh)
+    entity, distance = geometry.compute_closest_entity(tree, tree_mid, mesh, p)
     assert entity == reference[0]
-    assert round(distance - reference[1], 7) == 0
+    assert distance[0] == pytest.approx(reference[1], 1.0e-12)
 
 
 @skip_in_parallel
@@ -368,11 +366,11 @@ def test_compute_closest_entity_2d():
     reference = (1, 1.0)
     p = numpy.array([-1.0, 0.01, 0.0])
     mesh = UnitSquareMesh(MPI.comm_world, 16, 16)
-    tree_mid = cpp.geometry.create_midpoint_tree(mesh)
+    tree_mid = geometry.create_midpoint_tree(mesh)
     tree = BoundingBoxTree(mesh, mesh.topology.dim)
-    entity, distance = cpp.geometry.compute_closest_entity(tree._cpp_object, tree_mid, p, mesh)
+    entity, distance = geometry.compute_closest_entity(tree, tree_mid, mesh, p)
     assert entity == reference[0]
-    assert round(distance - reference[1], 7) == 0
+    assert distance[0] == pytest.approx(reference[1], 1.0e-12)
 
 
 @skip_in_parallel
@@ -381,7 +379,7 @@ def test_compute_closest_entity_3d():
     p = numpy.array([0.1, 0.05, -0.1])
     mesh = UnitCubeMesh(MPI.comm_world, 8, 8, 8)
     tree = BoundingBoxTree(mesh, mesh.topology.dim)
-    tree_mid = cpp.geometry.create_midpoint_tree(mesh)
-    entity, distance = cpp.geometry.compute_closest_entity(tree._cpp_object, tree_mid, p, mesh)
+    tree_mid = geometry.create_midpoint_tree(mesh)
+    entity, distance = geometry.compute_closest_entity(tree, tree_mid, mesh, p)
     assert entity == reference[0]
-    assert round(distance - reference[1], 7) == 0
+    assert distance[0] == pytest.approx(reference[1], 1.0e-12)
