@@ -129,12 +129,8 @@ void FormIntegrals::set_domains(FormIntegrals::Type type,
       = marker.values();
   const int num_entities = mesh->topology().ghost_offset(dim);
 
-  if (type == Type::exterior_facet or type == Type::interior_facet)
+  if (type == Type::exterior_facet)
   {
-    // For facet integrals, only use markers on exterior or interior
-    // respectively
-    const int num_cells_per_facet = (type == Type::exterior_facet) ? 1 : 2;
-
     std::shared_ptr<const mesh::Connectivity> connectivity
         = mesh->topology().connectivity(tdim - 1, tdim);
     if (!connectivity)
@@ -144,7 +140,7 @@ void FormIntegrals::set_domains(FormIntegrals::Type type,
     }
     for (Eigen::Index i = 0; i < num_entities; ++i)
     {
-      if ((int)connectivity->size_global(i) == num_cells_per_facet)
+      if ((int)connectivity->size_global(i) == 1)
       {
         auto it = id_to_integral.find(mf_values[i]);
         if (it != id_to_integral.end())
@@ -152,9 +148,45 @@ void FormIntegrals::set_domains(FormIntegrals::Type type,
       }
     }
   }
+  else if (type == Type::interior_facet)
+  {
+    const int rank = MPI::rank(mesh->mpi_comm());
+    const std::vector<std::int32_t>& cell_owners
+        = mesh->topology().cell_owner();
+    const std::int32_t cell_ghost_offset = mesh->topology().ghost_offset(tdim);
+    std::shared_ptr<const mesh::Connectivity> connectivity
+        = mesh->topology().connectivity(tdim - 1, tdim);
+    if (!connectivity)
+    {
+      throw std::runtime_error(
+          "Facet-cell connectivity has not been computed.");
+    }
+    for (Eigen::Index i = 0; i < num_entities; ++i)
+    {
+      if ((int)connectivity->size(i) == 2)
+      {
+        // Get connected cells and check if they are ghost or not
+        const std::int32_t* c = connectivity->connections(i);
+        const int owner0 = c[0] >= cell_ghost_offset
+                               ? cell_owners[c[0] - cell_ghost_offset]
+                               : rank;
+        const int owner1 = c[1] >= cell_ghost_offset
+                               ? cell_owners[c[1] - cell_ghost_offset]
+                               : rank;
+        if ((owner0 == rank and owner1 == rank)
+            or (owner0 == rank and owner1 > rank)
+            or (owner1 == rank and owner0 > rank))
+        {
+          auto it = id_to_integral.find(mf_values[i]);
+          if (it != id_to_integral.end())
+            integrals[it->second].active_entities.push_back(i);
+        }
+      }
+    }
+  }
   else
   {
-    // For cell and vertex integrals use all markers
+    // For cell and vertex integrals use all markers (but not on ghost entities)
     for (Eigen::Index i = 0; i < num_entities; ++i)
     {
       auto it = id_to_integral.find(mf_values[i]);
