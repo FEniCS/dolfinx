@@ -1124,7 +1124,7 @@ void HDF5File::write_mesh_value_collection(
     mesh::MeshEntity cell(*mesh, tdim, p.first.first);
     if (dim != tdim)
     {
-      const unsigned int entity_local_idx = cell.entities(dim)[p.first.second];
+      const int entity_local_idx = cell.entities(dim)[p.first.second];
       cell = mesh::MeshEntity(*mesh, dim, entity_local_idx);
     }
     for (auto& v : mesh::EntityRange(cell, 0))

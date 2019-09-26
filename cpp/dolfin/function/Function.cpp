@@ -15,6 +15,7 @@
 #include <dolfin/fem/DofMap.h>
 #include <dolfin/fem/FiniteElement.h>
 #include <dolfin/geometry/BoundingBoxTree.h>
+#include <dolfin/geometry/utils.h>
 #include <dolfin/la/PETScVector.h>
 #include <dolfin/la/utils.h>
 #include <dolfin/mesh/CoordinateDofs.h>
@@ -165,28 +166,33 @@ void Function::eval(
   // Find the cell that contains x
   const int gdim = x.cols();
   Eigen::Vector3d point = Eigen::Vector3d::Zero();
-  for (unsigned int i = 0; i < x.rows(); ++i)
+  for (int i = 0; i < x.rows(); ++i)
   {
     // Pad the input point to size 3 (bounding box requires 3d point)
     point.head(gdim) = x.row(i);
 
     // Get index of first cell containing point
-    unsigned int index = bb_tree.compute_first_entity_collision(point, mesh);
+    int index = geometry::compute_first_entity_collision(bb_tree, point, mesh);
 
     // If not found, use the closest cell
-    if (index == std::numeric_limits<unsigned int>::max())
+    if (index < 0)
     {
-      // Check if the closest cell is within 2*DBL_EPSILON. This we can
-      // allow without _allow_extrapolation
-      std::pair<unsigned int, double> close
-          = bb_tree.compute_closest_entity(point, mesh);
-      if (close.second < 2.0 * DBL_EPSILON)
-        index = close.first;
-      else
-      {
-        throw std::runtime_error("Cannot evaluate function at point. The point "
-                                 "is not inside the domain.");
-      }
+      throw std::runtime_error("Cannot evaluate function at point. The point "
+                               "is not inside the domain.");
+
+      // // Check if the closest cell is within 2*DBL_EPSILON. This we can
+      // // allow without _allow_extrapolation
+      // std::pair<int, double> close;
+      // // std::pair<int, double> close
+      // //     = compute_closest_entity(bb_tree, point, mesh);
+      // if (close.second < 2.0 * DBL_EPSILON)
+      //   index = close.first;
+      // else
+      // {
+      //   throw std::runtime_error("Cannot evaluate function at point. The
+      //   point "
+      //                            "is not inside the domain.");
+      // }
     }
 
     // Create cell that contains point
@@ -417,7 +423,7 @@ Function::compute_point_values() const
 
     // Copy values to array of point values
     const std::int32_t* dofs = cell_dofs.connections(cell.index());
-    for (unsigned int i = 0; i < x.rows(); ++i)
+    for (int i = 0; i < x.rows(); ++i)
       point_values.row(dofs[i]) = values.row(i);
   }
 

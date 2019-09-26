@@ -15,9 +15,11 @@ using namespace dolfin;
 using namespace dolfin::geometry;
 
 /// Compute numerically stable cross product (a - c) x (b - c)
-static inline Eigen::Vector3d cross_product(const Eigen::Vector3d& a,
-                                            const Eigen::Vector3d& b,
-                                            const Eigen::Vector3d& c)
+namespace
+{
+Eigen::Vector3d cross_product(const Eigen::Vector3d& a,
+                              const Eigen::Vector3d& b,
+                              const Eigen::Vector3d& c)
 {
   // See Shewchuk Lecture Notes on Geometric Robustness
   double ayz[2] = {a[1], a[2]};
@@ -33,6 +35,7 @@ static inline Eigen::Vector3d cross_product(const Eigen::Vector3d& a,
                     _orient2d(axy, bxy, cxy));
   return r;
 }
+} // namespace
 
 //-----------------------------------------------------------------------------
 // High-level collision detection predicates
@@ -51,34 +54,33 @@ bool CollisionPredicates::collides(const mesh::MeshEntity& entity,
   // Get data
   const mesh::Geometry& g = entity.mesh().geometry();
   const int32_t* v = entity.entities(0);
-  const std::size_t tdim = entity.mesh().topology().dim();
-  const std::size_t gdim = entity.mesh().geometry().dim();
+  const int tdim = entity.mesh().topology().dim();
+  const int gdim = entity.mesh().geometry().dim();
 
   // Pick correct specialized implementation
-  if (tdim == 1 && gdim == 1)
+  if (tdim == 1 and gdim == 1)
     return collides_segment_point_1d(g.x(v[0])[0], g.x(v[1])[0], point[0]);
-
-  if (tdim == 1 && gdim == 2)
+  else if (tdim == 1 and gdim == 2)
     return collides_segment_point_2d(g.x(v[0]), g.x(v[1]), point);
-
-  if (tdim == 1 && gdim == 3)
+  else if (tdim == 1 and gdim == 3)
     return collides_segment_point_3d(g.x(v[0]), g.x(v[1]), point);
-
-  if (tdim == 2 && gdim == 2)
+  else if (tdim == 2 and gdim == 2)
     return collides_triangle_point_2d(g.x(v[0]), g.x(v[1]), g.x(v[2]), point);
-
-  if (tdim == 2 && gdim == 3)
+  else if (tdim == 2 and gdim == 3)
     return collides_triangle_point_3d(g.x(v[0]), g.x(v[1]), g.x(v[2]), point);
-
-  if (tdim == 3)
+  else if (tdim == 3)
+  {
     return collides_tetrahedron_point_3d(g.x(v[0]), g.x(v[1]), g.x(v[2]),
                                          g.x(v[3]), point);
-
-  throw std::runtime_error("Cannot compute entity-point collision. "
-                           "Not implemented for dimensions"
-                           + std::to_string(tdim) + "/" + std::to_string(gdim));
-
-  return false;
+  }
+  else
+  {
+    throw std::runtime_error("Cannot compute entity-point collision. "
+                             "Not implemented for dimensions"
+                             + std::to_string(tdim) + "/"
+                             + std::to_string(gdim));
+    return false;
+  }
 }
 //-----------------------------------------------------------------------------
 bool CollisionPredicates::collides(const mesh::MeshEntity& entity_0,
@@ -87,7 +89,6 @@ bool CollisionPredicates::collides(const mesh::MeshEntity& entity_0,
   // Intersection is only implemented for simplex meshes
   if (!mesh::is_simplex(entity_0.mesh().cell_type())
       or !mesh::is_simplex(entity_1.mesh().cell_type()))
-
   {
     throw std::runtime_error(
         "Cannot intersect cell and point. "
@@ -110,54 +111,49 @@ bool CollisionPredicates::collides(const mesh::MeshEntity& entity_0,
     return collides_segment_segment(g0.x(v0[0]), g0.x(v0[1]), g1.x(v1[0]),
                                     g1.x(v1[1]), gdim);
   }
-
-  if (d0 == 1 && d1 == 2)
+  else if (d0 == 1 && d1 == 2)
   {
     return collides_triangle_segment(g1.x(v1[0]), g1.x(v1[1]), g1.x(v1[2]),
                                      g0.x(v0[0]), g0.x(v0[1]), gdim);
   }
-
-  if (d0 == 2 && d1 == 1)
+  else if (d0 == 2 && d1 == 1)
   {
     return collides_triangle_segment(g0.x(v0[0]), g0.x(v0[1]), g0.x(v0[2]),
                                      g1.x(v1[0]), g1.x(v1[1]), gdim);
   }
-
-  if (d0 == 2 && d1 == 2)
+  else if (d0 == 2 && d1 == 2)
   {
     return collides_triangle_triangle(g0.x(v0[0]), g0.x(v0[1]), g0.x(v0[2]),
                                       g1.x(v1[0]), g1.x(v1[1]), g1.x(v1[2]),
                                       gdim);
   }
-
-  if (d0 == 2 && d1 == 3)
+  else if (d0 == 2 && d1 == 3)
   {
     return collides_tetrahedron_triangle_3d(
         g1.x(v1[0]), g1.x(v1[1]), g1.x(v1[2]), g1.x(v1[3]), g0.x(v0[0]),
         g0.x(v0[1]), g0.x(v0[2]));
   }
-
-  if (d0 == 3 && d1 == 2)
+  else if (d0 == 3 && d1 == 2)
   {
     return collides_tetrahedron_triangle_3d(
         g0.x(v0[0]), g0.x(v0[1]), g0.x(v0[2]), g0.x(v0[3]), g1.x(v1[0]),
         g1.x(v1[1]), g1.x(v1[2]));
   }
-
-  if (d0 == 3 && d1 == 3)
+  else if (d0 == 3 && d1 == 3)
   {
     return collides_tetrahedron_tetrahedron_3d(
         g0.x(v0[0]), g0.x(v0[1]), g0.x(v0[2]), g0.x(v0[3]), g1.x(v1[0]),
         g1.x(v1[1]), g1.x(v1[2]), g1.x(v1[3]));
   }
-
-  throw std::runtime_error("Cannot compute entity-entity collision. "
-                           "Not implemented for topological dimensions "
-                           + std::to_string(d0) + " / " + std::to_string(d1)
-                           + " and geometrical dimension "
-                           + std::to_string(gdim));
-
-  return false;
+  else
+  {
+    throw std::runtime_error("Cannot compute entity-entity collision. "
+                             "Not implemented for topological dimensions "
+                             + std::to_string(d0) + " / " + std::to_string(d1)
+                             + " and geometrical dimension "
+                             + std::to_string(gdim));
+    return false;
+  }
 }
 //-----------------------------------------------------------------------------
 // Low-level collision detection predicates
@@ -179,8 +175,8 @@ bool CollisionPredicates::collides_segment_point(const Eigen::Vector3d& p0,
     throw std::runtime_error(
         "Cannot call collides_segment_point. Unknown "
         "dimension (only implemented for dimension 2 and 3)");
+    return false;
   }
-  return false;
 }
 //-----------------------------------------------------------------------------
 bool CollisionPredicates::collides_segment_segment(const Eigen::Vector3d& p0,
@@ -201,8 +197,8 @@ bool CollisionPredicates::collides_segment_segment(const Eigen::Vector3d& p0,
     throw std::runtime_error(
         "Cannot call collides_segment_segment. Unknown "
         "dimension (only implemented for dimension 2 and 3)");
+    return false;
   }
-  return false;
 }
 //------------------------------------------------------------------------------
 bool CollisionPredicates::collides_triangle_point(const Eigen::Vector3d& p0,
@@ -221,8 +217,8 @@ bool CollisionPredicates::collides_triangle_point(const Eigen::Vector3d& p0,
     throw std::runtime_error(
         "Cannot call collides_triangle_point. Unknown "
         "dimension (only implemented for dimension 2 and 3)");
+    return false;
   }
-  return false;
 }
 //------------------------------------------------------------------------------
 bool CollisionPredicates::collides_triangle_segment(const Eigen::Vector3d& p0,
@@ -242,8 +238,8 @@ bool CollisionPredicates::collides_triangle_segment(const Eigen::Vector3d& p0,
     throw std::runtime_error(
         "Cannot call collides_triangle_segment. Unknown "
         "dimension (only implemented for dimension 2 and 3)");
+    return false;
   }
-  return false;
 }
 //------------------------------------------------------------------------------
 bool CollisionPredicates::collides_triangle_triangle(
@@ -261,10 +257,9 @@ bool CollisionPredicates::collides_triangle_triangle(
     throw std::runtime_error(
         "Cannot call collides_triangle_triangle. Unknown "
         "dimension (only implemented for dimension 2 and 3)");
+    return false;
   }
-  return false;
 }
-
 //-----------------------------------------------------------------------------
 bool CollisionPredicates::collides_segment_point_1d(double p0, double p1,
                                                     double point)
@@ -279,10 +274,8 @@ bool CollisionPredicates::collides_segment_point_2d(
     const Eigen::Vector3d& point)
 {
   const double orientation = orient2d(p0, p1, point);
-
   const Eigen::Vector3d dp = p1 - p0;
   const double segment_length = dp.dot(dp);
-
   return orientation == 0.0 && (point - p0).dot(point - p0) <= segment_length
          && (point - p1).dot(point - p1) <= segment_length
          && dp.dot(p1 - point) >= 0.0 && dp.dot(point - p0) >= 0.0;
@@ -292,7 +285,6 @@ bool CollisionPredicates::collides_segment_point_3d(
     const Eigen::Vector3d& p0, const Eigen::Vector3d& p1,
     const Eigen::Vector3d& point)
 {
-
   if (point == p0 or point == p1)
     return true;
 
@@ -310,7 +302,6 @@ bool CollisionPredicates::collides_segment_point_3d(
       const std::array<std::array<double, 2>, 3> yz
           = {{{{p0[1], p0[2]}}, {{p1[1], p1[2]}}, {{point[1], point[2]}}}};
       const double det_yz = _orient2d(yz[0].data(), yz[1].data(), yz[2].data());
-
       if (det_yz == 0.0)
       {
         // Point is aligned with segment
@@ -347,19 +338,23 @@ bool CollisionPredicates::collides_segment_segment_2d(const Eigen::Vector3d& p0,
 
   if (collides_segment_point_2d(p0, p1, q0))
     return true;
-  if (collides_segment_point_2d(p0, p1, q1))
+  else if (collides_segment_point_2d(p0, p1, q1))
     return true;
-  if (collides_segment_point_2d(q0, q1, p0))
+  else if (collides_segment_point_2d(q0, q1, p0))
     return true;
-  if (collides_segment_point_2d(q0, q1, p1))
-    return true;
-
-  // Points must be on different sides
-  if (((orient2d(q0, q1, p0) > 0.0) xor (orient2d(q0, q1, p1) > 0.0))
-      and ((orient2d(p0, p1, q0) > 0.0) xor (orient2d(p0, p1, q1) > 0.0)))
+  else if (collides_segment_point_2d(q0, q1, p1))
     return true;
   else
-    return false;
+  {
+    // Points must be on different sides
+    if (((orient2d(q0, q1, p0) > 0.0) xor (orient2d(q0, q1, p1) > 0.0))
+        and ((orient2d(p0, p1, q0) > 0.0) xor (orient2d(p0, p1, q1) > 0.0)))
+    {
+      return true;
+    }
+    else
+      return false;
+  }
 }
 //-----------------------------------------------------------------------------
 bool CollisionPredicates::collides_segment_segment_3d(const Eigen::Vector3d& p0,
@@ -398,26 +393,33 @@ bool CollisionPredicates::collides_segment_segment_3d(const Eigen::Vector3d& p0,
       // Now we know that the segments are collinear
       if ((p0 - q0).dot(p0 - q0) <= (q1 - q0).dot(q1 - q0)
           and (p0 - q1).dot(p0 - q1) <= (q0 - q1).dot(q0 - q1))
+      {
         return true;
+      }
 
       if ((p1 - q0).dot(p1 - q0) <= (q1 - q0).dot(q1 - q0)
           and (p1 - q1).dot(p1 - q1) <= (q0 - q1).dot(q0 - q1))
+      {
         return true;
+      }
 
       if ((q0 - p0).dot(q0 - p0) <= (p1 - p0).dot(p1 - p0)
           and (q0 - p1).dot(q0 - p1) <= (p0 - p1).dot(p0 - p1))
+      {
         return true;
+      }
 
       if ((q1 - p0).dot(q1 - p0) <= (p1 - p0).dot(p1 - p0)
           and (q1 - p1).dot(q1 - p1) <= (p0 - p1).dot(p0 - p1))
+      {
         return true;
+      }
     }
   }
 
   // Segments are not collinear, but in the same plane
   // Try to reduce to 2d by elimination
-
-  for (std::size_t d = 0; d < 3; ++d)
+  for (int d = 0; d < 3; ++d)
   {
     if (p0[d] == p1[d] and p0[d] == q0[d] and p0[d] == q1[d])
     {
@@ -473,13 +475,11 @@ bool CollisionPredicates::collides_triangle_point_3d(
     return true;
 
   const double tet_det = orient3d(p0, p1, p2, point);
-
   if (tet_det < 0.0 or tet_det > 0.0)
     return false;
 
   // Use normal
   const Eigen::Vector3d n = cross_product(p0, p1, p2);
-
   return !(n.dot(cross_product(point, p0, p1)) < 0.0
            or n.dot(cross_product(point, p2, p0)) < 0.0
            or n.dot(cross_product(point, p1, p2)) < 0.0);

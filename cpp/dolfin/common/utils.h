@@ -40,7 +40,7 @@ std::string container_to_string(const T& x, std::string delimiter,
     }
     else
     {
-      for (unsigned int i = 0; i != x.size(); ++i)
+      for (std::size_t i = 0; i != x.size(); ++i)
       {
         if ((i + 1) % linebreak == 0)
           s << x[i] << std::endl;
