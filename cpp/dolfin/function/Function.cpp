@@ -153,61 +153,7 @@ void Function::eval(
     const Eigen::Ref<const Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic,
                                         Eigen::RowMajor>>
         x,
-    const geometry::BoundingBoxTree& bb_tree,
-    Eigen::Ref<Eigen::Array<PetscScalar, Eigen::Dynamic, Eigen::Dynamic,
-                            Eigen::RowMajor>>
-        u) const
-{
-  assert(_function_space);
-  assert(_function_space->mesh());
-  const mesh::Mesh& mesh = *_function_space->mesh();
-  const int tdim = mesh.topology().dim();
-
-  // Find the cell that contains x
-  const int gdim = x.cols();
-  Eigen::Vector3d point = Eigen::Vector3d::Zero();
-  for (int i = 0; i < x.rows(); ++i)
-  {
-    // Pad the input point to size 3 (bounding box requires 3d point)
-    point.head(gdim) = x.row(i);
-
-    // Get index of first cell containing point
-    int index = geometry::compute_first_entity_collision(bb_tree, point, mesh);
-
-    // If not found, use the closest cell
-    if (index < 0)
-    {
-      throw std::runtime_error("Cannot evaluate function at point. The point "
-                               "is not inside the domain.");
-
-      // // Check if the closest cell is within 2*DBL_EPSILON. This we can
-      // // allow without _allow_extrapolation
-      // std::pair<int, double> close;
-      // // std::pair<int, double> close
-      // //     = compute_closest_entity(bb_tree, point, mesh);
-      // if (close.second < 2.0 * DBL_EPSILON)
-      //   index = close.first;
-      // else
-      // {
-      //   throw std::runtime_error("Cannot evaluate function at point. The
-      //   point "
-      //                            "is not inside the domain.");
-      // }
-    }
-
-    // Create cell that contains point
-    const mesh::MeshEntity cell(mesh, tdim, index);
-
-    // Call evaluate function
-    eval(x.row(i), cell, u.row(i));
-  }
-}
-//-----------------------------------------------------------------------------
-void Function::eval(
-    const Eigen::Ref<const Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic,
-                                        Eigen::RowMajor>>
-        x,
-    const mesh::MeshEntity& cell,
+    const Eigen::Ref<const Eigen::Array<int, Eigen::Dynamic, 1>> cells,
     Eigen::Ref<Eigen::Array<PetscScalar, Eigen::Dynamic, Eigen::Dynamic,
                             Eigen::RowMajor>>
         u) const
@@ -218,15 +164,9 @@ void Function::eval(
   assert(_function_space);
   assert(_function_space->mesh());
   const mesh::Mesh& mesh = *_function_space->mesh();
-  if (cell.mesh().id() != mesh.id())
-  {
-    throw std::runtime_error(
-        "Cell passed to Function::eval is from a different mesh.");
-  }
 
   const int gdim = mesh.geometry().dim();
   const int tdim = mesh.topology().dim();
-  assert(cell.dim() == tdim);
 
   assert(x.rows() == u.rows());
   assert(_function_space->element());
@@ -250,13 +190,6 @@ void Function::eval(
       = mesh.geometry().points();
   EigenRowArrayXXd coordinate_dofs(num_dofs_g, gdim);
 
-  const int cell_index = cell.index();
-  for (int i = 0; i < num_dofs_g; ++i)
-    for (int j = 0; j < gdim; ++j)
-      coordinate_dofs(i, j) = x_g(cell_g[pos_g[cell_index] + i], j);
-
-  restrict(cell, coordinate_dofs, coefficients.data());
-
   // Get coordinate mapping
   std::shared_ptr<const fem::CoordinateMapping> cmap
       = mesh.geometry().coord_mapping;
@@ -266,36 +199,53 @@ void Function::eval(
         "fem::CoordinateMapping has not been attached to mesh.");
   }
 
-  std::size_t num_points = x.rows();
+  // -- here
+  if (x.rows() != cells.rows())
+  {
+    throw std::runtime_error(
+        "Number of points and number of cells must be equal.");
+  }
+
+  // std::size_t num_points = x.rows();
   std::size_t reference_value_size = element.reference_value_size();
   std::size_t value_size = element.value_size();
   std::size_t space_dimension = element.space_dimension();
 
-  Eigen::Tensor<double, 3, Eigen::RowMajor> J(num_points, gdim, tdim);
-  EigenArrayXd detJ(num_points);
-  Eigen::Tensor<double, 3, Eigen::RowMajor> K(num_points, tdim, gdim);
+  Eigen::Tensor<double, 3, Eigen::RowMajor> J(1, gdim, tdim);
+  EigenArrayXd detJ(1);
+  Eigen::Tensor<double, 3, Eigen::RowMajor> K(1, tdim, gdim);
+  EigenRowArrayXXd X(1, tdim);
 
-  EigenRowArrayXXd X(x.rows(), tdim);
   Eigen::Tensor<double, 3, Eigen::RowMajor> basis_reference_values(
-      num_points, space_dimension, reference_value_size);
+      1, space_dimension, reference_value_size);
+  Eigen::Tensor<double, 3, Eigen::RowMajor> basis_values(1, space_dimension,
+                                                         value_size);
 
-  Eigen::Tensor<double, 3, Eigen::RowMajor> basis_values(
-      num_points, space_dimension, value_size);
-
-  // Compute reference coordinates X, and J, detJ and K
-  cmap->compute_reference_geometry(X, J, detJ, K, x, coordinate_dofs);
-
-  // Compute basis on reference element
-  element.evaluate_reference_basis(basis_reference_values, X);
-
-  // Push basis forward to physical element
-  element.transform_reference_basis(basis_values, basis_reference_values, X, J,
-                                    detJ, K);
-
-  // Compute expansion
   u.setZero();
-  for (std::size_t p = 0; p < num_points; ++p)
+  for (int p = 0; p < cells.rows(); ++p)
   {
+    const int cell_index = cells(p);
+    if (cell_index < 0)
+      break;
+
+    for (int i = 0; i < num_dofs_g; ++i)
+      for (int j = 0; j < gdim; ++j)
+        coordinate_dofs(i, j) = x_g(cell_g[pos_g[cell_index] + i], j);
+
+    const mesh::MeshEntity cell(mesh, tdim, cell_index);
+    restrict(cell, coordinate_dofs, coefficients.data());
+
+    // Compute reference coordinates X, and J, detJ and K
+    cmap->compute_reference_geometry(X, J, detJ, K, x.row(p), coordinate_dofs);
+
+    // Compute basis on reference element
+    element.evaluate_reference_basis(basis_reference_values, X);
+
+    // Push basis forward to physical element
+    element.transform_reference_basis(basis_values, basis_reference_values, X,
+                                      J, detJ, K);
+
+    // Compute expansion
     for (std::size_t i = 0; i < space_dimension; ++i)
     {
       for (std::size_t j = 0; j < value_size; ++j)
@@ -305,6 +255,57 @@ void Function::eval(
       }
     }
   }
+
+  // const int cell_index = cell.index();
+  // for (int i = 0; i < num_dofs_g; ++i)
+  //   for (int j = 0; j < gdim; ++j)
+  //     coordinate_dofs(i, j) = x_g(cell_g[pos_g[cell_index] + i], j);
+
+  // restrict(cell, coordinate_dofs, coefficients.data());
+
+  // Get coordinate mapping
+  // std::shared_ptr<const fem::CoordinateMapping> cmap
+  //     = mesh.geometry().coord_mapping;
+  // if (!cmap)
+  // {
+  //   throw std::runtime_error(
+  //       "fem::CoordinateMapping has not been attached to mesh.");
+  // }
+
+  // Eigen::Tensor<double, 3, Eigen::RowMajor> J(num_points, gdim, tdim);
+  // EigenArrayXd detJ(num_points);
+  // Eigen::Tensor<double, 3, Eigen::RowMajor> K(num_points, tdim, gdim);
+
+  // EigenRowArrayXXd X(x.rows(), tdim);
+  // Eigen::Tensor<double, 3, Eigen::RowMajor> basis_reference_values(
+  //     num_points, space_dimension, reference_value_size);
+
+  // Eigen::Tensor<double, 3, Eigen::RowMajor> basis_values(
+  //     num_points, space_dimension, value_size);
+
+  // Compute reference coordinates X, and J, detJ and K
+  // cmap->compute_reference_geometry(X, J, detJ, K, x, coordinate_dofs);
+
+  // // Compute basis on reference element
+  // element.evaluate_reference_basis(basis_reference_values, X);
+
+  // // Push basis forward to physical element
+  // element.transform_reference_basis(basis_values, basis_reference_values, X,
+  // J,
+  //                                   detJ, K);
+
+  // // Compute expansion
+  // // for (std::size_t p = 0; p < num_points; ++p)
+  // // {
+  // for (std::size_t i = 0; i < space_dimension; ++i)
+  // {
+  //   for (std::size_t j = 0; j < value_size; ++j)
+  //   {
+  //     // TODO: Find an Eigen shortcut fot this operation
+  //     u.row(p)[j] += coefficients[i] * basis_values(p, i, j);
+  //   }
+  // }
+  // // }
 }
 //-----------------------------------------------------------------------------
 void Function::interpolate(const Function& v)
@@ -419,7 +420,9 @@ Function::compute_point_values() const
     values.resize(x.rows(), value_size_loc);
 
     // Call evaluate function
-    eval(x, cell, values);
+    Eigen::Array<int, Eigen::Dynamic, 1> cells(x.rows());
+    cells = cell.index();
+    eval(x, cells, values);
 
     // Copy values to array of point values
     const std::int32_t* dofs = cell_dofs.connections(cell.index());

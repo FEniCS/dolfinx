@@ -82,11 +82,11 @@ class Function(ufl.Coefficient):
             # Scalar evaluation
             return self(*x)
 
-    def eval_cell(self, x: np.ndarray, cell, u):
-        u = self._cpp_object.eval_cell(x, cell, u)
-        return u
+    # def eval_cell(self, x: np.ndarray, cells, u):
+    #     u = self._cpp_object.eval_cell(x, cells, u)
+    #     return u
 
-    def eval(self, x: np.ndarray, bb_tree: cpp.geometry.BoundingBoxTree, u=None) -> np.ndarray:
+    def eval(self, x: np.ndarray, cells, u=None) -> np.ndarray:
         """Evaluate Function at points x, where x has shape (num_points, gdim)"""
 
         # Make sure input coordinates are a NumPy array
@@ -105,7 +105,7 @@ class Function(ufl.Coefficient):
             else:
                 u = np.empty((num_points, value_size))
 
-        self._cpp_object.eval(x, bb_tree, u)
+        self._cpp_object.eval(x, [cells], u)
         if num_points == 1:
             u = np.reshape(u, (-1, ))
         return u

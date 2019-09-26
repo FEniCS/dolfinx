@@ -15,7 +15,8 @@ from petsc4py import PETSc
 
 import ufl
 from dolfin import (MPI, Function, FunctionSpace, TensorFunctionSpace,
-                    UnitCubeMesh, VectorFunctionSpace, cpp, interpolate)
+                    UnitCubeMesh, VectorFunctionSpace, cpp, geometry,
+                    interpolate)
 from dolfin_utils.test.fixtures import fixture
 from dolfin_utils.test.skips import skip_if_complex, skip_in_parallel
 
@@ -164,7 +165,8 @@ def test_eval(R, V, W, Q, mesh):
     u3.interpolate(e3)
 
     x0 = (mesh.geometry.x(0) + mesh.geometry.x(1)) / 2.0
-    tree = cpp.geometry.BoundingBoxTree(mesh, mesh.geometry.dim)
+    tree = geometry.BoundingBoxTree(mesh, mesh.geometry.dim)
+    cells = geometry.compute_first_entity_collision(tree, mesh)
     assert np.allclose(u3.eval(x0, tree)[:3], u2.eval(x0, tree), rtol=1e-15, atol=1e-15)
 
     with pytest.raises(ValueError):

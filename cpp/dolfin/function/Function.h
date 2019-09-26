@@ -118,20 +118,7 @@ public:
   eval(const Eigen::Ref<const Eigen::Array<double, Eigen::Dynamic,
                                            Eigen::Dynamic, Eigen::RowMajor>>
            x,
-       const mesh::MeshEntity& cell,
-       Eigen::Ref<Eigen::Array<PetscScalar, Eigen::Dynamic, Eigen::Dynamic,
-                               Eigen::RowMajor>>
-           u) const;
-
-  /// Evaluate function at given coordinates
-  /// @param[in] x The coordinates of the points
-  /// @param[in] bb_tree Bounding box tree for the mesh
-  /// @param[in,out] u The values at the points
-  void
-  eval(const Eigen::Ref<const Eigen::Array<double, Eigen::Dynamic,
-                                           Eigen::Dynamic, Eigen::RowMajor>>
-           x,
-       const geometry::BoundingBoxTree& bb_tree,
+       const Eigen::Ref<const Eigen::Array<int, Eigen::Dynamic, 1>> cells,
        Eigen::Ref<Eigen::Array<PetscScalar, Eigen::Dynamic, Eigen::Dynamic,
                                Eigen::RowMajor>>
            u) const;
