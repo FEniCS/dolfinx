@@ -127,6 +127,7 @@ void FormIntegrals::set_domains(FormIntegrals::Type type,
   // Get reference to mesh function data array
   Eigen::Ref<const Eigen::Array<std::size_t, Eigen::Dynamic, 1>> mf_values
       = marker.values();
+  const int num_entities = mesh->topology().ghost_offset(dim);
 
   if (type == Type::exterior_facet or type == Type::interior_facet)
   {
@@ -141,7 +142,7 @@ void FormIntegrals::set_domains(FormIntegrals::Type type,
       throw std::runtime_error(
           "Facet-cell connectivity has not been computed.");
     }
-    for (Eigen::Index i = 0; i < mf_values.size(); ++i)
+    for (Eigen::Index i = 0; i < num_entities; ++i)
     {
       if ((int)connectivity->size_global(i) == num_cells_per_facet)
       {
@@ -154,7 +155,7 @@ void FormIntegrals::set_domains(FormIntegrals::Type type,
   else
   {
     // For cell and vertex integrals use all markers
-    for (Eigen::Index i = 0; i < mf_values.size(); ++i)
+    for (Eigen::Index i = 0; i < num_entities; ++i)
     {
       auto it = id_to_integral.find(mf_values[i]);
       if (it != id_to_integral.end())
