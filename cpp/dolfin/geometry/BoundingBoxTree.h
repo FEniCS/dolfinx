@@ -24,8 +24,8 @@ class MeshEntity;
 namespace geometry
 {
 
-/// Axis-Aligned Bounding Box Tree, used to find entities in a collection
-/// (often a mesh::Mesh)
+/// Axis-Aligned bounding box binary tree. It is used to find entities
+/// in a collection (often a mesh::Mesh).
 
 class BoundingBoxTree
 {
@@ -82,6 +82,7 @@ public:
   }
 
 private:
+  // Constructor
   BoundingBoxTree(const std::vector<double>& leaf_bboxes,
                   const std::vector<int>::iterator partition_begin,
                   const std::vector<int>::iterator partition_end);
