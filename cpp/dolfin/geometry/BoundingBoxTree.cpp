@@ -225,7 +225,7 @@ int BoundingBoxTree::_build_from_leaf(
                      });
 
     // Split bounding boxes into two groups and call recursively
-    BBox bbox;
+    std::array<int, 2> bbox;
     bbox[0] = _build_from_leaf(leaf_bboxes, partition_begin, partition_middle);
     bbox[1] = _build_from_leaf(leaf_bboxes, partition_middle, partition_end);
 
@@ -241,17 +241,14 @@ int BoundingBoxTree::_build_from_point(
 {
   assert(begin < end);
 
-  // Create empty bounding box data
-  BBox bbox;
-
   // Reached leaf
   if (end - begin == 1)
   {
     // Store bounding box data
     const int point_index = *begin;
-    bbox[0] = num_bboxes(); // child_0 == node denotes a leaf
-    bbox[1] = point_index;  // index of entity contained in leaf
-    return add_point(bbox, points[point_index]);
+    const int c0 = num_bboxes(); // child_0 == node denotes a leaf
+    const int c1 = point_index;  // index of entity contained in leaf
+    return add_point({c0, c1}, points[point_index]);
   }
 
   // Compute bounding box of all points
@@ -269,6 +266,7 @@ int BoundingBoxTree::_build_from_point(
   });
 
   // Split bounding boxes into two groups and call recursively
+  std::array<int, 2> bbox;
   bbox[0] = _build_from_point(points, begin, middle);
   bbox[1] = _build_from_point(points, middle, end);
 
@@ -276,31 +274,9 @@ int BoundingBoxTree::_build_from_point(
   return add_bbox(bbox, b);
 }
 //-----------------------------------------------------------------------------
-void BoundingBoxTree::build_point_search_tree(const mesh::Mesh& mesh) const
-{
-  // Don't build search tree if it already exists
-  if (_point_search_tree)
-    return;
-
-  LOG(INFO) << "Building point search tree to accelerate distance queries.";
-
-  // Create list of midpoints for all cells
-  const int dim = mesh.topology().dim();
-  Eigen::Array<int, Eigen::Dynamic, 1> entities(mesh.num_entities(dim));
-  std::iota(entities.data(), entities.data() + entities.rows(), 0);
-  Eigen::Array<double, Eigen::Dynamic, 3, Eigen::RowMajor> midpoints
-      = mesh::midpoints(mesh, dim, entities);
-
-  std::vector<Eigen::Vector3d> points(entities.rows());
-  for (std::size_t i = 0; i < points.size(); ++i)
-    points[i] = midpoints.row(i);
-
-  // Build tree
-  _point_search_tree = std::make_unique<BoundingBoxTree>(points);
-}
-//-----------------------------------------------------------------------------
 int BoundingBoxTree::add_bbox(
-    const BBox& bbox, const Eigen::Array<double, 2, 3, Eigen::RowMajor>& b)
+    const std::array<int, 2>& bbox,
+    const Eigen::Array<double, 2, 3, Eigen::RowMajor>& b)
 {
   // Add bounding box and coordinates
   _bboxes.push_back(bbox);
@@ -341,7 +317,8 @@ void BoundingBoxTree::tree_print(std::stringstream& s, int i)
   }
 }
 //-----------------------------------------------------------------------------
-int BoundingBoxTree::add_point(const BBox& bbox, const Eigen::Vector3d& point)
+int BoundingBoxTree::add_point(const std::array<int, 2>& bbox,
+                               const Eigen::Vector3d& point)
 {
   // Add bounding box
   _bboxes.push_back(bbox);

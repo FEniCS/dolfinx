@@ -33,7 +33,7 @@ bool point_outside_of_plane(const Eigen::Vector3d& p, const Eigen::Vector3d& a,
 }
 //-----------------------------------------------------------------------------
 // Check whether bounding box is a leaf node
-bool is_leaf(const geometry::BoundingBoxTree::BBox& bbox, int node)
+bool is_leaf(const std::array<int, 2>& bbox, int node)
 {
   // Leaf nodes are marked by setting child_0 equal to the node itself
   return bbox[0] == node;
@@ -45,8 +45,8 @@ _compute_closest_entity(const geometry::BoundingBoxTree& tree,
                         const Eigen::Vector3d& point, int node,
                         const mesh::Mesh& mesh, int closest_entity, double R2)
 {
-  // Get bounding box for current node
-  const geometry::BoundingBoxTree::BBox bbox = tree.bbox(node);
+  // Get children of current bounding box node
+  const std::array<int, 2> bbox = tree.bbox(node);
 
   // If bounding box is outside radius, then don't search further
   const double r2
@@ -92,8 +92,8 @@ _compute_closest_point(const geometry::BoundingBoxTree& tree,
                        const Eigen::Vector3d& point, int node,
                        int closest_point, double R2)
 {
-  // Get bounding box for current node
-  const geometry::BoundingBoxTree::BBox bbox = tree.bbox(node);
+  // Get children of current bounding box node
+  const std::array<int, 2> bbox = tree.bbox(node);
 
   // If box is leaf, then compute distance and shrink radius
   if (is_leaf(bbox, node))
@@ -133,8 +133,8 @@ void _compute_collisions_point(const geometry::BoundingBoxTree& tree,
                                const mesh::Mesh* mesh,
                                std::vector<int>& entities)
 {
-  // Get bounding box for current node
-  const geometry::BoundingBoxTree::BBox bbox = tree.bbox(node);
+  // Get children of current bounding box node
+  const std::array<int, 2> bbox = tree.bbox(node);
 
   if (!geometry::point_in_bbox(tree.get_bbox(node), p))
   {
@@ -174,8 +174,8 @@ void _compute_collisions_point(const geometry::BoundingBoxTree& tree,
 int _compute_first_collision(const geometry::BoundingBoxTree& tree,
                              const Eigen::Vector3d& p, int node)
 {
-  // Get bounding box for current node
-  const geometry::BoundingBoxTree::BBox bbox = tree.bbox(node);
+  // Get children of current bounding box node
+  const std::array<int, 2> bbox = tree.bbox(node);
 
   if (!geometry::point_in_bbox(tree.get_bbox(node), p))
   {
@@ -209,8 +209,8 @@ int _compute_first_entity_collision(const geometry::BoundingBoxTree& tree,
                                     const Eigen::Vector3d& p, int node,
                                     const mesh::Mesh& mesh)
 {
-  // Get bounding box for current node
-  const geometry::BoundingBoxTree::BBox bbox = tree.bbox(node);
+  // Get children of current bounding box node
+  const std::array<int, 2> bbox = tree.bbox(node);
 
   // If point is not in bounding box, then don't search further
   if (!geometry::point_in_bbox(tree.get_bbox(node), p))
@@ -260,8 +260,8 @@ void _compute_collisions_tree(const geometry::BoundingBoxTree& A,
     return;
 
   // Get bounding boxes for current nodes
-  const geometry::BoundingBoxTree::BBox bbox_A = A.bbox(node_A);
-  const geometry::BoundingBoxTree::BBox bbox_B = B.bbox(node_B);
+  const std::array<int, 2> bbox_A = A.bbox(node_A);
+  const std::array<int, 2> bbox_B = B.bbox(node_B);
 
   // Check whether we've reached a leaf in A or B
   const bool is_leaf_A = is_leaf(bbox_A, node_A);
