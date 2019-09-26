@@ -77,8 +77,8 @@ public:
   ///         index of the cell that it bounds,
   std::array<int, 2> bbox(int node) const
   {
-    assert(node < (int)_bboxes.size());
-    return _bboxes[node];
+    assert(node < (int)_bboxes.rows());
+    return {_bboxes(node, 0), _bboxes(node, 1)};
   }
 
 private:
@@ -93,7 +93,8 @@ private:
   void tree_print(std::stringstream& s, int i);
 
   // List of bounding boxes (parent-child-entity relations)
-  std::vector<std::array<int, 2>> _bboxes;
+  // std::vector<std::array<int, 2>> _bboxes;
+  Eigen::Array<int, Eigen::Dynamic, 2, Eigen::RowMajor> _bboxes;
 
   // List of bounding box coordinates
   std::vector<double> _bbox_coordinates;

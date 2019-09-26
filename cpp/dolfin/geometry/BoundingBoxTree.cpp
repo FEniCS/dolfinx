@@ -225,7 +225,15 @@ BoundingBoxTree::BoundingBoxTree(const std::vector<double>& leaf_bboxes,
                                  const std::vector<int>::iterator end)
     : _tdim(0)
 {
-  _build_from_leaf(leaf_bboxes, begin, end, _bboxes, _bbox_coordinates);
+  std::vector<std::array<int, 2>> bboxes;
+  _build_from_leaf(leaf_bboxes, begin, end, bboxes, _bbox_coordinates);
+
+  _bboxes.resize(bboxes.size(), 2);
+  for (std::size_t i = 0; i < bboxes.size(); ++i)
+  {
+    _bboxes(i, 0) = bboxes[i][0];
+    _bboxes(i, 1) = bboxes[i][1];
+  }
 }
 //-----------------------------------------------------------------------------
 BoundingBoxTree::BoundingBoxTree(const mesh::Mesh& mesh, int tdim) : _tdim(tdim)
@@ -253,8 +261,9 @@ BoundingBoxTree::BoundingBoxTree(const mesh::Mesh& mesh, int tdim) : _tdim(tdim)
   std::iota(leaf_partition.begin(), leaf_partition.end(), 0);
 
   // Recursively build the bounding box tree from the leaves
+  std::vector<std::array<int, 2>> bboxes;
   _build_from_leaf(leaf_bboxes, leaf_partition.begin(), leaf_partition.end(),
-                   _bboxes, _bbox_coordinates);
+                   bboxes, _bbox_coordinates);
 
   LOG(INFO) << "Computed bounding box tree with " << num_bboxes()
             << " nodes for " << num_leaves << " entities.";
@@ -275,6 +284,13 @@ BoundingBoxTree::BoundingBoxTree(const mesh::Mesh& mesh, int tdim) : _tdim(tdim)
     LOG(INFO) << "Computed global bounding box tree with "
               << global_tree->num_bboxes() << " boxes.";
   }
+
+  _bboxes.resize(bboxes.size(), 2);
+  for (std::size_t i = 0; i < bboxes.size(); ++i)
+  {
+    _bboxes(i, 0) = bboxes[i][0];
+    _bboxes(i, 1) = bboxes[i][1];
+  }
 }
 //-----------------------------------------------------------------------------
 BoundingBoxTree::BoundingBoxTree(const std::vector<Eigen::Vector3d>& points)
@@ -286,8 +302,16 @@ BoundingBoxTree::BoundingBoxTree(const std::vector<Eigen::Vector3d>& points)
   std::iota(leaf_partition.begin(), leaf_partition.end(), 0);
 
   // Recursively build the bounding box tree from the leaves
+  std::vector<std::array<int, 2>> bboxes;
   _build_from_point(points, leaf_partition.begin(), leaf_partition.end(),
-                    _bboxes, _bbox_coordinates);
+                    bboxes, _bbox_coordinates);
+
+  _bboxes.resize(bboxes.size(), 2);
+  for (std::size_t i = 0; i < bboxes.size(); ++i)
+  {
+    _bboxes(i, 0) = bboxes[i][0];
+    _bboxes(i, 1) = bboxes[i][1];
+  }
 
   LOG(INFO) << "Computed bounding box tree with " << num_bboxes()
             << " nodes for " << num_leaves << " points.";
@@ -295,7 +319,7 @@ BoundingBoxTree::BoundingBoxTree(const std::vector<Eigen::Vector3d>& points)
 //-----------------------------------------------------------------------------
 // Implementation of private functions
 //-----------------------------------------------------------------------------
-int BoundingBoxTree::num_bboxes() const { return _bboxes.size(); }
+int BoundingBoxTree::num_bboxes() const { return _bboxes.rows(); }
 //-----------------------------------------------------------------------------
 std::string BoundingBoxTree::str(bool verbose)
 {
@@ -308,21 +332,21 @@ int BoundingBoxTree::tdim() const { return _tdim; }
 //-----------------------------------------------------------------------------
 void BoundingBoxTree::tree_print(std::stringstream& s, int i)
 {
-  assert(_bbox_coordinates.size() / _bboxes.size() == 3);
+  assert(_bbox_coordinates.size() / _bboxes.rows() == 3);
   int idx = i * 3;
   s << "[";
   for (int j = idx; j < idx + 3; ++j)
     s << _bbox_coordinates[j] << " ";
   s << "]\n";
 
-  if (_bboxes[i][0] == i)
-    s << "leaf containing entity (" << _bboxes[i][1] << ")";
+  if (_bboxes(i, 0) == i)
+    s << "leaf containing entity (" << _bboxes(i, 1) << ")";
   else
   {
     s << "{";
-    tree_print(s, _bboxes[i][0]);
+    tree_print(s, _bboxes(i, 0));
     s << ", \n";
-    tree_print(s, _bboxes[i][1]);
+    tree_print(s, _bboxes(i, 1));
     s << "}\n";
   }
 }
