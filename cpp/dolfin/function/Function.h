@@ -153,9 +153,12 @@ public:
   std::string name = "u";
 
   /// ID
-  const std::size_t id;
+  std::size_t id() const;
 
 private:
+  // ID
+  std::size_t _id;
+
   // The function space
   std::shared_ptr<const FunctionSpace> _function_space;
 

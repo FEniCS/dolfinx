@@ -334,7 +334,7 @@ face_long_edge(const mesh::Mesh& mesh)
     double max_len = 0.0;
     double min_len = std::numeric_limits<double>::max();
 
-    for (unsigned int i = 0; i < 3; ++i)
+    for (int i = 0; i < 3; ++i)
     {
       const double e_len = edge_length[face_edges[i]];
 
@@ -372,8 +372,8 @@ face_long_edge(const mesh::Mesh& mesh)
 //-----------------------------------------------------------------------------
 mesh::Mesh PlazaRefinementND::refine(const mesh::Mesh& mesh, bool redistribute)
 {
-  if (mesh.cell_type != mesh::CellType::triangle
-      and mesh.cell_type != mesh::CellType::tetrahedron)
+  if (mesh.cell_type() != mesh::CellType::triangle
+      and mesh.cell_type() != mesh::CellType::tetrahedron)
   {
     throw std::runtime_error("Cell type not supported");
   }
@@ -395,8 +395,8 @@ PlazaRefinementND::refine(const mesh::Mesh& mesh,
                           const mesh::MeshFunction<int>& refinement_marker,
                           bool redistribute)
 {
-  if (mesh.cell_type != mesh::CellType::triangle
-      and mesh.cell_type != mesh::CellType::tetrahedron)
+  if (mesh.cell_type() != mesh::CellType::triangle
+      and mesh.cell_type() != mesh::CellType::tetrahedron)
   {
     throw std::runtime_error("Cell type not supported");
   }

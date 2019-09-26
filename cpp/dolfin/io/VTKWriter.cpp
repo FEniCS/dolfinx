@@ -33,27 +33,33 @@ namespace
 {
 //-----------------------------------------------------------------------------
 // Get VTK cell type
-std::uint8_t vtk_cell_type(const mesh::Mesh &mesh, std::size_t cell_dim,
-                           std::size_t cell_order) {
+std::uint8_t vtk_cell_type(const mesh::Mesh& mesh, std::size_t cell_dim,
+                           std::size_t cell_order)
+{
   // Get cell type
-  mesh::CellType cell_type = mesh::cell_entity_type(mesh.cell_type, cell_dim);
+  mesh::CellType cell_type = mesh::cell_entity_type(mesh.cell_type(), cell_dim);
 
   // Determine VTK cell type
-  switch (cell_type) {
+  switch (cell_type)
+  {
   case mesh::CellType::tetrahedron:
     return 10;
   case mesh::CellType::hexahedron:
     return 12;
-  case mesh::CellType::quadrilateral: {
-    switch (cell_order) {
+  case mesh::CellType::quadrilateral:
+  {
+    switch (cell_order)
+    {
     case 1:
       return 9;
     default:
       return 70;
     }
   }
-  case mesh::CellType::triangle: {
-    switch (cell_order) {
+  case mesh::CellType::triangle:
+  {
+    switch (cell_order)
+    {
     case 1:
       return 5;
     default:
@@ -122,8 +128,8 @@ void write_ascii_mesh(const mesh::Mesh& mesh, std::size_t cell_dim,
   const int element_degree = mesh.degree();
 
   // Get VTK cell type
-  const std::size_t _vtk_cell_type =
-      vtk_cell_type(mesh, cell_dim, element_degree);
+  const std::size_t _vtk_cell_type
+      = vtk_cell_type(mesh, cell_dim, element_degree);
 
   // Open file
   std::ofstream file(filename.c_str(), std::ios::app);
@@ -138,8 +144,8 @@ void write_ascii_mesh(const mesh::Mesh& mesh, std::size_t cell_dim,
   file << "<DataArray  type=\"Float64\"  NumberOfComponents=\"3\"  format=\""
        << "ascii"
        << "\">";
-  const Eigen::Array<double, Eigen::Dynamic, 3, Eigen::RowMajor> points =
-      mesh.geometry().points();
+  const Eigen::Array<double, Eigen::Dynamic, 3, Eigen::RowMajor> points
+      = mesh.geometry().points();
   for (int i = 0; i < points.rows(); ++i)
     file << points(i, 0) << " " << points(i, 1) << " " << points(i, 2) << "  ";
   file << "</DataArray>" << std::endl << "</Points>" << std::endl;
@@ -150,19 +156,30 @@ void write_ascii_mesh(const mesh::Mesh& mesh, std::size_t cell_dim,
        << "ascii"
        << "\">";
 
-  const mesh::Connectivity &connectivity_g =
-      mesh.coordinate_dofs().entity_points();
+<<<<<<< HEAD
+  const mesh::Connectivity& connectivity_g
+      = mesh.coordinate_dofs().entity_points();
   Eigen::Ref<const Eigen::Array<std::int32_t, Eigen::Dynamic, 1>>
       cell_connections = connectivity_g.connections();
-  const Eigen::Ref<const Eigen::Array<std::int32_t, Eigen::Dynamic, 1>> pos_g =
-      connectivity_g.entity_positions();
-  const std::vector<std::uint8_t> perm =
-      mesh.coordinate_dofs().cell_permutation();
+  const Eigen::Ref<const Eigen::Array<std::int32_t, Eigen::Dynamic, 1>> pos_g
+      = connectivity_g.entity_positions();
+  const std::vector<std::uint8_t> perm
+      = mesh.coordinate_dofs().cell_permutation();
   int num_nodes = perm.size();
 
-  for (int j = 0; j < mesh.num_entities(mesh.topology().dim()); ++j) {
+  for (int j = 0; j < mesh.num_entities(mesh.topology().dim()); ++j)
+  {
     for (int i = 0; i < num_nodes; ++i)
       file << cell_connections(pos_g(j) + perm[i]) << " ";
+=======
+  mesh::CellType celltype = mesh::cell_entity_type(mesh.cell_type(), cell_dim);
+  const std::vector<std::int8_t> perm = mesh::vtk_mapping(celltype);
+  const int num_vertices = mesh::cell_num_entities(celltype, 0);
+  for (auto& c : mesh::MeshRange(mesh, cell_dim))
+  {
+    for (int i = 0; i < num_vertices; ++i)
+      file << c.entities(0)[perm[i]] << " ";
+>>>>>>> origin
     file << " ";
   }
   file << "</DataArray>" << std::endl;
@@ -202,10 +219,10 @@ void VTKWriter::write_cell_data(const function::Function& u,
                                 std::string filename)
 {
   // For brevity
-  assert(u.function_space()->mesh);
-  assert(u.function_space()->dofmap);
-  const mesh::Mesh& mesh = *u.function_space()->mesh;
-  const fem::DofMap& dofmap = *u.function_space()->dofmap;
+  assert(u.function_space()->mesh());
+  assert(u.function_space()->dofmap());
+  const mesh::Mesh& mesh = *u.function_space()->mesh();
+  const fem::DofMap& dofmap = *u.function_space()->dofmap();
   const std::size_t tdim = mesh.topology().dim();
   const std::size_t num_cells = mesh.topology().ghost_offset(tdim);
 

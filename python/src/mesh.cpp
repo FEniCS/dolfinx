@@ -170,7 +170,7 @@ void mesh(py::module& m)
             const std::uint32_t tdim = self.topology().dim();
             return py::array(
                 {(std::int32_t)self.topology().size(tdim),
-                 (std::int32_t)dolfin::mesh::num_cell_vertices(self.cell_type)},
+                 (std::int32_t)dolfin::mesh::num_cell_vertices(self.cell_type())},
                 self.topology().connectivity(tdim, 0)->connections().data(),
                 py::none());
           },
@@ -202,11 +202,11 @@ void mesh(py::module& m)
       .def_property_readonly(
           "topology", py::overload_cast<>(&dolfin::mesh::Mesh::topology),
           "Mesh topology", py::return_value_policy::reference_internal)
-      .def_readonly("cell_type", &dolfin::mesh::Mesh::cell_type)
+      .def_property_readonly("cell_type", &dolfin::mesh::Mesh::cell_type)
       .def("ufl_id", &dolfin::mesh::Mesh::id)
       .def_property_readonly("id", &dolfin::mesh::Mesh::id)
       .def("cell_name", [](const dolfin::mesh::Mesh& self) {
-        return dolfin::mesh::to_string(self.cell_type);
+        return dolfin::mesh::to_string(self.cell_type());
       });
 
   // dolfin::mesh::Connectivity class

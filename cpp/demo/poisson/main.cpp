@@ -124,15 +124,7 @@ int main(int argc, char* argv[])
 
   mesh::Ordering::order_simplex(*mesh);
 
-  ufc_function_space* space = poisson_functionspace_create();
-  ufc_dofmap* ufc_map = space->create_dofmap();
-  ufc_finite_element* ufc_element = space->create_element();
-  auto V = std::make_shared<function::FunctionSpace>(
-      mesh, std::make_shared<fem::FiniteElement>(*ufc_element),
-      std::make_shared<fem::DofMap>(fem::create_dofmap(*ufc_map, *mesh)));
-  std::free(ufc_element);
-  std::free(ufc_map);
-  std::free(space);
+  auto V = fem::create_functionspace(poisson_functionspace_create, mesh);
 
   // Now, the Dirichlet boundary condition (:math:`u = 0`) can be created
   // using the class :cpp:class:`DirichletBC`. A :cpp:class:`DirichletBC`
@@ -206,7 +198,7 @@ int main(int argc, char* argv[])
   // Compute solution
   function::Function u(V);
   la::PETScMatrix A = fem::create_matrix(*a);
-  la::PETScVector b(*L->function_space(0)->dofmap->index_map);
+  la::PETScVector b(*L->function_space(0)->dofmap()->index_map);
 
   MatZeroEntries(A.mat());
   dolfin::fem::assemble_matrix(A.mat(), *a, bc);

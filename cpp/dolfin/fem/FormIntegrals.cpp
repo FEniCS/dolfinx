@@ -23,16 +23,12 @@ FormIntegrals::FormIntegrals()
 const std::function<void(PetscScalar*, const PetscScalar*, const PetscScalar*,
                          const double*, const int*, const int*)>&
 FormIntegrals::get_tabulate_tensor_function(FormIntegrals::Type type,
-                                            unsigned int i) const
+                                            int i) const
 {
   int type_index = static_cast<int>(type);
   const std::vector<struct FormIntegrals::Integral>& integrals
-      = _integrals[type_index];
-
-  if (i > integrals.size())
-    throw std::runtime_error("Invalid integral index: " + std::to_string(i));
-
-  return integrals[i].tabulate;
+      = _integrals.at(type_index);
+  return integrals.at(i).tabulate;
 }
 //-----------------------------------------------------------------------------
 void FormIntegrals::register_tabulate_tensor(
@@ -42,7 +38,7 @@ void FormIntegrals::register_tabulate_tensor(
 {
   const int type_index = static_cast<int>(type);
   std::vector<struct FormIntegrals::Integral>& integrals
-      = _integrals[type_index];
+      = _integrals.at(type_index);
 
   // Find insertion point
   int pos = 0;
@@ -81,12 +77,10 @@ std::vector<int> FormIntegrals::integral_ids(FormIntegrals::Type type) const
 }
 //-----------------------------------------------------------------------------
 const std::vector<std::int32_t>&
-FormIntegrals::integral_domains(FormIntegrals::Type type, unsigned int i) const
+FormIntegrals::integral_domains(FormIntegrals::Type type, int i) const
 {
   int type_index = static_cast<int>(type);
-  if (i > _integrals[type_index].size())
-    throw std::runtime_error("Invalid integral:" + std::to_string(i));
-  return _integrals[type_index][i].active_entities;
+  return _integrals[type_index].at(i).active_entities;
 }
 //-----------------------------------------------------------------------------
 void FormIntegrals::set_domains(FormIntegrals::Type type,
@@ -114,7 +108,7 @@ void FormIntegrals::set_domains(FormIntegrals::Type type,
 
   // Create a reverse map
   std::map<int, int> id_to_integral;
-  for (unsigned int i = 0; i < integrals.size(); ++i)
+  for (std::size_t i = 0; i < integrals.size(); ++i)
   {
     if (integrals[i].id != -1)
     {

@@ -13,7 +13,7 @@ using namespace dolfin;
 using namespace dolfin::generation;
 
 //-----------------------------------------------------------------------------
-mesh::Mesh UnitDiscMesh::create(MPI_Comm comm, std::size_t n,
+mesh::Mesh UnitDiscMesh::create(MPI_Comm comm, int n,
                                 const mesh::GhostMode ghost_mode)
 {
   assert(n > 0);
@@ -28,13 +28,12 @@ mesh::Mesh UnitDiscMesh::create(MPI_Comm comm, std::size_t n,
   }
 
   EigenRowArrayXXd points(1 + 3 * (2 * n + 1) * 2 * n, 2);
-
-  points.row(0) << 0.0, 0.0;
+  points.row(0) = 0.0;
 
   std::uint32_t c = 1;
-  for (std::size_t i = 1; i < (2 * n + 1); ++i)
+  for (int i = 1; i < (2 * n + 1); ++i)
   {
-    for (std::size_t j = 0; j < 6 * i; ++j)
+    for (int j = 0; j < 6 * i; ++j)
     {
       const double r = (double)i / (double)(2 * n);
       const double th = 2 * M_PI * (double)j / (double)(6 * i);
@@ -52,7 +51,7 @@ mesh::Mesh UnitDiscMesh::create(MPI_Comm comm, std::size_t n,
       12, 4, 0, 13, 15, 4, 14, 5, 0, 15, 17, 5, 16, 6, 0, 17, 7, 6, 18, 1;
 
   c = 6;
-  for (unsigned int i = 0; i < (n - 1); ++i)
+  for (int i = 0; i < (n - 1); ++i)
   {
     std::uint32_t i1 = 3 * (2 * i + 1) * (2 * i + 2) + 1;
     std::uint32_t i0 = i1;
@@ -60,9 +59,9 @@ mesh::Mesh UnitDiscMesh::create(MPI_Comm comm, std::size_t n,
     std::uint32_t i3 = 3 * (2 * i + 3) * (2 * i + 4) + 1;
     std::uint32_t i4 = 3 * (2 * i + 4) * (2 * i + 5) + 1;
 
-    for (unsigned int k = 0; k < 6; ++k)
+    for (int k = 0; k < 6; ++k)
     {
-      for (unsigned int j = 0; j < (i + 1); ++j)
+      for (int j = 0; j < (i + 1); ++j)
       {
         if (j == 0)
         {

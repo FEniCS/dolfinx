@@ -75,13 +75,14 @@ compute_entities_by_key_matching(const Mesh& mesh, int dim)
   common::Timer timer("Compute entities of dim = " + std::to_string(dim));
 
   // Initialize local array of entities
-  const std::int8_t num_entities = mesh::cell_num_entities(mesh.cell_type, dim);
+  const std::int8_t num_entities
+      = mesh::cell_num_entities(mesh.cell_type(), dim);
   const int num_vertices
-      = mesh::num_cell_vertices(mesh::cell_entity_type(mesh.cell_type, dim));
+      = mesh::num_cell_vertices(mesh::cell_entity_type(mesh.cell_type(), dim));
 
   // Create map from cell vertices to entity vertices
   Eigen::Array<int, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor> e_vertices
-      = mesh::get_entity_vertices(mesh.cell_type, dim);
+      = mesh::get_entity_vertices(mesh.cell_type(), dim);
 
   assert(N == num_vertices);
 
@@ -262,14 +263,14 @@ Connectivity compute_from_map(const Mesh& mesh, int d0, int d1)
   assert(d0 > d1);
 
   // Get the type of entity d0
-  mesh::CellType cell_type = mesh::cell_entity_type(mesh.cell_type, d0);
+  mesh::CellType cell_type = mesh::cell_entity_type(mesh.cell_type(), d0);
 
   // Make a map from the sorted d1 entity vertices to the d1 entity index
   boost::unordered_map<std::vector<std::int32_t>, std::int32_t> entity_to_index;
   entity_to_index.reserve(mesh.num_entities(d1));
 
   const std::size_t num_verts_d1
-      = mesh::num_cell_vertices(mesh::cell_entity_type(mesh.cell_type, d1));
+      = mesh::num_cell_vertices(mesh::cell_entity_type(mesh.cell_type(), d1));
 
   std::vector<std::int32_t> key(num_verts_d1);
   for (auto& e : MeshRange(mesh, d1, MeshRangeType::ALL))
@@ -340,7 +341,7 @@ void TopologyComputation::compute_entities(Mesh& mesh, int dim)
 
   // Call specialised function to compute entities
   const std::int8_t num_entity_vertices
-      = mesh::num_cell_vertices(mesh::cell_entity_type(mesh.cell_type, dim));
+      = mesh::num_cell_vertices(mesh::cell_entity_type(mesh.cell_type(), dim));
 
   std::tuple<std::shared_ptr<Connectivity>, std::shared_ptr<Connectivity>,
              std::int32_t>
