@@ -116,7 +116,7 @@ void geometry(py::module& m)
               py::array_t<int>(entities.size(), entities.data()),
               py::array_t<int>(offset.size(), offset.data()));
         });
-  m.def("compute_entity_collisions",
+  m.def("compute_entity_collisions_bb",
         py::overload_cast<const dolfin::geometry::BoundingBoxTree&,
                           const dolfin::geometry::BoundingBoxTree&,
                           const dolfin::mesh::Mesh&, const dolfin::mesh::Mesh&>(
