@@ -93,7 +93,6 @@ private:
   void tree_print(std::stringstream& s, int i);
 
   // List of bounding boxes (parent-child-entity relations)
-  // std::vector<std::array<int, 2>> _bboxes;
   Eigen::Array<int, Eigen::Dynamic, 2, Eigen::RowMajor> _bboxes;
 
   // List of bounding box coordinates

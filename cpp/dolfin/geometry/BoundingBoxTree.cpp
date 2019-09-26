@@ -324,7 +324,7 @@ int BoundingBoxTree::num_bboxes() const { return _bboxes.rows(); }
 std::string BoundingBoxTree::str(bool verbose)
 {
   std::stringstream s;
-  tree_print(s, _bboxes.size() - 1);
+  tree_print(s, _bboxes.rows() - 1);
   return s.str();
 }
 //-----------------------------------------------------------------------------
