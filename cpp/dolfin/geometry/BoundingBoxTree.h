@@ -96,7 +96,7 @@ private:
   Eigen::Array<int, Eigen::Dynamic, 2, Eigen::RowMajor> _bboxes;
 
   // List of bounding box coordinates
-  std::vector<double> _bbox_coordinates;
+  Eigen::Array<double, Eigen::Dynamic, 3, Eigen::RowMajor> _bbox_coordinates;
 
 public:
   /// Global tree for mesh ownership of each process (same on all

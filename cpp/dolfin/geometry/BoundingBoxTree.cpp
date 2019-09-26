@@ -226,7 +226,8 @@ BoundingBoxTree::BoundingBoxTree(const std::vector<double>& leaf_bboxes,
     : _tdim(0)
 {
   std::vector<std::array<int, 2>> bboxes;
-  _build_from_leaf(leaf_bboxes, begin, end, bboxes, _bbox_coordinates);
+  std::vector<double> bbox_coordinates;
+  _build_from_leaf(leaf_bboxes, begin, end, bboxes, bbox_coordinates);
 
   _bboxes.resize(bboxes.size(), 2);
   for (std::size_t i = 0; i < bboxes.size(); ++i)
@@ -234,6 +235,9 @@ BoundingBoxTree::BoundingBoxTree(const std::vector<double>& leaf_bboxes,
     _bboxes(i, 0) = bboxes[i][0];
     _bboxes(i, 1) = bboxes[i][1];
   }
+  _bbox_coordinates
+      = Eigen::Map<Eigen::Array<double, Eigen::Dynamic, 3, Eigen::RowMajor>>(
+          bbox_coordinates.data(), bbox_coordinates.size() / 3, 3);
 }
 //-----------------------------------------------------------------------------
 BoundingBoxTree::BoundingBoxTree(const mesh::Mesh& mesh, int tdim) : _tdim(tdim)
@@ -262,8 +266,9 @@ BoundingBoxTree::BoundingBoxTree(const mesh::Mesh& mesh, int tdim) : _tdim(tdim)
 
   // Recursively build the bounding box tree from the leaves
   std::vector<std::array<int, 2>> bboxes;
+  std::vector<double> bbox_coordinates;
   _build_from_leaf(leaf_bboxes, leaf_partition.begin(), leaf_partition.end(),
-                   bboxes, _bbox_coordinates);
+                   bboxes, bbox_coordinates);
 
   LOG(INFO) << "Computed bounding box tree with " << num_bboxes()
             << " nodes for " << num_leaves << " entities.";
@@ -273,8 +278,8 @@ BoundingBoxTree::BoundingBoxTree(const mesh::Mesh& mesh, int tdim) : _tdim(tdim)
   if (mpi_size > 1)
   {
     // Send root node coordinates to all processes
-    std::vector<double> send_bbox(_bbox_coordinates.end() - 6,
-                                  _bbox_coordinates.end());
+    std::vector<double> send_bbox(bbox_coordinates.end() - 6,
+                                  bbox_coordinates.end());
     std::vector<double> recv_bbox;
     MPI::all_gather(mesh.mpi_comm(), send_bbox, recv_bbox);
     std::vector<int> global_leaves(mpi_size);
@@ -291,6 +296,9 @@ BoundingBoxTree::BoundingBoxTree(const mesh::Mesh& mesh, int tdim) : _tdim(tdim)
     _bboxes(i, 0) = bboxes[i][0];
     _bboxes(i, 1) = bboxes[i][1];
   }
+  _bbox_coordinates
+      = Eigen::Map<Eigen::Array<double, Eigen::Dynamic, 3, Eigen::RowMajor>>(
+          bbox_coordinates.data(), bbox_coordinates.size() / 3, 3);
 }
 //-----------------------------------------------------------------------------
 BoundingBoxTree::BoundingBoxTree(const std::vector<Eigen::Vector3d>& points)
@@ -303,8 +311,9 @@ BoundingBoxTree::BoundingBoxTree(const std::vector<Eigen::Vector3d>& points)
 
   // Recursively build the bounding box tree from the leaves
   std::vector<std::array<int, 2>> bboxes;
+  std::vector<double> bbox_coordinates;
   _build_from_point(points, leaf_partition.begin(), leaf_partition.end(),
-                    bboxes, _bbox_coordinates);
+                    bboxes, bbox_coordinates);
 
   _bboxes.resize(bboxes.size(), 2);
   for (std::size_t i = 0; i < bboxes.size(); ++i)
@@ -312,12 +321,13 @@ BoundingBoxTree::BoundingBoxTree(const std::vector<Eigen::Vector3d>& points)
     _bboxes(i, 0) = bboxes[i][0];
     _bboxes(i, 1) = bboxes[i][1];
   }
+  _bbox_coordinates
+      = Eigen::Map<Eigen::Array<double, Eigen::Dynamic, 3, Eigen::RowMajor>>(
+          bbox_coordinates.data(), bbox_coordinates.size() / 3, 3);
 
   LOG(INFO) << "Computed bounding box tree with " << num_bboxes()
             << " nodes for " << num_leaves << " points.";
 }
-//-----------------------------------------------------------------------------
-// Implementation of private functions
 //-----------------------------------------------------------------------------
 int BoundingBoxTree::num_bboxes() const { return _bboxes.rows(); }
 //-----------------------------------------------------------------------------
@@ -332,11 +342,9 @@ int BoundingBoxTree::tdim() const { return _tdim; }
 //-----------------------------------------------------------------------------
 void BoundingBoxTree::tree_print(std::stringstream& s, int i)
 {
-  assert(_bbox_coordinates.size() / _bboxes.rows() == 3);
-  int idx = i * 3;
   s << "[";
-  for (int j = idx; j < idx + 3; ++j)
-    s << _bbox_coordinates[j] << " ";
+  for (int j = 0; j < 3; ++j)
+    s << _bbox_coordinates(i, j) << " ";
   s << "]\n";
 
   if (_bboxes(i, 0) == i)
@@ -354,8 +362,6 @@ void BoundingBoxTree::tree_print(std::stringstream& s, int i)
 Eigen::Array<double, 2, 3, Eigen::RowMajor>
 BoundingBoxTree::get_bbox(int node) const
 {
-  Eigen::Map<const Eigen::Array<double, Eigen::Dynamic, 3, Eigen::RowMajor>> b(
-      _bbox_coordinates.data() + 6 * node, 2, 3);
-  return b;
+  return _bbox_coordinates.block<2, 3>(2 * node, 0);
 }
 //-----------------------------------------------------------------------------
