@@ -163,9 +163,8 @@ void write_ascii_mesh(const mesh::Mesh& mesh, std::size_t cell_dim,
   const Eigen::Ref<const Eigen::Array<std::int32_t, Eigen::Dynamic, 1>> pos_g
       = connectivity_g.entity_positions();
   int num_nodes = mesh.coordinate_dofs().cell_permutation().size();
-  mesh::CellType cell_type = mesh::cell_entity_type(mesh.cell_type(), cell_dim);
   const std::vector<std::uint8_t> perm
-      = mesh::vtk_mapping(cell_type, num_nodes);
+      = mesh::vtk_mapping(mesh.cell_type(), num_nodes);
 
   for (int j = 0; j < mesh.num_entities(mesh.topology().dim()); ++j)
   {

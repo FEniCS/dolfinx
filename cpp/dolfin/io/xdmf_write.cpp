@@ -560,6 +560,7 @@ void xdmf_write::add_topology_data(MPI_Comm comm, pugi::xml_node& xml_node,
     // Adjust num_nodes_per_cell to appropriate size
     num_nodes_per_cell = cell_points.size(0);
     topology_data.reserve(num_nodes_per_cell * mesh.num_entities(tdim));
+
     int num_nodes = mesh.coordinate_dofs().cell_permutation().size();
     const std::vector<std::uint8_t> perm
         = mesh::vtk_mapping(mesh.cell_type(), num_nodes);
