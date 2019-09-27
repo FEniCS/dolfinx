@@ -182,7 +182,7 @@ def test_eval_multiple(W):
     x = np.array([x0, x0 + 1.0e8])
     tree = geometry.BoundingBoxTree(mesh, W.mesh.geometry.dim)
     cells = geometry.compute_first_entity_collision(tree, mesh, x)
-    f = u.eval(x[0], 0)
+    u.eval(x[0], cells[0])
 
 
 def test_scalar_conditions(R):
