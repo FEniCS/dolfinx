@@ -253,9 +253,9 @@ void Function::eval(
     restrict(cell, coordinate_dofs, coefficients.data());
 
     // Compute expansion
-    for (std::size_t i = 0; i < space_dimension; ++i)
+    for (int i = 0; i < space_dimension; ++i)
     {
-      for (std::size_t j = 0; j < value_size; ++j)
+      for (int j = 0; j < value_size; ++j)
       {
         // TODO: Find an Eigen shortcut fot this operation
         u.row(p)[j] += coefficients[i] * basis_values(0, i, j);
