@@ -110,10 +110,13 @@ public:
   /// Return value shape
   std::vector<int> value_shape() const;
 
-  /// Evaluate at given point in given cell
+  /// Evaluate the Function at points
   /// @param[in] x The coordinates of the points
-  /// @param[in] cells The cell which contains the given point
-  /// @param[in,out] u The values at the points
+  /// @param[in] cells The index of the cell which contains each point.
+  ///            Negative indices are ignored.
+  /// @param[in,out] u The values at the points. Values are not computed
+  ///                  for points with a negative cel index. This
+  ///                  argument must be passed with the corrext size.
   void
   eval(const Eigen::Ref<const Eigen::Array<double, Eigen::Dynamic,
                                            Eigen::Dynamic, Eigen::RowMajor>>

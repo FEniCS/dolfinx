@@ -166,20 +166,19 @@ void Function::eval(
     throw std::runtime_error(
         "Number of points and number of cells must be equal.");
   }
+  if (x.rows() != u.rows())
+  {
+    throw std::runtime_error("Length of array for Function values must be the "
+                             "same as the number of points.");
+  }
 
   assert(_function_space);
   assert(_function_space->mesh());
   const mesh::Mesh& mesh = *_function_space->mesh();
   const int gdim = mesh.geometry().dim();
   const int tdim = mesh.topology().dim();
-
-  assert(x.rows() == u.rows());
   assert(_function_space->element());
   const fem::FiniteElement& element = *_function_space->element();
-
-  // Create work vector for expansion coefficients
-  Eigen::Matrix<PetscScalar, 1, Eigen::Dynamic> coefficients(
-      element.space_dimension());
 
   // Get geometry data
   const mesh::Connectivity& connectivity_g
@@ -204,9 +203,9 @@ void Function::eval(
         "fem::CoordinateMapping has not been attached to mesh.");
   }
 
-  const std::size_t reference_value_size = element.reference_value_size();
-  const std::size_t value_size = element.value_size();
-  const std::size_t space_dimension = element.space_dimension();
+  const int reference_value_size = element.reference_value_size();
+  const int value_size = element.value_size();
+  const int space_dimension = element.space_dimension();
 
   // Prepare geometry data structures
   Eigen::Tensor<double, 3, Eigen::RowMajor> J(1, gdim, tdim);
@@ -220,9 +219,13 @@ void Function::eval(
   Eigen::Tensor<double, 3, Eigen::RowMajor> basis_values(1, space_dimension,
                                                          value_size);
 
+  // Create work vector for expansion coefficients
+  Eigen::Matrix<PetscScalar, 1, Eigen::Dynamic> coefficients(
+      element.space_dimension());
+
   // Loop over points
   u.setZero();
-  for (int p = 0; p < cells.rows(); ++p)
+  for (Eigen::Index p = 0; p < cells.rows(); ++p)
   {
     const int cell_index = cells(p);
 

@@ -92,7 +92,7 @@ class Function(ufl.Coefficient):
         if x.shape[1] != self.geometric_dimension():
             raise ValueError("Wrong geometric dimension for coordinate(s).")
 
-        # Allocate memory for return value is not provided
+        # Allocate memory for return value if not provided
         if u is None:
             value_size = ufl.product(self.ufl_element().value_shape())
             if common.has_petsc_complex:
