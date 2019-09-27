@@ -8,12 +8,59 @@
 import pytest
 from petsc4py import PETSc
 
-from dolfin import MPI, fem
+import ufl
+from dolfin import MeshFunction, MPI, fem
 from dolfin.cpp.mesh import GhostMode
 from dolfin.function import Function, TestFunction, TrialFunction
 from dolfin.functionspace import FunctionSpace
 from dolfin.generation import UnitSquareMesh
-from ufl import avg, ds, dS, dx, inner
+from ufl import avg, inner, Measure
+
+
+def dx_from_ufl(mesh):
+    return ufl.dx
+
+
+def dx_from_measure(mesh):
+    subdomains = MeshFunction("size_t", mesh, mesh.topology.dim, 1)
+    dx = Measure("dx")(subdomain_data=subdomains, domain=mesh)
+    dx = dx(1)
+    return dx
+
+
+def dx_from_measure_and_subdomain(mesh):
+    dx = dx_from_measure(mesh)
+    return dx(1)
+
+
+def ds_from_ufl(mesh):
+    return ufl.ds
+
+
+def ds_from_measure(mesh):
+    boundaries = MeshFunction("size_t", mesh, mesh.topology.dim - 1, 1)
+    ds = Measure("ds")(subdomain_data=boundaries, domain=mesh)
+    return ds
+
+
+def ds_from_measure_and_subdomain(mesh):
+    ds = ds_from_measure(mesh)
+    return ds(1)
+
+
+def dS_from_ufl(mesh):
+    return ufl.dS
+
+
+def dS_from_measure(mesh):
+    boundaries = MeshFunction("size_t", mesh, mesh.topology.dim - 1, 1)
+    dS = Measure("dS")(subdomain_data=boundaries, domain=mesh)
+    return dS
+
+
+def dS_from_measure_and_subdomain(mesh):
+    dS = dS_from_measure(mesh)
+    return dS(1)
 
 
 @pytest.mark.parametrize("mode",
@@ -24,10 +71,16 @@ from ufl import avg, ds, dS, dx, inner
                           pytest.param(GhostMode.shared_vertex,
                                        marks=pytest.mark.xfail(condition=MPI.size(MPI.comm_world) == 1,
                                                                reason="Shared ghost modes fail in serial"))])
-def test_ghost_mesh_assembly(mode):
+@pytest.mark.parametrize("dx",
+                         [dx_from_ufl, dx_from_measure, dx_from_measure_and_subdomain])
+@pytest.mark.parametrize("ds",
+                         [ds_from_ufl, ds_from_measure, ds_from_measure_and_subdomain])
+def test_ghost_mesh_assembly(mode, dx, ds):
     mesh = UnitSquareMesh(MPI.comm_world, 12, 12, ghost_mode=mode)
     V = FunctionSpace(mesh, ("Lagrange", 1))
     u, v = TrialFunction(V), TestFunction(V)
+    dx = dx(mesh)
+    ds = ds(mesh)
 
     f = Function(V)
     with f.vector.localForm() as f_local:
@@ -61,10 +114,13 @@ def test_ghost_mesh_assembly(mode):
                           pytest.param(GhostMode.shared_vertex,
                                        marks=pytest.mark.xfail(condition=MPI.size(MPI.comm_world) == 1,
                                                                reason="Shared ghost modes fail in serial"))])
-def test_ghost_mesh_dS_assembly(mode):
+@pytest.mark.parametrize("dS",
+                         [dS_from_ufl, dS_from_measure, dS_from_measure_and_subdomain])
+def test_ghost_mesh_dS_assembly(mode, dS):
     mesh = UnitSquareMesh(MPI.comm_world, 12, 12, ghost_mode=mode)
     V = FunctionSpace(mesh, ("Lagrange", 1))
     u, v = TrialFunction(V), TestFunction(V)
+    dS = dS(mesh)
 
     a = inner(avg(u), avg(v)) * dS
 
