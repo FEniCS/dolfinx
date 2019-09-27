@@ -82,7 +82,10 @@ class Function(ufl.Coefficient):
             return self(*x)
 
     def eval(self, x: np.ndarray, cells: np.ndarray, u=None) -> np.ndarray:
-        """Evaluate Function at points x, where x has shape (num_points, gdim)"""
+        """Evaluate Function at points x, where x has shape (num_points, gdim),
+        and cells has shape (num_points,) and cell[i] is the index of the
+        cell containing point x[i]. If the cell index is negative the
+        point is ignored."""
 
         # Make sure input coordinates are a NumPy array
         x = np.asarray(x, dtype=np.float)

@@ -202,7 +202,7 @@ void Function::eval(
         "fem::CoordinateMapping has not been attached to mesh.");
   }
 
-  // Get elemet
+  // Get element
   assert(_function_space->element());
   const fem::FiniteElement& element = *_function_space->element();
   const int reference_value_size = element.reference_value_size();
@@ -259,7 +259,7 @@ void Function::eval(
     {
       for (int j = 0; j < value_size; ++j)
       {
-        // TODO: Find an Eigen shortcut fot this operation
+        // TODO: Find an Eigen shortcut for this operation
         u.row(p)[j] += coefficients[i] * basis_values(0, i, j);
       }
     }
