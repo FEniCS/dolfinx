@@ -12,8 +12,7 @@ import numpy as np
 from petsc4py import PETSc
 
 import ufl
-from dolfin import common, cpp, function
-from dolfin import functionspace
+from dolfin import common, cpp, function, functionspace
 
 
 class Function(ufl.Coefficient):
@@ -64,8 +63,8 @@ class Function(ufl.Coefficient):
 
     def ufl_evaluate(self, x, component, derivatives):
         """Function used by ufl to evaluate the Expression"""
-        # FIXME: same as dolfin.expression.Expression version. Find
-        # way to re-use.
+        # FIXME: same as dolfin.expression.Expression version. Find way
+        # to re-use.
         assert derivatives == ()  # TODO: Handle derivatives
 
         if component:
@@ -82,11 +81,7 @@ class Function(ufl.Coefficient):
             # Scalar evaluation
             return self(*x)
 
-    # def eval_cell(self, x: np.ndarray, cells, u):
-    #     u = self._cpp_object.eval_cell(x, cells, u)
-    #     return u
-
-    def eval(self, x: np.ndarray, cells, u=None) -> np.ndarray:
+    def eval(self, x: np.ndarray, cells: np.ndarray, u=None) -> np.ndarray:
         """Evaluate Function at points x, where x has shape (num_points, gdim)"""
 
         # Make sure input coordinates are a NumPy array

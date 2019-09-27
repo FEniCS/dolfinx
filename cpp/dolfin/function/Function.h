@@ -112,7 +112,7 @@ public:
 
   /// Evaluate at given point in given cell
   /// @param[in] x The coordinates of the points
-  /// @param[in] cell The cell which contains the given point
+  /// @param[in] cells The cell which contains the given point
   /// @param[in,out] u The values at the points
   void
   eval(const Eigen::Ref<const Eigen::Array<double, Eigen::Dynamic,

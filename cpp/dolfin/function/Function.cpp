@@ -161,10 +161,15 @@ void Function::eval(
   // FIXME: This function needs to be changed to handle an arbitrary
   // number of points for efficiency
 
+  if (x.rows() != cells.rows())
+  {
+    throw std::runtime_error(
+        "Number of points and number of cells must be equal.");
+  }
+
   assert(_function_space);
   assert(_function_space->mesh());
   const mesh::Mesh& mesh = *_function_space->mesh();
-
   const int gdim = mesh.geometry().dim();
   const int tdim = mesh.topology().dim();
 
@@ -176,14 +181,14 @@ void Function::eval(
   Eigen::Matrix<PetscScalar, 1, Eigen::Dynamic> coefficients(
       element.space_dimension());
 
-  // Cell coordinates (re-allocated inside function for thread safety)
-  // Prepare cell geometry
+  // Get geometry data
   const mesh::Connectivity& connectivity_g
       = mesh.coordinate_dofs().entity_points();
   const Eigen::Ref<const Eigen::Array<std::int32_t, Eigen::Dynamic, 1>> pos_g
       = connectivity_g.entity_positions();
   const Eigen::Ref<const Eigen::Array<std::int32_t, Eigen::Dynamic, 1>> cell_g
       = connectivity_g.connections();
+
   // FIXME: Add proper interface for num coordinate dofs
   const int num_dofs_g = connectivity_g.size(0);
   const Eigen::Array<double, Eigen::Dynamic, 3, Eigen::RowMajor>& x_g
@@ -199,41 +204,36 @@ void Function::eval(
         "fem::CoordinateMapping has not been attached to mesh.");
   }
 
-  // -- here
-  if (x.rows() != cells.rows())
-  {
-    throw std::runtime_error(
-        "Number of points and number of cells must be equal.");
-  }
+  const std::size_t reference_value_size = element.reference_value_size();
+  const std::size_t value_size = element.value_size();
+  const std::size_t space_dimension = element.space_dimension();
 
-  // std::size_t num_points = x.rows();
-  std::size_t reference_value_size = element.reference_value_size();
-  std::size_t value_size = element.value_size();
-  std::size_t space_dimension = element.space_dimension();
-
+  // Prepare geometry data structures
   Eigen::Tensor<double, 3, Eigen::RowMajor> J(1, gdim, tdim);
   EigenArrayXd detJ(1);
   Eigen::Tensor<double, 3, Eigen::RowMajor> K(1, tdim, gdim);
   EigenRowArrayXXd X(1, tdim);
 
+  // Prepare basis function data structures
   Eigen::Tensor<double, 3, Eigen::RowMajor> basis_reference_values(
       1, space_dimension, reference_value_size);
   Eigen::Tensor<double, 3, Eigen::RowMajor> basis_values(1, space_dimension,
                                                          value_size);
 
+  // Loop over points
   u.setZero();
   for (int p = 0; p < cells.rows(); ++p)
   {
     const int cell_index = cells(p);
+
+    // Skip negative cell indices
     if (cell_index < 0)
       break;
 
+    // Get cell geometry (coordinate dofs)
     for (int i = 0; i < num_dofs_g; ++i)
       for (int j = 0; j < gdim; ++j)
         coordinate_dofs(i, j) = x_g(cell_g[pos_g[cell_index] + i], j);
-
-    const mesh::MeshEntity cell(mesh, tdim, cell_index);
-    restrict(cell, coordinate_dofs, coefficients.data());
 
     // Compute reference coordinates X, and J, detJ and K
     cmap->compute_reference_geometry(X, J, detJ, K, x.row(p), coordinate_dofs);
@@ -245,67 +245,20 @@ void Function::eval(
     element.transform_reference_basis(basis_values, basis_reference_values, X,
                                       J, detJ, K);
 
+    // Get degrees of freedom for current cell
+    const mesh::MeshEntity cell(mesh, tdim, cell_index);
+    restrict(cell, coordinate_dofs, coefficients.data());
+
     // Compute expansion
     for (std::size_t i = 0; i < space_dimension; ++i)
     {
       for (std::size_t j = 0; j < value_size; ++j)
       {
         // TODO: Find an Eigen shortcut fot this operation
-        u.row(p)[j] += coefficients[i] * basis_values(p, i, j);
+        u.row(p)[j] += coefficients[i] * basis_values(0, i, j);
       }
     }
   }
-
-  // const int cell_index = cell.index();
-  // for (int i = 0; i < num_dofs_g; ++i)
-  //   for (int j = 0; j < gdim; ++j)
-  //     coordinate_dofs(i, j) = x_g(cell_g[pos_g[cell_index] + i], j);
-
-  // restrict(cell, coordinate_dofs, coefficients.data());
-
-  // Get coordinate mapping
-  // std::shared_ptr<const fem::CoordinateMapping> cmap
-  //     = mesh.geometry().coord_mapping;
-  // if (!cmap)
-  // {
-  //   throw std::runtime_error(
-  //       "fem::CoordinateMapping has not been attached to mesh.");
-  // }
-
-  // Eigen::Tensor<double, 3, Eigen::RowMajor> J(num_points, gdim, tdim);
-  // EigenArrayXd detJ(num_points);
-  // Eigen::Tensor<double, 3, Eigen::RowMajor> K(num_points, tdim, gdim);
-
-  // EigenRowArrayXXd X(x.rows(), tdim);
-  // Eigen::Tensor<double, 3, Eigen::RowMajor> basis_reference_values(
-  //     num_points, space_dimension, reference_value_size);
-
-  // Eigen::Tensor<double, 3, Eigen::RowMajor> basis_values(
-  //     num_points, space_dimension, value_size);
-
-  // Compute reference coordinates X, and J, detJ and K
-  // cmap->compute_reference_geometry(X, J, detJ, K, x, coordinate_dofs);
-
-  // // Compute basis on reference element
-  // element.evaluate_reference_basis(basis_reference_values, X);
-
-  // // Push basis forward to physical element
-  // element.transform_reference_basis(basis_values, basis_reference_values, X,
-  // J,
-  //                                   detJ, K);
-
-  // // Compute expansion
-  // // for (std::size_t p = 0; p < num_points; ++p)
-  // // {
-  // for (std::size_t i = 0; i < space_dimension; ++i)
-  // {
-  //   for (std::size_t j = 0; j < value_size; ++j)
-  //   {
-  //     // TODO: Find an Eigen shortcut fot this operation
-  //     u.row(p)[j] += coefficients[i] * basis_values(p, i, j);
-  //   }
-  // }
-  // // }
 }
 //-----------------------------------------------------------------------------
 void Function::interpolate(const Function& v)

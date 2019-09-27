@@ -166,9 +166,8 @@ def test_eval(R, V, W, Q, mesh):
 
     x0 = (mesh.geometry.x(0) + mesh.geometry.x(1)) / 2.0
     tree = geometry.BoundingBoxTree(mesh, mesh.geometry.dim)
-    cells = geometry.compute_first_entity_collisions(tree, mesh)
+    cells = geometry.compute_first_entity_collision(tree, mesh, x0)
     assert np.allclose(u3.eval(x0, cells)[:3], u2.eval(x0, cells), rtol=1e-15, atol=1e-15)
-
     with pytest.raises(ValueError):
         u0.eval([0, 0, 0, 0], tree)
     with pytest.raises(ValueError):
