@@ -493,7 +493,7 @@ std::pair<int, double> geometry::compute_closest_entity(
 
   // Call recursive find function
   std::pair<int, double> e = _compute_closest_entity(
-      tree, p, tree.num_bboxes() - 1, mesh, -1, r * r);
+      tree, p, tree.num_bboxes() - 1, mesh, guess.first, r * r);
 
   // Sanity check
   assert(e.first >= 0);

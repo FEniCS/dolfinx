@@ -67,7 +67,7 @@ public:
   int tdim() const;
 
   /// Print out for debugging
-  std::string str(bool verbose = false);
+  std::string str(bool verbose = false) const;
 
   /// Get bounding box child nodes
   /// @param[in] node The bounding box node index
@@ -91,7 +91,7 @@ private:
   int _tdim;
 
   // Print out recursively, for debugging
-  void tree_print(std::stringstream& s, int i);
+  void tree_print(std::stringstream& s, int i) const;
 
   // List of bounding boxes (parent-child-entity relations)
   Eigen::Array<int, Eigen::Dynamic, 2, Eigen::RowMajor> _bboxes;

@@ -331,7 +331,7 @@ BoundingBoxTree::BoundingBoxTree(const std::vector<Eigen::Vector3d>& points)
 //-----------------------------------------------------------------------------
 int BoundingBoxTree::num_bboxes() const { return _bboxes.rows(); }
 //-----------------------------------------------------------------------------
-std::string BoundingBoxTree::str(bool verbose)
+std::string BoundingBoxTree::str(bool verbose) const
 {
   std::stringstream s;
   tree_print(s, _bboxes.rows() - 1);
@@ -340,7 +340,7 @@ std::string BoundingBoxTree::str(bool verbose)
 //-----------------------------------------------------------------------------
 int BoundingBoxTree::tdim() const { return _tdim; }
 //-----------------------------------------------------------------------------
-void BoundingBoxTree::tree_print(std::stringstream& s, int i)
+void BoundingBoxTree::tree_print(std::stringstream& s, int i) const
 {
   s << "[";
   for (int j = 0; j < 3; ++j)
