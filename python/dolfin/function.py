@@ -89,11 +89,17 @@ class Function(ufl.Coefficient):
 
         # Make sure input coordinates are a NumPy array
         x = np.asarray(x, dtype=np.float)
-        assert x.ndim < 2
-        num_points = x.shape[0] if x.ndim > 1 else 1
+        assert x.ndim < 3
+        num_points = x.shape[0] if x.ndim == 2 else 1
         x = np.reshape(x, (num_points, -1))
         if x.shape[1] != self.geometric_dimension():
             raise ValueError("Wrong geometric dimension for coordinate(s).")
+
+        # Make sure cells are a NumPy array
+        cells = np.asarray(cells)
+        assert cells.ndim < 2
+        num_points_c = cells.shape[0] if cells.ndim == 1 else 1
+        cells = np.reshape(cells, num_points_c)
 
         # Allocate memory for return value if not provided
         if u is None:
@@ -103,7 +109,7 @@ class Function(ufl.Coefficient):
             else:
                 u = np.empty((num_points, value_size))
 
-        self._cpp_object.eval(x, [cells], u)
+        self._cpp_object.eval(x, cells, u)
         if num_points == 1:
             u = np.reshape(u, (-1, ))
         return u
