@@ -20,6 +20,7 @@
 #include <dolfin/function/FunctionSpace.h>
 #include <dolfin/la/PETScVector.h>
 #include <dolfin/la/utils.h>
+#include <dolfin/mesh/CoordinateDofs.h>
 #include <dolfin/mesh/DistributedMeshTools.h>
 #include <dolfin/mesh/Mesh.h>
 #include <dolfin/mesh/MeshEntity.h>
@@ -291,7 +292,9 @@ void HDF5File::write(const mesh::Mesh& mesh, int cell_dim,
     const auto& global_vertices = mesh.topology().global_indices(0);
 
     // Permutation to VTK ordering
-    const std::vector<std::int8_t> perm = mesh::vtk_mapping(cell_type);
+    int num_nodes = mesh.coordinate_dofs().cell_permutation().size();
+    const std::vector<std::uint8_t> perm
+        = mesh::vtk_mapping(mesh.cell_type(), num_nodes);
 
     if (cell_dim == tdim or !mpi_io)
     {

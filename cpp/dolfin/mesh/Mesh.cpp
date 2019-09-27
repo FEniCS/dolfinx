@@ -18,6 +18,7 @@
 #include <dolfin/common/MPI.h>
 #include <dolfin/common/Timer.h>
 #include <dolfin/common/utils.h>
+#include <dolfin/mesh/cell_types.h>
 
 using namespace dolfin;
 using namespace dolfin::mesh;
@@ -140,30 +141,23 @@ Mesh::Mesh(MPI_Comm comm, mesh::CellType type,
   }
 
   // Permutation from VTK to DOLFIN order for cell geometric nodes
-  // FIXME: should do this also for quad/hex
-  // FIXME: remove duplication in mesh::vtk_mapping()
-  std::vector<std::uint8_t> cell_permutation = {0, 1, 2, 3, 4, 5, 6, 7};
-
-  // Infer if the mesh has P2 geometry (P1 has num_vertices_per_cell ==
-  // cells.cols())
-  if (num_vertices_per_cell != cells.cols())
+  std::vector<std::uint8_t> cell_permutation;
+  if (type == mesh::CellType::quadrilateral)
   {
-    if (type == mesh::CellType::triangle and cells.cols() == 6)
-    {
-      _degree = 2;
-      cell_permutation = {0, 1, 2, 5, 3, 4};
-    }
-    else if (type == mesh::CellType::tetrahedron and cells.cols() == 10)
-    {
-      _degree = 2;
-      cell_permutation = {0, 1, 2, 3, 9, 6, 8, 7, 5, 4};
-    }
+    // Quadrilateral cells does not follow counter clockwise
+    // order (cc), but lexiographic order (LG). This breaks the assumptions
+    // that the cell permutation is the same as the VTK-map.
+    if (num_vertices_per_cell == cells.cols())
+      cell_permutation = {0, 1, 2, 3};
     else
-    {
-      throw std::runtime_error(
-          "Mismatch between cell type and number of vertices per cell");
-    }
+      throw std::runtime_error("Higher order quadrilateral not supported");
   }
+  else
+    cell_permutation = mesh::vtk_mapping(type, cells.cols());
+
+  // Find degree of mesh
+  // FIXME: degree should probably be in MeshGeometry
+  _degree = mesh::cell_degree(type, cells.cols());
 
   // Get number of nodes (global)
   const std::uint64_t num_points_global = MPI::sum(comm, points.rows());
