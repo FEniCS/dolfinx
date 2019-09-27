@@ -210,8 +210,11 @@ std::vector<std::int64_t> compute_topology_data(const mesh::Mesh& mesh,
   // Get mesh communicator
   MPI_Comm comm = mesh.mpi_comm();
 
+  int num_nodes = mesh.coordinate_dofs().cell_permutation().size();
+  mesh::CellType cell_type = mesh::cell_entity_type(mesh.cell_type(), cell_dim);
   const std::vector<std::uint8_t> perm
-      = mesh.coordinate_dofs().cell_permutation();
+      = mesh::vtk_mapping(cell_type, num_nodes);
+
   const int tdim = mesh.topology().dim();
   const auto& global_vertices = mesh.topology().global_indices(0);
   if (dolfin::MPI::size(comm) == 1 or cell_dim == tdim)
@@ -558,8 +561,11 @@ void xdmf_write::add_topology_data(MPI_Comm comm, pugi::xml_node& xml_node,
     // Adjust num_nodes_per_cell to appropriate size
     num_nodes_per_cell = cell_points.size(0);
     topology_data.reserve(num_nodes_per_cell * mesh.num_entities(tdim));
-    const std::vector<std::uint8_t>& perm
-        = mesh.coordinate_dofs().cell_permutation();
+    int num_nodes = mesh.coordinate_dofs().cell_permutation().size();
+    mesh::CellType cell_type
+        = mesh::cell_entity_type(mesh.cell_type(), cell_dim);
+    const std::vector<std::uint8_t> perm
+        = mesh::vtk_mapping(cell_type, num_nodes);
 
     for (std::int32_t c = 0; c < mesh.num_entities(tdim); ++c)
     {

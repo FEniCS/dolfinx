@@ -293,7 +293,7 @@ void HDF5File::write(const mesh::Mesh& mesh, int cell_dim,
 
     // Permutation to VTK ordering
     const std::vector<std::uint8_t> perm
-        = mesh.coordinate_dofs().cell_permutation();
+        = mesh::vtk_mapping(cell_type, mesh.degree());
 
     if (cell_dim == tdim or !mpi_io)
     {
