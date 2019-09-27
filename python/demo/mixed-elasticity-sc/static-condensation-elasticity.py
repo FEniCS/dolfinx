@@ -153,7 +153,7 @@ bb_tree = dolfin.cpp.geometry.BoundingBoxTree(mesh, 2)
 
 # Check against standard table value
 cell = dolfin.cpp.geometry.compute_first_collision(bb_tree, [48.0, 52.0, 0.0])
-if cell  >= 0:
+if cell >= 0:
     value = uc.eval([48.0, 52.0], numpy.asarray(cell))
     assert numpy.isclose(value[1], 23.95, rtol=1.e-2)
 
