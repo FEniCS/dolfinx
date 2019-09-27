@@ -485,7 +485,7 @@ std::pair<int, double> geometry::compute_closest_entity(
 
   // Search point cloud to get a good starting guess
   std::pair<int, double> guess = compute_closest_point(tree_midpoint, p);
-  double r = guess.second;
+  const double r = guess.second;
 
   // Return if we have found the point
   if (r == 0.0)
@@ -493,7 +493,7 @@ std::pair<int, double> geometry::compute_closest_entity(
 
   // Call recursive find function
   std::pair<int, double> e = _compute_closest_entity(
-      tree, p, tree.num_bboxes() - 1, mesh, -1, r * r);
+      tree, p, tree.num_bboxes() - 1, mesh, guess.first, r * r);
 
   // Sanity check
   assert(e.first >= 0);
