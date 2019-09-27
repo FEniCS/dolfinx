@@ -158,8 +158,8 @@ void Function::eval(
                             Eigen::RowMajor>>
         u) const
 {
-  // FIXME: This function needs to be changed to handle an arbitrary
-  // number of points for efficiency
+  // TODO: This could be easily made more efficient by exploiting points
+  // being ordered by the cell to which they belong.
 
   if (x.rows() != cells.rows())
   {
@@ -172,13 +172,12 @@ void Function::eval(
                              "same as the number of points.");
   }
 
+  // Get mesh
   assert(_function_space);
   assert(_function_space->mesh());
   const mesh::Mesh& mesh = *_function_space->mesh();
   const int gdim = mesh.geometry().dim();
   const int tdim = mesh.topology().dim();
-  assert(_function_space->element());
-  const fem::FiniteElement& element = *_function_space->element();
 
   // Get geometry data
   const mesh::Connectivity& connectivity_g
@@ -192,7 +191,7 @@ void Function::eval(
   const int num_dofs_g = connectivity_g.size(0);
   const Eigen::Array<double, Eigen::Dynamic, 3, Eigen::RowMajor>& x_g
       = mesh.geometry().points();
-  EigenRowArrayXXd coordinate_dofs(num_dofs_g, gdim);
+  Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor> coordinate_dofs(num_dofs_g, gdim);
 
   // Get coordinate mapping
   std::shared_ptr<const fem::CoordinateMapping> cmap
@@ -203,15 +202,18 @@ void Function::eval(
         "fem::CoordinateMapping has not been attached to mesh.");
   }
 
+  // Get elemet
+  assert(_function_space->element());
+  const fem::FiniteElement& element = *_function_space->element();
   const int reference_value_size = element.reference_value_size();
   const int value_size = element.value_size();
   const int space_dimension = element.space_dimension();
 
   // Prepare geometry data structures
   Eigen::Tensor<double, 3, Eigen::RowMajor> J(1, gdim, tdim);
-  EigenArrayXd detJ(1);
+  Eigen::Array<double, Eigen::Dynamic, 1> detJ(1);
   Eigen::Tensor<double, 3, Eigen::RowMajor> K(1, tdim, gdim);
-  EigenRowArrayXXd X(1, tdim);
+  Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor> X(1, tdim);
 
   // Prepare basis function data structures
   Eigen::Tensor<double, 3, Eigen::RowMajor> basis_reference_values(
