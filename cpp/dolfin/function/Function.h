@@ -110,28 +110,21 @@ public:
   /// Return value shape
   std::vector<int> value_shape() const;
 
-  /// Evaluate at given point in given cell
-  /// @param[in] x The coordinates of the points
-  /// @param[in] cell The cell which contains the given point
-  /// @param[in,out] u The values at the points
+  /// Evaluate the Function at points
+  /// @param[in] x The coordinates of the points. It has shape
+  ///              (num_points, gdim).
+  /// @param[in] cells An array of cell indices. cells[i] is the index
+  ///                  of the cell that contains the point x(i).
+  ///                  Negative cell indices can be passed, and the
+  ///                  corresponding point will be ignored.
+  /// @param[in,out] u The values at the points. Values are not computed
+  ///                  for points with a negative cell index. This
+  ///                  argument must be passed with the corrext size.
   void
   eval(const Eigen::Ref<const Eigen::Array<double, Eigen::Dynamic,
                                            Eigen::Dynamic, Eigen::RowMajor>>
            x,
-       const mesh::MeshEntity& cell,
-       Eigen::Ref<Eigen::Array<PetscScalar, Eigen::Dynamic, Eigen::Dynamic,
-                               Eigen::RowMajor>>
-           u) const;
-
-  /// Evaluate function at given coordinates
-  /// @param[in] x The coordinates of the points
-  /// @param[in] bb_tree Bounding box tree for the mesh
-  /// @param[in,out] u The values at the points
-  void
-  eval(const Eigen::Ref<const Eigen::Array<double, Eigen::Dynamic,
-                                           Eigen::Dynamic, Eigen::RowMajor>>
-           x,
-       const geometry::BoundingBoxTree& bb_tree,
+       const Eigen::Ref<const Eigen::Array<int, Eigen::Dynamic, 1>> cells,
        Eigen::Ref<Eigen::Array<PetscScalar, Eigen::Dynamic, Eigen::Dynamic,
                                Eigen::RowMajor>>
            u) const;
