@@ -118,11 +118,11 @@ public:
                                                  std::size_t dim) const;
 
   /// Layout of dofs on an element
-  const std::shared_ptr<const ElementDofLayout> element_dof_layout;
+  std::shared_ptr<const ElementDofLayout> element_dof_layout;
 
   /// Object containing information about dof distribution across
   /// processes
-  const std::shared_ptr<const common::IndexMap> index_map;
+  std::shared_ptr<const common::IndexMap> index_map;
 
 private:
   // Cell-local-to-dof map (dofs for cell dofmap[i])

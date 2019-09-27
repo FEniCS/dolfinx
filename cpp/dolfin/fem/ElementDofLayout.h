@@ -110,7 +110,7 @@ public:
   std::vector<int> sub_view(const std::vector<int>& component) const;
 
   /// Block size
-  const int block_size;
+  int block_size() const;
 
   /// True iff dof map is a view into another map
   ///
@@ -120,6 +120,9 @@ public:
   bool is_view() const;
 
 private:
+  // Block size
+  int _block_size;
+
   // Mapping of dofs to this ElementDofLayout's immediate parent
   std::vector<int> _parent_map;
 
@@ -135,13 +138,13 @@ private:
 
   // List of dofs per entity, ordered by dimension.
   // dof = _entity_dofs[dim][entity][i]
-  const std::vector<std::vector<std::set<int>>> _entity_dofs;
+  std::vector<std::vector<std::set<int>>> _entity_dofs;
 
   // List of dofs with connected entities of lower dimension
   std::vector<std::vector<std::set<int>>> _entity_closure_dofs;
 
   // List of sub dofmaps
-  const std::vector<std::shared_ptr<const ElementDofLayout>> _sub_dofmaps;
+  std::vector<std::shared_ptr<const ElementDofLayout>> _sub_dofmaps;
 };
 } // namespace fem
 } // namespace dolfin

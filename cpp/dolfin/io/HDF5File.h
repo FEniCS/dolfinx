@@ -103,22 +103,16 @@ public:
                        bool use_partition_from_file,
                        const mesh::GhostMode ghost_mode) const;
 
-  /// Construct mesh::Mesh with paths to topology and geometry datasets,
-  /// and providing essential meta-data, e.g. geometric dimension
-  /// and cell type. If this data is available in the HDF5 file, it
-  /// will be checked for consistency. Set expected_num_global_cells
-  /// to a negative value if not known.
+  /// Read in the data from the first mesh in HDF file
   ///
-  /// This function is typically called when using the XDMF format,
-  /// in which case the meta data has already been read from an XML
-  /// file
-  mesh::Mesh read_mesh(const std::string topology_path,
-                       const std::string geometry_path, const int gdim,
-                       const mesh::CellType cell_type,
-                       const std::int64_t expected_num_global_cells,
-                       const std::int64_t expected_num_global_points,
-                       bool use_partition_from_file,
-                       const mesh::GhostMode ghost_mode) const;
+  /// @param[in] data_path Path to topology and geometry datasets
+  /// @return Cell type,
+  ///         Geometric points on each process,
+  ///         Topological cells with global vertex indexing
+  ///         Global cell distribution
+  std::tuple<mesh::CellType, EigenRowArrayXXd, EigenRowArrayXXi64,
+             std::vector<std::int64_t>, std::vector<std::int64_t>>
+  read_mesh_data(const std::string data_path) const;
 
   /// Write mesh::MeshFunction to file in a format suitable for re-reading
   void write(const mesh::MeshFunction<std::size_t>& meshfunction,

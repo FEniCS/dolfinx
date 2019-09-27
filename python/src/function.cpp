@@ -38,7 +38,7 @@ void function(py::module& m)
            "Create a function on the given function space")
       .def(py::init<std::shared_ptr<dolfin::function::FunctionSpace>, Vec>())
       .def_readwrite("name", &dolfin::function::Function::name)
-      .def_readonly("id", &dolfin::function::Function::id)
+      .def_property_readonly("id", &dolfin::function::Function::id)
       .def("sub", &dolfin::function::Function::sub,
            "Return sub-function (view into parent Function")
       .def("collapse", &dolfin::function::Function::collapse,
@@ -129,15 +129,15 @@ void function(py::module& m)
       .def(py::init<std::shared_ptr<dolfin::mesh::Mesh>,
                     std::shared_ptr<dolfin::fem::FiniteElement>,
                     std::shared_ptr<dolfin::fem::DofMap>>())
-      .def_readonly("id", &dolfin::function::FunctionSpace::id)
+      .def_property_readonly("id", &dolfin::function::FunctionSpace::id)
       .def("__eq__", &dolfin::function::FunctionSpace::operator==)
       .def("dim", &dolfin::function::FunctionSpace::dim)
       .def("collapse", &dolfin::function::FunctionSpace::collapse)
       .def("component", &dolfin::function::FunctionSpace::component)
       .def("contains", &dolfin::function::FunctionSpace::contains)
-      .def_readonly("element", &dolfin::function::FunctionSpace::element)
-      .def_readonly("mesh", &dolfin::function::FunctionSpace::mesh)
-      .def_readonly("dofmap", &dolfin::function::FunctionSpace::dofmap)
+      .def_property_readonly("element", &dolfin::function::FunctionSpace::element)
+      .def_property_readonly("mesh", &dolfin::function::FunctionSpace::mesh)
+      .def_property_readonly("dofmap", &dolfin::function::FunctionSpace::dofmap)
       .def("set_x", &dolfin::function::FunctionSpace::set_x)
       .def("sub", &dolfin::function::FunctionSpace::sub)
       .def("tabulate_dof_coordinates",

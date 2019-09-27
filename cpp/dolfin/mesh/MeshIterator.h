@@ -78,7 +78,8 @@ private:
 
 /// Iterator for entities of specified dimension that are incident to a
 /// MeshEntity
-class MeshEntityIterator : public std::iterator<std::forward_iterator_tag, MeshEntity>
+class MeshEntityIterator
+    : public std::iterator<std::forward_iterator_tag, MeshEntity>
 {
 public:
   /// Constructor from MeshEntity and dimension
@@ -168,7 +169,6 @@ enum class MeshRangeType
   GHOST
 };
 
-
 /// Representation of a collection of entities of given dimension over a
 /// mesh. Provides begin() and end() methods for iterating over entities
 /// of the Mesh
@@ -186,8 +186,7 @@ public:
   const MeshIterator begin() const
   {
     if (_type == MeshRangeType::GHOST)
-      return MeshIterator(_mesh, _dim,
-                                      _mesh.topology().ghost_offset(_dim));
+      return MeshIterator(_mesh, _dim, _mesh.topology().ghost_offset(_dim));
 
     return MeshIterator(_mesh, _dim, 0);
   }
@@ -196,8 +195,7 @@ public:
   MeshIterator begin()
   {
     if (_type == MeshRangeType::GHOST)
-      return MeshIterator(_mesh, _dim,
-                                      _mesh.topology().ghost_offset(_dim));
+      return MeshIterator(_mesh, _dim, _mesh.topology().ghost_offset(_dim));
 
     return MeshIterator(_mesh, _dim, 0);
   }
@@ -206,8 +204,7 @@ public:
   const MeshIterator end() const
   {
     if (_type == MeshRangeType::REGULAR)
-      return MeshIterator(_mesh, _dim,
-                                      _mesh.topology().ghost_offset(_dim));
+      return MeshIterator(_mesh, _dim, _mesh.topology().ghost_offset(_dim));
 
     return MeshIterator(_mesh, _dim, _mesh.topology().size(_dim));
   }
@@ -241,10 +238,7 @@ public:
 
   /// MeshEntityIterator of MeshEntity pointing to start of range
   /// (non-const)
-  MeshEntityIterator begin()
-  {
-    return MeshEntityIterator(_entity, _dim, 0);
-  }
+  MeshEntityIterator begin() { return MeshEntityIterator(_entity, _dim, 0); }
 
   /// MeshEntityIterator of MeshEntity pointing to end of range (const)
   const MeshEntityIterator end() const

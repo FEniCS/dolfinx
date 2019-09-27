@@ -19,7 +19,7 @@ ElementDofLayout::ElementDofLayout(
     const std::vector<int>& parent_map,
     const std::vector<std::shared_ptr<const ElementDofLayout>> sub_dofmaps,
     const mesh::CellType cell_type)
-    : block_size(block_size), _parent_map(parent_map), _num_dofs(0),
+    : _block_size(block_size), _parent_map(parent_map), _num_dofs(0),
       _entity_dofs(entity_dofs), _sub_dofmaps(sub_dofmaps)
 {
   // TODO: Handle global support dofs
@@ -125,7 +125,8 @@ ElementDofLayout::sub_dofmap(const std::vector<int>& component) const
 {
   if (component.size() == 0)
     throw std::runtime_error("No sub dofmap specified");
-  std::shared_ptr<const ElementDofLayout> current = _sub_dofmaps.at(component[0]);
+  std::shared_ptr<const ElementDofLayout> current
+      = _sub_dofmaps.at(component[0]);
   for (std::size_t i = 1; i < component.size(); ++i)
   {
     const int idx = component[i];
@@ -151,13 +152,15 @@ ElementDofLayout::sub_view(const std::vector<int>& component) const
     element_dofmap_current = _sub_dofmaps.at(i).get();
 
     std::vector<int> dof_list_new(element_dofmap_current->_num_dofs);
-    for (unsigned int j = 0; j < dof_list_new.size(); ++j)
+    for (std::size_t j = 0; j < dof_list_new.size(); ++j)
       dof_list_new[j] = dof_list[element_dofmap_current->_parent_map[j]];
     dof_list = dof_list_new;
   }
 
   return dof_list;
 }
+//-----------------------------------------------------------------------------
+int ElementDofLayout::block_size() const { return _block_size; }
 //-----------------------------------------------------------------------------
 bool ElementDofLayout::is_view() const { return !_parent_map.empty(); }
 //-----------------------------------------------------------------------------

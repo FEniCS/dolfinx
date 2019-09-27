@@ -19,8 +19,6 @@
 #define MPICH_IGNORE_CXX_SEEK 1
 #include <mpi.h>
 
-#include <dolfin/common/Table.h>
-
 namespace dolfin
 {
 
@@ -43,43 +41,29 @@ public:
     /// Move constructor
     Comm(Comm&& comm);
 
-    /// Disable assignment operator
+    // Disable copy assignment operator
     Comm& operator=(const Comm& comm) = delete;
+
+    /// Move assignment operator
+    Comm& operator=(Comm&& comm) = default;
 
     /// Destructor (frees wrapped communicator)
     ~Comm();
-
-    /// Free (destroy) communicator. Calls function 'MPI_Comm_free'.
-    void free();
-
-    /// Duplicate communicator, and free any previously created
-    /// communicator
-    void reset(MPI_Comm comm);
-
-    /// Return process rank for the communicator
-    std::uint32_t rank() const;
-
-    /// Return size of the group (number of processes) associated with
-    /// the communicator. This function will also initialise MPI if it
-    /// hasn't already been initialised.
-    std::uint32_t size() const;
-
-    /// Set a barrier (synchronization point)
-    void barrier() const;
 
     /// Return the underlying MPI_Comm object
     MPI_Comm comm() const;
 
   private:
+
     // MPI communicator
     MPI_Comm _comm;
   };
 
-  /// Return process rank for the communicator
-  static std::uint32_t rank(MPI_Comm comm);
-
   /// Create a new comm with a subset of processes
   static MPI_Comm SubsetComm(MPI_Comm comm, int num_processes);
+
+  /// Return process rank for the communicator
+  static std::uint32_t rank(MPI_Comm comm);
 
   /// Return size of the group (number of processes) associated with the
   /// communicator
@@ -176,10 +160,6 @@ public:
   template <typename T>
   static T sum(MPI_Comm comm, const T& value);
 
-  /// Return average across comm; implemented only for T == Table
-  template <typename T>
-  static T avg(MPI_Comm comm, const T& value);
-
   /// All reduce
   template <typename T, typename X>
   static T all_reduce(MPI_Comm comm, const T& value, X op);
@@ -220,10 +200,6 @@ public:
   static std::uint32_t index_owner(MPI_Comm comm, std::size_t index,
                                    std::size_t N);
 
-  /// Return average reduction operation; recognized by
-  /// all_reduce(MPI_Comm, Table&, MPI_Op)
-  static MPI_Op MPI_AVG();
-
   template <typename T>
   struct dependent_false : std::false_type
   {
@@ -238,8 +214,6 @@ public:
     return MPI_CHAR;
   }
 
-  /// Maps some MPI_Op values to string
-  static std::map<MPI_Op, std::string> operation_map;
 };
 
 // Turn off doxygen for these template specialisations
@@ -659,7 +633,6 @@ void dolfin::MPI::all_gather(MPI_Comm comm, const T in_value,
                 1, mpi_type<T>(), comm);
 }
 //---------------------------------------------------------------------------
-/// All reduce table
 template <typename T, typename X>
 T dolfin::MPI::all_reduce(MPI_Comm comm, const T& value, X op)
 {
@@ -667,7 +640,7 @@ T dolfin::MPI::all_reduce(MPI_Comm comm, const T& value, X op)
   MPI_Allreduce(const_cast<T*>(&value), &out, 1, mpi_type<T>(), op, comm);
   return out;
 }
-//---------------------------------------------------------------------------
+//-----------------------------------------------------------------------------
 template <typename T>
 T dolfin::MPI::max(MPI_Comm comm, const T& value)
 {
@@ -696,12 +669,6 @@ T dolfin::MPI::sum(MPI_Comm comm, const T& value)
 }
 //---------------------------------------------------------------------------
 template <typename T>
-T dolfin::MPI::avg(MPI_Comm comm, const T& value)
-{
-  throw std::runtime_error("MPI::avg not implemented for this type");
-}
-//---------------------------------------------------------------------------
-template <typename T>
 void dolfin::MPI::send_recv(MPI_Comm comm, const std::vector<T>& send_value,
                             std::uint32_t dest, int send_tag,
                             std::vector<T>& recv_value, std::uint32_t source,
@@ -727,15 +694,4 @@ void dolfin::MPI::send_recv(MPI_Comm comm, const std::vector<T>& send_value,
 {
   MPI::send_recv(comm, send_value, dest, 0, recv_value, source, 0);
 }
-//---------------------------------------------------------------------------
-/// Specialization for dolfin::log::Table class
-/// NOTE: This function is not truly "all_reduce", it reduces to rank 0
-///       and returns zero Table on other ranks.
-template <>
-dolfin::Table dolfin::MPI::all_reduce(MPI_Comm, const Table&, MPI_Op);
-//---------------------------------------------------------------------------
-/// Specialization for dolfin::log::Table class
-template <>
-dolfin::Table dolfin::MPI::avg(MPI_Comm, const Table&);
-//---------------------------------------------------------------------------
 } // namespace dolfin

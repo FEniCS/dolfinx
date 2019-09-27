@@ -61,6 +61,8 @@ class HDF5File;
 /// data. Output of data in parallel is supported.
 ///
 /// XDMF is not suitable for checkpointing as it may decimate some data.
+/// XDMF is not suitable for higher order geometries, as their currently
+/// only supports 1st and 2nd order geometries.
 
 // FIXME: Set read mode when creating file object?
 

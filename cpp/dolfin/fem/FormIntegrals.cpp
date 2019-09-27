@@ -23,16 +23,12 @@ FormIntegrals::FormIntegrals()
 const std::function<void(PetscScalar*, const PetscScalar*, const PetscScalar*,
                          const double*, const int*, const int*)>&
 FormIntegrals::get_tabulate_tensor_function(FormIntegrals::Type type,
-                                            unsigned int i) const
+                                            int i) const
 {
   int type_index = static_cast<int>(type);
   const std::vector<struct FormIntegrals::Integral>& integrals
-      = _integrals[type_index];
-
-  if (i > integrals.size())
-    throw std::runtime_error("Invalid integral index: " + std::to_string(i));
-
-  return integrals[i].tabulate;
+      = _integrals.at(type_index);
+  return integrals.at(i).tabulate;
 }
 //-----------------------------------------------------------------------------
 void FormIntegrals::register_tabulate_tensor(
@@ -42,7 +38,7 @@ void FormIntegrals::register_tabulate_tensor(
 {
   const int type_index = static_cast<int>(type);
   std::vector<struct FormIntegrals::Integral>& integrals
-      = _integrals[type_index];
+      = _integrals.at(type_index);
 
   // Find insertion point
   int pos = 0;
@@ -81,12 +77,10 @@ std::vector<int> FormIntegrals::integral_ids(FormIntegrals::Type type) const
 }
 //-----------------------------------------------------------------------------
 const std::vector<std::int32_t>&
-FormIntegrals::integral_domains(FormIntegrals::Type type, unsigned int i) const
+FormIntegrals::integral_domains(FormIntegrals::Type type, int i) const
 {
   int type_index = static_cast<int>(type);
-  if (i > _integrals[type_index].size())
-    throw std::runtime_error("Invalid integral:" + std::to_string(i));
-  return _integrals[type_index][i].active_entities;
+  return _integrals[type_index].at(i).active_entities;
 }
 //-----------------------------------------------------------------------------
 void FormIntegrals::set_domains(FormIntegrals::Type type,
@@ -101,12 +95,13 @@ void FormIntegrals::set_domains(FormIntegrals::Type type,
 
   std::shared_ptr<const mesh::Mesh> mesh = marker.mesh();
   int tdim = mesh->topology().dim();
+  int dim = tdim;
   if (type == Type::exterior_facet or type == Type::interior_facet)
-    --tdim;
+    dim = tdim - 1;
   else if (type == Type::vertex)
-    tdim = 1;
+    dim = 0;
 
-  if (tdim != marker.dim())
+  if (dim != marker.dim())
   {
     throw std::runtime_error("Invalid MeshFunction dimension:"
                              + std::to_string(marker.dim()));
@@ -114,7 +109,7 @@ void FormIntegrals::set_domains(FormIntegrals::Type type,
 
   // Create a reverse map
   std::map<int, int> id_to_integral;
-  for (unsigned int i = 0; i < integrals.size(); ++i)
+  for (std::size_t i = 0; i < integrals.size(); ++i)
   {
     if (integrals[i].id != -1)
     {
@@ -126,11 +121,72 @@ void FormIntegrals::set_domains(FormIntegrals::Type type,
   // Get reference to mesh function data array
   Eigen::Ref<const Eigen::Array<std::size_t, Eigen::Dynamic, 1>> mf_values
       = marker.values();
-  for (Eigen::Index i = 0; i < mf_values.size(); ++i)
+  const int num_entities = mesh->topology().ghost_offset(dim);
+
+  if (type == Type::exterior_facet)
   {
-    auto it = id_to_integral.find(mf_values[i]);
-    if (it != id_to_integral.end())
-      integrals[it->second].active_entities.push_back(i);
+    std::shared_ptr<const mesh::Connectivity> connectivity
+        = mesh->topology().connectivity(tdim - 1, tdim);
+    if (!connectivity)
+    {
+      throw std::runtime_error(
+          "Facet-cell connectivity has not been computed.");
+    }
+    for (Eigen::Index i = 0; i < num_entities; ++i)
+    {
+      if ((int)connectivity->size_global(i) == 1)
+      {
+        auto it = id_to_integral.find(mf_values[i]);
+        if (it != id_to_integral.end())
+          integrals[it->second].active_entities.push_back(i);
+      }
+    }
+  }
+  else if (type == Type::interior_facet)
+  {
+    const int rank = MPI::rank(mesh->mpi_comm());
+    const std::vector<std::int32_t>& cell_owners
+        = mesh->topology().cell_owner();
+    const std::int32_t cell_ghost_offset = mesh->topology().ghost_offset(tdim);
+    std::shared_ptr<const mesh::Connectivity> connectivity
+        = mesh->topology().connectivity(tdim - 1, tdim);
+    if (!connectivity)
+    {
+      throw std::runtime_error(
+          "Facet-cell connectivity has not been computed.");
+    }
+    for (Eigen::Index i = 0; i < num_entities; ++i)
+    {
+      if ((int)connectivity->size(i) == 2)
+      {
+        // Get connected cells and check if they are ghost or not
+        const std::int32_t* c = connectivity->connections(i);
+        const int owner0 = c[0] >= cell_ghost_offset
+                               ? cell_owners[c[0] - cell_ghost_offset]
+                               : rank;
+        const int owner1 = c[1] >= cell_ghost_offset
+                               ? cell_owners[c[1] - cell_ghost_offset]
+                               : rank;
+        if ((owner0 == rank and owner1 == rank)
+            or (owner0 == rank and owner1 > rank)
+            or (owner1 == rank and owner0 > rank))
+        {
+          auto it = id_to_integral.find(mf_values[i]);
+          if (it != id_to_integral.end())
+            integrals[it->second].active_entities.push_back(i);
+        }
+      }
+    }
+  }
+  else
+  {
+    // For cell and vertex integrals use all markers (but not on ghost entities)
+    for (Eigen::Index i = 0; i < num_entities; ++i)
+    {
+      auto it = id_to_integral.find(mf_values[i]);
+      if (it != id_to_integral.end())
+        integrals[it->second].active_entities.push_back(i);
+    }
   }
 }
 //-----------------------------------------------------------------------------

@@ -30,7 +30,7 @@ fem::DofMap build_collapsed_dofmap(const DofMap& dofmap_view,
   assert(element_dof_layout);
 
   if (dofmap_view.index_map->block_size == 1
-      and element_dof_layout->block_size > 1)
+      and element_dof_layout->block_size() > 1)
   {
     throw std::runtime_error(
         "Cannot collapse dofmap with block size greater "
@@ -38,7 +38,7 @@ fem::DofMap build_collapsed_dofmap(const DofMap& dofmap_view,
   }
 
   if (dofmap_view.index_map->block_size > 1
-      and element_dof_layout->block_size > 1)
+      and element_dof_layout->block_size() > 1)
   {
     throw std::runtime_error(
         "Cannot (yet) collapse dofmap with block size greater "
@@ -64,7 +64,7 @@ fem::DofMap build_collapsed_dofmap(const DofMap& dofmap_view,
 
   // Get block sizes
   const int bs_view = dofmap_view.index_map->block_size;
-  const int bs = element_dof_layout->block_size;
+  const int bs = element_dof_layout->block_size();
 
   // Compute sizes
   const std::int32_t num_owned_view = dofmap_view.index_map->size_local();
@@ -160,7 +160,7 @@ DofMap::collapse(const mesh::Mesh& mesh) const
   assert(index_map);
   std::unique_ptr<DofMap> dofmap_new;
   if (this->index_map->block_size == 1
-      and this->element_dof_layout->block_size > 1)
+      and this->element_dof_layout->block_size() > 1)
   {
     // Create new element dof layout and reset parent
     auto collapsed_dof_layout
@@ -275,7 +275,7 @@ Eigen::Array<PetscInt, Eigen::Dynamic, 1> DofMap::dofs(const mesh::Mesh& mesh,
 
   // Build local dofs for each entity of dimension dim
   std::vector<Eigen::Array<int, Eigen::Dynamic, 1>> entity_dofs_local;
-  for (int i = 0; i < mesh::cell_num_entities(mesh.cell_type, dim); ++i)
+  for (int i = 0; i < mesh::cell_num_entities(mesh.cell_type(), dim); ++i)
     entity_dofs_local.push_back(element_dof_layout->entity_dofs(dim, i));
 
   // Iterate over cells
@@ -287,7 +287,7 @@ Eigen::Array<PetscInt, Eigen::Dynamic, 1> DofMap::dofs(const mesh::Mesh& mesh,
         = cell_dofs(c.index());
 
     // Loop over all entities of dimension dim
-    unsigned int local_index = 0;
+    int local_index = 0;
     for (auto& e : mesh::EntityRange(c, dim))
     {
       // Get dof index and add to list

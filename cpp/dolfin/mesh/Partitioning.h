@@ -9,6 +9,7 @@
 #include "PartitionData.h"
 #include <cstdint>
 #include <dolfin/common/types.h>
+#include <dolfin/graph/CSRGraph.h>
 #include <dolfin/mesh/cell_types.h>
 #include <map>
 #include <set>
@@ -139,6 +140,18 @@ public:
       MPI_Comm comm, std::int32_t num_vertices,
       const std::vector<std::int64_t>& global_point_indices,
       const std::map<std::int32_t, std::set<std::int32_t>>& shared_points);
+
+  /// Utility to compute halo cells for a given custom cell partition
+  /// @param[in] comm MPI Communicator
+  /// @param[in] parttition Array of destination process for each local cell
+  /// @param[in] cell_type Cell type
+  /// @param[in] cell_vertices Topological cells with global vertex indexing.
+  /// @return ghost_procs Map of cell_index to vector of sharing processes
+  ///                     for those cells that have multiple owners
+  static std::map<std::int64_t, std::vector<int>>
+  compute_halo_cells(MPI_Comm comm, std::vector<int> parttition,
+                     const mesh::CellType cell_type,
+                     const Eigen::Ref<const EigenRowArrayXXi64> cell_vertices);
 };
 } // namespace mesh
 } // namespace dolfin
