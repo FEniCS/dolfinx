@@ -72,29 +72,24 @@ void FunctionSpace::interpolate_from_any(
   }
 
   assert(_mesh);
-  const int gdim = _mesh->geometry().dim();
   const int tdim = _mesh->topology().dim();
 
-  // Initialize local arrays
-  assert(_dofmap->element_dof_layout);
-  std::vector<PetscScalar> cell_coefficients(
-      _dofmap->element_dof_layout->num_dofs());
+  // Get dofmaps
+  assert(_dofmap);
+  const fem::DofMap& dofmap = *_dofmap;
+  assert(v.function_space());
+  assert(v.function_space()->dofmap());
+  const fem::DofMap& dofmap_v = *v.function_space()->dofmap();
 
-  // Prepare cell geometry
-  const mesh::Connectivity& connectivity_g
-      = _mesh->coordinate_dofs().entity_points();
-  const Eigen::Ref<const Eigen::Array<std::int32_t, Eigen::Dynamic, 1>> pos_g
-      = connectivity_g.entity_positions();
-  const Eigen::Ref<const Eigen::Array<std::int32_t, Eigen::Dynamic, 1>> cell_g
-      = connectivity_g.connections();
-  // FIXME: Add proper interface for num coordinate dofs
-  const int num_dofs_g = connectivity_g.size(0);
-  const Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>&
-      x_g
-      = _mesh->geometry().points();
+  // Initialize local arrays
+  assert(dofmap.element_dof_layout);
+  std::vector<PetscScalar> cell_coefficients(
+      dofmap.element_dof_layout->num_dofs());
 
   // Iterate over mesh and interpolate on each cell
-  EigenRowArrayXXd coordinate_dofs(num_dofs_g, gdim);
+  la::VecReadWrapper v_vector_wrap(v.vector().vec());
+  Eigen::Map<const Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1>> v_array
+      = v_vector_wrap.x;
   for (auto& cell : mesh::MeshRange(*_mesh, tdim))
   {
     // FIXME: Move this out
@@ -104,26 +99,12 @@ void FunctionSpace::interpolate_from_any(
                                "different elements not suppoted.");
     }
 
-    // Get cell coordinate dofs
     const int cell_index = cell.index();
-    for (int i = 0; i < num_dofs_g; ++i)
-      for (int j = 0; j < gdim; ++j)
-        coordinate_dofs(i, j) = x_g(cell_g[pos_g[cell_index] + i], j);
-
-    // FIXME: This is all very circular.Clean up.
-    // Restrict function to cell
-    auto dofs = v.function_space()->dofmap()->cell_dofs(cell_index);
-    la::VecReadWrapper v_wrap(v.vector().vec());
-    Eigen::Map<const Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1>> _v
-        = v_wrap.x;
-    for (Eigen::Index i = 0; i < dofs.size(); ++i)
-      cell_coefficients[i] = _v[dofs[i]];
-
-    // Tabulate dofs
-    auto cell_dofs = _dofmap->cell_dofs(cell.index());
-
-    for (Eigen::Index i = 0; i < cell_dofs.size(); ++i)
-      expansion_coefficients[cell_dofs[i]] = cell_coefficients[i];
+    auto dofs_v = dofmap_v.cell_dofs(cell_index);
+    auto cell_dofs = dofmap.cell_dofs(cell_index);
+    assert(dofs_v.size() == cell_dofs.size());
+    for (Eigen::Index i = 0; i < dofs_v.size(); ++i)
+      expansion_coefficients[cell_dofs[i]] = v_array[dofs_v[i]];
   }
 }
 //-----------------------------------------------------------------------------
