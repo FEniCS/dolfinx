@@ -69,16 +69,24 @@ public:
   /// @param[in] cell_index The cell index.
   /// @return  Local-global map for cell (used process-local global
   /// index)
-  Eigen::Map<const Eigen::Array<PetscInt, Eigen::Dynamic, 1>>
-  cell_dofs(std::size_t cell_index) const
+  auto cell_dofs(std::size_t cell_index) const
   {
     assert(element_dof_layout);
     const int cell_dimension = element_dof_layout->num_dofs();
     const int index = cell_index * cell_dimension;
     assert(index + cell_dimension <= _dofmap.size());
-    return Eigen::Map<const Eigen::Array<PetscInt, Eigen::Dynamic, 1>>(
-        &_dofmap[index], cell_dimension);
+    return _dofmap.segment(index, cell_dimension);
   }
+  // Eigen::Map<const Eigen::Array<PetscInt, Eigen::Dynamic, 1>>
+  // cell_dofs(std::size_t cell_index) const
+  // {
+  //   assert(element_dof_layout);
+  //   const int cell_dimension = element_dof_layout->num_dofs();
+  //   const int index = cell_index * cell_dimension;
+  //   assert(index + cell_dimension <= _dofmap.size());
+  //   return Eigen::Map<const Eigen::Array<PetscInt, Eigen::Dynamic, 1>>(
+  //       &_dofmap[index], cell_dimension);
+  // }
 
   /// Extract subdofmap component
   /// @param[in] component The component indices
