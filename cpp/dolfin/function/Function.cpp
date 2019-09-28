@@ -225,8 +225,14 @@ void Function::eval(
   Eigen::Matrix<PetscScalar, 1, Eigen::Dynamic> coefficients(
       element.space_dimension());
 
+  // Get dofmap
+  assert(_function_space->dofmap());
+  const fem::DofMap& dofmap = *_function_space->dofmap();
+
   // Loop over points
   u.setZero();
+  la::VecReadWrapper v(_vector.vec());
+  Eigen::Map<const Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1>> _v = v.x;
   for (Eigen::Index p = 0; p < cells.rows(); ++p)
   {
     const int cell_index = cells(p);
@@ -251,8 +257,11 @@ void Function::eval(
                                       J, detJ, K);
 
     // Get degrees of freedom for current cell
-    const mesh::MeshEntity cell(mesh, tdim, cell_index);
-    restrict(cell, coordinate_dofs, coefficients.data());
+    // const mesh::MeshEntity cell(mesh, tdim, cell_index);
+    // restrict(cell, coordinate_dofs, coefficients.data());
+    auto dofs = dofmap.cell_dofs(cell_index);
+    for (Eigen::Index i = 0; i < dofs.size(); ++i)
+      coefficients[i] = _v[dofs[i]];
 
     // Compute expansion
     for (int i = 0; i < space_dimension; ++i)
