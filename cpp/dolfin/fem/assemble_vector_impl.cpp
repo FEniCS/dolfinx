@@ -537,8 +537,9 @@ void fem::impl::assemble_exterior_facets(
     // Update coefficients
     for (std::size_t i = 0; i < coefficients.size(); ++i)
     {
-      coefficients[i]->restrict(cell, coordinate_dofs,
-                                coeff_array.data() + offsets[i]);
+      _restrict(*coefficients[i]->function_space()->dofmap(),
+                coefficients[i]->vector().vec(), cell.index(),
+                coeff_array.data() + offsets[i]);
     }
 
     // Tabulate element vector
@@ -632,11 +633,12 @@ void fem::impl::assemble_interior_facets(
                          gdim);
     for (std::size_t i = 0; i < coefficients.size(); ++i)
     {
-      coefficients[i]->restrict(cell0, coordinate_dofs0,
-                                coeff_array.data() + offsets[i]);
-      coefficients[i]->restrict(cell1, coordinate_dofs1,
-                                coeff_array.data() + offsets.back()
-                                    + offsets[i]);
+      _restrict(*coefficients[i]->function_space()->dofmap(),
+                coefficients[i]->vector().vec(), cell0.index(),
+                coeff_array.data() + offsets[i]);
+      _restrict(*coefficients[i]->function_space()->dofmap(),
+                coefficients[i]->vector().vec(), cell1.index(),
+                coeff_array.data() + offsets.back() + offsets[i]);
     }
 
     // Tabulate element vector

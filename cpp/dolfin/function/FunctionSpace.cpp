@@ -110,8 +110,14 @@ void FunctionSpace::interpolate_from_any(
       for (int j = 0; j < gdim; ++j)
         coordinate_dofs(i, j) = x_g(cell_g[pos_g[cell_index] + i], j);
 
+    // FIXME: This is all very circular.Clean up.
     // Restrict function to cell
-    v.restrict(cell, coordinate_dofs, cell_coefficients.data());
+    auto dofs = v.function_space()->dofmap()->cell_dofs(cell_index);
+    la::VecReadWrapper v_wrap(v.vector().vec());
+    Eigen::Map<const Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1>> _v
+        = v_wrap.x;
+    for (Eigen::Index i = 0; i < dofs.size(); ++i)
+      cell_coefficients[i] = _v[dofs[i]];
 
     // Tabulate dofs
     auto cell_dofs = _dofmap->cell_dofs(cell.index());
