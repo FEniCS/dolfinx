@@ -20,6 +20,25 @@
 
 using namespace dolfin;
 
+namespace
+{
+//-----------------------------------------------------------------------------
+void _restrict(const fem::DofMap& dofmap, const Vec x, int cell_index,
+               PetscScalar* w)
+{
+  assert(w);
+  auto dofs = dofmap.cell_dofs(cell_index);
+
+  // Pick values from vector(s)
+  la::VecReadWrapper v(x);
+  Eigen::Map<const Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1>> _v = v.x;
+  for (Eigen::Index i = 0; i < dofs.size(); ++i)
+    w[i] = _v[dofs[i]];
+}
+//-----------------------------------------------------------------------------
+
+} // namespace
+
 //-----------------------------------------------------------------------------
 void fem::impl::assemble_matrix(Mat A, const Form& a,
                                 const std::vector<bool>& bc0,
@@ -148,8 +167,9 @@ void fem::impl::assemble_cells(
     // Update coefficients
     for (std::size_t i = 0; i < coefficients.size(); ++i)
     {
-      coefficients[i]->restrict(cell, coordinate_dofs,
-                                coeff_array.data() + offsets[i]);
+      _restrict(*coefficients[i]->function_space()->dofmap(),
+                coefficients[i]->vector().vec(), cell.index(),
+                coeff_array.data() + offsets[i]);
     }
 
     // Tabulate tensor
@@ -253,8 +273,9 @@ void fem::impl::assemble_exterior_facets(
     // Update coefficients
     for (std::size_t i = 0; i < coefficients.size(); ++i)
     {
-      coefficients[i]->restrict(cell, coordinate_dofs,
-                                coeff_array.data() + offsets[i]);
+      _restrict(*coefficients[i]->function_space()->dofmap(),
+                coefficients[i]->vector().vec(), cell.index(),
+                coeff_array.data() + offsets[i]);
     }
 
     // Tabulate tensor
@@ -389,11 +410,12 @@ void fem::impl::assemble_interior_facets(
                          gdim);
     for (std::size_t i = 0; i < coefficients.size(); ++i)
     {
-      coefficients[i]->restrict(cell0, coordinate_dofs0,
-                                coeff_array.data() + offsets[i]);
-      coefficients[i]->restrict(cell1, coordinate_dofs1,
-                                coeff_array.data() + offsets.back()
-                                    + offsets[i]);
+      _restrict(*coefficients[i]->function_space()->dofmap(),
+                coefficients[i]->vector().vec(), cell0.index(),
+                coeff_array.data() + offsets[i]);
+      _restrict(*coefficients[i]->function_space()->dofmap(),
+                coefficients[i]->vector().vec(), cell1.index(),
+                coeff_array.data() + offsets.back() + offsets[i]);
     }
 
     // Tabulate tensor

@@ -65,6 +65,7 @@ void FunctionSpace::interpolate_from_any(
         expansion_coefficients,
     const Function& v) const
 {
+  assert(v.function_space());
   if (!v.function_space()->has_element(*_element))
   {
     throw std::runtime_error("Restricting finite elements function in "
@@ -72,29 +73,26 @@ void FunctionSpace::interpolate_from_any(
   }
 
   assert(_mesh);
-  const int gdim = _mesh->geometry().dim();
+  assert(v.function_space()->mesh());
+  if (_mesh->id() != v.function_space()->mesh()->id())
+  {
+    throw std::runtime_error(
+        "Interpolation on different meshes not supported (yet).");
+  }
+
   const int tdim = _mesh->topology().dim();
 
-  // Initialize local arrays
-  assert(_dofmap->element_dof_layout);
-  std::vector<PetscScalar> cell_coefficients(
-      _dofmap->element_dof_layout->num_dofs());
-
-  // Prepare cell geometry
-  const mesh::Connectivity& connectivity_g
-      = _mesh->coordinate_dofs().entity_points();
-  const Eigen::Ref<const Eigen::Array<std::int32_t, Eigen::Dynamic, 1>> pos_g
-      = connectivity_g.entity_positions();
-  const Eigen::Ref<const Eigen::Array<std::int32_t, Eigen::Dynamic, 1>> cell_g
-      = connectivity_g.connections();
-  // FIXME: Add proper interface for num coordinate dofs
-  const int num_dofs_g = connectivity_g.size(0);
-  const Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>&
-      x_g
-      = _mesh->geometry().points();
+  // Get dofmaps
+  assert(_dofmap);
+  const fem::DofMap& dofmap = *_dofmap;
+  assert(v.function_space());
+  assert(v.function_space()->dofmap());
+  const fem::DofMap& dofmap_v = *v.function_space()->dofmap();
 
   // Iterate over mesh and interpolate on each cell
-  EigenRowArrayXXd coordinate_dofs(num_dofs_g, gdim);
+  la::VecReadWrapper v_vector_wrap(v.vector().vec());
+  Eigen::Map<const Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1>> v_array
+      = v_vector_wrap.x;
   for (auto& cell : mesh::MeshRange(*_mesh, tdim))
   {
     // FIXME: Move this out
@@ -104,20 +102,12 @@ void FunctionSpace::interpolate_from_any(
                                "different elements not suppoted.");
     }
 
-    // Get cell coordinate dofs
     const int cell_index = cell.index();
-    for (int i = 0; i < num_dofs_g; ++i)
-      for (int j = 0; j < gdim; ++j)
-        coordinate_dofs(i, j) = x_g(cell_g[pos_g[cell_index] + i], j);
-
-    // Restrict function to cell
-    v.restrict(cell, coordinate_dofs, cell_coefficients.data());
-
-    // Tabulate dofs
-    auto cell_dofs = _dofmap->cell_dofs(cell.index());
-
-    for (Eigen::Index i = 0; i < cell_dofs.size(); ++i)
-      expansion_coefficients[cell_dofs[i]] = cell_coefficients[i];
+    auto dofs_v = dofmap_v.cell_dofs(cell_index);
+    auto cell_dofs = dofmap.cell_dofs(cell_index);
+    assert(dofs_v.size() == cell_dofs.size());
+    for (Eigen::Index i = 0; i < dofs_v.size(); ++i)
+      expansion_coefficients[cell_dofs[i]] = v_array[dofs_v[i]];
   }
 }
 //-----------------------------------------------------------------------------
@@ -128,7 +118,6 @@ void FunctionSpace::interpolate(
 {
   assert(_mesh);
   assert(_element);
-  assert(_dofmap);
 
   // Check that function ranks match
   if (_element->value_rank() != v.value_rank())
@@ -155,7 +144,6 @@ void FunctionSpace::interpolate(
     }
   }
 
-  std::shared_ptr<const FunctionSpace> v_fs = v.function_space();
   interpolate_from_any(expansion_coefficients, v);
 }
 //-----------------------------------------------------------------------------
@@ -303,7 +291,6 @@ EigenRowArrayXXd FunctionSpace::tabulate_dof_coordinates() const
         "Cannot tabulate coordinates for a FunctionSpace that is a subspace.");
   }
 
-  // Get local size
   // Get local size
   assert(_dofmap);
   std::shared_ptr<const common::IndexMap> index_map = _dofmap->index_map;

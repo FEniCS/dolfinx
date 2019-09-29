@@ -129,14 +129,6 @@ public:
                                Eigen::RowMajor>>
            u) const;
 
-  /// Restrict function to local cell (compute expansion coefficients w)
-  /// @param[in] cell The cell
-  /// @param[in] coordinate_dofs The coordinate dofs
-  /// @param[in,out] w Expansion coefficients.
-  void restrict(const mesh::MeshEntity& cell,
-                const Eigen::Ref<const EigenRowArrayXXd>& coordinate_dofs,
-                PetscScalar* w) const;
-
   /// Compute values at all mesh points
   /// @return The values at all geometric points
   Eigen::Array<PetscScalar, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>

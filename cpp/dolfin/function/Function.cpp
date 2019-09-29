@@ -191,7 +191,8 @@ void Function::eval(
   const int num_dofs_g = connectivity_g.size(0);
   const Eigen::Array<double, Eigen::Dynamic, 3, Eigen::RowMajor>& x_g
       = mesh.geometry().points();
-  Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor> coordinate_dofs(num_dofs_g, gdim);
+  Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
+      coordinate_dofs(num_dofs_g, gdim);
 
   // Get coordinate mapping
   std::shared_ptr<const fem::CoordinateMapping> cmap
@@ -213,7 +214,8 @@ void Function::eval(
   Eigen::Tensor<double, 3, Eigen::RowMajor> J(1, gdim, tdim);
   Eigen::Array<double, Eigen::Dynamic, 1> detJ(1);
   Eigen::Tensor<double, 3, Eigen::RowMajor> K(1, tdim, gdim);
-  Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor> X(1, tdim);
+  Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor> X(1,
+                                                                          tdim);
 
   // Prepare basis function data structures
   Eigen::Tensor<double, 3, Eigen::RowMajor> basis_reference_values(
@@ -225,8 +227,14 @@ void Function::eval(
   Eigen::Matrix<PetscScalar, 1, Eigen::Dynamic> coefficients(
       element.space_dimension());
 
+  // Get dofmap
+  assert(_function_space->dofmap());
+  const fem::DofMap& dofmap = *_function_space->dofmap();
+
   // Loop over points
   u.setZero();
+  la::VecReadWrapper v(_vector.vec());
+  Eigen::Map<const Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1>> _v = v.x;
   for (Eigen::Index p = 0; p < cells.rows(); ++p)
   {
     const int cell_index = cells(p);
@@ -251,8 +259,11 @@ void Function::eval(
                                       J, detJ, K);
 
     // Get degrees of freedom for current cell
-    const mesh::MeshEntity cell(mesh, tdim, cell_index);
-    restrict(cell, coordinate_dofs, coefficients.data());
+    // const mesh::MeshEntity cell(mesh, tdim, cell_index);
+    // restrict(cell, coordinate_dofs, coefficients.data());
+    auto dofs = dofmap.cell_dofs(cell_index);
+    for (Eigen::Index i = 0; i < dofs.size(); ++i)
+      coefficients[i] = _v[dofs[i]];
 
     // Compute expansion
     for (int i = 0; i < space_dimension; ++i)
@@ -307,28 +318,6 @@ std::vector<int> Function::value_shape() const
   for (std::size_t i = 0; i < _shape.size(); ++i)
     _shape[i] = this->value_dimension(i);
   return _shape;
-}
-//-----------------------------------------------------------------------------
-void Function::restrict(
-    const mesh::MeshEntity& cell,
-    const Eigen::Ref<const EigenRowArrayXXd>& coordinate_dofs,
-    PetscScalar* w) const
-{
-  assert(w);
-  assert(_function_space);
-  assert(_function_space->dofmap());
-  assert(_function_space->mesh());
-  assert(_function_space->mesh()->topology().dim() == cell.dim());
-
-  // Get dofmap for cell
-  const fem::DofMap& dofmap = *_function_space->dofmap();
-  auto dofs = dofmap.cell_dofs(cell.index());
-
-  // Pick values from vector(s)
-  la::VecReadWrapper v(_vector.vec());
-  Eigen::Map<const Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1>> _v = v.x;
-  for (Eigen::Index i = 0; i < dofs.size(); ++i)
-    w[i] = _v[dofs[i]];
 }
 //-----------------------------------------------------------------------------
 Eigen::Array<PetscScalar, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
