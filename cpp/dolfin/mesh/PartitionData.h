@@ -64,9 +64,9 @@ public:
   /// process
   std::int32_t size() const;
 
-  /// Return the total number of ghosts cells in this partition on this
+  /// Return the total number of shared cells in this partition on this
   /// process. Useful for testing
-  int num_ghosts() const;
+  std::int32_t num_ghosts() const;
 
 private:
   // Contiguous list of processes, indexed with offset, below
