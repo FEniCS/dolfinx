@@ -157,3 +157,10 @@ def test_assembly_ds_domains(mesh):
     s2 = dolfin.MPI.sum(mesh.mpi_comm(), s2)
 
     assert (s == pytest.approx(s2, 1.0e-12) and 2.0 == pytest.approx(s, 1.0e-12))
+
+
+def test_assembly_dS_domains():
+    mesh = dolfin.UnitSquareMesh(dolfin.MPI.comm_world, 1, 1)
+    one = dolfin.Constant(mesh, 1)
+    val = dolfin.fem.assemble_scalar(one * ufl.dS)
+    assert val == pytest.approx(numpy.sqrt(2), 1.0e-12)
