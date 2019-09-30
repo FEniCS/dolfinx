@@ -121,8 +121,7 @@ void _lift_bc_cells(
   for (const mesh::MeshEntity& cell : mesh::MeshRange(mesh, tdim))
   {
     // Get dof maps for cell
-    const Eigen::Ref<const Eigen::Array<PetscInt, Eigen::Dynamic, 1>> dmap1
-        = dofmap1.cell_dofs(cell.index());
+    auto dmap1 = dofmap1.cell_dofs(cell.index());
 
     // Check if bc is applied to cell
     bool has_bc = false;
@@ -145,8 +144,7 @@ void _lift_bc_cells(
         coordinate_dofs(i, j) = x_g(cell_g[pos_g[cell_index] + i], j);
 
     // Size data structure for assembly
-    const Eigen::Map<const Eigen::Array<PetscInt, Eigen::Dynamic, 1>> dmap0
-        = dofmap0.cell_dofs(cell.index());
+    auto dmap0 = dofmap0.cell_dofs(cell.index());
 
     // TODO: Move gathering of coefficients outside of main assembly
     // loop
@@ -281,8 +279,7 @@ void _lift_bc_exterior_facets(
     const int orient = 0;
 
     // Get dof maps for cell
-    const Eigen::Map<const Eigen::Array<PetscInt, Eigen::Dynamic, 1>> dmap1
-        = dofmap1.cell_dofs(cell.index());
+    auto dmap1 = dofmap1.cell_dofs(cell.index());
 
     // Check if bc is applied to cell
     bool has_bc = false;
@@ -305,8 +302,7 @@ void _lift_bc_exterior_facets(
         coordinate_dofs(i, j) = x_g(cell_g[pos_g[cell_index] + i], j);
 
     // Size data structure for assembly
-    const Eigen::Map<const Eigen::Array<PetscInt, Eigen::Dynamic, 1>> dmap0
-        = dofmap0.cell_dofs(cell.index());
+    auto dmap0 = dofmap0.cell_dofs(cell.index());
 
     // TODO: Move gathering of coefficients outside of main assembly
     // loop
@@ -529,8 +525,7 @@ void fem::impl::assemble_exterior_facets(
         coordinate_dofs(i, j) = x_g(cell_g[pos_g[cell_index] + i], j);
 
     // Get dof map for cell
-    const Eigen::Map<const Eigen::Array<PetscInt, Eigen::Dynamic, 1>> dmap
-        = dofmap.cell_dofs(cell.index());
+    auto dmap = dofmap.cell_dofs(cell.index());
 
     // TODO: Move gathering of coefficients outside of main assembly
     // loop
@@ -615,10 +610,8 @@ void fem::impl::assemble_interior_facets(
       }
 
     // Get dofmaps for cell
-    const Eigen::Map<const Eigen::Array<PetscInt, Eigen::Dynamic, 1>> dmap0
-        = dofmap.cell_dofs(cell_index0);
-    const Eigen::Map<const Eigen::Array<PetscInt, Eigen::Dynamic, 1>> dmap1
-        = dofmap.cell_dofs(cell_index1);
+    auto dmap0 = dofmap.cell_dofs(cell_index0);
+    auto dmap1 = dofmap.cell_dofs(cell_index1);
 
     // TODO: Move gathering of coefficients outside of main assembly
     // loop

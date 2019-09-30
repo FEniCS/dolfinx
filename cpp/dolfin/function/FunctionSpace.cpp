@@ -197,8 +197,7 @@ void FunctionSpace::interpolate(
   for (auto& cell : mesh::MeshRange(*_mesh, tdim))
   {
     // Get dofmap for cell
-    Eigen::Map<const Eigen::Array<PetscInt, Eigen::Dynamic, 1>> cell_dofs
-        = _dofmap->cell_dofs(cell.index());
+    auto cell_dofs = _dofmap->cell_dofs(cell.index());
     for (Eigen::Index i = 0; i < cell_dofs.rows(); ++i)
     {
       for (Eigen::Index j = 0; j < value_size; ++j)
