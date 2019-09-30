@@ -157,3 +157,24 @@ def test_assembly_ds_domains(mesh):
     s2 = dolfin.MPI.sum(mesh.mpi_comm(), s2)
 
     assert (s == pytest.approx(s2, 1.0e-12) and 2.0 == pytest.approx(s, 1.0e-12))
+
+
+def test_additivity(mesh):
+    V = dolfin.FunctionSpace(mesh, ("CG", 1))
+
+    f1 = dolfin.Function(V)
+    f2 = dolfin.Function(V)
+
+    with f1.vector.localForm() as f1_local:
+        f1_local.set(1.0)
+    with f2.vector.localForm() as f2_local:
+        f2_local.set(2.0)
+
+    a1 = f1 * ufl.dx(mesh)
+    a2 = (f2("+") + f2("-")) * ufl.dS(mesh)
+
+    s1 = dolfin.MPI.sum(mesh.mpi_comm(), dolfin.fem.assemble_scalar(a1))
+    s2 = dolfin.MPI.sum(mesh.mpi_comm(), dolfin.fem.assemble_scalar(a2))
+    s12 = dolfin.MPI.sum(mesh.mpi_comm(), dolfin.fem.assemble_scalar(a1 + a2))
+
+    assert (s1 + s2) == pytest.approx(s12)
