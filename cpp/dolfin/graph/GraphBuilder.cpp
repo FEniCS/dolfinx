@@ -321,10 +321,8 @@ dolfin::graph::GraphBuilder::local_graph(const mesh::Mesh& mesh,
   const int tdim = mesh.topology().dim();
   for (auto& cell : mesh::MeshRange(mesh, tdim))
   {
-    Eigen::Map<const Eigen::Array<PetscInt, Eigen::Dynamic, 1>> dofs0
-        = dofmap0.cell_dofs(cell.index());
-    Eigen::Map<const Eigen::Array<PetscInt, Eigen::Dynamic, 1>> dofs1
-        = dofmap1.cell_dofs(cell.index());
+    auto dofs0 = dofmap0.cell_dofs(cell.index());
+    auto dofs1 = dofmap1.cell_dofs(cell.index());
 
     for (Eigen::Index i = 0; i < dofs0.size(); ++i)
     {
@@ -355,8 +353,7 @@ dolfin::graph::Graph dolfin::graph::GraphBuilder::local_graph(
   Graph graph(num_vertices);
 
   // Build graph
-  for (auto& vertex_entity :
-       mesh::MeshRange(mesh, coloring_type[0]))
+  for (auto& vertex_entity : mesh::MeshRange(mesh, coloring_type[0]))
   {
     const std::size_t vertex_entity_index = vertex_entity.index();
 
@@ -372,8 +369,7 @@ dolfin::graph::Graph dolfin::graph::GraphBuilder::local_graph(
       {
         const mesh::MeshEntity entity(mesh, coloring_type[level - 1],
                                       *entity_index);
-        for (auto& neighbor :
-             mesh::EntityRange(entity, coloring_type[level]))
+        for (auto& neighbor : mesh::EntityRange(entity, coloring_type[level]))
         {
           entity_list1.insert(neighbor.index());
         }
@@ -406,8 +402,7 @@ dolfin::graph::GraphBuilder::local_graph(const mesh::Mesh& mesh,
   for (auto& colored_entity : mesh::MeshRange(mesh, dim0))
   {
     const std::int32_t colored_entity_index = colored_entity.index();
-    for (auto& entity :
-         mesh::EntityRange(colored_entity, dim1))
+    for (auto& entity : mesh::EntityRange(colored_entity, dim1))
     {
       for (auto& neighbor : mesh::EntityRange(entity, dim0))
       {
