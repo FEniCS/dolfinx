@@ -311,10 +311,8 @@ compute_bc_dofs_topological(const function::FunctionSpace& V,
     const mesh::MeshEntity cell(mesh, tdim, cell_index);
 
     // Get cell dofmap
-    const Eigen::Map<const Eigen::Array<PetscInt, Eigen::Dynamic, 1>> cell_dofs
-        = dofmap.cell_dofs(cell.index());
-    const Eigen::Map<const Eigen::Array<PetscInt, Eigen::Dynamic, 1>>
-        cell_dofs_g = dofmap_g->cell_dofs(cell.index());
+    auto cell_dofs = dofmap.cell_dofs(cell.index());
+    auto cell_dofs_g = dofmap_g->cell_dofs(cell.index());
 
     // Loop over facet dofs
     const size_t facet_local_index = cell.index(facet);

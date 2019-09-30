@@ -89,24 +89,8 @@ void function(py::module& m)
                              &dolfin::function::Function::value_rank)
       .def_property_readonly("value_shape",
                              &dolfin::function::Function::value_shape)
-      .def("eval_cell",
-           py::overload_cast<
-               const Eigen::Ref<const dolfin::EigenRowArrayXXd>,
-               const dolfin::mesh::MeshEntity&,
-               Eigen::Ref<Eigen::Array<PetscScalar, Eigen::Dynamic,
-                                       Eigen::Dynamic, Eigen::RowMajor>>>(
-               &dolfin::function::Function::eval, py::const_),
-           py::arg("x"), py::arg("cell"), py::arg("values"),
-           "Evaluate Function (cell version)")
-      .def("eval",
-           py::overload_cast<
-               const Eigen::Ref<const dolfin::EigenRowArrayXXd>,
-               const dolfin::geometry::BoundingBoxTree&,
-               Eigen::Ref<Eigen::Array<PetscScalar, Eigen::Dynamic,
-                                       Eigen::Dynamic, Eigen::RowMajor>>>(
-               &dolfin::function::Function::eval, py::const_),
-           py::arg("x"), py::arg("bb_tree"), py::arg("values"),
-           "Evaluate Function")
+      .def("eval", &dolfin::function::Function::eval, py::arg("x"),
+           py::arg("cells"), py::arg("values"), "Evaluate Function")
       .def("compute_point_values",
            &dolfin::function::Function::compute_point_values,
            "Compute values at all mesh points")
@@ -135,7 +119,8 @@ void function(py::module& m)
       .def("collapse", &dolfin::function::FunctionSpace::collapse)
       .def("component", &dolfin::function::FunctionSpace::component)
       .def("contains", &dolfin::function::FunctionSpace::contains)
-      .def_property_readonly("element", &dolfin::function::FunctionSpace::element)
+      .def_property_readonly("element",
+                             &dolfin::function::FunctionSpace::element)
       .def_property_readonly("mesh", &dolfin::function::FunctionSpace::mesh)
       .def_property_readonly("dofmap", &dolfin::function::FunctionSpace::dofmap)
       .def("set_x", &dolfin::function::FunctionSpace::set_x)
