@@ -494,7 +494,7 @@ def test_custom_partition(tempdir, mesh_factory):
 
     if not is_simplex(mesh.cell_type):
         return
-            
+
     comm = mesh.mpi_comm()
     filename = os.path.join(tempdir, "mesh.xdmf")
     encoding = XDMFFile.Encoding.HDF5
