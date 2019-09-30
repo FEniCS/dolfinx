@@ -265,10 +265,8 @@ void fem::impl::assemble_exterior_facets(
         coordinate_dofs(i, j) = x_g(cell_g[pos_g[cell_index] + i], j);
 
     // Get dof maps for cell
-    Eigen::Map<const Eigen::Array<PetscInt, Eigen::Dynamic, 1>> dmap0
-        = dofmap0.cell_dofs(cell_index);
-    Eigen::Map<const Eigen::Array<PetscInt, Eigen::Dynamic, 1>> dmap1
-        = dofmap1.cell_dofs(cell_index);
+    auto dmap0 = dofmap0.cell_dofs(cell_index);
+    auto dmap1 = dofmap1.cell_dofs(cell_index);
 
     // Update coefficients
     for (std::size_t i = 0; i < coefficients.size(); ++i)
@@ -378,14 +376,10 @@ void fem::impl::assemble_interior_facets(
       }
 
     // Get dof maps for cell
-    Eigen::Map<const Eigen::Array<PetscInt, Eigen::Dynamic, 1>> dmap0_cell0
-        = dofmap0.cell_dofs(cell_index0);
-    Eigen::Map<const Eigen::Array<PetscInt, Eigen::Dynamic, 1>> dmap1_cell0
-        = dofmap1.cell_dofs(cell_index0);
-    Eigen::Map<const Eigen::Array<PetscInt, Eigen::Dynamic, 1>> dmap0_cell1
-        = dofmap0.cell_dofs(cell_index1);
-    Eigen::Map<const Eigen::Array<PetscInt, Eigen::Dynamic, 1>> dmap1_cell1
-        = dofmap1.cell_dofs(cell_index1);
+    auto dmap0_cell0 = dofmap0.cell_dofs(cell_index0);
+    auto dmap1_cell0 = dofmap1.cell_dofs(cell_index0);
+    auto dmap0_cell1 = dofmap0.cell_dofs(cell_index1);
+    auto dmap1_cell1 = dofmap1.cell_dofs(cell_index1);
 
     dmapjoint0.resize(dmap0_cell0.size() + dmap0_cell1.size());
     std::copy(dmap0_cell0.data(), dmap0_cell0.data() + dmap0_cell0.size(),
