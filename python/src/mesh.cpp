@@ -390,6 +390,5 @@ void mesh(py::module& m)
           return dolfin::mesh::Partitioning::compute_halo_cells(
               comm.get(), part, cell_type, cells);
         });
-
-} // namespace dolfin_wrappers
+}
 } // namespace dolfin_wrappers
