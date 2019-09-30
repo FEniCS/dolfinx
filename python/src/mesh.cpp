@@ -164,17 +164,17 @@ void mesh(py::module& m)
                 comm.get(), type, geometry, topology, global_cell_indices,
                 ghost_mode);
           }))
-      .def(
-          "cells",
-          [](const dolfin::mesh::Mesh& self) {
-            const std::uint32_t tdim = self.topology().dim();
-            return py::array(
-                {(std::int32_t)self.topology().size(tdim),
-                 (std::int32_t)dolfin::mesh::num_cell_vertices(self.cell_type())},
-                self.topology().connectivity(tdim, 0)->connections().data(),
-                py::none());
-          },
-          py::return_value_policy::reference_internal)
+      .def("cells",
+           [](const dolfin::mesh::Mesh& self) {
+             const std::uint32_t tdim = self.topology().dim();
+             return py::array(
+                 {(std::int32_t)self.topology().size(tdim),
+                  (std::int32_t)dolfin::mesh::num_cell_vertices(
+                      self.cell_type())},
+                 self.topology().connectivity(tdim, 0)->connections().data(),
+                 py::none());
+           },
+           py::return_value_policy::reference_internal)
       .def_property_readonly("geometry",
                              py::overload_cast<>(&dolfin::mesh::Mesh::geometry),
                              "Mesh geometry")
@@ -350,7 +350,14 @@ void mesh(py::module& m)
   py::class_<dolfin::mesh::PartitionData,
              std::shared_ptr<dolfin::mesh::PartitionData>>(
       m, "PartitionData", "PartitionData object")
-      .def("num_procs", &dolfin::mesh::PartitionData::num_procs);
+      .def(py::init(
+          [](const std::vector<int>& cell_partition,
+             const std::map<std::int64_t, std::vector<int>>& ghost_procs) {
+            return dolfin::mesh::PartitionData(cell_partition, ghost_procs);
+          }))
+      .def("num_procs", &dolfin::mesh::PartitionData::num_procs)
+      .def("size", &dolfin::mesh::PartitionData::num_ghosts)
+      .def("num_ghosts", &dolfin::mesh::PartitionData::num_ghosts);
 
   // dolfin::mesh::Partitioning::partition_cells
   m.def("partition_cells",
@@ -372,6 +379,16 @@ void mesh(py::module& m)
           return dolfin::mesh::Partitioning::build_from_partition(
               comm.get(), cell_type, points, cells, global_cell_indices,
               ghost_mode, cell_partition);
+        });
+
+  m.def("compute_halo_cells",
+        [](const MPICommWrapper comm, py::array_t<int> parttition,
+           dolfin::mesh::CellType cell_type,
+           const Eigen::Ref<const dolfin::EigenRowArrayXXi64> cells) {
+          std::vector<int> part(parttition.data(),
+                                parttition.data() + parttition.size());
+          return dolfin::mesh::Partitioning::compute_halo_cells(
+              comm.get(), part, cell_type, cells);
         });
 
 } // namespace dolfin_wrappers

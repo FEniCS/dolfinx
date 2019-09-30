@@ -487,6 +487,41 @@ def test_distribute_mesh(subset_comm, tempdir, mesh_factory):
     assert mesh.num_entities_global(dim) == dist_mesh.num_entities_global(dim)
 
 
+@pytest.mark.parametrize("mesh_factory", mesh_factories)
+def test_custom_partition(tempdir, mesh_factory):
+    func, args = mesh_factory
+    mesh = func(*args)
+
+    if not is_simplex(mesh.cell_type):
+        return
+            
+    comm = mesh.mpi_comm()
+    filename = os.path.join(tempdir, "mesh.xdmf")
+    encoding = XDMFFile.Encoding.HDF5
+    ghost_mode = cpp.mesh.GhostMode.none
+
+    with XDMFFile(comm, filename, encoding) as file:
+        file.write(mesh)
+
+    with XDMFFile(comm, filename) as file:
+        cell_type, points, cells, global_indices = file.read_mesh_data(comm)
+
+    # Create a custom partition array
+    part = numpy.zeros(cells.shape[0], dtype=numpy.int32)
+    part[:] = comm.rank
+
+    ghost_procs = cpp.mesh.compute_halo_cells(comm, part, cell_type, cells)
+    cell_partition = cpp.mesh.PartitionData(part, ghost_procs)
+    dist_mesh = cpp.mesh.build_from_partition(comm, cell_type, points,
+                                              cells, global_indices,
+                                              ghost_mode, cell_partition)
+
+    assert(mesh.cell_type == dist_mesh.cell_type)
+    assert mesh.num_entities_global(0) == dist_mesh.num_entities_global(0)
+    dim = dist_mesh.topology.dim
+    assert mesh.num_entities_global(dim) == dist_mesh.num_entities_global(dim)
+
+
 def test_coords():
     mesh = UnitCubeMesh(MPI.comm_world, 4, 4, 5)
     d = mesh.coordinate_dofs().entity_points()
