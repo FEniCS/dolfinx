@@ -157,3 +157,22 @@ def test_assembly_ds_domains(mesh):
     s2 = dolfin.MPI.sum(mesh.mpi_comm(), s2)
 
     assert (s == pytest.approx(s2, 1.0e-12) and 2.0 == pytest.approx(s, 1.0e-12))
+
+
+@pytest.mark.parametrize("mode",
+                         [pytest.param(dolfin.cpp.mesh.GhostMode.none,
+                                       marks=pytest.mark.skipif(condition=dolfin.MPI.size(dolfin.MPI.comm_world) > 1,
+                                                                reason="Unghosted interior facets fail in parallel")),
+                          pytest.param(dolfin.cpp.mesh.GhostMode.shared_facet,
+                                       marks=pytest.mark.skipif(condition=dolfin.MPI.size(dolfin.MPI.comm_world) == 1,
+                                                                reason="Shared ghost modes fail in serial")),
+                          pytest.param(dolfin.cpp.mesh.GhostMode.shared_vertex,
+                                       marks=pytest.mark.skipif(condition=dolfin.MPI.size(dolfin.MPI.comm_world) == 1,
+                                                                reason="Shared ghost modes fail in serial"))])
+def test_assembly_dS_domains(mode):
+    N = 10
+    mesh = dolfin.UnitSquareMesh(dolfin.MPI.comm_world, N, N, ghost_mode=mode)
+    one = dolfin.Constant(mesh, 1)
+    val = dolfin.fem.assemble_scalar(one * ufl.dS)
+    val = dolfin.MPI.sum(mesh.mpi_comm(), val)
+    assert val == pytest.approx(2 * (N - 1) + N * numpy.sqrt(2), 1.0e-7)
