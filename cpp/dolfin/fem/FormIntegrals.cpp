@@ -21,8 +21,8 @@ FormIntegrals::FormIntegrals()
 }
 //-----------------------------------------------------------------------------
 const std::function<ufc_tabulate_tensor>&
-FormIntegrals::get_tabulate_tensor_function(FormIntegrals::Type type,
-                                            int i) const
+FormIntegrals::get_tabulate_tensor_kernel(FormIntegrals::Type type,
+                                          int i) const
 {
   int type_index = static_cast<int>(type);
   const std::vector<struct FormIntegrals::Integral>& integrals
@@ -30,8 +30,9 @@ FormIntegrals::get_tabulate_tensor_function(FormIntegrals::Type type,
   return integrals.at(i).tabulate;
 }
 //-----------------------------------------------------------------------------
-void FormIntegrals::register_tabulate_tensor(FormIntegrals::Type type, int i,
-                                             ufc_tabulate_tensor* fn)
+void FormIntegrals::set_tabulate_tensor_kernel(
+    FormIntegrals::Type type, int i,
+    const std::function<ufc_tabulate_tensor>& kernel)
 {
   const int type_index = static_cast<int>(type);
   std::vector<struct FormIntegrals::Integral>& integrals
@@ -53,7 +54,7 @@ void FormIntegrals::register_tabulate_tensor(FormIntegrals::Type type, int i,
 
   // Create new Integral and insert
   struct FormIntegrals::Integral new_integral
-      = {fn, i, std::vector<std::int32_t>()};
+      = {kernel, i, std::vector<std::int32_t>()};
 
   integrals.insert(integrals.begin() + pos, new_integral);
 }

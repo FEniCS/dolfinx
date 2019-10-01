@@ -51,12 +51,13 @@ public:
   /// @param[in] i Integral number
   /// @return Function to call for tabulate_tensor
   const std::function<ufc_tabulate_tensor>&
-  get_tabulate_tensor_function(FormIntegrals::Type type, int i) const;
+  get_tabulate_tensor_kernel(FormIntegrals::Type type, int i) const;
 
   /// Register the function for 'tabulate_tensor' for integral i of
   /// given type
-  void register_tabulate_tensor(FormIntegrals::Type type, int i,
-                                ufc_tabulate_tensor* fn);
+  void
+  set_tabulate_tensor_kernel(FormIntegrals::Type type, int i,
+                             const std::function<ufc_tabulate_tensor>& kernel);
 
   /// Number of integrals of given type
   int num_integrals(FormIntegrals::Type t) const;

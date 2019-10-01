@@ -76,9 +76,9 @@ void _lift_bc_cells(
   }
   Eigen::Array<PetscScalar, Eigen::Dynamic, 1> coeff_array(n.back());
 
-  const auto& fn
-      = a.integrals().get_tabulate_tensor_function(FormIntegrals::Type::cell,
-                                                   0);
+  const auto& kernel
+      = a.integrals().get_tabulate_tensor_kernel(FormIntegrals::Type::cell,
+                                                 0);
 
   // Prepare cell geometry
   const int gdim = mesh.geometry().dim();
@@ -156,8 +156,8 @@ void _lift_bc_cells(
     }
 
     Ae.setZero(dmap0.size(), dmap1.size());
-    fn(Ae.data(), coeff_array.data(), constant_values.data(),
-       coordinate_dofs.data(), nullptr, &orient);
+    kernel(Ae.data(), coeff_array.data(), constant_values.data(),
+           coordinate_dofs.data(), nullptr, &orient);
 
     // Size data structure for assembly
     be.setZero(dmap0.size());
@@ -220,8 +220,8 @@ void _lift_bc_exterior_facets(
   }
   Eigen::Array<PetscScalar, Eigen::Dynamic, 1> coeff_array(n.back());
 
-  const auto& fn
-      = a.integrals().get_tabulate_tensor_function(
+  const auto& kernel
+      = a.integrals().get_tabulate_tensor_kernel(
           FormIntegrals::Type::exterior_facet, 0);
 
   // Prepare cell geometry
@@ -313,8 +313,8 @@ void _lift_bc_exterior_facets(
     }
 
     Ae.setZero(dmap0.size(), dmap1.size());
-    fn(Ae.data(), coeff_array.data(), constant_values.data(),
-       coordinate_dofs.data(), &local_facet, &orient);
+    kernel(Ae.data(), coeff_array.data(), constant_values.data(),
+           coordinate_dofs.data(), &local_facet, &orient);
 
     // Size data structure for assembly
     be.setZero(dmap0.size());
@@ -377,32 +377,32 @@ void fem::impl::assemble_vector(
   using type = fem::FormIntegrals::Type;
   for (int i = 0; i < integrals.num_integrals(type::cell); ++i)
   {
-    auto& fn
-        = integrals.get_tabulate_tensor_function(FormIntegrals::Type::cell, i);
+    auto& kernel
+        = integrals.get_tabulate_tensor_kernel(FormIntegrals::Type::cell, i);
     const std::vector<std::int32_t>& active_cells
         = integrals.integral_domains(type::cell, i);
     fem::impl::assemble_cells(b, mesh, active_cells, dof_array,
-                              num_dofs_per_cell, fn, coeff_fn, c_offsets,
+                              num_dofs_per_cell, kernel, coeff_fn, c_offsets,
                               constant_values);
   }
 
   for (int i = 0; i < integrals.num_integrals(type::exterior_facet); ++i)
   {
-    const auto& fn = integrals.get_tabulate_tensor_function(
+    const auto& kernel = integrals.get_tabulate_tensor_kernel(
         FormIntegrals::Type::exterior_facet, i);
     const std::vector<std::int32_t>& active_facets
         = integrals.integral_domains(type::exterior_facet, i);
-    fem::impl::assemble_exterior_facets(b, mesh, active_facets, dofmap, fn,
+    fem::impl::assemble_exterior_facets(b, mesh, active_facets, dofmap, kernel,
                                         coeff_fn, c_offsets, constant_values);
   }
 
   for (int i = 0; i < integrals.num_integrals(type::interior_facet); ++i)
   {
-    const auto& fn = integrals.get_tabulate_tensor_function(
+    const auto& kernel = integrals.get_tabulate_tensor_kernel(
         FormIntegrals::Type::interior_facet, i);
     const std::vector<std::int32_t>& active_facets
         = integrals.integral_domains(type::interior_facet, i);
-    fem::impl::assemble_interior_facets(b, mesh, active_facets, dofmap, fn,
+    fem::impl::assemble_interior_facets(b, mesh, active_facets, dofmap, kernel,
                                         coeff_fn, c_offsets, constant_values);
   }
 }
@@ -473,7 +473,7 @@ void fem::impl::assemble_exterior_facets(
     Eigen::Ref<Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1>> b,
     const mesh::Mesh& mesh, const std::vector<std::int32_t>& active_facets,
     const fem::DofMap& dofmap,
-    const std::function<ufc_tabulate_tensor>& fn,
+    const std::function<ufc_tabulate_tensor>& kernel,
     const std::vector<const function::Function*>& coefficients,
     const std::vector<int>& offsets,
     const std::vector<PetscScalar> constant_values)
@@ -533,8 +533,8 @@ void fem::impl::assemble_exterior_facets(
 
     // Tabulate element vector
     be.setZero(dmap.size());
-    fn(be.data(), coeff_array.data(), constant_values.data(),
-       coordinate_dofs.data(), &local_facet, &orient);
+    kernel(be.data(), coeff_array.data(), constant_values.data(),
+           coordinate_dofs.data(), &local_facet, &orient);
 
     // Add element vector to global vector
     for (Eigen::Index i = 0; i < dmap.size(); ++i)
@@ -546,7 +546,7 @@ void fem::impl::assemble_interior_facets(
     Eigen::Ref<Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1>> b,
     const mesh::Mesh& mesh, const std::vector<std::int32_t>& active_facets,
     const fem::DofMap& dofmap,
-    const std::function<ufc_tabulate_tensor>& fn,
+    const std::function<ufc_tabulate_tensor>& kernel,
     const std::vector<const function::Function*>& coefficients,
     const std::vector<int>& offsets,
     const std::vector<PetscScalar> constant_values)
@@ -634,8 +634,8 @@ void fem::impl::assemble_interior_facets(
 
     // Tabulate element vector
     be.setZero(dmap0.size() + dmap1.size());
-    fn(be.data(), coeff_array.data(), constant_values.data(),
-       coordinate_dofs.data(), local_facet, orient);
+    kernel(be.data(), coeff_array.data(), constant_values.data(),
+           coordinate_dofs.data(), local_facet, orient);
 
     // Add element vector to global vector
     for (Eigen::Index i = 0; i < dmap0.size(); ++i)

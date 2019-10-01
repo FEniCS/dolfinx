@@ -164,7 +164,7 @@ public:
 
   /// Register the function for 'tabulate_tensor' for cell integral i
   void register_tabulate_tensor_cell(
-      int i, ufc_tabulate_tensor* kernel);
+      int i, const std::function<ufc_tabulate_tensor>& kernel);
 
   /// Set cell domains
   /// @param[in] cell_domains The cell domains
