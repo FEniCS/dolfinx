@@ -7,10 +7,13 @@
 #pragma once
 
 #include <array>
+#include <dolfin/common/types.h>
 #include <functional>
 #include <memory>
 #include <petscsys.h>
+#include "ufc.h"
 #include <vector>
+
 
 namespace dolfin
 {
@@ -47,16 +50,13 @@ public:
   /// @param[in] type Integral type
   /// @param[in] i Integral number
   /// @return Function to call for tabulate_tensor
-  const std::function<void(PetscScalar*, const PetscScalar*, const PetscScalar*,
-                           const double*, const int*, const int*)>&
+  const std::function<ufc_tabulate_tensor>&
   get_tabulate_tensor_function(FormIntegrals::Type type, int i) const;
 
   /// Register the function for 'tabulate_tensor' for integral i of
   /// given type
   void register_tabulate_tensor(FormIntegrals::Type type, int i,
-                                void (*fn)(PetscScalar*, const PetscScalar*,
-                                           const PetscScalar*, const double*,
-                                           const int*, const int*));
+                                ufc_tabulate_tensor* fn);
 
   /// Number of integrals of given type
   int num_integrals(FormIntegrals::Type t) const;
@@ -93,9 +93,7 @@ private:
   // integrate on
   struct Integral
   {
-    std::function<void(PetscScalar*, const PetscScalar*, const PetscScalar*,
-                       const double*, const int*, const int*)>
-        tabulate;
+    std::function<ufc_tabulate_tensor> tabulate;
     int id;
     std::vector<std::int32_t> active_entities;
   };

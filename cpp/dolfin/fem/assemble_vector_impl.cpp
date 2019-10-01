@@ -76,8 +76,7 @@ void _lift_bc_cells(
   }
   Eigen::Array<PetscScalar, Eigen::Dynamic, 1> coeff_array(n.back());
 
-  const std::function<void(PetscScalar*, const PetscScalar*, const PetscScalar*,
-                           const double*, const int*, const int*)>& fn
+  const auto& fn
       = a.integrals().get_tabulate_tensor_function(FormIntegrals::Type::cell,
                                                    0);
 
@@ -221,8 +220,7 @@ void _lift_bc_exterior_facets(
   }
   Eigen::Array<PetscScalar, Eigen::Dynamic, 1> coeff_array(n.back());
 
-  const std::function<void(PetscScalar*, const PetscScalar*, const PetscScalar*,
-                           const double*, const int*, const int*)>& fn
+  const auto& fn
       = a.integrals().get_tabulate_tensor_function(
           FormIntegrals::Type::exterior_facet, 0);
 
@@ -414,9 +412,7 @@ void fem::impl::assemble_cells(
     const mesh::Mesh& mesh, const std::vector<std::int32_t>& active_cells,
     const Eigen::Ref<const Eigen::Array<PetscInt, Eigen::Dynamic, 1>> dofmap,
     int num_dofs_per_cell,
-    const std::function<void(PetscScalar*, const PetscScalar*,
-                             const PetscScalar*, const double*, const int*,
-                             const int*)>& kernel,
+    const std::function<ufc_tabulate_tensor>& kernel,
     const std::vector<const function::Function*>& coefficients,
     const std::vector<int>& offsets,
     const std::vector<PetscScalar> constant_values)
@@ -477,9 +473,7 @@ void fem::impl::assemble_exterior_facets(
     Eigen::Ref<Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1>> b,
     const mesh::Mesh& mesh, const std::vector<std::int32_t>& active_facets,
     const fem::DofMap& dofmap,
-    const std::function<void(PetscScalar*, const PetscScalar*,
-                             const PetscScalar*, const double*, const int*,
-                             const int*)>& fn,
+    const std::function<ufc_tabulate_tensor>& fn,
     const std::vector<const function::Function*>& coefficients,
     const std::vector<int>& offsets,
     const std::vector<PetscScalar> constant_values)
@@ -552,9 +546,7 @@ void fem::impl::assemble_interior_facets(
     Eigen::Ref<Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1>> b,
     const mesh::Mesh& mesh, const std::vector<std::int32_t>& active_facets,
     const fem::DofMap& dofmap,
-    const std::function<void(PetscScalar*, const PetscScalar*,
-                             const PetscScalar*, const double*, const int*,
-                             const int*)>& fn,
+    const std::function<ufc_tabulate_tensor>& fn,
     const std::vector<const function::Function*>& coefficients,
     const std::vector<int>& offsets,
     const std::vector<PetscScalar> constant_values)

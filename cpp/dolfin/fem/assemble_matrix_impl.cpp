@@ -122,9 +122,7 @@ void fem::impl::assemble_cells(
     const Eigen::Ref<const Eigen::Array<PetscInt, Eigen::Dynamic, 1>> dofmap1,
     int num_dofs_per_cell1, const std::vector<bool>& bc0,
     const std::vector<bool>& bc1,
-    const std::function<void(PetscScalar*, const PetscScalar*,
-                             const PetscScalar*, const double*, const int*,
-                             const int*)>& kernel,
+    const std::function<ufc_tabulate_tensor>& kernel,
     const std::vector<const function::Function*>& coefficients,
     const std::vector<int>& offsets,
     const std::vector<PetscScalar> constant_values)
@@ -213,9 +211,7 @@ void fem::impl::assemble_exterior_facets(
     const std::vector<std::int32_t>& active_facets, const DofMap& dofmap0,
     const DofMap& dofmap1, const std::vector<bool>& bc0,
     const std::vector<bool>& bc1,
-    const std::function<void(PetscScalar*, const PetscScalar*,
-                             const PetscScalar*, const double*, const int*,
-                             const int*)>& fn,
+    const std::function<ufc_tabulate_tensor>& fn,
     const std::vector<const function::Function*>& coefficients,
     const std::vector<int>& offsets,
     const std::vector<PetscScalar> constant_values)
@@ -313,9 +309,7 @@ void fem::impl::assemble_interior_facets(
     const std::vector<std::int32_t>& active_facets, const DofMap& dofmap0,
     const DofMap& dofmap1, const std::vector<bool>& bc0,
     const std::vector<bool>& bc1,
-    const std::function<void(PetscScalar*, const PetscScalar*,
-                             const PetscScalar*, const double*, const int*,
-                             const int*)>& fn,
+    const std::function<ufc_tabulate_tensor>& fn,
     const std::vector<const function::Function*>& coefficients,
     const std::vector<int>& offsets,
     const std::vector<PetscScalar> constant_values)

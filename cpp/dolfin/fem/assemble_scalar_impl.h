@@ -6,10 +6,12 @@
 
 #pragma once
 
+#include <dolfin/common/types.h>
 #include <Eigen/Dense>
 #include <dolfin/common/types.h>
 #include <memory>
 #include <petscsys.h>
+#include "ufc.h"
 #include <vector>
 
 namespace dolfin
@@ -41,9 +43,7 @@ PetscScalar assemble_scalar(const fem::Form& M);
 PetscScalar
 assemble_cells(const mesh::Mesh& mesh,
                const std::vector<std::int32_t>& active_cells,
-               const std::function<void(PetscScalar*, const PetscScalar*,
-                                        const PetscScalar*, const double*,
-                                        const int*, const int*)>& fn,
+               const std::function<ufc_tabulate_tensor>& fn,
                const std::vector<const function::Function*>& coefficients,
                const std::vector<int>& offsets,
                const std::vector<PetscScalar> constant_values);
@@ -51,9 +51,7 @@ assemble_cells(const mesh::Mesh& mesh,
 /// Execute kernel over exterior facets and accumulate result
 PetscScalar assemble_exterior_facets(
     const mesh::Mesh& mesh, const std::vector<std::int32_t>& active_cells,
-    const std::function<void(PetscScalar*, const PetscScalar*,
-                             const PetscScalar*, const double*, const int*,
-                             const int*)>& fn,
+    const std::function<ufc_tabulate_tensor>& fn,
     const std::vector<const function::Function*>& coefficients,
     const std::vector<int>& offsets,
     const std::vector<PetscScalar> constant_values);
@@ -61,9 +59,7 @@ PetscScalar assemble_exterior_facets(
 /// Assemble functional over interior facets
 PetscScalar assemble_interior_facets(
     const mesh::Mesh& mesh, const std::vector<std::int32_t>& active_cells,
-    const std::function<void(PetscScalar*, const PetscScalar*,
-                             const PetscScalar*, const double*, const int*,
-                             const int*)>& fn,
+    const std::function<ufc_tabulate_tensor>& fn,
     const std::vector<const function::Function*>& coefficients,
     const std::vector<int>& offsets,
     const std::vector<PetscScalar> constant_values);

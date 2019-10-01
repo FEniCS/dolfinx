@@ -104,9 +104,7 @@ PetscScalar dolfin::fem::impl::assemble_scalar(const dolfin::fem::Form& M)
 //-----------------------------------------------------------------------------
 PetscScalar fem::impl::assemble_cells(
     const mesh::Mesh& mesh, const std::vector<std::int32_t>& active_cells,
-    const std::function<void(PetscScalar*, const PetscScalar*,
-                             const PetscScalar*, const double*, const int*,
-                             const int*)>& fn,
+    const std::function<ufc_tabulate_tensor>& fn,
     const std::vector<const function::Function*>& coefficients,
     const std::vector<int>& offsets,
     const std::vector<PetscScalar> constant_values)
@@ -161,9 +159,7 @@ PetscScalar fem::impl::assemble_cells(
 //-----------------------------------------------------------------------------
 PetscScalar fem::impl::assemble_exterior_facets(
     const mesh::Mesh& mesh, const std::vector<std::int32_t>& active_facets,
-    const std::function<void(PetscScalar*, const PetscScalar*,
-                             const PetscScalar*, const double*, const int*,
-                             const int*)>& fn,
+    const std::function<ufc_tabulate_tensor>& fn,
     const std::vector<const function::Function*>& coefficients,
     const std::vector<int>& offsets,
     const std::vector<PetscScalar> constant_values)
@@ -228,9 +224,7 @@ PetscScalar fem::impl::assemble_exterior_facets(
 //-----------------------------------------------------------------------------
 PetscScalar fem::impl::assemble_interior_facets(
     const mesh::Mesh& mesh, const std::vector<std::int32_t>& active_facets,
-    const std::function<void(PetscScalar*, const PetscScalar*,
-                             const PetscScalar*, const double*, const int*,
-                             const int*)>& fn,
+    const std::function<ufc_tabulate_tensor>& fn,
     const std::vector<const function::Function*>& coefficients,
     const std::vector<int>& offsets,
     const std::vector<PetscScalar> constant_values)
