@@ -137,10 +137,9 @@ std::shared_ptr<const function::FunctionSpace> Form::function_space(int i) const
 }
 //-----------------------------------------------------------------------------
 void Form::register_tabulate_tensor_cell(
-    int i, void (*fn)(PetscScalar*, const PetscScalar*, const PetscScalar*,
-                      const double*, const int*, const int*))
+    int i, ufc_tabulate_tensor* kernel)
 {
-  _integrals.register_tabulate_tensor(FormIntegrals::Type::cell, i, fn);
+  _integrals.register_tabulate_tensor(FormIntegrals::Type::cell, i, kernel);
   if (i == -1 and _mesh)
     _integrals.set_default_domains(*_mesh);
 }

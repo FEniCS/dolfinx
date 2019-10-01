@@ -6,6 +6,7 @@
 
 #pragma once
 
+#include <dolfin/common/types.h>
 #include "FormCoefficients.h"
 #include "FormIntegrals.h"
 #include <functional>
@@ -13,6 +14,7 @@
 #include <memory>
 #include <petscsys.h>
 #include <string>
+#include "ufc.h"
 #include <vector>
 
 // Forward declaration
@@ -162,8 +164,7 @@ public:
 
   /// Register the function for 'tabulate_tensor' for cell integral i
   void register_tabulate_tensor_cell(
-      int i, void (*fn)(PetscScalar*, const PetscScalar*, const PetscScalar*,
-                        const double*, const int*, const int*));
+      int i, ufc_tabulate_tensor* kernel);
 
   /// Set cell domains
   /// @param[in] cell_domains The cell domains
