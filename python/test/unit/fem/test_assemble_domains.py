@@ -18,16 +18,16 @@ def mesh():
     return dolfin.generation.UnitSquareMesh(dolfin.MPI.comm_world, 10, 10)
 
 
-parametrize_ghost_mode = pytest.mark.parametrize("mode",
-    [pytest.param(dolfin.cpp.mesh.GhostMode.none,
-                marks=pytest.mark.skipif(condition=dolfin.MPI.size(dolfin.MPI.comm_world) > 1,
-                                        reason="Unghosted interior facets fail in parallel")),
+parametrize_ghost_mode = pytest.mark.parametrize("mode", [
+    pytest.param(dolfin.cpp.mesh.GhostMode.none,
+                 marks=pytest.mark.skipif(condition=dolfin.MPI.size(dolfin.MPI.comm_world) > 1,
+                                          reason="Unghosted interior facets fail in parallel")),
     pytest.param(dolfin.cpp.mesh.GhostMode.shared_facet,
-                marks=pytest.mark.skipif(condition=dolfin.MPI.size(dolfin.MPI.comm_world) == 1,
-                                        reason="Shared ghost modes fail in serial")),
+                 marks=pytest.mark.skipif(condition=dolfin.MPI.size(dolfin.MPI.comm_world) == 1,
+                                          reason="Shared ghost modes fail in serial")),
     pytest.param(dolfin.cpp.mesh.GhostMode.shared_vertex,
-                marks=pytest.mark.skipif(condition=dolfin.MPI.size(dolfin.MPI.comm_world) == 1,
-                                        reason="Shared ghost modes fail in serial"))])
+                 marks=pytest.mark.skipif(condition=dolfin.MPI.size(dolfin.MPI.comm_world) == 1,
+                                          reason="Shared ghost modes fail in serial"))])
 
 
 def test_assembly_dx_domains(mesh):
