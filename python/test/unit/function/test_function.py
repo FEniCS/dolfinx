@@ -15,7 +15,8 @@ from petsc4py import PETSc
 
 import ufl
 from dolfin import (MPI, Function, FunctionSpace, TensorFunctionSpace,
-                    UnitCubeMesh, VectorFunctionSpace, cpp, interpolate)
+                    UnitCubeMesh, VectorFunctionSpace, cpp, geometry,
+                    interpolate)
 from dolfin_utils.test.fixtures import fixture
 from dolfin_utils.test.skips import skip_if_complex, skip_in_parallel
 
@@ -164,13 +165,24 @@ def test_eval(R, V, W, Q, mesh):
     u3.interpolate(e3)
 
     x0 = (mesh.geometry.x(0) + mesh.geometry.x(1)) / 2.0
-    tree = cpp.geometry.BoundingBoxTree(mesh, mesh.geometry.dim)
-    assert np.allclose(u3.eval(x0, tree)[:3], u2.eval(x0, tree), rtol=1e-15, atol=1e-15)
+    tree = geometry.BoundingBoxTree(mesh, mesh.geometry.dim)
+    cells = geometry.compute_first_entity_collision(tree, mesh, x0)
+    assert np.allclose(u3.eval(x0, cells)[:3], u2.eval(x0, cells), rtol=1e-15, atol=1e-15)
+    with pytest.raises(ValueError):
+        u0.eval([0, 0, 0, 0], 0)
+    with pytest.raises(ValueError):
+        u0.eval([0, 0], 0)
 
-    with pytest.raises(ValueError):
-        u0.eval([0, 0, 0, 0], tree)
-    with pytest.raises(ValueError):
-        u0.eval([0, 0], tree)
+
+def test_eval_multiple(W):
+    u = Function(W)
+    u.vector.set(1.0)
+    mesh = W.mesh
+    x0 = (mesh.geometry.x(0) + mesh.geometry.x(1)) / 2.0
+    x = np.array([x0, x0 + 1.0e8])
+    tree = geometry.BoundingBoxTree(mesh, W.mesh.geometry.dim)
+    cells = geometry.compute_first_entity_collision(tree, mesh, x)
+    u.eval(x[0], cells[0])
 
 
 def test_scalar_conditions(R):
@@ -237,7 +249,7 @@ def test_interpolation_rank0(V):
 
 
 @skip_in_parallel
-def test_near_evaluations(R, mesh):
+def xtest_near_evaluations(R, mesh):
     # Test that we allow point evaluation that are slightly outside
     bb_tree = cpp.geometry.BoundingBoxTree(mesh, mesh.geometry.dim)
     u0 = Function(R)

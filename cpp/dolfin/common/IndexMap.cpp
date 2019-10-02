@@ -74,12 +74,12 @@ IndexMap::indices(bool unroll_block) const
   const std::int32_t size_local = this->size_local() * bs;
 
   Eigen::Array<std::int64_t, Eigen::Dynamic, 1> indx(size_local
-                                                    + num_ghosts() * bs);
-  std::iota(indx.data(), indx.data() + size_local, bs*local_range[0]);
+                                                     + num_ghosts() * bs);
+  std::iota(indx.data(), indx.data() + size_local, bs * local_range[0]);
   for (Eigen::Index i = 0; i < num_ghosts(); ++i)
   {
     for (Eigen::Index j = 0; j < bs; ++j)
-      indx[size_local + bs*i + j] = bs * _ghosts[i] + j;
+      indx[size_local + bs * i + j] = bs * _ghosts[i] + j;
   }
 
   return indx;

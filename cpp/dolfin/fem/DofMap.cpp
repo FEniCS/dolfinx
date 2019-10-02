@@ -30,7 +30,7 @@ fem::DofMap build_collapsed_dofmap(const DofMap& dofmap_view,
   assert(element_dof_layout);
 
   if (dofmap_view.index_map->block_size == 1
-      and element_dof_layout->block_size > 1)
+      and element_dof_layout->block_size() > 1)
   {
     throw std::runtime_error(
         "Cannot collapse dofmap with block size greater "
@@ -38,7 +38,7 @@ fem::DofMap build_collapsed_dofmap(const DofMap& dofmap_view,
   }
 
   if (dofmap_view.index_map->block_size > 1
-      and element_dof_layout->block_size > 1)
+      and element_dof_layout->block_size() > 1)
   {
     throw std::runtime_error(
         "Cannot (yet) collapse dofmap with block size greater "
@@ -53,8 +53,7 @@ fem::DofMap build_collapsed_dofmap(const DofMap& dofmap_view,
   std::vector<std::int32_t> dofs_view;
   for (std::int64_t i = 0; i < mesh.num_entities(tdim); ++i)
   {
-    Eigen::Map<const Eigen::Array<PetscInt, Eigen::Dynamic, 1>> cell_dofs
-        = dofmap_view.cell_dofs(i);
+    auto cell_dofs = dofmap_view.cell_dofs(i);
     for (Eigen::Index dof = 0; dof < cell_dofs.rows(); ++dof)
       dofs_view.push_back(cell_dofs[dof]);
   }
@@ -64,7 +63,7 @@ fem::DofMap build_collapsed_dofmap(const DofMap& dofmap_view,
 
   // Get block sizes
   const int bs_view = dofmap_view.index_map->block_size;
-  const int bs = element_dof_layout->block_size;
+  const int bs = element_dof_layout->block_size();
 
   // Compute sizes
   const std::int32_t num_owned_view = dofmap_view.index_map->size_local();
@@ -160,7 +159,7 @@ DofMap::collapse(const mesh::Mesh& mesh) const
   assert(index_map);
   std::unique_ptr<DofMap> dofmap_new;
   if (this->index_map->block_size == 1
-      and this->element_dof_layout->block_size > 1)
+      and this->element_dof_layout->block_size() > 1)
   {
     // Create new element dof layout and reset parent
     auto collapsed_dof_layout
@@ -188,10 +187,8 @@ DofMap::collapse(const mesh::Mesh& mesh) const
   const int tdim = mesh.topology().dim();
   for (std::int64_t c = 0; c < mesh.num_entities(tdim); ++c)
   {
-    Eigen::Map<const Eigen::Array<PetscInt, Eigen::Dynamic, 1>> view_cell_dofs
-        = this->cell_dofs(c);
-    Eigen::Map<const Eigen::Array<PetscInt, Eigen::Dynamic, 1>> cell_dofs
-        = dofmap_new->cell_dofs(c);
+    auto view_cell_dofs = this->cell_dofs(c);
+    auto cell_dofs = dofmap_new->cell_dofs(c);
     assert(view_cell_dofs.size() == cell_dofs.size());
 
     for (Eigen::Index j = 0; j < cell_dofs.size(); ++j)
@@ -275,7 +272,7 @@ Eigen::Array<PetscInt, Eigen::Dynamic, 1> DofMap::dofs(const mesh::Mesh& mesh,
 
   // Build local dofs for each entity of dimension dim
   std::vector<Eigen::Array<int, Eigen::Dynamic, 1>> entity_dofs_local;
-  for (int i = 0; i < mesh::cell_num_entities(mesh.cell_type, dim); ++i)
+  for (int i = 0; i < mesh::cell_num_entities(mesh.cell_type(), dim); ++i)
     entity_dofs_local.push_back(element_dof_layout->entity_dofs(dim, i));
 
   // Iterate over cells
@@ -283,11 +280,10 @@ Eigen::Array<PetscInt, Eigen::Dynamic, 1> DofMap::dofs(const mesh::Mesh& mesh,
   for (auto& c : mesh::MeshRange(mesh, tdim))
   {
     // Get local-to-global dofmap for cell
-    Eigen::Map<const Eigen::Array<PetscInt, Eigen::Dynamic, 1>> cell_dof_list
-        = cell_dofs(c.index());
+    auto cell_dof_list = cell_dofs(c.index());
 
     // Loop over all entities of dimension dim
-    unsigned int local_index = 0;
+    int local_index = 0;
     for (auto& e : mesh::EntityRange(c, dim))
     {
       // Get dof index and add to list

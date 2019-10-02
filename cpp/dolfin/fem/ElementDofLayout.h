@@ -40,11 +40,11 @@ public:
       const std::vector<std::shared_ptr<const ElementDofLayout>> sub_dofmaps,
       const mesh::CellType cell_type);
 
-  // Copy-like constructor with option to reset (clear) parent map
+  /// Copy-like constructor with option to reset (clear) parent map
   ElementDofLayout(const ElementDofLayout& element_dof_layout,
                    bool reset_parent);
 
-  // Copy constructor
+  /// Copy constructor
   ElementDofLayout(const ElementDofLayout& dofmap) = default;
 
   /// Move constructor
@@ -53,56 +53,39 @@ public:
   /// Destructor
   ~ElementDofLayout() = default;
 
-  // Copy assignment
+  /// Copy assignment
   ElementDofLayout& operator=(const ElementDofLayout& dofmap) = default;
 
   /// Move assignment
   ElementDofLayout& operator=(ElementDofLayout&& dofmap) = default;
 
-  /// Return the dimension of the local finite element function
-  /// space on a cell (number of dofs on element)
-  ///
-  /// @return     int
-  ///         Dimension of the local finite element function space.
+  /// Return the dimension of the local finite element function space on
+  /// a cell (number of dofs on element)
+  /// @return Dimension of the local finite element function space.
   int num_dofs() const;
 
   /// Return the number of dofs for a given entity dimension
-  ///
-  /// @param     entity_dim (int)
-  ///         Entity dimension
-  ///
-  /// @return     int
-  ///         Number of dofs associated with given entity dimension
+  /// @param[in] dim Entity dimension
+  /// @return Number of dofs associated with given entity dimension
   int num_entity_dofs(int dim) const;
 
   /// Return the number of closure dofs for a given entity dimension
-  ///
-  /// @param     entity_dim (int)
-  ///         Entity dimension
-  ///
-  /// @return     int
-  ///         Number of dofs associated with closure of given entity dimension
+  /// @param[in] dim Entity dimension
+  /// @return Number of dofs associated with closure of given entity
+  ///         dimension
   int num_entity_closure_dofs(int dim) const;
 
   /// Local-local mapping of dofs on entity of cell
-  ///
-  /// @param   entity_dim (std::size_t)
-  ///         The entity dimension.
-  /// @param    cell_entity_index (std::size_t)
-  ///         The local entity index on the cell.
-  /// @return     Eigen::Array<int, Eigen::Dynamic, 1>
-  ///         Degrees of freedom on a single element.
+  /// @param[in] entity_dim The entity dimension
+  /// @param[in] cell_entity_index The local entity index on the cell
+  /// @return Degrees of freedom on a single element.
   Eigen::Array<int, Eigen::Dynamic, 1> entity_dofs(int entity_dim,
                                                    int cell_entity_index) const;
 
   /// Local-local closure dofs on entity of cell
-  ///
-  /// @param   entity_dim (std::size_t)
-  ///         The entity dimension.
-  /// @param    cell_entity_index (std::size_t)
-  ///         The local entity index on the cell.
-  /// @return     Eigen::Array<int, Eigen::Dynamic, 1>
-  ///         Degrees of freedom on a single element.
+  /// @param[in] entity_dim The entity dimension
+  /// @param[in] cell_entity_index The local entity index on the cell
+  /// @return Degrees of freedom on a single element
   Eigen::Array<int, Eigen::Dynamic, 1>
   entity_closure_dofs(int entity_dim, int cell_entity_index) const;
 
@@ -127,7 +110,7 @@ public:
   std::vector<int> sub_view(const std::vector<int>& component) const;
 
   /// Block size
-  const int block_size;
+  int block_size() const;
 
   /// True iff dof map is a view into another map
   ///
@@ -137,6 +120,9 @@ public:
   bool is_view() const;
 
 private:
+  // Block size
+  int _block_size;
+
   // Mapping of dofs to this ElementDofLayout's immediate parent
   std::vector<int> _parent_map;
 
@@ -152,13 +138,13 @@ private:
 
   // List of dofs per entity, ordered by dimension.
   // dof = _entity_dofs[dim][entity][i]
-  const std::vector<std::vector<std::set<int>>> _entity_dofs;
+  std::vector<std::vector<std::set<int>>> _entity_dofs;
 
   // List of dofs with connected entities of lower dimension
   std::vector<std::vector<std::set<int>>> _entity_closure_dofs;
 
   // List of sub dofmaps
-  const std::vector<std::shared_ptr<const ElementDofLayout>> _sub_dofmaps;
+  std::vector<std::shared_ptr<const ElementDofLayout>> _sub_dofmaps;
 };
 } // namespace fem
 } // namespace dolfin

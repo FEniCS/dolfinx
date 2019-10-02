@@ -1,4 +1,4 @@
-# Copyright (C) 2019 Michal Habera, Andreas Zilian
+# Copyright (C) 2019 Michal Habera and Andreas Zilian
 #
 # This file is part of DOLFIN (https://www.fenicsproject.org)
 #
@@ -50,7 +50,7 @@ with u_bc.vector.localForm() as loc:
     loc.set(0.0)
 
 # Displacement BC is applied to the right side
-bc = dolfin.fem.DirichletBC(U, u_bc, lambda x, only_bndry: numpy.isclose(x[:, 0], 0.0))
+bc = dolfin.fem.DirichletBC(U, u_bc, lambda x: numpy.isclose(x[:, 0], 0.0))
 
 
 def free_end(x):
@@ -152,10 +152,11 @@ A.assemble()
 bb_tree = dolfin.cpp.geometry.BoundingBoxTree(mesh, 2)
 
 # Check against standard table value
-if bb_tree.collides([48.0, 52.0, 0.0]):
-    value = uc.eval([48.0, 52.0], bb_tree)
-    assert(numpy.isclose(value[1], 23.95, rtol=1.e-2))
+cell = dolfin.cpp.geometry.compute_first_collision(bb_tree, [48.0, 52.0, 0.0])
+if cell >= 0:
+    value = uc.eval([48.0, 52.0], numpy.asarray(cell))
+    assert numpy.isclose(value[1], 23.95, rtol=1.e-2)
 
-# Check the equality of displacement based and mixed condensed
-# global matrices, i.e. check that condensation is exact
-assert(numpy.isclose((A - A_cond).norm(), 0.0))
+# Check the equality of displacement based and mixed condensed global
+# matrices, i.e. check that condensation is exact
+assert numpy.isclose((A - A_cond).norm(), 0.0)

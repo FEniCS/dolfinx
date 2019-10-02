@@ -40,7 +40,7 @@ std::string container_to_string(const T& x, std::string delimiter,
     }
     else
     {
-      for (unsigned int i = 0; i != x.size(); ++i)
+      for (std::size_t i = 0; i != x.size(); ++i)
       {
         if ((i + 1) % linebreak == 0)
           s << x[i] << std::endl;
@@ -60,9 +60,9 @@ std::size_t hash_local(const T& x)
   return hash(x);
 }
 
-/// Return a hash for a distributed (MPI) object. A hash is computed
-/// on each process, and the hash of the std::vector of all local hash
-/// keys is returned. This function is collective.
+/// Return a hash for a distributed (MPI) object. A hash is computed on
+/// each process, and the hash of the std::vector of all local hash keys
+/// is returned. This function is collective.
 template <class T>
 std::size_t hash_global(const MPI_Comm mpi_comm, const T& x)
 {

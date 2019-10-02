@@ -6,6 +6,7 @@
 
 #pragma once
 
+#include "FunctionSpace.h"
 #include <Eigen/Dense>
 #include <dolfin/common/types.h>
 #include <dolfin/fem/FiniteElement.h>
@@ -29,8 +30,6 @@ class Mesh;
 
 namespace function
 {
-class FunctionSpace;
-
 /// This class represents a function \f$ u_h \f$ in a finite
 /// element function space \f$ V_h \f$, given by
 ///
@@ -42,19 +41,15 @@ class Function
 {
 public:
   /// Create function on given function space
-  ///
-  /// @param V (_FunctionSpace_)
-  ///         The function space.
+  /// @param[in] V The function space
   explicit Function(std::shared_ptr<const FunctionSpace> V);
 
   /// Create function on given function space with a given vector
   ///
   /// *Warning: This constructor is intended for internal library use only*
   ///
-  /// @param V (_FunctionSpace_)
-  ///         The function space.
-  /// @param x (_Vec_)
-  ///         The vector.
+  /// @param[in] V The function space
+  /// @param[in] x The vector
   Function(std::shared_ptr<const FunctionSpace> V, Vec x);
 
   // Copy constructor
@@ -73,11 +68,8 @@ public:
   Function& operator=(const Function& v) = delete;
 
   /// Extract subfunction (view into the Function)
-  ///
-  /// @param i (std::size_t)
-  ///         Index of subfunction.
-  /// @returns    _Function_
-  ///         The subfunction.
+  /// @param[in] i Index of subfunction
+  /// @return The subfunction
   Function sub(int i) const;
 
   /// Collapse a subfunction (view into the Function) to a stand-alone
@@ -85,126 +77,73 @@ public:
   Function collapse() const;
 
   /// Return shared pointer to function space
-  ///
-  /// @returns _FunctionSpace_
-  ///         Return the shared pointer.
+  /// @return The function space
   std::shared_ptr<const FunctionSpace> function_space() const;
 
   /// Return vector of expansion coefficients (non-const version)
-  ///
-  /// @returns  _PETScVector_
-  ///         The vector of expansion coefficients.
+  /// @return The vector of expansion coefficients
   la::PETScVector& vector();
 
   /// Return vector of expansion coefficients (const version)
-  ///
-  /// @returns _PETScVector_
-  ///         The vector of expansion coefficients (const).
+  /// @return The vector of expansion coefficients
   const la::PETScVector& vector() const;
 
   /// Interpolate a Function (on possibly non-matching meshes)
-  ///
-  /// @param    v (Function)
-  ///         The function to be interpolated.
+  /// @param[in] v The function to be interpolated.
   void interpolate(const Function& v);
 
   /// Interpolate expression
-  ///
-  /// @param    expr (Expression)
-  ///         The expression to be interpolated.
-  void interpolate(
-      const std::function<void(
-          Eigen::Ref<Eigen::Array<PetscScalar, Eigen::Dynamic, Eigen::Dynamic,
-                                  Eigen::RowMajor>>,
-          const Eigen::Ref<const Eigen::Array<
-              double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>>)>& f);
+  /// @param[in] f The expression to be interpolated.
+  void interpolate(const FunctionSpace::interpolation_function& f);
 
   /// Return value rank
-  ///
-  /// @returns int
-  ///         The value rank.
   int value_rank() const;
 
   /// Return value size
-  ///
-  /// @returns int
   int value_size() const;
 
   /// Return value dimension for given axis
-  ///
-  /// @param    i (int)
-  ///         The index of the axis.
-  ///
-  /// @returns    int
-  ///         The value dimension.
+  /// @param[in] i The index of the axis
+  /// @returns The value dimension.
   int value_dimension(int i) const;
 
   /// Return value shape
-  ///
-  /// @returns std::vector<int>
-  ///         The value shape.
   std::vector<int> value_shape() const;
 
-  /// Evaluate at given point in given cell
-  ///
-  /// @param   x (Eigen::Ref<const Eigen::VectorXd>
-  ///         The coordinates of the point.
-  /// @param    cell (mesh::Cell)
-  ///         The cell which contains the given point.
-  /// @param    u (Eigen::Ref<Eigen::VectorXd>)
-  ///         The values at the point.
+  /// Evaluate the Function at points
+  /// @param[in] x The coordinates of the points. It has shape
+  ///              (num_points, gdim).
+  /// @param[in] cells An array of cell indices. cells[i] is the index
+  ///                  of the cell that contains the point x(i).
+  ///                  Negative cell indices can be passed, and the
+  ///                  corresponding point will be ignored.
+  /// @param[in,out] u The values at the points. Values are not computed
+  ///                  for points with a negative cell index. This
+  ///                  argument must be passed with the corrext size.
   void
   eval(const Eigen::Ref<const Eigen::Array<double, Eigen::Dynamic,
                                            Eigen::Dynamic, Eigen::RowMajor>>
            x,
-       const mesh::MeshEntity& cell,
+       const Eigen::Ref<const Eigen::Array<int, Eigen::Dynamic, 1>> cells,
        Eigen::Ref<Eigen::Array<PetscScalar, Eigen::Dynamic, Eigen::Dynamic,
                                Eigen::RowMajor>>
            u) const;
-
-  /// Evaluate function at given coordinates
-  ///
-  /// @param    x (Eigen::Ref<const Eigen::VectorXd> x)
-  ///         The coordinates.
-  /// @param    u (Eigen::Ref<Eigen::VectorXd> u)
-  ///         The values.
-  void
-  eval(const Eigen::Ref<const Eigen::Array<double, Eigen::Dynamic,
-                                           Eigen::Dynamic, Eigen::RowMajor>>
-           x,
-       const geometry::BoundingBoxTree& bb_tree,
-       Eigen::Ref<Eigen::Array<PetscScalar, Eigen::Dynamic, Eigen::Dynamic,
-                               Eigen::RowMajor>>
-           u) const;
-
-  /// Restrict function to local cell (compute expansion coefficients w)
-  ///
-  /// @param    element (_FiniteElement_)
-  ///         The element.
-  /// @param    cell (_Cell_)
-  ///         The cell.
-  /// @param  coordinate_dofs (double *)
-  ///         The coordinates
-  /// @param    w (list of PetscScalars)
-  ///         Expansion coefficients.
-  void restrict(const mesh::MeshEntity& cell,
-                const Eigen::Ref<const EigenRowArrayXXd>& coordinate_dofs,
-                PetscScalar* w) const;
 
   /// Compute values at all mesh points
-  ///
-  /// @returns    point_values (EigenRowArrayXXd)
-  ///         The values at all geometric points
+  /// @return The values at all geometric points
   Eigen::Array<PetscScalar, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
   compute_point_values() const;
 
-  // Name
+  /// Name
   std::string name = "u";
 
   /// ID
-  const std::size_t id;
+  std::size_t id() const;
 
 private:
+  // ID
+  std::size_t _id;
+
   // The function space
   std::shared_ptr<const FunctionSpace> _function_space;
 

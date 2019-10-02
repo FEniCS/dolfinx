@@ -81,7 +81,8 @@ std::map<std::int32_t, std::set<std::int32_t>> build_shared_points(
   // received_point_indices to send back to originating process
   std::vector<std::int32_t> process_list(index);
   for (std::int32_t p = 0; p < mpi_size; ++p)
-    for (unsigned int i = 0; i < received_point_indices[p].size(); ++i)
+  {
+    for (std::size_t i = 0; i < received_point_indices[p].size(); ++i)
     {
       // Convert global to local index
       const std::size_t q = received_point_indices[p][i];
@@ -95,13 +96,14 @@ std::map<std::int32_t, std::set<std::int32_t>> build_shared_points(
         ++location;
       }
     }
+  }
 
   // Reset offsets to original positions
-  for (unsigned int i = 0; i != offset.size(); ++i)
+  for (std::size_t i = 0; i < offset.size(); ++i)
     offset[i] -= 2 * n_sharing[i];
 
   std::vector<std::vector<std::size_t>> send_sharing(mpi_size);
-  for (unsigned int i = 0; i != n_sharing.size(); ++i)
+  for (std::size_t i = 0; i < n_sharing.size(); ++i)
   {
     if (n_sharing[i] > 0)
     {
@@ -111,8 +113,10 @@ std::map<std::int32_t, std::set<std::int32_t>> build_shared_points(
         ss.push_back(n_sharing[i] - 1);
         ss.push_back(process_list[offset[i] + j * 2 + 1]);
         for (int k = 0; k < n_sharing[i]; ++k)
+        {
           if (j != k)
             ss.push_back(process_list[offset[i] + k * 2]);
+        }
       }
     }
   }
@@ -155,13 +159,13 @@ std::tuple<EigenRowArrayXXi64, std::vector<std::int64_t>, std::vector<int>,
 distribute_cells(const MPI_Comm mpi_comm,
                  const Eigen::Ref<const EigenRowArrayXXi64> cell_vertices,
                  const std::vector<std::int64_t>& global_cell_indices,
-                 const PartitionData& mp)
+                 const PartitionData& cell_partition)
 {
   // This function takes the partition computed by the partitioner
-  // stored in PartitionData mp. Some cells go to multiple destinations.
-  // Each cell is transmitted to its final destination(s) including its
-  // global index, and the cell owner (for ghost cells this will be
-  // different from the destination)
+  // stored in PartitionData cell_partition. Some cells go to multiple
+  // destinations. Each cell is transmitted to its final destination(s)
+  // including its global index, and the cell owner (for ghost cells this will
+  // be different from the destination)
 
   LOG(INFO) << "Distribute cells during distributed mesh construction";
 
@@ -178,7 +182,7 @@ distribute_cells(const MPI_Comm mpi_comm,
   // Get dimensions
   const std::int32_t num_local_cells = cell_vertices.rows();
   const std::int32_t num_cell_vertices = cell_vertices.cols();
-  assert(mp.size() == num_local_cells);
+  assert(cell_partition.size() == num_local_cells);
 
   // Send all cells to their destinations including their global
   // indices.  First element of vector is cell count of un-ghosted
@@ -186,10 +190,10 @@ distribute_cells(const MPI_Comm mpi_comm,
   std::vector<std::vector<std::size_t>> send_cell_vertices(
       mpi_size, std::vector<std::size_t>(2, 0));
 
-  for (std::int32_t i = 0; i < mp.size(); ++i)
+  for (std::int32_t i = 0; i < cell_partition.size(); ++i)
   {
-    std::int32_t num_procs = mp.num_procs(i);
-    const std::int32_t* sharing_procs = mp.procs(i);
+    std::int32_t num_procs = cell_partition.num_procs(i);
+    const std::int32_t* sharing_procs = cell_partition.procs(i);
     for (std::int32_t j = 0; j < num_procs; ++j)
     {
       // Create reference to destination vector
@@ -507,7 +511,7 @@ void distribute_cell_layer(
 PartitionData Partitioning::partition_cells(
     const MPI_Comm& mpi_comm, int nparts, const mesh::CellType cell_type,
     const Eigen::Ref<const EigenRowArrayXXi64> cell_vertices,
-    const std::string partitioner)
+    const mesh::Partitioner graph_partitioner)
 {
   LOG(INFO) << "Compute partition of cells across processes";
 
@@ -535,7 +539,7 @@ PartitionData Partitioning::partition_cells(
     }
 
     // Compute cell partition using partitioner from parameter system
-    if (partitioner == "SCOTCH")
+    if (graph_partitioner == mesh::Partitioner::scotch)
     {
       graph::CSRGraph<SCOTCH_Num> csr_graph(mpi_comm, local_graph);
       std::vector<std::size_t> weights;
@@ -543,7 +547,7 @@ PartitionData Partitioning::partition_cells(
       return PartitionData(graph::SCOTCH::partition(
           mpi_comm, (SCOTCH_Num)nparts, csr_graph, weights, num_ghost_nodes));
     }
-    else if (partitioner == "ParMETIS")
+    else if (graph_partitioner == mesh::Partitioner::parmetis)
     {
 #ifdef HAS_PARMETIS
       graph::CSRGraph<idx_t> csr_graph(mpi_comm, local_graph);
@@ -564,8 +568,8 @@ PartitionData Partitioning::partition_cells(
 // partition
 mesh::Mesh Partitioning::build_from_partition(
     const MPI_Comm& comm, mesh::CellType cell_type,
-    const Eigen::Ref<const EigenRowArrayXXi64> cell_vertices,
     const Eigen::Ref<const EigenRowArrayXXd> points,
+    const Eigen::Ref<const EigenRowArrayXXi64> cell_vertices,
     const std::vector<std::int64_t>& global_cell_indices,
     const mesh::GhostMode ghost_mode, const PartitionData& cell_partition)
 {
@@ -661,7 +665,7 @@ mesh::Mesh Partitioning::build_distributed_mesh(
     const Eigen::Ref<const EigenRowArrayXXd> points,
     const Eigen::Ref<const EigenRowArrayXXi64> cells,
     const std::vector<std::int64_t>& global_cell_indices,
-    const mesh::GhostMode ghost_mode, std::string graph_partitioner)
+    const mesh::GhostMode ghost_mode, const mesh::Partitioner graph_partitioner)
 {
 
   // By default all processes are used to partition the mesh
@@ -674,7 +678,7 @@ mesh::Mesh Partitioning::build_distributed_mesh(
 
   // Build mesh from local mesh data and provided cell partition
   mesh::Mesh mesh = Partitioning::build_from_partition(
-      comm, cell_type, cells, points, global_cell_indices, ghost_mode,
+      comm, cell_type, points, cells, global_cell_indices, ghost_mode,
       cell_partition);
 
   // Initialise number of globally connected cells to each facet. This
@@ -724,7 +728,7 @@ Partitioning::distribute_points(
   // in local_indexing the original position on this process
   std::vector<std::vector<std::size_t>> send_point_indices(mpi_size);
   std::vector<std::vector<std::int32_t>> local_indexing(mpi_size);
-  for (unsigned int i = 0; i != global_point_indices.size(); ++i)
+  for (std::size_t i = 0; i < global_point_indices.size(); ++i)
   {
     const std::size_t required_point = global_point_indices[i];
     const int location
@@ -901,3 +905,118 @@ Partitioning::build_global_vertex_indices(
   return {num_vertices_global, std::move(global_vertex_indices)};
 }
 //-----------------------------------------------------------------------------
+std::map<std::int64_t, std::vector<int>> Partitioning::compute_halo_cells(
+    MPI_Comm mpi_comm, std::vector<int> part, const mesh::CellType cell_type,
+    const Eigen::Ref<const EigenRowArrayXXi64> cell_vertices)
+{
+  // Compute dual graph (for this partition)
+  std::vector<std::vector<std::size_t>> local_graph;
+  std::tuple<std::int32_t, std::int32_t, std::int32_t> graph_info;
+  std::tie(local_graph, graph_info) = graph::GraphBuilder::compute_dual_graph(
+      mpi_comm, cell_vertices, cell_type);
+
+  graph::CSRGraph<std::int64_t> csr_graph(mpi_comm, local_graph);
+
+  std::map<std::int64_t, std::vector<int>> ghost_procs;
+
+  // Work out halo cells for current division of dual graph
+  const std::vector<std::int64_t>& elmdist = csr_graph.node_distribution();
+  const std::vector<std::int64_t>& xadj = csr_graph.nodes();
+  const std::vector<std::int64_t>& adjncy = csr_graph.edges();
+  const std::int32_t num_processes = dolfin::MPI::size(mpi_comm);
+  const std::int32_t process_number = dolfin::MPI::rank(mpi_comm);
+  const std::int32_t elm_begin = elmdist[process_number];
+  const std::int32_t elm_end = elmdist[process_number + 1];
+  const std::int32_t ncells = elm_end - elm_begin;
+
+  std::map<std::int32_t, std::set<std::int32_t>> halo_cell_to_remotes;
+
+  for (int i = 0; i < ncells; i++)
+  {
+    for (auto other_cell : csr_graph[i])
+    {
+      if (other_cell < elm_begin || other_cell >= elm_end)
+      {
+        const int remote
+            = std::upper_bound(elmdist.begin(), elmdist.end(), other_cell)
+              - elmdist.begin() - 1;
+        assert(remote < num_processes);
+        if (halo_cell_to_remotes.find(i) == halo_cell_to_remotes.end())
+          halo_cell_to_remotes[i] = std::set<std::int32_t>();
+        halo_cell_to_remotes[i].insert(remote);
+      }
+    }
+  }
+
+  // Do halo exchange of cell partition data
+  std::vector<std::vector<std::int64_t>> send_cell_partition(num_processes);
+  std::vector<std::int64_t> recv_cell_partition;
+
+  for (const auto& hcell : halo_cell_to_remotes)
+  {
+    for (auto proc : hcell.second)
+    {
+      assert(proc < num_processes);
+
+      // global cell number
+      send_cell_partition[proc].push_back(hcell.first + elm_begin);
+
+      // partitioning
+      send_cell_partition[proc].push_back(part[hcell.first]);
+    }
+  }
+
+  // Actual halo exchange
+  dolfin::MPI::all_to_all(mpi_comm, send_cell_partition, recv_cell_partition);
+
+  // Construct a map from all currently foreign cells to their new
+  // partition number
+  std::map<std::int64_t, std::int32_t> cell_ownership;
+  for (auto p = recv_cell_partition.begin(); p != recv_cell_partition.end();
+       p += 2)
+  {
+    cell_ownership[*p] = *(p + 1);
+  }
+
+  // Generate mapping for where new boundary cells need to be sent
+  for (std::int32_t i = 0; i < ncells; i++)
+  {
+    const std::size_t proc_this = part[i];
+    for (std::int32_t j = xadj[i]; j < xadj[i + 1]; ++j)
+    {
+      const std::int32_t other_cell = adjncy[j];
+      std::size_t proc_other;
+
+      if (other_cell < elm_begin || other_cell >= elm_end)
+      { // remote cell - should be in map
+        const auto find_other_proc = cell_ownership.find(other_cell);
+        assert(find_other_proc != cell_ownership.end());
+        proc_other = find_other_proc->second;
+      }
+      else
+        proc_other = part[other_cell - elm_begin];
+
+      if (proc_this != proc_other)
+      {
+        auto map_it = ghost_procs.find(i);
+        if (map_it == ghost_procs.end())
+        {
+          std::vector<std::int32_t> sharing_processes;
+          sharing_processes.push_back(proc_this);
+          sharing_processes.push_back(proc_other);
+          ghost_procs.insert({i, sharing_processes});
+        }
+        else
+        {
+          // Add to vector if not already there
+          auto it = std::find(map_it->second.begin(), map_it->second.end(),
+                              proc_other);
+          if (it == map_it->second.end())
+            map_it->second.push_back(proc_other);
+        }
+      }
+    }
+  }
+
+  return ghost_procs;
+}

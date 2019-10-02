@@ -205,8 +205,7 @@ void fem(py::module& m)
                     std::shared_ptr<const dolfin::function::Function>,
                     const std::function<Eigen::Array<bool, Eigen::Dynamic, 1>(
                         const Eigen::Ref<const Eigen::Array<
-                            double, Eigen::Dynamic, 3, Eigen::RowMajor>>&,
-                        bool only_boundary)>&,
+                            double, Eigen::Dynamic, 3, Eigen::RowMajor>>&)>&,
                     dolfin::fem::DirichletBC::Method>(),
            py::arg("V"), py::arg("g"), py::arg("mark"), py::arg("method"))
       .def(py::init<std::shared_ptr<const dolfin::function::FunctionSpace>,

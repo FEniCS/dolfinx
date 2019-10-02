@@ -20,9 +20,12 @@ class Ordering
 {
 public:
   /// Order mesh
+  /// @param[in,out] mesh The mesh to be re-ordered
   static void order_simplex(Mesh& mesh);
 
   /// Check if mesh is ordered
+  /// @param[in] mesh The mesh to checked
+  /// @return True if mesh is ordered, otherwise false
   static bool is_ordered_simplex(const Mesh& mesh);
 };
 

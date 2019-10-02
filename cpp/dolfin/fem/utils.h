@@ -18,6 +18,7 @@
 struct ufc_dofmap;
 struct ufc_form;
 struct ufc_coordinate_mapping;
+struct ufc_function_space;
 
 namespace dolfin
 {
@@ -72,7 +73,7 @@ la::PETScVector create_vector_nest(std::vector<const fem::Form*> L);
 
 /// Get new global index in 'spliced' indices
 std::size_t get_global_index(const std::vector<const common::IndexMap*> maps,
-                             const unsigned int field, const unsigned int n);
+                             const int field, const int n);
 
 /// Create an ElementDofLayout from a ufc_dofmap
 ElementDofLayout create_element_dof_layout(const ufc_dofmap& dofmap,
@@ -82,18 +83,14 @@ ElementDofLayout create_element_dof_layout(const ufc_dofmap& dofmap,
 
 /// Create dof map on mesh from a ufc_dofmap
 ///
-/// @param[in] ufc_dofmap (ufc_dofmap)
-///         The ufc_dofmap.
-/// @param[in] mesh (mesh::Mesh&)
-///         The mesh.
+/// @param[in] dofmap The ufc_dofmap.
+/// @param[in] mesh The mesh.
 DofMap create_dofmap(const ufc_dofmap& dofmap, const mesh::Mesh& mesh);
 
 /// Create form (shared data)
 ///
-/// @param[in] ufc_form (ufc_form)
-///         The UFC form.
-/// @param[in] function_spaces (std::vector<_function::FunctionSpace_>)
-///         Vector of function spaces.
+/// @param[in] ufc_form The UFC form.
+/// @param[in] spaces Vector of function spaces.
 Form create_form(
     const ufc_form& ufc_form,
     const std::vector<std::shared_ptr<const function::FunctionSpace>>& spaces);
@@ -109,6 +106,13 @@ get_constants_from_ufc_form(const ufc_form& ufc_form);
 /// Get dolfin::fem::CoordinateMapping from ufc
 std::shared_ptr<const fem::CoordinateMapping>
 get_cmap_from_ufc_cmap(const ufc_coordinate_mapping& ufc_cmap);
+
+/// Create FunctionSpace from UFC
+/// @param fptr Function Pointer to a ufc_function_space_create function
+/// @param mesh Mesh
+/// @return The created FunctionSpace
+std::shared_ptr<function::FunctionSpace>
+create_functionspace(ufc_function_space* (*fptr)(void), std::shared_ptr<mesh::Mesh> mesh);
 
 } // namespace fem
 } // namespace dolfin

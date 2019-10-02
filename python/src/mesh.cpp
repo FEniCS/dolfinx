@@ -19,6 +19,7 @@
 #include <dolfin/mesh/MeshQuality.h>
 #include <dolfin/mesh/MeshValueCollection.h>
 #include <dolfin/mesh/Ordering.h>
+#include <dolfin/mesh/PartitionData.h>
 #include <dolfin/mesh/Partitioning.h>
 #include <dolfin/mesh/Topology.h>
 #include <dolfin/mesh/cell_types.h>
@@ -69,6 +70,11 @@ void mesh(py::module& m)
       .value("none", dolfin::mesh::GhostMode::none)
       .value("shared_facet", dolfin::mesh::GhostMode::shared_facet)
       .value("shared_vertex", dolfin::mesh::GhostMode::shared_vertex);
+
+  // dolfin::mesh::Partitioner enums
+  py::enum_<dolfin::mesh::Partitioner>(m, "Partitioner")
+      .value("scotch", dolfin::mesh::Partitioner::scotch)
+      .value("parmetis", dolfin::mesh::Partitioner::parmetis);
 
   // dolfin::mesh::CoordinateDofs class
   py::class_<dolfin::mesh::CoordinateDofs,
@@ -133,6 +139,7 @@ void mesh(py::module& m)
       .def("ghost_offset", &dolfin::mesh::Topology::ghost_offset)
       .def("cell_owner",
            py::overload_cast<>(&dolfin::mesh::Topology::cell_owner, py::const_))
+      .def("on_boundary", &dolfin::mesh::Topology::on_boundary)
       .def("global_indices",
            [](const dolfin::mesh::Topology& self, int dim) {
              auto& indices = self.global_indices(dim);
@@ -163,7 +170,7 @@ void mesh(py::module& m)
             const std::uint32_t tdim = self.topology().dim();
             return py::array(
                 {(std::int32_t)self.topology().size(tdim),
-                 (std::int32_t)dolfin::mesh::num_cell_vertices(self.cell_type)},
+                 (std::int32_t)dolfin::mesh::num_cell_vertices(self.cell_type())},
                 self.topology().connectivity(tdim, 0)->connections().data(),
                 py::none());
           },
@@ -195,11 +202,11 @@ void mesh(py::module& m)
       .def_property_readonly(
           "topology", py::overload_cast<>(&dolfin::mesh::Mesh::topology),
           "Mesh topology", py::return_value_policy::reference_internal)
-      .def_readonly("cell_type", &dolfin::mesh::Mesh::cell_type)
+      .def_property_readonly("cell_type", &dolfin::mesh::Mesh::cell_type)
       .def("ufl_id", &dolfin::mesh::Mesh::id)
       .def_property_readonly("id", &dolfin::mesh::Mesh::id)
       .def("cell_name", [](const dolfin::mesh::Mesh& self) {
-        return dolfin::mesh::to_string(self.cell_type);
+        return dolfin::mesh::to_string(self.cell_type());
       });
 
   // dolfin::mesh::Connectivity class
@@ -338,6 +345,34 @@ void mesh(py::module& m)
       .def_static("order_simplex", &dolfin::mesh::Ordering::order_simplex)
       .def_static("is_ordered_simplex",
                   &dolfin::mesh::Ordering::is_ordered_simplex);
+
+  // dolfin::mesh::PartitionData class
+  py::class_<dolfin::mesh::PartitionData,
+             std::shared_ptr<dolfin::mesh::PartitionData>>(
+      m, "PartitionData", "PartitionData object")
+      .def("num_procs", &dolfin::mesh::PartitionData::num_procs);
+
+  // dolfin::mesh::Partitioning::partition_cells
+  m.def("partition_cells",
+        [](const MPICommWrapper comm, int nparts,
+           dolfin::mesh::CellType cell_type,
+           const Eigen::Ref<const dolfin::EigenRowArrayXXi64> cells,
+           dolfin::mesh::Partitioner partitioner) {
+          return dolfin::mesh::Partitioning::partition_cells(
+              comm.get(), nparts, cell_type, cells, partitioner);
+        });
+
+  m.def("build_from_partition",
+        [](const MPICommWrapper comm, dolfin::mesh::CellType cell_type,
+           const Eigen::Ref<const dolfin::EigenRowArrayXXd> points,
+           const Eigen::Ref<const dolfin::EigenRowArrayXXi64> cells,
+           const std::vector<std::int64_t>& global_cell_indices,
+           const dolfin::mesh::GhostMode ghost_mode,
+           const dolfin::mesh::PartitionData& cell_partition) {
+          return dolfin::mesh::Partitioning::build_from_partition(
+              comm.get(), cell_type, points, cells, global_cell_indices,
+              ghost_mode, cell_partition);
+        });
 
 } // namespace dolfin_wrappers
 } // namespace dolfin_wrappers

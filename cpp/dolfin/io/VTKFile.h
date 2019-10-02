@@ -35,8 +35,8 @@ namespace io
 
 /// Output of meshes and functions in VTK format
 
-/// XML format for visualisation purposes. It is not suitable to
-/// checkpointing as it may decimate some data.
+/// XML format is suitable for visualisation of higher order geometries.
+/// It is not suitable to checkpointing as it may decimate some data.
 
 class VTKFile
 {
@@ -44,7 +44,7 @@ public:
   /// Create VTK file
   VTKFile(const std::string filename);
 
-  // Destructor
+  /// Destructor
   ~VTKFile() = default;
 
   /// Output mesh

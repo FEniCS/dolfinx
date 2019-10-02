@@ -235,11 +235,11 @@ void SparsityPattern::insert_entries(
   // (using row_map/col_map) to be inserted into
   // the SparsityPattern data structure.
   //
-  // In serial (_mpi_comm.size() == 1) we have the special case
+  // In serial (MPI::size(_mpi_comm.comm()) == 1) we have the special case
   // where i == I and j == J.
 
   // Check local range
-  if (_mpi_comm.size() == 1)
+  if (MPI::size(_mpi_comm.comm()) == 1)
   {
     // Sequential mode, do simple insertion if not full row
     for (Eigen::Index i = 0; i < map_i.size(); ++i)
@@ -375,15 +375,15 @@ void SparsityPattern::assemble()
   const std::size_t local_size0 = bs0 * _index_maps[0]->size_local();
   const std::size_t offset0 = bs0 * local_range0[0];
 
-  const std::size_t num_processes = _mpi_comm.size();
-  const std::size_t proc_number = _mpi_comm.rank();
+  const std::size_t num_processes = MPI::size(_mpi_comm.comm());
+  const std::size_t proc_number = MPI::rank(_mpi_comm.comm());
 
   // Print some useful information
   // if (glog::default_logger()->level() <= glog::level::debug)
   //   info_statistics();
 
   // Communicate non-local blocks if any
-  if (_mpi_comm.size() > 1)
+  if (MPI::size(_mpi_comm.comm()) > 1)
   {
     // Figure out correct process for each non-local entry
     assert(_non_local.size() % 2 == 0);
