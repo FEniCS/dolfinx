@@ -510,7 +510,7 @@ def test_custom_partition(tempdir, mesh_factory):
     part = numpy.zeros(cells.shape[0], dtype=numpy.int32)
     part[:] = comm.rank
 
-    ghost_procs = cpp.mesh.compute_halo_cells(comm, part, cell_type, cells)
+    ghost_procs = cpp.mesh.ghost_cell_mapping(comm, part, cell_type, cells)
     cell_partition = cpp.mesh.PartitionData(part, ghost_procs)
     dist_mesh = cpp.mesh.build_from_partition(comm, cell_type, points,
                                               cells, global_indices,
