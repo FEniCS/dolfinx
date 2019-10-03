@@ -381,7 +381,7 @@ void mesh(py::module& m)
               ghost_mode, cell_partition);
         });
 
-  m.def("compute_halo_cells",
+  m.def("ghost_cell_mapping",
         [](const MPICommWrapper comm, py::array_t<int> parttition,
            dolfin::mesh::CellType cell_type,
            const Eigen::Ref<const dolfin::EigenRowArrayXXi64> cells) {
