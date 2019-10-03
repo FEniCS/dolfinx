@@ -404,12 +404,18 @@ void fem::impl::assemble_interior_facets(
                          gdim);
     for (std::size_t i = 0; i < coefficients.size(); ++i)
     {
+      // Layout for the restricted coefficients is flattened
+      // w[coefficient][restriction][dof]
+
+      // Prepare restriction to cell 0
       _restrict(*coefficients[i]->function_space()->dofmap(),
                 coefficients[i]->vector().vec(), cell0.index(),
-                coeff_array.data() + offsets[i]);
+                coeff_array.data() + 2 * offsets[i]);
+
+      // Prepare restriction to cell 1
       _restrict(*coefficients[i]->function_space()->dofmap(),
                 coefficients[i]->vector().vec(), cell1.index(),
-                coeff_array.data() + offsets.back() + offsets[i]);
+                coeff_array.data() + offsets[i + 1] + offsets[i]);
     }
 
     // Tabulate tensor
