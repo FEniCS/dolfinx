@@ -52,6 +52,9 @@ PetscScalar assemble_scalar(const Form& M);
 ///                  size. The process-local contribution of the form is
 ///                  assembled into this vector.
 /// @param[in] L The linear form to assemble
+/// @param[in] mode The insertion mode to use when adding local
+///                 contributions to the vector b. The default is to sum
+///                 (+=)
 void assemble_vector(Vec b, const Form& L, InsertMode mode = InsertMode::sum);
 
 // FIXME: clarify how x0 is used
