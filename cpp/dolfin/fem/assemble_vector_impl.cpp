@@ -65,7 +65,6 @@ void _assemble_cells(
     const std::vector<PetscScalar> constant_values)
 {
   const int gdim = mesh.geometry().dim();
-  const int tdim = mesh.topology().dim();
 
   // Prepare cell geometry
   const mesh::Connectivity& connectivity_g
@@ -89,8 +88,6 @@ void _assemble_cells(
   const int orientation = 0;
   for (std::int32_t cell_index : active_cells)
   {
-    const mesh::MeshEntity cell(mesh, tdim, cell_index);
-
     // Get cell coordinates/geometry
     for (int i = 0; i < num_dofs_g; ++i)
       for (int j = 0; j < gdim; ++j)
@@ -101,7 +98,7 @@ void _assemble_cells(
     for (std::size_t i = 0; i < coefficients.size(); ++i)
     {
       _restrict(*coefficients[i]->function_space()->dofmap(),
-                coefficients[i]->vector().vec(), cell.index(),
+                coefficients[i]->vector().vec(), cell_index,
                 coeff_array.data() + offsets[i]);
     }
 
@@ -352,14 +349,15 @@ void _lift_bc_exterior_facets(
     // FIXME: sort out ghosts
 
     // Create attached cell
-    mesh::MeshEntity cell(mesh, tdim, facet.entities(tdim)[0]);
+    const std::int32_t cell_index = facet.entities(tdim)[0];
 
     // Get local index of facet with respect to the cell
+    mesh::MeshEntity cell(mesh, tdim, cell_index);
     const int local_facet = cell.index(facet);
     const int orient = 0;
 
     // Get dof maps for cell
-    auto dmap1 = dofmap1.cell_dofs(cell.index());
+    auto dmap1 = dofmap1.cell_dofs(cell_index);
 
     // Check if bc is applied to cell
     bool has_bc = false;
@@ -376,13 +374,12 @@ void _lift_bc_exterior_facets(
       continue;
 
     // Get cell vertex coordinates
-    const int cell_index = cell.index();
     for (int i = 0; i < num_dofs_g; ++i)
       for (int j = 0; j < gdim; ++j)
         coordinate_dofs(i, j) = x_g(cell_g[pos_g[cell_index] + i], j);
 
     // Size data structure for assembly
-    auto dmap0 = dofmap0.cell_dofs(cell.index());
+    auto dmap0 = dofmap0.cell_dofs(cell_index);
 
     // TODO: Move gathering of coefficients outside of main assembly
     // loop
@@ -391,7 +388,7 @@ void _lift_bc_exterior_facets(
     for (int i = 0; i < coefficients.size(); ++i)
     {
       _restrict(*coefficients_ptr[i]->function_space()->dofmap(),
-                coefficients_ptr[i]->vector().vec(), cell.index(),
+                coefficients_ptr[i]->vector().vec(), cell_index,
                 coeff_array.data() + n[i]);
     }
 
@@ -570,15 +567,16 @@ void fem::impl::assemble_exterior_facets(
   {
     const mesh::MeshEntity facet(mesh, tdim - 1, facet_index);
 
-    // Create attached cell
-    const mesh::MeshEntity cell(mesh, tdim, facet.entities(tdim)[0]);
+    // Index of attached cell
+    const std::int32_t cell_index = facet.entities(tdim)[0];
 
+    // FIXME: See if creation of MeshEntity can be removed
     // Get local index of facet with respect to the cell
+    const mesh::MeshEntity cell(mesh, tdim, cell_index);
     const int local_facet = cell.index(facet);
     const int orient = 0;
 
     // Get cell vertex coordinates
-    const int cell_index = cell.index();
     for (int i = 0; i < num_dofs_g; ++i)
       for (int j = 0; j < gdim; ++j)
         coordinate_dofs(i, j) = x_g(cell_g[pos_g[cell_index] + i], j);
@@ -592,7 +590,7 @@ void fem::impl::assemble_exterior_facets(
     for (std::size_t i = 0; i < coefficients.size(); ++i)
     {
       _restrict(*coefficients[i]->function_space()->dofmap(),
-                coefficients[i]->vector().vec(), cell.index(),
+                coefficients[i]->vector().vec(), cell_index,
                 coeff_array.data() + offsets[i]);
     }
 
@@ -649,24 +647,24 @@ void fem::impl::assemble_interior_facets(
 
     // TODO: check ghosting sanity?
 
-    // Create attached cells
-    const mesh::MeshEntity cell0(mesh, tdim, facet.entities(tdim)[0]);
-    const mesh::MeshEntity cell1(mesh, tdim, facet.entities(tdim)[1]);
+    // Get attached cell indices
+    const std::int32_t cell_index0 = facet.entities(tdim)[0];
+    const std::int32_t cell_index1 = facet.entities(tdim)[1];
 
     // Get local index of facet with respect to the cell
-    const int local_facet[2] = {cell0.index(facet), cell1.index(facet)};
+    const int local_facet[2] = {cell_index0, cell_index1};
     const int orient[2] = {0, 0};
 
     // Get cell vertex coordinates
-    const int cell_index0 = cell0.index();
-    const int cell_index1 = cell1.index();
     for (int i = 0; i < num_dofs_g; ++i)
+    {
       for (int j = 0; j < gdim; ++j)
       {
         coordinate_dofs(i, j) = x_g(cell_g[pos_g[cell_index0] + i], j);
         coordinate_dofs(i + num_dofs_g, j)
             = x_g(cell_g[pos_g[cell_index1] + i], j);
       }
+    }
 
     // Get dofmaps for cell
     auto dmap0 = dofmap.cell_dofs(cell_index0);
@@ -690,12 +688,12 @@ void fem::impl::assemble_interior_facets(
 
       // Prepare restriction to cell 0
       _restrict(*coefficients[i]->function_space()->dofmap(),
-                coefficients[i]->vector().vec(), cell0.index(),
+                coefficients[i]->vector().vec(), cell_index0,
                 coeff_array.data() + 2 * offsets[i]);
 
       // Prepare restriction to cell 1
       _restrict(*coefficients[i]->function_space()->dofmap(),
-                coefficients[i]->vector().vec(), cell1.index(),
+                coefficients[i]->vector().vec(), cell_index1,
                 coeff_array.data() + offsets[i + 1] + offsets[i]);
     }
 
