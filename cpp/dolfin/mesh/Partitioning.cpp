@@ -145,12 +145,12 @@ std::map<std::int32_t, std::set<std::int32_t>> build_shared_points(
   return shared_points_local;
 }
 //-----------------------------------------------------------------------------
-// FIXME: Update, making clear exactly what is computed
 // This function takes the partition computed by the partitioner
 // (which tells us to which process each of the local cells stored on
-//  this process belongs) and sends the cells
-// to the appropriate owning process. Ghost cells are also sent,
-// along with the list of sharing processes.
+// this process belongs) and sends the cells
+// to the appropriate owning process. Ghost cells are also sent to all processes
+// that need them, along with the list of sharing processes.
+//
 // Returns (new_cell_vertices, new_global_cell_indices,
 // new_cell_partition, shared_cells, number of non-ghost cells on this
 // process).
@@ -696,13 +696,13 @@ Partitioning::distribute_points(
     const MPI_Comm mpi_comm, const Eigen::Ref<const EigenRowArrayXXd> points,
     const std::vector<std::int64_t>& global_point_indices)
 {
-  // This function distributes all points (coordinates and
-  // local-to-global mapping) according to the cells that are stored on
-  // each process. This happens in several stages: First each process
-  // figures out which points it needs (by looking at its cells) and
-  // where those points are located. That information is then
-  // distributed so that each process learns where it needs to send its
-  // points.
+  // Distribute points to destination processes. On input, points are
+  // distributed sequentially across processes:
+  // Process 0, points = [0 ... n]
+  // Process 1, points = [n+1 ... m]
+  // etc.
+  // and global_point_indices is the list of global points indices
+  // required on this process.
 
   // Get geometric dimension
   const int gdim = points.cols();
