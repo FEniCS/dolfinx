@@ -26,10 +26,20 @@ namespace fem
 class DirichletBC;
 class Form;
 
+/// Insertion method for assembly
+enum class InsertMode
+{
+  sum,
+  set,
+};
+
 // -- Scalar ----------------------------------------------------------------
 
 /// Assemble functional into scalar. Scalar is summed across all
-/// processes. Caller is for accumulation across processes.
+/// processes. Caller is responsible for accumulation across processes.
+/// @param[in] M The form (functional)
+/// @return The contribution to the form (functional) from the local
+///         process
 PetscScalar assemble_scalar(const Form& M);
 
 // -- Vectors ----------------------------------------------------------------
@@ -37,7 +47,12 @@ PetscScalar assemble_scalar(const Form& M);
 /// Assemble linear form into an already allocated vector. Ghost
 /// contributions are no accumulated (not sent to owner). Caller is
 /// responsible for calling VecGhostUpdateBegin/End.
-void assemble_vector(Vec b, const Form& L);
+/// @param[in,out] b The PETsc vector to assemble the form into. The
+///                  vector must already be initialised with the correct
+///                  size. The process-local contribution of the form is
+///                  assembled into this vector.
+/// @param[in] L The linear form to assemble
+void assemble_vector(Vec b, const Form& L, InsertMode mode = InsertMode::sum);
 
 // FIXME: clarify how x0 is used
 // FIXME: if bcs entries are set

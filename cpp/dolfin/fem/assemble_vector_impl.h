@@ -6,6 +6,7 @@
 
 #pragma once
 
+#include "assembler.h"
 #include <Eigen/Dense>
 #include <dolfin/common/types.h>
 #include <memory>
@@ -37,7 +38,7 @@ namespace impl
 /// Assemble linear form into an Eigen vector
 void
     assemble_vector(Eigen::Ref<Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1>> b,
-                    const Form& L);
+                    const Form& L, fem::InsertMode mode);
 
 /// Execute kernel over cells and accumulate result in vector
 void assemble_cells(
@@ -50,19 +51,7 @@ void assemble_cells(
                              const int*)>& kernel,
     const std::vector<const function::Function*>& coefficients,
     const std::vector<int>& offsets,
-    const std::vector<PetscScalar> constant_values);
-
-void assemble_cells_set(
-    Eigen::Ref<Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1>> b,
-    const mesh::Mesh& mesh, const std::vector<std::int32_t>& active_cells,
-    const Eigen::Ref<const Eigen::Array<PetscInt, Eigen::Dynamic, 1>> dofmap,
-    int num_dofs_per_cell,
-    const std::function<void(PetscScalar*, const PetscScalar*,
-                             const PetscScalar*, const double*, const int*,
-                             const int*)>& kernel,
-    const std::vector<const function::Function*>& coefficients,
-    const std::vector<int>& offsets,
-    const std::vector<PetscScalar> constant_values);
+    const std::vector<PetscScalar> constant_values, fem::InsertMode mode);
 
 /// Execute kernel over cells and accumulate result in vector
 void assemble_exterior_facets(
@@ -74,7 +63,7 @@ void assemble_exterior_facets(
                              const int*)>& fn,
     const std::vector<const function::Function*>& coefficients,
     const std::vector<int>& offsets,
-    const std::vector<PetscScalar> constant_values);
+    const std::vector<PetscScalar> constant_values, fem::InsertMode mode);
 
 /// Assemble linear form interior facet integrals into an Eigen vector
 void assemble_interior_facets(
@@ -86,7 +75,7 @@ void assemble_interior_facets(
                              const int*)>& fn,
     const std::vector<const function::Function*>& coefficients,
     const std::vector<int>& offsets,
-    const std::vector<PetscScalar> constant_values);
+    const std::vector<PetscScalar> constant_values, fem::InsertMode mode);
 
 /// Modify b such that:
 ///

@@ -423,7 +423,8 @@ void _lift_bc_exterior_facets(
 
 //-----------------------------------------------------------------------------
 void fem::impl::assemble_vector(
-    Eigen::Ref<Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1>> b, const Form& L)
+    Eigen::Ref<Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1>> b, const Form& L,
+    InsertMode mode)
 {
   assert(L.mesh());
   const mesh::Mesh& mesh = *L.mesh();
@@ -467,7 +468,7 @@ void fem::impl::assemble_vector(
         = integrals.integral_domains(type::cell, i);
     fem::impl::assemble_cells(b, mesh, active_cells, dof_array,
                               num_dofs_per_cell, fn, coeff_fn, c_offsets,
-                              constant_values);
+                              constant_values, mode);
   }
 
   for (int i = 0; i < integrals.num_integrals(type::exterior_facet); ++i)
@@ -477,7 +478,8 @@ void fem::impl::assemble_vector(
     const std::vector<std::int32_t>& active_facets
         = integrals.integral_domains(type::exterior_facet, i);
     fem::impl::assemble_exterior_facets(b, mesh, active_facets, dofmap, fn,
-                                        coeff_fn, c_offsets, constant_values);
+                                        coeff_fn, c_offsets, constant_values,
+                                        mode);
   }
 
   for (int i = 0; i < integrals.num_integrals(type::interior_facet); ++i)
@@ -487,7 +489,8 @@ void fem::impl::assemble_vector(
     const std::vector<std::int32_t>& active_facets
         = integrals.integral_domains(type::interior_facet, i);
     fem::impl::assemble_interior_facets(b, mesh, active_facets, dofmap, fn,
-                                        coeff_fn, c_offsets, constant_values);
+                                        coeff_fn, c_offsets, constant_values,
+                                        mode);
   }
 }
 //-----------------------------------------------------------------------------
@@ -501,28 +504,23 @@ void fem::impl::assemble_cells(
                              const int*)>& kernel,
     const std::vector<const function::Function*>& coefficients,
     const std::vector<int>& offsets,
-    const std::vector<PetscScalar> constant_values)
+    const std::vector<PetscScalar> constant_values, fem::InsertMode mode)
 {
-  _assemble_cells<_Plus<PetscScalar>>(
-      b, mesh, active_cells, dofmap, num_dofs_per_cell, kernel, coefficients,
-      offsets, constant_values);
-}
-//-----------------------------------------------------------------------------
-void fem::impl::assemble_cells_set(
-    Eigen::Ref<Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1>> b,
-    const mesh::Mesh& mesh, const std::vector<std::int32_t>& active_cells,
-    const Eigen::Ref<const Eigen::Array<PetscInt, Eigen::Dynamic, 1>> dofmap,
-    int num_dofs_per_cell,
-    const std::function<void(PetscScalar*, const PetscScalar*,
-                             const PetscScalar*, const double*, const int*,
-                             const int*)>& kernel,
-    const std::vector<const function::Function*>& coefficients,
-    const std::vector<int>& offsets,
-    const std::vector<PetscScalar> constant_values)
-{
-  _assemble_cells<_Assign<PetscScalar>>(b, mesh, active_cells, dofmap,
+  switch (mode)
+  {
+  case InsertMode::sum:
+    _assemble_cells<_Plus<PetscScalar>>(b, mesh, active_cells, dofmap,
                                         num_dofs_per_cell, kernel, coefficients,
                                         offsets, constant_values);
+    break;
+  case InsertMode::set:
+    _assemble_cells<_Assign<PetscScalar>>(b, mesh, active_cells, dofmap,
+                                       num_dofs_per_cell, kernel, coefficients,
+                                       offsets, constant_values);
+    break;
+  default:
+    throw std::runtime_error("Unknown assembly insertion mode.");
+  }
 }
 //-----------------------------------------------------------------------------
 void fem::impl::assemble_exterior_facets(
@@ -534,7 +532,7 @@ void fem::impl::assemble_exterior_facets(
                              const int*)>& fn,
     const std::vector<const function::Function*>& coefficients,
     const std::vector<int>& offsets,
-    const std::vector<PetscScalar> constant_values)
+    const std::vector<PetscScalar> constant_values, fem::InsertMode mode)
 {
   const int gdim = mesh.geometry().dim();
   const int tdim = mesh.topology().dim();
@@ -609,7 +607,7 @@ void fem::impl::assemble_interior_facets(
                              const int*)>& fn,
     const std::vector<const function::Function*>& coefficients,
     const std::vector<int>& offsets,
-    const std::vector<PetscScalar> constant_values)
+    const std::vector<PetscScalar> constant_values, fem::InsertMode mode)
 {
   const int gdim = mesh.geometry().dim();
   const int tdim = mesh.topology().dim();
