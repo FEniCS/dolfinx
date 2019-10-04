@@ -100,9 +100,10 @@ distribute_points_sharing(MPI_Comm mpi_comm,
   return point_to_procs;
 }
 //-----------------------------------------------------------------------------
-void point_distributor(MPI_Comm mpi_comm,
-                       const Eigen::Ref<const EigenRowArrayXXi64>& cell_nodes,
-                       Eigen::Ref<const EigenRowArrayXXd>& points)
+std::vector<std::int64_t>
+point_distributor(MPI_Comm mpi_comm, int num_vertices_per_cell,
+                  const Eigen::Ref<const EigenRowArrayXXi64>& cell_nodes,
+                  Eigen::Ref<const EigenRowArrayXXd>& points)
 {
   int mpi_size = dolfin::MPI::size(mpi_comm);
   int mpi_rank = dolfin::MPI::rank(mpi_comm);
@@ -113,7 +114,7 @@ void point_distributor(MPI_Comm mpi_comm,
   std::set<std::int64_t> global_index_set;
   for (std::int32_t c = 0; c < num_cells; ++c)
     for (std::int32_t v = 0; v < num_nodes_per_cell; ++v)
-      global_to_local.insert(cell_nodes(c, v));
+      global_index_set.insert(cell_nodes(c, v));
 
   // Compute where (process number) the points we need are located
   std::vector<std::int64_t> ranges(mpi_size);
@@ -124,34 +125,25 @@ void point_distributor(MPI_Comm mpi_comm,
 
   // Get all local points, and find destinations
   // global_index_set is a sorted set, so global indices appear in process order
-  std::vector<std::int64_t> send_global_index;
+  std::vector<std::int64_t> send_global_index(global_index_set.begin(),
+                                              global_index_set.end());
   std::vector<int> send_sizes(mpi_size);
-  std::vector<int> send_offsets = {0};
-  int proc = 0;
-  for (auto& q : global_index_set)
-  {
-    // Make sure we are pointing to the right process
-    while (q > ranges[proc + 1])
-    {
-      ++proc;
-      send_offsets.push_back(send_global_index.size());
-    }
+  std::vector<int> send_offsets(mpi_size);
 
-    assert(q >= ranges[proc] and q < ranges[proc + 1]);
-    send_global_index.push_back(q);
-  }
-  // Fill up for all remaining process offsets (if any)
-  while (proc < mpi_size)
+  std::vector<std::int64_t>::iterator it = send_global_index.begin();
+  for (int i = 0; i < mpi_size; ++i)
   {
-    ++proc;
-    send_offsets.push_back(send_global_index.size());
+    // Find first index on each process
+    it = std::lower_bound(it, send_global_index.end(), ranges[i]);
+    send_offsets[i] = it - send_global_index.begin();
   }
-  assert((int)send_offsets.size() == mpi_size + 1);
+  send_offsets.push_back(send_global_index.size());
+
+  for (int i = 0; i < mpi_size; ++i)
+    send_sizes[i] = send_offsets[i + 1] - send_offsets[i];
 
   // Get data size to transfer in Alltoallv
   std::vector<int> recv_sizes(mpi_size);
-  for (int i = 0; i < mpi_size; ++i)
-    send_sizes[i] = send_offsets[i + 1] - send_offsets[i];
   MPI_Alltoall(send_sizes.data(), mpi_size, MPI_INT, recv_sizes.data(),
                mpi_size, MPI_INT, mpi_comm);
 
@@ -185,14 +177,76 @@ void point_distributor(MPI_Comm mpi_comm,
     send_points.row(i) = points.row(local_index);
   }
 
-  // Get points back, matching global indices in local map
+  // Get points back, matching indices in global_index_set
   dolfin::EigenRowArrayXXd recv_points(send_global_index.size(), 3);
   MPI_Alltoallv(send_points.data(), recv_sizes.data(), recv_offsets.data(),
                 triplet_f64, recv_points.data(), send_sizes.data(),
                 send_offsets.data(), triplet_f64, mpi_comm);
 
-  // Now figure out which points are (a) local, (b) owned+shared, (c) not owned
-  // and which are vertices, and which are not.
+  // Now figure out which points are (a) local, (b) owned+shared, (c) not
+  // owned and which are vertices, and which are not.
+
+  std::vector<std::int64_t> local_to_global;
+  // TODO: make into a function
+  {
+    // Classify all nodes
+    std::set<std::int64_t> local_vertices;
+    std::set<std::int64_t> shared_vertices;
+    std::set<std::int64_t> ghost_vertices;
+    std::set<std::int64_t> non_vertex_nodes;
+
+    for (std::int32_t c = 0; c < num_cells; ++c)
+    {
+      // Loop over vertex nodes
+      for (std::int32_t v = 0; v < num_vertices_per_cell; ++v)
+      {
+        // Get global node index
+        std::int64_t q = cell_nodes(c, v);
+        auto shared_it = point_to_procs.find(q);
+        if (shared_it == point_to_procs.end())
+          local_vertices.insert(q);
+        else if (shared_it != point_to_procs.end())
+        {
+          // If lowest ranked sharing process is this process, then it is
+          // owner
+          if (*(shared_it->second.begin()) == mpi_rank)
+            shared_vertices.insert(q);
+          else
+            ghost_vertices.insert(q);
+        }
+      }
+      // Non-vertex nodes
+      for (std::int32_t v = num_vertices_per_cell; v < num_nodes_per_cell; ++v)
+      {
+        // Get global node index
+        std::int64_t q = cell_nodes(c, v);
+        non_vertex_nodes.insert(q);
+      }
+    }
+
+    // Now fill local->global map and reorder received points
+    local_to_global.insert(local_to_global.end(), local_vertices.begin(),
+                           local_vertices.end());
+    local_to_global.insert(local_to_global.end(), shared_vertices.begin(),
+                           shared_vertices.end());
+    local_to_global.insert(local_to_global.end(), ghost_vertices.begin(),
+                           ghost_vertices.end());
+    local_to_global.insert(local_to_global.end(), non_vertex_nodes.begin(),
+                           non_vertex_nodes.end());
+  }
+
+  // Reverse map
+  std::map<std::int64_t, std::int32_t> global_to_local;
+  for (std::size_t i = 0; i < local_to_global.size(); ++i)
+    global_to_local.insert({local_to_global[i], i});
+
+  // TODO:
+  // Convert cells to local indexing
+  // Convert sharing to local indexing
+  // Reorder points to correct order
+  // Return offsets for shared, ghosted, etc.
+
+  return local_to_global;
 }
 
 // Compute map from global node indices to local (contiguous) node
