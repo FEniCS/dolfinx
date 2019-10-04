@@ -150,8 +150,8 @@ la::PETScVector& Function::vector()
 const la::PETScVector& Function::vector() const { return _vector; }
 //-----------------------------------------------------------------------------
 void Function::eval(
-    const Eigen::Ref<const Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic,
-                                        Eigen::RowMajor>>
+    const Eigen::Ref<
+        const Eigen::Array<double, Eigen::Dynamic, 3, Eigen::RowMajor>>
         x,
     const Eigen::Ref<const Eigen::Array<int, Eigen::Dynamic, 1>> cells,
     Eigen::Ref<Eigen::Array<PetscScalar, Eigen::Dynamic, Eigen::Dynamic,
