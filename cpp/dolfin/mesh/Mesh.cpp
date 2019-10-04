@@ -96,7 +96,7 @@ distribute_points_sharing(MPI_Comm mpi_comm,
 
   // Reuse points to procs for received data
   point_to_procs.clear();
-  for (auto q = recv_sharing.begin(); q < recv_sharing.end(); q += (*q + 1))
+  for (auto q = recv_sharing.begin(); q < recv_sharing.end(); q += (*q + 2))
   {
     const std::int64_t global_index = *(q + 1);
     std::set<int> procs(q + 2, q + 2 + *q);
