@@ -56,10 +56,16 @@ Eigen::ArrayXd cell_r(const mesh::Mesh& mesh)
   // return r;
 }
 //-----------------------------------------------------------------------------
+// Create the sharing information for shared nodes
+// @param mpi_comm MPI Communicator
+// @param global_index List of global indices, in chunks ordered by originating
+// process
+// @param offsets Index into list for each process
+// @return map from global index to sharing processes
 std::map<std::int64_t, std::set<int>>
 distribute_points_sharing(MPI_Comm mpi_comm,
-                          const std::vector<std::int64_t>& recv_global_index,
-                          const std::vector<int>& recv_offsets)
+                          const std::vector<std::int64_t>& global_index,
+                          const std::vector<int>& offsets)
 {
   const int mpi_size = dolfin::MPI::size(mpi_comm);
 
@@ -67,8 +73,8 @@ distribute_points_sharing(MPI_Comm mpi_comm,
   std::map<std::int64_t, std::set<int>> point_to_procs;
   for (int i = 0; i < mpi_size; ++i)
   {
-    for (int j = recv_offsets[i]; j < recv_offsets[i + 1]; ++j)
-      point_to_procs[recv_global_index[j]].insert(i);
+    for (int j = offsets[i]; j < offsets[i + 1]; ++j)
+      point_to_procs[global_index[j]].insert(i);
   }
 
   std::vector<std::vector<std::int64_t>> send_sharing(mpi_size);
@@ -100,10 +106,14 @@ distribute_points_sharing(MPI_Comm mpi_comm,
   return point_to_procs;
 }
 //-----------------------------------------------------------------------------
-std::vector<std::int64_t>
+std::tuple<
+    std::vector<std::int64_t>, std::map<std::int32_t, std::set<int>>,
+    Eigen::Array<std::int32_t, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>,
+    EigenRowArrayXXd, int>
 point_distributor(MPI_Comm mpi_comm, int num_vertices_per_cell,
-                  const Eigen::Ref<const EigenRowArrayXXi64>& cell_nodes,
-                  Eigen::Ref<const EigenRowArrayXXd>& points)
+                  Eigen::Ref<const EigenRowArrayXXi64> cell_nodes,
+                  Eigen::Ref<const EigenRowArrayXXd> points,
+                  const std::vector<std::uint8_t>& cell_permutation)
 {
   int mpi_size = dolfin::MPI::size(mpi_comm);
   int mpi_rank = dolfin::MPI::rank(mpi_comm);
@@ -127,9 +137,8 @@ point_distributor(MPI_Comm mpi_comm, int num_vertices_per_cell,
   // global_index_set is a sorted set, so global indices appear in process order
   std::vector<std::int64_t> send_global_index(global_index_set.begin(),
                                               global_index_set.end());
-  std::vector<int> send_sizes(mpi_size);
-  std::vector<int> send_offsets(mpi_size);
 
+  std::vector<int> send_offsets(mpi_size);
   std::vector<std::int64_t>::iterator it = send_global_index.begin();
   for (int i = 0; i < mpi_size; ++i)
   {
@@ -139,13 +148,14 @@ point_distributor(MPI_Comm mpi_comm, int num_vertices_per_cell,
   }
   send_offsets.push_back(send_global_index.size());
 
+  std::vector<int> send_sizes(mpi_size);
   for (int i = 0; i < mpi_size; ++i)
     send_sizes[i] = send_offsets[i + 1] - send_offsets[i];
 
   // Get data size to transfer in Alltoallv
   std::vector<int> recv_sizes(mpi_size);
-  MPI_Alltoall(send_sizes.data(), mpi_size, MPI_INT, recv_sizes.data(),
-               mpi_size, MPI_INT, mpi_comm);
+  MPI_Alltoall(send_sizes.data(), 1, MPI_INT, recv_sizes.data(), 1, MPI_INT,
+               mpi_comm);
 
   std::vector<int> recv_offsets = {0};
   for (int i = 0; i < mpi_size; ++i)
@@ -161,13 +171,13 @@ point_distributor(MPI_Comm mpi_comm, int num_vertices_per_cell,
   std::map<std::int64_t, std::set<int>> point_to_procs
       = distribute_points_sharing(mpi_comm, recv_global_index, recv_offsets);
 
-  // Create compound datatype of three doubles (point coords)
-  MPI_Datatype triplet_f64;
-  MPI_Type_contiguous(3, MPI_DOUBLE, &triplet_f64);
-  MPI_Type_commit(&triplet_f64);
+  // Create compound datatype of gdim*doubles (point coords)
+  MPI_Datatype compound_f64;
+  MPI_Type_contiguous(points.cols(), MPI_DOUBLE, &compound_f64);
+  MPI_Type_commit(&compound_f64);
 
   // Fill in points to send back
-  dolfin::EigenRowArrayXXd send_points(recv_global_index.size(), 3);
+  dolfin::EigenRowArrayXXd send_points(recv_global_index.size(), points.cols());
   for (std::size_t i = 0; i < recv_global_index.size(); ++i)
   {
     assert(recv_global_index[i] >= ranges[mpi_rank]);
@@ -178,15 +188,16 @@ point_distributor(MPI_Comm mpi_comm, int num_vertices_per_cell,
   }
 
   // Get points back, matching indices in global_index_set
-  dolfin::EigenRowArrayXXd recv_points(send_global_index.size(), 3);
+  dolfin::EigenRowArrayXXd recv_points(send_global_index.size(), points.cols());
   MPI_Alltoallv(send_points.data(), recv_sizes.data(), recv_offsets.data(),
-                triplet_f64, recv_points.data(), send_sizes.data(),
-                send_offsets.data(), triplet_f64, mpi_comm);
+                compound_f64, recv_points.data(), send_sizes.data(),
+                send_offsets.data(), compound_f64, mpi_comm);
 
   // Now figure out which points are (a) local, (b) owned+shared, (c) not
   // owned and which are vertices, and which are not.
 
   std::vector<std::int64_t> local_to_global;
+  int num_vertices_local = 0;
   // TODO: make into a function
   {
     // Classify all nodes
@@ -231,6 +242,7 @@ point_distributor(MPI_Comm mpi_comm, int num_vertices_per_cell,
                            shared_vertices.end());
     local_to_global.insert(local_to_global.end(), ghost_vertices.begin(),
                            ghost_vertices.end());
+    num_vertices_local = local_to_global.size();
     local_to_global.insert(local_to_global.end(), non_vertex_nodes.begin(),
                            non_vertex_nodes.end());
   }
@@ -240,13 +252,29 @@ point_distributor(MPI_Comm mpi_comm, int num_vertices_per_cell,
   for (std::size_t i = 0; i < local_to_global.size(); ++i)
     global_to_local.insert({local_to_global[i], i});
 
-  // TODO:
-  // Convert cells to local indexing
-  // Convert sharing to local indexing
-  // Reorder points to correct order
-  // Return offsets for shared, ghosted, etc.
+  // Permute received points into local order
+  dolfin::EigenRowArrayXXd local_points(recv_points.rows(), recv_points.cols());
+  for (std::size_t i = 0; i < send_global_index.size(); ++i)
+  {
+    int local_idx = global_to_local[send_global_index[i]];
+    local_points.row(local_idx) = recv_points.row(i);
+  }
 
-  return local_to_global;
+  // Convert cell_nodes to local indexing
+  Eigen::Array<std::int32_t, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
+      cells_local(cell_nodes.rows(), cell_nodes.cols());
+  for (int c = 0; c < cell_nodes.rows(); ++c)
+    for (int v = 0; v < cell_nodes.cols(); ++v)
+      cells_local(c, cell_permutation[v]) = global_to_local[cell_nodes(c, v)];
+
+  // Convert sharing data to local indexing
+  std::map<std::int32_t, std::set<int>> point_sharing;
+  for (auto& q : point_to_procs)
+    point_sharing.insert({global_to_local[q.first], q.second});
+
+  return std::make_tuple(std::move(local_to_global), std::move(point_sharing),
+                         std::move(cells_local), std::move(local_points),
+                         num_vertices_local);
 }
 
 // Compute map from global node indices to local (contiguous) node
@@ -259,57 +287,57 @@ point_distributor(MPI_Comm mpi_comm, int num_vertices_per_cell,
 // @return
 //   Local-to-global map for nodes (std::vector<std::int64_t>) and cell
 //   nodes in local indexing (EigenRowArrayXXi32)
-std::tuple<std::int32_t, std::vector<std::int64_t>, EigenRowArrayXXi32>
-compute_cell_node_map(std::int32_t num_vertices_per_cell,
-                      const Eigen::Ref<const EigenRowArrayXXi64>& cell_nodes,
-                      const std::vector<std::uint8_t>& cell_permutation)
-{
-  const std::int32_t num_cells = cell_nodes.rows();
-  const std::int32_t num_nodes_per_cell = cell_nodes.cols();
+// std::tuple<std::int32_t, std::vector<std::int64_t>, EigenRowArrayXXi32>
+// compute_cell_node_map(std::int32_t num_vertices_per_cell,
+//                       const Eigen::Ref<const EigenRowArrayXXi64>& cell_nodes,
+//                       const std::vector<std::uint8_t>& cell_permutation)
+// {
+//   const std::int32_t num_cells = cell_nodes.rows();
+//   const std::int32_t num_nodes_per_cell = cell_nodes.cols();
 
-  // Cell points in local indexing
-  EigenRowArrayXXi32 cell_nodes_local(num_cells, num_nodes_per_cell);
+//   // Cell points in local indexing
+//   EigenRowArrayXXi32 cell_nodes_local(num_cells, num_nodes_per_cell);
 
-  // Loop over cells to build local-to-global map for (i) vertex nodes,
-  // and (ii) then other nodes
-  std::vector<std::int64_t> local_to_global;
-  std::map<std::int64_t, std::int32_t> global_to_local;
-  std::int32_t num_vertices_local = 0;
-  int v0 = 0;
-  int v1 = num_vertices_per_cell;
-  for (std::int32_t pass = 0; pass < 2; ++pass)
-  {
-    for (std::int32_t c = 0; c < num_cells; ++c)
-    {
-      // Loop over cell nodes
-      for (std::int32_t v = v0; v < v1; ++v)
-      {
-        // Get global node index
-        std::int64_t q = cell_nodes(c, v);
+//   // Loop over cells to build local-to-global map for (i) vertex nodes,
+//   // and (ii) then other nodes
+//   std::vector<std::int64_t> local_to_global;
+//   std::map<std::int64_t, std::int32_t> global_to_local;
+//   std::int32_t num_vertices_local = 0;
+//   int v0 = 0;
+//   int v1 = num_vertices_per_cell;
+//   for (std::int32_t pass = 0; pass < 2; ++pass)
+//   {
+//     for (std::int32_t c = 0; c < num_cells; ++c)
+//     {
+//       // Loop over cell nodes
+//       for (std::int32_t v = v0; v < v1; ++v)
+//       {
+//         // Get global node index
+//         std::int64_t q = cell_nodes(c, v);
 
-        // Insert (global_vertex_index, local_vertex_index) into map. If
-        // global index seen for first time, add to local-to-global map.
-        auto map_it = global_to_local.insert({q, local_to_global.size()});
-        if (map_it.second)
-          local_to_global.push_back(q);
+//         // Insert (global_vertex_index, local_vertex_index) into map. If
+//         // global index seen for first time, add to local-to-global map.
+//         auto map_it = global_to_local.insert({q, local_to_global.size()});
+//         if (map_it.second)
+//           local_to_global.push_back(q);
 
-        // Set local node index in cell node list (applying permutation)
-        cell_nodes_local(c, cell_permutation[v]) = map_it.first->second;
-      }
-    }
+//         // Set local node index in cell node list (applying permutation)
+//         cell_nodes_local(c, cell_permutation[v]) = map_it.first->second;
+//       }
+//     }
 
-    // Store number of local vertices
-    if (pass == 0)
-      num_vertices_local = local_to_global.size();
+//     // Store number of local vertices
+//     if (pass == 0)
+//       num_vertices_local = local_to_global.size();
 
-    // Update node loop range for second pass
-    v0 = num_vertices_per_cell;
-    v1 = num_nodes_per_cell;
-  }
+//     // Update node loop range for second pass
+//     v0 = num_vertices_per_cell;
+//     v1 = num_nodes_per_cell;
+//   }
 
-  return std::make_tuple(num_vertices_local, std::move(local_to_global),
-                         std::move(cell_nodes_local));
-}
+//   return std::make_tuple(num_vertices_local, std::move(local_to_global),
+//                          std::move(cell_nodes_local));
+// }
 //-----------------------------------------------------------------------------
 } // namespace
 
@@ -370,14 +398,21 @@ Mesh::Mesh(MPI_Comm comm, mesh::CellType type,
   std::vector<std::int64_t> node_indices_global;
   Eigen::Array<std::int32_t, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
       coordinate_nodes;
-  std::tie(num_vertices_local, node_indices_global, coordinate_nodes)
-      = compute_cell_node_map(num_vertices_per_cell, cells, cell_permutation);
+  std::map<std::int32_t, std::set<std::int32_t>> nodes_shared;
+  EigenRowArrayXXd points_received;
+
+  std::tie(node_indices_global, nodes_shared, coordinate_nodes, points_received,
+           num_vertices_local)
+      = point_distributor(comm, num_vertices_per_cell, cells, points,
+                          cell_permutation);
+
+  //  std::tie(num_vertices_local, node_indices_global, coordinate_nodes)
+  //      = compute_cell_node_map(num_vertices_per_cell, cells,
+  //      cell_permutation);
 
   // Distribute the points across processes and calculate shared nodes
-  EigenRowArrayXXd points_received;
-  std::map<std::int32_t, std::set<std::int32_t>> nodes_shared;
-  std::tie(points_received, nodes_shared)
-      = Partitioning::distribute_points(comm, points, node_indices_global);
+  //  std::tie(points_received, nodes_shared)
+  //      = Partitioning::distribute_points(comm, points, node_indices_global);
 
   _coordinate_dofs
       = std::make_unique<CoordinateDofs>(coordinate_nodes, cell_permutation);
