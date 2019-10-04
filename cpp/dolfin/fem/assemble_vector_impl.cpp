@@ -110,9 +110,7 @@ void _assemble_cells(
     kernel(be.data(), coeff_array.data(), constant_values.data(),
            coordinate_dofs.data(), nullptr, &orientation);
 
-    // Add local cell vector to global vector
-    // for (Eigen::Index i = 0; i < num_dofs_per_cell; ++i)
-    //   b[dofmap[cell_index * num_dofs_per_cell + i]] += be[i];
+    // Scatter cell vector to combined vector
     for (Eigen::Index i = 0; i < num_dofs_per_cell; ++i)
     {
       b[dofmap[cell_index * num_dofs_per_cell + i]]
@@ -388,6 +386,7 @@ void _lift_bc_exterior_facets(
 
     // TODO: Move gathering of coefficients outside of main assembly
     // loop
+
     // Update coefficients
     for (int i = 0; i < coefficients.size(); ++i)
     {
@@ -473,24 +472,34 @@ void fem::impl::assemble_vector(
 
   for (int i = 0; i < integrals.num_integrals(type::exterior_facet); ++i)
   {
+    if (mode != fem::InsertMode::sum)
+    {
+      throw std::runtime_error(
+          "Insert mode \"sum\" only is supported for facet integrals.");
+    }
+
     const auto& fn = integrals.get_tabulate_tensor_function(
         FormIntegrals::Type::exterior_facet, i);
     const std::vector<std::int32_t>& active_facets
         = integrals.integral_domains(type::exterior_facet, i);
     fem::impl::assemble_exterior_facets(b, mesh, active_facets, dofmap, fn,
-                                        coeff_fn, c_offsets, constant_values,
-                                        mode);
+                                        coeff_fn, c_offsets, constant_values);
   }
 
   for (int i = 0; i < integrals.num_integrals(type::interior_facet); ++i)
   {
+    if (mode != fem::InsertMode::sum)
+    {
+      throw std::runtime_error("Insert mode \"sum\" only is supported for "
+                               "interior facet integrals.");
+    }
+
     const auto& fn = integrals.get_tabulate_tensor_function(
         FormIntegrals::Type::interior_facet, i);
     const std::vector<std::int32_t>& active_facets
         = integrals.integral_domains(type::interior_facet, i);
     fem::impl::assemble_interior_facets(b, mesh, active_facets, dofmap, fn,
-                                        coeff_fn, c_offsets, constant_values,
-                                        mode);
+                                        coeff_fn, c_offsets, constant_values);
   }
 }
 //-----------------------------------------------------------------------------
@@ -514,9 +523,9 @@ void fem::impl::assemble_cells(
                                         offsets, constant_values);
     break;
   case InsertMode::set:
-    _assemble_cells<_Assign<PetscScalar>>(b, mesh, active_cells, dofmap,
-                                       num_dofs_per_cell, kernel, coefficients,
-                                       offsets, constant_values);
+    _assemble_cells<_Assign<PetscScalar>>(
+        b, mesh, active_cells, dofmap, num_dofs_per_cell, kernel, coefficients,
+        offsets, constant_values);
     break;
   default:
     throw std::runtime_error("Unknown assembly insertion mode.");
@@ -532,7 +541,7 @@ void fem::impl::assemble_exterior_facets(
                              const int*)>& fn,
     const std::vector<const function::Function*>& coefficients,
     const std::vector<int>& offsets,
-    const std::vector<PetscScalar> constant_values, fem::InsertMode mode)
+    const std::vector<PetscScalar> constant_values)
 {
   const int gdim = mesh.geometry().dim();
   const int tdim = mesh.topology().dim();
@@ -607,7 +616,7 @@ void fem::impl::assemble_interior_facets(
                              const int*)>& fn,
     const std::vector<const function::Function*>& coefficients,
     const std::vector<int>& offsets,
-    const std::vector<PetscScalar> constant_values, fem::InsertMode mode)
+    const std::vector<PetscScalar> constant_values)
 {
   const int gdim = mesh.geometry().dim();
   const int tdim = mesh.topology().dim();

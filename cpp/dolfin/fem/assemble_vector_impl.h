@@ -63,7 +63,7 @@ void assemble_exterior_facets(
                              const int*)>& fn,
     const std::vector<const function::Function*>& coefficients,
     const std::vector<int>& offsets,
-    const std::vector<PetscScalar> constant_values, fem::InsertMode mode);
+    const std::vector<PetscScalar> constant_values);
 
 /// Assemble linear form interior facet integrals into an Eigen vector
 void assemble_interior_facets(
@@ -75,7 +75,7 @@ void assemble_interior_facets(
                              const int*)>& fn,
     const std::vector<const function::Function*>& coefficients,
     const std::vector<int>& offsets,
-    const std::vector<PetscScalar> constant_values, fem::InsertMode mode);
+    const std::vector<PetscScalar> constant_values);
 
 /// Modify b such that:
 ///
