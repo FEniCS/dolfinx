@@ -262,7 +262,8 @@ void HDF5File::write(const mesh::Mesh& mesh, int cell_dim,
     const std::string coord_dataset = name + "/coordinates";
 
     // Copy coordinates and indices and remove off-process values
-    EigenRowArrayXXd _vertex_coords;
+    Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
+        _vertex_coords;
     if (!mpi_io)
       _vertex_coords = mesh.geometry().points();
     else
@@ -1332,8 +1333,9 @@ mesh::Mesh HDF5File::read_mesh(const std::string data_path,
                                const mesh::GhostMode ghost_mode) const
 {
   mesh::CellType cell_type;
-  EigenRowArrayXXd points;
-  EigenRowArrayXXi64 cells;
+  Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor> points;
+  Eigen::Array<std::int64_t, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
+      cells;
   std::vector<std::int64_t> global_cell_indices;
   std::vector<std::int64_t> cell_distribution;
 
@@ -1385,8 +1387,11 @@ mesh::Mesh HDF5File::read_mesh(const std::string data_path,
   }
 }
 //-----------------------------------------------------------------------------
-std::tuple<mesh::CellType, EigenRowArrayXXd, EigenRowArrayXXi64,
-           std::vector<std::int64_t>, std::vector<std::int64_t>>
+std::tuple<
+    mesh::CellType,
+    Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>,
+    Eigen::Array<std::int64_t, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>,
+    std::vector<std::int64_t>, std::vector<std::int64_t>>
 HDF5File::read_mesh_data(const std::string data_path) const
 {
 
@@ -1532,8 +1537,9 @@ HDF5File::read_mesh_data(const std::string data_path) const
               cell_range[0]);
   }
 
-  Eigen::Map<EigenRowArrayXXi64> cells(topology_data.data(), num_local_cells,
-                                       num_vertices_per_cell);
+  Eigen::Map<Eigen::Array<std::int64_t, Eigen::Dynamic, Eigen::Dynamic,
+                          Eigen::RowMajor>>
+      cells(topology_data.data(), num_local_cells, num_vertices_per_cell);
 
   // --- Coordinates ---
 
@@ -1571,8 +1577,9 @@ HDF5File::read_mesh_data(const std::string data_path) const
   std::vector<double> coordinates_data = HDF5Interface::read_dataset<double>(
       _hdf5_file_id, geometry_path, vertex_data_range);
   assert(coordinates_data.size() == num_local_points * gdim);
-  Eigen::Map<EigenRowArrayXXd> points(coordinates_data.data(), num_local_points,
-                                      gdim);
+  Eigen::Map<
+      Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>>
+      points(coordinates_data.data(), num_local_points, gdim);
 
   return std::make_tuple(cell_type, std::move(points), std::move(cells),
                          std::move(global_cell_indices),

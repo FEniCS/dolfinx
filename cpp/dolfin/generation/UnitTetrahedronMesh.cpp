@@ -15,8 +15,9 @@ using namespace dolfin::generation;
 //-----------------------------------------------------------------------------
 mesh::Mesh UnitTetrahedronMesh::create()
 {
-  EigenRowArrayXXd geom(4, 3);
-  EigenRowArrayXXi64 topo(1, 4);
+  Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor> geom(4,
+                                                                             3);
+  Eigen::Array<std::int64_t, 1, 4, Eigen::RowMajor> topo(1, 4);
 
   // Create vertices
   geom << 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 1.0;
@@ -24,7 +25,7 @@ mesh::Mesh UnitTetrahedronMesh::create()
   // Create cell
   topo << 0, 1, 2, 3;
 
-  return mesh::Mesh(MPI_COMM_SELF, mesh::CellType::tetrahedron, geom,
-                    topo, {}, mesh::GhostMode::none);
+  return mesh::Mesh(MPI_COMM_SELF, mesh::CellType::tetrahedron, geom, topo, {},
+                    mesh::GhostMode::none);
 }
 //-----------------------------------------------------------------------------

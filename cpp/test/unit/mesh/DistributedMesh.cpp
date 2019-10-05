@@ -44,8 +44,9 @@ void test_distributed_mesh()
   file.write(*mesh);
 
   mesh::CellType cell_type;
-  EigenRowArrayXXd points;
-  EigenRowArrayXXi64 cells;
+  Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor> points;
+  Eigen::Array<std::int64_t, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
+      cells;
   std::vector<std::int64_t> global_cell_indices;
 
   // Read in mesh in mesh data from XDMF file

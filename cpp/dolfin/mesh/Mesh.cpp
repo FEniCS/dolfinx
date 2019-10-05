@@ -69,9 +69,12 @@ Eigen::ArrayXd cell_r(const mesh::Mesh& mesh)
 std::tuple<
     std::int32_t, std::vector<std::int64_t>,
     Eigen::Array<std::int32_t, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>>
-compute_cell_node_map(std::int32_t num_vertices_per_cell,
-                      const Eigen::Ref<const EigenRowArrayXXi64>& cell_nodes,
-                      const std::vector<std::uint8_t>& cell_permutation)
+compute_cell_node_map(
+    std::int32_t num_vertices_per_cell,
+    const Eigen::Ref<const Eigen::Array<std::int64_t, Eigen::Dynamic,
+                                        Eigen::Dynamic, Eigen::RowMajor>>&
+        cell_nodes,
+    const std::vector<std::uint8_t>& cell_permutation)
 {
   const std::int32_t num_cells = cell_nodes.rows();
   const std::int32_t num_nodes_per_cell = cell_nodes.cols();
@@ -123,11 +126,14 @@ compute_cell_node_map(std::int32_t num_vertices_per_cell,
 } // namespace
 
 //-----------------------------------------------------------------------------
-Mesh::Mesh(MPI_Comm comm, mesh::CellType type,
-           const Eigen::Ref<const EigenRowArrayXXd>& points,
-           const Eigen::Ref<const EigenRowArrayXXi64>& cells,
-           const std::vector<std::int64_t>& global_cell_indices,
-           const GhostMode ghost_mode, std::int32_t num_ghost_cells)
+Mesh::Mesh(
+    MPI_Comm comm, mesh::CellType type,
+    const Eigen::Ref<const Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic,
+                                        Eigen::RowMajor>>& points,
+    const Eigen::Ref<const Eigen::Array<
+        std::int64_t, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>>& cells,
+    const std::vector<std::int64_t>& global_cell_indices,
+    const GhostMode ghost_mode, std::int32_t num_ghost_cells)
     : _cell_type(type), _degree(1), _mpi_comm(comm), _ghost_mode(ghost_mode),
       _unique_id(common::UniqueIdGenerator::id())
 {
@@ -185,7 +191,8 @@ Mesh::Mesh(MPI_Comm comm, mesh::CellType type,
       = std::make_unique<CoordinateDofs>(coordinate_nodes, cell_permutation);
 
   // Distribute the points across processes and calculate shared nodes
-  EigenRowArrayXXd points_received;
+  Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
+      points_received;
   std::map<std::int32_t, std::set<std::int32_t>> nodes_shared;
   std::tie(points_received, nodes_shared)
       = Partitioning::distribute_points(comm, points, node_indices_global);

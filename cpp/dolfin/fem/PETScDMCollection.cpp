@@ -78,7 +78,8 @@ tabulate_coordinates_to_dofs(const function::FunctionSpace& V)
   const int tdim = mesh.topology().dim();
 
   // Get dof coordinates on reference element
-  const EigenRowArrayXXd& X = element.dof_reference_coordinates();
+  const Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>& X
+      = element.dof_reference_coordinates();
 
   // Get coordinate mapping
   if (!mesh.geometry().coord_mapping)
@@ -101,8 +102,10 @@ tabulate_coordinates_to_dofs(const function::FunctionSpace& V)
       = mesh.geometry().points();
 
   // Loop over cells and tabulate dofs
-  EigenRowArrayXXd coordinates(element.space_dimension(), gdim);
-  EigenRowArrayXXd coordinate_dofs(num_dofs_g, gdim);
+  Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
+      coordinates(element.space_dimension(), gdim);
+  Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
+      coordinate_dofs(num_dofs_g, gdim);
   std::vector<double> coors(gdim);
 
   // Speed up the computations by only visiting (most) dofs once
@@ -520,12 +523,14 @@ la::PETScMatrix PETScDMCollection::create_transfer_matrix(
       = coarsemap->index_map->indices(true);
 
   // Loop over the found coarse cells
-  Eigen::Map<const EigenRowArrayXXd> x(found_points.data(), found_ids.size(),
-                                       gdim);
+  Eigen::Map<const Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic,
+                                Eigen::RowMajor>>
+      x(found_points.data(), found_ids.size(), gdim);
   const auto cmap = meshc.geometry().coord_mapping;
-  EigenRowArrayXXd X(1, gdim);
+  Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor> X(1,
+                                                                          gdim);
   Eigen::Tensor<double, 3, Eigen::RowMajor> J(1, gdim, tdim);
-  EigenArrayXd detJ(1);
+  Eigen::Array<double, 1, 1> detJ(1);
   Eigen::Tensor<double, 3, Eigen::RowMajor> K(1, tdim, gdim);
 
   // Prepare cell geometry
@@ -539,7 +544,8 @@ la::PETScMatrix PETScDMCollection::create_transfer_matrix(
   const int num_dofs_g = connectivity_g.size(0);
   const Eigen::Array<double, Eigen::Dynamic, 3, Eigen::RowMajor>& x_g
       = meshc.geometry().points();
-  EigenRowArrayXXd coordinate_dofs(num_dofs_g, gdim);
+  Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
+      coordinate_dofs(num_dofs_g, gdim);
   ; // cell dofs coordinates vector
 
   for (std::size_t i = 0; i < found_ids.size(); ++i)

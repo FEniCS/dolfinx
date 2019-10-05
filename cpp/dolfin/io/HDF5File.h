@@ -110,8 +110,12 @@ public:
   ///         Geometric points on each process,
   ///         Topological cells with global vertex indexing
   ///         Global cell distribution
-  std::tuple<mesh::CellType, EigenRowArrayXXd, EigenRowArrayXXi64,
-             std::vector<std::int64_t>, std::vector<std::int64_t>>
+  std::tuple<
+      mesh::CellType,
+      Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>,
+      Eigen::Array<std::int64_t, Eigen::Dynamic, Eigen::Dynamic,
+                   Eigen::RowMajor>,
+      std::vector<std::int64_t>, std::vector<std::int64_t>>
   read_mesh_data(const std::string data_path) const;
 
   /// Write mesh::MeshFunction to file in a format suitable for re-reading

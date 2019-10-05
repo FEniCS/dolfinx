@@ -252,10 +252,13 @@ void ParallelRefinement::create_new_vertices()
   for (std::size_t i = 0; i < num_new_vertices; i++)
     global_indices.push_back(i + global_offset);
 
-  Eigen::Map<EigenRowArrayXXd> old_tmp(_new_vertex_coordinates.data(),
-                                       _new_vertex_coordinates.size() / 3, 3);
-  EigenRowArrayXXd tmp = mesh::DistributedMeshTools::reorder_by_global_indices(
-      _mesh.mpi_comm(), old_tmp, global_indices);
+  Eigen::Map<
+      Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>>
+      old_tmp(_new_vertex_coordinates.data(),
+              _new_vertex_coordinates.size() / 3, 3);
+  Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor> tmp
+      = mesh::DistributedMeshTools::reorder_by_global_indices(
+          _mesh.mpi_comm(), old_tmp, global_indices);
 
   _new_vertex_coordinates
       = std::vector<double>(tmp.data(), tmp.data() + tmp.size());
@@ -271,10 +274,12 @@ mesh::Mesh ParallelRefinement::build_local() const
   assert(_new_cell_topology.size() % num_cell_vertices == 0);
   const std::size_t num_cells = _new_cell_topology.size() / num_cell_vertices;
 
-  Eigen::Map<const EigenRowArrayXXd> geometry(_new_vertex_coordinates.data(),
-                                              num_vertices, 3);
-  Eigen::Map<const EigenRowArrayXXi64> topology(_new_cell_topology.data(),
-                                                num_cells, num_cell_vertices);
+  Eigen::Map<const Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic,
+                                Eigen::RowMajor>>
+      geometry(_new_vertex_coordinates.data(), num_vertices, 3);
+  Eigen::Map<const Eigen::Array<std::int64_t, Eigen::Dynamic, Eigen::Dynamic,
+                                Eigen::RowMajor>>
+      topology(_new_cell_topology.data(), num_cells, num_cell_vertices);
 
   mesh::Mesh mesh(_mesh.mpi_comm(), _mesh.cell_type(), geometry, topology, {},
                   _mesh.get_ghost_mode());
@@ -296,12 +301,14 @@ mesh::Mesh ParallelRefinement::partition(bool redistribute) const
   for (std::int32_t i = 0; i < num_local_cells; i++)
     global_cell_indices[i] = idx_global_offset + i;
 
-  Eigen::Map<const EigenRowArrayXXi64> cells(
-      _new_cell_topology.data(), num_local_cells, num_vertices_per_cell);
+  Eigen::Map<const Eigen::Array<std::int64_t, Eigen::Dynamic, Eigen::Dynamic,
+                                Eigen::RowMajor>>
+      cells(_new_cell_topology.data(), num_local_cells, num_vertices_per_cell);
 
   const std::size_t num_local_vertices = _new_vertex_coordinates.size() / 3;
-  Eigen::Map<const EigenRowArrayXXd> points(_new_vertex_coordinates.data(),
-                                            num_local_vertices, 3);
+  Eigen::Map<const Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic,
+                                Eigen::RowMajor>>
+      points(_new_vertex_coordinates.data(), num_local_vertices, 3);
 
   if (redistribute)
   {

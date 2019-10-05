@@ -24,8 +24,9 @@ mesh::Mesh build_tri(MPI_Comm comm, const std::array<Eigen::Vector3d, 2>& p,
   // Receive mesh if not rank 0
   if (dolfin::MPI::rank(comm) != 0)
   {
-    EigenRowArrayXXd geom(0, 2);
-    EigenRowArrayXXi64 topo(0, 3);
+    Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor> geom(
+        0, 2);
+    Eigen::Array<std::int64_t, 0, 3, Eigen::RowMajor> topo(0, 3);
     return mesh::Partitioning::build_distributed_mesh(
         comm, mesh::CellType::triangle, geom, topo, {}, ghost_mode);
   }
@@ -82,8 +83,9 @@ mesh::Mesh build_tri(MPI_Comm comm, const std::array<Eigen::Vector3d, 2>& p,
     nc = 2 * nx * ny;
   }
 
-  EigenRowArrayXXd geom(nv, 2);
-  EigenRowArrayXXi64 topo(nc, 3);
+  Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor> geom(nv,
+                                                                             2);
+  Eigen::Array<std::int64_t, Eigen::Dynamic, 3, Eigen::RowMajor> topo(nc, 3);
 
   // Create main vertices
   std::size_t vertex = 0;
@@ -202,8 +204,9 @@ mesh::Mesh build_quad(MPI_Comm comm, const std::array<Eigen::Vector3d, 2>& p,
   // Receive mesh if not rank 0
   if (dolfin::MPI::rank(comm) != 0)
   {
-    EigenRowArrayXXd geom(0, 2);
-    EigenRowArrayXXi64 topo(0, 4);
+    Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor> geom(
+        0, 2);
+    Eigen::Array<std::int64_t, Eigen::Dynamic, 4, Eigen::RowMajor> topo(0, 4);
     return mesh::Partitioning::build_distributed_mesh(
         comm, mesh::CellType::quadrilateral, geom, topo, {}, ghost_mode);
   }
@@ -211,8 +214,10 @@ mesh::Mesh build_quad(MPI_Comm comm, const std::array<Eigen::Vector3d, 2>& p,
   const std::size_t nx = n[0];
   const std::size_t ny = n[1];
 
-  EigenRowArrayXXd geom((nx + 1) * (ny + 1), 2);
-  EigenRowArrayXXi64 topo(nx * ny, 4);
+  Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor> geom(
+      (nx + 1) * (ny + 1), 2);
+  Eigen::Array<std::int64_t, Eigen::Dynamic, 4, Eigen::RowMajor> topo(nx * ny,
+                                                                      4);
 
   const double a = p[0][0];
   const double b = p[1][0];
@@ -255,12 +260,10 @@ mesh::Mesh build_quad(MPI_Comm comm, const std::array<Eigen::Vector3d, 2>& p,
 } // namespace
 
 //-----------------------------------------------------------------------------
-mesh::Mesh RectangleMesh::create(MPI_Comm comm,
-                                 const std::array<Eigen::Vector3d, 2>& p,
-                                 std::array<std::size_t, 2> n,
-                                 mesh::CellType cell_type,
-                                 const mesh::GhostMode ghost_mode,
-                                 std::string diagonal)
+mesh::Mesh
+RectangleMesh::create(MPI_Comm comm, const std::array<Eigen::Vector3d, 2>& p,
+                      std::array<std::size_t, 2> n, mesh::CellType cell_type,
+                      const mesh::GhostMode ghost_mode, std::string diagonal)
 {
   if (cell_type == mesh::CellType::triangle)
     return build_tri(comm, p, n, ghost_mode, diagonal);

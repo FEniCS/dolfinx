@@ -222,11 +222,16 @@ public:
   /// Read in the data from the first mesh in XDMF file
   ///
   /// @param[in] comm The MPI Communicator
-  /// @return Geometric points on each process (EigenRowArrayXXd),
-  ///         Topological cells with global vertex indexing
-  ///         (EigenRowArrayXXi64), and the Cell type (mesh::CellType)
-  std::tuple<mesh::CellType, EigenRowArrayXXd, EigenRowArrayXXi64,
-             std::vector<std::int64_t>>
+  /// @return Geometric points on each process (Eigen::Array<double,
+  /// Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>),
+  ///         Topological cells with global vertex indexing, and the Cell type
+  ///         (mesh::CellType)
+  std::tuple<
+      mesh::CellType,
+      Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>,
+      Eigen::Array<std::int64_t, Eigen::Dynamic, Eigen::Dynamic,
+                   Eigen::RowMajor>,
+      std::vector<std::int64_t>>
   read_mesh_data(MPI_Comm comm) const;
 
   /// Read a function from the XDMF file. Supplied function must come
