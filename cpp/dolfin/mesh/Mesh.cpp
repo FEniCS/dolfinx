@@ -112,7 +112,7 @@ distribute_points_sharing(MPI_Comm mpi_comm,
 std::tuple<
     std::vector<std::int64_t>, std::map<std::int32_t, std::set<int>>,
     Eigen::Array<std::int32_t, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>,
-    EigenRowArrayXXd, int>
+    EigenRowArrayXXd, std::array<int, 4>>
 point_distributor(MPI_Comm mpi_comm, int num_vertices_per_cell,
                   Eigen::Ref<const EigenRowArrayXXi64> cell_nodes,
                   Eigen::Ref<const EigenRowArrayXXd> points,
@@ -200,7 +200,7 @@ point_distributor(MPI_Comm mpi_comm, int num_vertices_per_cell,
   // owned and which are vertices, and which are not.
 
   std::vector<std::int64_t> local_to_global;
-  int num_vertices_local = 0;
+  std::array<int, 4> num_vertices_local;
   // TODO: make into a function
   {
     // Classify all nodes
@@ -241,13 +241,16 @@ point_distributor(MPI_Comm mpi_comm, int num_vertices_per_cell,
     // Now fill local->global map and reorder received points
     local_to_global.insert(local_to_global.end(), local_vertices.begin(),
                            local_vertices.end());
+    num_vertices_local[0] = local_to_global.size();
     local_to_global.insert(local_to_global.end(), shared_vertices.begin(),
                            shared_vertices.end());
+    num_vertices_local[1] = local_to_global.size();
     local_to_global.insert(local_to_global.end(), ghost_vertices.begin(),
                            ghost_vertices.end());
-    num_vertices_local = local_to_global.size();
+    num_vertices_local[2] = local_to_global.size();
     local_to_global.insert(local_to_global.end(), non_vertex_nodes.begin(),
                            non_vertex_nodes.end());
+    num_vertices_local[3] = local_to_global.size();
   }
 
   // Reverse map
@@ -397,7 +400,7 @@ Mesh::Mesh(MPI_Comm comm, mesh::CellType type,
 
   // Compute node local-to-global map from global indices, and compute
   // cell topology using new local indices.
-  std::int32_t num_vertices_local;
+  std::array<int, 4> num_vertices_local;
   std::vector<std::int64_t> node_indices_global;
   Eigen::Array<std::int32_t, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
       coordinate_nodes;
@@ -441,38 +444,25 @@ Mesh::Mesh(MPI_Comm comm, mesh::CellType type,
     // to build a global indexing for vertices
     std::tie(num_vertices_global, vertex_indices_global)
         = Partitioning::build_global_vertex_indices(
-            comm, num_vertices_local, node_indices_global, nodes_shared);
+            comm, num_vertices_local[2], node_indices_global, nodes_shared);
 
     // FIXME: could be useful information. Where should it be kept?
     // Eliminate shared points which are not vertices
     for (auto it = nodes_shared.begin(); it != nodes_shared.end(); ++it)
-      if (it->first < num_vertices_local)
+      if (it->first < num_vertices_local[2])
         shared_vertices.insert(*it);
   }
 
   // Initialise vertex topology
-  _topology = std::make_unique<Topology>(tdim, num_vertices_local,
+  _topology = std::make_unique<Topology>(tdim, num_vertices_local[2],
                                          num_vertices_global);
   _topology->set_global_indices(0, vertex_indices_global);
   _topology->shared_entities(0) = shared_vertices;
+  _topology->init_ghost(0, num_vertices_local[1]);
 
   // Initialise cell topology
   _topology->set_num_entities_global(tdim, num_cells_global);
   _topology->init_ghost(tdim, num_cells_local);
-
-  // Find the max vertex index of non-ghost cells.
-  if (num_ghost_cells > 0)
-  {
-    const std::uint32_t max_vertex
-        = coordinate_nodes.topLeftCorner(num_cells_local, num_vertices_per_cell)
-              .maxCoeff();
-
-    // Initialise number of local non-ghost vertices
-    const std::uint32_t num_non_ghost_vertices = max_vertex + 1;
-    _topology->init_ghost(0, num_non_ghost_vertices);
-  }
-  else
-    _topology->init_ghost(0, num_vertices_local);
 
   // Add cells. Only copies the first few entries on each row
   // corresponding to vertices.
