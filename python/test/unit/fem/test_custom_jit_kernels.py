@@ -247,17 +247,12 @@ def test_numba_assembly_set_mode():
 
     u1 = dolfin.Function(P1)
 
-
     def expr(values, x):
         values[:, 0] = x[:, 0] + x[:, 1]
-
 
     # Interpolate linear expression into linear function,
     # this can be done exactly
     u1.interpolate(expr)
-
-    import cffi
-    ffi = cffi.FFI()
 
     @numba.cfunc(c_signature, nopython=True)
     def tabulate_tensor_b(b_, w_, c_, coords_, entity_local_index, cell_orientation):
