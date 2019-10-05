@@ -471,7 +471,7 @@ void fem::impl::assemble_vector(
   {
     if (mode != fem::InsertMode::sum)
     {
-      throw std::runtime_error("Insert mode \"sum\" is the only is supported "
+      throw std::runtime_error("Insert mode \"sum\" is the only supported "
                                "mode for facet integrals.");
     }
 
@@ -487,8 +487,8 @@ void fem::impl::assemble_vector(
   {
     if (mode != fem::InsertMode::sum)
     {
-      throw std::runtime_error("Insert mode \"sum\" is the only is supported "
-                               "mode for exterior facet integrals.");
+      throw std::runtime_error("Insert mode \"sum\" is the only supported "
+                               "mode for facet integrals.");
     }
 
     const auto& fn = integrals.get_tabulate_tensor_function(
