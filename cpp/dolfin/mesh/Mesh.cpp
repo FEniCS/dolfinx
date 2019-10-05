@@ -460,6 +460,12 @@ Mesh::Mesh(MPI_Comm comm, mesh::CellType type,
   _topology->shared_entities(0) = shared_vertices;
   _topology->init_ghost(0, num_vertices_local[1]);
 
+  // Set vertex ownership
+  std::vector<int> vertex_owner;
+  for (int i = num_vertices_local[1]; i < num_vertices_local[2]; ++i)
+    vertex_owner.push_back(*(shared_vertices[i].begin()));
+  _topology->entity_owner(0) = vertex_owner;
+
   // Initialise cell topology
   _topology->set_num_entities_global(tdim, num_cells_global);
   _topology->init_ghost(tdim, num_cells_local);
