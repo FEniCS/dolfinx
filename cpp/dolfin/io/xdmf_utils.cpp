@@ -28,10 +28,10 @@
 // #include <dolfin/mesh/Connectivity.h>
 #include <dolfin/mesh/DistributedMeshTools.h>
 // #include <dolfin/mesh/Mesh.h>
+#include <dolfin/mesh/Geometry.h>
 #include <dolfin/mesh/MeshEntity.h>
 #include <dolfin/mesh/MeshIterator.h>
 #include <dolfin/mesh/cell_types.h>
-#include <dolfin/mesh/Geometry.h>
 // #include <dolfin/mesh/MeshValueCollection.h>
 // #include <dolfin/mesh/Partitioning.h>
 // #include <iomanip>
@@ -208,7 +208,7 @@ std::int64_t xdmf_utils::get_num_cells(const pugi::xml_node& topology_node)
 std::vector<PetscScalar>
 xdmf_utils::get_point_data_values(const function::Function& u)
 {
-  auto mesh = u.function_space()->mesh();
+  std::shared_ptr<const mesh::Mesh> mesh = u.function_space()->mesh();
   assert(mesh);
   Eigen::Array<PetscScalar, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
       data_values = u.compute_point_values();

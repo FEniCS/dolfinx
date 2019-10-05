@@ -44,8 +44,9 @@ void test_distributed_mesh()
   file.write(*mesh);
 
   mesh::CellType cell_type;
-  EigenRowArrayXXd points;
-  EigenRowArrayXXi64 cells;
+  Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor> points;
+  Eigen::Array<std::int64_t, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
+      cells;
   std::vector<std::int64_t> global_cell_indices;
 
   // Read in mesh in mesh data from XDMF file
@@ -60,7 +61,7 @@ void test_distributed_mesh()
       subset_comm, nparts, cell_type, cells, mesh::Partitioner::scotch);
 
   // Build mesh from local mesh data, ghost mode, and provided cell partition
-  auto ghost_mode = mesh::GhostMode::none;
+  mesh::GhostMode ghost_mode = mesh::GhostMode::none;
   auto new_mesh
       = std::make_shared<mesh::Mesh>(mesh::Partitioning::build_from_partition(
           mpi_comm.comm(), cell_type, points, cells, global_cell_indices,

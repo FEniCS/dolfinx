@@ -15,10 +15,12 @@ void exactinit();
 double orient1d(double a, double b, double x);
 
 /// Convenience function using Eigen
-double orient2d(const Eigen::Vector3d& a, const Eigen::Vector3d& b, const Eigen::Vector3d& c);
+double orient2d(const Eigen::Vector3d& a, const Eigen::Vector3d& b,
+                const Eigen::Vector3d& c);
 
 /// Convenience function using Eigen
-double orient3d(const Eigen::Vector3d& a, const Eigen::Vector3d& b, const Eigen::Vector3d& c, const Eigen::Vector3d& d);
+double orient3d(const Eigen::Vector3d& a, const Eigen::Vector3d& b,
+                const Eigen::Vector3d& c, const Eigen::Vector3d& d);
 
 /// Class used for automatic initialization of tolerances at startup. A
 /// global instance is defined inside predicates.cpp to ensure that the

@@ -72,7 +72,7 @@ public:
   void compute_reference_geometry(
       Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>& X,
       Eigen::Tensor<double, 3, Eigen::RowMajor>& J,
-      Eigen::Array<double, Eigen::Dynamic, 1>& detJ,
+      Eigen::Ref<Eigen::Array<double, Eigen::Dynamic, 1>> detJ,
       Eigen::Tensor<double, 3, Eigen::RowMajor>& K,
       const Eigen::Ref<const Eigen::Array<double, Eigen::Dynamic,
                                           Eigen::Dynamic, Eigen::RowMajor>>& x,

@@ -163,7 +163,8 @@ void FunctionSpace::interpolate(
   // evaluted three times at the some point.
 
   // Build list of points at which to evaluate the Expression
-  EigenRowArrayXXd x = tabulate_dof_coordinates();
+  Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor> x
+      = tabulate_dof_coordinates();
 
   // Evaluate Expression at points
   // std::vector<int> vshape = e.value_shape();
@@ -180,7 +181,8 @@ void FunctionSpace::interpolate(
   // FIXME: Dummy coordinate dofs - should limit the interpolation to
   // Lagrange, in which case we don't need coordinate dofs in
   // FiniteElement::transform_values.
-  EigenRowArrayXXd coordinate_dofs;
+  Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
+      coordinate_dofs;
 
   // FIXME: It would be far more elegant and efficient to avoid the need
   // to loop over cells to set the expansion corfficients. Would be much
@@ -276,7 +278,8 @@ FunctionSpace::collapse() const
 //-----------------------------------------------------------------------------
 std::vector<int> FunctionSpace::component() const { return _component; }
 //-----------------------------------------------------------------------------
-EigenRowArrayXXd FunctionSpace::tabulate_dof_coordinates() const
+Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
+FunctionSpace::tabulate_dof_coordinates() const
 {
   // Geometric dimension
   assert(_mesh);
@@ -299,10 +302,12 @@ EigenRowArrayXXd FunctionSpace::tabulate_dof_coordinates() const
       = bs * (index_map->size_local() + index_map->num_ghosts());
 
   // Dof coordinate on reference element
-  const EigenRowArrayXXd& X = _element->dof_reference_coordinates();
+  const Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>& X
+      = _element->dof_reference_coordinates();
 
   // Arrray to hold coordinates and return
-  EigenRowArrayXXd x(local_size, gdim);
+  Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor> x(
+      local_size, gdim);
 
   // Get coordinate mapping
   if (!_mesh->geometry().coord_mapping)
@@ -316,9 +321,9 @@ EigenRowArrayXXd FunctionSpace::tabulate_dof_coordinates() const
   // Prepare cell geometry
   const mesh::Connectivity& connectivity_g
       = _mesh->coordinate_dofs().entity_points();
-  const Eigen::Ref<const Eigen::Array<std::int32_t, Eigen::Dynamic, 1>> pos_g
+  const Eigen::Array<std::int32_t, Eigen::Dynamic, 1>& pos_g
       = connectivity_g.entity_positions();
-  const Eigen::Ref<const Eigen::Array<std::int32_t, Eigen::Dynamic, 1>> cell_g
+  const Eigen::Array<std::int32_t, Eigen::Dynamic, 1>& cell_g
       = connectivity_g.connections();
   // FIXME: Add proper interface for num coordinate dofs
   const int num_dofs_g = connectivity_g.size(0);
@@ -327,8 +332,10 @@ EigenRowArrayXXd FunctionSpace::tabulate_dof_coordinates() const
       = _mesh->geometry().points();
 
   // Loop over cells and tabulate dofs
-  EigenRowArrayXXd coordinates(_element->space_dimension(), gdim);
-  EigenRowArrayXXd coordinate_dofs(num_dofs_g, gdim);
+  Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
+      coordinates(_element->space_dimension(), gdim);
+  Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
+      coordinate_dofs(num_dofs_g, gdim);
   for (auto& cell : mesh::MeshRange(*_mesh, tdim))
   {
     // Update cell
@@ -370,9 +377,9 @@ void FunctionSpace::set_x(
   // Prepare cell geometry
   const mesh::Connectivity& connectivity_g
       = _mesh->coordinate_dofs().entity_points();
-  const Eigen::Ref<const Eigen::Array<std::int32_t, Eigen::Dynamic, 1>> pos_g
+  const Eigen::Array<std::int32_t, Eigen::Dynamic, 1>& pos_g
       = connectivity_g.entity_positions();
-  const Eigen::Ref<const Eigen::Array<std::int32_t, Eigen::Dynamic, 1>> cell_g
+  const Eigen::Array<std::int32_t, Eigen::Dynamic, 1>& cell_g
       = connectivity_g.connections();
   // FIXME: Add proper interface for num coordinate dofs
   const int num_dofs_g = connectivity_g.size(0);

@@ -112,7 +112,8 @@ get_cmap_from_ufc_cmap(const ufc_coordinate_mapping& ufc_cmap);
 /// @param mesh Mesh
 /// @return The created FunctionSpace
 std::shared_ptr<function::FunctionSpace>
-create_functionspace(ufc_function_space* (*fptr)(void), std::shared_ptr<mesh::Mesh> mesh);
+create_functionspace(ufc_function_space* (*fptr)(void),
+                     std::shared_ptr<mesh::Mesh> mesh);
 
 } // namespace fem
 } // namespace dolfin

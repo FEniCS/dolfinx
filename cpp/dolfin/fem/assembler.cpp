@@ -30,7 +30,7 @@ namespace
 //-----------------------------------------------------------------------------
 void set_diagonal_local(
     Mat A,
-    const Eigen::Ref<const Eigen::Array<PetscInt, Eigen::Dynamic, 1>> rows,
+    const Eigen::Ref<const Eigen::Array<PetscInt, Eigen::Dynamic, 1>>& rows,
     PetscScalar diag)
 {
   assert(A);
@@ -429,7 +429,7 @@ void fem::assemble_matrix(Mat A, const Form& a,
       {
         // FIXME: could be simpler if DirichletBC::dof_indices had
         // options to return owned dofs only
-        const Eigen::Ref<const Eigen::Array<PetscInt, Eigen::Dynamic, 1>> dofs
+        const Eigen::Array<PetscInt, Eigen::Dynamic, 1>& dofs
             = bc->dof_indices();
         const int owned_size = map0->block_size * map0->size_local();
         auto it = std::lower_bound(dofs.data(), dofs.data() + dofs.rows(),

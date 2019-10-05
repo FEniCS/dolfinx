@@ -158,9 +158,9 @@ void write_ascii_mesh(const mesh::Mesh& mesh, std::size_t cell_dim,
 
   const mesh::Connectivity& connectivity_g
       = mesh.coordinate_dofs().entity_points();
-  Eigen::Ref<const Eigen::Array<std::int32_t, Eigen::Dynamic, 1>>
-      cell_connections = connectivity_g.connections();
-  const Eigen::Ref<const Eigen::Array<std::int32_t, Eigen::Dynamic, 1>> pos_g
+  const Eigen::Array<std::int32_t, Eigen::Dynamic, 1>& cell_connections
+      = connectivity_g.connections();
+  const Eigen::Array<std::int32_t, Eigen::Dynamic, 1>& pos_g
       = connectivity_g.entity_positions();
   int num_nodes = mesh.coordinate_dofs().cell_permutation().size();
   const std::vector<std::uint8_t> perm

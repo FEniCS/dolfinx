@@ -82,7 +82,7 @@ class Function(ufl.Coefficient):
             return self(*x)
 
     def eval(self, x: np.ndarray, cells: np.ndarray, u=None) -> np.ndarray:
-        """Evaluate Function at points x, where x has shape (num_points, gdim),
+        """Evaluate Function at points x, where x has shape (num_points, 3),
         and cells has shape (num_points,) and cell[i] is the index of the
         cell containing point x[i]. If the cell index is negative the
         point is ignored."""
@@ -92,8 +92,8 @@ class Function(ufl.Coefficient):
         assert x.ndim < 3
         num_points = x.shape[0] if x.ndim == 2 else 1
         x = np.reshape(x, (num_points, -1))
-        if x.shape[1] != self.geometric_dimension():
-            raise ValueError("Wrong geometric dimension for coordinate(s).")
+        if x.shape[1] != 3:
+            raise ValueError("Coordinate(s) for Function evaluation must have length 3.")
 
         # Make sure cells are a NumPy array
         cells = np.asarray(cells)
