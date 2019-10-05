@@ -36,7 +36,9 @@ std::tuple<std::vector<std::vector<std::size_t>>,
            std::int32_t>
 compute_local_dual_graph_keyed(
     const MPI_Comm mpi_comm,
-    const Eigen::Ref<const EigenRowArrayXXi64>& cell_vertices,
+    const Eigen::Array<std::int64_t, Eigen::Dynamic, Eigen::Dynamic,
+                       Eigen::RowMajor>& cell_vertices,
+    // const EigenRowArrayXXi64& cell_vertices,
     const mesh::CellType cell_type)
 {
   common::Timer timer("Compute local part of mesh dual graph");

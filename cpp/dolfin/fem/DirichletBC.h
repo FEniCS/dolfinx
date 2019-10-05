@@ -147,8 +147,7 @@ public:
   // FIXME: clarify length of returned array
   /// Get array of dof indices to which a Dirichlet BC is applied. The
   /// array is sorted.
-  const Eigen::Ref<const Eigen::Array<PetscInt, Eigen::Dynamic, 1>>
-  dof_indices() const;
+  const Eigen::Array<PetscInt, Eigen::Dynamic, 1>& dof_indices() const;
 
   // FIXME: clarify w.r.t ghosts
   /// Set bc entries in x to scale*x_bc

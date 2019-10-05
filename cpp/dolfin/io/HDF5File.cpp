@@ -664,7 +664,7 @@ HDF5File::read_mesh_function(std::shared_ptr<const mesh::Mesh> mesh,
   mesh::MeshFunction<T> mf(mesh, dim, 0);
 
   // Get reference to mesh function data array
-  Eigen::Ref<Eigen::Array<T, Eigen::Dynamic, 1>> mf_values = mf.values();
+  Eigen::Array<T, Eigen::Dynamic, 1>& mf_values = mf.values();
 
   for (std::size_t i = 0; i < receive_values.size(); ++i)
   {
@@ -747,9 +747,7 @@ void HDF5File::write_mesh_function(const mesh::MeshFunction<T>& meshfunction,
     }
 
     // Get reference to mesh function data array
-    Eigen::Ref<const Eigen::Array<T, Eigen::Dynamic, 1>> mf_values
-        = meshfunction.values();
-
+    const Eigen::Array<T, Eigen::Dynamic, 1>& mf_values = meshfunction.values();
     for (auto& e : mesh::MeshRange(mesh, cell_dim))
     {
       if (non_local_entities.find(e.index()) == non_local_entities.end())

@@ -69,7 +69,7 @@ public:
   /// @param[in] cell_index The cell index.
   /// @return  Local-global map for cell (used process-local global
   ///           index)
-  auto cell_dofs(std::size_t cell_index) const
+  auto cell_dofs(int cell_index) const
   {
     assert(element_dof_layout);
     const int cell_dimension = element_dof_layout->num_dofs();
@@ -107,7 +107,7 @@ public:
   std::string str(bool verbose) const;
 
   /// Get dofmap array
-  Eigen::Ref<const Eigen::Array<PetscInt, Eigen::Dynamic, 1>> dof_array() const;
+  const Eigen::Array<PetscInt, Eigen::Dynamic, 1>& dof_array() const;
 
   // FIXME: can this be removed?
   /// Return list of dof indices on this process that belong to mesh

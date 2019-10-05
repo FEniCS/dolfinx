@@ -428,7 +428,7 @@ std::shared_ptr<const function::Function> DirichletBC::value() const
   return _g;
 }
 //-----------------------------------------------------------------------------
-const Eigen::Ref<const Eigen::Array<PetscInt, Eigen::Dynamic, 1>>
+const Eigen::Array<PetscInt, Eigen::Dynamic, 1>&
 DirichletBC::dof_indices() const
 {
   return _dof_indices;

@@ -96,7 +96,7 @@ void ParallelRefinement::mark(const mesh::MeshFunction<int>& refinement_marker)
   const std::size_t entity_dim = refinement_marker.dim();
 
   // Get reference to mesh function data array
-  Eigen::Ref<const Eigen::Array<int, Eigen::Dynamic, 1>> mf_values
+  const Eigen::Array<int, Eigen::Dynamic, 1>& mf_values
       = refinement_marker.values();
 
   for (const auto& entity : mesh::MeshRange(_mesh, entity_dim))
@@ -284,7 +284,8 @@ mesh::Mesh ParallelRefinement::build_local() const
 //-----------------------------------------------------------------------------
 mesh::Mesh ParallelRefinement::partition(bool redistribute) const
 {
-  const int num_vertices_per_cell = mesh::cell_num_entities(_mesh.cell_type(), 0);
+  const int num_vertices_per_cell
+      = mesh::cell_num_entities(_mesh.cell_type(), 0);
 
   // Copy data to mesh::LocalMeshData structures
   const std::int32_t num_local_cells

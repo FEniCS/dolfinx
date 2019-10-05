@@ -93,12 +93,11 @@ public:
   const std::int32_t* connections(int entity) const;
 
   /// Return contiguous array of connections for all entities
-  Eigen::Ref<Eigen::Array<std::int32_t, Eigen::Dynamic, 1>> connections();
+  Eigen::Array<std::int32_t, Eigen::Dynamic, 1>& connections();
 
   /// Return contiguous array of connections for all entities (const
   /// version)
-  Eigen::Ref<const Eigen::Array<std::int32_t, Eigen::Dynamic, 1>>
-  connections() const;
+  const Eigen::Array<std::int32_t, Eigen::Dynamic, 1>& connections() const;
 
   /// Position of first connection in connections() for each entity
   /// (using local index)

@@ -174,8 +174,7 @@ std::vector<T> compute_value_data(const mesh::MeshFunction<T>& meshfunction)
         = xdmf_write::compute_nonlocal_entities(*mesh, cell_dim);
 
     // Get reference to mesh function data array
-    Eigen::Ref<const Eigen::Array<T, Eigen::Dynamic, 1>> mf_values
-        = meshfunction.values();
+    const Eigen::Array<T, Eigen::Dynamic, 1>& mf_values = meshfunction.values();
 
     for (auto& e : mesh::MeshRange(*mesh, cell_dim))
     {

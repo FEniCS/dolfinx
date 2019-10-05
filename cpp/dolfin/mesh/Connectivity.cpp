@@ -74,13 +74,12 @@ const std::int32_t* Connectivity::connections(int entity) const
              : nullptr;
 }
 //-----------------------------------------------------------------------------
-Eigen::Ref<Eigen::Array<std::int32_t, Eigen::Dynamic, 1>>
-Connectivity::connections()
+Eigen::Array<std::int32_t, Eigen::Dynamic, 1>& Connectivity::connections()
 {
   return _connections;
 }
 //-----------------------------------------------------------------------------
-Eigen::Ref<const Eigen::Array<std::int32_t, Eigen::Dynamic, 1>>
+const Eigen::Array<std::int32_t, Eigen::Dynamic, 1>&
 Connectivity::connections() const
 {
   return _connections;

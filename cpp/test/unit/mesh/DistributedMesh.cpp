@@ -60,7 +60,7 @@ void test_distributed_mesh()
       subset_comm, nparts, cell_type, cells, mesh::Partitioner::scotch);
 
   // Build mesh from local mesh data, ghost mode, and provided cell partition
-  auto ghost_mode = mesh::GhostMode::none;
+  mesh::GhostMode::ghost_mode = mesh::GhostMode::none;
   auto new_mesh
       = std::make_shared<mesh::Mesh>(mesh::Partitioning::build_from_partition(
           mpi_comm.comm(), cell_type, points, cells, global_cell_indices,

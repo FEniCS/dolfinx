@@ -83,11 +83,11 @@ public:
 
   /// Return array of values (const. version)
   /// @return The mesh function values
-  Eigen::Ref<const Eigen::Array<T, Eigen::Dynamic, 1>> values() const;
+  const Eigen::Array<T, Eigen::Dynamic, 1>& values() const;
 
   /// Return array of values
   /// @return The mesh function values
-  Eigen::Ref<Eigen::Array<T, Eigen::Dynamic, 1>> values();
+  Eigen::Array<T, Eigen::Dynamic, 1>& values();
 
   /// Marking function used to identify mesh entities
   using marking_function = std::function<Eigen::Array<bool, Eigen::Dynamic, 1>(
@@ -203,14 +203,13 @@ int MeshFunction<T>::dim() const
 }
 //---------------------------------------------------------------------------
 template <typename T>
-Eigen::Ref<const Eigen::Array<T, Eigen::Dynamic, 1>>
-MeshFunction<T>::values() const
+const Eigen::Array<T, Eigen::Dynamic, 1>& MeshFunction<T>::values() const
 {
   return _values;
 }
 //---------------------------------------------------------------------------
 template <typename T>
-Eigen::Ref<Eigen::Array<T, Eigen::Dynamic, 1>> MeshFunction<T>::values()
+Eigen::Array<T, Eigen::Dynamic, 1>& MeshFunction<T>::values()
 {
   return _values;
 }
