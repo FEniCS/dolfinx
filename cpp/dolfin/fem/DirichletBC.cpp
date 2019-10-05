@@ -110,7 +110,7 @@ get_remote_bcs(const common::IndexMap& map, const common::IndexMap& map_g,
 // Return list of facet indices that are marked
 std::vector<std::int32_t> marked_facets(
     const mesh::Mesh& mesh,
-    const std::function<EigenArrayXb(
+    const std::function<Eigen::Array<bool, Eigen::Dynamic, 1>(
         const Eigen::Ref<const Eigen::Array<double, Eigen::Dynamic, 3,
                                             Eigen::RowMajor>>&)>& marker)
 {
@@ -457,7 +457,7 @@ void DirichletBC::set(
 //-----------------------------------------------------------------------------
 void DirichletBC::set(
     Eigen::Ref<Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1>> x,
-    const Eigen::Ref<const Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1>> x0,
+    const Eigen::Ref<const Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1>>& x0,
     double scale) const
 {
   // FIXME: This one excludes ghosts. Need to straighten out.

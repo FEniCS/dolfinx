@@ -70,13 +70,13 @@ public:
 
   /// Insert non-zero entries using global indices
   void insert_global(
-      const Eigen::Ref<const Eigen::Array<PetscInt, Eigen::Dynamic, 1>> rows,
-      const Eigen::Ref<const Eigen::Array<PetscInt, Eigen::Dynamic, 1>> cols);
+      const Eigen::Ref<const Eigen::Array<PetscInt, Eigen::Dynamic, 1>>& rows,
+      const Eigen::Ref<const Eigen::Array<PetscInt, Eigen::Dynamic, 1>>& cols);
 
   /// Insert non-zero entries using local (process-wise) indices
   void insert_local(
-      const Eigen::Ref<const Eigen::Array<PetscInt, Eigen::Dynamic, 1>> rows,
-      const Eigen::Ref<const Eigen::Array<PetscInt, Eigen::Dynamic, 1>> cols);
+      const Eigen::Ref<const Eigen::Array<PetscInt, Eigen::Dynamic, 1>>& rows,
+      const Eigen::Ref<const Eigen::Array<PetscInt, Eigen::Dynamic, 1>>& cols);
 
   /// Return local range for dimension dim
   std::array<std::size_t, 2> local_range(std::size_t dim) const;
@@ -126,9 +126,9 @@ private:
   // The primary dim entries must be local
   // The primary_codim entries must be global
   void insert_entries(
-      const Eigen::Ref<const Eigen::Array<std::int32_t, Eigen::Dynamic, 1>>
+      const Eigen::Ref<const Eigen::Array<std::int32_t, Eigen::Dynamic, 1>>&
           rows,
-      const Eigen::Ref<const Eigen::Array<std::int32_t, Eigen::Dynamic, 1>>
+      const Eigen::Ref<const Eigen::Array<std::int32_t, Eigen::Dynamic, 1>>&
           cols,
       const std::function<PetscInt(const PetscInt, const common::IndexMap&)>&
           row_map,

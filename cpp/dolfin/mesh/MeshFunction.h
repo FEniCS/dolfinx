@@ -92,8 +92,7 @@ public:
   /// Marking function used to identify mesh entities
   using marking_function = std::function<Eigen::Array<bool, Eigen::Dynamic, 1>(
       const Eigen::Ref<
-          const Eigen::Array<double, Eigen::Dynamic, 3, Eigen::RowMajor>>
-          x)>;
+          const Eigen::Array<double, Eigen::Dynamic, 3, Eigen::RowMajor>>& x)>;
 
   /// Set values. If all vertices of a mesh entity satisfy the marking
   /// function then the entity is marked with the given value.
@@ -219,9 +218,8 @@ Eigen::Ref<Eigen::Array<T, Eigen::Dynamic, 1>> MeshFunction<T>::values()
 template <typename T>
 void MeshFunction<T>::mark(
     const std::function<Eigen::Array<bool, Eigen::Dynamic, 1>(
-        const Eigen::Ref<
-            const Eigen::Array<double, Eigen::Dynamic, 3, Eigen::RowMajor>>
-            x)>& mark,
+        const Eigen::Ref<const Eigen::Array<double, Eigen::Dynamic, 3,
+                                            Eigen::RowMajor>>& x)>& mark,
     T value)
 {
   // Get all vertices of the mesh

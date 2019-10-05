@@ -89,7 +89,7 @@ public:
       Eigen::Ref<Eigen::Array<PetscScalar, Eigen::Dynamic, Eigen::Dynamic,
                               Eigen::RowMajor>>,
       const Eigen::Ref<const Eigen::Array<double, Eigen::Dynamic,
-                                          Eigen::Dynamic, Eigen::RowMajor>>)>;
+                                          Eigen::Dynamic, Eigen::RowMajor>>&)>;
 
   /// Interpolate expression into function space, returning the vector
   /// of expansion coefficients

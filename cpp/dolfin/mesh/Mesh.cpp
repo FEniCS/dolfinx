@@ -121,8 +121,8 @@ compute_cell_node_map(std::int32_t num_vertices_per_cell,
 
 //-----------------------------------------------------------------------------
 Mesh::Mesh(MPI_Comm comm, mesh::CellType type,
-           const Eigen::Ref<const EigenRowArrayXXd> points,
-           const Eigen::Ref<const EigenRowArrayXXi64> cells,
+           const Eigen::Ref<const EigenRowArrayXXd>& points,
+           const Eigen::Ref<const EigenRowArrayXXi64>& cells,
            const std::vector<std::int64_t>& global_cell_indices,
            const GhostMode ghost_mode, std::int32_t num_ghost_cells)
     : _cell_type(type), _degree(1), _mpi_comm(comm), _ghost_mode(ghost_mode),

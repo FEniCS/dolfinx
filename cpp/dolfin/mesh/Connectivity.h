@@ -37,7 +37,7 @@ public:
   /// same number of connections
   Connectivity(
       const Eigen::Ref<const Eigen::Array<std::int32_t, Eigen::Dynamic,
-                                          Eigen::Dynamic, Eigen::RowMajor>>
+                                          Eigen::Dynamic, Eigen::RowMajor>>&
           connections);
 
   /// Set all connections for all entities (T is a '2D' container, e.g.

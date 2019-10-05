@@ -12,7 +12,7 @@ using namespace dolfin;
 //-----------------------------------------------------------------------------
 mesh::CoordinateDofs::CoordinateDofs(
     const Eigen::Ref<const Eigen::Array<std::int32_t, Eigen::Dynamic,
-                                        Eigen::Dynamic, Eigen::RowMajor>>
+                                        Eigen::Dynamic, Eigen::RowMajor>>&
         point_dofs,
     const std::vector<std::uint8_t>& cell_permutation)
     : _coord_dofs(new Connectivity(point_dofs)),

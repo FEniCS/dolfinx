@@ -25,7 +25,7 @@ Connectivity::Connectivity(const std::vector<std::int32_t>& connections,
 //-----------------------------------------------------------------------------
 Connectivity::Connectivity(
     const Eigen::Ref<const Eigen::Array<std::int32_t, Eigen::Dynamic,
-                                        Eigen::Dynamic, Eigen::RowMajor>>
+                                        Eigen::Dynamic, Eigen::RowMajor>>&
         connections)
     : _connections(connections.rows() * connections.cols()),
       _index_to_position(connections.rows() + 1)

@@ -120,13 +120,13 @@ public:
   /// @param[in,out] u The values at the points. Values are not computed
   ///                  for points with a negative cell index. This
   ///                  argument must be passed with the corrext size.
-  void eval(const Eigen::Ref<
-                const Eigen::Array<double, Eigen::Dynamic, 3, Eigen::RowMajor>>
-                x,
-            const Eigen::Ref<const Eigen::Array<int, Eigen::Dynamic, 1>> cells,
-            Eigen::Ref<Eigen::Array<PetscScalar, Eigen::Dynamic, Eigen::Dynamic,
-                                    Eigen::RowMajor>>
-                u) const;
+  void
+  eval(const Eigen::Ref<
+           const Eigen::Array<double, Eigen::Dynamic, 3, Eigen::RowMajor>>& x,
+       const Eigen::Ref<const Eigen::Array<int, Eigen::Dynamic, 1>>& cells,
+       Eigen::Ref<Eigen::Array<PetscScalar, Eigen::Dynamic, Eigen::Dynamic,
+                               Eigen::RowMajor>>
+           u) const;
 
   /// Compute values at all mesh points
   /// @return The values at all geometric points

@@ -69,24 +69,24 @@ public:
   // reference_values[num_points][num_dofs][reference_value_size]
   void evaluate_reference_basis(
       Eigen::Tensor<double, 3, Eigen::RowMajor>& reference_values,
-      const Eigen::Ref<const EigenRowArrayXXd> X) const;
+      const Eigen::Ref<const EigenRowArrayXXd>& X) const;
 
   /// Push basis functions forward to physical element
   void transform_reference_basis(
       Eigen::Tensor<double, 3, Eigen::RowMajor>& values,
       const Eigen::Tensor<double, 3, Eigen::RowMajor>& reference_values,
-      const Eigen::Ref<const EigenRowArrayXXd> X,
+      const Eigen::Ref<const EigenRowArrayXXd>& X,
       const Eigen::Tensor<double, 3, Eigen::RowMajor>& J,
-      const Eigen::Ref<const EigenArrayXd> detJ,
+      const Eigen::Ref<const EigenArrayXd>& detJ,
       const Eigen::Tensor<double, 3, Eigen::RowMajor>& K) const;
 
   /// Push basis function (derivatives) forward to physical element
   void transform_reference_basis_derivatives(
       Eigen::Tensor<double, 4, Eigen::RowMajor>& values, std::size_t order,
       const Eigen::Tensor<double, 4, Eigen::RowMajor>& reference_values,
-      const Eigen::Ref<const EigenRowArrayXXd> X,
+      const Eigen::Ref<const EigenRowArrayXXd>& X,
       const Eigen::Tensor<double, 3, Eigen::RowMajor>& J,
-      const Eigen::Ref<const EigenArrayXd> detJ,
+      const Eigen::Ref<const EigenArrayXd>& detJ,
       const Eigen::Tensor<double, 3, Eigen::RowMajor>& K) const;
 
   /// Tabulate the reference coordinates of all dofs on an element

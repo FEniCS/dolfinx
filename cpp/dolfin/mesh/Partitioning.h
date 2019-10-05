@@ -73,8 +73,8 @@ public:
   /// @return A distributed mesh
   static mesh::Mesh
   build_distributed_mesh(const MPI_Comm& comm, mesh::CellType cell_type,
-                         const Eigen::Ref<const EigenRowArrayXXd> points,
-                         const Eigen::Ref<const EigenRowArrayXXi64> cells,
+                         const Eigen::Ref<const EigenRowArrayXXd>& points,
+                         const Eigen::Ref<const EigenRowArrayXXi64>& cells,
                          const std::vector<std::int64_t>& global_cell_indices,
                          const mesh::GhostMode ghost_mode,
                          const mesh::Partitioner graph_partitioner
@@ -93,13 +93,12 @@ public:
   /// @param[in] cell_partition Cell partition data (PartitionData
   ///                           object)
   /// @return A distributed mesh
-  static mesh::Mesh
-  build_from_partition(const MPI_Comm& comm, mesh::CellType type,
-                       const Eigen::Ref<const EigenRowArrayXXd> points,
-                       const Eigen::Ref<const EigenRowArrayXXi64> cell_vertices,
-                       const std::vector<std::int64_t>& global_cell_indices,
-                       const mesh::GhostMode ghost_mode,
-                       const PartitionData& cell_partition);
+  static mesh::Mesh build_from_partition(
+      const MPI_Comm& comm, mesh::CellType type,
+      const Eigen::Ref<const EigenRowArrayXXd>& points,
+      const Eigen::Ref<const EigenRowArrayXXi64>& cell_vertices,
+      const std::vector<std::int64_t>& global_cell_indices,
+      const mesh::GhostMode ghost_mode, const PartitionData& cell_partition);
 
   /// Partition mesh cells using an external Graph Partitioner
   /// @param[in] comm MPI Communicator
@@ -112,7 +111,7 @@ public:
   static PartitionData
   partition_cells(const MPI_Comm& comm, int nparts,
                   const mesh::CellType cell_type,
-                  const Eigen::Ref<const EigenRowArrayXXi64> cell_vertices,
+                  const Eigen::Ref<const EigenRowArrayXXi64>& cell_vertices,
                   const mesh::Partitioner graph_partitioner);
 
   /// Redistribute points to the processes that need them
@@ -128,7 +127,7 @@ public:
   static std::pair<EigenRowArrayXXd,
                    std::map<std::int32_t, std::set<std::int32_t>>>
   distribute_points(const MPI_Comm comm,
-                    const Eigen::Ref<const EigenRowArrayXXd> points,
+                    const Eigen::Ref<const EigenRowArrayXXd>& points,
                     const std::vector<std::int64_t>& global_point_indices);
 
   /// Utility to create global vertex indices, needed for higher order
@@ -150,7 +149,7 @@ public:
   static std::map<std::int64_t, std::vector<int>>
   compute_halo_cells(MPI_Comm comm, std::vector<int> parttition,
                      const mesh::CellType cell_type,
-                     const Eigen::Ref<const EigenRowArrayXXi64> cell_vertices);
+                     const Eigen::Ref<const EigenRowArrayXXi64>& cell_vertices);
 };
 } // namespace mesh
 } // namespace dolfin

@@ -159,7 +159,7 @@ public:
   /// Set bc entries in x to scale*(x0 - x_bc).
   void set(
       Eigen::Ref<Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1>> x,
-      const Eigen::Ref<const Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1>> x0,
+      const Eigen::Ref<const Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1>>& x0,
       double scale = 1.0) const;
 
   // FIXME: clarify  w.r.t ghosts

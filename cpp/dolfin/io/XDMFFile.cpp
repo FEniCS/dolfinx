@@ -1205,8 +1205,7 @@ XDMFFile::read_mesh_value_collection(std::shared_ptr<const mesh::Mesh> mesh,
 //-----------------------------------------------------------------------------
 void XDMFFile::write(
     const Eigen::Ref<
-        const Eigen::Array<double, Eigen::Dynamic, 3, Eigen::RowMajor>>
-        points)
+        const Eigen::Array<double, Eigen::Dynamic, 3, Eigen::RowMajor>>& points)
 {
   // Check that encoding
   if (_encoding == Encoding::ASCII and MPI::size(_mpi_comm.comm()) != 1)
@@ -1244,10 +1243,10 @@ void XDMFFile::write(
     _xml_doc->save_file(_filename.c_str(), "  ");
 }
 //-----------------------------------------------------------------------------
-void XDMFFile::write(const Eigen::Ref<const Eigen::Array<double, Eigen::Dynamic,
-                                                         3, Eigen::RowMajor>>
-                         points,
-                     const std::vector<double>& values)
+void XDMFFile::write(
+    const Eigen::Ref<
+        const Eigen::Array<double, Eigen::Dynamic, 3, Eigen::RowMajor>>& points,
+    const std::vector<double>& values)
 {
   // Write clouds of points to XDMF/HDF5 with values
   assert((std::size_t)points.rows() == values.size());

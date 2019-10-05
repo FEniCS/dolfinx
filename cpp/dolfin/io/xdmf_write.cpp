@@ -482,8 +482,7 @@ xdmf_write::compute_nonlocal_entities(const mesh::Mesh& mesh, int cell_dim)
 void xdmf_write::add_points(
     MPI_Comm comm, pugi::xml_node& xdmf_node, hid_t h5_id,
     const Eigen::Ref<
-        const Eigen::Array<double, Eigen::Dynamic, 3, Eigen::RowMajor>>
-        points)
+        const Eigen::Array<double, Eigen::Dynamic, 3, Eigen::RowMajor>>& points)
 {
   xdmf_node.append_attribute("Version") = "3.0";
   xdmf_node.append_attribute("xmlns:xi") = "http://www.w3.org/2001/XInclude";

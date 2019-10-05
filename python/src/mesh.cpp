@@ -156,8 +156,8 @@ void mesh(py::module& m)
       m, "Mesh", py::dynamic_attr(), "Mesh object")
       .def(py::init(
           [](const MPICommWrapper comm, dolfin::mesh::CellType type,
-             const Eigen::Ref<const dolfin::EigenRowArrayXXd> geometry,
-             const Eigen::Ref<const dolfin::EigenRowArrayXXi64> topology,
+             const Eigen::Ref<const dolfin::EigenRowArrayXXd>& geometry,
+             const Eigen::Ref<const dolfin::EigenRowArrayXXi64>& topology,
              const std::vector<std::int64_t>& global_cell_indices,
              const dolfin::mesh::GhostMode ghost_mode) {
             return std::make_unique<dolfin::mesh::Mesh>(
@@ -363,7 +363,7 @@ void mesh(py::module& m)
   m.def("partition_cells",
         [](const MPICommWrapper comm, int nparts,
            dolfin::mesh::CellType cell_type,
-           const Eigen::Ref<const dolfin::EigenRowArrayXXi64> cells,
+           const Eigen::Ref<const dolfin::EigenRowArrayXXi64>& cells,
            dolfin::mesh::Partitioner partitioner) {
           return dolfin::mesh::Partitioning::partition_cells(
               comm.get(), nparts, cell_type, cells, partitioner);
@@ -371,8 +371,8 @@ void mesh(py::module& m)
 
   m.def("build_from_partition",
         [](const MPICommWrapper comm, dolfin::mesh::CellType cell_type,
-           const Eigen::Ref<const dolfin::EigenRowArrayXXd> points,
-           const Eigen::Ref<const dolfin::EigenRowArrayXXi64> cells,
+           const Eigen::Ref<const dolfin::EigenRowArrayXXd>& points,
+           const Eigen::Ref<const dolfin::EigenRowArrayXXi64>& cells,
            const std::vector<std::int64_t>& global_cell_indices,
            const dolfin::mesh::GhostMode ghost_mode,
            const dolfin::mesh::PartitionData& cell_partition) {
@@ -384,7 +384,7 @@ void mesh(py::module& m)
   m.def("ghost_cell_mapping",
         [](const MPICommWrapper comm, py::array_t<int> parttition,
            dolfin::mesh::CellType cell_type,
-           const Eigen::Ref<const dolfin::EigenRowArrayXXi64> cells) {
+           const Eigen::Ref<const dolfin::EigenRowArrayXXi64>& cells) {
           std::vector<int> part(parttition.data(),
                                 parttition.data() + parttition.size());
           return dolfin::mesh::Partitioning::compute_halo_cells(

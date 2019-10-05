@@ -30,7 +30,7 @@ namespace
 //-----------------------------------------------------------------------------
 void set_diagonal_local(
     Mat A,
-    const Eigen::Ref<const Eigen::Array<PetscInt, Eigen::Dynamic, 1>> rows,
+    const Eigen::Ref<const Eigen::Array<PetscInt, Eigen::Dynamic, 1>>& rows,
     PetscScalar diag)
 {
   assert(A);

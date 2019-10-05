@@ -157,7 +157,7 @@ std::map<std::int32_t, std::set<std::int32_t>> build_shared_points(
 std::tuple<EigenRowArrayXXi64, std::vector<std::int64_t>, std::vector<int>,
            std::map<std::int32_t, std::set<std::int32_t>>, std::int32_t>
 distribute_cells(const MPI_Comm mpi_comm,
-                 const Eigen::Ref<const EigenRowArrayXXi64> cell_vertices,
+                 const Eigen::Ref<const EigenRowArrayXXi64>& cell_vertices,
                  const std::vector<std::int64_t>& global_cell_indices,
                  const PartitionData& cell_partition)
 {
@@ -510,7 +510,7 @@ void distribute_cell_layer(
 // processes' to which ghost cells must be sent
 PartitionData Partitioning::partition_cells(
     const MPI_Comm& mpi_comm, int nparts, const mesh::CellType cell_type,
-    const Eigen::Ref<const EigenRowArrayXXi64> cell_vertices,
+    const Eigen::Ref<const EigenRowArrayXXi64>& cell_vertices,
     const mesh::Partitioner graph_partitioner)
 {
   LOG(INFO) << "Compute partition of cells across processes";
@@ -568,8 +568,8 @@ PartitionData Partitioning::partition_cells(
 // partition
 mesh::Mesh Partitioning::build_from_partition(
     const MPI_Comm& comm, mesh::CellType cell_type,
-    const Eigen::Ref<const EigenRowArrayXXd> points,
-    const Eigen::Ref<const EigenRowArrayXXi64> cell_vertices,
+    const Eigen::Ref<const EigenRowArrayXXd>& points,
+    const Eigen::Ref<const EigenRowArrayXXi64>& cell_vertices,
     const std::vector<std::int64_t>& global_cell_indices,
     const mesh::GhostMode ghost_mode, const PartitionData& cell_partition)
 {
@@ -662,8 +662,8 @@ mesh::Mesh Partitioning::build_from_partition(
 //-----------------------------------------------------------------------------
 mesh::Mesh Partitioning::build_distributed_mesh(
     const MPI_Comm& comm, mesh::CellType cell_type,
-    const Eigen::Ref<const EigenRowArrayXXd> points,
-    const Eigen::Ref<const EigenRowArrayXXi64> cells,
+    const Eigen::Ref<const EigenRowArrayXXd>& points,
+    const Eigen::Ref<const EigenRowArrayXXi64>& cells,
     const std::vector<std::int64_t>& global_cell_indices,
     const mesh::GhostMode ghost_mode, const mesh::Partitioner graph_partitioner)
 {
@@ -693,7 +693,7 @@ mesh::Mesh Partitioning::build_distributed_mesh(
 //-----------------------------------------------------------------------------
 std::pair<EigenRowArrayXXd, std::map<std::int32_t, std::set<std::int32_t>>>
 Partitioning::distribute_points(
-    const MPI_Comm mpi_comm, const Eigen::Ref<const EigenRowArrayXXd> points,
+    const MPI_Comm mpi_comm, const Eigen::Ref<const EigenRowArrayXXd>& points,
     const std::vector<std::int64_t>& global_point_indices)
 {
   // This function distributes all points (coordinates and
@@ -907,7 +907,7 @@ Partitioning::build_global_vertex_indices(
 //-----------------------------------------------------------------------------
 std::map<std::int64_t, std::vector<int>> Partitioning::compute_halo_cells(
     MPI_Comm mpi_comm, std::vector<int> part, const mesh::CellType cell_type,
-    const Eigen::Ref<const EigenRowArrayXXi64> cell_vertices)
+    const Eigen::Ref<const EigenRowArrayXXi64>& cell_vertices)
 {
   // Compute dual graph (for this partition)
   std::vector<std::vector<std::size_t>> local_graph;

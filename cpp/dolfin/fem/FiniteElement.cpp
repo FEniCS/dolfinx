@@ -105,7 +105,7 @@ std::string FiniteElement::family() const { return _family; }
 //-----------------------------------------------------------------------------
 void FiniteElement::evaluate_reference_basis(
     Eigen::Tensor<double, 3, Eigen::RowMajor>& reference_values,
-    const Eigen::Ref<const EigenRowArrayXXd> X) const
+    const Eigen::Ref<const EigenRowArrayXXd>& X) const
 {
   assert(_evaluate_reference_basis);
   const int num_points = X.rows();
@@ -121,9 +121,9 @@ void FiniteElement::evaluate_reference_basis(
 void FiniteElement::transform_reference_basis(
     Eigen::Tensor<double, 3, Eigen::RowMajor>& values,
     const Eigen::Tensor<double, 3, Eigen::RowMajor>& reference_values,
-    const Eigen::Ref<const EigenRowArrayXXd> X,
+    const Eigen::Ref<const EigenRowArrayXXd>& X,
     const Eigen::Tensor<double, 3, Eigen::RowMajor>& J,
-    const Eigen::Ref<const EigenArrayXd> detJ,
+    const Eigen::Ref<const EigenArrayXd>& detJ,
     const Eigen::Tensor<double, 3, Eigen::RowMajor>& K) const
 {
   assert(_transform_reference_basis_derivatives);
@@ -141,9 +141,9 @@ void FiniteElement::transform_reference_basis(
 void FiniteElement::transform_reference_basis_derivatives(
     Eigen::Tensor<double, 4, Eigen::RowMajor>& values, std::size_t order,
     const Eigen::Tensor<double, 4, Eigen::RowMajor>& reference_values,
-    const Eigen::Ref<const EigenRowArrayXXd> X,
+    const Eigen::Ref<const EigenRowArrayXXd>& X,
     const Eigen::Tensor<double, 3, Eigen::RowMajor>& J,
-    const Eigen::Ref<const EigenArrayXd> detJ,
+    const Eigen::Ref<const EigenArrayXd>& detJ,
     const Eigen::Tensor<double, 3, Eigen::RowMajor>& K) const
 {
   assert(_transform_reference_basis_derivatives);

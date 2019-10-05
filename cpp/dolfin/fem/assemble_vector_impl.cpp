@@ -42,10 +42,10 @@ void _restrict(const fem::DofMap& dofmap, const Vec x, int cell_index,
 // Implementation of bc application
 void _lift_bc_cells(
     Eigen::Ref<Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1>> b, const Form& a,
-    const Eigen::Ref<const Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1>>
+    const Eigen::Ref<const Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1>>&
         bc_values1,
     const std::vector<bool>& bc_markers1,
-    const Eigen::Ref<const Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1>> x0,
+    const Eigen::Ref<const Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1>>& x0,
     double scale)
 {
   assert(a.rank() == 2);
@@ -182,10 +182,10 @@ void _lift_bc_cells(
 //----------------------------------------------------------------------------
 void _lift_bc_exterior_facets(
     Eigen::Ref<Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1>> b, const Form& a,
-    const Eigen::Ref<const Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1>>
+    const Eigen::Ref<const Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1>>&
         bc_values1,
     const std::vector<bool>& bc_markers1,
-    const Eigen::Ref<const Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1>> x0,
+    const Eigen::Ref<const Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1>>& x0,
     double scale)
 {
   assert(a.rank() == 2);
@@ -412,7 +412,7 @@ void fem::impl::assemble_vector(
 void fem::impl::assemble_cells(
     Eigen::Ref<Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1>> b,
     const mesh::Mesh& mesh, const std::vector<std::int32_t>& active_cells,
-    const Eigen::Ref<const Eigen::Array<PetscInt, Eigen::Dynamic, 1>> dofmap,
+    const Eigen::Ref<const Eigen::Array<PetscInt, Eigen::Dynamic, 1>>& dofmap,
     int num_dofs_per_cell,
     const std::function<void(PetscScalar*, const PetscScalar*,
                              const PetscScalar*, const double*, const int*,
@@ -702,7 +702,7 @@ void fem::impl::apply_lifting(
 //-----------------------------------------------------------------------------
 void fem::impl::lift_bc(
     Eigen::Ref<Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1>> b, const Form& a,
-    const Eigen::Ref<const Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1>>
+    const Eigen::Ref<const Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1>>&
         bc_values1,
     const std::vector<bool>& bc_markers1, double scale)
 {
@@ -717,10 +717,10 @@ void fem::impl::lift_bc(
 //-----------------------------------------------------------------------------
 void fem::impl::lift_bc(
     Eigen::Ref<Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1>> b, const Form& a,
-    const Eigen::Ref<const Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1>>
+    const Eigen::Ref<const Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1>>&
         bc_values1,
     const std::vector<bool>& bc_markers1,
-    const Eigen::Ref<const Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1>> x0,
+    const Eigen::Ref<const Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1>>& x0,
     double scale)
 {
   if (b.size() != x0.size())

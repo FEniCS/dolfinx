@@ -165,8 +165,8 @@ SparsityPattern::SparsityPattern(
 }
 //-----------------------------------------------------------------------------
 void SparsityPattern::insert_global(
-    const Eigen::Ref<const Eigen::Array<PetscInt, Eigen::Dynamic, 1>> rows,
-    const Eigen::Ref<const Eigen::Array<PetscInt, Eigen::Dynamic, 1>> cols)
+    const Eigen::Ref<const Eigen::Array<PetscInt, Eigen::Dynamic, 1>>& rows,
+    const Eigen::Ref<const Eigen::Array<PetscInt, Eigen::Dynamic, 1>>& cols)
 {
   // The primary_dim is global and must be mapped to local
   const auto row_map = [](const PetscInt i_index,
@@ -186,8 +186,8 @@ void SparsityPattern::insert_global(
 }
 //-----------------------------------------------------------------------------
 void SparsityPattern::insert_local(
-    const Eigen::Ref<const Eigen::Array<PetscInt, Eigen::Dynamic, 1>> rows,
-    const Eigen::Ref<const Eigen::Array<PetscInt, Eigen::Dynamic, 1>> cols)
+    const Eigen::Ref<const Eigen::Array<PetscInt, Eigen::Dynamic, 1>>& rows,
+    const Eigen::Ref<const Eigen::Array<PetscInt, Eigen::Dynamic, 1>>& cols)
 {
   // The primary_dim is local and stays the same
   const auto row_map
@@ -208,8 +208,8 @@ void SparsityPattern::insert_local(
 }
 //-----------------------------------------------------------------------------
 void SparsityPattern::insert_entries(
-    const Eigen::Ref<const Eigen::Array<PetscInt, Eigen::Dynamic, 1>> rows,
-    const Eigen::Ref<const Eigen::Array<PetscInt, Eigen::Dynamic, 1>> cols,
+    const Eigen::Ref<const Eigen::Array<PetscInt, Eigen::Dynamic, 1>>& rows,
+    const Eigen::Ref<const Eigen::Array<PetscInt, Eigen::Dynamic, 1>>& cols,
     const std::function<PetscInt(const PetscInt, const common::IndexMap&)>&
         row_map,
     const std::function<PetscInt(const PetscInt, const common::IndexMap&)>&

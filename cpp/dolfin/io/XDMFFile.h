@@ -201,19 +201,17 @@ public:
   /// storing the data inline as XML.
   ///
   /// @param[in] points A list of points to save.
-  void write(const
-      Eigen::Ref<const Eigen::Array<double, Eigen::Dynamic, 3, Eigen::RowMajor>>
-          points);
+  void write(const Eigen::Ref<const Eigen::Array<double, Eigen::Dynamic, 3,
+                                                 Eigen::RowMajor>>& points);
 
   /// Save a cloud of points, with scalar values using an associated
   /// HDF5 file, or storing the data inline as XML.
   ///
   /// @param[in] points A list of points to save.
   /// @param[in] values A list of values at each point
-  void write(const
-      Eigen::Ref<const Eigen::Array<double, Eigen::Dynamic, 3, Eigen::RowMajor>>
-          points,
-      const std::vector<double>& values);
+  void write(const Eigen::Ref<const Eigen::Array<double, Eigen::Dynamic, 3,
+                                                 Eigen::RowMajor>>& points,
+             const std::vector<double>& values);
 
   /// Read in the first mesh::Mesh in XDMF file
   ///
@@ -291,7 +289,7 @@ public:
   /// @param[in] mesh The associated Mesh
   /// @param[in] name Name of data attribute in XDMF file
   /// @return A MeshValueCollection
- mesh::MeshValueCollection<std::size_t>
+  mesh::MeshValueCollection<std::size_t>
   read_mvc_size_t(std::shared_ptr<const mesh::Mesh> mesh,
                   std::string name = "") const;
 
