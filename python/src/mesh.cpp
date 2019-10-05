@@ -215,7 +215,8 @@ void mesh(py::module& m)
                                                           "Connectivity object")
       .def("connections",
            [](const dolfin::mesh::Connectivity& self, std::size_t i) {
-             return Eigen::Map<const dolfin::EigenArrayXi32>(
+             return Eigen::Map<
+                 const Eigen::Array<std::int32_t, Eigen::Dynamic, 1>>(
                  self.connections(i), self.size(i));
            },
            "Connections for a single mesh entity",

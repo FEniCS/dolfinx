@@ -29,22 +29,8 @@ using EigenRowArrayXd = Eigen::Array<double, 1, Eigen::Dynamic>;
 using EigenRowArrayXXd
     = Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>;
 
-// int32 Arrays
-using EigenArrayXi32 = Eigen::Array<std::int32_t, Eigen::Dynamic, 1>;
-using EigenRowArrayXi32 = Eigen::Array<std::int32_t, 1, Eigen::Dynamic>;
-using EigenRowArrayXXi32 = Eigen::Array<std::int32_t, Eigen::Dynamic,
-                                        Eigen::Dynamic, Eigen::RowMajor>;
-
 // int64 Arrays
-using EigenArrayXi64 = Eigen::Array<std::int64_t, Eigen::Dynamic, 1>;
-using EigenRowArrayXi64 = Eigen::Array<std::int64_t, 1, Eigen::Dynamic>;
 using EigenRowArrayXXi64 = Eigen::Array<std::int64_t, Eigen::Dynamic,
                                         Eigen::Dynamic, Eigen::RowMajor>;
 
-// double Matrices
-using EigenRowMatrixXd
-    = Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>;
-
-// double Vectors
-using EigenVectorXd = Eigen::Matrix<double, Eigen::Dynamic, 1>;
 } // namespace dolfin

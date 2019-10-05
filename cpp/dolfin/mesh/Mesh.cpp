@@ -64,9 +64,11 @@ Eigen::ArrayXd cell_r(const mesh::Mesh& mesh)
 // @param cell_permutation
 //   Permutation from VTK to DOLFIN index ordering
 // @return
-//   Local-to-global map for nodes (std::vector<std::int64_t>) and cell
-//   nodes in local indexing (EigenRowArrayXXi32)
-std::tuple<std::int32_t, std::vector<std::int64_t>, EigenRowArrayXXi32>
+//   Local-to-global map for nodes and cell
+//   nodes in local indexing
+std::tuple<
+    std::int32_t, std::vector<std::int64_t>,
+    Eigen::Array<std::int32_t, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>>
 compute_cell_node_map(std::int32_t num_vertices_per_cell,
                       const Eigen::Ref<const EigenRowArrayXXi64>& cell_nodes,
                       const std::vector<std::uint8_t>& cell_permutation)
@@ -75,7 +77,8 @@ compute_cell_node_map(std::int32_t num_vertices_per_cell,
   const std::int32_t num_nodes_per_cell = cell_nodes.cols();
 
   // Cell points in local indexing
-  EigenRowArrayXXi32 cell_nodes_local(num_cells, num_nodes_per_cell);
+  Eigen::Array<std::int32_t, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
+      cell_nodes_local(num_cells, num_nodes_per_cell);
 
   // Loop over cells to build local-to-global map for (i) vertex nodes,
   // and (ii) then other nodes
