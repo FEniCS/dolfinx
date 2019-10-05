@@ -270,7 +270,10 @@ point_distributor(MPI_Comm mpi_comm, int num_vertices_per_cell,
   // Convert sharing data to local indexing
   std::map<std::int32_t, std::set<int>> point_sharing;
   for (auto& q : point_to_procs)
+  {
+    q.second.erase(mpi_rank);
     point_sharing.insert({global_to_local[q.first], q.second});
+  }
 
   return std::make_tuple(std::move(local_to_global), std::move(point_sharing),
                          std::move(cells_local), std::move(local_points),
