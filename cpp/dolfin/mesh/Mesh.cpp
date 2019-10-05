@@ -133,6 +133,13 @@ compute_local_to_global_point_map(
   return std::make_pair(std::move(local_to_global), num_vertices_local);
 }
 //-----------------------------------------------------------------------------
+// Get the local points.
+// Returns: local_to_global map for points,
+// shared_points - local_index -> [remote sharing processes]
+// cells_local - cells in local indexing
+// points_local - array of local points
+// num_vertices_local - array[4] with size of (0)local, (1)local+shared,
+// (2)local+shared+ghost, (3)local+shared+ghost+non_vertex points
 std::tuple<
     std::vector<std::int64_t>, std::map<std::int32_t, std::set<int>>,
     Eigen::Array<std::int32_t, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>,
