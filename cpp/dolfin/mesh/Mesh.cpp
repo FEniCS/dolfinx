@@ -83,12 +83,15 @@ distribute_points_sharing(MPI_Comm mpi_comm,
   {
     if (q.second.size() > 1)
     {
-      for (auto& r : q.second)
+      for (auto r : q.second)
       {
-        send_sharing[r].push_back(q.second.size());
+        send_sharing[r].push_back(q.second.size() - 1);
         send_sharing[r].push_back(q.first);
-        send_sharing[r].insert(send_sharing[r].end(), q.second.begin(),
-                               q.second.end());
+        for (auto proc : q.second)
+        {
+          if (proc != r)
+            send_sharing[r].push_back(proc);
+        }
       }
     }
   }
@@ -218,9 +221,9 @@ point_distributor(MPI_Comm mpi_comm, int num_vertices_per_cell,
           local_vertices.insert(q);
         else if (shared_it != point_to_procs.end())
         {
-          // If lowest ranked sharing process is this process, then it is
-          // owner
-          if (*(shared_it->second.begin()) == mpi_rank)
+          // If lowest ranked sharing process is greather than this process,
+          // then it is owner
+          if (*(shared_it->second.begin()) > mpi_rank)
             shared_vertices.insert(q);
           else
             ghost_vertices.insert(q);
@@ -270,10 +273,7 @@ point_distributor(MPI_Comm mpi_comm, int num_vertices_per_cell,
   // Convert sharing data to local indexing
   std::map<std::int32_t, std::set<int>> point_sharing;
   for (auto& q : point_to_procs)
-  {
-    q.second.erase(mpi_rank);
     point_sharing.insert({global_to_local[q.first], q.second});
-  }
 
   return std::make_tuple(std::move(local_to_global), std::move(point_sharing),
                          std::move(cells_local), std::move(local_points),
