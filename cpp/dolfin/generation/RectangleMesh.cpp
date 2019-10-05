@@ -24,8 +24,7 @@ mesh::Mesh build_tri(MPI_Comm comm, const std::array<Eigen::Vector3d, 2>& p,
   // Receive mesh if not rank 0
   if (dolfin::MPI::rank(comm) != 0)
   {
-    Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor> geom(
-        0, 2);
+    Eigen::Array<double, 0, 2, Eigen::RowMajor> geom(0, 2);
     Eigen::Array<std::int64_t, 0, 3, Eigen::RowMajor> topo(0, 3);
     return mesh::Partitioning::build_distributed_mesh(
         comm, mesh::CellType::triangle, geom, topo, {}, ghost_mode);
@@ -83,8 +82,7 @@ mesh::Mesh build_tri(MPI_Comm comm, const std::array<Eigen::Vector3d, 2>& p,
     nc = 2 * nx * ny;
   }
 
-  Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor> geom(nv,
-                                                                             2);
+  Eigen::Array<double, Eigen::Dynamic, 2, Eigen::RowMajor> geom(nv, 2);
   Eigen::Array<std::int64_t, Eigen::Dynamic, 3, Eigen::RowMajor> topo(nc, 3);
 
   // Create main vertices
@@ -204,8 +202,7 @@ mesh::Mesh build_quad(MPI_Comm comm, const std::array<Eigen::Vector3d, 2>& p,
   // Receive mesh if not rank 0
   if (dolfin::MPI::rank(comm) != 0)
   {
-    Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor> geom(
-        0, 2);
+    Eigen::Array<double, 0, 2, Eigen::RowMajor> geom(0, 2);
     Eigen::Array<std::int64_t, Eigen::Dynamic, 4, Eigen::RowMajor> topo(0, 4);
     return mesh::Partitioning::build_distributed_mesh(
         comm, mesh::CellType::quadrilateral, geom, topo, {}, ghost_mode);
@@ -214,7 +211,7 @@ mesh::Mesh build_quad(MPI_Comm comm, const std::array<Eigen::Vector3d, 2>& p,
   const std::size_t nx = n[0];
   const std::size_t ny = n[1];
 
-  Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor> geom(
+  Eigen::Array<double, Eigen::Dynamic, 2, Eigen::RowMajor> geom(
       (nx + 1) * (ny + 1), 2);
   Eigen::Array<std::int64_t, Eigen::Dynamic, 4, Eigen::RowMajor> topo(nx * ny,
                                                                       4);

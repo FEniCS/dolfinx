@@ -73,7 +73,7 @@ mesh::Mesh build_tet(MPI_Comm comm, const std::array<Eigen::Vector3d, 2>& p,
         "BoxMesh has non-positive number of vertices in some dimension");
   }
 
-  Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor> geom(
+  Eigen::Array<double, Eigen::Dynamic, 3, Eigen::RowMajor> geom(
       (nx + 1) * (ny + 1) * (nz + 1), 3);
   Eigen::Array<std::int64_t, Eigen::Dynamic, 4, Eigen::RowMajor> topo(
       6 * nx * ny * nz, 4);
@@ -138,9 +138,8 @@ mesh::Mesh build_hex(MPI_Comm comm, std::array<std::size_t, 3> n,
   // Receive mesh if not rank 0
   if (dolfin::MPI::rank(comm) != 0)
   {
-    Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor> geom(
-        0, 3);
-    Eigen::Array<std::int64_t, 0, 4, Eigen::RowMajor> topo(0, 8);
+    Eigen::Array<double, 0, 3, Eigen::RowMajor> geom(0, 3);
+    Eigen::Array<std::int64_t, 0, 8, Eigen::RowMajor> topo(0, 8);
 
     return mesh::Partitioning::build_distributed_mesh(
         comm, mesh::CellType::hexahedron, geom, topo, {}, ghost_mode);
@@ -150,7 +149,7 @@ mesh::Mesh build_hex(MPI_Comm comm, std::array<std::size_t, 3> n,
   const std::size_t ny = n[1];
   const std::size_t nz = n[2];
 
-  Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor> geom(
+  Eigen::Array<double, Eigen::Dynamic, 3, Eigen::RowMajor> geom(
       (nx + 1) * (ny + 1) * (nz + 1), 3);
   Eigen::Array<std::int64_t, Eigen::Dynamic, 8, Eigen::RowMajor> topo(
       nx * ny * nz, 8);
