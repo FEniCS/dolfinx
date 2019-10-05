@@ -122,14 +122,12 @@ public:
   /// @param[in] global_point_indices Global indices for vertices
   ///                                 required on this process
   /// @return vertex_coordinates (array of coordinates on this process
-  ///         after distribution) and shared_vertices_local (map from
-  ///         local index to set of sharing processes for each shared
-  ///         vertex)
-  static std::pair<EigenRowArrayXXd,
-                   std::map<std::int32_t, std::set<std::int32_t>>>
-  distribute_points(const MPI_Comm comm,
-                    const Eigen::Ref<const EigenRowArrayXXd> points,
-                    const std::vector<std::int64_t>& global_point_indices);
+  ///         after distribution) and shared_points (map from
+  ///         global index to set of sharing processes for each shared
+  ///         point)
+  static std::pair<std::map<std::int64_t, std::set<int>>, dolfin::EigenRowArrayXXd>
+    distribute_points(MPI_Comm mpi_comm, Eigen::Ref<const EigenRowArrayXXd> points,
+                      const std::vector<std::int64_t>& global_point_indices);
 
   /// Utility to create global vertex indices, needed for higher order
   /// meshes, where there are geometric points which are not at the

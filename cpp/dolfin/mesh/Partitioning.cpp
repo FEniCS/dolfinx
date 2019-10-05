@@ -35,6 +35,54 @@ using namespace dolfin::mesh;
 namespace
 {
 //-----------------------------------------------------------------------------
+std::map<std::int64_t, std::set<int>>
+distribute_points_sharing(MPI_Comm mpi_comm,
+                          const std::vector<std::int64_t>& global_index,
+                          const std::vector<int>& offsets)
+{
+  common::Timer timer("Distribute shared point information");
+  const int mpi_size = dolfin::MPI::size(mpi_comm);
+
+  // Map for sharing information
+  std::map<std::int64_t, std::set<int>> point_to_procs;
+  for (int i = 0; i < mpi_size; ++i)
+  {
+    for (int j = offsets[i]; j < offsets[i + 1]; ++j)
+      point_to_procs[global_index[j]].insert(i);
+  }
+
+  std::vector<std::vector<std::int64_t>> send_sharing(mpi_size);
+  std::vector<std::int64_t> recv_sharing(mpi_size);
+  for (const auto& q : point_to_procs)
+  {
+    if (q.second.size() > 1)
+    {
+      for (auto r : q.second)
+      {
+        send_sharing[r].push_back(q.second.size() - 1);
+        send_sharing[r].push_back(q.first);
+        for (auto proc : q.second)
+        {
+          if (proc != r)
+            send_sharing[r].push_back(proc);
+        }
+      }
+    }
+  }
+  dolfin::MPI::all_to_all(mpi_comm, send_sharing, recv_sharing);
+
+  // Reuse points to procs for received data
+  point_to_procs.clear();
+  for (auto q = recv_sharing.begin(); q < recv_sharing.end(); q += (*q + 2))
+  {
+    const std::int64_t global_index = *(q + 1);
+    std::set<int> procs(q + 2, q + 2 + *q);
+    point_to_procs.insert({global_index, procs});
+  }
+
+  return point_to_procs;
+}
+//-----------------------------------------------------------------------------
 // This function takes the partition computed by the partitioner
 // (which tells us to which process each of the local cells stored on
 // this process belongs) and sends the cells
@@ -394,6 +442,86 @@ void distribute_cell_layer(
 }
 
 } // namespace
+//-----------------------------------------------------------------------------
+// Distribute points
+std::pair<std::map<std::int64_t, std::set<int>>, dolfin::EigenRowArrayXXd>
+Partitioning::distribute_points(
+    MPI_Comm mpi_comm, Eigen::Ref<const EigenRowArrayXXd> points,
+    const std::vector<std::int64_t>& global_point_indices)
+{
+  common::Timer timer("Distribute points");
+
+  EigenRowArrayXXd recv_points(global_point_indices.size(), points.cols());
+
+  int mpi_size = MPI::size(mpi_comm);
+  int mpi_rank = MPI::rank(mpi_comm);
+
+  // Compute where (process number) the points we need are located
+  std::vector<std::int64_t> ranges(mpi_size);
+  MPI::all_gather(mpi_comm, (std::int64_t)points.rows(), ranges);
+  for (std::size_t i = 1; i < ranges.size(); ++i)
+    ranges[i] += ranges[i - 1];
+  ranges.insert(ranges.begin(), 0);
+
+  std::vector<int> send_offsets(mpi_size);
+  std::vector<std::int64_t>::const_iterator it = global_point_indices.begin();
+  for (int i = 0; i < mpi_size; ++i)
+  {
+    // Find first index on each process
+    it = std::lower_bound(it, global_point_indices.end(), ranges[i]);
+    send_offsets[i] = it - global_point_indices.begin();
+  }
+  send_offsets.push_back(global_point_indices.size());
+
+  std::vector<int> send_sizes(mpi_size);
+  for (int i = 0; i < mpi_size; ++i)
+    send_sizes[i] = send_offsets[i + 1] - send_offsets[i];
+
+  // Get data size to transfer in Alltoallv
+  std::vector<int> recv_sizes(mpi_size);
+  MPI_Alltoall(send_sizes.data(), 1, MPI_INT, recv_sizes.data(), 1, MPI_INT,
+               mpi_comm);
+
+  std::vector<int> recv_offsets = {0};
+  for (int i = 0; i < mpi_size; ++i)
+    recv_offsets.push_back(recv_offsets.back() + recv_sizes[i]);
+  std::vector<std::int64_t> recv_global_index(recv_offsets.back());
+
+  // Transfer global indices to the processes holding the points
+  MPI_Alltoallv(global_point_indices.data(), send_sizes.data(),
+                send_offsets.data(), MPI::mpi_type<std::int64_t>(),
+                recv_global_index.data(), recv_sizes.data(),
+                recv_offsets.data(), MPI::mpi_type<std::int64_t>(), mpi_comm);
+
+  // Create compound datatype of gdim*doubles (point coords)
+  MPI_Datatype compound_f64;
+  MPI_Type_contiguous(points.cols(), MPI_DOUBLE, &compound_f64);
+  MPI_Type_commit(&compound_f64);
+
+  // Fill in points to send back
+  EigenRowArrayXXd send_points(recv_global_index.size(), points.cols());
+  for (std::size_t i = 0; i < recv_global_index.size(); ++i)
+  {
+    assert(recv_global_index[i] >= ranges[mpi_rank]);
+    assert(recv_global_index[i] < ranges[mpi_rank + 1]);
+
+    int local_index = recv_global_index[i] - ranges[mpi_rank];
+    send_points.row(i) = points.row(local_index);
+  }
+
+  // Send points back, matching indices in global_index_set
+  MPI_Alltoallv(send_points.data(), recv_sizes.data(), recv_offsets.data(),
+                compound_f64, recv_points.data(), send_sizes.data(),
+                send_offsets.data(), compound_f64, mpi_comm);
+
+  timer.stop();
+
+  // Use global indices to calculate sharing data
+  std::map<std::int64_t, std::set<int>> point_to_procs
+      = distribute_points_sharing(mpi_comm, recv_global_index, recv_offsets);
+
+  return std::make_pair(std::move(point_to_procs), std::move(recv_points));
+}
 //-----------------------------------------------------------------------------
 // Compute cell partitioning from local mesh data. Returns a vector
 // 'cell -> process' vector for cells, and a map 'local cell index ->
