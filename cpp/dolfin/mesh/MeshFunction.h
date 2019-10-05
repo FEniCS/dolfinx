@@ -83,17 +83,16 @@ public:
 
   /// Return array of values (const. version)
   /// @return The mesh function values
-  Eigen::Ref<const Eigen::Array<T, Eigen::Dynamic, 1>> values() const;
+  const Eigen::Array<T, Eigen::Dynamic, 1>& values() const;
 
   /// Return array of values
   /// @return The mesh function values
-  Eigen::Ref<Eigen::Array<T, Eigen::Dynamic, 1>> values();
+  Eigen::Array<T, Eigen::Dynamic, 1>& values();
 
   /// Marking function used to identify mesh entities
   using marking_function = std::function<Eigen::Array<bool, Eigen::Dynamic, 1>(
       const Eigen::Ref<
-          const Eigen::Array<double, Eigen::Dynamic, 3, Eigen::RowMajor>>
-          x)>;
+          const Eigen::Array<double, Eigen::Dynamic, 3, Eigen::RowMajor>>& x)>;
 
   /// Set values. If all vertices of a mesh entity satisfy the marking
   /// function then the entity is marked with the given value.
@@ -204,14 +203,13 @@ int MeshFunction<T>::dim() const
 }
 //---------------------------------------------------------------------------
 template <typename T>
-Eigen::Ref<const Eigen::Array<T, Eigen::Dynamic, 1>>
-MeshFunction<T>::values() const
+const Eigen::Array<T, Eigen::Dynamic, 1>& MeshFunction<T>::values() const
 {
   return _values;
 }
 //---------------------------------------------------------------------------
 template <typename T>
-Eigen::Ref<Eigen::Array<T, Eigen::Dynamic, 1>> MeshFunction<T>::values()
+Eigen::Array<T, Eigen::Dynamic, 1>& MeshFunction<T>::values()
 {
   return _values;
 }
@@ -219,9 +217,8 @@ Eigen::Ref<Eigen::Array<T, Eigen::Dynamic, 1>> MeshFunction<T>::values()
 template <typename T>
 void MeshFunction<T>::mark(
     const std::function<Eigen::Array<bool, Eigen::Dynamic, 1>(
-        const Eigen::Ref<
-            const Eigen::Array<double, Eigen::Dynamic, 3, Eigen::RowMajor>>
-            x)>& mark,
+        const Eigen::Ref<const Eigen::Array<double, Eigen::Dynamic, 3,
+                                            Eigen::RowMajor>>& x)>& mark,
     T value)
 {
   // Get all vertices of the mesh
@@ -229,7 +226,7 @@ void MeshFunction<T>::mark(
       = _mesh->geometry().points();
 
   // Evaluate the marker function at each vertex
-  EigenArrayXb marked = mark(x);
+  Eigen::Array<bool, Eigen::Dynamic, 1> marked = mark(x);
 
   // Iterate over all mesh entities of the dimension of this
   // MeshFunction

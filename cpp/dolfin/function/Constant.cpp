@@ -24,8 +24,7 @@ Constant::Constant(std::vector<PetscScalar> c) : shape(1, c.size()), value({c})
 //-----------------------------------------------------------------------------
 Constant::Constant(
     const Eigen::Ref<Eigen::Array<PetscScalar, Eigen::Dynamic, Eigen::Dynamic,
-                                  Eigen::RowMajor>>
-        c)
+                                  Eigen::RowMajor>>& c)
     : shape({(int)c.rows(), (int)c.cols()}), value(c.rows() * c.cols())
 {
   // Copy data from Eigen::Array to flattened vector

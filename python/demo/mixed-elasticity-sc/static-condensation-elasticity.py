@@ -152,9 +152,10 @@ A.assemble()
 bb_tree = dolfin.cpp.geometry.BoundingBoxTree(mesh, 2)
 
 # Check against standard table value
-cell = dolfin.cpp.geometry.compute_first_collision(bb_tree, [48.0, 52.0, 0.0])
+p = [48.0, 52.0, 0.0]
+cell = dolfin.cpp.geometry.compute_first_collision(bb_tree, p)
 if cell >= 0:
-    value = uc.eval([48.0, 52.0], numpy.asarray(cell))
+    value = uc.eval(p, numpy.asarray(cell))
     assert numpy.isclose(value[1], 23.95, rtol=1.e-2)
 
 # Check the equality of displacement based and mixed condensed global
