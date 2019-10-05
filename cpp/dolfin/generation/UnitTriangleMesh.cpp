@@ -15,8 +15,7 @@ using namespace dolfin::generation;
 //-----------------------------------------------------------------------------
 mesh::Mesh UnitTriangleMesh::create()
 {
-  Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor> geom(3,
-                                                                             2);
+  Eigen::Array<double, 3, 2, Eigen::RowMajor> geom(3, 2);
   Eigen::Array<std::int64_t, 1, 3, Eigen::RowMajor> topo(1, 3);
 
   // Create vertices

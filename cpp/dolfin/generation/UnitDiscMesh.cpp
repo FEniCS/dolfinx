@@ -21,14 +21,13 @@ mesh::Mesh UnitDiscMesh::create(MPI_Comm comm, int n,
   // Receive mesh if not rank 0
   if (dolfin::MPI::rank(comm) != 0)
   {
-    Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor> geom(
-        0, 2);
+    Eigen::Array<double, 0, 2, Eigen::RowMajor> geom(0, 2);
     Eigen::Array<std::int64_t, 0, 6, Eigen::RowMajor> topo(0, 6);
     return mesh::Partitioning::build_distributed_mesh(
         comm, mesh::CellType::triangle, geom, topo, {}, ghost_mode);
   }
 
-  Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor> points(
+  Eigen::Array<double, Eigen::Dynamic, 2, Eigen::RowMajor> points(
       1 + 3 * (2 * n + 1) * 2 * n, 2);
   points.row(0) = 0.0;
 

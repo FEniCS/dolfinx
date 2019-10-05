@@ -15,8 +15,7 @@ using namespace dolfin::generation;
 //-----------------------------------------------------------------------------
 mesh::Mesh UnitTetrahedronMesh::create()
 {
-  Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor> geom(4,
-                                                                             3);
+  Eigen::Array<double, 4, 3, Eigen::RowMajor> geom(4, 3);
   Eigen::Array<std::int64_t, 1, 4, Eigen::RowMajor> topo(1, 4);
 
   // Create vertices
