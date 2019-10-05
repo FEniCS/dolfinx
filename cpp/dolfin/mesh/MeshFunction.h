@@ -226,7 +226,7 @@ void MeshFunction<T>::mark(
       = _mesh->geometry().points();
 
   // Evaluate the marker function at each vertex
-  EigenArrayXb marked = mark(x);
+  Eigen::Array<bool, Eigen::Dynamic, 1> marked = mark(x);
 
   // Iterate over all mesh entities of the dimension of this
   // MeshFunction

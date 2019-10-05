@@ -161,7 +161,8 @@ std::vector<std::int32_t> marked_facets(
   }
 
   // Run marker function on boundary vertices
-  const EigenArrayXb boundary_marked = marker(x_boundary);
+  const Eigen::Array<bool, Eigen::Dynamic, 1> boundary_marked
+      = marker(x_boundary);
   assert(boundary_marked.rows() == x_boundary.rows());
 
   // Iterate over facets

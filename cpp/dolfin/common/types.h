@@ -23,11 +23,6 @@ namespace dolfin
 
 // Typedefs for Eigen
 
-// bool Arrays
-using EigenArrayXb = Eigen::Array<bool, Eigen::Dynamic, 1>;
-using EigenRowArrayXXb
-    = Eigen::Array<bool, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>;
-
 // double Arrays
 using EigenArrayXd = Eigen::Array<double, Eigen::Dynamic, 1>;
 using EigenRowArrayXd = Eigen::Array<double, 1, Eigen::Dynamic>;
@@ -45,9 +40,6 @@ using EigenArrayXi64 = Eigen::Array<std::int64_t, Eigen::Dynamic, 1>;
 using EigenRowArrayXi64 = Eigen::Array<std::int64_t, 1, Eigen::Dynamic>;
 using EigenRowArrayXXi64 = Eigen::Array<std::int64_t, Eigen::Dynamic,
                                         Eigen::Dynamic, Eigen::RowMajor>;
-
-// PetscInt Arrays
-using EigenArrayXpetscint = Eigen::Array<PetscInt, Eigen::Dynamic, 1>;
 
 // double Matrices
 using EigenRowMatrixXd
