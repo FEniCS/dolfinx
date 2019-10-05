@@ -149,11 +149,6 @@ mesh::Mesh build_hex(MPI_Comm comm, std::array<std::size_t, 3> n,
   const std::size_t ny = n[1];
   const std::size_t nz = n[2];
 
-  Eigen::Array<double, Eigen::Dynamic, 3, Eigen::RowMajor> geom(
-      (nx + 1) * (ny + 1) * (nz + 1), 3);
-  Eigen::Array<std::int64_t, Eigen::Dynamic, 8, Eigen::RowMajor> topo(
-      nx * ny * nz, 8);
-
   const double a = 0.0;
   const double b = 1.0;
   const double c = 0.0;
@@ -161,7 +156,9 @@ mesh::Mesh build_hex(MPI_Comm comm, std::array<std::size_t, 3> n,
   const double e = 0.0;
   const double f = 1.0;
 
-  // Create main vertices:
+  // Create main vertices
+  Eigen::Array<double, Eigen::Dynamic, 3, Eigen::RowMajor> geom(
+      (nx + 1) * (ny + 1) * (nz + 1), 3);
   std::size_t vertex = 0;
   for (std::size_t iz = 0; iz <= nz; ++iz)
   {
@@ -183,6 +180,8 @@ mesh::Mesh build_hex(MPI_Comm comm, std::array<std::size_t, 3> n,
   }
 
   // Create cuboids
+  Eigen::Array<std::int64_t, Eigen::Dynamic, 8, Eigen::RowMajor> topo(
+      nx * ny * nz, 8);
   std::size_t cell = 0;
   for (std::size_t iz = 0; iz < nz; ++iz)
   {

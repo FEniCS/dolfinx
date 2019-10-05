@@ -15,12 +15,13 @@ using namespace dolfin::generation;
 //-----------------------------------------------------------------------------
 mesh::Mesh UnitTriangleMesh::create()
 {
-  Eigen::Array<double, 3, 2, Eigen::RowMajor> geom(3, 2);
-  Eigen::Array<std::int64_t, 1, 3, Eigen::RowMajor> topo(1, 3);
 
   // Create vertices
+  Eigen::Array<double, 3, 2, Eigen::RowMajor> geom(3, 2);
   geom << 0.0, 0.0, 1.0, 0.0, 0.0, 1.0;
 
+  // Create cell
+  Eigen::Array<std::int64_t, 1, 3, Eigen::RowMajor> topo(1, 3);
   topo << 0, 1, 2;
 
   return mesh::Mesh(MPI_COMM_SELF, mesh::CellType::triangle, geom, topo, {},

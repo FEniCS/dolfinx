@@ -15,13 +15,12 @@ using namespace dolfin::generation;
 //-----------------------------------------------------------------------------
 mesh::Mesh UnitTetrahedronMesh::create()
 {
-  Eigen::Array<double, 4, 3, Eigen::RowMajor> geom(4, 3);
-  Eigen::Array<std::int64_t, 1, 4, Eigen::RowMajor> topo(1, 4);
-
   // Create vertices
+  Eigen::Array<double, 4, 3, Eigen::RowMajor> geom(4, 3);
   geom << 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 1.0;
 
   // Create cell
+  Eigen::Array<std::int64_t, 1, 4, Eigen::RowMajor> topo(1, 4);
   topo << 0, 1, 2, 3;
 
   return mesh::Mesh(MPI_COMM_SELF, mesh::CellType::tetrahedron, geom, topo, {},

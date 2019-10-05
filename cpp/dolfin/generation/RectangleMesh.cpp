@@ -211,11 +211,6 @@ mesh::Mesh build_quad(MPI_Comm comm, const std::array<Eigen::Vector3d, 2>& p,
   const std::size_t nx = n[0];
   const std::size_t ny = n[1];
 
-  Eigen::Array<double, Eigen::Dynamic, 2, Eigen::RowMajor> geom(
-      (nx + 1) * (ny + 1), 2);
-  Eigen::Array<std::int64_t, Eigen::Dynamic, 4, Eigen::RowMajor> topo(nx * ny,
-                                                                      4);
-
   const double a = p[0][0];
   const double b = p[1][0];
   const double ab = (b - a) / static_cast<double>(nx);
@@ -225,6 +220,8 @@ mesh::Mesh build_quad(MPI_Comm comm, const std::array<Eigen::Vector3d, 2>& p,
   const double cd = (d - c) / static_cast<double>(ny);
 
   // Create vertices
+  Eigen::Array<double, Eigen::Dynamic, 2, Eigen::RowMajor> geom(
+      (nx + 1) * (ny + 1), 2);
   std::size_t vertex = 0;
   for (std::size_t iy = 0; iy <= ny; iy++)
   {
@@ -238,6 +235,8 @@ mesh::Mesh build_quad(MPI_Comm comm, const std::array<Eigen::Vector3d, 2>& p,
   }
 
   // Create rectangles
+  Eigen::Array<std::int64_t, Eigen::Dynamic, 4, Eigen::RowMajor> topo(nx * ny,
+                                                                      4);
   std::size_t cell = 0;
   for (std::size_t iy = 0; iy < ny; iy++)
     for (std::size_t ix = 0; ix < nx; ix++)

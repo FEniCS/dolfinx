@@ -30,7 +30,6 @@ mesh::Mesh UnitDiscMesh::create(MPI_Comm comm, int n,
   Eigen::Array<double, Eigen::Dynamic, 2, Eigen::RowMajor> points(
       1 + 3 * (2 * n + 1) * 2 * n, 2);
   points.row(0) = 0.0;
-
   std::uint32_t c = 1;
   for (int i = 1; i < (2 * n + 1); ++i)
   {
@@ -45,13 +44,11 @@ mesh::Mesh UnitDiscMesh::create(MPI_Comm comm, int n,
     }
   }
 
+  // Fill in central circle manually
   Eigen::Array<std::int64_t, Eigen::Dynamic, 6, Eigen::RowMajor> cells(
       6 * n * n, 6);
-
-  // Fill in central circle manually
   cells.block(0, 0, 6, 6) << 0, 7, 9, 1, 8, 2, 0, 9, 11, 2, 10, 3, 0, 11, 13, 3,
       12, 4, 0, 13, 15, 4, 14, 5, 0, 15, 17, 5, 16, 6, 0, 17, 7, 6, 18, 1;
-
   c = 6;
   for (int i = 0; i < (n - 1); ++i)
   {
@@ -60,7 +57,6 @@ mesh::Mesh UnitDiscMesh::create(MPI_Comm comm, int n,
     std::uint32_t i2 = 3 * (2 * i + 2) * (2 * i + 3) + 1;
     std::uint32_t i3 = 3 * (2 * i + 3) * (2 * i + 4) + 1;
     std::uint32_t i4 = 3 * (2 * i + 4) * (2 * i + 5) + 1;
-
     for (int k = 0; k < 6; ++k)
     {
       for (int j = 0; j < (i + 1); ++j)
