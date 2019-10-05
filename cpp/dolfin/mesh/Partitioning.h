@@ -126,7 +126,7 @@ public:
   ///         global index to set of sharing processes for each shared
   ///         point)
   static std::pair<std::map<std::int64_t, std::set<int>>, dolfin::EigenRowArrayXXd>
-    distribute_points(MPI_Comm mpi_comm, Eigen::Ref<const EigenRowArrayXXd> points,
+    distribute_points(MPI_Comm comm, Eigen::Ref<const EigenRowArrayXXd> points,
                       const std::vector<std::int64_t>& global_point_indices);
 
   /// Utility to create global vertex indices, needed for higher order
