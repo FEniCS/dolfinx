@@ -118,20 +118,15 @@ W = FunctionSpace(mesh, TH)
 # It is a stable, standard element pair for the Stokes
 # equations. Now we can define boundary conditions::
 
-# No-slip boundary condition for velocity
-# x1 = 0, x1 = 1 and around the dolphin
-
-
-def noslip_expr(values, x):
-    values[:, :] = 0.0
-
 
 # Extract subdomain facet arrays
 mf = sub_domains.values
 mf0 = np.where(mf == 0)
 mf1 = np.where(mf == 1)
 
-noslip = interpolate(noslip_expr, W.sub(0).collapse())
+# No-slip boundary condition for velocity
+# x1 = 0, x1 = 1 and around the dolphin
+noslip = interpolate(lambda x: np.zeros((x.shape[0], 2)), W.sub(0).collapse())
 
 bc0 = DirichletBC(W.sub(0), noslip, mf0[0])
 
@@ -139,9 +134,10 @@ bc0 = DirichletBC(W.sub(0), noslip, mf0[0])
 # x0 = 1
 
 
-def inflow_eval(values, x):
+def inflow_eval(x):
+    values = np.zeros((x.shape[0], 2))
     values[:, 0] = - np.sin(x[:, 1] * np.pi)
-    values[:, 1] = 0.0
+    return values
 
 
 inflow = interpolate(inflow_eval, W.sub(0).collapse())
