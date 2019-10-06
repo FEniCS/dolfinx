@@ -15,8 +15,7 @@ from petsc4py import PETSc
 
 import ufl
 from dolfin import (MPI, Function, FunctionSpace, TensorFunctionSpace,
-                    UnitCubeMesh, VectorFunctionSpace, cpp, geometry,
-                    interpolate)
+                    UnitCubeMesh, VectorFunctionSpace, cpp, geometry)
 from dolfin_utils.test.fixtures import fixture
 from dolfin_utils.test.skips import skip_if_complex, skip_in_parallel
 
@@ -216,21 +215,21 @@ def test_scalar_conditions(R):
 
 @pytest.mark.skip
 def test_interpolation_mismatch_rank0(W):
-    def f(values, x):
-        values[:, 0] = 1.0
-
+    def f(x):
+        return np.ones(x.shape[0])
+    u = Function(W)
     with pytest.raises(RuntimeError):
-        interpolate(f, W)
+        u.interpolate(f)
 
 
 @pytest.mark.skip
 def test_interpolation_mismatch_rank1(W):
     def f(values, x):
-        values[:, 0] = 1.0
-        values[:, 1] = 1.0
+        return np.ones((x.shape[0], 2))
 
+    u = Function(W)
     with pytest.raises(RuntimeError):
-        interpolate(f, W)
+        u.interpolate(f)
 
 
 def test_interpolation_rank0(V):
@@ -243,11 +242,12 @@ def test_interpolation_rank0(V):
 
     f = MyExpression()
     f.t = 1.0
-    w = interpolate(f.eval, V)
+    w = Function(V)
+    w.interpolate(f.eval)
     with w.vector.localForm() as x:
         assert (x[:] == 1.0).all()
     f.t = 2.0
-    w = interpolate(f.eval, V)
+    w.interpolate(f.eval)
     with w.vector.localForm() as x:
         assert (x[:] == 2.0).all()
 
@@ -278,7 +278,8 @@ def test_interpolation_rank1(W):
         values[:, 2] = 1.0
         return values
 
-    w = interpolate(f, W)
+    w = Function(W)
+    w.interpolate(f)
     x = w.vector
     assert x.max()[1] == 1.0
     assert x.min()[1] == 1.0

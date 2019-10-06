@@ -13,7 +13,7 @@ from petsc4py import PETSc
 from dolfin import (MPI, Function, FunctionSpace, Mesh, MeshFunction,
                     MeshValueCollection, TensorFunctionSpace, UnitCubeMesh,
                     UnitIntervalMesh, UnitSquareMesh, VectorFunctionSpace, cpp,
-                    has_petsc_complex, interpolate)
+                    has_petsc_complex)
 from dolfin.cpp.mesh import CellType
 from dolfin.io import XDMFFile
 from dolfin_utils.test.fixtures import tempdir
@@ -294,7 +294,8 @@ def test_save_and_checkpoint_timeseries(tempdir, encoding):
 
     with XDMFFile(mesh.mpi_comm(), filename, encoding=encoding) as file:
         for i, p in enumerate(times):
-            u_out[i] = interpolate(expr_eval, V)
+            u_out[i] = Function(V)
+            u_out[i].interpolate(expr_eval)
             file.write_checkpoint(u_out[i], "u_out", p)
 
     with XDMFFile(mesh.mpi_comm(), filename) as file:

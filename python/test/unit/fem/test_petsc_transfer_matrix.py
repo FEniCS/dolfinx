@@ -10,7 +10,7 @@ import numpy as np
 import pytest
 
 from dolfin import (MPI, Function, FunctionSpace, UnitCubeMesh, UnitSquareMesh,
-                    VectorFunctionSpace, interpolate)
+                    VectorFunctionSpace)
 from dolfin.cpp.fem import PETScDMCollection
 from ufl import FiniteElement, MixedElement, VectorElement
 
@@ -25,8 +25,9 @@ def test_scalar_p1():
     def u(x):
         return x[:, 0] + 2.0 * x[:, 1] + 3.0 * x[:, 2]
 
-    uc = interpolate(u, Vc)
-    uf = interpolate(u, Vf)
+    uc, uf = Function(Vc), Function(Vf)
+    uc.interpolate(u)
+    uf.interpolate(u)
 
     mat = PETScDMCollection.create_transfer_matrix(Vc._cpp_object,
                                                    Vf._cpp_object)
@@ -51,9 +52,9 @@ def test_scalar_p1_scaled_mesh():
 
     def u(x):
         return x[:, 0] + 2.0 * x[:, 1] + 3.0 * x[:, 2]
-
-    uc = interpolate(u, Vc)
-    uf = interpolate(u, Vf)
+    uc, uf = Function(Vc), Function(Vf)
+    uc.interpolate(u)
+    uf.interpolate(u)
 
     mat = PETScDMCollection.create_transfer_matrix(Vc._cpp_object,
                                                    Vf._cpp_object)
@@ -67,8 +68,7 @@ def test_scalar_p1_scaled_mesh():
 
     # Now make coarse mesh larger than fine mesh
     meshc.geometry.points *= 1.5
-
-    uc = interpolate(u, Vc)
+    uc.interpolate(u)
 
     mat = PETScDMCollection.create_transfer_matrix(Vc._cpp_object,
                                                    Vf._cpp_object)
@@ -90,8 +90,9 @@ def test_scalar_p2():
     def u(x):
         return x[:, 0] + 2.0 * x[:, 1] + 3.0 * x[:, 2]
 
-    uc = interpolate(u, Vc)
-    uf = interpolate(u, Vf)
+    uc, uf = Function(Vc), Function(Vf)
+    uc.interpolate(u)
+    uf.interpolate(u)
 
     mat = PETScDMCollection.create_transfer_matrix(Vc._cpp_object,
                                                    Vf._cpp_object)
@@ -114,8 +115,9 @@ def test_vector_p1_2d():
     def u(x):
         return np.stack([x[:, 0] + 2.0 * x[:, 1], 4.0 * x[:, 0]], axis=1)
 
-    uc = interpolate(u, Vc)
-    uf = interpolate(u, Vf)
+    uc, uf = Function(Vc), Function(Vf)
+    uc.interpolate(u)
+    uf.interpolate(u)
 
     mat = PETScDMCollection.create_transfer_matrix(Vc._cpp_object,
                                                    Vf._cpp_object)
@@ -138,8 +140,9 @@ def test_vector_p2_2d():
     def u(x):
         return np.stack([x[:, 0] + 2.0 * x[:, 1], 4.0 * x[:, 0] * x[:, 1]], axis=1)
 
-    uc = interpolate(u, Vc)
-    uf = interpolate(u, Vf)
+    uc, uf = Function(Vc), Function(Vf)
+    uc.interpolate(u)
+    uf.interpolate(u)
 
     mat = PETScDMCollection.create_transfer_matrix(Vc._cpp_object,
                                                    Vf._cpp_object)
@@ -164,8 +167,9 @@ def test_vector_p1_3d():
         values2 = 3.0 * x[:, 2] + x[:, 0]
         return np.stack([values0, values1, values2], axis=1)
 
-    uc = interpolate(u, Vc)
-    uf = interpolate(u, Vf)
+    uc, uf = Function(Vc), Function(Vf)
+    uc.interpolate(u)
+    uf.interpolate(u)
 
     mat = PETScDMCollection.create_transfer_matrix(Vc._cpp_object,
                                                    Vf._cpp_object)
@@ -198,8 +202,9 @@ def test_taylor_hood_cube():
         values[:, 3] = x[:, 0] + 3.0 * x[:, 1] + x[:, 2]
         return values
 
-    zc = interpolate(z, Zc)
-    zf = interpolate(z, Zf)
+    zc, zf = Function(Zc), Function(Zf)
+    zc.interpolate(z)
+    zf.interpolate(z)
 
     mat = PETScDMCollection.create_transfer_matrix(Zc, Zf)
     Zuc = Function(Zf)

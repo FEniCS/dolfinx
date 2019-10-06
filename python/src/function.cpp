@@ -96,15 +96,6 @@ void function(py::module& m)
       .def_property_readonly("function_space",
                              &dolfin::function::Function::function_space);
 
-  // FIXME: why is this floating here?
-  m.def("interpolate",
-        [](const dolfin::function::Function& f,
-           std::shared_ptr<const dolfin::function::FunctionSpace> V) {
-          auto g = std::make_unique<dolfin::function::Function>(V);
-          g->interpolate(f);
-          return g;
-        });
-
   // dolfin::function::FunctionSpace
   py::class_<dolfin::function::FunctionSpace,
              std::shared_ptr<dolfin::function::FunctionSpace>>(
