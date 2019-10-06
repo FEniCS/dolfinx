@@ -111,8 +111,8 @@ def test_complex_assembly_solve():
     solver.solve(b, x)
 
     # Reference Solution
-    def ref_eval(values, x):
-        values[:, 0] = np.cos(2 * np.pi * x[:, 0]) * np.cos(2 * np.pi * x[:, 1])
+    def ref_eval(x):
+        return np.cos(2 * np.pi * x[:, 0]) * np.cos(2 * np.pi * x[:, 1])
     u_ref = dolfin.interpolate(ref_eval, V)
 
     xnorm = x.norm(PETSc.NormType.N2)
