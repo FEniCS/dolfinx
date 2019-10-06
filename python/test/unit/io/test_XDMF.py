@@ -1,4 +1,4 @@
-# Copyright (C) 2012 Garth N. Wells
+# Copyright (C) 2012-2019 Garth N. Wells
 #
 # This file is part of DOLFIN (https://www.fenicsproject.org)
 #
@@ -8,6 +8,7 @@ import os
 
 import numpy as np
 import pytest
+from petsc4py import PETSc
 
 from dolfin import (MPI, Function, FunctionSpace, Mesh, MeshFunction,
                     MeshValueCollection, TensorFunctionSpace, UnitCubeMesh,
