@@ -16,7 +16,6 @@ from petsc4py import PETSc
 import ufl
 from dolfin import (MPI, Function, FunctionSpace, TensorFunctionSpace,
                     UnitCubeMesh, VectorFunctionSpace, cpp, geometry)
-from dolfin_utils.test.fixtures import fixture
 from dolfin_utils.test.skips import skip_if_complex, skip_in_parallel
 
 
