@@ -1,4 +1,4 @@
-// Copyright (C) 2006-2016 Anders Logg
+// Copyright (C) 2006-2019 Anders Logg, Chris Richardson
 //
 // This file is part of DOLFIN (https://www.fenicsproject.org)
 //
@@ -48,16 +48,12 @@ Eigen::ArrayXd cell_r(const mesh::Mesh& mesh)
   Eigen::ArrayXi cells(num_cells);
   std::iota(cells.data(), cells.data() + cells.size(), 0);
   return mesh::inradius(mesh, cells);
-
-  // return cell_r(*this).minCoeff();
-  // double r = std::numeric_limits<double>::max();
-  // for (auto& cell : MeshRange<Cell>(*this))
-  //   r = std::min(r, cell.inradius());
-  // return r;
 }
 //-----------------------------------------------------------------------------
-std::vector<std::int64_t>
-compute_global_index_set(Eigen::Ref<const EigenRowArrayXXi64> cell_nodes)
+std::vector<std::int64_t> compute_global_index_set(
+    Eigen::Ref<const Eigen::Array<std::int64_t, Eigen::Dynamic, Eigen::Dynamic,
+                                  Eigen::RowMajor>>
+        cell_nodes)
 {
   // Get set of all global points needed locally
   const std::int32_t num_cells = cell_nodes.rows();
@@ -74,7 +70,9 @@ std::pair<std::vector<std::int64_t>, std::array<int, 4>>
 compute_local_to_global_point_map(
     MPI_Comm mpi_comm, int num_vertices_per_cell,
     const std::map<std::int64_t, std::set<int>>& point_to_procs,
-    Eigen::Ref<const EigenRowArrayXXi64> cell_nodes)
+    Eigen::Ref<const Eigen::Array<std::int64_t, Eigen::Dynamic, Eigen::Dynamic,
+                                  Eigen::RowMajor>>
+        cell_nodes)
 {
   int mpi_rank = dolfin::MPI::rank(mpi_comm);
   std::vector<std::int64_t> local_to_global;
@@ -143,11 +141,15 @@ compute_local_to_global_point_map(
 std::tuple<
     std::vector<std::int64_t>, std::map<std::int32_t, std::set<int>>,
     Eigen::Array<std::int32_t, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>,
-    EigenRowArrayXXd, std::array<int, 4>>
-compute_point_distribution(MPI_Comm mpi_comm, int num_vertices_per_cell,
-                           Eigen::Ref<const EigenRowArrayXXi64> cell_nodes,
-                           Eigen::Ref<const EigenRowArrayXXd> points,
-                           const std::vector<std::uint8_t>& cell_permutation)
+    Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>,
+    std::array<int, 4>>
+compute_point_distribution(
+    MPI_Comm mpi_comm, int num_vertices_per_cell,
+    Eigen::Array<std::int64_t, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
+        cell_nodes,
+    Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
+        points,
+    const std::vector<std::uint8_t>& cell_permutation)
 {
   // Get set of global point indices, which exist on this process
   std::vector<std::int64_t> global_index_set
@@ -157,7 +159,8 @@ compute_point_distribution(MPI_Comm mpi_comm, int num_vertices_per_cell,
   // shared points. Points are returned in same order as in global_index_set.
   // Sharing information is (global_index -> [remote sharing processes]).
   std::map<std::int64_t, std::set<int>> shared_points_global;
-  dolfin::EigenRowArrayXXd recv_points;
+  Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
+      recv_points;
   std::tie(shared_points_global, recv_points)
       = Partitioning::distribute_points(mpi_comm, points, global_index_set);
 
@@ -173,7 +176,8 @@ compute_point_distribution(MPI_Comm mpi_comm, int num_vertices_per_cell,
     global_to_local.insert({local_to_global[i], i});
 
   // Permute received points into local order
-  dolfin::EigenRowArrayXXd points_local(recv_points.rows(), recv_points.cols());
+  Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
+      points_local(recv_points.rows(), recv_points.cols());
   for (std::size_t i = 0; i < global_index_set.size(); ++i)
   {
     int local_idx = global_to_local[global_index_set[i]];
@@ -200,11 +204,14 @@ compute_point_distribution(MPI_Comm mpi_comm, int num_vertices_per_cell,
 } // namespace
 
 //-----------------------------------------------------------------------------
-Mesh::Mesh(MPI_Comm comm, mesh::CellType type,
-           const Eigen::Ref<const EigenRowArrayXXd> points,
-           const Eigen::Ref<const EigenRowArrayXXi64> cells,
-           const std::vector<std::int64_t>& global_cell_indices,
-           const GhostMode ghost_mode, std::int32_t num_ghost_cells)
+Mesh::Mesh(
+    MPI_Comm comm, mesh::CellType type,
+    const Eigen::Ref<const Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic,
+                                        Eigen::RowMajor>>& points,
+    const Eigen::Ref<const Eigen::Array<
+        std::int64_t, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>>& cells,
+    const std::vector<std::int64_t>& global_cell_indices,
+    const GhostMode ghost_mode, std::int32_t num_ghost_cells)
     : _cell_type(type), _degree(1), _mpi_comm(comm), _ghost_mode(ghost_mode),
       _unique_id(common::UniqueIdGenerator::id())
 {
@@ -257,7 +264,8 @@ Mesh::Mesh(MPI_Comm comm, mesh::CellType type,
   Eigen::Array<std::int32_t, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
       coordinate_nodes;
   std::map<std::int32_t, std::set<std::int32_t>> nodes_shared;
-  EigenRowArrayXXd points_received;
+  Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
+      points_received;
 
   std::tie(node_indices_global, nodes_shared, coordinate_nodes, points_received,
            num_vertices_local)

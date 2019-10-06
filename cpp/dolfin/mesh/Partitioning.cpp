@@ -92,12 +92,17 @@ distribute_points_sharing(MPI_Comm mpi_comm,
 // Returns (new_cell_vertices, new_global_cell_indices,
 // new_cell_partition, shared_cells, number of non-ghost cells on this
 // process).
-std::tuple<EigenRowArrayXXi64, std::vector<std::int64_t>, std::vector<int>,
-           std::map<std::int32_t, std::set<std::int32_t>>, std::int32_t>
-distribute_cells(const MPI_Comm mpi_comm,
-                 const Eigen::Ref<const EigenRowArrayXXi64> cell_vertices,
-                 const std::vector<std::int64_t>& global_cell_indices,
-                 const PartitionData& cell_partition)
+std::tuple<
+    Eigen::Array<std::int64_t, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>,
+    std::vector<std::int64_t>, std::vector<int>,
+    std::map<std::int32_t, std::set<std::int32_t>>, std::int32_t>
+distribute_cells(
+    const MPI_Comm mpi_comm,
+    const Eigen::Ref<const Eigen::Array<std::int64_t, Eigen::Dynamic,
+                                        Eigen::Dynamic, Eigen::RowMajor>>&
+        cell_vertices,
+    const std::vector<std::int64_t>& global_cell_indices,
+    const PartitionData& cell_partition)
 {
   // This function takes the partition computed by the partitioner
   // stored in PartitionData cell_partition. Some cells go to multiple
@@ -184,7 +189,8 @@ distribute_cells(const MPI_Comm mpi_comm,
 
   const std::size_t all_count = ghost_count + local_count;
 
-  EigenRowArrayXXi64 new_cell_vertices(all_count, num_cell_vertices);
+  Eigen::Array<std::int64_t, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
+      new_cell_vertices(all_count, num_cell_vertices);
   std::vector<std::int64_t> new_global_cell_indices(all_count);
   std::vector<int> new_cell_partition(all_count);
 
@@ -248,7 +254,8 @@ distribute_cells(const MPI_Comm mpi_comm,
 void distribute_cell_layer(
     MPI_Comm mpi_comm, const int num_regular_cells,
     std::map<std::int32_t, std::set<std::int32_t>>& shared_cells,
-    EigenRowArrayXXi64& cell_vertices,
+    Eigen::Array<std::int64_t, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>&
+        cell_vertices,
     std::vector<std::int64_t>& global_cell_indices,
     std::vector<int>& cell_partition)
 {
@@ -444,14 +451,16 @@ void distribute_cell_layer(
 } // namespace
 //-----------------------------------------------------------------------------
 // Distribute points
-std::pair<std::map<std::int64_t, std::set<int>>, dolfin::EigenRowArrayXXd>
+std::pair<std::map<std::int64_t, std::set<int>>,
+          Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>>
 Partitioning::distribute_points(
-    MPI_Comm comm, Eigen::Ref<const EigenRowArrayXXd> points,
+    MPI_Comm comm,
+    Eigen::Ref<const Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic,
+                                  Eigen::RowMajor>>
+        points,
     const std::vector<std::int64_t>& global_point_indices)
 {
   common::Timer timer("Distribute points");
-
-  EigenRowArrayXXd recv_points(global_point_indices.size(), points.cols());
 
   int mpi_size = MPI::size(comm);
   int mpi_rank = MPI::rank(comm);
@@ -499,7 +508,8 @@ Partitioning::distribute_points(
   MPI_Type_commit(&compound_f64);
 
   // Fill in points to send back
-  EigenRowArrayXXd send_points(recv_global_index.size(), points.cols());
+  Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
+      send_points(recv_global_index.size(), points.cols());
   for (std::size_t i = 0; i < recv_global_index.size(); ++i)
   {
     assert(recv_global_index[i] >= ranges[mpi_rank]);
@@ -510,6 +520,9 @@ Partitioning::distribute_points(
   }
 
   // Send points back, matching indices in global_index_set
+  Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
+      recv_points(global_point_indices.size(), points.cols());
+
   MPI_Alltoallv(send_points.data(), recv_sizes.data(), recv_offsets.data(),
                 compound_f64, recv_points.data(), send_sizes.data(),
                 send_offsets.data(), compound_f64, comm);
@@ -528,7 +541,9 @@ Partitioning::distribute_points(
 // processes' to which ghost cells must be sent
 PartitionData Partitioning::partition_cells(
     const MPI_Comm& mpi_comm, int nparts, const mesh::CellType cell_type,
-    const Eigen::Ref<const EigenRowArrayXXi64> cell_vertices,
+    const Eigen::Ref<const Eigen::Array<std::int64_t, Eigen::Dynamic,
+                                        Eigen::Dynamic, Eigen::RowMajor>>&
+        cell_vertices,
     const mesh::Partitioner graph_partitioner)
 {
   LOG(INFO) << "Compute partition of cells across processes";
@@ -586,8 +601,11 @@ PartitionData Partitioning::partition_cells(
 // partition
 mesh::Mesh Partitioning::build_from_partition(
     const MPI_Comm& comm, mesh::CellType cell_type,
-    const Eigen::Ref<const EigenRowArrayXXd> points,
-    const Eigen::Ref<const EigenRowArrayXXi64> cell_vertices,
+    const Eigen::Ref<const Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic,
+                                        Eigen::RowMajor>>& points,
+    const Eigen::Ref<const Eigen::Array<std::int64_t, Eigen::Dynamic,
+                                        Eigen::Dynamic, Eigen::RowMajor>>&
+        cell_vertices,
     const std::vector<std::int64_t>& global_cell_indices,
     const mesh::GhostMode ghost_mode, const PartitionData& cell_partition)
 {
@@ -606,7 +624,8 @@ mesh::Mesh Partitioning::build_from_partition(
   // Send cells to owning process according to cell_partition, and
   // receive cells that belong to this process. Also compute auxiliary
   // data related to sharing.
-  EigenRowArrayXXi64 new_cell_vertices;
+  Eigen::Array<std::int64_t, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
+      new_cell_vertices;
   std::vector<std::int64_t> new_global_cell_indices;
   std::vector<int> new_cell_partition;
   std::map<std::int32_t, std::set<std::int32_t>> shared_cells;
@@ -680,8 +699,10 @@ mesh::Mesh Partitioning::build_from_partition(
 //-----------------------------------------------------------------------------
 mesh::Mesh Partitioning::build_distributed_mesh(
     const MPI_Comm& comm, mesh::CellType cell_type,
-    const Eigen::Ref<const EigenRowArrayXXd> points,
-    const Eigen::Ref<const EigenRowArrayXXi64> cells,
+    const Eigen::Ref<const Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic,
+                                        Eigen::RowMajor>>& points,
+    const Eigen::Ref<const Eigen::Array<
+        std::int64_t, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>>& cells,
     const std::vector<std::int64_t>& global_cell_indices,
     const mesh::GhostMode ghost_mode, const mesh::Partitioner graph_partitioner)
 {
@@ -783,7 +804,9 @@ Partitioning::build_global_vertex_indices(
 //-----------------------------------------------------------------------------
 std::map<std::int64_t, std::vector<int>> Partitioning::compute_halo_cells(
     MPI_Comm mpi_comm, std::vector<int> part, const mesh::CellType cell_type,
-    const Eigen::Ref<const EigenRowArrayXXi64> cell_vertices)
+    const Eigen::Ref<const Eigen::Array<std::int64_t, Eigen::Dynamic,
+                                        Eigen::Dynamic, Eigen::RowMajor>>&
+        cell_vertices)
 {
   // Compute dual graph (for this partition)
   std::vector<std::vector<std::size_t>> local_graph;

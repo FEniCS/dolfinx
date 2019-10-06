@@ -116,7 +116,6 @@ private:
 
   // Mapping from global to local index (only for shared edges)
   std::map<std::int64_t, std::int32_t> _global_to_local_edge_map;
-
 };
 } // namespace refinement
 } // namespace dolfin

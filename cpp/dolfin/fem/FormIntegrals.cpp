@@ -119,7 +119,7 @@ void FormIntegrals::set_domains(FormIntegrals::Type type,
   }
 
   // Get reference to mesh function data array
-  Eigen::Ref<const Eigen::Array<std::size_t, Eigen::Dynamic, 1>> mf_values
+  const Eigen::Array<std::size_t, Eigen::Dynamic, 1>& mf_values
       = marker.values();
   const int num_entities = mesh->topology().ghost_offset(dim);
 

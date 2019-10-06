@@ -42,10 +42,10 @@ void _restrict(const fem::DofMap& dofmap, const Vec x, int cell_index,
 // Implementation of bc application
 void _lift_bc_cells(
     Eigen::Ref<Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1>> b, const Form& a,
-    const Eigen::Ref<const Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1>>
+    const Eigen::Ref<const Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1>>&
         bc_values1,
     const std::vector<bool>& bc_markers1,
-    const Eigen::Ref<const Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1>> x0,
+    const Eigen::Ref<const Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1>>& x0,
     double scale)
 {
   assert(a.rank() == 2);
@@ -85,9 +85,9 @@ void _lift_bc_cells(
   const int gdim = mesh.geometry().dim();
   const mesh::Connectivity& connectivity_g
       = mesh.coordinate_dofs().entity_points();
-  const Eigen::Ref<const Eigen::Array<std::int32_t, Eigen::Dynamic, 1>> pos_g
+  const Eigen::Array<std::int32_t, Eigen::Dynamic, 1>& pos_g
       = connectivity_g.entity_positions();
-  const Eigen::Ref<const Eigen::Array<std::int32_t, Eigen::Dynamic, 1>> cell_g
+  const Eigen::Array<std::int32_t, Eigen::Dynamic, 1>& cell_g
       = connectivity_g.connections();
   // FIXME: Add proper interface for num coordinate dofs
   const int num_dofs_g = connectivity_g.size(0);
@@ -182,10 +182,10 @@ void _lift_bc_cells(
 //----------------------------------------------------------------------------
 void _lift_bc_exterior_facets(
     Eigen::Ref<Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1>> b, const Form& a,
-    const Eigen::Ref<const Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1>>
+    const Eigen::Ref<const Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1>>&
         bc_values1,
     const std::vector<bool>& bc_markers1,
-    const Eigen::Ref<const Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1>> x0,
+    const Eigen::Ref<const Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1>>& x0,
     double scale)
 {
   assert(a.rank() == 2);
@@ -229,9 +229,9 @@ void _lift_bc_exterior_facets(
   // Prepare cell geometry
   const mesh::Connectivity& connectivity_g
       = mesh.coordinate_dofs().entity_points();
-  const Eigen::Ref<const Eigen::Array<std::int32_t, Eigen::Dynamic, 1>> pos_g
+  const Eigen::Array<std::int32_t, Eigen::Dynamic, 1>& pos_g
       = connectivity_g.entity_positions();
-  const Eigen::Ref<const Eigen::Array<std::int32_t, Eigen::Dynamic, 1>> cell_g
+  const Eigen::Array<std::int32_t, Eigen::Dynamic, 1>& cell_g
       = connectivity_g.connections();
   // FIXME: Add proper interface for num coordinate dofs
   const int num_dofs_g = connectivity_g.size(0);
@@ -348,7 +348,7 @@ void fem::impl::assemble_vector(
 
   // Get dofmap data
   const fem::DofMap& dofmap = *L.function_space(0)->dofmap();
-  Eigen::Ref<const Eigen::Array<PetscInt, Eigen::Dynamic, 1>> dof_array
+  const Eigen::Array<PetscInt, Eigen::Dynamic, 1>& dof_array
       = dofmap.dof_array();
 
   assert(dofmap.element_dof_layout);
@@ -412,7 +412,7 @@ void fem::impl::assemble_vector(
 void fem::impl::assemble_cells(
     Eigen::Ref<Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1>> b,
     const mesh::Mesh& mesh, const std::vector<std::int32_t>& active_cells,
-    const Eigen::Ref<const Eigen::Array<PetscInt, Eigen::Dynamic, 1>> dofmap,
+    const Eigen::Ref<const Eigen::Array<PetscInt, Eigen::Dynamic, 1>>& dofmap,
     int num_dofs_per_cell,
     const std::function<void(PetscScalar*, const PetscScalar*,
                              const PetscScalar*, const double*, const int*,
@@ -427,9 +427,9 @@ void fem::impl::assemble_cells(
   // Prepare cell geometry
   const mesh::Connectivity& connectivity_g
       = mesh.coordinate_dofs().entity_points();
-  const Eigen::Ref<const Eigen::Array<std::int32_t, Eigen::Dynamic, 1>> pos_g
+  const Eigen::Array<std::int32_t, Eigen::Dynamic, 1>& pos_g
       = connectivity_g.entity_positions();
-  const Eigen::Ref<const Eigen::Array<std::int32_t, Eigen::Dynamic, 1>> cell_g
+  const Eigen::Array<std::int32_t, Eigen::Dynamic, 1>& cell_g
       = connectivity_g.connections();
   // FIXME: Add proper interface for num coordinate dofs
   const int num_dofs_g = connectivity_g.size(0);
@@ -492,9 +492,9 @@ void fem::impl::assemble_exterior_facets(
   // Prepare cell geometry
   const mesh::Connectivity& connectivity_g
       = mesh.coordinate_dofs().entity_points();
-  const Eigen::Ref<const Eigen::Array<std::int32_t, Eigen::Dynamic, 1>> pos_g
+  const Eigen::Array<std::int32_t, Eigen::Dynamic, 1>& pos_g
       = connectivity_g.entity_positions();
-  const Eigen::Ref<const Eigen::Array<std::int32_t, Eigen::Dynamic, 1>> cell_g
+  const Eigen::Array<std::int32_t, Eigen::Dynamic, 1>& cell_g
       = connectivity_g.connections();
   // FIXME: Add proper interface for num coordinate dofs
   const int num_dofs_g = connectivity_g.size(0);
@@ -567,9 +567,9 @@ void fem::impl::assemble_interior_facets(
   // Prepare cell geometry
   const mesh::Connectivity& connectivity_g
       = mesh.coordinate_dofs().entity_points();
-  const Eigen::Ref<const Eigen::Array<std::int32_t, Eigen::Dynamic, 1>> pos_g
+  const Eigen::Array<std::int32_t, Eigen::Dynamic, 1>& pos_g
       = connectivity_g.entity_positions();
-  const Eigen::Ref<const Eigen::Array<std::int32_t, Eigen::Dynamic, 1>> cell_g
+  const Eigen::Array<std::int32_t, Eigen::Dynamic, 1>& cell_g
       = connectivity_g.connections();
   // FIXME: Add proper interface for num coordinate dofs
   const int num_dofs_g = connectivity_g.size(0);
@@ -702,7 +702,7 @@ void fem::impl::apply_lifting(
 //-----------------------------------------------------------------------------
 void fem::impl::lift_bc(
     Eigen::Ref<Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1>> b, const Form& a,
-    const Eigen::Ref<const Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1>>
+    const Eigen::Ref<const Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1>>&
         bc_values1,
     const std::vector<bool>& bc_markers1, double scale)
 {
@@ -717,10 +717,10 @@ void fem::impl::lift_bc(
 //-----------------------------------------------------------------------------
 void fem::impl::lift_bc(
     Eigen::Ref<Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1>> b, const Form& a,
-    const Eigen::Ref<const Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1>>
+    const Eigen::Ref<const Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1>>&
         bc_values1,
     const std::vector<bool>& bc_markers1,
-    const Eigen::Ref<const Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1>> x0,
+    const Eigen::Ref<const Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1>>& x0,
     double scale)
 {
   if (b.size() != x0.size())

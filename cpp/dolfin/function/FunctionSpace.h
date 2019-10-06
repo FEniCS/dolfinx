@@ -89,7 +89,7 @@ public:
       Eigen::Ref<Eigen::Array<PetscScalar, Eigen::Dynamic, Eigen::Dynamic,
                               Eigen::RowMajor>>,
       const Eigen::Ref<const Eigen::Array<double, Eigen::Dynamic,
-                                          Eigen::Dynamic, Eigen::RowMajor>>)>;
+                                          Eigen::Dynamic, Eigen::RowMajor>>&)>;
 
   /// Interpolate expression into function space, returning the vector
   /// of expansion coefficients
@@ -140,7 +140,8 @@ public:
   /// spatial coordinates of dofs, for example for re-partitioning or
   /// nullspace computations.
   /// @return The dof coordinates [([0, y0], [x1, y1], . . .)
-  EigenRowArrayXXd tabulate_dof_coordinates() const;
+  Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
+  tabulate_dof_coordinates() const;
 
   /// Set dof entries in vector to value*x[i], where [x][i] is the
   /// coordinate of the dof spatial coordinate. Parallel layout of
