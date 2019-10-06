@@ -92,9 +92,23 @@ public:
   /// @param[in] v The function to be interpolated.
   void interpolate(const Function& v);
 
-  /// Interpolate expression
+  /// Interpolate an expression
   /// @param[in] f The expression to be interpolated.
-  void interpolate(const FunctionSpace::interpolation_function& f);
+  void interpolate(
+      const std::function<Eigen::Array<PetscScalar, Eigen::Dynamic,
+                                       Eigen::Dynamic, Eigen::RowMajor>(
+          const Eigen::Ref<const Eigen::Array<
+              double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>>&)>& f);
+
+  /// Interpolate an expression. This interface is primarily to support
+  /// C code implementations of the expression, e.g. using Numba.
+  /// @param[in] f The expression to be interpolated.
+  void interpolate(
+      const std::function<void(
+          Eigen::Ref<Eigen::Array<PetscScalar, Eigen::Dynamic, Eigen::Dynamic,
+                                  Eigen::RowMajor>>,
+          const Eigen::Ref<const Eigen::Array<
+              double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>>&)>& f);
 
   /// Return value rank
   int value_rank() const;

@@ -43,15 +43,24 @@ void function(py::module& m)
            "Return sub-function (view into parent Function")
       .def("collapse", &dolfin::function::Function::collapse,
            "Collapse sub-function view")
-      .def(
-          "interpolate",
-          py::overload_cast<const std::function<void(
-              Eigen::Ref<Eigen::Array<PetscScalar, Eigen::Dynamic,
-                                      Eigen::Dynamic, Eigen::RowMajor>>,
-              const Eigen::Ref<const Eigen::Array<
-                  double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>>&)>&>(
-              &dolfin::function::Function::interpolate),
-          py::arg("f"), "Interpolate a function expression")
+      //  .def("interpolate",
+      //       py::overload_cast<const std::function<void(
+      //           Eigen::Ref<Eigen::Array<PetscScalar, Eigen::Dynamic,
+      //                                   Eigen::Dynamic, Eigen::RowMajor>>,
+      //           const Eigen::Ref<
+      //               const Eigen::Array<double, Eigen::Dynamic,
+      //               Eigen::Dynamic,
+      //                                  Eigen::RowMajor>>&)>&>(
+      //           &dolfin::function::Function::interpolate),
+      //       py::arg("f"), "Interpolate an expression")
+      .def("interpolate",
+           py::overload_cast<const std::function<Eigen::Array<
+               PetscScalar, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>(
+               const Eigen::Ref<
+                   const Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic,
+                                      Eigen::RowMajor>>&)>&>(
+               &dolfin::function::Function::interpolate),
+           py::arg("f"), "Interpolate an expression")
       .def("interpolate",
            py::overload_cast<const dolfin::function::Function&>(
                &dolfin::function::Function::interpolate),
@@ -63,13 +72,13 @@ void function(py::module& m)
                  f = reinterpret_cast<void (*)(PetscScalar*, int, int,
                                                const double*, int)>(addr);
              auto _f =
-                 [&f](Eigen::Ref<Eigen::Array<PetscScalar, Eigen::Dynamic,
-                                              Eigen::Dynamic, Eigen::RowMajor>>
-                          values,
-                      const Eigen::Ref<
-                          const Eigen::Array<double, Eigen::Dynamic,
-                                             Eigen::Dynamic, Eigen::RowMajor>>&
-                          x) {
+                 [&f](
+                     Eigen::Ref<Eigen::Array<PetscScalar, Eigen::Dynamic,
+                                             Eigen::Dynamic, Eigen::RowMajor>>
+                         values,
+                     const Eigen::Ref<const Eigen::Array<double, Eigen::Dynamic,
+                                                         Eigen::Dynamic,
+                                                         Eigen::RowMajor>>& x) {
                    f(values.data(), values.rows(), values.cols(), x.data(),
                      x.cols());
                  };

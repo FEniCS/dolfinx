@@ -95,6 +95,19 @@ public:
   /// of expansion coefficients
   /// @param[in] expansion_coefficients The expansion coefficients
   /// @param[in] f The function to be interpolated
+  void interpolate(
+      Eigen::Ref<Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1>>
+          expansion_coefficients,
+      const std::function<Eigen::Array<PetscScalar, Eigen::Dynamic,
+                                       Eigen::Dynamic, Eigen::RowMajor>(
+          const Eigen::Ref<const Eigen::Array<
+              double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>>&)>& f)
+      const;
+
+  /// Interpolate expression into function space, returning the vector
+  /// of expansion coefficients
+  /// @param[in] expansion_coefficients The expansion coefficients
+  /// @param[in] f The function to be interpolated
   void interpolate(Eigen::Ref<Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1>>
                        expansion_coefficients,
                    const interpolation_function& f) const;
@@ -168,6 +181,14 @@ public:
   std::shared_ptr<const fem::DofMap> dofmap() const;
 
 private:
+  // Interpolate data
+  void interpolate(
+      Eigen::Ref<Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1>>
+          expansion_coefficients,
+      const Eigen::Ref<const Eigen::Matrix<PetscScalar, Eigen::Dynamic,
+                                           Eigen::Dynamic, Eigen::RowMajor>>& values)
+      const;
+
   // The mesh
   std::shared_ptr<const mesh::Mesh> _mesh;
 
