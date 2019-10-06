@@ -9,49 +9,48 @@ import pytest
 
 from dolfin import (MPI, Function, FunctionSpace, TestFunction, TrialFunction,
                     UnitCubeMesh, VectorFunctionSpace)
-from dolfin_utils.test.fixtures import fixture
 from ufl import FiniteElement, VectorElement, grad, triangle
 from ufl.log import UFLException
 
 
-@fixture
+@pytest.fixture
 def mesh():
     return UnitCubeMesh(MPI.comm_world, 8, 8, 8)
 
 
-@fixture
+@pytest.fixture
 def V(mesh):
     return FunctionSpace(mesh, ('CG', 1))
 
 
-@fixture
+@pytest.fixture
 def W(mesh):
     return VectorFunctionSpace(mesh, ('CG', 1))
 
 
-@fixture
+@pytest.fixture
 def Q(mesh):
     W = VectorElement('CG', mesh.ufl_cell(), 1)
     V = FiniteElement('CG', mesh.ufl_cell(), 1)
     return FunctionSpace(mesh, W * V)
 
 
-@fixture
+@pytest.fixture
 def f(V):
     return Function(V)
 
 
-@fixture
+@pytest.fixture
 def V2(f):
     return f.function_space
 
 
-@fixture
+@pytest.fixture
 def g(W):
     return Function(W)
 
 
-@fixture
+@pytest.fixture
 def W2(g):
     return g.function_space
 
