@@ -71,9 +71,7 @@ def solution(values, x):
 
 # Function space for exact solution - need it to be higher than deg
 V_exact = FunctionSpace(mesh, ("Lagrange", deg + 3))
-
-# "exact" solution
-u_exact = interpolate(solution, V_exact)
+u_exact = interpolate(lambda x: A * np.cos(k0 * x[:, 0]) * np.cos(k0 * x[:, 1]), V_exact)
 
 # best approximation from V
 # u_BA = project(u_exact, V)
