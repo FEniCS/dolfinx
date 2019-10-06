@@ -110,8 +110,8 @@ public:
   /// Return value shape
   std::vector<int> value_shape() const;
 
-  /// Evaluate the Function at points
-  /// @param[in] x The coordinates of the points. It has shape
+  /// Evaluate the Function at physical points
+  /// @param[in] x The physical coordinates of the points. It has shape
   ///              (num_points, 3).
   /// @param[in] cells An array of cell indices. cells[i] is the index
   ///                  of the cell that contains the point x(i).
@@ -127,6 +127,22 @@ public:
        Eigen::Ref<Eigen::Array<PetscScalar, Eigen::Dynamic, Eigen::Dynamic,
                                Eigen::RowMajor>>
            u) const;
+
+  /// Evaluate the Function at points in reference coordinates on all
+  /// cells
+  /// @warning This function only supports non-manifold Lagrange
+  ///          elements
+  /// @param[in] x The reference element coordinates of the points. It
+  ///              has shape (num_points, 3).
+  /// @param[in,out] u The values at the points for each cell.
+  //                   The values are ordered by cell. This argument
+  //                   must be passed with the corrext size.
+  void eval_reference(
+      const Eigen::Ref<
+          const Eigen::Array<double, Eigen::Dynamic, 3, Eigen::RowMajor>>& X,
+      Eigen::Ref<Eigen::Array<PetscScalar, Eigen::Dynamic, Eigen::Dynamic,
+                              Eigen::RowMajor>>
+          u) const;
 
   /// Compute values at all mesh points
   /// @return The values at all geometric points

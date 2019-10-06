@@ -174,6 +174,39 @@ def test_eval(R, V, W, Q, mesh):
         u0.eval([0, 0], 0)
 
 
+def test_eval_reference(V, mesh):
+    u = Function(V)
+
+    def my_function(values, x):
+        values[:, 0] = x[:, 0]
+    u.interpolate(my_function)
+
+    # Get reference coordinates of dofs and evaluate u
+    X = V.element.dof_reference_coordinates()
+    values0 = u.eval_reference(X)
+
+    # FIXME: This step shpuld be a lot simpler
+    # Compute physical coordinate of X
+    coord_dofs = mesh.coordinate_dofs().entity_points()
+    x_g = mesh.geometry.points
+    cmap = V.mesh.geometry.coord_mapping
+    x_dofs = []
+    for c in range(mesh.num_cells()):
+        x_coord_new = np.zeros([4, 3])
+        for v in range(4):
+            x_coord_new[v] = x_g[coord_dofs[c, v]]
+        x = X.copy()
+        cmap.compute_physical_coordinates(x, X, x_coord_new)
+        for _x in x:
+            x_dofs.append(_x)
+
+    x = np.asarray(x_dofs)
+    cells = [c for c in range(mesh.num_cells()) for j in range(4)]
+    values1 = u.eval(x, np.asarray(cells))
+
+    assert values1 == pytest.approx(values0)
+
+
 def test_eval_multiple(W):
     u = Function(W)
     u.vector.set(1.0)

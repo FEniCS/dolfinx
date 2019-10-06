@@ -275,6 +275,72 @@ void Function::eval(
   }
 }
 //-----------------------------------------------------------------------------
+void Function::eval_reference(
+    const Eigen::Ref<
+        const Eigen::Array<double, Eigen::Dynamic, 3, Eigen::RowMajor>>& X,
+    Eigen::Ref<Eigen::Array<PetscScalar, Eigen::Dynamic, Eigen::Dynamic,
+                            Eigen::RowMajor>>
+        u) const
+{
+  // if (X.rows() != u.rows())
+  // {
+  //   throw std::runtime_error("Length of array for Function values must be the
+  //   "
+  //                            "same as the number of points.");
+  // }
+
+  // Get mesh
+  assert(_function_space);
+  assert(_function_space->mesh());
+  const mesh::Mesh& mesh = *_function_space->mesh();
+  const int gdim = mesh.geometry().dim();
+  const int tdim = mesh.topology().dim();
+
+  // Get element
+  assert(_function_space->element());
+  const fem::FiniteElement& element = *_function_space->element();
+  const int reference_value_size = element.reference_value_size();
+  const int value_size = element.value_size();
+  const int space_dimension = element.space_dimension();
+
+  // Compute basis on reference element
+
+  // NOTE: This step needs to be generalised for elements other than
+  //       non-manifold Lagrange elements
+  Eigen::Tensor<double, 3, Eigen::RowMajor> basis_reference_values(
+      X.rows(), space_dimension, reference_value_size);
+  element.evaluate_reference_basis(basis_reference_values, X.leftCols(gdim));
+
+  // Get dofmap
+  assert(_function_space->dofmap());
+  const fem::DofMap& dofmap = *_function_space->dofmap();
+
+  // Unwrap data vector
+  la::VecReadWrapper v(_vector.vec());
+  Eigen::Map<const Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1>> _v = v.x;
+
+  // Loop over cells
+  u.setZero();
+  for (int c = 0; c < mesh.num_entities(tdim); ++c)
+  {
+    auto dofs = dofmap.cell_dofs(c);
+
+    // Loop over points
+    for (int p = 0; p < X.rows(); ++p)
+    {
+      for (int i = 0; i < space_dimension; ++i)
+      {
+        for (int j = 0; j < value_size; ++j)
+        {
+          // TODO: Find an Eigen shortcut for this operation
+          u.row(c * X.rows() + p)[j]
+              += _v[dofs[i]] * basis_reference_values(p, i, j);
+        }
+      }
+    }
+  }
+}
+//-----------------------------------------------------------------------------
 void Function::interpolate(const Function& v)
 {
   assert(_function_space);

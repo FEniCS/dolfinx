@@ -114,6 +114,32 @@ class Function(ufl.Coefficient):
             u = np.reshape(u, (-1, ))
         return u
 
+    def eval_reference(self, X: np.ndarray, u=None) -> np.ndarray:
+        """Evaluate Function at reference coordinates X, where X has shape
+        (num_points, 3), in all cells."""
+
+        # Make sure input coordinates are a NumPy array
+        X = np.asarray(X, dtype=np.float)
+        assert X.ndim < 3
+        num_points = X.shape[0] if X.ndim == 2 else 1
+        X = np.reshape(X, (num_points, -1))
+        if X.shape[1] != 3:
+            raise ValueError("Coordinate(s) for Function evaluation must have length 3.")
+
+        # Allocate memory for return value if not provided
+        if u is None:
+            num_cells = self.function_space.mesh.num_cells()
+            value_size = ufl.product(self.ufl_element().value_shape())
+            if common.has_petsc_complex:
+                u = np.empty((num_points * num_cells, value_size), dtype=np.complex128)
+            else:
+                u = np.empty((num_points * num_cells, value_size))
+
+        self._cpp_object.eval_reference(X, u)
+        if num_points == 1:
+            u = np.reshape(u, (-1, ))
+        return u
+
     def interpolate(self, u) -> None:
         """Interpolate an expression"""
 
