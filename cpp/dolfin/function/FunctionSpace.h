@@ -93,6 +93,7 @@ public:
 
   /// Interpolate expression into function space, returning the vector
   /// of expansion coefficients
+  /// @cond Work around doxygen bug for std::function
   /// @param[in] expansion_coefficients The expansion coefficients
   /// @param[in] f The function to be interpolated
   void interpolate(
@@ -103,6 +104,7 @@ public:
           const Eigen::Ref<const Eigen::Array<
               double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>>&)>& f)
       const;
+  /// @endcond
 
   /// Interpolate expression into function space, returning the vector
   /// of expansion coefficients
@@ -144,8 +146,7 @@ public:
     return element.hash() == this->_element->hash();
   }
 
-  /// Return component w.r.t. to root superspace, i.e. W.sub(1).sub(0)
-  ///   == [1, 0].
+  /// Return component w.r.t. to root superspace, i.e. W.sub(1).sub(0) == [1, 0].
   std::vector<int> component() const;
 
   /// Tabulate the coordinates of all dofs on this process. This
@@ -187,8 +188,8 @@ private:
       Eigen::Ref<Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1>>
           expansion_coefficients,
       const Eigen::Ref<const Eigen::Matrix<PetscScalar, Eigen::Dynamic,
-                                           Eigen::Dynamic, Eigen::RowMajor>>& values)
-      const;
+                                           Eigen::Dynamic, Eigen::RowMajor>>&
+          values) const;
 
   // The mesh
   std::shared_ptr<const mesh::Mesh> _mesh;

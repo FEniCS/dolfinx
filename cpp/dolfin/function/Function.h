@@ -94,7 +94,9 @@ public:
   void interpolate(const Function& v);
 
   /// Interpolate an expression
+  /// @cond Work around doxygen bug for std::function
   /// @param[in] f The expression to be interpolated
+  /// @endcond
   void interpolate(
       const std::function<Eigen::Array<PetscScalar, Eigen::Dynamic,
                                        Eigen::Dynamic, Eigen::RowMajor>(
