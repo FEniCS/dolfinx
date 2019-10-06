@@ -103,12 +103,7 @@ public:
   /// Interpolate an expression. This interface is primarily to support
   /// C code implementations of the expression, e.g. using Numba.
   /// @param[in] f The expression to be interpolated.
-  void interpolate(
-      const std::function<void(
-          Eigen::Ref<Eigen::Array<PetscScalar, Eigen::Dynamic, Eigen::Dynamic,
-                                  Eigen::RowMajor>>,
-          const Eigen::Ref<const Eigen::Array<
-              double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>>&)>& f);
+  void interpolate(const FunctionSpace::interpolation_function& f);
 
   /// Return value rank
   int value_rank() const;
