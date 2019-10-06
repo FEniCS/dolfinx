@@ -54,7 +54,6 @@ public:
     MPI_Comm comm() const;
 
   private:
-
     // MPI communicator
     MPI_Comm _comm;
   };
@@ -213,7 +212,6 @@ public:
     throw std::runtime_error("MPI data type unknown");
     return MPI_CHAR;
   }
-
 };
 
 // Turn off doxygen for these template specialisations

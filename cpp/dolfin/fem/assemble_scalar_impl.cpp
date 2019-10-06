@@ -118,9 +118,9 @@ PetscScalar fem::impl::assemble_cells(
   // Prepare cell geometry
   const mesh::Connectivity& connectivity_g
       = mesh.coordinate_dofs().entity_points();
-  const Eigen::Ref<const Eigen::Array<std::int32_t, Eigen::Dynamic, 1>> pos_g
+  const Eigen::Array<std::int32_t, Eigen::Dynamic, 1>& pos_g
       = connectivity_g.entity_positions();
-  const Eigen::Ref<const Eigen::Array<std::int32_t, Eigen::Dynamic, 1>> cell_g
+  const Eigen::Array<std::int32_t, Eigen::Dynamic, 1>& cell_g
       = connectivity_g.connections();
   // FIXME: Add proper interface for num coordinate dofs
   const int num_dofs_g = connectivity_g.size(0);
@@ -176,9 +176,9 @@ PetscScalar fem::impl::assemble_exterior_facets(
   // Prepare cell geometry
   const mesh::Connectivity& connectivity_g
       = mesh.coordinate_dofs().entity_points();
-  const Eigen::Ref<const Eigen::Array<std::int32_t, Eigen::Dynamic, 1>> pos_g
+  const Eigen::Array<std::int32_t, Eigen::Dynamic, 1>& pos_g
       = connectivity_g.entity_positions();
-  const Eigen::Ref<const Eigen::Array<std::int32_t, Eigen::Dynamic, 1>> cell_g
+  const Eigen::Array<std::int32_t, Eigen::Dynamic, 1>& cell_g
       = connectivity_g.connections();
   // FIXME: Add proper interface for num coordinate dofs
   const int num_dofs_g = connectivity_g.size(0);
@@ -243,9 +243,9 @@ PetscScalar fem::impl::assemble_interior_facets(
   // Prepare cell geometry
   const mesh::Connectivity& connectivity_g
       = mesh.coordinate_dofs().entity_points();
-  const Eigen::Ref<const Eigen::Array<std::int32_t, Eigen::Dynamic, 1>> pos_g
+  const Eigen::Array<std::int32_t, Eigen::Dynamic, 1>& pos_g
       = connectivity_g.entity_positions();
-  const Eigen::Ref<const Eigen::Array<std::int32_t, Eigen::Dynamic, 1>> cell_g
+  const Eigen::Array<std::int32_t, Eigen::Dynamic, 1>& cell_g
       = connectivity_g.connections();
   // FIXME: Add proper interface for num coordinate dofs
   const int num_dofs_g = connectivity_g.size(0);
@@ -295,12 +295,18 @@ PetscScalar fem::impl::assemble_interior_facets(
                          gdim);
     for (std::size_t i = 0; i < coefficients.size(); ++i)
     {
+      // Layout for the restricted coefficients is flattened
+      // w[coefficient][restriction][dof]
+
+      // Prepare restriction to cell 0
       _restrict(*coefficients[i]->function_space()->dofmap(),
                 coefficients[i]->vector().vec(), cell0.index(),
-                coeff_array.data() + offsets[i]);
+                coeff_array.data() + 2 * offsets[i]);
+
+      // Prepare restriction to cell 1
       _restrict(*coefficients[i]->function_space()->dofmap(),
                 coefficients[i]->vector().vec(), cell1.index(),
-                coeff_array.data() + offsets.back() + offsets[i]);
+                coeff_array.data() + offsets[i + 1] + offsets[i]);
     }
 
     fn(&value, coeff_array.data(), constant_values.data(),

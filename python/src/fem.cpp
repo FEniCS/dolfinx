@@ -215,15 +215,22 @@ void fem(py::module& m)
            py::arg("V"), py::arg("g"), py::arg("facets"), py::arg("method"))
       .def("function_space", &dolfin::fem::DirichletBC::function_space);
 
+  // Assembler insert mode  enum
+  py::enum_<dolfin::fem::InsertMode>(m, "InsertMode")
+      .value("set", dolfin::fem::InsertMode::set)
+      .value("sum", dolfin::fem::InsertMode::sum);
+
   // dolfin::fem::assemble
   m.def("assemble_scalar", &dolfin::fem::assemble_scalar,
         "Assemble functional over mesh");
   // Vectors (single)
-  m.def("assemble_vector",
-        py::overload_cast<Vec, const dolfin::fem::Form&>(
-            &dolfin::fem::assemble_vector),
-        py::arg("b"), py::arg("L"),
-        "Assemble linear form into an existing vector");
+  m.def(
+      "assemble_vector",
+      py::overload_cast<Vec, const dolfin::fem::Form&, dolfin::fem::InsertMode>(
+          &dolfin::fem::assemble_vector),
+      py::arg("b"), py::arg("L"),
+      py::arg("insert_mode") = dolfin::fem::InsertMode::sum,
+      "Assemble linear form into an existing vector");
   // Block/nest vectors
   m.def("assemble_vector",
         py::overload_cast<

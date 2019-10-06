@@ -49,7 +49,7 @@ void function(py::module& m)
               Eigen::Ref<Eigen::Array<PetscScalar, Eigen::Dynamic,
                                       Eigen::Dynamic, Eigen::RowMajor>>,
               const Eigen::Ref<const Eigen::Array<
-                  double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>>)>&>(
+                  double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>>&)>&>(
               &dolfin::function::Function::interpolate),
           py::arg("f"), "Interpolate a function expression")
       .def("interpolate",
@@ -68,7 +68,7 @@ void function(py::module& m)
                           values,
                       const Eigen::Ref<
                           const Eigen::Array<double, Eigen::Dynamic,
-                                             Eigen::Dynamic, Eigen::RowMajor>>
+                                             Eigen::Dynamic, Eigen::RowMajor>>&
                           x) {
                    f(values.data(), values.rows(), values.cols(), x.data(),
                      x.cols());

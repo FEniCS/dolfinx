@@ -114,16 +114,18 @@ void mesh(py::module& m)
       .def("x", &dolfin::mesh::Geometry::x,
            py::return_value_policy::reference_internal,
            "Return coordinates of a point")
-      .def_property("points",
-                    // Get
-                    py::overload_cast<>(&dolfin::mesh::Geometry::points),
-                    // Set
-                    [](dolfin::mesh::Geometry& self,
-                       const dolfin::EigenRowArrayXXd& values) {
-                      self.points() = values;
-                    },
-                    py::return_value_policy::reference_internal,
-                    "Return coordinates of all points")
+      .def_property(
+          "points",
+          // Get
+          py::overload_cast<>(&dolfin::mesh::Geometry::points),
+          // Set
+          [](dolfin::mesh::Geometry& self,
+             const Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic,
+                                Eigen::RowMajor>& values) {
+            self.points() = values;
+          },
+          py::return_value_policy::reference_internal,
+          "Return coordinates of all points")
       .def_readwrite("coord_mapping", &dolfin::mesh::Geometry::coord_mapping);
 
   // dolfin::mesh::Topology class
@@ -157,25 +159,29 @@ void mesh(py::module& m)
       m, "Mesh", py::dynamic_attr(), "Mesh object")
       .def(py::init(
           [](const MPICommWrapper comm, dolfin::mesh::CellType type,
-             const Eigen::Ref<const dolfin::EigenRowArrayXXd> geometry,
-             const Eigen::Ref<const dolfin::EigenRowArrayXXi64> topology,
+             const Eigen::Ref<const Eigen::Array<
+                 double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>>&
+                 geometry,
+             const Eigen::Ref<
+                 const Eigen::Array<std::int64_t, Eigen::Dynamic,
+                                    Eigen::Dynamic, Eigen::RowMajor>>& topology,
              const std::vector<std::int64_t>& global_cell_indices,
              const dolfin::mesh::GhostMode ghost_mode) {
             return std::make_unique<dolfin::mesh::Mesh>(
                 comm.get(), type, geometry, topology, global_cell_indices,
                 ghost_mode);
           }))
-      .def(
-          "cells",
-          [](const dolfin::mesh::Mesh& self) {
-            const std::uint32_t tdim = self.topology().dim();
-            return py::array(
-                {(std::int32_t)self.topology().size(tdim),
-                 (std::int32_t)dolfin::mesh::num_cell_vertices(self.cell_type())},
-                self.topology().connectivity(tdim, 0)->connections().data(),
-                py::none());
-          },
-          py::return_value_policy::reference_internal)
+      .def("cells",
+           [](const dolfin::mesh::Mesh& self) {
+             const std::uint32_t tdim = self.topology().dim();
+             return py::array(
+                 {(std::int32_t)self.topology().size(tdim),
+                  (std::int32_t)dolfin::mesh::num_cell_vertices(
+                      self.cell_type())},
+                 self.topology().connectivity(tdim, 0)->connections().data(),
+                 py::none());
+           },
+           py::return_value_policy::reference_internal)
       .def_property_readonly("geometry",
                              py::overload_cast<>(&dolfin::mesh::Mesh::geometry),
                              "Mesh geometry")
@@ -216,7 +222,8 @@ void mesh(py::module& m)
                                                           "Connectivity object")
       .def("connections",
            [](const dolfin::mesh::Connectivity& self, std::size_t i) {
-             return Eigen::Map<const dolfin::EigenArrayXi32>(
+             return Eigen::Map<
+                 const Eigen::Array<std::int32_t, Eigen::Dynamic, 1>>(
                  self.connections(i), self.size(i));
            },
            "Connections for a single mesh entity",
@@ -351,29 +358,55 @@ void mesh(py::module& m)
   py::class_<dolfin::mesh::PartitionData,
              std::shared_ptr<dolfin::mesh::PartitionData>>(
       m, "PartitionData", "PartitionData object")
-      .def("num_procs", &dolfin::mesh::PartitionData::num_procs);
+      .def(py::init(
+          [](const std::vector<int>& cell_partition,
+             const std::map<std::int64_t, std::vector<int>>& ghost_procs) {
+            return dolfin::mesh::PartitionData(cell_partition, ghost_procs);
+          }))
+      .def("num_procs", &dolfin::mesh::PartitionData::num_procs)
+      .def("size", &dolfin::mesh::PartitionData::num_ghosts)
+      .def("num_ghosts", &dolfin::mesh::PartitionData::num_ghosts);
 
   // dolfin::mesh::Partitioning::partition_cells
-  m.def("partition_cells",
-        [](const MPICommWrapper comm, int nparts,
-           dolfin::mesh::CellType cell_type,
-           const Eigen::Ref<const dolfin::EigenRowArrayXXi64> cells,
-           dolfin::mesh::Partitioner partitioner) {
-          return dolfin::mesh::Partitioning::partition_cells(
-              comm.get(), nparts, cell_type, cells, partitioner);
-        });
+  m.def(
+      "partition_cells",
+      [](const MPICommWrapper comm, int nparts,
+         dolfin::mesh::CellType cell_type,
+         const Eigen::Ref<const Eigen::Array<std::int64_t, Eigen::Dynamic,
+                                             Eigen::Dynamic, Eigen::RowMajor>>&
+             cells,
+         dolfin::mesh::Partitioner partitioner) {
+        return dolfin::mesh::Partitioning::partition_cells(
+            comm.get(), nparts, cell_type, cells, partitioner);
+      });
 
-  m.def("build_from_partition",
-        [](const MPICommWrapper comm, dolfin::mesh::CellType cell_type,
-           const Eigen::Ref<const dolfin::EigenRowArrayXXd> points,
-           const Eigen::Ref<const dolfin::EigenRowArrayXXi64> cells,
-           const std::vector<std::int64_t>& global_cell_indices,
-           const dolfin::mesh::GhostMode ghost_mode,
-           const dolfin::mesh::PartitionData& cell_partition) {
-          return dolfin::mesh::Partitioning::build_from_partition(
-              comm.get(), cell_type, points, cells, global_cell_indices,
-              ghost_mode, cell_partition);
-        });
+  m.def(
+      "build_from_partition",
+      [](const MPICommWrapper comm, dolfin::mesh::CellType cell_type,
+         const Eigen::Ref<const Eigen::Array<
+             double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>>& points,
+         const Eigen::Ref<const Eigen::Array<std::int64_t, Eigen::Dynamic,
+                                             Eigen::Dynamic, Eigen::RowMajor>>&
+             cells,
+         const std::vector<std::int64_t>& global_cell_indices,
+         const dolfin::mesh::GhostMode ghost_mode,
+         const dolfin::mesh::PartitionData& cell_partition) {
+        return dolfin::mesh::Partitioning::build_from_partition(
+            comm.get(), cell_type, points, cells, global_cell_indices,
+            ghost_mode, cell_partition);
+      });
 
-} // namespace dolfin_wrappers
+  m.def(
+      "ghost_cell_mapping",
+      [](const MPICommWrapper comm, py::array_t<int> parttition,
+         dolfin::mesh::CellType cell_type,
+         const Eigen::Ref<const Eigen::Array<std::int64_t, Eigen::Dynamic,
+                                             Eigen::Dynamic, Eigen::RowMajor>>&
+             cells) {
+        std::vector<int> part(parttition.data(),
+                              parttition.data() + parttition.size());
+        return dolfin::mesh::Partitioning::compute_halo_cells(comm.get(), part,
+                                                              cell_type, cells);
+      });
+}
 } // namespace dolfin_wrappers
