@@ -141,12 +141,12 @@ def inflow_eval(x):
     return values
 
 
-inflow = Function(W.sub(0).collapse()))
+inflow = Function(W.sub(0).collapse())
 inflow.interpolate(inflow_eval)
-bc1=DirichletBC(W.sub(0), inflow, mf1[0])
+bc1 = DirichletBC(W.sub(0), inflow, mf1[0])
 
 # Collect boundary conditions
-bcs=[bc0, bc1]
+bcs = [bc0, bc1]
 
 # The first argument to
 # :py:class:`DirichletBC <dolfin.cpp.fem.DirichletBC>`
@@ -163,11 +163,11 @@ bcs=[bc0, bc1]
 # formulation of the Stokes equations are defined as follows::
 
 # Define variational problem
-(u, p)=TrialFunctions(W)
-(v, q)=TestFunctions(W)
-f=Function(W.sub(0).collapse())
-a=(inner(grad(u), grad(v)) - inner(p, div(v)) + inner(div(u), q)) * dx
-L=inner(f, v) * dx
+(u, p) = TrialFunctions(W)
+(v, q) = TestFunctions(W)
+f = Function(W.sub(0).collapse())
+a = (inner(grad(u), grad(v)) - inner(p, div(v)) + inner(div(u), q)) * dx
+L = inner(f, v) * dx
 
 # We also need to create a :py:class:`Function
 # <dolfin.cpp.function.Function>` to store the solution(s). The (full)
@@ -182,13 +182,13 @@ L=inner(f, v) * dx
 # a deep copy for further computations on the coefficient vectors::
 
 # Compute solution
-w=Function(W)
-solve(a == L, w, bcs, petsc_options = {"ksp_type": "preonly",
+w = Function(W)
+solve(a == L, w, bcs, petsc_options={"ksp_type": "preonly",
                                      "pc_type": "lu", "pc_factor_mat_solver_type": "mumps"})
 
 # Split the mixed solution and collapse
-u=w.sub(0).collapse()
-p=w.sub(1).collapse()
+u = w.sub(0).collapse()
+p = w.sub(1).collapse()
 
 # We can calculate the :math:`L^2` norms of u and p as follows::
 
@@ -209,10 +209,10 @@ with XDMFFile(MPI.comm_world, "pressure.xdmf") as pfile_xdmf:
 
 # Plot solution
 plt.figure()
-plot(u, title = "velocity")
+plot(u, title="velocity")
 
 # plt.figure()
-plot(p, title = "pressure" + str(MPI.rank(mesh.mpi_comm())))
+plot(p, title="pressure" + str(MPI.rank(mesh.mpi_comm())))
 
 # Display plots
 plt.show()
