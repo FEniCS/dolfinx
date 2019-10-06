@@ -5,68 +5,15 @@
 # SPDX-License-Identifier:    LGPL-3.0-or-later
 """Shared fixtures for unit tests."""
 
-import gc
 import os
 import shutil
 from collections import defaultdict
 
-import decorator
 import pytest
 
 from dolfin import MPI
 
 # --- Test fixtures (use as is or as examples): ---
-
-
-def fixture(func):
-    """Decorator for creating module scope fixture.
-    Also take care of garbage collection of temporaries.
-
-    NOTE: Probably does not work with yield fixtures or
-    maybe just ignores post-yield code
-
-    This is the preferred decorator for writing fixtures involving
-    objects which might have collective destructors.  If in a need for
-    using ``pytest.fixture`` directly, do::
-
-        yield result_of_fixture
-
-        gc.collect()
-        MPI.barrier(MPI.comm_world)
-
-    """
-
-    def wrapper(func, *args, **kwargs):
-
-        # Run function
-        rv = func(*args, **kwargs)
-
-        # Collect garbage of temporaries of the function
-        # and return collectively
-        gc.collect()
-        MPI.barrier(MPI.comm_world)
-
-        return rv
-
-        # FIXME: Need also to find a way how to clean-up fixture
-        #        return value; yield does not work here
-
-    # Decorate function with the wrapper
-    wrapped = decorator.decorator(wrapper, func)
-
-    # Mark as fixture and return
-    return pytest.fixture(scope='module')(wrapped)
-
-
-def gc_barrier():
-    """Internal utility to easily switch on and off calls to gc.collect()
-    and MPI.barrier(world) in all fixtures here.  Helps make the tests
-    deterministic when debugging.
-
-    """
-    gc.collect()
-    if MPI.size(MPI.comm_world) > 1:
-        MPI.barrier(MPI.comm_world)
 
 
 def worker_id(request):
@@ -75,25 +22,6 @@ def worker_id(request):
         return request.config.slaveinput['slaveid']
     except AttributeError:
         return 'master'
-
-
-@pytest.yield_fixture(scope="function")
-def gc_barrier_fixture():
-    """Function decorator to call gc.collect() and
-    MPI.barrier(world) before and after a test.  Helps
-    make the tests deterministic when debugging.
-
-    NOTE: This decorator is not needed now for writing tests, as there
-    is ``gc.collect()`` call in ``conftest.py`` on teardown of every
-    test.
-
-    """
-    gc_barrier()
-    yield
-    gc_barrier()
-
-
-use_gc_barrier = pytest.mark.usefixtures("gc_barrier_fixture")
 
 
 def _create_tempdir(request):
@@ -167,29 +95,27 @@ def tempdir(request):
     MPI safe (assuming MPI.comm_world context).
 
     """
-    gc_barrier()
     return _create_tempdir(request)
 
 
-@pytest.yield_fixture(scope="function")
-def cd_tempdir(request):
-    """Return a unique directory name for this test function instance.
+# @pytest.yield_fixture(scope="function")
+# def cd_tempdir(request):
+#     """Return a unique directory name for this test function instance.
 
-    Deletes and re-creates directory from previous test runs but lets
-    the directory stay after the test run for eventual inspection.
+#     Deletes and re-creates directory from previous test runs but lets
+#     the directory stay after the test run for eventual inspection.
 
-    Returns the directory name, derived from the test file and
-    function plus a sequence number to work with parameterized tests.
+#     Returns the directory name, derived from the test file and
+#     function plus a sequence number to work with parameterized tests.
 
-    Changes the current directory to the tempdir and resets cwd
-    afterwards.
+#     Changes the current directory to the tempdir and resets cwd
+#     afterwards.
 
-    MPI safe (assuming MPI.comm_world context).
+#     MPI safe (assuming MPI.comm_world context).
 
-    """
-    gc_barrier()
-    cwd = os.getcwd()
-    path = _create_tempdir(request)
-    os.chdir(path)
-    yield path
-    os.chdir(cwd)
+#     """
+#     cwd = os.getcwd()
+#     path = _create_tempdir(request)
+#     os.chdir(path)
+#     yield path
+#     os.chdir(cwd)
