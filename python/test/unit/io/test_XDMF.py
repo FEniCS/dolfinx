@@ -228,7 +228,7 @@ def test_save_and_checkpoint_vector(tempdir, encoding, fe_degree, fe_family,
 
         elif mesh.geometry.dim == 2:
             def expr_eval(x):
-                values = np.empty((x.shape[0], 2))
+                values = np.empty((x.shape[0], 2), dtype=PETSc.ScalarType)
                 values[:, 0] = 1.0j * x[:, 0] * x[:, 1]
                 values[:, 1] = x[:, 0] + 1.0j * x[:, 0]
                 return values
@@ -236,7 +236,7 @@ def test_save_and_checkpoint_vector(tempdir, encoding, fe_degree, fe_family,
 
         elif mesh.geometry.dim == 3:
             def expr_eval(x):
-                values = np.empty((x.shape[0], 3))
+                values = np.empty((x.shape[0], 3), dtype=PETSc.ScalarType)
                 values[:, 0] = x[:, 0] * x[:, 1]
                 values[:, 1] = x[:, 0] + 1.0j * x[:, 0]
                 values[:, 2] = x[:, 2]
