@@ -132,7 +132,7 @@ public:
   /// cells
   /// @warning This function only supports non-manifold Lagrange
   ///          elements
-  /// @param[in] x The reference element coordinates of the points. It
+  /// @param[in] X The reference element coordinates of the points. It
   ///              has shape (num_points, 3).
   /// @param[in,out] u The values at the points for each cell.
   //                   The values are ordered by cell. This argument
