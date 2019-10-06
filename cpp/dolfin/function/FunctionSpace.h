@@ -181,7 +181,8 @@ public:
   std::shared_ptr<const fem::DofMap> dofmap() const;
 
 private:
-  // Interpolate data
+  // Interpolate data. Fills expansion_coefficients using 'values',
+  // which are the values of the expression at each dof.
   void interpolate(
       Eigen::Ref<Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1>>
           expansion_coefficients,
