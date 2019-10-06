@@ -46,7 +46,8 @@ V = FunctionSpace(mesh, ("Lagrange", deg))
 # Define variational problem
 u = TrialFunction(V)
 v = TestFunction(V)
-f = interpolate(lambda x: A * k0**2 * np.cos(k0 * x[:, 0]) * np.cos(k0 * x[:, 1]), V)
+f = Function(V)
+f.interpolate(lambda x: A * k0**2 * np.cos(k0 * x[:, 0]) * np.cos(k0 * x[:, 1]))
 a = inner(grad(u), grad(v)) * dx - k0**2 * inner(u, v) * dx
 L = inner(f, v) * dx
 
@@ -71,7 +72,8 @@ def solution(values, x):
 
 # Function space for exact solution - need it to be higher than deg
 V_exact = FunctionSpace(mesh, ("Lagrange", deg + 3))
-u_exact = interpolate(lambda x: A * np.cos(k0 * x[:, 0]) * np.cos(k0 * x[:, 1]), V_exact)
+u_exact = Function(V_exact)
+u_exact.interpolate(lambda x: A * np.cos(k0 * x[:, 0]) * np.cos(k0 * x[:, 1]))
 
 # best approximation from V
 # u_BA = project(u_exact, V)
