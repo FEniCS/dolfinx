@@ -40,17 +40,13 @@ else:
     A = 1
 
 
-def source(values, x):
-    values[:, 0] = A * k0**2 * np.cos(k0 * x[:, 0]) * np.cos(k0 * x[:, 1])
-
-
 # Test and trial function space
 V = FunctionSpace(mesh, ("Lagrange", deg))
 
 # Define variational problem
 u = TrialFunction(V)
 v = TestFunction(V)
-f = interpolate(source, V)
+f = interpolate(lambda x: A * k0**2 * np.cos(k0 * x[:, 0]) * np.cos(k0 * x[:, 1]), V)
 a = inner(grad(u), grad(v)) * dx - k0**2 * inner(u, v) * dx
 L = inner(f, v) * dx
 
