@@ -8,16 +8,15 @@ import pytest
 
 import dolfin
 from dolfin import MPI, UnitCubeMesh, UnitSquareMesh
-from dolfin_utils.test.fixtures import fixture
 from dolfin_utils.test.skips import skip_in_parallel
 
 
-@fixture
+@pytest.fixture
 def cube():
     return UnitCubeMesh(MPI.comm_world, 5, 5, 5)
 
 
-@fixture
+@pytest.fixture
 def square():
     return UnitSquareMesh(MPI.comm_world, 5, 5)
 
