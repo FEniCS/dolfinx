@@ -103,10 +103,14 @@ public:
           const Eigen::Ref<const Eigen::Array<
               double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>>&)>& f);
 
-  /// Interpolate an expression. This interface is primarily to support
-  /// C code implementations of the expression, e.g. using Numba.
-  /// @param[in] f The expression to be interpolated.
-  void interpolate(const FunctionSpace::interpolation_function& f);
+  /// Interpolate an expression. This interface uses an expression
+  /// function f that has an in/out argument for the expression values.
+  /// It is primarily to support C code implementations of the
+  /// expression, e.g. using Numba. Generally the interface where the
+  /// expression function is a pure function, i.e. the expression values
+  /// are the return argument, should be preferred.
+  /// @param[in] f The expression to be interpolated
+  void interpolate_c(const FunctionSpace::interpolation_function& f);
 
   /// Return value rank
   int value_rank() const;

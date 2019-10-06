@@ -110,7 +110,7 @@ public:
   /// of expansion coefficients
   /// @param[in] expansion_coefficients The expansion coefficients
   /// @param[in] f The function to be interpolated
-  void interpolate(Eigen::Ref<Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1>>
+  void interpolate_c(Eigen::Ref<Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1>>
                        expansion_coefficients,
                    const interpolation_function& f) const;
 

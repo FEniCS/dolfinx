@@ -73,7 +73,7 @@ void function(py::module& m)
                      x.cols());
                  };
 
-             self.interpolate(_f);
+             self.interpolate_c(_f);
            },
            "Interpolate using a pointer to an expression with a C signature")
       .def_property_readonly(

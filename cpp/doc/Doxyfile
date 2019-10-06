@@ -874,7 +874,6 @@ RECURSIVE              = YES
 # run.
 
 EXCLUDE                = ../dolfin/io/pugixml.hpp \
-                         ../dolfin/io/pugixml.hpp \
                          ../dolfin/io/pugixml.cpp \
                          ../dolfin/common/loguru.hpp \
                          ../dolfin/common/loguru.cpp

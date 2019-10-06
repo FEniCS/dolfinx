@@ -178,7 +178,7 @@ void FunctionSpace::interpolate(
   interpolate(expansion_coefficients, values);
 }
 //-----------------------------------------------------------------------------
-void FunctionSpace::interpolate(
+void FunctionSpace::interpolate_c(
     Eigen::Ref<Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1>>
         expansion_coefficients,
     const interpolation_function& f) const
