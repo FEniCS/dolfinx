@@ -93,7 +93,7 @@ public:
   void interpolate(const Function& v);
 
   /// Interpolate an expression
-  /// @param[in] f The expression to be interpolated.
+  /// @param[in] f The expression to be interpolated
   void interpolate(
       const std::function<Eigen::Array<PetscScalar, Eigen::Dynamic,
                                        Eigen::Dynamic, Eigen::RowMajor>(
