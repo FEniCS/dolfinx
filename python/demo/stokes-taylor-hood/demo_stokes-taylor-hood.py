@@ -88,7 +88,7 @@ import numpy as np
 
 import dolfin
 from dolfin import (MPI, DirichletBC, Function, FunctionSpace, TestFunctions,
-                    TrialFunctions, interpolate, solve)
+                    TrialFunctions, solve)
 from dolfin.io import XDMFFile
 from dolfin.plotting import plot
 from ufl import FiniteElement, VectorElement, div, dx, grad, inner

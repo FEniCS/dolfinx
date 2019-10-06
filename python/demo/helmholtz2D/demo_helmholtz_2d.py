@@ -15,8 +15,7 @@ solution and source term."""
 import numpy as np
 
 from dolfin import (MPI, FacetNormal, Function, FunctionSpace, TestFunction,
-                    TrialFunction, UnitSquareMesh, has_petsc_complex,
-                    interpolate, solve)
+                    TrialFunction, UnitSquareMesh, has_petsc_complex, solve)
 from dolfin.fem.assemble import assemble_scalar
 from dolfin.io import XDMFFile
 from ufl import dx, grad, inner
