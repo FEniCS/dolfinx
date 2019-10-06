@@ -20,27 +20,27 @@ from dolfin_utils.test.fixtures import fixture
 from dolfin_utils.test.skips import skip_if_complex, skip_in_parallel
 
 
-@fixture
+@pytest.fixture
 def mesh():
     return UnitCubeMesh(MPI.comm_world, 3, 3, 3)
 
 
-@fixture
+@pytest.fixture
 def R(mesh):
     return FunctionSpace(mesh, ('R', 0))
 
 
-@fixture
+@pytest.fixture
 def V(mesh):
     return FunctionSpace(mesh, ('CG', 1))
 
 
-@fixture
+@pytest.fixture
 def W(mesh):
     return VectorFunctionSpace(mesh, ('CG', 1))
 
 
-@fixture
+@pytest.fixture
 def Q(mesh):
     return TensorFunctionSpace(mesh, ('CG', 1))
 
