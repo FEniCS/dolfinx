@@ -11,6 +11,7 @@
 #include <dolfin/common/types.h>
 #include <dolfin/fem/FiniteElement.h>
 #include <dolfin/la/PETScVector.h>
+#include <functional>
 #include <memory>
 #include <petscsys.h>
 #include <petscvec.h>
