@@ -211,23 +211,23 @@ def test_quad_dofs_order_4(L, H, eps):
     # Test fourth order mesh by computing volume of one cell
     #  *---------*   3--10-11-12-2
     #  |         |   |           |
-    #  |         |   15 19 22 18 9
+    #  |         |   15 22 23 24 9
     #  |         |   |           |
-    #  |         |   14 23 24 21 8
+    #  |         |   14 19 20 21 8
     #  |         |   |           |
-    #  |         |   13 16 20 17 7
+    #  |         |   13 16 17 18 7
     #  |         |   |           |
     #  *---------*   0--4--5--6--1
-    points = np.array([[0, 0], [L, 0], [L, H], [0, H],
+    points = np.array([[0, 0], [L, 0], [L, H], [0, H],  # 0 1 2 3
                        #
-                       [L / 4, 0], [L / 2, 0], [3 * L / 4, 0],
-                       [L + eps, H / 4], [L - eps, H / 2], [L + eps, 3 * H / 4],
-                       [L / 4, H], [L / 2, H], [3 * L / 4, H],
-                       [eps, H / 4], [-eps, H / 2], [eps, 3 * H / 4],
+                       [L / 4, 0], [L / 2, 0], [3 * L / 4, 0],  # 4 5 6
+                       [L + eps, H / 4], [L - eps, H / 2], [L + eps, 3 * H / 4],  # 7 8 9
+                       [L / 4, H], [L / 2, H], [3 * L / 4, H],  # 10 11 12
+                       [eps, H / 4], [-eps, H / 2], [eps, 3 * H / 4],  # 13 14 15
                        #
-                       [L / 4, H / 4], [L / 2, H / 4], [3 * L / 4, H / 4],
-                       [L / 4, H / 2], [L / 2, H / 2], [3 * L / 4, H / 2],
-                       [L / 4, 3 * H / 4], [L / 2, 3 * H / 4], [3 * L / 4, 3 * H / 4]])
+                       [L / 4 + eps, H / 4], [L / 2 + eps, H / 4], [3 * L / 4 + eps, H / 4],  # 16 17 18
+                       [L / 4 - eps, H / 2], [L / 2 - eps, H / 2], [3 * L / 4 - eps, H / 2],  # 19 20 21
+                       [L / 4 + eps, 3 * H / 4], [L / 2 + eps, 3 * H / 4], [3 * L / 4 + eps, 3 * H / 4]])  # 22 23 24
     cells = np.array([list(range(25))])
 
     mesh = Mesh(MPI.comm_world, CellType.quadrilateral, points, cells,
