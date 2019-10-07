@@ -9,7 +9,6 @@ import numpy.random
 import pytest
 
 from dolfin import MPI, MeshFunction, UnitCubeMesh
-from dolfin_utils.test.fixtures import fixture
 
 
 dtypes = (
@@ -18,7 +17,7 @@ dtypes = (
 )
 
 
-@fixture
+@pytest.fixture
 def mesh():
     return UnitCubeMesh(MPI.comm_world, 3, 3, 3)
 
