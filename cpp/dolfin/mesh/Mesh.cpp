@@ -18,6 +18,7 @@
 #include <dolfin/common/MPI.h>
 #include <dolfin/common/Timer.h>
 #include <dolfin/common/utils.h>
+#include <dolfin/mesh/cell_types.h>
 
 using namespace dolfin;
 using namespace dolfin::mesh;
@@ -63,18 +64,24 @@ Eigen::ArrayXd cell_r(const mesh::Mesh& mesh)
 // @param cell_permutation
 //   Permutation from VTK to DOLFIN index ordering
 // @return
-//   Local-to-global map for nodes (std::vector<std::int64_t>) and cell
-//   nodes in local indexing (EigenRowArrayXXi32)
-std::tuple<std::int32_t, std::vector<std::int64_t>, EigenRowArrayXXi32>
-compute_cell_node_map(std::int32_t num_vertices_per_cell,
-                      const Eigen::Ref<const EigenRowArrayXXi64>& cell_nodes,
-                      const std::vector<std::uint8_t>& cell_permutation)
+//   Local-to-global map for nodes and cell
+//   nodes in local indexing
+std::tuple<
+    std::int32_t, std::vector<std::int64_t>,
+    Eigen::Array<std::int32_t, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>>
+compute_cell_node_map(
+    std::int32_t num_vertices_per_cell,
+    const Eigen::Ref<const Eigen::Array<std::int64_t, Eigen::Dynamic,
+                                        Eigen::Dynamic, Eigen::RowMajor>>&
+        cell_nodes,
+    const std::vector<std::uint8_t>& cell_permutation)
 {
   const std::int32_t num_cells = cell_nodes.rows();
   const std::int32_t num_nodes_per_cell = cell_nodes.cols();
 
   // Cell points in local indexing
-  EigenRowArrayXXi32 cell_nodes_local(num_cells, num_nodes_per_cell);
+  Eigen::Array<std::int32_t, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
+      cell_nodes_local(num_cells, num_nodes_per_cell);
 
   // Loop over cells to build local-to-global map for (i) vertex nodes,
   // and (ii) then other nodes
@@ -119,16 +126,20 @@ compute_cell_node_map(std::int32_t num_vertices_per_cell,
 } // namespace
 
 //-----------------------------------------------------------------------------
-Mesh::Mesh(MPI_Comm comm, mesh::CellType type,
-           const Eigen::Ref<const EigenRowArrayXXd> points,
-           const Eigen::Ref<const EigenRowArrayXXi64> cells,
-           const std::vector<std::int64_t>& global_cell_indices,
-           const GhostMode ghost_mode, std::int32_t num_ghost_cells)
-    : cell_type(type), _degree(1), _mpi_comm(comm), _ghost_mode(ghost_mode),
+Mesh::Mesh(
+    MPI_Comm comm, mesh::CellType type,
+    const Eigen::Ref<const Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic,
+                                        Eigen::RowMajor>>& points,
+    const Eigen::Ref<const Eigen::Array<
+        std::int64_t, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>>& cells,
+    const std::vector<std::int64_t>& global_cell_indices,
+    const GhostMode ghost_mode, std::int32_t num_ghost_cells)
+    : _cell_type(type), _degree(1), _mpi_comm(comm), _ghost_mode(ghost_mode),
       _unique_id(common::UniqueIdGenerator::id())
 {
-  const int tdim = mesh::cell_dim(cell_type);
-  const std::int32_t num_vertices_per_cell = mesh::num_cell_vertices(cell_type);
+  const int tdim = mesh::cell_dim(_cell_type);
+  const std::int32_t num_vertices_per_cell
+      = mesh::num_cell_vertices(_cell_type);
 
   // Check size of global cell indices. If empty, construct later.
   if (global_cell_indices.size() > 0
@@ -139,30 +150,23 @@ Mesh::Mesh(MPI_Comm comm, mesh::CellType type,
   }
 
   // Permutation from VTK to DOLFIN order for cell geometric nodes
-  // FIXME: should do this also for quad/hex
-  // FIXME: remove duplication in mesh::vtk_mapping()
-  std::vector<std::uint8_t> cell_permutation = {0, 1, 2, 3, 4, 5, 6, 7};
-
-  // Infer if the mesh has P2 geometry (P1 has num_vertices_per_cell ==
-  // cells.cols())
-  if (num_vertices_per_cell != cells.cols())
+  std::vector<std::uint8_t> cell_permutation;
+  if (type == mesh::CellType::quadrilateral)
   {
-    if (type == mesh::CellType::triangle and cells.cols() == 6)
-    {
-      _degree = 2;
-      cell_permutation = {0, 1, 2, 5, 3, 4};
-    }
-    else if (type == mesh::CellType::tetrahedron and cells.cols() == 10)
-    {
-      _degree = 2;
-      cell_permutation = {0, 1, 2, 3, 9, 6, 8, 7, 5, 4};
-    }
+    // Quadrilateral cells does not follow counter clockwise
+    // order (cc), but lexiographic order (LG). This breaks the assumptions
+    // that the cell permutation is the same as the VTK-map.
+    if (num_vertices_per_cell == cells.cols())
+      cell_permutation = {0, 1, 2, 3};
     else
-    {
-      throw std::runtime_error(
-          "Mismatch between cell type and number of vertices per cell");
-    }
+      throw std::runtime_error("Higher order quadrilateral not supported");
   }
+  else
+    cell_permutation = mesh::vtk_mapping(type, cells.cols());
+
+  // Find degree of mesh
+  // FIXME: degree should probably be in MeshGeometry
+  _degree = mesh::cell_degree(type, cells.cols());
 
   // Get number of nodes (global)
   const std::uint64_t num_points_global = MPI::sum(comm, points.rows());
@@ -187,7 +191,8 @@ Mesh::Mesh(MPI_Comm comm, mesh::CellType type,
       = std::make_unique<CoordinateDofs>(coordinate_nodes, cell_permutation);
 
   // Distribute the points across processes and calculate shared nodes
-  EigenRowArrayXXd points_received;
+  Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
+      points_received;
   std::map<std::int32_t, std::set<std::int32_t>> nodes_shared;
   std::tie(points_received, nodes_shared)
       = Partitioning::distribute_points(comm, points, node_indices_global);
@@ -267,7 +272,7 @@ Mesh::Mesh(MPI_Comm comm, mesh::CellType type,
 }
 //-----------------------------------------------------------------------------
 Mesh::Mesh(const Mesh& mesh)
-    : cell_type(mesh.cell_type), _topology(new Topology(*mesh._topology)),
+    : _cell_type(mesh._cell_type), _topology(new Topology(*mesh._topology)),
       _geometry(new Geometry(*mesh._geometry)),
       _coordinate_dofs(new CoordinateDofs(*mesh._coordinate_dofs)),
       _degree(mesh._degree), _mpi_comm(mesh.mpi_comm()),
@@ -278,7 +283,7 @@ Mesh::Mesh(const Mesh& mesh)
 }
 //-----------------------------------------------------------------------------
 Mesh::Mesh(Mesh&& mesh)
-    : cell_type(std::move(mesh.cell_type)),
+    : _cell_type(std::move(mesh._cell_type)),
       _topology(std::move(mesh._topology)),
       _geometry(std::move(mesh._geometry)),
       _coordinate_dofs(std::move(mesh._coordinate_dofs)),
@@ -439,7 +444,7 @@ std::string Mesh::str(bool verbose) const
   {
     const int tdim = _topology->dim();
     s << "<Mesh of topological dimension " << tdim << " ("
-      << mesh::to_string(cell_type) << ") with " << num_entities(0)
+      << mesh::to_string(_cell_type) << ") with " << num_entities(0)
       << " vertices and " << num_entities(tdim) << " cells >";
   }
 
@@ -463,4 +468,6 @@ const CoordinateDofs& Mesh::coordinate_dofs() const
 }
 //-----------------------------------------------------------------------------
 std::int32_t Mesh::degree() const { return _degree; }
+//-----------------------------------------------------------------------------
+mesh::CellType Mesh::cell_type() const { return _cell_type; }
 //-----------------------------------------------------------------------------

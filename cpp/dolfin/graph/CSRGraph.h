@@ -17,17 +17,17 @@ namespace graph
 /// Compressed Sparse Row graph
 
 /// This class provides a Compressed Sparse Row Graph defined by a
-/// vector containing edges for each node and a vector of offsets
-/// into the edge vector for each node
+/// vector containing edges for each node and a vector of offsets into
+/// the edge vector for each node
 ///
-/// In parallel, all nodes must be numbered from zero on process
-/// zero continuously through increasing rank processes. Edges must
-/// be defined in terms of the global node numbers. The global node
-/// offset of each process is given by node_distribution()
+/// In parallel, all nodes must be numbered from zero on process zero
+/// continuously through increasing rank processes. Edges must be
+/// defined in terms of the global node numbers. The global node offset
+/// of each process is given by node_distribution()
 ///
-/// The format of the nodes, edges and distribution is identical
-/// with the formats for ParMETIS and PT-SCOTCH.  See the manuals
-/// for these libraries for further information.
+/// The format of the nodes, edges and distribution is identical with
+/// the formats for ParMETIS and PT-SCOTCH.  See the manuals for these
+/// libraries for further information.
 
 template <typename T>
 class CSRGraph

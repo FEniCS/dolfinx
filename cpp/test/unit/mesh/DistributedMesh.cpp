@@ -24,7 +24,7 @@ void test_distributed_mesh()
   PetscInitialize(&argc, &argv, nullptr, nullptr);
 
   auto mpi_comm = dolfin::MPI::Comm(MPI_COMM_WORLD);
-  int mpi_size = mpi_comm.size();
+  int mpi_size = dolfin::MPI::size(mpi_comm.comm());
 
   // Create sub-communicator
   int subset_size = (mpi_size > 1) ? ceil(mpi_size / 2) : 1;
@@ -44,11 +44,12 @@ void test_distributed_mesh()
   file.write(*mesh);
 
   mesh::CellType cell_type;
-  EigenRowArrayXXd points;
-  EigenRowArrayXXi64 cells;
+  Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor> points;
+  Eigen::Array<std::int64_t, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
+      cells;
   std::vector<std::int64_t> global_cell_indices;
 
-  // Save mesh in XDMF format
+  // Read in mesh in mesh data from XDMF file
   io::XDMFFile infile(MPI_COMM_WORLD, "mesh.xdmf");
   std::tie(cell_type, points, cells, global_cell_indices)
       = infile.read_mesh_data(subset_comm);
@@ -56,15 +57,14 @@ void test_distributed_mesh()
   // Partition mesh into nparts using local mesh data and subset of
   // communicators
   int nparts = mpi_size;
-  std::string partitioner = "SCOTCH";
   mesh::PartitionData cell_partition = mesh::Partitioning::partition_cells(
-      subset_comm, nparts, cell_type, cells, partitioner);
+      subset_comm, nparts, cell_type, cells, mesh::Partitioner::scotch);
 
   // Build mesh from local mesh data, ghost mode, and provided cell partition
-  auto ghost_mode = mesh::GhostMode::none;
+  mesh::GhostMode ghost_mode = mesh::GhostMode::none;
   auto new_mesh
       = std::make_shared<mesh::Mesh>(mesh::Partitioning::build_from_partition(
-          mpi_comm.comm(), cell_type, cells, points, global_cell_indices,
+          mpi_comm.comm(), cell_type, points, cells, global_cell_indices,
           ghost_mode, cell_partition));
 
   // Check mesh features

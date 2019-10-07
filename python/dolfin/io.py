@@ -6,7 +6,12 @@
 # SPDX-License-Identifier:    LGPL-3.0-or-later
 """IO module for input data, post-processing and checkpointing"""
 
+import typing
+
+import numpy
+
 from dolfin import cpp, fem, function
+
 
 __all__ = ["HDF5File", "XDMFFile"]
 
@@ -115,8 +120,36 @@ class HDF5File:
         return function.Function(V, u_cpp.vector)
 
 
+class VTKFile:
+    """Interface to VTK files
+    VTK supports arbitrary order Lagrangian finite elements for the
+    geometry description. XDMF is the preferred format for geometry
+    order <= 2.
+
+    """
+
+    def __init__(self, filename: str):
+        """Open VTK file
+        Parameters
+        ----------
+        filename
+            Name of the file
+        """
+        self._cpp_object = cpp.io.VTKFile(filename)
+
+    def write(self, o) -> None:
+        """Write object to file"""
+        o_cpp = getattr(o, "_cpp_object", o)
+        self._cpp_object.write(o_cpp)
+
+
 class XDMFFile:
-    """Interface to XDMF files"""
+    """Interface to XDMF files
+    This format is preferred on lower order geometries and for
+    DG and RT function spaces.
+    XDMF also allows for checkpointing of solutions and has parallel support.
+
+    """
 
     # Import encoding (find better way?)
     Encoding = cpp.io.XDMFFile.Encoding
@@ -217,6 +250,28 @@ class XDMFFile:
 
     def read_information_string(self):
         return self._cpp_object.read_information_string()
+
+    def read_mesh_data(self, mpi_comm) -> typing.Tuple[cpp.mesh.CellType, numpy.ndarray,
+                                                       numpy.ndarray, typing.List[int]]:
+        """Read in mesh data
+
+        Parameters
+        ----------
+        mpi_comm:
+            MPI communicator
+        Returns
+        -------
+        cell_type
+            Cell type
+        points
+            Geometric points on each process
+        cells
+            Topological cells with global vertex indexing
+        global_cell_indices
+            List of global cell indices
+        """
+        return self._cpp_object.read_mesh_data(mpi_comm)
+
 
     def read_checkpoint(self, V, name: str,
                         counter: int = -1) -> function.Function:

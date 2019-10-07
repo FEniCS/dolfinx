@@ -22,8 +22,8 @@ mesh::Mesh build(MPI_Comm comm, std::size_t nx, std::array<double, 2> x,
   // Receive mesh according to parallel policy
   if (dolfin::MPI::rank(comm) != 0)
   {
-    EigenRowArrayXXd geom(0, 1);
-    EigenRowArrayXXi64 topo(0, 2);
+    Eigen::Array<double, 0, 1> geom(0, 1);
+    Eigen::Array<std::int64_t, 0, 2, Eigen::RowMajor> topo(0, 2);
     return mesh::Partitioning::build_distributed_mesh(
         comm, mesh::CellType::interval, geom, topo, {}, ghost_mode);
   }
@@ -47,14 +47,13 @@ mesh::Mesh build(MPI_Comm comm, std::size_t nx, std::array<double, 2> x,
   if (nx < 1)
     throw std::runtime_error("Number of points on interval must be at least 1");
 
-  EigenRowArrayXXd geom((nx + 1), 1);
-  EigenRowArrayXXi64 topo(nx, 2);
-
   // Create vertices
+  Eigen::Array<double, Eigen::Dynamic, 1> geom((nx + 1), 1);
   for (std::size_t ix = 0; ix <= nx; ix++)
     geom(ix, 0) = a + ab * static_cast<double>(ix);
 
   // Create intervals
+  Eigen::Array<std::int64_t, Eigen::Dynamic, 2, Eigen::RowMajor> topo(nx, 2);
   for (std::size_t ix = 0; ix < nx; ix++)
     topo.row(ix) << ix, ix + 1;
 

@@ -48,8 +48,7 @@ std::set<std::uint32_t> compute_nonlocal_entities(const mesh::Mesh& mesh,
 /// Add set of points to XDMF xml_node and write data
 void add_points(MPI_Comm comm, pugi::xml_node& xdmf_node, hid_t h5_id,
                 const Eigen::Ref<const Eigen::Array<double, Eigen::Dynamic, 3,
-                                                    Eigen::RowMajor>>
-                    points);
+                                                    Eigen::RowMajor>>& points);
 
 /// Add set of points to XDMF xml_node and write data
 template <typename T>
@@ -207,8 +206,7 @@ std::vector<T> compute_value_data(const mesh::MeshFunction<T>& meshfunction)
         = xdmf_write::compute_nonlocal_entities(*mesh, cell_dim);
 
     // Get reference to mesh function data array
-    Eigen::Ref<const Eigen::Array<T, Eigen::Dynamic, 1>> mf_values
-        = meshfunction.values();
+    const Eigen::Array<T, Eigen::Dynamic, 1>& mf_values = meshfunction.values();
 
     for (auto& e : mesh::MeshRange(*mesh, cell_dim))
     {

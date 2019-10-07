@@ -28,10 +28,10 @@
 // #include <dolfin/mesh/Connectivity.h>
 #include <dolfin/mesh/DistributedMeshTools.h>
 // #include <dolfin/mesh/Mesh.h>
+#include <dolfin/mesh/Geometry.h>
 #include <dolfin/mesh/MeshEntity.h>
 #include <dolfin/mesh/MeshIterator.h>
 #include <dolfin/mesh/cell_types.h>
-#include <dolfin/mesh/Geometry.h>
 // #include <dolfin/mesh/MeshValueCollection.h>
 // #include <dolfin/mesh/Partitioning.h>
 // #include <iomanip>
@@ -208,7 +208,7 @@ std::int64_t xdmf_utils::get_num_cells(const pugi::xml_node& topology_node)
 std::vector<PetscScalar>
 xdmf_utils::get_point_data_values(const function::Function& u)
 {
-  auto mesh = u.function_space()->mesh;
+  std::shared_ptr<const mesh::Mesh> mesh = u.function_space()->mesh();
   assert(mesh);
   Eigen::Array<PetscScalar, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
       data_values = u.compute_point_values();
@@ -259,8 +259,8 @@ xdmf_utils::get_point_data_values(const function::Function& u)
 std::vector<PetscScalar>
 xdmf_utils::get_cell_data_values(const function::Function& u)
 {
-  assert(u.function_space()->dofmap);
-  const auto mesh = u.function_space()->mesh;
+  assert(u.function_space()->dofmap());
+  const auto mesh = u.function_space()->mesh();
   const int value_size = u.value_size();
   const int value_rank = u.value_rank();
 
@@ -272,7 +272,7 @@ xdmf_utils::get_cell_data_values(const function::Function& u)
   // Build lists of dofs and create map
   std::vector<PetscInt> dof_set;
   dof_set.reserve(local_size);
-  const auto dofmap = u.function_space()->dofmap;
+  const auto dofmap = u.function_space()->dofmap();
   assert(dofmap->element_dof_layout);
   const int ndofs = dofmap->element_dof_layout->num_dofs();
   for (auto& cell : mesh::MeshRange(*mesh, tdim))

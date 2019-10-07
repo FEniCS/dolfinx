@@ -16,9 +16,9 @@ PartitionData::PartitionData(
     : _offset(1)
 
 {
-  for (std::size_t i = 0; i != cell_partition.size(); ++i)
+  for (std::size_t i = 0; i < cell_partition.size(); ++i)
   {
-    const auto it = ghost_procs.find(i);
+    auto it = ghost_procs.find(i);
     if (it == ghost_procs.end())
       _dest_processes.push_back(cell_partition[i]);
     else
@@ -50,8 +50,8 @@ const std::int32_t* PartitionData::procs(std::int32_t i) const
 //-----------------------------------------------------------------------------
 std::int32_t PartitionData::size() const { return _offset.size() - 1; }
 //-----------------------------------------------------------------------------
-int PartitionData::num_ghosts() const
+std::int32_t PartitionData::num_ghosts() const
 {
-  return _offset.size() - _dest_processes.size() - 1;
+  return _dest_processes.size() - _offset.size() + 1;
 }
 //-----------------------------------------------------------------------------

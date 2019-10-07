@@ -99,13 +99,36 @@ public:
   /// Send n values for each index that is owned to processes that have
   /// the index as a ghost. The size of the input array local_data must
   /// be the same as size_local().
+  /// @param local_data Local data
+  /// @param remote_data Remote data
+  /// @param n Number of data items per index
   void scatter_fwd(const std::vector<std::int64_t>& local_data,
                    std::vector<std::int64_t>& remote_data, int n) const;
+
+  /// Send n values for each index that is owned to processes that have
+  /// the index as a ghost. The size of the input array local_data must
+  /// be the same as size_local().
+  /// @param local_data Local data
+  /// @param remote_data Remote data
+  /// @param n Number of data items per index
   void scatter_fwd(const std::vector<std::int32_t>& local_data,
                    std::vector<std::int32_t>& remote_data, int n) const;
 
+  /// Send n values for each index that is owned to processes that have
+  /// the index as a ghost. The size of the input array local_data must
+  /// be the same as size_local().
+  /// @param local_data Local data
+  /// @param n Number of data items per index
+  /// @return Remote data
   std::vector<std::int64_t>
   scatter_fwd(const std::vector<std::int64_t>& local_data, int n) const;
+
+  /// Send n values for each index that is owned to processes that have
+  /// the index as a ghost. The size of the input array local_data must
+  /// be the same as size_local().
+  /// @param local_data Local data
+  /// @param n Number of data items per index
+  /// @return Remote data
   std::vector<std::int32_t>
   scatter_fwd(const std::vector<std::int32_t>& local_data, int n) const;
 
@@ -114,6 +137,9 @@ public:
   void scatter_rev(std::vector<std::int64_t>& local_data,
                    const std::vector<std::int64_t>& remote_data, int n,
                    MPI_Op op) const;
+
+  /// Send n values for each ghost index to owning to processes. The size
+  /// of the input array remote_data must be the same as num_ghosts().
   void scatter_rev(std::vector<std::int32_t>& local_data,
                    const std::vector<std::int32_t>& remote_data, int n,
                    MPI_Op op) const;

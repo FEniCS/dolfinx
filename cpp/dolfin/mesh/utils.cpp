@@ -22,7 +22,7 @@ namespace
 //-----------------------------------------------------------------------------
 template <typename T>
 T volume_interval(const mesh::Mesh& mesh,
-                  const Eigen::Ref<const Eigen::ArrayXi> entities)
+                  const Eigen::Ref<const Eigen::ArrayXi>& entities)
 {
   const mesh::Geometry& geometry = mesh.geometry();
   const mesh::Topology& topology = mesh.topology();
@@ -44,7 +44,7 @@ T volume_interval(const mesh::Mesh& mesh,
 //-----------------------------------------------------------------------------
 template <typename T>
 T volume_triangle(const mesh::Mesh& mesh,
-                  const Eigen::Ref<const Eigen::ArrayXi> entities)
+                  const Eigen::Ref<const Eigen::ArrayXi>& entities)
 {
   const mesh::Geometry& geometry = mesh.geometry();
   const mesh::Topology& topology = mesh.topology();
@@ -100,7 +100,7 @@ T volume_triangle(const mesh::Mesh& mesh,
 //-----------------------------------------------------------------------------
 template <typename T>
 T volume_tetrahedron(const mesh::Mesh& mesh,
-                     const Eigen::Ref<const Eigen::ArrayXi> entities)
+                     const Eigen::Ref<const Eigen::ArrayXi>& entities)
 {
   const mesh::Geometry& geometry = mesh.geometry();
   const mesh::Topology& topology = mesh.topology();
@@ -140,7 +140,7 @@ T volume_tetrahedron(const mesh::Mesh& mesh,
 //-----------------------------------------------------------------------------
 template <typename T>
 T volume_quadrilateral(const mesh::Mesh& mesh,
-                       const Eigen::Ref<const Eigen::ArrayXi> entities)
+                       const Eigen::Ref<const Eigen::ArrayXi>& entities)
 {
   const mesh::Geometry& geometry = mesh.geometry();
   const mesh::Topology& topology = mesh.topology();
@@ -187,9 +187,10 @@ T volume_quadrilateral(const mesh::Mesh& mesh,
 /// for a small number of entities.
 template <typename T>
 T volume_entities_tmpl(const mesh::Mesh& mesh,
-                       const Eigen::Ref<const Eigen::ArrayXi> entities, int dim)
+                       const Eigen::Ref<const Eigen::ArrayXi>& entities,
+                       int dim)
 {
-  const mesh::CellType type = cell_entity_type(mesh.cell_type, dim);
+  const mesh::CellType type = cell_entity_type(mesh.cell_type(), dim);
   switch (type)
   {
   case mesh::CellType::point:
@@ -217,7 +218,7 @@ T volume_entities_tmpl(const mesh::Mesh& mesh,
 //-----------------------------------------------------------------------------
 template <typename T>
 T circumradius_triangle(const mesh::Mesh& mesh,
-                        const Eigen::Ref<const Eigen::ArrayXi> entities)
+                        const Eigen::Ref<const Eigen::ArrayXi>& entities)
 {
   // Get mesh geometry
   const mesh::Geometry& geometry = mesh.geometry();
@@ -249,7 +250,7 @@ T circumradius_triangle(const mesh::Mesh& mesh,
 //-----------------------------------------------------------------------------
 template <typename T>
 T circumradius_tetrahedron(const mesh::Mesh& mesh,
-                           const Eigen::Ref<const Eigen::ArrayXi> entities)
+                           const Eigen::Ref<const Eigen::ArrayXi>& entities)
 {
   // Get mesh geometry
   const mesh::Geometry& geometry = mesh.geometry();
@@ -292,9 +293,9 @@ T circumradius_tetrahedron(const mesh::Mesh& mesh,
 //-----------------------------------------------------------------------------
 template <typename T>
 T circumradius_tmpl(const mesh::Mesh& mesh,
-                    const Eigen::Ref<const Eigen::ArrayXi> entities, int dim)
+                    const Eigen::Ref<const Eigen::ArrayXi>& entities, int dim)
 {
-  const mesh::CellType type = cell_entity_type(mesh.cell_type, dim);
+  const mesh::CellType type = cell_entity_type(mesh.cell_type(), dim);
   switch (type)
   {
   case mesh::CellType::point:
@@ -326,16 +327,17 @@ T circumradius_tmpl(const mesh::Mesh& mesh,
 //-----------------------------------------------------------------------------
 Eigen::ArrayXd
 mesh::volume_entities(const mesh::Mesh& mesh,
-                      const Eigen::Ref<const Eigen::ArrayXi> entities, int dim)
+                      const Eigen::Ref<const Eigen::ArrayXi>& entities, int dim)
 {
   return volume_entities_tmpl<Eigen::ArrayXd>(mesh, entities, dim);
 }
 //-----------------------------------------------------------------------------
 Eigen::ArrayXd mesh::h(const Mesh& mesh,
-                       const Eigen::Ref<const Eigen::ArrayXi> entities, int dim)
+                       const Eigen::Ref<const Eigen::ArrayXi>& entities,
+                       int dim)
 {
   // Get number of cell vertices
-  const mesh::CellType type = cell_entity_type(mesh.cell_type, dim);
+  const mesh::CellType type = cell_entity_type(mesh.cell_type(), dim);
   const int num_vertices = num_cell_vertices(type);
 
   const mesh::Geometry& geometry = mesh.geometry();
@@ -366,16 +368,16 @@ Eigen::ArrayXd mesh::h(const Mesh& mesh,
 //-----------------------------------------------------------------------------
 Eigen::ArrayXd
 mesh::circumradius(const mesh::Mesh& mesh,
-                   const Eigen::Ref<const Eigen::ArrayXi> entities, int dim)
+                   const Eigen::Ref<const Eigen::ArrayXi>& entities, int dim)
 {
   return circumradius_tmpl<Eigen::ArrayXd>(mesh, entities, dim);
 }
 //-----------------------------------------------------------------------------
 Eigen::ArrayXd mesh::inradius(const mesh::Mesh& mesh,
-                              const Eigen::Ref<const Eigen::ArrayXi> entities)
+                              const Eigen::Ref<const Eigen::ArrayXi>& entities)
 {
   // Cell type
-  const mesh::CellType type = mesh.cell_type;
+  const mesh::CellType type = mesh.cell_type();
 
   // Check cell type
   if (!mesh::is_simplex(type))
@@ -422,20 +424,20 @@ Eigen::ArrayXd mesh::inradius(const mesh::Mesh& mesh,
 //-----------------------------------------------------------------------------
 Eigen::ArrayXd
 mesh::radius_ratio(const mesh::Mesh& mesh,
-                   const Eigen::Ref<const Eigen::ArrayXi> entities)
+                   const Eigen::Ref<const Eigen::ArrayXi>& entities)
 {
-  const mesh::CellType type = mesh.cell_type;
+  const mesh::CellType type = mesh.cell_type();
   const int dim = mesh::cell_dim(type);
   Eigen::ArrayXd r = mesh::inradius(mesh, entities);
   Eigen::ArrayXd cr = mesh::circumradius(mesh, entities, dim);
-  return mesh::cell_dim(mesh.cell_type) * r / cr;
+  return mesh::cell_dim(mesh.cell_type()) * r / cr;
 }
 //-----------------------------------------------------------------------------
 Eigen::Array<double, Eigen::Dynamic, 3, Eigen::RowMajor>
 mesh::cell_normals(const mesh::Mesh& mesh, int dim)
 {
   const int gdim = mesh.geometry().dim();
-  const mesh::CellType type = mesh::cell_entity_type(mesh.cell_type, dim);
+  const mesh::CellType type = mesh::cell_entity_type(mesh.cell_type(), dim);
   const mesh::Geometry& geometry = mesh.geometry();
 
   switch (type)
@@ -508,7 +510,7 @@ mesh::cell_normals(const mesh::Mesh& mesh, int dim)
 Eigen::Vector3d mesh::normal(const mesh::MeshEntity& cell, int facet_local)
 {
   const mesh::Geometry& geometry = cell.mesh().geometry();
-  const mesh::CellType type = cell.mesh().cell_type;
+  const mesh::CellType type = cell.mesh().cell_type();
   const int tdim = cell.mesh().topology().dim();
   assert(cell.dim() == tdim);
 
@@ -631,7 +633,7 @@ Eigen::Vector3d mesh::normal(const mesh::MeshEntity& cell, int facet_local)
 //-----------------------------------------------------------------------------
 Eigen::Array<double, Eigen::Dynamic, 3, Eigen::RowMajor> mesh::midpoints(
     const mesh::Mesh& mesh, int dim,
-    const Eigen::Ref<const Eigen::Array<int, Eigen::Dynamic, 1>> entities)
+    const Eigen::Ref<const Eigen::Array<int, Eigen::Dynamic, 1>>& entities)
 {
   const mesh::Geometry& geometry = mesh.geometry();
   const Eigen::Array<double, Eigen::Dynamic, 3, Eigen::RowMajor>& points
@@ -653,7 +655,7 @@ Eigen::Array<double, Eigen::Dynamic, 3, Eigen::RowMajor> mesh::midpoints(
     std::shared_ptr<const mesh::Connectivity> connectivity
         = topology.connectivity(dim, 0);
     const int num_vertices
-        = mesh::cell_num_entities(cell_entity_type(mesh.cell_type, dim), 0);
+        = mesh::cell_num_entities(cell_entity_type(mesh.cell_type(), dim), 0);
     for (Eigen::Index e = 0; e < entities.rows(); ++e)
     {
       const std::int32_t* vertices = connectivity->connections(entities[e]);

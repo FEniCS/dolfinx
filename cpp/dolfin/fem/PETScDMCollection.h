@@ -44,18 +44,17 @@ class PETScDMCollection
 {
 public:
   /// Construct PETScDMCollection from a vector of
-  /// function::FunctionSpaces. The vector of function::FunctionSpaces is stored
-  /// from
-  /// coarse to fine.
+  /// function::FunctionSpaces. The vector of function::FunctionSpaces
+  /// is stored from coarse to fine.
   PETScDMCollection(std::vector<std::shared_ptr<const function::FunctionSpace>>
                         function_spaces);
 
   /// Destructor
   ~PETScDMCollection();
 
-  /// Return the ith DM objects. The coarest DM has index 0. Use
-  /// i=-1 to get the DM for the finest level, i=-2 for the DM for
-  /// the second finest level, etc.
+  /// Return the ith DM objects. The coarsest DM has index 0. Use i=-1
+  /// to get the DM for the finest level, i=-2 for the DM for the second
+  /// finest level, etc.
   DM get_dm(int i);
 
   /// These are test/debugging functions that will be removed

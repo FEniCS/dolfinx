@@ -6,7 +6,7 @@
 # SPDX-License-Identifier:    LGPL-3.0-or-later
 
 import ufl
-from dolfin import function
+from dolfin import function, functionspace
 
 
 def adjoint(form: ufl.Form, reordered_arguments=None) -> ufl.Form:
@@ -52,17 +52,17 @@ def derivative(form: ufl.Form, u, du,
     return ufl.derivative(form, u, du, coefficient_derivatives)
 
 
-def increase_order(V: function.FunctionSpace) -> function.FunctionSpace:
+def increase_order(V: functionspace.FunctionSpace) -> functionspace.FunctionSpace:
     """For a given function space, return the same space, but with
     polynomial degree increase by 1.
 
     """
     e = ufl.algorithms.elementtransformations.increase_order(V.ufl_element())
-    return function.FunctionSpace(V.mesh, e)
+    return functionspace.FunctionSpace(V.mesh, e)
 
 
-def change_regularity(V: function.FunctionSpace,
-                      family: str) -> function.FunctionSpace:
+def change_regularity(V: functionspace.FunctionSpace,
+                      family: str) -> functionspace.FunctionSpace:
     """For a given function space, return the corresponding space with
     the finite elements specified by 'family'. Possible families are
     the families supported by the form compiler
@@ -70,10 +70,10 @@ def change_regularity(V: function.FunctionSpace,
     """
     e = ufl.algorithms.elementtransformations.change_regularity(
         V.ufl_element(), family)
-    return function.FunctionSpace(V.mesh, e)
+    return functionspace.FunctionSpace(V.mesh, e)
 
 
-def tear(V: function.FunctionSpace) -> function.FunctionSpace:
+def tear(V: functionspace.FunctionSpace) -> functionspace.FunctionSpace:
     """For a given function space, return the corresponding discontinuous
     space
 

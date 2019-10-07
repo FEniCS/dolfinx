@@ -15,6 +15,7 @@ namespace dolfin
 namespace fem
 {
 
+/// Tabulates the vertex positions for the reference cell
 class ReferenceCellGeometry
 {
 public:
