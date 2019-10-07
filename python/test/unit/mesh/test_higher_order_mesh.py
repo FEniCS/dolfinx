@@ -207,33 +207,32 @@ def test_quad_dofs_order_3(L, H, eps):
     vol = assemble_scalar(Constant(mesh, 1) * dx)
     assert(vol == pytest.approx(L * H, rel=1e-9))
 
+
 @skip_in_parallel
 @pytest.mark.parametrize('L', [1, 4])
 @pytest.mark.parametrize('H', [1, 5])
 @pytest.mark.parametrize('eps', [0, 1, 10, 100])
 def test_quad_dofs_order_4(L, H, eps):
     # Test third order mesh by computing volume of one cell
-    #  *---------*   3--12-11-10-2
+    #  *---------*   3--10-11-12-2
     #  |         |   |           |
-    #  |         |   13 19 22 18 9
+    #  |         |   15 19 22 18 9
     #  |         |   |           |
     #  |         |   14 23 24 21 8
     #  |         |   |           |
-    #  |         |   15 16 20 17 7
+    #  |         |   13 16 20 17 7
     #  |         |   |           |
     #  *---------*   0--4--5--6--1
     points = np.array([[0, 0], [L, 0], [L, H], [0, H],
                        #
                        [L / 4, 0], [L / 2, 0], [3 * L / 4, 0],
                        [L + eps, H / 4], [L - eps, H / 2], [L + eps, 3 * H / 4],
-                       [3 * L / 4, H], [L / 2, H], [L / 4, H],
-                       [eps, 3 * H / 4], [-eps, H / 2], [eps, H / 4],
+                       [L / 4, H], [L / 2, H], [3 * L / 4, H],
+                       [eps, H / 4], [-eps, H / 2], [eps, 3 * H / 4],
                        #
-                       [L / 4 + eps, H / 4], [3 * L / 4 + eps, H / 4],
-                       [3 * L / 4 + eps, 3 * H / 4], [L / 4 + eps, 3 * H / 4],
-                       [L / 2 + eps, H / 4], [3 * L / 4 - eps, H / 2],
-                       [L / 2 + eps, 3 * H / 4], [L / 4 - eps, H / 2],
-                       [L / 2, H / 2]])
+                       [L / 4, H / 4], [L / 2, H / 4], [3 * L / 4, H / 4],
+                       [L / 4, H / 2], [L / 2, H / 2], [3 * L / 4, H / 2],
+                       [L / 4, 3 * H / 4], [L / 2, 3 * H / 4], [3 * L / 4, 3 * H / 4]])
     cells = np.array([list(range(25))])
 
     mesh = Mesh(MPI.comm_world, CellType.quadrilateral, points, cells,
@@ -248,5 +247,3 @@ def test_quad_dofs_order_4(L, H, eps):
                 [], GhostMode.none)
     vol = assemble_scalar(Constant(mesh, 1) * dx)
     assert(vol == pytest.approx(L * H, rel=1e-9))
-
-test_quad_dofs_order_3(1,1,.1)
