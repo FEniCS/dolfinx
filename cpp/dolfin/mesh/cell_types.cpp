@@ -542,15 +542,9 @@ std::vector<std::uint8_t> mesh::vtk_mapping(mesh::CellType type, int num_nodes)
         assert(j == i * i);
         return permutation;
       }
+      throw std::runtime_error("Quadrilateral of order "
+                               + std::to_string(num_nodes) + " not supported");
     }
-    // case 9: (i = 3)
-    //  return {0,3,4,1, 6,        5,     7,        2,     8};
-    // case 16: (i = 4)
-    //  return {0,4,5,1, 8,12,     6,7,   13,9,     3,2,   10,14,11,15};
-    // case 25: (i = 5)
-    //  return {0,5,6,1, 10,15,20, 7,8,9, 21,16,11, 4,3,2,
-    //                                      12,17,22,13,18,23,14,19,24};
-    throw std::runtime_error("Higher order quadrilateral not supported");
   case mesh::CellType::hexahedron:
     switch (num_nodes)
     {
@@ -588,7 +582,7 @@ int mesh::cell_degree(mesh::CellType type, int num_nodes)
       throw std::runtime_error("Higher order tetrahedron not supported");
   case mesh::CellType::quadrilateral:
   {
-    int i = sqrt(num_nodes);
+    int i = std::sqrt(num_nodes);
     if (num_nodes == i * i)
       return i - 1;
     throw std::runtime_error("Quadrilateral of order "
