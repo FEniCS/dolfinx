@@ -282,10 +282,20 @@ void Function::interpolate(const Function& v)
   _function_space->interpolate(x.x, v);
 }
 //-----------------------------------------------------------------------------
-void Function::interpolate(const FunctionSpace::interpolation_function& f)
+void Function::interpolate(
+    const std::function<Eigen::Array<PetscScalar, Eigen::Dynamic,
+                                     Eigen::Dynamic, Eigen::RowMajor>(
+        const Eigen::Ref<const Eigen::Array<
+            double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>>&)>& f)
 {
   la::VecWrapper x(_vector.vec());
   _function_space->interpolate(x.x, f);
+}
+//-----------------------------------------------------------------------------
+void Function::interpolate_c(const FunctionSpace::interpolation_function& f)
+{
+  la::VecWrapper x(_vector.vec());
+  _function_space->interpolate_c(x.x, f);
 }
 //-----------------------------------------------------------------------------
 int Function::value_rank() const
