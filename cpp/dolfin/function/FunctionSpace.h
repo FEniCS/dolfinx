@@ -34,14 +34,13 @@ namespace function
 class Function;
 
 /// This class represents a finite element function space defined by a
-/// mesh, a finite element, and a local-to-global mapping of the degrees
-/// of freedom (dofmap).
+/// mesh, a finite element, and a local-to-global map of the degrees of
+/// freedom (dofmap).
 
 class FunctionSpace
 {
 public:
-  /// Create function space for given mesh, element and dofmap (shared
-  /// data)
+  /// Create function space for given mesh, element and dofmap
   /// @param[in] mesh The mesh
   /// @param[in] element The element
   /// @param[in] dofmap The dofmap
@@ -73,16 +72,19 @@ public:
   bool operator!=(const FunctionSpace& V) const;
 
   /// Return global dimension of the function space
-  /// @return The dimension of the function space.
+  /// @return The dimension of the function space
   std::int64_t dim() const;
 
-  /// Interpolate function v into function space, returning the vector
-  /// of expansion coefficients
-  /// @param[in] expansion_coefficients The expansion coefficients
+  /// Interpolate a finite element Function into this function space,
+  /// filling the array of expansion coefficients associated with this
+  /// function space
+  /// @param[in,out] coefficients The expansion coefficients. It must be
+  ///                             correctly sized by the calling
+  ///                             function.
   /// @param[in] v The function to be interpolated
-  void interpolate(Eigen::Ref<Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1>>
-                       expansion_coefficients,
-                   const Function& v) const;
+  void interpolate(
+      Eigen::Ref<Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1>> coefficients,
+      const Function& v) const;
 
   /// Interpolation function
   using interpolation_function = std::function<void(
@@ -91,37 +93,45 @@ public:
       const Eigen::Ref<const Eigen::Array<double, Eigen::Dynamic,
                                           Eigen::Dynamic, Eigen::RowMajor>>&)>;
 
-  /// Interpolate expression into function space
+  /// Interpolate an expression into this function space, filling the
+  /// array of expansion coefficients associated with this function
+  /// space.
   /// @cond Work around doxygen bug for std::function
-  /// @param[in,out] expansion_coefficients The expansion coefficients
-  ///                to filled
+  /// @param[in,out] coefficients The expansion coefficients. It must be
+  ///                             correctly sized by the calling
+  ///                             function.
   /// @param[in] f The function to be interpolated
+  /// @endcond
   void interpolate(
-      Eigen::Ref<Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1>>
-          expansion_coefficients,
+      Eigen::Ref<Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1>> coefficients,
       const std::function<Eigen::Array<PetscScalar, Eigen::Dynamic,
                                        Eigen::Dynamic, Eigen::RowMajor>(
           const Eigen::Ref<const Eigen::Array<
               double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>>&)>& f)
       const;
-  /// @endcond
 
-  /// Interpolate expression into function space
-  /// @param[in,out] expansion_coefficients The expansion coefficients
-  ///                to be filled
+  /// Interpolate an expression into this function space, filling the
+  /// array of expansion coefficients associated with this function
+  /// space.
+  /// @note This interface is not intended for general use. It supports
+  ///       the use of an expression function with a C-signature; it is
+  ///       typically used by compiled Numba functions with C interface.
+  /// @param[in,out] coefficients The expansion coefficients to be
+  ///                             filled. It must be correctly sized by
+  ///                             the calling function.
   /// @param[in] f The function to be interpolated
-  void interpolate_c(Eigen::Ref<Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1>>
-                       expansion_coefficients,
-                   const interpolation_function& f) const;
+  void interpolate_c(
+      Eigen::Ref<Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1>> coefficients,
+      const interpolation_function& f) const;
 
   /// Extract subspace for component
-  /// @param[in] component The component
+  /// @param[in] component The subspace component
   /// @return The subspace
   std::shared_ptr<FunctionSpace> sub(const std::vector<int>& component) const;
 
   /// Check whether V is subspace of this, or this itself
-  /// @param[in] V The space to be tested for inclusion.
-  /// @return True if V is contained in or equal to this.
+  /// @param[in] V The space to be tested for inclusion
+  /// @return True if V is contained in or equal to this FunctionSpace
   bool contains(const FunctionSpace& V) const;
 
   /// Collapse a subspace and return a new function space and a map from
@@ -131,7 +141,7 @@ public:
   collapse() const;
 
   /// Check if function space has given cell
-  /// @param[in] cell The cell
+  /// @param[in] cell A cell
   /// @return True if the function space has the given cell
   bool has_cell(const mesh::MeshEntity& cell) const
   {
@@ -146,7 +156,9 @@ public:
     return element.hash() == this->_element->hash();
   }
 
-  /// Return component w.r.t. to root superspace, i.e. W.sub(1).sub(0) == [1, 0].
+  /// Get the component with respect to the root superspace
+  /// @return The component with respect to the root superspace , i.e.
+  ///         W.sub(1).sub(0) == [1, 0]
   std::vector<int> component() const;
 
   /// Tabulate the coordinates of all dofs on this process. This
@@ -182,11 +194,10 @@ public:
   std::shared_ptr<const fem::DofMap> dofmap() const;
 
 private:
-  // Interpolate data. Fills expansion_coefficients using 'values',
-  // which are the values of an expression at each dof.
+  // Interpolate data. Fills coefficients using 'values', which are the
+  // values of an expression at each dof.
   void interpolate(
-      Eigen::Ref<Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1>>
-          expansion_coefficients,
+      Eigen::Ref<Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1>> coefficients,
       const Eigen::Ref<const Eigen::Matrix<PetscScalar, Eigen::Dynamic,
                                            Eigen::Dynamic, Eigen::RowMajor>>&
           values) const;

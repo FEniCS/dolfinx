@@ -148,14 +148,14 @@ void FunctionSpace::interpolate(
 }
 //-----------------------------------------------------------------------------
 void FunctionSpace::interpolate(
-    Eigen::Ref<Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1>>
-        expansion_coefficients,
+    Eigen::Ref<Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1>> coefficients,
     const std::function<Eigen::Array<PetscScalar, Eigen::Dynamic,
                                      Eigen::Dynamic, Eigen::RowMajor>(
         const Eigen::Ref<const Eigen::Array<
             double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>>&)>& f)
     const
 {
+  // Evaluate expression at dof points
   Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor> x
       = tabulate_dof_coordinates();
   Eigen::Array<PetscScalar, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
@@ -175,19 +175,18 @@ void FunctionSpace::interpolate(
   if (values.cols() != value_size)
     throw std::runtime_error("Values shape is incorrect.");
 
-  interpolate(expansion_coefficients, values);
+  interpolate(coefficients, values);
 }
 //-----------------------------------------------------------------------------
 void FunctionSpace::interpolate_c(
-    Eigen::Ref<Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1>>
-        expansion_coefficients,
+    Eigen::Ref<Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1>> coefficients,
     const interpolation_function& f) const
 {
   // Build list of points at which to evaluate the Expression
   Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor> x
       = tabulate_dof_coordinates();
 
-  // Evaluate Expression at points
+  // Evaluate expression at points
   assert(_element);
   std::vector<int> vshape(_element->value_rank(), 1);
   for (std::size_t i = 0; i < vshape.size(); ++i)
@@ -198,7 +197,7 @@ void FunctionSpace::interpolate_c(
       values(x.rows(), value_size);
   f(values, x);
 
-  interpolate(expansion_coefficients, values);
+  interpolate(coefficients, values);
 }
 //-----------------------------------------------------------------------------
 std::shared_ptr<FunctionSpace>
@@ -445,8 +444,7 @@ bool FunctionSpace::contains(const FunctionSpace& V) const
 }
 //-----------------------------------------------------------------------------
 void FunctionSpace::interpolate(
-    Eigen::Ref<Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1>>
-        expansion_coefficients,
+    Eigen::Ref<Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1>> coefficients,
     const Eigen::Ref<const Eigen::Matrix<PetscScalar, Eigen::Dynamic,
                                          Eigen::Dynamic, Eigen::RowMajor>>&
         values) const
@@ -498,7 +496,7 @@ void FunctionSpace::interpolate(
 
       // Copy into expansion coefficient array
       for (Eigen::Index i = 0; i < cell_dofs.rows(); ++i)
-        expansion_coefficients[cell_dofs[i]] = cell_coefficients[i];
+        coefficients[cell_dofs[i]] = cell_coefficients[i];
     }
   }
 }
