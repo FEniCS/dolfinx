@@ -164,6 +164,9 @@ Mesh::Mesh(
     case 9:
       cell_permutation = mesh::vtk_mapping(type, cells.cols());
       break;
+    case 16:
+      cell_permutation = mesh::vtk_mapping(type, cells.cols());
+      break;
     default:
       throw std::runtime_error("Higher order quadrilateral not supported");
     }
