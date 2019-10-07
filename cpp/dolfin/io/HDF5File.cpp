@@ -351,7 +351,7 @@ void HDF5File::write(const mesh::Mesh& mesh, int cell_dim,
         // which are in lower rank process cells to a set for
         // exclusion from output
         const std::vector<std::int32_t>& cell_owners
-            = mesh.topology().cell_owner();
+            = mesh.topology().entity_owner(tdim);
         const std::int32_t ghost_offset_c = mesh.topology().ghost_offset(tdim);
         const std::int32_t ghost_offset_e
             = mesh.topology().ghost_offset(cell_dim);
@@ -730,7 +730,7 @@ void HDF5File::write_mesh_function(const mesh::MeshFunction<T>& meshfunction,
       // shared from lower rank process cells to a set for exclusion
       // from output
       const std::vector<std::int32_t>& cell_owners
-          = mesh.topology().cell_owner();
+          = mesh.topology().entity_owner(tdim);
       const std::int32_t ghost_offset_c = mesh.topology().ghost_offset(tdim);
       const std::int32_t ghost_offset_e
           = mesh.topology().ghost_offset(cell_dim);
