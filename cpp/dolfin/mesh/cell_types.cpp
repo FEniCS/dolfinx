@@ -516,9 +516,7 @@ std::vector<std::uint8_t> mesh::vtk_mapping(mesh::CellType type, int num_nodes)
       // which is the VTK format
       return {0, 1, 3, 2};
     {
-      int i = 0;
-      while (i * i < num_nodes)
-        ++i;
+      int i = sqrt(num_nodes);
       if (i * i == num_nodes)
       {
         std::vector<std::uint8_t> permutation(num_nodes);
@@ -590,12 +588,11 @@ int mesh::cell_degree(mesh::CellType type, int num_nodes)
       throw std::runtime_error("Higher order tetrahedron not supported");
   case mesh::CellType::quadrilateral:
   {
-    int i = 0;
-    while (i * i < num_nodes)
-      ++i;
+    int i = sqrt(num_nodes);
     if (num_nodes == i * i)
       return i - 1;
-    throw std::runtime_error("Higher order quadrilateral not supported");
+    throw std::runtime_error("Quadrilateral of order "
+                             + std::to_string(num_nodes) + " not supported");
   }
   case mesh::CellType::hexahedron:
     if (num_nodes == 8)
