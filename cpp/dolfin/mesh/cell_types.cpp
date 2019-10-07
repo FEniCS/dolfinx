@@ -523,12 +523,12 @@ std::vector<std::uint8_t> mesh::vtk_mapping(mesh::CellType type, int num_nodes)
       {
         std::vector<std::uint8_t> permutation(num_nodes);
         // vertices
-        permutation[0] = 0;
-        permutation[1] = i;
-        permutation[2] = i + 1;
-        permutation[3] = 1;
-        // edges
         int j = 4;
+        permutation[j++] = 0;
+        permutation[j++] = i;
+        permutation[j++] = i + 1;
+        permutation[j++] = 1;
+        // edges
         for (int k = 2; k < i; ++k)
           permutation[j++] = i * k;
         for (int k = i + 2; k < 2 * i; ++k)
@@ -541,17 +541,18 @@ std::vector<std::uint8_t> mesh::vtk_mapping(mesh::CellType type, int num_nodes)
         for (int k = 2; k < i; ++k)
           for (int l = 2; l < i; ++l)
             permutation[j++] = l * i + k;
+        assert(j == i * i);
         return permutation;
       }
     }
-    throw std::runtime_error("Higher order quadrilateral not supported");
-    // case 9: i = 3
+    // case 9: (i = 3)
     //  return {0,3,4,1, 6,        5,     7,        2,     8};
-    // case 16: i = 4
+    // case 16: (i = 4)
     //  return {0,4,5,1, 8,12,     6,7,   13,9,     3,2,   10,14,11,15};
-    // case 25: i = 5
+    // case 25: (i = 5)
     //  return {0,5,6,1, 10,15,20, 7,8,9, 21,16,11, 4,3,2,
-    //  12,17,22,13,18,23,14,19,24};
+    //                                      12,17,22,13,18,23,14,19,24};
+    throw std::runtime_error("Higher order quadrilateral not supported");
   case mesh::CellType::hexahedron:
     switch (num_nodes)
     {
