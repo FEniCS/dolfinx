@@ -17,13 +17,13 @@ from dolfin import (MPI, BoxMesh, MeshEntity, MeshFunction, RectangleMesh,
                     UnitCubeMesh, UnitIntervalMesh, UnitSquareMesh, cpp)
 from dolfin.cpp.mesh import CellType, is_simplex
 from dolfin.io import XDMFFile
-from dolfin_utils.test.fixtures import fixture, tempdir
+from dolfin_utils.test.fixtures import tempdir
 from dolfin_utils.test.skips import skip_in_parallel
 
 assert (tempdir)
 
 
-@fixture
+@pytest.fixture
 def mesh1d():
     """Create 1D mesh with degenerate cell"""
     mesh1d = UnitIntervalMesh(MPI.comm_world, 4)
@@ -31,7 +31,7 @@ def mesh1d():
     return mesh1d
 
 
-@fixture
+@pytest.fixture
 def mesh2d():
     """Create 2D mesh with one equilateral triangle"""
     mesh2d = RectangleMesh(
@@ -42,7 +42,7 @@ def mesh2d():
     return mesh2d
 
 
-@fixture
+@pytest.fixture
 def mesh3d():
     """Create 3D mesh with regular tetrahedron and degenerate cells"""
     mesh3d = UnitCubeMesh(MPI.comm_world, 1, 1, 1)
@@ -51,35 +51,35 @@ def mesh3d():
     return mesh3d
 
 
-@fixture
+@pytest.fixture
 def c0(mesh3d):
     """Original tetrahedron from UnitCubeMesh(MPI.comm_world, 1, 1, 1)"""
     return MeshEntity(mesh3d, mesh3d.topology.dim, 0)
 
 
-@fixture
+@pytest.fixture
 def c1(mesh3d):
     # Degenerate cell
     return MeshEntity(mesh3d, mesh3d.topology.dim, 1)
 
 
-@fixture
+@pytest.fixture
 def c5(mesh3d):
     # Regular tetrahedron with edge sqrt(2)
     return MeshEntity(mesh3d, mesh3d.topology.dim, 5)
 
 
-@fixture
+@pytest.fixture
 def interval():
     return UnitIntervalMesh(MPI.comm_world, 10)
 
 
-@fixture
+@pytest.fixture
 def square():
     return UnitSquareMesh(MPI.comm_world, 5, 5)
 
 
-@fixture
+@pytest.fixture
 def rectangle():
     return RectangleMesh(
         MPI.comm_world, [numpy.array([0.0, 0.0, 0.0]),
@@ -87,24 +87,24 @@ def rectangle():
         CellType.triangle, cpp.mesh.GhostMode.none)
 
 
-@fixture
+@pytest.fixture
 def cube():
     return UnitCubeMesh(MPI.comm_world, 3, 3, 3)
 
 
-@fixture
+@pytest.fixture
 def box():
     return BoxMesh(MPI.comm_world, [numpy.array([0, 0, 0]),
                                     numpy.array([2, 2, 2])], [2, 2, 5], CellType.tetrahedron,
                    cpp.mesh.GhostMode.none)
 
 
-@fixture
+@pytest.fixture
 def mesh():
     return UnitSquareMesh(MPI.comm_world, 3, 3)
 
 
-@fixture
+@pytest.fixture
 def f(mesh):
     return MeshFunction('int', mesh, 0, 0)
 
@@ -480,6 +480,41 @@ def test_distribute_mesh(subset_comm, tempdir, mesh_factory):
     dist_mesh = cpp.mesh.build_from_partition(MPI.comm_world, cell_type, points,
                                               cells, indices, ghost_mode,
                                               partition_data)
+
+    assert(mesh.cell_type == dist_mesh.cell_type)
+    assert mesh.num_entities_global(0) == dist_mesh.num_entities_global(0)
+    dim = dist_mesh.topology.dim
+    assert mesh.num_entities_global(dim) == dist_mesh.num_entities_global(dim)
+
+
+@pytest.mark.parametrize("mesh_factory", mesh_factories)
+def test_custom_partition(tempdir, mesh_factory):
+    func, args = mesh_factory
+    mesh = func(*args)
+
+    if not is_simplex(mesh.cell_type):
+        return
+
+    comm = mesh.mpi_comm()
+    filename = os.path.join(tempdir, "mesh.xdmf")
+    encoding = XDMFFile.Encoding.HDF5
+    ghost_mode = cpp.mesh.GhostMode.none
+
+    with XDMFFile(comm, filename, encoding) as file:
+        file.write(mesh)
+
+    with XDMFFile(comm, filename) as file:
+        cell_type, points, cells, global_indices = file.read_mesh_data(comm)
+
+    # Create a custom partition array
+    part = numpy.zeros(cells.shape[0], dtype=numpy.int32)
+    part[:] = comm.rank
+
+    ghost_procs = cpp.mesh.ghost_cell_mapping(comm, part, cell_type, cells)
+    cell_partition = cpp.mesh.PartitionData(part, ghost_procs)
+    dist_mesh = cpp.mesh.build_from_partition(comm, cell_type, points,
+                                              cells, global_indices,
+                                              ghost_mode, cell_partition)
 
     assert(mesh.cell_type == dist_mesh.cell_type)
     assert mesh.num_entities_global(0) == dist_mesh.num_entities_global(0)

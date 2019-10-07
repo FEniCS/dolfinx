@@ -15,11 +15,11 @@
 // #include <dolfin/mesh/MeshValueCollection.h>
 // #include <memory>
 #include <array>
+#include <dolfin/mesh/cell_types.h>
 #include <petscsys.h>
 #include <string>
 #include <utility>
 #include <vector>
-#include <dolfin/mesh/cell_types.h>
 
 namespace pugi
 {

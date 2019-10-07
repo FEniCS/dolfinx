@@ -30,7 +30,7 @@ namespace
 //-----------------------------------------------------------------------------
 void set_diagonal_local(
     Mat A,
-    const Eigen::Ref<const Eigen::Array<PetscInt, Eigen::Dynamic, 1>> rows,
+    const Eigen::Ref<const Eigen::Array<PetscInt, Eigen::Dynamic, 1>>& rows,
     PetscScalar diag)
 {
   assert(A);
@@ -115,7 +115,7 @@ void _assemble_vector_nest(
     // Assemble
     la::VecWrapper _b(b_sub);
     _b.x.setZero();
-    fem::impl::assemble_vector(_b.x, *L[i]);
+    fem::impl::assemble_vector(_b.x, *L[i], fem::InsertMode::sum);
 
     // FIXME: sort out x0 \ne nullptr for nested case
     // Apply lifting
@@ -198,7 +198,7 @@ void _assemble_vector_block(
                                                                    + map_size1);
 
     // Assemble and modify for bcs (lifting)
-    fem::impl::assemble_vector(b_vec[i], *L[i]);
+    fem::impl::assemble_vector(b_vec[i], *L[i], fem::InsertMode::sum);
     fem::impl::apply_lifting(b_vec[i], a[i], bcs1[i], {}, scale);
   }
 
@@ -273,10 +273,10 @@ PetscScalar fem::assemble_scalar(const Form& M)
   return fem::impl::assemble_scalar(M);
 }
 //-----------------------------------------------------------------------------
-void fem::assemble_vector(Vec b, const Form& L)
+void fem::assemble_vector(Vec b, const Form& L, InsertMode mode)
 {
   la::VecWrapper _b(b);
-  fem::impl::assemble_vector(_b.x, L);
+  fem::impl::assemble_vector(_b.x, L, mode);
 }
 //-----------------------------------------------------------------------------
 void fem::assemble_vector(
@@ -429,7 +429,7 @@ void fem::assemble_matrix(Mat A, const Form& a,
       {
         // FIXME: could be simpler if DirichletBC::dof_indices had
         // options to return owned dofs only
-        const Eigen::Ref<const Eigen::Array<PetscInt, Eigen::Dynamic, 1>> dofs
+        const Eigen::Array<PetscInt, Eigen::Dynamic, 1>& dofs
             = bc->dof_indices();
         const int owned_size = map0->block_size * map0->size_local();
         auto it = std::lower_bound(dofs.data(), dofs.data() + dofs.rows(),

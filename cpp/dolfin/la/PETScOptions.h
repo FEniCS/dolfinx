@@ -36,8 +36,9 @@ public:
       option = '-' + option;
 
     PetscErrorCode ierr;
-    ierr = PetscOptionsSetValue(
-        nullptr, option.c_str(), boost::lexical_cast<std::string>(value).c_str());
+    ierr
+        = PetscOptionsSetValue(nullptr, option.c_str(),
+                               boost::lexical_cast<std::string>(value).c_str());
     if (ierr != 0)
       petsc_error(ierr, __FILE__, "PetscOptionsSetValue");
   }

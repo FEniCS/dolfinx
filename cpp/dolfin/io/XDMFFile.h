@@ -201,19 +201,17 @@ public:
   /// storing the data inline as XML.
   ///
   /// @param[in] points A list of points to save.
-  void write(const
-      Eigen::Ref<const Eigen::Array<double, Eigen::Dynamic, 3, Eigen::RowMajor>>
-          points);
+  void write(const Eigen::Ref<const Eigen::Array<double, Eigen::Dynamic, 3,
+                                                 Eigen::RowMajor>>& points);
 
   /// Save a cloud of points, with scalar values using an associated
   /// HDF5 file, or storing the data inline as XML.
   ///
   /// @param[in] points A list of points to save.
   /// @param[in] values A list of values at each point
-  void write(const
-      Eigen::Ref<const Eigen::Array<double, Eigen::Dynamic, 3, Eigen::RowMajor>>
-          points,
-      const std::vector<double>& values);
+  void write(const Eigen::Ref<const Eigen::Array<double, Eigen::Dynamic, 3,
+                                                 Eigen::RowMajor>>& points,
+             const std::vector<double>& values);
 
   /// Read in the first mesh::Mesh in XDMF file
   ///
@@ -224,11 +222,16 @@ public:
   /// Read in the data from the first mesh in XDMF file
   ///
   /// @param[in] comm The MPI Communicator
-  /// @return Geometric points on each process (EigenRowArrayXXd),
-  ///         Topological cells with global vertex indexing
-  ///         (EigenRowArrayXXi64), and the Cell type (mesh::CellType)
-  std::tuple<mesh::CellType, EigenRowArrayXXd, EigenRowArrayXXi64,
-             std::vector<std::int64_t>>
+  /// @return Geometric points on each process (Eigen::Array<double,
+  /// Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>),
+  ///         Topological cells with global vertex indexing, and the Cell type
+  ///         (mesh::CellType)
+  std::tuple<
+      mesh::CellType,
+      Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>,
+      Eigen::Array<std::int64_t, Eigen::Dynamic, Eigen::Dynamic,
+                   Eigen::RowMajor>,
+      std::vector<std::int64_t>>
   read_mesh_data(MPI_Comm comm) const;
 
   /// Read a function from the XDMF file. Supplied function must come
@@ -291,7 +294,7 @@ public:
   /// @param[in] mesh The associated Mesh
   /// @param[in] name Name of data attribute in XDMF file
   /// @return A MeshValueCollection
- mesh::MeshValueCollection<std::size_t>
+  mesh::MeshValueCollection<std::size_t>
   read_mvc_size_t(std::shared_ptr<const mesh::Mesh> mesh,
                   std::string name = "") const;
 

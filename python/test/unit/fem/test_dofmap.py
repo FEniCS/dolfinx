@@ -10,18 +10,18 @@ import sys
 
 import numpy as np
 import pytest
-from dolfin_utils.test.fixtures import fixture
-from dolfin_utils.test.skips import skip_in_parallel
 
-from dolfin import (MPI, MeshEntity, FunctionSpace, UnitCubeMesh, UnitIntervalMesh,
-                    UnitSquareMesh, VectorFunctionSpace, cpp, fem)
+from dolfin import (MPI, FunctionSpace, MeshEntity, UnitCubeMesh,
+                    UnitIntervalMesh, UnitSquareMesh, VectorFunctionSpace, cpp,
+                    fem)
 from dolfin.cpp.mesh import CellType
+from dolfin_utils.test.skips import skip_in_parallel
 from ufl import FiniteElement, MixedElement, VectorElement
 
 xfail = pytest.mark.xfail(strict=True)
 
 
-@fixture
+@pytest.fixture
 def mesh():
     return UnitSquareMesh(MPI.comm_world, 4, 4)
 

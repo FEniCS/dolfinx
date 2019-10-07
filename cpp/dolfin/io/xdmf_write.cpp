@@ -482,8 +482,7 @@ xdmf_write::compute_nonlocal_entities(const mesh::Mesh& mesh, int cell_dim)
 void xdmf_write::add_points(
     MPI_Comm comm, pugi::xml_node& xdmf_node, hid_t h5_id,
     const Eigen::Ref<
-        const Eigen::Array<double, Eigen::Dynamic, 3, Eigen::RowMajor>>
-        points)
+        const Eigen::Array<double, Eigen::Dynamic, 3, Eigen::RowMajor>>& points)
 {
   xdmf_node.append_attribute("Version") = "3.0";
   xdmf_node.append_attribute("xmlns:xi") = "http://www.w3.org/2001/XInclude";
@@ -606,9 +605,10 @@ void xdmf_write::add_geometry_data(MPI_Comm comm, pugi::xml_node& xml_node,
   geometry_node.append_attribute("GeometryType") = geometry_type.c_str();
 
   // Pack geometry data
-  EigenRowArrayXXd _x = mesh::DistributedMeshTools::reorder_by_global_indices(
-      mesh.mpi_comm(), mesh.geometry().points(),
-      mesh.geometry().global_indices());
+  Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor> _x
+      = mesh::DistributedMeshTools::reorder_by_global_indices(
+          mesh.mpi_comm(), mesh.geometry().points(),
+          mesh.geometry().global_indices());
 
   // Increase 1D to 2D because XDMF has no "X" geometry, use "XY"
   int width = (gdim == 1) ? 2 : gdim;
