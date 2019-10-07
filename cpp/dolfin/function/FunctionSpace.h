@@ -91,10 +91,10 @@ public:
       const Eigen::Ref<const Eigen::Array<double, Eigen::Dynamic,
                                           Eigen::Dynamic, Eigen::RowMajor>>&)>;
 
-  /// Interpolate expression into function space, returning the vector
-  /// of expansion coefficients
+  /// Interpolate expression into function space
   /// @cond Work around doxygen bug for std::function
-  /// @param[in] expansion_coefficients The expansion coefficients
+  /// @param[in,out] expansion_coefficients The expansion coefficients
+  ///                to filled
   /// @param[in] f The function to be interpolated
   void interpolate(
       Eigen::Ref<Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1>>
@@ -106,9 +106,9 @@ public:
       const;
   /// @endcond
 
-  /// Interpolate expression into function space, returning the vector
-  /// of expansion coefficients
-  /// @param[in] expansion_coefficients The expansion coefficients
+  /// Interpolate expression into function space
+  /// @param[in,out] expansion_coefficients The expansion coefficients
+  ///                to be filled
   /// @param[in] f The function to be interpolated
   void interpolate_c(Eigen::Ref<Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1>>
                        expansion_coefficients,
@@ -183,7 +183,7 @@ public:
 
 private:
   // Interpolate data. Fills expansion_coefficients using 'values',
-  // which are the values of the expression at each dof.
+  // which are the values of an expression at each dof.
   void interpolate(
       Eigen::Ref<Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1>>
           expansion_coefficients,
