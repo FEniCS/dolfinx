@@ -156,36 +156,31 @@ def test_quad_dofs_order_2(L, H, eps):
 @skip_in_parallel
 @pytest.mark.parametrize('L', [1, 4])
 @pytest.mark.parametrize('H', [1, 5])
-@pytest.mark.parametrize('eps', [0, 1, 10, 100])
+@pytest.mark.parametrize('eps', [0, 0.08, 0.05, 0.01])
 def test_quad_dofs_order_3(L, H, eps):
     # Test third order mesh by computing volume of two cells
-    #  *---------*   3--9--8--2-23-22-17
+    #  *---------*   3--8--9--2-22-23-17
     #  |         |   |        |       |
-    #  |         |   10 15 14 7 27 26 21
+    #  |         |   11 14 15 7 26 27 21
     #  |         |   |        |       |
-    #  |         |   11 12 13 6 24 25 20
+    #  |         |   10 12 13 6 24 25 20
     #  |         |   |        |       |
     #  *---------*   0--4--5--1-18-19-16
-    points = np.array([[0, 0], [L, 0], [L, H], [0, H],
-                       #
-                       [L / 3, 0], [2 * L / 3, 0],
-                       [L + eps, H / 3], [L - eps, 2 * H / 3],
-                       [2 * L / 3, H], [L / 3, H],
-                       [-eps, 2 * H / 3], [eps, H / 3],
-                       #
-                       [L / 3 + eps, H / 3], [2 * L / 3 + eps, H / 3],
-                       [2 * L / 3 - eps, 2 * H / 3], [L / 3 - eps, 2 * H / 3],
-                       #####
-                       [2 * L, 0], [2 * L, H],
-                       #
-                       [4 * L / 3, 0], [5 * L / 3, 0],
-                       [2 * L + eps, H / 3], [2 * L - eps, 2 * H / 3],
-                       [5 * L / 3, H], [4 * L / 3, H],
-                       #
-                       [4 * L / 3 + eps, H / 3], [5 * L / 3 + eps, H / 3],
-                       [5 * L / 3 - eps, 2 * H / 3], [4 * L / 3 - eps, 2 * H / 3]])
+    points = np.array([[0, 0], [L, 0], [L, H], [0, H],          # 0  1 2 3
+                       [L / 3, - eps], [2 * L / 3, eps],         # 4  5
+                       [L + eps, H / 3], [L - eps, 2 * H / 3],  # 6  7
+                       [L / 3, H - eps], [2 * L / 3, H + eps],      # 8  9
+                       [eps, H / 3], [-eps, 2 * H / 3],         # 10 11
+                       [L / 3 + eps, H / 3 - eps], [2 * L / 3 + eps, H / 3 + eps],          # 12 13
+                       [L / 3 - eps, 2 * H / 3 - eps], [2 * L / 3 - eps, 2 * H / 3 + eps],  # 14,15
+                       [2 * L, 0], [2 * L, H],                 # 16 17
+                       [4 * L / 3, eps], [5 * L / 3, -eps],    # 18 19
+                       [2 * L + eps, H / 3], [2 * L - eps, 2 * H / 3],  # 20 21
+                       [4 * L / 3, H - eps], [5 * L / 3, H + eps],      # 22 23
+                       [4 * L / 3 + eps, H / 3 + eps], [5 * L / 3 + eps, H / 3 - eps],           # 24 25
+                       [4 * L / 3 - eps, 2 * H / 3 - eps], [5 * L / 3 - eps, 2 * H / 3 + eps]])  # 26 27
     cells = np.array([[0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15],
-                      [1, 16, 17, 2, 18, 19, 20, 21, 22, 23, 7, 6, 24, 25, 26, 27]])
+                      [1, 16, 17, 2, 18, 19, 20, 21, 22, 23, 6, 7, 24, 25, 26, 27]])
 
     mesh = Mesh(MPI.comm_world, CellType.quadrilateral, points, cells,
                 [], GhostMode.none)

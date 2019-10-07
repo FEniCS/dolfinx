@@ -520,9 +520,9 @@ std::vector<std::uint8_t> mesh::vtk_mapping(mesh::CellType type, int num_nodes)
       return {0, 1, 3, 2};
     }
     case 9:
-      return {0,3,4,1,6,5,7,2,8};
+      return {0, 3, 4, 1, 6, 5, 7, 2, 8};
     case 16:
-      return {0,4,5,1,8,12,6,7,13,9,3,2,10,14,15,11};
+      return {0, 4, 5, 1, 8, 12, 6, 7, 9, 13, 2, 3, 10, 14, 11, 15};
     default:
       throw std::runtime_error("Higher order quadrilateral not supported");
     }
