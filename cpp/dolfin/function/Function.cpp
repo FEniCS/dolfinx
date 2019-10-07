@@ -282,13 +282,6 @@ void Function::eval_reference(
                             Eigen::RowMajor>>
         u) const
 {
-  // if (X.rows() != u.rows())
-  // {
-  //   throw std::runtime_error("Length of array for Function values must be the
-  //   "
-  //                            "same as the number of points.");
-  // }
-
   // Get mesh
   assert(_function_space);
   assert(_function_space->mesh());
