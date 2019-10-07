@@ -90,6 +90,7 @@
 #include "poisson.h"
 #include <cfloat>
 #include <dolfin.h>
+#include <dolfin/function/Constant.h>
 #include <dolfin/mesh/Ordering.h>
 
 using namespace dolfin;
@@ -123,15 +124,7 @@ int main(int argc, char* argv[])
 
   mesh::Ordering::order_simplex(*mesh);
 
-  ufc_function_space* space = poisson_functionspace_create();
-  ufc_dofmap* ufc_map = space->create_dofmap();
-  ufc_finite_element* ufc_element = space->create_element();
-  auto V = std::make_shared<function::FunctionSpace>(
-      mesh, std::make_shared<fem::FiniteElement>(*ufc_element),
-      std::make_shared<fem::DofMap>(fem::create_dofmap(*ufc_map, *mesh)));
-  std::free(ufc_element);
-  std::free(ufc_map);
-  std::free(space);
+  auto V = fem::create_functionspace(poisson_functionspace_create, mesh);
 
   // Now, the Dirichlet boundary condition (:math:`u = 0`) can be created
   // using the class :cpp:class:`DirichletBC`. A :cpp:class:`DirichletBC`
@@ -150,10 +143,10 @@ int main(int argc, char* argv[])
   // Define boundary condition
   auto u0 = std::make_shared<function::Function>(V);
 
-  std::vector<std::shared_ptr<const fem::DirichletBC>> bc = {
-      std::make_shared<fem::DirichletBC>(V, u0, [](auto x, bool only_boundary) {
-        return (x.col(0) < DBL_EPSILON or x.col(0) > 1.0 - DBL_EPSILON);
-      })};
+  std::vector<std::shared_ptr<const fem::DirichletBC>> bc
+      = {std::make_shared<fem::DirichletBC>(V, u0, [](auto x) {
+          return (x.col(0) < DBL_EPSILON or x.col(0) > 1.0 - DBL_EPSILON);
+        })};
 
   // Next, we define the variational formulation by initializing the
   // bilinear and linear forms (:math:`a`, :math:`L`) using the previously
@@ -189,6 +182,10 @@ int main(int argc, char* argv[])
       [](auto values, auto x) { values = Eigen::sin(5 * x.col(0)); });
   L->set_coefficients({{"f", f}, {"g", g}});
 
+  // Prepare and set Constants for the bilinear form
+  auto kappa = std::make_shared<function::Constant>(2.0);
+  a->set_constants({{"kappa", kappa}});
+
   // Now, we have specified the variational forms and can consider the
   // solution of the variational problem. First, we need to define a
   // :cpp:class:`Function` ``u`` to store the solution. (Upon
@@ -201,7 +198,7 @@ int main(int argc, char* argv[])
   // Compute solution
   function::Function u(V);
   la::PETScMatrix A = fem::create_matrix(*a);
-  la::PETScVector b(*L->function_space(0)->dofmap->index_map);
+  la::PETScVector b(*L->function_space(0)->dofmap()->index_map);
 
   MatZeroEntries(A.mat());
   dolfin::fem::assemble_matrix(A.mat(), *a, bc);

@@ -45,15 +45,17 @@ void assemble_matrix(Mat A, const Form& a, const std::vector<bool>& bc0,
 void assemble_cells(
     Mat A, const mesh::Mesh& mesh,
     const std::vector<std::int32_t>& active_cells,
-    const Eigen::Ref<const Eigen::Array<PetscInt, Eigen::Dynamic, 1>> dofmap0,
+    const Eigen::Ref<const Eigen::Array<PetscInt, Eigen::Dynamic, 1>>& dofmap0,
     int num_dofs_per_cell0,
-    const Eigen::Ref<const Eigen::Array<PetscInt, Eigen::Dynamic, 1>> dofmap1,
+    const Eigen::Ref<const Eigen::Array<PetscInt, Eigen::Dynamic, 1>>& dofmap1,
     int num_dofs_per_cell1, const std::vector<bool>& bc0,
     const std::vector<bool>& bc1,
-    const std::function<void(PetscScalar*, const PetscScalar*, const double*,
-                             const int*, const int*)>& kernel,
+    const std::function<void(PetscScalar*, const PetscScalar*,
+                             const PetscScalar*, const double*, const int*,
+                             const int*)>& kernel,
     const std::vector<const function::Function*>& coefficients,
-    const std::vector<int>& offsets);
+    const std::vector<int>& offsets,
+    const std::vector<PetscScalar> constant_values);
 
 /// Execute kernel over exterior facets and  accumulate result in Mat
 void assemble_exterior_facets(
@@ -61,20 +63,24 @@ void assemble_exterior_facets(
     const std::vector<std::int32_t>& active_facets, const DofMap& dofmap0,
     const DofMap& dofmap1, const std::vector<bool>& bc0,
     const std::vector<bool>& bc1,
-    const std::function<void(PetscScalar*, const PetscScalar*, const double*,
-                             const int*, const int*)>& fn,
+    const std::function<void(PetscScalar*, const PetscScalar*,
+                             const PetscScalar*, const double*, const int*,
+                             const int*)>& fn,
     const std::vector<const function::Function*>& coefficients,
-    const std::vector<int>& offsets);
+    const std::vector<int>& offsets,
+    const std::vector<PetscScalar> constant_values);
 
 void assemble_interior_facets(
     Mat A, const mesh::Mesh& mesh,
     const std::vector<std::int32_t>& active_facets, const DofMap& dofmap0,
     const DofMap& dofmap1, const std::vector<bool>& bc0,
     const std::vector<bool>& bc1,
-    const std::function<void(PetscScalar*, const PetscScalar*, const double*,
-                             const int*, const int*)>& fn,
+    const std::function<void(PetscScalar*, const PetscScalar*,
+                             const PetscScalar*, const double*, const int*,
+                             const int*)>& fn,
     const std::vector<const function::Function*>& coefficients,
-    const std::vector<int>& offsets);
+    const std::vector<int>& offsets,
+    const std::vector<PetscScalar> constant_values);
 
 } // namespace impl
 } // namespace fem

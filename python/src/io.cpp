@@ -9,6 +9,7 @@
 #include <dolfin/function/Function.h>
 #include <dolfin/function/FunctionSpace.h>
 #include <dolfin/io/HDF5File.h>
+#include <dolfin/io/VTKFile.h>
 #include <dolfin/io/XDMFFile.h>
 #include <dolfin/la/PETScVector.h>
 #include <dolfin/mesh/Mesh.h>
@@ -200,14 +201,15 @@ void io(py::module& m)
                &dolfin::io::XDMFFile::write),
            py::arg("mvc"))
       // Points
-      .def("write",
-           py::overload_cast<const Eigen::Ref<
-               const Eigen::Array<double, Eigen::Dynamic, 3, Eigen::RowMajor>>>(
-               &dolfin::io::XDMFFile::write),
-           py::arg("points"))
+      .def(
+          "write",
+          py::overload_cast<const Eigen::Ref<
+              const Eigen::Array<double, Eigen::Dynamic, 3, Eigen::RowMajor>>&>(
+              &dolfin::io::XDMFFile::write),
+          py::arg("points"))
       .def("write",
            py::overload_cast<const Eigen::Ref<const Eigen::Array<
-                                 double, Eigen::Dynamic, 3, Eigen::RowMajor>>,
+                                 double, Eigen::Dynamic, 3, Eigen::RowMajor>>&,
                              const std::vector<double>&>(
                &dolfin::io::XDMFFile::write),
            py::arg("points"), py::arg("values"))
@@ -220,6 +222,24 @@ void io(py::module& m)
            },
            py::arg("u"), py::arg("function_name"), py::arg("time_step") = 0.0);
 
+  // dolfin::io::VTKFile
+  py::class_<dolfin::io::VTKFile, std::shared_ptr<dolfin::io::VTKFile>>
+      vtk_file(m, "VTKFile");
+
+  vtk_file
+      .def(py::init([](std::string filename) {
+             return std::make_unique<dolfin::io::VTKFile>(filename);
+           }),
+           py::arg("filename"))
+      .def("write",
+           py::overload_cast<const dolfin::function::Function&>(
+               &dolfin::io::VTKFile::write),
+           py::arg("u"))
+      .def("write",
+           py::overload_cast<const dolfin::mesh::Mesh&>(
+               &dolfin::io::VTKFile::write),
+           py::arg("mesh"));
+
   // XDFMFile::read
   xdmf_file
       // Mesh
@@ -227,6 +247,10 @@ void io(py::module& m)
            [](dolfin::io::XDMFFile& self,
               const dolfin::mesh::GhostMode ghost_mode) {
              return self.read_mesh(ghost_mode);
+           })
+      .def("read_mesh_data",
+           [](dolfin::io::XDMFFile& self, const MPICommWrapper comm) {
+             return self.read_mesh_data(comm.get());
            })
       // MeshFunction
       .def("read_mf_int", &dolfin::io::XDMFFile::read_mf_int, py::arg("mesh"),

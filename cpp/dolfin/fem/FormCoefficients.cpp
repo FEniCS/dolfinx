@@ -36,7 +36,7 @@ std::vector<int> FormCoefficients::offsets() const
   {
     if (!c)
       throw std::runtime_error("Not all form coefficients have been set.");
-    n.push_back(n.back() + c->function_space()->element->space_dimension());
+    n.push_back(n.back() + c->function_space()->element()->space_dimension());
   }
   return n;
 }
@@ -62,14 +62,12 @@ void FormCoefficients::set(
 //-----------------------------------------------------------------------------
 std::shared_ptr<const function::Function> FormCoefficients::get(int i) const
 {
-  assert(i < (int)_coefficients.size());
-  return _coefficients[i];
+  return _coefficients.at(i);
 }
 //-----------------------------------------------------------------------------
 int FormCoefficients::original_position(int i) const
 {
-  assert(i < (int)_original_pos.size());
-  return _original_pos[i];
+  return _original_pos.at(i);
 }
 //-----------------------------------------------------------------------------
 int FormCoefficients::get_index(std::string name) const

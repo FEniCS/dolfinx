@@ -5,7 +5,6 @@
 // SPDX-License-Identifier:    LGPL-3.0-or-later
 
 #include "Function.h"
-#include "FunctionSpace.h"
 #include <algorithm>
 #include <cfloat>
 #include <dolfin/common/IndexMap.h>
@@ -16,6 +15,7 @@
 #include <dolfin/fem/DofMap.h>
 #include <dolfin/fem/FiniteElement.h>
 #include <dolfin/geometry/BoundingBoxTree.h>
+#include <dolfin/geometry/utils.h>
 #include <dolfin/la/PETScVector.h>
 #include <dolfin/la/utils.h>
 #include <dolfin/mesh/CoordinateDofs.h>
@@ -39,8 +39,8 @@ la::PETScVector create_vector(const function::FunctionSpace& V)
   common::Timer timer("Init dof vector");
 
   // Get dof map
-  assert(V.dofmap);
-  const fem::DofMap& dofmap = *(V.dofmap);
+  assert(V.dofmap());
+  const fem::DofMap& dofmap = *(V.dofmap());
 
   // Check that function space is not a subspace (view)
   assert(dofmap.element_dof_layout);
@@ -63,7 +63,7 @@ la::PETScVector create_vector(const function::FunctionSpace& V)
 
 //-----------------------------------------------------------------------------
 Function::Function(std::shared_ptr<const FunctionSpace> V)
-    : id(common::UniqueIdGenerator::id()), _function_space(V),
+    : _id(common::UniqueIdGenerator::id()), _function_space(V),
       _vector(create_vector(*V))
 {
   // Check that we don't have a subspace
@@ -75,14 +75,15 @@ Function::Function(std::shared_ptr<const FunctionSpace> V)
 }
 //-----------------------------------------------------------------------------
 Function::Function(std::shared_ptr<const FunctionSpace> V, Vec x)
-    : id(common::UniqueIdGenerator::id()), _function_space(V), _vector(x)
+    : _id(common::UniqueIdGenerator::id()), _function_space(V), _vector(x)
 {
   // We do not check for a subspace since this constructor is used for
   // creating subfunctions
 
   // Assertion uses '<=' to deal with sub-functions
-  assert(V->dofmap);
-  assert(V->dofmap->index_map->size_global() * V->dofmap->index_map->block_size
+  assert(V->dofmap());
+  assert(V->dofmap()->index_map->size_global()
+             * V->dofmap()->index_map->block_size
          <= _vector.size());
 }
 //-----------------------------------------------------------------------------
@@ -127,18 +128,17 @@ Function Function::collapse() const
 //-----------------------------------------------------------------------------
 std::shared_ptr<const FunctionSpace> Function::function_space() const
 {
-  assert(_function_space);
   return _function_space;
 }
 //-----------------------------------------------------------------------------
 la::PETScVector& Function::vector()
 {
   // Check that this is not a sub function.
-  assert(_function_space->dofmap);
-  assert(_function_space->dofmap->index_map);
+  assert(_function_space->dofmap());
+  assert(_function_space->dofmap()->index_map);
   if (_vector.size()
-      != _function_space->dofmap->index_map->size_global()
-             * _function_space->dofmap->index_map->block_size)
+      != _function_space->dofmap()->index_map->size_global()
+             * _function_space->dofmap()->index_map->block_size)
   {
     throw std::runtime_error(
         "Cannot access a non-const vector from a subfunction");
@@ -149,105 +149,49 @@ la::PETScVector& Function::vector()
 //-----------------------------------------------------------------------------
 const la::PETScVector& Function::vector() const { return _vector; }
 //-----------------------------------------------------------------------------
-void Function::eval(Eigen::Ref<Eigen::Array<PetscScalar, Eigen::Dynamic,
-                                            Eigen::Dynamic, Eigen::RowMajor>>
-                        values,
-                    const Eigen::Ref<const EigenRowArrayXXd> x,
-                    const geometry::BoundingBoxTree& bb_tree) const
-{
-  assert(_function_space);
-  assert(_function_space->mesh);
-  const mesh::Mesh& mesh = *_function_space->mesh;
-  const int tdim = mesh.topology().dim();
-
-  // Find the cell that contains x
-  const int gdim = x.cols();
-  Eigen::Vector3d point = Eigen::Vector3d::Zero();
-  for (unsigned int i = 0; i < x.rows(); ++i)
-  {
-    // Pad the input point to size 3 (bounding box requires 3d point)
-    point.head(gdim) = x.row(i);
-
-    // Get index of first cell containing point
-    unsigned int id = bb_tree.compute_first_entity_collision(point, mesh);
-
-    // If not found, use the closest cell
-    if (id == std::numeric_limits<unsigned int>::max())
-    {
-      // Check if the closest cell is within 2*DBL_EPSILON. This we can
-      // allow without _allow_extrapolation
-      std::pair<unsigned int, double> close
-          = bb_tree.compute_closest_entity(point, mesh);
-      if (close.second < 2.0 * DBL_EPSILON)
-        id = close.first;
-      else
-      {
-        throw std::runtime_error("Cannot evaluate function at point. The point "
-                                 "is not inside the domain.");
-      }
-    }
-
-    // Create cell that contains point
-    const mesh::MeshEntity cell(mesh, tdim, id);
-
-    // Call evaluate function
-    eval(values.row(i), x.row(i), cell);
-  }
-}
-//-----------------------------------------------------------------------------
 void Function::eval(
+    const Eigen::Ref<
+        const Eigen::Array<double, Eigen::Dynamic, 3, Eigen::RowMajor>>& x,
+    const Eigen::Ref<const Eigen::Array<int, Eigen::Dynamic, 1>>& cells,
     Eigen::Ref<Eigen::Array<PetscScalar, Eigen::Dynamic, Eigen::Dynamic,
                             Eigen::RowMajor>>
-        values,
-    const Eigen::Ref<const Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic,
-                                        Eigen::RowMajor>>
-        x,
-    const mesh::MeshEntity& cell) const
+        u) const
 {
-  // FIXME: This function needs to be changed to handle an arbitrary
-  // number of points for efficiency
+  // TODO: This could be easily made more efficient by exploiting points
+  // being ordered by the cell to which they belong.
 
-  assert(_function_space);
-  assert(_function_space->mesh);
-  const mesh::Mesh& mesh = *_function_space->mesh;
-  if (cell.mesh().id() != mesh.id())
+  if (x.rows() != cells.rows())
   {
     throw std::runtime_error(
-        "Cell passed to Function::eval is from a different mesh.");
+        "Number of points and number of cells must be equal.");
+  }
+  if (x.rows() != u.rows())
+  {
+    throw std::runtime_error("Length of array for Function values must be the "
+                             "same as the number of points.");
   }
 
+  // Get mesh
+  assert(_function_space);
+  assert(_function_space->mesh());
+  const mesh::Mesh& mesh = *_function_space->mesh();
   const int gdim = mesh.geometry().dim();
   const int tdim = mesh.topology().dim();
-  assert(cell.dim() == tdim);
 
-  assert(x.rows() == values.rows());
-  assert(_function_space->element);
-  const fem::FiniteElement& element = *_function_space->element;
-
-  // Create work vector for expansion coefficients
-  Eigen::Matrix<PetscScalar, 1, Eigen::Dynamic> coefficients(
-      element.space_dimension());
-
-  // Cell coordinates (re-allocated inside function for thread safety)
-  // Prepare cell geometry
+  // Get geometry data
   const mesh::Connectivity& connectivity_g
       = mesh.coordinate_dofs().entity_points();
-  const Eigen::Ref<const Eigen::Array<std::int32_t, Eigen::Dynamic, 1>> pos_g
+  const Eigen::Array<std::int32_t, Eigen::Dynamic, 1>& pos_g
       = connectivity_g.entity_positions();
-  const Eigen::Ref<const Eigen::Array<std::int32_t, Eigen::Dynamic, 1>> cell_g
+  const Eigen::Array<std::int32_t, Eigen::Dynamic, 1>& cell_g
       = connectivity_g.connections();
+
   // FIXME: Add proper interface for num coordinate dofs
   const int num_dofs_g = connectivity_g.size(0);
   const Eigen::Array<double, Eigen::Dynamic, 3, Eigen::RowMajor>& x_g
       = mesh.geometry().points();
-  EigenRowArrayXXd coordinate_dofs(num_dofs_g, gdim);
-
-  const int cell_index = cell.index();
-  for (int i = 0; i < num_dofs_g; ++i)
-    for (int j = 0; j < gdim; ++j)
-      coordinate_dofs(i, j) = x_g(cell_g[pos_g[cell_index] + i], j);
-
-  restrict(coefficients.data(), cell, coordinate_dofs);
+  Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
+      coordinate_dofs(num_dofs_g, gdim);
 
   // Get coordinate mapping
   std::shared_ptr<const fem::CoordinateMapping> cmap
@@ -258,42 +202,74 @@ void Function::eval(
         "fem::CoordinateMapping has not been attached to mesh.");
   }
 
-  std::size_t num_points = x.rows();
-  std::size_t reference_value_size = element.reference_value_size();
-  std::size_t value_size = element.value_size();
-  std::size_t space_dimension = element.space_dimension();
+  // Get element
+  assert(_function_space->element());
+  const fem::FiniteElement& element = *_function_space->element();
+  const int reference_value_size = element.reference_value_size();
+  const int value_size = element.value_size();
+  const int space_dimension = element.space_dimension();
 
-  Eigen::Tensor<double, 3, Eigen::RowMajor> J(num_points, gdim, tdim);
-  EigenArrayXd detJ(num_points);
-  Eigen::Tensor<double, 3, Eigen::RowMajor> K(num_points, tdim, gdim);
+  // Prepare geometry data structures
+  Eigen::Tensor<double, 3, Eigen::RowMajor> J(1, gdim, tdim);
+  Eigen::Array<double, Eigen::Dynamic, 1> detJ(1);
+  Eigen::Tensor<double, 3, Eigen::RowMajor> K(1, tdim, gdim);
+  Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor> X(1,
+                                                                          tdim);
 
-  EigenRowArrayXXd X(x.rows(), tdim);
+  // Prepare basis function data structures
   Eigen::Tensor<double, 3, Eigen::RowMajor> basis_reference_values(
-      num_points, space_dimension, reference_value_size);
+      1, space_dimension, reference_value_size);
+  Eigen::Tensor<double, 3, Eigen::RowMajor> basis_values(1, space_dimension,
+                                                         value_size);
 
-  Eigen::Tensor<double, 3, Eigen::RowMajor> basis_values(
-      num_points, space_dimension, value_size);
+  // Create work vector for expansion coefficients
+  Eigen::Matrix<PetscScalar, 1, Eigen::Dynamic> coefficients(
+      element.space_dimension());
 
-  // Compute reference coordinates X, and J, detJ and K
-  cmap->compute_reference_geometry(X, J, detJ, K, x, coordinate_dofs);
+  // Get dofmap
+  assert(_function_space->dofmap());
+  const fem::DofMap& dofmap = *_function_space->dofmap();
 
-  // Compute basis on reference element
-  element.evaluate_reference_basis(basis_reference_values, X);
-
-  // Push basis forward to physical element
-  element.transform_reference_basis(basis_values, basis_reference_values, X, J,
-                                    detJ, K);
-
-  // Compute expansion
-  values.setZero();
-  for (std::size_t p = 0; p < num_points; ++p)
+  // Loop over points
+  u.setZero();
+  la::VecReadWrapper v(_vector.vec());
+  Eigen::Map<const Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1>> _v = v.x;
+  for (Eigen::Index p = 0; p < cells.rows(); ++p)
   {
-    for (std::size_t i = 0; i < space_dimension; ++i)
+    const int cell_index = cells(p);
+
+    // Skip negative cell indices
+    if (cell_index < 0)
+      break;
+
+    // Get cell geometry (coordinate dofs)
+    for (int i = 0; i < num_dofs_g; ++i)
+      for (int j = 0; j < gdim; ++j)
+        coordinate_dofs(i, j) = x_g(cell_g[pos_g[cell_index] + i], j);
+
+    // Compute reference coordinates X, and J, detJ and K
+    cmap->compute_reference_geometry(X, J, detJ, K, x.row(p).head(gdim),
+                                     coordinate_dofs);
+
+    // Compute basis on reference element
+    element.evaluate_reference_basis(basis_reference_values, X);
+
+    // Push basis forward to physical element
+    element.transform_reference_basis(basis_values, basis_reference_values, X,
+                                      J, detJ, K);
+
+    // Get degrees of freedom for current cell
+    auto dofs = dofmap.cell_dofs(cell_index);
+    for (Eigen::Index i = 0; i < dofs.size(); ++i)
+      coefficients[i] = _v[dofs[i]];
+
+    // Compute expansion
+    for (int i = 0; i < space_dimension; ++i)
     {
-      for (std::size_t j = 0; j < value_size; ++j)
+      for (int j = 0; j < value_size; ++j)
       {
-        // TODO: Find an Eigen shortcut fot this operation
-        values.row(p)[j] += coefficients[i] * basis_values(p, i, j);
+        // TODO: Find an Eigen shortcut for this operation
+        u.row(p)[j] += coefficients[i] * basis_values(0, i, j);
       }
     }
   }
@@ -306,13 +282,7 @@ void Function::interpolate(const Function& v)
   _function_space->interpolate(x.x, v);
 }
 //-----------------------------------------------------------------------------
-void Function::interpolate(
-    const std::function<
-        void(Eigen::Ref<Eigen::Array<PetscScalar, Eigen::Dynamic,
-                                     Eigen::Dynamic, Eigen::RowMajor>>,
-             const Eigen::Ref<const Eigen::Array<
-                 double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>>)>& f)
-
+void Function::interpolate(const FunctionSpace::interpolation_function& f)
 {
   la::VecWrapper x(_vector.vec());
   _function_space->interpolate(x.x, f);
@@ -321,8 +291,8 @@ void Function::interpolate(
 int Function::value_rank() const
 {
   assert(_function_space);
-  assert(_function_space->element);
-  return _function_space->element->value_rank();
+  assert(_function_space->element());
+  return _function_space->element()->value_rank();
 }
 //-----------------------------------------------------------------------------
 int Function::value_size() const
@@ -336,47 +306,24 @@ int Function::value_size() const
 int Function::value_dimension(int i) const
 {
   assert(_function_space);
-  assert(_function_space->element);
-  return _function_space->element->value_dimension(i);
+  assert(_function_space->element());
+  return _function_space->element()->value_dimension(i);
 }
 //-----------------------------------------------------------------------------
 std::vector<int> Function::value_shape() const
 {
-  assert(_function_space);
-  assert(_function_space->element);
   std::vector<int> _shape(this->value_rank(), 1);
   for (std::size_t i = 0; i < _shape.size(); ++i)
     _shape[i] = this->value_dimension(i);
   return _shape;
 }
 //-----------------------------------------------------------------------------
-void Function::restrict(
-    PetscScalar* w, const mesh::MeshEntity& cell,
-    const Eigen::Ref<const EigenRowArrayXXd>& coordinate_dofs) const
-{
-  assert(w);
-  assert(_function_space);
-  assert(_function_space->dofmap);
-  assert(_function_space->mesh);
-  assert(_function_space->mesh->topology().dim() == cell.dim());
-
-  // Get dofmap for cell
-  const fem::DofMap& dofmap = *_function_space->dofmap;
-  auto dofs = dofmap.cell_dofs(cell.index());
-
-  // Pick values from vector(s)
-  la::VecReadWrapper v(_vector.vec());
-  Eigen::Map<const Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1>> _v = v.x;
-  for (Eigen::Index i = 0; i < dofs.size(); ++i)
-    w[i] = _v[dofs[i]];
-}
-//-----------------------------------------------------------------------------
 Eigen::Array<PetscScalar, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
 Function::compute_point_values() const
 {
   assert(_function_space);
-  assert(_function_space->mesh);
-  const mesh::Mesh& mesh = *_function_space->mesh;
+  assert(_function_space->mesh());
+  const mesh::Mesh& mesh = *_function_space->mesh();
 
   const int tdim = mesh.topology().dim();
 
@@ -387,24 +334,23 @@ Function::compute_point_values() const
   Eigen::Array<PetscScalar, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
       point_values(mesh.geometry().num_points(), value_size_loc);
 
-  const int gdim = mesh.topology().dim();
   const mesh::Connectivity& cell_dofs = mesh.coordinate_dofs().entity_points();
 
   // Prepare cell geometry
   const mesh::Connectivity& connectivity_g
       = mesh.coordinate_dofs().entity_points();
-  const Eigen::Ref<const Eigen::Array<std::int32_t, Eigen::Dynamic, 1>> pos_g
+  const Eigen::Array<std::int32_t, Eigen::Dynamic, 1>& pos_g
       = connectivity_g.entity_positions();
-  const Eigen::Ref<const Eigen::Array<std::int32_t, Eigen::Dynamic, 1>> cell_g
+  const Eigen::Array<std::int32_t, Eigen::Dynamic, 1>& cell_g
       = connectivity_g.connections();
   // FIXME: Add proper interface for num coordinate dofs
   const int num_dofs_g = connectivity_g.size(0);
   const Eigen::Array<double, Eigen::Dynamic, 3, Eigen::RowMajor>& x_g
       = mesh.geometry().points();
 
-  // Interpolate point values on each cell (using last computed value
-  // if not continuous, e.g. discontinuous Galerkin methods)
-  EigenRowArrayXXd x(num_dofs_g, mesh.geometry().dim());
+  // Interpolate point values on each cell (using last computed value if
+  // not continuous, e.g. discontinuous Galerkin methods)
+  Eigen::Array<double, Eigen::Dynamic, 3, Eigen::RowMajor> x(num_dofs_g, 3);
   Eigen::Array<PetscScalar, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
       values(num_dofs_g, value_size_loc);
   for (auto& cell : mesh::MeshRange(mesh, tdim, mesh::MeshRangeType::ALL))
@@ -412,21 +358,23 @@ Function::compute_point_values() const
     // Get coordinates for all points in cell
     const int cell_index = cell.index();
     for (int i = 0; i < num_dofs_g; ++i)
-      for (int j = 0; j < gdim; ++j)
-        x(i, j) = x_g(cell_g[pos_g[cell_index] + i], j);
+      x.row(i) = x_g.row(cell_g[pos_g[cell_index] + i]);
 
     values.resize(x.rows(), value_size_loc);
 
     // Call evaluate function
-    eval(values, x, cell);
+    Eigen::Array<int, Eigen::Dynamic, 1> cells(x.rows());
+    cells = cell.index();
+    eval(x, cells, values);
 
     // Copy values to array of point values
     const std::int32_t* dofs = cell_dofs.connections(cell.index());
-    for (unsigned int i = 0; i < x.rows(); ++i)
+    for (int i = 0; i < x.rows(); ++i)
       point_values.row(dofs[i]) = values.row(i);
   }
 
   return point_values;
-
 }
+//-----------------------------------------------------------------------------
+std::size_t Function::id() const { return _id; }
 //-----------------------------------------------------------------------------

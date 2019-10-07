@@ -27,10 +27,8 @@ mesh::Mesh build_tet(MPI_Comm comm, const std::array<Eigen::Vector3d, 2>& p,
   // Receive mesh if not rank 0
   if (dolfin::MPI::rank(comm) != 0)
   {
-    Eigen::Array<double, 0, 3, Eigen::RowMajor> geom(
-        0, 3);
-    Eigen::Array<std::int64_t, 0, 4, Eigen::RowMajor>
-        topo(0, 4);
+    Eigen::Array<double, 0, 3, Eigen::RowMajor> geom(0, 3);
+    Eigen::Array<std::int64_t, 0, 4, Eigen::RowMajor> topo(0, 4);
 
     return mesh::Partitioning::build_distributed_mesh(
         comm, mesh::CellType::tetrahedron, geom, topo, {}, ghost_mode);
@@ -75,8 +73,10 @@ mesh::Mesh build_tet(MPI_Comm comm, const std::array<Eigen::Vector3d, 2>& p,
         "BoxMesh has non-positive number of vertices in some dimension");
   }
 
-  EigenRowArrayXXd geom((nx + 1) * (ny + 1) * (nz + 1), 3);
-  EigenRowArrayXXi64 topo(6 * nx * ny * nz, 4);
+  Eigen::Array<double, Eigen::Dynamic, 3, Eigen::RowMajor> geom(
+      (nx + 1) * (ny + 1) * (nz + 1), 3);
+  Eigen::Array<std::int64_t, Eigen::Dynamic, 4, Eigen::RowMajor> topo(
+      6 * nx * ny * nz, 4);
 
   std::size_t vertex = 0;
   for (std::size_t iz = 0; iz <= nz; ++iz)
@@ -138,8 +138,8 @@ mesh::Mesh build_hex(MPI_Comm comm, std::array<std::size_t, 3> n,
   // Receive mesh if not rank 0
   if (dolfin::MPI::rank(comm) != 0)
   {
-    EigenRowArrayXXd geom(0, 3);
-    EigenRowArrayXXi64 topo(0, 8);
+    Eigen::Array<double, 0, 3, Eigen::RowMajor> geom(0, 3);
+    Eigen::Array<std::int64_t, 0, 8, Eigen::RowMajor> topo(0, 8);
 
     return mesh::Partitioning::build_distributed_mesh(
         comm, mesh::CellType::hexahedron, geom, topo, {}, ghost_mode);
@@ -149,9 +149,6 @@ mesh::Mesh build_hex(MPI_Comm comm, std::array<std::size_t, 3> n,
   const std::size_t ny = n[1];
   const std::size_t nz = n[2];
 
-  EigenRowArrayXXd geom((nx + 1) * (ny + 1) * (nz + 1), 3);
-  EigenRowArrayXXi64 topo(nx * ny * nz, 8);
-
   const double a = 0.0;
   const double b = 1.0;
   const double c = 0.0;
@@ -159,7 +156,9 @@ mesh::Mesh build_hex(MPI_Comm comm, std::array<std::size_t, 3> n,
   const double e = 0.0;
   const double f = 1.0;
 
-  // Create main vertices:
+  // Create main vertices
+  Eigen::Array<double, Eigen::Dynamic, 3, Eigen::RowMajor> geom(
+      (nx + 1) * (ny + 1) * (nz + 1), 3);
   std::size_t vertex = 0;
   for (std::size_t iz = 0; iz <= nz; ++iz)
   {
@@ -181,6 +180,8 @@ mesh::Mesh build_hex(MPI_Comm comm, std::array<std::size_t, 3> n,
   }
 
   // Create cuboids
+  Eigen::Array<std::int64_t, Eigen::Dynamic, 8, Eigen::RowMajor> topo(
+      nx * ny * nz, 8);
   std::size_t cell = 0;
   for (std::size_t iz = 0; iz < nz; ++iz)
   {

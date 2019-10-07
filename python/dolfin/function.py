@@ -4,7 +4,6 @@
 # This file is part of DOLFIN (https://www.fenicsproject.org)
 #
 # SPDX-License-Identifier:    LGPL-3.0-or-later
-"""Finite element functions"""
 
 import typing
 from functools import singledispatch
@@ -13,8 +12,7 @@ import numpy as np
 from petsc4py import PETSc
 
 import ufl
-from dolfin import common, cpp, function
-from dolfin.function import functionspace
+from dolfin import common, cpp, function, functionspace
 
 
 class Function(ufl.Coefficient):
@@ -65,8 +63,8 @@ class Function(ufl.Coefficient):
 
     def ufl_evaluate(self, x, component, derivatives):
         """Function used by ufl to evaluate the Expression"""
-        # FIXME: same as dolfin.expression.Expression version. Find
-        # way to re-use.
+        # FIXME: same as dolfin.expression.Expression version. Find way
+        # to re-use.
         assert derivatives == ()  # TODO: Handle derivatives
 
         if component:
@@ -83,32 +81,38 @@ class Function(ufl.Coefficient):
             # Scalar evaluation
             return self(*x)
 
-    def __call__(self, x: np.ndarray, bb_tree: cpp.geometry.BoundingBoxTree) -> np.ndarray:
-        """Evaluate Function at points x, where x has shape (num_points, gdim)"""
-        _x = np.asarray(x, dtype=np.float)
-        num_points = _x.shape[0] if len(_x.shape) > 1 else 1
-        _x = np.reshape(_x, (num_points, -1))
-        if _x.shape[1] != self.geometric_dimension():
-            raise ValueError("Wrong geometric dimension for coordinate(s).")
+    def eval(self, x: np.ndarray, cells: np.ndarray, u=None) -> np.ndarray:
+        """Evaluate Function at points x, where x has shape (num_points, 3),
+        and cells has shape (num_points,) and cell[i] is the index of the
+        cell containing point x[i]. If the cell index is negative the
+        point is ignored."""
 
-        value_size = ufl.product(self.ufl_element().value_shape())
-        if common.has_petsc_complex:
-            values = np.empty((num_points, value_size), dtype=np.complex128)
-        else:
-            values = np.empty((num_points, value_size))
+        # Make sure input coordinates are a NumPy array
+        x = np.asarray(x, dtype=np.float)
+        assert x.ndim < 3
+        num_points = x.shape[0] if x.ndim == 2 else 1
+        x = np.reshape(x, (num_points, -1))
+        if x.shape[1] != 3:
+            raise ValueError("Coordinate(s) for Function evaluation must have length 3.")
 
-        # Call the evaluation
-        self._cpp_object.eval(values, _x, bb_tree)
+        # Make sure cells are a NumPy array
+        cells = np.asarray(cells)
+        assert cells.ndim < 2
+        num_points_c = cells.shape[0] if cells.ndim == 1 else 1
+        cells = np.reshape(cells, num_points_c)
+
+        # Allocate memory for return value if not provided
+        if u is None:
+            value_size = ufl.product(self.ufl_element().value_shape())
+            if common.has_petsc_complex:
+                u = np.empty((num_points, value_size), dtype=np.complex128)
+            else:
+                u = np.empty((num_points, value_size))
+
+        self._cpp_object.eval(x, cells, u)
         if num_points == 1:
-            values = np.reshape(values, (-1, ))
-
-        return values
-
-    def eval_cell(self, u, x, cell):
-        return self._cpp_object.eval(u, x, cell)
-
-    def eval(self, u, x, bb_tree: cpp.geometry.BoundingBoxTree):
-        return self._cpp_object.eval(u, x, bb_tree)
+            u = np.reshape(u, (-1, ))
+        return u
 
     def interpolate(self, u) -> None:
         """Interpolate an expression"""
@@ -188,3 +192,65 @@ class Function(ufl.Coefficient):
         V_collapsed = functionspace.FunctionSpace(None, self.ufl_element(),
                                                   u_collapsed.function_space)
         return Function(V_collapsed, u_collapsed.vector)
+
+
+# # TODO: Update this message to clarify dolfin.FunctionSpace vs
+# # ufl.FunctionSpace
+# _ufl_dolfin_difference_message = """\ When constructing an Argument, TestFunction or TrialFunction, you
+# must to provide a FunctionSpace and not a FiniteElement.  The
+# FiniteElement class provided by ufl only represents an abstract finite
+# element space and is only used in standalone .ufl files, while the
+# FunctionSpace provides a full discrete function space over a given
+# mesh and should be used in dolfin programs in Python.  """
+
+class Argument(ufl.Argument):
+    """Representation of an argument to a form"""
+
+    def __init__(self, V: functionspace.FunctionSpace, number: int, part: int = None):
+        """Create a UFL/DOLFIN Argument"""
+        ufl.Argument.__init__(self, V.ufl_function_space(), number, part)
+        self._V = V
+
+    def function_space(self):
+        """Return the FunctionSpace"""
+        return self._V
+
+    def __eq__(self, other: 'Argument'):
+        """Extending UFL __eq__ here to distinguish test and trial functions
+        in different function spaces with same ufl element.
+
+        """
+        return (isinstance(other, Argument)
+                and self.number() == other.number()
+                and self.part() == other.part() and self._V == other._V)
+
+    def __hash__(self):
+        return ufl.Argument.__hash__(self)
+
+
+def TestFunction(V: functionspace.FunctionSpace, part: int = None):
+    """Create a test function argument to a form"""
+    return Argument(V, 0, part)
+
+
+def TrialFunction(V: functionspace.FunctionSpace, part: int = None):
+    """UFL value: Create a trial function argument to a form."""
+    return Argument(V, 1, part)
+
+
+def TestFunctions(V: functionspace.FunctionSpace):
+    """Create a TestFunction in a mixed space, and return a
+    tuple with the function components corresponding to the
+    subelements.
+
+    """
+    return ufl.split(TestFunction(V))
+
+
+def TrialFunctions(V: functionspace.FunctionSpace):
+    """Create a TrialFunction in a mixed space, and return a
+    tuple with the function components corresponding to the
+    subelements.
+
+    """
+    return ufl.split(TrialFunction(V))

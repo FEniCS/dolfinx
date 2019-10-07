@@ -22,8 +22,8 @@ class SubSystemsManager
 {
 public:
   /// Singleton instance. Calling this ensures singleton instance of
-  /// SubSystemsManager is initialized according to the "Construct
-  /// on First Use" idiom.
+  /// SubSystemsManager is initialized according to the "Construct on
+  /// First Use" idiom.
   static SubSystemsManager& singleton();
 
   // Copy constructor
@@ -36,22 +36,22 @@ public:
   static int init_mpi(int argc, char* argv[], int required_thread_level);
 
   /// Initialise loguru
-  static void init_logging(int argc, char *argv[]);
+  static void init_logging(int argc, char* argv[]);
 
   /// Initialize PETSc without command-line arguments
   static void init_petsc();
 
   /// Initialize PETSc with command-line arguments. Note that PETSc
-  /// command-line arguments may also be filtered and sent to PETSc
-  /// by parameters.parse(argc, argv).
+  /// command-line arguments may also be filtered and sent to PETSc by
+  /// parameters.parse(argc, argv).
   static void init_petsc(int argc, char* argv[]);
 
   /// Finalize subsystems. This will be called by the destructor, but in
   /// special cases it may be necessary to call finalize() explicitly.
   static void finalize();
 
-  /// Return true if DOLFIN initialised MPI (and is therefore responsible
-  /// for finalization)
+  /// Return true if DOLFIN initialised MPI (and is therefore
+  /// responsible for finalization)
   static bool responsible_mpi();
 
   /// Return true if DOLFIN initialised PETSc (and is therefore

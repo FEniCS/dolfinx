@@ -6,6 +6,7 @@
 
 #pragma once
 
+#include <dolfin/common/MPI.h>
 #include <map>
 #include <set>
 #include <string>
@@ -13,8 +14,6 @@
 
 namespace dolfin
 {
-class MPI;
-class XMLTable;
 class TableEntry;
 
 /// This class provides storage and pretty-printing for tables.
@@ -34,6 +33,16 @@ class TableEntry;
 class Table
 {
 public:
+  /// Types of MPI reduction available for Table,
+  /// to get the max, min or average values over an MPI_Comm
+  ///
+  enum class Reduction
+  {
+    average,
+    max,
+    min
+  };
+
   /// Create empty table
   Table(std::string title = "", bool right_justify = true);
 
@@ -64,6 +73,12 @@ public:
   /// Get value of table entry
   double get_value(std::string row, std::string col) const;
 
+  /// Do MPI reduction on Table
+  /// @param comm MPI Comm
+  /// @param reduction Type of reduction to perform
+  /// @return Reduced Table
+  Table reduce(MPI_Comm comm, Reduction reduction);
+
   /// Table name
   std::string name;
 
@@ -90,12 +105,6 @@ private:
 
   // True if we should right-justify the table entries
   bool _right_justify;
-
-  // Allow MPI::all_reduce accessing dvalues
-  friend class MPI;
-
-  // Allow XMLTable accessing data
-  friend class XMLTable;
 };
 
 /// This class represents an entry in a Table
