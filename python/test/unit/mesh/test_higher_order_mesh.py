@@ -1,5 +1,4 @@
-# Copyright (C) 2019 Jørgen Schartum Dokken
-#
+# Copyright (C) 2019 Jørgen Schartum Dokken & Matthew Scroggs
 # This file is part of DOLFIN (https://www.fenicsproject.org)
 #
 # SPDX-License-Identifier:    LGPL-3.0-or-later
@@ -115,9 +114,9 @@ def test_triangle_order_3():
 
 
 @skip_in_parallel
-@pytest.mark.parametrize('L', [1,2,3])
-@pytest.mark.parametrize('H', [1,2,3])
-@pytest.mark.parametrize('eps', [0])
+@pytest.mark.parametrize('L', [1, 4])
+@pytest.mark.parametrize('H', [1, 5])
+@pytest.mark.parametrize('eps', [0, 1, 10, 100])
 def test_quad_dofs(L, H, eps):
     # Test second order mesh by computing volume two cells
     #  *-----*-----*   3--6--2--13-10
@@ -125,32 +124,30 @@ def test_quad_dofs(L, H, eps):
     #  |     |     |   7  8  5  14 12
     #  |     |     |   |     |     |
     #  *-----*-----*   0--4--1--11-9
-    points = np.array([[0,0],[L,0],[L,H],[0,H],
-                       [L/2,0],[L,H/2],[L/2,H+eps],[0+eps,H/2],
-                       [L/2,H/2],
-                       [2*L,0],[2*L,H],
-                       [3*L/2, 0],[2*L, H/2],[3*L/2, H],
-                       [3*L/2, H/2]])
-    cells = np.array([[0, 1, 2, 3, 4, 5, 6, 7, 8],[1, 9, 10, 2, 11, 12, 13, 5, 14]])
+    points = np.array([[0, 0], [L, 0], [L, H], [0, H],
+                       [L / 2, 0], [L + eps, H / 2], [L / 2, H], [0 + eps, H / 2],
+                       [L / 2 + eps, H / 2],
+                       [2 * L, 0], [2 * L, H],
+                       [3 * L / 2, 0], [2 * L + eps, H / 2], [3 * L / 2, H],
+                       [3 * L / 2 + eps, H / 2]])
+    cells = np.array([[0, 1, 2, 3, 4, 5, 6, 7, 8], [1, 9, 10, 2, 11, 12, 13, 5, 14]])
 
     mesh = Mesh(MPI.comm_world, CellType.quadrilateral, points, cells,
                 [], GhostMode.none)
 
-    import dolfin
-
     vol = assemble_scalar(Constant(mesh, 1) * dx)
-    assert(vol == pytest.approx(L * H*2, rel=1e-3))
+    assert(vol == pytest.approx(L * H * 2, rel=1e-9))
 
     # Volume of cell 1
     cell_1 = np.array([cells[0]])
     mesh = Mesh(MPI.comm_world, CellType.quadrilateral, points, cell_1,
                 [], GhostMode.none)
     vol = assemble_scalar(Constant(mesh, 1) * dx)
-    assert(vol == pytest.approx(L * H, rel=1e-3))
+    assert(vol == pytest.approx(L * H, rel=1e-9))
 
     # Volume of cell 2
     cell_2 = np.array([cells[1]])
     mesh = Mesh(MPI.comm_world, CellType.quadrilateral, points, cell_2,
                 [], GhostMode.none)
     vol = assemble_scalar(Constant(mesh, 1) * dx)
-    assert(vol == pytest.approx(L * H, rel=1e-3))
+    assert(vol == pytest.approx(L * H, rel=1e-9))
