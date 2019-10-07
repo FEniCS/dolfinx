@@ -44,9 +44,8 @@ void function(py::module& m)
       .def("collapse", &dolfin::function::Function::collapse,
            "Collapse sub-function view")
       .def("interpolate",
-           py::overload_cast<const std::function<void(
-               Eigen::Ref<Eigen::Array<PetscScalar, Eigen::Dynamic,
-                                       Eigen::Dynamic, Eigen::RowMajor>>,
+           py::overload_cast<const std::function<Eigen::Array<
+               PetscScalar, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>(
                const Eigen::Ref<
                    const Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic,
                                       Eigen::RowMajor>>&)>&>(
@@ -74,7 +73,7 @@ void function(py::module& m)
                      x.cols());
                  };
 
-             self.interpolate(_f);
+             self.interpolate_c(_f);
            },
            "Interpolate using a pointer to an expression with a C signature")
       .def_property_readonly(
@@ -100,15 +99,6 @@ void function(py::module& m)
            "Compute values at all mesh points")
       .def_property_readonly("function_space",
                              &dolfin::function::Function::function_space);
-
-  // FIXME: why is this floating here?
-  m.def("interpolate",
-        [](const dolfin::function::Function& f,
-           std::shared_ptr<const dolfin::function::FunctionSpace> V) {
-          auto g = std::make_unique<dolfin::function::Function>(V);
-          g->interpolate(f);
-          return g;
-        });
 
   // dolfin::function::FunctionSpace
   py::class_<dolfin::function::FunctionSpace,

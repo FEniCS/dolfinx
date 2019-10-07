@@ -159,8 +159,8 @@ def test_save_and_read_function(tempdir):
     F0 = Function(Q)
     F1 = Function(Q)
 
-    def E(values, x):
-        values[:, 0] = x[:, 0]
+    def E(x):
+        return x[:, 0]
 
     F0.interpolate(E)
 

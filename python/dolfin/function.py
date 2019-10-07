@@ -151,7 +151,7 @@ class Function(ufl.Coefficient):
                 self._cpp_object.interpolate(u._cpp_object)
 
         @_interpolate.register(int)
-        def _(u, verbose=False):
+        def _(u):
             self._cpp_object.interpolate_ptr(u)
 
         _interpolate(u)
