@@ -288,6 +288,11 @@ void Function::eval_reference(
   const mesh::Mesh& mesh = *_function_space->mesh();
   const int gdim = mesh.geometry().dim();
   const int tdim = mesh.topology().dim();
+  if (tdim != gdim)
+  {
+    throw std::runtime_error("Function evaluation at reference cell "
+                             "coordinates is not yet supported for manifolds.");
+  }
 
   // Get element
   assert(_function_space->element());
