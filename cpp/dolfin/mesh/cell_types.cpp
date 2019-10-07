@@ -519,6 +519,8 @@ std::vector<std::uint8_t> mesh::vtk_mapping(mesh::CellType type, int num_nodes)
       // which is the VTK format
       return {0, 1, 3, 2};
     }
+    case 9:
+      return {0,3,4,1,6,5,7,2,8};
     default:
       throw std::runtime_error("Higher order quadrilateral not supported");
     }
@@ -560,6 +562,8 @@ int mesh::cell_degree(mesh::CellType type, int num_nodes)
   case mesh::CellType::quadrilateral:
     if (num_nodes == 4)
       return 1;
+    else if (num_nodes == 9)
+      return 2;
     else
       throw std::runtime_error("Higher order quadrilateral not supported");
   case mesh::CellType::hexahedron:

@@ -147,10 +147,17 @@ Mesh::Mesh(MPI_Comm comm, mesh::CellType type,
     // Quadrilateral cells does not follow counter clockwise
     // order (cc), but lexiographic order (LG). This breaks the assumptions
     // that the cell permutation is the same as the VTK-map.
-    if (num_vertices_per_cell == cells.cols())
+    switch (cells.cols())
+    {
+    case 4:
       cell_permutation = {0, 1, 2, 3};
-    else
+      break;
+    case 9:
+      cell_permutation = mesh::vtk_mapping(type, cells.cols());
+      break;
+    default:
       throw std::runtime_error("Higher order quadrilateral not supported");
+    }
   }
   else
     cell_permutation = mesh::vtk_mapping(type, cells.cols());
