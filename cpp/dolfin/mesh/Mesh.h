@@ -1,4 +1,4 @@
-// Copyright (C) 2006-2016 Anders Logg
+// Copyright (C) 2006-2019 Anders Logg, Chris Richardson
 //
 // This file is part of DOLFIN (https://www.fenicsproject.org)
 //
