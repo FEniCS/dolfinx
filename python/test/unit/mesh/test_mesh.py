@@ -224,6 +224,7 @@ def test_UnitSquareMeshDistributed():
     assert mesh.num_entities_global(0) == 48
     assert mesh.num_entities_global(2) == 70
     assert mesh.geometry.dim == 2
+    assert MPI.sum(mesh.mpi_comm(), mesh.topology.ghost_offset(0)) == 48
 
 
 def test_UnitSquareMeshLocal():
@@ -240,6 +241,7 @@ def test_UnitCubeMeshDistributed():
     assert mesh.num_entities_global(0) == 480
     assert mesh.num_entities_global(3) == 1890
     assert mesh.geometry.dim == 3
+    assert MPI.sum(mesh.mpi_comm(), mesh.topology.ghost_offset(0)) == 480
 
 
 def test_UnitCubeMeshLocal():
@@ -255,6 +257,7 @@ def test_UnitQuadMesh():
     assert mesh.num_entities_global(0) == 48
     assert mesh.num_entities_global(2) == 35
     assert mesh.geometry.dim == 2
+    assert MPI.sum(mesh.mpi_comm(), mesh.topology.ghost_offset(0)) == 48
 
 
 def test_UnitHexMesh():
@@ -262,6 +265,7 @@ def test_UnitHexMesh():
     assert mesh.num_entities_global(0) == 480
     assert mesh.num_entities_global(3) == 315
     assert mesh.geometry.dim == 3
+    assert MPI.sum(mesh.mpi_comm(), mesh.topology.ghost_offset(0)) == 480
 
 
 def test_hash():
