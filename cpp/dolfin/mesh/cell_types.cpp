@@ -523,7 +523,7 @@ std::vector<std::uint8_t> mesh::vtk_mapping(mesh::CellType type, int num_nodes)
       {
         std::vector<std::uint8_t> permutation(num_nodes);
         // vertices
-        int j = 4;
+        int j = 0;
         permutation[j++] = 0;
         permutation[j++] = i;
         permutation[j++] = i + 1;
