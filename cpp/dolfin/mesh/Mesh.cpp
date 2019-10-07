@@ -151,26 +151,11 @@ Mesh::Mesh(
 
   // Permutation from VTK to DOLFIN order for cell geometric nodes
   std::vector<std::uint8_t> cell_permutation;
-  if (type == mesh::CellType::quadrilateral)
-  {
-    // Quadrilateral cells does not follow counter clockwise
-    // order (cc), but lexiographic order (LG). This breaks the assumptions
+  if (type == mesh::CellType::quadrilateral && cells.cols() == 4)
+    // Quadrilateral cells do not follow counter clockwise
+    // order (cc), but tensor product ordering. This breaks the assumptions
     // that the cell permutation is the same as the VTK-map.
-    switch (cells.cols())
-    {
-    case 4:
-      cell_permutation = {0, 1, 2, 3};
-      break;
-    case 9:
-      cell_permutation = mesh::vtk_mapping(type, cells.cols());
-      break;
-    case 16:
-      cell_permutation = mesh::vtk_mapping(type, cells.cols());
-      break;
-    default:
-      throw std::runtime_error("Higher order quadrilateral not supported");
-    }
-  }
+    cell_permutation = {0, 1, 2, 3};
   else
     cell_permutation = mesh::vtk_mapping(type, cells.cols());
 
