@@ -229,19 +229,26 @@ Mesh::Mesh(
 
   // Permutation from VTK to DOLFIN order for cell geometric nodes
   std::vector<std::uint8_t> cell_permutation;
-  if (type == mesh::CellType::quadrilateral)
+  switch (type)
   {
+  case mesh::CellType::quadrilateral:
     // Quadrilateral cells does not follow counter clockwise
     // order (cc), but lexiographic order (LG). This breaks the assumptions
     // that the cell permutation is the same as the VTK-map.
-    if (num_vertices_per_cell == cells.cols())
+    if (cells.cols() == 4)
       cell_permutation = {0, 1, 2, 3};
     else
-      throw std::runtime_error("Higher order quadrilateral not supported");
-  }
-  else
+      cell_permutation = mesh::vtk_mapping(type, cells.cols());
+    break;
+  case mesh::CellType::hexahedron:
+    if (cells.cols() == 8)
+      cell_permutation = {0, 1, 2, 3, 4, 5, 6, 7};
+    else
+      throw std::runtime_error("Higher order hexahedron not supported");
+    break;
+  default:
     cell_permutation = mesh::vtk_mapping(type, cells.cols());
-
+  }
   // Find degree of mesh
   // FIXME: degree should probably be in MeshGeometry
   _degree = mesh::cell_degree(type, cells.cols());

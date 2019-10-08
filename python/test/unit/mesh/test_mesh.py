@@ -16,9 +16,11 @@ import FIAT
 from dolfin import (MPI, BoxMesh, MeshEntity, MeshFunction, RectangleMesh,
                     UnitCubeMesh, UnitIntervalMesh, UnitSquareMesh, cpp)
 from dolfin.cpp.mesh import CellType, is_simplex
+from dolfin.fem import assemble_scalar
 from dolfin.io import XDMFFile
 from dolfin_utils.test.fixtures import tempdir
 from dolfin_utils.test.skips import skip_in_parallel
+from ufl import dx
 
 assert (tempdir)
 
@@ -536,3 +538,10 @@ def test_coords():
     d = mesh.coordinate_dofs().entity_points()
     d += 2
     assert numpy.array_equal(d, mesh.coordinate_dofs().entity_points())
+
+
+def test_UnitHexMesh_assemble():
+    mesh = UnitCubeMesh(MPI.comm_world, 6, 7, 5, CellType.hexahedron)
+    vol = assemble_scalar(1 * dx(mesh))
+    vol = MPI.sum(mesh.mpi_comm(), vol)
+    assert(vol == pytest.approx(1, rel=1e-9))
