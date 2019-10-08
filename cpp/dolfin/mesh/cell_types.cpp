@@ -482,7 +482,7 @@ mesh::cell_entity_closure(mesh::CellType cell_type)
   return entity_closure;
 }
 //-----------------------------------------------------------------------------
-std::vector<std::uint8_t> mesh::vtk_mapping(mesh::CellType type, int num_nodes)
+std::vector<std::uint8_t> mesh::vtk_cell_permutation(mesh::CellType type, int num_nodes)
 {
   switch (type)
   {
@@ -657,6 +657,6 @@ std::vector<std::uint8_t> mesh::default_cell_permutation(mesh::CellType type,
   default:
     throw std::runtime_error("Unknown cell type.");
   }
-  return mesh::vtk_mapping(type, n);
+  return mesh::vtk_cell_permutation(type, n);
 }
 //-----------------------------------------------------------------------------

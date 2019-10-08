@@ -295,7 +295,7 @@ void HDF5File::write(const mesh::Mesh& mesh, int cell_dim,
     // Permutation to VTK ordering
     int num_nodes = mesh.coordinate_dofs().cell_permutation().size();
     const std::vector<std::uint8_t> perm
-        = mesh::vtk_mapping(mesh.cell_type(), num_nodes);
+        = mesh::vtk_cell_permutation(mesh.cell_type(), num_nodes);
 
     if (cell_dim == tdim or !mpi_io)
     {

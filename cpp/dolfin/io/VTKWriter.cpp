@@ -164,7 +164,7 @@ void write_ascii_mesh(const mesh::Mesh& mesh, std::size_t cell_dim,
       = connectivity_g.entity_positions();
   int num_nodes = mesh.coordinate_dofs().cell_permutation().size();
   const std::vector<std::uint8_t> perm
-      = mesh::vtk_mapping(mesh.cell_type(), num_nodes);
+      = mesh::vtk_cell_permutation(mesh.cell_type(), num_nodes);
 
   for (int j = 0; j < mesh.num_entities(mesh.topology().dim()); ++j)
   {

@@ -78,13 +78,13 @@ int num_cell_vertices(CellType type);
 std::map<std::array<int, 2>, std::vector<std::set<int>>>
 cell_entity_closure(mesh::CellType cell_type);
 
-/// Find the order of a cell given the number of nodes in the element.
+/// Find the order of a cell given the number of nodes in the element
 int cell_degree(CellType type, int num_nodes);
 
 /// Map from DOLFIN node ordering to VTK/XDMF ordering
-std::vector<std::uint8_t> vtk_mapping(CellType type, int num_nodes);
+std::vector<std::uint8_t> vtk_cell_permutation(CellType type, int num_nodes);
 
-/// Default mapping of DOLFIN/UFC node ordering to the cell input ordering.
+/// Default map of DOLFIN/UFC node ordering to the cell input ordering
 std::vector<std::uint8_t> default_cell_permutation(CellType type,
                                                    std::int32_t degree);
 
