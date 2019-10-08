@@ -236,7 +236,7 @@ Mesh::Mesh(
   std::vector<std::uint8_t> cell_permutation;
   if (custom_permutation.size() == 0)
     cell_permutation = mesh::default_cell_permutation(type, _degree);
-  else if (custom_permutation.size() == cells.cols())
+  else if (custom_permutation.size() == static_cast<unsigned int>(cells.cols()))
     cell_permutation = custom_permutation;
   else
     throw std::runtime_error("Permutation vector does not match cell input");
