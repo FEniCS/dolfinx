@@ -112,3 +112,71 @@ def test_triangle_order_3():
     assert q2 == pytest.approx(0.5 * (np.sin(1) - np.cos(1)),
                                rel=1e-9)
     assert q3 == pytest.approx(L * H)
+
+
+
+@skip_in_parallel
+def test_triangle_order_4():
+    H, L = 1, 1
+    #  *--*--*--*--*   3-21-20-19--2
+    #  | \         |   | \         |
+    #  *   *  * *  *   10 9 24 23  18
+    #  |     \     |   |    \      |
+    #  *  *   *  * *   11 15  8 22 17
+    #  |       \   |   |       \   |
+    #  *  * *   *  *   12 13 14 7  16
+    #  |         \ |   |         \ |
+    #  *--*--*--*--*   0--4--5--6--1
+    points = np.array(
+        [[0, 0], [L, 0], [L, H], [0, H], # 0, 1, 2, 3
+         [L / 4, 0], [L / 2, 0], [3 * L / 4, 0], # 4, 5, 6
+         [3 / 4 * L, H / 4], [L / 2, H / 2], # 7, 8
+         [L / 4, 3 * H / 4], [0, 3 * H / 4], # 9, 10
+         [0, H / 2], [0, H / 4], # 11, 12
+         [L / 4, H / 4], [L / 2, H / 4], [L / 4, H / 2], # 13, 14, 15
+         [L, H / 4], [L, H / 2], [L, 3 * H / 4], # 16, 17, 18
+         [3 * L / 4, H], [L / 2, H], [L / 4, H], # 19, 20, 21
+         [3 * L / 4, H / 2], [3 * L / 4, 3 * H / 4], # 22, 23
+         [L / 2, 3 * H / 4]] # 24
+    )
+
+    cells = np.array([[0, 1, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15],
+                      [1, 2, 3, 16, 17, 18, 19, 20, 21, 9, 8, 7, 22, 23, 24]])
+
+    def quantities(mesh):
+        x, y = SpatialCoordinate(mesh)
+        q1 = assemble_scalar(x * y * dx)
+        q2 = assemble_scalar(x * y * sin(x) * dx)
+        q3 = assemble_scalar(1 * dx(mesh))
+        return q1, q2, q3
+
+    # Only first cell as mesh
+    cell_0 = np.array([cells[0]])
+    mesh = Mesh(MPI.comm_world, CellType.triangle, points, cell_0,
+                [], GhostMode.none)
+    q1, q2, q3 = quantities(mesh)
+    assert q1 == pytest.approx(1 / 24, rel=1e-9)
+    assert q2 == pytest.approx(2 - 3 * np.sin(1) + np.cos(1), rel=1e-9)
+    assert q3 == pytest.approx(L * H / 2)
+
+    # Only second cell as mesh
+    cell_0 = np.array([cells[1]])
+    mesh = Mesh(MPI.comm_world, CellType.triangle, points, cell_0,
+                [], GhostMode.none)
+    from dolfin.io import VTKFile
+    VTKFile("mesh.pvd").write(mesh)
+
+    q1, q2, q3 = quantities(mesh)
+    assert q1 == pytest.approx(5 / 24, rel=1e-9)
+    assert q2 == pytest.approx(0.5 * (-4 + 7 * np.sin(1) - 3 * np.cos(1)),
+                               rel=1e-9)
+    assert q3 == pytest.approx(L * H / 2)
+
+    # Both cells as mesh
+    mesh = Mesh(MPI.comm_world, CellType.triangle, points, cells,
+                [], GhostMode.none)
+    q1, q2, q3 = quantities(mesh)
+    assert q1 == pytest.approx(0.25, rel=1e-9)
+    assert q2 == pytest.approx(0.5 * (np.sin(1) - np.cos(1)),
+                               rel=1e-9)
+    assert q3 == pytest.approx(L * H)

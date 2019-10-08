@@ -499,6 +499,8 @@ std::vector<std::uint8_t> mesh::vtk_mapping(mesh::CellType type, int num_nodes)
       return {0, 1, 2, 5, 3, 4};
     case 10:
       return {0, 1, 2, 7, 8, 3, 4, 6, 5, 9};
+    case 15:
+      return {0, 1, 2, 9, 10, 11, 3, 4, 5, 8, 7, 6, 12, 13, 14};
     default:
       throw std::runtime_error("Unknown cell type.");
     }
@@ -544,14 +546,19 @@ int mesh::cell_degree(mesh::CellType type, int num_nodes)
   case mesh::CellType::interval:
     return 1;
   case mesh::CellType::triangle:
-    if (num_nodes == 3)
+    switch (num_nodes)
+    {
+    case 3:
       return 1;
-    else if (num_nodes == 6)
+    case 6:
       return 2;
-    else if (num_nodes == 10)
+    case 10:
       return 3;
-    else
-      throw std::runtime_error("Unknown cell type.");
+    case 15:
+      return 4;
+    default:
+      throw std::runtime_error("Triangle order > 4 is not supported.");
+    }
   case mesh::CellType::tetrahedron:
     if (num_nodes == 4)
       return 1;
