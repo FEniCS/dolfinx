@@ -90,8 +90,22 @@ public:
   /// @param[in] ghost_mode The ghost mode
   /// @param[in] num_ghost_cells Number of ghost cells on this process
   ///                            (must be at end of list of cells)
-  /// @param[in] custom_permutation Mapping of DOLFIN/UFC node ordering
+  /// @param[in] custom_permutation Mapping of DOLFIN node ordering
   ///                               to the input ordering for each input cell.
+  ///                               The DOLFIN ordering starts with
+  ///                               iterating through the mesh entities,
+  ///                               starting with vertices, in an
+  ///                               ad-hoc fashion. Then other entities
+  ///                               within each topological dimension is
+  ///                               ordered in an lexicographical ordering
+  ///                               of the corresponding tuples of
+  ///                               non-incident vertices.
+  ///                               Simplicial cells are ordered based on
+  ///                               the global vertex numbering, while
+  ///                               non-simplicial cells has an arbitrary
+  ///                               ordering, as long as it is topographically
+  ///                               isomorphic to the corresponding reference
+  ///                               cell by matching vertices.
   Mesh(MPI_Comm comm, mesh::CellType type,
        const Eigen::Ref<const Eigen::Array<
            double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>>& points,

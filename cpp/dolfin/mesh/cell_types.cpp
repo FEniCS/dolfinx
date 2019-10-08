@@ -515,8 +515,6 @@ std::vector<std::uint8_t> mesh::vtk_mapping(mesh::CellType type, int num_nodes)
   case mesh::CellType::quadrilateral:
   {
     if (num_nodes == 4)
-      // Assumes mapping from lexiographic ordering, not counter-clockwise
-      // which is the VTK format
       return {0, 1, 3, 2};
     {
       // Since quadrilaterals are tensorproducts of intervals, the number of
