@@ -520,33 +520,29 @@ std::vector<std::uint8_t> mesh::vtk_mapping(mesh::CellType type, int num_nodes)
       // Since quadrilaterals are tensorproducts of intervals, the number of
       // nodes for each interval should be an integer.
       int i = sqrt(num_nodes);
-      if (i * i == num_nodes)
-      {
-        std::vector<std::uint8_t> permutation(num_nodes);
-        // vertices
-        int j = 0;
-        permutation[j++] = 0;
-        permutation[j++] = i;
-        permutation[j++] = i + 1;
-        permutation[j++] = 1;
-        // edges
-        for (int k = 2; k < i; ++k)
-          permutation[j++] = i * k;
-        for (int k = i + 2; k < 2 * i; ++k)
-          permutation[j++] = k;
-        for (int k = 2; k < i; ++k)
-          permutation[j++] = k * i + 1;
-        for (int k = 2; k < i; ++k)
-          permutation[j++] = k;
-        // on the face
-        for (int k = 2; k < i; ++k)
-          for (int l = 2; l < i; ++l)
-            permutation[j++] = l * i + k;
-        assert(j == i * i);
-        return permutation;
-      }
-      throw std::runtime_error("Quadrilateral of order "
-                               + std::to_string(num_nodes) + " not supported");
+      assert((sqrt(i) - floor(sqrt(i))) == 0);
+      std::vector<std::uint8_t> permutation(num_nodes);
+      // vertices
+      int j = 0;
+      permutation[j++] = 0;
+      permutation[j++] = i;
+      permutation[j++] = i + 1;
+      permutation[j++] = 1;
+      // edges
+      for (int k = 2; k < i; ++k)
+        permutation[j++] = i * k;
+      for (int k = i + 2; k < 2 * i; ++k)
+        permutation[j++] = k;
+      for (int k = 2; k < i; ++k)
+        permutation[j++] = k * i + 1;
+      for (int k = 2; k < i; ++k)
+        permutation[j++] = k;
+      // on the face
+      for (int k = 2; k < i; ++k)
+        for (int l = 2; l < i; ++l)
+          permutation[j++] = l * i + k;
+      assert(j == i * i);
+      return permutation;
     }
     break;
   }
