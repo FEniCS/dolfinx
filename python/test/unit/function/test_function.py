@@ -179,7 +179,7 @@ def test_eval(R, V, W, Q, mesh):
 def test_eval_reference(V, mesh):
     u = Function(V)
 
-    u.interpolate(lambda x : x[:, 0])
+    u.interpolate(lambda x: x[:, 0])
 
     # Get reference coordinates of dofs and evaluate u
     X = V.element.dof_reference_coordinates()
