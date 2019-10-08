@@ -43,6 +43,16 @@ class MeshValueCollection:
             return mvc(mesh)
 
 
+class Mesh(cpp.mesh.Mesh):
+    def __init__(self, mpi_comm, cell_type, points, connectivity,
+                 global_cell_indices, ghost_mode, num_ghost_cells=0,
+                 custom_permutation=[]):
+        super().__init__(mpi_comm, cell_type, points, connectivity,
+                             global_cell_indices, ghost_mode, num_ghost_cells,
+                             custom_permutation)
+
+
+
 # Functions to extend cpp.mesh.Mesh with
 
 

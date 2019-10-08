@@ -630,7 +630,7 @@ std::vector<std::uint8_t> mesh::default_cell_permutation(mesh::CellType type,
     n = (degree + 1) * (degree + 2) / 2;
     break;
   default:
-    std::runtime_error("Unknown cell type.");
+    throw std::runtime_error("Unknown cell type.");
   }
   return mesh::vtk_mapping(type, n);
 }

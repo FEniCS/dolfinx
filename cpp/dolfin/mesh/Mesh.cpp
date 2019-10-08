@@ -211,7 +211,8 @@ Mesh::Mesh(
     const Eigen::Ref<const Eigen::Array<
         std::int64_t, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>>& cells,
     const std::vector<std::int64_t>& global_cell_indices,
-    const GhostMode ghost_mode, std::int32_t num_ghost_cells)
+    const GhostMode ghost_mode, std::int32_t num_ghost_cells,
+    std::vector<std::uint8_t> custom_permutation)
     : _cell_type(type), _degree(1), _mpi_comm(comm), _ghost_mode(ghost_mode),
       _unique_id(common::UniqueIdGenerator::id())
 {
@@ -231,10 +232,14 @@ Mesh::Mesh(
   // FIXME: degree should probably be in MeshGeometry
   _degree = mesh::cell_degree(type, cells.cols());
 
-  // Permutation from VTK to DOLFIN order for cell geometric nodes
+  // Permutation from Mesh input format to DOLFIN order for cell geometric nodes
   std::vector<std::uint8_t> cell_permutation;
-  cell_permutation = mesh::default_cell_permutation(type, _degree);
-
+  if (custom_permutation.size() == 0)
+    cell_permutation = mesh::default_cell_permutation(type, _degree);
+  else if (custom_permutation.size() == cells.cols())
+    cell_permutation = custom_permutation;
+  else
+    throw std::runtime_error("Permutation vector does not match cell input");
   // Get number of nodes (global)
   const std::uint64_t num_points_global = MPI::sum(comm, points.rows());
 
