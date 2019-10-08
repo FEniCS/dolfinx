@@ -517,37 +517,37 @@ std::vector<std::uint8_t> mesh::vtk_mapping(mesh::CellType type, int num_nodes)
     // Check that num_nodes is a square integer (since quadrilaterals
     // are tensorproducts of intervals, the number of nodes for each
     // interval should be an integer)
-    assert((sqrt(num_nodes) - floor(sqrt(num_nodes))) == 0);
+    assert((std::sqrt(num_nodes) - std::floor(std::sqrt(num_nodes))) == 0);
 
     if (num_nodes == 4)
       return {0, 1, 3, 2};
     else
     {
       // Number of nodes in each direction
-      int i = sqrt(num_nodes);
+      const int n = sqrt(num_nodes);
       std::vector<std::uint8_t> permutation(num_nodes);
 
       // Vertices
       int j = 0;
       permutation[j++] = 0;
-      permutation[j++] = i;
-      permutation[j++] = i + 1;
+      permutation[j++] = n;
+      permutation[j++] = n + 1;
       permutation[j++] = 1;
 
       // Edges
-      for (int k = 2; k < i; ++k)
-        permutation[j++] = i * k;
-      for (int k = i + 2; k < 2 * i; ++k)
+      for (int k = 2; k < n; ++k)
+        permutation[j++] = n * k;
+      for (int k = n + 2; k < 2 * n; ++k)
         permutation[j++] = k;
-      for (int k = 2; k < i; ++k)
-        permutation[j++] = k * i + 1;
-      for (int k = 2; k < i; ++k)
+      for (int k = 2; k < n; ++k)
+        permutation[j++] = k * n + 1;
+      for (int k = 2; k < n; ++k)
         permutation[j++] = k;
 
       // Face
-      for (int k = 2; k < i; ++k)
-        for (int l = 2; l < i; ++l)
-          permutation[j++] = l * i + k;
+      for (int k = 2; k < n; ++k)
+        for (int l = 2; l < n; ++l)
+          permutation[j++] = l * n + k;
 
       assert(j == num_nodes);
       return permutation;
@@ -589,23 +589,23 @@ int mesh::cell_degree(mesh::CellType type, int num_nodes)
       throw std::runtime_error("Triangle order > 4 is not supported.");
     }
   case mesh::CellType::tetrahedron:
-    if (num_nodes == 4)
-      return 1;
-    else
+    if (num_nodes != 4)
       throw std::runtime_error("Higher order tetrahedron not supported");
+    return 1;
   case mesh::CellType::quadrilateral:
   {
-    int i = std::sqrt(num_nodes);
-    if (num_nodes == i * i)
-      return i - 1;
-    throw std::runtime_error("Quadrilateral of order "
-                             + std::to_string(num_nodes) + " not supported");
+    const int n = std::sqrt(num_nodes);
+    if (num_nodes != n * n)
+    {
+      throw std::runtime_error("Quadrilateral of order "
+                               + std::to_string(num_nodes) + " not supported");
+    }
+    return n - 1;
   }
   case mesh::CellType::hexahedron:
-    if (num_nodes == 8)
-      return 1;
-    else
+    if (num_nodes != 8)
       throw std::runtime_error("Higher order hexahedron not supported");
+    return 1;
   default:
     throw std::runtime_error("Unknown cell type.");
   }
@@ -621,9 +621,10 @@ std::vector<std::uint8_t> mesh::default_cell_permutation(mesh::CellType type,
     switch (degree)
     {
     case 1:
-      // First order quadrilateral cells does not follow counter clockwise
-      // order (cc), but lexiographic order (LG). This breaks the assumptions
-      // that the cell permutation is the same as the VTK-map.
+      // First order quadrilateral cells does not follow counter
+      // clockwise order (cc), but lexiographic order (LG). This breaks
+      // the assumptions that the cell permutation is the same as the
+      // VTK-map.
       return {0, 1, 2, 3};
     default:
       // Higher order assumes VTK
