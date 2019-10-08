@@ -13,7 +13,8 @@ import pytest
 
 import dolfin
 import FIAT
-from dolfin import (MPI, BoxMesh, MeshEntity, MeshFunction, RectangleMesh,
+
+from dolfin import (MPI, Mesh, BoxMesh, MeshEntity, MeshFunction, RectangleMesh,
                     UnitCubeMesh, UnitIntervalMesh, UnitSquareMesh, cpp)
 from dolfin.cpp.mesh import CellType, is_simplex
 from dolfin.fem import assemble_scalar
@@ -168,23 +169,22 @@ def test_mesh_construction_pygmsh():
             "line": numpy.zeros([0, 2], dtype=numpy.int64)
         }
 
-    mesh = dolfin.cpp.mesh.Mesh(
-        MPI.comm_world, dolfin.cpp.mesh.CellType.tetrahedron, points,
-        cells['tetra'], [], cpp.mesh.GhostMode.none)
+    mesh = Mesh(MPI.comm_world, dolfin.cpp.mesh.CellType.tetrahedron, points,
+                cells['tetra'], [], cpp.mesh.GhostMode.none)
     assert mesh.degree() == 1
     assert mesh.geometry.dim == 3
     assert mesh.topology.dim == 3
 
-    mesh = dolfin.cpp.mesh.Mesh(MPI.comm_world,
-                                dolfin.cpp.mesh.CellType.triangle, points,
-                                cells['triangle'], [], cpp.mesh.GhostMode.none)
+    mesh = Mesh(MPI.comm_world,
+                dolfin.cpp.mesh.CellType.triangle, points,
+                cells['triangle'], [], cpp.mesh.GhostMode.none)
     assert mesh.degree() == 1
     assert mesh.geometry.dim == 3
     assert mesh.topology.dim == 2
 
-    mesh = dolfin.cpp.mesh.Mesh(MPI.comm_world,
-                                dolfin.cpp.mesh.CellType.interval, points,
-                                cells['line'], [], cpp.mesh.GhostMode.none)
+    mesh = Mesh(MPI.comm_world,
+                dolfin.cpp.mesh.CellType.interval, points,
+                cells['line'], [], cpp.mesh.GhostMode.none)
     assert mesh.degree() == 1
     assert mesh.geometry.dim == 3
     assert mesh.topology.dim == 1
@@ -205,16 +205,14 @@ def test_mesh_construction_pygmsh():
             "line3": numpy.zeros([0, 3], dtype=numpy.int64)
         }
 
-    mesh = dolfin.cpp.mesh.Mesh(
-        MPI.comm_world, dolfin.cpp.mesh.CellType.tetrahedron, points,
-        cells['tetra10'], [], cpp.mesh.GhostMode.none)
+    mesh = Mesh(MPI.comm_world, dolfin.cpp.mesh.CellType.tetrahedron, points,
+                cells['tetra10'], [], cpp.mesh.GhostMode.none)
     assert mesh.degree() == 2
     assert mesh.geometry.dim == 3
     assert mesh.topology.dim == 3
 
-    mesh = dolfin.cpp.mesh.Mesh(
-        MPI.comm_world, dolfin.cpp.mesh.CellType.triangle, points,
-        cells['triangle6'], [], cpp.mesh.GhostMode.none)
+    mesh = Mesh(MPI.comm_world, dolfin.cpp.mesh.CellType.triangle, points,
+                cells['triangle6'], [], cpp.mesh.GhostMode.none)
     assert mesh.degree() == 2
     assert mesh.geometry.dim == 3
     assert mesh.topology.dim == 2
