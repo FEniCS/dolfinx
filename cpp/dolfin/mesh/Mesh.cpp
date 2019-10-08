@@ -227,37 +227,13 @@ Mesh::Mesh(
         "Cannot create mesh. Wrong number of global cell indices");
   }
 
-  // Permutation from VTK to DOLFIN order for cell geometric nodes
-  std::vector<std::uint8_t> cell_permutation;
-  switch (type)
-  {
-  case mesh::CellType::quadrilateral:
-    switch (cells.cols())
-    {
-    case 4:
-      // First order quadrilateral cells does not follow counter clockwise
-      // order (cc), but lexiographic order (LG). This breaks the assumptions
-      // that the cell permutation is the same as the VTK-map.
-      cell_permutation = {0, 1, 2, 3};
-      break;
-    default:
-      // Higher order assumes VTK
-      cell_permutation = mesh::vtk_mapping(type, cells.cols());
-      break;
-    }
-  case mesh::CellType::hexahedron:
-    if (cells.cols() == 8)
-      // First order hexes also follows lexiographic ordering
-      cell_permutation = {0, 1, 2, 3, 4, 5, 6, 7};
-    else
-      throw std::runtime_error("Higher order hexahedron not supported");
-    break;
-  default:
-    cell_permutation = mesh::vtk_mapping(type, cells.cols());
-  }
   // Find degree of mesh
   // FIXME: degree should probably be in MeshGeometry
   _degree = mesh::cell_degree(type, cells.cols());
+
+  // Permutation from VTK to DOLFIN order for cell geometric nodes
+  std::vector<std::uint8_t> cell_permutation;
+  cell_permutation = mesh::default_cell_permutation(type, _degree);
 
   // Get number of nodes (global)
   const std::uint64_t num_points_global = MPI::sum(comm, points.rows());

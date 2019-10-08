@@ -587,3 +587,51 @@ int mesh::cell_degree(mesh::CellType type, int num_nodes)
   }
 }
 //-----------------------------------------------------------------------------
+std::vector<std::uint8_t> mesh::default_cell_permutation(mesh::CellType type,
+                                                         std::int32_t degree)
+{
+  int n;
+  switch (type)
+  {
+  case mesh::CellType::quadrilateral:
+    switch (degree)
+    {
+    case 1:
+      // First order quadrilateral cells does not follow counter clockwise
+      // order (cc), but lexiographic order (LG). This breaks the assumptions
+      // that the cell permutation is the same as the VTK-map.
+      return {0, 1, 2, 3};
+    default:
+      // Higher order assumes VTK
+      n = (degree + 1) * (degree + 1);
+      break;
+    }
+    break;
+  case mesh::CellType::hexahedron:
+    switch (degree)
+    {
+    case 1:
+      // First order hexes follows lexiographic ordering
+      return {0, 1, 2, 3, 4, 5, 6, 7};
+    default:
+      throw std::runtime_error("Higher order hexahedron not supported");
+    }
+    break;
+  case mesh::CellType::interval:
+    n = 2;
+    break;
+  case mesh::CellType::point:
+    n = 1;
+    break;
+  case mesh::CellType::tetrahedron:
+    n = 4;
+    break;
+  case mesh::CellType::triangle:
+    n = (degree + 1) * (degree + 2) / 2;
+    break;
+  default:
+    std::runtime_error("Unknown cell type.");
+  }
+  return mesh::vtk_mapping(type, n);
+}
+//-----------------------------------------------------------------------------

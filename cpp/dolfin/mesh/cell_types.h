@@ -84,5 +84,10 @@ int cell_degree(CellType type, int num_nodes);
 /// Mapping of DOLFIN/UFC vertex ordering to VTK/XDMF ordering
 std::vector<std::uint8_t> vtk_mapping(CellType type, int num_nodes);
 
+/// Returns the default mesh cell permutation assumed by dolfin
+/// for a cell with given degree
+std::vector<std::uint8_t> default_cell_permutation(CellType type, std::int32_t degree);
+
+
 } // namespace mesh
 } // namespace dolfin
