@@ -513,21 +513,43 @@ std::vector<std::uint8_t> mesh::vtk_mapping(mesh::CellType type, int num_nodes)
       throw std::runtime_error("Higher order tetrahedron not supported");
     }
   case mesh::CellType::quadrilateral:
-    switch (num_nodes)
-    {
-    case 4:
-    {
+  {
+    if (num_nodes == 4)
       // Assumes mapping from lexiographic ordering, not counter-clockwise
       // which is the VTK format
       return {0, 1, 3, 2};
+    {
+      int i = sqrt(num_nodes);
+      if (i * i == num_nodes)
+      {
+        std::vector<std::uint8_t> permutation(num_nodes);
+        // vertices
+        int j = 0;
+        permutation[j++] = 0;
+        permutation[j++] = i;
+        permutation[j++] = i + 1;
+        permutation[j++] = 1;
+        // edges
+        for (int k = 2; k < i; ++k)
+          permutation[j++] = i * k;
+        for (int k = i + 2; k < 2 * i; ++k)
+          permutation[j++] = k;
+        for (int k = 2; k < i; ++k)
+          permutation[j++] = k * i + 1;
+        for (int k = 2; k < i; ++k)
+          permutation[j++] = k;
+        // on the face
+        for (int k = 2; k < i; ++k)
+          for (int l = 2; l < i; ++l)
+            permutation[j++] = l * i + k;
+        assert(j == i * i);
+        return permutation;
+      }
+      throw std::runtime_error("Quadrilateral of order "
+                               + std::to_string(num_nodes) + " not supported");
     }
-    case 9:
-      return {0, 3, 4, 1, 6, 5, 7, 2, 8};
-    case 16:
-      return {0, 4, 5, 1, 8, 12, 6, 7, 9, 13, 2, 3, 10, 14, 11, 15};
-    default:
-      throw std::runtime_error("Higher order quadrilateral not supported");
-    }
+    break;
+  }
   case mesh::CellType::hexahedron:
     switch (num_nodes)
     {
@@ -569,14 +591,13 @@ int mesh::cell_degree(mesh::CellType type, int num_nodes)
     else
       throw std::runtime_error("Higher order tetrahedron not supported");
   case mesh::CellType::quadrilateral:
-    if (num_nodes == 4)
-      return 1;
-    else if (num_nodes == 9)
-      return 2;
-    else if (num_nodes == 16)
-      return 3;
-    else
-      throw std::runtime_error("Higher order quadrilateral not supported");
+  {
+    int i = std::sqrt(num_nodes);
+    if (num_nodes == i * i)
+      return i - 1;
+    throw std::runtime_error("Quadrilateral of order "
+                             + std::to_string(num_nodes) + " not supported");
+  }
   case mesh::CellType::hexahedron:
     if (num_nodes == 8)
       return 1;
