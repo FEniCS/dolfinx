@@ -519,6 +519,8 @@ std::vector<std::uint8_t> mesh::vtk_mapping(mesh::CellType type, int num_nodes)
       // which is the VTK format
       return {0, 1, 3, 2};
     {
+      // Since quadrilaterals are tensorproducts of intervals, the number of
+      // nodes for each interval should be an integer.
       int i = sqrt(num_nodes);
       if (i * i == num_nodes)
       {

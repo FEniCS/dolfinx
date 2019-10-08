@@ -232,14 +232,15 @@ Mesh::Mesh(
   // FIXME: degree should probably be in MeshGeometry
   _degree = mesh::cell_degree(type, cells.cols());
 
-  // Permutation from Mesh input format to DOLFIN order for cell geometric nodes
+  // Get the mapping of UFC node ordering to the mesh input format
   std::vector<std::uint8_t> cell_permutation;
-  if (custom_permutation.size() == 0)
+  if (custom_permutation.empty())
     cell_permutation = mesh::default_cell_permutation(type, _degree);
   else if (custom_permutation.size() == static_cast<unsigned int>(cells.cols()))
     cell_permutation = custom_permutation;
   else
     throw std::runtime_error("Permutation vector does not match cell input");
+
   // Get number of nodes (global)
   const std::uint64_t num_points_global = MPI::sum(comm, points.rows());
 

@@ -90,8 +90,8 @@ public:
   /// @param[in] ghost_mode The ghost mode
   /// @param[in] num_ghost_cells Number of ghost cells on this process
   ///                            (must be at end of list of cells)
-  /// @param[in] custom_permutation Mapping of DOLFIN/UFC vertex
-  ///                               ordering to input ordering.
+  /// @param[in] custom_permutation Mapping of DOLFIN/UFC node ordering
+  ///                               to the input ordering for each input cell.
   Mesh(MPI_Comm comm, mesh::CellType type,
        const Eigen::Ref<const Eigen::Array<
            double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>>& points,
