@@ -48,9 +48,8 @@ class Mesh(cpp.mesh.Mesh):
                  global_cell_indices, ghost_mode, num_ghost_cells=0,
                  custom_permutation=[]):
         super().__init__(mpi_comm, cell_type, points, connectivity,
-                             global_cell_indices, ghost_mode, num_ghost_cells,
-                             custom_permutation)
-
+                         global_cell_indices, ghost_mode, num_ghost_cells,
+                         custom_permutation)
 
 
 # Functions to extend cpp.mesh.Mesh with
