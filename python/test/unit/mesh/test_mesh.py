@@ -13,7 +13,7 @@ import pytest
 
 import dolfin
 import FIAT
-from dolfin import (MPI, BoxMesh, Constant, MeshEntity, MeshFunction, RectangleMesh,
+from dolfin import (MPI, BoxMesh, MeshEntity, MeshFunction, RectangleMesh,
                     UnitCubeMesh, UnitIntervalMesh, UnitSquareMesh, cpp)
 from dolfin.cpp.mesh import CellType, is_simplex
 from dolfin.fem import assemble_scalar
