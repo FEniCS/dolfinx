@@ -542,6 +542,6 @@ def test_coords():
 
 def test_UnitHexMesh_assemble():
     mesh = UnitCubeMesh(MPI.comm_world, 6, 7, 5, CellType.hexahedron)
-    vol = assemble_scalar(Constant(mesh, 1) * dx)
+    vol = assemble_scalar(1 * dx(mesh))
     vol = MPI.sum(mesh.mpi_comm(), vol)
     assert(vol == pytest.approx(1, rel=1e-9))
