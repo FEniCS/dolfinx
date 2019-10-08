@@ -34,7 +34,7 @@ public:
   ///                     "left/right", "crossed"
   /// @return Mesh
   static mesh::Mesh
-    create(MPI_Comm comm, const std::array<Eigen::Vector3d, 2>& p,
+  create(MPI_Comm comm, const std::array<Eigen::Vector3d, 2>& p,
          std::array<std::size_t, 2> n, mesh::CellType cell_type,
          const mesh::GhostMode ghost_mode, std::string diagonal = "right");
 };

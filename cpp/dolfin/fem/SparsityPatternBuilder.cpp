@@ -65,8 +65,8 @@ void SparsityPatternBuilder::interior_facets(
     // Tabulate dofs for each dimension on macro element
     for (std::size_t i = 0; i < 2; i++)
     {
-      const auto cell_dofs0 = dofmaps[i]->cell_dofs(cell0.index());
-      const auto cell_dofs1 = dofmaps[i]->cell_dofs(cell1.index());
+      auto cell_dofs0 = dofmaps[i]->cell_dofs(cell0.index());
+      auto cell_dofs1 = dofmaps[i]->cell_dofs(cell1.index());
       macro_dofs[i].resize(cell_dofs0.size() + cell_dofs1.size());
       std::copy(cell_dofs0.data(), cell_dofs0.data() + cell_dofs0.size(),
                 macro_dofs[i].data());

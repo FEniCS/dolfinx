@@ -210,8 +210,10 @@ std::vector<std::int64_t> compute_topology_data(const mesh::Mesh& mesh,
   // Get mesh communicator
   MPI_Comm comm = mesh.mpi_comm();
 
+  int num_nodes = mesh.coordinate_dofs().cell_permutation().size();
   const std::vector<std::uint8_t> perm
-      = mesh.coordinate_dofs().cell_permutation();
+      = mesh::vtk_mapping(mesh.cell_type(), num_nodes);
+
   const int tdim = mesh.topology().dim();
   const auto& global_vertices = mesh.topology().global_indices(0);
   if (dolfin::MPI::size(comm) == 1 or cell_dim == tdim)
@@ -459,7 +461,7 @@ xdmf_write::compute_nonlocal_entities(const mesh::Mesh& mesh, int cell_dim)
   {
     // Iterate through ghost cells, adding non-ghost entities which are
     // in lower rank process cells
-    const std::vector<std::int32_t>& cell_owners = topology.cell_owner();
+    const std::vector<std::int32_t>& cell_owners = topology.entity_owner(tdim);
     const std::int32_t ghost_offset_c = topology.ghost_offset(tdim);
     const std::int32_t ghost_offset_e = topology.ghost_offset(cell_dim);
     for (auto& c : mesh::MeshRange(mesh, tdim, mesh::MeshRangeType::GHOST))
@@ -480,8 +482,7 @@ xdmf_write::compute_nonlocal_entities(const mesh::Mesh& mesh, int cell_dim)
 void xdmf_write::add_points(
     MPI_Comm comm, pugi::xml_node& xdmf_node, hid_t h5_id,
     const Eigen::Ref<
-        const Eigen::Array<double, Eigen::Dynamic, 3, Eigen::RowMajor>>
-        points)
+        const Eigen::Array<double, Eigen::Dynamic, 3, Eigen::RowMajor>>& points)
 {
   xdmf_node.append_attribute("Version") = "3.0";
   xdmf_node.append_attribute("xmlns:xi") = "http://www.w3.org/2001/XInclude";
@@ -558,8 +559,10 @@ void xdmf_write::add_topology_data(MPI_Comm comm, pugi::xml_node& xml_node,
     // Adjust num_nodes_per_cell to appropriate size
     num_nodes_per_cell = cell_points.size(0);
     topology_data.reserve(num_nodes_per_cell * mesh.num_entities(tdim));
-    const std::vector<std::uint8_t>& perm
-        = mesh.coordinate_dofs().cell_permutation();
+
+    int num_nodes = mesh.coordinate_dofs().cell_permutation().size();
+    const std::vector<std::uint8_t> perm
+        = mesh::vtk_mapping(mesh.cell_type(), num_nodes);
 
     for (std::int32_t c = 0; c < mesh.num_entities(tdim); ++c)
     {
@@ -602,9 +605,10 @@ void xdmf_write::add_geometry_data(MPI_Comm comm, pugi::xml_node& xml_node,
   geometry_node.append_attribute("GeometryType") = geometry_type.c_str();
 
   // Pack geometry data
-  EigenRowArrayXXd _x = mesh::DistributedMeshTools::reorder_by_global_indices(
-      mesh.mpi_comm(), mesh.geometry().points(),
-      mesh.geometry().global_indices());
+  Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor> _x
+      = mesh::DistributedMeshTools::reorder_by_global_indices(
+          mesh.mpi_comm(), mesh.geometry().points(),
+          mesh.geometry().global_indices());
 
   // Increase 1D to 2D because XDMF has no "X" geometry, use "XY"
   int width = (gdim == 1) ? 2 : gdim;

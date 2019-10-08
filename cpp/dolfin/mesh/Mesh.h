@@ -1,4 +1,4 @@
-// Copyright (C) 2006-2016 Anders Logg
+// Copyright (C) 2006-2019 Anders Logg, Chris Richardson
 //
 // This file is part of DOLFIN (https://www.fenicsproject.org)
 //
@@ -91,8 +91,11 @@ public:
   /// @param[in] num_ghost_cells Number of ghost cells on this process
   ///                            (must be at end of list of cells)
   Mesh(MPI_Comm comm, mesh::CellType type,
-       const Eigen::Ref<const EigenRowArrayXXd> points,
-       const Eigen::Ref<const EigenRowArrayXXi64> cells,
+       const Eigen::Ref<const Eigen::Array<
+           double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>>& points,
+       const Eigen::Ref<const Eigen::Array<std::int64_t, Eigen::Dynamic,
+                                           Eigen::Dynamic, Eigen::RowMajor>>&
+           cells,
        const std::vector<std::int64_t>& global_cell_indices,
        const GhostMode ghost_mode, std::int32_t num_ghost_cells = 0);
 

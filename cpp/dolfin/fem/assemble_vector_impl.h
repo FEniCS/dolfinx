@@ -6,6 +6,7 @@
 
 #pragma once
 
+#include "assembler.h"
 #include <Eigen/Dense>
 #include <dolfin/common/types.h>
 #include <memory>
@@ -37,20 +38,20 @@ namespace impl
 /// Assemble linear form into an Eigen vector
 void
     assemble_vector(Eigen::Ref<Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1>> b,
-                    const Form& L);
+                    const Form& L, fem::InsertMode mode);
 
 /// Execute kernel over cells and accumulate result in vector
 void assemble_cells(
     Eigen::Ref<Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1>> b,
     const mesh::Mesh& mesh, const std::vector<std::int32_t>& active_cells,
-    const Eigen::Ref<const Eigen::Array<PetscInt, Eigen::Dynamic, 1>> dofmap,
+    const Eigen::Ref<const Eigen::Array<PetscInt, Eigen::Dynamic, 1>>& dofmap,
     int num_dofs_per_cell,
     const std::function<void(PetscScalar*, const PetscScalar*,
                              const PetscScalar*, const double*, const int*,
                              const int*)>& kernel,
     const std::vector<const function::Function*>& coefficients,
     const std::vector<int>& offsets,
-    const std::vector<PetscScalar> constant_values);
+    const std::vector<PetscScalar> constant_values, fem::InsertMode mode);
 
 /// Execute kernel over cells and accumulate result in vector
 void assemble_exterior_facets(
@@ -96,7 +97,7 @@ void apply_lifting(
 /// Modify RHS vector to account for boundary condition b <- b - scale*Ax_bc
 void lift_bc(
     Eigen::Ref<Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1>> b, const Form& a,
-    const Eigen::Ref<const Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1>>
+    const Eigen::Ref<const Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1>>&
         bc_values1,
     const std::vector<bool>& bc_markers1, double scale);
 
@@ -104,10 +105,10 @@ void lift_bc(
 /// - scale*A (x_bc - x0)
 void lift_bc(
     Eigen::Ref<Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1>> b, const Form& a,
-    const Eigen::Ref<const Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1>>
+    const Eigen::Ref<const Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1>>&
         bc_values1,
     const std::vector<bool>& bc_markers1,
-    Eigen::Ref<const Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1>> x0,
+    const Eigen::Ref<const Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1>>& x0,
     double scale);
 
 } // namespace impl

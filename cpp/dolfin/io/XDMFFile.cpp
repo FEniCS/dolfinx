@@ -1096,7 +1096,7 @@ XDMFFile::read_mesh_value_collection(std::shared_ptr<const mesh::Mesh> mesh,
   const std::vector<std::int64_t>& global_indices
       = mesh->topology().global_indices(0);
   std::vector<std::int32_t> v(num_verts_per_entity);
-  for (auto& m : mesh::MeshRange(*mesh, dim))
+  for (auto& m : mesh::MeshRange(*mesh, dim, mesh::MeshRangeType::ALL))
   {
     if (dim == 0)
       v[0] = global_indices[m.index()];
@@ -1205,8 +1205,7 @@ XDMFFile::read_mesh_value_collection(std::shared_ptr<const mesh::Mesh> mesh,
 //-----------------------------------------------------------------------------
 void XDMFFile::write(
     const Eigen::Ref<
-        const Eigen::Array<double, Eigen::Dynamic, 3, Eigen::RowMajor>>
-        points)
+        const Eigen::Array<double, Eigen::Dynamic, 3, Eigen::RowMajor>>& points)
 {
   // Check that encoding
   if (_encoding == Encoding::ASCII and MPI::size(_mpi_comm.comm()) != 1)
@@ -1244,10 +1243,10 @@ void XDMFFile::write(
     _xml_doc->save_file(_filename.c_str(), "  ");
 }
 //-----------------------------------------------------------------------------
-void XDMFFile::write(const Eigen::Ref<const Eigen::Array<double, Eigen::Dynamic,
-                                                         3, Eigen::RowMajor>>
-                         points,
-                     const std::vector<double>& values)
+void XDMFFile::write(
+    const Eigen::Ref<
+        const Eigen::Array<double, Eigen::Dynamic, 3, Eigen::RowMajor>>& points,
+    const std::vector<double>& values)
 {
   // Write clouds of points to XDMF/HDF5 with values
   assert((std::size_t)points.rows() == values.size());
@@ -1326,8 +1325,11 @@ XDMFFile::read_mf_double(std::shared_ptr<const mesh::Mesh> mesh,
   return read_mesh_function<double>(mesh, name);
 }
 //----------------------------------------------------------------------------
-std::tuple<mesh::CellType, EigenRowArrayXXd, EigenRowArrayXXi64,
-           std::vector<std::int64_t>>
+std::tuple<
+    mesh::CellType,
+    Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>,
+    Eigen::Array<std::int64_t, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>,
+    std::vector<std::int64_t>>
 XDMFFile::read_mesh_data(MPI_Comm comm) const
 {
   // Extract parent filepath (required by HDF5 when XDMF stores relative
@@ -1414,8 +1416,9 @@ XDMFFile::read_mesh_data(MPI_Comm comm) const
     const auto geometry_data
         = xdmf_read::get_dataset<double>(comm, geometry_data_node, parent_path);
     const std::size_t num_local_points = geometry_data.size() / gdim;
-    Eigen::Map<const EigenRowArrayXXd> points(geometry_data.data(),
-                                              num_local_points, gdim);
+    Eigen::Map<const Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic,
+                                  Eigen::RowMajor>>
+        points(geometry_data.data(), num_local_points, gdim);
 
     // Topology data
     const std::vector<std::int64_t> tdims
@@ -1423,8 +1426,9 @@ XDMFFile::read_mesh_data(MPI_Comm comm) const
     const auto topology_data = xdmf_read::get_dataset<std::int64_t>(
         comm, topology_data_node, parent_path);
     const std::size_t num_local_cells = topology_data.size() / npoint_per_cell;
-    Eigen::Map<const EigenRowArrayXXi64> cells(
-        topology_data.data(), num_local_cells, npoint_per_cell);
+    Eigen::Map<const Eigen::Array<std::int64_t, Eigen::Dynamic, Eigen::Dynamic,
+                                  Eigen::RowMajor>>
+        cells(topology_data.data(), num_local_cells, npoint_per_cell);
 
     // Set cell global indices by adding offset
     const std::int64_t cell_index_offset
@@ -1442,8 +1446,10 @@ XDMFFile::read_mesh_data(MPI_Comm comm) const
     // communicator.
     const std::size_t num_local_cells = 0;
     MPI::global_offset(_mpi_comm.comm(), num_local_cells, true);
-    EigenRowArrayXXd points(num_local_cells, gdim);
-    EigenRowArrayXXi64 cells(num_local_cells, npoint_per_cell);
+    Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
+        points(num_local_cells, gdim);
+    Eigen::Array<std::int64_t, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
+        cells(num_local_cells, npoint_per_cell);
     std::vector<std::int64_t> global_cell_indices(num_local_cells);
 
     return std::make_tuple(cell_type, std::move(points), std::move(cells),
@@ -1455,8 +1461,9 @@ mesh::Mesh XDMFFile::read_mesh(const mesh::GhostMode ghost_mode) const
 {
 
   mesh::CellType cell_type;
-  EigenRowArrayXXd points;
-  EigenRowArrayXXi64 cells;
+  Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor> points;
+  Eigen::Array<std::int64_t, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
+      cells;
   std::vector<std::int64_t> global_cell_indices;
 
   // Read local mesh data

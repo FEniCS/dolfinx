@@ -11,6 +11,7 @@
 #include <dolfin/common/types.h>
 #include <dolfin/fem/FiniteElement.h>
 #include <dolfin/la/PETScVector.h>
+#include <functional>
 #include <memory>
 #include <petscsys.h>
 #include <petscvec.h>
@@ -92,9 +93,24 @@ public:
   /// @param[in] v The function to be interpolated.
   void interpolate(const Function& v);
 
-  /// Interpolate expression
-  /// @param[in] f The expression to be interpolated.
-  void interpolate(const FunctionSpace::interpolation_function& f);
+  /// Interpolate an expression
+  /// @cond Work around doxygen bug for std::function
+  /// @param[in] f The expression to be interpolated
+  /// @endcond
+  void interpolate(
+      const std::function<Eigen::Array<PetscScalar, Eigen::Dynamic,
+                                       Eigen::Dynamic, Eigen::RowMajor>(
+          const Eigen::Ref<const Eigen::Array<
+              double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>>&)>& f);
+
+  /// Interpolate an expression. This interface uses an expression
+  /// function f that has an in/out argument for the expression values.
+  /// It is primarily to support C code implementations of the
+  /// expression, e.g. using Numba. Generally the interface where the
+  /// expression function is a pure function, i.e. the expression values
+  /// are the return argument, should be preferred.
+  /// @param[in] f The expression to be interpolated
+  void interpolate_c(const FunctionSpace::interpolation_function& f);
 
   /// Return value rank
   int value_rank() const;
@@ -110,39 +126,23 @@ public:
   /// Return value shape
   std::vector<int> value_shape() const;
 
-  /// Evaluate at given point in given cell
-  /// @param[in] x The coordinates of the points
-  /// @param[in] cell The cell which contains the given point
-  /// @param[in,out] u The values at the points
+  /// Evaluate the Function at points
+  /// @param[in] x The coordinates of the points. It has shape
+  ///              (num_points, 3).
+  /// @param[in] cells An array of cell indices. cells[i] is the index
+  ///                  of the cell that contains the point x(i).
+  ///                  Negative cell indices can be passed, and the
+  ///                  corresponding point will be ignored.
+  /// @param[in,out] u The values at the points. Values are not computed
+  ///                  for points with a negative cell index. This
+  ///                  argument must be passed with the corrext size.
   void
-  eval(const Eigen::Ref<const Eigen::Array<double, Eigen::Dynamic,
-                                           Eigen::Dynamic, Eigen::RowMajor>>
-           x,
-       const mesh::MeshEntity& cell,
+  eval(const Eigen::Ref<
+           const Eigen::Array<double, Eigen::Dynamic, 3, Eigen::RowMajor>>& x,
+       const Eigen::Ref<const Eigen::Array<int, Eigen::Dynamic, 1>>& cells,
        Eigen::Ref<Eigen::Array<PetscScalar, Eigen::Dynamic, Eigen::Dynamic,
                                Eigen::RowMajor>>
            u) const;
-
-  /// Evaluate function at given coordinates
-  /// @param[in] x The coordinates of the points
-  /// @param[in] bb_tree Bounding box tree for the mesh
-  /// @param[in,out] u The values at the points
-  void
-  eval(const Eigen::Ref<const Eigen::Array<double, Eigen::Dynamic,
-                                           Eigen::Dynamic, Eigen::RowMajor>>
-           x,
-       const geometry::BoundingBoxTree& bb_tree,
-       Eigen::Ref<Eigen::Array<PetscScalar, Eigen::Dynamic, Eigen::Dynamic,
-                               Eigen::RowMajor>>
-           u) const;
-
-  /// Restrict function to local cell (compute expansion coefficients w)
-  /// @param[in] cell The cell
-  /// @param[in] coordinate_dofs The coordinate dofs
-  /// @param[in,out] w Expansion coefficients.
-  void restrict(const mesh::MeshEntity& cell,
-                const Eigen::Ref<const EigenRowArrayXXd>& coordinate_dofs,
-                PetscScalar* w) const;
 
   /// Compute values at all mesh points
   /// @return The values at all geometric points

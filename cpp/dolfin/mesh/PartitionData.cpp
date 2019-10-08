@@ -50,8 +50,8 @@ const std::int32_t* PartitionData::procs(std::int32_t i) const
 //-----------------------------------------------------------------------------
 std::int32_t PartitionData::size() const { return _offset.size() - 1; }
 //-----------------------------------------------------------------------------
-int PartitionData::num_ghosts() const
+std::int32_t PartitionData::num_ghosts() const
 {
-  return _offset.size() - _dest_processes.size() - 1;
+  return _dest_processes.size() - _offset.size() + 1;
 }
 //-----------------------------------------------------------------------------

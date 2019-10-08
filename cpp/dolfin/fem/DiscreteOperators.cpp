@@ -105,8 +105,10 @@ DiscreteOperators::build_gradient(const function::FunctionSpace& V0,
     }
   }
 
-  Eigen::Map<const EigenArrayXpetscint> _rows(rows.data(), rows.size());
-  Eigen::Map<const EigenArrayXpetscint> _cols(cols.data(), cols.size());
+  Eigen::Map<const Eigen::Array<PetscInt, Eigen::Dynamic, 1>> _rows(
+      rows.data(), rows.size());
+  Eigen::Map<const Eigen::Array<PetscInt, Eigen::Dynamic, 1>> _cols(
+      cols.data(), cols.size());
   pattern.insert_global(_rows, _cols);
   pattern.assemble();
 

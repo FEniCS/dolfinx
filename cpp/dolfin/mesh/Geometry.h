@@ -62,7 +62,6 @@ public:
   /// Return coordinate array for point with local index n
   Eigen::Ref<const Eigen::Vector3d> x(std::size_t n) const;
 
-  // Should this return an Eigen::Ref?
   /// Return array of coordinates for all points
   Eigen::Array<double, Eigen::Dynamic, 3, Eigen::RowMajor>& points();
 

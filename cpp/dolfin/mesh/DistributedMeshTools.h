@@ -6,6 +6,7 @@
 
 #pragma once
 
+#include <Eigen/Dense>
 #include <array>
 #include <dolfin/common/MPI.h>
 #include <dolfin/common/types.h>

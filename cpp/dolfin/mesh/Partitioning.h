@@ -71,14 +71,16 @@ public:
   /// @param[in] graph_partitioner External Graph Partitioner (SCOTCH,
   ///                              PARMETIS, etc)
   /// @return A distributed mesh
-  static mesh::Mesh
-  build_distributed_mesh(const MPI_Comm& comm, mesh::CellType cell_type,
-                         const Eigen::Ref<const EigenRowArrayXXd> points,
-                         const Eigen::Ref<const EigenRowArrayXXi64> cells,
-                         const std::vector<std::int64_t>& global_cell_indices,
-                         const mesh::GhostMode ghost_mode,
-                         const mesh::Partitioner graph_partitioner
-                         = mesh::Partitioner::scotch);
+  static mesh::Mesh build_distributed_mesh(
+      const MPI_Comm& comm, mesh::CellType cell_type,
+      const Eigen::Ref<const Eigen::Array<
+          double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>>& points,
+      const Eigen::Ref<const Eigen::Array<std::int64_t, Eigen::Dynamic,
+                                          Eigen::Dynamic, Eigen::RowMajor>>&
+          cells,
+      const std::vector<std::int64_t>& global_cell_indices,
+      const mesh::GhostMode ghost_mode,
+      const mesh::Partitioner graph_partitioner = mesh::Partitioner::scotch);
 
   /// Build distributed mesh from a set of points and cells on each
   /// local process with a pre-computed partition
@@ -93,13 +95,15 @@ public:
   /// @param[in] cell_partition Cell partition data (PartitionData
   ///                           object)
   /// @return A distributed mesh
-  static mesh::Mesh
-  build_from_partition(const MPI_Comm& comm, mesh::CellType type,
-                       const Eigen::Ref<const EigenRowArrayXXd> points,
-                       const Eigen::Ref<const EigenRowArrayXXi64> cell_vertices,
-                       const std::vector<std::int64_t>& global_cell_indices,
-                       const mesh::GhostMode ghost_mode,
-                       const PartitionData& cell_partition);
+  static mesh::Mesh build_from_partition(
+      const MPI_Comm& comm, mesh::CellType type,
+      const Eigen::Ref<const Eigen::Array<
+          double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>>& points,
+      const Eigen::Ref<const Eigen::Array<std::int64_t, Eigen::Dynamic,
+                                          Eigen::Dynamic, Eigen::RowMajor>>&
+          cell_vertices,
+      const std::vector<std::int64_t>& global_cell_indices,
+      const mesh::GhostMode ghost_mode, const PartitionData& cell_partition);
 
   /// Partition mesh cells using an external Graph Partitioner
   /// @param[in] comm MPI Communicator
@@ -109,11 +113,12 @@ public:
   ///                          indexing. Each cell appears once only.
   /// @param[in] graph_partitioner The graph partitioner
   /// @return Cell partition data
-  static PartitionData
-  partition_cells(const MPI_Comm& comm, int nparts,
-                  const mesh::CellType cell_type,
-                  const Eigen::Ref<const EigenRowArrayXXi64> cell_vertices,
-                  const mesh::Partitioner graph_partitioner);
+  static PartitionData partition_cells(
+      const MPI_Comm& comm, int nparts, const mesh::CellType cell_type,
+      const Eigen::Ref<const Eigen::Array<std::int64_t, Eigen::Dynamic,
+                                          Eigen::Dynamic, Eigen::RowMajor>>&
+          cell_vertices,
+      const mesh::Partitioner graph_partitioner);
 
   /// Redistribute points to the processes that need them
   /// @param[in] comm MPI Communicator
@@ -122,14 +127,19 @@ public:
   /// @param[in] global_point_indices Global indices for vertices
   ///                                 required on this process
   /// @return vertex_coordinates (array of coordinates on this process
-  ///         after distribution) and shared_vertices_local (map from
-  ///         local index to set of sharing processes for each shared
-  ///         vertex)
-  static std::pair<EigenRowArrayXXd,
-                   std::map<std::int32_t, std::set<std::int32_t>>>
-  distribute_points(const MPI_Comm comm,
-                    const Eigen::Ref<const EigenRowArrayXXd> points,
-                    const std::vector<std::int64_t>& global_point_indices);
+  ///         after distribution) and shared_points (map from
+  ///         global index to set of sharing processes for each shared
+  ///         point)
+
+  static std::pair<
+      std::map<std::int64_t, std::set<int>>,
+      Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>>
+  distribute_points(
+      const MPI_Comm comm,
+      Eigen::Ref<const Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic,
+                                    Eigen::RowMajor>>
+          points,
+      const std::vector<std::int64_t>& global_point_indices);
 
   /// Utility to create global vertex indices, needed for higher order
   /// meshes, where there are geometric points which are not at the
@@ -147,10 +157,12 @@ public:
   /// @param[in] cell_vertices Topological cells with global vertex indexing.
   /// @return ghost_procs Map of cell_index to vector of sharing processes
   ///                     for those cells that have multiple owners
-  static std::map<std::int64_t, std::vector<int>>
-  compute_halo_cells(MPI_Comm comm, std::vector<int> parttition,
-                     const mesh::CellType cell_type,
-                     const Eigen::Ref<const EigenRowArrayXXi64> cell_vertices);
+  static std::map<std::int64_t, std::vector<int>> compute_halo_cells(
+      MPI_Comm comm, std::vector<int> parttition,
+      const mesh::CellType cell_type,
+      const Eigen::Ref<const Eigen::Array<std::int64_t, Eigen::Dynamic,
+                                          Eigen::Dynamic, Eigen::RowMajor>>&
+          cell_vertices);
 };
 } // namespace mesh
 } // namespace dolfin

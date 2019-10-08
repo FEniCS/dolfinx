@@ -16,7 +16,6 @@ from dolfin.fem.dofmap import DofMap
 from dolfin.fem.form import Form
 from dolfin.fem.formmanipulations import (derivative, adjoint, increase_order,
                                           tear)
-from dolfin.fem.interpolation import interpolate
 from dolfin.fem.solving import solve
 
 
@@ -26,5 +25,5 @@ __all__ = [
     "assemble_matrix_block", "assemble_matrix_nest",
     "assemble_matrix", "set_bc", "create_coordinate_map",
     "DirichletBC", "DofMap", "Form", "derivative", "adjoint", "increase_order",
-    "tear", "interpolate", "project", "solve"
+    "tear", "project", "solve"
 ]

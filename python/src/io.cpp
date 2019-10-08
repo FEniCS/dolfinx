@@ -201,14 +201,15 @@ void io(py::module& m)
                &dolfin::io::XDMFFile::write),
            py::arg("mvc"))
       // Points
-      .def("write",
-           py::overload_cast<const Eigen::Ref<
-               const Eigen::Array<double, Eigen::Dynamic, 3, Eigen::RowMajor>>>(
-               &dolfin::io::XDMFFile::write),
-           py::arg("points"))
+      .def(
+          "write",
+          py::overload_cast<const Eigen::Ref<
+              const Eigen::Array<double, Eigen::Dynamic, 3, Eigen::RowMajor>>&>(
+              &dolfin::io::XDMFFile::write),
+          py::arg("points"))
       .def("write",
            py::overload_cast<const Eigen::Ref<const Eigen::Array<
-                                 double, Eigen::Dynamic, 3, Eigen::RowMajor>>,
+                                 double, Eigen::Dynamic, 3, Eigen::RowMajor>>&,
                              const std::vector<double>&>(
                &dolfin::io::XDMFFile::write),
            py::arg("points"), py::arg("values"))
