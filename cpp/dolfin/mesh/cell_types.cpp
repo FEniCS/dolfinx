@@ -548,7 +548,8 @@ std::vector<std::uint8_t> mesh::vtk_mapping(mesh::CellType type, int num_nodes)
       for (int k = 2; k < i; ++k)
         for (int l = 2; l < i; ++l)
           permutation[j++] = l * i + k;
-      assert(j == i * i);
+
+      assert(j == num_nodes);
       return permutation;
     }
   }
