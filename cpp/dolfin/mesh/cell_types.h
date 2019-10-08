@@ -81,12 +81,12 @@ cell_entity_closure(mesh::CellType cell_type);
 /// Find the order of a cell given the number of nodes in the element.
 int cell_degree(CellType type, int num_nodes);
 
-/// Mapping of DOLFIN/UFC node ordering to VTK/XDMF ordering
+/// Map from DOLFIN node ordering to VTK/XDMF ordering
 std::vector<std::uint8_t> vtk_mapping(CellType type, int num_nodes);
 
 /// Default mapping of DOLFIN/UFC node ordering to the cell input ordering.
-std::vector<std::uint8_t> default_cell_permutation(CellType type, std::int32_t degree);
-
+std::vector<std::uint8_t> default_cell_permutation(CellType type,
+                                                   std::int32_t degree);
 
 } // namespace mesh
 } // namespace dolfin

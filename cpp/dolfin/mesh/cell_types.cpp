@@ -514,21 +514,27 @@ std::vector<std::uint8_t> mesh::vtk_mapping(mesh::CellType type, int num_nodes)
     }
   case mesh::CellType::quadrilateral:
   {
+    // Check that num_nodes is a square integer (since quadrilaterals
+    // are tensorproducts of intervals, the number of nodes for each
+    // interval should be an integer)
+    assert((sqrt(num_nodes) - floor(sqrt(num_nodes))) == 0);
+
     if (num_nodes == 4)
       return {0, 1, 3, 2};
+    else
     {
-      // Since quadrilaterals are tensorproducts of intervals, the number of
-      // nodes for each interval should be an integer.
+      // Number of nodes in each direction
       int i = sqrt(num_nodes);
-      assert((sqrt(i) - floor(sqrt(i))) == 0);
       std::vector<std::uint8_t> permutation(num_nodes);
-      // vertices
+
+      // Vertices
       int j = 0;
       permutation[j++] = 0;
       permutation[j++] = i;
       permutation[j++] = i + 1;
       permutation[j++] = 1;
-      // edges
+
+      // Edges
       for (int k = 2; k < i; ++k)
         permutation[j++] = i * k;
       for (int k = i + 2; k < 2 * i; ++k)
@@ -537,14 +543,14 @@ std::vector<std::uint8_t> mesh::vtk_mapping(mesh::CellType type, int num_nodes)
         permutation[j++] = k * i + 1;
       for (int k = 2; k < i; ++k)
         permutation[j++] = k;
-      // on the face
+
+      // Face
       for (int k = 2; k < i; ++k)
         for (int l = 2; l < i; ++l)
           permutation[j++] = l * i + k;
       assert(j == i * i);
       return permutation;
     }
-    break;
   }
   case mesh::CellType::hexahedron:
     switch (num_nodes)
