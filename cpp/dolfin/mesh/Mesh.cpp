@@ -232,16 +232,22 @@ Mesh::Mesh(
   switch (type)
   {
   case mesh::CellType::quadrilateral:
-    // Quadrilateral cells does not follow counter clockwise
-    // order (cc), but lexiographic order (LG). This breaks the assumptions
-    // that the cell permutation is the same as the VTK-map.
-    if (cells.cols() == 4)
+    switch (cells.cols())
+    {
+    case 4:
+      // First order quadrilateral cells does not follow counter clockwise
+      // order (cc), but lexiographic order (LG). This breaks the assumptions
+      // that the cell permutation is the same as the VTK-map.
       cell_permutation = {0, 1, 2, 3};
-    else
+      break;
+    default:
+      // Higher order assumes VTK
       cell_permutation = mesh::vtk_mapping(type, cells.cols());
-    break;
+      break;
+    }
   case mesh::CellType::hexahedron:
     if (cells.cols() == 8)
+      // First order hexes also follows lexiographic ordering
       cell_permutation = {0, 1, 2, 3, 4, 5, 6, 7};
     else
       throw std::runtime_error("Higher order hexahedron not supported");
