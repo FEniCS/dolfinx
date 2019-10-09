@@ -330,7 +330,7 @@ FunctionSpace::tabulate_dof_coordinates() const
     auto dofs = _dofmap->cell_dofs(cell.index());
 
     // Tabulate dof coordinates on cell
-    cmap.compute_physical_coordinates(coordinates, X, coordinate_dofs);
+    cmap.push_forward(coordinates, X, coordinate_dofs);
 
     // Copy dof coordinates into vector
     for (Eigen::Index i = 0; i < dofs.size(); ++i)
@@ -397,7 +397,7 @@ void FunctionSpace::set_x(
     auto dofs = _dofmap->cell_dofs(cell.index());
 
     // Tabulate dof coordinates
-    cmap.compute_physical_coordinates(coordinates, X, coordinate_dofs);
+    cmap.push_forward(coordinates, X, coordinate_dofs);
 
     assert(coordinates.rows() == dofs.size());
     assert(component < (int)coordinates.cols());

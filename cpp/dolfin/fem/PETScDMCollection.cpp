@@ -125,7 +125,7 @@ tabulate_coordinates_to_dofs(const function::FunctionSpace& V)
     auto dofs = dofmap.cell_dofs(cell.index());
 
     // Tabulate dof coordinates on cell
-    cmap.compute_physical_coordinates(coordinates, X, coordinate_dofs);
+    cmap.push_forward(coordinates, X, coordinate_dofs);
 
     // Map dofs into coords_to_dofs
     for (Eigen::Index i = 0; i < dofs.size(); ++i)

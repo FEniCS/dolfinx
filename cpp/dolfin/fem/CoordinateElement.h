@@ -19,6 +19,7 @@ namespace dolfin
 namespace fem
 {
 
+// FIXME: A dof layout on a reference cell needs to be defined.
 /// This class manages coordinate mappings for isoparametric cells.
 
 class CoordinateElement
@@ -57,7 +58,10 @@ public:
 
   /// Compute physical coordinates x for points X  in the reference
   /// configuration
-  void compute_physical_coordinates(
+  /// @param[in,out] x The physical coordinates of the reference points X
+  /// @param[in] X The coordinates on the reference cells
+  /// @param[in] cell_geometry The cell node coordinates (physical)
+  void push_forward(
       Eigen::Ref<
           Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>>
           x,
@@ -65,7 +69,7 @@ public:
                                           Eigen::Dynamic, Eigen::RowMajor>>& X,
       const Eigen::Ref<const Eigen::Array<double, Eigen::Dynamic,
                                           Eigen::Dynamic, Eigen::RowMajor>>&
-          coordinate_dofs) const;
+          cell_geometry) const;
 
   /// Compute reference coordinates X, and J, detJ and K for physical
   /// coordinates x

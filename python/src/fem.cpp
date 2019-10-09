@@ -184,8 +184,8 @@ void fem(py::module& m)
   py::class_<dolfin::fem::CoordinateElement,
              std::shared_ptr<dolfin::fem::CoordinateElement>>(
       m, "CoordinateElement", "Coordinate mapping object")
-      .def("compute_physical_coordinates",
-           &dolfin::fem::CoordinateElement::compute_physical_coordinates);
+      .def("push_forward",
+           &dolfin::fem::CoordinateElement::push_forward);
 
   // dolfin::fem::DirichletBC
   py::class_<dolfin::fem::DirichletBC,

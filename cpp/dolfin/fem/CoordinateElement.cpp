@@ -34,22 +34,21 @@ int CoordinateElement::topological_dimension() const { return _tdim; }
 //-----------------------------------------------------------------------------
 int CoordinateElement::geometric_dimension() const { return _gdim; }
 //-----------------------------------------------------------------------------
-void CoordinateElement::compute_physical_coordinates(
+void CoordinateElement::push_forward(
     Eigen::Ref<
         Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>>
         x,
     const Eigen::Ref<const Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic,
                                         Eigen::RowMajor>>& X,
     const Eigen::Ref<const Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic,
-                                        Eigen::RowMajor>>& coordinate_dofs)
-    const
+                                        Eigen::RowMajor>>& cell_geometry) const
 {
   assert(_compute_physical_coordinates);
   assert(x.rows() == X.rows());
   assert(x.cols() == _gdim);
   assert(X.cols() == _tdim);
   _compute_physical_coordinates(x.data(), X.rows(), X.data(),
-                                coordinate_dofs.data());
+                                cell_geometry.data());
 }
 //-----------------------------------------------------------------------------
 void CoordinateElement::compute_reference_geometry(
