@@ -59,16 +59,15 @@ void CoordinateElement::compute_reference_geometry(
     const Eigen::Ref<const Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic,
                                         Eigen::RowMajor>>& x,
     const Eigen::Ref<const Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic,
-                                        Eigen::RowMajor>>& coordinate_dofs)
-    const
+                                        Eigen::RowMajor>>& cell_geometry) const
 {
   // Number of points
   int num_points = x.rows();
 
   // in-argument checks
   assert(x.cols() == this->geometric_dimension());
-  // assert(coordinate_dofs.rows() == space_dimension);
-  assert(coordinate_dofs.cols() == this->geometric_dimension());
+  // assert(cell_geometry.rows() == space_dimension);
+  assert(cell_geometry.cols() == this->geometric_dimension());
 
   // In/out size checks
   assert(X.rows() == num_points);
@@ -83,6 +82,6 @@ void CoordinateElement::compute_reference_geometry(
 
   assert(_compute_reference_geometry);
   _compute_reference_geometry(X.data(), J.data(), detJ.data(), K.data(),
-                              num_points, x.data(), coordinate_dofs.data(), 1);
+                              num_points, x.data(), cell_geometry.data(), 1);
 }
 //-----------------------------------------------------------------------------

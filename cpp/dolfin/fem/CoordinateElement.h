@@ -30,8 +30,12 @@ public:
   /// @param[in] topological_dimension
   /// @param[in] geometric_dimension
   /// @param[in] signature
-  /// @param[in] compute_physical_coordinates
-  /// @param[in] compute_reference_geometry
+  /// @param[in] compute_physical_coordinates Push-forward function from
+  ///                                         reference to physical
+  ///                                         coordinates
+  /// @param[in] compute_reference_geometry Pull-back function from
+  ///                                       physical coordinates to
+  ///                                       reference coordinates
   CoordinateElement(
       mesh::CellType cell_type, int topological_dimension,
       int geometric_dimension, std::string signature,
@@ -44,10 +48,12 @@ public:
   /// Destructor
   virtual ~CoordinateElement() = default;
 
-  /// Return a string identifying the finite element
+  /// String identifying the finite element
+  /// @return The signature
   std::string signature() const;
 
-  /// Return the cell shape
+  /// Cell shape
+  /// @return The cell shape
   mesh::CellType cell_shape() const;
 
   /// Return the topological dimension of the cell shape
@@ -82,7 +88,7 @@ public:
                                           Eigen::Dynamic, Eigen::RowMajor>>& x,
       const Eigen::Ref<const Eigen::Array<double, Eigen::Dynamic,
                                           Eigen::Dynamic, Eigen::RowMajor>>&
-          coordinate_dofs) const;
+          cell_geometry) const;
 
 private:
   int _tdim, _gdim;
