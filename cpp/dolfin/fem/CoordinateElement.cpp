@@ -4,15 +4,14 @@
 //
 // SPDX-License-Identifier:    LGPL-3.0-or-later
 
-#include "CoordinateMapping.h"
-#include <dolfin/common/types.h>
+#include "CoordinateElement.h"
 #include <unsupported/Eigen/CXX11/Tensor>
 
 using namespace dolfin;
 using namespace dolfin::fem;
 
 //-----------------------------------------------------------------------------
-CoordinateMapping::CoordinateMapping(
+CoordinateElement::CoordinateElement(
     mesh::CellType cell_type, int topological_dimension,
     int geometric_dimension, std::string signature,
     std::function<void(double*, int, const double*, const double*)>
@@ -27,15 +26,15 @@ CoordinateMapping::CoordinateMapping(
 {
 }
 //-----------------------------------------------------------------------------
-std::string CoordinateMapping::signature() const { return _signature; }
+std::string CoordinateElement::signature() const { return _signature; }
 //-----------------------------------------------------------------------------
-mesh::CellType CoordinateMapping::cell_shape() const { return _cell; }
+mesh::CellType CoordinateElement::cell_shape() const { return _cell; }
 //-----------------------------------------------------------------------------
-std::uint32_t CoordinateMapping::topological_dimension() const { return _tdim; }
+int CoordinateElement::topological_dimension() const { return _tdim; }
 //-----------------------------------------------------------------------------
-std::uint32_t CoordinateMapping::geometric_dimension() const { return _gdim; }
+int CoordinateElement::geometric_dimension() const { return _gdim; }
 //-----------------------------------------------------------------------------
-void CoordinateMapping::compute_physical_coordinates(
+void CoordinateElement::compute_physical_coordinates(
     Eigen::Ref<
         Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>>
         x,
@@ -53,7 +52,7 @@ void CoordinateMapping::compute_physical_coordinates(
                                 coordinate_dofs.data());
 }
 //-----------------------------------------------------------------------------
-void CoordinateMapping::compute_reference_geometry(
+void CoordinateElement::compute_reference_geometry(
     Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>& X,
     Eigen::Tensor<double, 3, Eigen::RowMajor>& J,
     Eigen::Ref<Eigen::Array<double, Eigen::Dynamic, 1>> detJ,

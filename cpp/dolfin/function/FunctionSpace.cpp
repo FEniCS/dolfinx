@@ -10,7 +10,7 @@
 #include <dolfin/common/UniqueIdGenerator.h>
 #include <dolfin/common/types.h>
 #include <dolfin/common/utils.h>
-#include <dolfin/fem/CoordinateMapping.h>
+#include <dolfin/fem/CoordinateElement.h>
 #include <dolfin/fem/DofMap.h>
 #include <dolfin/fem/FiniteElement.h>
 #include <dolfin/mesh/CoordinateDofs.h>
@@ -295,9 +295,9 @@ FunctionSpace::tabulate_dof_coordinates() const
   if (!_mesh->geometry().coord_mapping)
   {
     throw std::runtime_error(
-        "CoordinateMapping has not been attached to mesh.");
+        "CoordinateElement has not been attached to mesh.");
   }
-  const fem::CoordinateMapping& cmap = *_mesh->geometry().coord_mapping;
+  const fem::CoordinateElement& cmap = *_mesh->geometry().coord_mapping;
 
   // Cell coordinates (re-allocated inside function for thread safety)
   // Prepare cell geometry
@@ -377,9 +377,9 @@ void FunctionSpace::set_x(
   if (!_mesh->geometry().coord_mapping)
   {
     throw std::runtime_error(
-        "CoordinateMapping has not been attached to mesh.");
+        "CoordinateElement has not been attached to mesh.");
   }
-  const fem::CoordinateMapping& cmap = *_mesh->geometry().coord_mapping;
+  const fem::CoordinateElement& cmap = *_mesh->geometry().coord_mapping;
 
   Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
       coordinates(_element->space_dimension(), _mesh->geometry().dim());

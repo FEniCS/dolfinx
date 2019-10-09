@@ -21,17 +21,17 @@ namespace fem
 
 /// This class manages coordinate mappings for isoparametric cells.
 
-class CoordinateMapping
+class CoordinateElement
 {
 public:
-  /// Create a CoordinateMapping object
+  /// Create a coordinate element
   /// @param[in] cell_type
   /// @param[in] topological_dimension
   /// @param[in] geometric_dimension
   /// @param[in] signature
   /// @param[in] compute_physical_coordinates
   /// @param[in] compute_reference_geometry
-  CoordinateMapping(
+  CoordinateElement(
       mesh::CellType cell_type, int topological_dimension,
       int geometric_dimension, std::string signature,
       std::function<void(double*, int, const double*, const double*)>
@@ -41,7 +41,7 @@ public:
           compute_reference_geometry);
 
   /// Destructor
-  virtual ~CoordinateMapping() = default;
+  virtual ~CoordinateElement() = default;
 
   /// Return a string identifying the finite element
   std::string signature() const;
@@ -50,10 +50,10 @@ public:
   mesh::CellType cell_shape() const;
 
   /// Return the topological dimension of the cell shape
-  std::uint32_t topological_dimension() const;
+  int topological_dimension() const;
 
   /// Return the geometric dimension of the cell shape
-  std::uint32_t geometric_dimension() const;
+  int geometric_dimension() const;
 
   /// Compute physical coordinates x for points X  in the reference
   /// configuration
