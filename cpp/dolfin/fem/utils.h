@@ -6,7 +6,7 @@
 
 #pragma once
 
-#include "CoordinateMapping.h"
+#include "CoordinateElement.h"
 #include "DofMap.h"
 #include "ElementDofLayout.h"
 #include <dolfin/common/types.h>
@@ -103,8 +103,8 @@ get_coeffs_from_ufc_form(const ufc_form& ufc_form);
 std::vector<std::pair<std::string, std::shared_ptr<const function::Constant>>>
 get_constants_from_ufc_form(const ufc_form& ufc_form);
 
-/// Get dolfin::fem::CoordinateMapping from ufc
-std::shared_ptr<const fem::CoordinateMapping>
+/// Get dolfin::fem::CoordinateElement from ufc
+std::shared_ptr<const fem::CoordinateElement>
 get_cmap_from_ufc_cmap(const ufc_coordinate_mapping& ufc_cmap);
 
 /// Create FunctionSpace from UFC

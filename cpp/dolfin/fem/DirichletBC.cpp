@@ -9,7 +9,7 @@
 #include "FiniteElement.h"
 #include <array>
 #include <dolfin/common/IndexMap.h>
-#include <dolfin/fem/CoordinateMapping.h>
+#include <dolfin/fem/CoordinateElement.h>
 #include <dolfin/function/Function.h>
 #include <dolfin/function/FunctionSpace.h>
 #include <dolfin/mesh/Mesh.h>
@@ -551,9 +551,9 @@ void DirichletBC::mark_dofs(std::vector<bool>& markers) const
 //   if (!mesh.geometry().coord_mapping)
 //   {
 //     throw std::runtime_error(
-//         "CoordinateMapping has not been attached to mesh.");
+//         "CoordinateElement has not been attached to mesh.");
 //   }
-//   const CoordinateMapping& cmap = *mesh.geometry().coord_mapping;
+//   const CoordinateElement& cmap = *mesh.geometry().coord_mapping;
 
 //   // Create vertex coordinate holder
 //   Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>

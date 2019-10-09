@@ -8,7 +8,7 @@
 #include "caster_petsc.h"
 #include <cfloat>
 #include <dolfin/common/types.h>
-#include <dolfin/fem/CoordinateMapping.h>
+#include <dolfin/fem/CoordinateElement.h>
 #include <dolfin/mesh/Connectivity.h>
 #include <dolfin/mesh/CoordinateDofs.h>
 #include <dolfin/mesh/Geometry.h>
