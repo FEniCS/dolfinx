@@ -179,6 +179,7 @@ def test_triangle_order_4():
                                rel=1e-9)
     assert q3 == pytest.approx(L * H)
 
+
 @pytest.mark.parametrize('L', [1, 4])
 @pytest.mark.parametrize('H', [1, 5])
 @pytest.mark.parametrize('eps', [0, 1, 10, 100])

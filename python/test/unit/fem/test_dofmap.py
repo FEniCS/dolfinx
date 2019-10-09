@@ -11,7 +11,7 @@ import sys
 import numpy as np
 import pytest
 
-from dolfin import (MPI, FunctionSpace, MeshEntity, UnitCubeMesh,
+from dolfin import (Mesh, MPI, FunctionSpace, MeshEntity, UnitCubeMesh,
                     UnitIntervalMesh, UnitSquareMesh, VectorFunctionSpace, cpp,
                     fem)
 from dolfin.cpp.mesh import CellType
@@ -502,8 +502,8 @@ def test_high_order_lagrange():
     # Create simple mesh
     points = np.array([[0.0, 0.0], [1.0, 0.0], [1.0, 1.0], [0.0, 1.0]])
     cells = np.array([[0, 1, 2], [2, 3, 0], ])
-    mesh = cpp.mesh.Mesh(MPI.comm_world, CellType.triangle, points,
-                         cells, [], cpp.mesh.GhostMode.none)
+    mesh = Mesh(MPI.comm_world, CellType.triangle, points,
+                cells, [], cpp.mesh.GhostMode.none)
     mesh.create_connectivity(2, 1)
 
     c21 = mesh.topology.connectivity(2, 1)
