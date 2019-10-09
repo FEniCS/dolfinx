@@ -494,7 +494,7 @@ def test_high_order_lagrange():
             for v in range(3):
                 x_coord_new[v] = x_g[coord_dofs[c, v], :2]
             x = X.copy()
-            cmap.compute_physical_coordinates(x, X, x_coord_new)
+            cmap.push_forward(x, X, x_coord_new)
             x_dofs.append(x[edge_dofs_local[c]])
 
         return x_dofs

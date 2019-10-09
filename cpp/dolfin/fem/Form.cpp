@@ -7,7 +7,7 @@
 #include "Form.h"
 #include "DofMap.h"
 #include <dolfin/common/types.h>
-#include <dolfin/fem/CoordinateMapping.h>
+#include <dolfin/fem/CoordinateElement.h>
 #include <dolfin/fem/FiniteElement.h>
 #include <dolfin/fem/utils.h>
 #include <dolfin/function/Constant.h>
@@ -31,7 +31,7 @@ Form::Form(
     const std::vector<
         std::pair<std::string, std::shared_ptr<const function::Constant>>>
         constants,
-    std::shared_ptr<const CoordinateMapping> coord_mapping)
+    std::shared_ptr<const CoordinateElement> coord_mapping)
     : _integrals(integrals), _coefficients(coefficients), _constants(constants),
       _function_spaces(function_spaces), _coord_mapping(coord_mapping)
 {
@@ -186,7 +186,7 @@ Form::constants() const
 //-----------------------------------------------------------------------------
 const fem::FormIntegrals& Form::integrals() const { return _integrals; }
 //-----------------------------------------------------------------------------
-std::shared_ptr<const fem::CoordinateMapping> Form::coordinate_mapping() const
+std::shared_ptr<const fem::CoordinateElement> Form::coordinate_mapping() const
 {
   return _coord_mapping;
 }
