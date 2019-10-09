@@ -651,8 +651,12 @@ void fem::impl::assemble_interior_facets(
     const std::int32_t cell_index0 = facet.entities(tdim)[0];
     const std::int32_t cell_index1 = facet.entities(tdim)[1];
 
+    // Create attached cells
+    const mesh::MeshEntity cell0(mesh, tdim, facet.entities(tdim)[0]);
+    const mesh::MeshEntity cell1(mesh, tdim, facet.entities(tdim)[1]);
+
     // Get local index of facet with respect to the cell
-    const int local_facet[2] = {cell_index0, cell_index1};
+    const int local_facet[2] = {cell0.index(facet), cell1.index(facet)};
     const int orient[2] = {0, 0};
 
     // Get cell vertex coordinates
