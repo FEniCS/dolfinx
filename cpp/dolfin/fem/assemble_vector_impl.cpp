@@ -567,7 +567,7 @@ void fem::impl::assemble_exterior_facets(
   {
     const mesh::MeshEntity facet(mesh, tdim - 1, facet_index);
 
-    // Index of attached cell
+    // Get index of first attached cell
     const std::int32_t cell_index = facet.entities(tdim)[0];
 
     // FIXME: See if creation of MeshEntity can be removed
@@ -582,7 +582,7 @@ void fem::impl::assemble_exterior_facets(
         coordinate_dofs(i, j) = x_g(cell_g[pos_g[cell_index] + i], j);
 
     // Get dof map for cell
-    auto dmap = dofmap.cell_dofs(cell.index());
+    auto dmap = dofmap.cell_dofs(cell_index);
 
     // TODO: Move gathering of coefficients outside of main assembly
     // loop
@@ -654,9 +654,9 @@ void fem::impl::assemble_interior_facets(
     // Create attached cells
     const mesh::MeshEntity cell0(mesh, tdim, facet.entities(tdim)[0]);
     const mesh::MeshEntity cell1(mesh, tdim, facet.entities(tdim)[1]);
-
-    // Get local index of facet with respect to the cell
     const int local_facet[2] = {cell0.index(facet), cell1.index(facet)};
+
+    // Orientation
     const int orient[2] = {0, 0};
 
     // Get cell vertex coordinates
