@@ -222,7 +222,7 @@ def test_newton_solver_inheritance():
     assert isinstance(derived, DerivedNewtonSolver)
 
 
-def test_newton_solver_iheritance_override_methods():
+def test_newton_solver_inheritance_override_methods():
     import functools
     called_methods = {}
 
