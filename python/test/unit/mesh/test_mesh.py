@@ -23,8 +23,6 @@ from dolfin_utils.test.fixtures import tempdir
 from dolfin_utils.test.skips import skip_in_parallel
 from ufl import dx
 
-from pygmsh.built_in import Geometry
-from pygmsh import generate_mesh
 
 assert (tempdir)
 
