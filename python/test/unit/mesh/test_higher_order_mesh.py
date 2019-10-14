@@ -16,8 +16,8 @@ import pytest
 
 
 @skip_in_parallel
-@pytest.mark.parametrize('L', [1, 1, 2, 3])
-@pytest.mark.parametrize('H', [0.5, 1, 2, 3])
+@pytest.mark.parametrize('L', [1, 3])
+@pytest.mark.parametrize('H', [0.5, 1])
 def test_triangle_order_2(L, H):
     # Test second order mesh by computing volume of two cells
     #  *-----*-----*   3----6-----2
@@ -177,9 +177,9 @@ def test_triangle_order_4():
     assert q3 == pytest.approx(L * H)
 
 
-@pytest.mark.parametrize('L', [1, 4])
+@pytest.mark.parametrize('L', [1])
 @pytest.mark.parametrize('H', [1, 5])
-@pytest.mark.parametrize('eps', [0, 1, 10, 100])
+@pytest.mark.parametrize('eps', [0, 1, 100])
 def test_quad_dofs_order_2(L, H, eps):
     # Test second order mesh by computing volume of two cells
     #  *-----*-----*   3--6--2--13-10
@@ -217,9 +217,9 @@ def test_quad_dofs_order_2(L, H, eps):
 
 
 @skip_in_parallel
-@pytest.mark.parametrize('L', [1, 4])
+@pytest.mark.parametrize('L', [1])
 @pytest.mark.parametrize('H', [1, 5])
-@pytest.mark.parametrize('eps', [0, 0.08, 0.05, 0.01])
+@pytest.mark.parametrize('eps', [0, 0.01])
 def test_quad_dofs_order_3(L, H, eps):
     # Test third order mesh by computing volume of two cells
     #  *---------*   3--8--9--2-22-23-17

@@ -501,8 +501,14 @@ int mesh::cell_degree(mesh::CellType type, int num_nodes)
       return 3;
     case 15:
       return 4;
+    case 21:
+      return 5;
+    case 28:
+      return 6;
+    case 36:
+      return 7;
     default:
-      throw std::runtime_error("Triangle order > 4 is not supported.");
+      throw std::runtime_error("Triangle order > 7 is not supported.");
     }
   case mesh::CellType::tetrahedron:
     if (num_nodes != 4)

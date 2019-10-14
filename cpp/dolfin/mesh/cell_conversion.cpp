@@ -40,27 +40,43 @@ std::vector<std::uint8_t> mesh::vtk_cell_permutation(mesh::CellType type,
 
     int degree = mesh::cell_degree(type, num_nodes);
 
-    if (degree < 5)
+    for (int k = 1; k < degree; ++k)
+      permutation[j++] = 3 + 2 * (degree - 1) + k - 1;
+
+    for (int k = 1; k < degree; ++k)
+      permutation[j++] = 3 + k - 1;
+
+    for (int k = 1; k < degree; ++k)
+      permutation[j++] = 2 * degree - (k - 1);
+
+    // Interior VTK is ordered as a lower order triangle, while FEniCS
+    // orders them lexicographically.
+    // FIXME: Should be possible to generalize with some recursive function
+    std::vector<std::uint8_t> remainders(num_nodes - j);
+    const int base = 3 * degree;
+    switch (degree)
     {
-      for (int k = 1; k < degree; ++k)
-        permutation[j++] = 3 + 2 * (degree - 1) + k - 1;
-
-      for (int k = 1; k < degree; ++k)
-        permutation[j++] = 3 + k - 1;
-
-      for (int k = 1; k < degree; ++k)
-        permutation[j++] = 2 * degree - (k - 1);
-
-      /// Current workaround for degree >= 4
-      /// Need to figure out how VTK ordering for higher order
-      /// Triangles are as it is not clear from the documentation.
-      for (int k = j; j < num_nodes; ++k)
-        permutation[j++] = k;
-
+    case 3:
+      remainders = {0};
+      break;
+    case 4:
+      remainders = {0, 1, 2};
+      break;
+    case 5:
+      remainders = {0, 2, 5, 1, 4, 3};
+      break;
+    case 6:
+      remainders = {0, 3, 9, 1, 2, 6, 8, 7, 4, 5};
+      break;
+    case 7:
+      remainders = {0, 4, 14, 1, 2, 3, 8, 11, 13, 12, 9, 5, 6, 7, 10};
+      break;
+    default:
       return permutation;
     }
-    else
-      throw std::runtime_error("Triangles with order > 4 not supported");
+    for (int k = 0; k < remainders.size(); ++k)
+      permutation[j++] = base + remainders[k];
+    return permutation;
   }
   case mesh::CellType::tetrahedron:
     switch (num_nodes)
