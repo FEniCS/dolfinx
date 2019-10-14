@@ -342,12 +342,23 @@ DofMapStructure build_basic_dofmap(const mesh::Mesh& mesh,
   const std::vector<std::vector<std::set<int>>>& entity_dofs
       = element_dof_layout.entity_dofs_all();
 
+  // Make a dof permuter
+  const int vertex_dofs = 0<=D ? element_dof_layout.num_entity_dofs(0) : 0;
+  const int edge_dofs = 1<=D ? element_dof_layout.num_entity_dofs(1) : 0;
+  const int face_dofs = 2<=D ? element_dof_layout.num_entity_dofs(2) : 0;
+  const int volume_dofs = 3<=D ? element_dof_layout.num_entity_dofs(3) : 0;
+
+  DofMapPermuter permuter = generate_cell_permutations(mesh, vertex_dofs, edge_dofs, face_dofs, volume_dofs);
+
   // Build dofmaps from ElementDofmap
   for (auto& cell : mesh::MeshRange(mesh, D, mesh::MeshRangeType::ALL))
   {
     // Get local (process) and global cell entity indices
     get_cell_entities(entity_indices_local, entity_indices_global, cell,
                       needs_entities);
+
+    // Get cell permutation
+    std::vector<int> permutation = permuter.cell_permutation(cell.index());
 
     // Iterate over topological dimensions
     std::int32_t offset_local = 0;
@@ -377,7 +388,7 @@ DofMapStructure build_basic_dofmap(const mesh::Mesh& mesh,
           const std::int32_t count = std::distance(e_dofs->begin(), dof_local);
           const std::int32_t dof
               = offset_local + num_entity_dofs * e_index_local + count;
-          dofmap.dof(cell.index(), *dof_local) = dof;
+          dofmap.dof(cell.index(), permutation[*dof_local]) = dof;
           dofmap.global_indices[dof]
               = offset_global + num_entity_dofs * e_index_global + count;
         }
@@ -388,21 +399,7 @@ DofMapStructure build_basic_dofmap(const mesh::Mesh& mesh,
   }
 
 
-  const int vertex_dofs = 0<=D ? element_dof_layout.num_entity_dofs(0) : 0;
-  const int edge_dofs = 1<=D ? element_dof_layout.num_entity_dofs(1) : 0;
-  const int face_dofs = 2<=D ? element_dof_layout.num_entity_dofs(2) : 0;
-  const int volume_dofs = 3<=D ? element_dof_layout.num_entity_dofs(3) : 0;
-
-  DofMapPermuter permuter = generate_cell_permutations(mesh, vertex_dofs, edge_dofs, face_dofs, volume_dofs);
-
-  DofMapStructure dofmap_permuted;
-  dofmap_permuted.cell_ptr = dofmap.cell_ptr;
-  dofmap_permuted.global_indices = dofmap.global_indices;
-  dofmap_permuted.data.resize(mesh.num_entities(D) * local_dim);
-  for (auto& cell : mesh::MeshRange(mesh, D, mesh::MeshRangeType::ALL))
-    for(int i=0;i<permuter.dof_count;++i)
-      dofmap_permuted.dof(cell.index(), i) = dofmap.dof(cell.index(), permuter.get_dof(cell.index(), i));
-  return dofmap_permuted;
+  return dofmap;
 }
 //-----------------------------------------------------------------------------
 // Compute sharing marker for each node

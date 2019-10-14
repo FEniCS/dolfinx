@@ -24,33 +24,29 @@ class DofMapPermuter
 public:
   /// Build permuter
   DofMapPermuter(const int dofs);
-  const std::vector<int> permute(const std::vector<int> dofs, const int cell);
-  int get_dof(const int cell, const int dof) const;
-  const std::vector<int> permute(std::vector<int> vec, std::vector<int> perm);
+  std::vector<int> cell_permutation(const int cell) const;
+  std::vector<int> permute(std::vector<int> vec, std::vector<int> perm) const;
   void add_permutation(const std::vector<int> permutation, int order);
 
-  void set_cell_permutation(const int cell,const int permutation);
-  void set_cell_permutation(const int cell, const std::vector<int> orders);
+  void set_cell(const int cell,const int permutation);
+  void set_cell(const int cell, const std::vector<int> orders);
   void prepare(const int cells);
   int get_permutation_number(const std::vector<int> orders) const;
   std::vector<int> get_orders(const int number) const;
-  void generate_necessary_permutations();
 
   // REMOVE: for testing only
-  void print_p(const std::vector<int> p) const {
-    std::cout << "["; for(int i=0;i<p.size();++i) {std::cout << p[i];if(i+1<p.size()) std::cout << " ";}
+  void print_p(const std::vector<int> p, const int start=0) const {
+    std::cout << "["; for(int i=start;i<p.size();++i) {std::cout << p[i];if(i+1<p.size()) std::cout << " ";}
     std::cout << "]" << std::endl;
   }
 
   int dof_count;
 private:
-  std::vector<int> _cell_permutation_numbers;
-  std::vector<std::vector<int>> _cell_permutations;
+  std::vector<std::vector<int>> _cell_orders;
 
   std::vector<std::vector<int>> _permutations;
   std::vector<int> _permutation_orders;
   int _total_options;
-  std::vector<bool> _used;
 };
 
 

@@ -25,15 +25,14 @@ void DofMapPermuter::add_permutation(const std::vector<int> permutation, int ord
   _permutation_orders.push_back(order);
 }
 //-----------------------------------------------------------------------------
-void DofMapPermuter::set_cell_permutation(const int cell,const int permutation)
+void DofMapPermuter::set_cell(const int cell,const int permutation)
 {
-  _cell_permutation_numbers[cell] = permutation;
-  _used[permutation] = true;
+  set_cell(cell, get_orders(permutation));
 }
 //-----------------------------------------------------------------------------
-void DofMapPermuter::set_cell_permutation(const int cell, const std::vector<int> orders)
+void DofMapPermuter::set_cell(const int cell, const std::vector<int> orders)
 {
-  set_cell_permutation(cell, get_permutation_number(orders));
+  _cell_orders[cell] = orders;
 }
 //-----------------------------------------------------------------------------
 void DofMapPermuter::prepare(const int cells)
@@ -41,8 +40,7 @@ void DofMapPermuter::prepare(const int cells)
   _total_options=1;
   for(int i=0;i<_permutation_orders.size();++i)
     _total_options *= _permutation_orders[i];
-  _used.resize(_total_options,false);
-  _cell_permutation_numbers.resize(cells,-1);
+  _cell_orders.resize(cells,{0,0,0,0});
 }
 //-----------------------------------------------------------------------------
 int DofMapPermuter::get_permutation_number(const std::vector<int> orders) const
@@ -69,36 +67,27 @@ std::vector<int> DofMapPermuter::get_orders(const int number) const
   return out;
 }
 //-----------------------------------------------------------------------------
-void DofMapPermuter::generate_necessary_permutations()
-{
-  _cell_permutations.resize(_total_options,{});
-  for(int p=0;p<_total_options;++p)
-    if(_used[p])
-    {
-      std::vector<int> orders = get_orders(p);
-
-      std::vector<int> permutation(dof_count);
-      for(int i=0;i<dof_count;++i)
-        permutation[i] = i;
-      for (int i=0;i<orders.size();++i)
-        for(int j=0;j<orders[i];++j)
-          permutation = permute(permutation, _permutations[i]);
-
-      _cell_permutations[p] = permutation;
-    }
-}
-//-----------------------------------------------------------------------------
-int DofMapPermuter::get_dof(const int cell, const int dof) const
-{
-  return _cell_permutations[_cell_permutation_numbers[cell]][dof];
-}
-//-----------------------------------------------------------------------------
-const std::vector<int> DofMapPermuter::permute(std::vector<int> vec, std::vector<int> perm)
+std::vector<int> DofMapPermuter::permute(std::vector<int> vec, std::vector<int> perm) const
 {
   std::vector<int> output(perm.size());
   for (int i=0;i<perm.size();++i)
     output[perm[i]] = vec[i];
   return output;
+}
+//-----------------------------------------------------------------------------
+std::vector<int> DofMapPermuter::cell_permutation(const int cell) const
+{
+  std::vector<int> orders = _cell_orders[cell];
+
+  std::vector<int> permutation(dof_count);
+  for(int i=0;i<dof_count;++i)
+    permutation[i] = i;
+
+  for (int i=0;i<orders.size();++i)
+    for(int j=0;j<orders[i];++j)
+      permutation = permute(permutation, _permutations[i]);
+
+  return permutation;
 }
 //-----------------------------------------------------------------------------
 DofMapPermuter generate_cell_permutations(const mesh::Mesh mesh,
@@ -148,10 +137,12 @@ DofMapPermuter generate_cell_permutations_triangle(const mesh::Mesh mesh,
     for(int dof=0;dof<3*vertex_dofs+3*edge_dofs;++dof)
       rotation[j++] = dof;
     // face
-    for(int st=side_length-1;st>=0;--st){
+    int i=1;
+    for(int st=face_dofs-1;st>=0;st-=(i++))
+    {
       int dof = 3*vertex_dofs + 3*edge_dofs + st;
-      for(int add=side_length-1;add>=side_length-st-1;--add)
-        rotation[j++] = (dof += add);
+      for(int sub=i+1;sub<=side_length+1;dof-=(sub++))
+        rotation[j++] = dof;
     }
     assert(j == dof_count);
     output.add_permutation(rotation,3);
@@ -199,10 +190,8 @@ DofMapPermuter generate_cell_permutations_triangle(const mesh::Mesh mesh,
       orders[3] = 2;
       orders[4] = (vertices[0] > vertices[1]);
     }
-    output.set_cell_permutation(cell_n, orders);
+    output.set_cell(cell_n, orders);
   }
-
-  output.generate_necessary_permutations();
 
   return output;
 }
