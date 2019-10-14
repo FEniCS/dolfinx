@@ -167,12 +167,10 @@ void mesh(py::module& m)
                  const Eigen::Array<std::int64_t, Eigen::Dynamic,
                                     Eigen::Dynamic, Eigen::RowMajor>>& topology,
              const std::vector<std::int64_t>& global_cell_indices,
-             const dolfin::mesh::GhostMode ghost_mode,
-			 std::int32_t num_ghost_cells,
-			 std::vector<std::uint8_t> custom_permutation) {
+             const dolfin::mesh::GhostMode ghost_mode) {
             return std::make_unique<dolfin::mesh::Mesh>(
                 comm.get(), type, geometry, topology, global_cell_indices,
-                ghost_mode, num_ghost_cells, custom_permutation);
+                ghost_mode);
           }))
       .def("cells",
            [](const dolfin::mesh::Mesh& self) {

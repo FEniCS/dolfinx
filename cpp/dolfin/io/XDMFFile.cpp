@@ -34,7 +34,7 @@
 #include <dolfin/mesh/MeshIterator.h>
 #include <dolfin/mesh/MeshValueCollection.h>
 #include <dolfin/mesh/Partitioning.h>
-#include <dolfin/mesh/cell_types.h>
+#include <dolfin/mesh/cell_conversion.h>
 #include <iomanip>
 #include <memory>
 #include <petscvec.h>

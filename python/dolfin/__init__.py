@@ -42,7 +42,7 @@ import dolfin.log
 from dolfin.generation import (IntervalMesh, BoxMesh, RectangleMesh,
                                UnitIntervalMesh, UnitSquareMesh, UnitCubeMesh)
 
-from .cpp.mesh import Topology, Geometry, MeshEntity, EntityRange, MeshQuality
+from .cpp.mesh import Mesh, Topology, Geometry, MeshEntity, EntityRange, MeshQuality
 
 from .cpp.nls import (NonlinearProblem, NewtonSolver)
 
@@ -59,7 +59,6 @@ from .function import (TestFunction, TrialFunction, TestFunctions,
 from .specialfunctions import (FacetNormal, CellVolume, CellNormal,
                                CellDiameter, Circumradius)
 
-from .mesh import Mesh
 from .mesh import MeshFunction
 from .mesh import MeshValueCollection
 

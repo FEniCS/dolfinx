@@ -18,6 +18,7 @@
 #include <dolfin/common/MPI.h>
 #include <dolfin/common/Timer.h>
 #include <dolfin/common/utils.h>
+#include <dolfin/mesh/cell_conversion.h>
 #include <dolfin/mesh/cell_types.h>
 
 using namespace dolfin;
@@ -211,8 +212,7 @@ Mesh::Mesh(
     const Eigen::Ref<const Eigen::Array<
         std::int64_t, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>>& cells,
     const std::vector<std::int64_t>& global_cell_indices,
-    const GhostMode ghost_mode, std::int32_t num_ghost_cells,
-    std::vector<std::uint8_t> custom_permutation)
+    const GhostMode ghost_mode, std::int32_t num_ghost_cells)
     : _cell_type(type), _degree(1), _mpi_comm(comm), _ghost_mode(ghost_mode),
       _unique_id(common::UniqueIdGenerator::id())
 {
@@ -227,19 +227,15 @@ Mesh::Mesh(
     throw std::runtime_error(
         "Cannot create mesh. Wrong number of global cell indices");
   }
-
   // Find degree of mesh
   // FIXME: degree should probably be in MeshGeometry
   _degree = mesh::cell_degree(type, cells.cols());
 
+  // FIXME: Default simplicies is VTK, non-simplicies is lexicographic
+  // This should be changed to simplicies being UFC, non-simplicies VTK
   // Get the mapping of UFC node ordering to the mesh input format
   std::vector<std::uint8_t> cell_permutation;
-  if (custom_permutation.empty())
-    cell_permutation = mesh::default_cell_permutation(type, _degree);
-  else if (custom_permutation.size() == static_cast<unsigned int>(cells.cols()))
-    cell_permutation = custom_permutation;
-  else
-    throw std::runtime_error("Permutation vector does not match cell input");
+  cell_permutation = mesh::default_cell_permutation(type, _degree);
 
   // Get number of nodes (global)
   const std::uint64_t num_points_global = MPI::sum(comm, points.rows());

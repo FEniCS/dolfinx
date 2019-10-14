@@ -24,6 +24,7 @@
 #include <dolfin/mesh/Mesh.h>
 #include <dolfin/mesh/MeshIterator.h>
 #include <dolfin/mesh/Topology.h>
+#include <dolfin/mesh/cell_conversion.h>
 
 using namespace dolfin;
 using namespace dolfin::io;

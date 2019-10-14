@@ -19,7 +19,7 @@
 #include <dolfin/mesh/MeshEntity.h>
 #include <dolfin/mesh/MeshFunction.h>
 #include <dolfin/mesh/MeshIterator.h>
-#include <dolfin/mesh/cell_types.h>
+#include <dolfin/mesh/cell_conversion.h>
 #include <fstream>
 #include <iomanip>
 #include <ostream>
