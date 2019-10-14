@@ -31,22 +31,32 @@ std::vector<std::uint8_t> vtk_to_tp(CellType type, int num_nodes);
 
 
 /// Map from the mapping of lexicographic nodes to a tensor product ordering
- /// @param type Celltype to map
+/// @param type Celltype to map
 /// @param num_nodes Number of nodes in cell
 /// @return The map
  std::vector<std::uint8_t> lexico_to_tp(CellType type, int num_nodes);
 
 
-// Permutation for VTK ordering to FENICS ordering
+/// Permutation for VTK ordering to FENICS ordering
+/// @param type Celltype to map
+/// @param num_nodes Number of nodes in cell
+/// @return The map
 std::vector<std::uint8_t> vtk_to_fenics(CellType type, int num_nodes);
 
 
-// Convert gmsh cell ordering to FENICS cell ordering
+/// Convert gmsh cell ordering to FENICS cell ordering
+/// @param cells array containing cell connectivities in VTK format
+/// @param type Celltype to the permuter
+/// @return Permuted cell connectivities
 Eigen::Array<std::int64_t, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
 gmsh_to_dolfin_ordering(Eigen::Array<std::int64_t, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor> cells,
 						CellType type);
 
 /// Default map of DOLFIN/UFC node ordering to the cell input ordering
+/// @param type Celltype to map
+/// @param degree Degree e of cell
+/// @return Default dolfin permutation
+
 std::vector<std::uint8_t> default_cell_permutation(CellType type,
                                                    std::int32_t degree);
 
