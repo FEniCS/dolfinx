@@ -546,25 +546,3 @@ def test_UnitHexMesh_assemble():
     vol = assemble_scalar(1 * dx(mesh))
     vol = MPI.sum(mesh.mpi_comm(), vol)
     assert(vol == pytest.approx(1, rel=1e-9))
-
-
-@skip_in_parallel
-@pytest.mark.parametrize("L", [1, 2])
-@pytest.mark.parametrize("H", [1, 2])
-def test_custom_permutation(L, H):
-    geo = Geometry()
-    # Structured quadrialterals
-    geo.add_raw_code("Mesh.Algorithm = 8;")
-    circle = geo.add_rectangle(0, L, 0, H, 0, lcar=0.2)
-    geo.add_raw_code("Recombine Surface {{{}}};".format(circle.surface.id))
-    mesh_gmsh = generate_mesh(geo, prune_z_0=True, geo_filename="mesh.geo")
-
-    ghost_mode = cpp.mesh.GhostMode.none
-    # Counter Clockwise permutation
-    mesh = Mesh(MPI.comm_world, CellType.quadrilateral,
-                mesh_gmsh.points, mesh_gmsh.cells["quad"],
-                [], ghost_mode, custom_permutation=[0, 1, 3, 2])
-    vol = assemble_scalar(1 * dx(mesh))
-    vol = MPI.sum(mesh.mpi_comm(), vol)
-
-    assert(vol == pytest.approx(L * H, rel=1e-9))
