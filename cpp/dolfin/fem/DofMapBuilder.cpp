@@ -387,7 +387,22 @@ DofMapStructure build_basic_dofmap(const mesh::Mesh& mesh,
     }
   }
 
-  return dofmap;
+
+  const int vertex_dofs = 0<=D ? element_dof_layout.num_entity_dofs(0) : 0;
+  const int edge_dofs = 1<=D ? element_dof_layout.num_entity_dofs(1) : 0;
+  const int face_dofs = 2<=D ? element_dof_layout.num_entity_dofs(2) : 0;
+  const int volume_dofs = 3<=D ? element_dof_layout.num_entity_dofs(3) : 0;
+
+  DofMapPermuter permuter = generate_cell_permutations(mesh, vertex_dofs, edge_dofs, face_dofs, volume_dofs);
+
+  DofMapStructure dofmap_permuted;
+  dofmap_permuted.cell_ptr = dofmap.cell_ptr;
+  dofmap_permuted.global_indices = dofmap.global_indices;
+  dofmap_permuted.data.resize(mesh.num_entities(D) * local_dim);
+  for (auto& cell : mesh::MeshRange(mesh, D, mesh::MeshRangeType::ALL))
+    for(int i=0;i<permuter.dof_count;++i)
+      dofmap_permuted.dof(cell.index(), i) = dofmap.dof(cell.index(), permuter.get_dof(cell.index(), i));
+  return dofmap_permuted;
 }
 //-----------------------------------------------------------------------------
 // Compute sharing marker for each node

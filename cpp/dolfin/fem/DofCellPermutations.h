@@ -6,6 +6,7 @@
 
 #include <tuple>
 #include <vector>
+#include <iostream>  // REMOVE: for testing only
 
 namespace dolfin
 {
@@ -26,25 +27,28 @@ public:
   const std::vector<int> permute(const std::vector<int> dofs, const int cell);
   int get_dof(const int cell, const int dof) const;
   const std::vector<int> permute(std::vector<int> vec, std::vector<int> perm);
-  void add_edge_flip(const std::vector<int> flip);
-  void set_reflection(const std::vector<int> reflection);
-  void set_rotation(const std::vector<int> rotation, int order);
+  void add_permutation(const std::vector<int> permutation, int order);
+
   void set_cell_permutation(const int cell,const int permutation);
-  void set_cell_permutation(const int cell,const int rotations, const int reflections, const std::vector<int> edge_flips={});
+  void set_cell_permutation(const int cell, const std::vector<int> orders);
   void prepare(const int cells);
-  const int get_permutation_number(const int rotations, const int reflections, const std::vector<int> edge_flips={});
+  int get_permutation_number(const std::vector<int> orders) const;
+  std::vector<int> get_orders(const int number) const;
   void generate_necessary_permutations();
 
-  // TODO: remove this; it's only for testing
-  std::vector<int> p(){ return _permutations_of_cells;}
+  // REMOVE: for testing only
+  void print_p(const std::vector<int> p) const {
+    std::cout << "["; for(int i=0;i<p.size();++i) {std::cout << p[i];if(i+1<p.size()) std::cout << " ";}
+    std::cout << "]" << std::endl;
+  }
+
   int dof_count;
 private:
-  std::vector<int> _permutations_of_cells;
+  std::vector<int> _cell_permutation_numbers;
+  std::vector<std::vector<int>> _cell_permutations;
+
   std::vector<std::vector<int>> _permutations;
-  std::vector<std::vector<int>> _edge_flips;
-  std::vector<int> _reflection;
-  std::vector<int> _rotation;
-  int _rotation_order;
+  std::vector<int> _permutation_orders;
   int _total_options;
   std::vector<bool> _used;
 };
