@@ -1,6 +1,5 @@
 import cffi
 from petsc4py import PETSc
-import pytest
 import numpy as np
 
 import ufl
@@ -30,11 +29,11 @@ def test_interpolation_laplace():
 
     ffi = cffi.FFI()
 
-    I = dolfin.cpp.fem.Form([dP0._cpp_object])
-    I.set_tabulate_cell(-1, ffi.cast("uintptr_t", kernel))
-    I.set_coefficient(0, u._cpp_object)
+    L = dolfin.cpp.fem.Form([dP0._cpp_object])
+    L.set_tabulate_cell(-1, ffi.cast("uintptr_t", kernel))
+    L.set_coefficient(0, u._cpp_object)
 
-    dolfin.fem.assemble_vector(f.vector, I, mode=dolfin.cpp.fem.InsertMode.set)
+    dolfin.fem.assemble_vector(f.vector, L, mode=dolfin.cpp.fem.InsertMode.set)
 
     # Update ghosts with the same mode as assembly
     f.vector.ghostUpdate(addv=PETSc.InsertMode.INSERT, mode=PETSc.ScatterMode.FORWARD)
