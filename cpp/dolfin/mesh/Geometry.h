@@ -15,7 +15,7 @@ namespace dolfin
 {
 namespace fem
 {
-class CoordinateMapping;
+class CoordinateElement;
 }
 
 namespace mesh
@@ -62,7 +62,6 @@ public:
   /// Return coordinate array for point with local index n
   Eigen::Ref<const Eigen::Vector3d> x(std::size_t n) const;
 
-  // Should this return an Eigen::Ref?
   /// Return array of coordinates for all points
   Eigen::Array<double, Eigen::Dynamic, 3, Eigen::RowMajor>& points();
 
@@ -81,8 +80,8 @@ public:
   /// Return informal string representation (pretty-print)
   std::string str(bool verbose) const;
 
-  /// Put CoordinateMapping for now. Experimental.
-  std::shared_ptr<const fem::CoordinateMapping> coord_mapping;
+  /// Put CoordinateElement for now. Experimental.
+  std::shared_ptr<const fem::CoordinateElement> coord_mapping;
 
 private:
   // Coordinates for all points stored as a contiguous array

@@ -119,7 +119,7 @@ void FormIntegrals::set_domains(FormIntegrals::Type type,
   }
 
   // Get reference to mesh function data array
-  Eigen::Ref<const Eigen::Array<std::size_t, Eigen::Dynamic, 1>> mf_values
+  const Eigen::Array<std::size_t, Eigen::Dynamic, 1>& mf_values
       = marker.values();
   const int num_entities = mesh->topology().ghost_offset(dim);
 
@@ -146,7 +146,7 @@ void FormIntegrals::set_domains(FormIntegrals::Type type,
   {
     const int rank = MPI::rank(mesh->mpi_comm());
     const std::vector<std::int32_t>& cell_owners
-        = mesh->topology().cell_owner();
+        = mesh->topology().entity_owner(tdim);
     const std::int32_t cell_ghost_offset = mesh->topology().ghost_offset(tdim);
     std::shared_ptr<const mesh::Connectivity> connectivity
         = mesh->topology().connectivity(tdim - 1, tdim);
@@ -240,7 +240,7 @@ void FormIntegrals::set_default_domains(const mesh::Mesh& mesh)
     {
       // Get owner (MPI ranks) of ghost cells
       const std::vector<std::int32_t>& cell_owners
-          = mesh.topology().cell_owner();
+          = mesh.topology().entity_owner(tdim);
       const std::int32_t ghost_offset = mesh.topology().ghost_offset(tdim);
 
       std::shared_ptr<const mesh::Connectivity> connectivity

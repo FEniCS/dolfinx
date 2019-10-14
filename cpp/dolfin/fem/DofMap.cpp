@@ -118,7 +118,7 @@ fem::DofMap build_collapsed_dofmap(const DofMap& dofmap_view,
     old_to_new[dof] = count++;
 
   // Build new dofmap
-  Eigen::Ref<const Eigen::Array<PetscInt, Eigen::Dynamic, 1>> dof_array_view
+  const Eigen::Array<PetscInt, Eigen::Dynamic, 1>& dof_array_view
       = dofmap_view.dof_array();
   Eigen::Array<PetscInt, Eigen::Dynamic, 1> _dofmap(dof_array_view.size());
   for (Eigen::Index i = 0; i < _dofmap.size(); ++i)
@@ -208,8 +208,7 @@ void DofMap::set(Eigen::Ref<Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1>> x,
     x[_dofmap[i]] = value;
 }
 //-----------------------------------------------------------------------------
-Eigen::Ref<const Eigen::Array<PetscInt, Eigen::Dynamic, 1>>
-DofMap::dof_array() const
+const Eigen::Array<PetscInt, Eigen::Dynamic, 1>& DofMap::dof_array() const
 {
   return _dofmap;
 }

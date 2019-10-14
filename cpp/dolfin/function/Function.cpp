@@ -11,7 +11,7 @@
 #include <dolfin/common/Timer.h>
 #include <dolfin/common/UniqueIdGenerator.h>
 #include <dolfin/common/utils.h>
-#include <dolfin/fem/CoordinateMapping.h>
+#include <dolfin/fem/CoordinateElement.h>
 #include <dolfin/fem/DofMap.h>
 #include <dolfin/fem/FiniteElement.h>
 #include <dolfin/geometry/BoundingBoxTree.h>
@@ -150,10 +150,9 @@ la::PETScVector& Function::vector()
 const la::PETScVector& Function::vector() const { return _vector; }
 //-----------------------------------------------------------------------------
 void Function::eval(
-    const Eigen::Ref<const Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic,
-                                        Eigen::RowMajor>>
-        x,
-    const Eigen::Ref<const Eigen::Array<int, Eigen::Dynamic, 1>> cells,
+    const Eigen::Ref<
+        const Eigen::Array<double, Eigen::Dynamic, 3, Eigen::RowMajor>>& x,
+    const Eigen::Ref<const Eigen::Array<int, Eigen::Dynamic, 1>>& cells,
     Eigen::Ref<Eigen::Array<PetscScalar, Eigen::Dynamic, Eigen::Dynamic,
                             Eigen::RowMajor>>
         u) const
@@ -182,9 +181,9 @@ void Function::eval(
   // Get geometry data
   const mesh::Connectivity& connectivity_g
       = mesh.coordinate_dofs().entity_points();
-  const Eigen::Ref<const Eigen::Array<std::int32_t, Eigen::Dynamic, 1>> pos_g
+  const Eigen::Array<std::int32_t, Eigen::Dynamic, 1>& pos_g
       = connectivity_g.entity_positions();
-  const Eigen::Ref<const Eigen::Array<std::int32_t, Eigen::Dynamic, 1>> cell_g
+  const Eigen::Array<std::int32_t, Eigen::Dynamic, 1>& cell_g
       = connectivity_g.connections();
 
   // FIXME: Add proper interface for num coordinate dofs
@@ -195,12 +194,12 @@ void Function::eval(
       coordinate_dofs(num_dofs_g, gdim);
 
   // Get coordinate mapping
-  std::shared_ptr<const fem::CoordinateMapping> cmap
+  std::shared_ptr<const fem::CoordinateElement> cmap
       = mesh.geometry().coord_mapping;
   if (!cmap)
   {
     throw std::runtime_error(
-        "fem::CoordinateMapping has not been attached to mesh.");
+        "fem::CoordinateElement has not been attached to mesh.");
   }
 
   // Get element
@@ -249,7 +248,8 @@ void Function::eval(
         coordinate_dofs(i, j) = x_g(cell_g[pos_g[cell_index] + i], j);
 
     // Compute reference coordinates X, and J, detJ and K
-    cmap->compute_reference_geometry(X, J, detJ, K, x.row(p), coordinate_dofs);
+    cmap->compute_reference_geometry(X, J, detJ, K, x.row(p).head(gdim),
+                                     coordinate_dofs);
 
     // Compute basis on reference element
     element.evaluate_reference_basis(basis_reference_values, X);
@@ -259,8 +259,6 @@ void Function::eval(
                                       J, detJ, K);
 
     // Get degrees of freedom for current cell
-    // const mesh::MeshEntity cell(mesh, tdim, cell_index);
-    // restrict(cell, coordinate_dofs, coefficients.data());
     auto dofs = dofmap.cell_dofs(cell_index);
     for (Eigen::Index i = 0; i < dofs.size(); ++i)
       coefficients[i] = _v[dofs[i]];
@@ -284,10 +282,20 @@ void Function::interpolate(const Function& v)
   _function_space->interpolate(x.x, v);
 }
 //-----------------------------------------------------------------------------
-void Function::interpolate(const FunctionSpace::interpolation_function& f)
+void Function::interpolate(
+    const std::function<Eigen::Array<PetscScalar, Eigen::Dynamic,
+                                     Eigen::Dynamic, Eigen::RowMajor>(
+        const Eigen::Ref<const Eigen::Array<
+            double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>>&)>& f)
 {
   la::VecWrapper x(_vector.vec());
   _function_space->interpolate(x.x, f);
+}
+//-----------------------------------------------------------------------------
+void Function::interpolate_c(const FunctionSpace::interpolation_function& f)
+{
+  la::VecWrapper x(_vector.vec());
+  _function_space->interpolate_c(x.x, f);
 }
 //-----------------------------------------------------------------------------
 int Function::value_rank() const
@@ -336,24 +344,23 @@ Function::compute_point_values() const
   Eigen::Array<PetscScalar, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
       point_values(mesh.geometry().num_points(), value_size_loc);
 
-  const int gdim = mesh.topology().dim();
   const mesh::Connectivity& cell_dofs = mesh.coordinate_dofs().entity_points();
 
   // Prepare cell geometry
   const mesh::Connectivity& connectivity_g
       = mesh.coordinate_dofs().entity_points();
-  const Eigen::Ref<const Eigen::Array<std::int32_t, Eigen::Dynamic, 1>> pos_g
+  const Eigen::Array<std::int32_t, Eigen::Dynamic, 1>& pos_g
       = connectivity_g.entity_positions();
-  const Eigen::Ref<const Eigen::Array<std::int32_t, Eigen::Dynamic, 1>> cell_g
+  const Eigen::Array<std::int32_t, Eigen::Dynamic, 1>& cell_g
       = connectivity_g.connections();
   // FIXME: Add proper interface for num coordinate dofs
   const int num_dofs_g = connectivity_g.size(0);
   const Eigen::Array<double, Eigen::Dynamic, 3, Eigen::RowMajor>& x_g
       = mesh.geometry().points();
 
-  // Interpolate point values on each cell (using last computed value
-  // if not continuous, e.g. discontinuous Galerkin methods)
-  EigenRowArrayXXd x(num_dofs_g, mesh.geometry().dim());
+  // Interpolate point values on each cell (using last computed value if
+  // not continuous, e.g. discontinuous Galerkin methods)
+  Eigen::Array<double, Eigen::Dynamic, 3, Eigen::RowMajor> x(num_dofs_g, 3);
   Eigen::Array<PetscScalar, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
       values(num_dofs_g, value_size_loc);
   for (auto& cell : mesh::MeshRange(mesh, tdim, mesh::MeshRangeType::ALL))
@@ -361,8 +368,7 @@ Function::compute_point_values() const
     // Get coordinates for all points in cell
     const int cell_index = cell.index();
     for (int i = 0; i < num_dofs_g; ++i)
-      for (int j = 0; j < gdim; ++j)
-        x(i, j) = x_g(cell_g[pos_g[cell_index] + i], j);
+      x.row(i) = x_g.row(cell_g[pos_g[cell_index] + i]);
 
     values.resize(x.rows(), value_size_loc);
 

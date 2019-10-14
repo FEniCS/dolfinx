@@ -634,9 +634,9 @@ fem::Form fem::create_form(
         "Vertex integrals not supported. Under development.");
   }
 
-  // Create CoordinateMapping
+  // Create CoordinateElement
   ufc_coordinate_mapping* cmap = ufc_form.create_coordinate_mapping();
-  std::shared_ptr<const fem::CoordinateMapping> coord_mapping
+  std::shared_ptr<const fem::CoordinateElement> coord_mapping
       = fem::get_cmap_from_ufc_cmap(*cmap);
   std::free(cmap);
 
@@ -645,7 +645,7 @@ fem::Form fem::create_form(
                    fem::get_constants_from_ufc_form(ufc_form), coord_mapping);
 }
 //-----------------------------------------------------------------------------
-std::shared_ptr<const fem::CoordinateMapping>
+std::shared_ptr<const fem::CoordinateElement>
 fem::get_cmap_from_ufc_cmap(const ufc_coordinate_mapping& ufc_cmap)
 {
   static const std::map<ufc_shape, mesh::CellType> ufc_to_cell
@@ -661,7 +661,7 @@ fem::get_cmap_from_ufc_cmap(const ufc_coordinate_mapping& ufc_cmap)
   mesh::CellType cell_type = it->second;
   assert(ufc_cmap.topological_dimension == mesh::cell_dim(cell_type));
 
-  return std::make_shared<fem::CoordinateMapping>(
+  return std::make_shared<fem::CoordinateElement>(
       cell_type, ufc_cmap.topological_dimension, ufc_cmap.geometric_dimension,
       ufc_cmap.signature, ufc_cmap.compute_physical_coordinates,
       ufc_cmap.compute_reference_geometry);

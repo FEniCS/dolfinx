@@ -48,7 +48,6 @@ from .cpp.nls import (NonlinearProblem, NewtonSolver)
 
 from .fem.form import Form
 from .fem.dirichletbc import DirichletBC
-from .fem.interpolation import interpolate
 from .fem.solving import solve
 
 from .functionspace import (FunctionSpace, VectorFunctionSpace,

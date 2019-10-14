@@ -8,7 +8,6 @@
 
 # from dolfin import MPI, UnitSquareMesh
 # from dolfin.cpp.mesh import PeriodicBoundaryComputation
-# from dolfin_utils.test.fixtures import fixture
 # from dolfin_utils.test.skips import skip_in_parallel
 
 
@@ -16,7 +15,7 @@
 #     return np.isclose(x[:, 0], 0.0)
 
 
-# @fixture
+# @pytest.fixture
 # def mesh():
 #     return UnitSquareMesh(MPI.comm_world, 4, 4)
 

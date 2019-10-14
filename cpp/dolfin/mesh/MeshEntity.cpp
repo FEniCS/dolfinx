@@ -37,7 +37,7 @@ int MeshEntity::index(const MeshEntity& entity) const
   // Entity was not found
   throw std::runtime_error("Mesh entity was not found");
 
-  return 0;
+  return -1;
 }
 //-----------------------------------------------------------------------------
 std::string MeshEntity::str(bool verbose) const

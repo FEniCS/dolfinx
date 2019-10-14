@@ -34,7 +34,6 @@ public:
   static mesh::Mesh create(MPI_Comm comm, std::size_t n,
                            std::array<double, 2> x,
                            const mesh::GhostMode ghost_mode);
-
 };
 } // namespace generation
 } // namespace dolfin

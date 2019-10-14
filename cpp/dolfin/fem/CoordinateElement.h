@@ -19,19 +19,24 @@ namespace dolfin
 namespace fem
 {
 
+// FIXME: A dof layout on a reference cell needs to be defined.
 /// This class manages coordinate mappings for isoparametric cells.
 
-class CoordinateMapping
+class CoordinateElement
 {
 public:
-  /// Create a CoordinateMapping object
+  /// Create a coordinate element
   /// @param[in] cell_type
   /// @param[in] topological_dimension
   /// @param[in] geometric_dimension
   /// @param[in] signature
-  /// @param[in] compute_physical_coordinates
-  /// @param[in] compute_reference_geometry
-  CoordinateMapping(
+  /// @param[in] compute_physical_coordinates Push-forward function from
+  ///                                         reference to physical
+  ///                                         coordinates
+  /// @param[in] compute_reference_geometry Pull-back function from
+  ///                                       physical coordinates to
+  ///                                       reference coordinates
+  CoordinateElement(
       mesh::CellType cell_type, int topological_dimension,
       int geometric_dimension, std::string signature,
       std::function<void(double*, int, const double*, const double*)>
@@ -41,23 +46,28 @@ public:
           compute_reference_geometry);
 
   /// Destructor
-  virtual ~CoordinateMapping() = default;
+  virtual ~CoordinateElement() = default;
 
-  /// Return a string identifying the finite element
+  /// String identifying the finite element
+  /// @return The signature
   std::string signature() const;
 
-  /// Return the cell shape
+  /// Cell shape
+  /// @return The cell shape
   mesh::CellType cell_shape() const;
 
   /// Return the topological dimension of the cell shape
-  std::uint32_t topological_dimension() const;
+  int topological_dimension() const;
 
   /// Return the geometric dimension of the cell shape
-  std::uint32_t geometric_dimension() const;
+  int geometric_dimension() const;
 
   /// Compute physical coordinates x for points X  in the reference
   /// configuration
-  void compute_physical_coordinates(
+  /// @param[in,out] x The physical coordinates of the reference points X
+  /// @param[in] X The coordinates on the reference cells
+  /// @param[in] cell_geometry The cell node coordinates (physical)
+  void push_forward(
       Eigen::Ref<
           Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>>
           x,
@@ -65,20 +75,20 @@ public:
                                           Eigen::Dynamic, Eigen::RowMajor>>& X,
       const Eigen::Ref<const Eigen::Array<double, Eigen::Dynamic,
                                           Eigen::Dynamic, Eigen::RowMajor>>&
-          coordinate_dofs) const;
+          cell_geometry) const;
 
   /// Compute reference coordinates X, and J, detJ and K for physical
   /// coordinates x
   void compute_reference_geometry(
       Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>& X,
       Eigen::Tensor<double, 3, Eigen::RowMajor>& J,
-      Eigen::Array<double, Eigen::Dynamic, 1>& detJ,
+      Eigen::Ref<Eigen::Array<double, Eigen::Dynamic, 1>> detJ,
       Eigen::Tensor<double, 3, Eigen::RowMajor>& K,
       const Eigen::Ref<const Eigen::Array<double, Eigen::Dynamic,
                                           Eigen::Dynamic, Eigen::RowMajor>>& x,
       const Eigen::Ref<const Eigen::Array<double, Eigen::Dynamic,
                                           Eigen::Dynamic, Eigen::RowMajor>>&
-          coordinate_dofs) const;
+          cell_geometry) const;
 
 private:
   int _tdim, _gdim;

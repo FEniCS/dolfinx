@@ -15,33 +15,31 @@ from petsc4py import PETSc
 
 import ufl
 from dolfin import (MPI, Function, FunctionSpace, TensorFunctionSpace,
-                    UnitCubeMesh, VectorFunctionSpace, cpp, geometry,
-                    interpolate)
-from dolfin_utils.test.fixtures import fixture
+                    UnitCubeMesh, VectorFunctionSpace, cpp, geometry)
 from dolfin_utils.test.skips import skip_if_complex, skip_in_parallel
 
 
-@fixture
+@pytest.fixture
 def mesh():
     return UnitCubeMesh(MPI.comm_world, 3, 3, 3)
 
 
-@fixture
+@pytest.fixture
 def R(mesh):
     return FunctionSpace(mesh, ('R', 0))
 
 
-@fixture
+@pytest.fixture
 def V(mesh):
     return FunctionSpace(mesh, ('CG', 1))
 
 
-@fixture
+@pytest.fixture
 def W(mesh):
     return VectorFunctionSpace(mesh, ('CG', 1))
 
 
-@fixture
+@pytest.fixture
 def Q(mesh):
     return TensorFunctionSpace(mesh, ('CG', 1))
 
@@ -140,15 +138,18 @@ def test_eval(R, V, W, Q, mesh):
     u2 = Function(W)
     u3 = Function(Q)
 
-    def e1(values, x):
-        values[:, 0] = x[:, 0] + x[:, 1] + x[:, 2]
+    def e1(x):
+        return x[:, 0] + x[:, 1] + x[:, 2]
 
-    def e2(values, x):
+    def e2(x):
+        values = np.empty((x.shape[0], 3))
         values[:, 0] = x[:, 0] + x[:, 1] + x[:, 2]
         values[:, 1] = x[:, 0] - x[:, 1] - x[:, 2]
         values[:, 2] = x[:, 0] + x[:, 1] + x[:, 2]
+        return values
 
-    def e3(values, x):
+    def e3(x):
+        values = np.empty((x.shape[0], 9))
         values[:, 0] = x[:, 0] + x[:, 1] + x[:, 2]
         values[:, 1] = x[:, 0] - x[:, 1] - x[:, 2]
         values[:, 2] = x[:, 0] + x[:, 1] + x[:, 2]
@@ -158,6 +159,7 @@ def test_eval(R, V, W, Q, mesh):
         values[:, 6] = -x[:, 0]
         values[:, 7] = -x[:, 1]
         values[:, 8] = -x[:, 2]
+        return values
 
     u0.vector.set(1.0)
     u1.interpolate(e1)
@@ -212,21 +214,21 @@ def test_scalar_conditions(R):
 
 @pytest.mark.skip
 def test_interpolation_mismatch_rank0(W):
-    def f(values, x):
-        values[:, 0] = 1.0
-
+    def f(x):
+        return np.ones(x.shape[0])
+    u = Function(W)
     with pytest.raises(RuntimeError):
-        interpolate(f, W)
+        u.interpolate(f)
 
 
 @pytest.mark.skip
 def test_interpolation_mismatch_rank1(W):
     def f(values, x):
-        values[:, 0] = 1.0
-        values[:, 1] = 1.0
+        return np.ones((x.shape[0], 2))
 
+    u = Function(W)
     with pytest.raises(RuntimeError):
-        interpolate(f, W)
+        u.interpolate(f)
 
 
 def test_interpolation_rank0(V):
@@ -234,16 +236,17 @@ def test_interpolation_rank0(V):
         def __init__(self):
             self.t = 0.0
 
-        def eval(self, values, x):
-            values[:, 0] = self.t
+        def eval(self, x):
+            return np.full(x.shape[0], self.t)
 
     f = MyExpression()
     f.t = 1.0
-    w = interpolate(f.eval, V)
+    w = Function(V)
+    w.interpolate(f.eval)
     with w.vector.localForm() as x:
         assert (x[:] == 1.0).all()
     f.t = 2.0
-    w = interpolate(f.eval, V)
+    w.interpolate(f.eval)
     with w.vector.localForm() as x:
         assert (x[:] == 2.0).all()
 
@@ -267,12 +270,15 @@ def xtest_near_evaluations(R, mesh):
 
 
 def test_interpolation_rank1(W):
-    def f(values, x):
+    def f(x):
+        values = np.empty((x.shape[0], 3))
         values[:, 0] = 1.0
         values[:, 1] = 1.0
         values[:, 2] = 1.0
+        return values
 
-    w = interpolate(f, W)
+    w = Function(W)
+    w.interpolate(f)
     x = w.vector
     assert x.max()[1] == 1.0
     assert x.min()[1] == 1.0
@@ -280,11 +286,11 @@ def test_interpolation_rank1(W):
 
 @skip_in_parallel
 def test_interpolation_old(V, W, mesh):
-    def f0(values, x):
-        values[:, 0] = 1.0
+    def f0(x):
+        return np.ones(x.shape[0])
 
-    def f1(values, x):
-        values[:, :] = 1.0
+    def f1(x):
+        return np.ones((x.shape[0], mesh.geometry.dim))
 
     # Scalar interpolation
     f = Function(V)
@@ -331,8 +337,8 @@ def test_cffi_expression(V):
     f1 = Function(V)
     f1.interpolate(int(eval_ptr))
 
-    def expr_eval2(values, x):
-        values[:, 0] = x[:, 0] + x[:, 1]
+    def expr_eval2(x):
+        return x[:, 0] + x[:, 1]
 
     f2 = Function(V)
     f2.interpolate(expr_eval2)

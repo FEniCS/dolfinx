@@ -159,8 +159,7 @@ MeshValueCollection<T>::MeshValueCollection(
   const int D = _mesh->topology().dim();
 
   // Prefetch values of mesh function
-  Eigen::Ref<const Eigen::Array<T, Eigen::Dynamic, 1>> mf_values
-      = mesh_function.values();
+  const Eigen::Array<T, Eigen::Dynamic, 1>& mf_values = mesh_function.values();
 
   // Handle cells as a special case
   if (D == _dim)
@@ -213,8 +212,7 @@ operator=(const MeshFunction<T>& mesh_function)
   // FIXME: Use iterators
 
   // Prefetch values of mesh function
-  Eigen::Ref<const Eigen::Array<T, Eigen::Dynamic, 1>> mf_values
-      = mesh_function.values();
+  const Eigen::Array<T, Eigen::Dynamic, 1>& mf_values = mesh_function.values();
 
   // Handle cells as a special case
   if (D == _dim)

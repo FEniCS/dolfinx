@@ -83,9 +83,7 @@ def mpi_jit_decorator(local_jit, *args, **kwargs):
             # the error without deadlock
             if not root:
                 error_msg = "Compilation failed on root node."
-            cpp.dolfin_error("jit.py",
-                             "perform just-in-time compilation of form",
-                             error_msg)
+            raise RuntimeError("Failed just-in-time compilation of form: {}".format(error_msg))
         return output
 
     # Return the decorated jit function

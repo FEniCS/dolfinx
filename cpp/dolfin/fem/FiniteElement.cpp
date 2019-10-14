@@ -105,7 +105,8 @@ std::string FiniteElement::family() const { return _family; }
 //-----------------------------------------------------------------------------
 void FiniteElement::evaluate_reference_basis(
     Eigen::Tensor<double, 3, Eigen::RowMajor>& reference_values,
-    const Eigen::Ref<const EigenRowArrayXXd> X) const
+    const Eigen::Ref<const Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic,
+                                        Eigen::RowMajor>>& X) const
 {
   assert(_evaluate_reference_basis);
   const int num_points = X.rows();
@@ -121,9 +122,10 @@ void FiniteElement::evaluate_reference_basis(
 void FiniteElement::transform_reference_basis(
     Eigen::Tensor<double, 3, Eigen::RowMajor>& values,
     const Eigen::Tensor<double, 3, Eigen::RowMajor>& reference_values,
-    const Eigen::Ref<const EigenRowArrayXXd> X,
+    const Eigen::Ref<const Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic,
+                                        Eigen::RowMajor>>& X,
     const Eigen::Tensor<double, 3, Eigen::RowMajor>& J,
-    const Eigen::Ref<const EigenArrayXd> detJ,
+    const Eigen::Ref<const Eigen::Array<double, Eigen::Dynamic, 1>>& detJ,
     const Eigen::Tensor<double, 3, Eigen::RowMajor>& K) const
 {
   assert(_transform_reference_basis_derivatives);
@@ -141,9 +143,10 @@ void FiniteElement::transform_reference_basis(
 void FiniteElement::transform_reference_basis_derivatives(
     Eigen::Tensor<double, 4, Eigen::RowMajor>& values, std::size_t order,
     const Eigen::Tensor<double, 4, Eigen::RowMajor>& reference_values,
-    const Eigen::Ref<const EigenRowArrayXXd> X,
+    const Eigen::Ref<const Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic,
+                                        Eigen::RowMajor>>& X,
     const Eigen::Tensor<double, 3, Eigen::RowMajor>& J,
-    const Eigen::Ref<const EigenArrayXd> detJ,
+    const Eigen::Ref<const Eigen::Array<double, Eigen::Dynamic, 1>>& detJ,
     const Eigen::Tensor<double, 3, Eigen::RowMajor>& K) const
 {
   assert(_transform_reference_basis_derivatives);
@@ -158,7 +161,8 @@ void FiniteElement::transform_reference_basis_derivatives(
   }
 }
 //-----------------------------------------------------------------------------
-const EigenRowArrayXXd& FiniteElement::dof_reference_coordinates() const
+const Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>&
+FiniteElement::dof_reference_coordinates() const
 {
   return _refX;
 }
@@ -168,7 +172,9 @@ void FiniteElement::transform_values(
     const Eigen::Ref<const Eigen::Array<PetscScalar, Eigen::Dynamic,
                                         Eigen::Dynamic, Eigen::RowMajor>>&
         physical_values,
-    const Eigen::Ref<const EigenRowArrayXXd>& coordinate_dofs) const
+    const Eigen::Ref<const Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic,
+                                        Eigen::RowMajor>>& coordinate_dofs)
+    const
 {
   assert(_transform_values);
   _transform_values(reference_values, physical_values.data(),
