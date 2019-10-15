@@ -4,9 +4,9 @@
 //
 // SPDX-License-Identifier:    LGPL-3.0-or-later
 
+#include <iostream> // REMOVE: for testing
 #include <tuple>
 #include <vector>
-#include <iostream>  // REMOVE: for testing only
 
 namespace dolfin
 {
@@ -35,7 +35,7 @@ public:
   int get_permutation_number(const std::vector<int> orders) const;
   std::vector<int> get_orders(const int number) const;
 
-  // REMOVE: for testing only
+  // REMOVE: for testing
   void print_p(const std::vector<int> p, const int start=0) const {
     std::cout << "["; for(int i=start;i<p.size();++i) {std::cout << p[i];if(i+1<p.size()) std::cout << " ";}
     std::cout << "]" << std::endl;
