@@ -14,10 +14,9 @@ namespace dolfin
 namespace fem
 {
 //-----------------------------------------------------------------------------
-DofMapPermuter::DofMapPermuter(const int dofs) : dof_count(dofs)
-{
-  // Do nothing
-}
+DofMapPermuter::DofMapPermuter(){};
+//-----------------------------------------------------------------------------
+void DofMapPermuter::set_dof_count(const int dofs) { dof_count = dofs; }
 //-----------------------------------------------------------------------------
 void DofMapPermuter::add_permutation(const std::vector<int> permutation, int order)
 {
@@ -35,11 +34,8 @@ void DofMapPermuter::set_cell(const int cell, const std::vector<int> orders)
   _cell_orders[cell] = orders;
 }
 //-----------------------------------------------------------------------------
-void DofMapPermuter::prepare(const int cells)
+void DofMapPermuter::set_cell_count(const int cells)
 {
-  _total_options=1;
-  for(int i=0;i<_permutation_orders.size();++i)
-    _total_options *= _permutation_orders[i];
   _cell_orders.resize(cells,{0,0,0,0});
 }
 //-----------------------------------------------------------------------------
@@ -109,7 +105,8 @@ DofMapPermuter generate_cell_permutations_triangle(const mesh::Mesh mesh,
     const int vertex_dofs, const int edge_dofs, const int face_dofs)
 {
   const int dof_count = 3*vertex_dofs + 3*edge_dofs + face_dofs;
-  DofMapPermuter output(dof_count);
+  DofMapPermuter output;
+  output.set_dof_count(dof_count);
 
   float root = std::sqrt(8*face_dofs+1);
   assert(root == floor(root) && root%2 == 1);
@@ -141,7 +138,7 @@ DofMapPermuter generate_cell_permutations_triangle(const mesh::Mesh mesh,
     for(int st=face_dofs-1;st>=0;st-=(i++))
     {
       int dof = 3*vertex_dofs + 3*edge_dofs + st;
-      for(int sub=i+1;sub<=side_length+1;dof-=(sub++))
+      for (int sub = i + 1; sub <= side_length + 1; dof -= (sub++))
         rotation[j++] = dof;
     }
     assert(j == dof_count);
@@ -152,12 +149,13 @@ DofMapPermuter generate_cell_permutations_triangle(const mesh::Mesh mesh,
   {
     std::vector<int> reflection(dof_count);
     int j=0;
-    for(int dof=0;dof<3*vertex_dofs+3*edge_dofs;++dof)
+    for (int dof = 0; dof < 3 * vertex_dofs + 3 * edge_dofs; ++dof)
       reflection[j++] = dof;
     // face
-    for(int st=0;st<side_length;++st){
+    for (int st = 0; st < side_length; ++st)
+    {
       int dof = 3*vertex_dofs + 3*edge_dofs + st;
-      for(int add=side_length+1;add>=st+2;dof+= (add--))
+      for (int add = side_length; add > st; dof += (add--))
         reflection[j++] = dof;
     }
     assert(j == dof_count);
@@ -165,7 +163,7 @@ DofMapPermuter generate_cell_permutations_triangle(const mesh::Mesh mesh,
   }
 
   int cells = mesh.num_entities(mesh.topology().dim());
-  output.prepare(cells);
+  output.set_cell_count(cells);
 
   for(int cell_n=0;cell_n<cells;++cell_n){
     const mesh::MeshEntity cell(mesh, 2, cell_n);
@@ -200,7 +198,8 @@ DofMapPermuter generate_cell_permutations_quadrilateral(const mesh::Mesh mesh,
     const int vertex_dofs, const int edge_dofs, const int face_dofs)
 {
   const int dof_count = 4*vertex_dofs + 4*edge_dofs + face_dofs;
-  DofMapPermuter output(dof_count);
+  DofMapPermuter output;
+  output.set_dof_count(dof_count);
   return output;
 }
 } // namespace fem

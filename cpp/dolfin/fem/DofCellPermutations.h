@@ -23,14 +23,15 @@ class DofMapPermuter
 {
 public:
   /// Build permuter
-  DofMapPermuter(const int dofs);
+  DofMapPermuter();
   std::vector<int> cell_permutation(const int cell) const;
   std::vector<int> permute(std::vector<int> vec, std::vector<int> perm) const;
   void add_permutation(const std::vector<int> permutation, int order);
 
   void set_cell(const int cell,const int permutation);
   void set_cell(const int cell, const std::vector<int> orders);
-  void prepare(const int cells);
+  void set_cell_count(const int cells);
+  void set_dof_count(const int dofs);
   int get_permutation_number(const std::vector<int> orders) const;
   std::vector<int> get_orders(const int number) const;
 
@@ -46,7 +47,6 @@ private:
 
   std::vector<std::vector<int>> _permutations;
   std::vector<int> _permutation_orders;
-  int _total_options;
 };
 
 

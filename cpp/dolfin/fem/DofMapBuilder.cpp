@@ -359,7 +359,6 @@ DofMapStructure build_basic_dofmap(const mesh::Mesh& mesh,
 
     // Get cell permutation
     std::vector<int> permutation = permuter.cell_permutation(cell.index());
-
     // Iterate over topological dimensions
     std::int32_t offset_local = 0;
     std::int64_t offset_global = 0;
@@ -397,7 +396,6 @@ DofMapStructure build_basic_dofmap(const mesh::Mesh& mesh,
       offset_global += entity_dofs[d][0].size() * num_mesh_entities_global[d];
     }
   }
-
 
   return dofmap;
 }
