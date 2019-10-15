@@ -10,7 +10,7 @@
 #include <dolfin/common/UniqueIdGenerator.h>
 #include <dolfin/common/types.h>
 #include <dolfin/common/utils.h>
-#include <dolfin/fem/CoordinateMapping.h>
+#include <dolfin/fem/CoordinateElement.h>
 #include <dolfin/fem/DofMap.h>
 #include <dolfin/fem/FiniteElement.h>
 #include <dolfin/mesh/CoordinateDofs.h>
@@ -295,9 +295,9 @@ FunctionSpace::tabulate_dof_coordinates() const
   if (!_mesh->geometry().coord_mapping)
   {
     throw std::runtime_error(
-        "CoordinateMapping has not been attached to mesh.");
+        "CoordinateElement has not been attached to mesh.");
   }
-  const fem::CoordinateMapping& cmap = *_mesh->geometry().coord_mapping;
+  const fem::CoordinateElement& cmap = *_mesh->geometry().coord_mapping;
 
   // Cell coordinates (re-allocated inside function for thread safety)
   // Prepare cell geometry
@@ -330,7 +330,7 @@ FunctionSpace::tabulate_dof_coordinates() const
     auto dofs = _dofmap->cell_dofs(cell.index());
 
     // Tabulate dof coordinates on cell
-    cmap.compute_physical_coordinates(coordinates, X, coordinate_dofs);
+    cmap.push_forward(coordinates, X, coordinate_dofs);
 
     // Copy dof coordinates into vector
     for (Eigen::Index i = 0; i < dofs.size(); ++i)
@@ -377,9 +377,9 @@ void FunctionSpace::set_x(
   if (!_mesh->geometry().coord_mapping)
   {
     throw std::runtime_error(
-        "CoordinateMapping has not been attached to mesh.");
+        "CoordinateElement has not been attached to mesh.");
   }
-  const fem::CoordinateMapping& cmap = *_mesh->geometry().coord_mapping;
+  const fem::CoordinateElement& cmap = *_mesh->geometry().coord_mapping;
 
   Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
       coordinates(_element->space_dimension(), _mesh->geometry().dim());
@@ -397,7 +397,7 @@ void FunctionSpace::set_x(
     auto dofs = _dofmap->cell_dofs(cell.index());
 
     // Tabulate dof coordinates
-    cmap.compute_physical_coordinates(coordinates, X, coordinate_dofs);
+    cmap.push_forward(coordinates, X, coordinate_dofs);
 
     assert(coordinates.rows() == dofs.size());
     assert(component < (int)coordinates.cols());

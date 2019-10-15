@@ -38,6 +38,16 @@ void nls(py::module& m)
       return dolfin::nls::NewtonSolver::converged(r, nonlinear_problem,
                                                   iteration);
     }
+
+    void update_solution(Vec x, const Vec dx, double relaxation,
+                         const dolfin::nls::NonlinearProblem& nonlinear_problem,
+                         std::size_t iteration)
+    {
+      PYBIND11_OVERLOAD_INT(void, dolfin::nls::NewtonSolver, "update_solution",
+                            x, &dx, relaxation, &nonlinear_problem, iteration);
+      return dolfin::nls::NewtonSolver::update_solution(
+              x, dx, relaxation, nonlinear_problem, iteration);
+    }
   };
 
   // Class used to expose protected dolfin::NewtonSolver members

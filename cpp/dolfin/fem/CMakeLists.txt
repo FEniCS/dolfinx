@@ -3,7 +3,7 @@ set(HEADERS
   assemble_matrix_impl.h
   assemble_scalar_impl.h
   assemble_vector_impl.h
-  CoordinateMapping.h
+  CoordinateElement.h
   DirichletBC.h
   DiscreteOperators.h
   DofMapPermuter.h
@@ -26,7 +26,7 @@ set(SOURCES
   assemble_matrix_impl.cpp
   assemble_scalar_impl.cpp
   assemble_vector_impl.cpp
-  CoordinateMapping.cpp
+  CoordinateElement.cpp
   DirichletBC.cpp
   DiscreteOperators.cpp
   DofMapPermuter.cpp
