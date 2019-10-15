@@ -74,7 +74,7 @@ std::vector<std::uint8_t> mesh::vtk_cell_permutation(mesh::CellType type,
     default:
       return permutation;
     }
-    for (int k = 0; k < unsigned(remainders.size()); ++k)
+    for (int k = 0; unsigned(k) < remainders.size(); ++k)
       permutation[j++] = base + remainders[k];
     return permutation;
   }
