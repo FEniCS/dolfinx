@@ -4,7 +4,7 @@
 //
 // SPDX-License-Identifier:    LGPL-3.0-or-later
 
-#include "DofCellPermutations.h"
+#include "DofMapPermuter.h"
 #include <dolfin/mesh/MeshEntity.h>
 #include <dolfin/mesh/MeshIterator.h>
 

@@ -6,7 +6,7 @@ set(HEADERS
   CoordinateMapping.h
   DirichletBC.h
   DiscreteOperators.h
-  DofCellPermutations.h
+  DofMapPermuter.h
   DofMapBuilder.h
   DofMap.h
   ElementDofLayout.h
@@ -29,7 +29,7 @@ set(SOURCES
   CoordinateMapping.cpp
   DirichletBC.cpp
   DiscreteOperators.cpp
-  DofCellPermutations.cpp
+  DofMapPermuter.cpp
   DofMapBuilder.cpp
   DofMap.cpp
   ElementDofLayout.cpp
