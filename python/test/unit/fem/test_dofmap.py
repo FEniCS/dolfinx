@@ -500,7 +500,7 @@ def test_triangle_dof_ordering(n):
         for v in range(3):
             x_coord_new[v] = x_g[coord_dofs[face, v], :2]
         x = X.copy()
-        cmap.compute_physical_coordinates(x, X, x_coord_new)
+        cmap.push_forward(x, X, x_coord_new)
 
         edges.append({i: j for i, j in zip(edge_dofs, x[edge_dofs_local])})
 
