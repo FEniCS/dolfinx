@@ -35,7 +35,4 @@ def test_interpolation_laplace():
 
     dolfin.fem.assemble_vector(f.vector, L, mode=dolfin.cpp.fem.InsertMode.set)
 
-    # Update ghosts with the same mode as assembly
-    f.vector.ghostUpdate(addv=PETSc.InsertMode.INSERT, mode=PETSc.ScatterMode.REVERSE)
-
     assert np.isclose((f.vector - 2.0).norm(), 0.0)
