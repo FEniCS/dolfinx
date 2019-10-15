@@ -6,6 +6,7 @@ import dolfin
 
 
 def test_interpolation_laplace():
+    """This test interpolates laplace of x^2 into piecewise constant space."""
     mesh = dolfin.generation.UnitSquareMesh(dolfin.MPI.comm_world, 5, 5)
 
     P2 = dolfin.FunctionSpace(mesh, ("P", 2))

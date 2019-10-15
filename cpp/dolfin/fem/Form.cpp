@@ -107,8 +107,7 @@ void Form::set_constants(
 void Form::set_constants(
     std::vector<std::shared_ptr<const function::Constant>> constants)
 {
-  if (constants.size() != _constants.size())
-    throw std::runtime_error("Incorrect number of constants.");
+  _constants.resize(constants.size());
 
   // Loop every constant that user wants to attach
   for (std::size_t i = 0; i < constants.size(); ++i)
