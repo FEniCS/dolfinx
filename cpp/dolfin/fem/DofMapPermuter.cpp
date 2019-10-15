@@ -20,10 +20,6 @@ void DofMapPermuter::set_dof_count(const int dofs) { dof_count = dofs; }
 //-----------------------------------------------------------------------------
 void DofMapPermuter::add_permutation(const std::vector<int> permutation, int order)
 {
-  for (int i = 0; i < permutation.size(); ++i)
-    if (permutation[i] > dof_count)
-      std::cout << "AAAAAAAAAAAAAAAAAHHHHHHHHHHHHHH: " << _permutations.size()
-                << std::endl;
   _permutations.push_back(permutation);
   _permutation_orders.push_back(order);
 }
@@ -96,18 +92,23 @@ DofMapPermuter generate_cell_permutations(const mesh::Mesh mesh,
   const mesh::CellType type = mesh.cell_type();
   switch (type)
   {
-    //case (mesh::CellType::quadrilateral):
-    //  return generate_cell_permutations_quadrilateral(mesh, vertex_dofs, edge_dofs, face_dofs);
-    case (mesh::CellType::triangle):
-      return generate_cell_permutations_triangle(mesh, vertex_dofs, edge_dofs, face_dofs);
-    default:
-      throw std::runtime_error("Dof ordering on this cell type is not implemented.");
+  case (mesh::CellType::quadrilateral):
+    return generate_cell_permutations_quadrilateral(mesh, vertex_dofs,
+                                                    edge_dofs, face_dofs);
+  case (mesh::CellType::triangle):
+    return generate_cell_permutations_triangle(mesh, vertex_dofs, edge_dofs,
+                                               face_dofs);
+  default:
+    throw std::runtime_error(
+        "Dof ordering on this cell type is not implemented.");
   }
 }
 //-----------------------------------------------------------------------------
 DofMapPermuter generate_cell_permutations_triangle(const mesh::Mesh mesh,
     const int vertex_dofs, const int edge_dofs, const int face_dofs)
 {
+  // FIXME: This function assumes VTK-like ordering of the dofs. It should use
+  // ElementDofLayout instead.
   const int dof_count = 3*vertex_dofs + 3*edge_dofs + face_dofs;
   DofMapPermuter output;
   output.set_dof_count(dof_count);
