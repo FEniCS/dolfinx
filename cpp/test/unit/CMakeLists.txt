@@ -16,6 +16,7 @@ set(TEST_SOURCES
   ${CMAKE_CURRENT_SOURCE_DIR}/common/SubSystemsManager.cpp
   ${CMAKE_CURRENT_SOURCE_DIR}/common/IndexMap.cpp
   ${CMAKE_CURRENT_SOURCE_DIR}/mesh/DistributedMesh.cpp
+  ${CMAKE_CURRENT_SOURCE_DIR}/common/CIFailure.cpp
   )
 
 add_executable(unittests ${TEST_SOURCES})
