@@ -1,5 +1,4 @@
 import cffi
-from petsc4py import PETSc
 import numpy as np
 
 import ufl
