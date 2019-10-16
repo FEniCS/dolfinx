@@ -11,6 +11,7 @@
 #include <algorithm>
 #include <cfloat>
 #include <cstdlib>
+#include <dolfin/common/log.h>
 #include <stdexcept>
 
 using namespace dolfin;
@@ -507,8 +508,14 @@ int mesh::cell_degree(mesh::CellType type, int num_nodes)
       return 6;
     case 36:
       return 7;
+    case 45:
+      LOG(WARNING) << "8th order mesh is untested";
+      return 8;
+    case 55:
+      LOG(WARNING) << "9th order mesh is untested";
+      return 9;
     default:
-      throw std::runtime_error("Triangle order > 7 is not supported.");
+      throw std::runtime_error("Triangle order > 9 is not supported.");
     }
   case mesh::CellType::tetrahedron:
     if (num_nodes != 4)

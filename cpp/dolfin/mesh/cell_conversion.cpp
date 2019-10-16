@@ -71,6 +71,14 @@ std::vector<std::uint8_t> mesh::vtk_cell_permutation(mesh::CellType type,
     case 7:
       remainders = {0, 4, 14, 1, 2, 3, 8, 11, 13, 12, 9, 5, 6, 7, 10};
       break;
+    case 8:
+      remainders = {0,  5,  20, 1, 2, 3, 4,  10, 14, 17, 19,
+                    18, 15, 11, 6, 7, 9, 16, 8,  13, 12};
+      break;
+    case 9:
+      remainders = {0,  6,  27, 1, 2, 3,  4,  5, 12, 17, 21, 24, 26, 25,
+                    22, 18, 13, 7, 8, 11, 23, 9, 10, 16, 20, 19, 14, 15};
+      break;
     default:
       return permutation;
     }
