@@ -147,7 +147,7 @@ def test_third_order_mesh(H, Z):
 
 @skip_in_parallel
 @pytest.mark.parametrize('H', [1, 0.3])
-@pytest.mark.parametrize('Z', [1, 0.5])
+@pytest.mark.parametrize('Z', [0.2, 0.1])
 def test_fourth_order_mesh(H, Z):
     L = 1
     #  *--*--*--*--*   3-21-20-19--2
@@ -188,7 +188,7 @@ def test_fourth_order_mesh(H, Z):
     cmap = fem.create_coordinate_map(mesh.ufl_domain())
     mesh.geometry.coord_mapping = cmap
     u.interpolate(e2)
-    intu = assemble_scalar(u * dx(metadata={"quadrature_degree": 90}))
+    intu = assemble_scalar(u * dx(metadata={"quadrature_degree": 50}))
     nodes = [0, 3, 10, 11, 12]
     ref = sympy_scipy(points, nodes, L, H)
     assert ref == pytest.approx(intu, rel=1e-4)
