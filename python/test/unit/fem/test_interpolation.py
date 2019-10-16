@@ -24,7 +24,7 @@ def test_interpolation_grad():
     ufl_expr = ufl.grad(u)
 
     # Attach the expression with P1 points of degrees of freedom
-    expr = (ufl_expr, np.array([[0.0, 0.0], [1.0, 0.0], [0.0, 1.0]]) )
+    expr = (ufl_expr, np.array([[0.0, 0.0], [1.0, 0.0], [0.0, 1.0]]))
 
     module = dolfin.jit.ffc_jit(expr)
     kernel = module.tabulate_expression
