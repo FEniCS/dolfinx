@@ -19,8 +19,8 @@
 using namespace dolfin;
 
 //-----------------------------------------------------------------------------
-std::vector<std::uint8_t> mesh::vtk_cell_permutation(mesh::CellType type,
-                                                     int num_nodes)
+std::vector<std::uint8_t> mesh::dolfin_to_vtk(mesh::CellType type,
+                                              int num_nodes)
 {
   switch (type)
   {
@@ -149,16 +149,14 @@ std::vector<std::uint8_t> mesh::vtk_to_tp(mesh::CellType type, int num_nodes)
     {
     case mesh::CellType::quadrilateral:
     {
-      std::vector<std::uint8_t> reversed
-          = mesh::vtk_cell_permutation(type, num_nodes);
+      std::vector<std::uint8_t> reversed = mesh::dolfin_to_vtk(type, num_nodes);
       std::vector<std::uint8_t> perm(num_nodes);
       for (int i = 0; i < num_nodes; ++i)
         perm[reversed[i]] = i;
       return perm;
     }
     case mesh::CellType::hexahedron:
-      std::vector<std::uint8_t> reversed
-          = mesh::vtk_cell_permutation(type, num_nodes);
+      std::vector<std::uint8_t> reversed = mesh::dolfin_to_vtk(type, num_nodes);
       std::vector<std::uint8_t> perm(num_nodes);
       for (int i = 0; i < num_nodes; ++i)
         perm[reversed[i]] = i;
@@ -169,7 +167,7 @@ std::vector<std::uint8_t> mesh::vtk_to_tp(mesh::CellType type, int num_nodes)
   }
 }
 //-----------------------------------------------------------------------------
-std::vector<std::uint8_t> mesh::lexico_to_tp(mesh::CellType type, int num_nodes)
+std::vector<std::uint8_t> mesh::lex_to_tp(mesh::CellType type, int num_nodes)
 {
   switch (type)
   {
@@ -214,7 +212,7 @@ std::vector<std::uint8_t> mesh::lexico_to_tp(mesh::CellType type, int num_nodes)
   }
 }
 //-----------------------------------------------------------------------------
-std::vector<std::uint8_t> mesh::vtk_to_fenics(mesh::CellType type,
+std::vector<std::uint8_t> mesh::vtk_to_dolfin(mesh::CellType type,
                                               int num_nodes)
 {
   switch (type)
@@ -227,7 +225,7 @@ std::vector<std::uint8_t> mesh::vtk_to_fenics(mesh::CellType type,
     case mesh::CellType::triangle:
     {
       std::vector<std::uint8_t> reversed
-          = mesh::vtk_cell_permutation(type, num_nodes);
+          = mesh::dolfin_to_vtk(type, num_nodes);
       std::vector<std::uint8_t> perm(num_nodes);
       for (int i = 0; i < num_nodes; ++i)
         perm[reversed[i]] = i;
@@ -265,7 +263,7 @@ mesh::gmsh_to_dolfin_ordering(
 {
   /// Retrieve VTK permutation for given cell type
   std::vector<std::uint8_t> permutation
-      = mesh::vtk_to_fenics(type, cells.cols());
+      = mesh::vtk_to_dolfin(type, cells.cols());
 
   /// Permute input cells
   Eigen::Array<std::int64_t, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
@@ -294,12 +292,12 @@ std::vector<std::uint8_t> mesh::default_cell_permutation(mesh::CellType type,
     {
     case 1:
       // Current default for built in meshes
-      return mesh::lexico_to_tp(type, n);
+      return mesh::lex_to_tp(type, n);
     default:
       // mesh::compute_local_to_global_point_map assumes that the first four
       // points in the connectivity array are the vertices, thus you need VTK
       // ordering.
-      return mesh::vtk_cell_permutation(type, n);
+      return mesh::dolfin_to_vtk(type, n);
     }
 
   case mesh::CellType::hexahedron:
@@ -327,6 +325,6 @@ std::vector<std::uint8_t> mesh::default_cell_permutation(mesh::CellType type,
   default:
     throw std::runtime_error("Unknown cell type.");
   }
-  return mesh::vtk_cell_permutation(type, n);
+  return mesh::dolfin_to_vtk(type, n);
 }
 //-----------------------------------------------------------------------------
