@@ -11,6 +11,7 @@
 #include "HDF5File.h"
 #include "HDF5Utility.h"
 #include "XDMFFile.h"
+#include "cell_conversion.h"
 #include "pugixml.hpp"
 #include <algorithm>
 #include <boost/algorithm/string.hpp>
@@ -34,7 +35,6 @@
 #include <dolfin/mesh/MeshIterator.h>
 #include <dolfin/mesh/MeshValueCollection.h>
 #include <dolfin/mesh/Partitioning.h>
-#include <dolfin/mesh/cell_conversion.h>
 #include <iomanip>
 #include <memory>
 #include <petscvec.h>

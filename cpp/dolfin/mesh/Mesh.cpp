@@ -18,7 +18,7 @@
 #include <dolfin/common/MPI.h>
 #include <dolfin/common/Timer.h>
 #include <dolfin/common/utils.h>
-#include <dolfin/mesh/cell_conversion.h>
+#include <dolfin/io/cell_conversion.h>
 #include <dolfin/mesh/cell_types.h>
 
 using namespace dolfin;
@@ -235,7 +235,7 @@ Mesh::Mesh(
   // This should be changed to simplicies being UFC, non-simplicies VTK
   // Get the mapping of UFC node ordering to the mesh input format
   std::vector<std::uint8_t> cell_permutation;
-  cell_permutation = mesh::default_cell_permutation(type, _degree);
+  cell_permutation = io::cells::default_cell_permutation(type, _degree);
 
   // Get number of nodes (global)
   const std::uint64_t num_points_global = MPI::sum(comm, points.rows());

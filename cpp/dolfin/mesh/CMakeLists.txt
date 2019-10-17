@@ -16,7 +16,6 @@ set(HEADERS
   PartitionData.h
   TopologyComputation.h
   cell_types.h
-  cell_conversion.h
   utils.h
   PARENT_SCOPE)
 
@@ -34,6 +33,5 @@ set(SOURCES
   PartitionData.cpp
   TopologyComputation.cpp
   cell_types.cpp
-  cell_conversion.cpp
   utils.cpp
   PARENT_SCOPE)

@@ -4,13 +4,10 @@
 //
 // SPDX-License-Identifier:    LGPL-3.0-or-later
 
-// #include "Geometry.h"
-// #include "MeshEntity.h"
-#include "cell_types.h"
+#include "cell_conversion.h"
 #include <Eigen/Dense>
-#include <cstdlib>
+#include <cstdint>
 #include <dolfin/common/log.h>
-#include <dolfin/mesh/cell_conversion.h>
 #include <dolfin/mesh/cell_types.h>
 #include <numeric>
 #include <stdexcept>
@@ -18,8 +15,8 @@
 using namespace dolfin;
 
 //-----------------------------------------------------------------------------
-std::vector<std::uint8_t> mesh::dolfin_to_vtk(mesh::CellType type,
-                                              int num_nodes)
+std::vector<std::uint8_t> io::cells::dolfin_to_vtk(mesh::CellType type,
+                                                  int num_nodes)
 {
   switch (type)
   {
@@ -141,21 +138,22 @@ std::vector<std::uint8_t> mesh::dolfin_to_vtk(mesh::CellType type,
   }
 }
 //-----------------------------------------------------------------------------
-std::vector<std::uint8_t> mesh::vtk_to_tp(mesh::CellType type, int num_nodes)
+std::vector<std::uint8_t> io::cells::vtk_to_tp(mesh::CellType type,
+                                              int num_nodes)
 {
   switch (type)
   {
     {
     case mesh::CellType::quadrilateral:
     {
-      std::vector<std::uint8_t> reversed = mesh::dolfin_to_vtk(type, num_nodes);
+      std::vector<std::uint8_t> reversed = io::cells::dolfin_to_vtk(type, num_nodes);
       std::vector<std::uint8_t> perm(num_nodes);
       for (int i = 0; i < num_nodes; ++i)
         perm[reversed[i]] = i;
       return perm;
     }
     case mesh::CellType::hexahedron:
-      std::vector<std::uint8_t> reversed = mesh::dolfin_to_vtk(type, num_nodes);
+      std::vector<std::uint8_t> reversed = io::cells::dolfin_to_vtk(type, num_nodes);
       std::vector<std::uint8_t> perm(num_nodes);
       for (int i = 0; i < num_nodes; ++i)
         perm[reversed[i]] = i;
@@ -166,7 +164,8 @@ std::vector<std::uint8_t> mesh::vtk_to_tp(mesh::CellType type, int num_nodes)
   }
 }
 //-----------------------------------------------------------------------------
-std::vector<std::uint8_t> mesh::lex_to_tp(mesh::CellType type, int num_nodes)
+std::vector<std::uint8_t> io::cells::lex_to_tp(mesh::CellType type,
+                                              int num_nodes)
 {
   switch (type)
   {
@@ -211,8 +210,8 @@ std::vector<std::uint8_t> mesh::lex_to_tp(mesh::CellType type, int num_nodes)
   }
 }
 //-----------------------------------------------------------------------------
-std::vector<std::uint8_t> mesh::vtk_to_dolfin(mesh::CellType type,
-                                              int num_nodes)
+std::vector<std::uint8_t> io::cells::vtk_to_dolfin(mesh::CellType type,
+                                                  int num_nodes)
 {
   switch (type)
   {
@@ -223,7 +222,8 @@ std::vector<std::uint8_t> mesh::vtk_to_dolfin(mesh::CellType type,
       return {0, 1};
     case mesh::CellType::triangle:
     {
-      std::vector<std::uint8_t> reversed = mesh::dolfin_to_vtk(type, num_nodes);
+      std::vector<std::uint8_t> reversed
+          = io::cells::dolfin_to_vtk(type, num_nodes);
       std::vector<std::uint8_t> perm(num_nodes);
       for (int i = 0; i < num_nodes; ++i)
         perm[reversed[i]] = i;
@@ -239,12 +239,12 @@ std::vector<std::uint8_t> mesh::vtk_to_dolfin(mesh::CellType type,
       }
     case mesh::CellType::quadrilateral:
     {
-      std::vector<std::uint8_t> perm = mesh::vtk_to_tp(type, num_nodes);
+      std::vector<std::uint8_t> perm = io::cells::vtk_to_tp(type, num_nodes);
       return perm;
     }
     case mesh::CellType::hexahedron:
     {
-      std::vector<std::uint8_t> perm = mesh::vtk_to_tp(type, num_nodes);
+      std::vector<std::uint8_t> perm = io::cells::vtk_to_tp(type, num_nodes);
       return perm;
     }
     default:
@@ -254,14 +254,14 @@ std::vector<std::uint8_t> mesh::vtk_to_dolfin(mesh::CellType type,
 }
 //-----------------------------------------------------------------------------
 Eigen::Array<std::int64_t, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
-mesh::gmsh_to_dolfin_ordering(
+io::cells::gmsh_to_dolfin_ordering(
     Eigen::Array<std::int64_t, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
         cells,
     mesh::CellType type)
 {
   /// Retrieve VTK permutation for given cell type
   std::vector<std::uint8_t> permutation
-      = mesh::vtk_to_dolfin(type, cells.cols());
+      = io::cells::vtk_to_dolfin(type, cells.cols());
 
   /// Permute input cells
   Eigen::Array<std::int64_t, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
@@ -276,26 +276,26 @@ mesh::gmsh_to_dolfin_ordering(
   return cells_dolfin;
 }
 //-----------------------------------------------------------------------------
-std::vector<std::uint8_t> mesh::default_cell_permutation(mesh::CellType type,
-                                                         std::int32_t degree)
+std::vector<std::uint8_t>
+io::cells::default_cell_permutation(mesh::CellType type, std::int32_t degree)
 {
   int n;
   switch (type)
   {
   case mesh::CellType::quadrilateral:
-    // Quadrilateral cells follow lexciographic order (LG) and must be mapped
-    // to tensor product ordering.
+    // Quadrilateral cells follow lexciographic order (LG) and must be
+    // mapped to tensor product ordering.
     n = (degree + 1) * (degree + 1);
     switch (degree)
     {
     case 1:
       // Current default for built in meshes
-      return mesh::lex_to_tp(type, n);
+      return io::cells::lex_to_tp(type, n);
     default:
-      // mesh::compute_local_to_global_point_map assumes that the first four
-      // points in the connectivity array are the vertices, thus you need VTK
-      // ordering.
-      return mesh::dolfin_to_vtk(type, n);
+      // mesh::compute_local_to_global_point_map assumes that the first
+      // four points in the connectivity array are the vertices, thus
+      // you need VTK ordering.
+      return io::cells::dolfin_to_vtk(type, n);
     }
 
   case mesh::CellType::hexahedron:
@@ -323,6 +323,7 @@ std::vector<std::uint8_t> mesh::default_cell_permutation(mesh::CellType type,
   default:
     throw std::runtime_error("Unknown cell type.");
   }
-  return mesh::dolfin_to_vtk(type, n);
+
+  return io::cells::dolfin_to_vtk(type, n);
 }
 //-----------------------------------------------------------------------------
