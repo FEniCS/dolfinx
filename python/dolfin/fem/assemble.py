@@ -13,9 +13,9 @@ from petsc4py import PETSc
 
 import ufl
 
-import dolfin
 from dolfin import cpp
 from dolfin.fem.dirichletbc import DirichletBC
+from dolfin.fem import Form
 
 
 def _create_cpp_form(form):
@@ -23,7 +23,7 @@ def _create_cpp_form(form):
     return form argument
     """
     if isinstance(form, ufl.Form):
-        return dolfin.fem.Form(form)._cpp_object
+        return Form(form)._cpp_object
     elif isinstance(form, (tuple, list)):
         return list(map(lambda sub_form: _create_cpp_form(sub_form), form))
     return form
