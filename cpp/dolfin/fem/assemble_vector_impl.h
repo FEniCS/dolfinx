@@ -38,7 +38,7 @@ namespace impl
 /// Assemble linear form into an Eigen vector
 void
     assemble_vector(Eigen::Ref<Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1>> b,
-                    const Form& L, fem::InsertMode mode);
+                    const Form& L);
 
 /// Execute kernel over cells and accumulate result in vector
 void assemble_cells(
@@ -51,7 +51,7 @@ void assemble_cells(
                              const int*)>& kernel,
     const std::vector<const function::Function*>& coefficients,
     const std::vector<int>& offsets,
-    const std::vector<PetscScalar> constant_values, fem::InsertMode mode);
+    const std::vector<PetscScalar> constant_values);
 
 /// Execute kernel over cells and accumulate result in vector
 void assemble_exterior_facets(
