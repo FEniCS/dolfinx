@@ -42,7 +42,7 @@ def assemble_scalar(M: typing.Union[Form, cpp.fem.Form]) -> PETSc.ScalarType:
 
 
 @functools.singledispatch
-def assemble_vector(L: typing.Union[Form, cpp.fem.Form], mode=cpp.fem.InsertMode.sum) -> PETSc.Vec:
+def assemble_vector(L: typing.Union[Form, cpp.fem.Form]) -> PETSc.Vec:
     """Assemble linear form into a vector. The returned vector is not
     finalised, i.e. ghost values are not accumulated.
 
@@ -56,7 +56,7 @@ def assemble_vector(L: typing.Union[Form, cpp.fem.Form], mode=cpp.fem.InsertMode
 
 
 @assemble_vector.register(PETSc.Vec)
-def _(b: PETSc.Vec, L: typing.Union[Form, cpp.fem.Form], mode=cpp.fem.InsertMode.sum) -> PETSc.Vec:
+def _(b: PETSc.Vec, L: typing.Union[Form, cpp.fem.Form]) -> PETSc.Vec:
     """Re-assemble linear form into a vector.
 
     The vector is not zeroed and it is not finalised, i.e. ghost values
