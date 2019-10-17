@@ -60,8 +60,9 @@ DofMapPermuter generate_cell_permutations_hexahedron(const mesh::Mesh mesh,
                                                      const int v, const int e,
                                                      const int f, const int v2);
 DofMapPermuter generate_cell_permutations_point(const mesh::Mesh mesh,
-                                                     const int vertex_dofs);
+                                                const int vertex_dofs);
 DofMapPermuter generate_cell_permutations_interval(const mesh::Mesh mesh,
-                                                     const int vertex_dofs, const int edge_dofs);
+                                                   const int vertex_dofs,
+                                                   const int edge_dofs);
 } // namespace fem
 } // namespace dolfin
