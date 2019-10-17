@@ -55,6 +55,8 @@ gmsh_to_dolfin_ordering(
         cells,
     mesh::CellType type);
 
+/// @note This function is temporary and will be removed soon
+///
 /// Default map of DOLFIN/UFC node ordering to the cell input ordering
 /// @param type Celltype to map
 /// @param degree Degree e of cell

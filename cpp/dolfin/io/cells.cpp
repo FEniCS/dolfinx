@@ -16,7 +16,7 @@ using namespace dolfin;
 
 //-----------------------------------------------------------------------------
 std::vector<std::uint8_t> io::cells::dolfin_to_vtk(mesh::CellType type,
-                                                  int num_nodes)
+                                                   int num_nodes)
 {
   switch (type)
   {
@@ -139,21 +139,23 @@ std::vector<std::uint8_t> io::cells::dolfin_to_vtk(mesh::CellType type,
 }
 //-----------------------------------------------------------------------------
 std::vector<std::uint8_t> io::cells::vtk_to_tp(mesh::CellType type,
-                                              int num_nodes)
+                                               int num_nodes)
 {
   switch (type)
   {
     {
     case mesh::CellType::quadrilateral:
     {
-      std::vector<std::uint8_t> reversed = io::cells::dolfin_to_vtk(type, num_nodes);
+      std::vector<std::uint8_t> reversed
+          = io::cells::dolfin_to_vtk(type, num_nodes);
       std::vector<std::uint8_t> perm(num_nodes);
       for (int i = 0; i < num_nodes; ++i)
         perm[reversed[i]] = i;
       return perm;
     }
     case mesh::CellType::hexahedron:
-      std::vector<std::uint8_t> reversed = io::cells::dolfin_to_vtk(type, num_nodes);
+      std::vector<std::uint8_t> reversed
+          = io::cells::dolfin_to_vtk(type, num_nodes);
       std::vector<std::uint8_t> perm(num_nodes);
       for (int i = 0; i < num_nodes; ++i)
         perm[reversed[i]] = i;
@@ -165,7 +167,7 @@ std::vector<std::uint8_t> io::cells::vtk_to_tp(mesh::CellType type,
 }
 //-----------------------------------------------------------------------------
 std::vector<std::uint8_t> io::cells::lex_to_tp(mesh::CellType type,
-                                              int num_nodes)
+                                               int num_nodes)
 {
   switch (type)
   {
@@ -211,7 +213,7 @@ std::vector<std::uint8_t> io::cells::lex_to_tp(mesh::CellType type,
 }
 //-----------------------------------------------------------------------------
 std::vector<std::uint8_t> io::cells::vtk_to_dolfin(mesh::CellType type,
-                                                  int num_nodes)
+                                                   int num_nodes)
 {
   switch (type)
   {
@@ -238,15 +240,9 @@ std::vector<std::uint8_t> io::cells::vtk_to_dolfin(mesh::CellType type,
         throw std::runtime_error("Higher order tetrahedron not supported");
       }
     case mesh::CellType::quadrilateral:
-    {
-      std::vector<std::uint8_t> perm = io::cells::vtk_to_tp(type, num_nodes);
-      return perm;
-    }
+      return io::cells::vtk_to_tp(type, num_nodes);
     case mesh::CellType::hexahedron:
-    {
-      std::vector<std::uint8_t> perm = io::cells::vtk_to_tp(type, num_nodes);
-      return perm;
-    }
+      return io::cells::vtk_to_tp(type, num_nodes);
     default:
       throw std::runtime_error("Unknown cell type.");
     }
@@ -259,8 +255,8 @@ io::cells::gmsh_to_dolfin_ordering(
         cells,
     mesh::CellType type)
 {
-  /// Retrieve VTK permutation for given cell type
-  std::vector<std::uint8_t> permutation
+  /// Get VTK permutation for given cell type
+  const std::vector<std::uint8_t> permutation
       = io::cells::vtk_to_dolfin(type, cells.cols());
 
   /// Permute input cells
@@ -269,9 +265,7 @@ io::cells::gmsh_to_dolfin_ordering(
   for (int c = 0; c < cells_dolfin.rows(); ++c)
   {
     for (int v = 0; v < cells_dolfin.cols(); ++v)
-    {
       cells_dolfin(c, v) = cells(c, permutation[v]);
-    }
   }
   return cells_dolfin;
 }
