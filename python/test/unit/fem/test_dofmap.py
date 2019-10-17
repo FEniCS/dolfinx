@@ -507,3 +507,54 @@ def test_triangle_dof_ordering(n):
     for i in edges[0]:
         for j in edges[1:]:
             assert np.allclose(edges[0][i], j[i])
+
+
+skip_in_parallel
+@pytest.mark.parametrize('n', [1, 2, 3, 4, 5, 6])
+def test_tetrahedron_dof_ordering(n):
+    """Checks that dofs on shared tetrahedron edges and faces match up"""
+    # Create simple tetrahedron mesh
+    from itertools import permutations
+    points = np.array([[0, 0, 0], [1, 0, 0], [0, 1, 0], [0, 0, 1]])
+    cells = list(permutations(range(4)))
+    mesh = cpp.mesh.Mesh(MPI.comm_world, CellType.tetrahedron, points,
+                         np.array(cells), [], cpp.mesh.GhostMode.none)
+    V = FunctionSpace(mesh, ("Lagrange", n))
+
+    dofmap = V.dofmap
+
+    edges = []
+    faces = []
+
+    for tet in range(len(cells)):
+        dofs = dofmap.cell_dofs(tet)
+        edge_dofs_local = []
+        for i in range(6):
+            edge_dofs_local += list(dofmap.dof_layout.entity_dofs(1, i))
+        edge_dofs = [dofs[i] for i in edge_dofs_local]
+
+        face_dofs_local = []
+        for i in range(4):
+            face_dofs_local += list(dofmap.dof_layout.entity_dofs(2, i))
+        face_dofs = [dofs[i] for i in face_dofs_local]
+
+        X = V.element.dof_reference_coordinates()
+        coord_dofs = mesh.coordinate_dofs().entity_points()
+        x_g = mesh.geometry.points
+        cmap = fem.create_coordinate_map(mesh.ufl_domain())
+
+        x_coord_new = np.zeros([4, 3])
+        for v in range(4):
+            x_coord_new[v] = x_g[coord_dofs[tet, v], :3]
+        x = X.copy()
+        cmap.push_forward(x, X, x_coord_new)
+
+        edges.append({i: j for i, j in zip(edge_dofs, x[edge_dofs_local])})
+        faces.append({i: j for i, j in zip(face_dofs, x[face_dofs_local])})
+
+    for i in edges[0]:
+        for j in edges[1:]:
+            assert np.allclose(edges[0][i], j[i])
+    for i in faces[0]:
+        for j in faces[1:]:
+            assert np.allclose(faces[0][i], j[i])
