@@ -183,7 +183,14 @@ void _assemble_vector_block(
   std::vector<std::vector<std::vector<std::shared_ptr<const DirichletBC>>>> bcs1
       = bcs_cols(a, bcs);
 
+  int offset_x0 = 0;
   std::vector<Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1>> b_vec(L.size());
+  std::vector<
+          Eigen::Ref<const Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1>>>
+          x0_vec;
+  x0_vec.reserve(L.size());
+
+  // Assemble sub vectors and collect x0 sub vectors
   for (std::size_t i = 0; i < L.size(); ++i)
   {
     // FIXME: Sort out for x0 \ne nullptr case
@@ -199,8 +206,27 @@ void _assemble_vector_block(
 
     // Assemble and modify for bcs (lifting)
     fem::impl::assemble_vector(b_vec[i], *L[i], fem::InsertMode::sum);
-    fem::impl::apply_lifting(b_vec[i], a[i], bcs1[i], {}, scale);
+
+    // Collect x0 sub vector
+    if (x0)
+    {
+      la::VecReadWrapper x0_wrapper(x0);
+      x0_vec.push_back(x0_wrapper.x.segment(offset_x0, map_size0 + map_size1));
+      x0_wrapper.restore();
+    }
+
+    offset_x0 += map_size0 + map_size1;
   }
+
+  // Apply lifting, x0_vec will be empty if x0 is NULL
+  for (std::size_t i = 0; i < L.size(); ++i)
+  {
+    if (x0)
+      fem::impl::apply_lifting(b_vec[i], a[i], bcs1[i], x0_vec, scale);
+    else
+      fem::impl::apply_lifting(b_vec[i], a[i], bcs1[i], {}, scale);
+  }
+
 
   // Get local representation of b vector and copy values in
   la::VecWrapper _b(b);
@@ -244,6 +270,9 @@ void _assemble_vector_block(
   // Set bcs
   PetscScalar* values = nullptr;
   VecGetArray(b, &values);
+  PetscScalar* values_x0 = nullptr;
+  if (x0)
+    VecGetArray(x0, &values_x0);
   int offset = 0;
   for (std::size_t i = 0; i < L.size(); ++i)
   {
@@ -252,12 +281,22 @@ void _assemble_vector_block(
     const int map_size0 = map->size_local() * bs;
     Eigen::Map<Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1>> vec(
         values + offset, map_size0);
-    Eigen::Map<Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1>> vec_x0(nullptr,
-                                                                     0);
+    Eigen::Map<Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1>> vec_x0(
+            values_x0 + offset, map_size0);
+    std::cout << "debugging " << vec.size() << ", " << vec_x0.size() << std::endl;
     for (auto bc : bcs)
     {
       if (L[i]->function_space(0)->contains(*bc->function_space()))
-        bc->set(vec, scale);
+      {
+        if (x0)
+        {
+          bc->set(vec, vec_x0, scale);
+        }
+        else
+        {
+          bc->set(vec, scale);
+        }
+      }
     }
     offset += map_size0;
   }
