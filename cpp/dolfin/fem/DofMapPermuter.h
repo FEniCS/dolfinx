@@ -59,5 +59,12 @@ DofMapPermuter generate_cell_permutations_triangle(
     const mesh::Mesh mesh, const int v, const int e, const int f);
 DofMapPermuter generate_cell_permutations_quadrilateral(
     const mesh::Mesh mesh, const int v, const int e, const int f);
+DofMapPermuter generate_cell_permutations_tetrahedron(const mesh::Mesh mesh,
+                                                      const int v, const int e,
+                                                      const int f,
+                                                      const int v2);
+DofMapPermuter generate_cell_permutations_hexahedron(const mesh::Mesh mesh,
+                                                     const int v, const int e,
+                                                     const int f, const int v2);
 } // namespace fem
 } // namespace dolfin
