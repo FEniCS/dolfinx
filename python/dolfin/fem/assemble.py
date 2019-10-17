@@ -15,7 +15,7 @@ import ufl
 
 from dolfin import cpp
 from dolfin.fem.dirichletbc import DirichletBC
-from dolfin.fem import Form
+from dolfin.fem.form import Form
 
 
 def _create_cpp_form(form):
