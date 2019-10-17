@@ -4,7 +4,6 @@
 //
 // SPDX-License-Identifier:    LGPL-3.0-or-later
 
-#include <iostream> // REMOVE: for testing
 #include <tuple>
 #include <vector>
 
@@ -35,12 +34,6 @@ public:
   int get_permutation_number(const std::vector<int> orders) const;
   std::vector<int> get_orders(const int number) const;
 
-  // REMOVE: for testing
-  void print_p(const std::vector<int> p, const int start=0) const {
-    std::cout << "["; for(int i=start;i<p.size();++i) {std::cout << p[i];if(i+1<p.size()) std::cout << " ";}
-    std::cout << "]" << std::endl;
-  }
-
   int dof_count;
 private:
   std::vector<std::vector<int>> _cell_orders;
@@ -66,5 +59,9 @@ DofMapPermuter generate_cell_permutations_tetrahedron(const mesh::Mesh mesh,
 DofMapPermuter generate_cell_permutations_hexahedron(const mesh::Mesh mesh,
                                                      const int v, const int e,
                                                      const int f, const int v2);
+DofMapPermuter generate_cell_permutations_point(const mesh::Mesh mesh,
+                                                     const int vertex_dofs);
+DofMapPermuter generate_cell_permutations_interval(const mesh::Mesh mesh,
+                                                     const int vertex_dofs, const int edge_dofs);
 } // namespace fem
 } // namespace dolfin

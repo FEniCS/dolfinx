@@ -92,6 +92,10 @@ DofMapPermuter generate_cell_permutations(const mesh::Mesh mesh,
   const mesh::CellType type = mesh.cell_type();
   switch (type)
   {
+  case mesh::CellType::point:
+    return generate_cell_permutations_point(mesh, vertex_dofs);
+  case mesh::CellType::interval:
+    return generate_cell_permutations_interval(mesh, vertex_dofs, edge_dofs);
   case (mesh::CellType::quadrilateral):
     return generate_cell_permutations_quadrilateral(mesh, vertex_dofs,
                                                     edge_dofs, face_dofs);
@@ -270,7 +274,7 @@ DofMapPermuter generate_cell_permutations_triangle(const mesh::Mesh mesh,
   {
     std::vector<int> flip(dof_count);
     std::iota(flip.begin(), flip.end(), 0);
-    // FIXME: infer this from ElementDofLayout
+    // FIXME: infer the following from ElementDofLayout
     std::vector<int> edge(edge_dofs);
     std::iota(edge.begin(), edge.end(), 3 * vertex_dofs + edge_n * edge_dofs);
     for (int j = 0; j < edge.size(); ++j)
@@ -286,7 +290,7 @@ DofMapPermuter generate_cell_permutations_triangle(const mesh::Mesh mesh,
   {
     std::vector<int> rotation(dof_count);
     std::iota(rotation.begin(), rotation.end(), 0);
-    // FIXME: infer this from ElementDofLayout
+    // FIXME: infer the following from ElementDofLayout
     std::vector<int> face(face_dofs);
     std::iota(face.begin(), face.end(), 3 * vertex_dofs + 3 * edge_dofs);
     for (int j = 0; j < face.size(); ++j)
@@ -298,7 +302,7 @@ DofMapPermuter generate_cell_permutations_triangle(const mesh::Mesh mesh,
   {
     std::vector<int> reflection(dof_count);
     std::iota(reflection.begin(), reflection.end(), 0);
-    // FIXME: infer this from ElementDofLayout
+    // FIXME: infer the following from ElementDofLayout
     std::vector<int> face(face_dofs);
     std::iota(face.begin(), face.end(), 3 * vertex_dofs + 3 * edge_dofs);
     for (int j = 0; j < face.size(); ++j)
@@ -330,10 +334,19 @@ DofMapPermuter generate_cell_permutations_triangle(const mesh::Mesh mesh,
 DofMapPermuter generate_cell_permutations_quadrilateral(const mesh::Mesh mesh,
     const int vertex_dofs, const int edge_dofs, const int face_dofs)
 {
-  // FIXME: This function assumes tensor product ordering of the dofs. It should
-  // use ElementDofLayout instead.
-  throw std::runtime_error(
-      "Dof ordering on quadrilaterals is not yet implemented.");
+  // This function temporarily returns a permuter that contains only empty
+  // permutations
+  const int dof_count
+      = 4 * vertex_dofs + 4 * edge_dofs + face_dofs;
+  DofMapPermuter output;
+  output.set_dof_count(dof_count);
+
+  int cells = mesh.num_entities(mesh.topology().dim());
+  output.set_cell_count(cells);
+  for (int cell_n = 0; cell_n < cells; ++cell_n)
+    output.set_cell(cell_n, {});
+
+  return output;
 }
 //-----------------------------------------------------------------------------
 DofMapPermuter generate_cell_permutations_tetrahedron(const mesh::Mesh mesh,
@@ -361,7 +374,7 @@ DofMapPermuter generate_cell_permutations_tetrahedron(const mesh::Mesh mesh,
   {
     std::vector<int> flip(dof_count);
     std::iota(flip.begin(), flip.end(), 0);
-    // FIXME: infer this from ElementDofLayout
+    // FIXME: infer the following from ElementDofLayout
     std::vector<int> edge(edge_dofs);
     std::iota(edge.begin(), edge.end(), 4 * vertex_dofs + edge_n * edge_dofs);
     for (int j = 0; j < edge.size(); ++j)
@@ -379,7 +392,7 @@ DofMapPermuter generate_cell_permutations_tetrahedron(const mesh::Mesh mesh,
   {
     std::vector<int> rotation(dof_count);
     std::iota(rotation.begin(), rotation.end(), 0);
-    // FIXME: infer this from ElementDofLayout
+    // FIXME: infer the following from ElementDofLayout
     std::vector<int> face(face_dofs);
     std::iota(face.begin(), face.end(),
               4 * vertex_dofs + 6 * edge_dofs + face_n * face_dofs);
@@ -393,7 +406,7 @@ DofMapPermuter generate_cell_permutations_tetrahedron(const mesh::Mesh mesh,
   {
     std::vector<int> reflection(dof_count);
     std::iota(reflection.begin(), reflection.end(), 0);
-    // FIXME: infer this from ElementDofLayout
+    // FIXME: infer the following from ElementDofLayout
     std::vector<int> face(face_dofs);
     std::iota(face.begin(), face.end(),
               4 * vertex_dofs + 6 * edge_dofs + face_n * face_dofs);
@@ -408,7 +421,7 @@ DofMapPermuter generate_cell_permutations_tetrahedron(const mesh::Mesh mesh,
   tie(base_interior_rotation1, base_interior_rotation2,
       base_interior_reflection)
       = tetrahedron_rotations_and_reflection(volume_dofs);
-  // FIXME: infer this from ElementDofLayout
+  // FIXME: infer the following from ElementDofLayout
   std::vector<int> interior(volume_dofs);
   std::iota(interior.begin(), interior.end(),
             4 * vertex_dofs + 6 * edge_dofs + 4 * face_dofs);
@@ -442,8 +455,6 @@ DofMapPermuter generate_cell_permutations_tetrahedron(const mesh::Mesh mesh,
       reflection[interior[j]] = interior[base_interior_reflection[j]];
     output.add_permutation(reflection, 2);
   }
-
-  // TODO: make these into full permuitations
 
   int cells = mesh.num_entities(mesh.topology().dim());
   output.set_cell_count(cells);
@@ -485,9 +496,55 @@ DofMapPermuter generate_cell_permutations_hexahedron(const mesh::Mesh mesh,
                                                      const int face_dofs,
                                                      const int volume_dofs)
 {
-  // FIXME: This function assumes tensor product ordering of the dofs. It should
-  // use ElementDofLayout instead.
-  throw std::runtime_error("Dof ordering on hexahedra is not yet implemented.");
+  // This function temporarily returns a permuter that contains only empty
+  // permutations
+  const int dof_count
+      = 8 * vertex_dofs + 12 * edge_dofs + 6 * face_dofs + volume_dofs;
+  DofMapPermuter output;
+  output.set_dof_count(dof_count);
+
+  int cells = mesh.num_entities(mesh.topology().dim());
+  output.set_cell_count(cells);
+  for (int cell_n = 0; cell_n < cells; ++cell_n)
+    output.set_cell(cell_n, {});
+
+  return output;
+}
+//-----------------------------------------------------------------------------
+DofMapPermuter generate_cell_permutations_point(const mesh::Mesh mesh,
+                                                     const int vertex_dofs)
+{
+  // This function temporarily returns a permuter that contains only empty
+  // permutations
+  const int dof_count = vertex_dofs;
+  DofMapPermuter output;
+  output.set_dof_count(dof_count);
+
+  int cells = mesh.num_entities(mesh.topology().dim());
+  output.set_cell_count(cells);
+  for (int cell_n = 0; cell_n < cells; ++cell_n)
+    output.set_cell(cell_n, {});
+
+  return output;
+}
+//-----------------------------------------------------------------------------
+DofMapPermuter generate_cell_permutations_interval(const mesh::Mesh mesh,
+                                                     const int vertex_dofs,
+                                                     const int edge_dofs)
+{
+  // This function temporarily returns a permuter that contains only empty
+  // permutations
+  const int dof_count
+      = 2 * vertex_dofs + edge_dofs;
+  DofMapPermuter output;
+  output.set_dof_count(dof_count);
+
+  int cells = mesh.num_entities(mesh.topology().dim());
+  output.set_cell_count(cells);
+  for (int cell_n = 0; cell_n < cells; ++cell_n)
+    output.set_cell(cell_n, {});
+
+  return output;
 }
 } // namespace fem
 } // namespace dolfin
