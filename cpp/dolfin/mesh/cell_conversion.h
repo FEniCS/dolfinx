@@ -7,9 +7,7 @@
 #pragma once
 
 #include <Eigen/Dense>
-#include <array>
 #include <dolfin/mesh/cell_types.h>
-#include <map>
 #include <vector>
 
 namespace dolfin
@@ -23,15 +21,16 @@ namespace mesh
 /// @return The map from local DOLFIN node ordering to the VTK ordering
 std::vector<std::uint8_t> dolfin_to_vtk(CellType type, int num_nodes);
 
-/// Map from VTK ordering of a cell to tensor-product ordering.
-/// This map returns the identity map for all other cells than
-/// quadrilaterals and hexahedrons.
+/// Map from VTK ordering of a cell to tensor-product ordering. This map
+/// returns the identity map for all other cells than quadrilaterals and
+/// hexahedrons.
 /// @param[in] type The cell shape
 /// @param[in] num_nodes The number of cell 'nodes'
 /// @return The map
 std::vector<std::uint8_t> vtk_to_tp(CellType type, int num_nodes);
 
-/// Map from the mapping of lexicographic nodes to a tensor product ordering
+/// Map from the mapping of lexicographic nodes to a tensor product
+/// ordering
 /// @param[in] type The cell shape
 /// @param[in] num_nodes The number of cell 'nodes'
 /// @return The map

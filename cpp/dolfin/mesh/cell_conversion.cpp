@@ -4,16 +4,15 @@
 //
 // SPDX-License-Identifier:    LGPL-3.0-or-later
 
-#include "Geometry.h"
-#include "MeshEntity.h"
+// #include "Geometry.h"
+// #include "MeshEntity.h"
 #include "cell_types.h"
 #include <Eigen/Dense>
-#include <cfloat>
 #include <cstdlib>
 #include <dolfin/common/log.h>
 #include <dolfin/mesh/cell_conversion.h>
 #include <dolfin/mesh/cell_types.h>
-#include <iostream>
+#include <numeric>
 #include <stdexcept>
 
 using namespace dolfin;
@@ -224,8 +223,7 @@ std::vector<std::uint8_t> mesh::vtk_to_dolfin(mesh::CellType type,
       return {0, 1};
     case mesh::CellType::triangle:
     {
-      std::vector<std::uint8_t> reversed
-          = mesh::dolfin_to_vtk(type, num_nodes);
+      std::vector<std::uint8_t> reversed = mesh::dolfin_to_vtk(type, num_nodes);
       std::vector<std::uint8_t> perm(num_nodes);
       for (int i = 0; i < num_nodes; ++i)
         perm[reversed[i]] = i;
