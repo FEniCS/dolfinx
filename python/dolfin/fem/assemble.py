@@ -51,7 +51,7 @@ def assemble_vector(L: typing.Union[Form, cpp.fem.Form]) -> PETSc.Vec:
     b = cpp.la.create_vector(L_cpp.function_space(0).dofmap.index_map)
     with b.localForm() as b_local:
         b_local.set(0.0)
-    cpp.fem.assemble_vector(b, L_cpp, mode)
+    cpp.fem.assemble_vector(b, L_cpp)
     return b
 
 
@@ -64,7 +64,7 @@ def _(b: PETSc.Vec, L: typing.Union[Form, cpp.fem.Form]) -> PETSc.Vec:
 
     """
     L_cpp = _create_cpp_form(L)
-    cpp.fem.assemble_vector(b, L_cpp, mode)
+    cpp.fem.assemble_vector(b, L_cpp)
     return b
 
 
