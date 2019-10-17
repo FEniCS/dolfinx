@@ -283,19 +283,14 @@ void _assemble_vector_block(
         values + offset, map_size0);
     Eigen::Map<Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1>> vec_x0(
             values_x0 + offset, map_size0);
-    std::cout << "debugging " << vec.size() << ", " << vec_x0.size() << std::endl;
     for (auto bc : bcs)
     {
       if (L[i]->function_space(0)->contains(*bc->function_space()))
       {
         if (x0)
-        {
           bc->set(vec, vec_x0, scale);
-        }
         else
-        {
           bc->set(vec, scale);
-        }
       }
     }
     offset += map_size0;
