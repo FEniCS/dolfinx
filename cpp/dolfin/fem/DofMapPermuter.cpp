@@ -208,6 +208,49 @@ tetrahedron_rotations_and_reflection(const int volume_dofs)
   return std::make_tuple(rotation1, rotation2, reflection);
 }
 //-----------------------------------------------------------------------------
+std::pair<int, int> calculate_triangle_orders(int v1, int v2, int v3)
+{
+  if (v1 < v2 && v1 < v3)
+    return std::make_pair(0, v2 > v3);
+  if (v2 < v1 && v2 < v3)
+    return std::make_pair(1, v3 > v1);
+  if (v3 < v1 && v3 < v2)
+    return std::make_pair(2, v1 > v2);
+}
+//-----------------------------------------------------------------------------
+std::tuple<int, int, int, int> calculate_tetrahedron_orders(int v1, int v2,
+                                                            int v3, int v4)
+{
+  if (v1 < v2 && v1 < v3 && v1 < v4)
+  {
+    int a;
+    int b;
+    std::tie(a, b) = calculate_triangle_orders(v2, v3, v4);
+    return std::make_tuple(0, 0, a, b);
+  }
+  if (v2 < v1 && v2 < v3 && v2 < v4)
+  {
+    int a;
+    int b;
+    std::tie(a, b) = calculate_triangle_orders(v3, v1, v4);
+    return std::make_tuple(1, 0, a, b);
+  }
+  if (v3 < v1 && v3 < v2 && v3 < v4)
+  {
+    int a;
+    int b;
+    std::tie(a, b) = calculate_triangle_orders(v1, v2, v4);
+    return std::make_tuple(2, 0, a, b);
+  }
+  if (v4 < v1 && v4 < v2 && v4 < v3)
+  {
+    int a;
+    int b;
+    std::tie(a, b) = calculate_triangle_orders(v2, v1, v3);
+    return std::make_tuple(0, 1, a, b);
+  }
+}
+//-----------------------------------------------------------------------------
 DofMapPermuter generate_cell_permutations_triangle(const mesh::Mesh mesh,
     const int vertex_dofs, const int edge_dofs, const int face_dofs)
 {
@@ -275,21 +318,9 @@ DofMapPermuter generate_cell_permutations_triangle(const mesh::Mesh mesh,
     orders[1] = (vertices[0] > vertices[2]);
     orders[2] = (vertices[0] > vertices[1]);
 
-    if(vertices[0] < vertices[1] && vertices[0] < vertices[2])
-    {
-      orders[3] = 0;
-      orders[4] = (vertices[1] > vertices[2]);
-    }
-    if(vertices[1] < vertices[0] && vertices[1] < vertices[2])
-    {
-      orders[3] = 1;
-      orders[4] = (vertices[2] > vertices[0]);
-    }
-    if(vertices[2] < vertices[0] && vertices[2] < vertices[1])
-    {
-      orders[3] = 2;
-      orders[4] = (vertices[0] > vertices[1]);
-    }
+    std::tie(orders[3], orders[4])
+        = calculate_triangle_orders(vertices[0], vertices[1], vertices[2]);
+
     output.set_cell(cell_n, orders);
   }
 
@@ -351,7 +382,7 @@ DofMapPermuter generate_cell_permutations_tetrahedron(const mesh::Mesh mesh,
     // FIXME: infer this from ElementDofLayout
     std::vector<int> face(face_dofs);
     std::iota(face.begin(), face.end(),
-              4 * vertex_dofs + 3 * edge_dofs + face_n * face_dofs);
+              4 * vertex_dofs + 6 * edge_dofs + face_n * face_dofs);
     for (int j = 0; j < face.size(); ++j)
       rotation[face[j]] = face[base_face_rotation[j]];
     output.add_permutation(rotation, 3);
@@ -365,7 +396,7 @@ DofMapPermuter generate_cell_permutations_tetrahedron(const mesh::Mesh mesh,
     // FIXME: infer this from ElementDofLayout
     std::vector<int> face(face_dofs);
     std::iota(face.begin(), face.end(),
-              4 * vertex_dofs + 3 * edge_dofs + face_n * face_dofs);
+              4 * vertex_dofs + 6 * edge_dofs + face_n * face_dofs);
     for (int j = 0; j < face.size(); ++j)
       reflection[face[j]] = face[base_face_reflection[j]];
     output.add_permutation(reflection, 2);
@@ -377,6 +408,42 @@ DofMapPermuter generate_cell_permutations_tetrahedron(const mesh::Mesh mesh,
   tie(base_interior_rotation1, base_interior_rotation2,
       base_interior_reflection)
       = tetrahedron_rotations_and_reflection(volume_dofs);
+  // FIXME: infer this from ElementDofLayout
+  std::vector<int> interior(volume_dofs);
+  std::iota(interior.begin(), interior.end(),
+            4 * vertex_dofs + 6 * edge_dofs + 4 * face_dofs);
+  {
+    std::vector<int> rotation(dof_count);
+    std::iota(rotation.begin(), rotation.end(), 0);
+    for (int j = 0; j < interior.size(); ++j)
+      rotation[interior[j]] = interior[base_interior_rotation1[j]];
+    output.add_permutation(rotation, 3);
+  }
+  {
+    std::vector<int> rotation(dof_count);
+    std::iota(rotation.begin(), rotation.end(), 0);
+    for (int j = 0; j < interior.size(); ++j)
+      rotation[interior[j]] = interior[base_interior_rotation2[j]];
+    output.add_permutation(rotation, 3);
+  }
+  {
+    std::vector<int> rotation(dof_count);
+    std::iota(rotation.begin(), rotation.end(), 0);
+    for (int j = 0; j < interior.size(); ++j)
+      rotation[interior[j]]
+          = interior[base_interior_rotation2
+                         [base_interior_rotation2[base_interior_rotation1[j]]]];
+    output.add_permutation(rotation, 3);
+  }
+  {
+    std::vector<int> reflection(dof_count);
+    std::iota(reflection.begin(), reflection.end(), 0);
+    for (int j = 0; j < interior.size(); ++j)
+      reflection[interior[j]] = interior[base_interior_reflection[j]];
+    output.add_permutation(reflection, 2);
+  }
+
+  // TODO: make these into full permuitations
 
   int cells = mesh.num_entities(mesh.topology().dim());
   output.set_cell_count(cells);
@@ -385,8 +452,8 @@ DofMapPermuter generate_cell_permutations_tetrahedron(const mesh::Mesh mesh,
   {
     const mesh::MeshEntity cell(mesh, 3, cell_n);
     const std::int32_t* vertices = cell.entities(0);
-    std::vector<int> orders(17, 0);
-    // TODO: check numbering of edges
+    std::vector<int> orders(18, 0);
+
     orders[0] = (vertices[2] > vertices[3]);
     orders[1] = (vertices[1] > vertices[3]);
     orders[2] = (vertices[1] > vertices[2]);
@@ -394,25 +461,18 @@ DofMapPermuter generate_cell_permutations_tetrahedron(const mesh::Mesh mesh,
     orders[4] = (vertices[0] > vertices[2]);
     orders[5] = (vertices[0] > vertices[1]);
 
-    // TODO: rotate and reflect face dofs
+    std::tie(orders[6], orders[10])
+        = calculate_triangle_orders(vertices[1], vertices[2], vertices[3]);
+    std::tie(orders[7], orders[11])
+        = calculate_triangle_orders(vertices[0], vertices[2], vertices[3]);
+    std::tie(orders[8], orders[12])
+        = calculate_triangle_orders(vertices[0], vertices[1], vertices[3]);
+    std::tie(orders[9], orders[13])
+        = calculate_triangle_orders(vertices[0], vertices[1], vertices[2]);
 
-    if (vertices[0] < vertices[1] && vertices[0] < vertices[2])
-    {
-      // orders[3] = 0;
-      // orders[4] = (vertices[1] > vertices[2]);
-    }
-    if (vertices[1] < vertices[0] && vertices[1] < vertices[2])
-    {
-      // orders[3] = 1;
-      // orders[4] = (vertices[2] > vertices[0]);
-    }
-    if (vertices[2] < vertices[0] && vertices[2] < vertices[1])
-    {
-      // orders[3] = 2;
-      // orders[4] = (vertices[0] > vertices[1]);
-    }
-
-    // TODO: rotate and reflect interior dofs
+    std::tie(orders[14], orders[15], orders[16], orders[17])
+        = calculate_tetrahedron_orders(vertices[0], vertices[1], vertices[2],
+                                       vertices[3]);
     output.set_cell(cell_n, orders);
   }
 
