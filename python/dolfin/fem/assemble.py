@@ -41,26 +41,8 @@ def convert_ufl_forms_to_dolfin_forms(f):
     return wrapper
 
 
-# # -- Vector instantiation ----------------------------------------------------
-#
-# def create_vector(L: typing.Union[Form, cpp.fem.Form]):
-#     L_cpp = _create_cpp_form(L)
-#     b = cpp.la.create_vector(L_cpp.function_space(0).dofmap.index_map)
-#     return b
-#
-#
-# def create_vector_block(L: typing.List[typing.Union[Form, cpp.fem.Form]]):
-#     L_cpp = [_create_cpp_form(form) for form in L]
-#     b = cpp.fem.create_vector(L_cpp)
-#     return b
-#
-#
-# def create_vector_nest(L: typing.List[typing.Union[Form, cpp.fem.Form]]):
-#     L_cpp = [_create_cpp_form(form) for form in L]
-#     b = cpp.fem.create_vector_nest(L_cpp)
-#     return b
-
 # -- Scalar assembly ---------------------------------------------------------
+
 
 @convert_ufl_forms_to_dolfin_forms
 def assemble_scalar(M: typing.Union[Form, cpp.fem.Form]) -> PETSc.ScalarType:
@@ -71,6 +53,7 @@ def assemble_scalar(M: typing.Union[Form, cpp.fem.Form]) -> PETSc.ScalarType:
     return cpp.fem.assemble_scalar(M)
 
 # -- Vector assembly ---------------------------------------------------------
+
 
 @convert_ufl_forms_to_dolfin_forms
 @functools.singledispatch
