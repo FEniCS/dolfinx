@@ -6,7 +6,7 @@
 
 #include "xdmf_write.h"
 #include "HDF5File.h"
-#include "cell_conversion.h"
+#include "cells.h"
 #include "pugixml.hpp"
 #include "xdmf_utils.h"
 #include <boost/algorithm/string.hpp>

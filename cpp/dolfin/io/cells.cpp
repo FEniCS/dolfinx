@@ -4,7 +4,7 @@
 //
 // SPDX-License-Identifier:    LGPL-3.0-or-later
 
-#include "cell_conversion.h"
+#include "cells.h"
 #include <Eigen/Dense>
 #include <cstdint>
 #include <dolfin/common/log.h>

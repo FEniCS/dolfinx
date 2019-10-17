@@ -11,7 +11,7 @@
 #include "HDF5File.h"
 #include "HDF5Utility.h"
 #include "XDMFFile.h"
-#include "cell_conversion.h"
+#include "cells.h"
 #include "pugixml.hpp"
 #include <algorithm>
 #include <boost/algorithm/string.hpp>

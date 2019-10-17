@@ -7,7 +7,7 @@
 #include "HDF5File.h"
 #include "HDF5Interface.h"
 #include "HDF5Utility.h"
-#include "cell_conversion.h"
+#include "cells.h"
 #include <Eigen/Dense>
 #include <boost/filesystem.hpp>
 #include <boost/unordered_map.hpp>

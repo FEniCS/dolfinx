@@ -18,7 +18,7 @@
 #include <dolfin/common/MPI.h>
 #include <dolfin/common/Timer.h>
 #include <dolfin/common/utils.h>
-#include <dolfin/io/cell_conversion.h>
+#include <dolfin/io/cells.h>
 #include <dolfin/mesh/cell_types.h>
 
 using namespace dolfin;

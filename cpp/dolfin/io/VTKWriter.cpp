@@ -5,7 +5,7 @@
 // SPDX-License-Identifier:    LGPL-3.0-or-later
 
 #include "VTKWriter.h"
-#include "cell_conversion.h"
+#include "cells.h"
 #include <boost/detail/endian.hpp>
 #include <cstdint>
 #include <dolfin/fem/DofMap.h>
