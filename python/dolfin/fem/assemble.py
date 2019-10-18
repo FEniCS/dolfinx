@@ -42,7 +42,7 @@ def assemble_scalar(M: typing.Union[Form, cpp.fem.Form]) -> PETSc.ScalarType:
 
 
 @functools.singledispatch
-def assemble_vector(L: typing.Union[Form, cpp.fem.Form], mode=cpp.fem.InsertMode.sum) -> PETSc.Vec:
+def assemble_vector(L: typing.Union[Form, cpp.fem.Form]) -> PETSc.Vec:
     """Assemble linear form into a vector. The returned vector is not
     finalised, i.e. ghost values are not accumulated.
 
@@ -51,12 +51,12 @@ def assemble_vector(L: typing.Union[Form, cpp.fem.Form], mode=cpp.fem.InsertMode
     b = cpp.la.create_vector(L_cpp.function_space(0).dofmap.index_map)
     with b.localForm() as b_local:
         b_local.set(0.0)
-    cpp.fem.assemble_vector(b, L_cpp, mode)
+    cpp.fem.assemble_vector(b, L_cpp)
     return b
 
 
 @assemble_vector.register(PETSc.Vec)
-def _(b: PETSc.Vec, L: typing.Union[Form, cpp.fem.Form], mode=cpp.fem.InsertMode.sum) -> PETSc.Vec:
+def _(b: PETSc.Vec, L: typing.Union[Form, cpp.fem.Form]) -> PETSc.Vec:
     """Re-assemble linear form into a vector.
 
     The vector is not zeroed and it is not finalised, i.e. ghost values
@@ -64,7 +64,7 @@ def _(b: PETSc.Vec, L: typing.Union[Form, cpp.fem.Form], mode=cpp.fem.InsertMode
 
     """
     L_cpp = _create_cpp_form(L)
-    cpp.fem.assemble_vector(b, L_cpp, mode)
+    cpp.fem.assemble_vector(b, L_cpp)
     return b
 
 
