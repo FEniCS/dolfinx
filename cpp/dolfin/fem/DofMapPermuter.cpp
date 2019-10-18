@@ -58,6 +58,9 @@ std::vector<int> DofMapPermuter::cell_permutation(const int cell) const
   return permutation;
 }
 //-----------------------------------------------------------------------------
+/// Makes a permutation to flip the dofs on an edge
+/// @param[in] edge_dofs Number of edge dofs
+/// @return The permutation to reverse the dofs
 std::vector<int> edge_flip(const int edge_dofs)
 {
   std::vector<int> flip(edge_dofs);
@@ -66,6 +69,9 @@ std::vector<int> edge_flip(const int edge_dofs)
   return flip;
 }
 //-----------------------------------------------------------------------------
+/// Makes permutations to rotate and reflect the dofs on a triangle
+/// @param[in] edge_dofs Number of dofs on the face of the triangle
+/// @return Permutations to rotate and reflect the dofs
 std::pair<std::vector<int>, std::vector<int>>
 triangle_rotation_and_reflection(const int face_dofs)
 {
@@ -101,6 +107,9 @@ triangle_rotation_and_reflection(const int face_dofs)
   return std::make_pair(rotation, reflection);
 }
 //-----------------------------------------------------------------------------
+/// Makes permutations to rotate and reflect the dofs in a tetrahedron
+/// @param[in] edge_dofs Number of dofs on the interior of the tetrahedron
+/// @return Permutations to rotate and reflect the dofs
 std::tuple<std::vector<int>, std::vector<int>, std::vector<int>>
 tetrahedron_rotations_and_reflection(const int volume_dofs)
 {
@@ -203,6 +212,7 @@ DofMapPermuter::calculate_tetrahedron_orders(int v1, int v2, int v3, int v4)
 /// Make the DofMapPermuter for a given triangular mesh and dof layout
 /// @param[in] mesh The mesh
 /// @param[in] element_dof_layout The layout of dofs in each cell
+/// @return A DofMapPermuter for the mesh and dof layout
 DofMapPermuter
 _generate_cell_permutations_triangle(const mesh::Mesh mesh,
                                      const ElementDofLayout& element_dof_layout)
@@ -417,17 +427,12 @@ DofMapPermuter _generate_cell_permutations_tetrahedron(
 /// @param[in] mesh The mesh
 /// @param[in] element_dof_layout The layout of dofs in each cell
 /// @return A DofMapPermuter for the mesh and dof layout
-DofMapPermuter empty_permutations(const mesh::Mesh mesh,
-                                  const ElementDofLayout& element_dof_layout)
+DofMapPermuter _empty_permutations(const mesh::Mesh mesh,
+                                   const ElementDofLayout& element_dof_layout)
 {
-  // This function returns a permuter that contains only empty permutations
   DofMapPermuter permuter;
-  int dof_count = element_dof_layout.num_dofs();
-  permuter.set_dof_count(dof_count);
-
-  int cells = mesh.num_entities(mesh.topology().dim());
-  permuter.set_cell_count(cells);
-
+  permuter.set_dof_count(element_dof_layout.num_dofs());
+  permuter.set_cell_count(mesh.num_entities(mesh.topology().dim()));
   return permuter;
 }
 //-----------------------------------------------------------------------------
@@ -445,7 +450,7 @@ generate_cell_permutations(const mesh::Mesh mesh,
   default:
     LOG(WARNING) << "Dof permutations are not defined for this cell type. High "
                     "order elements may be incorrect.";
-    return empty_permutations(mesh, element_dof_layout);
+    return _empty_permutations(mesh, element_dof_layout);
   }
 }
 } // namespace fem
