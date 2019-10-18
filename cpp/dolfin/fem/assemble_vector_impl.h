@@ -40,7 +40,6 @@ namespace impl
 /// @param[in,out] b The vector to be assembled. It will not be zeroed
 ///                  before assembly.
 /// @param[in] L The linear forms to assemble into b
-/// @param[in] mode The insertion mode
 void
     assemble_vector(Eigen::Ref<Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1>> b,
                     const Form& L);
