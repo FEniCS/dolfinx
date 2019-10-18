@@ -5,6 +5,7 @@
 // SPDX-License-Identifier:    LGPL-3.0-or-later
 
 #include "DofMapPermuter.h"
+#include <dolfin/common/log.h>
 #include <dolfin/mesh/MeshEntity.h>
 #include <dolfin/mesh/MeshIterator.h>
 
@@ -92,25 +93,17 @@ DofMapPermuter generate_cell_permutations(const mesh::Mesh mesh,
   const mesh::CellType type = mesh.cell_type();
   switch (type)
   {
-  case mesh::CellType::point:
-    return generate_cell_permutations_point(mesh, vertex_dofs);
-  case mesh::CellType::interval:
-    return generate_cell_permutations_interval(mesh, vertex_dofs, edge_dofs);
-  case (mesh::CellType::quadrilateral):
-    return generate_cell_permutations_quadrilateral(mesh, vertex_dofs,
-                                                    edge_dofs, face_dofs);
   case (mesh::CellType::triangle):
     return generate_cell_permutations_triangle(mesh, vertex_dofs, edge_dofs,
                                                face_dofs);
   case (mesh::CellType::tetrahedron):
     return generate_cell_permutations_tetrahedron(mesh, vertex_dofs, edge_dofs,
                                                   face_dofs, volume_dofs);
-  case (mesh::CellType::hexahedron):
-    return generate_cell_permutations_hexahedron(mesh, vertex_dofs, edge_dofs,
-                                                 face_dofs, volume_dofs);
   default:
-    throw std::runtime_error(
-        "Dof ordering on this cell type is not implemented.");
+    LOG(WARNING) << "Dof permutations are not defined for this cell type. High "
+                    "order elements may be incorrect.";
+    return empty_permutations(mesh, vertex_dofs, edge_dofs, face_dofs,
+                              volume_dofs);
   }
 }
 //-----------------------------------------------------------------------------
@@ -331,24 +324,6 @@ DofMapPermuter generate_cell_permutations_triangle(const mesh::Mesh mesh,
   return output;
 }
 //-----------------------------------------------------------------------------
-DofMapPermuter generate_cell_permutations_quadrilateral(const mesh::Mesh mesh,
-    const int vertex_dofs, const int edge_dofs, const int face_dofs)
-{
-  // This function temporarily returns a permuter that contains only empty
-  // permutations
-  const int dof_count
-      = 4 * vertex_dofs + 4 * edge_dofs + face_dofs;
-  DofMapPermuter output;
-  output.set_dof_count(dof_count);
-
-  int cells = mesh.num_entities(mesh.topology().dim());
-  output.set_cell_count(cells);
-  for (int cell_n = 0; cell_n < cells; ++cell_n)
-    output.set_cell(cell_n, {});
-
-  return output;
-}
-//-----------------------------------------------------------------------------
 DofMapPermuter generate_cell_permutations_tetrahedron(const mesh::Mesh mesh,
                                                       const int vertex_dofs,
                                                       const int edge_dofs,
@@ -490,53 +465,19 @@ DofMapPermuter generate_cell_permutations_tetrahedron(const mesh::Mesh mesh,
   return output;
 }
 //-----------------------------------------------------------------------------
-DofMapPermuter generate_cell_permutations_hexahedron(const mesh::Mesh mesh,
-                                                     const int vertex_dofs,
-                                                     const int edge_dofs,
-                                                     const int face_dofs,
-                                                     const int volume_dofs)
+DofMapPermuter empty_permutations(const mesh::Mesh mesh, const int vertex_dofs,
+                                  const int edge_dofs, const int face_dofs,
+                                  const int volume_dofs)
 {
-  // This function temporarily returns a permuter that contains only empty
-  // permutations
-  const int dof_count
-      = 8 * vertex_dofs + 12 * edge_dofs + 6 * face_dofs + volume_dofs;
+  // This function returns a permuter that contains only empty permutations
   DofMapPermuter output;
-  output.set_dof_count(dof_count);
+  const mesh::CellType type = mesh.cell_type();
+  int dof_count = 0;
+  dof_count += vertex_dofs * mesh::cell_num_entities(type, 0);
+  dof_count += edge_dofs * mesh::cell_num_entities(type, 1);
+  dof_count += face_dofs * mesh::cell_num_entities(type, 2);
+  dof_count += volume_dofs * mesh::cell_num_entities(type, 3);
 
-  int cells = mesh.num_entities(mesh.topology().dim());
-  output.set_cell_count(cells);
-  for (int cell_n = 0; cell_n < cells; ++cell_n)
-    output.set_cell(cell_n, {});
-
-  return output;
-}
-//-----------------------------------------------------------------------------
-DofMapPermuter generate_cell_permutations_point(const mesh::Mesh mesh,
-                                                     const int vertex_dofs)
-{
-  // This function temporarily returns a permuter that contains only empty
-  // permutations
-  const int dof_count = vertex_dofs;
-  DofMapPermuter output;
-  output.set_dof_count(dof_count);
-
-  int cells = mesh.num_entities(mesh.topology().dim());
-  output.set_cell_count(cells);
-  for (int cell_n = 0; cell_n < cells; ++cell_n)
-    output.set_cell(cell_n, {});
-
-  return output;
-}
-//-----------------------------------------------------------------------------
-DofMapPermuter generate_cell_permutations_interval(const mesh::Mesh mesh,
-                                                     const int vertex_dofs,
-                                                     const int edge_dofs)
-{
-  // This function temporarily returns a permuter that contains only empty
-  // permutations
-  const int dof_count
-      = 2 * vertex_dofs + edge_dofs;
-  DofMapPermuter output;
   output.set_dof_count(dof_count);
 
   int cells = mesh.num_entities(mesh.topology().dim());
