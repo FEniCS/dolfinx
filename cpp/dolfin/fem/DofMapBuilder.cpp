@@ -343,12 +343,8 @@ DofMapStructure build_basic_dofmap(const mesh::Mesh& mesh,
       = element_dof_layout.entity_dofs_all();
 
   // Make a dof permuter
-  const int vertex_dofs = 0<=D ? element_dof_layout.num_entity_dofs(0) : 0;
-  const int edge_dofs = 1<=D ? element_dof_layout.num_entity_dofs(1) : 0;
-  const int face_dofs = 2<=D ? element_dof_layout.num_entity_dofs(2) : 0;
-  const int volume_dofs = 3<=D ? element_dof_layout.num_entity_dofs(3) : 0;
-
-  DofMapPermuter permuter = generate_cell_permutations(mesh, vertex_dofs, edge_dofs, face_dofs, volume_dofs);
+  DofMapPermuter permuter
+      = generate_cell_permutations(mesh, element_dof_layout);
 
   // Build dofmaps from ElementDofmap
   for (auto& cell : mesh::MeshRange(mesh, D, mesh::MeshRangeType::ALL))
