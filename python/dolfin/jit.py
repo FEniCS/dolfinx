@@ -96,11 +96,9 @@ def ffc_jit(ufl_object, form_compiler_parameters=None):
     p["scalar_type"] = "double complex" if common.has_petsc_complex else "double"
     p.update(form_compiler_parameters or {})
 
-    # extra_compile_args = ['-g0', '-O3', '-march=native']
-    extra_compile_args = ['-g0', '-O0']
-    # extra_compile_args = None
-    cffi_debug = True
-    cffi_verbose = True
+    extra_compile_args = ['-g0', '-O3', '-march=native']
+    cffi_debug = False
+    cffi_verbose = False
 
     # Switch on type and compile, returning cffi object
     if isinstance(ufl_object, ufl.Form):
