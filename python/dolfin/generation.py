@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 # Copyright (C) 2017-2019 Chris N. Richardson and Michal Habera
 #
 # This file is part of DOLFIN (https://www.fenicsproject.org)

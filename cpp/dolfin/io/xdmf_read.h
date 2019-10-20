@@ -21,6 +21,7 @@ namespace dolfin
 
 namespace io
 {
+/// Low-level methods for reading XDMF files
 namespace xdmf_read
 {
 

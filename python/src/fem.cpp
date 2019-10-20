@@ -8,7 +8,7 @@
 #include <Eigen/Dense>
 #include <dolfin/common/IndexMap.h>
 #include <dolfin/common/types.h>
-#include <dolfin/fem/CoordinateMapping.h>
+#include <dolfin/fem/CoordinateElement.h>
 #include <dolfin/fem/DirichletBC.h>
 #include <dolfin/fem/DiscreteOperators.h>
 #include <dolfin/fem/DofMap.h>
@@ -81,7 +81,7 @@ void fem(py::module& m)
               = reinterpret_cast<ufc_coordinate_mapping*>(e);
           return dolfin::fem::get_cmap_from_ufc_cmap(*p);
         },
-        "Create a CoordinateMapping object from a pointer to a "
+        "Create a CoordinateElement object from a pointer to a "
         "ufc_coordinate_map.");
 
   // utils
@@ -180,12 +180,11 @@ void fem(py::module& m)
       .def("set", &dolfin::fem::DofMap::set)
       .def("dof_array", &dolfin::fem::DofMap::dof_array);
 
-  // dolfin::fem::CoordinateMapping
-  py::class_<dolfin::fem::CoordinateMapping,
-             std::shared_ptr<dolfin::fem::CoordinateMapping>>(
-      m, "CoordinateMapping", "Coordinate mapping object")
-      .def("compute_physical_coordinates",
-           &dolfin::fem::CoordinateMapping::compute_physical_coordinates);
+  // dolfin::fem::CoordinateElement
+  py::class_<dolfin::fem::CoordinateElement,
+             std::shared_ptr<dolfin::fem::CoordinateElement>>(
+      m, "CoordinateElement", "Coordinate mapping object")
+      .def("push_forward", &dolfin::fem::CoordinateElement::push_forward);
 
   // dolfin::fem::DirichletBC
   py::class_<dolfin::fem::DirichletBC,
@@ -215,22 +214,15 @@ void fem(py::module& m)
            py::arg("V"), py::arg("g"), py::arg("facets"), py::arg("method"))
       .def("function_space", &dolfin::fem::DirichletBC::function_space);
 
-  // Assembler insert mode  enum
-  py::enum_<dolfin::fem::InsertMode>(m, "InsertMode")
-      .value("set", dolfin::fem::InsertMode::set)
-      .value("sum", dolfin::fem::InsertMode::sum);
-
   // dolfin::fem::assemble
   m.def("assemble_scalar", &dolfin::fem::assemble_scalar,
         "Assemble functional over mesh");
   // Vectors (single)
-  m.def(
-      "assemble_vector",
-      py::overload_cast<Vec, const dolfin::fem::Form&, dolfin::fem::InsertMode>(
-          &dolfin::fem::assemble_vector),
-      py::arg("b"), py::arg("L"),
-      py::arg("insert_mode") = dolfin::fem::InsertMode::sum,
-      "Assemble linear form into an existing vector");
+  m.def("assemble_vector",
+        py::overload_cast<Vec, const dolfin::fem::Form&>(
+            &dolfin::fem::assemble_vector),
+        py::arg("b"), py::arg("L"),
+        "Assemble linear form into an existing vector");
   // Block/nest vectors
   m.def("assemble_vector",
         py::overload_cast<
