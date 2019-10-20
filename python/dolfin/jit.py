@@ -102,7 +102,7 @@ def ffc_jit(ufl_object, form_compiler_parameters=None):
     if user_cflags is not None:
         extra_compile_args = user_cflags.split(" ")
     cffi_debug = False
-    cffi_verbose = True
+    cffi_verbose = False
 
     # Switch on type and compile, returning cffi object
     if isinstance(ufl_object, ufl.Form):
