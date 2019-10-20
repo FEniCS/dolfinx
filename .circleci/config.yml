@@ -85,7 +85,7 @@ demos-python: &demos-python
     mkdir -p ~/junit
     cd python/demo
     python3 ./generate-demo-files.py
-    python3 -m pytest -n=3 -v -m serial --durations=10 --junitxml=~/junit/demo-results.xml test.py
+    python3 -m pytest -n=4 -v -m serial --durations=10 --junitxml=~/junit/demo-results.xml test.py
 
 demos-python-mpi: &demos-python-mpi
   name: Run demos (Python, MPI)
