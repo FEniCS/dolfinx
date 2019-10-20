@@ -103,13 +103,16 @@ def ffc_jit(ufl_object, form_compiler_parameters=None):
     # Switch on type and compile, returning cffi object
     if isinstance(ufl_object, ufl.Form):
         r = ffc.codegeneration.jit.compile_forms(
-            [ufl_object], parameters=p, cffi_extra_compile_args=extra_compile_args, cffi_verbose=cffi_verbose, cffi_debug=cffi_debug)
+            [ufl_object], parameters=p, cffi_extra_compile_args=extra_compile_args, cffi_verbose=cffi_verbose,
+            cffi_debug=cffi_debug)
     elif isinstance(ufl_object, ufl.FiniteElementBase):
         r = ffc.codegeneration.jit.compile_elements(
-            [ufl_object], parameters=p, cffi_extra_compile_args=extra_compile_args, cffi_verbose=cffi_verbose, cffi_debug=cffi_debug)
+            [ufl_object], parameters=p, cffi_extra_compile_args=extra_compile_args, cffi_verbose=cffi_verbose,
+            cffi_debug=cffi_debug)
     elif isinstance(ufl_object, ufl.Mesh):
         r = ffc.codegeneration.jit.compile_coordinate_maps(
-            [ufl_object], parameters=p, cffi_extra_compile_args=extra_compile_args, cffi_verbose=cffi_verbose, cffi_debug=cffi_debug)
+            [ufl_object], parameters=p, cffi_extra_compile_args=extra_compile_args, cffi_verbose=cffi_verbose,
+            cffi_debug=cffi_debug)
     else:
         raise TypeError(type(ufl_object))
 
