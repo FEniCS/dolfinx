@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 # Copyright (C) 2017-2018 Chris N. Richardson and Garth N. Wells
 #
 # This file is part of DOLFIN (https://www.fenicsproject.org)
@@ -6,6 +5,7 @@
 # SPDX-License-Identifier:    LGPL-3.0-or-later
 
 import functools
+import os
 
 import dolfin.pkgconfig
 import ffc
@@ -97,13 +97,26 @@ def ffc_jit(ufl_object, form_compiler_parameters=None):
     p["scalar_type"] = "double complex" if common.has_petsc_complex else "double"
     p.update(form_compiler_parameters or {})
 
+    extra_compile_args = ['-g0', '-O3', '-march=native']
+    user_cflags = os.getenv('DOLFIN_JIT_CFLAGS')
+    if user_cflags is not None:
+        extra_compile_args = user_cflags.split(" ")
+    cffi_debug = False
+    cffi_verbose = False
+
     # Switch on type and compile, returning cffi object
     if isinstance(ufl_object, ufl.Form):
-        r = ffc.codegeneration.jit.compile_forms([ufl_object], parameters=p)
+        r = ffc.codegeneration.jit.compile_forms(
+            [ufl_object], parameters=p, cffi_extra_compile_args=extra_compile_args, cffi_verbose=cffi_verbose,
+            cffi_debug=cffi_debug)
     elif isinstance(ufl_object, ufl.FiniteElementBase):
-        r = ffc.codegeneration.jit.compile_elements([ufl_object], parameters=p)
+        r = ffc.codegeneration.jit.compile_elements(
+            [ufl_object], parameters=p, cffi_extra_compile_args=extra_compile_args, cffi_verbose=cffi_verbose,
+            cffi_debug=cffi_debug)
     elif isinstance(ufl_object, ufl.Mesh):
-        r = ffc.codegeneration.jit.compile_coordinate_maps([ufl_object], parameters=p)
+        r = ffc.codegeneration.jit.compile_coordinate_maps(
+            [ufl_object], parameters=p, cffi_extra_compile_args=extra_compile_args, cffi_verbose=cffi_verbose,
+            cffi_debug=cffi_debug)
     else:
         raise TypeError(type(ufl_object))
 
