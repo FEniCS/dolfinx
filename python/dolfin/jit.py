@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 # Copyright (C) 2017-2018 Chris N. Richardson and Garth N. Wells
 #
 # This file is part of DOLFIN (https://www.fenicsproject.org)
@@ -100,12 +99,14 @@ def ffc_jit(ufl_object, form_compiler_parameters=None):
     # Switch on type and compile, returning cffi object
     extra_compile_args = ['-g0', '-O3', '-march=native']
     if isinstance(ufl_object, ufl.Form):
-        r = ffc.codegeneration.jit.compile_forms([ufl_object], parameters=p, extra_compile_args=extra_compile_args)
+        r = ffc.codegeneration.jit.compile_forms(
+            [ufl_object], parameters=p, cffi_extra_compile_args=extra_compile_args, cffi_debug=False)
     elif isinstance(ufl_object, ufl.FiniteElementBase):
-        r = ffc.codegeneration.jit.compile_elements([ufl_object], parameters=p, extra_compile_args=extra_compile_args)
+        r = ffc.codegeneration.jit.compile_elements(
+            [ufl_object], parameters=p, cffi_extra_compile_args=extra_compile_args, cffi_debug=False)
     elif isinstance(ufl_object, ufl.Mesh):
         r = ffc.codegeneration.jit.compile_coordinate_maps(
-            [ufl_object], parameters=p, extra_compile_args=extra_compile_args)
+            [ufl_object], parameters=p, cffi_extra_compile_args=extra_compile_args, cffi_debug=False)
     else:
         raise TypeError(type(ufl_object))
 
