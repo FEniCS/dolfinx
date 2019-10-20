@@ -35,6 +35,7 @@ class Mesh;
 
 namespace io
 {
+/// Low-level methods for generating XDMF files
 namespace xdmf_write
 {
 
@@ -145,7 +146,7 @@ void add_data_item(MPI_Comm comm, pugi::xml_node& xml_node, hid_t h5_id,
   }
 }
 
-// Return data which is local
+/// Return data which is local
 template <typename T>
 std::vector<T> compute_value_data(const mesh::MeshFunction<T>& meshfunction)
 {
