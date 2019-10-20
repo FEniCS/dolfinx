@@ -67,7 +67,7 @@ unit-tests-python: &unit-tests-python
   command: |
     mkdir -p ~/junit
     cd python/test/unit
-    python3 -m pytest -s -n3 --durations=50 --junitxml=~/junit/test-results.xml .
+    python3 -m pytest -s --durations=50 --junitxml=~/junit/test-results.xml .
 
 unit-tests-python-mpi: &unit-tests-python-mpi
   name: Run unit tests (Python, MPI)

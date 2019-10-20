@@ -102,7 +102,7 @@ def ffc_jit(ufl_object, form_compiler_parameters=None):
     if user_cflags is not None:
         extra_compile_args = user_cflags.split(" ")
 
-    print("test flag:", extra_compile_args)
+    print("!!!!! test flags:", extra_compile_args)
     cffi_debug = False
     cffi_verbose = True
 
