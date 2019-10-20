@@ -67,7 +67,7 @@ unit-tests-python: &unit-tests-python
   command: |
     mkdir -p ~/junit
     cd python/test/unit
-    python3 -m pytest -s --durations=50 --junitxml=~/junit/test-results.xml .
+    python3 -m pytest -n=3 --durations=50 --junitxml=~/junit/test-results.xml .
 
 unit-tests-python-mpi: &unit-tests-python-mpi
   name: Run unit tests (Python, MPI)
@@ -75,7 +75,7 @@ unit-tests-python-mpi: &unit-tests-python-mpi
       DOLFIN_JIT_CFLAGS: -g0 -O0
   command: |
     cd python/test/unit
-    mpirun -n 3 python3 -m pytest .
+    mpirun -np 3 python3 -m pytest .
 
 demos-python: &demos-python
   name: Run demos (Python, serial)
@@ -85,7 +85,7 @@ demos-python: &demos-python
     mkdir -p ~/junit
     cd python/demo
     python3 ./generate-demo-files.py
-    python3 -m pytest --durations=10 --junitxml=~/junit/demo-results.xml -n3 -v -m serial test.py
+    python3 -m pytest -n=3 -v -m serial --durations=10 --junitxml=~/junit/demo-results.xml test.py
 
 demos-python-mpi: &demos-python-mpi
   name: Run demos (Python, MPI)
@@ -94,7 +94,7 @@ demos-python-mpi: &demos-python-mpi
   command: |
     cd python/demo
     python3 ./generate-demo-files.py
-    python3 -m pytest -n2 -v -m mpi test.py --num-proc=3
+    python3 -m pytest -n=2 -v -m mpi test.py --num-proc=3
 
 version: 2
 
