@@ -5,6 +5,7 @@
 # SPDX-License-Identifier:    LGPL-3.0-or-later
 
 import functools
+import os
 
 import dolfin.pkgconfig
 import ffc
@@ -97,8 +98,13 @@ def ffc_jit(ufl_object, form_compiler_parameters=None):
     p.update(form_compiler_parameters or {})
 
     extra_compile_args = ['-g0', '-O3', '-march=native']
+    user_cflags = os.getenv('DOLFIN_JIT_CFLAGS')
+    if user_cflags is not None:
+        extra_compile_args = user_cflags.split(" ")
+
+    print("test flag:", extra_compile_args)
     cffi_debug = False
-    cffi_verbose = False
+    cffi_verbose = True
 
     # Switch on type and compile, returning cffi object
     if isinstance(ufl_object, ufl.Form):
