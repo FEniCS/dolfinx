@@ -27,12 +27,15 @@ void DofMapPermuter::add_permutation(const std::vector<int> permutation, int ord
 //-----------------------------------------------------------------------------
 void DofMapPermuter::set_cell(const int cell, const std::vector<int> orders)
 {
-  _cell_orders[cell] = orders;
+  for (std::size_t i = 0; i < orders.size(); ++i)
+    _cell_orders(cell, i) = orders[i];
 }
 //-----------------------------------------------------------------------------
 void DofMapPermuter::set_cell_count(const int cells)
 {
-  _cell_orders.resize(cells, {});
+  _cell_count = cells;
+  _cell_orders.resize(_cell_count, _dof_count);
+  _cell_orders.fill(0);
 }
 //-----------------------------------------------------------------------------
 std::vector<int> DofMapPermuter::permute(std::vector<int> vec, std::vector<int> perm) const
@@ -45,14 +48,12 @@ std::vector<int> DofMapPermuter::permute(std::vector<int> vec, std::vector<int> 
 //-----------------------------------------------------------------------------
 std::vector<int> DofMapPermuter::cell_permutation(const int cell) const
 {
-  std::vector<int> orders = _cell_orders[cell];
-
   std::vector<int> permutation(_dof_count);
   for (int i = 0; i < _dof_count; ++i)
     permutation[i] = i;
 
-  for (std::size_t i = 0; i < orders.size(); ++i)
-    for (int j = 0; j < orders[i]; ++j)
+  for (std::size_t i = 0; i < _permutations.size(); ++i)
+    for (int j = 0; j < _cell_orders(cell, i); ++j)
       permutation = permute(permutation, _permutations[i]);
 
   return permutation;

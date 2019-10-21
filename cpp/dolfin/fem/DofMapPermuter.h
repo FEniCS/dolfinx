@@ -73,9 +73,10 @@ public:
 private:
   /// The number of dofs
   int _dof_count;
+  int _cell_count;
 
   /// The orders of each cell
-  std::vector<std::vector<int>> _cell_orders;
+  Eigen::Array<PetscInt, Eigen::Dynamic, 2> _cell_orders;
 
   /// The permutations
   std::vector<std::vector<int>> _permutations;
