@@ -34,7 +34,7 @@ void DofMapPermuter::set_cell(const int cell, const std::vector<int> orders)
 void DofMapPermuter::set_cell_count(const int cells)
 {
   _cell_count = cells;
-  _cell_orders.resize(_cell_count, _dof_count);
+  _cell_orders.resize(_cell_count, _permutations.size());
   _cell_orders.fill(0);
 }
 //-----------------------------------------------------------------------------
