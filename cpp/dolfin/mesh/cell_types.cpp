@@ -515,7 +515,7 @@ int mesh::cell_degree(mesh::CellType type, int num_nodes)
       LOG(WARNING) << "9th order mesh is untested";
       return 9;
     default:
-      throw std::runtime_error("Triangle order > 9 is not supported.");
+      throw std::runtime_error("Unknown triangle layout.");
     }
   case mesh::CellType::tetrahedron:
     if (num_nodes != 4)

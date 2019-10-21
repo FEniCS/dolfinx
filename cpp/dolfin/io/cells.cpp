@@ -78,7 +78,7 @@ std::vector<std::uint8_t> io::cells::dolfin_to_vtk(mesh::CellType type,
     default:
       return permutation;
     }
-    for (int k = 0; unsigned(k) < remainders.size(); ++k)
+    for (std::size_t k = 0; k < remainders.size(); ++k)
       permutation[j++] = base + remainders[k];
     return permutation;
   }
@@ -185,14 +185,14 @@ std::vector<std::uint8_t> io::cells::lex_to_tp(mesh::CellType type,
     rows.back() = 1;
 
     std::vector<std::uint8_t>::iterator row;
-    for (row = rows.begin(); row != rows.end(); ++row)
+    for (auto row : rows)
     {
-      permutation[j] = *row;
-      permutation[j + n - 1] = n + *row;
+      permutation[j] = row;
+      permutation[j + n - 1] = n + row;
       j++;
       for (int index = 0; index < n - 2; ++index)
       {
-        permutation[j] = (2 + index) * n + *row;
+        permutation[j] = (2 + index) * n + row;
         j++;
       }
       j++;
@@ -251,7 +251,8 @@ std::vector<std::uint8_t> io::cells::vtk_to_dolfin(mesh::CellType type,
 //-----------------------------------------------------------------------------
 Eigen::Array<std::int64_t, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
 io::cells::gmsh_to_dolfin_ordering(
-    Eigen::Array<std::int64_t, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
+    const Eigen::Ref<const Eigen::Array<std::int64_t, Eigen::Dynamic,
+                                        Eigen::Dynamic, Eigen::RowMajor>>
         cells,
     mesh::CellType type)
 {
