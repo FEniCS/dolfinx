@@ -38,7 +38,7 @@ void DofMapPermuter::set_cell_count(const int cells)
 std::vector<int> DofMapPermuter::permute(std::vector<int> vec, std::vector<int> perm) const
 {
   std::vector<int> output(perm.size());
-  for (int i = 0; i < perm.size(); ++i)
+  for (std::size_t i = 0; i < perm.size(); ++i)
     output[perm[i]] = vec[i];
   return output;
 }
@@ -51,7 +51,7 @@ std::vector<int> DofMapPermuter::cell_permutation(const int cell) const
   for (int i = 0; i < _dof_count; ++i)
     permutation[i] = i;
 
-  for (int i = 0; i < orders.size(); ++i)
+  for (std::size_t i = 0; i < orders.size(); ++i)
     for (int j = 0; j < orders[i]; ++j)
       permutation = permute(permutation, _permutations[i]);
 
@@ -154,7 +154,7 @@ tetrahedron_rotations_and_reflection(const int volume_dofs)
     }
 
     start += face_dofs;
-    for (int j = 0; j < face.size(); ++j)
+    for (std::size_t j = 0; j < face.size(); ++j)
     {
       rotation1[face[j]] = face[base_face_rotation[j]];
       rotation2[face2[j]] = face2[base_face_rotation[j]];
@@ -238,7 +238,7 @@ _generate_cell_permutations_triangle(const mesh::Mesh mesh,
     std::vector<int> flip(dof_count);
     std::iota(flip.begin(), flip.end(), 0);
     auto edge = element_dof_layout.entity_dofs(1, edge_n);
-    for (int j = 0; j < edge.size(); ++j)
+    for (std::size_t j = 0; j < edge.size(); ++j)
       flip[edge[j]] = edge[base_flip[j]];
     permuter.add_permutation(flip, 2);
   }
@@ -252,7 +252,7 @@ _generate_cell_permutations_triangle(const mesh::Mesh mesh,
     std::vector<int> rotation(dof_count);
     std::iota(rotation.begin(), rotation.end(), 0);
     auto face = element_dof_layout.entity_dofs(2, 0);
-    for (int j = 0; j < face.size(); ++j)
+    for (std::size_t j = 0; j < face.size(); ++j)
       rotation[face[j]] = face[base_face_rotation[j]];
     permuter.add_permutation(rotation, 3);
   }
@@ -262,7 +262,7 @@ _generate_cell_permutations_triangle(const mesh::Mesh mesh,
     std::vector<int> reflection(dof_count);
     std::iota(reflection.begin(), reflection.end(), 0);
     auto face = element_dof_layout.entity_dofs(2, 0);
-    for (int j = 0; j < face.size(); ++j)
+    for (std::size_t j = 0; j < face.size(); ++j)
       reflection[face[j]] = face[base_face_reflection[j]];
     permuter.add_permutation(reflection, 2);
   }
@@ -319,7 +319,7 @@ DofMapPermuter _generate_cell_permutations_tetrahedron(
     std::vector<int> flip(dof_count);
     std::iota(flip.begin(), flip.end(), 0);
     auto edge = element_dof_layout.entity_dofs(1, edge_n);
-    for (int j = 0; j < edge.size(); ++j)
+    for (std::size_t j = 0; j < edge.size(); ++j)
       flip[edge[j]] = edge[base_flip[j]];
     permuter.add_permutation(flip, 2);
   }
@@ -335,7 +335,7 @@ DofMapPermuter _generate_cell_permutations_tetrahedron(
     std::vector<int> rotation(dof_count);
     std::iota(rotation.begin(), rotation.end(), 0);
     auto face = element_dof_layout.entity_dofs(2, face_n);
-    for (int j = 0; j < face.size(); ++j)
+    for (std::size_t j = 0; j < face.size(); ++j)
       rotation[face[j]] = face[base_face_rotation[j]];
     permuter.add_permutation(rotation, 3);
   }
@@ -346,7 +346,7 @@ DofMapPermuter _generate_cell_permutations_tetrahedron(
     std::vector<int> reflection(dof_count);
     std::iota(reflection.begin(), reflection.end(), 0);
     auto face = element_dof_layout.entity_dofs(2, face_n);
-    for (int j = 0; j < face.size(); ++j)
+    for (std::size_t j = 0; j < face.size(); ++j)
       reflection[face[j]] = face[base_face_reflection[j]];
     permuter.add_permutation(reflection, 2);
   }
@@ -361,21 +361,21 @@ DofMapPermuter _generate_cell_permutations_tetrahedron(
   {
     std::vector<int> rotation(dof_count);
     std::iota(rotation.begin(), rotation.end(), 0);
-    for (int j = 0; j < interior.size(); ++j)
+    for (std::size_t j = 0; j < interior.size(); ++j)
       rotation[interior[j]] = interior[base_interior_rotation1[j]];
     permuter.add_permutation(rotation, 3);
   }
   {
     std::vector<int> rotation(dof_count);
     std::iota(rotation.begin(), rotation.end(), 0);
-    for (int j = 0; j < interior.size(); ++j)
+    for (std::size_t j = 0; j < interior.size(); ++j)
       rotation[interior[j]] = interior[base_interior_rotation2[j]];
     permuter.add_permutation(rotation, 3);
   }
   {
     std::vector<int> rotation(dof_count);
     std::iota(rotation.begin(), rotation.end(), 0);
-    for (int j = 0; j < interior.size(); ++j)
+    for (std::size_t j = 0; j < interior.size(); ++j)
       rotation[interior[j]]
           = interior[base_interior_rotation2
                          [base_interior_rotation2[base_interior_rotation1[j]]]];
@@ -384,7 +384,7 @@ DofMapPermuter _generate_cell_permutations_tetrahedron(
   {
     std::vector<int> reflection(dof_count);
     std::iota(reflection.begin(), reflection.end(), 0);
-    for (int j = 0; j < interior.size(); ++j)
+    for (std::size_t j = 0; j < interior.size(); ++j)
       reflection[interior[j]] = interior[base_interior_reflection[j]];
     permuter.add_permutation(reflection, 2);
   }
