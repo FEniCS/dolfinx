@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 # Copyright (C) 2017-2018 Chris N. Richardson and Garth N. Wells
 #
 # This file is part of DOLFIN (https://www.fenicsproject.org)
@@ -6,11 +5,13 @@
 # SPDX-License-Identifier:    LGPL-3.0-or-later
 
 import functools
+import os
+from pathlib import Path
 
 import dolfin.pkgconfig
 import ffc
-import ufl
 import ffc.codegeneration.jit
+import ufl
 from dolfin import common, cpp
 
 if dolfin.pkgconfig.exists("dolfin"):
@@ -97,13 +98,27 @@ def ffc_jit(ufl_object, form_compiler_parameters=None):
     p["scalar_type"] = "double complex" if common.has_petsc_complex else "double"
     p.update(form_compiler_parameters or {})
 
+    # CFFI compiler options/flags
+    extra_compile_args = ['-g0', '-O3', '-march=native']
+    user_cflags = os.getenv('DOLFIN_JIT_CFLAGS')
+    if user_cflags is not None:
+        extra_compile_args = user_cflags.split(" ")
+    cffi_options = dict(cffi_extra_compile_args=extra_compile_args, cffi_verbose=False,
+                        cffi_debug=False)
+
+    # Set FFC cache location
+    cache_dir = "~/.cache/fenics"
+    cache_dir = os.getenv('FENICS_CACHE_DIR', cache_dir)
+    cache_dir = Path(cache_dir).expanduser()
+
     # Switch on type and compile, returning cffi object
     if isinstance(ufl_object, ufl.Form):
-        r = ffc.codegeneration.jit.compile_forms([ufl_object], parameters=p)
+        r = ffc.codegeneration.jit.compile_forms([ufl_object], parameters=p, cache_dir=cache_dir, **cffi_options)
     elif isinstance(ufl_object, ufl.FiniteElementBase):
-        r = ffc.codegeneration.jit.compile_elements([ufl_object], parameters=p)
+        r = ffc.codegeneration.jit.compile_elements([ufl_object], parameters=p, cache_dir=cache_dir, **cffi_options)
     elif isinstance(ufl_object, ufl.Mesh):
-        r = ffc.codegeneration.jit.compile_coordinate_maps([ufl_object], parameters=p)
+        r = ffc.codegeneration.jit.compile_coordinate_maps(
+            [ufl_object], parameters=p, cache_dir=cache_dir, **cffi_options)
     else:
         raise TypeError(type(ufl_object))
 

@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 # Copyright (C) 2018-2019 Garth N. Wells
 #
 # This file is part of DOLFIN (https://www.fenicsproject.org)
@@ -79,7 +78,7 @@ def assemble_scalar(M: typing.Union[Form, cpp.fem.Form]) -> PETSc.ScalarType:
 
 @convert_ufl_forms_to_dolfin_forms
 @functools.singledispatch
-def assemble_vector(L: typing.Union[Form, cpp.fem.Form], mode=cpp.fem.InsertMode.sum) -> PETSc.Vec:
+def assemble_vector(L: typing.Union[Form, cpp.fem.Form]) -> PETSc.Vec:
     """Assemble linear form into a vector. The returned vector is not
     finalised, i.e. ghost values are not accumulated.
 
@@ -87,20 +86,20 @@ def assemble_vector(L: typing.Union[Form, cpp.fem.Form], mode=cpp.fem.InsertMode
     b = cpp.la.create_vector(L.function_space(0).dofmap.index_map)
     with b.localForm() as b_local:
         b_local.set(0.0)
-    cpp.fem.assemble_vector(b, L, mode)
+    cpp.fem.assemble_vector(b, L)
     return b
 
 
 @convert_ufl_forms_to_dolfin_forms
 @assemble_vector.register(PETSc.Vec)
-def _(b: PETSc.Vec, L: typing.Union[Form, cpp.fem.Form], mode=cpp.fem.InsertMode.sum) -> PETSc.Vec:
+def _(b: PETSc.Vec, L: typing.Union[Form, cpp.fem.Form]) -> PETSc.Vec:
     """Re-assemble linear form into a vector.
 
     The vector is not zeroed and it is not finalised, i.e. ghost values
     are not accumulated.
 
     """
-    cpp.fem.assemble_vector(b, L, mode)
+    cpp.fem.assemble_vector(b, L)
     return b
 
 

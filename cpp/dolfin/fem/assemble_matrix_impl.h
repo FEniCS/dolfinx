@@ -70,6 +70,7 @@ void assemble_exterior_facets(
     const std::vector<int>& offsets,
     const std::vector<PetscScalar> constant_values);
 
+/// Execute kernel over interior facets and  accumulate result in Mat
 void assemble_interior_facets(
     Mat A, const mesh::Mesh& mesh,
     const std::vector<std::int32_t>& active_facets, const DofMap& dofmap0,
