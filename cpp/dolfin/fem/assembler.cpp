@@ -205,7 +205,7 @@ void _assemble_vector_block(
                                                                    + map_size1);
 
     // Assemble and modify for bcs (lifting)
-    fem::impl::assemble_vector(b_vec[i], *L[i], fem::InsertMode::sum);
+    fem::impl::assemble_vector(b_vec[i], *L[i]);
 
     // Collect x0 sub vector
     if (x0)
