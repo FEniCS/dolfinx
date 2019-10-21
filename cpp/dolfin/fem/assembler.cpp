@@ -296,6 +296,8 @@ void _assemble_vector_block(
     offset += map_size0;
   }
   VecRestoreArray(b, &values);
+  if (x0)
+    VecRestoreArray(x0, &values_x0);
 }
 //-----------------------------------------------------------------------------
 
