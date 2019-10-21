@@ -180,36 +180,36 @@ std::pair<int, int> DofMapPermuter::calculate_triangle_orders(int v1, int v2,
     return std::make_pair(2, v1 > v2);
 }
 //-----------------------------------------------------------------------------
-std::tuple<int, int, int, int>
-DofMapPermuter::calculate_tetrahedron_orders(int v1, int v2, int v3, int v4)
+std::array<int, 4> DofMapPermuter::calculate_tetrahedron_orders(int v1, int v2,
+                                                                int v3, int v4)
 {
   if (v1 < v2 && v1 < v3 && v1 < v4)
   {
     int a;
     int b;
     std::tie(a, b) = calculate_triangle_orders(v2, v3, v4);
-    return std::make_tuple(0, 0, a, b);
+    return {0, 0, a, b};
   }
   if (v2 < v1 && v2 < v3 && v2 < v4)
   {
     int a;
     int b;
     std::tie(a, b) = calculate_triangle_orders(v3, v1, v4);
-    return std::make_tuple(1, 0, a, b);
+    return {1, 0, a, b};
   }
   if (v3 < v1 && v3 < v2 && v3 < v4)
   {
     int a;
     int b;
     std::tie(a, b) = calculate_triangle_orders(v1, v2, v4);
-    return std::make_tuple(2, 0, a, b);
+    return {2, 0, a, b};
   }
   if (v4 < v1 && v4 < v2 && v4 < v3)
   {
     int a;
     int b;
     std::tie(a, b) = calculate_triangle_orders(v2, v1, v3);
-    return std::make_tuple(0, 1, a, b);
+    return {0, 1, a, b};
   }
 }
 //-----------------------------------------------------------------------------
@@ -418,9 +418,12 @@ DofMapPermuter _generate_cell_permutations_tetrahedron(
     std::tie(orders[9], orders[13]) = permuter.calculate_triangle_orders(
         vertices[0], vertices[1], vertices[2]);
 
-    std::tie(orders[14], orders[15], orders[16], orders[17])
-        = permuter.calculate_tetrahedron_orders(vertices[0], vertices[1],
-                                                vertices[2], vertices[3]);
+    auto tet_orders = permuter.calculate_tetrahedron_orders(
+        vertices[0], vertices[1], vertices[2], vertices[3]);
+    orders[14] = tet_orders[0];
+    orders[15] = tet_orders[1];
+    orders[16] = tet_orders[2];
+    orders[17] = tet_orders[3];
     permuter.set_cell(cell_n, orders);
   }
 

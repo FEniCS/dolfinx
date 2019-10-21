@@ -67,8 +67,8 @@ public:
   /// @param[in] v3 The global vertex number of the tetrahedron's third vertex
   /// @param[in] v4 The global vertex number of the tetrahedron's fourth vertex
   /// @return The rotation and reflection orders for the tetrahedron
-  std::tuple<int, int, int, int> calculate_tetrahedron_orders(int v1, int v2,
-                                                              int v3, int v4);
+  std::array<int, 4> calculate_tetrahedron_orders(int v1, int v2, int v3,
+                                                  int v4);
 
 private:
   /// The number of dofs
