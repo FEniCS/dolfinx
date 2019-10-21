@@ -29,6 +29,7 @@ def _create_cpp_form(form):
     return form
 
 
+# FIXME: This really shouldn't be needed
 def convert_ufl_forms_to_dolfin_forms(f):
     """Function decorator to wrap all ufl.Form arguments to dolfin.fem.Form.
     This decorator prevents having to do this conversion in each of the members
@@ -39,6 +40,27 @@ def convert_ufl_forms_to_dolfin_forms(f):
         args = _create_cpp_form(args)
         return f(*args, **kwargs)
     return wrapper
+
+
+# -- Vector instantiation ----------------------------------------------------
+
+
+@convert_ufl_forms_to_dolfin_forms
+def create_vector(L: typing.Union[Form, cpp.fem.Form]) -> PETSc.Vec:
+    b = cpp.la.create_vector(L.function_space(0).dofmap.index_map)
+    return b
+
+
+@convert_ufl_forms_to_dolfin_forms
+def create_vector_block(L: typing.List[typing.Union[Form, cpp.fem.Form]]) -> PETSc.Vec:
+    b = cpp.fem.create_vector(L)
+    return b
+
+
+@convert_ufl_forms_to_dolfin_forms
+def create_vector_nest(L: typing.List[typing.Union[Form, cpp.fem.Form]]) -> PETSc.Vec:
+    b = cpp.fem.create_vector_nest(L)
+    return b
 
 
 # -- Scalar assembly ---------------------------------------------------------
