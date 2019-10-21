@@ -79,22 +79,17 @@ def test_matrix_assembly_block():
     with x0.localForm() as x0_local:
         x0_local.set(initial_guess_value)
 
-    # # Copy initial guess vector x0 into FE functions
-    # offset = 0
-    # for soln_vec in [u, p]:
-    #     soln_vec = soln_vec.vector
-    #     size_local = soln_vec.getLocalSize()
-    #     iset = PETSc.IS().createGeneral(list(range(offset, offset + size_local)))
-    #     x0_subvec = x0.getSubVector(iset)
-    #     x0_subvec.copy(soln_vec)
-    #     x0.restoreSubVector(iset, x0_subvec)
-    #     soln_vec.ghostUpdate(addv=PETSc.InsertMode.ADD, mode=PETSc.ScatterMode.REVERSE)
-    #     offset += size_local
-
-    with u.vector.localForm() as ul:
-        ul.set(initial_guess_value)
-    with p.vector.localForm() as pl:
-        pl.set(initial_guess_value)
+    # Copy initial guess vector x0 into FE functions
+    offset = 0
+    for soln_vec in [u, p]:
+        soln_vec = soln_vec.vector
+        size_local = soln_vec.getLocalSize()
+        iset = PETSc.IS().createGeneral(list(range(offset, offset + size_local)))
+        x0_subvec = x0.getSubVector(iset)
+        x0_subvec.copy(soln_vec)
+        x0.restoreSubVector(iset, x0_subvec)
+        soln_vec.ghostUpdate(addv=PETSc.InsertMode.INSERT, mode=PETSc.ScatterMode.FORWARD)
+        offset += size_local
 
     # Ghosts are updated inside assemble_vector_block
     A0 = dolfin.fem.assemble_matrix_block(a_block, [bc])
