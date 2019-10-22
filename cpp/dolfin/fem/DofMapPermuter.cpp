@@ -76,13 +76,17 @@ std::array<int, 4> _calculate_tetrahedron_orders(int v1, int v2, int v3, int v4)
 //-----------------------------------------------------------------------------
 /// Makes a permutation to flip the dofs on an edge
 /// @param[in] edge_dofs Number of edge dofs
+/// @param[in] bs Block size
 /// @return The permutation to reverse the dofs
-std::vector<int> _edge_flip(const int edge_dofs)
+std::vector<int> _edge_flip(const int edge_dofs, const int blocksize)
 {
   // This will only be called at most once for each mesh
+  const int blocks = edge_dofs / blocksize;
+  int j = 0;
   std::vector<int> flip(edge_dofs);
-  for (int i = 0; i < edge_dofs; ++i)
-    flip[i] = edge_dofs - 1 - i;
+  for (int i = 0; i < blocks; ++i)
+    for (int k = 0; k < blocksize; ++k)
+      flip[j++] = edge_dofs - (i + 1) * blocksize + k;
   return flip;
 }
 //-----------------------------------------------------------------------------
@@ -90,10 +94,11 @@ std::vector<int> _edge_flip(const int edge_dofs)
 /// @param[in] edge_dofs Number of dofs on the face of the triangle
 /// @return Permutations to rotate and reflect the dofs
 std::array<std::vector<int>, 2>
-_triangle_rotation_and_reflection(const int face_dofs)
+_triangle_rotation_and_reflection(const int face_dofs, const int blocksize)
 {
   // This will only be called at most once for each mesh
-  float root = std::sqrt(8 * face_dofs + 1);
+  const int blocks = face_dofs / blocksize;
+  float root = std::sqrt(8 * blocks + 1);
   assert(root == std::floor(root) && root % 2 == 1);
   int side_length = (root - 1) / 2; // side length of the triangle of face dofs
 
@@ -101,11 +106,12 @@ _triangle_rotation_and_reflection(const int face_dofs)
   {
     int j = 0;
     int i = 1;
-    for (int st = face_dofs - 1; st >= 0; st -= (i++))
+    for (int st = blocks - 1; st >= 0; st -= (i++))
     {
       int dof = st;
       for (int sub = i + 1; sub <= side_length + 1; dof -= (sub++))
-        rotation[j++] = dof;
+        for (int k = 0; k < blocksize; ++k)
+          rotation[j++] = blocksize * dof + k;
     }
     assert(j == face_dofs);
   }
@@ -117,7 +123,8 @@ _triangle_rotation_and_reflection(const int face_dofs)
     {
       int dof = st;
       for (int add = side_length; add > st; dof += (add--))
-        reflection[j++] = dof;
+        for (int k = 0; k < blocksize; ++k)
+          reflection[j++] = blocksize * dof + k;
     }
     assert(j == face_dofs);
   }
@@ -129,14 +136,15 @@ _triangle_rotation_and_reflection(const int face_dofs)
 /// @param[in] edge_dofs Number of dofs on the interior of the tetrahedron
 /// @return Permutations to rotate and reflect the dofs
 std::array<std::vector<int>, 4>
-_tetrahedron_rotations_and_reflection(const int volume_dofs)
+_tetrahedron_rotations_and_reflection(const int volume_dofs,
+                                      const int blocksize)
 {
   // This will only be called at most once for each mesh
+  const int blocks = volume_dofs / blocksize;
   int side_length = 0;
-  while (side_length * (side_length + 1) * (side_length + 2) < 6 * volume_dofs)
+  while (side_length * (side_length + 1) * (side_length + 2) < 6 * blocks)
     ++side_length;
-  assert(side_length * (side_length + 1) * (side_length + 2)
-         == 6 * volume_dofs);
+  assert(side_length * (side_length + 1) * (side_length + 2) == 6 * blocks);
 
   std::vector<int> rotation1(volume_dofs);
   std::iota(rotation1.begin(), rotation1.end(), 0);
@@ -149,22 +157,24 @@ _tetrahedron_rotations_and_reflection(const int volume_dofs)
   for (int side = side_length; side > 0; --side)
   {
     int face_dofs = side * (side + 1) / 2;
-    auto base_faces = _triangle_rotation_and_reflection(face_dofs);
+    auto base_faces = _triangle_rotation_and_reflection(face_dofs, 1);
 
-    std::vector<int> face(face_dofs);
+    std::vector<int> face(face_dofs * blocksize);
     std::iota(face.begin(), face.end(), start);
 
-    std::vector<int> face2(face_dofs);
+    std::vector<int> face2(face_dofs * blocksize);
     int j = 0;
     int start2 = side * side_length - 1 - side * (side - 1) / 2;
     for (int row = 0; row < side; ++row)
     {
       int dof = start2;
-      face2[j++] = dof;
+      for (int k = 0; k < blocksize; ++k)
+        face2[j++] = dof * blocksize + k;
       for (int sub = 2 + (side_length - side); sub <= side_length - row; ++sub)
       {
         dof -= sub;
-        face2[j++] = dof;
+        for (int k = 0; k < blocksize; ++k)
+          face2[j++] = dof * blocksize + k;
       }
       start2 += (side_length - row - 1) * (side_length - row) / 2;
     }
@@ -261,6 +271,7 @@ void DofMapPermuter::_generate_triangle(
   const int edge_dofs = 1 <= D ? element_dof_layout.num_entity_dofs(1) : 0;
   const int face_dofs = 2 <= D ? element_dof_layout.num_entity_dofs(2) : 0;
   const int volume_dofs = 3 <= D ? element_dof_layout.num_entity_dofs(3) : 0;
+  const int bs = element_dof_layout.block_size();
 
   _dof_count = 3 * vertex_dofs + 3 * edge_dofs + face_dofs;
   _permutation_count = 5;
@@ -269,14 +280,14 @@ void DofMapPermuter::_generate_triangle(
   _resize_data();
 
   // Make edge flipping permutations
-  std::vector<int> base_flip = _edge_flip(edge_dofs);
+  std::vector<int> base_flip = _edge_flip(edge_dofs, bs);
   for (int edge_n = 0; edge_n < 3; ++edge_n)
   {
     auto edge = element_dof_layout.entity_dofs(1, edge_n);
     _set_permutation(edge_n, edge, base_flip, 2);
   }
   // Make permutations that rotate and reflect the face dofs
-  auto base_faces = _triangle_rotation_and_reflection(face_dofs);
+  auto base_faces = _triangle_rotation_and_reflection(face_dofs, bs);
   auto face = element_dof_layout.entity_dofs(2, 0);
   _set_permutation(3, face, base_faces[0], 3);
   _set_permutation(4, face, base_faces[1], 2);
@@ -306,6 +317,7 @@ void DofMapPermuter::_generate_tetrahedron(
   const int edge_dofs = 1 <= D ? element_dof_layout.num_entity_dofs(1) : 0;
   const int face_dofs = 2 <= D ? element_dof_layout.num_entity_dofs(2) : 0;
   const int volume_dofs = 3 <= D ? element_dof_layout.num_entity_dofs(3) : 0;
+  const int bs = element_dof_layout.block_size();
 
   _dof_count = 4 * vertex_dofs + 6 * edge_dofs + 4 * face_dofs + volume_dofs;
   _permutation_count = 18;
@@ -314,14 +326,14 @@ void DofMapPermuter::_generate_tetrahedron(
   _resize_data();
 
   // Make edge flipping permutations
-  std::vector<int> base_flip = _edge_flip(edge_dofs);
+  std::vector<int> base_flip = _edge_flip(edge_dofs, bs);
   for (int edge_n = 0; edge_n < 6; ++edge_n)
   {
     auto edge = element_dof_layout.entity_dofs(1, edge_n);
     _set_permutation(edge_n, edge, base_flip, 2);
   }
   // Make permutations that rotate and reflect the face dofs
-  auto base_faces = _triangle_rotation_and_reflection(face_dofs);
+  auto base_faces = _triangle_rotation_and_reflection(face_dofs, bs);
   for (int face_n = 0; face_n < 4; ++face_n)
   {
     auto face = element_dof_layout.entity_dofs(2, face_n);
@@ -329,7 +341,7 @@ void DofMapPermuter::_generate_tetrahedron(
     _set_permutation(6 + 2 * face_n + 1, face, base_faces[1], 2);
   }
   // Make permutations that rotate and reflect the interior dofs
-  auto base_interiors = _tetrahedron_rotations_and_reflection(volume_dofs);
+  auto base_interiors = _tetrahedron_rotations_and_reflection(volume_dofs, bs);
   auto interior = element_dof_layout.entity_dofs(3, 0);
   _set_permutation(14, interior, base_interiors[0], 3);
   _set_permutation(15, interior, base_interiors[1], 3);
