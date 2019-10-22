@@ -94,7 +94,7 @@ def mpi_jit_decorator(local_jit, *args, **kwargs):
 @mpi_jit_decorator
 def ffc_jit(ufl_object, form_compiler_parameters=None):
     # Prepare form compiler parameters with overrides from dolfin
-    p = ffc.default_jit_parameters()
+    p = ffc.default_parameters()
     p["scalar_type"] = "double complex" if common.has_petsc_complex else "double"
     p.update(form_compiler_parameters or {})
 
