@@ -115,7 +115,7 @@ ENV PYTHONPATH=/usr/local/gmsh-${GMSH_VERSION}-Linux64-sdk/lib
 # - Third set of packages are optional but required for
 #   pygmsh/meshio/DOLFIN mesh pipeline.
 RUN pip3 install --no-cache-dir mpi4py numba && \
-    pip3 install --no-cache-dir cffi decorator flake8 pytest pytest-xdist sphinx sphinx_rtd_theme && \
+    pip3 install --no-cache-dir cffi flake8 pytest pytest-xdist sphinx sphinx_rtd_theme && \
     export HDF5_MPI="ON" && \
     pip3 install --no-cache-dir --no-binary=h5py h5py meshio pygmsh
 # Install pybind11
