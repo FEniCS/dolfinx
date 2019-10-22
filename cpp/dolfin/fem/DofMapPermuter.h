@@ -23,75 +23,56 @@ class DofMapPermuter
 {
 public:
   /// Constructor
-  DofMapPermuter();
+  /// @param[in] mesh The mesh
+  /// @param[in] element_dof_layout The layout of dofs in each cell
+  DofMapPermuter(const mesh::Mesh mesh,
+                 const ElementDofLayout& element_dof_layout);
 
   /// Return the dof permutations for the given cell
   /// @param[in] cell The cell index
   /// @return The permutation for the given cell
   std::vector<int> cell_permutation(const int cell) const;
 
-  /// Permute a vector
-  /// @param[in] vec A vector to permute
-  /// @param[in] perm A permutation
-  /// @return The permuted vector
-  std::vector<int> permute(std::vector<int> vec, std::vector<int> perm) const;
-
-  /// Adds a permutation to the DofMapPermuter
-  /// @param[in] permutation The permutation
-  /// @param[in] order The order of the permutation
-  void add_permutation(const std::vector<int> permutation, int order);
-
-  /// Sets the orders of each permutation for a cell
-  /// @param[in] cell The cell index
-  /// @param[in] orders The permutation orders
-  void set_cell(const int cell, const std::vector<int> orders);
-
-  /// Sets the number of cells
-  /// @param[in] cells Number of cells
-  void set_cell_count(const int cells);
-
-  /// Sets the number of dofs per cell
-  /// @param[in] cells Number of dofs per cell
-  void set_dof_count(const int dofs);
-
-  /// Calculates the permutation orders for a triangle
-  /// @param[in] v1 The global vertex number of the triangle's first vertex
-  /// @param[in] v2 The global vertex number of the triangle's second vertex
-  /// @param[in] v3 The global vertex number of the triangle's third vertex
-  /// @return The rotation and reflection orders for the triangle
-  std::pair<int, int> calculate_triangle_orders(int v1, int v2, int v3);
-
-  /// Calculates the permutation orders for a tetrahedron
-  /// @param[in] v1 The global vertex number of the tetrahedron's first vertex
-  /// @param[in] v2 The global vertex number of the tetrahedron's second vertex
-  /// @param[in] v3 The global vertex number of the tetrahedron's third vertex
-  /// @param[in] v4 The global vertex number of the tetrahedron's fourth vertex
-  /// @return The rotation and reflection orders for the tetrahedron
-  std::array<int, 4> calculate_tetrahedron_orders(int v1, int v2, int v3,
-                                                  int v4);
-
 private:
-  /// The number of dofs
+  // Functions called by the constructor for specific mesh types
+  void _generate_triangle(const mesh::Mesh mesh,
+                          const ElementDofLayout& element_dof_layout);
+  void _generate_tetrahedron(const mesh::Mesh mesh,
+                             const ElementDofLayout& element_dof_layout);
+  void _generate_empty(const mesh::Mesh mesh,
+                       const ElementDofLayout& element_dof_layout);
+
+  void _resize_data();
+
+  /// The number of dofs and cells and permutations
   int _dof_count;
   int _cell_count;
+  int _permutation_count;
+
+  /// Sets the orders of a permutation for a cell
+  /// @param[in] cell The cell index
+  /// @param[in] permutation The permutation index
+  /// @param[in] orders The permutation order
+  void _set_order(const int cell, const int permutation, const int order);
 
   /// The orders of each cell
-  Eigen::Array<PetscInt, Eigen::Dynamic, 2> _cell_orders;
+  Eigen::Array<PetscInt, Eigen::Dynamic, Eigen::Dynamic> _cell_orders;
 
   /// The permutations
-  std::vector<std::vector<int>> _permutations;
+  Eigen::Array<PetscInt, Eigen::Dynamic, Eigen::Dynamic> _permutations;
 
   /// The orders of each permutation
   std::vector<int> _permutation_orders;
-};
 
-/// Make the DofMapPermuter for a given mesh and dof layout
-/// @param[in] mesh The mesh
-/// @param[in] element_dof_layout The layout of dofs in each cell
-/// @return A DofMapPermuter for the mesh and dof layout
-DofMapPermuter
-generate_cell_permutations(const mesh::Mesh mesh,
-                           const ElementDofLayout& element_dof_layout);
+  /// Sets a permutation to the DofMapPermuter
+  /// @param[in] index The index of the permutation
+  /// @param[in] dofs The local dofs on the mesh element to be permuted
+  /// @param[in] base_permutation The reordering of the local dofs
+  /// @param[in] order The order of the permutation
+  void _set_permutation(const int index,
+                        const Eigen::Array<PetscInt, Eigen::Dynamic, 1> dofs,
+                        const std::vector<int> base_permutation, int order);
+};
 
 } // namespace fem
 } // namespace dolfin
