@@ -174,10 +174,10 @@ class NonlinearPDE_SNESProblem():
 
 
 def test_assembly_solve_block():
-    """Solve a two-field mass-matrix like problem with block matrix approaches
-    and test that solution is the same.
+    """Solve a two-field nonlinear diffusion like problem with block matrix
+    approaches and test that solution is the same.
     """
-    mesh = dolfin.generation.UnitSquareMesh(dolfin.MPI.comm_world, 32, 31)
+    mesh = dolfin.generation.UnitSquareMesh(dolfin.MPI.comm_world, 12, 13)
     p0, p1 = 1, 1
     P0 = ufl.FiniteElement("Lagrange", mesh.ufl_cell(), p0)
     P1 = ufl.FiniteElement("Lagrange", mesh.ufl_cell(), p1)
@@ -187,7 +187,7 @@ def test_assembly_solve_block():
     bc_val_0 = 1.0
     bc_val_1 = 2.0
 
-    initial_guess = 100.0
+    initial_guess = 1.0
 
     def boundary(x):
         return numpy.logical_or(x[:, 0] < 1.0e-6, x[:, 0] > 1.0 - 1.0e-6)
@@ -212,10 +212,9 @@ def test_assembly_solve_block():
 
     f = 1.0
     g = -3.0
-    zero = dolfin.Function(V0)
 
-    F = [inner(u, v) * dx + zero * inner(p, v) * dx - inner(f, v) * dx,
-         zero * inner(u, q) * dx + inner(p, q) * dx - inner(g, q) * dx]
+    F = [inner((u**2 + 1)*ufl.grad(u), ufl.grad(v)) * dx - inner(f, v) * dx,
+         inner((p**2 + 1)*ufl.grad(p), ufl.grad(q)) * dx - inner(g, q) * dx]
 
     J = [[derivative(F[0], u, du), derivative(F[0], p, dp)],
          [derivative(F[1], u, du), derivative(F[1], p, dp)]]
@@ -278,7 +277,8 @@ def test_assembly_solve_block():
     u0, u1 = ufl.split(U)
     v0, v1 = dolfin.function.TestFunctions(W)
 
-    F =  inner(u0, v0) * dx + inner(u1, v1) * dx \
+    F =  inner((u0**2 + 1)*ufl.grad(u0), ufl.grad(v0)) * dx \
+         + inner((u1**2 + 1)*ufl.grad(u1), ufl.grad(v1)) * dx \
          - inner(f, v0) * ufl.dx - inner(g, v1) * dx
     J = derivative(F, U, dU)
 
