@@ -81,14 +81,10 @@ def test_matrix_assembly_block():
 
     # Copy initial guess vector x0 into FE functions
     offset = 0
-    for soln_vec in [u, p]:
-        soln_vec = soln_vec.vector
-        size_local = soln_vec.getLocalSize()
-        iset = PETSc.IS().createGeneral(list(range(offset, offset + size_local)))
-        x0_subvec = x0.getSubVector(iset)
-        x0_subvec.copy(soln_vec)
-        x0.restoreSubVector(iset, x0_subvec)
-        soln_vec.ghostUpdate(addv=PETSc.InsertMode.INSERT, mode=PETSc.ScatterMode.FORWARD)
+    for var in [u, p]:
+        size_local = var.vector.getLocalSize()
+        var.vector.getArray()[:] = x0.getArray()[offset:offset+size_local]
+        var.vector.ghostUpdate(addv=PETSc.InsertMode.INSERT, mode=PETSc.ScatterMode.FORWARD)
         offset += size_local
 
     # Ghosts are updated inside assemble_vector_block
