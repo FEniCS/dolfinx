@@ -4,7 +4,6 @@
 # SPDX-License-Identifier:    LGPL-3.0-or-later
 """ Unit-tests for higher order meshes """
 
-
 import numpy as np
 import pytest
 import sympy as sp
@@ -244,7 +243,7 @@ def scipy_one_cell(points, nodes):
 
 # FIXME: Higher order tests are too slow, need to find a better test
 @skip_in_parallel
-@pytest.mark.parametrize("order", range(1, 7))
+@pytest.mark.parametrize("order", range(1, 6))
 def test_nth_order_triangle(order):
     num_nodes = (order + 1) * (order + 2) / 2
     cells = np.array([range(int(num_nodes))])

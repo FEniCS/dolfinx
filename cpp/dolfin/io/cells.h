@@ -7,6 +7,7 @@
 #pragma once
 
 #include <Eigen/Dense>
+#include <cstdint>
 #include <dolfin/mesh/cell_types.h>
 #include <vector>
 

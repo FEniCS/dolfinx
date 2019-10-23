@@ -83,7 +83,6 @@ std::vector<std::uint8_t> io::cells::dolfin_to_vtk(mesh::CellType type,
     case 4:
       return {0, 1, 2, 3};
     default:
-
       throw std::runtime_error("Higher order tetrahedron not supported.");
     }
   case mesh::CellType::quadrilateral:
