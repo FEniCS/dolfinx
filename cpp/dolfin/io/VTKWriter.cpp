@@ -5,6 +5,7 @@
 // SPDX-License-Identifier:    LGPL-3.0-or-later
 
 #include "VTKWriter.h"
+#include "cells.h"
 #include <boost/detail/endian.hpp>
 #include <cstdint>
 #include <dolfin/fem/DofMap.h>
@@ -19,7 +20,6 @@
 #include <dolfin/mesh/MeshEntity.h>
 #include <dolfin/mesh/MeshFunction.h>
 #include <dolfin/mesh/MeshIterator.h>
-#include <dolfin/mesh/cell_types.h>
 #include <fstream>
 #include <iomanip>
 #include <ostream>
@@ -164,7 +164,7 @@ void write_ascii_mesh(const mesh::Mesh& mesh, std::size_t cell_dim,
       = connectivity_g.entity_positions();
   int num_nodes = mesh.coordinate_dofs().cell_permutation().size();
   const std::vector<std::uint8_t> perm
-      = mesh::vtk_mapping(mesh.cell_type(), num_nodes);
+      = io::cells::dolfin_to_vtk(mesh.cell_type(), num_nodes);
 
   for (int j = 0; j < mesh.num_entities(mesh.topology().dim()); ++j)
   {
