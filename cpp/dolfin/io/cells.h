@@ -45,24 +45,24 @@ std::vector<std::uint8_t> lex_to_tp(mesh::CellType type, int num_nodes);
 /// @return The map
 std::vector<std::uint8_t> vtk_to_dolfin(mesh::CellType type, int num_nodes);
 
-/// Convert gmsh cell ordering to FENICS cell ordering
-/// @param cells array containing cell connectivities in VTK format
-/// @param type Celltype to the permuter
+/// Convert gmsh cell ordering to FEniCS cell ordering
+/// @param[in] cells array containing cell connectivities in VTK format
+/// @param[in] type Celltype to the permuter
 /// @return Permuted cell connectivities
 Eigen::Array<std::int64_t, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
 gmsh_to_dolfin_ordering(
-     const Eigen::Ref<const Eigen::Array<std::int64_t, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>>
-        cells,
+    const Eigen::Ref<const Eigen::Array<
+        std::int64_t, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>>& cells,
     mesh::CellType type);
 
 /// @note This function is temporary and will be removed soon
 ///
 /// Default map of DOLFIN/UFC node ordering to the cell input ordering
-/// @param type Celltype to map
-/// @param degree Degree e of cell
+/// @param[in] type Celltype to map
+/// @param[in] degree Degree e of cell
 /// @return Default dolfin permutation
 std::vector<std::uint8_t> default_cell_permutation(mesh::CellType type,
-                                                   std::int32_t degree);
+                                                   int degree);
 
 } // namespace cells
 } // namespace io
