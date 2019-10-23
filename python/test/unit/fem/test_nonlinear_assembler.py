@@ -82,10 +82,8 @@ def test_matrix_assembly_block():
         size_local = var.vector.getLocalSize()
         var_array = var.vector.getArray()
         var_array[:] = x_array[offset:offset + size_local]
-        var.vector.resetArray()
         var.vector.ghostUpdate(addv=PETSc.InsertMode.INSERT, mode=PETSc.ScatterMode.FORWARD)
         offset += size_local
-    x0.resetArray()
 
     # Ghosts are updated inside assemble_vector_block
     A0 = dolfin.fem.assemble_matrix_block(a_block, [bc])
@@ -169,10 +167,8 @@ class NonlinearPDE_SNESProblem():
             size_local = var.vector.getLocalSize()
             var_array = var.vector.getArray()
             var_array[:] = x_array[offset:offset + size_local]
-            var.vector.resetArray()
             var.vector.ghostUpdate(addv=PETSc.InsertMode.INSERT, mode=PETSc.ScatterMode.FORWARD)
             offset += size_local
-        x.resetArray()
 
         dolfin.fem.assemble_vector_block(F, self.L, self.a, self.bcs, x0=x, scale=-1.0)
 
