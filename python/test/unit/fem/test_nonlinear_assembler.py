@@ -13,9 +13,7 @@ from petsc4py import PETSc
 
 import dolfin
 import ufl
-from dolfin import constant, functionspace
-from dolfin.specialfunctions import SpatialCoordinate
-from ufl import derivative, ds, dx, inner
+from ufl import derivative, dx, inner
 
 
 def nest_matrix_norm(A):
@@ -49,7 +47,6 @@ def test_matrix_assembly_block():
     def boundary(x):
         return numpy.logical_or(x[:, 0] < 1.0e-6, x[:, 0] > 1.0 - 1.0e-6)
 
-
     initial_guess_value = 1.0
     bc_value = 0.0
 
@@ -63,15 +60,14 @@ def test_matrix_assembly_block():
     u, p = dolfin.function.Function(V0), dolfin.function.Function(V1)
     v, q = dolfin.function.TestFunction(V0), dolfin.function.TestFunction(V1)
 
-    zero = dolfin.Function(V0)
     f = 1.0
     g = -3.0
 
-    F0 = inner(u, v) * dx + inner(p, v) * dx - inner(f, v)*dx
-    F1 = inner(u, q) * dx + inner(p, q) * dx - inner(g, q)*dx
+    F0 = inner(u, v) * dx + inner(p, v) * dx - inner(f, v) * dx
+    F1 = inner(u, q) * dx + inner(p, q) * dx - inner(g, q) * dx
 
-    a_block = [[ufl.derivative(F0, u, du), ufl.derivative(F0, p, dp)],
-               [ufl.derivative(F1, u, du), ufl.derivative(F1, p, dp)]]
+    a_block = [[derivative(F0, u, du), derivative(F0, p, dp)],
+               [derivative(F1, u, du), derivative(F1, p, dp)]]
     L_block = [F0, F1]
 
     # Monolithic blocked
@@ -83,7 +79,7 @@ def test_matrix_assembly_block():
     offset = 0
     for var in [u, p]:
         size_local = var.vector.getLocalSize()
-        var.vector.getArray()[:] = x0.getArray()[offset:offset+size_local]
+        var.vector.getArray()[:] = x0.getArray()[offset:offset + size_local]
         var.vector.ghostUpdate(addv=PETSc.InsertMode.INSERT, mode=PETSc.ScatterMode.FORWARD)
         offset += size_local
 
@@ -117,7 +113,7 @@ def test_matrix_assembly_block():
         + inner(u0, v1) * dx + inner(u1, v1) * dx \
         - inner(f, v0) * ufl.dx - inner(g, v1) * dx
 
-    J = ufl.derivative(F, U, dU)
+    J = derivative(F, U, dU)
 
     bc = dolfin.fem.dirichletbc.DirichletBC(W.sub(1), u_bc, boundary)
     A2 = dolfin.fem.assemble_matrix(J, [bc])
@@ -166,7 +162,7 @@ class NonlinearPDE_SNESProblem():
         offset = 0
         for var in self.soln_vars:
             size_local = var.vector.getLocalSize()
-            var.vector.getArray()[:] = x.getArray()[offset:offset+size_local]
+            var.vector.getArray()[:] = x.getArray()[offset:offset + size_local]
             var.vector.ghostUpdate(addv=PETSc.InsertMode.INSERT, mode=PETSc.ScatterMode.FORWARD)
             offset += size_local
 
@@ -222,8 +218,8 @@ def test_assembly_solve_block():
     f = 1.0
     g = -3.0
 
-    F = [inner((u**2 + 1)*ufl.grad(u), ufl.grad(v)) * dx - inner(f, v) * dx,
-         inner((p**2 + 1)*ufl.grad(p), ufl.grad(q)) * dx - inner(g, q) * dx]
+    F = [inner((u**2 + 1) * ufl.grad(u), ufl.grad(v)) * dx - inner(f, v) * dx,
+         inner((p**2 + 1) * ufl.grad(p), ufl.grad(q)) * dx - inner(g, q) * dx]
 
     J = [[derivative(F[0], u, du), derivative(F[0], p, dp)],
          [derivative(F[1], u, du), derivative(F[1], p, dp)]]
@@ -286,9 +282,9 @@ def test_assembly_solve_block():
     u0, u1 = ufl.split(U)
     v0, v1 = dolfin.function.TestFunctions(W)
 
-    F =  inner((u0**2 + 1)*ufl.grad(u0), ufl.grad(v0)) * dx \
-         + inner((u1**2 + 1)*ufl.grad(u1), ufl.grad(v1)) * dx \
-         - inner(f, v0) * ufl.dx - inner(g, v1) * dx
+    F = inner((u0**2 + 1) * ufl.grad(u0), ufl.grad(v0)) * dx \
+        + inner((u1**2 + 1) * ufl.grad(u1), ufl.grad(v1)) * dx \
+        - inner(f, v0) * ufl.dx - inner(g, v1) * dx
     J = derivative(F, U, dU)
 
     u0_bc = dolfin.function.Function(V0)
@@ -344,8 +340,8 @@ def test_assembly_solve_block():
 ])
 def test_assembly_solve_taylor_hood(mesh):
     """Assemble Stokes problem with Taylor-Hood elements and solve."""
-    P2 = functionspace.VectorFunctionSpace(mesh, ("Lagrange", 2))
-    P1 = functionspace.FunctionSpace(mesh, ("Lagrange", 1))
+    P2 = dolfin.function.functionspace.VectorFunctionSpace(mesh, ("Lagrange", 2))
+    P1 = dolfin.function.functionspace.FunctionSpace(mesh, ("Lagrange", 1))
 
     def boundary0(x):
         """Define boundary x = 0"""
@@ -361,16 +357,15 @@ def test_assembly_solve_taylor_hood(mesh):
     bcs = [dolfin.DirichletBC(P2, u0, boundary0),
            dolfin.DirichletBC(P2, u0, boundary1)]
 
-
     u, p = dolfin.Function(P2), dolfin.Function(P1)
     du, dp = dolfin.TrialFunction(P2), dolfin.TrialFunction(P1)
     v, q = dolfin.TestFunction(P2), dolfin.TestFunction(P1)
 
-    F = [inner(ufl.grad(u), ufl.grad(v)) * dx + ufl.inner(p, ufl.div(v)) * dx,
-         ufl.inner(ufl.div(u), q) * dx]
+    F = [inner(ufl.grad(u), ufl.grad(v)) * dx + inner(p, ufl.div(v)) * dx,
+         inner(ufl.div(u), q) * dx]
 
-    J = [[ufl.derivative(F[0], u, du), ufl.derivative(F[0], p, dp)],
-         [ufl.derivative(F[1], u, du), ufl.derivative(F[1], p, dp)]]
+    J = [[derivative(F[0], u, du), derivative(F[0], p, dp)],
+         [derivative(F[1], u, du), derivative(F[1], p, dp)]]
 
     P = [[J[0][0], None],
          [None, inner(dp, q) * dx]]
@@ -418,14 +413,14 @@ def test_assembly_solve_taylor_hood(mesh):
     du, dp = ufl.split(dU)
     v, q = dolfin.TestFunctions(W)
 
-    F = ufl.inner(ufl.grad(u), ufl.grad(v)) * dx \
-        + ufl.inner(p, ufl.div(v)) * dx \
-        + ufl.inner(ufl.div(u), q) * dx
+    F = inner(ufl.grad(u), ufl.grad(v)) * dx \
+        + inner(p, ufl.div(v)) * dx \
+        + inner(ufl.div(u), q) * dx
 
-    J = ufl.derivative(F, U, dU)
+    J = derivative(F, U, dU)
 
-    P = ufl.inner(ufl.grad(du), ufl.grad(v)) * dx \
-        + ufl.inner(dp, q) * dx
+    P = inner(ufl.grad(du), ufl.grad(v)) * dx \
+        + inner(dp, q) * dx
 
     bcs = [dolfin.DirichletBC(W.sub(0), u0, boundary0),
            dolfin.DirichletBC(W.sub(0), u0, boundary1)]
@@ -454,7 +449,6 @@ def test_assembly_solve_taylor_hood(mesh):
     with x2.localForm() as x2l:
         x2l.set(0.0)
     snes.solve(None, x2)
-
 
     assert Jmat2.norm() == pytest.approx(Jmat0.norm(), 1.0e-12)
     assert Fvec2.norm() == pytest.approx(Fvec0.norm(), 1.0e-12)
