@@ -427,6 +427,7 @@ void fem::impl::assemble_vector(
                            array.data() + array.size());
   }
 
+  // Prepare coefficients
   Eigen::Array<PetscScalar, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
       coeffs = pack_coefficients(L);
 
@@ -449,7 +450,7 @@ void fem::impl::assemble_vector(
     const std::vector<std::int32_t>& active_facets
         = integrals.integral_domains(type::exterior_facet, i);
     fem::impl::assemble_exterior_facets(b, mesh, active_facets, dofmap, fn,
-                                        coeff_fn, c_offsets, constant_values);
+                                        coeffs, constant_values);
   }
 
   for (int i = 0; i < integrals.num_integrals(type::interior_facet); ++i)
@@ -471,8 +472,6 @@ void fem::impl::assemble_cells(
     const std::function<void(PetscScalar*, const PetscScalar*,
                              const PetscScalar*, const double*, const int*,
                              const int*)>& kernel,
-    // const std::vector<const function::Function*>& coefficients,
-    // const std::vector<int>& offsets,
     const Eigen::Array<PetscScalar, Eigen::Dynamic, Eigen::Dynamic,
                        Eigen::RowMajor>& coeffs,
     const std::vector<PetscScalar> constant_values)
@@ -511,7 +510,7 @@ void fem::impl::assemble_cells(
     kernel(be.data(), coeff_cell.data(), constant_values.data(),
            coordinate_dofs.data(), nullptr, &orientation);
 
-    // Scatter cell vector to 'global' vector
+    // Scatter cell vector to 'global' vector array
     for (Eigen::Index i = 0; i < num_dofs_per_cell; ++i)
       b[dofmap[cell_index * num_dofs_per_cell + i]] += be[i];
   }
@@ -524,8 +523,8 @@ void fem::impl::assemble_exterior_facets(
     const std::function<void(PetscScalar*, const PetscScalar*,
                              const PetscScalar*, const double*, const int*,
                              const int*)>& fn,
-    const std::vector<const function::Function*>& coefficients,
-    const std::vector<int>& offsets,
+    const Eigen::Array<PetscScalar, Eigen::Dynamic, Eigen::Dynamic,
+                       Eigen::RowMajor>& coeffs,
     const std::vector<PetscScalar> constant_values)
 {
   const int gdim = mesh.geometry().dim();
@@ -549,7 +548,7 @@ void fem::impl::assemble_exterior_facets(
   Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
       coordinate_dofs(num_dofs_g, gdim);
   Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1> be;
-  Eigen::Array<PetscScalar, Eigen::Dynamic, 1> coeff_array(offsets.back());
+  // Eigen::Array<PetscScalar, Eigen::Dynamic, 1> coeff_array(offsets.back());
 
   for (const auto& facet_index : active_facets)
   {
@@ -572,20 +571,11 @@ void fem::impl::assemble_exterior_facets(
     // Get dof map for cell
     auto dmap = dofmap.cell_dofs(cell_index);
 
-    // TODO: Move gathering of coefficients outside of main assembly
-    // loop
-    // Update coefficients
-    for (std::size_t i = 0; i < coefficients.size(); ++i)
-    {
-      _restrict(*coefficients[i]->function_space()->dofmap(),
-                coefficients[i]->vector().vec(), cell_index,
-                coeff_array.data() + offsets[i]);
-    }
-
     // Tabulate element vector
+    auto coeff_cell = coeffs.row(cell_index);
     be.setZero(dmap.size());
-    fn(be.data(), coeff_array.data(), constant_values.data(),
-       coordinate_dofs.data(), &local_facet, &orient);
+    fn(be.data(), coeff_cell.data(), constant_values.data(), coordinate_dofs.data(),
+       &local_facet, &orient);
 
     // Add element vector to global vector
     for (Eigen::Index i = 0; i < dmap.size(); ++i)
