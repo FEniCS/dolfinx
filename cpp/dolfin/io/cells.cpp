@@ -5,9 +5,6 @@
 // SPDX-License-Identifier:    LGPL-3.0-or-later
 
 #include "cells.h"
-#include <Eigen/Dense>
-#include <cstdint>
-#include <dolfin/common/log.h>
 #include <dolfin/mesh/cell_types.h>
 #include <numeric>
 #include <stdexcept>
