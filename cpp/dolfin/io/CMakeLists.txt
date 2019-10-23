@@ -1,5 +1,6 @@
 set(HEADERS
   dolfin_io.h
+  cells.h
   HDF5File.h
   HDF5Interface.h
   HDF5Utility.h
@@ -12,6 +13,7 @@ set(HEADERS
   PARENT_SCOPE)
 
 set(SOURCES
+  cells.cpp
   HDF5File.cpp
   HDF5Interface.cpp
   HDF5Utility.cpp

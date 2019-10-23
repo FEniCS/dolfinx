@@ -11,6 +11,7 @@
 #include <algorithm>
 #include <cfloat>
 #include <cstdlib>
+#include <dolfin/common/log.h>
 #include <stdexcept>
 
 using namespace dolfin;
@@ -482,59 +483,6 @@ mesh::cell_entity_closure(mesh::CellType cell_type)
   return entity_closure;
 }
 //-----------------------------------------------------------------------------
-std::vector<std::uint8_t> mesh::vtk_mapping(mesh::CellType type, int num_nodes)
-{
-  switch (type)
-  {
-  case mesh::CellType::point:
-    return {0};
-  case mesh::CellType::interval:
-    return {0, 1};
-  case mesh::CellType::triangle:
-    switch (num_nodes)
-    {
-    case 3:
-      return {0, 1, 2};
-    case 6:
-      return {0, 1, 2, 5, 3, 4};
-    case 10:
-      return {0, 1, 2, 7, 8, 3, 4, 6, 5, 9};
-    default:
-      throw std::runtime_error("Unknown cell type.");
-    }
-  case mesh::CellType::tetrahedron:
-    switch (num_nodes)
-    {
-    case 4:
-      return {0, 1, 2, 3};
-    default:
-      throw std::runtime_error("Higher order tetrahedron not supported");
-    }
-  case mesh::CellType::quadrilateral:
-    switch (num_nodes)
-    {
-    case 4:
-    {
-      // Assumes mapping from lexiographic ordering, not counter-clockwise
-      // which is the VTK format
-      return {0, 1, 3, 2};
-    }
-    default:
-      throw std::runtime_error("Higher order quadrilateral not supported");
-    }
-  case mesh::CellType::hexahedron:
-    switch (num_nodes)
-    {
-    case 8:
-      return {0, 1, 3, 2, 4, 5, 7, 6};
-    default:
-      throw std::runtime_error("Higher order hexahedron not supported");
-    }
-  default:
-    throw std::runtime_error("Unknown cell type.");
-  }
-}
-//-----------------------------------------------------------------------------
 int mesh::cell_degree(mesh::CellType type, int num_nodes)
 {
   switch (type)
@@ -544,29 +492,49 @@ int mesh::cell_degree(mesh::CellType type, int num_nodes)
   case mesh::CellType::interval:
     return 1;
   case mesh::CellType::triangle:
-    if (num_nodes == 3)
+    switch (num_nodes)
+    {
+    case 3:
       return 1;
-    else if (num_nodes == 6)
+    case 6:
       return 2;
-    else if (num_nodes == 10)
+    case 10:
       return 3;
-    else
-      throw std::runtime_error("Unknown cell type.");
+    case 15:
+      return 4;
+    case 21:
+      return 5;
+    case 28:
+      return 6;
+    case 36:
+      return 7;
+    case 45:
+      LOG(WARNING) << "8th order mesh is untested";
+      return 8;
+    case 55:
+      LOG(WARNING) << "9th order mesh is untested";
+      return 9;
+    default:
+      throw std::runtime_error("Unknown triangle layout.");
+    }
   case mesh::CellType::tetrahedron:
-    if (num_nodes == 4)
-      return 1;
-    else
+    if (num_nodes != 4)
       throw std::runtime_error("Higher order tetrahedron not supported");
+    return 1;
   case mesh::CellType::quadrilateral:
-    if (num_nodes == 4)
-      return 1;
-    else
-      throw std::runtime_error("Higher order quadrilateral not supported");
+  {
+    const int n = std::sqrt(num_nodes);
+    if (num_nodes != n * n)
+    {
+      throw std::runtime_error("Quadrilateral of order "
+                               + std::to_string(num_nodes) + " not supported");
+    }
+    return n - 1;
+  }
   case mesh::CellType::hexahedron:
-    if (num_nodes == 8)
-      return 1;
-    else
+    if (num_nodes != 8)
       throw std::runtime_error("Higher order hexahedron not supported");
+    return 1;
   default:
     throw std::runtime_error("Unknown cell type.");
   }
