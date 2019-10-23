@@ -47,7 +47,7 @@ pack_coefficients(const fem::Form& L)
   for (int i = 0; i < mesh.num_entities(tdim); ++i)
   {
     auto c_cell = c.row(i);
-    for (std::size_t j = 0; j < coefficients.size(); ++j)
+    for (std::size_t j = 0; j < coeff_fn.size(); ++j)
     {
 
       _restrict(*coeff_fn[j]->function_space()->dofmap(),
