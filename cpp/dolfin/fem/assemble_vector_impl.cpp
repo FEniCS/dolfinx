@@ -27,6 +27,47 @@ namespace
 {
 //-----------------------------------------------------------------------------
 void _restrict(const fem::DofMap& dofmap, const Vec x, int cell_index,
+               PetscScalar* w);
+//-----------------------------------------------------------------------------
+Eigen::Array<PetscScalar, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
+pack_coefficients(const fem::Form& L)
+{
+  const FormCoefficients& coefficients = L.coefficients();
+
+  std::vector<const function::Function*> coeff_fn(coefficients.size());
+  for (int i = 0; i < coefficients.size(); ++i)
+    coeff_fn[i] = coefficients.get(i).get();
+  const std::vector<int> offsets = coefficients.offsets();
+
+  assert(L.mesh());
+  const mesh::Mesh mesh = *L.mesh();
+  const int tdim = mesh.topology().dim();
+  Eigen::Array<PetscScalar, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor> c(
+      mesh.num_entities(tdim), offsets.back());
+  for (int i = 0; i < mesh.num_entities(tdim); ++i)
+  {
+    auto c_cell = c.row(i);
+    for (std::size_t j = 0; j < coefficients.size(); ++j)
+    {
+
+      _restrict(*coeff_fn[j]->function_space()->dofmap(),
+                coeff_fn[j]->vector().vec(), i, c_cell.data() + offsets[j]);
+    }
+  }
+
+  //  Eigen::Array<PetscScalar, Eigen::Dynamic, 1> coeff_array(offsets.back());
+
+  // for (std::size_t i = 0; i < coefficients.size(); ++i)
+  // {
+  //   _restrict(*coefficients[i]->function_space()->dofmap(),
+  //             coefficients[i]->vector().vec(), cell_index,
+  //             coeff_array.data() + offsets[i]);
+  // }
+
+  return c;
+}
+//-----------------------------------------------------------------------------
+void _restrict(const fem::DofMap& dofmap, const Vec x, int cell_index,
                PetscScalar* w)
 {
   assert(w);
@@ -376,6 +417,9 @@ void fem::impl::assemble_vector(
                            array.data() + array.size());
   }
 
+  Eigen::Array<PetscScalar, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
+      coeffs = pack_coefficients(L);
+
   const FormIntegrals& integrals = L.integrals();
   using type = fem::FormIntegrals::Type;
   for (int i = 0; i < integrals.num_integrals(type::cell); ++i)
@@ -385,8 +429,9 @@ void fem::impl::assemble_vector(
     const std::vector<std::int32_t>& active_cells
         = integrals.integral_domains(type::cell, i);
     fem::impl::assemble_cells(b, mesh, active_cells, dof_array,
-                              num_dofs_per_cell, fn, coeff_fn, c_offsets,
-                              constant_values);
+                              num_dofs_per_cell, fn,
+                              // coeff_fn, c_offsets,
+                              coeffs, constant_values);
   }
 
   for (int i = 0; i < integrals.num_integrals(type::exterior_facet); ++i)
@@ -418,8 +463,10 @@ void fem::impl::assemble_cells(
     const std::function<void(PetscScalar*, const PetscScalar*,
                              const PetscScalar*, const double*, const int*,
                              const int*)>& kernel,
-    const std::vector<const function::Function*>& coefficients,
-    const std::vector<int>& offsets,
+    // const std::vector<const function::Function*>& coefficients,
+    // const std::vector<int>& offsets,
+    const Eigen::Array<PetscScalar, Eigen::Dynamic, Eigen::Dynamic,
+                       Eigen::RowMajor>& coeffs,
     const std::vector<PetscScalar> constant_values)
 {
   const int gdim = mesh.geometry().dim();
@@ -440,7 +487,10 @@ void fem::impl::assemble_cells(
   Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
       coordinate_dofs(num_dofs_g, gdim);
   Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1> be(num_dofs_per_cell);
-  Eigen::Array<PetscScalar, Eigen::Dynamic, 1> coeff_array(offsets.back());
+  // Eigen::Array<PetscScalar, Eigen::Dynamic, 1> coeff_array(offsets.back());
+
+  // Eigen::Array<PetscScalar, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
+  //     coeffs = pack_coefficients(cL);
 
   // Iterate over active cells
   const int orientation = 0;
@@ -451,18 +501,19 @@ void fem::impl::assemble_cells(
       for (int j = 0; j < gdim; ++j)
         coordinate_dofs(i, j) = x_g(cell_g[pos_g[cell_index] + i], j);
 
-    // FIXME: Move this outside of inner assembly loop
-    // Update coefficients
-    for (std::size_t i = 0; i < coefficients.size(); ++i)
-    {
-      _restrict(*coefficients[i]->function_space()->dofmap(),
-                coefficients[i]->vector().vec(), cell_index,
-                coeff_array.data() + offsets[i]);
-    }
+    // // FIXME: Move this outside of inner assembly loop
+    // // Update coefficients
+    // for (std::size_t i = 0; i < coefficients.size(); ++i)
+    // {
+    //   _restrict(*coefficients[i]->function_space()->dofmap(),
+    //             coefficients[i]->vector().vec(), cell_index,
+    //             coeff_array.data() + offsets[i]);
+    // }
 
     // Tabulate vector for cell
+    auto coeff_cell = coeffs.row(cell_index);
     be.setZero();
-    kernel(be.data(), coeff_array.data(), constant_values.data(),
+    kernel(be.data(), coeff_cell.data(), constant_values.data(),
            coordinate_dofs.data(), nullptr, &orientation);
 
     // Scatter cell vector to 'global' vector
