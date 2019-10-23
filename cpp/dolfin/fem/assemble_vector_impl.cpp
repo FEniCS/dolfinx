@@ -113,19 +113,9 @@ void _lift_bc_cells(
   const fem::DofMap& dofmap0 = *a.function_space(0)->dofmap();
   const fem::DofMap& dofmap1 = *a.function_space(1)->dofmap();
 
-  // TODO: simplify and move elsewhere
-  // Manage coefficients
-  const FormCoefficients& coefficients = a.coefficients();
-  std::vector<std::uint32_t> n = {0};
-  std::vector<const function::Function*> coefficients_ptr(coefficients.size());
-  for (int i = 0; i < coefficients.size(); ++i)
-  {
-    coefficients_ptr[i] = coefficients.get(i).get();
-    n.push_back(
-        n.back()
-        + coefficients_ptr[i]->function_space()->element()->space_dimension());
-  }
-  Eigen::Array<PetscScalar, Eigen::Dynamic, 1> coeff_array(n.back());
+  // Prepare coefficients
+  Eigen::Array<PetscScalar, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
+      coeffs = pack_coefficients(a);
 
   const std::function<void(PetscScalar*, const PetscScalar*, const PetscScalar*,
                            const double*, const int*, const int*)>& fn
@@ -188,25 +178,17 @@ void _lift_bc_cells(
     if (!has_bc)
       continue;
 
-    // Get cell vertex coordinates
     const int cell_index = cell.index();
+
+    // Get cell vertex coordinates
     for (int i = 0; i < num_dofs_g; ++i)
       for (int j = 0; j < gdim; ++j)
         coordinate_dofs(i, j) = x_g(cell_g[pos_g[cell_index] + i], j);
 
     // Size data structure for assembly
-    auto dmap0 = dofmap0.cell_dofs(cell.index());
+    auto dmap0 = dofmap0.cell_dofs(cell_index);
 
-    // TODO: Move gathering of coefficients outside of main assembly
-    // loop
-    // Update coefficients
-    for (int i = 0; i < coefficients.size(); ++i)
-    {
-      _restrict(*coefficients_ptr[i]->function_space()->dofmap(),
-                coefficients_ptr[i]->vector().vec(), cell.index(),
-                coeff_array.data() + n[i]);
-    }
-
+    auto coeff_array = coeffs.row(cell_index);
     Ae.setZero(dmap0.size(), dmap1.size());
     fn(Ae.data(), coeff_array.data(), constant_values.data(),
        coordinate_dofs.data(), nullptr, &orient);
@@ -258,19 +240,9 @@ void _lift_bc_exterior_facets(
   const fem::DofMap& dofmap0 = *a.function_space(0)->dofmap();
   const fem::DofMap& dofmap1 = *a.function_space(1)->dofmap();
 
-  // TODO: simplify and move elsewhere
-  // Manage coefficients
-  const FormCoefficients& coefficients = a.coefficients();
-  std::vector<std::uint32_t> n = {0};
-  std::vector<const function::Function*> coefficients_ptr(coefficients.size());
-  for (int i = 0; i < coefficients.size(); ++i)
-  {
-    coefficients_ptr[i] = coefficients.get(i).get();
-    n.push_back(
-        n.back()
-        + coefficients_ptr[i]->function_space()->element()->space_dimension());
-  }
-  Eigen::Array<PetscScalar, Eigen::Dynamic, 1> coeff_array(n.back());
+  // Prepare coefficients
+  Eigen::Array<PetscScalar, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
+      coeffs = pack_coefficients(a);
 
   const std::function<void(PetscScalar*, const PetscScalar*, const PetscScalar*,
                            const double*, const int*, const int*)>& fn
@@ -358,14 +330,8 @@ void _lift_bc_exterior_facets(
     // TODO: Move gathering of coefficients outside of main assembly
     // loop
 
-    // Update coefficients
-    for (int i = 0; i < coefficients.size(); ++i)
-    {
-      _restrict(*coefficients_ptr[i]->function_space()->dofmap(),
-                coefficients_ptr[i]->vector().vec(), cell_index,
-                coeff_array.data() + n[i]);
-    }
 
+    auto coeff_array = coeffs.row(cell_index);
     Ae.setZero(dmap0.size(), dmap1.size());
     fn(Ae.data(), coeff_array.data(), constant_values.data(),
        coordinate_dofs.data(), &local_facet, &orient);
