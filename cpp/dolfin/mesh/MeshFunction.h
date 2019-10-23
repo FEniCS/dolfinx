@@ -261,56 +261,72 @@ template <typename T>
 void MeshFunction<T>::update_ghosts()
 {
   std::int32_t size_owned = _mesh->topology().ghost_offset(_dim);
+  std::int32_t size_local = _mesh->topology().size(_dim);
+  std::int32_t num_ghosts = size_local - size_owned;
+
   std::vector<std::int32_t> entity_owner = _mesh->topology().entity_owner(_dim);
   const std::map<std::int32_t, std::set<std::int32_t>>& shared_entities
       = _mesh->topology().shared_entities(_dim);
 
-  std::map<std::int32_t, std::vector<T>> send_values;
-  std::map<std::int32_t, std::vector<T>> recv_values;
+  assert(entity_owner.size() == num_ghosts);
+  assert(shared_entities.size() >= num_ghosts);
 
+  // Create and populate sending buffer
+  std::map<std::int32_t, std::vector<T>> send_values;
   for (auto const& entity : shared_entities)
   {
     for (auto const& owner : entity.second)
     {
       if (entity.first < size_owned)
         send_values[owner].push_back(_values[entity.first]);
-      else if (entity_owner[entity.first - size_owned] == owner)
-        recv_values[owner].push_back(_values[entity.first]);
     }
   }
 
-  MPI_Request send_request[send_values.size()];
-  MPI_Request recv_request[recv_values.size()];
-  MPI_Status status[recv_values.size()];
+  // Allocate buffer for receiving ghost values
+  std::map<std::int32_t, std::vector<T>> recv_values;
+  std::unordered_set<std::int32_t> entity_owner_set(entity_owner.begin(),
+                                                    entity_owner.end());
+  for (std::int32_t proc : entity_owner_set)
+  {
+    int num_ghosts_proc
+        = std::count(entity_owner.begin(), entity_owner.end(), proc);
+    recv_values[proc].resize(num_ghosts_proc);
+  }
 
-  // Send owning values to ghost process
-  int count = 0;
+  // Send shared values to remote processes
+  int j = 0;
+  MPI_Request send_request[send_values.size()];
   for (auto const& x : send_values)
   {
     MPI_Isend(x.second.data(), x.second.size(), dolfin::MPI::mpi_type<T>(),
-              x.first, 0, MPI_COMM_WORLD, &send_request[count]);
-    count++;
+              x.first, 0, MPI_COMM_WORLD, &send_request[j]);
+    j++;
   }
 
   // Reveive ghost values from owning process
-  std::vector<std::int32_t> neighbors;
-  count = 0;
+  j = 0;
+  MPI_Request recv_request[recv_values.size()];
+  std::vector<std::int32_t> remote_procs(recv_values.size());
   for (auto& x : recv_values)
   {
-    neighbors.push_back(x.first);
     MPI_Irecv(x.second.data(), x.second.size(), dolfin::MPI::mpi_type<T>(),
-              x.first, 0, MPI_COMM_WORLD, &recv_request[count]);
-    count++;
+              x.first, 0, MPI_COMM_WORLD, &recv_request[j]);
+    remote_procs[j] = x.first;
+    j++;
   }
 
+  // Distribute remote data as soon as each request is satisfied.
   for (int i = 0; i < recv_values.size(); i++)
   {
     int req_index;
-    MPI_Waitany(recv_values.size(), recv_request, &req_index, &status[i]);
-    std::int32_t process = neighbors[req_index];
+    MPI_Status mpi_status;
+    MPI_Waitany(recv_values.size(), recv_request, &req_index, &mpi_status);
 
+    std::int32_t process = remote_procs[req_index];
     std::vector<std::int32_t>::iterator it
         = std::find(entity_owner.begin(), entity_owner.end(), process);
+
+    // Update all ghost values with owned values from the current remote process
     for (T& value : recv_values[process])
     {
       std::size_t local_entity_index = it - entity_owner.begin() + size_owned;
