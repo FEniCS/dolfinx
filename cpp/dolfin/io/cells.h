@@ -45,12 +45,12 @@ std::vector<std::uint8_t> lex_to_tp(mesh::CellType type, int num_nodes);
 /// @return The map
 std::vector<std::uint8_t> vtk_to_dolfin(mesh::CellType type, int num_nodes);
 
-/// Convert gmsh cell ordering to FENICS cell ordering
+/// Convert VTK cell ordering to FENICS cell ordering
 /// @param cells array containing cell connectivities in VTK format
 /// @param type Celltype to the permuter
 /// @return Permuted cell connectivities
 Eigen::Array<std::int64_t, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
-gmsh_to_dolfin_ordering(
+vtk_to_dolfin_ordering(
      const Eigen::Ref<const Eigen::Array<std::int64_t, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>>
         cells,
     mesh::CellType type);

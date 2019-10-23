@@ -4,16 +4,21 @@
 # SPDX-License-Identifier:    LGPL-3.0-or-later
 """ Unit-tests for higher order meshes """
 
+
 import numpy as np
 import pytest
 import sympy as sp
 import scipy.integrate
 from sympy.vector import CoordSys3D, matrix_to_vector
+import pygmsh
+import meshio
 
 from dolfin import MPI, Function, FunctionSpace, Mesh, fem
 from dolfin.cpp.mesh import CellType, GhostMode
 from dolfin.fem import assemble_scalar
 from dolfin_utils.test.skips import skip_in_parallel
+from dolfin.cpp.io import vtk_to_dolfin_ordering
+from dolfin.io import XDMFFile
 from ufl import dx
 
 
@@ -81,6 +86,8 @@ def test_second_order_mesh(H, Z):
                        [0, H / 2, 0], [L / 2, H / 2, 0]])
     cells = np.array([[0, 1, 3, 4, 8, 7],
                       [1, 2, 3, 5, 6, 8]])
+    cells = vtk_to_dolfin_ordering(cells, CellType.triangle)
+
     mesh = Mesh(MPI.comm_world, CellType.triangle, points, cells,
                 [], GhostMode.none)
 
@@ -92,10 +99,13 @@ def test_second_order_mesh(H, Z):
     # Interpolate function
     V = FunctionSpace(mesh, ("CG", degree))
     u = Function(V)
+
     cmap = fem.create_coordinate_map(mesh.ufl_domain())
     mesh.geometry.coord_mapping = cmap
     u.interpolate(e2)
     intu = assemble_scalar(u * dx(metadata={"quadrature_degree": 40}))
+    intu = MPI.sum(mesh.mpi_comm(), intu)
+
     nodes = [0, 7, 3]
     ref = sympy_scipy(points, nodes, L, H)
     assert ref == pytest.approx(intu, rel=1e-6)
@@ -123,6 +133,8 @@ def test_third_order_mesh(H, Z):
                        [2 * L / 3, 2 * H / 3, 0]])            # 15
     cells = np.array([[0, 1, 3, 4, 5, 6, 7, 8, 9, 14],
                       [1, 2, 3, 12, 13, 10, 11, 7, 6, 15]])
+    cells = vtk_to_dolfin_ordering(cells, CellType.triangle)
+
     mesh = Mesh(MPI.comm_world, CellType.triangle, points, cells,
                 [], GhostMode.none)
 
@@ -137,7 +149,10 @@ def test_third_order_mesh(H, Z):
     cmap = fem.create_coordinate_map(mesh.ufl_domain())
     mesh.geometry.coord_mapping = cmap
     u.interpolate(e2)
+
     intu = assemble_scalar(u * dx(metadata={"quadrature_degree": 40}))
+    intu = MPI.sum(mesh.mpi_comm(), intu)
+
     nodes = [0, 9, 8, 3]
     ref = sympy_scipy(points, nodes, L, H)
     assert ref == pytest.approx(intu, rel=1e-6)
@@ -172,6 +187,8 @@ def test_fourth_order_mesh(H, Z):
 
     cells = np.array([[0, 1, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15],
                       [1, 2, 3, 16, 17, 18, 19, 20, 21, 9, 8, 7, 22, 23, 24]])
+    cells = vtk_to_dolfin_ordering(cells, CellType.triangle)
+
     mesh = Mesh(MPI.comm_world, CellType.triangle, points, cells,
                 [], GhostMode.none)
 
@@ -186,7 +203,9 @@ def test_fourth_order_mesh(H, Z):
     cmap = fem.create_coordinate_map(mesh.ufl_domain())
     mesh.geometry.coord_mapping = cmap
     u.interpolate(e2)
+
     intu = assemble_scalar(u * dx(metadata={"quadrature_degree": 50}))
+    intu = MPI.sum(mesh.mpi_comm(), intu)
     nodes = [0, 3, 10, 11, 12]
     ref = sympy_scipy(points, nodes, L, H)
     assert ref == pytest.approx(intu, rel=1e-4)
@@ -225,10 +244,11 @@ def scipy_one_cell(points, nodes):
 
 # FIXME: Higher order tests are too slow, need to find a better test
 @skip_in_parallel
-@pytest.mark.parametrize("order", range(1, 6))
+@pytest.mark.parametrize("order", range(1, 7))
 def test_nth_order_triangle(order):
     num_nodes = (order + 1) * (order + 2) / 2
     cells = np.array([range(int(num_nodes))])
+    cells = vtk_to_dolfin_ordering(cells, CellType.triangle)
 
     if order == 1:
         points = np.array([[0.00000, 0.00000, 0.00000], [1.00000, 0.00000, 0.00000],
@@ -350,6 +370,27 @@ def test_nth_order_triangle(order):
 
     quad_order = 30
     intu = assemble_scalar(u * dx(metadata={"quadrature_degree": quad_order}))
+    intu = MPI.sum(mesh.mpi_comm(), intu)
 
     ref = scipy_one_cell(points, nodes)
     assert ref == pytest.approx(intu, rel=3e-3)
+
+
+def test_XDMF_input():
+    # Parameterize test if gmsh gets wider support
+    order = 2
+    R = 1
+    res = R / 7
+    geo = pygmsh.opencascade.Geometry()
+    geo.add_raw_code("Mesh.ElementOrder={0:d};".format(order))
+    geo.add_ball([0, 0, 0], R, char_length=res)
+    element = "triangle{0:d}".format(int((order + 1) * (order + 2) / 2))
+    if order == 1:
+        element = element[:-1]
+    msh = pygmsh.generate_mesh(geo, verbose=True, dim=2)
+    meshio.write("mesh.xdmf", meshio.Mesh(points=msh.points, cells={element: msh.cells[element]}))
+    with XDMFFile(MPI.comm_world, "mesh.xdmf") as xdmf:
+        mesh = xdmf.read_mesh(GhostMode.none)
+
+    surface = assemble_scalar(1 * dx(mesh))
+    assert MPI.sum(mesh.mpi_comm(), surface) == pytest.approx(4 * np.pi * R * R, rel=1e-5)

@@ -234,8 +234,11 @@ Mesh::Mesh(
   // FIXME: Default simplicies is VTK, non-simplicies is lexicographic
   // This should be changed to simplicies being UFC, non-simplicies VTK
   // Get the mapping of UFC node ordering to the mesh input format
-  std::vector<std::uint8_t> cell_permutation;
-  cell_permutation = io::cells::default_cell_permutation(type, _degree);
+
+  // std::vector<std::uint8_t> cell_permutation;
+  // cell_permutation = io::cells::default_cell_permutation(type, _degree);
+  std::vector<std::uint8_t> cell_permutation(cells.cols());
+  std::iota(cell_permutation.begin(), cell_permutation.end(), 0);
 
   // Get number of nodes (global)
   const std::uint64_t num_points_global = MPI::sum(comm, points.rows());
