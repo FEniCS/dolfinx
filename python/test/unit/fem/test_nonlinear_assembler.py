@@ -132,10 +132,11 @@ def test_matrix_assembly_block():
 
 
 class NonlinearPDE_SNESProblem():
-    def __init__(self, F, J, soln_vars, bcs):
+    def __init__(self, F, J, soln_vars, bcs, P=None):
         super().__init__()
         self.L = F
         self.a = J
+        self.a_precon = P
         self.bcs = bcs
         self.soln_vars = soln_vars
 
@@ -154,6 +155,10 @@ class NonlinearPDE_SNESProblem():
         J.zeroEntries()
         dolfin.fem.assemble_matrix(J, self.a, self.bcs, diagonal=1.0)
         J.assemble()
+        if self.a_precon is not None:
+            P.zeroEntries()
+            dolfin.fem.assemble_matrix(P, self.a_precon, self.bcs, diagonal=1.0)
+            P.assemble()
 
     def F_block(self, snes, x, F):
         x.ghostUpdate(addv=PETSc.InsertMode.INSERT, mode=PETSc.ScatterMode.FORWARD)
@@ -171,6 +176,10 @@ class NonlinearPDE_SNESProblem():
         J.zeroEntries()
         dolfin.fem.assemble_matrix_block(J, self.a, self.bcs, diagonal=1.0)
         J.assemble()
+        if self.a_precon is not None:
+            P.zeroEntries()
+            dolfin.fem.assemble_matrix_block(P, self.a_precon, self.bcs, diagonal=1.0)
+            P.assemble()
 
 
 def test_assembly_solve_block():
@@ -327,166 +336,126 @@ def test_assembly_solve_block():
     assert J2norm == pytest.approx(J0norm, 1.0e-12)
     assert F2norm == pytest.approx(F0norm, 1.0e-12)
     assert x2norm == pytest.approx(x0norm, 1.0e-12)
-#
-#
-# @pytest.mark.parametrize("mesh", [
-#     dolfin.generation.UnitSquareMesh(dolfin.MPI.comm_world, 32, 31),
-#     dolfin.generation.UnitCubeMesh(dolfin.MPI.comm_world, 3, 7, 8)
-# ])
-# def test_assembly_solve_taylor_hood(mesh):
-#     """Assemble Stokes problem with Taylor-Hood elements and solve."""
-#     P2 = functionspace.VectorFunctionSpace(mesh, ("Lagrange", 2))
-#     P1 = functionspace.FunctionSpace(mesh, ("Lagrange", 1))
-#
-#     def boundary0(x):
-#         """Define boundary x = 0"""
-#         return x[:, 0] < 10 * numpy.finfo(float).eps
-#
-#     def boundary1(x):
-#         """Define boundary x = 1"""
-#         return x[:, 0] > (1.0 - 10 * numpy.finfo(float).eps)
-#
-#     u0 = dolfin.Function(P2)
-#     u0.vector.set(1.0)
-#     u0.vector.ghostUpdate(addv=PETSc.InsertMode.INSERT, mode=PETSc.ScatterMode.FORWARD)
-#     bc0 = dolfin.DirichletBC(P2, u0, boundary0)
-#     bc1 = dolfin.DirichletBC(P2, u0, boundary1)
-#
-#     u, p = dolfin.TrialFunction(P2), dolfin.TrialFunction(P1)
-#     v, q = dolfin.TestFunction(P2), dolfin.TestFunction(P1)
-#
-#     a00 = inner(ufl.grad(u), ufl.grad(v)) * dx
-#     a01 = ufl.inner(p, ufl.div(v)) * dx
-#     a10 = ufl.inner(ufl.div(u), q) * dx
-#     a11 = None
-#
-#     p00 = a00
-#     p01, p10 = None, None
-#     p11 = inner(p, q) * dx
-#
-#     # FIXME
-#     # We need zero function for the 'zero' part of L
-#     p_zero = dolfin.Function(P1)
-#     f = dolfin.Function(P2)
-#     L0 = ufl.inner(f, v) * dx
-#     L1 = ufl.inner(p_zero, q) * dx
-#
-#     # -- Blocked and nested
-#
-#     A0 = dolfin.fem.assemble_matrix_nest([[a00, a01], [a10, a11]], [bc0, bc1])
-#     A0norm = nest_matrix_norm(A0)
-#     P0 = dolfin.fem.assemble_matrix_nest([[p00, p01], [p10, p11]], [bc0, bc1])
-#     P0norm = nest_matrix_norm(P0)
-#     b0 = dolfin.fem.assemble_vector_nest([L0, L1], [[a00, a01], [a10, a11]],
-#                                          [bc0, bc1])
-#     b0norm = b0.norm()
-#
-#     ksp = PETSc.KSP()
-#     ksp.create(mesh.mpi_comm())
-#     ksp.setOperators(A0, P0)
-#     nested_IS = P0.getNestISs()
-#     ksp.setType("minres")
-#     pc = ksp.getPC()
-#     pc.setType("fieldsplit")
-#     pc.setFieldSplitIS(["u", nested_IS[0][0]], ["p", nested_IS[1][1]])
-#     ksp_u, ksp_p = pc.getFieldSplitSubKSP()
-#     ksp_u.setType("preonly")
-#     ksp_u.getPC().setType('lu')
-#     ksp_u.getPC().setFactorSolverType('mumps')
-#     ksp_p.setType("preonly")
-#
-#     def monitor(ksp, its, rnorm):
-#         # print("Num it, rnorm:", its, rnorm)
-#         pass
-#
-#     ksp.setTolerances(rtol=1.0e-8, max_it=50)
-#     ksp.setMonitor(monitor)
-#     ksp.setFromOptions()
-#     x0 = b0.copy()
-#     ksp.solve(b0, x0)
-#     assert ksp.getConvergedReason() > 0
-#
-#     # -- Blocked and monolithic
-#
-#     A1 = dolfin.fem.assemble_matrix_block([[a00, a01], [a10, a11]], [bc0, bc1])
-#     assert A1.norm() == pytest.approx(A0norm, 1.0e-12)
-#     P1 = dolfin.fem.assemble_matrix_block([[p00, p01], [p10, p11]], [bc0, bc1])
-#     assert P1.norm() == pytest.approx(P0norm, 1.0e-12)
-#     b1 = dolfin.fem.assemble_vector_block([L0, L1], [[a00, a01], [a10, a11]],
-#                                           [bc0, bc1])
-#     assert b1.norm() == pytest.approx(b0norm, 1.0e-12)
-#
-#     ksp = PETSc.KSP()
-#     ksp.create(mesh.mpi_comm())
-#     ksp.setOperators(A1, P1)
-#     ksp.setType("minres")
-#     pc = ksp.getPC()
-#     pc.setType('lu')
-#     pc.setFactorSolverType('mumps')
-#     ksp.setTolerances(rtol=1.0e-8, max_it=50)
-#     ksp.setFromOptions()
-#     x1 = A1.createVecRight()
-#     ksp.solve(b1, x1)
-#     assert ksp.getConvergedReason() > 0
-#     assert x1.norm() == pytest.approx(x0.norm(), 1e-8)
-#
-#     # -- Monolithic
-#
-#     P2 = ufl.VectorElement("Lagrange", mesh.ufl_cell(), 2)
-#     P1 = ufl.FiniteElement("Lagrange", mesh.ufl_cell(), 1)
-#     TH = P2 * P1
-#     W = dolfin.FunctionSpace(mesh, TH)
-#     (u, p) = dolfin.TrialFunctions(W)
-#     (v, q) = dolfin.TestFunctions(W)
-#     a00 = ufl.inner(ufl.grad(u), ufl.grad(v)) * dx
-#     a01 = ufl.inner(p, ufl.div(v)) * dx
-#     a10 = ufl.inner(ufl.div(u), q) * dx
-#     a = a00 + a01 + a10
-#
-#     p00 = ufl.inner(ufl.grad(u), ufl.grad(v)) * dx
-#     p11 = ufl.inner(p, q) * dx
-#     p_form = p00 + p11
-#
-#     f = dolfin.Function(W.sub(0).collapse())
-#     p_zero = dolfin.Function(W.sub(1).collapse())
-#     L0 = inner(f, v) * dx
-#     L1 = inner(p_zero, q) * dx
-#     L = L0 + L1
-#
-#     bc0 = dolfin.DirichletBC(W.sub(0), u0, boundary0)
-#     bc1 = dolfin.DirichletBC(W.sub(0), u0, boundary1)
-#
-#     A2 = dolfin.fem.assemble_matrix(a, [bc0, bc1])
-#     A2.assemble()
-#     assert A2.norm() == pytest.approx(A0norm, 1.0e-12)
-#     P2 = dolfin.fem.assemble_matrix(p_form, [bc0, bc1])
-#     P2.assemble()
-#     assert P2.norm() == pytest.approx(P0norm, 1.0e-12)
-#
-#     b2 = dolfin.fem.assemble_vector(L)
-#     dolfin.fem.apply_lifting(b2, [a], [[bc0, bc1]])
-#     b2.ghostUpdate(addv=PETSc.InsertMode.ADD, mode=PETSc.ScatterMode.REVERSE)
-#     dolfin.fem.set_bc(b2, [bc0, bc1])
-#     b2norm = b2.norm()
-#     assert b2norm == pytest.approx(b0norm, 1.0e-12)
-#
-#     ksp = PETSc.KSP()
-#     ksp.create(mesh.mpi_comm())
-#     ksp.setOperators(A2, P2)
-#     ksp.setType("minres")
-#     pc = ksp.getPC()
-#     pc.setType('lu')
-#     pc.setFactorSolverType('mumps')
-#
-#     def monitor(ksp, its, rnorm):
-#         # print("Num it, rnorm:", its, rnorm)
-#         pass
-#
-#     ksp.setTolerances(rtol=1.0e-8, max_it=50)
-#     ksp.setMonitor(monitor)
-#     ksp.setFromOptions()
-#     x2 = A2.createVecRight()
-#     ksp.solve(b2, x2)
-#     assert ksp.getConvergedReason() > 0
-#     assert x0.norm() == pytest.approx(x2.norm(), 1e-8)
-#
+
+
+@pytest.mark.parametrize("mesh", [
+    dolfin.generation.UnitSquareMesh(dolfin.MPI.comm_world, 32, 31),
+    dolfin.generation.UnitCubeMesh(dolfin.MPI.comm_world, 3, 7, 8)
+])
+def test_assembly_solve_taylor_hood(mesh):
+    """Assemble Stokes problem with Taylor-Hood elements and solve."""
+    P2 = functionspace.VectorFunctionSpace(mesh, ("Lagrange", 2))
+    P1 = functionspace.FunctionSpace(mesh, ("Lagrange", 1))
+
+    def boundary0(x):
+        """Define boundary x = 0"""
+        return x[:, 0] < 10 * numpy.finfo(float).eps
+
+    def boundary1(x):
+        """Define boundary x = 1"""
+        return x[:, 0] > (1.0 - 10 * numpy.finfo(float).eps)
+
+    u0 = dolfin.Function(P2)
+    u0.vector.set(1.0)
+    u0.vector.ghostUpdate(addv=PETSc.InsertMode.INSERT, mode=PETSc.ScatterMode.FORWARD)
+    bcs = [dolfin.DirichletBC(P2, u0, boundary0),
+           dolfin.DirichletBC(P2, u0, boundary1)]
+
+
+    u, p = dolfin.Function(P2), dolfin.Function(P1)
+    du, dp = dolfin.TrialFunction(P2), dolfin.TrialFunction(P1)
+    v, q = dolfin.TestFunction(P2), dolfin.TestFunction(P1)
+
+    F = [inner(ufl.grad(u), ufl.grad(v)) * dx + ufl.inner(p, ufl.div(v)) * dx,
+         ufl.inner(ufl.div(u), q) * dx]
+
+    J = [[ufl.derivative(F[0], u, du), ufl.derivative(F[0], p, dp)],
+         [ufl.derivative(F[1], u, du), ufl.derivative(F[1], p, dp)]]
+
+    P = [[J[0][0], None],
+         [None, inner(dp, q) * dx]]
+
+    # # -- Blocked and nested
+    #
+    # TODO
+
+    # -- Blocked and monolithic
+
+    Jmat0 = dolfin.fem.create_matrix_block(J)
+    Pmat0 = dolfin.fem.create_matrix_block(P)
+    Fvec0 = dolfin.fem.create_vector_block(F)
+
+    snes = PETSc.SNES().create(dolfin.MPI.comm_world)
+    snes.setTolerances(rtol=1.0e-9, max_it=10)
+
+    opts = PETSc.Options()
+    opts["ksp_type"] = "minres"
+    opts["snes_monitor"] = None
+    opts["snes_linesearch_type"] = "basic"
+    opts["ksp_monitor"] = None
+    opts["pc_type"] = "lu"
+    opts["pc_factor_mat_solver_type"] = "mumps"
+    snes.setFromOptions()
+
+    problem = NonlinearPDE_SNESProblem(F, J, [u, p], bcs, P=P)
+    snes.setFunction(problem.F_block, Fvec0)
+    snes.setJacobian(problem.J_block, J=Jmat0, P=Pmat0)
+
+    x0 = dolfin.fem.create_vector_block(F)
+    with x0.localForm() as x0l:
+        x0l.set(0.0)
+    snes.solve(None, x0)
+
+    # -- Monolithic
+
+    P2 = ufl.VectorElement("Lagrange", mesh.ufl_cell(), 2)
+    P1 = ufl.FiniteElement("Lagrange", mesh.ufl_cell(), 1)
+    TH = P2 * P1
+    W = dolfin.FunctionSpace(mesh, TH)
+    U = dolfin.Function(W)
+    dU = dolfin.TrialFunction(W)
+    u, p = ufl.split(U)
+    du, dp = ufl.split(dU)
+    v, q = dolfin.TestFunctions(W)
+
+    F = ufl.inner(ufl.grad(u), ufl.grad(v)) * dx \
+        + ufl.inner(p, ufl.div(v)) * dx \
+        + ufl.inner(ufl.div(u), q) * dx
+
+    J = ufl.derivative(F, U, dU)
+
+    P = ufl.inner(ufl.grad(du), ufl.grad(v)) * dx \
+        + ufl.inner(dp, q) * dx
+
+    bcs = [dolfin.DirichletBC(W.sub(0), u0, boundary0),
+           dolfin.DirichletBC(W.sub(0), u0, boundary1)]
+
+    Jmat2 = dolfin.fem.create_matrix(J)
+    Pmat2 = dolfin.fem.create_matrix(P)
+    Fvec2 = dolfin.fem.create_vector(F)
+
+    snes = PETSc.SNES().create(dolfin.MPI.comm_world)
+    snes.setTolerances(rtol=1.0e-9, max_it=10)
+
+    opts = PETSc.Options()
+    opts["ksp_type"] = "minres"
+    opts["snes_monitor"] = None
+    opts["snes_linesearch_type"] = "basic"
+    opts["ksp_monitor"] = None
+    opts["pc_type"] = "lu"
+    opts["pc_factor_mat_solver_type"] = "mumps"
+    snes.setFromOptions()
+
+    problem = NonlinearPDE_SNESProblem(F, J, U, bcs, P=P)
+    snes.setFunction(problem.F, Fvec2)
+    snes.setJacobian(problem.J, J=Jmat2, P=Pmat2)
+
+    x2 = dolfin.fem.create_vector(F)
+    with x2.localForm() as x2l:
+        x2l.set(0.0)
+    snes.solve(None, x2)
+
+
+    assert Jmat2.norm() == pytest.approx(Jmat0.norm(), 1.0e-12)
+    assert Fvec2.norm() == pytest.approx(Fvec0.norm(), 1.0e-12)
+    assert x2.norm() == pytest.approx(x0.norm(), 1.0e-12)
