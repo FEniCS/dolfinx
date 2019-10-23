@@ -81,7 +81,7 @@ def test_matrix_assembly_block():
     for var in [u, p]:
         size_local = var.vector.getLocalSize()
         var_array = var.vector.getArray()
-        var_array[:] = x_array[offset:offset+size_local]
+        var_array[:] = x_array[offset:offset + size_local]
         var.vector.resetArray()
         var.vector.ghostUpdate(addv=PETSc.InsertMode.INSERT, mode=PETSc.ScatterMode.FORWARD)
         offset += size_local
@@ -168,7 +168,7 @@ class NonlinearPDE_SNESProblem():
         for var in self.soln_vars:
             size_local = var.vector.getLocalSize()
             var_array = var.vector.getArray()
-            var_array[:] = x_array[offset:offset+size_local]
+            var_array[:] = x_array[offset:offset + size_local]
             var.vector.resetArray()
             var.vector.ghostUpdate(addv=PETSc.InsertMode.INSERT, mode=PETSc.ScatterMode.FORWARD)
             offset += size_local
