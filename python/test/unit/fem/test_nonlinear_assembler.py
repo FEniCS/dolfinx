@@ -231,14 +231,9 @@ def test_assembly_solve_block():
     snes = PETSc.SNES().create(dolfin.MPI.comm_world)
     snes.setTolerances(rtol=1.0e-9, max_it=10)
 
-    opts = PETSc.Options()
-    opts["ksp_type"] = "preonly"
-    opts["snes_monitor"] = None
-    opts["snes_linesearch_type"] = "basic"
-    opts["ksp_monitor"] = None
-    opts["pc_type"] = "lu"
-    opts["pc_factor_mat_solver_type"] = "mumps"
-    snes.setFromOptions()
+    snes.getKSP().setType("preonly")
+    snes.getKSP().getPC().setType("lu")
+    snes.getKSP().getPC().setFactorSolverType("mumps")
 
     problem = NonlinearPDE_SNESProblem(F, J, [u, p], bcs)
     snes.setFunction(problem.F_block, Fvec0)
@@ -307,14 +302,9 @@ def test_assembly_solve_block():
     snes = PETSc.SNES().create(dolfin.MPI.comm_world)
     snes.setTolerances(rtol=1.0e-9, max_it=10)
 
-    opts = PETSc.Options()
-    opts["ksp_type"] = "preonly"
-    opts["snes_monitor"] = None
-    opts["snes_linesearch_type"] = "basic"
-    opts["ksp_monitor"] = None
-    opts["pc_type"] = "lu"
-    opts["pc_factor_mat_solver_type"] = "mumps"
-    snes.setFromOptions()
+    snes.getKSP().setType("preonly")
+    snes.getKSP().getPC().setType("lu")
+    snes.getKSP().getPC().setFactorSolverType("mumps")
 
     problem = NonlinearPDE_SNESProblem(F, J, U, bcs)
     snes.setFunction(problem.F, Fvec2)
@@ -383,14 +373,18 @@ def test_assembly_solve_taylor_hood(mesh):
     snes = PETSc.SNES().create(dolfin.MPI.comm_world)
     snes.setTolerances(rtol=1.0e-9, max_it=10)
 
-    opts = PETSc.Options()
-    opts["ksp_type"] = "minres"
-    opts["snes_monitor"] = None
-    opts["snes_linesearch_type"] = "basic"
-    opts["ksp_monitor"] = None
-    opts["pc_type"] = "lu"
-    opts["pc_factor_mat_solver_type"] = "mumps"
-    snes.setFromOptions()
+    snes.getKSP().setType("minres")
+    snes.getKSP().getPC().setType("lu")
+    snes.getKSP().getPC().setFactorSolverType("mumps")
+
+    # opts = PETSc.Options()
+    # opts["ksp_type"] = "minres"
+    # opts["snes_monitor"] = None
+    # opts["snes_linesearch_type"] = "basic"
+    # opts["ksp_monitor"] = None
+    # opts["pc_type"] = "lu"
+    # opts["pc_factor_mat_solver_type"] = "mumps"
+    # snes.setFromOptions()
 
     problem = NonlinearPDE_SNESProblem(F, J, [u, p], bcs, P=P)
     snes.setFunction(problem.F_block, Fvec0)
@@ -432,14 +426,9 @@ def test_assembly_solve_taylor_hood(mesh):
     snes = PETSc.SNES().create(dolfin.MPI.comm_world)
     snes.setTolerances(rtol=1.0e-9, max_it=10)
 
-    opts = PETSc.Options()
-    opts["ksp_type"] = "minres"
-    opts["snes_monitor"] = None
-    opts["snes_linesearch_type"] = "basic"
-    opts["ksp_monitor"] = None
-    opts["pc_type"] = "lu"
-    opts["pc_factor_mat_solver_type"] = "mumps"
-    snes.setFromOptions()
+    snes.getKSP().setType("minres")
+    snes.getKSP().getPC().setType("lu")
+    snes.getKSP().getPC().setFactorSolverType("mumps")
 
     problem = NonlinearPDE_SNESProblem(F, J, U, bcs, P=P)
     snes.setFunction(problem.F, Fvec2)
