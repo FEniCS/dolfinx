@@ -175,6 +175,15 @@ void _assemble_vector_block(
   if (is_vecnest)
     throw std::runtime_error("Do not expect a nested vector.");
 
+  // Compute number of owned (i.e., non-ghost) entries for this process
+  int offset1 = 0;
+  for (auto& _L : L)
+  {
+    auto map = _L->function_space(0)->dofmap()->index_map;
+    const int bs = map->block_size;
+    offset1 += map->size_local() * bs;
+  }
+
   // const Vec _x0 = x0 ? x0->vec() : nullptr;
 
   // Pack DirichletBC pointers for rows and columns
@@ -184,11 +193,16 @@ void _assemble_vector_block(
       = bcs_cols(a, bcs);
 
   int offset_x0 = 0;
+  int offset_x0_owned = 0;
+  int offset_x0_ghost = offset1;
   std::vector<Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1>> b_vec(L.size());
   std::vector<
           Eigen::Ref<const Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1>>>
           x0_vec;
   x0_vec.reserve(L.size());
+  std::vector<
+          Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1>>
+          x0_copy_ghosts(L.size());
 
   // Assemble sub vectors and collect x0 sub vectors
   for (std::size_t i = 0; i < L.size(); ++i)
@@ -211,11 +225,19 @@ void _assemble_vector_block(
     if (x0)
     {
       la::VecReadWrapper x0_wrapper(x0);
-      x0_vec.push_back(x0_wrapper.x.segment(offset_x0, map_size0 + map_size1));
+
+      x0_copy_ghosts[i] = Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1>::Zero(map_size0
+                                                                              + map_size1);
+      x0_copy_ghosts[i].segment(0, map_size0) = x0_wrapper.x.segment(offset_x0_owned, map_size0);
+      x0_copy_ghosts[i].segment(map_size0, map_size1) = x0_wrapper.x.segment(offset_x0_ghost, map_size1);
+      x0_vec.push_back(x0_copy_ghosts[i]);
+
       x0_wrapper.restore();
     }
 
     offset_x0 += map_size0 + map_size1;
+    offset_x0_owned += map_size0;
+    offset_x0_ghost += map_size1;
   }
 
   // Apply lifting, x0_vec will be empty if x0 is NULL
@@ -227,18 +249,8 @@ void _assemble_vector_block(
       fem::impl::apply_lifting(b_vec[i], a[i], bcs1[i], {}, scale);
   }
 
-
   // Get local representation of b vector and copy values in
   la::VecWrapper _b(b);
-
-  // Compute number of owned (i.e., non-ghost) entries for this process
-  int offset1 = 0;
-  for (auto& _L : L)
-  {
-    auto map = _L->function_space(0)->dofmap()->index_map;
-    const int bs = map->block_size;
-    offset1 += map->size_local() * bs;
-  }
 
   int offset0 = 0;
   for (std::size_t i = 0; i < L.size(); ++i)

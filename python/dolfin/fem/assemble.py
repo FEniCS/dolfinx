@@ -62,6 +62,27 @@ def create_vector_nest(L: typing.List[typing.Union[Form, cpp.fem.Form]]) -> PETS
     return b
 
 
+# -- Matrix instantiation ----------------------------------------------------
+
+
+@convert_ufl_forms_to_dolfin_forms
+def create_matrix(a: typing.Union[Form, cpp.fem.Form]) -> PETSc.Mat:
+    A = cpp.fem.create_matrix(a)
+    return A
+
+
+@convert_ufl_forms_to_dolfin_forms
+def create_matrix_block(a: typing.List[typing.List[typing.Union[Form, cpp.fem.Form]]]) -> PETSc.Mat:
+    A = cpp.fem.create_matrix_block(a)
+    return A
+
+
+@convert_ufl_forms_to_dolfin_forms
+def create_matrix_nest(a: typing.List[typing.List[typing.Union[Form, cpp.fem.Form]]]) -> PETSc.Mat:
+    A = cpp.fem.create_matrix_nest(a)
+    return A
+
+
 # -- Scalar assembly ---------------------------------------------------------
 
 
@@ -122,6 +143,7 @@ def assemble_vector_nest(L: typing.List[typing.Union[Form, cpp.fem.Form]],
 
 # FIXME: Revise this interface
 @convert_ufl_forms_to_dolfin_forms
+@functools.singledispatch
 def assemble_vector_block(L: typing.List[typing.Union[Form, cpp.fem.Form]],
                           a,
                           bcs: typing.List[DirichletBC],
@@ -133,6 +155,23 @@ def assemble_vector_block(L: typing.List[typing.Union[Form, cpp.fem.Form]],
 
     """
     b = cpp.fem.create_vector(L)
+    cpp.fem.assemble_vector(b, L, a, bcs, x0, scale)
+    return b
+
+
+@convert_ufl_forms_to_dolfin_forms
+@assemble_vector_block.register(PETSc.Vec)
+def _(b: PETSc.Vec,
+      L: typing.List[typing.Union[Form, cpp.fem.Form]],
+      a,
+      bcs: typing.List[DirichletBC],
+      x0: typing.Optional[PETSc.Vec] = None,
+      scale: float = 1.0) -> PETSc.Vec:
+    """Assemble linear forms into a monolithic vector. The vector is not
+    zeroed and it is not finalised, i.e. ghost values are not
+    accumulated.
+
+    """
     cpp.fem.assemble_vector(b, L, a, bcs, x0, scale)
     return b
 
@@ -197,12 +236,24 @@ def assemble_matrix_nest(a,
 
 # FIXME: Revise this interface
 @convert_ufl_forms_to_dolfin_forms
+@functools.singledispatch
 def assemble_matrix_block(a,
                           bcs: typing.List[DirichletBC],
                           diagonal: float = 1.0) -> PETSc.Mat:
     """Assemble bilinear forms into matrix"""
     A = cpp.fem.create_matrix_block(a)
     A.zeroEntries()
+    cpp.fem.assemble_blocked_matrix(A, a, bcs, diagonal)
+    return A
+
+
+@convert_ufl_forms_to_dolfin_forms
+@assemble_matrix_block.register(PETSc.Mat)
+def _(A: PETSc.Mat,
+      a,
+      bcs: typing.List[DirichletBC],
+      diagonal: float = 1.0) -> PETSc.Mat:
+    """Assemble bilinear forms into matrix"""
     cpp.fem.assemble_blocked_matrix(A, a, bcs, diagonal)
     return A
 
