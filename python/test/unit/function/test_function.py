@@ -196,7 +196,7 @@ def test_eval_reference(V, mesh):
         for v in range(4):
             x_coord_new[v] = x_g[coord_dofs[c, v]]
         x = X.copy()
-        cmap.compute_physical_coordinates(x, X, x_coord_new)
+        cmap.push_forward(x, X, x_coord_new)
         for _x in x:
             x_dofs.append(_x)
 
