@@ -291,6 +291,8 @@ void mesh(py::module& m)
              return self.id;                                                   \
            })                                                                  \
       .def("mark", &dolfin::mesh::MeshFunction<SCALAR>::mark)                  \
+      .def("update_ghosts",                                                    \
+           &dolfin::mesh::MeshFunction<SCALAR>::update_ghosts)                 \
       .def_property_readonly(                                                  \
           "values",                                                            \
           py::overload_cast<>(&dolfin::mesh::MeshFunction<SCALAR>::values));

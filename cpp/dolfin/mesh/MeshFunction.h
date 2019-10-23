@@ -315,7 +315,7 @@ void MeshFunction<T>::update_ghosts()
     j++;
   }
 
-  // Distribute remote data as soon as each request is satisfied.
+  // Distribute remote data as soon as each request is satisfied
   for (int i = 0; i < recv_values.size(); i++)
   {
     int req_index;
@@ -326,7 +326,7 @@ void MeshFunction<T>::update_ghosts()
     std::vector<std::int32_t>::iterator it
         = std::find(entity_owner.begin(), entity_owner.end(), process);
 
-    // Update all ghost values with owned values from the current remote process
+    // Update all ghost values from onwning process values
     for (T& value : recv_values[process])
     {
       std::size_t local_entity_index = it - entity_owner.begin() + size_owned;
