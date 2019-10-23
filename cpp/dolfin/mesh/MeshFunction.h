@@ -12,7 +12,6 @@
 #include "MeshEntity.h"
 #include "MeshIterator.h"
 #include "Topology.h"
-#include <boost/container/vector.hpp>
 #include <dolfin/common/MPI.h>
 #include <dolfin/common/UniqueIdGenerator.h>
 #include <map>
@@ -88,6 +87,14 @@ public:
   /// Return array of values
   /// @return The mesh function values
   Eigen::Array<T, Eigen::Dynamic, 1>& values();
+
+  /// Update owned entries owned by this process and which are ghosts on
+  /// other processes, i.e., have been added to by a remote process.
+  void apply_ghosts();
+
+  /// Update ghost values (gathers ghost values from the owning
+  /// processes)
+  void update_ghosts();
 
   /// Marking function used to identify mesh entities
   using marking_function = std::function<Eigen::Array<bool, Eigen::Dynamic, 1>(
@@ -250,6 +257,68 @@ void MeshFunction<T>::mark(
   }
 }
 //---------------------------------------------------------------------------
+template <typename T>
+void MeshFunction<T>::update_ghosts()
+{
+  std::int32_t size_owned = _mesh->topology().ghost_offset(_dim);
+  std::vector<std::int32_t> entity_owner = _mesh->topology().entity_owner(_dim);
+  const std::map<std::int32_t, std::set<std::int32_t>>& shared_entities
+      = _mesh->topology().shared_entities(_dim);
 
+  std::map<std::int32_t, std::vector<T>> send_values;
+  std::map<std::int32_t, std::vector<T>> recv_values;
+
+  for (auto const& entity : shared_entities)
+  {
+    for (auto const& owner : entity.second)
+    {
+      if (entity.first < size_owned)
+        send_values[owner].push_back(_values[entity.first]);
+      else if (entity_owner[entity.first - size_owned] == owner)
+        recv_values[owner].push_back(_values[entity.first]);
+    }
+  }
+
+  MPI_Request send_request[send_values.size()];
+  MPI_Request recv_request[recv_values.size()];
+  MPI_Status status[recv_values.size()];
+
+  // Send owning values to ghost process
+  int count = 0;
+  for (auto const& x : send_values)
+  {
+    MPI_Isend(x.second.data(), x.second.size(), dolfin::MPI::mpi_type<T>(),
+              x.first, 0, MPI_COMM_WORLD, &send_request[count]);
+    count++;
+  }
+
+  // Reveive ghost values from owning process
+  std::vector<std::int32_t> neighbors;
+  count = 0;
+  for (auto& x : recv_values)
+  {
+    neighbors.push_back(x.first);
+    MPI_Irecv(x.second.data(), x.second.size(), dolfin::MPI::mpi_type<T>(),
+              x.first, 0, MPI_COMM_WORLD, &recv_request[count]);
+    count++;
+  }
+
+  for (int i = 0; i < recv_values.size(); i++)
+  {
+    int req_index;
+    MPI_Waitany(recv_values.size(), recv_request, &req_index, &status[i]);
+    std::int32_t process = neighbors[req_index];
+
+    std::vector<std::int32_t>::iterator it
+        = std::find(entity_owner.begin(), entity_owner.end(), process);
+    for (T& value : recv_values[process])
+    {
+      std::size_t local_entity_index = it - entity_owner.begin() + size_owned;
+      _values[local_entity_index] = value;
+      it = std::find(it + 1, entity_owner.end(), process);
+    }
+  }
+}
+//---------------------------------------------------------------------------
 } // namespace mesh
 } // namespace dolfin

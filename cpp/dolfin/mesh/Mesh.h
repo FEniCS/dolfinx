@@ -202,8 +202,7 @@ public:
   /// @return The communicator on which the mesh is distributed
   MPI_Comm mpi_comm() const;
 
-  /// Ghost mode used for partitioning. Possible values are same as
-  /// `parameters["ghost_mode"]`.
+  /// Ghost mode used for partitioning.
   /// @warning The interface may change in future without deprecation;
   ///          the method is now intended for internal library use.
   mesh::GhostMode get_ghost_mode() const;
