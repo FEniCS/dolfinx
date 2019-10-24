@@ -4,54 +4,118 @@
 # SPDX-License-Identifier:    LGPL-3.0-or-later
 """ Unit-tests for higher order meshes """
 
-from dolfin import Mesh, MPI, Constant, fem
+from dolfin import Mesh, MPI, Constant, fem, Function, FunctionSpace
 from dolfin.cpp.mesh import CellType, GhostMode
 from dolfin.fem import assemble_scalar
 from dolfin_utils.test.skips import skip_in_parallel
 from ufl import dx, SpatialCoordinate, sin
-
+from dolfin.cpp.io import vtk_to_dolfin_ordering
 
 import numpy as np
 import pytest
 
+import sympy as sp
+import scipy.integrate
+from sympy.vector import CoordSys3D, matrix_to_vector
+import pygmsh
+import meshio
+
+def sympy_scipy(points, nodes, L, H):
+    """
+    Approximated integration of z + x*y over a surface where the z-coordinate
+    is only dependent of the y-component of the box.
+    x in [0,L], y in [0,H]
+    Input:
+      points: All points of defining the geometry
+      nodes:  Points on one of the outer boundaries varying in the y-direction
+    """
+    degree = len(nodes) - 1
+
+    x, y, z = sp.symbols("x y z")
+    a = [sp.Symbol("a{0:d}".format(i)) for i in range(degree + 1)]
+
+    # Find polynomial for variation in z-direction
+    poly = 0
+    for deg in range(degree + 1):
+        poly += a[deg] * y**deg
+    eqs = []
+    for node in nodes:
+        eqs.append(poly.subs(y, points[node][-2]) - points[node][-1])
+    coeffs = sp.solve(eqs, a)
+    transform = poly
+    for i in range(len(a)):
+        transform = transform.subs(a[i], coeffs[a[i]])
+
+    # Compute integral
+    C = CoordSys3D("C")
+    para = sp.Matrix([x, y, transform])
+    vec = matrix_to_vector(para, C)
+    cross = (vec.diff(x) ^ vec.diff(y)).magnitude()
+
+    expr = (transform + x + x * y) * cross
+    approx = sp.lambdify((x, y), expr)
+    print(transform)
+    ref = scipy.integrate.nquad(approx, [[0, L], [0, H]])[0]
+    # Slow and only works for simple integrals
+    # integral = sp.integrate(expr, (y, 0, H))
+    # integral = sp.integrate(integral, (x, 0, L))
+    # ex = integral.evalf()
+
+    return ref
+
 
 @pytest.mark.parametrize('L', [1])
-@pytest.mark.parametrize('H', [1, 5])
-@pytest.mark.parametrize('eps', [0, 1, 100])
-def test_quad_dofs_order_2(L, H, eps):
+@pytest.mark.parametrize('H', [1])
+@pytest.mark.parametrize('Z', [0.5])
+def test_quad_dofs_order_2(L, H, Z):
     # Test second order mesh by computing volume of two cells
     #  *-----*-----*   3--6--2--13-10
     #  |     |     |   |     |     |
     #  |     |     |   7  8  5  14 12
     #  |     |     |   |     |     |
     #  *-----*-----*   0--4--1--11-9
-    points = np.array([[0, 0], [L, 0], [L, H], [0, H],
-                       [L / 2, 0], [L + eps, H / 2], [L / 2, H], [0 + eps, H / 2],
-                       [L / 2 + eps, H / 2],
-                       [2 * L, 0], [2 * L, H],
-                       [3 * L / 2, 0], [2 * L + eps, H / 2], [3 * L / 2, H],
-                       [3 * L / 2 + eps, H / 2]])
-    cells = np.array([[0, 1, 2, 3, 4, 5, 6, 7, 8], [1, 9, 10, 2, 11, 12, 13, 5, 14]])
+    points = np.array([[0, 0, 0], [L, 0, 0], [L, H, Z], [0, H, Z],
+                       [L / 2, 0, 0], [L, H / 2, 0], [L / 2, H, Z], [0, H / 2, 0],
+                       [L / 2, H / 2, 0],
+                       [2 * L, 0, 0], [2 * L, H, Z],
+                       [3 * L / 2, 0, 0], [2 * L, H / 2, 0], [3 * L / 2, H, Z],
+                       [3 * L / 2, H / 2, 0]])
 
+    cells = np.array([[0, 1, 2, 3, 4, 5, 6, 7, 8]])#, [1, 9, 10, 2, 11, 12, 13, 5, 14]])
+
+    cells = vtk_to_dolfin_ordering(cells, CellType.quadrilateral)
+    print(cells)
     mesh = Mesh(MPI.comm_world, CellType.quadrilateral, points, cells,
                 [], GhostMode.none)
+    from dolfin.io import VTKFile
+    VTKFile("mesh.pvd").write(mesh)
+    def e2(x):
+        values = np.empty((x.shape[0], 1))
+        values[:, 0] = x[:, 2] + x[:, 0] * x[:, 1]
+        return values
+    degree = mesh.degree()
+    # Interpolate function
+    V = FunctionSpace(mesh, ("CG", degree))
+    print(V.dofmap.dofs(mesh,0))
 
-    vol = assemble_scalar(Constant(mesh, 1) * dx)
-    assert(vol == pytest.approx(L * H * 2, rel=1e-9))
 
-    # Volume of cell 1
-    cell_1 = np.array([cells[0]])
-    mesh = Mesh(MPI.comm_world, CellType.quadrilateral, points, cell_1,
-                [], GhostMode.none)
-    vol = assemble_scalar(Constant(mesh, 1) * dx)
-    assert(vol == pytest.approx(L * H, rel=1e-9))
+    u = Function(V)
+    cmap = fem.create_coordinate_map(mesh.ufl_domain())
+    mesh.geometry.coord_mapping = cmap
+    coord = V.tabulate_dof_coordinates()
+    u.interpolate(e2)
+    for i in range(len(coord)):
+        print(coord[i], u.vector.array[i])
+    intu = assemble_scalar(u * dx(metadata={"quadrature_degree": 30}))
+    intu = MPI.sum(mesh.mpi_comm(), intu)
+    VTKFile("u.pvd").write(u)
+    nodes = [0, 3, 7]
+    ref = sympy_scipy(points, nodes, L, H)
+    print(ref, intu)
 
-    # Volume of cell 2
-    cell_2 = np.array([cells[1]])
-    mesh = Mesh(MPI.comm_world, CellType.quadrilateral, points, cell_2,
-                [], GhostMode.none)
-    vol = assemble_scalar(Constant(mesh, 1) * dx)
-    assert(vol == pytest.approx(L * H, rel=1e-9))
+    assert ref == pytest.approx(intu, rel=1e-6)
+
+
 
 
 @skip_in_parallel

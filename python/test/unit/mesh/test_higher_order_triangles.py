@@ -79,7 +79,9 @@ def test_second_order_mesh(H, Z):
     #  *-----*-----*   0----4-----1
 
     # Perturbation of nodes 4,5,6,7 while keeping volume constant
-    L = 1
+    #L = 1
+    L, H = 1, 1
+    Z =0.5
     points = np.array([[0, 0, 0], [L, 0, 0], [L, H, Z], [0, H, Z],
                        [L / 2, 0, 0], [L, H / 2, 0], [L / 2, H, Z],
                        [0, H / 2, 0], [L / 2, H / 2, 0]])
@@ -102,11 +104,20 @@ def test_second_order_mesh(H, Z):
     cmap = fem.create_coordinate_map(mesh.ufl_domain())
     mesh.geometry.coord_mapping = cmap
     u.interpolate(e2)
+    coord = V.tabulate_dof_coordinates()
+    print("Triangle")
+    for i in range(len(coord)):
+        print(coord[i], u.vector.array[i])
+    from dolfin.io import VTKFile
+    VTKFile("u_triangle.pvd").write(u)
+
     intu = assemble_scalar(u * dx(metadata={"quadrature_degree": 40}))
     intu = MPI.sum(mesh.mpi_comm(), intu)
 
-    nodes = [0, 7, 3]
+    nodes = [0, 3, 7]
     ref = sympy_scipy(points, nodes, L, H)
+    print(ref, intu)
+    assert(False)
     assert ref == pytest.approx(intu, rel=1e-6)
 
 

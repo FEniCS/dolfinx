@@ -60,7 +60,7 @@ public:
   /// Comparison Operator
   ///
   /// @param e Another mesh entity.
-  /// @return rue if the two mesh entities are NOT equal.
+  /// @return True if the two mesh entities are NOT equal.
   bool operator!=(const MeshEntity& e) const { return !operator==(e); }
 
   /// Return mesh associated with mesh entity

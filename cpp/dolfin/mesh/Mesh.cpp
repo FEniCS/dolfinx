@@ -23,6 +23,7 @@
 
 using namespace dolfin;
 using namespace dolfin::mesh;
+using namespace dolfin::io;
 
 namespace
 {
@@ -73,7 +74,8 @@ compute_local_to_global_point_map(
     const std::map<std::int64_t, std::set<int>>& point_to_procs,
     Eigen::Ref<const Eigen::Array<std::int64_t, Eigen::Dynamic, Eigen::Dynamic,
                                   Eigen::RowMajor>>
-        cell_nodes)
+        cell_nodes,
+    mesh::CellType type)
 {
   int mpi_rank = dolfin::MPI::rank(mpi_comm);
   std::vector<std::int64_t> local_to_global;
@@ -87,13 +89,22 @@ compute_local_to_global_point_map(
 
   const std::int32_t num_cells = cell_nodes.rows();
   const std::int32_t num_nodes_per_cell = cell_nodes.cols();
+  std::int64_t q;
   for (std::int32_t c = 0; c < num_cells; ++c)
   {
     // Loop over vertex nodes
     for (std::int32_t v = 0; v < num_vertices_per_cell; ++v)
     {
       // Get global node index
-      std::int64_t q = cell_nodes(c, v);
+      if (type == mesh::CellType::quadrilateral)
+      {
+        // FIXME: Workaround to access the vertices of TensorProduct cells
+        std::vector<std::uint8_t> perm
+            = io::cells::dolfin_to_vtk(type, num_nodes_per_cell);
+        q = cell_nodes(c, perm[v]);
+      }
+      else
+        q = cell_nodes(c, v);
       auto shared_it = point_to_procs.find(q);
       if (shared_it == point_to_procs.end())
         local_vertices.insert(q);
@@ -111,7 +122,15 @@ compute_local_to_global_point_map(
     for (std::int32_t v = num_vertices_per_cell; v < num_nodes_per_cell; ++v)
     {
       // Get global node index
-      std::int64_t q = cell_nodes(c, v);
+      if (type == mesh::CellType::quadrilateral)
+      {
+        // FIXME: Workaround to access the vertices of TensorProduct cells
+        std::vector<std::uint8_t> perm
+            = io::cells::dolfin_to_vtk(type, num_nodes_per_cell);
+        q = cell_nodes(c, perm[v]);
+      }
+      else
+        q = cell_nodes(c, v);
       non_vertex_nodes.insert(q);
     }
   }
@@ -150,7 +169,7 @@ compute_point_distribution(
         cell_nodes,
     Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
         points,
-    const std::vector<std::uint8_t>& cell_permutation)
+    mesh::CellType type)
 {
   // Get set of global point indices, which exist on this process
   std::vector<std::int64_t> global_index_set
@@ -170,7 +189,8 @@ compute_point_distribution(
   std::array<int, 4> num_vertices_local;
   std::tie(local_to_global, num_vertices_local)
       = compute_local_to_global_point_map(mpi_comm, num_vertices_per_cell,
-                                          shared_points_global, cell_nodes);
+                                          shared_points_global, cell_nodes,
+                                          type);
   // Reverse map
   std::map<std::int64_t, std::int32_t> global_to_local;
   for (std::size_t i = 0; i < local_to_global.size(); ++i)
@@ -190,7 +210,7 @@ compute_point_distribution(
       cells_local(cell_nodes.rows(), cell_nodes.cols());
   for (int c = 0; c < cell_nodes.rows(); ++c)
     for (int v = 0; v < cell_nodes.cols(); ++v)
-      cells_local(c, cell_permutation[v]) = global_to_local[cell_nodes(c, v)];
+      cells_local(c, v) = global_to_local[cell_nodes(c, v)];
 
   // Convert shared points data to local indexing
   std::map<std::int32_t, std::set<int>> shared_points;
@@ -258,7 +278,7 @@ Mesh::Mesh(
   std::tie(node_indices_global, nodes_shared, coordinate_nodes, points_received,
            num_vertices_local)
       = compute_point_distribution(comm, num_vertices_per_cell, cells, points,
-                                   cell_permutation);
+                                   type);
 
   _coordinate_dofs
       = std::make_unique<CoordinateDofs>(coordinate_nodes, cell_permutation);
@@ -310,10 +330,20 @@ Mesh::Mesh(
   _topology->set_num_entities_global(tdim, num_cells_global);
   _topology->init_ghost(tdim, num_cells_local);
 
+  // Make cell to vertex connectivity, using the dolfin_to_vtk permutation
+  // to find the vertices
+  Eigen::Array<std::int32_t, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
+      vertex_cols(cells.rows(), num_vertices_per_cell);
+  std::vector<std::uint8_t> perm = io::cells::dolfin_to_vtk(type, cells.cols());
+  for (std::size_t i = 0; i < num_vertices_per_cell; ++i)
+    vertex_cols.col(i) = coordinate_nodes.col(perm[i]);
+
+  auto cv = std::make_shared<Connectivity>(vertex_cols);
+
   // Add cells. Only copies the first few entries on each row
   // corresponding to vertices.
-  auto cv = std::make_shared<Connectivity>(
-      coordinate_nodes.leftCols(num_vertices_per_cell));
+  // auto cv = std::make_shared<Connectivity>(
+  //     coordinate_nodes.leftCols(num_vertices_per_cell));
   _topology->set_connectivity(cv, tdim, 0);
 
   // Global cell indices - construct if none given
