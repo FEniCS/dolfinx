@@ -310,7 +310,7 @@ void fem::impl::assemble_interior_facets(
   assert(offsets.back() == coeffs.cols());
 
   // Temporaries for joint dofmaps
-  std::vector<PetscInt> dmapjoint0, dmapjoint1;
+  Eigen::Array<PetscInt, Eigen::Dynamic, 1> dmapjoint0, dmapjoint1;
 
   // Iterate over all facets
   PetscErrorCode ierr;
@@ -333,30 +333,27 @@ void fem::impl::assemble_interior_facets(
     const int cell_index0 = cell0.index();
     const int cell_index1 = cell1.index();
     for (int i = 0; i < num_dofs_g; ++i)
+    {
       for (int j = 0; j < gdim; ++j)
       {
         coordinate_dofs(i, j) = x_g(cell_g[pos_g[cell_index0] + i], j);
         coordinate_dofs(i + num_dofs_g, j)
             = x_g(cell_g[pos_g[cell_index1] + i], j);
       }
+    }
 
-    // Get dof maps for cell
+    // Get dof maps for cells and pack
     auto dmap0_cell0 = dofmap0.cell_dofs(cell_index0);
-    auto dmap1_cell0 = dofmap1.cell_dofs(cell_index0);
     auto dmap0_cell1 = dofmap0.cell_dofs(cell_index1);
-    auto dmap1_cell1 = dofmap1.cell_dofs(cell_index1);
-
     dmapjoint0.resize(dmap0_cell0.size() + dmap0_cell1.size());
-    std::copy(dmap0_cell0.data(), dmap0_cell0.data() + dmap0_cell0.size(),
-              dmapjoint0.begin());
-    std::copy(dmap0_cell1.data(), dmap0_cell1.data() + dmap0_cell1.size(),
-              dmapjoint0.begin() + dmap0_cell0.size());
+    dmapjoint0.head(dmap0_cell0.size()) = dmap0_cell0;
+    dmapjoint0.tail(dmap0_cell1.size()) = dmap0_cell1;
 
+    auto dmap1_cell0 = dofmap1.cell_dofs(cell_index0);
+    auto dmap1_cell1 = dofmap1.cell_dofs(cell_index1);
     dmapjoint1.resize(dmap1_cell0.size() + dmap1_cell1.size());
-    std::copy(dmap1_cell0.data(), dmap1_cell0.data() + dmap1_cell0.size(),
-              dmapjoint1.begin());
-    std::copy(dmap1_cell1.data(), dmap1_cell1.data() + dmap1_cell1.size(),
-              dmapjoint1.begin() + dmap1_cell0.size());
+    dmapjoint1.head(dmap1_cell0.size()) = dmap1_cell0;
+    dmapjoint1.tail(dmap1_cell1.size()) = dmap1_cell1;
 
     // Update coefficients
     Eigen::Map<const Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic,
@@ -378,12 +375,10 @@ void fem::impl::assemble_interior_facets(
     {
       // Loop over entries for coefficient i
       const int num_entries = offsets[i + 1] - offsets[i];
-      for (int j = 0; j < num_entries; ++j)
-      {
-        coeff_array(2 * offsets[i] + j) = coeff_cell0(offsets[i] + j);
-        coeff_array(offsets[i + 1] + offsets[i] + j)
-            = coeff_cell1(offsets[i] + j);
-      }
+      coeff_array.segment(2 * offsets[i], num_entries)
+          = coeff_cell0.segment(offsets[i], num_entries);
+      coeff_array.segment(offsets[i + 1] + offsets[i], num_entries)
+          = coeff_cell1.segment(offsets[i], num_entries);
     }
 
     // Tabulate tensor

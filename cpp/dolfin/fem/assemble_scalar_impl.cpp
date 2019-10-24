@@ -273,12 +273,10 @@ PetscScalar fem::impl::assemble_interior_facets(
     {
       // Loop over entries for coefficient i
       const int num_entries = offsets[i + 1] - offsets[i];
-      for (int j = 0; j < num_entries; ++j)
-      {
-        coeff_array(2 * offsets[i] + j) = coeff_cell0(offsets[i] + j);
-        coeff_array(offsets[i + 1] + offsets[i] + j)
-            = coeff_cell1(offsets[i] + j);
-      }
+      coeff_array.segment(2 * offsets[i], num_entries)
+          = coeff_cell0.segment(offsets[i], num_entries);
+      coeff_array.segment(offsets[i + 1] + offsets[i], num_entries)
+          = coeff_cell1.segment(offsets[i], num_entries);
     }
 
     fn(&value, coeff_array.data(), constant_values.data(),
