@@ -358,13 +358,7 @@ void fem::impl::assemble_vector(
   assert(dofmap.element_dof_layout);
   const int num_dofs_per_cell = dofmap.element_dof_layout->num_dofs();
 
-  // Prepare coefficients
-  const FormCoefficients& coefficients = L.coefficients();
-  // std::vector<const function::Function*> coeff_fn(coefficients.size());
-  // for (int i = 0; i < coefficients.size(); ++i)
-  //   coeff_fn[i] = coefficients.get(i).get();
-  const std::vector<int> c_offsets = coefficients.offsets();
-
+  // Prepare constants
   const std::vector<
       std::pair<std::string, std::shared_ptr<const function::Constant>>>
       constants = L.constants();
@@ -405,6 +399,7 @@ void fem::impl::assemble_vector(
 
   for (int i = 0; i < integrals.num_integrals(type::interior_facet); ++i)
   {
+    const std::vector<int> c_offsets = L.coefficients().offsets();
     const auto& fn = integrals.get_tabulate_tensor_function(
         FormIntegrals::Type::interior_facet, i);
     const std::vector<std::int32_t>& active_facets
