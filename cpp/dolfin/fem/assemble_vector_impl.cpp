@@ -372,7 +372,8 @@ void fem::impl::assemble_vector(
   }
 
   // Prepare coefficients
-  Eigen::Array<PetscScalar, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
+  const Eigen::Array<PetscScalar, Eigen::Dynamic, Eigen::Dynamic,
+                     Eigen::RowMajor>
       coeffs = pack_coefficients(L);
 
   const FormIntegrals& integrals = L.integrals();
@@ -493,8 +494,6 @@ void fem::impl::assemble_exterior_facets(
   Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
       coordinate_dofs(num_dofs_g, gdim);
   Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1> be;
-  // Eigen::Array<PetscScalar, Eigen::Dynamic, 1> coeff_array(offsets.back());
-
   for (const auto& facet_index : active_facets)
   {
     const mesh::MeshEntity facet(mesh, tdim - 1, facet_index);
@@ -562,13 +561,13 @@ void fem::impl::assemble_interior_facets(
       coordinate_dofs(2 * num_dofs_g, gdim);
   Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1> be;
   Eigen::Array<PetscScalar, Eigen::Dynamic, 1> coeff_array(2 * offsets.back());
+  assert(offsets.back() == coeffs.cols());
 
   for (const auto& facet_index : active_facets)
   {
     const mesh::MeshEntity facet(mesh, tdim - 1, facet_index);
 
     // assert(facet.num_global_entities(tdim) == 2);
-
     // TODO: check ghosting sanity?
 
     // Get attached cell indices
@@ -612,7 +611,6 @@ void fem::impl::assemble_interior_facets(
 
     // Layout for the restricted coefficients is flattened
     // w[coefficient][restriction][dof]
-    Eigen::Array<PetscScalar, Eigen::Dynamic, 1> coeff_array(2 * coeffs.cols());
     auto coeff_cell0 = coeffs.row(cell_index0);
     auto coeff_cell1 = coeffs.row(cell_index1);
 

@@ -23,17 +23,55 @@ using namespace dolfin;
 namespace
 {
 //-----------------------------------------------------------------------------
-void _restrict(const fem::DofMap& dofmap, const Vec x, int cell_index,
-               PetscScalar* w)
+Eigen::Array<PetscScalar, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
+pack_coefficients(const fem::Form& L)
 {
-  assert(w);
-  auto dofs = dofmap.cell_dofs(cell_index);
+  // Get form coefficient offsets amd dofmaps
+  const fem::FormCoefficients& coefficients = L.coefficients();
+  const std::vector<int> offsets = coefficients.offsets();
+  std::vector<const fem::DofMap*> dofmaps(coefficients.size());
+  for (int i = 0; i < coefficients.size(); ++i)
+    dofmaps[i] = coefficients.get(i)->function_space()->dofmap().get();
 
-  // Pick values from vector(s)
-  la::VecReadWrapper v(x);
-  Eigen::Map<const Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1>> _v = v.x;
-  for (Eigen::Index i = 0; i < dofs.size(); ++i)
-    w[i] = _v[dofs[i]];
+  // Get mesh
+  assert(L.mesh());
+  const mesh::Mesh mesh = *L.mesh();
+  const int tdim = mesh.topology().dim();
+
+  // Unwrap PETSc vectors
+  std::vector<const PetscScalar*> v(coefficients.size(), nullptr);
+  std::vector<Vec> x(coefficients.size(), nullptr),
+      x_local(coefficients.size(), nullptr);
+  for (std::size_t i = 0; i < v.size(); ++i)
+  {
+    x[i] = coefficients.get(i)->vector().vec();
+    VecGhostGetLocalForm(x[i], &x_local[i]);
+    VecGetArrayRead(x_local[i], &v[i]);
+  }
+
+  // Copy data into coefficient array
+  Eigen::Array<PetscScalar, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor> c(
+      mesh.num_entities(tdim), offsets.back());
+  for (int cell = 0; cell < mesh.num_entities(tdim); ++cell)
+  {
+    auto c_cell = c.row(cell);
+    for (std::size_t coeff = 0; coeff < dofmaps.size(); ++coeff)
+    {
+      auto dofs = dofmaps[coeff]->cell_dofs(cell);
+      const PetscScalar* _v = v[coeff];
+      for (Eigen::Index k = 0; k < dofs.size(); ++k)
+        c_cell(k + offsets[coeff]) = _v[dofs[k]];
+    }
+  }
+
+  // Restore PETSc vectors
+  for (std::size_t i = 0; i < v.size(); ++i)
+  {
+    VecRestoreArrayRead(x_local[i], &v[i]);
+    VecGhostRestoreLocalForm(x[i], &x_local[i]);
+  }
+
+  return c;
 }
 //-----------------------------------------------------------------------------
 
@@ -58,13 +96,6 @@ void fem::impl::assemble_matrix(Mat A, const Form& a,
   const int num_dofs_per_cell0 = dofmap0.element_dof_layout->num_dofs();
   const int num_dofs_per_cell1 = dofmap1.element_dof_layout->num_dofs();
 
-  // Prepare coefficients
-  const FormCoefficients& coefficients = a.coefficients();
-  std::vector<const function::Function*> coeff_fn(coefficients.size());
-  for (int i = 0; i < coefficients.size(); ++i)
-    coeff_fn[i] = coefficients.get(i).get();
-  std::vector<int> c_offsets = coefficients.offsets();
-
   // Prepare constants
   const std::vector<
       std::pair<std::string, std::shared_ptr<const function::Constant>>>
@@ -79,6 +110,11 @@ void fem::impl::assemble_matrix(Mat A, const Form& a,
                            array.data() + array.size());
   }
 
+  // Prepare coefficients
+  const Eigen::Array<PetscScalar, Eigen::Dynamic, Eigen::Dynamic,
+                     Eigen::RowMajor>
+      coeffs = pack_coefficients(a);
+
   const FormIntegrals& integrals = a.integrals();
   using type = fem::FormIntegrals::Type;
   for (int i = 0; i < integrals.num_integrals(type::cell); ++i)
@@ -88,7 +124,7 @@ void fem::impl::assemble_matrix(Mat A, const Form& a,
         = integrals.integral_domains(type::cell, i);
     fem::impl::assemble_cells(
         A, mesh, active_cells, dof_array0, num_dofs_per_cell0, dof_array1,
-        num_dofs_per_cell1, bc0, bc1, fn, coeff_fn, c_offsets, constant_values);
+        num_dofs_per_cell1, bc0, bc1, fn, coeffs, constant_values);
   }
 
   for (int i = 0; i < integrals.num_integrals(type::exterior_facet); ++i)
@@ -97,17 +133,18 @@ void fem::impl::assemble_matrix(Mat A, const Form& a,
     const std::vector<std::int32_t>& active_facets
         = integrals.integral_domains(type::exterior_facet, i);
     fem::impl::assemble_exterior_facets(A, mesh, active_facets, dofmap0,
-                                        dofmap1, bc0, bc1, fn, coeff_fn,
-                                        c_offsets, constant_values);
+                                        dofmap1, bc0, bc1, fn, coeffs,
+                                        constant_values);
   }
 
   for (int i = 0; i < integrals.num_integrals(type::interior_facet); ++i)
   {
+    const std::vector<int> c_offsets = a.coefficients().offsets();
     auto& fn = integrals.get_tabulate_tensor_function(type::interior_facet, i);
     const std::vector<std::int32_t>& active_facets
         = integrals.integral_domains(type::interior_facet, i);
     fem::impl::assemble_interior_facets(A, mesh, active_facets, dofmap0,
-                                        dofmap1, bc0, bc1, fn, coeff_fn,
+                                        dofmap1, bc0, bc1, fn, coeffs,
                                         c_offsets, constant_values);
   }
 }
@@ -123,8 +160,8 @@ void fem::impl::assemble_cells(
     const std::function<void(PetscScalar*, const PetscScalar*,
                              const PetscScalar*, const double*, const int*,
                              const int*)>& kernel,
-    const std::vector<const function::Function*>& coefficients,
-    const std::vector<int>& offsets,
+    const Eigen::Array<PetscScalar, Eigen::Dynamic, Eigen::Dynamic,
+                       Eigen::RowMajor>& coeffs,
     const std::vector<PetscScalar> constant_values)
 {
   assert(A);
@@ -148,7 +185,6 @@ void fem::impl::assemble_cells(
       coordinate_dofs(num_dofs_g, gdim);
   Eigen::Matrix<PetscScalar, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
       Ae;
-  Eigen::Array<PetscScalar, Eigen::Dynamic, 1> coeff_array(offsets.back());
 
   // Iterate over active cells
   PetscErrorCode ierr;
@@ -162,17 +198,10 @@ void fem::impl::assemble_cells(
       for (int j = 0; j < gdim; ++j)
         coordinate_dofs(i, j) = x_g(cell_g[pos_g[cell_index] + i], j);
 
-    // Update coefficients
-    for (std::size_t i = 0; i < coefficients.size(); ++i)
-    {
-      _restrict(*coefficients[i]->function_space()->dofmap(),
-                coefficients[i]->vector().vec(), cell.index(),
-                coeff_array.data() + offsets[i]);
-    }
-
     // Tabulate tensor
+    auto coeff_cell = coeffs.row(cell_index);
     Ae.setZero(num_dofs_per_cell0, num_dofs_per_cell1);
-    kernel(Ae.data(), coeff_array.data(), constant_values.data(),
+    kernel(Ae.data(), coeff_cell.data(), constant_values.data(),
            coordinate_dofs.data(), nullptr, &orientation);
 
     // Zero rows/columns for essential bcs
@@ -214,8 +243,8 @@ void fem::impl::assemble_exterior_facets(
     const std::function<void(PetscScalar*, const PetscScalar*,
                              const PetscScalar*, const double*, const int*,
                              const int*)>& fn,
-    const std::vector<const function::Function*>& coefficients,
-    const std::vector<int>& offsets,
+    const Eigen::Array<PetscScalar, Eigen::Dynamic, Eigen::Dynamic,
+                       Eigen::RowMajor>& coeffs,
     const std::vector<PetscScalar> constant_values)
 {
   const int gdim = mesh.geometry().dim();
@@ -240,7 +269,6 @@ void fem::impl::assemble_exterior_facets(
       coordinate_dofs(num_dofs_g, gdim);
   Eigen::Matrix<PetscScalar, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
       Ae;
-  Eigen::Array<PetscScalar, Eigen::Dynamic, 1> coeff_array(offsets.back());
 
   // Iterate over all facets
   PetscErrorCode ierr;
@@ -266,17 +294,10 @@ void fem::impl::assemble_exterior_facets(
     auto dmap0 = dofmap0.cell_dofs(cell_index);
     auto dmap1 = dofmap1.cell_dofs(cell_index);
 
-    // Update coefficients
-    for (std::size_t i = 0; i < coefficients.size(); ++i)
-    {
-      _restrict(*coefficients[i]->function_space()->dofmap(),
-                coefficients[i]->vector().vec(), cell.index(),
-                coeff_array.data() + offsets[i]);
-    }
-
     // Tabulate tensor
+    auto coeff_cell = coeffs.row(cell_index);
     Ae.setZero(dmap0.size(), dmap1.size());
-    fn(Ae.data(), coeff_array.data(), constant_values.data(),
+    fn(Ae.data(), coeff_cell.data(), constant_values.data(),
        coordinate_dofs.data(), &local_facet, &orient);
 
     // Zero rows/columns for essential bcs
@@ -314,7 +335,8 @@ void fem::impl::assemble_interior_facets(
     const std::function<void(PetscScalar*, const PetscScalar*,
                              const PetscScalar*, const double*, const int*,
                              const int*)>& fn,
-    const std::vector<const function::Function*>& coefficients,
+    const Eigen::Array<PetscScalar, Eigen::Dynamic, Eigen::Dynamic,
+                       Eigen::RowMajor>& coeffs,
     const std::vector<int>& offsets,
     const std::vector<PetscScalar> constant_values)
 {
@@ -341,6 +363,7 @@ void fem::impl::assemble_interior_facets(
   Eigen::Matrix<PetscScalar, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
       Ae;
   Eigen::Array<PetscScalar, Eigen::Dynamic, 1> coeff_array(2 * offsets.back());
+  assert(offsets.back() == coeffs.cols());
 
   // Temporaries for joint dofmaps
   std::vector<PetscInt> dmapjoint0, dmapjoint1;
@@ -400,20 +423,22 @@ void fem::impl::assemble_interior_facets(
                                   Eigen::RowMajor>>
         coordinate_dofs1(coordinate_dofs.data() + num_dofs_g * gdim, num_dofs_g,
                          gdim);
-    for (std::size_t i = 0; i < coefficients.size(); ++i)
+
+    // Layout for the restricted coefficients is flattened
+    // w[coefficient][restriction][dof]
+    auto coeff_cell0 = coeffs.row(cell_index0);
+    auto coeff_cell1 = coeffs.row(cell_index1);
+
+    // Loop over coefficients
+    for (std::size_t i = 0; i < offsets.size() - 1; ++i)
     {
-      // Layout for the restricted coefficients is flattened
-      // w[coefficient][restriction][dof]
-
-      // Prepare restriction to cell 0
-      _restrict(*coefficients[i]->function_space()->dofmap(),
-                coefficients[i]->vector().vec(), cell0.index(),
-                coeff_array.data() + 2 * offsets[i]);
-
-      // Prepare restriction to cell 1
-      _restrict(*coefficients[i]->function_space()->dofmap(),
-                coefficients[i]->vector().vec(), cell1.index(),
-                coeff_array.data() + offsets[i + 1] + offsets[i]);
+      // Loop over entries for coefficient i
+      for (int j = 0; j < offsets[i + 1]; ++j)
+      {
+        coeff_array(2 * offsets[i] + j) = coeff_cell0(offsets[i] + j);
+        coeff_array(offsets[i + 1] + offsets[i] + j)
+            = coeff_cell1(offsets[i] + j);
+      }
     }
 
     // Tabulate tensor
