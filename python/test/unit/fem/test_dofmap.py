@@ -11,7 +11,7 @@ import sys
 import numpy as np
 import pytest
 
-from dolfin import (Mesh, MPI, FunctionSpace, MeshEntity, UnitCubeMesh,
+from dolfin import (MPI, FunctionSpace, MeshEntity, UnitCubeMesh,
                     UnitIntervalMesh, UnitSquareMesh, VectorFunctionSpace, cpp,
                     fem)
 from dolfin.cpp.mesh import CellType
