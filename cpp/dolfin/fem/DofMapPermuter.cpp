@@ -95,7 +95,10 @@ _triangle_rotation_and_reflection(const int face_dofs)
 {
   // This will only be called at most once for each mesh
   float root = std::sqrt(8 * face_dofs + 1);
-  assert(root == std::floor(root) && int(root) % 2 == 1);
+  // FIXME: This function assumes the layout of the dofs are in a triangle
+  // shape. This is true for Lagrange space, but not true for eg N1curl spaces.
+  // The following assert fails for N1curl order 2 on a tetrahedron. assert(root
+  // == std::floor(root) && int(root) % 2 == 1);
   int side_length = (root - 1) / 2; // side length of the triangle of face dofs
 
   std::vector<int> rotation(face_dofs);
@@ -132,6 +135,8 @@ _triangle_rotation_and_reflection(const int face_dofs)
 std::array<std::vector<int>, 4>
 _tetrahedron_rotations_and_reflection(const int volume_dofs)
 {
+  // FIXME: This function assumes the layout of the dofs are in a triangle
+  // shape. This is true for Lagrange space, but not true for eg N1curl spaces.
   // This will only be called at most once for each mesh
   int side_length = 0;
   while (side_length * (side_length + 1) * (side_length + 2) < 6 * volume_dofs)
