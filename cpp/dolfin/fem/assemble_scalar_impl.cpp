@@ -115,7 +115,7 @@ PetscScalar fem::impl::assemble_cells(
   // Iterate over all cells
   const int orientation = 0;
   PetscScalar value(0);
-  for (const auto& cell_index : active_cells)
+  for (auto& cell_index : active_cells)
   {
     const mesh::MeshEntity cell(mesh, tdim, cell_index);
 
@@ -244,12 +244,14 @@ PetscScalar fem::impl::assemble_interior_facets(
     const int cell_index0 = cell0.index();
     const int cell_index1 = cell1.index();
     for (int i = 0; i < num_dofs_g; ++i)
+    {
       for (int j = 0; j < gdim; ++j)
       {
         coordinate_dofs(i, j) = x_g(cell_g[pos_g[cell_index0] + i], j);
         coordinate_dofs(i + num_dofs_g, j)
             = x_g(cell_g[pos_g[cell_index1] + i], j);
       }
+    }
 
     // Update coefficients
     Eigen::Map<const Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic,
@@ -270,7 +272,8 @@ PetscScalar fem::impl::assemble_interior_facets(
     for (std::size_t i = 0; i < offsets.size() - 1; ++i)
     {
       // Loop over entries for coefficient i
-      for (int j = 0; j < offsets[i + 1]; ++j)
+      const int num_entries = offsets[i + 1] - offsets[i];
+      for (int j = 0; j < num_entries; ++j)
       {
         coeff_array(2 * offsets[i] + j) = coeff_cell0(offsets[i] + j);
         coeff_array(offsets[i + 1] + offsets[i] + j)

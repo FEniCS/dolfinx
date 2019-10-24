@@ -377,7 +377,8 @@ void fem::impl::assemble_interior_facets(
     for (std::size_t i = 0; i < offsets.size() - 1; ++i)
     {
       // Loop over entries for coefficient i
-      for (int j = 0; j < offsets[i + 1]; ++j)
+      const int num_entries = offsets[i + 1] - offsets[i];
+      for (int j = 0; j < num_entries; ++j)
       {
         coeff_array(2 * offsets[i] + j) = coeff_cell0(offsets[i] + j);
         coeff_array(offsets[i + 1] + offsets[i] + j)
