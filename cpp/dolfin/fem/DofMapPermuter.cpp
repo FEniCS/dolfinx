@@ -18,11 +18,11 @@ namespace
 void _permute(std::vector<int>& vec,
               Eigen::Array<PetscInt, Eigen::Dynamic, 1> perm)
 {
-  int temp[vec.size()];
+  int input[vec.size()];
   for (std::size_t i = 0; i < vec.size(); ++i)
-    temp[i] = vec[i];
+    input[i] = vec[i];
   for (std::size_t i = 0; i < vec.size(); ++i)
-    vec[perm[i]] = temp[i];
+    vec[perm[i]] = input[i];
 }
 //-----------------------------------------------------------------------------
 /// Calculates the permutation orders for a triangle
@@ -38,6 +38,8 @@ std::array<int, 2> _calculate_triangle_orders(int v1, int v2, int v3)
     return {1, v3 > v1};
   if (v3 < v1 && v3 < v2)
     return {2, v1 > v2};
+}
+throw std::runtime_error("Two of a triangle's vertices appear to be equal.");
 }
 //-----------------------------------------------------------------------------
 /// Calculates the permutation orders for a tetrahedron
@@ -60,18 +62,16 @@ std::array<int, 4> _calculate_tetrahedron_orders(int v1, int v2, int v3, int v4)
   }
   if (v3 < v1 && v3 < v2 && v3 < v4)
   {
-    int a;
-    int b;
     auto tri_orders = _calculate_triangle_orders(v1, v2, v4);
     return {2, 0, tri_orders[0], tri_orders[1]};
   }
   if (v4 < v1 && v4 < v2 && v4 < v3)
   {
-    int a;
-    int b;
     auto tri_orders = _calculate_triangle_orders(v2, v1, v3);
     return {0, 1, tri_orders[0], tri_orders[1]};
   }
+  throw std::runtime_error(
+      "Two of a tetrahedron's vertices appear to be equal.");
 }
 //-----------------------------------------------------------------------------
 /// Makes a permutation to flip the dofs on an edge
@@ -95,7 +95,7 @@ _triangle_rotation_and_reflection(const int face_dofs)
 {
   // This will only be called at most once for each mesh
   float root = std::sqrt(8 * face_dofs + 1);
-  assert(root == std::floor(root) && root % 2 == 1);
+  assert(root == std::floor(root) && std::floor(root) % 2 == 1);
   int side_length = (root - 1) / 2; // side length of the triangle of face dofs
 
   std::vector<int> rotation(face_dofs);
@@ -266,7 +266,7 @@ DofMapPermuter::_generate_recursive(const mesh::Mesh mesh,
     auto sub_view = element_dof_layout.sub_view({i});
     auto sub_perm
         = _generate_recursive(mesh, *element_dof_layout.sub_dofmap({i}));
-    for (std::size_t p = 0; p < _permutation_count; ++p)
+    for (int p = 0; p < _permutation_count; ++p)
       for (std::size_t j = 0; j < sub_view.size(); ++j)
         output(p, sub_view[j]) = sub_view[sub_perm(p, j)];
   }
@@ -314,10 +314,8 @@ DofMapPermuter::_generate_triangle(const mesh::Mesh mesh,
   // TODO: Make this return an Array, then make the recursive function put it
   // into the higher level array
   const int D = mesh.topology().dim();
-  const int vertex_dofs = 0 <= D ? element_dof_layout.num_entity_dofs(0) : 0;
   const int edge_dofs = 1 <= D ? element_dof_layout.num_entity_dofs(1) : 0;
   const int face_dofs = 2 <= D ? element_dof_layout.num_entity_dofs(2) : 0;
-  const int volume_dofs = 3 <= D ? element_dof_layout.num_entity_dofs(3) : 0;
 
   Eigen::Array<PetscInt, Eigen::Dynamic, Eigen::Dynamic> permutations(
       _permutation_count, _dof_count);
@@ -347,7 +345,6 @@ DofMapPermuter::_generate_tetrahedron(
   // TODO: Make this return an Array, then make the recursive function put it
   // into the higher level array
   const int D = mesh.topology().dim();
-  const int vertex_dofs = 0 <= D ? element_dof_layout.num_entity_dofs(0) : 0;
   const int edge_dofs = 1 <= D ? element_dof_layout.num_entity_dofs(1) : 0;
   const int face_dofs = 2 <= D ? element_dof_layout.num_entity_dofs(2) : 0;
   const int volume_dofs = 3 <= D ? element_dof_layout.num_entity_dofs(3) : 0;
