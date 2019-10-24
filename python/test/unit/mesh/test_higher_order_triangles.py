@@ -107,7 +107,8 @@ def test_second_order_mesh(H, Z):
     coord = V.tabulate_dof_coordinates()
     print("Triangle")
     for i in range(len(coord)):
-        print(coord[i], u.vector.array[i])
+        print("{0:.2f}, {1:.2f}, {2:4.2f} : {3:.2f}".format(abs(coord[i][0]),abs(coord[i][1]),abs(coord[i][2]), u.vector.array[i]))
+
     from dolfin.io import VTKFile
     VTKFile("u_triangle.pvd").write(u)
 

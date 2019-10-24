@@ -14,54 +14,15 @@ from dolfin.cpp.io import vtk_to_dolfin_ordering
 import numpy as np
 import pytest
 
+from test_higher_order_triangles import sympy_scipy
+
 import sympy as sp
 import scipy.integrate
 from sympy.vector import CoordSys3D, matrix_to_vector
 import pygmsh
 import meshio
 
-def sympy_scipy(points, nodes, L, H):
-    """
-    Approximated integration of z + x*y over a surface where the z-coordinate
-    is only dependent of the y-component of the box.
-    x in [0,L], y in [0,H]
-    Input:
-      points: All points of defining the geometry
-      nodes:  Points on one of the outer boundaries varying in the y-direction
-    """
-    degree = len(nodes) - 1
 
-    x, y, z = sp.symbols("x y z")
-    a = [sp.Symbol("a{0:d}".format(i)) for i in range(degree + 1)]
-
-    # Find polynomial for variation in z-direction
-    poly = 0
-    for deg in range(degree + 1):
-        poly += a[deg] * y**deg
-    eqs = []
-    for node in nodes:
-        eqs.append(poly.subs(y, points[node][-2]) - points[node][-1])
-    coeffs = sp.solve(eqs, a)
-    transform = poly
-    for i in range(len(a)):
-        transform = transform.subs(a[i], coeffs[a[i]])
-
-    # Compute integral
-    C = CoordSys3D("C")
-    para = sp.Matrix([x, y, transform])
-    vec = matrix_to_vector(para, C)
-    cross = (vec.diff(x) ^ vec.diff(y)).magnitude()
-
-    expr = (transform + x + x * y) * cross
-    approx = sp.lambdify((x, y), expr)
-    print(transform)
-    ref = scipy.integrate.nquad(approx, [[0, L], [0, H]])[0]
-    # Slow and only works for simple integrals
-    # integral = sp.integrate(expr, (y, 0, H))
-    # integral = sp.integrate(integral, (x, 0, L))
-    # ex = integral.evalf()
-
-    return ref
 
 
 @pytest.mark.parametrize('L', [1])
@@ -105,8 +66,8 @@ def test_quad_dofs_order_2(L, H, Z):
     coord = V.tabulate_dof_coordinates()
     u.interpolate(e2)
     for i in range(len(coord)):
-        print(coord[i], u.vector.array[i])
-    intu = assemble_scalar(u * dx(metadata={"quadrature_degree": 30}))
+        print("{0:.2f}, {1:.2f}, {2:4.2f} : {3:.2f}".format(abs(coord[i][0]),abs(coord[i][1]),abs(coord[i][2]), u.vector.array[i]))
+    intu = assemble_scalar(u * dx(metadata={"quadrature_degree": 5}))
     intu = MPI.sum(mesh.mpi_comm(), intu)
     VTKFile("u.pvd").write(u)
     nodes = [0, 3, 7]
