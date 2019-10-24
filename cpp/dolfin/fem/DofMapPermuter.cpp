@@ -95,7 +95,7 @@ _triangle_rotation_and_reflection(const int face_dofs)
 {
   // This will only be called at most once for each mesh
   float root = std::sqrt(8 * face_dofs + 1);
-  assert(root == std::floor(root) && std::floor(root) % 2 == 1);
+  assert(root == std::floor(root) && int(root) % 2 == 1);
   int side_length = (root - 1) / 2; // side length of the triangle of face dofs
 
   std::vector<int> rotation(face_dofs);
