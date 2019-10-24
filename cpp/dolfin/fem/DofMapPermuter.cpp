@@ -18,11 +18,12 @@ namespace
 void _permute(std::vector<int>& vec,
               Eigen::Array<PetscInt, Eigen::Dynamic, 1> perm)
 {
-  int input[vec.size()];
+  int* temp = new int[vec.size()];
   for (std::size_t i = 0; i < vec.size(); ++i)
-    input[i] = vec[i];
+    temp[i] = vec[i];
   for (std::size_t i = 0; i < vec.size(); ++i)
-    vec[perm[i]] = input[i];
+    vec[perm[i]] = temp[i];
+  delete[] temp;
 }
 //-----------------------------------------------------------------------------
 /// Calculates the permutation orders for a triangle
@@ -38,8 +39,7 @@ std::array<int, 2> _calculate_triangle_orders(int v1, int v2, int v3)
     return {1, v3 > v1};
   if (v3 < v1 && v3 < v2)
     return {2, v1 > v2};
-}
-throw std::runtime_error("Two of a triangle's vertices appear to be equal.");
+  throw std::runtime_error("Two of a triangle's vertices appear to be equal.");
 }
 //-----------------------------------------------------------------------------
 /// Calculates the permutation orders for a tetrahedron
