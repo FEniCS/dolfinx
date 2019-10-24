@@ -282,9 +282,9 @@ void _assemble_vector_block(
   // Set bcs
   PetscScalar* values = nullptr;
   VecGetArray(b, &values);
-  PetscScalar* values_x0 = nullptr;
+  PetscScalar const* values_x0 = nullptr;
   if (x0)
-    VecGetArray(x0, &values_x0);
+    VecGetArrayRead(x0, &values_x0);
   int offset = 0;
   for (std::size_t i = 0; i < L.size(); ++i)
   {
@@ -293,7 +293,7 @@ void _assemble_vector_block(
     const int map_size0 = map->size_local() * bs;
     Eigen::Map<Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1>> vec(
         values + offset, map_size0);
-    Eigen::Map<Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1>> vec_x0(
+    Eigen::Map<const Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1>> vec_x0(
             values_x0 + offset, map_size0);
     for (auto bc : bcs)
     {
@@ -309,7 +309,7 @@ void _assemble_vector_block(
   }
   VecRestoreArray(b, &values);
   if (x0)
-    VecRestoreArray(x0, &values_x0);
+    VecRestoreArrayRead(x0, &values_x0);
 }
 //-----------------------------------------------------------------------------
 
