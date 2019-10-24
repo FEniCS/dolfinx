@@ -253,7 +253,7 @@ PetscScalar fem::impl::assemble_interior_facets(
       }
     }
 
-    // Update coefficients
+    // Get cell geometry
     Eigen::Map<const Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic,
                                   Eigen::RowMajor>>
         coordinate_dofs0(coordinate_dofs.data(), num_dofs_g, gdim);

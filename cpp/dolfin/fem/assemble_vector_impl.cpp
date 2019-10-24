@@ -547,9 +547,7 @@ void fem::impl::assemble_interior_facets(
     auto dmap0 = dofmap.cell_dofs(cell_index0);
     auto dmap1 = dofmap.cell_dofs(cell_index1);
 
-    // TODO: Move gathering of coefficients outside of main assembly
-    // loop
-    // Update coefficients
+    // Get cell geometry
     Eigen::Map<const Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic,
                                   Eigen::RowMajor>>
         coordinate_dofs0(coordinate_dofs.data(), num_dofs_g, gdim);

@@ -355,7 +355,7 @@ void fem::impl::assemble_interior_facets(
     dmapjoint1.head(dmap1_cell0.size()) = dmap1_cell0;
     dmapjoint1.tail(dmap1_cell1.size()) = dmap1_cell1;
 
-    // Update coefficients
+    // Get cell geometry
     Eigen::Map<const Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic,
                                   Eigen::RowMajor>>
         coordinate_dofs0(coordinate_dofs.data(), num_dofs_g, gdim);
