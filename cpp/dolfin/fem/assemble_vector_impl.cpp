@@ -8,6 +8,7 @@
 #include "DirichletBC.h"
 #include "DofMap.h"
 #include "Form.h"
+#include "utils.h"
 #include <dolfin/common/IndexMap.h>
 #include <dolfin/common/types.h>
 #include <dolfin/function/Constant.h>
@@ -25,57 +26,6 @@ using namespace dolfin::fem;
 
 namespace
 {
-//-----------------------------------------------------------------------------
-Eigen::Array<PetscScalar, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
-pack_coefficients(const fem::Form& L)
-{
-  // Get form coefficient offsets amd dofmaps
-  const FormCoefficients& coefficients = L.coefficients();
-  const std::vector<int> offsets = coefficients.offsets();
-  std::vector<const fem::DofMap*> dofmaps(coefficients.size());
-  for (int i = 0; i < coefficients.size(); ++i)
-    dofmaps[i] = coefficients.get(i)->function_space()->dofmap().get();
-
-  // Get mesh
-  assert(L.mesh());
-  const mesh::Mesh mesh = *L.mesh();
-  const int tdim = mesh.topology().dim();
-
-  // Unwrap PETSc vectors
-  std::vector<const PetscScalar*> v(coefficients.size(), nullptr);
-  std::vector<Vec> x(coefficients.size(), nullptr),
-      x_local(coefficients.size(), nullptr);
-  for (std::size_t i = 0; i < v.size(); ++i)
-  {
-    x[i] = coefficients.get(i)->vector().vec();
-    VecGhostGetLocalForm(x[i], &x_local[i]);
-    VecGetArrayRead(x_local[i], &v[i]);
-  }
-
-  // Copy data into coefficient array
-  Eigen::Array<PetscScalar, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor> c(
-      mesh.num_entities(tdim), offsets.back());
-  for (int cell = 0; cell < mesh.num_entities(tdim); ++cell)
-  {
-    auto c_cell = c.row(cell);
-    for (std::size_t coeff = 0; coeff < dofmaps.size(); ++coeff)
-    {
-      auto dofs = dofmaps[coeff]->cell_dofs(cell);
-      const PetscScalar* _v = v[coeff];
-      for (Eigen::Index k = 0; k < dofs.size(); ++k)
-        c_cell(k + offsets[coeff]) = _v[dofs[k]];
-    }
-  }
-
-  // Restore PETSc vectors
-  for (std::size_t i = 0; i < v.size(); ++i)
-  {
-    VecRestoreArrayRead(x_local[i], &v[i]);
-    VecGhostRestoreLocalForm(x[i], &x_local[i]);
-  }
-
-  return c;
-}
 //-----------------------------------------------------------------------------
 // Implementation of bc application
 void _lift_bc_cells(
