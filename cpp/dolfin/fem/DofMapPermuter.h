@@ -34,14 +34,24 @@ public:
   std::vector<int> cell_permutation(const int cell) const;
 
 private:
-  // Functions called by the constructor for specific mesh types
-  void _generate_triangle(const mesh::Mesh mesh,
-                          const ElementDofLayout& element_dof_layout);
-  void _generate_tetrahedron(const mesh::Mesh mesh,
-                             const ElementDofLayout& element_dof_layout);
-  void _generate_empty(const mesh::Mesh mesh,
-                       const ElementDofLayout& element_dof_layout);
+  Eigen::Array<PetscInt, Eigen::Dynamic, Eigen::Dynamic>
+  _generate_recursive(const mesh::Mesh mesh,
+                      const ElementDofLayout& element_dof_layout);
+  /// Functions called by the constructor for specific mesh types
+  Eigen::Array<PetscInt, Eigen::Dynamic, Eigen::Dynamic>
+  _generate_triangle(const mesh::Mesh mesh,
+                     const ElementDofLayout& element_dof_layout);
+  Eigen::Array<PetscInt, Eigen::Dynamic, Eigen::Dynamic>
+  _generate_tetrahedron(const mesh::Mesh mesh,
+                        const ElementDofLayout& element_dof_layout);
 
+  void _set_orders(const mesh::Mesh mesh,
+                   const ElementDofLayout& element_dof_layout);
+  /// Functions called by the constructor for specific mesh types
+  void _set_orders_triangle(const mesh::Mesh mesh,
+                            const ElementDofLayout& element_dof_layout);
+  void _set_orders_tetrahedron(const mesh::Mesh mesh,
+                               const ElementDofLayout& element_dof_layout);
   void _resize_data();
 
   /// The number of dofs and cells and permutations
@@ -60,18 +70,6 @@ private:
 
   /// The permutations
   Eigen::Array<PetscInt, Eigen::Dynamic, Eigen::Dynamic> _permutations;
-
-  /// The orders of each permutation
-  std::vector<int> _permutation_orders;
-
-  /// Sets a permutation to the DofMapPermuter
-  /// @param[in] index The index of the permutation
-  /// @param[in] dofs The local dofs on the mesh element to be permuted
-  /// @param[in] base_permutation The reordering of the local dofs
-  /// @param[in] order The order of the permutation
-  void _set_permutation(const int index,
-                        const Eigen::Array<PetscInt, Eigen::Dynamic, 1> dofs,
-                        const std::vector<int> base_permutation, int order);
 };
 
 } // namespace fem

@@ -76,17 +76,14 @@ std::array<int, 4> _calculate_tetrahedron_orders(int v1, int v2, int v3, int v4)
 //-----------------------------------------------------------------------------
 /// Makes a permutation to flip the dofs on an edge
 /// @param[in] edge_dofs Number of edge dofs
-/// @param[in] bs Block size
 /// @return The permutation to reverse the dofs
-std::vector<int> _edge_flip(const int edge_dofs, const int blocksize)
+std::vector<int> _edge_flip(const int edge_dofs)
 {
   // This will only be called at most once for each mesh
-  const int blocks = edge_dofs / blocksize;
   int j = 0;
   std::vector<int> flip(edge_dofs);
-  for (int i = 0; i < blocks; ++i)
-    for (int k = 0; k < blocksize; ++k)
-      flip[j++] = edge_dofs - (i + 1) * blocksize + k;
+  for (int i = 0; i < edge_dofs; ++i)
+    flip[j++] = edge_dofs - (i + 1);
   return flip;
 }
 //-----------------------------------------------------------------------------
@@ -94,11 +91,10 @@ std::vector<int> _edge_flip(const int edge_dofs, const int blocksize)
 /// @param[in] edge_dofs Number of dofs on the face of the triangle
 /// @return Permutations to rotate and reflect the dofs
 std::array<std::vector<int>, 2>
-_triangle_rotation_and_reflection(const int face_dofs, const int blocksize)
+_triangle_rotation_and_reflection(const int face_dofs)
 {
   // This will only be called at most once for each mesh
-  const int blocks = face_dofs / blocksize;
-  float root = std::sqrt(8 * blocks + 1);
+  float root = std::sqrt(8 * face_dofs + 1);
   assert(root == std::floor(root) && root % 2 == 1);
   int side_length = (root - 1) / 2; // side length of the triangle of face dofs
 
@@ -106,12 +102,11 @@ _triangle_rotation_and_reflection(const int face_dofs, const int blocksize)
   {
     int j = 0;
     int i = 1;
-    for (int st = blocks - 1; st >= 0; st -= (i++))
+    for (int st = face_dofs - 1; st >= 0; st -= (i++))
     {
       int dof = st;
       for (int sub = i + 1; sub <= side_length + 1; dof -= (sub++))
-        for (int k = 0; k < blocksize; ++k)
-          rotation[j++] = blocksize * dof + k;
+        rotation[j++] = dof;
     }
     assert(j == face_dofs);
   }
@@ -123,8 +118,7 @@ _triangle_rotation_and_reflection(const int face_dofs, const int blocksize)
     {
       int dof = st;
       for (int add = side_length; add > st; dof += (add--))
-        for (int k = 0; k < blocksize; ++k)
-          reflection[j++] = blocksize * dof + k;
+        reflection[j++] = dof;
     }
     assert(j == face_dofs);
   }
@@ -136,15 +130,14 @@ _triangle_rotation_and_reflection(const int face_dofs, const int blocksize)
 /// @param[in] edge_dofs Number of dofs on the interior of the tetrahedron
 /// @return Permutations to rotate and reflect the dofs
 std::array<std::vector<int>, 4>
-_tetrahedron_rotations_and_reflection(const int volume_dofs,
-                                      const int blocksize)
+_tetrahedron_rotations_and_reflection(const int volume_dofs)
 {
   // This will only be called at most once for each mesh
-  const int blocks = volume_dofs / blocksize;
   int side_length = 0;
-  while (side_length * (side_length + 1) * (side_length + 2) < 6 * blocks)
+  while (side_length * (side_length + 1) * (side_length + 2) < 6 * volume_dofs)
     ++side_length;
-  assert(side_length * (side_length + 1) * (side_length + 2) == 6 * blocks);
+  assert(side_length * (side_length + 1) * (side_length + 2)
+         == 6 * volume_dofs);
 
   std::vector<int> rotation1(volume_dofs);
   std::iota(rotation1.begin(), rotation1.end(), 0);
@@ -157,24 +150,22 @@ _tetrahedron_rotations_and_reflection(const int volume_dofs,
   for (int side = side_length; side > 0; --side)
   {
     int face_dofs = side * (side + 1) / 2;
-    auto base_faces = _triangle_rotation_and_reflection(face_dofs, 1);
+    auto base_faces = _triangle_rotation_and_reflection(face_dofs);
 
-    std::vector<int> face(face_dofs * blocksize);
+    std::vector<int> face(face_dofs);
     std::iota(face.begin(), face.end(), start);
 
-    std::vector<int> face2(face_dofs * blocksize);
+    std::vector<int> face2(face_dofs);
     int j = 0;
     int start2 = side * side_length - 1 - side * (side - 1) / 2;
     for (int row = 0; row < side; ++row)
     {
       int dof = start2;
-      for (int k = 0; k < blocksize; ++k)
-        face2[j++] = dof * blocksize + k;
+      face2[j++] = dof;
       for (int sub = 2 + (side_length - side); sub <= side_length - row; ++sub)
       {
         dof -= sub;
-        for (int k = 0; k < blocksize; ++k)
-          face2[j++] = dof * blocksize + k;
+        face2[j++] = dof;
       }
       start2 += (side_length - row - 1) * (side_length - row) / 2;
     }
@@ -194,6 +185,15 @@ _tetrahedron_rotations_and_reflection(const int volume_dofs,
   return {rotation1, rotation2, rotation3, reflection};
 }
 //-----------------------------------------------------------------------------
+void _apply_permutation(
+    Eigen::Array<PetscInt, Eigen::Dynamic, Eigen::Dynamic>& permutations,
+    const int index, const Eigen::Array<PetscInt, Eigen::Dynamic, 1> dofs,
+    const std::vector<int> base_permutation, int order)
+{
+  for (std::size_t i = 0; i < base_permutation.size(); ++i)
+    permutations(index, dofs(i)) = dofs(base_permutation[i]);
+}
+//-----------------------------------------------------------------------------
 } // namespace
 
 namespace fem
@@ -204,20 +204,25 @@ namespace fem
 DofMapPermuter::DofMapPermuter(const mesh::Mesh mesh,
                                const ElementDofLayout& element_dof_layout)
 {
-  const mesh::CellType type = mesh.cell_type();
-  switch (type)
+  _dof_count = element_dof_layout.num_dofs();
+  _cell_count = mesh.num_entities(mesh.topology().dim());
+  switch (mesh.cell_type())
   {
   case (mesh::CellType::triangle):
-    _generate_triangle(mesh, element_dof_layout);
-    return;
+    _permutation_count = 5;
+    break;
   case (mesh::CellType::tetrahedron):
-    _generate_tetrahedron(mesh, element_dof_layout);
-    return;
+    _permutation_count = 18;
+    break;
   default:
+    _permutation_count = 0;
     LOG(WARNING) << "Dof permutations are not defined for this cell type. High "
                     "order elements may be incorrect.";
-    _generate_empty(mesh, element_dof_layout);
+    return;
   }
+  _resize_data();
+  _permutations = _generate_recursive(mesh, element_dof_layout);
+  _set_orders(mesh, element_dof_layout);
 }
 //-----------------------------------------------------------------------------
 std::vector<int> DofMapPermuter::cell_permutation(const int cell) const
@@ -234,13 +239,56 @@ std::vector<int> DofMapPermuter::cell_permutation(const int cell) const
 //-----------------------------------------------------------------------------
 // private:
 //-----------------------------------------------------------------------------
-void DofMapPermuter::_set_permutation(
-    const int index, const Eigen::Array<PetscInt, Eigen::Dynamic, 1> dofs,
-    const std::vector<int> base_permutation, int order)
+Eigen::Array<PetscInt, Eigen::Dynamic, Eigen::Dynamic>
+DofMapPermuter::_generate_recursive(const mesh::Mesh mesh,
+                                    const ElementDofLayout& element_dof_layout)
 {
-  for (std::size_t i = 0; i < base_permutation.size(); ++i)
-    _permutations(index, dofs(i)) = dofs(base_permutation[i]);
-  _permutation_orders[index] = order;
+  if (element_dof_layout.num_sub_dofmaps() == 0)
+  {
+    switch (mesh.cell_type())
+    {
+    case (mesh::CellType::triangle):
+      return _generate_triangle(mesh, element_dof_layout);
+    case (mesh::CellType::tetrahedron):
+      return _generate_tetrahedron(mesh, element_dof_layout);
+    default:
+      throw std::runtime_error(
+          "Unrecognised cell type."); // The function should exit before this is
+                                      // reached
+    }
+  }
+
+  Eigen::Array<PetscInt, Eigen::Dynamic, Eigen::Dynamic> output(
+      _permutation_count, element_dof_layout.num_dofs());
+
+  for (int i = 0; i < element_dof_layout.num_sub_dofmaps(); ++i)
+  {
+    auto sub_view = element_dof_layout.sub_view({i});
+    auto sub_perm
+        = _generate_recursive(mesh, *element_dof_layout.sub_dofmap({i}));
+    for (std::size_t p = 0; p < _permutation_count; ++p)
+      for (std::size_t j = 0; j < sub_view.size(); ++j)
+        output(p, sub_view[j]) = sub_view[sub_perm(p, j)];
+  }
+  return output;
+}
+//-----------------------------------------------------------------------------
+void DofMapPermuter::_set_orders(const mesh::Mesh mesh,
+                                 const ElementDofLayout& element_dof_layout)
+{
+  switch (mesh.cell_type())
+  {
+  case (mesh::CellType::triangle):
+    _set_orders_triangle(mesh, element_dof_layout);
+    return;
+  case (mesh::CellType::tetrahedron):
+    _set_orders_tetrahedron(mesh, element_dof_layout);
+    return;
+  default:
+    throw std::runtime_error(
+        "Unrecognised cell type."); // The function should exit before this is
+                                    // reached
+  }
 }
 //-----------------------------------------------------------------------------
 void DofMapPermuter::_set_order(const int cell, const int permutation,
@@ -251,47 +299,94 @@ void DofMapPermuter::_set_order(const int cell, const int permutation,
 //-----------------------------------------------------------------------------
 void DofMapPermuter::_resize_data()
 {
-  if (_permutation_count > 0)
-  {
-    _cell_orders.resize(_cell_count, _permutation_count);
-    _cell_orders.fill(0);
-    _permutations.resize(_permutation_count, _dof_count);
-    for (int i = 0; i < _dof_count; ++i)
-      for (int j = 0; j < _permutation_count; ++j)
-        _permutations(j, i) = i;
-    _permutation_orders.resize(_permutation_count, 0);
-  }
+  _cell_orders.resize(_cell_count, _permutation_count);
+  _cell_orders.fill(0);
+  _permutations.resize(_permutation_count, _dof_count);
+  for (int i = 0; i < _dof_count; ++i)
+    for (int j = 0; j < _permutation_count; ++j)
+      _permutations(j, i) = i;
 }
 //-----------------------------------------------------------------------------
-void DofMapPermuter::_generate_triangle(
-    const mesh::Mesh mesh, const ElementDofLayout& element_dof_layout)
+Eigen::Array<PetscInt, Eigen::Dynamic, Eigen::Dynamic>
+DofMapPermuter::_generate_triangle(const mesh::Mesh mesh,
+                                   const ElementDofLayout& element_dof_layout)
 {
+  // TODO: Make this return an Array, then make the recursive function put it
+  // into the higher level array
   const int D = mesh.topology().dim();
   const int vertex_dofs = 0 <= D ? element_dof_layout.num_entity_dofs(0) : 0;
   const int edge_dofs = 1 <= D ? element_dof_layout.num_entity_dofs(1) : 0;
   const int face_dofs = 2 <= D ? element_dof_layout.num_entity_dofs(2) : 0;
   const int volume_dofs = 3 <= D ? element_dof_layout.num_entity_dofs(3) : 0;
-  const int bs = element_dof_layout.block_size();
 
-  _dof_count = 3 * vertex_dofs + 3 * edge_dofs + face_dofs;
-  _permutation_count = 5;
-  _cell_count = mesh.num_entities(mesh.topology().dim());
-
-  _resize_data();
+  Eigen::Array<PetscInt, Eigen::Dynamic, Eigen::Dynamic> permutations(
+      _permutation_count, _dof_count);
+  for (int i = 0; i < element_dof_layout.num_dofs(); ++i)
+    for (int j = 0; j < _permutation_count; ++j)
+      permutations(j, i) = i;
 
   // Make edge flipping permutations
-  std::vector<int> base_flip = _edge_flip(edge_dofs, bs);
+  std::vector<int> base_flip = _edge_flip(edge_dofs);
   for (int edge_n = 0; edge_n < 3; ++edge_n)
   {
     auto edge = element_dof_layout.entity_dofs(1, edge_n);
-    _set_permutation(edge_n, edge, base_flip, 2);
+    _apply_permutation(permutations, edge_n, edge, base_flip, 2);
   }
   // Make permutations that rotate and reflect the face dofs
-  auto base_faces = _triangle_rotation_and_reflection(face_dofs, bs);
+  auto base_faces = _triangle_rotation_and_reflection(face_dofs);
   auto face = element_dof_layout.entity_dofs(2, 0);
-  _set_permutation(3, face, base_faces[0], 3);
-  _set_permutation(4, face, base_faces[1], 2);
+  _apply_permutation(permutations, 3, face, base_faces[0], 3);
+  _apply_permutation(permutations, 4, face, base_faces[1], 2);
+  return permutations;
+}
+//-----------------------------------------------------------------------------
+Eigen::Array<PetscInt, Eigen::Dynamic, Eigen::Dynamic>
+DofMapPermuter::_generate_tetrahedron(
+    const mesh::Mesh mesh, const ElementDofLayout& element_dof_layout)
+{
+  // TODO: Make this return an Array, then make the recursive function put it
+  // into the higher level array
+  const int D = mesh.topology().dim();
+  const int vertex_dofs = 0 <= D ? element_dof_layout.num_entity_dofs(0) : 0;
+  const int edge_dofs = 1 <= D ? element_dof_layout.num_entity_dofs(1) : 0;
+  const int face_dofs = 2 <= D ? element_dof_layout.num_entity_dofs(2) : 0;
+  const int volume_dofs = 3 <= D ? element_dof_layout.num_entity_dofs(3) : 0;
 
+  Eigen::Array<PetscInt, Eigen::Dynamic, Eigen::Dynamic> permutations(
+      _permutation_count, _dof_count);
+  for (int i = 0; i < element_dof_layout.num_dofs(); ++i)
+    for (int j = 0; j < _permutation_count; ++j)
+      permutations(j, i) = i;
+
+  // Make edge flipping permutations
+  std::vector<int> base_flip = _edge_flip(edge_dofs);
+  for (int edge_n = 0; edge_n < 6; ++edge_n)
+  {
+    auto edge = element_dof_layout.entity_dofs(1, edge_n);
+    _apply_permutation(permutations, edge_n, edge, base_flip, 2);
+  }
+  // Make permutations that rotate and reflect the face dofs
+  auto base_faces = _triangle_rotation_and_reflection(face_dofs);
+  for (int face_n = 0; face_n < 4; ++face_n)
+  {
+    auto face = element_dof_layout.entity_dofs(2, face_n);
+    _apply_permutation(permutations, 6 + 2 * face_n, face, base_faces[0], 3);
+    _apply_permutation(permutations, 6 + 2 * face_n + 1, face, base_faces[1],
+                       2);
+  }
+  // Make permutations that rotate and reflect the interior dofs
+  auto base_interiors = _tetrahedron_rotations_and_reflection(volume_dofs);
+  auto interior = element_dof_layout.entity_dofs(3, 0);
+  _apply_permutation(permutations, 14, interior, base_interiors[0], 3);
+  _apply_permutation(permutations, 15, interior, base_interiors[1], 3);
+  _apply_permutation(permutations, 16, interior, base_interiors[2], 3);
+  _apply_permutation(permutations, 17, interior, base_interiors[3], 2);
+  return permutations;
+}
+//-----------------------------------------------------------------------------
+void DofMapPermuter::_set_orders_triangle(
+    const mesh::Mesh mesh, const ElementDofLayout& element_dof_layout)
+{
   // Set orders for each cell
   for (int cell_n = 0; cell_n < _cell_count; ++cell_n)
   {
@@ -309,45 +404,9 @@ void DofMapPermuter::_generate_triangle(
   }
 }
 //-----------------------------------------------------------------------------
-void DofMapPermuter::_generate_tetrahedron(
+void DofMapPermuter::_set_orders_tetrahedron(
     const mesh::Mesh mesh, const ElementDofLayout& element_dof_layout)
 {
-  const int D = mesh.topology().dim();
-  const int vertex_dofs = 0 <= D ? element_dof_layout.num_entity_dofs(0) : 0;
-  const int edge_dofs = 1 <= D ? element_dof_layout.num_entity_dofs(1) : 0;
-  const int face_dofs = 2 <= D ? element_dof_layout.num_entity_dofs(2) : 0;
-  const int volume_dofs = 3 <= D ? element_dof_layout.num_entity_dofs(3) : 0;
-  const int bs = element_dof_layout.block_size();
-
-  _dof_count = 4 * vertex_dofs + 6 * edge_dofs + 4 * face_dofs + volume_dofs;
-  _permutation_count = 18;
-  _cell_count = mesh.num_entities(mesh.topology().dim());
-
-  _resize_data();
-
-  // Make edge flipping permutations
-  std::vector<int> base_flip = _edge_flip(edge_dofs, bs);
-  for (int edge_n = 0; edge_n < 6; ++edge_n)
-  {
-    auto edge = element_dof_layout.entity_dofs(1, edge_n);
-    _set_permutation(edge_n, edge, base_flip, 2);
-  }
-  // Make permutations that rotate and reflect the face dofs
-  auto base_faces = _triangle_rotation_and_reflection(face_dofs, bs);
-  for (int face_n = 0; face_n < 4; ++face_n)
-  {
-    auto face = element_dof_layout.entity_dofs(2, face_n);
-    _set_permutation(6 + 2 * face_n, face, base_faces[0], 3);
-    _set_permutation(6 + 2 * face_n + 1, face, base_faces[1], 2);
-  }
-  // Make permutations that rotate and reflect the interior dofs
-  auto base_interiors = _tetrahedron_rotations_and_reflection(volume_dofs, bs);
-  auto interior = element_dof_layout.entity_dofs(3, 0);
-  _set_permutation(14, interior, base_interiors[0], 3);
-  _set_permutation(15, interior, base_interiors[1], 3);
-  _set_permutation(16, interior, base_interiors[2], 3);
-  _set_permutation(17, interior, base_interiors[3], 2);
-
   // Set orders for each cell
   for (int cell_n = 0; cell_n < _cell_count; ++cell_n)
   {
@@ -385,15 +444,6 @@ void DofMapPermuter::_generate_tetrahedron(
     _set_order(cell_n, 16, tet_orders[2]);
     _set_order(cell_n, 17, tet_orders[3]);
   }
-}
-//-----------------------------------------------------------------------------
-void DofMapPermuter::_generate_empty(const mesh::Mesh mesh,
-                                     const ElementDofLayout& element_dof_layout)
-{
-  _dof_count = element_dof_layout.num_dofs();
-  _cell_count = mesh.num_entities(mesh.topology().dim());
-  _permutation_count = 0;
-  _resize_data();
 }
 //-----------------------------------------------------------------------------
 } // namespace fem
