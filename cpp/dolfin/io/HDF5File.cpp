@@ -7,6 +7,7 @@
 #include "HDF5File.h"
 #include "HDF5Interface.h"
 #include "HDF5Utility.h"
+#include "cells.h"
 #include <Eigen/Dense>
 #include <boost/filesystem.hpp>
 #include <boost/unordered_map.hpp>
@@ -29,7 +30,6 @@
 #include <dolfin/mesh/MeshValueCollection.h>
 #include <dolfin/mesh/PartitionData.h>
 #include <dolfin/mesh/Partitioning.h>
-#include <dolfin/mesh/cell_types.h>
 #include <fstream>
 #include <iomanip>
 #include <iostream>
@@ -295,7 +295,7 @@ void HDF5File::write(const mesh::Mesh& mesh, int cell_dim,
     // Permutation to VTK ordering
     int num_nodes = mesh.coordinate_dofs().cell_permutation().size();
     const std::vector<std::uint8_t> perm
-        = mesh::vtk_mapping(mesh.cell_type(), num_nodes);
+        = io::cells::dolfin_to_vtk(mesh.cell_type(), num_nodes);
 
     if (cell_dim == tdim or !mpi_io)
     {
