@@ -389,7 +389,7 @@ void fem::impl::assemble_interior_facets(
     // Zero rows/columns for essential bcs
     if (!bc0.empty())
     {
-      for (std::size_t i = 0; i < dmapjoint0.size(); ++i)
+      for (Eigen::Index i = 0; i < dmapjoint0.size(); ++i)
       {
         if (bc0[dmapjoint0[i]])
           Ae.row(i).setZero();
@@ -397,7 +397,7 @@ void fem::impl::assemble_interior_facets(
     }
     if (!bc1.empty())
     {
-      for (std::size_t j = 0; j < dmapjoint1.size(); ++j)
+      for (Eigen::Index j = 0; j < dmapjoint1.size(); ++j)
       {
         if (bc1[dmapjoint1[j]])
           Ae.col(j).setZero();
