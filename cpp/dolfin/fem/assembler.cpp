@@ -200,6 +200,8 @@ void _assemble_vector_block(
           Eigen::Ref<const Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1>>>
           x0_vec;
   x0_vec.reserve(L.size());
+  // FIXME: design an Eigen::Map which handles the owned DoFs as well as ghosts
+  // so we don't have to copy x0
   std::vector<
           Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1>>
           x0_copy_ghosts(L.size());
@@ -207,8 +209,6 @@ void _assemble_vector_block(
   // Assemble sub vectors and collect x0 sub vectors
   for (std::size_t i = 0; i < L.size(); ++i)
   {
-    // FIXME: Sort out for x0 \ne nullptr case
-
     // Get size for block i
     assert(L[i]);
     auto map = L[i]->function_space(0)->dofmap()->index_map;
