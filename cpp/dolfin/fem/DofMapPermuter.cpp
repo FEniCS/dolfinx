@@ -95,10 +95,17 @@ _triangle_rotation_and_reflection(const int face_dofs)
 {
   // This will only be called at most once for each mesh
   float root = std::sqrt(8 * face_dofs + 1);
-  // FIXME: This function assumes the layout of the dofs are in a triangle
-  // shape. This is true for Lagrange space, but not true for eg N1curl spaces.
-  // The following assert fails for N1curl order 2 on a tetrahedron. assert(root
-  // == std::floor(root) && int(root) % 2 == 1);
+
+  // FIXME: If the dofs are not arranged in a triangle (eg N1curl spaces), what
+  // should this do?
+  if (root != std::floor(root) || int(root) % 2 != 1)
+  {
+    std::vector<int> trivial(face_dofs);
+    std::iota(trivial.begin(), trivial.end(), 0);
+    return {trivial, trivial};
+  }
+
+  assert(root == std::floor(root) && int(root) % 2 == 1);
   int side_length = (root - 1) / 2; // side length of the triangle of face dofs
 
   std::vector<int> rotation(face_dofs);
@@ -141,6 +148,16 @@ _tetrahedron_rotations_and_reflection(const int volume_dofs)
   int side_length = 0;
   while (side_length * (side_length + 1) * (side_length + 2) < 6 * volume_dofs)
     ++side_length;
+
+  // FIXME: This returns trivial permutations if the dofs are not a pyramid
+  // number. It should instead know what to do for non Lagrange spaces.
+  if (side_length * (side_length + 1) * (side_length + 2) != 6 * volume_dofs)
+  {
+    std::vector<int> trivial(volume_dofs);
+    std::iota(trivial.begin(), trivial.end(), 0);
+    return {trivial, trivial, trivial, trivial};
+  }
+
   assert(side_length * (side_length + 1) * (side_length + 2)
          == 6 * volume_dofs);
 
