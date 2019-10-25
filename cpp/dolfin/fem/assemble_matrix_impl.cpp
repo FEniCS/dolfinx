@@ -133,10 +133,8 @@ void fem::impl::assemble_cells(
   // Iterate over active cells
   PetscErrorCode ierr;
   const int orientation = 0;
-  for (auto& cell_index : active_cells)
+  for (std::int32_t cell_index : active_cells)
   {
-    const mesh::MeshEntity cell(mesh, tdim, cell_index);
-
     // Get cell coordinates/geometry
     for (int i = 0; i < num_dofs_g; ++i)
       for (int j = 0; j < gdim; ++j)
