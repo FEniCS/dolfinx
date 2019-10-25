@@ -656,12 +656,6 @@ void fem::impl::lift_bc(
     const Eigen::Ref<const Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1>>& x0,
     double scale)
 {
-//  if (b.size() != x0.size())
-//  {
-//    throw std::runtime_error(
-//        "Vector size mismatch in modification for boundary conditions.");
-//  }
-
   if (a.integrals().num_integrals(fem::FormIntegrals::Type::cell) > 0)
     _lift_bc_cells(b, a, bc_values1, bc_markers1, x0, scale);
   if (a.integrals().num_integrals(fem::FormIntegrals::Type::exterior_facet) > 0)
