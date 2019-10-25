@@ -187,6 +187,24 @@ class NonlinearPDE_SNESProblem():
             dolfin.fem.assemble_matrix_block(P, self.a_precon, self.bcs, diagonal=1.0)
             P.assemble()
 
+    def F_nest(self, snes, x, F):
+        for x_soln_pair in zip(x.getNestSubVecs(), self.soln_vars):
+            x_sub, var_sub = x_soln_pair
+            x_sub.ghostUpdate(addv=PETSc.InsertMode.INSERT, mode=PETSc.ScatterMode.FORWARD)
+            x_sub.copy(var_sub.vector)
+            var_sub.vector.ghostUpdate(addv=PETSc.InsertMode.INSERT, mode=PETSc.ScatterMode.FORWARD)
+
+        dolfin.fem.assemble_vector_block(F, self.L, self.a, self.bcs, x0=x, scale=-1.0)
+
+    def J_nest(self, snes, x, J, P):
+        J.zeroEntries()
+        dolfin.fem.assemble_matrix_block(J, self.a, self.bcs, diagonal=1.0)
+        J.assemble()
+        if self.a_precon is not None:
+            P.zeroEntries()
+            dolfin.fem.assemble_matrix_block(P, self.a_precon, self.bcs, diagonal=1.0)
+            P.assemble()
+
 
 def test_assembly_solve_block():
     """Solve a two-field nonlinear diffusion like problem with block matrix
@@ -239,7 +257,7 @@ def test_assembly_solve_block():
     Fvec0 = dolfin.fem.create_vector_block(F)
 
     snes = PETSc.SNES().create(dolfin.MPI.comm_world)
-    snes.setTolerances(rtol=1.0e-9, max_it=10)
+    snes.setTolerances(rtol=1.0e-15, max_it=10)
 
     snes.getKSP().setType("preonly")
     snes.getKSP().getPC().setType("lu")
@@ -254,33 +272,65 @@ def test_assembly_solve_block():
         x0l.set(initial_guess)
     snes.solve(None, x0)
 
+    assert snes.getKSP().getConvergedReason() > 0
     assert snes.getConvergedReason() > 0
 
     J0norm = Jmat0.norm()
     F0norm = Fvec0.norm()
     x0norm = x0.norm()
-    #
-    # # Nested (MatNest)
-    # A1 = dolfin.fem.assemble_matrix_nest([[a00, a01], [a10, a11]], bcs)
-    # b1 = dolfin.fem.assemble_vector_nest([L0, L1], [[a00, a01], [a10, a11]],
-    #                                      bcs)
-    # b1norm = b1.norm()
-    # assert b1norm == pytest.approx(b0norm, 1.0e-12)
-    # A1norm = nest_matrix_norm(A1)
-    # assert A0norm == pytest.approx(A1norm, 1.0e-12)
-    #
-    # x1 = b1.copy()
-    # ksp = PETSc.KSP()
-    # ksp.create(mesh.mpi_comm())
-    # ksp.setMonitor(monitor)
-    # ksp.setOperators(A1)
-    # ksp.setType('cg')
-    # ksp.setTolerances(rtol=1.0e-12)
-    # ksp.setFromOptions()
-    # ksp.solve(b1, x1)
-    # x1norm = x1.norm()
-    # assert x1norm == pytest.approx(x0norm, rel=1.0e-12)
-    #
+
+    # Nested (MatNest)
+    Jmat1 = dolfin.fem.create_matrix_nest(J)
+    Fvec1 = dolfin.fem.create_vector_nest(F)
+
+    snes = PETSc.SNES().create(dolfin.MPI.comm_world)
+    snes.setTolerances(rtol=1.0e-15, max_it=10)
+
+    nested_IS = Jmat1.getNestISs()
+
+    snes.getKSP().setType("fgmres")
+    snes.getKSP().setTolerances(rtol=1e-12)
+    snes.getKSP().getPC().setType("none")
+    snes.getKSP().getPC().setType("fieldsplit")
+    snes.getKSP().getPC().setFieldSplitIS(["u", nested_IS[0][0]], ["p", nested_IS[1][1]])
+
+    ksp_u, ksp_p = snes.getKSP().getPC().getFieldSplitSubKSP()
+    ksp_u.setType("preonly")
+    ksp_u.getPC().setType('lu')
+    ksp_u.getPC().setFactorSolverType('mumps')
+    ksp_p.setType("preonly")
+    ksp_p.getPC().setType('lu')
+    ksp_p.getPC().setFactorSolverType('mumps')
+
+    # FIXME: Update this option in the future to use petsc4py wrapper
+    # https://bitbucket.org/petsc/petsc4py/pull-requests/111/begin-wrapping-of-sneslinesearch-in/diff
+    opts = PETSc.Options()
+    opts["snes_linesearch_type"] = "basic"
+    snes.setFromOptions()
+
+    problem = NonlinearPDE_SNESProblem(F, J, [u, p], bcs)
+    snes.setFunction(problem.F_nest, Fvec1)
+    snes.setJacobian(problem.J_nest, J=Jmat1, P=None)
+
+    x1 = dolfin.fem.create_vector_nest(F)
+    x1.set(initial_guess)
+    for x1_sub in x1.getNestSubVecs():
+        x1_sub.ghostUpdate(addv=PETSc.InsertMode.INSERT, mode=PETSc.ScatterMode.FORWARD)
+
+    snes.solve(None, x1)
+
+    assert snes.getKSP().getConvergedReason() > 0
+    assert snes.getConvergedReason() > 0
+
+    J1norm = nest_matrix_norm(Jmat1)
+    F1norm = Fvec1.norm()
+    x1norm = x1.norm()
+
+    print(F1norm, F0norm)
+    assert J1norm == pytest.approx(J0norm, 1.0e-12)
+    assert F1norm == pytest.approx(F0norm, 1.0e-12)
+    assert x1norm == pytest.approx(x0norm, 1.0e-12)
+
     # Monolithic version
     E = P0 * P1
     W = dolfin.function.functionspace.FunctionSpace(mesh, E)
@@ -312,7 +362,7 @@ def test_assembly_solve_block():
     Fvec2 = dolfin.fem.create_vector(F)
 
     snes = PETSc.SNES().create(dolfin.MPI.comm_world)
-    snes.setTolerances(rtol=1.0e-9, max_it=10)
+    snes.setTolerances(rtol=1.0e-15, max_it=10)
 
     snes.getKSP().setType("preonly")
     snes.getKSP().getPC().setType("lu")
@@ -327,6 +377,7 @@ def test_assembly_solve_block():
         x2l.set(initial_guess)
     snes.solve(None, x2)
 
+    assert snes.getKSP().getConvergedReason() > 0
     assert snes.getConvergedReason() > 0
 
     J2norm = Jmat2.norm()
