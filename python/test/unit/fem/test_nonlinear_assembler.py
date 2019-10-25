@@ -48,7 +48,7 @@ def test_matrix_assembly_block():
         return numpy.logical_or(x[:, 0] < 1.0e-6, x[:, 0] > 1.0 - 1.0e-6)
 
     initial_guess_value = 1.0
-    bc_value = 0.0
+    bc_value = 3.0
 
     u_bc = dolfin.function.Function(V1)
     with u_bc.vector.localForm() as u_local:
@@ -92,13 +92,20 @@ def test_matrix_assembly_block():
     Anorm0 = A0.norm()
     bnorm0 = b0.norm()
 
-    # # Nested (MatNest)
-    # A1 = dolfin.fem.assemble_matrix_nest(a_block, [bc])
-    # Anorm1 = nest_matrix_norm(A1)
-    # assert Anorm0 == pytest.approx(Anorm1, 1.0e-12)
-    # b1 = dolfin.fem.assemble_vector_nest(L_block, a_block, [bc])
-    # bnorm1 = math.sqrt(sum([x.norm()**2 for x in b1.getNestSubVecs()]))
-    # assert bnorm0 == pytest.approx(bnorm1, 1.0e-12)
+    # Nested (MatNest)
+    x0 = dolfin.fem.create_vector_nest(L_block)
+    x0.set(initial_guess_value)
+    for x0_soln_pair in zip(x0.getNestSubVecs(), (u, p)):
+        x0_sub, soln_sub = x0_soln_pair
+        x0_sub.ghostUpdate(addv=PETSc.InsertMode.INSERT, mode=PETSc.ScatterMode.FORWARD)
+        x0_sub.copy(soln_sub.vector)
+
+    A1 = dolfin.fem.assemble_matrix_nest(a_block, [bc])
+    b1 = dolfin.fem.assemble_vector_nest(L_block, a_block, [bc], x0=x0, scale=-1.0)
+
+    assert A1.getType() == "nest"
+    assert nest_matrix_norm(A1) == pytest.approx(Anorm0, 1.0e-9)
+    assert b1.norm() == pytest.approx(bnorm0, 1.0e-9)
 
     # Monolithic version
     E = P0 * P1
