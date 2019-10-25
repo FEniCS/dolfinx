@@ -185,7 +185,7 @@ def test_assembly_solve_block():
     """Solve a two-field nonlinear diffusion like problem with block matrix
     approaches and test that solution is the same.
     """
-    mesh = dolfin.generation.UnitSquareMesh(dolfin.MPI.comm_world, 12, 13)
+    mesh = dolfin.generation.UnitSquareMesh(dolfin.MPI.comm_world, 12, 11)
     p0, p1 = 1, 1
     P0 = ufl.FiniteElement("Lagrange", mesh.ufl_cell(), p0)
     P1 = ufl.FiniteElement("Lagrange", mesh.ufl_cell(), p1)
@@ -246,6 +246,8 @@ def test_assembly_solve_block():
     with x0.localForm() as x0l:
         x0l.set(initial_guess)
     snes.solve(None, x0)
+
+    assert snes.getConvergedReason() > 0
 
     J0norm = Jmat0.norm()
     F0norm = Fvec0.norm()
@@ -318,6 +320,8 @@ def test_assembly_solve_block():
         x2l.set(initial_guess)
     snes.solve(None, x2)
 
+    assert snes.getConvergedReason() > 0
+
     J2norm = Jmat2.norm()
     F2norm = Fvec2.norm()
     x2norm = x2.norm()
@@ -328,8 +332,8 @@ def test_assembly_solve_block():
 
 
 @pytest.mark.parametrize("mesh", [
-    dolfin.generation.UnitSquareMesh(dolfin.MPI.comm_world, 32, 31),
-    dolfin.generation.UnitCubeMesh(dolfin.MPI.comm_world, 3, 7, 8)
+    dolfin.generation.UnitSquareMesh(dolfin.MPI.comm_world, 12, 11),
+    dolfin.generation.UnitCubeMesh(dolfin.MPI.comm_world, 3, 5, 4)
 ])
 def test_assembly_solve_taylor_hood(mesh):
     """Assemble Stokes problem with Taylor-Hood elements and solve."""
@@ -398,6 +402,8 @@ def test_assembly_solve_taylor_hood(mesh):
         x0l.set(0.0)
     snes.solve(None, x0)
 
+    assert snes.getConvergedReason() > 0
+
     # -- Monolithic
 
     P2 = ufl.VectorElement("Lagrange", mesh.ufl_cell(), 2)
@@ -442,6 +448,7 @@ def test_assembly_solve_taylor_hood(mesh):
         x2l.set(0.0)
     snes.solve(None, x2)
 
+    assert snes.getConvergedReason() > 0
     assert Jmat2.norm() == pytest.approx(Jmat0.norm(), 1.0e-12)
     assert Fvec2.norm() == pytest.approx(Fvec0.norm(), 1.0e-12)
     assert x2.norm() == pytest.approx(x0.norm(), 1.0e-12)
