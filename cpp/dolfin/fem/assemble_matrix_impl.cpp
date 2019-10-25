@@ -44,7 +44,6 @@ void fem::impl::assemble_matrix(Mat A, const Form& a,
   const std::vector<
       std::pair<std::string, std::shared_ptr<const function::Constant>>>
       constants = a.constants();
-
   std::vector<PetscScalar> constant_values;
   for (auto const& constant : constants)
   {
@@ -110,7 +109,6 @@ void fem::impl::assemble_cells(
 {
   assert(A);
   const int gdim = mesh.geometry().dim();
-  const int tdim = mesh.topology().dim();
 
   // Prepare cell geometry
   const mesh::Connectivity& connectivity_g
