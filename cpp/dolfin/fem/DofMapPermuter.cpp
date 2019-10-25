@@ -333,8 +333,6 @@ Eigen::Array<PetscInt, Eigen::Dynamic, Eigen::Dynamic>
 DofMapPermuter::_generate_triangle(const mesh::Mesh mesh,
                                    const ElementDofLayout& element_dof_layout)
 {
-  // TODO: Make this return an Array, then make the recursive function put it
-  // into the higher level array
   const int D = mesh.topology().dim();
   const int edge_dofs = 1 <= D ? element_dof_layout.num_entity_dofs(1) : 0;
   const int face_dofs = 2 <= D ? element_dof_layout.num_entity_dofs(2) : 0;
@@ -364,8 +362,6 @@ Eigen::Array<PetscInt, Eigen::Dynamic, Eigen::Dynamic>
 DofMapPermuter::_generate_tetrahedron(
     const mesh::Mesh mesh, const ElementDofLayout& element_dof_layout)
 {
-  // TODO: Make this return an Array, then make the recursive function put it
-  // into the higher level array
   const int D = mesh.topology().dim();
   const int edge_dofs = 1 <= D ? element_dof_layout.num_entity_dofs(1) : 0;
   const int face_dofs = 2 <= D ? element_dof_layout.num_entity_dofs(2) : 0;
