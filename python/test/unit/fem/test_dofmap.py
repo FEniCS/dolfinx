@@ -468,7 +468,7 @@ def test_readonly_view_local_to_global_unwoned(mesh):
     assert sys.getrefcount(index_map) == rc
 
 
-skip_in_parallel
+@skip_in_parallel
 @pytest.mark.parametrize('n', [1, 2, 3, 4, 5, 6])
 def test_triangle_dof_ordering(n):
     """Checks that dofs on shared triangle edges match up"""
@@ -509,7 +509,7 @@ def test_triangle_dof_ordering(n):
             assert np.allclose(edges[0][i], j[i])
 
 
-skip_in_parallel
+@skip_in_parallel
 @pytest.mark.parametrize('n', [1, 2, 3, 4, 5, 6])
 def test_tetrahedron_dof_ordering(n):
     """Checks that dofs on shared tetrahedron edges and faces match up"""
