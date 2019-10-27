@@ -732,6 +732,6 @@ fem::pack_coefficients(const fem::Form& form)
     VecGhostRestoreLocalForm(x[i], &x_local[i]);
   }
 
-  return std::move(c);
+  return c;
 }
 //-----------------------------------------------------------------------------
