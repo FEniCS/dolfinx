@@ -74,7 +74,7 @@ PetscScalar dolfin::fem::impl::assemble_scalar(const dolfin::fem::Form& M)
   PetscScalar value = 0.0;
   for (int i = 0; i < integrals.num_integrals(type::cell); ++i)
   {
-    auto& fn = integrals.get_tabulate_tensor_function(type::cell, i);
+    auto& fn = integrals.get_tabulate_tensor(type::cell, i);
     const std::vector<std::int32_t>& active_cells
         = integrals.integral_domains(type::cell, i);
     value += fem::impl::assemble_cells(mesh, active_cells, fn, coeff_fn,
@@ -83,7 +83,7 @@ PetscScalar dolfin::fem::impl::assemble_scalar(const dolfin::fem::Form& M)
 
   for (int i = 0; i < integrals.num_integrals(type::exterior_facet); ++i)
   {
-    auto& fn = integrals.get_tabulate_tensor_function(type::exterior_facet, i);
+    auto& fn = integrals.get_tabulate_tensor(type::exterior_facet, i);
     const std::vector<std::int32_t>& active_facets
         = integrals.integral_domains(type::exterior_facet, i);
     value += fem::impl::assemble_exterior_facets(
@@ -92,7 +92,7 @@ PetscScalar dolfin::fem::impl::assemble_scalar(const dolfin::fem::Form& M)
 
   for (int i = 0; i < integrals.num_integrals(type::interior_facet); ++i)
   {
-    auto& fn = integrals.get_tabulate_tensor_function(type::interior_facet, i);
+    auto& fn = integrals.get_tabulate_tensor(type::interior_facet, i);
     const std::vector<std::int32_t>& active_facets
         = integrals.integral_domains(type::interior_facet, i);
     value += fem::impl::assemble_interior_facets(

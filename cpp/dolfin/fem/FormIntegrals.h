@@ -49,14 +49,13 @@ public:
   /// @return Function to call for tabulate_tensor
   const std::function<void(PetscScalar*, const PetscScalar*, const PetscScalar*,
                            const double*, const int*, const int*)>&
-  get_tabulate_tensor_function(FormIntegrals::Type type, int i) const;
+  get_tabulate_tensor(FormIntegrals::Type type, int i) const;
 
-  /// Register the function for 'tabulate_tensor' for integral i of
+  /// Set the function for 'tabulate_tensor' for integral i of
   /// given type
-  void register_tabulate_tensor(FormIntegrals::Type type, int i,
-                                void (*fn)(PetscScalar*, const PetscScalar*,
-                                           const PetscScalar*, const double*,
-                                           const int*, const int*));
+  void set_tabulate_tensor(FormIntegrals::Type type, int i,
+                           std::function<void(PetscScalar*, const PetscScalar*, const PetscScalar*,
+                                              const double*, const int*, const int*)> fn);
 
   /// Number of integrals of given type
   int num_integrals(FormIntegrals::Type t) const;

@@ -83,7 +83,7 @@ void fem::impl::assemble_matrix(Mat A, const Form& a,
   using type = fem::FormIntegrals::Type;
   for (int i = 0; i < integrals.num_integrals(type::cell); ++i)
   {
-    auto& fn = integrals.get_tabulate_tensor_function(type::cell, i);
+    auto& fn = integrals.get_tabulate_tensor(type::cell, i);
     const std::vector<std::int32_t>& active_cells
         = integrals.integral_domains(type::cell, i);
     fem::impl::assemble_cells(
@@ -93,7 +93,7 @@ void fem::impl::assemble_matrix(Mat A, const Form& a,
 
   for (int i = 0; i < integrals.num_integrals(type::exterior_facet); ++i)
   {
-    auto& fn = integrals.get_tabulate_tensor_function(type::exterior_facet, i);
+    auto& fn = integrals.get_tabulate_tensor(type::exterior_facet, i);
     const std::vector<std::int32_t>& active_facets
         = integrals.integral_domains(type::exterior_facet, i);
     fem::impl::assemble_exterior_facets(A, mesh, active_facets, dofmap0,
@@ -103,7 +103,7 @@ void fem::impl::assemble_matrix(Mat A, const Form& a,
 
   for (int i = 0; i < integrals.num_integrals(type::interior_facet); ++i)
   {
-    auto& fn = integrals.get_tabulate_tensor_function(type::interior_facet, i);
+    auto& fn = integrals.get_tabulate_tensor(type::interior_facet, i);
     const std::vector<std::int32_t>& active_facets
         = integrals.integral_domains(type::interior_facet, i);
     fem::impl::assemble_interior_facets(A, mesh, active_facets, dofmap0,

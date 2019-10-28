@@ -155,8 +155,7 @@ void _lift_bc_cells(
 
   const std::function<void(PetscScalar*, const PetscScalar*, const PetscScalar*,
                            const double*, const int*, const int*)>& fn
-      = a.integrals().get_tabulate_tensor_function(FormIntegrals::Type::cell,
-                                                   0);
+      = a.integrals().get_tabulate_tensor(FormIntegrals::Type::cell, 0);
 
   // Prepare cell geometry
   const int gdim = mesh.geometry().dim();
@@ -300,8 +299,8 @@ void _lift_bc_exterior_facets(
 
   const std::function<void(PetscScalar*, const PetscScalar*, const PetscScalar*,
                            const double*, const int*, const int*)>& fn
-      = a.integrals().get_tabulate_tensor_function(
-          FormIntegrals::Type::exterior_facet, 0);
+      = a.integrals().get_tabulate_tensor(FormIntegrals::Type::exterior_facet,
+                                          0);
 
   // Prepare cell geometry
   const mesh::Connectivity& connectivity_g
@@ -458,8 +457,7 @@ void fem::impl::assemble_vector(
   using type = fem::FormIntegrals::Type;
   for (int i = 0; i < integrals.num_integrals(type::cell); ++i)
   {
-    auto& fn
-        = integrals.get_tabulate_tensor_function(FormIntegrals::Type::cell, i);
+    auto& fn = integrals.get_tabulate_tensor(FormIntegrals::Type::cell, i);
     const std::vector<std::int32_t>& active_cells
         = integrals.integral_domains(type::cell, i);
     fem::impl::assemble_cells(b, mesh, active_cells, dof_array,
@@ -475,8 +473,8 @@ void fem::impl::assemble_vector(
                                "mode for facet integrals.");
     }
 
-    const auto& fn = integrals.get_tabulate_tensor_function(
-        FormIntegrals::Type::exterior_facet, i);
+    const auto& fn
+        = integrals.get_tabulate_tensor(FormIntegrals::Type::exterior_facet, i);
     const std::vector<std::int32_t>& active_facets
         = integrals.integral_domains(type::exterior_facet, i);
     fem::impl::assemble_exterior_facets(b, mesh, active_facets, dofmap, fn,
@@ -491,8 +489,8 @@ void fem::impl::assemble_vector(
                                "mode for facet integrals.");
     }
 
-    const auto& fn = integrals.get_tabulate_tensor_function(
-        FormIntegrals::Type::interior_facet, i);
+    const auto& fn
+        = integrals.get_tabulate_tensor(FormIntegrals::Type::interior_facet, i);
     const std::vector<std::int32_t>& active_facets
         = integrals.integral_domains(type::interior_facet, i);
     fem::impl::assemble_interior_facets(b, mesh, active_facets, dofmap, fn,

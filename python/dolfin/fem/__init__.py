@@ -14,6 +14,7 @@ from dolfin.fem.coordinatemapping import create_coordinate_map
 from dolfin.fem.dirichletbc import DirichletBC
 from dolfin.fem.dofmap import DofMap
 from dolfin.fem.form import Form
+from dolfin.cpp.fem import FormIntegrals
 from dolfin.fem.formmanipulations import (derivative, adjoint, increase_order,
                                           tear)
 from dolfin.fem.solving import solve
