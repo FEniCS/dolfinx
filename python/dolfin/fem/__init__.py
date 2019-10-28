@@ -25,6 +25,7 @@ __all__ = [
     "assemble_vector_block", "assemble_vector_nest",
     "assemble_matrix_block", "assemble_matrix_nest",
     "assemble_matrix", "set_bc", "create_coordinate_map",
-    "DirichletBC", "DofMap", "Form", "derivative", "adjoint", "increase_order",
+    "DirichletBC", "DofMap", "Form", "FormIntegrals",
+    "derivative", "adjoint", "increase_order",
     "tear", "project", "solve"
 ]
