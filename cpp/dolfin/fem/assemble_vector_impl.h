@@ -32,6 +32,7 @@ class DirichletBC;
 class Form;
 class DofMap;
 
+/// Implementation of assembly
 namespace impl
 {
 
@@ -39,10 +40,9 @@ namespace impl
 /// @param[in,out] b The vector to be assembled. It will not be zeroed
 ///                  before assembly.
 /// @param[in] L The linear forms to assemble into b
-/// @param[in] mode The insertion mode
 void
     assemble_vector(Eigen::Ref<Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1>> b,
-                    const Form& L, fem::InsertMode mode);
+                    const Form& L);
 
 /// Execute kernel over cells and accumulate result in vector
 void assemble_cells(
@@ -53,9 +53,9 @@ void assemble_cells(
     const std::function<void(PetscScalar*, const PetscScalar*,
                              const PetscScalar*, const double*, const int*,
                              const int*)>& kernel,
-    const std::vector<const function::Function*>& coefficients,
-    const std::vector<int>& offsets,
-    const std::vector<PetscScalar> constant_values, fem::InsertMode mode);
+    const Eigen::Array<PetscScalar, Eigen::Dynamic, Eigen::Dynamic,
+                       Eigen::RowMajor>& coeffs,
+    const std::vector<PetscScalar> constant_values);
 
 /// Execute kernel over cells and accumulate result in vector
 void assemble_exterior_facets(
@@ -65,8 +65,8 @@ void assemble_exterior_facets(
     const std::function<void(PetscScalar*, const PetscScalar*,
                              const PetscScalar*, const double*, const int*,
                              const int*)>& fn,
-    const std::vector<const function::Function*>& coefficients,
-    const std::vector<int>& offsets,
+    const Eigen::Array<PetscScalar, Eigen::Dynamic, Eigen::Dynamic,
+                       Eigen::RowMajor>& coeffs,
     const std::vector<PetscScalar> constant_values);
 
 /// Assemble linear form interior facet integrals into an Eigen vector
@@ -77,7 +77,8 @@ void assemble_interior_facets(
     const std::function<void(PetscScalar*, const PetscScalar*,
                              const PetscScalar*, const double*, const int*,
                              const int*)>& fn,
-    const std::vector<const function::Function*>& coefficients,
+    const Eigen::Array<PetscScalar, Eigen::Dynamic, Eigen::Dynamic,
+                       Eigen::RowMajor>& coeffs,
     const std::vector<int>& offsets,
     const std::vector<PetscScalar> constant_values);
 
@@ -85,7 +86,7 @@ void assemble_interior_facets(
 ///
 ///   b <- b - scale * A_j (g_j - x0_j)
 ///
-/// where j is a block (nest) row index. For non-blocked probelem j = 1.
+/// where j is a block (nest) row index. For a non-blocked problem j = 0.
 /// The boundary conditions bc1 are on the trial spaces V_j. The forms
 /// in [a] must have the same test space as L (from which b was built),
 /// but the trial space may differ. If x0 is not supplied, then it is
@@ -97,7 +98,7 @@ void assemble_interior_facets(
 ///                 bcs1[2] are the boundary conditions applied to the
 ///                 columns of a[2] / x0[2] block
 /// @param[in] x0 The vectors used in the lifting
-/// @param[in] scaling Scaling to apply
+/// @param[in] scale Scaling to apply
 void apply_lifting(
     Eigen::Ref<Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1>> b,
     const std::vector<std::shared_ptr<const Form>> a,
@@ -115,7 +116,7 @@ void apply_lifting(
 /// @param[in] bc_values1 The boundary condition 'values'
 /// @param[in] bc_markers1 The indices (columns of A, rows of x) to
 ///                        which bcs belong
-/// @param[in] scaling Scaling to apply
+/// @param[in] scale Scaling to apply
 void lift_bc(
     Eigen::Ref<Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1>> b, const Form& a,
     const Eigen::Ref<const Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1>>&
@@ -133,7 +134,7 @@ void lift_bc(
 ///                        which bcs belong
 /// @param[in] x0 The array used in the lifting, typically a 'current
 ///               solution' in a Newton method
-/// @param[in] scaling Scaling to apply
+/// @param[in] scale Scaling to apply
 void lift_bc(
     Eigen::Ref<Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1>> b, const Form& a,
     const Eigen::Ref<const Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1>>&

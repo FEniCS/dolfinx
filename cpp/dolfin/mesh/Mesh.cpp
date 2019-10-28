@@ -18,6 +18,7 @@
 #include <dolfin/common/MPI.h>
 #include <dolfin/common/Timer.h>
 #include <dolfin/common/utils.h>
+#include <dolfin/io/cells.h>
 #include <dolfin/mesh/cell_types.h>
 
 using namespace dolfin;
@@ -226,25 +227,15 @@ Mesh::Mesh(
     throw std::runtime_error(
         "Cannot create mesh. Wrong number of global cell indices");
   }
-
-  // Permutation from VTK to DOLFIN order for cell geometric nodes
-  std::vector<std::uint8_t> cell_permutation;
-  if (type == mesh::CellType::quadrilateral)
-  {
-    // Quadrilateral cells does not follow counter clockwise
-    // order (cc), but lexiographic order (LG). This breaks the assumptions
-    // that the cell permutation is the same as the VTK-map.
-    if (num_vertices_per_cell == cells.cols())
-      cell_permutation = {0, 1, 2, 3};
-    else
-      throw std::runtime_error("Higher order quadrilateral not supported");
-  }
-  else
-    cell_permutation = mesh::vtk_mapping(type, cells.cols());
-
   // Find degree of mesh
   // FIXME: degree should probably be in MeshGeometry
   _degree = mesh::cell_degree(type, cells.cols());
+
+  // FIXME: Default simplicies is VTK, non-simplicies is lexicographic
+  // This should be changed to simplicies being UFC, non-simplicies VTK
+  // Get the mapping of UFC node ordering to the mesh input format
+  std::vector<std::uint8_t> cell_permutation;
+  cell_permutation = io::cells::default_cell_permutation(type, _degree);
 
   // Get number of nodes (global)
   const std::uint64_t num_points_global = MPI::sum(comm, points.rows());
