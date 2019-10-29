@@ -125,8 +125,8 @@ def _(b: PETSc.Vec, L: typing.Union[Form, cpp.fem.Form]) -> PETSc.Vec:
 
 
 # FIXME: Revise this interface
-@functools.singledispatch
 @convert_ufl_forms_to_dolfin_forms
+@functools.singledispatch
 def assemble_vector_nest(L: typing.List[typing.Union[Form, cpp.fem.Form]],
                          a,
                          bcs: typing.List[DirichletBC],
@@ -142,8 +142,8 @@ def assemble_vector_nest(L: typing.List[typing.Union[Form, cpp.fem.Form]],
     return b
 
 
-@assemble_vector_nest.register(PETSc.Vec)
 @convert_ufl_forms_to_dolfin_forms
+@assemble_vector_nest.register(PETSc.Vec)
 def _(b: PETSc.Vec,
       L: typing.List[typing.Union[Form, cpp.fem.Form]],
       a,
