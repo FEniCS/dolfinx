@@ -167,6 +167,8 @@ class NonlinearPDE_SNESProblem():
             P.assemble()
 
     def F_block(self, snes, x, F):
+        assert x.getType() != "nest"
+        assert F.getType() != "nest"
         x.ghostUpdate(addv=PETSc.InsertMode.INSERT, mode=PETSc.ScatterMode.FORWARD)
 
         offset = 0
@@ -180,6 +182,9 @@ class NonlinearPDE_SNESProblem():
         dolfin.fem.assemble_vector_block(F, self.L, self.a, self.bcs, x0=x, scale=-1.0)
 
     def J_block(self, snes, x, J, P):
+        assert x.getType() != "nest"
+        assert J.getType() != "nest"
+        assert P.getType() != "nest"
         J.zeroEntries()
         dolfin.fem.assemble_matrix_block(J, self.a, self.bcs, diagonal=1.0)
         J.assemble()
@@ -189,6 +194,8 @@ class NonlinearPDE_SNESProblem():
             P.assemble()
 
     def F_nest(self, snes, x, F):
+        assert x.getType() == "nest"
+        assert F.getType() == "nest"
         for x_soln_pair in zip(x.getNestSubVecs(), self.soln_vars):
             x_sub, var_sub = x_soln_pair
             x_sub.ghostUpdate(addv=PETSc.InsertMode.INSERT, mode=PETSc.ScatterMode.FORWARD)
@@ -196,8 +203,13 @@ class NonlinearPDE_SNESProblem():
             var_sub.vector.ghostUpdate(addv=PETSc.InsertMode.INSERT, mode=PETSc.ScatterMode.FORWARD)
 
         dolfin.fem.assemble_vector_nest(F, self.L, self.a, self.bcs, x0=x, scale=-1.0)
+        # Must assemble F here in the case of nest matrices
+        F.assemble()
 
     def J_nest(self, snes, x, J, P):
+        assert x.getType() == "nest"
+        assert J.getType() == "nest"
+        assert P.getType() == "nest"
         J.zeroEntries()
         dolfin.fem.assemble_matrix_nest(J, self.a, self.bcs, diagonal=1.0)
         J.assemble()
@@ -291,7 +303,6 @@ def test_assembly_solve_block():
 
     snes.getKSP().setType("fgmres")
     snes.getKSP().setTolerances(rtol=1e-12)
-    snes.getKSP().getPC().setType("none")
     snes.getKSP().getPC().setType("fieldsplit")
     snes.getKSP().getPC().setFieldSplitIS(["u", nested_IS[0][0]], ["p", nested_IS[1][1]])
 
@@ -303,12 +314,6 @@ def test_assembly_solve_block():
     ksp_p.getPC().setType('lu')
     ksp_p.getPC().setFactorSolverType('mumps')
 
-    # FIXME: Update this option in the future to use petsc4py wrapper
-    # https://bitbucket.org/petsc/petsc4py/pull-requests/111/begin-wrapping-of-sneslinesearch-in/diff
-    opts = PETSc.Options()
-    opts["snes_linesearch_type"] = "basic"
-    snes.setFromOptions()
-
     problem = NonlinearPDE_SNESProblem(F, J, [u, p], bcs)
     snes.setFunction(problem.F_nest, Fvec1)
     snes.setJacobian(problem.J_nest, J=Jmat1, P=None)
@@ -317,6 +322,8 @@ def test_assembly_solve_block():
     x1.set(initial_guess)
     for x1_sub in x1.getNestSubVecs():
         x1_sub.ghostUpdate(addv=PETSc.InsertMode.INSERT, mode=PETSc.ScatterMode.FORWARD)
+    u.vector.zeroEntries()
+    p.vector.zeroEntries()
 
     snes.solve(None, x1)
 
@@ -330,7 +337,6 @@ def test_assembly_solve_block():
     F1norm = Fvec1.norm()
     x1norm = x1.norm()
 
-    print(F1norm, F0norm)
     assert J1norm == pytest.approx(J0norm, 1.0e-12)
     assert F1norm == pytest.approx(F0norm, 1.0e-12)
     assert x1norm == pytest.approx(x0norm, 1.0e-12)
