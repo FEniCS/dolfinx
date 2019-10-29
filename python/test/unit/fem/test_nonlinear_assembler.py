@@ -265,7 +265,7 @@ def test_assembly_solve_block():
     J = [[derivative(F[0], u, du), derivative(F[0], p, dp)],
          [derivative(F[1], u, du), derivative(F[1], p, dp)]]
 
-    # Blocked version
+    # -- Blocked version
     Jmat0 = dolfin.fem.create_matrix_block(J)
     Fvec0 = dolfin.fem.create_vector_block(F)
 
@@ -292,7 +292,7 @@ def test_assembly_solve_block():
     F0norm = Fvec0.norm()
     x0norm = x0.norm()
 
-    # Nested (MatNest)
+    # -- Nested (MatNest)
     Jmat1 = dolfin.fem.create_matrix_nest(J)
     Fvec1 = dolfin.fem.create_vector_nest(F)
 
@@ -341,7 +341,7 @@ def test_assembly_solve_block():
     assert F1norm == pytest.approx(F0norm, 1.0e-12)
     assert x1norm == pytest.approx(x0norm, 1.0e-12)
 
-    # Monolithic version
+    # -- Monolithic version
     E = P0 * P1
     W = dolfin.function.functionspace.FunctionSpace(mesh, E)
     U = dolfin.function.Function(W)
