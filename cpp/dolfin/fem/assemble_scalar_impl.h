@@ -46,7 +46,7 @@ assemble_cells(const mesh::Mesh& mesh,
                                         const int*, const int*)>& fn,
                const Eigen::Array<PetscScalar, Eigen::Dynamic, Eigen::Dynamic,
                                   Eigen::RowMajor>& coeffs,
-               const std::vector<PetscScalar> constant_values);
+               const std::vector<PetscScalar>& constant_values);
 
 /// Execute kernel over exterior facets and accumulate result
 PetscScalar assemble_exterior_facets(
@@ -56,7 +56,7 @@ PetscScalar assemble_exterior_facets(
                              const int*)>& fn,
     const Eigen::Array<PetscScalar, Eigen::Dynamic, Eigen::Dynamic,
                        Eigen::RowMajor>& coeffs,
-    const std::vector<PetscScalar> constant_values);
+    const std::vector<PetscScalar>& constant_values);
 
 /// Assemble functional over interior facets
 PetscScalar assemble_interior_facets(
@@ -67,7 +67,7 @@ PetscScalar assemble_interior_facets(
     const Eigen::Array<PetscScalar, Eigen::Dynamic, Eigen::Dynamic,
                        Eigen::RowMajor>& coeffs,
     const std::vector<int>& offsets,
-    const std::vector<PetscScalar> constant_values);
+    const std::vector<PetscScalar>& constant_values);
 
 } // namespace impl
 } // namespace fem
