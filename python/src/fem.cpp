@@ -309,7 +309,7 @@ void fem(py::module& m)
       .def("set_interior_facet_domains",
            &dolfin::fem::Form::set_interior_facet_domains)
       .def("set_vertex_domains", &dolfin::fem::Form::set_vertex_domains)
-      .def("set_tabulate",
+      .def("set_tabulate_tensor",
            [](dolfin::fem::Form& self, dolfin::fem::FormIntegrals::Type type,
               int i, std::intptr_t addr) {
              auto tabulate_tensor_ptr = (void (*)(
