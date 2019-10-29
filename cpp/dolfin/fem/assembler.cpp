@@ -93,13 +93,14 @@ void _assemble_vector_nest(
     double scale)
 {
   if (L.size() < 2)
-    throw std::runtime_error("Oops, using blocked assembly.");
+    throw std::runtime_error("Expected more than one linear form "
+                             "in vector nest assembly.");
 
   VecType vec_type;
   for (Vec _vec : {b, x0})
   {
     VecGetType(_vec, &vec_type);
-    const bool is_vecnest = strcmp(vec_type, VECNEST) == 0 ? true : false;
+    const bool is_vecnest = strcmp(vec_type, VECNEST) == 0;
     if (!is_vecnest)
       throw std::runtime_error("Expected nested vectors.");
   }
