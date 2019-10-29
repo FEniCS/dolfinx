@@ -592,8 +592,8 @@ fem::Form fem::create_form(
   {
     ufc_integral* cell_integral = ufc_form.create_cell_integral(id);
     assert(cell_integral);
-    integrals.register_tabulate_tensor(FormIntegrals::Type::cell, id,
-                                       cell_integral->tabulate_tensor);
+    integrals.set_tabulate_tensor(FormIntegrals::Type::cell, id,
+                                  cell_integral->tabulate_tensor);
     std::free(cell_integral);
   }
 
@@ -605,9 +605,8 @@ fem::Form fem::create_form(
     ufc_integral* exterior_facet_integral
         = ufc_form.create_exterior_facet_integral(id);
     assert(exterior_facet_integral);
-    integrals.register_tabulate_tensor(
-        FormIntegrals::Type::exterior_facet, id,
-        exterior_facet_integral->tabulate_tensor);
+    integrals.set_tabulate_tensor(FormIntegrals::Type::exterior_facet, id,
+                                  exterior_facet_integral->tabulate_tensor);
     std::free(exterior_facet_integral);
   }
 
@@ -619,9 +618,8 @@ fem::Form fem::create_form(
     ufc_integral* interior_facet_integral
         = ufc_form.create_interior_facet_integral(id);
     assert(interior_facet_integral);
-    integrals.register_tabulate_tensor(
-        FormIntegrals::Type::interior_facet, id,
-        interior_facet_integral->tabulate_tensor);
+    integrals.set_tabulate_tensor(FormIntegrals::Type::interior_facet, id,
+                                  interior_facet_integral->tabulate_tensor);
     std::free(interior_facet_integral);
   }
 
