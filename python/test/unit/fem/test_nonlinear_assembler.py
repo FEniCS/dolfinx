@@ -435,10 +435,6 @@ def test_assembly_solve_taylor_hood(mesh):
     P = [[J[0][0], None],
          [None, inner(dp, q) * dx]]
 
-    # # -- Blocked and nested
-    #
-    # TODO
-
     # -- Blocked and monolithic
 
     Jmat0 = dolfin.fem.create_matrix_block(J)
@@ -452,15 +448,6 @@ def test_assembly_solve_taylor_hood(mesh):
     snes.getKSP().getPC().setType("lu")
     snes.getKSP().getPC().setFactorSolverType("mumps")
 
-    # opts = PETSc.Options()
-    # opts["ksp_type"] = "minres"
-    # opts["snes_monitor"] = None
-    # opts["snes_linesearch_type"] = "basic"
-    # opts["ksp_monitor"] = None
-    # opts["pc_type"] = "lu"
-    # opts["pc_factor_mat_solver_type"] = "mumps"
-    # snes.setFromOptions()
-
     problem = NonlinearPDE_SNESProblem(F, J, [u, p], bcs, P=P)
     snes.setFunction(problem.F_block, Fvec0)
     snes.setJacobian(problem.J_block, J=Jmat0, P=Pmat0)
@@ -471,6 +458,43 @@ def test_assembly_solve_taylor_hood(mesh):
     snes.solve(None, x0)
 
     assert snes.getConvergedReason() > 0
+
+    # -- Blocked and nested
+
+    Jmat1 = dolfin.fem.create_matrix_nest(J)
+    Pmat1 = dolfin.fem.create_matrix_nest(P)
+    Fvec1 = dolfin.fem.create_vector_nest(F)
+
+    snes = PETSc.SNES().create(dolfin.MPI.comm_world)
+    snes.setTolerances(rtol=1.0e-15, max_it=10)
+
+    nested_IS = Jmat1.getNestISs()
+
+    snes.getKSP().setType("minres")
+    snes.getKSP().setTolerances(rtol=1e-12)
+    snes.getKSP().getPC().setType("fieldsplit")
+    snes.getKSP().getPC().setFieldSplitIS(["u", nested_IS[0][0]], ["p", nested_IS[1][1]])
+
+    ksp_u, ksp_p = snes.getKSP().getPC().getFieldSplitSubKSP()
+    ksp_u.setType("preonly")
+    ksp_u.getPC().setType('lu')
+    ksp_u.getPC().setFactorSolverType('mumps')
+    ksp_p.setType("preonly")
+    ksp_p.getPC().setType('lu')
+    ksp_p.getPC().setFactorSolverType('mumps')
+
+    problem = NonlinearPDE_SNESProblem(F, J, [u, p], bcs, P=P)
+    snes.setFunction(problem.F_nest, Fvec1)
+    snes.setJacobian(problem.J_nest, J=Jmat1, P=Pmat1)
+
+    x1 = dolfin.fem.create_vector_nest(F)
+    x1.zeroEntries()
+    snes.solve(None, x1)
+
+    assert snes.getConvergedReason() > 0
+    assert nest_matrix_norm(Jmat1) == pytest.approx(Jmat0.norm(), 1.0e-12)
+    assert Fvec1.norm() == pytest.approx(Fvec0.norm(), 1.0e-12)
+    assert x1.norm() == pytest.approx(x0.norm(), 1.0e-12)
 
     # -- Monolithic
 
