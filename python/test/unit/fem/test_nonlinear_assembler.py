@@ -99,13 +99,14 @@ def test_matrix_assembly_block():
         x0_sub, soln_sub = x0_soln_pair
         x0_sub.ghostUpdate(addv=PETSc.InsertMode.INSERT, mode=PETSc.ScatterMode.FORWARD)
         x0_sub.copy(soln_sub.vector)
+        soln_sub.vector.ghostUpdate(addv=PETSc.InsertMode.INSERT, mode=PETSc.ScatterMode.FORWARD)
 
     A1 = dolfin.fem.assemble_matrix_nest(a_block, [bc])
     b1 = dolfin.fem.assemble_vector_nest(L_block, a_block, [bc], x0=x0, scale=-1.0)
 
     assert A1.getType() == "nest"
-    assert nest_matrix_norm(A1) == pytest.approx(Anorm0, 1.0e-9)
-    assert b1.norm() == pytest.approx(bnorm0, 1.0e-9)
+    assert nest_matrix_norm(A1) == pytest.approx(Anorm0, 1.0e-12)
+    assert b1.norm() == pytest.approx(bnorm0, 1.0e-12)
 
     # Monolithic version
     E = P0 * P1
@@ -132,8 +133,8 @@ def test_matrix_assembly_block():
     b2.ghostUpdate(addv=PETSc.InsertMode.ADD, mode=PETSc.ScatterMode.REVERSE)
     dolfin.fem.set_bc(b2, [bc], x0=U.vector, scale=-1.0)
     assert A2.getType() != "nest"
-    assert A2.norm() == pytest.approx(Anorm0, 1.0e-9)
-    assert b2.norm() == pytest.approx(bnorm0, 1.0e-9)
+    assert A2.norm() == pytest.approx(Anorm0, 1.0e-12)
+    assert b2.norm() == pytest.approx(bnorm0, 1.0e-12)
 
 
 class NonlinearPDE_SNESProblem():
@@ -194,15 +195,15 @@ class NonlinearPDE_SNESProblem():
             x_sub.copy(var_sub.vector)
             var_sub.vector.ghostUpdate(addv=PETSc.InsertMode.INSERT, mode=PETSc.ScatterMode.FORWARD)
 
-        dolfin.fem.assemble_vector_block(F, self.L, self.a, self.bcs, x0=x, scale=-1.0)
+        dolfin.fem.assemble_vector_nest(F, self.L, self.a, self.bcs, x0=x, scale=-1.0)
 
     def J_nest(self, snes, x, J, P):
         J.zeroEntries()
-        dolfin.fem.assemble_matrix_block(J, self.a, self.bcs, diagonal=1.0)
+        dolfin.fem.assemble_matrix_nest(J, self.a, self.bcs, diagonal=1.0)
         J.assemble()
         if self.a_precon is not None:
             P.zeroEntries()
-            dolfin.fem.assemble_matrix_block(P, self.a_precon, self.bcs, diagonal=1.0)
+            dolfin.fem.assemble_matrix_nest(P, self.a_precon, self.bcs, diagonal=1.0)
             P.assemble()
 
 
@@ -321,6 +322,9 @@ def test_assembly_solve_block():
 
     assert snes.getKSP().getConvergedReason() > 0
     assert snes.getConvergedReason() > 0
+    assert x1.getType() == "nest"
+    assert Jmat1.getType() == "nest"
+    assert Fvec1.getType() == "nest"
 
     J1norm = nest_matrix_norm(Jmat1)
     F1norm = Fvec1.norm()
@@ -436,7 +440,7 @@ def test_assembly_solve_taylor_hood(mesh):
     Fvec0 = dolfin.fem.create_vector_block(F)
 
     snes = PETSc.SNES().create(dolfin.MPI.comm_world)
-    snes.setTolerances(rtol=1.0e-9, max_it=10)
+    snes.setTolerances(rtol=1.0e-15, max_it=10)
 
     snes.getKSP().setType("minres")
     snes.getKSP().getPC().setType("lu")
@@ -491,7 +495,7 @@ def test_assembly_solve_taylor_hood(mesh):
     Fvec2 = dolfin.fem.create_vector(F)
 
     snes = PETSc.SNES().create(dolfin.MPI.comm_world)
-    snes.setTolerances(rtol=1.0e-9, max_it=10)
+    snes.setTolerances(rtol=1.0e-15, max_it=10)
 
     snes.getKSP().setType("minres")
     snes.getKSP().getPC().setType("lu")

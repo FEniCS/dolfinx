@@ -125,6 +125,7 @@ def _(b: PETSc.Vec, L: typing.Union[Form, cpp.fem.Form]) -> PETSc.Vec:
 
 
 # FIXME: Revise this interface
+@functools.singledispatch
 @convert_ufl_forms_to_dolfin_forms
 def assemble_vector_nest(L: typing.List[typing.Union[Form, cpp.fem.Form]],
                          a,
@@ -137,6 +138,23 @@ def assemble_vector_nest(L: typing.List[typing.Union[Form, cpp.fem.Form]],
 
     """
     b = cpp.fem.create_vector_nest(L)
+    cpp.fem.assemble_vector(b, L, a, bcs, x0, scale)
+    return b
+
+
+@assemble_vector_nest.register(PETSc.Vec)
+@convert_ufl_forms_to_dolfin_forms
+def _(b: PETSc.Vec,
+      L: typing.List[typing.Union[Form, cpp.fem.Form]],
+      a,
+      bcs: typing.List[DirichletBC],
+      x0: typing.Optional[PETSc.Vec] = None,
+      scale: float = 1.0) -> PETSc.Vec:
+    """Assemble linear forms into a nested (VecNest) vector. The vector is
+    not zeroed and it is not finalised, i.e. ghost values are not
+    accumulated.
+
+    """
     cpp.fem.assemble_vector(b, L, a, bcs, x0, scale)
     return b
 
@@ -224,12 +242,24 @@ def _(A, a, bcs: typing.List[DirichletBC] = [],
 
 # FIXME: Revise this interface
 @convert_ufl_forms_to_dolfin_forms
+@functools.singledispatch
 def assemble_matrix_nest(a,
                          bcs: typing.List[DirichletBC],
                          diagonal: float = 1.0) -> PETSc.Mat:
     """Assemble bilinear forms into matrix"""
     A = cpp.fem.create_matrix_nest(a)
     A.zeroEntries()
+    cpp.fem.assemble_blocked_matrix(A, a, bcs, diagonal)
+    return A
+
+
+@convert_ufl_forms_to_dolfin_forms
+@assemble_matrix_nest.register(PETSc.Mat)
+def _(A: PETSc.Mat,
+      a,
+      bcs: typing.List[DirichletBC],
+      diagonal: float = 1.0) -> PETSc.Mat:
+    """Assemble bilinear forms into matrix"""
     cpp.fem.assemble_blocked_matrix(A, a, bcs, diagonal)
     return A
 
