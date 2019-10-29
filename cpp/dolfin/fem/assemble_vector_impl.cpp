@@ -370,7 +370,7 @@ void fem::impl::assemble_cells(
                              const int*)>& kernel,
     const Eigen::Array<PetscScalar, Eigen::Dynamic, Eigen::Dynamic,
                        Eigen::RowMajor>& coeffs,
-    const std::vector<PetscScalar> constant_values)
+    const std::vector<PetscScalar>& constant_values)
 {
   const int gdim = mesh.geometry().dim();
 
@@ -421,7 +421,7 @@ void fem::impl::assemble_exterior_facets(
                              const int*)>& fn,
     const Eigen::Array<PetscScalar, Eigen::Dynamic, Eigen::Dynamic,
                        Eigen::RowMajor>& coeffs,
-    const std::vector<PetscScalar> constant_values)
+    const std::vector<PetscScalar>& constant_values)
 {
   const int gdim = mesh.geometry().dim();
   const int tdim = mesh.topology().dim();
@@ -487,7 +487,7 @@ void fem::impl::assemble_interior_facets(
     const Eigen::Array<PetscScalar, Eigen::Dynamic, Eigen::Dynamic,
                        Eigen::RowMajor>& coeffs,
     const std::vector<int>& offsets,
-    const std::vector<PetscScalar> constant_values)
+    const std::vector<PetscScalar>& constant_values)
 {
   const int gdim = mesh.geometry().dim();
   const int tdim = mesh.topology().dim();
@@ -589,15 +589,18 @@ void fem::impl::assemble_interior_facets(
 void fem::impl::apply_lifting(
     Eigen::Ref<Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1>> b,
     const std::vector<std::shared_ptr<const Form>> a,
-    std::vector<std::vector<std::shared_ptr<const DirichletBC>>> bcs1,
-    std::vector<Eigen::Ref<const Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1>>>
-        x0,
+    const std::vector<std::vector<std::shared_ptr<const DirichletBC>>>& bcs1,
+    const std::vector<
+        Eigen::Ref<const Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1>>>& x0,
     double scale)
 {
   // FIXME: make changes to reactivate this check
-   if (!x0.empty() and x0.size() != a.size())
-     throw std::runtime_error("Mismatch in size between x0 and "
-                              "a in assembler.");
+  if (!x0.empty() and x0.size() != a.size())
+  {
+    throw std::runtime_error(
+        "Mismatch in size between x0 and bilinear form in assembler.");
+  }
+
   if (a.size() != bcs1.size())
   {
     throw std::runtime_error(
@@ -618,7 +621,7 @@ void fem::impl::apply_lifting(
           = map1->block_size * (map1->size_local() + map1->num_ghosts());
       bc_markers1.assign(crange, false);
       bc_values1 = Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1>::Zero(crange);
-      for (std::shared_ptr<const DirichletBC>& bc : bcs1[j])
+      for (const std::shared_ptr<const DirichletBC>& bc : bcs1[j])
       {
         bc->mark_dofs(bc_markers1);
         bc->dof_values(bc_values1);
