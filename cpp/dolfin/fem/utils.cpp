@@ -23,6 +23,7 @@
 #include <dolfin/mesh/MeshEntity.h>
 #include <dolfin/mesh/MeshIterator.h>
 #include <memory>
+#include <string>
 #include <ufc.h>
 
 using namespace dolfin;
@@ -471,6 +472,12 @@ fem::create_element_dof_layout(const ufc_dofmap& dofmap,
   std::copy(dofmap.num_entity_dofs, dofmap.num_entity_dofs + 4,
             num_entity_dofs.data());
 
+  // FIXME: Replace this with real code
+  // std::string signature (dofmap.signature);
+  // int vector_type = 0;
+  // if (signature.find("Nedelec")!=std::string::npos) // FIXME
+  //  vector_type = 1;
+
   // Fill entity dof indices
   const int tdim = mesh::cell_dim(cell_type);
   std::vector<std::vector<std::set<int>>> entity_dofs(tdim + 1);
@@ -520,8 +527,10 @@ fem::create_element_dof_layout(const ufc_dofmap& dofmap,
   // but keep for now to mimic existing code
   const int block_size = analyse_block_structure(sub_dofmaps);
 
+  EntityArrangementTypes entity_types(dofmap, cell_type);
+
   return fem::ElementDofLayout(block_size, entity_dofs, parent_map, sub_dofmaps,
-                               cell_type);
+                               cell_type, entity_types);
 }
 //-----------------------------------------------------------------------------
 fem::DofMap fem::create_dofmap(const ufc_dofmap& ufc_dofmap,

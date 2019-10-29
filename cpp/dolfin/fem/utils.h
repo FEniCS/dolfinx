@@ -9,6 +9,7 @@
 #include "CoordinateElement.h"
 #include "DofMap.h"
 #include "ElementDofLayout.h"
+#include "entity_arrangement_types.h"
 #include <dolfin/common/types.h>
 #include <dolfin/la/PETScVector.h>
 #include <dolfin/mesh/cell_types.h>
