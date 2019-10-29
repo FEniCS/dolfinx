@@ -346,7 +346,7 @@ void fem::assemble_vector(
 {
   VecType vec_type;
   VecGetType(b, &vec_type);
-  const bool is_vecnest = strcmp(vec_type, VECNEST) == 0 ? true : false;
+  const bool is_vecnest = strcmp(vec_type, VECNEST) == 0;
   if (is_vecnest)
     _assemble_vector_nest(b, L, a, bcs, x0, scale);
   else
