@@ -34,10 +34,8 @@ def test_rank0():
 
     f = dolfin.Function(P2)
 
-
     def expr1(x):
         return x[:, 0] ** 2 + 2.0 * x[:, 1] ** 2
-
 
     f.interpolate(expr1)
 
@@ -51,7 +49,6 @@ def test_rank0():
     @numba.njit
     def assemble_expression(b, kernel, mesh, x, dofmap, coeff, coeff_dofmap):
         connections, pos = mesh
-        orientation = np.array([0], dtype=np.int32)
         geometry = np.zeros((3, 2))
         w = np.zeros(6, dtype=PETSc.ScalarType)
         constants = np.zeros(1, dtype=PETSc.ScalarType)
@@ -75,7 +72,6 @@ def test_rank0():
             for j in range(6):
                 b[dofmap[i * 6 + j]] = b_local[j]
 
-
     # Prepare mesh and dofmap data
     c = mesh.topology.connectivity(2, 0).connections()
     pos = mesh.topology.connectivity(2, 0).pos()
@@ -89,7 +85,6 @@ def test_rank0():
     assemble_expression(b.vector.array, compiled_expr.tabulate_expression,
                         (c, pos), geom, dofmap, f.vector.array, coeff_dofmap)
 
-
     def grad_expr1(x):
         values = np.empty((x.shape[0], 2))
 
@@ -97,7 +92,6 @@ def test_rank0():
         values[:, 1] = 4.0 * x[:, 1]
 
         return values
-
 
     b2 = dolfin.Function(vP1)
     b2.interpolate(grad_expr1)
