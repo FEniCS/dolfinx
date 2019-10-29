@@ -136,11 +136,13 @@ std::shared_ptr<const function::FunctionSpace> Form::function_space(int i) const
   return _function_spaces.at(i);
 }
 //-----------------------------------------------------------------------------
-void Form::register_tabulate_tensor_cell(
-    int i, void (*fn)(PetscScalar*, const PetscScalar*, const PetscScalar*,
-                      const double*, const int*, const int*))
+void Form::set_tabulate_tensor(
+    FormIntegrals::Type type, int i,
+    std::function<void(PetscScalar*, const PetscScalar*, const PetscScalar*,
+                       const double*, const int*, const int*)>
+        fn)
 {
-  _integrals.register_tabulate_tensor(FormIntegrals::Type::cell, i, fn);
+  _integrals.set_tabulate_tensor(type, i, fn);
   if (i == -1 and _mesh)
     _integrals.set_default_domains(*_mesh);
 }

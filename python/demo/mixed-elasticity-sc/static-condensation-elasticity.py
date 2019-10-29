@@ -127,7 +127,7 @@ def tabulate_condensed_tensor_A(A_, w_, c_, coords_, entity_local_index, cell_or
 
 # Prepare an empty Form and set the condensed tabulation kernel
 a_cond = dolfin.cpp.fem.Form([U._cpp_object, U._cpp_object])
-a_cond.set_tabulate_cell(-1, tabulate_condensed_tensor_A.address)
+a_cond.set_tabulate_tensor(dolfin.fem.FormIntegrals.Type.cell, -1, tabulate_condensed_tensor_A.address)
 
 A_cond = dolfin.fem.assemble_matrix(a_cond, [bc])
 A_cond.assemble()
