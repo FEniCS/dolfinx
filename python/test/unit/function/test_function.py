@@ -6,7 +6,6 @@
 """Unit tests for the Function class"""
 
 import importlib
-import math
 
 import cffi
 import numpy as np
@@ -15,7 +14,7 @@ from petsc4py import PETSc
 
 import ufl
 from dolfin import (MPI, Function, FunctionSpace, TensorFunctionSpace,
-                    UnitCubeMesh, VectorFunctionSpace, cpp, geometry)
+                    UnitCubeMesh, VectorFunctionSpace, geometry)
 from dolfin_utils.test.skips import skip_if_complex, skip_in_parallel
 
 
@@ -187,6 +186,7 @@ def xtest_eval_multiple(W):
     tree = geometry.BoundingBoxTree(mesh, W.mesh.geometry.dim)
     cells = geometry.compute_first_entity_collision(tree, mesh, x)
     u.eval(x[0], cells[0])
+
 
 @pytest.mark.skip("DofMap upates needed for Real spaces")
 def test_scalar_conditions(R):
