@@ -236,15 +236,9 @@ DofMapPermuter::DofMapPermuter(const mesh::Mesh& mesh,
                     "order elements may be incorrect.";
     return;
   }
-  // _resize_data();
-  _cell_orders.resize(_cell_count, _permutation_count);
-  _cell_orders.fill(0);
 
-  _permutations.resize(_permutation_count, _dof_count);
-  for (int i = 0; i < _dof_count; ++i)
-    for (int j = 0; j < _permutation_count; ++j)
-      _permutations(j, i) = i;
-
+  _cell_orders = Eigen::Array<PetscInt, Eigen::Dynamic, Eigen::Dynamic>::Zero(
+      _cell_count, _permutation_count);
   _permutations = generate_recursive(mesh, element_dof_layout);
 
   switch (mesh.cell_type())
