@@ -105,7 +105,7 @@ _triangle_rotation_and_reflection(const int face_dofs, const int blocksize)
   std::vector<int> rotation(face_dofs);
   {
     int j = 0;
-    int i = 1;
+    int i = 0;
     for (int st = blocks - 1; st >= 0; st -= i)
     {
       ++i;
