@@ -171,7 +171,8 @@ tetrahedron_rotations_and_reflection(const int volume_dofs, const int blocksize)
   for (int side = side_length; side > 0; --side)
   {
     int face_dofs = side * (side + 1) / 2;
-    auto base_faces = triangle_rotation_and_reflection(face_dofs, 1);
+    const std::array<std::vector<int>, 2> base_faces
+        = triangle_rotation_and_reflection(face_dofs, 1);
 
     std::vector<int> face(face_dofs * blocksize);
     std::iota(face.begin(), face.end(), start);
@@ -328,7 +329,8 @@ DofMapPermuter::generate_triangle(const mesh::Mesh& mesh,
     apply_permutation(permutations, edge_n, edge, base_flip, 2);
   }
   // Make permutations that rotate and reflect the face dofs
-  auto base_faces = triangle_rotation_and_reflection(face_dofs, face_bs);
+  const std::array<std::vector<int>, 2> base_faces
+      = triangle_rotation_and_reflection(face_dofs, face_bs);
   auto face = element_dof_layout.entity_dofs(2, 0);
   apply_permutation(permutations, 3, face, base_faces[0], 3);
   apply_permutation(permutations, 4, face, base_faces[1], 2);
@@ -363,7 +365,8 @@ DofMapPermuter::generate_tetrahedron(const mesh::Mesh& mesh,
     apply_permutation(permutations, edge_n, edge, base_flip, 2);
   }
   // Make permutations that rotate and reflect the face dofs
-  auto base_faces = triangle_rotation_and_reflection(face_dofs, face_bs);
+  const std::array<std::vector<int>, 2> base_faces
+      = triangle_rotation_and_reflection(face_dofs, face_bs);
   for (int face_n = 0; face_n < 4; ++face_n)
   {
     auto face = element_dof_layout.entity_dofs(2, face_n);
@@ -371,13 +374,14 @@ DofMapPermuter::generate_tetrahedron(const mesh::Mesh& mesh,
     apply_permutation(permutations, 6 + 2 * face_n + 1, face, base_faces[1], 2);
   }
   // Make permutations that rotate and reflect the interior dofs
-  auto base_interiors
+  const std::array<std::vector<int>, 4> base_interiors
       = tetrahedron_rotations_and_reflection(volume_dofs, volume_bs);
   auto interior = element_dof_layout.entity_dofs(3, 0);
   apply_permutation(permutations, 14, interior, base_interiors[0], 3);
   apply_permutation(permutations, 15, interior, base_interiors[1], 3);
   apply_permutation(permutations, 16, interior, base_interiors[2], 3);
   apply_permutation(permutations, 17, interior, base_interiors[3], 2);
+
   return permutations;
 }
 //-----------------------------------------------------------------------------
@@ -399,7 +403,7 @@ DofMapPermuter::set_orders_triangle(const mesh::Mesh& mesh,
     cell_orders(cell_n, 1) = (vertices[0] > vertices[2]);
     cell_orders(cell_n, 2) = (vertices[0] > vertices[1]);
 
-    auto tri_orders
+    const std::array<int, 2> tri_orders
         = calculate_triangle_orders(vertices[0], vertices[1], vertices[2]);
     cell_orders(cell_n, 3) = tri_orders[0];
     cell_orders(cell_n, 4) = tri_orders[0];
