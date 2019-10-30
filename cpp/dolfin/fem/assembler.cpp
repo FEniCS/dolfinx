@@ -93,19 +93,38 @@ void _assemble_vector_nest(
     double scale)
 {
   if (L.size() < 2)
-    throw std::runtime_error("Oops, using blocked assembly.");
+    throw std::runtime_error("Expected more than one linear form "
+                             "in vector nest assembly.");
 
   VecType vec_type;
-  VecGetType(b, &vec_type);
-  const bool is_vecnest = strcmp(vec_type, VECNEST) == 0 ? true : false;
-  if (!is_vecnest)
-    throw std::runtime_error("Expected a nested vector.");
+  for (Vec _vec : {b, x0})
+  {
+    VecGetType(_vec, &vec_type);
+    const bool is_vecnest = strcmp(vec_type, VECNEST) == 0;
+    if (!is_vecnest)
+      throw std::runtime_error("Expected nested vectors.");
+  }
 
   // Pack DirichletBC pointers for rows and columns
   std::vector<std::vector<std::shared_ptr<const DirichletBC>>> bcs0
       = bcs_rows(L, bcs);
   std::vector<std::vector<std::vector<std::shared_ptr<const DirichletBC>>>> bcs1
       = bcs_cols(a, bcs);
+
+  std::vector<Vec> x0_sub_vecs(L.size(), nullptr);
+  std::vector<Eigen::Ref<const Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1>>>
+          x0_sub_vecs_ref;
+  x0_sub_vecs_ref.reserve(L.size());
+  if (x0)
+  {
+    for (std::size_t i = 0; i < L.size(); ++i)
+    {
+      VecNestGetSubVec(x0, i, &x0_sub_vecs[i]);
+      la::VecReadWrapper x0_wrapper(x0_sub_vecs[i]);
+      x0_sub_vecs_ref.push_back(x0_wrapper.x);
+      x0_wrapper.restore();
+    }
+  }
 
   for (std::size_t i = 0; i < L.size(); ++i)
   {
@@ -120,18 +139,10 @@ void _assemble_vector_nest(
     // FIXME: sort out x0 \ne nullptr for nested case
     // Apply lifting
     if (x0)
-    {
-      la::VecReadWrapper x0_wrapper(x0);
-      std::vector<
-          Eigen::Ref<const Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1>>>
-          x0_vec(1, x0_wrapper.x);
-      fem::impl::apply_lifting(_b.x, a[i], bcs1[i], x0_vec, scale);
-      x0_wrapper.restore();
-    }
+      fem::impl::apply_lifting(_b.x, a[i], bcs1[i], x0_sub_vecs_ref, scale);
     else
-    {
       fem::impl::apply_lifting(_b.x, a[i], bcs1[i], {}, scale);
-    }
+    
     _b.restore();
 
     // Update ghosts
@@ -153,7 +164,7 @@ void _assemble_vector_nest(
         if (a[i][j])
         {
           if (*L[i]->function_space(0) == *a[i][j]->function_space(1))
-            set_bc(b_sub, bcs0[i], x0, scale);
+            set_bc(b_sub, bcs0[i], x0_sub_vecs[i], scale);
         }
       }
     }
@@ -335,7 +346,7 @@ void fem::assemble_vector(
 {
   VecType vec_type;
   VecGetType(b, &vec_type);
-  const bool is_vecnest = strcmp(vec_type, VECNEST) == 0 ? true : false;
+  const bool is_vecnest = strcmp(vec_type, VECNEST) == 0;
   if (is_vecnest)
     _assemble_vector_nest(b, L, a, bcs, x0, scale);
   else
