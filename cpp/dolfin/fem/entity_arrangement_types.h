@@ -15,6 +15,7 @@ namespace dolfin
 namespace fem
 {
 
+/// Element vector type identifier
 enum class ElementVectorType : int
 {
   scalar = 0,
