@@ -24,7 +24,7 @@ class DofMapPermuter
 public:
   /// Constructor
   /// @param[in] mesh The mesh
-  /// @param[in] element_dof_layout The layout of dofs in each cell
+  /// @param[in] dof_layout The layout of dofs on a each cell
   DofMapPermuter(const mesh::Mesh& mesh, const ElementDofLayout& dof_layout);
 
   /// Return the dof permutations for the given cell

@@ -321,13 +321,15 @@ generate_permutations_triangle(const mesh::Mesh& mesh,
   std::vector<int> base_flip = edge_flip(edge_dofs, edge_bs);
   for (int edge_n = 0; edge_n < 3; ++edge_n)
   {
-    auto edge = dof_layout.entity_dofs(1, edge_n);
+    const Eigen::Array<int, Eigen::Dynamic, 1> edge
+        = dof_layout.entity_dofs(1, edge_n);
     apply_permutation(permutations, edge_n, edge, base_flip, 2);
   }
   // Make permutations that rotate and reflect the face dofs
   const std::array<std::vector<int>, 2> base_faces
       = triangle_rotation_and_reflection(face_dofs, face_bs);
-  auto face = dof_layout.entity_dofs(2, 0);
+  const Eigen::Array<int, Eigen::Dynamic, 1> face
+      = dof_layout.entity_dofs(2, 0);
   apply_permutation(permutations, 3, face, base_faces[0], 3);
   apply_permutation(permutations, 4, face, base_faces[1], 2);
 
@@ -357,7 +359,8 @@ generate_permutations_tetrahedron(const mesh::Mesh& mesh,
   std::vector<int> base_flip = edge_flip(edge_dofs, edge_bs);
   for (int edge_n = 0; edge_n < 6; ++edge_n)
   {
-    auto edge = dof_layout.entity_dofs(1, edge_n);
+    const Eigen::Array<int, Eigen::Dynamic, 1> edge
+        = dof_layout.entity_dofs(1, edge_n);
     apply_permutation(permutations, edge_n, edge, base_flip, 2);
   }
   // Make permutations that rotate and reflect the face dofs
@@ -365,14 +368,16 @@ generate_permutations_tetrahedron(const mesh::Mesh& mesh,
       = triangle_rotation_and_reflection(face_dofs, face_bs);
   for (int face_n = 0; face_n < 4; ++face_n)
   {
-    auto face = dof_layout.entity_dofs(2, face_n);
+    const Eigen::Array<int, Eigen::Dynamic, 1> face
+        = dof_layout.entity_dofs(2, face_n);
     apply_permutation(permutations, 6 + 2 * face_n, face, base_faces[0], 3);
     apply_permutation(permutations, 6 + 2 * face_n + 1, face, base_faces[1], 2);
   }
   // Make permutations that rotate and reflect the interior dofs
   const std::array<std::vector<int>, 4> base_interiors
       = tetrahedron_rotations_and_reflection(volume_dofs, volume_bs);
-  auto interior = dof_layout.entity_dofs(3, 0);
+  const Eigen::Array<int, Eigen::Dynamic, 1> interior
+      = dof_layout.entity_dofs(3, 0);
   apply_permutation(permutations, 14, interior, base_interiors[0], 3);
   apply_permutation(permutations, 15, interior, base_interiors[1], 3);
   apply_permutation(permutations, 16, interior, base_interiors[2], 3);
@@ -417,7 +422,7 @@ generate_permutations(const mesh::Mesh& mesh,
 
   for (int i = 0; i < dof_layout.num_sub_dofmaps(); ++i)
   {
-    auto sub_view = dof_layout.sub_view({i});
+    const std::vector<int> sub_view = dof_layout.sub_view({i});
     const Eigen::Array<int, Eigen::Dynamic, Eigen::Dynamic> sub_perm
         = generate_permutations(mesh, *dof_layout.sub_dofmap({i}));
     for (int p = 0; p < num_permutations; ++p)
