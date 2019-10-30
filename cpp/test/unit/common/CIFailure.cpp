@@ -1,4 +1,4 @@
-// Copyright (C) 2019 Francesco Ballarin
+// Copyright (C) 2019 Francesco Ballarin and Igor A. Baratta
 //
 // This file is part of DOLFIN (https://www.fenicsproject.org)
 //
@@ -18,11 +18,8 @@ void test_ci_failure()
 
   auto mpi_comm = dolfin::MPI::Comm(MPI_COMM_WORLD);
   int mpi_rank = dolfin::MPI::rank(mpi_comm.comm());
-  int mpi_size = dolfin::MPI::size(mpi_comm.comm());
 
-  // Throw exeption
-  if (mpi_size == 0)
-    REQUIRE(mpi_rank == 0);
+  REQUIRE_FALSE(mpi_rank == -1);
 }
 } // namespace
 
