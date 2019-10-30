@@ -472,12 +472,6 @@ fem::create_element_dof_layout(const ufc_dofmap& dofmap,
   std::copy(dofmap.num_entity_dofs, dofmap.num_entity_dofs + 4,
             num_entity_dofs.data());
 
-  // FIXME: Replace this with real code
-  // std::string signature (dofmap.signature);
-  // int vector_type = 0;
-  // if (signature.find("Nedelec")!=std::string::npos) // FIXME
-  //  vector_type = 1;
-
   // Fill entity dof indices
   const int tdim = mesh::cell_dim(cell_type);
   std::vector<std::vector<std::set<int>>> entity_dofs(tdim + 1);
