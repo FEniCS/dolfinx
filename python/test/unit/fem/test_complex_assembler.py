@@ -91,7 +91,7 @@ def test_complex_assembly_solve():
     # Variational problem
     u = dolfin.function.TrialFunction(V)
     v = dolfin.function.TestFunction(V)
-    C = 1 + 1j
+    C = 1.0 + 1.0j
     a = C * inner(grad(u), grad(v)) * dx + C * inner(u, v) * dx
     L = inner(f, v) * dx
 
@@ -119,4 +119,4 @@ def test_complex_assembly_solve():
 
     xnorm = x.norm(PETSc.NormType.N2)
     x_ref_norm = u_ref.vector.norm(PETSc.NormType.N2)
-    assert xnorm == pytest.approx(x_ref_norm, rel=1e-4)
+    assert xnorm == pytest.approx(x_ref_norm, abs=1e-3)
