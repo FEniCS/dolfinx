@@ -326,3 +326,11 @@ def copy_block_vector_to_sub_vectors(
         sub_vecs: typing.List[PETSc.Vec],
         L: typing.List[typing.Union[Form, cpp.fem.Form]]):
     cpp.fem.copy_block_vector_to_sub_vectors(x, sub_vecs, L)
+
+
+@convert_ufl_forms_to_dolfin_forms
+def copy_sub_vectors_to_block_vector(
+        sub_vecs: typing.List[PETSc.Vec],
+        x: PETSc.Vec,
+        L: typing.List[typing.Union[Form, cpp.fem.Form]]):
+    cpp.fem.copy_sub_vectors_to_block_vector(sub_vecs, x, L)

@@ -797,3 +797,69 @@ void fem::copy_block_vector_to_sub_vectors(Vec x, std::vector<Vec> sub_vecs,
   }
 }
 //-----------------------------------------------------------------------------
+void fem::copy_sub_vectors_to_block_vector(std::vector<Vec> sub_vecs, Vec x,
+                                           const std::vector<const fem::Form*> L)
+{
+  assert(sub_vecs.size() == L.size());
+
+  VecType vec_type;
+  VecGetType(x, &vec_type);
+  const bool is_vecnest = strcmp(vec_type, VECNEST) == 0;
+
+  std::cout << "check complete" << std::endl;
+  if (is_vecnest)
+  {
+    for (int i = 0; i < L.size(); ++i)
+    {
+      Vec nest_sub_vec;
+      VecNestGetSubVec(x, i, &nest_sub_vec);
+
+      la::VecWrapper nest_sub_vec_wrapper(nest_sub_vec);
+      la::VecReadWrapper sub_vec_wrapper(sub_vecs[i]);
+
+      // Copy owned and ghosted values
+      nest_sub_vec_wrapper.x = sub_vec_wrapper.x;
+
+      sub_vec_wrapper.restore();
+      nest_sub_vec_wrapper.restore();
+    }
+  }
+  else
+  {
+    // Get the offset for owned DoFs
+    int offset_owned = 0;
+    for (auto &_L : L)
+    {
+      auto map = _L->function_space(0)->dofmap()->index_map;
+      const int bs = map->block_size;
+      offset_owned += map->size_local() * bs;
+    }
+
+    la::VecWrapper x_wrapper(x);
+
+    int offset = 0;
+    int offset_ghost = offset_owned; // Ghost DoFs start after owned
+    for (int i = 0; i < L.size(); ++i)
+    {
+      auto map = L[i]->function_space(0)->dofmap()->index_map;
+      const int bs = map->block_size;
+      const int map_size0 = map->size_local() * bs;
+      const int map_size1 = map->num_ghosts() * bs;
+
+      la::VecReadWrapper sub_vec_wrapper(sub_vecs[i]);
+
+      std::cout << "Here" << i << std::endl;
+      // Copy the owned DoF values
+      x_wrapper.x.segment(offset, map_size0) = sub_vec_wrapper.x.segment(0, map_size0);
+      // Copy the ghost DoF values
+      x_wrapper.x.segment(offset_ghost, map_size1) = sub_vec_wrapper.x.segment(map_size0, map_size1);
+
+      offset += map_size0;
+      offset_ghost += map_size1;
+
+      sub_vec_wrapper.restore();
+    }
+    x_wrapper.restore();
+  }
+}
+//-----------------------------------------------------------------------------

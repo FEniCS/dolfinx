@@ -139,6 +139,9 @@ void fem(py::module& m)
   m.def("copy_block_vector_to_sub_vectors",
         &dolfin::fem::copy_block_vector_to_sub_vectors,
         "Copy the components of a blocked vector into corresponding sub vectors.");
+  m.def("copy_sub_vectors_to_block_vector",
+        &dolfin::fem::copy_sub_vectors_to_block_vector,
+        "Copy the sub vector components into corresponding blocked vector.");
   m.def("build_dofmap",
         [](const dolfin::mesh::Mesh& mesh,
            std::shared_ptr<const dolfin::fem::ElementDofLayout>

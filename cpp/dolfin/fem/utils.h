@@ -125,5 +125,9 @@ pack_coefficients(const fem::Form& form);
 void copy_block_vector_to_sub_vectors(Vec x, std::vector<Vec> sub_vecs,
         const std::vector<const fem::Form*> L);
 
+/// Copy the given sub vectors into a blocked vector, x, based on the
+/// provided blocked linear form, L.
+void copy_sub_vectors_to_block_vector(std::vector<Vec> sub_vecs, Vec x,
+        const std::vector<const fem::Form*> L);
 } // namespace fem
 } // namespace dolfin
