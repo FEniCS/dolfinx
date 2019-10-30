@@ -395,13 +395,13 @@ generate_recursive(const mesh::Mesh& mesh,
 
     // temporarily do nothing for cell types not yet implemented
     case (mesh::CellType::hexahedron):
-      break;
+      return Eigen::Array<int, Eigen::Dynamic, Eigen::Dynamic>();
     case (mesh::CellType::quadrilateral):
-      break;
+      return Eigen::Array<int, Eigen::Dynamic, Eigen::Dynamic>();
     case (mesh::CellType::interval):
-      break;
+      return Eigen::Array<int, Eigen::Dynamic, Eigen::Dynamic>();
     case (mesh::CellType::point):
-      break;
+      return Eigen::Array<int, Eigen::Dynamic, Eigen::Dynamic>();
 
     default:
       throw std::runtime_error(
@@ -423,6 +423,7 @@ generate_recursive(const mesh::Mesh& mesh,
       for (std::size_t j = 0; j < sub_view.size(); ++j)
         output(p, sub_view[j]) = sub_view[sub_perm(p, j)];
   }
+
   return output;
 }
 //-----------------------------------------------------------------------------
@@ -462,6 +463,7 @@ DofMapPermuter::DofMapPermuter(const mesh::Mesh& mesh,
         "Unrecognised cell type."); // The function should exit before this is
                                     // reached
   }
+
 }
 //-----------------------------------------------------------------------------
 std::vector<int> DofMapPermuter::cell_permutation(const int cell) const
