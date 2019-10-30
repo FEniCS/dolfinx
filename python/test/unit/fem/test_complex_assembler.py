@@ -85,7 +85,7 @@ def test_complex_assembly_solve():
     x = SpatialCoordinate(mesh)
 
     # Define source term
-    A = 1 + 2 * (2 * np.pi)**2
+    A = 1.0 + 2.0 * (2.0 * np.pi)**2
     f = (1. + 1j) * A * ufl.cos(2 * np.pi * x[0]) * ufl.cos(2 * np.pi * x[1])
 
     # Variational problem
@@ -103,7 +103,8 @@ def test_complex_assembly_solve():
 
     # Create solver
     solver = PETSc.KSP().create(mesh.mpi_comm())
-    opts = PETSc.Options()
+    solver.setOptionsPrefix("test_lu_")
+    opts = PETSc.Options("test_lu_")
     opts["ksp_type"] = "preonly"
     opts["pc_type"] = "lu"
     solver.setFromOptions()
@@ -119,4 +120,4 @@ def test_complex_assembly_solve():
 
     xnorm = x.norm(PETSc.NormType.N2)
     x_ref_norm = u_ref.vector.norm(PETSc.NormType.N2)
-    assert xnorm == pytest.approx(x_ref_norm, abs=1e-3)
+    assert xnorm == pytest.approx(x_ref_norm, rtol=1e-2)
