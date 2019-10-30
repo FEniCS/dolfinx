@@ -435,6 +435,17 @@ DofMapPermuter::DofMapPermuter(const mesh::Mesh& mesh,
   case (mesh::CellType::tetrahedron):
     _cell_orders = compute_ordering_tetrahedron(mesh, element_dof_layout);
     break;
+
+  // temporarily do nothing for cell types not yet implemented
+  case (mesh::CellType::hexahedron):
+    break;
+  case (mesh::CellType::quadrilateral):
+    break;
+  case (mesh::CellType::interval):
+    break;
+  case (mesh::CellType::point):
+    break;
+
   default:
     throw std::runtime_error(
         "Unrecognised cell type."); // The function should exit before this is
