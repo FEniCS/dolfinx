@@ -106,12 +106,16 @@ _triangle_rotation_and_reflection(const int face_dofs, const int blocksize)
   {
     int j = 0;
     int i = 1;
-    for (int st = blocks - 1; st >= 0; st -= (i++))
+    for (int st = blocks - 1; st >= 0; st -= i)
     {
+      ++i;
       int dof = st;
-      for (int sub = i + 1; sub <= side_length + 1; dof -= (sub++))
+      for (int sub = i + 1; sub <= side_length + 1; ++sub)
+      {
         for (int k = 0; k < blocksize; ++k)
           rotation[j++] = blocksize * dof + k;
+        dof -= sub;
+      }
     }
     assert(j == face_dofs);
   }
@@ -122,9 +126,12 @@ _triangle_rotation_and_reflection(const int face_dofs, const int blocksize)
     for (int st = 0; st < side_length; ++st)
     {
       int dof = st;
-      for (int add = side_length; add > st; dof += (add--))
+      for (int add = side_length; add > st; --add)
+      {
         for (int k = 0; k < blocksize; ++k)
           reflection[j++] = blocksize * dof + k;
+        dof += add;
+      }
     }
     assert(j == face_dofs);
   }

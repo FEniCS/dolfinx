@@ -54,7 +54,6 @@ enum class VolumeArrangementType : int
 };
 
 /// Class that contains information about the dof arrangement on entities
-/// TODO: Move all this into ElementDofLayout
 class EntityArrangementTypes
 {
 public:
