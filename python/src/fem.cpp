@@ -136,7 +136,9 @@ void fem(py::module& m)
         "Create DOLFIN DofMap object from a ufc dofmap.");
   m.def("create_form", &dolfin::fem::create_form,
         "Create DOLFIN form from a ufc form.");
-
+  m.def("copy_block_vector_to_sub_vectors",
+        &dolfin::fem::copy_block_vector_to_sub_vectors,
+        "Copy the components of a blocked vector into corresponding sub vectors.");
   m.def("build_dofmap",
         [](const dolfin::mesh::Mesh& mesh,
            std::shared_ptr<const dolfin::fem::ElementDofLayout>

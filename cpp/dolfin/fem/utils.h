@@ -120,5 +120,10 @@ create_functionspace(ufc_function_space* (*fptr)(void),
 Eigen::Array<PetscScalar, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
 pack_coefficients(const fem::Form& form);
 
+/// Given a blocked vector, x, copy its sub components which are
+/// defined by the list of forms, L, into the subvectors sub_vecs
+void copy_block_vector_to_sub_vectors(Vec x, std::vector<Vec> sub_vecs,
+        const std::vector<const fem::Form*> L);
+
 } // namespace fem
 } // namespace dolfin

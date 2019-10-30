@@ -285,3 +285,14 @@ def set_bc(b: PETSc.Vec,
 
     """
     cpp.fem.set_bc(b, bcs, x0, scale)
+
+
+# -- Utility methods for blocked systems --------------------------------------
+
+
+@convert_ufl_forms_to_dolfin_forms
+def copy_block_vector_to_sub_vectors(
+        x: PETSc.Vec,
+        sub_vecs: typing.List[PETSc.Vec],
+        L: typing.List[typing.Union[Form, cpp.fem.Form]]):
+    cpp.fem.copy_block_vector_to_sub_vectors(x, sub_vecs, L)

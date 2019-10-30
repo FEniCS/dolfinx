@@ -11,7 +11,8 @@ from dolfin.fem.assemble import (create_vector, create_vector_block, create_vect
                                  assemble_scalar, assemble_vector_block,
                                  assemble_vector_nest, assemble_matrix,
                                  assemble_matrix_nest, assemble_matrix_block,
-                                 set_bc, assemble_vector, apply_lifting)
+                                 set_bc, assemble_vector, apply_lifting,
+                                 copy_block_vector_to_sub_vectors)
 from dolfin.fem.coordinatemapping import create_coordinate_map
 from dolfin.fem.dirichletbc import DirichletBC
 from dolfin.fem.dofmap import DofMap
@@ -31,5 +32,5 @@ __all__ = [
     "assemble_matrix", "set_bc", "create_coordinate_map",
     "DirichletBC", "DofMap", "Form", "FormIntegrals",
     "derivative", "adjoint", "increase_order",
-    "tear", "project", "solve"
+    "tear", "project", "solve", "copy_block_vector_to_sub_vectors"
 ]

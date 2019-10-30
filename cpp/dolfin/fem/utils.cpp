@@ -733,3 +733,40 @@ fem::pack_coefficients(const fem::Form& form)
   return c;
 }
 //-----------------------------------------------------------------------------
+void fem::copy_block_vector_to_sub_vectors(Vec x, std::vector<Vec> sub_vecs,
+        const std::vector<const fem::Form*> L)
+{
+  assert(sub_vecs.size() == L.size());
+
+  int offset_owned = 0;
+  for (auto& _L : L)
+  {
+    auto map = _L->function_space(0)->dofmap()->index_map;
+    const int bs = map->block_size;
+    offset_owned += map->size_local() * bs;
+  }
+
+  la::VecReadWrapper x_wrapper(x);
+
+  int offset = 0;
+  int offset_ghost = offset_owned;
+  for (int i = 0; i < L.size(); ++i)
+  {
+    auto map = L[i]->function_space(0)->dofmap()->index_map;
+    const int bs = map->block_size;
+    const int map_size0 = map->size_local() * bs;
+    const int map_size1 = map->num_ghosts() * bs;
+
+    la::VecWrapper sub_vec_wrapper(sub_vecs[i]);
+
+    sub_vec_wrapper.x.segment(0, map_size0) = x_wrapper.x.segment(offset, map_size0);
+    sub_vec_wrapper.x.segment(map_size0, map_size1) = x_wrapper.x.segment(offset_ghost, map_size1);
+
+    offset += map_size0;
+    offset_ghost += map_size1;
+
+    sub_vec_wrapper.restore();
+  }
+  x_wrapper.restore();
+}
+//-----------------------------------------------------------------------------
