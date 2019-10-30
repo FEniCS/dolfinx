@@ -119,4 +119,4 @@ def test_complex_assembly_solve():
 
     xnorm = x.norm(PETSc.NormType.N2)
     x_ref_norm = u_ref.vector.norm(PETSc.NormType.N2)
-    assert xnorm == pytest.approx(x_ref_norm, rel=1e-6)
+    assert xnorm == pytest.approx(x_ref_norm, rel=1e-4)
