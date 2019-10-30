@@ -318,20 +318,23 @@ generate_permutations_triangle(const mesh::Mesh& mesh,
     permutations.col(i) = i;
 
   // Make edge flipping permutations
-  std::vector<int> base_flip = edge_flip(edge_dofs, edge_bs);
+  const std::vector<int> base_flip = edge_flip(edge_dofs, edge_bs);
   for (int edge_n = 0; edge_n < 3; ++edge_n)
   {
     const Eigen::Array<int, Eigen::Dynamic, 1> edge
         = dof_layout.entity_dofs(1, edge_n);
-    apply_permutation(permutations, edge_n, edge, base_flip, 2);
+    for (std::size_t i = 0; i < base_flip.size(); ++i)
+      permutations(edge_n, edge(i)) = edge(base_flip[i]);
   }
   // Make permutations that rotate and reflect the face dofs
   const std::array<std::vector<int>, 2> base_faces
       = triangle_rotation_and_reflection(face_dofs, face_bs);
   const Eigen::Array<int, Eigen::Dynamic, 1> face
       = dof_layout.entity_dofs(2, 0);
-  apply_permutation(permutations, 3, face, base_faces[0], 3);
-  apply_permutation(permutations, 4, face, base_faces[1], 2);
+  for (std::size_t i = 0; i < base_faces[0].size(); ++i)
+    permutations(3, face(i)) = face(base_faces[0][i]);
+  for (std::size_t i = 0; i < base_faces[1].size(); ++i)
+    permutations(4, face(i)) = face(base_faces[1][i]);
 
   return permutations;
 }
