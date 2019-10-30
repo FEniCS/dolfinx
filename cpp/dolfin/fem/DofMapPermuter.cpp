@@ -392,6 +392,17 @@ generate_recursive(const mesh::Mesh& mesh,
       return generate_triangle(mesh, element_dof_layout);
     case (mesh::CellType::tetrahedron):
       return generate_tetrahedron(mesh, element_dof_layout);
+
+    // temporarily do nothing for cell types not yet implemented
+    case (mesh::CellType::hexahedron):
+      break;
+    case (mesh::CellType::quadrilateral):
+      break;
+    case (mesh::CellType::interval):
+      break;
+    case (mesh::CellType::point):
+      break;
+
     default:
       throw std::runtime_error(
           "Unrecognised cell type."); // The function should exit before this is
