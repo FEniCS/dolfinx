@@ -15,6 +15,21 @@ namespace dolfin
 namespace
 {
 //-----------------------------------------------------------------------------
+int get_num_permutations(mesh::CellType cell_type)
+{
+  switch (cell_type)
+  {
+  case (mesh::CellType::triangle):
+    return 5;
+  case (mesh::CellType::tetrahedron):
+    return 18;
+  default:
+    LOG(WARNING) << "Dof permutations are not defined for this cell type. High "
+                    "order elements may be incorrect.";
+    return 0;
+  }
+}
+//-----------------------------------------------------------------------------
 void permute(std::vector<int>& vec,
              const Eigen::Array<PetscInt, Eigen::Dynamic, 1>& perm)
 {
@@ -144,8 +159,8 @@ std::array<std::vector<int>, 4>
 tetrahedron_rotations_and_reflection(const int volume_dofs, const int blocksize)
 {
   // FIXME: This function assumes the layout of the dofs are in a triangle
-  // shape. This is true for Lagrange space, but not true for eg N1curl spaces.
-  // This will only be called at most once for each mesh
+  // shape. This is true for Lagrange space, but not true for eg N1curl
+  // spaces. This will only be called at most once for each mesh
   const int blocks = volume_dofs / blocksize;
   int side_length = 0;
   while (side_length * (side_length + 1) * (side_length + 2) < 6 * blocks)
@@ -311,19 +326,21 @@ void DofMapPermuter::set_order(const int cell, const int permutation,
 }
 //-----------------------------------------------------------------------------
 Eigen::Array<PetscInt, Eigen::Dynamic, Eigen::Dynamic>
-DofMapPermuter::generate_triangle(
-    const mesh::Mesh& mesh, const ElementDofLayout& element_dof_layout) const
+DofMapPermuter::generate_triangle(const mesh::Mesh& mesh,
+                                  const ElementDofLayout& element_dof_layout)
 {
+  const int num_permutations = get_num_permutations(mesh.cell_type());
+  const int dof_count = element_dof_layout.num_dofs();
+
   const int edge_dofs = element_dof_layout.num_entity_dofs(1);
   const int face_dofs = element_dof_layout.num_entity_dofs(2);
   const int edge_bs = element_dof_layout.entity_block_size(1);
   const int face_bs = element_dof_layout.entity_block_size(2);
 
   Eigen::Array<PetscInt, Eigen::Dynamic, Eigen::Dynamic> permutations(
-      _permutation_count, _dof_count);
-  for (int i = 0; i < element_dof_layout.num_dofs(); ++i)
-    for (int j = 0; j < _permutation_count; ++j)
-      permutations(j, i) = i;
+      num_permutations, dof_count);
+  for (int i = 0; i < permutations.cols(); ++i)
+    permutations.col(i) = i;
 
   // Make edge flipping permutations
   std::vector<int> base_flip = edge_flip(edge_dofs, edge_bs);
