@@ -31,7 +31,7 @@ int get_num_permutations(mesh::CellType cell_type)
 }
 //-----------------------------------------------------------------------------
 void permute(std::vector<int>& vec,
-             const Eigen::Array<PetscInt, Eigen::Dynamic, 1>& perm)
+             const Eigen::Array<int, Eigen::Dynamic, 1>& perm)
 {
   std::vector<int> temp(vec);
   for (std::size_t i = 0; i < vec.size(); ++i)
@@ -217,8 +217,8 @@ tetrahedron_rotations_and_reflection(const int volume_dofs, const int blocksize)
 }
 //-----------------------------------------------------------------------------
 void apply_permutation(
-    Eigen::Array<PetscInt, Eigen::Dynamic, Eigen::Dynamic>& permutations,
-    const int index, const Eigen::Array<PetscInt, Eigen::Dynamic, 1>& dofs,
+    Eigen::Array<int, Eigen::Dynamic, Eigen::Dynamic>& permutations,
+    const int index, const Eigen::Array<int, Eigen::Dynamic, 1>& dofs,
     const std::vector<int>& base_permutation, int order)
 {
   for (std::size_t i = 0; i < base_permutation.size(); ++i)
@@ -234,8 +234,7 @@ namespace fem
 //-----------------------------------------------------------------------------
 DofMapPermuter::DofMapPermuter(const mesh::Mesh& mesh,
                                const ElementDofLayout& element_dof_layout)
-    : _dof_count(element_dof_layout.num_dofs()),
-      _cell_count(mesh.num_entities(mesh.topology().dim()))
+    : _dof_count(element_dof_layout.num_dofs())
 {
   switch (mesh.cell_type())
   {
@@ -252,17 +251,18 @@ DofMapPermuter::DofMapPermuter(const mesh::Mesh& mesh,
     return;
   }
 
-  _cell_orders = Eigen::Array<PetscInt, Eigen::Dynamic, Eigen::Dynamic>::Zero(
-      _cell_count, _permutation_count);
+  const int num_cells = mesh.num_entities(mesh.topology().dim());
+  _cell_orders = Eigen::Array<int, Eigen::Dynamic, Eigen::Dynamic>::Zero(
+      num_cells, _permutation_count);
   _permutations = generate_recursive(mesh, element_dof_layout);
 
   switch (mesh.cell_type())
   {
   case (mesh::CellType::triangle):
-    set_orders_triangle(mesh, element_dof_layout);
+    _cell_orders = set_orders_triangle(mesh, element_dof_layout);
     break;
   case (mesh::CellType::tetrahedron):
-    set_orders_tetrahedron(mesh, element_dof_layout);
+    _cell_orders = set_orders_tetrahedron(mesh, element_dof_layout);
     break;
   default:
     throw std::runtime_error(
@@ -285,7 +285,7 @@ std::vector<int> DofMapPermuter::cell_permutation(const int cell) const
 //-----------------------------------------------------------------------------
 // private:
 //-----------------------------------------------------------------------------
-Eigen::Array<PetscInt, Eigen::Dynamic, Eigen::Dynamic>
+Eigen::Array<int, Eigen::Dynamic, Eigen::Dynamic>
 DofMapPermuter::generate_recursive(
     const mesh::Mesh& mesh, const ElementDofLayout& element_dof_layout) const
 {
@@ -304,7 +304,7 @@ DofMapPermuter::generate_recursive(
     }
   }
 
-  Eigen::Array<PetscInt, Eigen::Dynamic, Eigen::Dynamic> output(
+  Eigen::Array<int, Eigen::Dynamic, Eigen::Dynamic> output(
       _permutation_count, element_dof_layout.num_dofs());
 
   for (int i = 0; i < element_dof_layout.num_sub_dofmaps(); ++i)
@@ -319,13 +319,7 @@ DofMapPermuter::generate_recursive(
   return output;
 }
 //-----------------------------------------------------------------------------
-void DofMapPermuter::set_order(const int cell, const int permutation,
-                               const int order)
-{
-  _cell_orders(cell, permutation) = order;
-}
-//-----------------------------------------------------------------------------
-Eigen::Array<PetscInt, Eigen::Dynamic, Eigen::Dynamic>
+Eigen::Array<int, Eigen::Dynamic, Eigen::Dynamic>
 DofMapPermuter::generate_triangle(const mesh::Mesh& mesh,
                                   const ElementDofLayout& element_dof_layout)
 {
@@ -337,7 +331,7 @@ DofMapPermuter::generate_triangle(const mesh::Mesh& mesh,
   const int edge_bs = element_dof_layout.entity_block_size(1);
   const int face_bs = element_dof_layout.entity_block_size(2);
 
-  Eigen::Array<PetscInt, Eigen::Dynamic, Eigen::Dynamic> permutations(
+  Eigen::Array<int, Eigen::Dynamic, Eigen::Dynamic> permutations(
       num_permutations, dof_count);
   for (int i = 0; i < permutations.cols(); ++i)
     permutations.col(i) = i;
@@ -358,7 +352,7 @@ DofMapPermuter::generate_triangle(const mesh::Mesh& mesh,
   return permutations;
 }
 //-----------------------------------------------------------------------------
-Eigen::Array<PetscInt, Eigen::Dynamic, Eigen::Dynamic>
+Eigen::Array<int, Eigen::Dynamic, Eigen::Dynamic>
 DofMapPermuter::generate_tetrahedron(const mesh::Mesh& mesh,
                                      const ElementDofLayout& element_dof_layout)
 {
@@ -372,7 +366,7 @@ DofMapPermuter::generate_tetrahedron(const mesh::Mesh& mesh,
   const int face_bs = element_dof_layout.entity_block_size(2);
   const int volume_bs = element_dof_layout.entity_block_size(3);
 
-  Eigen::Array<PetscInt, Eigen::Dynamic, Eigen::Dynamic> permutations(
+  Eigen::Array<int, Eigen::Dynamic, Eigen::Dynamic> permutations(
       num_permutations, dof_count);
   for (int i = 0; i < permutations.cols(); ++i)
     permutations.col(i) = i;
@@ -403,11 +397,17 @@ DofMapPermuter::generate_tetrahedron(const mesh::Mesh& mesh,
   return permutations;
 }
 //-----------------------------------------------------------------------------
-void DofMapPermuter::set_orders_triangle(
-    const mesh::Mesh& mesh, const ElementDofLayout& element_dof_layout)
+Eigen::Array<int, Eigen::Dynamic, Eigen::Dynamic>
+DofMapPermuter::set_orders_triangle(const mesh::Mesh& mesh,
+                                    const ElementDofLayout& element_dof_layout)
 {
+  const int num_cells = mesh.num_entities(mesh.topology().dim());
+  const int num_permutations = get_num_permutations(mesh.cell_type());
+  Eigen::Array<int, Eigen::Dynamic, Eigen::Dynamic> _cell_orders(
+      num_cells, num_permutations);
+
   // Set orders for each cell
-  for (int cell_n = 0; cell_n < _cell_count; ++cell_n)
+  for (int cell_n = 0; cell_n < num_cells; ++cell_n)
   {
     const mesh::MeshEntity cell(mesh, 2, cell_n);
     const std::int32_t* vertices = cell.entities(0);
@@ -420,48 +420,58 @@ void DofMapPermuter::set_orders_triangle(
     _cell_orders(cell_n, 3) = tri_orders[0];
     _cell_orders(cell_n, 4) = tri_orders[0];
   }
+
+  return _cell_orders;
 }
 //-----------------------------------------------------------------------------
-void DofMapPermuter::set_orders_tetrahedron(
+Eigen::Array<int, Eigen::Dynamic, Eigen::Dynamic>
+DofMapPermuter::set_orders_tetrahedron(
     const mesh::Mesh& mesh, const ElementDofLayout& element_dof_layout)
 {
+  const int num_cells = mesh.num_entities(mesh.topology().dim());
+  const int num_permutations = get_num_permutations(mesh.cell_type());
+  Eigen::Array<int, Eigen::Dynamic, Eigen::Dynamic> _cell_orders(
+      num_cells, num_permutations);
+
   // Set orders for each cell
-  for (int cell_n = 0; cell_n < _cell_count; ++cell_n)
+  for (int cell_n = 0; cell_n < num_cells; ++cell_n)
   {
     const mesh::MeshEntity cell(mesh, 3, cell_n);
     const std::int32_t* vertices = cell.entities(0);
 
-    set_order(cell_n, 0, vertices[2] > vertices[3]);
-    set_order(cell_n, 1, vertices[1] > vertices[3]);
-    set_order(cell_n, 2, vertices[1] > vertices[2]);
-    set_order(cell_n, 3, vertices[0] > vertices[3]);
-    set_order(cell_n, 4, vertices[0] > vertices[2]);
-    set_order(cell_n, 5, vertices[0] > vertices[1]);
+    _cell_orders(cell_n, 0) = (vertices[2] > vertices[3]);
+    _cell_orders(cell_n, 1) = (vertices[1] > vertices[3]);
+    _cell_orders(cell_n, 2) = (vertices[1] > vertices[2]);
+    _cell_orders(cell_n, 3) = (vertices[0] > vertices[3]);
+    _cell_orders(cell_n, 4) = (vertices[0] > vertices[2]);
+    _cell_orders(cell_n, 5) = (vertices[0] > vertices[1]);
 
     auto tri_orders
         = calculate_triangle_orders(vertices[1], vertices[2], vertices[3]);
-    set_order(cell_n, 6, tri_orders[0]);
-    set_order(cell_n, 7, tri_orders[1]);
+    _cell_orders(cell_n, 6) = tri_orders[0];
+    _cell_orders(cell_n, 7) = tri_orders[1];
     tri_orders
         = calculate_triangle_orders(vertices[0], vertices[2], vertices[3]);
-    set_order(cell_n, 8, tri_orders[0]);
-    set_order(cell_n, 9, tri_orders[1]);
+    _cell_orders(cell_n, 8) = tri_orders[0];
+    _cell_orders(cell_n, 9) = tri_orders[1];
     tri_orders
         = calculate_triangle_orders(vertices[0], vertices[1], vertices[3]);
-    set_order(cell_n, 10, tri_orders[0]);
-    set_order(cell_n, 11, tri_orders[1]);
+    _cell_orders(cell_n, 10) = tri_orders[0];
+    _cell_orders(cell_n, 11) = tri_orders[1];
     tri_orders
         = calculate_triangle_orders(vertices[0], vertices[1], vertices[2]);
-    set_order(cell_n, 12, tri_orders[0]);
-    set_order(cell_n, 13, tri_orders[1]);
+    _cell_orders(cell_n, 12) = tri_orders[0];
+    _cell_orders(cell_n, 13) = tri_orders[1];
 
     auto tet_orders = calculate_tetrahedron_orders(vertices[0], vertices[1],
                                                    vertices[2], vertices[3]);
-    set_order(cell_n, 14, tet_orders[0]);
-    set_order(cell_n, 15, tet_orders[1]);
-    set_order(cell_n, 16, tet_orders[2]);
-    set_order(cell_n, 17, tet_orders[3]);
+    _cell_orders(cell_n, 14) = tri_orders[0];
+    _cell_orders(cell_n, 15) = tri_orders[1];
+    _cell_orders(cell_n, 16) = tri_orders[2];
+    _cell_orders(cell_n, 17) = tri_orders[3];
   }
+
+  return _cell_orders;
 }
 //-----------------------------------------------------------------------------
 } // namespace fem

@@ -48,27 +48,22 @@ private:
                        const ElementDofLayout& element_dof_layout);
 
   // Functions called by the constructor for specific mesh types
-  void set_orders_triangle(const mesh::Mesh& mesh,
-                           const ElementDofLayout& element_dof_layout);
-  void set_orders_tetrahedron(const mesh::Mesh& mesh,
-                              const ElementDofLayout& element_dof_layout);
+  static Eigen::Array<PetscInt, Eigen::Dynamic, Eigen::Dynamic>
+  set_orders_triangle(const mesh::Mesh& mesh,
+                      const ElementDofLayout& element_dof_layout);
+  static Eigen::Array<PetscInt, Eigen::Dynamic, Eigen::Dynamic>
+  set_orders_tetrahedron(const mesh::Mesh& mesh,
+                         const ElementDofLayout& element_dof_layout);
 
   // The number of dofs and cells and permutations
   int _dof_count;
-  int _cell_count;
   int _permutation_count;
 
-  // Sets the orders of a permutation for a cell
-  // @param[in] cell The cell index
-  /// @param[in] permutation The permutation index
-  // @param[in] orders The permutation order
-  void set_order(const int cell, const int permutation, const int order);
-
   // The orders of each cell
-  Eigen::Array<PetscInt, Eigen::Dynamic, Eigen::Dynamic> _cell_orders;
+  Eigen::Array<int, Eigen::Dynamic, Eigen::Dynamic> _cell_orders;
 
   // The permutations
-  Eigen::Array<PetscInt, Eigen::Dynamic, Eigen::Dynamic> _permutations;
+  Eigen::Array<int, Eigen::Dynamic, Eigen::Dynamic> _permutations;
 };
 
 } // namespace fem
