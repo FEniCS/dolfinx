@@ -43,9 +43,9 @@ private:
   generate_triangle(const mesh::Mesh& mesh,
                     const ElementDofLayout& element_dof_layout);
 
-  Eigen::Array<PetscInt, Eigen::Dynamic, Eigen::Dynamic>
+  static Eigen::Array<PetscInt, Eigen::Dynamic, Eigen::Dynamic>
   generate_tetrahedron(const mesh::Mesh& mesh,
-                       const ElementDofLayout& element_dof_layout) const;
+                       const ElementDofLayout& element_dof_layout);
 
   // Functions called by the constructor for specific mesh types
   void set_orders_triangle(const mesh::Mesh& mesh,

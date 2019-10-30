@@ -359,9 +359,12 @@ DofMapPermuter::generate_triangle(const mesh::Mesh& mesh,
 }
 //-----------------------------------------------------------------------------
 Eigen::Array<PetscInt, Eigen::Dynamic, Eigen::Dynamic>
-DofMapPermuter::generate_tetrahedron(
-    const mesh::Mesh& mesh, const ElementDofLayout& element_dof_layout) const
+DofMapPermuter::generate_tetrahedron(const mesh::Mesh& mesh,
+                                     const ElementDofLayout& element_dof_layout)
 {
+  const int num_permutations = get_num_permutations(mesh.cell_type());
+  const int dof_count = element_dof_layout.num_dofs();
+
   const int edge_dofs = element_dof_layout.num_entity_dofs(1);
   const int face_dofs = element_dof_layout.num_entity_dofs(2);
   const int volume_dofs = element_dof_layout.num_entity_dofs(3);
@@ -370,10 +373,9 @@ DofMapPermuter::generate_tetrahedron(
   const int volume_bs = element_dof_layout.entity_block_size(3);
 
   Eigen::Array<PetscInt, Eigen::Dynamic, Eigen::Dynamic> permutations(
-      _permutation_count, _dof_count);
-  for (int i = 0; i < element_dof_layout.num_dofs(); ++i)
-    for (int j = 0; j < _permutation_count; ++j)
-      permutations(j, i) = i;
+      num_permutations, dof_count);
+  for (int i = 0; i < permutations.cols(); ++i)
+    permutations.col(i) = i;
 
   // Make edge flipping permutations
   std::vector<int> base_flip = edge_flip(edge_dofs, edge_bs);
@@ -409,15 +411,14 @@ void DofMapPermuter::set_orders_triangle(
   {
     const mesh::MeshEntity cell(mesh, 2, cell_n);
     const std::int32_t* vertices = cell.entities(0);
-    std::vector<int> orders(5);
-    set_order(cell_n, 0, vertices[1] > vertices[2]);
-    set_order(cell_n, 1, vertices[0] > vertices[2]);
-    set_order(cell_n, 2, vertices[0] > vertices[1]);
+    _cell_orders(cell_n, 0) = (vertices[1] > vertices[2]);
+    _cell_orders(cell_n, 1) = (vertices[0] > vertices[2]);
+    _cell_orders(cell_n, 2) = (vertices[0] > vertices[1]);
 
     auto tri_orders
         = calculate_triangle_orders(vertices[0], vertices[1], vertices[2]);
-    set_order(cell_n, 3, tri_orders[0]);
-    set_order(cell_n, 4, tri_orders[1]);
+    _cell_orders(cell_n, 3) = tri_orders[0];
+    _cell_orders(cell_n, 4) = tri_orders[0];
   }
 }
 //-----------------------------------------------------------------------------
