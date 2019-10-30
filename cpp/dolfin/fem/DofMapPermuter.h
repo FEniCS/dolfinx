@@ -34,9 +34,9 @@ public:
   std::vector<int> cell_permutation(const int cell) const;
 
 private:
-  Eigen::Array<PetscInt, Eigen::Dynamic, Eigen::Dynamic>
+  static Eigen::Array<PetscInt, Eigen::Dynamic, Eigen::Dynamic>
   generate_recursive(const mesh::Mesh& mesh,
-                     const ElementDofLayout& element_dof_layout) const;
+                     const ElementDofLayout& element_dof_layout);
 
   // Functions called by the constructor for specific mesh types
   static Eigen::Array<PetscInt, Eigen::Dynamic, Eigen::Dynamic>

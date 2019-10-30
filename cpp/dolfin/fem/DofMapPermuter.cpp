@@ -286,8 +286,8 @@ std::vector<int> DofMapPermuter::cell_permutation(const int cell) const
 // private:
 //-----------------------------------------------------------------------------
 Eigen::Array<int, Eigen::Dynamic, Eigen::Dynamic>
-DofMapPermuter::generate_recursive(
-    const mesh::Mesh& mesh, const ElementDofLayout& element_dof_layout) const
+DofMapPermuter::generate_recursive(const mesh::Mesh& mesh,
+                                   const ElementDofLayout& element_dof_layout)
 {
   if (element_dof_layout.num_sub_dofmaps() == 0)
   {
@@ -304,15 +304,16 @@ DofMapPermuter::generate_recursive(
     }
   }
 
+  const int num_permutations = get_num_permutations(mesh.cell_type());
   Eigen::Array<int, Eigen::Dynamic, Eigen::Dynamic> output(
-      _permutation_count, element_dof_layout.num_dofs());
+      num_permutations, element_dof_layout.num_dofs());
 
   for (int i = 0; i < element_dof_layout.num_sub_dofmaps(); ++i)
   {
     auto sub_view = element_dof_layout.sub_view({i});
-    auto sub_perm
+    const Eigen::Array<int, Eigen::Dynamic, Eigen::Dynamic> sub_perm
         = generate_recursive(mesh, *element_dof_layout.sub_dofmap({i}));
-    for (int p = 0; p < _permutation_count; ++p)
+    for (int p = 0; p < num_permutations; ++p)
       for (std::size_t j = 0; j < sub_view.size(); ++j)
         output(p, sub_view[j]) = sub_view[sub_perm(p, j)];
   }
