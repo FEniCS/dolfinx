@@ -226,26 +226,11 @@ namespace fem
 //-----------------------------------------------------------------------------
 DofMapPermuter::DofMapPermuter(const mesh::Mesh& mesh,
                                const ElementDofLayout& element_dof_layout)
-    : _dof_count(element_dof_layout.num_dofs())
 {
-  switch (mesh.cell_type())
-  {
-  case (mesh::CellType::triangle):
-    _permutation_count = 5;
-    break;
-  case (mesh::CellType::tetrahedron):
-    _permutation_count = 18;
-    break;
-  default:
-    _permutation_count = 0;
-    LOG(WARNING) << "Dof permutations are not defined for this cell type. High "
-                    "order elements may be incorrect.";
-    return;
-  }
-
   const int num_cells = mesh.num_entities(mesh.topology().dim());
+  const int num_permutations = get_num_permutations(mesh.cell_type());
   _cell_orders = Eigen::Array<int, Eigen::Dynamic, Eigen::Dynamic>::Zero(
-      num_cells, _permutation_count);
+      num_cells, num_permutations);
   _permutations = generate_recursive(mesh, element_dof_layout);
 
   switch (mesh.cell_type())
@@ -265,10 +250,10 @@ DofMapPermuter::DofMapPermuter(const mesh::Mesh& mesh,
 //-----------------------------------------------------------------------------
 std::vector<int> DofMapPermuter::cell_permutation(const int cell) const
 {
-  std::vector<int> p(_dof_count);
+  std::vector<int> p(_permutations.cols());
   std::iota(p.begin(), p.end(), 0);
 
-  for (int i = 0; i < _permutation_count; ++i)
+  for (int i = 0; i < _cell_orders.cols(); ++i)
   {
     for (int j = 0; j < _cell_orders(cell, i); ++j)
     {

@@ -55,10 +55,6 @@ private:
   set_orders_tetrahedron(const mesh::Mesh& mesh,
                          const ElementDofLayout& element_dof_layout);
 
-  // The number of dofs and cells and permutations
-  int _dof_count;
-  int _permutation_count;
-
   // The orders of each cell
   Eigen::Array<int, Eigen::Dynamic, Eigen::Dynamic> _cell_orders;
 
