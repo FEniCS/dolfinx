@@ -271,8 +271,8 @@ std::vector<int> DofMapPermuter::cell_permutation(const int cell) const
 // private:
 //-----------------------------------------------------------------------------
 Eigen::Array<PetscInt, Eigen::Dynamic, Eigen::Dynamic>
-DofMapPermuter::generate_recursive(const mesh::Mesh& mesh,
-                                   const ElementDofLayout& element_dof_layout)
+DofMapPermuter::generate_recursive(
+    const mesh::Mesh& mesh, const ElementDofLayout& element_dof_layout) const
 {
   if (element_dof_layout.num_sub_dofmaps() == 0)
   {
@@ -311,8 +311,8 @@ void DofMapPermuter::set_order(const int cell, const int permutation,
 }
 //-----------------------------------------------------------------------------
 Eigen::Array<PetscInt, Eigen::Dynamic, Eigen::Dynamic>
-DofMapPermuter::generate_triangle(const mesh::Mesh& mesh,
-                                  const ElementDofLayout& element_dof_layout)
+DofMapPermuter::generate_triangle(
+    const mesh::Mesh& mesh, const ElementDofLayout& element_dof_layout) const
 {
   const int edge_dofs = element_dof_layout.num_entity_dofs(1);
   const int face_dofs = element_dof_layout.num_entity_dofs(2);
@@ -342,8 +342,8 @@ DofMapPermuter::generate_triangle(const mesh::Mesh& mesh,
 }
 //-----------------------------------------------------------------------------
 Eigen::Array<PetscInt, Eigen::Dynamic, Eigen::Dynamic>
-DofMapPermuter::generate_tetrahedron(const mesh::Mesh& mesh,
-                                     const ElementDofLayout& element_dof_layout)
+DofMapPermuter::generate_tetrahedron(
+    const mesh::Mesh& mesh, const ElementDofLayout& element_dof_layout) const
 {
   const int edge_dofs = element_dof_layout.num_entity_dofs(1);
   const int face_dofs = element_dof_layout.num_entity_dofs(2);

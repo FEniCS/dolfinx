@@ -36,22 +36,22 @@ public:
 private:
   Eigen::Array<PetscInt, Eigen::Dynamic, Eigen::Dynamic>
   generate_recursive(const mesh::Mesh& mesh,
-                      const ElementDofLayout& element_dof_layout);
+                     const ElementDofLayout& element_dof_layout) const;
 
   // Functions called by the constructor for specific mesh types
   Eigen::Array<PetscInt, Eigen::Dynamic, Eigen::Dynamic>
   generate_triangle(const mesh::Mesh& mesh,
-                     const ElementDofLayout& element_dof_layout);
+                    const ElementDofLayout& element_dof_layout) const;
 
   Eigen::Array<PetscInt, Eigen::Dynamic, Eigen::Dynamic>
   generate_tetrahedron(const mesh::Mesh& mesh,
-                        const ElementDofLayout& element_dof_layout);
+                       const ElementDofLayout& element_dof_layout) const;
 
   // Functions called by the constructor for specific mesh types
   void set_orders_triangle(const mesh::Mesh& mesh,
-                            const ElementDofLayout& element_dof_layout);
+                           const ElementDofLayout& element_dof_layout);
   void set_orders_tetrahedron(const mesh::Mesh& mesh,
-                               const ElementDofLayout& element_dof_layout);
+                              const ElementDofLayout& element_dof_layout);
 
   // The number of dofs and cells and permutations
   int _dof_count;
