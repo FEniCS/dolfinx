@@ -116,5 +116,10 @@ std::shared_ptr<function::FunctionSpace>
 create_functionspace(ufc_function_space* (*fptr)(void),
                      std::shared_ptr<mesh::Mesh> mesh);
 
+// NOTE: This is subject to change
+/// Pack form coeffcients ready for assembly
+Eigen::Array<PetscScalar, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
+pack_coefficients(const fem::Form& form);
+
 } // namespace fem
 } // namespace dolfin
