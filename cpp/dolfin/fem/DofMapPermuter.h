@@ -35,25 +35,22 @@ public:
 
 private:
   Eigen::Array<PetscInt, Eigen::Dynamic, Eigen::Dynamic>
-  _generate_recursive(const mesh::Mesh& mesh,
+  generate_recursive(const mesh::Mesh& mesh,
                       const ElementDofLayout& element_dof_layout);
 
   // Functions called by the constructor for specific mesh types
   Eigen::Array<PetscInt, Eigen::Dynamic, Eigen::Dynamic>
-  _generate_triangle(const mesh::Mesh& mesh,
+  generate_triangle(const mesh::Mesh& mesh,
                      const ElementDofLayout& element_dof_layout);
 
   Eigen::Array<PetscInt, Eigen::Dynamic, Eigen::Dynamic>
-  _generate_tetrahedron(const mesh::Mesh& mesh,
+  generate_tetrahedron(const mesh::Mesh& mesh,
                         const ElementDofLayout& element_dof_layout);
 
-  void _set_orders(const mesh::Mesh& mesh,
-                   const ElementDofLayout& element_dof_layout);
-
   // Functions called by the constructor for specific mesh types
-  void _set_orders_triangle(const mesh::Mesh& mesh,
+  void set_orders_triangle(const mesh::Mesh& mesh,
                             const ElementDofLayout& element_dof_layout);
-  void _set_orders_tetrahedron(const mesh::Mesh& mesh,
+  void set_orders_tetrahedron(const mesh::Mesh& mesh,
                                const ElementDofLayout& element_dof_layout);
 
   // The number of dofs and cells and permutations
@@ -65,7 +62,7 @@ private:
   // @param[in] cell The cell index
   /// @param[in] permutation The permutation index
   // @param[in] orders The permutation order
-  void _set_order(const int cell, const int permutation, const int order);
+  void set_order(const int cell, const int permutation, const int order);
 
   // The orders of each cell
   Eigen::Array<PetscInt, Eigen::Dynamic, Eigen::Dynamic> _cell_orders;
