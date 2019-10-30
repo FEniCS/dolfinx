@@ -38,7 +38,7 @@ def test_complex_assembly():
     b.ghostUpdate(addv=PETSc.InsertMode.ADD, mode=PETSc.ScatterMode.REVERSE)
     bnorm = b.norm(PETSc.NormType.N1)
     b_norm_ref = abs(-2 + 3.0j)
-    assert np.isclose(bnorm, b_norm_ref)
+    assert bnorm == pytest.appropx(b_norm_ref)
 
     A = dolfin.fem.assemble_matrix(a_real)
     A.assemble()
@@ -52,7 +52,8 @@ def test_complex_assembly():
     A = dolfin.fem.assemble_matrix(a_imag)
     A.assemble()
     A1_norm = A.norm(PETSc.NormType.FROBENIUS)
-    assert np.isclose(A0_norm, A1_norm)
+    assert A0_norm == pytest.appropx(A1_norm)
+
     b = dolfin.fem.assemble_vector(L0)
     b.ghostUpdate(addv=PETSc.InsertMode.ADD, mode=PETSc.ScatterMode.REVERSE)
     b1_norm = b.norm(PETSc.NormType.N2)
@@ -63,11 +64,11 @@ def test_complex_assembly():
     A = dolfin.fem.assemble_matrix(a_complex)
     A.assemble()
     A2_norm = A.norm(PETSc.NormType.FROBENIUS)
-    assert np.isclose(A1_norm, A2_norm / np.sqrt(2))
+    assert A1_norm == pytest.appropx(A2_norm / np.sqrt(2))
     b = dolfin.fem.assemble_vector(L2)
     b.ghostUpdate(addv=PETSc.InsertMode.ADD, mode=PETSc.ScatterMode.REVERSE)
     b2_norm = b.norm(PETSc.NormType.N2)
-    assert np.isclose(b2_norm, b1_norm)
+    assert b2_norm == pytest.appropx(b1_norm)
 
 
 def test_complex_assembly_solve():
@@ -118,4 +119,4 @@ def test_complex_assembly_solve():
 
     xnorm = x.norm(PETSc.NormType.N2)
     x_ref_norm = u_ref.vector.norm(PETSc.NormType.N2)
-    assert np.isclose(xnorm, x_ref_norm)
+    assert xnorm == pytest.approx(x_ref_norm)
