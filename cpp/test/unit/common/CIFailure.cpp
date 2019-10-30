@@ -15,18 +15,15 @@ namespace
 {
 void test_ci_failure()
 {
-  int argc = 0;
-  char** argv = nullptr;
-  PetscInitialize(&argc, &argv, nullptr, nullptr);
 
   auto mpi_comm = dolfin::MPI::Comm(MPI_COMM_WORLD);
   int mpi_rank = dolfin::MPI::rank(mpi_comm.comm());
+  int mpi_size = dolfin::MPI::size(mpi_comm.comm());
 
-  CHECK(mpi_rank == 0);
+  // Throw exeption
+  if (mpi_size == 0)
+    REQUIRE(mpi_rank == 0);
 }
 } // namespace
 
-TEST_CASE("CI failure", "[ci_failure]")
-{
-  CHECK_NOTHROW(test_ci_failure());
-}
+TEST_CASE("CI failure", "[ci_failure]") { CHECK_NOTHROW(test_ci_failure()); }
