@@ -228,12 +228,7 @@ namespace fem
 DofMapPermuter::DofMapPermuter(const mesh::Mesh& mesh,
                                const ElementDofLayout& element_dof_layout)
 {
-  const int num_cells = mesh.num_entities(mesh.topology().dim());
-  const int num_permutations = get_num_permutations(mesh.cell_type());
-  _cell_orders = Eigen::Array<int, Eigen::Dynamic, Eigen::Dynamic>::Zero(
-      num_cells, num_permutations);
   _permutations = generate_recursive(mesh, element_dof_layout);
-
   switch (mesh.cell_type())
   {
   case (mesh::CellType::triangle):
@@ -385,13 +380,13 @@ DofMapPermuter::generate_tetrahedron(const mesh::Mesh& mesh,
   return permutations;
 }
 //-----------------------------------------------------------------------------
-Eigen::Array<int, Eigen::Dynamic, Eigen::Dynamic>
+Eigen::Array<std::int8_t, Eigen::Dynamic, Eigen::Dynamic>
 DofMapPermuter::set_orders_triangle(const mesh::Mesh& mesh,
                                     const ElementDofLayout& element_dof_layout)
 {
   const int num_cells = mesh.num_entities(mesh.topology().dim());
   const int num_permutations = get_num_permutations(mesh.cell_type());
-  Eigen::Array<int, Eigen::Dynamic, Eigen::Dynamic> cell_orders(
+  Eigen::Array<std::int8_t, Eigen::Dynamic, Eigen::Dynamic> cell_orders(
       num_cells, num_permutations);
 
   // Set orders for each cell
@@ -412,13 +407,13 @@ DofMapPermuter::set_orders_triangle(const mesh::Mesh& mesh,
   return cell_orders;
 }
 //-----------------------------------------------------------------------------
-Eigen::Array<int, Eigen::Dynamic, Eigen::Dynamic>
+Eigen::Array<std::int8_t, Eigen::Dynamic, Eigen::Dynamic>
 DofMapPermuter::set_orders_tetrahedron(
     const mesh::Mesh& mesh, const ElementDofLayout& element_dof_layout)
 {
   const int num_cells = mesh.num_entities(mesh.topology().dim());
   const int num_permutations = get_num_permutations(mesh.cell_type());
-  Eigen::Array<int, Eigen::Dynamic, Eigen::Dynamic> cell_orders(
+  Eigen::Array<std::int8_t, Eigen::Dynamic, Eigen::Dynamic> cell_orders(
       num_cells, num_permutations);
 
   // Set orders for each cell

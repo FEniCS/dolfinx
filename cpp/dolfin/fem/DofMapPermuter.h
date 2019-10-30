@@ -48,15 +48,15 @@ private:
                        const ElementDofLayout& element_dof_layout);
 
   // Functions called by the constructor for specific mesh types
-  static Eigen::Array<PetscInt, Eigen::Dynamic, Eigen::Dynamic>
+  static Eigen::Array<std::int8_t, Eigen::Dynamic, Eigen::Dynamic>
   set_orders_triangle(const mesh::Mesh& mesh,
                       const ElementDofLayout& element_dof_layout);
-  static Eigen::Array<PetscInt, Eigen::Dynamic, Eigen::Dynamic>
+  static Eigen::Array<std::int8_t, Eigen::Dynamic, Eigen::Dynamic>
   set_orders_tetrahedron(const mesh::Mesh& mesh,
                          const ElementDofLayout& element_dof_layout);
 
-  // The orders of each cell
-  Eigen::Array<int, Eigen::Dynamic, Eigen::Dynamic> _cell_orders;
+  // Ordering on each cell
+  Eigen::Array<std::int8_t, Eigen::Dynamic, Eigen::Dynamic> _cell_orders;
 
   // The permutations
   Eigen::Array<int, Eigen::Dynamic, Eigen::Dynamic> _permutations;
