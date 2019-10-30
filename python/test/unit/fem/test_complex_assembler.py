@@ -118,6 +118,5 @@ def test_complex_assembly_solve():
     u_ref = dolfin.function.Function(V)
     u_ref.interpolate(ref_eval)
 
-    xnorm = x.norm(PETSc.NormType.N2)
-    x_ref_norm = u_ref.vector.norm(PETSc.NormType.N2)
-    assert xnorm == pytest.approx(x_ref_norm, rel=1e-2)
+    diff = (x - u_ref.vector).norm(PETSc.NormType.N2)
+    assert diff == pytest.approx(0.0, abs=1e-2)
