@@ -30,14 +30,6 @@ int get_num_permutations(mesh::CellType cell_type)
   }
 }
 //-----------------------------------------------------------------------------
-void permute(std::vector<int>& vec,
-             const Eigen::Array<int, Eigen::Dynamic, 1>& perm)
-{
-  std::vector<int> temp(vec);
-  for (std::size_t i = 0; i < vec.size(); ++i)
-    vec[perm[i]] = temp[i];
-}
-//-----------------------------------------------------------------------------
 /// Calculates the permutation orders for a triangle
 /// @param[in] v1 The global vertex number of the triangle's first vertex
 /// @param[in] v2 The global vertex number of the triangle's second vertex
@@ -273,14 +265,20 @@ DofMapPermuter::DofMapPermuter(const mesh::Mesh& mesh,
 //-----------------------------------------------------------------------------
 std::vector<int> DofMapPermuter::cell_permutation(const int cell) const
 {
-  std::vector<int> permutation(_dof_count);
-  std::iota(permutation.begin(), permutation.end(), 0);
+  std::vector<int> p(_dof_count);
+  std::iota(p.begin(), p.end(), 0);
 
   for (int i = 0; i < _permutation_count; ++i)
+  {
     for (int j = 0; j < _cell_orders(cell, i); ++j)
-      permute(permutation, _permutations.row(i));
+    {
+      std::vector<int> temp(p);
+      for (std::size_t k = 0; k < p.size(); ++k)
+        p[_permutations(i, k)] = temp[k];
+    }
+  }
 
-  return permutation;
+  return p;
 }
 //-----------------------------------------------------------------------------
 // private:
@@ -404,7 +402,7 @@ DofMapPermuter::set_orders_triangle(const mesh::Mesh& mesh,
 {
   const int num_cells = mesh.num_entities(mesh.topology().dim());
   const int num_permutations = get_num_permutations(mesh.cell_type());
-  Eigen::Array<int, Eigen::Dynamic, Eigen::Dynamic> _cell_orders(
+  Eigen::Array<int, Eigen::Dynamic, Eigen::Dynamic> cell_orders(
       num_cells, num_permutations);
 
   // Set orders for each cell
@@ -412,17 +410,17 @@ DofMapPermuter::set_orders_triangle(const mesh::Mesh& mesh,
   {
     const mesh::MeshEntity cell(mesh, 2, cell_n);
     const std::int32_t* vertices = cell.entities(0);
-    _cell_orders(cell_n, 0) = (vertices[1] > vertices[2]);
-    _cell_orders(cell_n, 1) = (vertices[0] > vertices[2]);
-    _cell_orders(cell_n, 2) = (vertices[0] > vertices[1]);
+    cell_orders(cell_n, 0) = (vertices[1] > vertices[2]);
+    cell_orders(cell_n, 1) = (vertices[0] > vertices[2]);
+    cell_orders(cell_n, 2) = (vertices[0] > vertices[1]);
 
     auto tri_orders
         = calculate_triangle_orders(vertices[0], vertices[1], vertices[2]);
-    _cell_orders(cell_n, 3) = tri_orders[0];
-    _cell_orders(cell_n, 4) = tri_orders[0];
+    cell_orders(cell_n, 3) = tri_orders[0];
+    cell_orders(cell_n, 4) = tri_orders[0];
   }
 
-  return _cell_orders;
+  return cell_orders;
 }
 //-----------------------------------------------------------------------------
 Eigen::Array<int, Eigen::Dynamic, Eigen::Dynamic>
@@ -431,7 +429,7 @@ DofMapPermuter::set_orders_tetrahedron(
 {
   const int num_cells = mesh.num_entities(mesh.topology().dim());
   const int num_permutations = get_num_permutations(mesh.cell_type());
-  Eigen::Array<int, Eigen::Dynamic, Eigen::Dynamic> _cell_orders(
+  Eigen::Array<int, Eigen::Dynamic, Eigen::Dynamic> cell_orders(
       num_cells, num_permutations);
 
   // Set orders for each cell
@@ -440,39 +438,39 @@ DofMapPermuter::set_orders_tetrahedron(
     const mesh::MeshEntity cell(mesh, 3, cell_n);
     const std::int32_t* vertices = cell.entities(0);
 
-    _cell_orders(cell_n, 0) = (vertices[2] > vertices[3]);
-    _cell_orders(cell_n, 1) = (vertices[1] > vertices[3]);
-    _cell_orders(cell_n, 2) = (vertices[1] > vertices[2]);
-    _cell_orders(cell_n, 3) = (vertices[0] > vertices[3]);
-    _cell_orders(cell_n, 4) = (vertices[0] > vertices[2]);
-    _cell_orders(cell_n, 5) = (vertices[0] > vertices[1]);
+    cell_orders(cell_n, 0) = (vertices[2] > vertices[3]);
+    cell_orders(cell_n, 1) = (vertices[1] > vertices[3]);
+    cell_orders(cell_n, 2) = (vertices[1] > vertices[2]);
+    cell_orders(cell_n, 3) = (vertices[0] > vertices[3]);
+    cell_orders(cell_n, 4) = (vertices[0] > vertices[2]);
+    cell_orders(cell_n, 5) = (vertices[0] > vertices[1]);
 
-    auto tri_orders
+    std::array<int, 2> tri_orders
         = calculate_triangle_orders(vertices[1], vertices[2], vertices[3]);
-    _cell_orders(cell_n, 6) = tri_orders[0];
-    _cell_orders(cell_n, 7) = tri_orders[1];
+    cell_orders(cell_n, 6) = tri_orders[0];
+    cell_orders(cell_n, 7) = tri_orders[1];
     tri_orders
         = calculate_triangle_orders(vertices[0], vertices[2], vertices[3]);
-    _cell_orders(cell_n, 8) = tri_orders[0];
-    _cell_orders(cell_n, 9) = tri_orders[1];
+    cell_orders(cell_n, 8) = tri_orders[0];
+    cell_orders(cell_n, 9) = tri_orders[1];
     tri_orders
         = calculate_triangle_orders(vertices[0], vertices[1], vertices[3]);
-    _cell_orders(cell_n, 10) = tri_orders[0];
-    _cell_orders(cell_n, 11) = tri_orders[1];
+    cell_orders(cell_n, 10) = tri_orders[0];
+    cell_orders(cell_n, 11) = tri_orders[1];
     tri_orders
         = calculate_triangle_orders(vertices[0], vertices[1], vertices[2]);
-    _cell_orders(cell_n, 12) = tri_orders[0];
-    _cell_orders(cell_n, 13) = tri_orders[1];
+    cell_orders(cell_n, 12) = tri_orders[0];
+    cell_orders(cell_n, 13) = tri_orders[1];
 
-    auto tet_orders = calculate_tetrahedron_orders(vertices[0], vertices[1],
-                                                   vertices[2], vertices[3]);
-    _cell_orders(cell_n, 14) = tet_orders[0];
-    _cell_orders(cell_n, 15) = tet_orders[1];
-    _cell_orders(cell_n, 16) = tet_orders[2];
-    _cell_orders(cell_n, 17) = tet_orders[3];
+    std::array<int, 4> tet_orders = calculate_tetrahedron_orders(
+        vertices[0], vertices[1], vertices[2], vertices[3]);
+    cell_orders(cell_n, 14) = tet_orders[0];
+    cell_orders(cell_n, 15) = tet_orders[1];
+    cell_orders(cell_n, 16) = tet_orders[2];
+    cell_orders(cell_n, 17) = tet_orders[3];
   }
 
-  return _cell_orders;
+  return cell_orders;
 }
 //-----------------------------------------------------------------------------
 } // namespace fem
