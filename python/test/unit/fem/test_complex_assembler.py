@@ -119,4 +119,4 @@ def test_complex_assembly_solve():
     u_ref.interpolate(ref_eval)
 
     diff = (x - u_ref.vector).norm(PETSc.NormType.N2)
-    assert diff == pytest.approx(0.0, abs=1e-2)
+    assert diff == pytest.approx(0.0, abs=1e-1)

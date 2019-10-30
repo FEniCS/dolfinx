@@ -25,8 +25,7 @@ public:
   /// Constructor
   /// @param[in] mesh The mesh
   /// @param[in] element_dof_layout The layout of dofs in each cell
-  DofMapPermuter(const mesh::Mesh& mesh,
-                 const ElementDofLayout& element_dof_layout);
+  DofMapPermuter(const mesh::Mesh& mesh, const ElementDofLayout& dof_layout);
 
   /// Return the dof permutations for the given cell
   /// @param[in] cell The cell index
@@ -35,7 +34,7 @@ public:
 
 private:
   // Ordering on each cell
-  Eigen::Array<std::int8_t, Eigen::Dynamic, Eigen::Dynamic> _cell_orders;
+  Eigen::Array<std::int8_t, Eigen::Dynamic, Eigen::Dynamic> _cell_ordering;
 
   // The permutations
   Eigen::Array<int, Eigen::Dynamic, Eigen::Dynamic> _permutations;
