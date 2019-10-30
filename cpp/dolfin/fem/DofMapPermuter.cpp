@@ -241,7 +241,15 @@ DofMapPermuter::DofMapPermuter(const mesh::Mesh& mesh,
                     "order elements may be incorrect.";
     return;
   }
-  _resize_data();
+  // _resize_data();
+  _cell_orders.resize(_cell_count, _permutation_count);
+  _cell_orders.fill(0);
+  _permutations.resize(_permutation_count, _dof_count);
+  for (int i = 0; i < _dof_count; ++i)
+    for (int j = 0; j < _permutation_count; ++j)
+      _permutations(j, i) = i;
+
+
   _permutations = _generate_recursive(mesh, element_dof_layout);
   _set_orders(mesh, element_dof_layout);
 }
@@ -301,10 +309,10 @@ void DofMapPermuter::_set_orders(const mesh::Mesh& mesh,
   {
   case (mesh::CellType::triangle):
     _set_orders_triangle(mesh, element_dof_layout);
-    return;
+    break;
   case (mesh::CellType::tetrahedron):
     _set_orders_tetrahedron(mesh, element_dof_layout);
-    return;
+    break;
   default:
     throw std::runtime_error(
         "Unrecognised cell type."); // The function should exit before this is
@@ -316,16 +324,6 @@ void DofMapPermuter::_set_order(const int cell, const int permutation,
                                 const int order)
 {
   _cell_orders(cell, permutation) = order;
-}
-//-----------------------------------------------------------------------------
-void DofMapPermuter::_resize_data()
-{
-  _cell_orders.resize(_cell_count, _permutation_count);
-  _cell_orders.fill(0);
-  _permutations.resize(_permutation_count, _dof_count);
-  for (int i = 0; i < _dof_count; ++i)
-    for (int j = 0; j < _permutation_count; ++j)
-      _permutations(j, i) = i;
 }
 //-----------------------------------------------------------------------------
 Eigen::Array<PetscInt, Eigen::Dynamic, Eigen::Dynamic>

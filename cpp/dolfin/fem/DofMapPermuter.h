@@ -55,7 +55,6 @@ private:
                             const ElementDofLayout& element_dof_layout);
   void _set_orders_tetrahedron(const mesh::Mesh& mesh,
                                const ElementDofLayout& element_dof_layout);
-  void _resize_data();
 
   // The number of dofs and cells and permutations
   int _dof_count;
