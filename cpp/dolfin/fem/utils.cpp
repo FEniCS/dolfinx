@@ -738,35 +738,62 @@ void fem::copy_block_vector_to_sub_vectors(Vec x, std::vector<Vec> sub_vecs,
 {
   assert(sub_vecs.size() == L.size());
 
-  int offset_owned = 0;
-  for (auto& _L : L)
+  VecType vec_type;
+  VecGetType(x, &vec_type);
+  const bool is_vecnest = strcmp(vec_type, VECNEST) == 0;
+
+  if (is_vecnest)
   {
-    auto map = _L->function_space(0)->dofmap()->index_map;
-    const int bs = map->block_size;
-    offset_owned += map->size_local() * bs;
+    for (int i = 0; i < L.size(); ++i)
+    {
+      Vec nest_sub_vec;
+      VecNestGetSubVec(x, i, &nest_sub_vec);
+
+      la::VecReadWrapper nest_sub_vec_wrapper(nest_sub_vec);
+      la::VecWrapper sub_vec_wrapper(sub_vecs[i]);
+
+      // Copy owned and ghosted values
+      sub_vec_wrapper.x = nest_sub_vec_wrapper.x;
+
+      sub_vec_wrapper.restore();
+      nest_sub_vec_wrapper.restore();
+    }
   }
-
-  la::VecReadWrapper x_wrapper(x);
-
-  int offset = 0;
-  int offset_ghost = offset_owned;
-  for (int i = 0; i < L.size(); ++i)
+  else
   {
-    auto map = L[i]->function_space(0)->dofmap()->index_map;
-    const int bs = map->block_size;
-    const int map_size0 = map->size_local() * bs;
-    const int map_size1 = map->num_ghosts() * bs;
+    // Get the offset for owned DoFs
+    int offset_owned = 0;
+    for (auto &_L : L)
+    {
+      auto map = _L->function_space(0)->dofmap()->index_map;
+      const int bs = map->block_size;
+      offset_owned += map->size_local() * bs;
+    }
 
-    la::VecWrapper sub_vec_wrapper(sub_vecs[i]);
+    la::VecReadWrapper x_wrapper(x);
 
-    sub_vec_wrapper.x.segment(0, map_size0) = x_wrapper.x.segment(offset, map_size0);
-    sub_vec_wrapper.x.segment(map_size0, map_size1) = x_wrapper.x.segment(offset_ghost, map_size1);
+    int offset = 0;
+    int offset_ghost = offset_owned; // Ghost DoFs start after owned
+    for (int i = 0; i < L.size(); ++i)
+    {
+      auto map = L[i]->function_space(0)->dofmap()->index_map;
+      const int bs = map->block_size;
+      const int map_size0 = map->size_local() * bs;
+      const int map_size1 = map->num_ghosts() * bs;
 
-    offset += map_size0;
-    offset_ghost += map_size1;
+      la::VecWrapper sub_vec_wrapper(sub_vecs[i]);
 
-    sub_vec_wrapper.restore();
+      // Copy the owned DoF values
+      sub_vec_wrapper.x.segment(0, map_size0) = x_wrapper.x.segment(offset, map_size0);
+      // Copy the ghost DoF values
+      sub_vec_wrapper.x.segment(map_size0, map_size1) = x_wrapper.x.segment(offset_ghost, map_size1);
+
+      offset += map_size0;
+      offset_ghost += map_size1;
+
+      sub_vec_wrapper.restore();
+    }
+    x_wrapper.restore();
   }
-  x_wrapper.restore();
 }
 //-----------------------------------------------------------------------------

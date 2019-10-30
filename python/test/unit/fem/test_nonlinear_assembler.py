@@ -191,11 +191,11 @@ class NonlinearPDE_SNESProblem():
     def F_nest(self, snes, x, F):
         assert x.getType() == "nest"
         assert F.getType() == "nest"
-        for x_soln_pair in zip(x.getNestSubVecs(), self.soln_vars):
-            x_sub, var_sub = x_soln_pair
-            x_sub.ghostUpdate(addv=PETSc.InsertMode.INSERT, mode=PETSc.ScatterMode.FORWARD)
-            x_sub.copy(var_sub.vector)
-            var_sub.vector.ghostUpdate(addv=PETSc.InsertMode.INSERT, mode=PETSc.ScatterMode.FORWARD)
+
+        for sub_x in x.getNestSubVecs():
+            sub_x.ghostUpdate(addv=PETSc.InsertMode.INSERT, mode=PETSc.ScatterMode.FORWARD)
+        soln_vecs = list(map(lambda var: var.vector, self.soln_vars))
+        dolfin.fem.copy_block_vector_to_sub_vectors(x, soln_vecs, self.L)
 
         dolfin.fem.assemble_vector_nest(F, self.L, self.a, self.bcs, x0=x, scale=-1.0)
         # Must assemble F here in the case of nest matrices
