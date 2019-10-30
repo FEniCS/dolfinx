@@ -466,10 +466,10 @@ DofMapPermuter::set_orders_tetrahedron(
 
     auto tet_orders = calculate_tetrahedron_orders(vertices[0], vertices[1],
                                                    vertices[2], vertices[3]);
-    _cell_orders(cell_n, 14) = tri_orders[0];
-    _cell_orders(cell_n, 15) = tri_orders[1];
-    _cell_orders(cell_n, 16) = tri_orders[2];
-    _cell_orders(cell_n, 17) = tri_orders[3];
+    _cell_orders(cell_n, 14) = tet_orders[0];
+    _cell_orders(cell_n, 15) = tet_orders[1];
+    _cell_orders(cell_n, 16) = tet_orders[2];
+    _cell_orders(cell_n, 17) = tet_orders[3];
   }
 
   return _cell_orders;
