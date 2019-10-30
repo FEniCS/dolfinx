@@ -171,13 +171,8 @@ class NonlinearPDE_SNESProblem():
         assert F.getType() != "nest"
         x.ghostUpdate(addv=PETSc.InsertMode.INSERT, mode=PETSc.ScatterMode.FORWARD)
 
-        offset = 0
-        x_array = x.getArray(readonly=True)
-        for var in self.soln_vars:
-            size_local = var.vector.getLocalSize()
-            var.vector.array[:] = x_array[offset:offset + size_local]
-            var.vector.ghostUpdate(addv=PETSc.InsertMode.INSERT, mode=PETSc.ScatterMode.FORWARD)
-            offset += size_local
+        soln_vecs = list(map(lambda var: var.vector, self.soln_vars))
+        dolfin.fem.copy_block_vector_to_sub_vectors(x, soln_vecs, self.L)
 
         dolfin.fem.assemble_vector_block(F, self.L, self.a, self.bcs, x0=x, scale=-1.0)
 
