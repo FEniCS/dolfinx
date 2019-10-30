@@ -83,7 +83,7 @@ public:
   ElementVectorType element_type() const { return _element_type; }
 
   /// Get the blocksize on an entity of a dimension
-  /// @param[in] The dimension of the entity
+  /// @param[in] dim The dimension of the entity
   /// @return The block size
   int get_block_size(const int dim) const;
 
