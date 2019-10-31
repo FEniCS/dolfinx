@@ -251,7 +251,7 @@ mesh::Mesh build_quad(MPI_Comm comm, const std::array<Eigen::Vector3d, 2>& p,
     }
 
   Eigen::Array<std::int64_t, Eigen::Dynamic, 4, Eigen::RowMajor> topo_reordered
-      = io::cells::vtk_to_dolfin_ordering(topo, mesh::CellType::quadrilateral);
+      = io::cells::lex_to_dolfin_ordering(topo, mesh::CellType::quadrilateral);
 
   return mesh::Partitioning::build_distributed_mesh(
       comm, mesh::CellType::quadrilateral, geom, topo_reordered, {},

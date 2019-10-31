@@ -1,4 +1,4 @@
-// Copyright (C) 2006-2019 Anders Logg, Chris Richardson
+// Copyright (C) 2006-2019 Anders Logg, Chris Richardson, Jorgen S. Dokken
 //
 // This file is part of DOLFIN (https://www.fenicsproject.org)
 //
@@ -89,49 +89,38 @@ compute_local_to_global_point_map(
 
   const std::int32_t num_cells = cell_nodes.rows();
   const std::int32_t num_nodes_per_cell = cell_nodes.cols();
+  const std::vector<int> vertex_indices
+      = mesh::cell_vertex_index(type, num_nodes_per_cell);
   std::int64_t q;
+
   for (std::int32_t c = 0; c < num_cells; ++c)
   {
-    // Loop over vertex nodes
-    for (std::int32_t v = 0; v < num_vertices_per_cell; ++v)
+    for (std::int32_t v = 0; v < num_nodes_per_cell; ++v)
     {
-      // Get global node index
-      if (type == mesh::CellType::quadrilateral)
+      q = cell_nodes(c, v);
+
+      // Check if vertex node
+      if (std::find(vertex_indices.begin(), vertex_indices.end(), v)
+          != vertex_indices.end())
       {
-        // FIXME: Workaround to access the vertices of TensorProduct cells
-        std::vector<std::uint8_t> perm
-            = io::cells::dolfin_to_vtk(type, num_nodes_per_cell);
-        q = cell_nodes(c, perm[v]);
-      }
-      else
-        q = cell_nodes(c, v);
-      auto shared_it = point_to_procs.find(q);
-      if (shared_it == point_to_procs.end())
-        local_vertices.insert(q);
-      else
-      {
-        // If lowest ranked sharing process is greather than this process,
-        // then it is owner
-        if (*(shared_it->second.begin()) > mpi_rank)
-          shared_vertices.insert(q);
+        auto shared_it = point_to_procs.find(q);
+        if (shared_it == point_to_procs.end())
+          local_vertices.insert(q);
         else
-          ghost_vertices.insert(q);
-      }
-    }
-    // Non-vertex nodes
-    for (std::int32_t v = num_vertices_per_cell; v < num_nodes_per_cell; ++v)
-    {
-      // Get global node index
-      if (type == mesh::CellType::quadrilateral)
-      {
-        // FIXME: Workaround to access the vertices of TensorProduct cells
-        std::vector<std::uint8_t> perm
-            = io::cells::dolfin_to_vtk(type, num_nodes_per_cell);
-        q = cell_nodes(c, perm[v]);
+        {
+          // If lowest ranked sharing process is greather than this process,
+          // then it is owner
+          if (*(shared_it->second.begin()) > mpi_rank)
+            shared_vertices.insert(q);
+          else
+            ghost_vertices.insert(q);
+        }
       }
       else
-        q = cell_nodes(c, v);
-      non_vertex_nodes.insert(q);
+      {
+        // Non-vertex nodes
+        non_vertex_nodes.insert(q);
+      }
     }
   }
 
@@ -149,7 +138,7 @@ compute_local_to_global_point_map(
                          non_vertex_nodes.end());
   num_vertices_local[3] = local_to_global.size();
   return std::make_pair(std::move(local_to_global), num_vertices_local);
-}
+} // namespace
 //-----------------------------------------------------------------------------
 // Get the local points.
 // Returns: local_to_global map for points,
@@ -334,16 +323,11 @@ Mesh::Mesh(
   // to find the vertices
   Eigen::Array<std::int32_t, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
       vertex_cols(cells.rows(), num_vertices_per_cell);
-  std::vector<std::uint8_t> perm = io::cells::dolfin_to_vtk(type, cells.cols());
+  std::vector<int> vertex_indices = mesh::cell_vertex_index(type, cells.cols());
   for (std::int32_t i = 0; i < num_vertices_per_cell; ++i)
-    vertex_cols.col(i) = coordinate_nodes.col(perm[i]);
-
+    vertex_cols.col(i) = coordinate_nodes.col(vertex_indices[i]);
   auto cv = std::make_shared<Connectivity>(vertex_cols);
 
-  // Add cells. Only copies the first few entries on each row
-  // corresponding to vertices.
-  // auto cv = std::make_shared<Connectivity>(
-  //     coordinate_nodes.leftCols(num_vertices_per_cell));
   _topology->set_connectivity(cv, tdim, 0);
 
   // Global cell indices - construct if none given

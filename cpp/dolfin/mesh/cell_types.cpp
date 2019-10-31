@@ -317,7 +317,6 @@ mesh::get_sub_entities(CellType type, int dim0, int dim1)
     throw std::runtime_error(
         "mesh::get_sub_entities supports getting edges (d=1) at present.");
   }
-
   const static Eigen::Array<int, 1, 3, Eigen::RowMajor> triangle
       = (Eigen::Array<int, 1, 3, Eigen::RowMajor>() << 0, 1, 2).finished();
   const static Eigen::Array<int, 1, 4, Eigen::RowMajor> quadrilateral
@@ -537,6 +536,21 @@ int mesh::cell_degree(mesh::CellType type, int num_nodes)
     return 1;
   default:
     throw std::runtime_error("Unknown cell type.");
+  }
+}
+
+std::vector<int> mesh::cell_vertex_index(mesh::CellType type, int num_nodes)
+{
+  int degree = mesh::cell_degree(type, num_nodes);
+  switch (type)
+  {
+  case mesh::CellType::quadrilateral:
+    // Topographical ordering yields this
+    return {0, 1, degree + 1, degree + 2};
+  default:
+    std::vector<int> vertex_indices(num_nodes);
+    std::iota(vertex_indices.begin(), vertex_indices.end(), 0);
+    return vertex_indices;
   }
 }
 //-----------------------------------------------------------------------------

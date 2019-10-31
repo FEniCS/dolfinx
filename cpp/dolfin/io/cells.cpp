@@ -264,53 +264,23 @@ io::cells::vtk_to_dolfin_ordering(
   return cells_dolfin;
 }
 //-----------------------------------------------------------------------------
-std::vector<std::uint8_t>
-io::cells::default_cell_permutation(mesh::CellType type, int degree)
+Eigen::Array<std::int64_t, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
+io::cells::lex_to_dolfin_ordering(
+    const Eigen::Ref<const Eigen::Array<
+        std::int64_t, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>>& cells,
+    mesh::CellType type)
 {
-  switch (type)
+  const std::vector<std::uint8_t> permutation
+      = io::cells::lex_to_tp(type, cells.cols());
+
+  /// Permute input cells
+  Eigen::Array<std::int64_t, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
+      cells_dolfin(cells.rows(), cells.cols());
+  for (Eigen::Index c = 0; c < cells_dolfin.rows(); ++c)
   {
-  case mesh::CellType::quadrilateral:
-  {
-    // Quadrilateral cells follow lexciographic order (LG) and must be
-    // mapped to tensor product ordering.
-    const int n = (degree + 1) * (degree + 1);
-    switch (degree)
-    {
-    case 1:
-      // Current default for built in meshes
-      return io::cells::lex_to_tp(type, n);
-    default:
-      // mesh::compute_local_to_global_point_map assumes that the first
-      // four points in the connectivity array are the vertices, thus
-      // you need VTK ordering.
-      return io::cells::dolfin_to_vtk(type, n);
-    }
+    for (Eigen::Index v = 0; v < cells_dolfin.cols(); ++v)
+      cells_dolfin(c, v) = cells(c, permutation[v]);
   }
-  case mesh::CellType::hexahedron:
-  {
-    switch (degree)
-    {
-    case 1:
-      // First order hexes follows lexiographic ordering
-      return {0, 1, 2, 3, 4, 5, 6, 7};
-    default:
-      throw std::runtime_error("Higher order hexahedron not supported");
-    }
-    break;
-  }
-  case mesh::CellType::point:
-    return io::cells::dolfin_to_vtk(type, 1);
-  case mesh::CellType::interval:
-    return io::cells::dolfin_to_vtk(type, 2);
-  case mesh::CellType::tetrahedron:
-    return io::cells::dolfin_to_vtk(type, 4);
-  case mesh::CellType::triangle:
-  {
-    const int n = (degree + 1) * (degree + 2) / 2;
-    return io::cells::dolfin_to_vtk(type, n);
-  }
-  default:
-    throw std::runtime_error("Unknown cell type.");
-  }
+  return cells_dolfin;
 }
 //-----------------------------------------------------------------------------
