@@ -367,7 +367,7 @@ def test_assembly_solve_block():
 
 
 @pytest.mark.parametrize("mesh", [
-    dolfin.generation.UnitSquareMesh(dolfin.MPI.comm_world, 32, 31),
+    dolfin.generation.UnitSquareMesh(dolfin.MPI.comm_world, 12, 11),
     dolfin.generation.UnitCubeMesh(dolfin.MPI.comm_world, 3, 7, 8)
 ])
 def test_assembly_solve_taylor_hood(mesh):

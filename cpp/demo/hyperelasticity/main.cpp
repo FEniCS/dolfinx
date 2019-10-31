@@ -110,7 +110,7 @@ int main(int argc, char* argv[])
   mesh->geometry().coord_mapping = cmap;
 
   auto u_rotation = std::make_shared<function::Function>(V);
-  u_rotation->interpolate([](auto values, auto x) {
+  u_rotation->interpolate([](auto x) {
     const double scale = 0.005;
 
     // Center of rotation
@@ -120,6 +120,8 @@ int main(int argc, char* argv[])
     // Large angle of rotation (60 degrees)
     double theta = 1.04719755;
 
+    Eigen::Array<PetscScalar, Eigen::Dynamic, 3, Eigen::RowMajor> values(
+        x.rows(), 3);
     for (int i = 0; i < x.rows(); ++i)
     {
       // New coordinates
@@ -131,10 +133,15 @@ int main(int argc, char* argv[])
       values(i, 1) = scale * (y - x(i, 1));
       values(i, 2) = scale * (z - x(i, 2));
     }
+
+    return values;
   });
 
   auto u_clamp = std::make_shared<function::Function>(V);
-  u_clamp->interpolate([](auto values, auto x) { values = 0.0; });
+  u_clamp->interpolate([](auto x) {
+    return Eigen::Array<PetscScalar, Eigen::Dynamic, 3, Eigen::RowMajor>::Zero(
+        x.rows(), 3);
+  });
 
   L->set_coefficients({{"u", u}});
   a->set_coefficients({{"u", u}});

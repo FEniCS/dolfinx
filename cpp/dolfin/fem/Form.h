@@ -23,7 +23,7 @@ namespace dolfin
 
 namespace fem
 {
-class CoordinateMapping;
+class CoordinateElement;
 }
 
 namespace function
@@ -85,7 +85,7 @@ public:
        const std::vector<
            std::pair<std::string, std::shared_ptr<const function::Constant>>>
            constants,
-       std::shared_ptr<const CoordinateMapping> coord_mapping);
+       std::shared_ptr<const CoordinateElement> coord_mapping);
 
   /// Create form (no UFC integrals). Integrals can be attached later
   /// using FormIntegrals::set_cell_tabulate_tensor. Experimental.
@@ -161,9 +161,11 @@ public:
   std::shared_ptr<const function::FunctionSpace> function_space(int i) const;
 
   /// Register the function for 'tabulate_tensor' for cell integral i
-  void register_tabulate_tensor_cell(
-      int i, void (*fn)(PetscScalar*, const PetscScalar*, const PetscScalar*,
-                        const double*, const int*, const int*));
+  void set_tabulate_tensor(
+      FormIntegrals::Type type, int i,
+      std::function<void(PetscScalar*, const PetscScalar*, const PetscScalar*,
+                         const double*, const int*, const int*)>
+          fn);
 
   /// Set cell domains
   /// @param[in] cell_domains The cell domains
@@ -204,7 +206,7 @@ public:
   constants() const;
 
   /// Get coordinate_mapping (experimental)
-  std::shared_ptr<const fem::CoordinateMapping> coordinate_mapping() const;
+  std::shared_ptr<const fem::CoordinateElement> coordinate_mapping() const;
 
 private:
   // Integrals associated with the Form
@@ -224,7 +226,7 @@ private:
   std::shared_ptr<const mesh::Mesh> _mesh;
 
   // Coordinate_mapping
-  std::shared_ptr<const fem::CoordinateMapping> _coord_mapping;
+  std::shared_ptr<const fem::CoordinateElement> _coord_mapping;
 };
 } // namespace fem
 } // namespace dolfin

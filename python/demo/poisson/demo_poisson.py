@@ -122,14 +122,6 @@ mesh.geometry.coord_mapping = cmap
 # \epsilon` or :math:`x > 1 - \epsilon` where :math:`\epsilon` is a
 # small number (such as machine precision).) ::
 
-# Define Dirichlet boundary (x = 0 or x = 1)
-
-
-def boundary(x):
-    return np.logical_or(x[:, 0] < np.finfo(float).eps,
-                         x[:, 0] > 1.0 - np.finfo(float).eps)
-
-
 # Now, the Dirichlet boundary condition can be created using the class
 # :py:class:`DirichletBC <dolfin.fem.bcs.DirichletBC>`. A
 # :py:class:`DirichletBC <dolfin.fem.bcs.DirichletBC>` takes three
@@ -141,10 +133,11 @@ def boundary(x):
 # Dirichlet boundary is defined immediately above. The definition of the
 # Dirichlet boundary condition then looks as follows: ::
 
-# Define boundary condition
+# Define boundary condition on x = 0 or x = 1
 u0 = Function(V)
 u0.vector.set(0.0)
-bc = DirichletBC(V, u0, boundary)
+bc = DirichletBC(V, u0, lambda x: np.logical_or(x[:, 0] < np.finfo(float).eps,
+                                                x[:, 0] > 1.0 - np.finfo(float).eps))
 
 # Next, we want to express the variational problem.  First, we need to
 # specify the trial function :math:`u` and the test function :math:`v`,

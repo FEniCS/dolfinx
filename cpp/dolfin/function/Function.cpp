@@ -11,7 +11,7 @@
 #include <dolfin/common/Timer.h>
 #include <dolfin/common/UniqueIdGenerator.h>
 #include <dolfin/common/utils.h>
-#include <dolfin/fem/CoordinateMapping.h>
+#include <dolfin/fem/CoordinateElement.h>
 #include <dolfin/fem/DofMap.h>
 #include <dolfin/fem/FiniteElement.h>
 #include <dolfin/geometry/BoundingBoxTree.h>
@@ -194,12 +194,12 @@ void Function::eval(
       coordinate_dofs(num_dofs_g, gdim);
 
   // Get coordinate mapping
-  std::shared_ptr<const fem::CoordinateMapping> cmap
+  std::shared_ptr<const fem::CoordinateElement> cmap
       = mesh.geometry().coord_mapping;
   if (!cmap)
   {
     throw std::runtime_error(
-        "fem::CoordinateMapping has not been attached to mesh.");
+        "fem::CoordinateElement has not been attached to mesh.");
   }
 
   // Get element
@@ -282,10 +282,20 @@ void Function::interpolate(const Function& v)
   _function_space->interpolate(x.x, v);
 }
 //-----------------------------------------------------------------------------
-void Function::interpolate(const FunctionSpace::interpolation_function& f)
+void Function::interpolate(
+    const std::function<Eigen::Array<PetscScalar, Eigen::Dynamic,
+                                     Eigen::Dynamic, Eigen::RowMajor>(
+        const Eigen::Ref<const Eigen::Array<
+            double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>>&)>& f)
 {
   la::VecWrapper x(_vector.vec());
   _function_space->interpolate(x.x, f);
+}
+//-----------------------------------------------------------------------------
+void Function::interpolate_c(const FunctionSpace::interpolation_function& f)
+{
+  la::VecWrapper x(_vector.vec());
+  _function_space->interpolate_c(x.x, f);
 }
 //-----------------------------------------------------------------------------
 int Function::value_rank() const

@@ -10,7 +10,7 @@
 #include <dolfin/common/UniqueIdGenerator.h>
 #include <dolfin/common/types.h>
 #include <dolfin/common/utils.h>
-#include <dolfin/fem/CoordinateMapping.h>
+#include <dolfin/fem/CoordinateElement.h>
 #include <dolfin/fem/DofMap.h>
 #include <dolfin/fem/FiniteElement.h>
 #include <dolfin/mesh/CoordinateDofs.h>
@@ -148,26 +148,46 @@ void FunctionSpace::interpolate(
 }
 //-----------------------------------------------------------------------------
 void FunctionSpace::interpolate(
-    Eigen::Ref<Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1>>
-        expansion_coefficients,
+    Eigen::Ref<Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1>> coefficients,
+    const std::function<Eigen::Array<PetscScalar, Eigen::Dynamic,
+                                     Eigen::Dynamic, Eigen::RowMajor>(
+        const Eigen::Ref<const Eigen::Array<
+            double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>>&)>& f)
+    const
+{
+  // Evaluate expression at dof points
+  Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor> x
+      = tabulate_dof_coordinates();
+  Eigen::Array<PetscScalar, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
+      values = f(x);
+
+  assert(_element);
+  std::vector<int> vshape(_element->value_rank(), 1);
+  for (std::size_t i = 0; i < vshape.size(); ++i)
+    vshape[i] = _element->value_dimension(i);
+  const int value_size = std::accumulate(std::begin(vshape), std::end(vshape),
+                                         1, std::multiplies<>());
+  if (values.rows() != x.rows())
+  {
+    throw std::runtime_error("Number of computed values is not equal to the "
+                             "number of evaluation points.");
+  }
+  if (values.cols() != value_size)
+    throw std::runtime_error("Values shape is incorrect.");
+
+  interpolate(coefficients, values);
+}
+//-----------------------------------------------------------------------------
+void FunctionSpace::interpolate_c(
+    Eigen::Ref<Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1>> coefficients,
     const interpolation_function& f) const
 {
-  assert(_mesh);
-  assert(_element);
-  assert(_dofmap);
-  const int tdim = _mesh->topology().dim();
-
-  // Note: the following does not exploit any block structure, e.g. for
-  // vector Lagrange, which leads to a lot of redundant evaluations.
-  // E.g., for a vector Lagrange element the vector-valued expression is
-  // evaluted three times at the some point.
-
   // Build list of points at which to evaluate the Expression
   Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor> x
       = tabulate_dof_coordinates();
 
-  // Evaluate Expression at points
-  // std::vector<int> vshape = e.value_shape();
+  // Evaluate expression at points
+  assert(_element);
   std::vector<int> vshape(_element->value_rank(), 1);
   for (std::size_t i = 0; i < vshape.size(); ++i)
     vshape[i] = _element->value_dimension(i);
@@ -175,47 +195,9 @@ void FunctionSpace::interpolate(
                                          1, std::multiplies<>());
   Eigen::Array<PetscScalar, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
       values(x.rows(), value_size);
-  assert(values.rows() == x.rows());
   f(values, x);
 
-  // FIXME: Dummy coordinate dofs - should limit the interpolation to
-  // Lagrange, in which case we don't need coordinate dofs in
-  // FiniteElement::transform_values.
-  Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
-      coordinate_dofs;
-
-  // FIXME: It would be far more elegant and efficient to avoid the need
-  // to loop over cells to set the expansion corfficients. Would be much
-  // better if the expansion coefficients could be passed straight into
-  // Expresion::eval.
-
-  // Loop over cells
-  const int ndofs = _element->space_dimension();
-  Eigen::Array<PetscScalar, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
-      values_cell(ndofs, value_size);
-  assert(_dofmap->element_dof_layout);
-  std::vector<PetscScalar> cell_coefficients(
-      _dofmap->element_dof_layout->num_dofs());
-  for (auto& cell : mesh::MeshRange(*_mesh, tdim))
-  {
-    // Get dofmap for cell
-    auto cell_dofs = _dofmap->cell_dofs(cell.index());
-    for (Eigen::Index i = 0; i < cell_dofs.rows(); ++i)
-    {
-      for (Eigen::Index j = 0; j < value_size; ++j)
-        values_cell(i, j) = values(cell_dofs[i], j);
-
-      // FIXME: For vector-valued Lagrange, this function 'throws away'
-      // the redundant expression evaluations. It should really be made
-      // not necessary.
-      _element->transform_values(cell_coefficients.data(), values_cell,
-                                 coordinate_dofs);
-
-      // Copy into expansion coefficient array
-      for (Eigen::Index i = 0; i < cell_dofs.rows(); ++i)
-        expansion_coefficients[cell_dofs[i]] = cell_coefficients[i];
-    }
-  }
+  interpolate(coefficients, values);
 }
 //-----------------------------------------------------------------------------
 std::shared_ptr<FunctionSpace>
@@ -313,9 +295,9 @@ FunctionSpace::tabulate_dof_coordinates() const
   if (!_mesh->geometry().coord_mapping)
   {
     throw std::runtime_error(
-        "CoordinateMapping has not been attached to mesh.");
+        "CoordinateElement has not been attached to mesh.");
   }
-  const fem::CoordinateMapping& cmap = *_mesh->geometry().coord_mapping;
+  const fem::CoordinateElement& cmap = *_mesh->geometry().coord_mapping;
 
   // Cell coordinates (re-allocated inside function for thread safety)
   // Prepare cell geometry
@@ -348,7 +330,7 @@ FunctionSpace::tabulate_dof_coordinates() const
     auto dofs = _dofmap->cell_dofs(cell.index());
 
     // Tabulate dof coordinates on cell
-    cmap.compute_physical_coordinates(coordinates, X, coordinate_dofs);
+    cmap.push_forward(coordinates, X, coordinate_dofs);
 
     // Copy dof coordinates into vector
     for (Eigen::Index i = 0; i < dofs.size(); ++i)
@@ -395,9 +377,9 @@ void FunctionSpace::set_x(
   if (!_mesh->geometry().coord_mapping)
   {
     throw std::runtime_error(
-        "CoordinateMapping has not been attached to mesh.");
+        "CoordinateElement has not been attached to mesh.");
   }
-  const fem::CoordinateMapping& cmap = *_mesh->geometry().coord_mapping;
+  const fem::CoordinateElement& cmap = *_mesh->geometry().coord_mapping;
 
   Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
       coordinates(_element->space_dimension(), _mesh->geometry().dim());
@@ -415,7 +397,7 @@ void FunctionSpace::set_x(
     auto dofs = _dofmap->cell_dofs(cell.index());
 
     // Tabulate dof coordinates
-    cmap.compute_physical_coordinates(coordinates, X, coordinate_dofs);
+    cmap.push_forward(coordinates, X, coordinate_dofs);
 
     assert(coordinates.rows() == dofs.size());
     assert(component < (int)coordinates.cols());
@@ -440,7 +422,6 @@ std::shared_ptr<const fem::DofMap> FunctionSpace::dofmap() const
   return _dofmap;
 }
 //-----------------------------------------------------------------------------
-
 bool FunctionSpace::contains(const FunctionSpace& V) const
 {
   // Is the root space same?
@@ -460,5 +441,63 @@ bool FunctionSpace::contains(const FunctionSpace& V) const
 
   // Ok, V is really our subspace
   return true;
+}
+//-----------------------------------------------------------------------------
+void FunctionSpace::interpolate(
+    Eigen::Ref<Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1>> coefficients,
+    const Eigen::Ref<const Eigen::Matrix<PetscScalar, Eigen::Dynamic,
+                                         Eigen::Dynamic, Eigen::RowMajor>>&
+        values) const
+{
+  assert(_mesh);
+  assert(_element);
+  assert(_dofmap);
+  const int tdim = _mesh->topology().dim();
+
+  // Note: the following does not exploit any block structure, e.g. for
+  // vector Lagrange, which leads to a lot of redundant evaluations.
+  // E.g., for a vector Lagrange element the vector-valued expression is
+  // evaluted three times at the some point.
+
+  const int value_size = values.cols();
+
+  // FIXME: Dummy coordinate dofs - should limit the interpolation to
+  // Lagrange, in which case we don't need coordinate dofs in
+  // FiniteElement::transform_values.
+  Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
+      coordinate_dofs;
+
+  // FIXME: It would be far more elegant and efficient to avoid the need
+  // to loop over cells to set the expansion corfficients. Would be much
+  // better if the expansion coefficients could be passed straight into
+  // Expresion::eval.
+
+  // Loop over cells
+  const int ndofs = _element->space_dimension();
+  Eigen::Array<PetscScalar, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
+      values_cell(ndofs, value_size);
+  assert(_dofmap->element_dof_layout);
+  std::vector<PetscScalar> cell_coefficients(
+      _dofmap->element_dof_layout->num_dofs());
+  for (auto& cell : mesh::MeshRange(*_mesh, tdim))
+  {
+    // Get dofmap for cell
+    auto cell_dofs = _dofmap->cell_dofs(cell.index());
+    for (Eigen::Index i = 0; i < cell_dofs.rows(); ++i)
+    {
+      for (Eigen::Index j = 0; j < value_size; ++j)
+        values_cell(i, j) = values(cell_dofs[i], j);
+
+      // FIXME: For vector-valued Lagrange, this function 'throws away'
+      // the redundant expression evaluations. It should really be made
+      // not necessary.
+      _element->transform_values(cell_coefficients.data(), values_cell,
+                                 coordinate_dofs);
+
+      // Copy into expansion coefficient array
+      for (Eigen::Index i = 0; i < cell_dofs.rows(); ++i)
+        coefficients[cell_dofs[i]] = cell_coefficients[i];
+    }
+  }
 }
 //-----------------------------------------------------------------------------

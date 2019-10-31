@@ -36,122 +36,60 @@ using namespace dolfin::mesh;
 namespace
 {
 //-----------------------------------------------------------------------------
-// FIXME: Improve explanation
-// Utility to convert received_point_indices into point sharing
-// information
-std::map<std::int32_t, std::set<std::int32_t>> build_shared_points(
-    MPI_Comm mpi_comm,
-    const std::vector<std::vector<std::size_t>>& received_point_indices,
-    const std::pair<std::size_t, std::size_t> local_point_range,
-    const std::vector<std::vector<std::int32_t>>& local_indexing)
+std::map<std::int64_t, std::set<int>>
+distribute_points_sharing(MPI_Comm mpi_comm,
+                          const std::vector<std::int64_t>& global_index,
+                          const std::vector<int>& offsets)
 {
-  LOG(INFO) << "Build shared points during distributed mesh construction.";
+  common::Timer timer("Distribute shared point information");
+  const int mpi_size = dolfin::MPI::size(mpi_comm);
 
-  const std::int32_t mpi_size = dolfin::MPI::size(mpi_comm);
-
-  // Count number sharing each local point
-  std::vector<std::int32_t> n_sharing(
-      local_point_range.second - local_point_range.first, 0);
-  for (const auto& p : received_point_indices)
+  // Map for sharing information
+  std::map<std::int64_t, std::set<int>> point_to_procs;
+  for (int i = 0; i < mpi_size; ++i)
   {
-    for (const auto& q : p)
-    {
-      assert(q >= local_point_range.first and q < local_point_range.second);
-      const std::size_t local_index = q - local_point_range.first;
-      ++n_sharing[local_index];
-    }
+    for (int j = offsets[i]; j < offsets[i + 1]; ++j)
+      point_to_procs[global_index[j]].insert(i);
   }
 
-  // Create an array of 'pointers' to shared entries (where number
-  // shared, p > 1).
-  // Set to 0 for unshared entries. Make space for two values: process
-  // number, and local index on that process
-  std::vector<std::int32_t> offset;
-  offset.reserve(n_sharing.size());
-  std::int32_t index = 0;
-  for (auto& p : n_sharing)
+  std::vector<std::vector<std::int64_t>> send_sharing(mpi_size);
+  std::vector<std::int64_t> recv_sharing(mpi_size);
+  for (const auto& q : point_to_procs)
   {
-    if (p == 1)
-      p = 0;
-
-    offset.push_back(index);
-    index += (p * 2);
-  }
-
-  // Fill with list of sharing processes and position in
-  // received_point_indices to send back to originating process
-  std::vector<std::int32_t> process_list(index);
-  for (std::int32_t p = 0; p < mpi_size; ++p)
-  {
-    for (std::size_t i = 0; i < received_point_indices[p].size(); ++i)
+    if (q.second.size() > 1)
     {
-      // Convert global to local index
-      const std::size_t q = received_point_indices[p][i];
-      const std::size_t local_index = q - local_point_range.first;
-      if (n_sharing[local_index] > 0)
+      for (auto r : q.second)
       {
-        std::int32_t& location = offset[local_index];
-        process_list[location] = p;
-        ++location;
-        process_list[location] = i;
-        ++location;
-      }
-    }
-  }
-
-  // Reset offsets to original positions
-  for (std::size_t i = 0; i < offset.size(); ++i)
-    offset[i] -= 2 * n_sharing[i];
-
-  std::vector<std::vector<std::size_t>> send_sharing(mpi_size);
-  for (std::size_t i = 0; i < n_sharing.size(); ++i)
-  {
-    if (n_sharing[i] > 0)
-    {
-      for (int j = 0; j < n_sharing[i]; ++j)
-      {
-        auto& ss = send_sharing[process_list[offset[i] + j * 2]];
-        ss.push_back(n_sharing[i] - 1);
-        ss.push_back(process_list[offset[i] + j * 2 + 1]);
-        for (int k = 0; k < n_sharing[i]; ++k)
+        send_sharing[r].push_back(q.second.size() - 1);
+        send_sharing[r].push_back(q.first);
+        for (auto proc : q.second)
         {
-          if (j != k)
-            ss.push_back(process_list[offset[i] + k * 2]);
+          if (proc != r)
+            send_sharing[r].push_back(proc);
         }
       }
     }
   }
-
-  // Receive sharing information back to original processes
-  std::vector<std::vector<std::size_t>> recv_sharing(mpi_size);
   dolfin::MPI::all_to_all(mpi_comm, send_sharing, recv_sharing);
 
-  // Unpack and store to shared_points_local
-  std::map<std::int32_t, std::set<std::int32_t>> shared_points_local;
-  for (std::int32_t p = 0; p < mpi_size; ++p)
+  // Reuse points to procs for received data
+  point_to_procs.clear();
+  for (auto q = recv_sharing.begin(); q < recv_sharing.end(); q += (*q + 2))
   {
-    const std::vector<std::int32_t>& local_index_p = local_indexing[p];
-    for (auto q = recv_sharing[p].begin(); q != recv_sharing[p].end();
-         q += (*q + 2))
-    {
-      const std::size_t num_sharing = *q;
-      const std::int32_t local_index = local_index_p[*(q + 1)];
-      std::set<std::int32_t> sharing_processes(q + 2, q + 2 + num_sharing);
-
-      auto it = shared_points_local.insert({local_index, sharing_processes});
-      assert(it.second);
-    }
+    const std::int64_t global_index = *(q + 1);
+    std::set<int> procs(q + 2, q + 2 + *q);
+    point_to_procs.insert({global_index, procs});
   }
 
-  return shared_points_local;
+  return point_to_procs;
 }
 //-----------------------------------------------------------------------------
-// FIXME: Update, making clear exactly what is computed
 // This function takes the partition computed by the partitioner
 // (which tells us to which process each of the local cells stored on
-//  this process belongs) and sends the cells
-// to the appropriate owning process. Ghost cells are also sent,
-// along with the list of sharing processes.
+// this process belongs) and sends the cells
+// to the appropriate owning process. Ghost cells are also sent to all processes
+// that need them, along with the list of sharing processes.
+//
 // Returns (new_cell_vertices, new_global_cell_indices,
 // new_cell_partition, shared_cells, number of non-ghost cells on this
 // process).
@@ -513,6 +451,92 @@ void distribute_cell_layer(
 
 } // namespace
 //-----------------------------------------------------------------------------
+// Distribute points
+std::pair<std::map<std::int64_t, std::set<int>>,
+          Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>>
+Partitioning::distribute_points(
+    MPI_Comm comm,
+    Eigen::Ref<const Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic,
+                                  Eigen::RowMajor>>
+        points,
+    const std::vector<std::int64_t>& global_point_indices)
+{
+  common::Timer timer("Distribute points");
+
+  int mpi_size = MPI::size(comm);
+  int mpi_rank = MPI::rank(comm);
+
+  // Compute where (process number) the points we need are located
+  std::vector<std::int64_t> ranges(mpi_size);
+  MPI::all_gather(comm, (std::int64_t)points.rows(), ranges);
+  for (std::size_t i = 1; i < ranges.size(); ++i)
+    ranges[i] += ranges[i - 1];
+  ranges.insert(ranges.begin(), 0);
+
+  std::vector<int> send_offsets(mpi_size);
+  std::vector<std::int64_t>::const_iterator it = global_point_indices.begin();
+  for (int i = 0; i < mpi_size; ++i)
+  {
+    // Find first index on each process
+    it = std::lower_bound(it, global_point_indices.end(), ranges[i]);
+    send_offsets[i] = it - global_point_indices.begin();
+  }
+  send_offsets.push_back(global_point_indices.size());
+
+  std::vector<int> send_sizes(mpi_size);
+  for (int i = 0; i < mpi_size; ++i)
+    send_sizes[i] = send_offsets[i + 1] - send_offsets[i];
+
+  // Get data size to transfer in Alltoallv
+  std::vector<int> recv_sizes(mpi_size);
+  MPI_Alltoall(send_sizes.data(), 1, MPI_INT, recv_sizes.data(), 1, MPI_INT,
+               comm);
+
+  std::vector<int> recv_offsets = {0};
+  for (int i = 0; i < mpi_size; ++i)
+    recv_offsets.push_back(recv_offsets.back() + recv_sizes[i]);
+  std::vector<std::int64_t> recv_global_index(recv_offsets.back());
+
+  // Transfer global indices to the processes holding the points
+  MPI_Alltoallv(global_point_indices.data(), send_sizes.data(),
+                send_offsets.data(), MPI::mpi_type<std::int64_t>(),
+                recv_global_index.data(), recv_sizes.data(),
+                recv_offsets.data(), MPI::mpi_type<std::int64_t>(), comm);
+
+  // Create compound datatype of gdim*doubles (point coords)
+  MPI_Datatype compound_f64;
+  MPI_Type_contiguous(points.cols(), MPI_DOUBLE, &compound_f64);
+  MPI_Type_commit(&compound_f64);
+
+  // Fill in points to send back
+  Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
+      send_points(recv_global_index.size(), points.cols());
+  for (std::size_t i = 0; i < recv_global_index.size(); ++i)
+  {
+    assert(recv_global_index[i] >= ranges[mpi_rank]);
+    assert(recv_global_index[i] < ranges[mpi_rank + 1]);
+
+    int local_index = recv_global_index[i] - ranges[mpi_rank];
+    send_points.row(i) = points.row(local_index);
+  }
+
+  // Send points back, matching indices in global_index_set
+  Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
+      recv_points(global_point_indices.size(), points.cols());
+
+  MPI_Alltoallv(send_points.data(), recv_sizes.data(), recv_offsets.data(),
+                compound_f64, recv_points.data(), send_sizes.data(),
+                send_offsets.data(), compound_f64, comm);
+
+  timer.stop();
+
+  // Use global indices to calculate sharing data
+  std::map<std::int64_t, std::set<int>> point_to_procs
+      = distribute_points_sharing(comm, recv_global_index, recv_offsets);
+
+  return std::make_pair(std::move(point_to_procs), std::move(recv_points));
+}
+//-----------------------------------------------------------------------------
 // Compute cell partitioning from local mesh data. Returns a vector
 // 'cell -> process' vector for cells, and a map 'local cell index ->
 // processes' to which ghost cells must be sent
@@ -671,7 +695,7 @@ mesh::Mesh Partitioning::build_from_partition(
     return mesh;
 
   // Copy cell ownership (only needed for ghost cells)
-  std::vector<std::int32_t>& cell_owner = mesh.topology().cell_owner();
+  std::vector<std::int32_t>& cell_owner = mesh.topology().entity_owner(tdim);
   cell_owner.clear();
   cell_owner.insert(cell_owner.begin(),
                     new_cell_partition.begin() + num_regular_cells,
@@ -715,154 +739,6 @@ mesh::Mesh Partitioning::build_distributed_mesh(
   DistributedMeshTools::init_facet_cell_connections(mesh);
 
   return mesh;
-}
-//-----------------------------------------------------------------------------
-std::pair<Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>,
-          std::map<std::int32_t, std::set<std::int32_t>>>
-Partitioning::distribute_points(
-    const MPI_Comm mpi_comm,
-    const Eigen::Ref<const Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic,
-                                        Eigen::RowMajor>>& points,
-    const std::vector<std::int64_t>& global_point_indices)
-{
-  // This function distributes all points (coordinates and
-  // local-to-global mapping) according to the cells that are stored on
-  // each process. This happens in several stages: First each process
-  // figures out which points it needs (by looking at its cells) and
-  // where those points are located. That information is then
-  // distributed so that each process learns where it needs to send its
-  // points.
-
-  // Get geometric dimension
-  const int gdim = points.cols();
-
-  // Create data structures that will be returned
-  Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
-      point_coordinates(global_point_indices.size(), gdim);
-
-  LOG(INFO) << "Distribute points during distributed mesh construction";
-  common::Timer timer("Distribute points");
-
-  // Get number of processes and rank
-  const int mpi_size = dolfin::MPI::size(mpi_comm);
-  const int mpi_rank = dolfin::MPI::rank(mpi_comm);
-
-  // Compute where (process number) the points we need are located
-  std::vector<std::size_t> ranges(mpi_size);
-  dolfin::MPI::all_gather(mpi_comm, (std::size_t)points.rows(), ranges);
-  for (std::size_t i = 1; i < ranges.size(); ++i)
-    ranges[i] += ranges[i - 1];
-  ranges.insert(ranges.begin(), 0);
-
-  // Send global indices to the processes that own them, also recording
-  // in local_indexing the original position on this process
-  std::vector<std::vector<std::size_t>> send_point_indices(mpi_size);
-  std::vector<std::vector<std::int32_t>> local_indexing(mpi_size);
-  for (std::size_t i = 0; i < global_point_indices.size(); ++i)
-  {
-    const std::size_t required_point = global_point_indices[i];
-    const int location
-        = std::upper_bound(ranges.begin(), ranges.end(), required_point)
-          - ranges.begin() - 1;
-    send_point_indices[location].push_back(required_point);
-    local_indexing[location].push_back(i);
-  }
-
-  // Each remote process will put the requested point coordinates into a
-  // block of memory on the local process. Calculate offset position for
-  // each process, and attach to the sending data
-  std::size_t offset = 0;
-  for (int i = 0; i != mpi_size; ++i)
-  {
-    send_point_indices[i].push_back(offset);
-    offset += (send_point_indices[i].size() - 1);
-  }
-
-  // Send required point indices to other processes, and receive point
-  // indices required by other processes.
-  std::vector<std::vector<std::size_t>> received_point_indices;
-  dolfin::MPI::all_to_all(mpi_comm, send_point_indices, received_point_indices);
-
-  // Pop offsets off back of received data
-  std::vector<std::size_t> remote_offsets;
-  std::size_t num_received_indices = 0;
-  for (std::vector<std::size_t>& p : received_point_indices)
-  {
-    remote_offsets.push_back(p.back());
-    p.pop_back();
-    num_received_indices += p.size();
-  }
-
-  // Pop offset off back of sending arrays too, achieving a clean
-  // transfer of the offset data from local to remote
-  for (auto& p : send_point_indices)
-    p.pop_back();
-
-  // Array to receive data into with RMA
-  // This is a block of memory which all remote processes can write into, by
-  // using the offset (and size) transferred in previous all_to_all.
-  Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
-      receive_coord_data(global_point_indices.size(), gdim);
-
-  // Create local RMA window
-  MPI_Win win;
-  MPI_Win_create(receive_coord_data.data(),
-                 sizeof(double) * global_point_indices.size() * gdim,
-                 sizeof(double), MPI_INFO_NULL, mpi_comm, &win);
-  MPI_Win_fence(0, win);
-
-  // This memory block is to read from, and must remain in place until
-  // the transfer is complete (after next MPI_Win_fence)
-  Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
-      send_coord_data(num_received_indices, gdim);
-
-  const std::pair<std::size_t, std::size_t> local_point_range
-      = {ranges[mpi_rank], ranges[mpi_rank + 1]};
-  // Convert global index to local index and put coordinate data in
-  // sending array
-  std::size_t local_index = 0;
-  for (int p = 0; p < mpi_size; ++p)
-  {
-    if (received_point_indices[p].size() > 0)
-    {
-      const std::size_t local_index_0 = local_index;
-      for (const auto& q : received_point_indices[p])
-      {
-        assert(q >= local_point_range.first and q < local_point_range.second);
-        const std::size_t location = q - local_point_range.first;
-        send_coord_data.row(local_index) = points.row(location);
-        ++local_index;
-      }
-
-      const std::size_t local_size = (local_index - local_index_0) * gdim;
-      MPI_Put(send_coord_data.data() + local_index_0 * gdim, local_size,
-              MPI_DOUBLE, p, remote_offsets[p] * gdim, local_size, MPI_DOUBLE,
-              win);
-    }
-  }
-
-  // Meanwhile, redistribute received_point_indices as point sharing
-  // information
-  const std::map<std::int32_t, std::set<std::int32_t>> shared_points_local
-      = build_shared_points(mpi_comm, received_point_indices, local_point_range,
-                            local_indexing);
-
-  // Synchronise and free RMA window
-  MPI_Win_fence(0, win);
-  MPI_Win_free(&win);
-
-  // Reorder coordinates according to local indexing
-  local_index = 0;
-  for (const auto& p : local_indexing)
-  {
-    for (const auto& v : p)
-    {
-      point_coordinates.row(v) = receive_coord_data.row(local_index);
-      ++local_index;
-    }
-  }
-
-  return {std::move(point_coordinates), std::move(shared_points_local)};
 }
 //-----------------------------------------------------------------------------
 std::pair<std::int64_t, std::vector<std::int64_t>>

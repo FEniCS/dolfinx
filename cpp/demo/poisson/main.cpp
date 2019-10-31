@@ -174,12 +174,11 @@ int main(int argc, char* argv[])
 
   // auto dx = Eigen::square(x - 0.5);
   // values = 10.0 * Eigen::exp(-(dx.col(0) + dx.col(1)) / 0.02);
-  f->interpolate([](auto values, auto x) {
+  f->interpolate([](auto x) {
     auto dx = Eigen::square(x - 0.5);
-    values = 10.0 * Eigen::exp(-(dx.col(0) + dx.col(1)) / 0.02);
+    return 10.0 * Eigen::exp(-(dx.col(0) + dx.col(1)) / 0.02);
   });
-  g->interpolate(
-      [](auto values, auto x) { values = Eigen::sin(5 * x.col(0)); });
+  g->interpolate([](auto x) { return Eigen::sin(5 * x.col(0)); });
   L->set_coefficients({{"f", f}, {"g", g}});
 
   // Prepare and set Constants for the bilinear form

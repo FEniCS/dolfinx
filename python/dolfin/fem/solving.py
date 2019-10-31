@@ -249,18 +249,8 @@ def _extract_eq(eq):
 
 def _extract_u(u):
     "Extract and check argument u"
-    # if hasattr(u, "cpp_object") and isinstance(u.cpp_object(), cpp.function.Function):
-    #     return u.cpp_object()
-    #
-    # if isinstance(u, cpp.function.Function):
-    #     return u
-    if isinstance(u, function.Function):
-        return u
-
-    raise RuntimeError("Expecting second argument to be a Function.")
-    # cpp.dolfin_error("solving.py",
-    #                      "solve variational problem",
-    #                      "Expecting second argument to be a Function")
+    if not isinstance(u, function.Function):
+        raise RuntimeError("Expecting second argument to be a Function.")
     return u
 
 

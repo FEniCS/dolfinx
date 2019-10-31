@@ -22,11 +22,11 @@
 #
 
 ARG GMSH_VERSION=4.4.1
-ARG PYBIND11_VERSION=2.3.0
-ARG PETSC_VERSION=3.11.3
-ARG SLEPC_VERSION=3.11.2
-ARG PETSC4PY_VERSION=3.11.0
-ARG SLEPC4PY_VERSION=3.11.0
+ARG PYBIND11_VERSION=2.4.3
+ARG PETSC_VERSION=3.12
+ARG SLEPC_VERSION=3.12.0
+ARG PETSC4PY_VERSION=3.12.0
+ARG SLEPC4PY_VERSION=3.12.0
 ARG TINI_VERSION=v0.18.0
 
 ARG MAKEFLAGS
@@ -115,7 +115,7 @@ ENV PYTHONPATH=/usr/local/gmsh-${GMSH_VERSION}-Linux64-sdk/lib
 # - Third set of packages are optional but required for
 #   pygmsh/meshio/DOLFIN mesh pipeline.
 RUN pip3 install --no-cache-dir mpi4py numba && \
-    pip3 install --no-cache-dir cffi decorator flake8 pytest pytest-xdist sphinx sphinx_rtd_theme && \
+    pip3 install --no-cache-dir cffi flake8 pytest pytest-xdist sphinx sphinx_rtd_theme && \
     export HDF5_MPI="ON" && \
     pip3 install --no-cache-dir --no-binary=h5py h5py meshio pygmsh
 # Install pybind11

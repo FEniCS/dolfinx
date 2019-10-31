@@ -128,16 +128,18 @@ public:
   /// @param[in] global_point_indices Global indices for vertices
   ///                                 required on this process
   /// @return vertex_coordinates (array of coordinates on this process
-  ///         after distribution) and shared_vertices_local (map from
-  ///         local index to set of sharing processes for each shared
-  ///         vertex)
+  ///         after distribution) and shared_points (map from
+  ///         global index to set of sharing processes for each shared
+  ///         point)
+
   static std::pair<
-      Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>,
-      std::map<std::int32_t, std::set<std::int32_t>>>
+      std::map<std::int64_t, std::set<int>>,
+      Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>>
   distribute_points(
       const MPI_Comm comm,
-      const Eigen::Ref<const Eigen::Array<
-          double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>>& points,
+      Eigen::Ref<const Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic,
+                                    Eigen::RowMajor>>
+          points,
       const std::vector<std::int64_t>& global_point_indices);
 
   /// Utility to create global vertex indices, needed for higher order

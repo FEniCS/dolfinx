@@ -13,13 +13,15 @@ import pytest
 
 import dolfin
 import FIAT
-from dolfin import (MPI, BoxMesh, MeshEntity, MeshFunction, RectangleMesh,
-                    UnitCubeMesh, UnitIntervalMesh, UnitSquareMesh, cpp,
-                    has_kahip)
+
+from dolfin import (MPI, Mesh, BoxMesh, MeshEntity, MeshFunction, RectangleMesh,
+                    UnitCubeMesh, UnitIntervalMesh, UnitSquareMesh, cpp, has_kahip)
 from dolfin.cpp.mesh import CellType, is_simplex, Partitioner
+from dolfin.fem import assemble_scalar
 from dolfin.io import XDMFFile
 from dolfin_utils.test.fixtures import tempdir
 from dolfin_utils.test.skips import skip_in_parallel
+from ufl import dx
 
 assert (tempdir)
 
@@ -47,8 +49,13 @@ def mesh2d():
 def mesh3d():
     """Create 3D mesh with regular tetrahedron and degenerate cells"""
     mesh3d = UnitCubeMesh(MPI.comm_world, 1, 1, 1)
-    mesh3d.geometry.points[6][0] = 1.0
-    mesh3d.geometry.points[3][1] = 0.0
+    i1 = numpy.where((mesh3d.geometry.points
+                      == (0, 1, 0)).all(axis=1))[0][0]
+    i2 = numpy.where((mesh3d.geometry.points
+                      == (1, 1, 1)).all(axis=1))[0][0]
+
+    mesh3d.geometry.points[i1][0] = 1.0
+    mesh3d.geometry.points[i2][1] = 0.0
     return mesh3d
 
 
@@ -162,23 +169,22 @@ def test_mesh_construction_pygmsh():
             "line": numpy.zeros([0, 2], dtype=numpy.int64)
         }
 
-    mesh = dolfin.cpp.mesh.Mesh(
-        MPI.comm_world, dolfin.cpp.mesh.CellType.tetrahedron, points,
-        cells['tetra'], [], cpp.mesh.GhostMode.none)
+    mesh = Mesh(MPI.comm_world, dolfin.cpp.mesh.CellType.tetrahedron, points,
+                cells['tetra'], [], cpp.mesh.GhostMode.none)
     assert mesh.degree() == 1
     assert mesh.geometry.dim == 3
     assert mesh.topology.dim == 3
 
-    mesh = dolfin.cpp.mesh.Mesh(MPI.comm_world,
-                                dolfin.cpp.mesh.CellType.triangle, points,
-                                cells['triangle'], [], cpp.mesh.GhostMode.none)
+    mesh = Mesh(MPI.comm_world,
+                dolfin.cpp.mesh.CellType.triangle, points,
+                cells['triangle'], [], cpp.mesh.GhostMode.none)
     assert mesh.degree() == 1
     assert mesh.geometry.dim == 3
     assert mesh.topology.dim == 2
 
-    mesh = dolfin.cpp.mesh.Mesh(MPI.comm_world,
-                                dolfin.cpp.mesh.CellType.interval, points,
-                                cells['line'], [], cpp.mesh.GhostMode.none)
+    mesh = Mesh(MPI.comm_world,
+                dolfin.cpp.mesh.CellType.interval, points,
+                cells['line'], [], cpp.mesh.GhostMode.none)
     assert mesh.degree() == 1
     assert mesh.geometry.dim == 3
     assert mesh.topology.dim == 1
@@ -199,16 +205,14 @@ def test_mesh_construction_pygmsh():
             "line3": numpy.zeros([0, 3], dtype=numpy.int64)
         }
 
-    mesh = dolfin.cpp.mesh.Mesh(
-        MPI.comm_world, dolfin.cpp.mesh.CellType.tetrahedron, points,
-        cells['tetra10'], [], cpp.mesh.GhostMode.none)
+    mesh = Mesh(MPI.comm_world, dolfin.cpp.mesh.CellType.tetrahedron, points,
+                cells['tetra10'], [], cpp.mesh.GhostMode.none)
     assert mesh.degree() == 2
     assert mesh.geometry.dim == 3
     assert mesh.topology.dim == 3
 
-    mesh = dolfin.cpp.mesh.Mesh(
-        MPI.comm_world, dolfin.cpp.mesh.CellType.triangle, points,
-        cells['triangle6'], [], cpp.mesh.GhostMode.none)
+    mesh = Mesh(MPI.comm_world, dolfin.cpp.mesh.CellType.triangle, points,
+                cells['triangle6'], [], cpp.mesh.GhostMode.none)
     assert mesh.degree() == 2
     assert mesh.geometry.dim == 3
     assert mesh.topology.dim == 2
@@ -220,6 +224,7 @@ def test_UnitSquareMeshDistributed():
     assert mesh.num_entities_global(0) == 48
     assert mesh.num_entities_global(2) == 70
     assert mesh.geometry.dim == 2
+    assert MPI.sum(mesh.mpi_comm(), mesh.topology.ghost_offset(0)) == 48
 
 
 def test_UnitSquareMeshLocal():
@@ -236,6 +241,7 @@ def test_UnitCubeMeshDistributed():
     assert mesh.num_entities_global(0) == 480
     assert mesh.num_entities_global(3) == 1890
     assert mesh.geometry.dim == 3
+    assert MPI.sum(mesh.mpi_comm(), mesh.topology.ghost_offset(0)) == 480
 
 
 def test_UnitCubeMeshLocal():
@@ -251,6 +257,7 @@ def test_UnitQuadMesh():
     assert mesh.num_entities_global(0) == 48
     assert mesh.num_entities_global(2) == 35
     assert mesh.geometry.dim == 2
+    assert MPI.sum(mesh.mpi_comm(), mesh.topology.ghost_offset(0)) == 48
 
 
 def test_UnitHexMesh():
@@ -258,6 +265,7 @@ def test_UnitHexMesh():
     assert mesh.num_entities_global(0) == 480
     assert mesh.num_entities_global(3) == 315
     assert mesh.geometry.dim == 3
+    assert MPI.sum(mesh.mpi_comm(), mesh.topology.ghost_offset(0)) == 480
 
 
 def test_hash():
@@ -534,3 +542,10 @@ def test_coords():
     d = mesh.coordinate_dofs().entity_points()
     d += 2
     assert numpy.array_equal(d, mesh.coordinate_dofs().entity_points())
+
+
+def test_UnitHexMesh_assemble():
+    mesh = UnitCubeMesh(MPI.comm_world, 6, 7, 5, CellType.hexahedron)
+    vol = assemble_scalar(1 * dx(mesh))
+    vol = MPI.sum(mesh.mpi_comm(), vol)
+    assert(vol == pytest.approx(1, rel=1e-9))
