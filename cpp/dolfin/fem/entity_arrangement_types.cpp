@@ -10,19 +10,19 @@
 namespace
 {
 //-----------------------------------------------------------------------------
-int _vertex_arrangement_blocksize(dolfin::fem::ElementVectorType& type,
+int _vertex_arrangement_blocksize(const dolfin::fem::ElementVectorType& type,
                                   const int element_dim)
 {
   return 1;
 }
 //-----------------------------------------------------------------------------
-int _edge_arrangement_blocksize(dolfin::fem::ElementVectorType& type,
+int _edge_arrangement_blocksize(const dolfin::fem::ElementVectorType& type,
                                 const int element_dim)
 {
   return 1;
 }
 //-----------------------------------------------------------------------------
-int _face_arrangement_blocksize(dolfin::fem::ElementVectorType& type,
+int _face_arrangement_blocksize(const dolfin::fem::ElementVectorType& type,
                                 const int element_dim)
 {
   switch (type)
@@ -44,7 +44,7 @@ int _face_arrangement_blocksize(dolfin::fem::ElementVectorType& type,
   return -1;
 }
 //-----------------------------------------------------------------------------
-int _volume_arrangement_blocksize(dolfin::fem::ElementVectorType& type,
+int _volume_arrangement_blocksize(const dolfin::fem::ElementVectorType& type,
                                   const int element_dim)
 {
   switch (type)
