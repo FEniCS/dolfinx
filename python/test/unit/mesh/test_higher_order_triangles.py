@@ -57,6 +57,7 @@ def sympy_scipy(points, nodes, L, H):
     approx = sp.lambdify((x, y), expr)
 
     ref = scipy.integrate.nquad(approx, [[0, L], [0, H]])[0]
+
     # Slow and only works for simple integrals
     # integral = sp.integrate(expr, (y, 0, H))
     # integral = sp.integrate(integral, (x, 0, L))
@@ -66,8 +67,8 @@ def sympy_scipy(points, nodes, L, H):
 
 
 @skip_in_parallel
-@pytest.mark.parametrize('H', [0.3, 2])
-@pytest.mark.parametrize('Z', [0.8, 1])
+@pytest.mark.parametrize('H', [1, 2])
+@pytest.mark.parametrize('Z', [0, 0.5])
 def test_second_order_mesh(H, Z):
     # Test second order mesh by computing volume of two cells
     #  *-----*-----*   3----6-----2
@@ -78,17 +79,15 @@ def test_second_order_mesh(H, Z):
     #  |         \ |   |        \ |
     #  *-----*-----*   0----4-----1
 
+    L = 1
     # Perturbation of nodes 4,5,6,7 while keeping volume constant
-    #L = 1
-    L, H = 1, 1
-    Z =0.5
     points = np.array([[0, 0, 0], [L, 0, 0], [L, H, Z], [0, H, Z],
                        [L / 2, 0, 0], [L, H / 2, 0], [L / 2, H, Z],
                        [0, H / 2, 0], [L / 2, H / 2, 0]])
+
     cells = np.array([[0, 1, 3, 4, 8, 7],
                       [1, 2, 3, 5, 6, 8]])
     cells = vtk_to_dolfin_ordering(cells, CellType.triangle)
-
     mesh = Mesh(MPI.comm_world, CellType.triangle, points, cells,
                 [], GhostMode.none)
 
@@ -100,31 +99,22 @@ def test_second_order_mesh(H, Z):
     # Interpolate function
     V = FunctionSpace(mesh, ("CG", degree))
     u = Function(V)
-
     cmap = fem.create_coordinate_map(mesh.ufl_domain())
+
     mesh.geometry.coord_mapping = cmap
     u.interpolate(e2)
-    coord = V.tabulate_dof_coordinates()
-    print("Triangle")
-    for i in range(len(coord)):
-        print("{0:.2f}, {1:.2f}, {2:4.2f} : {3:.2f}".format(abs(coord[i][0]),abs(coord[i][1]),abs(coord[i][2]), u.vector.array[i]))
 
-    from dolfin.io import VTKFile
-    VTKFile("u_triangle.pvd").write(u)
-
-    intu = assemble_scalar(u * dx(metadata={"quadrature_degree": 40}))
+    intu = assemble_scalar(u * dx(mesh, metadata={"quadrature_degree": 20}))
     intu = MPI.sum(mesh.mpi_comm(), intu)
 
     nodes = [0, 3, 7]
     ref = sympy_scipy(points, nodes, L, H)
-    print(ref, intu)
-    assert(False)
     assert ref == pytest.approx(intu, rel=1e-6)
 
 
 @skip_in_parallel
-@pytest.mark.parametrize('H', [1, 0.3])
-@pytest.mark.parametrize('Z', [1, 0.5])
+@pytest.mark.parametrize('H', [1, 2])
+@pytest.mark.parametrize('Z', [0, 0.5])
 def test_third_order_mesh(H, Z):
     #  *---*---*---*   3--11--10--2
     #  | \         |   | \        |
@@ -170,8 +160,8 @@ def test_third_order_mesh(H, Z):
 
 
 @skip_in_parallel
-@pytest.mark.parametrize('H', [1, 0.3])
-@pytest.mark.parametrize('Z', [0.2, 0.1])
+@pytest.mark.parametrize('H', [1, 2])
+@pytest.mark.parametrize('Z', [0, 0.5])
 def test_fourth_order_mesh(H, Z):
     L = 1
     #  *--*--*--*--*   3-21-20-19--2

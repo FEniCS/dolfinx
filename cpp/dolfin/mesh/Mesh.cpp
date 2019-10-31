@@ -335,7 +335,7 @@ Mesh::Mesh(
   Eigen::Array<std::int32_t, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
       vertex_cols(cells.rows(), num_vertices_per_cell);
   std::vector<std::uint8_t> perm = io::cells::dolfin_to_vtk(type, cells.cols());
-  for (std::size_t i = 0; i < num_vertices_per_cell; ++i)
+  for (std::int32_t i = 0; i < num_vertices_per_cell; ++i)
     vertex_cols.col(i) = coordinate_nodes.col(perm[i]);
 
   auto cv = std::make_shared<Connectivity>(vertex_cols);
