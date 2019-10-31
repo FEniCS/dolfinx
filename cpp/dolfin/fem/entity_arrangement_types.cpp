@@ -1,28 +1,28 @@
-// Copyright (C) 2006-2019 Matthew Scroggs
+// Copyright (C) 2019 Matthew Scroggs
 //
 // This file is part of DOLFIN (https://www.fenicsproject.org)
 //
 // SPDX-License-Identifier:    LGPL-3.0-or-later
 
 #include "entity_arrangement_types.h"
-#include <dolfin/common/log.h>
+#include <dolfin/mesh/cell_types.h>
 
 namespace
 {
 //-----------------------------------------------------------------------------
-int _vertex_arrangement_blocksize(dolfin::fem::ElementVectorType type,
+int _vertex_arrangement_blocksize(dolfin::fem::ElementVectorType& type,
                                   const int element_dim)
 {
   return 1;
 }
 //-----------------------------------------------------------------------------
-int _edge_arrangement_blocksize(dolfin::fem::ElementVectorType type,
+int _edge_arrangement_blocksize(dolfin::fem::ElementVectorType& type,
                                 const int element_dim)
 {
   return 1;
 }
 //-----------------------------------------------------------------------------
-int _face_arrangement_blocksize(dolfin::fem::ElementVectorType type,
+int _face_arrangement_blocksize(dolfin::fem::ElementVectorType& type,
                                 const int element_dim)
 {
   switch (type)
@@ -41,10 +41,10 @@ int _face_arrangement_blocksize(dolfin::fem::ElementVectorType type,
     throw std::runtime_error("HDivDiv not yet implemented.");
   }
   // Should not reach this point
-  return 0;
+  return -1;
 }
 //-----------------------------------------------------------------------------
-int _volume_arrangement_blocksize(dolfin::fem::ElementVectorType type,
+int _volume_arrangement_blocksize(dolfin::fem::ElementVectorType& type,
                                   const int element_dim)
 {
   switch (type)
@@ -61,18 +61,16 @@ int _volume_arrangement_blocksize(dolfin::fem::ElementVectorType type,
     throw std::runtime_error("HDivDiv not yet implemented.");
   }
   // Should not reach this point
-  return 0;
+  return -1;
 }
 //-----------------------------------------------------------------------------
 } // namespace
 
-namespace dolfin
-{
-namespace fem
-{
+using namespace dolfin;
+
 //-----------------------------------------------------------------------------
-EntityArrangementTypes::EntityArrangementTypes(const ufc_dofmap& dofmap,
-                                               const mesh::CellType cell_type)
+fem::EntityArrangementTypes::EntityArrangementTypes(
+    const ufc_dofmap& dofmap, const mesh::CellType& cell_type)
 {
   _vertex_type = VertexArrangementType::none;
   _edge_type = EdgeArrangementType::none;
@@ -143,27 +141,21 @@ EntityArrangementTypes::EntityArrangementTypes(const ufc_dofmap& dofmap,
     _element_type = ElementVectorType::divdiv; // TODO: what is this
 }
 //-----------------------------------------------------------------------------
-int EntityArrangementTypes::get_block_size(const int dim,
-                                           const int element_dim) const
-{
-  if (dim == 0)
+int fem::EntityArrangementTypes::get_block_size(const int dim,
+                                                const int element_dim) const
+int fem::EntityArrangementTypes::get_block_size(const int dim) const
+  switch (dim)
   {
+  case 0:
     return _vertex_arrangement_blocksize(_element_type, element_dim);
-  }
-  if (dim == 1)
-  {
+  case 1:
     return _edge_arrangement_blocksize(_element_type, element_dim);
-  }
-  if (dim == 2)
-  {
+  case 2:
     return _face_arrangement_blocksize(_element_type, element_dim);
-  }
-  if (dim == 3)
-  {
+  case 3:
     return _volume_arrangement_blocksize(_element_type, element_dim);
+  default:
+    throw std::runtime_error("Unrecognised arrangement type.");
   }
-  throw std::runtime_error("Unrecognised arrangement type.");
 }
 //-----------------------------------------------------------------------------
-} // namespace fem
-} // namespace dolfin

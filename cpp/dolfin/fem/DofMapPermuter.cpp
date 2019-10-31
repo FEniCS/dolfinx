@@ -5,16 +5,12 @@
 // SPDX-License-Identifier:    LGPL-3.0-or-later
 
 #include "DofMapPermuter.h"
+#include "ElementDofLayout.h"
 #include <dolfin/common/log.h>
 #include <dolfin/mesh/MeshEntity.h>
 #include <dolfin/mesh/MeshIterator.h>
 
-namespace
-{
-}
-
-namespace dolfin
-{
+using namespace dolfin;
 
 namespace
 {
@@ -272,24 +268,24 @@ compute_ordering_tetrahedron(const mesh::Mesh& mesh)
     cell_orders(cell_n, 4) = (vertices[0] > vertices[2]);
     cell_orders(cell_n, 5) = (vertices[0] > vertices[1]);
 
-    std::array<int, 2> tri_orders
+    const std::array<int, 2> tri_orders0
         = calculate_triangle_orders(vertices[1], vertices[2], vertices[3]);
-    cell_orders(cell_n, 6) = tri_orders[0];
-    cell_orders(cell_n, 7) = tri_orders[1];
-    tri_orders
+    cell_orders(cell_n, 6) = tri_orders0[0];
+    cell_orders(cell_n, 7) = tri_orders0[1];
+    const std::array<int, 2> tri_orders1
         = calculate_triangle_orders(vertices[0], vertices[2], vertices[3]);
-    cell_orders(cell_n, 8) = tri_orders[0];
-    cell_orders(cell_n, 9) = tri_orders[1];
-    tri_orders
+    cell_orders(cell_n, 8) = tri_orders1[0];
+    cell_orders(cell_n, 9) = tri_orders1[1];
+    const std::array<int, 2> tri_orders2
         = calculate_triangle_orders(vertices[0], vertices[1], vertices[3]);
-    cell_orders(cell_n, 10) = tri_orders[0];
-    cell_orders(cell_n, 11) = tri_orders[1];
-    tri_orders
+    cell_orders(cell_n, 10) = tri_orders2[0];
+    cell_orders(cell_n, 11) = tri_orders2[1];
+    const std::array<int, 2> tri_orders3
         = calculate_triangle_orders(vertices[0], vertices[1], vertices[2]);
-    cell_orders(cell_n, 12) = tri_orders[0];
-    cell_orders(cell_n, 13) = tri_orders[1];
+    cell_orders(cell_n, 12) = tri_orders3[0];
+    cell_orders(cell_n, 13) = tri_orders3[1];
 
-    std::array<int, 4> tet_orders = calculate_tetrahedron_orders(
+    const std::array<int, 4> tet_orders = calculate_tetrahedron_orders(
         vertices[0], vertices[1], vertices[2], vertices[3]);
     cell_orders(cell_n, 14) = tet_orders[0];
     cell_orders(cell_n, 15) = tet_orders[1];
@@ -422,7 +418,6 @@ generate_permutations(const mesh::Mesh& mesh,
   const int num_permutations = get_num_permutations(mesh.cell_type());
   Eigen::Array<int, Eigen::Dynamic, Eigen::Dynamic> output(
       num_permutations, dof_layout.num_dofs());
-
   for (int i = 0; i < dof_layout.num_sub_dofmaps(); ++i)
   {
     const std::vector<int> sub_view = dof_layout.sub_view({i});
@@ -435,16 +430,16 @@ generate_permutations(const mesh::Mesh& mesh,
   return output;
 }
 //-----------------------------------------------------------------------------
-
 } // namespace
 
-namespace fem
-{
 //-----------------------------------------------------------------------------
-DofMapPermuter::DofMapPermuter(const mesh::Mesh& mesh,
-                               const ElementDofLayout& dof_layout)
+fem::DofMapPermuter::DofMapPermuter(const mesh::Mesh& mesh,
+                                    const fem::ElementDofLayout& dof_layout)
 {
+  // Build permutations
   _permutations = generate_permutations(mesh, dof_layout);
+
+  // Build ordering in each cell
   switch (mesh.cell_type())
   {
   case (mesh::CellType::triangle):
@@ -471,7 +466,7 @@ DofMapPermuter::DofMapPermuter(const mesh::Mesh& mesh,
   }
 }
 //-----------------------------------------------------------------------------
-std::vector<int> DofMapPermuter::cell_permutation(const int cell) const
+std::vector<int> fem::DofMapPermuter::get_cell_permutation(const int cell) const
 {
   std::vector<int> p(_permutations.cols());
   std::iota(p.begin(), p.end(), 0);
@@ -488,5 +483,3 @@ std::vector<int> DofMapPermuter::cell_permutation(const int cell) const
   return p;
 }
 //-----------------------------------------------------------------------------
-} // namespace fem
-} // namespace dolfin

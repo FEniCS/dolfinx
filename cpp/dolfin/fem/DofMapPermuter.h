@@ -4,8 +4,7 @@
 //
 // SPDX-License-Identifier:    LGPL-3.0-or-later
 
-#include "ElementDofLayout.h"
-#include <tuple>
+#include <Eigen/Dense>
 #include <vector>
 
 namespace dolfin
@@ -18,6 +17,8 @@ class Mesh;
 
 namespace fem
 {
+class ElementDofLayout;
+
 /// A class to permute dofs on each cell
 class DofMapPermuter
 {
@@ -30,7 +31,7 @@ public:
   /// Return the dof permutations for the given cell
   /// @param[in] cell The cell index
   /// @return The permutation for the given cell
-  std::vector<int> cell_permutation(const int cell) const;
+  std::vector<int> get_cell_permutation(const int cell) const;
 
 private:
   // Ordering on each cell
