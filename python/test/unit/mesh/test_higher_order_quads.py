@@ -16,7 +16,7 @@ import pygmsh
 import pytest
 from test_higher_order_triangles import sympy_scipy
 
-
+@skip_in_parallel
 @pytest.mark.parametrize('L', [1, 2])
 @pytest.mark.parametrize('H', [1])
 @pytest.mark.parametrize('Z', [0, 0.3])
@@ -58,7 +58,6 @@ def test_second_order_mesh(L, H, Z):
 
     nodes = [0, 3, 7]
     ref = sympy_scipy(points, nodes, L, H)
-
     assert ref == pytest.approx(intu, rel=1e-6)
 
 
@@ -118,7 +117,6 @@ def test_third_order_mesh(L, H, Z):
 
     nodes = [0, 3, 10, 11]
     ref = sympy_scipy(points, nodes, L, H)
-
     assert ref == pytest.approx(intu, rel=1e-6)
 
 
@@ -189,10 +187,9 @@ def test_fourth_order_mesh(L, H, Z):
 
     nodes = [0, 5, 10, 15, 20]
     ref = sympy_scipy(points, nodes, L, H)
-
     assert ref == pytest.approx(intu, rel=1e-5)
 
-
+@skip_in_parallel
 @pytest.mark.parametrize('order', [2, 3])
 def test_gmsh_input(order):
     # Parameterize test if gmsh gets wider support
