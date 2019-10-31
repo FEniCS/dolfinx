@@ -133,8 +133,9 @@ private:
   // Number of mesh vertices
   std::int32_t _num_vertices;
 
-  // Number of ghost indices for each topological dimension (local
-  // or global??)
+  // Local index of first ghost entity, for each topological dimension.
+  // Since ghost entities come after non-ghost entities, this is
+  // also the number of local non-ghost entities for each dimension.
   std::vector<std::size_t> _ghost_offset_index;
 
   // Global number of mesh entities for each topological dimension
