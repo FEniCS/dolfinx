@@ -9,6 +9,7 @@
 #include <cfloat>
 #include <cmath>
 #include <dolfin/common/MPI.h>
+#include <dolfin/io/cells.h>
 #include <dolfin/mesh/Partitioning.h>
 
 using namespace dolfin;
@@ -249,8 +250,12 @@ mesh::Mesh build_quad(MPI_Comm comm, const std::array<Eigen::Vector3d, 2>& p,
       ++cell;
     }
 
+  Eigen::Array<std::int64_t, Eigen::Dynamic, 4, Eigen::RowMajor> topo_reordered
+      = io::cells::vtk_to_dolfin_ordering(topo, mesh::CellType::quadrilateral);
+
   return mesh::Partitioning::build_distributed_mesh(
-      comm, mesh::CellType::quadrilateral, geom, topo, {}, ghost_mode);
+      comm, mesh::CellType::quadrilateral, geom, topo_reordered, {},
+      ghost_mode);
 }
 //-----------------------------------------------------------------------------
 } // namespace
