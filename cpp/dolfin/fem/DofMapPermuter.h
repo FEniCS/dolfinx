@@ -31,7 +31,7 @@ public:
   /// Return the dof permutations for the given cell
   /// @param[in] cell The cell index
   /// @return The permutation for the given cell
-  std::vector<int> cell_permutation(const int cell) const;
+  std::vector<int> get_cell_permutation(const int cell) const;
 
 private:
   // Ordering on each cell

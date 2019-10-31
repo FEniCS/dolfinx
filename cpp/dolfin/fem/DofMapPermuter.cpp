@@ -466,7 +466,7 @@ fem::DofMapPermuter::DofMapPermuter(const mesh::Mesh& mesh,
   }
 }
 //-----------------------------------------------------------------------------
-std::vector<int> fem::DofMapPermuter::cell_permutation(const int cell) const
+std::vector<int> fem::DofMapPermuter::get_cell_permutation(const int cell) const
 {
   std::vector<int> p(_permutations.cols());
   std::iota(p.begin(), p.end(), 0);
