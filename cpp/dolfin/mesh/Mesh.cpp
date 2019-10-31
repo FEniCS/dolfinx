@@ -319,8 +319,7 @@ Mesh::Mesh(
   _topology->set_num_entities_global(tdim, num_cells_global);
   _topology->init_ghost(tdim, num_cells_local);
 
-  // Make cell to vertex connectivity, using the dolfin_to_vtk permutation
-  // to find the vertices
+  // Make cell to vertex connectivity
   Eigen::Array<std::int32_t, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
       vertex_cols(cells.rows(), num_vertices_per_cell);
   std::vector<int> vertex_indices = mesh::cell_vertex_index(type, cells.cols());
