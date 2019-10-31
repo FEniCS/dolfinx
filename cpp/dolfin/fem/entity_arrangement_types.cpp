@@ -143,7 +143,7 @@ fem::EntityArrangementTypes::EntityArrangementTypes(
 //-----------------------------------------------------------------------------
 int fem::EntityArrangementTypes::get_block_size(const int dim,
                                                 const int element_dim) const
-int fem::EntityArrangementTypes::get_block_size(const int dim) const
+{
   switch (dim)
   {
   case 0:
