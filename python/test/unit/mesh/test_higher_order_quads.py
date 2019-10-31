@@ -16,6 +16,7 @@ import pygmsh
 import pytest
 from test_higher_order_triangles import sympy_scipy
 
+
 @skip_in_parallel
 @pytest.mark.parametrize('L', [1, 2])
 @pytest.mark.parametrize('H', [1])
@@ -188,6 +189,7 @@ def test_fourth_order_mesh(L, H, Z):
     nodes = [0, 5, 10, 15, 20]
     ref = sympy_scipy(points, nodes, L, H)
     assert ref == pytest.approx(intu, rel=1e-5)
+
 
 @skip_in_parallel
 @pytest.mark.parametrize('order', [2, 3])
