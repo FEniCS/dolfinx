@@ -469,8 +469,24 @@ def test_readonly_view_local_to_global_unwoned(mesh):
 
 
 @skip_in_parallel
-@pytest.mark.parametrize('n', [1, 2, 3, 4, 5, 6])
-def test_triangle_dof_ordering(n):
+@skip_in_parallel
+@pytest.mark.parametrize('space_type', [
+    ("P", 1), ("P", 2), ("P", 3), ("P", 4),
+    ("N1curl", 1),
+    pytest.param(("N1curl", 2), marks=pytest.mark.xfail),
+    pytest.param(("N1curl", 3), marks=pytest.mark.xfail),
+    pytest.param(("N1curl", 4), marks=pytest.mark.xfail),
+    ("RT", 1), ("RT", 2), ("RT", 3), ("RT", 4),
+    ("BDM", 1),
+    pytest.param(("BDM", 2), marks=pytest.mark.xfail),
+    pytest.param(("BDM", 3), marks=pytest.mark.xfail),
+    pytest.param(("BDM", 4), marks=pytest.mark.xfail),
+    ("N2curl", 1),
+    pytest.param(("N2curl", 2), marks=pytest.mark.xfail),
+    pytest.param(("N2curl", 3), marks=pytest.mark.xfail),
+    pytest.param(("N2curl", 4), marks=pytest.mark.xfail),
+])
+def test_triangle_dof_ordering(space_type):
     """Checks that dofs on shared triangle edges match up"""
     # Create simple triangle mesh
     from itertools import permutations
@@ -478,7 +494,7 @@ def test_triangle_dof_ordering(n):
     cells = list(permutations(range(3)))
     mesh = cpp.mesh.Mesh(MPI.comm_world, CellType.triangle, points,
                          np.array(cells), [], cpp.mesh.GhostMode.none)
-    V = FunctionSpace(mesh, ("Lagrange", n))
+    V = FunctionSpace(mesh, space_type)
 
     dofmap = V.dofmap
 
@@ -510,8 +526,22 @@ def test_triangle_dof_ordering(n):
 
 
 @skip_in_parallel
-@pytest.mark.parametrize('n', [1, 2, 3, 4, 5, 6])
-def test_tetrahedron_dof_ordering(n):
+@pytest.mark.parametrize('space_type', [
+    ("P", 1), ("P", 2), ("P", 3), ("P", 4),
+    ("N1curl", 1), ("N1curl", 2),
+    pytest.param(("N1curl", 3), marks=pytest.mark.xfail),
+    pytest.param(("N1curl", 4), marks=pytest.mark.xfail),
+    ("RT", 1), ("RT", 2), ("RT", 3), ("RT", 4),
+    ("BDM", 1),
+    pytest.param(("BDM", 2), marks=pytest.mark.xfail),
+    pytest.param(("BDM", 3), marks=pytest.mark.xfail),
+    pytest.param(("BDM", 4), marks=pytest.mark.xfail),
+    ("N2curl", 1),
+    pytest.param(("N2curl", 2), marks=pytest.mark.xfail),
+    pytest.param(("N2curl", 3), marks=pytest.mark.xfail),
+    pytest.param(("N2curl", 4), marks=pytest.mark.xfail),
+])
+def test_tetrahedron_dof_ordering(space_type):
     """Checks that dofs on shared tetrahedron edges and faces match up"""
     # Create simple tetrahedron mesh
     from itertools import permutations
@@ -519,7 +549,7 @@ def test_tetrahedron_dof_ordering(n):
     cells = list(permutations(range(4)))
     mesh = cpp.mesh.Mesh(MPI.comm_world, CellType.tetrahedron, points,
                          np.array(cells), [], cpp.mesh.GhostMode.none)
-    V = FunctionSpace(mesh, ("Lagrange", n))
+    V = FunctionSpace(mesh, space_type)
 
     dofmap = V.dofmap
 
