@@ -115,7 +115,7 @@ public:
   int block_size() const;
 
   /// Block size of entity
-  int entity_block_size(int dim) const;
+  int entity_block_size(const int dim, const int element_dim) const;
 
   /// True iff dof map is a view into another map
   ///

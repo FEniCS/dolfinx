@@ -164,7 +164,8 @@ ElementDofLayout::sub_view(const std::vector<int>& component) const
 //-----------------------------------------------------------------------------
 int ElementDofLayout::block_size() const { return _block_size; }
 //-----------------------------------------------------------------------------
-int ElementDofLayout::entity_block_size(const int dim) const
+int ElementDofLayout::entity_block_size(const int dim,
+                                        const int element_dim) const
 {
   if (dim == 0)
   {
@@ -172,7 +173,7 @@ int ElementDofLayout::entity_block_size(const int dim) const
                     "num_entity_dofs(0).";
     return num_entity_dofs(0);
   }
-  return _entity_types.get_block_size(dim) * _block_size;
+  return _entity_types.get_block_size(dim, element_dim) * _block_size;
 }
 //-----------------------------------------------------------------------------
 bool ElementDofLayout::is_view() const { return !_parent_map.empty(); }

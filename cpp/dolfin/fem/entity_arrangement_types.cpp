@@ -10,17 +10,20 @@
 namespace
 {
 //-----------------------------------------------------------------------------
-int _vertex_arrangement_blocksize(dolfin::fem::ElementVectorType type)
+int _vertex_arrangement_blocksize(dolfin::fem::ElementVectorType type,
+                                  const int element_dim)
 {
   return 1;
 }
 //-----------------------------------------------------------------------------
-int _edge_arrangement_blocksize(dolfin::fem::ElementVectorType type)
+int _edge_arrangement_blocksize(dolfin::fem::ElementVectorType type,
+                                const int element_dim)
 {
   return 1;
 }
 //-----------------------------------------------------------------------------
-int _face_arrangement_blocksize(dolfin::fem::ElementVectorType type)
+int _face_arrangement_blocksize(dolfin::fem::ElementVectorType type,
+                                const int element_dim)
 {
   switch (type)
   {
@@ -29,13 +32,20 @@ int _face_arrangement_blocksize(dolfin::fem::ElementVectorType type)
   case dolfin::fem::ElementVectorType::curl:
     return 2;
   case dolfin::fem::ElementVectorType::div:
-    return 1;
+    if (element_dim == 3)
+      return 1;
+    return 2;
+  case dolfin::fem::ElementVectorType::ein:
+    throw std::runtime_error("HEin not yet implemented.");
+  case dolfin::fem::ElementVectorType::divdiv:
+    throw std::runtime_error("HDivDiv not yet implemented.");
   }
   // Should not reach this point
   return 0;
 }
 //-----------------------------------------------------------------------------
-int _volume_arrangement_blocksize(dolfin::fem::ElementVectorType type)
+int _volume_arrangement_blocksize(dolfin::fem::ElementVectorType type,
+                                  const int element_dim)
 {
   switch (type)
   {
@@ -45,6 +55,10 @@ int _volume_arrangement_blocksize(dolfin::fem::ElementVectorType type)
     return 3;
   case dolfin::fem::ElementVectorType::div:
     return 3;
+  case dolfin::fem::ElementVectorType::ein:
+    throw std::runtime_error("HEin not yet implemented.");
+  case dolfin::fem::ElementVectorType::divdiv:
+    throw std::runtime_error("HDivDiv not yet implemented.");
   }
   // Should not reach this point
   return 0;
@@ -109,30 +123,44 @@ EntityArrangementTypes::EntityArrangementTypes(const ufc_dofmap& dofmap,
   else if (dofmap.volume_arrangement_type == 4)
     _volume_type = VolumeArrangementType::hexahedron;
 
-  _element_type = ElementVectorType::scalar;
-  if (dofmap.sobolev_space_type == 2)
-    _element_type = ElementVectorType::curl;
+  /* From ufc:
+      mixed = -1, L2 = 0, H1 = 1, H2 = 2,
+      HCurl = 3, HDiv = 4, HEin = 5, HDivDiv = 6,
+  */
+  if (dofmap.sobolev_space_type == 0)
+    _element_type = ElementVectorType::scalar;
+  else if (dofmap.sobolev_space_type == 1)
+    _element_type = ElementVectorType::scalar;
+  else if (dofmap.sobolev_space_type == 2)
+    _element_type = ElementVectorType::scalar;
   else if (dofmap.sobolev_space_type == 3)
+    _element_type = ElementVectorType::curl;
+  else if (dofmap.sobolev_space_type == 4)
     _element_type = ElementVectorType::div;
+  else if (dofmap.sobolev_space_type == 5)
+    _element_type = ElementVectorType::ein; // TODO: what is this
+  else if (dofmap.sobolev_space_type == 6)
+    _element_type = ElementVectorType::divdiv; // TODO: what is this
 }
 //-----------------------------------------------------------------------------
-int EntityArrangementTypes::get_block_size(const int dim) const
+int EntityArrangementTypes::get_block_size(const int dim,
+                                           const int element_dim) const
 {
   if (dim == 0)
   {
-    return _vertex_arrangement_blocksize(_element_type);
+    return _vertex_arrangement_blocksize(_element_type, element_dim);
   }
   if (dim == 1)
   {
-    return _edge_arrangement_blocksize(_element_type);
+    return _edge_arrangement_blocksize(_element_type, element_dim);
   }
   if (dim == 2)
   {
-    return _face_arrangement_blocksize(_element_type);
+    return _face_arrangement_blocksize(_element_type, element_dim);
   }
   if (dim == 3)
   {
-    return _volume_arrangement_blocksize(_element_type);
+    return _volume_arrangement_blocksize(_element_type, element_dim);
   }
   throw std::runtime_error("Unrecognised arrangement type.");
 }

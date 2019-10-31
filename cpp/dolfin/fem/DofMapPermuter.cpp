@@ -177,14 +177,14 @@ tetrahedron_rotations_and_reflection(const int volume_dofs, const int blocksize)
   int start = 0;
   for (int side = side_length; side > 0; --side)
   {
-    int face_dofs = side * (side + 1) / 2;
+    int face_dofs = blocksize * side * (side + 1) / 2;
     const std::array<std::vector<int>, 2> base_faces
-        = triangle_rotation_and_reflection(face_dofs, 1);
+        = triangle_rotation_and_reflection(face_dofs, blocksize);
 
-    std::vector<int> face(face_dofs * blocksize);
+    std::vector<int> face(face_dofs);
     std::iota(face.begin(), face.end(), start);
 
-    std::vector<int> face2(face_dofs * blocksize);
+    std::vector<int> face2(face_dofs);
     int j = 0;
     int start2 = side * side_length - 1 - side * (side - 1) / 2;
     for (int row = 0; row < side; ++row)
@@ -309,8 +309,8 @@ generate_permutations_triangle(const mesh::Mesh& mesh,
 
   const int edge_dofs = dof_layout.num_entity_dofs(1);
   const int face_dofs = dof_layout.num_entity_dofs(2);
-  const int edge_bs = dof_layout.entity_block_size(1);
-  const int face_bs = dof_layout.entity_block_size(2);
+  const int edge_bs = dof_layout.entity_block_size(1, 2);
+  const int face_bs = dof_layout.entity_block_size(2, 2);
 
   Eigen::Array<int, Eigen::Dynamic, Eigen::Dynamic> permutations(
       num_permutations, dof_count);
@@ -349,9 +349,9 @@ generate_permutations_tetrahedron(const mesh::Mesh& mesh,
   const int edge_dofs = dof_layout.num_entity_dofs(1);
   const int face_dofs = dof_layout.num_entity_dofs(2);
   const int volume_dofs = dof_layout.num_entity_dofs(3);
-  const int edge_bs = dof_layout.entity_block_size(1);
-  const int face_bs = dof_layout.entity_block_size(2);
-  const int volume_bs = dof_layout.entity_block_size(3);
+  const int edge_bs = dof_layout.entity_block_size(1, 3);
+  const int face_bs = dof_layout.entity_block_size(2, 3);
+  const int volume_bs = dof_layout.entity_block_size(3, 3);
 
   Eigen::Array<int, Eigen::Dynamic, Eigen::Dynamic> permutations(
       num_permutations, dof_count);

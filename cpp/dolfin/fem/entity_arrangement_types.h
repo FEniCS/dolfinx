@@ -20,7 +20,9 @@ enum class ElementVectorType : int
 {
   scalar = 0,
   div = 1,
-  curl = 2
+  curl = 2,
+  ein = 3,
+  divdiv = 4
 };
 
 /// Vertex arrangement type identifier
@@ -83,8 +85,9 @@ public:
 
   /// Get the blocksize on an entity of a dimension
   /// @param[in] dim The dimension of the entity
+  /// @param[in] element_dim The dimension of the mesh
   /// @return The block size
-  int get_block_size(const int dim) const;
+  int get_block_size(const int dim, const int element_dim) const;
 
 private:
   fem::VertexArrangementType _vertex_type;
