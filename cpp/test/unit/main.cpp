@@ -4,9 +4,8 @@
 
 int main(int argc, char* argv[])
 {
-
-  // Parallel tests require MPI_Init and MPI_Finalize before and after the test
-  // framework
+  // Parallel tests require MPI initialization before any tests run and
+  // termination only after all tests complete.
   MPI_Init(&argc, &argv);
   int result = Catch::Session().run(argc, argv);
   MPI_Finalize();
