@@ -109,9 +109,8 @@ EntityArrangementTypes::EntityArrangementTypes(const ufc_dofmap& dofmap,
   else if (dofmap.volume_arrangement_type == 4)
     _volume_type = VolumeArrangementType::hexahedron;
 
-  if (dofmap.sobolev_space_type == 0 || dofmap.sobolev_space_type == 1)
-    _element_type = ElementVectorType::scalar;
-  else if (dofmap.sobolev_space_type == 2)
+  _element_type = ElementVectorType::scalar;
+  if (dofmap.sobolev_space_type == 2)
     _element_type = ElementVectorType::curl;
   else if (dofmap.sobolev_space_type == 3)
     _element_type = ElementVectorType::div;
