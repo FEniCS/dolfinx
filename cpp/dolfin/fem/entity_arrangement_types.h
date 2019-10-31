@@ -7,11 +7,16 @@
 #pragma once
 
 #include <dolfin/common/types.h>
-#include <dolfin/mesh/Mesh.h>
 #include <ufc.h>
 
 namespace dolfin
 {
+namespace mesh
+{
+enum class CellType;
+class Mesh;
+} // namespace mesh
+
 namespace fem
 {
 
@@ -59,7 +64,7 @@ class EntityArrangementTypes
 public:
   /// Construction
   EntityArrangementTypes(const ufc_dofmap& dofmap,
-                         const mesh::CellType cell_type);
+                         const mesh::CellType& cell_type);
 
   /// Get the arrangement type on vertices
   /// @return The vertex arrangement type
