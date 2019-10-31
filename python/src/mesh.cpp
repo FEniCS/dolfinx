@@ -18,7 +18,6 @@
 #include <dolfin/mesh/MeshIterator.h>
 #include <dolfin/mesh/MeshQuality.h>
 #include <dolfin/mesh/MeshValueCollection.h>
-#include <dolfin/mesh/Ordering.h>
 #include <dolfin/mesh/PartitionData.h>
 #include <dolfin/mesh/Partitioning.h>
 #include <dolfin/mesh/Topology.h>
@@ -80,27 +79,27 @@ void mesh(py::module& m)
   py::class_<dolfin::mesh::CoordinateDofs,
              std::shared_ptr<dolfin::mesh::CoordinateDofs>>(
       m, "CoordinateDofs", "CoordinateDofs object")
-      .def(
-          "entity_points",
-          [](const dolfin::mesh::CoordinateDofs& self) {
-            const dolfin::mesh::Connectivity& connectivity
-                = self.entity_points();
-            Eigen::Ref<const Eigen::Array<std::int32_t, Eigen::Dynamic, 1>>
-                connections = connectivity.connections();
-            const int num_entities = connectivity.entity_positions().size() - 1;
+      .def("entity_points",
+           [](const dolfin::mesh::CoordinateDofs& self) {
+             const dolfin::mesh::Connectivity& connectivity
+                 = self.entity_points();
+             Eigen::Ref<const Eigen::Array<std::int32_t, Eigen::Dynamic, 1>>
+                 connections = connectivity.connections();
+             const int num_entities
+                 = connectivity.entity_positions().size() - 1;
 
-            // FIXME: mesh::CoordinateDofs should know its dimension
-            // (entity_size) to handle empty case on a process.
-            int entity_size = 0;
-            if (num_entities > 0)
-            {
-              assert(connections.size() % num_entities == 0);
-              entity_size = connections.size() / num_entities;
-            }
-            return py::array({num_entities, entity_size}, connections.data(),
-                             py::none());
-          },
-          py::return_value_policy::reference_internal);
+             // FIXME: mesh::CoordinateDofs should know its dimension
+             // (entity_size) to handle empty case on a process.
+             int entity_size = 0;
+             if (num_entities > 0)
+             {
+               assert(connections.size() % num_entities == 0);
+               entity_size = connections.size() / num_entities;
+             }
+             return py::array({num_entities, entity_size}, connections.data(),
+                              py::none());
+           },
+           py::return_value_policy::reference_internal);
 
   // dolfin::mesh::Geometry class
   py::class_<dolfin::mesh::Geometry, std::shared_ptr<dolfin::mesh::Geometry>>(
@@ -143,14 +142,13 @@ void mesh(py::module& m)
            py::overload_cast<int>(&dolfin::mesh::Topology::entity_owner,
                                   py::const_))
       .def("on_boundary", &dolfin::mesh::Topology::on_boundary)
-      .def(
-          "global_indices",
-          [](const dolfin::mesh::Topology& self, int dim) {
-            auto& indices = self.global_indices(dim);
-            return py::array_t<std::int64_t>(indices.size(), indices.data(),
-                                             py::none());
-          },
-          py::return_value_policy::reference_internal)
+      .def("global_indices",
+           [](const dolfin::mesh::Topology& self, int dim) {
+             auto& indices = self.global_indices(dim);
+             return py::array_t<std::int64_t>(indices.size(), indices.data(),
+                                              py::none());
+           },
+           py::return_value_policy::reference_internal)
       .def("shared_entities",
            py::overload_cast<int>(&dolfin::mesh::Topology::shared_entities))
       .def("str", &dolfin::mesh::Topology::str);
@@ -221,15 +219,14 @@ void mesh(py::module& m)
   py::class_<dolfin::mesh::Connectivity,
              std::shared_ptr<dolfin::mesh::Connectivity>>(m, "Connectivity",
                                                           "Connectivity object")
-      .def(
-          "connections",
-          [](const dolfin::mesh::Connectivity& self, std::size_t i) {
-            return Eigen::Map<
-                const Eigen::Array<std::int32_t, Eigen::Dynamic, 1>>(
-                self.connections(i), self.size(i));
-          },
-          "Connections for a single mesh entity",
-          py::return_value_policy::reference_internal)
+      .def("connections",
+           [](const dolfin::mesh::Connectivity& self, std::size_t i) {
+             return Eigen::Map<
+                 const Eigen::Array<std::int32_t, Eigen::Dynamic, 1>>(
+                 self.connections(i), self.size(i));
+           },
+           "Connections for a single mesh entity",
+           py::return_value_policy::reference_internal)
       .def("connections",
            py::overload_cast<>(&dolfin::mesh::Connectivity::connections),
            "Connections for all mesh entities")
@@ -249,22 +246,21 @@ void mesh(py::module& m)
       .def("index",
            py::overload_cast<>(&dolfin::mesh::MeshEntity::index, py::const_),
            "Entity index")
-      .def(
-          "entities",
-          [](dolfin::mesh::MeshEntity& self, std::size_t dim) {
-            if (self.dim() == dim)
-              return py::array(1, self.entities(dim));
-            else
-            {
-              assert(self.mesh.topology().connectivity(self.dim(), dim));
-              const int num_entities = self.mesh()
-                                           .topology()
-                                           .connectivity(self.dim(), dim)
-                                           ->size(self.index());
-              return py::array(num_entities, self.entities(dim));
-            }
-          },
-          py::return_value_policy::reference_internal)
+      .def("entities",
+           [](dolfin::mesh::MeshEntity& self, std::size_t dim) {
+             if (self.dim() == dim)
+               return py::array(1, self.entities(dim));
+             else
+             {
+               assert(self.mesh.topology().connectivity(self.dim(), dim));
+               const int num_entities = self.mesh()
+                                            .topology()
+                                            .connectivity(self.dim(), dim)
+                                            ->size(self.index());
+               return py::array(num_entities, self.entities(dim));
+             }
+           },
+           py::return_value_policy::reference_internal)
       .def("__str__",
            [](dolfin::mesh::MeshEntity& self) { return self.str(false); });
 
@@ -351,11 +347,6 @@ void mesh(py::module& m)
                   py::arg("mesh"), py::arg("num_bins") = 50)
       .def_static("dihedral_angles_min_max",
                   &dolfin::mesh::MeshQuality::dihedral_angles_min_max);
-
-  py::class_<dolfin::mesh::Ordering>(m, "Ordering", "Order mesh cell entities")
-      .def_static("order_simplex", &dolfin::mesh::Ordering::order_simplex)
-      .def_static("is_ordered_simplex",
-                  &dolfin::mesh::Ordering::is_ordered_simplex);
 
   // dolfin::mesh::PartitionData class
   py::class_<dolfin::mesh::PartitionData,
