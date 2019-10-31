@@ -4,8 +4,7 @@
 //
 // SPDX-License-Identifier:    LGPL-3.0-or-later
 
-#include "ElementDofLayout.h"
-#include <tuple>
+#include <Eigen/Dense>
 #include <vector>
 
 namespace dolfin
@@ -18,6 +17,8 @@ class Mesh;
 
 namespace fem
 {
+class ElementDofLayout;
+
 /// A class to permute dofs on each cell
 class DofMapPermuter
 {

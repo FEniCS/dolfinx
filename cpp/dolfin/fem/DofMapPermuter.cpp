@@ -5,16 +5,12 @@
 // SPDX-License-Identifier:    LGPL-3.0-or-later
 
 #include "DofMapPermuter.h"
+#include "ElementDofLayout.h"
 #include <dolfin/common/log.h>
 #include <dolfin/mesh/MeshEntity.h>
 #include <dolfin/mesh/MeshIterator.h>
 
-namespace
-{
-}
-
-namespace dolfin
-{
+using namespace dolfin;
 
 namespace
 {
@@ -434,14 +430,11 @@ generate_permutations(const mesh::Mesh& mesh,
   return output;
 }
 //-----------------------------------------------------------------------------
-
 } // namespace
 
-namespace fem
-{
 //-----------------------------------------------------------------------------
-DofMapPermuter::DofMapPermuter(const mesh::Mesh& mesh,
-                               const ElementDofLayout& dof_layout)
+fem::DofMapPermuter::DofMapPermuter(const mesh::Mesh& mesh,
+                                    const fem::ElementDofLayout& dof_layout)
 {
   // Build permutations
   _permutations = generate_permutations(mesh, dof_layout);
@@ -473,7 +466,7 @@ DofMapPermuter::DofMapPermuter(const mesh::Mesh& mesh,
   }
 }
 //-----------------------------------------------------------------------------
-std::vector<int> DofMapPermuter::cell_permutation(const int cell) const
+std::vector<int> fem::DofMapPermuter::cell_permutation(const int cell) const
 {
   std::vector<int> p(_permutations.cols());
   std::iota(p.begin(), p.end(), 0);
@@ -490,5 +483,3 @@ std::vector<int> DofMapPermuter::cell_permutation(const int cell) const
   return p;
 }
 //-----------------------------------------------------------------------------
-} // namespace fem
-} // namespace dolfin
