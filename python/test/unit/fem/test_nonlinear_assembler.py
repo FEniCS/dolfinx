@@ -170,10 +170,6 @@ class NonlinearPDE_SNESProblem():
         assert x.getType() != "nest"
         assert F.getType() != "nest"
         x.ghostUpdate(addv=PETSc.InsertMode.INSERT, mode=PETSc.ScatterMode.FORWARD)
-
-        soln_vecs = list(map(lambda var: var.vector, self.soln_vars))
-        dolfin.fem.copy_block_vector_to_sub_vectors(x, soln_vecs, self.L)
-
         dolfin.fem.assemble_vector_block(F, self.L, self.a, self.bcs, x0=x, scale=-1.0)
 
     def J_block(self, snes, x, J, P):
@@ -194,9 +190,6 @@ class NonlinearPDE_SNESProblem():
 
         for sub_x in x.getNestSubVecs():
             sub_x.ghostUpdate(addv=PETSc.InsertMode.INSERT, mode=PETSc.ScatterMode.FORWARD)
-        soln_vecs = list(map(lambda var: var.vector, self.soln_vars))
-        dolfin.fem.copy_block_vector_to_sub_vectors(x, soln_vecs, self.L)
-
         dolfin.fem.assemble_vector_nest(F, self.L, self.a, self.bcs, x0=x, scale=-1.0)
         # Must assemble F here in the case of nest matrices
         F.assemble()
@@ -487,9 +480,9 @@ def test_assembly_solve_taylor_hood(mesh):
     snes.solve(None, x1)
 
     assert snes.getConvergedReason() > 0
-    assert nest_matrix_norm(Jmat1) == pytest.approx(Jmat0.norm(), 1.0e-12)
-    assert Fvec1.norm() == pytest.approx(Fvec0.norm(), 1.0e-12)
-    assert x1.norm() == pytest.approx(x0.norm(), 1.0e-12)
+    assert nest_matrix_norm(Jmat1) == pytest.approx(Jmat0.norm(), 1.0e-10)
+    assert Fvec1.norm() == pytest.approx(Fvec0.norm(), 1.0e-10)
+    assert x1.norm() == pytest.approx(x0.norm(), rel=1.0e-5)
 
     # -- Monolithic
 
@@ -538,4 +531,4 @@ def test_assembly_solve_taylor_hood(mesh):
     assert snes.getConvergedReason() > 0
     assert Jmat2.norm() == pytest.approx(Jmat0.norm(), 1.0e-12)
     assert Fvec2.norm() == pytest.approx(Fvec0.norm(), 1.0e-12)
-    assert x2.norm() == pytest.approx(x0.norm(), 1.0e-12)
+    assert x2.norm() == pytest.approx(x0.norm(), 1.0e-4)
