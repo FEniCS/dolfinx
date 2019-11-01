@@ -32,7 +32,6 @@ public:
 
   /// Get the blocksize on an entity of a dimension
   /// @param[in] dim The dimension of the entity
-  /// @param[in] element_dim The dimension of the mesh
   /// @return The block size
   int get_block_size(const int dim) const;
 
