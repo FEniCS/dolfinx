@@ -191,14 +191,6 @@ void _assemble_vector_block(
   for (std::size_t i = 0; i < L.size(); ++i)
     maps0.push_back(L[i]->function_space(0)->dofmap()->index_map.get());
 
-  // Compute number of owned (i.e., non-ghost) entries for this process
-  int offset1 = 0;
-  for (auto map : maps0)
-  {
-    const int bs = map->block_size;
-    offset1 += map->size_local() * bs;
-  }
-
   // Assemble sub vectors
   std::vector<Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1>> b_vec(L.size());
   for (std::size_t i = 0; i < L.size(); ++i)
@@ -241,28 +233,8 @@ void _assemble_vector_block(
       fem::impl::apply_lifting(b_vec[i], a[i], bcs1[i], {}, scale);
   }
 
-  // Get local representation of b vector and copy values in
-  la::VecWrapper _b(b);
-
-  int offset0 = 0;
-  for (std::size_t i = 0; i < L.size(); ++i)
-  {
-    const int bs = maps0[i]->block_size;
-    const int map_size0 = maps0[i]->size_local() * bs;
-    const int map_size1 = maps0[i]->num_ghosts() * bs;
-
-    // Copy data into PETSc b Vec
-    Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1>& b_i = b_vec[i];
-    for (int j = 0; j < map_size0; ++j)
-      _b.x[offset0 + j] = b_i[j];
-    for (int j = 0; j < map_size1; ++j)
-      _b.x[offset1 + j] = b_i[map_size0 + j];
-
-    // Add to local offset for (owned and ghost) for this field
-    offset0 += map->size_local() * bs;
-    offset1 += map->num_ghosts() * bs;
-  }
-  _b.restore();
+  // Scatter local vectors to PETSc vector
+  la::scatter_local_vectors(b, b_vec, maps0);
 
   // FIXME: should this be lifted higher up in the code path?
   // Update ghosts
