@@ -231,33 +231,27 @@ void _assemble_vector_block(
 
     // Assemble and modify for bcs (lifting)
     fem::impl::assemble_vector(b_vec[i], *L[i]);
+  }
 
-    // Collect x0 sub vector
-    if (x0)
-    {
-      la::VecReadWrapper x0_wrapper(x0);
-
-      x0_sub_vec[i] = Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1>::Zero(
-          map_size0 + map_size1);
-      x0_sub_vec[i].segment(0, map_size0)
-          = x0_wrapper.x.segment(offset_x0_owned, map_size0);
-      x0_sub_vec[i].segment(map_size0, map_size1)
-          = x0_wrapper.x.segment(offset_x0_ghost, map_size1);
-      x0_sub_vec_ref.push_back(x0_sub_vec[i]);
-
-      x0_wrapper.restore();
-    }
-
-    offset_x0 += map_size0 + map_size1;
-    offset_x0_owned += map_size0;
-    offset_x0_ghost += map_size1;
+  // Get x0 blocks
+  std::vector<Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1>> x0_array;
+  std::vector<Eigen::Ref<const Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1>>>
+      x0_array_ref;
+  if (x0)
+  {
+    std::vector<const common::IndexMap*> maps;
+    for (std::size_t i = 0; i < a[0].size(); ++i)
+      maps.push_back(a[0][i]->function_space(1)->dofmap()->index_map.get());
+    x0_array = la::get_local_vectors(x0, maps);
+    for (std::size_t i = 0; i < x0_array.size(); ++i)
+      x0_array_ref.push_back(x0_array[i]);
   }
 
   // Apply lifting, x0_sub_vec_ref will be empty if x0 is NULL
   for (std::size_t i = 0; i < L.size(); ++i)
   {
     if (x0)
-      fem::impl::apply_lifting(b_vec[i], a[i], bcs1[i], x0_sub_vec_ref, scale);
+      fem::impl::apply_lifting(b_vec[i], a[i], bcs1[i], x0_array_ref, scale);
     else
       fem::impl::apply_lifting(b_vec[i], a[i], bcs1[i], {}, scale);
   }
