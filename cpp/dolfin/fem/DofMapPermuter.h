@@ -29,6 +29,8 @@ public:
   DofMapPermuter(const mesh::Mesh& mesh, const ElementDofLayout& dof_layout);
 
   /// Return the dof permutations for all cells
+  /// Each row contains the numbers from 0 to (number of dofs on reference - 1)
+  /// permuted so that edges are oriented towards the higher global vertex index
   /// @return The permutations
   Eigen::Array<int, Eigen::Dynamic, Eigen::Dynamic>
   get_cell_permutations() const;
