@@ -117,7 +117,7 @@ void _assemble_vector_nest(
   x0_sub_vecs_ref.reserve(L.size());
   if (x0)
   {
-    for (std::size_t i = 0; i < L.size(); ++i)
+    for (std::size_t i = 0; i < a[0].size(); ++i)
     {
       VecNestGetSubVec(x0, i, &x0_sub_vecs[i]);
       la::VecReadWrapper x0_wrapper(x0_sub_vecs[i]);
@@ -142,7 +142,7 @@ void _assemble_vector_nest(
       fem::impl::apply_lifting(_b.x, a[i], bcs1[i], x0_sub_vecs_ref, scale);
     else
       fem::impl::apply_lifting(_b.x, a[i], bcs1[i], {}, scale);
-    
+
     _b.restore();
 
     // Update ghosts
