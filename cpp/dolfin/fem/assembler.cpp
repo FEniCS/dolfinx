@@ -196,29 +196,8 @@ void _assemble_vector_block(
     offset1 += map->size_local() * bs;
   }
 
-  // const Vec _x0 = x0 ? x0->vec() : nullptr;
-
-  // Pack DirichletBC pointers for rows and columns
-  std::vector<std::vector<std::shared_ptr<const DirichletBC>>> bcs0
-      = bcs_rows(L, bcs);
-  std::vector<std::vector<std::vector<std::shared_ptr<const DirichletBC>>>> bcs1
-      = bcs_cols(a, bcs);
-
+  // Assemble sub vectors
   std::vector<Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1>> b_vec(L.size());
-
-  // Used in lifting BCs
-  int offset_x0 = 0;
-  int offset_x0_owned = 0;
-  int offset_x0_ghost = offset1;
-  std::vector<Eigen::Ref<const Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1>>>
-      x0_sub_vec_ref;
-  x0_sub_vec_ref.reserve(L.size());
-  // FIXME: design an Eigen::Map which handles the owned DoFs as well as ghosts
-  // so we don't have to copy x0
-  std::vector<Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1>> x0_sub_vec(
-      L.size());
-
-  // Assemble sub vectors and collect x0 sub vectors
   for (std::size_t i = 0; i < L.size(); ++i)
   {
     // Get size for block i
@@ -232,33 +211,34 @@ void _assemble_vector_block(
 
     // Assemble and modify for bcs (lifting)
     fem::impl::assemble_vector(b_vec[i], *L[i]);
-
-    // Collect x0 sub vector
-    if (x0)
-    {
-      la::VecReadWrapper x0_wrapper(x0);
-
-      x0_sub_vec[i] = Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1>::Zero(
-          map_size0 + map_size1);
-      x0_sub_vec[i].segment(0, map_size0)
-          = x0_wrapper.x.segment(offset_x0_owned, map_size0);
-      x0_sub_vec[i].segment(map_size0, map_size1)
-          = x0_wrapper.x.segment(offset_x0_ghost, map_size1);
-      x0_sub_vec_ref.push_back(x0_sub_vec[i]);
-
-      x0_wrapper.restore();
-    }
-
-    offset_x0 += map_size0 + map_size1;
-    offset_x0_owned += map_size0;
-    offset_x0_ghost += map_size1;
   }
+
+  // Split x0 vector, if required
+  std::vector<Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1>> x0_array;
+  std::vector<Eigen::Ref<const Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1>>>
+      x0_array_ref;
+  if (x0)
+  {
+    if (a[0].empty())
+      throw std::runtime_error("Issue with number of a columns.");
+
+    std::vector<const common::IndexMap*> maps;
+    for (std::size_t i = 0; i < a[0].size(); ++i)
+      maps.push_back(a[0][i]->function_space(1)->dofmap()->index_map.get());
+    x0_array = la::get_local_vectors(x0, maps);
+    for (std::size_t i = 0; i < x0_array.size(); ++i)
+      x0_array_ref.push_back(x0_array[i]);
+  }
+
+  // Pack DirichletBC pointers for columns
+  std::vector<std::vector<std::vector<std::shared_ptr<const DirichletBC>>>> bcs1
+      = bcs_cols(a, bcs);
 
   // Apply lifting, x0_sub_vec_ref will be empty if x0 is NULL
   for (std::size_t i = 0; i < L.size(); ++i)
   {
     if (x0)
-      fem::impl::apply_lifting(b_vec[i], a[i], bcs1[i], x0_sub_vec_ref, scale);
+      fem::impl::apply_lifting(b_vec[i], a[i], bcs1[i], x0_array_ref, scale);
     else
       fem::impl::apply_lifting(b_vec[i], a[i], bcs1[i], {}, scale);
   }
