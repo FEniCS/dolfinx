@@ -93,8 +93,10 @@ void _assemble_vector_nest(
     double scale)
 {
   if (L.size() < 2)
+  {
     throw std::runtime_error("Expected more than one linear form "
                              "in vector nest assembly.");
+  }
 
   VecType vec_type;
   for (Vec _vec : {b, x0})
@@ -111,18 +113,17 @@ void _assemble_vector_nest(
   std::vector<std::vector<std::vector<std::shared_ptr<const DirichletBC>>>> bcs1
       = bcs_cols(a, bcs);
 
-  std::vector<Vec> x0_sub_vecs(L.size(), nullptr);
+  std::vector<Vec> x0_sub(a[0].size(), nullptr);
+  std::vector<la::VecReadWrapper> x0_wrapper;
   std::vector<Eigen::Ref<const Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1>>>
-          x0_sub_vecs_ref;
-  x0_sub_vecs_ref.reserve(L.size());
+      x0_ref;
   if (x0)
   {
     for (std::size_t i = 0; i < a[0].size(); ++i)
     {
-      VecNestGetSubVec(x0, i, &x0_sub_vecs[i]);
-      la::VecReadWrapper x0_wrapper(x0_sub_vecs[i]);
-      x0_sub_vecs_ref.push_back(x0_wrapper.x);
-      x0_wrapper.restore();
+      VecNestGetSubVec(x0, i, &x0_sub[i]);
+      x0_wrapper.push_back(la::VecReadWrapper(x0_sub[i]));
+      x0_ref.push_back(x0_wrapper.back().x);
     }
   }
 
@@ -139,7 +140,7 @@ void _assemble_vector_nest(
     // FIXME: sort out x0 \ne nullptr for nested case
     // Apply lifting
     if (x0)
-      fem::impl::apply_lifting(_b.x, a[i], bcs1[i], x0_sub_vecs_ref, scale);
+      fem::impl::apply_lifting(_b.x, a[i], bcs1[i], x0_ref, scale);
     else
       fem::impl::apply_lifting(_b.x, a[i], bcs1[i], {}, scale);
 
@@ -164,7 +165,7 @@ void _assemble_vector_nest(
         if (a[i][j])
         {
           if (*L[i]->function_space(0) == *a[i][j]->function_space(1))
-            set_bc(b_sub, bcs0[i], x0_sub_vecs[i], scale);
+            set_bc(b_sub, bcs0[i], x0_sub[i], scale);
         }
       }
     }
@@ -209,14 +210,13 @@ void _assemble_vector_block(
   int offset_x0 = 0;
   int offset_x0_owned = 0;
   int offset_x0_ghost = offset1;
-  std::vector<
-          Eigen::Ref<const Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1>>>
-          x0_sub_vec_ref;
+  std::vector<Eigen::Ref<const Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1>>>
+      x0_sub_vec_ref;
   x0_sub_vec_ref.reserve(L.size());
   // FIXME: design an Eigen::Map which handles the owned DoFs as well as ghosts
   // so we don't have to copy x0
-  std::vector<Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1>>
-          x0_sub_vec(L.size());
+  std::vector<Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1>> x0_sub_vec(
+      L.size());
 
   // Assemble sub vectors and collect x0 sub vectors
   for (std::size_t i = 0; i < L.size(); ++i)
@@ -238,9 +238,12 @@ void _assemble_vector_block(
     {
       la::VecReadWrapper x0_wrapper(x0);
 
-      x0_sub_vec[i] = Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1>::Zero(map_size0 + map_size1);
-      x0_sub_vec[i].segment(0, map_size0) = x0_wrapper.x.segment(offset_x0_owned, map_size0);
-      x0_sub_vec[i].segment(map_size0, map_size1) = x0_wrapper.x.segment(offset_x0_ghost, map_size1);
+      x0_sub_vec[i] = Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1>::Zero(
+          map_size0 + map_size1);
+      x0_sub_vec[i].segment(0, map_size0)
+          = x0_wrapper.x.segment(offset_x0_owned, map_size0);
+      x0_sub_vec[i].segment(map_size0, map_size1)
+          = x0_wrapper.x.segment(offset_x0_ghost, map_size1);
       x0_sub_vec_ref.push_back(x0_sub_vec[i]);
 
       x0_wrapper.restore();
@@ -305,7 +308,7 @@ void _assemble_vector_block(
     Eigen::Map<Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1>> vec(
         values + offset, map_size0);
     Eigen::Map<const Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1>> vec_x0(
-            values_x0 + offset, map_size0);
+        values_x0 + offset, map_size0);
     for (auto bc : bcs)
     {
       if (L[i]->function_space(0)->contains(*bc->function_space()))
