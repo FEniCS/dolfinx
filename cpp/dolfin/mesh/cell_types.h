@@ -84,6 +84,7 @@ int cell_degree(CellType type, int num_nodes);
 /// Find indices for vertices for a cell
 /// @param[in] type The cell shape
 /// @param[in] num_nodes The number of cell 'nodes'
+/// @param[in] num_vertices_per_cell Number of vertices per cell
 /// @return List of vertex-indices
  std::vector<int> cell_vertex_index(mesh::CellType type, int num_nodes, int num_vertices_per_cell);
 
