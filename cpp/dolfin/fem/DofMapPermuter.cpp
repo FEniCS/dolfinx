@@ -160,6 +160,7 @@ tetrahedron_rotations_and_reflection(const int volume_dofs, const int blocksize)
   int side_length = 0;
   while (side_length * (side_length + 1) * (side_length + 2) < 6 * blocks)
     ++side_length;
+  // side_length is the length of one edge of the tetrahedron of dofs
 
   assert(side_length * (side_length + 1) * (side_length + 2) == 6 * blocks);
 
@@ -473,12 +474,16 @@ fem::DofMapPermuter::DofMapPermuter(const mesh::Mesh& mesh,
 
   // temporarily do nothing for cell types not yet implemented
   case (mesh::CellType::hexahedron):
+    _cell_ordering.resize(mesh.num_entities(mesh.topology().dim()), 0);
     break;
   case (mesh::CellType::quadrilateral):
+    _cell_ordering.resize(mesh.num_entities(mesh.topology().dim()), 0);
     break;
   case (mesh::CellType::interval):
+    _cell_ordering.resize(mesh.num_entities(mesh.topology().dim()), 0);
     break;
   case (mesh::CellType::point):
+    _cell_ordering.resize(mesh.num_entities(mesh.topology().dim()), 0);
     break;
 
   default:
@@ -488,24 +493,31 @@ fem::DofMapPermuter::DofMapPermuter(const mesh::Mesh& mesh,
   }
 }
 //-----------------------------------------------------------------------------
-std::vector<int> fem::DofMapPermuter::get_cell_permutation(const int cell) const
+Eigen::Array<int, Eigen::Dynamic, Eigen::Dynamic>
+fem::DofMapPermuter::get_cell_permutations() const
 {
-  // FIXME: Make this return a rectangular array of permutations for all cells,
-  // then replace this class with a single function doing this
-  std::vector<int> p(_permutations.cols());
-  std::iota(p.begin(), p.end(), 0);
-  // for each permutation in _permutations
-  for (int i = 0; i < _cell_ordering.cols(); ++i)
-  {
-    // _cell_ordering(cell, i) says how many times this permutation should be
-    // applied
-    for (int j = 0; j < _cell_ordering(cell, i); ++j)
+  Eigen::Array<int, Eigen::Dynamic, Eigen::Dynamic> p(_cell_ordering.rows(),
+                                                      _permutations.cols());
+  for (int i = 0; i < p.cols(); ++i)
+    p.col(i) = i;
+
+  std::vector<int> temp(p.cols());
+
+  // for each cell
+  for (int cell = 0; cell < _cell_ordering.rows(); ++cell)
+    // for each permutation in _permutations
+    for (int i = 0; i < _cell_ordering.cols(); ++i)
     {
-      std::vector<int> temp(p);
-      for (std::size_t k = 0; k < p.size(); ++k)
-        p[_permutations(i, k)] = temp[k];
+      // _cell_ordering(cell, i) says how many times this permutation should be
+      // applied
+      for (int j = 0; j < _cell_ordering(cell, i); ++j)
+      {
+        for (int k = 0; k < p.cols(); ++k)
+          temp[k] = p(cell, k);
+        for (int k = 0; k < p.cols(); ++k)
+          p(cell, _permutations(i, k)) = temp[k];
+      }
     }
-  }
 
   return p;
 }
