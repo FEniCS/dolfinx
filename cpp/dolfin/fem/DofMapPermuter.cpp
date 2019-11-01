@@ -311,8 +311,8 @@ generate_permutations_triangle(const mesh::Mesh& mesh,
 
   const int edge_dofs = dof_layout.num_entity_dofs(1);
   const int face_dofs = dof_layout.num_entity_dofs(2);
-  const int edge_bs = dof_layout.entity_block_size(1, 2);
-  const int face_bs = dof_layout.entity_block_size(2, 2);
+  const int edge_bs = dof_layout.entity_block_size(1);
+  const int face_bs = dof_layout.entity_block_size(2);
 
   Eigen::Array<int, Eigen::Dynamic, Eigen::Dynamic> permutations(
       num_permutations, dof_count);
@@ -351,9 +351,9 @@ generate_permutations_tetrahedron(const mesh::Mesh& mesh,
   const int edge_dofs = dof_layout.num_entity_dofs(1);
   const int face_dofs = dof_layout.num_entity_dofs(2);
   const int volume_dofs = dof_layout.num_entity_dofs(3);
-  const int edge_bs = dof_layout.entity_block_size(1, 3);
-  const int face_bs = dof_layout.entity_block_size(2, 3);
-  const int volume_bs = dof_layout.entity_block_size(3, 3);
+  const int edge_bs = dof_layout.entity_block_size(1);
+  const int face_bs = dof_layout.entity_block_size(2);
+  const int volume_bs = dof_layout.entity_block_size(3);
 
   Eigen::Array<int, Eigen::Dynamic, Eigen::Dynamic> permutations(
       num_permutations, dof_count);
