@@ -124,6 +124,8 @@ void _assemble_vector_nest(
     fem::impl::assemble_vector(_b.x, *L[i]);
 
     // Apply lifting
+    if (a[0].empty())
+      throw std::runtime_error("Issue with number of a columns.");
     std::vector<Vec> x0_sub(a[0].size(), nullptr);
     if (x0)
     {
@@ -205,18 +207,6 @@ void _assemble_vector_block(
 
   std::vector<Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1>> b_vec(L.size());
 
-  // Used in lifting BCs
-  int offset_x0 = 0;
-  int offset_x0_owned = 0;
-  int offset_x0_ghost = offset1;
-  std::vector<Eigen::Ref<const Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1>>>
-      x0_sub_vec_ref;
-  x0_sub_vec_ref.reserve(L.size());
-  // FIXME: design an Eigen::Map which handles the owned DoFs as well as ghosts
-  // so we don't have to copy x0
-  std::vector<Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1>> x0_sub_vec(
-      L.size());
-
   // Assemble sub vectors and collect x0 sub vectors
   for (std::size_t i = 0; i < L.size(); ++i)
   {
@@ -240,6 +230,8 @@ void _assemble_vector_block(
   if (x0)
   {
     std::vector<const common::IndexMap*> maps;
+    if (a[0].empty())
+      throw std::runtime_error("Issue with number of a columns.");
     for (std::size_t i = 0; i < a[0].size(); ++i)
       maps.push_back(a[0][i]->function_space(1)->dofmap()->index_map.get());
     x0_array = la::get_local_vectors(x0, maps);
