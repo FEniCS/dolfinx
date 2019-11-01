@@ -323,7 +323,7 @@ void HDF5File::write(const mesh::Mesh& mesh, int cell_dim,
     else
     {
       // If not already numbered, number entities of order cell_dim
-      mesh::DistributedMeshTools::number_entities(mesh, cell_dim);
+      // mesh::DistributedMeshTools::number_entities(mesh, cell_dim);
 
       // Drop duplicate topology for shared entities of less than mesh
       // dimension
@@ -526,7 +526,7 @@ HDF5File::read_mesh_function(std::shared_ptr<const mesh::Mesh> mesh,
   const std::size_t dim = vertices_per_cell - 1;
 
   // Ensure num_entities_global(cell_dim) is set
-  mesh::DistributedMeshTools::number_entities(*mesh, dim);
+  // mesh::DistributedMeshTools::number_entities(*mesh, dim);
 
   if (num_global_cells != mesh->num_entities_global(dim))
   {

@@ -305,7 +305,6 @@ DofMapStructure build_basic_dofmap(const mesh::Mesh& mesh,
     {
       needs_entities[d] = true;
       mesh.create_entities(d);
-      mesh::DistributedMeshTools::number_entities(mesh, d);
       num_mesh_entities_local[d] = mesh.num_entities(d);
       num_mesh_entities_global[d] = mesh.num_entities_global(d);
     }

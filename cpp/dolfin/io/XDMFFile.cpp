@@ -1727,7 +1727,7 @@ XDMFFile::read_mesh_function(std::shared_ptr<const mesh::Mesh> mesh,
       = xdmf_utils::get_num_cells(topology_node);
 
   // Ensure num_entities_global(cell_dim) is set and check dataset matches
-  mesh::DistributedMeshTools::number_entities(*mesh, dim);
+  //  mesh::DistributedMeshTools::number_entities(*mesh, dim);
   assert(mesh->num_entities_global(dim) == num_entities_global);
 
   boost::filesystem::path xdmf_filename(_filename);
@@ -1850,7 +1850,7 @@ void XDMFFile::write_mesh_function(const mesh::MeshFunction<T>& meshfunction)
     // Make sure entities are numbered - only needed for  mesh::Edge in 3D in
     // parallel
     // FIXME: remove this once  mesh::Edge in 3D in parallel works properly
-    mesh::DistributedMeshTools::number_entities(*mesh, cell_dim);
+    //    mesh::DistributedMeshTools::number_entities(*mesh, cell_dim);
 
     xdmf_write::add_topology_data(_mpi_comm.comm(), grid_node, h5_id, mf_name,
                                   *mesh, cell_dim);
