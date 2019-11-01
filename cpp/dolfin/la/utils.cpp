@@ -404,3 +404,76 @@ void dolfin::la::VecReadWrapper::restore()
       Eigen::Map<Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1>>(nullptr, 0);
 }
 //-----------------------------------------------------------------------------
+std::vector<Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1>>
+dolfin::la::get_local_vectors(
+    const Vec x, const std::vector<const dolfin::common::IndexMap*>& maps)
+{
+  // Get ghost offset
+  int offset_owned = 0;
+  for (const common::IndexMap* map : maps)
+  {
+    assert(map);
+    offset_owned += map->size_local() * map->block_size;
+  }
+
+  // Unwrap PETSc vector
+  la::VecReadWrapper x_wrapper(x);
+
+  // Copy PETSc Vec data in to Eigen vector
+  std::vector<Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1>> x_b;
+  int offset = 0;
+  int offset_ghost = offset_owned; // Ghost DoFs start after owned
+  for (const common::IndexMap* map : maps)
+  {
+    const int bs = map->block_size;
+    const int size_owned = map->size_local() * bs;
+    const int size_ghost = map->num_ghosts() * bs;
+    x_b.emplace_back(
+        Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1>(size_owned + size_ghost));
+    x_b.back().head(size_owned) = x_wrapper.x.segment(offset, size_owned);
+    x_b.back().tail(size_ghost) = x_wrapper.x.segment(offset_ghost, size_ghost);
+
+    offset += size_owned;
+    offset_ghost += size_ghost;
+  }
+
+  x_wrapper.restore();
+
+  return x_b;
+}
+//-----------------------------------------------------------------------------
+void dolfin::la::scatter_local_vectors(
+    Vec x,
+    const std::vector<const Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1>>& x_b,
+    const std::vector<const common::IndexMap*>& maps)
+{
+  if (x_b.size() != maps.size())
+    throw std::runtime_error("Mismatch in vector/map size.");
+
+  // Get ghost offset
+  int offset_owned = 0;
+  for (const common::IndexMap* map : maps)
+  {
+    assert(map);
+    offset_owned += map->size_local() * map->block_size;
+  }
+
+  // Copy Eigen vectors into PETSc Vec
+  int offset = 0;
+  int offset_ghost = offset_owned; // Ghost DoFs start after owned
+  la::VecWrapper x_wrapper(x);
+  for (std::size_t i = 0; i < maps.size(); ++i)
+  {
+    const int bs = maps[i]->block_size;
+    const int size_owned = maps[i]->size_local() * bs;
+    const int size_ghost = maps[i]->num_ghosts() * bs;
+    x_wrapper.x.segment(offset, size_owned) = x_b[i].head(size_owned);
+    x_wrapper.x.segment(offset_ghost, size_ghost) = x_b[i].tail(size_ghost);
+
+    offset += size_owned;
+    offset_ghost += size_ghost;
+  }
+
+  x_wrapper.restore();
+}
+//-----------------------------------------------------------------------------
