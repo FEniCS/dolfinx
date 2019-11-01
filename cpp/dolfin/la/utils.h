@@ -127,7 +127,7 @@ get_local_vectors(const Vec x,
 /// Scatter local Eigen vectors to Vec
 void scatter_local_vectors(
     Vec x,
-    const std::vector<const Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1>>& x_b,
+    const std::vector<Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1>>& x_b,
     const std::vector<const common::IndexMap*>& maps);
 
 } // namespace la

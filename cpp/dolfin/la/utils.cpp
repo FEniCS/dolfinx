@@ -444,7 +444,7 @@ dolfin::la::get_local_vectors(const Vec x,
 //-----------------------------------------------------------------------------
 void dolfin::la::scatter_local_vectors(
     Vec x,
-    const std::vector<const Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1>>& x_b,
+    const std::vector<Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1>>& x_b,
     const std::vector<const common::IndexMap*>& maps)
 {
   if (x_b.size() != maps.size())
