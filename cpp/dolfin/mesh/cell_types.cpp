@@ -539,7 +539,8 @@ int mesh::cell_degree(mesh::CellType type, int num_nodes)
   }
 }
 
-std::vector<int> mesh::cell_vertex_index(mesh::CellType type, int num_nodes)
+std::vector<int> mesh::cell_vertex_index(mesh::CellType type, int num_nodes,
+                                         int num_vertices_per_cell)
 {
   int degree = mesh::cell_degree(type, num_nodes);
   switch (type)
@@ -548,7 +549,7 @@ std::vector<int> mesh::cell_vertex_index(mesh::CellType type, int num_nodes)
     // Topographical ordering yields this
     return {0, 1, degree + 1, degree + 2};
   default:
-    std::vector<int> vertex_indices(num_nodes);
+    std::vector<int> vertex_indices(num_vertices_per_cell);
     std::iota(vertex_indices.begin(), vertex_indices.end(), 0);
     return vertex_indices;
   }

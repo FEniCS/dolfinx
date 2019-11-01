@@ -85,7 +85,7 @@ int cell_degree(CellType type, int num_nodes);
 /// @param[in] type The cell shape
 /// @param[in] num_nodes The number of cell 'nodes'
 /// @return List of vertex-indices
-std::vector<int> cell_vertex_index(mesh::CellType type, int num_nodes);
+ std::vector<int> cell_vertex_index(mesh::CellType type, int num_nodes, int num_vertices_per_cell);
 
 } // namespace mesh
 } // namespace dolfin

@@ -80,7 +80,6 @@ def test_second_order_mesh(H, Z):
     #  *-----*-----*   0----4-----1
 
     L = 1
-    # Perturbation of nodes 4,5,6,7 while keeping volume constant
     points = np.array([[0, 0, 0], [L, 0, 0], [L, H, Z], [0, H, Z],
                        [L / 2, 0, 0], [L, H / 2, 0], [L / 2, H, Z],
                        [0, H / 2, 0], [L / 2, H / 2, 0]])
