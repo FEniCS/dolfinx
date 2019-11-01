@@ -98,10 +98,11 @@ void _assemble_vector_nest(
                              "in vector nest assembly.");
   }
 
-  VecType vec_type;
   for (Vec _vec : {b, x0})
   {
-    VecGetType(_vec, &vec_type);
+    VecType vec_type;
+    if (_vec)
+      VecGetType(_vec, &vec_type);
     const bool is_vecnest = strcmp(vec_type, VECNEST) == 0;
     if (!is_vecnest)
       throw std::runtime_error("Expected nested vectors.");
@@ -189,13 +190,15 @@ void _assemble_vector_block(
 
   std::vector<const common::IndexMap*> maps0;
   for (std::size_t i = 0; i < L.size(); ++i)
+  {
+    assert(L[i]);
     maps0.push_back(L[i]->function_space(0)->dofmap()->index_map.get());
+  }
 
   // Assemble sub vectors
   std::vector<Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1>> b_vec(L.size());
   for (std::size_t i = 0; i < L.size(); ++i)
   {
-    assert(L[i]);
     const int bs = maps0[i]->block_size;
     const int size_owned = maps0[i]->size_local() * bs;
     const int size_ghost = maps0[i]->num_ghosts() * bs;
@@ -250,9 +253,8 @@ void _assemble_vector_block(
   int offset = 0;
   for (std::size_t i = 0; i < L.size(); ++i)
   {
-    auto map = L[i]->function_space(0)->dofmap()->index_map;
-    const int bs = map->block_size;
-    const int map_size0 = map->size_local() * bs;
+    const int bs = maps0[i]->block_size;
+    const int map_size0 = maps0[i]->size_local() * bs;
     Eigen::Map<Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1>> vec(
         values + offset, map_size0);
     Eigen::Map<const Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1>> vec_x0(
