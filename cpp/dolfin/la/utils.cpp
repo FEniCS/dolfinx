@@ -405,8 +405,8 @@ void dolfin::la::VecReadWrapper::restore()
 }
 //-----------------------------------------------------------------------------
 std::vector<Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1>>
-dolfin::la::get_local_vectors(
-    const Vec x, const std::vector<const dolfin::common::IndexMap*>& maps)
+dolfin::la::get_local_vectors(const Vec x,
+                              const std::vector<const common::IndexMap*>& maps)
 {
   // Get ghost offset
   int offset_owned = 0;
