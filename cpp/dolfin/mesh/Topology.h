@@ -141,7 +141,7 @@ private:
   // Global number of mesh entities for each topological dimension
   std::vector<std::int64_t> _global_num_entities;
 
-  // Global indices for mesh entities (empty if not set)
+  // Global indices for mesh entities
   std::vector<std::vector<std::int64_t>> _global_indices;
 
   // TODO: Could IndexMap be used here in place of std::map?

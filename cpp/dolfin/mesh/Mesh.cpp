@@ -415,6 +415,8 @@ std::size_t Mesh::create_entities(int dim) const
   Mesh* mesh = const_cast<Mesh*>(this);
   TopologyComputation::compute_entities(*mesh, dim);
 
+  DistributedMeshTools::number_entities(*mesh, dim);
+
   return _topology->size(dim);
 }
 //-----------------------------------------------------------------------------
@@ -445,12 +447,6 @@ void Mesh::create_connectivity_all() const
   for (int d0 = 0; d0 <= _topology->dim(); d0++)
     for (int d1 = 0; d1 <= _topology->dim(); d1++)
       create_connectivity(d0, d1);
-}
-//-----------------------------------------------------------------------------
-void Mesh::create_global_indices(std::size_t dim) const
-{
-  create_entities(dim);
-  DistributedMeshTools::number_entities(*this, dim);
 }
 //-----------------------------------------------------------------------------
 void Mesh::clean()
