@@ -414,7 +414,6 @@ std::size_t Mesh::create_entities(int dim) const
   // Compute connectivity
   Mesh* mesh = const_cast<Mesh*>(this);
   TopologyComputation::compute_entities(*mesh, dim);
-
   DistributedMeshTools::number_entities(*mesh, dim);
 
   return _topology->size(dim);
@@ -428,9 +427,9 @@ void Mesh::create_connectivity(std::size_t d0, std::size_t d1) const
   // const_cast is also needed to allow iterators over a const Mesh to
   // create new connectivity.
 
-  // Skip if already computed
-  if (_topology->connectivity(d0, d1))
-    return;
+  // Make sure entities exist
+  create_entities(d0);
+  create_entities(d1);
 
   // Compute connectivity
   Mesh* mesh = const_cast<Mesh*>(this);

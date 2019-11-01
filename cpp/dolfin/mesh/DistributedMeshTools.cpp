@@ -432,9 +432,6 @@ void DistributedMeshTools::init_facet_cell_connections(Mesh& mesh)
   // Initialise local facet-cell connections.
   mesh.create_connectivity(D - 1, D);
 
-  // Global numbering
-  number_entities(mesh, D - 1);
-
   // Calculate the number of global cells attached to each facet
   // essentially defining the exterior surface
   // FIXME: should this be done earlier, e.g. at partitioning stage
