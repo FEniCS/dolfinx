@@ -134,6 +134,7 @@ def _(b: PETSc.Vec,
     cpp.fem.assemble_vector(b, _create_cpp_form(L), _create_cpp_form(a), bcs, x0, scale)
     return b
 
+
 @functools.singledispatch
 def assemble_vector_block(L: typing.List[typing.Union[Form, cpp.fem.Form]],
                           a,

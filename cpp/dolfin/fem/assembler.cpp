@@ -98,22 +98,19 @@ void _assemble_vector_nest(
                              "in vector nest assembly.");
   }
 
-  for (Vec _vec : {b, x0})
+  // Check that b and x0 are VecNest vector
+  VecType vec_type;
+  VecGetType(b, &vec_type);
+  if (strcmp(vec_type, VECNEST) != 0)
+    throw std::runtime_error("Expected nested RHS vector.");
+  if (x0)
   {
-    VecType vec_type;
-    if (_vec)
-      VecGetType(_vec, &vec_type);
-    const bool is_vecnest = strcmp(vec_type, VECNEST) == 0;
-    if (!is_vecnest)
-      throw std::runtime_error("Expected nested vectors.");
+    VecGetType(x0, &vec_type);
+    if (strcmp(vec_type, VECNEST) != 0)
+      throw std::runtime_error("Expected nested RHS vector.");
   }
 
-  // Pack DirichletBC pointers for rows and columns
-  std::vector<std::vector<std::shared_ptr<const DirichletBC>>> bcs0
-      = bcs_rows(L, bcs);
-  std::vector<std::vector<std::vector<std::shared_ptr<const DirichletBC>>>> bcs1
-      = bcs_cols(a, bcs);
-
+  // Extract x0 vectors, if required
   std::vector<Vec> x0_sub(a[0].size(), nullptr);
   std::vector<la::VecReadWrapper> x0_wrapper;
   std::vector<Eigen::Ref<const Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1>>>
@@ -128,6 +125,13 @@ void _assemble_vector_nest(
     }
   }
 
+  // Pack DirichletBC pointers for rows and columns
+  std::vector<std::vector<std::shared_ptr<const DirichletBC>>> bcs0
+      = bcs_rows(L, bcs);
+  std::vector<std::vector<std::vector<std::shared_ptr<const DirichletBC>>>> bcs1
+      = bcs_cols(a, bcs);
+
+  // Assemble
   for (std::size_t i = 0; i < L.size(); ++i)
   {
     Vec b_sub = nullptr;
