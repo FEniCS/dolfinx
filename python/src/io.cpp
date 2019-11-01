@@ -245,7 +245,39 @@ void io(py::module& m)
       .def("write",
            py::overload_cast<const dolfin::mesh::Mesh&>(
                &dolfin::io::VTKFile::write),
-           py::arg("mesh"));
+           py::arg("mesh"))
+      .def("write",
+           py::overload_cast<const dolfin::mesh::MeshFunction<std::size_t>&>(
+               &dolfin::io::VTKFile::write),
+           py::arg("mf"))
+      .def("write",
+           py::overload_cast<const dolfin::mesh::MeshFunction<std::size_t>&,
+                             double>(&dolfin::io::VTKFile::write),
+           py::arg("mf"), py::arg("t"))
+      .def("write",
+           py::overload_cast<const dolfin::mesh::MeshFunction<bool>&>(
+               &dolfin::io::VTKFile::write),
+           py::arg("mf"))
+      .def("write",
+           py::overload_cast<const dolfin::mesh::MeshFunction<bool>&, double>(
+               &dolfin::io::VTKFile::write),
+           py::arg("mf"), py::arg("t"))
+      .def("write",
+           py::overload_cast<const dolfin::mesh::MeshFunction<double>&>(
+               &dolfin::io::VTKFile::write),
+           py::arg("mf"))
+      .def("write",
+           py::overload_cast<const dolfin::mesh::MeshFunction<double>&, double>(
+               &dolfin::io::VTKFile::write),
+           py::arg("mf"), py::arg("t"))
+      .def("write",
+           py::overload_cast<const dolfin::mesh::MeshFunction<int>&>(
+               &dolfin::io::VTKFile::write),
+           py::arg("mf"))
+      .def("write",
+           py::overload_cast<const dolfin::mesh::MeshFunction<int>&, double>(
+               &dolfin::io::VTKFile::write),
+           py::arg("mf"), py::arg("t"));
 
   // XDFMFile::read
   xdmf_file

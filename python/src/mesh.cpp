@@ -298,6 +298,7 @@ void mesh(py::module& m)
           "values",                                                            \
           py::overload_cast<>(&dolfin::mesh::MeshFunction<SCALAR>::values));
 
+  MESHFUNCTION_MACRO(bool, bool);
   MESHFUNCTION_MACRO(int, Int);
   MESHFUNCTION_MACRO(double, Double);
   MESHFUNCTION_MACRO(std::size_t, Sizet);
