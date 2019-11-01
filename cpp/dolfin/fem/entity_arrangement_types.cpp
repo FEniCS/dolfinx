@@ -7,6 +7,8 @@
 #include "entity_arrangement_types.h"
 #include <dolfin/mesh/cell_types.h>
 
+// FIXME: This functionality should be moved into the ElementDofLayout
+
 namespace
 {
 //-----------------------------------------------------------------------------
@@ -36,8 +38,10 @@ int _face_arrangement_blocksize(const dolfin::fem::ElementVectorType& type,
       return 1;
     return 2;
   case dolfin::fem::ElementVectorType::ein:
+    // FIXME
     throw std::runtime_error("HEin not yet implemented.");
   case dolfin::fem::ElementVectorType::divdiv:
+    // FIXME
     throw std::runtime_error("HDivDiv not yet implemented.");
   }
   // Should not reach this point
@@ -56,8 +60,10 @@ int _volume_arrangement_blocksize(const dolfin::fem::ElementVectorType& type,
   case dolfin::fem::ElementVectorType::div:
     return 3;
   case dolfin::fem::ElementVectorType::ein:
+    // FIXME
     throw std::runtime_error("HEin not yet implemented.");
   case dolfin::fem::ElementVectorType::divdiv:
+    // FIXME
     throw std::runtime_error("HDivDiv not yet implemented.");
   }
   // Should not reach this point
@@ -111,14 +117,16 @@ fem::EntityArrangementTypes::EntityArrangementTypes(
     throw std::runtime_error("Unrecognised cell type.");
   }
 
+  // TODO: FFCx currently always returns face_arrangement_type = 0 and
+  // volume_arrangement_type = 0
   if (dofmap.face_arrangement_type == 3)
     _face_type = FaceArrangementType::triangle;
   else if (dofmap.face_arrangement_type == 4)
     _face_type = FaceArrangementType::quadrilateral;
 
-  if (dofmap.volume_arrangement_type == 3)
+  if (dofmap.volume_arrangement_type == 4)
     _volume_type = VolumeArrangementType::tetrahedron;
-  else if (dofmap.volume_arrangement_type == 4)
+  else if (dofmap.volume_arrangement_type == 6)
     _volume_type = VolumeArrangementType::hexahedron;
 
   /* From ufc:

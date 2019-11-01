@@ -17,6 +17,7 @@ namespace
 //-----------------------------------------------------------------------------
 int get_num_permutations(mesh::CellType cell_type)
 {
+  // In general, this will return num_edges + 2*num_faces + 4*num_volumes
   switch (cell_type)
   {
   case (mesh::CellType::triangle):
@@ -30,7 +31,8 @@ int get_num_permutations(mesh::CellType cell_type)
   }
 }
 //-----------------------------------------------------------------------------
-/// Calculates the permutation orders for a triangle
+/// Calculates the number of times the rotation and reflection of a triangle
+/// should be applied to a triangle with the given global vertex numbers
 /// @param[in] v1 The global vertex number of the triangle's first vertex
 /// @param[in] v2 The global vertex number of the triangle's second vertex
 /// @param[in] v3 The global vertex number of the triangle's third vertex
@@ -47,7 +49,8 @@ std::array<int, 2> calculate_triangle_orders(int v1, int v2, int v3)
   throw std::runtime_error("Two of a triangle's vertices appear to be equal.");
 }
 //-----------------------------------------------------------------------------
-/// Calculates the permutation orders for a tetrahedron
+/// Calculates the number of times the rotations and reflection of a triangle
+/// should be applied to a tetrahedron with the given global vertex numbers
 /// @param[in] v1 The global vertex number of the tetrahedron's first vertex
 /// @param[in] v2 The global vertex number of the tetrahedron's second vertex
 /// @param[in] v3 The global vertex number of the tetrahedron's third vertex
@@ -146,16 +149,13 @@ triangle_rotation_and_reflection(const int face_dofs, const int blocksize)
 }
 //-----------------------------------------------------------------------------
 /// Makes permutations to rotate and reflect the dofs in a tetrahedron
-/// @param[in] edge_dofs Number of dofs on the interior of the
-///                      tetrahedron
+/// @param[in] volume_dofs Number of dofs on the interior of the
+///                        tetrahedron
 /// @return Permutations to rotate and reflect the dofs
 std::array<std::vector<int>, 4>
 tetrahedron_rotations_and_reflection(const int volume_dofs, const int blocksize)
 {
-  // FIXME: This function assumes the layout of the dofs are in a
-  // triangle shape. This is true for Lagrange space, but not true for
-  // eg N1curl spaces. This will only be called at most once for each
-  // mesh
+  // This will only be called at most once for each mesh
   const int blocks = volume_dofs / blocksize;
   int side_length = 0;
   while (side_length * (side_length + 1) * (side_length + 2) < 6 * blocks)
@@ -234,10 +234,13 @@ compute_ordering_triangle(const mesh::Mesh& mesh)
   {
     const mesh::MeshEntity cell(mesh, 2, cell_n);
     const std::int32_t* vertices = cell.entities(0);
+
+    // Set the orders for the edge flips
     cell_orders(cell_n, 0) = (vertices[1] > vertices[2]);
     cell_orders(cell_n, 1) = (vertices[0] > vertices[2]);
     cell_orders(cell_n, 2) = (vertices[0] > vertices[1]);
 
+    // Set the orders for the face rotation and reflection
     const std::array<int, 2> tri_orders
         = calculate_triangle_orders(vertices[0], vertices[1], vertices[2]);
     cell_orders(cell_n, 3) = tri_orders[0];
@@ -261,6 +264,7 @@ compute_ordering_tetrahedron(const mesh::Mesh& mesh)
     const mesh::MeshEntity cell(mesh, 3, cell_n);
     const std::int32_t* vertices = cell.entities(0);
 
+    // Set the orders for the edge flips
     cell_orders(cell_n, 0) = (vertices[2] > vertices[3]);
     cell_orders(cell_n, 1) = (vertices[1] > vertices[3]);
     cell_orders(cell_n, 2) = (vertices[1] > vertices[2]);
@@ -268,6 +272,7 @@ compute_ordering_tetrahedron(const mesh::Mesh& mesh)
     cell_orders(cell_n, 4) = (vertices[0] > vertices[2]);
     cell_orders(cell_n, 5) = (vertices[0] > vertices[1]);
 
+    // Set the orders for the face rotations and reflections
     const std::array<int, 2> tri_orders0
         = calculate_triangle_orders(vertices[1], vertices[2], vertices[3]);
     cell_orders(cell_n, 6) = tri_orders0[0];
@@ -285,6 +290,7 @@ compute_ordering_tetrahedron(const mesh::Mesh& mesh)
     cell_orders(cell_n, 12) = tri_orders3[0];
     cell_orders(cell_n, 13) = tri_orders3[1];
 
+    // Set the orders for the volume rotations and reflections
     const std::array<int, 4> tet_orders = calculate_tetrahedron_orders(
         vertices[0], vertices[1], vertices[2], vertices[3]);
     cell_orders(cell_n, 14) = tet_orders[0];
@@ -372,15 +378,15 @@ generate_permutations_tetrahedron(const mesh::Mesh& mesh,
     apply_permutation(permutations, 6 + 2 * face_n, face, base_faces[0], 3);
     apply_permutation(permutations, 6 + 2 * face_n + 1, face, base_faces[1], 2);
   }
-  // Make permutations that rotate and reflect the interior dofs
-  const std::array<std::vector<int>, 4> base_interiors
+  // Make permutations that rotate and reflect the volume dofs
+  const std::array<std::vector<int>, 4> base_volumes
       = tetrahedron_rotations_and_reflection(volume_dofs, volume_bs);
-  const Eigen::Array<int, Eigen::Dynamic, 1> interior
+  const Eigen::Array<int, Eigen::Dynamic, 1> volume
       = dof_layout.entity_dofs(3, 0);
-  apply_permutation(permutations, 14, interior, base_interiors[0], 3);
-  apply_permutation(permutations, 15, interior, base_interiors[1], 3);
-  apply_permutation(permutations, 16, interior, base_interiors[2], 3);
-  apply_permutation(permutations, 17, interior, base_interiors[3], 2);
+  apply_permutation(permutations, 14, volume, base_volumes[0], 3);
+  apply_permutation(permutations, 15, volume, base_volumes[1], 3);
+  apply_permutation(permutations, 16, volume, base_volumes[2], 3);
+  apply_permutation(permutations, 17, volume, base_volumes[3], 2);
 
   return permutations;
 }
@@ -389,6 +395,8 @@ Eigen::Array<int, Eigen::Dynamic, Eigen::Dynamic>
 generate_permutations(const mesh::Mesh& mesh,
                       const fem::ElementDofLayout& dof_layout)
 {
+  // FIXME: What should be done here if the dof layout shape does not match the
+  // shape of the element (eg AAF on the periodical table of finite elements)
   if (dof_layout.num_sub_dofmaps() == 0)
   {
     switch (mesh.cell_type())
@@ -398,7 +406,10 @@ generate_permutations(const mesh::Mesh& mesh,
     case (mesh::CellType::tetrahedron):
       return generate_permutations_tetrahedron(mesh, dof_layout);
 
-    // temporarily do nothing for cell types not yet implemented
+    // Temporarily do nothing for cell types not yet implemented
+    // For these shapes, _permutations will have 0 rows, and _cell_ordering will
+    // have 0 columns, so the for loops that apply the permutations will be
+    // empty
     case (mesh::CellType::hexahedron):
       break;
     case (mesh::CellType::quadrilateral):
@@ -415,6 +426,7 @@ generate_permutations(const mesh::Mesh& mesh,
     }
   }
 
+  // If there are subdofmaps
   const int num_permutations = get_num_permutations(mesh.cell_type());
   Eigen::Array<int, Eigen::Dynamic, Eigen::Dynamic> output(
       num_permutations, dof_layout.num_dofs());
@@ -468,10 +480,15 @@ fem::DofMapPermuter::DofMapPermuter(const mesh::Mesh& mesh,
 //-----------------------------------------------------------------------------
 std::vector<int> fem::DofMapPermuter::get_cell_permutation(const int cell) const
 {
+  // FIXME: Make this return a rectangular array of permutations for all cells,
+  // then replace this class with a single function doing this
   std::vector<int> p(_permutations.cols());
   std::iota(p.begin(), p.end(), 0);
+  // for each permutation in _permutations
   for (int i = 0; i < _cell_ordering.cols(); ++i)
   {
+    // _cell_ordering(cell, i) says how many times this permutation should be
+    // applied
     for (int j = 0; j < _cell_ordering(cell, i); ++j)
     {
       std::vector<int> temp(p);

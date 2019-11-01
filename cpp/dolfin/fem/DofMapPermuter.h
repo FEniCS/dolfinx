@@ -28,16 +28,20 @@ public:
   /// @param[in] dof_layout The layout of dofs on a each cell
   DofMapPermuter(const mesh::Mesh& mesh, const ElementDofLayout& dof_layout);
 
-  /// Return the dof permutations for the given cell
+  /// Return the dof permutation for the given cell
   /// @param[in] cell The cell index
   /// @return The permutation for the given cell
   std::vector<int> get_cell_permutation(const int cell) const;
 
 private:
-  // Ordering on each cell
+  // Stores the number of times each row of _permutations should be applied on
+  // each cell Will have shape (number of cells) × (number of permutations)
   Eigen::Array<std::int8_t, Eigen::Dynamic, Eigen::Dynamic> _cell_ordering;
 
-  // The permutations
+  // Each row of this represent the rotation or reflection of a mesh entity
+  // Will have shape (number of permutations) × (number of dofs on reference)
+  //   where (number of permutations) = (num_edges + 2*num_faces +
+  //   4*num_volumes)
   Eigen::Array<int, Eigen::Dynamic, Eigen::Dynamic> _permutations;
 };
 
