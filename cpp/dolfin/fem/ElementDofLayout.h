@@ -6,7 +6,6 @@
 
 #pragma once
 
-#include "entity_arrangement_types.h"
 #include <Eigen/Dense>
 #include <array>
 #include <dolfin/common/types.h>
@@ -40,7 +39,7 @@ public:
       const std::vector<int>& parent_map,
       const std::vector<std::shared_ptr<const ElementDofLayout>> sub_dofmaps,
       const mesh::CellType cell_type,
-      const EntityArrangementTypes entity_types);
+      const std::array<int, 4> entity_block_size);
 
   /// Copy-like constructor with option to reset (clear) parent map
   ElementDofLayout(const ElementDofLayout& element_dof_layout,
@@ -151,7 +150,7 @@ private:
   // List of sub dofmaps
   std::vector<std::shared_ptr<const ElementDofLayout>> _sub_dofmaps;
 
-  EntityArrangementTypes _entity_types;
+  std::array<int, 4> _entity_block_size;
 };
 } // namespace fem
 } // namespace dolfin

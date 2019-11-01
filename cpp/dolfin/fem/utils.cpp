@@ -521,10 +521,12 @@ fem::create_element_dof_layout(const ufc_dofmap& dofmap,
   // but keep for now to mimic existing code
   const int block_size = analyse_block_structure(sub_dofmaps);
 
-  EntityArrangementTypes entity_types(dofmap, cell_type);
+  std::array<int, 4> entity_block_size;
+  for (int i = 0; i < 4; ++i)
+    entity_block_size[i] = dofmap.entity_block_size[i];
 
   return fem::ElementDofLayout(block_size, entity_dofs, parent_map, sub_dofmaps,
-                               cell_type, entity_types);
+                               cell_type, entity_block_size);
 }
 //-----------------------------------------------------------------------------
 fem::DofMap fem::create_dofmap(const ufc_dofmap& ufc_dofmap,

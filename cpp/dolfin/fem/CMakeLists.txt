@@ -10,7 +10,6 @@ set(HEADERS
   DofMapBuilder.h
   DofMap.h
   ElementDofLayout.h
-  entity_arrangement_types.h
   dolfin_fem.h
   utils.h
   FiniteElement.h
@@ -34,7 +33,6 @@ set(SOURCES
   DofMapBuilder.cpp
   DofMap.cpp
   ElementDofLayout.cpp
-  entity_arrangement_types.cpp
   utils.cpp
   FiniteElement.cpp
   Form.cpp
