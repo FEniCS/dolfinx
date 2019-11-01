@@ -187,11 +187,14 @@ void _assemble_vector_block(
   if (is_vecnest)
     throw std::runtime_error("Do not expect a nested vector.");
 
+  std::vector<const common::IndexMap*> maps0;
+  for (std::size_t i = 0; i < L.size(); ++i)
+    maps0.push_back(L[i]->function_space(0)->dofmap()->index_map.get());
+
   // Compute number of owned (i.e., non-ghost) entries for this process
   int offset1 = 0;
-  for (auto& _L : L)
+  for (auto map : maps0)
   {
-    auto map = _L->function_space(0)->dofmap()->index_map;
     const int bs = map->block_size;
     offset1 += map->size_local() * bs;
   }
@@ -200,45 +203,40 @@ void _assemble_vector_block(
   std::vector<Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1>> b_vec(L.size());
   for (std::size_t i = 0; i < L.size(); ++i)
   {
-    // Get size for block i
     assert(L[i]);
-    auto map = L[i]->function_space(0)->dofmap()->index_map;
-    const int bs = map->block_size;
-    const int map_size0 = map->size_local() * bs;
-    const int map_size1 = map->num_ghosts() * bs;
-    b_vec[i] = Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1>::Zero(map_size0
-                                                                   + map_size1);
-
-    // Assemble and modify for bcs (lifting)
+    const int bs = maps0[i]->block_size;
+    const int size_owned = maps0[i]->size_local() * bs;
+    const int size_ghost = maps0[i]->num_ghosts() * bs;
+    b_vec[i] = Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1>::Zero(
+        size_owned + size_ghost);
     fem::impl::assemble_vector(b_vec[i], *L[i]);
   }
 
   // Split x0 vector, if required
   std::vector<Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1>> x0_array;
   std::vector<Eigen::Ref<const Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1>>>
-      x0_array_ref;
+      x0_ref;
   if (x0)
   {
     if (a[0].empty())
       throw std::runtime_error("Issue with number of a columns.");
-
-    std::vector<const common::IndexMap*> maps;
+    std::vector<const common::IndexMap*> maps1;
     for (std::size_t i = 0; i < a[0].size(); ++i)
-      maps.push_back(a[0][i]->function_space(1)->dofmap()->index_map.get());
-    x0_array = la::get_local_vectors(x0, maps);
+      maps1.push_back(a[0][i]->function_space(1)->dofmap()->index_map.get());
+    x0_array = la::get_local_vectors(x0, maps1);
     for (std::size_t i = 0; i < x0_array.size(); ++i)
-      x0_array_ref.push_back(x0_array[i]);
+      x0_ref.push_back(x0_array[i]);
   }
 
   // Pack DirichletBC pointers for columns
   std::vector<std::vector<std::vector<std::shared_ptr<const DirichletBC>>>> bcs1
       = bcs_cols(a, bcs);
 
-  // Apply lifting, x0_sub_vec_ref will be empty if x0 is NULL
+  // Apply lifting
   for (std::size_t i = 0; i < L.size(); ++i)
   {
     if (x0)
-      fem::impl::apply_lifting(b_vec[i], a[i], bcs1[i], x0_array_ref, scale);
+      fem::impl::apply_lifting(b_vec[i], a[i], bcs1[i], x0_ref, scale);
     else
       fem::impl::apply_lifting(b_vec[i], a[i], bcs1[i], {}, scale);
   }
@@ -249,11 +247,9 @@ void _assemble_vector_block(
   int offset0 = 0;
   for (std::size_t i = 0; i < L.size(); ++i)
   {
-    assert(L[i]);
-    auto map = L[i]->function_space(0)->dofmap()->index_map;
-    const int bs = map->block_size;
-    const int map_size0 = map->size_local() * bs;
-    const int map_size1 = map->num_ghosts() * bs;
+    const int bs = maps0[i]->block_size;
+    const int map_size0 = maps0[i]->size_local() * bs;
+    const int map_size1 = maps0[i]->num_ghosts() * bs;
 
     // Copy data into PETSc b Vec
     Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1>& b_i = b_vec[i];
