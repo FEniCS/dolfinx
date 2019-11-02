@@ -191,7 +191,7 @@ class NonlinearPDE_SNESProblem():
             P.assemble()
 
     def F_nest(self, snes, x, F):
-        assert x.getType() == "nest" and  F.getType() == "nest"
+        assert x.getType() == "nest" and F.getType() == "nest"
         for x_sub, var_sub in zip(x.getNestSubVecs(), self.soln_vars):
             x_sub.ghostUpdate(addv=PETSc.InsertMode.INSERT, mode=PETSc.ScatterMode.FORWARD)
             with x_sub.localForm() as _x, var_sub.vector.localForm() as _u:
