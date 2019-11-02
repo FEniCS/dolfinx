@@ -139,17 +139,16 @@ def test_matrix_assembly_block():
 
 class NonlinearPDE_SNESProblem():
     def __init__(self, F, J, soln_vars, bcs, P=None):
-        super().__init__()
         self.L = F
         self.a = J
         self.a_precon = P
         self.bcs = bcs
         self.soln_vars = soln_vars
 
-    def F(self, snes, x, F):
+    def F_mono(self, snes, x, F):
         x.ghostUpdate(addv=PETSc.InsertMode.INSERT, mode=PETSc.ScatterMode.FORWARD)
-        x.copy(self.soln_vars.vector)
-        self.soln_vars.vector.ghostUpdate(addv=PETSc.InsertMode.INSERT, mode=PETSc.ScatterMode.FORWARD)
+        with x.localForm() as _x, self.soln_vars.vector.localForm() as _u:
+            _u[:] = _x
         with F.localForm() as f_local:
             f_local.set(0.0)
         dolfin.fem.assemble_vector(F, self.L)
@@ -157,7 +156,7 @@ class NonlinearPDE_SNESProblem():
         F.ghostUpdate(addv=PETSc.InsertMode.ADD, mode=PETSc.ScatterMode.REVERSE)
         dolfin.fem.set_bc(F, self.bcs, x, -1.0)
 
-    def J(self, snes, x, J, P):
+    def J_mono(self, snes, x, J, P):
         J.zeroEntries()
         dolfin.fem.assemble_matrix(J, self.a, self.bcs, diagonal=1.0)
         J.assemble()
@@ -182,9 +181,7 @@ class NonlinearPDE_SNESProblem():
         dolfin.fem.assemble_vector_block(F, self.L, self.a, self.bcs, x0=x, scale=-1.0)
 
     def J_block(self, snes, x, J, P):
-        assert x.getType() != "nest"
-        assert J.getType() != "nest"
-        assert P.getType() != "nest"
+        assert x.getType() != "nest" and J.getType() != "nest" and P.getType() != "nest"
         J.zeroEntries()
         dolfin.fem.assemble_matrix_block(J, self.a, self.bcs, diagonal=1.0)
         J.assemble()
@@ -194,22 +191,17 @@ class NonlinearPDE_SNESProblem():
             P.assemble()
 
     def F_nest(self, snes, x, F):
-        assert x.getType() == "nest"
-        assert F.getType() == "nest"
-        for x_soln_pair in zip(x.getNestSubVecs(), self.soln_vars):
-            x_sub, var_sub = x_soln_pair
+        assert x.getType() == "nest" and  F.getType() == "nest"
+        for x_sub, var_sub in zip(x.getNestSubVecs(), self.soln_vars):
             x_sub.ghostUpdate(addv=PETSc.InsertMode.INSERT, mode=PETSc.ScatterMode.FORWARD)
-            x_sub.copy(var_sub.vector)
-            var_sub.vector.ghostUpdate(addv=PETSc.InsertMode.INSERT, mode=PETSc.ScatterMode.FORWARD)
-
+            with x_sub.localForm() as _x, var_sub.vector.localForm() as _u:
+                _u[:] = _x
         dolfin.fem.assemble_vector_nest(F, self.L, self.a, self.bcs, x0=x, scale=-1.0)
         # Must assemble F here in the case of nest matrices
         F.assemble()
 
     def J_nest(self, snes, x, J, P):
-        assert x.getType() == "nest"
-        assert J.getType() == "nest"
-        assert P.getType() == "nest"
+        assert x.getType() == "nest" and J.getType() == "nest" and P.getType() == "nest"
         J.zeroEntries()
         dolfin.fem.assemble_matrix_nest(J, self.a, self.bcs, diagonal=1.0)
         J.assemble()
@@ -379,8 +371,8 @@ def test_assembly_solve_block():
     snes.getKSP().getPC().setFactorSolverType("mumps")
 
     problem = NonlinearPDE_SNESProblem(F, J, U, bcs)
-    snes.setFunction(problem.F, Fvec2)
-    snes.setJacobian(problem.J, J=Jmat2, P=None)
+    snes.setFunction(problem.F_mono, Fvec2)
+    snes.setJacobian(problem.J_mono, J=Jmat2, P=None)
 
     x2 = dolfin.fem.create_vector(F)
     with x2.localForm() as x2l:
@@ -417,8 +409,8 @@ def test_assembly_solve_taylor_hood(mesh):
         return x[:, 0] > (1.0 - 10 * numpy.finfo(float).eps)
 
     u0 = dolfin.Function(P2)
-    u0.vector.set(1.0)
-    u0.vector.ghostUpdate(addv=PETSc.InsertMode.INSERT, mode=PETSc.ScatterMode.FORWARD)
+    with u0.vector.localForm() as x:
+        x.set(1.0)
     bcs = [dolfin.DirichletBC(P2, u0, boundary0),
            dolfin.DirichletBC(P2, u0, boundary1)]
 
@@ -428,10 +420,8 @@ def test_assembly_solve_taylor_hood(mesh):
 
     F = [inner(ufl.grad(u), ufl.grad(v)) * dx + inner(p, ufl.div(v)) * dx,
          inner(ufl.div(u), q) * dx]
-
     J = [[derivative(F[0], u, du), derivative(F[0], p, dp)],
          [derivative(F[1], u, du), derivative(F[1], p, dp)]]
-
     P = [[J[0][0], None],
          [None, inner(dp, q) * dx]]
 
@@ -511,9 +501,7 @@ def test_assembly_solve_taylor_hood(mesh):
     F = inner(ufl.grad(u), ufl.grad(v)) * dx \
         + inner(p, ufl.div(v)) * dx \
         + inner(ufl.div(u), q) * dx
-
     J = derivative(F, U, dU)
-
     P = inner(ufl.grad(du), ufl.grad(v)) * dx \
         + inner(dp, q) * dx
 
