@@ -520,8 +520,8 @@ def test_assembly_solve_taylor_hood(mesh):
     snes.getKSP().getPC().setFactorSolverType("mumps")
 
     problem = NonlinearPDE_SNESProblem(F, J, U, bcs, P=P)
-    snes.setFunction(problem.F, Fvec2)
-    snes.setJacobian(problem.J, J=Jmat2, P=Pmat2)
+    snes.setFunction(problem.F_mono, Fvec2)
+    snes.setJacobian(problem.J_mono, J=Jmat2, P=Pmat2)
 
     x2 = dolfin.fem.create_vector(F)
     with x2.localForm() as x2l:
