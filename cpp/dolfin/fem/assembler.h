@@ -28,9 +28,9 @@ class Form;
 
 // -- Scalar ----------------------------------------------------------------
 
-/// Assemble functional into scalar. Scalar is summed across all
-/// processes. Caller is responsible for accumulation across processes.
-/// @param[in] M The form (functional)
+/// Assemble functional into scalar. Caller is responsible for
+/// accumulation across processes.
+/// @param[in] M The form (functional) to assemble
 /// @return The contribution to the form (functional) from the local
 ///         process
 PetscScalar assemble_scalar(const Form& M);
