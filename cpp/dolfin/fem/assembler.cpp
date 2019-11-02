@@ -249,35 +249,28 @@ void _assemble_vector_block(
   VecGhostUpdateEnd(b, ADD_VALUES, SCATTER_REVERSE);
 
   // Set bcs
-  PetscScalar* values = nullptr;
-  VecGetArray(b, &values);
-  PetscScalar const* values_x0 = nullptr;
-  if (x0)
-    VecGetArrayRead(x0, &values_x0);
+  PetscScalar* b_ptr = nullptr;
+  VecGetArray(b, &b_ptr);
   int offset = 0;
   for (std::size_t i = 0; i < L.size(); ++i)
   {
-    const int bs = maps0[i]->block_size;
-    const int map_size0 = maps0[i]->size_local() * bs;
-    Eigen::Map<Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1>> vec(
-        values + offset, map_size0);
-    Eigen::Map<const Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1>> vec_x0(
-        values_x0 + offset, map_size0);
+    const int map_size0 = maps0[i]->size_local() * maps0[i]->block_size;
+    Eigen::Map<Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1>> b_sub(
+        b_ptr + offset, map_size0);
     for (auto bc : bcs)
     {
       if (L[i]->function_space(0)->contains(*bc->function_space()))
       {
         if (x0)
-          bc->set(vec, vec_x0, scale);
+          bc->set(b_sub, x0_ref[i], scale);
         else
-          bc->set(vec, scale);
+          bc->set(b_sub, scale);
       }
     }
     offset += map_size0;
   }
-  VecRestoreArray(b, &values);
-  if (x0)
-    VecRestoreArrayRead(x0, &values_x0);
+
+  VecRestoreArray(b, &b_ptr);
 }
 //-----------------------------------------------------------------------------
 

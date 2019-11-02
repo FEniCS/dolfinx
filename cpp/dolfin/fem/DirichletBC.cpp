@@ -464,7 +464,7 @@ void DirichletBC::set(
   // FIXME: This one excludes ghosts. Need to straighten out.
 
   assert(_g);
-  assert(x.rows() == x0.rows());
+  assert(x.rows() <= x0.rows());
   la::VecReadWrapper g(_g->vector().vec(), false);
   for (Eigen::Index i = 0; i < _dofs.rows(); ++i)
   {
