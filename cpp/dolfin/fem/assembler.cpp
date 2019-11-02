@@ -4,7 +4,7 @@
 //
 // SPDX-License-Identifier:    LGPL-3.0-or-later
 
-#include <petscis.h>
+// #include <petscis.h>
 
 #include "DirichletBC.h"
 #include "DofMap.h"
@@ -247,6 +247,8 @@ void _assemble_vector_block(
   // Update ghosts
   VecGhostUpdateBegin(b, ADD_VALUES, SCATTER_REVERSE);
   VecGhostUpdateEnd(b, ADD_VALUES, SCATTER_REVERSE);
+
+  // TODO: split this function here
 
   // Set bcs
   PetscScalar* b_ptr = nullptr;

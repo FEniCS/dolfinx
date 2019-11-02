@@ -97,6 +97,17 @@ void assemble_matrix(Mat A, const std::vector<std::vector<const Form*>> a,
 
 /// Assemble bilinear form into a matrix. Matrix must be initialised.
 /// Does not zero or finalise the matrix.
+/// @param[in,out] A The PETsc matrix to assemble the form into. The
+///                  matrix size/layout must be initialised before
+///                  calling this function. The matrix is not zeroed and
+///                  it is not finalised (shared entries not
+///                  communicated).
+/// @param[in] a The bilinear from to assemble.
+/// @param[in] bcs Boundary conditions to apply. For boundary condition
+///                dofs the row and column are zeroed and the diagonal
+///                value set.
+/// @param[in] diagonal Value to set on the diagonal for boundary
+/// conditions dofs.
 void assemble_matrix(Mat A, const Form& a,
                      std::vector<std::shared_ptr<const DirichletBC>> bcs,
                      double diagonal = 1.0);
