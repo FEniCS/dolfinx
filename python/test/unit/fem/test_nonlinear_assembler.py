@@ -192,14 +192,27 @@ class NonlinearPDE_SNESProblem():
 
     def F_nest(self, snes, x, F):
         assert x.getType() == "nest" and F.getType() == "nest"
-        for x_sub, var_sub in zip(x.getNestSubVecs(), self.soln_vars):
+        # Update solution
+        x = x.getNestSubVecs()
+        for x_sub, var_sub in zip(x, self.soln_vars):
             x_sub.ghostUpdate(addv=PETSc.InsertMode.INSERT, mode=PETSc.ScatterMode.FORWARD)
             with x_sub.localForm() as _x, var_sub.vector.localForm() as _u:
                 _u[:] = _x
-        for F_sub in F.getNestSubVecs():
+
+        # Assemble
+        bcs1 = dolfin.cpp.fem.bcs_cols(dolfin.fem.assemble._create_cpp_form(self.a), self.bcs)
+        for L, F_sub, a, bc in zip(self.L, F.getNestSubVecs(), self.a, bcs1):
             with F_sub.localForm() as F_sub_local:
                 F_sub_local.set(0.0)
-        dolfin.fem.assemble_vector_nest(F, self.L, self.a, self.bcs, x0=x, scale=-1.0)
+            dolfin.fem.assemble.assemble_vector(F_sub, L)
+            dolfin.fem.assemble.apply_lifting(F_sub, a, bc, x0=x, scale=-1.0)
+            F_sub.ghostUpdate(addv=PETSc.InsertMode.ADD, mode=PETSc.ScatterMode.REVERSE)
+
+        # Set bc value in RHS
+        bcs0 = dolfin.cpp.fem.bcs_rows(dolfin.fem.assemble._create_cpp_form(self.L), self.bcs)
+        for F_sub, bc, x_sub in zip(F.getNestSubVecs(), bcs0, x):
+            dolfin.fem.assemble.set_bc(F_sub, bc, x_sub, -1.0)
+
         # Must assemble F here in the case of nest matrices
         F.assemble()
 

@@ -174,60 +174,6 @@ void fem::assemble_vector(
   {
     throw std::runtime_error(
         "This function no longer support blocked assembly.");
-    for (std::size_t i = 0; i < L.size(); ++i)
-    {
-      Vec b_sub = nullptr;
-      VecNestGetSubVec(b, i, &b_sub);
-      la::VecWrapper _b_sub(b_sub);
-      _b_sub.x.setZero();
-      fem::impl::assemble_vector(_b_sub.x, *L[i]);
-    }
-
-    std::vector<std::vector<std::shared_ptr<const DirichletBC>>> bcs0
-        = bcs_rows(L, bcs);
-    std::vector<std::vector<std::vector<std::shared_ptr<const DirichletBC>>>>
-        bcs1 = bcs_cols(a, bcs);
-
-    std::vector<Vec> x0_sub(a[0].size(), nullptr);
-    if (x0)
-    {
-      for (std::size_t i = 0; i < a[0].size(); ++i)
-        VecNestGetSubVec(x0, i, &x0_sub[i]);
-    }
-
-    for (std::size_t i = 0; i < L.size(); ++i)
-    {
-      Vec b_sub = nullptr;
-      VecNestGetSubVec(b, i, &b_sub);
-      if (x0)
-        apply_lifting(b_sub, a[i], bcs1[i], x0_sub, scale);
-      else
-        apply_lifting(b_sub, a[i], bcs1[i], {}, scale);
-
-      // Update ghosts
-      VecGhostUpdateBegin(b_sub, ADD_VALUES, SCATTER_REVERSE);
-      VecGhostUpdateEnd(b_sub, ADD_VALUES, SCATTER_REVERSE);
-
-      // Set bc values
-      if (a[0].empty())
-      {
-        // FIXME: this is a hack to handle the case that no bilinear forms
-        // have been supplied, which may happen in a Newton iteration.
-        // Needs to be fixed for nested systems
-        set_bc(b_sub, bcs0[0], x0, scale);
-      }
-      else
-      {
-        for (std::size_t j = 0; j < a[i].size(); ++j)
-        {
-          if (a[i][j])
-          {
-            if (*L[i]->function_space(0) == *a[i][j]->function_space(1))
-              set_bc(b_sub, bcs0[i], x0_sub[i], scale);
-          }
-        }
-      }
-    }
   }
   else
     _assemble_vector_block(b, L, a, bcs, x0, scale);
@@ -255,17 +201,6 @@ void fem::apply_lifting(
 
     fem::impl::apply_lifting(_b.x, a, bcs1, x0_ref, scale);
   }
-}
-//-----------------------------------------------------------------------------
-void fem::apply_lifting_new(
-    Eigen::Ref<Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1>> b,
-    const std::vector<std::shared_ptr<const Form>> a,
-    std::vector<std::vector<std::shared_ptr<const DirichletBC>>> bcs1,
-    const std::vector<
-        Eigen::Ref<const Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1>>>& x0,
-    double scale)
-{
-  fem::impl::apply_lifting(b, a, bcs1, x0, scale);
 }
 //-----------------------------------------------------------------------------
 void fem::assemble_matrix(Mat A, const std::vector<std::vector<const Form*>> a,

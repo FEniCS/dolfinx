@@ -95,33 +95,6 @@ void apply_lifting(
     std::vector<std::vector<std::shared_ptr<const DirichletBC>>> bcs1,
     const std::vector<Vec> x0, double scale);
 
-/// Modify b such that:
-///
-///   b <- b - scale * A_j (g_j - x0_j)
-///
-/// where j is a block (nest) index. For a non-blocked problem j = 0.
-/// The boundary conditions bc1 are on the trial spaces V_j. The forms
-/// in [a] must have the same test space as L (from which b was built),
-/// but the trial space may differ. If x0 is not supplied, then it is
-/// treated as zero.
-///
-/// Ghost contributions are not accumulated (not sent to owner). Caller
-/// is responsible for calling VecGhostUpdateBegin/End.
-/// @param[in,out] b The vector to modify
-/// @param[in] a The row of bilinear forms that share the same test
-///              space as b
-/// @param[in] bcs1 The Dirichlet boundary conditions
-/// @param[in] x0 The solution vectors associated with the trial spaces
-///               of the bilinear forms
-/// @param[in] scale Scaling parameter
-void apply_lifting_new(
-    Eigen::Ref<Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1>> b,
-    const std::vector<std::shared_ptr<const Form>> a,
-    std::vector<std::vector<std::shared_ptr<const DirichletBC>>> bcs1,
-    const std::vector<
-        Eigen::Ref<const Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1>>>& x0,
-    double scale);
-
 // -- Matrices ---------------------------------------------------------------
 
 /// Re-assemble blocked bilinear forms into a matrix. Does not zero the

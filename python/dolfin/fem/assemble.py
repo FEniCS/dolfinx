@@ -7,7 +7,6 @@
 
 import functools
 import typing
-import warnings
 
 from petsc4py import PETSc
 
@@ -154,6 +153,31 @@ def _(b: PETSc.Vec,
                     cpp.fem.set_bc(b_sub, bc0, x, scale)
     return b
 
+# FIXME: Revise this interface
+@functools.singledispatch
+def assemble_vector_nest_new(L: typing.Union[Form, cpp.fem.Form]) -> PETSc.Vec:
+    """Assemble linear forms into a nested (VecNest) vector. The vector is
+    not zeroed and it is not finalised, i.e. ghost values are not
+    accumulated.
+
+    """
+    b = cpp.fem.create_vector_nest(_create_cpp_form(L))
+    return assemble_vector_nest_new(b, L)
+
+
+@assemble_vector_nest_new.register(PETSc.Vec)
+def _(b: PETSc.Vec, L: typing.List[typing.Union[Form, cpp.fem.Form]]) -> PETSc.Vec:
+    """Assemble linear forms into a nested (VecNest) vector. The vector is
+    not zeroed and it is not finalised, i.e. ghost values are not
+    accumulated.
+
+    """
+    _b = b.getNestSubVecs()
+    _L = _create_cpp_form(L)
+    for b_sub, L_sub in zip(_b, _L):
+        cpp.fem.assemble_vector(b_sub, L_sub)
+    return b
+
 
 @functools.singledispatch
 def assemble_vector_block(L: typing.List[typing.Union[Form, cpp.fem.Form]],
@@ -289,6 +313,32 @@ def apply_lifting(b: PETSc.Vec,
     cpp.fem.apply_lifting(b, _create_cpp_form(a), bcs, x0, scale)
 
 
+def apply_lifting_nest(b: PETSc.Vec,
+                       a: typing.List[typing.List[typing.Union[Form, cpp.fem.Form]]],
+                       bcs: typing.List[DirichletBC],
+                       x0: typing.Optional[PETSc.Vec] = None,
+                       scale: float = 1.0) -> PETSc.Vec:
+    """Assemble linear forms into a nested (VecNest) vector. The vector is
+    not zeroed and it is not finalised, i.e. ghost values are not
+    accumulated.
+
+    """
+    _b = b.getNestSubVecs()
+    if x0 is not None:
+        _x0 = x0.getNestSubVecs()
+    else:
+        _x0 = []
+        # _x0 = [None] * len(_b)
+    if a is None:
+        raise RuntimeError("Oops, can't handle null block yet.")
+    a = _create_cpp_form(a)
+    bcs1 = cpp.fem.bcs_cols(a, bcs)
+    for b_sub, a_sub, bc1 in zip(_b, a, bcs1):
+        cpp.fem.apply_lifting(b_sub, a_sub, bc1, _x0, scale)
+
+    return b
+
+
 def set_bc(b: PETSc.Vec,
            bcs: typing.List[DirichletBC],
            x0: typing.Optional[PETSc.Vec] = None,
@@ -300,3 +350,22 @@ def set_bc(b: PETSc.Vec,
 
     """
     cpp.fem.set_bc(b, bcs, x0, scale)
+
+
+def set_bc_nest(b: PETSc.Vec,
+                bcs: typing.List[typing.List[DirichletBC]],
+                x0: typing.Optional[PETSc.Vec] = None,
+                scale: float = 1.0) -> None:
+    """Insert boundary condition values into vector. Only local (owned)
+    entries are set, hence communication after calling this function is
+    not required the ghost entries need to be updated to the boundary
+    condition value.
+
+    """
+    _b = b.getNestSubVecs()
+    if x0 is not None:
+        _x0 = x0.getNestSubVecs()
+    else:
+        _x0 = [None] * len(_b)
+    for b_sub, bc, x_sub in zip(_b, bcs, _x0):
+        cpp.fem.set_bc(b_sub, bc, x_sub, scale)
