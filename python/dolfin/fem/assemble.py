@@ -115,8 +115,18 @@ def assemble_vector_nest(L: typing.List[typing.Union[Form, cpp.fem.Form]],
 
     """
     b = cpp.fem.create_vector_nest(_create_cpp_form(L))
-    cpp.fem.assemble_vector(b, _create_cpp_form(L), _create_cpp_form(a), bcs, x0, scale)
-    return b
+    return assemble_vector_nest(b, L, a, bcs, x0, scale)
+
+    # cpp.fem.assemble_vector(b, _create_cpp_form(L), _create_cpp_form(a), bcs, x0, scale)
+    # if x0 is not None:
+    #     _x0 = x0.getNestSubVecs()
+    # for i in range(len(L)):
+    #     _b = b.getNestSubVec(i)
+    #     cpp.fem.assemble_vector(_b, _create_cpp_form(L[i]))
+    #     cpp.fem.apply_lifting(_b, _create_cpp_form(a[i]), bcs1,
+    #                           _x0, scale)
+    #     cpp.fem.set_bc(_b, bcs[i], _x0[i])
+    # return b
 
 
 @assemble_vector_nest.register(PETSc.Vec)
@@ -132,6 +142,48 @@ def _(b: PETSc.Vec,
 
     """
     cpp.fem.assemble_vector(b, _create_cpp_form(L), _create_cpp_form(a), bcs, x0, scale)
+    return b
+
+    if x0 is not None:
+        _x0 = x0.getNestSubVecs()
+    else:
+        _x0 = [None]*len(L)
+    _b = b.getNestSubVecs()
+    bcs0 = cpp.fem.bcs_rows(_create_cpp_form(L), bcs)
+    bcs1 = cpp.fem.bcs_cols(_create_cpp_form(a), bcs)
+
+    L = _create_cpp_form(L)
+    a = _create_cpp_form(a)
+
+    for i in range(len(L)):
+        cpp.fem.assemble_vector(_b[i], L[i])
+        if x0 is not None:
+            cpp.fem.apply_lifting(_b[i], a[i], bcs1[i], _x0, scale)
+        else:
+            cpp.fem.apply_lifting(_b[i], a[i], bcs1[i], [], scale)
+
+        _b[i].ghostUpdate(addv=PETSc.InsertMode.ADD, mode=PETSc.ScatterMode.REVERSE)
+
+        if a[i][0] == []:
+            # FIXME: this is a hack to handle the case that no bilinear forms
+            # have been supplied, which may happen in a Newton iteration.
+            # Needs to be fixed for nested systems
+            cpp.fem.set_bc(_b[i], bcs0[0], _x0[i], scale)
+        else:
+            for j in range(len(a[i])):
+                if a[i][j] is not None:
+                    if L[i].function_space(0) == a[i][j].function_space(1):
+                        cpp.fem.set_bc(_b[i], bcs0[i], _x0[i], scale)
+
+        # for (std::size_t j = 0; j < a[i].size(); ++j)
+        # {
+        #   if (a[i][j])
+        #   {
+        #     if (*L[i]->function_space(0) == *a[i][j]->function_space(1))
+        #       set_bc(b_sub, bcs0[i], x0_sub[i], scale);
+        #   }
+        # }
+
     return b
 
 

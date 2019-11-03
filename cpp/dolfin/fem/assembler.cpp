@@ -6,13 +6,13 @@
 
 // #include <petscis.h>
 
+#include "assembler.h"
 #include "DirichletBC.h"
 #include "DofMap.h"
 #include "Form.h"
 #include "assemble_matrix_impl.h"
 #include "assemble_scalar_impl.h"
 #include "assemble_vector_impl.h"
-#include "assembler.h"
 #include "utils.h"
 #include <dolfin/common/IndexMap.h>
 #include <dolfin/common/types.h>
@@ -41,139 +41,6 @@ void set_diagonal_local(
         = MatSetValuesLocal(A, 1, &row, 1, &row, &diag, ADD_VALUES);
     if (ierr != 0)
       la::petsc_error(ierr, __FILE__, "MatSetValuesLocal");
-  }
-}
-//-----------------------------------------------------------------------------
-std::vector<std::vector<std::shared_ptr<const fem::DirichletBC>>>
-bcs_rows(std::vector<const Form*> L,
-         std::vector<std::shared_ptr<const fem::DirichletBC>> bcs)
-{
-  // Pack DirichletBC pointers for rows
-  std::vector<std::vector<std::shared_ptr<const fem::DirichletBC>>> bcs0(
-      L.size());
-  for (std::size_t i = 0; i < L.size(); ++i)
-    for (std::shared_ptr<const DirichletBC> bc : bcs)
-      if (L[i]->function_space(0)->contains(*bc->function_space()))
-        bcs0[i].push_back(bc);
-
-  return bcs0;
-}
-//-----------------------------------------------------------------------------
-std::vector<std::vector<std::vector<std::shared_ptr<const fem::DirichletBC>>>>
-bcs_cols(std::vector<std::vector<std::shared_ptr<const Form>>> a,
-         std::vector<std::shared_ptr<const DirichletBC>> bcs)
-{
-  // Pack DirichletBC pointers for columns
-  std::vector<std::vector<std::vector<std::shared_ptr<const fem::DirichletBC>>>>
-      bcs1(a.size());
-  for (std::size_t i = 0; i < a.size(); ++i)
-  {
-    for (std::size_t j = 0; j < a[i].size(); ++j)
-    {
-      bcs1[i].resize(a[j].size());
-      for (std::shared_ptr<const DirichletBC> bc : bcs)
-      {
-        // FIXME: handle case where a[i][j] is null
-        if (a[i][j])
-        {
-          if (a[i][j]->function_space(1)->contains(*bc->function_space()))
-            bcs1[i][j].push_back(bc);
-        }
-      }
-    }
-  }
-
-  return bcs1;
-}
-//-----------------------------------------------------------------------------
-void _assemble_vector_nest(
-    Vec b, std::vector<const Form*> L,
-    const std::vector<std::vector<std::shared_ptr<const Form>>> a,
-    std::vector<std::shared_ptr<const DirichletBC>> bcs, const Vec x0,
-    double scale)
-{
-  if (L.size() < 2)
-  {
-    throw std::runtime_error("Expected more than one linear form "
-                             "in vector nest assembly.");
-  }
-
-  // Check that b and x0 are VecNest vector
-  VecType vec_type;
-  VecGetType(b, &vec_type);
-  if (strcmp(vec_type, VECNEST) != 0)
-    throw std::runtime_error("Expected nested RHS vector.");
-  if (x0)
-  {
-    VecGetType(x0, &vec_type);
-    if (strcmp(vec_type, VECNEST) != 0)
-      throw std::runtime_error("Expected nested RHS vector.");
-  }
-
-  // Extract x0 vectors, if required
-  std::vector<Vec> x0_sub(a[0].size(), nullptr);
-  std::vector<la::VecReadWrapper> x0_wrapper;
-  std::vector<Eigen::Ref<const Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1>>>
-      x0_ref;
-  if (x0)
-  {
-    for (std::size_t i = 0; i < a[0].size(); ++i)
-    {
-      VecNestGetSubVec(x0, i, &x0_sub[i]);
-      x0_wrapper.push_back(la::VecReadWrapper(x0_sub[i]));
-      x0_ref.push_back(x0_wrapper.back().x);
-    }
-  }
-
-  // Pack DirichletBC pointers for rows and columns
-  std::vector<std::vector<std::shared_ptr<const DirichletBC>>> bcs0
-      = bcs_rows(L, bcs);
-  std::vector<std::vector<std::vector<std::shared_ptr<const DirichletBC>>>> bcs1
-      = bcs_cols(a, bcs);
-
-  // Assemble
-  for (std::size_t i = 0; i < L.size(); ++i)
-  {
-    Vec b_sub = nullptr;
-    VecNestGetSubVec(b, i, &b_sub);
-
-    // Assemble
-    la::VecWrapper _b(b_sub);
-    _b.x.setZero();
-    fem::impl::assemble_vector(_b.x, *L[i]);
-
-    // FIXME: sort out x0 \ne nullptr for nested case
-    // Apply lifting
-    if (x0)
-      fem::impl::apply_lifting(_b.x, a[i], bcs1[i], x0_ref, scale);
-    else
-      fem::impl::apply_lifting(_b.x, a[i], bcs1[i], {}, scale);
-
-    _b.restore();
-
-    // Update ghosts
-    VecGhostUpdateBegin(b_sub, ADD_VALUES, SCATTER_REVERSE);
-    VecGhostUpdateEnd(b_sub, ADD_VALUES, SCATTER_REVERSE);
-
-    // Set bc values
-    if (a[0].empty())
-    {
-      // FIXME: this is a hack to handle the case that no bilinear forms
-      // have been supplied, which may happen in a Newton iteration.
-      // Needs to be fixed for nested systems
-      set_bc(b_sub, bcs0[0], x0, scale);
-    }
-    else
-    {
-      for (std::size_t j = 0; j < a[i].size(); ++j)
-      {
-        if (a[i][j])
-        {
-          if (*L[i]->function_space(0) == *a[i][j]->function_space(1))
-            set_bc(b_sub, bcs0[i], x0_sub[i], scale);
-        }
-      }
-    }
   }
 }
 //-----------------------------------------------------------------------------
@@ -291,6 +158,12 @@ void fem::assemble_vector(Vec b, const Form& L)
 }
 //-----------------------------------------------------------------------------
 void fem::assemble_vector(
+    Eigen::Ref<Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1>> b, const Form& L)
+{
+  fem::impl::assemble_vector(b, L);
+}
+//-----------------------------------------------------------------------------
+void fem::assemble_vector(
     Vec b, std::vector<const Form*> L,
     const std::vector<std::vector<std::shared_ptr<const Form>>> a,
     std::vector<std::shared_ptr<const DirichletBC>> bcs, const Vec x0,
@@ -300,7 +173,62 @@ void fem::assemble_vector(
   VecGetType(b, &vec_type);
   const bool is_vecnest = strcmp(vec_type, VECNEST) == 0;
   if (is_vecnest)
-    _assemble_vector_nest(b, L, a, bcs, x0, scale);
+  {
+    for (std::size_t i = 0; i < L.size(); ++i)
+    {
+      Vec b_sub = nullptr;
+      VecNestGetSubVec(b, i, &b_sub);
+      la::VecWrapper _b_sub(b_sub);
+      _b_sub.x.setZero();
+      fem::impl::assemble_vector(_b_sub.x, *L[i]);
+    }
+
+    std::vector<std::vector<std::shared_ptr<const DirichletBC>>> bcs0
+        = bcs_rows(L, bcs);
+    std::vector<std::vector<std::vector<std::shared_ptr<const DirichletBC>>>>
+        bcs1 = bcs_cols(a, bcs);
+
+    std::vector<Vec> x0_sub(a[0].size(), nullptr);
+    if (x0)
+    {
+      for (std::size_t i = 0; i < a[0].size(); ++i)
+        VecNestGetSubVec(x0, i, &x0_sub[i]);
+    }
+
+    for (std::size_t i = 0; i < L.size(); ++i)
+    {
+      Vec b_sub = nullptr;
+      VecNestGetSubVec(b, i, &b_sub);
+      if (x0)
+        apply_lifting(b_sub, a[i], bcs1[i], x0_sub, scale);
+      else
+        apply_lifting(b_sub, a[i], bcs1[i], {}, scale);
+
+      // Update ghosts
+      VecGhostUpdateBegin(b_sub, ADD_VALUES, SCATTER_REVERSE);
+      VecGhostUpdateEnd(b_sub, ADD_VALUES, SCATTER_REVERSE);
+
+      // Set bc values
+      if (a[0].empty())
+      {
+        // FIXME: this is a hack to handle the case that no bilinear forms
+        // have been supplied, which may happen in a Newton iteration.
+        // Needs to be fixed for nested systems
+        set_bc(b_sub, bcs0[0], x0, scale);
+      }
+      else
+      {
+        for (std::size_t j = 0; j < a[i].size(); ++j)
+        {
+          if (a[i][j])
+          {
+            if (*L[i]->function_space(0) == *a[i][j]->function_space(1))
+              set_bc(b_sub, bcs0[i], x0_sub[i], scale);
+          }
+        }
+      }
+    }
+  }
   else
     _assemble_vector_block(b, L, a, bcs, x0, scale);
 }
@@ -310,23 +238,35 @@ void fem::apply_lifting(
     std::vector<std::vector<std::shared_ptr<const DirichletBC>>> bcs1,
     const std::vector<Vec> x0, double scale)
 {
-  if (x0.size() > 1)
-  {
-    throw std::runtime_error(
-        "Simple fem::apply_lifting not get generalised for multiple x0");
-  }
-
   la::VecWrapper _b(b);
   if (x0.empty())
     fem::impl::apply_lifting(_b.x, a, bcs1, {}, scale);
   else
   {
-    assert(x0[0]);
-    la::VecReadWrapper x0_wrap(x0[0]);
-    fem::impl::apply_lifting(_b.x, a, bcs1, {x0_wrap.x}, scale);
-    x0_wrap.restore();
+    // std::vector<Vec> x0_sub(a.size(), nullptr);
+    std::vector<la::VecReadWrapper> x0_wrapper;
+    std::vector<Eigen::Ref<const Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1>>>
+        x0_ref;
+    for (std::size_t i = 0; i < a.size(); ++i)
+    {
+      assert(x0[i]);
+      x0_wrapper.push_back(la::VecReadWrapper(x0[i]));
+      x0_ref.push_back(x0_wrapper.back().x);
+    }
+
+    fem::impl::apply_lifting(_b.x, a, bcs1, x0_ref, scale);
   }
-  _b.restore();
+}
+//-----------------------------------------------------------------------------
+void fem::apply_lifting_new(
+    Eigen::Ref<Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1>> b,
+    const std::vector<std::shared_ptr<const Form>> a,
+    std::vector<std::vector<std::shared_ptr<const DirichletBC>>> bcs1,
+    const std::vector<
+        Eigen::Ref<const Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1>>>& x0,
+    double scale)
+{
+  fem::impl::apply_lifting(b, a, bcs1, x0, scale);
 }
 //-----------------------------------------------------------------------------
 void fem::assemble_matrix(Mat A, const std::vector<std::vector<const Form*>> a,
@@ -481,5 +421,47 @@ void fem::set_bc(Vec b, std::vector<std::shared_ptr<const DirichletBC>> bcs,
       bc->set(_b.x, scale);
     }
   }
+}
+//-----------------------------------------------------------------------------
+std::vector<std::vector<std::shared_ptr<const fem::DirichletBC>>>
+fem::bcs_rows(std::vector<const Form*> L,
+              std::vector<std::shared_ptr<const fem::DirichletBC>> bcs)
+{
+  // Pack DirichletBC pointers for rows
+  std::vector<std::vector<std::shared_ptr<const fem::DirichletBC>>> bcs0(
+      L.size());
+  for (std::size_t i = 0; i < L.size(); ++i)
+    for (std::shared_ptr<const DirichletBC> bc : bcs)
+      if (L[i]->function_space(0)->contains(*bc->function_space()))
+        bcs0[i].push_back(bc);
+
+  return bcs0;
+}
+//-----------------------------------------------------------------------------
+std::vector<std::vector<std::vector<std::shared_ptr<const fem::DirichletBC>>>>
+fem::bcs_cols(std::vector<std::vector<std::shared_ptr<const Form>>> a,
+              std::vector<std::shared_ptr<const DirichletBC>> bcs)
+{
+  // Pack DirichletBC pointers for columns
+  std::vector<std::vector<std::vector<std::shared_ptr<const fem::DirichletBC>>>>
+      bcs1(a.size());
+  for (std::size_t i = 0; i < a.size(); ++i)
+  {
+    for (std::size_t j = 0; j < a[i].size(); ++j)
+    {
+      bcs1[i].resize(a[j].size());
+      for (std::shared_ptr<const DirichletBC> bc : bcs)
+      {
+        // FIXME: handle case where a[i][j] is null
+        if (a[i][j])
+        {
+          if (a[i][j]->function_space(1)->contains(*bc->function_space()))
+            bcs1[i][j].push_back(bc);
+        }
+      }
+    }
+  }
+
+  return bcs1;
 }
 //-----------------------------------------------------------------------------

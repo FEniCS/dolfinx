@@ -254,6 +254,9 @@ void fem(py::module& m)
         "Modify vector for lifted boundary conditions");
   m.def("set_bc", &dolfin::fem::set_bc,
         "Insert boundary condition values into vector");
+  // Tools
+  m.def("bcs_rows", &dolfin::fem::bcs_rows);
+  m.def("bcs_cols", &dolfin::fem::bcs_cols);
 
   // dolfin::fem::DiscreteOperators
   py::class_<dolfin::fem::DiscreteOperators>(m, "DiscreteOperators")
