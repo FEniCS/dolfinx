@@ -124,7 +124,7 @@ std::vector<Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1>>
 get_local_vectors(const Vec x,
                   const std::vector<const common::IndexMap*>& maps);
 
-/// Copy blocks from Vec into local Vec objetcs
+/// Copy blocks from Vec into local Vec objects
 // std::vector<Vec>
 // get_local_petsc_vectors(const Vec x,
 //                         const std::vector<const common::IndexMap*>& maps);

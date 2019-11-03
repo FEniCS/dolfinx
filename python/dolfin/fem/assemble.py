@@ -134,11 +134,12 @@ def assemble_vector_block_new(L: typing.Union[Form, cpp.fem.Form]) -> PETSc.Vec:
     for b_sub in b_subs:
         with b_sub.localForm() as b_local:
             b_local.set(0.0)
-    return assemble_vector_block_new(b_subs, L)
+        assemble_vector_block_new2(b_subs, L)
+    return b_subs
 
-
-@assemble_vector_block_new.register(PETSc.Vec)
-def _(b: PETSc.Vec, L: typing.List[typing.Union[Form, cpp.fem.Form]]) -> PETSc.Vec:
+# @assemble_vector_block_new.register(PETSc.Vec)
+# def _(b: PETSc.Vec, L: typing.List[typing.Union[Form, cpp.fem.Form]]) -> PETSc.Vec:
+def assemble_vector_block_new2(b, L: typing.Union[Form, cpp.fem.Form]) -> PETSc.Vec:
     """Assemble linear forms into a list of vectors.
 
     """
