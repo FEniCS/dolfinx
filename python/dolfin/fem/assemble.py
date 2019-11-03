@@ -7,11 +7,11 @@
 
 import functools
 import typing
+import warnings
 
 from petsc4py import PETSc
 
 import ufl
-
 from dolfin import cpp
 from dolfin.fem.dirichletbc import DirichletBC
 from dolfin.fem.form import Form
@@ -141,19 +141,14 @@ def _(b: PETSc.Vec,
     accumulated.
 
     """
-    cpp.fem.assemble_vector(b, _create_cpp_form(L), _create_cpp_form(a), bcs, x0, scale)
-    return b
-
     if x0 is not None:
         _x0 = x0.getNestSubVecs()
     else:
-        _x0 = [None]*len(L)
+        _x0 = [None] * len(L)
     _b = b.getNestSubVecs()
-    bcs0 = cpp.fem.bcs_rows(_create_cpp_form(L), bcs)
-    bcs1 = cpp.fem.bcs_cols(_create_cpp_form(a), bcs)
 
-    L = _create_cpp_form(L)
-    a = _create_cpp_form(a)
+    L, a = _create_cpp_form(L), _create_cpp_form(a)
+    bcs0, bcs1 = cpp.fem.bcs_rows(L, bcs), cpp.fem.bcs_cols(a, bcs)
 
     for i in range(len(L)):
         cpp.fem.assemble_vector(_b[i], L[i])
@@ -164,26 +159,12 @@ def _(b: PETSc.Vec,
 
         _b[i].ghostUpdate(addv=PETSc.InsertMode.ADD, mode=PETSc.ScatterMode.REVERSE)
 
-        if a[i][0] == []:
-            # FIXME: this is a hack to handle the case that no bilinear forms
-            # have been supplied, which may happen in a Newton iteration.
-            # Needs to be fixed for nested systems
-            cpp.fem.set_bc(_b[i], bcs0[0], _x0[i], scale)
-        else:
-            for j in range(len(a[i])):
-                if a[i][j] is not None:
-                    if L[i].function_space(0) == a[i][j].function_space(1):
-                        cpp.fem.set_bc(_b[i], bcs0[i], _x0[i], scale)
-
-        # for (std::size_t j = 0; j < a[i].size(); ++j)
-        # {
-        #   if (a[i][j])
-        #   {
-        #     if (*L[i]->function_space(0) == *a[i][j]->function_space(1))
-        #       set_bc(b_sub, bcs0[i], x0_sub[i], scale);
-        #   }
-        # }
-
+        for j in range(len(a[i])):
+            if a[i][j] is not None:
+                if L[i].function_space(0) == a[i][j].function_space(1):
+                    cpp.fem.set_bc(_b[i], bcs0[i], _x0[i], scale)
+                else:
+                    warnings.warn("This boundary condition case has not be considred.")
     return b
 
 

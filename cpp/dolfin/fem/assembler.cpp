@@ -4,8 +4,6 @@
 //
 // SPDX-License-Identifier:    LGPL-3.0-or-later
 
-// #include <petscis.h>
-
 #include "assembler.h"
 #include "DirichletBC.h"
 #include "DofMap.h"
@@ -174,6 +172,8 @@ void fem::assemble_vector(
   const bool is_vecnest = strcmp(vec_type, VECNEST) == 0;
   if (is_vecnest)
   {
+    throw std::runtime_error(
+        "This function no longer support blocked assembly.");
     for (std::size_t i = 0; i < L.size(); ++i)
     {
       Vec b_sub = nullptr;
@@ -243,7 +243,6 @@ void fem::apply_lifting(
     fem::impl::apply_lifting(_b.x, a, bcs1, {}, scale);
   else
   {
-    // std::vector<Vec> x0_sub(a.size(), nullptr);
     std::vector<la::VecReadWrapper> x0_wrapper;
     std::vector<Eigen::Ref<const Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1>>>
         x0_ref;
