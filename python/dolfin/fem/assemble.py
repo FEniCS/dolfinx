@@ -103,24 +103,22 @@ def _(b: PETSc.Vec, L: typing.Union[Form, cpp.fem.Form]) -> PETSc.Vec:
 
 # FIXME: Revise this interface
 @functools.singledispatch
-def assemble_vector_nest_new(L: typing.Union[Form, cpp.fem.Form]) -> PETSc.Vec:
-    """Assemble linear forms into a nested (VecNest) vector. The vector is
-    not zeroed and it is not finalised, i.e. ghost values are not
-    accumulated.
+def assemble_vector_nest(L: typing.Union[Form, cpp.fem.Form]) -> PETSc.Vec:
+    """Assemble linear forms into a nested (VecNest) vector. not finalised,
+    i.e. ghost values are not accumulated.
 
     """
     b = cpp.fem.create_vector_nest(_create_cpp_form(L))
     for b_sub in b.getNestSubVecs():
         with b_sub.localForm() as b_local:
             b_local.set(0.0)
-    return assemble_vector_nest_new(b, L)
+    return assemble_vector_nest(b, L)
 
 
-@assemble_vector_nest_new.register(PETSc.Vec)
+@assemble_vector_nest.register(PETSc.Vec)
 def _(b: PETSc.Vec, L: typing.List[typing.Union[Form, cpp.fem.Form]]) -> PETSc.Vec:
     """Assemble linear forms into a nested (VecNest) vector. The vector is
-    not zeroed and it is not finalised, i.e. ghost values are not
-    accumulated.
+    not zeroed and is not finalised, i.e. ghost values are not accumulated.
 
     """
     _b = b.getNestSubVecs()
@@ -130,6 +128,7 @@ def _(b: PETSc.Vec, L: typing.List[typing.Union[Form, cpp.fem.Form]]) -> PETSc.V
     return b
 
 
+# FIXME: Revise this interface
 @functools.singledispatch
 def assemble_vector_block(L: typing.List[typing.Union[Form, cpp.fem.Form]],
                           a,

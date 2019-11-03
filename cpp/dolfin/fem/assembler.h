@@ -7,7 +7,6 @@
 #pragma once
 
 #include <Eigen/Dense>
-#include <boost/variant.hpp>
 #include <dolfin/common/types.h>
 #include <memory>
 #include <petscmat.h>

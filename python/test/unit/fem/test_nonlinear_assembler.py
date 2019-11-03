@@ -102,7 +102,7 @@ def test_matrix_assembly_block():
         soln_sub.vector.ghostUpdate(addv=PETSc.InsertMode.INSERT, mode=PETSc.ScatterMode.FORWARD)
 
     A1 = dolfin.fem.assemble_matrix_nest(a_block, [bc])
-    b1 = dolfin.fem.assemble.assemble_vector_nest_new(L_block)
+    b1 = dolfin.fem.assemble.assemble_vector_nest(L_block)
     dolfin.fem.assemble.apply_lifting_nest(b1, a_block, [bc], x0, scale=-1.0)
     for b_sub in b1.getNestSubVecs():
         b_sub.ghostUpdate(addv=PETSc.InsertMode.ADD, mode=PETSc.ScatterMode.REVERSE)
