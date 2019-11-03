@@ -428,8 +428,6 @@ def test_assembly_solve_taylor_hood(mesh):
     A0norm = nest_matrix_norm(A0)
     P0 = dolfin.fem.assemble_matrix_nest([[p00, p01], [p10, p11]], [bc0, bc1])
     P0norm = nest_matrix_norm(P0)
-    # b0 = dolfin.fem.assemble_vector_nest([L0, L1], [[a00, a01], [a10, a11]],
-    #                                      [bc0, bc1])
     b0 = dolfin.fem.assemble.assemble_vector_nest_new([L0, L1])
     dolfin.fem.assemble.apply_lifting_nest(b0, [[a00, a01], [a10, a11]], [bc0, bc1])
     for b_sub in b0.getNestSubVecs():

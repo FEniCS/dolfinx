@@ -103,58 +103,6 @@ def _(b: PETSc.Vec, L: typing.Union[Form, cpp.fem.Form]) -> PETSc.Vec:
 
 # FIXME: Revise this interface
 @functools.singledispatch
-def assemble_vector_nest(L: typing.List[typing.Union[Form, cpp.fem.Form]],
-                         a,
-                         bcs: typing.List[DirichletBC],
-                         x0: typing.Optional[PETSc.Vec] = None,
-                         scale: float = 1.0) -> PETSc.Vec:
-    """Assemble linear forms into a nested (VecNest) vector. The vector is
-    not zeroed and it is not finalised, i.e. ghost values are not
-    accumulated.
-
-    """
-    b = cpp.fem.create_vector_nest(_create_cpp_form(L))
-    return assemble_vector_nest(b, L, a, bcs, x0, scale)
-
-
-@assemble_vector_nest.register(PETSc.Vec)
-def _(b: PETSc.Vec,
-      L: typing.List[typing.Union[Form, cpp.fem.Form]],
-      a,
-      bcs: typing.List[DirichletBC],
-      x0: typing.Optional[PETSc.Vec] = None,
-      scale: float = 1.0) -> PETSc.Vec:
-    """Assemble linear forms into a nested (VecNest) vector. The vector is
-    not zeroed and it is not finalised, i.e. ghost values are not
-    accumulated.
-
-    """
-    if x0 is not None:
-        x0 = x0.getNestSubVecs()
-    else:
-        x0 = [None] * len(L)
-    _b = b.getNestSubVecs()
-
-    if a is None:
-        raise RuntimeError("Oops, can't handle null block yet.")
-
-    L, a = _create_cpp_form(L), _create_cpp_form(a)
-    bcs0, bcs1 = cpp.fem.bcs_rows(L, bcs), cpp.fem.bcs_cols(a, bcs)
-
-    for b_sub, L_sub, a_sub, bc0, bc1, x in zip(_b, L, a, bcs0, bcs1, x0):
-        cpp.fem.assemble_vector(b_sub, L_sub)
-        cpp.fem.apply_lifting(b_sub, a_sub, bc1, x0, scale)
-
-        b_sub.ghostUpdate(addv=PETSc.InsertMode.ADD, mode=PETSc.ScatterMode.REVERSE)
-
-        for j in range(len(a_sub)):
-            if a_sub[j] is not None:
-                if L_sub.function_space(0) == a_sub[j].function_space(1):
-                    cpp.fem.set_bc(b_sub, bc0, x, scale)
-    return b
-
-# FIXME: Revise this interface
-@functools.singledispatch
 def assemble_vector_nest_new(L: typing.Union[Form, cpp.fem.Form]) -> PETSc.Vec:
     """Assemble linear forms into a nested (VecNest) vector. The vector is
     not zeroed and it is not finalised, i.e. ghost values are not
@@ -162,6 +110,9 @@ def assemble_vector_nest_new(L: typing.Union[Form, cpp.fem.Form]) -> PETSc.Vec:
 
     """
     b = cpp.fem.create_vector_nest(_create_cpp_form(L))
+    for b_sub in b.getNestSubVecs():
+        with b_sub.localForm() as b_local:
+            b_local.set(0.0)
     return assemble_vector_nest_new(b, L)
 
 
@@ -331,9 +282,9 @@ def apply_lifting_nest(b: PETSc.Vec,
         # _x0 = [None] * len(_b)
     if a is None:
         raise RuntimeError("Oops, can't handle null block yet.")
-    a = _create_cpp_form(a)
-    bcs1 = cpp.fem.bcs_cols(a, bcs)
-    for b_sub, a_sub, bc1 in zip(_b, a, bcs1):
+    _a = _create_cpp_form(a)
+    bcs1 = cpp.fem.bcs_cols(_a, bcs)
+    for b_sub, a_sub, bc1 in zip(_b, _a, bcs1):
         cpp.fem.apply_lifting(b_sub, a_sub, bc1, _x0, scale)
 
     return b
