@@ -42,7 +42,8 @@ PetscScalar assemble_scalar(const Form& M);
 /// @param[in,out] b The PETsc vector to assemble the form into. The
 ///                  vector must already be initialised with the correct
 ///                  size. The process-local contribution of the form is
-///                  assembled into this vector.
+///                  assembled into this vector. It is not zeroed before
+///                  assembly.
 /// @param[in] L The linear form to assemble
 void assemble_vector(Vec b, const Form& L);
 

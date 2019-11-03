@@ -31,36 +31,31 @@ def _create_cpp_form(form):
 
 
 def create_vector(L: typing.Union[Form, cpp.fem.Form]) -> PETSc.Vec:
-    b = cpp.la.create_vector(_create_cpp_form(L).function_space(0).dofmap.index_map)
-    return b
+    return cpp.la.create_vector(_create_cpp_form(L).function_space(0).dofmap.index_map)
 
 
 def create_vector_block(L: typing.List[typing.Union[Form, cpp.fem.Form]]) -> PETSc.Vec:
-    b = cpp.fem.create_vector(_create_cpp_form(L))
-    return b
+    return cpp.fem.create_vector(_create_cpp_form(L))
 
 
 def create_vector_nest(L: typing.List[typing.Union[Form, cpp.fem.Form]]) -> PETSc.Vec:
-    b = cpp.fem.create_vector_nest(_create_cpp_form(L))
-    return b
+    maps = [form.function_space(0).dofmap.index_map for form in _create_cpp_form(L)]
+    return cpp.fem.create_vector_nest(maps)
 
 
 # -- Matrix instantiation ----------------------------------------------------
 
 
 def create_matrix(a: typing.Union[Form, cpp.fem.Form]) -> PETSc.Mat:
-    A = cpp.fem.create_matrix(_create_cpp_form(a))
-    return A
+    return cpp.fem.create_matrix(_create_cpp_form(a))
 
 
 def create_matrix_block(a: typing.List[typing.List[typing.Union[Form, cpp.fem.Form]]]) -> PETSc.Mat:
-    A = cpp.fem.create_matrix_block(_create_cpp_form(a))
-    return A
+    return cpp.fem.create_matrix_block(_create_cpp_form(a))
 
 
 def create_matrix_nest(a: typing.List[typing.List[typing.Union[Form, cpp.fem.Form]]]) -> PETSc.Mat:
-    A = cpp.fem.create_matrix_nest(_create_cpp_form(a))
-    return A
+    return cpp.fem.create_matrix_nest(_create_cpp_form(a))
 
 
 # -- Scalar assembly ---------------------------------------------------------
@@ -108,7 +103,8 @@ def assemble_vector_nest(L: typing.Union[Form, cpp.fem.Form]) -> PETSc.Vec:
     i.e. ghost values are not accumulated.
 
     """
-    b = cpp.fem.create_vector_nest(_create_cpp_form(L))
+    maps = [form.function_space(0).dofmap.index_map for form in _create_cpp_form(L)]
+    b = cpp.fem.create_vector_nest(maps)
     for b_sub in b.getNestSubVecs():
         with b_sub.localForm() as b_local:
             b_local.set(0.0)

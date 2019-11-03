@@ -31,7 +31,8 @@ namespace
 {
 // Try to figure out block size. FIXME - replace elsewhere
 int analyse_block_structure(
-    const std::vector<std::shared_ptr<const fem::ElementDofLayout>> sub_dofmaps)
+    const std::vector<std::shared_ptr<const fem::ElementDofLayout>>&
+        sub_dofmaps)
 {
   // Must be at least two subdofmaps
   if (sub_dofmaps.size() < 2)
@@ -61,7 +62,7 @@ int analyse_block_structure(
 
 //-----------------------------------------------------------------------------
 std::vector<std::vector<std::shared_ptr<const common::IndexMap>>>
-fem::blocked_index_sets(const std::vector<std::vector<const fem::Form*>> a)
+fem::blocked_index_sets(const std::vector<std::vector<const fem::Form*>>& a)
 {
   std::vector<std::vector<std::shared_ptr<const common::IndexMap>>> maps(2);
   maps[0].resize(a.size());
@@ -172,7 +173,7 @@ la::PETScMatrix dolfin::fem::create_matrix(const Form& a)
 }
 //-----------------------------------------------------------------------------
 la::PETScMatrix
-fem::create_matrix_block(std::vector<std::vector<const fem::Form*>> a)
+fem::create_matrix_block(const std::vector<std::vector<const fem::Form*>>& a)
 {
   // FIXME: this assumes that a00 is not null
   const mesh::Mesh& mesh = *a[0][0]->mesh();
@@ -315,7 +316,7 @@ fem::create_matrix_block(std::vector<std::vector<const fem::Form*>> a)
 }
 //-----------------------------------------------------------------------------
 la::PETScMatrix
-fem::create_matrix_nest(std::vector<std::vector<const fem::Form*>> a)
+fem::create_matrix_nest(const std::vector<std::vector<const fem::Form*>>& a)
 {
   // Check that array of forms is not empty and is square
   if (a.empty())
@@ -363,7 +364,7 @@ fem::create_matrix_nest(std::vector<std::vector<const fem::Form*>> a)
   return la::PETScMatrix(_A);
 }
 //-----------------------------------------------------------------------------
-la::PETScVector fem::create_vector_block(std::vector<const fem::Form*> L)
+la::PETScVector fem::create_vector_block(const std::vector<const fem::Form*>& L)
 {
   // FIXME: handle null blocks?
 
@@ -405,33 +406,34 @@ la::PETScVector fem::create_vector_block(std::vector<const fem::Form*> L)
   return la::PETScVector(index_map);
 }
 //-----------------------------------------------------------------------------
-la::PETScVector fem::create_vector_nest(std::vector<const fem::Form*> L)
+la::PETScVector
+fem::create_vector_nest(const std::vector<const common::IndexMap*>& maps)
 {
+  assert(!maps.empty());
+
   // Loop over each form and create vector
-  std::vector<std::shared_ptr<la::PETScVector>> vecs(L.size());
-  std::vector<Vec> petsc_vecs(L.size());
-  for (std::size_t i = 0; i < L.size(); ++i)
+  std::vector<std::shared_ptr<la::PETScVector>> vecs(maps.size());
+  std::vector<Vec> petsc_vecs(maps.size());
+  for (std::size_t i = 0; i < maps.size(); ++i)
   {
-    if (L[i])
+    if (!maps[i])
     {
-      const common::IndexMap& index_map
-          = *L[i]->function_space(0)->dofmap()->index_map;
-      vecs[i] = std::make_shared<la::PETScVector>(index_map);
-      petsc_vecs[i] = vecs[i]->vec();
+      throw std::runtime_error(
+          "Cannot construct nested PETSc vectors with null blocks.");
     }
-    else
-      petsc_vecs[i] = nullptr;
+    vecs[i] = std::make_shared<la::PETScVector>(*maps[i]);
+    petsc_vecs[i] = vecs[i]->vec();
   }
 
   // Create nested (VecNest) vector
   Vec y;
   VecCreateNest(vecs[0]->mpi_comm(), petsc_vecs.size(), nullptr,
                 petsc_vecs.data(), &y);
-  return la::PETScVector(y);
+  return la::PETScVector(y, false);
 }
 //-----------------------------------------------------------------------------
 std::size_t
-dolfin::fem::get_global_index(const std::vector<const common::IndexMap*> maps,
+dolfin::fem::get_global_index(const std::vector<const common::IndexMap*>& maps,
                               const int field, const int index)
 {
   // FIXME: handle/check block size > 1

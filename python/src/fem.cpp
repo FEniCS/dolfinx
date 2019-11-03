@@ -95,8 +95,8 @@ void fem(py::module& m)
         py::return_value_policy::take_ownership,
         "Initialise monolithic vector for multiple (stacked) linear forms.");
   m.def("create_vector_nest",
-        [](const std::vector<const dolfin::fem::Form*> L) {
-          auto x = dolfin::fem::create_vector_nest(L);
+        [](const std::vector<const dolfin::common::IndexMap*>& maps) {
+          auto x = dolfin::fem::create_vector_nest(maps);
           Vec _x = x.vec();
           PetscObjectReference((PetscObject)_x);
           return _x;

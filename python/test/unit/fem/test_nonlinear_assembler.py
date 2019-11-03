@@ -94,6 +94,7 @@ def test_matrix_assembly_block():
 
     # Nested (MatNest)
     x0 = dolfin.fem.create_vector_nest(L_block)
+
     x0.set(initial_guess_value)
     for x0_soln_pair in zip(x0.getNestSubVecs(), (u, p)):
         x0_sub, soln_sub = x0_soln_pair
