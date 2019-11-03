@@ -117,17 +117,6 @@ def assemble_vector_nest(L: typing.List[typing.Union[Form, cpp.fem.Form]],
     b = cpp.fem.create_vector_nest(_create_cpp_form(L))
     return assemble_vector_nest(b, L, a, bcs, x0, scale)
 
-    # cpp.fem.assemble_vector(b, _create_cpp_form(L), _create_cpp_form(a), bcs, x0, scale)
-    # if x0 is not None:
-    #     _x0 = x0.getNestSubVecs()
-    # for i in range(len(L)):
-    #     _b = b.getNestSubVec(i)
-    #     cpp.fem.assemble_vector(_b, _create_cpp_form(L[i]))
-    #     cpp.fem.apply_lifting(_b, _create_cpp_form(a[i]), bcs1,
-    #                           _x0, scale)
-    #     cpp.fem.set_bc(_b, bcs[i], _x0[i])
-    # return b
-
 
 @assemble_vector_nest.register(PETSc.Vec)
 def _(b: PETSc.Vec,
@@ -142,29 +131,27 @@ def _(b: PETSc.Vec,
 
     """
     if x0 is not None:
-        _x0 = x0.getNestSubVecs()
+        x0 = x0.getNestSubVecs()
     else:
-        _x0 = [None] * len(L)
+        x0 = [None] * len(L)
     _b = b.getNestSubVecs()
+
+    if a is None:
+        raise RuntimeError("Oops, can't handle null block yet.")
 
     L, a = _create_cpp_form(L), _create_cpp_form(a)
     bcs0, bcs1 = cpp.fem.bcs_rows(L, bcs), cpp.fem.bcs_cols(a, bcs)
 
-    for i in range(len(L)):
-        cpp.fem.assemble_vector(_b[i], L[i])
-        if x0 is not None:
-            cpp.fem.apply_lifting(_b[i], a[i], bcs1[i], _x0, scale)
-        else:
-            cpp.fem.apply_lifting(_b[i], a[i], bcs1[i], [], scale)
+    for b_sub, L_sub, a_sub, bc0, bc1, x in zip(_b, L, a, bcs0, bcs1, x0):
+        cpp.fem.assemble_vector(b_sub, L_sub)
+        cpp.fem.apply_lifting(b_sub, a_sub, bc1, x0, scale)
 
-        _b[i].ghostUpdate(addv=PETSc.InsertMode.ADD, mode=PETSc.ScatterMode.REVERSE)
+        b_sub.ghostUpdate(addv=PETSc.InsertMode.ADD, mode=PETSc.ScatterMode.REVERSE)
 
-        for j in range(len(a[i])):
-            if a[i][j] is not None:
-                if L[i].function_space(0) == a[i][j].function_space(1):
-                    cpp.fem.set_bc(_b[i], bcs0[i], _x0[i], scale)
-                else:
-                    warnings.warn("This boundary condition case has not be considred.")
+        for j in range(len(a_sub)):
+            if a_sub[j] is not None:
+                if L_sub.function_space(0) == a_sub[j].function_space(1):
+                    cpp.fem.set_bc(b_sub, bc0, x, scale)
     return b
 
 

@@ -161,12 +161,28 @@ void assemble_matrix(Mat A, const Form& a,
 void set_bc(Vec b, std::vector<std::shared_ptr<const DirichletBC>> bcs,
             const Vec x0, double scale = 1.0);
 
-/// BCs for rows
+// FIXME: Handle null block
+// FIXME: Pass function spaces rather than forms
+/// Arrange boundary conditions by block
+/// @param[in] L Linear forms for each block
+/// @param[in] bcs Boundary conditions
+/// @return The boundary conditions collected by block, i.e.
+///         bcs_block[i] is the list of boundary conditions applied to
+///         L[i]. The order within bcs_block[i] preserves the input
+///         order of the bcs array.
 std::vector<std::vector<std::shared_ptr<const fem::DirichletBC>>>
 bcs_rows(std::vector<const Form*> L,
          std::vector<std::shared_ptr<const fem::DirichletBC>> bcs);
 
-/// BCs for cols
+// FIXME: Handle null block
+// FIXME: Pass function spaces rather than forms
+/// Arrange boundary conditions by block
+/// @param[in] a Biinear forms for each block
+/// @param[in] bcs Boundary conditions
+/// @return The boundary conditions collected by block, i.e.
+///         bcs_block[i] is the list of boundary conditions applied to
+///         the trial space of a[i]. The order within bcs_block[i]
+///         preserves the input order of the bcs array.
 std::vector<std::vector<std::vector<std::shared_ptr<const fem::DirichletBC>>>>
 bcs_cols(std::vector<std::vector<std::shared_ptr<const Form>>> a,
          std::vector<std::shared_ptr<const DirichletBC>> bcs);
