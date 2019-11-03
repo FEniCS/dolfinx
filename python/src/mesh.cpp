@@ -137,7 +137,6 @@ void mesh(py::module& m)
                &dolfin::mesh::Topology::connectivity, py::const_))
       .def("size", &dolfin::mesh::Topology::size)
       .def("hash", &dolfin::mesh::Topology::hash)
-      .def("have_global_indices", &dolfin::mesh::Topology::have_global_indices)
       .def("ghost_offset", &dolfin::mesh::Topology::ghost_offset)
       .def("entity_owner",
            py::overload_cast<int>(&dolfin::mesh::Topology::entity_owner,

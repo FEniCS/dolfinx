@@ -80,7 +80,7 @@ void get_cell_entities(
   {
     if (needs_mesh_entities[d])
     {
-      assert(topology.have_global_indices(d));
+      assert(topology.connectivity(d, 0));
       const std::vector<std::int64_t>& global_indices
           = topology.global_indices(d);
       const int cell_num_entities

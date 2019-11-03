@@ -80,10 +80,6 @@ public:
   /// dimension d
   const std::vector<std::int64_t>& global_indices(std::size_t d) const;
 
-  /// Check if global indices are available for entities of
-  /// dimension dim
-  bool have_global_indices(std::size_t dim) const;
-
   /// Return map from shared entities (local index) to processes
   /// that share the entity
   std::map<std::int32_t, std::set<std::int32_t>>& shared_entities(int dim);

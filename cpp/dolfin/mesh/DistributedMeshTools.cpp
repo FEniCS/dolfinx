@@ -388,7 +388,7 @@ void DistributedMeshTools::number_entities(const Mesh& mesh, int d)
   common::Timer timer("Number distributed mesh entities");
 
   // Return if global entity indices have already been calculated
-  if (mesh.topology().have_global_indices(d))
+  if (mesh.topology().global_indices(d).size() > 0)
     return;
 
   // Const-cast to allow data to be attached

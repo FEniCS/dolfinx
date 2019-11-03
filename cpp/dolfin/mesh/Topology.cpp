@@ -103,12 +103,6 @@ const std::vector<std::int64_t>& Topology::global_indices(std::size_t d) const
   return _global_indices[d];
 }
 //-----------------------------------------------------------------------------
-bool Topology::have_global_indices(std::size_t dim) const
-{
-  assert(dim < _global_indices.size());
-  return !_global_indices[dim].empty();
-}
-//-----------------------------------------------------------------------------
 std::map<std::int32_t, std::set<std::int32_t>>&
 Topology::shared_entities(int dim)
 {

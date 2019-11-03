@@ -26,7 +26,7 @@ ParallelRefinement::ParallelRefinement(const mesh::Mesh& mesh)
     : _mesh(mesh), _marked_edges(mesh.num_entities(1), false),
       _marked_for_update(MPI::size(mesh.mpi_comm()))
 {
-  if (!_mesh.topology().have_global_indices(1))
+  if (!_mesh.topology().connectivity(1, 0))
     throw std::runtime_error("Edges must be initialised");
 
   // Create a global-to-local map for shared edges
