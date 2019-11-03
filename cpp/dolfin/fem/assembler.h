@@ -65,7 +65,7 @@ void
 ///   b_i <- b_i - scale * A_ij g_j
 ///
 // where L_i i assembled into b_i, and where i and j are the block
-// indices. For non-blocked probelem i = j / = 1. The boundary
+// indices. For non-blocked problem i = j / = 1. The boundary
 // conditions bc1 are on the trial spaces V_j, which / can be different
 // from the trial space of L (V_i). The forms in [a] / must have the
 // same test space as L, but the trial space may differ.
@@ -83,7 +83,7 @@ void assemble_vector(
 ///   b <- b - scale * A_j (g_j - x0_j)
 ///
 /// where j is a block (nest) index. For a non-blocked problem j = 0. The
-/// boundary conditions bc1 are on the trial spaces V_j. The forms in
+/// boundary conditions bcs1 are on the trial spaces V_j. The forms in
 /// [a] must have the same test space as L (from which b was built), but the
 /// trial space may differ. If x0 is not supplied, then it is treated as
 /// zero.
@@ -126,7 +126,6 @@ void assemble_matrix(Mat A, const Form& a,
 
 // FIXME: clarify x0
 // FIXME: clarify what happens with ghosts
-// FIXME: sort out case when x0 is nested, i.e. len(b) \ne len(x0)
 
 /// Set bc values in owned (local) part of the PETScVector, multiplied
 /// by 'scale'. The vectors b and x0 must have the same local size. The

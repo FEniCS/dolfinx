@@ -157,21 +157,6 @@ def _(b: PETSc.Vec,
     return b
 
 
-# FIXME: Revise this interface
-def reassemble_vector(b: PETSc.Vec,
-                      L,
-                      a=[],
-                      bcs: typing.List[DirichletBC] = [],
-                      x0: typing.Optional[PETSc.Vec] = None,
-                      scale: float = 1.0) -> PETSc.Vec:
-    """Re-assemble linear forms into a block vector, with modification for Dirichlet
-    boundary conditions
-
-    """
-    cpp.fem.reassemble_vector(b, _create_cpp_form(L), _create_cpp_form(a), bcs, x0, scale)
-    return b
-
-
 # -- Matrix assembly ---------------------------------------------------------
 
 
@@ -246,15 +231,24 @@ def _(A: PETSc.Mat,
 
 # -- Modifiers for Dirichlet conditions ---------------------------------------
 
-# FIXME: Explain in docstring order of calling this function and
-# parallel udpdating w.r.t assembly of L into b.
 def apply_lifting(b: PETSc.Vec,
                   a: typing.List[typing.Union[Form, cpp.fem.Form]],
                   bcs: typing.List[typing.List[DirichletBC]],
                   x0: typing.Optional[typing.List[PETSc.Vec]] = [],
                   scale: float = 1.0) -> None:
-    """Modify vector for lifting of Dirichlet boundary conditions.
+    """Modify RHS vector b for lifting of Dirichlet boundary conditions.
+    It modifies b such that:
 
+        b <- b - scale * A_j (g_j - x0_j)
+
+    where j is a block (nest) index. For a non-blocked problem j = 0.
+    The boundary conditions bcs are on the trial spaces V_j. The forms
+    in [a] must have the same test space as L (from which b was built),
+    but the trial space may differ. If x0 is not supplied, then it is
+    treated as zero.
+
+    Ghost contributions are not accumulated (not sent to owner). Caller
+    is responsible for calling VecGhostUpdateBegin/End.
     """
     cpp.fem.apply_lifting(b, _create_cpp_form(a), bcs, x0, scale)
 
@@ -264,22 +258,16 @@ def apply_lifting_nest(b: PETSc.Vec,
                        bcs: typing.List[DirichletBC],
                        x0: typing.Optional[PETSc.Vec] = None,
                        scale: float = 1.0) -> PETSc.Vec:
-    """Assemble linear forms into a nested (VecNest) vector. The vector is
-    not zeroed and it is not finalised, i.e. ghost values are not
-    accumulated.
+    """Modify nested vector for lifting of Dirichlet boundary conditions.
 
     """
-    _b = b.getNestSubVecs()
     if x0 is not None:
         _x0 = x0.getNestSubVecs()
     else:
         _x0 = []
-        # _x0 = [None] * len(_b)
-    if a is None:
-        raise RuntimeError("Oops, can't handle null block yet.")
     _a = _create_cpp_form(a)
     bcs1 = cpp.fem.bcs_cols(_a, bcs)
-    for b_sub, a_sub, bc1 in zip(_b, _a, bcs1):
+    for b_sub, a_sub, bc1 in zip(b.getNestSubVecs(), _a, bcs1):
         cpp.fem.apply_lifting(b_sub, a_sub, bc1, _x0, scale)
 
     return b
@@ -291,7 +279,7 @@ def set_bc(b: PETSc.Vec,
            scale: float = 1.0) -> None:
     """Insert boundary condition values into vector. Only local (owned)
     entries are set, hence communication after calling this function is
-    not required the ghost entries need to be updated to the boundary
+    not required unless ghost entries need to be updated to the boundary
     condition value.
 
     """
@@ -302,10 +290,10 @@ def set_bc_nest(b: PETSc.Vec,
                 bcs: typing.List[typing.List[DirichletBC]],
                 x0: typing.Optional[PETSc.Vec] = None,
                 scale: float = 1.0) -> None:
-    """Insert boundary condition values into vector. Only local (owned)
+    """Insert boundary condition values into nested vector. Only local (owned)
     entries are set, hence communication after calling this function is
-    not required the ghost entries need to be updated to the boundary
-    condition value.
+    not required unless the ghost entries need to be updated to the
+    boundary condition value.
 
     """
     _b = b.getNestSubVecs()
