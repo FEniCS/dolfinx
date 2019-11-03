@@ -414,7 +414,9 @@ std::size_t Mesh::create_entities(int dim) const
   // Compute connectivity to vertices
   Mesh* mesh = const_cast<Mesh*>(this);
 
+  // Create local entities
   TopologyComputation::compute_entities(*mesh, dim);
+  // Number globally
   DistributedMeshTools::number_entities(*mesh, dim);
 
   return _topology->size(dim);

@@ -80,9 +80,10 @@ void get_cell_entities(
   {
     if (needs_mesh_entities[d])
     {
-      assert(topology.connectivity(d, 0));
       const std::vector<std::int64_t>& global_indices
           = topology.global_indices(d);
+      assert(global_indices.size() > 0);
+
       const int cell_num_entities
           = mesh::cell_num_entities(cell.mesh().cell_type(), d);
       const std::int32_t* entities = cell.entities(d);

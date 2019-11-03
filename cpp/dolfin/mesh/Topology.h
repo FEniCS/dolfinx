@@ -100,12 +100,12 @@ public:
   const std::vector<std::int32_t>& entity_owner(int dim) const;
 
   /// Marker for entities of dimension dim on the boundary. An entity of
-  /// co-dimension < 0 is on the boundary if it is connected to boundary
-  /// facet. It i not defined for codimension 0.
+  /// co-dimension < 0 is on the boundary if it is connected to a boundary
+  /// facet. It is not defined for codimension 0.
   /// @param[in] dim Toplogical dimension of the entities to check. It
   /// must be less than the topological dimension.
   /// @return Vector of length equal to number of local entities, with
-  ///          'true' for enties on the boundary and otherwise 'false'.
+  ///          'true' for entities on the boundary and otherwise 'false'.
   std::vector<bool> on_boundary(int dim) const;
 
   /// Return connectivity for given pair of topological dimensions
