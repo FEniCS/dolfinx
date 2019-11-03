@@ -66,7 +66,7 @@ void la(py::module& m)
         for (std::size_t i = 0; i < x.size(); ++i)
         {
           assert(x[i]);
-          _x.push_back(std::make_shared<dolfin::la::PETScVector>(x[i]));
+          _x.push_back(std::make_shared<dolfin::la::PETScVector>(x[i], true));
         }
         return dolfin::la::VectorSpaceBasis(_x);
       }))
@@ -104,6 +104,7 @@ void la(py::module& m)
         },
         py::return_value_policy::take_ownership,
         "Create a PETSc Mat from sparsity pattern.");
+    m.def("get_local_vectors", &dolfin::la::get_local_vectors);
   // NOTE: Enabling the below requires adding a C API for MatNullSpace to
   // petsc4py
   //   m.def("create_nullspace",

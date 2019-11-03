@@ -364,45 +364,33 @@ fem::create_matrix_nest(const std::vector<std::vector<const fem::Form*>>& a)
   return la::PETScMatrix(_A);
 }
 //-----------------------------------------------------------------------------
-la::PETScVector fem::create_vector_block(const std::vector<const fem::Form*>& L)
+la::PETScVector
+fem::create_vector_block(const std::vector<const common::IndexMap*>& maps)
 {
-  // FIXME: handle null blocks?
-
-  // FIXME: handle consatnt block size > 1
-
-  // std::size_t local_size = 0;
-  std::vector<const common::IndexMap*> index_maps;
-  for (const fem::Form* form : L)
-  {
-    assert(form);
-    assert(form->rank() == 1);
-    auto map = form->function_space(0)->dofmap()->index_map;
-    index_maps.push_back(map.get());
-  }
+  // FIXME: handle constant block size > 1
 
   std::size_t local_size = 0;
   std::vector<std::int64_t> ghosts;
-  for (std::size_t i = 0; i < L.size(); ++i)
+  for (std::size_t i = 0; i < maps.size(); ++i)
   {
-    const common::IndexMap* map = index_maps[i];
-    const int bs = index_maps[i]->block_size;
-    local_size += map->size_local() * bs;
+    const int bs = maps[i]->block_size;
+    local_size += maps[i]->size_local() * bs;
 
     const Eigen::Array<PetscInt, Eigen::Dynamic, 1>& field_ghosts
-        = map->ghosts();
+        = maps[i]->ghosts();
     for (Eigen::Index j = 0; j < field_ghosts.size(); ++j)
     {
       for (int k = 0; k < bs; ++k)
       {
         std::int64_t global_index
-            = get_global_index(index_maps, i, bs * field_ghosts[j] + k);
+            = get_global_index(maps, i, bs * field_ghosts[j] + k);
         ghosts.push_back(global_index);
       }
     }
   }
 
-  // Create map for combined problem
-  common::IndexMap index_map(L[0]->mesh()->mpi_comm(), local_size, ghosts, 1);
+  // Create map for combined problem, and create vector
+  common::IndexMap index_map(maps[0]->mpi_comm(), local_size, ghosts, 1);
   return la::PETScVector(index_map);
 }
 //-----------------------------------------------------------------------------

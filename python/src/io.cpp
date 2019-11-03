@@ -114,7 +114,7 @@ void io(py::module& m)
            py::arg("meshfunction"), py::arg("name"))
       .def("write",
            [](dolfin::io::HDF5File& self, Vec x, std::string s) {
-             dolfin::la::PETScVector _x(x);
+             dolfin::la::PETScVector _x(x, true);
              self.write(_x, s);
            },
            py::arg("vector"), py::arg("name"))

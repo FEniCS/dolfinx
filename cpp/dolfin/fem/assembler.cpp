@@ -78,8 +78,6 @@ void _assemble_vector_block(
 
   // Split x0 vector, if required
   std::vector<Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1>> x0_array;
-  std::vector<Eigen::Ref<const Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1>>>
-      x0_ref;
   if (x0)
   {
     if (a[0].empty())
@@ -88,9 +86,9 @@ void _assemble_vector_block(
     for (std::size_t i = 0; i < a[0].size(); ++i)
       maps1.push_back(a[0][i]->function_space(1)->dofmap()->index_map.get());
     x0_array = la::get_local_vectors(x0, maps1);
-    for (std::size_t i = 0; i < x0_array.size(); ++i)
-      x0_ref.push_back(x0_array[i]);
   }
+  std::vector<Eigen::Ref<const Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1>>>
+      x0_ref(x0_array.begin(), x0_array.end());
 
   // Pack DirichletBC pointers for columns
   std::vector<std::vector<std::vector<std::shared_ptr<const DirichletBC>>>> bcs1
