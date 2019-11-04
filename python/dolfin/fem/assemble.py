@@ -139,6 +139,8 @@ def assemble_vector_block_new(L: typing.Union[Form, cpp.fem.Form]) -> PETSc.Vec:
 
 # @assemble_vector_block_new.register(PETSc.Vec)
 # def _(b: PETSc.Vec, L: typing.List[typing.Union[Form, cpp.fem.Form]]) -> PETSc.Vec:
+
+
 def assemble_vector_block_new2(b, L: typing.Union[Form, cpp.fem.Form]) -> PETSc.Vec:
     """Assemble linear forms into a list of vectors.
 
