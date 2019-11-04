@@ -63,9 +63,6 @@ compute_entity_numbering(const Mesh& mesh, int d)
   const int mpi_size = dolfin::MPI::size(mpi_comm);
   const int mpi_rank = dolfin::MPI::rank(mpi_comm);
 
-  // Initialize entities of dimension d locally
-  mesh.create_entities(d);
-
   // Get vertex global indices
   const std::vector<std::int64_t>& global_vertex_indices
       = mesh.topology().global_indices(0);
