@@ -36,11 +36,11 @@ points = np.array([[0., 0., 0.], #0
                    [0.5, 0.5, 1.],#25
                    [0.5, 0.5, 0.5]])#26
 cells = np.array([range(27)])
-# mesh = dolfin.Mesh(dolfin.MPI.comm_world, dolfin.cpp.mesh.CellType.hexahedron,
-#                    points, cells, [], dolfin.cpp.mesh.GhostMode.none)
+mesh = dolfin.Mesh(dolfin.MPI.comm_world, dolfin.cpp.mesh.CellType.hexahedron,
+                   points, cells, [], dolfin.cpp.mesh.GhostMode.none)
 # dolfin.io.VTKFile("mesh2.pvd").write(mesh)
 # print("Here")
-S = dolfin.FunctionSpace(mesh, ("Q", 1))
+S = dolfin.FunctionSpace(mesh, ("Q", 2))
 
 def qf(x):
     return x[:, 0] + 2*x[:, 1] + 3*x[:,2]

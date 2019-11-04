@@ -555,6 +555,19 @@ std::vector<int> mesh::cell_vertex_index(mesh::CellType type, int num_nodes,
   case mesh::CellType::quadrilateral:
     // Topographical ordering yields this
     return {0, 1, degree + 1, degree + 2};
+  case mesh::CellType::hexahedron:
+    if (num_nodes == 8)
+    {
+      std::vector<int> vertex_indices(num_vertices_per_cell);
+      std::iota(vertex_indices.begin(), vertex_indices.end(), 0);
+      return vertex_indices;
+    }
+    else
+    {
+      const int spacing = (1 + degree) * (1 + degree);
+      return {0,       1,           degree + 1,           degree + 2,
+              spacing, spacing + 1, spacing + degree + 1, spacing + degree + 2};
+    }
   default:
     std::vector<int> vertex_indices(num_vertices_per_cell);
     std::iota(vertex_indices.begin(), vertex_indices.end(), 0);
