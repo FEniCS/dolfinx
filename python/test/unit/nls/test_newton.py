@@ -194,9 +194,12 @@ def test_nonlinear_pde_snes():
     snes.setJacobian(problem.J, J)
 
     snes.setTolerances(rtol=1.0e-9, max_it=10)
-    snes.setFromOptions()
-
+    snes.getKSP().setType("preonly")
     snes.getKSP().setTolerances(rtol=1.0e-9)
+
+    snes.getKSP().getPC().setType("lu")
+    snes.getKSP().getPC().setFactorSolverType("mumps")
+
     snes.solve(None, u.vector)
     assert snes.getConvergedReason() > 0
     assert snes.getIterationNumber() < 6
@@ -222,7 +225,7 @@ def test_newton_solver_inheritance():
     assert isinstance(derived, DerivedNewtonSolver)
 
 
-def test_newton_solver_iheritance_override_methods():
+def test_newton_solver_inheritance_override_methods():
     import functools
     called_methods = {}
 
