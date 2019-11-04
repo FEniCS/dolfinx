@@ -45,7 +45,13 @@ std::uint8_t vtk_cell_type(const mesh::Mesh& mesh, std::size_t cell_dim,
   case mesh::CellType::tetrahedron:
     return 10;
   case mesh::CellType::hexahedron:
-    return 12;
+    switch (cell_order)
+    {
+    case 1:
+      return 12;
+    default:
+      return 72;
+    }
   case mesh::CellType::quadrilateral:
   {
     switch (cell_order)

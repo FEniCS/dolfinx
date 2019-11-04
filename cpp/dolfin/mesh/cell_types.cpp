@@ -531,9 +531,16 @@ int mesh::cell_degree(mesh::CellType type, int num_nodes)
     return n - 1;
   }
   case mesh::CellType::hexahedron:
-    if (num_nodes != 8)
-      throw std::runtime_error("Higher order hexahedron not supported");
-    return 1;
+    switch (num_nodes)
+    {
+    case 8:
+      return 1;
+    case 27:
+      return 2;
+    default:
+      throw std::runtime_error("Unsupported hexahedron layout");
+      return 1;
+    }
   default:
     throw std::runtime_error("Unknown cell type.");
   }

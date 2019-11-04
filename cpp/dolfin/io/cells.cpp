@@ -125,7 +125,12 @@ std::vector<std::uint8_t> io::cells::dolfin_to_vtk(mesh::CellType type,
     switch (num_nodes)
     {
     case 8:
-      return {0, 1, 3, 2, 4, 5, 7, 6};
+      return {0, 4, 6, 2, 1, 5, 7, 3};
+    case 27:
+      // FIXME: Ordering due to
+      // https://gitlab.kitware.com/paraview/paraview/issues/19433
+      return {0,  9, 12, 3,  1, 10, 13, 4,  18, 15, 21, 6,  19, 16,
+              22, 7, 2,  11, 5, 14, 8,  17, 20, 23, 24, 25, 26};
     default:
       throw std::runtime_error("Higher order hexahedron not supported.");
     }
@@ -198,7 +203,7 @@ std::vector<std::uint8_t> io::cells::lex_to_tp(mesh::CellType type,
     switch (num_nodes)
     {
     case 8:
-      return {0, 1, 3, 2, 4, 5, 7, 6};
+      return {0, 4, 2, 6, 1, 5, 3, 7};
     default:
       throw std::runtime_error("Higher order hexahedron not supported.");
     }
