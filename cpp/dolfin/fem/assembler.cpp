@@ -4,7 +4,7 @@
 //
 // SPDX-License-Identifier:    LGPL-3.0-or-later
 
-#include <petscis.h>
+// #include <petscis.h>
 
 #include "DirichletBC.h"
 #include "DofMap.h"
@@ -93,13 +93,37 @@ void _assemble_vector_nest(
     double scale)
 {
   if (L.size() < 2)
-    throw std::runtime_error("Oops, using blocked assembly.");
+  {
+    throw std::runtime_error("Expected more than one linear form "
+                             "in vector nest assembly.");
+  }
 
+  // Check that b and x0 are VecNest vector
   VecType vec_type;
   VecGetType(b, &vec_type);
-  const bool is_vecnest = strcmp(vec_type, VECNEST) == 0 ? true : false;
-  if (!is_vecnest)
-    throw std::runtime_error("Expected a nested vector.");
+  if (strcmp(vec_type, VECNEST) != 0)
+    throw std::runtime_error("Expected nested RHS vector.");
+  if (x0)
+  {
+    VecGetType(x0, &vec_type);
+    if (strcmp(vec_type, VECNEST) != 0)
+      throw std::runtime_error("Expected nested RHS vector.");
+  }
+
+  // Extract x0 vectors, if required
+  std::vector<Vec> x0_sub(a[0].size(), nullptr);
+  std::vector<la::VecReadWrapper> x0_wrapper;
+  std::vector<Eigen::Ref<const Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1>>>
+      x0_ref;
+  if (x0)
+  {
+    for (std::size_t i = 0; i < a[0].size(); ++i)
+    {
+      VecNestGetSubVec(x0, i, &x0_sub[i]);
+      x0_wrapper.push_back(la::VecReadWrapper(x0_sub[i]));
+      x0_ref.push_back(x0_wrapper.back().x);
+    }
+  }
 
   // Pack DirichletBC pointers for rows and columns
   std::vector<std::vector<std::shared_ptr<const DirichletBC>>> bcs0
@@ -107,6 +131,7 @@ void _assemble_vector_nest(
   std::vector<std::vector<std::vector<std::shared_ptr<const DirichletBC>>>> bcs1
       = bcs_cols(a, bcs);
 
+  // Assemble
   for (std::size_t i = 0; i < L.size(); ++i)
   {
     Vec b_sub = nullptr;
@@ -120,18 +145,10 @@ void _assemble_vector_nest(
     // FIXME: sort out x0 \ne nullptr for nested case
     // Apply lifting
     if (x0)
-    {
-      la::VecReadWrapper x0_wrapper(x0);
-      std::vector<
-          Eigen::Ref<const Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1>>>
-          x0_vec(1, x0_wrapper.x);
-      fem::impl::apply_lifting(_b.x, a[i], bcs1[i], x0_vec, scale);
-      x0_wrapper.restore();
-    }
+      fem::impl::apply_lifting(_b.x, a[i], bcs1[i], x0_ref, scale);
     else
-    {
       fem::impl::apply_lifting(_b.x, a[i], bcs1[i], {}, scale);
-    }
+
     _b.restore();
 
     // Update ghosts
@@ -153,7 +170,7 @@ void _assemble_vector_nest(
         if (a[i][j])
         {
           if (*L[i]->function_space(0) == *a[i][j]->function_space(1))
-            set_bc(b_sub, bcs0[i], x0, scale);
+            set_bc(b_sub, bcs0[i], x0_sub[i], scale);
         }
       }
     }
@@ -175,93 +192,87 @@ void _assemble_vector_block(
   if (is_vecnest)
     throw std::runtime_error("Do not expect a nested vector.");
 
-  // const Vec _x0 = x0 ? x0->vec() : nullptr;
+  std::vector<const common::IndexMap*> maps0;
+  for (std::size_t i = 0; i < L.size(); ++i)
+  {
+    assert(L[i]);
+    maps0.push_back(L[i]->function_space(0)->dofmap()->index_map.get());
+  }
 
-  // Pack DirichletBC pointers for rows and columns
-  std::vector<std::vector<std::shared_ptr<const DirichletBC>>> bcs0
-      = bcs_rows(L, bcs);
-  std::vector<std::vector<std::vector<std::shared_ptr<const DirichletBC>>>> bcs1
-      = bcs_cols(a, bcs);
-
+  // Assemble sub vectors
   std::vector<Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1>> b_vec(L.size());
   for (std::size_t i = 0; i < L.size(); ++i)
   {
-    // FIXME: Sort out for x0 \ne nullptr case
-
-    // Get size for block i
-    assert(L[i]);
-    auto map = L[i]->function_space(0)->dofmap()->index_map;
-    const int bs = map->block_size;
-    const int map_size0 = map->size_local() * bs;
-    const int map_size1 = map->num_ghosts() * bs;
-    b_vec[i] = Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1>::Zero(map_size0
-                                                                   + map_size1);
-
-    // Assemble and modify for bcs (lifting)
+    const int bs = maps0[i]->block_size;
+    const int size_owned = maps0[i]->size_local() * bs;
+    const int size_ghost = maps0[i]->num_ghosts() * bs;
+    b_vec[i] = Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1>::Zero(
+        size_owned + size_ghost);
     fem::impl::assemble_vector(b_vec[i], *L[i]);
-    fem::impl::apply_lifting(b_vec[i], a[i], bcs1[i], {}, scale);
   }
 
-  // Get local representation of b vector and copy values in
-  la::VecWrapper _b(b);
-
-  // Compute number of owned (i.e., non-ghost) entries for this process
-  int offset1 = 0;
-  for (auto& _L : L)
+  // Split x0 vector, if required
+  std::vector<Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1>> x0_array;
+  std::vector<Eigen::Ref<const Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1>>>
+      x0_ref;
+  if (x0)
   {
-    auto map = _L->function_space(0)->dofmap()->index_map;
-    const int bs = map->block_size;
-    offset1 += map->size_local() * bs;
+    if (a[0].empty())
+      throw std::runtime_error("Issue with number of a columns.");
+    std::vector<const common::IndexMap*> maps1;
+    for (std::size_t i = 0; i < a[0].size(); ++i)
+      maps1.push_back(a[0][i]->function_space(1)->dofmap()->index_map.get());
+    x0_array = la::get_local_vectors(x0, maps1);
+    for (std::size_t i = 0; i < x0_array.size(); ++i)
+      x0_ref.push_back(x0_array[i]);
   }
 
-  int offset0 = 0;
+  // Pack DirichletBC pointers for columns
+  std::vector<std::vector<std::vector<std::shared_ptr<const DirichletBC>>>> bcs1
+      = bcs_cols(a, bcs);
+
+  // Apply lifting
   for (std::size_t i = 0; i < L.size(); ++i)
   {
-    assert(L[i]);
-    auto map = L[i]->function_space(0)->dofmap()->index_map;
-    const int bs = map->block_size;
-    const int map_size0 = map->size_local() * bs;
-    const int map_size1 = map->num_ghosts() * bs;
-
-    // Copy data into PETSc b Vec
-    Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1>& b_i = b_vec[i];
-    for (int j = 0; j < map_size0; ++j)
-      _b.x[offset0 + j] = b_i[j];
-    for (int j = 0; j < map_size1; ++j)
-      _b.x[offset1 + j] = b_i[map_size0 + j];
-
-    // Add to local offset for (owned and ghost) for this field
-    offset0 += map->size_local() * bs;
-    offset1 += map->num_ghosts() * bs;
+    if (x0)
+      fem::impl::apply_lifting(b_vec[i], a[i], bcs1[i], x0_ref, scale);
+    else
+      fem::impl::apply_lifting(b_vec[i], a[i], bcs1[i], {}, scale);
   }
-  _b.restore();
+
+  // Scatter local vectors to PETSc vector
+  la::scatter_local_vectors(b, b_vec, maps0);
 
   // FIXME: should this be lifted higher up in the code path?
   // Update ghosts
   VecGhostUpdateBegin(b, ADD_VALUES, SCATTER_REVERSE);
   VecGhostUpdateEnd(b, ADD_VALUES, SCATTER_REVERSE);
 
+  // TODO: split this function here
+
   // Set bcs
-  PetscScalar* values = nullptr;
-  VecGetArray(b, &values);
+  PetscScalar* b_ptr = nullptr;
+  VecGetArray(b, &b_ptr);
   int offset = 0;
   for (std::size_t i = 0; i < L.size(); ++i)
   {
-    auto map = L[i]->function_space(0)->dofmap()->index_map;
-    const int bs = map->block_size;
-    const int map_size0 = map->size_local() * bs;
-    Eigen::Map<Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1>> vec(
-        values + offset, map_size0);
-    Eigen::Map<Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1>> vec_x0(nullptr,
-                                                                     0);
+    const int map_size0 = maps0[i]->size_local() * maps0[i]->block_size;
+    Eigen::Map<Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1>> b_sub(
+        b_ptr + offset, map_size0);
     for (auto bc : bcs)
     {
       if (L[i]->function_space(0)->contains(*bc->function_space()))
-        bc->set(vec, scale);
+      {
+        if (x0)
+          bc->set(b_sub, x0_ref[i], scale);
+        else
+          bc->set(b_sub, scale);
+      }
     }
     offset += map_size0;
   }
-  VecRestoreArray(b, &values);
+
+  VecRestoreArray(b, &b_ptr);
 }
 //-----------------------------------------------------------------------------
 
@@ -287,7 +298,7 @@ void fem::assemble_vector(
 {
   VecType vec_type;
   VecGetType(b, &vec_type);
-  const bool is_vecnest = strcmp(vec_type, VECNEST) == 0 ? true : false;
+  const bool is_vecnest = strcmp(vec_type, VECNEST) == 0;
   if (is_vecnest)
     _assemble_vector_nest(b, L, a, bcs, x0, scale);
   else
