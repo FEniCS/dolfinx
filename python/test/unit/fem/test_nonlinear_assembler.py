@@ -47,9 +47,9 @@ def test_matrix_assembly_block():
     def boundary(x):
         return numpy.logical_or(x[:, 0] < 1.0e-6, x[:, 0] > 1.0 - 1.0e-6)
 
-    initial_guess_u = lambda x: numpy.sin(numpy.pi*x[:, 0])*numpy.sin(numpy.pi*x[:, 1])
+    initial_guess_u = lambda x: numpy.sin(x[:, 0])*numpy.sin(x[:, 1])
     initial_guess_p = lambda x: -x[:, 0]**2 - x[:, 1]**3
-    bc_value = lambda x: numpy.cos(numpy.pi*x[:, 0])*numpy.cos(numpy.pi*x[:, 1])
+    bc_value = lambda x: numpy.cos(x[:, 0])*numpy.cos(x[:, 1])
 
     u_bc = dolfin.function.Function(V1)
     u_bc.interpolate(bc_value)
