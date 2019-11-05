@@ -47,9 +47,14 @@ def test_matrix_assembly_block():
     def boundary(x):
         return numpy.logical_or(x[:, 0] < 1.0e-6, x[:, 0] > 1.0 - 1.0e-6)
 
-    initial_guess_u = lambda x: numpy.sin(x[:, 0])*numpy.sin(x[:, 1])
-    initial_guess_p = lambda x: -x[:, 0]**2 - x[:, 1]**3
-    bc_value = lambda x: numpy.cos(x[:, 0])*numpy.cos(x[:, 1])
+    def initial_guess_u(x):
+        return numpy.sin(x[:, 0]) * numpy.sin(x[:, 1])
+
+    def initial_guess_p(x):
+        return -x[:, 0]**2 - x[:, 1]**3
+
+    def bc_value(x):
+        return numpy.cos(x[:, 0]) * numpy.cos(x[:, 1])
 
     u_bc = dolfin.function.Function(V1)
     u_bc.interpolate(bc_value)
@@ -216,11 +221,17 @@ def test_assembly_solve_block():
     V0 = dolfin.function.functionspace.FunctionSpace(mesh, P0)
     V1 = dolfin.function.functionspace.FunctionSpace(mesh, P1)
 
-    bc_val_0 = lambda x: x[:, 0]**2 + x[:, 1]**2
-    bc_val_1 = lambda x: numpy.sin(x[:, 0]) * numpy.cos(x[:, 1])
+    def bc_val_0(x):
+        return x[:, 0]**2 + x[:, 1]**2
 
-    initial_guess_u = lambda x: numpy.sin(x[:, 0])*numpy.sin(x[:, 1])
-    initial_guess_p = lambda x: -x[:, 0]**2 - x[:, 1]**3
+    def bc_val_1(x):
+        return numpy.sin(x[:, 0]) * numpy.cos(x[:, 1])
+
+    def initial_guess_u(x):
+        return numpy.sin(x[:, 0]) * numpy.sin(x[:, 1])
+
+    def initial_guess_p(x):
+        return -x[:, 0]**2 - x[:, 1]**3
 
     def boundary(x):
         return numpy.logical_or(x[:, 0] < 1.0e-6, x[:, 0] > 1.0 - 1.0e-6)
@@ -411,12 +422,14 @@ def test_assembly_solve_taylor_hood(mesh):
     def initial_guess_u(x):
         d = x.shape[1]
         u_init = numpy.column_stack(
-            (numpy.sin(x[:, 0])*numpy.sin(x[:, 1]),
+            (numpy.sin(x[:, 0]) * numpy.sin(x[:, 1]),
              numpy.cos(x[:, 0]) * numpy.cos(x[:, 1])))
         if d == 3:
             u_init = numpy.column_stack((u_init, numpy.cos(x[:, 2])))
         return u_init
-    initial_guess_p = lambda x: -x[:, 0]**2 - x[:, 1]**3
+
+    def initial_guess_p(x):
+        return -x[:, 0]**2 - x[:, 1]**3
 
     u_bc_0 = dolfin.Function(P2)
     u_bc_0.interpolate(
