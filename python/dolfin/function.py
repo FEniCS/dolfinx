@@ -210,6 +210,7 @@ class Argument(ufl.Argument):
         ufl.Argument.__init__(self, V.ufl_function_space(), number, part)
         self._V = V
 
+    @property
     def function_space(self):
         """Return the FunctionSpace"""
         return self._V
