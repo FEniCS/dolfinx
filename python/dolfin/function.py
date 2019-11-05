@@ -137,7 +137,7 @@ class Function(ufl.Coefficient):
         degree-of-freedom vector is copied.
 
         """
-        return function.Function(self.function_space(),
+        return function.Function(self.function_space,
                                  self._cpp_object.vector.copy())
 
     @property
