@@ -396,6 +396,7 @@ def test_assembly_solve_block():
 ])
 def test_assembly_solve_taylor_hood(mesh):
     """Assemble Stokes problem with Taylor-Hood elements and solve."""
+    gdim = mesh.geometry.dim
     P2 = dolfin.function.functionspace.VectorFunctionSpace(mesh, ("Lagrange", 2))
     P1 = dolfin.function.functionspace.FunctionSpace(mesh, ("Lagrange", 1))
 
@@ -407,11 +408,26 @@ def test_assembly_solve_taylor_hood(mesh):
         """Define boundary x = 1"""
         return x[:, 0] > (1.0 - 10 * numpy.finfo(float).eps)
 
-    u0 = dolfin.Function(P2)
-    with u0.vector.localForm() as x:
-        x.set(1.0)
-    bcs = [dolfin.DirichletBC(P2, u0, boundary0),
-           dolfin.DirichletBC(P2, u0, boundary1)]
+    def initial_guess_u(x):
+        d = x.shape[1]
+        u_init = numpy.column_stack(
+            (numpy.sin(x[:, 0])*numpy.sin(x[:, 1]),
+             numpy.cos(x[:, 0]) * numpy.cos(x[:, 1])))
+        if d == 3:
+            u_init = numpy.column_stack((u_init, numpy.cos(x[:, 2])))
+        return u_init
+    initial_guess_p = lambda x: -x[:, 0]**2 - x[:, 1]**3
+
+    u_bc_0 = dolfin.Function(P2)
+    u_bc_0.interpolate(
+        lambda x: numpy.column_stack(tuple(x[:, j] + float(j) for j in range(gdim))))
+
+    u_bc_1 = dolfin.Function(P2)
+    u_bc_1.interpolate(
+        lambda x: numpy.column_stack(tuple(numpy.sin(x[:, j]) for j in range(gdim))))
+
+    bcs = [dolfin.DirichletBC(P2, u_bc_0, boundary0),
+           dolfin.DirichletBC(P2, u_bc_1, boundary1)]
 
     u, p = dolfin.Function(P2), dolfin.Function(P1)
     du, dp = dolfin.TrialFunction(P2), dolfin.TrialFunction(P1)
@@ -441,9 +457,15 @@ def test_assembly_solve_taylor_hood(mesh):
     snes.setFunction(problem.F_block, Fvec0)
     snes.setJacobian(problem.J_block, J=Jmat0, P=Pmat0)
 
+    u.interpolate(initial_guess_u)
+    p.interpolate(initial_guess_p)
+
     x0 = dolfin.fem.create_vector_block(F)
-    with x0.localForm() as x0l:
-        x0l.set(0.0)
+    dolfin.cpp.la.scatter_local_vectors(
+        x0, [u.vector.array_r, p.vector.array_r],
+        [u.function_space.dofmap.index_map, p.function_space.dofmap.index_map])
+    x0.ghostUpdate(addv=PETSc.InsertMode.INSERT, mode=PETSc.ScatterMode.FORWARD)
+
     snes.solve(None, x0)
 
     assert snes.getConvergedReason() > 0
@@ -476,7 +498,16 @@ def test_assembly_solve_taylor_hood(mesh):
     snes.setFunction(problem.F_nest, Fvec1)
     snes.setJacobian(problem.J_nest, J=Jmat1, P=Pmat1)
 
+    u.interpolate(initial_guess_u)
+    p.interpolate(initial_guess_p)
+
     x1 = dolfin.fem.create_vector_nest(F)
+    for x1_soln_pair in zip(x1.getNestSubVecs(), (u, p)):
+        x1_sub, soln_sub = x1_soln_pair
+        soln_sub.vector.ghostUpdate(addv=PETSc.InsertMode.INSERT, mode=PETSc.ScatterMode.FORWARD)
+        soln_sub.vector.copy(result=x1_sub)
+        x1_sub.ghostUpdate(addv=PETSc.InsertMode.INSERT, mode=PETSc.ScatterMode.FORWARD)
+
     x1.zeroEntries()
     snes.solve(None, x1)
 
@@ -504,8 +535,8 @@ def test_assembly_solve_taylor_hood(mesh):
     P = inner(ufl.grad(du), ufl.grad(v)) * dx \
         + inner(dp, q) * dx
 
-    bcs = [dolfin.DirichletBC(W.sub(0), u0, boundary0),
-           dolfin.DirichletBC(W.sub(0), u0, boundary1)]
+    bcs = [dolfin.DirichletBC(W.sub(0), u_bc_0, boundary0),
+           dolfin.DirichletBC(W.sub(0), u_bc_1, boundary1)]
 
     Jmat2 = dolfin.fem.create_matrix(J)
     Pmat2 = dolfin.fem.create_matrix(P)
@@ -522,9 +553,11 @@ def test_assembly_solve_taylor_hood(mesh):
     snes.setFunction(problem.F_mono, Fvec2)
     snes.setJacobian(problem.J_mono, J=Jmat2, P=Pmat2)
 
+    U.interpolate(lambda x: numpy.column_stack(
+        (initial_guess_u(x), initial_guess_p(x))))
+
     x2 = dolfin.fem.create_vector(F)
-    with x2.localForm() as x2l:
-        x2l.set(0.0)
+    x2.array = U.vector.array_r
     snes.solve(None, x2)
 
     assert snes.getConvergedReason() > 0
