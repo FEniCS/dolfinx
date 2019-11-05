@@ -548,12 +548,17 @@ def test_high_order_lagrange():
                                                          [2 / 4, 3 / 2],
                                                          [3 / 4, 0], [3 / 4, 2], [3 / 4, 1 / 2], [3 / 4, 1],
                                                          [3 / 4, 3 / 2]]),
-                                               CellType.quadrilateral)])
+                                               CellType.quadrilateral),
+                                              (np.array([[0, 0], [1, 0], [0, 2], [0.5, 1], [0, 1], [0.5, 0]]),
+                                               CellType.triangle),
+                                              (np.array([[0, 0], [1, 0], [0, 2], [2 / 3, 2 / 3], [1 / 3, 4 / 3],
+                                                         [0, 2 / 3], [0, 4 / 3], [1 / 3, 0], [2 / 3, 0],
+                                                         [1 / 3, 2 / 3]]),
+                                               CellType.triangle)])
 def test_higher_order_dofmap(points, celltype):
     cells = np.array([range(len(points))])
     mesh = Mesh(MPI.comm_world, celltype, points,
                 cells, [], GhostMode.none)
-
     V = FunctionSpace(mesh, ("Lagrange", mesh.degree()))
 
     X = V.element.dof_reference_coordinates()
@@ -569,5 +574,6 @@ def test_higher_order_dofmap(points, celltype):
         i += 1
     x = np.zeros(X.shape)
     cmap.push_forward(x, X, x_coord_new)
+
     assert(np.allclose(x[:, 0], X[:, 0]))
     assert(np.allclose(x[:, 1], 2 * X[:, 1]))
