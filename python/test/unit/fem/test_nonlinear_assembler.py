@@ -216,22 +216,20 @@ def test_assembly_solve_block():
     V0 = dolfin.function.functionspace.FunctionSpace(mesh, P0)
     V1 = dolfin.function.functionspace.FunctionSpace(mesh, P1)
 
-    bc_val_0 = 1.0
-    bc_val_1 = 2.0
+    bc_val_0 = lambda x: x[:, 0]**2 + x[:, 1]**2
+    bc_val_1 = lambda x: numpy.sin(x[:, 0]) * numpy.cos(x[:, 1])
 
-    initial_guess = 1.0
+    initial_guess_u = lambda x: numpy.sin(x[:, 0])*numpy.sin(x[:, 1])
+    initial_guess_p = lambda x: -x[:, 0]**2 - x[:, 1]**3
 
     def boundary(x):
         return numpy.logical_or(x[:, 0] < 1.0e-6, x[:, 0] > 1.0 - 1.0e-6)
 
     u_bc0 = dolfin.function.Function(V0)
-    u_bc0.vector.set(bc_val_0)
-    u_bc0.vector.ghostUpdate(
-        addv=PETSc.InsertMode.INSERT, mode=PETSc.ScatterMode.FORWARD)
+    u_bc0.interpolate(bc_val_0)
     u_bc1 = dolfin.function.Function(V1)
-    u_bc1.vector.set(bc_val_1)
-    u_bc1.vector.ghostUpdate(
-        addv=PETSc.InsertMode.INSERT, mode=PETSc.ScatterMode.FORWARD)
+    u_bc1.interpolate(bc_val_1)
+
     bcs = [
         dolfin.fem.dirichletbc.DirichletBC(V0, u_bc0, boundary),
         dolfin.fem.dirichletbc.DirichletBC(V1, u_bc1, boundary)
@@ -266,9 +264,15 @@ def test_assembly_solve_block():
     snes.setFunction(problem.F_block, Fvec0)
     snes.setJacobian(problem.J_block, J=Jmat0, P=None)
 
+    u.interpolate(initial_guess_u)
+    p.interpolate(initial_guess_p)
+
     x0 = dolfin.fem.create_vector_block(F)
-    with x0.localForm() as x0l:
-        x0l.set(initial_guess)
+    dolfin.cpp.la.scatter_local_vectors(
+        x0, [u.vector.array_r, p.vector.array_r],
+        [u.function_space.dofmap.index_map, p.function_space.dofmap.index_map])
+    x0.ghostUpdate(addv=PETSc.InsertMode.INSERT, mode=PETSc.ScatterMode.FORWARD)
+
     snes.solve(None, x0)
 
     assert snes.getKSP().getConvergedReason() > 0
@@ -304,12 +308,15 @@ def test_assembly_solve_block():
     snes.setFunction(problem.F_nest, Fvec1)
     snes.setJacobian(problem.J_nest, J=Jmat1, P=None)
 
+    u.interpolate(initial_guess_u)
+    p.interpolate(initial_guess_p)
+
     x1 = dolfin.fem.create_vector_nest(F)
-    x1.set(initial_guess)
-    for x1_sub in x1.getNestSubVecs():
+    for x1_soln_pair in zip(x1.getNestSubVecs(), (u, p)):
+        x1_sub, soln_sub = x1_soln_pair
+        soln_sub.vector.ghostUpdate(addv=PETSc.InsertMode.INSERT, mode=PETSc.ScatterMode.FORWARD)
+        soln_sub.vector.copy(result=x1_sub)
         x1_sub.ghostUpdate(addv=PETSc.InsertMode.INSERT, mode=PETSc.ScatterMode.FORWARD)
-    u.vector.zeroEntries()
-    p.vector.zeroEntries()
 
     snes.solve(None, x1)
 
@@ -341,13 +348,9 @@ def test_assembly_solve_block():
     J = derivative(F, U, dU)
 
     u0_bc = dolfin.function.Function(V0)
-    u0_bc.vector.set(bc_val_0)
-    u0_bc.vector.ghostUpdate(
-        addv=PETSc.InsertMode.INSERT, mode=PETSc.ScatterMode.FORWARD)
+    u0_bc.interpolate(bc_val_0)
     u1_bc = dolfin.function.Function(V1)
-    u1_bc.vector.set(bc_val_1)
-    u1_bc.vector.ghostUpdate(
-        addv=PETSc.InsertMode.INSERT, mode=PETSc.ScatterMode.FORWARD)
+    u1_bc.interpolate(bc_val_1)
 
     bcs = [
         dolfin.fem.dirichletbc.DirichletBC(W.sub(0), u0_bc, boundary),
@@ -368,9 +371,11 @@ def test_assembly_solve_block():
     snes.setFunction(problem.F_mono, Fvec2)
     snes.setJacobian(problem.J_mono, J=Jmat2, P=None)
 
+    U.interpolate(lambda x: numpy.column_stack(
+        (initial_guess_u(x), initial_guess_p(x))))
     x2 = dolfin.fem.create_vector(F)
-    with x2.localForm() as x2l:
-        x2l.set(initial_guess)
+    x2.array = U.vector.array_r
+
     snes.solve(None, x2)
 
     assert snes.getKSP().getConvergedReason() > 0
