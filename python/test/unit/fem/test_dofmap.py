@@ -14,7 +14,7 @@ import pytest
 from dolfin import (Mesh, MPI, FunctionSpace, MeshEntity, UnitCubeMesh,
                     UnitIntervalMesh, UnitSquareMesh, VectorFunctionSpace, cpp,
                     fem)
-from dolfin.cpp.mesh import CellType
+from dolfin.cpp.mesh import CellType, GhostMode
 from dolfin_utils.test.skips import skip_in_parallel
 from ufl import FiniteElement, MixedElement, VectorElement
 
@@ -526,3 +526,54 @@ def test_high_order_lagrange():
     assert e0 == e1
     x0, x1 = check(mesh, [1, 2])
     assert np.allclose(x0, x1)
+
+
+@skip_in_parallel
+@pytest.mark.parametrize("points, celltype", [(np.array([[0, 0], [0, 2], [1, 0], [1, 2]]),
+                                               CellType.quadrilateral),
+                                              (np.array([[0, 0], [0, 2], [0, 1], [1, 0],
+                                                         [1, 2], [1, 1], [0.5, 0], [0.5, 2],
+                                                         [0.5, 1]]),
+                                               CellType.quadrilateral),
+                                              (np.array([[0, 0], [0, 2], [0, 2 / 3], [0, 4 / 3],
+                                                         [1, 0], [1, 2], [1, 2 / 3], [1, 4 / 3],
+                                                         [1 / 3, 0], [1 / 3, 2], [1 / 3, 2 / 3], [1 / 3, 4 / 3],
+                                                         [2 / 3, 0], [2 / 3, 2], [2 / 3, 2 / 3], [2 / 3, 4 / 3]]),
+                                               CellType.quadrilateral),
+                                              (np.array([[0, 0], [0, 2], [0, 1 / 2], [0, 1], [0, 3 / 2],
+                                                         [1, 0], [1, 2], [1, 1 / 2], [1, 1], [1, 3 / 2],
+                                                         [1 / 4, 0], [1 / 4, 2], [1 / 4, 1 / 2], [1 / 4, 1],
+                                                         [1 / 4, 3 / 2],
+                                                         [2 / 4, 0], [2 / 4, 2], [2 / 4, 1 / 2], [2 / 4, 1],
+                                                         [2 / 4, 3 / 2],
+                                                         [3 / 4, 0], [3 / 4, 2], [3 / 4, 1 / 2], [3 / 4, 1],
+                                                         [3 / 4, 3 / 2]]),
+                                               CellType.quadrilateral),
+                                              (np.array([[0, 0], [1, 0], [0, 2], [0.5, 1], [0, 1], [0.5, 0]]),
+                                               CellType.triangle),
+                                              (np.array([[0, 0], [1, 0], [0, 2], [2 / 3, 2 / 3], [1 / 3, 4 / 3],
+                                                         [0, 2 / 3], [0, 4 / 3], [1 / 3, 0], [2 / 3, 0],
+                                                         [1 / 3, 2 / 3]]),
+                                               CellType.triangle)])
+def test_higher_order_dofmap(points, celltype):
+    cells = np.array([range(len(points))])
+    mesh = Mesh(MPI.comm_world, celltype, points,
+                cells, [], GhostMode.none)
+    V = FunctionSpace(mesh, ("Lagrange", mesh.degree()))
+
+    X = V.element.dof_reference_coordinates()
+    coord_dofs = mesh.coordinate_dofs().entity_points()
+    x_g = mesh.geometry.points
+
+    cmap = fem.create_coordinate_map(mesh.ufl_domain())
+    x_coord_new = np.zeros([len(points), 2])
+
+    i = 0
+    for node in range(len(points)):
+        x_coord_new[i] = x_g[coord_dofs[0, node], :2]
+        i += 1
+    x = np.zeros(X.shape)
+    cmap.push_forward(x, X, x_coord_new)
+
+    assert(np.allclose(x[:, 0], X[:, 0]))
+    assert(np.allclose(x[:, 1], 2 * X[:, 1]))
