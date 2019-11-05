@@ -554,7 +554,20 @@ def test_high_order_lagrange():
                                               (np.array([[0, 0], [1, 0], [0, 2], [2 / 3, 2 / 3], [1 / 3, 4 / 3],
                                                          [0, 2 / 3], [0, 4 / 3], [1 / 3, 0], [2 / 3, 0],
                                                          [1 / 3, 2 / 3]]),
-                                               CellType.triangle)])
+                                               CellType.triangle),
+                                              (np.array([[0, 0, 0], [0, 0, 3], [0, 2, 0], [0, 2, 3],
+                                                         [1, 0, 0], [1, 0, 3], [1, 2, 0], [1, 2, 3]]),
+                                               CellType.hexahedron),
+                                              (np.array([[0, 0, 0], [0, 0, 3], [0, 0, 1.5],
+                                                         [0, 2, 0], [0, 2, 3], [0, 2, 1.5],
+                                                         [0, 1, 0], [0, 1, 3], [0, 1, 1.5],
+                                                         [1, 0, 0], [1, 0, 3], [1, 0, 1.5],
+                                                         [1, 2, 0], [1, 2, 3], [1, 2, 1.5],
+                                                         [1, 1, 0], [1, 1, 3], [1, 1, 1.5],
+                                                         [0.5, 0, 0], [0.5, 0, 3], [0.5, 0, 1.5],
+                                                         [0.5, 2, 0], [0.5, 2, 3], [0.5, 2, 1.5],
+                                                         [0.5, 1, 0], [0.5, 1, 3], [0.5, 1, 1.5]]),
+                                               CellType.hexahedron)])
 def test_higher_order_dofmap(points, celltype):
     cells = np.array([range(len(points))])
     mesh = Mesh(MPI.comm_world, celltype, points,
@@ -566,14 +579,18 @@ def test_higher_order_dofmap(points, celltype):
     x_g = mesh.geometry.points
 
     cmap = fem.create_coordinate_map(mesh.ufl_domain())
-    x_coord_new = np.zeros([len(points), 2])
+    x_coord_new = np.zeros([len(points), mesh.geometric_dimension()])
 
     i = 0
     for node in range(len(points)):
-        x_coord_new[i] = x_g[coord_dofs[0, node], :2]
+        x_coord_new[i] = x_g[coord_dofs[0, node], :mesh.geometric_dimension()]
         i += 1
+
     x = np.zeros(X.shape)
     cmap.push_forward(x, X, x_coord_new)
 
     assert(np.allclose(x[:, 0], X[:, 0]))
     assert(np.allclose(x[:, 1], 2 * X[:, 1]))
+
+    if mesh.geometric_dimension() == 3:
+        assert(np.allclose(x[:, 2], 3 * X[:, 2]))
