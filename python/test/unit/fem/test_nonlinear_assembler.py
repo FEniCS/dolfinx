@@ -47,18 +47,21 @@ def test_matrix_assembly_block():
     def boundary(x):
         return numpy.logical_or(x[:, 0] < 1.0e-6, x[:, 0] > 1.0 - 1.0e-6)
 
-    initial_guess_value = 1.0
-    bc_value = 3.0
+    initial_guess_u = lambda x: numpy.sin(numpy.pi*x[:, 0])*numpy.sin(numpy.pi*x[:, 1])
+    initial_guess_p = lambda x: -x[:, 0]**2 - x[:, 1]**3
+    bc_value = lambda x: numpy.cos(numpy.pi*x[:, 0])*numpy.cos(numpy.pi*x[:, 1])
 
     u_bc = dolfin.function.Function(V1)
-    with u_bc.vector.localForm() as u_local:
-        u_local.set(bc_value)
+    u_bc.interpolate(bc_value)
     bc = dolfin.fem.dirichletbc.DirichletBC(V1, u_bc, boundary)
 
     # Define variational problem
     du, dp = dolfin.function.TrialFunction(V0), dolfin.function.TrialFunction(V1)
     u, p = dolfin.function.Function(V0), dolfin.function.Function(V1)
     v, q = dolfin.function.TestFunction(V0), dolfin.function.TestFunction(V1)
+
+    u.interpolate(initial_guess_u)
+    p.interpolate(initial_guess_p)
 
     f = 1.0
     g = -3.0
@@ -72,18 +75,7 @@ def test_matrix_assembly_block():
 
     # Monolithic blocked
     x0 = dolfin.fem.create_vector_block(L_block)
-    with x0.localForm() as x0_local:
-        x0_local.set(initial_guess_value)
-
-    # Copy initial guess vector x0 into FE functions
-    offset = 0
-    x_array = x0.getArray(readonly=True)
-    for var in [u, p]:
-        size_local = var.vector.getLocalSize()
-        var_array = var.vector.getArray()
-        var_array[:] = x_array[offset:offset + size_local]
-        var.vector.ghostUpdate(addv=PETSc.InsertMode.INSERT, mode=PETSc.ScatterMode.FORWARD)
-        offset += size_local
+    dolfin.cpp.la.scatter_local_vectors(x0, [u.vector.array_r, p.vector.array_r], [u.function_space.dofmap.index_map, p.function_space.dofmap.index_map])
 
     # Ghosts are updated inside assemble_vector_block
     A0 = dolfin.fem.assemble_matrix_block(a_block, [bc])
@@ -93,16 +85,15 @@ def test_matrix_assembly_block():
     bnorm0 = b0.norm()
 
     # Nested (MatNest)
-    x0 = dolfin.fem.create_vector_nest(L_block)
-    x0.set(initial_guess_value)
-    for x0_soln_pair in zip(x0.getNestSubVecs(), (u, p)):
-        x0_sub, soln_sub = x0_soln_pair
-        x0_sub.ghostUpdate(addv=PETSc.InsertMode.INSERT, mode=PETSc.ScatterMode.FORWARD)
-        x0_sub.copy(soln_sub.vector)
+    x1 = dolfin.fem.create_vector_nest(L_block)
+    for x1_soln_pair in zip(x1.getNestSubVecs(), (u, p)):
+        x1_sub, soln_sub = x1_soln_pair
         soln_sub.vector.ghostUpdate(addv=PETSc.InsertMode.INSERT, mode=PETSc.ScatterMode.FORWARD)
+        soln_sub.vector.copy(result=x1_sub)
+        x1_sub.ghostUpdate(addv=PETSc.InsertMode.INSERT, mode=PETSc.ScatterMode.FORWARD)
 
     A1 = dolfin.fem.assemble_matrix_nest(a_block, [bc])
-    b1 = dolfin.fem.assemble_vector_nest(L_block, a_block, [bc], x0=x0, scale=-1.0)
+    b1 = dolfin.fem.assemble_vector_nest(L_block, a_block, [bc], x0=x1, scale=-1.0)
 
     assert A1.getType() == "nest"
     assert nest_matrix_norm(A1) == pytest.approx(Anorm0, 1.0e-12)
@@ -116,8 +107,8 @@ def test_matrix_assembly_block():
     u0, u1 = ufl.split(U)
     v0, v1 = dolfin.function.TestFunctions(W)
 
-    with U.vector.localForm() as Ulocal:
-        Ulocal.set(initial_guess_value)
+    U.interpolate(lambda x: numpy.column_stack(
+        (initial_guess_u(x), initial_guess_p(x))))
 
     F = inner(u0, v0) * dx + inner(u1, v0) * dx \
         + inner(u0, v1) * dx + inner(u1, v1) * dx \
