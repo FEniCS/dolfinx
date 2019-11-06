@@ -18,7 +18,7 @@ import numpy as np
     'space_type', ["RT"])
 @pytest.mark.parametrize(
     'order', [1, 2, 3, 4, 5])
-def test_div_conforming_2d(space_type, order):
+def test_div_conforming_triangle(space_type, order):
     """Checks that the vectors in div conforming spaces on a triangle are correctly oriented"""
     # Create simple triangle mesh
     def perform_test(points, cells):
@@ -48,6 +48,45 @@ def test_div_conforming_2d(space_type, order):
     # Direction is correct if mesh is ordered
     points = np.array([[0, 0], [1, 0], [1, 1], [0, 1]])
     cells = np.array([[0, 1, 2], [0, 2, 3]])
+    result = perform_test(points, cells)
+    for i, j in result:
+        assert np.allclose(i, j)
+
+
+@pytest.mark.parametrize(
+    'space_type', ["RT"])
+@pytest.mark.parametrize(
+    'order', [1, 2, 3, 4, 5])
+def test_div_conforming_tetrahedron(space_type, order):
+    """Checks that the vectors in div conforming spaces on a tetrahedron are correctly oriented"""
+    # Create simple tetrahedron mesh
+    def perform_test(points, cells):
+        mesh = cpp.mesh.Mesh(MPI.comm_world, CellType.tetrahedron, points,
+                             np.array(cells), [], cpp.mesh.GhostMode.none)
+        mesh.geometry.coord_mapping = fem.create_coordinate_map(mesh)
+        V = FunctionSpace(mesh, (space_type, order))
+        f = Function(V)
+        output = []
+        for dof in range(len(f.vector[:])):
+            f.vector[:] = np.zeros(len(f.vector[:]))
+            f.vector[dof] = 1
+            points = np.array([[1 / 3, 1 / 3, 1 / 3], [1 / 3, 1 / 3, 1 / 3]])
+            cells = np.array([0, 1])
+            result = f.eval(points, cells)
+            normal = np.array([1., 1., 1.])
+            output.append(result.dot(normal))
+        return output
+
+    # Direction is incorrect if mesh is not ordered
+    points = np.array([[0, 0, 0], [1, 0, 0], [0, 1, 0], [0, 0, 1], [1, 1, 1]])
+    cells = np.array([[0, 1, 2, 3], [1, 3, 2, 4]])
+    result = perform_test(points, cells)
+    for i, j in result:
+        assert np.allclose(i, -j)
+
+    # Direction is correct if mesh is ordered
+    points = np.array([[0, 0, 0], [1, 0, 0], [0, 1, 0], [0, 0, 1], [1, 1, 1]])
+    cells = np.array([[0, 1, 2, 3], [1, 2, 3, 4]])
     result = perform_test(points, cells)
     for i, j in result:
         assert np.allclose(i, j)
