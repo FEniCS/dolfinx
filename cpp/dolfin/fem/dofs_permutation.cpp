@@ -4,7 +4,7 @@
 //
 // SPDX-License-Identifier:    LGPL-3.0-or-later
 
-#include "DofMapPermuter.h"
+#include "dofs_permutation.h"
 #include "ElementDofLayout.h"
 #include <dolfin/common/log.h>
 #include <dolfin/mesh/MeshEntity.h>
@@ -518,74 +518,6 @@ fem::compute_dof_permutations(const mesh::Mesh& mesh,
           temp[k] = p(cell, k);
         for (int k = 0; k < p.cols(); ++k)
           p(cell, permutations(i, k)) = temp[k];
-      }
-    }
-  }
-
-  return p;
-}
-//-----------------------------------------------------------------------------
-fem::DofMapPermuter::DofMapPermuter(const mesh::Mesh& mesh,
-                                    const fem::ElementDofLayout& dof_layout)
-{
-  // Build permutations
-  _permutations = generate_permutations(mesh, dof_layout);
-
-  // Build ordering in each cell
-  switch (mesh.cell_type())
-  {
-  case (mesh::CellType::triangle):
-    _cell_ordering = compute_ordering_triangle(mesh);
-    break;
-  case (mesh::CellType::tetrahedron):
-    _cell_ordering = compute_ordering_tetrahedron(mesh);
-    break;
-
-  // temporarily do nothing for cell types not yet implemented
-  case (mesh::CellType::hexahedron):
-    _cell_ordering.resize(mesh.num_entities(mesh.topology().dim()), 0);
-    break;
-  case (mesh::CellType::quadrilateral):
-    _cell_ordering.resize(mesh.num_entities(mesh.topology().dim()), 0);
-    break;
-  case (mesh::CellType::interval):
-    _cell_ordering.resize(mesh.num_entities(mesh.topology().dim()), 0);
-    break;
-  case (mesh::CellType::point):
-    _cell_ordering.resize(mesh.num_entities(mesh.topology().dim()), 0);
-    break;
-
-  default:
-    throw std::runtime_error(
-        "Unrecognised cell type."); // The function should exit before this is
-                                    // reached
-  }
-}
-//-----------------------------------------------------------------------------
-Eigen::Array<int, Eigen::Dynamic, Eigen::Dynamic>
-fem::DofMapPermuter::get_cell_permutations() const
-{
-  Eigen::Array<int, Eigen::Dynamic, Eigen::Dynamic> p(_cell_ordering.rows(),
-                                                      _permutations.cols());
-  for (int i = 0; i < p.cols(); ++i)
-    p.col(i) = i;
-
-  std::vector<int> temp(p.cols());
-
-  // for each cell
-  for (int cell = 0; cell < _cell_ordering.rows(); ++cell)
-  {
-    // for each permutation in _permutations
-    for (int i = 0; i < _cell_ordering.cols(); ++i)
-    {
-      // _cell_ordering(cell, i) says how many times this permutation should be
-      // applied
-      for (int j = 0; j < _cell_ordering(cell, i); ++j)
-      {
-        for (int k = 0; k < p.cols(); ++k)
-          temp[k] = p(cell, k);
-        for (int k = 0; k < p.cols(); ++k)
-          p(cell, _permutations(i, k)) = temp[k];
       }
     }
   }
