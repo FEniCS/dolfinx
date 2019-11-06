@@ -396,19 +396,15 @@ void TopologyComputation::compute_connectivity(Mesh& mesh, int d0, int d1)
   // Get mesh topology and connectivity
   Topology& topology = mesh.topology();
 
-  // Return connectivity has already been computed
+  // Return if connectivity has already been computed
   if (topology.connectivity(d0, d1))
     return;
 
-  // Compute entities if they don't exist
-  if (!topology.connectivity(d0, 0))
-    compute_entities(mesh, d0);
-  if (!topology.connectivity(d1, 0))
-    compute_entities(mesh, d1);
-
-  // Check if connectivity still needs to be computed
-  if (topology.connectivity(d0, d1))
-    return;
+  // Make sure entities exist
+  if (d0 > 0)
+    assert(topology.connectivity(d0, 0));
+  if (d1 > 0)
+    assert(topology.connectivity(d1, 0));
 
   // Start timer
   common::Timer timer("Compute connectivity " + std::to_string(d0) + "-"
