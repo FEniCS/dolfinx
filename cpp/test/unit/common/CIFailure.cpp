@@ -15,9 +15,6 @@ namespace
 {
 void test_ci_failure()
 {
-  int argc = 0;
-  char** argv = nullptr;
-  PetscInitialize(&argc, &argv, nullptr, nullptr);
 
   auto mpi_comm = dolfin::MPI::Comm(MPI_COMM_WORLD);
   int mpi_rank = dolfin::MPI::rank(mpi_comm.comm());

@@ -53,9 +53,9 @@ void assemble_cells(
     const std::function<void(PetscScalar*, const PetscScalar*,
                              const PetscScalar*, const double*, const int*,
                              const int*)>& kernel,
-    const std::vector<const function::Function*>& coefficients,
-    const std::vector<int>& offsets,
-    const std::vector<PetscScalar> constant_values);
+    const Eigen::Array<PetscScalar, Eigen::Dynamic, Eigen::Dynamic,
+                       Eigen::RowMajor>& coeffs,
+    const std::vector<PetscScalar>& constant_values);
 
 /// Execute kernel over cells and accumulate result in vector
 void assemble_exterior_facets(
@@ -65,9 +65,9 @@ void assemble_exterior_facets(
     const std::function<void(PetscScalar*, const PetscScalar*,
                              const PetscScalar*, const double*, const int*,
                              const int*)>& fn,
-    const std::vector<const function::Function*>& coefficients,
-    const std::vector<int>& offsets,
-    const std::vector<PetscScalar> constant_values);
+    const Eigen::Array<PetscScalar, Eigen::Dynamic, Eigen::Dynamic,
+                       Eigen::RowMajor>& coeffs,
+    const std::vector<PetscScalar>& constant_values);
 
 /// Assemble linear form interior facet integrals into an Eigen vector
 void assemble_interior_facets(
@@ -77,9 +77,10 @@ void assemble_interior_facets(
     const std::function<void(PetscScalar*, const PetscScalar*,
                              const PetscScalar*, const double*, const int*,
                              const int*)>& fn,
-    const std::vector<const function::Function*>& coefficients,
+    const Eigen::Array<PetscScalar, Eigen::Dynamic, Eigen::Dynamic,
+                       Eigen::RowMajor>& coeffs,
     const std::vector<int>& offsets,
-    const std::vector<PetscScalar> constant_values);
+    const std::vector<PetscScalar>& constant_values);
 
 /// Modify b such that:
 ///
@@ -101,9 +102,9 @@ void assemble_interior_facets(
 void apply_lifting(
     Eigen::Ref<Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1>> b,
     const std::vector<std::shared_ptr<const Form>> a,
-    std::vector<std::vector<std::shared_ptr<const DirichletBC>>> bcs1,
-    std::vector<Eigen::Ref<const Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1>>>
-        x0,
+    const std::vector<std::vector<std::shared_ptr<const DirichletBC>>>& bcs1,
+    const std::vector<
+        Eigen::Ref<const Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1>>>& x0,
     double scale);
 
 /// Modify RHS vector to account for boundary condition

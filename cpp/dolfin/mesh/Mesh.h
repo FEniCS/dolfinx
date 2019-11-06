@@ -156,9 +156,6 @@ public:
   /// Compute all entities and connectivity
   void create_connectivity_all() const;
 
-  /// Compute global indices for entity dimension dim
-  void create_global_indices(std::size_t dim) const;
-
   /// Clean out all auxiliary topology data. This clears all topological
   /// data, except the connectivity between cells and vertices.
   void clean();
