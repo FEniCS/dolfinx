@@ -10,10 +10,11 @@ from dolfin import MPI, Function
 from dolfin.cpp.mesh import CellType
 from dolfin import cpp
 from dolfin import FunctionSpace, fem
-
+from dolfin_utils.test.skips import skip_in_parallel
 import numpy as np
 
 
+@skip_in_parallel
 @pytest.mark.parametrize(
     'space_type', ["RT"])
 @pytest.mark.parametrize(
@@ -53,6 +54,7 @@ def test_div_conforming_triangle(space_type, order):
         assert np.allclose(i, j)
 
 
+@skip_in_parallel
 @pytest.mark.parametrize(
     'space_type', ["RT"])
 @pytest.mark.parametrize(
