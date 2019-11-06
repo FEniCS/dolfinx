@@ -119,6 +119,8 @@ def ffc_jit(ufl_object, form_compiler_parameters=None):
     elif isinstance(ufl_object, ufl.Mesh):
         r = ffc.codegeneration.jit.compile_coordinate_maps(
             [ufl_object], parameters=p, cache_dir=cache_dir, **cffi_options)
+    elif isinstance(ufl_object, tuple) and isinstance(ufl_object[0], ufl.core.expr.Expr):
+        r = ffc.codegeneration.jit.compile_expressions([ufl_object], parameters=p, cache_dir=cache_dir, **cffi_options)
     else:
         raise TypeError(type(ufl_object))
 
