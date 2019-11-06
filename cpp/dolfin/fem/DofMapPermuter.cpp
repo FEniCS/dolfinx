@@ -486,11 +486,9 @@ fem::compute_dof_permutations(const mesh::Mesh& mesh,
   case (mesh::CellType::point):
     cell_ordering.resize(mesh.num_entities(mesh.topology().dim()), 0);
     break;
-
   default:
-    throw std::runtime_error(
-        "Unrecognised cell type."); // The function should exit before this is
-                                    // reached
+    // The function should exit before this is reached
+    throw std::runtime_error("Unrecognised cell type.");
   }
 
   // Build permutations. Each row of this represent the rotation or
