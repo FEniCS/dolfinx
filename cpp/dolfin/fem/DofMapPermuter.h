@@ -19,6 +19,16 @@ namespace fem
 {
 class ElementDofLayout;
 
+/// Return the dof permutations for all cells. Each row contains the
+/// numbers from 0 to (number of dofs on reference - 1) permuted so that
+/// edges are oriented towards the higher global vertex index
+/// @param[in] mesh The mesh
+/// @param[in] dof_layout The layout of dofs on a each cell
+/// @return The permutations
+Eigen::Array<int, Eigen::Dynamic, Eigen::Dynamic>
+compute_dof_permutations(const mesh::Mesh& mesh,
+                         const fem::ElementDofLayout& dof_layout);
+
 /// A class to permute dofs on each cell
 class DofMapPermuter
 {

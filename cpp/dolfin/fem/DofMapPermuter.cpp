@@ -456,6 +456,77 @@ generate_permutations(const mesh::Mesh& mesh,
 } // namespace
 
 //-----------------------------------------------------------------------------
+Eigen::Array<int, Eigen::Dynamic, Eigen::Dynamic>
+fem::compute_dof_permutations(const mesh::Mesh& mesh,
+                              const fem::ElementDofLayout& dof_layout)
+{
+  // Build ordering in each cell. It stores the number of times each row
+  // of _permutations should be applied on each cell Will have shape
+  // (number of cells) × (number of permutations)
+  Eigen::Array<std::int8_t, Eigen::Dynamic, Eigen::Dynamic> cell_ordering;
+  switch (mesh.cell_type())
+  {
+  case (mesh::CellType::triangle):
+    cell_ordering = compute_ordering_triangle(mesh);
+    break;
+  case (mesh::CellType::tetrahedron):
+    cell_ordering = compute_ordering_tetrahedron(mesh);
+    break;
+
+  // temporarily do nothing for cell types not yet implemented
+  case (mesh::CellType::hexahedron):
+    cell_ordering.resize(mesh.num_entities(mesh.topology().dim()), 0);
+    break;
+  case (mesh::CellType::quadrilateral):
+    cell_ordering.resize(mesh.num_entities(mesh.topology().dim()), 0);
+    break;
+  case (mesh::CellType::interval):
+    cell_ordering.resize(mesh.num_entities(mesh.topology().dim()), 0);
+    break;
+  case (mesh::CellType::point):
+    cell_ordering.resize(mesh.num_entities(mesh.topology().dim()), 0);
+    break;
+
+  default:
+    throw std::runtime_error(
+        "Unrecognised cell type."); // The function should exit before this is
+                                    // reached
+  }
+
+  // Build permutations. Each row of this represent the rotation or
+  // reflection of a mesh entity Will have shape (number of
+  // permutations) × (number of dofs on reference) where (number of
+  // permutations) = (num_edges + 2*num_faces + 4*num_volumes)
+  const Eigen::Array<int, Eigen::Dynamic, Eigen::Dynamic> permutations
+      = generate_permutations(mesh, dof_layout);
+
+  // Compute permutations on each cell
+  Eigen::Array<int, Eigen::Dynamic, Eigen::Dynamic> p(cell_ordering.rows(),
+                                                      permutations.cols());
+  for (int i = 0; i < p.cols(); ++i)
+    p.col(i) = i;
+  // For each cell
+  std::vector<int> temp(p.cols());
+  for (int cell = 0; cell < cell_ordering.rows(); ++cell)
+  {
+    // For each permutation in permutations
+    for (int i = 0; i < cell_ordering.cols(); ++i)
+    {
+      // cell_ordering(cell, i) says how many times this permutation
+      // should be applied
+      for (int j = 0; j < cell_ordering(cell, i); ++j)
+      {
+        for (int k = 0; k < p.cols(); ++k)
+          temp[k] = p(cell, k);
+        for (int k = 0; k < p.cols(); ++k)
+          p(cell, permutations(i, k)) = temp[k];
+      }
+    }
+  }
+
+  return p;
+}
+//-----------------------------------------------------------------------------
 fem::DofMapPermuter::DofMapPermuter(const mesh::Mesh& mesh,
                                     const fem::ElementDofLayout& dof_layout)
 {
@@ -505,6 +576,7 @@ fem::DofMapPermuter::get_cell_permutations() const
 
   // for each cell
   for (int cell = 0; cell < _cell_ordering.rows(); ++cell)
+  {
     // for each permutation in _permutations
     for (int i = 0; i < _cell_ordering.cols(); ++i)
     {
@@ -518,6 +590,7 @@ fem::DofMapPermuter::get_cell_permutations() const
           p(cell, _permutations(i, k)) = temp[k];
       }
     }
+  }
 
   return p;
 }
