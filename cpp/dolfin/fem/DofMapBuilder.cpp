@@ -80,9 +80,10 @@ void get_cell_entities(
   {
     if (needs_mesh_entities[d])
     {
-      assert(topology.have_global_indices(d));
       const std::vector<std::int64_t>& global_indices
           = topology.global_indices(d);
+      assert(global_indices.size() > 0);
+
       const int cell_num_entities
           = mesh::cell_num_entities(cell.mesh().cell_type(), d);
       const std::int32_t* entities = cell.entities(d);
@@ -305,7 +306,6 @@ DofMapStructure build_basic_dofmap(const mesh::Mesh& mesh,
     {
       needs_entities[d] = true;
       mesh.create_entities(d);
-      mesh::DistributedMeshTools::number_entities(mesh, d);
       num_mesh_entities_local[d] = mesh.num_entities(d);
       num_mesh_entities_global[d] = mesh.num_entities_global(d);
     }
