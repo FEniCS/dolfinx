@@ -80,10 +80,6 @@ public:
   /// dimension d
   const std::vector<std::int64_t>& global_indices(std::size_t d) const;
 
-  /// Check if global indices are available for entities of
-  /// dimension dim
-  bool have_global_indices(std::size_t dim) const;
-
   /// Return map from shared entities (local index) to processes
   /// that share the entity
   std::map<std::int32_t, std::set<std::int32_t>>& shared_entities(int dim);
@@ -104,12 +100,12 @@ public:
   const std::vector<std::int32_t>& entity_owner(int dim) const;
 
   /// Marker for entities of dimension dim on the boundary. An entity of
-  /// co-dimension < 0 is on the boundary if it is connected to boundary
-  /// facet. It i not defined for codimension 0.
+  /// co-dimension < 0 is on the boundary if it is connected to a boundary
+  /// facet. It is not defined for codimension 0.
   /// @param[in] dim Toplogical dimension of the entities to check. It
   /// must be less than the topological dimension.
   /// @return Vector of length equal to number of local entities, with
-  ///          'true' for enties on the boundary and otherwise 'false'.
+  ///          'true' for entities on the boundary and otherwise 'false'.
   std::vector<bool> on_boundary(int dim) const;
 
   /// Return connectivity for given pair of topological dimensions
@@ -133,14 +129,15 @@ private:
   // Number of mesh vertices
   std::int32_t _num_vertices;
 
-  // Number of ghost indices for each topological dimension (local
-  // or global??)
+  // Local index of first ghost entity, for each topological dimension.
+  // Since ghost entities come after non-ghost entities, this is
+  // also the number of local non-ghost entities for each dimension.
   std::vector<std::size_t> _ghost_offset_index;
 
   // Global number of mesh entities for each topological dimension
   std::vector<std::int64_t> _global_num_entities;
 
-  // Global indices for mesh entities (empty if not set)
+  // Global indices for mesh entities
   std::vector<std::vector<std::int64_t>> _global_indices;
 
   // TODO: Could IndexMap be used here in place of std::map?
