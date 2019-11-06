@@ -91,36 +91,36 @@ compute_local_to_global_point_map(
   const std::int32_t num_nodes_per_cell = cell_nodes.cols();
   const std::vector<int> vertex_indices = mesh::cell_vertex_index(
       type, num_nodes_per_cell, num_vertices_per_cell);
-  std::int64_t q;
+
+  std::vector<int> non_vertex_indices;
+  for (int i = 0; i < num_nodes_per_cell; ++i)
+    if (std::find(vertex_indices.begin(), vertex_indices.end(), i)
+        == vertex_indices.end())
+      non_vertex_indices.push_back(i);
 
   for (std::int32_t c = 0; c < num_cells; ++c)
   {
-    for (std::int32_t v = 0; v < num_nodes_per_cell; ++v)
+    for (int v : vertex_indices)
     {
-      q = cell_nodes(c, v);
-
-      // Check if vertex node
-      if (std::find(vertex_indices.begin(), vertex_indices.end(), v)
-          != vertex_indices.end())
-      {
-        auto shared_it = point_to_procs.find(q);
-        if (shared_it == point_to_procs.end())
-          local_vertices.insert(q);
-        else
-        {
-          // If lowest ranked sharing process is greather than this process,
-          // then it is owner
-          if (*(shared_it->second.begin()) > mpi_rank)
-            shared_vertices.insert(q);
-          else
-            ghost_vertices.insert(q);
-        }
-      }
+      std::int64_t q = cell_nodes(c, v);
+      auto shared_it = point_to_procs.find(q);
+      if (shared_it == point_to_procs.end())
+        local_vertices.insert(q);
       else
       {
-        // Non-vertex nodes
-        non_vertex_nodes.insert(q);
+        // If lowest ranked sharing process is greather than this process,
+        // then it is owner
+        if (*(shared_it->second.begin()) > mpi_rank)
+          shared_vertices.insert(q);
+        else
+          ghost_vertices.insert(q);
       }
+    }
+
+    for (int v : non_vertex_indices)
+    {
+      std::int64_t q = cell_nodes(c, v);
+      non_vertex_nodes.insert(q);
     }
   }
 
