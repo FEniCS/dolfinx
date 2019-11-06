@@ -8,6 +8,7 @@
 #include "DirichletBC.h"
 #include "DofMap.h"
 #include "Form.h"
+#include "utils.h"
 #include <dolfin/common/IndexMap.h>
 #include <dolfin/common/types.h>
 #include <dolfin/function/Constant.h>
@@ -25,96 +26,6 @@ using namespace dolfin::fem;
 
 namespace
 {
-//-----------------------------------------------------------------------------
-template <class T>
-struct _Plus
-{
-  constexpr T operator()(const T& x, const T& y) const { return x + y; }
-};
-//-----------------------------------------------------------------------------
-template <class T>
-struct _Assign
-{
-  constexpr T operator()(const T& x, const T& y) const { return y; }
-};
-//-----------------------------------------------------------------------------
-void _restrict(const fem::DofMap& dofmap, const Vec x, int cell_index,
-               PetscScalar* w)
-{
-  assert(w);
-  auto dofs = dofmap.cell_dofs(cell_index);
-
-  // Pick values from vector(s)
-  la::VecReadWrapper v(x);
-  Eigen::Map<const Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1>> _v = v.x;
-  for (Eigen::Index i = 0; i < dofs.size(); ++i)
-    w[i] = _v[dofs[i]];
-}
-//-----------------------------------------------------------------------------
-template <typename Op = std::plus<PetscScalar>>
-void _assemble_cells(
-    Eigen::Ref<Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1>> b,
-    const mesh::Mesh& mesh, const std::vector<std::int32_t>& active_cells,
-    const Eigen::Ref<const Eigen::Array<PetscInt, Eigen::Dynamic, 1>> dofmap,
-    int num_dofs_per_cell,
-    const std::function<void(PetscScalar*, const PetscScalar*,
-                             const PetscScalar*, const double*, const int*,
-                             const int*)>& kernel,
-    const std::vector<const function::Function*>& coefficients,
-    const std::vector<int>& offsets,
-    const std::vector<PetscScalar> constant_values)
-{
-  const int gdim = mesh.geometry().dim();
-
-  // Prepare cell geometry
-  const mesh::Connectivity& connectivity_g
-      = mesh.coordinate_dofs().entity_points();
-  const Eigen::Ref<const Eigen::Array<std::int32_t, Eigen::Dynamic, 1>> pos_g
-      = connectivity_g.entity_positions();
-  const Eigen::Ref<const Eigen::Array<std::int32_t, Eigen::Dynamic, 1>> cell_g
-      = connectivity_g.connections();
-  // FIXME: Add proper interface for num coordinate dofs
-  const int num_dofs_g = connectivity_g.size(0);
-  const Eigen::Array<double, Eigen::Dynamic, 3, Eigen::RowMajor>& x_g
-      = mesh.geometry().points();
-
-  // Create data structures used in assembly
-  Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
-      coordinate_dofs(num_dofs_g, gdim);
-  Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1> be(num_dofs_per_cell);
-  Eigen::Array<PetscScalar, Eigen::Dynamic, 1> coeff_array(offsets.back());
-
-  // Iterate over active cells
-  const int orientation = 0;
-  for (std::int32_t cell_index : active_cells)
-  {
-    // Get cell coordinates/geometry
-    for (int i = 0; i < num_dofs_g; ++i)
-      for (int j = 0; j < gdim; ++j)
-        coordinate_dofs(i, j) = x_g(cell_g[pos_g[cell_index] + i], j);
-
-    // FIXME: Move this outside of inner assembly loop
-    // Update coefficients
-    for (std::size_t i = 0; i < coefficients.size(); ++i)
-    {
-      _restrict(*coefficients[i]->function_space()->dofmap(),
-                coefficients[i]->vector().vec(), cell_index,
-                coeff_array.data() + offsets[i]);
-    }
-
-    // Tabulate vector for cell
-    be.setZero();
-    kernel(be.data(), coeff_array.data(), constant_values.data(),
-           coordinate_dofs.data(), nullptr, &orientation);
-
-    // Scatter cell vector to combined vector
-    for (Eigen::Index i = 0; i < num_dofs_per_cell; ++i)
-    {
-      b[dofmap[cell_index * num_dofs_per_cell + i]]
-          = Op{}(b[dofmap[cell_index * num_dofs_per_cell + i]], be[i]);
-    }
-  }
-}
 //-----------------------------------------------------------------------------
 // Implementation of bc application
 void _lift_bc_cells(
@@ -139,24 +50,13 @@ void _lift_bc_cells(
   const fem::DofMap& dofmap0 = *a.function_space(0)->dofmap();
   const fem::DofMap& dofmap1 = *a.function_space(1)->dofmap();
 
-  // TODO: simplify and move elsewhere
-  // Manage coefficients
-  const FormCoefficients& coefficients = a.coefficients();
-  std::vector<std::uint32_t> n = {0};
-  std::vector<const function::Function*> coefficients_ptr(coefficients.size());
-  for (int i = 0; i < coefficients.size(); ++i)
-  {
-    coefficients_ptr[i] = coefficients.get(i).get();
-    n.push_back(
-        n.back()
-        + coefficients_ptr[i]->function_space()->element()->space_dimension());
-  }
-  Eigen::Array<PetscScalar, Eigen::Dynamic, 1> coeff_array(n.back());
+  // Prepare coefficients
+  Eigen::Array<PetscScalar, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
+      coeffs = pack_coefficients(a);
 
   const std::function<void(PetscScalar*, const PetscScalar*, const PetscScalar*,
                            const double*, const int*, const int*)>& fn
-      = a.integrals().get_tabulate_tensor_function(FormIntegrals::Type::cell,
-                                                   0);
+      = a.integrals().get_tabulate_tensor(FormIntegrals::Type::cell, 0);
 
   // Prepare cell geometry
   const int gdim = mesh.geometry().dim();
@@ -214,25 +114,17 @@ void _lift_bc_cells(
     if (!has_bc)
       continue;
 
-    // Get cell vertex coordinates
     const int cell_index = cell.index();
+
+    // Get cell vertex coordinates
     for (int i = 0; i < num_dofs_g; ++i)
       for (int j = 0; j < gdim; ++j)
         coordinate_dofs(i, j) = x_g(cell_g[pos_g[cell_index] + i], j);
 
     // Size data structure for assembly
-    auto dmap0 = dofmap0.cell_dofs(cell.index());
+    auto dmap0 = dofmap0.cell_dofs(cell_index);
 
-    // TODO: Move gathering of coefficients outside of main assembly
-    // loop
-    // Update coefficients
-    for (int i = 0; i < coefficients.size(); ++i)
-    {
-      _restrict(*coefficients_ptr[i]->function_space()->dofmap(),
-                coefficients_ptr[i]->vector().vec(), cell.index(),
-                coeff_array.data() + n[i]);
-    }
-
+    auto coeff_array = coeffs.row(cell_index);
     Ae.setZero(dmap0.size(), dmap1.size());
     fn(Ae.data(), coeff_array.data(), constant_values.data(),
        coordinate_dofs.data(), nullptr, &orient);
@@ -284,24 +176,14 @@ void _lift_bc_exterior_facets(
   const fem::DofMap& dofmap0 = *a.function_space(0)->dofmap();
   const fem::DofMap& dofmap1 = *a.function_space(1)->dofmap();
 
-  // TODO: simplify and move elsewhere
-  // Manage coefficients
-  const FormCoefficients& coefficients = a.coefficients();
-  std::vector<std::uint32_t> n = {0};
-  std::vector<const function::Function*> coefficients_ptr(coefficients.size());
-  for (int i = 0; i < coefficients.size(); ++i)
-  {
-    coefficients_ptr[i] = coefficients.get(i).get();
-    n.push_back(
-        n.back()
-        + coefficients_ptr[i]->function_space()->element()->space_dimension());
-  }
-  Eigen::Array<PetscScalar, Eigen::Dynamic, 1> coeff_array(n.back());
+  // Prepare coefficients
+  Eigen::Array<PetscScalar, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
+      coeffs = pack_coefficients(a);
 
   const std::function<void(PetscScalar*, const PetscScalar*, const PetscScalar*,
                            const double*, const int*, const int*)>& fn
-      = a.integrals().get_tabulate_tensor_function(
-          FormIntegrals::Type::exterior_facet, 0);
+      = a.integrals().get_tabulate_tensor(FormIntegrals::Type::exterior_facet,
+                                          0);
 
   // Prepare cell geometry
   const mesh::Connectivity& connectivity_g
@@ -384,14 +266,7 @@ void _lift_bc_exterior_facets(
     // TODO: Move gathering of coefficients outside of main assembly
     // loop
 
-    // Update coefficients
-    for (int i = 0; i < coefficients.size(); ++i)
-    {
-      _restrict(*coefficients_ptr[i]->function_space()->dofmap(),
-                coefficients_ptr[i]->vector().vec(), cell_index,
-                coeff_array.data() + n[i]);
-    }
-
+    auto coeff_array = coeffs.row(cell_index);
     Ae.setZero(dmap0.size(), dmap1.size());
     fn(Ae.data(), coeff_array.data(), constant_values.data(),
        coordinate_dofs.data(), &local_facet, &orient);
@@ -419,8 +294,7 @@ void _lift_bc_exterior_facets(
 
 //-----------------------------------------------------------------------------
 void fem::impl::assemble_vector(
-    Eigen::Ref<Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1>> b, const Form& L,
-    InsertMode mode)
+    Eigen::Ref<Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1>> b, const Form& L)
 {
   assert(L.mesh());
   const mesh::Mesh& mesh = *L.mesh();
@@ -433,70 +307,54 @@ void fem::impl::assemble_vector(
   assert(dofmap.element_dof_layout);
   const int num_dofs_per_cell = dofmap.element_dof_layout->num_dofs();
 
-  // Prepare coefficients
-  const FormCoefficients& coefficients = L.coefficients();
-  std::vector<const function::Function*> coeff_fn(coefficients.size());
-  for (int i = 0; i < coefficients.size(); ++i)
-    coeff_fn[i] = coefficients.get(i).get();
-  std::vector<int> c_offsets = coefficients.offsets();
-
+  // Prepare constants
   const std::vector<
       std::pair<std::string, std::shared_ptr<const function::Constant>>>
       constants = L.constants();
-
   std::vector<PetscScalar> constant_values;
   for (auto const& constant : constants)
   {
     // Get underlying data array of this Constant
     const std::vector<PetscScalar>& array = constant.second->value;
-
     constant_values.insert(constant_values.end(), array.data(),
                            array.data() + array.size());
   }
+
+  // Prepare coefficients
+  const Eigen::Array<PetscScalar, Eigen::Dynamic, Eigen::Dynamic,
+                     Eigen::RowMajor>
+      coeffs = pack_coefficients(L);
 
   const FormIntegrals& integrals = L.integrals();
   using type = fem::FormIntegrals::Type;
   for (int i = 0; i < integrals.num_integrals(type::cell); ++i)
   {
-    auto& fn
-        = integrals.get_tabulate_tensor_function(FormIntegrals::Type::cell, i);
+    auto& fn = integrals.get_tabulate_tensor(FormIntegrals::Type::cell, i);
     const std::vector<std::int32_t>& active_cells
         = integrals.integral_domains(type::cell, i);
     fem::impl::assemble_cells(b, mesh, active_cells, dof_array,
-                              num_dofs_per_cell, fn, coeff_fn, c_offsets,
-                              constant_values, mode);
+                              num_dofs_per_cell, fn, coeffs, constant_values);
   }
 
   for (int i = 0; i < integrals.num_integrals(type::exterior_facet); ++i)
   {
-    if (mode != fem::InsertMode::sum)
-    {
-      throw std::runtime_error("Insert mode \"sum\" is the only supported "
-                               "mode for facet integrals.");
-    }
-
-    const auto& fn = integrals.get_tabulate_tensor_function(
-        FormIntegrals::Type::exterior_facet, i);
+    const auto& fn
+        = integrals.get_tabulate_tensor(FormIntegrals::Type::exterior_facet, i);
     const std::vector<std::int32_t>& active_facets
         = integrals.integral_domains(type::exterior_facet, i);
     fem::impl::assemble_exterior_facets(b, mesh, active_facets, dofmap, fn,
-                                        coeff_fn, c_offsets, constant_values);
+                                        coeffs, constant_values);
   }
 
   for (int i = 0; i < integrals.num_integrals(type::interior_facet); ++i)
   {
-    if (mode != fem::InsertMode::sum)
-    {
-      throw std::runtime_error("Insert mode \"sum\" is the only supported "
-                               "mode for facet integrals.");
-    }
-
-    const auto& fn = integrals.get_tabulate_tensor_function(
-        FormIntegrals::Type::interior_facet, i);
+    const std::vector<int> c_offsets = L.coefficients().offsets();
+    const auto& fn
+        = integrals.get_tabulate_tensor(FormIntegrals::Type::interior_facet, i);
     const std::vector<std::int32_t>& active_facets
         = integrals.integral_domains(type::interior_facet, i);
     fem::impl::assemble_interior_facets(b, mesh, active_facets, dofmap, fn,
-                                        coeff_fn, c_offsets, constant_values);
+                                        coeffs, c_offsets, constant_values);
   }
 }
 //-----------------------------------------------------------------------------
@@ -508,24 +366,47 @@ void fem::impl::assemble_cells(
     const std::function<void(PetscScalar*, const PetscScalar*,
                              const PetscScalar*, const double*, const int*,
                              const int*)>& kernel,
-    const std::vector<const function::Function*>& coefficients,
-    const std::vector<int>& offsets,
-    const std::vector<PetscScalar> constant_values, fem::InsertMode mode)
+    const Eigen::Array<PetscScalar, Eigen::Dynamic, Eigen::Dynamic,
+                       Eigen::RowMajor>& coeffs,
+    const std::vector<PetscScalar>& constant_values)
 {
-  switch (mode)
+  const int gdim = mesh.geometry().dim();
+
+  // Prepare cell geometry
+  const mesh::Connectivity& connectivity_g
+      = mesh.coordinate_dofs().entity_points();
+  const Eigen::Ref<const Eigen::Array<std::int32_t, Eigen::Dynamic, 1>> pos_g
+      = connectivity_g.entity_positions();
+  const Eigen::Ref<const Eigen::Array<std::int32_t, Eigen::Dynamic, 1>> cell_g
+      = connectivity_g.connections();
+  // FIXME: Add proper interface for num coordinate dofs
+  const int num_dofs_g = connectivity_g.size(0);
+  const Eigen::Array<double, Eigen::Dynamic, 3, Eigen::RowMajor>& x_g
+      = mesh.geometry().points();
+
+  // Create data structures used in assembly
+  Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
+      coordinate_dofs(num_dofs_g, gdim);
+  Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1> be(num_dofs_per_cell);
+
+  // Iterate over active cells
+  const int orientation = 0;
+  for (std::int32_t cell_index : active_cells)
   {
-  case InsertMode::sum:
-    _assemble_cells<_Plus<PetscScalar>>(b, mesh, active_cells, dofmap,
-                                        num_dofs_per_cell, kernel, coefficients,
-                                        offsets, constant_values);
-    break;
-  case InsertMode::set:
-    _assemble_cells<_Assign<PetscScalar>>(
-        b, mesh, active_cells, dofmap, num_dofs_per_cell, kernel, coefficients,
-        offsets, constant_values);
-    break;
-  default:
-    throw std::runtime_error("Unknown assembly insertion mode.");
+    // Get cell coordinates/geometry
+    for (int i = 0; i < num_dofs_g; ++i)
+      for (int j = 0; j < gdim; ++j)
+        coordinate_dofs(i, j) = x_g(cell_g[pos_g[cell_index] + i], j);
+
+    // Tabulate vector for cell
+    auto coeff_cell = coeffs.row(cell_index);
+    be.setZero();
+    kernel(be.data(), coeff_cell.data(), constant_values.data(),
+           coordinate_dofs.data(), nullptr, &orientation);
+
+    // Scatter cell vector to 'global' vector array
+    for (Eigen::Index i = 0; i < num_dofs_per_cell; ++i)
+      b[dofmap[cell_index * num_dofs_per_cell + i]] += be[i];
   }
 }
 //-----------------------------------------------------------------------------
@@ -536,9 +417,9 @@ void fem::impl::assemble_exterior_facets(
     const std::function<void(PetscScalar*, const PetscScalar*,
                              const PetscScalar*, const double*, const int*,
                              const int*)>& fn,
-    const std::vector<const function::Function*>& coefficients,
-    const std::vector<int>& offsets,
-    const std::vector<PetscScalar> constant_values)
+    const Eigen::Array<PetscScalar, Eigen::Dynamic, Eigen::Dynamic,
+                       Eigen::RowMajor>& coeffs,
+    const std::vector<PetscScalar>& constant_values)
 {
   const int gdim = mesh.geometry().dim();
   const int tdim = mesh.topology().dim();
@@ -561,13 +442,11 @@ void fem::impl::assemble_exterior_facets(
   Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
       coordinate_dofs(num_dofs_g, gdim);
   Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1> be;
-  Eigen::Array<PetscScalar, Eigen::Dynamic, 1> coeff_array(offsets.back());
-
   for (const auto& facet_index : active_facets)
   {
     const mesh::MeshEntity facet(mesh, tdim - 1, facet_index);
 
-    // Index of attached cell
+    // Get index of first attached cell
     const std::int32_t cell_index = facet.entities(tdim)[0];
 
     // FIXME: See if creation of MeshEntity can be removed
@@ -582,21 +461,12 @@ void fem::impl::assemble_exterior_facets(
         coordinate_dofs(i, j) = x_g(cell_g[pos_g[cell_index] + i], j);
 
     // Get dof map for cell
-    auto dmap = dofmap.cell_dofs(cell.index());
-
-    // TODO: Move gathering of coefficients outside of main assembly
-    // loop
-    // Update coefficients
-    for (std::size_t i = 0; i < coefficients.size(); ++i)
-    {
-      _restrict(*coefficients[i]->function_space()->dofmap(),
-                coefficients[i]->vector().vec(), cell_index,
-                coeff_array.data() + offsets[i]);
-    }
+    auto dmap = dofmap.cell_dofs(cell_index);
 
     // Tabulate element vector
+    auto coeff_cell = coeffs.row(cell_index);
     be.setZero(dmap.size());
-    fn(be.data(), coeff_array.data(), constant_values.data(),
+    fn(be.data(), coeff_cell.data(), constant_values.data(),
        coordinate_dofs.data(), &local_facet, &orient);
 
     // Add element vector to global vector
@@ -612,9 +482,10 @@ void fem::impl::assemble_interior_facets(
     const std::function<void(PetscScalar*, const PetscScalar*,
                              const PetscScalar*, const double*, const int*,
                              const int*)>& fn,
-    const std::vector<const function::Function*>& coefficients,
+    const Eigen::Array<PetscScalar, Eigen::Dynamic, Eigen::Dynamic,
+                       Eigen::RowMajor>& coeffs,
     const std::vector<int>& offsets,
-    const std::vector<PetscScalar> constant_values)
+    const std::vector<PetscScalar>& constant_values)
 {
   const int gdim = mesh.geometry().dim();
   const int tdim = mesh.topology().dim();
@@ -638,21 +509,25 @@ void fem::impl::assemble_interior_facets(
       coordinate_dofs(2 * num_dofs_g, gdim);
   Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1> be;
   Eigen::Array<PetscScalar, Eigen::Dynamic, 1> coeff_array(2 * offsets.back());
+  assert(offsets.back() == coeffs.cols());
 
   for (const auto& facet_index : active_facets)
   {
     const mesh::MeshEntity facet(mesh, tdim - 1, facet_index);
 
     // assert(facet.num_global_entities(tdim) == 2);
-
     // TODO: check ghosting sanity?
 
     // Get attached cell indices
     const std::int32_t cell_index0 = facet.entities(tdim)[0];
     const std::int32_t cell_index1 = facet.entities(tdim)[1];
 
-    // Get local index of facet with respect to the cell
-    const int local_facet[2] = {cell_index0, cell_index1};
+    // Create attached cells
+    const mesh::MeshEntity cell0(mesh, tdim, facet.entities(tdim)[0]);
+    const mesh::MeshEntity cell1(mesh, tdim, facet.entities(tdim)[1]);
+    const int local_facet[2] = {cell0.index(facet), cell1.index(facet)};
+
+    // Orientation
     const int orient[2] = {0, 0};
 
     // Get cell vertex coordinates
@@ -670,9 +545,7 @@ void fem::impl::assemble_interior_facets(
     auto dmap0 = dofmap.cell_dofs(cell_index0);
     auto dmap1 = dofmap.cell_dofs(cell_index1);
 
-    // TODO: Move gathering of coefficients outside of main assembly
-    // loop
-    // Update coefficients
+    // Get cell geometry
     Eigen::Map<const Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic,
                                   Eigen::RowMajor>>
         coordinate_dofs0(coordinate_dofs.data(), num_dofs_g, gdim);
@@ -681,20 +554,21 @@ void fem::impl::assemble_interior_facets(
                                   Eigen::RowMajor>>
         coordinate_dofs1(coordinate_dofs.data() + num_dofs_g * gdim, num_dofs_g,
                          gdim);
-    for (std::size_t i = 0; i < coefficients.size(); ++i)
+
+    // Layout for the restricted coefficients is flattened
+    // w[coefficient][restriction][dof]
+    auto coeff_cell0 = coeffs.row(cell_index0);
+    auto coeff_cell1 = coeffs.row(cell_index1);
+
+    // Loop over coefficients
+    for (std::size_t i = 0; i < offsets.size() - 1; ++i)
     {
-      // Layout for the restricted coefficients is flattened
-      // w[coefficient][restriction][dof]
-
-      // Prepare restriction to cell 0
-      _restrict(*coefficients[i]->function_space()->dofmap(),
-                coefficients[i]->vector().vec(), cell_index0,
-                coeff_array.data() + 2 * offsets[i]);
-
-      // Prepare restriction to cell 1
-      _restrict(*coefficients[i]->function_space()->dofmap(),
-                coefficients[i]->vector().vec(), cell_index1,
-                coeff_array.data() + offsets[i + 1] + offsets[i]);
+      // Loop over entries for coefficient i
+      const int num_entries = offsets[i + 1] - offsets[i];
+      coeff_array.segment(2 * offsets[i], num_entries)
+          = coeff_cell0.segment(offsets[i], num_entries);
+      coeff_array.segment(offsets[i + 1] + offsets[i], num_entries)
+          = coeff_cell1.segment(offsets[i], num_entries);
     }
 
     // Tabulate element vector
@@ -713,15 +587,18 @@ void fem::impl::assemble_interior_facets(
 void fem::impl::apply_lifting(
     Eigen::Ref<Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1>> b,
     const std::vector<std::shared_ptr<const Form>> a,
-    std::vector<std::vector<std::shared_ptr<const DirichletBC>>> bcs1,
-    std::vector<Eigen::Ref<const Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1>>>
-        x0,
+    const std::vector<std::vector<std::shared_ptr<const DirichletBC>>>& bcs1,
+    const std::vector<
+        Eigen::Ref<const Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1>>>& x0,
     double scale)
 {
   // FIXME: make changes to reactivate this check
-  // if (!x0.empty() and x0.size() != a.size())
-  //   throw std::runtime_error("Mismatch in size between x0 and a in
-  //   assembler.");
+  if (!x0.empty() and x0.size() != a.size())
+  {
+    throw std::runtime_error(
+        "Mismatch in size between x0 and bilinear form in assembler.");
+  }
+
   if (a.size() != bcs1.size())
   {
     throw std::runtime_error(
@@ -742,7 +619,7 @@ void fem::impl::apply_lifting(
           = map1->block_size * (map1->size_local() + map1->num_ghosts());
       bc_markers1.assign(crange, false);
       bc_values1 = Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1>::Zero(crange);
-      for (std::shared_ptr<const DirichletBC>& bc : bcs1[j])
+      for (const std::shared_ptr<const DirichletBC>& bc : bcs1[j])
       {
         bc->mark_dofs(bc_markers1);
         bc->dof_values(bc_values1);
@@ -780,12 +657,6 @@ void fem::impl::lift_bc(
     const Eigen::Ref<const Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1>>& x0,
     double scale)
 {
-  if (b.size() != x0.size())
-  {
-    throw std::runtime_error(
-        "Vector size mismatch in modification for boundary conditions.");
-  }
-
   if (a.integrals().num_integrals(fem::FormIntegrals::Type::cell) > 0)
     _lift_bc_cells(b, a, bc_values1, bc_markers1, x0, scale);
   if (a.integrals().num_integrals(fem::FormIntegrals::Type::exterior_facet) > 0)

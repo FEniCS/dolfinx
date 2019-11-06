@@ -182,7 +182,7 @@ bool nls::NewtonSolver::converged(const Vec r,
 //-----------------------------------------------------------------------------
 void nls::NewtonSolver::update_solution(
     Vec x, const Vec dx, double relaxation,
-    const NonlinearProblem& nonlinear_problem, std::size_t interation)
+    const NonlinearProblem& nonlinear_problem, std::size_t iteration)
 {
   VecAXPY(x, -relaxation, dx);
 }

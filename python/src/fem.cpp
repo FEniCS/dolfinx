@@ -8,7 +8,7 @@
 #include <Eigen/Dense>
 #include <dolfin/common/IndexMap.h>
 #include <dolfin/common/types.h>
-#include <dolfin/fem/CoordinateMapping.h>
+#include <dolfin/fem/CoordinateElement.h>
 #include <dolfin/fem/DirichletBC.h>
 #include <dolfin/fem/DiscreteOperators.h>
 #include <dolfin/fem/DofMap.h>
@@ -81,7 +81,7 @@ void fem(py::module& m)
               = reinterpret_cast<ufc_coordinate_mapping*>(e);
           return dolfin::fem::get_cmap_from_ufc_cmap(*p);
         },
-        "Create a CoordinateMapping object from a pointer to a "
+        "Create a CoordinateElement object from a pointer to a "
         "ufc_coordinate_map.");
 
   // utils
@@ -180,12 +180,11 @@ void fem(py::module& m)
       .def("set", &dolfin::fem::DofMap::set)
       .def("dof_array", &dolfin::fem::DofMap::dof_array);
 
-  // dolfin::fem::CoordinateMapping
-  py::class_<dolfin::fem::CoordinateMapping,
-             std::shared_ptr<dolfin::fem::CoordinateMapping>>(
-      m, "CoordinateMapping", "Coordinate mapping object")
-      .def("compute_physical_coordinates",
-           &dolfin::fem::CoordinateMapping::compute_physical_coordinates);
+  // dolfin::fem::CoordinateElement
+  py::class_<dolfin::fem::CoordinateElement,
+             std::shared_ptr<dolfin::fem::CoordinateElement>>(
+      m, "CoordinateElement", "Coordinate mapping object")
+      .def("push_forward", &dolfin::fem::CoordinateElement::push_forward);
 
   // dolfin::fem::DirichletBC
   py::class_<dolfin::fem::DirichletBC,
@@ -213,24 +212,19 @@ void fem(py::module& m)
                     const std::vector<std::int32_t>&,
                     dolfin::fem::DirichletBC::Method>(),
            py::arg("V"), py::arg("g"), py::arg("facets"), py::arg("method"))
-      .def("function_space", &dolfin::fem::DirichletBC::function_space);
-
-  // Assembler insert mode  enum
-  py::enum_<dolfin::fem::InsertMode>(m, "InsertMode")
-      .value("set", dolfin::fem::InsertMode::set)
-      .value("sum", dolfin::fem::InsertMode::sum);
+      .def_property_readonly("dof_indices", &dolfin::fem::DirichletBC::dof_indices)
+      .def_property_readonly("function_space", &dolfin::fem::DirichletBC::function_space)
+      .def_property_readonly("value", &dolfin::fem::DirichletBC::value);
 
   // dolfin::fem::assemble
   m.def("assemble_scalar", &dolfin::fem::assemble_scalar,
         "Assemble functional over mesh");
   // Vectors (single)
-  m.def(
-      "assemble_vector",
-      py::overload_cast<Vec, const dolfin::fem::Form&, dolfin::fem::InsertMode>(
-          &dolfin::fem::assemble_vector),
-      py::arg("b"), py::arg("L"),
-      py::arg("insert_mode") = dolfin::fem::InsertMode::sum,
-      "Assemble linear form into an existing vector");
+  m.def("assemble_vector",
+        py::overload_cast<Vec, const dolfin::fem::Form&>(
+            &dolfin::fem::assemble_vector),
+        py::arg("b"), py::arg("L"),
+        "Assemble linear form into an existing vector");
   // Block/nest vectors
   m.def("assemble_vector",
         py::overload_cast<
@@ -277,6 +271,18 @@ void fem(py::module& m)
                   },
                   py::return_value_policy::take_ownership);
 
+  // dolfin::fem::FormIntegrals
+  py::class_<dolfin::fem::FormIntegrals,
+             std::shared_ptr<dolfin::fem::FormIntegrals>>
+      formintegrals(m, "FormIntegrals",
+                    "Holder for integral kernels and domains");
+
+  py::enum_<dolfin::fem::FormIntegrals::Type>(formintegrals, "Type")
+      .value("cell", dolfin::fem::FormIntegrals::Type::cell)
+      .value("exterior_facet", dolfin::fem::FormIntegrals::Type::exterior_facet)
+      .value("interior_facet",
+             dolfin::fem::FormIntegrals::Type::interior_facet);
+
   // dolfin::fem::Form
   py::class_<dolfin::fem::Form, std::shared_ptr<dolfin::fem::Form>>(
       m, "Form", "Variational form object")
@@ -305,12 +311,13 @@ void fem(py::module& m)
       .def("set_interior_facet_domains",
            &dolfin::fem::Form::set_interior_facet_domains)
       .def("set_vertex_domains", &dolfin::fem::Form::set_vertex_domains)
-      .def("set_tabulate_cell",
-           [](dolfin::fem::Form& self, int i, std::intptr_t addr) {
+      .def("set_tabulate_tensor",
+           [](dolfin::fem::Form& self, dolfin::fem::FormIntegrals::Type type,
+              int i, std::intptr_t addr) {
              auto tabulate_tensor_ptr = (void (*)(
                  PetscScalar*, const PetscScalar*, const PetscScalar*,
                  const double*, const int*, const int*))addr;
-             self.register_tabulate_tensor_cell(i, tabulate_tensor_ptr);
+             self.set_tabulate_tensor(type, i, tabulate_tensor_ptr);
            })
       .def_property_readonly("rank", &dolfin::fem::Form::rank)
       .def("mesh", &dolfin::fem::Form::mesh)

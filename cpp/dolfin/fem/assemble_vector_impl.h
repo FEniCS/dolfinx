@@ -32,13 +32,17 @@ class DirichletBC;
 class Form;
 class DofMap;
 
+/// Implementation of assembly
 namespace impl
 {
 
 /// Assemble linear form into an Eigen vector
+/// @param[in,out] b The vector to be assembled. It will not be zeroed
+///                  before assembly.
+/// @param[in] L The linear forms to assemble into b
 void
     assemble_vector(Eigen::Ref<Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1>> b,
-                    const Form& L, fem::InsertMode mode);
+                    const Form& L);
 
 /// Execute kernel over cells and accumulate result in vector
 void assemble_cells(
@@ -49,9 +53,9 @@ void assemble_cells(
     const std::function<void(PetscScalar*, const PetscScalar*,
                              const PetscScalar*, const double*, const int*,
                              const int*)>& kernel,
-    const std::vector<const function::Function*>& coefficients,
-    const std::vector<int>& offsets,
-    const std::vector<PetscScalar> constant_values, fem::InsertMode mode);
+    const Eigen::Array<PetscScalar, Eigen::Dynamic, Eigen::Dynamic,
+                       Eigen::RowMajor>& coeffs,
+    const std::vector<PetscScalar>& constant_values);
 
 /// Execute kernel over cells and accumulate result in vector
 void assemble_exterior_facets(
@@ -61,9 +65,9 @@ void assemble_exterior_facets(
     const std::function<void(PetscScalar*, const PetscScalar*,
                              const PetscScalar*, const double*, const int*,
                              const int*)>& fn,
-    const std::vector<const function::Function*>& coefficients,
-    const std::vector<int>& offsets,
-    const std::vector<PetscScalar> constant_values);
+    const Eigen::Array<PetscScalar, Eigen::Dynamic, Eigen::Dynamic,
+                       Eigen::RowMajor>& coeffs,
+    const std::vector<PetscScalar>& constant_values);
 
 /// Assemble linear form interior facet integrals into an Eigen vector
 void assemble_interior_facets(
@@ -73,36 +77,64 @@ void assemble_interior_facets(
     const std::function<void(PetscScalar*, const PetscScalar*,
                              const PetscScalar*, const double*, const int*,
                              const int*)>& fn,
-    const std::vector<const function::Function*>& coefficients,
+    const Eigen::Array<PetscScalar, Eigen::Dynamic, Eigen::Dynamic,
+                       Eigen::RowMajor>& coeffs,
     const std::vector<int>& offsets,
-    const std::vector<PetscScalar> constant_values);
+    const std::vector<PetscScalar>& constant_values);
 
 /// Modify b such that:
 ///
 ///   b <- b - scale * A_j (g_j - x0_j)
 ///
-/// where j is a block (nest) index. For non-blocked probelem j = 1. The
-/// boundary conditions bc1 are on the trial spaces V_j. The forms in
-/// [a] must have the same test space as L (from b was built), but the
-/// trial space may differ. If x0 is not supplied, then it is treated as
-/// zero.
+/// where j is a block (nest) row index. For a non-blocked problem j = 0.
+/// The boundary conditions bc1 are on the trial spaces V_j. The forms
+/// in [a] must have the same test space as L (from which b was built),
+/// but the trial space may differ. If x0 is not supplied, then it is
+/// treated as zero.
+/// @param[in,out] b The vector to be modified
+/// @param[in] a The bilinear forms, where a[j] is the form that
+///              generates A_j
+/// @param[in] bcs1 List of boundary conditions for each block, i.e.
+///                 bcs1[2] are the boundary conditions applied to the
+///                 columns of a[2] / x0[2] block
+/// @param[in] x0 The vectors used in the lifting
+/// @param[in] scale Scaling to apply
 void apply_lifting(
     Eigen::Ref<Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1>> b,
     const std::vector<std::shared_ptr<const Form>> a,
-    std::vector<std::vector<std::shared_ptr<const DirichletBC>>> bcs1,
-    std::vector<Eigen::Ref<const Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1>>>
-        x0,
+    const std::vector<std::vector<std::shared_ptr<const DirichletBC>>>& bcs1,
+    const std::vector<
+        Eigen::Ref<const Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1>>>& x0,
     double scale);
 
-/// Modify RHS vector to account for boundary condition b <- b - scale*Ax_bc
+/// Modify RHS vector to account for boundary condition
+///
+///    b <- b - scale * A x_bc
+////
+/// @param[in,out] b The vector to be modified
+/// @param[in] a The bilinear form that generates A
+/// @param[in] bc_values1 The boundary condition 'values'
+/// @param[in] bc_markers1 The indices (columns of A, rows of x) to
+///                        which bcs belong
+/// @param[in] scale Scaling to apply
 void lift_bc(
     Eigen::Ref<Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1>> b, const Form& a,
     const Eigen::Ref<const Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1>>&
         bc_values1,
     const std::vector<bool>& bc_markers1, double scale);
 
-/// Modify RHS vector to account for boundary condition such that b <- b
-/// - scale*A (x_bc - x0)
+/// Modify RHS vector to account for boundary condition such that: b <-
+////
+///     b - scale * A (x_bc - x0)
+////
+/// @param[in,out] b The vector to be modified
+/// @param[in] a The bilinear form that generates A
+/// @param[in] bc_values1 The boundary condition 'values'
+/// @param[in] bc_markers1 The indices (columns of A, rows of x) to
+///                        which bcs belong
+/// @param[in] x0 The array used in the lifting, typically a 'current
+///               solution' in a Newton method
+/// @param[in] scale Scaling to apply
 void lift_bc(
     Eigen::Ref<Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1>> b, const Form& a,
     const Eigen::Ref<const Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1>>&

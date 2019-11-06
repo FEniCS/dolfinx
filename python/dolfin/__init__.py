@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 # Copyright (C) 2017 Chris N. Richardson and Garth N. Wells
 #
 # This file is part of DOLFIN (https://www.fenicsproject.org)
@@ -48,7 +47,6 @@ from .cpp.nls import (NonlinearProblem, NewtonSolver)
 
 from .fem.form import Form
 from .fem.dirichletbc import DirichletBC
-from .fem.interpolation import interpolate
 from .fem.solving import solve
 
 from .functionspace import (FunctionSpace, VectorFunctionSpace,

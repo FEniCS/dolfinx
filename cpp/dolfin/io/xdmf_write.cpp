@@ -6,6 +6,7 @@
 
 #include "xdmf_write.h"
 #include "HDF5File.h"
+#include "cells.h"
 #include "pugixml.hpp"
 #include "xdmf_utils.h"
 #include <boost/algorithm/string.hpp>
@@ -212,7 +213,7 @@ std::vector<std::int64_t> compute_topology_data(const mesh::Mesh& mesh,
 
   int num_nodes = mesh.coordinate_dofs().cell_permutation().size();
   const std::vector<std::uint8_t> perm
-      = mesh::vtk_mapping(mesh.cell_type(), num_nodes);
+      = io::cells::dolfin_to_vtk(mesh.cell_type(), num_nodes);
 
   const int tdim = mesh.topology().dim();
   const auto& global_vertices = mesh.topology().global_indices(0);
@@ -433,10 +434,6 @@ std::string to_string(X x, Y y)
 std::set<std::uint32_t>
 xdmf_write::compute_nonlocal_entities(const mesh::Mesh& mesh, int cell_dim)
 {
-  // If not already numbered, number entities of
-  // order cell_dim so we can get shared_entities
-  mesh::DistributedMeshTools::number_entities(mesh, cell_dim);
-
   const int mpi_rank = dolfin::MPI::rank(mesh.mpi_comm());
   const mesh::Topology& topology = mesh.topology();
   const std::map<std::int32_t, std::set<std::int32_t>>& shared_entities
@@ -461,7 +458,7 @@ xdmf_write::compute_nonlocal_entities(const mesh::Mesh& mesh, int cell_dim)
   {
     // Iterate through ghost cells, adding non-ghost entities which are
     // in lower rank process cells
-    const std::vector<std::int32_t>& cell_owners = topology.cell_owner();
+    const std::vector<std::int32_t>& cell_owners = topology.entity_owner(tdim);
     const std::int32_t ghost_offset_c = topology.ghost_offset(tdim);
     const std::int32_t ghost_offset_e = topology.ghost_offset(cell_dim);
     for (auto& c : mesh::MeshRange(mesh, tdim, mesh::MeshRangeType::GHOST))
@@ -562,7 +559,7 @@ void xdmf_write::add_topology_data(MPI_Comm comm, pugi::xml_node& xml_node,
 
     int num_nodes = mesh.coordinate_dofs().cell_permutation().size();
     const std::vector<std::uint8_t> perm
-        = mesh::vtk_mapping(mesh.cell_type(), num_nodes);
+        = io::cells::dolfin_to_vtk(mesh.cell_type(), num_nodes);
 
     for (std::int32_t c = 0; c < mesh.num_entities(tdim); ++c)
     {

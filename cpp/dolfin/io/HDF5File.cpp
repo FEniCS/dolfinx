@@ -7,6 +7,7 @@
 #include "HDF5File.h"
 #include "HDF5Interface.h"
 #include "HDF5Utility.h"
+#include "cells.h"
 #include <Eigen/Dense>
 #include <boost/filesystem.hpp>
 #include <boost/unordered_map.hpp>
@@ -29,7 +30,6 @@
 #include <dolfin/mesh/MeshValueCollection.h>
 #include <dolfin/mesh/PartitionData.h>
 #include <dolfin/mesh/Partitioning.h>
-#include <dolfin/mesh/cell_types.h>
 #include <fstream>
 #include <iomanip>
 #include <iostream>
@@ -295,7 +295,7 @@ void HDF5File::write(const mesh::Mesh& mesh, int cell_dim,
     // Permutation to VTK ordering
     int num_nodes = mesh.coordinate_dofs().cell_permutation().size();
     const std::vector<std::uint8_t> perm
-        = mesh::vtk_mapping(mesh.cell_type(), num_nodes);
+        = io::cells::dolfin_to_vtk(mesh.cell_type(), num_nodes);
 
     if (cell_dim == tdim or !mpi_io)
     {
@@ -322,9 +322,6 @@ void HDF5File::write(const mesh::Mesh& mesh, int cell_dim,
     }
     else
     {
-      // If not already numbered, number entities of order cell_dim
-      mesh::DistributedMeshTools::number_entities(mesh, cell_dim);
-
       // Drop duplicate topology for shared entities of less than mesh
       // dimension
 
@@ -351,7 +348,7 @@ void HDF5File::write(const mesh::Mesh& mesh, int cell_dim,
         // which are in lower rank process cells to a set for
         // exclusion from output
         const std::vector<std::int32_t>& cell_owners
-            = mesh.topology().cell_owner();
+            = mesh.topology().entity_owner(tdim);
         const std::int32_t ghost_offset_c = mesh.topology().ghost_offset(tdim);
         const std::int32_t ghost_offset_e
             = mesh.topology().ghost_offset(cell_dim);
@@ -524,9 +521,6 @@ HDF5File::read_mesh_function(std::shared_ptr<const mesh::Mesh> mesh,
   const std::int64_t num_global_cells = topology_shape[0];
   const std::size_t vertices_per_cell = topology_shape[1];
   const std::size_t dim = vertices_per_cell - 1;
-
-  // Ensure num_entities_global(cell_dim) is set
-  mesh::DistributedMeshTools::number_entities(*mesh, dim);
 
   if (num_global_cells != mesh->num_entities_global(dim))
   {
@@ -730,7 +724,7 @@ void HDF5File::write_mesh_function(const mesh::MeshFunction<T>& meshfunction,
       // shared from lower rank process cells to a set for exclusion
       // from output
       const std::vector<std::int32_t>& cell_owners
-          = mesh.topology().cell_owner();
+          = mesh.topology().entity_owner(tdim);
       const std::int32_t ghost_offset_c = mesh.topology().ghost_offset(tdim);
       const std::int32_t ghost_offset_e
           = mesh.topology().ghost_offset(cell_dim);

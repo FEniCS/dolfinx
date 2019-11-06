@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 # Copyright (C) 2009-2019 Johan Hake, Chris N. Richardson and Garth N. Wells
 #
 # This file is part of DOLFIN (https://www.fenicsproject.org)
@@ -125,7 +124,7 @@ class Function(ufl.Coefficient):
                 self._cpp_object.interpolate(u._cpp_object)
 
         @_interpolate.register(int)
-        def _(u, verbose=False):
+        def _(u):
             self._cpp_object.interpolate_ptr(u)
 
         _interpolate(u)
@@ -138,7 +137,7 @@ class Function(ufl.Coefficient):
         degree-of-freedom vector is copied.
 
         """
-        return function.Function(self.function_space(),
+        return function.Function(self.function_space,
                                  self._cpp_object.vector.copy())
 
     @property
@@ -211,6 +210,7 @@ class Argument(ufl.Argument):
         ufl.Argument.__init__(self, V.ufl_function_space(), number, part)
         self._V = V
 
+    @property
     def function_space(self):
         """Return the FunctionSpace"""
         return self._V

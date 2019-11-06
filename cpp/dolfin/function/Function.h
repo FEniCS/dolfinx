@@ -11,6 +11,7 @@
 #include <dolfin/common/types.h>
 #include <dolfin/fem/FiniteElement.h>
 #include <dolfin/la/PETScVector.h>
+#include <functional>
 #include <memory>
 #include <petscsys.h>
 #include <petscvec.h>
@@ -92,9 +93,24 @@ public:
   /// @param[in] v The function to be interpolated.
   void interpolate(const Function& v);
 
-  /// Interpolate expression
-  /// @param[in] f The expression to be interpolated.
-  void interpolate(const FunctionSpace::interpolation_function& f);
+  /// Interpolate an expression
+  /// @cond Work around doxygen bug for std::function
+  /// @param[in] f The expression to be interpolated
+  /// @endcond
+  void interpolate(
+      const std::function<Eigen::Array<PetscScalar, Eigen::Dynamic,
+                                       Eigen::Dynamic, Eigen::RowMajor>(
+          const Eigen::Ref<const Eigen::Array<
+              double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>>&)>& f);
+
+  /// Interpolate an expression. This interface uses an expression
+  /// function f that has an in/out argument for the expression values.
+  /// It is primarily to support C code implementations of the
+  /// expression, e.g. using Numba. Generally the interface where the
+  /// expression function is a pure function, i.e. the expression values
+  /// are the return argument, should be preferred.
+  /// @param[in] f The expression to be interpolated
+  void interpolate_c(const FunctionSpace::interpolation_function& f);
 
   /// Return value rank
   int value_rank() const;

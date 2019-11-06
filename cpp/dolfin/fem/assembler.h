@@ -26,18 +26,11 @@ namespace fem
 class DirichletBC;
 class Form;
 
-/// Insertion method for assembly
-enum class InsertMode
-{
-  sum,
-  set,
-};
-
 // -- Scalar ----------------------------------------------------------------
 
-/// Assemble functional into scalar. Scalar is summed across all
-/// processes. Caller is responsible for accumulation across processes.
-/// @param[in] M The form (functional)
+/// Assemble functional into scalar. Caller is responsible for
+/// accumulation across processes.
+/// @param[in] M The form (functional) to assemble
 /// @return The contribution to the form (functional) from the local
 ///         process
 PetscScalar assemble_scalar(const Form& M);
@@ -45,17 +38,14 @@ PetscScalar assemble_scalar(const Form& M);
 // -- Vectors ----------------------------------------------------------------
 
 /// Assemble linear form into an already allocated vector. Ghost
-/// contributions are no accumulated (not sent to owner). Caller is
+/// contributions are not accumulated (not sent to owner). Caller is
 /// responsible for calling VecGhostUpdateBegin/End.
 /// @param[in,out] b The PETsc vector to assemble the form into. The
 ///                  vector must already be initialised with the correct
 ///                  size. The process-local contribution of the form is
 ///                  assembled into this vector.
 /// @param[in] L The linear form to assemble
-/// @param[in] mode The insertion mode to use when adding local
-///                 contributions to the vector b. The default is to sum
-///                 (+=)
-void assemble_vector(Vec b, const Form& L, InsertMode mode = InsertMode::sum);
+void assemble_vector(Vec b, const Form& L);
 
 // FIXME: clarify how x0 is used
 // FIXME: if bcs entries are set
@@ -84,13 +74,13 @@ void assemble_vector(
 ///
 ///   b <- b - scale * A_j (g_j - x0_j)
 ///
-/// where j is a block (nest) index. For non-blocked probelem j = 1. The
+/// where j is a block (nest) index. For a non-blocked problem j = 0. The
 /// boundary conditions bc1 are on the trial spaces V_j. The forms in
-/// [a] must have the same test space as L (from b was built), but the
+/// [a] must have the same test space as L (from which b was built), but the
 /// trial space may differ. If x0 is not supplied, then it is treated as
 /// zero.
 ///
-/// Ghost contributions are no accumulated (not sent to owner). Caller
+/// Ghost contributions are not accumulated (not sent to owner). Caller
 /// is responsible for calling VecGhostUpdateBegin/End.
 void apply_lifting(
     Vec b, const std::vector<std::shared_ptr<const Form>> a,
@@ -107,6 +97,17 @@ void assemble_matrix(Mat A, const std::vector<std::vector<const Form*>> a,
 
 /// Assemble bilinear form into a matrix. Matrix must be initialised.
 /// Does not zero or finalise the matrix.
+/// @param[in,out] A The PETsc matrix to assemble the form into. The
+///                  matrix size/layout must be initialised before
+///                  calling this function. The matrix is not zeroed and
+///                  it is not finalised (shared entries not
+///                  communicated).
+/// @param[in] a The bilinear from to assemble.
+/// @param[in] bcs Boundary conditions to apply. For boundary condition
+///                dofs the row and column are zeroed and the diagonal
+///                value set.
+/// @param[in] diagonal Value to set on the diagonal for boundary
+/// conditions dofs.
 void assemble_matrix(Mat A, const Form& a,
                      std::vector<std::shared_ptr<const DirichletBC>> bcs,
                      double diagonal = 1.0);

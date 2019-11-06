@@ -58,13 +58,8 @@ std::int64_t Topology::size_global(int dim) const
 //-----------------------------------------------------------------------------
 std::int32_t Topology::ghost_offset(int dim) const
 {
-  if (_ghost_offset_index.empty())
-    return 0;
-  else
-  {
-    assert(dim < (int)_ghost_offset_index.size());
-    return _ghost_offset_index[dim];
-  }
+  assert(dim < (int)_ghost_offset_index.size());
+  return _ghost_offset_index[dim];
 }
 //-----------------------------------------------------------------------------
 void Topology::clear(int d0, int d1)
@@ -108,12 +103,6 @@ const std::vector<std::int64_t>& Topology::global_indices(std::size_t d) const
   return _global_indices[d];
 }
 //-----------------------------------------------------------------------------
-bool Topology::have_global_indices(std::size_t dim) const
-{
-  assert(dim < _global_indices.size());
-  return !_global_indices[dim].empty();
-}
-//-----------------------------------------------------------------------------
 std::map<std::int32_t, std::set<std::int32_t>>&
 Topology::shared_entities(int dim)
 {
@@ -128,11 +117,14 @@ Topology::shared_entities(int dim) const
   return _shared_entities[dim];
 }
 //-----------------------------------------------------------------------------
-std::vector<std::int32_t>& Topology::cell_owner() { return _cell_owner; }
-//-----------------------------------------------------------------------------
-const std::vector<std::int32_t>& Topology::cell_owner() const
+std::vector<std::int32_t>& Topology::entity_owner(int dim)
 {
-  return _cell_owner;
+  return _entity_owner[dim];
+}
+//-----------------------------------------------------------------------------
+const std::vector<std::int32_t>& Topology::entity_owner(int dim) const
+{
+  return _entity_owner[dim];
 }
 //-----------------------------------------------------------------------------
 std::vector<bool> Topology::on_boundary(int dim) const
