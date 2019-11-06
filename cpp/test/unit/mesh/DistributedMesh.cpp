@@ -19,10 +19,6 @@ namespace
 {
 void test_distributed_mesh()
 {
-  int argc = 0;
-  char** argv = nullptr;
-  PetscInitialize(&argc, &argv, nullptr, nullptr);
-
   auto mpi_comm = dolfin::MPI::Comm(MPI_COMM_WORLD);
   int mpi_size = dolfin::MPI::size(mpi_comm.comm());
 
