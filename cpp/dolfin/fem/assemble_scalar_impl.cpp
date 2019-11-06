@@ -54,7 +54,7 @@ PetscScalar dolfin::fem::impl::assemble_scalar(const dolfin::fem::Form& M)
   PetscScalar value = 0.0;
   for (int i = 0; i < integrals.num_integrals(type::cell); ++i)
   {
-    auto& fn = integrals.get_tabulate_tensor_function(type::cell, i);
+    auto& fn = integrals.get_tabulate_tensor(type::cell, i);
     const std::vector<std::int32_t>& active_cells
         = integrals.integral_domains(type::cell, i);
     value += fem::impl::assemble_cells(mesh, active_cells, fn, coeffs,
@@ -63,7 +63,7 @@ PetscScalar dolfin::fem::impl::assemble_scalar(const dolfin::fem::Form& M)
 
   for (int i = 0; i < integrals.num_integrals(type::exterior_facet); ++i)
   {
-    auto& fn = integrals.get_tabulate_tensor_function(type::exterior_facet, i);
+    auto& fn = integrals.get_tabulate_tensor(type::exterior_facet, i);
     const std::vector<std::int32_t>& active_facets
         = integrals.integral_domains(type::exterior_facet, i);
     value += fem::impl::assemble_exterior_facets(mesh, active_facets, fn,
@@ -73,7 +73,7 @@ PetscScalar dolfin::fem::impl::assemble_scalar(const dolfin::fem::Form& M)
   for (int i = 0; i < integrals.num_integrals(type::interior_facet); ++i)
   {
     const std::vector<int> c_offsets = M.coefficients().offsets();
-    auto& fn = integrals.get_tabulate_tensor_function(type::interior_facet, i);
+    auto& fn = integrals.get_tabulate_tensor(type::interior_facet, i);
     const std::vector<std::int32_t>& active_facets
         = integrals.integral_domains(type::interior_facet, i);
     value += fem::impl::assemble_interior_facets(
@@ -90,7 +90,7 @@ PetscScalar fem::impl::assemble_cells(
                              const int*)>& fn,
     const Eigen::Array<PetscScalar, Eigen::Dynamic, Eigen::Dynamic,
                        Eigen::RowMajor>& coeffs,
-    const std::vector<PetscScalar> constant_values)
+    const std::vector<PetscScalar>& constant_values)
 {
   const int gdim = mesh.geometry().dim();
   const int tdim = mesh.topology().dim();
@@ -139,7 +139,7 @@ PetscScalar fem::impl::assemble_exterior_facets(
                              const int*)>& fn,
     const Eigen::Array<PetscScalar, Eigen::Dynamic, Eigen::Dynamic,
                        Eigen::RowMajor>& coeffs,
-    const std::vector<PetscScalar> constant_values)
+    const std::vector<PetscScalar>& constant_values)
 {
   const int gdim = mesh.geometry().dim();
   const int tdim = mesh.topology().dim();
@@ -199,7 +199,7 @@ PetscScalar fem::impl::assemble_interior_facets(
     const Eigen::Array<PetscScalar, Eigen::Dynamic, Eigen::Dynamic,
                        Eigen::RowMajor>& coeffs,
     const std::vector<int>& offsets,
-    const std::vector<PetscScalar> constant_values)
+    const std::vector<PetscScalar>& constant_values)
 {
   const int gdim = mesh.geometry().dim();
   const int tdim = mesh.topology().dim();

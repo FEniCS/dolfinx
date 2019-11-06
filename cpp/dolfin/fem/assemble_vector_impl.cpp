@@ -56,8 +56,7 @@ void _lift_bc_cells(
 
   const std::function<void(PetscScalar*, const PetscScalar*, const PetscScalar*,
                            const double*, const int*, const int*)>& fn
-      = a.integrals().get_tabulate_tensor_function(FormIntegrals::Type::cell,
-                                                   0);
+      = a.integrals().get_tabulate_tensor(FormIntegrals::Type::cell, 0);
 
   // Prepare cell geometry
   const int gdim = mesh.geometry().dim();
@@ -183,8 +182,8 @@ void _lift_bc_exterior_facets(
 
   const std::function<void(PetscScalar*, const PetscScalar*, const PetscScalar*,
                            const double*, const int*, const int*)>& fn
-      = a.integrals().get_tabulate_tensor_function(
-          FormIntegrals::Type::exterior_facet, 0);
+      = a.integrals().get_tabulate_tensor(FormIntegrals::Type::exterior_facet,
+                                          0);
 
   // Prepare cell geometry
   const mesh::Connectivity& connectivity_g
@@ -330,8 +329,7 @@ void fem::impl::assemble_vector(
   using type = fem::FormIntegrals::Type;
   for (int i = 0; i < integrals.num_integrals(type::cell); ++i)
   {
-    auto& fn
-        = integrals.get_tabulate_tensor_function(FormIntegrals::Type::cell, i);
+    auto& fn = integrals.get_tabulate_tensor(FormIntegrals::Type::cell, i);
     const std::vector<std::int32_t>& active_cells
         = integrals.integral_domains(type::cell, i);
     fem::impl::assemble_cells(b, mesh, active_cells, dof_array,
@@ -340,8 +338,8 @@ void fem::impl::assemble_vector(
 
   for (int i = 0; i < integrals.num_integrals(type::exterior_facet); ++i)
   {
-    const auto& fn = integrals.get_tabulate_tensor_function(
-        FormIntegrals::Type::exterior_facet, i);
+    const auto& fn
+        = integrals.get_tabulate_tensor(FormIntegrals::Type::exterior_facet, i);
     const std::vector<std::int32_t>& active_facets
         = integrals.integral_domains(type::exterior_facet, i);
     fem::impl::assemble_exterior_facets(b, mesh, active_facets, dofmap, fn,
@@ -351,8 +349,8 @@ void fem::impl::assemble_vector(
   for (int i = 0; i < integrals.num_integrals(type::interior_facet); ++i)
   {
     const std::vector<int> c_offsets = L.coefficients().offsets();
-    const auto& fn = integrals.get_tabulate_tensor_function(
-        FormIntegrals::Type::interior_facet, i);
+    const auto& fn
+        = integrals.get_tabulate_tensor(FormIntegrals::Type::interior_facet, i);
     const std::vector<std::int32_t>& active_facets
         = integrals.integral_domains(type::interior_facet, i);
     fem::impl::assemble_interior_facets(b, mesh, active_facets, dofmap, fn,
@@ -370,7 +368,7 @@ void fem::impl::assemble_cells(
                              const int*)>& kernel,
     const Eigen::Array<PetscScalar, Eigen::Dynamic, Eigen::Dynamic,
                        Eigen::RowMajor>& coeffs,
-    const std::vector<PetscScalar> constant_values)
+    const std::vector<PetscScalar>& constant_values)
 {
   const int gdim = mesh.geometry().dim();
 
@@ -421,7 +419,7 @@ void fem::impl::assemble_exterior_facets(
                              const int*)>& fn,
     const Eigen::Array<PetscScalar, Eigen::Dynamic, Eigen::Dynamic,
                        Eigen::RowMajor>& coeffs,
-    const std::vector<PetscScalar> constant_values)
+    const std::vector<PetscScalar>& constant_values)
 {
   const int gdim = mesh.geometry().dim();
   const int tdim = mesh.topology().dim();
@@ -487,7 +485,7 @@ void fem::impl::assemble_interior_facets(
     const Eigen::Array<PetscScalar, Eigen::Dynamic, Eigen::Dynamic,
                        Eigen::RowMajor>& coeffs,
     const std::vector<int>& offsets,
-    const std::vector<PetscScalar> constant_values)
+    const std::vector<PetscScalar>& constant_values)
 {
   const int gdim = mesh.geometry().dim();
   const int tdim = mesh.topology().dim();
@@ -589,15 +587,18 @@ void fem::impl::assemble_interior_facets(
 void fem::impl::apply_lifting(
     Eigen::Ref<Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1>> b,
     const std::vector<std::shared_ptr<const Form>> a,
-    std::vector<std::vector<std::shared_ptr<const DirichletBC>>> bcs1,
-    std::vector<Eigen::Ref<const Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1>>>
-        x0,
+    const std::vector<std::vector<std::shared_ptr<const DirichletBC>>>& bcs1,
+    const std::vector<
+        Eigen::Ref<const Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1>>>& x0,
     double scale)
 {
   // FIXME: make changes to reactivate this check
-  // if (!x0.empty() and x0.size() != a.size())
-  //   throw std::runtime_error("Mismatch in size between x0 and a in
-  //   assembler.");
+  if (!x0.empty() and x0.size() != a.size())
+  {
+    throw std::runtime_error(
+        "Mismatch in size between x0 and bilinear form in assembler.");
+  }
+
   if (a.size() != bcs1.size())
   {
     throw std::runtime_error(
@@ -618,7 +619,7 @@ void fem::impl::apply_lifting(
           = map1->block_size * (map1->size_local() + map1->num_ghosts());
       bc_markers1.assign(crange, false);
       bc_values1 = Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1>::Zero(crange);
-      for (std::shared_ptr<const DirichletBC>& bc : bcs1[j])
+      for (const std::shared_ptr<const DirichletBC>& bc : bcs1[j])
       {
         bc->mark_dofs(bc_markers1);
         bc->dof_values(bc_values1);
@@ -656,12 +657,6 @@ void fem::impl::lift_bc(
     const Eigen::Ref<const Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1>>& x0,
     double scale)
 {
-  if (b.size() != x0.size())
-  {
-    throw std::runtime_error(
-        "Vector size mismatch in modification for boundary conditions.");
-  }
-
   if (a.integrals().num_integrals(fem::FormIntegrals::Type::cell) > 0)
     _lift_bc_cells(b, a, bc_values1, bc_markers1, x0, scale);
   if (a.integrals().num_integrals(fem::FormIntegrals::Type::exterior_facet) > 0)
