@@ -161,9 +161,11 @@ public:
   std::shared_ptr<const function::FunctionSpace> function_space(int i) const;
 
   /// Register the function for 'tabulate_tensor' for cell integral i
-  void register_tabulate_tensor_cell(
-      int i, void (*fn)(PetscScalar*, const PetscScalar*, const PetscScalar*,
-                        const double*, const int*, const int*));
+  void set_tabulate_tensor(
+      FormIntegrals::Type type, int i,
+      std::function<void(PetscScalar*, const PetscScalar*, const PetscScalar*,
+                         const double*, const int*, const int*)>
+          fn);
 
   /// Set cell domains
   /// @param[in] cell_domains The cell domains

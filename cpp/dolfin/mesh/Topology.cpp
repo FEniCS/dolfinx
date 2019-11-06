@@ -58,13 +58,8 @@ std::int64_t Topology::size_global(int dim) const
 //-----------------------------------------------------------------------------
 std::int32_t Topology::ghost_offset(int dim) const
 {
-  if (_ghost_offset_index.empty())
-    return 0;
-  else
-  {
-    assert(dim < (int)_ghost_offset_index.size());
-    return _ghost_offset_index[dim];
-  }
+  assert(dim < (int)_ghost_offset_index.size());
+  return _ghost_offset_index[dim];
 }
 //-----------------------------------------------------------------------------
 void Topology::clear(int d0, int d1)
@@ -106,12 +101,6 @@ const std::vector<std::int64_t>& Topology::global_indices(std::size_t d) const
 {
   assert(d < _global_indices.size());
   return _global_indices[d];
-}
-//-----------------------------------------------------------------------------
-bool Topology::have_global_indices(std::size_t dim) const
-{
-  assert(dim < _global_indices.size());
-  return !_global_indices[dim].empty();
 }
 //-----------------------------------------------------------------------------
 std::map<std::int32_t, std::set<std::int32_t>>&
