@@ -654,8 +654,6 @@ def test_append_and_load_mesh_value_collections(tempdir, encoding, data_type):
     dtype_str, dtype = data_type
     mesh = UnitCubeMesh(MPI.comm_world, 2, 2, 2)
     mesh.create_connectivity_all()
-    for d in range(mesh.geometry.dim + 1):
-        mesh.create_global_indices(d)
 
     mvc_v = MeshValueCollection(dtype_str, mesh, 0)
     mvc_v.name = "vertices"
