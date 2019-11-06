@@ -34,9 +34,9 @@ def adjoint(form: ufl.Form, reordered_arguments=None) -> ufl.Form:
 
     # Create new Arguments in the same spaces (NB: Order does not matter
     # anymore here because number is absolute)
-    v1 = function.Argument(arguments[1].function_space(),
+    v1 = function.Argument(arguments[1].function_space,
                            arguments[0].number(), arguments[0].part())
-    v0 = function.Argument(arguments[0].function_space(),
+    v0 = function.Argument(arguments[0].function_space,
                            arguments[1].number(), arguments[1].part())
 
     # Return form with swapped arguments as new arguments
