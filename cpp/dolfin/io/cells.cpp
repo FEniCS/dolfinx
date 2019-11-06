@@ -82,8 +82,13 @@ std::vector<std::uint8_t> io::cells::dolfin_to_vtk(mesh::CellType type,
     {
     case 4:
       return {0, 1, 2, 3};
+    case 10:
+      return {0, 1, 2, 3, 9, 6, 8, 7, 5, 4};
+    case 20:
+      return {0,  1,  2, 3, 14, 15, 8,  9,  13, 12,
+              10, 11, 6, 7, 4,  5,  18, 16, 17, 19};
     default:
-      throw std::runtime_error("Higher order tetrahedron not supported.");
+      throw std::runtime_error("Unknown tetrahedron layout");
     }
   case mesh::CellType::quadrilateral:
   {
@@ -232,13 +237,14 @@ std::vector<std::uint8_t> io::cells::vtk_to_dolfin(mesh::CellType type,
     return perm;
   }
   case mesh::CellType::tetrahedron:
-    switch (num_nodes)
-    {
-    case 4:
-      return {0, 1, 2, 3};
-    default:
-      throw std::runtime_error("Higher order tetrahedron not supported.");
-    }
+  {
+    const std::vector<std::uint8_t> reversed
+        = io::cells::dolfin_to_vtk(type, num_nodes);
+    std::vector<std::uint8_t> perm(num_nodes);
+    for (int i = 0; i < num_nodes; ++i)
+      perm[reversed[i]] = i;
+    return perm;
+  }
   case mesh::CellType::quadrilateral:
     return io::cells::vtk_to_tp(type, num_nodes);
   case mesh::CellType::hexahedron:

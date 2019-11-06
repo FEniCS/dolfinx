@@ -517,9 +517,17 @@ int mesh::cell_degree(mesh::CellType type, int num_nodes)
       throw std::runtime_error("Unknown triangle layout.");
     }
   case mesh::CellType::tetrahedron:
-    if (num_nodes != 4)
-      throw std::runtime_error("Higher order tetrahedron not supported");
-    return 1;
+    switch (num_nodes)
+    {
+    case 4:
+      return 1;
+    case 10:
+      return 2;
+    case 20:
+      return 3;
+    default:
+      throw std::runtime_error("Unknown tetrahedron layout.");
+    }
   case mesh::CellType::quadrilateral:
   {
     const int n = std::sqrt(num_nodes);
