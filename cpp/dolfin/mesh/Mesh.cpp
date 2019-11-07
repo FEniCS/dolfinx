@@ -23,7 +23,6 @@
 
 using namespace dolfin;
 using namespace dolfin::mesh;
-using namespace dolfin::io;
 
 namespace
 {
@@ -94,9 +93,13 @@ compute_local_to_global_point_map(
 
   std::vector<int> non_vertex_indices;
   for (int i = 0; i < num_nodes_per_cell; ++i)
+  {
     if (std::find(vertex_indices.begin(), vertex_indices.end(), i)
         == vertex_indices.end())
+    {
       non_vertex_indices.push_back(i);
+    }
+  }
 
   for (std::int32_t c = 0; c < num_cells; ++c)
   {

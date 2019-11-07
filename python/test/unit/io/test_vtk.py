@@ -27,12 +27,12 @@ def file_options():
 
 @pytest.fixture
 def mesh_function_types():
-    return ["size_t", "int", "double", "bool"]
+    return ["size_t", "int", "double"]
 
 
 @pytest.fixture
 def type_conv():
-    return dict(size_t=int, int=int, double=float, bool=bool)
+    return dict(size_t=int, int=int, double=float)
 
 
 @pytest.fixture(scope="function")

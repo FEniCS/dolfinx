@@ -9,7 +9,6 @@
 #include <cfloat>
 #include <cmath>
 #include <dolfin/common/MPI.h>
-#include <dolfin/io/cells.h>
 #include <dolfin/mesh/Partitioning.h>
 
 using namespace dolfin;
@@ -224,13 +223,13 @@ mesh::Mesh build_quad(MPI_Comm comm, const std::array<Eigen::Vector3d, 2>& p,
   Eigen::Array<double, Eigen::Dynamic, 2, Eigen::RowMajor> geom(
       (nx + 1) * (ny + 1), 2);
   std::size_t vertex = 0;
-  for (std::size_t iy = 0; iy <= ny; iy++)
+  for (std::size_t ix = 0; ix <= nx; ix++)
   {
-    double x1 = c + cd * static_cast<double>(iy);
-    for (std::size_t ix = 0; ix <= nx; ix++)
+    double x0 = a + ab * static_cast<double>(ix);
+    for (std::size_t iy = 0; iy <= ny; iy++)
     {
-      geom(vertex, 0) = a + ab * static_cast<double>(ix);
-      geom(vertex, 1) = x1;
+      geom(vertex, 0) = x0;
+      geom(vertex, 1) = c + cd * static_cast<double>(iy);
       ++vertex;
     }
   }
@@ -239,23 +238,19 @@ mesh::Mesh build_quad(MPI_Comm comm, const std::array<Eigen::Vector3d, 2>& p,
   Eigen::Array<std::int64_t, Eigen::Dynamic, 4, Eigen::RowMajor> topo(nx * ny,
                                                                       4);
   std::size_t cell = 0;
-  for (std::size_t iy = 0; iy < ny; iy++)
-    for (std::size_t ix = 0; ix < nx; ix++)
+  for (std::size_t ix = 0; ix < nx; ix++)
+    for (std::size_t iy = 0; iy < ny; iy++)
     {
-      const std::size_t i0 = iy * (nx + 1);
-      topo(cell, 0) = i0 + ix;
-      topo(cell, 1) = i0 + ix + 1;
-      topo(cell, 2) = i0 + ix + nx + 1;
-      topo(cell, 3) = i0 + ix + nx + 2;
+      const std::size_t i0 = ix * (ny + 1);
+      topo(cell, 0) = i0 + iy;
+      topo(cell, 1) = i0 + iy + 1;
+      topo(cell, 2) = i0 + iy + ny + 1;
+      topo(cell, 3) = i0 + iy + ny + 2;
       ++cell;
     }
 
-  Eigen::Array<std::int64_t, Eigen::Dynamic, 4, Eigen::RowMajor> topo_reordered
-      = io::cells::lex_to_dolfin_ordering(topo, mesh::CellType::quadrilateral);
-
   return mesh::Partitioning::build_distributed_mesh(
-      comm, mesh::CellType::quadrilateral, geom, topo_reordered, {},
-      ghost_mode);
+      comm, mesh::CellType::quadrilateral, geom, topo, {}, ghost_mode);
 }
 //-----------------------------------------------------------------------------
 } // namespace
