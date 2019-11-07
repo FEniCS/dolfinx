@@ -19,8 +19,8 @@ from ufl import SpatialCoordinate, div, dx, grad, inner
 
 
 def ManufacturedSolution(degree, gdim):
-    """
-    Generate manufactured solution as function of x,y,z and the corresponding Laplacian
+    """Generate manufactured solution as function of x,y,z and the
+    corresponding Laplacian.
     """
     xvec = sp.symbols("x[0] x[1] x[2]")
     x, y, z = xvec
@@ -36,11 +36,7 @@ def ManufacturedSolution(degree, gdim):
 
 def boundary(x):
     """Boundary marker """
-    condition = np.logical_or(x[:, 0] < 1.0e-6, x[:, 0] > 1.0 - 1.0e-6)
-    for dim in range(1, x.shape[1]):
-        c_dim = np.logical_or(x[:, dim] < 1.0e-6, x[:, dim] > 1.0 - 1.0e-6)
-        condition = np.logical_or(condition, c_dim)
-    return condition
+    return np.full(x.shape[0], True)
 
 
 @pytest.mark.parametrize("degree", [2, 3, 4])
@@ -71,8 +67,8 @@ def test_manufactured_poisson(degree, cell_type, gdim):
     u_exact = eval(str(ManufacturedSolution(degree, gdim)))
 
     f = -div(grad(u_exact))
-    a = inner(grad(u), grad(v)) * dx(metadata={'quadrature_degree': 2*degree})
-    L = inner(f, v) * dx(metadata={'quadrature_degree': 2*degree})
+    a = inner(grad(u), grad(v)) * dx(metadata={'quadrature_degree': 2 * degree})
+    L = inner(f, v) * dx(metadata={'quadrature_degree': 2 * degree})
 
     u_bc = Function(V)
     with u_bc.vector.localForm() as u_local:
@@ -99,7 +95,7 @@ def test_manufactured_poisson(degree, cell_type, gdim):
 
     uh.vector.ghostUpdate(addv=PETSc.InsertMode.INSERT, mode=PETSc.ScatterMode.FORWARD)
 
-    error = assemble_scalar((u_exact - uh)**2 * dx(metadata={'quadrature_degree': 2*degree}))
+    error = assemble_scalar((u_exact - uh)**2 * dx(metadata={'quadrature_degree': 2 * degree}))
     error = MPI.sum(mesh.mpi_comm(), error)
     print(cell_type, degree, error)
 
