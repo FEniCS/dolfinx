@@ -342,6 +342,10 @@ DofMapStructure build_basic_dofmap(const mesh::Mesh& mesh,
   const std::vector<std::vector<std::set<int>>>& entity_dofs
       = element_dof_layout.entity_dofs_all();
 
+  // Compute cell dof permutations
+  const Eigen::Array<int, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
+      permutations = fem::compute_dof_permutations(mesh, element_dof_layout);
+
   // Build dofmaps from ElementDofmap
   for (auto& cell : mesh::MeshRange(mesh, D, mesh::MeshRangeType::ALL))
   {
@@ -377,7 +381,8 @@ DofMapStructure build_basic_dofmap(const mesh::Mesh& mesh,
           const std::int32_t count = std::distance(e_dofs->begin(), dof_local);
           const std::int32_t dof
               = offset_local + num_entity_dofs * e_index_local + count;
-          dofmap.dof(cell.index(), *dof_local) = dof;
+          dofmap.dof(cell.index(), permutations(cell.index(), *dof_local))
+              = dof;
           dofmap.global_indices[dof]
               = offset_global + num_entity_dofs * e_index_global + count;
         }
