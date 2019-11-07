@@ -66,8 +66,14 @@ mesh = BoxMesh(
     MPI.comm_world, [np.array([0.0, 0.0, 0.0]),
                      np.array([2.0, 1.0, 1.0])], [12, 12, 12],
     CellType.tetrahedron, dolfin.cpp.mesh.GhostMode.none)
+mesh = dolfin.cpp.refinement.refine(mesh, False)
+mesh = dolfin.cpp.refinement.refine(mesh, False)
+mesh = dolfin.cpp.refinement.refine(mesh, False)
+# cpp.mesh.Ordering.order_simplex(mesh)
+
 cmap = dolfin.fem.create_coordinate_map(mesh.ufl_domain())
 mesh.geometry.coord_mapping = cmap
+
 
 # Function to mark inner surface of pulley
 # def inner_surface(x, on_boundary):
@@ -94,16 +100,17 @@ nu = 0.0
 mu = E / (2.0 * (1.0 + nu))
 lmbda = E * nu / ((1.0 + nu) * (1.0 - 2.0 * nu))
 
-# Stress computation
-
 
 def sigma(v):
+    """Stress evaluations"""
     return 2.0 * mu * sym(grad(v)) + lmbda * tr(sym(grad(v))) * Identity(
         len(v))
 
 
 # Create function space
 V = VectorFunctionSpace(mesh, ("Lagrange", 1))
+exit(0)
+
 
 # Define variational problem
 u = TrialFunction(V)

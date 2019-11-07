@@ -213,13 +213,13 @@ tetrahedron_rotations_and_reflection(const int volume_dofs, const int blocksize)
   return {rotation1, rotation2, rotation3, reflection};
 }
 //-----------------------------------------------------------------------------
-Eigen::Array<std::int8_t, Eigen::Dynamic, Eigen::Dynamic>
+Eigen::Array<std::int8_t, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
 compute_ordering_triangle(const mesh::Mesh& mesh)
 {
   const int num_cells = mesh.num_entities(mesh.topology().dim());
   const int num_permutations = get_num_permutations(mesh.cell_type());
-  Eigen::Array<std::int8_t, Eigen::Dynamic, Eigen::Dynamic> cell_orders(
-      num_cells, num_permutations);
+  Eigen::Array<std::int8_t, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
+      cell_orders(num_cells, num_permutations);
 
   // Set orders for each cell
   for (int cell_n = 0; cell_n < num_cells; ++cell_n)
@@ -242,13 +242,13 @@ compute_ordering_triangle(const mesh::Mesh& mesh)
   return cell_orders;
 }
 //-----------------------------------------------------------------------------
-Eigen::Array<std::int8_t, Eigen::Dynamic, Eigen::Dynamic>
+Eigen::Array<std::int8_t, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
 compute_ordering_tetrahedron(const mesh::Mesh& mesh)
 {
   const int num_cells = mesh.num_entities(mesh.topology().dim());
   const int num_permutations = get_num_permutations(mesh.cell_type());
-  Eigen::Array<std::int8_t, Eigen::Dynamic, Eigen::Dynamic> cell_orders(
-      num_cells, num_permutations);
+  Eigen::Array<std::int8_t, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
+      cell_orders(num_cells, num_permutations);
 
   // Set orders for each cell
   for (int cell_n = 0; cell_n < num_cells; ++cell_n)
@@ -294,7 +294,7 @@ compute_ordering_tetrahedron(const mesh::Mesh& mesh)
   return cell_orders;
 }
 //-----------------------------------------------------------------------------
-Eigen::Array<int, Eigen::Dynamic, Eigen::Dynamic>
+Eigen::Array<int, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
 generate_permutations_triangle(const mesh::Mesh& mesh,
                                const fem::ElementDofLayout& dof_layout)
 {
@@ -308,8 +308,8 @@ generate_permutations_triangle(const mesh::Mesh& mesh,
 
   int perm_n = 0;
 
-  Eigen::Array<int, Eigen::Dynamic, Eigen::Dynamic> permutations(
-      num_permutations, dof_count);
+  Eigen::Array<int, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
+      permutations(num_permutations, dof_count);
   for (int i = 0; i < permutations.cols(); ++i)
     permutations.col(i) = i;
 
@@ -340,7 +340,7 @@ generate_permutations_triangle(const mesh::Mesh& mesh,
   return permutations;
 }
 //-----------------------------------------------------------------------------
-Eigen::Array<int, Eigen::Dynamic, Eigen::Dynamic>
+Eigen::Array<int, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
 generate_permutations_tetrahedron(const mesh::Mesh& mesh,
                                   const fem::ElementDofLayout& dof_layout)
 {
@@ -356,8 +356,8 @@ generate_permutations_tetrahedron(const mesh::Mesh& mesh,
 
   int perm_n = 0;
 
-  Eigen::Array<int, Eigen::Dynamic, Eigen::Dynamic> permutations(
-      num_permutations, dof_count);
+  Eigen::Array<int, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
+      permutations(num_permutations, dof_count);
   for (int i = 0; i < permutations.cols(); ++i)
     permutations.col(i) = i;
 
@@ -402,7 +402,7 @@ generate_permutations_tetrahedron(const mesh::Mesh& mesh,
   return permutations;
 }
 //-----------------------------------------------------------------------------
-Eigen::Array<int, Eigen::Dynamic, Eigen::Dynamic>
+Eigen::Array<int, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
 generate_permutations(const mesh::Mesh& mesh,
                       const fem::ElementDofLayout& dof_layout)
 {
@@ -439,13 +439,13 @@ generate_permutations(const mesh::Mesh& mesh,
 
   // If there are subdofmaps
   const int num_permutations = get_num_permutations(mesh.cell_type());
-  Eigen::Array<int, Eigen::Dynamic, Eigen::Dynamic> output(
+  Eigen::Array<int, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor> output(
       num_permutations, dof_layout.num_dofs());
   for (int i = 0; i < dof_layout.num_sub_dofmaps(); ++i)
   {
     const std::vector<int> sub_view = dof_layout.sub_view({i});
-    const Eigen::Array<int, Eigen::Dynamic, Eigen::Dynamic> sub_perm
-        = generate_permutations(mesh, *dof_layout.sub_dofmap({i}));
+    const Eigen::Array<int, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
+        sub_perm = generate_permutations(mesh, *dof_layout.sub_dofmap({i}));
     for (int p = 0; p < num_permutations; ++p)
       for (std::size_t j = 0; j < sub_view.size(); ++j)
         output(p, sub_view[j]) = sub_view[sub_perm(p, j)];
@@ -456,14 +456,15 @@ generate_permutations(const mesh::Mesh& mesh,
 } // namespace
 
 //-----------------------------------------------------------------------------
-Eigen::Array<int, Eigen::Dynamic, Eigen::Dynamic>
+Eigen::Array<int, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
 fem::compute_dof_permutations(const mesh::Mesh& mesh,
                               const fem::ElementDofLayout& dof_layout)
 {
   // Build ordering in each cell. It stores the number of times each row
   // of _permutations should be applied on each cell Will have shape
   // (number of cells) × (number of permutations)
-  Eigen::Array<std::int8_t, Eigen::Dynamic, Eigen::Dynamic> cell_ordering;
+  Eigen::Array<std::int8_t, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
+      cell_ordering;
   switch (mesh.cell_type())
   {
   case (mesh::CellType::triangle):
@@ -495,18 +496,22 @@ fem::compute_dof_permutations(const mesh::Mesh& mesh,
   // reflection of a mesh entity Will have shape (number of
   // permutations) × (number of dofs on reference) where (number of
   // permutations) = (num_edges + 2*num_faces + 4*num_volumes)
-  const Eigen::Array<int, Eigen::Dynamic, Eigen::Dynamic> permutations
-      = generate_permutations(mesh, dof_layout);
+  const Eigen::Array<int, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
+      permutations = generate_permutations(mesh, dof_layout);
 
   // Compute permutations on each cell
-  Eigen::Array<int, Eigen::Dynamic, Eigen::Dynamic> p(cell_ordering.rows(),
-                                                      permutations.cols());
+  Eigen::Array<int, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor> p(
+      cell_ordering.rows(), permutations.cols());
   for (int i = 0; i < p.cols(); ++i)
     p.col(i) = i;
+
   // For each cell
   std::vector<int> temp(p.cols());
   for (int cell = 0; cell < cell_ordering.rows(); ++cell)
   {
+    for (int k = 0; k < p.cols(); ++k)
+      temp[k] = p(cell, k);
+
     // For each permutation in permutations
     for (int i = 0; i < cell_ordering.cols(); ++i)
     {
@@ -514,8 +519,6 @@ fem::compute_dof_permutations(const mesh::Mesh& mesh,
       // should be applied
       for (int j = 0; j < cell_ordering(cell, i); ++j)
       {
-        for (int k = 0; k < p.cols(); ++k)
-          temp[k] = p(cell, k);
         for (int k = 0; k < p.cols(); ++k)
           p(cell, permutations(i, k)) = temp[k];
       }

@@ -25,7 +25,7 @@ class ElementDofLayout;
 /// @param[in] mesh The mesh
 /// @param[in] dof_layout The layout of dofs on a each cell
 /// @return The permutations
-Eigen::Array<int, Eigen::Dynamic, Eigen::Dynamic>
+Eigen::Array<int, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
 compute_dof_permutations(const mesh::Mesh& mesh,
                          const fem::ElementDofLayout& dof_layout);
 
