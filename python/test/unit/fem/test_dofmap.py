@@ -11,7 +11,7 @@ import sys
 import numpy as np
 import pytest
 
-from dolfin import (MPI, FunctionSpace, MeshEntity, UnitCubeMesh,
+from dolfin import (MPI, FunctionSpace, MeshEntity, UnitCubeMesh, Mesh,
                     UnitIntervalMesh, UnitSquareMesh, VectorFunctionSpace, cpp,
                     fem)
 from dolfin.cpp.mesh import CellType, GhostMode
@@ -492,8 +492,8 @@ def test_triangle_dof_ordering(space_type):
     from itertools import permutations
     points = np.array([[0, 0], [1, 0], [0, 1]])
     cells = list(permutations(range(3)))
-    mesh = cpp.mesh.Mesh(MPI.comm_world, CellType.triangle, points,
-                         np.array(cells), [], cpp.mesh.GhostMode.none)
+    mesh = Mesh(MPI.comm_world, CellType.triangle, points,
+                np.array(cells), [], cpp.mesh.GhostMode.none)
     V = FunctionSpace(mesh, space_type)
 
     dofmap = V.dofmap
@@ -547,8 +547,8 @@ def test_tetrahedron_dof_ordering(space_type):
     from itertools import permutations
     points = np.array([[0, 0, 0], [1, 0, 0], [0, 1, 0], [0, 0, 1]])
     cells = list(permutations(range(4)))
-    mesh = cpp.mesh.Mesh(MPI.comm_world, CellType.tetrahedron, points,
-                         np.array(cells), [], cpp.mesh.GhostMode.none)
+    mesh = Mesh(MPI.comm_world, CellType.tetrahedron, points,
+                np.array(cells), [], cpp.mesh.GhostMode.none)
     V = FunctionSpace(mesh, space_type)
 
     dofmap = V.dofmap
@@ -588,7 +588,6 @@ def test_tetrahedron_dof_ordering(space_type):
     for i in faces[0]:
         for j in faces[1:]:
             assert np.allclose(faces[0][i], j[i])
-
 
 
 @skip_in_parallel
