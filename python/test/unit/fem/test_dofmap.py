@@ -568,7 +568,10 @@ def test_high_order_lagrange():
                                                          [0.5, 2, 0], [0.5, 2, 3], [0.5, 2, 1.5],
                                                          [0.5, 1, 0], [0.5, 1, 3], [0.5, 1, 1.5]]),
                                                CellType.hexahedron)])
-def test_higher_order_dofmap(points, celltype):
+def test_higher_order_coordinate_map(points, celltype):
+    """
+    Computes physical coordinates of a cell, based on the coordinate map.
+    """
     cells = np.array([range(len(points))])
     mesh = Mesh(MPI.comm_world, celltype, points,
                 cells, [], GhostMode.none)
@@ -598,7 +601,10 @@ def test_higher_order_dofmap(points, celltype):
 
 @skip_in_parallel
 @pytest.mark.parametrize("order", [1, 2, 3])
-def test_higher_order_tetra_map(order):
+def test_higher_order_tetra_coordinate_map(order):
+    """
+    Computes physical coordinates of a cell, based on the coordinate map.
+    """
     celltype = CellType.tetrahedron
     points = np.array([[0, 0, 0], [1, 0, 0], [0, 2, 0], [0, 0, 3],
                        [0, 4 / 3, 1], [0, 2 / 3, 2],

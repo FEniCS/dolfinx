@@ -554,9 +554,9 @@ int mesh::cell_degree(mesh::CellType type, int num_nodes)
   }
 }
 
-std::vector<int> mesh::cell_vertex_index(mesh::CellType type, int num_nodes,
-                                         int num_vertices_per_cell)
+std::vector<int> mesh::cell_vertex_indices(mesh::CellType type, int num_nodes)
 {
+  int num_vertices_per_cell = mesh::num_cell_vertices(type);
   int degree = mesh::cell_degree(type, num_nodes);
   switch (type)
   {

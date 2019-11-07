@@ -67,14 +67,14 @@ vtk_to_dolfin_ordering(
 /// as specified in FIAT.
 /// Lexicographical ordering is defined as
 ///   *--*--*   6--7--8  y
-///   |     |   |     |
-///   *  *  *   3  4  5
+///   |     |   |     |  ^
+///   *  *  *   3  4  5  |
 ///   |     |   |     |  |
 ///   *--*--*   0--1--2  ---> x
 /// Tensor product
 ///   *--*--*   1--7--4  y
-///   |     |   |     |
-///   *  *  *   2  8  5
+///   |     |   |     |  ^
+///   *  *  *   2  8  5  |
 ///   |     |   |     |  |
 ///   *--*--*   0--6--3  ---> x
 /// @param[in] cells array containing cell connectivities in VTK format

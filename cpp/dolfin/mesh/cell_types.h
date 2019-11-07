@@ -81,12 +81,12 @@ cell_entity_closure(mesh::CellType cell_type);
 /// Find the order of a cell given the number of nodes in the element
 int cell_degree(CellType type, int num_nodes);
 
-/// Find indices for vertices for a cell
+/// Return the indices of the nodes corresponding to the vertices of a cell.
+/// For higher order cells, a cell is defined by more nodes than the vertices.
 /// @param[in] type The cell shape
-/// @param[in] num_nodes The number of cell 'nodes'
-/// @param[in] num_vertices_per_cell Number of vertices per cell
+/// @param[in] num_nodes The number of nodes defining the cell.
 /// @return List of vertex-indices
- std::vector<int> cell_vertex_index(mesh::CellType type, int num_nodes, int num_vertices_per_cell);
+ std::vector<int> cell_vertex_indices(mesh::CellType type, int num_nodes);
 
 } // namespace mesh
 } // namespace dolfin

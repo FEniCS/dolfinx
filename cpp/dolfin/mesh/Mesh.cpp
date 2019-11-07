@@ -88,8 +88,8 @@ compute_local_to_global_point_map(
 
   const std::int32_t num_cells = cell_nodes.rows();
   const std::int32_t num_nodes_per_cell = cell_nodes.cols();
-  const std::vector<int> vertex_indices = mesh::cell_vertex_index(
-      type, num_nodes_per_cell, num_vertices_per_cell);
+  const std::vector<int> vertex_indices
+      = mesh::cell_vertex_indices(type, num_nodes_per_cell);
 
   std::vector<int> non_vertex_indices;
   for (int i = 0; i < num_nodes_per_cell; ++i)
@@ -326,7 +326,7 @@ Mesh::Mesh(
   Eigen::Array<std::int32_t, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
       vertex_cols(cells.rows(), num_vertices_per_cell);
   std::vector<int> vertex_indices
-      = mesh::cell_vertex_index(type, cells.cols(), num_vertices_per_cell);
+      = mesh::cell_vertex_indices(type, cells.cols());
   for (std::int32_t i = 0; i < num_vertices_per_cell; ++i)
     vertex_cols.col(i) = coordinate_nodes.col(vertex_indices[i]);
   auto cv = std::make_shared<Connectivity>(vertex_cols);
