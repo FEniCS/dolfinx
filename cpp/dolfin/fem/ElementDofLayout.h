@@ -38,7 +38,8 @@ public:
       const std::vector<std::vector<std::set<int>>>& entity_dofs,
       const std::vector<int>& parent_map,
       const std::vector<std::shared_ptr<const ElementDofLayout>> sub_dofmaps,
-      const mesh::CellType cell_type);
+      const mesh::CellType cell_type,
+      const std::array<int, 4> entity_block_size);
 
   /// Copy-like constructor with option to reset (clear) parent map
   ElementDofLayout(const ElementDofLayout& element_dof_layout,
@@ -112,6 +113,9 @@ public:
   /// Block size
   int block_size() const;
 
+  /// Block size of entity
+  int entity_block_size(const int dim) const;
+
   /// True iff dof map is a view into another map
   ///
   /// @returns bool
@@ -145,6 +149,8 @@ private:
 
   // List of sub dofmaps
   std::vector<std::shared_ptr<const ElementDofLayout>> _sub_dofmaps;
+
+  std::array<int, 4> _entity_block_size;
 };
 } // namespace fem
 } // namespace dolfin

@@ -11,7 +11,7 @@ import sys
 import numpy as np
 import pytest
 
-from dolfin import (Mesh, MPI, FunctionSpace, MeshEntity, UnitCubeMesh,
+from dolfin import (MPI, FunctionSpace, MeshEntity, UnitCubeMesh,
                     UnitIntervalMesh, UnitSquareMesh, VectorFunctionSpace, cpp,
                     fem)
 from dolfin.cpp.mesh import CellType, GhostMode
@@ -469,63 +469,126 @@ def test_readonly_view_local_to_global_unwoned(mesh):
 
 
 @skip_in_parallel
-def test_high_order_lagrange():
-    """Test simple P3 Lagrange dofmap. Checks that dofs on a shared edged match."""
-    def check(mesh, edges):
-        """Compute the physical coordinates of the dofs on the given local edges"""
-        V = FunctionSpace(mesh, ("Lagrange", 3))
+@skip_in_parallel
+@pytest.mark.parametrize('space_type', [
+    ("P", 1), ("P", 2), ("P", 3), ("P", 4),
+    ("N1curl", 1),
+    pytest.param(("N1curl", 2), marks=pytest.mark.xfail),
+    pytest.param(("N1curl", 3), marks=pytest.mark.xfail),
+    pytest.param(("N1curl", 4), marks=pytest.mark.xfail),
+    ("RT", 1), ("RT", 2), ("RT", 3), ("RT", 4),
+    ("BDM", 1),
+    pytest.param(("BDM", 2), marks=pytest.mark.xfail),
+    pytest.param(("BDM", 3), marks=pytest.mark.xfail),
+    pytest.param(("BDM", 4), marks=pytest.mark.xfail),
+    ("N2curl", 1),
+    pytest.param(("N2curl", 2), marks=pytest.mark.xfail),
+    pytest.param(("N2curl", 3), marks=pytest.mark.xfail),
+    pytest.param(("N2curl", 4), marks=pytest.mark.xfail),
+])
+def test_triangle_dof_ordering(space_type):
+    """Checks that dofs on shared triangle edges match up"""
+    # Create simple triangle mesh
+    from itertools import permutations
+    points = np.array([[0, 0], [1, 0], [0, 1]])
+    cells = list(permutations(range(3)))
+    mesh = cpp.mesh.Mesh(MPI.comm_world, CellType.triangle, points,
+                         np.array(cells), [], cpp.mesh.GhostMode.none)
+    V = FunctionSpace(mesh, space_type)
 
-        assert len(edges) == 2
-        dofmap = V.dofmap
-        dofs = [dofmap.cell_dofs(c) for c in range(len(edges))]
-        edge_dofs_local = [dofmap.dof_layout.entity_dofs(1, e) for e in edges]
-        for edofs in edge_dofs_local:
-            assert len(edofs) == 2
-        edge_dofs = [dofs[0][edge_dofs_local[0]], dofs[1][edge_dofs_local[1]]]
-        assert set(edge_dofs[0]) == set(edge_dofs[1])
+    dofmap = V.dofmap
+
+    edges = []
+
+    for face in range(6):
+        dofs = dofmap.cell_dofs(face)
+        edge_dofs_local = []
+        for i in range(3):
+            edge_dofs_local += list(dofmap.dof_layout.entity_dofs(1, i))
+        edge_dofs = [dofs[i] for i in edge_dofs_local]
 
         X = V.element.dof_reference_coordinates()
         coord_dofs = mesh.coordinate_dofs().entity_points()
         x_g = mesh.geometry.points
-        x_dofs = []
         cmap = fem.create_coordinate_map(mesh.ufl_domain())
-        for c in range(len(edges)):
-            x_coord_new = np.zeros([3, 2])
-            for v in range(3):
-                x_coord_new[v] = x_g[coord_dofs[c, v], :2]
-            x = X.copy()
-            cmap.push_forward(x, X, x_coord_new)
-            x_dofs.append(x[edge_dofs_local[c]])
 
-        return x_dofs
+        x_coord_new = np.zeros([3, 2])
+        for v in range(3):
+            x_coord_new[v] = x_g[coord_dofs[face, v], :2]
+        x = X.copy()
+        cmap.push_forward(x, X, x_coord_new)
 
-    # Create simple mesh
-    points = np.array([[0.0, 0.0], [1.0, 0.0], [1.0, 1.0], [0.0, 1.0]])
-    cells = np.array([[0, 1, 2], [2, 3, 0], ])
-    mesh = Mesh(MPI.comm_world, CellType.triangle, points,
-                cells, [], cpp.mesh.GhostMode.none)
-    mesh.create_connectivity(2, 1)
+        edges.append({i: j for i, j in zip(edge_dofs, x[edge_dofs_local])})
 
-    c21 = mesh.topology.connectivity(2, 1)
-    e0 = c21.connections(0)[1]
-    e1 = c21.connections(1)[1]
-    assert e0 == e1
+    for i in edges[0]:
+        for j in edges[1:]:
+            assert np.allclose(edges[0][i], j[i])
 
-    # Check un-ordered mesh
-    x0, x1 = check(mesh, [1, 1])
-    assert not np.allclose(x0, x1)
-    x0.sort(axis=0)
-    x1.sort(axis=0)
-    assert np.allclose(x0, x1)
 
-    # Check ordered mesh
-    cpp.mesh.Ordering.order_simplex(mesh)
-    c21 = mesh.topology.connectivity(2, 1)
-    e0 = c21.connections(0)[1]
-    e1 = c21.connections(1)[2]
-    assert e0 == e1
-    x0, x1 = check(mesh, [1, 2])
-    assert np.allclose(x0, x1)
+@skip_in_parallel
+@pytest.mark.parametrize('space_type', [
+    ("P", 1), ("P", 2), ("P", 3), ("P", 4),
+    ("N1curl", 1), ("N1curl", 2),
+    pytest.param(("N1curl", 3), marks=pytest.mark.xfail),
+    pytest.param(("N1curl", 4), marks=pytest.mark.xfail),
+    ("RT", 1), ("RT", 2), ("RT", 3), ("RT", 4),
+    ("BDM", 1),
+    pytest.param(("BDM", 2), marks=pytest.mark.xfail),
+    pytest.param(("BDM", 3), marks=pytest.mark.xfail),
+    pytest.param(("BDM", 4), marks=pytest.mark.xfail),
+    ("N2curl", 1),
+    pytest.param(("N2curl", 2), marks=pytest.mark.xfail),
+    pytest.param(("N2curl", 3), marks=pytest.mark.xfail),
+    pytest.param(("N2curl", 4), marks=pytest.mark.xfail),
+])
+def test_tetrahedron_dof_ordering(space_type):
+    """Checks that dofs on shared tetrahedron edges and faces match up"""
+    # Create simple tetrahedron mesh
+    from itertools import permutations
+    points = np.array([[0, 0, 0], [1, 0, 0], [0, 1, 0], [0, 0, 1]])
+    cells = list(permutations(range(4)))
+    mesh = cpp.mesh.Mesh(MPI.comm_world, CellType.tetrahedron, points,
+                         np.array(cells), [], cpp.mesh.GhostMode.none)
+    V = FunctionSpace(mesh, space_type)
+
+    dofmap = V.dofmap
+
+    edges = []
+    faces = []
+
+    for tet in range(len(cells)):
+        dofs = dofmap.cell_dofs(tet)
+        edge_dofs_local = []
+        for i in range(6):
+            edge_dofs_local += list(dofmap.dof_layout.entity_dofs(1, i))
+        edge_dofs = [dofs[i] for i in edge_dofs_local]
+
+        face_dofs_local = []
+        for i in range(4):
+            face_dofs_local += list(dofmap.dof_layout.entity_dofs(2, i))
+        face_dofs = [dofs[i] for i in face_dofs_local]
+
+        X = V.element.dof_reference_coordinates()
+        coord_dofs = mesh.coordinate_dofs().entity_points()
+        x_g = mesh.geometry.points
+        cmap = fem.create_coordinate_map(mesh.ufl_domain())
+
+        x_coord_new = np.zeros([4, 3])
+        for v in range(4):
+            x_coord_new[v] = x_g[coord_dofs[tet, v], :3]
+        x = X.copy()
+        cmap.push_forward(x, X, x_coord_new)
+
+        edges.append({i: j for i, j in zip(edge_dofs, x[edge_dofs_local])})
+        faces.append({i: j for i, j in zip(face_dofs, x[face_dofs_local])})
+
+    for i in edges[0]:
+        for j in edges[1:]:
+            assert np.allclose(edges[0][i], j[i])
+    for i in faces[0]:
+        for j in faces[1:]:
+            assert np.allclose(faces[0][i], j[i])
+
 
 
 @skip_in_parallel

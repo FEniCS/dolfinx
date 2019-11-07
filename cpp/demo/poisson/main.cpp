@@ -91,7 +91,6 @@
 #include <cfloat>
 #include <dolfin.h>
 #include <dolfin/function/Constant.h>
-#include <dolfin/mesh/Ordering.h>
 
 using namespace dolfin;
 
@@ -121,8 +120,6 @@ int main(int argc, char* argv[])
   auto mesh = std::make_shared<mesh::Mesh>(generation::RectangleMesh::create(
       MPI_COMM_WORLD, pt, {{32, 32}}, mesh::CellType::triangle,
       mesh::GhostMode::none));
-
-  mesh::Ordering::order_simplex(*mesh);
 
   auto V = fem::create_functionspace(poisson_functionspace_create, mesh);
 
