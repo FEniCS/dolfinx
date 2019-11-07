@@ -5,24 +5,23 @@
 # SPDX-License-Identifier:    LGPL-3.0-or-later
 
 import math
-import sys
 import os
+import sys
 
-import numpy
+import numpy as np
 import pytest
+from dolfin_utils.test.fixtures import tempdir
+from dolfin_utils.test.skips import skip_in_parallel
 
 import dolfin
 import FIAT
-
-from dolfin import (MPI, Mesh, BoxMesh, MeshEntity, MeshFunction, RectangleMesh,
-                    UnitCubeMesh, UnitIntervalMesh, UnitSquareMesh, cpp)
+from dolfin import (MPI, BoxMesh, Mesh, MeshEntity, MeshFunction,
+                    RectangleMesh, UnitCubeMesh, UnitIntervalMesh,
+                    UnitSquareMesh, cpp)
 from dolfin.cpp.mesh import CellType, is_simplex
 from dolfin.fem import assemble_scalar
 from dolfin.io import XDMFFile
-from dolfin_utils.test.fixtures import tempdir
-from dolfin_utils.test.skips import skip_in_parallel
 from ufl import dx
-
 
 assert (tempdir)
 
@@ -39,8 +38,8 @@ def mesh1d():
 def mesh2d():
     """Create 2D mesh with one equilateral triangle"""
     mesh2d = RectangleMesh(
-        MPI.comm_world, [numpy.array([0.0, 0.0, 0.0]),
-                         numpy.array([1., 1., 0.0])], [1, 1],
+        MPI.comm_world, [np.array([0.0, 0.0, 0.0]),
+                         np.array([1., 1., 0.0])], [1, 1],
         CellType.triangle, cpp.mesh.GhostMode.none, 'left')
     mesh2d.geometry.points[3, :2] += 0.5 * (math.sqrt(3.0) - 1.0)
     return mesh2d
@@ -50,10 +49,10 @@ def mesh2d():
 def mesh3d():
     """Create 3D mesh with regular tetrahedron and degenerate cells"""
     mesh3d = UnitCubeMesh(MPI.comm_world, 1, 1, 1)
-    i1 = numpy.where((mesh3d.geometry.points
-                      == (0, 1, 0)).all(axis=1))[0][0]
-    i2 = numpy.where((mesh3d.geometry.points
-                      == (1, 1, 1)).all(axis=1))[0][0]
+    i1 = np.where((mesh3d.geometry.points
+                   == (0, 1, 0)).all(axis=1))[0][0]
+    i2 = np.where((mesh3d.geometry.points
+                   == (1, 1, 1)).all(axis=1))[0][0]
 
     mesh3d.geometry.points[i1][0] = 1.0
     mesh3d.geometry.points[i2][1] = 0.0
@@ -91,8 +90,8 @@ def square():
 @pytest.fixture
 def rectangle():
     return RectangleMesh(
-        MPI.comm_world, [numpy.array([0.0, 0.0, 0.0]),
-                         numpy.array([2.0, 2.0, 0.0])], [5, 5],
+        MPI.comm_world, [np.array([0.0, 0.0, 0.0]),
+                         np.array([2.0, 2.0, 0.0])], [5, 5],
         CellType.triangle, cpp.mesh.GhostMode.none)
 
 
@@ -103,8 +102,8 @@ def cube():
 
 @pytest.fixture
 def box():
-    return BoxMesh(MPI.comm_world, [numpy.array([0, 0, 0]),
-                                    numpy.array([2, 2, 2])], [2, 2, 5], CellType.tetrahedron,
+    return BoxMesh(MPI.comm_world, [np.array([0, 0, 0]),
+                                    np.array([2, 2, 2])], [2, 2, 5], CellType.tetrahedron,
                    cpp.mesh.GhostMode.none)
 
 
@@ -163,11 +162,11 @@ def test_mesh_construction_pygmsh():
         pygmsh_mesh = pygmsh.generate_mesh(geom)
         points, cells = pygmsh_mesh.points, pygmsh_mesh.cells
     else:
-        points = numpy.zeros([0, 3])
+        points = np.zeros([0, 3])
         cells = {
-            "tetra": numpy.zeros([0, 4], dtype=numpy.int64),
-            "triangle": numpy.zeros([0, 3], dtype=numpy.int64),
-            "line": numpy.zeros([0, 2], dtype=numpy.int64)
+            "tetra": np.zeros([0, 4], dtype=np.int64),
+            "triangle": np.zeros([0, 3], dtype=np.int64),
+            "line": np.zeros([0, 2], dtype=np.int64)
         }
 
     mesh = Mesh(MPI.comm_world, dolfin.cpp.mesh.CellType.tetrahedron, points,
@@ -199,11 +198,11 @@ def test_mesh_construction_pygmsh():
         points, cells = pygmsh_mesh.points, pygmsh_mesh.cells
         print("End Generate mesh", cells.keys())
     else:
-        points = numpy.zeros([0, 3])
+        points = np.zeros([0, 3])
         cells = {
-            "tetra10": numpy.zeros([0, 10], dtype=numpy.int64),
-            "triangle6": numpy.zeros([0, 6], dtype=numpy.int64),
-            "line3": numpy.zeros([0, 3], dtype=numpy.int64)
+            "tetra10": np.zeros([0, 10], dtype=np.int64),
+            "triangle6": np.zeros([0, 6], dtype=np.int64),
+            "line3": np.zeros([0, 3], dtype=np.int64)
         }
 
     mesh = Mesh(MPI.comm_world, dolfin.cpp.mesh.CellType.tetrahedron, points,
@@ -316,7 +315,7 @@ def test_cell_h(c0, c1, c5):
 @skip_in_parallel
 def test_cell_radius_ratio(c0, c1, c5):
     assert cpp.mesh.radius_ratio(c0.mesh(), [c0.index()]) == pytest.approx(math.sqrt(3.0) - 1.0)
-    assert numpy.isnan(cpp.mesh.radius_ratio(c1.mesh(), [c1.index()]))
+    assert np.isnan(cpp.mesh.radius_ratio(c1.mesh(), [c1.index()]))
     assert cpp.mesh.radius_ratio(c5.mesh(), [c5.index()]) == pytest.approx(1.0)
 
 
@@ -387,9 +386,6 @@ def test_mesh_topology_against_fiat(mesh_factory, ghost_mode=cpp.mesh.GhostMode.
     if not is_simplex(mesh.cell_type):
         return
 
-    # Order mesh
-    cpp.mesh.Ordering.order_simplex(mesh)
-
     # Create FIAT cell
     cell_name = cpp.mesh.to_string(mesh.cell_type)
     fiat_cell = FIAT.ufc_cell(cell_name)
@@ -415,9 +411,9 @@ def test_mesh_topology_against_fiat(mesh_factory, ghost_mode=cpp.mesh.GhostMode.
 
                 # Check that entity vertices map to cell vertices in correct order
                 entity = MeshEntity(mesh, d, entities[entity_index])
-                entity_vertices = entity.entities(0)
-                assert all(vertex_global_indices[numpy.array(entity_topology)]
-                           == entity_vertices)
+                vertices_dolfin = np.sort(entity.entities(0))
+                vertices_fiat = np.sort(vertex_global_indices[np.array(entity_topology)])
+                assert all(vertices_fiat == vertices_dolfin)
 
 
 def test_mesh_topology_lifetime():
@@ -455,7 +451,7 @@ def test_topology_surface(cube):
     surface_edge_markers = cube.topology.on_boundary(1)
     assert surface_edge_markers
     surface_facet_markers = cube.topology.on_boundary(2)
-    sf_count = numpy.count_nonzero(numpy.array(surface_facet_markers))
+    sf_count = np.count_nonzero(np.array(surface_facet_markers))
     assert MPI.sum(cube.mpi_comm(), sf_count) == n * n * 12
 
 
@@ -467,9 +463,6 @@ def test_distribute_mesh(subset_comm, tempdir, mesh_factory):
 
     if not is_simplex(mesh.cell_type):
         return
-
-    # Order mesh
-    cpp.mesh.Ordering.order_simplex(mesh)
 
     encoding = XDMFFile.Encoding.HDF5
     ghost_mode = cpp.mesh.GhostMode.none
@@ -517,7 +510,7 @@ def test_custom_partition(tempdir, mesh_factory):
         cell_type, points, cells, global_indices = file.read_mesh_data(comm)
 
     # Create a custom partition array
-    part = numpy.zeros(cells.shape[0], dtype=numpy.int32)
+    part = np.zeros(cells.shape[0], dtype=np.int32)
     part[:] = comm.rank
 
     ghost_procs = cpp.mesh.ghost_cell_mapping(comm, part, cell_type, cells)
@@ -536,7 +529,7 @@ def test_coords():
     mesh = UnitCubeMesh(MPI.comm_world, 4, 4, 5)
     d = mesh.coordinate_dofs().entity_points()
     d += 2
-    assert numpy.array_equal(d, mesh.coordinate_dofs().entity_points())
+    assert np.array_equal(d, mesh.coordinate_dofs().entity_points())
 
 
 def test_UnitHexMesh_assemble():
