@@ -3,6 +3,7 @@ import pytest
 from dolfin import (UnitIntervalMesh, UnitSquareMesh, UnitCubeMesh, Function, FunctionSpace,
                     TrialFunction, TestFunction, DirichletBC, MPI, solve)
 from dolfin.cpp.mesh import CellType
+from petsc4py import PETSc
 
 from ufl import inner, grad, dx, SpatialCoordinate
 import numpy as np
@@ -96,8 +97,8 @@ def test_manufactured_poisson(degree, cell_type, gdim):
     man_sol = ManufacturedSolution(degree, mesh.geometric_dimension())
 
     f = -eval(str(man_sol.laplace()))
-    a = inner(grad(u), grad(v)) * dx
-    lhs = inner(f, v) * dx
+    a = inner(grad(u), grad(v)) * dx#(metadata={'quadrature_degree': degree + 2})
+    lhs = inner(f, v) * dx #(metadata={'quadrature_degree': degree + 1})
 
     u_bc = Function(V)
     with u_bc.vector.localForm() as u_local:
@@ -106,6 +107,8 @@ def test_manufactured_poisson(degree, cell_type, gdim):
 
     uh = Function(V)
     solve(a == lhs, uh, bc)
+    uh.vector.ghostUpdate(addv=PETSc.InsertMode.INSERT, mode=PETSc.ScatterMode.FORWARD)
+
     x = V.tabulate_dof_coordinates()
     x_ = np.zeros((x.shape[0], 3))
     # Fill with coordinates to work with eval
@@ -115,7 +118,7 @@ def test_manufactured_poisson(degree, cell_type, gdim):
         x_[:, :2] = x
     else:
         x_ = x
-
+    mm = 0
     for i in range(V.mesh.num_cells()):
         # Find points of dofs in i-th cell
         dofs_i = V.dofmap.cell_dofs(i)
@@ -134,4 +137,7 @@ def test_manufactured_poisson(degree, cell_type, gdim):
         # Reshape
         result_i = result_i.reshape(exact_i.shape)
         # Measure absolute error as values close to zero breaks the rtol.
+        if max(abs(exact_i - result_i)) > mm:
+            mm =  max(abs(exact_i - result_i))
         assert max(exact_i - result_i) < 1e-3
+    print(mm)
