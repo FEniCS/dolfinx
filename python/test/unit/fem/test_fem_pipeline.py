@@ -17,13 +17,13 @@ from dolfin.fem import (apply_lifting, assemble_matrix, assemble_scalar,
 from ufl import SpatialCoordinate, div, dx, grad, inner
 
 
-@pytest.mark.parametrize("n", [3])
+@pytest.mark.parametrize("n", [3, 4])
 @pytest.mark.parametrize("cell_type, gdim", [
-    (CellType.interval, 1),
-    (CellType.triangle, 2),
-    (CellType.quadrilateral, 2),
+    # (CellType.interval, 1),
+    # (CellType.triangle, 2),
+    # (CellType.quadrilateral, 2),
     (CellType.tetrahedron, 3),
-    (CellType.hexahedron, 3)
+    # (CellType.hexahedron, 3)
 ])
 def test_manufactured_poisson(n, cell_type, gdim):
     """ Manufactured Poisson problem, solving u = Pi_{i=0}^gdim (1 - x[i]) * x[i]^(p - 1)
@@ -36,7 +36,7 @@ def test_manufactured_poisson(n, cell_type, gdim):
     if gdim == 2:
         mesh = UnitSquareMesh(MPI.comm_world, 15, 15, cell_type)
     elif gdim == 3:
-        mesh = UnitCubeMesh(MPI.comm_world, 5, 5, 5, cell_type)
+        mesh = UnitCubeMesh(MPI.comm_world, 1, 1, 1, cell_type)
     V = FunctionSpace(mesh, ("CG", n))
     u, v = TrialFunction(V), TestFunction(V)
 
