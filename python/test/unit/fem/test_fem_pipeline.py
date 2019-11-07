@@ -7,12 +7,13 @@
 import numpy as np
 import pytest
 import sympy as sp
-
+from petsc4py import PETSc
 from dolfin import (MPI, DirichletBC, Function, FunctionSpace, TestFunction,
                     TrialFunction, UnitCubeMesh, UnitIntervalMesh,
                     UnitSquareMesh, solve)
+from dolfin.fem import assemble_scalar
 from dolfin.cpp.mesh import CellType
-from ufl import SpatialCoordinate, dx, grad, inner
+from ufl import SpatialCoordinate, dx, grad, inner, div
 
 
 def ManufacturedSolution(degree, gdim):
@@ -21,23 +22,14 @@ def ManufacturedSolution(degree, gdim):
     """
     xvec = sp.symbols("x[0] x[1] x[2]")
     x, y, z = xvec
-    u = gdim**3 * (x)**(degree - 1) * (1 - x)
+    u = (x)**(degree - 1) * (1 - x)
 
     if gdim > 1:
         u *= (y)**(degree - 1) * (1 - y)
     if gdim > 2:
         u *= (z)**(degree - 1) * (1 - z)
 
-    x_ = sp.symbols("x y z")
-    u_lambda = u
-    for i in range(gdim):
-        u_lambda = u_lambda.subs(xvec[i], x_[i])
-    u_lambda = sp.lambdify((x_), u_lambda, 'numpy')
-
-    laplace_u = 0
-    for i in range(gdim):
-        laplace_u += sp.diff(u, xvec[i], xvec[i])
-    return u_lambda, laplace_u
+    return u
 
 
 def boundary(x):
@@ -49,10 +41,9 @@ def boundary(x):
     return condition
 
 
-# (CellType.tetrahedron, 3),
 @pytest.mark.parametrize("degree", [2, 3, 4])
 @pytest.mark.parametrize("cell_type, gdim", [(CellType.interval, 1), (CellType.triangle, 2),
-                                             (CellType.quadrilateral, 2),
+                                             (CellType.quadrilateral, 2), (CellType.tetrahedron, 3),
                                              (CellType.hexahedron, 3)])
 def test_manufactured_poisson(degree, cell_type, gdim):
     """ Manufactured Poisson problem, solving u = Pi_{i=0}^gdim (1 - x[i]) * x[i]^(p - 1)
@@ -64,19 +55,19 @@ def test_manufactured_poisson(degree, cell_type, gdim):
 
     """
     if gdim == 1:
-        mesh = UnitIntervalMesh(MPI.comm_world, 5)
+        mesh = UnitIntervalMesh(MPI.comm_world, 10)
     if gdim == 2:
-        mesh = UnitSquareMesh(MPI.comm_world, 10, 10, cell_type)
+        mesh = UnitSquareMesh(MPI.comm_world, 15, 15, cell_type)
     elif gdim == 3:
         mesh = UnitCubeMesh(MPI.comm_world, 5, 5, 5, cell_type)
     V = FunctionSpace(mesh, ("CG", degree))
     u, v = TrialFunction(V), TestFunction(V)
-    x = SpatialCoordinate(mesh)
 
-    u_exact, laplace_u = ManufacturedSolution(degree, gdim)
+    x = SpatialCoordinate(mesh)  # noqa: F841
+    u_exact = eval(str(ManufacturedSolution(degree, gdim)))
 
-    f = -eval(str(laplace_u))
-    a = inner(grad(u), grad(v)) * dx
+    f = -div(grad(u_exact))
+    a = inner(grad(u), grad(v)) * dx(metadata={'quadrature_degree': degree + 3})
     L = inner(f, v) * dx(metadata={'quadrature_degree': degree + 3})
 
     u_bc = Function(V)
@@ -88,35 +79,10 @@ def test_manufactured_poisson(degree, cell_type, gdim):
     solve(a == L, uh, bc)
     uh.vector.ghostUpdate(addv=PETSc.InsertMode.INSERT, mode=PETSc.ScatterMode.FORWARD)
 
-    x = V.tabulate_dof_coordinates()
-    x_ = np.zeros((x.shape[0], 3))
+    error = assemble_scalar((u_exact - uh)**2 * dx(metadata={'quadrature_degree': degree + 3}))
+    error = MPI.sum(mesh.mpi_comm(), error)
 
-    # Fill with coordinates to work with eval
-    if gdim == 1:
-        x_[:, :1] = x
-    elif gdim == 2:
-        x_[:, :2] = x
+    if cell_type == CellType.tetrahedron:
+        assert np.sqrt(error) < 2e-4
     else:
-        x_ = x
-
-    cell = 4
-
-    # Find points of dofs in i-th cell
-    dofs_i = V.dofmap.cell_dofs(cell)
-    x_i = np.array([x_[dof, :] for dof in dofs_i])
-
-    # Function values for dofs at i-th cell
-    result_i = uh.eval(x_i, cell * np.ones(len(x_i)))
-    # Compute exact solution
-    if mesh.geometric_dimension() == 1:
-        exact_i = u_exact(x_i[:, 0], 0, 0)
-    elif mesh.geometric_dimension() == 2:
-        exact_i = u_exact(x_i[:, 0], x_i[:, 1], 0)
-    elif mesh.geometric_dimension() == 3:
-        exact_i = u_exact(x_i[:, 0], x_i[:, 1], x_i[:, 2])
-    # Reshape
-    result_i = result_i.reshape(exact_i.shape)
-    result_i[np.abs(result_i) < 1e-5] = 0
-    exact_i[np.abs(exact_i) < 1e-5] = 0
-
-    assert result_i == pytest.approx(exact_i, rel=1e-2)
+        assert np.sqrt(error) < 5e-6
