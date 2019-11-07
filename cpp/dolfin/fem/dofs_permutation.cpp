@@ -509,9 +509,6 @@ fem::compute_dof_permutations(const mesh::Mesh& mesh,
   std::vector<int> temp(p.cols());
   for (int cell = 0; cell < cell_ordering.rows(); ++cell)
   {
-    for (int k = 0; k < p.cols(); ++k)
-      temp[k] = p(cell, k);
-
     // For each permutation in permutations
     for (int i = 0; i < cell_ordering.cols(); ++i)
     {
@@ -519,6 +516,9 @@ fem::compute_dof_permutations(const mesh::Mesh& mesh,
       // should be applied
       for (int j = 0; j < cell_ordering(cell, i); ++j)
       {
+        // This must be inside the loop as p changes after each permutation
+        for (int k = 0; k < p.cols(); ++k)
+          temp[k] = p(cell, k);
         for (int k = 0; k < p.cols(); ++k)
           p(cell, permutations(i, k)) = temp[k];
       }
