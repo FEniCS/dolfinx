@@ -520,8 +520,6 @@ fem::compute_dof_permutations(const mesh::Mesh& mesh,
         for (int k = 0; k < p.cols(); ++k)
           temp[k] = p(cell, k);
         for (int k = 0; k < p.cols(); ++k)
-          temp[k] = p(cell, k);
-        for (int k = 0; k < p.cols(); ++k)
           p(cell, permutations(i, k)) = temp[k];
       }
     }
