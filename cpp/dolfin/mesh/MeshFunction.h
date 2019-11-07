@@ -230,7 +230,7 @@ void MeshFunction<T>::mark(
 
   // Iterate over all mesh entities of the dimension of this
   // MeshFunction
-  for (const auto& entity : mesh::MeshRange(*_mesh.get(), _dim))
+  for (const auto& entity : mesh::MeshRange(*_mesh.get(), _dim, mesh::MeshRangeType::ALL))
   {
 
     // By default, assume maker is 'true' at all vertices of this entity
