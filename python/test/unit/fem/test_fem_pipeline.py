@@ -1,18 +1,23 @@
-import pytest
+# Copyright (C) 2019 Jorgen Dokken
+#
+# This file is part of DOLFIN (https://www.fenicsproject.org)
+#
+# SPDX-License-Identifier:    LGPL-3.0-or-later
 
-from dolfin import (UnitIntervalMesh, UnitSquareMesh, UnitCubeMesh, Function, FunctionSpace,
-                    TrialFunction, TestFunction, DirichletBC, MPI, solve)
-from dolfin.cpp.mesh import CellType
-
-from ufl import inner, grad, dx, SpatialCoordinate
 import numpy as np
+import pytest
 import sympy as sp
 
+from dolfin import (MPI, DirichletBC, Function, FunctionSpace, TestFunction,
+                    TrialFunction, UnitCubeMesh, UnitIntervalMesh,
+                    UnitSquareMesh, solve)
+from dolfin.cpp.mesh import CellType
+from ufl import SpatialCoordinate, dx, grad, inner
 
-class ManufacturedSolution():
+
+class ManufacturedSolutionPoisson():
     def __init__(self, degree, gdim):
-        """
-        Initialize manufactured solution for given polynomial degree and
+        """Initialize manufactured solution for given polynomial degree and
         geometric dimension gdim.
         """
         self.x = sp.symbols("x[0] x[1] x[2]")
@@ -34,25 +39,20 @@ class ManufacturedSolution():
         self.u_lambda = sp.lambdify((x_), self.u_lambda, 'numpy')
 
     def eval(self, *args):
-        """
-        Evaluate function at (x,y,z), where x,y,z each are individual arrays of the x, y and z
-        coordinates
+        """Evaluate function at (x, y, z), where x,y,z each are individual arrays
+        of the x, y and z coordinates.
         """
         return self.u_lambda(*args)
 
     def __call__(self, x):
-        """
-        Evaluate function at a single point (x,y,z) in space
-        """
+        """Evaluate function at a single point (x, y, z) in space."""
         out_u = self.u
         for i in range(self.gdim):
             out_u = out_u.subs(self.x[i], x[i])
         return out_u
 
     def laplace(self):
-        """
-        Compute Laplace of analytical solution to obtain source function
-        """
+        """ Compute Laplace of analytical solution to obtain source function."""
         laplace_u = 0
         for i in range(self.gdim):
             laplace_u += sp.diff(self.u, self.x[i], self.x[i])
@@ -60,9 +60,7 @@ class ManufacturedSolution():
 
 
 def boundary(x):
-    """
-    gdim-dimensional boundary marker
-    """
+    """Boundary marker """
     condition = np.logical_or(x[:, 0] < 1.0e-6, x[:, 0] > 1.0 - 1.0e-6)
     for dim in range(1, x.shape[1]):
         c_dim = np.logical_or(x[:, dim] < 1.0e-6, x[:, dim] > 1.0 - 1.0e-6)
@@ -75,12 +73,12 @@ def boundary(x):
                                              (CellType.quadrilateral, 2), (CellType.tetrahedron, 3),
                                              (CellType.hexahedron, 3)])
 def test_manufactured_poisson(degree, cell_type, gdim):
-    """
-    Manufactured Poisson problem, solving u = Pi_{i=0}^gdim (1 - x[i]) * x[i]^(p - 1)
+    """ Manufactured Poisson problem, solving u = Pi_{i=0}^gdim (1 - x[i]) * x[i]^(p - 1)
     where p is the degree of the Lagrange function space. Solved on the
-    gdim-dimensional UnitMesh, with homogeneous Dirichlet boundary conditions.
+    gdim-dimensional UnitMesh, with homogeneous Dirichlet boundary
+    conditions.
 
-    Comparing values at each dof with the analytical solution.
+    Compares values at each dof with the analytical solution.
 
     """
     if gdim == 1:
@@ -93,11 +91,10 @@ def test_manufactured_poisson(degree, cell_type, gdim):
     u, v = TrialFunction(V), TestFunction(V)
     x = SpatialCoordinate(mesh)
 
-    man_sol = ManufacturedSolution(degree, mesh.geometric_dimension())
-
+    man_sol = ManufacturedSolutionPoisson(degree, gdim)
     f = -eval(str(man_sol.laplace()))
     a = inner(grad(u), grad(v)) * dx
-    lhs = inner(f, v) * dx
+    L = inner(f, v) * dx
 
     u_bc = Function(V)
     with u_bc.vector.localForm() as u_local:
@@ -105,7 +102,7 @@ def test_manufactured_poisson(degree, cell_type, gdim):
     bc = DirichletBC(V, u_bc, boundary)
 
     uh = Function(V)
-    solve(a == lhs, uh, bc)
+    solve(a == L, uh, bc)
     x = V.tabulate_dof_coordinates()
     x_ = np.zeros((x.shape[0], 3))
     # Fill with coordinates to work with eval
