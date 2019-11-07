@@ -516,7 +516,8 @@ fem::compute_dof_permutations(const mesh::Mesh& mesh,
       // should be applied
       for (int j = 0; j < cell_ordering(cell, i); ++j)
       {
-        // This must be inside the loop as p changes after each permutation
+        // This must be inside the loop as p changes after each
+        // permutation
         for (int k = 0; k < p.cols(); ++k)
           temp[k] = p(cell, k);
         for (int k = 0; k < p.cols(); ++k)
