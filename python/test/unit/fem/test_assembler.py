@@ -205,9 +205,6 @@ def test_matrix_assembly_block():
     Anorm0 = A0.norm()
     bnorm0 = b0.norm()
 
-    print(Anorm0, bnorm0)
-    # return
-
     # Nested (MatNest)
     A1 = dolfin.fem.assemble_matrix_nest(a_block, [bc])
     Anorm1 = nest_matrix_norm(A1)
