@@ -10,25 +10,22 @@ from petsc4py import PETSc
 
 from dolfin import (MPI, DirichletBC, Function, FunctionSpace, TestFunction,
                     TrialFunction, UnitCubeMesh, UnitIntervalMesh,
-                    UnitSquareMesh, cpp)
+                    UnitSquareMesh)
 from dolfin.cpp.mesh import CellType
 from dolfin.fem import (apply_lifting, assemble_matrix, assemble_scalar,
                         assemble_vector, set_bc)
-from ufl import SpatialCoordinate, div, dx, grad, inner
+from ufl import dx, grad, inner
 
 
 @pytest.mark.parametrize("n", [2, 3, 4])
-@pytest.mark.parametrize("mesh", [
-    UnitIntervalMesh(MPI.comm_world, 10),
-    UnitSquareMesh(MPI.comm_world, 3, 4, CellType.triangle),
-    UnitSquareMesh(MPI.comm_world, 3, 4, CellType.quadrilateral),
-    UnitCubeMesh(MPI.comm_world, 2, 3, 2, CellType.tetrahedron),
-    UnitCubeMesh(MPI.comm_world, 2, 3, 2, CellType.hexahedron),
-])
+@pytest.mark.parametrize("mesh", [UnitIntervalMesh(MPI.comm_world, 10),
+                                  UnitSquareMesh(MPI.comm_world, 3, 4, CellType.triangle),
+                                  UnitSquareMesh(MPI.comm_world, 3, 4, CellType.quadrilateral),
+                                  UnitCubeMesh(MPI.comm_world, 2, 3, 2, CellType.tetrahedron),
+                                  UnitCubeMesh(MPI.comm_world, 2, 3, 2, CellType.hexahedron)])
 def test_manufactured_poisson(n, mesh):
-    """ Manufactured Poisson problem, solving u = x[0]**p,
-    where p is the degree of the Lagrange function space. Solved on the
-    gdim-dimensional UnitMesh.
+    """ Manufactured Poisson problem, solving u = x[0]**p, where p is the
+    degree of the Lagrange function space.
 
     """
 
@@ -40,7 +37,7 @@ def test_manufactured_poisson(n, mesh):
     u_exact = Function(V)
     u_exact.interpolate(lambda x: x[:, 0]**n)
 
-    # RHS terms
+    # Source term
     f = Function(V_f)
     f.interpolate(lambda x: -n * (n - 1) * x[:, 0]**(n - 2))
 
