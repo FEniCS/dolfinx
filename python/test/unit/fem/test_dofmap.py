@@ -659,6 +659,73 @@ def test_quadrilateral_dof_ordering(space_type):
             assert np.allclose(edges[0][i], j[i])
 
 
-test_quadrilateral_dof_ordering(("P", 1))
-test_quadrilateral_dof_ordering(("P", 2))
-test_quadrilateral_dof_ordering(("P", 3))
+#test_quadrilateral_dof_ordering(("P", 1))
+#test_quadrilateral_dof_ordering(("P", 2))
+#test_quadrilateral_dof_ordering(("P", 3))
+
+@skip_in_parallel
+@skip_in_parallel
+@pytest.mark.parametrize('space_type', [
+    ("P", 1), ("P", 2), ("P", 3), ("P", 4),
+    ("N1curl", 1),
+    pytest.param(("N1curl", 2), marks=pytest.mark.xfail),
+    pytest.param(("N1curl", 3), marks=pytest.mark.xfail),
+    pytest.param(("N1curl", 4), marks=pytest.mark.xfail),
+    ("RT", 1), ("RT", 2), ("RT", 3), ("RT", 4),
+    ("BDM", 1),
+    pytest.param(("BDM", 2), marks=pytest.mark.xfail),
+    pytest.param(("BDM", 3), marks=pytest.mark.xfail),
+    pytest.param(("BDM", 4), marks=pytest.mark.xfail),
+    ("N2curl", 1),
+    pytest.param(("N2curl", 2), marks=pytest.mark.xfail),
+    pytest.param(("N2curl", 3), marks=pytest.mark.xfail),
+    pytest.param(("N2curl", 4), marks=pytest.mark.xfail),
+])
+def test_hexahedron_dof_ordering(space_type):
+    """Checks that dofs on shared hexahedron edges match up"""
+    # Create simple hexahedron mesh
+    points = np.array([[0, 0, 0], [1, 0, 0], [0, 1, 0], [1, 1, 0],
+                       [0, 0, 1], [1, 0, 1], [0, 1, 1], [1, 1, 1]])
+    cells = [[0, 1, 2, 3, 4, 5, 6, 7], [4, 5, 6, 7, 0, 1, 2, 3],
+             [1, 0, 3, 2, 5, 4, 7, 6], [5, 4, 7, 6, 1, 0, 3, 2],
+             [1, 3, 0, 2, 5, 7, 4, 6], [5, 7, 4, 6, 1, 3, 0, 2],
+             [3, 1, 2, 0, 7, 5, 6, 4], [7, 5, 6, 4, 3, 1, 2, 0],
+             [2, 0, 3, 1, 6, 4, 7, 5], [6, 4, 7, 5, 2, 0, 3, 1],
+             [0, 2, 1, 3, 4, 6, 5, 7], [4, 6, 5, 7, 0, 2, 1, 3],
+             [3, 2, 1, 0, 7, 6, 5, 4], [7, 6, 5, 4, 3, 2, 1, 0],
+             [2, 3, 0, 1, 6, 7, 4, 5], [6, 7, 4, 5, 2, 3, 0, 1]]
+    mesh = cpp.mesh.Mesh(MPI.comm_world, CellType.hexahedron, points,
+                         np.array(cells), [], cpp.mesh.GhostMode.none)
+    V = FunctionSpace(mesh, space_type)
+    dofmap = V.dofmap
+
+    edges = []
+
+    for face in range(len(cells)):
+        dofs = dofmap.cell_dofs(face)
+        edge_dofs_local = []
+        for i in range(8):
+            edge_dofs_local += list(dofmap.dof_layout.entity_dofs(1, i))
+        edge_dofs = [dofs[i] for i in edge_dofs_local]
+
+        X = V.element.dof_reference_coordinates()
+        coord_dofs = mesh.coordinate_dofs().entity_points()
+        x_g = mesh.geometry.points
+        cmap = fem.create_coordinate_map(mesh.ufl_domain())
+
+        x_coord_new = np.zeros([8, 3])
+        for v in range(8):
+            x_coord_new[v] = x_g[coord_dofs[face, v], :3]
+        x = X.copy()
+        cmap.push_forward(x, X, x_coord_new)
+
+        edges.append({i: j for i, j in zip(edge_dofs, x[edge_dofs_local])})
+
+    for i in edges[0]:
+        for j in edges[1:]:
+            assert np.allclose(edges[0][i], j[i])
+
+
+for i in range(1,5):
+    print("hex P",i)
+    test_hexahedron_dof_ordering(("P", i))
