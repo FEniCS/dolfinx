@@ -1,4 +1,5 @@
 # Copyright (C) 2019 Jørgen Schartum Dokken and Matthew Scroggs
+#
 # This file is part of DOLFIN (https://www.fenicsproject.org)
 #
 # SPDX-License-Identifier:    LGPL-3.0-or-later

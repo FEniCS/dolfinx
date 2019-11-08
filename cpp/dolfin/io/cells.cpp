@@ -103,7 +103,6 @@ std::vector<std::uint8_t> io::cells::dolfin_to_vtk(mesh::CellType type,
     std::vector<std::uint8_t> permutation(num_nodes);
 
     // Vertices
-    int j = 0;
     permutation[0] = 0;
     permutation[1] = n;
     permutation[2] = n + 1;
