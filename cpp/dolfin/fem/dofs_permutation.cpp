@@ -24,6 +24,8 @@ int get_num_permutations(mesh::CellType cell_type)
     return 5;
   case (mesh::CellType::tetrahedron):
     return 18;
+  case (mesh::CellType::quadrilateral):
+    return 6;
   default:
     LOG(WARNING) << "Dof permutations are not defined for this cell type. High "
                     "order elements may be incorrect.";
@@ -81,6 +83,30 @@ std::array<int, 4> calculate_tetrahedron_orders(int v1, int v2, int v3, int v4)
 
   throw std::runtime_error(
       "Two of a tetrahedron's vertices appear to be equal.");
+}
+//-----------------------------------------------------------------------------
+/// Calculates the number of times the rotation and reflection of a
+/// quadrilateral should be applied to a quadrilateral with the given global
+/// vertex numbers
+/// @param[in] v1 The global vertex number of the quadrilateral's first vertex
+/// @param[in] v2 The global vertex number of the quadrilateral's second vertex
+/// @param[in] v3 The global vertex number of the quadrilateral's third vertex
+/// @param[in] v4 The global vertex number of the quadrilateral's fourth vertex
+/// @return The rotation and reflection orders for the quadrilateral
+std::array<int, 2> calculate_quadrilateral_orders(int v1, int v2, int v3,
+                                                  int v4)
+{
+  if (v1 < v2 and v1 < v3 and v1 < v4)
+    return {0, v2 > v3};
+  else if (v2 < v1 and v2 < v3 and v2 < v4)
+    return {1, v1 > v4};
+  else if (v4 < v1 and v4 < v2 and v4 < v3)
+    return {2, v3 > v2};
+  else if (v3 < v1 and v3 < v2 and v3 < v4)
+    return {3, v4 > v1};
+
+  throw std::runtime_error(
+      "Two of a quadrilateral's vertices appear to be equal.");
 }
 //-----------------------------------------------------------------------------
 /// Makes a permutation to flip the dofs on an edge
@@ -142,6 +168,41 @@ triangle_rotation_and_reflection(const int face_dofs, const int blocksize)
         dof += add;
       }
     }
+    assert(j == face_dofs);
+  }
+
+  return {rotation, reflection};
+}
+//-----------------------------------------------------------------------------
+/// Makes permutations to rotate and reflect the dofs on a quadrilateral
+/// @param[in] edge_dofs Number of dofs on the face of the quadrilateral
+/// @return Permutations to rotate and reflect the dofs
+std::array<std::vector<int>, 2>
+quadrilateral_rotation_and_reflection(const int face_dofs, const int blocksize)
+{
+  // This will only be called at most once for each mesh
+  const int blocks = face_dofs / blocksize;
+  float root = std::sqrt(blocks);
+  assert(root == std::floor(root));
+  int side_length = root; // side length of the quadrilateral of face dofs
+
+  std::vector<int> rotation(face_dofs);
+  {
+    int j = 0;
+    for (int st = side_length - 1; st >= 0; --st)
+      for (int dof = st; dof < blocks; dof += side_length)
+        for (int k = 0; k < blocksize; ++k)
+          rotation[j++] = blocksize * dof + k;
+    assert(j == face_dofs);
+  }
+
+  std::vector<int> reflection(face_dofs);
+  {
+    int j = 0;
+    for (int st = 0; st < side_length; ++st)
+      for (int dof = st; dof < blocks; dof += side_length)
+        for (int k = 0; k < blocksize; ++k)
+          reflection[j++] = blocksize * dof + k;
     assert(j == face_dofs);
   }
 
@@ -237,6 +298,42 @@ compute_ordering_triangle(const mesh::Mesh& mesh)
         = calculate_triangle_orders(vertices[0], vertices[1], vertices[2]);
     cell_orders(cell_n, 3) = tri_orders[0];
     cell_orders(cell_n, 4) = tri_orders[0];
+  }
+
+  return cell_orders;
+}
+//-----------------------------------------------------------------------------
+Eigen::Array<std::int8_t, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
+compute_ordering_quadrilateral(const mesh::Mesh& mesh)
+{
+  const int num_cells = mesh.num_entities(mesh.topology().dim());
+  const int num_permutations = get_num_permutations(mesh.cell_type());
+  Eigen::Array<std::int8_t, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
+      cell_orders(num_cells, num_permutations);
+
+  std::cout << num_cells << std::endl;
+  std::cout << num_permutations << std::endl;
+
+  // Set orders for each cell
+  for (int cell_n = 0; cell_n < num_cells; ++cell_n)
+  {
+    const mesh::MeshEntity cell(mesh, 2, cell_n);
+    const std::int32_t* vertices = cell.entities(0);
+
+    std::cout << vertices[0] << vertices[1] << vertices[2] << vertices[3]
+              << std::endl;
+
+    // Set the orders for the edge flips
+    cell_orders(cell_n, 0) = (vertices[2] > vertices[3]);
+    cell_orders(cell_n, 1) = (vertices[1] > vertices[3]);
+    cell_orders(cell_n, 2) = (vertices[1] > vertices[2]);
+    cell_orders(cell_n, 3) = (vertices[0] > vertices[2]);
+
+    // Set the orders for the face rotation and reflection
+    const std::array<int, 2> quad_orders = calculate_quadrilateral_orders(
+        vertices[0], vertices[1], vertices[2], vertices[3]);
+    cell_orders(cell_n, 4) = quad_orders[0];
+    cell_orders(cell_n, 5) = quad_orders[1];
   }
 
   return cell_orders;
@@ -341,6 +438,52 @@ generate_permutations_triangle(const mesh::Mesh& mesh,
 }
 //-----------------------------------------------------------------------------
 Eigen::Array<int, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
+generate_permutations_quadrilateral(const mesh::Mesh& mesh,
+                                    const fem::ElementDofLayout& dof_layout)
+{
+  const int num_permutations = get_num_permutations(mesh.cell_type());
+  const int dof_count = dof_layout.num_dofs();
+
+  const int edge_dofs = dof_layout.num_entity_dofs(1);
+  const int face_dofs = dof_layout.num_entity_dofs(2);
+  const int edge_bs = dof_layout.entity_block_size(1);
+  const int face_bs = dof_layout.entity_block_size(2);
+
+  int perm_n = 0;
+
+  Eigen::Array<int, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
+      permutations(num_permutations, dof_count);
+  for (int i = 0; i < permutations.cols(); ++i)
+    permutations.col(i) = i;
+
+  // Make edge flipping permutations
+  const std::vector<int> base_flip = edge_flip(edge_dofs, edge_bs);
+  for (int edge_n = 0; edge_n < 4; ++edge_n)
+  {
+    const Eigen::Array<int, Eigen::Dynamic, 1> edge
+        = dof_layout.entity_dofs(1, edge_n);
+    for (std::size_t i = 0; i < base_flip.size(); ++i)
+      permutations(perm_n, edge(i)) = edge(base_flip[i]);
+    ++perm_n;
+  }
+  // Make permutations that rotate and reflect the face dofs
+  const std::array<std::vector<int>, 2> base_faces
+      = quadrilateral_rotation_and_reflection(face_dofs, face_bs);
+  const Eigen::Array<int, Eigen::Dynamic, 1> face
+      = dof_layout.entity_dofs(2, 0);
+  for (int f_n = 0; f_n < 2; ++f_n)
+  {
+    for (std::size_t i = 0; i < base_faces[f_n].size(); ++i)
+      permutations(perm_n, face(i)) = face(base_faces[f_n][i]);
+    ++perm_n;
+  }
+
+  assert(perm_n == get_num_permutations(mesh::CellType::quadrilateral));
+
+  return permutations;
+}
+//-----------------------------------------------------------------------------
+Eigen::Array<int, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
 generate_permutations_tetrahedron(const mesh::Mesh& mesh,
                                   const fem::ElementDofLayout& dof_layout)
 {
@@ -416,14 +559,14 @@ generate_permutations(const mesh::Mesh& mesh,
       return generate_permutations_triangle(mesh, dof_layout);
     case (mesh::CellType::tetrahedron):
       return generate_permutations_tetrahedron(mesh, dof_layout);
+    case (mesh::CellType::quadrilateral):
+      return generate_permutations_quadrilateral(mesh, dof_layout);
 
     // Temporarily do nothing for cell types not yet implemented
     // For these shapes, _permutations will have 0 rows, and _cell_ordering will
     // have 0 columns, so the for loops that apply the permutations will be
     // empty
     case (mesh::CellType::hexahedron):
-      break;
-    case (mesh::CellType::quadrilateral):
       break;
     case (mesh::CellType::interval):
       break;
@@ -473,12 +616,12 @@ fem::compute_dof_permutations(const mesh::Mesh& mesh,
   case (mesh::CellType::tetrahedron):
     cell_ordering = compute_ordering_tetrahedron(mesh);
     break;
+  case (mesh::CellType::quadrilateral):
+    cell_ordering = compute_ordering_quadrilateral(mesh);
+    break;
 
   // temporarily do nothing for cell types not yet implemented
   case (mesh::CellType::hexahedron):
-    cell_ordering.resize(mesh.num_entities(mesh.topology().dim()), 0);
-    break;
-  case (mesh::CellType::quadrilateral):
     cell_ordering.resize(mesh.num_entities(mesh.topology().dim()), 0);
     break;
   case (mesh::CellType::interval):
@@ -492,6 +635,13 @@ fem::compute_dof_permutations(const mesh::Mesh& mesh,
     throw std::runtime_error("Unrecognised cell type.");
   }
 
+  for (int i = 0; i < cell_ordering.rows(); ++i)
+  {
+    std::cout << "<";
+    for (int j = 0; j < cell_ordering.cols(); ++j)
+      std::cout << unsigned(cell_ordering(i, j)) << ",";
+    std::cout << ">" << std::endl;
+  }
   // Build permutations. Each row of this represent the rotation or
   // reflection of a mesh entity Will have shape (number of
   // permutations) × (number of dofs on reference) where (number of
