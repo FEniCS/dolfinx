@@ -15,7 +15,7 @@ from dolfin_utils.test.skips import skip_in_parallel
 from sympy.vector import CoordSys3D, matrix_to_vector
 
 from dolfin import MPI, Function, FunctionSpace, Mesh, fem
-from dolfin.cpp.io import vtk_to_dolfin_ordering
+from dolfin.cpp.io import permute_cell_ordering, permutation_vtk_to_dolfin
 from dolfin.cpp.mesh import CellType, GhostMode
 from dolfin.fem import assemble_scalar
 from dolfin.io import XDMFFile
@@ -86,9 +86,8 @@ def test_second_order_mesh(H, Z):
 
     cells = np.array([[0, 1, 3, 4, 8, 7],
                       [1, 2, 3, 5, 6, 8]])
-    cells = vtk_to_dolfin_ordering(cells, CellType.triangle)
-    mesh = Mesh(MPI.comm_world, CellType.triangle, points, cells,
-                [], GhostMode.none)
+    cells = permute_cell_ordering(cells, permutation_vtk_to_dolfin(CellType.triangle, cells.shape[1]))
+    mesh = Mesh(MPI.comm_world, CellType.triangle, points, cells, [], GhostMode.none)
 
     def e2(x):
         values = np.empty((x.shape[0], 1))
@@ -133,8 +132,7 @@ def test_third_order_mesh(H, Z):
                        [2 * L / 3, 2 * H / 3, 0]])            # 15
     cells = np.array([[0, 1, 3, 4, 5, 6, 7, 8, 9, 14],
                       [1, 2, 3, 12, 13, 10, 11, 7, 6, 15]])
-    cells = vtk_to_dolfin_ordering(cells, CellType.triangle)
-
+    cells = permute_cell_ordering(cells, permutation_vtk_to_dolfin(CellType.triangle, cells.shape[1]))
     mesh = Mesh(MPI.comm_world, CellType.triangle, points, cells,
                 [], GhostMode.none)
 
@@ -187,7 +185,7 @@ def test_fourth_order_mesh(H, Z):
 
     cells = np.array([[0, 1, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15],
                       [1, 2, 3, 16, 17, 18, 19, 20, 21, 9, 8, 7, 22, 23, 24]])
-    cells = vtk_to_dolfin_ordering(cells, CellType.triangle)
+    cells = permute_cell_ordering(cells, permutation_vtk_to_dolfin(CellType.triangle, cells.shape[1]))
 
     mesh = Mesh(MPI.comm_world, CellType.triangle, points, cells,
                 [], GhostMode.none)
@@ -248,7 +246,7 @@ def scipy_one_cell(points, nodes):
 def test_nth_order_triangle(order):
     num_nodes = (order + 1) * (order + 2) / 2
     cells = np.array([range(int(num_nodes))])
-    cells = vtk_to_dolfin_ordering(cells, CellType.triangle)
+    cells = permute_cell_ordering(cells, permutation_vtk_to_dolfin(CellType.triangle, cells.shape[1]))
 
     if order == 1:
         points = np.array([[0.00000, 0.00000, 0.00000], [1.00000, 0.00000, 0.00000],

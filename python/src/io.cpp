@@ -32,6 +32,10 @@ namespace dolfin_wrappers
 void io(py::module& m)
 {
 
+  // dolfin::io::cell permutation functions
+  m.def("permutation_vtk_to_dolfin", &dolfin::io::cells::vtk_to_dolfin);
+  m.def("permute_cell_ordering", &dolfin::io::cells::permute_ordering);
+
   // dolfin::io::HDF5File
   py::class_<dolfin::io::HDF5File, std::shared_ptr<dolfin::io::HDF5File>>(
       m, "HDF5File", py::dynamic_attr())

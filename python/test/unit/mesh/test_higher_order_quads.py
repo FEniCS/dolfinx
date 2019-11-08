@@ -11,7 +11,7 @@ import pytest
 from dolfin_utils.test.skips import skip_in_parallel
 
 from dolfin import MPI, Function, FunctionSpace, Mesh, fem
-from dolfin.cpp.io import vtk_to_dolfin_ordering
+from dolfin.cpp.io import permute_cell_ordering, permutation_vtk_to_dolfin
 from dolfin.cpp.mesh import CellType, GhostMode
 from dolfin.fem import assemble_scalar
 from test_higher_order_triangles import sympy_scipy
@@ -40,7 +40,7 @@ def test_second_order_mesh(L, H, Z):
                        [L / 2, H / 2, 0],
                        [2 * L, 0, 0], [2 * L, H, Z]])
     cells = np.array([[0, 1, 2, 3, 4, 5, 6, 7, 8]])
-    cells = vtk_to_dolfin_ordering(cells, CellType.quadrilateral)
+    cells = permute_cell_ordering(cells, permutation_vtk_to_dolfin(CellType.quadrilateral, cells.shape[1]))
 
     mesh = Mesh(MPI.comm_world, CellType.quadrilateral, points, cells,
                 [], GhostMode.none)
@@ -102,8 +102,7 @@ def test_third_order_mesh(L, H, Z):
     cells = np.array([[0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15]])
     # ,[1, 16, 17, 2, 18, 19, 20, 21, 22, 23, 6, 7, 24, 25, 26, 27]])
 
-    cells = vtk_to_dolfin_ordering(cells, CellType.quadrilateral)
-    print(cells)
+    cells = permute_cell_ordering(cells, permutation_vtk_to_dolfin(CellType.quadrilateral, cells.shape[1]))
     mesh = Mesh(MPI.comm_world, CellType.quadrilateral, points, cells,
                 [], GhostMode.none)
 
@@ -175,8 +174,7 @@ def test_fourth_order_mesh(L, H, Z):
     #  , [4, 28, 44, 24, 25, 26, 27, 32, 36, 40, 41, 42, 43, 9, 14, 19,
     #     29, 30, 31, 33, 34, 35, 37, 38, 39]])
 
-    cells = vtk_to_dolfin_ordering(cells, CellType.quadrilateral)
-
+    cells = permute_cell_ordering(cells, permutation_vtk_to_dolfin(CellType.quadrilateral, cells.shape[1]))
     mesh = Mesh(MPI.comm_world, CellType.quadrilateral, points, cells,
                 [], GhostMode.none)
 
@@ -227,11 +225,12 @@ def test_gmsh_input(order):
                 cells[i, j] = msh.cells[element][i, msh_to_dolfin[j]]
     else:
         # XDMF does not support higher order quads
-        cells = vtk_to_dolfin_ordering(msh.cells[element], CellType.quadrilateral)
+        cells = permute_cell_ordering(msh.cells[element], permutation_vtk_to_dolfin(CellType.quadrilateral, msh.cells[element].shape[1]))
 
-    mesh = Mesh(MPI.comm_world, CellType.quadrilateral, msh.points, cells,
+
+    mesh=Mesh(MPI.comm_world, CellType.quadrilateral, msh.points, cells,
                 [], GhostMode.none)
-    surface = assemble_scalar(1 * dx(mesh))
+    surface=assemble_scalar(1 * dx(mesh))
 
     assert MPI.sum(mesh.mpi_comm(), surface) == pytest.approx(4 * np.pi * R * R, rel=1e-5)
 
