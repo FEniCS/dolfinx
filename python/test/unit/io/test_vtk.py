@@ -49,8 +49,6 @@ def test_save_1d_meshfunctions(tempfile, mesh_function_types, file_options,
             f = VTKFile(tempfile + "mf.pvd")
             f.write(mf, 0.)
             f.write(mf, 1.)
-            # for file_option in file_options:
-            #     VTKFile(tempfile + "mf.pvd", file_option).write(mf)
 
 
 def test_save_2d_meshfunctions(tempfile, mesh_function_types, file_options,
@@ -63,8 +61,6 @@ def test_save_2d_meshfunctions(tempfile, mesh_function_types, file_options,
             f = VTKFile(tempfile + "mf.pvd")
             f.write(mf, 0.)
             f.write(mf, 1.)
-            # for file_option in file_options:
-            #     VTKFile(tempfile + "mf.pvd", file_option).write(mf)
 
 
 def test_save_3d_meshfunctions(tempfile, mesh_function_types, file_options,
@@ -77,8 +73,6 @@ def test_save_3d_meshfunctions(tempfile, mesh_function_types, file_options,
             f = VTKFile(tempfile + "mf.pvd")
             f.write(mf, 0.)
             f.write(mf, 1.)
-            # for file_option in file_options:
-            #     VTKFile(tempfile + "mf.pvd", file_option).write(mf)
 
 
 @pytest.mark.xfail(reason="file_option not added to VTK initializer")

@@ -1,10 +1,9 @@
-"""Unit tests for the fem interface"""
-
 # Copyright (C) 2009-2018 Garth N. Wells
 #
 # This file is part of DOLFIN (https://www.fenicsproject.org)
 #
 # SPDX-License-Identifier:    LGPL-3.0-or-later
+"""Unit tests for the fem interface"""
 
 import sys
 
