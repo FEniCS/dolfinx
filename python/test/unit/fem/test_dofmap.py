@@ -648,20 +648,10 @@ def test_quadrilateral_dof_ordering(space_type):
 
         edges.append({i: j for i, j in zip(edge_dofs, x[edge_dofs_local])})
 
-    """l = sorted(edges[0].keys())
-    for a in edges:
-        for i in l:
-            print(i, int(a[i][0]*space_type[1]), int(a[i][1]*space_type[1]))
-        print("---")"""
-
     for i in edges[0]:
         for j in edges[1:]:
             assert np.allclose(edges[0][i], j[i])
 
-
-#test_quadrilateral_dof_ordering(("P", 1))
-#test_quadrilateral_dof_ordering(("P", 2))
-#test_quadrilateral_dof_ordering(("P", 3))
 
 @skip_in_parallel
 @skip_in_parallel
@@ -724,8 +714,3 @@ def test_hexahedron_dof_ordering(space_type):
     for i in edges[0]:
         for j in edges[1:]:
             assert np.allclose(edges[0][i], j[i])
-
-
-for i in range(1,5):
-    print("hex P",i)
-    test_hexahedron_dof_ordering(("P", i))
