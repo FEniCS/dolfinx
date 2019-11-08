@@ -14,38 +14,42 @@ from dolfin import (MPI, DirichletBC, Function, FunctionSpace, TestFunction,
 from dolfin.cpp.mesh import CellType
 from dolfin.fem import (apply_lifting, assemble_matrix, assemble_scalar,
                         assemble_vector, set_bc)
-from ufl import dx, grad, inner
+from ufl import SpatialCoordinate, div, dx, grad, inner
 
 
 @pytest.mark.parametrize("n", [2, 3, 4])
-@pytest.mark.parametrize("mesh", [UnitIntervalMesh(MPI.comm_world, 10),
-                                  UnitSquareMesh(MPI.comm_world, 3, 4, CellType.triangle),
-                                  UnitSquareMesh(MPI.comm_world, 3, 4, CellType.quadrilateral),
-                                  UnitCubeMesh(MPI.comm_world, 2, 3, 2, CellType.tetrahedron),
-                                  UnitCubeMesh(MPI.comm_world, 2, 3, 2, CellType.hexahedron)])
-def test_manufactured_poisson(n, mesh):
-    """ Manufactured Poisson problem, solving u = x[0]**p, where p is the
+@pytest.mark.parametrize("component", [0, 1, 2])
+@pytest.mark.parametrize("mesh", [
+    UnitIntervalMesh(MPI.comm_world, 10),
+    UnitSquareMesh(MPI.comm_world, 3, 4, CellType.triangle),
+    UnitSquareMesh(MPI.comm_world, 3, 4, CellType.quadrilateral),
+    UnitCubeMesh(MPI.comm_world, 2, 3, 2, CellType.tetrahedron),
+    UnitCubeMesh(MPI.comm_world, 2, 3, 2, CellType.hexahedron)
+])
+def test_manufactured_poisson(n, mesh, component):
+    """ Manufactured Poisson problem, solving u = x[component]**p, where p is the
     degree of the Lagrange function space.
 
     """
+    if component >= mesh.geometry.dim:
+        return
 
     V = FunctionSpace(mesh, ("Lagrange", n))
     V_f = FunctionSpace(mesh, ("Lagrange", max(n - 2, 1)))
     u, v = TrialFunction(V), TestFunction(V)
 
     # Exact solution
-    u_exact = Function(V)
-    u_exact.interpolate(lambda x: x[:, 0]**n)
+    x = SpatialCoordinate(mesh)
+    u_exact = x[component]**n
 
     # Source term
-    f = Function(V_f)
-    f.interpolate(lambda x: -n * (n - 1) * x[:, 0]**(n - 2))
+    f = - div(grad(u_exact))
 
     a = inner(grad(u), grad(v)) * dx
     L = inner(f, v) * dx
 
     u_bc = Function(V)
-    u_bc.interpolate(lambda x: x[:, 0]**n)
+    u_bc.interpolate(lambda x: x[:, component]**n)
     bc = DirichletBC(V, u_bc, lambda x: np.full(x.shape[0], True))
 
     b = assemble_vector(L)
@@ -70,4 +74,5 @@ def test_manufactured_poisson(n, mesh):
 
     error = assemble_scalar((u_exact - uh)**2 * dx)
     error = MPI.sum(mesh.mpi_comm(), error)
+    print("Error: ", error)
     assert error < 1.0e-14
