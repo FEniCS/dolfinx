@@ -201,6 +201,17 @@ void fem::apply_lifting(
   }
 }
 //-----------------------------------------------------------------------------
+void fem::apply_lifting(
+    Eigen::Ref<Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1>> b,
+    const std::vector<std::shared_ptr<const Form>> a,
+    std::vector<std::vector<std::shared_ptr<const DirichletBC>>> bcs1,
+    const std::vector<
+        Eigen::Ref<const Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1>>>& x0,
+    double scale)
+{
+  fem::impl::apply_lifting(b, a, bcs1, x0, scale);
+}
+//-----------------------------------------------------------------------------
 void fem::assemble_matrix(Mat A, const std::vector<std::vector<const Form*>> a,
                           std::vector<std::shared_ptr<const DirichletBC>> bcs,
                           double diagonal, bool use_nest_extract)
@@ -337,21 +348,38 @@ void fem::set_bc(Vec b, std::vector<std::shared_ptr<const DirichletBC>> bcs,
   if (x0)
   {
     la::VecReadWrapper _x0(x0, false);
-    if (_b.x.size() != _x0.x.size())
-      throw std::runtime_error("Size mismatch between b and x0 vectors.");
-    for (auto bc : bcs)
-    {
-      assert(bc);
-      bc->set(_b.x, _x0.x, scale);
-    }
+    set_bc_new(_b.x, bcs, _x0.x, scale);
   }
   else
   {
-    for (auto bc : bcs)
-    {
-      assert(bc);
-      bc->set(_b.x, scale);
-    }
+    set_bc_new(_b.x, bcs, scale);
+  }
+}
+//-----------------------------------------------------------------------------
+void fem::set_bc_new(
+    Eigen::Ref<Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1>> b,
+    std::vector<std::shared_ptr<const DirichletBC>> bcs,
+    const Eigen::Ref<const Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1>>& x0,
+    double scale)
+{
+  if (b.rows() != x0.rows())
+    throw std::runtime_error("Size mismatch between b and x0 vectors.");
+  for (auto bc : bcs)
+  {
+    assert(bc);
+    bc->set(b, x0, scale);
+  }
+}
+//-----------------------------------------------------------------------------
+void
+    fem::set_bc_new(Eigen::Ref<Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1>> b,
+                    std::vector<std::shared_ptr<const DirichletBC>> bcs,
+                    double scale)
+{
+  for (auto bc : bcs)
+  {
+    assert(bc);
+    bc->set(b, scale);
   }
 }
 //-----------------------------------------------------------------------------

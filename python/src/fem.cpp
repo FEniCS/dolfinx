@@ -212,8 +212,10 @@ void fem(py::module& m)
                     const std::vector<std::int32_t>&,
                     dolfin::fem::DirichletBC::Method>(),
            py::arg("V"), py::arg("g"), py::arg("facets"), py::arg("method"))
-      .def_property_readonly("dof_indices", &dolfin::fem::DirichletBC::dof_indices)
-      .def_property_readonly("function_space", &dolfin::fem::DirichletBC::function_space)
+      .def_property_readonly("dof_indices",
+                             &dolfin::fem::DirichletBC::dof_indices)
+      .def_property_readonly("function_space",
+                             &dolfin::fem::DirichletBC::function_space)
       .def_property_readonly("value", &dolfin::fem::DirichletBC::value);
 
   // dolfin::fem::assemble
@@ -225,6 +227,12 @@ void fem(py::module& m)
             &dolfin::fem::assemble_vector),
         py::arg("b"), py::arg("L"),
         "Assemble linear form into an existing vector");
+  m.def("assemble_vector",
+        py::overload_cast<
+            Eigen::Ref<Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1>>,
+            const dolfin::fem::Form&>(&dolfin::fem::assemble_vector),
+        py::arg("b"), py::arg("L"),
+        "Assemble linear form into an existing Eigen vector");
   // Block/nest vectors
   m.def("assemble_vector",
         py::overload_cast<
@@ -252,10 +260,33 @@ void fem(py::module& m)
         py::arg("use_nest_extract") = true,
         "Re-assemble bilinear forms over mesh into blocked matrix");
   // BC modifiers
-  m.def("apply_lifting", &dolfin::fem::apply_lifting,
+  m.def("apply_lifting",
+        py::overload_cast<
+            Vec, const std::vector<std::shared_ptr<const dolfin::fem::Form>>,
+            std::vector<
+                std::vector<std::shared_ptr<const dolfin::fem::DirichletBC>>>,
+            const std::vector<Vec>, double>(&dolfin::fem::apply_lifting),
         "Modify vector for lifted boundary conditions");
+  m.def(
+      "apply_lifting",
+      py::overload_cast<
+          Eigen::Ref<Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1>>,
+          const std::vector<std::shared_ptr<const dolfin::fem::Form>>,
+          std::vector<
+              std::vector<std::shared_ptr<const dolfin::fem::DirichletBC>>>,
+          const std::vector<
+              Eigen::Ref<const Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1>>>&,
+          double>(&dolfin::fem::apply_lifting),
+      "Modify vector for lifted boundary conditions");
   m.def("set_bc", &dolfin::fem::set_bc,
         "Insert boundary condition values into vector");
+  m.def(
+      "set_bc_new",
+      py::overload_cast<
+          Eigen::Ref<Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1>>,
+          std::vector<std::shared_ptr<const dolfin::fem::DirichletBC>>, double>(
+          &dolfin::fem::set_bc_new),
+      "Insert boundary condition values into vector");
   // Tools
   m.def("bcs_rows", &dolfin::fem::bcs_rows);
   m.def("bcs_cols", &dolfin::fem::bcs_cols);
