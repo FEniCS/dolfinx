@@ -311,17 +311,11 @@ compute_ordering_quadrilateral(const mesh::Mesh& mesh)
   Eigen::Array<std::int8_t, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
       cell_orders(num_cells, num_permutations);
 
-  std::cout << num_cells << std::endl;
-  std::cout << num_permutations << std::endl;
-
   // Set orders for each cell
   for (int cell_n = 0; cell_n < num_cells; ++cell_n)
   {
     const mesh::MeshEntity cell(mesh, 2, cell_n);
     const std::int32_t* vertices = cell.entities(0);
-
-    std::cout << vertices[0] << vertices[1] << vertices[2] << vertices[3]
-              << std::endl;
 
     // Set the orders for the edge flips
     cell_orders(cell_n, 0) = (vertices[2] > vertices[3]);
@@ -635,13 +629,6 @@ fem::compute_dof_permutations(const mesh::Mesh& mesh,
     throw std::runtime_error("Unrecognised cell type.");
   }
 
-  for (int i = 0; i < cell_ordering.rows(); ++i)
-  {
-    std::cout << "<";
-    for (int j = 0; j < cell_ordering.cols(); ++j)
-      std::cout << unsigned(cell_ordering(i, j)) << ",";
-    std::cout << ">" << std::endl;
-  }
   // Build permutations. Each row of this represent the rotation or
   // reflection of a mesh entity Will have shape (number of
   // permutations) × (number of dofs on reference) where (number of
