@@ -34,36 +34,48 @@ std::vector<std::uint8_t> dolfin_to_vtk(mesh::CellType type, int num_nodes);
 std::vector<std::uint8_t> vtk_to_tp(mesh::CellType type, int num_nodes);
 
 /// Map from the mapping of lexicographic nodes to a tensor product
-/// ordering
+/// ordering. Convert Lexicographic cell ordering to FEniCS cell
+/// ordering. For simplices the FEniCS ordering is following the
+/// UFC-convention, see:
+/// https://fossies.org/linux/ufc/doc/manual/ufc-user-manual.pdf For
+/// non-simplices (quadrilaterals and hexahedra a TensorProduct
+/// ordering, as specified in FIAT. Lexicographical ordering is defined
+/// as:
+///
+///   *--*--*   6--7--8  y
+///   |     |   |     |  ^
+///   *  *  *   3  4  5  |
+///             |     |   |     |  |
+///   *--*--*   0--1--2  ---> x
+///
+/// Tensor product:
+///
+///   *--*--*   1--7--4  y
+///   |     |   |     |  ^
+///   *  *  *   2  8  5  |
+///             |     |   |     |  |
+///   *--*--*   0--6--3  ---> x
+///
 /// @param[in] type The cell shape
 /// @param[in] num_nodes The number of cell 'nodes'
 /// @return The map
 std::vector<std::uint8_t> lex_to_tp(mesh::CellType type, int num_nodes);
 
-/// Permutation for VTK ordering to DOLFIN ordering
+/// Permutation for VTK ordering to DOLFIN cell ordering. For simplices
+/// the FEniCS ordering is following the UFC-convention, see:
+/// https://fossies.org/linux/ufc/doc/manual/ufc-user-manual.pdf For
+/// non-simplices (Quadrilaterals and Hexahedrons) a TensorProduct
+/// ordering, as specified in FIAT.
 /// @param[in] type The cell shape
 /// @param[in] num_nodes The number of cell 'nodes'
 /// @return The map
 std::vector<std::uint8_t> vtk_to_dolfin(mesh::CellType type, int num_nodes);
 
-/// Convert gmsh cell ordering to FEniCS cell ordering
-/// @param[in] cells array containing cell connectivities in VTK format
-/// @param[in] type Celltype to the permuter
-/// @return Permuted cell connectivities
 Eigen::Array<std::int64_t, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
-gmsh_to_dolfin_ordering(
+permute_ordering(
     const Eigen::Ref<const Eigen::Array<
         std::int64_t, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>>& cells,
-    mesh::CellType type);
-
-/// @note This function is temporary and will be removed soon
-///
-/// Default map of DOLFIN/UFC node ordering to the cell input ordering
-/// @param[in] type Celltype to map
-/// @param[in] degree Degree e of cell
-/// @return Default dolfin permutation
-std::vector<std::uint8_t> default_cell_permutation(mesh::CellType type,
-                                                   int degree);
+    const std::vector<std::uint8_t>& permutation);
 
 } // namespace cells
 } // namespace io
