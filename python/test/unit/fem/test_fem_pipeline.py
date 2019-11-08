@@ -42,7 +42,7 @@ def test_manufactured_poisson(n, mesh):
 
     # RHS terms
     f = Function(V_f)
-    f.interpolate(lambda x: -n*(n-1)*x[:, 0]**(n-2))
+    f.interpolate(lambda x: -n * (n - 1) * x[:, 0]**(n - 2))
 
     a = inner(grad(u), grad(v)) * dx
     L = inner(f, v) * dx
