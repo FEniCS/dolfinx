@@ -233,15 +233,6 @@ void fem(py::module& m)
             const dolfin::fem::Form&>(&dolfin::fem::assemble_vector),
         py::arg("b"), py::arg("L"),
         "Assemble linear form into an existing Eigen vector");
-  // Block/nest vectors
-  m.def("assemble_vector",
-        py::overload_cast<
-            Vec, std::vector<const dolfin::fem::Form*>,
-            const std::vector<
-                std::vector<std::shared_ptr<const dolfin::fem::Form>>>,
-            std::vector<std::shared_ptr<const dolfin::fem::DirichletBC>>,
-            const Vec, double>(&dolfin::fem::assemble_vector),
-        "Re-assemble linear forms over mesh into blocked/nested vector");
   // Matrices
   m.def(
       "assemble_matrix",

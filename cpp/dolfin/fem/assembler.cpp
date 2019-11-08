@@ -42,102 +42,6 @@ void set_diagonal_local(
   }
 }
 //-----------------------------------------------------------------------------
-void _assemble_vector_block(
-    Vec b, std::vector<const Form*> L,
-    const std::vector<std::vector<std::shared_ptr<const Form>>> a,
-    std::vector<std::shared_ptr<const DirichletBC>> bcs, const Vec x0,
-    double scale)
-{
-  if (L.size() < 2)
-    throw std::runtime_error("Oops, using blocked assembly.");
-
-  VecType vec_type;
-  VecGetType(b, &vec_type);
-  const bool is_vecnest = strcmp(vec_type, VECNEST) == 0 ? true : false;
-  if (is_vecnest)
-    throw std::runtime_error("Do not expect a nested vector.");
-
-  std::vector<const common::IndexMap*> maps0;
-  for (std::size_t i = 0; i < L.size(); ++i)
-  {
-    assert(L[i]);
-    maps0.push_back(L[i]->function_space(0)->dofmap()->index_map.get());
-  }
-
-  // Assemble sub vectors
-  std::vector<Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1>> b_vec(L.size());
-  for (std::size_t i = 0; i < L.size(); ++i)
-  {
-    const int bs = maps0[i]->block_size;
-    const int size_owned = maps0[i]->size_local() * bs;
-    const int size_ghost = maps0[i]->num_ghosts() * bs;
-    b_vec[i] = Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1>::Zero(
-        size_owned + size_ghost);
-    fem::impl::assemble_vector(b_vec[i], *L[i]);
-  }
-
-  // Split x0 vector, if required
-  std::vector<Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1>> x0_array;
-  if (x0)
-  {
-    if (a[0].empty())
-      throw std::runtime_error("Issue with number of a columns.");
-    std::vector<const common::IndexMap*> maps1;
-    for (std::size_t i = 0; i < a[0].size(); ++i)
-      maps1.push_back(a[0][i]->function_space(1)->dofmap()->index_map.get());
-    x0_array = la::get_local_vectors(x0, maps1);
-  }
-  std::vector<Eigen::Ref<const Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1>>>
-      x0_ref(x0_array.begin(), x0_array.end());
-
-  // Pack DirichletBC pointers for columns
-  std::vector<std::vector<std::vector<std::shared_ptr<const DirichletBC>>>> bcs1
-      = bcs_cols(a, bcs);
-
-  // Apply lifting
-  for (std::size_t i = 0; i < L.size(); ++i)
-  {
-    if (x0)
-      fem::impl::apply_lifting(b_vec[i], a[i], bcs1[i], x0_ref, scale);
-    else
-      fem::impl::apply_lifting(b_vec[i], a[i], bcs1[i], {}, scale);
-  }
-
-  // Scatter local vectors to PETSc vector
-  la::scatter_local_vectors(b, b_vec, maps0);
-
-  // FIXME: should this be lifted higher up in the code path?
-  // Update ghosts
-  VecGhostUpdateBegin(b, ADD_VALUES, SCATTER_REVERSE);
-  VecGhostUpdateEnd(b, ADD_VALUES, SCATTER_REVERSE);
-
-  // TODO: split this function here
-
-  // Set bcs
-  PetscScalar* b_ptr = nullptr;
-  VecGetArray(b, &b_ptr);
-  int offset = 0;
-  for (std::size_t i = 0; i < L.size(); ++i)
-  {
-    const int map_size0 = maps0[i]->size_local() * maps0[i]->block_size;
-    Eigen::Map<Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1>> b_sub(
-        b_ptr + offset, map_size0);
-    for (auto bc : bcs)
-    {
-      if (L[i]->function_space(0)->contains(*bc->function_space()))
-      {
-        if (x0)
-          bc->set(b_sub, x0_ref[i], scale);
-        else
-          bc->set(b_sub, scale);
-      }
-    }
-    offset += map_size0;
-  }
-
-  VecRestoreArray(b, &b_ptr);
-}
-//-----------------------------------------------------------------------------
 
 } // namespace
 
@@ -157,24 +61,6 @@ void fem::assemble_vector(
     Eigen::Ref<Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1>> b, const Form& L)
 {
   fem::impl::assemble_vector(b, L);
-}
-//-----------------------------------------------------------------------------
-void fem::assemble_vector(
-    Vec b, std::vector<const Form*> L,
-    const std::vector<std::vector<std::shared_ptr<const Form>>> a,
-    std::vector<std::shared_ptr<const DirichletBC>> bcs, const Vec x0,
-    double scale)
-{
-  VecType vec_type;
-  VecGetType(b, &vec_type);
-  const bool is_vecnest = strcmp(vec_type, VECNEST) == 0;
-  if (is_vecnest)
-  {
-    throw std::runtime_error(
-        "This function no longer support blocked assembly.");
-  }
-  else
-    _assemble_vector_block(b, L, a, bcs, x0, scale);
 }
 //-----------------------------------------------------------------------------
 void fem::apply_lifting(

@@ -124,6 +124,24 @@ def _(b: PETSc.Vec, L: typing.List[typing.Union[Form, cpp.fem.Form]]) -> PETSc.V
     return b
 
 
+@functools.singledispatch
+def assemble_vector_block_new(L: typing.Union[Form, cpp.fem.Form]) -> PETSc.Vec:
+    """Assemble linear forms into a nested (VecNest) vector. not finalised,
+    i.e. ghost values are not accumulated.
+
+    """
+    maps = [form.function_space(0).dofmap.index_map for form in _create_cpp_form(L)]
+    b_subs = [cpp.la.create_vector(index_map) for index_map in maps]
+    for b_sub in b_subs:
+        with b_sub.localForm() as b_local:
+            b_local.set(0.0)
+        assemble_vector_block_new2(b_subs, L)
+    return b_subs
+
+# @assemble_vector_block_new.register(PETSc.Vec)
+# def _(b: PETSc.Vec, L: typing.List[typing.Union[Form, cpp.fem.Form]]) -> PETSc.Vec:
+
+
 # FIXME: Revise this interface
 @functools.singledispatch
 def assemble_vector_block(L: typing.List[typing.Union[Form, cpp.fem.Form]],
@@ -139,7 +157,23 @@ def assemble_vector_block(L: typing.List[typing.Union[Form, cpp.fem.Form]],
     maps = [form.function_space(0).dofmap.index_map for form in _create_cpp_form(L)]
     b = cpp.fem.create_vector_block(maps)
     b.set(0.0)
+    return assemble_vector_block(b, L, a, bcs, x0, scale)
 
+
+@assemble_vector_block.register(PETSc.Vec)
+def _(b: PETSc.Vec,
+      L: typing.List[typing.Union[Form, cpp.fem.Form]],
+      a,
+      bcs: typing.List[DirichletBC],
+      x0: typing.Optional[PETSc.Vec] = None,
+      scale: float = 1.0) -> PETSc.Vec:
+    """Assemble linear forms into a monolithic vector. The vector is not
+    zeroed and it is not finalised, i.e. ghost values are not
+    accumulated.
+
+    """
+    # cpp.fem.assemble_vector(b, _create_cpp_form(L), _create_cpp_form(a), bcs, x0, scale)
+    maps = [form.function_space(0).dofmap.index_map for form in _create_cpp_form(L)]
     if x0 is not None:
         x0_local = cpp.la.get_local_vectors(x0, maps)
     else:
@@ -178,28 +212,12 @@ def assemble_vector_block(L: typing.List[typing.Union[Form, cpp.fem.Form]],
     b.ghostUpdate(addv=PETSc.InsertMode.INSERT, mode=PETSc.ScatterMode.FORWARD)
     return b
 
-    b1 = cpp.fem.create_vector_block(maps)
-    b1.set(0.0)
-    cpp.fem.assemble_vector(b1, _create_cpp_form(L), _create_cpp_form(a), bcs, x0, scale)
-    print("Norms:", b.norm(), b1.norm())
-    # (b - b1).view()
-    return b1
-
-
-@assemble_vector_block.register(PETSc.Vec)
-def _(b: PETSc.Vec,
-      L: typing.List[typing.Union[Form, cpp.fem.Form]],
-      a,
-      bcs: typing.List[DirichletBC],
-      x0: typing.Optional[PETSc.Vec] = None,
-      scale: float = 1.0) -> PETSc.Vec:
-    """Assemble linear forms into a monolithic vector. The vector is not
-    zeroed and it is not finalised, i.e. ghost values are not
-    accumulated.
-
-    """
-    cpp.fem.assemble_vector(b, _create_cpp_form(L), _create_cpp_form(a), bcs, x0, scale)
-    return b
+    # b1 = cpp.fem.create_vector_block(maps)
+    # b1.set(0.0)
+    # cpp.fem.assemble_vector(b1, _create_cpp_form(L), _create_cpp_form(a), bcs, x0, scale)
+    # print("Norms:", b.norm(), b1.norm())
+    # # (b - b1).view()
+    # return b1
 
 
 # -- Matrix assembly ---------------------------------------------------------
