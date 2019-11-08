@@ -124,33 +124,6 @@ def _(b: PETSc.Vec, L: typing.List[typing.Union[Form, cpp.fem.Form]]) -> PETSc.V
     return b
 
 
-@functools.singledispatch
-def assemble_vector_block_new(L: typing.Union[Form, cpp.fem.Form]) -> PETSc.Vec:
-    """Assemble linear forms into a nested (VecNest) vector. not finalised,
-    i.e. ghost values are not accumulated.
-
-    """
-    maps = [form.function_space(0).dofmap.index_map for form in _create_cpp_form(L)]
-    b_subs = [cpp.la.create_vector(index_map) for index_map in maps]
-    for b_sub in b_subs:
-        with b_sub.localForm() as b_local:
-            b_local.set(0.0)
-        assemble_vector_block_new2(b_subs, L)
-    return b_subs
-
-# @assemble_vector_block_new.register(PETSc.Vec)
-# def _(b: PETSc.Vec, L: typing.List[typing.Union[Form, cpp.fem.Form]]) -> PETSc.Vec:
-
-
-def assemble_vector_block_new2(b, L: typing.Union[Form, cpp.fem.Form]) -> PETSc.Vec:
-    """Assemble linear forms into a list of vectors.
-
-    """
-    for b_sub, L_sub in zip(b, L):
-        assemble_vector(b_sub, L_sub)
-    return b
-
-
 # FIXME: Revise this interface
 @functools.singledispatch
 def assemble_vector_block(L: typing.List[typing.Union[Form, cpp.fem.Form]],

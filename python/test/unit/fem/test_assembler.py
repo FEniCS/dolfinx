@@ -472,21 +472,6 @@ def test_assembly_solve_taylor_hood(mesh):
     b1 = dolfin.fem.assemble_vector_block([L0, L1], [[a00, a01], [a10, a11]],
                                           [bc0, bc1])
 
-    # b2 = dolfin.fem.assemble_vector_block([L0, L1], [[a00, a01], [a10, a11]], [])
-    # print("Norm 1: ", b2.norm())
-    # bcs1 = dolfin.cpp.fem.bcs_cols(dolfin.fem.assemble._create_cpp_form([[a00, a01], [a10, a11]]), [bc0, bc1])
-    # # Assemble blocks, including bc lifting
-    # b_block = dolfin.fem.assemble.assemble_vector_block_new([L0, L1])
-    # for b_sub, a_sub, bc in zip(b_block, [[a00, a01], [a10, a11]], bcs1):
-    #     dolfin.fem.assemble.apply_lifting(b_sub, a_sub, bc)
-
-    # # Combine into global b
-    # maps = [form.function_space(0).dofmap.index_map for form in dolfin.fem.assemble._create_cpp_form([L0, L1])]
-    # b2.set(0.0)
-    # dolfin.cpp.la.scatter_local_vectors(b2, b_block, maps)
-    # bcs0 = dolfin.cpp.fem.bcs_rows(dolfin.fem.assemble._create_cpp_form([L0, L1]), [bc0, bc1])
-    # print("Norm 2: ", b2.norm())
-
     assert b1.norm() == pytest.approx(b0norm, 1.0e-12)
 
     ksp = PETSc.KSP()
