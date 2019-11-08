@@ -172,36 +172,36 @@ def assemble_vector_block(L: typing.List[typing.Union[Form, cpp.fem.Form]],
     else:
         x0_local = []
 
-    x0_local = []
     bcs1 = cpp.fem.bcs_cols(_create_cpp_form(a), bcs)
     b_local = cpp.la.get_local_vectors(b, maps)
     for b_sub, L_sub, a_sub, bc in zip(b_local, L, a, bcs1):
+        b_sub[:] = 0.0
         cpp.fem.assemble_vector(b_sub, _create_cpp_form(L_sub))
-        tmp = b_sub.copy()
         cpp.fem.apply_lifting(b_sub, _create_cpp_form(a_sub), bc, x0_local, scale)
-        # print(b_sub)
-
 
     cpp.la.scatter_local_vectors(b, b_local, maps)
-    b.view()
+    b.ghostUpdate(addv=PETSc.InsertMode.ADD, mode=PETSc.ScatterMode.REVERSE)
 
     bcs0 = cpp.fem.bcs_rows(_create_cpp_form(L), bcs)
-    for b_sub, bc in zip(b_local, bcs0):
-        cpp.fem.set_bc_new(b_sub, bc, scale)
-        # print(b_sub)
+    offset = 0
+    b_array = b.getArray(readonly=False)
+    for submap, bc, x0_sub in zip(maps, bcs0, x0_local):
+        size = submap.size_local * submap.block_size
+        b_sub = b_array[offset:offset + size]
+        if x0 is None:
+            cpp.fem.set_bc_new(b_sub, bc, scale)
+        else:
+            cpp.fem.set_bc_new(b_sub, bc, x0_sub, scale)
+        offset += size
 
-    cpp.la.scatter_local_vectors(b, b_local, maps)
-    b.view()
+    b.ghostUpdate(addv=PETSc.InsertMode.INSERT, mode=PETSc.ScatterMode.FORWARD)
+    return b
 
-    # b.ghostUpdate(addv=PETSc.InsertMode.INSERT, mode=PETSc.ScatterMode.FORWARD)
-
-    b1 = cpp.fem.create_vector_block(maps)
-    b1.set(0.0)
+    # b1 = cpp.fem.create_vector_block(maps)
+    # b1.set(0.0)
     # cpp.fem.assemble_vector(b1, _create_cpp_form(L), _create_cpp_form(a), bcs, x0, scale)
-    cpp.fem.assemble_vector(b1, _create_cpp_form(L), _create_cpp_form(a), bcs, x0, scale)
-    b1.view()
-    # (b1 - b).view()
-    return b1
+    # (b - b1).view()
+    # return b1
 
 
 @assemble_vector_block.register(PETSc.Vec)

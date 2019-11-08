@@ -287,6 +287,14 @@ void fem(py::module& m)
           std::vector<std::shared_ptr<const dolfin::fem::DirichletBC>>, double>(
           &dolfin::fem::set_bc_new),
       "Insert boundary condition values into vector");
+  m.def("set_bc_new",
+        py::overload_cast<
+            Eigen::Ref<Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1>>,
+            std::vector<std::shared_ptr<const dolfin::fem::DirichletBC>>,
+            const Eigen::Ref<
+                const Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1>>&,
+            double>(&dolfin::fem::set_bc_new),
+        "Insert boundary condition values into vector");
   // Tools
   m.def("bcs_rows", &dolfin::fem::bcs_rows);
   m.def("bcs_cols", &dolfin::fem::bcs_cols);
