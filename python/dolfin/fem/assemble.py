@@ -193,11 +193,13 @@ def assemble_vector_block(L: typing.List[typing.Union[Form, cpp.fem.Form]],
             cpp.fem.set_bc_new(b_sub, bc, scale)
             offset += size
     else:
-        for submap, bc, x0_sub in zip(maps, bcs0, x0_local):
+        x_array = x0.getArray(readonly=True)
+        for submap, bc in zip(maps, bcs0):
             size = submap.size_local * submap.block_size
             b_sub = b_array[offset:offset + size]
+            x_sub = x_array[offset:offset + size]
             cpp.fem.set_bc_new(b_sub, bc, scale)
-            cpp.fem.set_bc_new(b_sub, bc, x0_sub, scale)
+            cpp.fem.set_bc_new(b_sub, bc, x_sub, scale)
             offset += size
 
     b.ghostUpdate(addv=PETSc.InsertMode.INSERT, mode=PETSc.ScatterMode.FORWARD)
