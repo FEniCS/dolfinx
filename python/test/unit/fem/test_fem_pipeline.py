@@ -68,10 +68,8 @@ def test_manufactured_poisson(n, mesh, component):
     # Solve
     uh = Function(V)
     solver.solve(b, uh.vector)
-    uh.vector.ghostUpdate(addv=PETSc.InsertMode.INSERT,
-                          mode=PETSc.ScatterMode.FORWARD)
+    uh.vector.ghostUpdate(addv=PETSc.InsertMode.INSERT, mode=PETSc.ScatterMode.FORWARD)
 
     error = assemble_scalar((u_exact - uh)**2 * dx)
     error = MPI.sum(mesh.mpi_comm(), error)
-    print("Error: ", error)
-    assert error < 1.0e-14
+    assert np.absolute(error) < 1.0e-14
