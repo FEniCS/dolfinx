@@ -32,8 +32,6 @@ namespace dolfin_wrappers
 void io(py::module& m)
 {
 
-  m.def("vtk_to_dolfin_ordering", &dolfin::io::cells::vtk_to_dolfin_ordering);
-
   // dolfin::io::HDF5File
   py::class_<dolfin::io::HDF5File, std::shared_ptr<dolfin::io::HDF5File>>(
       m, "HDF5File", py::dynamic_attr())
