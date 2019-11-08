@@ -10,74 +10,67 @@ from petsc4py import PETSc
 
 from dolfin import (MPI, DirichletBC, Function, FunctionSpace, TestFunction,
                     TrialFunction, UnitCubeMesh, UnitIntervalMesh,
-                    UnitSquareMesh)
+                    UnitSquareMesh, cpp)
 from dolfin.cpp.mesh import CellType
 from dolfin.fem import (apply_lifting, assemble_matrix, assemble_scalar,
                         assemble_vector, set_bc)
 from ufl import SpatialCoordinate, div, dx, grad, inner
 
 
-@pytest.mark.parametrize("n", [3, 4])
-@pytest.mark.parametrize("cell_type, gdim", [
-    # (CellType.interval, 1),
-    # (CellType.triangle, 2),
-    # (CellType.quadrilateral, 2),
-    (CellType.tetrahedron, 3),
-    # (CellType.hexahedron, 3)
+@pytest.mark.parametrize("n", [2, 3, 4])
+@pytest.mark.parametrize("mesh", [
+    UnitIntervalMesh(MPI.comm_world, 10),
+    UnitSquareMesh(MPI.comm_world, 3, 4, CellType.triangle),
+    UnitSquareMesh(MPI.comm_world, 3, 4, CellType.quadrilateral),
+    UnitCubeMesh(MPI.comm_world, 2, 3, 2, CellType.tetrahedron),
+    UnitCubeMesh(MPI.comm_world, 2, 3, 2, CellType.hexahedron),
 ])
-def test_manufactured_poisson(n, cell_type, gdim):
-    """ Manufactured Poisson problem, solving u = Pi_{i=0}^gdim (1 - x[i]) * x[i]^(p - 1)
+def test_manufactured_poisson(n, mesh):
+    """ Manufactured Poisson problem, solving u = x[0]**p,
     where p is the degree of the Lagrange function space. Solved on the
-    gdim-dimensional UnitMesh, with homogeneous Dirichlet boundary
-    conditions.
+    gdim-dimensional UnitMesh.
+
     """
-    if gdim == 1:
-        mesh = UnitIntervalMesh(MPI.comm_world, 10)
-    if gdim == 2:
-        mesh = UnitSquareMesh(MPI.comm_world, 15, 15, cell_type)
-    elif gdim == 3:
-        mesh = UnitCubeMesh(MPI.comm_world, 1, 1, 1, cell_type)
-    V = FunctionSpace(mesh, ("CG", n))
+
+    V = FunctionSpace(mesh, ("Lagrange", n))
+    V_f = FunctionSpace(mesh, ("Lagrange", max(n - 2, 1)))
     u, v = TrialFunction(V), TestFunction(V)
 
-    f = Function(V)
-    f.interpolate(lambda x: -n * (n - 1) * x[:, 0]**(n - 2) + (n - 1) * (n - 2) * x[:, 0]**(n - 3))
-
+    # Exact solution
     u_exact = Function(V)
-    u_exact.interpolate(lambda x: - x[:, 0]**n + x[:, 0]**(n - 1))
-    a= inner(grad(u), grad(v)) * dx
-    L= inner(-f, v) * dx
+    u_exact.interpolate(lambda x: x[:, 0]**n)
 
-    def boundary(x):
-        """Boundary marker """
-        return np.logical_or(x[:, 0] < 1e-6, x[:, 0] > (1.0 - 1e-6))
+    # RHS terms
+    f = Function(V_f)
+    f.interpolate(lambda x: -n*(n-1)*x[:, 0]**(n-2))
 
-    u_bc= Function(V)
-    with u_bc.vector.localForm() as u_local:
-        u_local.set(0.0)
-    bc= DirichletBC(V, u_bc, boundary)
+    a = inner(grad(u), grad(v)) * dx
+    L = inner(f, v) * dx
 
-    uh= Function(V)
-    b= assemble_vector(L)
+    u_bc = Function(V)
+    u_bc.interpolate(lambda x: x[:, 0]**n)
+    bc = DirichletBC(V, u_bc, lambda x: np.full(x.shape[0], True))
+
+    b = assemble_vector(L)
     apply_lifting(b, [a], [[bc]])
     b.ghostUpdate(addv=PETSc.InsertMode.ADD, mode=PETSc.ScatterMode.REVERSE)
     set_bc(b, [bc])
 
-    A= assemble_matrix(a, [bc])
+    A = assemble_matrix(a, [bc])
     A.assemble()
 
-    # Create CG Krylov solver and turn convergence monitoring on
-    opts= PETSc.Options()
-    opts["ksp_type"]= "preonly"
-    opts["pc_type"]= "lu"
-    solver= PETSc.KSP().create(MPI.comm_world)
-    solver.setFromOptions()
+    # Create LU linear solver
+    solver = PETSc.KSP().create(MPI.comm_world)
+    solver.setType(PETSc.KSP.Type.PREONLY)
+    solver.getPC().setType(PETSc.PC.Type.LU)
     solver.setOperators(A)
+
+    # Solve
+    uh = Function(V)
     solver.solve(b, uh.vector)
+    uh.vector.ghostUpdate(addv=PETSc.InsertMode.INSERT,
+                          mode=PETSc.ScatterMode.FORWARD)
 
-    uh.vector.ghostUpdate(addv=PETSc.InsertMode.INSERT, mode=PETSc.ScatterMode.FORWARD)
-
-    error= assemble_scalar((u_exact - uh)**2 * dx)
-    error= MPI.sum(mesh.mpi_comm(), error)
-    print(error)
-    # assert error < 1e-12
+    error = assemble_scalar((u_exact - uh)**2 * dx)
+    error = MPI.sum(mesh.mpi_comm(), error)
+    assert error < 1.0e-14
