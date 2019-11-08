@@ -135,8 +135,8 @@ std::vector<std::uint8_t> io::cells::dolfin_to_vtk(mesh::CellType type,
     case 8:
       return {0, 4, 6, 2, 1, 5, 7, 3};
     case 27:
-      // FIXME: Ordering due to
-      // https://gitlab.kitware.com/paraview/paraview/issues/19433
+      // TODO: change permutation when paraview issue 19433 is resolved
+      // (https://gitlab.kitware.com/paraview/paraview/issues/19433)
       return {0,  9, 12, 3,  1, 10, 13, 4,  18, 15, 21, 6,  19, 16,
               22, 7, 2,  11, 5, 14, 8,  17, 20, 23, 24, 25, 26};
     default:
@@ -263,19 +263,8 @@ io::cells::vtk_to_dolfin_ordering(
         std::int64_t, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>>& cells,
     mesh::CellType type)
 {
-  /// Get VTK permutation for given cell type
-  const std::vector<std::uint8_t> permutation
-      = io::cells::vtk_to_dolfin(type, cells.cols());
 
-  /// Permute input cells
-  Eigen::Array<std::int64_t, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
-      cells_dolfin(cells.rows(), cells.cols());
-  for (Eigen::Index c = 0; c < cells_dolfin.rows(); ++c)
-  {
-    for (Eigen::Index v = 0; v < cells_dolfin.cols(); ++v)
-      cells_dolfin(c, v) = cells(c, permutation[v]);
-  }
-  return cells_dolfin;
+  return permute_ordering(cells, io::cells::vtk_to_dolfin(type, cells.cols()));
 }
 //-----------------------------------------------------------------------------
 Eigen::Array<std::int64_t, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
@@ -284,10 +273,15 @@ io::cells::lex_to_dolfin_ordering(
         std::int64_t, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>>& cells,
     mesh::CellType type)
 {
-  const std::vector<std::uint8_t> permutation
-      = io::cells::lex_to_tp(type, cells.cols());
-
-  /// Permute input cells
+  return permute_ordering(cells, io::cells::lex_to_tp(type, cells.cols()));
+}
+//-----------------------------------------------------------------------------
+Eigen::Array<std::int64_t, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
+io::cells::permute_ordering(
+    const Eigen::Ref<const Eigen::Array<
+        std::int64_t, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>>& cells,
+    const std::vector<std::uint8_t>& permutation)
+{
   Eigen::Array<std::int64_t, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
       cells_dolfin(cells.rows(), cells.cols());
   for (Eigen::Index c = 0; c < cells_dolfin.rows(); ++c)

@@ -90,6 +90,12 @@ lex_to_dolfin_ordering(
         std::int64_t, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>>& cells,
     mesh::CellType type);
 
+Eigen::Array<std::int64_t, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
+permute_ordering(
+    const Eigen::Ref<const Eigen::Array<
+        std::int64_t, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>>& cells,
+    const std::vector<std::uint8_t>& permutation);
+
 } // namespace cells
 } // namespace io
 } // namespace dolfin
