@@ -7,6 +7,7 @@
 #include "UnitDiscMesh.h"
 #include <cmath>
 #include <dolfin/common/types.h>
+#include <dolfin/io/cells.h>
 #include <dolfin/mesh/Partitioning.h>
 
 using namespace dolfin;
@@ -92,8 +93,11 @@ mesh::Mesh UnitDiscMesh::create(MPI_Comm comm, int n,
     }
   }
 
+  Eigen::Array<std::int64_t, Eigen::Dynamic, 6, Eigen::RowMajor> cells_reordered
+      = io::cells::vtk_to_dolfin_ordering(cells, mesh::CellType::triangle);
+
   return mesh::Partitioning::build_distributed_mesh(
-      comm, mesh::CellType::triangle, points, cells, {}, ghost_mode);
+      comm, mesh::CellType::triangle, points, cells_reordered, {}, ghost_mode);
 }
 
 //-----------------------------------------------------------------------------

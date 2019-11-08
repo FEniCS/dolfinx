@@ -1469,6 +1469,9 @@ mesh::Mesh XDMFFile::read_mesh(const mesh::GhostMode ghost_mode) const
   std::tie(cell_type, points, cells, global_cell_indices)
       = read_mesh_data(_mpi_comm.comm());
 
+  //  Permute cells to dolfin ordering
+  cells = io::cells::vtk_to_dolfin_ordering(cells, cell_type);
+
   return mesh::Partitioning::build_distributed_mesh(
       _mpi_comm.comm(), cell_type, points, cells, global_cell_indices,
       ghost_mode);
