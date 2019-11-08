@@ -29,7 +29,6 @@
 #include <dolfin/la/PETScVector.h>
 #include <dolfin/la/utils.h>
 #include <dolfin/mesh/Connectivity.h>
-#include <dolfin/mesh/DistributedMeshTools.h>
 #include <dolfin/mesh/Mesh.h>
 #include <dolfin/mesh/MeshEntity.h>
 #include <dolfin/mesh/MeshIterator.h>
@@ -1470,6 +1469,10 @@ mesh::Mesh XDMFFile::read_mesh(const mesh::GhostMode ghost_mode) const
   std::tie(cell_type, points, cells, global_cell_indices)
       = read_mesh_data(_mpi_comm.comm());
 
+  //  Permute cells to DOLFIN ordering
+  cells = io::cells::permute_ordering(
+      cells, io::cells::vtk_to_dolfin(cell_type, cells.cols()));
+
   return mesh::Partitioning::build_distributed_mesh(
       _mpi_comm.comm(), cell_type, points, cells, global_cell_indices,
       ghost_mode);
@@ -1726,8 +1729,6 @@ XDMFFile::read_mesh_function(std::shared_ptr<const mesh::Mesh> mesh,
   const std::int64_t num_entities_global
       = xdmf_utils::get_num_cells(topology_node);
 
-  // Ensure num_entities_global(cell_dim) is set and check dataset matches
-  mesh::DistributedMeshTools::number_entities(*mesh, dim);
   assert(mesh->num_entities_global(dim) == num_entities_global);
 
   boost::filesystem::path xdmf_filename(_filename);
@@ -1846,11 +1847,6 @@ void XDMFFile::write_mesh_function(const mesh::MeshFunction<T>& meshfunction)
     assert(grid_node);
     grid_node.append_attribute("Name") = "mesh";
     grid_node.append_attribute("GridType") = "Uniform";
-
-    // Make sure entities are numbered - only needed for  mesh::Edge in 3D in
-    // parallel
-    // FIXME: remove this once  mesh::Edge in 3D in parallel works properly
-    mesh::DistributedMeshTools::number_entities(*mesh, cell_dim);
 
     xdmf_write::add_topology_data(_mpi_comm.comm(), grid_node, h5_id, mf_name,
                                   *mesh, cell_dim);

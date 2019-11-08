@@ -11,6 +11,7 @@
 #include <dolfin/io/HDF5File.h>
 #include <dolfin/io/VTKFile.h>
 #include <dolfin/io/XDMFFile.h>
+#include <dolfin/io/cells.h>
 #include <dolfin/la/PETScVector.h>
 #include <dolfin/mesh/Mesh.h>
 #include <dolfin/mesh/MeshFunction.h>
@@ -30,6 +31,11 @@ namespace dolfin_wrappers
 
 void io(py::module& m)
 {
+
+  // dolfin::io::cell permutation functions
+  m.def("permutation_vtk_to_dolfin", &dolfin::io::cells::vtk_to_dolfin);
+  m.def("permute_cell_ordering", &dolfin::io::cells::permute_ordering);
+
   // dolfin::io::HDF5File
   py::class_<dolfin::io::HDF5File, std::shared_ptr<dolfin::io::HDF5File>>(
       m, "HDF5File", py::dynamic_attr())
@@ -238,7 +244,39 @@ void io(py::module& m)
       .def("write",
            py::overload_cast<const dolfin::mesh::Mesh&>(
                &dolfin::io::VTKFile::write),
-           py::arg("mesh"));
+           py::arg("mesh"))
+      .def("write",
+           py::overload_cast<const dolfin::mesh::MeshFunction<std::size_t>&>(
+               &dolfin::io::VTKFile::write),
+           py::arg("mf"))
+      .def("write",
+           py::overload_cast<const dolfin::mesh::MeshFunction<std::size_t>&,
+                             double>(&dolfin::io::VTKFile::write),
+           py::arg("mf"), py::arg("t"))
+      .def("write",
+           py::overload_cast<const dolfin::mesh::MeshFunction<bool>&>(
+               &dolfin::io::VTKFile::write),
+           py::arg("mf"))
+      .def("write",
+           py::overload_cast<const dolfin::mesh::MeshFunction<bool>&, double>(
+               &dolfin::io::VTKFile::write),
+           py::arg("mf"), py::arg("t"))
+      .def("write",
+           py::overload_cast<const dolfin::mesh::MeshFunction<double>&>(
+               &dolfin::io::VTKFile::write),
+           py::arg("mf"))
+      .def("write",
+           py::overload_cast<const dolfin::mesh::MeshFunction<double>&, double>(
+               &dolfin::io::VTKFile::write),
+           py::arg("mf"), py::arg("t"))
+      .def("write",
+           py::overload_cast<const dolfin::mesh::MeshFunction<int>&>(
+               &dolfin::io::VTKFile::write),
+           py::arg("mf"))
+      .def("write",
+           py::overload_cast<const dolfin::mesh::MeshFunction<int>&, double>(
+               &dolfin::io::VTKFile::write),
+           py::arg("mf"), py::arg("t"));
 
   // XDFMFile::read
   xdmf_file

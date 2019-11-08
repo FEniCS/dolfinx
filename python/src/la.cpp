@@ -104,9 +104,10 @@ void la(py::module& m)
         },
         py::return_value_policy::take_ownership,
         "Create a PETSc Mat from sparsity pattern.");
-    m.def("get_local_vectors", &dolfin::la::get_local_vectors);
-    m.def("scatter_local_vectors", &dolfin::la::scatter_local_vectors);
-
+  m.def("scatter_local_vectors", &dolfin::la::scatter_local_vectors,
+        "Scatter the (ordered) list of sub vectors into a block vector.");
+  m.def("get_local_vectors", &dolfin::la::get_local_vectors,
+        "Gather an (ordered) list of sub vectors from a block vector.");
   // NOTE: Enabling the below requires adding a C API for MatNullSpace to
   // petsc4py
   //   m.def("create_nullspace",

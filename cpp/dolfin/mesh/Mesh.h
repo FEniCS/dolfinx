@@ -156,9 +156,6 @@ public:
   /// Compute all entities and connectivity
   void create_connectivity_all() const;
 
-  /// Compute global indices for entity dimension dim
-  void create_global_indices(std::size_t dim) const;
-
   /// Clean out all auxiliary topology data. This clears all topological
   /// data, except the connectivity between cells and vertices.
   void clean();
@@ -235,7 +232,7 @@ private:
   // Coordinate dofs
   std::unique_ptr<CoordinateDofs> _coordinate_dofs;
 
-  // FXIME: This shouldn't be here
+  // FIXME: This shouldn't be here
   // Mesh geometric degree (in Lagrange basis) describing coordinate
   // dofs
   std::int32_t _degree;

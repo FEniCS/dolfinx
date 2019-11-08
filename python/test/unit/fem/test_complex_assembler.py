@@ -38,7 +38,7 @@ def test_complex_assembly():
     b.ghostUpdate(addv=PETSc.InsertMode.ADD, mode=PETSc.ScatterMode.REVERSE)
     bnorm = b.norm(PETSc.NormType.N1)
     b_norm_ref = abs(-2 + 3.0j)
-    assert np.isclose(bnorm, b_norm_ref)
+    assert bnorm == pytest.approx(b_norm_ref)
 
     A = dolfin.fem.assemble_matrix(a_real)
     A.assemble()
@@ -52,7 +52,8 @@ def test_complex_assembly():
     A = dolfin.fem.assemble_matrix(a_imag)
     A.assemble()
     A1_norm = A.norm(PETSc.NormType.FROBENIUS)
-    assert np.isclose(A0_norm, A1_norm)
+    assert A0_norm == pytest.approx(A1_norm)
+
     b = dolfin.fem.assemble_vector(L0)
     b.ghostUpdate(addv=PETSc.InsertMode.ADD, mode=PETSc.ScatterMode.REVERSE)
     b1_norm = b.norm(PETSc.NormType.N2)
@@ -63,11 +64,11 @@ def test_complex_assembly():
     A = dolfin.fem.assemble_matrix(a_complex)
     A.assemble()
     A2_norm = A.norm(PETSc.NormType.FROBENIUS)
-    assert np.isclose(A1_norm, A2_norm / np.sqrt(2))
+    assert A1_norm == pytest.approx(A2_norm / np.sqrt(2))
     b = dolfin.fem.assemble_vector(L2)
     b.ghostUpdate(addv=PETSc.InsertMode.ADD, mode=PETSc.ScatterMode.REVERSE)
     b2_norm = b.norm(PETSc.NormType.N2)
-    assert np.isclose(b2_norm, b1_norm)
+    assert b2_norm == pytest.approx(b1_norm)
 
 
 def test_complex_assembly_solve():
@@ -84,13 +85,13 @@ def test_complex_assembly_solve():
     x = SpatialCoordinate(mesh)
 
     # Define source term
-    A = 1 + 2 * (2 * np.pi)**2
+    A = 1.0 + 2.0 * (2.0 * np.pi)**2
     f = (1. + 1j) * A * ufl.cos(2 * np.pi * x[0]) * ufl.cos(2 * np.pi * x[1])
 
     # Variational problem
     u = dolfin.function.TrialFunction(V)
     v = dolfin.function.TestFunction(V)
-    C = 1 + 1j
+    C = 1.0 + 1.0j
     a = C * inner(grad(u), grad(v)) * dx + C * inner(u, v) * dx
     L = inner(f, v) * dx
 
@@ -102,7 +103,8 @@ def test_complex_assembly_solve():
 
     # Create solver
     solver = PETSc.KSP().create(mesh.mpi_comm())
-    opts = PETSc.Options()
+    solver.setOptionsPrefix("test_lu_")
+    opts = PETSc.Options("test_lu_")
     opts["ksp_type"] = "preonly"
     opts["pc_type"] = "lu"
     solver.setFromOptions()
@@ -116,6 +118,5 @@ def test_complex_assembly_solve():
     u_ref = dolfin.function.Function(V)
     u_ref.interpolate(ref_eval)
 
-    xnorm = x.norm(PETSc.NormType.N2)
-    x_ref_norm = u_ref.vector.norm(PETSc.NormType.N2)
-    assert np.isclose(xnorm, x_ref_norm)
+    diff = (x - u_ref.vector).norm(PETSc.NormType.N2)
+    assert diff == pytest.approx(0.0, abs=1e-1)

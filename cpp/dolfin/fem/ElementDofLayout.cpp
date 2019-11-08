@@ -6,6 +6,7 @@
 
 #include "ElementDofLayout.h"
 #include <array>
+#include <dolfin/common/log.h>
 #include <map>
 #include <numeric>
 #include <set>
@@ -18,9 +19,10 @@ ElementDofLayout::ElementDofLayout(
     int block_size, const std::vector<std::vector<std::set<int>>>& entity_dofs,
     const std::vector<int>& parent_map,
     const std::vector<std::shared_ptr<const ElementDofLayout>> sub_dofmaps,
-    const mesh::CellType cell_type)
+    const mesh::CellType cell_type, const std::array<int, 4> entity_block_size)
     : _block_size(block_size), _parent_map(parent_map), _num_dofs(0),
-      _entity_dofs(entity_dofs), _sub_dofmaps(sub_dofmaps)
+      _entity_dofs(entity_dofs), _sub_dofmaps(sub_dofmaps),
+      _entity_block_size(entity_block_size)
 {
   // TODO: Handle global support dofs
 
@@ -161,6 +163,11 @@ ElementDofLayout::sub_view(const std::vector<int>& component) const
 }
 //-----------------------------------------------------------------------------
 int ElementDofLayout::block_size() const { return _block_size; }
+//-----------------------------------------------------------------------------
+int ElementDofLayout::entity_block_size(const int dim) const
+{
+  return _entity_block_size[dim] * _block_size;
+}
 //-----------------------------------------------------------------------------
 bool ElementDofLayout::is_view() const { return !_parent_map.empty(); }
 //-----------------------------------------------------------------------------

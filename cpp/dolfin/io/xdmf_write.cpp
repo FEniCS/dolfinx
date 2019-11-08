@@ -434,10 +434,6 @@ std::string to_string(X x, Y y)
 std::set<std::uint32_t>
 xdmf_write::compute_nonlocal_entities(const mesh::Mesh& mesh, int cell_dim)
 {
-  // If not already numbered, number entities of
-  // order cell_dim so we can get shared_entities
-  mesh::DistributedMeshTools::number_entities(mesh, cell_dim);
-
   const int mpi_rank = dolfin::MPI::rank(mesh.mpi_comm());
   const mesh::Topology& topology = mesh.topology();
   const std::map<std::int32_t, std::set<std::int32_t>>& shared_entities
