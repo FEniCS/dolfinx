@@ -525,11 +525,6 @@ def test_triangle_dof_ordering(space_type):
             assert np.allclose(edges[0][i], j[i])
 
 
-test_triangle_dof_ordering(("P", 1))
-test_triangle_dof_ordering(("P", 2))
-test_triangle_dof_ordering(("P", 3))
-
-
 @skip_in_parallel
 @pytest.mark.parametrize('space_type', [
     ("P", 1), ("P", 2), ("P", 3), ("P", 4),
