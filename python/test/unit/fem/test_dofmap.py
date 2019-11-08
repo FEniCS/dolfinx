@@ -628,17 +628,10 @@ def test_quadrilateral_dof_ordering(space_type):
 
         edges.append({i: j for i, j in zip(edge_dofs, x[edge_dofs_local])})
 
-    for i in edges:
-        print(i)
-
     for i in edges[0]:
         for j in edges[1:]:
             assert np.allclose(edges[0][i], j[i])
 
-
-test_quadrilateral_dof_ordering(("P", 2))
-test_quadrilateral_dof_ordering(("P", 3))
-test_quadrilateral_dof_ordering(("P", 5))
 
 @skip_in_parallel
 @pytest.mark.parametrize("points, celltype", [(np.array([[0, 0], [0, 2], [1, 0], [1, 2]]),

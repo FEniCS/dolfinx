@@ -318,21 +318,16 @@ compute_ordering_quadrilateral(const mesh::Mesh& mesh)
     const std::int32_t* vertices = cell.entities(0);
 
     // Set the orders for the edge flips
-    cell_orders(cell_n, 0) = (vertices[2] > vertices[3]);
-    cell_orders(cell_n, 1) = (vertices[1] > vertices[3]);
+    cell_orders(cell_n, 0) = (vertices[0] > vertices[1]);
+    cell_orders(cell_n, 1) = (vertices[2] > vertices[3]);
     cell_orders(cell_n, 2) = (vertices[0] > vertices[2]);
-    cell_orders(cell_n, 3) = (vertices[0] > vertices[1]);
+    cell_orders(cell_n, 3) = (vertices[1] > vertices[3]);
 
     // Set the orders for the face rotation and reflection
     const std::array<int, 2> quad_orders = calculate_quadrilateral_orders(
         vertices[0], vertices[1], vertices[2], vertices[3]);
-    cell_orders(cell_n, 4) = quad_orders[0];
+    cell_orders(cell_n, 4) = quad_orders[0]; // TODO: check these permutations
     cell_orders(cell_n, 5) = quad_orders[1];
-
-    std::cout << '<';
-    for (int i=0; i<6; ++i)
-      std::cout << unsigned(cell_orders(cell_n, i)) << ',';
-    std::cout << '>' << std::endl;
   }
 
   return cell_orders;
