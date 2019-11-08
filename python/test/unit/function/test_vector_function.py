@@ -5,20 +5,17 @@
 # SPDX-License-Identifier:    LGPL-3.0-or-later
 """Test that the vectors in vector spaces are correctly oriented"""
 
-import pytest
-from dolfin import MPI, Function
-from dolfin.cpp.mesh import CellType
-from dolfin import cpp
-from dolfin import FunctionSpace, fem
-from dolfin_utils.test.skips import skip_in_parallel
 import numpy as np
+import pytest
+from dolfin_utils.test.skips import skip_in_parallel
+
+from dolfin import MPI, Function, FunctionSpace, cpp, fem
+from dolfin.cpp.mesh import CellType
 
 
 @skip_in_parallel
-@pytest.mark.parametrize(
-    'space_type', ["RT"])
-@pytest.mark.parametrize(
-    'order', [1, 2, 3, 4, 5])
+@pytest.mark.parametrize('space_type', ["RT"])
+@pytest.mark.parametrize('order', [1, 2, 3, 4, 5])
 def test_div_conforming_triangle(space_type, order):
     """Checks that the vectors in div conforming spaces on a triangle are correctly oriented"""
     # Create simple triangle mesh
@@ -56,10 +53,8 @@ def test_div_conforming_triangle(space_type, order):
 
 
 @skip_in_parallel
-@pytest.mark.parametrize(
-    'space_type', ["RT"])
-@pytest.mark.parametrize(
-    'order', [1, 2, 3, 4, 5])
+@pytest.mark.parametrize('space_type', ["RT"])
+@pytest.mark.parametrize('order', [1, 2, 3, 4, 5])
 def test_div_conforming_tetrahedron(space_type, order):
     """Checks that the vectors in div conforming spaces on a tetrahedron are correctly oriented"""
     # Create simple tetrahedron mesh
