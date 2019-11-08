@@ -93,7 +93,6 @@ def test_matrix_assembly_block():
     bnorm0 = b0.norm()
 
     # Nested (MatNest)
-<<<<<<< HEAD
     x0 = dolfin.fem.create_vector_nest(L_block)
 
     x0.set(initial_guess_value)
@@ -101,26 +100,17 @@ def test_matrix_assembly_block():
         x0_sub, soln_sub = x0_soln_pair
         x0_sub.ghostUpdate(addv=PETSc.InsertMode.INSERT, mode=PETSc.ScatterMode.FORWARD)
         x0_sub.copy(soln_sub.vector)
-=======
-    x1 = dolfin.fem.create_vector_nest(L_block)
-    for x1_soln_pair in zip(x1.getNestSubVecs(), (u, p)):
-        x1_sub, soln_sub = x1_soln_pair
->>>>>>> master
         soln_sub.vector.ghostUpdate(addv=PETSc.InsertMode.INSERT, mode=PETSc.ScatterMode.FORWARD)
         soln_sub.vector.copy(result=x1_sub)
         x1_sub.ghostUpdate(addv=PETSc.InsertMode.INSERT, mode=PETSc.ScatterMode.FORWARD)
 
     A1 = dolfin.fem.assemble_matrix_nest(a_block, [bc])
-<<<<<<< HEAD
     b1 = dolfin.fem.assemble.assemble_vector_nest(L_block)
     dolfin.fem.assemble.apply_lifting_nest(b1, a_block, [bc], x0, scale=-1.0)
     for b_sub in b1.getNestSubVecs():
         b_sub.ghostUpdate(addv=PETSc.InsertMode.ADD, mode=PETSc.ScatterMode.REVERSE)
     bcs0 = dolfin.cpp.fem.bcs_rows(dolfin.fem.assemble._create_cpp_form(L_block), [bc])
     dolfin.fem.assemble.set_bc_nest(b1, bcs0, x0, scale=-1.0)
-=======
-    b1 = dolfin.fem.assemble_vector_nest(L_block, a_block, [bc], x0=x1, scale=-1.0)
->>>>>>> master
 
     assert A1.getType() == "nest"
     assert nest_matrix_norm(A1) == pytest.approx(Anorm0, 1.0e-12)
@@ -256,11 +246,6 @@ def test_assembly_solve_block():
     V0 = dolfin.function.functionspace.FunctionSpace(mesh, P0)
     V1 = dolfin.function.functionspace.FunctionSpace(mesh, P1)
 
-<<<<<<< HEAD
-    bc_val_0 = 1.0
-    bc_val_1 = 2.0
-    initial_guess = 1.0
-=======
     def bc_val_0(x):
         return x[:, 0]**2 + x[:, 1]**2
 
@@ -272,7 +257,6 @@ def test_assembly_solve_block():
 
     def initial_guess_p(x):
         return -x[:, 0]**2 - x[:, 1]**3
->>>>>>> master
 
     def boundary(x):
         return numpy.logical_or(x[:, 0] < 1.0e-6, x[:, 0] > 1.0 - 1.0e-6)
@@ -280,19 +264,10 @@ def test_assembly_solve_block():
     u_bc0 = dolfin.function.Function(V0)
     u_bc0.interpolate(bc_val_0)
     u_bc1 = dolfin.function.Function(V1)
-<<<<<<< HEAD
     u_bc1.vector.set(bc_val_1)
     u_bc1.vector.ghostUpdate(addv=PETSc.InsertMode.INSERT, mode=PETSc.ScatterMode.FORWARD)
     bcs = [dolfin.fem.dirichletbc.DirichletBC(V0, u_bc0, boundary),
            dolfin.fem.dirichletbc.DirichletBC(V1, u_bc1, boundary)]
-=======
-    u_bc1.interpolate(bc_val_1)
-
-    bcs = [
-        dolfin.fem.dirichletbc.DirichletBC(V0, u_bc0, boundary),
-        dolfin.fem.dirichletbc.DirichletBC(V1, u_bc1, boundary)
-    ]
->>>>>>> master
 
     # Block and Nest variational problem
     u, p = dolfin.function.Function(V0), dolfin.function.Function(V1)
@@ -407,17 +382,9 @@ def test_assembly_solve_block():
     J = derivative(F, U, dU)
 
     u0_bc = dolfin.function.Function(V0)
-<<<<<<< HEAD
-    u0_bc.vector.set(bc_val_0)
-    u0_bc.vector.ghostUpdate(addv=PETSc.InsertMode.INSERT, mode=PETSc.ScatterMode.FORWARD)
-    u1_bc = dolfin.function.Function(V1)
-    u1_bc.vector.set(bc_val_1)
-    u1_bc.vector.ghostUpdate(addv=PETSc.InsertMode.INSERT, mode=PETSc.ScatterMode.FORWARD)
-=======
     u0_bc.interpolate(bc_val_0)
     u1_bc = dolfin.function.Function(V1)
     u1_bc.interpolate(bc_val_1)
->>>>>>> master
 
     bcs = [dolfin.fem.dirichletbc.DirichletBC(W.sub(0), u0_bc, boundary),
            dolfin.fem.dirichletbc.DirichletBC(W.sub(1), u1_bc, boundary)]
