@@ -72,4 +72,4 @@ def test_manufactured_poisson(n, mesh, component):
 
     error = assemble_scalar((u_exact - uh)**2 * dx)
     error = MPI.sum(mesh.mpi_comm(), error)
-    assert np.absolute(error) < 1.0e-14
+    assert np.absolute(error) < 1.0e-4
