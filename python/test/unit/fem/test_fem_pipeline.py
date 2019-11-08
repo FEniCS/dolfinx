@@ -1,4 +1,4 @@
-# Copyright (C) 2019 Jorgen Dokken
+# Copyright (C) 2019 Jorgen Dokken and Garth N. Wells
 #
 # This file is part of DOLFIN (https://www.fenicsproject.org)
 #
@@ -35,7 +35,6 @@ def test_manufactured_poisson(n, mesh, component):
         return
 
     V = FunctionSpace(mesh, ("Lagrange", n))
-    V_f = FunctionSpace(mesh, ("Lagrange", max(n - 2, 1)))
     u, v = TrialFunction(V), TestFunction(V)
 
     # Exact solution
