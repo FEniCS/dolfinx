@@ -65,9 +65,13 @@ int cell_dim(CellType type);
 int cell_num_entities(mesh::CellType type, int dim);
 
 /// Check if cell is a simplex
+/// @param[in] type Cell type
+/// @return True is the cell type is a simplex
 bool is_simplex(CellType type);
 
-/// Num vertices for a cell type
+/// Number vertices for a cell type
+/// @param[in] type Cell type
+/// @return The number of cell vertices
 int num_cell_vertices(CellType type);
 
 // [dim, entity] -> closure{sub_dim, (sub_entities)}
@@ -81,12 +85,13 @@ cell_entity_closure(mesh::CellType cell_type);
 /// Find the order of a cell given the number of nodes in the element
 int cell_degree(CellType type, int num_nodes);
 
-/// Return the indices of the nodes corresponding to the vertices of a cell.
-/// For higher order cells, a cell is defined by more nodes than the vertices.
+/// Return the indices of the nodes corresponding to the vertices of a
+/// cell. For higher order cells, a cell is defined by more nodes than
+/// the vertices.
 /// @param[in] type The cell shape
 /// @param[in] num_nodes The number of nodes defining the cell.
 /// @return List of vertex-indices
- std::vector<int> cell_vertex_indices(mesh::CellType type, int num_nodes);
+std::vector<int> cell_vertex_indices(mesh::CellType type, int num_nodes);
 
 } // namespace mesh
 } // namespace dolfin

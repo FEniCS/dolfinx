@@ -232,7 +232,7 @@ private:
   // Coordinate dofs
   std::unique_ptr<CoordinateDofs> _coordinate_dofs;
 
-  // FXIME: This shouldn't be here
+  // FIXME: This shouldn't be here
   // Mesh geometric degree (in Lagrange basis) describing coordinate
   // dofs
   std::int32_t _degree;

@@ -60,23 +60,27 @@ vtk_to_dolfin_ordering(
         std::int64_t, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>>& cells,
     mesh::CellType type);
 
-/// Convert Lexicographic cell ordering to FEniCS cell ordering.
-/// For simplices the FEniCS ordering is following the UFC-convention, see:
-/// https://fossies.org/linux/ufc/doc/manual/ufc-user-manual.pdf
-/// For non-simplices (Quadrilaterals and Hexahedrons) a TensorProduct ordering,
-/// as specified in FIAT.
-/// Lexicographical ordering is defined as
+/// Convert Lexicographic cell ordering to FEniCS cell ordering. For
+/// simplices the FEniCS ordering is following the UFC-convention, see:
+/// https://fossies.org/linux/ufc/doc/manual/ufc-user-manual.pdf For
+/// non-simplices (Quadrilaterals and Hexahedrons) a TensorProduct
+/// ordering, as specified in FIAT. Lexicographical ordering is defined
+/// as:
+///
 ///   *--*--*   6--7--8  y
 ///   |     |   |     |  ^
 ///   *  *  *   3  4  5  |
 ///   |     |   |     |  |
 ///   *--*--*   0--1--2  ---> x
-/// Tensor product
+///
+/// Tensor product:
+///
 ///   *--*--*   1--7--4  y
 ///   |     |   |     |  ^
 ///   *  *  *   2  8  5  |
 ///   |     |   |     |  |
 ///   *--*--*   0--6--3  ---> x
+///
 /// @param[in] cells array containing cell connectivities in VTK format
 /// @param[in] type Celltype to the permuter
 /// @return Permuted cell connectivities
@@ -85,7 +89,6 @@ lex_to_dolfin_ordering(
     const Eigen::Ref<const Eigen::Array<
         std::int64_t, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>>& cells,
     mesh::CellType type);
-
 
 } // namespace cells
 } // namespace io

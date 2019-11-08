@@ -6,11 +6,11 @@
 
 import numpy
 import pytest
+from dolfin_utils.test.skips import skip_in_parallel
 
 from dolfin import (MPI, Mesh, MeshEntity, UnitCubeMesh, UnitIntervalMesh,
                     UnitSquareMesh, cpp)
 from dolfin.cpp.mesh import CellType
-from dolfin_utils.test.skips import skip_in_parallel
 
 
 @skip_in_parallel

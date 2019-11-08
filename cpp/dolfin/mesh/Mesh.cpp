@@ -258,7 +258,7 @@ Mesh::Mesh(
   const std::int64_t num_cells_global = MPI::sum(comm, num_cells_local);
 
   // Compute node local-to-global map from global indices, and compute
-  // cell topology using new local indices.
+  // cell topology using new local indices
   std::array<int, 4> num_vertices_local;
   std::vector<std::int64_t> node_indices_global;
   Eigen::Array<std::int32_t, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>

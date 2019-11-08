@@ -10,12 +10,12 @@ import sys
 
 import numpy as np
 import pytest
+from dolfin_utils.test.skips import skip_in_parallel
 
-from dolfin import (MPI, FunctionSpace, MeshEntity, UnitCubeMesh, Mesh,
+from dolfin import (MPI, FunctionSpace, Mesh, MeshEntity, UnitCubeMesh,
                     UnitIntervalMesh, UnitSquareMesh, VectorFunctionSpace, cpp,
                     fem)
 from dolfin.cpp.mesh import CellType, GhostMode
-from dolfin_utils.test.skips import skip_in_parallel
 from ufl import FiniteElement, MixedElement, VectorElement
 
 xfail = pytest.mark.xfail(strict=True)

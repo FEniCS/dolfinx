@@ -26,11 +26,11 @@ std::vector<std::uint8_t> io::cells::dolfin_to_vtk(mesh::CellType type,
     std::vector<std::uint8_t> permutation(num_nodes);
 
     // Vertices
-    int j = 0;
-    permutation[j++] = 0;
-    permutation[j++] = 1;
-    permutation[j++] = 2;
+    permutation[0] = 0;
+    permutation[1] = 1;
+    permutation[2] = 2;
 
+    int j = 3;
     const int degree = mesh::cell_degree(type, num_nodes);
     for (int k = 1; k < degree; ++k)
       permutation[j++] = 3 + 2 * (degree - 1) + k - 1;
@@ -41,7 +41,8 @@ std::vector<std::uint8_t> io::cells::dolfin_to_vtk(mesh::CellType type,
 
     // Interior VTK is ordered as a lower order triangle, while FEniCS
     // orders them lexicographically.
-    // FIXME: Should be possible to generalize with some recursive function
+    // FIXME: Should be possible to generalize with some recursive
+    //        function
     std::vector<std::uint8_t> remainders(num_nodes - j);
     const int base = 3 * degree;
     switch (degree)
@@ -75,6 +76,7 @@ std::vector<std::uint8_t> io::cells::dolfin_to_vtk(mesh::CellType type,
 
     for (std::size_t k = 0; k < remainders.size(); ++k)
       permutation[j++] = base + remainders[k];
+
     return permutation;
   }
   case mesh::CellType::tetrahedron:
@@ -102,10 +104,12 @@ std::vector<std::uint8_t> io::cells::dolfin_to_vtk(mesh::CellType type,
 
     // Vertices
     int j = 0;
-    permutation[j++] = 0;
-    permutation[j++] = n;
-    permutation[j++] = n + 1;
-    permutation[j++] = 1;
+    permutation[0] = 0;
+    permutation[1] = n;
+    permutation[2] = n + 1;
+    permutation[3] = 1;
+
+    int j = 4;
 
     // Edges
     for (int k = 2; k < n; ++k)

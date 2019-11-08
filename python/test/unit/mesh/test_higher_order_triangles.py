@@ -1,34 +1,33 @@
-# Copyright (C) 2019 Jørgen Schartum Dokken & Matthew Scroggs
+# Copyright (C) 2019 Jørgen Schartum Dokken and Matthew Scroggs
 # This file is part of DOLFIN (https://www.fenicsproject.org)
 #
 # SPDX-License-Identifier:    LGPL-3.0-or-later
 """ Unit-tests for higher order meshes """
 
-import numpy as np
-import pytest
-import sympy as sp
-import scipy.integrate
-from sympy.vector import CoordSys3D, matrix_to_vector
-import pygmsh
 import meshio
+import numpy as np
+import pygmsh
+import pytest
+import scipy.integrate
+import sympy as sp
+from dolfin_utils.test.skips import skip_in_parallel
+from sympy.vector import CoordSys3D, matrix_to_vector
 
 from dolfin import MPI, Function, FunctionSpace, Mesh, fem
+from dolfin.cpp.io import vtk_to_dolfin_ordering
 from dolfin.cpp.mesh import CellType, GhostMode
 from dolfin.fem import assemble_scalar
-from dolfin_utils.test.skips import skip_in_parallel
-from dolfin.cpp.io import vtk_to_dolfin_ordering
 from dolfin.io import XDMFFile
 from ufl import dx
 
 
 def sympy_scipy(points, nodes, L, H):
-    """
-    Approximated integration of z + x*y over a surface where the z-coordinate
-    is only dependent of the y-component of the box.
-    x in [0,L], y in [0,H]
-    Input:
-      points: All points of defining the geometry
-      nodes:  Points on one of the outer boundaries varying in the y-direction
+    """Approximated integration of z + x*y over a surface where the z-coordinate
+    is only dependent of the y-component of the box. x in [0,L], y in
+    [0,H]
+
+    Input: points: All points of defining the geometry nodes:  Points on
+      one of the outer boundaries varying in the y-direction
     """
     degree = len(nodes) - 1
 

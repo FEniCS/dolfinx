@@ -4,17 +4,17 @@
 # SPDX-License-Identifier:    LGPL-3.0-or-later
 """ Unit-tests for higher order quadrilateral meshes """
 
-from dolfin import Mesh, MPI, fem, Function, FunctionSpace
-from dolfin.cpp.mesh import CellType, GhostMode
-from dolfin.fem import assemble_scalar
-from dolfin_utils.test.skips import skip_in_parallel
-from dolfin.cpp.io import vtk_to_dolfin_ordering
-from ufl import dx
-
 import numpy as np
 import pygmsh
 import pytest
+from dolfin_utils.test.skips import skip_in_parallel
+
+from dolfin import MPI, Function, FunctionSpace, Mesh, fem
+from dolfin.cpp.io import vtk_to_dolfin_ordering
+from dolfin.cpp.mesh import CellType, GhostMode
+from dolfin.fem import assemble_scalar
 from test_higher_order_triangles import sympy_scipy
+from ufl import dx
 
 
 @skip_in_parallel
@@ -22,13 +22,17 @@ from test_higher_order_triangles import sympy_scipy
 @pytest.mark.parametrize('H', [1])
 @pytest.mark.parametrize('Z', [0, 0.3])
 def test_second_order_mesh(L, H, Z):
-    # Test by comparing integration of z+x*y against sympy/scipy integration
-    # of a quad element. Z>0 implies curved element.
-    #  *-----*   3--6--2
-    #  |     |   |     |
-    #  |     |   7  8  5
-    #  |     |   |     |
-    #  *-----*   0--4--1
+    """ Test by comparing integration of z+x*y against sympy/scipy
+    integration of a quad element. Z>0 implies curved element.
+
+      *-----*   3--6--2
+      |     |   |     |
+      |     |   7  8  5
+      |     |   |     |
+      *-----*   0--4--1
+
+    """
+
     points = np.array([[0, 0, 0], [L, 0, 0], [L, H, Z], [0, H, Z],
                        [L / 2, 0, 0], [L, H / 2, 0],
                        [L / 2, H, Z], [0, H / 2, 0],
@@ -67,15 +71,18 @@ def test_second_order_mesh(L, H, Z):
 @pytest.mark.parametrize('H', [1])
 @pytest.mark.parametrize('Z', [0, 0.3])
 def test_third_order_mesh(L, H, Z):
-    # Test by comparing integration of z+x*y against sympy/scipy integration
-    # of a quad element. Z>0 implies curved element.
-    #  *---------*   3--8--9--2-22-23-17
-    #  |         |   |        |       |
-    #  |         |   11 14 15 7 26 27 21
-    #  |         |   |        |       |
-    #  |         |   10 12 13 6 24 25 20
-    #  |         |   |        |       |
-    #  *---------*   0--4--5--1-18-19-16
+    """Test by comparing integration of z+x*y against sympy/scipy integration
+    of a quad element. Z>0 implies curved element.
+
+      *---------*   3--8--9--2-22-23-17
+      |         |   |        |       |
+      |         |   11 14 15 7 26 27 21
+      |         |   |        |       |
+      |         |   10 12 13 6 24 25 20
+      |         |   |        |       |
+      *---------*   0--4--5--1-18-19-16
+
+    """
     points = np.array([[0, 0, 0], [L, 0, 0], [L, H, Z], [0, H, Z],        # 0  1 2 3
                        [L / 3, 0, 0], [2 * L / 3, 0, 0],                  # 4  5
                        [L, H / 3, 0], [L, 2 * H / 3, 0],                  # 6  7
@@ -126,18 +133,20 @@ def test_third_order_mesh(L, H, Z):
 @pytest.mark.parametrize('H', [1])
 @pytest.mark.parametrize('Z', [0, 0.3])
 def test_fourth_order_mesh(L, H, Z):
-    # Test by comparing integration of z+x*y against sympy/scipy integration
-    # of a quad element. Z>0 implies curved element.
+    """Test by comparing integration of z+x*y against sympy/scipy integration
+    of a quad element. Z>0 implies curved element.
 
-    #  *---------*   20-21-22-23-24-41--42--43--44
-    #  |         |   |           |              |
-    #  |         |   15 16 17 18 19 37  38  39  40
-    #  |         |   |           |              |
-    #  |         |   10 11 12 13 14 33  34  35  36
-    #  |         |   |           |              |
-    #  |         |   5  6  7  8  9  29  30  31  32
-    #  |         |   |           |              |
-    #  *---------*   0--1--2--3--4--25--26--27--28
+      *---------*   20-21-22-23-24-41--42--43--44
+      |         |   |           |              |
+      |         |   15 16 17 18 19 37  38  39  40
+      |         |   |           |              |
+      |         |   10 11 12 13 14 33  34  35  36
+      |         |   |           |              |
+      |         |   5  6  7  8  9  29  30  31  32
+      |         |   |           |              |
+      *---------*   0--1--2--3--4--25--26--27--28
+
+    """
     points = np.array([[0, 0, 0], [L / 4, 0, 0], [L / 2, 0, 0],               # 0 1 2
                        [3 * L / 4, 0, 0], [L, 0, 0],                          # 3 4
                        [0, H / 4, -Z / 3], [L / 4, H / 4, -Z / 3], [L / 2, H / 4, -Z / 3],   # 5 6 7
