@@ -258,25 +258,6 @@ std::vector<std::uint8_t> io::cells::vtk_to_dolfin(mesh::CellType type,
 }
 //-----------------------------------------------------------------------------
 Eigen::Array<std::int64_t, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
-io::cells::vtk_to_dolfin_ordering(
-    const Eigen::Ref<const Eigen::Array<
-        std::int64_t, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>>& cells,
-    mesh::CellType type)
-{
-
-  return permute_ordering(cells, io::cells::vtk_to_dolfin(type, cells.cols()));
-}
-//-----------------------------------------------------------------------------
-Eigen::Array<std::int64_t, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
-io::cells::lex_to_dolfin_ordering(
-    const Eigen::Ref<const Eigen::Array<
-        std::int64_t, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>>& cells,
-    mesh::CellType type)
-{
-  return permute_ordering(cells, io::cells::lex_to_tp(type, cells.cols()));
-}
-//-----------------------------------------------------------------------------
-Eigen::Array<std::int64_t, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
 io::cells::permute_ordering(
     const Eigen::Ref<const Eigen::Array<
         std::int64_t, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>>& cells,

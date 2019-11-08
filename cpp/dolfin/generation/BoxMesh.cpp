@@ -203,8 +203,10 @@ mesh::Mesh build_hex(MPI_Comm comm, std::array<std::size_t, 3> n,
       }
     }
   }
-  Eigen::Array<std::int64_t, Eigen::Dynamic, 8, Eigen::RowMajor> topo_reordered
-      = io::cells::lex_to_dolfin_ordering(topo, mesh::CellType::hexahedron);
+
+  const Eigen::Array<std::int64_t, Eigen::Dynamic, 8, Eigen::RowMajor>
+      topo_reordered = io::cells::permute_ordering(
+          topo, io::cells::lex_to_tp(mesh::CellType::hexahedron, topo.cols()));
 
   return mesh::Partitioning::build_distributed_mesh(
       comm, mesh::CellType::hexahedron, geom, topo_reordered, {}, ghost_mode);

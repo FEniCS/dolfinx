@@ -93,8 +93,11 @@ mesh::Mesh UnitDiscMesh::create(MPI_Comm comm, int n,
     }
   }
 
-  Eigen::Array<std::int64_t, Eigen::Dynamic, 6, Eigen::RowMajor> cells_reordered
-      = io::cells::vtk_to_dolfin_ordering(cells, mesh::CellType::triangle);
+  const Eigen::Array<std::int64_t, Eigen::Dynamic, Eigen::Dynamic,
+                     Eigen::RowMajor>
+      cells_reordered = io::cells::permute_ordering(
+          cells,
+          io::cells::vtk_to_dolfin(mesh::CellType::triangle, cells.cols()));
 
   return mesh::Partitioning::build_distributed_mesh(
       comm, mesh::CellType::triangle, points, cells_reordered, {}, ghost_mode);
