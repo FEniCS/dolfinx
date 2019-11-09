@@ -175,6 +175,8 @@ class NonlinearPDE_SNESProblem():
         assert x.getType() != "nest"
         assert F.getType() != "nest"
         x.ghostUpdate(addv=PETSc.InsertMode.INSERT, mode=PETSc.ScatterMode.FORWARD)
+        with F.localForm() as f_local:
+            f_local.set(0.0)
 
         offset = 0
         x_array = x.getArray(readonly=True)
