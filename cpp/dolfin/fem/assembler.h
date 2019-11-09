@@ -156,7 +156,7 @@ void assemble_matrix_new(
 /// Set diagonal
 void set_diagonal(Mat A, const Form& a,
                   const std::vector<std::shared_ptr<const DirichletBC>>& bcs,
-                  double diagonal = 1.0);
+                  PetscScalar diagonal = 1.0);
 
 // -- Setting bcs ------------------------------------------------------------
 

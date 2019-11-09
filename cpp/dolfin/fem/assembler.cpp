@@ -23,35 +23,6 @@
 using namespace dolfin;
 using namespace dolfin::fem;
 
-namespace
-{
-//-----------------------------------------------------------------------------
-void set_diagonal_local(
-    Mat A,
-    const Eigen::Ref<const Eigen::Array<PetscInt, Eigen::Dynamic, 1>>& rows,
-    PetscScalar diag)
-{
-  assert(A);
-  // MatSetOption(A, MAT_NO_OFF_PROC_ZERO_ROWS, PETSC_TRUE);
-  // PetscErrorCode ierr
-  //     = MatZeroRowsLocal(A, rows.rows(), rows.data(), diag, nullptr,
-  //     nullptr);
-  // if (ierr != 0)
-  //   la::petsc_error(ierr, __FILE__, "MatZeroRowsLocal");
-
-  PetscInt row_range = 0;
-  MatGetLocalSize(A, &row_range, nullptr);
-
-  for (Eigen::Index i = 0; i < rows.size(); ++i)
-  {
-    const PetscInt row = rows[i];
-    MatSetValuesLocal(A, 1, &row, 1, &row, &diag, ADD_VALUES);
-  }
-}
-//-----------------------------------------------------------------------------
-
-} // namespace
-
 //-----------------------------------------------------------------------------
 PetscScalar fem::assemble_scalar(const Form& M)
 {
@@ -223,7 +194,8 @@ void fem::assemble_matrix_new(
 //-----------------------------------------------------------------------------
 void fem::set_diagonal(
     Mat A, const Form& a,
-    const std::vector<std::shared_ptr<const DirichletBC>>& bcs, double diagonal)
+    const std::vector<std::shared_ptr<const DirichletBC>>& bcs,
+    PetscScalar diagonal)
 {
   // Set diagonal for boundary conditions
   auto map0 = a.function_space(0)->dofmap()->index_map;
@@ -236,7 +208,11 @@ void fem::set_diagonal(
       {
         const Eigen::Map<const Eigen::Array<PetscInt, Eigen::Dynamic, 1>> dofs
             = bc->dof_indices_owned();
-        set_diagonal_local(A, dofs, diagonal);
+        for (Eigen::Index i = 0; i < dofs.size(); ++i)
+        {
+          const PetscInt row = dofs[i];
+          MatSetValuesLocal(A, 1, &row, 1, &row, &diagonal, ADD_VALUES);
+        }
       }
     }
   }
