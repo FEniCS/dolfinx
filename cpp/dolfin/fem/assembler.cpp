@@ -32,13 +32,20 @@ void set_diagonal_local(
     PetscScalar diag)
 {
   assert(A);
+  // MatSetOption(A, MAT_NO_OFF_PROC_ZERO_ROWS, PETSC_TRUE);
+  // PetscErrorCode ierr
+  //     = MatZeroRowsLocal(A, rows.rows(), rows.data(), diag, nullptr,
+  //     nullptr);
+  // if (ierr != 0)
+  //   la::petsc_error(ierr, __FILE__, "MatZeroRowsLocal");
+
+  PetscInt row_range = 0;
+  MatGetLocalSize(A, &row_range, nullptr);
+
   for (Eigen::Index i = 0; i < rows.size(); ++i)
   {
     const PetscInt row = rows[i];
-    PetscErrorCode ierr
-        = MatSetValuesLocal(A, 1, &row, 1, &row, &diag, ADD_VALUES);
-    if (ierr != 0)
-      la::petsc_error(ierr, __FILE__, "MatSetValuesLocal");
+    MatSetValuesLocal(A, 1, &row, 1, &row, &diag, ADD_VALUES);
   }
 }
 //-----------------------------------------------------------------------------
@@ -98,38 +105,11 @@ void fem::apply_lifting(
   fem::impl::apply_lifting(b, a, bcs1, x0, scale);
 }
 //-----------------------------------------------------------------------------
-void fem::assemble_matrix(
+void fem::assemble_matrix_nest(
     Mat A, const std::vector<std::vector<const Form*>>& a,
-    const std::vector<std::shared_ptr<const DirichletBC>>& bcs, double diagonal,
-    bool use_nest_extract)
+    const std::vector<std::shared_ptr<const DirichletBC>>& bcs, double diagonal)
 {
-  // Check if matrix should be nested
-  assert(!a.empty());
-  const bool block_matrix = a.size() > 1 or a[0].size() > 1;
-
-  MatType mat_type;
-  MatGetType(A, &mat_type);
-  const bool is_matnest
-      = (strcmp(mat_type, MATNEST) == 0) and use_nest_extract ? true : false;
-
-  // Assemble matrix
-  std::vector<IS> is_row, is_col;
-  if (block_matrix and !is_matnest)
-  {
-    // Prepare data structures for extracting sub-matrices by index
-    // sets
-
-    // Extract index maps
-    const std::vector<std::vector<std::shared_ptr<const common::IndexMap>>> maps
-        = fem::blocked_index_sets(a);
-    std::vector<std::vector<const common::IndexMap*>> _maps(2);
-    for (auto& m : maps[0])
-      _maps[0].push_back(m.get());
-    for (auto& m : maps[1])
-      _maps[1].push_back(m.get());
-    is_row = la::compute_petsc_index_sets(_maps[0]);
-    is_col = la::compute_petsc_index_sets(_maps[1]);
-  }
+  assert(A);
 
   // Loop over each form and assemble
   for (std::size_t i = 0; i < a.size(); ++i)
@@ -139,16 +119,49 @@ void fem::assemble_matrix(
       if (a[i][j])
       {
         Mat subA;
-        if (block_matrix and !is_matnest)
-          MatGetLocalSubMatrix(A, is_row[i], is_col[j], &subA);
-        else if (is_matnest)
-          MatNestGetSubMat(A, i, j, &subA);
-        else
-          subA = A;
+        MatNestGetSubMat(A, i, j, &subA);
+        assemble_matrix_new(subA, *a[i][j], bcs);
+        set_diagonal(subA, *a[i][j], bcs, diagonal);
+      }
+      else
+      {
+        // Null block, do nothing
+      }
+    }
+  }
+}
+//-----------------------------------------------------------------------------
+void fem::assemble_matrix(
+    Mat A, const std::vector<std::vector<const Form*>>& a,
+    const std::vector<std::shared_ptr<const DirichletBC>>& bcs, double diagonal,
+    bool use_nest_extract)
+{
+  // Check if matrix should be nested
+  assert(!a.empty());
 
+  // Prepare data structures for extracting sub-matrices by index sets
+  std::vector<IS> is_row, is_col;
+  const std::vector<std::vector<std::shared_ptr<const common::IndexMap>>> maps
+      = fem::blocked_index_sets(a);
+  std::vector<std::vector<const common::IndexMap*>> _maps(2);
+  for (auto& m : maps[0])
+    _maps[0].push_back(m.get());
+  for (auto& m : maps[1])
+    _maps[1].push_back(m.get());
+  is_row = la::compute_petsc_index_sets(_maps[0]);
+  is_col = la::compute_petsc_index_sets(_maps[1]);
+
+  // Loop over each form and assemble
+  for (std::size_t i = 0; i < a.size(); ++i)
+  {
+    for (std::size_t j = 0; j < a[i].size(); ++j)
+    {
+      if (a[i][j])
+      {
+        Mat subA;
+        MatGetLocalSubMatrix(A, is_row[i], is_col[j], &subA);
         assemble_matrix(subA, *a[i][j], bcs, diagonal);
-        if (block_matrix and !is_matnest)
-          MatRestoreLocalSubMatrix(A, is_row[i], is_row[j], &subA);
+        MatRestoreLocalSubMatrix(A, is_row[i], is_row[j], &subA);
       }
       else
       {
@@ -170,6 +183,20 @@ void fem::assemble_matrix(
 void fem::assemble_matrix(
     Mat A, const Form& a,
     const std::vector<std::shared_ptr<const DirichletBC>>& bcs, double diagonal)
+{
+  // Assemble
+  assemble_matrix_new(A, a, bcs);
+
+  // MatAssemblyBegin(A, MAT_FINAL_ASSEMBLY);
+  // MatAssemblyEnd(A, MAT_FINAL_ASSEMBLY);
+
+  // Set diagonal
+  set_diagonal(A, a, bcs, diagonal);
+}
+//-----------------------------------------------------------------------------
+void fem::assemble_matrix_new(
+    Mat A, const Form& a,
+    const std::vector<std::shared_ptr<const DirichletBC>>& bcs)
 {
   // Index maps for dof ranges
   auto map0 = a.function_space(0)->dofmap()->index_map;
@@ -199,8 +226,15 @@ void fem::assemble_matrix(
 
   // Assemble
   impl::assemble_matrix(A, a, dof_marker0, dof_marker1);
-
+}
+//-----------------------------------------------------------------------------
+void fem::set_diagonal(
+    Mat A, const Form& a,
+    const std::vector<std::shared_ptr<const DirichletBC>>& bcs, double diagonal)
+{
   // Set diagonal for boundary conditions
+  auto map0 = a.function_space(0)->dofmap()->index_map;
+  auto map1 = a.function_space(1)->dofmap()->index_map;
   if (*a.function_space(0) == *a.function_space(1))
   {
     for (const auto& bc : bcs)
@@ -223,9 +257,6 @@ void fem::assemble_matrix(
       }
     }
   }
-
-  // Do not finalise assembly - matrix may be a proxy/sub-matrix with
-  // finalisation done elsewhere.
 }
 //-----------------------------------------------------------------------------
 void fem::set_bc(Vec b,

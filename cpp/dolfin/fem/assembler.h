@@ -123,6 +123,13 @@ void assemble_matrix(Mat A, const std::vector<std::vector<const Form*>>& a,
                      const std::vector<std::shared_ptr<const DirichletBC>>& bcs,
                      double diagonal = 1.0, bool use_nest_extract = true);
 
+/// Re-assemble blocked bilinear forms into a matrix. Does not zero the
+/// matrix.
+void assemble_matrix_nest(
+    Mat A, const std::vector<std::vector<const Form*>>& a,
+    const std::vector<std::shared_ptr<const DirichletBC>>& bcs,
+    double diagonal = 1.0);
+
 /// Assemble bilinear form into a matrix. Matrix must be initialised.
 /// Does not zero or finalise the matrix.
 /// @param[in,out] A The PETsc matrix to assemble the form into. The
@@ -139,6 +146,16 @@ void assemble_matrix(Mat A, const std::vector<std::vector<const Form*>>& a,
 void assemble_matrix(Mat A, const Form& a,
                      const std::vector<std::shared_ptr<const DirichletBC>>& bcs,
                      double diagonal = 1.0);
+
+// TDOO
+void assemble_matrix_new(
+    Mat A, const Form& a,
+    const std::vector<std::shared_ptr<const DirichletBC>>& bcs);
+
+/// Set diagonal
+void set_diagonal(Mat A, const Form& a,
+                  const std::vector<std::shared_ptr<const DirichletBC>>& bcs,
+                  double diagonal = 1.0);
 
 // -- Setting bcs ------------------------------------------------------------
 

@@ -533,7 +533,7 @@ def test_assembly_solve_taylor_hood(mesh):
         soln_sub.vector.copy(result=x1_sub)
         x1_sub.ghostUpdate(addv=PETSc.InsertMode.INSERT, mode=PETSc.ScatterMode.FORWARD)
 
-    x1.zeroEntries()
+    x1.set(0.0)
     snes.solve(None, x1)
 
     assert snes.getConvergedReason() > 0

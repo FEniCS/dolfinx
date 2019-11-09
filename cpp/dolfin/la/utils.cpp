@@ -404,6 +404,12 @@ void dolfin::la::VecReadWrapper::restore()
       Eigen::Map<Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1>>(nullptr, 0);
 }
 //-----------------------------------------------------------------------------
+// Mat dolfin::la::get_local_submatrix(const Mat A, const IS row, const IS col);
+
+// void restore_local_submatrix(const Mat A, const IS row, const IS col, Mat* Asub);
+
+
+//-----------------------------------------------------------------------------
 std::vector<Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1>>
 dolfin::la::get_local_vectors(const Vec x,
                               const std::vector<const common::IndexMap*>& maps)

@@ -119,6 +119,13 @@ private:
   bool _ghosted;
 };
 
+// /// Get sub-matrix. Sub-matrix is local to the process
+// Mat get_local_submatrix(const Mat A, const IS row, const IS col);
+
+// /// Restore local submatrix
+// void restore_local_submatrix(const Mat A, const IS row, const IS col, Mat* Asub);
+
+
 /// Copy blocks from Vec into Eigen vectors
 std::vector<Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1>>
 get_local_vectors(const Vec x,
