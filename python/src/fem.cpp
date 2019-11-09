@@ -234,20 +234,11 @@ void fem(py::module& m)
         py::arg("b"), py::arg("L"),
         "Assemble linear form into an existing Eigen vector");
   // Matrices
-  m.def("assemble_matrix",
-        py::overload_cast<
-            Mat, const dolfin::fem::Form&,
-            const std::vector<std::shared_ptr<const dolfin::fem::DirichletBC>>&,
-            double>(&dolfin::fem::assemble_matrix),
-        py::arg("A"), py::arg("a"), py::arg("bcs"), py::arg("diagonal"),
+  m.def("assemble_matrix", &dolfin::fem::assemble_matrix, py::arg("A"),
+        py::arg("a"), py::arg("bcs"), py::arg("diagonal"),
         "Assemble bilinear form over mesh into matrix");
-  m.def("assemble_blocked_matrix",
-        py::overload_cast<
-            Mat, const std::vector<std::vector<const dolfin::fem::Form*>>&,
-            const std::vector<std::shared_ptr<const dolfin::fem::DirichletBC>>&,
-            double, bool>(&dolfin::fem::assemble_matrix),
+  m.def("assemble_matrix_block", &dolfin::fem::assemble_matrix_block,
         py::arg("A"), py::arg("a"), py::arg("bcs"), py::arg("diagonal"),
-        py::arg("use_nest_extract") = true,
         "Re-assemble bilinear forms over mesh into blocked matrix");
   m.def("assemble_matrix_nest", &dolfin::fem::assemble_matrix_nest);
   // BC modifiers

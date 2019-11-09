@@ -131,16 +131,14 @@ void fem::assemble_matrix_nest(
   }
 }
 //-----------------------------------------------------------------------------
-void fem::assemble_matrix(
+void fem::assemble_matrix_block(
     Mat A, const std::vector<std::vector<const Form*>>& a,
-    const std::vector<std::shared_ptr<const DirichletBC>>& bcs, double diagonal,
-    bool use_nest_extract)
+    const std::vector<std::shared_ptr<const DirichletBC>>& bcs, double diagonal)
 {
   // Check if matrix should be nested
   assert(!a.empty());
 
   // Prepare data structures for extracting sub-matrices by index sets
-  std::vector<IS> is_row, is_col;
   const std::vector<std::vector<std::shared_ptr<const common::IndexMap>>> maps
       = fem::blocked_index_sets(a);
   std::vector<std::vector<const common::IndexMap*>> _maps(2);
@@ -148,8 +146,8 @@ void fem::assemble_matrix(
     _maps[0].push_back(m.get());
   for (auto& m : maps[1])
     _maps[1].push_back(m.get());
-  is_row = la::compute_petsc_index_sets(_maps[0]);
-  is_col = la::compute_petsc_index_sets(_maps[1]);
+  std::vector<IS> is_row = la::compute_petsc_index_sets(_maps[0]);
+  std::vector<IS> is_col = la::compute_petsc_index_sets(_maps[1]);
 
   // Loop over each form and assemble
   for (std::size_t i = 0; i < a.size(); ++i)
@@ -160,7 +158,8 @@ void fem::assemble_matrix(
       {
         Mat subA;
         MatGetLocalSubMatrix(A, is_row[i], is_col[j], &subA);
-        assemble_matrix(subA, *a[i][j], bcs, diagonal);
+        assemble_matrix_new(subA, *a[i][j], bcs);
+        set_diagonal(subA, *a[i][j], bcs, diagonal);
         MatRestoreLocalSubMatrix(A, is_row[i], is_row[j], &subA);
       }
       else
@@ -175,9 +174,6 @@ void fem::assemble_matrix(
     ISDestroy(&is_row[i]);
   for (std::size_t i = 0; i < is_col.size(); ++i)
     ISDestroy(&is_col[i]);
-
-  MatAssemblyBegin(A, MAT_FINAL_ASSEMBLY);
-  MatAssemblyEnd(A, MAT_FINAL_ASSEMBLY);
 }
 //-----------------------------------------------------------------------------
 void fem::assemble_matrix(
@@ -186,9 +182,6 @@ void fem::assemble_matrix(
 {
   // Assemble
   assemble_matrix_new(A, a, bcs);
-
-  // MatAssemblyBegin(A, MAT_FINAL_ASSEMBLY);
-  // MatAssemblyEnd(A, MAT_FINAL_ASSEMBLY);
 
   // Set diagonal
   set_diagonal(A, a, bcs, diagonal);
@@ -234,7 +227,6 @@ void fem::set_diagonal(
 {
   // Set diagonal for boundary conditions
   auto map0 = a.function_space(0)->dofmap()->index_map;
-  auto map1 = a.function_space(1)->dofmap()->index_map;
   if (*a.function_space(0) == *a.function_space(1))
   {
     for (const auto& bc : bcs)

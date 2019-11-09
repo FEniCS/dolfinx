@@ -119,9 +119,10 @@ void apply_lifting(
 
 /// Re-assemble blocked bilinear forms into a matrix. Does not zero the
 /// matrix.
-void assemble_matrix(Mat A, const std::vector<std::vector<const Form*>>& a,
-                     const std::vector<std::shared_ptr<const DirichletBC>>& bcs,
-                     double diagonal = 1.0, bool use_nest_extract = true);
+void assemble_matrix_block(
+    Mat A, const std::vector<std::vector<const Form*>>& a,
+    const std::vector<std::shared_ptr<const DirichletBC>>& bcs,
+    double diagonal = 1.0);
 
 /// Re-assemble blocked bilinear forms into a matrix. Does not zero the
 /// matrix.
