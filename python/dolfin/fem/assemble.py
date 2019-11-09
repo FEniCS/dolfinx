@@ -160,7 +160,7 @@ def _(b: PETSc.Vec,
         x0_sub = x0_local
     else:
         x0_local = []
-        x0_sub = [None]*len(maps)
+        x0_sub = [None] * len(maps)
 
     bcs1 = cpp.fem.bcs_cols(_create_cpp_form(a), bcs)
     b_local = cpp.la.get_local_vectors(b, maps)
