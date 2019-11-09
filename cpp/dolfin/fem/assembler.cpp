@@ -234,18 +234,9 @@ void fem::set_diagonal(
       assert(bc);
       if (a.function_space(0)->contains(*bc->function_space()))
       {
-        // FIXME: could be simpler if DirichletBC::dof_indices had
-        // options to return owned dofs only
-        const Eigen::Array<PetscInt, Eigen::Dynamic, 1>& dofs
-            = bc->dof_indices();
-        const int owned_size = map0->block_size * map0->size_local();
-        auto it = std::lower_bound(dofs.data(), dofs.data() + dofs.rows(),
-                                   owned_size);
-        const Eigen::Index pos = std::distance(dofs.data(), it);
-        assert(pos <= dofs.size() and pos >= 0);
-        const Eigen::Map<const Eigen::Array<PetscInt, Eigen::Dynamic, 1>>
-            dofs_owned(dofs.data(), pos);
-        set_diagonal_local(A, dofs_owned, diagonal);
+        const Eigen::Map<const Eigen::Array<PetscInt, Eigen::Dynamic, 1>> dofs
+            = bc->dof_indices_owned();
+        set_diagonal_local(A, dofs, diagonal);
       }
     }
   }
