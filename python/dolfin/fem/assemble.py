@@ -176,7 +176,7 @@ def _(b: PETSc.Vec,
     b_array = b.getArray(readonly=False)
     for submap, bc, _x0 in zip(maps, bcs0, x0_sub):
         size = submap.size_local * submap.block_size
-        cpp.fem.set_bc(b_array[offset:offset + size], bc[:size], _x0, scale)
+        cpp.fem.set_bc(b_array[offset:offset + size], bc, _x0, scale)
         offset += size
 
     return b

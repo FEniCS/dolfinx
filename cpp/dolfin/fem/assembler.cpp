@@ -250,7 +250,7 @@ void fem::set_bc(
     const Eigen::Ref<const Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1>>& x0,
     double scale)
 {
-  if (b.rows() != x0.rows())
+  if (b.rows() <= x0.rows())
     throw std::runtime_error("Size mismatch between b and x0 vectors.");
   for (auto bc : bcs)
   {

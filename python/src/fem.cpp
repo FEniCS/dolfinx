@@ -278,7 +278,7 @@ void fem(py::module& m)
         [](Eigen::Ref<Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1>> b,
            const std::vector<std::shared_ptr<const dolfin::fem::DirichletBC>>&
                bcs,
-           py::array_t<PetscScalar> x0, double scale) {
+           const py::array_t<PetscScalar>& x0, double scale) {
           if (x0.ndim() == 0)
             dolfin::fem::set_bc(b, bcs, scale);
           else if (x0.ndim() == 1)
