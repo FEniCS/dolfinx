@@ -110,7 +110,7 @@ void fem::assemble_matrix_block(
   assert(!a.empty());
 
   // Prepare data structures for extracting sub-matrices by index sets
-  const std::vector<std::vector<std::shared_ptr<const common::IndexMap>>> maps
+  const std::array<std::vector<std::shared_ptr<const common::IndexMap>>, 2> maps
       = fem::blocked_index_sets(a);
   std::vector<std::vector<const common::IndexMap*>> _maps(2);
   for (auto& m : maps[0])

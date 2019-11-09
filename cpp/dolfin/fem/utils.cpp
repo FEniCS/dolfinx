@@ -62,10 +62,10 @@ int analyse_block_structure(
 } // namespace
 
 //-----------------------------------------------------------------------------
-std::vector<std::vector<std::shared_ptr<const common::IndexMap>>>
+std::array<std::vector<std::shared_ptr<const common::IndexMap>>, 2>
 fem::blocked_index_sets(const std::vector<std::vector<const fem::Form*>>& a)
 {
-  std::vector<std::vector<std::shared_ptr<const common::IndexMap>>> maps(2);
+  std::array<std::vector<std::shared_ptr<const common::IndexMap>>, 2> maps;
   maps[0].resize(a.size());
   maps[1].resize(a[0].size());
 
@@ -187,7 +187,7 @@ fem::create_matrix_block(const std::vector<std::vector<const fem::Form*>>& a)
   // for (std::size_t col = 0; col < a[0].size(); ++col)
   //   cmaps.push_back(a[0][col]->function_space(1)->dofmap->index_map;
 
-  std::vector<std::vector<std::shared_ptr<const common::IndexMap>>> maps
+  std::array<std::vector<std::shared_ptr<const common::IndexMap>>, 2> maps
       = blocked_index_sets(a);
   std::vector<std::shared_ptr<const common::IndexMap>> rmaps = maps[0];
   std::vector<std::shared_ptr<const common::IndexMap>> cmaps = maps[1];

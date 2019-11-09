@@ -50,7 +50,7 @@ namespace fem
 class Form;
 
 /// Compute IndexMaps for stacked index maps
-std::vector<std::vector<std::shared_ptr<const common::IndexMap>>>
+std::array<std::vector<std::shared_ptr<const common::IndexMap>>, 2>
 blocked_index_sets(const std::vector<std::vector<const fem::Form*>>& a);
 
 /// Create matrix. Matrix is not zeroed.
