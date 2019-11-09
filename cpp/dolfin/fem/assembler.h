@@ -148,7 +148,7 @@ void assemble_matrix(Mat A, const Form& a,
                      const std::vector<std::shared_ptr<const DirichletBC>>& bcs,
                      double diagonal = 1.0);
 
-// TDOO
+/// TDOO
 void assemble_matrix_new(
     Mat A, const Form& a,
     const std::vector<std::shared_ptr<const DirichletBC>>& bcs);
