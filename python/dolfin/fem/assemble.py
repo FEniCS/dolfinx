@@ -157,8 +157,10 @@ def _(b: PETSc.Vec,
     maps = [form.function_space(0).dofmap.index_map for form in _create_cpp_form(L)]
     if x0 is not None:
         x0_local = cpp.la.get_local_vectors(x0, maps)
+        x0_sub = x0_local
     else:
         x0_local = []
+        x0_sub = [None]*len(maps)
 
     bcs1 = cpp.fem.bcs_cols(_create_cpp_form(a), bcs)
     b_local = cpp.la.get_local_vectors(b, maps)
@@ -172,27 +174,12 @@ def _(b: PETSc.Vec,
     bcs0 = cpp.fem.bcs_rows(_create_cpp_form(L), bcs)
     offset = 0
     b_array = b.getArray(readonly=False)
-    if x0 is None:
-        for submap, bc in zip(maps, bcs0):
-            size = submap.size_local * submap.block_size
-            cpp.fem.set_bc(b_array[offset:offset + size], bc, scale)
-            offset += size
-    else:
-        x_array = x0.getArray(readonly=True)
-        for submap, bc in zip(maps, bcs0):
-            size = submap.size_local * submap.block_size
-            cpp.fem.set_bc(b_array[offset:offset + size], x_array[offset:offset + size], scale)
-            offset += size
+    for submap, bc, _x0 in zip(maps, bcs0, x0_sub):
+        size = submap.size_local * submap.block_size
+        cpp.fem.set_bc(b_array[offset:offset + size], bc[:size], _x0, scale)
+        offset += size
 
-    b.ghostUpdate(addv=PETSc.InsertMode.INSERT, mode=PETSc.ScatterMode.FORWARD)
     return b
-
-    # b1 = cpp.fem.create_vector_block(maps)
-    # b1.set(0.0)
-    # cpp.fem.assemble_vector(b1, _create_cpp_form(L), _create_cpp_form(a), bcs, x0, scale)
-    # print("Norms:", b.norm(), b1.norm())
-    # # (b - b1).view()
-    # return b1
 
 
 # -- Matrix assembly ---------------------------------------------------------
