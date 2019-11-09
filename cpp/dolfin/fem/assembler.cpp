@@ -64,9 +64,9 @@ void fem::assemble_vector(
 }
 //-----------------------------------------------------------------------------
 void fem::apply_lifting(
-    Vec b, const std::vector<std::shared_ptr<const Form>> a,
-    std::vector<std::vector<std::shared_ptr<const DirichletBC>>> bcs1,
-    const std::vector<Vec> x0, double scale)
+    Vec b, const std::vector<std::shared_ptr<const Form>>& a,
+    const std::vector<std::vector<std::shared_ptr<const DirichletBC>>>& bcs1,
+    const std::vector<Vec>& x0, double scale)
 {
   la::VecWrapper _b(b);
   if (x0.empty())
@@ -89,8 +89,8 @@ void fem::apply_lifting(
 //-----------------------------------------------------------------------------
 void fem::apply_lifting(
     Eigen::Ref<Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1>> b,
-    const std::vector<std::shared_ptr<const Form>> a,
-    std::vector<std::vector<std::shared_ptr<const DirichletBC>>> bcs1,
+    const std::vector<std::shared_ptr<const Form>>& a,
+    const std::vector<std::vector<std::shared_ptr<const DirichletBC>>>& bcs1,
     const std::vector<
         Eigen::Ref<const Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1>>>& x0,
     double scale)
@@ -98,9 +98,10 @@ void fem::apply_lifting(
   fem::impl::apply_lifting(b, a, bcs1, x0, scale);
 }
 //-----------------------------------------------------------------------------
-void fem::assemble_matrix(Mat A, const std::vector<std::vector<const Form*>> a,
-                          std::vector<std::shared_ptr<const DirichletBC>> bcs,
-                          double diagonal, bool use_nest_extract)
+void fem::assemble_matrix(
+    Mat A, const std::vector<std::vector<const Form*>>& a,
+    const std::vector<std::shared_ptr<const DirichletBC>>& bcs, double diagonal,
+    bool use_nest_extract)
 {
   // Check if matrix should be nested
   assert(!a.empty());
@@ -166,9 +167,9 @@ void fem::assemble_matrix(Mat A, const std::vector<std::vector<const Form*>> a,
   MatAssemblyEnd(A, MAT_FINAL_ASSEMBLY);
 }
 //-----------------------------------------------------------------------------
-void fem::assemble_matrix(Mat A, const Form& a,
-                          std::vector<std::shared_ptr<const DirichletBC>> bcs,
-                          double diagonal)
+void fem::assemble_matrix(
+    Mat A, const Form& a,
+    const std::vector<std::shared_ptr<const DirichletBC>>& bcs, double diagonal)
 {
   // Index maps for dof ranges
   auto map0 = a.function_space(0)->dofmap()->index_map;
@@ -227,24 +228,25 @@ void fem::assemble_matrix(Mat A, const Form& a,
   // finalisation done elsewhere.
 }
 //-----------------------------------------------------------------------------
-void fem::set_bc(Vec b, std::vector<std::shared_ptr<const DirichletBC>> bcs,
+void fem::set_bc(Vec b,
+                 const std::vector<std::shared_ptr<const DirichletBC>>& bcs,
                  const Vec x0, double scale)
 {
   la::VecWrapper _b(b, false);
   if (x0)
   {
     la::VecReadWrapper _x0(x0, false);
-    set_bc_new(_b.x, bcs, _x0.x, scale);
+    set_bc(_b.x, bcs, _x0.x, scale);
   }
   else
   {
-    set_bc_new(_b.x, bcs, scale);
+    set_bc(_b.x, bcs, scale);
   }
 }
 //-----------------------------------------------------------------------------
-void fem::set_bc_new(
+void fem::set_bc(
     Eigen::Ref<Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1>> b,
-    std::vector<std::shared_ptr<const DirichletBC>> bcs,
+    const std::vector<std::shared_ptr<const DirichletBC>>& bcs,
     const Eigen::Ref<const Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1>>& x0,
     double scale)
 {
@@ -257,10 +259,9 @@ void fem::set_bc_new(
   }
 }
 //-----------------------------------------------------------------------------
-void
-    fem::set_bc_new(Eigen::Ref<Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1>> b,
-                    std::vector<std::shared_ptr<const DirichletBC>> bcs,
-                    double scale)
+void fem::set_bc(Eigen::Ref<Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1>> b,
+                 const std::vector<std::shared_ptr<const DirichletBC>>& bcs,
+                 double scale)
 {
   for (auto bc : bcs)
   {
@@ -270,8 +271,8 @@ void
 }
 //-----------------------------------------------------------------------------
 std::vector<std::vector<std::shared_ptr<const fem::DirichletBC>>>
-fem::bcs_rows(std::vector<const Form*> L,
-              std::vector<std::shared_ptr<const fem::DirichletBC>> bcs)
+fem::bcs_rows(const std::vector<const Form*>& L,
+              const std::vector<std::shared_ptr<const fem::DirichletBC>>& bcs)
 {
   // Pack DirichletBC pointers for rows
   std::vector<std::vector<std::shared_ptr<const fem::DirichletBC>>> bcs0(
@@ -285,8 +286,8 @@ fem::bcs_rows(std::vector<const Form*> L,
 }
 //-----------------------------------------------------------------------------
 std::vector<std::vector<std::vector<std::shared_ptr<const fem::DirichletBC>>>>
-fem::bcs_cols(std::vector<std::vector<std::shared_ptr<const Form>>> a,
-              std::vector<std::shared_ptr<const DirichletBC>> bcs)
+fem::bcs_cols(const std::vector<std::vector<std::shared_ptr<const Form>>>& a,
+              const std::vector<std::shared_ptr<const DirichletBC>>& bcs)
 {
   // Pack DirichletBC pointers for columns
   std::vector<std::vector<std::vector<std::shared_ptr<const fem::DirichletBC>>>>

@@ -175,18 +175,13 @@ def _(b: PETSc.Vec,
     if x0 is None:
         for submap, bc in zip(maps, bcs0):
             size = submap.size_local * submap.block_size
-            b_sub = b_array[offset:offset + size]
-            cpp.fem.set_bc_new(b_sub, bc, scale)
-            cpp.fem.set_bc_new(b_sub, bc, scale)
+            cpp.fem.set_bc(b_array[offset:offset + size], bc, scale)
             offset += size
     else:
         x_array = x0.getArray(readonly=True)
         for submap, bc in zip(maps, bcs0):
             size = submap.size_local * submap.block_size
-            b_sub = b_array[offset:offset + size]
-            x_sub = x_array[offset:offset + size]
-            cpp.fem.set_bc_new(b_sub, bc, scale)
-            cpp.fem.set_bc_new(b_sub, bc, x_sub, scale)
+            cpp.fem.set_bc(b_array[offset:offset + size], x_array[offset:offset + size], scale)
             offset += size
 
     b.ghostUpdate(addv=PETSc.InsertMode.INSERT, mode=PETSc.ScatterMode.FORWARD)
