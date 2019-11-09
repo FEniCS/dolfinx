@@ -51,7 +51,7 @@ class Form;
 
 /// Compute IndexMaps for stacked index maps
 std::vector<std::vector<std::shared_ptr<const common::IndexMap>>>
-blocked_index_sets(const std::vector<std::vector<const fem::Form*>> a);
+blocked_index_sets(const std::vector<std::vector<const fem::Form*>>& a);
 
 /// Create matrix. Matrix is not zeroed.
 la::PETScMatrix create_matrix(const Form& a);
@@ -59,20 +59,22 @@ la::PETScMatrix create_matrix(const Form& a);
 /// Initialise monolithic matrix for an array for bilinear forms. Matrix
 /// is not zeroed.
 la::PETScMatrix
-create_matrix_block(std::vector<std::vector<const fem::Form*>> a);
+create_matrix_block(const std::vector<std::vector<const fem::Form*>>& a);
 
 /// Create nested (MatNest) matrix. Matrix is not zeroed.
 la::PETScMatrix
-create_matrix_nest(std::vector<std::vector<const fem::Form*>> a);
+create_matrix_nest(const std::vector<std::vector<const fem::Form*>>& a);
 
 /// Initialise monolithic vector. Vector is not zeroed.
-la::PETScVector create_vector_block(std::vector<const fem::Form*> L);
+la::PETScVector
+create_vector_block(const std::vector<const common::IndexMap*>& maps);
 
-/// Initialise nested (VecNest) vector. Vector is not zeroed.
-la::PETScVector create_vector_nest(std::vector<const fem::Form*> L);
+/// Create nested (VecNest) vector. Vector is not zeroed.
+la::PETScVector
+create_vector_nest(const std::vector<const common::IndexMap*>& maps);
 
 /// Get new global index in 'spliced' indices
-std::size_t get_global_index(const std::vector<const common::IndexMap*> maps,
+std::size_t get_global_index(const std::vector<const common::IndexMap*>& maps,
                              const int field, const int n);
 
 /// Create an ElementDofLayout from a ufc_dofmap

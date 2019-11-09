@@ -85,24 +85,24 @@ void fem(py::module& m)
         "ufc_coordinate_map.");
 
   // utils
-  m.def("create_vector", // TODO: change name to create_vector_block
-        [](const std::vector<const dolfin::fem::Form*> L) {
-          dolfin::la::PETScVector x = dolfin::fem::create_vector_block(L);
+  m.def("create_vector_block",
+        [](const std::vector<const dolfin::common::IndexMap*>& maps) {
+          dolfin::la::PETScVector x = dolfin::fem::create_vector_block(maps);
           Vec _x = x.vec();
           PetscObjectReference((PetscObject)_x);
           return _x;
         },
         py::return_value_policy::take_ownership,
-        "Initialise monolithic vector for multiple (stacked) linear forms.");
+        "Create a monolithic vector for multiple (stacked) linear forms.");
   m.def("create_vector_nest",
-        [](const std::vector<const dolfin::fem::Form*> L) {
-          auto x = dolfin::fem::create_vector_nest(L);
+        [](const std::vector<const dolfin::common::IndexMap*>& maps) {
+          auto x = dolfin::fem::create_vector_nest(maps);
           Vec _x = x.vec();
           PetscObjectReference((PetscObject)_x);
           return _x;
         },
         py::return_value_policy::take_ownership,
-        "Initialise nested vector for multiple (stacked) linear forms.");
+        "Create nested vector for multiple (stacked) linear forms.");
   m.def("create_matrix",
         [](const dolfin::fem::Form& a) {
           auto A = dolfin::fem::create_matrix(a);
@@ -212,8 +212,10 @@ void fem(py::module& m)
                     const std::vector<std::int32_t>&,
                     dolfin::fem::DirichletBC::Method>(),
            py::arg("V"), py::arg("g"), py::arg("facets"), py::arg("method"))
-      .def_property_readonly("dof_indices", &dolfin::fem::DirichletBC::dof_indices)
-      .def_property_readonly("function_space", &dolfin::fem::DirichletBC::function_space)
+      .def_property_readonly("dof_indices",
+                             &dolfin::fem::DirichletBC::dof_indices)
+      .def_property_readonly("function_space",
+                             &dolfin::fem::DirichletBC::function_space)
       .def_property_readonly("value", &dolfin::fem::DirichletBC::value);
 
   // dolfin::fem::assemble
@@ -225,37 +227,74 @@ void fem(py::module& m)
             &dolfin::fem::assemble_vector),
         py::arg("b"), py::arg("L"),
         "Assemble linear form into an existing vector");
-  // Block/nest vectors
   m.def("assemble_vector",
         py::overload_cast<
-            Vec, std::vector<const dolfin::fem::Form*>,
-            const std::vector<
-                std::vector<std::shared_ptr<const dolfin::fem::Form>>>,
-            std::vector<std::shared_ptr<const dolfin::fem::DirichletBC>>,
-            const Vec, double>(&dolfin::fem::assemble_vector),
-        "Re-assemble linear forms over mesh into blocked/nested vector");
+            Eigen::Ref<Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1>>,
+            const dolfin::fem::Form&>(&dolfin::fem::assemble_vector),
+        py::arg("b"), py::arg("L"),
+        "Assemble linear form into an existing Eigen vector");
   // Matrices
-  m.def(
-      "assemble_matrix",
-      py::overload_cast<
-          Mat, const dolfin::fem::Form&,
-          std::vector<std::shared_ptr<const dolfin::fem::DirichletBC>>, double>(
-          &dolfin::fem::assemble_matrix),
-      py::arg("A"), py::arg("a"), py::arg("bcs"), py::arg("diagonal"),
-      "Assemble bilinear form over mesh into matrix");
+  m.def("assemble_matrix",
+        py::overload_cast<
+            Mat, const dolfin::fem::Form&,
+            const std::vector<std::shared_ptr<const dolfin::fem::DirichletBC>>&,
+            double>(&dolfin::fem::assemble_matrix),
+        py::arg("A"), py::arg("a"), py::arg("bcs"), py::arg("diagonal"),
+        "Assemble bilinear form over mesh into matrix");
   m.def("assemble_blocked_matrix",
         py::overload_cast<
-            Mat, const std::vector<std::vector<const dolfin::fem::Form*>>,
-            std::vector<std::shared_ptr<const dolfin::fem::DirichletBC>>,
+            Mat, const std::vector<std::vector<const dolfin::fem::Form*>>&,
+            const std::vector<std::shared_ptr<const dolfin::fem::DirichletBC>>&,
             double, bool>(&dolfin::fem::assemble_matrix),
         py::arg("A"), py::arg("a"), py::arg("bcs"), py::arg("diagonal"),
         py::arg("use_nest_extract") = true,
         "Re-assemble bilinear forms over mesh into blocked matrix");
   // BC modifiers
-  m.def("apply_lifting", &dolfin::fem::apply_lifting,
+  m.def("apply_lifting",
+        py::overload_cast<
+            Vec, const std::vector<std::shared_ptr<const dolfin::fem::Form>>&,
+            const std::vector<
+                std::vector<std::shared_ptr<const dolfin::fem::DirichletBC>>>&,
+            const std::vector<Vec>&, double>(&dolfin::fem::apply_lifting),
         "Modify vector for lifted boundary conditions");
-  m.def("set_bc", &dolfin::fem::set_bc,
+  m.def(
+      "apply_lifting",
+      py::overload_cast<
+          Eigen::Ref<Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1>>,
+          const std::vector<std::shared_ptr<const dolfin::fem::Form>>&,
+          const std::vector<
+              std::vector<std::shared_ptr<const dolfin::fem::DirichletBC>>>&,
+          const std::vector<
+              Eigen::Ref<const Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1>>>&,
+          double>(&dolfin::fem::apply_lifting),
+      "Modify vector for lifted boundary conditions");
+  m.def("set_bc",
+        py::overload_cast<
+            Vec,
+            const std::vector<std::shared_ptr<const dolfin::fem::DirichletBC>>&,
+            const Vec, double>(&dolfin::fem::set_bc),
         "Insert boundary condition values into vector");
+  m.def("set_bc",
+        [](Eigen::Ref<Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1>> b,
+           const std::vector<std::shared_ptr<const dolfin::fem::DirichletBC>>&
+               bcs,
+           const py::array_t<PetscScalar>& x0, double scale) {
+          if (x0.ndim() == 0)
+            dolfin::fem::set_bc(b, bcs, scale);
+          else if (x0.ndim() == 1)
+          {
+            Eigen::Map<const Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1>> _x0(
+                x0.data(), x0.shape(0));
+            dolfin::fem::set_bc(b, bcs, _x0, scale);
+          }
+          else
+            throw std::runtime_error("Wrong array dimension.");
+        },
+        py::arg("b"), py::arg("bcs"), py::arg("x0") = py::none(),
+        py::arg("scale") = 1.0);
+  // Tools
+  m.def("bcs_rows", &dolfin::fem::bcs_rows);
+  m.def("bcs_cols", &dolfin::fem::bcs_cols);
 
   // dolfin::fem::DiscreteOperators
   py::class_<dolfin::fem::DiscreteOperators>(m, "DiscreteOperators")

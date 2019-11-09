@@ -154,7 +154,7 @@ bool nls::NewtonSolver::converged(const Vec r,
                                   const NonlinearProblem& nonlinear_problem,
                                   std::size_t newton_iteration)
 {
-  la::PETScVector _r(r);
+  la::PETScVector _r(r, true);
   _residual = _r.norm(la::Norm::l2);
 
   // If this is the first iteration step, set initial residual

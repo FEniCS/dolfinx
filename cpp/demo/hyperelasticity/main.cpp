@@ -27,7 +27,7 @@ public:
 
   void form(Vec x) final
   {
-    la::PETScVector _x(x);
+    la::PETScVector _x(x, true);
     _x.update_ghosts();
   }
 

@@ -374,6 +374,7 @@ def test_nth_order_triangle(order):
     assert ref == pytest.approx(intu, rel=3e-3)
 
 
+@skip_in_parallel
 def test_xdmf_input_tri():
     # Parameterize test if gmsh gets wider support
     order = 2
