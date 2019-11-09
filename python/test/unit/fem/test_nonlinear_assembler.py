@@ -55,7 +55,6 @@ def test_matrix_assembly_block():
 
     def bc_value(x):
         return numpy.cos(x[:, 0]) * numpy.cos(x[:, 1])
-
     u_bc = dolfin.function.Function(V1)
     u_bc.interpolate(bc_value)
     bc = dolfin.fem.dirichletbc.DirichletBC(V1, u_bc, boundary)
@@ -101,7 +100,12 @@ def test_matrix_assembly_block():
         x1_sub.ghostUpdate(addv=PETSc.InsertMode.INSERT, mode=PETSc.ScatterMode.FORWARD)
 
     A1 = dolfin.fem.assemble_matrix_nest(a_block, [bc])
-    b1 = dolfin.fem.assemble_vector_nest(L_block, a_block, [bc], x0=x1, scale=-1.0)
+    b1 = dolfin.fem.assemble.assemble_vector_nest(L_block)
+    dolfin.fem.assemble.apply_lifting_nest(b1, a_block, [bc], x1, scale=-1.0)
+    for b_sub in b1.getNestSubVecs():
+        b_sub.ghostUpdate(addv=PETSc.InsertMode.ADD, mode=PETSc.ScatterMode.REVERSE)
+    bcs0 = dolfin.cpp.fem.bcs_rows(dolfin.fem.assemble._create_cpp_form(L_block), [bc])
+    dolfin.fem.assemble.set_bc_nest(b1, bcs0, x1, scale=-1.0)
 
     assert A1.getType() == "nest"
     assert nest_matrix_norm(A1) == pytest.approx(Anorm0, 1.0e-12)
@@ -115,13 +119,10 @@ def test_matrix_assembly_block():
     u0, u1 = ufl.split(U)
     v0, v1 = dolfin.function.TestFunctions(W)
 
-    U.interpolate(lambda x: numpy.column_stack(
-        (initial_guess_u(x), initial_guess_p(x))))
+    U.interpolate(lambda x: numpy.column_stack((initial_guess_u(x), initial_guess_p(x))))
 
-    F = inner(u0, v0) * dx + inner(u1, v0) * dx \
-        + inner(u0, v1) * dx + inner(u1, v1) * dx \
+    F = inner(u0, v0) * dx + inner(u1, v0) * dx + inner(u0, v1) * dx + inner(u1, v1) * dx \
         - inner(f, v0) * ufl.dx - inner(g, v1) * dx
-
     J = derivative(F, U, dU)
 
     bc = dolfin.fem.dirichletbc.DirichletBC(W.sub(1), u_bc, boundary)
@@ -168,6 +169,8 @@ class NonlinearPDE_SNESProblem():
         assert x.getType() != "nest"
         assert F.getType() != "nest"
         x.ghostUpdate(addv=PETSc.InsertMode.INSERT, mode=PETSc.ScatterMode.FORWARD)
+        with F.localForm() as f_local:
+            f_local.set(0.0)
 
         offset = 0
         x_array = x.getArray(readonly=True)
@@ -191,11 +194,27 @@ class NonlinearPDE_SNESProblem():
 
     def F_nest(self, snes, x, F):
         assert x.getType() == "nest" and F.getType() == "nest"
-        for x_sub, var_sub in zip(x.getNestSubVecs(), self.soln_vars):
+        # Update solution
+        x = x.getNestSubVecs()
+        for x_sub, var_sub in zip(x, self.soln_vars):
             x_sub.ghostUpdate(addv=PETSc.InsertMode.INSERT, mode=PETSc.ScatterMode.FORWARD)
             with x_sub.localForm() as _x, var_sub.vector.localForm() as _u:
                 _u[:] = _x
-        dolfin.fem.assemble_vector_nest(F, self.L, self.a, self.bcs, x0=x, scale=-1.0)
+
+        # Assemble
+        bcs1 = dolfin.cpp.fem.bcs_cols(dolfin.fem.assemble._create_cpp_form(self.a), self.bcs)
+        for L, F_sub, a, bc in zip(self.L, F.getNestSubVecs(), self.a, bcs1):
+            with F_sub.localForm() as F_sub_local:
+                F_sub_local.set(0.0)
+            dolfin.fem.assemble.assemble_vector(F_sub, L)
+            dolfin.fem.assemble.apply_lifting(F_sub, a, bc, x0=x, scale=-1.0)
+            F_sub.ghostUpdate(addv=PETSc.InsertMode.ADD, mode=PETSc.ScatterMode.REVERSE)
+
+        # Set bc value in RHS
+        bcs0 = dolfin.cpp.fem.bcs_rows(dolfin.fem.assemble._create_cpp_form(self.L), self.bcs)
+        for F_sub, bc, x_sub in zip(F.getNestSubVecs(), bcs0, x):
+            dolfin.fem.assemble.set_bc(F_sub, bc, x_sub, -1.0)
+
         # Must assemble F here in the case of nest matrices
         F.assemble()
 
@@ -240,11 +259,8 @@ def test_assembly_solve_block():
     u_bc0.interpolate(bc_val_0)
     u_bc1 = dolfin.function.Function(V1)
     u_bc1.interpolate(bc_val_1)
-
-    bcs = [
-        dolfin.fem.dirichletbc.DirichletBC(V0, u_bc0, boundary),
-        dolfin.fem.dirichletbc.DirichletBC(V1, u_bc1, boundary)
-    ]
+    bcs = [dolfin.fem.dirichletbc.DirichletBC(V0, u_bc0, boundary),
+           dolfin.fem.dirichletbc.DirichletBC(V1, u_bc1, boundary)]
 
     # Block and Nest variational problem
     u, p = dolfin.function.Function(V0), dolfin.function.Function(V1)
@@ -363,10 +379,8 @@ def test_assembly_solve_block():
     u1_bc = dolfin.function.Function(V1)
     u1_bc.interpolate(bc_val_1)
 
-    bcs = [
-        dolfin.fem.dirichletbc.DirichletBC(W.sub(0), u0_bc, boundary),
-        dolfin.fem.dirichletbc.DirichletBC(W.sub(1), u1_bc, boundary)
-    ]
+    bcs = [dolfin.fem.dirichletbc.DirichletBC(W.sub(0), u0_bc, boundary),
+           dolfin.fem.dirichletbc.DirichletBC(W.sub(1), u1_bc, boundary)]
 
     Jmat2 = dolfin.fem.create_matrix(J)
     Fvec2 = dolfin.fem.create_vector(F)
@@ -382,8 +396,8 @@ def test_assembly_solve_block():
     snes.setFunction(problem.F_mono, Fvec2)
     snes.setJacobian(problem.J_mono, J=Jmat2, P=None)
 
-    U.interpolate(lambda x: numpy.column_stack(
-        (initial_guess_u(x), initial_guess_p(x))))
+    U.interpolate(lambda x: numpy.column_stack((initial_guess_u(x), initial_guess_p(x))))
+
     x2 = dolfin.fem.create_vector(F)
     x2.array = U.vector.array_r
 
@@ -432,12 +446,10 @@ def test_assembly_solve_taylor_hood(mesh):
         return -x[:, 0]**2 - x[:, 1]**3
 
     u_bc_0 = dolfin.Function(P2)
-    u_bc_0.interpolate(
-        lambda x: numpy.column_stack(tuple(x[:, j] + float(j) for j in range(gdim))))
+    u_bc_0.interpolate(lambda x: numpy.column_stack(tuple(x[:, j] + float(j) for j in range(gdim))))
 
     u_bc_1 = dolfin.Function(P2)
-    u_bc_1.interpolate(
-        lambda x: numpy.column_stack(tuple(numpy.sin(x[:, j]) for j in range(gdim))))
+    u_bc_1.interpolate(lambda x: numpy.column_stack(tuple(numpy.sin(x[:, j]) for j in range(gdim))))
 
     bcs = [dolfin.DirichletBC(P2, u_bc_0, boundary0),
            dolfin.DirichletBC(P2, u_bc_1, boundary1)]
@@ -541,12 +553,10 @@ def test_assembly_solve_taylor_hood(mesh):
     du, dp = ufl.split(dU)
     v, q = dolfin.TestFunctions(W)
 
-    F = inner(ufl.grad(u), ufl.grad(v)) * dx \
-        + inner(p, ufl.div(v)) * dx \
+    F = inner(ufl.grad(u), ufl.grad(v)) * dx + inner(p, ufl.div(v)) * dx \
         + inner(ufl.div(u), q) * dx
     J = derivative(F, U, dU)
-    P = inner(ufl.grad(du), ufl.grad(v)) * dx \
-        + inner(dp, q) * dx
+    P = inner(ufl.grad(du), ufl.grad(v)) * dx + inner(dp, q) * dx
 
     bcs = [dolfin.DirichletBC(W.sub(0), u_bc_0, boundary0),
            dolfin.DirichletBC(W.sub(0), u_bc_1, boundary1)]
@@ -566,11 +576,11 @@ def test_assembly_solve_taylor_hood(mesh):
     snes.setFunction(problem.F_mono, Fvec2)
     snes.setJacobian(problem.J_mono, J=Jmat2, P=Pmat2)
 
-    U.interpolate(lambda x: numpy.column_stack(
-        (initial_guess_u(x), initial_guess_p(x))))
+    U.interpolate(lambda x: numpy.column_stack((initial_guess_u(x), initial_guess_p(x))))
 
     x2 = dolfin.fem.create_vector(F)
     x2.array = U.vector.array_r
+
     snes.solve(None, x2)
 
     assert snes.getConvergedReason() > 0

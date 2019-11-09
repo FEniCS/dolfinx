@@ -136,10 +136,13 @@ class VTKFile:
         """
         self._cpp_object = cpp.io.VTKFile(filename)
 
-    def write(self, o) -> None:
+    def write(self, o, t=None) -> None:
         """Write object to file"""
         o_cpp = getattr(o, "_cpp_object", o)
-        self._cpp_object.write(o_cpp)
+        if t is None:
+            self._cpp_object.write(o_cpp)
+        else:
+            self._cpp_object.write(o_cpp, t)
 
 
 class XDMFFile:

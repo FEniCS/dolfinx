@@ -1,7 +1,6 @@
 #include "hyperelasticity.h"
 #include <cfloat>
 #include <dolfin.h>
-#include <dolfin/mesh/Ordering.h>
 
 using namespace dolfin;
 
@@ -28,7 +27,7 @@ public:
 
   void form(Vec x) final
   {
-    la::PETScVector _x(x);
+    la::PETScVector _x(x, true);
     _x.update_ghosts();
   }
 
@@ -89,7 +88,6 @@ int main(int argc, char* argv[])
   auto mesh = std::make_shared<mesh::Mesh>(generation::BoxMesh::create(
       MPI_COMM_WORLD, pt, {{8, 8, 8}}, mesh::CellType::tetrahedron,
       mesh::GhostMode::none));
-  mesh::Ordering::order_simplex(*mesh);
 
   auto V
       = fem::create_functionspace(hyperelasticity_functionspace_create, mesh);

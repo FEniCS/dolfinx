@@ -442,6 +442,46 @@ dolfin::la::get_local_vectors(const Vec x,
   return x_b;
 }
 //-----------------------------------------------------------------------------
+// std::vector<Vec> dolfin::la::get_local_petsc_vectors(
+//     const Vec x, const std::vector<const common::IndexMap*>& maps)
+// {
+//     // Get ghost offset
+//   int offset_owned = 0;
+//   for (const common::IndexMap* map : maps)
+//   {
+//     assert(map);
+//     offset_owned += map->size_local() * map->block_size;
+//   }
+
+//   // Unwrap PETSc vector
+//   la::VecReadWrapper x_wrapper(x);
+
+//   // Copy PETSc Vec data in to Eigen vector
+//   std::vector<Vec> x_b;
+//   int offset = 0;
+//   int offset_ghost = offset_owned; // Ghost DoFs start after owned
+//   for (const common::IndexMap* map : maps)
+//   {
+//     VecCreate
+
+//     const int bs = map->block_size;
+//     const int size_owned = map->size_local() * bs;
+//     const int size_ghost = map->num_ghosts() * bs;
+//     x_b.emplace_back(
+//         Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1>(size_owned + size_ghost));
+//     x_b.back().head(size_owned) = x_wrapper.x.segment(offset, size_owned);
+//     x_b.back().tail(size_ghost) = x_wrapper.x.segment(offset_ghost, size_ghost);
+
+//     offset += size_owned;
+//     offset_ghost += size_ghost;
+//   }
+
+//   x_wrapper.restore();
+
+//   return x_b;
+
+// }
+//-----------------------------------------------------------------------------
 void dolfin::la::scatter_local_vectors(
     Vec x,
     const std::vector<Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1>>& x_b,

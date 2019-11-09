@@ -66,7 +66,7 @@ void la(py::module& m)
         for (std::size_t i = 0; i < x.size(); ++i)
         {
           assert(x[i]);
-          _x.push_back(std::make_shared<dolfin::la::PETScVector>(x[i]));
+          _x.push_back(std::make_shared<dolfin::la::PETScVector>(x[i], true));
         }
         return dolfin::la::VectorSpaceBasis(_x);
       }))
