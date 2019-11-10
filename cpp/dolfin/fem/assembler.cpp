@@ -159,8 +159,8 @@ void fem::assemble_matrix_block(
   }
 
   // Restore sub-matrices
-  for (std::size_t i = 0; i < Asub.rows(); ++i)
-    for (std::size_t j = 0; j < Asub.cols(); ++j)
+  for (Eigen::Index i = 0; i < Asub.rows(); ++i)
+    for (Eigen::Index j = 0; j < Asub.cols(); ++j)
       if (Asub(i, j))
         MatRestoreLocalSubMatrix(A, is_row[i], is_col[j], &Asub(i, j));
 

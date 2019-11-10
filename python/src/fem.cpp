@@ -247,7 +247,6 @@ void fem(py::module& m)
   m.def("assemble_matrix_block", &dolfin::fem::assemble_matrix_block,
         py::arg("A"), py::arg("a"), py::arg("bcs"), py::arg("diagonal"),
         "Re-assemble bilinear forms over mesh into blocked matrix");
-  m.def("assemble_matrix_nest", &dolfin::fem::assemble_matrix_nest);
   m.def("set_diagonal",
         py::overload_cast<
             Mat, const dolfin::fem::Form&,

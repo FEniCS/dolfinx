@@ -49,7 +49,10 @@ namespace fem
 {
 class Form;
 
-/// Compute IndexMaps for stacked index maps
+/// Extract IndexMaps for (0) rows blocks and (1) columns blocks from a
+/// rectangular array of bilinear forms.
+/// @param[in] a A rectangular block on bilinear forms
+/// @return IndexMaps for row blocks (0) and column blocks (1)
 std::array<std::vector<std::shared_ptr<const common::IndexMap>>, 2>
 blocked_index_sets(const std::vector<std::vector<const fem::Form*>>& a);
 

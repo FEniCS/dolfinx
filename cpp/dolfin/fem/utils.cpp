@@ -65,29 +65,34 @@ int analyse_block_structure(
 std::array<std::vector<std::shared_ptr<const common::IndexMap>>, 2>
 fem::blocked_index_sets(const std::vector<std::vector<const fem::Form*>>& a)
 {
+  assert(!a.empty());
   std::array<std::vector<std::shared_ptr<const common::IndexMap>>, 2> maps;
-  maps[0].resize(a.size());
-  maps[1].resize(a[0].size());
+  std::vector<std::shared_ptr<const common::IndexMap>>& maps0 = maps[0];
+  std::vector<std::shared_ptr<const common::IndexMap>>& maps1 = maps[1];
+  maps0.resize(a.size());
+  maps1.resize(a[0].size());
 
-  // Loop over rows and columns
+  // Loop over rows
   for (std::size_t i = 0; i < a.size(); ++i)
   {
+    assert(a[0].size() == a[1].size());
+
+    // Loop over columns
     for (std::size_t j = 0; j < a[i].size(); ++j)
     {
       if (a[i][j])
       {
         assert(a[i][j]->rank() == 2);
-        auto m0 = a[i][j]->function_space(0)->dofmap()->index_map;
-        auto m1 = a[i][j]->function_space(1)->dofmap()->index_map;
-        if (!maps[0][i])
-          maps[0][i] = m0;
+
+        if (!maps0[i])
+          maps0[i] = a[i][j]->function_space(0)->dofmap()->index_map;
         else
         {
           // TODO: Check that maps are the same
         }
 
-        if (!maps[1][j])
-          maps[1][j] = m1;
+        if (!maps1[j])
+          maps1[j] = a[i][j]->function_space(1)->dofmap()->index_map;
         else
         {
           // TODO: Check that maps are the same
