@@ -117,6 +117,35 @@ void apply_lifting(
 
 // -- Matrices ---------------------------------------------------------------
 
+/// Assemble bilinear form into a matrix. Matrix must already be
+/// initialised. Does not zero or finalise the matrix.
+/// @param[in,out] A The PETsc matrix to assemble the form into. The
+///                  matrix size/layout must be initialised before
+///                  calling this function. The matrix is not zeroed and
+///                  it is not finalised (shared entries not
+///                  communicated).
+/// @param[in] a The bilinear from to assemble
+/// @param[in] bcs Boundary conditions to apply. For boundary condition
+///                dofs the row and column are zeroed. The diagonal
+///                entry is not set.
+void assemble_matrix(
+    Mat A, const Form& a,
+    const std::vector<std::shared_ptr<const DirichletBC>>& bcs);
+
+/// Assemble bilinear form into a matrix. Matrix must already be
+/// initialised. Does not zero or finalise the matrix.
+/// @param[in,out] A The matrix to assemble in to. Matrix must be
+///                  initialised.
+/// @param[in] a The bilinear form to assemble
+/// @param[in] bc0 Boundary condition markers for the rows. If bc[i] is
+///                true then rows i in A will be zeroed. The index i is
+///                a local index.
+/// @param[in] bc1 Boundary condition markers for the columns. If bc[i]
+///                is true then rows i in A will be zeroed. The index i
+///                is a local index.
+void assemble_matrix(Mat A, const Form& a, const std::vector<bool>& bc0,
+                     const std::vector<bool>& bc1);
+
 /// Re-assemble blocked bilinear forms into a matrix. Does not zero the
 /// matrix.
 void assemble_matrix_block(
@@ -131,32 +160,19 @@ void assemble_matrix_nest(
     const std::vector<std::shared_ptr<const DirichletBC>>& bcs,
     double diagonal = 1.0);
 
-/// Assemble bilinear form into a matrix. Matrix must be initialised.
-/// Does not zero or finalise the matrix.
-/// @param[in,out] A The PETsc matrix to assemble the form into. The
-///                  matrix size/layout must be initialised before
-///                  calling this function. The matrix is not zeroed and
-///                  it is not finalised (shared entries not
-///                  communicated).
-/// @param[in] a The bilinear from to assemble.
-/// @param[in] bcs Boundary conditions to apply. For boundary condition
-///                dofs the row and column are zeroed and the diagonal
-///                value set.
-/// @param[in] diagonal Value to set on the diagonal for boundary
-/// conditions dofs.
-void assemble_matrix(Mat A, const Form& a,
-                     const std::vector<std::shared_ptr<const DirichletBC>>& bcs,
-                     double diagonal = 1.0);
-
-/// TDOO
-void assemble_matrix_new(
-    Mat A, const Form& a,
-    const std::vector<std::shared_ptr<const DirichletBC>>& bcs);
-
 /// Set diagonal
 void set_diagonal(Mat A, const Form& a,
                   const std::vector<std::shared_ptr<const DirichletBC>>& bcs,
                   PetscScalar diagonal = 1.0);
+
+/// Set diagonal
+/// @param[in,out] A The matrix
+/// @param[in] rows The rows, in local indices, for which to set the
+///                 diagonal
+/// @param[in] diagonal The value to set on the diagonal
+void set_diagonal(
+    Mat A, Eigen::Ref<const Eigen::Array<PetscInt, Eigen::Dynamic, 1>> rows,
+    PetscScalar diagonal = 1.0);
 
 // -- Setting bcs ------------------------------------------------------------
 

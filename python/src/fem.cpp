@@ -234,13 +234,25 @@ void fem(py::module& m)
         py::arg("b"), py::arg("L"),
         "Assemble linear form into an existing Eigen vector");
   // Matrices
-  m.def("assemble_matrix", &dolfin::fem::assemble_matrix, py::arg("A"),
-        py::arg("a"), py::arg("bcs"), py::arg("diagonal"),
-        "Assemble bilinear form over mesh into matrix");
+  m.def(
+      "assemble_matrix",
+      py::overload_cast<
+          Mat, const dolfin::fem::Form&,
+          const std::vector<std::shared_ptr<const dolfin::fem::DirichletBC>>&>(
+          &dolfin::fem::assemble_matrix));
+  m.def("assemble_matrix",
+        py::overload_cast<Mat, const dolfin::fem::Form&,
+                          const std::vector<bool>&, const std::vector<bool>&>(
+            &dolfin::fem::assemble_matrix));
   m.def("assemble_matrix_block", &dolfin::fem::assemble_matrix_block,
         py::arg("A"), py::arg("a"), py::arg("bcs"), py::arg("diagonal"),
         "Re-assemble bilinear forms over mesh into blocked matrix");
   m.def("assemble_matrix_nest", &dolfin::fem::assemble_matrix_nest);
+  m.def("set_diagonal",
+        py::overload_cast<
+            Mat, const dolfin::fem::Form&,
+            const std::vector<std::shared_ptr<const dolfin::fem::DirichletBC>>&,
+            PetscScalar>(&dolfin::fem::set_diagonal));
   // BC modifiers
   m.def("apply_lifting",
         py::overload_cast<

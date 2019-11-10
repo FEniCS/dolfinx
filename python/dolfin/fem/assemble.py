@@ -207,7 +207,10 @@ def _(A: PETSc.Mat,
     finalised, i.e. ghost values are not accumulated.
 
     """
-    cpp.fem.assemble_matrix(A, _create_cpp_form(a), bcs, diagonal)
+    _a = _create_cpp_form(a)
+    cpp.fem.assemble_matrix(A, _a, bcs)
+    if _a.function_space(0) == _a.function_space(1):
+        cpp.fem.set_diagonal(A, _a, bcs, diagonal)
     return A
 
 

@@ -79,6 +79,46 @@ void fem::apply_lifting(
   fem::impl::apply_lifting(b, a, bcs1, x0, scale);
 }
 //-----------------------------------------------------------------------------
+void fem::assemble_matrix(
+    Mat A, const Form& a,
+    const std::vector<std::shared_ptr<const DirichletBC>>& bcs)
+{
+  // Index maps for dof ranges
+  auto map0 = a.function_space(0)->dofmap()->index_map;
+  auto map1 = a.function_space(1)->dofmap()->index_map;
+
+  // Build dof markers
+  std::vector<bool> dof_marker0, dof_marker1;
+  std::int32_t dim0
+      = map0->block_size * (map0->size_local() + map0->num_ghosts());
+  std::int32_t dim1
+      = map1->block_size * (map1->size_local() + map1->num_ghosts());
+  for (std::size_t k = 0; k < bcs.size(); ++k)
+  {
+    assert(bcs[k]);
+    assert(bcs[k]->function_space());
+    if (a.function_space(0)->contains(*bcs[k]->function_space()))
+    {
+      dof_marker0.resize(dim0, false);
+      bcs[k]->mark_dofs(dof_marker0);
+    }
+    if (a.function_space(1)->contains(*bcs[k]->function_space()))
+    {
+      dof_marker1.resize(dim1, false);
+      bcs[k]->mark_dofs(dof_marker1);
+    }
+  }
+
+  // Assemble
+  impl::assemble_matrix(A, a, dof_marker0, dof_marker1);
+}
+//-----------------------------------------------------------------------------
+void fem::assemble_matrix(Mat A, const Form& a, const std::vector<bool>& bc0,
+                          const std::vector<bool>& bc1)
+{
+  impl::assemble_matrix(A, a, bc0, bc1);
+}
+//-----------------------------------------------------------------------------
 void fem::assemble_matrix_nest(
     Mat A, const std::vector<std::vector<const Form*>>& a,
     const std::vector<std::shared_ptr<const DirichletBC>>& bcs, double diagonal)
@@ -100,7 +140,7 @@ void fem::assemble_matrix_nest(
     {
       if (a[i][j])
       {
-        assemble_matrix_new(Asub(i, j), *a[i][j], bcs);
+        assemble_matrix(Asub(i, j), *a[i][j], bcs);
         if (*a[i][j]->function_space(0) == *a[i][j]->function_space(1))
           set_diagonal(Asub(i, j), *a[i][j], bcs, diagonal);
       }
@@ -140,7 +180,7 @@ void fem::assemble_matrix_block(
     {
       if (a[i][j])
       {
-        assemble_matrix_new(Asub(i, j), *a[i][j], bcs);
+        assemble_matrix(Asub(i, j), *a[i][j], bcs);
         if (*a[i][j]->function_space(0) == *a[i][j]->function_space(1))
           set_diagonal(Asub(i, j), *a[i][j], bcs, diagonal);
       }
@@ -160,51 +200,6 @@ void fem::assemble_matrix_block(
     ISDestroy(&is_col[i]);
 }
 //-----------------------------------------------------------------------------
-void fem::assemble_matrix(
-    Mat A, const Form& a,
-    const std::vector<std::shared_ptr<const DirichletBC>>& bcs, double diagonal)
-{
-  // Assemble
-  assemble_matrix_new(A, a, bcs);
-
-  // Set diagonal
-  set_diagonal(A, a, bcs, diagonal);
-}
-//-----------------------------------------------------------------------------
-void fem::assemble_matrix_new(
-    Mat A, const Form& a,
-    const std::vector<std::shared_ptr<const DirichletBC>>& bcs)
-{
-  // Index maps for dof ranges
-  auto map0 = a.function_space(0)->dofmap()->index_map;
-  auto map1 = a.function_space(1)->dofmap()->index_map;
-
-  // Build dof markers
-  std::vector<bool> dof_marker0, dof_marker1;
-  std::int32_t dim0
-      = map0->block_size * (map0->size_local() + map0->num_ghosts());
-  std::int32_t dim1
-      = map1->block_size * (map1->size_local() + map1->num_ghosts());
-  for (std::size_t k = 0; k < bcs.size(); ++k)
-  {
-    assert(bcs[k]);
-    assert(bcs[k]->function_space());
-    if (a.function_space(0)->contains(*bcs[k]->function_space()))
-    {
-      dof_marker0.resize(dim0, false);
-      bcs[k]->mark_dofs(dof_marker0);
-    }
-    if (a.function_space(1)->contains(*bcs[k]->function_space()))
-    {
-      dof_marker1.resize(dim1, false);
-      bcs[k]->mark_dofs(dof_marker1);
-    }
-  }
-
-  // Assemble
-  impl::assemble_matrix(A, a, dof_marker0, dof_marker1);
-}
-//-----------------------------------------------------------------------------
 void fem::set_diagonal(
     Mat A, const Form& a,
     const std::vector<std::shared_ptr<const DirichletBC>>& bcs,
@@ -219,15 +214,27 @@ void fem::set_diagonal(
       assert(bc);
       if (a.function_space(0)->contains(*bc->function_space()))
       {
-        const Eigen::Map<const Eigen::Array<PetscInt, Eigen::Dynamic, 1>> dofs
-            = bc->dof_indices_owned();
-        for (Eigen::Index i = 0; i < dofs.size(); ++i)
-        {
-          const PetscInt row = dofs[i];
-          MatSetValuesLocal(A, 1, &row, 1, &row, &diagonal, ADD_VALUES);
-        }
+        set_diagonal(A, bc->dof_indices_owned(), diagonal);
       }
     }
+  }
+}
+//-----------------------------------------------------------------------------
+void fem::set_diagonal(
+    Mat A, Eigen::Ref<const Eigen::Array<PetscInt, Eigen::Dynamic, 1>> rows,
+    PetscScalar diagonal)
+{
+  // NOTE: We use MatSetValuesLocal rather than MatZeroRowsLocal because
+  //       MatZeroRowsLocal does not work with sub-matrices extracted
+  //       using MatGetLocalSubMatrix from a monolithic matrix.
+
+  // NOTE: MatSetValuesLocal uses ADD_VALUES, hence it requires that the
+  //       diagonal is zero before this function is called.
+
+  for (Eigen::Index i = 0; i < rows.size(); ++i)
+  {
+    const PetscInt row = rows(i);
+    MatSetValuesLocal(A, 1, &row, 1, &row, &diagonal, ADD_VALUES);
   }
 }
 //-----------------------------------------------------------------------------
