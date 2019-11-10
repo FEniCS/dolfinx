@@ -59,8 +59,13 @@ Mat create_petsc_matrix(MPI_Comm comm, const SparsityPattern& sparsity_pattern);
 MatNullSpace create_petsc_nullspace(MPI_Comm comm,
                                     const VectorSpaceBasis& nullspace);
 
-/// Compute IndexSets (IS) for stacked index maps. Caller is responsible
-/// for destruction of each IS.
+/// @todo This function could take just the local sizes
+/// Compute IndexSets (IS) for stacked index maps.  E.g., if map[0] =
+/// {0, 1, 2, 3, 4, 5, 6} and map[1] = {0, 1, 2, 4} (in local indices),
+/// IS[0] = {0, 1, 2, 3, 4, 5, 6} and IS[1] = {7, 8, 9, 10}. Caller is
+/// responsible for destruction of each IS.
+/// @param[in] maps Vector of IndexMaps
+/// @returns Vector of PETSc Index Sets, created on PETSc_COMM_SELF
 std::vector<IS>
 create_petsc_index_sets(const std::vector<const common::IndexMap*>& maps);
 

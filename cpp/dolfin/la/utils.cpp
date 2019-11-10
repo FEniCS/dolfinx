@@ -249,7 +249,7 @@ std::vector<IS> dolfin::la::create_petsc_index_sets(
     std::vector<PetscInt> index(bs * size);
     std::iota(index.begin(), index.end(), offset);
 
-    ISCreateBlock(MPI_COMM_SELF, 1, index.size(), index.data(),
+    ISCreateBlock(PETSC_COMM_SELF, 1, index.size(), index.data(),
                   PETSC_COPY_VALUES, &is[i]);
     offset += bs * size;
     // ISCreateBlock(MPI_COMM_SELF, bs, index.size(), index.data(),

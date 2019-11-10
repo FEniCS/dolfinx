@@ -268,9 +268,10 @@ def _(A: PETSc.Mat,
     is_cols = cpp.la.create_petsc_index_sets([Vsub.dofmap.index_map for Vsub in V[1]])
     for i, a_row in enumerate(_a):
         for j, a_sub in enumerate(a_row):
-            Asub = A.getLocalSubMatrix(is_rows[i], is_cols[j])
-            assemble_matrix(Asub, a_sub, bcs, diagonal)
-            A.restoreLocalSubMatrix(is_rows[i], is_cols[j], Asub)
+            if a_sub is not None:
+                Asub = A.getLocalSubMatrix(is_rows[i], is_cols[j])
+                assemble_matrix(Asub, a_sub, bcs, diagonal)
+                A.restoreLocalSubMatrix(is_rows[i], is_cols[j], Asub)
     A.assemble()
     return A
 
