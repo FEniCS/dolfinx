@@ -49,11 +49,13 @@ namespace fem
 {
 class Form;
 
-/// Extract IndexMaps for (0) rows blocks and (1) columns blocks from a
-/// rectangular array of bilinear forms.
+/// Extract FunctionSpaces IndexMaps for (0) rows blocks and (1) columns
+/// blocks from a rectangular array of bilinear forms. Raises an
+/// exception if there is an inconsistency. e.g. if each form in row i
+/// does not have the same test space then an exception is raised.
 /// @param[in] a A rectangular block on bilinear forms
 /// @return IndexMaps for row blocks (0) and column blocks (1)
-std::array<std::vector<std::shared_ptr<const common::IndexMap>>, 2>
+std::array<std::vector<std::shared_ptr<const function::FunctionSpace>>, 2>
 blocked_index_sets(const std::vector<std::vector<const fem::Form*>>& a);
 
 /// Create matrix. Matrix is not zeroed.

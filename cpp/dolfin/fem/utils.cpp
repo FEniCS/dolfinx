@@ -62,7 +62,7 @@ int analyse_block_structure(
 } // namespace
 
 //-----------------------------------------------------------------------------
-std::array<std::vector<std::shared_ptr<const common::IndexMap>>, 2>
+std::array<std::vector<std::shared_ptr<const function::FunctionSpace>>, 2>
 fem::blocked_index_sets(const std::vector<std::vector<const fem::Form*>>& a)
 {
   assert(!a.empty());
@@ -88,7 +88,7 @@ fem::blocked_index_sets(const std::vector<std::vector<const fem::Form*>>& a)
         else
         {
           if (V[0][i] != a[i][j]->function_space(0))
-            throw std::runtime_error("Ooops (0)");
+            throw std::runtime_error("Mismatched test space for row.");
         }
 
         if (!V[1][j])
@@ -96,31 +96,19 @@ fem::blocked_index_sets(const std::vector<std::vector<const fem::Form*>>& a)
         else
         {
           if (V[1][j] != a[i][j]->function_space(1))
-            throw std::runtime_error("Ooops (1)");
+            throw std::runtime_error("Mismatched trial space for column.");
         }
       }
     }
   }
 
+  // Check there are no null entries
   for (std::size_t i = 0; i < V.size(); ++i)
-  {
     for (std::size_t j = 0; j < V[i].size(); ++j)
-    {
       if (!V[i][j])
-        throw std::runtime_error("XXXCould not deduce all block index maps.");
-    }
-  }
+        throw std::runtime_error("Could not deduce all block spaces.");
 
-  std::array<std::vector<std::shared_ptr<const common::IndexMap>>, 2> maps;
-  for (std::size_t i = 0; i < 2; ++i)
-  {
-    for (std::size_t j = 0; j < V[i].size(); ++j)
-    {
-      maps[i].push_back(V[i][j]->dofmap()->index_map);
-    }
-  }
-
-  return maps;
+  return V;
 }
 //-----------------------------------------------------------------------------
 la::PETScMatrix dolfin::fem::create_matrix(const Form& a)
@@ -191,30 +179,20 @@ la::PETScMatrix dolfin::fem::create_matrix(const Form& a)
 la::PETScMatrix
 fem::create_matrix_block(const std::vector<std::vector<const fem::Form*>>& a)
 {
-  // FIXME: this assumes that a00 is not null
-  const mesh::Mesh& mesh = *a[0][0]->mesh();
-
-  // FIXME: assume no null block in first row or column
   // Extract and check row/column ranges
-  // std::vector<std::shared_ptr<const common::IndexMap>> rmaps, cmaps;
-  // for (std::size_t row = 0; row < a.size(); ++row)
-  //   rmaps.push_back(a[row][0]->function_space(0)->dofmap->index_map;
-  // for (std::size_t col = 0; col < a[0].size(); ++col)
-  //   cmaps.push_back(a[0][col]->function_space(1)->dofmap->index_map;
-
-  std::array<std::vector<std::shared_ptr<const common::IndexMap>>, 2> maps
+  std::array<std::vector<std::shared_ptr<const function::FunctionSpace>>, 2> V
       = blocked_index_sets(a);
-  std::vector<std::shared_ptr<const common::IndexMap>> rmaps = maps[0];
-  std::vector<std::shared_ptr<const common::IndexMap>> cmaps = maps[1];
+
+  const mesh::Mesh& mesh = *V[0][0]->mesh();
 
   // Build sparsity pattern for each block
   std::vector<std::vector<std::unique_ptr<la::SparsityPattern>>> patterns(
-      a.size());
+      V[0].size());
   std::vector<std::vector<const la::SparsityPattern*>> p(
-      a.size(), std::vector<const la::SparsityPattern*>(a[0].size()));
-  for (std::size_t row = 0; row < a.size(); ++row)
+      V[0].size(), std::vector<const la::SparsityPattern*>(V[1].size()));
+  for (std::size_t row = 0; row < V[0].size(); ++row)
   {
-    for (std::size_t col = 0; col < a[row].size(); ++col)
+    for (std::size_t col = 0; col < V[1].size(); ++col)
     {
       if (a[row][col])
       {
@@ -253,8 +231,8 @@ fem::create_matrix_block(const std::vector<std::vector<const fem::Form*>>& a)
       else
       {
         // FIXME: create sparsity pattern that has just a row/col range
-        const std::array<std::shared_ptr<const common::IndexMap>, 2> maps
-            = {{rmaps[row], cmaps[col]}};
+        const std::array<std::shared_ptr<const common::IndexMap>, 2> maps = {
+            {V[0][row]->dofmap()->index_map, V[1][col]->dofmap()->index_map}};
         auto sp = std::make_unique<la::SparsityPattern>(mesh.mpi_comm(), maps);
         patterns[row].push_back(std::move(sp));
       }
@@ -272,16 +250,15 @@ fem::create_matrix_block(const std::vector<std::vector<const fem::Form*>>& a)
 
   // Build list of row and column index maps (over each block)
   std::array<std::vector<const common::IndexMap*>, 2> index_maps;
-  for (auto& m : maps[0])
-    index_maps[0].push_back(m.get());
-  for (auto& m : maps[1])
-    index_maps[1].push_back(m.get());
+  for (std::size_t i = 0; i < 2; ++i)
+    for (std::size_t j = 0; j < V[i].size(); ++j)
+      index_maps[i].push_back(V[i][j]->dofmap()->index_map.get());
 
   // Create row and column local-to-global maps to attach to matrix
   std::array<std::vector<PetscInt>, 2> _maps;
-  for (std::size_t i = 0; i < maps[0].size(); ++i)
+  for (std::size_t i = 0; i < V[0].size(); ++i)
   {
-    auto map = maps[0][i];
+    auto map = V[0][i]->dofmap()->index_map;
     std::size_t size = map->size_local() + map->num_ghosts();
     const int bs0 = map->block_size;
     for (std::size_t k = 0; k < size; ++k)
@@ -296,9 +273,9 @@ fem::create_matrix_block(const std::vector<std::vector<const fem::Form*>>& a)
     }
   }
 
-  for (std::size_t i = 0; i < maps[1].size(); ++i)
+  for (std::size_t i = 0; i < V[1].size(); ++i)
   {
-    auto map = maps[1][i];
+    auto map = V[1][i]->dofmap()->index_map;
     std::size_t size = map->size_local() + map->num_ghosts();
     const int bs1 = map->block_size;
     for (std::size_t k = 0; k < size; ++k)

@@ -127,13 +127,18 @@ void fem::assemble_matrix_block(
   assert(!a.empty());
 
   // Prepare data structures for extracting sub-matrices by index sets
-  const std::array<std::vector<std::shared_ptr<const common::IndexMap>>, 2> maps
-      = fem::blocked_index_sets(a);
+  const std::array<std::vector<std::shared_ptr<const function::FunctionSpace>>,
+                   2>
+      V = fem::blocked_index_sets(a);
   std::vector<std::vector<const common::IndexMap*>> _maps(2);
-  std::for_each(maps[0].begin(), maps[0].end(),
-                [& map = _maps[0]](auto& m) { map.push_back(m.get()); });
-  std::for_each(maps[1].begin(), maps[1].end(),
-                [& map = _maps[1]](auto& m) { map.push_back(m.get()); });
+  std::for_each(V[0].begin(), V[0].end(), [& map = _maps[0]](auto& V) {
+    map.push_back(V->dofmap()->index_map.get());
+  });
+  std::for_each(V[1].begin(), V[1].end(), [& map = _maps[1]](auto& V) {
+    map.push_back(V->dofmap()->index_map.get());
+  });
+  // std::for_each(maps[1].begin(), maps[1].end(),
+  //               [& map = _maps[1]](auto& m) { map.push_back(m.get()); });
   std::vector<IS> is_row = la::compute_petsc_index_sets(_maps[0]);
   std::vector<IS> is_col = la::compute_petsc_index_sets(_maps[1]);
 
