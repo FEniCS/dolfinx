@@ -66,11 +66,11 @@ std::array<std::vector<std::shared_ptr<const common::IndexMap>>, 2>
 fem::blocked_index_sets(const std::vector<std::vector<const fem::Form*>>& a)
 {
   assert(!a.empty());
-  std::array<std::vector<std::shared_ptr<const common::IndexMap>>, 2> maps;
-  std::vector<std::shared_ptr<const common::IndexMap>>& maps0 = maps[0];
-  std::vector<std::shared_ptr<const common::IndexMap>>& maps1 = maps[1];
-  maps0.resize(a.size());
-  maps1.resize(a[0].size());
+  std::array<std::vector<std::shared_ptr<const function::FunctionSpace>>, 2> V;
+  V[0] = std::vector<std::shared_ptr<const function::FunctionSpace>>(a.size(),
+                                                                     nullptr);
+  V[1] = std::vector<std::shared_ptr<const function::FunctionSpace>>(
+      a[0].size(), nullptr);
 
   // Loop over rows
   for (std::size_t i = 0; i < a.size(); ++i)
@@ -83,30 +83,40 @@ fem::blocked_index_sets(const std::vector<std::vector<const fem::Form*>>& a)
       if (a[i][j])
       {
         assert(a[i][j]->rank() == 2);
-
-        if (!maps0[i])
-          maps0[i] = a[i][j]->function_space(0)->dofmap()->index_map;
+        if (!V[0][i])
+          V[0][i] = a[i][j]->function_space(0);
         else
         {
-          // TODO: Check that maps are the same
+          if (V[0][i] != a[i][j]->function_space(0))
+            throw std::runtime_error("Ooops (0)");
         }
 
-        if (!maps1[j])
-          maps1[j] = a[i][j]->function_space(1)->dofmap()->index_map;
+        if (!V[1][j])
+          V[1][j] = a[i][j]->function_space(1);
         else
         {
-          // TODO: Check that maps are the same
+          if (V[1][j] != a[i][j]->function_space(1))
+            throw std::runtime_error("Ooops (1)");
         }
       }
     }
   }
 
-  for (std::size_t i = 0; i < maps.size(); ++i)
+  for (std::size_t i = 0; i < V.size(); ++i)
   {
-    for (std::size_t j = 0; j < maps[i].size(); ++j)
+    for (std::size_t j = 0; j < V[i].size(); ++j)
     {
-      if (!maps[i][j])
-        throw std::runtime_error("Could not deduce all block index maps.");
+      if (!V[i][j])
+        throw std::runtime_error("XXXCould not deduce all block index maps.");
+    }
+  }
+
+  std::array<std::vector<std::shared_ptr<const common::IndexMap>>, 2> maps;
+  for (std::size_t i = 0; i < 2; ++i)
+  {
+    for (std::size_t j = 0; j < V[i].size(); ++j)
+    {
+      maps[i].push_back(V[i][j]->dofmap()->index_map);
     }
   }
 
