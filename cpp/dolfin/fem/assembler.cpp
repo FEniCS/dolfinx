@@ -23,6 +23,9 @@
 using namespace dolfin;
 using namespace dolfin::fem;
 
+using MatArray
+    = Eigen::Array<Mat, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>;
+
 //-----------------------------------------------------------------------------
 PetscScalar fem::assemble_scalar(const Form& M)
 {
@@ -82,6 +85,14 @@ void fem::assemble_matrix_nest(
 {
   assert(A);
 
+  // Get sub-matrices
+  MatArray Asub(a.size(), a[0].size());
+  Asub = nullptr;
+  for (std::size_t i = 0; i < a.size(); ++i)
+    for (std::size_t j = 0; j < a[i].size(); ++j)
+      if (a[i][j])
+        MatNestGetSubMat(A, i, j, &Asub(i, j));
+
   // Loop over each form and assemble
   for (std::size_t i = 0; i < a.size(); ++i)
   {
@@ -89,14 +100,9 @@ void fem::assemble_matrix_nest(
     {
       if (a[i][j])
       {
-        Mat subA;
-        MatNestGetSubMat(A, i, j, &subA);
-        assemble_matrix_new(subA, *a[i][j], bcs);
-        set_diagonal(subA, *a[i][j], bcs, diagonal);
-      }
-      else
-      {
-        // Null block, do nothing
+        assemble_matrix_new(Asub(i, j), *a[i][j], bcs);
+        if (*a[i][j]->function_space(0) == *a[i][j]->function_space(1))
+          set_diagonal(Asub(i, j), *a[i][j], bcs, diagonal);
       }
     }
   }
@@ -113,32 +119,39 @@ void fem::assemble_matrix_block(
   const std::array<std::vector<std::shared_ptr<const common::IndexMap>>, 2> maps
       = fem::blocked_index_sets(a);
   std::vector<std::vector<const common::IndexMap*>> _maps(2);
-  for (auto& m : maps[0])
-    _maps[0].push_back(m.get());
-  for (auto& m : maps[1])
-    _maps[1].push_back(m.get());
+  std::for_each(maps[0].begin(), maps[0].end(),
+                [& map = _maps[0]](auto& m) { map.push_back(m.get()); });
+  std::for_each(maps[1].begin(), maps[1].end(),
+                [& map = _maps[1]](auto& m) { map.push_back(m.get()); });
   std::vector<IS> is_row = la::compute_petsc_index_sets(_maps[0]);
   std::vector<IS> is_col = la::compute_petsc_index_sets(_maps[1]);
 
-  // Loop over each form and assemble
+  // Get sub-matrices
+  MatArray Asub(a.size(), a[0].size());
+  Asub = nullptr;
+  for (std::size_t i = 0; i < a.size(); ++i)
+    for (std::size_t j = 0; j < a[i].size(); ++j)
+      if (a[i][j])
+        MatGetLocalSubMatrix(A, is_row[i], is_col[j], &Asub(i, j));
+
   for (std::size_t i = 0; i < a.size(); ++i)
   {
     for (std::size_t j = 0; j < a[i].size(); ++j)
     {
       if (a[i][j])
       {
-        Mat subA;
-        MatGetLocalSubMatrix(A, is_row[i], is_col[j], &subA);
-        assemble_matrix_new(subA, *a[i][j], bcs);
-        set_diagonal(subA, *a[i][j], bcs, diagonal);
-        MatRestoreLocalSubMatrix(A, is_row[i], is_row[j], &subA);
-      }
-      else
-      {
-        // Null block, do nothing
+        assemble_matrix_new(Asub(i, j), *a[i][j], bcs);
+        if (*a[i][j]->function_space(0) == *a[i][j]->function_space(1))
+          set_diagonal(Asub(i, j), *a[i][j], bcs, diagonal);
       }
     }
   }
+
+  // Restore sub-matrices
+  for (std::size_t i = 0; i < Asub.rows(); ++i)
+    for (std::size_t j = 0; j < Asub.cols(); ++j)
+      if (Asub(i, j))
+        MatRestoreLocalSubMatrix(A, is_row[i], is_col[j], &Asub(i, j));
 
   // Clean up index sets
   for (std::size_t i = 0; i < is_row.size(); ++i)
