@@ -63,7 +63,7 @@ int analyse_block_structure(
 
 //-----------------------------------------------------------------------------
 std::array<std::vector<std::shared_ptr<const function::FunctionSpace>>, 2>
-fem::blocked_index_sets(const std::vector<std::vector<const fem::Form*>>& a)
+fem::block_function_spaces(const std::vector<std::vector<const fem::Form*>>& a)
 {
   assert(!a.empty());
   std::array<std::vector<std::shared_ptr<const function::FunctionSpace>>, 2> V;
@@ -75,14 +75,14 @@ fem::blocked_index_sets(const std::vector<std::vector<const fem::Form*>>& a)
   // Loop over rows
   for (std::size_t i = 0; i < a.size(); ++i)
   {
-    assert(a[0].size() == a[1].size());
-
     // Loop over columns
+    assert(a[0].size() == a[1].size());
     for (std::size_t j = 0; j < a[i].size(); ++j)
     {
       if (a[i][j])
       {
         assert(a[i][j]->rank() == 2);
+
         if (!V[0][i])
           V[0][i] = a[i][j]->function_space(0);
         else
@@ -181,7 +181,7 @@ fem::create_matrix_block(const std::vector<std::vector<const fem::Form*>>& a)
 {
   // Extract and check row/column ranges
   std::array<std::vector<std::shared_ptr<const function::FunctionSpace>>, 2> V
-      = blocked_index_sets(a);
+      = block_function_spaces(a);
 
   const mesh::Mesh& mesh = *V[0][0]->mesh();
 
@@ -198,8 +198,7 @@ fem::create_matrix_block(const std::vector<std::vector<const fem::Form*>>& a)
       {
         // Build sparsity pattern for block
         std::array<const DofMap*, 2> dofmaps
-            = {{a[row][col]->function_space(0)->dofmap().get(),
-                a[row][col]->function_space(1)->dofmap().get()}};
+            = {{V[0][row]->dofmap().get(), V[1][col]->dofmap().get()}};
         // auto sp = std::make_unique<la::SparsityPattern>(
         //     SparsityPatternBuilder::build(mesh.mpi_comm(), mesh, dofmaps,
         //     true,

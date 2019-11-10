@@ -236,8 +236,8 @@ MatNullSpace dolfin::la::create_petsc_nullspace(
   return petsc_nullspace;
 }
 //-----------------------------------------------------------------------------
-std::vector<IS> dolfin::la::compute_petsc_index_sets(
-    std::vector<const dolfin::common::IndexMap*> maps)
+std::vector<IS> dolfin::la::create_petsc_index_sets(
+    const std::vector<const dolfin::common::IndexMap*>& maps)
 {
   std::vector<IS> is(maps.size());
   std::size_t offset = 0;
@@ -248,11 +248,12 @@ std::vector<IS> dolfin::la::compute_petsc_index_sets(
     const int bs = maps[i]->block_size;
     std::vector<PetscInt> index(bs * size);
     std::iota(index.begin(), index.end(), offset);
+
     ISCreateBlock(MPI_COMM_SELF, 1, index.size(), index.data(),
                   PETSC_COPY_VALUES, &is[i]);
+    offset += bs * size;
     // ISCreateBlock(MPI_COMM_SELF, bs, index.size(), index.data(),
     //               PETSC_COPY_VALUES, &is[i]);
-    offset += bs * size;
     // offset += size;
   }
 
@@ -406,8 +407,8 @@ void dolfin::la::VecReadWrapper::restore()
 //-----------------------------------------------------------------------------
 // Mat dolfin::la::get_local_submatrix(const Mat A, const IS row, const IS col);
 
-// void restore_local_submatrix(const Mat A, const IS row, const IS col, Mat* Asub);
-
+// void restore_local_submatrix(const Mat A, const IS row, const IS col, Mat*
+// Asub);
 
 //-----------------------------------------------------------------------------
 std::vector<Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1>>
@@ -474,9 +475,11 @@ dolfin::la::get_local_vectors(const Vec x,
 //     const int size_owned = map->size_local() * bs;
 //     const int size_ghost = map->num_ghosts() * bs;
 //     x_b.emplace_back(
-//         Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1>(size_owned + size_ghost));
+//         Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1>(size_owned +
+//         size_ghost));
 //     x_b.back().head(size_owned) = x_wrapper.x.segment(offset, size_owned);
-//     x_b.back().tail(size_ghost) = x_wrapper.x.segment(offset_ghost, size_ghost);
+//     x_b.back().tail(size_ghost) = x_wrapper.x.segment(offset_ghost,
+//     size_ghost);
 
 //     offset += size_owned;
 //     offset_ghost += size_ghost;

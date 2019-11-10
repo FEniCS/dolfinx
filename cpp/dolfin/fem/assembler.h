@@ -146,13 +146,6 @@ void assemble_matrix(
 void assemble_matrix(Mat A, const Form& a, const std::vector<bool>& bc0,
                      const std::vector<bool>& bc1);
 
-/// Re-assemble blocked bilinear forms into a matrix. Does not zero the
-/// matrix.
-void assemble_matrix_block(
-    Mat A, const std::vector<std::vector<const Form*>>& a,
-    const std::vector<std::shared_ptr<const DirichletBC>>& bcs,
-    double diagonal = 1.0);
-
 /// Set diagonal
 void set_diagonal(Mat A, const Form& a,
                   const std::vector<std::shared_ptr<const DirichletBC>>& bcs,

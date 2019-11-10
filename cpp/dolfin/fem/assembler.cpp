@@ -119,63 +119,6 @@ void fem::assemble_matrix(Mat A, const Form& a, const std::vector<bool>& bc0,
   impl::assemble_matrix(A, a, bc0, bc1);
 }
 //-----------------------------------------------------------------------------
-void fem::assemble_matrix_block(
-    Mat A, const std::vector<std::vector<const Form*>>& a,
-    const std::vector<std::shared_ptr<const DirichletBC>>& bcs, double diagonal)
-{
-  // Check if matrix should be nested
-  assert(!a.empty());
-
-  // Prepare data structures for extracting sub-matrices by index sets
-  const std::array<std::vector<std::shared_ptr<const function::FunctionSpace>>,
-                   2>
-      V = fem::blocked_index_sets(a);
-  std::vector<std::vector<const common::IndexMap*>> _maps(2);
-  std::for_each(V[0].begin(), V[0].end(), [& map = _maps[0]](auto& V) {
-    map.push_back(V->dofmap()->index_map.get());
-  });
-  std::for_each(V[1].begin(), V[1].end(), [& map = _maps[1]](auto& V) {
-    map.push_back(V->dofmap()->index_map.get());
-  });
-  // std::for_each(maps[1].begin(), maps[1].end(),
-  //               [& map = _maps[1]](auto& m) { map.push_back(m.get()); });
-  std::vector<IS> is_row = la::compute_petsc_index_sets(_maps[0]);
-  std::vector<IS> is_col = la::compute_petsc_index_sets(_maps[1]);
-
-  // Get sub-matrices
-  MatArray Asub(a.size(), a[0].size());
-  Asub = nullptr;
-  for (std::size_t i = 0; i < a.size(); ++i)
-    for (std::size_t j = 0; j < a[i].size(); ++j)
-      if (a[i][j])
-        MatGetLocalSubMatrix(A, is_row[i], is_col[j], &Asub(i, j));
-
-  for (std::size_t i = 0; i < a.size(); ++i)
-  {
-    for (std::size_t j = 0; j < a[i].size(); ++j)
-    {
-      if (a[i][j])
-      {
-        assemble_matrix(Asub(i, j), *a[i][j], bcs);
-        if (*a[i][j]->function_space(0) == *a[i][j]->function_space(1))
-          set_diagonal(Asub(i, j), *a[i][j], bcs, diagonal);
-      }
-    }
-  }
-
-  // Restore sub-matrices
-  for (Eigen::Index i = 0; i < Asub.rows(); ++i)
-    for (Eigen::Index j = 0; j < Asub.cols(); ++j)
-      if (Asub(i, j))
-        MatRestoreLocalSubMatrix(A, is_row[i], is_col[j], &Asub(i, j));
-
-  // Clean up index sets
-  for (std::size_t i = 0; i < is_row.size(); ++i)
-    ISDestroy(&is_row[i]);
-  for (std::size_t i = 0; i < is_col.size(); ++i)
-    ISDestroy(&is_col[i]);
-}
-//-----------------------------------------------------------------------------
 void fem::set_diagonal(
     Mat A, const Form& a,
     const std::vector<std::shared_ptr<const DirichletBC>>& bcs,

@@ -62,7 +62,7 @@ MatNullSpace create_petsc_nullspace(MPI_Comm comm,
 /// Compute IndexSets (IS) for stacked index maps. Caller is responsible
 /// for destruction of each IS.
 std::vector<IS>
-compute_petsc_index_sets(std::vector<const dolfin::common::IndexMap*> maps);
+create_petsc_index_sets(const std::vector<const common::IndexMap*>& maps);
 
 /// Print error message for PETSc calls that return an error
 void petsc_error(int error_code, std::string filename,
@@ -123,8 +123,8 @@ private:
 // Mat get_local_submatrix(const Mat A, const IS row, const IS col);
 
 // /// Restore local submatrix
-// void restore_local_submatrix(const Mat A, const IS row, const IS col, Mat* Asub);
-
+// void restore_local_submatrix(const Mat A, const IS row, const IS col, Mat*
+// Asub);
 
 /// Copy blocks from Vec into Eigen vectors
 std::vector<Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1>>

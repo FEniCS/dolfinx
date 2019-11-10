@@ -85,6 +85,7 @@ void fem(py::module& m)
         "ufc_coordinate_map.");
 
   // utils
+  m.def("block_function_spaces", &dolfin::fem::block_function_spaces);
   m.def("create_vector_block",
         [](const std::vector<const dolfin::common::IndexMap*>& maps) {
           dolfin::la::PETScVector x = dolfin::fem::create_vector_block(maps);
@@ -244,9 +245,6 @@ void fem(py::module& m)
         py::overload_cast<Mat, const dolfin::fem::Form&,
                           const std::vector<bool>&, const std::vector<bool>&>(
             &dolfin::fem::assemble_matrix));
-  m.def("assemble_matrix_block", &dolfin::fem::assemble_matrix_block,
-        py::arg("A"), py::arg("a"), py::arg("bcs"), py::arg("diagonal"),
-        "Re-assemble bilinear forms over mesh into blocked matrix");
   m.def("set_diagonal",
         py::overload_cast<
             Mat, const dolfin::fem::Form&,
