@@ -233,7 +233,14 @@ def _(A: PETSc.Mat,
       bcs: typing.List[DirichletBC],
       diagonal: float = 1.0) -> PETSc.Mat:
     """Assemble bilinear forms into matrix"""
-    cpp.fem.assemble_matrix_nest(A, _create_cpp_form(a), bcs, diagonal)
+    _a = _create_cpp_form(a)
+    for i, a_row in enumerate(_a):
+        for j, a_block in enumerate(a_row):
+            if a_block is not None:
+                Asub = A.getNestSubMatrix(i, j)
+                cpp.fem.assemble_matrix(Asub, a_block, bcs)
+                if a_block.function_space(0) == a_block.function_space(1):
+                    cpp.fem.set_diagonal(Asub, a_block, bcs, diagonal)
     A.assemble()
     return A
 

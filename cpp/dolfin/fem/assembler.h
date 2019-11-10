@@ -153,13 +153,6 @@ void assemble_matrix_block(
     const std::vector<std::shared_ptr<const DirichletBC>>& bcs,
     double diagonal = 1.0);
 
-/// Re-assemble blocked bilinear forms into a matrix. Does not zero the
-/// matrix.
-void assemble_matrix_nest(
-    Mat A, const std::vector<std::vector<const Form*>>& a,
-    const std::vector<std::shared_ptr<const DirichletBC>>& bcs,
-    double diagonal = 1.0);
-
 /// Set diagonal
 void set_diagonal(Mat A, const Form& a,
                   const std::vector<std::shared_ptr<const DirichletBC>>& bcs,
@@ -171,7 +164,8 @@ void set_diagonal(Mat A, const Form& a,
 ///                 diagonal
 /// @param[in] diagonal The value to set on the diagonal
 void set_diagonal(
-    Mat A, Eigen::Ref<const Eigen::Array<PetscInt, Eigen::Dynamic, 1>> rows,
+    Mat A,
+    const Eigen::Ref<const Eigen::Array<PetscInt, Eigen::Dynamic, 1>>& rows,
     PetscScalar diagonal = 1.0);
 
 // -- Setting bcs ------------------------------------------------------------

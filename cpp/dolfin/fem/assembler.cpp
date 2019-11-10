@@ -119,35 +119,6 @@ void fem::assemble_matrix(Mat A, const Form& a, const std::vector<bool>& bc0,
   impl::assemble_matrix(A, a, bc0, bc1);
 }
 //-----------------------------------------------------------------------------
-void fem::assemble_matrix_nest(
-    Mat A, const std::vector<std::vector<const Form*>>& a,
-    const std::vector<std::shared_ptr<const DirichletBC>>& bcs, double diagonal)
-{
-  assert(A);
-
-  // Get sub-matrices
-  MatArray Asub(a.size(), a[0].size());
-  Asub = nullptr;
-  for (std::size_t i = 0; i < a.size(); ++i)
-    for (std::size_t j = 0; j < a[i].size(); ++j)
-      if (a[i][j])
-        MatNestGetSubMat(A, i, j, &Asub(i, j));
-
-  // Loop over each form and assemble
-  for (std::size_t i = 0; i < a.size(); ++i)
-  {
-    for (std::size_t j = 0; j < a[i].size(); ++j)
-    {
-      if (a[i][j])
-      {
-        assemble_matrix(Asub(i, j), *a[i][j], bcs);
-        if (*a[i][j]->function_space(0) == *a[i][j]->function_space(1))
-          set_diagonal(Asub(i, j), *a[i][j], bcs, diagonal);
-      }
-    }
-  }
-}
-//-----------------------------------------------------------------------------
 void fem::assemble_matrix_block(
     Mat A, const std::vector<std::vector<const Form*>>& a,
     const std::vector<std::shared_ptr<const DirichletBC>>& bcs, double diagonal)
@@ -221,7 +192,8 @@ void fem::set_diagonal(
 }
 //-----------------------------------------------------------------------------
 void fem::set_diagonal(
-    Mat A, Eigen::Ref<const Eigen::Array<PetscInt, Eigen::Dynamic, 1>> rows,
+    Mat A,
+    const Eigen::Ref<const Eigen::Array<PetscInt, Eigen::Dynamic, 1>>& rows,
     PetscScalar diagonal)
 {
   // NOTE: We use MatSetValuesLocal rather than MatZeroRowsLocal because
