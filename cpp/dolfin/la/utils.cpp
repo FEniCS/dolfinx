@@ -237,7 +237,7 @@ MatNullSpace dolfin::la::create_petsc_nullspace(
 }
 //-----------------------------------------------------------------------------
 std::vector<IS> dolfin::la::create_petsc_index_sets(
-    const std::vector<const dolfin::common::IndexMap*>& maps)
+    const std::vector<const common::IndexMap*>& maps)
 {
   std::vector<IS> is(maps.size());
   std::size_t offset = 0;
