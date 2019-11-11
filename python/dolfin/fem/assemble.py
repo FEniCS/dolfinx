@@ -210,7 +210,7 @@ def _(A: PETSc.Mat,
     _a = _create_cpp_form(a)
     cpp.fem.assemble_matrix(A, _a, bcs)
     if _a.function_space(0) == _a.function_space(1):
-        cpp.fem.set_diagonal(A, _a, bcs, diagonal)
+        cpp.fem.add_diagonal(A, _a.function_space(0), bcs, diagonal)
     return A
 
 
@@ -238,9 +238,7 @@ def _(A: PETSc.Mat,
         for j, a_block in enumerate(a_row):
             if a_block is not None:
                 Asub = A.getNestSubMatrix(i, j)
-                cpp.fem.assemble_matrix(Asub, a_block, bcs)
-                if a_block.function_space(0) == a_block.function_space(1):
-                    cpp.fem.set_diagonal(Asub, a_block, bcs, diagonal)
+                assemble_matrix(Asub, a_block, bcs)
     A.assemble()
     return A
 

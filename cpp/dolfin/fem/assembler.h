@@ -57,23 +57,6 @@ void
 
 // FIXME: clarify how x0 is used
 // FIXME: if bcs entries are set
-// FIXME: split into assemble and lift stages?
-
-/// Re-assemble a blocked linear form L into the vector b. The vector is
-/// modified for any boundary conditions such that:
-///
-///   b_i <- b_i - scale * A_ij g_j
-///
-// where L_i i assembled into b_i, and where i and j are the block
-// indices. For non-blocked problem i = j / = 1. The boundary
-// conditions bc1 are on the trial spaces V_j, which / can be different
-// from the trial space of L (V_i). The forms in [a] / must have the
-// same test space as L, but the trial space may differ.
-// void assemble_vector(
-//     Vec b, std::vector<const Form*> L,
-//     const std::vector<std::vector<std::shared_ptr<const Form>>> a,
-//     std::vector<std::shared_ptr<const DirichletBC>> bcs, const Vec x0,
-//     double scale = 1.0);
 
 // FIXME: need to pass an array of Vec for x0?
 // FIXME: clarify zeroing of vector
@@ -146,17 +129,41 @@ void assemble_matrix(
 void assemble_matrix(Mat A, const Form& a, const std::vector<bool>& bc0,
                      const std::vector<bool>& bc1);
 
-/// Set diagonal
-void set_diagonal(Mat A, const Form& a,
+/// Adds a value to the diagonal of the matrix for rows with a Dirichlet
+/// boundary conditions applied. This function is typically called after
+/// assembly. The assembly function zeroes Dirichlet rows and columns.
+/// This function adds the value only to rows that are locally owned,
+/// and therefore does not create a need for parallel communication. For
+/// block matrices, this function should normally be called only on the
+/// diagonal blocks, i.e. blocks for which the test and trial spaces are
+/// the same.
+/// @param[in,out] A The matrix to add diagonal values to
+/// @param[in] V The function space for the rows and columns of the
+///              matrix. It is used to extract only the Dirichlet
+///              boundary conditions that are define on V or subspaces
+///              of V.
+/// @param[in] bcs The Dirichlet boundary condtions
+/// @param[in] diagonal The value to add to the diagonal for rows with a
+///                     boundary condition applied
+void add_diagonal(Mat A, const function::FunctionSpace& V,
                   const std::vector<std::shared_ptr<const DirichletBC>>& bcs,
                   PetscScalar diagonal = 1.0);
 
-/// Set diagonal
-/// @param[in,out] A The matrix
-/// @param[in] rows The rows, in local indices, for which to set the
-///                 diagonal
-/// @param[in] diagonal The value to set on the diagonal
-void set_diagonal(
+// Developer note: This function calls MatSetValuesLocal and not
+// MatZeroRowsLocal
+// (https://www.mcs.anl.gov/petsc/petsc-current/docs/manualpages/Mat/MatZeroRowsLocal.html)
+
+/// Adds a value to the diagonal of a matrix for specified rows. It is
+/// typically called after assembly. The assembly function zeroes
+/// Dirichlet rows and columns. For block matrices, this function should
+/// normally be called only on the diagonal blocks, i.e. blocks for
+/// which the test and trial spaces are the same.
+/// @param[in,out] A The matrix to add diagonal values to
+/// @param[in] rows The rows, in local indices, for which to add a value
+///                 to the diagonal
+/// @param[in] diagonal The value to add to the diagonal for the
+///                     specified rows
+void add_diagonal(
     Mat A,
     const Eigen::Ref<const Eigen::Array<PetscInt, Eigen::Dynamic, 1>>& rows,
     PetscScalar diagonal = 1.0);

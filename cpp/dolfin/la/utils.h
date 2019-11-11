@@ -60,6 +60,7 @@ MatNullSpace create_petsc_nullspace(MPI_Comm comm,
                                     const VectorSpaceBasis& nullspace);
 
 /// @todo This function could take just the local sizes
+
 /// Compute IndexSets (IS) for stacked index maps.  E.g., if map[0] =
 /// {0, 1, 2, 3, 4, 5, 6} and map[1] = {0, 1, 2, 4} (in local indices),
 /// IS[0] = {0, 1, 2, 3, 4, 5, 6} and IS[1] = {7, 8, 9, 10}. Caller is

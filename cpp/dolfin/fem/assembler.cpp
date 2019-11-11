@@ -119,27 +119,22 @@ void fem::assemble_matrix(Mat A, const Form& a, const std::vector<bool>& bc0,
   impl::assemble_matrix(A, a, bc0, bc1);
 }
 //-----------------------------------------------------------------------------
-void fem::set_diagonal(
-    Mat A, const Form& a,
+void fem::add_diagonal(
+    Mat A, const function::FunctionSpace& V,
     const std::vector<std::shared_ptr<const DirichletBC>>& bcs,
     PetscScalar diagonal)
 {
-  // Set diagonal for boundary conditions
-  auto map0 = a.function_space(0)->dofmap()->index_map;
-  if (*a.function_space(0) == *a.function_space(1))
+  for (const auto& bc : bcs)
   {
-    for (const auto& bc : bcs)
+    assert(bc);
+    if (V.contains(*bc->function_space()))
     {
-      assert(bc);
-      if (a.function_space(0)->contains(*bc->function_space()))
-      {
-        set_diagonal(A, bc->dof_indices_owned(), diagonal);
-      }
+      add_diagonal(A, bc->dof_indices_owned(), diagonal);
     }
   }
 }
 //-----------------------------------------------------------------------------
-void fem::set_diagonal(
+void fem::add_diagonal(
     Mat A,
     const Eigen::Ref<const Eigen::Array<PetscInt, Eigen::Dynamic, 1>>& rows,
     PetscScalar diagonal)

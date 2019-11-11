@@ -245,11 +245,11 @@ void fem(py::module& m)
         py::overload_cast<Mat, const dolfin::fem::Form&,
                           const std::vector<bool>&, const std::vector<bool>&>(
             &dolfin::fem::assemble_matrix));
-  m.def("set_diagonal",
+  m.def("add_diagonal",
         py::overload_cast<
-            Mat, const dolfin::fem::Form&,
+            Mat, const dolfin::function::FunctionSpace&,
             const std::vector<std::shared_ptr<const dolfin::fem::DirichletBC>>&,
-            PetscScalar>(&dolfin::fem::set_diagonal));
+            PetscScalar>(&dolfin::fem::add_diagonal));
   // BC modifiers
   m.def("apply_lifting",
         py::overload_cast<

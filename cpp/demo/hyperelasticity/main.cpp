@@ -53,7 +53,7 @@ public:
   {
     MatZeroEntries(_matA.mat());
     assemble_matrix(_matA.mat(), *_j, _bcs);
-    set_diagonal(_matA.mat(), *_j, _bcs);
+    add_diagonal(_matA.mat(), *_j->function_space(0), _bcs);
     _matA.apply(la::PETScMatrix::AssemblyType::FINAL);
     return _matA.mat();
   }
