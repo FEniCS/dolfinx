@@ -74,10 +74,10 @@ fem::block_function_spaces(
                                                                      nullptr);
 
   // Loop over rows
-  for (std::size_t i = 0; i < a.rows(); ++i)
+  for (int i = 0; i < a.rows(); ++i)
   {
     // Loop over columns
-    for (std::size_t j = 0; j < a.cols(); ++j)
+    for (int j = 0; j < a.cols(); ++j)
     {
       if (a(i, j))
       {
@@ -293,9 +293,9 @@ la::PETScMatrix fem::create_matrix_nest(
       mats(a.rows(), a.cols());
   Eigen::Array<Mat, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor> petsc_mats(
       a.rows(), a.cols());
-  for (std::size_t i = 0; i < a.rows(); ++i)
+  for (int i = 0; i < a.rows(); ++i)
   {
-    for (std::size_t j = 0; j < a.cols(); ++j)
+    for (int j = 0; j < a.cols(); ++j)
     {
       if (a(i, j))
       {
