@@ -13,6 +13,13 @@
 #include <pybind11/pybind11.h>
 #include <pybind11/stl.h>
 
+#ifdef DEBUG
+// Needed for typeid(_p_Mat) in debug mode
+#include <petsc/private/matimpl.h>
+// Needed for typeid(_p_Vec) in debug mode
+#include <petsc/private/vecimpl.h>
+#endif
+
 namespace py = pybind11;
 
 namespace dolfin_wrappers
@@ -46,7 +53,7 @@ void nls(py::module& m)
       PYBIND11_OVERLOAD_INT(void, dolfin::nls::NewtonSolver, "update_solution",
                             x, &dx, relaxation, &nonlinear_problem, iteration);
       return dolfin::nls::NewtonSolver::update_solution(
-              x, dx, relaxation, nonlinear_problem, iteration);
+          x, dx, relaxation, nonlinear_problem, iteration);
     }
   };
 
