@@ -67,7 +67,7 @@ PETScVector PETScVector::copy() const
   Vec _y;
   VecDuplicate(_x, &_y);
   VecCopy(_x, _y);
-  PETScVector y(_y);
+  PETScVector y(_y, true);
   VecDestroy(&_y);
   return y;
 }

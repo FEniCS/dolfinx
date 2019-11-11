@@ -75,7 +75,7 @@ Function::Function(std::shared_ptr<const FunctionSpace> V)
 }
 //-----------------------------------------------------------------------------
 Function::Function(std::shared_ptr<const FunctionSpace> V, Vec x)
-    : _id(common::UniqueIdGenerator::id()), _function_space(V), _vector(x)
+    : _id(common::UniqueIdGenerator::id()), _function_space(V), _vector(x, true)
 {
   // We do not check for a subspace since this constructor is used for
   // creating subfunctions
