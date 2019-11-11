@@ -218,7 +218,8 @@ private:
   // a 1D array, e.g. [x0, y0, z0, x1, y1, z1] for a vector in 3D
   template <typename T>
   void write_data(const std::string dataset_name, const std::vector<T>& data,
-                  const std::vector<std::int64_t> global_size, bool use_mpi_io);
+                  const std::vector<std::int64_t>& global_size,
+                  bool use_mpi_io);
 
   // Write 2D dataset to HDF5. Eigen::Arrays on each process must have the same
   // number of columns.
@@ -240,7 +241,7 @@ private:
 template <typename T>
 void HDF5File::write_data(const std::string dataset_name,
                           const std::vector<T>& data,
-                          const std::vector<std::int64_t> global_size,
+                          const std::vector<std::int64_t>& global_size,
                           bool use_mpi_io)
 {
   assert(_hdf5_file_id > 0);

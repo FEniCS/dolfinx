@@ -252,7 +252,7 @@ void mesh(py::module& m)
                return py::array(1, self.entities(dim));
              else
              {
-               assert(self.mesh.topology().connectivity(self.dim(), dim));
+               assert(self.mesh().topology().connectivity(self.dim(), dim));
                const int num_entities = self.mesh()
                                             .topology()
                                             .connectivity(self.dim(), dim)

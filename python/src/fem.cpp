@@ -39,10 +39,40 @@
 
 namespace py = pybind11;
 
+namespace
+{
+// Copy a vector-of-vectors into an Eigen::Array for dolfin::fem::Form*
+Eigen::Array<const dolfin::fem::Form*, Eigen::Dynamic, Eigen::Dynamic,
+             Eigen::RowMajor>
+forms_vector_to_array(
+    const std::vector<std::vector<const dolfin::fem::Form*>>& a)
+{
+  if (a.empty())
+  {
+    return Eigen::Array<const dolfin::fem::Form*, Eigen::Dynamic,
+                        Eigen::Dynamic, Eigen::RowMajor>();
+  }
+  Eigen::Array<const dolfin::fem::Form*, Eigen::Dynamic, Eigen::Dynamic,
+               Eigen::RowMajor>
+      _a(a.size(), a[0].size());
+  _a = nullptr;
+  for (std::size_t i = 0; i < a.size(); ++i)
+  {
+    if (a[i].size() != a[0].size())
+      throw std::runtime_error("Array of forms is not rectangular.");
+    for (std::size_t j = 0; j < a[i].size(); ++j)
+      _a(i, j) = a[i][j];
+  }
+  return _a;
+}
+
+} // namespace
+
 namespace dolfin_wrappers
 {
 void fem(py::module& m)
 {
+
   // UFC objects
   py::class_<ufc_finite_element, std::shared_ptr<ufc_finite_element>>(
       m, "ufc_finite_element", "UFC finite element object");
@@ -85,6 +115,10 @@ void fem(py::module& m)
         "ufc_coordinate_map.");
 
   // utils
+  m.def("block_function_spaces",
+        [](const std::vector<std::vector<const dolfin::fem::Form*>>& a) {
+          return dolfin::fem::block_function_spaces(forms_vector_to_array(a));
+        });
   m.def("create_vector_block",
         [](const std::vector<const dolfin::common::IndexMap*>& maps) {
           dolfin::la::PETScVector x = dolfin::fem::create_vector_block(maps);
@@ -113,8 +147,9 @@ void fem(py::module& m)
         py::return_value_policy::take_ownership,
         "Create a PETSc Mat for bilinear form.");
   m.def("create_matrix_block",
-        [](std::vector<std::vector<const dolfin::fem::Form*>> a) {
-          auto A = dolfin::fem::create_matrix_block(a);
+        [](const std::vector<std::vector<const dolfin::fem::Form*>>& a) {
+          dolfin::la::PETScMatrix A
+              = dolfin::fem::create_matrix_block(forms_vector_to_array(a));
           Mat _A = A.mat();
           PetscObjectReference((PetscObject)_A);
           return _A;
@@ -122,8 +157,9 @@ void fem(py::module& m)
         py::return_value_policy::take_ownership,
         "Create monolithic sparse matrix for stacked bilinear forms.");
   m.def("create_matrix_nest",
-        [](const std::vector<std::vector<const dolfin::fem::Form*>> a) {
-          auto A = dolfin::fem::create_matrix_nest(a);
+        [](const std::vector<std::vector<const dolfin::fem::Form*>>& a) {
+          dolfin::la::PETScMatrix A
+              = dolfin::fem::create_matrix_nest(forms_vector_to_array(a));
           Mat _A = A.mat();
           PetscObjectReference((PetscObject)_A);
           return _A;
@@ -234,21 +270,21 @@ void fem(py::module& m)
         py::arg("b"), py::arg("L"),
         "Assemble linear form into an existing Eigen vector");
   // Matrices
+  m.def(
+      "assemble_matrix",
+      py::overload_cast<
+          Mat, const dolfin::fem::Form&,
+          const std::vector<std::shared_ptr<const dolfin::fem::DirichletBC>>&>(
+          &dolfin::fem::assemble_matrix));
   m.def("assemble_matrix",
+        py::overload_cast<Mat, const dolfin::fem::Form&,
+                          const std::vector<bool>&, const std::vector<bool>&>(
+            &dolfin::fem::assemble_matrix));
+  m.def("add_diagonal",
         py::overload_cast<
-            Mat, const dolfin::fem::Form&,
+            Mat, const dolfin::function::FunctionSpace&,
             const std::vector<std::shared_ptr<const dolfin::fem::DirichletBC>>&,
-            double>(&dolfin::fem::assemble_matrix),
-        py::arg("A"), py::arg("a"), py::arg("bcs"), py::arg("diagonal"),
-        "Assemble bilinear form over mesh into matrix");
-  m.def("assemble_blocked_matrix",
-        py::overload_cast<
-            Mat, const std::vector<std::vector<const dolfin::fem::Form*>>&,
-            const std::vector<std::shared_ptr<const dolfin::fem::DirichletBC>>&,
-            double, bool>(&dolfin::fem::assemble_matrix),
-        py::arg("A"), py::arg("a"), py::arg("bcs"), py::arg("diagonal"),
-        py::arg("use_nest_extract") = true,
-        "Re-assemble bilinear forms over mesh into blocked matrix");
+            PetscScalar>(&dolfin::fem::add_diagonal));
   // BC modifiers
   m.def("apply_lifting",
         py::overload_cast<
