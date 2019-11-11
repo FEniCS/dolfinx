@@ -223,7 +223,6 @@ def assemble_matrix_nest(a: typing.List[typing.List[typing.Union[Form, cpp.fem.F
     A = cpp.fem.create_matrix_nest(_create_cpp_form(a))
     A.zeroEntries()
     assemble_matrix_nest(A, a, bcs, diagonal)
-    A.assemble()
     return A
 
 
@@ -239,7 +238,6 @@ def _(A: PETSc.Mat,
             if a_block is not None:
                 Asub = A.getNestSubMatrix(i, j)
                 assemble_matrix(Asub, a_block, bcs)
-    A.assemble()
     return A
 
 
@@ -270,7 +268,6 @@ def _(A: PETSc.Mat,
                 Asub = A.getLocalSubMatrix(is_rows[i], is_cols[j])
                 assemble_matrix(Asub, a_sub, bcs, diagonal)
                 A.restoreLocalSubMatrix(is_rows[i], is_cols[j], Asub)
-    A.assemble()
     return A
 
 
