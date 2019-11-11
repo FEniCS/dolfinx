@@ -6,6 +6,8 @@
 
 #include "IndexMap.h"
 #include <algorithm>
+#include <set>
+#include <vector>
 
 using namespace dolfin;
 using namespace dolfin::common;
@@ -32,6 +34,21 @@ IndexMap::IndexMap(MPI_Comm mpi_comm, std::int32_t local_size,
     _ghost_owners[i] = owner(ghosts[i]);
     assert(_ghost_owners[i] != _myrank);
   }
+
+  std::set<int> ghost_set(_ghost_owners.data(),
+                          _ghost_owners.data() + _ghost_owners.size());
+  std::vector<int> sources(1 + ghost_set.size());
+  sources[0] = _myrank;
+  std::copy(ghost_set.begin(), ghost_set.end(), sources.begin() + 1);
+  std::vector<int> degrees(1 + ghost_set.size(), 1);
+  degrees[0] = ghost_set.size();
+  std::vector<int> dests(ghost_set.size() * 2, _myrank);
+  std::copy(ghost_set.begin(), ghost_set.end(), dests.begin());
+
+  MPI_Comm neighbour_comm;
+  MPI_Dist_graph_create(_mpi_comm, 1 + ghost_set.size(), sources.data(),
+                        degrees.data(), dests.data(), MPI_UNWEIGHTED,
+                        MPI_INFO_NULL, false, &neighbour_comm);
 }
 //-----------------------------------------------------------------------------
 std::array<std::int64_t, 2> IndexMap::local_range() const
