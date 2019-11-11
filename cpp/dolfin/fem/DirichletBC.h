@@ -143,11 +143,15 @@ public:
   ///         exist.
   std::shared_ptr<const function::Function> value() const;
 
-  // FIXME: clarify  w.r.t ghosts
-  // FIXME: clarify length of returned array
   /// Get array of dof indices to which a Dirichlet BC is applied. The
-  /// array is sorted.
+  /// array is sorted and may contain ghost entries.
   const Eigen::Array<PetscInt, Eigen::Dynamic, 1>& dof_indices() const;
+
+  /// Get array of dof indices owned by this process to which a
+  /// Dirichlet BC is applied. The array is sorted and goes not contain ghost
+  /// entries.
+  Eigen::Map<const Eigen::Array<PetscInt, Eigen::Dynamic, 1>>
+  dof_indices_owned() const;
 
   // FIXME: clarify w.r.t ghosts
   /// Set bc entries in x to scale*x_bc
@@ -186,6 +190,9 @@ private:
 
   // Indices in _function_space to which bcs are applied. Must be sorted.
   Eigen::Array<PetscInt, Eigen::Dynamic, 1> _dof_indices;
+
+  // The first _owned_indices in  _dof_indices are owned by this process
+  int _owned_indices = -1;
 };
 } // namespace fem
 } // namespace dolfin

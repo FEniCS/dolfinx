@@ -23,27 +23,8 @@
 using namespace dolfin;
 using namespace dolfin::fem;
 
-namespace
-{
-//-----------------------------------------------------------------------------
-void set_diagonal_local(
-    Mat A,
-    const Eigen::Ref<const Eigen::Array<PetscInt, Eigen::Dynamic, 1>>& rows,
-    PetscScalar diag)
-{
-  assert(A);
-  for (Eigen::Index i = 0; i < rows.size(); ++i)
-  {
-    const PetscInt row = rows[i];
-    PetscErrorCode ierr
-        = MatSetValuesLocal(A, 1, &row, 1, &row, &diag, ADD_VALUES);
-    if (ierr != 0)
-      la::petsc_error(ierr, __FILE__, "MatSetValuesLocal");
-  }
-}
-//-----------------------------------------------------------------------------
-
-} // namespace
+using MatArray
+    = Eigen::Array<Mat, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>;
 
 //-----------------------------------------------------------------------------
 PetscScalar fem::assemble_scalar(const Form& M)
@@ -99,77 +80,8 @@ void fem::apply_lifting(
 }
 //-----------------------------------------------------------------------------
 void fem::assemble_matrix(
-    Mat A, const std::vector<std::vector<const Form*>>& a,
-    const std::vector<std::shared_ptr<const DirichletBC>>& bcs, double diagonal,
-    bool use_nest_extract)
-{
-  // Check if matrix should be nested
-  assert(!a.empty());
-  const bool block_matrix = a.size() > 1 or a[0].size() > 1;
-
-  MatType mat_type;
-  MatGetType(A, &mat_type);
-  const bool is_matnest
-      = (strcmp(mat_type, MATNEST) == 0) and use_nest_extract ? true : false;
-
-  // Assemble matrix
-  std::vector<IS> is_row, is_col;
-  if (block_matrix and !is_matnest)
-  {
-    // Prepare data structures for extracting sub-matrices by index
-    // sets
-
-    // Extract index maps
-    const std::vector<std::vector<std::shared_ptr<const common::IndexMap>>> maps
-        = fem::blocked_index_sets(a);
-    std::vector<std::vector<const common::IndexMap*>> _maps(2);
-    for (auto& m : maps[0])
-      _maps[0].push_back(m.get());
-    for (auto& m : maps[1])
-      _maps[1].push_back(m.get());
-    is_row = la::compute_petsc_index_sets(_maps[0]);
-    is_col = la::compute_petsc_index_sets(_maps[1]);
-  }
-
-  // Loop over each form and assemble
-  for (std::size_t i = 0; i < a.size(); ++i)
-  {
-    for (std::size_t j = 0; j < a[i].size(); ++j)
-    {
-      if (a[i][j])
-      {
-        Mat subA;
-        if (block_matrix and !is_matnest)
-          MatGetLocalSubMatrix(A, is_row[i], is_col[j], &subA);
-        else if (is_matnest)
-          MatNestGetSubMat(A, i, j, &subA);
-        else
-          subA = A;
-
-        assemble_matrix(subA, *a[i][j], bcs, diagonal);
-        if (block_matrix and !is_matnest)
-          MatRestoreLocalSubMatrix(A, is_row[i], is_row[j], &subA);
-      }
-      else
-      {
-        // Null block, do nothing
-      }
-    }
-  }
-
-  // Clean up index sets
-  for (std::size_t i = 0; i < is_row.size(); ++i)
-    ISDestroy(&is_row[i]);
-  for (std::size_t i = 0; i < is_col.size(); ++i)
-    ISDestroy(&is_col[i]);
-
-  MatAssemblyBegin(A, MAT_FINAL_ASSEMBLY);
-  MatAssemblyEnd(A, MAT_FINAL_ASSEMBLY);
-}
-//-----------------------------------------------------------------------------
-void fem::assemble_matrix(
     Mat A, const Form& a,
-    const std::vector<std::shared_ptr<const DirichletBC>>& bcs, double diagonal)
+    const std::vector<std::shared_ptr<const DirichletBC>>& bcs)
 {
   // Index maps for dof ranges
   auto map0 = a.function_space(0)->dofmap()->index_map;
@@ -199,33 +111,46 @@ void fem::assemble_matrix(
 
   // Assemble
   impl::assemble_matrix(A, a, dof_marker0, dof_marker1);
-
-  // Set diagonal for boundary conditions
-  if (*a.function_space(0) == *a.function_space(1))
+}
+//-----------------------------------------------------------------------------
+void fem::assemble_matrix(Mat A, const Form& a, const std::vector<bool>& bc0,
+                          const std::vector<bool>& bc1)
+{
+  impl::assemble_matrix(A, a, bc0, bc1);
+}
+//-----------------------------------------------------------------------------
+void fem::add_diagonal(
+    Mat A, const function::FunctionSpace& V,
+    const std::vector<std::shared_ptr<const DirichletBC>>& bcs,
+    PetscScalar diagonal)
+{
+  for (const auto& bc : bcs)
   {
-    for (const auto& bc : bcs)
+    assert(bc);
+    if (V.contains(*bc->function_space()))
     {
-      assert(bc);
-      if (a.function_space(0)->contains(*bc->function_space()))
-      {
-        // FIXME: could be simpler if DirichletBC::dof_indices had
-        // options to return owned dofs only
-        const Eigen::Array<PetscInt, Eigen::Dynamic, 1>& dofs
-            = bc->dof_indices();
-        const int owned_size = map0->block_size * map0->size_local();
-        auto it = std::lower_bound(dofs.data(), dofs.data() + dofs.rows(),
-                                   owned_size);
-        const Eigen::Index pos = std::distance(dofs.data(), it);
-        assert(pos <= dofs.size() and pos >= 0);
-        const Eigen::Map<const Eigen::Array<PetscInt, Eigen::Dynamic, 1>>
-            dofs_owned(dofs.data(), pos);
-        set_diagonal_local(A, dofs_owned, diagonal);
-      }
+      add_diagonal(A, bc->dof_indices_owned(), diagonal);
     }
   }
+}
+//-----------------------------------------------------------------------------
+void fem::add_diagonal(
+    Mat A,
+    const Eigen::Ref<const Eigen::Array<PetscInt, Eigen::Dynamic, 1>>& rows,
+    PetscScalar diagonal)
+{
+  // NOTE: We use MatSetValuesLocal rather than MatZeroRowsLocal because
+  //       MatZeroRowsLocal does not work with sub-matrices extracted
+  //       using MatGetLocalSubMatrix from a monolithic matrix.
 
-  // Do not finalise assembly - matrix may be a proxy/sub-matrix with
-  // finalisation done elsewhere.
+  // NOTE: MatSetValuesLocal uses ADD_VALUES, hence it requires that the
+  //       diagonal is zero before this function is called.
+
+  for (Eigen::Index i = 0; i < rows.size(); ++i)
+  {
+    const PetscInt row = rows(i);
+    MatSetValuesLocal(A, 1, &row, 1, &row, &diagonal, ADD_VALUES);
+  }
 }
 //-----------------------------------------------------------------------------
 void fem::set_bc(Vec b,
