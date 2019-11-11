@@ -61,7 +61,7 @@ std::int64_t FunctionSpace::dim() const
 }
 //-----------------------------------------------------------------------------
 void FunctionSpace::interpolate_from_any(
-    Eigen::Ref<Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1>>
+    Eigen::Ref<Eigen::Array<PetscScalar, Eigen::Dynamic, 1>>
         expansion_coefficients,
     const Function& v) const
 {
@@ -112,7 +112,7 @@ void FunctionSpace::interpolate_from_any(
 }
 //-----------------------------------------------------------------------------
 void FunctionSpace::interpolate(
-    Eigen::Ref<Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1>>
+    Eigen::Ref<Eigen::Array<PetscScalar, Eigen::Dynamic, 1>>
         expansion_coefficients,
     const Function& v) const
 {
@@ -148,7 +148,7 @@ void FunctionSpace::interpolate(
 }
 //-----------------------------------------------------------------------------
 void FunctionSpace::interpolate(
-    Eigen::Ref<Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1>> coefficients,
+    Eigen::Ref<Eigen::Array<PetscScalar, Eigen::Dynamic, 1>> coefficients,
     const std::function<Eigen::Array<PetscScalar, Eigen::Dynamic,
                                      Eigen::Dynamic, Eigen::RowMajor>(
         const Eigen::Ref<const Eigen::Array<
@@ -159,7 +159,7 @@ void FunctionSpace::interpolate(
   Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor> x
       = tabulate_dof_coordinates();
   Eigen::Array<PetscScalar, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
-      values = f(x);
+      values = f(x.transpose());
 
   assert(_element);
   std::vector<int> vshape(_element->value_rank(), 1);
@@ -167,19 +167,37 @@ void FunctionSpace::interpolate(
     vshape[i] = _element->value_dimension(i);
   const int value_size = std::accumulate(std::begin(vshape), std::end(vshape),
                                          1, std::multiplies<>());
-  if (values.rows() != x.rows())
-  {
-    throw std::runtime_error("Number of computed values is not equal to the "
-                             "number of evaluation points.");
-  }
-  if (values.cols() != value_size)
-    throw std::runtime_error("Values shape is incorrect.");
 
-  interpolate(coefficients, values);
+  // Note: pybind11 maps 1D NumPy arrays to column vectors for
+  // Eigen::Array<PetscScalar, Eigen::Dynamic,Eigen::Dynamic, Eigen::RowMajor>
+  // types, therefore we need to handle vectors as a special case.
+  if (value_size == 1)
+  {
+    if (values.cols() != 1)
+      throw std::runtime_error("Values shape is incorrect. (1)");
+    if (values.rows() != x.rows())
+    {
+      throw std::runtime_error("Number of computed values is not equal to the "
+                               "number of evaluation points. (1)");
+    }
+    interpolate(coefficients, values);
+  }
+  else
+  {
+    if (values.cols() != x.rows())
+    {
+      throw std::runtime_error("Number of computed values is not equal to the "
+                               "number of evaluation points. (2)");
+    }
+    if (values.rows() != value_size)
+      throw std::runtime_error("Values shape is incorrect. (2)");
+
+    interpolate(coefficients, values.transpose());
+  }
 }
 //-----------------------------------------------------------------------------
 void FunctionSpace::interpolate_c(
-    Eigen::Ref<Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1>> coefficients,
+    Eigen::Ref<Eigen::Array<PetscScalar, Eigen::Dynamic, 1>> coefficients,
     const interpolation_function& f) const
 {
   // Build list of points at which to evaluate the Expression
@@ -345,7 +363,7 @@ FunctionSpace::tabulate_dof_coordinates() const
 }
 //-----------------------------------------------------------------------------
 void FunctionSpace::set_x(
-    Eigen::Ref<Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1>> x,
+    Eigen::Ref<Eigen::Array<PetscScalar, Eigen::Dynamic, 1>> x,
     PetscScalar value, int component) const
 {
   assert(_mesh);
@@ -444,9 +462,9 @@ bool FunctionSpace::contains(const FunctionSpace& V) const
 }
 //-----------------------------------------------------------------------------
 void FunctionSpace::interpolate(
-    Eigen::Ref<Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1>> coefficients,
-    const Eigen::Ref<const Eigen::Matrix<PetscScalar, Eigen::Dynamic,
-                                         Eigen::Dynamic, Eigen::RowMajor>>&
+    Eigen::Ref<Eigen::Array<PetscScalar, Eigen::Dynamic, 1>> coefficients,
+    const Eigen::Ref<const Eigen::Array<PetscScalar, Eigen::Dynamic,
+                                        Eigen::Dynamic, Eigen::RowMajor>>&
         values) const
 {
   assert(_mesh);
