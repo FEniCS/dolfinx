@@ -75,6 +75,56 @@ IndexMap::IndexMap(MPI_Comm mpi_comm, std::int32_t local_size,
                            NULL, num_neighbours, dests.data(), NULL);
 
   assert(sources == dests);
+
+  // Number of indices to send and receive from each neighbour
+  std::vector<int> ind_send_sizes(num_neighbours);
+  std::vector<int> ind_recv_sizes(num_neighbours);
+
+  // Collect
+  for (std::size_t i = 0; i < num_neighbours; ++i)
+  {
+    int count = std::count(_ghost_owners.data(),
+                           _ghost_owners.data() + _ghost_owners.size(),
+                           neighbours[i]);
+    ind_send_sizes[i] = count;
+  }
+
+  MPI_Neighbor_alltoall(ind_send_sizes.data(), 1, MPI_INT,
+                        ind_recv_sizes.data(), 1, MPI_INT, _neighbour_comm);
+
+  // Create vectors for forward communication
+  int n_send = std::accumulate(ind_send_sizes.begin(), ind_send_sizes.end(), 0);
+  std::vector<int> indices_to_send(n_send);
+  int n_recv = std::accumulate(ind_recv_sizes.begin(), ind_recv_sizes.end(), 0);
+  std::vector<int> indices_to_recv(n_recv);
+
+  // Create vectors for displacement
+  std::vector<int> displs_send(num_neighbours);
+  std::partial_sum(ind_send_sizes.begin(), ind_send_sizes.end() - 1,
+                   displs_send.begin() + 1);
+  std::vector<int> displs_recv(num_neighbours);
+  std::partial_sum(ind_recv_sizes.begin(), ind_recv_sizes.end() - 1,
+                   displs_recv.begin() + 1);
+
+  // TODO: simplify loop?
+  // Group indices to send by neighbour process
+  for (std::size_t i = 0; i < num_neighbours; ++i)
+  {
+    int k = 0;
+    for (std::size_t j = 0; j < _ghosts.size(); ++j)
+    {
+      if (neighbours[i] == _ghost_owners[j])
+      {
+        indices_to_send[displs_send[i] + k] = _ghosts[j];
+        k++;
+      }
+    }
+  }
+
+  MPI_Neighbor_alltoallv(indices_to_send.data(), ind_send_sizes.data(),
+                         displs_send.data(), MPI_INT, indices_to_recv.data(),
+                         ind_recv_sizes.data(), displs_recv.data(), MPI_INT,
+                         _neighbour_comm);
 }
 //-----------------------------------------------------------------------------
 std::array<std::int64_t, 2> IndexMap::local_range() const
