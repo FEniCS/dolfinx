@@ -118,7 +118,7 @@ int main(int argc, char* argv[])
   std::array<Eigen::Vector3d, 2> pt{Eigen::Vector3d(0.0, 0.0, 0.0),
                                     Eigen::Vector3d(1.0, 1.0, 0.0)};
   auto mesh = std::make_shared<mesh::Mesh>(generation::RectangleMesh::create(
-      MPI_COMM_WORLD, pt, {{1, 1}}, mesh::CellType::triangle,
+      MPI_COMM_WORLD, pt, {{32, 32}}, mesh::CellType::triangle,
       mesh::GhostMode::none));
 
   auto V = fem::create_functionspace(poisson_functionspace_create, mesh);
@@ -173,7 +173,6 @@ int main(int argc, char* argv[])
   // values = 10.0 * Eigen::exp(-(dx.col(0) + dx.col(1)) / 0.02);
   f->interpolate([](auto& x) {
     auto dx = Eigen::square(x - 0.5);
-    std::cout << 10.0 * Eigen::exp(-(dx.row(0) + dx.row(1)) / 0.02) << std::endl;
     return 10.0 * Eigen::exp(-(dx.row(0) + dx.row(1)) / 0.02);
   });
 
