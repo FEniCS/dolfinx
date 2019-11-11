@@ -179,69 +179,55 @@ la::PETScMatrix dolfin::fem::create_matrix(const Form& a)
 la::PETScMatrix
 fem::create_matrix_block(const std::vector<std::vector<const fem::Form*>>& a)
 {
-  // Extract and check row/column ranges
+  // Extract row/column ranges
   std::array<std::vector<std::shared_ptr<const function::FunctionSpace>>, 2> V
       = block_function_spaces(a);
 
+  // Extract mesh
   const mesh::Mesh& mesh = *V[0][0]->mesh();
 
   // Build sparsity pattern for each block
   std::vector<std::vector<std::unique_ptr<la::SparsityPattern>>> patterns(
       V[0].size());
-  std::vector<std::vector<const la::SparsityPattern*>> p(
-      V[0].size(), std::vector<const la::SparsityPattern*>(V[1].size()));
   for (std::size_t row = 0; row < V[0].size(); ++row)
   {
     for (std::size_t col = 0; col < V[1].size(); ++col)
     {
+      std::array<const DofMap*, 2> dofmaps
+          = {{V[0][row]->dofmap().get(), V[1][col]->dofmap().get()}};
+      std::array<std::shared_ptr<const common::IndexMap>, 2> index_maps
+          = {{dofmaps[0]->index_map, dofmaps[1]->index_map}};
       if (a[row][col])
       {
         // Build sparsity pattern for block
-        std::array<const DofMap*, 2> dofmaps
-            = {{V[0][row]->dofmap().get(), V[1][col]->dofmap().get()}};
-        // auto sp = std::make_unique<la::SparsityPattern>(
-        //     SparsityPatternBuilder::build(mesh.mpi_comm(), mesh, dofmaps,
-        //     true,
-        //                                   false, false));
-
-        std::array<std::shared_ptr<const common::IndexMap>, 2> index_maps
-            = {{dofmaps[0]->index_map, dofmaps[1]->index_map}};
         auto sp = std::make_unique<la::SparsityPattern>(mesh.mpi_comm(),
                                                         index_maps);
-        if (a[row][col]->integrals().num_integrals(
-                fem::FormIntegrals::Type::cell)
-            > 0)
+        const fem::FormIntegrals& integrals = a[row][col]->integrals();
+        using IntegralsType = fem::FormIntegrals::Type;
+        if (integrals.num_integrals(IntegralsType::cell) > 0)
           SparsityPatternBuilder::cells(*sp, mesh, dofmaps);
-        if (a[row][col]->integrals().num_integrals(
-                fem::FormIntegrals::Type::interior_facet)
-            > 0)
-        {
+        if (integrals.num_integrals(IntegralsType::interior_facet) > 0)
           SparsityPatternBuilder::interior_facets(*sp, mesh, dofmaps);
-        }
-        if (a[row][col]->integrals().num_integrals(
-                fem::FormIntegrals::Type::exterior_facet)
-            > 0)
-        {
+        if (integrals.num_integrals(IntegralsType::exterior_facet) > 0)
           SparsityPatternBuilder::exterior_facets(*sp, mesh, dofmaps);
-        }
+
         sp->assemble();
         patterns[row].push_back(std::move(sp));
       }
       else
       {
-        // FIXME: create sparsity pattern that has just a row/col range
-        const std::array<std::shared_ptr<const common::IndexMap>, 2> maps = {
-            {V[0][row]->dofmap()->index_map, V[1][col]->dofmap()->index_map}};
-        auto sp = std::make_unique<la::SparsityPattern>(mesh.mpi_comm(), maps);
-        patterns[row].push_back(std::move(sp));
+        // Create sparsity pattern that has just a row/col range
+        patterns[row].push_back(
+            std::make_unique<la::SparsityPattern>(mesh.mpi_comm(), index_maps));
       }
-
-      p[row][col] = patterns[row][col].get();
-      assert(p[row][col]);
     }
   }
 
   // Create merged sparsity pattern
+  std::vector<std::vector<const la::SparsityPattern*>> p(V[0].size());
+  for (std::size_t i = 0; i < V[0].size(); ++i)
+    for (std::size_t j = 0; j < V[j].size(); ++j)
+      p[i].push_back(patterns[i][j].get());
   la::SparsityPattern pattern(mesh.mpi_comm(), p);
 
   // Initialise matrix
@@ -258,14 +244,14 @@ fem::create_matrix_block(const std::vector<std::vector<const fem::Form*>>& a)
   for (std::size_t i = 0; i < V[0].size(); ++i)
   {
     auto map = V[0][i]->dofmap()->index_map;
-    std::size_t size = map->size_local() + map->num_ghosts();
+    std::int64_t size = map->size_local() + map->num_ghosts();
     const int bs0 = map->block_size;
     for (std::size_t k = 0; k < size; ++k)
     {
-      std::size_t index_k = map->local_to_global(k);
+      std::int64_t index_k = map->local_to_global(k);
       for (int block = 0; block < bs0; ++block)
       {
-        std::size_t index
+        std::int64_t index
             = get_global_index(index_maps[0], i, index_k * bs0 + block);
         _maps[0].push_back(index);
       }
@@ -275,14 +261,14 @@ fem::create_matrix_block(const std::vector<std::vector<const fem::Form*>>& a)
   for (std::size_t i = 0; i < V[1].size(); ++i)
   {
     auto map = V[1][i]->dofmap()->index_map;
-    std::size_t size = map->size_local() + map->num_ghosts();
+    std::int64_t size = map->size_local() + map->num_ghosts();
     const int bs1 = map->block_size;
     for (std::size_t k = 0; k < size; ++k)
     {
-      std::size_t index_k = map->local_to_global(k);
+      std::int64_t index_k = map->local_to_global(k);
       for (int block = 0; block < bs1; ++block)
       {
-        std::size_t index
+        std::int64_t index
             = get_global_index(index_maps[1], i, index_k * bs1 + block);
         _maps[1].push_back(index);
       }
@@ -412,7 +398,7 @@ fem::create_vector_nest(const std::vector<const common::IndexMap*>& maps)
   return la::PETScVector(y, false);
 }
 //-----------------------------------------------------------------------------
-std::size_t
+std::int64_t
 dolfin::fem::get_global_index(const std::vector<const common::IndexMap*>& maps,
                               const int field, const int index)
 {
