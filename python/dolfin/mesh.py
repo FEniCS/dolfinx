@@ -16,7 +16,6 @@ _meshfunction_types = {
 }
 
 _meshvaluecollection_types = {
-    "bool": cpp.mesh.MeshValueCollection_bool,
     "size_t": cpp.mesh.MeshValueCollection_sizet,
     "int": cpp.mesh.MeshValueCollection_int,
     "double": cpp.mesh.MeshValueCollection_double

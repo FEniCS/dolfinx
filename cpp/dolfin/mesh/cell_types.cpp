@@ -317,7 +317,6 @@ mesh::get_sub_entities(CellType type, int dim0, int dim1)
     throw std::runtime_error(
         "mesh::get_sub_entities supports getting edges (d=1) at present.");
   }
-
   const static Eigen::Array<int, 1, 3, Eigen::RowMajor> triangle
       = (Eigen::Array<int, 1, 3, Eigen::RowMajor>() << 0, 1, 2).finished();
   const static Eigen::Array<int, 1, 4, Eigen::RowMajor> quadrilateral
@@ -518,9 +517,17 @@ int mesh::cell_degree(mesh::CellType type, int num_nodes)
       throw std::runtime_error("Unknown triangle layout.");
     }
   case mesh::CellType::tetrahedron:
-    if (num_nodes != 4)
-      throw std::runtime_error("Higher order tetrahedron not supported");
-    return 1;
+    switch (num_nodes)
+    {
+    case 4:
+      return 1;
+    case 10:
+      return 2;
+    case 20:
+      return 3;
+    default:
+      throw std::runtime_error("Unknown tetrahedron layout.");
+    }
   case mesh::CellType::quadrilateral:
   {
     const int n = std::sqrt(num_nodes);
@@ -532,11 +539,47 @@ int mesh::cell_degree(mesh::CellType type, int num_nodes)
     return n - 1;
   }
   case mesh::CellType::hexahedron:
-    if (num_nodes != 8)
-      throw std::runtime_error("Higher order hexahedron not supported");
-    return 1;
+    switch (num_nodes)
+    {
+    case 8:
+      return 1;
+    case 27:
+      return 2;
+    default:
+      throw std::runtime_error("Unsupported hexahedron layout");
+      return 1;
+    }
   default:
     throw std::runtime_error("Unknown cell type.");
+  }
+}
+
+std::vector<int> mesh::cell_vertex_indices(mesh::CellType type, int num_nodes)
+{
+  int num_vertices_per_cell = mesh::num_cell_vertices(type);
+  int degree = mesh::cell_degree(type, num_nodes);
+  switch (type)
+  {
+  case mesh::CellType::quadrilateral:
+    // Topographical ordering yields this
+    return {0, 1, degree + 1, degree + 2};
+  case mesh::CellType::hexahedron:
+    if (num_nodes == 8)
+    {
+      std::vector<int> vertex_indices(num_vertices_per_cell);
+      std::iota(vertex_indices.begin(), vertex_indices.end(), 0);
+      return vertex_indices;
+    }
+    else
+    {
+      const int spacing = (1 + degree) * (1 + degree);
+      return {0,       1,           degree + 1,           degree + 2,
+              spacing, spacing + 1, spacing + degree + 1, spacing + degree + 2};
+    }
+  default:
+    std::vector<int> vertex_indices(num_vertices_per_cell);
+    std::iota(vertex_indices.begin(), vertex_indices.end(), 0);
+    return vertex_indices;
   }
 }
 //-----------------------------------------------------------------------------
