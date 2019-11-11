@@ -186,7 +186,7 @@ def _(b: PETSc.Vec,
 
 
 @functools.singledispatch
-def assemble_matrix(a,
+def assemble_matrix(a: typing.Union[Form, cpp.fem.Form],
                     bcs: typing.List[DirichletBC] = [],
                     diagonal: float = 1.0) -> PETSc.Mat:
     """Assemble bilinear form into a matrix. The returned matrix is not
@@ -195,62 +195,79 @@ def assemble_matrix(a,
     """
     A = cpp.fem.create_matrix(_create_cpp_form(a))
     A.zeroEntries()
-    cpp.fem.assemble_matrix(A, _create_cpp_form(a), bcs, diagonal)
-    return A
+    return assemble_matrix(A, a, bcs, diagonal)
 
 
 @assemble_matrix.register(PETSc.Mat)
-def _(A, a, bcs: typing.List[DirichletBC] = [],
+def _(A: PETSc.Mat,
+      a: typing.Union[Form, cpp.fem.Form],
+      bcs: typing.List[DirichletBC] = [],
       diagonal: float = 1.0) -> PETSc.Mat:
     """Assemble bilinear form into a matrix. The returned matrix is not
     finalised, i.e. ghost values are not accumulated.
 
     """
-    cpp.fem.assemble_matrix(A, _create_cpp_form(a), bcs, diagonal)
+    _a = _create_cpp_form(a)
+    cpp.fem.assemble_matrix(A, _a, bcs)
+    if _a.function_space(0) == _a.function_space(1):
+        cpp.fem.add_diagonal(A, _a.function_space(0), bcs, diagonal)
     return A
 
 
 # FIXME: Revise this interface
 @functools.singledispatch
-def assemble_matrix_nest(a,
+def assemble_matrix_nest(a: typing.List[typing.List[typing.Union[Form, cpp.fem.Form]]],
                          bcs: typing.List[DirichletBC],
                          diagonal: float = 1.0) -> PETSc.Mat:
     """Assemble bilinear forms into matrix"""
     A = cpp.fem.create_matrix_nest(_create_cpp_form(a))
     A.zeroEntries()
-    cpp.fem.assemble_blocked_matrix(A, _create_cpp_form(a), bcs, diagonal)
+    assemble_matrix_nest(A, a, bcs, diagonal)
     return A
 
 
 @assemble_matrix_nest.register(PETSc.Mat)
 def _(A: PETSc.Mat,
-      a,
+      a: typing.List[typing.List[typing.Union[Form, cpp.fem.Form]]],
       bcs: typing.List[DirichletBC],
       diagonal: float = 1.0) -> PETSc.Mat:
     """Assemble bilinear forms into matrix"""
-    cpp.fem.assemble_blocked_matrix(A, _create_cpp_form(a), bcs, diagonal)
+    _a = _create_cpp_form(a)
+    for i, a_row in enumerate(_a):
+        for j, a_block in enumerate(a_row):
+            if a_block is not None:
+                Asub = A.getNestSubMatrix(i, j)
+                assemble_matrix(Asub, a_block, bcs)
     return A
 
 
 # FIXME: Revise this interface
 @functools.singledispatch
-def assemble_matrix_block(a,
+def assemble_matrix_block(a: typing.List[typing.List[typing.Union[Form, cpp.fem.Form]]],
                           bcs: typing.List[DirichletBC],
                           diagonal: float = 1.0) -> PETSc.Mat:
     """Assemble bilinear forms into matrix"""
     A = cpp.fem.create_matrix_block(_create_cpp_form(a))
     A.zeroEntries()
-    cpp.fem.assemble_blocked_matrix(A, _create_cpp_form(a), bcs, diagonal)
-    return A
+    return assemble_matrix_block(A, a, bcs, diagonal)
 
 
 @assemble_matrix_block.register(PETSc.Mat)
 def _(A: PETSc.Mat,
-      a,
+      a: typing.List[typing.List[typing.Union[Form, cpp.fem.Form]]],
       bcs: typing.List[DirichletBC],
       diagonal: float = 1.0) -> PETSc.Mat:
     """Assemble bilinear forms into matrix"""
-    cpp.fem.assemble_blocked_matrix(A, _create_cpp_form(a), bcs, diagonal)
+    _a = _create_cpp_form(a)
+    V = cpp.fem.block_function_spaces(_a)
+    is_rows = cpp.la.create_petsc_index_sets([Vsub.dofmap.index_map for Vsub in V[0]])
+    is_cols = cpp.la.create_petsc_index_sets([Vsub.dofmap.index_map for Vsub in V[1]])
+    for i, a_row in enumerate(_a):
+        for j, a_sub in enumerate(a_row):
+            if a_sub is not None:
+                Asub = A.getLocalSubMatrix(is_rows[i], is_cols[j])
+                assemble_matrix(Asub, a_sub, bcs, diagonal)
+                A.restoreLocalSubMatrix(is_rows[i], is_cols[j], Asub)
     return A
 
 

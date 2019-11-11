@@ -87,6 +87,7 @@ def test_matrix_assembly_block():
     # Ghosts are updated inside assemble_vector_block
     A0 = dolfin.fem.assemble_matrix_block(a_block, [bc])
     b0 = dolfin.fem.assemble_vector_block(L_block, a_block, [bc], x0=x0, scale=-1.0)
+    A0.assemble()
     assert A0.getType() != "nest"
     Anorm0 = A0.norm()
     bnorm0 = b0.norm()
@@ -106,6 +107,7 @@ def test_matrix_assembly_block():
         b_sub.ghostUpdate(addv=PETSc.InsertMode.ADD, mode=PETSc.ScatterMode.REVERSE)
     bcs0 = dolfin.cpp.fem.bcs_rows(dolfin.fem.assemble._create_cpp_form(L_block), [bc])
     dolfin.fem.assemble.set_bc_nest(b1, bcs0, x1, scale=-1.0)
+    A1.assemble()
 
     assert A1.getType() == "nest"
     assert nest_matrix_norm(A1) == pytest.approx(Anorm0, 1.0e-12)
@@ -533,7 +535,7 @@ def test_assembly_solve_taylor_hood(mesh):
         soln_sub.vector.copy(result=x1_sub)
         x1_sub.ghostUpdate(addv=PETSc.InsertMode.INSERT, mode=PETSc.ScatterMode.FORWARD)
 
-    x1.zeroEntries()
+    x1.set(0.0)
     snes.solve(None, x1)
 
     assert snes.getConvergedReason() > 0

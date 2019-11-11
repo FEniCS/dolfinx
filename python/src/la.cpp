@@ -104,6 +104,8 @@ void la(py::module& m)
         },
         py::return_value_policy::take_ownership,
         "Create a PETSc Mat from sparsity pattern.");
+  m.def("create_petsc_index_sets", &dolfin::la::create_petsc_index_sets,
+        py::return_value_policy::take_ownership);
   m.def("scatter_local_vectors", &dolfin::la::scatter_local_vectors,
         "Scatter the (ordered) list of sub vectors into a block vector.");
   m.def("get_local_vectors", &dolfin::la::get_local_vectors,

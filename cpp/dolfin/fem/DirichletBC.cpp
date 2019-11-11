@@ -416,6 +416,13 @@ DirichletBC::DirichletBC(std::shared_ptr<const function::FunctionSpace> V,
 
   // Note: _dof_indices must be sorted
   _dof_indices = _dofs.col(0);
+
+  const int owned_size = V->dofmap()->index_map->block_size
+                         * V->dofmap()->index_map->size_local();
+  auto it
+      = std::lower_bound(_dof_indices.data(),
+                         _dof_indices.data() + _dof_indices.rows(), owned_size);
+  _owned_indices = std::distance(_dof_indices.data(), it);
 }
 //-----------------------------------------------------------------------------
 std::shared_ptr<const function::FunctionSpace>
@@ -433,6 +440,13 @@ const Eigen::Array<PetscInt, Eigen::Dynamic, 1>&
 DirichletBC::dof_indices() const
 {
   return _dof_indices;
+}
+//-----------------------------------------------------------------------------
+Eigen::Map<const Eigen::Array<PetscInt, Eigen::Dynamic, 1>>
+DirichletBC::dof_indices_owned() const
+{
+  return Eigen::Map<const Eigen::Array<PetscInt, Eigen::Dynamic, 1>>(
+      _dof_indices.data(), _owned_indices);
 }
 //-----------------------------------------------------------------------------
 void DirichletBC::set(
