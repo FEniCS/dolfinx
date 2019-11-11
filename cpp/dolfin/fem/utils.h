@@ -56,19 +56,23 @@ class Form;
 /// @return Function spaces for each row blocks (0) and for each column
 /// blocks (1).
 std::array<std::vector<std::shared_ptr<const function::FunctionSpace>>, 2>
-block_function_spaces(const std::vector<std::vector<const fem::Form*>>& a);
+block_function_spaces(
+    const Eigen::Ref<const Eigen::Array<const fem::Form*, Eigen::Dynamic,
+                                        Eigen::Dynamic, Eigen::RowMajor>>& a);
 
 /// Create matrix. Matrix is not zeroed.
 la::PETScMatrix create_matrix(const Form& a);
 
 /// Initialise monolithic matrix for an array for bilinear forms. Matrix
 /// is not zeroed.
-la::PETScMatrix
-create_matrix_block(const std::vector<std::vector<const fem::Form*>>& a);
+la::PETScMatrix create_matrix_block(
+    const Eigen::Ref<const Eigen::Array<const fem::Form*, Eigen::Dynamic,
+                                        Eigen::Dynamic, Eigen::RowMajor>>& a);
 
 /// Create nested (MatNest) matrix. Matrix is not zeroed.
-la::PETScMatrix
-create_matrix_nest(const std::vector<std::vector<const fem::Form*>>& a);
+la::PETScMatrix create_matrix_nest(
+    const Eigen::Ref<const Eigen::Array<const fem::Form*, Eigen::Dynamic,
+                                        Eigen::Dynamic, Eigen::RowMajor>>& a);
 
 /// Initialise monolithic vector. Vector is not zeroed.
 la::PETScVector

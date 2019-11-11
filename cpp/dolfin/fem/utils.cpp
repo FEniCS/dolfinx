@@ -63,39 +63,39 @@ int analyse_block_structure(
 
 //-----------------------------------------------------------------------------
 std::array<std::vector<std::shared_ptr<const function::FunctionSpace>>, 2>
-fem::block_function_spaces(const std::vector<std::vector<const fem::Form*>>& a)
+fem::block_function_spaces(
+    const Eigen::Ref<const Eigen::Array<const fem::Form*, Eigen::Dynamic,
+                                        Eigen::Dynamic, Eigen::RowMajor>>& a)
 {
-  assert(!a.empty());
   std::array<std::vector<std::shared_ptr<const function::FunctionSpace>>, 2> V;
-  V[0] = std::vector<std::shared_ptr<const function::FunctionSpace>>(a.size(),
+  V[0] = std::vector<std::shared_ptr<const function::FunctionSpace>>(a.rows(),
                                                                      nullptr);
-  V[1] = std::vector<std::shared_ptr<const function::FunctionSpace>>(
-      a[0].size(), nullptr);
+  V[1] = std::vector<std::shared_ptr<const function::FunctionSpace>>(a.cols(),
+                                                                     nullptr);
 
   // Loop over rows
-  for (std::size_t i = 0; i < a.size(); ++i)
+  for (std::size_t i = 0; i < a.rows(); ++i)
   {
     // Loop over columns
-    assert(a[0].size() == a[1].size());
-    for (std::size_t j = 0; j < a[i].size(); ++j)
+    for (std::size_t j = 0; j < a.cols(); ++j)
     {
-      if (a[i][j])
+      if (a(i, j))
       {
-        assert(a[i][j]->rank() == 2);
+        assert(a(i, j)->rank() == 2);
 
         if (!V[0][i])
-          V[0][i] = a[i][j]->function_space(0);
+          V[0][i] = a(i, j)->function_space(0);
         else
         {
-          if (V[0][i] != a[i][j]->function_space(0))
+          if (V[0][i] != a(i, j)->function_space(0))
             throw std::runtime_error("Mismatched test space for row.");
         }
 
         if (!V[1][j])
-          V[1][j] = a[i][j]->function_space(1);
+          V[1][j] = a(i, j)->function_space(1);
         else
         {
-          if (V[1][j] != a[i][j]->function_space(1))
+          if (V[1][j] != a(i, j)->function_space(1))
             throw std::runtime_error("Mismatched trial space for column.");
         }
       }
@@ -176,8 +176,9 @@ la::PETScMatrix dolfin::fem::create_matrix(const Form& a)
   return A;
 }
 //-----------------------------------------------------------------------------
-la::PETScMatrix
-fem::create_matrix_block(const std::vector<std::vector<const fem::Form*>>& a)
+la::PETScMatrix fem::create_matrix_block(
+    const Eigen::Ref<const Eigen::Array<const fem::Form*, Eigen::Dynamic,
+                                        Eigen::Dynamic, Eigen::RowMajor>>& a)
 {
   // Extract and check row/column ranges
   std::array<std::vector<std::shared_ptr<const function::FunctionSpace>>, 2> V
@@ -194,9 +195,9 @@ fem::create_matrix_block(const std::vector<std::vector<const fem::Form*>>& a)
     {
       const std::array<std::shared_ptr<const common::IndexMap>, 2> index_maps
           = {{V[0][row]->dofmap()->index_map, V[1][col]->dofmap()->index_map}};
-      if (a[row][col])
+      if (a(row, col))
       {
-        //Create sparsity pattern for block
+        // Create sparsity pattern for block
         patterns[row].push_back(
             std::make_unique<la::SparsityPattern>(mesh.mpi_comm(), index_maps));
 
@@ -205,7 +206,7 @@ fem::create_matrix_block(const std::vector<std::vector<const fem::Form*>>& a)
             = {{V[0][row]->dofmap().get(), V[1][col]->dofmap().get()}};
         assert(patterns[row].back());
         auto& sp = *patterns[row].back();
-        const FormIntegrals& integrals = a[row][col]->integrals();
+        const FormIntegrals& integrals = a(row, col)->integrals();
         if (integrals.num_integrals(FormIntegrals::Type::cell) > 0)
           SparsityPatternBuilder::cells(sp, mesh, dofmaps);
         if (integrals.num_integrals(FormIntegrals::Type::interior_facet) > 0)
@@ -278,38 +279,28 @@ fem::create_matrix_block(const std::vector<std::vector<const fem::Form*>>& a)
   return A;
 }
 //-----------------------------------------------------------------------------
-la::PETScMatrix
-fem::create_matrix_nest(const std::vector<std::vector<const fem::Form*>>& a)
+la::PETScMatrix fem::create_matrix_nest(
+    const Eigen::Ref<const Eigen::Array<const fem::Form*, Eigen::Dynamic,
+                                        Eigen::Dynamic, Eigen::RowMajor>>& a)
 {
-  // Check that array of forms is not empty and is square
-  if (a.empty())
-    throw std::runtime_error("Cannot created nested matrix without forms.");
-  for (const auto& a_row : a)
-  {
-    if (a_row.size() != a[0].size())
-    {
-      throw std::runtime_error(
-          "Array for forms must be rectangular to initialised nested matrix.");
-    }
-  }
+  // Extract and check row/column ranges
+  std::array<std::vector<std::shared_ptr<const function::FunctionSpace>>, 2> V
+      = block_function_spaces(a);
 
   // Loop over each form and create matrix
   Eigen::Array<std::shared_ptr<la::PETScMatrix>, Eigen::Dynamic, Eigen::Dynamic,
                Eigen::RowMajor>
-      mats(a.size(), a[0].size());
+      mats(a.rows(), a.cols());
   Eigen::Array<Mat, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor> petsc_mats(
-      a.size(), a[0].size());
-  for (std::size_t i = 0; i < a.size(); ++i)
+      a.rows(), a.cols());
+  for (std::size_t i = 0; i < a.rows(); ++i)
   {
-    for (std::size_t j = 0; j < a[i].size(); ++j)
+    for (std::size_t j = 0; j < a.cols(); ++j)
     {
-      if (a[i][j])
+      if (a(i, j))
       {
-        mats(i, j) = std::make_shared<la::PETScMatrix>(create_matrix(*a[i][j]));
+        mats(i, j) = std::make_shared<la::PETScMatrix>(create_matrix(*a(i, j)));
         petsc_mats(i, j) = mats(i, j)->mat();
-        // mats[i][j] =
-        // std::make_shared<la::PETScMatrix>(create_matrix(*a[i][j]));
-        // petsc_mats[i][j] = mats[i][j]->mat();
       }
       else
         petsc_mats(i, j) = nullptr;
@@ -318,7 +309,7 @@ fem::create_matrix_nest(const std::vector<std::vector<const fem::Form*>>& a)
 
   // Initialise block (MatNest) matrix
   Mat _A;
-  MatCreate(a[0][0]->mesh()->mpi_comm(), &_A);
+  MatCreate(V[0][0]->mesh()->mpi_comm(), &_A);
   MatSetType(_A, MATNEST);
   MatNestSetSubMats(_A, petsc_mats.rows(), nullptr, petsc_mats.cols(), nullptr,
                     petsc_mats.data());
