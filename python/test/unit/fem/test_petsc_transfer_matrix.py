@@ -195,12 +195,10 @@ def test_taylor_hood_cube():
     Zf = FunctionSpace(meshf, Ze)
 
     def z(x):
-        values = np.array([x.shape[1], 4])
-        values[0] = x[0] * x[1]
-        values[1] = x[1] * x[2]
-        values[2] = x[2] * x[0]
-        values[3] = x[0] + 3.0 * x[1] + x[2]
-        return values
+        return np.row_stack((x[0] * x[1],
+                             x[1] * x[2],
+                             x[2] * x[0],
+                             x[0] + 3.0 * x[1] + x[2]))
 
     zc, zf = Function(Zc), Function(Zf)
     zc.interpolate(z)
