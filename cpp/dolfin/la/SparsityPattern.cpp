@@ -17,7 +17,7 @@ using namespace dolfin::la;
 //-----------------------------------------------------------------------------
 SparsityPattern::SparsityPattern(
     MPI_Comm comm,
-    const std::array<std::shared_ptr<const common::IndexMap>, 2> index_maps)
+    const std::array<std::shared_ptr<const common::IndexMap>, 2>& index_maps)
     : _mpi_comm(comm), _index_maps(index_maps)
 {
   const std::size_t local_size0
@@ -28,7 +28,7 @@ SparsityPattern::SparsityPattern(
 //-----------------------------------------------------------------------------
 SparsityPattern::SparsityPattern(
     MPI_Comm comm,
-    const std::vector<std::vector<const SparsityPattern*>> patterns)
+    const std::vector<std::vector<const SparsityPattern*>>& patterns)
     : _mpi_comm(comm)
 {
   // FIXME: - Add range/bound checks for each block

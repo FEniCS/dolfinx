@@ -24,7 +24,7 @@ class VectorSpaceBasis
 {
 public:
   /// Constructor
-  VectorSpaceBasis(const std::vector<std::shared_ptr<PETScVector>> basis);
+  VectorSpaceBasis(const std::vector<std::shared_ptr<PETScVector>>& basis);
 
   /// Delete copy constructor
   VectorSpaceBasis(const VectorSpaceBasis& basis) = delete;
