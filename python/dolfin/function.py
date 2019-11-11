@@ -115,13 +115,14 @@ class Function(ufl.Coefficient):
 
     def interpolate(self, u) -> None:
         """Interpolate an expression"""
-
         @singledispatch
         def _interpolate(u):
-            try:
-                self._cpp_object.interpolate(u)
-            except TypeError:
+            if isinstance(u, self.__class__):
+                # Interpolate a function
                 self._cpp_object.interpolate(u._cpp_object)
+            else:
+                # Interpolate an expression
+                self._cpp_object.interpolate(u)
 
         @_interpolate.register(int)
         def _(u):
