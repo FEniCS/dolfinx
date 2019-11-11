@@ -149,9 +149,9 @@ int main(int argc, char* argv[])
   auto u0 = std::make_shared<function::Function>(V);
   std::vector<std::shared_ptr<const fem::DirichletBC>> bcs
       = {std::make_shared<fem::DirichletBC>(
-             V, u_clamp, [](auto x) { return x.col(0) < DBL_EPSILON; }),
+             V, u_clamp, [](auto x) { return x.row(0) < DBL_EPSILON; }),
          std::make_shared<fem::DirichletBC>(V, u_rotation, [](auto x) {
-           return (x.col(0) - 1.0).abs() < DBL_EPSILON;
+           return (x.row(0) - 1.0).abs() < DBL_EPSILON;
          })};
 
   HyperElasticProblem problem(u, L, a, bcs);

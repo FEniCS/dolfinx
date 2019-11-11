@@ -142,7 +142,7 @@ int main(int argc, char* argv[])
 
   std::vector<std::shared_ptr<const fem::DirichletBC>> bc
       = {std::make_shared<fem::DirichletBC>(V, u0, [](auto x) {
-          return (x.col(0) < DBL_EPSILON or x.col(0) > 1.0 - DBL_EPSILON);
+          return (x.row(0) < DBL_EPSILON or x.row(0) > 1.0 - DBL_EPSILON);
         })};
 
   // Next, we define the variational formulation by initializing the
