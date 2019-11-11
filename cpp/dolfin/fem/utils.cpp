@@ -239,38 +239,24 @@ fem::create_matrix_block(const std::vector<std::vector<const fem::Form*>>& a)
     for (std::size_t j = 0; j < V[i].size(); ++j)
       index_maps[i].push_back(V[i][j]->dofmap()->index_map.get());
 
-  // Create row and column local-to-global maps to attach to matrix
+  // Create row and column local-to-global maps
   std::array<std::vector<PetscInt>, 2> _maps;
-  for (std::size_t i = 0; i < V[0].size(); ++i)
+  for (int d = 0; d < 2; ++d)
   {
-    auto map = V[0][i]->dofmap()->index_map;
-    int size = map->size_local() + map->num_ghosts();
-    const int bs0 = map->block_size;
-    for (int k = 0; k < size; ++k)
+    for (std::size_t i = 0; i < V[d].size(); ++i)
     {
-      std::int64_t index_k = map->local_to_global(k);
-      for (int block = 0; block < bs0; ++block)
+      auto map = V[d][i]->dofmap()->index_map;
+      int size = map->size_local() + map->num_ghosts();
+      const int bs = map->block_size;
+      for (int k = 0; k < size; ++k)
       {
-        std::int64_t index
-            = get_global_index(index_maps[0], i, index_k * bs0 + block);
-        _maps[0].push_back(index);
-      }
-    }
-  }
-
-  for (std::size_t i = 0; i < V[1].size(); ++i)
-  {
-    auto map = V[1][i]->dofmap()->index_map;
-    int size = map->size_local() + map->num_ghosts();
-    const int bs1 = map->block_size;
-    for (int k = 0; k < size; ++k)
-    {
-      std::int64_t index_k = map->local_to_global(k);
-      for (int block = 0; block < bs1; ++block)
-      {
-        std::int64_t index
-            = get_global_index(index_maps[1], i, index_k * bs1 + block);
-        _maps[1].push_back(index);
+        std::int64_t index_k = map->local_to_global(k);
+        for (int block = 0; block < bs; ++block)
+        {
+          std::int64_t index
+              = get_global_index(index_maps[d], i, index_k * bs + block);
+          _maps[d].push_back(index);
+        }
       }
     }
   }
