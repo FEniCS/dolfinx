@@ -45,10 +45,17 @@ IndexMap::IndexMap(MPI_Comm mpi_comm, std::int32_t local_size,
   std::vector<int> dests(ghost_set.size() * 2, _myrank);
   std::copy(ghost_set.begin(), ghost_set.end(), dests.begin());
 
-  MPI_Comm neighbour_comm;
   MPI_Dist_graph_create(_mpi_comm, 1 + ghost_set.size(), sources.data(),
                         degrees.data(), dests.data(), MPI_UNWEIGHTED,
-                        MPI_INFO_NULL, false, &neighbour_comm);
+                        MPI_INFO_NULL, false, &_neighbour_comm);
+
+  int in_degree, out_degree, w;
+  MPI_Dist_graph_neighbors_count(_neighbour_comm, &in_degree, &out_degree, &w);
+
+  sources.resize(in_degree);
+  dests.resize(out_degree);
+  MPI_Dist_graph_neighbors(_neighbour_comm, in_degree, sources.data(), NULL,
+                           out_degree, dests.data(), NULL);
 }
 //-----------------------------------------------------------------------------
 std::array<std::int64_t, 2> IndexMap::local_range() const

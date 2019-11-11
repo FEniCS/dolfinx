@@ -149,6 +149,9 @@ private:
   // dolfin::MPI::Comm _mpi_comm;
   MPI_Comm _mpi_comm;
 
+  // MPI Communicator for neighbourhood only
+  MPI_Comm _neighbour_comm;
+
   // Cache rank on mpi_comm (otherwise calls to MPI_Comm_rank can be
   // excessive)
   int _myrank;
