@@ -99,7 +99,7 @@ void FunctionSpace::interpolate_from_any(
     if (!v.function_space()->has_cell(cell))
     {
       throw std::runtime_error("Restricting finite elements function in "
-                               "different elements not suppoted.");
+                               "different elements not supported.");
     }
 
     const int cell_index = cell.index();
