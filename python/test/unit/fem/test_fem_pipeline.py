@@ -161,7 +161,7 @@ def test_convergence_rate_poisson_non_simplices(n, cell):
         u = 1
         for component in range(gdim):
             u *= np.sin(np.pi * x[:, component])
-            return u
+        return u
 
     refs = 3
     errors = np.zeros(refs)
