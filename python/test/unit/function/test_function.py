@@ -343,3 +343,13 @@ def test_cffi_expression(V):
     f2 = Function(V)
     f2.interpolate(expr_eval2)
     assert (f1.vector - f2.vector).norm() < 1.0e-12
+
+
+def test_interpolation_function(mesh):
+    V = FunctionSpace(mesh, ("CG", 1))
+    u = Function(V)
+    u.vector.set(1)
+    Vh = FunctionSpace(mesh, ("CG", 1))
+    uh = Function(Vh)
+    uh.interpolate(u)
+    assert np.allclose(uh.vector.array, 1)
