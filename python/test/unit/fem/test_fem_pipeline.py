@@ -97,7 +97,6 @@ def test_convergence_rate_poisson_simplices(n, cell):
         V = FunctionSpace(mesh, ("Lagrange", n))
         u, v = TrialFunction(V), TestFunction(V)
 
-
         def u_exact(x):
             u_exact = 1
             for component in range(mesh.geometry.dim):
