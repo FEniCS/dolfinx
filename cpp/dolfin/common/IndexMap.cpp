@@ -42,6 +42,7 @@ IndexMap::IndexMap(MPI_Comm mpi_comm, std::int32_t local_size,
   std::vector<int> degrees(1, ghost_set.size());
   std::vector<int> dests(ghost_set.begin(), ghost_set.end());
 
+  // TODO: Avoid creating the graph twice
   MPI_Dist_graph_create(_mpi_comm, sources.size(), sources.data(),
                         degrees.data(), dests.data(), MPI_UNWEIGHTED,
                         MPI_INFO_NULL, false, &_neighbour_comm);
@@ -54,56 +55,26 @@ IndexMap::IndexMap(MPI_Comm mpi_comm, std::int32_t local_size,
   MPI_Dist_graph_neighbors(_neighbour_comm, in_degree, sources.data(), NULL,
                            out_degree, dests.data(), NULL);
 
-  // Number of indices to send
-  std::vector<int> ind_send_sizes(out_degree);
-  // Number of indices to receive from neigbors
-  std::vector<int> ind_recv_sizes(in_degree);
+  std::vector<int> source_dest;
+  std::sort(sources.begin(), sources.end());
+  std::sort(dests.begin(), dests.end());
+  std::set_union(sources.begin(), sources.end(), dests.begin(), dests.end(),
+                 std::back_inserter(source_dest));
 
-  int j = 0;
-  for (auto owner : ghost_set)
-  {
-    int count = std::count(_ghost_owners.data(),
-                           _ghost_owners.data() + _ghost_owners.size(), owner);
-    ind_send_sizes[j] = count;
-  }
+  // No communication is needed to build the graph with complete adjacent
+  // information
+  MPI_Dist_graph_create_adjacent(
+      _mpi_comm, source_dest.size(), source_dest.data(), MPI_UNWEIGHTED,
+      source_dest.size(), source_dest.data(), MPI_UNWEIGHTED, MPI_INFO_NULL,
+      false, &_neighbour_comm);
 
-  MPI_Neighbor_alltoall(ind_send_sizes.data(), 1, MPI_INT,
-                        ind_recv_sizes.data(), 1, MPI_INT, _neighbour_comm);
+  int num_neighbours = source_dest.size();
+  sources.resize(num_neighbours);
+  dests.resize(num_neighbours);
+  MPI_Dist_graph_neighbors(_neighbour_comm, num_neighbours, sources.data(),
+                           NULL, num_neighbours, dests.data(), NULL);
 
-  int n_send = std::accumulate(ind_send_sizes.begin(), ind_send_sizes.end(), 0);
-  std::vector<int> indices_to_send(n_send);
-
-  int n_recv = std::accumulate(ind_recv_sizes.begin(), ind_recv_sizes.end(), 0);
-  std::vector<int> indices_to_recv(n_recv);
-
-  std::vector<int> offset_send(out_degree);
-  std::vector<int> offset_recv(in_degree);
-  std::partial_sum(ind_send_sizes.begin(), ind_send_sizes.end() - 1,
-                   offset_send.begin() + 1);
-  std::partial_sum(ind_recv_sizes.begin(), ind_recv_sizes.end() - 1,
-                   offset_recv.begin() + 1);
-
-  // TODO: simplify the loop
-  // Group indices to send by neighbor process
-  std::set<int>::iterator setIt = ghost_set.begin();
-  for (std::size_t i = 0; i < ghost_set.size(); ++i)
-  {
-    int k = 0;
-    for (std::size_t j = 0; j < ghosts.size(); ++j)
-    {
-      if (*setIt == _ghost_owners[j])
-      {
-        indices_to_send[offset_send[i] + k] = ghosts[j];
-        k++;
-      }
-    }
-    setIt++;
-  }
-
-  MPI_Neighbor_alltoallv(indices_to_send.data(), ind_send_sizes.data(),
-                         offset_send.data(), MPI_INT, indices_to_recv.data(),
-                         ind_recv_sizes.data(), offset_recv.data(), MPI_INT,
-                         _neighbour_comm);
+  assert(sources == dests);
 }
 //-----------------------------------------------------------------------------
 std::array<std::int64_t, 2> IndexMap::local_range() const
