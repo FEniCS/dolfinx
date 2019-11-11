@@ -157,10 +157,16 @@ def test_convergence_rate_poisson_non_simplices(n, cell):
     elif cell == CellType.hexahedron:
         gdim = 3
 
+    def u_exact(x):
+        u = 1
+        for component in range(gdim):
+            u *= np.sin(np.pi * x[:, component])
+            return u
+
     refs = 3
     errors = np.zeros(refs)
     for i in range(refs):
-        N = 2**(i+1)
+        N = 2**(i + 1)
         if cell == CellType.interval:
             mesh = UnitIntervalMesh(MPI.comm_world, N)
         elif cell == CellType.quadrilateral:
@@ -172,12 +178,6 @@ def test_convergence_rate_poisson_non_simplices(n, cell):
         mesh.geometry.coord_mapping = cmap
         V = FunctionSpace(mesh, ("Lagrange", n))
         u, v = TrialFunction(V), TestFunction(V)
-
-        def u_exact(x):
-            u = 1
-            for component in range(mesh.geometry.dim):
-                u *= np.sin(np.pi * x[:, component])
-            return u
 
         # Exact solution
         Vh = FunctionSpace(mesh, ("Lagrange", n + 3))
