@@ -118,7 +118,7 @@ int main(int argc, char* argv[])
   std::array<Eigen::Vector3d, 2> pt{Eigen::Vector3d(0.0, 0.0, 0.0),
                                     Eigen::Vector3d(1.0, 1.0, 0.0)};
   auto mesh = std::make_shared<mesh::Mesh>(generation::RectangleMesh::create(
-      MPI_COMM_WORLD, pt, {{32, 32}}, mesh::CellType::triangle,
+      MPI_COMM_WORLD, pt, {{1, 1}}, mesh::CellType::triangle,
       mesh::GhostMode::none));
 
   auto V = fem::create_functionspace(poisson_functionspace_create, mesh);
@@ -141,7 +141,7 @@ int main(int argc, char* argv[])
   auto u0 = std::make_shared<function::Function>(V);
 
   std::vector<std::shared_ptr<const fem::DirichletBC>> bc
-      = {std::make_shared<fem::DirichletBC>(V, u0, [](auto x) {
+      = {std::make_shared<fem::DirichletBC>(V, u0, [](auto& x) {
           return (x.row(0) < DBL_EPSILON or x.row(0) > 1.0 - DBL_EPSILON);
         })};
 
@@ -171,11 +171,13 @@ int main(int argc, char* argv[])
 
   // auto dx = Eigen::square(x - 0.5);
   // values = 10.0 * Eigen::exp(-(dx.col(0) + dx.col(1)) / 0.02);
-  f->interpolate([](auto x) {
+  f->interpolate([](auto& x) {
     auto dx = Eigen::square(x - 0.5);
-    return 10.0 * Eigen::exp(-(dx.col(0) + dx.col(1)) / 0.02);
+    std::cout << 10.0 * Eigen::exp(-(dx.row(0) + dx.row(1)) / 0.02) << std::endl;
+    return 10.0 * Eigen::exp(-(dx.row(0) + dx.row(1)) / 0.02);
   });
-  g->interpolate([](auto x) { return Eigen::sin(5 * x.col(0)); });
+
+  g->interpolate([](auto& x) { return Eigen::sin(5 * x.row(0)); });
   L->set_coefficients({{"f", f}, {"g", g}});
 
   // Prepare and set Constants for the bilinear form
