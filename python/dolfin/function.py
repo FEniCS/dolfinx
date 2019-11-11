@@ -117,16 +117,14 @@ class Function(ufl.Coefficient):
         """Interpolate an expression"""
         @singledispatch
         def _interpolate(u):
-            if isinstance(u, self.__class__):
-                # Interpolate a function
+            try:
                 self._cpp_object.interpolate(u._cpp_object)
-            else:
-                # Interpolate an expression
+            except AttributeError:
                 self._cpp_object.interpolate(u)
 
         @_interpolate.register(int)
-        def _(u):
-            self._cpp_object.interpolate_ptr(u)
+        def _(u_ptr):
+            self._cpp_object.interpolate_ptr(u_ptr)
 
         _interpolate(u)
 
