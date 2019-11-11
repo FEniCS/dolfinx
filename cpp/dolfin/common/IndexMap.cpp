@@ -37,15 +37,11 @@ IndexMap::IndexMap(MPI_Comm mpi_comm, std::int32_t local_size,
 
   std::set<int> ghost_set(_ghost_owners.data(),
                           _ghost_owners.data() + _ghost_owners.size());
-  std::vector<int> sources(1 + ghost_set.size());
-  sources[0] = _myrank;
-  std::copy(ghost_set.begin(), ghost_set.end(), sources.begin() + 1);
-  std::vector<int> degrees(1 + ghost_set.size(), 1);
-  degrees[0] = ghost_set.size();
-  std::vector<int> dests(ghost_set.size() * 2, _myrank);
-  std::copy(ghost_set.begin(), ghost_set.end(), dests.begin());
+  std::vector<int> sources(1, _myrank);
+  std::vector<int> degrees(1, ghost_set.size());
+  std::vector<int> dests(ghost_set.begin(), ghost_set.end());
 
-  MPI_Dist_graph_create(_mpi_comm, 1 + ghost_set.size(), sources.data(),
+  MPI_Dist_graph_create(_mpi_comm, sources.size(), sources.data(),
                         degrees.data(), dests.data(), MPI_UNWEIGHTED,
                         MPI_INFO_NULL, false, &_neighbour_comm);
 
@@ -56,6 +52,19 @@ IndexMap::IndexMap(MPI_Comm mpi_comm, std::int32_t local_size,
   dests.resize(out_degree);
   MPI_Dist_graph_neighbors(_neighbour_comm, in_degree, sources.data(), NULL,
                            out_degree, dests.data(), NULL);
+
+  std::stringstream s;
+
+  s << "RANK = " << _myrank << "\n----------------\n";
+  s << "Sources(" << in_degree << ") = ";
+  for (auto& q : sources)
+    s << q << " ";
+  s << "\n---------------\n Dests(" << out_degree << ") = ";
+  for (auto& q : dests)
+    s << q << " ";
+  s << "\n---------------";
+
+  std::cout << s.str() << "\n";
 }
 //-----------------------------------------------------------------------------
 std::array<std::int64_t, 2> IndexMap::local_range() const
