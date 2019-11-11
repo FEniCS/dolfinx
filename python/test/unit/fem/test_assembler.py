@@ -200,6 +200,7 @@ def test_matrix_assembly_block():
 
     # Monolithic blocked
     A0 = dolfin.fem.assemble_matrix_block(a_block, [bc])
+    A0.assemble()
     b0 = dolfin.fem.assemble_vector_block(L_block, a_block, [bc])
     assert A0.getType() != "nest"
     Anorm0 = A0.norm()
@@ -207,6 +208,7 @@ def test_matrix_assembly_block():
 
     # Nested (MatNest)
     A1 = dolfin.fem.assemble_matrix_nest(a_block, [bc])
+    A1.assemble()
     Anorm1 = nest_matrix_norm(A1)
     assert Anorm0 == pytest.approx(Anorm1, 1.0e-12)
 
@@ -290,6 +292,7 @@ def test_assembly_solve_block():
     A0 = dolfin.fem.assemble_matrix_block([[a00, a01], [a10, a11]], bcs)
     b0 = dolfin.fem.assemble_vector_block([L0, L1], [[a00, a01], [a10, a11]],
                                           bcs)
+    A0.assemble()
     A0norm = A0.norm()
     b0norm = b0.norm()
     x0 = A0.createVecLeft()
@@ -305,6 +308,7 @@ def test_assembly_solve_block():
 
     # Nested (MatNest)
     A1 = dolfin.fem.assemble_matrix_nest([[a00, a01], [a10, a11]], bcs)
+    A1.assemble()
     b1 = dolfin.fem.assemble.assemble_vector_nest([L0, L1])
     dolfin.fem.assemble.apply_lifting_nest(b1, [[a00, a01], [a10, a11]], bcs)
     for b_sub in b1.getNestSubVecs():
@@ -425,8 +429,10 @@ def test_assembly_solve_taylor_hood(mesh):
     # -- Blocked (nested)
 
     A0 = dolfin.fem.assemble_matrix_nest([[a00, a01], [a10, a11]], [bc0, bc1])
+    A0.assemble()
     A0norm = nest_matrix_norm(A0)
     P0 = dolfin.fem.assemble_matrix_nest([[p00, p01], [p10, p11]], [bc0, bc1])
+    P0.assemble()
     P0norm = nest_matrix_norm(P0)
     b0 = dolfin.fem.assemble.assemble_vector_nest([L0, L1])
     dolfin.fem.assemble.apply_lifting_nest(b0, [[a00, a01], [a10, a11]], [bc0, bc1])
@@ -465,8 +471,10 @@ def test_assembly_solve_taylor_hood(mesh):
     # -- Blocked (monolithic)
 
     A1 = dolfin.fem.assemble_matrix_block([[a00, a01], [a10, a11]], [bc0, bc1])
+    A1.assemble()
     assert A1.norm() == pytest.approx(A0norm, 1.0e-12)
     P1 = dolfin.fem.assemble_matrix_block([[p00, p01], [p10, p11]], [bc0, bc1])
+    P1.assemble()
     assert P1.norm() == pytest.approx(P0norm, 1.0e-12)
 
     b1 = dolfin.fem.assemble_vector_block([L0, L1], [[a00, a01], [a10, a11]],
