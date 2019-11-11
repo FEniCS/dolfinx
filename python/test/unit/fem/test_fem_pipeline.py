@@ -8,6 +8,7 @@ import numpy as np
 import pytest
 from petsc4py import PETSc
 
+from dolfin_utils.test.skips import skip_in_parallel
 from dolfin import (MPI, DirichletBC, fem, Function, FunctionSpace, TestFunction,
                     TrialFunction, UnitCubeMesh, UnitIntervalMesh,
                     UnitSquareMesh)
@@ -76,6 +77,7 @@ def test_manufactured_poisson(n, mesh, component):
     assert np.absolute(error) < 1.0e-14
 
 
+@skip_in_parallel
 @pytest.mark.parametrize("n", [1, 2, 3])
 @pytest.mark.parametrize("cell", [CellType.triangle, CellType.tetrahedron])
 def test_convergence_rate_poisson_simplices(n, cell):
@@ -146,6 +148,7 @@ def test_convergence_rate_poisson_simplices(n, cell):
     assert min(refined_rates) > n + 0.85
 
 
+@skip_in_parallel
 @pytest.mark.parametrize("n", [1, 2, 3])
 @pytest.mark.parametrize("cell", [CellType.interval, CellType.quadrilateral, CellType.hexahedron])
 def test_convergence_rate_poisson_non_simplices(n, cell):
