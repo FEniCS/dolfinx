@@ -188,60 +188,45 @@ fem::create_matrix_block(const std::vector<std::vector<const fem::Form*>>& a)
   // Build sparsity pattern for each block
   std::vector<std::vector<std::unique_ptr<la::SparsityPattern>>> patterns(
       V[0].size());
-  std::vector<std::vector<const la::SparsityPattern*>> p(
-      V[0].size(), std::vector<const la::SparsityPattern*>(V[1].size()));
   for (std::size_t row = 0; row < V[0].size(); ++row)
   {
     for (std::size_t col = 0; col < V[1].size(); ++col)
     {
+      const std::array<std::shared_ptr<const common::IndexMap>, 2> index_maps
+          = {{V[0][row]->dofmap()->index_map, V[1][col]->dofmap()->index_map}};
       if (a[row][col])
       {
+        //Create sparsity pattern for block
+        patterns[row].push_back(
+            std::make_unique<la::SparsityPattern>(mesh.mpi_comm(), index_maps));
+
         // Build sparsity pattern for block
         std::array<const DofMap*, 2> dofmaps
             = {{V[0][row]->dofmap().get(), V[1][col]->dofmap().get()}};
-        // auto sp = std::make_unique<la::SparsityPattern>(
-        //     SparsityPatternBuilder::build(mesh.mpi_comm(), mesh, dofmaps,
-        //     true,
-        //                                   false, false));
-
-        std::array<std::shared_ptr<const common::IndexMap>, 2> index_maps
-            = {{dofmaps[0]->index_map, dofmaps[1]->index_map}};
-        auto sp = std::make_unique<la::SparsityPattern>(mesh.mpi_comm(),
-                                                        index_maps);
-        if (a[row][col]->integrals().num_integrals(
-                fem::FormIntegrals::Type::cell)
-            > 0)
-          SparsityPatternBuilder::cells(*sp, mesh, dofmaps);
-        if (a[row][col]->integrals().num_integrals(
-                fem::FormIntegrals::Type::interior_facet)
-            > 0)
-        {
-          SparsityPatternBuilder::interior_facets(*sp, mesh, dofmaps);
-        }
-        if (a[row][col]->integrals().num_integrals(
-                fem::FormIntegrals::Type::exterior_facet)
-            > 0)
-        {
-          SparsityPatternBuilder::exterior_facets(*sp, mesh, dofmaps);
-        }
-        sp->assemble();
-        patterns[row].push_back(std::move(sp));
+        assert(patterns[row].back());
+        auto& sp = *patterns[row].back();
+        const FormIntegrals& integrals = a[row][col]->integrals();
+        if (integrals.num_integrals(FormIntegrals::Type::cell) > 0)
+          SparsityPatternBuilder::cells(sp, mesh, dofmaps);
+        if (integrals.num_integrals(FormIntegrals::Type::interior_facet) > 0)
+          SparsityPatternBuilder::interior_facets(sp, mesh, dofmaps);
+        if (integrals.num_integrals(FormIntegrals::Type::exterior_facet) > 0)
+          SparsityPatternBuilder::exterior_facets(sp, mesh, dofmaps);
+        sp.assemble();
       }
       else
       {
-        // FIXME: create sparsity pattern that has just a row/col range
-        const std::array<std::shared_ptr<const common::IndexMap>, 2> maps = {
-            {V[0][row]->dofmap()->index_map, V[1][col]->dofmap()->index_map}};
-        auto sp = std::make_unique<la::SparsityPattern>(mesh.mpi_comm(), maps);
-        patterns[row].push_back(std::move(sp));
+        patterns[row].push_back(
+            std::make_unique<la::SparsityPattern>(mesh.mpi_comm(), index_maps));
       }
-
-      p[row][col] = patterns[row][col].get();
-      assert(p[row][col]);
     }
   }
 
   // Create merged sparsity pattern
+  std::vector<std::vector<const la::SparsityPattern*>> p(V[0].size());
+  for (std::size_t row = 0; row < V[0].size(); ++row)
+    for (std::size_t col = 0; col < V[1].size(); ++col)
+      p[row].push_back(patterns[row][col].get());
   la::SparsityPattern pattern(mesh.mpi_comm(), p);
 
   // Initialise matrix
