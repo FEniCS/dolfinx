@@ -76,7 +76,7 @@ def test_manufactured_poisson(n, mesh, component):
     assert np.absolute(error) < 1.0e-14
 
 
-@pytest.mark.parametrize("n", [1, 2, 3, 4])
+@pytest.mark.parametrize("n", [1, 2, 3])
 @pytest.mark.parametrize("cell", [CellType.triangle, CellType.tetrahedron])
 def test_convergence_rate_poisson_simplices(n, cell):
     """ Manufactured Poisson problem, solving u = Pi_{i=0}^gdim sin(pi*x_i) """
@@ -150,7 +150,7 @@ def test_convergence_rate_poisson_simplices(n, cell):
     assert min(refined_rates) > n + 0.9
 
 
-@pytest.mark.parametrize("n", [1, 2, 3, 4])
+@pytest.mark.parametrize("n", [1, 2, 3])
 @pytest.mark.parametrize("cell", [CellType.interval, CellType.quadrilateral, CellType.hexahedron])
 def test_convergence_rate_poisson_non_simplices(n, cell):
     """ Manufactured Poisson problem, solving $u = Pi_{i=0}^gdim sin(pi*x_i)$ """
