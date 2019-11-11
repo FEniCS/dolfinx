@@ -244,9 +244,9 @@ fem::create_matrix_block(const std::vector<std::vector<const fem::Form*>>& a)
   for (std::size_t i = 0; i < V[0].size(); ++i)
   {
     auto map = V[0][i]->dofmap()->index_map;
-    std::int64_t size = map->size_local() + map->num_ghosts();
+    int size = map->size_local() + map->num_ghosts();
     const int bs0 = map->block_size;
-    for (std::size_t k = 0; k < size; ++k)
+    for (int k = 0; k < size; ++k)
     {
       std::int64_t index_k = map->local_to_global(k);
       for (int block = 0; block < bs0; ++block)
@@ -261,9 +261,9 @@ fem::create_matrix_block(const std::vector<std::vector<const fem::Form*>>& a)
   for (std::size_t i = 0; i < V[1].size(); ++i)
   {
     auto map = V[1][i]->dofmap()->index_map;
-    std::int64_t size = map->size_local() + map->num_ghosts();
+    int size = map->size_local() + map->num_ghosts();
     const int bs1 = map->block_size;
-    for (std::size_t k = 0; k < size; ++k)
+    for (int k = 0; k < size; ++k)
     {
       std::int64_t index_k = map->local_to_global(k);
       for (int block = 0; block < bs1; ++block)
