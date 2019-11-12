@@ -59,8 +59,6 @@ from .specialfunctions import (FacetNormal, CellVolume, CellNormal,
 from .mesh import MeshFunction
 from .mesh import MeshValueCollection
 
-from ufl import TestFunction, TrialFunction, TestFunctions, TrialFunctions
-
 # Initialise PETSc
 from dolfin import cpp
 import sys

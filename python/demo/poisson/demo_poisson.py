@@ -81,7 +81,7 @@ import dolfin
 import dolfin.plotting
 import ufl
 from dolfin import (MPI, DirichletBC, Function, FunctionSpace, RectangleMesh,
-                    TestFunction, TrialFunction, solve)
+                    solve)
 from dolfin.cpp.mesh import CellType
 from dolfin.io import XDMFFile
 from dolfin.specialfunctions import SpatialCoordinate
@@ -156,8 +156,8 @@ bc = DirichletBC(V, u0, lambda x: np.logical_or(x[:, 0] < np.finfo(float).eps,
 # the linear form ``L`` (using UFL operators). In summary, this reads ::
 
 # Define variational problem
-u = TrialFunction(V)
-v = TestFunction(V)
+u = ufl.TrialFunction(V)
+v = ufl.TestFunction(V)
 x = SpatialCoordinate(mesh)
 f = 10 * ufl.exp(-((x[0] - 0.5)**2 + (x[1] - 0.5)**2) / 0.02)
 g = ufl.sin(5 * x[0])

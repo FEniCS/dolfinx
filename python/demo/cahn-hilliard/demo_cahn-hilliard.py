@@ -114,13 +114,12 @@ import numpy as np
 from petsc4py import PETSc
 
 from dolfin import (MPI, Function, FunctionSpace, NewtonSolver,
-                    NonlinearProblem, TestFunctions, TrialFunction,
-                    UnitSquareMesh, log)
+                    NonlinearProblem, UnitSquareMesh, log)
 from dolfin.cpp.mesh import CellType
 from dolfin.fem.assemble import assemble_matrix, assemble_vector
 from dolfin.io import XDMFFile
-from ufl import (FiniteElement, derivative, diff, dx, grad, inner, split,
-                 variable)
+from ufl import (FiniteElement, TestFunctions, TrialFunction, derivative, diff,
+                 dx, grad, inner, split, variable)
 
 # Save all logging to file
 log.set_output_file("log.txt")
