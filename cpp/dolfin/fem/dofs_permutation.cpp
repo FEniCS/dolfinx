@@ -361,7 +361,6 @@ hexahedron_rotations_and_reflection(const int volume_dofs, const int blocksize)
         for (int dof = st; dof < (level + 1) * area; dof += side_length)
           for (int k = 0; k < blocksize; ++k)
             rotation1[j++] = blocksize * dof + k;
-    std::cout << '{' << j << ' ' << volume_dofs << '}' << std::endl;
     assert(j == volume_dofs);
   }
 
