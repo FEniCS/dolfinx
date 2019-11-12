@@ -174,7 +174,7 @@ public:
   /// typically used to construct the null space of a matrix operator,
   /// e.g. rigid body rotations.
   ///
-  /// @param[in] x The vector to set
+  /// @param[in,out] x The vector to set
   /// @param[in] value The value to multiply to coordinate by
   /// @param[in] component The coordinate index
   void set_x(Eigen::Ref<Eigen::Array<PetscScalar, Eigen::Dynamic, 1>> x,
