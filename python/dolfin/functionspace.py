@@ -60,15 +60,32 @@ class FunctionSpace(ufl.FunctionSpace):
         # Initialize the cpp.FunctionSpace
         self._cpp_object = cpp.function.FunctionSpace(mesh, cpp_element, cpp_dofmap)
 
+    def clone(self) -> "FunctionSpace":
+        """Return a new FunctionSpace :math:`W` which shares data with this
+        FunctionSpace :math:`V`, but with a different unique integer ID.
+
+        This function is helpful for defining mixed problems and using
+        blocked linear algebra. For example, a matrix block defined on
+        the spaces :math:`V \\times W` where, :math:`V` and :math:`W`
+        are defined on the same finite element and mesh can be
+        identified as an off-diagonal block whereas the :math:`V \\times
+        V` and :math:`V \\times V` matrices can be identified as
+        diagonal blocks. This is relevant for the handling of boundary
+        conditions.
+
+        """
+        Vcpp = cpp.function.FunctionSpace(self._cpp_object.mesh, self._cpp_object.element, self._cpp_object.dofmap)
+        return FunctionSpace(None, self.ufl_element(), Vcpp)
+
     def dolfin_element(self):
         """Return the DOLFIN element."""
         return self._cpp_object.element
 
-    def num_sub_spaces(self):
+    def num_sub_spaces(self) -> int:
         """Return the number of sub spaces."""
         return self.dolfin_element().num_sub_elements()
 
-    def sub(self, i: int):
+    def sub(self, i: int) -> "FunctionSpace":
         """Return the i-th sub space."""
         assert self.ufl_element().num_sub_elements() > i
         sub_element = self.ufl_element().sub_elements()[i]
@@ -79,8 +96,11 @@ class FunctionSpace(ufl.FunctionSpace):
         """Return the component relative to the parent space."""
         return self._cpp_object.component()
 
-    def contains(self, V):
-        """Check whether a function is in the FunctionSpace."""
+    def contains(self, V) -> bool:
+        """Check whether a FunctionSpace is in this FunctionSpace, or is the
+        same as this FunctionSpace.
+
+        """
         return self._cpp_object.contains(V._cpp_object)
 
     def __contains__(self, u):
@@ -91,9 +111,7 @@ class FunctionSpace(ufl.FunctionSpace):
             try:
                 return u._cpp_object._in(self._cpp_object)
             except Exception as e:
-                raise RuntimeError(
-                    "Unable to check if object is in FunctionSpace ({})".
-                    format(e))
+                raise RuntimeError("Unable to check if object is in FunctionSpace ({})".format(e))
 
     def __eq__(self, other):
         """Comparison for equality."""
@@ -106,7 +124,8 @@ class FunctionSpace(ufl.FunctionSpace):
     def ufl_cell(self):
         return self._cpp_object.mesh.ufl_cell()
 
-    def ufl_function_space(self):
+    def ufl_function_space(self) -> ufl.FunctionSpace:
+        """Return the UFL function space"""
         return self
 
     @property
@@ -115,6 +134,7 @@ class FunctionSpace(ufl.FunctionSpace):
 
     @property
     def id(self) -> int:
+        """The unique identifier"""
         return self._cpp_object.id
 
     @property
@@ -131,7 +151,7 @@ class FunctionSpace(ufl.FunctionSpace):
         """Return the mesh on which the function space is defined."""
         return self._cpp_object.mesh
 
-    def set_x(self, basis, x, component):
+    def set_x(self, basis, x, component) -> None:
         return self._cpp_object.set_x(basis, x, component)
 
     def collapse(self, collapsed_dofs: bool = False):
@@ -143,7 +163,7 @@ class FunctionSpace(ufl.FunctionSpace):
                 Return the map from new to old dofs
 
        *Returns*
-           _FunctionSpace_
+           FunctionSpace
                 The new function space.
            dict
                 The map from new to old dofs (optional)
@@ -163,7 +183,7 @@ class FunctionSpace(ufl.FunctionSpace):
 def VectorFunctionSpace(mesh: cpp.mesh.Mesh,
                         element: ElementMetaData,
                         dim=None,
-                        restriction=None):
+                        restriction=None) -> "FunctionSpace":
     """Create vector finite element (composition of scalar elements) function space."""
 
     e = ElementMetaData(*element)
@@ -175,7 +195,7 @@ def TensorFunctionSpace(mesh: cpp.mesh.Mesh,
                         element: ElementMetaData,
                         shape=None,
                         symmetry: bool = None,
-                        restriction=None):
+                        restriction=None) -> "FunctionSpace":
     """Create tensor finite element (composition of scalar elements) function space."""
 
     e = ElementMetaData(*element)
