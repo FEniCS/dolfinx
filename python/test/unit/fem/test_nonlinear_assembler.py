@@ -60,9 +60,9 @@ def test_matrix_assembly_block():
     bc = dolfin.fem.dirichletbc.DirichletBC(V1, u_bc, boundary)
 
     # Define variational problem
-    du, dp = dolfin.function.TrialFunction(V0), dolfin.function.TrialFunction(V1)
+    du, dp = dolfin.TrialFunction(V0), dolfin.TrialFunction(V1)
     u, p = dolfin.function.Function(V0), dolfin.function.Function(V1)
-    v, q = dolfin.function.TestFunction(V0), dolfin.function.TestFunction(V1)
+    v, q = dolfin.TestFunction(V0), dolfin.TestFunction(V1)
 
     u.interpolate(initial_guess_u)
     p.interpolate(initial_guess_p)
@@ -116,10 +116,10 @@ def test_matrix_assembly_block():
     # Monolithic version
     E = P0 * P1
     W = dolfin.function.functionspace.FunctionSpace(mesh, E)
-    dU = dolfin.function.TrialFunction(W)
+    dU = dolfin.TrialFunction(W)
     U = dolfin.function.Function(W)
     u0, u1 = ufl.split(U)
-    v0, v1 = dolfin.function.TestFunctions(W)
+    v0, v1 = dolfin.TestFunctions(W)
 
     U.interpolate(lambda x: numpy.column_stack((initial_guess_u(x), initial_guess_p(x))))
 
@@ -266,8 +266,8 @@ def test_assembly_solve_block():
 
     # Block and Nest variational problem
     u, p = dolfin.function.Function(V0), dolfin.function.Function(V1)
-    du, dp = dolfin.function.TrialFunction(V0), dolfin.function.TrialFunction(V1)
-    v, q = dolfin.function.TestFunction(V0), dolfin.function.TestFunction(V1)
+    du, dp = dolfin.TrialFunction(V0), dolfin.TrialFunction(V1)
+    v, q = dolfin.TestFunction(V0), dolfin.TestFunction(V1)
 
     f = 1.0
     g = -3.0
@@ -367,9 +367,9 @@ def test_assembly_solve_block():
     E = P0 * P1
     W = dolfin.function.functionspace.FunctionSpace(mesh, E)
     U = dolfin.function.Function(W)
-    dU = dolfin.function.TrialFunction(W)
+    dU = dolfin.TrialFunction(W)
     u0, u1 = ufl.split(U)
-    v0, v1 = dolfin.function.TestFunctions(W)
+    v0, v1 = dolfin.TestFunctions(W)
 
     F = inner((u0**2 + 1) * ufl.grad(u0), ufl.grad(v0)) * dx \
         + inner((u1**2 + 1) * ufl.grad(u1), ufl.grad(v1)) * dx \

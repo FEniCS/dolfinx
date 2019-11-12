@@ -181,8 +181,8 @@ def test_matrix_assembly_block():
     bc = dolfin.fem.dirichletbc.DirichletBC(V1, u_bc, boundary)
 
     # Define variational problem
-    u, p = dolfin.function.TrialFunction(V0), dolfin.function.TrialFunction(V1)
-    v, q = dolfin.function.TestFunction(V0), dolfin.function.TestFunction(V1)
+    u, p = dolfin.TrialFunction(V0), dolfin.TrialFunction(V1)
+    v, q = dolfin.TestFunction(V0), dolfin.TestFunction(V1)
     f = 1.0
     g = -3.0
     zero = dolfin.Function(V0)
@@ -226,8 +226,8 @@ def test_matrix_assembly_block():
     # Monolithic version
     E = P0 * P1
     W = dolfin.function.functionspace.FunctionSpace(mesh, E)
-    u0, u1 = dolfin.function.TrialFunctions(W)
-    v0, v1 = dolfin.function.TestFunctions(W)
+    u0, u1 = dolfin.TrialFunctions(W)
+    v0, v1 = dolfin.TestFunctions(W)
     a = inner(u0, v0) * dx + inner(u1, v1) * dx + inner(u0, v1) * dx + inner(
         u1, v0) * dx
     L = zero * inner(f, v0) * ufl.dx + inner(g, v1) * dx
@@ -272,8 +272,8 @@ def test_assembly_solve_block():
     ]
 
     # Variational problem
-    u, p = dolfin.function.TrialFunction(V0), dolfin.function.TrialFunction(V1)
-    v, q = dolfin.function.TestFunction(V0), dolfin.function.TestFunction(V1)
+    u, p = dolfin.TrialFunction(V0), dolfin.TrialFunction(V1)
+    v, q = dolfin.TestFunction(V0), dolfin.TestFunction(V1)
     f = 1.0
     g = -3.0
     zero = dolfin.Function(V0)
@@ -337,8 +337,8 @@ def test_assembly_solve_block():
     # Monolithic version
     E = P0 * P1
     W = dolfin.function.functionspace.FunctionSpace(mesh, E)
-    u0, u1 = dolfin.function.TrialFunctions(W)
-    v0, v1 = dolfin.function.TestFunctions(W)
+    u0, u1 = dolfin.TrialFunctions(W)
+    v0, v1 = dolfin.TestFunctions(W)
     a = inner(u0, v0) * dx + inner(u1, v1) * dx
     L = inner(f, v0) * ufl.dx + inner(g, v1) * dx
 

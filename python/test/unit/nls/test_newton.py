@@ -11,7 +11,7 @@ from petsc4py import PETSc
 import dolfin
 import dolfin.fem as fem
 import ufl
-from dolfin import function, functionspace
+from dolfin import TestFunction, TrialFunction, function, functionspace
 from ufl import derivative, dx, grad, inner
 
 
@@ -21,7 +21,7 @@ class NonlinearPDEProblem(dolfin.cpp.nls.NonlinearProblem):
     def __init__(self, F, u, bc):
         super().__init__()
         V = u.function_space
-        du = function.TrialFunction(V)
+        du = TrialFunction(V)
         self.L = F
         self.a = derivative(F, u, du)
         self.bc = bc
@@ -59,7 +59,7 @@ class NonlinearPDE_SNESProblem():
     def __init__(self, F, u, bc):
         super().__init__()
         V = u.function_space
-        du = function.TrialFunction(V)
+        du = TrialFunction(V)
         self.L = F
         self.a = derivative(F, u, du)
         self.a_comp = dolfin.fem.Form(self.a)
@@ -93,7 +93,7 @@ def test_linear_pde():
     mesh = dolfin.generation.UnitSquareMesh(dolfin.MPI.comm_world, 12, 12)
     V = functionspace.FunctionSpace(mesh, ("Lagrange", 1))
     u = function.Function(V)
-    v = function.TestFunction(V)
+    v = TestFunction(V)
     F = inner(10.0, v) * dx - inner(grad(u), grad(v)) * dx
 
     def boundary(x):
@@ -128,7 +128,7 @@ def test_nonlinear_pde():
     mesh = dolfin.generation.UnitSquareMesh(dolfin.MPI.comm_world, 12, 5)
     V = functionspace.FunctionSpace(mesh, ("Lagrange", 1))
     u = dolfin.function.Function(V)
-    v = function.TestFunction(V)
+    v = TestFunction(V)
     F = inner(5.0, v) * dx - ufl.sqrt(u * u) * inner(
         grad(u), grad(v)) * dx - inner(u, v) * dx
 
@@ -166,7 +166,7 @@ def test_nonlinear_pde_snes():
     mesh = dolfin.generation.UnitSquareMesh(dolfin.MPI.comm_world, 12, 15)
     V = functionspace.FunctionSpace(mesh, ("Lagrange", 1))
     u = function.Function(V)
-    v = function.TestFunction(V)
+    v = TestFunction(V)
     F = inner(5.0, v) * dx - ufl.sqrt(u * u) * inner(
         grad(u), grad(v)) * dx - inner(u, v) * dx
 
@@ -253,7 +253,7 @@ def test_newton_solver_inheritance_override_methods():
     mesh = dolfin.generation.UnitSquareMesh(dolfin.MPI.comm_world, 12, 12)
     V = functionspace.FunctionSpace(mesh, ("Lagrange", 1))
     u = function.Function(V)
-    v = function.TestFunction(V)
+    v = TestFunction(V)
     F = inner(10.0, v) * dx - inner(grad(u), grad(v)) * dx
 
     def boundary(x):

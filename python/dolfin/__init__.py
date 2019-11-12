@@ -53,14 +53,13 @@ from .functionspace import (FunctionSpace, VectorFunctionSpace,
                             TensorFunctionSpace)
 from .function import Function
 from .constant import Constant
-from .function import (TestFunction, TrialFunction, TestFunctions,
-                       TrialFunctions)
 from .specialfunctions import (FacetNormal, CellVolume, CellNormal,
                                CellDiameter, Circumradius)
 
 from .mesh import MeshFunction
 from .mesh import MeshValueCollection
 
+from ufl import TestFunction, TrialFunction, TestFunctions, TrialFunctions
 
 # Initialise PETSc
 from dolfin import cpp
