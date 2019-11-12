@@ -168,6 +168,18 @@ private:
   // Owning process for each ghost index
   Eigen::Array<std::int32_t, Eigen::Dynamic, 1> _ghost_owners;
 
+  // Neigbour processes
+  std::vector<std::int32_t> _neighbours;
+
+  // Number of indices to send to each neighbour process in reverse mode
+  std::vector<std::int32_t> _reverse_sizes;
+
+  // Number of indices to send to each neighbour process in forward mode
+  std::vector<std::int32_t> _forward_sizes;
+
+  // "Owned" local indices shared with neighbour processes
+  std::vector<std::int32_t> _forward_indices;
+
   template <typename T>
   void scatter_fwd_impl(const std::vector<T>& local_data,
                         std::vector<T>& remote_data, int n) const;
