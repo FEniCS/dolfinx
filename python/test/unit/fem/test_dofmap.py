@@ -636,19 +636,6 @@ def test_quadrilateral_dof_ordering(space_type):
 @skip_in_parallel
 @pytest.mark.parametrize('space_type', [
     ("P", 1), ("P", 2), ("P", 3), ("P", 4),
-    ("N1curl", 1),
-    pytest.param(("N1curl", 2), marks=pytest.mark.xfail),
-    pytest.param(("N1curl", 3), marks=pytest.mark.xfail),
-    pytest.param(("N1curl", 4), marks=pytest.mark.xfail),
-    ("RT", 1), ("RT", 2), ("RT", 3), ("RT", 4),
-    ("BDM", 1),
-    pytest.param(("BDM", 2), marks=pytest.mark.xfail),
-    pytest.param(("BDM", 3), marks=pytest.mark.xfail),
-    pytest.param(("BDM", 4), marks=pytest.mark.xfail),
-    ("N2curl", 1),
-    pytest.param(("N2curl", 2), marks=pytest.mark.xfail),
-    pytest.param(("N2curl", 3), marks=pytest.mark.xfail),
-    pytest.param(("N2curl", 4), marks=pytest.mark.xfail),
 ])
 def test_hexahedron_dof_ordering(space_type):
     """Checks that dofs on shared hexahedron edges match up"""

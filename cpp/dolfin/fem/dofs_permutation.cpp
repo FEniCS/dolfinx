@@ -129,7 +129,6 @@ std::array<int, 2> calculate_quadrilateral_orders(int v1, int v2, int v3,
 std::array<int, 4> calculate_hexahedron_orders(int v1, int v2, int v3, int v4,
                                                int v5, int v6, int v7, int v8)
 {
-  // TODO
   if (v1 < v2 and v1 < v3 and v1 < v4 and v1 < v5 and v1 < v6 and v1 < v7 and v1 < v8)
   {
     const std::array<int, 2> tri_orders = calculate_triangle_orders(v2, v3, v5);
@@ -543,18 +542,18 @@ compute_ordering_hexahedron(const mesh::Mesh& mesh)
     const std::int32_t* vertices = cell.entities(0);
 
     // Set the orders for the edge flips
-    cell_orders(cell_n, 0) = (vertices[6] > vertices[7]);
-    cell_orders(cell_n, 1) = (vertices[5] > vertices[7]);
-    cell_orders(cell_n, 2) = (vertices[3] > vertices[7]);
-    cell_orders(cell_n, 3) = (vertices[4] > vertices[6]);
-    cell_orders(cell_n, 4) = (vertices[2] > vertices[6]);
-    cell_orders(cell_n, 5) = (vertices[4] > vertices[5]);
-    cell_orders(cell_n, 6) = (vertices[1] > vertices[5]);
-    cell_orders(cell_n, 7) = (vertices[0] > vertices[4]);
-    cell_orders(cell_n, 8) = (vertices[1] > vertices[3]);
-    cell_orders(cell_n, 9) = (vertices[2] > vertices[3]);
-    cell_orders(cell_n, 10) = (vertices[0] > vertices[2]);
-    cell_orders(cell_n, 11) = (vertices[0] > vertices[1]);
+    cell_orders(cell_n, 3) = (vertices[6] > vertices[7]);
+    cell_orders(cell_n, 7) = (vertices[5] > vertices[7]);
+    cell_orders(cell_n, 11) = (vertices[3] > vertices[7]);
+    cell_orders(cell_n, 6) = (vertices[4] > vertices[6]);
+    cell_orders(cell_n, 10) = (vertices[2] > vertices[6]);
+    cell_orders(cell_n, 2) = (vertices[4] > vertices[5]);
+    cell_orders(cell_n, 9) = (vertices[1] > vertices[5]);
+    cell_orders(cell_n, 8) = (vertices[0] > vertices[4]);
+    cell_orders(cell_n, 5) = (vertices[1] > vertices[3]);
+    cell_orders(cell_n, 1) = (vertices[2] > vertices[3]);
+    cell_orders(cell_n, 4) = (vertices[0] > vertices[2]);
+    cell_orders(cell_n, 0) = (vertices[0] > vertices[1]);
 
     // Set the orders for the face rotations and reflections
     const std::array<int, 2> quad_orders0
