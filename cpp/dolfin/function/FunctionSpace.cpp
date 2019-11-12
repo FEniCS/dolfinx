@@ -304,7 +304,7 @@ FunctionSpace::tabulate_dof_coordinates() const
   const Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>& X
       = _element->dof_reference_coordinates();
 
-  // Arrray to hold coordinates and return
+  // Array to hold coordinates to return
   Eigen::Array<double, Eigen::Dynamic, 3, Eigen::RowMajor> x
       = Eigen::Array<double, Eigen::Dynamic, 3, Eigen::RowMajor>::Zero(
           local_size, gdim);
