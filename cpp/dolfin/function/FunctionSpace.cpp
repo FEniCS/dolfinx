@@ -156,7 +156,7 @@ void FunctionSpace::interpolate(
     const
 {
   // Evaluate expression at dof points
-  Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor> x
+  Eigen::Array<double, Eigen::Dynamic, 3, Eigen::RowMajor> x
       = tabulate_dof_coordinates();
   Eigen::Array<PetscScalar, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
       values = f(x.transpose());
@@ -200,7 +200,7 @@ void FunctionSpace::interpolate_c(
     const interpolation_function& f) const
 {
   // Build list of points at which to evaluate the Expression
-  Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor> x
+  Eigen::Array<double, Eigen::Dynamic, 3, Eigen::RowMajor> x
       = tabulate_dof_coordinates();
 
   // Evaluate expression at points
@@ -277,7 +277,7 @@ FunctionSpace::collapse() const
 //-----------------------------------------------------------------------------
 std::vector<int> FunctionSpace::component() const { return _component; }
 //-----------------------------------------------------------------------------
-Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
+Eigen::Array<double, Eigen::Dynamic, 3, Eigen::RowMajor>
 FunctionSpace::tabulate_dof_coordinates() const
 {
   // Geometric dimension
@@ -305,8 +305,9 @@ FunctionSpace::tabulate_dof_coordinates() const
       = _element->dof_reference_coordinates();
 
   // Arrray to hold coordinates and return
-  Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor> x(
-      local_size, gdim);
+  Eigen::Array<double, Eigen::Dynamic, 3, Eigen::RowMajor> x
+      = Eigen::Array<double, Eigen::Dynamic, 3, Eigen::RowMajor>::Zero(
+          local_size, gdim);
 
   // Get coordinate mapping
   if (!_mesh->geometry().coord_mapping)
@@ -340,8 +341,13 @@ FunctionSpace::tabulate_dof_coordinates() const
     // Update cell
     const int cell_index = cell.index();
     for (int i = 0; i < num_dofs_g; ++i)
+    {
       for (int j = 0; j < gdim; ++j)
-        coordinate_dofs(i, j) = x_g(cell_g[pos_g[cell_index] + i], j);
+      {
+        coordinate_dofs.row(i).head(gdim)
+            = x_g.row(cell_g[pos_g[cell_index] + i]).head(gdim);
+      }
+    }
 
     // Get local-to-global map
     auto dofs = _dofmap->cell_dofs(cell.index());
@@ -353,8 +359,7 @@ FunctionSpace::tabulate_dof_coordinates() const
     for (Eigen::Index i = 0; i < dofs.size(); ++i)
     {
       const PetscInt dof = dofs[i];
-      if (dof < (PetscInt)local_size)
-        x.row(dof) = coordinates.row(i);
+      x.row(dof) = coordinates.row(i);
     }
   }
 
