@@ -285,8 +285,8 @@ void Function::interpolate(const Function& v)
 void Function::interpolate(
     const std::function<Eigen::Array<PetscScalar, Eigen::Dynamic,
                                      Eigen::Dynamic, Eigen::RowMajor>(
-        const Eigen::Ref<const Eigen::Array<
-            double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>>&)>& f)
+        const Eigen::Ref<const Eigen::Array<double, 3, Eigen::Dynamic,
+                                            Eigen::RowMajor>>&)>& f)
 {
   la::VecWrapper x(_vector.vec());
   _function_space->interpolate(x.x, f);
