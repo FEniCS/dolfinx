@@ -123,6 +123,12 @@ def test_not_equal(W, V, W2, V2):
     assert W2 != V2
 
 
+def test_clone(W):
+    V = W.clone()
+    assert V == W
+    assert V.id != W.id
+
+
 def test_collapse(W, V):
     Vs = W.sub(2)
     with pytest.raises(RuntimeError):
