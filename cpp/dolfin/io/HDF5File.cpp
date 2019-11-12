@@ -257,7 +257,13 @@ void HDF5File::write(const mesh::Mesh& mesh, int cell_dim,
   mesh::CellType cell_type = mesh::cell_entity_type(mesh.cell_type(), cell_dim);
   const mesh::Connectivity& cell_points
       = mesh.coordinate_dofs().entity_points();
-  int num_nodes_per_cell = cell_points.size(0);
+
+  // Allowing for higher order meshes to be written to file
+  std::size_t num_cell_points;
+  if (cell_dim == tdim)
+    num_cell_points = cell_points.size(0);
+  else
+    num_cell_points = mesh::cell_num_entities(cell_type, 0);
 
   // ---------- Vertices (coordinates)
   {
@@ -318,8 +324,7 @@ void HDF5File::write(const mesh::Mesh& mesh, int cell_dim,
     }
     else
     {
-      topological_data.reserve(mesh.num_entities(cell_dim)
-                               * (num_nodes_per_cell));
+      topological_data.reserve(mesh.num_entities(cell_dim) * (num_cell_points));
 
       const auto& global_vertices = mesh.topology().global_indices(0);
 
@@ -431,9 +436,9 @@ void HDF5File::write(const mesh::Mesh& mesh, int cell_dim,
     // Write topology data
     const std::string topology_dataset = name + "/topology";
     std::vector<std::int64_t> global_size(2);
-    global_size[0] = MPI::sum(_mpi_comm.comm(),
-                              topological_data.size() / num_nodes_per_cell);
-    global_size[1] = num_nodes_per_cell;
+    global_size[0]
+        = MPI::sum(_mpi_comm.comm(), topological_data.size() / num_cell_points);
+    global_size[1] = num_cell_points;
 
     const std::int64_t num_cells = mpi_io ? mesh.num_entities_global(cell_dim)
                                           : mesh.num_entities(cell_dim);
@@ -459,7 +464,7 @@ void HDF5File::write(const mesh::Mesh& mesh, int cell_dim,
     // Add partitioning attribute to dataset
     std::vector<std::size_t> partitions;
     const std::size_t topology_offset = MPI::global_offset(
-        _mpi_comm.comm(), topological_data.size() / num_nodes_per_cell, true);
+        _mpi_comm.comm(), topological_data.size() / num_cell_points, true);
 
     std::vector<std::size_t> topology_offset_tmp(1, topology_offset);
     MPI::gather(_mpi_comm.comm(), topology_offset_tmp, partitions);
