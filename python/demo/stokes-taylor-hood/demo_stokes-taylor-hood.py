@@ -83,12 +83,14 @@
 # facets). Mesh and mesh functions can be read from file in the
 # following way::
 
+from petsc4py import PETSc
+
 import matplotlib.pyplot as plt
 import numpy as np
 
 import dolfin
-from dolfin import (MPI, DirichletBC, Function, FunctionSpace, TestFunctions,
-                    TrialFunctions, solve)
+from dolfin import (MPI, DirichletBC, Function, FunctionSpace, TestFunction,
+                    TrialFunction)
 from dolfin.io import XDMFFile
 from dolfin.plotting import plot
 from ufl import FiniteElement, VectorElement, div, dx, grad, inner
@@ -111,8 +113,9 @@ mesh.geometry.coord_mapping = cmap
 # Define function spaces
 P2 = VectorElement("Lagrange", mesh.ufl_cell(), 2)
 P1 = FiniteElement("Lagrange", mesh.ufl_cell(), 1)
-TH = P2 * P1
-W = FunctionSpace(mesh, TH)
+
+V = FunctionSpace(mesh, P2)
+Q = FunctionSpace(mesh, P1)
 
 # The mixed finite element space is known as Taylor–Hood.
 # It is a stable, standard element pair for the Stokes
@@ -126,10 +129,10 @@ mf1 = np.where(mf == 1)
 
 # No-slip boundary condition for velocity
 # x1 = 0, x1 = 1 and around the dolphin
-noslip = Function(W.sub(0).collapse())
+noslip = Function(V)
 noslip.interpolate(lambda x: np.zeros_like(x))
 
-bc0 = DirichletBC(W.sub(0), noslip, mf0[0])
+bc0 = DirichletBC(V, noslip, mf0[0])
 
 # Inflow boundary condition for velocity
 # x0 = 1
@@ -141,9 +144,9 @@ def inflow_eval(x):
     return values
 
 
-inflow = Function(W.sub(0).collapse())
+inflow = Function(V)
 inflow.interpolate(inflow_eval)
-bc1 = DirichletBC(W.sub(0), inflow, mf1[0])
+bc1 = DirichletBC(V, inflow, mf1[0])
 
 # Collect boundary conditions
 bcs = [bc0, bc1]
@@ -163,11 +166,20 @@ bcs = [bc0, bc1]
 # formulation of the Stokes equations are defined as follows::
 
 # Define variational problem
-(u, p) = TrialFunctions(W)
-(v, q) = TestFunctions(W)
-f = Function(W.sub(0).collapse())
-a = (inner(grad(u), grad(v)) - inner(p, div(v)) + inner(div(u), q)) * dx
-L = inner(f, v) * dx
+(u, p) = TrialFunction(V), TrialFunction(Q)
+(v, q) = TestFunction(V), TestFunction(Q)
+f = Function(V)
+g = Function(Q)
+
+a = (
+    (inner(grad(u), grad(v)) * dx,  inner(p, div(v)) * dx),
+    (inner(div(u), q) * dx, None)
+)
+
+L = (
+        inner(f, v) * dx,
+        g * q * dx
+)
 
 # We also need to create a :py:class:`Function
 # <dolfin.cpp.function.Function>` to store the solution(s). The (full)
@@ -182,16 +194,26 @@ L = inner(f, v) * dx
 # a deep copy for further computations on the coefficient vectors::
 
 # Compute solution
-w = Function(W)
-solve(a == L, w, bcs, petsc_options={"ksp_type": "preonly",
-                                     "pc_type": "lu", "pc_factor_mat_solver_type": "mumps"})
+x = dolfin.fem.create_vector_block(L)
 
-# Split the mixed solution and collapse
-u = w.sub(0).collapse()
-p = w.sub(1).collapse()
+A = dolfin.fem.assemble_matrix_block(a, bcs)
+A.assemble()
+b = dolfin.fem.assemble_vector_block(L, a, bcs)
+b.assemble()
+
+ksp = PETSc.KSP().create(mesh.mpi_comm())
+ksp.setType("preonly")
+ksp.getPC().setType("lu")
+ksp.getPC().setFactorSolverType("mumps")
+
+ksp.setOperators(A)
+ksp.solve(b, x)
 
 # We can calculate the :math:`L^2` norms of u and p as follows::
 
+u, p = Function(V), Function(Q)
+(u.vector.array, p.vector.array) = \
+    dolfin.cpp.la.get_local_vectors(x, [V.dofmap.index_map, Q.dofmap.index_map])
 print("Norm of velocity coefficient vector: %.15g" % u.vector.norm())
 print("Norm of pressure coefficient vector: %.15g" % p.vector.norm())
 
