@@ -11,8 +11,8 @@ from petsc4py import PETSc
 import dolfin
 import dolfin.fem as fem
 import ufl
-from dolfin import TestFunction, TrialFunction, function, functionspace
-from ufl import derivative, dx, grad, inner
+from dolfin import function, functionspace
+from ufl import TestFunction, TrialFunction, derivative, dx, grad, inner
 
 
 class NonlinearPDEProblem(dolfin.cpp.nls.NonlinearProblem):
