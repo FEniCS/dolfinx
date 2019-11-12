@@ -171,7 +171,7 @@ void FunctionSpace::interpolate(
   // Note: pybind11 maps 1D NumPy arrays to column vectors for
   // Eigen::Array<PetscScalar, Eigen::Dynamic,Eigen::Dynamic, Eigen::RowMajor>
   // types, therefore we need to handle vectors as a special case.
-  if (values.cols() == 1 and values.cols() != 1)
+  if (values.cols() == 1 and values.rows() != 1)
   {
     if (values.rows() != x.cols())
     {

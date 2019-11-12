@@ -56,18 +56,16 @@ void function(py::module& m)
            py::arg("u"), "Interpolate a finite element function")
       .def("interpolate_ptr",
            [](dolfin::function::Function& self, std::uintptr_t addr) {
-             const std::function<void(PetscScalar*, int, int, const double*,
-                                      int)>
-                 f = reinterpret_cast<void (*)(PetscScalar*, int, int,
-                                               const double*, int)>(addr);
+             const std::function<void(PetscScalar*, int, int, const double*)> f
+                 = reinterpret_cast<void (*)(PetscScalar*, int, int,
+                                             const double*)>(addr);
              auto _f =
                  [&f](Eigen::Ref<Eigen::Array<PetscScalar, Eigen::Dynamic,
                                               Eigen::Dynamic, Eigen::RowMajor>>
                           values,
                       const Eigen::Ref<const Eigen::Array<
                           double, Eigen::Dynamic, 3, Eigen::RowMajor>>& x) {
-                   f(values.data(), values.rows(), values.cols(), x.data(),
-                     x.cols());
+                   f(values.data(), values.rows(), values.cols(), x.data());
                  };
 
              self.interpolate_c(_f);
