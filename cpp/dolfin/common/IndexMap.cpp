@@ -36,101 +36,92 @@ IndexMap::IndexMap(MPI_Comm mpi_comm, std::int32_t local_size,
     assert(_ghost_owners[i] != _myrank);
   }
 
-  if (MPI::rank(_mpi_comm) > 1)
+  // Find all neighbour counts, both send and receive
+  std::vector<std::int32_t> send_nghosts(mpi_size, 0);
+  for (int i = 0; i < _ghost_owners.size(); ++i)
+    ++send_nghosts[_ghost_owners[i]];
+
+  std::vector<std::int32_t> recv_nghosts(mpi_size);
+  MPI_Alltoall(send_nghosts.data(), 1, MPI_INT, recv_nghosts.data(), 1, MPI_INT,
+               _mpi_comm);
+
+  std::vector<std::int32_t> neighbours;
+  for (std::int32_t i = 0; i < mpi_size; ++i)
+    if (send_nghosts[i] > 0 or recv_nghosts[i] > 0)
+      neighbours.push_back(i);
+
+  // No communication is needed to build the graph with complete adjacent
+  // information
+  MPI_Dist_graph_create_adjacent(
+      _mpi_comm, neighbours.size(), neighbours.data(), MPI_UNWEIGHTED,
+      neighbours.size(), neighbours.data(), MPI_UNWEIGHTED, MPI_INFO_NULL,
+      false, &_neighbour_comm);
+
+  std::int32_t num_neighbours = neighbours.size();
+  std::vector<int> sources(num_neighbours);
+  std::vector<int> dests(num_neighbours);
+  MPI_Dist_graph_neighbors(_neighbour_comm, num_neighbours, sources.data(),
+                           NULL, num_neighbours, dests.data(), NULL);
+
+  int nbr_size = MPI::size(_neighbour_comm);
+  std::stringstream s;
+  s << _myrank << "/" << nbr_size << ": ";
+  for (int q : sources)
+    s << q << " ";
+  s << "\n";
+  std::cout << s.str();
+
+  assert(sources == dests);
+
+  // Number of indices to send
+  std::vector<std::int32_t> ind_send_sizes(num_neighbours);
+  // Number of indices to receive from neigbors
+  std::vector<std::int32_t> ind_recv_sizes(num_neighbours);
+
+  for (std::int32_t i = 0; i < num_neighbours; ++i)
   {
-    std::set<std::int32_t> ghost_set(
-        _ghost_owners.data(), _ghost_owners.data() + _ghost_owners.size());
-    std::vector<std::int32_t> sources(1, _myrank);
-    std::vector<std::int32_t> degrees(1, ghost_set.size());
-    std::vector<std::int32_t> dests(ghost_set.begin(), ghost_set.end());
+    int count = std::count(_ghost_owners.data(),
+                           _ghost_owners.data() + _ghost_owners.size(),
+                           neighbours[i]);
+    ind_send_sizes[i] = count;
+  }
 
-    // TODO: Avoid creating the graph twice
-    MPI_Dist_graph_create(_mpi_comm, sources.size(), sources.data(),
-                          degrees.data(), dests.data(), MPI_UNWEIGHTED,
-                          MPI_INFO_NULL, false, &_neighbour_comm);
+  MPI_Neighbor_alltoall(ind_send_sizes.data(), 1, MPI_INT,
+                        ind_recv_sizes.data(), 1, MPI_INT, _neighbour_comm);
 
-    std::int32_t in_degree, out_degree, w;
-    MPI_Dist_graph_neighbors_count(_neighbour_comm, &in_degree, &out_degree,
-                                   &w);
+  // Create vectors for forward communication
+  int n_send = std::accumulate(ind_send_sizes.begin(), ind_send_sizes.end(), 0);
+  std::vector<std::int64_t> indices_to_send(n_send);
+  int n_recv = std::accumulate(ind_recv_sizes.begin(), ind_recv_sizes.end(), 0);
+  std::vector<std::int64_t> indices_to_recv(n_recv);
 
-    sources.resize(in_degree);
-    dests.resize(out_degree);
-    MPI_Dist_graph_neighbors(_neighbour_comm, in_degree, sources.data(), NULL,
-                             out_degree, dests.data(), NULL);
+  // Create vectors for displacement
+  std::vector<std::int32_t> displs_send(num_neighbours);
+  std::partial_sum(ind_send_sizes.begin(), ind_send_sizes.end() - 1,
+                   displs_send.begin() + 1);
+  std::vector<std::int32_t> displs_recv(num_neighbours);
+  std::partial_sum(ind_recv_sizes.begin(), ind_recv_sizes.end() - 1,
+                   displs_recv.begin() + 1);
 
-    std::vector<std::int32_t> neighbours;
-    std::sort(sources.begin(), sources.end());
-    std::sort(dests.begin(), dests.end());
-    std::set_union(sources.begin(), sources.end(), dests.begin(), dests.end(),
-                   std::back_inserter(neighbours));
-
-    // No communication is needed to build the graph with complete adjacent
-    // information
-    MPI_Dist_graph_create_adjacent(
-        _mpi_comm, neighbours.size(), neighbours.data(), MPI_UNWEIGHTED,
-        neighbours.size(), neighbours.data(), MPI_UNWEIGHTED, MPI_INFO_NULL,
-        false, &_neighbour_comm);
-
-    std::int32_t num_neighbours = neighbours.size();
-    sources.resize(num_neighbours);
-    dests.resize(num_neighbours);
-    MPI_Dist_graph_neighbors(_neighbour_comm, num_neighbours, sources.data(),
-                             NULL, num_neighbours, dests.data(), NULL);
-
-    assert(sources == dests);
-
-    // Number of indices to send
-    std::vector<std::int32_t> ind_send_sizes(num_neighbours);
-    // Number of indices to receive from neigbors
-    std::vector<std::int32_t> ind_recv_sizes(num_neighbours);
-
-    for (std::int32_t i = 0; i < num_neighbours; ++i)
+  // TODO: simplify loop?
+  // Group indices to send by neighbour process
+  for (std::int32_t i = 0; i < num_neighbours; ++i)
+  {
+    int k = 0;
+    for (std::int32_t j = 0; j < _ghosts.size(); ++j)
     {
-      int count = std::count(_ghost_owners.data(),
-                             _ghost_owners.data() + _ghost_owners.size(),
-                             neighbours[i]);
-      ind_send_sizes[i] = count;
-    }
-
-    MPI_Neighbor_alltoall(ind_send_sizes.data(), 1, MPI_INT,
-                          ind_recv_sizes.data(), 1, MPI_INT, _neighbour_comm);
-
-    // Create vectors for forward communication
-    int n_send
-        = std::accumulate(ind_send_sizes.begin(), ind_send_sizes.end(), 0);
-    std::vector<std::int64_t> indices_to_send(n_send);
-    int n_recv
-        = std::accumulate(ind_recv_sizes.begin(), ind_recv_sizes.end(), 0);
-    std::vector<std::int64_t> indices_to_recv(n_recv);
-
-    // Create vectors for displacement
-    std::vector<std::int32_t> displs_send(num_neighbours);
-    std::partial_sum(ind_send_sizes.begin(), ind_send_sizes.end() - 1,
-                     displs_send.begin() + 1);
-    std::vector<std::int32_t> displs_recv(num_neighbours);
-    std::partial_sum(ind_recv_sizes.begin(), ind_recv_sizes.end() - 1,
-                     displs_recv.begin() + 1);
-
-    // TODO: simplify loop?
-    // Group indices to send by neighbour process
-    for (std::int32_t i = 0; i < num_neighbours; ++i)
-    {
-      int k = 0;
-      for (std::int32_t j = 0; j < _ghosts.size(); ++j)
+      if (neighbours[i] == _ghost_owners[j])
       {
-        if (neighbours[i] == _ghost_owners[j])
-        {
-          indices_to_send[displs_send[i] + k] = _ghosts[j];
-          k++;
-        }
+        indices_to_send[displs_send[i] + k] = _ghosts[j];
+        k++;
       }
     }
-
-    MPI_Neighbor_alltoallv(indices_to_send.data(), ind_send_sizes.data(),
-                           displs_send.data(), MPI_INT, indices_to_recv.data(),
-                           ind_recv_sizes.data(), displs_recv.data(), MPI_INT,
-                           _neighbour_comm);
   }
+
+  MPI_Neighbor_alltoallv(indices_to_send.data(), ind_send_sizes.data(),
+                         displs_send.data(), MPI_INT, indices_to_recv.data(),
+                         ind_recv_sizes.data(), displs_recv.data(), MPI_INT,
+                         _neighbour_comm);
 }
 //-----------------------------------------------------------------------------
 std::array<std::int64_t, 2> IndexMap::local_range() const
