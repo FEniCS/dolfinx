@@ -26,10 +26,10 @@ from dolfin.fem.solving import solve
 __all__ = [
     "create_vector", "create_vector_block", "create_vector_nest",
     "create_matrix", "create_matrix_block", "create_matrix_nest",
-    "apply_lifting", "assemble_scalar", "assemble_vector",
-    "assemble_vector_block",
+    "apply_lifting", "apply_lifting_nest", "assemble_scalar", "assemble_vector",
+    "assemble_vector_block", "assemble_vector_nest",
     "assemble_matrix_block", "assemble_matrix_nest",
-    "assemble_matrix", "set_bc", "create_coordinate_map",
+    "assemble_matrix", "set_bc", "set_bc_nest", "create_coordinate_map",
     "DirichletBC", "DofMap", "Form", "FormIntegrals",
     "derivative", "adjoint", "increase_order",
     "tear", "project", "solve"
