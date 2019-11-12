@@ -155,11 +155,11 @@ void FunctionSpace::interpolate(
                                             Eigen::RowMajor>>&)>& f) const
 {
   // Evaluate expression at dof points
-  const Eigen::Array<double, Eigen::Dynamic, 3, Eigen::RowMajor> x
-      = tabulate_dof_coordinates();
+  const Eigen::Array<double, 3, Eigen::Dynamic, Eigen::RowMajor> x
+      = tabulate_dof_coordinates().transpose();
   const Eigen::Array<PetscScalar, Eigen::Dynamic, Eigen::Dynamic,
                      Eigen::RowMajor>
-      values = f(x.transpose());
+      values = f(x);
 
   assert(_element);
   std::vector<int> vshape(_element->value_rank(), 1);
@@ -171,9 +171,9 @@ void FunctionSpace::interpolate(
   // Note: pybind11 maps 1D NumPy arrays to column vectors for
   // Eigen::Array<PetscScalar, Eigen::Dynamic,Eigen::Dynamic, Eigen::RowMajor>
   // types, therefore we need to handle vectors as a special case.
-  if (values.cols() == 1 and values.rows() != 1)
+  if (values.cols() == 1 and values.cols() != 1)
   {
-    if (values.rows() != x.rows())
+    if (values.rows() != x.cols())
     {
       throw std::runtime_error("Number of computed values is not equal to the "
                                "number of evaluation points. (1)");
@@ -185,7 +185,7 @@ void FunctionSpace::interpolate(
     if (values.rows() != value_size)
       throw std::runtime_error("Values shape is incorrect. (2)");
 
-    if (values.cols() != x.rows())
+    if (values.cols() != x.cols())
     {
       throw std::runtime_error("Number of computed values is not equal to the "
                                "number of evaluation points. (2)");
@@ -307,7 +307,7 @@ FunctionSpace::tabulate_dof_coordinates() const
   // Array to hold coordinates to return
   Eigen::Array<double, Eigen::Dynamic, 3, Eigen::RowMajor> x
       = Eigen::Array<double, Eigen::Dynamic, 3, Eigen::RowMajor>::Zero(
-          local_size, gdim);
+          local_size, 3);
 
   // Get coordinate mapping
   if (!_mesh->geometry().coord_mapping)
@@ -342,11 +342,8 @@ FunctionSpace::tabulate_dof_coordinates() const
     const int cell_index = cell.index();
     for (int i = 0; i < num_dofs_g; ++i)
     {
-      for (int j = 0; j < gdim; ++j)
-      {
-        coordinate_dofs.row(i).head(gdim)
-            = x_g.row(cell_g[pos_g[cell_index] + i]).head(gdim);
-      }
+      coordinate_dofs.row(i)
+          = x_g.row(cell_g[pos_g[cell_index] + i]).head(gdim);
     }
 
     // Get local-to-global map
@@ -359,7 +356,7 @@ FunctionSpace::tabulate_dof_coordinates() const
     for (Eigen::Index i = 0; i < dofs.size(); ++i)
     {
       const PetscInt dof = dofs[i];
-      x.row(dof) = coordinates.row(i);
+      x.row(dof).head(gdim) = coordinates.row(i);
     }
   }
 
