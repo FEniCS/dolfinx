@@ -151,14 +151,14 @@ void FunctionSpace::interpolate(
     Eigen::Ref<Eigen::Array<PetscScalar, Eigen::Dynamic, 1>> coefficients,
     const std::function<Eigen::Array<PetscScalar, Eigen::Dynamic,
                                      Eigen::Dynamic, Eigen::RowMajor>(
-        const Eigen::Ref<const Eigen::Array<
-            double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>>&)>& f)
-    const
+        const Eigen::Ref<const Eigen::Array<double, 3, Eigen::Dynamic,
+                                            Eigen::RowMajor>>&)>& f) const
 {
   // Evaluate expression at dof points
-  Eigen::Array<double, Eigen::Dynamic, 3, Eigen::RowMajor> x
+  const Eigen::Array<double, Eigen::Dynamic, 3, Eigen::RowMajor> x
       = tabulate_dof_coordinates();
-  Eigen::Array<PetscScalar, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
+  const Eigen::Array<PetscScalar, Eigen::Dynamic, Eigen::Dynamic,
+                     Eigen::RowMajor>
       values = f(x.transpose());
 
   assert(_element);
@@ -200,7 +200,7 @@ void FunctionSpace::interpolate_c(
     const interpolation_function& f) const
 {
   // Build list of points at which to evaluate the Expression
-  Eigen::Array<double, Eigen::Dynamic, 3, Eigen::RowMajor> x
+  const Eigen::Array<double, Eigen::Dynamic, 3, Eigen::RowMajor> x
       = tabulate_dof_coordinates();
 
   // Evaluate expression at points

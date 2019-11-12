@@ -46,9 +46,8 @@ void function(py::module& m)
       .def("interpolate",
            py::overload_cast<const std::function<Eigen::Array<
                PetscScalar, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>(
-               const Eigen::Ref<
-                   const Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic,
-                                      Eigen::RowMajor>>&)>&>(
+               const Eigen::Ref<const Eigen::Array<double, 3, Eigen::Dynamic,
+                                                   Eigen::RowMajor>>&)>&>(
                &dolfin::function::Function::interpolate),
            py::arg("f"), "Interpolate an expression")
       .def("interpolate",
@@ -62,13 +61,11 @@ void function(py::module& m)
                  f = reinterpret_cast<void (*)(PetscScalar*, int, int,
                                                const double*, int)>(addr);
              auto _f =
-                 [&f](
-                     Eigen::Ref<Eigen::Array<PetscScalar, Eigen::Dynamic,
-                                             Eigen::Dynamic, Eigen::RowMajor>>
-                         values,
-                     const Eigen::Ref<const Eigen::Array<double, Eigen::Dynamic,
-                                                         Eigen::Dynamic,
-                                                         Eigen::RowMajor>>& x) {
+                 [&f](Eigen::Ref<Eigen::Array<PetscScalar, Eigen::Dynamic,
+                                              Eigen::Dynamic, Eigen::RowMajor>>
+                          values,
+                      const Eigen::Ref<const Eigen::Array<
+                          double, Eigen::Dynamic, 3, Eigen::RowMajor>>& x) {
                    f(values.data(), values.rows(), values.cols(), x.data(),
                      x.cols());
                  };

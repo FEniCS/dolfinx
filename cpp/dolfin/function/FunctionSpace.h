@@ -90,8 +90,8 @@ public:
   using interpolation_function = std::function<void(
       Eigen::Ref<Eigen::Array<PetscScalar, Eigen::Dynamic, Eigen::Dynamic,
                               Eigen::RowMajor>>,
-      const Eigen::Ref<const Eigen::Array<double, Eigen::Dynamic,
-                                          Eigen::Dynamic, Eigen::RowMajor>>&)>;
+      const Eigen::Ref<
+          const Eigen::Array<double, Eigen::Dynamic, 3, Eigen::RowMajor>>&)>;
 
   /// Interpolate an expression into this function space, filling the
   /// array of expansion coefficients associated with this function
@@ -106,9 +106,8 @@ public:
       Eigen::Ref<Eigen::Array<PetscScalar, Eigen::Dynamic, 1>> coefficients,
       const std::function<Eigen::Array<PetscScalar, Eigen::Dynamic,
                                        Eigen::Dynamic, Eigen::RowMajor>(
-          const Eigen::Ref<const Eigen::Array<
-              double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>>&)>& f)
-      const;
+          const Eigen::Ref<const Eigen::Array<double, 3, Eigen::Dynamic,
+                                              Eigen::RowMajor>>&)>& f) const;
 
   /// Interpolate an expression into this function space, filling the
   /// array of expansion coefficients associated with this function
