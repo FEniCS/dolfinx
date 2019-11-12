@@ -230,8 +230,8 @@ c0, mu0 = split(u0)
 
 def u_init(x):
     """Initialise values for c and mu."""
-    values = np.zeros((x.shape[0], 2))
-    values[:, 0] = 0.63 + 0.02 * (0.5 - np.random.rand(x.shape[0]))
+    values = np.zeros((2, x.shape[1]))
+    values[0] = 0.63 + 0.02 * (0.5 - np.random.rand(x.shape[1]))
     return values
 
 

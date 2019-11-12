@@ -98,7 +98,7 @@ def test_linear_pde():
 
     def boundary(x):
         """Define Dirichlet boundary (x = 0 or x = 1)."""
-        return np.logical_or(x[:, 0] < 1.0e-8, x[:, 0] > 1.0 - 1.0e-8)
+        return np.logical_or(x[0] < 1.0e-8, x[0] > 1.0 - 1.0e-8)
 
     u_bc = function.Function(V)
     u_bc.vector.set(1.0)
@@ -134,7 +134,7 @@ def test_nonlinear_pde():
 
     def boundary(x):
         """Define Dirichlet boundary (x = 0 or x = 1)."""
-        return np.logical_or(x[:, 0] < 1.0e-8, x[:, 0] > 1.0 - 1.0e-8)
+        return np.logical_or(x[0] < 1.0e-8, x[0] > 1.0 - 1.0e-8)
 
     u_bc = function.Function(V)
     u_bc.vector.set(1.0)
@@ -172,7 +172,7 @@ def test_nonlinear_pde_snes():
 
     def boundary(x):
         """Define Dirichlet boundary (x = 0 or x = 1)."""
-        return np.logical_or(x[:, 0] < 1.0e-8, x[:, 0] > 1.0 - 1.0e-8)
+        return np.logical_or(x[0] < 1.0e-8, x[0] > 1.0 - 1.0e-8)
 
     u_bc = function.Function(V)
     u_bc.vector.set(1.0)
@@ -258,7 +258,7 @@ def test_newton_solver_inheritance_override_methods():
 
     def boundary(x):
         """Define Dirichlet boundary (x = 0 or x = 1)."""
-        return np.logical_or(x[:, 0] < 1.0e-8, x[:, 0] > 1.0 - 1.0e-8)
+        return np.logical_or(x[0] < 1.0e-8, x[0] > 1.0 - 1.0e-8)
 
     u_bc = function.Function(V)
     bc = fem.DirichletBC(V, u_bc, boundary)

@@ -127,7 +127,7 @@ mf1 = np.where(mf == 1)
 # No-slip boundary condition for velocity
 # x1 = 0, x1 = 1 and around the dolphin
 noslip = Function(W.sub(0).collapse())
-noslip.interpolate(lambda x: np.zeros((x.shape[0], 2)))
+noslip.interpolate(lambda x: np.zeros_like(x))
 
 bc0 = DirichletBC(W.sub(0), noslip, mf0[0])
 
@@ -136,8 +136,8 @@ bc0 = DirichletBC(W.sub(0), noslip, mf0[0])
 
 
 def inflow_eval(x):
-    values = np.zeros((x.shape[0], 2))
-    values[:, 0] = - np.sin(x[:, 1] * np.pi)
+    values = np.zeros((2, x.shape[1]))
+    values[0] = - np.sin(x[1] * np.pi)
     return values
 
 

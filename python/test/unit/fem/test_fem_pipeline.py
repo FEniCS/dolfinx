@@ -48,8 +48,8 @@ def test_manufactured_poisson(n, mesh, component):
     L = inner(f, v) * dx
 
     u_bc = Function(V)
-    u_bc.interpolate(lambda x: x[:, component]**n)
-    bc = DirichletBC(V, u_bc, lambda x: np.full(x.shape[0], True))
+    u_bc.interpolate(lambda x: x[component]**n)
+    bc = DirichletBC(V, u_bc, lambda x: np.full(x.shape[1], True))
 
     b = assemble_vector(L)
     apply_lifting(b, [a], [[bc]])

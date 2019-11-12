@@ -114,7 +114,7 @@ def test_complex_assembly_solve():
 
     # Reference Solution
     def ref_eval(x):
-        return np.cos(2 * np.pi * x[:, 0]) * np.cos(2 * np.pi * x[:, 1])
+        return np.cos(2 * np.pi * x[0]) * np.cos(2 * np.pi * x[1])
     u_ref = dolfin.function.Function(V)
     u_ref.interpolate(ref_eval)
 
