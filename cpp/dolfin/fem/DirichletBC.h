@@ -86,7 +86,7 @@ public:
   /// Marking function to define facets when DirichletBC applies
   using marking_function = std::function<Eigen::Array<bool, Eigen::Dynamic, 1>(
       const Eigen::Ref<
-          const Eigen::Array<double, Eigen::Dynamic, 3, Eigen::RowMajor>>&)>;
+          const Eigen::Array<double, 3, Eigen::Dynamic, Eigen::RowMajor>>&)>;
 
   /// Create boundary condition with marking method
   ///

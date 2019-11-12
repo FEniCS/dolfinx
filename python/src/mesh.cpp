@@ -379,6 +379,22 @@ void mesh(py::module& m)
       });
 
   m.def(
+      "build_distributed_mesh",
+      [](const MPICommWrapper comm, dolfin::mesh::CellType cell_type,
+         const Eigen::Ref<const Eigen::Array<
+             double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>>& points,
+         const Eigen::Ref<const Eigen::Array<std::int64_t, Eigen::Dynamic,
+                                             Eigen::Dynamic, Eigen::RowMajor>>&
+             cells,
+         const std::vector<std::int64_t>& global_cell_indices,
+         const dolfin::mesh::GhostMode ghost_mode,
+         const dolfin::mesh::Partitioner graph_partitioner) {
+        return dolfin::mesh::Partitioning::build_distributed_mesh(
+            comm.get(), cell_type, points, cells, global_cell_indices,
+            ghost_mode, graph_partitioner);
+      });
+
+  m.def(
       "build_from_partition",
       [](const MPICommWrapper comm, dolfin::mesh::CellType cell_type,
          const Eigen::Ref<const Eigen::Array<

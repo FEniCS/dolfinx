@@ -45,16 +45,16 @@ def test_matrix_assembly_block():
     V1 = dolfin.function.functionspace.FunctionSpace(mesh, P1)
 
     def boundary(x):
-        return numpy.logical_or(x[:, 0] < 1.0e-6, x[:, 0] > 1.0 - 1.0e-6)
+        return numpy.logical_or(x[0] < 1.0e-6, x[0] > 1.0 - 1.0e-6)
 
     def initial_guess_u(x):
-        return numpy.sin(x[:, 0]) * numpy.sin(x[:, 1])
+        return numpy.sin(x[0]) * numpy.sin(x[1])
 
     def initial_guess_p(x):
-        return -x[:, 0]**2 - x[:, 1]**3
+        return -x[0]**2 - x[1]**3
 
     def bc_value(x):
-        return numpy.cos(x[:, 0]) * numpy.cos(x[:, 1])
+        return numpy.cos(x[0]) * numpy.cos(x[1])
     u_bc = dolfin.function.Function(V1)
     u_bc.interpolate(bc_value)
     bc = dolfin.fem.dirichletbc.DirichletBC(V1, u_bc, boundary)
@@ -121,7 +121,7 @@ def test_matrix_assembly_block():
     u0, u1 = ufl.split(U)
     v0, v1 = dolfin.function.TestFunctions(W)
 
-    U.interpolate(lambda x: numpy.column_stack((initial_guess_u(x), initial_guess_p(x))))
+    U.interpolate(lambda x: numpy.row_stack((initial_guess_u(x), initial_guess_p(x))))
 
     F = inner(u0, v0) * dx + inner(u1, v0) * dx + inner(u0, v1) * dx + inner(u1, v1) * dx \
         - inner(f, v0) * ufl.dx - inner(g, v1) * dx
@@ -236,26 +236,25 @@ def test_assembly_solve_block():
     approaches and test that solution is the same.
     """
     mesh = dolfin.generation.UnitSquareMesh(dolfin.MPI.comm_world, 12, 11)
-    p0, p1 = 1, 1
-    P0 = ufl.FiniteElement("Lagrange", mesh.ufl_cell(), p0)
-    P1 = ufl.FiniteElement("Lagrange", mesh.ufl_cell(), p1)
-    V0 = dolfin.function.functionspace.FunctionSpace(mesh, P0)
-    V1 = dolfin.function.functionspace.FunctionSpace(mesh, P1)
+    p = 1
+    P = ufl.FiniteElement("Lagrange", mesh.ufl_cell(), p)
+    V0 = dolfin.function.functionspace.FunctionSpace(mesh, P)
+    V1 = V0.clone()
 
     def bc_val_0(x):
-        return x[:, 0]**2 + x[:, 1]**2
+        return x[0]**2 + x[1]**2
 
     def bc_val_1(x):
-        return numpy.sin(x[:, 0]) * numpy.cos(x[:, 1])
+        return numpy.sin(x[0]) * numpy.cos(x[1])
 
     def initial_guess_u(x):
-        return numpy.sin(x[:, 0]) * numpy.sin(x[:, 1])
+        return numpy.sin(x[0]) * numpy.sin(x[1])
 
     def initial_guess_p(x):
-        return -x[:, 0]**2 - x[:, 1]**3
+        return -x[0]**2 - x[1]**3
 
     def boundary(x):
-        return numpy.logical_or(x[:, 0] < 1.0e-6, x[:, 0] > 1.0 - 1.0e-6)
+        return numpy.logical_or(x[0] < 1.0e-6, x[0] > 1.0 - 1.0e-6)
 
     u_bc0 = dolfin.function.Function(V0)
     u_bc0.interpolate(bc_val_0)
@@ -364,7 +363,7 @@ def test_assembly_solve_block():
     assert x1norm == pytest.approx(x0norm, 1.0e-12)
 
     # -- Monolithic version
-    E = P0 * P1
+    E = P * P
     W = dolfin.function.functionspace.FunctionSpace(mesh, E)
     U = dolfin.function.Function(W)
     dU = dolfin.function.TrialFunction(W)
@@ -398,7 +397,7 @@ def test_assembly_solve_block():
     snes.setFunction(problem.F_mono, Fvec2)
     snes.setJacobian(problem.J_mono, J=Jmat2, P=None)
 
-    U.interpolate(lambda x: numpy.column_stack((initial_guess_u(x), initial_guess_p(x))))
+    U.interpolate(lambda x: numpy.row_stack((initial_guess_u(x), initial_guess_p(x))))
 
     x2 = dolfin.fem.create_vector(F)
     x2.array = U.vector.array_r
@@ -429,29 +428,28 @@ def test_assembly_solve_taylor_hood(mesh):
 
     def boundary0(x):
         """Define boundary x = 0"""
-        return x[:, 0] < 10 * numpy.finfo(float).eps
+        return x[0] < 10 * numpy.finfo(float).eps
 
     def boundary1(x):
         """Define boundary x = 1"""
-        return x[:, 0] > (1.0 - 10 * numpy.finfo(float).eps)
+        return x[0] > (1.0 - 10 * numpy.finfo(float).eps)
 
     def initial_guess_u(x):
-        d = x.shape[1]
-        u_init = numpy.column_stack(
-            (numpy.sin(x[:, 0]) * numpy.sin(x[:, 1]),
-             numpy.cos(x[:, 0]) * numpy.cos(x[:, 1])))
+        d = x.shape[0]
+        u_init = numpy.row_stack((numpy.sin(x[0]) * numpy.sin(x[1]),
+                                  numpy.cos(x[0]) * numpy.cos(x[1])))
         if d == 3:
-            u_init = numpy.column_stack((u_init, numpy.cos(x[:, 2])))
+            u_init = numpy.row_stack((u_init, numpy.cos(x[2])))
         return u_init
 
     def initial_guess_p(x):
-        return -x[:, 0]**2 - x[:, 1]**3
+        return -x[0]**2 - x[1]**3
 
     u_bc_0 = dolfin.Function(P2)
-    u_bc_0.interpolate(lambda x: numpy.column_stack(tuple(x[:, j] + float(j) for j in range(gdim))))
+    u_bc_0.interpolate(lambda x: numpy.row_stack(tuple(x[j] + float(j) for j in range(gdim))))
 
     u_bc_1 = dolfin.Function(P2)
-    u_bc_1.interpolate(lambda x: numpy.column_stack(tuple(numpy.sin(x[:, j]) for j in range(gdim))))
+    u_bc_1.interpolate(lambda x: numpy.row_stack(tuple(numpy.sin(x[j]) for j in range(gdim))))
 
     bcs = [dolfin.DirichletBC(P2, u_bc_0, boundary0),
            dolfin.DirichletBC(P2, u_bc_1, boundary1)]
@@ -578,7 +576,7 @@ def test_assembly_solve_taylor_hood(mesh):
     snes.setFunction(problem.F_mono, Fvec2)
     snes.setJacobian(problem.J_mono, J=Jmat2, P=Pmat2)
 
-    U.interpolate(lambda x: numpy.column_stack((initial_guess_u(x), initial_guess_p(x))))
+    U.interpolate(lambda x: numpy.row_stack((initial_guess_u(x), initial_guess_p(x))))
 
     x2 = dolfin.fem.create_vector(F)
     x2.array = U.vector.array_r

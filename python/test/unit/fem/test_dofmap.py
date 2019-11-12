@@ -1,4 +1,4 @@
-# Copyright (C) 2009-2018 Garth N. Wells
+# Copyright (C) 2009-2019 Garth N. Wells, Matthew W. Scroggs and Jorgen S. Dokken
 #
 # This file is part of DOLFIN (https://www.fenicsproject.org)
 #
@@ -468,7 +468,6 @@ def test_readonly_view_local_to_global_unwoned(mesh):
 
 
 @skip_in_parallel
-@skip_in_parallel
 @pytest.mark.parametrize('space_type', [
     ("P", 1), ("P", 2), ("P", 3), ("P", 4),
     ("N1curl", 1),
@@ -513,6 +512,69 @@ def test_triangle_dof_ordering(space_type):
     for i in edges[0]:
         for j in edges[1:]:
             assert np.allclose(edges[0][i], j[i])
+
+
+@pytest.mark.parametrize('space_type', [
+    ("P", 1), ("P", 2), ("P", 3), ("P", 4),
+    ("N1curl", 1),
+    ("RT", 1), ("RT", 2), ("RT", 3), ("RT", 4),
+    ("BDM", 1),
+    ("N2curl", 1),
+])
+def test_triangle_dof_ordering_parallel(space_type):
+    """Checks that dofs on shared triangle edges match up"""
+    # Create a triangle mesh
+    from random import shuffle
+    N = 10
+    points = np.array([[x / 2, y / 2] for x in range(N) for y in range(N)])
+    cells = []
+    for x in range(N - 1):
+        for y in range(N - 1):
+            a = N * y + x
+            for cell in [[a, a + 1, a + N + 1], [a, a + N + 1, a + N]]:
+                # Put points in cell in a random order to test dof permuting
+                shuffle(cell)
+                cells.append(cell)
+
+    if MPI.rank(MPI.comm_world) == 0:
+        # On process 0, input mesh data and distribute to other processes
+        mesh = cpp.mesh.build_distributed_mesh(MPI.comm_world, CellType.triangle, points,
+                                               np.array(cells), [], cpp.mesh.GhostMode.none,
+                                               cpp.mesh.Partitioner.scotch)
+    else:
+        # On other processes, accept distribiuted data
+        mesh = cpp.mesh.build_distributed_mesh(MPI.comm_world, CellType.triangle, np.ndarray((0, 2)),
+                                               np.ndarray((0, 3)), [], cpp.mesh.GhostMode.none,
+                                               cpp.mesh.Partitioner.scotch)
+
+    V = FunctionSpace(mesh, space_type)
+    dofmap = V.dofmap
+
+    edges = {}
+
+    # Get coordinates of dofs and edges and check that they are the same for each global dof number
+    X = V.element.dof_reference_coordinates()
+    coord_dofs = mesh.coordinate_dofs().entity_points()
+    x_g = mesh.geometry.points
+    cmap = fem.create_coordinate_map(mesh.ufl_domain())
+    for cell_n, cell in enumerate(coord_dofs):
+        dofs = dofmap.cell_dofs(cell_n)
+        edge_dofs_local = []
+        for i in range(3):
+            edge_dofs_local += list(dofmap.dof_layout.entity_dofs(1, i))
+        edge_dofs = [dofs[i] for i in edge_dofs_local]
+
+        x_coord_new = np.zeros([3, 2])
+        for v in range(3):
+            x_coord_new[v] = x_g[coord_dofs[cell_n, v], :2]
+        x = X.copy()
+        cmap.push_forward(x, X, x_coord_new)
+
+        for i, j in zip(edge_dofs, x[edge_dofs_local]):
+            if i in edges:
+                assert np.allclose(j, edges[i])
+            else:
+                edges[i] = j
 
 
 @skip_in_parallel
