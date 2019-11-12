@@ -111,8 +111,7 @@ def test_ghost_connectivities(mode):
 
     # Loop through ghosted mesh and check connectivities
     tdim = meshG.topology.dim
-    num_facets = meshG.num_entities(tdim -
-                                    1) - meshG.topology.ghost_offset(tdim - 1)
+    num_facets = meshG.num_entities(tdim - 1) - meshG.topology.ghost_offset(tdim - 1)
     allowable_cell_indices = range(meshG.num_cells())
     facet_mp = cpp.mesh.midpoints(meshG, tdim - 1,
                                   range(meshG.num_entities(tdim - 1)))
