@@ -236,11 +236,10 @@ def test_assembly_solve_block():
     approaches and test that solution is the same.
     """
     mesh = dolfin.generation.UnitSquareMesh(dolfin.MPI.comm_world, 12, 11)
-    p0, p1 = 1, 1
-    P0 = ufl.FiniteElement("Lagrange", mesh.ufl_cell(), p0)
-    P1 = ufl.FiniteElement("Lagrange", mesh.ufl_cell(), p1)
-    V0 = dolfin.function.functionspace.FunctionSpace(mesh, P0)
-    V1 = dolfin.function.functionspace.FunctionSpace(mesh, P1)
+    p = 1
+    P = ufl.FiniteElement("Lagrange", mesh.ufl_cell(), p)
+    V0 = dolfin.function.functionspace.FunctionSpace(mesh, P)
+    V1 = V0.clone()
 
     def bc_val_0(x):
         return x[:, 0]**2 + x[:, 1]**2
@@ -364,7 +363,7 @@ def test_assembly_solve_block():
     assert x1norm == pytest.approx(x0norm, 1.0e-12)
 
     # -- Monolithic version
-    E = P0 * P1
+    E = P * P
     W = dolfin.function.functionspace.FunctionSpace(mesh, E)
     U = dolfin.function.Function(W)
     dU = dolfin.function.TrialFunction(W)
