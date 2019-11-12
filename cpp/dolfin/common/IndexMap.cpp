@@ -91,7 +91,7 @@ IndexMap::IndexMap(MPI_Comm mpi_comm, std::int32_t local_size,
 
   // Create vectors for forward communication
   int n_send = std::accumulate(_reverse_sizes.begin(), _reverse_sizes.end(), 0);
-  std::vector<std::int64_t> reverse_indices(n_send);
+  std::vector<std::int32_t> reverse_indices(n_send);
   int n_recv = std::accumulate(_forward_sizes.begin(), _forward_sizes.end(), 0);
   _forward_indices.resize(n_recv);
 
@@ -104,9 +104,7 @@ IndexMap::IndexMap(MPI_Comm mpi_comm, std::int32_t local_size,
     displs_forward[i] = displs_forward[i - 1] + _forward_sizes[i - 1];
   }
 
-  std::vector<std::int32_t> displs;
-  std::copy(displs_reverse.begin(), displs_reverse.end(),
-            back_inserter(displs));
+  std::vector<std::int32_t> displs(displs_reverse);
   int nb_ind;
   std::vector<std::int32_t>::iterator it;
   for (std::int32_t j = 0; j < _ghosts.size(); ++j)
@@ -123,19 +121,6 @@ IndexMap::IndexMap(MPI_Comm mpi_comm, std::int32_t local_size,
                          displs_reverse.data(), MPI_INT,
                          _forward_indices.data(), _forward_sizes.data(),
                          displs_forward.data(), MPI_INT, _neighbour_comm);
-  std::stringstream s;
-  int nbr_size = MPI::size(_neighbour_comm);
-  s << _myrank << "/" << nbr_size << ": ";
-
-  s << "RANK = " << _myrank << "\n----------------\n";
-  for (auto& q : reverse_indices)
-    s << q << " ";
-  s << "\n---------------\n";
-  for (auto& q : _forward_indices)
-    s << q << " ";
-  s << "\n---------------";
-
-  std::cout << s.str() << "\n";
 }
 //-----------------------------------------------------------------------------
 std::array<std::int64_t, 2> IndexMap::local_range() const
@@ -263,10 +248,21 @@ void IndexMap::scatter_fwd_impl(const std::vector<T>& local_data,
       data_to_send[n * i + j] = local_data[n * _forward_indices[i] + j];
   }
 
-  MPI_Neighbor_alltoallv(data_to_send.data(), _forward_sizes.data(),
-                         displs_send.data(), MPI_INT, data_to_recv.data(),
-                         _reverse_sizes.data(), displs_recv.data(), MPI_INT,
-                         _neighbour_comm);
+  MPI_Neighbor_alltoallv(
+      data_to_send.data(), _forward_sizes.data(), displs_send.data(),
+      MPI::mpi_type<T>(), data_to_recv.data(), _reverse_sizes.data(),
+      displs_recv.data(), MPI::mpi_type<T>(), _neighbour_comm);
+
+  for (int i = 0; i < _ghosts.size(); ++i)
+  {
+    std::int32_t nb_ind
+        = std::find(_neighbours.begin(), _neighbours.end(), _ghost_owners[i])
+          - _neighbours.begin();
+    std::copy(data_to_recv.begin() + displs_recv[nb_ind],
+              data_to_recv.begin() + displs_recv[nb_ind] + n,
+              remote_data.begin() + i * n);
+    displs_recv[nb_ind] += n;
+  }
 }
 //-----------------------------------------------------------------------------
 template <typename T>
