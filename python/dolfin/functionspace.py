@@ -97,7 +97,10 @@ class FunctionSpace(ufl.FunctionSpace):
         return self._cpp_object.component()
 
     def contains(self, V) -> bool:
-        """Check whether a function is in the FunctionSpace."""
+        """Check whether a FunctionSpace is in this FunctionSpace, or is the
+        same as this FunctionSpace.
+
+        """
         return self._cpp_object.contains(V._cpp_object)
 
     def __contains__(self, u):
@@ -108,9 +111,7 @@ class FunctionSpace(ufl.FunctionSpace):
             try:
                 return u._cpp_object._in(self._cpp_object)
             except Exception as e:
-                raise RuntimeError(
-                    "Unable to check if object is in FunctionSpace ({})".
-                    format(e))
+                raise RuntimeError("Unable to check if object is in FunctionSpace ({})".format(e))
 
     def __eq__(self, other):
         """Comparison for equality."""
