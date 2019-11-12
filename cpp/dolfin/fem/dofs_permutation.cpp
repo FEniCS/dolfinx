@@ -446,6 +446,27 @@ compute_ordering_triangle(const mesh::Mesh& mesh)
 }
 //-----------------------------------------------------------------------------
 Eigen::Array<std::int8_t, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
+compute_ordering_interval(const mesh::Mesh& mesh)
+{
+  const int num_cells = mesh.num_entities(mesh.topology().dim());
+  const int num_permutations = get_num_permutations(mesh.cell_type());
+  Eigen::Array<std::int8_t, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
+      cell_orders(num_cells, num_permutations);
+
+  // Set orders for each cell
+  for (int cell_n = 0; cell_n < num_cells; ++cell_n)
+  {
+    const mesh::MeshEntity cell(mesh, 1, cell_n);
+    const std::int32_t* vertices = cell.entities(0);
+
+    // Set the orders for the edge flip
+    cell_orders(cell_n, 0) = (vertices[0] > vertices[1]);
+  }
+
+  return cell_orders;
+}
+//-----------------------------------------------------------------------------
+Eigen::Array<std::int8_t, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
 compute_ordering_quadrilateral(const mesh::Mesh& mesh)
 {
   const int num_cells = mesh.num_entities(mesh.topology().dim());
@@ -641,6 +662,36 @@ generate_permutations_triangle(const mesh::Mesh& mesh,
 }
 //-----------------------------------------------------------------------------
 Eigen::Array<int, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
+generate_permutations_interval(const mesh::Mesh& mesh,
+                               const fem::ElementDofLayout& dof_layout)
+{
+  const int num_permutations = get_num_permutations(mesh.cell_type());
+  const int dof_count = dof_layout.num_dofs();
+
+  const int edge_dofs = dof_layout.num_entity_dofs(1);
+  const int edge_bs = dof_layout.entity_block_size(1);
+
+  int perm_n = 0;
+
+  Eigen::Array<int, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
+      permutations(num_permutations, dof_count);
+  for (int i = 0; i < permutations.cols(); ++i)
+    permutations.col(i) = i;
+
+  // Make edge flipping permutations
+  const std::vector<int> base_flip = edge_flip(edge_dofs, edge_bs);
+  const Eigen::Array<int, Eigen::Dynamic, 1> edge
+      = dof_layout.entity_dofs(1, 0);
+  for (std::size_t i = 0; i < base_flip.size(); ++i)
+    permutations(perm_n, edge(i)) = edge(base_flip[i]);
+  ++perm_n;
+
+  assert(perm_n == get_num_permutations(mesh::CellType::interval));
+
+  return permutations;
+}
+//-----------------------------------------------------------------------------
+Eigen::Array<int, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
 generate_permutations_quadrilateral(const mesh::Mesh& mesh,
                                     const fem::ElementDofLayout& dof_layout)
 {
@@ -820,6 +871,13 @@ generate_permutations(const mesh::Mesh& mesh,
   {
     switch (mesh.cell_type())
     {
+    case (mesh::CellType::point):
+      // For a point, _permutations will have 0 rows, and _cell_ordering will
+      // have 0 columns, so the for loops that apply the permutations will be
+      // empty
+      break;
+    case (mesh::CellType::interval):
+      return generate_permutations_interval(mesh, dof_layout);
     case (mesh::CellType::triangle):
       return generate_permutations_triangle(mesh, dof_layout);
     case (mesh::CellType::tetrahedron):
@@ -829,19 +887,9 @@ generate_permutations(const mesh::Mesh& mesh,
     case (mesh::CellType::hexahedron):
       return generate_permutations_hexahedron(mesh, dof_layout);
 
-    // Temporarily do nothing for cell types not yet implemented
-    // For these shapes, _permutations will have 0 rows, and _cell_ordering will
-    // have 0 columns, so the for loops that apply the permutations will be
-    // empty
-    case (mesh::CellType::interval):
-      break;
-    case (mesh::CellType::point):
-      break;
-
     default:
-      throw std::runtime_error(
-          "Unrecognised cell type."); // The function should exit before this is
-                                      // reached
+      // The switch should exit before this is reached
+      throw std::runtime_error("Unrecognised cell type.");
     }
   }
 
@@ -854,6 +902,7 @@ generate_permutations(const mesh::Mesh& mesh,
     const std::vector<int> sub_view = dof_layout.sub_view({i});
     const Eigen::Array<int, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
         sub_perm = generate_permutations(mesh, *dof_layout.sub_dofmap({i}));
+    assert(unsigned(sub_view.size()) == sub_perm.cols());
     for (int p = 0; p < num_permutations; ++p)
       for (std::size_t j = 0; j < sub_view.size(); ++j)
         output(p, sub_view[j]) = sub_view[sub_perm(p, j)];
@@ -875,6 +924,12 @@ fem::compute_dof_permutations(const mesh::Mesh& mesh,
       cell_ordering;
   switch (mesh.cell_type())
   {
+  case (mesh::CellType::point):
+    cell_ordering.resize(mesh.num_entities(mesh.topology().dim()), 0);
+    break;
+  case (mesh::CellType::interval):
+    cell_ordering = compute_ordering_interval(mesh);
+    break;
   case (mesh::CellType::triangle):
     cell_ordering = compute_ordering_triangle(mesh);
     break;
@@ -888,15 +943,8 @@ fem::compute_dof_permutations(const mesh::Mesh& mesh,
     cell_ordering = compute_ordering_hexahedron(mesh);
     break;
 
-  // temporarily do nothing for cell types not yet implemented
-  case (mesh::CellType::interval):
-    cell_ordering.resize(mesh.num_entities(mesh.topology().dim()), 0);
-    break;
-  case (mesh::CellType::point):
-    cell_ordering.resize(mesh.num_entities(mesh.topology().dim()), 0);
-    break;
   default:
-    // The function should exit before this is reached
+    // The switch should exit before this is reached
     throw std::runtime_error("Unrecognised cell type.");
   }
 
