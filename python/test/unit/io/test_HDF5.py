@@ -178,10 +178,10 @@ def test_save_and_read_function(tempdir):
     assert F0.vector.norm() < 1.0e-12
     hdf5_file.close()
 
+
 @pytest.mark.parametrize("mesh0", [UnitSquareMesh(MPI.comm_world, 20, 20),
                                    cpp.generation.UnitDiscMesh.create(MPI.comm_world, 3,
-                                                                       cpp.mesh.GhostMode.none)
-])
+                                                                      cpp.mesh.GhostMode.none)])
 def test_save_and_read_mesh_2D(mesh0, tempdir):
     filename = os.path.join(tempdir, "mesh2d.h5")
 
