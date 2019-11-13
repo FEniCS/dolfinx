@@ -90,9 +90,7 @@ def test_second_order_tri(H, Z):
     mesh = Mesh(MPI.comm_world, CellType.triangle, points, cells, [], GhostMode.none)
 
     def e2(x):
-        values = np.empty((x.shape[0], 1))
-        values[:, 0] = x[:, 2] + x[:, 0] * x[:, 1]
-        return values
+        return x[2] + x[0] * x[1]
     degree = mesh.degree()
     # Interpolate function
     V = FunctionSpace(mesh, ("CG", degree))
@@ -137,9 +135,7 @@ def test_third_order_tri(H, Z):
                 [], GhostMode.none)
 
     def e2(x):
-        values = np.empty((x.shape[0], 1))
-        values[:, 0] = x[:, 2] + x[:, 0] * x[:, 1]
-        return values
+        return x[2] + x[0] * x[1]
     degree = mesh.degree()
     # Interpolate function
     V = FunctionSpace(mesh, ("CG", degree))
@@ -191,9 +187,7 @@ def test_fourth_order_tri(H, Z):
                 [], GhostMode.none)
 
     def e2(x):
-        values = np.empty((x.shape[0], 1))
-        values[:, 0] = x[:, 2] + x[:, 0] * x[:, 1]
-        return values
+        return x[2] + x[0] * x[1]
     degree = mesh.degree()
     # Interpolate function
     V = FunctionSpace(mesh, ("CG", degree))
@@ -355,9 +349,7 @@ def test_nth_order_triangle(order):
             nodes.append(j)
 
     def e2(x):
-        values = np.empty((x.shape[0], 1))
-        values[:, 0] = x[:, 2] + x[:, 0] * x[:, 1]
-        return values
+        return x[2] + x[0] * x[1]
 
     # For solution to be in functionspace
     V = FunctionSpace(mesh, ("CG", max(2, order)))
@@ -423,9 +415,7 @@ def test_second_order_quad(L, H, Z):
                 [], GhostMode.none)
 
     def e2(x):
-        values = np.empty((x.shape[0], 1))
-        values[:, 0] = x[:, 2] + x[:, 0] * x[:, 1]
-        return values
+        return x[2] + x[0] * x[1]
 
     # Interpolate function
     V = FunctionSpace(mesh, ("CG", 2))
@@ -484,9 +474,7 @@ def test_third_order_quad(L, H, Z):
                 [], GhostMode.none)
 
     def e2(x):
-        values = np.empty((x.shape[0], 1))
-        values[:, 0] = x[:, 2] + x[:, 0] * x[:, 1]
-        return values
+        return x[2] + x[0] * x[1]
 
     # Interpolate function
     V = FunctionSpace(mesh, ("CG", 3))
@@ -556,9 +544,7 @@ def test_fourth_order__quad(L, H, Z):
                 [], GhostMode.none)
 
     def e2(x):
-        values = np.empty((x.shape[0], 1))
-        values[:, 0] = x[:, 2] + x[:, 0] * x[:, 1]
-        return values
+        return x[2] + x[0] * x[1]
 
     V = FunctionSpace(mesh, ("CG", 4))
     u = Function(V)

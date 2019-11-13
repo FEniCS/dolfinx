@@ -136,8 +136,8 @@ mesh.geometry.coord_mapping = cmap
 # Define boundary condition on x = 0 or x = 1
 u0 = Function(V)
 u0.vector.set(0.0)
-bc = DirichletBC(V, u0, lambda x: np.logical_or(x[:, 0] < np.finfo(float).eps,
-                                                x[:, 0] > 1.0 - np.finfo(float).eps))
+bc = DirichletBC(V, u0, lambda x: np.logical_or(x[0] < np.finfo(float).eps,
+                                                x[0] > 1.0 - np.finfo(float).eps))
 
 # Next, we want to express the variational problem.  First, we need to
 # specify the trial function :math:`u` and the test function :math:`v`,

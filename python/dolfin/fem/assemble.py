@@ -209,7 +209,7 @@ def _(A: PETSc.Mat,
     """
     _a = _create_cpp_form(a)
     cpp.fem.assemble_matrix(A, _a, bcs)
-    if _a.function_space(0) == _a.function_space(1):
+    if _a.function_space(0).id == _a.function_space(1).id:
         cpp.fem.add_diagonal(A, _a.function_space(0), bcs, diagonal)
     return A
 

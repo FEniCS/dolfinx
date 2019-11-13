@@ -42,11 +42,11 @@ def test_read_write_p2_function(tempdir):
     F = Function(Q)
     if has_petsc_complex:
         def expr_eval(x):
-            return x[:, 0] + 1.0j * x[:, 0]
+            return x[0] + 1.0j * x[0]
         F.interpolate(expr_eval)
     else:
         def expr_eval(x):
-            return x[:, 0]
+            return x[0]
         F.interpolate(expr_eval)
 
     filename = os.path.join(tempdir, "tri6_function.xdmf")
