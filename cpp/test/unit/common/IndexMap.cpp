@@ -75,7 +75,7 @@ void test_scatter_rev()
   std::vector<std::int64_t> data_ghost(num_ghosts, value);
 
   // Scatter ghost values back to owner (sum)
-  idx_map.scatter_rev(data_local, data_ghost, 1, MPI_SUM);
+  idx_map.scatter_rev(data_local, data_ghost, 1, common::IndexMap::Mode::add);
   std::int64_t sum = std::accumulate(data_local.begin(), data_local.end(), 0);
   CHECK(sum == value * num_ghosts);
 
@@ -83,7 +83,8 @@ void test_scatter_rev()
   const int n = 5;
   std::vector<std::int64_t> data_local_n(n * size_local, 0);
   std::vector<std::int64_t> data_ghost_n(n * num_ghosts, value);
-  idx_map.scatter_rev(data_local_n, data_ghost_n, n, MPI_SUM);
+  idx_map.scatter_rev(data_local_n, data_ghost_n, n,
+                      common::IndexMap::Mode::add);
 
   CHECK(data_local_n.size() == n * size_local);
   std::int64_t sum_n
