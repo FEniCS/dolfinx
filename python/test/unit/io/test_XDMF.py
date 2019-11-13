@@ -11,9 +11,9 @@ import pytest
 from petsc4py import PETSc
 
 from dolfinx import (MPI, Function, FunctionSpace, Mesh, MeshFunction,
-                    MeshValueCollection, TensorFunctionSpace, UnitCubeMesh,
-                    UnitIntervalMesh, UnitSquareMesh, VectorFunctionSpace, cpp,
-                    has_petsc_complex)
+                     MeshValueCollection, TensorFunctionSpace, UnitCubeMesh,
+                     UnitIntervalMesh, UnitSquareMesh, VectorFunctionSpace, cpp,
+                     has_petsc_complex)
 from dolfinx.cpp.mesh import CellType
 from dolfinx.io import XDMFFile
 from dolfinx_utils.test.fixtures import tempdir

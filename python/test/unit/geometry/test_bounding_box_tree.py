@@ -9,7 +9,7 @@ import numpy
 import pytest
 
 from dolfinx import (MPI, UnitCubeMesh, UnitIntervalMesh, UnitSquareMesh, cpp,
-                    geometry)
+                     geometry)
 from dolfinx.geometry import BoundingBoxTree
 from dolfinx_utils.test.skips import skip_in_parallel
 

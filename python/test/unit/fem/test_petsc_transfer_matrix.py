@@ -10,7 +10,7 @@ import numpy as np
 import pytest
 
 from dolfinx import (MPI, Function, FunctionSpace, UnitCubeMesh, UnitSquareMesh,
-                    VectorFunctionSpace)
+                     VectorFunctionSpace)
 from dolfinx.cpp.fem import PETScDMCollection
 from ufl import FiniteElement, MixedElement, VectorElement
 

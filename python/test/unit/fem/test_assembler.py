@@ -289,7 +289,7 @@ def test_assembly_solve_block():
 
     A0 = dolfinx.fem.assemble_matrix_block([[a00, a01], [a10, a11]], bcs)
     b0 = dolfinx.fem.assemble_vector_block([L0, L1], [[a00, a01], [a10, a11]],
-                                          bcs)
+                                           bcs)
     A0.assemble()
     A0norm = A0.norm()
     b0norm = b0.norm()
@@ -473,7 +473,7 @@ def test_assembly_solve_taylor_hood(mesh):
     assert P1.norm() == pytest.approx(P0norm, 1.0e-12)
 
     b1 = dolfinx.fem.assemble_vector_block([L0, L1], [[a00, a01], [a10, a11]],
-                                          [bc0, bc1])
+                                           [bc0, bc1])
 
     assert b1.norm() == pytest.approx(b0norm, 1.0e-12)
 
@@ -557,10 +557,12 @@ def test_basic_interior_facet_assembly():
     if (dolfinx.MPI.size(dolfinx.MPI.comm_world) > 1):
         ghost_mode = dolfinx.cpp.mesh.GhostMode.shared_facet
 
-    mesh = dolfinx.RectangleMesh(dolfinx.MPI.comm_world, [numpy.array([0.0, 0.0, 0.0]),
-                                                        numpy.array([1.0, 1.0, 0.0])], [5, 5],
-                                cell_type=dolfinx.cpp.mesh.CellType.triangle,
-                                ghost_mode=ghost_mode)
+    mesh = dolfinx.RectangleMesh(dolfinx.MPI.comm_world,
+                                 [numpy.array([0.0, 0.0, 0.0]),
+                                  numpy.array([1.0, 1.0, 0.0])],
+                                 [5, 5],
+                                 cell_type=dolfinx.cpp.mesh.CellType.triangle,
+                                 ghost_mode=ghost_mode)
 
     V = functionspace.FunctionSpace(mesh, ("DG", 1))
     u, v = ufl.TrialFunction(V), ufl.TestFunction(V)

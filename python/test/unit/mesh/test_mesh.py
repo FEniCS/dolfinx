@@ -16,8 +16,8 @@ from dolfinx_utils.test.skips import skip_in_parallel
 import dolfinx
 import FIAT
 from dolfinx import (MPI, BoxMesh, Mesh, MeshEntity, MeshFunction,
-                    RectangleMesh, UnitCubeMesh, UnitIntervalMesh,
-                    UnitSquareMesh, cpp)
+                     RectangleMesh, UnitCubeMesh, UnitIntervalMesh,
+                     UnitSquareMesh, cpp)
 from dolfinx.cpp.mesh import CellType, is_simplex
 from dolfinx.fem import assemble_scalar
 from dolfinx.io import XDMFFile

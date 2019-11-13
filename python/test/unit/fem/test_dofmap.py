@@ -12,8 +12,8 @@ import pytest
 from dolfinx_utils.test.skips import skip_in_parallel
 
 from dolfinx import (MPI, FunctionSpace, Mesh, MeshEntity, UnitCubeMesh,
-                    UnitIntervalMesh, UnitSquareMesh, VectorFunctionSpace, cpp,
-                    fem)
+                     UnitIntervalMesh, UnitSquareMesh, VectorFunctionSpace, cpp,
+                     fem)
 from dolfinx.cpp.mesh import CellType, GhostMode
 from ufl import FiniteElement, MixedElement, VectorElement
 from random import shuffle

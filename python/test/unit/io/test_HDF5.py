@@ -10,7 +10,7 @@ import numpy
 from petsc4py import PETSc
 
 from dolfinx import (MPI, Function, FunctionSpace, MeshEntity, MeshFunction,
-                    MeshValueCollection, UnitCubeMesh, UnitSquareMesh, cpp)
+                     MeshValueCollection, UnitCubeMesh, UnitSquareMesh, cpp)
 from dolfinx.io import HDF5File
 from dolfinx_utils.test.fixtures import tempdir
 from dolfinx_utils.test.skips import xfail_if_complex

@@ -11,8 +11,8 @@ from dolfinx_utils.test.fixtures import tempdir
 from dolfinx_utils.test.skips import skip_in_parallel
 
 from dolfinx import (MPI, Function, FunctionSpace, MeshFunction,
-                    TensorFunctionSpace, UnitCubeMesh, UnitIntervalMesh,
-                    UnitSquareMesh, VectorFunctionSpace)
+                     TensorFunctionSpace, UnitCubeMesh, UnitIntervalMesh,
+                     UnitSquareMesh, VectorFunctionSpace)
 from dolfinx.io import VTKFile
 
 assert (tempdir)

@@ -7,7 +7,7 @@
 import os
 
 from dolfinx import (MPI, Function, FunctionSpace, VectorFunctionSpace, cpp,
-                    fem, has_petsc_complex)
+                     fem, has_petsc_complex)
 from dolfinx.io import XDMFFile
 from dolfinx_utils.test.fixtures import tempdir
 
