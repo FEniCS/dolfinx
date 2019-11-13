@@ -141,8 +141,8 @@ int main(int argc, char* argv[])
   auto u0 = std::make_shared<function::Function>(V);
 
   std::vector<std::shared_ptr<const fem::DirichletBC>> bc
-      = {std::make_shared<fem::DirichletBC>(V, u0, [](auto x) {
-          return (x.col(0) < DBL_EPSILON or x.col(0) > 1.0 - DBL_EPSILON);
+      = {std::make_shared<fem::DirichletBC>(V, u0, [](auto& x) {
+          return (x.row(0) < DBL_EPSILON or x.row(0) > 1.0 - DBL_EPSILON);
         })};
 
   // Next, we define the variational formulation by initializing the
@@ -169,13 +169,12 @@ int main(int argc, char* argv[])
   auto cmap = a->coordinate_mapping();
   mesh->geometry().coord_mapping = cmap;
 
-  // auto dx = Eigen::square(x - 0.5);
-  // values = 10.0 * Eigen::exp(-(dx.col(0) + dx.col(1)) / 0.02);
-  f->interpolate([](auto x) {
+  f->interpolate([](auto& x) {
     auto dx = Eigen::square(x - 0.5);
-    return 10.0 * Eigen::exp(-(dx.col(0) + dx.col(1)) / 0.02);
+    return 10.0 * Eigen::exp(-(dx.row(0) + dx.row(1)) / 0.02);
   });
-  g->interpolate([](auto x) { return Eigen::sin(5 * x.col(0)); });
+
+  g->interpolate([](auto& x) { return Eigen::sin(5 * x.row(0)); });
   L->set_coefficients({{"f", f}, {"g", g}});
 
   // Prepare and set Constants for the bilinear form

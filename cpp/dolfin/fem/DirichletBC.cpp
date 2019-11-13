@@ -111,7 +111,7 @@ get_remote_bcs(const common::IndexMap& map, const common::IndexMap& map_g,
 std::vector<std::int32_t> marked_facets(
     const mesh::Mesh& mesh,
     const std::function<Eigen::Array<bool, Eigen::Dynamic, 1>(
-        const Eigen::Ref<const Eigen::Array<double, Eigen::Dynamic, 3,
+        const Eigen::Ref<const Eigen::Array<double, 3, Eigen::Dynamic,
                                             Eigen::RowMajor>>&)>& marker)
 {
   const int tdim = mesh.topology().dim();
@@ -153,17 +153,18 @@ std::vector<std::int32_t> marked_facets(
       = mesh.geometry().points();
 
   // Pack coordinates of all boundary vertices
-  Eigen::Array<double, Eigen::Dynamic, 3, Eigen::RowMajor> x_boundary(count, 3);
+  Eigen::Array<double, 3, Eigen::Dynamic, Eigen::RowMajor> x_boundary(3, count);
   for (std::int32_t i = 0; i < mesh.num_entities(0); ++i)
   {
     if (boundary_vertex[i] != -1)
-      x_boundary.row(boundary_vertex[i]) = x_all.row(i);
+      x_boundary.col(boundary_vertex[i]) = x_all.row(i);
   }
 
   // Run marker function on boundary vertices
   const Eigen::Array<bool, Eigen::Dynamic, 1> boundary_marked
       = marker(x_boundary);
-  assert(boundary_marked.rows() == x_boundary.rows());
+  if (boundary_marked.rows() != x_boundary.cols())
+    throw std::runtime_error("Length of array of boundary markers is wrong.");
 
   // Iterate over facets
   const std::vector<bool> boundary_facet
@@ -180,7 +181,7 @@ std::vector<std::int32_t> marked_facets(
       for (const auto& v : mesh::EntityRange(facet, 0))
       {
         const std::int32_t idx = v.index();
-        assert(boundary_vertex[idx] < boundary_marked.size());
+        assert(boundary_vertex[idx] < boundary_marked.rows());
         if (!boundary_marked[boundary_vertex[idx]])
         {
           all_vertices_marked = false;
