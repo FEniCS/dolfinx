@@ -39,7 +39,7 @@ IndexMap::IndexMap(MPI_Comm mpi_comm, std::int32_t local_size,
     _ghost_owners[i] = owner(ghosts[i]);
     assert(_ghost_owners[i] != _myrank);
 
-    // Send desired index to remote
+    // Accumulate number of indices to send to process p
     const int p = _ghost_owners[i];
     ++send_nghosts[p];
   }
@@ -59,7 +59,7 @@ IndexMap::IndexMap(MPI_Comm mpi_comm, std::int32_t local_size,
   std::int32_t num_neighbours = _neighbours.size();
 
   // No further communication is needed to build the graph with complete
-  // adjacent information
+  // adjacency information
   MPI_Dist_graph_create_adjacent(
       _mpi_comm, _neighbours.size(), _neighbours.data(), MPI_UNWEIGHTED,
       _neighbours.size(), _neighbours.data(), MPI_UNWEIGHTED, MPI_INFO_NULL,
@@ -93,9 +93,13 @@ IndexMap::IndexMap(MPI_Comm mpi_comm, std::int32_t local_size,
     const int p = _ghost_owners[j];
     const auto it = std::find(_neighbours.begin(), _neighbours.end(), p);
     assert(it != _neighbours.end());
-    const int nb_ind = it - _neighbours.begin();
-    reverse_indices[displs[nb_ind]] = _ghosts[j] - _all_ranges[p];
-    ++displs[nb_ind];
+    const int np = it - _neighbours.begin();
+
+    // Convert to neighbour number instead of global process number
+    _ghost_owners[j] = np;
+
+    reverse_indices[displs[np]] = _ghosts[j] - _all_ranges[p];
+    ++displs[np];
   }
 
   //  May have repeated shared indices with different processes
@@ -134,7 +138,12 @@ int IndexMap::owner(std::int64_t global_index) const
 const Eigen::Array<std::int32_t, Eigen::Dynamic, 1>
 IndexMap::ghost_owners() const
 {
-  return _ghost_owners;
+  Eigen::Array<std::int32_t, Eigen::Dynamic, 1> proc_owners(
+      _ghost_owners.size());
+  for (int i = 0; i < proc_owners.size(); ++i)
+    proc_owners[i] = _neighbours[_ghost_owners[i]];
+
+  return proc_owners;
 }
 //----------------------------------------------------------------------------
 Eigen::Array<std::int64_t, Eigen::Dynamic, 1>
@@ -224,11 +233,10 @@ void IndexMap::scatter_fwd_impl(const std::vector<T>& local_data,
 
   // Allocate buffers for sending and receiving data
   int n_send = displs_send.back();
-  int n_recv = displs_recv.back();
-
   std::vector<T> data_to_send(n_send);
+  int n_recv = displs_recv.back();
   std::vector<T> data_to_recv(n_recv);
-  int nb_ind;
+
   for (std::size_t i = 0; i < _forward_indices.size(); ++i)
   {
     const int index = _forward_indices[i];
@@ -241,14 +249,13 @@ void IndexMap::scatter_fwd_impl(const std::vector<T>& local_data,
       MPI::mpi_type<T>(), data_to_recv.data(), recv_sizes.data(),
       displs_recv.data(), MPI::mpi_type<T>(), _neighbour_comm);
 
-  std::vector<std::int32_t> offsets_recv(displs_recv);
+  std::vector<std::int32_t> displs(displs_recv);
   for (int i = 0; i < _ghosts.size(); ++i)
   {
-    nb_ind = std::find(_neighbours.begin(), _neighbours.end(), _ghost_owners[i])
-             - _neighbours.begin();
+    const int np = _ghost_owners[i];
     for (std::int32_t j = 0; j < n; ++j)
-      remote_data[i * n + j] = data_to_recv[offsets_recv[nb_ind] + j];
-    offsets_recv[nb_ind] += n;
+      remote_data[i * n + j] = data_to_recv[displs[np] + j];
+    displs[np] += n;
   }
 }
 //-----------------------------------------------------------------------------
@@ -263,42 +270,39 @@ void IndexMap::scatter_rev_impl(std::vector<T>& local_data,
   int num_neighbours = _neighbours.size();
 
   // Create displacement vectors
-  std::vector<std::int32_t> displs_reverse(num_neighbours + 1, 0);
-  std::vector<std::int32_t> displs_forward(num_neighbours + 1, 0);
-  std::vector<std::int32_t> reverse_sizes(num_neighbours, 0);
-  std::vector<std::int32_t> forward_sizes(num_neighbours, 0);
+  std::vector<std::int32_t> displs_send(num_neighbours + 1, 0);
+  std::vector<std::int32_t> displs_recv(num_neighbours + 1, 0);
+  std::vector<std::int32_t> send_sizes(num_neighbours, 0);
+  std::vector<std::int32_t> recv_sizes(num_neighbours, 0);
   for (std::int32_t i = 0; i < num_neighbours; ++i)
   {
-    reverse_sizes[i] = _reverse_sizes[i] * n;
-    forward_sizes[i] = _forward_sizes[i] * n;
-    displs_reverse[i + 1] = displs_reverse[i] + reverse_sizes[i];
-    displs_forward[i + 1] = displs_forward[i] + forward_sizes[i];
+    send_sizes[i] = _reverse_sizes[i] * n;
+    recv_sizes[i] = _forward_sizes[i] * n;
+    displs_send[i + 1] = displs_send[i] + send_sizes[i];
+    displs_recv[i + 1] = displs_recv[i] + recv_sizes[i];
   }
 
   // Create vectors for forward communication
-  int n_send = displs_reverse.back();
+  int n_send = displs_send.back();
   std::vector<T> send_data(n_send);
-  int n_recv = displs_forward.back();
+  int n_recv = displs_recv.back();
   std::vector<T> recv_data(n_recv);
 
   // Fill send data
-  std::vector<std::int32_t> displs(displs_reverse);
+  std::vector<std::int32_t> displs(displs_send);
   for (std::int32_t i = 0; i < _ghosts.size(); ++i)
   {
-    const int p = _ghost_owners[i];
-    const auto it = std::find(_neighbours.begin(), _neighbours.end(), p);
-    assert(it != _neighbours.end());
-    const int nb_ind = it - _neighbours.begin();
-    for (int j = 0; j < n; ++j)
-      send_data[displs[nb_ind] + j] = remote_data[i * n + j];
-    displs[nb_ind] += n;
+    const int np = _ghost_owners[i];
+    for (std::int32_t j = 0; j < n; ++j)
+      send_data[displs[np] + j] = remote_data[i * n + j];
+    displs[np] += n;
   }
 
   //  May have repeated shared indices with different processes
   MPI_Neighbor_alltoallv(
-      send_data.data(), reverse_sizes.data(), displs_reverse.data(),
-      MPI::mpi_type<T>(), recv_data.data(), forward_sizes.data(),
-      displs_forward.data(), MPI::mpi_type<T>(), _neighbour_comm);
+      send_data.data(), send_sizes.data(), displs_send.data(),
+      MPI::mpi_type<T>(), recv_data.data(), recv_sizes.data(),
+      displs_recv.data(), MPI::mpi_type<T>(), _neighbour_comm);
 
   for (std::size_t i = 0; i < _forward_indices.size(); ++i)
   {
