@@ -6,7 +6,7 @@
 
 from math import pi
 
-from dolfin import MPI, MeshQuality, UnitCubeMesh
+from dolfinx import MPI, MeshQuality, UnitCubeMesh
 
 
 def test_dihedral_angles_min_max():

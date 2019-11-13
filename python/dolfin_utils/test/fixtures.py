@@ -11,7 +11,7 @@ from collections import defaultdict
 
 import pytest
 
-from dolfin import MPI
+from dolfinx import MPI
 
 # --- Test fixtures (use as is or as examples): ---
 

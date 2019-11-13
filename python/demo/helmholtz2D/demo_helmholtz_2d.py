@@ -14,10 +14,10 @@ solution and source term."""
 
 import numpy as np
 
-from dolfin import (MPI, FacetNormal, Function, FunctionSpace, UnitSquareMesh,
+from dolfinx import (MPI, FacetNormal, Function, FunctionSpace, UnitSquareMesh,
                     has_petsc_complex, solve)
-from dolfin.fem.assemble import assemble_scalar
-from dolfin.io import XDMFFile
+from dolfinx.fem.assemble import assemble_scalar
+from dolfinx.io import XDMFFile
 from ufl import TestFunction, TrialFunction, dx, grad, inner
 
 # wavenumber

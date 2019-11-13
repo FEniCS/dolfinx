@@ -8,10 +8,10 @@ import numpy as np
 import pytest
 from petsc4py import PETSc
 
-from dolfin import (MPI, DirichletBC, Function, FunctionSpace, UnitCubeMesh,
+from dolfinx import (MPI, DirichletBC, Function, FunctionSpace, UnitCubeMesh,
                     UnitIntervalMesh, UnitSquareMesh)
-from dolfin.cpp.mesh import CellType
-from dolfin.fem import (apply_lifting, assemble_matrix, assemble_scalar,
+from dolfinx.cpp.mesh import CellType
+from dolfinx.fem import (apply_lifting, assemble_matrix, assemble_scalar,
                         assemble_vector, set_bc)
 from ufl import (SpatialCoordinate, TestFunction, TrialFunction, div, dx, grad,
                  inner)

@@ -77,20 +77,20 @@
 import matplotlib.pyplot as plt
 import numpy as np
 
-import dolfin
-import dolfin.plotting
+import dolfinx
+import dolfinx.plotting
 import ufl
-from dolfin import (MPI, DirichletBC, Function, FunctionSpace, RectangleMesh,
+from dolfinx import (MPI, DirichletBC, Function, FunctionSpace, RectangleMesh,
                     solve)
-from dolfin.cpp.mesh import CellType
-from dolfin.io import XDMFFile
-from dolfin.specialfunctions import SpatialCoordinate
+from dolfinx.cpp.mesh import CellType
+from dolfinx.io import XDMFFile
+from dolfinx.specialfunctions import SpatialCoordinate
 from ufl import ds, dx, grad, inner
 
 # We begin by defining a mesh of the domain and a finite element
 # function space :math:`V` relative to this mesh. As the unit square is
 # a very standard domain, we can use a built-in mesh provided by the
-# class :py:class:`UnitSquareMesh <dolfin.cpp.UnitSquareMesh>`. In order
+# class :py:class:`UnitSquareMesh <dolfinx.cpp.UnitSquareMesh>`. In order
 # to create a mesh consisting of 32 x 32 squares with each square
 # divided into two triangles, we do as follows ::
 
@@ -98,14 +98,14 @@ from ufl import ds, dx, grad, inner
 mesh = RectangleMesh(
     MPI.comm_world,
     [np.array([0, 0, 0]), np.array([1, 1, 0])], [32, 32],
-    CellType.triangle, dolfin.cpp.mesh.GhostMode.none)
+    CellType.triangle, dolfinx.cpp.mesh.GhostMode.none)
 V = FunctionSpace(mesh, ("Lagrange", 1))
 
-cmap = dolfin.fem.create_coordinate_map(mesh.ufl_domain())
+cmap = dolfinx.fem.create_coordinate_map(mesh.ufl_domain())
 mesh.geometry.coord_mapping = cmap
 
 # The second argument to :py:class:`FunctionSpace
-# <dolfin.functions.functionspace.FunctionSpace>` is the finite element
+# <dolfinx.functions.functionspace.FunctionSpace>` is the finite element
 # family, while the third argument specifies the polynomial
 # degree. Thus, in this case, our space ``V`` consists of first-order,
 # continuous Lagrange finite element functions (or in order words,
@@ -123,13 +123,13 @@ mesh.geometry.coord_mapping = cmap
 # small number (such as machine precision).) ::
 
 # Now, the Dirichlet boundary condition can be created using the class
-# :py:class:`DirichletBC <dolfin.fem.bcs.DirichletBC>`. A
-# :py:class:`DirichletBC <dolfin.fem.bcs.DirichletBC>` takes three
+# :py:class:`DirichletBC <dolfinx.fem.bcs.DirichletBC>`. A
+# :py:class:`DirichletBC <dolfinx.fem.bcs.DirichletBC>` takes three
 # arguments: the function space the boundary condition applies to, the
 # value of the boundary condition, and the part of the boundary on which
 # the condition applies. In our example, the function space is ``V``,
 # the value of the boundary condition (0.0) can represented using a
-# :py:class:`Function <dolfin.functions.Function>` and the
+# :py:class:`Function <dolfinx.functions.Function>` and the
 # Dirichlet boundary is defined immediately above. The definition of the
 # Dirichlet boundary condition then looks as follows: ::
 
@@ -142,11 +142,11 @@ bc = DirichletBC(V, u0, lambda x: np.logical_or(x[0] < np.finfo(float).eps,
 # Next, we want to express the variational problem.  First, we need to
 # specify the trial function :math:`u` and the test function :math:`v`,
 # both living in the function space :math:`V`. We do this by defining a
-# :py:class:`TrialFunction <dolfin.functions.function.TrialFunction>`
+# :py:class:`TrialFunction <dolfinx.functions.function.TrialFunction>`
 # and a :py:class:`TestFunction
-# <dolfin.functions.function.TrialFunction>` on the previously defined
+# <dolfinx.functions.function.TrialFunction>` on the previously defined
 # :py:class:`FunctionSpace
-# <dolfin.functions.functionspace.FunctionSpace>` ``V``.
+# <dolfinx.functions.functionspace.FunctionSpace>` ``V``.
 #
 # Further, the source :math:`f` and the boundary normal derivative
 # :math:`g` are involved in the variational forms, and hence we must
@@ -166,12 +166,12 @@ L = inner(f, v) * dx + inner(g, v) * ds
 
 # Now, we have specified the variational forms and can consider the
 # solution of the variational problem. First, we need to define a
-# :py:class:`Function <dolfin.functions.function.Function>` ``u`` to
+# :py:class:`Function <dolfinx.functions.function.Function>` ``u`` to
 # represent the solution. (Upon initialization, it is simply set to the
 # zero function.) A :py:class:`Function
-# <dolfin.functions.function.Function>` represents a function living in
+# <dolfinx.functions.function.Function>` represents a function living in
 # a finite element function space. Next, we can call the :py:func:`solve
-# <dolfin.fem.solving.solve>` function with the arguments ``a == L``,
+# <dolfinx.fem.solving.solve>` function with the arguments ``a == L``,
 # ``u`` and ``bc`` as follows: ::
 
 # Compute solution
@@ -183,11 +183,11 @@ solve(a == L, u, bc, petsc_options={"ksp_type": "preonly", "pc_type": "lu"})
 # used. However, the solution process can be controlled in much more
 # detail if desired.
 #
-# A :py:class:`Function <dolfin.functions.function.Function>` can be
+# A :py:class:`Function <dolfinx.functions.function.Function>` can be
 # manipulated in various ways, in particular, it can be plotted and
 # saved to file. Here, we output the solution to an ``XDMF`` file
 # for later visualization and also plot it using
-# the :py:func:`plot <dolfin.common.plot.plot>` command: ::
+# the :py:func:`plot <dolfinx.common.plot.plot>` command: ::
 
 # Save solution in XDMF format
 with XDMFFile(
@@ -196,5 +196,5 @@ with XDMFFile(
     file.write(u)
 
 # Plot solution
-dolfin.plotting.plot(u)
+dolfinx.plotting.plot(u)
 plt.show()

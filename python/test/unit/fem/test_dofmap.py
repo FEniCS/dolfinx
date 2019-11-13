@@ -9,12 +9,12 @@ import sys
 
 import numpy as np
 import pytest
-from dolfin_utils.test.skips import skip_in_parallel
+from dolfinx_utils.test.skips import skip_in_parallel
 
-from dolfin import (MPI, FunctionSpace, Mesh, MeshEntity, UnitCubeMesh,
+from dolfinx import (MPI, FunctionSpace, Mesh, MeshEntity, UnitCubeMesh,
                     UnitIntervalMesh, UnitSquareMesh, VectorFunctionSpace, cpp,
                     fem)
-from dolfin.cpp.mesh import CellType, GhostMode
+from dolfinx.cpp.mesh import CellType, GhostMode
 from ufl import FiniteElement, MixedElement, VectorElement
 from random import shuffle
 

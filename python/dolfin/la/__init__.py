@@ -6,15 +6,15 @@
 
 import numpy as np
 
-from dolfin import cpp
-from dolfin.la.solver import solve
+from dolfinx import cpp
+from dolfinx.la.solver import solve
 
 __all__ = [
     "solve"
 ]
 
-# Import pybind11 objects into dolfin.la
-from dolfin.cpp.la import VectorSpaceBasis  # noqa
+# Import pybind11 objects into dolfinx.la
+from dolfinx.cpp.la import VectorSpaceBasis  # noqa
 
 
 def la_index_dtype():

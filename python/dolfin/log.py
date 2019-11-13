@@ -6,5 +6,5 @@
 
 """Logging module"""
 
-# Import pybind11 wrapped code intp dolfin.log
-from dolfin.cpp.log import log, set_output_file, set_log_level, get_log_level, LogLevel # noqa
+# Import pybind11 wrapped code intp dolfinx.log
+from dolfinx.cpp.log import log, set_output_file, set_log_level, get_log_level, LogLevel # noqa

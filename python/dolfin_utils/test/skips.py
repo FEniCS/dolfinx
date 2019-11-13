@@ -3,12 +3,12 @@
 # This file is part of DOLFIN (https://www.fenicsproject.org)
 #
 # SPDX-License-Identifier:    LGPL-3.0-or-later
-"""Shared skips for unit tests involving dolfin."""
+"""Shared skips for unit tests involving dolfinx."""
 
 import pytest
 
-from dolfin import MPI
-from dolfin.common import has_petsc_complex
+from dolfinx import MPI
+from dolfinx.common import has_petsc_complex
 
 # Skips with respect to parallel or serial
 xfail_in_parallel = pytest.mark.xfail(

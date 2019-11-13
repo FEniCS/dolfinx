@@ -8,7 +8,7 @@ import numpy
 import numpy.random
 import pytest
 
-from dolfin import MPI, MeshFunction, UnitCubeMesh
+from dolfinx import MPI, MeshFunction, UnitCubeMesh
 
 
 dtypes = (

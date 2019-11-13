@@ -7,10 +7,10 @@
 
 import numpy as np
 import pytest
-from dolfin_utils.test.skips import skip_in_parallel
+from dolfinx_utils.test.skips import skip_in_parallel
 
-from dolfin import MPI, Function, FunctionSpace, cpp, fem
-from dolfin.cpp.mesh import CellType
+from dolfinx import MPI, Function, FunctionSpace, cpp, fem
+from dolfinx.cpp.mesh import CellType
 
 
 @skip_in_parallel

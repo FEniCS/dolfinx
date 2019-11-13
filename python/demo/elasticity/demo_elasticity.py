@@ -13,13 +13,13 @@ from contextlib import ExitStack
 import numpy as np
 from petsc4py import PETSc
 
-import dolfin
-from dolfin import (MPI, BoxMesh, DirichletBC, Function, VectorFunctionSpace,
+import dolfinx
+from dolfinx import (MPI, BoxMesh, DirichletBC, Function, VectorFunctionSpace,
                     cpp)
-from dolfin.cpp.mesh import CellType
-from dolfin.fem import apply_lifting, assemble_matrix, assemble_vector, set_bc
-from dolfin.io import XDMFFile
-from dolfin.la import VectorSpaceBasis
+from dolfinx.cpp.mesh import CellType
+from dolfinx.fem import apply_lifting, assemble_matrix, assemble_vector, set_bc
+from dolfinx.io import XDMFFile
+from dolfinx.la import VectorSpaceBasis
 from ufl import (Identity, SpatialCoordinate, TestFunction, TrialFunction,
                  as_vector, dx, grad, inner, sym, tr)
 
@@ -66,8 +66,8 @@ def build_nullspace(V):
 mesh = BoxMesh(
     MPI.comm_world, [np.array([0.0, 0.0, 0.0]),
                      np.array([2.0, 1.0, 1.0])], [12, 12, 12],
-    CellType.tetrahedron, dolfin.cpp.mesh.GhostMode.none)
-cmap = dolfin.fem.create_coordinate_map(mesh.ufl_domain())
+    CellType.tetrahedron, dolfinx.cpp.mesh.GhostMode.none)
+cmap = dolfinx.fem.create_coordinate_map(mesh.ufl_domain())
 mesh.geometry.coord_mapping = cmap
 
 # Function to mark inner surface of pulley
@@ -183,6 +183,6 @@ if MPI.rank(mesh.mpi_comm()) == 0:
 
 # Plot solution
 # import matplotlib.pyplot as plt
-# import dolfin.plotting
-# dolfin.plotting.plot(u)
+# import dolfinx.plotting
+# dolfinx.plotting.plot(u)
 # plt.show()

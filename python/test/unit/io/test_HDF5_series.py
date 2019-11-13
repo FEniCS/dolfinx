@@ -6,10 +6,10 @@
 
 import os
 
-from dolfin import MPI, Function, FunctionSpace, UnitSquareMesh
-from dolfin.io import HDF5File
-from dolfin_utils.test.fixtures import tempdir
-from dolfin_utils.test.skips import xfail_if_complex
+from dolfinx import MPI, Function, FunctionSpace, UnitSquareMesh
+from dolfinx.io import HDF5File
+from dolfinx_utils.test.fixtures import tempdir
+from dolfinx_utils.test.skips import xfail_if_complex
 
 assert (tempdir)
 

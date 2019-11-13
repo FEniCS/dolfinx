@@ -5,7 +5,7 @@
 #
 # SPDX-License-Identifier:    LGPL-3.0-or-later
 
-from dolfin import cpp
+from dolfinx import cpp
 
 
 def make_ufc_finite_element(ufc_finite_element):

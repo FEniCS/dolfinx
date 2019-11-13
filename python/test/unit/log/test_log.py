@@ -6,7 +6,7 @@
 #
 # SPDX-License-Identifier:    LGPL-3.0-or-later
 
-from dolfin import log
+from dolfinx import log
 
 
 def test_log():

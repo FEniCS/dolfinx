@@ -78,7 +78,7 @@
 # In this example, different boundary conditions are prescribed on
 # different parts of the boundaries. Each sub-regions is tagged with
 # different (integer) labels. For this purpose, DOLFIN provides
-# a :py:class:`MeshFunction <dolfin.cpp.mesh.MeshFunction>` class
+# a :py:class:`MeshFunction <dolfinx.cpp.mesh.MeshFunction>` class
 # representing functions over mesh entities (such as over cells or over
 # facets). Mesh and mesh functions can be read from file in the
 # following way::
@@ -86,24 +86,24 @@
 import matplotlib.pyplot as plt
 import numpy as np
 
-import dolfin
-from dolfin import MPI, DirichletBC, Function, FunctionSpace, solve
-from dolfin.io import XDMFFile
-from dolfin.plotting import plot
+import dolfinx
+from dolfinx import MPI, DirichletBC, Function, FunctionSpace, solve
+from dolfinx.io import XDMFFile
+from dolfinx.plotting import plot
 from ufl import (FiniteElement, TestFunctions, TrialFunctions, VectorElement,
                  div, dx, grad, inner)
 
 # Load mesh and subdomains
 xdmf = XDMFFile(MPI.comm_world, "../dolfin_fine.xdmf")
-mesh = xdmf.read_mesh(dolfin.cpp.mesh.GhostMode.none)
+mesh = xdmf.read_mesh(dolfinx.cpp.mesh.GhostMode.none)
 
 sub_domains = xdmf.read_mf_size_t(mesh)
 
-cmap = dolfin.fem.create_coordinate_map(mesh.ufl_domain())
+cmap = dolfinx.fem.create_coordinate_map(mesh.ufl_domain())
 mesh.geometry.coord_mapping = cmap
 
 # Next, we define a :py:class:`FunctionSpace
-# <dolfin.functions.functionspace.FunctionSpace>` built on a mixed
+# <dolfinx.functions.functionspace.FunctionSpace>` built on a mixed
 # finite element ``TH`` which consists of continuous
 # piecewise quadratics and continuous piecewise
 # linears::
@@ -149,9 +149,9 @@ bc1 = DirichletBC(W.sub(0), inflow, mf1[0])
 bcs = [bc0, bc1]
 
 # The first argument to
-# :py:class:`DirichletBC <dolfin.cpp.fem.DirichletBC>`
+# :py:class:`DirichletBC <dolfinx.cpp.fem.DirichletBC>`
 # specifies the :py:class:`FunctionSpace
-# <dolfin.cpp.function.FunctionSpace>`. Since we have a
+# <dolfinx.cpp.function.FunctionSpace>`. Since we have a
 # mixed function space, we write
 # ``W.sub(0)`` for the velocity component of the space, and
 # ``W.sub(1)`` for the pressure component of the space.
@@ -170,13 +170,13 @@ a = (inner(grad(u), grad(v)) - inner(p, div(v)) + inner(div(u), q)) * dx
 L = inner(f, v) * dx
 
 # We also need to create a :py:class:`Function
-# <dolfin.cpp.function.Function>` to store the solution(s). The (full)
+# <dolfinx.cpp.function.Function>` to store the solution(s). The (full)
 # solution will be stored in ``w``, which we initialize using the mixed
 # function space ``W``. The actual
 # computation is performed by calling solve with the arguments ``a``,
 # ``L``, ``w`` and ``bcs``. The separate components ``u`` and ``p`` of
 # the solution can be extracted by calling the :py:meth:`split
-# <dolfin.functions.function.Function.split>` function. Here we use an
+# <dolfinx.functions.function.Function.split>` function. Here we use an
 # optional argument True in the split function to specify that we want a
 # deep copy. If no argument is given we will get a shallow copy. We want
 # a deep copy for further computations on the coefficient vectors::

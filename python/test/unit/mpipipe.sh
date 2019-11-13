@@ -14,7 +14,7 @@ if [ ! -z $OMPI_COMM_WORLD_RANK ]; then
 elif [ ! -z $PMI_RANK ]; then
     MYRANK=$PMI_RANK
 else
-    MYRANK=`python -c "import dolfin;c=dolfin.mpi_comm_world();r=dolfin.MPI.rank(c);print(r);dolfin.MPI.barrier(c)"`
+    MYRANK=`python -c "import dolfinx;c=dolfinx.mpi_comm_world();r=dolfinx.MPI.rank(c);print(r);dolfinx.MPI.barrier(c)"`
 fi
 
 OUT=output.$MYRANK

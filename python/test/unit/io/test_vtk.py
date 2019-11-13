@@ -7,13 +7,13 @@
 import os
 
 import pytest
-from dolfin_utils.test.fixtures import tempdir
-from dolfin_utils.test.skips import skip_in_parallel
+from dolfinx_utils.test.fixtures import tempdir
+from dolfinx_utils.test.skips import skip_in_parallel
 
-from dolfin import (MPI, Function, FunctionSpace, MeshFunction,
+from dolfinx import (MPI, Function, FunctionSpace, MeshFunction,
                     TensorFunctionSpace, UnitCubeMesh, UnitIntervalMesh,
                     UnitSquareMesh, VectorFunctionSpace)
-from dolfin.io import VTKFile
+from dolfinx.io import VTKFile
 
 assert (tempdir)
 

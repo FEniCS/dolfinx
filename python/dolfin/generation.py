@@ -9,7 +9,7 @@ import typing
 
 import numpy
 
-from dolfin import cpp, fem
+from dolfinx import cpp, fem
 
 __all__ = ["IntervalMesh", "UnitIntervalMesh",
            "RectangleMesh", "UnitSquareMesh",

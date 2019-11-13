@@ -6,7 +6,7 @@
 # SPDX-License-Identifier:    LGPL-3.0-or-later
 
 import ufl
-from dolfin import function, functionspace
+from dolfinx import function, functionspace
 
 
 def adjoint(form: ufl.Form, reordered_arguments=None) -> ufl.Form:

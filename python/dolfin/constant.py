@@ -8,7 +8,7 @@ from typing import Sequence, Union
 
 import numpy
 
-import dolfin.cpp
+import dolfinx.cpp
 import ufl
 
 
@@ -24,7 +24,7 @@ class Constant(ufl.Constant):
         """
         c_np = numpy.asarray(c)
         super().__init__(domain, c_np.shape)
-        self._cpp_object = dolfin.cpp.function.Constant(c_np.shape, c_np.flatten())
+        self._cpp_object = dolfinx.cpp.function.Constant(c_np.shape, c_np.flatten())
 
     @property
     def value(self):

@@ -9,7 +9,7 @@ import warnings
 
 import numpy as np
 
-from dolfin import cpp, fem, function
+from dolfinx import cpp, fem, function
 
 __all__ = ["plot"]
 
@@ -331,11 +331,11 @@ def plot(object, *args, **kwargs):
 
     *Arguments*
         object
-            a :py:class:`Mesh <dolfin.cpp.Mesh>`, a :py:class:`MeshFunction
-            <dolfin.cpp.MeshFunction>`, a :py:class:`Function
-            <dolfin.functions.function.Function>`, a :py:class:`Expression`
-            <dolfin.Expression>, a :py:class:`DirichletBC`
-            <dolfin.cpp.DirichletBC>, a :py:class:`FiniteElement
+            a :py:class:`Mesh <dolfinx.cpp.Mesh>`, a :py:class:`MeshFunction
+            <dolfinx.cpp.MeshFunction>`, a :py:class:`Function
+            <dolfinx.functions.function.Function>`, a :py:class:`Expression`
+            <dolfinx.Expression>, a :py:class:`DirichletBC`
+            <dolfinx.cpp.DirichletBC>, a :py:class:`FiniteElement
             <ufl.FiniteElement>`.
 
     *Examples of usage*
@@ -389,7 +389,7 @@ def plot(object, *args, **kwargs):
         cpp.log.info("Matplotlib is required to plot from Python.")
         return
 
-    # For dolfin.function.Function, extract cpp_object
+    # For dolfinx.function.Function, extract cpp_object
     if hasattr(object, "_cpp_object"):
         object = object._cpp_object
 

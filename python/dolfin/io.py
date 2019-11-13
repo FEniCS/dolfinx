@@ -9,7 +9,7 @@ import typing
 
 import numpy
 
-from dolfin import cpp, fem, function
+from dolfinx import cpp, fem, function
 
 
 __all__ = ["HDF5File", "XDMFFile"]
@@ -105,7 +105,7 @@ class HDF5File:
             Name of function as saved into HDF file.
         Returns
         -------
-        dolfin.function.function.Function
+        dolfinx.function.function.Function
             Function read from file
 
         Note
@@ -283,7 +283,7 @@ class XDMFFile:
         except for ordering of mesh entities.
         Returns
         -------
-        dolfin.function.function.Function
+        dolfinx.function.function.Function
             The finite element Function read from checkpoint file
         """
 

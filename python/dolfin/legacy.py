@@ -5,8 +5,8 @@
 # SPDX-License-Identifier:    LGPL-3.0-or-later
 """Interfaces for compatibility with the legacy DOLFIN interface"""
 
-import dolfin.cpp as _cpp
-from dolfin.function import functionspace
+import dolfinx.cpp as _cpp
+from dolfinx.function import functionspace
 
 
 def FunctionSpace(mesh: _cpp.mesh.Mesh, element, degree=None):

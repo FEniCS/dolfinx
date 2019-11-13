@@ -9,8 +9,8 @@ import typing
 import cffi
 
 import ufl
-from dolfin import cpp, jit
-from dolfin.fem import dofmap
+from dolfinx import cpp, jit
+from dolfinx.fem import dofmap
 
 
 class ElementMetaData(typing.NamedTuple):

@@ -11,13 +11,13 @@ import typing
 from petsc4py import PETSc
 
 import ufl
-from dolfin import cpp
-from dolfin.fem.dirichletbc import DirichletBC
-from dolfin.fem.form import Form
+from dolfinx import cpp
+from dolfinx.fem.dirichletbc import DirichletBC
+from dolfinx.fem.form import Form
 
 
 def _create_cpp_form(form):
-    """Recursively look for ufl.Forms and convert to dolfin.fem.Form, otherwise
+    """Recursively look for ufl.Forms and convert to dolfinx.fem.Form, otherwise
     return form argument
     """
     if isinstance(form, ufl.Form):

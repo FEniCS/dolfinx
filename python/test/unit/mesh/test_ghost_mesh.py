@@ -6,7 +6,7 @@
 
 import pytest
 
-from dolfin import MPI, UnitCubeMesh, UnitIntervalMesh, UnitSquareMesh, cpp
+from dolfinx import MPI, UnitCubeMesh, UnitIntervalMesh, UnitSquareMesh, cpp
 
 # See https://bitbucket.org/fenics-project/dolfin/issues/579
 

@@ -11,14 +11,14 @@ import pygmsh
 import pytest
 import scipy.integrate
 import sympy as sp
-from dolfin_utils.test.skips import skip_in_parallel
+from dolfinx_utils.test.skips import skip_in_parallel
 from sympy.vector import CoordSys3D, matrix_to_vector
 
-from dolfin import MPI, Function, FunctionSpace, Mesh, fem
-from dolfin.cpp.io import permute_cell_ordering, permutation_vtk_to_dolfin
-from dolfin.cpp.mesh import CellType, GhostMode
-from dolfin.fem import assemble_scalar
-from dolfin.io import XDMFFile
+from dolfinx import MPI, Function, FunctionSpace, Mesh, fem
+from dolfinx.cpp.io import permute_cell_ordering, permutation_vtk_to_dolfin
+from dolfinx.cpp.mesh import CellType, GhostMode
+from dolfinx.fem import assemble_scalar
+from dolfinx.io import XDMFFile
 from ufl import dx
 
 
@@ -607,7 +607,7 @@ def test_gmsh_input_quad(order):
     # V = FunctionSpace(mesh, ("CG", order))
     # u = Function(V)
     # u.interpolate(e2)
-    # from dolfin.io import VTKFile
+    # from dolfinx.io import VTKFile
     # VTKFile("u{0:d}.pvd".format(order)).write(u)
     # print(min(u.vector.array),max(u.vector.array))
     # print(assemble_scalar(u*dx(mesh)))

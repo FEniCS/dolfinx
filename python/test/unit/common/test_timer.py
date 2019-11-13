@@ -9,7 +9,7 @@
 import random
 from time import sleep
 
-from dolfin import common
+from dolfinx import common
 
 # Seed random generator for determinism
 random.seed(0)

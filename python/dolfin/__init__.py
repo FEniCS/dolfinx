@@ -31,14 +31,14 @@ del sys
 from .cpp import __version__
 
 
-from dolfin.common import (has_debug, has_petsc_complex, has_parmetis,
+from dolfinx.common import (has_debug, has_petsc_complex, has_parmetis,
                            git_commit_hash, TimingType, timing, timings,
                            list_timings)
 
-import dolfin.MPI
-import dolfin.log
+import dolfinx.MPI
+import dolfinx.log
 
-from dolfin.generation import (IntervalMesh, BoxMesh, RectangleMesh,
+from dolfinx.generation import (IntervalMesh, BoxMesh, RectangleMesh,
                                UnitIntervalMesh, UnitSquareMesh, UnitCubeMesh)
 
 from .cpp.mesh import Mesh, Topology, Geometry, MeshEntity, EntityRange, MeshQuality
@@ -60,7 +60,7 @@ from .mesh import MeshFunction
 from .mesh import MeshValueCollection
 
 # Initialise PETSc
-from dolfin import cpp
+from dolfinx import cpp
 import sys
 cpp.common.SubSystemsManager.init_logging(sys.argv)
 del sys

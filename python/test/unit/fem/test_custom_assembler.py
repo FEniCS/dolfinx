@@ -19,7 +19,7 @@ import numpy as np
 import pytest
 from petsc4py import PETSc
 
-import dolfin
+import dolfinx
 import ufl
 from ufl import dx, inner
 
@@ -111,7 +111,7 @@ MatSetValues_abi = petsc_lib_cffi.MatSetValuesLocal
 # Make MatSetValuesLocal from PETSc available via cffi in API mode
 worker = os.getenv('PYTEST_XDIST_WORKER', None)
 module_name = "_petsc_cffi_{}".format(worker)
-if dolfin.MPI.comm_world.Get_rank() == 0:
+if dolfinx.MPI.comm_world.Get_rank() == 0:
     os.environ["CC"] = "mpicc"
     petsc_dir = os.environ.get('PETSC_DIR', None)
     ffibuilder = cffi.FFI()
@@ -132,7 +132,7 @@ if dolfin.MPI.comm_world.Get_rank() == 0:
                           extra_compile_args=[])
     ffibuilder.compile(verbose=False)
 
-dolfin.MPI.comm_world.barrier()
+dolfinx.MPI.comm_world.barrier()
 
 spec = importlib.util.find_spec(module_name)
 if spec is None:
@@ -261,8 +261,8 @@ def assemble_matrix_ctypes(A, mesh, x, dofmap, set_vals, mode):
 def test_custom_mesh_loop_rank1():
 
     # Create mesh and function space
-    mesh = dolfin.generation.UnitSquareMesh(dolfin.MPI.comm_world, 64, 64)
-    V = dolfin.FunctionSpace(mesh, ("Lagrange", 1))
+    mesh = dolfinx.generation.UnitSquareMesh(dolfinx.MPI.comm_world, 64, 64)
+    V = dolfinx.FunctionSpace(mesh, ("Lagrange", 1))
 
     # Unpack mesh and dofmap data
     c = mesh.topology.connectivity(2, 0).connections()
@@ -271,7 +271,7 @@ def test_custom_mesh_loop_rank1():
     dofs = V.dofmap.dof_array
 
     # Assemble with pure Numba function (two passes, first will include JIT overhead)
-    b0 = dolfin.Function(V)
+    b0 = dolfinx.Function(V)
     for i in range(2):
         with b0.vector.localForm() as b:
             b.set(0.0)
@@ -288,14 +288,14 @@ def test_custom_mesh_loop_rank1():
     L = inner(1.0, v) * dx
 
     start = time.time()
-    b1 = dolfin.fem.assemble_vector(L)
+    b1 = dolfinx.fem.assemble_vector(L)
     end = time.time()
     print("Time (C++, pass 1):", end - start)
 
     with b1.localForm() as b_local:
         b_local.set(0.0)
     start = time.time()
-    dolfin.fem.assemble_vector(b1, L)
+    dolfinx.fem.assemble_vector(b1, L)
     end = time.time()
     print("Time (C++, pass 2):", end - start)
 
@@ -303,8 +303,8 @@ def test_custom_mesh_loop_rank1():
     assert((b1 - b0.vector).norm() == pytest.approx(0.0))
 
     # Assemble using generated tabulate_tensor kernel and Numba assembler
-    b3 = dolfin.Function(V)
-    ufc_form = dolfin.jit.ffc_jit(L)
+    b3 = dolfinx.Function(V)
+    ufc_form = dolfinx.jit.ffc_jit(L)
     kernel = ufc_form.create_cell_integral(-1).tabulate_tensor
     for i in range(2):
         with b3.vector.localForm() as b:
@@ -322,8 +322,8 @@ def test_custom_mesh_loop_ctypes_rank2():
     """Test numba assembler for bilinear form"""
 
     # Create mesh and function space
-    mesh = dolfin.generation.UnitSquareMesh(dolfin.MPI.comm_world, 64, 64)
-    V = dolfin.FunctionSpace(mesh, ("Lagrange", 1))
+    mesh = dolfinx.generation.UnitSquareMesh(dolfinx.MPI.comm_world, 64, 64)
+    V = dolfinx.FunctionSpace(mesh, ("Lagrange", 1))
 
     # Extract mesh and dofmap data
     c = mesh.topology.connectivity(2, 0).connections()
@@ -334,12 +334,12 @@ def test_custom_mesh_loop_ctypes_rank2():
     # Generated case with general assembler
     u, v = ufl.TrialFunction(V), ufl.TestFunction(V)
     a = inner(u, v) * dx
-    A0 = dolfin.fem.assemble_matrix(a)
+    A0 = dolfinx.fem.assemble_matrix(a)
     A0.assemble()
     A0.zeroEntries()
 
     start = time.time()
-    dolfin.fem.assemble_matrix(A0, a)
+    dolfinx.fem.assemble_matrix(A0, a)
     end = time.time()
     print("Time (C++, pass 2):", end - start)
     A0.assemble()
@@ -362,18 +362,18 @@ def test_custom_mesh_loop_ctypes_rank2():
 def test_custom_mesh_loop_cffi_rank2(set_vals):
     """Test numba assembler for bilinear form"""
 
-    mesh = dolfin.generation.UnitSquareMesh(dolfin.MPI.comm_world, 64, 64)
-    V = dolfin.FunctionSpace(mesh, ("Lagrange", 1))
+    mesh = dolfinx.generation.UnitSquareMesh(dolfinx.MPI.comm_world, 64, 64)
+    V = dolfinx.FunctionSpace(mesh, ("Lagrange", 1))
 
     # Test against generated code and general assembler
     u, v = ufl.TrialFunction(V), ufl.TestFunction(V)
     a = inner(u, v) * dx
-    A0 = dolfin.fem.assemble_matrix(a)
+    A0 = dolfinx.fem.assemble_matrix(a)
     A0.assemble()
 
     A0.zeroEntries()
     start = time.time()
-    dolfin.fem.assemble_matrix(A0, a)
+    dolfinx.fem.assemble_matrix(A0, a)
     end = time.time()
     print("Time (C++, pass 2):", end - start)
     A0.assemble()

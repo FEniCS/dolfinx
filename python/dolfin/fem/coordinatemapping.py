@@ -7,8 +7,8 @@
 
 import ufl
 
-from dolfin import jit
-from dolfin import fem
+from dolfinx import jit
+from dolfinx import fem
 from cffi import FFI
 
 

@@ -6,7 +6,7 @@
 #
 # SPDX-License-Identifier:    LGPL-3.0-or-later
 
-import dolfin
+import dolfinx
 from mpi4py import MPI
 
 
@@ -16,7 +16,7 @@ def test_mpi_comm_wrapper():
     """
     w1 = MPI.COMM_WORLD
 
-    m = dolfin.UnitSquareMesh(w1, 4, 4)
+    m = dolfinx.UnitSquareMesh(w1, 4, 4)
     w2 = m.mpi_comm()
 
     assert isinstance(w1, MPI.Comm)

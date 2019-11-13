@@ -128,7 +128,7 @@ void geometry(py::module& m)
 
   // These classes are wrapped only to be able to write tests in python.
   // They are not imported into the dolfin namespace in python, but must
-  // be accessed through dolfin.cpp.geometry
+  // be accessed through dolfinx.cpp.geometry
   py::class_<dolfin::geometry::CollisionPredicates>(m, "CollisionPredicates")
       .def_static(
           "collides_segment_point_2d",

@@ -10,11 +10,11 @@ import numba
 import numpy as np
 from petsc4py import PETSc
 
-import dolfin
-from dolfin import (MPI, FunctionSpace, TimingType, UnitSquareMesh, cpp,
+import dolfinx
+from dolfinx import (MPI, FunctionSpace, TimingType, UnitSquareMesh, cpp,
                     list_timings, Function)
-from dolfin_utils.test.skips import skip_if_complex
-from dolfin.fem import FormIntegrals
+from dolfinx_utils.test.skips import skip_if_complex
+from dolfinx.fem import FormIntegrals
 
 c_signature = numba.types.void(
     numba.types.CPointer(numba.typeof(PETSc.ScalarType())),
@@ -82,9 +82,9 @@ def test_numba_assembly():
     L = cpp.fem.Form([V._cpp_object])
     L.set_tabulate_tensor(FormIntegrals.Type.cell, -1, tabulate_tensor_b.address)
 
-    A = dolfin.fem.assemble_matrix(a)
+    A = dolfinx.fem.assemble_matrix(a)
     A.assemble()
-    b = dolfin.fem.assemble_vector(L)
+    b = dolfinx.fem.assemble_vector(L)
     b.ghostUpdate(addv=PETSc.InsertMode.ADD, mode=PETSc.ScatterMode.REVERSE)
 
     Anorm = A.norm(PETSc.NormType.FROBENIUS)
@@ -106,7 +106,7 @@ def test_coefficient():
     L.set_tabulate_tensor(FormIntegrals.Type.cell, -1, tabulate_tensor_b_coeff.address)
     L.set_coefficient(0, vals._cpp_object)
 
-    b = dolfin.fem.assemble_vector(L)
+    b = dolfinx.fem.assemble_vector(L)
     b.ghostUpdate(addv=PETSc.InsertMode.ADD, mode=PETSc.ScatterMode.REVERSE)
 
     bnorm = b.norm(PETSc.NormType.N2)
@@ -227,9 +227,9 @@ def test_cffi_assembly():
     ptrL = ffi.cast("intptr_t", ffi.addressof(lib, "tabulate_tensor_poissonL"))
     L.set_tabulate_tensor(FormIntegrals.Type.cell, -1, ptrL)
 
-    A = dolfin.fem.assemble_matrix(a)
+    A = dolfinx.fem.assemble_matrix(a)
     A.assemble()
-    b = dolfin.fem.assemble_vector(L)
+    b = dolfinx.fem.assemble_vector(L)
     b.ghostUpdate(addv=PETSc.InsertMode.ADD, mode=PETSc.ScatterMode.REVERSE)
 
     Anorm = A.norm(PETSc.NormType.FROBENIUS)

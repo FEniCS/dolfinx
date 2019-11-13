@@ -8,14 +8,14 @@ import functools
 import os
 from pathlib import Path
 
-import dolfin.pkgconfig
+import dolfinx.pkgconfig
 import ffc
 import ffc.codegeneration.jit
 import ufl
-from dolfin import common, cpp
+from dolfinx import common, cpp
 
-if dolfin.pkgconfig.exists("dolfin"):
-    dolfin_pc = dolfin.pkgconfig.parse("dolfin")
+if dolfinx.pkgconfig.exists("dolfin"):
+    dolfin_pc = dolfinx.pkgconfig.parse("dolfin")
 else:
     raise RuntimeError(
         "Could not find DOLFIN pkg-config file. Make sure appropriate paths are set."

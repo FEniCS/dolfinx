@@ -7,7 +7,7 @@
 
 from petsc4py import PETSc
 
-from dolfin import cpp
+from dolfinx import cpp
 
 
 def solve(A, x, b):

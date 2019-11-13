@@ -8,7 +8,7 @@
 import cffi
 
 import ufl
-from dolfin import cpp, fem, jit
+from dolfinx import cpp, fem, jit
 
 
 class Form(ufl.Form):
@@ -51,7 +51,7 @@ class Form(ufl.Form):
             func.ufl_function_space()._cpp_object for func in form.arguments()
         ]
 
-        # Prepare dolfin.Form and hold it as a member
+        # Prepare dolfinx.Form and hold it as a member
         self._cpp_object = cpp.fem.create_form(ufc_form, function_spaces)
 
         # Need to fill the form with coefficients data

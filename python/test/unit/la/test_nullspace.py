@@ -12,11 +12,11 @@ import numpy as np
 import pytest
 
 import ufl
-from dolfin import (MPI, UnitCubeMesh, UnitSquareMesh, VectorFunctionSpace,
+from dolfinx import (MPI, UnitCubeMesh, UnitSquareMesh, VectorFunctionSpace,
                     cpp, fem, la)
-from dolfin.cpp.mesh import CellType, GhostMode
-from dolfin.fem import assemble_matrix
-from dolfin.generation import BoxMesh
+from dolfinx.cpp.mesh import CellType, GhostMode
+from dolfinx.fem import assemble_matrix
+from dolfinx.generation import BoxMesh
 from ufl import TestFunction, TrialFunction, dx, grad, inner
 
 

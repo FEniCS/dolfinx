@@ -9,8 +9,8 @@
 import numpy
 import pytest
 
-from dolfin import MPI, FunctionSpace, RectangleMesh
-from dolfin.cpp.mesh import CellType
+from dolfinx import MPI, FunctionSpace, RectangleMesh
+from dolfinx.cpp.mesh import CellType
 from ufl import TestFunction, TrialFunction, dx, grad, inner, lhs, rhs, system
 
 

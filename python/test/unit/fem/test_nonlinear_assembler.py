@@ -11,7 +11,7 @@ import numpy
 import pytest
 from petsc4py import PETSc
 
-import dolfin
+import dolfinx
 import ufl
 from ufl import derivative, dx, inner
 
@@ -35,14 +35,14 @@ def test_matrix_assembly_block():
     blocked structures, PETSc Nest structures, and monolithic structures
     in the nonlinear setting
     """
-    mesh = dolfin.generation.UnitSquareMesh(dolfin.MPI.comm_world, 4, 8)
+    mesh = dolfinx.generation.UnitSquareMesh(dolfinx.MPI.comm_world, 4, 8)
 
     p0, p1 = 1, 2
     P0 = ufl.FiniteElement("Lagrange", mesh.ufl_cell(), p0)
     P1 = ufl.FiniteElement("Lagrange", mesh.ufl_cell(), p1)
 
-    V0 = dolfin.function.functionspace.FunctionSpace(mesh, P0)
-    V1 = dolfin.function.functionspace.FunctionSpace(mesh, P1)
+    V0 = dolfinx.function.functionspace.FunctionSpace(mesh, P0)
+    V1 = dolfinx.function.functionspace.FunctionSpace(mesh, P1)
 
     def boundary(x):
         return numpy.logical_or(x[0] < 1.0e-6, x[0] > 1.0 - 1.0e-6)
@@ -55,13 +55,13 @@ def test_matrix_assembly_block():
 
     def bc_value(x):
         return numpy.cos(x[0]) * numpy.cos(x[1])
-    u_bc = dolfin.function.Function(V1)
+    u_bc = dolfinx.function.Function(V1)
     u_bc.interpolate(bc_value)
-    bc = dolfin.fem.dirichletbc.DirichletBC(V1, u_bc, boundary)
+    bc = dolfinx.fem.dirichletbc.DirichletBC(V1, u_bc, boundary)
 
     # Define variational problem
     du, dp = ufl.TrialFunction(V0), ufl.TrialFunction(V1)
-    u, p = dolfin.function.Function(V0), dolfin.function.Function(V1)
+    u, p = dolfinx.function.Function(V0), dolfinx.function.Function(V1)
     v, q = ufl.TestFunction(V0), ufl.TestFunction(V1)
 
     u.interpolate(initial_guess_u)
@@ -78,35 +78,35 @@ def test_matrix_assembly_block():
     L_block = [F0, F1]
 
     # Monolithic blocked
-    x0 = dolfin.fem.create_vector_block(L_block)
-    dolfin.cpp.la.scatter_local_vectors(
+    x0 = dolfinx.fem.create_vector_block(L_block)
+    dolfinx.cpp.la.scatter_local_vectors(
         x0, [u.vector.array_r, p.vector.array_r],
         [u.function_space.dofmap.index_map, p.function_space.dofmap.index_map])
     x0.ghostUpdate(addv=PETSc.InsertMode.INSERT, mode=PETSc.ScatterMode.FORWARD)
 
     # Ghosts are updated inside assemble_vector_block
-    A0 = dolfin.fem.assemble_matrix_block(a_block, [bc])
-    b0 = dolfin.fem.assemble_vector_block(L_block, a_block, [bc], x0=x0, scale=-1.0)
+    A0 = dolfinx.fem.assemble_matrix_block(a_block, [bc])
+    b0 = dolfinx.fem.assemble_vector_block(L_block, a_block, [bc], x0=x0, scale=-1.0)
     A0.assemble()
     assert A0.getType() != "nest"
     Anorm0 = A0.norm()
     bnorm0 = b0.norm()
 
     # Nested (MatNest)
-    x1 = dolfin.fem.create_vector_nest(L_block)
+    x1 = dolfinx.fem.create_vector_nest(L_block)
     for x1_soln_pair in zip(x1.getNestSubVecs(), (u, p)):
         x1_sub, soln_sub = x1_soln_pair
         soln_sub.vector.ghostUpdate(addv=PETSc.InsertMode.INSERT, mode=PETSc.ScatterMode.FORWARD)
         soln_sub.vector.copy(result=x1_sub)
         x1_sub.ghostUpdate(addv=PETSc.InsertMode.INSERT, mode=PETSc.ScatterMode.FORWARD)
 
-    A1 = dolfin.fem.assemble_matrix_nest(a_block, [bc])
-    b1 = dolfin.fem.assemble.assemble_vector_nest(L_block)
-    dolfin.fem.assemble.apply_lifting_nest(b1, a_block, [bc], x1, scale=-1.0)
+    A1 = dolfinx.fem.assemble_matrix_nest(a_block, [bc])
+    b1 = dolfinx.fem.assemble.assemble_vector_nest(L_block)
+    dolfinx.fem.assemble.apply_lifting_nest(b1, a_block, [bc], x1, scale=-1.0)
     for b_sub in b1.getNestSubVecs():
         b_sub.ghostUpdate(addv=PETSc.InsertMode.ADD, mode=PETSc.ScatterMode.REVERSE)
-    bcs0 = dolfin.cpp.fem.bcs_rows(dolfin.fem.assemble._create_cpp_form(L_block), [bc])
-    dolfin.fem.assemble.set_bc_nest(b1, bcs0, x1, scale=-1.0)
+    bcs0 = dolfinx.cpp.fem.bcs_rows(dolfinx.fem.assemble._create_cpp_form(L_block), [bc])
+    dolfinx.fem.assemble.set_bc_nest(b1, bcs0, x1, scale=-1.0)
     A1.assemble()
 
     assert A1.getType() == "nest"
@@ -115,9 +115,9 @@ def test_matrix_assembly_block():
 
     # Monolithic version
     E = P0 * P1
-    W = dolfin.function.functionspace.FunctionSpace(mesh, E)
+    W = dolfinx.function.functionspace.FunctionSpace(mesh, E)
     dU = ufl.TrialFunction(W)
-    U = dolfin.function.Function(W)
+    U = dolfinx.function.Function(W)
     u0, u1 = ufl.split(U)
     v0, v1 = ufl.TestFunctions(W)
 
@@ -127,13 +127,13 @@ def test_matrix_assembly_block():
         - inner(f, v0) * ufl.dx - inner(g, v1) * dx
     J = derivative(F, U, dU)
 
-    bc = dolfin.fem.dirichletbc.DirichletBC(W.sub(1), u_bc, boundary)
-    A2 = dolfin.fem.assemble_matrix(J, [bc])
+    bc = dolfinx.fem.dirichletbc.DirichletBC(W.sub(1), u_bc, boundary)
+    A2 = dolfinx.fem.assemble_matrix(J, [bc])
     A2.assemble()
-    b2 = dolfin.fem.assemble_vector(F)
-    dolfin.fem.apply_lifting(b2, [J], bcs=[[bc]], x0=[U.vector], scale=-1.0)
+    b2 = dolfinx.fem.assemble_vector(F)
+    dolfinx.fem.apply_lifting(b2, [J], bcs=[[bc]], x0=[U.vector], scale=-1.0)
     b2.ghostUpdate(addv=PETSc.InsertMode.ADD, mode=PETSc.ScatterMode.REVERSE)
-    dolfin.fem.set_bc(b2, [bc], x0=U.vector, scale=-1.0)
+    dolfinx.fem.set_bc(b2, [bc], x0=U.vector, scale=-1.0)
     assert A2.getType() != "nest"
     assert A2.norm() == pytest.approx(Anorm0, 1.0e-12)
     assert b2.norm() == pytest.approx(bnorm0, 1.0e-12)
@@ -153,18 +153,18 @@ class NonlinearPDE_SNESProblem():
             _u[:] = _x
         with F.localForm() as f_local:
             f_local.set(0.0)
-        dolfin.fem.assemble_vector(F, self.L)
-        dolfin.fem.apply_lifting(F, [self.a], [self.bcs], x0=[x], scale=-1.0)
+        dolfinx.fem.assemble_vector(F, self.L)
+        dolfinx.fem.apply_lifting(F, [self.a], [self.bcs], x0=[x], scale=-1.0)
         F.ghostUpdate(addv=PETSc.InsertMode.ADD, mode=PETSc.ScatterMode.REVERSE)
-        dolfin.fem.set_bc(F, self.bcs, x, -1.0)
+        dolfinx.fem.set_bc(F, self.bcs, x, -1.0)
 
     def J_mono(self, snes, x, J, P):
         J.zeroEntries()
-        dolfin.fem.assemble_matrix(J, self.a, self.bcs, diagonal=1.0)
+        dolfinx.fem.assemble_matrix(J, self.a, self.bcs, diagonal=1.0)
         J.assemble()
         if self.a_precon is not None:
             P.zeroEntries()
-            dolfin.fem.assemble_matrix(P, self.a_precon, self.bcs, diagonal=1.0)
+            dolfinx.fem.assemble_matrix(P, self.a_precon, self.bcs, diagonal=1.0)
             P.assemble()
 
     def F_block(self, snes, x, F):
@@ -182,16 +182,16 @@ class NonlinearPDE_SNESProblem():
             var.vector.ghostUpdate(addv=PETSc.InsertMode.INSERT, mode=PETSc.ScatterMode.FORWARD)
             offset += size_local
 
-        dolfin.fem.assemble_vector_block(F, self.L, self.a, self.bcs, x0=x, scale=-1.0)
+        dolfinx.fem.assemble_vector_block(F, self.L, self.a, self.bcs, x0=x, scale=-1.0)
 
     def J_block(self, snes, x, J, P):
         assert x.getType() != "nest" and J.getType() != "nest" and P.getType() != "nest"
         J.zeroEntries()
-        dolfin.fem.assemble_matrix_block(J, self.a, self.bcs, diagonal=1.0)
+        dolfinx.fem.assemble_matrix_block(J, self.a, self.bcs, diagonal=1.0)
         J.assemble()
         if self.a_precon is not None:
             P.zeroEntries()
-            dolfin.fem.assemble_matrix_block(P, self.a_precon, self.bcs, diagonal=1.0)
+            dolfinx.fem.assemble_matrix_block(P, self.a_precon, self.bcs, diagonal=1.0)
             P.assemble()
 
     def F_nest(self, snes, x, F):
@@ -204,18 +204,18 @@ class NonlinearPDE_SNESProblem():
                 _u[:] = _x
 
         # Assemble
-        bcs1 = dolfin.cpp.fem.bcs_cols(dolfin.fem.assemble._create_cpp_form(self.a), self.bcs)
+        bcs1 = dolfinx.cpp.fem.bcs_cols(dolfinx.fem.assemble._create_cpp_form(self.a), self.bcs)
         for L, F_sub, a, bc in zip(self.L, F.getNestSubVecs(), self.a, bcs1):
             with F_sub.localForm() as F_sub_local:
                 F_sub_local.set(0.0)
-            dolfin.fem.assemble.assemble_vector(F_sub, L)
-            dolfin.fem.assemble.apply_lifting(F_sub, a, bc, x0=x, scale=-1.0)
+            dolfinx.fem.assemble.assemble_vector(F_sub, L)
+            dolfinx.fem.assemble.apply_lifting(F_sub, a, bc, x0=x, scale=-1.0)
             F_sub.ghostUpdate(addv=PETSc.InsertMode.ADD, mode=PETSc.ScatterMode.REVERSE)
 
         # Set bc value in RHS
-        bcs0 = dolfin.cpp.fem.bcs_rows(dolfin.fem.assemble._create_cpp_form(self.L), self.bcs)
+        bcs0 = dolfinx.cpp.fem.bcs_rows(dolfinx.fem.assemble._create_cpp_form(self.L), self.bcs)
         for F_sub, bc, x_sub in zip(F.getNestSubVecs(), bcs0, x):
-            dolfin.fem.assemble.set_bc(F_sub, bc, x_sub, -1.0)
+            dolfinx.fem.assemble.set_bc(F_sub, bc, x_sub, -1.0)
 
         # Must assemble F here in the case of nest matrices
         F.assemble()
@@ -223,11 +223,11 @@ class NonlinearPDE_SNESProblem():
     def J_nest(self, snes, x, J, P):
         assert x.getType() == "nest" and J.getType() == "nest" and P.getType() == "nest"
         J.zeroEntries()
-        dolfin.fem.assemble_matrix_nest(J, self.a, self.bcs, diagonal=1.0)
+        dolfinx.fem.assemble_matrix_nest(J, self.a, self.bcs, diagonal=1.0)
         J.assemble()
         if self.a_precon is not None:
             P.zeroEntries()
-            dolfin.fem.assemble_matrix_nest(P, self.a_precon, self.bcs, diagonal=1.0)
+            dolfinx.fem.assemble_matrix_nest(P, self.a_precon, self.bcs, diagonal=1.0)
             P.assemble()
 
 
@@ -235,10 +235,10 @@ def test_assembly_solve_block():
     """Solve a two-field nonlinear diffusion like problem with block matrix
     approaches and test that solution is the same.
     """
-    mesh = dolfin.generation.UnitSquareMesh(dolfin.MPI.comm_world, 12, 11)
+    mesh = dolfinx.generation.UnitSquareMesh(dolfinx.MPI.comm_world, 12, 11)
     p = 1
     P = ufl.FiniteElement("Lagrange", mesh.ufl_cell(), p)
-    V0 = dolfin.function.functionspace.FunctionSpace(mesh, P)
+    V0 = dolfinx.function.functionspace.FunctionSpace(mesh, P)
     V1 = V0.clone()
 
     def bc_val_0(x):
@@ -256,15 +256,15 @@ def test_assembly_solve_block():
     def boundary(x):
         return numpy.logical_or(x[0] < 1.0e-6, x[0] > 1.0 - 1.0e-6)
 
-    u_bc0 = dolfin.function.Function(V0)
+    u_bc0 = dolfinx.function.Function(V0)
     u_bc0.interpolate(bc_val_0)
-    u_bc1 = dolfin.function.Function(V1)
+    u_bc1 = dolfinx.function.Function(V1)
     u_bc1.interpolate(bc_val_1)
-    bcs = [dolfin.fem.dirichletbc.DirichletBC(V0, u_bc0, boundary),
-           dolfin.fem.dirichletbc.DirichletBC(V1, u_bc1, boundary)]
+    bcs = [dolfinx.fem.dirichletbc.DirichletBC(V0, u_bc0, boundary),
+           dolfinx.fem.dirichletbc.DirichletBC(V1, u_bc1, boundary)]
 
     # Block and Nest variational problem
-    u, p = dolfin.function.Function(V0), dolfin.function.Function(V1)
+    u, p = dolfinx.function.Function(V0), dolfinx.function.Function(V1)
     du, dp = ufl.TrialFunction(V0), ufl.TrialFunction(V1)
     v, q = ufl.TestFunction(V0), ufl.TestFunction(V1)
 
@@ -278,10 +278,10 @@ def test_assembly_solve_block():
          [derivative(F[1], u, du), derivative(F[1], p, dp)]]
 
     # -- Blocked version
-    Jmat0 = dolfin.fem.create_matrix_block(J)
-    Fvec0 = dolfin.fem.create_vector_block(F)
+    Jmat0 = dolfinx.fem.create_matrix_block(J)
+    Fvec0 = dolfinx.fem.create_vector_block(F)
 
-    snes = PETSc.SNES().create(dolfin.MPI.comm_world)
+    snes = PETSc.SNES().create(dolfinx.MPI.comm_world)
     snes.setTolerances(rtol=1.0e-15, max_it=10)
 
     snes.getKSP().setType("preonly")
@@ -295,8 +295,8 @@ def test_assembly_solve_block():
     u.interpolate(initial_guess_u)
     p.interpolate(initial_guess_p)
 
-    x0 = dolfin.fem.create_vector_block(F)
-    dolfin.cpp.la.scatter_local_vectors(
+    x0 = dolfinx.fem.create_vector_block(F)
+    dolfinx.cpp.la.scatter_local_vectors(
         x0, [u.vector.array_r, p.vector.array_r],
         [u.function_space.dofmap.index_map, p.function_space.dofmap.index_map])
     x0.ghostUpdate(addv=PETSc.InsertMode.INSERT, mode=PETSc.ScatterMode.FORWARD)
@@ -311,10 +311,10 @@ def test_assembly_solve_block():
     x0norm = x0.norm()
 
     # -- Nested (MatNest)
-    Jmat1 = dolfin.fem.create_matrix_nest(J)
-    Fvec1 = dolfin.fem.create_vector_nest(F)
+    Jmat1 = dolfinx.fem.create_matrix_nest(J)
+    Fvec1 = dolfinx.fem.create_vector_nest(F)
 
-    snes = PETSc.SNES().create(dolfin.MPI.comm_world)
+    snes = PETSc.SNES().create(dolfinx.MPI.comm_world)
     snes.setTolerances(rtol=1.0e-15, max_it=10)
 
     nested_IS = Jmat1.getNestISs()
@@ -339,7 +339,7 @@ def test_assembly_solve_block():
     u.interpolate(initial_guess_u)
     p.interpolate(initial_guess_p)
 
-    x1 = dolfin.fem.create_vector_nest(F)
+    x1 = dolfinx.fem.create_vector_nest(F)
     for x1_soln_pair in zip(x1.getNestSubVecs(), (u, p)):
         x1_sub, soln_sub = x1_soln_pair
         soln_sub.vector.ghostUpdate(addv=PETSc.InsertMode.INSERT, mode=PETSc.ScatterMode.FORWARD)
@@ -364,8 +364,8 @@ def test_assembly_solve_block():
 
     # -- Monolithic version
     E = P * P
-    W = dolfin.function.functionspace.FunctionSpace(mesh, E)
-    U = dolfin.function.Function(W)
+    W = dolfinx.function.functionspace.FunctionSpace(mesh, E)
+    U = dolfinx.function.Function(W)
     dU = ufl.TrialFunction(W)
     u0, u1 = ufl.split(U)
     v0, v1 = ufl.TestFunctions(W)
@@ -375,18 +375,18 @@ def test_assembly_solve_block():
         - inner(f, v0) * ufl.dx - inner(g, v1) * dx
     J = derivative(F, U, dU)
 
-    u0_bc = dolfin.function.Function(V0)
+    u0_bc = dolfinx.function.Function(V0)
     u0_bc.interpolate(bc_val_0)
-    u1_bc = dolfin.function.Function(V1)
+    u1_bc = dolfinx.function.Function(V1)
     u1_bc.interpolate(bc_val_1)
 
-    bcs = [dolfin.fem.dirichletbc.DirichletBC(W.sub(0), u0_bc, boundary),
-           dolfin.fem.dirichletbc.DirichletBC(W.sub(1), u1_bc, boundary)]
+    bcs = [dolfinx.fem.dirichletbc.DirichletBC(W.sub(0), u0_bc, boundary),
+           dolfinx.fem.dirichletbc.DirichletBC(W.sub(1), u1_bc, boundary)]
 
-    Jmat2 = dolfin.fem.create_matrix(J)
-    Fvec2 = dolfin.fem.create_vector(F)
+    Jmat2 = dolfinx.fem.create_matrix(J)
+    Fvec2 = dolfinx.fem.create_vector(F)
 
-    snes = PETSc.SNES().create(dolfin.MPI.comm_world)
+    snes = PETSc.SNES().create(dolfinx.MPI.comm_world)
     snes.setTolerances(rtol=1.0e-15, max_it=10)
 
     snes.getKSP().setType("preonly")
@@ -399,7 +399,7 @@ def test_assembly_solve_block():
 
     U.interpolate(lambda x: numpy.row_stack((initial_guess_u(x), initial_guess_p(x))))
 
-    x2 = dolfin.fem.create_vector(F)
+    x2 = dolfinx.fem.create_vector(F)
     x2.array = U.vector.array_r
 
     snes.solve(None, x2)
@@ -417,14 +417,14 @@ def test_assembly_solve_block():
 
 
 @pytest.mark.parametrize("mesh", [
-    dolfin.generation.UnitSquareMesh(dolfin.MPI.comm_world, 12, 11),
-    dolfin.generation.UnitCubeMesh(dolfin.MPI.comm_world, 3, 5, 4)
+    dolfinx.generation.UnitSquareMesh(dolfinx.MPI.comm_world, 12, 11),
+    dolfinx.generation.UnitCubeMesh(dolfinx.MPI.comm_world, 3, 5, 4)
 ])
 def test_assembly_solve_taylor_hood(mesh):
     """Assemble Stokes problem with Taylor-Hood elements and solve."""
     gdim = mesh.geometry.dim
-    P2 = dolfin.function.functionspace.VectorFunctionSpace(mesh, ("Lagrange", 2))
-    P1 = dolfin.function.functionspace.FunctionSpace(mesh, ("Lagrange", 1))
+    P2 = dolfinx.function.functionspace.VectorFunctionSpace(mesh, ("Lagrange", 2))
+    P1 = dolfinx.function.functionspace.FunctionSpace(mesh, ("Lagrange", 1))
 
     def boundary0(x):
         """Define boundary x = 0"""
@@ -444,16 +444,16 @@ def test_assembly_solve_taylor_hood(mesh):
     def initial_guess_p(x):
         return -x[0]**2 - x[1]**3
 
-    u_bc_0 = dolfin.Function(P2)
+    u_bc_0 = dolfinx.Function(P2)
     u_bc_0.interpolate(lambda x: numpy.row_stack(tuple(x[j] + float(j) for j in range(gdim))))
 
-    u_bc_1 = dolfin.Function(P2)
+    u_bc_1 = dolfinx.Function(P2)
     u_bc_1.interpolate(lambda x: numpy.row_stack(tuple(numpy.sin(x[j]) for j in range(gdim))))
 
-    bcs = [dolfin.DirichletBC(P2, u_bc_0, boundary0),
-           dolfin.DirichletBC(P2, u_bc_1, boundary1)]
+    bcs = [dolfinx.DirichletBC(P2, u_bc_0, boundary0),
+           dolfinx.DirichletBC(P2, u_bc_1, boundary1)]
 
-    u, p = dolfin.Function(P2), dolfin.Function(P1)
+    u, p = dolfinx.Function(P2), dolfinx.Function(P1)
     du, dp = ufl.TrialFunction(P2), ufl.TrialFunction(P1)
     v, q = ufl.TestFunction(P2), ufl.TestFunction(P1)
 
@@ -466,11 +466,11 @@ def test_assembly_solve_taylor_hood(mesh):
 
     # -- Blocked and monolithic
 
-    Jmat0 = dolfin.fem.create_matrix_block(J)
-    Pmat0 = dolfin.fem.create_matrix_block(P)
-    Fvec0 = dolfin.fem.create_vector_block(F)
+    Jmat0 = dolfinx.fem.create_matrix_block(J)
+    Pmat0 = dolfinx.fem.create_matrix_block(P)
+    Fvec0 = dolfinx.fem.create_vector_block(F)
 
-    snes = PETSc.SNES().create(dolfin.MPI.comm_world)
+    snes = PETSc.SNES().create(dolfinx.MPI.comm_world)
     snes.setTolerances(rtol=1.0e-15, max_it=10)
 
     snes.getKSP().setType("minres")
@@ -484,8 +484,8 @@ def test_assembly_solve_taylor_hood(mesh):
     u.interpolate(initial_guess_u)
     p.interpolate(initial_guess_p)
 
-    x0 = dolfin.fem.create_vector_block(F)
-    dolfin.cpp.la.scatter_local_vectors(
+    x0 = dolfinx.fem.create_vector_block(F)
+    dolfinx.cpp.la.scatter_local_vectors(
         x0, [u.vector.array_r, p.vector.array_r],
         [u.function_space.dofmap.index_map, p.function_space.dofmap.index_map])
     x0.ghostUpdate(addv=PETSc.InsertMode.INSERT, mode=PETSc.ScatterMode.FORWARD)
@@ -496,11 +496,11 @@ def test_assembly_solve_taylor_hood(mesh):
 
     # -- Blocked and nested
 
-    Jmat1 = dolfin.fem.create_matrix_nest(J)
-    Pmat1 = dolfin.fem.create_matrix_nest(P)
-    Fvec1 = dolfin.fem.create_vector_nest(F)
+    Jmat1 = dolfinx.fem.create_matrix_nest(J)
+    Pmat1 = dolfinx.fem.create_matrix_nest(P)
+    Fvec1 = dolfinx.fem.create_vector_nest(F)
 
-    snes = PETSc.SNES().create(dolfin.MPI.comm_world)
+    snes = PETSc.SNES().create(dolfinx.MPI.comm_world)
     snes.setTolerances(rtol=1.0e-15, max_it=10)
 
     nested_IS = Jmat1.getNestISs()
@@ -525,7 +525,7 @@ def test_assembly_solve_taylor_hood(mesh):
     u.interpolate(initial_guess_u)
     p.interpolate(initial_guess_p)
 
-    x1 = dolfin.fem.create_vector_nest(F)
+    x1 = dolfinx.fem.create_vector_nest(F)
     for x1_soln_pair in zip(x1.getNestSubVecs(), (u, p)):
         x1_sub, soln_sub = x1_soln_pair
         soln_sub.vector.ghostUpdate(addv=PETSc.InsertMode.INSERT, mode=PETSc.ScatterMode.FORWARD)
@@ -545,8 +545,8 @@ def test_assembly_solve_taylor_hood(mesh):
     P2 = ufl.VectorElement("Lagrange", mesh.ufl_cell(), 2)
     P1 = ufl.FiniteElement("Lagrange", mesh.ufl_cell(), 1)
     TH = P2 * P1
-    W = dolfin.FunctionSpace(mesh, TH)
-    U = dolfin.Function(W)
+    W = dolfinx.FunctionSpace(mesh, TH)
+    U = dolfinx.Function(W)
     dU = ufl.TrialFunction(W)
     u, p = ufl.split(U)
     du, dp = ufl.split(dU)
@@ -557,14 +557,14 @@ def test_assembly_solve_taylor_hood(mesh):
     J = derivative(F, U, dU)
     P = inner(ufl.grad(du), ufl.grad(v)) * dx + inner(dp, q) * dx
 
-    bcs = [dolfin.DirichletBC(W.sub(0), u_bc_0, boundary0),
-           dolfin.DirichletBC(W.sub(0), u_bc_1, boundary1)]
+    bcs = [dolfinx.DirichletBC(W.sub(0), u_bc_0, boundary0),
+           dolfinx.DirichletBC(W.sub(0), u_bc_1, boundary1)]
 
-    Jmat2 = dolfin.fem.create_matrix(J)
-    Pmat2 = dolfin.fem.create_matrix(P)
-    Fvec2 = dolfin.fem.create_vector(F)
+    Jmat2 = dolfinx.fem.create_matrix(J)
+    Pmat2 = dolfinx.fem.create_matrix(P)
+    Fvec2 = dolfinx.fem.create_vector(F)
 
-    snes = PETSc.SNES().create(dolfin.MPI.comm_world)
+    snes = PETSc.SNES().create(dolfinx.MPI.comm_world)
     snes.setTolerances(rtol=1.0e-15, max_it=10)
 
     snes.getKSP().setType("minres")
@@ -577,7 +577,7 @@ def test_assembly_solve_taylor_hood(mesh):
 
     U.interpolate(lambda x: numpy.row_stack((initial_guess_u(x), initial_guess_p(x))))
 
-    x2 = dolfin.fem.create_vector(F)
+    x2 = dolfinx.fem.create_vector(F)
     x2.array = U.vector.array_r
 
     snes.solve(None, x2)

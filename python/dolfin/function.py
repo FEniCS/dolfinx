@@ -11,7 +11,7 @@ import numpy as np
 from petsc4py import PETSc
 
 import ufl
-from dolfin import common, cpp, function, functionspace
+from dolfinx import common, cpp, function, functionspace
 
 
 class Function(ufl.Coefficient):
@@ -62,7 +62,7 @@ class Function(ufl.Coefficient):
 
     def ufl_evaluate(self, x, component, derivatives):
         """Function used by ufl to evaluate the Expression"""
-        # FIXME: same as dolfin.expression.Expression version. Find way
+        # FIXME: same as dolfinx.expression.Expression version. Find way
         # to re-use.
         assert derivatives == ()  # TODO: Handle derivatives
 
