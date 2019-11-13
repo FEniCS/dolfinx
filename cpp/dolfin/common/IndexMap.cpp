@@ -6,8 +6,6 @@
 
 #include "IndexMap.h"
 #include <algorithm>
-#include <functional>
-#include <map>
 #include <set>
 #include <vector>
 
