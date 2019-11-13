@@ -169,8 +169,6 @@ int main(int argc, char* argv[])
   auto cmap = a->coordinate_mapping();
   mesh->geometry().coord_mapping = cmap;
 
-  // auto dx = Eigen::square(x - 0.5);
-  // values = 10.0 * Eigen::exp(-(dx.col(0) + dx.col(1)) / 0.02);
   f->interpolate([](auto& x) {
     auto dx = Eigen::square(x - 0.5);
     return 10.0 * Eigen::exp(-(dx.row(0) + dx.row(1)) / 0.02);

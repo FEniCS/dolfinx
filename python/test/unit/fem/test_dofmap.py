@@ -709,11 +709,11 @@ def test_higher_order_coordinate_map(points, celltype):
     x_g = mesh.geometry.points
 
     cmap = fem.create_coordinate_map(mesh.ufl_domain())
-    x_coord_new = np.zeros([len(points), mesh.geometric_dimension()])
+    x_coord_new = np.zeros([len(points), mesh.geometry.dim])
 
     i = 0
     for node in range(len(points)):
-        x_coord_new[i] = x_g[coord_dofs[0, node], :mesh.geometric_dimension()]
+        x_coord_new[i] = x_g[coord_dofs[0, node], :mesh.geometry.dim]
         i += 1
 
     x = np.zeros(X.shape)
@@ -722,7 +722,7 @@ def test_higher_order_coordinate_map(points, celltype):
     assert(np.allclose(x[:, 0], X[:, 0]))
     assert(np.allclose(x[:, 1], 2 * X[:, 1]))
 
-    if mesh.geometric_dimension() == 3:
+    if mesh.geometry.dim == 3:
         assert(np.allclose(x[:, 2], 3 * X[:, 2]))
 
 
@@ -758,11 +758,11 @@ def test_higher_order_tetra_coordinate_map(order):
     x_g = mesh.geometry.points
 
     cmap = fem.create_coordinate_map(mesh.ufl_domain())
-    x_coord_new = np.zeros([len(points), mesh.geometric_dimension()])
+    x_coord_new = np.zeros([len(points), mesh.geometry.dim])
 
     i = 0
     for node in range(len(points)):
-        x_coord_new[i] = x_g[coord_dofs[0, node], :mesh.geometric_dimension()]
+        x_coord_new[i] = x_g[coord_dofs[0, node], :mesh.geometry.dim]
         i += 1
 
     x = np.zeros(X.shape)
