@@ -435,10 +435,9 @@ def test_assembly_solve_taylor_hood(mesh):
         return x[0] > (1.0 - 10 * numpy.finfo(float).eps)
 
     def initial_guess_u(x):
-        d = x.shape[0]
         u_init = numpy.row_stack((numpy.sin(x[0]) * numpy.sin(x[1]),
                                   numpy.cos(x[0]) * numpy.cos(x[1])))
-        if d == 3:
+        if gdim == 3:
             u_init = numpy.row_stack((u_init, numpy.cos(x[2])))
         return u_init
 
