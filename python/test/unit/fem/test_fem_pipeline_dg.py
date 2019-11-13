@@ -1,14 +1,18 @@
-# DG test based on https://github.com/FEniCS/dolfinx/blob/master/python/test/unit/fem/test_fem_pipeline.py
+# Copyright (C) 2019 Joe Dean, Jorgen Dokken, and Garth N. Wells
+#
+# This file is part of DOLFIN (https://www.fenicsproject.org)
+#
+# SPDX-License-Identifier:    LGPL-3.0-or-later
 
 import numpy as np
 import pytest
 from petsc4py import PETSc
-from dolfin import (MPI, Function, FunctionSpace, TestFunction,
-                    TrialFunction, UnitCubeMesh, UnitIntervalMesh,
+from dolfin import (MPI, Function, FunctionSpace, UnitCubeMesh, UnitIntervalMesh,
                     UnitSquareMesh, FacetNormal, CellDiameter)
 from dolfin.cpp.mesh import CellType
 from dolfin.fem import (assemble_matrix, assemble_scalar, assemble_vector)
-from ufl import SpatialCoordinate, div, dx, grad, inner, ds, dS, avg, jump
+from ufl import (SpatialCoordinate, div, dx, grad, inner, ds, dS, avg, jump,
+                 TestFunction, TrialFunction)
 
 
 @pytest.mark.parametrize("p", [2, 3, 4])
