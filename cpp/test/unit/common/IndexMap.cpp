@@ -92,8 +92,12 @@ void test_scatter_rev()
 }
 } // namespace
 
-TEST_CASE("Scatter using IndexMap", "[index_map_scatter]")
+TEST_CASE("Scatter forward using IndexMap", "[index_map_scatter_fwd]")
 {
   CHECK_NOTHROW(test_scatter_fwd());
+}
+
+TEST_CASE("Scatter reverse using IndexMap", "[index_map_scatter_rev]")
+{
   CHECK_NOTHROW(test_scatter_rev());
 }
