@@ -116,7 +116,7 @@ IndexMap::IndexMap(MPI_Comm mpi_comm, std::int32_t local_size,
     displs[nb_ind] += 1;
   }
 
-  //  May have repeated shared indidices with different processes
+  //  May have repeated shared indices with different processes
   MPI_Neighbor_alltoallv(reverse_indices.data(), _reverse_sizes.data(),
                          displs_reverse.data(), MPI_INT,
                          _forward_indices.data(), _forward_sizes.data(),
@@ -228,30 +228,28 @@ void IndexMap::scatter_fwd_impl(const std::vector<T>& local_data,
   remote_data.resize(n * num_ghosts());
 
   // Create displacement vectors
-  std::vector<std::int32_t> displs_send(num_neighbours, 0);
-  std::vector<std::int32_t> displs_recv(num_neighbours, 0);
+  std::vector<std::int32_t> displs_send(num_neighbours + 1, 0);
+  std::vector<std::int32_t> displs_recv(num_neighbours + 1, 0);
   std::vector<std::int32_t> send_sizes(num_neighbours, 0);
   std::vector<std::int32_t> recv_sizes(num_neighbours, 0);
   for (std::int32_t i = 0; i < num_neighbours; ++i)
   {
     send_sizes[i] = _forward_sizes[i] * n;
     recv_sizes[i] = _reverse_sizes[i] * n;
-    if (i > 1)
-    {
-      displs_send[i] = displs_send[i - 1] + send_sizes[i - 1];
-      displs_recv[i] = displs_recv[i - 1] + send_sizes[i - 1];
-    }
+    displs_send[i + 1] = displs_send[i] + send_sizes[i];
+    displs_recv[i + 1] = displs_recv[i] + send_sizes[i];
   }
 
-  // Allocate buffers for sending an receiving data
-  int n_send = std::accumulate(send_sizes.begin(), send_sizes.end(), 0);
-  int n_recv = std::accumulate(recv_sizes.begin(), recv_sizes.end(), 0);
+  // Allocate buffers for sending and receiving data
+  int n_send = displs_send.back();
+  int n_recv = displs_recv.back();
+
   std::vector<T> data_to_send(n_send);
   std::vector<T> data_to_recv(n_recv);
   int nb_ind;
   for (std::size_t i = 0; i < _forward_indices.size(); ++i)
   {
-    int index = _forward_indices[i];
+    const int index = _forward_indices[i];
     for (std::int32_t j = 0; j < n; ++j)
       data_to_send[i * n + j] = local_data[n * index + j];
   }
