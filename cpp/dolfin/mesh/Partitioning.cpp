@@ -552,9 +552,7 @@ PartitionData Partitioning::partition_cells(
   if (mpi_comm != MPI_COMM_NULL)
   {
     // Compute dual graph (for this partition)
-    std::vector<std::vector<std::size_t>> local_graph;
-    std::tuple<std::int32_t, std::int32_t, std::int32_t> graph_info;
-    std::tie(local_graph, graph_info) = graph::GraphBuilder::compute_dual_graph(
+    auto [local_graph, graph_info] = graph::GraphBuilder::compute_dual_graph(
         mpi_comm, cell_vertices, cell_type);
 
     const std::size_t global_graph_size
@@ -809,9 +807,7 @@ std::map<std::int64_t, std::vector<int>> Partitioning::compute_halo_cells(
         cell_vertices)
 {
   // Compute dual graph (for this partition)
-  std::vector<std::vector<std::size_t>> local_graph;
-  std::tuple<std::int32_t, std::int32_t, std::int32_t> graph_info;
-  std::tie(local_graph, graph_info) = graph::GraphBuilder::compute_dual_graph(
+  auto [local_graph, graph_info] = graph::GraphBuilder::compute_dual_graph(
       mpi_comm, cell_vertices, cell_type);
 
   graph::CSRGraph<std::int64_t> csr_graph(mpi_comm, local_graph);

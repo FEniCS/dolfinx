@@ -170,16 +170,11 @@ compute_point_distribution(
   // Distribute points to processes that need them, and calculate
   // shared points. Points are returned in same order as in global_index_set.
   // Sharing information is (global_index -> [remote sharing processes]).
-  std::map<std::int64_t, std::set<int>> shared_points_global;
-  Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
-      recv_points;
-  std::tie(shared_points_global, recv_points)
+  auto [shared_points_global, recv_points]
       = Partitioning::distribute_points(mpi_comm, points, global_index_set);
 
   // Get local to global mapping for points
-  std::vector<std::int64_t> local_to_global;
-  std::array<int, 4> num_vertices_local;
-  std::tie(local_to_global, num_vertices_local)
+  auto [local_to_global, num_vertices_local]
       = compute_local_to_global_point_map(mpi_comm, num_vertices_per_cell,
                                           shared_points_global, cell_nodes,
                                           type);
