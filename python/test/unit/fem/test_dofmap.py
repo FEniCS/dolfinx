@@ -16,6 +16,7 @@ from dolfin import (MPI, FunctionSpace, Mesh, MeshEntity, UnitCubeMesh,
                     fem)
 from dolfin.cpp.mesh import CellType, GhostMode
 from ufl import FiniteElement, MixedElement, VectorElement
+from random import shuffle
 
 xfail = pytest.mark.xfail(strict=True)
 
@@ -533,17 +534,20 @@ def test_triangle_dof_ordering(space_type):
 def test_triangle_dof_ordering_parallel(space_type):
     """Checks that dofs on shared triangle edges match up"""
     # Create a triangle mesh
-    from random import shuffle
     N = 10
-    points = np.array([[x / 2, y / 2] for x in range(N) for y in range(N)])
+    # Create a grid of points [0, 0.5, ..., 9.5]**2, then order them in a random order
+    temp_points = np.array([[x / 2, y / 2] for x in range(N) for y in range(N)])
+    order = [i for i, j in enumerate(temp_points)]
+    shuffle(order)
+    points = np.array([temp_points[i] for i in order])
+
+    # Make triangle cells using the randomly ordered points
     cells = []
     for x in range(N - 1):
         for y in range(N - 1):
             a = N * y + x
             for cell in [[a, a + 1, a + N + 1], [a, a + N + 1, a + N]]:
-                # Put points in cell in a random order to test dof permuting
-                shuffle(cell)
-                cells.append(cell)
+                cells.append([order[i] for i in cell])
 
     if MPI.rank(MPI.comm_world) == 0:
         # On process 0, input mesh data and distribute to other processes
