@@ -546,6 +546,12 @@ def test_triangle_dof_ordering_parallel(space_type):
     for x in range(N - 1):
         for y in range(N - 1):
             a = N * y + x
+            # Adds two triangle cells:
+            # a+N -- a+N+1
+            #  |   / |
+            #  |  /  |
+            #  | /   |
+            #  a --- a+1
             for cell in [[a, a + 1, a + N + 1], [a, a + N + 1, a + N]]:
                 cells.append([order[i] for i in cell])
 
