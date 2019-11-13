@@ -89,12 +89,12 @@ import matplotlib.pyplot as plt
 import numpy as np
 
 import dolfin
-from dolfin import (MPI, DirichletBC, Function, FunctionSpace, TestFunction,
-                    TrialFunction)
+from dolfin import (MPI, DirichletBC, Function, FunctionSpace)
 from dolfin.io import XDMFFile
 from dolfin.plotting import plot
 from ufl import (FiniteElement, VectorElement,
-                 div, dx, grad, inner)
+                 div, dx, grad, inner,
+                 TrialFunction, TestFunction)
 
 # Load mesh and subdomains
 xdmf = XDMFFile(MPI.comm_world, "../dolfin_fine.xdmf")
@@ -131,7 +131,7 @@ mf1 = np.where(mf == 1)
 # No-slip boundary condition for velocity
 # x1 = 0, x1 = 1 and around the dolphin
 noslip = Function(V)
-noslip.interpolate(lambda x: np.zeros_like(x))
+noslip.interpolate(lambda x: np.zeros_like(x[:mesh.geometry.dim]))
 
 bc0 = DirichletBC(V, noslip, mf0[0])
 
@@ -175,7 +175,7 @@ g = Function(Q)
 a = [[inner(grad(u), grad(v)) * dx,  inner(p, div(v)) * dx],
      [inner(div(u), q) * dx, None]]
 
-prec = [[inner(grad(u), grad(v)) * dx, None],
+prec = [[a[0][0], None],
         [None, p * q * dx]]
 
 L = [inner(f, v) * dx, dolfin.Constant(mesh, 0) * q * dx]
@@ -191,9 +191,6 @@ L = [inner(f, v) * dx, dolfin.Constant(mesh, 0) * q * dx]
 # optional argument True in the split function to specify that we want a
 # deep copy. If no argument is given we will get a shallow copy. We want
 # a deep copy for further computations on the coefficient vectors::
-
-# Compute solution
-x = dolfin.fem.create_vector_nest(L)
 
 A = dolfin.fem.create_matrix_nest(a)
 dolfin.fem.assemble_matrix_nest(A, a, bcs)
@@ -249,7 +246,7 @@ ksp.setOperators(A, P)
 ksp.setTolerances(rtol=1e-8)
 ksp.setType("fgmres")
 ksp.getPC().setType("fieldsplit")
-ksp.getPC().setFieldSplitType(PETSc.PC.CompositeType.MULTIPLICATIVE)
+ksp.getPC().setFieldSplitType(PETSc.PC.CompositeType.ADDITIVE)
 
 nested_IS = A.getNestISs()
 ksp.getPC().setFieldSplitIS(
@@ -270,9 +267,11 @@ opts["ksp_monitor"] = None
 opts["ksp_monitor_lg_residualnorm"] = None
 ksp.setFromOptions()
 
+# Compute solution
+x = dolfin.fem.create_vector_nest(L)
 ksp.solve(b, x)
 
-ksp.view()
+# ksp.view()
 # We can calculate the :math:`L^2` norms of u and p as follows::
 
 u, p = Function(V), Function(Q)
