@@ -14,7 +14,6 @@ from petsc4py import PETSc
 
 import ufl
 from dolfin import common, cpp, fem, function, jit
-from dolfin.fem import dofmap
 
 
 class Constant(ufl.Constant):
