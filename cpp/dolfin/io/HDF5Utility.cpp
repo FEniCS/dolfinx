@@ -289,9 +289,7 @@ void HDF5Utility::set_local_vector_values(
 
   // Calculate one (global cell, local_dof_index) to associate with
   // each item in the vector on this process
-  std::vector<std::size_t> global_cells;
-  std::vector<std::size_t> remote_local_dofi;
-  std::tie(global_cells, remote_local_dofi) = HDF5Utility::map_gdof_to_cell(
+  auto [global_cells, remote_local_dofi] = HDF5Utility::map_gdof_to_cell(
       mpi_comm, cells, cell_dofs, x_cell_dofs, input_vector_range);
 
   // At this point, each process has a set of data, and for each
