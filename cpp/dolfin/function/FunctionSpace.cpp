@@ -151,15 +151,15 @@ void FunctionSpace::interpolate(
     Eigen::Ref<Eigen::Array<PetscScalar, Eigen::Dynamic, 1>> coefficients,
     const std::function<Eigen::Array<PetscScalar, Eigen::Dynamic,
                                      Eigen::Dynamic, Eigen::RowMajor>(
-        const Eigen::Ref<const Eigen::Array<
-            double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>>&)>& f)
-    const
+        const Eigen::Ref<const Eigen::Array<double, 3, Eigen::Dynamic,
+                                            Eigen::RowMajor>>&)>& f) const
 {
   // Evaluate expression at dof points
-  Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor> x
-      = tabulate_dof_coordinates();
-  Eigen::Array<PetscScalar, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
-      values = f(x.transpose());
+  const Eigen::Array<double, 3, Eigen::Dynamic, Eigen::RowMajor> x
+      = tabulate_dof_coordinates().transpose();
+  const Eigen::Array<PetscScalar, Eigen::Dynamic, Eigen::Dynamic,
+                     Eigen::RowMajor>
+      values = f(x);
 
   assert(_element);
   std::vector<int> vshape(_element->value_rank(), 1);
@@ -173,7 +173,7 @@ void FunctionSpace::interpolate(
   // types, therefore we need to handle vectors as a special case.
   if (values.cols() == 1 and values.rows() != 1)
   {
-    if (values.rows() != x.rows())
+    if (values.rows() != x.cols())
     {
       throw std::runtime_error("Number of computed values is not equal to the "
                                "number of evaluation points. (1)");
@@ -185,7 +185,7 @@ void FunctionSpace::interpolate(
     if (values.rows() != value_size)
       throw std::runtime_error("Values shape is incorrect. (2)");
 
-    if (values.cols() != x.rows())
+    if (values.cols() != x.cols())
     {
       throw std::runtime_error("Number of computed values is not equal to the "
                                "number of evaluation points. (2)");
@@ -200,7 +200,7 @@ void FunctionSpace::interpolate_c(
     const interpolation_function& f) const
 {
   // Build list of points at which to evaluate the Expression
-  Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor> x
+  const Eigen::Array<double, Eigen::Dynamic, 3, Eigen::RowMajor> x
       = tabulate_dof_coordinates();
 
   // Evaluate expression at points
@@ -277,7 +277,7 @@ FunctionSpace::collapse() const
 //-----------------------------------------------------------------------------
 std::vector<int> FunctionSpace::component() const { return _component; }
 //-----------------------------------------------------------------------------
-Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
+Eigen::Array<double, Eigen::Dynamic, 3, Eigen::RowMajor>
 FunctionSpace::tabulate_dof_coordinates() const
 {
   // Geometric dimension
@@ -304,9 +304,10 @@ FunctionSpace::tabulate_dof_coordinates() const
   const Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>& X
       = _element->dof_reference_coordinates();
 
-  // Arrray to hold coordinates and return
-  Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor> x(
-      local_size, gdim);
+  // Array to hold coordinates to return
+  Eigen::Array<double, Eigen::Dynamic, 3, Eigen::RowMajor> x
+      = Eigen::Array<double, Eigen::Dynamic, 3, Eigen::RowMajor>::Zero(
+          local_size, 3);
 
   // Get coordinate mapping
   if (!_mesh->geometry().coord_mapping)
@@ -340,8 +341,10 @@ FunctionSpace::tabulate_dof_coordinates() const
     // Update cell
     const int cell_index = cell.index();
     for (int i = 0; i < num_dofs_g; ++i)
-      for (int j = 0; j < gdim; ++j)
-        coordinate_dofs(i, j) = x_g(cell_g[pos_g[cell_index] + i], j);
+    {
+      coordinate_dofs.row(i)
+          = x_g.row(cell_g[pos_g[cell_index] + i]).head(gdim);
+    }
 
     // Get local-to-global map
     auto dofs = _dofmap->cell_dofs(cell.index());
@@ -353,8 +356,7 @@ FunctionSpace::tabulate_dof_coordinates() const
     for (Eigen::Index i = 0; i < dofs.size(); ++i)
     {
       const PetscInt dof = dofs[i];
-      if (dof < (PetscInt)local_size)
-        x.row(dof) = coordinates.row(i);
+      x.row(dof).head(gdim) = coordinates.row(i);
     }
   }
 
