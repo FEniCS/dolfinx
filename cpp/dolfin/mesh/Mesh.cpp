@@ -254,16 +254,8 @@ Mesh::Mesh(
 
   // Compute node local-to-global map from global indices, and compute
   // cell topology using new local indices
-  std::array<int, 4> num_vertices_local;
-  std::vector<std::int64_t> node_indices_global;
-  Eigen::Array<std::int32_t, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
-      coordinate_nodes;
-  std::map<std::int32_t, std::set<std::int32_t>> nodes_shared;
-  Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
-      points_received;
-
-  std::tie(node_indices_global, nodes_shared, coordinate_nodes, points_received,
-           num_vertices_local)
+  auto [node_indices_global, nodes_shared, coordinate_nodes, points_received,
+        num_vertices_local]
       = compute_point_distribution(comm, num_vertices_per_cell, cells, points,
                                    type);
 

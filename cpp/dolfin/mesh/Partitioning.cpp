@@ -807,7 +807,8 @@ std::map<std::int64_t, std::vector<int>> Partitioning::compute_halo_cells(
         cell_vertices)
 {
   // Compute dual graph (for this partition)
-  auto [local_graph, graph_info] = graph::GraphBuilder::compute_dual_graph(
+  std::vector<std::vector<std::size_t>> local_graph;
+  std::tie(local_graph, std::ignore) = graph::GraphBuilder::compute_dual_graph(
       mpi_comm, cell_vertices, cell_type);
 
   graph::CSRGraph<std::int64_t> csr_graph(mpi_comm, local_graph);
