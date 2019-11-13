@@ -93,7 +93,7 @@ from dolfin import (MPI, DirichletBC, Function, FunctionSpace, TestFunction,
                     TrialFunction)
 from dolfin.io import XDMFFile
 from dolfin.plotting import plot
-from ufl import (FiniteElement, TestFunctions, TrialFunctions, VectorElement,
+from ufl import (FiniteElement, VectorElement,
                  div, dx, grad, inner)
 
 # Load mesh and subdomains
