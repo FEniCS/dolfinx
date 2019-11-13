@@ -83,7 +83,7 @@ public:
   }
 
   /// Owner rank of each ghost entry
-  const Eigen::Array<std::int32_t, Eigen::Dynamic, 1>& ghost_owners() const;
+  const Eigen::Array<std::int32_t, Eigen::Dynamic, 1> ghost_owners() const;
 
   /// Get process that owns index (global block index)
   int owner(std::int64_t global_index) const;

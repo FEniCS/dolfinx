@@ -50,7 +50,11 @@ IndexMap::IndexMap(MPI_Comm mpi_comm, std::int32_t local_size,
 
   for (std::int32_t i = 0; i < mpi_size; ++i)
     if (send_nghosts[i] > 0 or recv_nghosts[i] > 0)
+    {
       _neighbours.push_back(i);
+      _reverse_sizes.push_back(send_nghosts[i]);
+      _forward_sizes.push_back(recv_nghosts[i]);
+    }
 
   std::int32_t num_neighbours = _neighbours.size();
 
@@ -66,20 +70,7 @@ IndexMap::IndexMap(MPI_Comm mpi_comm, std::int32_t local_size,
   MPI_Dist_graph_neighbors(_neighbour_comm, num_neighbours, sources.data(),
                            NULL, num_neighbours, dests.data(), NULL);
   assert(sources == dests);
-
-  // Number of indices to send and receive
-  _reverse_sizes.resize(num_neighbours);
-  _forward_sizes.resize(num_neighbours);
-  for (std::int32_t i = 0; i < num_neighbours; ++i)
-  {
-    int count = std::count(_ghost_owners.data(),
-                           _ghost_owners.data() + _ghost_owners.size(),
-                           _neighbours[i]);
-    _reverse_sizes[i] = count;
-  }
-
-  MPI_Neighbor_alltoall(_reverse_sizes.data(), 1, MPI_INT,
-                        _forward_sizes.data(), 1, MPI_INT, _neighbour_comm);
+  assert(sources == _neighbours);
 
   // Create displacement vector
   std::vector<std::int32_t> displs_reverse(num_neighbours + 1, 0);
@@ -140,7 +131,7 @@ int IndexMap::owner(std::int64_t global_index) const
   return std::distance(_all_ranges.begin(), it) - 1;
 }
 //-----------------------------------------------------------------------------
-const Eigen::Array<std::int32_t, Eigen::Dynamic, 1>&
+const Eigen::Array<std::int32_t, Eigen::Dynamic, 1>
 IndexMap::ghost_owners() const
 {
   return _ghost_owners;
