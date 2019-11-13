@@ -90,8 +90,8 @@ public:
   using interpolation_function = std::function<void(
       Eigen::Ref<Eigen::Array<PetscScalar, Eigen::Dynamic, Eigen::Dynamic,
                               Eigen::RowMajor>>,
-      const Eigen::Ref<const Eigen::Array<double, Eigen::Dynamic,
-                                          Eigen::Dynamic, Eigen::RowMajor>>&)>;
+      const Eigen::Ref<
+          const Eigen::Array<double, Eigen::Dynamic, 3, Eigen::RowMajor>>&)>;
 
   /// Interpolate an expression into this function space, filling the
   /// array of expansion coefficients associated with this function
@@ -106,9 +106,8 @@ public:
       Eigen::Ref<Eigen::Array<PetscScalar, Eigen::Dynamic, 1>> coefficients,
       const std::function<Eigen::Array<PetscScalar, Eigen::Dynamic,
                                        Eigen::Dynamic, Eigen::RowMajor>(
-          const Eigen::Ref<const Eigen::Array<
-              double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>>&)>& f)
-      const;
+          const Eigen::Ref<const Eigen::Array<double, 3, Eigen::Dynamic,
+                                              Eigen::RowMajor>>&)>& f) const;
 
   /// Interpolate an expression into this function space, filling the
   /// array of expansion coefficients associated with this function
@@ -165,8 +164,8 @@ public:
   /// function is typically used by preconditioners that require the
   /// spatial coordinates of dofs, for example for re-partitioning or
   /// nullspace computations.
-  /// @return The dof coordinates [([0, y0], [x1, y1], . . .)
-  Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
+  /// @return The dof coordinates [([x0, y0, z0], [x1, y1, z1], ...)
+  Eigen::Array<double, Eigen::Dynamic, 3, Eigen::RowMajor>
   tabulate_dof_coordinates() const;
 
   /// Set dof entries in vector to value*x[i], where [x][i] is the
@@ -175,7 +174,7 @@ public:
   /// typically used to construct the null space of a matrix operator,
   /// e.g. rigid body rotations.
   ///
-  /// @param[in] x The vector to set
+  /// @param[in,out] x The vector to set
   /// @param[in] value The value to multiply to coordinate by
   /// @param[in] component The coordinate index
   void set_x(Eigen::Ref<Eigen::Array<PetscScalar, Eigen::Dynamic, 1>> x,

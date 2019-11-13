@@ -20,6 +20,7 @@ import pytest
 from petsc4py import PETSc
 
 import dolfin
+import ufl
 from ufl import dx, inner
 
 petsc_dir = os.environ.get('PETSC_DIR', None)
@@ -283,7 +284,7 @@ def test_custom_mesh_loop_rank1():
     assert(b0.vector.sum() == pytest.approx(1.0))
 
     # Test against generated code and general assembler
-    v = dolfin.TestFunction(V)
+    v = ufl.TestFunction(V)
     L = inner(1.0, v) * dx
 
     start = time.time()
@@ -331,7 +332,7 @@ def test_custom_mesh_loop_ctypes_rank2():
     dofs = V.dofmap.dof_array
 
     # Generated case with general assembler
-    u, v = dolfin.TrialFunction(V), dolfin.TestFunction(V)
+    u, v = ufl.TrialFunction(V), ufl.TestFunction(V)
     a = inner(u, v) * dx
     A0 = dolfin.fem.assemble_matrix(a)
     A0.assemble()
@@ -365,7 +366,7 @@ def test_custom_mesh_loop_cffi_rank2(set_vals):
     V = dolfin.FunctionSpace(mesh, ("Lagrange", 1))
 
     # Test against generated code and general assembler
-    u, v = dolfin.TrialFunction(V), dolfin.TestFunction(V)
+    u, v = ufl.TrialFunction(V), ufl.TestFunction(V)
     a = inner(u, v) * dx
     A0 = dolfin.fem.assemble_matrix(a)
     A0.assemble()

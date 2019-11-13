@@ -60,9 +60,9 @@ def test_matrix_assembly_block():
     bc = dolfin.fem.dirichletbc.DirichletBC(V1, u_bc, boundary)
 
     # Define variational problem
-    du, dp = dolfin.function.TrialFunction(V0), dolfin.function.TrialFunction(V1)
+    du, dp = ufl.TrialFunction(V0), ufl.TrialFunction(V1)
     u, p = dolfin.function.Function(V0), dolfin.function.Function(V1)
-    v, q = dolfin.function.TestFunction(V0), dolfin.function.TestFunction(V1)
+    v, q = ufl.TestFunction(V0), ufl.TestFunction(V1)
 
     u.interpolate(initial_guess_u)
     p.interpolate(initial_guess_p)
@@ -116,10 +116,10 @@ def test_matrix_assembly_block():
     # Monolithic version
     E = P0 * P1
     W = dolfin.function.functionspace.FunctionSpace(mesh, E)
-    dU = dolfin.function.TrialFunction(W)
+    dU = ufl.TrialFunction(W)
     U = dolfin.function.Function(W)
     u0, u1 = ufl.split(U)
-    v0, v1 = dolfin.function.TestFunctions(W)
+    v0, v1 = ufl.TestFunctions(W)
 
     U.interpolate(lambda x: numpy.row_stack((initial_guess_u(x), initial_guess_p(x))))
 
@@ -265,8 +265,8 @@ def test_assembly_solve_block():
 
     # Block and Nest variational problem
     u, p = dolfin.function.Function(V0), dolfin.function.Function(V1)
-    du, dp = dolfin.function.TrialFunction(V0), dolfin.function.TrialFunction(V1)
-    v, q = dolfin.function.TestFunction(V0), dolfin.function.TestFunction(V1)
+    du, dp = ufl.TrialFunction(V0), ufl.TrialFunction(V1)
+    v, q = ufl.TestFunction(V0), ufl.TestFunction(V1)
 
     f = 1.0
     g = -3.0
@@ -366,9 +366,9 @@ def test_assembly_solve_block():
     E = P * P
     W = dolfin.function.functionspace.FunctionSpace(mesh, E)
     U = dolfin.function.Function(W)
-    dU = dolfin.function.TrialFunction(W)
+    dU = ufl.TrialFunction(W)
     u0, u1 = ufl.split(U)
-    v0, v1 = dolfin.function.TestFunctions(W)
+    v0, v1 = ufl.TestFunctions(W)
 
     F = inner((u0**2 + 1) * ufl.grad(u0), ufl.grad(v0)) * dx \
         + inner((u1**2 + 1) * ufl.grad(u1), ufl.grad(v1)) * dx \
@@ -435,10 +435,9 @@ def test_assembly_solve_taylor_hood(mesh):
         return x[0] > (1.0 - 10 * numpy.finfo(float).eps)
 
     def initial_guess_u(x):
-        d = x.shape[0]
         u_init = numpy.row_stack((numpy.sin(x[0]) * numpy.sin(x[1]),
                                   numpy.cos(x[0]) * numpy.cos(x[1])))
-        if d == 3:
+        if gdim == 3:
             u_init = numpy.row_stack((u_init, numpy.cos(x[2])))
         return u_init
 
@@ -455,8 +454,8 @@ def test_assembly_solve_taylor_hood(mesh):
            dolfin.DirichletBC(P2, u_bc_1, boundary1)]
 
     u, p = dolfin.Function(P2), dolfin.Function(P1)
-    du, dp = dolfin.TrialFunction(P2), dolfin.TrialFunction(P1)
-    v, q = dolfin.TestFunction(P2), dolfin.TestFunction(P1)
+    du, dp = ufl.TrialFunction(P2), ufl.TrialFunction(P1)
+    v, q = ufl.TestFunction(P2), ufl.TestFunction(P1)
 
     F = [inner(ufl.grad(u), ufl.grad(v)) * dx + inner(p, ufl.div(v)) * dx,
          inner(ufl.div(u), q) * dx]
@@ -548,10 +547,10 @@ def test_assembly_solve_taylor_hood(mesh):
     TH = P2 * P1
     W = dolfin.FunctionSpace(mesh, TH)
     U = dolfin.Function(W)
-    dU = dolfin.TrialFunction(W)
+    dU = ufl.TrialFunction(W)
     u, p = ufl.split(U)
     du, dp = ufl.split(dU)
-    v, q = dolfin.TestFunctions(W)
+    v, q = ufl.TestFunctions(W)
 
     F = inner(ufl.grad(u), ufl.grad(v)) * dx + inner(p, ufl.div(v)) * dx \
         + inner(ufl.div(u), q) * dx

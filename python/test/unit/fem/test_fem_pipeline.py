@@ -8,13 +8,13 @@ import numpy as np
 import pytest
 from petsc4py import PETSc
 
-from dolfin import (MPI, DirichletBC, Function, FunctionSpace, TestFunction,
-                    TrialFunction, UnitCubeMesh, UnitIntervalMesh,
-                    UnitSquareMesh)
+from dolfin import (MPI, DirichletBC, Function, FunctionSpace, UnitCubeMesh,
+                    UnitIntervalMesh, UnitSquareMesh)
 from dolfin.cpp.mesh import CellType
 from dolfin.fem import (apply_lifting, assemble_matrix, assemble_scalar,
                         assemble_vector, set_bc)
-from ufl import SpatialCoordinate, div, dx, grad, inner
+from ufl import (SpatialCoordinate, TestFunction, TrialFunction, div, dx, grad,
+                 inner)
 
 
 @pytest.mark.parametrize("n", [2, 3, 4])
