@@ -347,7 +347,7 @@ class FunctionSpace(ufl.FunctionSpace):
         return self._cpp_object.element
 
     @property
-    def dofmap(self) -> fem.dofmap.DofMap:
+    def dofmap(self) -> "fem.dofmap.DofMap":
         """Return the degree-of-freedom map associated with the function space."""
         return fem.dofmap.DofMap(self._cpp_object.dofmap)
 
