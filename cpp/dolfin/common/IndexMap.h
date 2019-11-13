@@ -83,7 +83,7 @@ public:
   }
 
   /// Owner rank of each ghost entry
-  const Eigen::Array<std::int32_t, Eigen::Dynamic, 1> ghost_owners() const;
+  Eigen::Array<std::int32_t, Eigen::Dynamic, 1> ghost_owners() const;
 
   /// Get process that owns index (global block index)
   int owner(std::int64_t global_index) const;
@@ -165,14 +165,11 @@ private:
   // Local-to-global map for ghost indices
   Eigen::Array<PetscInt, Eigen::Dynamic, 1> _ghosts;
 
-  // Owning process for each ghost index
+  // Owning neighbour for each ghost index
   Eigen::Array<std::int32_t, Eigen::Dynamic, 1> _ghost_owners;
 
   // Neigbour processes
   std::vector<std::int32_t> _neighbours;
-
-  // Number of indices to send to each neighbour process in reverse mode
-  std::vector<std::int32_t> _reverse_sizes;
 
   // Number of indices to send to each neighbour process in forward mode
   std::vector<std::int32_t> _forward_sizes;
