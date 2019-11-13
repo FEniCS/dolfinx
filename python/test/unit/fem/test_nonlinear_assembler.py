@@ -41,8 +41,8 @@ def test_matrix_assembly_block():
     P0 = ufl.FiniteElement("Lagrange", mesh.ufl_cell(), p0)
     P1 = ufl.FiniteElement("Lagrange", mesh.ufl_cell(), p1)
 
-    V0 = dolfin.function.functionspace.FunctionSpace(mesh, P0)
-    V1 = dolfin.function.functionspace.FunctionSpace(mesh, P1)
+    V0 = dolfin.function.FunctionSpace(mesh, P0)
+    V1 = dolfin.function.FunctionSpace(mesh, P1)
 
     def boundary(x):
         return numpy.logical_or(x[0] < 1.0e-6, x[0] > 1.0 - 1.0e-6)
@@ -115,7 +115,7 @@ def test_matrix_assembly_block():
 
     # Monolithic version
     E = P0 * P1
-    W = dolfin.function.functionspace.FunctionSpace(mesh, E)
+    W = dolfin.function.FunctionSpace(mesh, E)
     dU = ufl.TrialFunction(W)
     U = dolfin.function.Function(W)
     u0, u1 = ufl.split(U)
@@ -238,7 +238,7 @@ def test_assembly_solve_block():
     mesh = dolfin.generation.UnitSquareMesh(dolfin.MPI.comm_world, 12, 11)
     p = 1
     P = ufl.FiniteElement("Lagrange", mesh.ufl_cell(), p)
-    V0 = dolfin.function.functionspace.FunctionSpace(mesh, P)
+    V0 = dolfin.function.FunctionSpace(mesh, P)
     V1 = V0.clone()
 
     def bc_val_0(x):
@@ -364,7 +364,7 @@ def test_assembly_solve_block():
 
     # -- Monolithic version
     E = P * P
-    W = dolfin.function.functionspace.FunctionSpace(mesh, E)
+    W = dolfin.function.FunctionSpace(mesh, E)
     U = dolfin.function.Function(W)
     dU = ufl.TrialFunction(W)
     u0, u1 = ufl.split(U)
@@ -423,8 +423,8 @@ def test_assembly_solve_block():
 def test_assembly_solve_taylor_hood(mesh):
     """Assemble Stokes problem with Taylor-Hood elements and solve."""
     gdim = mesh.geometry.dim
-    P2 = dolfin.function.functionspace.VectorFunctionSpace(mesh, ("Lagrange", 2))
-    P1 = dolfin.function.functionspace.FunctionSpace(mesh, ("Lagrange", 1))
+    P2 = dolfin.function.VectorFunctionSpace(mesh, ("Lagrange", 2))
+    P1 = dolfin.function.FunctionSpace(mesh, ("Lagrange", 1))
 
     def boundary0(x):
         """Define boundary x = 0"""

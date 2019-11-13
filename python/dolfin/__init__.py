@@ -49,8 +49,7 @@ from .fem.form import Form
 from .fem.dirichletbc import DirichletBC
 from .fem.solving import solve
 
-from .functionspace import (FunctionSpace, VectorFunctionSpace,
-                            TensorFunctionSpace)
+from .function import FunctionSpace, VectorFunctionSpace, TensorFunctionSpace
 from .function import Function
 from .constant import Constant
 from .specialfunctions import (FacetNormal, CellVolume, CellNormal,
