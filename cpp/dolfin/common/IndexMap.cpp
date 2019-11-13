@@ -260,29 +260,51 @@ void IndexMap::scatter_rev_impl(std::vector<T>& local_data,
   assert((std::int32_t)remote_data.size() == n * num_ghosts());
   local_data.resize(n * size_local(), 0);
 
-  // Open window into local data array
-  MPI_Win win;
-  MPI_Win_create(local_data.data(), sizeof(T) * n * size_local(), sizeof(T),
-                 MPI_INFO_NULL, _mpi_comm, &win);
-  MPI_Win_fence(0, win);
+  int num_neighbours = _neighbours.size();
 
-  // 'Put' (accumulate) ghost data onto owning process
-  for (int i = 0; i < num_ghosts(); ++i)
+  // Create displacement vectors
+  std::vector<std::int32_t> displs_reverse(num_neighbours + 1, 0);
+  std::vector<std::int32_t> displs_forward(num_neighbours + 1, 0);
+  std::vector<std::int32_t> reverse_sizes(num_neighbours, 0);
+  std::vector<std::int32_t> forward_sizes(num_neighbours, 0);
+  for (std::int32_t i = 0; i < num_neighbours; ++i)
   {
-
-    // Remote owning process
-    const int p = _ghost_owners[i];
-
-    // Index on remote process
-    const int remote_data_offset = _ghosts[i] - _all_ranges[p];
-
-    // Stack up requests (sum)
-    MPI_Accumulate(remote_data.data() + n * i, n, MPI::mpi_type<T>(), p,
-                   n * remote_data_offset, n, MPI::mpi_type<T>(), op, win);
+    reverse_sizes[i] = _reverse_sizes[i] * n;
+    forward_sizes[i] = _forward_sizes[i] * n;
+    displs_reverse[i + 1] = displs_reverse[i] + reverse_sizes[i];
+    displs_forward[i + 1] = displs_forward[i] + forward_sizes[i];
   }
 
-  // Synchronise and free window
-  MPI_Win_fence(0, win);
-  MPI_Win_free(&win);
+  // Create vectors for forward communication
+  int n_send = displs_reverse.back();
+  std::vector<T> send_data(n_send);
+  int n_recv = displs_forward.back();
+  std::vector<T> recv_data(n_recv);
+
+  // Fill send data
+  std::vector<std::int32_t> displs(displs_reverse);
+  for (std::int32_t i = 0; i < _ghosts.size(); ++i)
+  {
+    const int p = _ghost_owners[i];
+    const auto it = std::find(_neighbours.begin(), _neighbours.end(), p);
+    assert(it != _neighbours.end());
+    const int nb_ind = it - _neighbours.begin();
+    for (int j = 0; j < n; ++j)
+      send_data[displs[nb_ind] + j] = remote_data[i * n + j];
+    displs[nb_ind] += n;
+  }
+
+  //  May have repeated shared indices with different processes
+  MPI_Neighbor_alltoallv(
+      send_data.data(), reverse_sizes.data(), displs_reverse.data(),
+      MPI::mpi_type<T>(), recv_data.data(), forward_sizes.data(),
+      displs_forward.data(), MPI::mpi_type<T>(), _neighbour_comm);
+
+  for (std::size_t i = 0; i < _forward_indices.size(); ++i)
+  {
+    const int index = _forward_indices[i];
+    for (std::int32_t j = 0; j < n; ++j)
+      local_data[index * n + j] = recv_data[i * n + j];
+  }
 }
 //-----------------------------------------------------------------------------
