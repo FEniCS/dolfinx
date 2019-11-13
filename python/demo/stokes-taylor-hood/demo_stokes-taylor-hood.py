@@ -87,11 +87,11 @@ import matplotlib.pyplot as plt
 import numpy as np
 
 import dolfin
-from dolfin import (MPI, DirichletBC, Function, FunctionSpace, TestFunctions,
-                    TrialFunctions, solve)
+from dolfin import MPI, DirichletBC, Function, FunctionSpace, solve
 from dolfin.io import XDMFFile
 from dolfin.plotting import plot
-from ufl import FiniteElement, VectorElement, div, dx, grad, inner
+from ufl import (FiniteElement, TestFunctions, TrialFunctions, VectorElement,
+                 div, dx, grad, inner)
 
 # Load mesh and subdomains
 xdmf = XDMFFile(MPI.comm_world, "../dolfin_fine.xdmf")

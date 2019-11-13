@@ -32,7 +32,7 @@ parametrize_ghost_mode = pytest.mark.parametrize("mode", [
 
 def test_assembly_dx_domains(mesh):
     V = dolfin.FunctionSpace(mesh, ("CG", 1))
-    u, v = dolfin.TrialFunction(V), dolfin.TestFunction(V)
+    u, v = ufl.TrialFunction(V), ufl.TestFunction(V)
 
     marker = dolfin.MeshFunction("size_t", mesh, mesh.topology.dim, 0)
     values = marker.values
@@ -97,7 +97,7 @@ def test_assembly_dx_domains(mesh):
 
 def test_assembly_ds_domains(mesh):
     V = dolfin.FunctionSpace(mesh, ("CG", 1))
-    u, v = dolfin.TrialFunction(V), dolfin.TestFunction(V)
+    u, v = ufl.TrialFunction(V), ufl.TestFunction(V)
 
     marker = dolfin.MeshFunction("size_t", mesh, mesh.topology.dim - 1, 0)
 

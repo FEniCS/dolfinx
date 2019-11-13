@@ -52,8 +52,8 @@ def test_assemble_derivatives():
     mesh = dolfin.generation.UnitSquareMesh(dolfin.MPI.comm_world, 12, 12)
     Q = dolfin.FunctionSpace(mesh, ("Lagrange", 1))
     u = dolfin.Function(Q)
-    v = dolfin.TestFunction(Q)
-    du = dolfin.TrialFunction(Q)
+    v = ufl.TestFunction(Q)
+    du = ufl.TrialFunction(Q)
     b = dolfin.Function(Q)
     c1 = constant.Constant(mesh, [[1.0, 0.0], [3.0, 4.0]])
     c2 = constant.Constant(mesh, 2.0)
@@ -77,7 +77,7 @@ def test_assemble_derivatives():
 def test_basic_assembly():
     mesh = dolfin.generation.UnitSquareMesh(dolfin.MPI.comm_world, 12, 12)
     V = dolfin.FunctionSpace(mesh, ("Lagrange", 1))
-    u, v = dolfin.TrialFunction(V), dolfin.TestFunction(V)
+    u, v = ufl.TrialFunction(V), ufl.TestFunction(V)
 
     f = dolfin.Function(V)
     with f.vector.localForm() as f_local:
@@ -124,7 +124,7 @@ def test_basic_assembly():
 def test_assembly_bcs():
     mesh = dolfin.generation.UnitSquareMesh(dolfin.MPI.comm_world, 12, 12)
     V = dolfin.FunctionSpace(mesh, ("Lagrange", 1))
-    u, v = dolfin.TrialFunction(V), dolfin.TestFunction(V)
+    u, v = ufl.TrialFunction(V), ufl.TestFunction(V)
     a = inner(u, v) * dx + inner(u, v) * ds
     L = inner(1.0, v) * dx
 
@@ -181,8 +181,8 @@ def test_matrix_assembly_block():
     bc = dolfin.fem.dirichletbc.DirichletBC(V1, u_bc, boundary)
 
     # Define variational problem
-    u, p = dolfin.function.TrialFunction(V0), dolfin.function.TrialFunction(V1)
-    v, q = dolfin.function.TestFunction(V0), dolfin.function.TestFunction(V1)
+    u, p = ufl.TrialFunction(V0), ufl.TrialFunction(V1)
+    v, q = ufl.TestFunction(V0), ufl.TestFunction(V1)
     f = 1.0
     g = -3.0
     zero = dolfin.Function(V0)
@@ -226,8 +226,8 @@ def test_matrix_assembly_block():
     # Monolithic version
     E = P0 * P1
     W = dolfin.function.functionspace.FunctionSpace(mesh, E)
-    u0, u1 = dolfin.function.TrialFunctions(W)
-    v0, v1 = dolfin.function.TestFunctions(W)
+    u0, u1 = ufl.TrialFunctions(W)
+    v0, v1 = ufl.TestFunctions(W)
     a = inner(u0, v0) * dx + inner(u1, v1) * dx + inner(u0, v1) * dx + inner(
         u1, v0) * dx
     L = zero * inner(f, v0) * ufl.dx + inner(g, v1) * dx
@@ -270,8 +270,8 @@ def test_assembly_solve_block():
     ]
 
     # Variational problem
-    u, p = dolfin.function.TrialFunction(V0), dolfin.function.TrialFunction(V1)
-    v, q = dolfin.function.TestFunction(V0), dolfin.function.TestFunction(V1)
+    u, p = ufl.TrialFunction(V0), ufl.TrialFunction(V1)
+    v, q = ufl.TestFunction(V0), ufl.TestFunction(V1)
     f = 1.0
     g = -3.0
     zero = dolfin.Function(V0)
@@ -335,8 +335,8 @@ def test_assembly_solve_block():
     # Monolithic version
     E = P * P
     W = dolfin.function.functionspace.FunctionSpace(mesh, E)
-    u0, u1 = dolfin.function.TrialFunctions(W)
-    v0, v1 = dolfin.function.TestFunctions(W)
+    u0, u1 = ufl.TrialFunctions(W)
+    v0, v1 = ufl.TestFunctions(W)
     a = inner(u0, v0) * dx + inner(u1, v1) * dx
     L = inner(f, v0) * ufl.dx + inner(g, v1) * dx
 
@@ -402,8 +402,8 @@ def test_assembly_solve_taylor_hood(mesh):
     bc0 = dolfin.DirichletBC(P2, u0, boundary0)
     bc1 = dolfin.DirichletBC(P2, u0, boundary1)
 
-    u, p = dolfin.TrialFunction(P2), dolfin.TrialFunction(P1)
-    v, q = dolfin.TestFunction(P2), dolfin.TestFunction(P1)
+    u, p = ufl.TrialFunction(P2), ufl.TrialFunction(P1)
+    v, q = ufl.TestFunction(P2), ufl.TestFunction(P1)
 
     a00 = inner(ufl.grad(u), ufl.grad(v)) * dx
     a01 = ufl.inner(p, ufl.div(v)) * dx
@@ -497,8 +497,8 @@ def test_assembly_solve_taylor_hood(mesh):
     P1 = ufl.FiniteElement("Lagrange", mesh.ufl_cell(), 1)
     TH = P2 * P1
     W = dolfin.FunctionSpace(mesh, TH)
-    (u, p) = dolfin.TrialFunctions(W)
-    (v, q) = dolfin.TestFunctions(W)
+    (u, p) = ufl.TrialFunctions(W)
+    (v, q) = ufl.TestFunctions(W)
     a00 = ufl.inner(ufl.grad(u), ufl.grad(v)) * dx
     a01 = ufl.inner(p, ufl.div(v)) * dx
     a10 = ufl.inner(ufl.div(u), q) * dx
@@ -563,7 +563,7 @@ def test_basic_interior_facet_assembly():
                                 ghost_mode=ghost_mode)
 
     V = functionspace.FunctionSpace(mesh, ("DG", 1))
-    u, v = dolfin.TrialFunction(V), dolfin.TestFunction(V)
+    u, v = ufl.TrialFunction(V), ufl.TestFunction(V)
 
     a = ufl.inner(ufl.avg(u), ufl.avg(v)) * ufl.dS
 
@@ -587,7 +587,7 @@ def test_basic_assembly_constant():
     """
     mesh = dolfin.generation.UnitSquareMesh(dolfin.MPI.comm_world, 5, 5)
     V = functionspace.FunctionSpace(mesh, ("Lagrange", 1))
-    u, v = dolfin.TrialFunction(V), dolfin.TestFunction(V)
+    u, v = ufl.TrialFunction(V), ufl.TestFunction(V)
 
     c = constant.Constant(mesh, [[1.0, 2.0], [5.0, 3.0]])
 
