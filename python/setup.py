@@ -79,16 +79,17 @@ class CMakeBuild(build_ext):
         subprocess.check_call(['cmake', '--build', '.'] + build_args, cwd=self.build_temp, env=env)
 
 
-setup(name='fenics-dolfin',
+setup(name='fenics-dolfinx',
       version=VERSION,
       author='FEniCS Project',
       description='DOLFIN Python interface',
       long_description='',
-      packages=["dolfin",
-                "dolfin.fem",
-                "dolfin.la",
+      packages=["dolfinx",
+                "dolfinx.fem",
+                "dolfinx.la",
                 "dolfin_utils.test"],
-      ext_modules=[CMakeExtension('dolfin.cpp')],
+      ext_modules=[CMakeExtension('dolfinx.cpp')],
+      package_dir={"dolfinx": "dolfin"},
       cmdclass=dict(build_ext=CMakeBuild),
       install_requires=REQUIREMENTS,
       zip_safe=False)
