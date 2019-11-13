@@ -1,8 +1,9 @@
-# Copyright (C) 2009-2019 Johan Hake, Chris N. Richardson and Garth N. Wells
+# Copyright (C) 2009-2019 Chris N. Richardson, Garth N. Wells and Michal Habera
 #
 # This file is part of DOLFIN (https://www.fenicsproject.org)
 #
 # SPDX-License-Identifier:    LGPL-3.0-or-later
+"""Collection of functions and function spaces"""
 
 import typing
 from functools import singledispatch
@@ -12,8 +13,32 @@ import numpy as np
 from petsc4py import PETSc
 
 import ufl
-from dolfin import common, cpp, function, jit
+from dolfin import common, cpp, fem, function, jit
 from dolfin.fem import dofmap
+
+
+class Constant(ufl.Constant):
+    def __init__(self, domain, c: typing.Union[np.ndarray, typing.Sequence, float]):
+        """A constant with respect to a domain.
+
+        Parameters
+        ----------
+        domain : DOLFIN or UFL mesh
+        c
+            Value of the constant.
+        """
+        c_np = np.asarray(c)
+        super().__init__(domain, c_np.shape)
+        self._cpp_object = cpp.function.Constant(c_np.shape, c_np.flatten())
+
+    @property
+    def value(self):
+        """Returns value of the constant."""
+        return self._cpp_object.value()
+
+    @value.setter
+    def value(self, v):
+        np.copyto(self._cpp_object.value(), np.asarray(v))
 
 
 class Function(ufl.Coefficient):
@@ -232,10 +257,10 @@ class FunctionSpace(ufl.FunctionSpace):
             self.ufl_element(), form_compiler_parameters=None, mpi_comm=mesh.mpi_comm())
 
         ffi = cffi.FFI()
-        ufc_element = dofmap.make_ufc_finite_element(ffi.cast("uintptr_t", ufc_element))
+        ufc_element = fem.dofmap.make_ufc_finite_element(ffi.cast("uintptr_t", ufc_element))
         cpp_element = cpp.fem.FiniteElement(ufc_element)
 
-        ufc_dofmap = dofmap.make_ufc_dofmap(ffi.cast("uintptr_t", ufc_dofmap_ptr))
+        ufc_dofmap = fem.dofmap.make_ufc_dofmap(ffi.cast("uintptr_t", ufc_dofmap_ptr))
         cpp_dofmap = cpp.fem.create_dofmap(ufc_dofmap, mesh)
 
         # Initialize the cpp.FunctionSpace
@@ -323,9 +348,9 @@ class FunctionSpace(ufl.FunctionSpace):
         return self._cpp_object.element
 
     @property
-    def dofmap(self) -> dofmap.DofMap:
+    def dofmap(self) -> fem.dofmap.DofMap:
         """Return the degree-of-freedom map associated with the function space."""
-        return dofmap.DofMap(self._cpp_object.dofmap)
+        return fem.dofmap.DofMap(self._cpp_object.dofmap)
 
     @property
     def mesh(self):

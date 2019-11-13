@@ -13,7 +13,7 @@ from petsc4py import PETSc
 
 import dolfin
 import ufl
-from dolfin import constant, function
+from dolfin import function
 from dolfin.specialfunctions import SpatialCoordinate
 from ufl import derivative, ds, dx, inner
 
@@ -55,8 +55,8 @@ def test_assemble_derivatives():
     v = ufl.TestFunction(Q)
     du = ufl.TrialFunction(Q)
     b = dolfin.Function(Q)
-    c1 = constant.Constant(mesh, [[1.0, 0.0], [3.0, 4.0]])
-    c2 = constant.Constant(mesh, 2.0)
+    c1 = function.Constant(mesh, [[1.0, 0.0], [3.0, 4.0]])
+    c2 = function.Constant(mesh, 2.0)
 
     with b.vector.localForm() as b_local:
         b_local.set(2.0)
@@ -589,7 +589,7 @@ def test_basic_assembly_constant():
     V = function.FunctionSpace(mesh, ("Lagrange", 1))
     u, v = ufl.TrialFunction(V), ufl.TestFunction(V)
 
-    c = constant.Constant(mesh, [[1.0, 2.0], [5.0, 3.0]])
+    c = function.Constant(mesh, [[1.0, 2.0], [5.0, 3.0]])
 
     a = inner(c[1, 0] * u, v) * dx + inner(c[1, 0] * u, v) * ds
     L = inner(c[1, 0], v) * dx + inner(c[1, 0], v) * ds
