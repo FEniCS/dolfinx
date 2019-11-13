@@ -12,7 +12,7 @@ from dolfinx import (MPI, DirichletBC, Function, FunctionSpace, UnitCubeMesh,
                      UnitIntervalMesh, UnitSquareMesh)
 from dolfinx.cpp.mesh import CellType
 from dolfinx.fem import (apply_lifting, assemble_matrix, assemble_scalar,
-                        assemble_vector, set_bc)
+                         assemble_vector, set_bc)
 from ufl import (SpatialCoordinate, TestFunction, TrialFunction, div, dx, grad,
                  inner)
 

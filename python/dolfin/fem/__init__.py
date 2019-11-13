@@ -7,18 +7,18 @@
 """Tools for assembling and manipulating finite element forms"""
 
 from dolfinx.fem.assemble import (create_vector, create_vector_block, create_vector_nest,
-                                 create_matrix, create_matrix_block, create_matrix_nest,
-                                 assemble_scalar, assemble_vector_block,
-                                 assemble_matrix,
-                                 assemble_matrix_nest, assemble_matrix_block,
-                                 set_bc, assemble_vector, apply_lifting)
+                                  create_matrix, create_matrix_block, create_matrix_nest,
+                                  assemble_scalar, assemble_vector_block,
+                                  assemble_matrix,
+                                  assemble_matrix_nest, assemble_matrix_block,
+                                  set_bc, assemble_vector, apply_lifting)
 from dolfinx.fem.coordinatemapping import create_coordinate_map
 from dolfinx.fem.dirichletbc import DirichletBC
 from dolfinx.fem.dofmap import DofMap
 from dolfinx.fem.form import Form
 from dolfinx.cpp.fem import FormIntegrals
 from dolfinx.fem.formmanipulations import (derivative, adjoint, increase_order,
-                                          tear)
+                                           tear)
 from dolfinx.fem.solving import solve
 
 

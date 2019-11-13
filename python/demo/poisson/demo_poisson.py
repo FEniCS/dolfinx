@@ -81,7 +81,7 @@ import dolfinx
 import dolfinx.plotting
 import ufl
 from dolfinx import (MPI, DirichletBC, Function, FunctionSpace, RectangleMesh,
-                    solve)
+                     solve)
 from dolfinx.cpp.mesh import CellType
 from dolfinx.io import XDMFFile
 from dolfinx.specialfunctions import SpatialCoordinate

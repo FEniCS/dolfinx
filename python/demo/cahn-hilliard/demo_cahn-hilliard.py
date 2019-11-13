@@ -114,7 +114,7 @@ import numpy as np
 from petsc4py import PETSc
 
 from dolfinx import (MPI, Function, FunctionSpace, NewtonSolver,
-                    NonlinearProblem, UnitSquareMesh, log)
+                     NonlinearProblem, UnitSquareMesh, log)
 from dolfinx.cpp.mesh import CellType
 from dolfinx.fem.assemble import assemble_matrix, assemble_vector
 from dolfinx.io import XDMFFile
