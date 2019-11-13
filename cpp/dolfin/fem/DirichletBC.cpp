@@ -89,7 +89,8 @@ get_remote_bcs(const common::IndexMap& map, const common::IndexMap& map_g,
 
   // Scatter (reverse) data from ghost processes to owner
   std::vector<PetscInt> marker_owner_rcvd(bs * size_owned, -1);
-  map.scatter_rev(marker_owner_rcvd, marker_ghost, bs, MPI_MAX);
+  map.scatter_rev(marker_owner_rcvd, marker_ghost, bs,
+                  common::IndexMap::Mode::insert);
   assert((int)marker_owner_rcvd.size() == size_owned * bs);
   for (std::size_t i = 0; i < marker_owner_rcvd.size(); ++i)
   {

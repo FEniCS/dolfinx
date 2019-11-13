@@ -197,14 +197,14 @@ IndexMap::scatter_fwd(const std::vector<std::int32_t>& local_data, int n) const
 //-----------------------------------------------------------------------------
 void IndexMap::scatter_rev(std::vector<std::int64_t>& local_data,
                            const std::vector<std::int64_t>& remote_data, int n,
-                           MPI_Op op) const
+                           IndexMap::Mode op) const
 {
   scatter_rev_impl(local_data, remote_data, n, op);
 }
 //-----------------------------------------------------------------------------
 void IndexMap::scatter_rev(std::vector<std::int32_t>& local_data,
                            const std::vector<std::int32_t>& remote_data, int n,
-                           MPI_Op op) const
+                           IndexMap::Mode op) const
 {
   scatter_rev_impl(local_data, remote_data, n, op);
 }
@@ -267,7 +267,7 @@ void IndexMap::scatter_fwd_impl(const std::vector<T>& local_data,
 template <typename T>
 void IndexMap::scatter_rev_impl(std::vector<T>& local_data,
                                 const std::vector<T>& remote_data, int n,
-                                MPI_Op op) const
+                                IndexMap::Mode op) const
 {
   assert((std::int32_t)remote_data.size() == n * num_ghosts());
   local_data.resize(n * size_local(), 0);
@@ -312,13 +312,24 @@ void IndexMap::scatter_rev_impl(std::vector<T>& local_data,
       MPI::mpi_type<T>(), recv_data.data(), recv_sizes.data(),
       displs_recv.data(), MPI::mpi_type<T>(), _neighbour_comm);
 
-  // Copy into "local_data"
-  // FIXME: apply operation (max/min/sum etc.)
-  for (std::size_t i = 0; i < _forward_indices.size(); ++i)
+  // Copy or accumulate into "local_data"
+  if (op == Mode::insert)
   {
-    const int index = _forward_indices[i];
-    for (std::int32_t j = 0; j < n; ++j)
-      local_data[index * n + j] = recv_data[i * n + j];
+    for (std::size_t i = 0; i < _forward_indices.size(); ++i)
+    {
+      const int index = _forward_indices[i];
+      for (std::int32_t j = 0; j < n; ++j)
+        local_data[index * n + j] = recv_data[i * n + j];
+    }
+  }
+  else if (op == Mode::add)
+  {
+    for (std::size_t i = 0; i < _forward_indices.size(); ++i)
+    {
+      const int index = _forward_indices[i];
+      for (std::int32_t j = 0; j < n; ++j)
+        local_data[index * n + j] += recv_data[i * n + j];
+    }
   }
 }
 //-----------------------------------------------------------------------------

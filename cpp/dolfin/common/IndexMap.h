@@ -29,6 +29,15 @@ namespace common
 class IndexMap
 {
 public:
+
+  /// Mode for reverse scatter operation
+  enum class Mode
+  {
+    insert,
+    add
+  };
+
+
   /// Create Index map with local_size owned blocks on this process, and
   /// blocks have size block_size.
   ///
@@ -136,13 +145,13 @@ public:
   /// of the input array remote_data must be the same as num_ghosts().
   void scatter_rev(std::vector<std::int64_t>& local_data,
                    const std::vector<std::int64_t>& remote_data, int n,
-                   MPI_Op op) const;
+                   IndexMap::Mode op) const;
 
   /// Send n values for each ghost index to owning to processes. The size
   /// of the input array remote_data must be the same as num_ghosts().
   void scatter_rev(std::vector<std::int32_t>& local_data,
                    const std::vector<std::int32_t>& remote_data, int n,
-                   MPI_Op op) const;
+                   IndexMap::Mode op) const;
 
 private:
   // MPI Communicator
@@ -183,7 +192,7 @@ private:
   template <typename T>
   void scatter_rev_impl(std::vector<T>& local_data,
                         const std::vector<T>& remote_data, int n,
-                        MPI_Op op) const;
+                        Mode op) const;
 };
 
 } // namespace common
