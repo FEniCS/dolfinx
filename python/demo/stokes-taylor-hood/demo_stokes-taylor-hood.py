@@ -171,15 +171,13 @@ bcs = [bc0, bc1]
 f = Function(V)
 g = Function(Q)
 
-a = (
-    (inner(grad(u), grad(v)) * dx,  inner(p, div(v)) * dx),
-    (inner(div(u), q) * dx, None)
-)
+a = [[inner(grad(u), grad(v)) * dx,  inner(p, div(v)) * dx],
+     [inner(div(u), q) * dx, None]]
 
-L = (
-        inner(f, v) * dx,
-        g * q * dx
-)
+prec = [[inner(grad(u), grad(v)) * dx, None],
+        [None, p * q * dx]]
+
+L = [inner(f, v) * dx, dolfin.Constant(mesh, 0) * q * dx]
 
 # We also need to create a :py:class:`Function
 # <dolfin.cpp.function.Function>` to store the solution(s). The (full)
@@ -194,26 +192,92 @@ L = (
 # a deep copy for further computations on the coefficient vectors::
 
 # Compute solution
-x = dolfin.fem.create_vector_block(L)
+x = dolfin.fem.create_vector_nest(L)
 
-A = dolfin.fem.assemble_matrix_block(a, bcs)
+A = dolfin.fem.create_matrix_nest(a)
+dolfin.fem.assemble_matrix_nest(A, a, bcs)
 A.assemble()
-b = dolfin.fem.assemble_vector_block(L, a, bcs)
+
+P = dolfin.fem.create_matrix_nest(prec)
+dolfin.fem.assemble_matrix_nest(P, prec, bcs)
+P.assemble()
+
+b = dolfin.fem.create_vector_nest(L)
+b.zeroEntries()
+
+dolfin.fem.assemble.assemble_vector_nest(b, L)
+dolfin.fem.assemble.apply_lifting_nest(b, a, bcs)
+for b_sub in b.getNestSubVecs():
+    b_sub.ghostUpdate(addv=PETSc.InsertMode.ADD, mode=PETSc.ScatterMode.REVERSE)
+bcs0 = dolfin.cpp.fem.bcs_rows(dolfin.fem.assemble._create_cpp_form(L), bcs)
+dolfin.fem.assemble.set_bc_nest(b, bcs0)
+
 b.assemble()
 
-ksp = PETSc.KSP().create(mesh.mpi_comm())
-ksp.setType("preonly")
-ksp.getPC().setType("lu")
-ksp.getPC().setFactorSolverType("mumps")
+# -- Nullspace
+x_nullspace = dolfin.fem.create_vector_nest(L)
+x_nullspace.zeroEntries()
+x_nullspace.getNestSubVecs()[1].set(1.0)
+x_nullspace.getNestSubVecs()[1].array /= x_nullspace.getNestSubVecs()[1].norm()
+x_nullspace.getNestSubVecs()[1].ghostUpdate(addv=PETSc.InsertMode.INSERT, mode=PETSc.ScatterMode.FORWARD)
+nullspace = PETSc.NullSpace().create(vectors=(x_nullspace,), comm=mesh.mpi_comm())
+A.setNullSpace(nullspace)
+P.setNullSpace(nullspace)
 
-ksp.setOperators(A)
+# -- Near nullspace
+rbm_functions = [lambda x: np.row_stack((np.ones_like(x[1]), np.zeros_like(x[1]))),
+                 lambda x: np.row_stack((np.zeros_like(x[1]), np.ones_like(x[1]))),
+                 lambda x: np.row_stack((-x[1], x[0]))]
+
+rbms = [Function(V) for _ in range(3)]
+
+for (rbm, rbm_function) in zip(rbms, rbm_functions):
+    rbm.interpolate(rbm_function)
+
+rbms = dolfin.cpp.la.VectorSpaceBasis(list(map(lambda rbm: rbm.vector, rbms)))
+rbms.orthonormalize()
+
+near_nullspace = PETSc.NullSpace().create(vectors=tuple(rbms[i] for i in range(3)), comm=mesh.mpi_comm())
+A.getNestSubMatrix(0, 0).setNearNullSpace(near_nullspace)
+P.getNestSubMatrix(0, 0).setNearNullSpace(near_nullspace)
+
+ksp = PETSc.KSP().create(mesh.mpi_comm())
+
+ksp.setOperators(A, P)
+
+ksp.setTolerances(rtol=1e-8)
+ksp.setType("fgmres")
+ksp.getPC().setType("fieldsplit")
+ksp.getPC().setFieldSplitType(PETSc.PC.CompositeType.MULTIPLICATIVE)
+
+nested_IS = A.getNestISs()
+ksp.getPC().setFieldSplitIS(
+    ("u", nested_IS[0][0]), ("p", nested_IS[0][1]))
+
+# ksp.getPC().setUp()
+ksp_u, ksp_p = ksp.getPC().getFieldSplitSubKSP()
+ksp_u.setType("preonly")
+ksp_u.setTolerances(rtol=1e-3)
+ksp_u.getPC().setType("gamg")
+ksp_u.getPC().setGAMGType(PETSc.PC.GAMGType.AGG)
+ksp_p.setType("cg")
+ksp_p.setTolerances(rtol=1e-3)
+ksp_p.getPC().setType("hypre")
+
+opts = PETSc.Options()
+opts["ksp_monitor"] = None
+opts["ksp_monitor_lg_residualnorm"] = None
+ksp.setFromOptions()
+
 ksp.solve(b, x)
 
+ksp.view()
 # We can calculate the :math:`L^2` norms of u and p as follows::
 
 u, p = Function(V), Function(Q)
 (u.vector.array, p.vector.array) = \
-    dolfin.cpp.la.get_local_vectors(x, [V.dofmap.index_map, Q.dofmap.index_map])
+    map(lambda vec: vec.array_r, x.getNestSubVecs())
+
 print("Norm of velocity coefficient vector: %.15g" % u.vector.norm())
 print("Norm of pressure coefficient vector: %.15g" % p.vector.norm())
 
