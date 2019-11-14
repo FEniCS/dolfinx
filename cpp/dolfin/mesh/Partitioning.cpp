@@ -584,7 +584,8 @@ PartitionData Partitioning::partition_cells(
     {
 #ifdef HAS_PARMETIS
       graph::CSRGraph<idx_t> csr_graph(mpi_comm, local_graph);
-      return PartitionData(graph::ParMETIS::partition(mpi_comm, csr_graph));
+      return PartitionData(
+          graph::ParMETIS::partition(mpi_comm, (idx_t)nparts, csr_graph));
 #else
       throw std::runtime_error("ParMETIS not available");
 #endif
