@@ -212,12 +212,12 @@ def test_matrix_assembly_block():
     Anorm1 = nest_matrix_norm(A1)
     assert Anorm0 == pytest.approx(Anorm1, 1.0e-12)
 
-    b1 = dolfin.fem.assemble.assemble_vector_nest(L_block)
-    dolfin.fem.assemble.apply_lifting_nest(b1, a_block, [bc])
+    b1 = dolfin.fem.assemble_vector_nest(L_block)
+    dolfin.fem.apply_lifting_nest(b1, a_block, [bc])
     for b_sub in b1.getNestSubVecs():
         b_sub.ghostUpdate(addv=PETSc.InsertMode.ADD, mode=PETSc.ScatterMode.REVERSE)
     bcs0 = dolfin.cpp.fem.bcs_rows(dolfin.fem.assemble._create_cpp_form(L_block), [bc])
-    dolfin.fem.assemble.set_bc_nest(b1, bcs0)
+    dolfin.fem.set_bc_nest(b1, bcs0)
     b1.assemble()
 
     bnorm1 = math.sqrt(sum([x.norm()**2 for x in b1.getNestSubVecs()]))
@@ -307,12 +307,12 @@ def test_assembly_solve_block():
     # Nested (MatNest)
     A1 = dolfin.fem.assemble_matrix_nest([[a00, a01], [a10, a11]], bcs)
     A1.assemble()
-    b1 = dolfin.fem.assemble.assemble_vector_nest([L0, L1])
-    dolfin.fem.assemble.apply_lifting_nest(b1, [[a00, a01], [a10, a11]], bcs)
+    b1 = dolfin.fem.assemble_vector_nest([L0, L1])
+    dolfin.fem.apply_lifting_nest(b1, [[a00, a01], [a10, a11]], bcs)
     for b_sub in b1.getNestSubVecs():
         b_sub.ghostUpdate(addv=PETSc.InsertMode.ADD, mode=PETSc.ScatterMode.REVERSE)
     bcs0 = dolfin.cpp.fem.bcs_rows(dolfin.fem.assemble._create_cpp_form([L0, L1]), bcs)
-    dolfin.fem.assemble.set_bc_nest(b1, bcs0)
+    dolfin.fem.set_bc_nest(b1, bcs0)
     b1.assemble()
 
     b1norm = b1.norm()
@@ -429,12 +429,12 @@ def test_assembly_solve_taylor_hood(mesh):
     P0 = dolfin.fem.assemble_matrix_nest([[p00, p01], [p10, p11]], [bc0, bc1])
     P0.assemble()
     P0norm = nest_matrix_norm(P0)
-    b0 = dolfin.fem.assemble.assemble_vector_nest([L0, L1])
-    dolfin.fem.assemble.apply_lifting_nest(b0, [[a00, a01], [a10, a11]], [bc0, bc1])
+    b0 = dolfin.fem.assemble_vector_nest([L0, L1])
+    dolfin.fem.apply_lifting_nest(b0, [[a00, a01], [a10, a11]], [bc0, bc1])
     for b_sub in b0.getNestSubVecs():
         b_sub.ghostUpdate(addv=PETSc.InsertMode.ADD, mode=PETSc.ScatterMode.REVERSE)
     bcs0 = dolfin.cpp.fem.bcs_rows(dolfin.fem.assemble._create_cpp_form([L0, L1]), [bc0, bc1])
-    dolfin.fem.assemble.set_bc_nest(b0, bcs0)
+    dolfin.fem.set_bc_nest(b0, bcs0)
     b0.assemble()
     b0norm = b0.norm()
 
