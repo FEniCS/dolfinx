@@ -403,7 +403,9 @@ void DistributedMeshTools::number_entities(const Mesh& mesh, int d)
   }
 
   // Number entities
-  auto [global_entity_indices, shared_entities, num_global_entities]
+  std::vector<std::int64_t> global_entity_indices;
+  std::size_t num_global_entities;
+  std::tie(global_entity_indices, std::ignore, num_global_entities)
       = compute_entity_numbering(mesh, d);
 
   // Set global entity numbers in mesh
