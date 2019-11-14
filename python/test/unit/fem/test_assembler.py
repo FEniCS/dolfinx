@@ -13,7 +13,7 @@ from petsc4py import PETSc
 
 import dolfin
 import ufl
-from dolfin import constant, functionspace
+from dolfin import function
 from dolfin.specialfunctions import SpatialCoordinate
 from ufl import derivative, ds, dx, inner
 
@@ -55,8 +55,8 @@ def test_assemble_derivatives():
     v = ufl.TestFunction(Q)
     du = ufl.TrialFunction(Q)
     b = dolfin.Function(Q)
-    c1 = constant.Constant(mesh, [[1.0, 0.0], [3.0, 4.0]])
-    c2 = constant.Constant(mesh, 2.0)
+    c1 = function.Constant(mesh, [[1.0, 0.0], [3.0, 4.0]])
+    c2 = function.Constant(mesh, 2.0)
 
     with b.vector.localForm() as b_local:
         b_local.set(2.0)
@@ -169,8 +169,8 @@ def test_matrix_assembly_block():
     P0 = ufl.FiniteElement("Lagrange", mesh.ufl_cell(), p0)
     P1 = ufl.FiniteElement("Lagrange", mesh.ufl_cell(), p1)
 
-    V0 = dolfin.function.functionspace.FunctionSpace(mesh, P0)
-    V1 = dolfin.function.functionspace.FunctionSpace(mesh, P1)
+    V0 = dolfin.function.FunctionSpace(mesh, P0)
+    V1 = dolfin.function.FunctionSpace(mesh, P1)
 
     def boundary(x):
         return numpy.logical_or(x[0] < 1.0e-6, x[0] > 1.0 - 1.0e-6)
@@ -225,7 +225,7 @@ def test_matrix_assembly_block():
 
     # Monolithic version
     E = P0 * P1
-    W = dolfin.function.functionspace.FunctionSpace(mesh, E)
+    W = dolfin.function.FunctionSpace(mesh, E)
     u0, u1 = ufl.TrialFunctions(W)
     v0, v1 = ufl.TestFunctions(W)
     a = inner(u0, v0) * dx + inner(u1, v1) * dx + inner(u0, v1) * dx + inner(
@@ -250,7 +250,7 @@ def test_assembly_solve_block():
     """
     mesh = dolfin.generation.UnitSquareMesh(dolfin.MPI.comm_world, 32, 31)
     P = ufl.FiniteElement("Lagrange", mesh.ufl_cell(), 1)
-    V0 = dolfin.function.functionspace.FunctionSpace(mesh, P)
+    V0 = dolfin.function.FunctionSpace(mesh, P)
     V1 = V0.clone()
 
     def boundary(x):
@@ -334,7 +334,7 @@ def test_assembly_solve_block():
 
     # Monolithic version
     E = P * P
-    W = dolfin.function.functionspace.FunctionSpace(mesh, E)
+    W = dolfin.function.FunctionSpace(mesh, E)
     u0, u1 = ufl.TrialFunctions(W)
     v0, v1 = ufl.TestFunctions(W)
     a = inner(u0, v0) * dx + inner(u1, v1) * dx
@@ -385,8 +385,8 @@ def test_assembly_solve_block():
 ])
 def test_assembly_solve_taylor_hood(mesh):
     """Assemble Stokes problem with Taylor-Hood elements and solve."""
-    P2 = functionspace.VectorFunctionSpace(mesh, ("Lagrange", 2))
-    P1 = functionspace.FunctionSpace(mesh, ("Lagrange", 1))
+    P2 = function.VectorFunctionSpace(mesh, ("Lagrange", 2))
+    P1 = function.FunctionSpace(mesh, ("Lagrange", 1))
 
     def boundary0(x):
         """Define boundary x = 0"""
@@ -562,7 +562,7 @@ def test_basic_interior_facet_assembly():
                                 cell_type=dolfin.cpp.mesh.CellType.triangle,
                                 ghost_mode=ghost_mode)
 
-    V = functionspace.FunctionSpace(mesh, ("DG", 1))
+    V = function.FunctionSpace(mesh, ("DG", 1))
     u, v = ufl.TrialFunction(V), ufl.TestFunction(V)
 
     a = ufl.inner(ufl.avg(u), ufl.avg(v)) * ufl.dS
@@ -586,10 +586,10 @@ def test_basic_assembly_constant():
 
     """
     mesh = dolfin.generation.UnitSquareMesh(dolfin.MPI.comm_world, 5, 5)
-    V = functionspace.FunctionSpace(mesh, ("Lagrange", 1))
+    V = function.FunctionSpace(mesh, ("Lagrange", 1))
     u, v = ufl.TrialFunction(V), ufl.TestFunction(V)
 
-    c = constant.Constant(mesh, [[1.0, 2.0], [5.0, 3.0]])
+    c = function.Constant(mesh, [[1.0, 2.0], [5.0, 3.0]])
 
     a = inner(c[1, 0] * u, v) * dx + inner(c[1, 0] * u, v) * ds
     L = inner(c[1, 0], v) * dx + inner(c[1, 0], v) * ds
