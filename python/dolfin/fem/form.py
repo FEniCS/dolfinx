@@ -48,7 +48,7 @@ class Form(ufl.Form):
 
         # For every argument in form extract its function space
         function_spaces = [
-            func.function_space._cpp_object for func in form.arguments()
+            func.ufl_function_space()._cpp_object for func in form.arguments()
         ]
 
         # Prepare dolfin.Form and hold it as a member

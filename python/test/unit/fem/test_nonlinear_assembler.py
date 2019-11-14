@@ -60,9 +60,9 @@ def test_matrix_assembly_block():
     bc = dolfin.fem.dirichletbc.DirichletBC(V1, u_bc, boundary)
 
     # Define variational problem
-    du, dp = dolfin.function.TrialFunction(V0), dolfin.function.TrialFunction(V1)
+    du, dp = ufl.TrialFunction(V0), ufl.TrialFunction(V1)
     u, p = dolfin.function.Function(V0), dolfin.function.Function(V1)
-    v, q = dolfin.function.TestFunction(V0), dolfin.function.TestFunction(V1)
+    v, q = ufl.TestFunction(V0), ufl.TestFunction(V1)
 
     u.interpolate(initial_guess_u)
     p.interpolate(initial_guess_p)
@@ -101,12 +101,12 @@ def test_matrix_assembly_block():
         x1_sub.ghostUpdate(addv=PETSc.InsertMode.INSERT, mode=PETSc.ScatterMode.FORWARD)
 
     A1 = dolfin.fem.assemble_matrix_nest(a_block, [bc])
-    b1 = dolfin.fem.assemble.assemble_vector_nest(L_block)
-    dolfin.fem.assemble.apply_lifting_nest(b1, a_block, [bc], x1, scale=-1.0)
+    b1 = dolfin.fem.assemble_vector_nest(L_block)
+    dolfin.fem.apply_lifting_nest(b1, a_block, [bc], x1, scale=-1.0)
     for b_sub in b1.getNestSubVecs():
         b_sub.ghostUpdate(addv=PETSc.InsertMode.ADD, mode=PETSc.ScatterMode.REVERSE)
     bcs0 = dolfin.cpp.fem.bcs_rows(dolfin.fem.assemble._create_cpp_form(L_block), [bc])
-    dolfin.fem.assemble.set_bc_nest(b1, bcs0, x1, scale=-1.0)
+    dolfin.fem.set_bc_nest(b1, bcs0, x1, scale=-1.0)
     A1.assemble()
 
     assert A1.getType() == "nest"
@@ -116,10 +116,10 @@ def test_matrix_assembly_block():
     # Monolithic version
     E = P0 * P1
     W = dolfin.function.functionspace.FunctionSpace(mesh, E)
-    dU = dolfin.function.TrialFunction(W)
+    dU = ufl.TrialFunction(W)
     U = dolfin.function.Function(W)
     u0, u1 = ufl.split(U)
-    v0, v1 = dolfin.function.TestFunctions(W)
+    v0, v1 = ufl.TestFunctions(W)
 
     U.interpolate(lambda x: numpy.row_stack((initial_guess_u(x), initial_guess_p(x))))
 
@@ -208,14 +208,14 @@ class NonlinearPDE_SNESProblem():
         for L, F_sub, a, bc in zip(self.L, F.getNestSubVecs(), self.a, bcs1):
             with F_sub.localForm() as F_sub_local:
                 F_sub_local.set(0.0)
-            dolfin.fem.assemble.assemble_vector(F_sub, L)
-            dolfin.fem.assemble.apply_lifting(F_sub, a, bc, x0=x, scale=-1.0)
+            dolfin.fem.assemble_vector(F_sub, L)
+            dolfin.fem.apply_lifting(F_sub, a, bc, x0=x, scale=-1.0)
             F_sub.ghostUpdate(addv=PETSc.InsertMode.ADD, mode=PETSc.ScatterMode.REVERSE)
 
         # Set bc value in RHS
         bcs0 = dolfin.cpp.fem.bcs_rows(dolfin.fem.assemble._create_cpp_form(self.L), self.bcs)
         for F_sub, bc, x_sub in zip(F.getNestSubVecs(), bcs0, x):
-            dolfin.fem.assemble.set_bc(F_sub, bc, x_sub, -1.0)
+            dolfin.fem.set_bc(F_sub, bc, x_sub, -1.0)
 
         # Must assemble F here in the case of nest matrices
         F.assemble()
@@ -265,8 +265,8 @@ def test_assembly_solve_block():
 
     # Block and Nest variational problem
     u, p = dolfin.function.Function(V0), dolfin.function.Function(V1)
-    du, dp = dolfin.function.TrialFunction(V0), dolfin.function.TrialFunction(V1)
-    v, q = dolfin.function.TestFunction(V0), dolfin.function.TestFunction(V1)
+    du, dp = ufl.TrialFunction(V0), ufl.TrialFunction(V1)
+    v, q = ufl.TestFunction(V0), ufl.TestFunction(V1)
 
     f = 1.0
     g = -3.0
@@ -366,9 +366,9 @@ def test_assembly_solve_block():
     E = P * P
     W = dolfin.function.functionspace.FunctionSpace(mesh, E)
     U = dolfin.function.Function(W)
-    dU = dolfin.function.TrialFunction(W)
+    dU = ufl.TrialFunction(W)
     u0, u1 = ufl.split(U)
-    v0, v1 = dolfin.function.TestFunctions(W)
+    v0, v1 = ufl.TestFunctions(W)
 
     F = inner((u0**2 + 1) * ufl.grad(u0), ufl.grad(v0)) * dx \
         + inner((u1**2 + 1) * ufl.grad(u1), ufl.grad(v1)) * dx \
@@ -454,8 +454,8 @@ def test_assembly_solve_taylor_hood(mesh):
            dolfin.DirichletBC(P2, u_bc_1, boundary1)]
 
     u, p = dolfin.Function(P2), dolfin.Function(P1)
-    du, dp = dolfin.TrialFunction(P2), dolfin.TrialFunction(P1)
-    v, q = dolfin.TestFunction(P2), dolfin.TestFunction(P1)
+    du, dp = ufl.TrialFunction(P2), ufl.TrialFunction(P1)
+    v, q = ufl.TestFunction(P2), ufl.TestFunction(P1)
 
     F = [inner(ufl.grad(u), ufl.grad(v)) * dx + inner(p, ufl.div(v)) * dx,
          inner(ufl.div(u), q) * dx]
@@ -547,10 +547,10 @@ def test_assembly_solve_taylor_hood(mesh):
     TH = P2 * P1
     W = dolfin.FunctionSpace(mesh, TH)
     U = dolfin.Function(W)
-    dU = dolfin.TrialFunction(W)
+    dU = ufl.TrialFunction(W)
     u, p = ufl.split(U)
     du, dp = ufl.split(dU)
-    v, q = dolfin.TestFunctions(W)
+    v, q = ufl.TestFunctions(W)
 
     F = inner(ufl.grad(u), ufl.grad(v)) * dx + inner(p, ufl.div(v)) * dx \
         + inner(ufl.div(u), q) * dx

@@ -29,6 +29,15 @@ namespace common
 class IndexMap
 {
 public:
+
+  /// Mode for reverse scatter operation
+  enum class Mode
+  {
+    insert,
+    add
+  };
+
+
   /// Create Index map with local_size owned blocks on this process, and
   /// blocks have size block_size.
   ///
@@ -83,7 +92,7 @@ public:
   }
 
   /// Owner rank of each ghost entry
-  const Eigen::Array<std::int32_t, Eigen::Dynamic, 1>& ghost_owners() const;
+  Eigen::Array<std::int32_t, Eigen::Dynamic, 1> ghost_owners() const;
 
   /// Get process that owns index (global block index)
   int owner(std::int64_t global_index) const;
@@ -136,18 +145,21 @@ public:
   /// of the input array remote_data must be the same as num_ghosts().
   void scatter_rev(std::vector<std::int64_t>& local_data,
                    const std::vector<std::int64_t>& remote_data, int n,
-                   MPI_Op op) const;
+                   IndexMap::Mode op) const;
 
   /// Send n values for each ghost index to owning to processes. The size
   /// of the input array remote_data must be the same as num_ghosts().
   void scatter_rev(std::vector<std::int32_t>& local_data,
                    const std::vector<std::int32_t>& remote_data, int n,
-                   MPI_Op op) const;
+                   IndexMap::Mode op) const;
 
 private:
   // MPI Communicator
   // dolfin::MPI::Comm _mpi_comm;
   MPI_Comm _mpi_comm;
+
+  // MPI Communicator for neighbourhood only
+  MPI_Comm _neighbour_comm;
 
   // Cache rank on mpi_comm (otherwise calls to MPI_Comm_rank can be
   // excessive)
@@ -162,8 +174,17 @@ private:
   // Local-to-global map for ghost indices
   Eigen::Array<PetscInt, Eigen::Dynamic, 1> _ghosts;
 
-  // Owning process for each ghost index
+  // Owning neighbour for each ghost index
   Eigen::Array<std::int32_t, Eigen::Dynamic, 1> _ghost_owners;
+
+  // Neigbour processes
+  std::vector<std::int32_t> _neighbours;
+
+  // Number of indices to send to each neighbour process in forward mode
+  std::vector<std::int32_t> _forward_sizes;
+
+  // "Owned" local indices shared with neighbour processes
+  std::vector<std::int32_t> _forward_indices;
 
   template <typename T>
   void scatter_fwd_impl(const std::vector<T>& local_data,
@@ -171,7 +192,7 @@ private:
   template <typename T>
   void scatter_rev_impl(std::vector<T>& local_data,
                         const std::vector<T>& remote_data, int n,
-                        MPI_Op op) const;
+                        Mode op) const;
 };
 
 } // namespace common

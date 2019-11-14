@@ -12,12 +12,12 @@ import numpy as np
 import pytest
 
 import ufl
-from dolfin import (MPI, TestFunction, TrialFunction, UnitCubeMesh,
-                    UnitSquareMesh, VectorFunctionSpace, cpp, fem, la)
+from dolfin import (MPI, UnitCubeMesh, UnitSquareMesh, VectorFunctionSpace,
+                    cpp, fem, la)
 from dolfin.cpp.mesh import CellType, GhostMode
 from dolfin.fem import assemble_matrix
 from dolfin.generation import BoxMesh
-from ufl import dx, grad, inner
+from ufl import TestFunction, TrialFunction, dx, grad, inner
 
 
 def build_elastic_nullspace(V):
