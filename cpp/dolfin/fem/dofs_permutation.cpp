@@ -292,8 +292,6 @@ tetrahedron_rotations_and_reflection(const int volume_dofs, const int blocksize)
 
   std::vector<int> rotation1(volume_dofs);
   std::iota(rotation1.begin(), rotation1.end(), 0);
-  std::vector<int> reflection(volume_dofs);
-  std::iota(reflection.begin(), reflection.end(), 0);
   std::vector<int> rotation2(volume_dofs);
   std::iota(rotation2.begin(), rotation2.end(), 0);
 
@@ -329,13 +327,31 @@ tetrahedron_rotations_and_reflection(const int volume_dofs, const int blocksize)
     {
       rotation1[face[j]] = face[base_faces[0][j]];
       rotation2[face2[j]] = face2[base_faces[0][j]];
-      reflection[face[j]] = face[base_faces[1][j]];
+    }
+  }
+
+  std::vector<int> reflection(volume_dofs);
+  {
+    int j = 0;
+    int layerst = 0;
+    for (int layer = 0; layer < side_length; ++layer)
+    {
+      int st = layerst;
+      for (int i = side_length; i > layer; --i)
+      {
+        for (int dof = st; dof < st + i - layer; ++dof)
+          for (int k = 0; k < blocksize; ++k)
+            reflection[j++] = dof * blocksize + k;
+        st += i * (i + 1) / 2 - layer;
+      }
+      layerst += side_length - layer;
     }
   }
 
   std::vector<int> rotation3(volume_dofs);
   for (int j = 0; j < volume_dofs; ++j)
     rotation3[j] = rotation2[rotation2[rotation1[j]]];
+
   return {rotation1, rotation2, rotation3, reflection};
 }
 //-----------------------------------------------------------------------------
