@@ -170,7 +170,7 @@ a = [[inner(grad(u), grad(v)) * dx, inner(p, div(v)) * dx],
      [inner(div(u), q) * dx, None]]
 
 prec = [[a[0][0], None],
-        [None, p * q * dx]]
+        [None, inner(p, q) * dx]]
 
 L = [inner(f, v) * dx,
      dolfin.Constant(mesh, 0) * q * dx]
