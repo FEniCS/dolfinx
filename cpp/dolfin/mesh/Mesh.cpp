@@ -303,7 +303,7 @@ Mesh::Mesh(
   std::vector<int> vertex_owner;
   for (int i = num_vertices_local[1]; i < num_vertices_local[2]; ++i)
     vertex_owner.push_back(*(shared_vertices[i].begin()));
-  _topology->entity_owner(0) = vertex_owner;
+  _topology->set_entity_owner(0, vertex_owner);
 
   // Initialise cell topology
   _topology->set_num_entities_global(tdim, num_cells_global);

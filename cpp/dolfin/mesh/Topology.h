@@ -90,10 +90,10 @@ public:
   const std::map<std::int32_t, std::set<std::int32_t>>&
   shared_entities(int dim) const;
 
-  /// Return mapping from local ghost cell index to owning process.
-  /// Since ghost cells are at the end of the range, this is just a vector
+  /// Set map from local ghost cell index to owning process. Since
+  /// ghost cells are at the end of the range, this is just a vector
   /// over those cells
-  std::vector<std::int32_t>& entity_owner(int dim);
+  void set_entity_owner(int dim, const std::vector<std::int32_t>& owners);
 
   /// Return mapping from local ghost cell index to owning process
   /// (const version). Since ghost cells are at the end of the range,

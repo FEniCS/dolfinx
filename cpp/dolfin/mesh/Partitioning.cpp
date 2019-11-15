@@ -682,13 +682,11 @@ mesh::Mesh Partitioning::build_from_partition(
     return mesh;
 
   // Copy cell ownership (only needed for ghost cells)
-  std::vector<std::int32_t>& cell_owner = mesh.topology().entity_owner(tdim);
-  cell_owner.clear();
-  cell_owner.insert(cell_owner.begin(),
-                    new_cell_partition.begin() + num_regular_cells,
-                    new_cell_partition.end());
+  std::vector<std::int32_t> cell_owner(
+      new_cell_partition.begin() + num_regular_cells, new_cell_partition.end());
 
   // Assign map of shared cells (only needed for ghost cells)
+  mesh.topology().set_entity_owner(tdim, cell_owner);
   mesh.topology().set_shared_entities(tdim, shared_cells);
   DistributedMeshTools::init_facet_cell_connections(mesh);
 
