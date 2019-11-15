@@ -14,9 +14,9 @@ using namespace dolfin;
 namespace
 {
 Eigen::Array<bool, Eigen::Dynamic, 1>
-marking_function(const Eigen::Ref<const Eigen::Array<double, Eigen::Dynamic, 3, Eigen::RowMajor>>& x)
+marking_function(const Eigen::Ref<const Eigen::Array<double, 3, Eigen::Dynamic, Eigen::RowMajor>>& x)
 {
-  Eigen::Array<bool, Eigen::Dynamic, 1> inside(x.rows());
+  Eigen::Array<bool, 1, Eigen::Dynamic> inside(x.cols());
   inside.fill(true);
   return inside;
 }
