@@ -103,11 +103,11 @@ const std::vector<std::int64_t>& Topology::global_indices(std::size_t d) const
   return _global_indices[d];
 }
 //-----------------------------------------------------------------------------
-std::map<std::int32_t, std::set<std::int32_t>>&
-Topology::shared_entities(int dim)
+void Topology::set_shared_entities(
+    int dim, const std::map<std::int32_t, std::set<std::int32_t>>& entities)
 {
   assert(dim <= this->dim());
-  return _shared_entities[dim];
+  _shared_entities[dim] = entities;
 }
 //-----------------------------------------------------------------------------
 const std::map<std::int32_t, std::set<std::int32_t>>&

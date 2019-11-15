@@ -296,7 +296,7 @@ Mesh::Mesh(
   _topology = std::make_unique<Topology>(tdim, num_vertices_local[2],
                                          num_vertices_global);
   _topology->set_global_indices(0, vertex_indices_global);
-  _topology->shared_entities(0) = shared_vertices;
+  _topology->set_shared_entities(0, shared_vertices);
   _topology->init_ghost(0, num_vertices_local[1]);
 
   // Set vertex ownership

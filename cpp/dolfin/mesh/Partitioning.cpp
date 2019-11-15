@@ -689,7 +689,7 @@ mesh::Mesh Partitioning::build_from_partition(
                     new_cell_partition.end());
 
   // Assign map of shared cells (only needed for ghost cells)
-  mesh.topology().shared_entities(tdim) = shared_cells;
+  mesh.topology().set_shared_entities(tdim, shared_cells);
   DistributedMeshTools::init_facet_cell_connections(mesh);
 
   return mesh;

@@ -80,9 +80,10 @@ public:
   /// dimension d
   const std::vector<std::int64_t>& global_indices(std::size_t d) const;
 
-  /// Return map from shared entities (local index) to processes
-  /// that share the entity
-  std::map<std::int32_t, std::set<std::int32_t>>& shared_entities(int dim);
+  /// Set the map from shared entities (local index) to processes that
+  /// share the entity
+  void set_shared_entities(
+      int dim, const std::map<std::int32_t, std::set<std::int32_t>>& entities);
 
   /// Return map from shared entities (local index) to process that
   /// share the entity (const version)
