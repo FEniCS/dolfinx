@@ -48,13 +48,14 @@ IndexMap::IndexMap(MPI_Comm mpi_comm, std::int32_t local_size,
 
   // Compute number of out- and in-edges, and ranks of neighbourhood
   // processes
-  std::vector<std::int32_t> out_edges_num;
+  std::vector<std::int32_t> in_edges_num, out_edges_num;
   for (std::int32_t i = 0; i < mpi_size; ++i)
   {
     if (nghosts_send[i] > 0 or nghosts_recv[i] > 0)
     {
       _neighbours.push_back(i);
-      _forward_sizes.push_back(nghosts_recv[i]);
+      // _forward_sizes.push_back(nghosts_recv[i]);
+      in_edges_num.push_back(nghosts_recv[i]);
       out_edges_num.push_back(nghosts_send[i]);
     }
   }
@@ -68,12 +69,17 @@ IndexMap::IndexMap(MPI_Comm mpi_comm, std::int32_t local_size,
       _neighbours.size(), _neighbours.data(), MPI_UNWEIGHTED, MPI_INFO_NULL,
       false, &_neighbour_comm);
 
-  std::vector<std::int32_t> sources(num_neighbours);
-  std::vector<std::int32_t> dests(num_neighbours);
-  MPI_Dist_graph_neighbors(_neighbour_comm, num_neighbours, sources.data(),
-                           NULL, num_neighbours, dests.data(), NULL);
-  assert(sources == dests);
-  assert(sources == _neighbours);
+  // Check for 'symmetry' of the graph
+  {
+#if DEBUG
+    std::vector<std::int32_t> sources(num_neighbours);
+    std::vector<std::int32_t> dests(num_neighbours);
+    MPI_Dist_graph_neighbors(_neighbour_comm, num_neighbours, sources.data(),
+                             NULL, num_neighbours, dests.data(), NULL);
+    assert(sources == dests);
+    assert(sources == _neighbours);
+#endif
+  }
 
   // Create displacement vector
   std::vector<std::int32_t> displs_reverse(num_neighbours + 1, 0);
@@ -81,7 +87,7 @@ IndexMap::IndexMap(MPI_Comm mpi_comm, std::int32_t local_size,
   for (std::int32_t i = 0; i < num_neighbours; ++i)
   {
     displs_reverse[i + 1] = displs_reverse[i] + out_edges_num[i];
-    displs_forward[i + 1] = displs_forward[i] + _forward_sizes[i];
+    displs_forward[i + 1] = displs_forward[i] + in_edges_num[i];
   }
 
   // Create vectors for forward communication
@@ -108,8 +114,10 @@ IndexMap::IndexMap(MPI_Comm mpi_comm, std::int32_t local_size,
   //  May have repeated shared indices with different processes
   MPI_Neighbor_alltoallv(reverse_indices.data(), out_edges_num.data(),
                          displs_reverse.data(), MPI_INT,
-                         _forward_indices.data(), _forward_sizes.data(),
+                         _forward_indices.data(), in_edges_num.data(),
                          displs_forward.data(), MPI_INT, _neighbour_comm);
+
+  _forward_sizes = in_edges_num;
 }
 //-----------------------------------------------------------------------------
 std::array<std::int64_t, 2> IndexMap::local_range() const
