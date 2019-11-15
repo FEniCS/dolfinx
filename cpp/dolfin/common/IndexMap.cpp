@@ -29,32 +29,35 @@ IndexMap::IndexMap(MPI_Comm mpi_comm, std::int32_t local_size,
   std::partial_sum(local_sizes.begin(), local_sizes.end(),
                    _all_ranges.begin() + 1);
 
-  // Find all neighbour counts, both send and receive
-  std::vector<std::int32_t> send_nghosts(mpi_size, 0);
-
+  // Compute number of outgoing edges to other processes
+  std::vector<std::int32_t> nghosts_send(mpi_size, 0);
   for (std::size_t i = 0; i < ghosts.size(); ++i)
   {
+    const int p = owner(ghosts[i]);
     _ghosts[i] = ghosts[i];
-    _ghost_owners[i] = owner(ghosts[i]);
+    _ghost_owners[i] = p;
     assert(_ghost_owners[i] != _myrank);
-
-    // Accumulate number of indices to send to process p
-    const int p = _ghost_owners[i];
-    ++send_nghosts[p];
+    nghosts_send[p] += 1;
   }
 
-  std::vector<std::int32_t> recv_nghosts(mpi_size);
-  MPI_Alltoall(send_nghosts.data(), 1, MPI_INT, recv_nghosts.data(), 1, MPI_INT,
-               _mpi_comm);
+  // Send number of outgoing edges (target) processes, and receive
+  // process numbers of incoming edges from each process
+  std::vector<std::int32_t> nghosts_recv(mpi_size);
+  MPI_Alltoall(nghosts_send.data(), 1, MPI_INT32_T, nghosts_recv.data(), 1,
+               MPI_INT32_T, _mpi_comm);
 
-  std::vector<std::int32_t> reverse_sizes;
+  // Compute number of out- and in-edges, and ranks of neighbourhood
+  // processes
+  std::vector<std::int32_t> out_edges_num;
   for (std::int32_t i = 0; i < mpi_size; ++i)
-    if (send_nghosts[i] > 0 or recv_nghosts[i] > 0)
+  {
+    if (nghosts_send[i] > 0 or nghosts_recv[i] > 0)
     {
       _neighbours.push_back(i);
-      _forward_sizes.push_back(recv_nghosts[i]);
-      reverse_sizes.push_back(send_nghosts[i]);
+      _forward_sizes.push_back(nghosts_recv[i]);
+      out_edges_num.push_back(nghosts_send[i]);
     }
+  }
 
   std::int32_t num_neighbours = _neighbours.size();
 
@@ -77,7 +80,7 @@ IndexMap::IndexMap(MPI_Comm mpi_comm, std::int32_t local_size,
   std::vector<std::int32_t> displs_forward(num_neighbours + 1, 0);
   for (std::int32_t i = 0; i < num_neighbours; ++i)
   {
-    displs_reverse[i + 1] = displs_reverse[i] + reverse_sizes[i];
+    displs_reverse[i + 1] = displs_reverse[i] + out_edges_num[i];
     displs_forward[i + 1] = displs_forward[i] + _forward_sizes[i];
   }
 
@@ -103,7 +106,7 @@ IndexMap::IndexMap(MPI_Comm mpi_comm, std::int32_t local_size,
   }
 
   //  May have repeated shared indices with different processes
-  MPI_Neighbor_alltoallv(reverse_indices.data(), reverse_sizes.data(),
+  MPI_Neighbor_alltoallv(reverse_indices.data(), out_edges_num.data(),
                          displs_reverse.data(), MPI_INT,
                          _forward_indices.data(), _forward_sizes.data(),
                          displs_forward.data(), MPI_INT, _neighbour_comm);
