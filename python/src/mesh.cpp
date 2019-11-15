@@ -149,8 +149,7 @@ void mesh(py::module& m)
                                               py::none());
            },
            py::return_value_policy::reference_internal)
-      .def("shared_entities",
-           py::overload_cast<int>(&dolfin::mesh::Topology::shared_entities))
+      .def("shared_entities", &dolfin::mesh::Topology::shared_entities)
       .def("str", &dolfin::mesh::Topology::str);
 
   // dolfin::mesh::Mesh

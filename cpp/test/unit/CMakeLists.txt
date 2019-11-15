@@ -4,6 +4,9 @@ project(dolfin-tests)
 find_package(DOLFIN REQUIRED)
 include(${DOLFIN_USE_FILE})
 
+set(CMAKE_CXX_STANDARD 17)
+set(CMAKE_CXX_STANDARD_REQUIRED ON)
+
 # Prepare "Catch" library for other executables
 set(CATCH_INCLUDE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/catch)
 
