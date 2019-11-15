@@ -173,7 +173,7 @@ prec = [[a[0][0], None],
         [None, inner(p, q) * dx]]
 
 L = [inner(f, v) * dx,
-     dolfin.Constant(mesh, 0) * q * dx]
+     inner(dolfin.Constant(mesh, 0), q) * dx]
 
 # With the bilinear form ``a``, preconditioner bilinear form ``prec`` and
 # linear right hand side (RHS) ``L``, we may now assembly the finite
