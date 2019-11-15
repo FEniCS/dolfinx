@@ -20,13 +20,14 @@ IndexMap::IndexMap(MPI_Comm mpi_comm, std::int32_t local_size,
       _ghosts(ghosts.size()), _ghost_owners(ghosts.size())
 {
   // Calculate offsets
-  MPI::all_gather(_mpi_comm, (std::int64_t)local_size, _all_ranges);
-
-  const std::int32_t mpi_size = dolfin::MPI::size(_mpi_comm);
-  for (std::int32_t i = 1; i < mpi_size; ++i)
-    _all_ranges[i] += _all_ranges[i - 1];
-
-  _all_ranges.insert(_all_ranges.begin(), 0);
+  int mpi_size = -1;
+  MPI_Comm_size(mpi_comm, &mpi_size);
+  std::vector<std::int32_t> local_sizes(mpi_size);
+  MPI_Allgather(&local_size, 1, MPI_INT32_T, local_sizes.data(), 1, MPI_INT32_T,
+                mpi_comm);
+  _all_ranges = std::vector<std::int64_t>(mpi_size + 1, 0);
+  std::partial_sum(local_sizes.begin(), local_sizes.end(),
+                   _all_ranges.begin() + 1);
 
   // Find all neighbour counts, both send and receive
   std::vector<std::int32_t> send_nghosts(mpi_size, 0);
