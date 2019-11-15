@@ -240,7 +240,7 @@ distribute_cells(
   assert(c == local_count);
   assert(gc == all_count);
 
-  return std::make_tuple(
+  return std::tuple(
       std::move(new_cell_vertices), std::move(new_global_cell_indices),
       std::move(new_cell_partition), std::move(shared_cells), local_count);
 }

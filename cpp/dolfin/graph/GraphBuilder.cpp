@@ -144,7 +144,7 @@ compute_local_dual_graph_keyed(
                               cell_index});
   }
 
-  return std::make_tuple(std::move(local_graph), std::move(facet_cell_map),
+  return std::tuple(std::move(local_graph), std::move(facet_cell_map),
                          num_local_edges);
 }
 //-----------------------------------------------------------------------------
@@ -443,7 +443,7 @@ graph::GraphBuilder::compute_dual_graph(
 
   return std::pair(
       std::move(local_graph),
-      std::make_tuple(num_ghost_nodes, num_local_edges, num_nonlocal_edges));
+      std::tuple(num_ghost_nodes, num_local_edges, num_nonlocal_edges));
 }
 //-----------------------------------------------------------------------------
 std::tuple<std::vector<std::vector<std::size_t>>,

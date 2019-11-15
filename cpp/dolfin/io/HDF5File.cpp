@@ -1568,7 +1568,7 @@ HDF5File::read_mesh_data(const std::string data_path) const
       Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>>
       points(coordinates_data.data(), num_local_points, gdim);
 
-  return std::make_tuple(cell_type, std::move(points), std::move(cells),
+  return std::tuple(cell_type, std::move(points), std::move(cells),
                          std::move(global_cell_indices),
                          std::move(cell_distribution));
 }

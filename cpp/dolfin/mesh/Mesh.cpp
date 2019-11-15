@@ -204,9 +204,9 @@ compute_point_distribution(
   for (auto& q : shared_points_global)
     shared_points.insert({global_to_local[q.first], q.second});
 
-  return std::make_tuple(std::move(local_to_global), std::move(shared_points),
-                         std::move(cells_local), std::move(points_local),
-                         num_vertices_local);
+  return std::tuple(std::move(local_to_global), std::move(shared_points),
+                    std::move(cells_local), std::move(points_local),
+                    num_vertices_local);
 }
 //-----------------------------------------------------------------------------
 } // namespace
