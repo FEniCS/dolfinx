@@ -39,6 +39,10 @@ fe_degrees = [0, 1, 3]
 topological_dim = [1, 2, 3]
 number_cells = [6, 10]
 
+# Mesh cell types tested
+celltypes_2D = [CellType.triangle, CellType.quadrilateral]
+celltypes_3D = [CellType.tetrahedron, CellType.hexahedron]
+
 
 def mesh_factory(tdim, n):
     if tdim == 1:
@@ -62,9 +66,10 @@ def worker_id(request):
         return 'master'
 
 
+@pytest.mark.parametrize("cell_type", celltypes_2D)
 @pytest.mark.parametrize("encoding", encodings)
-def test_multiple_datasets(tempdir, encoding):
-    mesh = UnitSquareMesh(MPI.comm_world, 2, 2)
+def test_multiple_datasets(tempdir, encoding, cell_type):
+    mesh = UnitSquareMesh(MPI.comm_world, 2, 2, cell_type)
     cf0 = MeshFunction('size_t', mesh, 2, 11)
     cf0.name = 'cf0'
     cf1 = MeshFunction('size_t', mesh, 2, 22)
@@ -94,10 +99,11 @@ def test_save_and_load_1d_mesh(tempdir, encoding):
     assert mesh.num_entities_global(dim) == mesh2.num_entities_global(dim)
 
 
+@pytest.mark.parametrize("cell_type", celltypes_2D)
 @pytest.mark.parametrize("encoding", encodings)
-def test_save_and_load_2d_mesh(tempdir, encoding):
+def test_save_and_load_2d_mesh(tempdir, encoding, cell_type):
     filename = os.path.join(tempdir, "mesh_2D.xdmf")
-    mesh = UnitSquareMesh(MPI.comm_world, 32, 32)
+    mesh = UnitSquareMesh(MPI.comm_world, 32, 32, cell_type)
     with XDMFFile(mesh.mpi_comm(), filename, encoding=encoding) as file:
         file.write(mesh)
     with XDMFFile(MPI.comm_world, filename) as file:
@@ -107,23 +113,11 @@ def test_save_and_load_2d_mesh(tempdir, encoding):
     assert mesh.num_entities_global(dim) == mesh2.num_entities_global(dim)
 
 
+@pytest.mark.parametrize("cell_type", celltypes_3D)
 @pytest.mark.parametrize("encoding", encodings)
-def test_save_and_load_2d_quad_mesh(tempdir, encoding):
-    filename = os.path.join(tempdir, "mesh_2D_quad.xdmf")
-    mesh = UnitSquareMesh(MPI.comm_world, 32, 32, CellType.quadrilateral)
-    with XDMFFile(mesh.mpi_comm(), filename, encoding=encoding) as file:
-        file.write(mesh)
-    with XDMFFile(MPI.comm_world, filename) as file:
-        mesh2 = file.read_mesh(cpp.mesh.GhostMode.none)
-    assert mesh.num_entities_global(0) == mesh2.num_entities_global(0)
-    dim = mesh.topology.dim
-    assert mesh.num_entities_global(dim) == mesh2.num_entities_global(dim)
-
-
-@pytest.mark.parametrize("encoding", encodings)
-def test_save_and_load_3d_mesh(tempdir, encoding):
+def test_save_and_load_3d_mesh(tempdir, encoding, cell_type):
     filename = os.path.join(tempdir, "mesh_3D.xdmf")
-    mesh = UnitCubeMesh(MPI.comm_world, 4, 4, 4)
+    mesh = UnitCubeMesh(MPI.comm_world, 4, 4, 4, cell_type)
     with XDMFFile(mesh.mpi_comm(), filename, encoding=encoding) as file:
         file.write(mesh)
     with XDMFFile(MPI.comm_world, filename) as file:
@@ -276,9 +270,10 @@ def test_save_and_checkpoint_vector(tempdir, encoding, fe_degree, fe_family,
     assert u_in.vector.norm() < 1.0e-12
 
 
+@pytest.mark.parametrize("cell_type", celltypes_2D)
 @pytest.mark.parametrize("encoding", encodings)
-def test_save_and_checkpoint_timeseries(tempdir, encoding):
-    mesh = UnitSquareMesh(MPI.comm_world, 16, 16)
+def test_save_and_checkpoint_timeseries(tempdir, encoding, cell_type):
+    mesh = UnitSquareMesh(MPI.comm_world, 16, 16, cell_type)
     filename = os.path.join(tempdir, "u2_checkpoint.xdmf")
     FE = FiniteElement("CG", mesh.ufl_cell(), 2)
     V = FunctionSpace(mesh, FE)
@@ -314,10 +309,11 @@ def test_save_and_checkpoint_timeseries(tempdir, encoding):
     assert u_out[-1].vector.norm() < 1.0e-12
 
 
+@pytest.mark.parametrize("cell_type", celltypes_2D)
 @pytest.mark.parametrize("encoding", encodings)
-def test_save_2d_scalar(tempdir, encoding):
+def test_save_2d_scalar(tempdir, encoding, cell_type):
     filename = os.path.join(tempdir, "u2.xdmf")
-    mesh = UnitSquareMesh(MPI.comm_world, 16, 16)
+    mesh = UnitSquareMesh(MPI.comm_world, 16, 16, cell_type)
     # FIXME: This randomly hangs in parallel
     V = FunctionSpace(mesh, ("Lagrange", 2))
     u = Function(V)
@@ -326,10 +322,11 @@ def test_save_2d_scalar(tempdir, encoding):
         file.write(u)
 
 
+@pytest.mark.parametrize("cell_type", celltypes_3D)
 @pytest.mark.parametrize("encoding", encodings)
-def test_save_3d_scalar(tempdir, encoding):
+def test_save_3d_scalar(tempdir, encoding, cell_type):
     filename = os.path.join(tempdir, "u3.xdmf")
-    mesh = UnitCubeMesh(MPI.comm_world, 4, 4, 4)
+    mesh = UnitCubeMesh(MPI.comm_world, 4, 4, 4, cell_type)
     V = FunctionSpace(mesh, ("Lagrange", 2))
     u = Function(V)
     u.vector.set(1.0 + (1j if has_petsc_complex else 0))
@@ -337,10 +334,11 @@ def test_save_3d_scalar(tempdir, encoding):
         file.write(u)
 
 
+@pytest.mark.parametrize("cell_type", celltypes_2D)
 @pytest.mark.parametrize("encoding", encodings)
-def test_save_2d_vector(tempdir, encoding):
+def test_save_2d_vector(tempdir, encoding, cell_type):
     filename = os.path.join(tempdir, "u_2dv.xdmf")
-    mesh = UnitSquareMesh(MPI.comm_world, 16, 16)
+    mesh = UnitSquareMesh(MPI.comm_world, 16, 16, cell_type)
     V = VectorFunctionSpace(mesh, ("Lagrange", 2))
     u = Function(V)
     u.vector.set(1.0 + (1j if has_petsc_complex else 0))
@@ -348,20 +346,22 @@ def test_save_2d_vector(tempdir, encoding):
         file.write(u)
 
 
+@pytest.mark.parametrize("cell_type", celltypes_3D)
 @pytest.mark.parametrize("encoding", encodings)
-def test_save_3d_vector(tempdir, encoding):
+def test_save_3d_vector(tempdir, encoding, cell_type):
     filename = os.path.join(tempdir, "u_3Dv.xdmf")
-    mesh = UnitCubeMesh(MPI.comm_world, 2, 2, 2)
+    mesh = UnitCubeMesh(MPI.comm_world, 2, 2, 2, cell_type)
     u = Function(VectorFunctionSpace(mesh, ("Lagrange", 1)))
     u.vector.set(1.0 + (1j if has_petsc_complex else 0))
     with XDMFFile(mesh.mpi_comm(), filename, encoding=encoding) as file:
         file.write(u)
 
 
+@pytest.mark.parametrize("cell_type", celltypes_3D)
 @pytest.mark.parametrize("encoding", encodings)
-def test_save_3d_vector_series(tempdir, encoding):
+def test_save_3d_vector_series(tempdir, encoding, cell_type):
     filename = os.path.join(tempdir, "u_3D.xdmf")
-    mesh = UnitCubeMesh(MPI.comm_world, 2, 2, 2)
+    mesh = UnitCubeMesh(MPI.comm_world, 2, 2, 2, cell_type)
     u = Function(VectorFunctionSpace(mesh, ("Lagrange", 2)))
     with XDMFFile(mesh.mpi_comm(), filename, encoding=encoding) as file:
         u.vector.set(1.0 + (1j if has_petsc_complex else 0))
@@ -372,20 +372,22 @@ def test_save_3d_vector_series(tempdir, encoding):
         file.write(u, 0.3)
 
 
+@pytest.mark.parametrize("cell_type", celltypes_2D)
 @pytest.mark.parametrize("encoding", encodings)
-def test_save_2d_tensor(tempdir, encoding):
+def test_save_2d_tensor(tempdir, encoding, cell_type):
     filename = os.path.join(tempdir, "tensor.xdmf")
-    mesh = UnitSquareMesh(MPI.comm_world, 16, 16)
+    mesh = UnitSquareMesh(MPI.comm_world, 16, 16, cell_type)
     u = Function(TensorFunctionSpace(mesh, ("Lagrange", 2)))
     u.vector.set(1.0 + (1j if has_petsc_complex else 0))
     with XDMFFile(mesh.mpi_comm(), filename, encoding=encoding) as file:
         file.write(u)
 
 
+@pytest.mark.parametrize("cell_type", celltypes_3D)
 @pytest.mark.parametrize("encoding", encodings)
-def test_save_3d_tensor(tempdir, encoding):
+def test_save_3d_tensor(tempdir, encoding, cell_type):
     filename = os.path.join(tempdir, "u3t.xdmf")
-    mesh = UnitCubeMesh(MPI.comm_world, 4, 4, 4)
+    mesh = UnitCubeMesh(MPI.comm_world, 4, 4, 4, cell_type)
     u = Function(TensorFunctionSpace(mesh, ("Lagrange", 2)))
     u.vector.set(1.0 + (1j if has_petsc_complex else 0))
     with XDMFFile(mesh.mpi_comm(), filename, encoding=encoding) as file:
@@ -402,12 +404,13 @@ def test_save_1d_mesh(tempdir, encoding):
         file.write(mf)
 
 
+@pytest.mark.parametrize("cell_type", celltypes_2D)
 @pytest.mark.parametrize("encoding", encodings)
 @pytest.mark.parametrize("data_type", data_types)
-def test_save_2D_cell_function(tempdir, encoding, data_type):
+def test_save_2D_cell_function(tempdir, encoding, data_type, cell_type):
     dtype_str, dtype = data_type
     filename = os.path.join(tempdir, "mf_2D_%s.xdmf" % dtype_str)
-    mesh = UnitSquareMesh(MPI.comm_world, 32, 32)
+    mesh = UnitSquareMesh(MPI.comm_world, 32, 32, cell_type)
     mf = MeshFunction(dtype_str, mesh, mesh.topology.dim, 0)
     mf.name = "cells"
 
@@ -422,11 +425,12 @@ def test_save_2D_cell_function(tempdir, encoding, data_type):
     assert np.all(diff == 0)
 
 
+@pytest.mark.parametrize("cell_type", celltypes_3D)
 @pytest.mark.parametrize("encoding", encodings)
 @pytest.mark.parametrize("data_type", data_types)
-def test_save_3D_cell_function(tempdir, encoding, data_type):
+def test_save_3D_cell_function(tempdir, encoding, data_type, cell_type):
     dtype_str, dtype = data_type
-    mesh = UnitCubeMesh(MPI.comm_world, 4, 4, 4)
+    mesh = UnitCubeMesh(MPI.comm_world, 4, 4, 4, cell_type)
     mf = MeshFunction(dtype_str, mesh, mesh.topology.dim, 0)
     mf.name = "cells"
 
@@ -442,11 +446,12 @@ def test_save_3D_cell_function(tempdir, encoding, data_type):
     assert np.all(diff == 0)
 
 
+@pytest.mark.parametrize("cell_type", celltypes_2D)
 @pytest.mark.parametrize("encoding", encodings)
 @pytest.mark.parametrize("data_type", data_types)
-def test_save_2D_facet_function(tempdir, encoding, data_type):
+def test_save_2D_facet_function(tempdir, encoding, data_type, cell_type):
     dtype_str, dtype = data_type
-    mesh = UnitSquareMesh(MPI.comm_world, 32, 32)
+    mesh = UnitSquareMesh(MPI.comm_world, 32, 32, cell_type)
     tdim = mesh.topology.dim
     mf = MeshFunction(dtype_str, mesh, tdim - 1, 0)
     mf.name = "facets"
@@ -465,11 +470,12 @@ def test_save_2D_facet_function(tempdir, encoding, data_type):
     assert np.all(diff == 0)
 
 
+@pytest.mark.parametrize("cell_type", celltypes_3D)
 @pytest.mark.parametrize("encoding", encodings)
 @pytest.mark.parametrize("data_type", data_types)
-def test_save_3D_facet_function(tempdir, encoding, data_type):
+def test_save_3D_facet_function(tempdir, encoding, data_type, cell_type):
     dtype_str, dtype = data_type
-    mesh = UnitCubeMesh(MPI.comm_world, 4, 4, 4)
+    mesh = UnitCubeMesh(MPI.comm_world, 4, 4, 4, cell_type)
     tdim = mesh.topology.dim
     mf = MeshFunction(dtype_str, mesh, tdim - 1, 0)
     mf.name = "facets"
@@ -487,11 +493,12 @@ def test_save_3D_facet_function(tempdir, encoding, data_type):
     assert np.all(diff == 0)
 
 
+@pytest.mark.parametrize("cell_type", celltypes_3D)
 @pytest.mark.parametrize("encoding", encodings)
 @pytest.mark.parametrize("data_type", data_types)
-def test_save_3D_edge_function(tempdir, encoding, data_type):
+def test_save_3D_edge_function(tempdir, encoding, data_type, cell_type):
     dtype_str, dtype = data_type
-    mesh = UnitCubeMesh(MPI.comm_world, 4, 4, 4)
+    mesh = UnitCubeMesh(MPI.comm_world, 4, 4, 4, cell_type)
     mf = MeshFunction(dtype_str, mesh, 1, 0)
     mf.name = "edges"
 
@@ -502,11 +509,12 @@ def test_save_3D_edge_function(tempdir, encoding, data_type):
         file.write(mf)
 
 
+@pytest.mark.parametrize("cell_type", celltypes_2D)
 @pytest.mark.parametrize("encoding", encodings)
 @pytest.mark.parametrize("data_type", data_types)
-def test_save_2D_vertex_function(tempdir, encoding, data_type):
+def test_save_2D_vertex_function(tempdir, encoding, data_type, cell_type):
     dtype_str, dtype = data_type
-    mesh = UnitSquareMesh(MPI.comm_world, 32, 32)
+    mesh = UnitSquareMesh(MPI.comm_world, 32, 32, cell_type)
     mf = MeshFunction(dtype_str, mesh, 0, 0)
     mf.name = "vertices"
 
@@ -523,21 +531,23 @@ def test_save_2D_vertex_function(tempdir, encoding, data_type):
     assert np.all(diff == 0)
 
 
+@pytest.mark.parametrize("cell_type", celltypes_3D)
 @pytest.mark.parametrize("encoding", encodings)
 @pytest.mark.parametrize("data_type", data_types)
-def test_save_3D_vertex_function(tempdir, encoding, data_type):
+def test_save_3D_vertex_function(tempdir, encoding, data_type, cell_type):
     dtype_str, dtype = data_type
     filename = os.path.join(tempdir, "mf_vertex_3D_%s.xdmf" % dtype_str)
-    mesh = UnitCubeMesh(MPI.comm_world, 4, 4, 4)
+    mesh = UnitCubeMesh(MPI.comm_world, 4, 4, 4, cell_type)
     mf = MeshFunction(dtype_str, mesh, 0, 0)
     mf.values[:] = np.arange(mesh.num_entities(0), dtype=dtype)
     with XDMFFile(mesh.mpi_comm(), filename, encoding=encoding) as file:
         file.write(mf)
 
 
+@pytest.mark.parametrize("cell_type", celltypes_2D)
 @pytest.mark.parametrize("encoding", encodings)
-def test_save_points_2D(tempdir, encoding):
-    mesh = UnitSquareMesh(MPI.comm_world, 16, 16)
+def test_save_points_2D(tempdir, encoding, cell_type):
+    mesh = UnitSquareMesh(MPI.comm_world, 16, 16, cell_type)
     points = mesh.geometry.points
     vals = np.linalg.norm(points, axis=1)
     with XDMFFile(
@@ -552,9 +562,10 @@ def test_save_points_2D(tempdir, encoding):
         file.write(points, vals)
 
 
+@pytest.mark.parametrize("cell_type", celltypes_3D)
 @pytest.mark.parametrize("encoding", encodings)
-def test_save_points_3D(tempdir, encoding):
-    mesh = UnitCubeMesh(MPI.comm_world, 4, 4, 4)
+def test_save_points_3D(tempdir, encoding, cell_type):
+    mesh = UnitCubeMesh(MPI.comm_world, 4, 4, 4, cell_type)
     points = mesh.geometry.points
     vals = np.linalg.norm(points, axis=1)
     with XDMFFile(
@@ -569,11 +580,12 @@ def test_save_points_3D(tempdir, encoding):
         file.write(points, vals)
 
 
+@pytest.mark.parametrize("cell_type", celltypes_3D)
 @pytest.mark.parametrize("encoding", encodings)
 @pytest.mark.parametrize("data_type", data_types)
-def test_save_mesh_value_collection(tempdir, encoding, data_type):
+def test_save_mesh_value_collection(tempdir, encoding, data_type, cell_type):
     dtype_str, dtype = data_type
-    mesh = UnitCubeMesh(MPI.comm_world, 4, 4, 4)
+    mesh = UnitCubeMesh(MPI.comm_world, 4, 4, 4, cell_type)
     tdim = mesh.topology.dim
     meshfn = MeshFunction(dtype_str, mesh, mesh.topology.dim, False)
     meshfn.name = "volume_marker"
@@ -611,7 +623,9 @@ def test_append_and_load_mesh_functions(tempdir, encoding, data_type):
     dtype_str, dtype = data_type
     meshes = [
         UnitSquareMesh(MPI.comm_world, 12, 12),
-        UnitCubeMesh(MPI.comm_world, 2, 2, 2)
+        UnitCubeMesh(MPI.comm_world, 2, 2, 2),
+        UnitSquareMesh(MPI.comm_world, 12, 12, CellType.quadrilateral),
+        UnitCubeMesh(MPI.comm_world, 2, 2, 2, CellType.hexahedron)
     ]
 
     for mesh in meshes:
@@ -627,7 +641,7 @@ def test_append_and_load_mesh_functions(tempdir, encoding, data_type):
         vf.values[:] = mesh.topology.global_indices(0)[:]
         ff.values[:] = mesh.topology.global_indices(dim - 1)[:]
         cf.values[:] = mesh.topology.global_indices(dim)[:]
-        filename = os.path.join(tempdir, "appended_mf_%dD.xdmf" % dim)
+        filename = os.path.join(tempdir, "appended_mf_{0:d}_{1:s}.xdmf".format(dim, str(mesh.cell_type)))
         with XDMFFile(mesh.mpi_comm(), filename, encoding=encoding) as xdmf:
             xdmf.write(mesh)
             xdmf.write(vf)
@@ -648,11 +662,12 @@ def test_append_and_load_mesh_functions(tempdir, encoding, data_type):
         assert np.all(diff_cf == 0)
 
 
+@pytest.mark.parametrize("cell_type", celltypes_3D)
 @pytest.mark.parametrize("encoding", encodings)
 @pytest.mark.parametrize("data_type", data_types)
-def test_append_and_load_mesh_value_collections(tempdir, encoding, data_type):
+def test_append_and_load_mesh_value_collections(tempdir, encoding, data_type, cell_type):
     dtype_str, dtype = data_type
-    mesh = UnitCubeMesh(MPI.comm_world, 2, 2, 2)
+    mesh = UnitCubeMesh(MPI.comm_world, 2, 2, 2, cell_type)
     mesh.create_connectivity_all()
 
     mvc_v = MeshValueCollection(dtype_str, mesh, 0)
@@ -697,8 +712,9 @@ def test_append_and_load_mesh_value_collections(tempdir, encoding, data_type):
         assert np.all(diff == 0)
 
 
-def test_xdmf_timeseries_write_to_closed_hdf5_using_with(tempdir):
-    mesh = UnitCubeMesh(MPI.comm_world, 2, 2, 2)
+@pytest.mark.parametrize("cell_type", celltypes_3D)
+def test_xdmf_timeseries_write_to_closed_hdf5_using_with(tempdir, cell_type):
+    mesh = UnitCubeMesh(MPI.comm_world, 2, 2, 2, cell_type)
     V = FunctionSpace(mesh, ("CG", 1))
     u = Function(V)
 
