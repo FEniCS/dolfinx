@@ -619,7 +619,7 @@ def test_triangle_dof_ordering_parallel(space_type):
 def test_tetrahedron_dof_ordering(space_type):
     """Checks that dofs on shared tetrahedron edges and faces match up"""
     # Create simple tetrahedron mesh
-    N = 3
+    N = 2
     temp_points = np.array([[x / 2, y / 2, z / 2] for x in range(N) for y in range(N) for z in range(N)])
 
     order = [i for i, j in enumerate(temp_points)]
@@ -637,7 +637,7 @@ def test_tetrahedron_dof_ordering(space_type):
                           [a + N, a + N + 1, a + N ** 2 + N + 1, a + N ** 2 + 1],
                           [a + N, a + N ** 2 + N + 1, a + N ** 2 + N, a + N ** 2 + 1],
                           [a, a + N, a + N ** 2 + N, a + N ** 2 + 1],
-                          [a, a + N ** 2 + N, a + N ** 2, a + N ** 2 + 1]]:
+                          [a, a + N, a + N ** 2, a + N ** 2 + 1]]:
                     cell = [order[i] for i in c]
                     cells.append(cell)
 
@@ -649,7 +649,7 @@ def test_tetrahedron_dof_ordering(space_type):
     else:
         # On other processes, accept distribiuted data
         mesh = cpp.mesh.build_distributed_mesh(MPI.comm_world, CellType.tetrahedron, np.ndarray((0, 3)),
-                                               np.ndarray((0, 8)), [], cpp.mesh.GhostMode.none,
+                                               np.ndarray((0, 4)), [], cpp.mesh.GhostMode.none,
                                                cpp.mesh.Partitioner.scotch)
 
     V = FunctionSpace(mesh, space_type)
