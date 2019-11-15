@@ -141,7 +141,7 @@ dolfin::nls::NewtonSolver::solve(NonlinearProblem& nonlinear_problem, Vec x)
       LOG(WARNING) << "Newton solver did not converge.";
   }
 
-  return std::make_pair(newton_iteration, newton_converged);
+  return std::pair(newton_iteration, newton_converged);
 }
 //-----------------------------------------------------------------------------
 int nls::NewtonSolver::krylov_iterations() const { return _krylov_iterations; }

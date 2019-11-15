@@ -271,7 +271,7 @@ FunctionSpace::collapse() const
   auto collapsed_sub_space
       = std::make_shared<FunctionSpace>(_mesh, _element, collapsed_dofmap);
 
-  return std::make_pair(std::move(collapsed_sub_space),
+  return std::pair(std::move(collapsed_sub_space),
                         std::move(collapsed_dofs));
 }
 //-----------------------------------------------------------------------------

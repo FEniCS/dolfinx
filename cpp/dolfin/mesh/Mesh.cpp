@@ -140,7 +140,7 @@ compute_local_to_global_point_map(
   local_to_global.insert(local_to_global.end(), non_vertex_nodes.begin(),
                          non_vertex_nodes.end());
   num_vertices_local[3] = local_to_global.size();
-  return std::make_pair(std::move(local_to_global), num_vertices_local);
+  return std::pair(std::move(local_to_global), num_vertices_local);
 } // namespace
 //-----------------------------------------------------------------------------
 // Get the local points.

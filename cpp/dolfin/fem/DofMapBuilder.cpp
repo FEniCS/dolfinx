@@ -147,7 +147,7 @@ compute_ownership(const DofMapStructure& dofmap,
       const std::int32_t dest
           = dolfin::MPI::index_owner(mpi_comm, global_index, global_dim);
       send_buffer[dest].push_back(global_index);
-      global_to_local.insert(std::make_pair(global_index, i));
+      global_to_local.insert(std::pair(global_index, i));
     }
   }
 
@@ -168,7 +168,7 @@ compute_ownership(const DofMapStructure& dofmap,
       const std::int32_t dest
           = dolfin::MPI::index_owner(mpi_comm, global_index, global_dim);
       send_buffer[dest].push_back(global_index);
-      global_to_local.insert(std::make_pair(global_index, i));
+      global_to_local.insert(std::pair(global_index, i));
     }
   }
 
@@ -613,7 +613,7 @@ std::vector<std::int64_t> compute_global_indices(
   {
     // if (node_ownership[i] == -1)
     if (node_ownership[i] == ownership::not_owned)
-      node_pairs.push_back(std::make_pair(dofmap.global_indices[i], i));
+      node_pairs.push_back(std::pair(dofmap.global_indices[i], i));
   }
   std::map<std::int64_t, int> global_to_local_nodes_unowned(node_pairs.begin(),
                                                             node_pairs.end());
