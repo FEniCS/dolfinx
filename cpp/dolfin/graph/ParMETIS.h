@@ -38,7 +38,7 @@ class ParMETIS
 public:
   // Standard ParMETIS partition
   static std::pair<std::vector<int>, std::map<std::int64_t, std::vector<int>>>
-  partition(MPI_Comm mpi_comm, const CSRGraph<idx_t>& csr_graph);
+  partition(MPI_Comm mpi_comm, idx_t nparts, const CSRGraph<idx_t>& csr_graph);
 
 private:
   // ParMETIS adaptive repartition, so has to be non-const here

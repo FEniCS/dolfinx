@@ -19,6 +19,7 @@
 #include <dolfin/fem/DofMap.h>
 #include <dolfin/function/Function.h>
 #include <dolfin/function/FunctionSpace.h>
+#include <dolfin/io/cells.h>
 #include <dolfin/la/PETScVector.h>
 #include <dolfin/la/utils.h>
 #include <dolfin/mesh/CoordinateDofs.h>
@@ -254,7 +255,15 @@ void HDF5File::write(const mesh::Mesh& mesh, int cell_dim,
   assert(_hdf5_file_id > 0);
 
   mesh::CellType cell_type = mesh::cell_entity_type(mesh.cell_type(), cell_dim);
-  std::size_t num_cell_points = mesh::cell_num_entities(cell_type, 0);
+  const mesh::Connectivity& cell_points
+      = mesh.coordinate_dofs().entity_points();
+
+  // Allowing for higher order meshes to be written to file
+  std::size_t num_cell_points;
+  if (cell_dim == tdim)
+    num_cell_points = cell_points.size(0);
+  else
+    num_cell_points = mesh::cell_num_entities(cell_type, 0);
 
   // ---------- Vertices (coordinates)
   {
@@ -264,14 +273,9 @@ void HDF5File::write(const mesh::Mesh& mesh, int cell_dim,
     // Copy coordinates and indices and remove off-process values
     Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
         _vertex_coords;
-    if (!mpi_io)
-      _vertex_coords = mesh.geometry().points();
-    else
-    {
-      _vertex_coords = mesh::DistributedMeshTools::reorder_by_global_indices(
-          mesh.mpi_comm(), mesh.geometry().points(),
-          mesh.geometry().global_indices());
-    }
+    _vertex_coords = mesh::DistributedMeshTools::reorder_by_global_indices(
+        mesh.mpi_comm(), mesh.geometry().points(),
+        mesh.geometry().global_indices());
 
     Eigen::Map<Eigen::Array<double, Eigen::Dynamic, 3, Eigen::RowMajor>> varray(
         _vertex_coords.data(), _vertex_coords.size() / 3, 3);
@@ -288,105 +292,141 @@ void HDF5File::write(const mesh::Mesh& mesh, int cell_dim,
   {
     // Get/build topology data
     std::vector<std::int64_t> topological_data;
-    topological_data.reserve(mesh.num_entities(cell_dim) * (num_cell_points));
 
-    const auto& global_vertices = mesh.topology().global_indices(0);
+    const std::size_t degree = mesh.degree();
 
-    // Permutation to VTK ordering
-    int num_nodes = mesh.coordinate_dofs().cell_permutation().size();
-    const std::vector<std::uint8_t> perm
-        = io::cells::dolfin_to_vtk(mesh.cell_type(), num_nodes);
-
-    if (cell_dim == tdim or !mpi_io)
+    if (degree > 1)
     {
-      // Usual case, with cell output, and/or none shared with another
-      // process.
-      if (cell_dim == 0)
+      if (cell_dim != tdim)
       {
-        for (auto& v : mesh::MeshRange(mesh, 0))
-          topological_data.push_back(global_vertices[v.index()]);
+        throw std::runtime_error("Cannot create topology data for mesh. "
+                                 "Can only create mesh of cells");
       }
-      else
+
+      const auto& global_points = mesh.geometry().global_indices();
+
+      // Adjust num_nodes_per_cell to appropriate size
+      int num_nodes_per_cell = cell_points.size(0);
+      topological_data.reserve(num_nodes_per_cell * mesh.num_entities(tdim));
+
+      int num_nodes = mesh.coordinate_dofs().cell_permutation().size();
+      const std::vector<std::uint8_t> perm
+          = io::cells::dolfin_to_vtk(mesh.cell_type(), num_nodes);
+
+      for (std::int32_t c = 0; c < mesh.num_entities(tdim); ++c)
       {
-        const int num_vertices = mesh::cell_num_entities(
-            mesh::cell_entity_type(mesh.cell_type(), cell_dim), 0);
-        for (auto& c : mesh::MeshRange(mesh, cell_dim))
+        const std::int32_t* points = cell_points.connections(c);
+        for (std::int32_t i = 0; i < num_nodes_per_cell; ++i)
         {
-          for (int i = 0; i < num_vertices; ++i)
-          {
-            const int local_idx = c.entities(0)[perm[i]];
-            topological_data.push_back(global_vertices[local_idx]);
-          }
+          topological_data.push_back(global_points[points[perm[i]]]);
         }
       }
     }
     else
     {
-      // Drop duplicate topology for shared entities of less than mesh
-      // dimension
+      topological_data.reserve(mesh.num_entities(cell_dim) * (num_cell_points));
 
-      const int mpi_rank = MPI::rank(_mpi_comm.comm());
-      const std::map<std::int32_t, std::set<std::int32_t>>& shared_entities
-          = mesh.topology().shared_entities(cell_dim);
+      const auto& global_vertices = mesh.topology().global_indices(0);
 
-      std::set<int> non_local_entities;
-      if (mesh.topology().size(tdim) == mesh.topology().ghost_offset(tdim))
-      {
-        // No ghost cells - exclude shared entities which are on lower
-        // rank processes
-        for (auto sh = shared_entities.begin(); sh != shared_entities.end();
-             ++sh)
-        {
-          const int lowest_proc = *(sh->second.begin());
-          if (lowest_proc < mpi_rank)
-            non_local_entities.insert(sh->first);
-        }
-      }
-      else
-      {
-        // Iterate through ghost cells, adding non-ghost entities
-        // which are in lower rank process cells to a set for
-        // exclusion from output
-        const std::vector<std::int32_t>& cell_owners
-            = mesh.topology().entity_owner(tdim);
-        const std::int32_t ghost_offset_c = mesh.topology().ghost_offset(tdim);
-        const std::int32_t ghost_offset_e
-            = mesh.topology().ghost_offset(cell_dim);
-        for (auto& c : mesh::MeshRange(mesh, tdim, mesh::MeshRangeType::GHOST))
-        {
-          assert(c.index() >= ghost_offset_c);
-          const int cell_owner = cell_owners[c.index() - ghost_offset_c];
-          for (auto& e : mesh::EntityRange(c, cell_dim))
-          {
-            const bool not_ghost = e.index() < ghost_offset_e;
-            if (not_ghost and cell_owner < mpi_rank)
-              non_local_entities.insert(e.index());
-          }
-        }
-      }
+      // Permutation to VTK ordering
+      int num_nodes = mesh.coordinate_dofs().cell_permutation().size();
+      const std::vector<std::uint8_t> perm
+          = io::cells::dolfin_to_vtk(mesh.cell_type(), num_nodes);
 
-      if (cell_dim == 0)
+      if (cell_dim == tdim or !mpi_io)
       {
-        // Special case for mesh of points
-        for (auto& v : mesh::MeshRange(mesh, 0))
+        // Usual case, with cell output, and/or none shared with another
+        // process.
+        if (cell_dim == 0)
         {
-          if (non_local_entities.find(v.index()) == non_local_entities.end())
+          for (auto& v : mesh::MeshRange(mesh, 0))
             topological_data.push_back(global_vertices[v.index()]);
         }
-      }
-      else
-      {
-        const int num_vertices = mesh::cell_num_entities(
-            mesh::cell_entity_type(mesh.cell_type(), cell_dim), 0);
-        for (auto& ent : mesh::MeshRange(mesh, cell_dim))
+        else
         {
-          // If not excluded, add to topology
-          if (non_local_entities.find(ent.index()) == non_local_entities.end())
+          const int num_vertices = mesh::cell_num_entities(
+              mesh::cell_entity_type(mesh.cell_type(), cell_dim), 0);
+          for (auto& c : mesh::MeshRange(mesh, cell_dim))
           {
             for (int i = 0; i < num_vertices; ++i)
             {
-              const int local_idx = ent.entities(0)[perm[i]];
+              const int local_idx = c.entities(0)[perm[i]];
               topological_data.push_back(global_vertices[local_idx]);
+            }
+          }
+        }
+      }
+      else
+      {
+        // Drop duplicate topology for shared entities of less than mesh
+        // dimension
+
+        const int mpi_rank = MPI::rank(_mpi_comm.comm());
+        const std::map<std::int32_t, std::set<std::int32_t>>& shared_entities
+            = mesh.topology().shared_entities(cell_dim);
+
+        std::set<int> non_local_entities;
+        if (mesh.topology().size(tdim) == mesh.topology().ghost_offset(tdim))
+        {
+          // No ghost cells - exclude shared entities which are on lower
+          // rank processes
+          for (auto sh = shared_entities.begin(); sh != shared_entities.end();
+               ++sh)
+          {
+            const int lowest_proc = *(sh->second.begin());
+            if (lowest_proc < mpi_rank)
+              non_local_entities.insert(sh->first);
+          }
+        }
+        else
+        {
+          // Iterate through ghost cells, adding non-ghost entities
+          // which are in lower rank process cells to a set for
+          // exclusion from output
+          const std::vector<std::int32_t>& cell_owners
+              = mesh.topology().entity_owner(tdim);
+          const std::int32_t ghost_offset_c
+              = mesh.topology().ghost_offset(tdim);
+          const std::int32_t ghost_offset_e
+              = mesh.topology().ghost_offset(cell_dim);
+          for (auto& c :
+               mesh::MeshRange(mesh, tdim, mesh::MeshRangeType::GHOST))
+          {
+            assert(c.index() >= ghost_offset_c);
+            const int cell_owner = cell_owners[c.index() - ghost_offset_c];
+            for (auto& e : mesh::EntityRange(c, cell_dim))
+            {
+              const bool not_ghost = e.index() < ghost_offset_e;
+              if (not_ghost and cell_owner < mpi_rank)
+                non_local_entities.insert(e.index());
+            }
+          }
+        }
+
+        if (cell_dim == 0)
+        {
+          // Special case for mesh of points
+          for (auto& v : mesh::MeshRange(mesh, 0))
+          {
+            if (non_local_entities.find(v.index()) == non_local_entities.end())
+              topological_data.push_back(global_vertices[v.index()]);
+          }
+        }
+        else
+        {
+          const int num_vertices = mesh::cell_num_entities(
+              mesh::cell_entity_type(mesh.cell_type(), cell_dim), 0);
+          for (auto& ent : mesh::MeshRange(mesh, cell_dim))
+          {
+            // If not excluded, add to topology
+            if (non_local_entities.find(ent.index())
+                == non_local_entities.end())
+            {
+              for (int i = 0; i < num_vertices; ++i)
+              {
+                const int local_idx = ent.entities(0)[perm[i]];
+                topological_data.push_back(global_vertices[local_idx]);
+              }
             }
           }
         }
@@ -1294,8 +1334,8 @@ HDF5File::read_mesh_value_collection(std::shared_ptr<const mesh::Mesh> mesh,
 
       if (map_it == entity_map.end())
       {
-        throw std::runtime_error(
-            "Cannot find entity in map when reading mesh::MeshValueCollection");
+        throw std::runtime_error("Cannot find entity in map when reading "
+                                 "mesh::MeshValueCollection");
       }
       for (auto p = map_it->second.begin(); p != map_it->second.end(); p += 2)
       {
@@ -1326,15 +1366,8 @@ mesh::Mesh HDF5File::read_mesh(const std::string data_path,
                                bool use_partition_from_file,
                                const mesh::GhostMode ghost_mode) const
 {
-  mesh::CellType cell_type;
-  Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor> points;
-  Eigen::Array<std::int64_t, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
-      cells;
-  std::vector<std::int64_t> global_cell_indices;
-  std::vector<std::int64_t> cell_distribution;
-
   // Read local mesh data
-  std::tie(cell_type, points, cells, global_cell_indices, cell_distribution)
+  auto [cell_type, points, cells, global_cell_indices, cell_distribution]
       = read_mesh_data(data_path);
 
   if (use_partition_from_file)
@@ -1440,28 +1473,25 @@ HDF5File::read_mesh_data(const std::string data_path) const
   // Extract geometric dimension
   int gdim = coords_shape[1];
 
-  // Get number of vertices per cell from CellType
-  const int num_vertices_per_cell = mesh::cell_num_entities(cell_type, 0);
-
   // Discover shape of the topology data set in HDF5 file
   std::vector<std::int64_t> topology_shape
       = HDF5Interface::get_dataset_shape(_hdf5_file_id, topology_path);
+
+  // Number of nodes per element != vertices per element for higher order
+  // meshes.
+  const int num_nodes_per_cell = topology_shape[1];
 
   // Compute number of global cells (handle case that topology may be
   // arranged a 1D or 2D array)
   std::int64_t num_global_cells = 0;
   if (topology_shape.size() == 1)
   {
-    assert(topology_shape[0] % num_vertices_per_cell == 0);
-    num_global_cells = topology_shape[0] / num_vertices_per_cell;
+    assert(topology_shape[0] % num_nodes_per_cell == 0);
+    num_global_cells = topology_shape[0] / num_nodes_per_cell;
   }
   else if (topology_shape.size() == 2)
   {
     num_global_cells = topology_shape[0];
-    if (topology_shape[1] != num_vertices_per_cell)
-    {
-      throw std::runtime_error("Topology in HDF5 file has inconsistent size");
-    }
   }
   else
   {
@@ -1500,8 +1530,8 @@ HDF5File::read_mesh_data(const std::string data_path) const
   std::array<std::int64_t, 2> cell_data_range = cell_range;
   if (topology_shape.size() == 1)
   {
-    cell_data_range[0] *= num_vertices_per_cell;
-    cell_data_range[1] *= num_vertices_per_cell;
+    cell_data_range[0] *= num_nodes_per_cell;
+    cell_data_range[1] *= num_nodes_per_cell;
   }
 
   // Read a block of cells
@@ -1533,7 +1563,10 @@ HDF5File::read_mesh_data(const std::string data_path) const
 
   Eigen::Map<Eigen::Array<std::int64_t, Eigen::Dynamic, Eigen::Dynamic,
                           Eigen::RowMajor>>
-      cells(topology_data.data(), num_local_cells, num_vertices_per_cell);
+      cells(topology_data.data(), num_local_cells, num_nodes_per_cell);
+
+  cells = io::cells::permute_ordering(
+      cells, io::cells::vtk_to_dolfin(cell_type, num_nodes_per_cell));
 
   // --- Coordinates ---
 

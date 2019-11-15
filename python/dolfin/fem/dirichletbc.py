@@ -13,13 +13,13 @@ import types
 import typing
 
 import ufl
-from dolfin import cpp, function, functionspace
+from dolfin import cpp, function
 
 
 class DirichletBC(cpp.fem.DirichletBC):
     def __init__(
             self,
-            V: typing.Union[functionspace.FunctionSpace],
+            V: typing.Union[function.FunctionSpace],
             value: typing.Union[ufl.Coefficient, function.Function, cpp.function.Function],
             domain: typing.Union[types.FunctionType, typing.List[int]],
             method: cpp.fem.DirichletBC.Method = cpp.fem.DirichletBC.Method.topological):

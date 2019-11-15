@@ -1458,15 +1458,8 @@ XDMFFile::read_mesh_data(MPI_Comm comm) const
 //----------------------------------------------------------------------------
 mesh::Mesh XDMFFile::read_mesh(const mesh::GhostMode ghost_mode) const
 {
-
-  mesh::CellType cell_type;
-  Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor> points;
-  Eigen::Array<std::int64_t, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
-      cells;
-  std::vector<std::int64_t> global_cell_indices;
-
   // Read local mesh data
-  std::tie(cell_type, points, cells, global_cell_indices)
+  auto [cell_type, points, cells, global_cell_indices]
       = read_mesh_data(_mpi_comm.comm());
 
   //  Permute cells to DOLFIN ordering
