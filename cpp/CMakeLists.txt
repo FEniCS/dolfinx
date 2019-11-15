@@ -26,10 +26,10 @@ if (POLICY CMP0075)
 endif()
 
 #------------------------------------------------------------------------------
-# Use C++14
-set(CMAKE_CXX_STANDARD 14)
+# Use C++17
+set(CMAKE_CXX_STANDARD 17)
 
-# Require C++14
+# Require C++17
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
 # Do not enable compler-specific extensions

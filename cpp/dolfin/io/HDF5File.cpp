@@ -1366,15 +1366,8 @@ mesh::Mesh HDF5File::read_mesh(const std::string data_path,
                                bool use_partition_from_file,
                                const mesh::GhostMode ghost_mode) const
 {
-  mesh::CellType cell_type;
-  Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor> points;
-  Eigen::Array<std::int64_t, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
-      cells;
-  std::vector<std::int64_t> global_cell_indices;
-  std::vector<std::int64_t> cell_distribution;
-
   // Read local mesh data
-  std::tie(cell_type, points, cells, global_cell_indices, cell_distribution)
+  auto [cell_type, points, cells, global_cell_indices, cell_distribution]
       = read_mesh_data(data_path);
 
   if (use_partition_from_file)

@@ -429,19 +429,13 @@ graph::GraphBuilder::compute_dual_graph(
 {
   LOG(INFO) << "Build mesh dual graph";
 
-  std::vector<std::vector<std::size_t>> local_graph;
-  std::int32_t num_ghost_nodes;
-
   // Compute local part of dual graph
-  graph::GraphBuilder::FacetCellMap facet_cell_map;
-  std::int32_t num_local_edges;
-  std::tie(local_graph, facet_cell_map, num_local_edges)
+  auto [local_graph, facet_cell_map, num_local_edges]
       = graph::GraphBuilder::compute_local_dual_graph(mpi_comm, cell_vertices,
                                                       cell_type);
 
   // Compute nonlocal part
-  std::int32_t num_nonlocal_edges;
-  std::tie(num_ghost_nodes, num_nonlocal_edges) = compute_nonlocal_dual_graph(
+  auto [num_ghost_nodes, num_nonlocal_edges] = compute_nonlocal_dual_graph(
       mpi_comm, cell_vertices, cell_type, facet_cell_map, local_graph);
 
   // Shrink to fit
