@@ -553,9 +553,7 @@ PartitionData Partitioning::partition_cells(
   if (mpi_comm != MPI_COMM_NULL)
   {
     // Compute dual graph (for this partition)
-    std::vector<std::vector<std::size_t>> local_graph;
-    std::tuple<std::int32_t, std::int32_t, std::int32_t> graph_info;
-    std::tie(local_graph, graph_info) = graph::GraphBuilder::compute_dual_graph(
+    auto [local_graph, graph_info] = graph::GraphBuilder::compute_dual_graph(
         mpi_comm, cell_vertices, cell_type);
 
     const std::size_t global_graph_size
@@ -696,14 +694,12 @@ mesh::Mesh Partitioning::build_from_partition(
     return mesh;
 
   // Copy cell ownership (only needed for ghost cells)
-  std::vector<std::int32_t>& cell_owner = mesh.topology().entity_owner(tdim);
-  cell_owner.clear();
-  cell_owner.insert(cell_owner.begin(),
-                    new_cell_partition.begin() + num_regular_cells,
-                    new_cell_partition.end());
+  std::vector<std::int32_t> cell_owner(
+      new_cell_partition.begin() + num_regular_cells, new_cell_partition.end());
 
   // Assign map of shared cells (only needed for ghost cells)
-  mesh.topology().shared_entities(tdim) = shared_cells;
+  mesh.topology().set_entity_owner(tdim, cell_owner);
+  mesh.topology().set_shared_entities(tdim, shared_cells);
   DistributedMeshTools::init_facet_cell_connections(mesh);
 
   return mesh;
@@ -822,8 +818,7 @@ std::map<std::int64_t, std::vector<int>> Partitioning::compute_halo_cells(
 {
   // Compute dual graph (for this partition)
   std::vector<std::vector<std::size_t>> local_graph;
-  std::tuple<std::int32_t, std::int32_t, std::int32_t> graph_info;
-  std::tie(local_graph, graph_info) = graph::GraphBuilder::compute_dual_graph(
+  std::tie(local_graph, std::ignore) = graph::GraphBuilder::compute_dual_graph(
       mpi_comm, cell_vertices, cell_type);
 
   graph::CSRGraph<std::int64_t> csr_graph(mpi_comm, local_graph);
