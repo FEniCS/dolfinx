@@ -9,7 +9,7 @@ import pytest
 from petsc4py import PETSc
 from dolfin import (MPI, Function, FunctionSpace, UnitCubeMesh, UnitIntervalMesh,
                     UnitSquareMesh, FacetNormal, CellDiameter)
-from dolfin.cpp.mesh import CellType
+from dolfin.cpp.mesh import CellType, Ordering
 from dolfin.fem import (assemble_matrix, assemble_scalar, assemble_vector)
 from ufl import (SpatialCoordinate, div, dx, grad, inner, ds, dS, avg, jump,
                  TestFunction, TrialFunction)
@@ -31,6 +31,8 @@ def test_manufactured_poisson(p, mesh, component):
 
     if component >= mesh.geometry.dim:
         return
+
+    Ordering.order_simplex(mesh)
 
     V = FunctionSpace(mesh, ("DG", p))
     u, v = TrialFunction(V), TestFunction(V)
