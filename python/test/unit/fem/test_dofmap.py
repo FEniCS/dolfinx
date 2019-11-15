@@ -609,7 +609,6 @@ def test_triangle_dof_ordering_parallel(space_type):
                 edges[i] = j
 
 
-@skip_in_parallel
 @pytest.mark.parametrize('space_type', [
     ("P", 1), ("P", 2), ("P", 3), ("P", 4),
     ("N1curl", 1), ("N1curl", 2),
@@ -619,52 +618,68 @@ def test_triangle_dof_ordering_parallel(space_type):
 ])
 def test_tetrahedron_dof_ordering(space_type):
     """Checks that dofs on shared tetrahedron edges and faces match up"""
-    # TODO: use new test method here
     # Create simple tetrahedron mesh
-    from itertools import permutations
-    points = np.array([[0, 0, 0], [1, 0, 0], [0, 1, 0], [0, 0, 1]])
-    cells = list(permutations(range(4)))
-    mesh = Mesh(MPI.comm_world, CellType.tetrahedron, points,
-                np.array(cells), [], cpp.mesh.GhostMode.none)
-    V = FunctionSpace(mesh, space_type)
+    N = 3
+    temp_points = np.array([[x / 2, y / 2, z / 2] for x in range(N) for y in range(N) for z in range(N)])
 
+    order = [i for i, j in enumerate(temp_points)]
+    shuffle(order)
+
+    points = np.array([temp_points[i] for i in order])
+
+    cells = []
+    for x in range(N - 1):
+        for y in range(N - 1):
+            for z in range(N - 1):
+                a = N ** 2 * z + N * y + x
+                for c in [[a, a + 1, a + N, a + N ** 2 + 1],
+                          [a + N, a + 1, a + N + 1, a + N ** 2 + 1],
+                          [a + N, a + N + 1, a + N ** 2 + N + 1, a + N ** 2 + 1],
+                          [a + N, a + N ** 2 + N + 1, a + N ** 2 + N, a + N ** 2 + 1],
+                          [a, a + N, a + N ** 2 + N, a + N ** 2 + 1],
+                          [a, a + N ** 2 + N, a + N ** 2, a + N ** 2 + 1]]:
+                    cell = [order[i] for i in c]
+                    cells.append(cell)
+
+    if MPI.rank(MPI.comm_world) == 0:
+        # On process 0, input mesh data and distribute to other processes
+        mesh = cpp.mesh.build_distributed_mesh(MPI.comm_world, CellType.tetrahedron, points,
+                                               np.array(cells), [], cpp.mesh.GhostMode.none,
+                                               cpp.mesh.Partitioner.scotch)
+    else:
+        # On other processes, accept distribiuted data
+        mesh = cpp.mesh.build_distributed_mesh(MPI.comm_world, CellType.tetrahedron, np.ndarray((0, 3)),
+                                               np.ndarray((0, 8)), [], cpp.mesh.GhostMode.none,
+                                               cpp.mesh.Partitioner.scotch)
+
+    V = FunctionSpace(mesh, space_type)
     dofmap = V.dofmap
 
-    edges = []
-    faces = []
+    edges = {}
 
-    for tet in range(len(cells)):
-        dofs = dofmap.cell_dofs(tet)
+    # Get coordinates of dofs and edges and check that they are the same for each global dof number
+    X = V.element.dof_reference_coordinates()
+    coord_dofs = mesh.coordinate_dofs().entity_points()
+    x_g = mesh.geometry.points
+    cmap = fem.create_coordinate_map(mesh.ufl_domain())
+    for cell_n, cell in enumerate(coord_dofs):
+        dofs = dofmap.cell_dofs(cell_n)
         edge_dofs_local = []
         for i in range(6):
             edge_dofs_local += list(dofmap.dof_layout.entity_dofs(1, i))
         edge_dofs = [dofs[i] for i in edge_dofs_local]
 
-        face_dofs_local = []
-        for i in range(4):
-            face_dofs_local += list(dofmap.dof_layout.entity_dofs(2, i))
-        face_dofs = [dofs[i] for i in face_dofs_local]
-
-        X = V.element.dof_reference_coordinates()
-        coord_dofs = mesh.coordinate_dofs().entity_points()
-        x_g = mesh.geometry.points
-        cmap = fem.create_coordinate_map(mesh.ufl_domain())
-
         x_coord_new = np.zeros([4, 3])
         for v in range(4):
-            x_coord_new[v] = x_g[coord_dofs[tet, v], :3]
+            x_coord_new[v] = x_g[coord_dofs[cell_n, v]]
         x = X.copy()
         cmap.push_forward(x, X, x_coord_new)
 
-        edges.append({i: j for i, j in zip(edge_dofs, x[edge_dofs_local])})
-        faces.append({i: j for i, j in zip(face_dofs, x[face_dofs_local])})
-
-    for i in edges[0]:
-        for j in edges[1:]:
-            assert np.allclose(edges[0][i], j[i])
-    for i in faces[0]:
-        for j in faces[1:]:
-            assert np.allclose(faces[0][i], j[i])
+        for i, j in zip(edge_dofs, x[edge_dofs_local]):
+            if i in edges:
+                assert np.allclose(j, edges[i])
+            else:
+                edges[i] = j
 
 
 @pytest.mark.parametrize('space_type', [
