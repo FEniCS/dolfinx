@@ -69,7 +69,7 @@ def worker_id(request):
 @pytest.mark.parametrize("cell_type", celltypes_2D)
 @pytest.mark.parametrize("encoding", encodings)
 def test_multiple_datasets(tempdir, encoding, cell_type):
-    mesh = UnitSquareMesh(MPI.comm_world, 2, 2, cell_type)
+    mesh = UnitSquareMesh(MPI.comm_world, 4, 4, cell_type)
     cf0 = MeshFunction('size_t', mesh, 2, 11)
     cf0.name = 'cf0'
     cf1 = MeshFunction('size_t', mesh, 2, 22)
