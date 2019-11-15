@@ -182,7 +182,7 @@ theta = 0.5      # time stepping family, e.g. theta=1 -> backward Euler, theta=0
 
 # A unit square mesh with 97 (= 96 + 1) vertices in each direction is
 # created, and on this mesh a
-# :py:class:`FunctionSpace<dolfin.functions.functionspace.FunctionSpace>`
+# :py:class:`FunctionSpace<dolfin.function.FunctionSpace>`
 # ``ME`` is built using a pair of linear Lagrangian elements. ::
 
 # Create mesh and build function space

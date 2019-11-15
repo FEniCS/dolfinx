@@ -15,6 +15,7 @@ from dolfin.io import HDF5File
 from dolfin_utils.test.fixtures import tempdir
 from dolfin_utils.test.skips import xfail_if_complex
 
+import pytest
 assert (tempdir)
 
 
@@ -178,11 +179,13 @@ def test_save_and_read_function(tempdir):
     hdf5_file.close()
 
 
-def test_save_and_read_mesh_2D(tempdir):
+@pytest.mark.parametrize("mesh0", [UnitSquareMesh(MPI.comm_world, 20, 20),
+                                   cpp.generation.UnitDiscMesh.create(MPI.comm_world, 3,
+                                                                      cpp.mesh.GhostMode.none)])
+def test_save_and_read_mesh_2D(mesh0, tempdir):
     filename = os.path.join(tempdir, "mesh2d.h5")
 
     # Write to file
-    mesh0 = UnitSquareMesh(MPI.comm_world, 20, 20)
     mesh_file = HDF5File(mesh0.mpi_comm(), filename, "w")
     mesh_file.write(mesh0, "/my_mesh")
     mesh_file.close()

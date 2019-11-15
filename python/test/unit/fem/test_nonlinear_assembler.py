@@ -41,8 +41,8 @@ def test_matrix_assembly_block():
     P0 = ufl.FiniteElement("Lagrange", mesh.ufl_cell(), p0)
     P1 = ufl.FiniteElement("Lagrange", mesh.ufl_cell(), p1)
 
-    V0 = dolfin.function.functionspace.FunctionSpace(mesh, P0)
-    V1 = dolfin.function.functionspace.FunctionSpace(mesh, P1)
+    V0 = dolfin.function.FunctionSpace(mesh, P0)
+    V1 = dolfin.function.FunctionSpace(mesh, P1)
 
     def boundary(x):
         return numpy.logical_or(x[0] < 1.0e-6, x[0] > 1.0 - 1.0e-6)
@@ -101,12 +101,12 @@ def test_matrix_assembly_block():
         x1_sub.ghostUpdate(addv=PETSc.InsertMode.INSERT, mode=PETSc.ScatterMode.FORWARD)
 
     A1 = dolfin.fem.assemble_matrix_nest(a_block, [bc])
-    b1 = dolfin.fem.assemble.assemble_vector_nest(L_block)
-    dolfin.fem.assemble.apply_lifting_nest(b1, a_block, [bc], x1, scale=-1.0)
+    b1 = dolfin.fem.assemble_vector_nest(L_block)
+    dolfin.fem.apply_lifting_nest(b1, a_block, [bc], x1, scale=-1.0)
     for b_sub in b1.getNestSubVecs():
         b_sub.ghostUpdate(addv=PETSc.InsertMode.ADD, mode=PETSc.ScatterMode.REVERSE)
     bcs0 = dolfin.cpp.fem.bcs_rows(dolfin.fem.assemble._create_cpp_form(L_block), [bc])
-    dolfin.fem.assemble.set_bc_nest(b1, bcs0, x1, scale=-1.0)
+    dolfin.fem.set_bc_nest(b1, bcs0, x1, scale=-1.0)
     A1.assemble()
 
     assert A1.getType() == "nest"
@@ -115,7 +115,7 @@ def test_matrix_assembly_block():
 
     # Monolithic version
     E = P0 * P1
-    W = dolfin.function.functionspace.FunctionSpace(mesh, E)
+    W = dolfin.function.FunctionSpace(mesh, E)
     dU = ufl.TrialFunction(W)
     U = dolfin.function.Function(W)
     u0, u1 = ufl.split(U)
@@ -208,14 +208,14 @@ class NonlinearPDE_SNESProblem():
         for L, F_sub, a, bc in zip(self.L, F.getNestSubVecs(), self.a, bcs1):
             with F_sub.localForm() as F_sub_local:
                 F_sub_local.set(0.0)
-            dolfin.fem.assemble.assemble_vector(F_sub, L)
-            dolfin.fem.assemble.apply_lifting(F_sub, a, bc, x0=x, scale=-1.0)
+            dolfin.fem.assemble_vector(F_sub, L)
+            dolfin.fem.apply_lifting(F_sub, a, bc, x0=x, scale=-1.0)
             F_sub.ghostUpdate(addv=PETSc.InsertMode.ADD, mode=PETSc.ScatterMode.REVERSE)
 
         # Set bc value in RHS
         bcs0 = dolfin.cpp.fem.bcs_rows(dolfin.fem.assemble._create_cpp_form(self.L), self.bcs)
         for F_sub, bc, x_sub in zip(F.getNestSubVecs(), bcs0, x):
-            dolfin.fem.assemble.set_bc(F_sub, bc, x_sub, -1.0)
+            dolfin.fem.set_bc(F_sub, bc, x_sub, -1.0)
 
         # Must assemble F here in the case of nest matrices
         F.assemble()
@@ -238,7 +238,7 @@ def test_assembly_solve_block():
     mesh = dolfin.generation.UnitSquareMesh(dolfin.MPI.comm_world, 12, 11)
     p = 1
     P = ufl.FiniteElement("Lagrange", mesh.ufl_cell(), p)
-    V0 = dolfin.function.functionspace.FunctionSpace(mesh, P)
+    V0 = dolfin.function.FunctionSpace(mesh, P)
     V1 = V0.clone()
 
     def bc_val_0(x):
@@ -364,7 +364,7 @@ def test_assembly_solve_block():
 
     # -- Monolithic version
     E = P * P
-    W = dolfin.function.functionspace.FunctionSpace(mesh, E)
+    W = dolfin.function.FunctionSpace(mesh, E)
     U = dolfin.function.Function(W)
     dU = ufl.TrialFunction(W)
     u0, u1 = ufl.split(U)
@@ -423,8 +423,8 @@ def test_assembly_solve_block():
 def test_assembly_solve_taylor_hood(mesh):
     """Assemble Stokes problem with Taylor-Hood elements and solve."""
     gdim = mesh.geometry.dim
-    P2 = dolfin.function.functionspace.VectorFunctionSpace(mesh, ("Lagrange", 2))
-    P1 = dolfin.function.functionspace.FunctionSpace(mesh, ("Lagrange", 1))
+    P2 = dolfin.function.VectorFunctionSpace(mesh, ("Lagrange", 2))
+    P1 = dolfin.function.FunctionSpace(mesh, ("Lagrange", 1))
 
     def boundary0(x):
         """Define boundary x = 0"""

@@ -55,7 +55,7 @@ bc = dolfin.fem.DirichletBC(U, u_bc, lambda x: numpy.isclose(x[0], 0.0))
 
 def free_end(x):
     """Marks the leftmost points of the cantilever"""
-    return numpy.isclose(x[:, 0], 48.0)
+    return numpy.isclose(x[0], 48.0)
 
 
 # Mark free end facets as 1
