@@ -23,7 +23,7 @@ def test_complex_assembly():
 
     mesh = dolfin.generation.UnitSquareMesh(dolfin.MPI.comm_world, 10, 10)
     P2 = ufl.FiniteElement("Lagrange", mesh.ufl_cell(), 2)
-    V = dolfin.functionspace.FunctionSpace(mesh, P2)
+    V = dolfin.function.FunctionSpace(mesh, P2)
 
     u = ufl.TrialFunction(V)
     v = ufl.TestFunction(V)
@@ -80,7 +80,7 @@ def test_complex_assembly_solve():
     degree = 3
     mesh = dolfin.generation.UnitSquareMesh(dolfin.MPI.comm_world, 20, 20)
     P = ufl.FiniteElement("Lagrange", mesh.ufl_cell(), degree)
-    V = dolfin.functionspace.FunctionSpace(mesh, P)
+    V = dolfin.function.FunctionSpace(mesh, P)
 
     x = SpatialCoordinate(mesh)
 
