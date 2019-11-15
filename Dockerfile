@@ -128,6 +128,14 @@ RUN wget -nc --quiet https://github.com/pybind/pybind11/archive/v${PYBIND11_VERS
     make install && \
     rm -rf /tmp/*
 
+# Install KaHIP
+RUN cd /usr/local && \
+    git clone https://github.com/schulzchristian/KaHIP.git && \
+    cd KaHIP/ && \
+    ./compile_withcmake.sh
+
+ENV KAHIP_ROOT=/usr/local/KaHIP
+
 WORKDIR /root
 
 ########################################
