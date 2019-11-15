@@ -221,6 +221,7 @@ ksp.setOperators(A, P)
 # Setup the parent KSP
 ksp.setTolerances(rtol=1e-8)
 ksp.setType("fgmres")
+ksp.setGMRESRestart(120)
 ksp.getPC().setType("fieldsplit")
 ksp.getPC().setFieldSplitType(PETSc.PC.CompositeType.ADDITIVE)
 
@@ -236,7 +237,7 @@ ksp_u.setType("preonly")
 ksp_u.getPC().setType("gamg")
 ksp_u.getPC().setGAMGType(PETSc.PC.GAMGType.AGG)
 ksp_p.setType("preonly")
-ksp_p.getPC().setType("hypre")
+ksp_p.getPC().setType("sor")
 
 # Monitor the convergence of the KSP
 opts = PETSc.Options()
