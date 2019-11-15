@@ -326,7 +326,7 @@ dolfin::graph::SCOTCH::partition(const MPI_Comm mpi_comm,
   // data is already in the ghost_procs map
 
   return std::pair(std::vector<int>(_cell_partition.begin(),
-                                         _cell_partition.begin() + vertlocnbr),
-                        std::move(ghost_procs));
+                                    _cell_partition.begin() + vertlocnbr),
+                   std::move(ghost_procs));
 }
 //-----------------------------------------------------------------------------

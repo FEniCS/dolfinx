@@ -1437,7 +1437,7 @@ XDMFFile::read_mesh_data(MPI_Comm comm) const
               cell_index_offset);
 
     return std::tuple(cell_type, std::move(points), std::move(cells),
-                           std::move(global_cell_indices));
+                      std::move(global_cell_indices));
   }
   else
   {
@@ -1452,7 +1452,7 @@ XDMFFile::read_mesh_data(MPI_Comm comm) const
     std::vector<std::int64_t> global_cell_indices(num_local_cells);
 
     return std::tuple(cell_type, std::move(points), std::move(cells),
-                           std::move(global_cell_indices));
+                      std::move(global_cell_indices));
   }
 }
 //----------------------------------------------------------------------------

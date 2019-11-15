@@ -52,8 +52,8 @@ compute_entity_numbering(const Mesh& mesh, int d)
     shared_entities.clear();
     global_entity_indices = mesh.topology().global_indices(d);
     return std::tuple(std::move(global_entity_indices),
-                           std::move(shared_entities),
-                           mesh.num_entities_global(d));
+                      std::move(shared_entities),
+                      mesh.num_entities_global(d));
   }
 
   // MPI communicator
@@ -301,7 +301,7 @@ compute_entity_numbering(const Mesh& mesh, int d)
   }
 
   return std::tuple(std::move(global_entity_indices),
-                         std::move(shared_entities), num_global);
+                    std::move(shared_entities), num_global);
 }
 //-----------------------------------------------------------------------------
 template <typename T>

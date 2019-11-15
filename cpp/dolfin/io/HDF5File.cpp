@@ -1609,8 +1609,8 @@ HDF5File::read_mesh_data(const std::string data_path) const
       points(coordinates_data.data(), num_local_points, gdim);
 
   return std::tuple(cell_type, std::move(points), std::move(cells),
-                         std::move(global_cell_indices),
-                         std::move(cell_distribution));
+                    std::move(global_cell_indices),
+                    std::move(cell_distribution));
 }
 //-----------------------------------------------------------------------------
 bool HDF5File::has_dataset(const std::string dataset_name) const
