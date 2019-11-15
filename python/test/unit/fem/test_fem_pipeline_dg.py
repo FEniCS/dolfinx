@@ -32,7 +32,10 @@ def test_manufactured_poisson(p, mesh, component):
     if component >= mesh.geometry.dim:
         return
 
-    Ordering.order_simplex(mesh)
+    try:
+        Ordering.order_simplex(mesh)
+    except RuntimeError:
+        pass
 
     V = FunctionSpace(mesh, ("DG", p))
     u, v = TrialFunction(V), TestFunction(V)
