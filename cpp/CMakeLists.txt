@@ -105,7 +105,7 @@ endforeach()
 # Check for MPI
 
 # FIXME: Should we set CMake to use the discovered MPI compiler wrappers?
-find_package(MPI REQUIRED)
+find_package(MPI 3 REQUIRED)
 
 #------------------------------------------------------------------------------
 # Compiler flags
