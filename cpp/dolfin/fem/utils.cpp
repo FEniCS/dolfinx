@@ -344,7 +344,9 @@ fem::create_vector_block(const std::vector<const common::IndexMap*>& maps)
   }
 
   // Create map for combined problem, and create vector
-  common::IndexMap index_map(maps[0]->mpi_comm(), local_size, ghosts, 1);
+  Eigen::Map<const Eigen::Array<std::int64_t, Eigen::Dynamic, 1>> _ghosts(
+      ghosts.data(), ghosts.size());
+  common::IndexMap index_map(maps[0]->mpi_comm(), local_size, _ghosts, 1);
   return la::PETScVector(index_map);
 }
 //-----------------------------------------------------------------------------

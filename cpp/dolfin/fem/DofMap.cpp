@@ -98,7 +98,7 @@ fem::DofMap build_collapsed_dofmap(const DofMap& dofmap_view,
   dofmap_view.index_map->scatter_fwd(global_index, global_index_remote, 1);
 
   // Compute ghosts for collapsed dofmap
-  std::vector<std::int64_t> ghosts(num_unowned);
+  Eigen::Array<std::int64_t, Eigen::Dynamic, 1> ghosts(num_unowned);
   for (auto it = it_unowned0; it != dofs_view.end(); ++it)
   {
     const std::int32_t index = std::distance(it_unowned0, it) / bs;

@@ -14,9 +14,11 @@ using namespace dolfin;
 using namespace dolfin::common;
 
 //-----------------------------------------------------------------------------
-IndexMap::IndexMap(MPI_Comm mpi_comm, std::int32_t local_size,
-                   const std::vector<std::int64_t>& ghosts,
-                   std::size_t block_size)
+IndexMap::IndexMap(
+    MPI_Comm mpi_comm, std::int32_t local_size,
+    const Eigen::Ref<const Eigen::Array<std::int64_t, Eigen::Dynamic, 1>>&
+        ghosts,
+    int block_size)
     : block_size(block_size), _mpi_comm(mpi_comm), _myrank(MPI::rank(mpi_comm)),
       _ghosts(ghosts.size()), _ghost_owners(ghosts.size())
 {

@@ -40,8 +40,16 @@ public:
   /// blocks have size block_size.
   ///
   /// Collective
-  IndexMap(MPI_Comm mpi_comm, std::int32_t local_size,
-           const std::vector<std::int64_t>& ghosts, std::size_t block_size);
+  /// @param[in] mpi_comm The MPI communicator
+  /// @param[in] local_size Local size of the IndexMap, i.e. the number
+  ///                       of owned entries
+  /// @param[in] ghosts The global indices of ghost entries
+  /// @param[in] block_size The block size of the IndexMap
+  IndexMap(
+      MPI_Comm mpi_comm, std::int32_t local_size,
+      const Eigen::Ref<const Eigen::Array<std::int64_t, Eigen::Dynamic, 1>>&
+          ghosts,
+      int block_size);
 
   /// Copy constructor
   IndexMap(const IndexMap& map) = default;
@@ -101,6 +109,7 @@ public:
   indices(bool unroll_block) const;
 
   /// Return MPI communicator
+  /// @return The communicator on which the IndexMap is defined
   MPI_Comm mpi_comm() const;
 
   /// Send n values for each index that is owned to processes that have

@@ -157,7 +157,7 @@ SparsityPattern::SparsityPattern(
   // Initialise common::IndexMaps for merged pattern
   auto p00 = patterns[0][0];
   assert(p00);
-  std::vector<std::int64_t> ghosts;
+  Eigen::Array<std::int64_t, Eigen::Dynamic, 1> ghosts;
   _index_maps[0] = std::make_shared<common::IndexMap>(
       p00->mpi_comm(), row_local_size, ghosts, 1);
   _index_maps[1] = std::make_shared<common::IndexMap>(
