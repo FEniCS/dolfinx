@@ -6,6 +6,7 @@
 
 #include "IndexMap.h"
 #include <algorithm>
+#include <numeric>
 #include <set>
 #include <vector>
 
@@ -55,12 +56,12 @@ IndexMap::IndexMap(MPI_Comm mpi_comm, std::int32_t local_size,
 
   // Store number of out- and in-edges, and ranks of neighbourhood
   // processes
-  std::vector<std::int32_t> in_edges_num, out_edges_num;
+  std::vector<std::int32_t> neighbours, in_edges_num, out_edges_num;
   for (std::int32_t i = 0; i < mpi_size; ++i)
   {
     if (num_edges_out_per_proc[i] > 0 or num_edges_in_per_proc[i] > 0)
     {
-      _neighbours.push_back(i);
+      neighbours.push_back(i);
       in_edges_num.push_back(num_edges_in_per_proc[i]);
       out_edges_num.push_back(num_edges_out_per_proc[i]);
     }
@@ -69,12 +70,12 @@ IndexMap::IndexMap(MPI_Comm mpi_comm, std::int32_t local_size,
   // Create neighbourhood communicator. No communication is needed to
   // build the graph with complete adjacency information
   MPI_Dist_graph_create_adjacent(
-      _mpi_comm, _neighbours.size(), _neighbours.data(), MPI_UNWEIGHTED,
-      _neighbours.size(), _neighbours.data(), MPI_UNWEIGHTED, MPI_INFO_NULL,
+      _mpi_comm, neighbours.size(), neighbours.data(), MPI_UNWEIGHTED,
+      neighbours.size(), neighbours.data(), MPI_UNWEIGHTED, MPI_INFO_NULL,
       false, &_neighbour_comm);
 
   // Size of neighbourhood
-  const int num_neighbours = _neighbours.size();
+  const int num_neighbours = neighbours.size();
 
   // Check for 'symmetry' of the graph
 #if DEBUG
@@ -83,35 +84,34 @@ IndexMap::IndexMap(MPI_Comm mpi_comm, std::int32_t local_size,
     MPI_Dist_graph_neighbors(_neighbour_comm, num_neighbours, sources.data(),
                              NULL, num_neighbours, dests.data(), NULL);
     assert(sources == dests);
-    assert(sources == _neighbours);
+    assert(sources == neighbours);
   }
 #endif
 
-  // Create displacement vector
-  std::vector<int> disp_out(num_neighbours + 1, 0);
-  std::vector<int> disp_in(num_neighbours + 1, 0);
-  for (int i = 0; i < num_neighbours; ++i)
-  {
-    disp_out[i + 1] = disp_out[i] + out_edges_num[i];
-    disp_in[i + 1] = disp_in[i] + in_edges_num[i];
-  }
+  // Create displacement vectors
+  std::vector<int> disp_out(num_neighbours + 1, 0),
+      disp_in(num_neighbours + 1, 0);
+  std::partial_sum(out_edges_num.begin(), out_edges_num.end(),
+                   disp_out.begin() + 1);
+  std::partial_sum(in_edges_num.begin(), in_edges_num.end(),
+                   disp_in.begin() + 1);
 
-  // Create vectors for forward communication
+  // Create vectors for forward (in edges) communication
   const int n_send = disp_out.back();
-  std::vector<std::int32_t> out_indices(n_send);
+  std::vector<int> out_indices(n_send);
 
-  std::vector<std::int32_t> disp(disp_out);
-  for (std::int32_t j = 0; j < _ghosts.size(); ++j)
+  std::vector<int> disp(disp_out);
+  for (int j = 0; j < _ghosts.size(); ++j)
   {
     // Get rank of owner process rank on global communicator
     const int p = ghost_owner_global[j];
 
     // Get rank of owner on neighbourhood communicator
-    const auto it = std::find(_neighbours.begin(), _neighbours.end(), p);
-    assert(it != _neighbours.end());
-    const int np = std::distance(_neighbours.begin(), it);
+    const auto it = std::find(neighbours.begin(), neighbours.end(), p);
+    assert(it != neighbours.end());
+    const int np = std::distance(neighbours.begin(), it);
 
-    // Convert to neighbour rank instead of global process rank
+    // Store owner neighbour rank for each ghost
     _ghost_owners[j] = np;
 
     out_indices[disp[np]] = _ghosts[j] - _all_ranges[p];
@@ -126,7 +126,7 @@ IndexMap::IndexMap(MPI_Comm mpi_comm, std::int32_t local_size,
                          in_edges_num.data(), disp_in.data(), MPI_INT,
                          _neighbour_comm);
 
-  _forward_sizes = in_edges_num;
+  _forward_sizes = std::move(in_edges_num);
 }
 //-----------------------------------------------------------------------------
 std::array<std::int64_t, 2> IndexMap::local_range() const
@@ -157,10 +157,21 @@ int IndexMap::owner(std::int64_t global_index) const
 //-----------------------------------------------------------------------------
 Eigen::Array<std::int32_t, Eigen::Dynamic, 1> IndexMap::ghost_owners() const
 {
+  int indegree(-1), outdegree(-2), weighted(-1);
+  MPI_Dist_graph_neighbors_count(_neighbour_comm, &indegree, &outdegree,
+                                 &weighted);
+  assert(indegree == outdegree);
+  std::vector<int> neighbours(indegree), neighbours1(indegree),
+      weights(indegree), weights1(indegree);
+
+  MPI_Dist_graph_neighbors(_neighbour_comm, indegree, neighbours.data(),
+                           weights.data(), outdegree, neighbours1.data(),
+                           weights1.data());
+
   Eigen::Array<std::int32_t, Eigen::Dynamic, 1> proc_owners(
       _ghost_owners.size());
   for (int i = 0; i < proc_owners.size(); ++i)
-    proc_owners[i] = _neighbours[_ghost_owners[i]];
+    proc_owners[i] = neighbours[_ghost_owners[i]];
 
   return proc_owners;
 }
@@ -232,8 +243,12 @@ template <typename T>
 void IndexMap::scatter_fwd_impl(const std::vector<T>& local_data,
                                 std::vector<T>& remote_data, int n) const
 {
+  int num_neighbours(-1), outdegree(-2), weighted(-1);
+  MPI_Dist_graph_neighbors_count(_neighbour_comm, &num_neighbours, &outdegree,
+                                 &weighted);
+  assert(num_neighbours == outdegree);
+
   const std::size_t _size_local = size_local();
-  const int num_neighbours = _neighbours.size();
   assert(local_data.size() == n * _size_local);
   remote_data.resize(n * num_ghosts());
 
@@ -291,7 +306,10 @@ void IndexMap::scatter_rev_impl(std::vector<T>& local_data,
   assert((std::int32_t)remote_data.size() == n * num_ghosts());
   local_data.resize(n * size_local(), 0);
 
-  int num_neighbours = _neighbours.size();
+  int num_neighbours(-1), outdegree(-2), weighted(-1);
+  MPI_Dist_graph_neighbors_count(_neighbour_comm, &num_neighbours, &outdegree,
+                                 &weighted);
+  assert(num_neighbours == outdegree);
 
   // Create displacement vectors
   std::vector<std::int32_t> displs_send(num_neighbours + 1, 0);

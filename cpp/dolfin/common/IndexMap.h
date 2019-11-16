@@ -29,14 +29,12 @@ namespace common
 class IndexMap
 {
 public:
-
   /// Mode for reverse scatter operation
   enum class Mode
   {
     insert,
     add
   };
-
 
   /// Create Index map with local_size owned blocks on this process, and
   /// blocks have size block_size.
@@ -91,7 +89,7 @@ public:
     }
   }
 
-  /// Owner rank of each ghost entry
+  /// Owner rank (on global communicator) of each ghost entry
   Eigen::Array<std::int32_t, Eigen::Dynamic, 1> ghost_owners() const;
 
   /// Get process that owns index (global block index)
@@ -176,9 +174,6 @@ private:
 
   // Owning neighbour for each ghost index
   Eigen::Array<std::int32_t, Eigen::Dynamic, 1> _ghost_owners;
-
-  // Neigbour processes
-  std::vector<std::int32_t> _neighbours;
 
   // Number of indices to send to each neighbour process in forward mode
   std::vector<std::int32_t> _forward_sizes;
