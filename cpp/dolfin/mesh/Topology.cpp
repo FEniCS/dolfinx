@@ -6,6 +6,7 @@
 
 #include "Topology.h"
 #include "Connectivity.h"
+#include <dolfin/common/IndexMap.h>
 #include <dolfin/common/utils.h>
 #include <numeric>
 #include <sstream>
@@ -91,6 +92,19 @@ void Topology::set_global_indices(
   _global_indices[dim] = global_indices;
 }
 //-----------------------------------------------------------------------------
+void Topology::set_index_map(int dim,
+                             std::shared_ptr<const common::IndexMap> index_map)
+{
+  assert(dim < (int)_index_map.size());
+  _index_map[dim] = index_map;
+}
+//-----------------------------------------------------------------------------
+std::shared_ptr<const common::IndexMap> Topology::index_map(int dim)
+{
+  assert(dim < (int)_index_map.size());
+  return _index_map[dim];
+}
+//-----------------------------------------------------------------------------
 void Topology::init_ghost(std::size_t dim, std::size_t index)
 {
   assert(dim < _ghost_offset_index.size());
@@ -117,7 +131,8 @@ Topology::shared_entities(int dim) const
   return _shared_entities[dim];
 }
 //-----------------------------------------------------------------------------
-void Topology::set_entity_owner(int dim, const std::vector<std::int32_t>& owners)
+void Topology::set_entity_owner(int dim,
+                                const std::vector<std::int32_t>& owners)
 {
   assert(dim <= this->dim());
   _entity_owner[dim] = owners;

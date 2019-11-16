@@ -15,6 +15,11 @@
 
 namespace dolfin
 {
+namespace common
+{
+  class IndexMap;
+}
+
 namespace mesh
 {
 
@@ -72,6 +77,12 @@ public:
   /// Set the global indices for entities of dimension dim
   void set_global_indices(int dim,
                           const std::vector<std::int64_t>& global_indices);
+
+  /// Set the IndexMap for dimension dim
+  void set_index_map(int dim, std::shared_ptr<const common::IndexMap> index_map);
+
+  /// Get the IndexMap for dimension dim
+  std::shared_ptr<const common::IndexMap> index_map(int dim);
 
   /// Initialise the offset index of ghost entities for this dimension
   void init_ghost(std::size_t dim, std::size_t index);
@@ -151,6 +162,10 @@ private:
   // vector rather than a map, since ghost cells are always at the end
   // of the range.
   std::array<std::vector<std::int32_t>, 4> _entity_owner;
+
+  // IndexMap to store ghosting for each entity dimension
+  // TODO: starting with vertices, other dimensions to follow...
+  std::array<std::shared_ptr<const common::IndexMap>, 4> _index_map;
 
   // Connectivity for pairs of topological dimensions
   std::vector<std::vector<std::shared_ptr<Connectivity>>> _connectivity;
