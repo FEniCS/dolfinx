@@ -19,6 +19,10 @@ IndexMap::IndexMap(MPI_Comm mpi_comm, std::int32_t local_size,
     : block_size(block_size), _mpi_comm(mpi_comm), _myrank(MPI::rank(mpi_comm)),
       _ghosts(ghosts.size()), _ghost_owners(ghosts.size())
 {
+  // Copy ghosts vector
+  for (std::size_t i = 0; i < ghosts.size(); ++i)
+    _ghosts[i] = ghosts[i];
+
   // Calculate offsets
   int mpi_size = -1;
   MPI_Comm_size(mpi_comm, &mpi_size);
@@ -29,90 +33,97 @@ IndexMap::IndexMap(MPI_Comm mpi_comm, std::int32_t local_size,
   std::partial_sum(local_sizes.begin(), local_sizes.end(),
                    _all_ranges.begin() + 1);
 
-  // Compute number of outgoing edges to other processes
-  std::vector<std::int32_t> nghosts_send(mpi_size, 0);
+  // Compute number of outgoing edges (ghost -> owner) to each remote
+  // processes
+  std::vector<int> ghost_owner_global(ghosts.size(), -1);
+  std::vector<std::int32_t> num_edges_out_per_proc(mpi_size, 0);
+  // std::vector<std::int32_t> nghosts_send(mpi_size, 0);
   for (std::size_t i = 0; i < ghosts.size(); ++i)
   {
     const int p = owner(ghosts[i]);
-    _ghosts[i] = ghosts[i];
-    _ghost_owners[i] = p;
-    assert(_ghost_owners[i] != _myrank);
-    nghosts_send[p] += 1;
+    ghost_owner_global[i] = p;
+    assert(ghost_owner_global[i] != _myrank);
+    num_edges_out_per_proc[p] += 1;
   }
 
-  // Send number of outgoing edges (target) processes, and receive
-  // process numbers of incoming edges from each process
-  std::vector<std::int32_t> nghosts_recv(mpi_size);
-  MPI_Alltoall(nghosts_send.data(), 1, MPI_INT32_T, nghosts_recv.data(), 1,
-               MPI_INT32_T, _mpi_comm);
+  // Send number of outgoing edges (ghost -> owner) to target processes,
+  // and receive number of incoming edges (ghost <- owner) from each
+  // source process
+  std::vector<std::int32_t> num_edges_in_per_proc(mpi_size);
+  MPI_Alltoall(num_edges_out_per_proc.data(), 1, MPI_INT32_T,
+               num_edges_in_per_proc.data(), 1, MPI_INT32_T, _mpi_comm);
 
-  // Compute number of out- and in-edges, and ranks of neighbourhood
+  // Store number of out- and in-edges, and ranks of neighbourhood
   // processes
   std::vector<std::int32_t> in_edges_num, out_edges_num;
   for (std::int32_t i = 0; i < mpi_size; ++i)
   {
-    if (nghosts_send[i] > 0 or nghosts_recv[i] > 0)
+    if (num_edges_out_per_proc[i] > 0 or num_edges_in_per_proc[i] > 0)
     {
       _neighbours.push_back(i);
-      in_edges_num.push_back(nghosts_recv[i]);
-      out_edges_num.push_back(nghosts_send[i]);
+      in_edges_num.push_back(num_edges_in_per_proc[i]);
+      out_edges_num.push_back(num_edges_out_per_proc[i]);
     }
   }
 
-  std::int32_t num_neighbours = _neighbours.size();
-
-  // Create neighbourhood communicator. No further communication is
-  // needed to build the graph with complete adjacency information.
+  // Create neighbourhood communicator. No communication is needed to
+  // build the graph with complete adjacency information
   MPI_Dist_graph_create_adjacent(
       _mpi_comm, _neighbours.size(), _neighbours.data(), MPI_UNWEIGHTED,
       _neighbours.size(), _neighbours.data(), MPI_UNWEIGHTED, MPI_INFO_NULL,
       false, &_neighbour_comm);
 
+  // Size of neighbourhood
+  const int num_neighbours = _neighbours.size();
+
   // Check for 'symmetry' of the graph
-  {
 #if DEBUG
-    std::vector<std::int32_t> sources(num_neighbours), dests(num_neighbours);
+  {
+    std::vector<int> sources(num_neighbours), dests(num_neighbours);
     MPI_Dist_graph_neighbors(_neighbour_comm, num_neighbours, sources.data(),
                              NULL, num_neighbours, dests.data(), NULL);
     assert(sources == dests);
     assert(sources == _neighbours);
-#endif
   }
+#endif
 
   // Create displacement vector
-  std::vector<std::int32_t> displs_out(num_neighbours + 1, 0);
-  std::vector<std::int32_t> displs_in(num_neighbours + 1, 0);
-  for (std::int32_t i = 0; i < num_neighbours; ++i)
+  std::vector<int> disp_out(num_neighbours + 1, 0);
+  std::vector<int> disp_in(num_neighbours + 1, 0);
+  for (int i = 0; i < num_neighbours; ++i)
   {
-    displs_out[i + 1] = displs_out[i] + out_edges_num[i];
-    displs_in[i + 1] = displs_in[i] + in_edges_num[i];
+    disp_out[i + 1] = disp_out[i] + out_edges_num[i];
+    disp_in[i + 1] = disp_in[i] + in_edges_num[i];
   }
 
   // Create vectors for forward communication
-  int n_send = displs_out.back();
+  const int n_send = disp_out.back();
   std::vector<std::int32_t> out_indices(n_send);
-  int n_recv = displs_in.back();
-  _forward_indices.resize(n_recv);
 
-  std::vector<std::int32_t> displs(displs_out);
+  std::vector<std::int32_t> disp(disp_out);
   for (std::int32_t j = 0; j < _ghosts.size(); ++j)
   {
-    const int p = _ghost_owners[j];
+    // Get rank of owner process rank on global communicator
+    const int p = ghost_owner_global[j];
+
+    // Get rank of owner on neighbourhood communicator
     const auto it = std::find(_neighbours.begin(), _neighbours.end(), p);
     assert(it != _neighbours.end());
-    const int np = it - _neighbours.begin();
+    const int np = std::distance(_neighbours.begin(), it);
 
-    // Convert to neighbour number instead of global process number
+    // Convert to neighbour rank instead of global process rank
     _ghost_owners[j] = np;
 
-    out_indices[displs[np]] = _ghosts[j] - _all_ranges[p];
-    ++displs[np];
+    out_indices[disp[np]] = _ghosts[j] - _all_ranges[p];
+    disp[np] += 1;
   }
 
   //  May have repeated shared indices with different processes
+  const int n_recv = disp_in.back();
+  _forward_indices.resize(n_recv);
   MPI_Neighbor_alltoallv(out_indices.data(), out_edges_num.data(),
-                         displs_out.data(), MPI_INT, _forward_indices.data(),
-                         in_edges_num.data(), displs_in.data(), MPI_INT,
+                         disp_out.data(), MPI_INT, _forward_indices.data(),
+                         in_edges_num.data(), disp_in.data(), MPI_INT,
                          _neighbour_comm);
 
   _forward_sizes = in_edges_num;
