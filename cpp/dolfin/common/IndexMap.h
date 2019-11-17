@@ -112,6 +112,10 @@ public:
   /// @return The communicator on which the IndexMap is defined
   MPI_Comm mpi_comm() const;
 
+  /// Return MPI neighbourhood communicator
+  /// @return The neighbourhood communicator
+  MPI_Comm mpi_comm_neighborhood() const;
+
   /// Send n values for each index that is owned to processes that have
   /// the index as a ghost. The size of the input array local_data must
   /// be the same as n * size_local().

@@ -198,6 +198,8 @@ IndexMap::indices(bool unroll_block) const
 //----------------------------------------------------------------------------
 MPI_Comm IndexMap::mpi_comm() const { return _mpi_comm; }
 //----------------------------------------------------------------------------
+MPI_Comm IndexMap::mpi_comm_neighborhood() const { return _neighbour_comm; }
+//----------------------------------------------------------------------------
 void IndexMap::scatter_fwd(const std::vector<std::int64_t>& local_data,
                            std::vector<std::int64_t>& remote_data, int n) const
 {

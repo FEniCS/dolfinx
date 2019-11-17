@@ -280,9 +280,10 @@ void SparsityPattern::insert_entries(
         // Store non-local entry (communicated later during assemble())
         for (Eigen::Index j = 0; j < map_j.size(); ++j)
         {
+          _non_local.push_back(I);
+
           auto j_index = map_j[j];
           const auto J = col_map(j_index, index_map1);
-          _non_local.push_back(I);
           _non_local.push_back(J);
         }
       }
@@ -376,6 +377,9 @@ void SparsityPattern::assemble()
   const std::size_t num_processes = MPI::size(_mpi_comm.comm());
   const std::size_t proc_number = MPI::rank(_mpi_comm.comm());
 
+  // Get size of neighbourhood
+  // const int size_neighborhood = _index_maps[0]->mpi_comm_neighburhood();
+
   // Print some useful information
   // if (glog::default_logger()->level() <= glog::level::debug)
   //   info_statistics();
@@ -398,8 +402,8 @@ void SparsityPattern::assemble()
     for (std::size_t i = 0; i < _non_local.size(); i += 2)
     {
       // Get local indices of off-process dofs
-      const std::size_t i_index = _non_local[i];
-      const std::size_t J = _non_local[i + 1];
+      const std::int64_t i_index = _non_local[i];
+      const std::int64_t J = _non_local[i + 1];
 
       // Figure out which process owns the row
       assert(i_index >= local_size0);
@@ -413,10 +417,13 @@ void SparsityPattern::assemble()
       // Get global I index
       PetscInt I = 0;
       if (i_index < local_size0)
+      {
+        throw std::runtime_error("Should not reach this point.");
         I = i_index + offset0;
+      }
       else
       {
-        std::size_t tmp = i_index - local_size0;
+        const int tmp = i_index - local_size0;
         const std::div_t div = std::div((int)tmp, (int)dim_block_size);
         const int i_node = div.quot;
         const int i_component = div.rem;
@@ -429,6 +436,23 @@ void SparsityPattern::assemble()
       non_local_send[p].push_back(I);
       non_local_send[p].push_back(J);
     }
+
+    // TESTING
+    MPI_Comm comm = _index_maps[0]->mpi_comm_neighborhood();
+    const int size_neighborhood = MPI::size(comm);
+    const int num_my_rows = non_local_send.size();
+    // const int num_rows = non_local_send.size();
+    std::vector<int> num_rows_recv(size_neighborhood);
+    MPI_Neighbor_allgather(&num_my_rows, 1, MPI_INT, num_rows_recv.data(),
+                           num_rows_recv.size(), MPI_INT, comm);
+
+    // const int num_remote
+    //     = std::accumulate(num_rows_recv.begin(), num_rows_recv.end(), 0);
+
+    // std::vector<std::int64_t> non_local_received_new(2 * num_remote);
+    // MPI_Neighbor_allgather(non_local_send.data(), non_local_send.size(),
+    //                        MPI_INT64_T, non_local_received_new.data(),
+    //                        non_local_received_new.size(), MPI_INT64_T, comm);
 
     // Communicate non-local entries to other processes
     std::vector<std::size_t> non_local_received;
