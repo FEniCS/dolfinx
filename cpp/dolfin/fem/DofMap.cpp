@@ -198,7 +198,7 @@ DofMap::collapse(const mesh::Mesh& mesh) const
     }
   }
 
-  return std::make_pair(std::move(dofmap_new), std::move(collapsed_map));
+  return std::pair(std::move(dofmap_new), std::move(collapsed_map));
 }
 //-----------------------------------------------------------------------------
 void DofMap::set(Eigen::Ref<Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1>> x,

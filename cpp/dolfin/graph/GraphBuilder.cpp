@@ -144,7 +144,7 @@ compute_local_dual_graph_keyed(
                               cell_index});
   }
 
-  return std::make_tuple(std::move(local_graph), std::move(facet_cell_map),
+  return std::tuple(std::move(local_graph), std::move(facet_cell_map),
                          num_local_edges);
 }
 //-----------------------------------------------------------------------------
@@ -167,7 +167,7 @@ std::pair<std::int32_t, std::int32_t> compute_nonlocal_dual_graph(
   // Get number of MPI processes, and return if mesh is not distributed
   const int num_processes = dolfin::MPI::size(mpi_comm);
   if (num_processes == 1)
-    return std::make_pair(0, 0);
+    return std::pair(0, 0);
 
   // At this stage facet_cell map only contains facets->cells with
   // edge facets either interprocess or external boundaries
@@ -292,7 +292,7 @@ std::pair<std::int32_t, std::int32_t> compute_nonlocal_dual_graph(
     ghost_nodes.insert(cell_list[i + 1]);
   }
 
-  return std::make_pair(ghost_nodes.size(), num_nonlocal_edges);
+  return std::pair(ghost_nodes.size(), num_nonlocal_edges);
 }
 //-----------------------------------------------------------------------------
 
@@ -441,9 +441,9 @@ graph::GraphBuilder::compute_dual_graph(
   // Shrink to fit
   local_graph.shrink_to_fit();
 
-  return std::make_pair(
+  return std::pair(
       std::move(local_graph),
-      std::make_tuple(num_ghost_nodes, num_local_edges, num_nonlocal_edges));
+      std::tuple(num_ghost_nodes, num_local_edges, num_nonlocal_edges));
 }
 //-----------------------------------------------------------------------------
 std::tuple<std::vector<std::vector<std::size_t>>,
