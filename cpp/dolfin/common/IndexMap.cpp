@@ -253,7 +253,7 @@ void IndexMap::scatter_fwd_impl(const std::vector<T>& local_data,
   assert(num_neighbours == outdegree);
 
   const std::int32_t _size_local = size_local();
-  assert(local_data.size() == n * _size_local);
+  assert((int)local_data.size() == n * _size_local);
   remote_data.resize(n * _ghosts.rows());
 
   // Create displacement vectors
