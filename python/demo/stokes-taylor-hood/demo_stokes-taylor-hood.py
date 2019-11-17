@@ -83,24 +83,27 @@
 # facets). Meshes and mesh functions can be read from file in the
 # following way::
 
-from petsc4py import PETSc
-
 import matplotlib.pyplot as plt
 import numpy as np
+from petsc4py import PETSc
 
 import dolfin
-from dolfin import (MPI, DirichletBC, Function, FunctionSpace)
+from dolfin import MPI, DirichletBC, Function, FunctionSpace, RectangleMesh
+from dolfin.cpp.mesh import CellType
 from dolfin.io import XDMFFile
 from dolfin.plotting import plot
-from ufl import (FiniteElement, VectorElement,
-                 div, dx, grad, inner,
-                 TrialFunction, TestFunction)
+from ufl import (FiniteElement, TestFunction, TrialFunction, VectorElement,
+                 div, dx, grad, inner)
 
 # Load mesh and subdomains
-xdmf = XDMFFile(MPI.comm_world, "../dolfin_fine.xdmf")
-mesh = xdmf.read_mesh(dolfin.cpp.mesh.GhostMode.none)
+# xdmf = XDMFFile(MPI.comm_world, "../dolfin_fine.xdmf")
+# mesh = xdmf.read_mesh(dolfin.cpp.mesh.GhostMode.none)
+mesh = RectangleMesh(
+    MPI.comm_world,
+    [np.array([0, 0, 0]), np.array([1, 1, 0])], [64, 64],
+    CellType.triangle, dolfin.cpp.mesh.GhostMode.none)
 
-sub_domains = xdmf.read_mf_size_t(mesh)
+# sub_domains = xdmf.read_mf_size_t(mesh)
 
 cmap = dolfin.fem.create_coordinate_map(mesh.ufl_domain())
 mesh.geometry.coord_mapping = cmap
@@ -122,16 +125,16 @@ Q = FunctionSpace(mesh, P1)
 # for the Stokes equations. Now we can define boundary conditions::
 
 # Extract subdomain facet arrays
-mf = sub_domains.values
-mf0 = np.where(mf == 0)
-mf1 = np.where(mf == 1)
+# mf = sub_domains.values
+# mf0 = np.where(mf == 0)
+# mf1 = np.where(mf == 1)
 
 # No-slip boundary condition for velocity
 # x1 = 0, x1 = 1 and around the dolphin
 noslip = Function(V)
-noslip.interpolate(lambda x: np.zeros_like(x[:mesh.geometry.dim]))
-
-bc0 = DirichletBC(V, noslip, mf0[0])
+# noslip.interpolate(lambda x: np.zeros_like(x[:mesh.geometry.dim]))
+bc0 = DirichletBC(V, noslip, lambda x: np.logical_or(np.isclose(x[1], 0.0),
+                                                     np.isclose(x[1], 1.0)))
 
 
 # Inflow boundary condition for velocity at x0 = 1
@@ -143,7 +146,7 @@ def inflow_eval(x):
 
 inflow = Function(V)
 inflow.interpolate(inflow_eval)
-bc1 = DirichletBC(V, inflow, mf1[0])
+bc1 = DirichletBC(V, inflow, lambda x: np.isclose(x[0], 1.0))
 
 # Collect boundary conditions
 bcs = [bc0, bc1]
@@ -220,10 +223,18 @@ ksp.setOperators(A, P)
 
 # Setup the parent KSP
 ksp.setTolerances(rtol=1e-8)
-ksp.setType("fgmres")
-ksp.setGMRESRestart(120)
+ksp.setType("minres")
+
+# Monitor the convergence of the KSP
+opts = PETSc.Options()
+opts["ksp_monitor"] = None
+opts["ksp_view"] = None
+opts["pc_fieldsplit_type"] = "additive"
+# opts["pc_fieldsplit_schur_fact_type"] = "diag"
+
+# ksp.setGMRESRestart(120)
 ksp.getPC().setType("fieldsplit")
-ksp.getPC().setFieldSplitType(PETSc.PC.CompositeType.ADDITIVE)
+# ksp.getPC().setFieldSplitType(PETSc.PC.CompositeType.ADDITIVE)
 
 # Supply the KSP with the velocity and pressure matrix index sets
 nested_IS = A.getNestISs()
@@ -234,43 +245,12 @@ ksp.getPC().setFieldSplitIS(
 # Configure velocity and pressure sub KSPs
 ksp_u, ksp_p = ksp.getPC().getFieldSplitSubKSP()
 ksp_u.setType("preonly")
-ksp_u.getPC().setType("gamg")
-ksp_u.getPC().setGAMGType(PETSc.PC.GAMGType.AGG)
+ksp_u.getPC().setType("lu")
+# ksp_u.getPC().setGAMGType(PETSc.PC.GAMGType.AGG)
 ksp_p.setType("preonly")
-ksp_p.getPC().setType("sor")
+ksp_p.getPC().setType("lu")
 
-# Monitor the convergence of the KSP
-opts = PETSc.Options()
-opts["ksp_monitor"] = None
 ksp.setFromOptions()
-
-# Given that we use PETSc's geometric algebraic multigrid (gamg) solver
-# with smoothed aggregration on the velocity block, we can provide the
-# near nullspace of rigid body modes to encourage convergence.
-# To do this we interpolate  the rigid body modes of displacement and
-# rotation in the velocity space and collect them in a
-# :py:class:`VectorSpaceBasis <dolfin.cpp.la.VectorSpaceBasis>`.
-# The rigid body mode vectors must be orthonormalised prior to solving
-# the problem, so we simply call
-# :py:func:`orthonormalize <dolfin.cpp.la.VectorSpaceBasis.orthonormalize>`.
-# These rigid body modes are then provided to the velocity sub block of
-# the preconditioning matrix ``P``.
-
-
-rbm_functions = [lambda x: np.row_stack((np.ones_like(x[1]), np.zeros_like(x[1]))),
-                 lambda x: np.row_stack((np.zeros_like(x[1]), np.ones_like(x[1]))),
-                 lambda x: np.row_stack((-x[1], x[0]))]
-rbms = [Function(V) for _ in range(3)]
-
-for (rbm, rbm_function) in zip(rbms, rbm_functions):
-    rbm.interpolate(rbm_function)
-
-rbms = dolfin.cpp.la.VectorSpaceBasis(list(map(lambda rbm: rbm.vector, rbms)))
-rbms.orthonormalize()
-
-near_nullspace = PETSc.NullSpace().create(vectors=[rbms[i] for i in range(3)],
-                                          comm=mesh.mpi_comm())
-P.getNestSubMatrix(0, 0).setNearNullSpace(near_nullspace)
 
 
 # We also need to create a block vector,``x``, to store the (full) solution,
@@ -293,7 +273,7 @@ print("Norm of velocity coefficient vector: %.15g" % u.vector.norm())
 print("Norm of pressure coefficient vector: %.15g" % p.vector.norm())
 
 # Check pressure norm
-assert np.isclose(p.vector.norm(), 4147.69457577)
+# assert np.isclose(p.vector.norm(), 4147.69457577)
 
 # Finally, we can save and plot the solutions::
 
