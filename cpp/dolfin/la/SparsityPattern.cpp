@@ -453,12 +453,12 @@ void SparsityPattern::assemble()
       const std::int32_t i_index = I - offset0;
       if (J >= bs1 * local_range1[0] and J < bs1 * local_range1[1])
       {
-        assert(i_index < _diagonal.size());
+        assert(i_index < (std::int32_t) _diagonal.size());
         _diagonal[i_index].insert(J);
       }
       else
       {
-        assert(i_index < _off_diagonal.size());
+        assert(i_index < (std::int32_t)_off_diagonal.size());
         _off_diagonal[i_index].insert(J);
       }
     }
