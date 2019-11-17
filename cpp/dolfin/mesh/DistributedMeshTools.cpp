@@ -51,9 +51,9 @@ compute_entity_numbering(const Mesh& mesh, int d)
     // FIXME: Should be redundant?
     shared_entities.clear();
     global_entity_indices = mesh.topology().global_indices(d);
-    return std::make_tuple(std::move(global_entity_indices),
-                           std::move(shared_entities),
-                           mesh.num_entities_global(d));
+    return std::tuple(std::move(global_entity_indices),
+                      std::move(shared_entities),
+                      mesh.num_entities_global(d));
   }
 
   // MPI communicator
@@ -300,8 +300,8 @@ compute_entity_numbering(const Mesh& mesh, int d)
     }
   }
 
-  return std::make_tuple(std::move(global_entity_indices),
-                         std::move(shared_entities), num_global);
+  return std::tuple(std::move(global_entity_indices),
+                    std::move(shared_entities), num_global);
 }
 //-----------------------------------------------------------------------------
 template <typename T>

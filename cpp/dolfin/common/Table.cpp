@@ -31,7 +31,7 @@ void Table::set(std::string row, std::string col, int value)
   std::stringstream s;
   s << value;
   set(row, col, s.str());
-  dvalues[std::make_pair(row, col)] = static_cast<double>(value);
+  dvalues[std::pair(row, col)] = static_cast<double>(value);
 }
 //-----------------------------------------------------------------------------
 void Table::set(std::string row, std::string col, std::size_t value)
@@ -39,7 +39,7 @@ void Table::set(std::string row, std::string col, std::size_t value)
   std::stringstream s;
   s << value;
   set(row, col, s.str());
-  dvalues[std::make_pair(row, col)] = static_cast<double>(value);
+  dvalues[std::pair(row, col)] = static_cast<double>(value);
 }
 //-----------------------------------------------------------------------------
 void Table::set(std::string row, std::string col, double value)
@@ -49,7 +49,7 @@ void Table::set(std::string row, std::string col, double value)
   std::stringstream s;
   s << std::setprecision(5) << value;
   set(row, col, s.str());
-  dvalues[std::make_pair(row, col)] = value;
+  dvalues[std::pair(row, col)] = value;
 }
 //-----------------------------------------------------------------------------
 void Table::set(std::string row, std::string col, std::string value)
