@@ -23,7 +23,7 @@ IndexMap::IndexMap(
       _ghosts(ghosts.size()), _ghost_owners(ghosts.size())
 {
   // Copy ghosts vector
-  for (std::size_t i = 0; i < ghosts.size(); ++i)
+  for (int i = 0; i < ghosts.size(); ++i)
     _ghosts[i] = ghosts[i];
 
   // Calculate offsets
@@ -40,8 +40,7 @@ IndexMap::IndexMap(
   // processes
   std::vector<int> ghost_owner_global(ghosts.size(), -1);
   std::vector<std::int32_t> num_edges_out_per_proc(mpi_size, 0);
-  // std::vector<std::int32_t> nghosts_send(mpi_size, 0);
-  for (std::size_t i = 0; i < ghosts.size(); ++i)
+  for (int i = 0; i < ghosts.size(); ++i)
   {
     const int p = owner(ghosts[i]);
     ghost_owner_global[i] = p;
