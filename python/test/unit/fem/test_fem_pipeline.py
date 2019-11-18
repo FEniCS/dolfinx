@@ -21,10 +21,10 @@ from ufl import (SpatialCoordinate, TestFunction, TrialFunction, div, dx, grad,
 @pytest.mark.parametrize("component", [0, 1, 2])
 @pytest.mark.parametrize("mesh", [
     UnitIntervalMesh(MPI.comm_world, 10),
-    UnitSquareMesh(MPI.comm_world, 3, 4, CellType.triangle),
-    UnitSquareMesh(MPI.comm_world, 3, 4, CellType.quadrilateral),
-    UnitCubeMesh(MPI.comm_world, 2, 3, 2, CellType.tetrahedron),
-    UnitCubeMesh(MPI.comm_world, 2, 3, 2, CellType.hexahedron)
+    UnitSquareMesh(MPI.comm_world, 3, 10, CellType.triangle),
+    UnitSquareMesh(MPI.comm_world, 3, 10, CellType.quadrilateral),
+    UnitCubeMesh(MPI.comm_world, 2, 3, 10, CellType.tetrahedron),
+    UnitCubeMesh(MPI.comm_world, 2, 3, 10, CellType.hexahedron)
 ])
 def test_manufactured_poisson(n, mesh, component):
     """ Manufactured Poisson problem, solving u = x[component]**p, where p is the
