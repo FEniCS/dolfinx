@@ -26,7 +26,7 @@ from dolfin_utils.test.skips import skip_in_parallel
     UnitCubeMesh(MPI.comm_world, 2, 3, 2, CellType.tetrahedron),
     UnitCubeMesh(MPI.comm_world, 2, 3, 2, CellType.hexahedron)
 ])
-def test_manufactured_poisson(p, mesh, component):
+def test_manufactured_poisson_dg(p, mesh, component):
     """ Manufactured Poisson problem, solving u = x[component]**p, where p is the
     degree of the Lagrange function space.
     """
