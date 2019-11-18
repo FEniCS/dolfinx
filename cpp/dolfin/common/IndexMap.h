@@ -1,4 +1,4 @@
-// Copyright (C) 2015-2018 Chris Richardson and Garth N. Wells
+// Copyright (C) 2015-2019 Chris Richardson, Garth N. Wells and Igor Baratta
 //
 // This file is part of DOLFIN (https://www.fenicsproject.org)
 //
