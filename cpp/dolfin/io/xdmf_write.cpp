@@ -540,7 +540,7 @@ void xdmf_write::add_topology_data(MPI_Comm comm, pugi::xml_node& xml_node,
   // Compute packed topology data
   std::vector<std::int64_t> topology_data;
 
-  if (degree > 1)
+  if (true)
   {
     const int tdim = mesh.topology().dim();
     if (cell_dim != tdim)
