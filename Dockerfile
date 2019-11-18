@@ -28,6 +28,8 @@ ARG SLEPC_VERSION=3.12.1
 ARG PETSC4PY_VERSION=3.12.0
 ARG SLEPC4PY_VERSION=3.12.0
 ARG TINI_VERSION=v0.18.0
+# Should be updated upon a new KaHIP release
+ARG KAHIP_VERSION=14be06c
 
 ARG MAKEFLAGS
 ARG PETSC_SLEPC_OPTFLAGS="-02 -g"
@@ -132,6 +134,7 @@ RUN wget -nc --quiet https://github.com/pybind/pybind11/archive/v${PYBIND11_VERS
 RUN cd /usr/local && \
     git clone https://github.com/schulzchristian/KaHIP.git && \
     cd KaHIP/ && \
+    git checkout $KAHIP_VERSION && \
     ./compile_withcmake.sh
 
 ENV KAHIP_ROOT=/usr/local/KaHIP
