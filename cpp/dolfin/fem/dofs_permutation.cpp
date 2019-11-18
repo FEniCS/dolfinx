@@ -105,11 +105,11 @@ std::array<int, 2> calculate_quadrilateral_orders(int v1, int v2, int v3,
   if (v1 < v2 and v1 < v3 and v1 < v4)
     return {0, v2 > v3};
   else if (v2 < v1 and v2 < v3 and v2 < v4)
-    return {1, v1 > v4};
+    return {1, v4 > v1};
   else if (v4 < v1 and v4 < v2 and v4 < v3)
     return {2, v3 > v2};
   else if (v3 < v1 and v3 < v2 and v3 < v4)
-    return {3, v4 > v1};
+    return {3, v1 > v4};
 
   throw std::runtime_error(
       "Two of a quadrilateral's vertices appear to be equal.");
@@ -254,8 +254,8 @@ quadrilateral_rotation_and_reflection(const int face_dofs, const int blocksize)
   std::vector<int> rotation(face_dofs);
   {
     int j = 0;
-    for (int st = side_length - 1; st >= 0; --st)
-      for (int dof = st; dof < blocks; dof += side_length)
+    for (int st = blocks - side_length; st < blocks; ++st)
+      for (int dof = st; dof >= 0; dof -= side_length)
         for (int k = 0; k < blocksize; ++k)
           rotation[j++] = blocksize * dof + k;
     assert(j == face_dofs);
