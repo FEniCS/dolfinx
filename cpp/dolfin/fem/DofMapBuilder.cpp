@@ -283,7 +283,7 @@ compute_ownership(const DofMapStructure& dofmap,
   }
 
   return std::tuple(std::move(num_owned_nodes), std::move(node_ownership),
-                         std::move(shared_node_to_processes));
+                    std::move(shared_node_to_processes));
 }
 //-----------------------------------------------------------------------------
 // Build a simple dofmap from ElementDofmap based on mesh entity indices
@@ -812,6 +812,6 @@ DofMapBuilder::build(const mesh::Mesh& mesh,
     }
   }
 
-  return std::tuple(std::move(index_map), std::move(dofmap));
+  return std::make_tuple(std::move(index_map), std::move(dofmap));
 }
 //-----------------------------------------------------------------------------
