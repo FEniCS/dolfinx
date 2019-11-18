@@ -82,6 +82,7 @@ public:
   void set_index_map(int dim, std::shared_ptr<const common::IndexMap> index_map);
 
   /// Get the IndexMap for dimension dim
+  /// (Currently partially working)
   std::shared_ptr<const common::IndexMap> index_map(int dim);
 
   /// Initialise the offset index of ghost entities for this dimension

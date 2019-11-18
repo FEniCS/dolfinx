@@ -272,7 +272,9 @@ Mesh::Mesh(
   std::vector<std::int64_t> vertex_indices_global;
   std::map<std::int32_t, std::set<std::int32_t>> shared_vertices;
   std::shared_ptr<common::IndexMap> vertex_index_map;
-  if (_degree == 1)
+
+  // Disable - always remap vertices.
+  if (_degree == -1)
   {
     num_vertices_global = num_points_global;
     vertex_indices_global = std::move(node_indices_global);
