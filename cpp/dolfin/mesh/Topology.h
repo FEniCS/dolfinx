@@ -164,7 +164,6 @@ private:
   std::array<std::vector<std::int32_t>, 4> _entity_owner;
 
   // IndexMap to store ghosting for each entity dimension
-  // TODO: starting with vertices, other dimensions to follow...
   std::array<std::shared_ptr<const common::IndexMap>, 4> _index_map;
 
   // Connectivity for pairs of topological dimensions

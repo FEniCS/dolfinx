@@ -146,7 +146,7 @@ public:
   /// vertex nodes
   static std::pair<std::int64_t, std::vector<std::int64_t>>
   build_global_vertex_indices(
-      MPI_Comm comm, std::int32_t num_vertices,
+      MPI_Comm comm, const std::array<std::int32_t, 4>& num_vertices,
       const std::vector<std::int64_t>& global_point_indices,
       const std::map<std::int32_t, std::set<std::int32_t>>& shared_points);
 

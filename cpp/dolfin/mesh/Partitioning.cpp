@@ -15,6 +15,7 @@
 #include <algorithm>
 #include <cmath>
 #include <cstdint>
+#include <dolfin/common/IndexMap.h>
 #include <dolfin/common/MPI.h>
 #include <dolfin/common/Set.h>
 #include <dolfin/common/Timer.h>
@@ -729,41 +730,39 @@ mesh::Mesh Partitioning::build_distributed_mesh(
 //-----------------------------------------------------------------------------
 std::pair<std::int64_t, std::vector<std::int64_t>>
 Partitioning::build_global_vertex_indices(
-    MPI_Comm mpi_comm, std::int32_t num_vertices,
+    MPI_Comm mpi_comm, const std::array<std::int32_t, 4>& num_vertices,
     const std::vector<std::int64_t>& global_point_indices,
     const std::map<std::int32_t, std::set<std::int32_t>>& shared_points)
 {
   // Find out how many vertices are locally 'owned' and number them
-  std::vector<std::int64_t> global_vertex_indices(num_vertices);
+  std::vector<std::int64_t> global_vertex_indices(num_vertices[2]);
   const std::int32_t mpi_rank = dolfin::MPI::rank(mpi_comm);
   const std::int32_t mpi_size = dolfin::MPI::size(mpi_comm);
   std::vector<std::vector<std::int64_t>> send_data(mpi_size);
   std::vector<std::int64_t> recv_data(mpi_size);
 
+  // Local
   std::int64_t v = 0;
-  for (std::int32_t i = 0; i < num_vertices; ++i)
+  for (std::int32_t i = 0; i < num_vertices[0]; ++i)
+  {
+    global_vertex_indices[i] = v;
+    ++v;
+  }
+
+  // Shared and owned
+  for (std::int32_t i = num_vertices[0]; i < num_vertices[1]; ++i)
   {
     const auto it = shared_points.find(i);
-    if (it == shared_points.end())
+    assert(it != shared_points.end());
+    assert(mpi_rank < *it->second.begin());
+
+    global_vertex_indices[i] = v;
+    for (auto p : it->second)
     {
-      // local
-      global_vertex_indices[i] = v;
-      ++v;
+      send_data[p].push_back(global_point_indices[i]);
+      send_data[p].push_back(v);
     }
-    else
-    {
-      // Owned locally if rank less than first entry
-      if (mpi_rank < *it->second.begin())
-      {
-        global_vertex_indices[i] = v;
-        for (auto p : it->second)
-        {
-          send_data[p].push_back(global_point_indices[i]);
-          send_data[p].push_back(v);
-        }
-        ++v;
-      }
-    }
+    ++v;
   }
 
   // Now have numbered all vertices locally so can get global size and
@@ -787,7 +786,7 @@ Partitioning::build_global_vertex_indices(
 
   // Adjust global_vertex_indices either by adding offset or inserting
   // remote index
-  for (std::int32_t i = 0; i < num_vertices; ++i)
+  for (std::int32_t i = 0; i < num_vertices[2]; ++i)
   {
     const auto it = global_point_to_vertex.find(global_point_indices[i]);
     if (it == global_point_to_vertex.end())
@@ -795,6 +794,9 @@ Partitioning::build_global_vertex_indices(
     else
       global_vertex_indices[i] = it->second;
   }
+
+  // Test creating IndexMap
+  //  common::IndexMap vertex_index_map(mpi_comm, v, ghosts, 1);
 
   return {num_vertices_global, std::move(global_vertex_indices)};
 }

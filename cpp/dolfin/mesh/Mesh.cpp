@@ -283,7 +283,7 @@ Mesh::Mesh(
     // to build a global indexing for vertices
     std::tie(num_vertices_global, vertex_indices_global)
         = Partitioning::build_global_vertex_indices(
-            comm, num_vertices_local[2], node_indices_global, nodes_shared);
+            comm, num_vertices_local, node_indices_global, nodes_shared);
 
     // FIXME: could be useful information. Where should it be kept?
     // Eliminate shared points which are not vertices
