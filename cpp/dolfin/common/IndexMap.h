@@ -10,6 +10,7 @@
 #include <array>
 #include <cstdint>
 #include <dolfin/common/MPI.h>
+#include <map>
 #include <petscsys.h>
 #include <vector>
 
@@ -99,6 +100,9 @@ public:
 
   /// Owner rank (on global communicator) of each ghost entry
   Eigen::Array<std::int32_t, Eigen::Dynamic, 1> ghost_owners() const;
+
+  /// Map from shared indices to sharing processes
+  std::map<std::int32_t, std::vector<int>> shared_indices() const;
 
   /// Get process that owns index (global block index)
   int owner(std::int64_t global_index) const;

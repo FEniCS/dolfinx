@@ -8,7 +8,6 @@
 #include <algorithm>
 #include <numeric>
 #include <set>
-#include <vector>
 
 using namespace dolfin;
 using namespace dolfin::common;
@@ -149,6 +148,31 @@ std::int64_t IndexMap::size_global() const { return _all_ranges.back(); }
 const Eigen::Array<PetscInt, Eigen::Dynamic, 1>& IndexMap::ghosts() const
 {
   return _ghosts;
+}
+//-----------------------------------------------------------------------------
+std::map<std::int32_t, std::vector<int>> IndexMap::shared_indices() const
+{
+  int indegree(-1), outdegree(-2), weighted(-1);
+  MPI_Dist_graph_neighbors_count(_neighbour_comm, &indegree, &outdegree,
+                                 &weighted);
+  assert(indegree == outdegree);
+  std::vector<int> neighbours(indegree), neighbours1(indegree),
+      weights(indegree), weights1(indegree);
+
+  MPI_Dist_graph_neighbors(_neighbour_comm, indegree, neighbours.data(),
+                           weights.data(), outdegree, neighbours1.data(),
+                           weights1.data());
+
+  std::map<std::int32_t, std::vector<int>> sh_map;
+  int j = 0;
+  for (std::size_t i = 0; i < _forward_sizes.size(); ++i)
+  {
+    auto it = sh_map.insert({_forward_indices[j], {neighbours[i]}});
+    if (!it.second)
+      it.first->second.push_back(i);
+    ++j;
+  }
+  return sh_map;
 }
 //-----------------------------------------------------------------------------
 int IndexMap::owner(std::int64_t global_index) const
