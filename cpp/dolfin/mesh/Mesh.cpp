@@ -239,9 +239,6 @@ Mesh::Mesh(
   // FIXME: degree should probably be in MeshGeometry
   _degree = mesh::cell_degree(type, cells.cols());
 
-  std::vector<std::uint8_t> cell_permutation(cells.cols());
-  std::iota(cell_permutation.begin(), cell_permutation.end(), 0);
-
   // Get number of nodes (global)
   const std::uint64_t num_points_global = MPI::sum(comm, points.rows());
 
@@ -260,8 +257,7 @@ Mesh::Mesh(
       = compute_point_distribution(comm, num_vertices_per_cell, cells, points,
                                    type);
 
-  _coordinate_dofs
-      = std::make_unique<CoordinateDofs>(coordinate_nodes, cell_permutation);
+  _coordinate_dofs = std::make_unique<CoordinateDofs>(coordinate_nodes);
 
   _geometry = std::make_unique<Geometry>(num_points_global, points_received,
                                          node_indices_global);
