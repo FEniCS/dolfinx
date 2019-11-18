@@ -40,8 +40,9 @@ topological_dim = [1, 2, 3]
 number_cells = [6, 10]
 
 # Mesh cell types tested
-celltypes_2D = [CellType.triangle, CellType.quadrilateral]
-celltypes_3D = [CellType.tetrahedron, CellType.hexahedron]
+# Non-simplicies not run due to test slowdown
+celltypes_2D = [CellType.triangle]     # [CellType.triangle, CellType.quadrilateral]
+celltypes_3D = [CellType.tetrahedron]  # [CellType.tetrahedron, CellType.hexahedron]
 
 
 def mesh_factory(tdim, n):

@@ -202,8 +202,9 @@ std::vector<std::int64_t> compute_topology_data(const mesh::Mesh& mesh,
                                                 int cell_dim)
 {
   // Create vector to store topology data
-  mesh::CellType cell_type = mesh::cell_entity_type(mesh.cell_type(), cell_dim);
-  const int num_vertices_per_cell = mesh::num_cell_vertices(cell_type);
+  const mesh::CellType entity_cell_type
+      = mesh::cell_entity_type(mesh.cell_type(), cell_dim);
+  const int num_vertices_per_cell = mesh::num_cell_vertices(entity_cell_type);
 
   std::vector<std::int64_t> topology_data;
   topology_data.reserve(mesh.num_entities(cell_dim) * (num_vertices_per_cell));
@@ -218,7 +219,7 @@ std::vector<std::int64_t> compute_topology_data(const mesh::Mesh& mesh,
   else
     // Lower the permutation level to the appropriate cell type
     // FIXME: Only works for first order geometries
-    perm = io::cells::dolfin_to_vtk(cell_type, num_vertices_per_cell);
+    perm = io::cells::dolfin_to_vtk(entity_cell_type, num_vertices_per_cell);
 
   const int tdim = mesh.topology().dim();
   const auto& global_vertices = mesh.topology().global_indices(0);
