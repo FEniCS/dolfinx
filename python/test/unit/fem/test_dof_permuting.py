@@ -25,30 +25,30 @@ xfail = pytest.mark.xfail(strict=True)
 def test_triangle_dof_ordering(space_type):
     """Checks that dofs on shared triangle edges match up"""
     # Create a triangle mesh
-    N = 10
-    # Create a grid of points [0, 0.5, ..., 9.5]**2, then order them in a random order
-    temp_points = np.array([[x / 2, y / 2] for x in range(N) for y in range(N)])
-    order = [i for i, j in enumerate(temp_points)]
-    shuffle(order)
-    points = np.zeros(temp_points.shape)
-    for i, j in enumerate(order):
-        points[j] = temp_points[i]
-
-    # Make triangle cells using the randomly ordered points
-    cells = []
-    for x in range(N - 1):
-        for y in range(N - 1):
-            a = N * y + x
-            # Adds two triangle cells:
-            # a+N -- a+N+1
-            #  |   / |
-            #  |  /  |
-            #  | /   |
-            #  a --- a+1
-            for cell in [[a, a + 1, a + N + 1], [a, a + N + 1, a + N]]:
-                cells.append([order[i] for i in cell])
-
     if MPI.rank(MPI.comm_world) == 0:
+        N = 6
+        # Create a grid of points [0, 0.5, ..., 9.5]**2, then order them in a random order
+        temp_points = np.array([[x / 2, y / 2] for x in range(N) for y in range(N)])
+        order = [i for i, j in enumerate(temp_points)]
+        shuffle(order)
+        points = np.zeros(temp_points.shape)
+        for i, j in enumerate(order):
+            points[j] = temp_points[i]
+
+        # Make triangle cells using the randomly ordered points
+        cells = []
+        for x in range(N - 1):
+            for y in range(N - 1):
+                a = N * y + x
+                # Adds two triangle cells:
+                # a+N -- a+N+1
+                #  |   / |
+                #  |  /  |
+                #  | /   |
+                #  a --- a+1
+                for cell in [[a, a + 1, a + N + 1], [a, a + N + 1, a + N]]:
+                    cells.append([order[i] for i in cell])
+
         # On process 0, input mesh data and distribute to other processes
         mesh = cpp.mesh.build_distributed_mesh(MPI.comm_world, CellType.triangle, points,
                                                np.array(cells), [], cpp.mesh.GhostMode.none,
@@ -98,31 +98,30 @@ def test_triangle_dof_ordering(space_type):
 ])
 def test_tetrahedron_dof_ordering(space_type):
     """Checks that dofs on shared tetrahedron edges and faces match up"""
-    # Create simple tetrahedron mesh
-    N = 3
-    temp_points = np.array([[x / 2, y / 2, z / 2] for x in range(N) for y in range(N) for z in range(N)])
-
-    order = [i for i, j in enumerate(temp_points)]
-    shuffle(order)
-    points = np.zeros(temp_points.shape)
-    for i, j in enumerate(order):
-        points[j] = temp_points[i]
-
-    cells = []
-    for x in range(N - 1):
-        for y in range(N - 1):
-            for z in range(N - 1):
-                a = N ** 2 * z + N * y + x
-                for c in [[a + N, a + N ** 2 + 1, a, a + 1],
-                          [a + N, a + N ** 2 + 1, a + 1, a + N + 1],
-                          [a + N, a + N ** 2 + 1, a + N + 1, a + N ** 2 + N + 1],
-                          [a + N, a + N ** 2 + 1, a + N ** 2 + N + 1, a + N ** 2 + N],
-                          [a + N, a + N ** 2 + 1, a + N ** 2 + N, a + N ** 2],
-                          [a + N, a + N ** 2 + 1, a + N ** 2, a]]:
-                    cell = [order[i] for i in c]
-                    cells.append(cell)
-
     if MPI.rank(MPI.comm_world) == 0:
+        # Create simple tetrahedron mesh
+        N = 3
+        temp_points = np.array([[x / 2, y / 2, z / 2] for x in range(N) for y in range(N) for z in range(N)])
+
+        order = [i for i, j in enumerate(temp_points)]
+        shuffle(order)
+        points = np.zeros(temp_points.shape)
+        for i, j in enumerate(order):
+            points[j] = temp_points[i]
+
+        cells = []
+        for x in range(N - 1):
+            for y in range(N - 1):
+                for z in range(N - 1):
+                    a = N ** 2 * z + N * y + x
+                    for c in [[a + N, a + N ** 2 + 1, a, a + 1],
+                              [a + N, a + N ** 2 + 1, a + 1, a + N + 1],
+                              [a + N, a + N ** 2 + 1, a + N + 1, a + N ** 2 + N + 1],
+                              [a + N, a + N ** 2 + 1, a + N ** 2 + N + 1, a + N ** 2 + N],
+                              [a + N, a + N ** 2 + 1, a + N ** 2 + N, a + N ** 2],
+                              [a + N, a + N ** 2 + 1, a + N ** 2, a]]:
+                        cell = [order[i] for i in c]
+                        cells.append(cell)
         # On process 0, input mesh data and distribute to other processes
         mesh = cpp.mesh.build_distributed_mesh(MPI.comm_world, CellType.tetrahedron, points,
                                                np.array(cells), [], cpp.mesh.GhostMode.none,
@@ -179,24 +178,24 @@ def test_tetrahedron_dof_ordering(space_type):
 ])
 def test_quadrilateral_dof_ordering(space_type):
     """Checks that dofs on shared quadrilateral edges match up"""
-    # Create a quadrilateral mesh
-    N = 10
-    temp_points = np.array([[x / 2, y / 2] for x in range(N) for y in range(N)])
-
-    order = [i for i, j in enumerate(temp_points)]
-    shuffle(order)
-    points = np.zeros(temp_points.shape)
-    for i, j in enumerate(order):
-        points[j] = temp_points[i]
-
-    cells = []
-    for x in range(N - 1):
-        for y in range(N - 1):
-            a = N * y + x
-            cell = [order[i] for i in [a, a + 1, a + N, a + N + 1]]
-            cells.append(cell)
-
     if MPI.rank(MPI.comm_world) == 0:
+        # Create a quadrilateral mesh
+        N = 10
+        temp_points = np.array([[x / 2, y / 2] for x in range(N) for y in range(N)])
+
+        order = [i for i, j in enumerate(temp_points)]
+        shuffle(order)
+        points = np.zeros(temp_points.shape)
+        for i, j in enumerate(order):
+            points[j] = temp_points[i]
+
+        cells = []
+        for x in range(N - 1):
+            for y in range(N - 1):
+                a = N * y + x
+                cell = [order[i] for i in [a, a + 1, a + N, a + N + 1]]
+                cells.append(cell)
+
         # On process 0, input mesh data and distribute to other processes
         mesh = cpp.mesh.build_distributed_mesh(MPI.comm_world, CellType.quadrilateral, points,
                                                np.array(cells), [], cpp.mesh.GhostMode.none,
@@ -242,27 +241,27 @@ def test_quadrilateral_dof_ordering(space_type):
 ])
 def test_hexahedron_dof_ordering(space_type):
     """Checks that dofs on shared hexahedron edges match up"""
-    # Create a hexahedron mesh
-    N = 5
-    temp_points = np.array([[x / 2, y / 2, z / 2] for x in range(N) for y in range(N) for z in range(N)])
-
-    order = [i for i, j in enumerate(temp_points)]
-    shuffle(order)
-    points = np.zeros(temp_points.shape)
-    for i, j in enumerate(order):
-        points[j] = temp_points[i]
-
-    cells = []
-    for x in range(N - 1):
-        for y in range(N - 1):
-            for z in range(N - 1):
-                a = N ** 2 * z + N * y + x
-                cell = [order[i] for i in [a, a + 1, a + N, a + N + 1,
-                                           a + N ** 2, a + 1 + N ** 2, a + N + N ** 2,
-                                           a + N + 1 + N ** 2]]
-                cells.append(cell)
-
     if MPI.rank(MPI.comm_world) == 0:
+        # Create a hexahedron mesh
+        N = 5
+        temp_points = np.array([[x / 2, y / 2, z / 2] for x in range(N) for y in range(N) for z in range(N)])
+
+        order = [i for i, j in enumerate(temp_points)]
+        shuffle(order)
+        points = np.zeros(temp_points.shape)
+        for i, j in enumerate(order):
+            points[j] = temp_points[i]
+
+        cells = []
+        for x in range(N - 1):
+            for y in range(N - 1):
+                for z in range(N - 1):
+                    a = N ** 2 * z + N * y + x
+                    cell = [order[i] for i in [a, a + 1, a + N, a + N + 1,
+                                               a + N ** 2, a + 1 + N ** 2, a + N + N ** 2,
+                                               a + N + 1 + N ** 2]]
+                    cells.append(cell)
+
         # On process 0, input mesh data and distribute to other processes
         mesh = cpp.mesh.build_distributed_mesh(MPI.comm_world, CellType.hexahedron, points,
                                                np.array(cells), [], cpp.mesh.GhostMode.none,
