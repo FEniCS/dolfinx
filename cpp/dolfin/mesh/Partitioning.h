@@ -12,6 +12,7 @@
 #include <dolfin/graph/CSRGraph.h>
 #include <dolfin/mesh/cell_types.h>
 #include <map>
+#include <memory>
 #include <set>
 #include <string>
 #include <tuple>
@@ -20,6 +21,11 @@
 
 namespace dolfin
 {
+namespace common
+{
+class IndexMap;
+}
+
 namespace mesh
 {
 // Developer note: MeshFunction and MeshValueCollection cannot appear in
@@ -144,7 +150,8 @@ public:
   /// Utility to create global vertex indices, needed for higher order
   /// meshes, where there are geometric points which are not at the
   /// vertex nodes
-  static std::pair<std::int64_t, std::vector<std::int64_t>>
+  static std::tuple<std::int64_t, std::vector<std::int64_t>,
+                    std::shared_ptr<common::IndexMap>>
   build_global_vertex_indices(
       MPI_Comm comm, const std::array<std::int32_t, 4>& num_vertices,
       const std::vector<std::int64_t>& global_point_indices,

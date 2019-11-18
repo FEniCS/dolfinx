@@ -7,6 +7,7 @@
 #include "caster_mpi.h"
 #include "caster_petsc.h"
 #include <cfloat>
+#include <dolfin/common/IndexMap.h>
 #include <dolfin/common/types.h>
 #include <dolfin/fem/CoordinateElement.h>
 #include <dolfin/mesh/Connectivity.h>
@@ -150,6 +151,7 @@ void mesh(py::module& m)
            },
            py::return_value_policy::reference_internal)
       .def("shared_entities", &dolfin::mesh::Topology::shared_entities)
+      .def("index_map", &dolfin::mesh::Topology::index_map)
       .def("str", &dolfin::mesh::Topology::str);
 
   // dolfin::mesh::Mesh

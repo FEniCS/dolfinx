@@ -271,6 +271,7 @@ Mesh::Mesh(
   std::uint64_t num_vertices_global;
   std::vector<std::int64_t> vertex_indices_global;
   std::map<std::int32_t, std::set<std::int32_t>> shared_vertices;
+  std::shared_ptr<common::IndexMap> vertex_index_map;
   if (_degree == 1)
   {
     num_vertices_global = num_points_global;
@@ -281,7 +282,7 @@ Mesh::Mesh(
   {
     // For higher order meshes, vertices are a subset of points, so need
     // to build a global indexing for vertices
-    std::tie(num_vertices_global, vertex_indices_global)
+    std::tie(num_vertices_global, vertex_indices_global, vertex_index_map)
         = Partitioning::build_global_vertex_indices(
             comm, num_vertices_local, node_indices_global, nodes_shared);
 
@@ -298,6 +299,7 @@ Mesh::Mesh(
   _topology->set_global_indices(0, vertex_indices_global);
   _topology->set_shared_entities(0, shared_vertices);
   _topology->init_ghost(0, num_vertices_local[1]);
+  _topology->set_index_map(0, vertex_index_map);
 
   // Set vertex ownership
   std::vector<int> vertex_owner;

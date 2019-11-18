@@ -728,7 +728,8 @@ mesh::Mesh Partitioning::build_distributed_mesh(
   return mesh;
 }
 //-----------------------------------------------------------------------------
-std::pair<std::int64_t, std::vector<std::int64_t>>
+std::tuple<std::int64_t, std::vector<std::int64_t>,
+           std::shared_ptr<common::IndexMap>>
 Partitioning::build_global_vertex_indices(
     MPI_Comm mpi_comm, const std::array<std::int32_t, 4>& num_vertices,
     const std::vector<std::int64_t>& global_point_indices,
@@ -749,7 +750,7 @@ Partitioning::build_global_vertex_indices(
     ++v;
   }
 
-  // Shared and owned
+  // Shared and owned (ghost on other processes)
   for (std::int32_t i = num_vertices[0]; i < num_vertices[1]; ++i)
   {
     const auto it = shared_points.find(i);
@@ -786,19 +787,25 @@ Partitioning::build_global_vertex_indices(
 
   // Adjust global_vertex_indices either by adding offset or inserting
   // remote index
-  for (std::int32_t i = 0; i < num_vertices[2]; ++i)
+  for (std::int32_t i = 0; i < num_vertices[1]; ++i)
+    global_vertex_indices[i] += offset;
+  for (std::int32_t i = num_vertices[1]; i < num_vertices[2]; ++i)
   {
     const auto it = global_point_to_vertex.find(global_point_indices[i]);
-    if (it == global_point_to_vertex.end())
-      global_vertex_indices[i] += offset;
-    else
-      global_vertex_indices[i] = it->second;
+    assert(it != global_point_to_vertex.end());
+    global_vertex_indices[i] = it->second;
   }
 
-  // Test creating IndexMap
-  //  common::IndexMap vertex_index_map(mpi_comm, v, ghosts, 1);
+  Eigen::Map<Eigen::Array<std::int64_t, Eigen::Dynamic, 1>> ghosts(
+      global_vertex_indices.data() + num_vertices[1],
+      num_vertices[2] - num_vertices[1]);
 
-  return {num_vertices_global, std::move(global_vertex_indices)};
+  // Test creating IndexMap
+  auto vertex_index_map = std::make_shared<common::IndexMap>(
+      mpi_comm, num_vertices[1], ghosts, 1);
+
+  return {num_vertices_global, std::move(global_vertex_indices),
+          vertex_index_map};
 }
 //-----------------------------------------------------------------------------
 std::map<std::int64_t, std::vector<int>> Partitioning::compute_halo_cells(
