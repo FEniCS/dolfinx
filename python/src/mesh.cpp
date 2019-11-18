@@ -75,6 +75,7 @@ void mesh(py::module& m)
   // dolfin::mesh::Partitioner enums
   py::enum_<dolfin::mesh::Partitioner>(m, "Partitioner")
       .value("scotch", dolfin::mesh::Partitioner::scotch)
+      .value("kahip", dolfin::mesh::Partitioner::kahip)
       .value("parmetis", dolfin::mesh::Partitioner::parmetis);
 
   // dolfin::mesh::CoordinateDofs class

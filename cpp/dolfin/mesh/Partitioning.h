@@ -51,7 +51,8 @@ enum class GhostMode : int
 enum class Partitioner
 {
   scotch,
-  parmetis
+  parmetis,
+  kahip
 };
 
 /// This class partitions and distributes a mesh based on partitioned
