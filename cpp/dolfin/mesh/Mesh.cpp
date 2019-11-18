@@ -178,6 +178,7 @@ compute_point_distribution(
       = compute_local_to_global_point_map(mpi_comm, num_vertices_per_cell,
                                           shared_points_global, cell_nodes,
                                           type);
+
   // Reverse map
   std::map<std::int64_t, std::int32_t> global_to_local;
   for (std::size_t i = 0; i < local_to_global.size(); ++i)
@@ -262,8 +263,6 @@ Mesh::Mesh(
   _coordinate_dofs
       = std::make_unique<CoordinateDofs>(coordinate_nodes, cell_permutation);
 
-  // Initialise geometry with global size, actual points, and local to
-  // global map
   _geometry = std::make_unique<Geometry>(num_points_global, points_received,
                                          node_indices_global);
 
@@ -273,8 +272,7 @@ Mesh::Mesh(
   std::map<std::int32_t, std::set<std::int32_t>> shared_vertices;
   std::shared_ptr<common::IndexMap> vertex_index_map;
 
-  // Disable - always remap vertices.
-  if (_degree == -1)
+  if (_degree == 1)
   {
     num_vertices_global = num_points_global;
     vertex_indices_global = std::move(node_indices_global);
