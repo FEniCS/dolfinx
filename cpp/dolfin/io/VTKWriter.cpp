@@ -175,7 +175,7 @@ void write_ascii_mesh(const mesh::Mesh& mesh, std::size_t cell_dim,
       = connectivity_g.connections();
   const Eigen::Array<std::int32_t, Eigen::Dynamic, 1>& pos_g
       = connectivity_g.entity_positions();
-  int num_nodes = mesh.coordinate_dofs().cell_permutation().size();
+  int num_nodes = connectivity_g.size(0);
   const std::vector<std::uint8_t> perm
       = io::cells::dolfin_to_vtk(mesh.cell_type(), num_nodes);
 

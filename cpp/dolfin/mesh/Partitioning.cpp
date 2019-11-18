@@ -21,6 +21,7 @@
 #include <dolfin/common/log.h>
 #include <dolfin/graph/CSRGraph.h>
 #include <dolfin/graph/GraphBuilder.h>
+#include <dolfin/graph/KaHIP.h>
 #include <dolfin/graph/ParMETIS.h>
 #include <dolfin/graph/SCOTCH.h>
 #include <iterator>
@@ -586,6 +587,16 @@ PartitionData Partitioning::partition_cells(
           graph::ParMETIS::partition(mpi_comm, (idx_t)nparts, csr_graph));
 #else
       throw std::runtime_error("ParMETIS not available");
+#endif
+    }
+    else if (graph_partitioner == mesh::Partitioner::kahip)
+    {
+#ifdef HAS_KAHIP
+      graph::CSRGraph<unsigned long long> csr_graph(mpi_comm, local_graph);
+      return PartitionData(
+          graph::KaHIP::partition(mpi_comm, nparts, csr_graph));
+#else
+      throw std::runtime_error("KaHIP not available");
 #endif
     }
     else
