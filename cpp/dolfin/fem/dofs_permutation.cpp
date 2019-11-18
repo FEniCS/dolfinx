@@ -372,62 +372,46 @@ hexahedron_rotations_and_reflection(const int volume_dofs, const int blocksize)
   std::vector<int> rotation1(volume_dofs);
   {
     int j = 0;
-    for (int level = 0; level < side_length; ++level)
-      for (int st = level * area + side_length - 1; st >= level * area; --st)
-        for (int dof = st; dof < (level + 1) * area; dof += side_length)
+    for (int lst = area - side_length; lst < blocks; lst += area)
+      for (int st = lst; st < lst + side_length; ++st)
+        for (int dof = st; dof >= lst - area + side_length; dof -= side_length)
           for (int k = 0; k < blocksize; ++k)
             rotation1[j++] = blocksize * dof + k;
     assert(j == volume_dofs);
   }
 
-  std::vector<int> reflection(volume_dofs);
-  std::iota(reflection.begin(), reflection.end(), 0);
   std::vector<int> rotation2(volume_dofs);
-  std::iota(rotation2.begin(), rotation2.end(), 0);
-
-  std::cout << side_length;
-
-
-  // TODO
-  /*int start = 0;
-  for (int side = side_length; side > 0; --side)
   {
-    int face_dofs = blocksize * side * (side + 1) / 2;
-    const std::array<std::vector<int>, 2> base_faces
-        = triangle_rotation_and_reflection(face_dofs, blocksize);
-
-    std::vector<int> face(face_dofs);
-    std::iota(face.begin(), face.end(), start);
-
-    std::vector<int> face2(face_dofs);
     int j = 0;
-    int start2 = side * side_length - 1 - side * (side - 1) / 2;
-    for (int row = 0; row < side; ++row)
-    {
-      int dof = start2;
-      for (int k = 0; k < blocksize; ++k)
-        face2[j++] = dof * blocksize + k;
-      for (int sub = 2 + (side_length - side); sub <= side_length - row; ++sub)
-      {
-        dof -= sub;
-        for (int k = 0; k < blocksize; ++k)
-          face2[j++] = dof * blocksize + k;
-      }
-      start2 += (side_length - row - 1) * (side_length - row) / 2;
-    }
-
-    start += face_dofs;
-    for (std::size_t j = 0; j < face.size(); ++j)
-    {
-      rotation1[face[j]] = face[base_faces[0][j]];
-      rotation2[face2[j]] = face2[base_faces[0][j]];
-      reflection[face[j]] = face[base_faces[1][j]];
-    }
-  }*/
+    for (int lst = side_length - 1; lst >= 0; --lst)
+      for (int st = lst; st < area; st += side_length)
+        for (int dof = st; dof < blocks; dof += area)
+          for (int k = 0; k < blocksize; ++k)
+            rotation2[j++] = blocksize * dof + k;
+    assert(j == volume_dofs);
+  }
 
   std::vector<int> rotation3(volume_dofs);
-  for (int j = 0; j < volume_dofs; ++j)
-    rotation3[j] = rotation2[rotation2[rotation1[j]]];
+  {
+    int j = 0;
+    for (int st = 0; st < area; ++st)
+      for (int dof = st; dof < blocks; dof += area)
+        for (int k = 0; k < blocksize; ++k)
+          rotation3[j++] = blocksize * dof + k;
+    assert(j == volume_dofs);
+  }
+
+  std::vector<int> reflection(volume_dofs);
+  {
+    int j = 0;
+    for (int lst = 0; lst < area; lst += side_length)
+      for (int st = lst; st < blocks; st += area)
+        for (int dof = st; dof < st + side_length; ++dof)
+          for (int k = 0; k < blocksize; ++k)
+            reflection[j++] = blocksize * dof + k;
+    assert(j == volume_dofs);
+  }
+
   return {rotation1, rotation2, rotation3, reflection};
 }
 //-----------------------------------------------------------------------------
