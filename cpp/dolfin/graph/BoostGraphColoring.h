@@ -60,7 +60,7 @@ public:
       {
         const std::size_t vertex_index = vertex - graph.begin();
         if (vertex_index != (std::size_t)*edge)
-          edges.push_back(std::make_pair(vertex_index, *edge));
+          edges.push_back(std::pair(vertex_index, *edge));
       }
     }
     // Build Boost graph

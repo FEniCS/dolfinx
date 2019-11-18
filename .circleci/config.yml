@@ -31,8 +31,8 @@ unit-tests-cpp: &unit-tests-cpp
   command: |
     cd build
     ninja -j3 unittests
-    ctest -R unittests
-    mpirun -np 3 ctest -R unittests
+    ctest --output-on-failure -R unittests
+    mpirun -np 3 ctest --output-on-failure -R unittests
 
 regression-tests-cpp: &regression-tests-cpp
   name: Build and run C++ regressions tests (serial)

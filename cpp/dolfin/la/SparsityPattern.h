@@ -147,8 +147,9 @@ private:
   // Sparsity patterns for diagonal and off-diagonal blocks
   std::vector<set_type> _diagonal, _off_diagonal;
 
-  // Cache for non-local entries stored as [i0, j0, i1, j1, ...].
-  // Cleared after communication via apply()
+  // Cache for non-local entries stored as [i0, j0, i1, j1, ...]. i is
+  // the local row index and j is the global column index. Cleared after
+  // communication via apply().
   std::vector<std::size_t> _non_local;
 };
 } // namespace la
