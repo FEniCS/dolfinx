@@ -140,7 +140,7 @@ compute_local_to_global_point_map(
   local_to_global.insert(local_to_global.end(), non_vertex_nodes.begin(),
                          non_vertex_nodes.end());
   num_vertices_local[3] = local_to_global.size();
-  return std::make_pair(std::move(local_to_global), num_vertices_local);
+  return std::pair(std::move(local_to_global), num_vertices_local);
 } // namespace
 //-----------------------------------------------------------------------------
 // Get the local points.
@@ -204,9 +204,9 @@ compute_point_distribution(
   for (auto& q : shared_points_global)
     shared_points.insert({global_to_local[q.first], q.second});
 
-  return std::make_tuple(std::move(local_to_global), std::move(shared_points),
-                         std::move(cells_local), std::move(points_local),
-                         num_vertices_local);
+  return std::tuple(std::move(local_to_global), std::move(shared_points),
+                    std::move(cells_local), std::move(points_local),
+                    num_vertices_local);
 }
 //-----------------------------------------------------------------------------
 } // namespace

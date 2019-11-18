@@ -1436,8 +1436,8 @@ XDMFFile::read_mesh_data(MPI_Comm comm) const
     std::iota(global_cell_indices.begin(), global_cell_indices.end(),
               cell_index_offset);
 
-    return std::make_tuple(cell_type, std::move(points), std::move(cells),
-                           std::move(global_cell_indices));
+    return std::tuple(cell_type, std::move(points), std::move(cells),
+                      std::move(global_cell_indices));
   }
   else
   {
@@ -1451,8 +1451,8 @@ XDMFFile::read_mesh_data(MPI_Comm comm) const
         cells(num_local_cells, npoint_per_cell);
     std::vector<std::int64_t> global_cell_indices(num_local_cells);
 
-    return std::make_tuple(cell_type, std::move(points), std::move(cells),
-                           std::move(global_cell_indices));
+    return std::tuple(cell_type, std::move(points), std::move(cells),
+                      std::move(global_cell_indices));
   }
 }
 //----------------------------------------------------------------------------
