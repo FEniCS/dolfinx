@@ -527,7 +527,6 @@ Partitioning::distribute_points(
   MPI_Alltoallv(send_points.data(), recv_sizes.data(), recv_offsets.data(),
                 compound_f64, recv_points.data(), send_sizes.data(),
                 send_offsets.data(), compound_f64, comm);
-
   timer.stop();
 
   // Use global indices to calculate sharing data

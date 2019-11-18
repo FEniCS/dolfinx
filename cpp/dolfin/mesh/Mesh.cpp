@@ -259,35 +259,31 @@ Mesh::Mesh(
 
   _coordinate_dofs = std::make_unique<CoordinateDofs>(coordinate_nodes);
 
-  _geometry = std::make_unique<Geometry>(num_points_global, points_received,
-                                         node_indices_global);
-
   // Get global vertex information
   std::uint64_t num_vertices_global;
   std::vector<std::int64_t> vertex_indices_global;
   std::map<std::int32_t, std::set<std::int32_t>> shared_vertices;
   std::shared_ptr<common::IndexMap> vertex_index_map;
 
-  if (_degree == 1)
-  {
-    num_vertices_global = num_points_global;
-    vertex_indices_global = std::move(node_indices_global);
-    shared_vertices = std::move(nodes_shared);
-  }
-  else
-  {
-    // For higher order meshes, vertices are a subset of points, so need
-    // to build a global indexing for vertices
-    std::tie(num_vertices_global, vertex_indices_global, vertex_index_map)
-        = Partitioning::build_global_vertex_indices(
-            comm, num_vertices_local, node_indices_global, nodes_shared);
+  // Build a new indexing for vertices, so that they are numbered contiguously
+  // across processes, in line with other topological entities.
+  // FIXME: keep the original numbering somewhere...
+  std::tie(num_vertices_global, vertex_indices_global, vertex_index_map)
+      = Partitioning::build_global_vertex_indices(
+          comm, num_vertices_local, node_indices_global, nodes_shared);
 
-    // FIXME: could be useful information. Where should it be kept?
-    // Eliminate shared points which are not vertices
-    for (auto it = nodes_shared.begin(); it != nodes_shared.end(); ++it)
-      if (it->first < num_vertices_local[2])
-        shared_vertices.insert(*it);
-  }
+  // Eliminate shared points which are not vertices
+  for (auto it = nodes_shared.begin(); it != nodes_shared.end(); ++it)
+    if (it->first < num_vertices_local[2])
+      shared_vertices.insert(*it);
+
+  // FIXME: maybe need to remap node_indices_global?
+  if (_degree == 1)
+    _geometry = std::make_unique<Geometry>(num_points_global, points_received,
+                                           vertex_indices_global);
+  else
+    _geometry = std::make_unique<Geometry>(num_points_global, points_received,
+                                           node_indices_global);
 
   // Initialise vertex topology
   _topology = std::make_unique<Topology>(tdim, num_vertices_local[2],

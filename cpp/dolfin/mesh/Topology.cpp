@@ -53,6 +53,11 @@ std::int64_t Topology::size_global(int dim) const
   else
   {
     assert(dim < (int)_global_num_entities.size());
+    if (_index_map[dim])
+    {
+      std::cout << "GLOBAL: " << _global_num_entities[dim]
+                << "==" << _index_map[dim]->size_global() << "\n";
+    }
     return _global_num_entities[dim];
   }
 }
@@ -60,6 +65,12 @@ std::int64_t Topology::size_global(int dim) const
 std::int32_t Topology::ghost_offset(int dim) const
 {
   assert(dim < (int)_ghost_offset_index.size());
+  if (_index_map[dim])
+  {
+    std::cout << _ghost_offset_index[dim]
+              << "==" << _index_map[dim]->size_local() << "\n";
+  }
+
   return _ghost_offset_index[dim];
 }
 //-----------------------------------------------------------------------------
