@@ -364,7 +364,7 @@ face_long_edge(const mesh::Mesh& mesh)
     long_edge[f.index()] = face_edges[imax];
   }
 
-  return std::make_pair(std::move(long_edge), std::move(edge_ratio_ok));
+  return std::pair(std::move(long_edge), std::move(edge_ratio_ok));
 }
 //-----------------------------------------------------------------------------
 

@@ -134,7 +134,7 @@ dolfin::graph::SCOTCH::compute_reordering(const Graph& graph,
   std::copy(inverse_permutation_indices.begin(),
             inverse_permutation_indices.end(), inverse_permutation.begin());
 
-  return std::make_pair(std::move(permutation), std::move(inverse_permutation));
+  return std::pair(std::move(permutation), std::move(inverse_permutation));
 }
 //-----------------------------------------------------------------------------
 std::pair<std::vector<int>, std::map<std::int64_t, std::vector<int>>>
@@ -303,7 +303,7 @@ dolfin::graph::SCOTCH::partition(const MPI_Comm mpi_comm,
           // Owning process always goes in first to vector
           sharing_processes.push_back(proc_this);
           sharing_processes.push_back(proc_other);
-          ghost_procs.insert(std::make_pair(i, sharing_processes));
+          ghost_procs.insert(std::pair(i, sharing_processes));
         }
         else
         {
@@ -325,8 +325,8 @@ dolfin::graph::SCOTCH::partition(const MPI_Comm mpi_comm,
   // Only copy the local nodes partition information. Ghost process
   // data is already in the ghost_procs map
 
-  return std::make_pair(std::vector<int>(_cell_partition.begin(),
-                                         _cell_partition.begin() + vertlocnbr),
-                        std::move(ghost_procs));
+  return std::pair(std::vector<int>(_cell_partition.begin(),
+                                    _cell_partition.begin() + vertlocnbr),
+                   std::move(ghost_procs));
 }
 //-----------------------------------------------------------------------------

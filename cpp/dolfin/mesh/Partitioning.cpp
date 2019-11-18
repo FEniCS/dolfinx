@@ -240,7 +240,7 @@ distribute_cells(
   assert(c == local_count);
   assert(gc == all_count);
 
-  return std::make_tuple(
+  return std::tuple(
       std::move(new_cell_vertices), std::move(new_global_cell_indices),
       std::move(new_cell_partition), std::move(shared_cells), local_count);
 }
@@ -533,7 +533,7 @@ Partitioning::distribute_points(
   std::map<std::int64_t, std::set<int>> point_to_procs
       = distribute_points_sharing(comm, recv_global_index, recv_offsets);
 
-  return std::make_pair(std::move(point_to_procs), std::move(recv_points));
+  return std::pair(std::move(point_to_procs), std::move(recv_points));
 }
 //-----------------------------------------------------------------------------
 // Compute cell partitioning from local mesh data. Returns a vector
