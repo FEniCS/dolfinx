@@ -562,42 +562,42 @@ compute_ordering_hexahedron(const mesh::Mesh& mesh)
     const std::int32_t* vertices = cell.entities(0);
 
     // Set the orders for the edge flips
-    cell_orders(cell_n, 3) = (vertices[6] > vertices[7]);
-    cell_orders(cell_n, 7) = (vertices[5] > vertices[7]);
-    cell_orders(cell_n, 11) = (vertices[3] > vertices[7]);
-    cell_orders(cell_n, 6) = (vertices[4] > vertices[6]);
-    cell_orders(cell_n, 10) = (vertices[2] > vertices[6]);
-    cell_orders(cell_n, 2) = (vertices[4] > vertices[5]);
-    cell_orders(cell_n, 9) = (vertices[1] > vertices[5]);
-    cell_orders(cell_n, 8) = (vertices[0] > vertices[4]);
-    cell_orders(cell_n, 5) = (vertices[1] > vertices[3]);
-    cell_orders(cell_n, 1) = (vertices[2] > vertices[3]);
-    cell_orders(cell_n, 4) = (vertices[0] > vertices[2]);
     cell_orders(cell_n, 0) = (vertices[0] > vertices[1]);
+    cell_orders(cell_n, 1) = (vertices[2] > vertices[3]);
+    cell_orders(cell_n, 2) = (vertices[4] > vertices[5]);
+    cell_orders(cell_n, 3) = (vertices[6] > vertices[7]);
+    cell_orders(cell_n, 4) = (vertices[0] > vertices[2]);
+    cell_orders(cell_n, 5) = (vertices[1] > vertices[3]);
+    cell_orders(cell_n, 6) = (vertices[4] > vertices[6]);
+    cell_orders(cell_n, 7) = (vertices[5] > vertices[7]);
+    cell_orders(cell_n, 8) = (vertices[0] > vertices[4]);
+    cell_orders(cell_n, 9) = (vertices[1] > vertices[5]);
+    cell_orders(cell_n, 10) = (vertices[2] > vertices[6]);
+    cell_orders(cell_n, 11) = (vertices[3] > vertices[7]);
 
     // Set the orders for the face rotations and reflections
-    const std::array<int, 2> quad_orders0
-        = calculate_quadrilateral_orders(vertices[4], vertices[5], vertices[6], vertices[7]);
+    const std::array<int, 2> quad_orders0 = calculate_quadrilateral_orders(
+        vertices[0], vertices[1], vertices[2], vertices[3]);
     cell_orders(cell_n, 12) = quad_orders0[0];
     cell_orders(cell_n, 13) = quad_orders0[1];
-    const std::array<int, 2> quad_orders1
-        = calculate_quadrilateral_orders(vertices[2], vertices[3], vertices[6], vertices[7]);
+    const std::array<int, 2> quad_orders1 = calculate_quadrilateral_orders(
+        vertices[4], vertices[5], vertices[6], vertices[7]);
     cell_orders(cell_n, 14) = quad_orders1[0];
     cell_orders(cell_n, 15) = quad_orders1[1];
-    const std::array<int, 2> quad_orders2
-        = calculate_quadrilateral_orders(vertices[1], vertices[3], vertices[5], vertices[7]);
+    const std::array<int, 2> quad_orders2 = calculate_quadrilateral_orders(
+        vertices[0], vertices[1], vertices[4], vertices[5]);
     cell_orders(cell_n, 16) = quad_orders2[0];
     cell_orders(cell_n, 17) = quad_orders2[1];
-    const std::array<int, 2> quad_orders3
-        = calculate_quadrilateral_orders(vertices[0], vertices[2], vertices[4], vertices[6]);
+    const std::array<int, 2> quad_orders3 = calculate_quadrilateral_orders(
+        vertices[2], vertices[3], vertices[6], vertices[7]);
     cell_orders(cell_n, 18) = quad_orders3[0];
     cell_orders(cell_n, 19) = quad_orders3[1];
-    const std::array<int, 2> quad_orders4
-        = calculate_quadrilateral_orders(vertices[0], vertices[1], vertices[4], vertices[5]);
+    const std::array<int, 2> quad_orders4 = calculate_quadrilateral_orders(
+        vertices[0], vertices[2], vertices[4], vertices[6]);
     cell_orders(cell_n, 20) = quad_orders4[0];
     cell_orders(cell_n, 21) = quad_orders4[1];
-    const std::array<int, 2> quad_orders5
-        = calculate_quadrilateral_orders(vertices[0], vertices[1], vertices[2], vertices[3]);
+    const std::array<int, 2> quad_orders5 = calculate_quadrilateral_orders(
+        vertices[1], vertices[3], vertices[5], vertices[7]);
     cell_orders(cell_n, 22) = quad_orders5[0];
     cell_orders(cell_n, 23) = quad_orders5[1];
 
