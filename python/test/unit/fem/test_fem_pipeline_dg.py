@@ -72,6 +72,7 @@ def test_manufactured_poisson(p, mesh, component):
     b = assemble_vector(L)
     b.ghostUpdate(addv=PETSc.InsertMode.ADD, mode=PETSc.ScatterMode.REVERSE)
 
+    # FIXME: make this test work in parallel
     A = assemble_matrix(a, [])  # In parallel, it crashes here
     A.assemble()
 
