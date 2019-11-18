@@ -130,6 +130,8 @@ IndexMap::IndexMap(
   _forward_sizes = std::move(in_edges_num);
 }
 //-----------------------------------------------------------------------------
+IndexMap::~IndexMap() { MPI_Comm_free(&_neighbour_comm); }
+//-----------------------------------------------------------------------------
 std::array<std::int64_t, 2> IndexMap::local_range() const
 {
   return {{_all_ranges[_myrank], _all_ranges[_myrank + 1]}};

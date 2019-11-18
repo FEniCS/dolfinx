@@ -52,13 +52,13 @@ public:
       int block_size);
 
   /// Copy constructor
-  IndexMap(const IndexMap& map) = default;
+  IndexMap(const IndexMap& map) = delete;
 
   /// Move constructor
   IndexMap(IndexMap&& map) = default;
 
   /// Destructor
-  ~IndexMap() = default;
+  ~IndexMap();
 
   /// Range of indices (global) owned by this process
   std::array<std::int64_t, 2> local_range() const;
