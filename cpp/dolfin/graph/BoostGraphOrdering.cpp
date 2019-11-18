@@ -85,7 +85,7 @@ T build_csr_directed_graph(const X& graph)
   edges.reserve(num_edges);
   for (vertex = graph.begin(); vertex != graph.end(); ++vertex)
     for (auto edge = vertex->cbegin(); edge != vertex->cend(); ++edge)
-      edges.push_back(std::make_pair(vertex - graph.begin(), *edge));
+      edges.push_back(std::pair(vertex - graph.begin(), *edge));
 
   // Number of vertices
   const std::size_t n = graph.size();

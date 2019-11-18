@@ -140,7 +140,7 @@ compute_local_to_global_point_map(
   local_to_global.insert(local_to_global.end(), non_vertex_nodes.begin(),
                          non_vertex_nodes.end());
   num_vertices_local[3] = local_to_global.size();
-  return std::make_pair(std::move(local_to_global), num_vertices_local);
+  return std::pair(std::move(local_to_global), num_vertices_local);
 } // namespace
 //-----------------------------------------------------------------------------
 // Get the local points.
@@ -170,16 +170,11 @@ compute_point_distribution(
   // Distribute points to processes that need them, and calculate
   // shared points. Points are returned in same order as in global_index_set.
   // Sharing information is (global_index -> [remote sharing processes]).
-  std::map<std::int64_t, std::set<int>> shared_points_global;
-  Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
-      recv_points;
-  std::tie(shared_points_global, recv_points)
+  auto [shared_points_global, recv_points]
       = Partitioning::distribute_points(mpi_comm, points, global_index_set);
 
   // Get local to global mapping for points
-  std::vector<std::int64_t> local_to_global;
-  std::array<int, 4> num_vertices_local;
-  std::tie(local_to_global, num_vertices_local)
+  auto [local_to_global, num_vertices_local]
       = compute_local_to_global_point_map(mpi_comm, num_vertices_per_cell,
                                           shared_points_global, cell_nodes,
                                           type);
@@ -209,9 +204,9 @@ compute_point_distribution(
   for (auto& q : shared_points_global)
     shared_points.insert({global_to_local[q.first], q.second});
 
-  return std::make_tuple(std::move(local_to_global), std::move(shared_points),
-                         std::move(cells_local), std::move(points_local),
-                         num_vertices_local);
+  return std::tuple(std::move(local_to_global), std::move(shared_points),
+                    std::move(cells_local), std::move(points_local),
+                    num_vertices_local);
 }
 //-----------------------------------------------------------------------------
 } // namespace
@@ -259,16 +254,8 @@ Mesh::Mesh(
 
   // Compute node local-to-global map from global indices, and compute
   // cell topology using new local indices
-  std::array<int, 4> num_vertices_local;
-  std::vector<std::int64_t> node_indices_global;
-  Eigen::Array<std::int32_t, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
-      coordinate_nodes;
-  std::map<std::int32_t, std::set<std::int32_t>> nodes_shared;
-  Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
-      points_received;
-
-  std::tie(node_indices_global, nodes_shared, coordinate_nodes, points_received,
-           num_vertices_local)
+  auto [node_indices_global, nodes_shared, coordinate_nodes, points_received,
+        num_vertices_local]
       = compute_point_distribution(comm, num_vertices_per_cell, cells, points,
                                    type);
 
@@ -309,14 +296,14 @@ Mesh::Mesh(
   _topology = std::make_unique<Topology>(tdim, num_vertices_local[2],
                                          num_vertices_global);
   _topology->set_global_indices(0, vertex_indices_global);
-  _topology->shared_entities(0) = shared_vertices;
+  _topology->set_shared_entities(0, shared_vertices);
   _topology->init_ghost(0, num_vertices_local[1]);
 
   // Set vertex ownership
   std::vector<int> vertex_owner;
   for (int i = num_vertices_local[1]; i < num_vertices_local[2]; ++i)
     vertex_owner.push_back(*(shared_vertices[i].begin()));
-  _topology->entity_owner(0) = vertex_owner;
+  _topology->set_entity_owner(0, vertex_owner);
 
   // Initialise cell topology
   _topology->set_num_entities_global(tdim, num_cells_global);

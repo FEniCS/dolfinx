@@ -100,9 +100,7 @@ Function Function::sub(int i) const
 Function Function::collapse() const
 {
   // Create new collapsed FunctionSpace
-  std::shared_ptr<const FunctionSpace> function_space_new;
-  std::vector<PetscInt> collapsed_map;
-  std::tie(function_space_new, collapsed_map) = _function_space->collapse();
+  auto [function_space_new, collapsed_map] = _function_space->collapse();
 
   // Create new vector
   assert(function_space_new);

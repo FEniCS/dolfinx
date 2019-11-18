@@ -1,4 +1,4 @@
-// Copyright (C) 2015-2018 Chris Richardson and Garth N. Wells
+// Copyright (C) 2015-2019 Chris Richardson, Garth N. Wells and Igor Baratta
 //
 // This file is part of DOLFIN (https://www.fenicsproject.org)
 //
@@ -29,7 +29,6 @@ namespace common
 class IndexMap
 {
 public:
-
   /// Mode for reverse scatter operation
   enum class Mode
   {
@@ -37,22 +36,29 @@ public:
     add
   };
 
-
   /// Create Index map with local_size owned blocks on this process, and
   /// blocks have size block_size.
   ///
   /// Collective
-  IndexMap(MPI_Comm mpi_comm, std::int32_t local_size,
-           const std::vector<std::int64_t>& ghosts, std::size_t block_size);
+  /// @param[in] mpi_comm The MPI communicator
+  /// @param[in] local_size Local size of the IndexMap, i.e. the number
+  ///                       of owned entries
+  /// @param[in] ghosts The global indices of ghost entries
+  /// @param[in] block_size The block size of the IndexMap
+  IndexMap(
+      MPI_Comm mpi_comm, std::int32_t local_size,
+      const Eigen::Ref<const Eigen::Array<std::int64_t, Eigen::Dynamic, 1>>&
+          ghosts,
+      int block_size);
 
   /// Copy constructor
-  IndexMap(const IndexMap& map) = default;
+  IndexMap(const IndexMap& map) = delete;
 
   /// Move constructor
   IndexMap(IndexMap&& map) = default;
 
   /// Destructor
-  ~IndexMap() = default;
+  ~IndexMap();
 
   /// Range of indices (global) owned by this process
   std::array<std::int64_t, 2> local_range() const;
@@ -91,7 +97,7 @@ public:
     }
   }
 
-  /// Owner rank of each ghost entry
+  /// Owner rank (on global communicator) of each ghost entry
   Eigen::Array<std::int32_t, Eigen::Dynamic, 1> ghost_owners() const;
 
   /// Get process that owns index (global block index)
@@ -103,59 +109,92 @@ public:
   indices(bool unroll_block) const;
 
   /// Return MPI communicator
+  /// @return The communicator on which the IndexMap is defined
   MPI_Comm mpi_comm() const;
+
+  /// Return MPI neighbourhood communicator
+  /// @return The neighbourhood communicator
+  MPI_Comm mpi_comm_neighborhood() const;
 
   /// Send n values for each index that is owned to processes that have
   /// the index as a ghost. The size of the input array local_data must
-  /// be the same as size_local().
-  /// @param local_data Local data
-  /// @param remote_data Remote data
-  /// @param n Number of data items per index
+  /// be the same as n * size_local().
+  /// @param[in] local_data Local data associated with each owned local
+  ///                       index to be sent to process where the data
+  ///                       is ghosted. Size must be n * size_local().
+  /// @param[in,out] remote_data Ghost data on this process received
+  ///                            from the owning process. Size will be n
+  ///                            * num_ghosts().
+  /// @param[in] n Number of data items per index
   void scatter_fwd(const std::vector<std::int64_t>& local_data,
                    std::vector<std::int64_t>& remote_data, int n) const;
 
   /// Send n values for each index that is owned to processes that have
   /// the index as a ghost. The size of the input array local_data must
-  /// be the same as size_local().
-  /// @param local_data Local data
-  /// @param remote_data Remote data
-  /// @param n Number of data items per index
+  /// be the same as n * size_local().
+  /// @param[in] local_data Local data associated with each owned local
+  ///                       index to be sent to process where the data
+  ///                       is ghosted. Size must be n * size_local().
+  /// @param[in,out] remote_data Ghost data on this process received
+  ///                            from the owning process. Size will be n
+  ///                            * num_ghosts().
+  /// @param[in] n Number of data items per index
   void scatter_fwd(const std::vector<std::int32_t>& local_data,
                    std::vector<std::int32_t>& remote_data, int n) const;
 
   /// Send n values for each index that is owned to processes that have
   /// the index as a ghost. The size of the input array local_data must
-  /// be the same as size_local().
-  /// @param local_data Local data
-  /// @param n Number of data items per index
-  /// @return Remote data
+  /// be the same as n * size_local().
+  /// @param[in] local_data Local data associated with each owned local
+  ///                       index to be sent to process where the data
+  ///                       is ghosted. Size must be n * size_local().
+  /// @param[in] n Number of data items per index
+  /// @return Ghost data on this process received from the owning
+  ///         process. Size will be n * num_ghosts().
   std::vector<std::int64_t>
   scatter_fwd(const std::vector<std::int64_t>& local_data, int n) const;
 
   /// Send n values for each index that is owned to processes that have
-  /// the index as a ghost. The size of the input array local_data must
-  /// be the same as size_local().
-  /// @param local_data Local data
-  /// @param n Number of data items per index
-  /// @return Remote data
+  /// the index as a ghost.
+  /// @param[in] local_data Local data associated with each owned local
+  ///                       index to be sent to process where the data
+  ///                       is ghosted. Size must be n * size_local().
+  /// @param[in] n Number of data items per index
+  /// @return Ghost data on this process received from the owning
+  ///         process. Size will be n * num_ghosts().
   std::vector<std::int32_t>
   scatter_fwd(const std::vector<std::int32_t>& local_data, int n) const;
 
-  /// Send n values for each ghost index to owning to processes. The size
-  /// of the input array remote_data must be the same as num_ghosts().
+  /// Send n values for each ghost index to owning to the process.
+  /// @param[in,out] local_data Local data associated with each owned
+  ///                           local index to be sent to process where
+  ///                           the data is ghosted. Size must be n *
+  ///                           size_local().
+  /// @param[in] remote_data Ghost data on this process received from
+  ///                        the owning process. Size will be n *
+  ///                        num_ghosts().
+  /// @param[in] n Number of data items per index
+  /// @param[in] op Sum or set received values in local_data
   void scatter_rev(std::vector<std::int64_t>& local_data,
                    const std::vector<std::int64_t>& remote_data, int n,
                    IndexMap::Mode op) const;
 
-  /// Send n values for each ghost index to owning to processes. The size
-  /// of the input array remote_data must be the same as num_ghosts().
+  /// Send n values for each ghost index to owning to the process.
+  /// @param[in,out] local_data Local data associated with each owned
+  ///                           local index to be sent to process where
+  ///                           the data is ghosted. Size must be n *
+  ///                           size_local().
+  /// @param[in] remote_data Ghost data on this process received from
+  ///                        the owning process. Size will be n *
+  ///                        num_ghosts().
+  /// @param[in] n Number of data items per index
+  /// @param[in] op Sum or set received values in local_data
   void scatter_rev(std::vector<std::int32_t>& local_data,
                    const std::vector<std::int32_t>& remote_data, int n,
                    IndexMap::Mode op) const;
 
 private:
   // MPI Communicator
-  // dolfin::MPI::Comm _mpi_comm;
   MPI_Comm _mpi_comm;
 
   // MPI Communicator for neighbourhood only
@@ -177,10 +216,8 @@ private:
   // Owning neighbour for each ghost index
   Eigen::Array<std::int32_t, Eigen::Dynamic, 1> _ghost_owners;
 
-  // Neigbour processes
-  std::vector<std::int32_t> _neighbours;
-
-  // Number of indices to send to each neighbour process in forward mode
+  // Number of indices to send to each neighbour process (ghost ->
+  // owner, i.e. forward mode scatter)
   std::vector<std::int32_t> _forward_sizes;
 
   // "Owned" local indices shared with neighbour processes
