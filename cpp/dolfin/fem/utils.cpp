@@ -344,7 +344,9 @@ fem::create_vector_block(const std::vector<const common::IndexMap*>& maps)
   }
 
   // Create map for combined problem, and create vector
-  common::IndexMap index_map(maps[0]->mpi_comm(), local_size, ghosts, 1);
+  Eigen::Map<const Eigen::Array<std::int64_t, Eigen::Dynamic, 1>> _ghosts(
+      ghosts.data(), ghosts.size());
+  common::IndexMap index_map(maps[0]->mpi_comm(), local_size, _ghosts, 1);
   return la::PETScVector(index_map);
 }
 //-----------------------------------------------------------------------------
@@ -489,7 +491,7 @@ fem::get_coeffs_from_ufc_form(const ufc_form& ufc_form)
   for (int i = 0; i < ufc_form.num_coefficients; ++i)
   {
     coeffs.push_back(
-        std::make_tuple<int, std::string, std::shared_ptr<function::Function>>(
+        std::tuple<int, std::string, std::shared_ptr<function::Function>>(
             ufc_form.original_coefficient_position(i), names[i], nullptr));
   }
   return coeffs;
@@ -504,7 +506,7 @@ fem::get_constants_from_ufc_form(const ufc_form& ufc_form)
   for (int i = 0; i < ufc_form.num_constants; ++i)
   {
     constants.push_back(
-        std::make_pair<std::string, std::shared_ptr<const function::Constant>>(
+        std::pair<std::string, std::shared_ptr<const function::Constant>>(
             names[i], nullptr));
   }
   return constants;
