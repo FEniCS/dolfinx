@@ -583,7 +583,7 @@ compute_reordering_map(const DofMapStructure& dofmap,
 }
 //-----------------------------------------------------------------------------
 // Compute global indices for unowned dofs
-std::vector<std::int64_t> compute_global_indices(
+Eigen::Array<std::int64_t, Eigen::Dynamic, 1> compute_global_indices(
     const std::int64_t process_offset,
     const std::vector<std::int32_t>& old_to_new,
     const std::unordered_map<int, std::vector<int>>& node_to_sharing_processes,
@@ -645,7 +645,8 @@ std::vector<std::int64_t> compute_global_indices(
   std::vector<std::vector<std::int64_t>> recv_buffer(mpi_size);
   dolfin::MPI::all_to_all(mpi_comm, send_buffer, recv_buffer);
 
-  std::vector<std::int64_t> local_to_global_unowned(unowned_local_size);
+  Eigen::Array<std::int64_t, Eigen::Dynamic, 1> local_to_global_unowned(
+      unowned_local_size);
   for (std::int32_t src = 0; src < mpi_size; ++src)
   {
     for (auto q = recv_buffer[src].begin(); q != recv_buffer[src].end(); q += 2)
@@ -779,7 +780,7 @@ DofMapBuilder::build(const mesh::Mesh& mesh,
       = dolfin::MPI::global_offset(mesh.mpi_comm(), num_owned_nodes, true);
 
   // Get global indices for unowned unowned dofs
-  const std::vector<std::int64_t> local_to_global_unowned
+  const Eigen::Array<std::int64_t, Eigen::Dynamic, 1> local_to_global_unowned
       = compute_global_indices(process_offset, old_to_new,
                                shared_node_to_processes0, node_graph0,
                                node_ownership0, mesh.mpi_comm());
