@@ -39,6 +39,7 @@ namespace
 //-----------------------------------------------------------------------------
 std::map<std::int64_t, std::set<int>>
 distribute_points_sharing(MPI_Comm mpi_comm,
+                          const std::array<std::int64_t, 2> local_range,
                           const std::vector<std::int64_t>& global_index,
                           const std::vector<int>& offsets)
 {
@@ -46,24 +47,25 @@ distribute_points_sharing(MPI_Comm mpi_comm,
   const int mpi_size = dolfin::MPI::size(mpi_comm);
 
   // Map for sharing information
-  std::map<std::int64_t, std::set<int>> point_to_procs;
+  std::vector<std::set<int>> point_to_procs_set(local_range[1]
+                                                - local_range[0]);
   for (int i = 0; i < mpi_size; ++i)
   {
     for (int j = offsets[i]; j < offsets[i + 1]; ++j)
-      point_to_procs[global_index[j]].insert(i);
+      point_to_procs_set[global_index[j] - local_range[0]].insert(i);
   }
 
   std::vector<std::vector<std::int64_t>> send_sharing(mpi_size);
   std::vector<std::int64_t> recv_sharing(mpi_size);
-  for (const auto& q : point_to_procs)
+  for (int i = local_range[0]; i < local_range[1]; ++i)
   {
-    if (q.second.size() > 1)
+    if (point_to_procs_set[i].size() > 1)
     {
-      for (auto r : q.second)
+      for (int r : point_to_procs_set[i])
       {
-        send_sharing[r].push_back(q.second.size() - 1);
-        send_sharing[r].push_back(q.first);
-        for (auto proc : q.second)
+        send_sharing[r].push_back(point_to_procs_set[i].size() - 1);
+        send_sharing[r].push_back(i);
+        for (int proc : point_to_procs_set[i])
         {
           if (proc != r)
             send_sharing[r].push_back(proc);
@@ -73,8 +75,7 @@ distribute_points_sharing(MPI_Comm mpi_comm,
   }
   dolfin::MPI::all_to_all(mpi_comm, send_sharing, recv_sharing);
 
-  // Reuse points to procs for received data
-  point_to_procs.clear();
+  std::map<std::int64_t, std::set<int>> point_to_procs;
   for (auto q = recv_sharing.begin(); q < recv_sharing.end(); q += (*q + 2))
   {
     const std::int64_t global_index = *(q + 1);
@@ -504,6 +505,100 @@ Partitioning::distribute_points(
                 recv_global_index.data(), recv_sizes.data(),
                 recv_offsets.data(), MPI::mpi_type<std::int64_t>(), comm);
 
+  // Determine ownership
+  // Lowest rank will be the index owner (FIXME: to be revised)
+  std::vector<int> index_owner(ranges[mpi_rank + 1] - ranges[mpi_rank], -1);
+  std::vector<int> count(mpi_size);
+  for (int i = 0; i < mpi_size; ++i)
+  {
+    for (int j = recv_offsets[i]; j < recv_offsets[i + 1]; ++j)
+    {
+      const std::int64_t gi = recv_global_index[j] - ranges[mpi_rank];
+      if (index_owner[gi] < 0)
+      {
+        index_owner[gi] = i;
+        ++count[i];
+      }
+    }
+  }
+
+  // Get global offsets - each process contains a portion of owned indices
+  // of each other process. FIXME: optimise this section
+  std::vector<int> count_recv(mpi_size);
+  MPI_Alltoall(count.data(), 1, MPI_INT, count_recv.data(), 1, MPI_INT, comm);
+  std::vector<int> count_sum = {0};
+  for (std::size_t i = 0; i < count_recv.size(); ++i)
+    count_sum.push_back(count_sum.back() + count_recv[i]);
+  const int local_size = count_sum.back();
+  count_sum[0] = local_size;
+  std::cout << "size on process " << mpi_rank << " = " << local_size << "\n";
+
+  // Send offsets back to holding processes
+  MPI_Alltoall(count_sum.data(), 1, MPI_INT, count_recv.data(), 1, MPI_INT,
+               comm);
+  if (mpi_rank == 0)
+  {
+    count_sum = {0};
+    for (std::size_t i = 0; i < count_recv.size(); ++i)
+    {
+      count_sum.push_back(count_sum.back() + count_recv[i]);
+      count_recv[i] = 0;
+    }
+    std::cout << "total verts = " << count_sum.back() << "!!\n";
+  }
+  MPI_Bcast(count_sum.data(), mpi_size, MPI_INT, 0, comm);
+  std::cout << "Offset of process " << mpi_rank << " = " << count_sum[mpi_rank]
+            << "\n";
+  for (int i = 0; i < mpi_size; ++i)
+    count_sum[i] += count_recv[i];
+
+  // Make new global indexing, taking ghosting into account
+  std::vector<std::int64_t> new_global_index0(index_owner.size(), -1);
+  // Label 'local' indices first
+  for (int i = 0; i < mpi_size; ++i)
+  {
+    for (int j = recv_offsets[i]; j < recv_offsets[i + 1]; ++j)
+    {
+      const std::int64_t gi = recv_global_index[j] - ranges[mpi_rank];
+      if (index_owner[gi] == i)
+      {
+        assert(new_global_index0[gi] == -1);
+        new_global_index0[gi] = count_sum[i];
+        ++count_sum[i];
+      }
+    }
+  }
+
+  // Second pass, fill in return data, including ghost indices
+  std::vector<std::int64_t> new_global_index(recv_global_index.size());
+  for (int i = 0; i < mpi_size; ++i)
+  {
+    for (int j = recv_offsets[i]; j < recv_offsets[i + 1]; ++j)
+    {
+      const std::int64_t gi = recv_global_index[j] - ranges[mpi_rank];
+      assert(new_global_index0[gi] != -1);
+      new_global_index[j] = new_global_index0[gi];
+    }
+  }
+
+  std::vector<std::int64_t> recv_new_global(send_offsets.back());
+  MPI_Alltoallv(new_global_index.data(), recv_sizes.data(), recv_offsets.data(),
+                MPI::mpi_type<std::int64_t>(), recv_new_global.data(),
+                send_sizes.data(), send_offsets.data(),
+                MPI::mpi_type<std::int64_t>(), comm);
+
+  // common::IndexMap v_idx_map(comm, local_size, ghosts, 1);
+
+  exit(-10);
+
+  // Use global indices to calculate sharing data
+  std::array<std::int64_t, 2> local_range;
+  std::map<std::int64_t, std::set<int>> point_to_procs
+      = distribute_points_sharing(comm, local_range, recv_global_index,
+                                  recv_offsets);
+
+  // Create a new global index for all points...
+
   // Create compound datatype of gdim*doubles (point coords)
   MPI_Datatype compound_f64;
   MPI_Type_contiguous(points.cols(), MPI_DOUBLE, &compound_f64);
@@ -530,10 +625,6 @@ Partitioning::distribute_points(
                 send_offsets.data(), compound_f64, comm);
   timer.stop();
 
-  // Use global indices to calculate sharing data
-  std::map<std::int64_t, std::set<int>> point_to_procs
-      = distribute_points_sharing(comm, recv_global_index, recv_offsets);
-
   return std::pair(std::move(point_to_procs), std::move(recv_points));
 }
 //-----------------------------------------------------------------------------
@@ -549,7 +640,8 @@ PartitionData Partitioning::partition_cells(
 {
   LOG(INFO) << "Compute partition of cells across processes";
 
-  // If this process is not in the (new) communicator, it will be MPI_COMM_NULL.
+  // If this process is not in the (new) communicator, it will be
+  // MPI_COMM_NULL.
   if (mpi_comm != MPI_COMM_NULL)
   {
     // Compute dual graph (for this partition)

@@ -15,6 +15,7 @@
 #include "Topology.h"
 #include "TopologyComputation.h"
 #include "utils.h"
+#include <dolfin/common/IndexMap.h>
 #include <dolfin/common/MPI.h>
 #include <dolfin/common/Timer.h>
 #include <dolfin/common/utils.h>
@@ -259,31 +260,39 @@ Mesh::Mesh(
 
   _coordinate_dofs = std::make_unique<CoordinateDofs>(coordinate_nodes);
 
+  _geometry = std::make_unique<Geometry>(num_points_global, points_received,
+                                         node_indices_global);
+
   // Get global vertex information
   std::uint64_t num_vertices_global;
   std::vector<std::int64_t> vertex_indices_global;
   std::map<std::int32_t, std::set<std::int32_t>> shared_vertices;
   std::shared_ptr<common::IndexMap> vertex_index_map;
 
-  // Build a new indexing for vertices, so that they are numbered contiguously
-  // across processes, in line with other topological entities.
-  // FIXME: keep the original numbering somewhere...
-  std::tie(num_vertices_global, vertex_indices_global, vertex_index_map)
-      = Partitioning::build_global_vertex_indices(
-          comm, num_vertices_local, node_indices_global, nodes_shared);
-
-  // Eliminate shared points which are not vertices
-  for (auto it = nodes_shared.begin(); it != nodes_shared.end(); ++it)
-    if (it->first < num_vertices_local[2])
-      shared_vertices.insert(*it);
-
-  // FIXME: maybe need to remap node_indices_global?
   if (_degree == 1)
-    _geometry = std::make_unique<Geometry>(num_points_global, points_received,
-                                           vertex_indices_global);
+  {
+    num_vertices_global = num_points_global;
+    vertex_indices_global = std::move(node_indices_global);
+    shared_vertices = std::move(nodes_shared);
+
+    // Make an index map - how to get ghosts?
+    Eigen::Array<std::int64_t, Eigen::Dynamic, 1> ghosts(
+        num_vertices_local[2] - num_vertices_local[1]);
+
+    vertex_index_map = std::make_shared<common::IndexMap>(
+        comm, num_vertices_local[1], ghosts, 1);
+  }
   else
-    _geometry = std::make_unique<Geometry>(num_points_global, points_received,
-                                           node_indices_global);
+  {
+    std::tie(num_vertices_global, vertex_indices_global, vertex_index_map)
+        = Partitioning::build_global_vertex_indices(
+            comm, num_vertices_local, node_indices_global, nodes_shared);
+
+    // Eliminate shared points which are not vertices
+    for (auto it = nodes_shared.begin(); it != nodes_shared.end(); ++it)
+      if (it->first < num_vertices_local[2])
+        shared_vertices.insert(*it);
+  }
 
   // Initialise vertex topology
   _topology = std::make_unique<Topology>(tdim, num_vertices_local[2],
