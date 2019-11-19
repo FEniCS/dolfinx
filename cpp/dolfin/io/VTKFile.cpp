@@ -187,7 +187,10 @@ void mesh_function_write(T& meshfunction, const std::string filename,
   // Open file to write data
   std::ofstream fp(vtu_filename.c_str(), std::ios_base::app);
   fp.precision(16);
-  fp << "<CellData  Scalars=\"" << meshfunction.name << "\">" << std::endl;
+  if (cell_dim == 0)
+    fp << "<PointData  Scalars=\"" << meshfunction.name << "\">" << std::endl;
+  else
+    fp << "<CellData  Scalars=\"" << meshfunction.name << "\">" << std::endl;
   fp << "<DataArray  type=\"Float64\"  Name=\"" << meshfunction.name
      << "\"  format=\"ascii\">";
 
@@ -196,7 +199,10 @@ void mesh_function_write(T& meshfunction, const std::string filename,
 
   // Write footers
   fp << "</DataArray>" << std::endl;
-  fp << "</CellData>" << std::endl;
+  if (cell_dim == 0)
+    fp << "</PointData>" << std::endl;
+  else
+    fp << "</CellData>" << std::endl;
 
   // Close file
   fp.close();

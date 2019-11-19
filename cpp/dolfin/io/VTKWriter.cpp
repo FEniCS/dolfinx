@@ -141,8 +141,12 @@ void write_ascii_mesh(const mesh::Mesh& mesh, std::size_t cell_dim,
   const int element_degree = mesh.degree();
 
   // Get VTK cell type
-  const std::size_t _vtk_cell_type
-      = vtk_cell_type(mesh, cell_dim, element_degree);
+  std::size_t edim;
+  if (cell_dim == 0)
+    edim = mesh.topology().dim();
+  else
+    edim = cell_dim;
+  const std::size_t _vtk_cell_type = vtk_cell_type(mesh, edim, element_degree);
 
   // Open file
   std::ofstream file(filename.c_str(), std::ios::app);
@@ -179,13 +183,46 @@ void write_ascii_mesh(const mesh::Mesh& mesh, std::size_t cell_dim,
   const std::vector<std::uint8_t> perm
       = io::cells::dolfin_to_vtk(mesh.cell_type(), num_nodes);
 
-  for (int j = 0; j < mesh.num_entities(mesh.topology().dim()); ++j)
+  const std::size_t tdim = mesh.topology().dim();
+  if (cell_dim == tdim)
   {
-    for (int i = 0; i < num_nodes; ++i)
-      file << cell_connections(pos_g(j) + perm[i]) << " ";
-    file << " ";
+    for (int j = 0; j < mesh.num_entities(mesh.topology().dim()); ++j)
+    {
+      for (int i = 0; i < num_nodes; ++i)
+        file << cell_connections(pos_g(j) + perm[i]) << " ";
+      file << " ";
+    }
+    file << "</DataArray>" << std::endl;
   }
-  file << "</DataArray>" << std::endl;
+  else
+  {
+    const std::size_t degree = mesh.degree();
+    if (degree > 1)
+    {
+      throw std::runtime_error("MeshFunction of lower degree than the "
+                               "topological dimension is not implemented");
+    }
+
+    // const auto& global_vertices = mesh.topology().global_indices(0);
+    const int num_vertices = mesh::cell_num_entities(
+        mesh::cell_entity_type(mesh.cell_type(), cell_dim), 0);
+    num_nodes = num_vertices;
+    auto vertex_connectivity = mesh.topology().connectivity(cell_dim, 0);
+    const Eigen::Array<std::int32_t, Eigen::Dynamic, 1>& vertex_connections
+        = vertex_connectivity->connections();
+    const Eigen::Array<std::int32_t, Eigen::Dynamic, 1>& pos_vertex
+        = vertex_connectivity->entity_positions();
+
+    // FIXME : Need to implement permutations for higher order geometries (aka
+    // line segments). Need to obtain the enity_cell_type permutation here.
+    for (int j = 0; j < mesh.num_entities(cell_dim); ++j)
+    {
+      for (int i = 0; i < num_vertices; ++i)
+        file << vertex_connections(pos_vertex(j) + perm[i]) << " ";
+      file << " ";
+    }
+    file << "</DataArray>" << std::endl;
+  }
 
   // Write offset into connectivity array for the end of each cell
   file << "<DataArray  type=\"UInt32\"  Name=\"offsets\"  format=\""
