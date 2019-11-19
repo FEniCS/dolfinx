@@ -5,12 +5,13 @@
 # SPDX-License-Identifier:    LGPL-3.0-or-later
 """Unit tests for the fem interface"""
 
+from random import shuffle
+
 import numpy as np
 import pytest
 
 from dolfin import MPI, FunctionSpace, cpp, fem
 from dolfin.cpp.mesh import CellType
-from random import shuffle
 
 xfail = pytest.mark.xfail(strict=True)
 
@@ -27,7 +28,8 @@ def test_triangle_dof_ordering(space_type):
     # Create a triangle mesh
     if MPI.rank(MPI.comm_world) == 0:
         N = 6
-        # Create a grid of points [0, 0.5, ..., 9.5]**2, then order them in a random order
+        # Create a grid of points [0, 0.5, ..., 9.5]**2, then order them
+        # in a random order
         temp_points = np.array([[x / 2, y / 2] for x in range(N) for y in range(N)])
         order = [i for i, j in enumerate(temp_points)]
         shuffle(order)
@@ -49,12 +51,13 @@ def test_triangle_dof_ordering(space_type):
                 for cell in [[a, a + 1, a + N + 1], [a, a + N + 1, a + N]]:
                     cells.append([order[i] for i in cell])
 
-        # On process 0, input mesh data and distribute to other processes
+        # On process 0, input mesh data and distribute to other
+        # processes
         mesh = cpp.mesh.build_distributed_mesh(MPI.comm_world, CellType.triangle, points,
                                                np.array(cells), [], cpp.mesh.GhostMode.none,
                                                cpp.mesh.Partitioner.scotch)
     else:
-        # On other processes, accept distribited data
+        # On other processes, accept distributed data
         mesh = cpp.mesh.build_distributed_mesh(MPI.comm_world, CellType.triangle, np.ndarray((0, 2)),
                                                np.ndarray((0, 3)), [], cpp.mesh.GhostMode.none,
                                                cpp.mesh.Partitioner.scotch)
@@ -64,7 +67,8 @@ def test_triangle_dof_ordering(space_type):
 
     edges = {}
 
-    # Get coordinates of dofs and edges and check that they are the same for each global dof number
+    # Get coordinates of dofs and edges and check that they are the same
+    # for each global dof number
     X = V.element.dof_reference_coordinates()
     coord_dofs = mesh.coordinate_dofs().entity_points()
     x_g = mesh.geometry.points
@@ -122,7 +126,8 @@ def test_tetrahedron_dof_ordering(space_type):
                               [a + N, a + N ** 2 + 1, a + N ** 2, a]]:
                         cell = [order[i] for i in c]
                         cells.append(cell)
-        # On process 0, input mesh data and distribute to other processes
+        # On process 0, input mesh data and distribute to other
+        # processes
         mesh = cpp.mesh.build_distributed_mesh(MPI.comm_world, CellType.tetrahedron, points,
                                                np.array(cells), [], cpp.mesh.GhostMode.none,
                                                cpp.mesh.Partitioner.scotch)
@@ -138,7 +143,8 @@ def test_tetrahedron_dof_ordering(space_type):
     edges = {}
     faces = {}
 
-    # Get coordinates of dofs and edges and check that they are the same for each global dof number
+    # Get coordinates of dofs and edges and check that they are the same
+    # for each global dof number
     X = V.element.dof_reference_coordinates()
     coord_dofs = mesh.coordinate_dofs().entity_points()
     x_g = mesh.geometry.points
@@ -196,7 +202,8 @@ def test_quadrilateral_dof_ordering(space_type):
                 cell = [order[i] for i in [a, a + 1, a + N, a + N + 1]]
                 cells.append(cell)
 
-        # On process 0, input mesh data and distribute to other processes
+        # On process 0, input mesh data and distribute to other
+        # processes
         mesh = cpp.mesh.build_distributed_mesh(MPI.comm_world, CellType.quadrilateral, points,
                                                np.array(cells), [], cpp.mesh.GhostMode.none,
                                                cpp.mesh.Partitioner.scotch)
@@ -211,7 +218,8 @@ def test_quadrilateral_dof_ordering(space_type):
 
     edges = {}
 
-    # Get coordinates of dofs and edges and check that they are the same for each global dof number
+    # Get coordinates of dofs and edges and check that they are the same
+    # for each global dof number
     X = V.element.dof_reference_coordinates()
     coord_dofs = mesh.coordinate_dofs().entity_points()
     x_g = mesh.geometry.points
@@ -262,7 +270,8 @@ def test_hexahedron_dof_ordering(space_type):
                                                a + N + 1 + N ** 2]]
                     cells.append(cell)
 
-        # On process 0, input mesh data and distribute to other processes
+        # On process 0, input mesh data and distribute to other
+        # processes
         mesh = cpp.mesh.build_distributed_mesh(MPI.comm_world, CellType.hexahedron, points,
                                                np.array(cells), [], cpp.mesh.GhostMode.none,
                                                cpp.mesh.Partitioner.scotch)
@@ -278,7 +287,8 @@ def test_hexahedron_dof_ordering(space_type):
     edges = {}
     faces = {}
 
-    # Get coordinates of dofs and edges and check that they are the same for each global dof number
+    # Get coordinates of dofs and edges and check that they are the same
+    # for each global dof number
     X = V.element.dof_reference_coordinates()
     coord_dofs = mesh.coordinate_dofs().entity_points()
     x_g = mesh.geometry.points
