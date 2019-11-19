@@ -31,9 +31,9 @@ del sys
 from .cpp import __version__
 
 
-from dolfin.common import (has_debug, has_petsc_complex, has_parmetis,
-                           git_commit_hash, TimingType, timing, timings,
-                           list_timings)
+from dolfin.common import (has_debug, has_petsc_complex, has_kahip,
+                           has_parmetis, git_commit_hash, TimingType, timing,
+                           timings, list_timings)
 
 import dolfin.MPI
 import dolfin.log

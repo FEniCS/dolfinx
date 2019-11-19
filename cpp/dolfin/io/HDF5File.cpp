@@ -309,7 +309,7 @@ void HDF5File::write(const mesh::Mesh& mesh, int cell_dim,
       int num_nodes_per_cell = cell_points.size(0);
       topological_data.reserve(num_nodes_per_cell * mesh.num_entities(tdim));
 
-      int num_nodes = mesh.coordinate_dofs().cell_permutation().size();
+      int num_nodes = mesh.coordinate_dofs().entity_points().size(0);
       const std::vector<std::uint8_t> perm
           = io::cells::dolfin_to_vtk(mesh.cell_type(), num_nodes);
 
@@ -329,7 +329,7 @@ void HDF5File::write(const mesh::Mesh& mesh, int cell_dim,
       const auto& global_vertices = mesh.topology().global_indices(0);
 
       // Permutation to VTK ordering
-      int num_nodes = mesh.coordinate_dofs().cell_permutation().size();
+      int num_nodes = mesh.coordinate_dofs().entity_points().size(0);
       const std::vector<std::uint8_t> perm
           = io::cells::dolfin_to_vtk(mesh.cell_type(), num_nodes);
 
