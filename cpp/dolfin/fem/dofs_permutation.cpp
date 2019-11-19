@@ -430,9 +430,9 @@ compute_ordering_triangle(const mesh::Mesh& mesh)
   {
     const mesh::MeshEntity cell(mesh, 2, cell_n);
     const std::int32_t* vertices = cell.entities(0);
-    const std::int32_t v0 = global_indices[vertices[0]];
-    const std::int32_t v1 = global_indices[vertices[1]];
-    const std::int32_t v2 = global_indices[vertices[2]];
+    const std::int64_t v0 = global_indices[vertices[0]];
+    const std::int64_t v1 = global_indices[vertices[1]];
+    const std::int64_t v2 = global_indices[vertices[2]];
 
     // Set the orders for the edge flips
     cell_orders(cell_n, 0) = (v1 > v2);
@@ -463,8 +463,8 @@ compute_ordering_interval(const mesh::Mesh& mesh)
   {
     const mesh::MeshEntity cell(mesh, 1, cell_n);
     const std::int32_t* vertices = cell.entities(0);
-    const std::int32_t v0 = global_indices[vertices[0]];
-    const std::int32_t v1 = global_indices[vertices[1]];
+    const std::int64_t v0 = global_indices[vertices[0]];
+    const std::int64_t v1 = global_indices[vertices[1]];
 
     // Set the orders for the edge flip
     cell_orders(cell_n, 0) = (v0 > v1);
@@ -488,10 +488,10 @@ compute_ordering_quadrilateral(const mesh::Mesh& mesh)
   {
     const mesh::MeshEntity cell(mesh, 2, cell_n);
     const std::int32_t* vertices = cell.entities(0);
-    const std::int32_t v0 = global_indices[vertices[0]];
-    const std::int32_t v1 = global_indices[vertices[1]];
-    const std::int32_t v2 = global_indices[vertices[2]];
-    const std::int32_t v3 = global_indices[vertices[3]];
+    const std::int64_t v0 = global_indices[vertices[0]];
+    const std::int64_t v1 = global_indices[vertices[1]];
+    const std::int64_t v2 = global_indices[vertices[2]];
+    const std::int64_t v3 = global_indices[vertices[3]];
 
     // Set the orders for the edge flips
     cell_orders(cell_n, 0) = (v0 > v1);
@@ -524,10 +524,10 @@ compute_ordering_tetrahedron(const mesh::Mesh& mesh)
   {
     const mesh::MeshEntity cell(mesh, 3, cell_n);
     const std::int32_t* vertices = cell.entities(0);
-    const std::int32_t v0 = global_indices[vertices[0]];
-    const std::int32_t v1 = global_indices[vertices[1]];
-    const std::int32_t v2 = global_indices[vertices[2]];
-    const std::int32_t v3 = global_indices[vertices[3]];
+    const std::int64_t v0 = global_indices[vertices[0]];
+    const std::int64_t v1 = global_indices[vertices[1]];
+    const std::int64_t v2 = global_indices[vertices[2]];
+    const std::int64_t v3 = global_indices[vertices[3]];
 
     // Set the orders for the edge flips
     cell_orders(cell_n, 0) = (v2 > v3);
@@ -582,14 +582,14 @@ compute_ordering_hexahedron(const mesh::Mesh& mesh)
   {
     const mesh::MeshEntity cell(mesh, 3, cell_n);
     const std::int32_t* vertices = cell.entities(0);
-    const std::int32_t v0 = global_indices[vertices[0]];
-    const std::int32_t v1 = global_indices[vertices[1]];
-    const std::int32_t v2 = global_indices[vertices[2]];
-    const std::int32_t v3 = global_indices[vertices[3]];
-    const std::int32_t v4 = global_indices[vertices[4]];
-    const std::int32_t v5 = global_indices[vertices[5]];
-    const std::int32_t v6 = global_indices[vertices[6]];
-    const std::int32_t v7 = global_indices[vertices[7]];
+    const std::int64_t v0 = global_indices[vertices[0]];
+    const std::int64_t v1 = global_indices[vertices[1]];
+    const std::int64_t v2 = global_indices[vertices[2]];
+    const std::int64_t v3 = global_indices[vertices[3]];
+    const std::int64_t v4 = global_indices[vertices[4]];
+    const std::int64_t v5 = global_indices[vertices[5]];
+    const std::int64_t v6 = global_indices[vertices[6]];
+    const std::int64_t v7 = global_indices[vertices[7]];
 
     // Set the orders for the edge flips
     cell_orders(cell_n, 0) = (v0 > v1);
