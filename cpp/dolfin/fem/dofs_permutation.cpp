@@ -502,7 +502,7 @@ compute_ordering_quadrilateral(const mesh::Mesh& mesh)
     // Set the orders for the face rotation and reflection
     const std::array<int, 2> quad_orders
         = calculate_quadrilateral_orders(v0, v1, v2, v3);
-    cell_orders(cell_n, 4) = quad_orders[0]; // TODO: check these permutations
+    cell_orders(cell_n, 4) = quad_orders[0];
     cell_orders(cell_n, 5) = quad_orders[1];
   }
 
