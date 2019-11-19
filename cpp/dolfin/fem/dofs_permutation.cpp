@@ -47,6 +47,7 @@ int get_num_permutations(mesh::CellType cell_type)
 /// @return The rotation and reflection orders for the triangle
 std::array<int, 2> calculate_triangle_orders(int v1, int v2, int v3)
 {
+  std::cout << "<<" << v1 << " " << v2 << " " << v3 << ">>" << std::endl;
   if (v1 < v2 and v1 < v3)
     return {0, v2 > v3};
   else if (v2 < v1 and v2 < v3)
@@ -510,6 +511,88 @@ compute_ordering_quadrilateral(const mesh::Mesh& mesh)
 }
 //-----------------------------------------------------------------------------
 Eigen::Array<std::int8_t, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
+compute_ordering_general(const mesh::Mesh& mesh,
+    const int num_vertices_per_cell,
+    std::vector<std::pair<mesh::CellType, std::vector<std::int8_t>>> entities)
+{
+  const int num_cells = mesh.num_entities(mesh.topology().dim());
+  const int num_permutations = get_num_permutations(mesh.cell_type());
+  Eigen::Array<std::int8_t, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
+      cell_orders(num_cells, num_permutations);
+  // Set orders for each cell
+  const std::vector<std::int64_t>& global_indices
+      = mesh.topology().global_indices(0);
+  // Reserve memory to store global vertex numbers
+  std::vector<std::int32_t> vertices(num_vertices_per_cell);
+  for (int cell_n = 0; cell_n < num_cells; ++cell_n)
+  {
+    const mesh::MeshEntity cell(mesh, 3, cell_n);
+    const std::int32_t* local_vertices = cell.entities(0);
+    for (int i = 0; i < num_vertices_per_cell; ++i)
+    {
+      vertices[i] = global_indices[local_vertices[i]];
+      std::cout << vertices[i] << ",";
+    }
+    std::cout << std::endl;
+    int j = 0;
+    for (std::size_t e_n = 0; e_n < entities.size(); ++e_n)
+    {
+      auto cell_type = entities[e_n].first;
+      auto vertex_indices = entities[e_n].second;
+      switch (cell_type)
+      {
+        case (mesh::CellType::point):
+          break;
+        case (mesh::CellType::interval):
+          cell_orders(cell_n, j++) = (vertices[vertex_indices[0]] > vertices[vertex_indices[1]]);
+          break;
+        case (mesh::CellType::triangle):
+        {
+          const std::array<int, 2> tri_orders
+              = calculate_triangle_orders(vertices[vertex_indices[0]], vertices[vertex_indices[1]], vertices[vertex_indices[2]]);
+          cell_orders(cell_n, j++) = tri_orders[0];
+          cell_orders(cell_n, j++) = tri_orders[1];
+          break;
+        }
+        case (mesh::CellType::quadrilateral):
+        {
+          const std::array<int, 2> quad_orders
+              = calculate_quadrilateral_orders(vertices[vertex_indices[0]], vertices[vertex_indices[1]], vertices[vertex_indices[2]], vertices[vertex_indices[3]]);
+          cell_orders(cell_n, j++) = quad_orders[0];
+          cell_orders(cell_n, j++) = quad_orders[1];
+          break;
+        }
+        case (mesh::CellType::tetrahedron):
+        {
+          const std::array<int, 4> tetra_orders
+              = calculate_tetrahedron_orders(vertices[vertex_indices[0]], vertices[vertex_indices[1]], vertices[vertex_indices[2]], vertices[vertex_indices[3]]);
+          cell_orders(cell_n, j++) = tetra_orders[0];
+          cell_orders(cell_n, j++) = tetra_orders[1];
+          cell_orders(cell_n, j++) = tetra_orders[2];
+          cell_orders(cell_n, j++) = tetra_orders[3];
+          break;
+        }
+        case (mesh::CellType::hexahedron):
+        {
+          const std::array<int, 4> hexa_orders
+              = calculate_hexahedron_orders(vertices[vertex_indices[0]], vertices[vertex_indices[1]], vertices[vertex_indices[2]], vertices[vertex_indices[3]],
+                                            vertices[vertex_indices[4]], vertices[vertex_indices[5]], vertices[vertex_indices[6]], vertices[vertex_indices[7]]);
+          cell_orders(cell_n, j++) = hexa_orders[0];
+          cell_orders(cell_n, j++) = hexa_orders[1];
+          cell_orders(cell_n, j++) = hexa_orders[2];
+          cell_orders(cell_n, j++) = hexa_orders[3];
+          break;
+        }
+        default:
+          LOG(WARNING) << "Unrecognised cell type.";
+      }
+    }
+    assert (j == num_permutations);
+  }
+  return cell_orders;
+}
+//-----------------------------------------------------------------------------
+Eigen::Array<std::int8_t, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
 compute_ordering_tetrahedron(const mesh::Mesh& mesh)
 {
   const int num_cells = mesh.num_entities(mesh.topology().dim());
@@ -563,6 +646,39 @@ compute_ordering_tetrahedron(const mesh::Mesh& mesh)
     cell_orders(cell_n, 16) = tet_orders[2];
     cell_orders(cell_n, 17) = tet_orders[3];
   }
+
+
+  std::vector<std::pair<mesh::CellType, std::vector<std::int8_t>>> entities(11);
+  entities[0].first = mesh::CellType::interval;
+  entities[1].first = mesh::CellType::interval;
+  entities[2].first = mesh::CellType::interval;
+  entities[3].first = mesh::CellType::interval;
+  entities[4].first = mesh::CellType::interval;
+  entities[5].first = mesh::CellType::interval;
+  entities[0].second = {2, 3};
+  entities[1].second = {1, 3};
+  entities[2].second = {1, 2};
+  entities[3].second = {0, 3};
+  entities[4].second = {0, 2};
+  entities[5].second = {0, 1};
+
+  entities[6].first = mesh::CellType::triangle;
+  entities[7].first = mesh::CellType::triangle;
+  entities[8].first = mesh::CellType::triangle;
+  entities[9].first = mesh::CellType::triangle;
+  entities[6].second = {1, 2, 3};
+  entities[7].second = {0, 2, 3};
+  entities[8].second = {0, 1, 3};
+  entities[9].second = {0, 1, 2};
+
+  entities[10].first = mesh::CellType::tetrahedron;
+  entities[10].second = {0, 1, 2, 3};
+
+
+  auto cell_o2 = compute_ordering_general(mesh, 4, entities);
+  for (int cell_n = 0; cell_n < num_cells; ++cell_n)
+    for (int i=0;i<18;++i)
+      assert(cell_orders(cell_n,i) == cell_o2(cell_n,i));
 
   return cell_orders;
 }
