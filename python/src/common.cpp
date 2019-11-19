@@ -65,6 +65,11 @@ void common(py::module& m)
       .def_property_readonly("ghosts", &dolfin::common::IndexMap::ghosts,
                              py::return_value_policy::reference_internal,
                              "Return list of ghost indices")
+      .def_property_readonly("shared_indices",
+                             &dolfin::common::IndexMap::shared_indices,
+                             py::return_value_policy::reference_internal,
+                             "Return dict of index to sharing processes for "
+                             "shared indices on this process")
       .def("indices", &dolfin::common::IndexMap::indices,
            "Return array of global indices for all indices on this process");
 

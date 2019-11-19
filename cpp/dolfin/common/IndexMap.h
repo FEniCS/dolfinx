@@ -11,6 +11,7 @@
 #include <cstdint>
 #include <dolfin/common/MPI.h>
 #include <map>
+#include <set>
 #include <petscsys.h>
 #include <vector>
 
@@ -102,7 +103,7 @@ public:
   Eigen::Array<std::int32_t, Eigen::Dynamic, 1> ghost_owners() const;
 
   /// Map from shared indices to sharing processes
-  std::map<std::int32_t, std::vector<int>> shared_indices() const;
+  std::map<std::int32_t, std::set<int>> shared_indices() const;
 
   /// Get process that owns index (global block index)
   int owner(std::int64_t global_index) const;

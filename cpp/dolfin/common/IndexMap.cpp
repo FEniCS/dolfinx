@@ -150,7 +150,7 @@ const Eigen::Array<PetscInt, Eigen::Dynamic, 1>& IndexMap::ghosts() const
   return _ghosts;
 }
 //-----------------------------------------------------------------------------
-std::map<std::int32_t, std::vector<int>> IndexMap::shared_indices() const
+std::map<std::int32_t, std::set<int>> IndexMap::shared_indices() const
 {
   int indegree(-1), outdegree(-2), weighted(-1);
   MPI_Dist_graph_neighbors_count(_neighbour_comm, &indegree, &outdegree,
@@ -163,14 +163,17 @@ std::map<std::int32_t, std::vector<int>> IndexMap::shared_indices() const
                            weights.data(), outdegree, neighbours1.data(),
                            weights1.data());
 
-  std::map<std::int32_t, std::vector<int>> sh_map;
-  int j = 0;
+  assert(neighbours.size() == _forward_sizes.size());
+
+  std::map<std::int32_t, std::set<int>> sh_map;
+  int k = 0;
   for (std::size_t i = 0; i < _forward_sizes.size(); ++i)
   {
-    auto it = sh_map.insert({_forward_indices[j], {neighbours[i]}});
-    if (!it.second)
-      it.first->second.push_back(i);
-    ++j;
+    for (int j = 0; j < _forward_sizes[i]; ++j)
+    {
+      sh_map[_forward_indices[k]].insert(neighbours[i]);
+      ++k;
+    }
   }
   return sh_map;
 }
