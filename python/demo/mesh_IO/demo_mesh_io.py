@@ -26,7 +26,7 @@ from pygmsh import generate_mesh
 #
 # * First to third order quadrilateral elements
 # * First to third order triangular elements
-def generate_pygmsh_mesh(element, order, filename, R=1, res=0.3):
+def generate_pygmsh_mesh(element, order, filename, R=1, res=0.3, outdir="output/"):
     """
     Generates a circular mesh with radius one and mesh resolution 0.3.
     The function returns a  :py:class:`Mesh <mesio._mesh.Mesh>` object,
@@ -54,88 +54,86 @@ def generate_pygmsh_mesh(element, order, filename, R=1, res=0.3):
     # When the mesh is generated, the z-coordinates are removed so that it
     # is no longer a 2D mesh embedded in a 3D space.
     msh = generate_mesh(geo, verbose=False, dim=2, prune_z_0=True,
-                        geo_filename=filename+ ".geo")
+                        geo_filename=outdir + filename+ ".geo")
     return msh
 
 # The next step is to save the Mesh to file.
 
-def save_mesh_to_file(mesh, element, order, filename):
-    # The easiest way to save a mesh to file is by using meshio.
-    # Meshio supports XDMF, which has limited support for higher order geometries.
-    if order < 3 and element == "triangle":
-        import meshio
-        # We first generate the mesh by stripping it for the facet function information
-        meshio_mesh = meshio.Mesh(points=mesh.points,
-                                  cells={element: mesh.cells[element]},
-                                  cell_data={element: {"name_to_read":
-                                                       mesh.cell_data[element]["gmsh:physical"]}})
-        meshio.write(filename + ".xdmf", meshio_mesh)
+def save_mesh_to_file(mesh, element, order, filename, outdir="output/"):
+    """
+    Saving the meshio Mesh to HDF5, readable by the dolfinx paraview plugin.
+    """
+    # For third order meshes, the best way of saving them is to use HDF5
+    facets = {1:"line", 2:"line3", 3: "line4"}
 
-        # To save the facet data, we generate a new mesh, consisting of the facets of the original mesh
-        facets = {1:"line", 2:"line3"}
-        facet_mesh = meshio.Mesh(points=mesh.points,
-                                 cells={facets[order]: mesh.cells[facets[order]]},
-                                 cell_data={facets[order]: {"name_to_read":
-                                                            mesh.cell_data[facets[order]]["gmsh:physical"]}})
-
-
-        meshio.write("mf" + filename[4:] + ".xdmf".format(element, order), facet_mesh)
+    import h5py
+    import mpi4py
+    import numpy
+    if order == 3 and "quad" in element:
+        # Gmsh uses a custom msh ordering of quadrilaterals of order three. We permute these to VTK.
+        msh_to_vtk = numpy.array([0, 1, 2, 3, 4, 5, 6, 7, 9, 8, 11, 10, 12, 13, 15, 14])
+        cells = numpy.zeros(mesh.cells[element].shape)
+        for i in range(cells.shape[0]):
+            for j in range(cells.shape[1]):
+                cells[i,j] = mesh.cells[element][i, msh_to_vtk[j]]
     else:
-        # For third order meshes, the best way of saving them is to use HDF5
-        import h5py
-        import mpi4py
-        import numpy
-        if order == 3 and "quad" in element:
-            # Gmsh uses a custom msh ordering of quadrilaterals of order three. We permute these to VTK.
-            msh_to_vtk = numpy.array([0, 1, 2, 3, 4, 5, 6, 7, 9, 8, 11, 10, 12, 13, 14, 15])
-            cells = numpy.zeros(mesh.cells[element].shape)
-            for i in range(cells.shape[0]):
-                for j in range(cells.shape[1]):
-                    cells[i,j] = mesh.cells[element][i, msh_to_vtk[j]]
-        else:
-            cells = mesh.cells[element]
-        # The dolfin HDF5 storage format requires the following groups, datasets and attributes
-        outfile = h5py.File(filename + ".xdmf", "w", driver='mpio', comm=mpi4py.MPI.COMM_WORLD)
-        grp = outfile.create_group("gmsh_mesh")
-        grp.create_dataset("cell_indices", data=range(cells.shape[0]))
-        grp.create_dataset("coordinates", data=mesh.points)
-        top = grp.create_dataset("topology", data=cells)
-        cell_func = outfile.create_group("cellfunction")
-        # cell_func.create_dataset("topology", data=cells)
-        # cell_func.create_dataset("coordinates", data=mesh.points)
-        # cell_func.create_dataset("values", data=mesh.cell_data[element]["gmsh:physical"])
-        cell_type_HDF5 = "triangle" if "triangle" in element else "quadrilateral"
-        top.attrs["celltype"] = numpy.bytes_(cell_type_HDF5)
-        outfile.close()
+        cells = mesh.cells[element]
+    # The dolfin HDF5 storage format requires the following groups, datasets and attributes
+    outfile = h5py.File(outdir + filename + ".h5", "w", driver='mpio', comm=mpi4py.MPI.COMM_WORLD)
+    grp = outfile.create_group("mesh")
+    grp.create_dataset("cell_indices", data=range(cells.shape[0]))
+    grp.create_dataset("coordinates", data=mesh.points)
+    top = grp.create_dataset("topology", data=cells)
+    cell_type_HDF5 = "triangle" if "triangle" in element else "quadrilateral"
+    top.attrs["celltype"] = numpy.bytes_(cell_type_HDF5)
 
+    cell_func = outfile.create_group("cellfunction")
+    c_top = cell_func.create_dataset("topology", data=cells)
+    cell_func.create_dataset("coordinates", data=mesh.points)
+    cell_func.create_dataset("values", data=mesh.cell_data[element]["gmsh:physical"])
+    c_top.attrs["celltype"] = numpy.bytes_(cell_type_HDF5)
 
-def load_to_dolfin(element, order, filename):
+    facet_func = outfile.create_group("facetfunction")
+    facet_func.attrs["dimension"] = 1
+    f_top = facet_func.create_dataset("topology", data=mesh.cells[facets[order]])
+    facet_func.create_dataset("coordinates", data=mesh.points)
+    facet_func.create_dataset("values", data=mesh.cell_data[facets[order]]["gmsh:physical"])
+
+    outfile.close()
+
+def load_to_dolfin(element, order, filename, outdir="output/"):
     """
     Function illustrating how to load the saved meshes to dolfin, and write the
     to a format that can be visualized in Paraview
     """
-    from dolfin import MPI
+    from dolfin import MPI, cpp
     from dolfin.cpp.mesh import GhostMode
     from dolfin.io import VTKFile
-    if order < 3 and element == "triangle":
-        from dolfin.io import XDMFFile
-        with XDMFFile(MPI.comm_world, filename + ".xdmf") as xdmf:
-            mesh = xdmf.read_mesh(GhostMode.none)
-    else:
-        # Load the HDF5 file
-        from dolfin.io import HDF5File
-        mesh_file = HDF5File(MPI.comm_world, filename + ".xdmf".format(element, order), "r")
-        # We did not save partition instructions in the HDF5-file
-        mesh = mesh_file.read_mesh("/gmsh_mesh", False, GhostMode.none)
-        # Load the cell function:
-        # cf = mesh_file.read_mf_double(mesh, "/cellfunction")
-        mesh_file.close()
-        # VTKFile("cf" + filename[4:] + ".pvd".format(element, order)).write(cf)
+    # if order < 3 and element == "triangle":
+    #     from dolfin.io import XDMFFile
+    #     with XDMFFile(MPI.comm_world, filename + ".xdmf") as xdmf:
+    #         mesh = xdmf.read_mesh(GhostMode.none)
+    # else:
+    # Load the HDF5 file
+    from dolfin.io import HDF5File
+    mesh_file = HDF5File(MPI.comm_world, outdir + filename + ".h5".format(element, order), "r")
+    # We did not save partition instructions in the HDF5-file
+    mesh = mesh_file.read_mesh("/mesh", False, GhostMode.none)
+    # Load the cell function:
 
+    cf = mesh_file.read_mf_double(mesh, "/cellfunction")
+    # need to figure out how one can read data from only fractions of the elements.
+    mvc = mesh_file.read_mvc_size_t(mesh, "/facetfunction")
+    mesh_file.close()
+
+    VTKFile(outdir + "cf" + filename[4:] + ".pvd".format(element, order)).write(cf)
 
     # Save mesh with VTK
-    VTKFile(filename + ".pvd".format(element, order)).write(mesh)
+    VTKFile((outdir + filename + ".pvd").format(element, order)).write(mesh)
 
+    ff = cpp.mesh.MeshFunctionSizet(mesh, mvc, 1)
+    print(ff.values)
+    VTKFile(outdir + "ff" + filename[4:] + ".pvd".format(element, order)).write(ff)
 
 element_names = {"triangle": {1: "triangle", 2: "triangle6", 3: "triangle10"},
                  "quadrilateral": {1: "quad", 2: "quad9", 3: "quad16"}}
