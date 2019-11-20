@@ -6,17 +6,17 @@
 """ Unit-tests for higher order meshes """
 
 import os
+
 import numpy as np
 import pygmsh
 import pytest
 import scipy.integrate
 import sympy as sp
 from dolfin_utils.test.skips import skip_in_parallel
-
 from sympy.vector import CoordSys3D, matrix_to_vector
 
 from dolfin import MPI, Function, FunctionSpace, Mesh, fem
-from dolfin.cpp.io import permute_cell_ordering, permutation_vtk_to_dolfin
+from dolfin.cpp.io import permutation_vtk_to_dolfin, permute_cell_ordering
 from dolfin.cpp.mesh import CellType, GhostMode
 from dolfin.fem import assemble_scalar
 from dolfin.io import XDMFFile

@@ -1,7 +1,9 @@
 import gc
-from dolfin import MPI
-import pytest
 import os
+
+import pytest
+
+from dolfin import MPI
 
 
 def pytest_runtest_teardown(item):
