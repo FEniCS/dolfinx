@@ -141,12 +141,8 @@ void write_ascii_mesh(const mesh::Mesh& mesh, std::size_t cell_dim,
   const int element_degree = mesh.degree();
 
   // Get VTK cell type
-  std::size_t edim;
-  if (cell_dim == 0)
-    edim = mesh.topology().dim();
-  else
-    edim = cell_dim;
-  const std::size_t _vtk_cell_type = vtk_cell_type(mesh, edim, element_degree);
+  const std::size_t _vtk_cell_type
+      = vtk_cell_type(mesh, cell_dim, element_degree);
 
   // Open file
   std::ofstream file(filename.c_str(), std::ios::app);
@@ -173,19 +169,31 @@ void write_ascii_mesh(const mesh::Mesh& mesh, std::size_t cell_dim,
        << "ascii"
        << "\">";
 
-  const mesh::Connectivity& connectivity_g
-      = mesh.coordinate_dofs().entity_points();
-  const Eigen::Array<std::int32_t, Eigen::Dynamic, 1>& cell_connections
-      = connectivity_g.connections();
-  const Eigen::Array<std::int32_t, Eigen::Dynamic, 1>& pos_g
-      = connectivity_g.entity_positions();
-  int num_nodes = connectivity_g.size(0);
-  const std::vector<std::uint8_t> perm
-      = io::cells::dolfin_to_vtk(mesh.cell_type(), num_nodes);
+  int num_nodes;
+  std::vector<std::uint8_t> perm;
 
   const std::size_t tdim = mesh.topology().dim();
-  if (cell_dim == tdim)
+  if (cell_dim == 0)
   {
+    // Special case when only points should be visualized
+    for (int i = 0; i < points.rows(); ++i)
+      file << i << " ";
+    file << "</DataArray>" << std::endl;
+    num_nodes = 1;
+  }
+  else if (cell_dim == tdim)
+  {
+    // Special case where the cells are visualized (Supports higher order
+    // elements)
+    const mesh::Connectivity& connectivity_g
+        = mesh.coordinate_dofs().entity_points();
+    const Eigen::Array<std::int32_t, Eigen::Dynamic, 1>& cell_connections
+        = connectivity_g.connections();
+    const Eigen::Array<std::int32_t, Eigen::Dynamic, 1>& pos_g
+        = connectivity_g.entity_positions();
+    num_nodes = connectivity_g.size(0);
+
+    perm = io::cells::dolfin_to_vtk(mesh.cell_type(), num_nodes);
     for (int j = 0; j < mesh.num_entities(mesh.topology().dim()); ++j)
     {
       for (int i = 0; i < num_nodes; ++i)
@@ -202,19 +210,17 @@ void write_ascii_mesh(const mesh::Mesh& mesh, std::size_t cell_dim,
       throw std::runtime_error("MeshFunction of lower degree than the "
                                "topological dimension is not implemented");
     }
-
-    // const auto& global_vertices = mesh.topology().global_indices(0);
-    const int num_vertices = mesh::cell_num_entities(
-        mesh::cell_entity_type(mesh.cell_type(), cell_dim), 0);
-    num_nodes = num_vertices;
+    mesh::CellType e_type = mesh::cell_entity_type(mesh.cell_type(), cell_dim);
+    // FIXME : Need to implement permutations for higher order
+    // geometries (aka line segments). CoordinateDofs needs to be
+    // extended to have connections to facets.
+    const int num_vertices = mesh::num_cell_vertices(e_type);
+    perm = io::cells::dolfin_to_vtk(e_type, num_vertices);
     auto vertex_connectivity = mesh.topology().connectivity(cell_dim, 0);
     const Eigen::Array<std::int32_t, Eigen::Dynamic, 1>& vertex_connections
         = vertex_connectivity->connections();
     const Eigen::Array<std::int32_t, Eigen::Dynamic, 1>& pos_vertex
         = vertex_connectivity->entity_positions();
-
-    // FIXME : Need to implement permutations for higher order geometries (aka
-    // line segments). Need to obtain the enity_cell_type permutation here.
     for (int j = 0; j < mesh.num_entities(cell_dim); ++j)
     {
       for (int i = 0; i < num_vertices; ++i)
@@ -222,6 +228,8 @@ void write_ascii_mesh(const mesh::Mesh& mesh, std::size_t cell_dim,
       file << " ";
     }
     file << "</DataArray>" << std::endl;
+    // Change number of nodes to fix offset
+    num_nodes = num_vertices;
   }
 
   // Write offset into connectivity array for the end of each cell
@@ -243,7 +251,7 @@ void write_ascii_mesh(const mesh::Mesh& mesh, std::size_t cell_dim,
 
   // Close file
   file.close();
-}
+} // namespace
 //-----------------------------------------------------------------------------
 
 } // namespace

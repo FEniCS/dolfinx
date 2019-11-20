@@ -489,7 +489,7 @@ int mesh::cell_degree(mesh::CellType type, int num_nodes)
   case mesh::CellType::point:
     return 1;
   case mesh::CellType::interval:
-    return 1;
+    return num_nodes - 1;
   case mesh::CellType::triangle:
     switch (num_nodes)
     {
