@@ -68,80 +68,81 @@ std::vector<std::int64_t> compute_global_index_set(
   return std::vector<std::int64_t>(gi_set.begin(), gi_set.end());
 }
 //-----------------------------------------------------------------------------
-std::pair<std::vector<std::int64_t>, std::array<int, 4>>
-compute_local_to_global_point_map(
-    MPI_Comm mpi_comm, int num_vertices_per_cell,
-    const std::map<std::int64_t, std::set<int>>& point_to_procs,
-    Eigen::Ref<const Eigen::Array<std::int64_t, Eigen::Dynamic, Eigen::Dynamic,
-                                  Eigen::RowMajor>>
-        cell_nodes,
-    mesh::CellType type)
-{
-  int mpi_rank = dolfin::MPI::rank(mpi_comm);
-  std::vector<std::int64_t> local_to_global;
-  std::array<int, 4> num_vertices_local;
+// std::pair<std::vector<std::int64_t>, std::array<int, 4>>
+// compute_local_to_global_point_map(
+//     MPI_Comm mpi_comm, int num_vertices_per_cell,
+//     const std::map<std::int64_t, std::set<int>>& point_to_procs,
+//     Eigen::Ref<const Eigen::Array<std::int64_t, Eigen::Dynamic,
+//     Eigen::Dynamic,
+//                                   Eigen::RowMajor>>
+//         cell_nodes,
+//     mesh::CellType type)
+// {
+//   int mpi_rank = dolfin::MPI::rank(mpi_comm);
+//   std::vector<std::int64_t> local_to_global;
+//   std::array<int, 4> num_vertices_local;
 
-  // Classify all nodes
-  std::set<std::int64_t> local_vertices;
-  std::set<std::int64_t> shared_vertices;
-  std::set<std::int64_t> ghost_vertices;
-  std::set<std::int64_t> non_vertex_nodes;
+//   // Classify all nodes
+//   std::set<std::int64_t> local_vertices;
+//   std::set<std::int64_t> shared_vertices;
+//   std::set<std::int64_t> ghost_vertices;
+//   std::set<std::int64_t> non_vertex_nodes;
 
-  const std::int32_t num_cells = cell_nodes.rows();
-  const std::int32_t num_nodes_per_cell = cell_nodes.cols();
-  const std::vector<int> vertex_indices
-      = mesh::cell_vertex_indices(type, num_nodes_per_cell);
+//   const std::int32_t num_cells = cell_nodes.rows();
+//   const std::int32_t num_nodes_per_cell = cell_nodes.cols();
+//   const std::vector<int> vertex_indices
+//       = mesh::cell_vertex_indices(type, num_nodes_per_cell);
 
-  std::vector<int> non_vertex_indices;
-  for (int i = 0; i < num_nodes_per_cell; ++i)
-  {
-    if (std::find(vertex_indices.begin(), vertex_indices.end(), i)
-        == vertex_indices.end())
-    {
-      non_vertex_indices.push_back(i);
-    }
-  }
+//   std::vector<int> non_vertex_indices;
+//   for (int i = 0; i < num_nodes_per_cell; ++i)
+//   {
+//     if (std::find(vertex_indices.begin(), vertex_indices.end(), i)
+//         == vertex_indices.end())
+//     {
+//       non_vertex_indices.push_back(i);
+//     }
+//   }
 
-  for (std::int32_t c = 0; c < num_cells; ++c)
-  {
-    for (int v : vertex_indices)
-    {
-      std::int64_t q = cell_nodes(c, v);
-      auto shared_it = point_to_procs.find(q);
-      if (shared_it == point_to_procs.end())
-        local_vertices.insert(q);
-      else
-      {
-        // If lowest ranked sharing process is greather than this process,
-        // then it is owner
-        if (*(shared_it->second.begin()) > mpi_rank)
-          shared_vertices.insert(q);
-        else
-          ghost_vertices.insert(q);
-      }
-    }
+//   for (std::int32_t c = 0; c < num_cells; ++c)
+//   {
+//     for (int v : vertex_indices)
+//     {
+//       std::int64_t q = cell_nodes(c, v);
+//       auto shared_it = point_to_procs.find(q);
+//       if (shared_it == point_to_procs.end())
+//         local_vertices.insert(q);
+//       else
+//       {
+//         // If lowest ranked sharing process is greather than this process,
+//         // then it is owner
+//         if (*(shared_it->second.begin()) > mpi_rank)
+//           shared_vertices.insert(q);
+//         else
+//           ghost_vertices.insert(q);
+//       }
+//     }
 
-    for (int v : non_vertex_indices)
-    {
-      std::int64_t q = cell_nodes(c, v);
-      non_vertex_nodes.insert(q);
-    }
-  }
+//     for (int v : non_vertex_indices)
+//     {
+//       std::int64_t q = cell_nodes(c, v);
+//       non_vertex_nodes.insert(q);
+//     }
+//   }
 
-  // Now fill local->global map and reorder received points
-  local_to_global.insert(local_to_global.end(), local_vertices.begin(),
-                         local_vertices.end());
-  num_vertices_local[0] = local_to_global.size();
-  local_to_global.insert(local_to_global.end(), shared_vertices.begin(),
-                         shared_vertices.end());
-  num_vertices_local[1] = local_to_global.size();
-  local_to_global.insert(local_to_global.end(), ghost_vertices.begin(),
-                         ghost_vertices.end());
-  num_vertices_local[2] = local_to_global.size();
-  local_to_global.insert(local_to_global.end(), non_vertex_nodes.begin(),
-                         non_vertex_nodes.end());
-  num_vertices_local[3] = local_to_global.size();
-  return std::pair(std::move(local_to_global), num_vertices_local);
+//   // Now fill local->global map and reorder received points
+//   local_to_global.insert(local_to_global.end(), local_vertices.begin(),
+//                          local_vertices.end());
+//   num_vertices_local[0] = local_to_global.size();
+//   local_to_global.insert(local_to_global.end(), shared_vertices.begin(),
+//                          shared_vertices.end());
+//   num_vertices_local[1] = local_to_global.size();
+//   local_to_global.insert(local_to_global.end(), ghost_vertices.begin(),
+//                          ghost_vertices.end());
+//   num_vertices_local[2] = local_to_global.size();
+//   local_to_global.insert(local_to_global.end(), non_vertex_nodes.begin(),
+//                          non_vertex_nodes.end());
+//   num_vertices_local[3] = local_to_global.size();
+//   return std::pair(std::move(local_to_global), num_vertices_local);
 } // namespace
 //-----------------------------------------------------------------------------
 // Get the local points.
@@ -170,15 +171,8 @@ compute_point_distribution(
 
   // Distribute points to processes that need them, and calculate
   // shared points. Points are returned in same order as in global_index_set.
-  // Sharing information is (global_index -> [remote sharing processes]).
-  auto [shared_points_global, recv_points]
+  auto [point_index_map, recv_points]
       = Partitioning::distribute_points(mpi_comm, points, global_index_set);
-
-  // Get local to global mapping for points
-  auto [local_to_global, num_vertices_local]
-      = compute_local_to_global_point_map(mpi_comm, num_vertices_per_cell,
-                                          shared_points_global, cell_nodes,
-                                          type);
 
   // Reverse map
   std::map<std::int64_t, std::int32_t> global_to_local;

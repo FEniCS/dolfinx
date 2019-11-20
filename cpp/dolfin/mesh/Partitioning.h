@@ -9,6 +9,7 @@
 #include "PartitionData.h"
 #include <cstdint>
 #include <dolfin/common/types.h>
+#include <dolfin/common/IndexMap.h>
 #include <dolfin/graph/CSRGraph.h>
 #include <dolfin/mesh/cell_types.h>
 #include <map>
@@ -139,7 +140,7 @@ public:
   ///         point)
 
   static std::pair<
-      std::map<std::int64_t, std::set<int>>,
+    common::IndexMap,
       Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>>
   distribute_points(
       const MPI_Comm comm,
