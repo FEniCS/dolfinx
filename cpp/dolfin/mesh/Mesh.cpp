@@ -143,7 +143,7 @@ std::vector<std::int64_t> compute_global_index_set(
 //                          non_vertex_nodes.end());
 //   num_vertices_local[3] = local_to_global.size();
 //   return std::pair(std::move(local_to_global), num_vertices_local);
-} // namespace
+
 //-----------------------------------------------------------------------------
 // Get the local points.
 // Returns: local_to_global map for points,
@@ -170,35 +170,40 @@ compute_point_distribution(
       = compute_global_index_set(cell_nodes);
 
   // Distribute points to processes that need them, and calculate
-  // shared points. Points are returned in same order as in global_index_set.
+  // IndexMap. Points are returned in same order as in global_index_set.
   auto [point_index_map, recv_points]
       = Partitioning::distribute_points(mpi_comm, points, global_index_set);
 
+  std::cout << point_index_map.num_ghosts() << "\n";
+
+  std::vector<std::int64_t> local_to_global;
+  std::array<int, 4> num_vertices_local;
+
   // Reverse map
-  std::map<std::int64_t, std::int32_t> global_to_local;
-  for (std::size_t i = 0; i < local_to_global.size(); ++i)
-    global_to_local.insert({local_to_global[i], i});
+  //  std::map<std::int64_t, std::int32_t> global_to_local;
+  // for (std::size_t i = 0; i < local_to_global.size(); ++i)
+  //   global_to_local.insert({local_to_global[i], i});
 
   // Permute received points into local order
   Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
       points_local(recv_points.rows(), recv_points.cols());
-  for (std::size_t i = 0; i < global_index_set.size(); ++i)
-  {
-    int local_idx = global_to_local[global_index_set[i]];
-    points_local.row(local_idx) = recv_points.row(i);
-  }
+  // for (std::size_t i = 0; i < global_index_set.size(); ++i)
+  // {
+  //   int local_idx = global_to_local[global_index_set[i]];
+  //   points_local.row(local_idx) = recv_points.row(i);
+  // }
 
   // Convert cell_nodes to local indexing
   Eigen::Array<std::int32_t, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
       cells_local(cell_nodes.rows(), cell_nodes.cols());
-  for (int c = 0; c < cell_nodes.rows(); ++c)
-    for (int v = 0; v < cell_nodes.cols(); ++v)
-      cells_local(c, v) = global_to_local[cell_nodes(c, v)];
+  // for (int c = 0; c < cell_nodes.rows(); ++c)
+  //   for (int v = 0; v < cell_nodes.cols(); ++v)
+  //     cells_local(c, v) = global_to_local[cell_nodes(c, v)];
 
   // Convert shared points data to local indexing
   std::map<std::int32_t, std::set<int>> shared_points;
-  for (auto& q : shared_points_global)
-    shared_points.insert({global_to_local[q.first], q.second});
+  // for (auto& q : shared_points_global)
+  //   shared_points.insert({global_to_local[q.first], q.second});
 
   return std::tuple(std::move(local_to_global), std::move(shared_points),
                     std::move(cells_local), std::move(points_local),

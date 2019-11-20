@@ -494,9 +494,9 @@ Partitioning::distribute_points(
   MPI_Alltoall(send_sizes.data(), 1, MPI_INT, recv_sizes.data(), 1, MPI_INT,
                comm);
 
-  std::vector<int> recv_offsets = {0};
-  for (int i = 0; i < mpi_size; ++i)
-    recv_offsets.push_back(recv_offsets.back() + recv_sizes[i]);
+  std::vector<int> recv_offsets(mpi_size + 1, 0);
+  std::partial_sum(recv_sizes.begin(), recv_sizes.end(),
+                   recv_offsets.begin() + 1);
   std::vector<std::int64_t> recv_global_index(recv_offsets.back());
 
   // Transfer global indices to the processes holding the points
@@ -524,26 +524,24 @@ Partitioning::distribute_points(
 
   // Get global offsets - each process contains a portion of owned indices
   // of each other process. FIXME: optimise this section
-  std::vector<int> count_recv(mpi_size);
-  MPI_Alltoall(count.data(), 1, MPI_INT, count_recv.data(), 1, MPI_INT, comm);
-  std::vector<int> count_sum = {0};
-  for (std::size_t i = 0; i < count_recv.size(); ++i)
-    count_sum.push_back(count_sum.back() + count_recv[i]);
+  std::vector<int> count_remote(mpi_size);
+  MPI_Alltoall(count.data(), 1, MPI_INT, count_remote.data(), 1, MPI_INT, comm);
+  std::vector<int> count_sum(mpi_size + 1, 0);
+  std::partial_sum(count_remote.begin(), count_remote.end(),
+                   count_sum.begin() + 1);
   const std::int64_t local_size = count_sum.back();
   count_sum[0] = local_size;
   std::cout << "size on process " << mpi_rank << " = " << local_size << "\n";
 
   // Send offsets back to holding processes
-  MPI_Alltoall(count_sum.data(), 1, MPI_INT, count_recv.data(), 1, MPI_INT,
+  MPI_Alltoall(count_sum.data(), 1, MPI_INT, count_remote.data(), 1, MPI_INT,
                comm);
   if (mpi_rank == 0)
   {
-    count_sum = {0};
-    for (std::size_t i = 0; i < count_recv.size(); ++i)
-    {
-      count_sum.push_back(count_sum.back() + count_recv[i]);
-      count_recv[i] = 0;
-    }
+    count_sum[0] = 0;
+    std::partial_sum(count_remote.begin(), count_remote.end(),
+                     count_sum.begin() + 1);
+    std::fill(count_remote.begin(), count_remote.end(), 0);
     std::cout << "total verts = " << count_sum.back() << "!!\n";
   }
   MPI_Bcast(count_sum.data(), mpi_size, MPI_INT, 0, comm);
@@ -551,7 +549,7 @@ Partitioning::distribute_points(
   std::cout << "Offset of process " << mpi_rank << " = " << local_offset
             << "\n";
   for (int i = 0; i < mpi_size; ++i)
-    count_sum[i] += count_recv[i];
+    count_sum[i] += count_remote[i];
 
   // Make new global indexing, taking ghosting into account
   std::vector<std::int64_t> new_global_index0(index_owner.size(), -1);
