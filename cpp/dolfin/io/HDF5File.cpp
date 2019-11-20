@@ -551,28 +551,16 @@ HDF5File::read_mesh_function(std::shared_ptr<const mesh::Mesh> mesh,
 
   // --- Topology ---
 
-  // Get topology data
-  std::string cell_type_str;
-  if (HDF5Interface::has_attribute(_hdf5_file_id, topology_name, "celltype"))
-  {
-    cell_type_str = HDF5Interface::get_attribute<std::string>(
-        _hdf5_file_id, topology_name, "celltype");
-  }
-
-  // Create MeshFunction CellType from string
-  mesh::CellType entity_cell_type = mesh::to_type(cell_type_str);
-
   // Discover size of topology dataset
   const std::vector<std::int64_t> topology_shape
       = HDF5Interface::get_dataset_shape(_hdf5_file_id, topology_name);
 
   // Some consistency checks
 
-  // FIXME: Will break for other non-simplex and higher order geometries
+  // FIXME: Will break for other non-simplex
   const std::int64_t num_global_cells = topology_shape[0];
-  const std::int64_t nodes_per_cell = topology_shape[1];
-
-  const std::size_t dim = mesh::cell_dim(entity_cell_type);
+  const std::size_t vertices_per_cell = topology_shape[1];
+  const std::size_t dim = vertices_per_cell - 1;
 
   if (num_global_cells != mesh->num_entities_global(dim))
   {
@@ -593,20 +581,10 @@ HDF5File::read_mesh_function(std::shared_ptr<const mesh::Mesh> mesh,
   // Wrap data as 2D array
   Eigen::Map<Eigen::Array<std::size_t, Eigen::Dynamic, Eigen::Dynamic,
                           Eigen::RowMajor>>
-      topology_array(topology_data.data(), num_read_cells, nodes_per_cell);
+      topology_array(topology_data.data(), num_read_cells, vertices_per_cell);
 
   std::vector<T> value_data
       = HDF5Interface::read_dataset<T>(_hdf5_file_id, values_name, cell_range);
-
-  // Strip topology data of non-vertex data
-  const std::int32_t vertices_per_cell
-      = mesh::num_cell_vertices(entity_cell_type);
-  Eigen::Array<std::size_t, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
-      topology_vertex_array(num_read_cells, vertices_per_cell);
-  std::vector<int> vertex_indices
-      = mesh::cell_vertex_indices(entity_cell_type, topology_array.cols());
-  for (std::int32_t i = 0; i < vertices_per_cell; ++i)
-    topology_vertex_array.col(i) = topology_array.col(vertex_indices[i]);
 
   // Now send the read data to each process on the basis of the first
   // vertex of the entity, since we do not know the global_index
@@ -1218,6 +1196,7 @@ HDF5File::read_mesh_value_collection(std::shared_ptr<const mesh::Mesh> mesh,
                              "Group \""
                              + name + "\" not found in file");
   }
+
   std::size_t dim = HDF5Interface::get_attribute<std::size_t>(
       _hdf5_file_id, name, "dimension");
   assert(mesh);
