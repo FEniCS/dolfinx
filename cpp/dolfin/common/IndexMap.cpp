@@ -277,11 +277,11 @@ void IndexMap::scatter_fwd_impl(const std::vector<T>& local_data,
 
 #ifdef DEBUG
   // Check size of neighbourhood
-  int n_neighbours(-1), outdegree(-2), weighted(-1);
-  MPI_Dist_graph_neighbors_count(_neighbour_comm, &num_neighbours, &outdegree,
+  int indegree(-1), outdegree(-2), weighted(-1);
+  MPI_Dist_graph_neighbors_count(_neighbour_comm, &indegree, &outdegree,
                                  &weighted);
-  assert(n_neighbours == outdegree);
-  assert(n_neighbours == _forward_sizes.size());
+  assert(indegree == outdegree);
+  assert(indegree == (int)_forward_sizes.size());
 #endif
   const int num_neighbours = _forward_sizes.size();
 
@@ -341,11 +341,11 @@ void IndexMap::scatter_rev_impl(std::vector<T>& local_data,
 
 #ifdef DEBUG
   // Check size of neighbourhood
-  int n_neighbours(-1), outdegree(-2), weighted(-1);
-  MPI_Dist_graph_neighbors_count(_neighbour_comm, &num_neighbours, &outdegree,
+  int indegree(-1), outdegree(-2), weighted(-1);
+  MPI_Dist_graph_neighbors_count(_neighbour_comm, &indegree, &outdegree,
                                  &weighted);
-  assert(n_neighbours == outdegree);
-  assert(n_neighbours == _forward_sizes.size());
+  assert(indegree == outdegree);
+  assert(indegree == (int)_forward_sizes.size());
 #endif
   const int num_neighbours = _forward_sizes.size();
 
