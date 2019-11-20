@@ -149,8 +149,9 @@ const Eigen::Array<PetscInt, Eigen::Dynamic, 1>& IndexMap::ghosts() const
   return _ghosts;
 }
 //-----------------------------------------------------------------------------
-std::map<std::int32_t, std::set<int>> IndexMap::shared_indices() const
+std::map<std::int32_t, std::set<int>> IndexMap::compute_shared_indices() const
 {
+  // Get neighbour processes
   int indegree(-1), outdegree(-2), weighted(-1);
   MPI_Dist_graph_neighbors_count(_neighbour_comm, &indegree, &outdegree,
                                  &weighted);
@@ -166,10 +167,12 @@ std::map<std::int32_t, std::set<int>> IndexMap::shared_indices() const
 
   std::map<std::int32_t, std::set<int>> sh_map;
   int k = 0;
+  // Iterate through each neighbour (i)
   for (std::size_t i = 0; i < _forward_sizes.size(); ++i)
   {
     for (int j = 0; j < _forward_sizes[i]; ++j)
     {
+      // Add map entry from this index to the process it is shared with
       sh_map[_forward_indices[k]].insert(neighbours[i]);
       ++k;
     }
