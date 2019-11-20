@@ -7,7 +7,6 @@
 #include "IndexMap.h"
 #include <algorithm>
 #include <numeric>
-#include <set>
 
 using namespace dolfin;
 using namespace dolfin::common;
@@ -275,11 +274,16 @@ template <typename T>
 void IndexMap::scatter_fwd_impl(const std::vector<T>& local_data,
                                 std::vector<T>& remote_data, int n) const
 {
-  // Get size of neighbourhood
-  int num_neighbours(-1), outdegree(-2), weighted(-1);
+
+#ifdef DEBUG
+  // Check size of neighbourhood
+  int n_neighbours(-1), outdegree(-2), weighted(-1);
   MPI_Dist_graph_neighbors_count(_neighbour_comm, &num_neighbours, &outdegree,
                                  &weighted);
-  assert(num_neighbours == outdegree);
+  assert(n_neighbours == outdegree);
+  assert(n_neighbours == _forward_sizes.size());
+#endif
+  const int num_neighbours = _forward_sizes.size();
 
   const std::int32_t _size_local = size_local();
   assert((int)local_data.size() == n * _size_local);
@@ -335,11 +339,15 @@ void IndexMap::scatter_rev_impl(std::vector<T>& local_data,
   assert((std::int32_t)remote_data.size() == n * num_ghosts());
   local_data.resize(n * size_local(), 0);
 
-  // Get size of neighbourhood
-  int num_neighbours(-1), outdegree(-2), weighted(-1);
+#ifdef DEBUG
+  // Check size of neighbourhood
+  int n_neighbours(-1), outdegree(-2), weighted(-1);
   MPI_Dist_graph_neighbors_count(_neighbour_comm, &num_neighbours, &outdegree,
                                  &weighted);
-  assert(num_neighbours == outdegree);
+  assert(n_neighbours == outdegree);
+  assert(n_neighbours == _forward_sizes.size());
+#endif
+  const int num_neighbours = _forward_sizes.size();
 
   // Compute number of items to send to each process
   std::vector<std::int32_t> send_sizes(num_neighbours, 0);
