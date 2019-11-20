@@ -10,17 +10,17 @@ import sys
 
 import numpy as np
 import pytest
-from dolfin_utils.test.fixtures import tempdir
-from dolfin_utils.test.skips import skip_in_parallel
 
 import dolfin
 import FIAT
 from dolfin import (MPI, BoxMesh, Mesh, MeshEntity, MeshFunction,
                     RectangleMesh, UnitCubeMesh, UnitIntervalMesh,
-                    UnitSquareMesh, cpp)
-from dolfin.cpp.mesh import CellType, is_simplex
+                    UnitSquareMesh, cpp, has_kahip)
+from dolfin.cpp.mesh import CellType, Partitioner, is_simplex
 from dolfin.fem import assemble_scalar
 from dolfin.io import XDMFFile
+from dolfin_utils.test.fixtures import tempdir
+from dolfin_utils.test.skips import skip_in_parallel
 from ufl import dx
 
 assert (tempdir)
@@ -457,7 +457,12 @@ def test_topology_surface(cube):
 
 @pytest.mark.parametrize("mesh_factory", mesh_factories)
 @pytest.mark.parametrize("subset_comm", [MPI.comm_world, new_comm(MPI.comm_world)])
-def test_distribute_mesh(subset_comm, tempdir, mesh_factory):
+@pytest.mark.parametrize(
+    "graph_partitioner",
+    [Partitioner.scotch,
+     pytest.param(Partitioner.kahip,
+                  marks=pytest.mark.skipif(not has_kahip, reason="KaHIP is not available"))])
+def test_distribute_mesh(subset_comm, tempdir, mesh_factory, graph_partitioner):
     func, args = mesh_factory
     mesh = func(*args)
 
@@ -469,7 +474,6 @@ def test_distribute_mesh(subset_comm, tempdir, mesh_factory):
     filename = os.path.join(tempdir, "mesh.xdmf")
     comm = mesh.mpi_comm()
     parts = comm.size
-    partitioner = cpp.mesh.Partitioner.scotch
 
     with XDMFFile(mesh.mpi_comm(), filename, encoding) as file:
         file.write(mesh)
@@ -478,8 +482,10 @@ def test_distribute_mesh(subset_comm, tempdir, mesh_factory):
     # available processes
     with XDMFFile(subset_comm, filename) as file:
         cell_type, points, cells, indices = file.read_mesh_data(subset_comm)
+
     partition_data = cpp.mesh.partition_cells(subset_comm, parts, cell_type,
-                                              cells, partitioner)
+                                              cells, graph_partitioner)
+
     dist_mesh = cpp.mesh.build_from_partition(MPI.comm_world, cell_type, points,
                                               cells, indices, ghost_mode,
                                               partition_data)
@@ -537,3 +543,36 @@ def test_UnitHexMesh_assemble():
     vol = assemble_scalar(1 * dx(mesh))
     vol = MPI.sum(mesh.mpi_comm(), vol)
     assert(vol == pytest.approx(1, rel=1e-9))
+
+
+def test_mesh_order_unchanged_triangle():
+    points = [[0, 0], [1, 0], [1, 1]]
+    cells = [[0, 1, 2]]
+    mesh = Mesh(MPI.comm_world, CellType.triangle, points,
+                cells, [], cpp.mesh.GhostMode.none)
+    assert (mesh.cells()[0] == cells[0]).all()
+
+
+def test_mesh_order_unchanged_quadrilateral():
+    points = [[0, 0], [1, 0], [0, 1], [1, 1]]
+    cells = [[0, 1, 2, 3]]
+    mesh = Mesh(MPI.comm_world, CellType.quadrilateral, points,
+                cells, [], cpp.mesh.GhostMode.none)
+    assert (mesh.cells()[0] == cells[0]).all()
+
+
+def test_mesh_order_unchanged_tetrahedron():
+    points = [[0, 0, 0], [1, 0, 0], [1, 1, 0], [0, 0, 1]]
+    cells = [[0, 1, 2, 3]]
+    mesh = Mesh(MPI.comm_world, CellType.tetrahedron, points,
+                cells, [], cpp.mesh.GhostMode.none)
+    assert (mesh.cells()[0] == cells[0]).all()
+
+
+def test_mesh_order_unchanged_hexahedron():
+    points = [[0, 0, 0], [1, 0, 0], [0, 1, 0], [1, 1, 0],
+              [0, 0, 1], [1, 0, 1], [0, 1, 1], [1, 1, 1]]
+    cells = [[0, 1, 2, 3, 4, 5, 6, 7]]
+    mesh = Mesh(MPI.comm_world, CellType.hexahedron, points,
+                cells, [], cpp.mesh.GhostMode.none)
+    assert (mesh.cells()[0] == cells[0]).all()
