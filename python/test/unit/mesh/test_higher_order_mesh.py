@@ -372,7 +372,7 @@ def test_xdmf_input_tri(datadir):
     with XDMFFile(MPI.comm_world, os.path.join(datadir, "mesh.xdmf")) as xdmf:
         mesh = xdmf.read_mesh(GhostMode.none)
     surface = assemble_scalar(1 * dx(mesh))
-    assert MPI.sum(mesh.mpi_comm(), surface) == pytest.approx(4 * np.pi, rel=1e-5)
+    assert MPI.sum(mesh.mpi_comm(), surface) == pytest.approx(4 * np.pi, rel=1e-4)
 
 
 @skip_in_parallel
