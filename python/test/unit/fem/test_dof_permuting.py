@@ -327,8 +327,7 @@ def test_hexahedron_dof_ordering(space_type):
 
 @skip_in_parallel
 @pytest.mark.parametrize('cell_type', [CellType.triangle, CellType.tetrahedron,
-                                       CellType.quadrilateral])
-#                                       CellType.quadrilateral, CellType.hexahedron])
+                                       CellType.quadrilateral, CellType.hexahedron])
 def test_facet_normals(cell_type):
     """Test that FacetNormal is outward facing"""
     if cell_type == CellType.triangle:
