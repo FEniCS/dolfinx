@@ -9,9 +9,11 @@ from random import shuffle
 
 import numpy as np
 import pytest
+from dolfin_utils.test.skips import skip_in_parallel
 
-from dolfin import MPI, FunctionSpace, cpp, fem
+from dolfin import MPI, FunctionSpace, cpp, fem, Mesh, FacetNormal, Function
 from dolfin.cpp.mesh import CellType
+from ufl import inner, grad, ds
 
 xfail = pytest.mark.xfail(strict=True)
 
@@ -321,3 +323,66 @@ def test_hexahedron_dof_ordering(space_type):
                 assert np.allclose(j, faces[i])
             else:
                 faces[i] = j
+
+
+@skip_in_parallel
+@pytest.mark.parametrize('cell_type', [CellType.triangle, CellType.tetrahedron,
+                                       CellType.quadrilateral, CellType.hexahedron])
+def test_facet_normals(cell_type):
+    """Test that FacetNormal is outward facing"""
+    if cell_type == CellType.triangle:
+        points = np.array([[0., 0.], [1., 0.], [0., 1.]])
+        num_facets = 3
+    elif cell_type == CellType.tetrahedron:
+        points = np.array([[0., 0., 0.], [1., 0., 0.], [0., 1., 0.], [0., 0., 1.]])
+        num_facets = 4
+    elif cell_type == CellType.quadrilateral:
+        points = np.array([[0., 0.], [1., 0.], [0., 1.], [1., 1.]])
+        num_facets = 4
+    elif cell_type == CellType.hexahedron:
+        points = np.array([[0., 0., 0.], [1., 0., 0.], [0., 1., 0.],
+                           [1., 1., 0.], [0., 0., 1.], [1., 0., 1.],
+                           [0., 1., 1.], [1., 1., 1.]])
+        num_facets = 6
+    num_points = len(points)
+
+    order = list(range(num_points))
+    for count in range(10):
+        # Randomly number the points and create the mest
+        shuffle(order)
+        ordered_points = np.zeros(points.shape)
+        for i, j in enumerate(order):
+            ordered_points[j] = points[i]
+        cells = np.array([order])
+        mesh = Mesh(MPI.comm_world, cell_type, ordered_points, cells,
+                    [], cpp.mesh.GhostMode.none)
+        mesh.geometry.coord_mapping = fem.create_coordinate_map(mesh)
+        V = FunctionSpace(mesh, ("Lagrange", 2))
+        normal = FacetNormal(mesh)
+
+        # For each facet, check that the inner product of the normal and
+        #  the vector that has a positive normal component on only that facet
+        # is positive
+        for i in range(num_facets):
+            v = Function(V)
+            if cell_type == CellType.triangle:
+                co = points[i]
+                v.interpolate(lambda x: (x[0] * (x[0] / 2 - co[0])
+                                         + x[1] * (x[1] / 2 - co[1])))
+            elif cell_type == CellType.tetrahedron:
+                co = points[i]
+                v.interpolate(lambda x: (x[0] * (x[0] / 2 - co[0])
+                                         + x[1] * (x[1] / 2 - co[1])
+                                         + x[2] * (x[2] / 2 - co[2])))
+            elif cell_type == CellType.quadrilateral:
+                c = i // 2
+                d = i % 2
+                v.interpolate(lambda x: x[c] ** 2 / 2 - d * x[c])
+            elif cell_type == CellType.hexahedron:
+                c = i // 2
+                d = i % 2
+                v.interpolate(lambda x: x[c] ** 2 / 2 - d * x[c])
+
+            a = inner(grad(v), normal) * ds
+            result = fem.assemble_scalar(a)
+            assert result > 0
