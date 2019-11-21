@@ -168,8 +168,10 @@ void remap_meshfunction_data(mesh::MeshFunction<T>& meshfunction,
   // vertex of the entity, since we do not know the global_index
   const int cell_dim = meshfunction.dim();
   const auto mesh = meshfunction.mesh();
-  // FIXME : get vertices_per_entity properly
-  const int vertices_per_entity = meshfunction.dim() + 1;
+
+  mesh::CellType cell_type = mesh::cell_entity_type((*mesh).cell_type(), cell_dim);
+  const int vertices_per_entity = mesh::num_cell_vertices(cell_type);
+
   const MPI_Comm comm = mesh->mpi_comm();
   const std::size_t num_processes = MPI::size(comm);
 

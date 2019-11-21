@@ -26,10 +26,10 @@ if (POLICY CMP0075)
 endif()
 
 #------------------------------------------------------------------------------
-# Use C++14
-set(CMAKE_CXX_STANDARD 14)
+# Use C++17
+set(CMAKE_CXX_STANDARD 17)
 
-# Require C++14
+# Require C++17
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
 # Do not enable compler-specific extensions
@@ -88,6 +88,7 @@ add_feature_info(CMAKE_INSTALL_RPATH_USE_LINK_PATH CMAKE_INSTALL_RPATH_USE_LINK_
 set(OPTIONAL_PACKAGES "")
 list(APPEND OPTIONAL_PACKAGES "SLEPc")
 list(APPEND OPTIONAL_PACKAGES "ParMETIS")
+list(APPEND OPTIONAL_PACKAGES "KaHIP")
 
 # Add options
 foreach (OPTIONAL_PACKAGE ${OPTIONAL_PACKAGES})
@@ -105,7 +106,7 @@ endforeach()
 # Check for MPI
 
 # FIXME: Should we set CMake to use the discovered MPI compiler wrappers?
-find_package(MPI REQUIRED)
+find_package(MPI 3 REQUIRED)
 
 #------------------------------------------------------------------------------
 # Compiler flags
@@ -233,6 +234,15 @@ if (DOLFIN_ENABLE_PARMETIS)
   set_package_properties(ParMETIS PROPERTIES TYPE OPTIONAL
     DESCRIPTION "Parallel Graph Partitioning and Fill-reducing Matrix Ordering"
     URL "http://glaros.dtc.umn.edu/gkhome/metis/parmetis/overview"
+    PURPOSE "Enables parallel graph partitioning")
+endif()
+
+# Check for KaHIP
+if (DOLFIN_ENABLE_KAHIP)
+  find_package(KaHIP)
+  set_package_properties(KaHIP PROPERTIES TYPE OPTIONAL
+    DESCRIPTION "A family of graph partitioning programs"
+    URL "http://algo2.iti.kit.edu/documents/kahip/index.html"
     PURPOSE "Enables parallel graph partitioning")
 endif()
 

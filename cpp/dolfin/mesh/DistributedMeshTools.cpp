@@ -51,9 +51,9 @@ compute_entity_numbering(const Mesh& mesh, int d)
     // FIXME: Should be redundant?
     shared_entities.clear();
     global_entity_indices = mesh.topology().global_indices(d);
-    return std::make_tuple(std::move(global_entity_indices),
-                           std::move(shared_entities),
-                           mesh.num_entities_global(d));
+    return std::tuple(std::move(global_entity_indices),
+                      std::move(shared_entities),
+                      mesh.num_entities_global(d));
   }
 
   // MPI communicator
@@ -300,8 +300,8 @@ compute_entity_numbering(const Mesh& mesh, int d)
     }
   }
 
-  return std::make_tuple(std::move(global_entity_indices),
-                         std::move(shared_entities), num_global);
+  return std::tuple(std::move(global_entity_indices),
+                    std::move(shared_entities), num_global);
 }
 //-----------------------------------------------------------------------------
 template <typename T>
@@ -402,15 +402,12 @@ void DistributedMeshTools::number_entities(const Mesh& mesh, int d)
     return;
   }
 
-  // Get shared entities map
-  std::map<std::int32_t, std::set<std::int32_t>>& shared_entities
-      = _mesh.topology().shared_entities(d);
-
   // Number entities
-  std::vector<std::int64_t> global_entity_indices;
-  std::size_t num_global_entities;
-  std::tie(global_entity_indices, shared_entities, num_global_entities)
+  auto [global_entity_indices, shared_entities, num_global_entities]
       = compute_entity_numbering(mesh, d);
+
+  // Set shared entities
+  _mesh.topology().set_shared_entities(d, shared_entities);
 
   // Set global entity numbers in mesh
   _mesh.topology().set_num_entities_global(d, num_global_entities);
@@ -439,7 +436,7 @@ void DistributedMeshTools::init_facet_cell_connections(Mesh& mesh)
   Eigen::Array<std::int32_t, Eigen::Dynamic, 1> num_global_neighbors(
       mesh.num_entities(D - 1));
 
-  std::map<std::int32_t, std::set<std::int32_t>>& shared_facets
+  const std::map<std::int32_t, std::set<std::int32_t>>& shared_facets
       = mesh.topology().shared_entities(D - 1);
 
   // Check if no ghost cells

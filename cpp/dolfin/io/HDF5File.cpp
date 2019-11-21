@@ -309,7 +309,7 @@ void HDF5File::write(const mesh::Mesh& mesh, int cell_dim,
       int num_nodes_per_cell = cell_points.size(0);
       topological_data.reserve(num_nodes_per_cell * mesh.num_entities(tdim));
 
-      int num_nodes = mesh.coordinate_dofs().cell_permutation().size();
+      int num_nodes = mesh.coordinate_dofs().entity_points().size(0);
       const std::vector<std::uint8_t> perm
           = io::cells::dolfin_to_vtk(mesh.cell_type(), num_nodes);
 
@@ -329,7 +329,7 @@ void HDF5File::write(const mesh::Mesh& mesh, int cell_dim,
       const auto& global_vertices = mesh.topology().global_indices(0);
 
       // Permutation to VTK ordering
-      int num_nodes = mesh.coordinate_dofs().cell_permutation().size();
+      int num_nodes = mesh.coordinate_dofs().entity_points().size(0);
       const std::vector<std::uint8_t> perm
           = io::cells::dolfin_to_vtk(mesh.cell_type(), num_nodes);
 
@@ -1366,15 +1366,8 @@ mesh::Mesh HDF5File::read_mesh(const std::string data_path,
                                bool use_partition_from_file,
                                const mesh::GhostMode ghost_mode) const
 {
-  mesh::CellType cell_type;
-  Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor> points;
-  Eigen::Array<std::int64_t, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
-      cells;
-  std::vector<std::int64_t> global_cell_indices;
-  std::vector<std::int64_t> cell_distribution;
-
   // Read local mesh data
-  std::tie(cell_type, points, cells, global_cell_indices, cell_distribution)
+  auto [cell_type, points, cells, global_cell_indices, cell_distribution]
       = read_mesh_data(data_path);
 
   if (use_partition_from_file)
@@ -1615,9 +1608,9 @@ HDF5File::read_mesh_data(const std::string data_path) const
       Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>>
       points(coordinates_data.data(), num_local_points, gdim);
 
-  return std::make_tuple(cell_type, std::move(points), std::move(cells),
-                         std::move(global_cell_indices),
-                         std::move(cell_distribution));
+  return std::tuple(cell_type, std::move(points), std::move(cells),
+                    std::move(global_cell_indices),
+                    std::move(cell_distribution));
 }
 //-----------------------------------------------------------------------------
 bool HDF5File::has_dataset(const std::string dataset_name) const

@@ -74,6 +74,7 @@ void mesh(py::module& m)
   // dolfin::mesh::Partitioner enums
   py::enum_<dolfin::mesh::Partitioner>(m, "Partitioner")
       .value("scotch", dolfin::mesh::Partitioner::scotch)
+      .value("kahip", dolfin::mesh::Partitioner::kahip)
       .value("parmetis", dolfin::mesh::Partitioner::parmetis);
 
   // dolfin::mesh::CoordinateDofs class
@@ -149,8 +150,7 @@ void mesh(py::module& m)
                                               py::none());
            },
            py::return_value_policy::reference_internal)
-      .def("shared_entities",
-           py::overload_cast<int>(&dolfin::mesh::Topology::shared_entities))
+      .def("shared_entities", &dolfin::mesh::Topology::shared_entities)
       .def("str", &dolfin::mesh::Topology::str);
 
   // dolfin::mesh::Mesh
