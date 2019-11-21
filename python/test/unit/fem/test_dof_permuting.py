@@ -11,9 +11,9 @@ import numpy as np
 import pytest
 from dolfin_utils.test.skips import skip_in_parallel
 
-from dolfin import MPI, FunctionSpace, cpp, fem, Mesh, FacetNormal, Function
+from dolfin import MPI, FunctionSpace, cpp, fem, Mesh, FacetNormal, Function, VectorFunctionSpace
 from dolfin.cpp.mesh import CellType
-from ufl import inner, grad, ds
+from ufl import inner, ds
 
 xfail = pytest.mark.xfail(strict=True)
 
@@ -327,7 +327,8 @@ def test_hexahedron_dof_ordering(space_type):
 
 @skip_in_parallel
 @pytest.mark.parametrize('cell_type', [CellType.triangle, CellType.tetrahedron,
-                                       CellType.quadrilateral, CellType.hexahedron])
+                                       CellType.quadrilateral])
+#                                       CellType.quadrilateral, CellType.hexahedron])
 def test_facet_normals(cell_type):
     """Test that FacetNormal is outward facing"""
     if cell_type == CellType.triangle:
@@ -357,7 +358,8 @@ def test_facet_normals(cell_type):
         mesh = Mesh(MPI.comm_world, cell_type, ordered_points, cells,
                     [], cpp.mesh.GhostMode.none)
         mesh.geometry.coord_mapping = fem.create_coordinate_map(mesh)
-        V = FunctionSpace(mesh, ("Lagrange", 2))
+
+        V = VectorFunctionSpace(mesh, ("Lagrange", 1))
         normal = FacetNormal(mesh)
 
         # For each facet, check that the inner product of the normal and
@@ -367,22 +369,23 @@ def test_facet_normals(cell_type):
             v = Function(V)
             if cell_type == CellType.triangle:
                 co = points[i]
-                v.interpolate(lambda x: (x[0] * (x[0] / 2 - co[0])
-                                         + x[1] * (x[1] / 2 - co[1])))
+                v.interpolate(lambda x: (x[0] - co[0], x[1] - co[1]))
             elif cell_type == CellType.tetrahedron:
                 co = points[i]
-                v.interpolate(lambda x: (x[0] * (x[0] / 2 - co[0])
-                                         + x[1] * (x[1] / 2 - co[1])
-                                         + x[2] * (x[2] / 2 - co[2])))
+                v.interpolate(lambda x: (x[0] - co[0], x[1] - co[1], x[2] - co[2]))
             elif cell_type == CellType.quadrilateral:
-                c = i // 2
-                d = i % 2
-                v.interpolate(lambda x: x[c] ** 2 / 2 - d * x[c])
+                if i // 2 == 0:
+                    v.interpolate(lambda x: (x[0] - i % 2, 0 * x[1]))
+                else:
+                    v.interpolate(lambda x: (0 * x[0], x[1] - i % 2))
             elif cell_type == CellType.hexahedron:
-                c = i // 2
-                d = i % 2
-                v.interpolate(lambda x: x[c] ** 2 / 2 - d * x[c])
+                if i // 2 == 0:
+                    v.interpolate(lambda x: (x[0] - i % 2, 0 * x[1], 0 * x[2]))
+                elif i // 2 == 1:
+                    v.interpolate(lambda x: (0 * x[0], x[1] - i % 2, 0 * x[2]))
+                else:
+                    v.interpolate(lambda x: (0 * x[0], 0 * x[1], x[2] - i % 2))
 
-            a = inner(grad(v), normal) * ds
+            a = inner(v, normal) * ds
             result = fem.assemble_scalar(a)
             assert np.real(result) > 0
