@@ -83,15 +83,15 @@ public:
   ///                             function.
   /// @param[in] v The function to be interpolated
   void interpolate(
-      Eigen::Ref<Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1>> coefficients,
+      Eigen::Ref<Eigen::Array<PetscScalar, Eigen::Dynamic, 1>> coefficients,
       const Function& v) const;
 
   /// Interpolation function
   using interpolation_function = std::function<void(
       Eigen::Ref<Eigen::Array<PetscScalar, Eigen::Dynamic, Eigen::Dynamic,
                               Eigen::RowMajor>>,
-      const Eigen::Ref<const Eigen::Array<double, Eigen::Dynamic,
-                                          Eigen::Dynamic, Eigen::RowMajor>>&)>;
+      const Eigen::Ref<
+          const Eigen::Array<double, Eigen::Dynamic, 3, Eigen::RowMajor>>&)>;
 
   /// Interpolate an expression into this function space, filling the
   /// array of expansion coefficients associated with this function
@@ -103,12 +103,11 @@ public:
   /// @param[in] f The function to be interpolated
   /// @endcond
   void interpolate(
-      Eigen::Ref<Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1>> coefficients,
+      Eigen::Ref<Eigen::Array<PetscScalar, Eigen::Dynamic, 1>> coefficients,
       const std::function<Eigen::Array<PetscScalar, Eigen::Dynamic,
                                        Eigen::Dynamic, Eigen::RowMajor>(
-          const Eigen::Ref<const Eigen::Array<
-              double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>>&)>& f)
-      const;
+          const Eigen::Ref<const Eigen::Array<double, 3, Eigen::Dynamic,
+                                              Eigen::RowMajor>>&)>& f) const;
 
   /// Interpolate an expression into this function space, filling the
   /// array of expansion coefficients associated with this function
@@ -121,7 +120,7 @@ public:
   ///                             the calling function.
   /// @param[in] f The function to be interpolated
   void interpolate_c(
-      Eigen::Ref<Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1>> coefficients,
+      Eigen::Ref<Eigen::Array<PetscScalar, Eigen::Dynamic, 1>> coefficients,
       const interpolation_function& f) const;
 
   /// Extract subspace for component
@@ -165,8 +164,8 @@ public:
   /// function is typically used by preconditioners that require the
   /// spatial coordinates of dofs, for example for re-partitioning or
   /// nullspace computations.
-  /// @return The dof coordinates [([0, y0], [x1, y1], . . .)
-  Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
+  /// @return The dof coordinates [([x0, y0, z0], [x1, y1, z1], ...)
+  Eigen::Array<double, Eigen::Dynamic, 3, Eigen::RowMajor>
   tabulate_dof_coordinates() const;
 
   /// Set dof entries in vector to value*x[i], where [x][i] is the
@@ -175,10 +174,10 @@ public:
   /// typically used to construct the null space of a matrix operator,
   /// e.g. rigid body rotations.
   ///
-  /// @param[in] x The vector to set
+  /// @param[in,out] x The vector to set
   /// @param[in] value The value to multiply to coordinate by
   /// @param[in] component The coordinate index
-  void set_x(Eigen::Ref<Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1>> x,
+  void set_x(Eigen::Ref<Eigen::Array<PetscScalar, Eigen::Dynamic, 1>> x,
              PetscScalar value, int component) const;
 
   /// Unique identifier
@@ -197,9 +196,9 @@ private:
   // Interpolate data. Fills coefficients using 'values', which are the
   // values of an expression at each dof.
   void interpolate(
-      Eigen::Ref<Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1>> coefficients,
-      const Eigen::Ref<const Eigen::Matrix<PetscScalar, Eigen::Dynamic,
-                                           Eigen::Dynamic, Eigen::RowMajor>>&
+      Eigen::Ref<Eigen::Array<PetscScalar, Eigen::Dynamic, 1>> coefficients,
+      const Eigen::Ref<const Eigen::Array<PetscScalar, Eigen::Dynamic,
+                                          Eigen::Dynamic, Eigen::RowMajor>>&
           values) const;
 
   // The mesh
@@ -213,7 +212,7 @@ private:
 
   // General interpolation from any Function on any mesh
   void interpolate_from_any(
-      Eigen::Ref<Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1>>
+      Eigen::Ref<Eigen::Array<PetscScalar, Eigen::Dynamic, 1>>
           expansion_coefficients,
       const Function& v) const;
 

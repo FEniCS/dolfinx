@@ -9,12 +9,11 @@ import pytest
 from petsc4py import PETSc
 
 import ufl
-from dolfin import MeshFunction, MPI, fem
+from dolfin import MPI, MeshFunction, fem
 from dolfin.cpp.mesh import GhostMode
-from dolfin.function import Function, TestFunction, TrialFunction
-from dolfin.functionspace import FunctionSpace
+from dolfin.function import Function, FunctionSpace
 from dolfin.generation import UnitSquareMesh
-from ufl import avg, inner, Measure
+from ufl import Measure, avg, inner
 
 
 def dx_from_ufl(mesh):
@@ -78,7 +77,7 @@ def dS_from_measure_and_subdomain(mesh):
 def test_ghost_mesh_assembly(mode, dx, ds):
     mesh = UnitSquareMesh(MPI.comm_world, 12, 12, ghost_mode=mode)
     V = FunctionSpace(mesh, ("Lagrange", 1))
-    u, v = TrialFunction(V), TestFunction(V)
+    u, v = ufl.TrialFunction(V), ufl.TestFunction(V)
     dx = dx(mesh)
     ds = ds(mesh)
 
@@ -119,7 +118,7 @@ def test_ghost_mesh_assembly(mode, dx, ds):
 def test_ghost_mesh_dS_assembly(mode, dS):
     mesh = UnitSquareMesh(MPI.comm_world, 12, 12, ghost_mode=mode)
     V = FunctionSpace(mesh, ("Lagrange", 1))
-    u, v = TrialFunction(V), TestFunction(V)
+    u, v = ufl.TrialFunction(V), ufl.TestFunction(V)
     dS = dS(mesh)
 
     a = inner(avg(u), avg(v)) * dS

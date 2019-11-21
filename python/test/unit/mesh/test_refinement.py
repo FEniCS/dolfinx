@@ -43,4 +43,4 @@ def test_refinement_gdim():
     """Test that 2D refinement is still 2D"""
     mesh = UnitSquareMesh(MPI.comm_world, 3, 4)
     mesh2 = refine(mesh, True)
-    assert mesh.geometric_dimension() == mesh2.geometric_dimension()
+    assert mesh.geometry.dim == mesh2.geometry.dim

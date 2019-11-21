@@ -139,26 +139,26 @@ def test_eval(R, V, W, Q, mesh):
     u3 = Function(Q)
 
     def e1(x):
-        return x[:, 0] + x[:, 1] + x[:, 2]
+        return x[0] + x[1] + x[2]
 
     def e2(x):
-        values = np.empty((x.shape[0], 3))
-        values[:, 0] = x[:, 0] + x[:, 1] + x[:, 2]
-        values[:, 1] = x[:, 0] - x[:, 1] - x[:, 2]
-        values[:, 2] = x[:, 0] + x[:, 1] + x[:, 2]
+        values = np.empty((3, x.shape[1]))
+        values[0] = x[0] + x[1] + x[2]
+        values[1] = x[0] - x[1] - x[2]
+        values[2] = x[0] + x[1] + x[2]
         return values
 
     def e3(x):
-        values = np.empty((x.shape[0], 9))
-        values[:, 0] = x[:, 0] + x[:, 1] + x[:, 2]
-        values[:, 1] = x[:, 0] - x[:, 1] - x[:, 2]
-        values[:, 2] = x[:, 0] + x[:, 1] + x[:, 2]
-        values[:, 3] = x[:, 0]
-        values[:, 4] = x[:, 1]
-        values[:, 5] = x[:, 2]
-        values[:, 6] = -x[:, 0]
-        values[:, 7] = -x[:, 1]
-        values[:, 8] = -x[:, 2]
+        values = np.empty((9, x.shape[1]))
+        values[0] = x[0] + x[1] + x[2]
+        values[1] = x[0] - x[1] - x[2]
+        values[2] = x[0] + x[1] + x[2]
+        values[3] = x[0]
+        values[4] = x[1]
+        values[5] = x[2]
+        values[6] = -x[0]
+        values[7] = -x[1]
+        values[8] = -x[2]
         return values
 
     u0.vector.set(1.0)
@@ -215,7 +215,7 @@ def test_scalar_conditions(R):
 @pytest.mark.skip
 def test_interpolation_mismatch_rank0(W):
     def f(x):
-        return np.ones(x.shape[0])
+        return np.ones(x.shape[1])
     u = Function(W)
     with pytest.raises(RuntimeError):
         u.interpolate(f)
@@ -224,7 +224,7 @@ def test_interpolation_mismatch_rank0(W):
 @pytest.mark.skip
 def test_interpolation_mismatch_rank1(W):
     def f(values, x):
-        return np.ones((x.shape[0], 2))
+        return np.ones((2, x.shape[1]))
 
     u = Function(W)
     with pytest.raises(RuntimeError):
@@ -237,7 +237,7 @@ def test_interpolation_rank0(V):
             self.t = 0.0
 
         def eval(self, x):
-            return np.full(x.shape[0], self.t)
+            return np.full(x.shape[1], self.t)
 
     f = MyExpression()
     f.t = 1.0
@@ -271,10 +271,10 @@ def xtest_near_evaluations(R, mesh):
 
 def test_interpolation_rank1(W):
     def f(x):
-        values = np.empty((x.shape[0], 3))
-        values[:, 0] = 1.0
-        values[:, 1] = 1.0
-        values[:, 2] = 1.0
+        values = np.empty((3, x.shape[1]))
+        values[0] = 1.0
+        values[1] = 1.0
+        values[2] = 1.0
         return values
 
     w = Function(W)
@@ -287,35 +287,33 @@ def test_interpolation_rank1(W):
 @skip_in_parallel
 def test_interpolation_old(V, W, mesh):
     def f0(x):
-        return np.ones(x.shape[0])
+        return np.ones(x.shape[1])
 
     def f1(x):
-        return np.ones((x.shape[0], mesh.geometry.dim))
+        return np.ones((mesh.geometry.dim, x.shape[1]))
 
     # Scalar interpolation
     f = Function(V)
     f.interpolate(f0)
-    assert round(f.vector.norm(PETSc.NormType.N1) - mesh.num_entities(0),
-                 7) == 0
+    assert round(f.vector.norm(PETSc.NormType.N1) - mesh.num_entities(0), 7) == 0
 
     # Vector interpolation
     f = Function(W)
     f.interpolate(f1)
-    assert round(f.vector.norm(PETSc.NormType.N1) - 3 * mesh.num_entities(0),
-                 7) == 0
+    assert round(f.vector.norm(PETSc.NormType.N1) - 3 * mesh.num_entities(0), 7) == 0
 
 
 @skip_if_complex
 def test_cffi_expression(V):
     code_h = """
-    void eval(double* values, int num_points, int value_size, const double* x, int gdim);
+    void eval(double* values, int num_points, int value_size, const double* x);
     """
 
     code_c = """
-    void eval(double* values, int num_points, int value_size, const double* x, int gdim)
+    void eval(double* values, int num_points, int value_size, const double* x)
     {
       for (int i = 0; i < num_points; ++i)
-        values[i*value_size + 0] = x[i*gdim + 0] + x[i*gdim + 1];
+        values[i*value_size + 0] = x[i*3 + 0] + x[i*3 + 1];
     }
     """
     module = "_expr_eval" + str(MPI.comm_world.rank)
@@ -338,7 +336,7 @@ def test_cffi_expression(V):
     f1.interpolate(int(eval_ptr))
 
     def expr_eval2(x):
-        return x[:, 0] + x[:, 1]
+        return x[0] + x[1]
 
     f2 = Function(V)
     f2.interpolate(expr_eval2)

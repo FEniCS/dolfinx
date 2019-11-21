@@ -21,7 +21,7 @@ TimeLogger::TimeLogger() : _mpi_comm(MPI_COMM_WORLD)
 void TimeLogger::register_timing(std::string task,
                                  std::tuple<double, double, double> elapsed)
 {
-  assert(elapsed >= std::make_tuple(double(0.0), double(0.0), double(0.0)));
+  assert(elapsed >= std::tuple(double(0.0), double(0.0), double(0.0)));
 
   // Print a message
   std::stringstream line;
@@ -31,7 +31,7 @@ void TimeLogger::register_timing(std::string task,
   DLOG(INFO) << line.str();
 
   // Store values for summary
-  const auto timing = std::tuple_cat(std::make_tuple(std::size_t(1)), elapsed);
+  const auto timing = std::tuple_cat(std::tuple(std::size_t(1)), elapsed);
   auto it = _timings.find(task);
   if (it == _timings.end())
   {

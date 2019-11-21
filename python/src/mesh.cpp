@@ -74,6 +74,7 @@ void mesh(py::module& m)
   // dolfin::mesh::Partitioner enums
   py::enum_<dolfin::mesh::Partitioner>(m, "Partitioner")
       .value("scotch", dolfin::mesh::Partitioner::scotch)
+      .value("kahip", dolfin::mesh::Partitioner::kahip)
       .value("parmetis", dolfin::mesh::Partitioner::parmetis);
 
   // dolfin::mesh::CoordinateDofs class
@@ -149,8 +150,7 @@ void mesh(py::module& m)
                                               py::none());
            },
            py::return_value_policy::reference_internal)
-      .def("shared_entities",
-           py::overload_cast<int>(&dolfin::mesh::Topology::shared_entities))
+      .def("shared_entities", &dolfin::mesh::Topology::shared_entities)
       .def("str", &dolfin::mesh::Topology::str);
 
   // dolfin::mesh::Mesh
@@ -376,6 +376,22 @@ void mesh(py::module& m)
          dolfin::mesh::Partitioner partitioner) {
         return dolfin::mesh::Partitioning::partition_cells(
             comm.get(), nparts, cell_type, cells, partitioner);
+      });
+
+  m.def(
+      "build_distributed_mesh",
+      [](const MPICommWrapper comm, dolfin::mesh::CellType cell_type,
+         const Eigen::Ref<const Eigen::Array<
+             double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>>& points,
+         const Eigen::Ref<const Eigen::Array<std::int64_t, Eigen::Dynamic,
+                                             Eigen::Dynamic, Eigen::RowMajor>>&
+             cells,
+         const std::vector<std::int64_t>& global_cell_indices,
+         const dolfin::mesh::GhostMode ghost_mode,
+         const dolfin::mesh::Partitioner graph_partitioner) {
+        return dolfin::mesh::Partitioning::build_distributed_mesh(
+            comm.get(), cell_type, points, cells, global_cell_indices,
+            ghost_mode, graph_partitioner);
       });
 
   m.def(

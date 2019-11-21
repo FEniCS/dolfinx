@@ -8,15 +8,16 @@ import numpy as np
 import pytest
 from petsc4py import PETSc
 
+
 from dolfin_utils.test.skips import skip_in_parallel
-from dolfin import (MPI, DirichletBC, fem, Function, FunctionSpace, TestFunction,
-                    TrialFunction, UnitCubeMesh, UnitIntervalMesh,
-                    UnitSquareMesh)
+from dolfin import (MPI, DirichletBC, fem, Function, FunctionSpace,
+                    UnitCubeMesh, UnitIntervalMesh, UnitSquareMesh)
 from dolfin.cpp.mesh import CellType
 from dolfin.cpp.refinement import refine
 from dolfin.fem import (apply_lifting, assemble_matrix, assemble_scalar,
                         assemble_vector, set_bc)
-from ufl import SpatialCoordinate, div, dx, grad, inner
+from ufl import (SpatialCoordinate, TestFunction, TrialFunction, div, dx, grad,
+                 inner)
 
 
 @pytest.mark.parametrize("n", [2, 3, 4])
@@ -50,8 +51,8 @@ def test_manufactured_poisson(n, mesh, component):
     L = inner(f, v) * dx
 
     u_bc = Function(V)
-    u_bc.interpolate(lambda x: x[:, component]**n)
-    bc = DirichletBC(V, u_bc, lambda x: np.full(x.shape[0], True))
+    u_bc.interpolate(lambda x: x[component]**n)
+    bc = DirichletBC(V, u_bc, lambda x: np.full(x.shape[1], True))
 
     b = assemble_vector(L)
     apply_lifting(b, [a], [[bc]])

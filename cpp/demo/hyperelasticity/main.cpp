@@ -109,7 +109,7 @@ int main(int argc, char* argv[])
   mesh->geometry().coord_mapping = cmap;
 
   auto u_rotation = std::make_shared<function::Function>(V);
-  u_rotation->interpolate([](auto x) {
+  u_rotation->interpolate([](auto& x) {
     const double scale = 0.005;
 
     // Center of rotation
@@ -119,27 +119,27 @@ int main(int argc, char* argv[])
     // Large angle of rotation (60 degrees)
     double theta = 1.04719755;
 
-    Eigen::Array<PetscScalar, Eigen::Dynamic, 3, Eigen::RowMajor> values(
-        x.rows(), 3);
-    for (int i = 0; i < x.rows(); ++i)
+    Eigen::Array<PetscScalar, 3, Eigen::Dynamic, Eigen::RowMajor> values(
+        3, x.cols());
+    for (int i = 0; i < x.cols(); ++i)
     {
       // New coordinates
-      double y = y0 + (x(1, 1) - y0) * cos(theta) - (x(i, 2) - z0) * sin(theta);
-      double z = z0 + (x(i, 1) - y0) * sin(theta) + (x(i, 2) - z0) * cos(theta);
+      double y = y0 + (x(1, i) - y0) * cos(theta) - (x(2, i) - z0) * sin(theta);
+      double z = z0 + (x(1, i) - y0) * sin(theta) + (x(2, i) - z0) * cos(theta);
 
       // Rotate at right end
-      values(i, 0) = 0.0;
-      values(i, 1) = scale * (y - x(i, 1));
-      values(i, 2) = scale * (z - x(i, 2));
+      values(0, i) = 0.0;
+      values(1, i) = scale * (y - x(1, i));
+      values(2, i) = scale * (z - x(2, i));
     }
 
     return values;
   });
 
   auto u_clamp = std::make_shared<function::Function>(V);
-  u_clamp->interpolate([](auto x) {
-    return Eigen::Array<PetscScalar, Eigen::Dynamic, 3, Eigen::RowMajor>::Zero(
-        x.rows(), 3);
+  u_clamp->interpolate([](auto& x) {
+    return Eigen::Array<PetscScalar, 3, Eigen::Dynamic, Eigen::RowMajor>::Zero(
+        3, x.cols());
   });
 
   L->set_coefficients({{"u", u}});
@@ -149,9 +149,9 @@ int main(int argc, char* argv[])
   auto u0 = std::make_shared<function::Function>(V);
   std::vector<std::shared_ptr<const fem::DirichletBC>> bcs
       = {std::make_shared<fem::DirichletBC>(
-             V, u_clamp, [](auto x) { return x.col(0) < DBL_EPSILON; }),
-         std::make_shared<fem::DirichletBC>(V, u_rotation, [](auto x) {
-           return (x.col(0) - 1.0).abs() < DBL_EPSILON;
+             V, u_clamp, [](auto x) { return x.row(0) < DBL_EPSILON; }),
+         std::make_shared<fem::DirichletBC>(V, u_rotation, [](auto& x) {
+           return (x.row(0) - 1.0).abs() < DBL_EPSILON;
          })};
 
   HyperElasticProblem problem(u, L, a, bcs);

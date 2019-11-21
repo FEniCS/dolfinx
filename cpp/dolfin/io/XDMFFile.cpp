@@ -1436,8 +1436,8 @@ XDMFFile::read_mesh_data(MPI_Comm comm) const
     std::iota(global_cell_indices.begin(), global_cell_indices.end(),
               cell_index_offset);
 
-    return std::make_tuple(cell_type, std::move(points), std::move(cells),
-                           std::move(global_cell_indices));
+    return std::tuple(cell_type, std::move(points), std::move(cells),
+                      std::move(global_cell_indices));
   }
   else
   {
@@ -1451,22 +1451,15 @@ XDMFFile::read_mesh_data(MPI_Comm comm) const
         cells(num_local_cells, npoint_per_cell);
     std::vector<std::int64_t> global_cell_indices(num_local_cells);
 
-    return std::make_tuple(cell_type, std::move(points), std::move(cells),
-                           std::move(global_cell_indices));
+    return std::tuple(cell_type, std::move(points), std::move(cells),
+                      std::move(global_cell_indices));
   }
 }
 //----------------------------------------------------------------------------
 mesh::Mesh XDMFFile::read_mesh(const mesh::GhostMode ghost_mode) const
 {
-
-  mesh::CellType cell_type;
-  Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor> points;
-  Eigen::Array<std::int64_t, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
-      cells;
-  std::vector<std::int64_t> global_cell_indices;
-
   // Read local mesh data
-  std::tie(cell_type, points, cells, global_cell_indices)
+  auto [cell_type, points, cells, global_cell_indices]
       = read_mesh_data(_mpi_comm.comm());
 
   //  Permute cells to DOLFIN ordering

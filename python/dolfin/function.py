@@ -1,17 +1,43 @@
-# Copyright (C) 2009-2019 Johan Hake, Chris N. Richardson and Garth N. Wells
+# Copyright (C) 2009-2019 Chris N. Richardson, Garth N. Wells and Michal Habera
 #
 # This file is part of DOLFIN (https://www.fenicsproject.org)
 #
 # SPDX-License-Identifier:    LGPL-3.0-or-later
+"""Collection of functions and function spaces"""
 
 import typing
 from functools import singledispatch
 
+import cffi
 import numpy as np
 from petsc4py import PETSc
 
 import ufl
-from dolfin import common, cpp, function, functionspace
+from dolfin import common, cpp, fem, function, jit
+
+
+class Constant(ufl.Constant):
+    def __init__(self, domain, c: typing.Union[np.ndarray, typing.Sequence, float]):
+        """A constant with respect to a domain.
+
+        Parameters
+        ----------
+        domain : DOLFIN or UFL mesh
+        c
+            Value of the constant.
+        """
+        c_np = np.asarray(c)
+        super().__init__(domain, c_np.shape)
+        self._cpp_object = cpp.function.Constant(c_np.shape, c_np.flatten())
+
+    @property
+    def value(self):
+        """Returns value of the constant."""
+        return self._cpp_object.value()
+
+    @value.setter
+    def value(self, v):
+        np.copyto(self._cpp_object.value(), np.asarray(v))
 
 
 class Function(ufl.Coefficient):
@@ -22,7 +48,7 @@ class Function(ufl.Coefficient):
     """
 
     def __init__(self,
-                 V: functionspace.FunctionSpace,
+                 V: "FunctionSpace",
                  x: typing.Optional[PETSc.Vec] = None,
                  name: typing.Optional[str] = None):
         """Initialize finite element Function."""
@@ -46,7 +72,7 @@ class Function(ufl.Coefficient):
         self._V = V
 
     @property
-    def function_space(self) -> function.functionspace.FunctionSpace:
+    def function_space(self) -> "FunctionSpace":
         """Return the FunctionSpace"""
         return self._V
 
@@ -187,69 +213,196 @@ class Function(ufl.Coefficient):
 
     def collapse(self):
         u_collapsed = self._cpp_object.collapse()
-        V_collapsed = functionspace.FunctionSpace(None, self.ufl_element(),
-                                                  u_collapsed.function_space)
+        V_collapsed = function.FunctionSpace(None, self.ufl_element(),
+                                             u_collapsed.function_space)
         return Function(V_collapsed, u_collapsed.vector)
 
 
-# # TODO: Update this message to clarify dolfin.FunctionSpace vs
-# # ufl.FunctionSpace
-# _ufl_dolfin_difference_message = """\ When constructing an Argument, TestFunction or TrialFunction, you
-# must to provide a FunctionSpace and not a FiniteElement.  The
-# FiniteElement class provided by ufl only represents an abstract finite
-# element space and is only used in standalone .ufl files, while the
-# FunctionSpace provides a full discrete function space over a given
-# mesh and should be used in dolfin programs in Python.  """
+class ElementMetaData(typing.NamedTuple):
+    """Data for representing a finite element"""
+    family: str
+    degree: int
+    form_degree: typing.Optional[int] = None  # noqa
 
-class Argument(ufl.Argument):
-    """Representation of an argument to a form"""
 
-    def __init__(self, V: functionspace.FunctionSpace, number: int, part: int = None):
-        """Create a UFL/DOLFIN Argument"""
-        ufl.Argument.__init__(self, V.ufl_function_space(), number, part)
-        self._V = V
+class FunctionSpace(ufl.FunctionSpace):
+    """A space on which Functions (fields) can be defined."""
 
-    @property
-    def function_space(self):
-        """Return the FunctionSpace"""
-        return self._V
+    def __init__(self,
+                 mesh: cpp.mesh.Mesh,
+                 element: typing.Union[ufl.FiniteElementBase, ElementMetaData],
+                 cppV: typing.Optional[cpp.function.FunctionSpace] = None):
+        """Create a finite element function space."""
 
-    def __eq__(self, other: 'Argument'):
-        """Extending UFL __eq__ here to distinguish test and trial functions
-        in different function spaces with same ufl element.
+        # Create function space from a UFL element and existing cpp
+        # FunctionSpace
+        if cppV is not None:
+            assert mesh is None
+            ufl_domain = cppV.mesh.ufl_domain()
+            super().__init__(ufl_domain, element)
+            self._cpp_object = cppV
+            return
+
+        # Initialise the ufl.FunctionSpace
+        if isinstance(element, ufl.FiniteElementBase):
+            super().__init__(mesh.ufl_domain(), element)
+        else:
+            e = ElementMetaData(*element)
+            ufl_element = ufl.FiniteElement(e.family, mesh.ufl_cell(), e.degree, form_degree=e.form_degree)
+            super().__init__(mesh.ufl_domain(), ufl_element)
+
+        # Compile dofmap and element and create DOLFIN objects
+        ufc_element, ufc_dofmap_ptr = jit.ffc_jit(
+            self.ufl_element(), form_compiler_parameters=None, mpi_comm=mesh.mpi_comm())
+
+        ffi = cffi.FFI()
+        ufc_element = fem.dofmap.make_ufc_finite_element(ffi.cast("uintptr_t", ufc_element))
+        cpp_element = cpp.fem.FiniteElement(ufc_element)
+
+        ufc_dofmap = fem.dofmap.make_ufc_dofmap(ffi.cast("uintptr_t", ufc_dofmap_ptr))
+        cpp_dofmap = cpp.fem.create_dofmap(ufc_dofmap, mesh)
+
+        # Initialize the cpp.FunctionSpace
+        self._cpp_object = cpp.function.FunctionSpace(mesh, cpp_element, cpp_dofmap)
+
+    def clone(self) -> "FunctionSpace":
+        """Return a new FunctionSpace :math:`W` which shares data with this
+        FunctionSpace :math:`V`, but with a different unique integer ID.
+
+        This function is helpful for defining mixed problems and using
+        blocked linear algebra. For example, a matrix block defined on
+        the spaces :math:`V \\times W` where, :math:`V` and :math:`W`
+        are defined on the same finite element and mesh can be
+        identified as an off-diagonal block whereas the :math:`V \\times
+        V` and :math:`V \\times V` matrices can be identified as
+        diagonal blocks. This is relevant for the handling of boundary
+        conditions.
 
         """
-        return (isinstance(other, Argument)
-                and self.number() == other.number()
-                and self.part() == other.part() and self._V == other._V)
+        Vcpp = cpp.function.FunctionSpace(self._cpp_object.mesh, self._cpp_object.element, self._cpp_object.dofmap)
+        return FunctionSpace(None, self.ufl_element(), Vcpp)
 
-    def __hash__(self):
-        return ufl.Argument.__hash__(self)
+    def dolfin_element(self):
+        """Return the DOLFIN element."""
+        return self._cpp_object.element
+
+    def num_sub_spaces(self) -> int:
+        """Return the number of sub spaces."""
+        return self.dolfin_element().num_sub_elements()
+
+    def sub(self, i: int) -> "FunctionSpace":
+        """Return the i-th sub space."""
+        assert self.ufl_element().num_sub_elements() > i
+        sub_element = self.ufl_element().sub_elements()[i]
+        cppV_sub = self._cpp_object.sub([i])
+        return FunctionSpace(None, sub_element, cppV_sub)
+
+    def component(self):
+        """Return the component relative to the parent space."""
+        return self._cpp_object.component()
+
+    def contains(self, V) -> bool:
+        """Check whether a FunctionSpace is in this FunctionSpace, or is the
+        same as this FunctionSpace.
+
+        """
+        return self._cpp_object.contains(V._cpp_object)
+
+    def __contains__(self, u):
+        """Check whether a function is in the FunctionSpace."""
+        try:
+            return u._in(self._cpp_object)
+        except AttributeError:
+            try:
+                return u._cpp_object._in(self._cpp_object)
+            except Exception as e:
+                raise RuntimeError("Unable to check if object is in FunctionSpace ({})".format(e))
+
+    def __eq__(self, other):
+        """Comparison for equality."""
+        return super().__eq__(other) and self._cpp_object == other._cpp_object
+
+    def __ne__(self, other):
+        """Comparison for inequality."""
+        return super().__ne__(other) or self._cpp_object != other._cpp_object
+
+    def ufl_cell(self):
+        return self._cpp_object.mesh.ufl_cell()
+
+    def ufl_function_space(self) -> ufl.FunctionSpace:
+        """Return the UFL function space"""
+        return self
+
+    @property
+    def dim(self) -> int:
+        return self._cpp_object.dim
+
+    @property
+    def id(self) -> int:
+        """The unique identifier"""
+        return self._cpp_object.id
+
+    @property
+    def element(self):
+        return self._cpp_object.element
+
+    @property
+    def dofmap(self) -> "fem.dofmap.DofMap":
+        """Return the degree-of-freedom map associated with the function space."""
+        return fem.dofmap.DofMap(self._cpp_object.dofmap)
+
+    @property
+    def mesh(self):
+        """Return the mesh on which the function space is defined."""
+        return self._cpp_object.mesh
+
+    def set_x(self, basis, x, component) -> None:
+        return self._cpp_object.set_x(basis, x, component)
+
+    def collapse(self, collapsed_dofs: bool = False):
+        """Collapse a subspace and return a new function space and a map from
+        new to old dofs.
+
+        *Arguments*
+            collapsed_dofs
+                Return the map from new to old dofs
+
+       *Returns*
+           FunctionSpace
+                The new function space.
+           dict
+                The map from new to old dofs (optional)
+
+        """
+        cpp_space, dofs = self._cpp_object.collapse()
+        V = FunctionSpace(None, self.ufl_element(), cpp_space)
+        if collapsed_dofs:
+            return V, dofs
+        else:
+            return V
+
+    def tabulate_dof_coordinates(self):
+        return self._cpp_object.tabulate_dof_coordinates()
 
 
-def TestFunction(V: functionspace.FunctionSpace, part: int = None):
-    """Create a test function argument to a form"""
-    return Argument(V, 0, part)
+def VectorFunctionSpace(mesh: cpp.mesh.Mesh,
+                        element: ElementMetaData,
+                        dim=None,
+                        restriction=None) -> "FunctionSpace":
+    """Create vector finite element (composition of scalar elements) function space."""
+
+    e = ElementMetaData(*element)
+    ufl_element = ufl.VectorElement(e.family, mesh.ufl_cell(), e.degree, form_degree=e.form_degree, dim=dim)
+    return FunctionSpace(mesh, ufl_element)
 
 
-def TrialFunction(V: functionspace.FunctionSpace, part: int = None):
-    """UFL value: Create a trial function argument to a form."""
-    return Argument(V, 1, part)
+def TensorFunctionSpace(mesh: cpp.mesh.Mesh,
+                        element: ElementMetaData,
+                        shape=None,
+                        symmetry: bool = None,
+                        restriction=None) -> "FunctionSpace":
+    """Create tensor finite element (composition of scalar elements) function space."""
 
-
-def TestFunctions(V: functionspace.FunctionSpace):
-    """Create a TestFunction in a mixed space, and return a
-    tuple with the function components corresponding to the
-    subelements.
-
-    """
-    return ufl.split(TestFunction(V))
-
-
-def TrialFunctions(V: functionspace.FunctionSpace):
-    """Create a TrialFunction in a mixed space, and return a
-    tuple with the function components corresponding to the
-    subelements.
-
-    """
-    return ufl.split(TrialFunction(V))
+    e = ElementMetaData(*element)
+    ufl_element = ufl.TensorElement(e.family, mesh.ufl_cell(), e.degree, shape, symmetry)
+    return FunctionSpace(mesh, ufl_element)

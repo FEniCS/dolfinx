@@ -11,16 +11,17 @@
 from contextlib import ExitStack
 
 import numpy as np
+from petsc4py import PETSc
 
 import dolfin
-from dolfin import (MPI, BoxMesh, DirichletBC, Function,
-                    TestFunction, TrialFunction, VectorFunctionSpace, cpp)
+from dolfin import (MPI, BoxMesh, DirichletBC, Function, VectorFunctionSpace,
+                    cpp)
+from dolfin.cpp.mesh import CellType
 from dolfin.fem import apply_lifting, assemble_matrix, assemble_vector, set_bc
 from dolfin.io import XDMFFile
 from dolfin.la import VectorSpaceBasis
-from dolfin.cpp.mesh import CellType
-from ufl import Identity, as_vector, dx, grad, inner, sym, tr, SpatialCoordinate
-from petsc4py import PETSc
+from ufl import (Identity, SpatialCoordinate, TestFunction, TrialFunction,
+                 as_vector, dx, grad, inner, sym, tr)
 
 
 def build_nullspace(V):
@@ -76,8 +77,8 @@ mesh.geometry.coord_mapping = cmap
 
 
 def boundary(x):
-    return np.logical_or(x[:, 0] < 10.0 * np.finfo(float).eps,
-                         x[:, 0] > 1.0 - 10.0 * np.finfo(float).eps)
+    return np.logical_or(x[0] < 10.0 * np.finfo(float).eps,
+                         x[0] > 1.0 - 10.0 * np.finfo(float).eps)
 
 
 # Rotation rate and mass density

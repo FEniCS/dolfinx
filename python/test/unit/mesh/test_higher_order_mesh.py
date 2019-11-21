@@ -5,7 +5,8 @@
 # SPDX-License-Identifier:    LGPL-3.0-or-later
 """ Unit-tests for higher order meshes """
 
-import meshio
+import os
+
 import numpy as np
 import pygmsh
 import pytest
@@ -15,7 +16,7 @@ from dolfin_utils.test.skips import skip_in_parallel
 from sympy.vector import CoordSys3D, matrix_to_vector
 
 from dolfin import MPI, Function, FunctionSpace, Mesh, fem
-from dolfin.cpp.io import permute_cell_ordering, permutation_vtk_to_dolfin
+from dolfin.cpp.io import permutation_vtk_to_dolfin, permute_cell_ordering
 from dolfin.cpp.mesh import CellType, GhostMode
 from dolfin.fem import assemble_scalar
 from dolfin.io import XDMFFile
@@ -90,9 +91,7 @@ def test_second_order_tri(H, Z):
     mesh = Mesh(MPI.comm_world, CellType.triangle, points, cells, [], GhostMode.none)
 
     def e2(x):
-        values = np.empty((x.shape[0], 1))
-        values[:, 0] = x[:, 2] + x[:, 0] * x[:, 1]
-        return values
+        return x[2] + x[0] * x[1]
     degree = mesh.degree()
     # Interpolate function
     V = FunctionSpace(mesh, ("CG", degree))
@@ -137,9 +136,7 @@ def test_third_order_tri(H, Z):
                 [], GhostMode.none)
 
     def e2(x):
-        values = np.empty((x.shape[0], 1))
-        values[:, 0] = x[:, 2] + x[:, 0] * x[:, 1]
-        return values
+        return x[2] + x[0] * x[1]
     degree = mesh.degree()
     # Interpolate function
     V = FunctionSpace(mesh, ("CG", degree))
@@ -191,9 +188,7 @@ def test_fourth_order_tri(H, Z):
                 [], GhostMode.none)
 
     def e2(x):
-        values = np.empty((x.shape[0], 1))
-        values[:, 0] = x[:, 2] + x[:, 0] * x[:, 1]
-        return values
+        return x[2] + x[0] * x[1]
     degree = mesh.degree()
     # Interpolate function
     V = FunctionSpace(mesh, ("CG", degree))
@@ -355,9 +350,7 @@ def test_nth_order_triangle(order):
             nodes.append(j)
 
     def e2(x):
-        values = np.empty((x.shape[0], 1))
-        values[:, 0] = x[:, 2] + x[:, 0] * x[:, 1]
-        return values
+        return x[2] + x[0] * x[1]
 
     # For solution to be in functionspace
     V = FunctionSpace(mesh, ("CG", max(2, order)))
@@ -375,24 +368,11 @@ def test_nth_order_triangle(order):
 
 
 @skip_in_parallel
-def test_xdmf_input_tri():
-    # Parameterize test if gmsh gets wider support
-    order = 2
-    R = 1
-    res = R / 7
-    geo = pygmsh.opencascade.Geometry()
-    geo.add_raw_code("Mesh.ElementOrder={0:d};".format(order))
-    geo.add_ball([0, 0, 0], R, char_length=res)
-    element = "triangle{0:d}".format(int((order + 1) * (order + 2) / 2))
-    if order == 1:
-        element = element[:-1]
-    msh = pygmsh.generate_mesh(geo, verbose=True, dim=2)
-    meshio.write("mesh.xdmf", meshio.Mesh(points=msh.points, cells={element: msh.cells[element]}))
-    with XDMFFile(MPI.comm_world, "mesh.xdmf") as xdmf:
+def test_xdmf_input_tri(datadir):
+    with XDMFFile(MPI.comm_world, os.path.join(datadir, "mesh.xdmf")) as xdmf:
         mesh = xdmf.read_mesh(GhostMode.none)
-
     surface = assemble_scalar(1 * dx(mesh))
-    assert MPI.sum(mesh.mpi_comm(), surface) == pytest.approx(4 * np.pi * R * R, rel=1e-5)
+    assert MPI.sum(mesh.mpi_comm(), surface) == pytest.approx(4 * np.pi, rel=1e-4)
 
 
 @skip_in_parallel
@@ -423,9 +403,7 @@ def test_second_order_quad(L, H, Z):
                 [], GhostMode.none)
 
     def e2(x):
-        values = np.empty((x.shape[0], 1))
-        values[:, 0] = x[:, 2] + x[:, 0] * x[:, 1]
-        return values
+        return x[2] + x[0] * x[1]
 
     # Interpolate function
     V = FunctionSpace(mesh, ("CG", 2))
@@ -484,9 +462,7 @@ def test_third_order_quad(L, H, Z):
                 [], GhostMode.none)
 
     def e2(x):
-        values = np.empty((x.shape[0], 1))
-        values[:, 0] = x[:, 2] + x[:, 0] * x[:, 1]
-        return values
+        return x[2] + x[0] * x[1]
 
     # Interpolate function
     V = FunctionSpace(mesh, ("CG", 3))
@@ -556,9 +532,7 @@ def test_fourth_order__quad(L, H, Z):
                 [], GhostMode.none)
 
     def e2(x):
-        values = np.empty((x.shape[0], 1))
-        values[:, 0] = x[:, 2] + x[:, 0] * x[:, 1]
-        return values
+        return x[2] + x[0] * x[1]
 
     V = FunctionSpace(mesh, ("CG", 4))
     u = Function(V)

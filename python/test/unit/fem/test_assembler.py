@@ -13,7 +13,7 @@ from petsc4py import PETSc
 
 import dolfin
 import ufl
-from dolfin import constant, functionspace
+from dolfin import function
 from dolfin.specialfunctions import SpatialCoordinate
 from ufl import derivative, ds, dx, inner
 
@@ -52,11 +52,11 @@ def test_assemble_derivatives():
     mesh = dolfin.generation.UnitSquareMesh(dolfin.MPI.comm_world, 12, 12)
     Q = dolfin.FunctionSpace(mesh, ("Lagrange", 1))
     u = dolfin.Function(Q)
-    v = dolfin.TestFunction(Q)
-    du = dolfin.TrialFunction(Q)
+    v = ufl.TestFunction(Q)
+    du = ufl.TrialFunction(Q)
     b = dolfin.Function(Q)
-    c1 = constant.Constant(mesh, [[1.0, 0.0], [3.0, 4.0]])
-    c2 = constant.Constant(mesh, 2.0)
+    c1 = function.Constant(mesh, [[1.0, 0.0], [3.0, 4.0]])
+    c2 = function.Constant(mesh, 2.0)
 
     with b.vector.localForm() as b_local:
         b_local.set(2.0)
@@ -77,7 +77,7 @@ def test_assemble_derivatives():
 def test_basic_assembly():
     mesh = dolfin.generation.UnitSquareMesh(dolfin.MPI.comm_world, 12, 12)
     V = dolfin.FunctionSpace(mesh, ("Lagrange", 1))
-    u, v = dolfin.TrialFunction(V), dolfin.TestFunction(V)
+    u, v = ufl.TrialFunction(V), ufl.TestFunction(V)
 
     f = dolfin.Function(V)
     with f.vector.localForm() as f_local:
@@ -124,12 +124,12 @@ def test_basic_assembly():
 def test_assembly_bcs():
     mesh = dolfin.generation.UnitSquareMesh(dolfin.MPI.comm_world, 12, 12)
     V = dolfin.FunctionSpace(mesh, ("Lagrange", 1))
-    u, v = dolfin.TrialFunction(V), dolfin.TestFunction(V)
+    u, v = ufl.TrialFunction(V), ufl.TestFunction(V)
     a = inner(u, v) * dx + inner(u, v) * ds
     L = inner(1.0, v) * dx
 
     def boundary(x):
-        return numpy.logical_or(x[:, 0] < 1.0e-6, x[:, 0] > 1.0 - 1.0e-6)
+        return numpy.logical_or(x[0] < 1.0e-6, x[0] > 1.0 - 1.0e-6)
 
     u_bc = dolfin.function.Function(V)
     with u_bc.vector.localForm() as u_local:
@@ -169,11 +169,11 @@ def test_matrix_assembly_block():
     P0 = ufl.FiniteElement("Lagrange", mesh.ufl_cell(), p0)
     P1 = ufl.FiniteElement("Lagrange", mesh.ufl_cell(), p1)
 
-    V0 = dolfin.function.functionspace.FunctionSpace(mesh, P0)
-    V1 = dolfin.function.functionspace.FunctionSpace(mesh, P1)
+    V0 = dolfin.function.FunctionSpace(mesh, P0)
+    V1 = dolfin.function.FunctionSpace(mesh, P1)
 
     def boundary(x):
-        return numpy.logical_or(x[:, 0] < 1.0e-6, x[:, 0] > 1.0 - 1.0e-6)
+        return numpy.logical_or(x[0] < 1.0e-6, x[0] > 1.0 - 1.0e-6)
 
     u_bc = dolfin.function.Function(V1)
     with u_bc.vector.localForm() as u_local:
@@ -181,8 +181,8 @@ def test_matrix_assembly_block():
     bc = dolfin.fem.dirichletbc.DirichletBC(V1, u_bc, boundary)
 
     # Define variational problem
-    u, p = dolfin.function.TrialFunction(V0), dolfin.function.TrialFunction(V1)
-    v, q = dolfin.function.TestFunction(V0), dolfin.function.TestFunction(V1)
+    u, p = ufl.TrialFunction(V0), ufl.TrialFunction(V1)
+    v, q = ufl.TestFunction(V0), ufl.TestFunction(V1)
     f = 1.0
     g = -3.0
     zero = dolfin.Function(V0)
@@ -212,12 +212,12 @@ def test_matrix_assembly_block():
     Anorm1 = nest_matrix_norm(A1)
     assert Anorm0 == pytest.approx(Anorm1, 1.0e-12)
 
-    b1 = dolfin.fem.assemble.assemble_vector_nest(L_block)
-    dolfin.fem.assemble.apply_lifting_nest(b1, a_block, [bc])
+    b1 = dolfin.fem.assemble_vector_nest(L_block)
+    dolfin.fem.apply_lifting_nest(b1, a_block, [bc])
     for b_sub in b1.getNestSubVecs():
         b_sub.ghostUpdate(addv=PETSc.InsertMode.ADD, mode=PETSc.ScatterMode.REVERSE)
     bcs0 = dolfin.cpp.fem.bcs_rows(dolfin.fem.assemble._create_cpp_form(L_block), [bc])
-    dolfin.fem.assemble.set_bc_nest(b1, bcs0)
+    dolfin.fem.set_bc_nest(b1, bcs0)
     b1.assemble()
 
     bnorm1 = math.sqrt(sum([x.norm()**2 for x in b1.getNestSubVecs()]))
@@ -225,9 +225,9 @@ def test_matrix_assembly_block():
 
     # Monolithic version
     E = P0 * P1
-    W = dolfin.function.functionspace.FunctionSpace(mesh, E)
-    u0, u1 = dolfin.function.TrialFunctions(W)
-    v0, v1 = dolfin.function.TestFunctions(W)
+    W = dolfin.function.FunctionSpace(mesh, E)
+    u0, u1 = ufl.TrialFunctions(W)
+    v0, v1 = ufl.TestFunctions(W)
     a = inner(u0, v0) * dx + inner(u1, v1) * dx + inner(u0, v1) * dx + inner(
         u1, v0) * dx
     L = zero * inner(f, v0) * ufl.dx + inner(g, v1) * dx
@@ -249,14 +249,12 @@ def test_assembly_solve_block():
     and test that solution is the same.
     """
     mesh = dolfin.generation.UnitSquareMesh(dolfin.MPI.comm_world, 32, 31)
-    p0, p1 = 1, 1
-    P0 = ufl.FiniteElement("Lagrange", mesh.ufl_cell(), p0)
-    P1 = ufl.FiniteElement("Lagrange", mesh.ufl_cell(), p1)
-    V0 = dolfin.function.functionspace.FunctionSpace(mesh, P0)
-    V1 = dolfin.function.functionspace.FunctionSpace(mesh, P1)
+    P = ufl.FiniteElement("Lagrange", mesh.ufl_cell(), 1)
+    V0 = dolfin.function.FunctionSpace(mesh, P)
+    V1 = V0.clone()
 
     def boundary(x):
-        return numpy.logical_or(x[:, 0] < 1.0e-6, x[:, 0] > 1.0 - 1.0e-6)
+        return numpy.logical_or(x[0] < 1.0e-6, x[0] > 1.0 - 1.0e-6)
 
     u_bc0 = dolfin.function.Function(V0)
     u_bc0.vector.set(50.0)
@@ -272,8 +270,8 @@ def test_assembly_solve_block():
     ]
 
     # Variational problem
-    u, p = dolfin.function.TrialFunction(V0), dolfin.function.TrialFunction(V1)
-    v, q = dolfin.function.TestFunction(V0), dolfin.function.TestFunction(V1)
+    u, p = ufl.TrialFunction(V0), ufl.TrialFunction(V1)
+    v, q = ufl.TestFunction(V0), ufl.TestFunction(V1)
     f = 1.0
     g = -3.0
     zero = dolfin.Function(V0)
@@ -309,12 +307,12 @@ def test_assembly_solve_block():
     # Nested (MatNest)
     A1 = dolfin.fem.assemble_matrix_nest([[a00, a01], [a10, a11]], bcs)
     A1.assemble()
-    b1 = dolfin.fem.assemble.assemble_vector_nest([L0, L1])
-    dolfin.fem.assemble.apply_lifting_nest(b1, [[a00, a01], [a10, a11]], bcs)
+    b1 = dolfin.fem.assemble_vector_nest([L0, L1])
+    dolfin.fem.apply_lifting_nest(b1, [[a00, a01], [a10, a11]], bcs)
     for b_sub in b1.getNestSubVecs():
         b_sub.ghostUpdate(addv=PETSc.InsertMode.ADD, mode=PETSc.ScatterMode.REVERSE)
     bcs0 = dolfin.cpp.fem.bcs_rows(dolfin.fem.assemble._create_cpp_form([L0, L1]), bcs)
-    dolfin.fem.assemble.set_bc_nest(b1, bcs0)
+    dolfin.fem.set_bc_nest(b1, bcs0)
     b1.assemble()
 
     b1norm = b1.norm()
@@ -335,15 +333,12 @@ def test_assembly_solve_block():
     assert x1norm == pytest.approx(x0norm, rel=1.0e-12)
 
     # Monolithic version
-    E = P0 * P1
-    W = dolfin.function.functionspace.FunctionSpace(mesh, E)
-    u0, u1 = dolfin.function.TrialFunctions(W)
-    v0, v1 = dolfin.function.TestFunctions(W)
+    E = P * P
+    W = dolfin.function.FunctionSpace(mesh, E)
+    u0, u1 = ufl.TrialFunctions(W)
+    v0, v1 = ufl.TestFunctions(W)
     a = inner(u0, v0) * dx + inner(u1, v1) * dx
     L = inner(f, v0) * ufl.dx + inner(g, v1) * dx
-
-    V0 = dolfin.function.functionspace.FunctionSpace(mesh, P0)
-    V1 = dolfin.function.functionspace.FunctionSpace(mesh, P1)
 
     u0_bc = dolfin.function.Function(V0)
     u0_bc.vector.set(50.0)
@@ -390,16 +385,16 @@ def test_assembly_solve_block():
 ])
 def test_assembly_solve_taylor_hood(mesh):
     """Assemble Stokes problem with Taylor-Hood elements and solve."""
-    P2 = functionspace.VectorFunctionSpace(mesh, ("Lagrange", 2))
-    P1 = functionspace.FunctionSpace(mesh, ("Lagrange", 1))
+    P2 = function.VectorFunctionSpace(mesh, ("Lagrange", 2))
+    P1 = function.FunctionSpace(mesh, ("Lagrange", 1))
 
     def boundary0(x):
         """Define boundary x = 0"""
-        return x[:, 0] < 10 * numpy.finfo(float).eps
+        return x[0] < 10 * numpy.finfo(float).eps
 
     def boundary1(x):
         """Define boundary x = 1"""
-        return x[:, 0] > (1.0 - 10 * numpy.finfo(float).eps)
+        return x[0] > (1.0 - 10 * numpy.finfo(float).eps)
 
     u0 = dolfin.Function(P2)
     u0.vector.set(1.0)
@@ -407,8 +402,8 @@ def test_assembly_solve_taylor_hood(mesh):
     bc0 = dolfin.DirichletBC(P2, u0, boundary0)
     bc1 = dolfin.DirichletBC(P2, u0, boundary1)
 
-    u, p = dolfin.TrialFunction(P2), dolfin.TrialFunction(P1)
-    v, q = dolfin.TestFunction(P2), dolfin.TestFunction(P1)
+    u, p = ufl.TrialFunction(P2), ufl.TrialFunction(P1)
+    v, q = ufl.TestFunction(P2), ufl.TestFunction(P1)
 
     a00 = inner(ufl.grad(u), ufl.grad(v)) * dx
     a01 = ufl.inner(p, ufl.div(v)) * dx
@@ -434,12 +429,12 @@ def test_assembly_solve_taylor_hood(mesh):
     P0 = dolfin.fem.assemble_matrix_nest([[p00, p01], [p10, p11]], [bc0, bc1])
     P0.assemble()
     P0norm = nest_matrix_norm(P0)
-    b0 = dolfin.fem.assemble.assemble_vector_nest([L0, L1])
-    dolfin.fem.assemble.apply_lifting_nest(b0, [[a00, a01], [a10, a11]], [bc0, bc1])
+    b0 = dolfin.fem.assemble_vector_nest([L0, L1])
+    dolfin.fem.apply_lifting_nest(b0, [[a00, a01], [a10, a11]], [bc0, bc1])
     for b_sub in b0.getNestSubVecs():
         b_sub.ghostUpdate(addv=PETSc.InsertMode.ADD, mode=PETSc.ScatterMode.REVERSE)
     bcs0 = dolfin.cpp.fem.bcs_rows(dolfin.fem.assemble._create_cpp_form([L0, L1]), [bc0, bc1])
-    dolfin.fem.assemble.set_bc_nest(b0, bcs0)
+    dolfin.fem.set_bc_nest(b0, bcs0)
     b0.assemble()
     b0norm = b0.norm()
 
@@ -502,8 +497,8 @@ def test_assembly_solve_taylor_hood(mesh):
     P1 = ufl.FiniteElement("Lagrange", mesh.ufl_cell(), 1)
     TH = P2 * P1
     W = dolfin.FunctionSpace(mesh, TH)
-    (u, p) = dolfin.TrialFunctions(W)
-    (v, q) = dolfin.TestFunctions(W)
+    (u, p) = ufl.TrialFunctions(W)
+    (v, q) = ufl.TestFunctions(W)
     a00 = ufl.inner(ufl.grad(u), ufl.grad(v)) * dx
     a01 = ufl.inner(p, ufl.div(v)) * dx
     a10 = ufl.inner(ufl.div(u), q) * dx
@@ -567,8 +562,8 @@ def test_basic_interior_facet_assembly():
                                 cell_type=dolfin.cpp.mesh.CellType.triangle,
                                 ghost_mode=ghost_mode)
 
-    V = functionspace.FunctionSpace(mesh, ("DG", 1))
-    u, v = dolfin.TrialFunction(V), dolfin.TestFunction(V)
+    V = function.FunctionSpace(mesh, ("DG", 1))
+    u, v = ufl.TrialFunction(V), ufl.TestFunction(V)
 
     a = ufl.inner(ufl.avg(u), ufl.avg(v)) * ufl.dS
 
@@ -591,10 +586,10 @@ def test_basic_assembly_constant():
 
     """
     mesh = dolfin.generation.UnitSquareMesh(dolfin.MPI.comm_world, 5, 5)
-    V = functionspace.FunctionSpace(mesh, ("Lagrange", 1))
-    u, v = dolfin.TrialFunction(V), dolfin.TestFunction(V)
+    V = function.FunctionSpace(mesh, ("Lagrange", 1))
+    u, v = ufl.TrialFunction(V), ufl.TestFunction(V)
 
-    c = constant.Constant(mesh, [[1.0, 2.0], [5.0, 3.0]])
+    c = function.Constant(mesh, [[1.0, 2.0], [5.0, 3.0]])
 
     a = inner(c[1, 0] * u, v) * dx + inner(c[1, 0] * u, v) * ds
     L = inner(c[1, 0], v) * dx + inner(c[1, 0], v) * ds

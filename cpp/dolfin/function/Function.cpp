@@ -100,9 +100,7 @@ Function Function::sub(int i) const
 Function Function::collapse() const
 {
   // Create new collapsed FunctionSpace
-  std::shared_ptr<const FunctionSpace> function_space_new;
-  std::vector<PetscInt> collapsed_map;
-  std::tie(function_space_new, collapsed_map) = _function_space->collapse();
+  auto [function_space_new, collapsed_map] = _function_space->collapse();
 
   // Create new vector
   assert(function_space_new);
@@ -285,8 +283,8 @@ void Function::interpolate(const Function& v)
 void Function::interpolate(
     const std::function<Eigen::Array<PetscScalar, Eigen::Dynamic,
                                      Eigen::Dynamic, Eigen::RowMajor>(
-        const Eigen::Ref<const Eigen::Array<
-            double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>>&)>& f)
+        const Eigen::Ref<const Eigen::Array<double, 3, Eigen::Dynamic,
+                                            Eigen::RowMajor>>&)>& f)
 {
   la::VecWrapper x(_vector.vec());
   _function_space->interpolate(x.x, f);

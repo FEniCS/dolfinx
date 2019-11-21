@@ -61,7 +61,7 @@ std::int64_t FunctionSpace::dim() const
 }
 //-----------------------------------------------------------------------------
 void FunctionSpace::interpolate_from_any(
-    Eigen::Ref<Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1>>
+    Eigen::Ref<Eigen::Array<PetscScalar, Eigen::Dynamic, 1>>
         expansion_coefficients,
     const Function& v) const
 {
@@ -112,7 +112,7 @@ void FunctionSpace::interpolate_from_any(
 }
 //-----------------------------------------------------------------------------
 void FunctionSpace::interpolate(
-    Eigen::Ref<Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1>>
+    Eigen::Ref<Eigen::Array<PetscScalar, Eigen::Dynamic, 1>>
         expansion_coefficients,
     const Function& v) const
 {
@@ -148,17 +148,17 @@ void FunctionSpace::interpolate(
 }
 //-----------------------------------------------------------------------------
 void FunctionSpace::interpolate(
-    Eigen::Ref<Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1>> coefficients,
+    Eigen::Ref<Eigen::Array<PetscScalar, Eigen::Dynamic, 1>> coefficients,
     const std::function<Eigen::Array<PetscScalar, Eigen::Dynamic,
                                      Eigen::Dynamic, Eigen::RowMajor>(
-        const Eigen::Ref<const Eigen::Array<
-            double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>>&)>& f)
-    const
+        const Eigen::Ref<const Eigen::Array<double, 3, Eigen::Dynamic,
+                                            Eigen::RowMajor>>&)>& f) const
 {
   // Evaluate expression at dof points
-  Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor> x
-      = tabulate_dof_coordinates();
-  Eigen::Array<PetscScalar, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
+  const Eigen::Array<double, 3, Eigen::Dynamic, Eigen::RowMajor> x
+      = tabulate_dof_coordinates().transpose();
+  const Eigen::Array<PetscScalar, Eigen::Dynamic, Eigen::Dynamic,
+                     Eigen::RowMajor>
       values = f(x);
 
   assert(_element);
@@ -167,23 +167,40 @@ void FunctionSpace::interpolate(
     vshape[i] = _element->value_dimension(i);
   const int value_size = std::accumulate(std::begin(vshape), std::end(vshape),
                                          1, std::multiplies<>());
-  if (values.rows() != x.rows())
-  {
-    throw std::runtime_error("Number of computed values is not equal to the "
-                             "number of evaluation points.");
-  }
-  if (values.cols() != value_size)
-    throw std::runtime_error("Values shape is incorrect.");
 
-  interpolate(coefficients, values);
+  // Note: pybind11 maps 1D NumPy arrays to column vectors for
+  // Eigen::Array<PetscScalar, Eigen::Dynamic,Eigen::Dynamic, Eigen::RowMajor>
+  // types, therefore we need to handle vectors as a special case.
+  if (values.cols() == 1 and values.rows() != 1)
+  {
+    if (values.rows() != x.cols())
+    {
+      throw std::runtime_error("Number of computed values is not equal to the "
+                               "number of evaluation points. (1)");
+    }
+    interpolate(coefficients, values);
+  }
+  else
+  {
+    if (values.rows() != value_size)
+      throw std::runtime_error("Values shape is incorrect. (2)");
+
+    if (values.cols() != x.cols())
+    {
+      throw std::runtime_error("Number of computed values is not equal to the "
+                               "number of evaluation points. (2)");
+    }
+
+    interpolate(coefficients, values.transpose());
+  }
 }
 //-----------------------------------------------------------------------------
 void FunctionSpace::interpolate_c(
-    Eigen::Ref<Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1>> coefficients,
+    Eigen::Ref<Eigen::Array<PetscScalar, Eigen::Dynamic, 1>> coefficients,
     const interpolation_function& f) const
 {
   // Build list of points at which to evaluate the Expression
-  Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor> x
+  const Eigen::Array<double, Eigen::Dynamic, 3, Eigen::RowMajor> x
       = tabulate_dof_coordinates();
 
   // Evaluate expression at points
@@ -254,13 +271,13 @@ FunctionSpace::collapse() const
   auto collapsed_sub_space
       = std::make_shared<FunctionSpace>(_mesh, _element, collapsed_dofmap);
 
-  return std::make_pair(std::move(collapsed_sub_space),
-                        std::move(collapsed_dofs));
+  return std::pair(std::move(collapsed_sub_space),
+                   std::move(collapsed_dofs));
 }
 //-----------------------------------------------------------------------------
 std::vector<int> FunctionSpace::component() const { return _component; }
 //-----------------------------------------------------------------------------
-Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
+Eigen::Array<double, Eigen::Dynamic, 3, Eigen::RowMajor>
 FunctionSpace::tabulate_dof_coordinates() const
 {
   // Geometric dimension
@@ -287,9 +304,10 @@ FunctionSpace::tabulate_dof_coordinates() const
   const Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>& X
       = _element->dof_reference_coordinates();
 
-  // Arrray to hold coordinates and return
-  Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor> x(
-      local_size, gdim);
+  // Array to hold coordinates to return
+  Eigen::Array<double, Eigen::Dynamic, 3, Eigen::RowMajor> x
+      = Eigen::Array<double, Eigen::Dynamic, 3, Eigen::RowMajor>::Zero(
+          local_size, 3);
 
   // Get coordinate mapping
   if (!_mesh->geometry().coord_mapping)
@@ -323,8 +341,10 @@ FunctionSpace::tabulate_dof_coordinates() const
     // Update cell
     const int cell_index = cell.index();
     for (int i = 0; i < num_dofs_g; ++i)
-      for (int j = 0; j < gdim; ++j)
-        coordinate_dofs(i, j) = x_g(cell_g[pos_g[cell_index] + i], j);
+    {
+      coordinate_dofs.row(i)
+          = x_g.row(cell_g[pos_g[cell_index] + i]).head(gdim);
+    }
 
     // Get local-to-global map
     auto dofs = _dofmap->cell_dofs(cell.index());
@@ -336,8 +356,7 @@ FunctionSpace::tabulate_dof_coordinates() const
     for (Eigen::Index i = 0; i < dofs.size(); ++i)
     {
       const PetscInt dof = dofs[i];
-      if (dof < (PetscInt)local_size)
-        x.row(dof) = coordinates.row(i);
+      x.row(dof).head(gdim) = coordinates.row(i);
     }
   }
 
@@ -345,7 +364,7 @@ FunctionSpace::tabulate_dof_coordinates() const
 }
 //-----------------------------------------------------------------------------
 void FunctionSpace::set_x(
-    Eigen::Ref<Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1>> x,
+    Eigen::Ref<Eigen::Array<PetscScalar, Eigen::Dynamic, 1>> x,
     PetscScalar value, int component) const
 {
   assert(_mesh);
@@ -444,9 +463,9 @@ bool FunctionSpace::contains(const FunctionSpace& V) const
 }
 //-----------------------------------------------------------------------------
 void FunctionSpace::interpolate(
-    Eigen::Ref<Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1>> coefficients,
-    const Eigen::Ref<const Eigen::Matrix<PetscScalar, Eigen::Dynamic,
-                                         Eigen::Dynamic, Eigen::RowMajor>>&
+    Eigen::Ref<Eigen::Array<PetscScalar, Eigen::Dynamic, 1>> coefficients,
+    const Eigen::Ref<const Eigen::Array<PetscScalar, Eigen::Dynamic,
+                                        Eigen::Dynamic, Eigen::RowMajor>>&
         values) const
 {
   assert(_mesh);
