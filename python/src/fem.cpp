@@ -229,27 +229,13 @@ void fem(py::module& m)
           m, "DirichletBC",
           "Object for representing Dirichlet (essential) boundary conditions");
 
-  // dolfin::fem::DirichletBC  enum
-  py::enum_<dolfin::fem::DirichletBC::Method>(dirichletbc, "Method")
-      .value("topological", dolfin::fem::DirichletBC::Method::topological)
-      .value("geometric", dolfin::fem::DirichletBC::Method::geometric)
-      .value("pointwise", dolfin::fem::DirichletBC::Method::pointwise);
-
   dirichletbc
       .def(py::init<std::shared_ptr<const dolfin::function::FunctionSpace>,
                     std::shared_ptr<const dolfin::function::Function>,
-                    const std::function<Eigen::Array<bool, Eigen::Dynamic, 1>(
-                        const Eigen::Ref<const Eigen::Array<
-                            double, 3, Eigen::Dynamic, Eigen::RowMajor>>&)>&,
-                    dolfin::fem::DirichletBC::Method>(),
-           py::arg("V"), py::arg("g"), py::arg("mark"), py::arg("method"))
-      .def(py::init<std::shared_ptr<const dolfin::function::FunctionSpace>,
-                    std::shared_ptr<const dolfin::function::Function>,
-                    const std::vector<std::int32_t>&,
-                    dolfin::fem::DirichletBC::Method>(),
-           py::arg("V"), py::arg("g"), py::arg("facets"), py::arg("method"))
+                    Eigen::Array<PetscInt, Eigen::Dynamic, 2>&>(),
+           py::arg("V"), py::arg("g"), py::arg("dof_indices"))
       .def_property_readonly("dof_indices",
-                             &dolfin::fem::DirichletBC::dof_indices)
+                             &dolfin::fem::DirichletBC::dofs)
       .def_property_readonly("function_space",
                              &dolfin::fem::DirichletBC::function_space)
       .def_property_readonly("value", &dolfin::fem::DirichletBC::value);
@@ -418,5 +404,10 @@ void fem(py::module& m)
           py::return_value_policy::take_ownership)
       .def("check_ref_count", &dolfin::fem::PETScDMCollection::check_ref_count)
       .def("get_dm", &dolfin::fem::PETScDMCollection::get_dm);
+
+
+  m.def("locate_dofs_topological", &dolfin::fem::locate_dofs_topological);
+  m.def("locate_dofs_geometrical", &dolfin::fem::locate_dofs_geometrical);
+
 } // namespace dolfin_wrappers
 } // namespace dolfin_wrappers

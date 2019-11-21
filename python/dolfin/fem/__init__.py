@@ -21,7 +21,7 @@ from dolfin.cpp.fem import FormIntegrals
 from dolfin.fem.formmanipulations import (derivative, adjoint, increase_order,
                                           tear)
 from dolfin.fem.solving import solve
-
+from dolfin.fem.dirichletbc import locate_dofs_geometrical, locate_dofs_topological
 
 __all__ = [
     "create_vector", "create_vector_block", "create_vector_nest",

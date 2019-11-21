@@ -16,13 +16,34 @@ import ufl
 from dolfin import cpp, function
 
 
+def locate_dofs_geometrical(V: typing.Union[function.FunctionSpace], marker: types.FunctionType):
+    # Extract cpp function space
+    try:
+        _V = V._cpp_object
+    except AttributeError:
+        _V = V
+
+    return cpp.fem.locate_dofs_geometrical(_V, marker)
+
+
+def locate_dofs_topological(V: typing.Union[function.FunctionSpace],
+                            entity_dim: int,
+                            entities: typing.List[int]):
+    # Extract cpp function space
+    try:
+        _V = V._cpp_object
+    except AttributeError:
+        _V = V
+
+    return cpp.fem.locate_dofs_topological(_V, entity_dim, entities)
+
+
 class DirichletBC(cpp.fem.DirichletBC):
     def __init__(
             self,
             V: typing.Union[function.FunctionSpace],
             value: typing.Union[ufl.Coefficient, function.Function, cpp.function.Function],
-            domain: typing.Union[types.FunctionType, typing.List[int]],
-            method: cpp.fem.DirichletBC.Method = cpp.fem.DirichletBC.Method.topological):
+            dof_indices: typing.Union[typing.List[int]]):
         """Representation of Dirichlet boundary condition which is imposed on
         a linear system.
 
@@ -47,4 +68,4 @@ class DirichletBC(cpp.fem.DirichletBC):
         else:
             raise NotImplementedError
 
-        super().__init__(_V, _value, domain, method)
+        super().__init__(_V, _value, dof_indices)

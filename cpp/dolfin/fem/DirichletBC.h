@@ -29,6 +29,16 @@ class Mesh;
 namespace fem
 {
 
+std::vector<PetscInt>
+locate_dofs_topological(const function::FunctionSpace& V, const int entity_dim,
+                        const std::vector<std::int32_t>& entities);
+
+Eigen::Array<PetscInt, Eigen::Dynamic, 1> locate_dofs_geometrical(
+    const function::FunctionSpace& V,
+    std::function<Eigen::Array<bool, Eigen::Dynamic, 1>(
+        const Eigen::Ref<
+            const Eigen::Array<double, 3, Eigen::Dynamic, Eigen::RowMajor>>&)>);
+
 /// Interface for setting (strong) Dirichlet boundary conditions.
 ///
 ///     u = g on G,
@@ -75,46 +85,43 @@ class DirichletBC
 {
 
 public:
-  /// Method of boundary condition application
-  enum class Method
-  {
-    topological,
-    geometric,
-    pointwise
-  };
 
   /// Marking function to define facets when DirichletBC applies
   using marking_function = std::function<Eigen::Array<bool, Eigen::Dynamic, 1>(
       const Eigen::Ref<
           const Eigen::Array<double, 3, Eigen::Dynamic, Eigen::RowMajor>>&)>;
 
-  /// Create boundary condition with marking method
-  ///
-  /// @param[in] V The function (sub)space on which the boundary
-  ///              condition is applied
-  /// @param[in] g The boundary condition value
-  /// @param[in] mark The marking function. Only boundary facet are
-  ///                 tested.
-  /// @param[in] method Optional argument: A string specifying the
-  ///                   method to identify dofs
-  DirichletBC(std::shared_ptr<const function::FunctionSpace> V,
-              std::shared_ptr<const function::Function> g,
-              const marking_function& mark,
-              Method method = Method::topological);
+//   /// Create boundary condition with marking method
+//   ///
+//   /// @param[in] V The function (sub)space on which the boundary
+//   ///              condition is applied
+//   /// @param[in] g The boundary condition value
+//   /// @param[in] mark The marking function. Only boundary facet are
+//   ///                 tested.
+//   /// @param[in] method Optional argument: A string specifying the
+//   ///                   method to identify dofs
+//   DirichletBC(std::shared_ptr<const function::FunctionSpace> V,
+//               std::shared_ptr<const function::Function> g,
+//               const marking_function& mark,
+//               Method method = Method::topological);
 
-  /// Create boundary condition with facet indices
-  ///
-  /// @param[in] V The function (sub)space on which the boundary
-  ///              condition is applied
-  /// @param[in] g The boundary condition value
-  /// @param[in] facet_indices Facets on which the boundary condition is
-  ///                           applied (facet index local to process)
-  /// @param[in] method Optional argument: A string specifying the
-  ///                   method to identify dofs.
+//   /// Create boundary condition with facet indices
+//   ///
+//   /// @param[in] V The function (sub)space on which the boundary
+//   ///              condition is applied
+//   /// @param[in] g The boundary condition value
+//   /// @param[in] facet_indices Facets on which the boundary condition is
+//   ///                           applied (facet index local to process)
+//   /// @param[in] method Optional argument: A string specifying the
+//   ///                   method to identify dofs.
+//   DirichletBC(std::shared_ptr<const function::FunctionSpace> V,
+//               std::shared_ptr<const function::Function> g,
+//               const std::vector<std::int32_t>& facet_indices,
+//               Method method = Method::topological);
+
   DirichletBC(std::shared_ptr<const function::FunctionSpace> V,
               std::shared_ptr<const function::Function> g,
-              const std::vector<std::int32_t>& facet_indices,
-              Method method = Method::topological);
+              Eigen::Array<PetscInt, Eigen::Dynamic, 2>& dof_indices);
 
   /// Copy constructor. Either cached DOF data are copied.
   /// @param[in] bc The object to be copied.
@@ -145,13 +152,13 @@ public:
 
   /// Get array of dof indices to which a Dirichlet BC is applied. The
   /// array is sorted and may contain ghost entries.
-  const Eigen::Array<PetscInt, Eigen::Dynamic, 1>& dof_indices() const;
+  Eigen::Array<PetscInt, Eigen::Dynamic, 2>& dofs();
 
   /// Get array of dof indices owned by this process to which a
-  /// Dirichlet BC is applied. The array is sorted and goes not contain ghost
+  /// Dirichlet BC is applied. The array is sorted and does not contain ghost
   /// entries.
-  Eigen::Map<const Eigen::Array<PetscInt, Eigen::Dynamic, 1>>
-  dof_indices_owned() const;
+  const Eigen::Ref<const Eigen::Array<PetscInt, Eigen::Dynamic, 2>>
+  dofs_owned() const;
 
   // FIXME: clarify w.r.t ghosts
   /// Set bc entries in x to scale*x_bc
@@ -165,7 +172,7 @@ public:
       const Eigen::Ref<const Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1>>& x0,
       double scale = 1.0) const;
 
-  // FIXME: clarify  w.r.t ghosts
+  // FIXME: clarify  w.r.t ghostss
   /// Set boundary condition value for entres with an applied boundary
   /// condition. Other entries are not modified.
   void dof_values(
@@ -183,15 +190,10 @@ private:
   // The function
   std::shared_ptr<const function::Function> _g;
 
-  // Vector tuples (dof in _function_space, dof in g-space) to which bcs
-  // are applied, i.e. u[dofs[i][0]] = g[dofs[i][1]] where u is in
-  // _function_space.
-  Eigen::Array<PetscInt, Eigen::Dynamic, 2, Eigen::RowMajor> _dofs;
+  // Indices of dofs in _function_space and in the space of _g
+  Eigen::Array<PetscInt, Eigen::Dynamic, 2> _dofs;
 
-  // Indices in _function_space to which bcs are applied. Must be sorted.
-  Eigen::Array<PetscInt, Eigen::Dynamic, 1> _dof_indices;
-
-  // The first _owned_indices in  _dof_indices are owned by this process
+  // The first _owned_indices in _dofs are owned by this process
   int _owned_indices = -1;
 };
 } // namespace fem
