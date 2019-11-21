@@ -8,7 +8,6 @@ import numpy as np
 import pytest
 from petsc4py import PETSc
 
-
 from dolfin import (MPI, DirichletBC, fem, Function, FunctionSpace,
                     UnitCubeMesh, UnitIntervalMesh, UnitSquareMesh)
 from dolfin.cpp.mesh import CellType
@@ -82,9 +81,10 @@ def test_manufactured_poisson(n, mesh, component):
 def test_convergence_rate_poisson_simplices(n, cell):
     """ Manufactured Poisson problem, solving u = Pi_{i=0}^gdim sin(pi*x_i) """
     if cell == CellType.triangle:
-        mesh = UnitSquareMesh(MPI.comm_world, 3, 3, diagonal="crossed")
+        mesh = UnitSquareMesh(MPI.comm_world, 2, 1, diagonal="crossed")
     elif cell == CellType.tetrahedron:
-        mesh = UnitCubeMesh(MPI.comm_world, 2, 2, 2, CellType.tetrahedron)
+        N = 1 if n == 3 else 2
+        mesh = UnitCubeMesh(MPI.comm_world, N, N, N, CellType.tetrahedron)
 
     cmap = fem.create_coordinate_map(mesh.ufl_domain())
 
@@ -107,7 +107,6 @@ def test_convergence_rate_poisson_simplices(n, cell):
         Vh = FunctionSpace(mesh, ("Lagrange", n + 3))
         u_ex = Function(Vh)
         u_ex.interpolate(u_exact)
-
         # Source term
         f = - div(grad(u_ex))
 
@@ -136,14 +135,13 @@ def test_convergence_rate_poisson_simplices(n, cell):
         uh = Function(V)
         solver.solve(b, uh.vector)
         uh.vector.ghostUpdate(addv=PETSc.InsertMode.INSERT, mode=PETSc.ScatterMode.FORWARD)
-
         error = assemble_scalar((u_ex - uh)**2 * dx)
         error = MPI.sum(mesh.mpi_comm(), error)
         errors[i] = np.sqrt(error)
 
     # Compute convergence rate
     rate = np.log(errors[1:] / errors[:-1]) / np.log(0.5)
-    assert rate[0] > n + 0.85
+    assert rate[0] > n + 0.65
     assert rate[1] > n + 0.95
 
 
