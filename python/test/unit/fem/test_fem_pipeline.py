@@ -9,7 +9,6 @@ import pytest
 from petsc4py import PETSc
 
 
-from dolfin_utils.test.skips import skip_in_parallel
 from dolfin import (MPI, DirichletBC, fem, Function, FunctionSpace,
                     UnitCubeMesh, UnitIntervalMesh, UnitSquareMesh)
 from dolfin.cpp.mesh import CellType
@@ -83,7 +82,7 @@ def test_manufactured_poisson(n, mesh, component):
 def test_convergence_rate_poisson_simplices(n, cell):
     """ Manufactured Poisson problem, solving u = Pi_{i=0}^gdim sin(pi*x_i) """
     if cell == CellType.triangle:
-        mesh = UnitSquareMesh(MPI.comm_world, 3, 3)
+        mesh = UnitSquareMesh(MPI.comm_world, 3, 3, diagonal="crossed")
     elif cell == CellType.tetrahedron:
         mesh = UnitCubeMesh(MPI.comm_world, 2, 2, 2, CellType.tetrahedron)
 
@@ -101,7 +100,7 @@ def test_convergence_rate_poisson_simplices(n, cell):
         def u_exact(x):
             u = 1
             for component in range(mesh.geometry.dim):
-                u *= np.sin(np.pi * x[:,component])
+                u *= np.sin(np.pi * x[component])
             return u
 
         # Exact solution
@@ -116,8 +115,8 @@ def test_convergence_rate_poisson_simplices(n, cell):
         L = inner(f, v) * dx
 
         u_bc = Function(V)
-        u_bc.interpolate(lambda x: np.zeros(x.shape[0]))
-        bc = DirichletBC(V, u_bc, lambda x: np.full(x.shape[0], True))
+        u_bc.interpolate(lambda x: np.zeros(x.shape[1]))
+        bc = DirichletBC(V, u_bc, lambda x: np.full(x.shape[1], True))
 
         b = assemble_vector(L)
         apply_lifting(b, [a], [[bc]])
@@ -144,8 +143,8 @@ def test_convergence_rate_poisson_simplices(n, cell):
 
     # Compute convergence rate
     rate = np.log(errors[1:] / errors[:-1]) / np.log(0.5)
-    print(rate)
-    assert min(rate) > n + 0.85
+    assert rate[0] > n + 0.85
+    assert rate[1] > n + 0.95
 
 
 @pytest.mark.parametrize("n", [1, 2, 3])
@@ -162,7 +161,7 @@ def test_convergence_rate_poisson_non_simplices(n, cell):
     def u_exact(x):
         u = 1
         for component in range(gdim):
-            u *= np.sin(np.pi * x[:, component])
+            u *= np.sin(np.pi * x[component])
         return u
 
     refs = 3
@@ -196,8 +195,8 @@ def test_convergence_rate_poisson_non_simplices(n, cell):
         L = inner(f, v) * dx
 
         u_bc = Function(V)
-        u_bc.interpolate(lambda x: np.zeros(x.shape[0]))
-        bc = DirichletBC(V, u_bc, lambda x: np.full(x.shape[0], True))
+        u_bc.interpolate(lambda x: np.zeros(x.shape[1]))
+        bc = DirichletBC(V, u_bc, lambda x: np.full(x.shape[1], True))
 
         b = assemble_vector(L)
         apply_lifting(b, [a], [[bc]])
@@ -224,5 +223,5 @@ def test_convergence_rate_poisson_non_simplices(n, cell):
 
     # Compute convergence rate
     rate = np.log(errors[1:] / errors[:-1]) / np.log(0.5)
-    print(rate)
-    assert min(rate) > n + 0.85
+    assert rate[0] > n + 0.85
+    assert rate[1] > n + 0.95
