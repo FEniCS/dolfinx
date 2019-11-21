@@ -11,7 +11,8 @@ import numpy as np
 import pytest
 from dolfin_utils.test.skips import skip_in_parallel
 
-from dolfin import MPI, FunctionSpace, cpp, fem, Mesh, FacetNormal, Function, VectorFunctionSpace
+from dolfin import (MPI, FunctionSpace, cpp, fem, Mesh, FacetNormal, Function,
+                    VectorFunctionSpace, MeshFunction)
 from dolfin.cpp.mesh import CellType
 from ufl import inner, ds
 
@@ -331,15 +332,24 @@ def test_hexahedron_dof_ordering(space_type):
 def test_facet_normals(cell_type):
     """Test that FacetNormal is outward facing"""
     if cell_type == CellType.triangle:
-        points = np.array([[0., 0.], [1., 0.], [0., 1.]])
+        # Define equilateral triangle such that the integral over one facet will be one
+        s = np.sqrt(2 / np.sqrt(3))  # side length
+        points = np.array([[0., 0.], [s, 0.],
+                           [s / 2, s * np.sqrt(3) / 2]])
         num_facets = 3
     elif cell_type == CellType.tetrahedron:
-        points = np.array([[0., 0., 0.], [1., 0., 0.], [0., 1., 0.], [0., 0., 1.]])
+        # Define regular tetrahedron such that the integral over one facet will be one
+        s = np.power(2, 1 / 4)
+        points = np.array([[0., 0., 0.], [s, 0., 0.],
+                           [s / 2, s * np.sqrt(3) / 2, 0.],
+                           [s / 2, s / np.sqrt(3), 2 * np.sqrt(2 / 3)]])
         num_facets = 4
     elif cell_type == CellType.quadrilateral:
+        # Define unit quadrilateral
         points = np.array([[0., 0.], [1., 0.], [0., 1.], [1., 1.]])
         num_facets = 4
     elif cell_type == CellType.hexahedron:
+        # Define unit hexahedron
         points = np.array([[0., 0., 0.], [1., 0., 0.], [0., 1., 0.],
                            [1., 1., 0.], [0., 0., 1.], [1., 0., 1.],
                            [0., 1., 1.], [1., 1., 1.]])
@@ -348,7 +358,7 @@ def test_facet_normals(cell_type):
 
     order = list(range(num_points))
     for count in range(10):
-        # Randomly number the points and create the mest
+        # Randomly number the points and create the mesh
         shuffle(order)
         ordered_points = np.zeros(points.shape)
         for i, j in enumerate(order):
@@ -361,30 +371,41 @@ def test_facet_normals(cell_type):
         V = VectorFunctionSpace(mesh, ("Lagrange", 1))
         normal = FacetNormal(mesh)
 
+        v = Function(V)
+        facet_function = MeshFunction("size_t", mesh, mesh.topology.dim - 1, 1)
+        facet_function.values[:] = range(num_facets)
+
         # For each facet, check that the inner product of the normal and
         # the vector that has a positive normal component on only that facet
         # is positive
         for i in range(num_facets):
-            v = Function(V)
             if cell_type == CellType.triangle:
-                co = points[i]
+                co = ordered_points[2 - i]
+                # Vector function that is zero at `co` and points away from `co`
+                # so that there is no normal component on two edges
                 v.interpolate(lambda x: (x[0] - co[0], x[1] - co[1]))
             elif cell_type == CellType.tetrahedron:
-                co = points[i]
+                co = ordered_points[3 - i]
+                # Vector function that is zero at `co` and points away from `co`
+                # so that there is no normal component on three faces
                 v.interpolate(lambda x: (x[0] - co[0], x[1] - co[1], x[2] - co[2]))
             elif cell_type == CellType.quadrilateral:
-                if i // 2 == 0:
-                    v.interpolate(lambda x: (x[0] - i % 2, 0 * x[1]))
-                else:
-                    v.interpolate(lambda x: (0 * x[0], x[1] - i % 2))
+                # function that is 0 on one edge and points away from that edge
+                # so that there is no normal component on three edges
+                v.interpolate(lambda x: tuple(x[j] - i % 2 if j == i // 2 else 0 * x[j] for j in range(2)))
             elif cell_type == CellType.hexahedron:
-                if i // 2 == 0:
-                    v.interpolate(lambda x: (x[0] - i % 2, 0 * x[1], 0 * x[2]))
-                elif i // 2 == 1:
-                    v.interpolate(lambda x: (0 * x[0], x[1] - i % 2, 0 * x[2]))
-                else:
-                    v.interpolate(lambda x: (0 * x[0], 0 * x[1], x[2] - i % 2))
+                # function that is 0 on one face and points away from that face
+                # so that there is no normal component on five faces
+                v.interpolate(lambda x: tuple(x[j] - i % 2 if j == i // 3 else 0 * x[j] for j in range(3)))
 
-            a = inner(v, normal) * ds
-            result = fem.assemble_scalar(a)
-            assert np.real(result) > 0
+            # assert that the integrals these functions dotted with the normal over a face
+            # is 1 on one face and 0 on the others
+            ones = 0
+            for j in range(num_facets):
+                a = inner(v, normal) * ds(subdomain_data=facet_function, subdomain_id=j)
+                result = fem.assemble_scalar(a)
+                if np.isclose(result, 1):
+                    assert ones == 0
+                    ones += 1
+                else:
+                    assert np.isclose(result, 0)
