@@ -1,8 +1,4 @@
-from pygmsh.opencascade import Geometry
-from pygmsh import generate_mesh
-
 import numpy as np
-import h5py
 import os
 import pytest
 
@@ -16,6 +12,12 @@ assert(tempdir)
 
 @pytest.mark.parametrize("order, element", [(1, "tetra"), (2, "tetra10")])
 def test_HDF5_io(tempdir, order, element):
+    pytest.importorskip("pygmsh")
+    h5py = pytest.importorskip("h5py")
+
+    from pygmsh.opencascade import Geometry
+    from pygmsh import generate_mesh
+
     # Generate a sphere with gmsh with tetrahedral elements
     geo = Geometry()
     geo.add_raw_code("Mesh.Algorithm = 2;")
