@@ -91,6 +91,7 @@ import dolfin
 from dolfin import MPI, DirichletBC, Function, FunctionSpace, RectangleMesh
 from dolfin.cpp.mesh import CellType
 from dolfin.io import XDMFFile
+from dolfin.la import VectorSpaceBasis
 from dolfin.plotting import plot
 from ufl import (FiniteElement, TestFunction, TrialFunction, VectorElement,
                  div, dx, grad, inner)
@@ -133,20 +134,22 @@ Q = FunctionSpace(mesh, P1)
 # x1 = 0, x1 = 1 and around the dolphin
 noslip = Function(V)
 # noslip.interpolate(lambda x: np.zeros_like(x[:mesh.geometry.dim]))
-bc0 = DirichletBC(V, noslip, lambda x: np.logical_or(np.isclose(x[1], 0.0),
-                                                     np.isclose(x[1], 1.0)))
+bc0 = DirichletBC(V, noslip,
+                  lambda x: np.logical_or(np.logical_or(np.isclose(x[0], 0.0),
+                                                        np.isclose(x[0], 1.0)),
+                                          np.isclose(x[1], 0.0)))
 
 
 # Inflow boundary condition for velocity at x0 = 1
 def inflow_eval(x):
     values = np.zeros((2, x.shape[1]))
-    values[0] = - np.sin(x[1] * np.pi)
+    values[0] = 1.0
     return values
 
 
 inflow = Function(V)
 inflow.interpolate(inflow_eval)
-bc1 = DirichletBC(V, inflow, lambda x: np.isclose(x[0], 1.0))
+bc1 = DirichletBC(V, inflow, lambda x: np.isclose(x[1], 1.0))
 
 # Collect boundary conditions
 bcs = [bc0, bc1]
@@ -225,6 +228,16 @@ ksp.setOperators(A, P)
 ksp.setTolerances(rtol=1e-8)
 ksp.setType("minres")
 
+# Set near null space for pressure.
+# TODO Check if this is correct!
+null_vec = Function(Q).vector
+null_vec.set(1.0)
+basis = VectorSpaceBasis([null_vec])
+basis.orthonormalize()
+nsp = PETSc.NullSpace()
+nsp.create(basis)
+A.setNearNullSpace(nsp)
+
 # Monitor the convergence of the KSP
 opts = PETSc.Options()
 opts["ksp_monitor"] = None
@@ -245,10 +258,10 @@ ksp.getPC().setFieldSplitIS(
 # Configure velocity and pressure sub KSPs
 ksp_u, ksp_p = ksp.getPC().getFieldSplitSubKSP()
 ksp_u.setType("preonly")
-ksp_u.getPC().setType("lu")
+ksp_u.getPC().setType("hypre")
 # ksp_u.getPC().setGAMGType(PETSc.PC.GAMGType.AGG)
-ksp_p.setType("preonly")
-ksp_p.getPC().setType("lu")
+ksp_p.setType("cg")
+ksp_p.getPC().setType("jacobi")
 
 ksp.setFromOptions()
 
