@@ -361,7 +361,7 @@ def test_facet_normals(cell_type):
         normal = FacetNormal(mesh)
 
         # For each facet, check that the inner product of the normal and
-        #  the vector that has a positive normal component on only that facet
+        # the vector that has a positive normal component on only that facet
         # is positive
         for i in range(num_facets):
             v = Function(V)
