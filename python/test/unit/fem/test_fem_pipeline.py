@@ -77,15 +77,14 @@ def test_manufactured_poisson(n, mesh, component):
     assert np.absolute(error) < 1.0e-14
 
 
-@skip_in_parallel
 @pytest.mark.parametrize("n", [1, 2, 3])
 @pytest.mark.parametrize("cell", [CellType.triangle, CellType.tetrahedron])
 def test_convergence_rate_poisson_simplices(n, cell):
     """ Manufactured Poisson problem, solving u = Pi_{i=0}^gdim sin(pi*x_i) """
     if cell == CellType.triangle:
-        mesh = UnitSquareMesh(MPI.comm_world, 1, 1)
+        mesh = UnitSquareMesh(MPI.comm_world, 3, 3)
     elif cell == CellType.tetrahedron:
-        mesh = UnitCubeMesh(MPI.comm_world, 1, 1, 1, CellType.tetrahedron)
+        mesh = UnitCubeMesh(MPI.comm_world, 2, 2, 2, CellType.tetrahedron)
 
     cmap = fem.create_coordinate_map(mesh.ufl_domain())
 
@@ -101,7 +100,7 @@ def test_convergence_rate_poisson_simplices(n, cell):
         def u_exact(x):
             u = 1
             for component in range(mesh.geometry.dim):
-                u *= np.sin(np.pi * x[:, component])
+                u *= np.sin(np.pi * x[:,component])
             return u
 
         # Exact solution
@@ -144,11 +143,10 @@ def test_convergence_rate_poisson_simplices(n, cell):
 
     # Compute convergence rate
     rate = np.log(errors[1:] / errors[:-1]) / np.log(0.5)
-    refined_rates = rate[1:]
-    assert min(refined_rates) > n + 0.85
+    print(rate)
+    assert min(rate) > n + 0.85
 
 
-@skip_in_parallel
 @pytest.mark.parametrize("n", [1, 2, 3])
 @pytest.mark.parametrize("cell", [CellType.interval, CellType.quadrilateral, CellType.hexahedron])
 def test_convergence_rate_poisson_non_simplices(n, cell):
@@ -169,7 +167,10 @@ def test_convergence_rate_poisson_non_simplices(n, cell):
     refs = 3
     errors = np.zeros(refs)
     for i in range(refs):
-        N = 2**(i + 1)
+        if (gdim == 3):
+            N = 2**(i + 1)
+        else:
+            N = 2**(i + 3)
         if cell == CellType.interval:
             mesh = UnitIntervalMesh(MPI.comm_world, N)
         elif cell == CellType.quadrilateral:
@@ -222,4 +223,5 @@ def test_convergence_rate_poisson_non_simplices(n, cell):
 
     # Compute convergence rate
     rate = np.log(errors[1:] / errors[:-1]) / np.log(0.5)
+    print(rate)
     assert min(rate) > n + 0.85
