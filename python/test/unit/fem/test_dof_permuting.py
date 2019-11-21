@@ -385,4 +385,4 @@ def test_facet_normals(cell_type):
 
             a = inner(grad(v), normal) * ds
             result = fem.assemble_scalar(a)
-            assert result > 0
+            assert np.real(result) > 0
