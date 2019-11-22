@@ -82,7 +82,7 @@ class DirichletBC(cpp.fem.DirichletBC):
         else:
             raise NotImplementedError
 
-        if g_dofs == None:
+        if g_dofs is None:
             g_dofs = V_dofs
 
         super().__init__(_V, _value, V_dofs, g_dofs)
