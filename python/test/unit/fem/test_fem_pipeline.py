@@ -81,9 +81,9 @@ def test_manufactured_poisson(n, mesh, component):
 def test_convergence_rate_poisson_simplices(n, cell):
     """ Manufactured Poisson problem, solving u = Pi_{i=0}^gdim sin(pi*x_i) """
     if cell == CellType.triangle:
-        mesh = UnitSquareMesh(MPI.comm_world, 2, 1, diagonal="crossed")
+        mesh = UnitSquareMesh(MPI.comm_world, 2, 2, diagonal="crossed")
     elif cell == CellType.tetrahedron:
-        N = 1 if n == 3 else 2
+        N = 3
         mesh = UnitCubeMesh(MPI.comm_world, N, N, N, CellType.tetrahedron)
 
     cmap = fem.create_coordinate_map(mesh.ufl_domain())
@@ -104,7 +104,7 @@ def test_convergence_rate_poisson_simplices(n, cell):
             return u
 
         # Exact solution
-        Vh = FunctionSpace(mesh, ("Lagrange", n + 3))
+        Vh = FunctionSpace(mesh, ("Lagrange", n + 2))
         u_ex = Function(Vh)
         u_ex.interpolate(u_exact)
         # Source term
@@ -141,7 +141,7 @@ def test_convergence_rate_poisson_simplices(n, cell):
 
     # Compute convergence rate
     rate = np.log(errors[1:] / errors[:-1]) / np.log(0.5)
-    assert rate[0] > n + 0.65
+    assert rate[0] > n + 0.85
     assert rate[1] > n + 0.95
 
 
@@ -182,7 +182,7 @@ def test_convergence_rate_poisson_non_simplices(n, cell):
         u, v = TrialFunction(V), TestFunction(V)
 
         # Exact solution
-        Vh = FunctionSpace(mesh, ("Lagrange", n + 3))
+        Vh = FunctionSpace(mesh, ("Lagrange", n + 2))
         u_ex = Function(Vh)
         u_ex.interpolate(u_exact)
 
@@ -221,5 +221,5 @@ def test_convergence_rate_poisson_non_simplices(n, cell):
 
     # Compute convergence rate
     rate = np.log(errors[1:] / errors[:-1]) / np.log(0.5)
-    assert rate[0] > n + 0.85
+    assert rate[0] > n + 0.8
     assert rate[1] > n + 0.95
