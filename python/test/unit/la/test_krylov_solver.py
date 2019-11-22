@@ -14,7 +14,7 @@ from petsc4py import PETSc
 
 import ufl
 from dolfin import (MPI, DirichletBC, Function, FunctionSpace, UnitSquareMesh,
-                    VectorFunctionSpace)
+                    VectorFunctionSpace, MeshFunction)
 from dolfin.fem import (apply_lifting, assemble_matrix, assemble_vector, set_bc,
                         locate_dofs_topological)
 from dolfin.la import VectorSpaceBasis
@@ -100,9 +100,9 @@ def test_krylov_samg_solver_elasticity():
             return np.full(x.shape[1], True)
 
         facetdim = mesh.topology.dim - 1
-        mf = dolfin.MeshFunction("size_t", mesh, facetdim, 0)
+        mf = MeshFunction("size_t", mesh, facetdim, 0)
         mf.mark(boundary, 1)
-        bndry_facets = numpy.where(mf.values == 1)[0]
+        bndry_facets = np.where(mf.values == 1)[0]
 
         bdofs0 = locate_dofs_topological(V.sub(0), facetdim, bndry_facets)
         bdofs = locate_dofs_topological(V, facetdim, bndry_facets)

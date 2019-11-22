@@ -63,7 +63,7 @@ def test_matrix_assembly_block():
 
     u_bc = dolfin.function.Function(V1)
     u_bc.interpolate(bc_value)
-    bdofs = dolfin.fem.locate_dofs_topological(V, facetdim, bndry_facets)
+    bdofs = dolfin.fem.locate_dofs_topological(V1, facetdim, bndry_facets)
     bc = dolfin.fem.dirichletbc.DirichletBC(V1, u_bc, bdofs)
 
     # Define variational problem
@@ -274,8 +274,8 @@ def test_assembly_solve_block():
     u_bc0.interpolate(bc_val_0)
     u_bc1 = dolfin.function.Function(V1)
     u_bc1.interpolate(bc_val_1)
-    bdofs0 = dolfin.fem.locate_dofs_topological(V0, facetdim, boundary)
-    bdofs1 = dolfin.fem.locate_dofs_topological(V1, facetdim, boundary)
+    bdofs0 = dolfin.fem.locate_dofs_topological(V0, facetdim, bndry_facets)
+    bdofs1 = dolfin.fem.locate_dofs_topological(V1, facetdim, bndry_facets)
 
     bcs = [dolfin.fem.dirichletbc.DirichletBC(V0, u_bc0, bdofs0),
            dolfin.fem.dirichletbc.DirichletBC(V1, u_bc1, bdofs1)]

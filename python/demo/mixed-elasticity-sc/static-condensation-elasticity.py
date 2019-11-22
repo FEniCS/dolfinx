@@ -50,7 +50,8 @@ with u_bc.vector.localForm() as loc:
     loc.set(0.0)
 
 # Displacement BC is applied to the right side
-bc = dolfin.fem.DirichletBC(U, u_bc, dolfin.fem.locate_dofs_geometrical(V, lambda x: numpy.isclose(x[0], 0.0)))
+bdofs = dolfin.fem.locate_dofs_geometrical(U, lambda x: numpy.isclose(x[0], 0.0))
+bc = dolfin.fem.DirichletBC(U, u_bc, bdofs)
 
 
 def free_end(x):

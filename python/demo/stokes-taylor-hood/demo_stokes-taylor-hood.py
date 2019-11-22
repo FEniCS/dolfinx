@@ -121,16 +121,17 @@ W = FunctionSpace(mesh, TH)
 
 # Extract subdomain facet arrays
 mf = sub_domains.values
-mf0 = np.where(mf == 0)
-mf1 = np.where(mf == 1)
+mf0 = np.where(mf == 0)[0]
+mf1 = np.where(mf == 1)[0]
 
 # No-slip boundary condition for velocity
 # x1 = 0, x1 = 1 and around the dolphin
 noslip = Function(W.sub(0).collapse())
 noslip.interpolate(lambda x: np.zeros_like(x[:mesh.geometry.dim]))
 
-bdofs = locate_dofs_topological(V, sub_domains.dim, mf0[0])
-bc0 = DirichletBC(W.sub(0), noslip, bdofs)
+bdofs = locate_dofs_topological(W.sub(0), sub_domains.dim, mf0)
+bdofs_collapsed = locate_dofs_topological(W.sub(0).collapse(), sub_domains.dim, mf0)
+bc0 = DirichletBC(W.sub(0), noslip, bdofs, bdofs_collapsed)
 
 # Inflow boundary condition for velocity
 # x0 = 1
@@ -145,7 +146,8 @@ def inflow_eval(x):
 inflow = Function(W.sub(0).collapse())
 inflow.interpolate(inflow_eval)
 
-bdofs1 = locate_dofs_topological(V, sub_domains.dim, mf1[0])
+bdofs1 = locate_dofs_topological(W.sub(0), sub_domains.dim, mf1)
+bdofs1_collapsed = locate_dofs_topological(W.sub(0).collapse(), sub_domains.dim, mf1)
 bc1 = DirichletBC(W.sub(0), inflow, bdofs1)
 
 # Collect boundary conditions
