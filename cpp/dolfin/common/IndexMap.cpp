@@ -7,8 +7,6 @@
 #include "IndexMap.h"
 #include <algorithm>
 #include <numeric>
-#include <set>
-#include <vector>
 
 using namespace dolfin;
 using namespace dolfin::common;
@@ -151,6 +149,38 @@ const Eigen::Array<PetscInt, Eigen::Dynamic, 1>& IndexMap::ghosts() const
   return _ghosts;
 }
 //-----------------------------------------------------------------------------
+std::map<std::int32_t, std::set<int>>
+IndexMap::compute_forward_processes() const
+{
+  // Get neighbour processes
+  int indegree(-1), outdegree(-2), weighted(-1);
+  MPI_Dist_graph_neighbors_count(_neighbour_comm, &indegree, &outdegree,
+                                 &weighted);
+  assert(indegree == outdegree);
+  std::vector<int> neighbours(indegree), neighbours1(indegree),
+      weights(indegree), weights1(indegree);
+
+  MPI_Dist_graph_neighbors(_neighbour_comm, indegree, neighbours.data(),
+                           weights.data(), outdegree, neighbours1.data(),
+                           weights1.data());
+
+  assert(neighbours.size() == _forward_sizes.size());
+
+  std::map<std::int32_t, std::set<int>> sh_map;
+  int k = 0;
+  // Iterate through each neighbour (i)
+  for (std::size_t i = 0; i < _forward_sizes.size(); ++i)
+  {
+    for (int j = 0; j < _forward_sizes[i]; ++j)
+    {
+      // Add map entry from this index to the process it is shared with
+      sh_map[_forward_indices[k]].insert(neighbours[i]);
+      ++k;
+    }
+  }
+  return sh_map;
+}
+//-----------------------------------------------------------------------------
 int IndexMap::owner(std::int64_t global_index) const
 {
   auto it
@@ -248,11 +278,16 @@ template <typename T>
 void IndexMap::scatter_fwd_impl(const std::vector<T>& local_data,
                                 std::vector<T>& remote_data, int n) const
 {
-  // Get size of neighbourhood
-  int num_neighbours(-1), outdegree(-2), weighted(-1);
-  MPI_Dist_graph_neighbors_count(_neighbour_comm, &num_neighbours, &outdegree,
+
+#ifdef DEBUG
+  // Check size of neighbourhood
+  int indegree(-1), outdegree(-2), weighted(-1);
+  MPI_Dist_graph_neighbors_count(_neighbour_comm, &indegree, &outdegree,
                                  &weighted);
-  assert(num_neighbours == outdegree);
+  assert(indegree == outdegree);
+  assert(indegree == (int)_forward_sizes.size());
+#endif
+  const int num_neighbours = _forward_sizes.size();
 
   const std::int32_t _size_local = size_local();
   assert((int)local_data.size() == n * _size_local);
@@ -308,11 +343,15 @@ void IndexMap::scatter_rev_impl(std::vector<T>& local_data,
   assert((std::int32_t)remote_data.size() == n * num_ghosts());
   local_data.resize(n * size_local(), 0);
 
-  // Get size of neighbourhood
-  int num_neighbours(-1), outdegree(-2), weighted(-1);
-  MPI_Dist_graph_neighbors_count(_neighbour_comm, &num_neighbours, &outdegree,
+#ifdef DEBUG
+  // Check size of neighbourhood
+  int indegree(-1), outdegree(-2), weighted(-1);
+  MPI_Dist_graph_neighbors_count(_neighbour_comm, &indegree, &outdegree,
                                  &weighted);
-  assert(num_neighbours == outdegree);
+  assert(indegree == outdegree);
+  assert(indegree == (int)_forward_sizes.size());
+#endif
+  const int num_neighbours = _forward_sizes.size();
 
   // Compute number of items to send to each process
   std::vector<std::int32_t> send_sizes(num_neighbours, 0);
