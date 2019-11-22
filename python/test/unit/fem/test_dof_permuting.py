@@ -14,7 +14,7 @@ from dolfin_utils.test.skips import skip_in_parallel
 from dolfin import (MPI, FunctionSpace, cpp, fem, Mesh, FacetNormal, Function,
                     VectorFunctionSpace, MeshFunction)
 from dolfin.cpp.mesh import CellType
-from ufl import inner, ds, jump, dS
+from ufl import inner, ds, jump, dS, avg
 
 xfail = pytest.mark.xfail(strict=True)
 
@@ -488,3 +488,60 @@ def test_jumps(cell_type):
                 a = jump(v, normal) * dS(subdomain_data=facet_function, subdomain_id=j)
                 result = fem.assemble_scalar(a)
                 assert np.isclose(abs(result), 2)
+
+
+@skip_in_parallel
+@pytest.mark.parametrize('cell_type', [CellType.triangle, CellType.tetrahedron,
+                                       CellType.quadrilateral, CellType.hexahedron])
+def test_averages(cell_type):
+    """Test that avg between two cells is correctly computed"""
+    # Define meshes with two cells such that the boundary between the cells is at x = 0
+    # In each mesh, the facet where the two cells meet has area 1
+    if cell_type == CellType.triangle:
+        points = np.array([[-1., 0.5], [0., 0.], [0., 1.], [1., 0.5]])
+        cells = np.array([[0, 1, 2], [3, 1, 2]])
+    elif cell_type == CellType.tetrahedron:
+        points = np.array([[-1., 0., 0.], [0., 0., 0.], [0., 2., 0.], [0., 0., 1.], [1., 0., 0.]])
+        cells = np.array([[0, 1, 2, 3], [1, 3, 2, 4]])
+    elif cell_type == CellType.quadrilateral:
+        points = np.array([[-1., 0.], [-1., 0.], [0., 0.], [0., 1.], [1., 0.], [1., 1.]])
+        cells = np.array([[0, 1, 2, 3], [2, 3, 4, 5]])
+    elif cell_type == CellType.hexahedron:
+        points = np.array([[-1., 0., 0.], [-1., 1., 0.], [-1., 0., 1.], [-1., 1., 1.],
+                           [0., 0., 0.], [0., 1., 0.], [0., 0., 1.], [0., 1., 1.],
+                           [1., 0., 0.], [1., 1., 0.], [1., 0., 1.], [1., 1., 1.]])
+        cells = np.array([[0, 1, 2, 3, 4, 5, 6, 7], [4, 5, 6, 7, 8, 9, 10, 11]])
+    num_points = len(points)
+
+    order = list(range(num_points))
+    for count in range(10):
+        # Randomly number the points and create the mesh
+        shuffle(order)
+        ordered_points = np.zeros(points.shape)
+        for i, j in enumerate(order):
+            ordered_points[j] = points[i]
+        ordered_cells = np.array([[order[i] for i in cell] for cell in cells])
+        mesh = Mesh(MPI.comm_world, cell_type, ordered_points, ordered_cells,
+                    [], cpp.mesh.GhostMode.none)
+        mesh.geometry.coord_mapping = fem.create_coordinate_map(mesh)
+
+        V = FunctionSpace(mesh, ("DG", 0))
+        v = Function(V)
+
+        vec = np.ones(V.dim())
+        for i in V.dofmap.cell_dofs(0):
+            vec[i] = 0
+
+        v.vector[:] = vec
+
+        # Calculate integral over shared facet of the avg. This should be 1/2.
+        num_facets = mesh.num_entities(mesh.topology.dim - 1)
+        facet_function = MeshFunction("size_t", mesh, mesh.topology.dim - 1, 1)
+        facet_function.values[:] = range(num_facets)
+
+        on_b = mesh.topology.on_boundary(mesh.topology.dim - 1)
+        for j in range(num_facets):
+            if not on_b[j]:
+                a = avg(v) * dS(subdomain_data=facet_function, subdomain_id=j)
+                result = fem.assemble_scalar(a)
+                assert np.isclose(abs(result), 1/2)
