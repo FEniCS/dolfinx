@@ -29,6 +29,11 @@ class Mesh;
 namespace fem
 {
 
+/// Marking function to define facets when DirichletBC applies
+using marking_function = std::function<Eigen::Array<bool, Eigen::Dynamic, 1>(
+    const Eigen::Ref<
+        const Eigen::Array<double, 3, Eigen::Dynamic, Eigen::RowMajor>>&)>;
+
 /// Locate degrees of freedom topologically
 ///
 /// Finds degrees of freedom which belong to mesh entities. This
@@ -42,9 +47,10 @@ namespace fem
 ///                     will be located
 /// @return Array of local indices of located degrees of freedom
 ///
-std::vector<PetscInt>
-locate_dofs_topological(const function::FunctionSpace& V, const int entity_dim,
-                        const std::vector<std::int32_t>& entities);
+Eigen::Array<PetscInt, Eigen::Dynamic, 1> locate_dofs_topological(
+    const function::FunctionSpace& V, const int entity_dim,
+    const Eigen::Ref<const Eigen::Array<PetscInt, Eigen::Dynamic, 1>>&
+        entities);
 
 /// Locate degrees of freedom geometrically
 ///
@@ -55,11 +61,9 @@ locate_dofs_topological(const function::FunctionSpace& V, const int entity_dim,
 /// @param[in] marker Function marking tabulated degrees of freedom
 /// @return Array of local indices of located degrees of freedom
 ///
-Eigen::Array<PetscInt, Eigen::Dynamic, 1> locate_dofs_geometrical(
-    const function::FunctionSpace& V,
-    std::function<Eigen::Array<bool, Eigen::Dynamic, 1>(
-        const Eigen::Ref<
-            const Eigen::Array<double, 3, Eigen::Dynamic, Eigen::RowMajor>>&)> marker);
+Eigen::Array<PetscInt, Eigen::Dynamic, 1>
+locate_dofs_geometrical(const function::FunctionSpace& V,
+                        marking_function marker);
 
 /// Interface for setting (strong) Dirichlet boundary conditions.
 ///
@@ -77,11 +81,6 @@ class DirichletBC
 {
 
 public:
-
-  /// Marking function to define facets when DirichletBC applies
-  using marking_function = std::function<Eigen::Array<bool, Eigen::Dynamic, 1>(
-      const Eigen::Ref<
-          const Eigen::Array<double, 3, Eigen::Dynamic, Eigen::RowMajor>>&)>;
 
   /// Create boundary condition
   ///

@@ -232,10 +232,9 @@ void DirichletBC::mark_dofs(std::vector<bool>& markers) const
   }
 }
 //-----------------------------------------------------------------------------
-std::vector<PetscInt> fem::locate_dofs_topological(
-    const function::FunctionSpace& V,
-    const int entity_dim,
-    const std::vector<std::int32_t>& entities)
+Eigen::Array<PetscInt, Eigen::Dynamic, 1> fem::locate_dofs_topological(
+    const function::FunctionSpace& V, const int entity_dim,
+    const Eigen::Ref<const Eigen::Array<PetscInt, Eigen::Dynamic, 1>>& entities)
 {
 
   const DofMap& dofmap = *V.dofmap();
@@ -261,7 +260,7 @@ std::vector<PetscInt> fem::locate_dofs_topological(
 
   std::vector<PetscInt> dofs;
 
-  for (std::size_t i = 0; i < entities.size(); ++i)
+  for (Eigen::Index i = 0; i < entities.rows(); ++i)
   {
     // Create entity and attached cell
     const mesh::MeshEntity entity(mesh, entity_dim, entities[i]);
@@ -281,7 +280,8 @@ std::vector<PetscInt> fem::locate_dofs_topological(
     }
   }
 
-  return dofs;
+  return Eigen::Map<Eigen::Array<PetscInt, Eigen::Dynamic, 1>>(dofs.data(),
+                                                               dofs.size());
 }
 //-----------------------------------------------------------------------------
 Eigen::Array<PetscInt, Eigen::Dynamic, 1> fem::locate_dofs_geometrical(
