@@ -6,8 +6,6 @@
 
 #include "SparsityPatternBuilder.h"
 #include <dolfin/common/IndexMap.h>
-#include <dolfin/common/MPI.h>
-#include <dolfin/fem/DofMap.h>
 #include <dolfin/la/SparsityPattern.h>
 #include <dolfin/mesh/Mesh.h>
 #include <dolfin/mesh/MeshEntity.h>
@@ -19,36 +17,38 @@ using namespace dolfin::fem;
 //-----------------------------------------------------------------------------
 void SparsityPatternBuilder::cells(
     la::SparsityPattern& pattern, const mesh::Mesh& mesh,
-    const std::array<const fem::DofMap*, 2> dofmaps)
+    const Eigen::Ref<const Eigen::Array<PetscInt, Eigen::Dynamic, 1>>& dofs0,
+    int dim0,
+    const Eigen::Ref<const Eigen::Array<PetscInt, Eigen::Dynamic, 1>>& dofs1,
+    int dim1)
 {
-  assert(dofmaps[0]);
-  assert(dofmaps[1]);
   const int D = mesh.topology().dim();
   for (auto& cell : mesh::MeshRange(mesh, D))
   {
-    pattern.insert_local(dofmaps[0]->cell_dofs(cell.index()),
-                         dofmaps[1]->cell_dofs(cell.index()));
+    const int index = cell.index();
+    pattern.insert_local(dofs0.segment(dim0 * index, dim0),
+                         dofs1.segment(dim1 * index, dim1));
   }
 }
 //-----------------------------------------------------------------------------
 void SparsityPatternBuilder::interior_facets(
     la::SparsityPattern& pattern, const mesh::Mesh& mesh,
-    const std::array<const fem::DofMap*, 2> dofmaps)
+    const Eigen::Ref<const Eigen::Array<PetscInt, Eigen::Dynamic, 1>>& dofs0,
+    int dim0,
+    const Eigen::Ref<const Eigen::Array<PetscInt, Eigen::Dynamic, 1>>& dofs1,
+    int dim1)
 {
-  assert(dofmaps[0]);
-  assert(dofmaps[1]);
-
   const std::size_t D = mesh.topology().dim();
   mesh.create_entities(D - 1);
   mesh.create_connectivity(D - 1, D);
 
   // Array to store macro-dofs, if required (for interior facets)
-  std::array<Eigen::Array<PetscInt, Eigen::Dynamic, 1>, 2> macro_dofs;
   std::shared_ptr<const mesh::Connectivity> connectivity
       = mesh.topology().connectivity(D - 1, D);
   if (!connectivity)
     throw std::runtime_error("Facet-cell connectivity has not been computed.");
 
+  std::array<Eigen::Array<PetscInt, Eigen::Dynamic, 1>, 2> macro_dofs;
   for (auto& facet : mesh::MeshRange(mesh, D - 1))
   {
     // Continue if facet is exterior facet
@@ -62,25 +62,38 @@ void SparsityPatternBuilder::interior_facets(
     const mesh::MeshEntity cell0(mesh, D, facet.entities(D)[0]);
     const mesh::MeshEntity cell1(mesh, D, facet.entities(D)[1]);
 
-    // Tabulate dofs for each dimension on macro element
-    for (std::size_t i = 0; i < 2; i++)
-    {
-      auto cell_dofs0 = dofmaps[i]->cell_dofs(cell0.index());
-      auto cell_dofs1 = dofmaps[i]->cell_dofs(cell1.index());
-      macro_dofs[i].resize(cell_dofs0.size() + cell_dofs1.size());
-      std::copy(cell_dofs0.data(), cell_dofs0.data() + cell_dofs0.size(),
-                macro_dofs[i].data());
-      std::copy(cell_dofs1.data(), cell_dofs1.data() + cell_dofs1.size(),
-                macro_dofs[i].data() + cell_dofs0.size());
-    }
+    const int index_c0 = cell0.index();
+    const int index_c1 = cell1.index();
 
+    // Get dofmaps 0 for cells 0 and 1
+    auto cell_dofs0_c0 = dofs0.segment(dim0 * index_c0, dim0);
+    auto cell_dofs0_c1 = dofs0.segment(dim0 * index_c1, dim0);
+
+    // Get dofmaps 1 for cells 0 and 1
+    auto cell_dofs1_c0 = dofs1.segment(dim1 * index_c0, dim1);
+    auto cell_dofs1_c1 = dofs1.segment(dim1 * index_c1, dim1);
+
+    // Stack dofmaps for each cells
+    macro_dofs[0].resize(cell_dofs0_c0.size() + cell_dofs0_c1.size());
+    macro_dofs[1].resize(cell_dofs1_c0.size() + cell_dofs1_c1.size());
+
+    macro_dofs[0].head(cell_dofs0_c0.size()) = cell_dofs0_c0;
+    macro_dofs[0].tail(cell_dofs0_c1.size()) = cell_dofs0_c1;
+
+    macro_dofs[1].head(cell_dofs1_c0.size()) = cell_dofs1_c0;
+    macro_dofs[1].tail(cell_dofs1_c1.size()) = cell_dofs1_c1;
+
+    // Insert into sparsity pattern
     pattern.insert_local(macro_dofs[0], macro_dofs[1]);
   }
 }
 //-----------------------------------------------------------------------------
 void SparsityPatternBuilder::exterior_facets(
     la::SparsityPattern& pattern, const mesh::Mesh& mesh,
-    const std::array<const fem::DofMap*, 2> dofmaps)
+    const Eigen::Ref<const Eigen::Array<PetscInt, Eigen::Dynamic, 1>>& dofs0,
+    int dim0,
+    const Eigen::Ref<const Eigen::Array<PetscInt, Eigen::Dynamic, 1>>& dofs1,
+    int dim1)
 {
   const std::size_t D = mesh.topology().dim();
   mesh.create_entities(D - 1);
@@ -100,8 +113,9 @@ void SparsityPatternBuilder::exterior_facets(
 
     assert(connectivity->size(facet.index()) == 1);
     mesh::MeshEntity cell(mesh, D, facet.entities(D)[0]);
-    pattern.insert_local(dofmaps[0]->cell_dofs(cell.index()),
-                         dofmaps[1]->cell_dofs(cell.index()));
+    const int index = cell.index();
+    pattern.insert_local(dofs0.segment(dim0 * index, dim0),
+                         dofs1.segment(dim1 * index, dim1));
   }
 }
 //-----------------------------------------------------------------------------

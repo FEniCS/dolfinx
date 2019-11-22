@@ -138,13 +138,23 @@ la::PETScMatrix dolfin::fem::create_matrix(const Form& a)
   // Create and build sparsity pattern
   la::SparsityPattern pattern(mesh.mpi_comm(), index_maps);
   if (a.integrals().num_integrals(fem::FormIntegrals::Type::cell) > 0)
-    SparsityPatternBuilder::cells(pattern, mesh, {{dofmaps[0], dofmaps[1]}});
+  {
+    SparsityPatternBuilder::cells(pattern, mesh, dofmaps[0]->dof_array(),
+                                  dofmaps[0]->dim(), dofmaps[1]->dof_array(),
+                                  dofmaps[1]->dim());
+  }
   if (a.integrals().num_integrals(fem::FormIntegrals::Type::interior_facet) > 0)
-    SparsityPatternBuilder::interior_facets(pattern, mesh,
-                                            {{dofmaps[0], dofmaps[1]}});
+  {
+    SparsityPatternBuilder::interior_facets(
+        pattern, mesh, dofmaps[0]->dof_array(), dofmaps[0]->dim(),
+        dofmaps[1]->dof_array(), dofmaps[1]->dim());
+  }
   if (a.integrals().num_integrals(fem::FormIntegrals::Type::exterior_facet) > 0)
-    SparsityPatternBuilder::exterior_facets(pattern, mesh,
-                                            {{dofmaps[0], dofmaps[1]}});
+  {
+    SparsityPatternBuilder::exterior_facets(
+        pattern, mesh, dofmaps[0]->dof_array(), dofmaps[0]->dim(),
+        dofmaps[1]->dof_array(), dofmaps[1]->dim());
+  }
   pattern.assemble();
   t0.stop();
 
@@ -208,11 +218,23 @@ la::PETScMatrix fem::create_matrix_block(
         auto& sp = *patterns[row].back();
         const FormIntegrals& integrals = a(row, col)->integrals();
         if (integrals.num_integrals(FormIntegrals::Type::cell) > 0)
-          SparsityPatternBuilder::cells(sp, mesh, dofmaps);
+        {
+          SparsityPatternBuilder::cells(
+              sp, mesh, dofmaps[0]->dof_array(), dofmaps[0]->dim(),
+              dofmaps[1]->dof_array(), dofmaps[1]->dim());
+        }
         if (integrals.num_integrals(FormIntegrals::Type::interior_facet) > 0)
-          SparsityPatternBuilder::interior_facets(sp, mesh, dofmaps);
+        {
+          SparsityPatternBuilder::interior_facets(
+              sp, mesh, dofmaps[0]->dof_array(), dofmaps[0]->dim(),
+              dofmaps[1]->dof_array(), dofmaps[1]->dim());
+        }
         if (integrals.num_integrals(FormIntegrals::Type::exterior_facet) > 0)
-          SparsityPatternBuilder::exterior_facets(sp, mesh, dofmaps);
+        {
+          SparsityPatternBuilder::exterior_facets(
+              sp, mesh, dofmaps[0]->dof_array(), dofmaps[0]->dim(),
+              dofmaps[1]->dof_array(), dofmaps[1]->dim());
+        }
         sp.assemble();
       }
       else

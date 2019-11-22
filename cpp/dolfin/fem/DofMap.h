@@ -78,6 +78,14 @@ public:
     return _dofmap.segment(index, cell_dimension);
   }
 
+  /// The dimension for each cell
+  /// @return The number of degrees-of-freedom of a cell
+  int dim() const
+  {
+    assert(element_dof_layout);
+    return element_dof_layout->num_dofs();
+  }
+
   /// Extract subdofmap component
   /// @param[in] component The component indices
   /// @param[in] mesh The mesh the the dofmap is defined on

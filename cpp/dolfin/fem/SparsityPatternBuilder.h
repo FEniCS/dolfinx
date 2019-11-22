@@ -6,7 +6,7 @@
 
 #pragma once
 
-#include <array>
+#include <Eigen/Dense>
 #include <dolfin/la/SparsityPattern.h>
 
 namespace dolfin
@@ -23,27 +23,36 @@ class Mesh;
 
 namespace fem
 {
-class DofMap;
 
 /// This class provides functions to compute the sparsity pattern
-/// based on DOF maps
+/// based on DOF map data
 
 class SparsityPatternBuilder
 {
 public:
   /// Iterate over cells and insert entries into sparsity pattern
-  static void cells(la::SparsityPattern& pattern, const mesh::Mesh& mesh,
-                    const std::array<const fem::DofMap*, 2> dofmaps);
+  static void cells(
+      la::SparsityPattern& pattern, const mesh::Mesh& mesh,
+      const Eigen::Ref<const Eigen::Array<PetscInt, Eigen::Dynamic, 1>>& dofs0,
+      int dim0,
+      const Eigen::Ref<const Eigen::Array<PetscInt, Eigen::Dynamic, 1>>& dofs1,
+      int dim1);
 
   /// Iterate over interior facets and insert entries into sparsity pattern
-  static void interior_facets(la::SparsityPattern& pattern,
-                              const mesh::Mesh& mesh,
-                              const std::array<const fem::DofMap*, 2> dofmaps);
+  static void interior_facets(
+      la::SparsityPattern& pattern, const mesh::Mesh& mesh,
+      const Eigen::Ref<const Eigen::Array<PetscInt, Eigen::Dynamic, 1>>& dofs0,
+      int dim0,
+      const Eigen::Ref<const Eigen::Array<PetscInt, Eigen::Dynamic, 1>>& dofs1,
+      int dim1);
 
   /// Iterate over exterior facets and insert entries into sparsity pattern
-  static void exterior_facets(la::SparsityPattern& pattern,
-                              const mesh::Mesh& mesh,
-                              const std::array<const fem::DofMap*, 2> dofmaps);
+  static void exterior_facets(
+      la::SparsityPattern& pattern, const mesh::Mesh& mesh,
+      const Eigen::Ref<const Eigen::Array<PetscInt, Eigen::Dynamic, 1>>& dofs0,
+      int dim0,
+      const Eigen::Ref<const Eigen::Array<PetscInt, Eigen::Dynamic, 1>>& dofs1,
+      int dim1);
 };
 } // namespace fem
 } // namespace dolfin
