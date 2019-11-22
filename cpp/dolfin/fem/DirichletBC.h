@@ -29,15 +29,37 @@ class Mesh;
 namespace fem
 {
 
+/// Locate degrees of freedom topologically
+///
+/// Finds degrees of freedom which belong to mesh entities. This
+/// doesn't work e.g. for discontinuous function spaces.
+///
+/// @param[in] V The function (sub)space on which degrees of freedom will
+///              be located
+/// @param[in] entity_dim Topological dimension of mesh entities on which
+///                       degrees of freedom will be located
+/// @param[in] entities Indices of mesh entities on which degrees of freedom
+///                     will be located
+/// @return Array of local indices of located degrees of freedom
+///
 std::vector<PetscInt>
 locate_dofs_topological(const function::FunctionSpace& V, const int entity_dim,
                         const std::vector<std::int32_t>& entities);
 
+/// Locate degrees of freedom geometrically
+///
+/// Finds degrees of freedom whose location satisfies a marking function.
+///
+/// @param[in] V The function (sub)space on which degrees of freedom will
+///              be located
+/// @param[in] marker Function marking tabulated degrees of freedom
+/// @return Array of local indices of located degrees of freedom
+///
 Eigen::Array<PetscInt, Eigen::Dynamic, 1> locate_dofs_geometrical(
     const function::FunctionSpace& V,
     std::function<Eigen::Array<bool, Eigen::Dynamic, 1>(
         const Eigen::Ref<
-            const Eigen::Array<double, 3, Eigen::Dynamic, Eigen::RowMajor>>&)>);
+            const Eigen::Array<double, 3, Eigen::Dynamic, Eigen::RowMajor>>&)> marker);
 
 /// Interface for setting (strong) Dirichlet boundary conditions.
 ///
@@ -47,39 +69,9 @@ Eigen::Array<PetscInt, Eigen::Dynamic, 1> locate_dofs_geometrical(
 /// sub domain of the mesh.
 ///
 /// A DirichletBC is specified by the function g, the function space
-/// (trial space) and boundary indicators on (a subset of) the mesh
-/// boundary.
+/// (trial space) and degrees of freedom to which the boundary condition
+///  applies.
 ///
-/// The boundary indicators may be specified in a number of different
-/// ways:
-///
-/// 1. Providing a marking function, mark(x, only_boundary), to specify
-///    on which facets the boundary conditions should be applied.
-/// 2. Providing list of facets (by index, local to a process).
-///
-/// The degrees-of-freedom to which boundary conditions are applied are
-/// computed at construction and cannot be changed afterwards.
-///
-/// The 'method' variable may be used to specify the type of method used
-/// to identify degrees of freedom on the boundary. Available methods
-/// are:
-///
-/// 1. topological approach (default)
-///
-///    Fastest, but will only identify degrees of freedom that are
-///    located on a facet that is entirely on the / boundary. In
-///    particular, the topological approach will not identify degrees of
-///    freedom for discontinuous elements (which are all internal to the
-///    cell).
-///
-/// 2. (not yet implemented) geometric approach
-///
-///    Each dof on each facet that matches the boundary condition will
-///    be checked.
-///
-/// 3. (not yet implemented) pointwise approach.
-///
-///    For pointwise boundary conditions e.g. pointloads.
 
 class DirichletBC
 {
@@ -91,34 +83,15 @@ public:
       const Eigen::Ref<
           const Eigen::Array<double, 3, Eigen::Dynamic, Eigen::RowMajor>>&)>;
 
-//   /// Create boundary condition with marking method
-//   ///
-//   /// @param[in] V The function (sub)space on which the boundary
-//   ///              condition is applied
-//   /// @param[in] g The boundary condition value
-//   /// @param[in] mark The marking function. Only boundary facet are
-//   ///                 tested.
-//   /// @param[in] method Optional argument: A string specifying the
-//   ///                   method to identify dofs
-//   DirichletBC(std::shared_ptr<const function::FunctionSpace> V,
-//               std::shared_ptr<const function::Function> g,
-//               const marking_function& mark,
-//               Method method = Method::topological);
-
-//   /// Create boundary condition with facet indices
-//   ///
-//   /// @param[in] V The function (sub)space on which the boundary
-//   ///              condition is applied
-//   /// @param[in] g The boundary condition value
-//   /// @param[in] facet_indices Facets on which the boundary condition is
-//   ///                           applied (facet index local to process)
-//   /// @param[in] method Optional argument: A string specifying the
-//   ///                   method to identify dofs.
-//   DirichletBC(std::shared_ptr<const function::FunctionSpace> V,
-//               std::shared_ptr<const function::Function> g,
-//               const std::vector<std::int32_t>& facet_indices,
-//               Method method = Method::topological);
-
+  /// Create boundary condition
+  ///
+  /// @param[in] V The function (sub)space on which the boundary
+  ///              condition is applied
+  /// @param[in] g The boundary condition value
+  /// @param[in] V_dofs Indices of degrees of freedom in the space where the
+  ///                   the boundary condition is applied
+  /// @param[in] g_dofs Indices of degrees of freedom in the space of the
+  ///                   boundary value function
   DirichletBC(
       std::shared_ptr<const function::FunctionSpace> V,
       std::shared_ptr<const function::Function> g,
