@@ -10,8 +10,6 @@ import sys
 
 import numpy as np
 import pytest
-from dolfin_utils.test.fixtures import tempdir
-from dolfin_utils.test.skips import skip_in_parallel
 
 import dolfin
 import FIAT
@@ -21,6 +19,8 @@ from dolfin import (MPI, BoxMesh, Mesh, MeshEntity, MeshFunction,
 from dolfin.cpp.mesh import CellType, Partitioner, is_simplex
 from dolfin.fem import assemble_scalar
 from dolfin.io import XDMFFile
+from dolfin_utils.test.fixtures import tempdir
+from dolfin_utils.test.skips import skip_in_parallel
 from ufl import dx
 
 assert (tempdir)
@@ -543,3 +543,36 @@ def test_UnitHexMesh_assemble():
     vol = assemble_scalar(1 * dx(mesh))
     vol = MPI.sum(mesh.mpi_comm(), vol)
     assert(vol == pytest.approx(1, rel=1e-9))
+
+
+def test_mesh_order_unchanged_triangle():
+    points = [[0, 0], [1, 0], [1, 1]]
+    cells = [[0, 1, 2]]
+    mesh = Mesh(MPI.comm_world, CellType.triangle, points,
+                cells, [], cpp.mesh.GhostMode.none)
+    assert (mesh.cells()[0] == cells[0]).all()
+
+
+def test_mesh_order_unchanged_quadrilateral():
+    points = [[0, 0], [1, 0], [0, 1], [1, 1]]
+    cells = [[0, 1, 2, 3]]
+    mesh = Mesh(MPI.comm_world, CellType.quadrilateral, points,
+                cells, [], cpp.mesh.GhostMode.none)
+    assert (mesh.cells()[0] == cells[0]).all()
+
+
+def test_mesh_order_unchanged_tetrahedron():
+    points = [[0, 0, 0], [1, 0, 0], [1, 1, 0], [0, 0, 1]]
+    cells = [[0, 1, 2, 3]]
+    mesh = Mesh(MPI.comm_world, CellType.tetrahedron, points,
+                cells, [], cpp.mesh.GhostMode.none)
+    assert (mesh.cells()[0] == cells[0]).all()
+
+
+def test_mesh_order_unchanged_hexahedron():
+    points = [[0, 0, 0], [1, 0, 0], [0, 1, 0], [1, 1, 0],
+              [0, 0, 1], [1, 0, 1], [0, 1, 1], [1, 1, 1]]
+    cells = [[0, 1, 2, 3, 4, 5, 6, 7]]
+    mesh = Mesh(MPI.comm_world, CellType.hexahedron, points,
+                cells, [], cpp.mesh.GhostMode.none)
+    assert (mesh.cells()[0] == cells[0]).all()
