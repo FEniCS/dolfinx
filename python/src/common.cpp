@@ -65,10 +65,10 @@ void common(py::module& m)
       .def_property_readonly("ghosts", &dolfin::common::IndexMap::ghosts,
                              py::return_value_policy::reference_internal,
                              "Return list of ghost indices")
-      .def("compute_shared_indices",
-           &dolfin::common::IndexMap::compute_shared_indices,
-           "Return dict of local index to sharing processes for "
-           "shared indices on this process")
+      .def("compute_forward_processes",
+           &dolfin::common::IndexMap::compute_forward_processes,
+           "Return mapping from local indices to remote processes where "
+           "each index is ghosted")
       .def("indices", &dolfin::common::IndexMap::indices,
            "Return array of global indices for all indices on this process");
 

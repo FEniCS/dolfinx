@@ -149,7 +149,8 @@ const Eigen::Array<PetscInt, Eigen::Dynamic, 1>& IndexMap::ghosts() const
   return _ghosts;
 }
 //-----------------------------------------------------------------------------
-std::map<std::int32_t, std::set<int>> IndexMap::compute_shared_indices() const
+std::map<std::int32_t, std::set<int>>
+IndexMap::compute_forward_processes() const
 {
   // Get neighbour processes
   int indegree(-1), outdegree(-2), weighted(-1);

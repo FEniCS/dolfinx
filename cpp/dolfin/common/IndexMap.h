@@ -102,9 +102,10 @@ public:
   /// Owner rank (on global communicator) of each ghost entry
   Eigen::Array<std::int32_t, Eigen::Dynamic, 1> ghost_owners() const;
 
-  /// Create a map from shared indices to sharing processes
-  /// @return Map from local index to the set of processes that it is shared with
-  std::map<std::int32_t, std::set<int>> compute_shared_indices() const;
+  /// Create a map from each local index which can be forward scattered,
+  /// to the set of processes which they will be scattered to.
+  /// @return Map from local index to a set of processes
+  std::map<std::int32_t, std::set<int>> compute_forward_processes() const;
 
   /// Get process that owns index (global block index)
   int owner(std::int64_t global_index) const;
