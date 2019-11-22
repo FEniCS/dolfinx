@@ -83,7 +83,7 @@ def test_convergence_rate_poisson_simplices(n, cell):
     if cell == CellType.triangle:
         mesh = UnitSquareMesh(MPI.comm_world, 2, 2, diagonal="crossed")
     elif cell == CellType.tetrahedron:
-        N = 2
+        N = 1 if n == 3 else 2
         mesh = UnitCubeMesh(MPI.comm_world, N, N, N, CellType.tetrahedron)
 
     cmap = fem.create_coordinate_map(mesh.ufl_domain())
@@ -91,7 +91,7 @@ def test_convergence_rate_poisson_simplices(n, cell):
     refs = 3
     errors = np.zeros(refs)
     for i in range(refs):
-        mesh = refine(mesh, True)
+        mesh = refine(mesh, False)
         mesh.geometry.coord_mapping = cmap
 
         V = FunctionSpace(mesh, ("Lagrange", n))
@@ -141,7 +141,7 @@ def test_convergence_rate_poisson_simplices(n, cell):
 
     # Compute convergence rate
     rate = np.log(errors[1:] / errors[:-1]) / np.log(0.5)
-    assert rate[0] > n + 0.75
+    assert rate[0] > n + 0.55
     assert rate[1] > n + 0.9
 
 
