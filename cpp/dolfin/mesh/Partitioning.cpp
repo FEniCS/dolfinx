@@ -454,8 +454,9 @@ void distribute_cell_layer(
 } // namespace
 //-----------------------------------------------------------------------------
 // Distribute points
-std::pair<common::IndexMap,
-          Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>>
+std::tuple<
+    std::shared_ptr<common::IndexMap>, std::vector<std::int32_t>,
+    Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>>
 Partitioning::distribute_points(
     MPI_Comm comm,
     Eigen::Ref<const Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic,
@@ -606,11 +607,12 @@ Partitioning::distribute_points(
   Eigen::Map<Eigen::Array<std::int64_t, Eigen::Dynamic, 1>> garr(ghosts.data(),
                                                                  ghosts.size());
 
-  common::IndexMap v_idx_map(comm, local_size, garr, 1);
+  auto v_idx_map
+      = std::make_shared<common::IndexMap>(comm, local_size, garr, 1);
 
-  std::cout << mpi_rank << "] " << v_idx_map.size_local() << " "
-            << v_idx_map.size_global() << " " << v_idx_map.num_ghosts() << " "
-            << v_idx_map.ghost_owners() << "\n";
+  std::cout << mpi_rank << "] " << v_idx_map->size_local() << " "
+            << v_idx_map->size_global() << " " << v_idx_map->num_ghosts() << " "
+            << "\n";
 
   // Create compound datatype of gdim*doubles (point coords)
   MPI_Datatype compound_f64;
@@ -640,7 +642,7 @@ Partitioning::distribute_points(
 
   // Sort points and input global_indices into new order...
 
-  return std::pair(std::move(v_idx_map), std::move(recv_points));
+  return std::tuple(v_idx_map, std::move(new_local), std::move(recv_points));
 }
 //-----------------------------------------------------------------------------
 // Compute cell partitioning from local mesh data. Returns a vector

@@ -139,8 +139,8 @@ public:
   ///         global index to set of sharing processes for each shared
   ///         point)
 
-  static std::pair<
-    common::IndexMap,
+  static std::tuple<
+    std::shared_ptr<common::IndexMap>, std::vector<std::int32_t>,
       Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>>
   distribute_points(
       const MPI_Comm comm,
