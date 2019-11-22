@@ -103,7 +103,7 @@ def test_linear_pde():
     u_bc = function.Function(V)
     u_bc.vector.set(1.0)
     u_bc.vector.ghostUpdate(addv=PETSc.InsertMode.INSERT, mode=PETSc.ScatterMode.FORWARD)
-    bc = fem.DirichletBC(V, u_bc, boundary)
+    bc = fem.DirichletBC(V, u_bc, fem.locate_dofs_geometrical(V, boundary))
 
     # Create nonlinear problem
     problem = NonlinearPDEProblem(F, u, bc)
@@ -139,7 +139,7 @@ def test_nonlinear_pde():
     u_bc = function.Function(V)
     u_bc.vector.set(1.0)
     u_bc.vector.ghostUpdate(addv=PETSc.InsertMode.INSERT, mode=PETSc.ScatterMode.FORWARD)
-    bc = fem.DirichletBC(V, u_bc, boundary)
+    bc = fem.DirichletBC(V, u_bc, fem.locate_dofs_geometrical(V, boundary))
 
     # Create nonlinear problem
     problem = NonlinearPDEProblem(F, u, bc)
@@ -177,7 +177,7 @@ def test_nonlinear_pde_snes():
     u_bc = function.Function(V)
     u_bc.vector.set(1.0)
     u_bc.vector.ghostUpdate(addv=PETSc.InsertMode.INSERT, mode=PETSc.ScatterMode.FORWARD)
-    bc = fem.DirichletBC(V, u_bc, boundary)
+    bc = fem.DirichletBC(V, u_bc, fem.locate_dofs_geometrical(V, boundary))
 
     # Create nonlinear problem
     problem = NonlinearPDE_SNESProblem(F, u, bc)
@@ -261,7 +261,7 @@ def test_newton_solver_inheritance_override_methods():
         return np.logical_or(x[0] < 1.0e-8, x[0] > 1.0 - 1.0e-8)
 
     u_bc = function.Function(V)
-    bc = fem.DirichletBC(V, u_bc, boundary)
+    bc = fem.DirichletBC(V, u_bc, fem.locate_dofs_geometrical(V, boundary))
 
     # Create nonlinear problem
     problem = NonlinearPDEProblem(F, u, bc)

@@ -82,6 +82,7 @@ import dolfin.plotting
 import ufl
 from dolfin import (MPI, DirichletBC, Function, FunctionSpace, RectangleMesh,
                     solve)
+from dolfin.fem import locate_dofs_geometrical
 from dolfin.cpp.mesh import CellType
 from dolfin.io import XDMFFile
 from dolfin.specialfunctions import SpatialCoordinate
@@ -127,7 +128,11 @@ mesh.geometry.coord_mapping = cmap
 # :py:class:`DirichletBC <dolfin.fem.bcs.DirichletBC>` takes three
 # arguments: the function space the boundary condition applies to, the
 # value of the boundary condition, and the part of the boundary on which
-# the condition applies. In our example, the function space is ``V``,
+# the condition applies. This boundary part is identified with degrees of
+# freedom in the function space to which we apply the boundary conditions.
+# A method ``locate_dofs_geometrical`` is provided to extract the boundary
+# degrees of freedom using a geometrical criterium.
+# In our example, the function space is ``V``,
 # the value of the boundary condition (0.0) can represented using a
 # :py:class:`Function <dolfin.functions.Function>` and the Dirichlet
 # boundary is defined immediately above. The definition of the Dirichlet
@@ -136,8 +141,9 @@ mesh.geometry.coord_mapping = cmap
 # Define boundary condition on x = 0 or x = 1
 u0 = Function(V)
 u0.vector.set(0.0)
-bc = DirichletBC(V, u0, lambda x: np.logical_or(x[0] < np.finfo(float).eps,
-                                                x[0] > 1.0 - np.finfo(float).eps))
+bdofs = locate_dofs_geometrical(V, lambda x: np.logical_or(x[0] < np.finfo(float).eps,
+                                                           x[0] > 1.0 - np.finfo(float).eps))
+bc = DirichletBC(V, u0, bdofs)
 
 # Next, we want to express the variational problem.  First, we need to
 # specify the trial function :math:`u` and the test function :math:`v`,

@@ -55,9 +55,16 @@ def test_matrix_assembly_block():
 
     def bc_value(x):
         return numpy.cos(x[0]) * numpy.cos(x[1])
+
+    facetdim = mesh.topology.dim - 1
+    mf = dolfin.MeshFunction("size_t", mesh, facetdim, 0)
+    mf.mark(boundary, 1)
+    bndry_facets = numpy.where(mf.values == 1)[0]
+
     u_bc = dolfin.function.Function(V1)
     u_bc.interpolate(bc_value)
-    bc = dolfin.fem.dirichletbc.DirichletBC(V1, u_bc, boundary)
+    bdofs = dolfin.fem.locate_dofs_topological(V, facetdim, bndry_facets)
+    bc = dolfin.fem.dirichletbc.DirichletBC(V1, u_bc, bdofs)
 
     # Define variational problem
     du, dp = ufl.TrialFunction(V0), ufl.TrialFunction(V1)
@@ -127,7 +134,9 @@ def test_matrix_assembly_block():
         - inner(f, v0) * ufl.dx - inner(g, v1) * dx
     J = derivative(F, U, dU)
 
-    bc = dolfin.fem.dirichletbc.DirichletBC(W.sub(1), u_bc, boundary)
+    bdofsW = dolfin.fem.locate_dofs_topological(W.sub(1), facetdim, bndry_facets)
+
+    bc = dolfin.fem.dirichletbc.DirichletBC(W.sub(1), u_bc, bdofs, bdofsW)
     A2 = dolfin.fem.assemble_matrix(J, [bc])
     A2.assemble()
     b2 = dolfin.fem.assemble_vector(F)
@@ -256,12 +265,20 @@ def test_assembly_solve_block():
     def boundary(x):
         return numpy.logical_or(x[0] < 1.0e-6, x[0] > 1.0 - 1.0e-6)
 
+    facetdim = mesh.topology.dim - 1
+    mf = dolfin.MeshFunction("size_t", mesh, facetdim, 0)
+    mf.mark(boundary, 1)
+    bndry_facets = numpy.where(mf.values == 1)[0]
+
     u_bc0 = dolfin.function.Function(V0)
     u_bc0.interpolate(bc_val_0)
     u_bc1 = dolfin.function.Function(V1)
     u_bc1.interpolate(bc_val_1)
-    bcs = [dolfin.fem.dirichletbc.DirichletBC(V0, u_bc0, boundary),
-           dolfin.fem.dirichletbc.DirichletBC(V1, u_bc1, boundary)]
+    bdofs0 = dolfin.fem.locate_dofs_topological(V0, facetdim, boundary)
+    bdofs1 = dolfin.fem.locate_dofs_topological(V1, facetdim, boundary)
+
+    bcs = [dolfin.fem.dirichletbc.DirichletBC(V0, u_bc0, bdofs0),
+           dolfin.fem.dirichletbc.DirichletBC(V1, u_bc1, bdofs1)]
 
     # Block and Nest variational problem
     u, p = dolfin.function.Function(V0), dolfin.function.Function(V1)
@@ -380,8 +397,11 @@ def test_assembly_solve_block():
     u1_bc = dolfin.function.Function(V1)
     u1_bc.interpolate(bc_val_1)
 
-    bcs = [dolfin.fem.dirichletbc.DirichletBC(W.sub(0), u0_bc, boundary),
-           dolfin.fem.dirichletbc.DirichletBC(W.sub(1), u1_bc, boundary)]
+    bdofsW0 = dolfin.fem.locate_dofs_topological(W.sub(0), facetdim, boundary)
+    bdofsW1 = dolfin.fem.locate_dofs_topological(W.sub(1), facetdim, boundary)
+
+    bcs = [dolfin.fem.dirichletbc.DirichletBC(W.sub(0), u0_bc, bdofs0, bdofsW0),
+           dolfin.fem.dirichletbc.DirichletBC(W.sub(1), u1_bc, bdofs1, bdofsW1)]
 
     Jmat2 = dolfin.fem.create_matrix(J)
     Fvec2 = dolfin.fem.create_vector(F)
@@ -450,8 +470,18 @@ def test_assembly_solve_taylor_hood(mesh):
     u_bc_1 = dolfin.Function(P2)
     u_bc_1.interpolate(lambda x: numpy.row_stack(tuple(numpy.sin(x[j]) for j in range(gdim))))
 
-    bcs = [dolfin.DirichletBC(P2, u_bc_0, boundary0),
-           dolfin.DirichletBC(P2, u_bc_1, boundary1)]
+    facetdim = mesh.topology.dim - 1
+    mf = dolfin.MeshFunction("size_t", mesh, facetdim, 0)
+    mf.mark(boundary0, 1)
+    mf.mark(boundary1, 2)
+    bndry_facets0 = numpy.where(mf.values == 1)[0]
+    bndry_facets1 = numpy.where(mf.values == 2)[0]
+
+    bdofs0 = dolfin.fem.locate_dofs_topological(P2, facetdim, bndry_facets0)
+    bdofs1 = dolfin.fem.locate_dofs_topological(P2, facetdim, bndry_facets1)
+
+    bcs = [dolfin.DirichletBC(P2, u_bc_0, bdofs0),
+           dolfin.DirichletBC(P2, u_bc_1, bdofs1)]
 
     u, p = dolfin.Function(P2), dolfin.Function(P1)
     du, dp = ufl.TrialFunction(P2), ufl.TrialFunction(P1)
@@ -557,8 +587,11 @@ def test_assembly_solve_taylor_hood(mesh):
     J = derivative(F, U, dU)
     P = inner(ufl.grad(du), ufl.grad(v)) * dx + inner(dp, q) * dx
 
-    bcs = [dolfin.DirichletBC(W.sub(0), u_bc_0, boundary0),
-           dolfin.DirichletBC(W.sub(0), u_bc_1, boundary1)]
+    bdofsW0 = dolfin.fem.locate_dofs_topological(W.sub(0), facetdim, bndry_facets0)
+    bdofsW1 = dolfin.fem.locate_dofs_topological(W.sub(0), facetdim, bndry_facets1)
+
+    bcs = [dolfin.DirichletBC(W.sub(0), u_bc_0, bdofs0, bdofsW0),
+           dolfin.DirichletBC(W.sub(0), u_bc_1, bdofs1, bdofsW1)]
 
     Jmat2 = dolfin.fem.create_matrix(J)
     Pmat2 = dolfin.fem.create_matrix(P)

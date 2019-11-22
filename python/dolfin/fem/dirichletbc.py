@@ -48,6 +48,19 @@ class DirichletBC(cpp.fem.DirichletBC):
         """Representation of Dirichlet boundary condition which is imposed on
         a linear system.
 
+        Parameters
+        ----------
+        V
+            Function space of a problem to which boundary conditions are applied.
+        value
+            Lifted boundary values function.
+        V_dofs
+            Local indices of degrees of freedom in V function space to which
+            boundary condition applies.
+        g_dofs : optional
+            Local indices of degrees of freedom in the space of value function
+            to which boundary condition applies.
+            If not specified, ``V_dofs`` is used.
         """
 
         # FIXME: Handle (mesh function, index) marker type? If yes, use

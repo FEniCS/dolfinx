@@ -12,7 +12,7 @@ from dolfin import (MPI, DirichletBC, Function, FunctionSpace, UnitCubeMesh,
                     UnitIntervalMesh, UnitSquareMesh)
 from dolfin.cpp.mesh import CellType
 from dolfin.fem import (apply_lifting, assemble_matrix, assemble_scalar,
-                        assemble_vector, set_bc)
+                        assemble_vector, set_bc, locate_dofs_geometrical)
 from ufl import (SpatialCoordinate, TestFunction, TrialFunction, div, dx, grad,
                  inner)
 
@@ -49,7 +49,8 @@ def test_manufactured_poisson(n, mesh, component):
 
     u_bc = Function(V)
     u_bc.interpolate(lambda x: x[component]**n)
-    bc = DirichletBC(V, u_bc, lambda x: np.full(x.shape[1], True))
+    bdofs = locate_dofs_geometrical(V, lambda x: np.full(x.shape[1], True))
+    bc = DirichletBC(V, u_bc, bdofs)
 
     b = assemble_vector(L)
     apply_lifting(b, [a], [[bc]])

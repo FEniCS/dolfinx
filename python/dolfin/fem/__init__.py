@@ -32,5 +32,5 @@ __all__ = [
     "assemble_matrix", "set_bc", "set_bc_nest", "create_coordinate_map",
     "DirichletBC", "DofMap", "Form", "FormIntegrals",
     "derivative", "adjoint", "increase_order",
-    "tear", "project", "solve"
+    "tear", "project", "solve", "locate_dofs_geometrical", "locate_dofs_topological"
 ]
