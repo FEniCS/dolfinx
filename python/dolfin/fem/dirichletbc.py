@@ -43,7 +43,8 @@ class DirichletBC(cpp.fem.DirichletBC):
             self,
             V: typing.Union[function.FunctionSpace],
             value: typing.Union[ufl.Coefficient, function.Function, cpp.function.Function],
-            dof_indices: typing.Union[typing.List[int]]):
+            V_dofs: typing.List[int],
+            g_dofs: typing.List[int] = None):
         """Representation of Dirichlet boundary condition which is imposed on
         a linear system.
 
@@ -68,4 +69,7 @@ class DirichletBC(cpp.fem.DirichletBC):
         else:
             raise NotImplementedError
 
-        super().__init__(_V, _value, dof_indices)
+        if g_dofs == None:
+            g_dofs = V_dofs
+
+        super().__init__(_V, _value, V_dofs, g_dofs)

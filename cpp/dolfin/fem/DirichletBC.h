@@ -119,9 +119,12 @@ public:
 //               const std::vector<std::int32_t>& facet_indices,
 //               Method method = Method::topological);
 
-  DirichletBC(std::shared_ptr<const function::FunctionSpace> V,
-              std::shared_ptr<const function::Function> g,
-              Eigen::Array<PetscInt, Eigen::Dynamic, 2>& dof_indices);
+  DirichletBC(
+      std::shared_ptr<const function::FunctionSpace> V,
+      std::shared_ptr<const function::Function> g,
+      const Eigen::Ref<const Eigen::Array<PetscInt, Eigen::Dynamic, 1>>& V_dofs,
+      const Eigen::Ref<const Eigen::Array<PetscInt, Eigen::Dynamic, 1>>&
+          g_dofs);
 
   /// Copy constructor. Either cached DOF data are copied.
   /// @param[in] bc The object to be copied.

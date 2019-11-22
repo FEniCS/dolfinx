@@ -27,7 +27,8 @@ namespace
 {
 std::vector<std::array<PetscInt, 2>>
 get_remote_bcs(const common::IndexMap& map, const common::IndexMap& map_g,
-               const Eigen::Ref<const Eigen::Array<PetscInt, Eigen::Dynamic, 2>>& dofs_local)
+               const Eigen::Ref<const Eigen::Array<PetscInt, Eigen::Dynamic, 1>>& dofs_local,
+               const Eigen::Ref<const Eigen::Array<PetscInt, Eigen::Dynamic, 1>>& dofs_local_g)
 {
   std::vector<std::array<PetscInt, 2>> dof_dof_g;
 
@@ -46,16 +47,16 @@ get_remote_bcs(const common::IndexMap& map, const common::IndexMap& map_g,
   std::vector<PetscInt> marker_ghost(bs * size_ghost, -1);
   for (Eigen::Index i = 0; i < dofs_local.rows(); i++)
   {
-    const PetscInt index_block_g = dofs_local(i, 1) / bs_g;
-    const PetscInt pos_g = dofs_local(i, 1) % bs_g;
-    if (dofs_local(i, 0) < bs * size_owned)
+    const PetscInt index_block_g = dofs_local_g[i] / bs_g;
+    const PetscInt pos_g = dofs_local_g[i] % bs_g;
+    if (dofs_local[i] < bs * size_owned)
     {
-      marker_owned[dofs_local(i, 0)]
+      marker_owned[dofs_local[i]]
           = bs_g * map_g.local_to_global(index_block_g) + pos_g;
     }
     else
     {
-      marker_ghost[dofs_local(i, 0) - (bs * size_owned)]
+      marker_ghost[dofs_local[i] - (bs * size_owned)]
           = bs_g * map_g.local_to_global(index_block_g) + pos_g;
     }
   }
@@ -109,24 +110,31 @@ get_remote_bcs(const common::IndexMap& map, const common::IndexMap& map_g,
 }
 } // namespace
 //-----------------------------------------------------------------------------
-DirichletBC::DirichletBC(std::shared_ptr<const function::FunctionSpace> V,
-                         std::shared_ptr<const function::Function> g,
-                         Eigen::Array<PetscInt, Eigen::Dynamic, 2>& dofs_local)
+DirichletBC::DirichletBC(
+    std::shared_ptr<const function::FunctionSpace> V,
+    std::shared_ptr<const function::Function> g,
+    const Eigen::Ref<const Eigen::Array<PetscInt, Eigen::Dynamic, 1>>& V_dofs,
+    const Eigen::Ref<const Eigen::Array<PetscInt, Eigen::Dynamic, 1>>& g_dofs)
     : _function_space(V), _g(g)
 {
+
+  if(V_dofs.rows() != g_dofs.rows())
+  {
+    throw std::runtime_error("Not matching number of degrees of freedom.");
+  }
 
   // Get bc dof indices (local) in (V, Vg) spaces on this process that
   // were found by other processes, e.g. a vertex dof on this process that
   // has no connected facets on the boundary.
   const std::vector<std::array<PetscInt, 2>> dofs_remote
       = get_remote_bcs(*V->dofmap()->index_map,
-                       *g->function_space()->dofmap()->index_map, dofs_local);
+                       *g->function_space()->dofmap()->index_map, V_dofs, g_dofs);
 
   // Copy the Eigen data structure into std::vector of arrays
   // This is needed for appending the remote dof indices and std::sort
-  std::vector<std::array<PetscInt, 2>> dofs_local_vec(dofs_local.rows());
-  for (Eigen::Index i = 0; i < dofs_local.rows(); ++i){
-    dofs_local_vec[i] = {dofs_local(i, 0), dofs_local(i, 1)};
+  std::vector<std::array<PetscInt, 2>> dofs_local_vec(V_dofs.rows());
+  for (Eigen::Index i = 0; i < V_dofs.rows(); ++i){
+    dofs_local_vec[i] = {V_dofs[i], g_dofs[i]};
   }
 
   // Add received bc indices to dofs_local

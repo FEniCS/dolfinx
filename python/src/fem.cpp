@@ -232,8 +232,9 @@ void fem(py::module& m)
   dirichletbc
       .def(py::init<std::shared_ptr<const dolfin::function::FunctionSpace>,
                     std::shared_ptr<const dolfin::function::Function>,
-                    Eigen::Array<PetscInt, Eigen::Dynamic, 2>&>(),
-           py::arg("V"), py::arg("g"), py::arg("dof_indices"))
+                    const Eigen::Ref<const Eigen::Array<PetscInt, Eigen::Dynamic, 1>>&,
+                    const Eigen::Ref<const Eigen::Array<PetscInt, Eigen::Dynamic, 1>>&>(),
+           py::arg("V"), py::arg("g"), py::arg("V_dofs"), py::arg("g_dofs"))
       .def_property_readonly("dof_indices",
                              &dolfin::fem::DirichletBC::dofs)
       .def_property_readonly("function_space",
