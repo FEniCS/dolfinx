@@ -235,7 +235,7 @@ null_vecs[0].set(0.0)
 null_vecs[1].set(1.0)
 null_vec.normalize()
 nsp = PETSc.NullSpace().create(False, [null_vec])
-A.setNearNullSpace(nsp)
+A.setNullSpace(nsp)
 assert np.isclose((A * null_vec).norm(), 0.0)
 
 # Monitor the convergence of the KSP
