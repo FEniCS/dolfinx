@@ -109,10 +109,11 @@ mesh = RectangleMesh(
 cmap = dolfin.fem.create_coordinate_map(mesh.ufl_domain())
 mesh.geometry.coord_mapping = cmap
 
-# Next, we define two :py:class:`FunctionSpace <dolfin.functions.functionspace.FunctionSpace>`
-# instances with different finite elements. ``P2`` corresponds to piecewise quadratics for
-# the velocity field and ``P1`` to continuous piecewise
-# linears for the pressure field::
+# Next, we define two :py:class:`FunctionSpace
+# <dolfin.functions.functionspace.FunctionSpace>` instances with
+# different finite elements. ``P2`` corresponds to piecewise quadratics
+# for the velocity field and ``P1`` to continuous piecewise linears for
+# the pressure field::
 
 # Define function spaces
 P2 = VectorElement("Lagrange", mesh.ufl_cell(), 2)
@@ -121,9 +122,9 @@ P1 = FiniteElement("Lagrange", mesh.ufl_cell(), 1)
 V = FunctionSpace(mesh, P2)
 Q = FunctionSpace(mesh, P1)
 
-# The product of these finite element spaces is known as the
-# Taylor–Hood mixed element. It is a standard stable element pair
-# for the Stokes equations. Now we can define boundary conditions::
+# The product of these finite element spaces is known as the Taylor–Hood
+# mixed element. It is a standard stable element pair for the Stokes
+# equations. Now we can define boundary conditions::
 
 # Extract subdomain facet arrays
 # mf = sub_domains.values
@@ -154,18 +155,16 @@ bc1 = DirichletBC(V, inflow, lambda x: np.isclose(x[1], 1.0))
 # Collect boundary conditions
 bcs = [bc0, bc1]
 
-# The first argument to
-# :py:class:`DirichletBC <dolfin.cpp.fem.DirichletBC>`
-# specifies the :py:class:`FunctionSpace
-# <dolfin.cpp.function.FunctionSpace>`.
-# The second argument specifies the value on the Dirichlet
-# boundary. The last argument specifies the marking of the subdomains:
-# ``mf0`` and ``mf1`` contain the ``0`` and ``1`` subdomain markers,
-# respectively.
+# The first argument to :py:class:`DirichletBC
+# <dolfin.cpp.fem.DirichletBC>` specifies the :py:class:`FunctionSpace
+# <dolfin.cpp.function.FunctionSpace>`. The second argument specifies
+# the value on the Dirichlet boundary. The last argument specifies the
+# marking of the subdomains: ``mf0`` and ``mf1`` contain the ``0`` and
+# ``1`` subdomain markers, respectively.
 #
-# We now define the bilinear and linear forms corresponding to the weak mixed
-# formulation of the Stokes equations. In our implementation we write
-# these formulations in a blocked structure::
+# We now define the bilinear and linear forms corresponding to the weak
+# mixed formulation of the Stokes equations. In our implementation we
+# write these formulations in a blocked structure::
 
 # Define variational problem
 (u, p) = TrialFunction(V), TrialFunction(Q)
@@ -181,14 +180,14 @@ prec = [[a[0][0], None],
 L = [inner(f, v) * dx,
      inner(dolfin.Constant(mesh, 0), q) * dx]
 
-# With the bilinear form ``a``, preconditioner bilinear form ``prec`` and
-# linear right hand side (RHS) ``L``, we may now assembly the finite
-# element linear system. We exploit the structure of the Stokes
-# system and assemble the finite element system into block matrices and
-# a block vector. Provision of the ``bcs`` argument to :py:func:`assemble_matrix_nest
-# <dolfin.fem.assemble_matrix_nest>` ensures the rows and columns associated with
-# the boundary conditions are zeroed and the diagonal set to the identity,
-# preserving symmetry::
+# With the bilinear form ``a``, preconditioner bilinear form ``prec``
+# and linear right hand side (RHS) ``L``, we may now assembly the finite
+# element linear system. We exploit the structure of the Stokes system
+# and assemble the finite element system into block matrices and a block
+# vector. Provision of the ``bcs`` argument to
+# :py:func:`assemble_matrix_nest <dolfin.fem.assemble_matrix_nest>`
+# ensures the rows and columns associated with the boundary conditions
+# are zeroed and the diagonal set to the identity, preserving symmetry::
 
 A = dolfin.fem.create_matrix_nest(a)
 dolfin.fem.assemble_matrix_nest(A, a, bcs)
@@ -201,12 +200,13 @@ P.assemble()
 b = dolfin.fem.create_vector_nest(L)
 b.zeroEntries()
 
-# The boundary conditions we collected in ``bcs`` may now be applied
-# to the RHS block vector ``b``. In this case we must apply the lifting
+# The boundary conditions we collected in ``bcs`` may now be applied to
+# the RHS block vector ``b``. In this case we must apply the lifting
 # operator to remove the columns of ``a`` corresponding to the boundary
-# conditions from ``b`` with :py:func:`apply_lifting_nest <dolfin.fem.assemble.apply_lifting_nest>`.
-# Thereafter we prescribe the values of the boundary conditions using
-# :py:func:`set_bc_nest <dolfin.fem.assemble.set_bc_nest>`::
+# conditions from ``b`` with :py:func:`apply_lifting_nest
+# <dolfin.fem.assemble.apply_lifting_nest>`. Thereafter we prescribe the
+# values of the boundary conditions using :py:func:`set_bc_nest
+# <dolfin.fem.assemble.set_bc_nest>`::
 
 dolfin.fem.assemble.assemble_vector_nest(b, L)
 dolfin.fem.assemble.apply_lifting_nest(b, a, bcs)
@@ -228,26 +228,23 @@ ksp.setOperators(A, P)
 ksp.setTolerances(rtol=1e-8)
 ksp.setType("minres")
 
-# Set near null space for pressure.
-# TODO Check if this is correct!
-null_vec = Function(Q).vector
-null_vec.set(1.0)
-basis = VectorSpaceBasis([null_vec])
-basis.orthonormalize()
-nsp = PETSc.NullSpace()
-nsp.create(basis)
+# Set near null space for pressure
+null_vec = dolfin.fem.create_vector_nest(L)
+null_vecs = null_vec.getNestSubVecs()
+null_vecs[0].set(0.0)
+null_vecs[1].set(1.0)
+null_vec.normalize()
+nsp = PETSc.NullSpace().create(False, [null_vec])
 A.setNearNullSpace(nsp)
+assert np.isclose((A * null_vec).norm(), 0.0)
 
 # Monitor the convergence of the KSP
 opts = PETSc.Options()
 opts["ksp_monitor"] = None
 opts["ksp_view"] = None
-opts["pc_fieldsplit_type"] = "additive"
-# opts["pc_fieldsplit_schur_fact_type"] = "diag"
 
-# ksp.setGMRESRestart(120)
 ksp.getPC().setType("fieldsplit")
-# ksp.getPC().setFieldSplitType(PETSc.PC.CompositeType.ADDITIVE)
+ksp.getPC().setFieldSplitType(PETSc.PC.CompositeType.ADDITIVE)
 
 # Supply the KSP with the velocity and pressure matrix index sets
 nested_IS = A.getNestISs()
@@ -259,22 +256,21 @@ ksp.getPC().setFieldSplitIS(
 ksp_u, ksp_p = ksp.getPC().getFieldSplitSubKSP()
 ksp_u.setType("preonly")
 ksp_u.getPC().setType("hypre")
-# ksp_u.getPC().setGAMGType(PETSc.PC.GAMGType.AGG)
-ksp_p.setType("cg")
-ksp_p.getPC().setType("jacobi")
+ksp_p.setType("preonly")
+ksp_p.getPC().setType("hypre")
 
 ksp.setFromOptions()
 
 
-# We also need to create a block vector,``x``, to store the (full) solution,
-# which we initialize using the block RHS form ``L``.
+# We also need to create a block vector,``x``, to store the (full)
+# solution, which we initialize using the block RHS form ``L``.
 
 # Compute solution
 x = dolfin.fem.create_vector_nest(L)
 ksp.solve(b, x)
 
-# From the full solution vector ``x`` we can extract the sub vectors corresponding
-# to the velocity and pressure.
+# From the full solution vector ``x`` we can extract the sub vectors
+# corresponding to the velocity and pressure.
 
 u, p = Function(V), Function(Q)
 u.vector.array = x.getNestSubVecs()[0].array_r
