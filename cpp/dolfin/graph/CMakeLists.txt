@@ -5,6 +5,7 @@ set(HEADERS
   dolfin_graph.h
   GraphBuilder.h
   Graph.h
+  KaHIP.h
   ParMETIS.h
   SCOTCH.h
   PARENT_SCOPE)
@@ -12,6 +13,7 @@ set(HEADERS
 set(SOURCES
   BoostGraphOrdering.cpp
   GraphBuilder.cpp
+  KaHIP.cpp
   ParMETIS.cpp
   SCOTCH.cpp
   PARENT_SCOPE)

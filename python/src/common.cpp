@@ -34,6 +34,7 @@ void common(py::module& m)
   // From dolfin/common/defines.h
   m.attr("has_debug") = dolfin::has_debug();
   m.attr("has_parmetis") = dolfin::has_parmetis();
+  m.attr("has_kahip") = dolfin::has_kahip();
   m.attr("has_petsc_complex") = dolfin::has_petsc_complex();
   m.attr("has_slepc") = dolfin::has_slepc();
 #ifdef HAS_PYBIND11_SLEPC4PY
@@ -64,6 +65,10 @@ void common(py::module& m)
       .def_property_readonly("ghosts", &dolfin::common::IndexMap::ghosts,
                              py::return_value_policy::reference_internal,
                              "Return list of ghost indices")
+      .def("compute_forward_processes",
+           &dolfin::common::IndexMap::compute_forward_processes,
+           "Return mapping from local indices to remote processes where "
+           "each index is ghosted")
       .def("indices", &dolfin::common::IndexMap::indices,
            "Return array of global indices for all indices on this process");
 
