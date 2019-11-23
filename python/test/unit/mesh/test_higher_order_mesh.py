@@ -8,7 +8,6 @@
 import os
 
 import numpy as np
-import pygmsh
 import pytest
 import scipy.integrate
 import sympy as sp
@@ -553,6 +552,8 @@ def test_fourth_order__quad(L, H, Z):
 @skip_in_parallel
 @pytest.mark.parametrize('order', [2, 3])
 def test_gmsh_input_quad(order):
+    pygmsh = pytest.importorskip("pygmsh")
+
     # Parameterize test if gmsh gets wider support
     R = 1
     res = 0.2 if order == 2 else 0.2
