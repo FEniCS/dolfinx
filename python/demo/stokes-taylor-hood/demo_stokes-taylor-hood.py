@@ -88,13 +88,13 @@ import numpy as np
 from petsc4py import PETSc
 
 import dolfin
+import ufl
 from dolfin import MPI, DirichletBC, Function, FunctionSpace, RectangleMesh
 from dolfin.cpp.mesh import CellType
 from dolfin.io import XDMFFile
 from dolfin.la import VectorSpaceBasis
 from dolfin.plotting import plot
-from ufl import (FiniteElement, TestFunction, TrialFunction, VectorElement,
-                 div, dx, grad, inner)
+from ufl import div, dx, grad, inner
 
 # Load mesh and subdomains
 # xdmf = XDMFFile(MPI.comm_world, "../dolfin_fine.xdmf")
@@ -116,8 +116,8 @@ mesh.geometry.coord_mapping = cmap
 # the pressure field::
 
 # Define function spaces
-P2 = VectorElement("Lagrange", mesh.ufl_cell(), 2)
-P1 = FiniteElement("Lagrange", mesh.ufl_cell(), 1)
+P2 = ufl.VectorElement("Lagrange", mesh.ufl_cell(), 2)
+P1 = ufl.FiniteElement("Lagrange", mesh.ufl_cell(), 1)
 
 V = FunctionSpace(mesh, P2)
 Q = FunctionSpace(mesh, P1)
@@ -167,8 +167,8 @@ bcs = [bc0, bc1]
 # write these formulations in a blocked structure::
 
 # Define variational problem
-(u, p) = TrialFunction(V), TrialFunction(Q)
-(v, q) = TestFunction(V), TestFunction(Q)
+(u, p) = ufl.TrialFunction(V), ufl.TrialFunction(Q)
+(v, q) = ufl.TestFunction(V), ufl.TestFunction(Q)
 f = dolfin.Constant(mesh, (0, 0))
 
 a = [[inner(grad(u), grad(v)) * dx, inner(p, div(v)) * dx],
@@ -261,20 +261,13 @@ ksp_p.getPC().setType("hypre")
 
 ksp.setFromOptions()
 
-
 # We also need to create a block vector,``x``, to store the (full)
 # solution, which we initialize using the block RHS form ``L``.
 
 # Compute solution
-x = dolfin.fem.create_vector_nest(L)
-ksp.solve(b, x)
-
-# From the full solution vector ``x`` we can extract the sub vectors
-# corresponding to the velocity and pressure.
-
 u, p = Function(V), Function(Q)
-u.vector.array = x.getNestSubVecs()[0].array_r
-p.vector.array = x.getNestSubVecs()[1].array_r
+x = PETSc.Vec().createNest([u.vector, p.vector])
+ksp.solve(b, x)
 
 # We can calculate the :math:`L^2` norms of u and p as follows::
 
