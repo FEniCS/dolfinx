@@ -232,7 +232,7 @@ void DirichletBC::mark_dofs(std::vector<bool>& markers) const
   }
 }
 //-----------------------------------------------------------------------------
-Eigen::Array<PetscInt, Eigen::Dynamic, 1> locate_dofs_topological(
+Eigen::Array<PetscInt, Eigen::Dynamic, 1> fem::locate_dofs_topological(
     const function::FunctionSpace& V, const int entity_dim,
     const Eigen::Ref<const Eigen::Array<PetscInt, Eigen::Dynamic, 1>>& entities)
 {
@@ -284,7 +284,7 @@ Eigen::Array<PetscInt, Eigen::Dynamic, 1> locate_dofs_topological(
                                                                dofs.size());
 }
 //-----------------------------------------------------------------------------
-Eigen::Array<PetscInt, Eigen::Dynamic, 1> locate_dofs_geometrical(
+Eigen::Array<PetscInt, Eigen::Dynamic, 1> fem::locate_dofs_geometrical(
     const function::FunctionSpace& V,
     std::function<Eigen::Array<bool, Eigen::Dynamic, 1>(
         const Eigen::Ref<

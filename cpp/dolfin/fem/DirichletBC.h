@@ -74,7 +74,7 @@ locate_dofs_geometrical(const function::FunctionSpace& V,
 ///
 /// A DirichletBC is specified by the function g, the function space
 /// (trial space) and degrees of freedom to which the boundary condition
-///  applies.
+/// applies.
 ///
 
 class DirichletBC
