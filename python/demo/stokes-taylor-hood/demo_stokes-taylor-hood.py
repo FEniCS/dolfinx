@@ -101,7 +101,7 @@ from ufl import div, dx, grad, inner
 # mesh = xdmf.read_mesh(dolfin.cpp.mesh.GhostMode.none)
 mesh = RectangleMesh(
     MPI.comm_world,
-    [np.array([0, 0, 0]), np.array([1, 1, 0])], [64, 64],
+    [np.array([0, 0, 0]), np.array([1, 1, 0])], [14, 14],
     CellType.triangle, dolfin.cpp.mesh.GhostMode.none)
 
 # sub_domains = xdmf.read_mf_size_t(mesh)
@@ -198,7 +198,7 @@ dolfin.fem.assemble_matrix_nest(P, prec, bcs)
 P.assemble()
 
 b = dolfin.fem.create_vector_nest(L)
-b.zeroEntries()
+b.set(0.0)
 
 # The boundary conditions we collected in ``bcs`` may now be applied to
 # the RHS block vector ``b``. In this case we must apply the lifting
@@ -288,10 +288,50 @@ with XDMFFile(MPI.comm_world, "pressure.xdmf") as pfile_xdmf:
     p.vector.ghostUpdate(addv=PETSc.InsertMode.INSERT, mode=PETSc.ScatterMode.FORWARD)
     pfile_xdmf.write(p)
 
-# Plot solution
-plt.figure()
-plot(u, title="velocity")
-plot(p, title="pressure" + str(MPI.rank(mesh.mpi_comm())))
+# # Plot solution
+# plt.figure()
+# plot(u, title="velocity")
+# plot(p, title="pressure" + str(MPI.rank(mesh.mpi_comm())))
 
-# Display plots
-plt.show()
+# # Display plots
+# plt.show()
+
+A = dolfin.fem.create_matrix_block(a)
+dolfin.fem.assemble_matrix_block(A, a, bcs)
+A.assemble()
+
+P = dolfin.fem.create_matrix_block(prec)
+dolfin.fem.assemble_matrix_block(P, prec, bcs)
+P.assemble()
+
+b = dolfin.fem.create_vector_block(L)
+b.set(0.0)
+dolfin.fem.assemble.assemble_vector_block(b, L, a, bcs)
+
+
+ksp = PETSc.KSP().create(mesh.mpi_comm())
+ksp.setOperators(A)
+
+# Setup the parent KSP
+ksp.setType("preonly")
+
+# Monitor the convergence of the KSP
+opts = PETSc.Options()
+opts["ksp_view"] = None
+ksp.getPC().setType("lu")
+ksp.getPC().setFactorSolverType("umfpack")
+ksp.setFromOptions()
+
+# We also need to create a block vector,``x``, to store the (full)
+# solution, which we initialize using the block RHS form ``L``.
+
+# Compute solution
+# u, p = Function(V), Function(Q)
+x = b.copy()
+ksp.solve(b, x)
+
+# We can calculate the :math:`L^2` norms of u and p as follows::
+
+print("Norm of soln vector: {}".format(x.norm()))
+# print("Norm of velocity coefficient vector: {}".format(u.vector.norm()))
+# print("Norm of pressure coefficient vector: {}".format(p.vector.norm()))
