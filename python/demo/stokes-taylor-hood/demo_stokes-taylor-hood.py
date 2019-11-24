@@ -101,7 +101,7 @@ from ufl import div, dx, grad, inner
 # mesh = xdmf.read_mesh(dolfin.cpp.mesh.GhostMode.none)
 mesh = RectangleMesh(
     MPI.comm_world,
-    [np.array([0, 0, 0]), np.array([1, 1, 0])], [14, 14],
+    [np.array([0, 0, 0]), np.array([1, 1, 0])], [3, 2],
     CellType.triangle, dolfin.cpp.mesh.GhostMode.none)
 
 # sub_domains = xdmf.read_mf_size_t(mesh)
@@ -252,6 +252,10 @@ ksp.getPC().setFieldSplitIS(
     ("u", nested_IS[0][0]),
     ("p", nested_IS[0][1]))
 
+# nested_IS[0][0].view()
+# nested_IS[0][1].view()
+# exit(0)
+
 # Configure velocity and pressure sub KSPs
 ksp_u, ksp_p = ksp.getPC().getFieldSplitSubKSP()
 ksp_u.setType("preonly")
@@ -271,9 +275,10 @@ ksp.solve(b, x)
 
 # We can calculate the :math:`L^2` norms of u and p as follows::
 
-print("Norm of whole solution vector: {}".format(x.norm()))
-print("Norm of velocity coefficient vector: {}".format(u.vector.norm()))
-print("Norm of pressure coefficient vector: {}".format(p.vector.norm()))
+print("NN Norm of whole solution vector: {}".format(x.norm()))
+print("NN Norm of velocity coefficient vector: {}".format(u.vector.norm()))
+print("NN Norm of pressure coefficient vector: {}".format(p.vector.norm()))
+ref = x.norm()
 
 # Check pressure norm
 # assert np.isclose(p.vector.norm(), 4147.69457577)
@@ -296,6 +301,9 @@ with XDMFFile(MPI.comm_world, "pressure.xdmf") as pfile_xdmf:
 
 # # Display plots
 # plt.show()
+
+
+print("----------------------")
 
 A = dolfin.fem.create_matrix_block(a)
 dolfin.fem.assemble_matrix_block(A, a, bcs)
@@ -333,17 +341,69 @@ assert np.isclose((A * null_vec).norm(), 0.0)
 
 # Monitor the convergence of the KSP
 opts = PETSc.Options()
-opts["ksp_monitor"] = None
-opts["ksp_view"] = None
+# opts["ksp_monitor"] = None
+# opts["ksp_view"] = None
 
 ksp.getPC().setType("fieldsplit")
 ksp.getPC().setFieldSplitType(PETSc.PC.CompositeType.ADDITIVE)
 
 # Supply the KSP with the velocity and pressure matrix index sets
 is_rows = dolfin.cpp.la.create_petsc_index_sets([V.dofmap.index_map, Q.dofmap.index_map])
+# if MPI.rank(mesh.mpi_comm()) == 0:
+#     is_rows[0].view()
+#     is_rows[1].view()
+
+u_map = V.dofmap.index_map
+p_map = Q.dofmap.index_map
+u_size = u_map.size_local  # * u_map.block_size
+u_size_ghost = u_map.num_ghosts  # * u_map.block_size
+
+local_range_u = u_map.local_range
+local_range_p = p_map.local_range
+
+print("UUU", local_range_u[0] )
+print("PPP", local_range_p[0] )
+offset_u = u_map.local_range[0] * u_map.block_size + p_map.local_range[0]
+offset_p = offset_u + (u_map.size_local ) * u_map.block_size
+
+ui = np.arange(offset_u, offset_u + u_size * u_map.block_size, dtype=np.int32)
+is_u = PETSc.IS().createGeneral(ui, comm=PETSc.COMM_SELF)
+is_u.view()
+# is_u = PETSc.IS().createGeneral(ui)
+
+up = np.arange(offset_p, offset_p + p_map.size_local, dtype=np.int32)
+
+if MPI.rank(mesh.mpi_comm()) == 1:
+    print(ui)
+    print(up)
+
+
+is_p = PETSc.IS().createGeneral(up, comm=PETSc.COMM_SELF)
+# is_p = PETSc.IS().createGeneral(up, comm=PETSc.COMM_SELF)
+is_p.view()
+
+# exit(0)
+
+# if MPI.rank(mesh.mpi_comm()) == 1:
+#     print(ui)
+#     print(u_size, u_size_ghost)
+#     print(p_map.size_local)
+#     print(up)
+#     # is_u.view()
+#     # is_p.view()
+
+# exit(0)
 ksp.getPC().setFieldSplitIS(
-    ("u", is_rows[0]),
-    ("p", is_rows[1]))
+    ("u", is_u),
+    ("p", is_p))
+# ksp.getPC().setFieldSplitIS(
+#     ("u", is_rows[0]),
+#     ("p", is_rows[1]))
+# exit(0)
+
+# if MPI.rank(mesh.mpi_comm()) == 1:
+#     print("*******" , A.sizes)
+# exit(0)
 
 # Configure velocity and pressure sub KSPs
 ksp_u, ksp_p = ksp.getPC().getFieldSplitSubKSP()
@@ -358,17 +418,19 @@ ksp.setFromOptions()
 # solution, which we initialize using the block RHS form ``L``.
 
 # Compute solution
-x = A.createVecRight()
-# x = b.copy()
+# x = A.createVecRight()
+x = b.copy()
+x.set(0.0)
 ksp.solve(b, x)
 
-u, p = Function(V), Function(Q)
-u_local, p_local = dolfin.cpp.la.get_local_vectors(x, [V.dofmap.index_map, Q.dofmap.index_map])
-u.vector.array = u_local
-p.vector.array = p_local
+# u, p = Function(V), Function(Q)
+# u_local, p_local = dolfin.cpp.la.get_local_vectors(x, [V.dofmap.index_map, Q.dofmap.index_map])
+# u.vector.array = u_local
+# p.vector.array = p_local
 
 # We can calculate the :math:`L^2` norms of u and p as follows::
 
-print("Norm of whole solution vector: {}".format(x.norm()))
-print("Norm of velocity coefficient vector: {}".format(u.vector.norm()))
-print("Norm of pressure coefficient vector: {}".format(p.vector.norm()))
+print("RR Norm of whole solution vector: {}".format(ref))
+print("BB Norm of whole solution vector: {}".format(x.norm()))
+# print("XX Norm of velocity coefficient vector: {}".format(u.vector.norm()))
+# print("XX Norm of pressure coefficient vector: {}".format(p.vector.norm()))
