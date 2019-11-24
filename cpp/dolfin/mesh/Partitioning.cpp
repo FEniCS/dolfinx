@@ -36,55 +36,7 @@ using namespace dolfin::mesh;
 
 namespace
 {
-//-----------------------------------------------------------------------------
-// std::map<std::int64_t, std::set<int>>
-// distribute_points_sharing(MPI_Comm mpi_comm,
-//                           const std::array<std::int64_t, 2> local_range,
-//                           const std::vector<std::int64_t>& global_index,
-//                           const std::vector<int>& offsets)
-// {
-//   common::Timer timer("Distribute shared point information");
-//   const int mpi_size = dolfin::MPI::size(mpi_comm);
 
-//   // Map for sharing information
-//   std::vector<std::set<int>> point_to_procs_set(local_range[1]
-//                                                 - local_range[0]);
-//   for (int i = 0; i < mpi_size; ++i)
-//   {
-//     for (int j = offsets[i]; j < offsets[i + 1]; ++j)
-//       point_to_procs_set[global_index[j] - local_range[0]].insert(i);
-//   }
-
-//   std::vector<std::vector<std::int64_t>> send_sharing(mpi_size);
-//   std::vector<std::int64_t> recv_sharing(mpi_size);
-//   for (int i = local_range[0]; i < local_range[1]; ++i)
-//   {
-//     if (point_to_procs_set[i].size() > 1)
-//     {
-//       for (int r : point_to_procs_set[i])
-//       {
-//         send_sharing[r].push_back(point_to_procs_set[i].size() - 1);
-//         send_sharing[r].push_back(i);
-//         for (int proc : point_to_procs_set[i])
-//         {
-//           if (proc != r)
-//             send_sharing[r].push_back(proc);
-//         }
-//       }
-//     }
-//   }
-//   dolfin::MPI::all_to_all(mpi_comm, send_sharing, recv_sharing);
-
-//   std::map<std::int64_t, std::set<int>> point_to_procs;
-//   for (auto q = recv_sharing.begin(); q < recv_sharing.end(); q += (*q + 2))
-//   {
-//     const std::int64_t global_index = *(q + 1);
-//     std::set<int> procs(q + 2, q + 2 + *q);
-//     point_to_procs.insert({global_index, procs});
-//   }
-
-//   return point_to_procs;
-// }
 //-----------------------------------------------------------------------------
 // This function takes the partition computed by the partitioner
 // (which tells us to which process each of the local cells stored on

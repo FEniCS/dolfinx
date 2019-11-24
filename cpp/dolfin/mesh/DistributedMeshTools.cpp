@@ -52,8 +52,7 @@ compute_entity_numbering(const Mesh& mesh, int d)
     shared_entities.clear();
     global_entity_indices = mesh.topology().global_indices(d);
     return std::tuple(std::move(global_entity_indices),
-                      std::move(shared_entities),
-                      mesh.num_entities_global(d));
+                      std::move(shared_entities), mesh.num_entities_global(d));
   }
 
   // MPI communicator
@@ -449,8 +448,8 @@ void DistributedMeshTools::init_facet_cell_connections(Mesh& mesh)
       num_global_neighbors[f.index()] = connectivity->size(f.index());
 
     // All shared facets must have two cells, if no ghost cells
-    for (auto f_it = shared_facets.begin(); f_it != shared_facets.end(); ++f_it)
-      num_global_neighbors[f_it->first] = 2;
+    for (const auto& f_it : shared_facets)
+      num_global_neighbors[f_it.first] = 2;
   }
   else
   {

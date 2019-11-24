@@ -67,7 +67,8 @@ std::int32_t Topology::ghost_offset(int dim) const
   assert(dim < (int)_ghost_offset_index.size());
   if (_index_map[dim])
   {
-    std::cout << _ghost_offset_index[dim]
+    std::cout << "INDEX_MAP:" << MPI::rank(_index_map[dim]->mpi_comm()) << "]"
+              << _ghost_offset_index[dim]
               << "==" << _index_map[dim]->size_local() << "\n";
   }
 
