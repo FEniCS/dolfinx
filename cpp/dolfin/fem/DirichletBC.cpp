@@ -247,7 +247,8 @@ Eigen::Array<PetscInt, Eigen::Dynamic, 1> fem::locate_dofs_topological(
   mesh.create_connectivity(entity_dim, tdim);
 
   // Prepare an element-local dof layout for dofs on entities of the entity_dim
-  const int num_entities = mesh::cell_num_entities(mesh.cell_type(), entity_dim);
+  const int num_entities
+      = mesh::cell_num_entities(mesh.cell_type(), entity_dim);
   std::vector<Eigen::Array<int, Eigen::Dynamic, 1>> entity_dofs;
   for (int i = 0; i < num_entities; ++i)
   {
@@ -284,22 +285,22 @@ Eigen::Array<PetscInt, Eigen::Dynamic, 1> fem::locate_dofs_topological(
                                                                dofs.size());
 }
 //-----------------------------------------------------------------------------
-Eigen::Array<PetscInt, Eigen::Dynamic, 1> fem::locate_dofs_geometrical(
-    const function::FunctionSpace& V,
-    std::function<Eigen::Array<bool, Eigen::Dynamic, 1>(
-        const Eigen::Ref<
-            const Eigen::Array<double, 3, Eigen::Dynamic, Eigen::RowMajor>>&)> marker)
+Eigen::Array<PetscInt, Eigen::Dynamic, 1>
+fem::locate_dofs_geometrical(const function::FunctionSpace& V,
+                             marking_function marker)
 {
 
-  auto dof_coordinates = V.tabulate_dof_coordinates().transpose();
-  auto marked_dofs = marker(dof_coordinates);
+  const auto dof_coordinates = V.tabulate_dof_coordinates().transpose();
+  const auto marked_dofs = marker(dof_coordinates);
 
   std::vector<PetscInt> dofs;
 
-  for (PetscInt i = 0; i < marked_dofs.size(); ++i){
+  for (PetscInt i = 0; i < marked_dofs.size(); ++i)
+  {
     if (marked_dofs[i])
       dofs.push_back(i);
   }
 
-  return Eigen::Map<Eigen::Array<PetscInt, Eigen::Dynamic, 1>>(dofs.data(), dofs.size());
+  return Eigen::Map<Eigen::Array<PetscInt, Eigen::Dynamic, 1>>(dofs.data(),
+                                                               dofs.size());
 }
