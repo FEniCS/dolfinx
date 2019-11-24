@@ -271,8 +271,8 @@ ksp.solve(b, x)
 
 # We can calculate the :math:`L^2` norms of u and p as follows::
 
-print("Norm of velocity coefficient vector: %.15g" % u.vector.norm())
-print("Norm of pressure coefficient vector: %.15g" % p.vector.norm())
+print("Norm of velocity coefficient vector: {}".format(u.vector.norm()))
+print("Norm of pressure coefficient vector: {}".format(p.vector.norm()))
 
 # Check pressure norm
 # assert np.isclose(p.vector.norm(), 4147.69457577)
@@ -281,9 +281,11 @@ print("Norm of pressure coefficient vector: %.15g" % p.vector.norm())
 
 # Save solution in XDMF format
 with XDMFFile(MPI.comm_world, "velocity.xdmf") as ufile_xdmf:
+    u.vector.ghostUpdate(addv=PETSc.InsertMode.INSERT, mode=PETSc.ScatterMode.FORWARD)
     ufile_xdmf.write(u)
 
 with XDMFFile(MPI.comm_world, "pressure.xdmf") as pfile_xdmf:
+    p.vector.ghostUpdate(addv=PETSc.InsertMode.INSERT, mode=PETSc.ScatterMode.FORWARD)
     pfile_xdmf.write(p)
 
 # Plot solution
