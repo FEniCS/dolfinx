@@ -33,8 +33,8 @@ namespace
 {
 //-----------------------------------------------------------------------------
 // Get VTK cell type
-std::uint8_t vtk_cell_type(const mesh::Mesh& mesh, std::size_t cell_dim,
-                           std::size_t cell_order)
+std::int8_t get_vtk_cell_type(const mesh::Mesh& mesh, std::size_t cell_dim,
+                              std::size_t cell_order)
 {
   // Get cell type
   mesh::CellType cell_type = mesh::cell_entity_type(mesh.cell_type(), cell_dim);
@@ -137,12 +137,13 @@ std::string ascii_cell_data(const mesh::Mesh& mesh,
 void write_ascii_mesh(const mesh::Mesh& mesh, std::size_t cell_dim,
                       std::string filename)
 {
-  const std::size_t num_cells = mesh.topology().ghost_offset(cell_dim);
+  // FIXME: 'mesh.topology().ghost_offset' is plain confusing
+  const int num_cells = mesh.topology().ghost_offset(cell_dim);
   const int element_degree = mesh.degree();
 
   // Get VTK cell type
-  const std::size_t _vtk_cell_type
-      = vtk_cell_type(mesh, cell_dim, element_degree);
+  const std::int8_t vtk_cell_type
+      = get_vtk_cell_type(mesh, cell_dim, element_degree);
 
   // Open file
   std::ofstream file(filename.c_str(), std::ios::app);
@@ -170,9 +171,7 @@ void write_ascii_mesh(const mesh::Mesh& mesh, std::size_t cell_dim,
        << "\">";
 
   int num_nodes;
-  std::vector<std::uint8_t> perm;
-
-  const std::size_t tdim = mesh.topology().dim();
+  const int tdim = mesh.topology().dim();
   if (cell_dim == 0)
   {
     // Special case when only points should be visualized
@@ -193,7 +192,8 @@ void write_ascii_mesh(const mesh::Mesh& mesh, std::size_t cell_dim,
         = connectivity_g.entity_positions();
     num_nodes = connectivity_g.size(0);
 
-    perm = io::cells::dolfin_to_vtk(mesh.cell_type(), num_nodes);
+    const std::vector<std::uint8_t> perm
+        = io::cells::dolfin_to_vtk(mesh.cell_type(), num_nodes);
     for (int j = 0; j < mesh.num_entities(mesh.topology().dim()); ++j)
     {
       for (int i = 0; i < num_nodes; ++i)
@@ -204,7 +204,7 @@ void write_ascii_mesh(const mesh::Mesh& mesh, std::size_t cell_dim,
   }
   else
   {
-    const std::size_t degree = mesh.degree();
+    const int degree = mesh.degree();
     if (degree > 1)
     {
       throw std::runtime_error("MeshFunction of lower degree than the "
@@ -215,7 +215,8 @@ void write_ascii_mesh(const mesh::Mesh& mesh, std::size_t cell_dim,
     // geometries (aka line segments). CoordinateDofs needs to be
     // extended to have connections to facets.
     const int num_vertices = mesh::num_cell_vertices(e_type);
-    perm = io::cells::dolfin_to_vtk(e_type, num_vertices);
+    const std::vector<std::uint8_t> perm
+        = io::cells::dolfin_to_vtk(e_type, num_vertices);
     auto vertex_connectivity = mesh.topology().connectivity(cell_dim, 0);
     const Eigen::Array<std::int32_t, Eigen::Dynamic, 1>& vertex_connections
         = vertex_connectivity->connections();
@@ -236,7 +237,7 @@ void write_ascii_mesh(const mesh::Mesh& mesh, std::size_t cell_dim,
   file << "<DataArray  type=\"UInt32\"  Name=\"offsets\"  format=\""
        << "ascii"
        << "\">";
-  for (std::size_t offsets = 1; offsets <= num_cells; offsets++)
+  for (int offsets = 1; offsets <= num_cells; offsets++)
     file << offsets * num_nodes << " ";
   file << "</DataArray>" << std::endl;
 
@@ -244,8 +245,8 @@ void write_ascii_mesh(const mesh::Mesh& mesh, std::size_t cell_dim,
   file << "<DataArray  type=\"UInt8\"  Name=\"types\"  format=\""
        << "ascii"
        << "\">";
-  for (std::size_t types = 0; types < num_cells; types++)
-    file << _vtk_cell_type << " ";
+  for (int types = 0; types < num_cells; types++)
+    file << vtk_cell_type << " ";
   file << "</DataArray>" << std::endl;
   file << "</Cells>" << std::endl;
 
