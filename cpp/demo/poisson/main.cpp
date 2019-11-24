@@ -123,6 +123,30 @@ int main(int argc, char* argv[])
 
   auto V = fem::create_functionspace(poisson_functionspace_create, mesh);
 
+  // Next, we define the variational formulation by initializing the
+  // bilinear and linear forms (:math:`a`, :math:`L`) using the previously
+  // defined :cpp:class:`FunctionSpace` ``V``.  Then we can create the
+  // source and boundary flux term (:math:`f`, :math:`g`) and attach these
+  // to the linear form.
+  //
+  // .. code-block:: cpp
+
+  // Define variational forms
+  ufc_form* form_a = poisson_bilinearform_create();
+  auto a = std::make_shared<fem::Form>(fem::create_form(*form_a, {V, V}));
+  std::free(form_a);
+
+  ufc_form* form_L = poisson_linearform_create();
+  auto L = std::make_shared<fem::Form>(fem::create_form(*form_L, {V}));
+  std::free(form_L);
+
+  auto f = std::make_shared<function::Function>(V);
+  auto g = std::make_shared<function::Function>(V);
+
+  // Attach 'coordinate mapping' to mesh
+  auto cmap = a->coordinate_mapping();
+  mesh->geometry().coord_mapping = cmap;
+
   // Now, the Dirichlet boundary condition (:math:`u = 0`) can be created
   // using the class :cpp:class:`DirichletBC`. A :cpp:class:`DirichletBC`
   // takes four arguments: the function space the boundary condition
@@ -147,30 +171,6 @@ int main(int argc, char* argv[])
 
   std::vector<std::shared_ptr<const fem::DirichletBC>> bc
       = {std::make_shared<fem::DirichletBC>(V, u0, bdofs, bdofs)};
-
-  // Next, we define the variational formulation by initializing the
-  // bilinear and linear forms (:math:`a`, :math:`L`) using the previously
-  // defined :cpp:class:`FunctionSpace` ``V``.  Then we can create the
-  // source and boundary flux term (:math:`f`, :math:`g`) and attach these
-  // to the linear form.
-  //
-  // .. code-block:: cpp
-
-  // Define variational forms
-  ufc_form* form_a = poisson_bilinearform_create();
-  auto a = std::make_shared<fem::Form>(fem::create_form(*form_a, {V, V}));
-  std::free(form_a);
-
-  ufc_form* form_L = poisson_linearform_create();
-  auto L = std::make_shared<fem::Form>(fem::create_form(*form_L, {V}));
-  std::free(form_L);
-
-  auto f = std::make_shared<function::Function>(V);
-  auto g = std::make_shared<function::Function>(V);
-
-  // Attach 'coordinate mapping' to mesh
-  auto cmap = a->coordinate_mapping();
-  mesh->geometry().coord_mapping = cmap;
 
   f->interpolate([](auto& x) {
     auto dx = Eigen::square(x - 0.5);
