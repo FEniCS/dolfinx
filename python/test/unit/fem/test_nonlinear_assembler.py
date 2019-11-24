@@ -136,7 +136,7 @@ def test_matrix_assembly_block():
 
     bdofsW = dolfin.fem.locate_dofs_topological(W.sub(1), facetdim, bndry_facets)
 
-    bc = dolfin.fem.dirichletbc.DirichletBC(W.sub(1), u_bc, bdofs, bdofsW)
+    bc = dolfin.fem.dirichletbc.DirichletBC(W.sub(1), u_bc, bdofsW, bdofs)
     A2 = dolfin.fem.assemble_matrix(J, [bc])
     A2.assemble()
     b2 = dolfin.fem.assemble_vector(F)
@@ -397,11 +397,11 @@ def test_assembly_solve_block():
     u1_bc = dolfin.function.Function(V1)
     u1_bc.interpolate(bc_val_1)
 
-    bdofsW0 = dolfin.fem.locate_dofs_topological(W.sub(0), facetdim, boundary)
-    bdofsW1 = dolfin.fem.locate_dofs_topological(W.sub(1), facetdim, boundary)
+    bdofsW0 = dolfin.fem.locate_dofs_topological(W.sub(0), facetdim, bndry_facets)
+    bdofsW1 = dolfin.fem.locate_dofs_topological(W.sub(1), facetdim, bndry_facets)
 
-    bcs = [dolfin.fem.dirichletbc.DirichletBC(W.sub(0), u0_bc, bdofs0, bdofsW0),
-           dolfin.fem.dirichletbc.DirichletBC(W.sub(1), u1_bc, bdofs1, bdofsW1)]
+    bcs = [dolfin.fem.dirichletbc.DirichletBC(W.sub(0), u0_bc, bdofsW0, bdofs0),
+           dolfin.fem.dirichletbc.DirichletBC(W.sub(1), u1_bc, bdofsW1, bdofs1)]
 
     Jmat2 = dolfin.fem.create_matrix(J)
     Fvec2 = dolfin.fem.create_vector(F)
@@ -590,8 +590,8 @@ def test_assembly_solve_taylor_hood(mesh):
     bdofsW0 = dolfin.fem.locate_dofs_topological(W.sub(0), facetdim, bndry_facets0)
     bdofsW1 = dolfin.fem.locate_dofs_topological(W.sub(0), facetdim, bndry_facets1)
 
-    bcs = [dolfin.DirichletBC(W.sub(0), u_bc_0, bdofs0, bdofsW0),
-           dolfin.DirichletBC(W.sub(0), u_bc_1, bdofs1, bdofsW1)]
+    bcs = [dolfin.DirichletBC(W.sub(0), u_bc_0, bdofsW0, bdofs0),
+           dolfin.DirichletBC(W.sub(0), u_bc_1, bdofsW1, bdofs1)]
 
     Jmat2 = dolfin.fem.create_matrix(J)
     Pmat2 = dolfin.fem.create_matrix(P)

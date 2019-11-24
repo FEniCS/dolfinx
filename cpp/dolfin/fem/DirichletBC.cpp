@@ -209,7 +209,7 @@ void DirichletBC::set(
   la::VecReadWrapper g(_g->vector().vec(), false);
   for (Eigen::Index i = 0; i < _dofs.rows(); ++i)
   {
-    x[_dofs(i, 0)] = scale * (g.x[_dofs(i, 0)] - x0[_dofs(i, 0)]);
+    x[_dofs(i, 0)] = scale * (g.x[_dofs(i, 1)] - x0[_dofs(i, 0)]);
   }
 }
 //-----------------------------------------------------------------------------
