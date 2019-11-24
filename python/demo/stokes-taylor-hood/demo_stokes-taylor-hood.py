@@ -225,7 +225,7 @@ ksp = PETSc.KSP().create(mesh.mpi_comm())
 ksp.setOperators(A, P)
 
 # Setup the parent KSP
-ksp.setTolerances(rtol=1e-8)
+ksp.setTolerances(rtol=1e-12)
 ksp.setType("minres")
 
 # Set near null space for pressure
@@ -240,8 +240,8 @@ assert np.isclose((A * null_vec).norm(), 0.0)
 
 # Monitor the convergence of the KSP
 opts = PETSc.Options()
-opts["ksp_monitor"] = None
-opts["ksp_view"] = None
+# opts["ksp_monitor"] = None
+# opts["ksp_view"] = None
 
 ksp.getPC().setType("fieldsplit")
 ksp.getPC().setFieldSplitType(PETSc.PC.CompositeType.ADDITIVE)
@@ -271,6 +271,7 @@ ksp.solve(b, x)
 
 # We can calculate the :math:`L^2` norms of u and p as follows::
 
+print("Norm of whole solution vector: {}".format(x.norm()))
 print("Norm of velocity coefficient vector: {}".format(u.vector.norm()))
 print("Norm of pressure coefficient vector: {}".format(p.vector.norm()))
 
@@ -308,30 +309,66 @@ b = dolfin.fem.create_vector_block(L)
 b.set(0.0)
 dolfin.fem.assemble.assemble_vector_block(b, L, a, bcs)
 
-
 ksp = PETSc.KSP().create(mesh.mpi_comm())
-ksp.setOperators(A)
+ksp.setOperators(A, P)
 
 # Setup the parent KSP
-ksp.setType("preonly")
+ksp.setTolerances(rtol=1e-12)
+ksp.setType("minres")
+
+# Set near null space for pressure
+
+# FIXME: using createVecRight doesn't add ghosts, which breaks at the
+# scatter_local_vectors step, which assumes that vectors are ghosted.
+# null_vec = A.createVecRight()
+null_vec = b.copy()
+Vsize = V.dofmap.index_map.block_size * (V.dofmap.index_map.size_local + V.dofmap.index_map.num_ghosts)
+xu = np.zeros(Vsize)
+xp = np.ones(Q.dofmap.index_map.size_local + Q.dofmap.index_map.num_ghosts)
+dolfin.cpp.la.scatter_local_vectors(null_vec, [xu, xp], [V.dofmap.index_map, Q.dofmap.index_map])
+null_vec.normalize()
+nsp = PETSc.NullSpace().create(False, [null_vec])
+A.setNullSpace(nsp)
+assert np.isclose((A * null_vec).norm(), 0.0)
 
 # Monitor the convergence of the KSP
 opts = PETSc.Options()
+opts["ksp_monitor"] = None
 opts["ksp_view"] = None
-ksp.getPC().setType("lu")
-ksp.getPC().setFactorSolverType("umfpack")
+
+ksp.getPC().setType("fieldsplit")
+ksp.getPC().setFieldSplitType(PETSc.PC.CompositeType.ADDITIVE)
+
+# Supply the KSP with the velocity and pressure matrix index sets
+is_rows = dolfin.cpp.la.create_petsc_index_sets([V.dofmap.index_map, Q.dofmap.index_map])
+ksp.getPC().setFieldSplitIS(
+    ("u", is_rows[0]),
+    ("p", is_rows[1]))
+
+# Configure velocity and pressure sub KSPs
+ksp_u, ksp_p = ksp.getPC().getFieldSplitSubKSP()
+ksp_u.setType("preonly")
+ksp_u.getPC().setType("hypre")
+ksp_p.setType("preonly")
+ksp_p.getPC().setType("hypre")
+
 ksp.setFromOptions()
 
 # We also need to create a block vector,``x``, to store the (full)
 # solution, which we initialize using the block RHS form ``L``.
 
 # Compute solution
-# u, p = Function(V), Function(Q)
-x = b.copy()
+x = A.createVecRight()
+# x = b.copy()
 ksp.solve(b, x)
+
+u, p = Function(V), Function(Q)
+u_local, p_local = dolfin.cpp.la.get_local_vectors(x, [V.dofmap.index_map, Q.dofmap.index_map])
+u.vector.array = u_local
+p.vector.array = p_local
 
 # We can calculate the :math:`L^2` norms of u and p as follows::
 
-print("Norm of soln vector: {}".format(x.norm()))
-# print("Norm of velocity coefficient vector: {}".format(u.vector.norm()))
-# print("Norm of pressure coefficient vector: {}".format(p.vector.norm()))
+print("Norm of whole solution vector: {}".format(x.norm()))
+print("Norm of velocity coefficient vector: {}".format(u.vector.norm()))
+print("Norm of pressure coefficient vector: {}".format(p.vector.norm()))
