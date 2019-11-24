@@ -123,11 +123,12 @@ compute_shared_from_indexmap(const common::IndexMap& index_map)
   int rank = dolfin::MPI::rank(index_map.mpi_comm());
   for (int i = 0; i < index_map.num_ghosts(); ++i)
   {
-    int np = proc_to_neighbour[index_map.ghost_owners()[i]];
+    const int p = index_map.ghost_owners()[i];
+    const int np = proc_to_neighbour[p];
     std::set<int> sharing_set(recv_data.begin() + recv_offsets[np],
                               recv_data.begin() + recv_offsets[np]
                                   + ghost_shared_sizes[i]);
-    sharing_set.insert(np);
+    sharing_set.insert(p);
     sharing_set.erase(rank);
     recv_offsets[np] += ghost_shared_sizes[i];
     shared_entities[i + index_map.size_local()] = sharing_set;
@@ -154,7 +155,6 @@ std::vector<std::int64_t> compute_global_index_set(
 // Get the local points.
 std::tuple<
     std::shared_ptr<common::IndexMap>, std::vector<std::int64_t>,
-    std::map<std::int32_t, std::set<int>>,
     Eigen::Array<std::int32_t, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>,
     Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>>
 compute_point_distribution(
@@ -185,13 +185,11 @@ compute_point_distribution(
   }
 
   // DEBUG
-  std::stringstream s;
-  s << dolfin::MPI::rank(mpi_comm) << ": ";
-  s << "num ghosts = " << point_index_map->num_ghosts() << " - ";
-  for (std::int64_t i : local_to_global)
-    s << i << " ";
-  s << "\n";
-  std::cout << s.str();
+  //  std::stringstream s;
+  //  s << dolfin::MPI::rank(mpi_comm) << ": ";
+  //  s << "num ghosts = " << point_index_map->num_ghosts();
+  //  s << "\n";
+  //  std::cout << s.str();
 
   // Permute received points into local order
   Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
@@ -209,13 +207,8 @@ compute_point_distribution(
     for (int v = 0; v < cell_nodes.cols(); ++v)
       cells_local(c, v) = global_to_local[cell_nodes(c, v)];
 
-  // Convert shared points data to local indexing
-  std::map<std::int32_t, std::set<int>> shared_points
-      = compute_shared_from_indexmap(*point_index_map);
-
   return std::tuple(point_index_map, std::move(local_to_global),
-                    std::move(shared_points), std::move(cells_local),
-                    std::move(points_local));
+                    std::move(cells_local), std::move(points_local));
 }
 //-----------------------------------------------------------------------------
 } // namespace
@@ -260,8 +253,7 @@ Mesh::Mesh(
 
   // Compute node local-to-global map from global indices, and compute
   // cell topology using new local indices
-  auto [point_index_map, node_indices_global, nodes_shared, coordinate_nodes,
-        points_received]
+  auto [point_index_map, node_indices_global, coordinate_nodes, points_received]
       = compute_point_distribution(comm, num_vertices_per_cell, cells, points,
                                    type);
 
@@ -270,6 +262,10 @@ Mesh::Mesh(
   _geometry = std::make_unique<Geometry>(num_points_global, points_received,
                                          node_indices_global);
 
+  // Convert shared points data to local indexing
+  std::map<std::int32_t, std::set<int>> shared_points
+      = compute_shared_from_indexmap(*point_index_map);
+
   // Get global vertex information
   std::vector<std::int64_t> vertex_indices_global;
   std::map<std::int32_t, std::set<std::int32_t>> shared_vertices;
@@ -277,7 +273,7 @@ Mesh::Mesh(
   if (_degree == 1)
   {
     vertex_indices_global = std::move(node_indices_global);
-    shared_vertices = std::move(nodes_shared);
+    shared_vertices = std::move(shared_points);
   }
   else
   {
