@@ -163,6 +163,23 @@ compute_point_distribution(
         points,
     mesh::CellType type)
 {
+  int mpi_size = dolfin::MPI::size(mpi_comm);
+
+  if (mpi_size == 1)
+  {
+    std::map<std::int32_t, std::set<int>> shared_points;
+    std::vector<std::int64_t> local_to_global(points.rows());
+    std::iota(local_to_global.begin(), local_to_global.end(), 0);
+    std::array<int, 4> num_vertices_local;
+    num_vertices_local.fill(points.rows());
+    Eigen::Array<std::int32_t, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
+        cells_local = cell_nodes.cast <std::int32_t> ();
+
+    return std::tuple(std::move(local_to_global), std::move(shared_points),
+                      std::move(cells_local), std::move(points),
+                      num_vertices_local);
+  }
+
   // Get set of global point indices, which exist on this process
   std::vector<std::int64_t> global_index_set
       = compute_global_index_set(cell_nodes);

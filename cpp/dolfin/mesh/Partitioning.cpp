@@ -719,6 +719,14 @@ mesh::Mesh Partitioning::build_distributed_mesh(
   // nparts = MPI size
   const int nparts = dolfin::MPI::size(comm);
 
+  if (nparts == 1)
+  {
+
+    mesh::Mesh mesh(comm, cell_type, points, cells,
+                    global_cell_indices, ghost_mode);
+    return mesh;
+  }
+
   // Compute the cell partition
   PartitionData cell_partition
       = partition_cells(comm, nparts, cell_type, cells, graph_partitioner);
