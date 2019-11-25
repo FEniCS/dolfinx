@@ -140,7 +140,7 @@ public:
   ///         point)
 
   static std::tuple<
-    std::shared_ptr<common::IndexMap>, std::vector<std::int32_t>,
+    std::shared_ptr<common::IndexMap>, std::vector<std::int64_t>,
       Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>>
   distribute_points(
       const MPI_Comm comm,

@@ -291,7 +291,7 @@ void IndexMap::scatter_fwd_impl(const std::vector<T>& local_data,
 
   const std::int32_t _size_local = size_local();
   assert((int)local_data.size() == n * _size_local);
-  remote_data.resize(n * _ghosts.rows());
+  remote_data.resize(n * _ghosts.size());
 
   // Create displacement vectors
   std::vector<std::int32_t> sizes_recv(num_neighbours, 0);
@@ -317,7 +317,7 @@ void IndexMap::scatter_fwd_impl(const std::vector<T>& local_data,
       data_to_send[i * n + j] = local_data[index * n + j];
   }
 
-  // Send/receive daat
+  // Send/receive data
   std::vector<T> data_to_recv(displs_recv.back());
   MPI_Neighbor_alltoallv(
       data_to_send.data(), sizes_send.data(), displs_send.data(),

@@ -52,6 +52,35 @@ Eigen::ArrayXd cell_r(const mesh::Mesh& mesh)
   return mesh::inradius(mesh, cells);
 }
 //-----------------------------------------------------------------------------
+common::IndexMap
+point_map_to_vertex_map(const common::IndexMap& point_index_map,
+                        const std::vector<std::int32_t>& vertices)
+{
+  std::vector<std::int64_t> vertex_local(point_index_map.size_local(), -1);
+  std::int64_t local_count = vertices.size();
+  std::int64_t local_offset = dolfin::MPI::global_offset(
+      point_index_map.mpi_comm(), local_count, true);
+  for (std::int64_t i = 0; i < local_count; ++i)
+  {
+    if (vertices[i] < (int)vertex_local.size())
+      vertex_local[vertices[i]] = i + local_offset;
+  }
+
+  std::vector<std::int64_t> point_ghost
+      = point_index_map.scatter_fwd(vertex_local, 1);
+
+  std::vector<std::int64_t> vertex_ghost;
+  for (std::int64_t idx : point_ghost)
+    if (idx != -1)
+      vertex_ghost.push_back(idx);
+  common::IndexMap vertex_index_map(
+      point_index_map.mpi_comm(), local_count,
+      Eigen::Map<Eigen::Array<std::int64_t, Eigen::Dynamic, 1>>(
+          vertex_ghost.data(), vertex_ghost.size()),
+      1);
+  return vertex_index_map;
+}
+//-----------------------------------------------------------------------------
 std::map<std::int32_t, std::set<int>>
 compute_shared_from_indexmap(const common::IndexMap& index_map)
 {
@@ -137,8 +166,8 @@ compute_shared_from_indexmap(const common::IndexMap& index_map)
 }
 //-----------------------------------------------------------------------------
 std::vector<std::int64_t> compute_global_index_set(
-    Eigen::Ref<const Eigen::Array<std::int64_t, Eigen::Dynamic, Eigen::Dynamic,
-                                  Eigen::RowMajor>>
+    const Eigen::Ref<const Eigen::Array<std::int64_t, Eigen::Dynamic,
+                                        Eigen::Dynamic, Eigen::RowMajor>>&
         cell_nodes)
 {
   // Get set of all global points needed locally
@@ -158,7 +187,7 @@ std::tuple<
     Eigen::Array<std::int32_t, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>,
     Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>>
 compute_point_distribution(
-    MPI_Comm mpi_comm, int num_vertices_per_cell,
+    MPI_Comm mpi_comm,
     Eigen::Array<std::int64_t, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
         cell_nodes,
     Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
@@ -170,35 +199,14 @@ compute_point_distribution(
       = compute_global_index_set(cell_nodes);
 
   // Distribute points to processes that need them, and calculate
-  // IndexMap. Points are returned in same order as in global_index_set.
-  auto [point_index_map, point_local_index, recv_points]
+  // IndexMap.
+  auto [point_index_map, local_to_global, points_local]
       = Partitioning::distribute_points(mpi_comm, points, global_index_set);
 
-  // Map from local to global and reverse map
-  std::vector<std::int64_t> local_to_global(point_index_map->size_local()
-                                            + point_index_map->num_ghosts());
+  // Reverse map
   std::map<std::int64_t, std::int32_t> global_to_local;
-  for (std::size_t i = 0; i < point_local_index.size(); ++i)
-  {
-    local_to_global[point_local_index[i]] = global_index_set[i];
-    global_to_local.insert({global_index_set[i], point_local_index[i]});
-  }
-
-  // DEBUG
-  //  std::stringstream s;
-  //  s << dolfin::MPI::rank(mpi_comm) << ": ";
-  //  s << "num ghosts = " << point_index_map->num_ghosts();
-  //  s << "\n";
-  //  std::cout << s.str();
-
-  // Permute received points into local order
-  Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
-      points_local(recv_points.rows(), recv_points.cols());
-  for (std::size_t i = 0; i < global_index_set.size(); ++i)
-  {
-    int local_idx = point_local_index[i];
-    points_local.row(local_idx) = recv_points.row(i);
-  }
+  for (std::size_t i = 0; i < local_to_global.size(); ++i)
+    global_to_local.insert({local_to_global[i], i});
 
   // Convert cell_nodes to local indexing
   Eigen::Array<std::int32_t, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
@@ -226,8 +234,6 @@ Mesh::Mesh(
       _unique_id(common::UniqueIdGenerator::id())
 {
   const int tdim = mesh::cell_dim(_cell_type);
-  const std::int32_t num_vertices_per_cell
-      = mesh::num_cell_vertices(_cell_type);
 
   // Check size of global cell indices. If empty, construct later.
   if (global_cell_indices.size() > 0
@@ -254,15 +260,14 @@ Mesh::Mesh(
   // Compute node local-to-global map from global indices, and compute
   // cell topology using new local indices
   auto [point_index_map, node_indices_global, coordinate_nodes, points_received]
-      = compute_point_distribution(comm, num_vertices_per_cell, cells, points,
-                                   type);
+      = compute_point_distribution(comm, cells, points, type);
 
   _coordinate_dofs = std::make_unique<CoordinateDofs>(coordinate_nodes);
 
   _geometry = std::make_unique<Geometry>(num_points_global, points_received,
                                          node_indices_global);
 
-  // Convert shared points data to local indexing
+  // Compute shared points from IndexMap
   std::map<std::int32_t, std::set<int>> shared_points
       = compute_shared_from_indexmap(*point_index_map);
 
@@ -277,14 +282,20 @@ Mesh::Mesh(
   }
   else
   {
-    //    std::tie(num_vertices_global, vertex_indices_global, vertex_index_map)
-    //        = Partitioning::build_global_vertex_indices(
-    //            comm, num_vertices_local, node_indices_global, nodes_shared);
+    // Filter out vertices
+    const std::vector<int> vertex_indices
+        = mesh::cell_vertex_indices(type, cells.cols());
+    std::set<std::int32_t> vertex_set;
+    for (int i = 0; i < coordinate_nodes.rows(); ++i)
+      for (std::size_t j = 0; j < vertex_indices.size(); ++j)
+        vertex_set.insert(coordinate_nodes(i, vertex_indices[j]));
+    std::vector<std::int32_t> vertices(vertex_set.begin(), vertex_set.end());
 
-    // Eliminate shared points which are not vertices
-    //    for (auto it = nodes_shared.begin(); it != nodes_shared.end(); ++it)
-    //      if (it->first < num_vertices_local[2])
-    //        shared_vertices.insert(*it);
+    common::IndexMap vim = point_map_to_vertex_map(*point_index_map, vertices);
+
+    std::cout << "Made vim with " << vim.size_local() << " and "
+              << vim.num_ghosts() << "\n";
+    //    shared_vertices = compute_shared_from_indexmap(vim);
   }
 
   // Initialise vertex topology
@@ -296,10 +307,10 @@ Mesh::Mesh(
   _topology->init_ghost(0, point_index_map->size_local());
   _topology->set_index_map(0, point_index_map);
 
-  // Set vertex ownership
-  std::vector<int> vertex_owner;
-  //  for (int i = num_vertices_local[1]; i < num_vertices_local[2]; ++i)
-  //    vertex_owner.push_back(*(shared_vertices[i].begin()));
+  // Set vertex ownership from IndexMap (TODO: remove)
+  std::vector<int> vertex_owner(point_index_map->num_ghosts());
+  auto owners = point_index_map->ghost_owners();
+  std::copy(owners.data(), owners.data() + owners.size(), vertex_owner.begin());
   _topology->set_entity_owner(0, vertex_owner);
 
   // Initialise cell topology
@@ -307,6 +318,8 @@ Mesh::Mesh(
   _topology->init_ghost(tdim, num_cells_local);
 
   // Make cell to vertex connectivity
+  const std::int32_t num_vertices_per_cell
+      = mesh::num_cell_vertices(_cell_type);
   Eigen::Array<std::int32_t, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
       vertex_cols(cells.rows(), num_vertices_per_cell);
   std::vector<int> vertex_indices

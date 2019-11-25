@@ -407,7 +407,7 @@ void distribute_cell_layer(
 //-----------------------------------------------------------------------------
 // Distribute points
 std::tuple<
-    std::shared_ptr<common::IndexMap>, std::vector<std::int32_t>,
+    std::shared_ptr<common::IndexMap>, std::vector<std::int64_t>,
     Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>>
 Partitioning::distribute_points(
     MPI_Comm comm,
@@ -594,7 +594,19 @@ Partitioning::distribute_points(
 
   // Sort points and input global_indices into new order...
 
-  return std::tuple(v_idx_map, std::move(new_local), std::move(recv_points));
+  std::vector<std::int64_t> local_to_global(v_idx_map->size_local()
+                                            + v_idx_map->num_ghosts());
+  Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
+      points_local(recv_points.rows(), recv_points.cols());
+  for (std::size_t i = 0; i < new_local.size(); ++i)
+  {
+    int local_idx = new_local[i];
+    local_to_global[local_idx] = global_point_indices[i];
+    points_local.row(local_idx) = recv_points.row(i);
+  }
+
+  return std::tuple(v_idx_map, std::move(local_to_global),
+                    std::move(points_local));
 }
 //-----------------------------------------------------------------------------
 // Compute cell partitioning from local mesh data. Returns a vector
