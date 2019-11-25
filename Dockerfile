@@ -268,61 +268,71 @@ WORKDIR /root
 
 ########################################
 
-FROM dev-env-real as real
-LABEL description="DOLFIN-X in real mode"
+FROM dev-env-real as real-master
+LABEL description="DOLFIN-X in real mode (ONBUILD)"
 
-ARG MAKEFLAGS
+ONBUILD ARG MAKEFLAGS
 
-WORKDIR /tmp
+ONBUILD WORKDIR /tmp
 
 # Install ipython (optional), FIAT, UFL and ffcX (development
 # versions, master branch)
-RUN pip3 install --no-cache-dir ipython && \
-    pip3 install --no-cache-dir git+https://github.com/FEniCS/fiat.git && \
-    pip3 install --no-cache-dir git+https://github.com/FEniCS/ufl.git && \
-    pip3 install --no-cache-dir git+https://github.com/fenics/ffcX
+ONBUILD RUN pip3 install --no-cache-dir ipython && \
+            pip3 install --no-cache-dir git+https://github.com/FEniCS/fiat.git && \
+            pip3 install --no-cache-dir git+https://github.com/FEniCS/ufl.git && \
+            pip3 install --no-cache-dir git+https://github.com/fenics/ffcX
 
 # Install dolfinx
-RUN git clone https://github.com/fenics/dolfinx.git && \
-    cd dolfinx && \
-    mkdir build && \
-    cd build && \
-    cmake -G Ninja ../cpp && \
-    ninja ${MAKEFLAGS} install && \
-    cd ../python && \
-    pip3 install . && \
-    rm -rf /tmp/*
+ONBUILD RUN git clone https://github.com/fenics/dolfinx.git && \
+            cd dolfinx && \
+            mkdir build && \
+            cd build && \
+            cmake -G Ninja ../cpp && \
+            ninja ${MAKEFLAGS} install && \
+            cd ../python && \
+            pip3 install . && \
+            rm -rf /tmp/*
 
-WORKDIR /root
+ONBUILD WORKDIR /root
 
 ########################################
 
-FROM dev-env-complex as complex
-LABEL description="DOLFIN-X in complex mode"
+FROM real-master as real
+LABEL description="DOLFIN-X in real mode"
 
-ARG MAKEFLAGS
+########################################
 
-WORKDIR /tmp
+FROM dev-env-complex as complex-master
+LABEL description="DOLFIN-X in complex mode (ONBUILD)"
+
+ONBUILD ARG MAKEFLAGS
+
+ONBUILD WORKDIR /tmp
 
 # Install ipython (optional), FIAT, UFL and ffcX (development versions,
 # master branch)
-RUN pip3 install --no-cache-dir ipython && \
-    pip3 install --no-cache-dir git+https://github.com/FEniCS/fiat.git && \
-    pip3 install --no-cache-dir git+https://github.com/FEniCS/ufl.git && \
-    pip3 install --no-cache-dir git+https://github.com/fenics/ffcX
+ONBUILD RUN pip3 install --no-cache-dir ipython && \
+            pip3 install --no-cache-dir git+https://github.com/FEniCS/fiat.git && \
+            pip3 install --no-cache-dir git+https://github.com/FEniCS/ufl.git && \
+            pip3 install --no-cache-dir git+https://github.com/fenics/ffcX
 
 # Install dolfinx
-RUN git clone https://github.com/fenics/dolfinx.git && \
-    cd dolfinx && \
-    mkdir build && \
-    cd build && \
-    cmake -G Ninja ../cpp && \
-    ninja ${MAKEFLAGS} install && \
-    cd ../python && \
-    pip3 install . && \
-    rm -rf /tmp/*
+ONBUILD RUN git clone https://github.com/fenics/dolfinx.git && \
+            cd dolfinx && \
+            mkdir build && \
+            cd build && \
+            cmake -G Ninja ../cpp && \
+            ninja ${MAKEFLAGS} install && \
+            cd ../python && \
+            pip3 install . && \
+            rm -rf /tmp/*
 
-WORKDIR /root
+ONBUILD WORKDIR /root
+
+########################################
+
+FROM complex-master as complex
+LABEL description="DOLFIN-X in real mode"
 
 ########################################
 
