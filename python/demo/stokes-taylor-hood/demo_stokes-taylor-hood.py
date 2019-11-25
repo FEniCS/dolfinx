@@ -302,9 +302,10 @@ with XDMFFile(MPI.comm_world, "pressure.xdmf") as pfile_xdmf:
 # # Display plots
 # plt.show()
 
-# Solve same problem, but now with monolithic matrices
 
 print("----------------------")
+
+# Solve same problem, but now with monolithic matrices and iterative solvers
 
 A = dolfin.fem.create_matrix_block(a)
 dolfin.fem.assemble_matrix_block(A, a, bcs)
@@ -391,3 +392,41 @@ print("RR Norm of whole solution vector: {}".format(ref))
 print("BB Norm of whole solution vector: {}".format(x.norm()))
 # print("XX Norm of velocity coefficient vector: {}".format(u.vector.norm()))
 # print("XX Norm of pressure coefficient vector: {}".format(p.vector.norm()))
+
+
+print("----------------------")
+
+# Solve same problem, but now with monolithic matrices and a direct solver
+
+# Create LU solver
+ksp = PETSc.KSP().create(mesh.mpi_comm())
+ksp.setOperators(A)
+ksp.setType("preonly")
+ksp.getPC().setType("lu")
+ksp.getPC().setFactorSolverType("superlu_dist")
+
+# Monitor the convergence of the KSP
+opts = PETSc.Options()
+# opts["ksp_monitor"] = None
+# opts["ksp_view"] = None
+
+ksp.setFromOptions()
+
+# We also need to create a block vector,``x``, to store the (full)
+# solution, which we initialize using the block RHS form ``L``.
+
+# Compute solution
+# x = A.createVecRight()
+x = b.copy()
+x.set(0.0)
+ksp.solve(b, x)
+
+# u, p = Function(V), Function(Q)
+# u_local, p_local = dolfin.cpp.la.get_local_vectors(x, [V.dofmap.index_map, Q.dofmap.index_map])
+# u.vector.array = u_local
+# p.vector.array = p_local
+
+# We can calculate the :math:`L^2` norms of u and p as follows::
+
+print("RR Norm of whole solution vector: {}".format(ref))
+print("DD Norm of whole solution vector: {}".format(x.norm()))
