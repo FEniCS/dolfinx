@@ -134,7 +134,7 @@ std::string ascii_cell_data(const mesh::Mesh& mesh,
 }
 //----------------------------------------------------------------------------
 // mesh::Mesh writer (ascii)
-void write_ascii_mesh(const mesh::Mesh& mesh, std::size_t cell_dim,
+void write_ascii_mesh(const mesh::Mesh& mesh, int cell_dim,
                       std::string filename)
 {
   // FIXME: 'mesh.topology().ghost_offset' is plain confusing
