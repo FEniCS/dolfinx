@@ -268,7 +268,7 @@ WORKDIR /root
 
 ########################################
 
-FROM dev-env-real as real-master
+FROM dev-env-real as real-onbuild
 LABEL description="DOLFIN-X in real mode (ONBUILD)"
 
 ONBUILD ARG MAKEFLAGS
@@ -297,12 +297,12 @@ ONBUILD WORKDIR /root
 
 ########################################
 
-FROM real-master as real
+FROM real-onbuild as real
 LABEL description="DOLFIN-X in real mode"
 
 ########################################
 
-FROM dev-env-complex as complex-master
+FROM dev-env-complex as complex-onbuild
 LABEL description="DOLFIN-X in complex mode (ONBUILD)"
 
 ONBUILD ARG MAKEFLAGS
@@ -331,7 +331,7 @@ ONBUILD WORKDIR /root
 
 ########################################
 
-FROM complex-master as complex
+FROM complex-build as complex
 LABEL description="DOLFIN-X in real mode"
 
 ########################################

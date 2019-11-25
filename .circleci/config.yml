@@ -229,9 +229,9 @@ jobs:
             docker pull quay.io/fenicsproject/dolfinx:dev-env-real
             docker pull quay.io/fenicsproject/dolfinx:dev-env-complex
       - build-and-push-target:
-          docker-target: "real-master"
+          docker-target: "real-onbuild"
       - build-and-push-target:
-          docker-target: "complex-master"
+          docker-target: "complex-onbuild"
       - build-and-push-target:
           docker-target: "real"
       - build-and-push-target:
