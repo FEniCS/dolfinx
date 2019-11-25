@@ -14,7 +14,7 @@ from dolfin_utils.test.skips import skip_in_parallel
 from dolfin import (MPI, FunctionSpace, cpp, fem, Mesh, FacetNormal, Function,
                     VectorFunctionSpace, MeshFunction)
 from dolfin.cpp.mesh import CellType, GhostMode
-from ufl import inner, ds, jump, dS, avg, grad, dx, TestFunction
+from ufl import inner, ds, jump, dS, avg, grad, dx
 
 xfail = pytest.mark.xfail(strict=True)
 
@@ -638,14 +638,15 @@ def test_plus_and_minus(cell_type, space_type, order):
 
         V = FunctionSpace(mesh, (space_type, order))
 
-        v = TestFunction(V)
         f = Function(V)
         f.interpolate(lambda x: x[0])
 
-        a = f("+") * v("+") * dS
-        b = f("-") * v("+") * dS
+        a = f("+") * f("+") * dS
+        b = f("-") * f("+") * dS
 
-        v1 = fem.assemble_vector(a)
-        v2 = fem.assemble_vector(b)
+        v1 = fem.assemble_scalar(a)
+        v2 = fem.assemble_scalar(b)
 
-        assert np.allclose(v1, v2)
+        print(v1, v2)
+
+        assert np.isclose(v1, v2)
