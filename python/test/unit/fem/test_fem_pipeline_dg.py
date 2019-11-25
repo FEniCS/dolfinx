@@ -31,11 +31,11 @@ def test_manufactured_poisson_dg(p, mesh, component):
     """
 
     # Randomly reorder the mesh
-    order = [i for i,j in enumerate(mesh.geometry.points)]
+    order = [i for i, j in enumerate(mesh.geometry.points)]
     shuffle(order)
 
     points = np.zeros(mesh.geometry.points.shape)
-    for i,j in enumerate(order):
+    for i, j in enumerate(order):
         points[j] = mesh.geometry.points[i]
     cells = [[order[i] for i in c] for c in mesh.cells()]
     mesh = Mesh(MPI.comm_world, mesh.cell_type, points, cells,
@@ -50,7 +50,7 @@ def test_manufactured_poisson_dg(p, mesh, component):
 
     # Exact solution
     x = SpatialCoordinate(mesh)
-    u_exact = x[component]**p
+    u_exact = x[component] ** p
 
     # Coefficient
     k = Function(V)
