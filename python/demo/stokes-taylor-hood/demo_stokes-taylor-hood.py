@@ -302,6 +302,7 @@ with XDMFFile(MPI.comm_world, "pressure.xdmf") as pfile_xdmf:
 # # Display plots
 # plt.show()
 
+# Solve same problem, but now with monolithic matrices
 
 print("----------------------")
 
@@ -316,13 +317,6 @@ P.assemble()
 b = dolfin.fem.create_vector_block(L)
 b.set(0.0)
 dolfin.fem.assemble.assemble_vector_block(b, L, a, bcs)
-
-ksp = PETSc.KSP().create(mesh.mpi_comm())
-ksp.setOperators(A, P)
-
-# Setup the parent KSP
-ksp.setTolerances(rtol=1e-12)
-ksp.setType("minres")
 
 # Set near null space for pressure
 
@@ -339,71 +333,29 @@ nsp = PETSc.NullSpace().create(False, [null_vec])
 A.setNullSpace(nsp)
 assert np.isclose((A * null_vec).norm(), 0.0)
 
-# Monitor the convergence of the KSP
-opts = PETSc.Options()
-# opts["ksp_monitor"] = None
-# opts["ksp_view"] = None
+# Build IndexSets for each field (global dof indices for each field)
+V_map = V.dofmap.index_map
+Q_map = Q.dofmap.index_map
+proc_offset_u, _ = V_map.local_range
+proc_offset_p, _ = Q_map.local_range
 
+offset_u = proc_offset_u * V_map.block_size + proc_offset_p
+offset_p = offset_u + V_map.size_local * V_map.block_size
+
+is_u = PETSc.IS().createStride(V_map.size_local * V_map.block_size, offset_u, 1, comm=PETSc.COMM_SELF)
+is_p = PETSc.IS().createStride(Q_map.size_local, offset_p, 1, comm=PETSc.COMM_SELF)
+
+# Create Krylov solver
+ksp = PETSc.KSP().create(mesh.mpi_comm())
+ksp.setOperators(A, P)
+ksp.setTolerances(rtol=1e-12)
+ksp.setType("minres")
 ksp.getPC().setType("fieldsplit")
 ksp.getPC().setFieldSplitType(PETSc.PC.CompositeType.ADDITIVE)
-
-# Supply the KSP with the velocity and pressure matrix index sets
-is_rows = dolfin.cpp.la.create_petsc_index_sets([V.dofmap.index_map, Q.dofmap.index_map])
-# if MPI.rank(mesh.mpi_comm()) == 0:
-#     is_rows[0].view()
-#     is_rows[1].view()
-
-u_map = V.dofmap.index_map
-p_map = Q.dofmap.index_map
-u_size = u_map.size_local  # * u_map.block_size
-u_size_ghost = u_map.num_ghosts  # * u_map.block_size
-
-local_range_u = u_map.local_range
-local_range_p = p_map.local_range
-
-print("UUU", local_range_u[0] )
-print("PPP", local_range_p[0] )
-offset_u = u_map.local_range[0] * u_map.block_size + p_map.local_range[0]
-offset_p = offset_u + (u_map.size_local ) * u_map.block_size
-
-ui = np.arange(offset_u, offset_u + u_size * u_map.block_size, dtype=np.int32)
-is_u = PETSc.IS().createGeneral(ui, comm=PETSc.COMM_SELF)
-is_u.view()
-# is_u = PETSc.IS().createGeneral(ui)
-
-up = np.arange(offset_p, offset_p + p_map.size_local, dtype=np.int32)
-
-if MPI.rank(mesh.mpi_comm()) == 1:
-    print(ui)
-    print(up)
-
-
-is_p = PETSc.IS().createGeneral(up, comm=PETSc.COMM_SELF)
-# is_p = PETSc.IS().createGeneral(up, comm=PETSc.COMM_SELF)
-is_p.view()
-
-# exit(0)
-
-# if MPI.rank(mesh.mpi_comm()) == 1:
-#     print(ui)
-#     print(u_size, u_size_ghost)
-#     print(p_map.size_local)
-#     print(up)
-#     # is_u.view()
-#     # is_p.view()
-
-# exit(0)
 ksp.getPC().setFieldSplitIS(
     ("u", is_u),
     ("p", is_p))
-# ksp.getPC().setFieldSplitIS(
-#     ("u", is_rows[0]),
-#     ("p", is_rows[1]))
-# exit(0)
 
-# if MPI.rank(mesh.mpi_comm()) == 1:
-#     print("*******" , A.sizes)
-# exit(0)
 
 # Configure velocity and pressure sub KSPs
 ksp_u, ksp_p = ksp.getPC().getFieldSplitSubKSP()
@@ -411,6 +363,11 @@ ksp_u.setType("preonly")
 ksp_u.getPC().setType("hypre")
 ksp_p.setType("preonly")
 ksp_p.getPC().setType("hypre")
+
+# Monitor the convergence of the KSP
+opts = PETSc.Options()
+# opts["ksp_monitor"] = None
+# opts["ksp_view"] = None
 
 ksp.setFromOptions()
 
