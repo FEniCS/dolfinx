@@ -724,6 +724,13 @@ mesh::Mesh Partitioning::build_distributed_mesh(
 
     mesh::Mesh mesh(comm, cell_type, points, cells,
                     global_cell_indices, ghost_mode);
+
+    // Initialise number of globally connected cells to each facet. This
+    // is necessary to distinguish between facets on an exterior boundary
+    // and facets on a partition boundary (see
+    // https://bugs.launchpad.net/dolfin/+bug/733834).
+    DistributedMeshTools::init_facet_cell_connections(mesh);
+
     return mesh;
   }
 
