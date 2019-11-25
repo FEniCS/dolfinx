@@ -13,7 +13,7 @@ from dolfin_utils.test.skips import skip_in_parallel
 
 from dolfin import (MPI, FunctionSpace, cpp, fem, Mesh, FacetNormal, Function,
                     VectorFunctionSpace, MeshFunction)
-from dolfin.cpp.mesh import CellType
+from dolfin.cpp.mesh import CellType, GhostMode
 from ufl import inner, ds, jump, dS, avg, grad, dx
 
 xfail = pytest.mark.xfail(strict=True)
@@ -612,3 +612,49 @@ def test_grads(cell_type):
                 a = inner(avg(grad(v)), avg(grad(v))) * dS(subdomain_data=facet_function, subdomain_id=j)
                 result = fem.assemble_scalar(a)
                 assert np.isclose(abs(result), 1)
+
+
+@skip_in_parallel
+@pytest.mark.parametrize('cell_type', [CellType.triangle])
+def test_me(cell_type):
+    """Test that grad between two cells is correctly computed"""
+    # Define meshes with two cells such that the boundary between the cells is at x = 0
+    # In each mesh, the facet where the two cells meet has area 1
+    points = np.array([[-1., -2.],[0., 2.],[0., 0.],[-1., 0.]])
+
+    cellC = (3, 2, 0)
+
+    for cellA in [(1, 3, 2), (1, 2, 3)]:
+        cells = np.array([cellA, cellC])
+        mesh = Mesh(MPI.comm_world, CellType.triangle, points, cells,
+                    [], GhostMode.none)
+        mesh.geometry.coord_mapping = fem.create_coordinate_map(mesh)
+
+        # check that the volume of the mesh is 1
+        V = FunctionSpace(mesh, ("DG", 0))
+        u = Function(V)
+        v = Function(V)
+
+        vec = 5 * np.ones(V.dim())
+        for i in V.dofmap.cell_dofs(0):
+            vec[i] = 7
+        u.vector[:] = vec
+
+        vec = 2 * np.ones(V.dim())
+        for i in V.dofmap.cell_dofs(0):
+            vec[i] = 3
+        v.vector[:] = vec
+
+        # Calculate integral over shared facet of avg(grad v)^2. This should be 1.
+        num_facets = mesh.num_entities(mesh.topology.dim - 1)
+        facet_function = MeshFunction("size_t", mesh, mesh.topology.dim - 1, 1)
+        facet_function.values[:] = range(num_facets)
+
+        on_b = mesh.topology.on_boundary(mesh.topology.dim - 1)
+        for j in range(num_facets):
+            if not on_b[j]:
+                a = u("+") * v("-") * dS(subdomain_data=facet_function, subdomain_id=j)
+                result = fem.assemble_scalar(a)
+                assert np.isclose(abs(result), 14)
+        ############################
+        # TODO: put TestFunction and TrialFunction in here to see why they don't work

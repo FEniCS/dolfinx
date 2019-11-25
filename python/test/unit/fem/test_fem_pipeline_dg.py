@@ -7,9 +7,10 @@
 import numpy as np
 import pytest
 from petsc4py import PETSc
+from random import shuffle
 from dolfin import (MPI, Function, FunctionSpace, UnitCubeMesh, UnitIntervalMesh,
-                    UnitSquareMesh, FacetNormal, CellDiameter)
-from dolfin.cpp.mesh import CellType
+                    UnitSquareMesh, FacetNormal, CellDiameter, Mesh, fem)
+from dolfin.cpp.mesh import CellType, GhostMode
 from dolfin.fem import (assemble_matrix, assemble_scalar, assemble_vector)
 from ufl import (SpatialCoordinate, div, dx, grad, inner, ds, dS, avg, jump,
                  TestFunction, TrialFunction)
@@ -28,6 +29,18 @@ def test_manufactured_poisson_dg(p, mesh, component):
     """ Manufactured Poisson problem, solving u = x[component]**p, where p is the
     degree of the Lagrange function space.
     """
+
+    # Randomly reorder the mesh
+    order = [i for i,j in enumerate(mesh.geometry.points)]
+    shuffle(order)
+
+    points = np.zeros(mesh.geometry.points.shape)
+    for i,j in enumerate(order):
+        points[j] = mesh.geometry.points[i]
+    cells = [[order[i] for i in c] for c in mesh.cells()]
+    mesh = Mesh(MPI.comm_world, mesh.cell_type, points, cells,
+                [], GhostMode.none)
+    mesh.geometry.coord_mapping = fem.create_coordinate_map(mesh)
 
     if component >= mesh.geometry.dim:
         return
