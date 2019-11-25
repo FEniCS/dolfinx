@@ -173,7 +173,7 @@ compute_point_distribution(
     std::array<int, 4> num_vertices_local;
     num_vertices_local.fill(points.rows());
     Eigen::Array<std::int32_t, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
-        cells_local = cell_nodes.cast <std::int32_t> ();
+        cells_local = cell_nodes.cast<std::int32_t>();
 
     return std::tuple(std::move(local_to_global), std::move(shared_points),
                       std::move(cells_local), std::move(points),
