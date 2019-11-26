@@ -721,6 +721,9 @@ mesh::Mesh Partitioning::build_distributed_mesh(
 
   if (nparts == 1)
   {
+    if (ghost_mode != mesh::GhostMode::none)
+      throw std::runtime_error(
+          "Ghost cell information not available in serial");
 
     mesh::Mesh mesh(comm, cell_type, points, cells, global_cell_indices,
                     ghost_mode);
