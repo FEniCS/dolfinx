@@ -69,15 +69,11 @@ std::string rank_to_string(std::size_t value_rank)
 // Returns true for DG0 function::Functions
 bool has_cell_centred_data(const function::Function& u)
 {
-  int cell_based_dim = 1;
-  for (int i = 0; i < u.value_rank(); i++)
-    cell_based_dim *= u.function_space()->mesh()->topology().dim();
-
   assert(u.function_space());
-  assert(u.function_space()->dofmap());
-  assert(u.function_space()->dofmap()->element_dof_layout);
-  return (u.function_space()->dofmap()->element_dof_layout->num_dofs()
-          == cell_based_dim);
+  return (u.function_space()->element()->family().compare(
+              "Discontinuous Lagrange")
+          == 0)
+         and (u.function_space()->element()->degree() == 0);
 }
 //-----------------------------------------------------------------------------
 // Get data width - normally the same as u.value_size(), but expand for
