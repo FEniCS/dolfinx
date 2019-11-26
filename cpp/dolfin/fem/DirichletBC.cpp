@@ -27,8 +27,7 @@ namespace
 {
 std::vector<std::array<PetscInt, 2>>
 get_remote_bcs(const common::IndexMap& map, const common::IndexMap& map_g,
-               const Eigen::Ref<const Eigen::Array<PetscInt, Eigen::Dynamic, 1>>& dofs_local,
-               const Eigen::Ref<const Eigen::Array<PetscInt, Eigen::Dynamic, 1>>& dofs_local_g)
+               const std::vector<std::array<PetscInt, 2>>& dofs_local)
 {
   std::vector<std::array<PetscInt, 2>> dof_dof_g;
 
@@ -45,18 +44,18 @@ get_remote_bcs(const common::IndexMap& map, const common::IndexMap& map_g,
   // For each dof local index, store global index in Vg (-1 if no bc)
   std::vector<PetscInt> marker_owned(bs * size_owned, -1);
   std::vector<PetscInt> marker_ghost(bs * size_ghost, -1);
-  for (Eigen::Index i = 0; i < dofs_local.rows(); i++)
+  for (auto& dofs : dofs_local)
   {
-    const PetscInt index_block_g = dofs_local_g[i] / bs_g;
-    const PetscInt pos_g = dofs_local_g[i] % bs_g;
-    if (dofs_local[i] < bs * size_owned)
+    const PetscInt index_block_g = dofs[1] / bs_g;
+    const PetscInt pos_g = dofs[1] % bs_g;
+    if (dofs[0] < bs * size_owned)
     {
-      marker_owned[dofs_local[i]]
+      marker_owned[dofs[0]]
           = bs_g * map_g.local_to_global(index_block_g) + pos_g;
     }
     else
     {
-      marker_ghost[dofs_local[i] - (bs * size_owned)]
+      marker_ghost[dofs[0] - (bs * size_owned)]
           = bs_g * map_g.local_to_global(index_block_g) + pos_g;
     }
   }
@@ -123,19 +122,24 @@ DirichletBC::DirichletBC(
     throw std::runtime_error("Not matching number of degrees of freedom.");
   }
 
-  // Get bc dof indices (local) in (V, Vg) spaces on this process that
-  // were found by other processes, e.g. a vertex dof on this process that
-  // has no connected facets on the boundary.
-  const std::vector<std::array<PetscInt, 2>> dofs_remote
-      = get_remote_bcs(*V->dofmap()->index_map,
-                       *g->function_space()->dofmap()->index_map, V_dofs, g_dofs);
-
   // Copy the Eigen data structure into std::vector of arrays
   // This is needed for appending the remote dof indices and std::sort
   std::vector<std::array<PetscInt, 2>> dofs_local_vec(V_dofs.rows());
   for (Eigen::Index i = 0; i < V_dofs.rows(); ++i){
     dofs_local_vec[i] = {V_dofs[i], g_dofs[i]};
   }
+
+  // Remove duplicates
+  std::sort(dofs_local_vec.begin(), dofs_local_vec.end());
+  dofs_local_vec.erase(std::unique(dofs_local_vec.begin(), dofs_local_vec.end()),
+                       dofs_local_vec.end());
+
+  // Get bc dof indices (local) in (V, Vg) spaces on this process that
+  // were found by other processes, e.g. a vertex dof on this process that
+  // has no connected facets on the boundary.
+  const std::vector<std::array<PetscInt, 2>> dofs_remote
+      = get_remote_bcs(*V->dofmap()->index_map,
+                       *g->function_space()->dofmap()->index_map, dofs_local_vec);
 
   // Add received bc indices to dofs_local
   for (auto& dof_remote : dofs_remote)
@@ -190,6 +194,8 @@ void DirichletBC::set(
     Eigen::Ref<Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1>> x,
     double scale) const
 {
+  // FIXME: This one excludes ghosts. Need to straighten out.
+
   assert(_g);
   la::VecReadWrapper g(_g->vector().vec(), false);
   for (Eigen::Index i = 0; i < _dofs.rows(); ++i)
@@ -204,12 +210,15 @@ void DirichletBC::set(
     const Eigen::Ref<const Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1>>& x0,
     double scale) const
 {
+  // FIXME: This one excludes ghosts. Need to straighten out.
+
   assert(_g);
   assert(x.rows() <= x0.rows());
   la::VecReadWrapper g(_g->vector().vec(), false);
   for (Eigen::Index i = 0; i < _dofs.rows(); ++i)
   {
-    x[_dofs(i, 0)] = scale * (g.x[_dofs(i, 1)] - x0[_dofs(i, 0)]);
+    if (_dofs(i, 0) < x.rows())
+      x[_dofs(i, 0)] = scale * (g.x[_dofs(i, 1)] - x0[_dofs(i, 0)]);
   }
 }
 //-----------------------------------------------------------------------------
