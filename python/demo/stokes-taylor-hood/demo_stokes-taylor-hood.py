@@ -148,7 +148,7 @@ inflow.interpolate(inflow_eval)
 
 bdofs1 = locate_dofs_topological(W.sub(0), sub_domains.dim, mf1)
 bdofs1_collapsed = locate_dofs_topological(W.sub(0).collapse(), sub_domains.dim, mf1)
-bc1 = DirichletBC(W.sub(0), inflow, bdofs1)
+bc1 = DirichletBC(W.sub(0), inflow, bdofs1, bdofs1_collapsed)
 
 # Collect boundary conditions
 bcs = [bc0, bc1]

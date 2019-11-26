@@ -270,10 +270,13 @@ def test_assembly_solve_block():
     mf.mark(boundary, 1)
     bndry_facets = numpy.where(mf.values == 1)[0]
 
+    print(dolfin.MPI.comm_world.rank, bndry_facets.shape)
+
     u_bc0 = dolfin.function.Function(V0)
     u_bc0.interpolate(bc_val_0)
     u_bc1 = dolfin.function.Function(V1)
     u_bc1.interpolate(bc_val_1)
+
     bdofs0 = dolfin.fem.locate_dofs_topological(V0, facetdim, bndry_facets)
     bdofs1 = dolfin.fem.locate_dofs_topological(V1, facetdim, bndry_facets)
 
