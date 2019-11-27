@@ -139,7 +139,7 @@ std::shared_ptr<const function::FunctionSpace> Form::function_space(int i) const
 void Form::set_tabulate_tensor(
     FormIntegrals::Type type, int i,
     std::function<void(PetscScalar*, const PetscScalar*, const PetscScalar*,
-                       const double*, const int*, const int*)>
+                       const double*, const int*, const int*, const int*)>
         fn)
 {
   _integrals.set_tabulate_tensor(type, i, fn);

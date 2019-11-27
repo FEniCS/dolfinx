@@ -98,6 +98,8 @@ public:
   /// @return The local index of given entity.
   int index(const MeshEntity& entity) const;
 
+  int facet_permutation(const MeshEntity& entity) const;
+
   /// Return informal string representation (pretty-print)
   /// @param[in] verbose Flag to turn on additional output
   /// @return An informal representation of the function space
