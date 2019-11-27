@@ -5,9 +5,9 @@
 # SPDX-License-Identifier:    LGPL-3.0-or-later
 """ Unit-tests for higher order meshes """
 
-import meshio
+import os
+
 import numpy as np
-import pygmsh
 import pytest
 import scipy.integrate
 import sympy as sp
@@ -15,7 +15,7 @@ from dolfin_utils.test.skips import skip_in_parallel
 from sympy.vector import CoordSys3D, matrix_to_vector
 
 from dolfin import MPI, Function, FunctionSpace, Mesh, fem
-from dolfin.cpp.io import permute_cell_ordering, permutation_vtk_to_dolfin
+from dolfin.cpp.io import permutation_vtk_to_dolfin, permute_cell_ordering
 from dolfin.cpp.mesh import CellType, GhostMode
 from dolfin.fem import assemble_scalar
 from dolfin.io import XDMFFile
@@ -367,24 +367,11 @@ def test_nth_order_triangle(order):
 
 
 @skip_in_parallel
-def test_xdmf_input_tri():
-    # Parameterize test if gmsh gets wider support
-    order = 2
-    R = 1
-    res = R / 7
-    geo = pygmsh.opencascade.Geometry()
-    geo.add_raw_code("Mesh.ElementOrder={0:d};".format(order))
-    geo.add_ball([0, 0, 0], R, char_length=res)
-    element = "triangle{0:d}".format(int((order + 1) * (order + 2) / 2))
-    if order == 1:
-        element = element[:-1]
-    msh = pygmsh.generate_mesh(geo, verbose=True, dim=2)
-    meshio.write("mesh.xdmf", meshio.Mesh(points=msh.points, cells={element: msh.cells[element]}))
-    with XDMFFile(MPI.comm_world, "mesh.xdmf") as xdmf:
+def test_xdmf_input_tri(datadir):
+    with XDMFFile(MPI.comm_world, os.path.join(datadir, "mesh.xdmf")) as xdmf:
         mesh = xdmf.read_mesh(GhostMode.none)
-
     surface = assemble_scalar(1 * dx(mesh))
-    assert MPI.sum(mesh.mpi_comm(), surface) == pytest.approx(4 * np.pi * R * R, rel=1e-5)
+    assert MPI.sum(mesh.mpi_comm(), surface) == pytest.approx(4 * np.pi, rel=1e-4)
 
 
 @skip_in_parallel
@@ -565,6 +552,8 @@ def test_fourth_order__quad(L, H, Z):
 @skip_in_parallel
 @pytest.mark.parametrize('order', [2, 3])
 def test_gmsh_input_quad(order):
+    pygmsh = pytest.importorskip("pygmsh")
+
     # Parameterize test if gmsh gets wider support
     R = 1
     res = 0.2 if order == 2 else 0.2
