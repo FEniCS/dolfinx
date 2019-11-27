@@ -49,8 +49,13 @@ u_bc = dolfin.Function(U)
 with u_bc.vector.localForm() as loc:
     loc.set(0.0)
 
+facetdim = mesh.topology.dim - 1
+mf = dolfin.MeshFunction("size_t", mesh, facetdim, 0)
+mf.mark(lambda x: numpy.isclose(x[0], 0.0), 1)
+bndry_facets = numpy.where(mf.values == 1)[0]
+
 # Displacement BC is applied to the right side
-bdofs = dolfin.fem.locate_dofs_geometrical(U, lambda x: numpy.isclose(x[0], 0.0))
+bdofs = dolfin.fem.locate_dofs_topological(U, facetdim, bndry_facets)
 bc = dolfin.fem.DirichletBC(U, u_bc, bdofs)
 
 
