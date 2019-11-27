@@ -101,16 +101,20 @@ demos-python-mpi: &demos-python-mpi
 
 commands:
   build-and-push-target:
-    description: "Build and push target in docker/Dockerfile"
+    description: "Build and push target in docker/`dockerfile`"
     parameters:
       docker-target:
         type: string
+      dockerfile:
+        type: string
+        default: "Dockerfile"
     steps:
       - run: >
           cd docker &&
           docker build --build-arg MAKEFLAGS='-j3'
           --build-arg PETSC_SLEPC_OPTFLAGS='-O3'
           --target << parameters.docker-target >>
+          --file << parameters.dockerfile >>
           -t quay.io/fenicsproject/dolfinx:<< parameters.docker-target >> . &&
           docker push quay.io/fenicsproject/dolfinx:<< parameters.docker-target >>
 
@@ -208,10 +212,13 @@ jobs:
           command: echo ${QUAYIO_TOKEN} | docker login -u ${QUAYIO_USERNAME} --password-stdin quay.io
       - build-and-push-target:
           docker-target: "base"
+          dockerfile: "Dockerfile.dev-env"
       - build-and-push-target:
           docker-target: "dev-env-real"
+          dockerfile: "Dockerfile.dev-env"
       - build-and-push-target:
           docker-target: "dev-env-complex"
+          dockerfile: "Dockerfile.dev-env"
 
   build-and-push-complete-build-docker-images:
     docker:
