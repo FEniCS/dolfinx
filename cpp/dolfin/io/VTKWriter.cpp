@@ -246,7 +246,7 @@ void write_ascii_mesh(const mesh::Mesh& mesh, int cell_dim,
        << "ascii"
        << "\">";
   for (int types = 0; types < num_cells; types++)
-    file << vtk_cell_type << " ";
+    file << int(vtk_cell_type) << " ";
   file << "</DataArray>" << std::endl;
   file << "</Cells>" << std::endl;
 
