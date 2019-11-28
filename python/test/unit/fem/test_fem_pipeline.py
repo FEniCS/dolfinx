@@ -4,12 +4,13 @@
 #
 # SPDX-License-Identifier:    LGPL-3.0-or-later
 
-import numpy as np
 import os
+
+import numpy as np
 import pytest
 from petsc4py import PETSc
 
-from dolfin import (MPI, DirichletBC, Function, FunctionSpace)
+from dolfin import MPI, DirichletBC, Function, FunctionSpace
 from dolfin.cpp.mesh import GhostMode
 from dolfin.fem import (apply_lifting, assemble_matrix, assemble_scalar,
                         assemble_vector, set_bc)
