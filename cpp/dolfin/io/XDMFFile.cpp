@@ -36,7 +36,6 @@
 #include <dolfin/mesh/Partitioning.h>
 #include <iomanip>
 #include <memory>
-#include <petscvec.h>
 #include <set>
 #include <string>
 #include <vector>
@@ -71,11 +70,11 @@ bool has_cell_centred_data(const function::Function& u)
 {
   assert(u.function_space());
   assert(u.function_space()->dofmap());
-  assert(u.function_space()->dofmap()->element_dof_layout);
-  int tdim = u.function_space()->mesh()->topology().dim();
-  return (
-      u.function_space()->dofmap()->element_dof_layout->num_entity_dofs(tdim)
-      == u.function_space()->dofmap()->element_dof_layout->num_dofs());
+  std::shared_ptr<const fem::ElementDofLayout> dof_layout
+      = u.function_space()->dofmap()->element_dof_layout;
+  assert(u.function_space()->mesh());
+  const int tdim = u.function_space()->mesh()->topology().dim();
+  return dof_layout->num_entity_dofs(tdim) == dof_layout->num_dofs();
 }
 //-----------------------------------------------------------------------------
 // Get data width - normally the same as u.value_size(), but expand for
