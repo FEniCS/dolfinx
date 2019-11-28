@@ -299,8 +299,10 @@ fem::locate_dofs_geometrical(const function::FunctionSpace& V,
                              marking_function marker)
 {
 
-  const auto dof_coordinates = V.tabulate_dof_coordinates().transpose();
-  const auto marked_dofs = marker(dof_coordinates);
+  const Eigen::Array<double, 3, Eigen::Dynamic, Eigen::RowMajor> dof_coordinates
+      = V.tabulate_dof_coordinates().transpose();
+  const Eigen::Array<bool, Eigen::Dynamic, 1> marked_dofs
+      = marker(dof_coordinates);
 
   std::vector<PetscInt> dofs;
 
