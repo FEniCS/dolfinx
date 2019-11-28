@@ -86,6 +86,10 @@ void _lift_bc_cells(
   for (auto const& constant : constants)
   {
     // Get underlying data array of this Constant
+    if (!constant.second)
+      throw std::runtime_error("Constant \"" + constant.first
+                               + "\" has not been set.");
+
     const std::vector<PetscScalar>& array = constant.second->value;
 
     constant_values.insert(constant_values.end(), array.data(),

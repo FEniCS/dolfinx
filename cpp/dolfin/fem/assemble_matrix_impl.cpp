@@ -47,6 +47,10 @@ void fem::impl::assemble_matrix(Mat A, const Form& a,
   std::vector<PetscScalar> constant_values;
   for (auto& constant : constants)
   {
+    if (!constant.second)
+      throw std::runtime_error("Constant \"" + constant.first
+                               + "\" has not been set.");
+
     const std::vector<PetscScalar>& array = constant.second->value;
     constant_values.insert(constant_values.end(), array.data(),
                            array.data() + array.size());

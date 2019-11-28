@@ -37,6 +37,10 @@ PetscScalar dolfin::fem::impl::assemble_scalar(const dolfin::fem::Form& M)
   std::vector<PetscScalar> constant_values;
   for (auto const& constant : constants)
   {
+    if (!constant.second)
+      throw std::runtime_error("Constant \"" + constant.first
+                               + "\" has not been set.");
+
     // Get underlying data array of this Constant
     const std::vector<PetscScalar>& array = constant.second->value;
 
