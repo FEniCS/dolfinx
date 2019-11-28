@@ -325,7 +325,7 @@ void fem::impl::assemble_interior_facets(
     // Get local index of facet with respect to the cell
     const int local_facet[2] = {cell0.index(facet), cell1.index(facet)};
     const int orient[2] = {0, 0};
-    const int perm[2] = {0, 0};
+    const int perm[2] = {cell0.facet_permutation(facet), cell1.facet_permutation(facet)};
 
     // Get cell vertex coordinates
     const int cell_index0 = cell0.index();

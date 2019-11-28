@@ -535,7 +535,7 @@ void fem::impl::assemble_interior_facets(
 
     // Orientation
     const int orient[2] = {0, 0};
-    const int perm[2] = {0, 0};
+    const int perm[2] = {cell0.facet_permutation(facet), cell1.facet_permutation(facet)};
 
     // Get cell vertex coordinates
     for (int i = 0; i < num_dofs_g; ++i)
