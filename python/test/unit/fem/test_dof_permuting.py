@@ -731,7 +731,7 @@ def test_facet_integral(cell_type):
 
                 expected = 1 / 2
                 expected *= np.linalg.norm(p1 - p0)
-                expected *= np.dot(normal, np.array([p1[0] + p0[0], 0, 0]))
+                expected *= np.dot(normal, np.array([p0[0] + p1[0], 0, 0]))
 
                 if vertices[0] > vertices[1]:
                     expected *= -1
@@ -741,12 +741,24 @@ def test_facet_integral(cell_type):
                 p1 = mesh.geometry.points[vertices[1]]
                 p2 = mesh.geometry.points[vertices[2]]
 
+                normal = np.cross(p2 - p0, p1 - p0)
+                normal /= np.linalg.norm(normal)
+                if np.dot(normal, midpoint - facet_midpoint) > 0:
+                    normal *= -1
+
                 expected = 1 / 6
-                expected *= 1 / 2 * np.linalg.norm(np.linalg.dot(p1 - p0, p2 - p0))
-                expected *= np.dot(normal, np.array([p1[0] + p0[0], 0, 0]))
-                return
+                expected *= np.linalg.norm(np.cross(p1 - p0, p2 - p0))
+                expected *= np.dot(normal, np.array([p0[0] + p1[0] + p2[0], 0, 0]))
+
+                min_i = np.argmin(vertices)
+                next = (min_i + 1) % len(vertices)
+                pre = min_i - 1
+
+                if vertices[next] > vertices[pre]:
+                    expected *= -1
 
             if len(vertices) == 4:  # Facet is quadrilateral
+                # TODO
                 return
 
             assert np.isclose(result, expected)
