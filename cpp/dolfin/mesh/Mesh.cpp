@@ -52,14 +52,18 @@ Eigen::ArrayXd cell_r(const mesh::Mesh& mesh)
   return mesh::inradius(mesh, cells);
 }
 //-----------------------------------------------------------------------------
-common::IndexMap
-point_map_to_vertex_map(const common::IndexMap& point_index_map,
+std::shared_ptr<common::IndexMap>
+point_map_to_vertex_map(std::shared_ptr<const common::IndexMap> point_index_map,
                         const std::vector<std::int32_t>& vertices)
 {
-  std::vector<std::int64_t> vertex_local(point_index_map.size_local(), -1);
+  // Compute an IndexMap for vertices, given the IndexMap for points
+  // applicable to higher-order meshes where there are more points than
+  // vertices.
+
+  std::vector<std::int64_t> vertex_local(point_index_map->size_local(), -1);
   std::int64_t local_count = vertices.size();
   std::int64_t local_offset = dolfin::MPI::global_offset(
-      point_index_map.mpi_comm(), local_count, true);
+      point_index_map->mpi_comm(), local_count, true);
   for (std::int64_t i = 0; i < local_count; ++i)
   {
     if (vertices[i] < (int)vertex_local.size())
@@ -67,14 +71,15 @@ point_map_to_vertex_map(const common::IndexMap& point_index_map,
   }
 
   std::vector<std::int64_t> point_ghost
-      = point_index_map.scatter_fwd(vertex_local, 1);
+      = point_index_map->scatter_fwd(vertex_local, 1);
 
   std::vector<std::int64_t> vertex_ghost;
   for (std::int64_t idx : point_ghost)
     if (idx != -1)
       vertex_ghost.push_back(idx);
-  common::IndexMap vertex_index_map(
-      point_index_map.mpi_comm(), local_count,
+
+  auto vertex_index_map = std::make_shared<common::IndexMap>(
+      point_index_map->mpi_comm(), local_count,
       Eigen::Map<Eigen::Array<std::int64_t, Eigen::Dynamic, 1>>(
           vertex_ghost.data(), vertex_ghost.size()),
       1);
@@ -274,11 +279,13 @@ Mesh::Mesh(
   // Get global vertex information
   std::vector<std::int64_t> vertex_indices_global;
   std::map<std::int32_t, std::set<std::int32_t>> shared_vertices;
+  std::shared_ptr<common::IndexMap> vertex_index_map;
 
   if (_degree == 1)
   {
     vertex_indices_global = std::move(node_indices_global);
     shared_vertices = std::move(shared_points);
+    vertex_index_map = point_index_map;
   }
   else
   {
@@ -291,25 +298,36 @@ Mesh::Mesh(
         vertex_set.insert(coordinate_nodes(i, vertex_indices[j]));
     std::vector<std::int32_t> vertices(vertex_set.begin(), vertex_set.end());
 
-    common::IndexMap vim = point_map_to_vertex_map(*point_index_map, vertices);
+    vertex_index_map = point_map_to_vertex_map(point_index_map, vertices);
 
-    std::cout << "Made vim with " << vim.size_local() << " and "
-              << vim.num_ghosts() << "\n";
-    //    shared_vertices = compute_shared_from_indexmap(vim);
+    std::stringstream s;
+
+    s << "Made vertex_index_map for higher order with "
+      << vertex_index_map->size_local() << " local and "
+      << vertex_index_map->num_ghosts() << " ghost indices\n";
+    shared_vertices = compute_shared_from_indexmap(*vertex_index_map);
+    for (auto q : shared_vertices)
+    {
+      s << q.first << ":{";
+      for (int r : q.second)
+        s << r << " ";
+      s << "},";
+    }
+    std::cout << s.str() << "\n";
   }
 
   // Initialise vertex topology
   _topology = std::make_unique<Topology>(
-      tdim, point_index_map->size_local() + point_index_map->num_ghosts(),
-      point_index_map->size_global());
+      tdim, vertex_index_map->size_local() + vertex_index_map->num_ghosts(),
+      vertex_index_map->size_global());
   _topology->set_global_indices(0, vertex_indices_global);
   _topology->set_shared_entities(0, shared_vertices);
-  _topology->init_ghost(0, point_index_map->size_local());
-  _topology->set_index_map(0, point_index_map);
+  _topology->init_ghost(0, vertex_index_map->size_local());
+  _topology->set_index_map(0, vertex_index_map);
 
-  // Set vertex ownership from IndexMap (TODO: remove)
-  std::vector<int> vertex_owner(point_index_map->num_ghosts());
-  auto owners = point_index_map->ghost_owners();
+  // Set vertex ownership from IndexMap (TODO: remove?)
+  std::vector<int> vertex_owner(vertex_index_map->num_ghosts());
+  auto owners = vertex_index_map->ghost_owners();
   std::copy(owners.data(), owners.data() + owners.size(), vertex_owner.begin());
   _topology->set_entity_owner(0, vertex_owner);
 
