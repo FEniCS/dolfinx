@@ -427,14 +427,68 @@ def test_facet_integral(cell_type):
 
         num_facets = mesh.num_entities(mesh.topology.dim - 1)
 
-        v = Function(V)
+        f = Function(V)
+        f.interpolate(lambda x: x[0])
+
         facet_function = MeshFunction("size_t", mesh, mesh.topology.dim - 1, 1)
         facet_function.values[:] = range(num_facets)
 
-        v.interpolate(lambda x: x[0])
-
+        mesh.create_connectivity(mesh.geometry.dim - 1, 0)
+        connect = mesh.topology.connectivity(mesh.geometry.dim - 1, 0)
+        con = connect.connections()
+        pos = connect.pos()
         # assert that the integrals of x over each facet is 0 or positive
         for j in range(num_facets):
-            a = v * ds(subdomain_data=facet_function, subdomain_id=j)
+            vertices = [con[i] for i in range(pos[j], pos[j + 1])]
+            a = f * ds(subdomain_data=facet_function, subdomain_id=j)
             result = fem.assemble_scalar(a)
-            assert np.isclose(result, 0) or result > 0
+            if len(vertices) == 2:
+                expected = (mesh.geometry.points[vertices[0]][0]
+                            + mesh.geometry.points[vertices[1]][0])
+                expected /= 2
+                expected *= np.linalg.norm(mesh.geometry.points[vertices[0]]
+                                           - mesh.geometry.points[vertices[1]])
+                assert np.isclose(result, expected)
+
+    for count in range(10):
+        mesh = randomly_ordered_unit_cell(cell_type)
+
+        V = VectorFunctionSpace(mesh, ("Lagrange", 1))
+
+        num_facets = mesh.num_entities(mesh.topology.dim - 1)
+
+        n = FacetNormal(mesh)
+        f = Function(V)
+        f.interpolate(lambda x: tuple(x[i] if i == 0 else 0 * x[1]
+                                      for i in range(mesh.topology.dim)))
+
+        facet_function = MeshFunction("size_t", mesh, mesh.topology.dim - 1, 1)
+        facet_function.values[:] = range(num_facets)
+
+        mesh.create_connectivity(mesh.geometry.dim - 1, 0)
+        connect = mesh.topology.connectivity(mesh.geometry.dim - 1, 0)
+        con = connect.connections()
+        pos = connect.pos()
+        # assert that the integrals of x over each facet is 0 or positive
+        for j in range(num_facets):
+            vertices = [con[i] for i in range(pos[j], pos[j + 1])]
+            a = inner(n, f) * ds(subdomain_data=facet_function, subdomain_id=j)
+            result = fem.assemble_scalar(a)
+            if len(vertices) == 2:
+                midpoint = sum(mesh.geometry.points) / len(mesh.geometry.points)
+                facet_midpoint = sum(mesh.geometry.points[i] for i in vertices) / len(vertices)
+                p0 = mesh.geometry.points[vertices[0]]
+                p1 = mesh.geometry.points[vertices[1]]
+                normal = np.array([p1[1] - p0[1], p0[0] - p1[0], 0])
+                normal /= np.linalg.norm(normal)
+                if np.dot(normal, midpoint - facet_midpoint) > 0:
+                    normal *= -1
+
+                expected = 1 / 2
+                expected *= np.linalg.norm(p1 - p0)
+                expected *= np.dot(normal, np.array([p1[0] + p0[0], 0, 0]))
+
+                if vertices[0] > vertices[1]:
+                    expected *= -1
+
+                assert np.isclose(result, expected)
