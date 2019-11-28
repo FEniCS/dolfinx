@@ -326,43 +326,48 @@ def test_hexahedron_dof_ordering(space_type):
                 faces[i] = j
 
 
-@skip_in_parallel
-@pytest.mark.parametrize('cell_type', [CellType.triangle, CellType.tetrahedron,
-                                       CellType.quadrilateral, CellType.hexahedron])
-def test_facet_normals(cell_type):
-    """Test that FacetNormal is outward facing"""
+def randomly_ordered_unit_cell(cell_type):
     if cell_type == CellType.triangle:
-        # Define equilateral triangle such that the integral over one facet will be one
-        s = np.sqrt(2 / np.sqrt(3))  # side length
-        points = np.array([[0., 0.], [s, 0.],
-                           [s / 2, s * np.sqrt(3) / 2]])
+        # Define equilateral triangle with area 1
+        root = 3 ** 0.25  # 4th root of 3
+        points = np.array([[0., 0.], [2 / root, 0.],
+                           [1 / root, root]])
     elif cell_type == CellType.tetrahedron:
-        # Define regular tetrahedron such that the integral over one facet will be one
-        s = np.power(2, 1 / 4)
+        # Define regular tetrahedron with volume 1
+        s = 2 ** 0.5 * 3 ** (1 / 3)  # side length
         points = np.array([[0., 0., 0.], [s, 0., 0.],
                            [s / 2, s * np.sqrt(3) / 2, 0.],
-                           [s / 2, s / np.sqrt(3), 2 * np.sqrt(2 / 3)]])
+                           [s / 2, s / np.sqrt(3), s * np.sqrt(2 / 3)]])
     elif cell_type == CellType.quadrilateral:
-        # Define unit quadrilateral
+        # Define unit quadrilateral (area 1)
         points = np.array([[0., 0.], [1., 0.], [0., 1.], [1., 1.]])
     elif cell_type == CellType.hexahedron:
-        # Define unit hexahedron
+        # Define unit hexahedron (volume 1)
         points = np.array([[0., 0., 0.], [1., 0., 0.], [0., 1., 0.],
                            [1., 1., 0.], [0., 0., 1.], [1., 0., 1.],
                            [0., 1., 1.], [1., 1., 1.]])
     num_points = len(points)
 
+    # Randomly number the points and create the mesh
     order = list(range(num_points))
+    shuffle(order)
+    ordered_points = np.zeros(points.shape)
+    for i, j in enumerate(order):
+        ordered_points[j] = points[i]
+    cells = np.array([order])
+    mesh = Mesh(MPI.comm_world, cell_type, ordered_points, cells,
+                [], cpp.mesh.GhostMode.none)
+    mesh.geometry.coord_mapping = fem.create_coordinate_map(mesh)
+    return mesh
+
+
+@skip_in_parallel
+@pytest.mark.parametrize('cell_type', [CellType.triangle, CellType.tetrahedron,
+                                       CellType.quadrilateral, CellType.hexahedron])
+def test_facet_normals(cell_type):
+    """Test that FacetNormal is outward facing"""
     for count in range(10):
-        # Randomly number the points and create the mesh
-        shuffle(order)
-        ordered_points = np.zeros(points.shape)
-        for i, j in enumerate(order):
-            ordered_points[j] = points[i]
-        cells = np.array([order])
-        mesh = Mesh(MPI.comm_world, cell_type, ordered_points, cells,
-                    [], cpp.mesh.GhostMode.none)
-        mesh.geometry.coord_mapping = fem.create_coordinate_map(mesh)
+        mesh = randomly_ordered_unit_cell(cell_type)
 
         V = VectorFunctionSpace(mesh, ("Lagrange", 1))
         normal = FacetNormal(mesh)
@@ -378,15 +383,17 @@ def test_facet_normals(cell_type):
         # is positive
         for i in range(num_facets):
             if cell_type == CellType.triangle:
-                co = points[i]
+                co = mesh.geometry.points[i]
                 # Vector function that is zero at `co` and points away from `co`
-                # so that there is no normal component on two edges
-                v.interpolate(lambda x: (x[0] - co[0], x[1] - co[1]))
+                # so that there is no normal component on two edges and the integral
+                # over the other edge is 1
+                v.interpolate(lambda x: ((x[0] - co[0]) / 2, (x[1] - co[1]) / 2))
             elif cell_type == CellType.tetrahedron:
-                co = points[i]
+                co = mesh.geometry.points[i]
                 # Vector function that is zero at `co` and points away from `co`
-                # so that there is no normal component on three faces
-                v.interpolate(lambda x: (x[0] - co[0], x[1] - co[1], x[2] - co[2]))
+                # so that there is no normal component on three faces and the integral
+                # over the other edge is 1
+                v.interpolate(lambda x: ((x[0] - co[0]) / 3, (x[1] - co[1]) / 3, (x[2] - co[2]) / 3))
             elif cell_type == CellType.quadrilateral:
                 # function that is 0 on one edge and points away from that edge
                 # so that there is no normal component on three edges
@@ -650,3 +657,96 @@ def test_plus_and_minus(cell_type, space_type, order):
         print(v1, v2)
 
         assert np.isclose(v1, v2)
+
+
+@skip_in_parallel
+@pytest.mark.parametrize('cell_type', [CellType.triangle, CellType.tetrahedron,
+                                       CellType.quadrilateral, CellType.hexahedron])
+def test_facet_integral(cell_type):
+    """Test that FacetNormal is outward facing"""
+    for count in range(10):
+        mesh = randomly_ordered_unit_cell(cell_type)
+
+        V = FunctionSpace(mesh, ("Lagrange", 1))
+
+        num_facets = mesh.num_entities(mesh.topology.dim - 1)
+
+        f = Function(V)
+        f.interpolate(lambda x: x[0])
+
+        facet_function = MeshFunction("size_t", mesh, mesh.topology.dim - 1, 1)
+        facet_function.values[:] = range(num_facets)
+
+        mesh.create_connectivity(mesh.geometry.dim - 1, 0)
+        connect = mesh.topology.connectivity(mesh.geometry.dim - 1, 0)
+        con = connect.connections()
+        pos = connect.pos()
+        # assert that the integrals of x over each facet is 0 or positive
+        for j in range(num_facets):
+            vertices = [con[i] for i in range(pos[j], pos[j + 1])]
+            a = f * ds(subdomain_data=facet_function, subdomain_id=j)
+            result = fem.assemble_scalar(a)
+            if len(vertices) == 2:
+                expected = (mesh.geometry.points[vertices[0]][0]
+                            + mesh.geometry.points[vertices[1]][0])
+                expected /= 2
+                expected *= np.linalg.norm(mesh.geometry.points[vertices[0]]
+                                           - mesh.geometry.points[vertices[1]])
+                assert np.isclose(result, expected)
+
+    for count in range(10):
+        mesh = randomly_ordered_unit_cell(cell_type)
+
+        V = VectorFunctionSpace(mesh, ("Lagrange", 1))
+
+        num_facets = mesh.num_entities(mesh.topology.dim - 1)
+
+        n = FacetNormal(mesh)
+        f = Function(V)
+        f.interpolate(lambda x: tuple(x[i] if i == 0 else 0 * x[1]
+                                      for i in range(mesh.topology.dim)))
+
+        facet_function = MeshFunction("size_t", mesh, mesh.topology.dim - 1, 1)
+        facet_function.values[:] = range(num_facets)
+
+        mesh.create_connectivity(mesh.geometry.dim - 1, 0)
+        connect = mesh.topology.connectivity(mesh.geometry.dim - 1, 0)
+        con = connect.connections()
+        pos = connect.pos()
+        # assert that the integrals of x over each facet is 0 or positive
+        for j in range(num_facets):
+            vertices = [con[i] for i in range(pos[j], pos[j + 1])]
+            a = inner(n, f) * ds(subdomain_data=facet_function, subdomain_id=j)
+            result = fem.assemble_scalar(a)
+
+            midpoint = sum(mesh.geometry.points) / len(mesh.geometry.points)
+            facet_midpoint = sum(mesh.geometry.points[i] for i in vertices) / len(vertices)
+            if len(vertices) == 2:  # Facet is interval
+                p0 = mesh.geometry.points[vertices[0]]
+                p1 = mesh.geometry.points[vertices[1]]
+                normal = np.array([p1[1] - p0[1], p0[0] - p1[0], 0])
+                normal /= np.linalg.norm(normal)
+                if np.dot(normal, midpoint - facet_midpoint) > 0:
+                    normal *= -1
+
+                expected = 1 / 2
+                expected *= np.linalg.norm(p1 - p0)
+                expected *= np.dot(normal, np.array([p1[0] + p0[0], 0, 0]))
+
+                if vertices[0] > vertices[1]:
+                    expected *= -1
+
+            if len(vertices) == 3:  # Facet is triangle
+                p0 = mesh.geometry.points[vertices[0]]
+                p1 = mesh.geometry.points[vertices[1]]
+                p2 = mesh.geometry.points[vertices[2]]
+
+                expected = 1 / 6
+                expected *= 1 / 2 * np.linalg.norm(np.linalg.dot(p1 - p0, p2 - p0))
+                expected *= np.dot(normal, np.array([p1[0] + p0[0], 0, 0]))
+                return
+
+            if len(vertices) == 4:  # Facet is quadrilateral
+                return
+
+            assert np.isclose(result, expected)
