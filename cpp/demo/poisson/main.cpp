@@ -165,9 +165,10 @@ int main(int argc, char* argv[])
   // Define boundary condition
   auto u0 = std::make_shared<function::Function>(V);
 
-  const auto bdofs = fem::locate_dofs_geometrical(*V, [](auto& x) {
-    return (x.row(0) < DBL_EPSILON or x.row(0) > 1.0 - DBL_EPSILON);
-  });
+  const Eigen::Array<PetscInt, Eigen::Dynamic, 1> bdofs
+      = fem::locate_dofs_geometrical(*V, [](auto& x) {
+          return (x.row(0) < DBL_EPSILON or x.row(0) > 1.0 - DBL_EPSILON);
+        });
 
   std::vector<std::shared_ptr<const fem::DirichletBC>> bc
       = {std::make_shared<fem::DirichletBC>(V, u0, bdofs, bdofs)};
