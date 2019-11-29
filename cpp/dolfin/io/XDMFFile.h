@@ -138,12 +138,19 @@ public:
   /// Save a function::Function to XDMF file for visualisation, using an
   /// associated HDF5 file, or storing the data inline as XML.
   ///
+  /// The cell_centred flag should be set to true for DG 0 spaces, as the
+  /// data should be cell_centred, and not point based.
+  ///
   /// @param[in] u The Function to save
-  void write(const function::Function& u);
+  /// @param[in] cell_centred Flag for function structure
+  void write(const function::Function& u, bool cell_centred = false);
 
   /// Save a function::Function with timestamp to XDMF file for
   /// visualisation, using an associated HDF5 file, or storing the data
   /// inline as XML.
+  ///
+  /// The cell_centred flag should be set to true for DG 0 spaces, as the
+  /// data should be cell_centred, and not point based.
   ///
   /// You can control the output with the following boolean parameters
   /// on the XDMFFile class:
@@ -159,7 +166,8 @@ public:
   ///
   /// @param[in] u The Function to save
   /// @param[in] t The time
-  void write(const function::Function& u, double t);
+  /// @param[in] cell_centred Flag for function structure
+  void write(const function::Function& u, double t, bool cell_centred = false);
 
   /// Save mesh::MeshFunction to file using an associated HDF5 file, or
   /// storing the data inline as XML.

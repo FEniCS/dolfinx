@@ -55,16 +55,17 @@ void io(py::module& m)
              return self.read_mesh(data_path, use_partition_from_file,
                                    ghost_mode);
            })
-      .def("read_vector",
-           [](dolfin::io::HDF5File& self, const MPICommWrapper comm,
-              const std::string data_path, bool use_partition_from_file) {
-             auto x = self.read_vector(comm.get(), data_path,
-                                       use_partition_from_file);
-             Vec _x = x.vec();
-             PetscObjectReference((PetscObject)_x);
-             return _x;
-           },
-           py::return_value_policy::take_ownership)
+      .def(
+          "read_vector",
+          [](dolfin::io::HDF5File& self, const MPICommWrapper comm,
+             const std::string data_path, bool use_partition_from_file) {
+            auto x = self.read_vector(comm.get(), data_path,
+                                      use_partition_from_file);
+            Vec _x = x.vec();
+            PetscObjectReference((PetscObject)_x);
+            return _x;
+          },
+          py::return_value_policy::take_ownership)
       .def("read_mf_int", &dolfin::io::HDF5File::read_mf_int, py::arg("mesh"),
            py::arg("name"))
       .def("read_mf_size_t", &dolfin::io::HDF5File::read_mf_size_t,
@@ -118,12 +119,13 @@ void io(py::module& m)
                const dolfin::mesh::MeshFunction<double>&, std::string))
                & dolfin::io::HDF5File::write,
            py::arg("meshfunction"), py::arg("name"))
-      .def("write",
-           [](dolfin::io::HDF5File& self, Vec x, std::string s) {
-             dolfin::la::PETScVector _x(x, true);
-             self.write(_x, s);
-           },
-           py::arg("vector"), py::arg("name"))
+      .def(
+          "write",
+          [](dolfin::io::HDF5File& self, Vec x, std::string s) {
+            dolfin::la::PETScVector _x(x, true);
+            self.write(_x, s);
+          },
+          py::arg("vector"), py::arg("name"))
       .def("write",
            (void (dolfin::io::HDF5File::*)(const dolfin::function::Function&,
                                            std::string))
@@ -167,13 +169,13 @@ void io(py::module& m)
   xdmf_file
       // Function
       .def("write",
-           py::overload_cast<const dolfin::function::Function&>(
+           py::overload_cast<const dolfin::function::Function&, bool>(
                &dolfin::io::XDMFFile::write),
-           py::arg("u"))
+           py::arg("u"), py::arg("cell_centred"))
       .def("write",
-           py::overload_cast<const dolfin::function::Function&, double>(
+           py::overload_cast<const dolfin::function::Function&, double, bool>(
                &dolfin::io::XDMFFile::write),
-           py::arg("u"), py::arg("t"))
+           py::arg("u"), py::arg("t"), py::arg("cell_centred"))
       // Mesh
       .def("write",
            py::overload_cast<const dolfin::mesh::Mesh&>(
@@ -220,13 +222,14 @@ void io(py::module& m)
                &dolfin::io::XDMFFile::write),
            py::arg("points"), py::arg("values"))
       // Checkpoints
-      .def("write_checkpoint",
-           [](dolfin::io::XDMFFile& instance,
-              const dolfin::function::Function& u, std::string function_name,
-              double time_step) {
-             instance.write_checkpoint(u, function_name, time_step);
-           },
-           py::arg("u"), py::arg("function_name"), py::arg("time_step") = 0.0);
+      .def(
+          "write_checkpoint",
+          [](dolfin::io::XDMFFile& instance,
+             const dolfin::function::Function& u, std::string function_name,
+             double time_step) {
+            instance.write_checkpoint(u, function_name, time_step);
+          },
+          py::arg("u"), py::arg("function_name"), py::arg("time_step") = 0.0);
 
   // dolfin::io::VTKFile
   py::class_<dolfin::io::VTKFile, std::shared_ptr<dolfin::io::VTKFile>>

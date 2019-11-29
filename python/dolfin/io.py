@@ -181,7 +181,7 @@ class XDMFFile:
         """Close file"""
         self._cpp_object.close()
 
-    def write(self, o, t=None) -> None:
+    def write(self, o, t=None, cell_centred=False) -> None:
         """Write object to file
 
         Parameters
@@ -190,13 +190,16 @@ class XDMFFile:
             The object to write to file
         t
             The time stamp
+        cell_centred
+            Boolean flag casting the data to be cell_centred.
+            Should be set to True for functions from a DG 0 space.
 
         """
         o_cpp = getattr(o, "_cpp_object", o)
         if t is None:
-            self._cpp_object.write(o_cpp)
+            self._cpp_object.write(o_cpp, cell_centred=cell_centred)
         else:
-            self._cpp_object.write(o_cpp, t)
+            self._cpp_object.write(o_cpp, t, cell_centred=cell_centred)
 
     # ----------------------------------------------------------
 

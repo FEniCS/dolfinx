@@ -66,18 +66,6 @@ std::string rank_to_string(std::size_t value_rank)
   return "";
 }
 //-----------------------------------------------------------------------------
-// Returns true for DG0 function::Functions
-bool has_cell_centred_data(const function::Function& u)
-{
-  assert(u.function_space());
-  assert(u.function_space()->dofmap());
-  assert(u.function_space()->dofmap()->element_dof_layout);
-  int tdim = u.function_space()->mesh()->topology().dim();
-  return (
-      u.function_space()->dofmap()->element_dof_layout->num_entity_dofs(tdim)
-      == u.function_space()->dofmap()->element_dof_layout->num_dofs());
-}
-//-----------------------------------------------------------------------------
 // Get data width - normally the same as u.value_size(), but expand for
 // 2D vector/tensor because XDMF presents everything as 3D
 std::int64_t get_padded_width(const function::Function& u)
@@ -456,7 +444,7 @@ void XDMFFile::write_checkpoint(const function::Function& u,
   }
 }
 //-----------------------------------------------------------------------------
-void XDMFFile::write(const function::Function& u)
+void XDMFFile::write(const function::Function& u, bool cell_centred)
 {
   // Check that encoding
   if (_encoding == Encoding::ASCII and MPI::size(_mpi_comm.comm()) != 1)
@@ -508,7 +496,6 @@ void XDMFFile::write(const function::Function& u)
 
   // Get function::Function data values and shape
   std::vector<PetscScalar> data_values;
-  bool cell_centred = has_cell_centred_data(u);
   if (cell_centred)
     data_values = xdmf_utils::get_cell_data_values(u);
   else
@@ -571,7 +558,8 @@ void XDMFFile::write(const function::Function& u)
     _xml_doc->save_file(_filename.c_str(), "  ");
 }
 //-----------------------------------------------------------------------------
-void XDMFFile::write(const function::Function& u, double time_step)
+void XDMFFile::write(const function::Function& u, double time_step,
+                     bool cell_centred)
 {
   // Check that encoding
   if (_encoding == Encoding::ASCII and MPI::size(_mpi_comm.comm()) != 1)
@@ -700,7 +688,6 @@ void XDMFFile::write(const function::Function& u, double time_step)
 
   // Get function::Function data values and shape
   std::vector<PetscScalar> data_values;
-  bool cell_centred = has_cell_centred_data(u);
 
   if (cell_centred)
     data_values = xdmf_utils::get_cell_data_values(u);
