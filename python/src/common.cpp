@@ -99,10 +99,11 @@ void common(py::module& m)
     std::set<dolfin::TimingType> _type(type.begin(), type.end());
     return dolfin::timings(_type);
   });
-  m.def("list_timings", [](std::vector<dolfin::TimingType> type) {
-    std::set<dolfin::TimingType> _type(type.begin(), type.end());
-    dolfin::list_timings(_type);
-  });
+  m.def("list_timings",
+        [](const MPICommWrapper comm, std::vector<dolfin::TimingType> type) {
+          std::set<dolfin::TimingType> _type(type.begin(), type.end());
+          dolfin::list_timings(comm.get(), _type);
+        });
 
   // dolfin::SubSystemsManager
   py::class_<dolfin::common::SubSystemsManager,
