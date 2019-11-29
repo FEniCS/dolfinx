@@ -36,7 +36,6 @@
 #include <dolfin/mesh/Partitioning.h>
 #include <iomanip>
 #include <memory>
-#include <petscvec.h>
 #include <set>
 #include <string>
 #include <vector>
