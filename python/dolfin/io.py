@@ -197,10 +197,15 @@ class XDMFFile:
         """
         o_cpp = getattr(o, "_cpp_object", o)
         if t is None:
-            self._cpp_object.write(o_cpp, cell_centred=cell_centred)
+            try:
+                self._cpp_object.write(o_cpp, cell_centred=cell_centred)
+            except TypeError:
+                self._cpp_object.write(o_cpp)
         else:
-            self._cpp_object.write(o_cpp, t, cell_centred=cell_centred)
-
+            try:
+                self._cpp_object.write(o_cpp, t, cell_centred=cell_centred)
+            except TypeError:
+                self._cpp_object.write(o_cpp, t)
     # ----------------------------------------------------------
 
     # FIXME: implement a common function for multiple types
