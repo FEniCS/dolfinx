@@ -42,8 +42,10 @@ public:
   Table timings(std::set<TimingType> type);
 
   /// List a summary of timings and tasks. ``MPI_AVG`` reduction is
-  /// printed. Collective on ``Logger::mpi_comm()``.
-  void list_timings(std::set<TimingType> type);
+  /// printed.
+  /// @param mpi_comm MPI Communicator
+  /// @param type Set of possible timings: wall, user or system
+  void list_timings(MPI_Comm mpi_comm, std::set<TimingType> type);
 
   /// Return timing (count, total wall time, total user time, total
   /// system time) for given task.

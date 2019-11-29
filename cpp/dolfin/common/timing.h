@@ -6,6 +6,7 @@
 
 #pragma once
 
+#include <mpi.h>
 #include <cstdint>
 #include <dolfin/common/Table.h>
 #include <string>
@@ -47,27 +48,13 @@ double time();
 Table timings(std::set<TimingType> type);
 
 /// List a summary of timings and tasks.
-/// ``MPI_AVG`` reduction is printed. Collective on ``MPI_COMM_WORLD``.
+/// ``MPI_AVG`` reduction is printed.
 ///
-/// @param    type (std::set<TimingType>)
+/// @param mpi_comm MPI Communicator
+/// @param  type (std::set<TimingType>)
 ///         subset of ``{ TimingType::wall, TimingType::user,
 ///         TimingType::system }``
-void list_timings(std::set<TimingType> type);
-// NOTE: Function marked as 'collective on COMM_WORLD' (instead of
-//       'collective on Logger::mpi_comm()') as user has no clue what the
-//       function has to do with Logger
-
-/// Dump a summary of timings and tasks to XML file.
-/// ``MPI_MAX``, ``MPI_MIN`` and ``MPI_AVG`` reductions are
-/// stored. Collective on ``MPI_COMM_WORLD``.
-///
-/// @param    filename (std::string)
-///         output filename; must have ``.xml`` suffix; existing file
-///         is silently overwritten
-void dump_timings_to_xml(std::string filename);
-// NOTE: Function marked as 'collective on COMM_WORLD' (instead of
-//       'collective on Logger::mpi_comm()') as user has no clue what the
-//       function has to do with Logger
+void list_timings(MPI_Comm mpi_comm, std::set<TimingType> type);
 
 /// Return timing (count, total wall time, total user time,
 /// total system time) for given task.
