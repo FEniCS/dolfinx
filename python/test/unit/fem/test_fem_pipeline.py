@@ -4,34 +4,38 @@
 #
 # SPDX-License-Identifier:    LGPL-3.0-or-later
 
+import os
+
 import numpy as np
 import pytest
 from petsc4py import PETSc
 
-from dolfin import (MPI, DirichletBC, fem, Function, FunctionSpace,
-                    UnitCubeMesh, UnitIntervalMesh, UnitSquareMesh)
-from dolfin.cpp.mesh import CellType
-from dolfin.cpp.refinement import refine
+
+from dolfin import (DirichletBC, fem, Function, FunctionSpace,
+                    MPI, UnitIntervalMesh, UnitSquareMesh, UnitCubeMesh)
+from dolfin.cpp.mesh import GhostMode, CellType
 from dolfin.fem import (apply_lifting, assemble_matrix, assemble_scalar,
                         assemble_vector, set_bc)
+from dolfin.io import XDMFFile
+from dolfin.cpp.refinement import refine
 from ufl import (SpatialCoordinate, TestFunction, TrialFunction, div, dx, grad,
                  inner)
 
 
 @pytest.mark.parametrize("n", [2, 3, 4])
 @pytest.mark.parametrize("component", [0, 1, 2])
-@pytest.mark.parametrize("mesh", [
-    UnitIntervalMesh(MPI.comm_world, 10),
-    UnitSquareMesh(MPI.comm_world, 3, 4, CellType.triangle),
-    UnitSquareMesh(MPI.comm_world, 3, 4, CellType.quadrilateral),
-    UnitCubeMesh(MPI.comm_world, 2, 3, 2, CellType.tetrahedron),
-    UnitCubeMesh(MPI.comm_world, 2, 3, 2, CellType.hexahedron)
-])
-def test_manufactured_poisson(n, mesh, component):
+@pytest.mark.parametrize("filename", ["UnitCubeMesh_hexahedron.xdmf",
+                                      "UnitCubeMesh_tetra.xdmf",
+                                      "UnitSquareMesh_quad.xdmf",
+                                      "UnitSquareMesh_triangle.xdmf"])
+def test_manufactured_poisson(n, filename, component, datadir):
     """ Manufactured Poisson problem, solving u = x[component]**p, where p is the
     degree of the Lagrange function space.
 
     """
+    with XDMFFile(MPI.comm_world, os.path.join(datadir, filename)) as xdmf:
+        mesh = xdmf.read_mesh(GhostMode.none)
+
     if component >= mesh.geometry.dim:
         return
 
@@ -77,24 +81,22 @@ def test_manufactured_poisson(n, mesh, component):
 
 
 @pytest.mark.parametrize("n", [1, 2, 3])
-@pytest.mark.parametrize("cell", [CellType.triangle, CellType.tetrahedron])
-def test_convergence_rate_poisson_simplices(n, cell):
+@pytest.mark.parametrize("filename", ["UnitCubeMesh_tetra.xdmf",
+                                      "UnitSquareMesh_triangle.xdmf"])
+def test_convergence_rate_poisson_simplices(n, filename, datadir):
     """ Manufactured Poisson problem, solving u = Pi_{i=0}^gdim sin(pi*x_i) """
-    if cell == CellType.triangle:
-        mesh = UnitSquareMesh(MPI.comm_world, 2, 2, diagonal="crossed")
-    elif cell == CellType.tetrahedron:
-        N = 1 if n == 3 else 2
-        mesh = UnitCubeMesh(MPI.comm_world, N, N, N, CellType.tetrahedron)
+    with XDMFFile(MPI.comm_world, os.path.join(datadir, filename)) as xdmf:
+        mesh = xdmf.read_mesh(GhostMode.none)
 
     cmap = fem.create_coordinate_map(mesh.ufl_domain())
 
     refs = 3
     errors = np.zeros(refs)
     for i in range(refs):
-        mesh = refine(mesh, False)
         mesh.geometry.coord_mapping = cmap
 
         V = FunctionSpace(mesh, ("Lagrange", n))
+
         u, v = TrialFunction(V), TestFunction(V)
 
         def u_exact(x):
@@ -105,6 +107,7 @@ def test_convergence_rate_poisson_simplices(n, cell):
 
         # Exact solution
         Vh = FunctionSpace(mesh, ("Lagrange", n + 2))
+        print(i, V.dim(), Vh.dim())
         u_ex = Function(Vh)
         u_ex.interpolate(u_exact)
         # Source term
@@ -130,14 +133,17 @@ def test_convergence_rate_poisson_simplices(n, cell):
         solver.setType(PETSc.KSP.Type.PREONLY)
         solver.getPC().setType(PETSc.PC.Type.LU)
         solver.setOperators(A)
-
+        print("presolve")
         # Solve
         uh = Function(V)
         solver.solve(b, uh.vector)
+
         uh.vector.ghostUpdate(addv=PETSc.InsertMode.INSERT, mode=PETSc.ScatterMode.FORWARD)
         error = assemble_scalar((u_ex - uh)**2 * dx)
         error = MPI.sum(mesh.mpi_comm(), error)
         errors[i] = np.sqrt(error)
+
+        mesh = refine(mesh, False)
 
     # Compute convergence rate
     rate = np.log(errors[1:] / errors[:-1]) / np.log(0.5)
