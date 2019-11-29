@@ -54,7 +54,7 @@ void TimeLogger::list_timings(MPI_Comm mpi_comm, std::set<TimingType> type)
   const std::string str = "\n" + timings.str(true);
 
   // Print just on rank 0
-  if (dolfin::MPI::rank(_mpi_comm) == 0)
+  if (dolfin::MPI::rank(mpi_comm) == 0)
     std::cout << str << std::endl;
 }
 //-----------------------------------------------------------------------------

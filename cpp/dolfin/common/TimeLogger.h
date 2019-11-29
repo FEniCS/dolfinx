@@ -51,8 +51,6 @@ public:
   /// system time) for given task.
   std::tuple<std::size_t, double, double, double> timing(std::string task);
 
-  /// Return MPI Communicator of TimeLogger
-  MPI_Comm mpi_comm() { return _mpi_comm; }
 
 private:
   // List of timings for tasks, map from string to (num_timings,
@@ -63,8 +61,6 @@ private:
   // Map for stringifying TimingType
   static std::map<TimingType, std::string> _TimingType_descr;
 
-  // MPI Communicator
-  MPI_Comm _mpi_comm;
 };
 } // namespace common
 } // namespace dolfin
