@@ -93,6 +93,7 @@ def test_convergence_rate_poisson_simplices(n, filename, datadir):
     refs = 3
     errors = np.zeros(refs)
     for i in range(refs):
+        mesh = refine(mesh, False)
         mesh.geometry.coord_mapping = cmap
 
         V = FunctionSpace(mesh, ("Lagrange", n))
@@ -107,7 +108,6 @@ def test_convergence_rate_poisson_simplices(n, filename, datadir):
 
         # Exact solution
         Vh = FunctionSpace(mesh, ("Lagrange", n + 2))
-        print(i, V.dim(), Vh.dim())
         u_ex = Function(Vh)
         u_ex.interpolate(u_exact)
         # Source term
@@ -133,7 +133,8 @@ def test_convergence_rate_poisson_simplices(n, filename, datadir):
         solver.setType(PETSc.KSP.Type.PREONLY)
         solver.getPC().setType(PETSc.PC.Type.LU)
         solver.setOperators(A)
-        print("presolve")
+        solver.getPC().setFactorSolverType("mumps")
+
         # Solve
         uh = Function(V)
         solver.solve(b, uh.vector)
@@ -143,11 +144,10 @@ def test_convergence_rate_poisson_simplices(n, filename, datadir):
         error = MPI.sum(mesh.mpi_comm(), error)
         errors[i] = np.sqrt(error)
 
-        mesh = refine(mesh, False)
-
     # Compute convergence rate
     rate = np.log(errors[1:] / errors[:-1]) / np.log(0.5)
-    assert rate[0] > n + 0.55
+    print(rate)
+    assert rate[1] > n + 0.85
     assert rate[1] > n + 0.9
 
 
