@@ -144,7 +144,7 @@ Table Table::reduce(MPI_Comm comm, Table::Reduction reduction) const
     while (std::getline(keys_stream, key[0], '\0'),
            std::getline(keys_stream, key[1], '\0'))
     {
-      auto it = dvalues_all.find(key);
+      const auto it = dvalues_all.find(key);
       if (it != dvalues_all.end())
         op_impl(it->second, *(values_ptr++));
       else
@@ -239,7 +239,9 @@ std::string Table::str() const
       {
         for (std::size_t k = 0; k < col_sizes[j + 1] - tvalues[i][j].size();
              k++)
+        {
           s << " ";
+        }
         s << "  " << tvalues[i][j];
       }
       else
