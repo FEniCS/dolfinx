@@ -11,6 +11,7 @@
 #include <iomanip>
 #include <iostream>
 #include <sstream>
+#include <variant>
 
 using namespace dolfin;
 
@@ -21,19 +22,36 @@ Table::Table(std::string title, bool right_justify)
   // Do nothing
 }
 //-----------------------------------------------------------------------------
-void Table::set(std::string row, std::string col, int value)
-{
-  set(row, col, std::to_string(value));
-  _dvalues[std::pair(row, col)] = static_cast<double>(value);
-}
+// void Table::set(std::string row, std::string col, int value)
+// {
+//   set(row, col, std::to_string(value));
+//   _dvalues[std::pair(row, col)] = static_cast<double>(value);
+// }
+// //-----------------------------------------------------------------------------
+// void Table::set(std::string row, std::string col, double value)
+// {
+//   set(row, col, std::to_string(value));
+//   _dvalues[std::pair(row, col)] = value;
+// }
 //-----------------------------------------------------------------------------
-void Table::set(std::string row, std::string col, double value)
-{
-  set(row, col, std::to_string(value));
-  _dvalues[std::pair(row, col)] = value;
-}
+// void Table::set(std::string row, std::string col, std::string value)
+// {
+//   set_new(row, col, value);
+//   // // Add row
+//   // if (std::find(_rows.begin(), _rows.end(), row) != _rows.end())
+//   //   _rows.push_back(row);
+
+//   // // Add column
+//   // if (std::find(_cols.begin(), _cols.end(), col) != _cols.end())
+//   //   _cols.push_back(col);
+
+//   // // Store value
+//   // std::pair<std::string, std::string> key(row, col);
+//   // _values[key] = value;
+// }
 //-----------------------------------------------------------------------------
-void Table::set(std::string row, std::string col, std::string value)
+void Table::set(std::string row, std::string col,
+                std::variant<std::string, int, double> value)
 {
   // Add row
   if (std::find(_rows.begin(), _rows.end(), row) != _rows.end())
@@ -46,6 +64,13 @@ void Table::set(std::string row, std::string col, std::string value)
   // Store value
   std::pair<std::string, std::string> key(row, col);
   _values[key] = value;
+
+  if (auto pval = std::get_if<int>(&value))
+    _dvalues[std::pair(row, col)] = *pval;
+  if (auto pval = std::get_if<double>(&value))
+    _dvalues[std::pair(row, col)] = *pval;
+
+  // _dvalues[std::pair(row, col)] = value;
 }
 //-----------------------------------------------------------------------------
 std::string Table::get(std::string row, std::string col) const
@@ -58,7 +83,7 @@ std::string Table::get(std::string row, std::string col) const
                              + "\", \"" + col + "\")");
   }
 
-  return it->second;
+  return std::get<std::string>(it->second);
 }
 //-----------------------------------------------------------------------------
 Table Table::reduce(MPI_Comm comm, Table::Reduction reduction)

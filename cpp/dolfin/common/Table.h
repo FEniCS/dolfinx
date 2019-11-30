@@ -10,6 +10,7 @@
 #include <map>
 #include <set>
 #include <string>
+#include <variant>
 #include <vector>
 
 namespace dolfin
@@ -58,14 +59,8 @@ public:
   /// Move assignment
   Table& operator=(Table&& table) = default;
 
-  /// Set value of table entry
-  void set(std::string row, std::string col, int value);
-
-  /// Set value of table entry
-  void set(std::string row, std::string col, double value);
-
-  /// Set value of table entry
-  void set(std::string row, std::string col, std::string value);
+  void set(std::string row, std::string col,
+           std::variant<std::string, int, double> value);
 
   /// Get value of table entry
   std::string get(std::string row, std::string col) const;
@@ -90,7 +85,9 @@ private:
   std::vector<std::string> _rows, _cols;
 
   // Table values as strings
-  std::map<std::pair<std::string, std::string>, std::string> _values;
+  std::map<std::pair<std::string, std::string>,
+           std::variant<std::string, int, double>>
+      _values;
 
   // Table values as doubles
   std::map<std::pair<std::string, std::string>, double> _dvalues;
