@@ -6,9 +6,9 @@
 
 #pragma once
 
+#include <array>
 #include <boost/timer/timer.hpp>
 #include <string>
-#include <tuple>
 
 namespace dolfin
 {
@@ -53,7 +53,7 @@ public:
   double stop();
 
   /// Return wall, user and system time in seconds
-  std::tuple<double, double, double> elapsed() const;
+  std::array<double, 3> elapsed() const;
 
 private:
   // Name of task

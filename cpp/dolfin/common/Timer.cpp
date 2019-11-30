@@ -49,12 +49,12 @@ double Timer::stop()
   return wall;
 }
 //-----------------------------------------------------------------------------
-std::tuple<double, double, double> Timer::elapsed() const
+std::array<double, 3> Timer::elapsed() const
 {
   const boost::timer::cpu_times elapsed = _timer.elapsed();
   const double wall = static_cast<double>(elapsed.wall) * 1e-9;
   const double user = static_cast<double>(elapsed.user) * 1e-9;
   const double system = static_cast<double>(elapsed.system) * 1e-9;
-  return std::tuple(wall, user, system);
+  return {wall, user, system};
 }
 //-----------------------------------------------------------------------------
