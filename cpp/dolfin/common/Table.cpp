@@ -7,6 +7,7 @@
 #include "Table.h"
 #include <cfloat>
 #include <cmath>
+#include <functional>
 #include <iomanip>
 #include <iostream>
 #include <sstream>
@@ -90,26 +91,20 @@ Table Table::reduce(MPI_Comm comm, Table::Reduction reduction)
   std::string new_title;
 
   // Prepare reduction operation y := op(y, x)
-  void (*op_impl)(double&, const double&) = nullptr;
+  std::function<void(double, double)> op_impl;
   switch (reduction)
   {
   case Table::Reduction::average:
     new_title = "[MPI_AVG] ";
-    op_impl = [](double& y, const double& x) { y += x; };
+    op_impl = [](double y, double x) { return y + x; };
     break;
   case Table::Reduction::min:
     new_title = "[MPI_MIN] ";
-    op_impl = [](double& y, const double& x) {
-      if (x < y)
-        y = x;
-    };
+    op_impl = [](double y, double x) { return std::min(y, x); };
     break;
   case Table::Reduction::max:
     new_title = "[MPI_MAX] ";
-    op_impl = [](double& y, const double& x) {
-      if (x > y)
-        y = x;
-    };
+    op_impl = [](double y, double x) { return std::max(y, x); };
     break;
   default:
     throw std::runtime_error("Cannot perform reduction of Table. Requested "
@@ -314,35 +309,3 @@ std::string Table::str_latex() const
   return s.str();
 }
 //-----------------------------------------------------------------------------
-// TableEntry::TableEntry(std::string row, std::string col, Table& table)
-//     : _row(row), _col(col), _table(table)
-// {
-//   // Do nothing
-// }
-// //-----------------------------------------------------------------------------
-// const TableEntry& TableEntry::operator=(std::size_t value)
-// {
-//   _table.set(_row, _col, value);
-//   return *this;
-// }
-// //-----------------------------------------------------------------------------
-// const TableEntry& TableEntry::operator=(int value)
-// {
-//   _table.set(_row, _col, value);
-//   return *this;
-// }
-// //-----------------------------------------------------------------------------
-// const TableEntry& TableEntry::operator=(double value)
-// {
-//   _table.set(_row, _col, value);
-//   return *this;
-// }
-// //-----------------------------------------------------------------------------
-// const TableEntry& TableEntry::operator=(std::string value)
-// {
-//   _table.set(_row, _col, value);
-//   return *this;
-// }
-// //-----------------------------------------------------------------------------
-// TableEntry::operator std::string() const { return _table.get(_row, _col); }
-// //-----------------------------------------------------------------------------

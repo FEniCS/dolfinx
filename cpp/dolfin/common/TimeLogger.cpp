@@ -67,9 +67,9 @@ Table TimeLogger::timings(std::set<TimingType> type)
     table.set(task, "wall avg", wall / static_cast<double>(num_timings));
     table.set(task, "wall tot", wall);
     table.set(task, "usr avg", usr / static_cast<double>(num_timings));
-    table.set(task, "usr tot",  usr);
-    table.set(task, "sys avg",  sys / static_cast<double>(num_timings));
-    table.set(task, "sys tot",  sys);
+    table.set(task, "usr tot", usr);
+    table.set(task, "sys avg", sys / static_cast<double>(num_timings));
+    table.set(task, "sys tot", sys);
   }
 
   return table;
@@ -81,7 +81,8 @@ TimeLogger::timing(std::string task)
   // Find timing
   auto it = _timings.find(task);
   if (it == _timings.end())
-    throw std::runtime_error("No timings registered for task \"" + task + "\".");
+    throw std::runtime_error("No timings registered for task \"" + task
+                             + "\".");
 
   return it->second;
 }
