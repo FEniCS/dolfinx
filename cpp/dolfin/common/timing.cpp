@@ -34,9 +34,9 @@ Table dolfin::timings(std::set<TimingType> type)
   return TimeLogManager::logger().timings(type);
 }
 //-----------------------------------------------------------------------------
-void dolfin::list_timings(std::set<TimingType> type)
+void dolfin::list_timings(MPI_Comm mpi_comm, std::set<TimingType> type)
 {
-  TimeLogManager::logger().list_timings(type);
+  TimeLogManager::logger().list_timings(mpi_comm, type);
 }
 //-----------------------------------------------------------------------------
 std::tuple<std::size_t, double, double, double> dolfin::timing(std::string task)

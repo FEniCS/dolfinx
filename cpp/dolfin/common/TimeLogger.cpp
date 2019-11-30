@@ -13,7 +13,7 @@ using namespace dolfin;
 using namespace dolfin::common;
 
 //-----------------------------------------------------------------------------
-TimeLogger::TimeLogger() : _mpi_comm(MPI_COMM_WORLD)
+TimeLogger::TimeLogger()
 {
   // Do nothing
 }
@@ -46,15 +46,15 @@ void TimeLogger::register_timing(std::string task,
   }
 }
 //-----------------------------------------------------------------------------
-void TimeLogger::list_timings(std::set<TimingType> type)
+void TimeLogger::list_timings(MPI_Comm mpi_comm, std::set<TimingType> type)
 {
   // Format and reduce to rank 0
   Table timings = this->timings(type);
-  timings = timings.reduce(_mpi_comm, Table::Reduction::average);
+  timings = timings.reduce(mpi_comm, Table::Reduction::average);
   const std::string str = "\n" + timings.str(true);
 
   // Print just on rank 0
-  if (dolfin::MPI::rank(_mpi_comm) == 0)
+  if (dolfin::MPI::rank(mpi_comm) == 0)
     std::cout << str << std::endl;
 }
 //-----------------------------------------------------------------------------
