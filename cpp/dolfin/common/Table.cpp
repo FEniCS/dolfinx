@@ -13,6 +13,32 @@
 #include <sstream>
 #include <variant>
 
+namespace
+{
+template <class T>
+struct always_false : std::false_type
+{
+};
+
+std::string to_str(std::variant<std::string, int, double> value)
+{
+  return std::visit(
+      [](auto&& arg) -> std::string {
+        using T = std::decay_t<decltype(arg)>;
+        if constexpr (std::is_same_v<T, int>)
+          return std::to_string(arg);
+        else if constexpr (std::is_same_v<T, double>)
+          return std::to_string(arg);
+        else if constexpr (std::is_same_v<T, std::string>)
+          return arg;
+        else
+          static_assert(always_false<T>::value, "non-exhaustive visitor!");
+      },
+      value);
+}
+
+} // namespace
+
 using namespace dolfin;
 
 //-----------------------------------------------------------------------------
@@ -22,43 +48,15 @@ Table::Table(std::string title, bool right_justify)
   // Do nothing
 }
 //-----------------------------------------------------------------------------
-// void Table::set(std::string row, std::string col, int value)
-// {
-//   set(row, col, std::to_string(value));
-//   _dvalues[std::pair(row, col)] = static_cast<double>(value);
-// }
-// //-----------------------------------------------------------------------------
-// void Table::set(std::string row, std::string col, double value)
-// {
-//   set(row, col, std::to_string(value));
-//   _dvalues[std::pair(row, col)] = value;
-// }
-//-----------------------------------------------------------------------------
-// void Table::set(std::string row, std::string col, std::string value)
-// {
-//   set_new(row, col, value);
-//   // // Add row
-//   // if (std::find(_rows.begin(), _rows.end(), row) != _rows.end())
-//   //   _rows.push_back(row);
-
-//   // // Add column
-//   // if (std::find(_cols.begin(), _cols.end(), col) != _cols.end())
-//   //   _cols.push_back(col);
-
-//   // // Store value
-//   // std::pair<std::string, std::string> key(row, col);
-//   // _values[key] = value;
-// }
-//-----------------------------------------------------------------------------
 void Table::set(std::string row, std::string col,
                 std::variant<std::string, int, double> value)
 {
   // Add row
-  if (std::find(_rows.begin(), _rows.end(), row) != _rows.end())
+  if (std::find(_rows.begin(), _rows.end(), row) == _rows.end())
     _rows.push_back(row);
 
   // Add column
-  if (std::find(_cols.begin(), _cols.end(), col) != _cols.end())
+  if (std::find(_cols.begin(), _cols.end(), col) == _cols.end())
     _cols.push_back(col);
 
   // Store value
@@ -73,7 +71,8 @@ void Table::set(std::string row, std::string col,
   // _dvalues[std::pair(row, col)] = value;
 }
 //-----------------------------------------------------------------------------
-std::string Table::get(std::string row, std::string col) const
+std::variant<std::string, int, double> Table::get(std::string row,
+                                                  std::string col) const
 {
   std::pair<std::string, std::string> key(row, col);
   auto it = _values.find(key);
@@ -83,7 +82,7 @@ std::string Table::get(std::string row, std::string col) const
                              + "\", \"" + col + "\")");
   }
 
-  return std::get<std::string>(it->second);
+  return it->second;
 }
 //-----------------------------------------------------------------------------
 Table Table::reduce(MPI_Comm comm, Table::Reduction reduction)
@@ -198,7 +197,7 @@ std::string Table::str(bool verbose) const
       col_sizes[0] = std::max(col_sizes[0], _rows[i].size());
       for (std::size_t j = 0; j < _cols.size(); j++)
       {
-        std::string value = get(_rows[i], _cols[j]);
+        const std::string value = to_str(get(_rows[i], _cols[j]));
         tvalues[i].push_back(value);
         col_sizes[j + 1] = std::max(col_sizes[j + 1], value.size());
       }
@@ -264,47 +263,6 @@ std::string Table::str(bool verbose) const
   {
     s << "<Table of size " << _rows.size() << " x " << _cols.size() << ">";
   }
-
-  return s.str();
-}
-//-----------------------------------------------------------------------------
-std::string Table::str_latex() const
-{
-  if (_rows.empty() or _cols.empty())
-    return "Empty table";
-
-  std::stringstream s;
-
-  s << name << "\n";
-  s << "\\begin{center}\n";
-  s << "\\begin{tabular}{|l|";
-  for (std::size_t j = 0; j < _cols.size(); j++)
-    s << "|c";
-  s << "|}\n";
-  s << "\\hline\n";
-  s << "& ";
-  for (std::size_t j = 0; j < _cols.size(); j++)
-  {
-    if (j < _cols.size() - 1)
-      s << _cols[j] << " & ";
-    else
-      s << _cols[j] << " \\\\\n";
-  }
-  s << "\\hline\\hline\n";
-  for (std::size_t i = 0; i < _rows.size(); i++)
-  {
-    s << _rows[i] << " & ";
-    for (std::size_t j = 0; j < _cols.size(); j++)
-    {
-      if (j < _cols.size() - 1)
-        s << get(_rows[i], _cols[j]) << " & ";
-      else
-        s << get(_rows[i], _cols[j]) << " \\\\\n";
-    }
-    s << "\\hline\n";
-  }
-  s << "\\end{tabular}\n";
-  s << "\\end{center}\n";
 
   return s.str();
 }

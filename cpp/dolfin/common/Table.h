@@ -60,11 +60,18 @@ public:
   Table& operator=(Table&& table) = default;
 
   /// Set table entry
+  /// @param[in] row Row name
+  /// @param[in] col Column name
+  /// @param[in] value The value to set
   void set(std::string row, std::string col,
            std::variant<std::string, int, double> value);
 
   /// Get value of table entry
-  std::string get(std::string row, std::string col) const;
+  /// @param[in] row Row name
+  /// @param[in] col Column name
+  /// @returns Returns the entry for requested row and columns
+  std::variant<std::string, int, double> get(std::string row,
+                                             std::string col) const;
 
   /// Do MPI reduction on Table
   /// @param[in] comm MPI Comm
@@ -77,9 +84,6 @@ public:
 
   /// Return informal string representation (pretty-print)
   std::string str(bool verbose) const;
-
-  /// Return informal string representation for LaTeX
-  std::string str_latex() const;
 
 private:
   // Rows and columns
