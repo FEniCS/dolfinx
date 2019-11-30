@@ -75,8 +75,7 @@ Table TimeLogger::timings(std::set<TimingType> type)
   return table;
 }
 //-----------------------------------------------------------------------------
-std::tuple<std::size_t, double, double, double>
-TimeLogger::timing(std::string task)
+std::tuple<int, double, double, double> TimeLogger::timing(std::string task)
 {
   // Find timing
   auto it = _timings.find(task);

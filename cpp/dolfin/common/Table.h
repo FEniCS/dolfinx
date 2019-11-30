@@ -62,9 +62,6 @@ public:
   void set(std::string row, std::string col, int value);
 
   /// Set value of table entry
-  void set(std::string row, std::string col, std::size_t value);
-
-  /// Set value of table entry
   void set(std::string row, std::string col, double value);
 
   /// Set value of table entry
@@ -72,9 +69,6 @@ public:
 
   /// Get value of table entry
   std::string get(std::string row, std::string col) const;
-
-  /// Get value of table entry
-  double get_value(std::string row, std::string col) const;
 
   /// Do MPI reduction on Table
   /// @param[in] comm MPI Comm
@@ -92,19 +86,14 @@ public:
   std::string str_latex() const;
 
 private:
-  // Rows
-  std::vector<std::string> rows;
-  std::set<std::string> row_set;
-
-  // Columns
-  std::vector<std::string> cols;
-  std::set<std::string> col_set;
+  // Rows and columns
+  std::vector<std::string> _rows, _cols;
 
   // Table values as strings
-  std::map<std::pair<std::string, std::string>, std::string> values;
+  std::map<std::pair<std::string, std::string>, std::string> _values;
 
   // Table values as doubles
-  std::map<std::pair<std::string, std::string>, double> dvalues;
+  std::map<std::pair<std::string, std::string>, double> _dvalues;
 
   // True if we should right-justify the table entries
   bool _right_justify;

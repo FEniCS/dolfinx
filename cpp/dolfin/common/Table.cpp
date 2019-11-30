@@ -24,62 +24,37 @@ Table::Table(std::string title, bool right_justify)
 void Table::set(std::string row, std::string col, int value)
 {
   set(row, col, std::to_string(value));
-  dvalues[std::pair(row, col)] = static_cast<double>(value);
-}
-//-----------------------------------------------------------------------------
-void Table::set(std::string row, std::string col, std::size_t value)
-{
-  set(row, col, std::to_string(value));
-  dvalues[std::pair(row, col)] = static_cast<double>(value);
+  _dvalues[std::pair(row, col)] = static_cast<double>(value);
 }
 //-----------------------------------------------------------------------------
 void Table::set(std::string row, std::string col, double value)
 {
   set(row, col, std::to_string(value));
-  dvalues[std::pair(row, col)] = value;
+  _dvalues[std::pair(row, col)] = value;
 }
 //-----------------------------------------------------------------------------
 void Table::set(std::string row, std::string col, std::string value)
 {
   // Add row
-  if (row_set.find(row) == row_set.end())
-  {
-    rows.push_back(row);
-    row_set.insert(row);
-  }
+  if (std::find(_rows.begin(), _rows.end(), row) != _rows.end())
+    _rows.push_back(row);
 
   // Add column
-  if (col_set.find(col) == col_set.end())
-  {
-    cols.push_back(col);
-    col_set.insert(col);
-  }
+  if (std::find(_cols.begin(), _cols.end(), col) != _cols.end())
+    _cols.push_back(col);
 
   // Store value
   std::pair<std::string, std::string> key(row, col);
-  values[key] = value;
+  _values[key] = value;
 }
 //-----------------------------------------------------------------------------
 std::string Table::get(std::string row, std::string col) const
 {
   std::pair<std::string, std::string> key(row, col);
-  auto it = values.find(key);
-  if (it == values.end())
+  auto it = _values.find(key);
+  if (it == _values.end())
   {
     throw std::runtime_error("Missing table value for entry (\"" + row
-                             + "\", \"" + col + "\")");
-  }
-
-  return it->second;
-}
-//-----------------------------------------------------------------------------
-double Table::get_value(std::string row, std::string col) const
-{
-  std::pair<std::string, std::string> key(row, col);
-  auto it = dvalues.find(key);
-  if (it == dvalues.end())
-  {
-    throw std::runtime_error("Missing double value for entry (\"" + row
                              + "\", \"" + col + "\")");
   }
 
@@ -123,9 +98,9 @@ Table Table::reduce(MPI_Comm comm, Table::Reduction reduction)
   // Get keys, values into containers
   std::string keys;
   std::vector<double> values;
-  keys.reserve(128 * dvalues.size());
-  values.reserve(dvalues.size());
-  for (const auto& it : dvalues)
+  keys.reserve(128 * _dvalues.size());
+  values.reserve(_dvalues.size());
+  for (const auto& it : _dvalues)
   {
     keys += it.first.first + '\0' + it.first.second + '\0';
     values.push_back(it.second);
@@ -190,15 +165,15 @@ std::string Table::str(bool verbose) const
 
     // Format values and compute column sizes
     col_sizes.push_back(name.size());
-    for (std::size_t j = 0; j < cols.size(); j++)
-      col_sizes.push_back(cols[j].size());
-    for (std::size_t i = 0; i < rows.size(); i++)
+    for (std::size_t j = 0; j < _cols.size(); j++)
+      col_sizes.push_back(_cols[j].size());
+    for (std::size_t i = 0; i < _rows.size(); i++)
     {
       tvalues.push_back(std::vector<std::string>());
-      col_sizes[0] = std::max(col_sizes[0], rows[i].size());
-      for (std::size_t j = 0; j < cols.size(); j++)
+      col_sizes[0] = std::max(col_sizes[0], _rows[i].size());
+      for (std::size_t j = 0; j < _cols.size(); j++)
       {
-        std::string value = get(rows[i], cols[j]);
+        std::string value = get(_rows[i], _cols[j]);
         tvalues[i].push_back(value);
         col_sizes[j + 1] = std::max(col_sizes[j + 1], value.size());
       }
@@ -216,32 +191,32 @@ std::string Table::str(bool verbose) const
     for (std::size_t k = 0; k < col_sizes[0] - name.size(); k++)
       s << " ";
     s << "  |";
-    for (std::size_t j = 0; j < cols.size(); j++)
+    for (std::size_t j = 0; j < _cols.size(); j++)
     {
       if (_right_justify)
       {
-        for (std::size_t k = 0; k < col_sizes[j + 1] - cols[j].size(); k++)
+        for (std::size_t k = 0; k < col_sizes[j + 1] - _cols[j].size(); k++)
           s << " ";
-        s << "  " << cols[j];
+        s << "  " << _cols[j];
       }
       else
       {
-        s << "  " << cols[j];
-        for (std::size_t k = 0; k < col_sizes[j + 1] - cols[j].size(); k++)
+        s << "  " << _cols[j];
+        for (std::size_t k = 0; k < col_sizes[j + 1] - _cols[j].size(); k++)
           s << " ";
       }
     }
     s << "\n";
     for (std::size_t k = 0; k < row_size; k++)
       s << "-";
-    for (std::size_t i = 0; i < rows.size(); i++)
+    for (std::size_t i = 0; i < _rows.size(); i++)
     {
       s << "\n";
-      s << rows[i];
-      for (std::size_t k = 0; k < col_sizes[0] - rows[i].size(); k++)
+      s << _rows[i];
+      for (std::size_t k = 0; k < col_sizes[0] - _rows[i].size(); k++)
         s << " ";
       s << "  |";
-      for (std::size_t j = 0; j < cols.size(); j++)
+      for (std::size_t j = 0; j < _cols.size(); j++)
       {
         if (_right_justify)
         {
@@ -262,7 +237,7 @@ std::string Table::str(bool verbose) const
   }
   else
   {
-    s << "<Table of size " << rows.size() << " x " << cols.size() << ">";
+    s << "<Table of size " << _rows.size() << " x " << _cols.size() << ">";
   }
 
   return s.str();
@@ -270,7 +245,7 @@ std::string Table::str(bool verbose) const
 //-----------------------------------------------------------------------------
 std::string Table::str_latex() const
 {
-  if (rows.empty() || cols.empty())
+  if (_rows.empty() or _cols.empty())
     return "Empty table";
 
   std::stringstream s;
@@ -278,28 +253,28 @@ std::string Table::str_latex() const
   s << name << "\n";
   s << "\\begin{center}\n";
   s << "\\begin{tabular}{|l|";
-  for (std::size_t j = 0; j < cols.size(); j++)
+  for (std::size_t j = 0; j < _cols.size(); j++)
     s << "|c";
   s << "|}\n";
   s << "\\hline\n";
   s << "& ";
-  for (std::size_t j = 0; j < cols.size(); j++)
+  for (std::size_t j = 0; j < _cols.size(); j++)
   {
-    if (j < cols.size() - 1)
-      s << cols[j] << " & ";
+    if (j < _cols.size() - 1)
+      s << _cols[j] << " & ";
     else
-      s << cols[j] << " \\\\\n";
+      s << _cols[j] << " \\\\\n";
   }
   s << "\\hline\\hline\n";
-  for (std::size_t i = 0; i < rows.size(); i++)
+  for (std::size_t i = 0; i < _rows.size(); i++)
   {
-    s << rows[i] << " & ";
-    for (std::size_t j = 0; j < cols.size(); j++)
+    s << _rows[i] << " & ";
+    for (std::size_t j = 0; j < _cols.size(); j++)
     {
-      if (j < cols.size() - 1)
-        s << get(rows[i], cols[j]) << " & ";
+      if (j < _cols.size() - 1)
+        s << get(_rows[i], _cols[j]) << " & ";
       else
-        s << get(rows[i], cols[j]) << " \\\\\n";
+        s << get(_rows[i], _cols[j]) << " \\\\\n";
     }
     s << "\\hline\n";
   }

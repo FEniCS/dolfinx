@@ -51,13 +51,12 @@ public:
   /// @param[in] task The task name to retrieve the timing for
   /// @returns Values (count, total wall time, total user time, total
   /// system time) for given task.
-  std::tuple<std::size_t, double, double, double> timing(std::string task);
+  std::tuple<int, double, double, double> timing(std::string task);
 
 private:
   // List of timings for tasks, map from string to (num_timings,
   // total_wall_time, total_user_time, total_system_time)
-  std::map<std::string, std::tuple<std::size_t, double, double, double>>
-      _timings;
+  std::map<std::string, std::tuple<int, double, double, double>> _timings;
 };
 } // namespace common
 } // namespace dolfin
