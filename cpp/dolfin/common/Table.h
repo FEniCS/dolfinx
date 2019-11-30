@@ -59,7 +59,7 @@ public:
   /// Move assignment
   Table& operator=(Table&& table) = default;
 
-  // Set table entry
+  /// Set table entry
   void set(std::string row, std::string col,
            std::variant<std::string, int, double> value);
 
