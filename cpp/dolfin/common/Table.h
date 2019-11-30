@@ -94,9 +94,6 @@ private:
            std::variant<std::string, int, double>>
       _values;
 
-  // Table values as doubles
-  std::map<std::pair<std::string, std::string>, double> _dvalues;
-
   // True if we should right-justify the table entries
   bool _right_justify;
 };

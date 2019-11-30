@@ -62,13 +62,6 @@ void Table::set(std::string row, std::string col,
   // Store value
   std::pair<std::string, std::string> key(row, col);
   _values[key] = value;
-
-  if (auto pval = std::get_if<int>(&value))
-    _dvalues[std::pair(row, col)] = *pval;
-  if (auto pval = std::get_if<double>(&value))
-    _dvalues[std::pair(row, col)] = *pval;
-
-  // _dvalues[std::pair(row, col)] = value;
 }
 //-----------------------------------------------------------------------------
 std::variant<std::string, int, double> Table::get(std::string row,
@@ -119,15 +112,21 @@ Table Table::reduce(MPI_Comm comm, Table::Reduction reduction)
     return table_all;
   }
 
-  // Get keys, values into containers
+  // Get keys, values into containers for int and doubles
   std::string keys;
   std::vector<double> values;
-  keys.reserve(128 * _dvalues.size());
-  values.reserve(_dvalues.size());
-  for (const auto& it : _dvalues)
+  for (const auto& it : _values)
   {
-    keys += it.first.first + '\0' + it.first.second + '\0';
-    values.push_back(it.second);
+    if (auto pval = std::get_if<int>(&it.second))
+    {
+      keys += it.first.first + '\0' + it.first.second + '\0';
+      values.push_back(*pval);
+    }
+    else if (auto pval = std::get_if<double>(&it.second))
+    {
+      keys += it.first.first + '\0' + it.first.second + '\0';
+      values.push_back(*pval);
+    }
   }
 
   // Gather to rank zero
@@ -142,10 +141,7 @@ Table Table::reduce(MPI_Comm comm, Table::Reduction reduction)
 
   // Construct dvalues map from obtained data
   std::map<std::array<std::string, 2>, double> dvalues_all;
-  std::map<std::array<std::string, 2>, double>::iterator it;
   std::array<std::string, 2> key;
-  key[0].reserve(128);
-  key[1].reserve(128);
   double* values_ptr = values_all.data();
   for (std::size_t i = 0; i < MPI::size(comm); ++i)
   {
@@ -153,7 +149,7 @@ Table Table::reduce(MPI_Comm comm, Table::Reduction reduction)
     while (std::getline(keys_stream, key[0], '\0'),
            std::getline(keys_stream, key[1], '\0'))
     {
-      it = dvalues_all.find(key);
+      auto it = dvalues_all.find(key);
       if (it != dvalues_all.end())
         op_impl(it->second, *(values_ptr++));
       else
