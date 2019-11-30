@@ -112,17 +112,12 @@ Table Table::reduce(MPI_Comm comm, Table::Reduction reduction) const
     return table_all;
   }
 
-  // Get keys, values into containers for int and doubles
+  // Get keys, values into containers for int doubles
   std::string keys;
   std::vector<double> values;
   for (const auto& it : _values)
   {
-    if (auto pval = std::get_if<int>(&it.second))
-    {
-      keys += it.first.first + '\0' + it.first.second + '\0';
-      values.push_back(*pval);
-    }
-    else if (auto pval = std::get_if<double>(&it.second))
+    if (auto pval = std::get_if<double>(&it.second))
     {
       keys += it.first.first + '\0' + it.first.second + '\0';
       values.push_back(*pval);
@@ -168,96 +163,93 @@ Table Table::reduce(MPI_Comm comm, Table::Reduction reduction) const
 
   // Construct table to return
   Table table_all(new_title);
+  for (const auto& it : _values)
+  {
+    if (auto pval = std::get_if<int>(&it.second))
+      table_all.set(it.first.first, it.first.second, *pval);
+  }
   for (const auto& it : dvalues_all)
     table_all.set(it.first[0], it.first[1], it.second);
 
   return table_all;
 }
 //-----------------------------------------------------------------------------
-std::string Table::str(bool verbose) const
+std::string Table::str() const
 {
   std::stringstream s;
+  std::vector<std::vector<std::string>> tvalues;
+  std::vector<std::size_t> col_sizes;
 
-  if (verbose)
+  // Format values and compute column sizes
+  col_sizes.push_back(name.size());
+  for (std::size_t j = 0; j < _cols.size(); j++)
+    col_sizes.push_back(_cols[j].size());
+  for (std::size_t i = 0; i < _rows.size(); i++)
   {
-    std::vector<std::vector<std::string>> tvalues;
-    std::vector<std::size_t> col_sizes;
-
-    // Format values and compute column sizes
-    col_sizes.push_back(name.size());
+    tvalues.push_back(std::vector<std::string>());
+    col_sizes[0] = std::max(col_sizes[0], _rows[i].size());
     for (std::size_t j = 0; j < _cols.size(); j++)
-      col_sizes.push_back(_cols[j].size());
-    for (std::size_t i = 0; i < _rows.size(); i++)
     {
-      tvalues.push_back(std::vector<std::string>());
-      col_sizes[0] = std::max(col_sizes[0], _rows[i].size());
-      for (std::size_t j = 0; j < _cols.size(); j++)
-      {
-        const std::string value = to_str(get(_rows[i], _cols[j]));
-        tvalues[i].push_back(value);
-        col_sizes[j + 1] = std::max(col_sizes[j + 1], value.size());
-      }
+      const std::string value = to_str(get(_rows[i], _cols[j]));
+      tvalues[i].push_back(value);
+      col_sizes[j + 1] = std::max(col_sizes[j + 1], value.size());
     }
-    std::size_t row_size = 2 * col_sizes.size() + 1;
-    for (std::size_t j = 0; j < col_sizes.size(); j++)
-      row_size += col_sizes[j];
+  }
+  std::size_t row_size = 2 * col_sizes.size() + 1;
+  for (std::size_t j = 0; j < col_sizes.size(); j++)
+    row_size += col_sizes[j];
 
-    // Stay silent if no data
-    if (tvalues.empty())
-      return "";
+  // Stay silent if no data
+  if (tvalues.empty())
+    return "";
 
-    // Write table
-    s << name;
-    for (std::size_t k = 0; k < col_sizes[0] - name.size(); k++)
+  // Write table
+  s << name;
+  for (std::size_t k = 0; k < col_sizes[0] - name.size(); k++)
+    s << " ";
+  s << "  |";
+  for (std::size_t j = 0; j < _cols.size(); j++)
+  {
+    if (_right_justify)
+    {
+      for (std::size_t k = 0; k < col_sizes[j + 1] - _cols[j].size(); k++)
+        s << " ";
+      s << "  " << _cols[j];
+    }
+    else
+    {
+      s << "  " << _cols[j];
+      for (std::size_t k = 0; k < col_sizes[j + 1] - _cols[j].size(); k++)
+        s << " ";
+    }
+  }
+  s << "\n";
+  for (std::size_t k = 0; k < row_size; k++)
+    s << "-";
+  for (std::size_t i = 0; i < _rows.size(); i++)
+  {
+    s << "\n";
+    s << _rows[i];
+    for (std::size_t k = 0; k < col_sizes[0] - _rows[i].size(); k++)
       s << " ";
     s << "  |";
     for (std::size_t j = 0; j < _cols.size(); j++)
     {
       if (_right_justify)
       {
-        for (std::size_t k = 0; k < col_sizes[j + 1] - _cols[j].size(); k++)
+        for (std::size_t k = 0; k < col_sizes[j + 1] - tvalues[i][j].size();
+             k++)
           s << " ";
-        s << "  " << _cols[j];
+        s << "  " << tvalues[i][j];
       }
       else
       {
-        s << "  " << _cols[j];
-        for (std::size_t k = 0; k < col_sizes[j + 1] - _cols[j].size(); k++)
+        s << "  " << tvalues[i][j];
+        for (std::size_t k = 0; k < col_sizes[j + 1] - tvalues[i][j].size();
+             k++)
           s << " ";
       }
     }
-    s << "\n";
-    for (std::size_t k = 0; k < row_size; k++)
-      s << "-";
-    for (std::size_t i = 0; i < _rows.size(); i++)
-    {
-      s << "\n";
-      s << _rows[i];
-      for (std::size_t k = 0; k < col_sizes[0] - _rows[i].size(); k++)
-        s << " ";
-      s << "  |";
-      for (std::size_t j = 0; j < _cols.size(); j++)
-      {
-        if (_right_justify)
-        {
-          for (std::size_t k = 0; k < col_sizes[j + 1] - tvalues[i][j].size();
-               k++)
-            s << " ";
-          s << "  " << tvalues[i][j];
-        }
-        else
-        {
-          s << "  " << tvalues[i][j];
-          for (std::size_t k = 0; k < col_sizes[j + 1] - tvalues[i][j].size();
-               k++)
-            s << " ";
-        }
-      }
-    }
-  }
-  else
-  {
-    s << "<Table of size " << _rows.size() << " x " << _cols.size() << ">";
   }
 
   return s.str();

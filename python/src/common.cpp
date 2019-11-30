@@ -73,9 +73,9 @@ void common(py::module& m)
            "Return array of global indices for all indices on this process");
 
   // dolfin::Table
-  py::class_<dolfin::Table, std::shared_ptr<dolfin::Table>>(m, "Table")
-      .def(py::init<std::string>())
-      .def("str", &dolfin::Table::str);
+  // py::class_<dolfin::Table, std::shared_ptr<dolfin::Table>>(m, "Table")
+  //     .def(py::init<std::string>())
+  //     .def("str", &dolfin::Table::str);
 
   // dolfin::common::Timer
   py::class_<dolfin::common::Timer, std::shared_ptr<dolfin::common::Timer>>(

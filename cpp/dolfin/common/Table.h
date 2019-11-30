@@ -82,8 +82,8 @@ public:
   /// Table name
   std::string name;
 
-  /// Return informal string representation (pretty-print)
-  std::string str(bool verbose) const;
+  /// Return string representation of the table
+  std::string str() const;
 
 private:
   // Row and column names

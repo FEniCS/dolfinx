@@ -48,7 +48,7 @@ void TimeLogger::list_timings(MPI_Comm mpi_comm, std::set<TimingType> type)
   // Format and reduce to rank 0
   Table timings = this->timings(type);
   timings = timings.reduce(mpi_comm, Table::Reduction::average);
-  const std::string str = "\n" + timings.str(true);
+  const std::string str = "\n" + timings.str();
 
   // Print just on rank 0
   if (dolfin::MPI::rank(mpi_comm) == 0)
@@ -80,9 +80,10 @@ std::tuple<int, double, double, double> TimeLogger::timing(std::string task)
   // Find timing
   auto it = _timings.find(task);
   if (it == _timings.end())
+  {
     throw std::runtime_error("No timings registered for task \"" + task
                              + "\".");
-
+  }
   return it->second;
 }
 //-----------------------------------------------------------------------------
