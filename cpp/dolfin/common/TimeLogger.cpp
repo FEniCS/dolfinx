@@ -18,32 +18,29 @@ TimeLogger::TimeLogger()
   // Do nothing
 }
 //-----------------------------------------------------------------------------
-void TimeLogger::register_timing(std::string task,
-                                 std::tuple<double, double, double> elapsed)
+void TimeLogger::register_timing(std::string task, double wall, double user,
+                                 double system)
 {
-  assert(elapsed >= std::tuple(double(0.0), double(0.0), double(0.0)));
+  assert(wall >= 0.0);
+  assert(user >= 0.0);
+  assert(system >= 0.0);
 
   // Print a message
   std::stringstream line;
-  line << "Elapsed wall, usr, sys time: " << std::get<0>(elapsed) << ", "
-       << std::get<1>(elapsed) << ", " << std::get<2>(elapsed) << " (" << task
-       << ")";
+  line << "Elapsed wall, usr, sys time: " << wall << ", " << user << ", "
+       << system << " (" << task << ")";
   DLOG(INFO) << line.str();
 
   // Store values for summary
-  const auto timing = std::tuple_cat(std::tuple(std::size_t(1)), elapsed);
-  auto it = _timings.find(task);
-  if (it == _timings.end())
+  if (auto it = _timings.find(task); it != _timings.end())
   {
-    _timings[task] = timing;
+    std::get<0>(it->second) += 1;
+    std::get<1>(it->second) += wall;
+    std::get<2>(it->second) += user;
+    std::get<3>(it->second) += system;
   }
   else
-  {
-    std::get<0>(it->second) += std::get<0>(timing);
-    std::get<1>(it->second) += std::get<1>(timing);
-    std::get<2>(it->second) += std::get<2>(timing);
-    std::get<3>(it->second) += std::get<3>(timing);
-  }
+    _timings.insert({task, {std::size_t(1), wall, user, system}});
 }
 //-----------------------------------------------------------------------------
 void TimeLogger::list_timings(MPI_Comm mpi_comm, std::set<TimingType> type)
@@ -58,11 +55,6 @@ void TimeLogger::list_timings(MPI_Comm mpi_comm, std::set<TimingType> type)
     std::cout << str << std::endl;
 }
 //-----------------------------------------------------------------------------
-std::map<TimingType, std::string> TimeLogger::_TimingType_descr
-    = {{TimingType::wall, "wall"},
-       {TimingType::user, "usr"},
-       {TimingType::system, "sys"}};
-//-----------------------------------------------------------------------------
 Table TimeLogger::timings(std::set<TimingType> type)
 {
   // Generate log::timing table
@@ -70,17 +62,14 @@ Table TimeLogger::timings(std::set<TimingType> type)
   for (auto& it : _timings)
   {
     const std::string task = it.first;
-    const std::size_t num_timings = std::get<0>(it.second);
-    const std::vector<double> times{
-        std::get<1>(it.second), std::get<2>(it.second), std::get<3>(it.second)};
+    const auto [num_timings, wall, usr, sys] = it.second;
     table(task, "reps") = num_timings;
-    for (const auto& t : type)
-    {
-      const double total_time = times[static_cast<int>(t)];
-      const double average_time = total_time / static_cast<double>(num_timings);
-      table(task, TimeLogger::_TimingType_descr[t] + " avg") = average_time;
-      table(task, TimeLogger::_TimingType_descr[t] + " tot") = total_time;
-    }
+    table(task, "wall avg") = wall / static_cast<double>(num_timings);
+    table(task, "wall tot") = wall;
+    table(task, "usr avg") = usr / static_cast<double>(num_timings);
+    table(task, "usr tot") = usr;
+    table(task, "sys avg") = sys / static_cast<double>(num_timings);
+    table(task, "sys tot") = sys;
   }
 
   return table;
@@ -92,14 +81,8 @@ TimeLogger::timing(std::string task)
   // Find timing
   auto it = _timings.find(task);
   if (it == _timings.end())
-  {
-    std::stringstream line;
-    line << "No timings registered for task \"" << task << "\".";
-    throw std::runtime_error("Cannot extract timing. " + line.str());
-  }
-  // Prepare for return for the case of reset
-  const auto result = it->second;
+    throw std::runtime_error("No timings registered for task \"" + task + "\".");
 
-  return result;
+  return it->second;
 }
 //-----------------------------------------------------------------------------

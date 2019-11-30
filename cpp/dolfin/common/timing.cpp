@@ -8,27 +8,17 @@
 #include "Timer.h"
 #include <dolfin/common/Table.h>
 #include <dolfin/common/TimeLogManager.h>
-#include <tuple>
 
-namespace dolfin
+namespace
 {
-namespace common
-{
-Timer __global_timer;
-Timer __tic_timer;
-} // namespace common
-} // namespace dolfin
+dolfin::common::Timer __global_timer;
+dolfin::common::Timer __tic_timer;
+} // namespace
 
 using namespace dolfin;
 using namespace dolfin::common;
 
 //-----------------------------------------------------------------------
-void dolfin::tic() { __tic_timer.start(); }
-//-----------------------------------------------------------------------------
-double dolfin::toc() { return std::get<0>(__tic_timer.elapsed()); }
-//-----------------------------------------------------------------------------
-double dolfin::time() { return std::get<0>(__global_timer.elapsed()); }
-//-----------------------------------------------------------------------------
 Table dolfin::timings(std::set<TimingType> type)
 {
   return TimeLogManager::logger().timings(type);

@@ -25,17 +25,14 @@ class TableEntry;
 ///   table("Eigen",  "Solve")    = 0.020;
 ///   table("PETSc",  "Assemble") = 0.011;
 ///   table("PETSc",  "Solve")    = 0.019;
-///   table("Tpetra", "Assemble") = 0.012;
-///   table("Tpetra", "Solve")    = 0.018;
 ///
 ///   log::info(table);
 
 class Table
 {
 public:
-  /// Types of MPI reduction available for Table,
-  /// to get the max, min or average values over an MPI_Comm
-  ///
+  /// Types of MPI reduction available for Table, to get the max, min or
+  /// average values over an MPI_Comm
   enum class Reduction
   {
     average,
@@ -46,11 +43,20 @@ public:
   /// Create empty table
   Table(std::string title = "", bool right_justify = true);
 
+  /// Copy constructor
+  Table(const Table& table) = default;
+
+  /// Move constructor
+  Table(Table&& table) = default;
+
   /// Destructor
   ~Table() = default;
 
   /// Assignment operator
   Table& operator=(const Table& table) = default;
+
+  /// Move assignment
+  Table& operator=(Table&& table) = default;
 
   /// Return table entry
   TableEntry operator()(std::string row, std::string col);
@@ -74,8 +80,8 @@ public:
   double get_value(std::string row, std::string col) const;
 
   /// Do MPI reduction on Table
-  /// @param comm MPI Comm
-  /// @param reduction Type of reduction to perform
+  /// @param[in] comm MPI Comm
+  /// @param[in] reduction Type of reduction to perform
   /// @return Reduced Table
   Table reduce(MPI_Comm comm, Reduction reduction);
 

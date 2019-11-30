@@ -52,9 +52,7 @@ public:
   /// logger
   double stop();
 
-  /// Return wall, user and system time in seconds. Wall-clock time has
-  /// precision around 1 microsecond; user and system around 10
-  /// millisecond.
+  /// Return wall, user and system time in seconds
   std::tuple<double, double, double> elapsed() const;
 
 private:
