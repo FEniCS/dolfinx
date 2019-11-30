@@ -20,35 +20,21 @@ Table::Table(std::string title, bool right_justify)
   // Do nothing
 }
 //-----------------------------------------------------------------------------
-TableEntry Table::operator()(std::string row, std::string col)
-{
-  TableEntry entry(row, col, *this);
-  return entry;
-}
-//-----------------------------------------------------------------------------
 void Table::set(std::string row, std::string col, int value)
 {
-  std::stringstream s;
-  s << value;
-  set(row, col, s.str());
+  set(row, col, std::to_string(value));
   dvalues[std::pair(row, col)] = static_cast<double>(value);
 }
 //-----------------------------------------------------------------------------
 void Table::set(std::string row, std::string col, std::size_t value)
 {
-  std::stringstream s;
-  s << value;
-  set(row, col, s.str());
+  set(row, col, std::to_string(value));
   dvalues[std::pair(row, col)] = static_cast<double>(value);
 }
 //-----------------------------------------------------------------------------
 void Table::set(std::string row, std::string col, double value)
 {
-  if (std::abs(value) < DBL_EPSILON)
-    value = 0.0;
-  std::stringstream s;
-  s << std::setprecision(5) << value;
-  set(row, col, s.str());
+  set(row, col, std::to_string(value));
   dvalues[std::pair(row, col)] = value;
 }
 //-----------------------------------------------------------------------------
@@ -193,7 +179,7 @@ Table Table::reduce(MPI_Comm comm, Table::Reduction reduction)
   // Construct table to return
   Table table_all(new_title);
   for (const auto& it : dvalues_all)
-    table_all(it.first[0], it.first[1]) = it.second;
+    table_all.set(it.first[0], it.first[1], it.second);
 
   return table_all;
 }
@@ -328,35 +314,35 @@ std::string Table::str_latex() const
   return s.str();
 }
 //-----------------------------------------------------------------------------
-TableEntry::TableEntry(std::string row, std::string col, Table& table)
-    : _row(row), _col(col), _table(table)
-{
-  // Do nothing
-}
-//-----------------------------------------------------------------------------
-const TableEntry& TableEntry::operator=(std::size_t value)
-{
-  _table.set(_row, _col, value);
-  return *this;
-}
-//-----------------------------------------------------------------------------
-const TableEntry& TableEntry::operator=(int value)
-{
-  _table.set(_row, _col, value);
-  return *this;
-}
-//-----------------------------------------------------------------------------
-const TableEntry& TableEntry::operator=(double value)
-{
-  _table.set(_row, _col, value);
-  return *this;
-}
-//-----------------------------------------------------------------------------
-const TableEntry& TableEntry::operator=(std::string value)
-{
-  _table.set(_row, _col, value);
-  return *this;
-}
-//-----------------------------------------------------------------------------
-TableEntry::operator std::string() const { return _table.get(_row, _col); }
-//-----------------------------------------------------------------------------
+// TableEntry::TableEntry(std::string row, std::string col, Table& table)
+//     : _row(row), _col(col), _table(table)
+// {
+//   // Do nothing
+// }
+// //-----------------------------------------------------------------------------
+// const TableEntry& TableEntry::operator=(std::size_t value)
+// {
+//   _table.set(_row, _col, value);
+//   return *this;
+// }
+// //-----------------------------------------------------------------------------
+// const TableEntry& TableEntry::operator=(int value)
+// {
+//   _table.set(_row, _col, value);
+//   return *this;
+// }
+// //-----------------------------------------------------------------------------
+// const TableEntry& TableEntry::operator=(double value)
+// {
+//   _table.set(_row, _col, value);
+//   return *this;
+// }
+// //-----------------------------------------------------------------------------
+// const TableEntry& TableEntry::operator=(std::string value)
+// {
+//   _table.set(_row, _col, value);
+//   return *this;
+// }
+// //-----------------------------------------------------------------------------
+// TableEntry::operator std::string() const { return _table.get(_row, _col); }
+// //-----------------------------------------------------------------------------

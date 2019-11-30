@@ -40,7 +40,7 @@ void TimeLogger::register_timing(std::string task, double wall, double user,
     std::get<3>(it->second) += system;
   }
   else
-    _timings.insert({task, {std::size_t(1), wall, user, system}});
+    _timings.insert({task, {1, wall, user, system}});
 }
 //-----------------------------------------------------------------------------
 void TimeLogger::list_timings(MPI_Comm mpi_comm, std::set<TimingType> type)
@@ -63,13 +63,13 @@ Table TimeLogger::timings(std::set<TimingType> type)
   {
     const std::string task = it.first;
     const auto [num_timings, wall, usr, sys] = it.second;
-    table(task, "reps") = num_timings;
-    table(task, "wall avg") = wall / static_cast<double>(num_timings);
-    table(task, "wall tot") = wall;
-    table(task, "usr avg") = usr / static_cast<double>(num_timings);
-    table(task, "usr tot") = usr;
-    table(task, "sys avg") = sys / static_cast<double>(num_timings);
-    table(task, "sys tot") = sys;
+    table.set(task, "reps", num_timings);
+    table.set(task, "wall avg", wall / static_cast<double>(num_timings));
+    table.set(task, "wall tot", wall);
+    table.set(task, "usr avg", usr / static_cast<double>(num_timings));
+    table.set(task, "usr tot",  usr);
+    table.set(task, "sys avg",  sys / static_cast<double>(num_timings));
+    table.set(task, "sys tot",  sys);
   }
 
   return table;

@@ -58,9 +58,6 @@ public:
   /// Move assignment
   Table& operator=(Table&& table) = default;
 
-  /// Return table entry
-  TableEntry operator()(std::string row, std::string col);
-
   /// Set value of table entry
   void set(std::string row, std::string col, int value);
 
@@ -113,40 +110,4 @@ private:
   bool _right_justify;
 };
 
-/// This class represents an entry in a Table
-
-class TableEntry
-{
-public:
-  /// Create table entry
-  TableEntry(std::string row, std::string col, Table& table);
-
-  /// Destructor
-  ~TableEntry() = default;
-
-  /// Assign value to table entry
-  const TableEntry& operator=(std::size_t value);
-
-  /// Assign value to table entry
-  const TableEntry& operator=(int value);
-
-  /// Assign value to table entry
-  const TableEntry& operator=(double value);
-
-  /// Assign value to table entry
-  const TableEntry& operator=(std::string value);
-
-  /// Cast to entry value
-  operator std::string() const;
-
-private:
-  // Row
-  std::string _row;
-
-  // Column
-  std::string _col;
-
-  // Table
-  Table& _table;
-};
 } // namespace dolfin
