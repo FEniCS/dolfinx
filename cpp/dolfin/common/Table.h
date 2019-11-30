@@ -22,10 +22,10 @@ class TableEntry;
 ///
 ///   Table table("Timings");
 ///
-///   table("Eigen",  "Assemble") = 0.010;
-///   table("Eigen",  "Solve")    = 0.020;
-///   table("PETSc",  "Assemble") = 0.011;
-///   table("PETSc",  "Solve")    = 0.019;
+///   table.set("Eigen",  "Assemble", 0.010);
+///   table.set("Eigen",  "Solve", 0.020);
+///   table.set("PETSc",  "Assemble", 0.011);
+///   table.set("PETSc",  "Solve", 0.019);
 ///
 ///   log::info(table);
 
@@ -74,10 +74,10 @@ public:
                                              std::string col) const;
 
   /// Do MPI reduction on Table
-  /// @param[in] comm MPI Comm
+  /// @param[in] comm MPI communicator
   /// @param[in] reduction Type of reduction to perform
   /// @return Reduced Table
-  Table reduce(MPI_Comm comm, Reduction reduction);
+  Table reduce(MPI_Comm comm, Reduction reduction) const;
 
   /// Table name
   std::string name;
@@ -86,10 +86,10 @@ public:
   std::string str(bool verbose) const;
 
 private:
-  // Rows and columns
+  // Row and column names
   std::vector<std::string> _rows, _cols;
 
-  // Table values as strings
+  // Table entry values
   std::map<std::pair<std::string, std::string>,
            std::variant<std::string, int, double>>
       _values;

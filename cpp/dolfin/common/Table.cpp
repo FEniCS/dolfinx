@@ -78,7 +78,7 @@ std::variant<std::string, int, double> Table::get(std::string row,
   return it->second;
 }
 //-----------------------------------------------------------------------------
-Table Table::reduce(MPI_Comm comm, Table::Reduction reduction)
+Table Table::reduce(MPI_Comm comm, Table::Reduction reduction) const
 {
   std::string new_title;
 
