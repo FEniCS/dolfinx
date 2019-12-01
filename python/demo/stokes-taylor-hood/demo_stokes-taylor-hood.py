@@ -192,9 +192,9 @@ null_vec = dolfin.fem.create_vector_nest(L)
 null_vecs = null_vec.getNestSubVecs()
 null_vecs[0].set(0.0), null_vecs[1].set(1.0)
 null_vec.normalize()
-nsp = PETSc.NullSpace().create(constant=False, vectors=[null_vec])
-A.setNullSpace(nsp)
+nsp = PETSc.NullSpace().create(vectors=[null_vec])
 assert nsp.test(A)
+A.setNullSpace(nsp)
 
 # Now we are ready to create a Krylov Subspace Solver ``ksp``. We
 # configure it for block Jacobi preconditioning using PETSc's additive
@@ -203,15 +203,7 @@ assert nsp.test(A)
 ksp = PETSc.KSP().create(mesh.mpi_comm())
 ksp.setOperators(A, P)
 ksp.setType("minres")
-
-# Set parameters for the parent KSP
 ksp.setTolerances(rtol=1e-12)
-
-# Monitor the convergence of the KSP
-opts = PETSc.Options()
-opts["ksp_monitor"] = None
-opts["ksp_view"] = None
-
 ksp.getPC().setType("fieldsplit")
 ksp.getPC().setFieldSplitType(PETSc.PC.CompositeType.ADDITIVE)
 
@@ -222,13 +214,18 @@ ksp.getPC().setFieldSplitIS(
     ("u", nested_IS[0][0]),
     ("p", nested_IS[0][1]))
 
-# Configure velocity and pressure sub KSPs
 ksp_u, ksp_p = ksp.getPC().getFieldSplitSubKSP()
 ksp_u.setType("preonly")
 ksp_u.getPC().setType("hypre")
 ksp_p.setType("preonly")
 ksp_p.getPC().setType("jacobi")
 
+# Monitor the convergence of the KSP
+opts = PETSc.Options()
+opts["ksp_monitor"] = None
+opts["ksp_view"] = None
+
+# Configure velocity and pressure sub KSPs
 ksp.setFromOptions()
 
 # Compute solution
@@ -263,30 +260,20 @@ P.assemble()
 
 b = dolfin.fem.assemble.assemble_vector_block(L, a, bcs)
 
-# TODO: Set near null space for pressure
-
-# FIXME: using createVecRight doesn't add ghosts, which breaks at the
-# scatter_local_vectors step, which assumes that vectors are ghosted.
-# null_vec = A.createVecRight()
-null_vec = b.copy()
-Vsize = V.dofmap.index_map.block_size * (V.dofmap.index_map.size_local + V.dofmap.index_map.num_ghosts)
-xu = np.zeros(Vsize)
-xp = np.ones(Q.dofmap.index_map.size_local + Q.dofmap.index_map.num_ghosts)
-dolfin.cpp.la.scatter_local_vectors(null_vec, [xu, xp], [V.dofmap.index_map, Q.dofmap.index_map])
+# Set near null space for pressure
+null_vec = A.createVecRight()
+offset = V.dofmap.index_map.size_local * V.dofmap.index_map.block_size
+null_vec.array[offset:] = 1.0
 null_vec.normalize()
-nsp = PETSc.NullSpace().create(False, [null_vec])
+nsp = PETSc.NullSpace().create(vectors=[null_vec])
+assert nsp.test(A)
 A.setNullSpace(nsp)
-assert np.isclose((A * null_vec).norm(), 0.0)
 
 # Build IndexSets for each field (global dof indices for each field)
 V_map = V.dofmap.index_map
 Q_map = Q.dofmap.index_map
-proc_offset_u, _ = V_map.local_range
-proc_offset_p, _ = Q_map.local_range
-
-offset_u = proc_offset_u * V_map.block_size + proc_offset_p
+offset_u = V_map.local_range[0] * V_map.block_size + Q_map.local_range[0]
 offset_p = offset_u + V_map.size_local * V_map.block_size
-
 is_u = PETSc.IS().createStride(V_map.size_local * V_map.block_size, offset_u, 1, comm=PETSc.COMM_SELF)
 is_p = PETSc.IS().createStride(Q_map.size_local, offset_p, 1, comm=PETSc.COMM_SELF)
 
@@ -300,7 +287,6 @@ ksp.getPC().setFieldSplitType(PETSc.PC.CompositeType.ADDITIVE)
 ksp.getPC().setFieldSplitIS(
     ("u", is_u),
     ("p", is_p))
-
 
 # Configure velocity and pressure sub KSPs
 ksp_u, ksp_p = ksp.getPC().getFieldSplitSubKSP()
