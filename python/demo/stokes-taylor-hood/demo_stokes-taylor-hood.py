@@ -5,7 +5,7 @@
 # ==========================================
 #
 # This demo show how to solve the Stokes problem using Taylor-Hood
-# elements with a range of different linbear solvers.
+# elements with a range of different linear solvers.
 #
 # Equation and problem definition
 # -------------------------------
@@ -25,8 +25,7 @@
 # A typical set of boundary conditions on the boundary :math:`\partial
 # \Omega = \Gamma_{D} \cup \Gamma_{N}` can be:
 #
-# .. math::
-#    u &= u_0 \quad {\rm on} \ \Gamma_{D},
+# .. math:: u &= u_0 \quad {\rm on} \ \Gamma_{D},
 #
 #    \nabla u \cdot n + p n &= g \,   \quad\;\; {\rm on} \ \Gamma_{N}.
 #
@@ -44,11 +43,11 @@
 #
 # .. math::
 #
-#    a((u, p), (v, q)) &:= \int_{\Omega} \nabla u \cdot \nabla v
-#               - \nabla \cdot v \ p + \nabla \cdot u \ q \, {\rm d} x,
+#    a((u, p), (v, q)) &:= \int_{\Omega} \nabla u \cdot \nabla v -
+#               \nabla \cdot v \ p + \nabla \cdot u \ q \, {\rm d} x,
 #
-#    L((v, q)) &:= \int_{\Omega} f \cdot v \, {\rm d} x
-#               + \int_{\partial \Omega_N} g \cdot v \, {\rm d} s.
+#    L((v, q)) &:= \int_{\Omega} f \cdot v \, {\rm d} x + \int_{\partial
+#               \Omega_N} g \cdot v \, {\rm d} s.
 #
 # The space :math:`W` is mixed (product) function space :math:`W = V
 # \times Q`, such that :math:`u \in V` and :math:`q \in Q`.
@@ -61,8 +60,8 @@
 #
 # * :math:`\Omega = [0,1]\times[0,1] (a unit square)
 # * :math:`\Gamma_D = \partial \Omega
-# * :math:`u_0 = (1, 0)^\top` at :math:`x_1 = 1` and
-#   :math:`u_0 = (0, 0)^\top` otherwise
+# * :math:`u_0 = (1, 0)^\top` at :math:`x_1 = 1` and :math:`u_0 = (0,
+#   0)^\top` otherwise
 # * :math:`f = (0, 0)^\top`
 #
 #
@@ -259,11 +258,12 @@ with XDMFFile(MPI.comm_world, "pressure.xdmf") as pfile_xdmf:
     p.vector.ghostUpdate(addv=PETSc.InsertMode.INSERT, mode=PETSc.ScatterMode.FORWARD)
     pfile_xdmf.write(p)
 
+
 # Monolithic block iterative solver
 # ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 #
 # Next, we solve same problem, but now with monolithic (non-nested)
-# matrices and iterative solvers
+# matrices and iterative solvers.
 
 A = dolfin.fem.assemble_matrix_block(a, bcs)
 A.assemble()
@@ -340,6 +340,9 @@ assert np.isclose(norm_p_1, norm_p_0)
 # ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 #
 # Solve same problem, but now with monolithic matrices and a direct solver
+#
+# .. todo:: The pressure should be pinned via a `DirichletBC` at one
+#           point for the direct solver
 
 # Create LU solver
 ksp = PETSc.KSP().create(mesh.mpi_comm())
@@ -370,3 +373,78 @@ if MPI.rank(MPI.comm_world) == 0:
     print("(C) Norm of pressure coefficient vector: {}".format(norm_p_2))
 assert np.isclose(norm_u_2, norm_u_0)
 assert np.isclose(norm_p_2, norm_p_0)
+
+
+# Non-blocked direct solver
+# ^^^^^^^^^^^^^^^^^^^^^^^^^
+# .. todo:: The pressure should be pinned via a `DirichletBC` at one
+#           point for the direct solver
+
+TH = P2 * P1
+W = FunctionSpace(mesh, TH)
+W0 = W.sub(0).collapse()
+
+noslip = Function(W0)
+bc0 = DirichletBC(W.sub(0), noslip,
+                  lambda x: np.logical_or(np.logical_or(np.isclose(x[0], 0.0),
+                                                        np.isclose(x[0], 1.0)),
+                                          np.isclose(x[1], 0.0)))
+
+
+# Driving velocity condition u = (1, 0) on top boundary (y = 1)
+lid_velocity = Function(W0)
+lid_velocity.interpolate(lambda x: np.stack((np.ones(x.shape[1]), np.zeros(x.shape[1]))))
+bc1 = DirichletBC(W.sub(0), lid_velocity, lambda x: np.isclose(x[1], 1.0))
+
+# Collect Dirichlet boundary conditions
+bcs = [bc0, bc1]
+
+# Define variational problem
+(u, p) = ufl.TrialFunctions(W)
+(v, q) = ufl.TestFunctions(W)
+f = Function(W0)
+a = (inner(grad(u), grad(v)) + inner(p, div(v)) + inner(div(u), q)) * dx
+L = inner(f, v) * dx
+
+A = dolfin.fem.assemble_matrix(a, bcs)
+A.assemble()
+b = dolfin.fem.assemble.assemble_vector(L)
+
+dolfin.fem.assemble.apply_lifting(b, [a], [bcs])
+b.ghostUpdate(addv=PETSc.InsertMode.ADD, mode=PETSc.ScatterMode.REVERSE)
+
+# Set Dirichlet boundary condition values in the RHS
+dolfin.fem.assemble.set_bc(b, bcs)
+
+U = Function(W)
+
+# Set near null space for pressure
+null_vec = U.vector.copy()
+null_vec.set(0.0)
+with  null_vec.localForm() as _null_vec:
+    W.sub(1).dofmap.set(_null_vec.array, 1.0)
+null_vec.normalize()
+nsp = PETSc.NullSpace().create(vectors=[null_vec])
+assert nsp.test(A)
+A.setNullSpace(nsp)
+
+
+ksp = PETSc.KSP().create(mesh.mpi_comm())
+ksp.setOperators(A)
+ksp.setType("preonly")
+ksp.getPC().setType("lu")
+ksp.getPC().setFactorSolverType("superlu_dist")
+
+# U = Function(W)
+ksp.solve(b, U.vector)
+
+u = U.sub(0).collapse()
+p = U.sub(1).collapse()
+
+norm_u_3 = u.vector.norm()
+norm_p_3 = p.vector.norm()
+if MPI.rank(MPI.comm_world) == 0:
+    print("(D) Norm of velocity coefficient vector: {}".format(norm_u_3))
+    print("(D) Norm of pressure coefficient vector: {}".format(norm_p_3))
+# assert np.isclose(norm_u_3, norm_u_0)
+# assert np.isclose(norm_p_3, norm_p_0)
