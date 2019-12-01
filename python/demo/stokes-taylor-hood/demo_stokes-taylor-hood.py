@@ -144,49 +144,64 @@ a_p11 = inner(p, q) * dx
 a_p = [[a[0][0], None],
        [None, a_p11]]
 
-# With the bilinear form ``a``, preconditioner bilinear form ``prec``
-# and linear right hand side (RHS) ``L``, we may now assembly the finite
-# element linear system. We exploit the structure of the Stokes system
-# and assemble the finite element system into block matrices and a block
-# vector. Provision of the ``bcs`` argument to
-# :py:func:`assemble_matrix_nest <dolfin.fem.assemble_matrix_nest>`
-# ensures the rows and columns associated with the boundary conditions
-# are zeroed and the diagonal set to the identity, preserving symmetry::
+# Nested matrix solver
+# ^^^^^^^^^^^^^^^^^^^^
+#
+# We now assembly the bilinear form into a nested matrix `A`, and call
+# the `assemble()` method to communicate shared entries in parallel.
+# Rows and columns in `A` that correspond to degrees-of-freedom with
+# Dirichlet boundary conditions are zeroed and a value of 1 is set on
+# the diagonal.
 
 A = dolfin.fem.assemble_matrix_nest(a, bcs)
 A.assemble()
 
-# The preconditioner P can share the A_00 block
+# We create a nested matrix `P` to use as the preconditioner. The
+# top-left block of `P` is shared with the top-left block of `A`. The
+# bottom-right diagonal entry is assembled from the form `a_p11`::
+
 P11 = dolfin.fem.assemble_matrix(a_p11, [])
 P = PETSc.Mat().createNest([[A.getNestSubMatrix(0, 0), None], [None, P11]])
 P.assemble()
 
-# Assemble the RHS vector
+# Next, the right-hand side vector is assembled and then modified to
+# account for non-homogeneous Dirichlet boundary conditions::
+
 b = dolfin.fem.assemble.assemble_vector_nest(L)
 
 # Modify ('lift') the RHS for Dirichlet boundary conditions
 dolfin.fem.assemble.apply_lifting_nest(b, a, bcs)
+
+# Sum contributions from ghost entries on the owner
 for b_sub in b.getNestSubVecs():
     b_sub.ghostUpdate(addv=PETSc.InsertMode.ADD, mode=PETSc.ScatterMode.REVERSE)
 
-# Set Dirichlet bc values in the RHS
+# Set Dirichlet boundary condition values in the RHS
 bcs0 = dolfin.cpp.fem.bcs_rows(dolfin.fem.assemble._create_cpp_form(L), bcs)
 dolfin.fem.assemble.set_bc_nest(b, bcs0)
 
-# Ths pressure field is determined only up to a constant. We can supply
-# the this vector and it will be eliminated during the iterative linear
-# solution process.
+# Ths pressure field for this problem is determined only up to a
+# constant. We can supply the vector that spans the nullspace and any
+# component of the solution in this direction will be eliminated during
+# the iterative linear solution process.
+
+# Create nullspace vector
 null_vec = dolfin.fem.create_vector_nest(L)
+
+# Set velocity part tp zero and the pressure part to a non-zero constant
 null_vecs = null_vec.getNestSubVecs()
 null_vecs[0].set(0.0), null_vecs[1].set(1.0)
+
+# Normalize the vector, create a nullspace object, and attach it to the
+# matrix
 null_vec.normalize()
 nsp = PETSc.NullSpace().create(vectors=[null_vec])
 assert nsp.test(A)
 A.setNullSpace(nsp)
 
-# Now we are ready to create a Krylov Subspace Solver ``ksp``. We
-# configure it for block Jacobi preconditioning using PETSc's additive
-# fieldsplit composite type.
+# Now we create a Krylov Subspace Solver ``ksp``. We configure it to use
+# the MINRES method, and a block-diagonal preconditioner using PETSc's
+# additive fieldsplit type preconditioner::
 
 ksp = PETSc.KSP().create(mesh.mpi_comm())
 ksp.setOperators(A, P)
@@ -202,6 +217,7 @@ ksp.getPC().setFieldSplitIS(
     ("u", nested_IS[0][0]),
     ("p", nested_IS[0][1]))
 
+# Set the preconditioners for each block
 ksp_u, ksp_p = ksp.getPC().getFieldSplitSubKSP()
 ksp_u.setType("preonly")
 ksp_u.getPC().setType("hypre")
@@ -211,25 +227,30 @@ ksp_p.getPC().setType("jacobi")
 # Monitor the convergence of the KSP
 opts = PETSc.Options()
 opts["ksp_monitor"] = None
-# opts["ksp_view"] = None
-
-# Configure velocity and pressure sub KSPs
+opts["ksp_view"] = None
 ksp.setFromOptions()
 
-# Compute solution
+# To compute the solution, we create finite element :py:class:`Function
+# <dolfin.function.Function>` for the velocity (on the space `V`) and
+# for the pressure (on the space `Q`). The vectors for `u` and `p` are
+# combined to form a nested vector and the system is solved::
+
 u, p = Function(V), Function(Q)
 x = PETSc.Vec().createNest([u.vector, p.vector])
 ksp.solve(b, x)
 
-# We can calculate the :math:`L^2` norms of u and p as follows::
+# Norms of the solution vectors be comouted::
+
 norm_u_0 = u.vector.norm()
 norm_p_0 = p.vector.norm()
 if MPI.rank(MPI.comm_world) == 0:
     print("(A) Norm of velocity coefficient vector: {}".format(norm_u_0))
     print("(A) Norm of pressure coefficient vector: {}".format(norm_p_0))
 
-# Save solutions in XDMF format. Before writing to file, ghost values
+# The solution fields can be saved to file in XDMF format for
+# visualization, e.g. with ParView. Before writing to file, ghost values
 # are updated.
+
 with XDMFFile(MPI.comm_world, "velocity.xdmf") as ufile_xdmf:
     u.vector.ghostUpdate(addv=PETSc.InsertMode.INSERT, mode=PETSc.ScatterMode.FORWARD)
     ufile_xdmf.write(u)
@@ -238,6 +259,9 @@ with XDMFFile(MPI.comm_world, "pressure.xdmf") as pfile_xdmf:
     p.vector.ghostUpdate(addv=PETSc.InsertMode.INSERT, mode=PETSc.ScatterMode.FORWARD)
     pfile_xdmf.write(p)
 
+# Monolithic block iterative solver
+# ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+#
 # Next, we solve same problem, but now with monolithic (non-nested)
 # matrices and iterative solvers
 
@@ -312,6 +336,9 @@ if MPI.rank(MPI.comm_world) == 0:
 assert np.isclose(norm_u_1, norm_u_0)
 assert np.isclose(norm_p_1, norm_p_0)
 
+# Monolithic block direct solver
+# ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+#
 # Solve same problem, but now with monolithic matrices and a direct solver
 
 # Create LU solver
