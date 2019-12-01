@@ -154,9 +154,9 @@ a = [[inner(grad(u), grad(v)) * dx, inner(p, div(v)) * dx],
 L = [inner(f, v) * dx,
      inner(dolfin.Constant(mesh, 0), q) * dx]
 
+a_p11 = inner(p, q) * dx
 a_p = [[a[0][0], None],
-       [None, inner(p, q) * dx]]
-
+       [None, a_p11]]
 
 # With the bilinear form ``a``, preconditioner bilinear form ``prec``
 # and linear right hand side (RHS) ``L``, we may now assembly the finite
@@ -170,8 +170,11 @@ a_p = [[a[0][0], None],
 A = dolfin.fem.assemble_matrix_nest(a, bcs)
 A.assemble()
 
-P = dolfin.fem.assemble_matrix_nest(a_p, bcs)
+# The preconditioner P can share the A_00 block
+P11 = dolfin.fem.assemble_matrix(a_p11, [])
+P = PETSc.Mat().createNest([[A.getNestSubMatrix(0, 0), None], [None, P11]])
 P.assemble()
+
 
 # Assemble the RHS vector
 b = dolfin.fem.assemble.assemble_vector_nest(L)
@@ -222,8 +225,8 @@ ksp_p.getPC().setType("jacobi")
 
 # Monitor the convergence of the KSP
 opts = PETSc.Options()
-opts["ksp_monitor"] = None
-opts["ksp_view"] = None
+# opts["ksp_monitor"] = None
+# opts["ksp_view"] = None
 
 # Configure velocity and pressure sub KSPs
 ksp.setFromOptions()
@@ -235,10 +238,10 @@ ksp.solve(b, x)
 
 # We can calculate the :math:`L^2` norms of u and p as follows::
 
-print("(A) Norm of whole solution vector: {}".format(x.norm()))
-print("(A) Norm of velocity coefficient vector: {}".format(u.vector.norm()))
-print("(A) Norm of pressure coefficient vector: {}".format(p.vector.norm()))
-ref = x.norm()
+norm_u_0 = u.vector.norm()
+norm_p_0 = p.vector.norm()
+print("(A) Norm of velocity coefficient vector: {}".format(norm_u_0))
+print("(A) Norm of pressure coefficient vector: {}".format(norm_p_0))
 
 # Save solution in XDMF format
 with XDMFFile(MPI.comm_world, "velocity.xdmf") as ufile_xdmf:
@@ -254,14 +257,12 @@ with XDMFFile(MPI.comm_world, "pressure.xdmf") as pfile_xdmf:
 
 A = dolfin.fem.assemble_matrix_block(a, bcs)
 A.assemble()
-
 P = dolfin.fem.assemble_matrix_block(a_p, bcs)
 P.assemble()
-
 b = dolfin.fem.assemble.assemble_vector_block(L, a, bcs)
 
 # Set near null space for pressure
-null_vec = A.createVecRight()
+null_vec = A.createVecLeft()
 offset = V.dofmap.index_map.size_local * V.dofmap.index_map.block_size
 null_vec.array[offset:] = 1.0
 null_vec.normalize()
@@ -306,25 +307,23 @@ ksp.setFromOptions()
 # solution, which we initialize using the block RHS form ``L``.
 
 # Compute solution
-# x = A.createVecRight()
-x = b.copy()
-x.set(0.0)
+x = A.createVecRight()
 ksp.solve(b, x)
 
-# u, p = Function(V), Function(Q)
-# u_local, p_local = dolfin.cpp.la.get_local_vectors(x, [V.dofmap.index_map, Q.dofmap.index_map])
-# u.vector.array = u_local
-# p.vector.array = p_local
+# Create Functions and scatter x solution
+u, p = Function(V), Function(Q)
+offset = V_map.size_local * V_map.block_size
+u.vector.array[:] = x.array_r[:offset]
+p.vector.array[:] = x.array_r[offset:]
 
 # We can calculate the :math:`L^2` norms of u and p as follows::
 
-print("RR Norm of whole solution vector: {}".format(ref))
-print("BB Norm of whole solution vector: {}".format(x.norm()))
-# print("XX Norm of velocity coefficient vector: {}".format(u.vector.norm()))
-# print("XX Norm of pressure coefficient vector: {}".format(p.vector.norm()))
-
-
-print("----------------------")
+norm_u_1 = u.vector.norm()
+norm_p_1 = p.vector.norm()
+print("(B) Norm of velocity coefficient vector: {}".format(norm_u_1))
+print("(B) Norm of pressure coefficient vector: {}".format(norm_p_1))
+assert np.isclose(norm_u_1, norm_u_0)
+assert np.isclose(norm_p_1, norm_p_0)
 
 # Solve same problem, but now with monolithic matrices and a direct solver
 
@@ -346,17 +345,20 @@ ksp.setFromOptions()
 # solution, which we initialize using the block RHS form ``L``.
 
 # Compute solution
-# x = A.createVecRight()
-x = b.copy()
-x.set(0.0)
+x = A.createVecLeft()
 ksp.solve(b, x)
 
-# u, p = Function(V), Function(Q)
-# u_local, p_local = dolfin.cpp.la.get_local_vectors(x, [V.dofmap.index_map, Q.dofmap.index_map])
-# u.vector.array = u_local
-# p.vector.array = p_local
+# Create Functions and scatter x solution
+u, p = Function(V), Function(Q)
+offset = V_map.size_local * V_map.block_size
+u.vector.array[:] = x.array_r[:offset]
+p.vector.array[:] = x.array_r[offset:]
 
 # We can calculate the :math:`L^2` norms of u and p as follows::
 
-print("RR Norm of whole solution vector: {}".format(ref))
-print("DD Norm of whole solution vector: {}".format(x.norm()))
+norm_u_2 = u.vector.norm()
+norm_p_2 = p.vector.norm()
+print("(C) Norm of velocity coefficient vector: {}".format(norm_u_2))
+print("(C) Norm of pressure coefficient vector: {}".format(norm_p_2))
+assert np.isclose(norm_u_2, norm_u_0)
+assert np.isclose(norm_p_2, norm_p_0)
