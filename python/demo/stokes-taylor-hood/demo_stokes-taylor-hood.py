@@ -13,11 +13,10 @@
 # Strong formulation
 # ^^^^^^^^^^^^^^^^^^
 #
-# .. math:: - \nabla \cdot (\nabla u + p I) &= f \quad {\rm in} \
-#         \Omega, \\
-#                         \nabla \cdot u &= 0 \quad {\rm in} \ \Omega.
-#                         \\
+# .. math::
+#    - \nabla \cdot (\nabla u + p I) &= f \quad {\rm in} \ \Omega,
 #
+#    \nabla \cdot u &= 0 \quad {\rm in} \ \Omega.
 #
 # .. note:: The sign of the pressure has been flipped from the classical
 #         definition. This is done in order to have a symmetric system
@@ -26,9 +25,10 @@
 # A typical set of boundary conditions on the boundary :math:`\partial
 # \Omega = \Gamma_{D} \cup \Gamma_{N}` can be:
 #
-# .. math:: u &= u_0 \quad {\rm on} \ \Gamma_{D}, \\
-#         \nabla u \cdot n + p n &= g \,   \quad\;\; {\rm on} \
-#         \Gamma_{N}. \\
+# .. math::
+#    u &= u_0 \quad {\rm on} \ \Gamma_{D},
+#
+#    \nabla u \cdot n + p n &= g \,   \quad\;\; {\rm on} \ \Gamma_{N}.
 #
 #
 # Weak formulation
@@ -44,13 +44,11 @@
 #
 # .. math::
 #
-#         a((u, p), (v, q))
-#                                 &= \int_{\Omega} \nabla u \cdot \nabla v
-#                  - \nabla \cdot v \ p
-#                  + \nabla \cdot u \ q \, {\rm d} x, \\
-#         L((v, q))
-#                                 &= \int_{\Omega} f \cdot v \, {\rm d} x
-#                         + \int_{\partial \Omega_N} g \cdot v \, {\rm d} s. \\
+#    a((u, p), (v, q)) &:= \int_{\Omega} \nabla u \cdot \nabla v
+#               - \nabla \cdot v \ p + \nabla \cdot u \ q \, {\rm d} x,
+#
+#    L((v, q)) &:= \int_{\Omega} f \cdot v \, {\rm d} x
+#               + \int_{\partial \Omega_N} g \cdot v \, {\rm d} s.
 #
 # The space :math:`W` is mixed (product) function space :math:`W = V
 # \times Q`, such that :math:`u \in V` and :math:`q \in Q`.
@@ -58,29 +56,20 @@
 # Domain and boundary conditions
 # ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 #
-# We shall consider the following definitions of the input functions,
-# the domain, and the boundaries:
+# We shall the lid-driven cavity problem with the following definitions
+# domain and boundary conditions:
 #
-# * :math:`\Omega = [0,1]\times[0,1] \setminus {\rm dolphin}` (a unit
-#   square)
-# * :math:`\Gamma_N = \{ 0 \} \times [0, 1]`
-# * :math:`\Gamma_D = \partial \Omega \setminus \Gamma_N`
-# * :math:`u_0 = (- \sin(\pi x_1), 0)^\top` at :math:`x_0 = 1` and
+# * :math:`\Omega = [0,1]\times[0,1] (a unit square)
+# * :math:`\Gamma_D = \partial \Omega
+# * :math:`u_0 = (1, 0)^\top` at :math:`x_1 = 1` and
 #   :math:`u_0 = (0, 0)^\top` otherwise
 # * :math:`f = (0, 0)^\top`
-# * :math:`g = (0, 0)^\top`
 #
 #
 # Implementation
 # --------------
 #
-# In this example, different boundary conditions are prescribed on
-# different parts of the domain's exterior. Each sub-region is tagged
-# with a different (integer) label. For this purpose, DOLFIN provides a
-# :py:class:`MeshFunction <dolfin.cpp.mesh.MeshFunction>` class
-# representing functions over mesh entities (such as over cells or over
-# facets). Meshes and mesh functions can be read from file in the
-# following way::
+# We first import the modules and function that the program uses::
 
 import matplotlib.pyplot as plt
 import numpy as np
@@ -95,34 +84,31 @@ from dolfin.la import VectorSpaceBasis
 from dolfin.plotting import plot
 from ufl import div, dx, grad, inner
 
+# We create a Mesh and attach a coordinate map to the mesh::
+
 # Create mesh
 mesh = RectangleMesh(
     MPI.comm_world,
-    [np.array([0, 0, 0]), np.array([1, 1, 0])], [16, 16],
+    [np.array([0, 0, 0]), np.array([1, 1, 0])], [32, 32],
     CellType.triangle, dolfin.cpp.mesh.GhostMode.none)
 
 cmap = dolfin.fem.create_coordinate_map(mesh.ufl_domain())
 mesh.geometry.coord_mapping = cmap
 
 # We define two :py:class:`FunctionSpace
-# <dolfin.functions.functionspace.FunctionSpace>` instances with
-# different finite elements. ``P2`` corresponds to piecewise quadratics
-# for the velocity field and ``P1`` to continuous piecewise linears for
-# the pressure field::
+# <dolfin.function.FunctionSpace>` instances with different finite
+# elements. ``P2`` corresponds to piecewise quadratics for the velocity
+# field and ``P1`` to continuous piecewise linears for the pressure
+# field::
 
-# Define function spaces
 P2 = ufl.VectorElement("Lagrange", mesh.ufl_cell(), 2)
 P1 = ufl.FiniteElement("Lagrange", mesh.ufl_cell(), 1)
+V, Q = FunctionSpace(mesh, P2), FunctionSpace(mesh, P1)
 
-V = FunctionSpace(mesh, P2)
-Q = FunctionSpace(mesh, P1)
+# We can define boundary conditions::
 
-# The product of these finite element spaces is known as the Taylor–Hood
-# mixed element. It is a standard stable element pair for the Stokes
-# equations. Now we can define boundary conditions::
-
-# No-slip boundary condition for velocity on boundaries where x = 0, x =
-# 1, and y = 0.
+# No-slip boundary condition for velocity field (`V`) on boundaries
+# where x = 0, x = 1, and y = 0
 noslip = Function(V)
 bc0 = DirichletBC(V, noslip,
                   lambda x: np.logical_or(np.logical_or(np.isclose(x[0], 0.0),
@@ -130,7 +116,7 @@ bc0 = DirichletBC(V, noslip,
                                           np.isclose(x[1], 0.0)))
 
 
-# Driving velocity condition for velocity on y = 1
+# Driving velocity condition u = (1, 0) on top boundary (y = 1)
 lid_velocity = Function(V)
 lid_velocity.interpolate(lambda x: np.stack((np.ones(x.shape[1]), np.zeros(x.shape[1]))))
 bc1 = DirichletBC(V, lid_velocity, lambda x: np.isclose(x[1], 1.0))
@@ -139,8 +125,7 @@ bc1 = DirichletBC(V, lid_velocity, lambda x: np.isclose(x[1], 1.0))
 bcs = [bc0, bc1]
 
 # We now define the bilinear and linear forms corresponding to the weak
-# mixed formulation of the Stokes equations. In our implementation we
-# write these formulations in a blocked structure::
+# mixed formulation of the Stokes equations in a blocked structure::
 
 # Define variational problem
 (u, p) = ufl.TrialFunction(V), ufl.TrialFunction(Q)
@@ -152,6 +137,8 @@ a = [[inner(grad(u), grad(v)) * dx, inner(p, div(v)) * dx],
 
 L = [inner(f, v) * dx,
      inner(dolfin.Constant(mesh, 0), q) * dx]
+
+# We will use a block-diagonal preconditioner to solve this problem::
 
 a_p11 = inner(p, q) * dx
 a_p = [[a[0][0], None],
