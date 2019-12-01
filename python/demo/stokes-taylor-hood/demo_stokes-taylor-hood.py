@@ -366,6 +366,9 @@ p.vector.array[:] = x.array_r[offset:]
 
 # We can calculate the :math:`L^2` norms of u and p as follows::
 
+# print("(**C) A Norm: {}".format(A.norm()))
+# print("(**C) b Norm: {}".format(x.norm()))
+
 norm_u_2 = u.vector.norm()
 norm_p_2 = p.vector.norm()
 if MPI.rank(MPI.comm_world) == 0:
@@ -440,6 +443,9 @@ ksp.solve(b, U.vector)
 
 u = U.sub(0).collapse()
 p = U.sub(1).collapse()
+
+# print("(**D) A Norm: {}".format(A.norm()))
+# print("(**D) b Norm: {}".format(U.vector.norm()))
 
 norm_u_3 = u.vector.norm()
 norm_p_3 = p.vector.norm()
