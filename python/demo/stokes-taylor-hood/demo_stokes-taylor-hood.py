@@ -98,7 +98,7 @@ from ufl import div, dx, grad, inner
 # Create mesh
 mesh = RectangleMesh(
     MPI.comm_world,
-    [np.array([0, 0, 0]), np.array([1, 1, 0])], [3, 2],
+    [np.array([0, 0, 0]), np.array([1, 1, 0])], [16, 16],
     CellType.triangle, dolfin.cpp.mesh.GhostMode.none)
 
 cmap = dolfin.fem.create_coordinate_map(mesh.ufl_domain())
@@ -206,7 +206,7 @@ A.setNullSpace(nsp)
 ksp = PETSc.KSP().create(mesh.mpi_comm())
 ksp.setOperators(A, P)
 ksp.setType("minres")
-ksp.setTolerances(rtol=1e-12)
+ksp.setTolerances(rtol=1e-8)
 ksp.getPC().setType("fieldsplit")
 ksp.getPC().setFieldSplitType(PETSc.PC.CompositeType.ADDITIVE)
 
@@ -225,7 +225,7 @@ ksp_p.getPC().setType("jacobi")
 
 # Monitor the convergence of the KSP
 opts = PETSc.Options()
-# opts["ksp_monitor"] = None
+opts["ksp_monitor"] = None
 # opts["ksp_view"] = None
 
 # Configure velocity and pressure sub KSPs
@@ -237,13 +237,14 @@ x = PETSc.Vec().createNest([u.vector, p.vector])
 ksp.solve(b, x)
 
 # We can calculate the :math:`L^2` norms of u and p as follows::
-
 norm_u_0 = u.vector.norm()
 norm_p_0 = p.vector.norm()
-print("(A) Norm of velocity coefficient vector: {}".format(norm_u_0))
-print("(A) Norm of pressure coefficient vector: {}".format(norm_p_0))
+if MPI.rank(MPI.comm_world) == 0:
+    print("(A) Norm of velocity coefficient vector: {}".format(norm_u_0))
+    print("(A) Norm of pressure coefficient vector: {}".format(norm_p_0))
 
-# Save solution in XDMF format
+# Save solutions in XDMF format. Before writing to file, ghost values
+# are updated.
 with XDMFFile(MPI.comm_world, "velocity.xdmf") as ufile_xdmf:
     u.vector.ghostUpdate(addv=PETSc.InsertMode.INSERT, mode=PETSc.ScatterMode.FORWARD)
     ufile_xdmf.write(u)
@@ -281,7 +282,7 @@ is_p = PETSc.IS().createStride(Q_map.size_local, offset_p, 1, comm=PETSc.COMM_SE
 # Create Krylov solver
 ksp = PETSc.KSP().create(mesh.mpi_comm())
 ksp.setOperators(A, P)
-ksp.setTolerances(rtol=1e-12)
+ksp.setTolerances(rtol=1e-8)
 ksp.setType("minres")
 ksp.getPC().setType("fieldsplit")
 ksp.getPC().setFieldSplitType(PETSc.PC.CompositeType.ADDITIVE)
@@ -294,7 +295,7 @@ ksp_u, ksp_p = ksp.getPC().getFieldSplitSubKSP()
 ksp_u.setType("preonly")
 ksp_u.getPC().setType("hypre")
 ksp_p.setType("preonly")
-ksp_p.getPC().setType("hypre")
+ksp_p.getPC().setType("jacobi")
 
 # Monitor the convergence of the KSP
 opts = PETSc.Options()
@@ -320,8 +321,9 @@ p.vector.array[:] = x.array_r[offset:]
 
 norm_u_1 = u.vector.norm()
 norm_p_1 = p.vector.norm()
-print("(B) Norm of velocity coefficient vector: {}".format(norm_u_1))
-print("(B) Norm of pressure coefficient vector: {}".format(norm_p_1))
+if MPI.rank(MPI.comm_world) == 0:
+    print("(B) Norm of velocity coefficient vector: {}".format(norm_u_1))
+    print("(B) Norm of pressure coefficient vector: {}".format(norm_p_1))
 assert np.isclose(norm_u_1, norm_u_0)
 assert np.isclose(norm_p_1, norm_p_0)
 
@@ -333,13 +335,6 @@ ksp.setOperators(A)
 ksp.setType("preonly")
 ksp.getPC().setType("lu")
 ksp.getPC().setFactorSolverType("superlu_dist")
-
-# Monitor the convergence of the KSP
-opts = PETSc.Options()
-# opts["ksp_monitor"] = None
-# opts["ksp_view"] = None
-
-ksp.setFromOptions()
 
 # We also need to create a block vector,``x``, to store the (full)
 # solution, which we initialize using the block RHS form ``L``.
@@ -358,7 +353,8 @@ p.vector.array[:] = x.array_r[offset:]
 
 norm_u_2 = u.vector.norm()
 norm_p_2 = p.vector.norm()
-print("(C) Norm of velocity coefficient vector: {}".format(norm_u_2))
-print("(C) Norm of pressure coefficient vector: {}".format(norm_p_2))
+if MPI.rank(MPI.comm_world) == 0:
+    print("(C) Norm of velocity coefficient vector: {}".format(norm_u_2))
+    print("(C) Norm of pressure coefficient vector: {}".format(norm_p_2))
 assert np.isclose(norm_u_2, norm_u_0)
 assert np.isclose(norm_p_2, norm_p_0)
