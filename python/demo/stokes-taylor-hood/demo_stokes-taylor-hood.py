@@ -121,7 +121,6 @@ Q = FunctionSpace(mesh, P1)
 # mixed element. It is a standard stable element pair for the Stokes
 # equations. Now we can define boundary conditions::
 
-
 # No-slip boundary condition for velocity on boundaries where x = 0, x =
 # 1, and y = 0.
 noslip = Function(V)
@@ -174,7 +173,6 @@ A.assemble()
 P11 = dolfin.fem.assemble_matrix(a_p11, [])
 P = PETSc.Mat().createNest([[A.getNestSubMatrix(0, 0), None], [None, P11]])
 P.assemble()
-
 
 # Assemble the RHS vector
 b = dolfin.fem.assemble.assemble_vector_nest(L)
