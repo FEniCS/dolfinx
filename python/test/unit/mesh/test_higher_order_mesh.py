@@ -5,9 +5,9 @@
 # SPDX-License-Identifier:    LGPL-3.0-or-later
 """ Unit-tests for higher order meshes """
 
-import meshio
+import os
+
 import numpy as np
-import pygmsh
 import pytest
 import scipy.integrate
 import sympy as sp
@@ -15,7 +15,7 @@ from dolfin_utils.test.skips import skip_in_parallel
 from sympy.vector import CoordSys3D, matrix_to_vector
 
 from dolfin import MPI, Function, FunctionSpace, Mesh, fem
-from dolfin.cpp.io import permute_cell_ordering, permutation_vtk_to_dolfin
+from dolfin.cpp.io import permutation_vtk_to_dolfin, permute_cell_ordering
 from dolfin.cpp.mesh import CellType, GhostMode
 from dolfin.fem import assemble_scalar
 from dolfin.io import XDMFFile
@@ -367,24 +367,11 @@ def test_nth_order_triangle(order):
 
 
 @skip_in_parallel
-def test_xdmf_input_tri():
-    # Parameterize test if gmsh gets wider support
-    order = 2
-    R = 1
-    res = R / 7
-    geo = pygmsh.opencascade.Geometry()
-    geo.add_raw_code("Mesh.ElementOrder={0:d};".format(order))
-    geo.add_ball([0, 0, 0], R, char_length=res)
-    element = "triangle{0:d}".format(int((order + 1) * (order + 2) / 2))
-    if order == 1:
-        element = element[:-1]
-    msh = pygmsh.generate_mesh(geo, verbose=True, dim=2)
-    meshio.write("mesh.xdmf", meshio.Mesh(points=msh.points, cells={element: msh.cells[element]}))
-    with XDMFFile(MPI.comm_world, "mesh.xdmf") as xdmf:
+def test_xdmf_input_tri(datadir):
+    with XDMFFile(MPI.comm_world, os.path.join(datadir, "mesh.xdmf")) as xdmf:
         mesh = xdmf.read_mesh(GhostMode.none)
-
     surface = assemble_scalar(1 * dx(mesh))
-    assert MPI.sum(mesh.mpi_comm(), surface) == pytest.approx(4 * np.pi * R * R, rel=1e-5)
+    assert MPI.sum(mesh.mpi_comm(), surface) == pytest.approx(4 * np.pi, rel=1e-4)
 
 
 @skip_in_parallel
@@ -458,16 +445,16 @@ def test_third_order_quad(L, H, Z):
                        [0, H / 3, 0], [0, 2 * H / 3, 0],                  # 10 11
                        [L / 3, H / 3, 0], [2 * L / 3, H / 3, 0],          # 12 13
                        [L / 3, 2 * H / 3, 0], [2 * L / 3, 2 * H / 3, 0],  # 14 15
-                       [2 * L, 0, 0], [2 * L, H, 0],                      # 16 17
+                       [2 * L, 0, 0], [2 * L, H, Z],                      # 16 17
                        [4 * L / 3, 0, 0], [5 * L / 3, 0, 0],              # 18 19
                        [2 * L, H / 3, 0], [2 * L, 2 * H / 3, 0],          # 20 21
-                       [4 * L / 3, H, 0], [5 * L / 3, H, 0],              # 22 23
+                       [4 * L / 3, H, Z], [5 * L / 3, H, Z],              # 22 23
                        [4 * L / 3, H / 3, 0], [5 * L / 3, H / 3, 0],           # 24 25
                        [4 * L / 3, 2 * H / 3, 0], [5 * L / 3, 2 * H / 3, 0]])  # 26 27
 
     # Change to multiple cells when matthews dof-maps work for quads
-    cells = np.array([[0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15]])
-    # ,[1, 16, 17, 2, 18, 19, 20, 21, 22, 23, 6, 7, 24, 25, 26, 27]])
+    cells = np.array([[0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15],
+                      [1, 16, 17, 2, 18, 19, 20, 21, 22, 23, 6, 7, 24, 25, 26, 27]])
 
     cells = permute_cell_ordering(cells, permutation_vtk_to_dolfin(CellType.quadrilateral, cells.shape[1]))
     mesh = Mesh(MPI.comm_world, CellType.quadrilateral, points, cells,
@@ -489,7 +476,7 @@ def test_third_order_quad(L, H, Z):
     intu = MPI.sum(mesh.mpi_comm(), intu)
 
     nodes = [0, 3, 10, 11]
-    ref = sympy_scipy(points, nodes, L, H)
+    ref = sympy_scipy(points, nodes, 2 * L, H)
     assert ref == pytest.approx(intu, rel=1e-6)
 
 
@@ -497,7 +484,7 @@ def test_third_order_quad(L, H, Z):
 @pytest.mark.parametrize('L', [1, 2])
 @pytest.mark.parametrize('H', [1])
 @pytest.mark.parametrize('Z', [0, 0.3])
-def test_fourth_order__quad(L, H, Z):
+def test_fourth_order_quad(L, H, Z):
     """Test by comparing integration of z+x*y against sympy/scipy integration
     of a quad element. Z>0 implies curved element.
 
@@ -535,9 +522,9 @@ def test_fourth_order__quad(L, H, Z):
                        [(7 / 4) * L, H, Z], [2 * L, H, Z]])                   # 43 44
 
     # VTK ordering
-    cells = np.array([[0, 4, 24, 20, 1, 2, 3, 9, 14, 19, 21, 22, 23, 5, 10, 15, 6, 7, 8, 11, 12, 13, 16, 17, 18]])
-    #  , [4, 28, 44, 24, 25, 26, 27, 32, 36, 40, 41, 42, 43, 9, 14, 19,
-    #     29, 30, 31, 33, 34, 35, 37, 38, 39]])
+    cells = np.array([[0, 4, 24, 20, 1, 2, 3, 9, 14, 19, 21, 22, 23, 5, 10, 15, 6, 7, 8, 11, 12, 13, 16, 17, 18],
+                      [4, 28, 44, 24, 25, 26, 27, 32, 36, 40, 41, 42, 43, 9, 14, 19,
+                       29, 30, 31, 33, 34, 35, 37, 38, 39]])
 
     cells = permute_cell_ordering(cells, permutation_vtk_to_dolfin(CellType.quadrilateral, cells.shape[1]))
     mesh = Mesh(MPI.comm_world, CellType.quadrilateral, points, cells,
@@ -558,13 +545,15 @@ def test_fourth_order__quad(L, H, Z):
     intu = MPI.sum(mesh.mpi_comm(), intu)
 
     nodes = [0, 5, 10, 15, 20]
-    ref = sympy_scipy(points, nodes, L, H)
+    ref = sympy_scipy(points, nodes, 2 * L, H)
     assert ref == pytest.approx(intu, rel=1e-5)
 
 
 @skip_in_parallel
 @pytest.mark.parametrize('order', [2, 3])
 def test_gmsh_input_quad(order):
+    pygmsh = pytest.importorskip("pygmsh")
+
     # Parameterize test if gmsh gets wider support
     R = 1
     res = 0.2 if order == 2 else 0.2

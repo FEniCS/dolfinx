@@ -248,7 +248,7 @@ dolfin::graph::ParMETIS::partition(MPI_Comm mpi_comm, idx_t nparts,
 
   timer2.stop();
 
-  return std::make_pair(std::vector<int>(part.begin(), part.end()),
+  return std::pair(std::vector<int>(part.begin(), part.end()),
                         std::move(ghost_procs));
 }
 //-----------------------------------------------------------------------------

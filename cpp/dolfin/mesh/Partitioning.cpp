@@ -21,6 +21,7 @@
 #include <dolfin/common/log.h>
 #include <dolfin/graph/CSRGraph.h>
 #include <dolfin/graph/GraphBuilder.h>
+#include <dolfin/graph/KaHIP.h>
 #include <dolfin/graph/ParMETIS.h>
 #include <dolfin/graph/SCOTCH.h>
 #include <iterator>
@@ -240,7 +241,7 @@ distribute_cells(
   assert(c == local_count);
   assert(gc == all_count);
 
-  return std::make_tuple(
+  return std::tuple(
       std::move(new_cell_vertices), std::move(new_global_cell_indices),
       std::move(new_cell_partition), std::move(shared_cells), local_count);
 }
@@ -533,7 +534,7 @@ Partitioning::distribute_points(
   std::map<std::int64_t, std::set<int>> point_to_procs
       = distribute_points_sharing(comm, recv_global_index, recv_offsets);
 
-  return std::make_pair(std::move(point_to_procs), std::move(recv_points));
+  return std::pair(std::move(point_to_procs), std::move(recv_points));
 }
 //-----------------------------------------------------------------------------
 // Compute cell partitioning from local mesh data. Returns a vector
@@ -586,6 +587,16 @@ PartitionData Partitioning::partition_cells(
           graph::ParMETIS::partition(mpi_comm, (idx_t)nparts, csr_graph));
 #else
       throw std::runtime_error("ParMETIS not available");
+#endif
+    }
+    else if (graph_partitioner == mesh::Partitioner::kahip)
+    {
+#ifdef HAS_KAHIP
+      graph::CSRGraph<unsigned long long> csr_graph(mpi_comm, local_graph);
+      return PartitionData(
+          graph::KaHIP::partition(mpi_comm, nparts, csr_graph));
+#else
+      throw std::runtime_error("KaHIP not available");
 #endif
     }
     else

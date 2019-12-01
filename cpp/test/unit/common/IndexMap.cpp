@@ -26,7 +26,7 @@ void test_scatter_fwd()
 
   // Create some ghost entries on next process
   int num_ghosts = (mpi_size - 1) * 3;
-  std::vector<std::int64_t> ghosts(num_ghosts);
+  Eigen::Array<std::int64_t, Eigen::Dynamic, 1> ghosts(num_ghosts);
   for (int i = 0; i < num_ghosts; ++i)
     ghosts[i] = (mpi_rank + 1) % mpi_size * size_local + i;
 
@@ -57,7 +57,7 @@ void test_scatter_rev()
 
   // Create some ghost entries on next process
   const int num_ghosts = (mpi_size - 1) * 3;
-  std::vector<std::int64_t> ghosts(num_ghosts);
+  Eigen::Array<std::int64_t, Eigen::Dynamic, 1> ghosts(num_ghosts);
   for (int i = 0; i < num_ghosts; ++i)
     ghosts[i] = (mpi_rank + 1) % mpi_size * size_local + i;
 

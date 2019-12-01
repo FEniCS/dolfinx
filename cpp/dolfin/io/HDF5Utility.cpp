@@ -46,7 +46,7 @@ HDF5Utility::map_gdof_to_cell(const MPI_Comm mpi_comm,
     {
       const unsigned char local_dof_i = j - x_cell_dofs[i];
       const PetscInt global_dof = input_cell_dofs[j - offset];
-      dof_to_cell[global_dof] = std::make_pair(input_cells[i], local_dof_i);
+      dof_to_cell[global_dof] = std::pair(input_cells[i], local_dof_i);
     }
   }
 
@@ -89,7 +89,7 @@ HDF5Utility::map_gdof_to_cell(const MPI_Comm mpi_comm,
     }
   }
 
-  return std::make_pair(std::move(global_cells), std::move(remote_local_dofi));
+  return std::pair(std::move(global_cells), std::move(remote_local_dofi));
 }
 //-----------------------------------------------------------------------------
 std::vector<PetscInt> HDF5Utility::get_global_dof(

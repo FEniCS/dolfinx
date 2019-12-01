@@ -140,7 +140,7 @@ compute_local_to_global_point_map(
   local_to_global.insert(local_to_global.end(), non_vertex_nodes.begin(),
                          non_vertex_nodes.end());
   num_vertices_local[3] = local_to_global.size();
-  return std::make_pair(std::move(local_to_global), num_vertices_local);
+  return std::pair(std::move(local_to_global), num_vertices_local);
 } // namespace
 //-----------------------------------------------------------------------------
 // Get the local points.
@@ -204,9 +204,9 @@ compute_point_distribution(
   for (auto& q : shared_points_global)
     shared_points.insert({global_to_local[q.first], q.second});
 
-  return std::make_tuple(std::move(local_to_global), std::move(shared_points),
-                         std::move(cells_local), std::move(points_local),
-                         num_vertices_local);
+  return std::tuple(std::move(local_to_global), std::move(shared_points),
+                    std::move(cells_local), std::move(points_local),
+                    num_vertices_local);
 }
 //-----------------------------------------------------------------------------
 } // namespace
@@ -238,9 +238,6 @@ Mesh::Mesh(
   // FIXME: degree should probably be in MeshGeometry
   _degree = mesh::cell_degree(type, cells.cols());
 
-  std::vector<std::uint8_t> cell_permutation(cells.cols());
-  std::iota(cell_permutation.begin(), cell_permutation.end(), 0);
-
   // Get number of nodes (global)
   const std::uint64_t num_points_global = MPI::sum(comm, points.rows());
 
@@ -259,8 +256,7 @@ Mesh::Mesh(
       = compute_point_distribution(comm, num_vertices_per_cell, cells, points,
                                    type);
 
-  _coordinate_dofs
-      = std::make_unique<CoordinateDofs>(coordinate_nodes, cell_permutation);
+  _coordinate_dofs = std::make_unique<CoordinateDofs>(coordinate_nodes);
 
   // Initialise geometry with global size, actual points, and local to
   // global map
