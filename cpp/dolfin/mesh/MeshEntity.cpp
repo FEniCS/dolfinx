@@ -57,6 +57,16 @@ int MeshEntity::facet_permutation(const MeshEntity& entity) const
     return 0;
   }
 
+  if (entity._dim == 2)
+  {
+    // TODO
+  }
+
+  if (entity._dim == 3)
+  {
+    // TODO
+  }
+
   return 0;
 }
 //-----------------------------------------------------------------------------

@@ -130,13 +130,15 @@ void fem::impl::assemble_cells(
   // Iterate over active cells
   PetscErrorCode ierr;
   const int orientation = 0;
-  const int perm = 0;
   for (std::int32_t cell_index : active_cells)
   {
     // Get cell coordinates/geometry
     for (int i = 0; i < num_dofs_g; ++i)
       for (int j = 0; j < gdim; ++j)
         coordinate_dofs(i, j) = x_g(cell_g[pos_g[cell_index] + i], j);
+
+    const mesh::MeshEntity cell(mesh, gdim, cell_index);
+    const int perm = cell.facet_permutation(cell);
 
     // Tabulate tensor
     auto coeff_cell = coeffs.row(cell_index);
