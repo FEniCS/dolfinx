@@ -78,20 +78,14 @@ void _lift_bc_cells(
       Ae;
   Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1> be;
 
+  fem::check_constants(a);
   const std::vector<
       std::pair<std::string, std::shared_ptr<const function::Constant>>>
       constants = a.constants();
-
   std::vector<PetscScalar> constant_values;
   for (auto const& constant : constants)
   {
     // Get underlying data array of this Constant
-    if (!constant.second)
-    {
-      throw std::runtime_error("Constant \"" + constant.first
-                               + "\" has not been set.");
-    }
-
     const std::vector<PetscScalar>& array = constant.second->value;
 
     constant_values.insert(constant_values.end(), array.data(),

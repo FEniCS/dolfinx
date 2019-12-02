@@ -643,9 +643,38 @@ fem::create_functionspace(ufc_function_space* (*fptr)(void),
   return V;
 }
 //-----------------------------------------------------------------------------
+void fem::check_coefficients(const fem::Form& form)
+{
+  const fem::FormCoefficients& coefficients = form.coefficients();
+  for (int i = 0; i < coefficients.size(); ++i)
+  {
+    auto coeff = coefficients.get(i);
+    if (!coeff)
+    {
+      throw std::runtime_error("Coefficient " + std::to_string(i)
+                               + " has not been set.");
+    }
+  }
+}
+//-----------------------------------------------------------------------------
+void fem::check_constants(const fem::Form& form)
+{
+  for (auto& constant : form.constants())
+  {
+    if (!constant.second)
+    {
+      throw std::runtime_error("Constant \"" + constant.first
+                               + "\" has not been set.");
+    }
+  }
+}
+//-----------------------------------------------------------------------------
 Eigen::Array<PetscScalar, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
 fem::pack_coefficients(const fem::Form& form)
 {
+  // Preliminary check that coefficients are all set
+  fem::check_coefficients(form);
+
   // Get form coefficient offsets amd dofmaps
   const fem::FormCoefficients& coefficients = form.coefficients();
   const std::vector<int> offsets = coefficients.offsets();
@@ -653,11 +682,6 @@ fem::pack_coefficients(const fem::Form& form)
   for (int i = 0; i < coefficients.size(); ++i)
   {
     auto coeff = coefficients.get(i);
-    if (!coeff)
-    {
-      throw std::runtime_error("Coefficient " + std::to_string(i)
-                               + " not set.");
-    }
     dofmaps[i] = coeff->function_space()->dofmap().get();
   }
 
