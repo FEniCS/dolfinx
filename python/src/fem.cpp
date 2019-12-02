@@ -170,7 +170,11 @@ void fem(py::module& m)
         "Create ElementDofLayout object from a ufc dofmap.");
   m.def("create_dofmap", &dolfin::fem::create_dofmap,
         "Create DOLFIN DofMap object from a ufc dofmap.");
-  m.def("create_form", &dolfin::fem::create_form,
+  m.def("create_form",
+        py::overload_cast<const ufc_form&,
+                          const std::vector<std::shared_ptr<
+                              const dolfin::function::FunctionSpace>>&>(
+            &dolfin::fem::create_form),
         "Create DOLFIN form from a ufc form.");
 
   m.def("build_dofmap",

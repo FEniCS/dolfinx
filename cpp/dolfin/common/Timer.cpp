@@ -11,7 +11,7 @@ using namespace dolfin;
 using namespace dolfin::common;
 
 //-----------------------------------------------------------------------------
-Timer::Timer() : _task("")
+Timer::Timer() : Timer::Timer("")
 {
   // Do nothing
 }
@@ -31,7 +31,7 @@ void Timer::start() { _timer.start(); }
 //-----------------------------------------------------------------------------
 void Timer::resume()
 {
-  if (_task.size() > 0)
+  if (!_task.empty())
   {
     throw std::runtime_error(
         "Resuming is not well-defined for logging timer. Only "
@@ -43,19 +43,18 @@ void Timer::resume()
 double Timer::stop()
 {
   _timer.stop();
-  const auto elapsed = this->elapsed();
-
-  if (_task.size() > 0)
-    TimeLogManager::logger().register_timing(_task, elapsed);
-  return std::get<0>(elapsed);
+  auto [wall, user, system] = this->elapsed();
+  if (!_task.empty())
+    TimeLogManager::logger().register_timing(_task, wall, user, system);
+  return wall;
 }
 //-----------------------------------------------------------------------------
-std::tuple<double, double, double> Timer::elapsed() const
+std::array<double, 3> Timer::elapsed() const
 {
-  const auto elapsed = _timer.elapsed();
+  const boost::timer::cpu_times elapsed = _timer.elapsed();
   const double wall = static_cast<double>(elapsed.wall) * 1e-9;
   const double user = static_cast<double>(elapsed.user) * 1e-9;
   const double system = static_cast<double>(elapsed.system) * 1e-9;
-  return std::tuple(wall, user, system);
+  return {wall, user, system};
 }
 //-----------------------------------------------------------------------------
