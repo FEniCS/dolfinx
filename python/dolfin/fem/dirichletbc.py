@@ -28,14 +28,15 @@ def locate_dofs_geometrical(V: typing.Union[function.FunctionSpace], marker: typ
 
 def locate_dofs_topological(V: typing.Union[function.FunctionSpace],
                             entity_dim: int,
-                            entities: typing.List[int]):
+                            entities: typing.List[int],
+                            boundary: bool = False):
     # Extract cpp function space
     try:
         _V = V._cpp_object
     except AttributeError:
         _V = V
 
-    return cpp.fem.locate_dofs_topological(_V, entity_dim, entities)
+    return cpp.fem.locate_dofs_topological(_V, entity_dim, entities, boundary)
 
 
 class DirichletBC(cpp.fem.DirichletBC):

@@ -45,12 +45,14 @@ using marking_function = std::function<Eigen::Array<bool, Eigen::Dynamic, 1>(
 ///                       degrees of freedom will be located
 /// @param[in] entities Indices of mesh entities on which degrees of freedom
 ///                     will be located
+/// @param[in] boundary True if only boundary mesh entities are considered,
+///                     False for all mesh entities
 /// @return Array of local indices of located degrees of freedom
 ///
 Eigen::Array<PetscInt, Eigen::Dynamic, 1> locate_dofs_topological(
     const function::FunctionSpace& V, const int entity_dim,
-    const Eigen::Ref<const Eigen::Array<PetscInt, Eigen::Dynamic, 1>>&
-        entities);
+    const Eigen::Ref<const Eigen::Array<PetscInt, Eigen::Dynamic, 1>>& entities,
+    bool boundary = false);
 
 /// Locate degrees of freedom geometrically
 ///

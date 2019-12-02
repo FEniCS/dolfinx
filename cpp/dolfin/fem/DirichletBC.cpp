@@ -243,7 +243,8 @@ void DirichletBC::mark_dofs(std::vector<bool>& markers) const
 //-----------------------------------------------------------------------------
 Eigen::Array<PetscInt, Eigen::Dynamic, 1> fem::locate_dofs_topological(
     const function::FunctionSpace& V, const int entity_dim,
-    const Eigen::Ref<const Eigen::Array<PetscInt, Eigen::Dynamic, 1>>& entities)
+    const Eigen::Ref<const Eigen::Array<PetscInt, Eigen::Dynamic, 1>>& entities,
+    bool boundary)
 {
 
   const DofMap& dofmap = *V.dofmap();
@@ -270,8 +271,17 @@ Eigen::Array<PetscInt, Eigen::Dynamic, 1> fem::locate_dofs_topological(
 
   std::vector<PetscInt> dofs;
 
+  // Fetch boundary entities
+  const std::vector<bool> boundary_entities
+      = mesh.topology().on_boundary(entity_dim);
+
   for (Eigen::Index i = 0; i < entities.rows(); ++i)
   {
+
+    // Skip if only boundaries are needed but not a boundary entity
+    if (boundary && !boundary_entities[i])
+      continue;
+
     // Create entity and attached cell
     const mesh::MeshEntity entity(mesh, entity_dim, entities[i]);
     const std::size_t cell_index = entity.entities(tdim)[0];
