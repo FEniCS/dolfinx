@@ -32,37 +32,31 @@ public:
   TimeLogger();
 
   /// Destructor
-  ~TimeLogger(){};
+  ~TimeLogger() = default;
 
   /// Register timing (for later summary)
-  void register_timing(std::string task,
-                       std::tuple<double, double, double> elapsed);
+  void register_timing(std::string task, double wall, double user,
+                       double system);
 
   /// Return a summary of timings and tasks in a Table
   Table timings(std::set<TimingType> type);
 
   /// List a summary of timings and tasks. ``MPI_AVG`` reduction is
-  /// printed. Collective on ``Logger::mpi_comm()``.
-  void list_timings(std::set<TimingType> type);
+  /// printed.
+  /// @param mpi_comm MPI Communicator
+  /// @param type Set of possible timings: wall, user or system
+  void list_timings(MPI_Comm mpi_comm, std::set<TimingType> type);
 
-  /// Return timing (count, total wall time, total user time, total
+  /// Return timing
+  /// @param[in] task The task name to retrieve the timing for
+  /// @returns Values (count, total wall time, total user time, total
   /// system time) for given task.
-  std::tuple<std::size_t, double, double, double> timing(std::string task);
-
-  /// Return MPI Communicator of TimeLogger
-  MPI_Comm mpi_comm() { return _mpi_comm; }
+  std::tuple<int, double, double, double> timing(std::string task);
 
 private:
   // List of timings for tasks, map from string to (num_timings,
   // total_wall_time, total_user_time, total_system_time)
-  std::map<std::string, std::tuple<std::size_t, double, double, double>>
-      _timings;
-
-  // Map for stringifying TimingType
-  static std::map<TimingType, std::string> _TimingType_descr;
-
-  // MPI Communicator
-  MPI_Comm _mpi_comm;
+  std::map<std::string, std::tuple<int, double, double, double>> _timings;
 };
 } // namespace common
 } // namespace dolfin

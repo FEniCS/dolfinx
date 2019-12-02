@@ -98,6 +98,16 @@ ElementDofLayout create_element_dof_layout(const ufc_dofmap& dofmap,
 /// @param[in] mesh The mesh.
 DofMap create_dofmap(const ufc_dofmap& dofmap, const mesh::Mesh& mesh);
 
+/// Create a form from a form_create function returning a pointer to a ufc_form,
+/// taking care of memory allocation.
+///
+/// @param[in] fptr pointer to a function returning a pointer to ufc_form.
+/// @param[in] spaces function spaces.
+/// @return Form
+std::shared_ptr<Form> create_form(
+    ufc_form* (*fptr)(void),
+    const std::vector<std::shared_ptr<const function::FunctionSpace>>& spaces);
+
 /// Create form (shared data)
 ///
 /// @param[in] ufc_form The UFC form.
