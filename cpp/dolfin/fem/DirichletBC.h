@@ -37,26 +37,28 @@ using marking_function = std::function<Eigen::Array<bool, Eigen::Dynamic, 1>(
 /// Locate degrees of freedom topologically
 ///
 /// Finds degrees of freedom which belong to mesh entities. This doesn't
-/// work e.g. for discontinuous function spaces.
+/// work elements will degrees-of-freedom that are associated with cell
+/// interiors, e.g. for discontinuous elements.
 ///
 /// @param[in] V The function (sub)space on which degrees of freedom
 ///              will be located
 /// @param[in] entity_dim Topological dimension of mesh entities on
 ///                       which degrees of freedom will be located
-/// @param[in] entities Indices of mesh entities on which degrees of
-///                     freedom will be located
-/// @param[in] boundary True if only boundary mesh entities are
-///                     considered, False for all mesh entities
+/// @param[in] entities Indices of mesh entities. All dofs associated
+///                     with these indices will be returned.
+/// @param[in] boundary_only Pass 'true' if only mesh entities that lie
+///                          on the boundary are considered. Otherwise
+///                          all mesh entities are checked.
 /// @return Array of local indices of located degrees of freedom
 Eigen::Array<PetscInt, Eigen::Dynamic, 1> locate_dofs_topological(
     const function::FunctionSpace& V, const int entity_dim,
     const Eigen::Ref<const Eigen::Array<PetscInt, Eigen::Dynamic, 1>>& entities,
-    bool boundary = false);
+    bool boundary_only = true);
 
 /// Locate degrees of freedom geometrically
 ///
-/// Finds degrees of freedom whose location satisfies a marking
-/// function.
+/// Finds degrees of freedom whose geometric coordinate is true for a
+/// marking function.
 ///
 /// @param[in] V The function (sub)space on which degrees of freedom
 ///              will be located

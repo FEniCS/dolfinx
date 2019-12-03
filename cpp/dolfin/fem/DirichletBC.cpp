@@ -237,7 +237,7 @@ void DirichletBC::mark_dofs(std::vector<bool>& markers) const
 Eigen::Array<PetscInt, Eigen::Dynamic, 1> fem::locate_dofs_topological(
     const function::FunctionSpace& V, const int entity_dim,
     const Eigen::Ref<const Eigen::Array<PetscInt, Eigen::Dynamic, 1>>& entities,
-    bool boundary)
+    bool boundary_only)
 {
   assert(V.dofmap());
   const DofMap& dofmap = *V.dofmap();
@@ -273,7 +273,7 @@ Eigen::Array<PetscInt, Eigen::Dynamic, 1> fem::locate_dofs_topological(
   {
 
     // Skip if only boundaries are needed but not a boundary entity
-    if (boundary && !boundary_entities[i])
+    if (boundary_only and !boundary_entities[i])
       continue;
 
     // Create entity and attached cell
@@ -302,6 +302,9 @@ Eigen::Array<PetscInt, Eigen::Dynamic, 1>
 fem::locate_dofs_geometrical(const function::FunctionSpace& V,
                              marking_function marker)
 {
+  // FIXME: Calling V.tabulate_dof_coordinates() is very expensive,
+  // especially when we usually want the boundary dofs only.
+
   // Use 'auto' in case this is an Eigen proxy
   auto dof_coordinates
       = V.tabulate_dof_coordinates().transpose();
