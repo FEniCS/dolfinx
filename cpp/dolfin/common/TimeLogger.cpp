@@ -59,17 +59,31 @@ Table TimeLogger::timings(std::set<TimingType> type)
 {
   // Generate log::timing table
   Table table("Summary of timings");
+
+  bool time_wall = type.find(TimingType::wall) != type.end();
+  bool time_user = type.find(TimingType::user) != type.end();
+  bool time_sys = type.find(TimingType::system) != type.end();
+
   for (auto& it : _timings)
   {
     const std::string task = it.first;
     const auto [num_timings, wall, usr, sys] = it.second;
     table.set(task, "reps", num_timings);
-    table.set(task, "wall avg", wall / static_cast<double>(num_timings));
-    table.set(task, "wall tot", wall);
-    table.set(task, "usr avg", usr / static_cast<double>(num_timings));
-    table.set(task, "usr tot", usr);
-    table.set(task, "sys avg", sys / static_cast<double>(num_timings));
-    table.set(task, "sys tot", sys);
+    if (time_wall)
+    {
+      table.set(task, "wall avg", wall / static_cast<double>(num_timings));
+      table.set(task, "wall tot", wall);
+    }
+    if (time_user)
+    {
+      table.set(task, "usr avg", usr / static_cast<double>(num_timings));
+      table.set(task, "usr tot", usr);
+    }
+    if (time_sys)
+    {
+      table.set(task, "sys avg", sys / static_cast<double>(num_timings));
+      table.set(task, "sys tot", sys);
+    }
   }
 
   return table;
