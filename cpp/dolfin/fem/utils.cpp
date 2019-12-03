@@ -680,10 +680,7 @@ fem::pack_coefficients(const fem::Form& form)
   const std::vector<int> offsets = coefficients.offsets();
   std::vector<const fem::DofMap*> dofmaps(coefficients.size());
   for (int i = 0; i < coefficients.size(); ++i)
-  {
-    auto coeff = coefficients.get(i);
-    dofmaps[i] = coeff->function_space()->dofmap().get();
-  }
+    dofmaps[i] = coefficients.get(i)->function_space()->dofmap().get();
 
   // Get mesh
   assert(form.mesh());
