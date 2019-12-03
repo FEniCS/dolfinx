@@ -30,7 +30,8 @@ PetscScalar dolfin::fem::impl::assemble_scalar(const dolfin::fem::Form& M)
   const mesh::Mesh& mesh = *M.mesh();
 
   // Prepare constants
-  fem::check_constants(M);
+  if (M.list_unset_constants().size() > 0)
+    throw std::runtime_error("Unset constant in Form");
   const std::vector<
       std::pair<std::string, std::shared_ptr<const function::Constant>>>
       constants = M.constants();

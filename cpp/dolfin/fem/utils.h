@@ -136,14 +136,6 @@ std::shared_ptr<function::FunctionSpace>
 create_functionspace(ufc_function_space* (*fptr)(void),
                      std::shared_ptr<mesh::Mesh> mesh);
 
-/// Check coefficients in Form and throw an error if any are not set
-/// @param form Form to check
-void check_coefficients(const fem::Form& form);
-
-/// Check constants in Form and throw an error if any are not set
-/// @param form Form to check
-void check_constants(const fem::Form& form);
-
 // NOTE: This is subject to change
 /// Pack form coeffcients ready for assembly
 Eigen::Array<PetscScalar, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>

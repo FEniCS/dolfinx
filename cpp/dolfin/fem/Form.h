@@ -146,6 +146,11 @@ public:
   void set_constants(
       std::vector<std::shared_ptr<const function::Constant>> constants);
 
+  /// Get the names of any constants which do not have values set.
+  ///
+  /// @return list of names of unset constants
+  std::vector<std::string> list_unset_constants() const;
+
   /// Set mesh, necessary for functionals when there are no function
   /// spaces
   /// @param[in] mesh The mesh
