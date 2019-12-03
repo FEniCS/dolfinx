@@ -43,8 +43,6 @@ def test_mpi_comm_wrapper_cppimport(tempdir):  # noqa: F811
         setup_pybind11(cfg)
         cfg['include_dirs'] += {dolfin_pc["include_dirs"] + [mpi4py.get_include()]}
         cfg['compiler_args'] += {["-D" + dm for dm in dolfin_pc["define_macros"]]}
-        cfg['libraries'] += {dolfin_pc["libraries"]}
-        cfg['library_dirs'] += {dolfin_pc["library_dirs"]}
         %>
         """
 
