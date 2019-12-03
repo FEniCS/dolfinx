@@ -36,19 +36,18 @@ using marking_function = std::function<Eigen::Array<bool, Eigen::Dynamic, 1>(
 
 /// Locate degrees of freedom topologically
 ///
-/// Finds degrees of freedom which belong to mesh entities. This
-/// doesn't work e.g. for discontinuous function spaces.
+/// Finds degrees of freedom which belong to mesh entities. This doesn't
+/// work e.g. for discontinuous function spaces.
 ///
-/// @param[in] V The function (sub)space on which degrees of freedom will
-///              be located
-/// @param[in] entity_dim Topological dimension of mesh entities on which
-///                       degrees of freedom will be located
-/// @param[in] entities Indices of mesh entities on which degrees of freedom
-///                     will be located
-/// @param[in] boundary True if only boundary mesh entities are considered,
-///                     False for all mesh entities
+/// @param[in] V The function (sub)space on which degrees of freedom
+///              will be located
+/// @param[in] entity_dim Topological dimension of mesh entities on
+///                       which degrees of freedom will be located
+/// @param[in] entities Indices of mesh entities on which degrees of
+///                     freedom will be located
+/// @param[in] boundary True if only boundary mesh entities are
+///                     considered, False for all mesh entities
 /// @return Array of local indices of located degrees of freedom
-///
 Eigen::Array<PetscInt, Eigen::Dynamic, 1> locate_dofs_topological(
     const function::FunctionSpace& V, const int entity_dim,
     const Eigen::Ref<const Eigen::Array<PetscInt, Eigen::Dynamic, 1>>& entities,
@@ -56,13 +55,13 @@ Eigen::Array<PetscInt, Eigen::Dynamic, 1> locate_dofs_topological(
 
 /// Locate degrees of freedom geometrically
 ///
-/// Finds degrees of freedom whose location satisfies a marking function.
+/// Finds degrees of freedom whose location satisfies a marking
+/// function.
 ///
-/// @param[in] V The function (sub)space on which degrees of freedom will
-///              be located
+/// @param[in] V The function (sub)space on which degrees of freedom
+///              will be located
 /// @param[in] marker Function marking tabulated degrees of freedom
 /// @return Array of local indices of located degrees of freedom
-///
 Eigen::Array<PetscInt, Eigen::Dynamic, 1>
 locate_dofs_geometrical(const function::FunctionSpace& V,
                         marking_function marker);
@@ -89,10 +88,10 @@ public:
   /// @param[in] V The function (sub)space on which the boundary
   ///              condition is applied
   /// @param[in] g The boundary condition value
-  /// @param[in] V_dofs Indices of degrees of freedom in the space where the
-  ///                   the boundary condition is applied
-  /// @param[in] g_dofs Indices of degrees of freedom in the space of the
-  ///                   boundary value function
+  /// @param[in] V_dofs Indices of degrees of freedom in the space where
+  ///                   the the boundary condition is applied
+  /// @param[in] g_dofs Indices of degrees of freedom in the space of
+  ///                   the boundary value function
   DirichletBC(
       std::shared_ptr<const function::FunctionSpace> V,
       std::shared_ptr<const function::Function> g,
@@ -100,8 +99,8 @@ public:
       const Eigen::Ref<const Eigen::Array<PetscInt, Eigen::Dynamic, 1>>&
           g_dofs);
 
-  /// Copy constructor. Either cached DOF data are copied.
-  /// @param[in] bc The object to be copied.
+  /// Copy constructor. Either cached DOF data are copied
+  /// @param[in] bc The object to be copied
   DirichletBC(const DirichletBC& bc) = default;
 
   /// Move constructor
@@ -110,8 +109,8 @@ public:
   /// Destructor
   ~DirichletBC() = default;
 
-  /// Assignment operator. Either cached DOF data are assigned.
-  /// @param[in] bc Another DirichletBC object.
+  /// Assignment operator. Either cached DOF data are assigned
+  /// @param[in] bc Another DirichletBC object
   DirichletBC& operator=(const DirichletBC& bc) = default;
 
   /// Move assignment operator
@@ -119,12 +118,12 @@ public:
 
   /// Return function space V
   /// @return The function space to which boundary conditions are
-  ///          applied.
+  ///          applied
   std::shared_ptr<const function::FunctionSpace> function_space() const;
 
   /// Return boundary value g
   /// @return The boundary values Function. Returns null if it does not
-  ///         exist.
+  ///         exist
   std::shared_ptr<const function::Function> value() const;
 
   /// Get array of dof indices to which a Dirichlet BC is applied. The
@@ -132,8 +131,8 @@ public:
   Eigen::Array<PetscInt, Eigen::Dynamic, 2>& dofs();
 
   /// Get array of dof indices owned by this process to which a
-  /// Dirichlet BC is applied. The array is sorted and does not contain ghost
-  /// entries.
+  /// Dirichlet BC is applied. The array is sorted and does not contain
+  /// ghost entries.
   const Eigen::Ref<const Eigen::Array<PetscInt, Eigen::Dynamic, 2>>
   dofs_owned() const;
 
@@ -149,15 +148,16 @@ public:
       const Eigen::Ref<const Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1>>& x0,
       double scale = 1.0) const;
 
-  // FIXME: clarify  w.r.t ghostss
+  // FIXME: clarify  w.r.t ghosts
+
   /// Set boundary condition value for entres with an applied boundary
   /// condition. Other entries are not modified.
   void dof_values(
       Eigen::Ref<Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1>> values) const;
 
   // FIXME: clarify w.r.t ghosts
-  /// Set markers[i] = true if dof i has a boundary condition applied.
-  /// Value of markers[i] is not changed otherwise.
+  /// Set markers[i] = true if dof i has a boundary condition applied
+  /// Value of markers[i] is not changed otherwise
   void mark_dofs(std::vector<bool>& markers) const;
 
 private:

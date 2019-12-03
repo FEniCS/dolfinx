@@ -14,7 +14,6 @@
 #include <dolfin/function/FunctionSpace.h>
 #include <dolfin/mesh/Mesh.h>
 #include <dolfin/mesh/MeshEntity.h>
-#include <dolfin/mesh/MeshFunction.h>
 #include <dolfin/mesh/MeshIterator.h>
 #include <dolfin/mesh/cell_types.h>
 #include <map>
@@ -108,6 +107,7 @@ get_remote_bcs(const common::IndexMap& map, const common::IndexMap& map_g,
   return dof_dof_g;
 }
 } // namespace
+
 //-----------------------------------------------------------------------------
 DirichletBC::DirichletBC(
     std::shared_ptr<const function::FunctionSpace> V,
@@ -116,14 +116,11 @@ DirichletBC::DirichletBC(
     const Eigen::Ref<const Eigen::Array<PetscInt, Eigen::Dynamic, 1>>& g_dofs)
     : _function_space(V), _g(g)
 {
-
   if(V_dofs.rows() != g_dofs.rows())
-  {
     throw std::runtime_error("Not matching number of degrees of freedom.");
-  }
 
-  // Copy the Eigen data structure into std::vector of arrays
-  // This is needed for appending the remote dof indices and std::sort
+  // Copy the Eigen data structure into std::vector of arrays. This is
+  // needed for appending the remote dof indices and std::sort.q
   std::vector<std::array<PetscInt, 2>> dofs_local_vec(V_dofs.rows());
   for (Eigen::Index i = 0; i < V_dofs.rows(); ++i){
     dofs_local_vec[i] = {V_dofs[i], g_dofs[i]};
@@ -135,8 +132,8 @@ DirichletBC::DirichletBC(
                        dofs_local_vec.end());
 
   // Get bc dof indices (local) in (V, Vg) spaces on this process that
-  // were found by other processes, e.g. a vertex dof on this process that
-  // has no connected facets on the boundary.
+  // were found by other processes, e.g. a vertex dof on this process
+  // that has no connected facets on the boundary.
   const std::vector<std::array<PetscInt, 2>> dofs_remote
       = get_remote_bcs(*V->dofmap()->index_map,
                        *g->function_space()->dofmap()->index_map, dofs_local_vec);
@@ -152,7 +149,6 @@ DirichletBC::DirichletBC(
 
   _dofs = Eigen::Array<PetscInt, Eigen::Dynamic, 2, Eigen::RowMajor>(
       dofs_local_vec.size(), 2);
-
   for (std::size_t i = 0; i < dofs_local_vec.size(); ++i)
   {
     _dofs(i, 0) = dofs_local_vec[i][0];
@@ -195,7 +191,6 @@ void DirichletBC::set(
     double scale) const
 {
   // FIXME: This one excludes ghosts. Need to straighten out.
-
   assert(_g);
   la::VecReadWrapper g(_g->vector().vec(), false);
   for (Eigen::Index i = 0; i < _dofs.rows(); ++i)
@@ -211,7 +206,6 @@ void DirichletBC::set(
     double scale) const
 {
   // FIXME: This one excludes ghosts. Need to straighten out.
-
   assert(_g);
   assert(x.rows() <= x0.rows());
   la::VecReadWrapper g(_g->vector().vec(), false);
@@ -229,7 +223,6 @@ void DirichletBC::dof_values(
   la::VecReadWrapper g(_g->vector().vec());
   for (Eigen::Index i = 0; i < _dofs.rows(); ++i)
     values[_dofs(i, 0)] = g.x[_dofs(i, 1)];
-  g.restore();
 }
 //-----------------------------------------------------------------------------
 void DirichletBC::mark_dofs(std::vector<bool>& markers) const
@@ -246,8 +239,9 @@ Eigen::Array<PetscInt, Eigen::Dynamic, 1> fem::locate_dofs_topological(
     const Eigen::Ref<const Eigen::Array<PetscInt, Eigen::Dynamic, 1>>& entities,
     bool boundary)
 {
-
+  assert(V.dofmap());
   const DofMap& dofmap = *V.dofmap();
+  assert(V.mesh());
   dolfin::mesh::Mesh mesh = *V.mesh();
 
   const int tdim = mesh.topology().dim();
@@ -256,7 +250,8 @@ Eigen::Array<PetscInt, Eigen::Dynamic, 1> fem::locate_dofs_topological(
   mesh.create_entities(tdim);
   mesh.create_connectivity(entity_dim, tdim);
 
-  // Prepare an element-local dof layout for dofs on entities of the entity_dim
+  // Prepare an element-local dof layout for dofs on entities of the
+  // entity_dim
   const int num_entities
       = mesh::cell_num_entities(mesh.cell_type(), entity_dim);
   std::vector<Eigen::Array<int, Eigen::Dynamic, 1>> entity_dofs;
@@ -269,12 +264,11 @@ Eigen::Array<PetscInt, Eigen::Dynamic, 1> fem::locate_dofs_topological(
   const std::size_t num_entity_closure_dofs
       = dofmap.element_dof_layout->num_entity_closure_dofs(entity_dim);
 
-  std::vector<PetscInt> dofs;
-
   // Fetch boundary entities
   const std::vector<bool> boundary_entities
       = mesh.topology().on_boundary(entity_dim);
 
+  std::vector<PetscInt> dofs;
   for (Eigen::Index i = 0; i < entities.rows(); ++i)
   {
 
@@ -284,17 +278,17 @@ Eigen::Array<PetscInt, Eigen::Dynamic, 1> fem::locate_dofs_topological(
 
     // Create entity and attached cell
     const mesh::MeshEntity entity(mesh, entity_dim, entities[i]);
-    const std::size_t cell_index = entity.entities(tdim)[0];
+    const int cell_index = entity.entities(tdim)[0];
     const mesh::MeshEntity cell(mesh, tdim, cell_index);
 
     // Get cell dofmap
     auto cell_dofs = dofmap.cell_dofs(cell_index);
 
     // Loop over entity dofs
-    const size_t entity_local_index = cell.index(entity);
+    const int entity_local_index = cell.index(entity);
     for (std::size_t j = 0; j < num_entity_closure_dofs; j++)
     {
-      const std::size_t index = entity_dofs[entity_local_index][j];
+      const int index = entity_dofs[entity_local_index][j];
       const PetscInt dof_index = cell_dofs[index];
       dofs.push_back(dof_index);
     }
@@ -308,15 +302,14 @@ Eigen::Array<PetscInt, Eigen::Dynamic, 1>
 fem::locate_dofs_geometrical(const function::FunctionSpace& V,
                              marking_function marker)
 {
-
-  const Eigen::Array<double, 3, Eigen::Dynamic, Eigen::RowMajor> dof_coordinates
+  // Use 'auto' in case this is an Eigen proxy
+  auto dof_coordinates
       = V.tabulate_dof_coordinates().transpose();
   const Eigen::Array<bool, Eigen::Dynamic, 1> marked_dofs
       = marker(dof_coordinates);
 
   std::vector<PetscInt> dofs;
-
-  for (PetscInt i = 0; i < marked_dofs.size(); ++i)
+  for (Eigen::Index i = 0; i < marked_dofs.size(); ++i)
   {
     if (marked_dofs[i])
       dofs.push_back(i);
@@ -325,3 +318,4 @@ fem::locate_dofs_geometrical(const function::FunctionSpace& V,
   return Eigen::Map<Eigen::Array<PetscInt, Eigen::Dynamic, 1>>(dofs.data(),
                                                                dofs.size());
 }
+//-----------------------------------------------------------------------------
