@@ -81,7 +81,7 @@ import dolfin
 import dolfin.plotting
 import ufl
 from dolfin import (MPI, DirichletBC, Function, FunctionSpace, RectangleMesh,
-                    solve, list_timings, TimingType)
+                    solve)
 from dolfin.cpp.mesh import CellType
 from dolfin.io import XDMFFile
 from dolfin.specialfunctions import SpatialCoordinate
@@ -197,5 +197,3 @@ with XDMFFile(
 # Plot solution
 dolfin.plotting.plot(u)
 plt.show()
-
-list_timings(MPI.comm_world, [TimingType.wall])
