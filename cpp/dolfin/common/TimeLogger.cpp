@@ -60,9 +60,9 @@ Table TimeLogger::timings(std::set<TimingType> type)
   // Generate log::timing table
   Table table("Summary of timings");
 
-  bool time_wall = (type.find(TimingType::wall) != type.end());
-  bool time_user = (type.find(TimingType::user) != type.end());
-  bool time_sys = (type.find(TimingType::system) != type.end());
+  bool time_wall = type.find(TimingType::wall) != type.end();
+  bool time_user = type.find(TimingType::user) != type.end();
+  bool time_sys = type.find(TimingType::system) != type.end();
 
   for (auto& it : _timings)
   {
