@@ -6,14 +6,15 @@
 #
 # SPDX-License-Identifier:    LGPL-3.0-or-later
 
+import os
+import sys
+
 import dolfin
 import mpi4py
-import os
 import pytest
-import sys
-from mpi4py import MPI
 from dolfin.jit import dolfin_pc, mpi_jit_decorator
 from dolfin_utils.test.fixtures import tempdir  # noqa: F401
+from mpi4py import MPI
 
 
 def test_mpi_comm_wrapper():

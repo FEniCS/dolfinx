@@ -6,15 +6,16 @@
 #
 # SPDX-License-Identifier:    LGPL-3.0-or-later
 
+import os
+import sys
+
 import dolfin
 import numpy
 import petsc4py
-import os
 import pytest
-import sys
-from petsc4py import PETSc
 from dolfin.jit import dolfin_pc, mpi_jit_decorator
 from dolfin_utils.test.fixtures import tempdir  # noqa: F401
+from petsc4py import PETSc
 
 
 def test_petsc_casters_cppimport(tempdir):  # noqa: F811
