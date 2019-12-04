@@ -13,6 +13,7 @@
 #include <boost/graph/cuthill_mckee_ordering.hpp>
 #include <boost/graph/properties.hpp>
 #include <dolfin/common/Timer.h>
+#include <numeric>
 
 using namespace dolfin;
 
@@ -119,8 +120,7 @@ dolfin::graph::BoostGraphOrdering::compute_cuthill_mckee(const Graph& graph,
   if (boost::num_edges(boost_graph) == 0)
   {
     // Graph has no edges, so no need to re-order
-    for (std::size_t i = 0; i < map.size(); ++i)
-      map[i] = i;
+    std::iota(map.begin(), map.end(), 0);
   }
   else
   {
@@ -162,8 +162,7 @@ std::vector<int> dolfin::graph::BoostGraphOrdering::compute_cuthill_mckee(
   if (boost::num_edges(boost_graph) == 0)
   {
     // Graph has no edges, so no need to re-order
-    for (std::size_t i = 0; i < map.size(); ++i)
-      map[i] = i;
+    std::iota(map.begin(), map.end(), 0);
   }
   else
   {
