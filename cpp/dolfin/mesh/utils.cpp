@@ -669,3 +669,91 @@ Eigen::Array<double, Eigen::Dynamic, 3, Eigen::RowMajor> mesh::midpoints(
   return x;
 }
 //-----------------------------------------------------------------------------
+Eigen::Array<std::int32_t, Eigen::Dynamic, 1> mesh::compute_marked_entities(
+    const mesh::Mesh& mesh, const int dim,
+    const std::function<Eigen::Array<bool, Eigen::Dynamic, 1>(
+        const Eigen::Ref<const Eigen::Array<double, 3, Eigen::Dynamic,
+                                            Eigen::RowMajor>>&)>& marker,
+    bool boundary_only)
+{
+  const int tdim = mesh.topology().dim();
+
+  // Create facets
+  mesh.create_entities(dim);
+
+  // Marked facet indices
+  std::vector<std::int32_t> facets;
+
+  // Compute connectivities for boundary detection, if necessary
+  if (dim < tdim)
+  {
+    mesh.create_entities(dim);
+    if (dim != tdim - 1)
+      mesh.create_connectivity(dim, tdim - 1);
+    mesh.create_connectivity(tdim - 1, tdim);
+  }
+
+  // Find all vertices on boundary. Set all to -1 (interior) to start
+  // with. If a vertex is on the boundary, give it an index from [0,
+  // count)
+  const std::vector<bool> on_boundary0 = mesh.topology().on_boundary(0);
+  std::vector<std::int32_t> boundary_vertex(mesh.num_entities(0), -1);
+  assert(on_boundary0.size() == boundary_vertex.size());
+  int count = 0;
+  for (std::size_t i = 0; i < on_boundary0.size(); ++i)
+  {
+    if (on_boundary0[i])
+      boundary_vertex[i] = count++;
+  }
+
+  // FIXME: Does this make sense for non-affine elements?
+  // Get all points
+  const Eigen::Array<double, Eigen::Dynamic, 3, Eigen::RowMajor>& x_all
+      = mesh.geometry().points();
+
+  // Pack coordinates of all boundary vertices
+  Eigen::Array<double, 3, Eigen::Dynamic, Eigen::RowMajor> x_boundary(3, count);
+  for (std::int32_t i = 0; i < mesh.num_entities(0); ++i)
+  {
+    if (boundary_vertex[i] != -1)
+      x_boundary.col(boundary_vertex[i]) = x_all.row(i);
+  }
+
+  // Run marker function on boundary vertices
+  const Eigen::Array<bool, Eigen::Dynamic, 1> boundary_marked
+      = marker(x_boundary);
+  if (boundary_marked.rows() != x_boundary.cols())
+    throw std::runtime_error("Length of array of boundary markers is wrong.");
+
+  // Iterate over entities
+  const std::vector<bool> boundary_entity = mesh.topology().on_boundary(dim);
+  for (auto& e : mesh::MeshRange(mesh, dim))
+  {
+    // Consider boundary facets only
+    if (boundary_entity[e.index()])
+    {
+      // Assume all vertices on this facet are marked
+      bool all_vertices_marked = true;
+
+      // Iterate over facet vertices
+      for (const auto& v : mesh::EntityRange(e, 0))
+      {
+        const std::int32_t idx = v.index();
+        assert(boundary_vertex[idx] < boundary_marked.rows());
+        if (!boundary_marked[boundary_vertex[idx]])
+        {
+          all_vertices_marked = false;
+          break;
+        }
+      }
+
+      // Mark facet with all vertices marked
+      if (all_vertices_marked)
+        facets.push_back(e.index());
+    }
+  }
+
+  return Eigen::Map<Eigen::Array<std::int32_t, Eigen::Dynamic, 1>>(
+      facets.data(), facets.size());
+}
+//-----------------------------------------------------------------------------

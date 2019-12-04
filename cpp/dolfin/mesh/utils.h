@@ -49,5 +49,14 @@ Eigen::Array<double, Eigen::Dynamic, 3, Eigen::RowMajor> midpoints(
     const mesh::Mesh& mesh, int dim,
     const Eigen::Ref<const Eigen::Array<int, Eigen::Dynamic, 1>>& entities);
 
+/// TODO
+Eigen::Array<std::int32_t, Eigen::Dynamic, 1> compute_marked_entities(
+    const mesh::Mesh& mesh,
+    const int dim,
+    const std::function<Eigen::Array<bool, Eigen::Dynamic, 1>(
+        const Eigen::Ref<const Eigen::Array<double, 3, Eigen::Dynamic,
+                                            Eigen::RowMajor>>&)>& marker,
+    bool boundary_only = true);
+
 } // namespace mesh
 } // namespace dolfin
