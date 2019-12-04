@@ -41,7 +41,7 @@ void fem::impl::assemble_matrix(Mat A, const Form& a,
   const int num_dofs_per_cell1 = dofmap1.element_dof_layout->num_dofs();
 
   // Prepare constants
-  if (a.list_unset_constants().size() > 0)
+  if (!a.all_constants_set())
     throw std::runtime_error("Unset constant in Form");
 
   const std::vector<

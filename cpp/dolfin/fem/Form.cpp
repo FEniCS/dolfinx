@@ -118,13 +118,22 @@ void Form::set_constants(
   }
 }
 //-----------------------------------------------------------------------------
-std::vector<std::string> Form::list_unset_constants() const
+bool Form::all_constants_set() const
 {
-  std::vector<std::string> unset;
+  for (auto& constant : _constants)
+    if (!constant.second)
+      return false;
+
+  return true;
+}
+//-----------------------------------------------------------------------------
+std::set<std::string> Form::get_unset_constants() const
+{
+  std::set<std::string> unset;
   for (auto& constant : _constants)
   {
     if (!constant.second)
-      unset.push_back(constant.first);
+      unset.insert(constant.first);
   }
   return unset;
 }
