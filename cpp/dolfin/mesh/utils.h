@@ -53,12 +53,14 @@ Eigen::Array<double, Eigen::Dynamic, 3, Eigen::RowMajor> midpoints(
 /// evaluate to true for the provided marking function. An entity is
 /// considered marked if the marker function evaluates true for all of
 /// the entities vertices.
+/// @cond Work around doxygen bug for std::function
 /// @param[in] mesh The mesh
 /// @param[in] dim The topological dimension of the entities to be
 ///                considered
 /// @param[in] marker The marking function
 /// @returns List of marked entity indices (indices local to the
 /// process)
+/// @endcond
 Eigen::Array<std::int32_t, Eigen::Dynamic, 1> compute_marked_boundary_entities(
     const mesh::Mesh& mesh, const int dim,
     const std::function<Eigen::Array<bool, Eigen::Dynamic, 1>(
