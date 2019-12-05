@@ -422,5 +422,8 @@ void mesh(py::module& m)
         return dolfin::mesh::Partitioning::compute_halo_cells(comm.get(), part,
                                                               cell_type, cells);
       });
+
+  m.def("compute_marked_boundary_entities",
+        &dolfin::mesh::compute_marked_boundary_entities);
 }
 } // namespace dolfin_wrappers

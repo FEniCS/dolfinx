@@ -116,27 +116,29 @@ DirichletBC::DirichletBC(
     const Eigen::Ref<const Eigen::Array<PetscInt, Eigen::Dynamic, 1>>& g_dofs)
     : _function_space(V), _g(g)
 {
-  if(V_dofs.rows() != g_dofs.rows())
+  if (V_dofs.rows() != g_dofs.rows())
     throw std::runtime_error("Not matching number of degrees of freedom.");
 
   // Copy the Eigen data structure into std::vector of arrays. This is
   // needed for appending the remote dof indices and std::sort.q
   std::vector<std::array<PetscInt, 2>> dofs_local_vec(V_dofs.rows());
-  for (Eigen::Index i = 0; i < V_dofs.rows(); ++i){
+  for (Eigen::Index i = 0; i < V_dofs.rows(); ++i)
+  {
     dofs_local_vec[i] = {V_dofs[i], g_dofs[i]};
   }
 
   // Remove duplicates
   std::sort(dofs_local_vec.begin(), dofs_local_vec.end());
-  dofs_local_vec.erase(std::unique(dofs_local_vec.begin(), dofs_local_vec.end()),
-                       dofs_local_vec.end());
+  dofs_local_vec.erase(
+      std::unique(dofs_local_vec.begin(), dofs_local_vec.end()),
+      dofs_local_vec.end());
 
   // Get bc dof indices (local) in (V, Vg) spaces on this process that
   // were found by other processes, e.g. a vertex dof on this process
   // that has no connected facets on the boundary.
-  const std::vector<std::array<PetscInt, 2>> dofs_remote
-      = get_remote_bcs(*V->dofmap()->index_map,
-                       *g->function_space()->dofmap()->index_map, dofs_local_vec);
+  const std::vector<std::array<PetscInt, 2>> dofs_remote = get_remote_bcs(
+      *V->dofmap()->index_map, *g->function_space()->dofmap()->index_map,
+      dofs_local_vec);
 
   // Add received bc indices to dofs_local
   for (auto& dof_remote : dofs_remote)
@@ -144,8 +146,9 @@ DirichletBC::DirichletBC(
 
   // Remove duplicates
   std::sort(dofs_local_vec.begin(), dofs_local_vec.end());
-  dofs_local_vec.erase(std::unique(dofs_local_vec.begin(), dofs_local_vec.end()),
-                       dofs_local_vec.end());
+  dofs_local_vec.erase(
+      std::unique(dofs_local_vec.begin(), dofs_local_vec.end()),
+      dofs_local_vec.end());
 
   _dofs = Eigen::Array<PetscInt, Eigen::Dynamic, 2, Eigen::RowMajor>(
       dofs_local_vec.size(), 2);
@@ -157,9 +160,8 @@ DirichletBC::DirichletBC(
 
   const int owned_size = V->dofmap()->index_map->block_size
                          * V->dofmap()->index_map->size_local();
-  auto it
-      = std::lower_bound(_dofs.col(0).data(),
-                         _dofs.col(0).data() + _dofs.rows(), owned_size);
+  auto it = std::lower_bound(_dofs.col(0).data(),
+                             _dofs.col(0).data() + _dofs.rows(), owned_size);
   _owned_indices = std::distance(_dofs.col(0).data(), it);
 }
 //-----------------------------------------------------------------------------
@@ -174,11 +176,7 @@ std::shared_ptr<const function::Function> DirichletBC::value() const
   return _g;
 }
 //-----------------------------------------------------------------------------
-Eigen::Array<PetscInt, Eigen::Dynamic, 2>&
-DirichletBC::dofs()
-{
-  return _dofs;
-}
+Eigen::Array<PetscInt, Eigen::Dynamic, 2>& DirichletBC::dofs() { return _dofs; }
 //-----------------------------------------------------------------------------
 const Eigen::Ref<const Eigen::Array<PetscInt, Eigen::Dynamic, 2>>
 DirichletBC::dofs_owned() const
@@ -236,8 +234,7 @@ void DirichletBC::mark_dofs(std::vector<bool>& markers) const
 //-----------------------------------------------------------------------------
 Eigen::Array<PetscInt, Eigen::Dynamic, 1> fem::locate_dofs_topological(
     const function::FunctionSpace& V, const int entity_dim,
-    const Eigen::Ref<const Eigen::Array<PetscInt, Eigen::Dynamic, 1>>& entities,
-    bool boundary_only)
+    const Eigen::Ref<const Eigen::Array<PetscInt, Eigen::Dynamic, 1>>& entities)
 {
   assert(V.dofmap());
   const DofMap& dofmap = *V.dofmap();
@@ -261,21 +258,11 @@ Eigen::Array<PetscInt, Eigen::Dynamic, 1> fem::locate_dofs_topological(
         dofmap.element_dof_layout->entity_closure_dofs(entity_dim, i));
   }
 
-  const std::size_t num_entity_closure_dofs
+  const int num_entity_closure_dofs
       = dofmap.element_dof_layout->num_entity_closure_dofs(entity_dim);
-
-  // Fetch boundary entities
-  const std::vector<bool> boundary_entities
-      = mesh.topology().on_boundary(entity_dim);
-
   std::vector<PetscInt> dofs;
   for (Eigen::Index i = 0; i < entities.rows(); ++i)
   {
-
-    // Skip if only boundaries are needed but not a boundary entity
-    if (boundary_only and !boundary_entities[i])
-      continue;
-
     // Create entity and attached cell
     const mesh::MeshEntity entity(mesh, entity_dim, entities[i]);
     const int cell_index = entity.entities(tdim)[0];
@@ -286,7 +273,7 @@ Eigen::Array<PetscInt, Eigen::Dynamic, 1> fem::locate_dofs_topological(
 
     // Loop over entity dofs
     const int entity_local_index = cell.index(entity);
-    for (std::size_t j = 0; j < num_entity_closure_dofs; j++)
+    for (int j = 0; j < num_entity_closure_dofs; j++)
     {
       const int index = entity_dofs[entity_local_index][j];
       const PetscInt dof_index = cell_dofs[index];
@@ -305,8 +292,7 @@ fem::locate_dofs_geometrical(const function::FunctionSpace& V,
   // FIXME: Calling V.tabulate_dof_coordinates() is very expensive,
   // especially when we usually want the boundary dofs only.
 
-  // Use 'auto' in case this is an Eigen proxy
-  auto dof_coordinates
+  const Eigen::Array<double, 3, Eigen::Dynamic, Eigen::RowMajor> dof_coordinates
       = V.tabulate_dof_coordinates().transpose();
   const Eigen::Array<bool, Eigen::Dynamic, 1> marked_dofs
       = marker(dof_coordinates);

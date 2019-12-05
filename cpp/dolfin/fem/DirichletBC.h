@@ -46,14 +46,11 @@ using marking_function = std::function<Eigen::Array<bool, Eigen::Dynamic, 1>(
 ///                       which degrees of freedom will be located
 /// @param[in] entities Indices of mesh entities. All dofs associated
 ///                     with these indices will be returned.
-/// @param[in] boundary_only Pass 'true' if only mesh entities that lie
-///                          on the boundary are considered. Otherwise
-///                          all mesh entities are checked.
 /// @return Array of local indices of located degrees of freedom
 Eigen::Array<PetscInt, Eigen::Dynamic, 1> locate_dofs_topological(
     const function::FunctionSpace& V, const int entity_dim,
-    const Eigen::Ref<const Eigen::Array<PetscInt, Eigen::Dynamic, 1>>& entities,
-    bool boundary_only = true);
+    const Eigen::Ref<const Eigen::Array<PetscInt, Eigen::Dynamic, 1>>&
+        entities);
 
 /// Locate degrees of freedom geometrically
 ///
@@ -84,7 +81,6 @@ class DirichletBC
 {
 
 public:
-
   /// Create boundary condition
   ///
   /// @param[in] V The function (sub)space on which the boundary
