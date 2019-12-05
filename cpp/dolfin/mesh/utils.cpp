@@ -681,7 +681,8 @@ mesh::compute_marked_boundary_entities(
   // Create entities
   mesh.create_entities(dim);
 
-  // Compute connectivities for boundary detection, if necessary
+  // Compute connectivities for boundary detection
+  // (Topology::on_boundary())
   if (dim < tdim)
   {
     mesh.create_entities(dim);

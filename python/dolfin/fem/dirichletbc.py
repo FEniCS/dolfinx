@@ -16,26 +16,45 @@ import ufl
 from dolfin import cpp, function
 
 
-def locate_dofs_geometrical(V: typing.Union[function.FunctionSpace], marker: types.FunctionType):
-    # Extract cpp function space
-    try:
-        _V = V._cpp_object
-    except AttributeError:
-        _V = V
+def locate_dofs_geometrical(V: typing.Union[function.FunctionSpace],
+                            marker: types.FunctionType) -> "np.ndarray":
+    """Locate degrees-of-freedom geometrically using a marker function.
 
-    return cpp.fem.locate_dofs_geometrical(_V, marker)
+    Parameters
+    ----------
+    V Function space in which to search for degree-of-freedom indices.
+
+    maker A function that takes an array of points `x` with shape
+         `(gdim, num_points)` and returns an array of booleans of length
+         `num_points`, evaluating to `True` for entities whose
+         degree-of-freedom should be returned.
+
+    Returns
+    -------
+        An array of degree-of-freedom indices (local to the process)
+        for degrees-of-freedom whose coordinate evaluates to True for the
+        marker function.
+
+    """
+
+    try:
+        return cpp.fem.locate_dofs_geometrical(V._cpp_object, marker)
+    except AttributeError:
+        return cpp.fem.locate_dofs_geometrical(V, marker)
 
 
 def locate_dofs_topological(V: typing.Union[function.FunctionSpace],
                             entity_dim: int,
-                            entities: typing.List[int]):
-    # Extract cpp function space
-    try:
-        _V = V._cpp_object
-    except AttributeError:
-        _V = V
+                            entities: typing.List[int]) -> "np.ndarray":
+    """Return array of degree-of-freedom indices (local to the process)
+    for degrees-of-freedom belonging to the closure the mesh entities of
+    dimension `entity_dim` and index in `entities`.
+    """
 
-    return cpp.fem.locate_dofs_topological(_V, entity_dim, entities)
+    try:
+        return cpp.fem.locate_dofs_topological(V._cpp_object, entity_dim, entities)
+    except AttributeError:
+        return cpp.fem.locate_dofs_topological(V, entity_dim, entities)
 
 
 class DirichletBC(cpp.fem.DirichletBC):

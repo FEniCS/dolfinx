@@ -4,10 +4,39 @@
 #
 # SPDX-License-Identifier:    LGPL-3.0-or-later
 
+import types
+
 import ufl
 from dolfin import cpp
 
+
+def compute_marked_boundary_entities(mesh: cpp.mesh.Mesh,
+                                     dim: int,
+                                     marker: types.FunctionType) -> "np.ndarray":
+    """Compute list of boundary mesh entities satisfying a geometric marking function.
+
+    Parameters
+    ----------
+    mesh The mesh
+
+    dim The topological dimension of the mesh entities to consider
+
+    maker A function that takes an array of points `x` with shape
+         `(gdim, num_points)` and returns an array of booleans of length
+         `num_points`, evaluating to `True` for entities whose
+         degree-of-freedom should be returned.
+
+    Returns
+    -------
+        Indices (local to the process) of marked mesh entities.
+
+    """
+
+    return cpp.mesh.compute_marked_boundary_entities(mesh, dim, marker)
+
+
 # __all__ = ["MeshFunction", "MeshValueCollection"]
+
 
 _meshfunction_types = {
     "size_t": cpp.mesh.MeshFunctionSizet,
