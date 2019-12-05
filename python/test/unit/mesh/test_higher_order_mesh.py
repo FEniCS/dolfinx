@@ -445,16 +445,16 @@ def test_third_order_quad(L, H, Z):
                        [0, H / 3, 0], [0, 2 * H / 3, 0],                  # 10 11
                        [L / 3, H / 3, 0], [2 * L / 3, H / 3, 0],          # 12 13
                        [L / 3, 2 * H / 3, 0], [2 * L / 3, 2 * H / 3, 0],  # 14 15
-                       [2 * L, 0, 0], [2 * L, H, 0],                      # 16 17
+                       [2 * L, 0, 0], [2 * L, H, Z],                      # 16 17
                        [4 * L / 3, 0, 0], [5 * L / 3, 0, 0],              # 18 19
                        [2 * L, H / 3, 0], [2 * L, 2 * H / 3, 0],          # 20 21
-                       [4 * L / 3, H, 0], [5 * L / 3, H, 0],              # 22 23
+                       [4 * L / 3, H, Z], [5 * L / 3, H, Z],              # 22 23
                        [4 * L / 3, H / 3, 0], [5 * L / 3, H / 3, 0],           # 24 25
                        [4 * L / 3, 2 * H / 3, 0], [5 * L / 3, 2 * H / 3, 0]])  # 26 27
 
     # Change to multiple cells when matthews dof-maps work for quads
-    cells = np.array([[0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15]])
-    # ,[1, 16, 17, 2, 18, 19, 20, 21, 22, 23, 6, 7, 24, 25, 26, 27]])
+    cells = np.array([[0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15],
+                      [1, 16, 17, 2, 18, 19, 20, 21, 22, 23, 6, 7, 24, 25, 26, 27]])
 
     cells = permute_cell_ordering(cells, permutation_vtk_to_dolfin(CellType.quadrilateral, cells.shape[1]))
     mesh = Mesh(MPI.comm_world, CellType.quadrilateral, points, cells,
@@ -476,7 +476,7 @@ def test_third_order_quad(L, H, Z):
     intu = MPI.sum(mesh.mpi_comm(), intu)
 
     nodes = [0, 3, 10, 11]
-    ref = sympy_scipy(points, nodes, L, H)
+    ref = sympy_scipy(points, nodes, 2 * L, H)
     assert ref == pytest.approx(intu, rel=1e-6)
 
 
@@ -484,7 +484,7 @@ def test_third_order_quad(L, H, Z):
 @pytest.mark.parametrize('L', [1, 2])
 @pytest.mark.parametrize('H', [1])
 @pytest.mark.parametrize('Z', [0, 0.3])
-def test_fourth_order__quad(L, H, Z):
+def test_fourth_order_quad(L, H, Z):
     """Test by comparing integration of z+x*y against sympy/scipy integration
     of a quad element. Z>0 implies curved element.
 
@@ -522,9 +522,9 @@ def test_fourth_order__quad(L, H, Z):
                        [(7 / 4) * L, H, Z], [2 * L, H, Z]])                   # 43 44
 
     # VTK ordering
-    cells = np.array([[0, 4, 24, 20, 1, 2, 3, 9, 14, 19, 21, 22, 23, 5, 10, 15, 6, 7, 8, 11, 12, 13, 16, 17, 18]])
-    #  , [4, 28, 44, 24, 25, 26, 27, 32, 36, 40, 41, 42, 43, 9, 14, 19,
-    #     29, 30, 31, 33, 34, 35, 37, 38, 39]])
+    cells = np.array([[0, 4, 24, 20, 1, 2, 3, 9, 14, 19, 21, 22, 23, 5, 10, 15, 6, 7, 8, 11, 12, 13, 16, 17, 18],
+                      [4, 28, 44, 24, 25, 26, 27, 32, 36, 40, 41, 42, 43, 9, 14, 19,
+                       29, 30, 31, 33, 34, 35, 37, 38, 39]])
 
     cells = permute_cell_ordering(cells, permutation_vtk_to_dolfin(CellType.quadrilateral, cells.shape[1]))
     mesh = Mesh(MPI.comm_world, CellType.quadrilateral, points, cells,
@@ -545,7 +545,7 @@ def test_fourth_order__quad(L, H, Z):
     intu = MPI.sum(mesh.mpi_comm(), intu)
 
     nodes = [0, 5, 10, 15, 20]
-    ref = sympy_scipy(points, nodes, L, H)
+    ref = sympy_scipy(points, nodes, 2 * L, H)
     assert ref == pytest.approx(intu, rel=1e-5)
 
 
