@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 # Copyright (C) 2017 Chris N. Richardson and Garth N. Wells
 #
 # This file is part of DOLFIN (https://www.fenicsproject.org)
@@ -32,9 +31,9 @@ del sys
 from .cpp import __version__
 
 
-from dolfin.common import (has_debug, has_petsc_complex, has_parmetis,
-                           git_commit_hash, TimingType, timing, timings,
-                           list_timings)
+from dolfin.common import (has_debug, has_petsc_complex, has_kahip,
+                           has_parmetis, git_commit_hash, TimingType, timing,
+                           timings, list_timings)
 
 import dolfin.MPI
 import dolfin.log
@@ -48,21 +47,15 @@ from .cpp.nls import (NonlinearProblem, NewtonSolver)
 
 from .fem.form import Form
 from .fem.dirichletbc import DirichletBC
-from .fem.interpolation import interpolate
 from .fem.solving import solve
 
-from .functionspace import (FunctionSpace, VectorFunctionSpace,
-                            TensorFunctionSpace)
-from .function import Function
-from .constant import Constant
-from .function import (TestFunction, TrialFunction, TestFunctions,
-                       TrialFunctions)
+from .function import (FunctionSpace, VectorFunctionSpace,
+                       TensorFunctionSpace, Constant, Function)
 from .specialfunctions import (FacetNormal, CellVolume, CellNormal,
                                CellDiameter, Circumradius)
 
 from .mesh import MeshFunction
 from .mesh import MeshValueCollection
-
 
 # Initialise PETSc
 from dolfin import cpp

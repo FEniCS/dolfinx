@@ -1,7 +1,6 @@
 #include "hyperelasticity.h"
 #include <cfloat>
 #include <dolfin.h>
-#include <dolfin/mesh/Ordering.h>
 
 using namespace dolfin;
 
@@ -28,7 +27,7 @@ public:
 
   void form(Vec x) final
   {
-    la::PETScVector _x(x);
+    la::PETScVector _x(x, true);
     _x.update_ghosts();
   }
 
@@ -54,6 +53,7 @@ public:
   {
     MatZeroEntries(_matA.mat());
     assemble_matrix(_matA.mat(), *_j, _bcs);
+    add_diagonal(_matA.mat(), *_j->function_space(0), _bcs);
     _matA.apply(la::PETScMatrix::AssemblyType::FINAL);
     return _matA.mat();
   }
@@ -89,7 +89,6 @@ int main(int argc, char* argv[])
   auto mesh = std::make_shared<mesh::Mesh>(generation::BoxMesh::create(
       MPI_COMM_WORLD, pt, {{8, 8, 8}}, mesh::CellType::tetrahedron,
       mesh::GhostMode::none));
-  mesh::Ordering::order_simplex(*mesh);
 
   auto V
       = fem::create_functionspace(hyperelasticity_functionspace_create, mesh);
@@ -97,20 +96,18 @@ int main(int argc, char* argv[])
   // Define solution function
   auto u = std::make_shared<function::Function>(V);
 
-  ufc_form* form_a = hyperelasticity_bilinearform_create();
-  auto a = std::make_shared<fem::Form>(fem::create_form(*form_a, {V, V}));
-  std::free(form_a);
+  std::shared_ptr<fem::Form> a
+      = fem::create_form(hyperelasticity_bilinearform_create, {V, V});
 
-  ufc_form* form_L = hyperelasticity_linearform_create();
-  auto L = std::make_shared<fem::Form>(fem::create_form(*form_L, {V}));
-  std::free(form_L);
+  std::shared_ptr<fem::Form> L
+      = fem::create_form(hyperelasticity_linearform_create, {V});
 
   // Attach 'coordinate mapping' to mesh
   auto cmap = a->coordinate_mapping();
   mesh->geometry().coord_mapping = cmap;
 
   auto u_rotation = std::make_shared<function::Function>(V);
-  u_rotation->interpolate([](auto values, auto x) {
+  u_rotation->interpolate([](auto& x) {
     const double scale = 0.005;
 
     // Center of rotation
@@ -120,21 +117,28 @@ int main(int argc, char* argv[])
     // Large angle of rotation (60 degrees)
     double theta = 1.04719755;
 
-    for (int i = 0; i < x.rows(); ++i)
+    Eigen::Array<PetscScalar, 3, Eigen::Dynamic, Eigen::RowMajor> values(
+        3, x.cols());
+    for (int i = 0; i < x.cols(); ++i)
     {
       // New coordinates
-      double y = y0 + (x(1, 1) - y0) * cos(theta) - (x(i, 2) - z0) * sin(theta);
-      double z = z0 + (x(i, 1) - y0) * sin(theta) + (x(i, 2) - z0) * cos(theta);
+      double y = y0 + (x(1, i) - y0) * cos(theta) - (x(2, i) - z0) * sin(theta);
+      double z = z0 + (x(1, i) - y0) * sin(theta) + (x(2, i) - z0) * cos(theta);
 
       // Rotate at right end
-      values(i, 0) = 0.0;
-      values(i, 1) = scale * (y - x(i, 1));
-      values(i, 2) = scale * (z - x(i, 2));
+      values(0, i) = 0.0;
+      values(1, i) = scale * (y - x(1, i));
+      values(2, i) = scale * (z - x(2, i));
     }
+
+    return values;
   });
 
   auto u_clamp = std::make_shared<function::Function>(V);
-  u_clamp->interpolate([](auto values, auto x) { values = 0.0; });
+  u_clamp->interpolate([](auto& x) {
+    return Eigen::Array<PetscScalar, 3, Eigen::Dynamic, Eigen::RowMajor>::Zero(
+        3, x.cols());
+  });
 
   L->set_coefficients({{"u", u}});
   a->set_coefficients({{"u", u}});
@@ -143,9 +147,9 @@ int main(int argc, char* argv[])
   auto u0 = std::make_shared<function::Function>(V);
   std::vector<std::shared_ptr<const fem::DirichletBC>> bcs
       = {std::make_shared<fem::DirichletBC>(
-             V, u_clamp, [](auto x) { return x.col(0) < DBL_EPSILON; }),
-         std::make_shared<fem::DirichletBC>(V, u_rotation, [](auto x) {
-           return (x.col(0) - 1.0).abs() < DBL_EPSILON;
+             V, u_clamp, [](auto x) { return x.row(0) < DBL_EPSILON; }),
+         std::make_shared<fem::DirichletBC>(V, u_rotation, [](auto& x) {
+           return (x.row(0) - 1.0).abs() < DBL_EPSILON;
          })};
 
   HyperElasticProblem problem(u, L, a, bcs);

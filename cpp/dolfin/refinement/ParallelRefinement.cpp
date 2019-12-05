@@ -26,7 +26,8 @@ ParallelRefinement::ParallelRefinement(const mesh::Mesh& mesh)
     : _mesh(mesh), _marked_edges(mesh.num_entities(1), false),
       _marked_for_update(MPI::size(mesh.mpi_comm()))
 {
-  _mesh.create_global_indices(1);
+  if (!_mesh.topology().connectivity(1, 0))
+    throw std::runtime_error("Edges must be initialised");
 
   // Create a global-to-local map for shared edges
   const std::map<std::int32_t, std::set<std::int32_t>>& shared_edges
@@ -281,7 +282,8 @@ mesh::Mesh ParallelRefinement::build_local() const
                                 Eigen::RowMajor>>
       topology(_new_cell_topology.data(), num_cells, num_cell_vertices);
 
-  mesh::Mesh mesh(_mesh.mpi_comm(), _mesh.cell_type(), geometry, topology, {},
+  mesh::Mesh mesh(_mesh.mpi_comm(), _mesh.cell_type(),
+                  geometry.leftCols(_mesh.geometry().dim()), topology, {},
                   _mesh.get_ghost_mode());
 
   return mesh;
@@ -313,11 +315,13 @@ mesh::Mesh ParallelRefinement::partition(bool redistribute) const
   if (redistribute)
   {
     return mesh::Partitioning::build_distributed_mesh(
-        _mesh.mpi_comm(), _mesh.cell_type(), points, cells, global_cell_indices,
+        _mesh.mpi_comm(), _mesh.cell_type(),
+        points.leftCols(_mesh.geometry().dim()), cells, global_cell_indices,
         _mesh.get_ghost_mode());
   }
 
-  mesh::Mesh mesh(_mesh.mpi_comm(), _mesh.cell_type(), points, cells,
+  mesh::Mesh mesh(_mesh.mpi_comm(), _mesh.cell_type(),
+                  points.leftCols(_mesh.geometry().dim()), cells,
                   global_cell_indices, _mesh.get_ghost_mode());
 
   mesh::DistributedMeshTools::init_facet_cell_connections(mesh);

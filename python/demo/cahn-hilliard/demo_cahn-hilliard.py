@@ -114,13 +114,12 @@ import numpy as np
 from petsc4py import PETSc
 
 from dolfin import (MPI, Function, FunctionSpace, NewtonSolver,
-                    NonlinearProblem, TestFunctions, TrialFunction,
-                    UnitSquareMesh, log)
+                    NonlinearProblem, UnitSquareMesh, log)
 from dolfin.cpp.mesh import CellType
 from dolfin.fem.assemble import assemble_matrix, assemble_vector
 from dolfin.io import XDMFFile
-from ufl import (FiniteElement, derivative, diff, dx, grad, inner, split,
-                 variable)
+from ufl import (FiniteElement, TestFunctions, TrialFunction, derivative, diff,
+                 dx, grad, inner, split, variable)
 
 # Save all logging to file
 log.set_output_file("log.txt")
@@ -183,7 +182,7 @@ theta = 0.5      # time stepping family, e.g. theta=1 -> backward Euler, theta=0
 
 # A unit square mesh with 97 (= 96 + 1) vertices in each direction is
 # created, and on this mesh a
-# :py:class:`FunctionSpace<dolfin.functions.functionspace.FunctionSpace>`
+# :py:class:`FunctionSpace<dolfin.function.FunctionSpace>`
 # ``ME`` is built using a pair of linear Lagrangian elements. ::
 
 # Create mesh and build function space
@@ -229,10 +228,11 @@ c0, mu0 = split(u0)
 # then interpolated into a finite element space::
 
 
-def u_init(values, x):
+def u_init(x):
     """Initialise values for c and mu."""
-    values[:, 0] = 0.63 + 0.02 * (0.5 - np.random.rand(x.shape[0]))
-    values[:, 1] = 0.0
+    values = np.zeros((2, x.shape[1]))
+    values[0] = 0.63 + 0.02 * (0.5 - np.random.rand(x.shape[1]))
+    return values
 
 
 # Create intial conditions and interpolate

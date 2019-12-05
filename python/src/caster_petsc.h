@@ -8,6 +8,7 @@
 
 #include <petsc4py/petsc4py.h>
 #include <petscdm.h>
+#include <petscis.h>
 #include <petscksp.h>
 #include <petscmat.h>
 #include <petscsnes.h>
@@ -63,6 +64,7 @@ namespace pybind11
 namespace detail
 {
 PETSC_CASTER_MACRO(DM, DM, dm);
+PETSC_CASTER_MACRO(IS, IS, is);
 PETSC_CASTER_MACRO(KSP, KSP, ksp);
 PETSC_CASTER_MACRO(Mat, Mat, mat);
 // PETSC_CASTER_MACRO(MatNullSpace, NullSpace, matnullspace);

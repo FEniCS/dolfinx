@@ -49,21 +49,27 @@ public:
   /// @return Function to call for tabulate_tensor
   const std::function<void(PetscScalar*, const PetscScalar*, const PetscScalar*,
                            const double*, const int*, const int*)>&
-  get_tabulate_tensor_function(FormIntegrals::Type type, int i) const;
+  get_tabulate_tensor(FormIntegrals::Type type, int i) const;
 
-  /// Register the function for 'tabulate_tensor' for integral i of
+  /// Set the function for 'tabulate_tensor' for integral i of
   /// given type
-  void register_tabulate_tensor(FormIntegrals::Type type, int i,
-                                void (*fn)(PetscScalar*, const PetscScalar*,
-                                           const PetscScalar*, const double*,
-                                           const int*, const int*));
+  /// @param[in] type Integral type
+  /// @param[in] i Integral number
+  /// @param[in] fn tabulate function
+  void set_tabulate_tensor(FormIntegrals::Type type, int i,
+                           std::function<void(PetscScalar*, const PetscScalar*, const PetscScalar*,
+                                              const double*, const int*, const int*)> fn);
 
   /// Number of integrals of given type
+  /// @param[in] t Integral type
+  /// @return Number of integrals
   int num_integrals(FormIntegrals::Type t) const;
 
   /// Get the integer IDs of integrals of type t. The IDs correspond to
   /// the domains which the integrals are defined for in the form,
   /// except ID -1, which denotes the default integral.
+  /// @param[in] t Integral type
+  /// @return List of IDs for this integral
   std::vector<int> integral_ids(FormIntegrals::Type t) const;
 
   /// Get the list of active entities for the ith integral of type t.
@@ -71,6 +77,9 @@ public:
   /// can be obtained with "FormIntegrals::integral_ids()". For cell
   /// integrals, a list of cells. For facet integrals, a list of facets
   /// etc.
+  /// @param[in] t Integral type
+  /// @param[in] i Integral number
+  /// @return List of active entities for this integral
   const std::vector<std::int32_t>& integral_domains(FormIntegrals::Type t,
                                                     int i) const;
 
@@ -79,6 +88,8 @@ public:
   /// each cell (entity) which corresponds to an integral ID. Note the
   /// MeshFunction is not stored, so if there any changes to the
   /// integration domain this must be called again.
+  /// @param[in] type Integral type
+  /// @param[in] marker Meshfunction mapping entities to integrals
   void set_domains(FormIntegrals::Type type,
                    const mesh::MeshFunction<std::size_t>& marker);
 
@@ -86,6 +97,7 @@ public:
   /// entities for those integrals from the mesh topology. For cell
   /// integrals, this is all cells. For facet integrals, it is either
   /// all interior or all exterior facets.
+  /// @param[in] mesh Mesh
   void set_default_domains(const mesh::Mesh& mesh);
 
 private:

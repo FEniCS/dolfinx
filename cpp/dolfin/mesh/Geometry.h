@@ -15,7 +15,7 @@ namespace dolfin
 {
 namespace fem
 {
-class CoordinateMapping;
+class CoordinateElement;
 }
 
 namespace mesh
@@ -80,8 +80,8 @@ public:
   /// Return informal string representation (pretty-print)
   std::string str(bool verbose) const;
 
-  /// Put CoordinateMapping for now. Experimental.
-  std::shared_ptr<const fem::CoordinateMapping> coord_mapping;
+  /// Put CoordinateElement for now. Experimental.
+  std::shared_ptr<const fem::CoordinateElement> coord_mapping;
 
 private:
   // Coordinates for all points stored as a contiguous array

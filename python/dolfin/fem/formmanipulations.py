@@ -6,7 +6,7 @@
 # SPDX-License-Identifier:    LGPL-3.0-or-later
 
 import ufl
-from dolfin import function, functionspace
+from dolfin import function
 
 
 def adjoint(form: ufl.Form, reordered_arguments=None) -> ufl.Form:
@@ -34,9 +34,9 @@ def adjoint(form: ufl.Form, reordered_arguments=None) -> ufl.Form:
 
     # Create new Arguments in the same spaces (NB: Order does not matter
     # anymore here because number is absolute)
-    v1 = function.Argument(arguments[1].function_space(),
+    v1 = function.Argument(arguments[1].function_space,
                            arguments[0].number(), arguments[0].part())
-    v0 = function.Argument(arguments[0].function_space(),
+    v0 = function.Argument(arguments[0].function_space,
                            arguments[1].number(), arguments[1].part())
 
     # Return form with swapped arguments as new arguments
@@ -52,17 +52,17 @@ def derivative(form: ufl.Form, u, du,
     return ufl.derivative(form, u, du, coefficient_derivatives)
 
 
-def increase_order(V: functionspace.FunctionSpace) -> functionspace.FunctionSpace:
+def increase_order(V: function.FunctionSpace) -> function.FunctionSpace:
     """For a given function space, return the same space, but with
     polynomial degree increase by 1.
 
     """
     e = ufl.algorithms.elementtransformations.increase_order(V.ufl_element())
-    return functionspace.FunctionSpace(V.mesh, e)
+    return function.FunctionSpace(V.mesh, e)
 
 
-def change_regularity(V: functionspace.FunctionSpace,
-                      family: str) -> functionspace.FunctionSpace:
+def change_regularity(V: function.FunctionSpace,
+                      family: str) -> function.FunctionSpace:
     """For a given function space, return the corresponding space with
     the finite elements specified by 'family'. Possible families are
     the families supported by the form compiler
@@ -70,10 +70,10 @@ def change_regularity(V: functionspace.FunctionSpace,
     """
     e = ufl.algorithms.elementtransformations.change_regularity(
         V.ufl_element(), family)
-    return functionspace.FunctionSpace(V.mesh, e)
+    return function.FunctionSpace(V.mesh, e)
 
 
-def tear(V: functionspace.FunctionSpace) -> functionspace.FunctionSpace:
+def tear(V: function.FunctionSpace) -> function.FunctionSpace:
     """For a given function space, return the corresponding discontinuous
     space
 

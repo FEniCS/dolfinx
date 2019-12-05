@@ -6,7 +6,7 @@
 
 #pragma once
 
-#include "CoordinateMapping.h"
+#include "CoordinateElement.h"
 #include "DofMap.h"
 #include "ElementDofLayout.h"
 #include <dolfin/common/types.h>
@@ -41,7 +41,6 @@ class FunctionSpace;
 
 namespace mesh
 {
-class Geometry;
 class Mesh;
 } // namespace mesh
 
@@ -49,31 +48,43 @@ namespace fem
 {
 class Form;
 
-/// Compute IndexMaps for stacked index maps
-std::vector<std::vector<std::shared_ptr<const common::IndexMap>>>
-blocked_index_sets(const std::vector<std::vector<const fem::Form*>> a);
+/// Extract FunctionSpaces for (0) rows blocks and (1) columns blocks
+/// from a rectangular array of bilinear forms. Raises an exception if
+/// there is an inconsistency. e.g. if each form in row i does not have
+/// the same test space then an exception is raised.
+/// @param[in] a A rectangular block on bilinear forms
+/// @return Function spaces for each row blocks (0) and for each column
+/// blocks (1).
+std::array<std::vector<std::shared_ptr<const function::FunctionSpace>>, 2>
+block_function_spaces(
+    const Eigen::Ref<const Eigen::Array<const fem::Form*, Eigen::Dynamic,
+                                        Eigen::Dynamic, Eigen::RowMajor>>& a);
 
 /// Create matrix. Matrix is not zeroed.
 la::PETScMatrix create_matrix(const Form& a);
 
 /// Initialise monolithic matrix for an array for bilinear forms. Matrix
 /// is not zeroed.
-la::PETScMatrix
-create_matrix_block(std::vector<std::vector<const fem::Form*>> a);
+la::PETScMatrix create_matrix_block(
+    const Eigen::Ref<const Eigen::Array<const fem::Form*, Eigen::Dynamic,
+                                        Eigen::Dynamic, Eigen::RowMajor>>& a);
 
 /// Create nested (MatNest) matrix. Matrix is not zeroed.
-la::PETScMatrix
-create_matrix_nest(std::vector<std::vector<const fem::Form*>> a);
+la::PETScMatrix create_matrix_nest(
+    const Eigen::Ref<const Eigen::Array<const fem::Form*, Eigen::Dynamic,
+                                        Eigen::Dynamic, Eigen::RowMajor>>& a);
 
 /// Initialise monolithic vector. Vector is not zeroed.
-la::PETScVector create_vector_block(std::vector<const fem::Form*> L);
+la::PETScVector
+create_vector_block(const std::vector<const common::IndexMap*>& maps);
 
-/// Initialise nested (VecNest) vector. Vector is not zeroed.
-la::PETScVector create_vector_nest(std::vector<const fem::Form*> L);
+/// Create nested (VecNest) vector. Vector is not zeroed.
+la::PETScVector
+create_vector_nest(const std::vector<const common::IndexMap*>& maps);
 
 /// Get new global index in 'spliced' indices
-std::size_t get_global_index(const std::vector<const common::IndexMap*> maps,
-                             const int field, const int n);
+std::int64_t get_global_index(const std::vector<const common::IndexMap*>& maps,
+                              const int field, const int n);
 
 /// Create an ElementDofLayout from a ufc_dofmap
 ElementDofLayout create_element_dof_layout(const ufc_dofmap& dofmap,
@@ -86,6 +97,16 @@ ElementDofLayout create_element_dof_layout(const ufc_dofmap& dofmap,
 /// @param[in] dofmap The ufc_dofmap.
 /// @param[in] mesh The mesh.
 DofMap create_dofmap(const ufc_dofmap& dofmap, const mesh::Mesh& mesh);
+
+/// Create a form from a form_create function returning a pointer to a ufc_form,
+/// taking care of memory allocation.
+///
+/// @param[in] fptr pointer to a function returning a pointer to ufc_form.
+/// @param[in] spaces function spaces.
+/// @return Form
+std::shared_ptr<Form> create_form(
+    ufc_form* (*fptr)(void),
+    const std::vector<std::shared_ptr<const function::FunctionSpace>>& spaces);
 
 /// Create form (shared data)
 ///
@@ -103,8 +124,8 @@ get_coeffs_from_ufc_form(const ufc_form& ufc_form);
 std::vector<std::pair<std::string, std::shared_ptr<const function::Constant>>>
 get_constants_from_ufc_form(const ufc_form& ufc_form);
 
-/// Get dolfin::fem::CoordinateMapping from ufc
-std::shared_ptr<const fem::CoordinateMapping>
+/// Get dolfin::fem::CoordinateElement from ufc
+std::shared_ptr<const fem::CoordinateElement>
 get_cmap_from_ufc_cmap(const ufc_coordinate_mapping& ufc_cmap);
 
 /// Create FunctionSpace from UFC
@@ -114,6 +135,11 @@ get_cmap_from_ufc_cmap(const ufc_coordinate_mapping& ufc_cmap);
 std::shared_ptr<function::FunctionSpace>
 create_functionspace(ufc_function_space* (*fptr)(void),
                      std::shared_ptr<mesh::Mesh> mesh);
+
+// NOTE: This is subject to change
+/// Pack form coeffcients ready for assembly
+Eigen::Array<PetscScalar, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
+pack_coefficients(const fem::Form& form);
 
 } // namespace fem
 } // namespace dolfin

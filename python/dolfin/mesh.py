@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 # Copyright (C) 2017-2018 Chris N. Richardson and Garth N. Wells
 #
 # This file is part of DOLFIN (https://www.fenicsproject.org)
@@ -17,7 +16,6 @@ _meshfunction_types = {
 }
 
 _meshvaluecollection_types = {
-    "bool": cpp.mesh.MeshValueCollection_bool,
     "size_t": cpp.mesh.MeshValueCollection_sizet,
     "int": cpp.mesh.MeshValueCollection_int,
     "double": cpp.mesh.MeshValueCollection_double
@@ -70,13 +68,6 @@ def ufl_domain(self):
     return self._ufl_domain
 
 
-# FIXME: find a way to remove this from public interface. Use gdim =
-# mesh.geometry.dim instead
-def geometric_dimension(self):
-    """Returns geometric dimension for UFL interface"""
-    return self.geometry.dim
-
-
 def num_cells(self):
     """Return number of mesh cells"""
     return self.num_entities(self.topology.dim)
@@ -86,7 +77,6 @@ def num_cells(self):
 cpp.mesh.Mesh.ufl_cell = ufl_cell
 cpp.mesh.Mesh.ufl_coordinate_element = ufl_coordinate_element
 cpp.mesh.Mesh.ufl_domain = ufl_domain
-cpp.mesh.Mesh.geometric_dimension = geometric_dimension
 cpp.mesh.Mesh.num_cells = num_cells
 
-del ufl_cell, ufl_coordinate_element, ufl_domain, geometric_dimension, num_cells
+del ufl_cell, ufl_coordinate_element, ufl_domain, num_cells

@@ -313,8 +313,6 @@ void mesh::Ordering::order_simplex(mesh::Mesh& mesh)
   mesh::Connectivity& connect_g = mesh.coordinate_dofs().entity_points();
 
   // Get global vertex numbering
-  if (!mesh.topology().have_global_indices(0))
-    throw std::runtime_error("Mesh does not have global vertex indices.");
   const std::vector<std::int64_t>& global_vertex_indices
       = mesh.topology().global_indices(0);
 
@@ -395,8 +393,6 @@ bool mesh::Ordering::is_ordered_simplex(const mesh::Mesh& mesh)
     return true;
 
   // Get global vertex numbering
-  if (!mesh.topology().have_global_indices(0))
-    throw std::runtime_error("Mesh does not have global vertex indices.");
   const std::vector<std::int64_t>& global_vertex_indices
       = mesh.topology().global_indices(0);
 

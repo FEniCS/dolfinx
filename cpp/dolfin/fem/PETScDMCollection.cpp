@@ -7,7 +7,7 @@
 #include "PETScDMCollection.h"
 #include <Eigen/Dense>
 #include <dolfin/common/IndexMap.h>
-#include <dolfin/fem/CoordinateMapping.h>
+#include <dolfin/fem/CoordinateElement.h>
 #include <dolfin/fem/DofMap.h>
 #include <dolfin/fem/FiniteElement.h>
 #include <dolfin/function/Function.h>
@@ -85,9 +85,9 @@ tabulate_coordinates_to_dofs(const function::FunctionSpace& V)
   if (!mesh.geometry().coord_mapping)
   {
     throw std::runtime_error(
-        "CoordinateMapping has not been attached to mesh.");
+        "CoordinateElement has not been attached to mesh.");
   }
-  const CoordinateMapping& cmap = *mesh.geometry().coord_mapping;
+  const CoordinateElement& cmap = *mesh.geometry().coord_mapping;
 
   // Prepare cell geometry
   const mesh::Connectivity& connectivity_g
@@ -125,7 +125,7 @@ tabulate_coordinates_to_dofs(const function::FunctionSpace& V)
     auto dofs = dofmap.cell_dofs(cell.index());
 
     // Tabulate dof coordinates on cell
-    cmap.compute_physical_coordinates(coordinates, X, coordinate_dofs);
+    cmap.push_forward(coordinates, X, coordinate_dofs);
 
     // Map dofs into coords_to_dofs
     for (Eigen::Index i = 0; i < dofs.size(); ++i)

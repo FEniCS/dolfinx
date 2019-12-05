@@ -22,8 +22,7 @@ FormIntegrals::FormIntegrals()
 //-----------------------------------------------------------------------------
 const std::function<void(PetscScalar*, const PetscScalar*, const PetscScalar*,
                          const double*, const int*, const int*)>&
-FormIntegrals::get_tabulate_tensor_function(FormIntegrals::Type type,
-                                            int i) const
+FormIntegrals::get_tabulate_tensor(FormIntegrals::Type type, int i) const
 {
   int type_index = static_cast<int>(type);
   const std::vector<struct FormIntegrals::Integral>& integrals
@@ -31,10 +30,12 @@ FormIntegrals::get_tabulate_tensor_function(FormIntegrals::Type type,
   return integrals.at(i).tabulate;
 }
 //-----------------------------------------------------------------------------
-void FormIntegrals::register_tabulate_tensor(
+void FormIntegrals::set_tabulate_tensor(
     FormIntegrals::Type type, int i,
-    void (*fn)(PetscScalar*, const PetscScalar*, const PetscScalar*,
-               const double*, const int*, const int*))
+    std::function<void(PetscScalar*, const PetscScalar*, const PetscScalar*,
+                       const double*, const int*, const int*)>
+        fn)
+
 {
   const int type_index = static_cast<int>(type);
   std::vector<struct FormIntegrals::Integral>& integrals
@@ -146,7 +147,7 @@ void FormIntegrals::set_domains(FormIntegrals::Type type,
   {
     const int rank = MPI::rank(mesh->mpi_comm());
     const std::vector<std::int32_t>& cell_owners
-        = mesh->topology().cell_owner();
+        = mesh->topology().entity_owner(tdim);
     const std::int32_t cell_ghost_offset = mesh->topology().ghost_offset(tdim);
     std::shared_ptr<const mesh::Connectivity> connectivity
         = mesh->topology().connectivity(tdim - 1, tdim);
@@ -240,7 +241,7 @@ void FormIntegrals::set_default_domains(const mesh::Mesh& mesh)
     {
       // Get owner (MPI ranks) of ghost cells
       const std::vector<std::int32_t>& cell_owners
-          = mesh.topology().cell_owner();
+          = mesh.topology().entity_owner(tdim);
       const std::int32_t ghost_offset = mesh.topology().ghost_offset(tdim);
 
       std::shared_ptr<const mesh::Connectivity> connectivity

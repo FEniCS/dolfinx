@@ -11,8 +11,8 @@ from petsc4py import PETSc
 import dolfin
 import dolfin.fem as fem
 import ufl
-from dolfin import function, functionspace
-from ufl import derivative, dx, grad, inner
+from dolfin import function
+from ufl import TestFunction, TrialFunction, derivative, dx, grad, inner
 
 
 class NonlinearPDEProblem(dolfin.cpp.nls.NonlinearProblem):
@@ -21,7 +21,7 @@ class NonlinearPDEProblem(dolfin.cpp.nls.NonlinearProblem):
     def __init__(self, F, u, bc):
         super().__init__()
         V = u.function_space
-        du = function.TrialFunction(V)
+        du = TrialFunction(V)
         self.L = F
         self.a = derivative(F, u, du)
         self.bc = bc
@@ -59,7 +59,7 @@ class NonlinearPDE_SNESProblem():
     def __init__(self, F, u, bc):
         super().__init__()
         V = u.function_space
-        du = function.TrialFunction(V)
+        du = TrialFunction(V)
         self.L = F
         self.a = derivative(F, u, du)
         self.a_comp = dolfin.fem.Form(self.a)
@@ -91,14 +91,14 @@ def test_linear_pde():
     """Test Newton solver for a linear PDE"""
     # Create mesh and function space
     mesh = dolfin.generation.UnitSquareMesh(dolfin.MPI.comm_world, 12, 12)
-    V = functionspace.FunctionSpace(mesh, ("Lagrange", 1))
+    V = function.FunctionSpace(mesh, ("Lagrange", 1))
     u = function.Function(V)
-    v = function.TestFunction(V)
+    v = TestFunction(V)
     F = inner(10.0, v) * dx - inner(grad(u), grad(v)) * dx
 
     def boundary(x):
         """Define Dirichlet boundary (x = 0 or x = 1)."""
-        return np.logical_or(x[:, 0] < 1.0e-8, x[:, 0] > 1.0 - 1.0e-8)
+        return np.logical_or(x[0] < 1.0e-8, x[0] > 1.0 - 1.0e-8)
 
     u_bc = function.Function(V)
     u_bc.vector.set(1.0)
@@ -126,15 +126,15 @@ def test_nonlinear_pde():
     """Test Newton solver for a simple nonlinear PDE"""
     # Create mesh and function space
     mesh = dolfin.generation.UnitSquareMesh(dolfin.MPI.comm_world, 12, 5)
-    V = functionspace.FunctionSpace(mesh, ("Lagrange", 1))
+    V = function.FunctionSpace(mesh, ("Lagrange", 1))
     u = dolfin.function.Function(V)
-    v = function.TestFunction(V)
+    v = TestFunction(V)
     F = inner(5.0, v) * dx - ufl.sqrt(u * u) * inner(
         grad(u), grad(v)) * dx - inner(u, v) * dx
 
     def boundary(x):
         """Define Dirichlet boundary (x = 0 or x = 1)."""
-        return np.logical_or(x[:, 0] < 1.0e-8, x[:, 0] > 1.0 - 1.0e-8)
+        return np.logical_or(x[0] < 1.0e-8, x[0] > 1.0 - 1.0e-8)
 
     u_bc = function.Function(V)
     u_bc.vector.set(1.0)
@@ -164,15 +164,15 @@ def test_nonlinear_pde_snes():
     """Test Newton solver for a simple nonlinear PDE"""
     # Create mesh and function space
     mesh = dolfin.generation.UnitSquareMesh(dolfin.MPI.comm_world, 12, 15)
-    V = functionspace.FunctionSpace(mesh, ("Lagrange", 1))
+    V = function.FunctionSpace(mesh, ("Lagrange", 1))
     u = function.Function(V)
-    v = function.TestFunction(V)
+    v = TestFunction(V)
     F = inner(5.0, v) * dx - ufl.sqrt(u * u) * inner(
         grad(u), grad(v)) * dx - inner(u, v) * dx
 
     def boundary(x):
         """Define Dirichlet boundary (x = 0 or x = 1)."""
-        return np.logical_or(x[:, 0] < 1.0e-8, x[:, 0] > 1.0 - 1.0e-8)
+        return np.logical_or(x[0] < 1.0e-8, x[0] > 1.0 - 1.0e-8)
 
     u_bc = function.Function(V)
     u_bc.vector.set(1.0)
@@ -194,9 +194,12 @@ def test_nonlinear_pde_snes():
     snes.setJacobian(problem.J, J)
 
     snes.setTolerances(rtol=1.0e-9, max_it=10)
-    snes.setFromOptions()
-
+    snes.getKSP().setType("preonly")
     snes.getKSP().setTolerances(rtol=1.0e-9)
+
+    snes.getKSP().getPC().setType("lu")
+    snes.getKSP().getPC().setFactorSolverType("mumps")
+
     snes.solve(None, u.vector)
     assert snes.getConvergedReason() > 0
     assert snes.getIterationNumber() < 6
@@ -220,3 +223,52 @@ def test_newton_solver_inheritance():
 
     derived = DerivedNewtonSolver(dolfin.MPI.comm_world)
     assert isinstance(derived, DerivedNewtonSolver)
+
+
+def test_newton_solver_inheritance_override_methods():
+    import functools
+    called_methods = {}
+
+    def check_is_called(method):
+        @functools.wraps(method)
+        def wrapper(*args, **kwargs):
+            called_methods[method.__name__] = True
+            return method(*args, **kwargs)
+        return wrapper
+
+    class CustomNewtonSolver(dolfin.cpp.nls.NewtonSolver):
+
+        def __init__(self, comm):
+            super().__init__(comm)
+
+        @check_is_called
+        def update_solution(self, x, dx, relaxation,
+                            problem, it):
+            return super().update_solution(x, dx, relaxation, problem, it)
+
+        @check_is_called
+        def converged(self, r, problem, it):
+            return super().converged(r, problem, it)
+
+    mesh = dolfin.generation.UnitSquareMesh(dolfin.MPI.comm_world, 12, 12)
+    V = function.FunctionSpace(mesh, ("Lagrange", 1))
+    u = function.Function(V)
+    v = TestFunction(V)
+    F = inner(10.0, v) * dx - inner(grad(u), grad(v)) * dx
+
+    def boundary(x):
+        """Define Dirichlet boundary (x = 0 or x = 1)."""
+        return np.logical_or(x[0] < 1.0e-8, x[0] > 1.0 - 1.0e-8)
+
+    u_bc = function.Function(V)
+    bc = fem.DirichletBC(V, u_bc, boundary)
+
+    # Create nonlinear problem
+    problem = NonlinearPDEProblem(F, u, bc)
+
+    # Create Newton solver and solve
+    solver = CustomNewtonSolver(dolfin.MPI.comm_world)
+    n, converged = solver.solve(problem, u.vector)
+
+    assert called_methods[CustomNewtonSolver.converged.__name__]
+    assert called_methods[CustomNewtonSolver.update_solution.__name__]

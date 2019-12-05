@@ -58,13 +58,8 @@ std::int64_t Topology::size_global(int dim) const
 //-----------------------------------------------------------------------------
 std::int32_t Topology::ghost_offset(int dim) const
 {
-  if (_ghost_offset_index.empty())
-    return 0;
-  else
-  {
-    assert(dim < (int)_ghost_offset_index.size());
-    return _ghost_offset_index[dim];
-  }
+  assert(dim < (int)_ghost_offset_index.size());
+  return _ghost_offset_index[dim];
 }
 //-----------------------------------------------------------------------------
 void Topology::clear(int d0, int d1)
@@ -108,17 +103,11 @@ const std::vector<std::int64_t>& Topology::global_indices(std::size_t d) const
   return _global_indices[d];
 }
 //-----------------------------------------------------------------------------
-bool Topology::have_global_indices(std::size_t dim) const
-{
-  assert(dim < _global_indices.size());
-  return !_global_indices[dim].empty();
-}
-//-----------------------------------------------------------------------------
-std::map<std::int32_t, std::set<std::int32_t>>&
-Topology::shared_entities(int dim)
+void Topology::set_shared_entities(
+    int dim, const std::map<std::int32_t, std::set<std::int32_t>>& entities)
 {
   assert(dim <= this->dim());
-  return _shared_entities[dim];
+  _shared_entities[dim] = entities;
 }
 //-----------------------------------------------------------------------------
 const std::map<std::int32_t, std::set<std::int32_t>>&
@@ -128,11 +117,15 @@ Topology::shared_entities(int dim) const
   return _shared_entities[dim];
 }
 //-----------------------------------------------------------------------------
-std::vector<std::int32_t>& Topology::cell_owner() { return _cell_owner; }
-//-----------------------------------------------------------------------------
-const std::vector<std::int32_t>& Topology::cell_owner() const
+void Topology::set_entity_owner(int dim, const std::vector<std::int32_t>& owners)
 {
-  return _cell_owner;
+  assert(dim <= this->dim());
+  _entity_owner[dim] = owners;
+}
+//-----------------------------------------------------------------------------
+const std::vector<std::int32_t>& Topology::entity_owner(int dim) const
+{
+  return _entity_owner[dim];
 }
 //-----------------------------------------------------------------------------
 std::vector<bool> Topology::on_boundary(int dim) const

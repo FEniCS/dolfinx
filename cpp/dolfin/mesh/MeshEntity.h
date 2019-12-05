@@ -15,14 +15,14 @@ namespace dolfin
 
 namespace mesh
 {
+
 /// A MeshEntity represents a mesh entity associated with a specific
-/// topological dimension of some _Mesh_.
+/// topological dimension of some Mesh.
 
 class MeshEntity
 {
 public:
   /// Constructor
-  ///
   /// @param[in] mesh The mesh
   /// @param[in] dim The topological dimension
   /// @param[in] index The entity index
@@ -48,9 +48,8 @@ public:
   MeshEntity& operator=(MeshEntity&& e) = default;
 
   /// Comparison Operator
-  ///
-  /// @param e Another mesh entity
-  ///  @return True if the two mesh entities are equal.
+  /// @param[in] e Another mesh entity
+  /// @return True if the two mesh entities are equal.
   bool operator==(const MeshEntity& e) const
   {
     return (_mesh == e._mesh and _dim == e._dim
@@ -58,19 +57,16 @@ public:
   }
 
   /// Comparison Operator
-  ///
-  /// @param e Another mesh entity.
-  /// @return rue if the two mesh entities are NOT equal.
+  /// @param[in] e Another mesh entity.
+  /// @return True if the two mesh entities are NOT equal.
   bool operator!=(const MeshEntity& e) const { return !operator==(e); }
 
   /// Return mesh associated with mesh entity
-  ///
-  /// @return The mesh.
+  /// @return The mesh
   const Mesh& mesh() const { return *_mesh; }
 
   /// Return topological dimension
-  ///
-  /// @return The dimension
+  /// @return The topological dimension
   int dim() const { return _dim; }
 
   /// Return index of mesh entity
@@ -80,8 +76,7 @@ public:
 
   /// Return array of indices for incident mesh entities of given
   /// topological dimension
-  ///
-  /// @param dim The topological dimension
+  /// @param[in] dim The topological dimension
   /// @return The index for incident mesh entities of given dimension
   const std::int32_t* entities(int dim) const
   {
@@ -98,15 +93,12 @@ public:
     }
   }
 
-  /// Compute local index of given incident entity (error if not
-  /// found)
-  ///
+  /// Compute local index of given incident entity (error if not found)
   /// @param[in] entity The mesh entity.
   /// @return The local index of given entity.
   int index(const MeshEntity& entity) const;
 
   /// Return informal string representation (pretty-print)
-  ///
   /// @param[in] verbose Flag to turn on additional output
   /// @return An informal representation of the function space
   std::string str(bool verbose) const;

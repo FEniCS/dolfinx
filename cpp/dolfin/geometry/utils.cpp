@@ -370,7 +370,7 @@ geometry::compute_collisions(const BoundingBoxTree& tree0,
                            tree1.num_bboxes() - 1, nullptr, nullptr, entities_0,
                            entities_1);
 
-  return std::make_pair(entities_0, entities_1);
+  return std::pair(entities_0, entities_1);
 }
 //-----------------------------------------------------------------------------
 std::pair<std::vector<int>, std::vector<int>>
@@ -386,7 +386,7 @@ geometry::compute_entity_collisions(const BoundingBoxTree& tree0,
                            tree1.num_bboxes() - 1, &mesh0, &mesh1, entities_0,
                            entities_1);
 
-  return std::make_pair(entities_0, entities_1);
+  return std::pair(entities_0, entities_1);
 }
 //-----------------------------------------------------------------------------
 std::vector<int> geometry::compute_collisions(const BoundingBoxTree& tree,

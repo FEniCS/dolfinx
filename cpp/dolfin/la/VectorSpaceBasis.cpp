@@ -13,7 +13,7 @@ using namespace dolfin::la;
 
 //-----------------------------------------------------------------------------
 VectorSpaceBasis::VectorSpaceBasis(
-    const std::vector<std::shared_ptr<PETScVector>> basis)
+    const std::vector<std::shared_ptr<PETScVector>>& basis)
     : _basis(basis)
 {
   // Do nothing

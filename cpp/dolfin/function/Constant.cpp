@@ -17,7 +17,8 @@ Constant::Constant(PetscScalar c) : value({c})
   // Do nothing
 }
 //-----------------------------------------------------------------------------
-Constant::Constant(std::vector<PetscScalar> c) : shape(1, c.size()), value({c})
+Constant::Constant(const std::vector<PetscScalar>& c)
+    : shape(1, c.size()), value({c})
 {
   // Do nothing
 }

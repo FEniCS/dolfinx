@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 # Copyright (C) 2018 Michal Habera
 #
 # This file is part of DOLFIN (https://www.fenicsproject.org)
@@ -9,7 +8,8 @@ import functools
 
 from dolfin import cpp
 from dolfin.cpp.common import (git_commit_hash, has_debug,  # noqa
-                               has_parmetis, has_petsc_complex)
+                               has_parmetis, has_kahip,
+                               has_petsc_complex)
 
 TimingType = cpp.common.TimingType
 
@@ -22,8 +22,8 @@ def timings(timing_types: list):
     return cpp.common.timings(timing_types)
 
 
-def list_timings(timing_types: list):
-    return cpp.common.list_timings(timing_types)
+def list_timings(mpi_comm, timing_types: list):
+    return cpp.common.list_timings(mpi_comm, timing_types)
 
 
 class Timer:

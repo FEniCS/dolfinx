@@ -35,18 +35,19 @@ def test_read_write_p2_mesh(tempdir):
 def test_read_write_p2_function(tempdir):
     mesh = cpp.generation.UnitDiscMesh.create(MPI.comm_world, 3,
                                               cpp.mesh.GhostMode.none)
+    gdim = mesh.geometry.dim
     cmap = fem.create_coordinate_map(mesh.ufl_domain())
     mesh.geometry.coord_mapping = cmap
     Q = FunctionSpace(mesh, ("Lagrange", 2))
 
     F = Function(Q)
     if has_petsc_complex:
-        def expr_eval(values, x):
-            values[:, 0] = x[:, 0] + 1.0j * x[:, 0]
+        def expr_eval(x):
+            return x[0] + 1.0j * x[0]
         F.interpolate(expr_eval)
     else:
-        def expr_eval(values, x):
-            values[:, 0] = x[:, 0]
+        def expr_eval(x):
+            return x[0]
         F.interpolate(expr_eval)
 
     filename = os.path.join(tempdir, "tri6_function.xdmf")
@@ -58,12 +59,12 @@ def test_read_write_p2_function(tempdir):
     Q = VectorFunctionSpace(mesh, ("Lagrange", 1))
     F = Function(Q)
     if has_petsc_complex:
-        def expr_eval(values, x):
-            values[:, :] = x + 1.0j * x
+        def expr_eval(x):
+            return x[:gdim] + 1.0j * x[:gdim]
         F.interpolate(expr_eval)
     else:
-        def expr_eval(values, x):
-            values[:, :] = x
+        def expr_eval(x):
+            return x[:gdim]
         F.interpolate(expr_eval)
     filename = os.path.join(tempdir, "tri6_vector_function.xdmf")
     with XDMFFile(

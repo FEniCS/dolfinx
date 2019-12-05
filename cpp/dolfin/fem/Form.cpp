@@ -7,7 +7,7 @@
 #include "Form.h"
 #include "DofMap.h"
 #include <dolfin/common/types.h>
-#include <dolfin/fem/CoordinateMapping.h>
+#include <dolfin/fem/CoordinateElement.h>
 #include <dolfin/fem/FiniteElement.h>
 #include <dolfin/fem/utils.h>
 #include <dolfin/function/Constant.h>
@@ -31,7 +31,7 @@ Form::Form(
     const std::vector<
         std::pair<std::string, std::shared_ptr<const function::Constant>>>
         constants,
-    std::shared_ptr<const CoordinateMapping> coord_mapping)
+    std::shared_ptr<const CoordinateElement> coord_mapping)
     : _integrals(integrals), _coefficients(coefficients), _constants(constants),
       _function_spaces(function_spaces), _coord_mapping(coord_mapping)
 {
@@ -114,8 +114,28 @@ void Form::set_constants(
   for (std::size_t i = 0; i < constants.size(); ++i)
   {
     // In this case, the constants don't have names
-    _constants[i] = std::make_pair("", constants[i]);
+    _constants[i] = std::pair("", constants[i]);
   }
+}
+//-----------------------------------------------------------------------------
+bool Form::all_constants_set() const
+{
+  for (auto& constant : _constants)
+    if (!constant.second)
+      return false;
+
+  return true;
+}
+//-----------------------------------------------------------------------------
+std::set<std::string> Form::get_unset_constants() const
+{
+  std::set<std::string> unset;
+  for (auto& constant : _constants)
+  {
+    if (!constant.second)
+      unset.insert(constant.first);
+  }
+  return unset;
 }
 //-----------------------------------------------------------------------------
 void Form::set_mesh(std::shared_ptr<const mesh::Mesh> mesh)
@@ -136,11 +156,13 @@ std::shared_ptr<const function::FunctionSpace> Form::function_space(int i) const
   return _function_spaces.at(i);
 }
 //-----------------------------------------------------------------------------
-void Form::register_tabulate_tensor_cell(
-    int i, void (*fn)(PetscScalar*, const PetscScalar*, const PetscScalar*,
-                      const double*, const int*, const int*))
+void Form::set_tabulate_tensor(
+    FormIntegrals::Type type, int i,
+    std::function<void(PetscScalar*, const PetscScalar*, const PetscScalar*,
+                       const double*, const int*, const int*)>
+        fn)
 {
-  _integrals.register_tabulate_tensor(FormIntegrals::Type::cell, i, fn);
+  _integrals.set_tabulate_tensor(type, i, fn);
   if (i == -1 and _mesh)
     _integrals.set_default_domains(*_mesh);
 }
@@ -186,7 +208,7 @@ Form::constants() const
 //-----------------------------------------------------------------------------
 const fem::FormIntegrals& Form::integrals() const { return _integrals; }
 //-----------------------------------------------------------------------------
-std::shared_ptr<const fem::CoordinateMapping> Form::coordinate_mapping() const
+std::shared_ptr<const fem::CoordinateElement> Form::coordinate_mapping() const
 {
   return _coord_mapping;
 }

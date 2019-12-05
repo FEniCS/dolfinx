@@ -5,20 +5,23 @@
 # SPDX-License-Identifier:    LGPL-3.0-or-later
 
 import math
-import sys
 import os
+import sys
 
-import numpy
+import numpy as np
 import pytest
 
 import dolfin
 import FIAT
-from dolfin import (MPI, BoxMesh, MeshEntity, MeshFunction, RectangleMesh,
-                    UnitCubeMesh, UnitIntervalMesh, UnitSquareMesh, cpp)
-from dolfin.cpp.mesh import CellType, is_simplex
+from dolfin import (MPI, BoxMesh, Mesh, MeshEntity, MeshFunction,
+                    RectangleMesh, UnitCubeMesh, UnitIntervalMesh,
+                    UnitSquareMesh, cpp, has_kahip)
+from dolfin.cpp.mesh import CellType, Partitioner, is_simplex
+from dolfin.fem import assemble_scalar
 from dolfin.io import XDMFFile
 from dolfin_utils.test.fixtures import tempdir
 from dolfin_utils.test.skips import skip_in_parallel
+from ufl import dx
 
 assert (tempdir)
 
@@ -35,8 +38,8 @@ def mesh1d():
 def mesh2d():
     """Create 2D mesh with one equilateral triangle"""
     mesh2d = RectangleMesh(
-        MPI.comm_world, [numpy.array([0.0, 0.0, 0.0]),
-                         numpy.array([1., 1., 0.0])], [1, 1],
+        MPI.comm_world, [np.array([0.0, 0.0, 0.0]),
+                         np.array([1., 1., 0.0])], [1, 1],
         CellType.triangle, cpp.mesh.GhostMode.none, 'left')
     mesh2d.geometry.points[3, :2] += 0.5 * (math.sqrt(3.0) - 1.0)
     return mesh2d
@@ -46,8 +49,13 @@ def mesh2d():
 def mesh3d():
     """Create 3D mesh with regular tetrahedron and degenerate cells"""
     mesh3d = UnitCubeMesh(MPI.comm_world, 1, 1, 1)
-    mesh3d.geometry.points[6][0] = 1.0
-    mesh3d.geometry.points[3][1] = 0.0
+    i1 = np.where((mesh3d.geometry.points
+                   == (0, 1, 0)).all(axis=1))[0][0]
+    i2 = np.where((mesh3d.geometry.points
+                   == (1, 1, 1)).all(axis=1))[0][0]
+
+    mesh3d.geometry.points[i1][0] = 1.0
+    mesh3d.geometry.points[i2][1] = 0.0
     return mesh3d
 
 
@@ -82,8 +90,8 @@ def square():
 @pytest.fixture
 def rectangle():
     return RectangleMesh(
-        MPI.comm_world, [numpy.array([0.0, 0.0, 0.0]),
-                         numpy.array([2.0, 2.0, 0.0])], [5, 5],
+        MPI.comm_world, [np.array([0.0, 0.0, 0.0]),
+                         np.array([2.0, 2.0, 0.0])], [5, 5],
         CellType.triangle, cpp.mesh.GhostMode.none)
 
 
@@ -94,8 +102,8 @@ def cube():
 
 @pytest.fixture
 def box():
-    return BoxMesh(MPI.comm_world, [numpy.array([0, 0, 0]),
-                                    numpy.array([2, 2, 2])], [2, 2, 5], CellType.tetrahedron,
+    return BoxMesh(MPI.comm_world, [np.array([0, 0, 0]),
+                                    np.array([2, 2, 2])], [2, 2, 5], CellType.tetrahedron,
                    cpp.mesh.GhostMode.none)
 
 
@@ -146,7 +154,7 @@ def test_UFLDomain(interval, square, rectangle, cube, box):
 @skip_in_parallel
 def test_mesh_construction_pygmsh():
 
-    import pygmsh
+    pygmsh = pytest.importorskip("pygmsh")
 
     if MPI.rank(MPI.comm_world) == 0:
         geom = pygmsh.opencascade.Geometry()
@@ -154,30 +162,29 @@ def test_mesh_construction_pygmsh():
         pygmsh_mesh = pygmsh.generate_mesh(geom)
         points, cells = pygmsh_mesh.points, pygmsh_mesh.cells
     else:
-        points = numpy.zeros([0, 3])
+        points = np.zeros([0, 3])
         cells = {
-            "tetra": numpy.zeros([0, 4], dtype=numpy.int64),
-            "triangle": numpy.zeros([0, 3], dtype=numpy.int64),
-            "line": numpy.zeros([0, 2], dtype=numpy.int64)
+            "tetra": np.zeros([0, 4], dtype=np.int64),
+            "triangle": np.zeros([0, 3], dtype=np.int64),
+            "line": np.zeros([0, 2], dtype=np.int64)
         }
 
-    mesh = dolfin.cpp.mesh.Mesh(
-        MPI.comm_world, dolfin.cpp.mesh.CellType.tetrahedron, points,
-        cells['tetra'], [], cpp.mesh.GhostMode.none)
+    mesh = Mesh(MPI.comm_world, dolfin.cpp.mesh.CellType.tetrahedron, points,
+                cells['tetra'], [], cpp.mesh.GhostMode.none)
     assert mesh.degree() == 1
     assert mesh.geometry.dim == 3
     assert mesh.topology.dim == 3
 
-    mesh = dolfin.cpp.mesh.Mesh(MPI.comm_world,
-                                dolfin.cpp.mesh.CellType.triangle, points,
-                                cells['triangle'], [], cpp.mesh.GhostMode.none)
+    mesh = Mesh(MPI.comm_world,
+                dolfin.cpp.mesh.CellType.triangle, points,
+                cells['triangle'], [], cpp.mesh.GhostMode.none)
     assert mesh.degree() == 1
     assert mesh.geometry.dim == 3
     assert mesh.topology.dim == 2
 
-    mesh = dolfin.cpp.mesh.Mesh(MPI.comm_world,
-                                dolfin.cpp.mesh.CellType.interval, points,
-                                cells['line'], [], cpp.mesh.GhostMode.none)
+    mesh = Mesh(MPI.comm_world,
+                dolfin.cpp.mesh.CellType.interval, points,
+                cells['line'], [], cpp.mesh.GhostMode.none)
     assert mesh.degree() == 1
     assert mesh.geometry.dim == 3
     assert mesh.topology.dim == 1
@@ -191,23 +198,21 @@ def test_mesh_construction_pygmsh():
         points, cells = pygmsh_mesh.points, pygmsh_mesh.cells
         print("End Generate mesh", cells.keys())
     else:
-        points = numpy.zeros([0, 3])
+        points = np.zeros([0, 3])
         cells = {
-            "tetra10": numpy.zeros([0, 10], dtype=numpy.int64),
-            "triangle6": numpy.zeros([0, 6], dtype=numpy.int64),
-            "line3": numpy.zeros([0, 3], dtype=numpy.int64)
+            "tetra10": np.zeros([0, 10], dtype=np.int64),
+            "triangle6": np.zeros([0, 6], dtype=np.int64),
+            "line3": np.zeros([0, 3], dtype=np.int64)
         }
 
-    mesh = dolfin.cpp.mesh.Mesh(
-        MPI.comm_world, dolfin.cpp.mesh.CellType.tetrahedron, points,
-        cells['tetra10'], [], cpp.mesh.GhostMode.none)
+    mesh = Mesh(MPI.comm_world, dolfin.cpp.mesh.CellType.tetrahedron, points,
+                cells['tetra10'], [], cpp.mesh.GhostMode.none)
     assert mesh.degree() == 2
     assert mesh.geometry.dim == 3
     assert mesh.topology.dim == 3
 
-    mesh = dolfin.cpp.mesh.Mesh(
-        MPI.comm_world, dolfin.cpp.mesh.CellType.triangle, points,
-        cells['triangle6'], [], cpp.mesh.GhostMode.none)
+    mesh = Mesh(MPI.comm_world, dolfin.cpp.mesh.CellType.triangle, points,
+                cells['triangle6'], [], cpp.mesh.GhostMode.none)
     assert mesh.degree() == 2
     assert mesh.geometry.dim == 3
     assert mesh.topology.dim == 2
@@ -219,6 +224,7 @@ def test_UnitSquareMeshDistributed():
     assert mesh.num_entities_global(0) == 48
     assert mesh.num_entities_global(2) == 70
     assert mesh.geometry.dim == 2
+    assert MPI.sum(mesh.mpi_comm(), mesh.topology.ghost_offset(0)) == 48
 
 
 def test_UnitSquareMeshLocal():
@@ -235,6 +241,7 @@ def test_UnitCubeMeshDistributed():
     assert mesh.num_entities_global(0) == 480
     assert mesh.num_entities_global(3) == 1890
     assert mesh.geometry.dim == 3
+    assert MPI.sum(mesh.mpi_comm(), mesh.topology.ghost_offset(0)) == 480
 
 
 def test_UnitCubeMeshLocal():
@@ -250,6 +257,7 @@ def test_UnitQuadMesh():
     assert mesh.num_entities_global(0) == 48
     assert mesh.num_entities_global(2) == 35
     assert mesh.geometry.dim == 2
+    assert MPI.sum(mesh.mpi_comm(), mesh.topology.ghost_offset(0)) == 48
 
 
 def test_UnitHexMesh():
@@ -257,6 +265,7 @@ def test_UnitHexMesh():
     assert mesh.num_entities_global(0) == 480
     assert mesh.num_entities_global(3) == 315
     assert mesh.geometry.dim == 3
+    assert MPI.sum(mesh.mpi_comm(), mesh.topology.ghost_offset(0)) == 480
 
 
 def test_hash():
@@ -306,7 +315,7 @@ def test_cell_h(c0, c1, c5):
 @skip_in_parallel
 def test_cell_radius_ratio(c0, c1, c5):
     assert cpp.mesh.radius_ratio(c0.mesh(), [c0.index()]) == pytest.approx(math.sqrt(3.0) - 1.0)
-    assert numpy.isnan(cpp.mesh.radius_ratio(c1.mesh(), [c1.index()]))
+    assert np.isnan(cpp.mesh.radius_ratio(c1.mesh(), [c1.index()]))
     assert cpp.mesh.radius_ratio(c5.mesh(), [c5.index()]) == pytest.approx(1.0)
 
 
@@ -377,9 +386,6 @@ def test_mesh_topology_against_fiat(mesh_factory, ghost_mode=cpp.mesh.GhostMode.
     if not is_simplex(mesh.cell_type):
         return
 
-    # Order mesh
-    cpp.mesh.Ordering.order_simplex(mesh)
-
     # Create FIAT cell
     cell_name = cpp.mesh.to_string(mesh.cell_type)
     fiat_cell = FIAT.ufc_cell(cell_name)
@@ -405,9 +411,9 @@ def test_mesh_topology_against_fiat(mesh_factory, ghost_mode=cpp.mesh.GhostMode.
 
                 # Check that entity vertices map to cell vertices in correct order
                 entity = MeshEntity(mesh, d, entities[entity_index])
-                entity_vertices = entity.entities(0)
-                assert all(vertex_global_indices[numpy.array(entity_topology)]
-                           == entity_vertices)
+                vertices_dolfin = np.sort(entity.entities(0))
+                vertices_fiat = np.sort(vertex_global_indices[np.array(entity_topology)])
+                assert all(vertices_fiat == vertices_dolfin)
 
 
 def test_mesh_topology_lifetime():
@@ -445,28 +451,29 @@ def test_topology_surface(cube):
     surface_edge_markers = cube.topology.on_boundary(1)
     assert surface_edge_markers
     surface_facet_markers = cube.topology.on_boundary(2)
-    sf_count = numpy.count_nonzero(numpy.array(surface_facet_markers))
+    sf_count = np.count_nonzero(np.array(surface_facet_markers))
     assert MPI.sum(cube.mpi_comm(), sf_count) == n * n * 12
 
 
 @pytest.mark.parametrize("mesh_factory", mesh_factories)
 @pytest.mark.parametrize("subset_comm", [MPI.comm_world, new_comm(MPI.comm_world)])
-def test_distribute_mesh(subset_comm, tempdir, mesh_factory):
+@pytest.mark.parametrize(
+    "graph_partitioner",
+    [Partitioner.scotch,
+     pytest.param(Partitioner.kahip,
+                  marks=pytest.mark.skipif(not has_kahip, reason="KaHIP is not available"))])
+def test_distribute_mesh(subset_comm, tempdir, mesh_factory, graph_partitioner):
     func, args = mesh_factory
     mesh = func(*args)
 
     if not is_simplex(mesh.cell_type):
         return
 
-    # Order mesh
-    cpp.mesh.Ordering.order_simplex(mesh)
-
     encoding = XDMFFile.Encoding.HDF5
     ghost_mode = cpp.mesh.GhostMode.none
     filename = os.path.join(tempdir, "mesh.xdmf")
     comm = mesh.mpi_comm()
     parts = comm.size
-    partitioner = cpp.mesh.Partitioner.scotch
 
     with XDMFFile(mesh.mpi_comm(), filename, encoding) as file:
         file.write(mesh)
@@ -475,8 +482,10 @@ def test_distribute_mesh(subset_comm, tempdir, mesh_factory):
     # available processes
     with XDMFFile(subset_comm, filename) as file:
         cell_type, points, cells, indices = file.read_mesh_data(subset_comm)
+
     partition_data = cpp.mesh.partition_cells(subset_comm, parts, cell_type,
-                                              cells, partitioner)
+                                              cells, graph_partitioner)
+
     dist_mesh = cpp.mesh.build_from_partition(MPI.comm_world, cell_type, points,
                                               cells, indices, ghost_mode,
                                               partition_data)
@@ -507,7 +516,7 @@ def test_custom_partition(tempdir, mesh_factory):
         cell_type, points, cells, global_indices = file.read_mesh_data(comm)
 
     # Create a custom partition array
-    part = numpy.zeros(cells.shape[0], dtype=numpy.int32)
+    part = np.zeros(cells.shape[0], dtype=np.int32)
     part[:] = comm.rank
 
     ghost_procs = cpp.mesh.ghost_cell_mapping(comm, part, cell_type, cells)
@@ -526,4 +535,44 @@ def test_coords():
     mesh = UnitCubeMesh(MPI.comm_world, 4, 4, 5)
     d = mesh.coordinate_dofs().entity_points()
     d += 2
-    assert numpy.array_equal(d, mesh.coordinate_dofs().entity_points())
+    assert np.array_equal(d, mesh.coordinate_dofs().entity_points())
+
+
+def test_UnitHexMesh_assemble():
+    mesh = UnitCubeMesh(MPI.comm_world, 6, 7, 5, CellType.hexahedron)
+    vol = assemble_scalar(1 * dx(mesh))
+    vol = MPI.sum(mesh.mpi_comm(), vol)
+    assert(vol == pytest.approx(1, rel=1e-9))
+
+
+def test_mesh_order_unchanged_triangle():
+    points = [[0, 0], [1, 0], [1, 1]]
+    cells = [[0, 1, 2]]
+    mesh = Mesh(MPI.comm_world, CellType.triangle, points,
+                cells, [], cpp.mesh.GhostMode.none)
+    assert (mesh.cells()[0] == cells[0]).all()
+
+
+def test_mesh_order_unchanged_quadrilateral():
+    points = [[0, 0], [1, 0], [0, 1], [1, 1]]
+    cells = [[0, 1, 2, 3]]
+    mesh = Mesh(MPI.comm_world, CellType.quadrilateral, points,
+                cells, [], cpp.mesh.GhostMode.none)
+    assert (mesh.cells()[0] == cells[0]).all()
+
+
+def test_mesh_order_unchanged_tetrahedron():
+    points = [[0, 0, 0], [1, 0, 0], [1, 1, 0], [0, 0, 1]]
+    cells = [[0, 1, 2, 3]]
+    mesh = Mesh(MPI.comm_world, CellType.tetrahedron, points,
+                cells, [], cpp.mesh.GhostMode.none)
+    assert (mesh.cells()[0] == cells[0]).all()
+
+
+def test_mesh_order_unchanged_hexahedron():
+    points = [[0, 0, 0], [1, 0, 0], [0, 1, 0], [1, 1, 0],
+              [0, 0, 1], [1, 0, 1], [0, 1, 1], [1, 1, 1]]
+    cells = [[0, 1, 2, 3, 4, 5, 6, 7]]
+    mesh = Mesh(MPI.comm_world, CellType.hexahedron, points,
+                cells, [], cpp.mesh.GhostMode.none)
+    assert (mesh.cells()[0] == cells[0]).all()

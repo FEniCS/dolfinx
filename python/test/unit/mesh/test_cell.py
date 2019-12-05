@@ -6,11 +6,11 @@
 
 import numpy
 import pytest
+from dolfin_utils.test.skips import skip_in_parallel
 
 from dolfin import (MPI, Mesh, MeshEntity, UnitCubeMesh, UnitIntervalMesh,
                     UnitSquareMesh, cpp)
 from dolfin.cpp.mesh import CellType
-from dolfin_utils.test.skips import skip_in_parallel
 
 
 @skip_in_parallel
@@ -58,8 +58,8 @@ def test_volume_quadrilateralR2():
 
 @pytest.mark.parametrize(
     'coordinates',
-    [[[0.0, 0.0, 0.0], [1.0, 0.0, 0.0], [0.0, 1.0, 0.0], [1.0, 1.0, 0.0]],
-     [[0.0, 0.0, 0.0], [0.0, 1.0, 0.0], [0.0, 0.0, 1.0], [0.0, 1.0, 1.0]]])
+    [[[0.0, 0.0, 0.0], [0.0, 1.0, 0.0], [1.0, 0.0, 0.0], [1.0, 1.0, 0.0]],
+     [[0.0, 0.0, 0.0], [0.0, 0.0, 1.0], [0.0, 1.0, 0.0], [0.0, 1.0, 1.0]]])
 def test_volume_quadrilateralR3(coordinates):
     mesh = Mesh(MPI.comm_world, CellType.quadrilateral,
                 numpy.array(coordinates, dtype=numpy.float64),

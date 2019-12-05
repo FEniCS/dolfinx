@@ -22,12 +22,14 @@
 #
 
 ARG GMSH_VERSION=4.4.1
-ARG PYBIND11_VERSION=2.3.0
-ARG PETSC_VERSION=3.11.3
-ARG SLEPC_VERSION=3.11.2
-ARG PETSC4PY_VERSION=3.11.0
-ARG SLEPC4PY_VERSION=3.11.0
+ARG PYBIND11_VERSION=2.4.3
+ARG PETSC_VERSION=3.12.1
+ARG SLEPC_VERSION=3.12.1
+ARG PETSC4PY_VERSION=3.12.0
+ARG SLEPC4PY_VERSION=3.12.0
 ARG TINI_VERSION=v0.18.0
+# Should be updated upon a new KaHIP release
+ARG KAHIP_VERSION=14be06c
 
 ARG MAKEFLAGS
 ARG PETSC_SLEPC_OPTFLAGS="-02 -g"
@@ -115,7 +117,7 @@ ENV PYTHONPATH=/usr/local/gmsh-${GMSH_VERSION}-Linux64-sdk/lib
 # - Third set of packages are optional but required for
 #   pygmsh/meshio/DOLFIN mesh pipeline.
 RUN pip3 install --no-cache-dir mpi4py numba && \
-    pip3 install --no-cache-dir cffi decorator flake8 pytest pytest-xdist sphinx sphinx_rtd_theme && \
+    pip3 install --no-cache-dir cffi flake8 pytest pytest-xdist sphinx sphinx_rtd_theme && \
     export HDF5_MPI="ON" && \
     pip3 install --no-cache-dir --no-binary=h5py h5py meshio pygmsh
 # Install pybind11
@@ -127,6 +129,15 @@ RUN wget -nc --quiet https://github.com/pybind/pybind11/archive/v${PYBIND11_VERS
     cmake -DPYBIND11_TEST=False ../ && \
     make install && \
     rm -rf /tmp/*
+
+# Install KaHIP
+RUN cd /usr/local && \
+    git clone https://github.com/schulzchristian/KaHIP.git && \
+    cd KaHIP/ && \
+    git checkout $KAHIP_VERSION && \
+    ./compile_withcmake.sh
+
+ENV KAHIP_ROOT=/usr/local/KaHIP
 
 WORKDIR /root
 

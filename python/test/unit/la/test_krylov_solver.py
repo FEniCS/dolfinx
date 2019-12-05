@@ -13,11 +13,12 @@ import pytest
 from petsc4py import PETSc
 
 import ufl
-from dolfin import (MPI, DirichletBC, Function, FunctionSpace, TestFunction,
-                    TrialFunction, UnitSquareMesh, VectorFunctionSpace)
+from dolfin import (MPI, DirichletBC, Function, FunctionSpace, UnitSquareMesh,
+                    VectorFunctionSpace)
 from dolfin.fem import apply_lifting, assemble_matrix, assemble_vector, set_bc
 from dolfin.la import VectorSpaceBasis
-from ufl import Identity, dot, dx, grad, inner, sym, tr
+from ufl import (Identity, TestFunction, TrialFunction, dot, dx, grad, inner,
+                 sym, tr)
 
 
 def test_krylov_solver_lu():
@@ -95,7 +96,7 @@ def test_krylov_samg_solver_elasticity():
             bc_local.set(0.0)
 
         def boundary(x):
-            return np.full(x.shape[0], True)
+            return np.full(x.shape[1], True)
 
         bc = DirichletBC(V.sub(0), bc0, boundary)
         u = TrialFunction(V)

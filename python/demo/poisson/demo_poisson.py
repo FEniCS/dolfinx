@@ -81,7 +81,7 @@ import dolfin
 import dolfin.plotting
 import ufl
 from dolfin import (MPI, DirichletBC, Function, FunctionSpace, RectangleMesh,
-                    TestFunction, TrialFunction, solve)
+                    solve)
 from dolfin.cpp.mesh import CellType
 from dolfin.io import XDMFFile
 from dolfin.specialfunctions import SpatialCoordinate
@@ -105,7 +105,7 @@ cmap = dolfin.fem.create_coordinate_map(mesh.ufl_domain())
 mesh.geometry.coord_mapping = cmap
 
 # The second argument to :py:class:`FunctionSpace
-# <dolfin.functions.functionspace.FunctionSpace>` is the finite element
+# <dolfin.function.FunctionSpace>` is the finite element
 # family, while the third argument specifies the polynomial
 # degree. Thus, in this case, our space ``V`` consists of first-order,
 # continuous Lagrange finite element functions (or in order words,
@@ -122,14 +122,6 @@ mesh.geometry.coord_mapping = cmap
 # \epsilon` or :math:`x > 1 - \epsilon` where :math:`\epsilon` is a
 # small number (such as machine precision).) ::
 
-# Define Dirichlet boundary (x = 0 or x = 1)
-
-
-def boundary(x):
-    return np.logical_or(x[:, 0] < np.finfo(float).eps,
-                         x[:, 0] > 1.0 - np.finfo(float).eps)
-
-
 # Now, the Dirichlet boundary condition can be created using the class
 # :py:class:`DirichletBC <dolfin.fem.bcs.DirichletBC>`. A
 # :py:class:`DirichletBC <dolfin.fem.bcs.DirichletBC>` takes three
@@ -137,14 +129,15 @@ def boundary(x):
 # value of the boundary condition, and the part of the boundary on which
 # the condition applies. In our example, the function space is ``V``,
 # the value of the boundary condition (0.0) can represented using a
-# :py:class:`Function <dolfin.functions.Function>` and the
-# Dirichlet boundary is defined immediately above. The definition of the
-# Dirichlet boundary condition then looks as follows: ::
+# :py:class:`Function <dolfin.functions.Function>` and the Dirichlet
+# boundary is defined immediately above. The definition of the Dirichlet
+# boundary condition then looks as follows: ::
 
-# Define boundary condition
+# Define boundary condition on x = 0 or x = 1
 u0 = Function(V)
 u0.vector.set(0.0)
-bc = DirichletBC(V, u0, boundary)
+bc = DirichletBC(V, u0, lambda x: np.logical_or(x[0] < np.finfo(float).eps,
+                                                x[0] > 1.0 - np.finfo(float).eps))
 
 # Next, we want to express the variational problem.  First, we need to
 # specify the trial function :math:`u` and the test function :math:`v`,
@@ -152,8 +145,7 @@ bc = DirichletBC(V, u0, boundary)
 # :py:class:`TrialFunction <dolfin.functions.function.TrialFunction>`
 # and a :py:class:`TestFunction
 # <dolfin.functions.function.TrialFunction>` on the previously defined
-# :py:class:`FunctionSpace
-# <dolfin.functions.functionspace.FunctionSpace>` ``V``.
+# :py:class:`FunctionSpace <dolfin.functions.FunctionSpace>` ``V``.
 #
 # Further, the source :math:`f` and the boundary normal derivative
 # :math:`g` are involved in the variational forms, and hence we must
@@ -163,8 +155,8 @@ bc = DirichletBC(V, u0, boundary)
 # the linear form ``L`` (using UFL operators). In summary, this reads ::
 
 # Define variational problem
-u = TrialFunction(V)
-v = TestFunction(V)
+u = ufl.TrialFunction(V)
+v = ufl.TestFunction(V)
 x = SpatialCoordinate(mesh)
 f = 10 * ufl.exp(-((x[0] - 0.5)**2 + (x[1] - 0.5)**2) / 0.02)
 g = ufl.sin(5 * x[0])

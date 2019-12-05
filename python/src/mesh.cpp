@@ -8,7 +8,7 @@
 #include "caster_petsc.h"
 #include <cfloat>
 #include <dolfin/common/types.h>
-#include <dolfin/fem/CoordinateMapping.h>
+#include <dolfin/fem/CoordinateElement.h>
 #include <dolfin/mesh/Connectivity.h>
 #include <dolfin/mesh/CoordinateDofs.h>
 #include <dolfin/mesh/Geometry.h>
@@ -74,6 +74,7 @@ void mesh(py::module& m)
   // dolfin::mesh::Partitioner enums
   py::enum_<dolfin::mesh::Partitioner>(m, "Partitioner")
       .value("scotch", dolfin::mesh::Partitioner::scotch)
+      .value("kahip", dolfin::mesh::Partitioner::kahip)
       .value("parmetis", dolfin::mesh::Partitioner::parmetis);
 
   // dolfin::mesh::CoordinateDofs class
@@ -137,10 +138,10 @@ void mesh(py::module& m)
                &dolfin::mesh::Topology::connectivity, py::const_))
       .def("size", &dolfin::mesh::Topology::size)
       .def("hash", &dolfin::mesh::Topology::hash)
-      .def("have_global_indices", &dolfin::mesh::Topology::have_global_indices)
       .def("ghost_offset", &dolfin::mesh::Topology::ghost_offset)
-      .def("cell_owner",
-           py::overload_cast<>(&dolfin::mesh::Topology::cell_owner, py::const_))
+      .def("entity_owner",
+           py::overload_cast<int>(&dolfin::mesh::Topology::entity_owner,
+                                  py::const_))
       .def("on_boundary", &dolfin::mesh::Topology::on_boundary)
       .def("global_indices",
            [](const dolfin::mesh::Topology& self, int dim) {
@@ -149,8 +150,7 @@ void mesh(py::module& m)
                                               py::none());
            },
            py::return_value_policy::reference_internal)
-      .def("shared_entities",
-           py::overload_cast<int>(&dolfin::mesh::Topology::shared_entities))
+      .def("shared_entities", &dolfin::mesh::Topology::shared_entities)
       .def("str", &dolfin::mesh::Topology::str);
 
   // dolfin::mesh::Mesh
@@ -191,7 +191,6 @@ void mesh(py::module& m)
       .def("hash", &dolfin::mesh::Mesh::hash)
       .def("hmax", &dolfin::mesh::Mesh::hmax)
       .def("hmin", &dolfin::mesh::Mesh::hmin)
-      .def("create_global_indices", &dolfin::mesh::Mesh::create_global_indices)
       .def("create_entities", &dolfin::mesh::Mesh::create_entities)
       .def("create_connectivity", &dolfin::mesh::Mesh::create_connectivity)
       .def("create_connectivity_all",
@@ -252,7 +251,7 @@ void mesh(py::module& m)
                return py::array(1, self.entities(dim));
              else
              {
-               assert(self.mesh.topology().connectivity(self.dim(), dim));
+               assert(self.mesh().topology().connectivity(self.dim(), dim));
                const int num_entities = self.mesh()
                                             .topology()
                                             .connectivity(self.dim(), dim)
@@ -377,6 +376,22 @@ void mesh(py::module& m)
          dolfin::mesh::Partitioner partitioner) {
         return dolfin::mesh::Partitioning::partition_cells(
             comm.get(), nparts, cell_type, cells, partitioner);
+      });
+
+  m.def(
+      "build_distributed_mesh",
+      [](const MPICommWrapper comm, dolfin::mesh::CellType cell_type,
+         const Eigen::Ref<const Eigen::Array<
+             double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>>& points,
+         const Eigen::Ref<const Eigen::Array<std::int64_t, Eigen::Dynamic,
+                                             Eigen::Dynamic, Eigen::RowMajor>>&
+             cells,
+         const std::vector<std::int64_t>& global_cell_indices,
+         const dolfin::mesh::GhostMode ghost_mode,
+         const dolfin::mesh::Partitioner graph_partitioner) {
+        return dolfin::mesh::Partitioning::build_distributed_mesh(
+            comm.get(), cell_type, points, cells, global_cell_indices,
+            ghost_mode, graph_partitioner);
       });
 
   m.def(

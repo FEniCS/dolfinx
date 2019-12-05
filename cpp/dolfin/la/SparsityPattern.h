@@ -48,14 +48,14 @@ public:
   /// Create an empty sparsity pattern with specified dimensions
   SparsityPattern(
       MPI_Comm comm,
-      std::array<std::shared_ptr<const common::IndexMap>, 2> index_maps);
+      const std::array<std::shared_ptr<const common::IndexMap>, 2>& index_maps);
 
   /// Create a new sparsity pattern by adding sub-patterns, e.g.
   /// pattern =[ pattern00 ][ pattern 01]
   ///          [ pattern10 ][ pattern 11]
   SparsityPattern(
       MPI_Comm comm,
-      const std::vector<std::vector<const SparsityPattern*>> patterns);
+      const std::vector<std::vector<const SparsityPattern*>>& patterns);
 
   SparsityPattern(const SparsityPattern& pattern) = delete;
 
@@ -147,8 +147,9 @@ private:
   // Sparsity patterns for diagonal and off-diagonal blocks
   std::vector<set_type> _diagonal, _off_diagonal;
 
-  // Cache for non-local entries stored as [i0, j0, i1, j1, ...].
-  // Cleared after communication via apply()
+  // Cache for non-local entries stored as [i0, j0, i1, j1, ...]. i is
+  // the local row index and j is the global column index. Cleared after
+  // communication via apply().
   std::vector<std::size_t> _non_local;
 };
 } // namespace la

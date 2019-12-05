@@ -41,8 +41,8 @@ U = dolfin.FunctionSpace(mesh, Ue)
 Ssize = S.dolfin_element().space_dimension()
 Usize = U.dolfin_element().space_dimension()
 
-sigma, tau = dolfin.TrialFunction(S), dolfin.TestFunction(S)
-u, v = dolfin.TrialFunction(U), dolfin.TestFunction(U)
+sigma, tau = ufl.TrialFunction(S), ufl.TestFunction(S)
+u, v = ufl.TrialFunction(U), ufl.TestFunction(U)
 
 # Homogeneous boundary condition in displacement
 u_bc = dolfin.Function(U)
@@ -50,12 +50,12 @@ with u_bc.vector.localForm() as loc:
     loc.set(0.0)
 
 # Displacement BC is applied to the right side
-bc = dolfin.fem.DirichletBC(U, u_bc, lambda x: numpy.isclose(x[:, 0], 0.0))
+bc = dolfin.fem.DirichletBC(U, u_bc, lambda x: numpy.isclose(x[0], 0.0))
 
 
 def free_end(x):
     """Marks the leftmost points of the cantilever"""
-    return numpy.isclose(x[:, 0], 48.0)
+    return numpy.isclose(x[0], 48.0)
 
 
 # Mark free end facets as 1
@@ -127,7 +127,7 @@ def tabulate_condensed_tensor_A(A_, w_, c_, coords_, entity_local_index, cell_or
 
 # Prepare an empty Form and set the condensed tabulation kernel
 a_cond = dolfin.cpp.fem.Form([U._cpp_object, U._cpp_object])
-a_cond.set_tabulate_cell(-1, tabulate_condensed_tensor_A.address)
+a_cond.set_tabulate_tensor(dolfin.fem.FormIntegrals.Type.cell, -1, tabulate_condensed_tensor_A.address)
 
 A_cond = dolfin.fem.assemble_matrix(a_cond, [bc])
 A_cond.assemble()
