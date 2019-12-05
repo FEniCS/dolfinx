@@ -669,27 +669,22 @@ Eigen::Array<double, Eigen::Dynamic, 3, Eigen::RowMajor> mesh::midpoints(
   return x;
 }
 //-----------------------------------------------------------------------------
-Eigen::Array<std::int32_t, Eigen::Dynamic, 1> mesh::compute_marked_entities(
+Eigen::Array<std::int32_t, Eigen::Dynamic, 1>
+mesh::compute_marked_boundary_entities(
     const mesh::Mesh& mesh, const int dim,
     const std::function<Eigen::Array<bool, Eigen::Dynamic, 1>(
         const Eigen::Ref<const Eigen::Array<double, 3, Eigen::Dynamic,
-                                            Eigen::RowMajor>>&)>& marker,
-    bool boundary_only)
+                                            Eigen::RowMajor>>&)>& marker)
 {
   const int tdim = mesh.topology().dim();
 
-  // Create facets
+  // Create entities
   mesh.create_entities(dim);
-
-  // Marked facet indices
-  std::vector<std::int32_t> facets;
 
   // Compute connectivities for boundary detection, if necessary
   if (dim < tdim)
   {
     mesh.create_entities(dim);
-    if (dim != tdim - 1)
-      mesh.create_connectivity(dim, tdim - 1);
     mesh.create_connectivity(tdim - 1, tdim);
   }
 
@@ -725,11 +720,12 @@ Eigen::Array<std::int32_t, Eigen::Dynamic, 1> mesh::compute_marked_entities(
   if (boundary_marked.rows() != x_boundary.cols())
     throw std::runtime_error("Length of array of boundary markers is wrong.");
 
-  // Iterate over entities
+  // Iterate over entities and build vector of marked entities
+  std::vector<std::int32_t> entities;
   const std::vector<bool> boundary_entity = mesh.topology().on_boundary(dim);
   for (auto& e : mesh::MeshRange(mesh, dim))
   {
-    // Consider boundary facets only
+    // Consider boundary entities only
     if (boundary_entity[e.index()])
     {
       // Assume all vertices on this facet are marked
@@ -749,11 +745,11 @@ Eigen::Array<std::int32_t, Eigen::Dynamic, 1> mesh::compute_marked_entities(
 
       // Mark facet with all vertices marked
       if (all_vertices_marked)
-        facets.push_back(e.index());
+        entities.push_back(e.index());
     }
   }
 
   return Eigen::Map<Eigen::Array<std::int32_t, Eigen::Dynamic, 1>>(
-      facets.data(), facets.size());
+      entities.data(), entities.size());
 }
 //-----------------------------------------------------------------------------
