@@ -85,6 +85,7 @@ from dolfin import (MPI, DirichletBC, Function, FunctionSpace, RectangleMesh,
 from dolfin.cpp.mesh import CellType
 from dolfin.fem import locate_dofs_topological
 from dolfin.io import XDMFFile
+from dolfin.mesg import compute_marked_boundary_entities
 from dolfin.specialfunctions import SpatialCoordinate
 from ufl import ds, dx, grad, inner
 
@@ -141,8 +142,8 @@ mesh.geometry.coord_mapping = cmap
 # Define boundary condition on x = 0 or x = 1
 u0 = Function(V)
 u0.vector.set(0.0)
-facets = dolfin.mesh.compute_marked_boundary_entities(mesh, 1, lambda x: np.logical_or(x[0] < np.finfo(float).eps,
-                                                                                       x[0] > 1.0 - np.finfo(float).eps))
+facets = compute_marked_boundary_entities(mesh, 1, lambda x: np.logical_or(x[0] < np.finfo(float).eps,
+                                                                           x[0] > 1.0 - np.finfo(float).eps))
 bc = DirichletBC(V, u0, locate_dofs_topological(V, 1, facets))
 
 
