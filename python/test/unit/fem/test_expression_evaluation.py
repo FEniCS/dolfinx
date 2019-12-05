@@ -35,7 +35,7 @@ def test_rank0():
     f = dolfin.Function(P2)
 
     def expr1(x):
-        return x[:, 0] ** 2 + 2.0 * x[:, 1] ** 2
+        return x[0] ** 2 + 2.0 * x[1] ** 2
 
     f.interpolate(expr1)
 
@@ -86,10 +86,9 @@ def test_rank0():
                         (c, pos), geom, dofmap, f.vector.array, coeff_dofmap)
 
     def grad_expr1(x):
-        values = np.empty((x.shape[0], 2))
-
-        values[:, 0] = 2.0 * x[:, 0]
-        values[:, 1] = 4.0 * x[:, 1]
+        values = np.empty((2, x.shape[1]))
+        values[0] = 2.0 * x[0]
+        values[1] = 4.0 * x[1]
 
         return values
 

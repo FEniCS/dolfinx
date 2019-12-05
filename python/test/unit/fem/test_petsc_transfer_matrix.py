@@ -23,7 +23,7 @@ def test_scalar_p1():
     Vf = FunctionSpace(meshf, ("CG", 1))
 
     def u(x):
-        return x[:, 0] + 2.0 * x[:, 1] + 3.0 * x[:, 2]
+        return x[0] + 2.0 * x[1] + 3.0 * x[2]
 
     uc, uf = Function(Vc), Function(Vf)
     uc.interpolate(u)
@@ -51,7 +51,7 @@ def test_scalar_p1_scaled_mesh():
     Vf = FunctionSpace(meshf, ("CG", 1))
 
     def u(x):
-        return x[:, 0] + 2.0 * x[:, 1] + 3.0 * x[:, 2]
+        return x[0] + 2.0 * x[1] + 3.0 * x[2]
     uc, uf = Function(Vc), Function(Vf)
     uc.interpolate(u)
     uf.interpolate(u)
@@ -88,7 +88,7 @@ def test_scalar_p2():
     Vf = FunctionSpace(meshf, ("CG", 2))
 
     def u(x):
-        return x[:, 0] + 2.0 * x[:, 1] + 3.0 * x[:, 2]
+        return x[0] + 2.0 * x[1] + 3.0 * x[2]
 
     uc, uf = Function(Vc), Function(Vf)
     uc.interpolate(u)
@@ -113,7 +113,7 @@ def test_vector_p1_2d():
     Vf = VectorFunctionSpace(meshf, ("CG", 1))
 
     def u(x):
-        return np.stack([x[:, 0] + 2.0 * x[:, 1], 4.0 * x[:, 0]], axis=1)
+        return np.stack([x[0] + 2.0 * x[1], 4.0 * x[0]], axis=0)
 
     uc, uf = Function(Vc), Function(Vf)
     uc.interpolate(u)
@@ -138,7 +138,7 @@ def test_vector_p2_2d():
     Vf = VectorFunctionSpace(meshf, ("CG", 2))
 
     def u(x):
-        return np.stack([x[:, 0] + 2.0 * x[:, 1], 4.0 * x[:, 0] * x[:, 1]], axis=1)
+        return np.stack([x[0] + 2.0 * x[1], 4.0 * x[0] * x[1]], axis=0)
 
     uc, uf = Function(Vc), Function(Vf)
     uc.interpolate(u)
@@ -162,10 +162,10 @@ def test_vector_p1_3d():
     Vf = VectorFunctionSpace(meshf, ("CG", 1))
 
     def u(x):
-        values0 = x[:, 0] + 2.0 * x[:, 1]
-        values1 = 4.0 * x[:, 0]
-        values2 = 3.0 * x[:, 2] + x[:, 0]
-        return np.stack([values0, values1, values2], axis=1)
+        values0 = x[0] + 2.0 * x[1]
+        values1 = 4.0 * x[0]
+        values2 = 3.0 * x[2] + x[0]
+        return np.stack([values0, values1, values2], axis=0)
 
     uc, uf = Function(Vc), Function(Vf)
     uc.interpolate(u)
@@ -195,12 +195,10 @@ def test_taylor_hood_cube():
     Zf = FunctionSpace(meshf, Ze)
 
     def z(x):
-        values = np.array([x.shape[0], 3])
-        values[:, 0] = x[:, 0] * x[:, 1]
-        values[:, 1] = x[:, 1] * x[:, 2]
-        values[:, 2] = x[:, 2] * x[:, 0]
-        values[:, 3] = x[:, 0] + 3.0 * x[:, 1] + x[:, 2]
-        return values
+        return np.row_stack((x[0] * x[1],
+                             x[1] * x[2],
+                             x[2] * x[0],
+                             x[0] + 3.0 * x[1] + x[2]))
 
     zc, zf = Function(Zc), Function(Zf)
     zc.interpolate(z)

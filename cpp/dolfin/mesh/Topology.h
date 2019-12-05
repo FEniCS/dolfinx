@@ -80,19 +80,20 @@ public:
   /// dimension d
   const std::vector<std::int64_t>& global_indices(std::size_t d) const;
 
-  /// Return map from shared entities (local index) to processes
-  /// that share the entity
-  std::map<std::int32_t, std::set<std::int32_t>>& shared_entities(int dim);
+  /// Set the map from shared entities (local index) to processes that
+  /// share the entity
+  void set_shared_entities(
+      int dim, const std::map<std::int32_t, std::set<std::int32_t>>& entities);
 
   /// Return map from shared entities (local index) to process that
   /// share the entity (const version)
   const std::map<std::int32_t, std::set<std::int32_t>>&
   shared_entities(int dim) const;
 
-  /// Return mapping from local ghost cell index to owning process.
-  /// Since ghost cells are at the end of the range, this is just a vector
+  /// Set map from local ghost cell index to owning process. Since
+  /// ghost cells are at the end of the range, this is just a vector
   /// over those cells
-  std::vector<std::int32_t>& entity_owner(int dim);
+  void set_entity_owner(int dim, const std::vector<std::int32_t>& owners);
 
   /// Return mapping from local ghost cell index to owning process
   /// (const version). Since ghost cells are at the end of the range,

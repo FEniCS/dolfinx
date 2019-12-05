@@ -41,8 +41,8 @@ U = dolfin.FunctionSpace(mesh, Ue)
 Ssize = S.dolfin_element().space_dimension()
 Usize = U.dolfin_element().space_dimension()
 
-sigma, tau = dolfin.TrialFunction(S), dolfin.TestFunction(S)
-u, v = dolfin.TrialFunction(U), dolfin.TestFunction(U)
+sigma, tau = ufl.TrialFunction(S), ufl.TestFunction(S)
+u, v = ufl.TrialFunction(U), ufl.TestFunction(U)
 
 # Homogeneous boundary condition in displacement
 u_bc = dolfin.Function(U)
@@ -50,12 +50,12 @@ with u_bc.vector.localForm() as loc:
     loc.set(0.0)
 
 # Displacement BC is applied to the right side
-bc = dolfin.fem.DirichletBC(U, u_bc, lambda x: numpy.isclose(x[:, 0], 0.0))
+bc = dolfin.fem.DirichletBC(U, u_bc, lambda x: numpy.isclose(x[0], 0.0))
 
 
 def free_end(x):
     """Marks the leftmost points of the cantilever"""
-    return numpy.isclose(x[:, 0], 48.0)
+    return numpy.isclose(x[0], 48.0)
 
 
 # Mark free end facets as 1

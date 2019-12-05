@@ -6,7 +6,6 @@
 
 #pragma once
 
-#include "assembler.h"
 #include <Eigen/Dense>
 #include <dolfin/common/types.h>
 #include <memory>

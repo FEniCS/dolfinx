@@ -114,8 +114,28 @@ void Form::set_constants(
   for (std::size_t i = 0; i < constants.size(); ++i)
   {
     // In this case, the constants don't have names
-    _constants[i] = std::make_pair("", constants[i]);
+    _constants[i] = std::pair("", constants[i]);
   }
+}
+//-----------------------------------------------------------------------------
+bool Form::all_constants_set() const
+{
+  for (auto& constant : _constants)
+    if (!constant.second)
+      return false;
+
+  return true;
+}
+//-----------------------------------------------------------------------------
+std::set<std::string> Form::get_unset_constants() const
+{
+  std::set<std::string> unset;
+  for (auto& constant : _constants)
+  {
+    if (!constant.second)
+      unset.insert(constant.first);
+  }
+  return unset;
 }
 //-----------------------------------------------------------------------------
 void Form::set_mesh(std::shared_ptr<const mesh::Mesh> mesh)

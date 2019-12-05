@@ -26,7 +26,7 @@ def test_save_and_read_function_timeseries(tempdir):
     t = 0.0
 
     def E(x):
-        return t * x[:, 0]
+        return t * x[0]
 
     F0.interpolate(E)
 

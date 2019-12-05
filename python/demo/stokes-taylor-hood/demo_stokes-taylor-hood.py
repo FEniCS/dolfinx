@@ -87,11 +87,11 @@ import matplotlib.pyplot as plt
 import numpy as np
 
 import dolfin
-from dolfin import (MPI, DirichletBC, Function, FunctionSpace, TestFunctions,
-                    TrialFunctions, solve)
+from dolfin import MPI, DirichletBC, Function, FunctionSpace, solve
 from dolfin.io import XDMFFile
 from dolfin.plotting import plot
-from ufl import FiniteElement, VectorElement, div, dx, grad, inner
+from ufl import (FiniteElement, TestFunctions, TrialFunctions, VectorElement,
+                 div, dx, grad, inner)
 
 # Load mesh and subdomains
 xdmf = XDMFFile(MPI.comm_world, "../dolfin_fine.xdmf")
@@ -103,10 +103,9 @@ cmap = dolfin.fem.create_coordinate_map(mesh.ufl_domain())
 mesh.geometry.coord_mapping = cmap
 
 # Next, we define a :py:class:`FunctionSpace
-# <dolfin.functions.functionspace.FunctionSpace>` built on a mixed
-# finite element ``TH`` which consists of continuous
-# piecewise quadratics and continuous piecewise
-# linears::
+# <dolfin.function.FunctionSpace>` built on a mixed finite element
+# ``TH`` which consists of continuous piecewise quadratics and
+# continuous piecewise linears::
 
 # Define function spaces
 P2 = VectorElement("Lagrange", mesh.ufl_cell(), 2)
@@ -127,7 +126,7 @@ mf1 = np.where(mf == 1)
 # No-slip boundary condition for velocity
 # x1 = 0, x1 = 1 and around the dolphin
 noslip = Function(W.sub(0).collapse())
-noslip.interpolate(lambda x: np.zeros((x.shape[0], 2)))
+noslip.interpolate(lambda x: np.zeros_like(x[:mesh.geometry.dim]))
 
 bc0 = DirichletBC(W.sub(0), noslip, mf0[0])
 
@@ -136,8 +135,8 @@ bc0 = DirichletBC(W.sub(0), noslip, mf0[0])
 
 
 def inflow_eval(x):
-    values = np.zeros((x.shape[0], 2))
-    values[:, 0] = - np.sin(x[:, 1] * np.pi)
+    values = np.zeros((2, x.shape[1]))
+    values[0] = - np.sin(x[1] * np.pi)
     return values
 
 

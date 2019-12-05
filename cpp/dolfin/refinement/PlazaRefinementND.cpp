@@ -364,7 +364,7 @@ face_long_edge(const mesh::Mesh& mesh)
     long_edge[f.index()] = face_edges[imax];
   }
 
-  return std::make_pair(std::move(long_edge), std::move(edge_ratio_ok));
+  return std::pair(std::move(long_edge), std::move(edge_ratio_ok));
 }
 //-----------------------------------------------------------------------------
 
@@ -379,9 +379,7 @@ mesh::Mesh PlazaRefinementND::refine(const mesh::Mesh& mesh, bool redistribute)
   }
 
   common::Timer t0("PLAZA: refine");
-  std::vector<std::int32_t> long_edge;
-  std::vector<bool> edge_ratio_ok;
-  std::tie(long_edge, edge_ratio_ok) = face_long_edge(mesh);
+  auto [long_edge, edge_ratio_ok] = face_long_edge(mesh);
 
   ParallelRefinement p_ref(mesh);
   p_ref.mark_all();
@@ -402,9 +400,7 @@ PlazaRefinementND::refine(const mesh::Mesh& mesh,
   }
 
   common::Timer t0("PLAZA: refine");
-  std::vector<std::int32_t> long_edge;
-  std::vector<bool> edge_ratio_ok;
-  std::tie(long_edge, edge_ratio_ok) = face_long_edge(mesh);
+  auto [long_edge, edge_ratio_ok] = face_long_edge(mesh);
 
   ParallelRefinement p_ref(mesh);
   p_ref.mark(refinement_marker);

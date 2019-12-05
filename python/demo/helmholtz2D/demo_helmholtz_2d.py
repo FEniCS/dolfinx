@@ -14,11 +14,11 @@ solution and source term."""
 
 import numpy as np
 
-from dolfin import (MPI, FacetNormal, Function, FunctionSpace, TestFunction,
-                    TrialFunction, UnitSquareMesh, has_petsc_complex, solve)
+from dolfin import (MPI, FacetNormal, Function, FunctionSpace, UnitSquareMesh,
+                    has_petsc_complex, solve)
 from dolfin.fem.assemble import assemble_scalar
 from dolfin.io import XDMFFile
-from ufl import dx, grad, inner
+from ufl import TestFunction, TrialFunction, dx, grad, inner
 
 # wavenumber
 k0 = 4 * np.pi
@@ -46,7 +46,7 @@ V = FunctionSpace(mesh, ("Lagrange", deg))
 u = TrialFunction(V)
 v = TestFunction(V)
 f = Function(V)
-f.interpolate(lambda x: A * k0**2 * np.cos(k0 * x[:, 0]) * np.cos(k0 * x[:, 1]))
+f.interpolate(lambda x: A * k0**2 * np.cos(k0 * x[0]) * np.cos(k0 * x[1]))
 a = inner(grad(u), grad(v)) * dx - k0**2 * inner(u, v) * dx
 L = inner(f, v) * dx
 
@@ -72,7 +72,7 @@ def solution(values, x):
 # Function space for exact solution - need it to be higher than deg
 V_exact = FunctionSpace(mesh, ("Lagrange", deg + 3))
 u_exact = Function(V_exact)
-u_exact.interpolate(lambda x: A * np.cos(k0 * x[:, 0]) * np.cos(k0 * x[:, 1]))
+u_exact.interpolate(lambda x: A * np.cos(k0 * x[0]) * np.cos(k0 * x[1]))
 
 # best approximation from V
 # u_BA = project(u_exact, V)

@@ -97,11 +97,11 @@ public:
   /// @cond Work around doxygen bug for std::function
   /// @param[in] f The expression to be interpolated
   /// @endcond
-  void interpolate(
-      const std::function<Eigen::Array<PetscScalar, Eigen::Dynamic,
-                                       Eigen::Dynamic, Eigen::RowMajor>(
-          const Eigen::Ref<const Eigen::Array<
-              double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>>&)>& f);
+  void
+  interpolate(const std::function<Eigen::Array<PetscScalar, Eigen::Dynamic,
+                                               Eigen::Dynamic, Eigen::RowMajor>(
+                  const Eigen::Ref<const Eigen::Array<double, 3, Eigen::Dynamic,
+                                                      Eigen::RowMajor>>&)>& f);
 
   /// Interpolate an expression. This interface uses an expression
   /// function f that has an in/out argument for the expression values.

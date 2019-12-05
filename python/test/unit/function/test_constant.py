@@ -8,8 +8,7 @@
 import numpy as np
 import pytest
 
-from dolfin import MPI, UnitCubeMesh
-from dolfin import Constant
+from dolfin import MPI, Constant, UnitCubeMesh
 
 
 def test_scalar_constant():

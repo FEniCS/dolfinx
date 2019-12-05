@@ -147,7 +147,6 @@ def _solve_varproblem(*args, **kwargs):
 
         ksp.setFromOptions()
         ksp.solve(b, u.vector)
-        ksp.view()
 
     # Solve nonlinear variational problem
     else:

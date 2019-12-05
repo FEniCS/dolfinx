@@ -6,9 +6,9 @@
 
 #pragma once
 
+#include <array>
 #include <boost/timer/timer.hpp>
 #include <string>
-#include <tuple>
 
 namespace dolfin
 {
@@ -52,10 +52,8 @@ public:
   /// logger
   double stop();
 
-  /// Return wall, user and system time in seconds. Wall-clock time has
-  /// precision around 1 microsecond; user and system around 10
-  /// millisecond.
-  std::tuple<double, double, double> elapsed() const;
+  /// Return wall, user and system time in seconds
+  std::array<double, 3> elapsed() const;
 
 private:
   // Name of task

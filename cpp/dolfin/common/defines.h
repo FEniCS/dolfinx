@@ -38,4 +38,7 @@ bool has_scotch();
 /// Return true if DOLFIN is compiled with ParMETIS
 bool has_parmetis();
 
+/// Return true if DOLFIN is compiled with KaHIP
+bool has_kahip();
+
 } // namespace dolfin
