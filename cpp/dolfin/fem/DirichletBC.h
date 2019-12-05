@@ -86,10 +86,10 @@ public:
   /// @param[in] V The function (sub)space on which the boundary
   ///              condition is applied
   /// @param[in] g The boundary condition value
-  /// @param[in] V_dofs Indices of degrees of freedom in the space where
-  ///                   the the boundary condition is applied
-  /// @param[in] g_dofs Indices of degrees of freedom in the space of
-  ///                   the boundary value function
+  /// @param[in] V_dofs Degree-of-freedom indices in the space where the
+  ///                   the boundary condition is applied
+  /// @param[in] g_dofs Degree-of-freedom indices in the space of the
+  ///                   boundary value function
   DirichletBC(
       std::shared_ptr<const function::FunctionSpace> V,
       std::shared_ptr<const function::Function> g,
@@ -97,35 +97,34 @@ public:
       const Eigen::Ref<const Eigen::Array<PetscInt, Eigen::Dynamic, 1>>&
           g_dofs);
 
-  /// Copy constructor. Either cached DOF data are copied
+  /// Copy constructor
   /// @param[in] bc The object to be copied
   DirichletBC(const DirichletBC& bc) = default;
 
   /// Move constructor
+  /// @param[in] bc The object to be moved
   DirichletBC(DirichletBC&& bc) = default;
 
   /// Destructor
   ~DirichletBC() = default;
 
-  /// Assignment operator. Either cached DOF data are assigned
+  /// Assignment operator
   /// @param[in] bc Another DirichletBC object
   DirichletBC& operator=(const DirichletBC& bc) = default;
 
   /// Move assignment operator
   DirichletBC& operator=(DirichletBC&& bc) = default;
 
-  /// Return function space V
-  /// @return The function space to which boundary conditions are
-  ///          applied
+  /// Return function space to which boundary conditions are applied
+  /// @return The function space
   std::shared_ptr<const function::FunctionSpace> function_space() const;
 
-  /// Return boundary value g
-  /// @return The boundary values Function. Returns null if it does not
-  ///         exist
+  /// Return boundary value function g
+  /// @return The boundary values Function
   std::shared_ptr<const function::Function> value() const;
 
-  /// Get array of dof indices to which a Dirichlet BC is applied. The
-  /// array is sorted and may contain ghost entries.
+  /// Get array of dof indices to which a Dirichlet boundary condition
+  /// is applied. The array is sorted and may contain ghost entries.
   Eigen::Array<PetscInt, Eigen::Dynamic, 2>& dofs();
 
   /// Get array of dof indices owned by this process to which a
