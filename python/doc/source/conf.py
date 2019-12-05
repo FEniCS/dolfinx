@@ -175,3 +175,4 @@ autoclass_content = "both"
 napoleon_google_docstring = False
 napoleon_use_admonition_for_notes = False
 #napoleon_include_init_with_doc= False
+napoleon_numpy_docstring = True

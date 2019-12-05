@@ -12,22 +12,25 @@ from dolfin import cpp
 
 def compute_marked_boundary_entities(mesh: cpp.mesh.Mesh,
                                      dim: int,
-                                     marker: types.FunctionType) -> "np.ndarray":
+                                     marker: types.FunctionType):
     """Compute list of boundary mesh entities satisfying a geometric marking function.
 
     Parameters
     ----------
-    mesh The mesh
+    mesh
+        The mesh
 
-    dim The topological dimension of the mesh entities to consider
+    dim
+        The topological dimension of the mesh entities to consider
 
-    maker A function that takes an array of points `x` with shape
-         `(gdim, num_points)` and returns an array of booleans of length
-         `num_points`, evaluating to `True` for entities whose
-         degree-of-freedom should be returned.
+    marker A function that takes an array of points `x` with shape
+           ``(gdim, num_points)`` and returns an array of booleans of
+           length ``num_points``, evaluating to `True` for entities whose
+           degree-of-freedom should be returned.
 
     Returns
     -------
+    numpy.ndarray
         Indices (local to the process) of marked mesh entities.
 
     """
