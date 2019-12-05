@@ -85,7 +85,7 @@ from dolfin import (MPI, DirichletBC, Function, FunctionSpace, RectangleMesh,
 from dolfin.cpp.mesh import CellType
 from dolfin.fem import locate_dofs_topological
 from dolfin.io import XDMFFile
-from dolfin.mesg import compute_marked_boundary_entities
+from dolfin.mesh import compute_marked_boundary_entities
 from dolfin.specialfunctions import SpatialCoordinate
 from ufl import ds, dx, grad, inner
 
