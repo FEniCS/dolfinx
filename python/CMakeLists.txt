@@ -30,11 +30,15 @@ pybind11_add_module(cpp SHARED
   src/log.cpp
   src/mesh.cpp
   src/nls.cpp
-  src/refinement.cpp
-  src/MPICommWrapper.cpp)
+  src/refinement.cpp)
 
 # Add DOLFIN libraries and other config
 target_link_libraries(cpp PRIVATE pybind11::module dolfin)
+
+# Install headers of the binding library
+install(FILES src/caster_mpi.h src/caster_petsc.h src/MPICommWrapper.h
+  DESTINATION ${DOLFIN_INCLUDE_DIRS}/dolfin/pybind11
+  COMPONENT Development)
 
 # Add to CMake search path
 set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH}
