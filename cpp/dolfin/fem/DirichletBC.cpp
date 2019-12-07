@@ -158,6 +158,10 @@ Eigen::Array<PetscInt, Eigen::Dynamic, 1> fem::locate_dofs_topological(
     }
   }
 
+  // TODO: off-process entries should be handled here, e.g. processes
+  // that share a Dirichlet dof but perhaps one does not have a boundary
+  // facet.
+
   return Eigen::Map<Eigen::Array<PetscInt, Eigen::Dynamic, 1>>(dofs.data(),
                                                                dofs.size());
 }
@@ -211,6 +215,8 @@ DirichletBC::DirichletBC(
   dofs_local_vec.erase(
       std::unique(dofs_local_vec.begin(), dofs_local_vec.end()),
       dofs_local_vec.end());
+
+  // TODO: This step should be moved to fem::locate_dofs_topological
 
   // Get bc dof indices (local) in (V, Vg) spaces on this process that
   // were found by other processes, e.g. a vertex dof on this process
