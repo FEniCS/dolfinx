@@ -109,6 +109,87 @@ get_remote_bcs(const common::IndexMap& map, const common::IndexMap& map_g,
 } // namespace
 
 //-----------------------------------------------------------------------------
+Eigen::Array<PetscInt, Eigen::Dynamic, 1> fem::locate_dofs_topological(
+    const function::FunctionSpace& V, const int entity_dim,
+    const Eigen::Ref<const Eigen::Array<int, Eigen::Dynamic, 1>>& entities)
+{
+  assert(V.dofmap());
+  const DofMap& dofmap = *V.dofmap();
+  assert(V.mesh());
+  dolfin::mesh::Mesh mesh = *V.mesh();
+
+  const int tdim = mesh.topology().dim();
+
+  // Initialise entity-cell connectivity
+  mesh.create_entities(tdim);
+  mesh.create_connectivity(entity_dim, tdim);
+
+  // Prepare an element - local dof layout for dofs on entities of the
+  // entity_dim
+  const int num_cell_entities
+      = mesh::cell_num_entities(mesh.cell_type(), entity_dim);
+  std::vector<Eigen::Array<int, Eigen::Dynamic, 1>> entity_dofs;
+  for (int i = 0; i < num_cell_entities; ++i)
+  {
+    entity_dofs.push_back(
+        dofmap.element_dof_layout->entity_closure_dofs(entity_dim, i));
+  }
+
+  const int num_entity_closure_dofs
+      = dofmap.element_dof_layout->num_entity_closure_dofs(entity_dim);
+  std::vector<PetscInt> dofs;
+  for (Eigen::Index i = 0; i < entities.rows(); ++i)
+  {
+    // Create entity and attached cell
+    const mesh::MeshEntity entity(mesh, entity_dim, entities[i]);
+    const int cell_index = entity.entities(tdim)[0];
+    const mesh::MeshEntity cell(mesh, tdim, cell_index);
+
+    // Get cell dofmap
+    auto cell_dofs = dofmap.cell_dofs(cell_index);
+
+    // Loop over entity dofs
+    const int entity_local_index = cell.index(entity);
+    for (int j = 0; j < num_entity_closure_dofs; j++)
+    {
+      const int index = entity_dofs[entity_local_index][j];
+      const PetscInt dof_index = cell_dofs[index];
+      dofs.push_back(dof_index);
+    }
+  }
+
+  return Eigen::Map<Eigen::Array<PetscInt, Eigen::Dynamic, 1>>(dofs.data(),
+                                                               dofs.size());
+}
+//-----------------------------------------------------------------------------
+Eigen::Array<PetscInt, Eigen::Dynamic, 1>
+fem::locate_dofs_geometrical(const function::FunctionSpace& V,
+                             marking_function marker)
+{
+  // FIXME: Calling V.tabulate_dof_coordinates() is very expensive,
+  // especially when we usually want the boundary dofs only. Add
+  // interface that computes dofs coordinates only for specified cell.
+
+  // Compute dof coordinates
+  const Eigen::Array<double, 3, Eigen::Dynamic, Eigen::RowMajor> dof_coordinates
+      = V.tabulate_dof_coordinates().transpose();
+
+  // Compute marker for each dof coordinate
+  const Eigen::Array<bool, Eigen::Dynamic, 1> marked_dofs
+      = marker(dof_coordinates);
+
+  std::vector<PetscInt> dofs;
+  dofs.reserve(marked_dofs.count());
+  for (Eigen::Index i = 0; i < marked_dofs.size(); ++i)
+  {
+    if (marked_dofs[i])
+      dofs.push_back(i);
+  }
+
+  return Eigen::Map<Eigen::Array<PetscInt, Eigen::Dynamic, 1>>(dofs.data(),
+                                                               dofs.size());
+}
+//-----------------------------------------------------------------------------
 DirichletBC::DirichletBC(
     std::shared_ptr<const function::FunctionSpace> V,
     std::shared_ptr<const function::Function> g,
@@ -120,12 +201,10 @@ DirichletBC::DirichletBC(
     throw std::runtime_error("Not matching number of degrees of freedom.");
 
   // Copy the Eigen data structure into std::vector of arrays. This is
-  // needed for appending the remote dof indices and std::sort.q
+  // needed for appending the remote dof indices and std::sort.
   std::vector<std::array<PetscInt, 2>> dofs_local_vec(V_dofs.rows());
   for (Eigen::Index i = 0; i < V_dofs.rows(); ++i)
-  {
     dofs_local_vec[i] = {V_dofs[i], g_dofs[i]};
-  }
 
   // Remove duplicates
   std::sort(dofs_local_vec.begin(), dofs_local_vec.end());
@@ -230,81 +309,5 @@ void DirichletBC::mark_dofs(std::vector<bool>& markers) const
     assert(_dofs(i, 0) < (PetscInt)markers.size());
     markers[_dofs(i, 0)] = true;
   }
-}
-//-----------------------------------------------------------------------------
-Eigen::Array<PetscInt, Eigen::Dynamic, 1> fem::locate_dofs_topological(
-    const function::FunctionSpace& V, const int entity_dim,
-    const Eigen::Ref<const Eigen::Array<PetscInt, Eigen::Dynamic, 1>>& entities)
-{
-  assert(V.dofmap());
-  const DofMap& dofmap = *V.dofmap();
-  assert(V.mesh());
-  dolfin::mesh::Mesh mesh = *V.mesh();
-
-  const int tdim = mesh.topology().dim();
-
-  // Initialise entity-cell connectivity
-  mesh.create_entities(tdim);
-  mesh.create_connectivity(entity_dim, tdim);
-
-  // Prepare an element-local dof layout for dofs on entities of the
-  // entity_dim
-  const int num_entities
-      = mesh::cell_num_entities(mesh.cell_type(), entity_dim);
-  std::vector<Eigen::Array<int, Eigen::Dynamic, 1>> entity_dofs;
-  for (int i = 0; i < num_entities; ++i)
-  {
-    entity_dofs.push_back(
-        dofmap.element_dof_layout->entity_closure_dofs(entity_dim, i));
-  }
-
-  const int num_entity_closure_dofs
-      = dofmap.element_dof_layout->num_entity_closure_dofs(entity_dim);
-  std::vector<PetscInt> dofs;
-  for (Eigen::Index i = 0; i < entities.rows(); ++i)
-  {
-    // Create entity and attached cell
-    const mesh::MeshEntity entity(mesh, entity_dim, entities[i]);
-    const int cell_index = entity.entities(tdim)[0];
-    const mesh::MeshEntity cell(mesh, tdim, cell_index);
-
-    // Get cell dofmap
-    auto cell_dofs = dofmap.cell_dofs(cell_index);
-
-    // Loop over entity dofs
-    const int entity_local_index = cell.index(entity);
-    for (int j = 0; j < num_entity_closure_dofs; j++)
-    {
-      const int index = entity_dofs[entity_local_index][j];
-      const PetscInt dof_index = cell_dofs[index];
-      dofs.push_back(dof_index);
-    }
-  }
-
-  return Eigen::Map<Eigen::Array<PetscInt, Eigen::Dynamic, 1>>(dofs.data(),
-                                                               dofs.size());
-}
-//-----------------------------------------------------------------------------
-Eigen::Array<PetscInt, Eigen::Dynamic, 1>
-fem::locate_dofs_geometrical(const function::FunctionSpace& V,
-                             marking_function marker)
-{
-  // FIXME: Calling V.tabulate_dof_coordinates() is very expensive,
-  // especially when we usually want the boundary dofs only.
-
-  const Eigen::Array<double, 3, Eigen::Dynamic, Eigen::RowMajor> dof_coordinates
-      = V.tabulate_dof_coordinates().transpose();
-  const Eigen::Array<bool, Eigen::Dynamic, 1> marked_dofs
-      = marker(dof_coordinates);
-
-  std::vector<PetscInt> dofs;
-  for (Eigen::Index i = 0; i < marked_dofs.size(); ++i)
-  {
-    if (marked_dofs[i])
-      dofs.push_back(i);
-  }
-
-  return Eigen::Map<Eigen::Array<PetscInt, Eigen::Dynamic, 1>>(dofs.data(),
-                                                               dofs.size());
 }
 //-----------------------------------------------------------------------------

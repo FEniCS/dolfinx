@@ -271,8 +271,7 @@ FunctionSpace::collapse() const
   auto collapsed_sub_space
       = std::make_shared<FunctionSpace>(_mesh, _element, collapsed_dofmap);
 
-  return std::pair(std::move(collapsed_sub_space),
-                   std::move(collapsed_dofs));
+  return std::pair(std::move(collapsed_sub_space), std::move(collapsed_dofs));
 }
 //-----------------------------------------------------------------------------
 std::vector<int> FunctionSpace::component() const { return _component; }
@@ -317,7 +316,6 @@ FunctionSpace::tabulate_dof_coordinates() const
   }
   const fem::CoordinateElement& cmap = *_mesh->geometry().coord_mapping;
 
-  // Cell coordinates (re-allocated inside function for thread safety)
   // Prepare cell geometry
   const mesh::Connectivity& connectivity_g
       = _mesh->coordinate_dofs().entity_points();

@@ -34,11 +34,13 @@ using marking_function = std::function<Eigen::Array<bool, Eigen::Dynamic, 1>(
     const Eigen::Ref<
         const Eigen::Array<double, 3, Eigen::Dynamic, Eigen::RowMajor>>&)>;
 
-/// Locate degrees of freedom topologically
+/// Build an array of degree-of-freedom indices that are associated with
+/// give mesh entities (topological)
 ///
-/// Finds degrees of freedom which belong to mesh entities. This doesn't
-/// work elements will degrees-of-freedom that are associated with cell
-/// interiors, e.g. for discontinuous elements.
+/// Finds degrees-of-freedom which belong to provided mesh entities.
+/// Note that degrees-of-freedom for discontinuous elements are
+/// associated with the cell even if they may appear to be associated
+/// with a facet/edge/vertex.
 ///
 /// @param[in] V The function (sub)space on which degrees of freedom
 ///              will be located
@@ -49,13 +51,13 @@ using marking_function = std::function<Eigen::Array<bool, Eigen::Dynamic, 1>(
 /// @return Array of local indices of located degrees of freedom
 Eigen::Array<PetscInt, Eigen::Dynamic, 1> locate_dofs_topological(
     const function::FunctionSpace& V, const int entity_dim,
-    const Eigen::Ref<const Eigen::Array<PetscInt, Eigen::Dynamic, 1>>&
-        entities);
+    const Eigen::Ref<const Eigen::Array<int, Eigen::Dynamic, 1>>& entities);
 
-/// Locate degrees of freedom geometrically
+/// Build an array of degree-of-freedom indices based on coordinates of
+/// the degree-of-freedom (geometric).
 ///
-/// Finds degrees of freedom whose geometric coordinate is true for a
-/// marking function.
+/// Finds degrees of freedom whose geometric coordinate is true for the
+/// provided marking function.
 ///
 /// @param[in] V The function (sub)space on which degrees of freedom
 ///              will be located
@@ -89,7 +91,7 @@ public:
   /// @param[in] V_dofs Degree-of-freedom indices in the space where the
   ///                   the boundary condition is applied
   /// @param[in] g_dofs Degree-of-freedom indices in the space of the
-  ///                   boundary value function
+  ///                   boundary value function applied to V_dofs[i]
   DirichletBC(
       std::shared_ptr<const function::FunctionSpace> V,
       std::shared_ptr<const function::Function> g,
