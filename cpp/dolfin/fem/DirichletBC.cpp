@@ -109,6 +109,103 @@ get_remote_bcs(const common::IndexMap& map, const common::IndexMap& map_g,
 } // namespace
 
 //-----------------------------------------------------------------------------
+Eigen::Array<PetscInt, Eigen::Dynamic, 2, Eigen::RowMajor>
+fem::locate_dofs_topological(
+    const function::FunctionSpace& V0, const function::FunctionSpace& V1,
+    const int dim,
+    const Eigen::Ref<const Eigen::Array<int, Eigen::Dynamic, 1>>& entities)
+{
+  // Get mesh
+  assert(V0.mesh());
+  assert(V1.mesh());
+  if (V0.mesh() != V1.mesh())
+    throw std::runtime_error("Meshes are not the same.");
+  const mesh::Mesh& mesh = *V0.mesh();
+  const std::size_t tdim = mesh.topology().dim();
+
+  assert(V0.element());
+  assert(V1.element());
+  if (V0.element() != V1.element())
+    throw std::runtime_error("Elements are not the same.");
+
+  // Get dofmaps
+  assert(V0.dofmap());
+  assert(V1.dofmap());
+  const DofMap& dofmap0 = *V0.dofmap();
+  const DofMap& dofmap1 = *V1.dofmap();
+
+  // Initialise entity-cell connectivity
+  mesh.create_entities(tdim);
+  mesh.create_connectivity(dim, tdim);
+
+  // Allocate space
+  assert(dofmap0.element_dof_layout);
+  const int num_entity_dofs
+      = dofmap0.element_dof_layout->num_entity_closure_dofs(dim);
+
+  // Build vector local dofs for each cell facet
+  std::vector<Eigen::Array<int, Eigen::Dynamic, 1>> entity_dofs;
+  for (int i = 0; i < mesh::cell_num_entities(mesh.cell_type(), dim); ++i)
+  {
+    entity_dofs.push_back(
+        dofmap0.element_dof_layout->entity_closure_dofs(dim, i));
+  }
+
+  // Iterate over marked facets
+  std::vector<std::array<PetscInt, 2>> bc_dofs;
+  for (std::size_t f = 0; f < entities.rows(); ++f)
+  {
+    // Create facet and attached cell
+    const mesh::MeshEntity entity(mesh, dim, entities[f]);
+    const std::size_t cell_index = entity.entities(tdim)[0];
+    const mesh::MeshEntity cell(mesh, tdim, cell_index);
+
+    // Get cell dofmap
+    auto cell_dofs0 = dofmap0.cell_dofs(cell.index());
+    auto cell_dofs1 = dofmap1.cell_dofs(cell.index());
+
+    // Loop over facet dofs
+    const int entity_local_index = cell.index(entity);
+    for (int i = 0; i < num_entity_dofs; i++)
+    {
+      const int index = entity_dofs[entity_local_index][i];
+      const PetscInt dof_index0 = cell_dofs0[index];
+      const PetscInt dof_index1 = cell_dofs1[index];
+      bc_dofs.push_back({{dof_index0, dof_index1}});
+    }
+  }
+
+  // TODO: is removing duplicates at this point worth the effort?
+  // Remove duplicates
+  std::sort(bc_dofs.begin(), bc_dofs.end());
+  bc_dofs.erase(std::unique(bc_dofs.begin(), bc_dofs.end()), bc_dofs.end());
+
+  // Get bc dof indices (local) in (V, Vg) spaces on this process that
+  // were found by other processes, e.g. a vertex dof on this process that
+  // has no connected facets on the boundary.
+  const std::vector<std::array<PetscInt, 2>> dofs_remote = get_remote_bcs(
+      *V0.dofmap()->index_map, *V1.dofmap()->index_map, bc_dofs);
+
+  // Add received bc indices to dofs_local
+  for (auto& dof_remote : dofs_remote)
+    bc_dofs.push_back(dof_remote);
+
+  // TODO: is removing duplicates at this point worth the effort?
+  // Remove duplicates
+  std::sort(bc_dofs.begin(), bc_dofs.end());
+  bc_dofs.erase(std::unique(bc_dofs.begin(), bc_dofs.end()), bc_dofs.end());
+
+  Eigen::Array<PetscInt, Eigen::Dynamic, 2, Eigen::RowMajor> dofs(
+      bc_dofs.size(), 2);
+  for (std::size_t i = 0; i < bc_dofs.size(); ++i)
+  {
+    dofs(i, 0) = bc_dofs[i][0];
+    dofs(i, 1) = bc_dofs[i][1];
+  }
+
+  return dofs;
+}
+//-----------------------------------------------------------------------------
 Eigen::Array<PetscInt, Eigen::Dynamic, 1> fem::locate_dofs_topological(
     const function::FunctionSpace& V, const int entity_dim,
     const Eigen::Ref<const Eigen::Array<int, Eigen::Dynamic, 1>>& entities)
