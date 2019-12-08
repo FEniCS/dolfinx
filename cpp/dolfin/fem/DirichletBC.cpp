@@ -195,6 +195,14 @@ fem::locate_dofs_geometrical(const function::FunctionSpace& V,
 }
 //-----------------------------------------------------------------------------
 DirichletBC::DirichletBC(
+    std::shared_ptr<const function::Function> g,
+    const Eigen::Ref<const Eigen::Array<PetscInt, Eigen::Dynamic, 1>>& dofs)
+    : DirichletBC(g->function_space(), g, dofs, dofs)
+{
+  // Do nothing
+}
+//-----------------------------------------------------------------------------
+DirichletBC::DirichletBC(
     std::shared_ptr<const function::FunctionSpace> V,
     std::shared_ptr<const function::Function> g,
     const Eigen::Ref<const Eigen::Array<PetscInt, Eigen::Dynamic, 1>>& V_dofs,
@@ -222,8 +230,8 @@ DirichletBC::DirichletBC(
   // were found by other processes, e.g. a vertex dof on this process
   // that has no connected facets on the boundary.
   const std::vector<std::array<PetscInt, 2>> dofs_remote = get_remote_bcs(
-      *V->dofmap()->index_map, *g->function_space()->dofmap()->index_map,
-      dofs_local_vec);
+      *_function_space->dofmap()->index_map,
+      *_g->function_space()->dofmap()->index_map, dofs_local_vec);
 
   // Add received bc indices to dofs_local
   for (auto& dof_remote : dofs_remote)
@@ -243,8 +251,8 @@ DirichletBC::DirichletBC(
     _dofs(i, 1) = dofs_local_vec[i][1];
   }
 
-  const int owned_size = V->dofmap()->index_map->block_size
-                         * V->dofmap()->index_map->size_local();
+  const int owned_size = _function_space->dofmap()->index_map->block_size
+                         * _function_space->dofmap()->index_map->size_local();
   auto it = std::lower_bound(_dofs.col(0).data(),
                              _dofs.col(0).data() + _dofs.rows(), owned_size);
   _owned_indices = std::distance(_dofs.col(0).data(), it);

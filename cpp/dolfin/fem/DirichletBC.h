@@ -85,6 +85,15 @@ class DirichletBC
 public:
   /// Create boundary condition
   ///
+  /// @param[in] g The boundary condition value
+  /// @param[in] dofs Degree-of-freedom indices in the space of the
+  ///                 boundary value function applied to V_dofs[i]
+  DirichletBC(
+      std::shared_ptr<const function::Function> g,
+      const Eigen::Ref<const Eigen::Array<PetscInt, Eigen::Dynamic, 1>>& dofs);
+
+  /// Create boundary condition
+  ///
   /// @param[in] V The function (sub)space on which the boundary
   ///              condition is applied
   /// @param[in] g The boundary condition value

@@ -236,11 +236,16 @@ void fem(py::module& m)
   dirichletbc
       .def(py::init<std::shared_ptr<const dolfin::function::FunctionSpace>,
                     std::shared_ptr<const dolfin::function::Function>,
-                    const Eigen::Ref<const Eigen::Array<PetscInt, Eigen::Dynamic, 1>>&,
-                    const Eigen::Ref<const Eigen::Array<PetscInt, Eigen::Dynamic, 1>>&>(),
+                    const Eigen::Ref<
+                        const Eigen::Array<PetscInt, Eigen::Dynamic, 1>>&,
+                    const Eigen::Ref<
+                        const Eigen::Array<PetscInt, Eigen::Dynamic, 1>>&>(),
            py::arg("V"), py::arg("g"), py::arg("V_dofs"), py::arg("g_dofs"))
-      .def_property_readonly("dof_indices",
-                             &dolfin::fem::DirichletBC::dofs)
+      .def(py::init<std::shared_ptr<const dolfin::function::Function>,
+                    const Eigen::Ref<
+                        const Eigen::Array<PetscInt, Eigen::Dynamic, 1>>&>(),
+           py::arg("g"), py::arg("dofs"))
+      .def_property_readonly("dof_indices", &dolfin::fem::DirichletBC::dofs)
       .def_property_readonly("function_space",
                              &dolfin::fem::DirichletBC::function_space)
       .def_property_readonly("value", &dolfin::fem::DirichletBC::value);
@@ -409,7 +414,6 @@ void fem(py::module& m)
           py::return_value_policy::take_ownership)
       .def("check_ref_count", &dolfin::fem::PETScDMCollection::check_ref_count)
       .def("get_dm", &dolfin::fem::PETScDMCollection::get_dm);
-
 
   m.def("locate_dofs_topological", &dolfin::fem::locate_dofs_topological);
   m.def("locate_dofs_geometrical", &dolfin::fem::locate_dofs_geometrical);
