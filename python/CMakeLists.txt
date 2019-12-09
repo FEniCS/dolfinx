@@ -2,6 +2,7 @@ cmake_minimum_required(VERSION 3.5.0)
 
 PROJECT(dolfin_pybind11)
 
+set(PYBIND11_CPP_STANDARD -std=c++17)
 find_package(pybind11 REQUIRED CONFIG HINTS ${PYBIND11_DIR} ${PYBIND11_ROOT}
   $ENV{PYBIND11_DIR} $ENV{PYBIND11_ROOT})
 
