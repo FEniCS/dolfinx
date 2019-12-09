@@ -297,10 +297,20 @@ Mesh::Mesh(
       for (std::size_t j = 0; j < vertex_indices.size(); ++j)
         vertex_set.insert(coordinate_nodes(i, vertex_indices[j]));
     std::vector<std::int32_t> vertices(vertex_set.begin(), vertex_set.end());
+    for (int i : vertices)
+      vertex_indices_global.push_back(node_indices_global[i]);
+
+    std::stringstream s;
+    s << MPI::rank(comm) << " ";
+    s << "V=";
+    for (int q : vertices)
+      s << q << " ";
+    s << "\n\n";
+    std::cout << s.str();
 
     vertex_index_map = point_map_to_vertex_map(point_index_map, vertices);
 
-    std::stringstream s;
+    s.str("");
 
     s << "Made vertex_index_map for higher order with "
       << vertex_index_map->size_local() << " local and "

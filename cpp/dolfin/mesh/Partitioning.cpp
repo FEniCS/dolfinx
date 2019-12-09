@@ -735,26 +735,6 @@ mesh::Mesh Partitioning::build_from_partition(
     shared_cells.clear();
   }
 
-  // if (parameter::parameters["reorder_cells_gps"])
-  // {
-  //   // Allocate objects to hold re-ordering
-  //   std::map<std::int32_t, std::set<std::int32_t>> reordered_shared_cells;
-  //   EigenRowArrayXXi64 reordered_cell_vertices;
-  //   std::vector<std::int64_t> reordered_global_cell_indices;
-
-  //   // Re-order cells
-  //   std::tie(reordered_shared_cells, reordered_cell_vertices,
-  //            reordered_global_cell_indices)
-  //       = reorder_cells_gps(comm, num_regular_cells, *cell_type,
-  //       shared_cells,
-  //                           new_cell_vertices, new_global_cell_indices);
-
-  //   // Update to re-ordered indices
-  //   std::swap(shared_cells, reordered_shared_cells);
-  //   new_cell_vertices = reordered_cell_vertices;
-  //   std::swap(new_global_cell_indices, reordered_global_cell_indices);
-  // }
-
   timer.stop();
 
   // Build mesh from points and distributed cells
@@ -763,16 +743,18 @@ mesh::Mesh Partitioning::build_from_partition(
   mesh::Mesh mesh(comm, cell_type, points, new_cell_vertices,
                   new_global_cell_indices, ghost_mode, num_ghosts);
 
-  if (ghost_mode == mesh::GhostMode::none)
-    return mesh;
+  if (ghost_mode != mesh::GhostMode::none)
+  {
+    // Copy cell ownership (only needed for ghost cells)
+    std::vector<std::int32_t> cell_owner(new_cell_partition.begin()
+                                             + num_regular_cells,
+                                         new_cell_partition.end());
 
-  // Copy cell ownership (only needed for ghost cells)
-  std::vector<std::int32_t> cell_owner(
-      new_cell_partition.begin() + num_regular_cells, new_cell_partition.end());
+    // Assign map of shared cells (only needed for ghost cells)
+    mesh.topology().set_entity_owner(tdim, cell_owner);
+    mesh.topology().set_shared_entities(tdim, shared_cells);
+  }
 
-  // Assign map of shared cells (only needed for ghost cells)
-  mesh.topology().set_entity_owner(tdim, cell_owner);
-  mesh.topology().set_shared_entities(tdim, shared_cells);
   DistributedMeshTools::init_facet_cell_connections(mesh);
 
   return mesh;
@@ -800,13 +782,6 @@ mesh::Mesh Partitioning::build_distributed_mesh(
   mesh::Mesh mesh = Partitioning::build_from_partition(
       comm, cell_type, points, cells, global_cell_indices, ghost_mode,
       cell_partition);
-
-  // Initialise number of globally connected cells to each facet. This
-  // is necessary to distinguish between facets on an exterior boundary
-  // and facets on a partition boundary (see
-  // https://bugs.launchpad.net/dolfin/+bug/733834).
-
-  DistributedMeshTools::init_facet_cell_connections(mesh);
 
   return mesh;
 }
