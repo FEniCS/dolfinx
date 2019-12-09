@@ -153,10 +153,10 @@ fem::locate_dofs_topological(
 
   // Iterate over marked facets
   std::vector<std::array<PetscInt, 2>> bc_dofs;
-  for (std::size_t f = 0; f < entities.rows(); ++f)
+  for (Eigen::Index e = 0; e < entities.rows(); ++e)
   {
     // Create facet and attached cell
-    const mesh::MeshEntity entity(mesh, dim, entities[f]);
+    const mesh::MeshEntity entity(mesh, dim, entities[e]);
     const std::size_t cell_index = entity.entities(tdim)[0];
     const mesh::MeshEntity cell(mesh, tdim, cell_index);
 
@@ -166,7 +166,7 @@ fem::locate_dofs_topological(
 
     // Loop over facet dofs
     const int entity_local_index = cell.index(entity);
-    for (int i = 0; i < num_entity_dofs; i++)
+    for (int i = 0; i < num_entity_dofs; ++i)
     {
       const int index = entity_dofs[entity_local_index][i];
       const PetscInt dof_index0 = cell_dofs0[index];
