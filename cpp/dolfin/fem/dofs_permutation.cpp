@@ -436,6 +436,8 @@ compute_ordering(const mesh::Mesh& mesh)
   const int num_cells = mesh.num_entities(t_dim);
   const int num_permutations = get_num_permutations(type);
   const int num_vertices_per_cell = mesh::num_cell_vertices(type);
+
+  // Find the total number of edges + faces + volumes
   int entity_count = 0;
   for (int dim = 1; dim < t_dim; ++dim)
     entity_count += mesh::cell_num_entities(type, dim);
