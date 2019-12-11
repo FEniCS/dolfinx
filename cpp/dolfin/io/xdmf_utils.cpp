@@ -79,7 +79,8 @@ xdmf_utils::get_cell_type(const pugi::xml_node& topology_node)
          {"triangle_6", {"triangle", 2}},
          {"tetrahedron", {"tetrahedron", 1}},
          {"tetrahedron_10", {"tetrahedron", 2}},
-         {"quadrilateral", {"quadrilateral", 1}}};
+         {"quadrilateral", {"quadrilateral", 1}},
+         {"hexahedron", {"hexahedron", 1}}};
 
   // Convert XDMF cell type string to DOLFIN cell type string
   std::string cell_type = type_attr.as_string();

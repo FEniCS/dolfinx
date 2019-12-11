@@ -10,8 +10,6 @@ import sys
 
 import numpy as np
 import pytest
-from dolfin_utils.test.fixtures import tempdir
-from dolfin_utils.test.skips import skip_in_parallel
 
 import dolfin
 import FIAT
@@ -21,6 +19,8 @@ from dolfin import (MPI, BoxMesh, Mesh, MeshEntity, MeshFunction,
 from dolfin.cpp.mesh import CellType, Partitioner, is_simplex
 from dolfin.fem import assemble_scalar
 from dolfin.io import XDMFFile
+from dolfin_utils.test.fixtures import tempdir
+from dolfin_utils.test.skips import skip_in_parallel
 from ufl import dx
 
 assert (tempdir)
@@ -154,7 +154,7 @@ def test_UFLDomain(interval, square, rectangle, cube, box):
 @skip_in_parallel
 def test_mesh_construction_pygmsh():
 
-    import pygmsh
+    pygmsh = pytest.importorskip("pygmsh")
 
     if MPI.rank(MPI.comm_world) == 0:
         geom = pygmsh.opencascade.Geometry()

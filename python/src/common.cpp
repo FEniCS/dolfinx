@@ -65,13 +65,12 @@ void common(py::module& m)
       .def_property_readonly("ghosts", &dolfin::common::IndexMap::ghosts,
                              py::return_value_policy::reference_internal,
                              "Return list of ghost indices")
+      .def("compute_forward_processes",
+           &dolfin::common::IndexMap::compute_forward_processes,
+           "Return mapping from local indices to remote processes where "
+           "each index is ghosted")
       .def("indices", &dolfin::common::IndexMap::indices,
            "Return array of global indices for all indices on this process");
-
-  // dolfin::Table
-  py::class_<dolfin::Table, std::shared_ptr<dolfin::Table>>(m, "Table")
-      .def(py::init<std::string>())
-      .def("str", &dolfin::Table::str);
 
   // dolfin::common::Timer
   py::class_<dolfin::common::Timer, std::shared_ptr<dolfin::common::Timer>>(
@@ -95,10 +94,11 @@ void common(py::module& m)
     std::set<dolfin::TimingType> _type(type.begin(), type.end());
     return dolfin::timings(_type);
   });
-  m.def("list_timings", [](std::vector<dolfin::TimingType> type) {
-    std::set<dolfin::TimingType> _type(type.begin(), type.end());
-    dolfin::list_timings(_type);
-  });
+  m.def("list_timings",
+        [](const MPICommWrapper comm, std::vector<dolfin::TimingType> type) {
+          std::set<dolfin::TimingType> _type(type.begin(), type.end());
+          dolfin::list_timings(comm.get(), _type);
+        });
 
   // dolfin::SubSystemsManager
   py::class_<dolfin::common::SubSystemsManager,

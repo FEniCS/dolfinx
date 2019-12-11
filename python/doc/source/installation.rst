@@ -15,7 +15,7 @@ C++ core
 
 .. rubric:: Required
 
-- C++ compiler (supporting the C++14 standard)
+- C++ compiler (supporting the C++17 standard)
 - Boost (http://www.boost.org), with the following compiled Boost components
 
   - filesystem

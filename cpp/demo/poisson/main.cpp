@@ -154,13 +154,11 @@ int main(int argc, char* argv[])
   // .. code-block:: cpp
 
   // Define variational forms
-  ufc_form* form_a = poisson_bilinearform_create();
-  auto a = std::make_shared<fem::Form>(fem::create_form(*form_a, {V, V}));
-  std::free(form_a);
+  std::shared_ptr<fem::Form> a
+      = fem::create_form(poisson_bilinearform_create, {V, V});
 
-  ufc_form* form_L = poisson_linearform_create();
-  auto L = std::make_shared<fem::Form>(fem::create_form(*form_L, {V}));
-  std::free(form_L);
+  std::shared_ptr<fem::Form> L
+      = fem::create_form(poisson_linearform_create, {V});
 
   auto f = std::make_shared<function::Function>(V);
   auto g = std::make_shared<function::Function>(V);
@@ -197,6 +195,7 @@ int main(int argc, char* argv[])
 
   MatZeroEntries(A.mat());
   dolfin::fem::assemble_matrix(A.mat(), *a, bc);
+  dolfin::fem::add_diagonal(A.mat(), *V, bc);
   MatAssemblyBegin(A.mat(), MAT_FINAL_ASSEMBLY);
   MatAssemblyEnd(A.mat(), MAT_FINAL_ASSEMBLY);
 

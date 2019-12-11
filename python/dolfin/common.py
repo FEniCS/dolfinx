@@ -22,8 +22,8 @@ def timings(timing_types: list):
     return cpp.common.timings(timing_types)
 
 
-def list_timings(timing_types: list):
-    return cpp.common.list_timings(timing_types)
+def list_timings(mpi_comm, timing_types: list):
+    return cpp.common.list_timings(mpi_comm, timing_types)
 
 
 class Timer:
