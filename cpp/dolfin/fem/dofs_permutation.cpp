@@ -430,11 +430,13 @@ hexahedron_rotations_and_reflection(const int volume_dofs, const int blocksize)
 //-----------------------------------------------------------------------------
 Eigen::Array<std::int8_t, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
 compute_ordering_general(
-    const mesh::Mesh& mesh, const int num_vertices_per_cell,
+    const mesh::Mesh& mesh,
     std::vector<std::pair<mesh::CellType, std::vector<std::int8_t>>> entities)
 {
   const int num_cells = mesh.num_entities(mesh.topology().dim());
   const int num_permutations = get_num_permutations(mesh.cell_type());
+  const int num_vertices_per_cell = mesh::num_cell_vertices(mesh.cell_type());
+
   Eigen::Array<std::int8_t, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
       cell_orders(num_cells, num_permutations);
   // Set orders for each cell
@@ -520,7 +522,7 @@ compute_ordering_interval(const mesh::Mesh& mesh)
   entities[0].first = mesh::CellType::interval;
   entities[0].second = {0, 1};
 
-  return compute_ordering_general(mesh, 2, entities);
+  return compute_ordering_general(mesh, entities);
 }
 //-----------------------------------------------------------------------------
 Eigen::Array<std::int8_t, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
@@ -536,7 +538,7 @@ compute_ordering_triangle(const mesh::Mesh& mesh)
   entities[3].first = mesh::CellType::triangle;
   entities[3].second = {0, 1, 2};
 
-  return compute_ordering_general(mesh, 3, entities);
+  return compute_ordering_general(mesh, entities);
 }
 //-----------------------------------------------------------------------------
 Eigen::Array<std::int8_t, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
@@ -553,7 +555,7 @@ compute_ordering_quadrilateral(const mesh::Mesh& mesh)
   entities[4].first = mesh::CellType::quadrilateral;
   entities[4].second = {0, 1, 2, 3};
 
-  return compute_ordering_general(mesh, 4, entities);
+  return compute_ordering_general(mesh, entities);
 }
 //-----------------------------------------------------------------------------
 Eigen::Array<std::int8_t, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
@@ -579,7 +581,7 @@ compute_ordering_tetrahedron(const mesh::Mesh& mesh)
   entities[10].first = mesh::CellType::tetrahedron;
   entities[10].second = {0, 1, 2, 3};
 
-  return compute_ordering_general(mesh, 4, entities);
+  return compute_ordering_general(mesh, entities);
 }
 //-----------------------------------------------------------------------------
 Eigen::Array<std::int8_t, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
@@ -613,7 +615,7 @@ compute_ordering_hexahedron(const mesh::Mesh& mesh)
   entities[18].first = mesh::CellType::hexahedron;
   entities[18].second = {0, 1, 2, 3, 4, 5, 6, 7};
 
-  return compute_ordering_general(mesh, 8, entities);
+  return compute_ordering_general(mesh, entities);
 }
 //-----------------------------------------------------------------------------
 Eigen::Array<int, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
