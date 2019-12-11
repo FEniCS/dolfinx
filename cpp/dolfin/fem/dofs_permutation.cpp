@@ -441,8 +441,8 @@ compute_ordering(const mesh::Mesh& mesh)
   for (int dim = 1; dim < t_dim; ++dim)
     entity_count += mesh::cell_num_entities(type, dim);
   entity_count += 1;
-  std::vector<std::pair<mesh::CellType,
-                        Eigen::Array<int, 1, Eigen::Dynamic>>> entities(entity_count);
+  std::vector<std::pair<mesh::CellType, Eigen::Array<int, 1, Eigen::Dynamic>>>
+      entities(entity_count);
   {
     int j = 0;
     for (int dim = 1; dim < t_dim; ++dim)
@@ -461,10 +461,6 @@ compute_ordering(const mesh::Mesh& mesh)
     for (int i = 0; i < num_vertices_per_cell; ++i)
       entities[j].second[i] = i;
   }
-
-  for (int j=0; j < entity_count; ++j)
-    std::cout << mesh::to_string(entities[j].first) << " " << entities[j].second << std::endl;
-  std::cout << std::endl;
 
   Eigen::Array<std::int8_t, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
       cell_orders(num_cells, num_permutations);
