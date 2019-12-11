@@ -429,13 +429,42 @@ hexahedron_rotations_and_reflection(const int volume_dofs, const int blocksize)
 }
 //-----------------------------------------------------------------------------
 Eigen::Array<std::int8_t, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
-compute_ordering_general(
-    const mesh::Mesh& mesh,
-    std::vector<std::pair<mesh::CellType, std::vector<std::int8_t>>> entities)
+compute_ordering(const mesh::Mesh& mesh)
 {
-  const int num_cells = mesh.num_entities(mesh.topology().dim());
-  const int num_permutations = get_num_permutations(mesh.cell_type());
-  const int num_vertices_per_cell = mesh::num_cell_vertices(mesh.cell_type());
+  mesh::CellType type = mesh.cell_type();
+  const int t_dim = mesh.topology().dim();
+  const int num_cells = mesh.num_entities(t_dim);
+  const int num_permutations = get_num_permutations(type);
+  const int num_vertices_per_cell = mesh::num_cell_vertices(type);
+
+  int entity_count = 0;
+  for (int dim = 1; dim < t_dim; ++dim)
+    entity_count += mesh::cell_num_entities(type, dim);
+  entity_count += 1;
+  std::vector<std::pair<mesh::CellType,
+                        Eigen::Array<int, 1, Eigen::Dynamic>>> entities(entity_count);
+  {
+    int j = 0;
+    for (int dim = 1; dim < t_dim; ++dim)
+    {
+      auto vertices = mesh::get_entity_vertices(type, dim);
+      auto e_type = mesh::cell_entity_type(type, dim);
+      for (int i = 0; i < mesh::cell_num_entities(type, dim); ++i)
+      {
+        entities[j].first = e_type;
+        entities[j].second = vertices.row(i);
+        ++j;
+      }
+    }
+    entities[j].first = type;
+    entities[j].second.resize(num_vertices_per_cell);
+    for (int i = 0; i < num_vertices_per_cell; ++i)
+      entities[j].second[i] = i;
+  }
+
+  for (int j=0; j < entity_count; ++j)
+    std::cout << mesh::to_string(entities[j].first) << " " << entities[j].second << std::endl;
+  std::cout << std::endl;
 
   Eigen::Array<std::int8_t, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
       cell_orders(num_cells, num_permutations);
@@ -446,7 +475,7 @@ compute_ordering_general(
   std::vector<std::int32_t> vertices(num_vertices_per_cell);
   for (int cell_n = 0; cell_n < num_cells; ++cell_n)
   {
-    const mesh::MeshEntity cell(mesh, mesh.topology().dim(), cell_n);
+    const mesh::MeshEntity cell(mesh, t_dim, cell_n);
     const std::int32_t* local_vertices = cell.entities(0);
     for (int i = 0; i < num_vertices_per_cell; ++i)
       vertices[i] = global_indices[local_vertices[i]];
@@ -512,110 +541,6 @@ compute_ordering_general(
     assert(j == num_permutations);
   }
   return cell_orders;
-}
-//-----------------------------------------------------------------------------
-Eigen::Array<std::int8_t, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
-compute_ordering_interval(const mesh::Mesh& mesh)
-{
-  std::vector<std::pair<mesh::CellType, std::vector<std::int8_t>>> entities(1);
-
-  entities[0].first = mesh::CellType::interval;
-  entities[0].second = {0, 1};
-
-  return compute_ordering_general(mesh, entities);
-}
-//-----------------------------------------------------------------------------
-Eigen::Array<std::int8_t, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
-compute_ordering_triangle(const mesh::Mesh& mesh)
-{
-  std::vector<std::pair<mesh::CellType, std::vector<std::int8_t>>> entities(4);
-  for (int i = 0; i < 3; ++i)
-    entities[i].first = mesh::CellType::interval;
-  entities[0].second = {1, 2};
-  entities[1].second = {0, 2};
-  entities[2].second = {0, 1};
-
-  entities[3].first = mesh::CellType::triangle;
-  entities[3].second = {0, 1, 2};
-
-  return compute_ordering_general(mesh, entities);
-}
-//-----------------------------------------------------------------------------
-Eigen::Array<std::int8_t, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
-compute_ordering_quadrilateral(const mesh::Mesh& mesh)
-{
-  std::vector<std::pair<mesh::CellType, std::vector<std::int8_t>>> entities(5);
-  for (int i = 0; i < 4; ++i)
-    entities[i].first = mesh::CellType::interval;
-  entities[0].second = {0, 1};
-  entities[1].second = {2, 3};
-  entities[2].second = {0, 2};
-  entities[3].second = {1, 3};
-
-  entities[4].first = mesh::CellType::quadrilateral;
-  entities[4].second = {0, 1, 2, 3};
-
-  return compute_ordering_general(mesh, entities);
-}
-//-----------------------------------------------------------------------------
-Eigen::Array<std::int8_t, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
-compute_ordering_tetrahedron(const mesh::Mesh& mesh)
-{
-  std::vector<std::pair<mesh::CellType, std::vector<std::int8_t>>> entities(11);
-  for (int i = 0; i < 6; ++i)
-    entities[i].first = mesh::CellType::interval;
-  entities[0].second = {2, 3};
-  entities[1].second = {1, 3};
-  entities[2].second = {1, 2};
-  entities[3].second = {0, 3};
-  entities[4].second = {0, 2};
-  entities[5].second = {0, 1};
-
-  for (int i = 6; i < 10; ++i)
-    entities[i].first = mesh::CellType::triangle;
-  entities[6].second = {1, 2, 3};
-  entities[7].second = {0, 2, 3};
-  entities[8].second = {0, 1, 3};
-  entities[9].second = {0, 1, 2};
-
-  entities[10].first = mesh::CellType::tetrahedron;
-  entities[10].second = {0, 1, 2, 3};
-
-  return compute_ordering_general(mesh, entities);
-}
-//-----------------------------------------------------------------------------
-Eigen::Array<std::int8_t, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
-compute_ordering_hexahedron(const mesh::Mesh& mesh)
-{
-  std::vector<std::pair<mesh::CellType, std::vector<std::int8_t>>> entities(19);
-  for (int i = 0; i < 12; ++i)
-    entities[i].first = mesh::CellType::interval;
-  entities[0].second = {0, 1};
-  entities[1].second = {2, 3};
-  entities[2].second = {4, 5};
-  entities[3].second = {6, 7};
-  entities[4].second = {0, 2};
-  entities[5].second = {1, 3};
-  entities[6].second = {4, 6};
-  entities[7].second = {5, 7};
-  entities[8].second = {0, 4};
-  entities[9].second = {1, 5};
-  entities[10].second = {2, 6};
-  entities[11].second = {3, 7};
-
-  for (int i = 12; i < 18; ++i)
-    entities[i].first = mesh::CellType::quadrilateral;
-  entities[12].second = {0, 1, 2, 3};
-  entities[13].second = {4, 5, 6, 7};
-  entities[14].second = {0, 1, 4, 5};
-  entities[15].second = {2, 3, 6, 7};
-  entities[16].second = {0, 2, 4, 6};
-  entities[17].second = {1, 3, 5, 7};
-
-  entities[18].first = mesh::CellType::hexahedron;
-  entities[18].second = {0, 1, 2, 3, 4, 5, 6, 7};
-
-  return compute_ordering_general(mesh, entities);
 }
 //-----------------------------------------------------------------------------
 Eigen::Array<int, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
@@ -924,32 +849,7 @@ fem::compute_dof_permutations(const mesh::Mesh& mesh,
   // of _permutations should be applied on each cell Will have shape
   // (number of cells) × (number of permutations)
   Eigen::Array<std::int8_t, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
-      cell_ordering;
-  switch (mesh.cell_type())
-  {
-  case (mesh::CellType::point):
-    cell_ordering.resize(mesh.num_entities(mesh.topology().dim()), 0);
-    break;
-  case (mesh::CellType::interval):
-    cell_ordering = compute_ordering_interval(mesh);
-    break;
-  case (mesh::CellType::triangle):
-    cell_ordering = compute_ordering_triangle(mesh);
-    break;
-  case (mesh::CellType::tetrahedron):
-    cell_ordering = compute_ordering_tetrahedron(mesh);
-    break;
-  case (mesh::CellType::quadrilateral):
-    cell_ordering = compute_ordering_quadrilateral(mesh);
-    break;
-  case (mesh::CellType::hexahedron):
-    cell_ordering = compute_ordering_hexahedron(mesh);
-    break;
-
-  default:
-    // The switch should exit before this is reached
-    throw std::runtime_error("Unrecognised cell type.");
-  }
+      cell_ordering = compute_ordering(mesh);
 
   // Build permutations. Each row of this represent the rotation or
   // reflection of a mesh entity Will have shape (number of
