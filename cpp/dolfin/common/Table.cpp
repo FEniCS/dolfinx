@@ -83,7 +83,7 @@ Table Table::reduce(MPI_Comm comm, Table::Reduction reduction) const
   std::string new_title;
 
   // Prepare reduction operation y := op(y, x)
-  std::function<void(double, double)> op_impl;
+  std::function<double(double, double)> op_impl;
   switch (reduction)
   {
   case Table::Reduction::average:
@@ -146,7 +146,7 @@ Table Table::reduce(MPI_Comm comm, Table::Reduction reduction) const
     {
       const auto it = dvalues_all.find(key);
       if (it != dvalues_all.end())
-        op_impl(it->second, *(values_ptr++));
+        it->second = op_impl(it->second, *(values_ptr++));
       else
         dvalues_all[key] = *(values_ptr++);
     }
