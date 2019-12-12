@@ -460,7 +460,7 @@ compute_ordering(const mesh::Mesh& mesh)
   for (int i = 0; i < num_vertices_per_cell; ++i)
     row[i] = i;
   entities.push_back({type, row});
-  assert(entities.size() == entity_count);
+  assert(unsigned(entities.size()) == entity_count);
 
   // Set orders for each cell
   Eigen::Array<std::int8_t, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
