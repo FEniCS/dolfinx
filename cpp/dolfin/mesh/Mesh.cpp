@@ -281,11 +281,22 @@ Mesh::Mesh(
   std::map<std::int32_t, std::set<std::int32_t>> shared_vertices;
   std::shared_ptr<common::IndexMap> vertex_index_map;
 
+  // Make cell to vertex connectivity
+  const std::int32_t num_vertices_per_cell
+      = mesh::num_cell_vertices(_cell_type);
+  Eigen::Array<std::int32_t, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
+      vertex_cols(cells.rows(), num_vertices_per_cell);
+
   if (_degree == 1)
   {
     vertex_indices_global = std::move(node_indices_global);
     shared_vertices = std::move(shared_points);
     vertex_index_map = point_index_map;
+
+    const std::vector<int> vertex_indices
+        = mesh::cell_vertex_indices(type, cells.cols());
+    for (std::int32_t i = 0; i < num_vertices_per_cell; ++i)
+      vertex_cols.col(i) = coordinate_nodes.col(vertex_indices[i]);
   }
   else
   {
@@ -299,6 +310,15 @@ Mesh::Mesh(
     std::vector<std::int32_t> vertices(vertex_set.begin(), vertex_set.end());
     for (int i : vertices)
       vertex_indices_global.push_back(node_indices_global[i]);
+
+    std::map<int, int> node_index_to_vertex;
+    for (std::size_t i = 0; i < vertices.size(); ++i)
+      node_index_to_vertex.insert({vertices[i], i});
+
+    for (int i = 0; i < vertex_cols.rows(); ++i)
+      for (std::int32_t j = 0; j < num_vertices_per_cell; ++j)
+        vertex_cols(i, j)
+            = node_index_to_vertex[coordinate_nodes(i, vertex_indices[j])];
 
     std::stringstream s;
     s << MPI::rank(comm) << " ";
@@ -345,15 +365,6 @@ Mesh::Mesh(
   _topology->set_num_entities_global(tdim, num_cells_global);
   _topology->init_ghost(tdim, num_cells_local);
 
-  // Make cell to vertex connectivity
-  const std::int32_t num_vertices_per_cell
-      = mesh::num_cell_vertices(_cell_type);
-  Eigen::Array<std::int32_t, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
-      vertex_cols(cells.rows(), num_vertices_per_cell);
-  std::vector<int> vertex_indices
-      = mesh::cell_vertex_indices(type, cells.cols());
-  for (std::int32_t i = 0; i < num_vertices_per_cell; ++i)
-    vertex_cols.col(i) = coordinate_nodes.col(vertex_indices[i]);
   auto cv = std::make_shared<Connectivity>(vertex_cols);
 
   _topology->set_connectivity(cv, tdim, 0);
