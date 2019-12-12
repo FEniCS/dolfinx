@@ -498,7 +498,6 @@ compute_ordering(const mesh::Mesh& mesh)
   for (int dim = 1; dim < t_dim; ++dim)
   {
     auto vertices = mesh::get_entity_vertices(type, dim);
-    mesh::CellType e_type = mesh::cell_entity_type(type, dim);
     auto f = get_ordering_function<std::int32_t>(
         mesh::cell_entity_type(type, dim));
     // Store the ordering function and vertices associated with the ith
