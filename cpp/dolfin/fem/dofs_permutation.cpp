@@ -445,30 +445,22 @@ compute_ordering(const mesh::Mesh& mesh)
 
   // Get lists of vertices on each entity from the cell type
   std::vector<std::pair<mesh::CellType, Eigen::Array<int, 1, Eigen::Dynamic>>>
-      entities(entity_count);
-  { // scope for j
-    int j = 0;
-    for (int dim = 1; dim < t_dim; ++dim)
-    {
-      auto vertices = mesh::get_entity_vertices(type, dim);
-      auto e_type = mesh::cell_entity_type(type, dim);
-      for (int i = 0; i < mesh::cell_num_entities(type, dim); ++i)
-      {
-        // Store the cell type and vertices associated with the ith
-        // entity of dimension dim
-        entities[j].first = e_type;
-        entities[j].second = vertices.row(i);
-        ++j;
-      }
-    }
-    // Add on the cell itself as an entity
-    entities[j].first = type;
-    entities[j].second.resize(num_vertices_per_cell);
-    for (int i = 0; i < num_vertices_per_cell; ++i)
-      entities[j].second[i] = i;
-    ++j;
-    assert(j == entity_count);
+      entities;
+  for (int dim = 1; dim < t_dim; ++dim)
+  {
+    auto vertices = mesh::get_entity_vertices(type, dim);
+    mesh::CellType e_type = mesh::cell_entity_type(type, dim);
+    // Store the cell type and vertices associated with the ith
+    // entity of dimension dim
+    for (int i = 0; i < mesh::cell_num_entities(type, dim); ++i)
+      entities.push_back({e_type, vertices.row(i)});
   }
+  // Add on the cell itself as an entity
+  Eigen::Array<int, 1, Eigen::Dynamic> row(num_vertices_per_cell);
+  for (int i = 0; i < num_vertices_per_cell; ++i)
+    row[i] = i;
+  entities.push_back({type, row});
+  assert(entities.size() == entity_count);
 
   // Set orders for each cell
   Eigen::Array<std::int8_t, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
@@ -491,8 +483,8 @@ compute_ordering(const mesh::Mesh& mesh)
     {
       // Look up the cell type of the entity, then calculate the orders
       // for that entity type
-      auto cell_type = entities[e_n].first;
-      auto v = entities[e_n].second;
+      mesh::CellType cell_type = entities[e_n].first;
+      Eigen::Array<int, 1, Eigen::Dynamic> v = entities[e_n].second;
       switch (cell_type)
       {
       case (mesh::CellType::point):
@@ -502,7 +494,7 @@ compute_ordering(const mesh::Mesh& mesh)
         break;
       case (mesh::CellType::triangle):
       {
-        const auto tri_orders = calculate_triangle_orders(
+        const std::array<std::int8_t, 2> tri_orders = calculate_triangle_orders(
             cell_vs[v[0]], cell_vs[v[1]], cell_vs[v[2]]);
         cell_orders(cell_n, j++) = tri_orders[0];
         cell_orders(cell_n, j++) = tri_orders[1];
@@ -510,16 +502,18 @@ compute_ordering(const mesh::Mesh& mesh)
       }
       case (mesh::CellType::quadrilateral):
       {
-        const auto quad_orders = calculate_quadrilateral_orders(
-            cell_vs[v[0]], cell_vs[v[1]], cell_vs[v[2]], cell_vs[v[3]]);
+        const std::array<std::int8_t, 2> quad_orders
+            = calculate_quadrilateral_orders(cell_vs[v[0]], cell_vs[v[1]],
+                                             cell_vs[v[2]], cell_vs[v[3]]);
         cell_orders(cell_n, j++) = quad_orders[0];
         cell_orders(cell_n, j++) = quad_orders[1];
         break;
       }
       case (mesh::CellType::tetrahedron):
       {
-        const auto tetra_orders = calculate_tetrahedron_orders(
-            cell_vs[v[0]], cell_vs[v[1]], cell_vs[v[2]], cell_vs[v[3]]);
+        const std::array<std::int8_t, 4> tetra_orders
+            = calculate_tetrahedron_orders(cell_vs[v[0]], cell_vs[v[1]],
+                                           cell_vs[v[2]], cell_vs[v[3]]);
         cell_orders(cell_n, j++) = tetra_orders[0];
         cell_orders(cell_n, j++) = tetra_orders[1];
         cell_orders(cell_n, j++) = tetra_orders[2];
@@ -528,9 +522,10 @@ compute_ordering(const mesh::Mesh& mesh)
       }
       case (mesh::CellType::hexahedron):
       {
-        const auto hexa_orders = calculate_hexahedron_orders(
-            cell_vs[v[0]], cell_vs[v[1]], cell_vs[v[2]], cell_vs[v[3]],
-            cell_vs[v[4]], cell_vs[v[5]], cell_vs[v[6]], cell_vs[v[7]]);
+        const std::array<std::int8_t, 4> hexa_orders
+            = calculate_hexahedron_orders(
+                cell_vs[v[0]], cell_vs[v[1]], cell_vs[v[2]], cell_vs[v[3]],
+                cell_vs[v[4]], cell_vs[v[5]], cell_vs[v[6]], cell_vs[v[7]]);
         cell_orders(cell_n, j++) = hexa_orders[0];
         cell_orders(cell_n, j++) = hexa_orders[1];
         cell_orders(cell_n, j++) = hexa_orders[2];
