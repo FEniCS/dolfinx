@@ -507,8 +507,8 @@ compute_ordering(const mesh::Mesh& mesh)
   }
   { // scope
     // Add on the cell itself as an entity
-    Eigen::Array<int, 1, Eigen::Dynamic> row(num_vertices_per_cell);
     auto f = get_ordering_function<std::int32_t>(type);
+    Eigen::Array<int, 1, Eigen::Dynamic> row(num_vertices_per_cell);
     for (int i = 0; i < num_vertices_per_cell; ++i)
       row[i] = i;
     entities.push_back({f, row});
@@ -541,7 +541,7 @@ compute_ordering(const mesh::Mesh& mesh)
       Eigen::Array<int, 1, Eigen::Dynamic> global_v(v.size());
       for (int i = 0; i < v.size(); ++i)
         global_v[i] = cell_vs[v[i]];
-      auto orders = f(global_v);
+      Eigen::Array<std::int8_t, 1, Eigen::Dynamic> orders = f(global_v);
       for (int i = 0; i < orders.size(); ++i)
         cell_orders(cell_n, j++) = orders[i];
     }
