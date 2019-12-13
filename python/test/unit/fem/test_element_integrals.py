@@ -67,6 +67,7 @@ def test_facet_integral(cell_type):
         facet_function = MeshFunction("size_t", mesh, mesh.topology.dim - 1, 1)
         facet_function.values[:] = range(num_facets)
 
+        # Functions that will have the same integral over each facet
         if cell_type == CellType.triangle:
             root = 3 ** 0.25  # 4th root of 3
             v.interpolate(lambda x: (x[0] - 1 / root) ** 2 + (x[1] - root / 3) ** 2)
