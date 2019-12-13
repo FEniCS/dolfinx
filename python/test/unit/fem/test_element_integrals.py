@@ -11,7 +11,7 @@ import numpy as np
 import pytest
 from dolfin_utils.test.skips import skip_in_parallel
 
-from dolfin import MPI, cpp, fem, Mesh, VectorFunctionSpace, FacetNormal, Function, MeshFunction
+from dolfin import MPI, cpp, fem, Mesh, FunctionSpace, VectorFunctionSpace, FacetNormal, Function, MeshFunction
 from ufl import inner, ds
 from dolfin.cpp.mesh import CellType
 
@@ -27,7 +27,7 @@ def randomly_ordered_unit_cell(cell_type):
         s = 2 ** 0.5 * 3 ** (1 / 3)  # side length
         points = np.array([[0., 0., 0.], [s, 0., 0.],
                            [s / 2, s * np.sqrt(3) / 2, 0.],
-                           [s / 2, s / np.sqrt(3), s * np.sqrt(2 / 3)]])
+                           [s / 2, s / 2 / np.sqrt(3), s * np.sqrt(2 / 3)]])
     elif cell_type == CellType.quadrilateral:
         # Define unit quadrilateral (area 1)
         points = np.array([[0., 0.], [1., 0.], [0., 1.], [1., 1.]])
@@ -49,6 +49,43 @@ def randomly_ordered_unit_cell(cell_type):
                 [], cpp.mesh.GhostMode.none)
     mesh.geometry.coord_mapping = fem.create_coordinate_map(mesh)
     return mesh
+
+
+@skip_in_parallel
+@pytest.mark.parametrize('cell_type', [CellType.triangle, CellType.tetrahedron,
+                                       CellType.quadrilateral, CellType.hexahedron])
+def test_facet_integral(cell_type):
+    """Test that the integral of a function over a facet is correct"""
+    for count in range(10):
+        mesh = randomly_ordered_unit_cell(cell_type)
+
+        V = FunctionSpace(mesh, ("Lagrange", 2))
+
+        num_facets = mesh.num_entities(mesh.topology.dim - 1)
+
+        v = Function(V)
+        facet_function = MeshFunction("size_t", mesh, mesh.topology.dim - 1, 1)
+        facet_function.values[:] = range(num_facets)
+
+        if cell_type == CellType.triangle:
+            root = 3 ** 0.25  # 4th root of 3
+            v.interpolate(lambda x: (x[0] - 1 / root) ** 2 + (x[1] - root / 3) ** 2)
+        elif cell_type == CellType.quadrilateral:
+            v.interpolate(lambda x: x[0] * (1 - x[0]) + x[1] * (1 - x[1]))
+        elif cell_type == CellType.tetrahedron:
+            s = 2 ** 0.5 * 3 ** (1 / 3)  # side length
+            v.interpolate(lambda x: (x[0] - s / 2) ** 2 + (x[1] - s / 2 / np.sqrt(3)) ** 2
+                          + (x[2] - s * np.sqrt(2 / 3) / 4) ** 2)
+        elif cell_type == CellType.hexahedron:
+            v.interpolate(lambda x: x[0] * (1 - x[0]) + x[1] * (1 - x[1]) + x[2] * (1 - x[2]))
+
+        # assert that the integral of these functions over each face are equal
+        out = []
+        for j in range(num_facets):
+            a = v * ds(subdomain_data=facet_function, subdomain_id=j)
+            result = fem.assemble_scalar(a)
+            out.append(result)
+            assert np.isclose(result, out[0])
 
 
 @skip_in_parallel
