@@ -1,4 +1,4 @@
-// Copyright (C) 2005-2015 Anders Logg
+// Copyright (C) 2005-2019 Anders Logg, Chris Richardson
 //
 // This file is part of DOLFIN (https://www.fenicsproject.org)
 //
@@ -21,17 +21,15 @@ namespace
 mesh::Mesh build_tet(MPI_Comm comm, const std::array<Eigen::Vector3d, 2>& p,
                      std::array<std::size_t, 3> n,
                      const mesh::GhostMode ghost_mode,
-		     mesh::Partitioner partitioner)
+                     mesh::Partitioner partitioner)
 {
   common::Timer timer("Build BoxMesh");
 
   const std::int64_t n_points = (n[0] + 1) * (n[1] + 1) * (n[2] + 1);
   const std::int64_t n_cells = n[0] * n[1] * n[2];
-  std::array<std::int64_t,2> range_p = dolfin::MPI::local_range(comm, n_points);
-  std::array<std::int64_t,2> range_c = dolfin::MPI::local_range(comm, n_cells);
-  
-  std::cout << range_p[0] << "-" << range_p[1] << "\n";
-  std::cout << range_c[0] << "-" << range_c[1] << "\n";
+  std::array<std::int64_t, 2> range_p
+      = dolfin::MPI::local_range(comm, n_points);
+  std::array<std::int64_t, 2> range_c = dolfin::MPI::local_range(comm, n_cells);
 
   // Extract data
   const Eigen::Vector3d& p0 = p[0];
@@ -73,9 +71,9 @@ mesh::Mesh build_tet(MPI_Comm comm, const std::array<Eigen::Vector3d, 2>& p,
   }
 
   Eigen::Array<double, Eigen::Dynamic, 3, Eigen::RowMajor> geom(
-                                                                range_p[1] - range_p[0], 3);
+      range_p[1] - range_p[0], 3);
   Eigen::Array<std::int64_t, Eigen::Dynamic, 4, Eigen::RowMajor> topo(
-                                                                      6 * (range_c[1] - range_c[0]), 4);
+      6 * (range_c[1] - range_c[0]), 4);
 
   const std::int64_t sqxy = (nx + 1) * (ny + 1);
   for (std::int64_t v = range_p[0]; v < range_p[1]; ++v)
@@ -94,8 +92,8 @@ mesh::Mesh build_tet(MPI_Comm comm, const std::array<Eigen::Vector3d, 2>& p,
   std::size_t cell = 0;
   for (std::size_t cct = range_c[0]; cct < range_c[1]; ++cct)
   {
-    const int iz = cct/(nx*ny);
-    const int p = cct %(nx*ny);
+    const int iz = cct / (nx * ny);
+    const int p = cct % (nx * ny);
     const int iy = p / nx;
     const int ix = p % nx;
 
@@ -107,7 +105,7 @@ mesh::Mesh build_tet(MPI_Comm comm, const std::array<Eigen::Vector3d, 2>& p,
     const std::size_t v5 = v1 + (nx + 1) * (ny + 1);
     const std::size_t v6 = v2 + (nx + 1) * (ny + 1);
     const std::size_t v7 = v3 + (nx + 1) * (ny + 1);
-    
+
     // Note that v0 < v1 < v2 < v3 < vmid.
     topo.row(cell) << v0, v1, v3, v7;
     ++cell;
@@ -124,12 +122,13 @@ mesh::Mesh build_tet(MPI_Comm comm, const std::array<Eigen::Vector3d, 2>& p,
   }
 
   return mesh::Partitioning::build_distributed_mesh(
-                                                    comm, mesh::CellType::tetrahedron, geom, topo, {}, ghost_mode, partitioner);
+      comm, mesh::CellType::tetrahedron, geom, topo, {}, ghost_mode,
+      partitioner);
 }
 //-----------------------------------------------------------------------------
 mesh::Mesh build_hex(MPI_Comm comm, std::array<std::size_t, 3> n,
-                     const mesh::GhostMode ghost_mode, 
-		     mesh::Partitioner partitioner)
+                     const mesh::GhostMode ghost_mode,
+                     mesh::Partitioner partitioner)
 {
   // Receive mesh if not rank 0
   if (dolfin::MPI::rank(comm) != 0)
@@ -204,19 +203,18 @@ mesh::Mesh build_hex(MPI_Comm comm, std::array<std::size_t, 3> n,
           topo, io::cells::lex_to_tp(mesh::CellType::hexahedron, topo.cols()));
 
   return mesh::Partitioning::build_distributed_mesh(
-						    comm, mesh::CellType::hexahedron, geom, topo_reordered, {}, ghost_mode, partitioner);
+      comm, mesh::CellType::hexahedron, geom, topo_reordered, {}, ghost_mode,
+      partitioner);
 }
 //-----------------------------------------------------------------------------
 
 } // namespace
 
 //-----------------------------------------------------------------------------
-mesh::Mesh BoxMesh::create(MPI_Comm comm,
-                           const std::array<Eigen::Vector3d, 2>& p,
-                           std::array<std::size_t, 3> n,
-                           mesh::CellType cell_type,
-                           const mesh::GhostMode ghost_mode,
-			   mesh::Partitioner partitioner)
+mesh::Mesh
+BoxMesh::create(MPI_Comm comm, const std::array<Eigen::Vector3d, 2>& p,
+                std::array<std::size_t, 3> n, mesh::CellType cell_type,
+                const mesh::GhostMode ghost_mode, mesh::Partitioner partitioner)
 {
   if (cell_type == mesh::CellType::tetrahedron)
     return build_tet(comm, p, n, ghost_mode, partitioner);

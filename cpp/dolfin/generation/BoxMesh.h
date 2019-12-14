@@ -38,12 +38,11 @@ public:
   /// @param[in] ghost_mode Ghost mode
   /// @param[in] partitioner Partitioner (scotch, parmetis or kahip)
   /// @return Mesh
-  static mesh::Mesh create(MPI_Comm comm,
-                           const std::array<Eigen::Vector3d, 2>& p,
-                           std::array<std::size_t, 3> n,
-                           mesh::CellType cell_type,
-                           const mesh::GhostMode ghost_mode,
-			   mesh::Partitioner partitioner=mesh::Partitioner::scotch);
+  static mesh::Mesh
+  create(MPI_Comm comm, const std::array<Eigen::Vector3d, 2>& p,
+         std::array<std::size_t, 3> n, mesh::CellType cell_type,
+         const mesh::GhostMode ghost_mode,
+         mesh::Partitioner partitioner = mesh::Partitioner::scotch);
 };
 } // namespace generation
 } // namespace dolfin
