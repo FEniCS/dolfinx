@@ -118,6 +118,26 @@ void Form::set_constants(
   }
 }
 //-----------------------------------------------------------------------------
+bool Form::all_constants_set() const
+{
+  for (auto& constant : _constants)
+    if (!constant.second)
+      return false;
+
+  return true;
+}
+//-----------------------------------------------------------------------------
+std::set<std::string> Form::get_unset_constants() const
+{
+  std::set<std::string> unset;
+  for (auto& constant : _constants)
+  {
+    if (!constant.second)
+      unset.insert(constant.first);
+  }
+  return unset;
+}
+//-----------------------------------------------------------------------------
 void Form::set_mesh(std::shared_ptr<const mesh::Mesh> mesh)
 {
   _mesh = mesh;

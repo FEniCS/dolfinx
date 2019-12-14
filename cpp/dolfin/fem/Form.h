@@ -12,6 +12,7 @@
 #include <map>
 #include <memory>
 #include <petscsys.h>
+#include <set>
 #include <string>
 #include <vector>
 
@@ -90,8 +91,7 @@ public:
   /// Create form (no UFC integrals). Integrals can be attached later
   /// using FormIntegrals::set_cell_tabulate_tensor. Experimental.
   ///
-  /// @param[in] function_spaces (std::vector<_function::FunctionSpace_>)
-  ///         Vector of function spaces.
+  /// @param[in] function_spaces Vector of function spaces
   Form(const std::vector<std::shared_ptr<const function::FunctionSpace>>&
            function_spaces);
 
@@ -137,7 +137,7 @@ public:
 
   /// Set constants based on their order (without names)
   ///
-  /// This method is used in python workflow, when constants are
+  /// This method is used in Python workflow, when constants are
   /// automatically attached to the form based on their order in the
   /// original form.
   ///
@@ -146,13 +146,21 @@ public:
   void set_constants(
       std::vector<std::shared_ptr<const function::Constant>> constants);
 
+  /// Check if all constants associated with the form have been set
+  /// @return True if all Form constants have been set
+  bool all_constants_set() const;
+
+  /// Return names of any constants that have not been set
+  /// @return Names of unset constants
+  std::set<std::string> get_unset_constants() const;
+
   /// Set mesh, necessary for functionals when there are no function
   /// spaces
   /// @param[in] mesh The mesh
   void set_mesh(std::shared_ptr<const mesh::Mesh> mesh);
 
   /// Extract common mesh from form
-  /// @return The mesh.
+  /// @return The mesh
   std::shared_ptr<const mesh::Mesh> mesh() const;
 
   /// Return function space for given argument
@@ -186,16 +194,16 @@ public:
   void
   set_vertex_domains(const mesh::MeshFunction<std::size_t>& vertex_domains);
 
-  /// Access coefficients (non-const)
+  /// Access coefficients
   FormCoefficients& coefficients();
 
-  /// Access coefficients (const)
+  /// Access coefficients
   const FormCoefficients& coefficients() const;
 
-  /// Access form integrals (const)
+  /// Access form integrals
   const FormIntegrals& integrals() const;
 
-  /// Access constants (const)
+  /// Access constants
   ///
   /// @return Vector of attached constants with their names.
   ///         Names are used to set constants in user's c++ code.
