@@ -153,7 +153,7 @@ mesh::Mesh build_hex(MPI_Comm comm, const std::array<Eigen::Vector3d, 2>& p,
   const std::int64_t nz = n[2];
   const std::int64_t n_cells = nx * ny * nz;
   std::array<std::int64_t, 2> range_c = dolfin::MPI::local_range(comm, n_cells);
-  Eigen::Array<std::int64_t, Eigen::Dynamic, 4, Eigen::RowMajor> topo(
+  Eigen::Array<std::int64_t, Eigen::Dynamic, 8, Eigen::RowMajor> topo(
       range_c[1] - range_c[0], 8);
 
   // Create cuboids
