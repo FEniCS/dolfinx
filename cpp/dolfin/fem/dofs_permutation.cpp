@@ -538,19 +538,19 @@ compute_ordering(const mesh::Mesh& mesh)
 
     int j = 0;
     // iterate over the cell's entities
-    for (std::size_t e_n = 0; e_n < entities.size(); ++e_n)
+    for (std::size_t e = 0; e < entities.size(); ++e)
     {
       // Use the functions for each entities and that entity's global
       // vertex numbers to calculate the number of times each
       // permutation should be applied on this cell
-      auto f = entities[e_n].first;
-      Eigen::Array<int, 1, Eigen::Dynamic> v = entities[e_n].second;
+      auto f = entities[e].first;
+      Eigen::Array<int, 1, Eigen::Dynamic> v = entities[e].second;
       Eigen::Array<std::int64_t, 1, Eigen::Dynamic> global_v(v.size());
       for (int i = 0; i < v.size(); ++i)
         global_v[i] = cell_vs[v[i]];
       Eigen::Array<std::int8_t, 1, Eigen::Dynamic> orders = f(global_v);
-      for (int i = 0; i < orders.size(); ++i)
-        cell_orders(cell_n, j++) = orders[i];
+      cell_orders.row(cell_n).segment(j, orders.size()) = orders;
+      j += orders.size();
     }
 
     assert(j == num_permutations);
