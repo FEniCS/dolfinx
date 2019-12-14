@@ -11,7 +11,6 @@
 #include <dolfin/common/MPI.h>
 #include <dolfin/common/Timer.h>
 #include <dolfin/io/cells.h>
-#include <dolfin/mesh/Partitioning.h>
 
 using namespace dolfin;
 using namespace dolfin::generation;
@@ -21,19 +20,18 @@ namespace
 //-----------------------------------------------------------------------------
 mesh::Mesh build_tet(MPI_Comm comm, const std::array<Eigen::Vector3d, 2>& p,
                      std::array<std::size_t, 3> n,
-                     const mesh::GhostMode ghost_mode)
+                     const mesh::GhostMode ghost_mode,
+		     mesh::Partitioner partitioner)
 {
   common::Timer timer("Build BoxMesh");
 
-  // Receive mesh if not rank 0
-  if (dolfin::MPI::rank(comm) != 0)
-  {
-    Eigen::Array<double, 0, 3, Eigen::RowMajor> geom(0, 3);
-    Eigen::Array<std::int64_t, 0, 4, Eigen::RowMajor> topo(0, 4);
-
-    return mesh::Partitioning::build_distributed_mesh(
-        comm, mesh::CellType::tetrahedron, geom, topo, {}, ghost_mode);
-  }
+  const std::int64_t n_points = (n[0] + 1) * (n[1] + 1) * (n[2] + 1);
+  const std::int64_t n_cells = n[0] * n[1] * n[2];
+  std::array<std::int64_t,2> range_p = dolfin::MPI::local_range(comm, n_points);
+  std::array<std::int64_t,2> range_c = dolfin::MPI::local_range(comm, n_cells);
+  
+  std::cout << range_p[0] << "-" << range_p[1] << "\n";
+  std::cout << range_c[0] << "-" << range_c[1] << "\n";
 
   // Extract data
   const Eigen::Vector3d& p0 = p[0];
@@ -75,66 +73,63 @@ mesh::Mesh build_tet(MPI_Comm comm, const std::array<Eigen::Vector3d, 2>& p,
   }
 
   Eigen::Array<double, Eigen::Dynamic, 3, Eigen::RowMajor> geom(
-      (nx + 1) * (ny + 1) * (nz + 1), 3);
+                                                                range_p[1] - range_p[0], 3);
   Eigen::Array<std::int64_t, Eigen::Dynamic, 4, Eigen::RowMajor> topo(
-      6 * nx * ny * nz, 4);
+                                                                      6 * (range_c[1] - range_c[0]), 4);
 
-  std::size_t vertex = 0;
-  for (std::size_t iz = 0; iz <= nz; ++iz)
+  const std::int64_t sqxy = (nx + 1) * (ny + 1);
+  for (std::int64_t v = range_p[0]; v < range_p[1]; ++v)
   {
+    const std::int64_t iz = v / sqxy;
+    const std::int64_t p = v % sqxy;
+    const std::int64_t iy = p / (nx + 1);
+    const std::int64_t ix = p % (nx + 1);
     const double z = e + ef * static_cast<double>(iz);
-    for (std::size_t iy = 0; iy <= ny; ++iy)
-    {
-      const double y = c + cd * static_cast<double>(iy);
-      for (std::size_t ix = 0; ix <= nx; ++ix)
-      {
-        const double x = a + ab * static_cast<double>(ix);
-        geom.row(vertex) << x, y, z;
-        ++vertex;
-      }
-    }
+    const double y = c + cd * static_cast<double>(iy);
+    const double x = a + ab * static_cast<double>(ix);
+    geom.row(v - range_p[0]) << x, y, z;
   }
 
   // Create tetrahedra
   std::size_t cell = 0;
-  for (std::size_t iz = 0; iz < nz; ++iz)
+  for (std::size_t cct = range_c[0]; cct < range_c[1]; ++cct)
   {
-    for (std::size_t iy = 0; iy < ny; ++iy)
-    {
-      for (std::size_t ix = 0; ix < nx; ++ix)
-      {
-        const std::size_t v0 = iz * (nx + 1) * (ny + 1) + iy * (nx + 1) + ix;
-        const std::size_t v1 = v0 + 1;
-        const std::size_t v2 = v0 + (nx + 1);
-        const std::size_t v3 = v1 + (nx + 1);
-        const std::size_t v4 = v0 + (nx + 1) * (ny + 1);
-        const std::size_t v5 = v1 + (nx + 1) * (ny + 1);
-        const std::size_t v6 = v2 + (nx + 1) * (ny + 1);
-        const std::size_t v7 = v3 + (nx + 1) * (ny + 1);
+    const int iz = cct/(nx*ny);
+    const int p = cct %(nx*ny);
+    const int iy = p / nx;
+    const int ix = p % nx;
 
-        // Note that v0 < v1 < v2 < v3 < vmid.
-        topo.row(cell) << v0, v1, v3, v7;
-        ++cell;
-        topo.row(cell) << v0, v1, v7, v5;
-        ++cell;
-        topo.row(cell) << v0, v5, v7, v4;
-        ++cell;
-        topo.row(cell) << v0, v3, v2, v7;
-        ++cell;
-        topo.row(cell) << v0, v6, v4, v7;
-        ++cell;
-        topo.row(cell) << v0, v2, v6, v7;
-        ++cell;
-      }
-    }
+    const std::size_t v0 = iz * (nx + 1) * (ny + 1) + iy * (nx + 1) + ix;
+    const std::size_t v1 = v0 + 1;
+    const std::size_t v2 = v0 + (nx + 1);
+    const std::size_t v3 = v1 + (nx + 1);
+    const std::size_t v4 = v0 + (nx + 1) * (ny + 1);
+    const std::size_t v5 = v1 + (nx + 1) * (ny + 1);
+    const std::size_t v6 = v2 + (nx + 1) * (ny + 1);
+    const std::size_t v7 = v3 + (nx + 1) * (ny + 1);
+    
+    // Note that v0 < v1 < v2 < v3 < vmid.
+    topo.row(cell) << v0, v1, v3, v7;
+    ++cell;
+    topo.row(cell) << v0, v1, v7, v5;
+    ++cell;
+    topo.row(cell) << v0, v5, v7, v4;
+    ++cell;
+    topo.row(cell) << v0, v3, v2, v7;
+    ++cell;
+    topo.row(cell) << v0, v6, v4, v7;
+    ++cell;
+    topo.row(cell) << v0, v2, v6, v7;
+    ++cell;
   }
 
   return mesh::Partitioning::build_distributed_mesh(
-      comm, mesh::CellType::tetrahedron, geom, topo, {}, ghost_mode);
+                                                    comm, mesh::CellType::tetrahedron, geom, topo, {}, ghost_mode, partitioner);
 }
 //-----------------------------------------------------------------------------
 mesh::Mesh build_hex(MPI_Comm comm, std::array<std::size_t, 3> n,
-                     const mesh::GhostMode ghost_mode)
+                     const mesh::GhostMode ghost_mode, 
+		     mesh::Partitioner partitioner)
 {
   // Receive mesh if not rank 0
   if (dolfin::MPI::rank(comm) != 0)
@@ -209,7 +204,7 @@ mesh::Mesh build_hex(MPI_Comm comm, std::array<std::size_t, 3> n,
           topo, io::cells::lex_to_tp(mesh::CellType::hexahedron, topo.cols()));
 
   return mesh::Partitioning::build_distributed_mesh(
-      comm, mesh::CellType::hexahedron, geom, topo_reordered, {}, ghost_mode);
+						    comm, mesh::CellType::hexahedron, geom, topo_reordered, {}, ghost_mode, partitioner);
 }
 //-----------------------------------------------------------------------------
 
@@ -220,16 +215,17 @@ mesh::Mesh BoxMesh::create(MPI_Comm comm,
                            const std::array<Eigen::Vector3d, 2>& p,
                            std::array<std::size_t, 3> n,
                            mesh::CellType cell_type,
-                           const mesh::GhostMode ghost_mode)
+                           const mesh::GhostMode ghost_mode,
+			   mesh::Partitioner partitioner)
 {
   if (cell_type == mesh::CellType::tetrahedron)
-    return build_tet(comm, p, n, ghost_mode);
+    return build_tet(comm, p, n, ghost_mode, partitioner);
   else if (cell_type == mesh::CellType::hexahedron)
-    return build_hex(comm, n, ghost_mode);
+    return build_hex(comm, n, ghost_mode, partitioner);
   else
     throw std::runtime_error("Generate rectangle mesh. Wrong cell type");
 
   // Will never reach this point
-  return build_tet(comm, p, n, ghost_mode);
+  return build_tet(comm, p, n, ghost_mode, partitioner);
 }
 //-----------------------------------------------------------------------------
