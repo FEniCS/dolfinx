@@ -90,7 +90,7 @@ mesh::Mesh build_tet(MPI_Comm comm, const std::array<Eigen::Vector3d, 2>& p,
 
   // Create tetrahedra
   std::size_t cell = 0;
-  for (std::size_t cct = range_c[0]; cct < range_c[1]; ++cct)
+  for (std::int64_t cct = range_c[0]; cct < range_c[1]; ++cct)
   {
     const int iz = cct / (nx * ny);
     const int p = cct % (nx * ny);
