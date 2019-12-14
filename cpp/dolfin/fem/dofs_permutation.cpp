@@ -42,9 +42,8 @@ int get_num_permutations(mesh::CellType cell_type)
 /// Returns an empty array
 /// @param[in] vs The global vertex number of the point's vertex
 /// @return An empty array
-template <typename T>
 Eigen::Array<std::int8_t, 1, Eigen::Dynamic>
-calculate_point_orders(const Eigen::Array<T, 1, 1>& vs)
+calculate_point_orders(const Eigen::Array<std::int64_t, 1, 1>& vs)
 {
   return {};
 }
@@ -52,9 +51,8 @@ calculate_point_orders(const Eigen::Array<T, 1, 1>& vs)
 /// Calculates whether or not an interval should be flipped
 /// @param[in] vs The global vertex numbers of the interval's vertices
 /// @return The reflection order for the interval
-template <typename T>
 Eigen::Array<std::int8_t, 1, Eigen::Dynamic>
-calculate_interval_orders(const Eigen::Array<T, 1, 2>& vs)
+calculate_interval_orders(const Eigen::Array<std::int64_t, 1, 2>& vs)
 {
   if (vs[0] > vs[1])
     return Eigen::Array<std::int8_t, 1, 1>(1);
@@ -62,13 +60,13 @@ calculate_interval_orders(const Eigen::Array<T, 1, 2>& vs)
     return Eigen::Array<std::int8_t, 1, 1>(0);
 }
 //-----------------------------------------------------------------------------
-/// Calculates the number of times the rotation and reflection of a triangle
-/// should be applied to a triangle with the given global vertex numbers
+/// Calculates the number of times the rotation and reflection of a
+/// triangle should be applied to a triangle with the given global
+/// vertex numbers
 /// @param[in] vs The global vertex numbers of the triangle's vertices
 /// @return The rotation and reflection orders for the triangle
-template <typename T>
 Eigen::Array<std::int8_t, 1, Eigen::Dynamic>
-calculate_triangle_orders(const Eigen::Array<T, 1, 3>& vs)
+calculate_triangle_orders(const Eigen::Array<std::int64_t, 1, 3>& vs)
 {
   if (vs[0] < vs[1] and vs[0] < vs[2])
     return Eigen::Array<std::int8_t, 1, 2>(0, vs[1] > vs[2]);
@@ -83,36 +81,37 @@ calculate_triangle_orders(const Eigen::Array<T, 1, 3>& vs)
   }
 }
 //-----------------------------------------------------------------------------
-/// Calculates the number of times the rotations and reflection of a triangle
-/// should be applied to a tetrahedron with the given global vertex numbers
-/// @param[in] vs The global vertex numbers of the tetrahedron's vertices
+/// Calculates the number of times the rotations and reflection of a
+/// triangle should be applied to a tetrahedron with the given global
+/// vertex numbers
+/// @param[in] vs The global vertex numbers of the tetrahedron's
+///                vertices
 /// @return The rotation and reflection orders for the tetrahedron
-template <typename T>
 Eigen::Array<std::int8_t, 1, Eigen::Dynamic>
-    calculate_tetrahedron_orders(Eigen::Array<T, 1, 4> vs)
+    calculate_tetrahedron_orders(Eigen::Array<std::int64_t, 1, 4> vs)
 {
   if (vs[0] < vs[1] and vs[0] < vs[2] and vs[0] < vs[3])
   {
     const Eigen::Array<std::int8_t, 1, 2> tri_orders
-        = calculate_triangle_orders<T>({vs[1], vs[2], vs[3]});
+        = calculate_triangle_orders({vs[1], vs[2], vs[3]});
     return Eigen::Array<std::int8_t, 1, 4>(0, 0, tri_orders[0], tri_orders[1]);
   }
   else if (vs[1] < vs[0] and vs[1] < vs[2] and vs[1] < vs[3])
   {
     const Eigen::Array<std::int8_t, 1, 2> tri_orders
-        = calculate_triangle_orders<T>({vs[2], vs[0], vs[3]});
+        = calculate_triangle_orders({vs[2], vs[0], vs[3]});
     return Eigen::Array<std::int8_t, 1, 4>(1, 0, tri_orders[0], tri_orders[1]);
   }
   else if (vs[2] < vs[0] and vs[2] < vs[1] and vs[2] < vs[3])
   {
     const Eigen::Array<std::int8_t, 1, 2> tri_orders
-        = calculate_triangle_orders<T>({vs[0], vs[1], vs[3]});
+        = calculate_triangle_orders({vs[0], vs[1], vs[3]});
     return Eigen::Array<std::int8_t, 1, 4>(2, 0, tri_orders[0], tri_orders[1]);
   }
   else if (vs[3] < vs[0] and vs[3] < vs[1] and vs[3] < vs[2])
   {
     const Eigen::Array<std::int8_t, 1, 2> tri_orders
-        = calculate_triangle_orders<T>({vs[1], vs[0], vs[2]});
+        = calculate_triangle_orders({vs[1], vs[0], vs[2]});
     return Eigen::Array<std::int8_t, 1, 4>(0, 1, tri_orders[0], tri_orders[1]);
   }
   else
@@ -123,13 +122,13 @@ Eigen::Array<std::int8_t, 1, Eigen::Dynamic>
 }
 //-----------------------------------------------------------------------------
 /// Calculates the number of times the rotation and reflection of a
-/// quadrilateral should be applied to a quadrilateral with the given global
-/// vertex numbers
-/// @param[in] v The global vertex numbers of the quadrilateral's vertices
+/// quadrilateral should be applied to a quadrilateral with the given
+/// global vertex numbers
+/// @param[in] v The global vertex numbers of the quadrilateral's
+///              vertices
 /// @return The rotation and reflection orders for the quadrilateral
-template <typename T>
 Eigen::Array<std::int8_t, 1, Eigen::Dynamic>
-    calculate_quadrilateral_orders(Eigen::Array<T, 1, 4> vs)
+    calculate_quadrilateral_orders(Eigen::Array<std::int64_t, 1, 4> vs)
 {
   if (vs[0] < vs[1] and vs[0] < vs[2] and vs[0] < vs[3])
     return Eigen::Array<std::int8_t, 1, 2>(0, vs[1] > vs[2]);
@@ -146,68 +145,68 @@ Eigen::Array<std::int8_t, 1, Eigen::Dynamic>
   }
 }
 //-----------------------------------------------------------------------------
-/// Calculates the number of times the rotations and reflection of a triangle
-/// should be applied to a hexahedron with the given global vertex numbers
+/// Calculates the number of times the rotations and reflection of a
+/// triangle should be applied to a hexahedron with the given global
+/// vertex numbers
 /// @param[in] vs The global vertex numbers of the hexahedron's vertices
 /// @return The rotation and reflection orders for the hexahedron
-template <typename T>
 Eigen::Array<std::int8_t, 1, Eigen::Dynamic>
-calculate_hexahedron_orders(const Eigen::Array<T, 1, 8>& vs)
+calculate_hexahedron_orders(const Eigen::Array<std::int64_t, 1, 8>& vs)
 {
   if (vs[0] < vs[1] and vs[0] < vs[2] and vs[0] < vs[3] and vs[0] < vs[4]
       and vs[0] < vs[5] and vs[0] < vs[6] and vs[0] < vs[7])
   {
     const Eigen::Array<std::int8_t, 1, 2> tri_orders
-        = calculate_triangle_orders<T>({vs[1], vs[2], vs[4]});
+        = calculate_triangle_orders({vs[1], vs[2], vs[4]});
     return Eigen::Array<std::int8_t, 1, 4>(0, 0, tri_orders[0], tri_orders[1]);
   }
   else if (vs[1] < vs[0] and vs[1] < vs[2] and vs[1] < vs[3] and vs[1] < vs[4]
            and vs[1] < vs[5] and vs[1] < vs[6] and vs[1] < vs[7])
   {
     const Eigen::Array<std::int8_t, 1, 2> tri_orders
-        = calculate_triangle_orders<T>({vs[3], vs[0], vs[5]});
+        = calculate_triangle_orders({vs[3], vs[0], vs[5]});
     return Eigen::Array<std::int8_t, 1, 4>(1, 0, tri_orders[0], tri_orders[1]);
   }
   else if (vs[2] < vs[0] and vs[2] < vs[1] and vs[2] < vs[3] and vs[2] < vs[4]
            and vs[2] < vs[5] and vs[2] < vs[6] and vs[2] < vs[7])
   {
     const Eigen::Array<std::int8_t, 1, 2> tri_orders
-        = calculate_triangle_orders<T>({vs[0], vs[3], vs[6]});
+        = calculate_triangle_orders({vs[0], vs[3], vs[6]});
     return Eigen::Array<std::int8_t, 1, 4>(3, 0, tri_orders[0], tri_orders[1]);
   }
   else if (vs[3] < vs[0] and vs[3] < vs[1] and vs[3] < vs[2] and vs[3] < vs[4]
            and vs[3] < vs[5] and vs[3] < vs[6] and vs[3] < vs[7])
   {
     const Eigen::Array<std::int8_t, 1, 2> tri_orders
-        = calculate_triangle_orders<T>({vs[1], vs[2], vs[7]});
+        = calculate_triangle_orders({vs[1], vs[2], vs[7]});
     return Eigen::Array<std::int8_t, 1, 4>(2, 0, tri_orders[0], tri_orders[1]);
   }
   else if (vs[4] < vs[0] and vs[4] < vs[1] and vs[4] < vs[2] and vs[4] < vs[3]
            and vs[4] < vs[5] and vs[4] < vs[6] and vs[4] < vs[7])
   {
     const Eigen::Array<std::int8_t, 1, 2> tri_orders
-        = calculate_triangle_orders<T>({vs[0], vs[6], vs[5]});
+        = calculate_triangle_orders({vs[0], vs[6], vs[5]});
     return Eigen::Array<std::int8_t, 1, 4>(0, 1, tri_orders[0], tri_orders[1]);
   }
   else if (vs[5] < vs[0] and vs[5] < vs[1] and vs[5] < vs[2] and vs[5] < vs[3]
            and vs[5] < vs[4] and vs[5] < vs[6] and vs[5] < vs[7])
   {
     const Eigen::Array<std::int8_t, 1, 2> tri_orders
-        = calculate_triangle_orders<T>({vs[4], vs[7], vs[1]});
+        = calculate_triangle_orders({vs[4], vs[7], vs[1]});
     return Eigen::Array<std::int8_t, 1, 4>(0, 2, tri_orders[0], tri_orders[1]);
   }
   else if (vs[6] < vs[0] and vs[6] < vs[1] and vs[6] < vs[2] and vs[6] < vs[3]
            and vs[6] < vs[4] and vs[6] < vs[5] and vs[6] < vs[7])
   {
     const Eigen::Array<std::int8_t, 1, 2> tri_orders
-        = calculate_triangle_orders<T>({vs[7], vs[4], vs[2]});
+        = calculate_triangle_orders({vs[7], vs[4], vs[2]});
     return Eigen::Array<std::int8_t, 1, 4>(2, 2, tri_orders[0], tri_orders[1]);
   }
   else if (vs[7] < vs[0] and vs[7] < vs[1] and vs[7] < vs[2] and vs[7] < vs[3]
            and vs[7] < vs[4] and vs[7] < vs[5] and vs[7] < vs[6])
   {
     const Eigen::Array<std::int8_t, 1, 2> tri_orders
-        = calculate_triangle_orders<T>({vs[3], vs[5], vs[6]});
+        = calculate_triangle_orders({vs[3], vs[5], vs[6]});
     return Eigen::Array<std::int8_t, 1, 4>(2, 1, tri_orders[0], tri_orders[1]);
   }
   else
@@ -217,25 +216,24 @@ calculate_hexahedron_orders(const Eigen::Array<T, 1, 8>& vs)
   }
 }
 //-----------------------------------------------------------------------------
-template <typename T>
 std::function<Eigen::Array<std::int8_t, 1, Eigen::Dynamic>(
-    Eigen::Array<T, 1, Eigen::Dynamic>)>
+    Eigen::Array<std::int64_t, 1, Eigen::Dynamic>)>
 get_ordering_function(const mesh::CellType& cell_type)
 {
   switch (cell_type)
   {
   case (mesh::CellType::point):
-    return calculate_point_orders<T>;
+    return calculate_point_orders;
   case (mesh::CellType::interval):
-    return calculate_interval_orders<T>;
+    return calculate_interval_orders;
   case (mesh::CellType::triangle):
-    return calculate_triangle_orders<T>;
+    return calculate_triangle_orders;
   case (mesh::CellType::quadrilateral):
-    return calculate_quadrilateral_orders<T>;
+    return calculate_quadrilateral_orders;
   case (mesh::CellType::tetrahedron):
-    return calculate_tetrahedron_orders<T>;
+    return calculate_tetrahedron_orders;
   case (mesh::CellType::hexahedron):
-    return calculate_hexahedron_orders<T>;
+    return calculate_hexahedron_orders;
   default:
     throw std::runtime_error("Unrecognised cell type.");
   }
@@ -501,15 +499,14 @@ compute_ordering(const mesh::Mesh& mesh)
   // Get lists of vertices on each entity from the cell type
   std::vector<
       std::pair<std::function<Eigen::Array<std::int8_t, 1, Eigen::Dynamic>(
-                    Eigen::Array<std::int32_t, 1, Eigen::Dynamic>)>,
+                    Eigen::Array<std::int64_t, 1, Eigen::Dynamic>)>,
                 Eigen::Array<int, 1, Eigen::Dynamic>>>
       entities;
   for (int d = 1; d < tdim; ++d)
   {
     const Eigen::Array<int, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
         vertices = mesh::get_entity_vertices(type, d);
-    auto f
-        = get_ordering_function<std::int32_t>(mesh::cell_entity_type(type, d));
+    auto f = get_ordering_function(mesh::cell_entity_type(type, d));
     // Store the ordering function and vertices associated with the ith
     // entity of dimension dim
     for (int i = 0; i < mesh::cell_num_entities(type, d); ++i)
@@ -517,7 +514,7 @@ compute_ordering(const mesh::Mesh& mesh)
   }
   { // scope
     // Add on the cell itself as an entity
-    auto f = get_ordering_function<std::int32_t>(type);
+    auto f = get_ordering_function(type);
     Eigen::Array<int, 1, Eigen::Dynamic> row(num_vertices_per_cell);
     for (int i = 0; i < num_vertices_per_cell; ++i)
       row[i] = i;
@@ -530,7 +527,7 @@ compute_ordering(const mesh::Mesh& mesh)
   const std::vector<std::int64_t>& global_indices
       = mesh.topology().global_indices(0);
   // Reserve memory to store global numbers of vertices of cell
-  std::vector<std::int32_t> cell_vs(num_vertices_per_cell);
+  std::vector<std::int64_t> cell_vs(num_vertices_per_cell);
   for (int cell_n = 0; cell_n < num_cells; ++cell_n)
   {
     // Get the cell and info about it
@@ -543,12 +540,12 @@ compute_ordering(const mesh::Mesh& mesh)
     // iterate over the cell's entities
     for (std::size_t e_n = 0; e_n < entities.size(); ++e_n)
     {
-      // Use the functions for each entites and that entity's global vertex
-      // numbers to calculate the number of times each permeutation should be
-      // applied on this cell
+      // Use the functions for each entities and that entity's global
+      // vertex numbers to calculate the number of times each
+      // permutation should be applied on this cell
       auto f = entities[e_n].first;
       Eigen::Array<int, 1, Eigen::Dynamic> v = entities[e_n].second;
-      Eigen::Array<int, 1, Eigen::Dynamic> global_v(v.size());
+      Eigen::Array<std::int64_t, 1, Eigen::Dynamic> global_v(v.size());
       for (int i = 0; i < v.size(); ++i)
         global_v[i] = cell_vs[v[i]];
       Eigen::Array<std::int8_t, 1, Eigen::Dynamic> orders = f(global_v);
