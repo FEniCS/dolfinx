@@ -35,7 +35,7 @@ int get_num_permutations(mesh::CellType cell_type)
   default:
     LOG(WARNING) << "Dof permutations are not defined for this cell type. High "
                     "order elements may be incorrect.";
-    return 0;
+    return -1;
   }
 }
 //-----------------------------------------------------------------------------
@@ -44,7 +44,7 @@ int get_num_permutations(mesh::CellType cell_type)
 /// @return An empty array
 template <typename T>
 Eigen::Array<std::int8_t, 1, Eigen::Dynamic>
-    calculate_point_orders(Eigen::Array<T, 1, 1> vs)
+calculate_point_orders(const Eigen::Array<T, 1, 1>& vs)
 {
   return {};
 }
@@ -54,7 +54,7 @@ Eigen::Array<std::int8_t, 1, Eigen::Dynamic>
 /// @return The reflection order for the interval
 template <typename T>
 Eigen::Array<std::int8_t, 1, Eigen::Dynamic>
-    calculate_interval_orders(Eigen::Array<T, 1, 2> vs)
+calculate_interval_orders(const Eigen::Array<T, 1, 2>& vs)
 {
   if (vs[0] > vs[1])
     return Eigen::Array<std::int8_t, 1, 1>(1);
@@ -68,7 +68,7 @@ Eigen::Array<std::int8_t, 1, Eigen::Dynamic>
 /// @return The rotation and reflection orders for the triangle
 template <typename T>
 Eigen::Array<std::int8_t, 1, Eigen::Dynamic>
-    calculate_triangle_orders(Eigen::Array<T, 1, 3> vs)
+calculate_triangle_orders(const Eigen::Array<T, 1, 3>& vs)
 {
   if (vs[0] < vs[1] and vs[0] < vs[2])
     return Eigen::Array<std::int8_t, 1, 2>(0, vs[1] > vs[2]);
@@ -76,8 +76,11 @@ Eigen::Array<std::int8_t, 1, Eigen::Dynamic>
     return Eigen::Array<std::int8_t, 1, 2>(1, vs[2] > vs[0]);
   else if (vs[2] < vs[0] and vs[2] < vs[1])
     return Eigen::Array<std::int8_t, 1, 2>(2, vs[0] > vs[1]);
-
-  throw std::runtime_error("Two of a triangle's vertices appear to be equal.");
+  else
+  {
+    throw std::runtime_error(
+        "Two of a triangle's vertices appear to be equal.");
+  }
 }
 //-----------------------------------------------------------------------------
 /// Calculates the number of times the rotations and reflection of a triangle
@@ -112,9 +115,11 @@ Eigen::Array<std::int8_t, 1, Eigen::Dynamic>
         = calculate_triangle_orders<T>({vs[1], vs[0], vs[2]});
     return Eigen::Array<std::int8_t, 1, 4>(0, 1, tri_orders[0], tri_orders[1]);
   }
-
-  throw std::runtime_error(
-      "Two of a tetrahedron's vertices appear to be equal.");
+  else
+  {
+    throw std::runtime_error(
+        "Two of a tetrahedron's vertices appear to be equal.");
+  }
 }
 //-----------------------------------------------------------------------------
 /// Calculates the number of times the rotation and reflection of a
@@ -134,9 +139,11 @@ Eigen::Array<std::int8_t, 1, Eigen::Dynamic>
     return Eigen::Array<std::int8_t, 1, 2>(2, vs[2] > vs[1]);
   else if (vs[2] < vs[0] and vs[2] < vs[1] and vs[2] < vs[3])
     return Eigen::Array<std::int8_t, 1, 2>(3, vs[0] > vs[3]);
-
-  throw std::runtime_error(
-      "Two of a quadrilateral's vertices appear to be equal.");
+  else
+  {
+    throw std::runtime_error(
+        "Two of a quadrilateral's vertices appear to be equal.");
+  }
 }
 //-----------------------------------------------------------------------------
 /// Calculates the number of times the rotations and reflection of a triangle
@@ -145,7 +152,7 @@ Eigen::Array<std::int8_t, 1, Eigen::Dynamic>
 /// @return The rotation and reflection orders for the hexahedron
 template <typename T>
 Eigen::Array<std::int8_t, 1, Eigen::Dynamic>
-    calculate_hexahedron_orders(Eigen::Array<T, 1, 8> vs)
+calculate_hexahedron_orders(const Eigen::Array<T, 1, 8>& vs)
 {
   if (vs[0] < vs[1] and vs[0] < vs[2] and vs[0] < vs[3] and vs[0] < vs[4]
       and vs[0] < vs[5] and vs[0] < vs[6] and vs[0] < vs[7])
@@ -203,15 +210,17 @@ Eigen::Array<std::int8_t, 1, Eigen::Dynamic>
         = calculate_triangle_orders<T>({vs[3], vs[5], vs[6]});
     return Eigen::Array<std::int8_t, 1, 4>(2, 1, tri_orders[0], tri_orders[1]);
   }
-
-  throw std::runtime_error(
-      "Two of a hexahedron's vertices appear to be equal.");
+  else
+  {
+    throw std::runtime_error(
+        "Two of a hexahedron's vertices appear to be equal.");
+  }
 }
 //-----------------------------------------------------------------------------
 template <typename T>
 std::function<Eigen::Array<std::int8_t, 1, Eigen::Dynamic>(
     Eigen::Array<T, 1, Eigen::Dynamic>)>
-get_ordering_function(mesh::CellType cell_type)
+get_ordering_function(const mesh::CellType& cell_type)
 {
   switch (cell_type)
   {
@@ -478,14 +487,14 @@ Eigen::Array<std::int8_t, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
 compute_ordering(const mesh::Mesh& mesh)
 {
   mesh::CellType type = mesh.cell_type();
-  const int t_dim = mesh.topology().dim();
-  const int num_cells = mesh.num_entities(t_dim);
+  const int tdim = mesh.topology().dim();
+  const int num_cells = mesh.num_entities(tdim);
   const int num_permutations = get_num_permutations(type);
   const int num_vertices_per_cell = mesh::num_cell_vertices(type);
 
   // Find the total number of edges + faces + volumes
   int entity_count = 0;
-  for (int dim = 1; dim < t_dim; ++dim)
+  for (int dim = 1; dim < tdim; ++dim)
     entity_count += mesh::cell_num_entities(type, dim);
   entity_count += 1;
 
@@ -495,14 +504,15 @@ compute_ordering(const mesh::Mesh& mesh)
                     Eigen::Array<std::int32_t, 1, Eigen::Dynamic>)>,
                 Eigen::Array<int, 1, Eigen::Dynamic>>>
       entities;
-  for (int dim = 1; dim < t_dim; ++dim)
+  for (int d = 1; d < tdim; ++d)
   {
-    auto vertices = mesh::get_entity_vertices(type, dim);
-    auto f = get_ordering_function<std::int32_t>(
-        mesh::cell_entity_type(type, dim));
+    const Eigen::Array<int, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
+        vertices = mesh::get_entity_vertices(type, d);
+    auto f
+        = get_ordering_function<std::int32_t>(mesh::cell_entity_type(type, d));
     // Store the ordering function and vertices associated with the ith
     // entity of dimension dim
-    for (int i = 0; i < mesh::cell_num_entities(type, dim); ++i)
+    for (int i = 0; i < mesh::cell_num_entities(type, d); ++i)
       entities.push_back({f, vertices.row(i)});
   }
   { // scope
@@ -524,7 +534,7 @@ compute_ordering(const mesh::Mesh& mesh)
   for (int cell_n = 0; cell_n < num_cells; ++cell_n)
   {
     // Get the cell and info about it
-    const mesh::MeshEntity cell(mesh, t_dim, cell_n);
+    const mesh::MeshEntity cell(mesh, tdim, cell_n);
     const std::int32_t* local_vertices = cell.entities(0);
     for (int i = 0; i < num_vertices_per_cell; ++i)
       cell_vs[i] = global_indices[local_vertices[i]];
@@ -548,6 +558,7 @@ compute_ordering(const mesh::Mesh& mesh)
 
     assert(j == num_permutations);
   }
+
   return cell_orders;
 }
 //-----------------------------------------------------------------------------
@@ -577,7 +588,6 @@ generate_permutations_interval(const mesh::Mesh& mesh,
   ++perm_n;
 
   assert(perm_n == get_num_permutations(mesh::CellType::interval));
-
   return permutations;
 }
 //-----------------------------------------------------------------------------
@@ -623,7 +633,6 @@ generate_permutations_triangle(const mesh::Mesh& mesh,
   }
 
   assert(perm_n == get_num_permutations(mesh::CellType::triangle));
-
   return permutations;
 }
 //-----------------------------------------------------------------------------
@@ -669,7 +678,6 @@ generate_permutations_quadrilateral(const mesh::Mesh& mesh,
   }
 
   assert(perm_n == get_num_permutations(mesh::CellType::quadrilateral));
-
   return permutations;
 }
 //-----------------------------------------------------------------------------
@@ -704,6 +712,7 @@ generate_permutations_tetrahedron(const mesh::Mesh& mesh,
       permutations(perm_n, edge(i)) = edge(base_flip[i]);
     ++perm_n;
   }
+
   // Make permutations that rotate and reflect the face dofs
   const std::array<std::vector<int>, 2> base_faces
       = triangle_rotation_and_reflection(face_dofs, face_bs);
@@ -718,6 +727,7 @@ generate_permutations_tetrahedron(const mesh::Mesh& mesh,
       ++perm_n;
     }
   }
+
   // Make permutations that rotate and reflect the volume dofs
   const std::array<std::vector<int>, 4> base_volumes
       = tetrahedron_rotations_and_reflection(volume_dofs, volume_bs);
@@ -731,7 +741,6 @@ generate_permutations_tetrahedron(const mesh::Mesh& mesh,
   }
 
   assert(perm_n == get_num_permutations(mesh::CellType::tetrahedron));
-
   return permutations;
 }
 //-----------------------------------------------------------------------------
@@ -780,6 +789,7 @@ generate_permutations_hexahedron(const mesh::Mesh& mesh,
       ++perm_n;
     }
   }
+
   // Make permutations that rotate and reflect the volume dofs
   const std::array<std::vector<int>, 4> base_volumes
       = hexahedron_rotations_and_reflection(volume_dofs, volume_bs);
@@ -801,16 +811,17 @@ Eigen::Array<int, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
 generate_permutations(const mesh::Mesh& mesh,
                       const fem::ElementDofLayout& dof_layout)
 {
-  // FIXME: What should be done here if the dof layout shape does not match the
-  // shape of the element (eg AAF on the periodical table of finite elements)
+  // FIXME: What should be done here if the dof layout shape does not
+  // match the shape of the element (eg AAF on the periodical table of
+  // finite elements)
   if (dof_layout.num_sub_dofmaps() == 0)
   {
     switch (mesh.cell_type())
     {
     case (mesh::CellType::point):
-      // For a point, _permutations will have 0 rows, and _cell_ordering will
-      // have 0 columns, so the for loops that apply the permutations will be
-      // empty
+      // For a point, _permutations will have 0 rows, and _cell_ordering
+      // will have 0 columns, so the for loops that apply the
+      // permutations will be empty
       break;
     case (mesh::CellType::interval):
       return generate_permutations_interval(mesh, dof_layout);
