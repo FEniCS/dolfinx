@@ -60,6 +60,21 @@ def locate_dofs_topological(V: typing.Union[function.FunctionSpace],
         return cpp.fem.locate_dofs_topological(V, entity_dim, entities)
 
 
+def locate_pair_dofs_topological(V0: typing.Union[function.FunctionSpace],
+                                 V1: typing.Union[function.FunctionSpace],
+                                 entity_dim: int,
+                                 entities: typing.List[int]):
+    """Return 2D array of degree-of-freedom indices (local to the process)
+    for degrees-of-freedom belonging to the closure the mesh entities of
+    dimension `entity_dim` and index in `entities`.
+    """
+
+    try:
+        return cpp.fem.locate_pair_dofs_topological(V0._cpp_object, V1._cpp_object, entity_dim, entities)
+    except AttributeError:
+        return cpp.fem.locate_pair_dofs_topological(V0, V1, entity_dim, entities)
+
+
 class DirichletBC(cpp.fem.DirichletBC):
     def __init__(
             self,

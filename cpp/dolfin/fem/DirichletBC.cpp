@@ -107,10 +107,69 @@ get_remote_bcs(const common::IndexMap& map, const common::IndexMap& map_g,
   return dof_dof_g;
 }
 } // namespace
+//-----------------------------------------------------------------------------
+std::vector<PetscInt>
+get_remote_bcs(const common::IndexMap& map,
+               const std::vector<PetscInt>& dofs_local)
+{
+  const std::int32_t bs = map.block_size;
+  const std::int32_t size_owned = map.size_local();
+  const std::int32_t size_ghost = map.num_ghosts();
 
+  const std::array<std::int64_t, 2> range = map.local_range();
+  const std::int64_t offset = range[0];
+
+  // For each dof local index, store global index (-1 if no bc)
+  std::vector<PetscInt> marker_owned(bs * size_owned, -1);
+  std::vector<PetscInt> marker_ghost(bs * size_ghost, -1);
+  for (auto& dofs : dofs_local)
+  {
+    const PetscInt index_block = dofs / bs;
+    const PetscInt pos = dofs % bs;
+    if (dofs < bs * size_owned)
+    {
+      marker_owned[dofs]
+          = bs * map.local_to_global(index_block) + pos;
+    }
+    else
+    {
+      marker_ghost[dofs - (bs * size_owned)]
+          = bs * map.local_to_global(index_block) + pos;
+    }
+  }
+
+  // Build global-to-local map for ghost indices (blocks) in map
+  std::map<PetscInt, PetscInt> global_to_local;
+  const Eigen::Array<PetscInt, Eigen::Dynamic, 1>& ghosts = map.ghosts();
+  for (Eigen::Index i = 0; i < size_owned; ++i)
+    global_to_local.insert({i + offset, i});
+  for (Eigen::Index i = 0; i < size_ghost; ++i)
+    global_to_local.insert({ghosts[i], i + size_owned});
+
+  // For each owned bc index, scatter associated global index to ghost
+  // processes
+  std::vector<PetscInt> marker_ghost_rcvd = map.scatter_fwd(marker_owned, bs);
+  assert((int)marker_ghost_rcvd.size() == size_ghost * bs);
+
+  std::vector<PetscInt> dofs;
+
+  // Add to local indices map
+  for (std::size_t i = 0; i < marker_ghost_rcvd.size(); ++i)
+  {
+    if (marker_ghost_rcvd[i] > -1)
+    {
+      const PetscInt index_block = marker_ghost_rcvd[i] / bs;
+      const auto it = global_to_local.find(index_block);
+      assert(it != global_to_local.end());
+      dofs.push_back((PetscInt)(bs * size_owned + i));
+    }
+  }
+
+  return dofs;
+}
 //-----------------------------------------------------------------------------
 Eigen::Array<PetscInt, Eigen::Dynamic, 2, Eigen::RowMajor>
-fem::locate_dofs_topological(
+fem::locate_pair_dofs_topological(
     const function::FunctionSpace& V0, const function::FunctionSpace& V1,
     const int dim,
     const Eigen::Ref<const Eigen::Array<int, Eigen::Dynamic, 1>>& entities)
@@ -125,8 +184,12 @@ fem::locate_dofs_topological(
 
   assert(V0.element());
   assert(V1.element());
-  if (V0.element() != V1.element())
-    throw std::runtime_error("Elements are not the same.");
+
+  if (!V0.has_element(*V1.element()))
+  {
+    throw std::runtime_error("Function spaces must have the same elements or "
+                             "one be a subelement of another.");
+  }
 
   // Get dofmaps
   assert(V0.dofmap());
@@ -255,9 +318,17 @@ Eigen::Array<PetscInt, Eigen::Dynamic, 1> fem::locate_dofs_topological(
     }
   }
 
-  // TODO: off-process entries should be handled here, e.g. processes
-  // that share a Dirichlet dof but perhaps one does not have a boundary
-  // facet.
+  const std::vector<PetscInt> dofs_remote = get_remote_bcs(
+      *V.dofmap()->index_map, dofs);
+
+  // Add received bc indices to dofs_local
+  for (auto& dof_remote : dofs_remote)
+    dofs.push_back(dof_remote);
+
+  // TODO: is removing duplicates at this point worth the effort?
+  // Remove duplicates
+  std::sort(dofs.begin(), dofs.end());
+  dofs.erase(std::unique(dofs.begin(), dofs.end()), dofs.end());
 
   return Eigen::Map<Eigen::Array<PetscInt, Eigen::Dynamic, 1>>(dofs.data(),
                                                                dofs.size());
@@ -314,25 +385,6 @@ DirichletBC::DirichletBC(
   std::vector<std::array<PetscInt, 2>> dofs_local_vec(V_dofs.rows());
   for (Eigen::Index i = 0; i < V_dofs.rows(); ++i)
     dofs_local_vec[i] = {V_dofs[i], g_dofs[i]};
-
-  // Remove duplicates
-  std::sort(dofs_local_vec.begin(), dofs_local_vec.end());
-  dofs_local_vec.erase(
-      std::unique(dofs_local_vec.begin(), dofs_local_vec.end()),
-      dofs_local_vec.end());
-
-  // TODO: This step should be moved to fem::locate_dofs_topological
-
-  // Get bc dof indices (local) in (V, Vg) spaces on this process that
-  // were found by other processes, e.g. a vertex dof on this process
-  // that has no connected facets on the boundary.
-  const std::vector<std::array<PetscInt, 2>> dofs_remote = get_remote_bcs(
-      *_function_space->dofmap()->index_map,
-      *_g->function_space()->dofmap()->index_map, dofs_local_vec);
-
-  // Add received bc indices to dofs_local
-  for (auto& dof_remote : dofs_remote)
-    dofs_local_vec.push_back(dof_remote);
 
   // Remove duplicates
   std::sort(dofs_local_vec.begin(), dofs_local_vec.end());

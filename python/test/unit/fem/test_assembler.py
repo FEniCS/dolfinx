@@ -242,9 +242,9 @@ def test_matrix_assembly_block():
         u1, v0) * dx
     L = zero * inner(f, v0) * ufl.dx + inner(g, v1) * dx
 
-    bdofsW = dolfin.fem.locate_dofs_topological(W.sub(1), mesh.topology.dim - 1, bndry_facets)
+    bdofsW_V1 = dolfin.fem.locate_pair_dofs_topological(W.sub(1), V1, mesh.topology.dim - 1, bndry_facets)
 
-    bc = dolfin.fem.dirichletbc.DirichletBC(W.sub(1), u_bc, bdofsW, bdofsV1)
+    bc = dolfin.fem.dirichletbc.DirichletBC(W.sub(1), u_bc, bdofsW_V1[:, 0], bdofsW_V1[:, 1])
     A2 = dolfin.fem.assemble_matrix(a, [bc])
     A2.assemble()
     b2 = dolfin.fem.assemble_vector(L)
