@@ -134,9 +134,9 @@ def test_matrix_assembly_block():
         - inner(f, v0) * ufl.dx - inner(g, v1) * dx
     J = derivative(F, U, dU)
 
-    bdofsW = dolfin.fem.locate_dofs_topological(W.sub(1), facetdim, bndry_facets)
+    bdofsW_V1 = dolfin.fem.locate_pair_dofs_topological(W.sub(1), V1, facetdim, bndry_facets)
 
-    bc = dolfin.fem.dirichletbc.DirichletBC(W.sub(1), u_bc, bdofsW, bdofs)
+    bc = dolfin.fem.dirichletbc.DirichletBC(W.sub(1), u_bc, bdofsW_V1[:, 0], bdofsW_V1[:, 1])
     A2 = dolfin.fem.assemble_matrix(J, [bc])
     A2.assemble()
     b2 = dolfin.fem.assemble_vector(F)
@@ -270,8 +270,6 @@ def test_assembly_solve_block():
     mf.mark(boundary, 1)
     bndry_facets = numpy.where(mf.values == 1)[0]
 
-    print(dolfin.MPI.comm_world.rank, bndry_facets.shape)
-
     u_bc0 = dolfin.function.Function(V0)
     u_bc0.interpolate(bc_val_0)
     u_bc1 = dolfin.function.Function(V1)
@@ -400,11 +398,11 @@ def test_assembly_solve_block():
     u1_bc = dolfin.function.Function(V1)
     u1_bc.interpolate(bc_val_1)
 
-    bdofsW0 = dolfin.fem.locate_dofs_topological(W.sub(0), facetdim, bndry_facets)
-    bdofsW1 = dolfin.fem.locate_dofs_topological(W.sub(1), facetdim, bndry_facets)
+    bdofsW0_V0 = dolfin.fem.locate_pair_dofs_topological(W.sub(0), V0, facetdim, bndry_facets)
+    bdofsW1_V1 = dolfin.fem.locate_pair_dofs_topological(W.sub(1), V1, facetdim, bndry_facets)
 
-    bcs = [dolfin.fem.dirichletbc.DirichletBC(W.sub(0), u0_bc, bdofsW0, bdofs0),
-           dolfin.fem.dirichletbc.DirichletBC(W.sub(1), u1_bc, bdofsW1, bdofs1)]
+    bcs = [dolfin.fem.dirichletbc.DirichletBC(W.sub(0), u0_bc, bdofsW0_V0[:, 0], bdofsW0_V0[:, 1]),
+           dolfin.fem.dirichletbc.DirichletBC(W.sub(1), u1_bc, bdofsW1_V1[:, 0], bdofsW1_V1[:, 1])]
 
     Jmat2 = dolfin.fem.create_matrix(J)
     Fvec2 = dolfin.fem.create_vector(F)
@@ -575,9 +573,9 @@ def test_assembly_solve_taylor_hood(mesh):
 
     # -- Monolithic
 
-    P2 = ufl.VectorElement("Lagrange", mesh.ufl_cell(), 2)
-    P1 = ufl.FiniteElement("Lagrange", mesh.ufl_cell(), 1)
-    TH = P2 * P1
+    P2_el = ufl.VectorElement("Lagrange", mesh.ufl_cell(), 2)
+    P1_el = ufl.FiniteElement("Lagrange", mesh.ufl_cell(), 1)
+    TH = P2_el * P1_el
     W = dolfin.FunctionSpace(mesh, TH)
     U = dolfin.Function(W)
     dU = ufl.TrialFunction(W)
@@ -590,11 +588,11 @@ def test_assembly_solve_taylor_hood(mesh):
     J = derivative(F, U, dU)
     P = inner(ufl.grad(du), ufl.grad(v)) * dx + inner(dp, q) * dx
 
-    bdofsW0 = dolfin.fem.locate_dofs_topological(W.sub(0), facetdim, bndry_facets0)
-    bdofsW1 = dolfin.fem.locate_dofs_topological(W.sub(0), facetdim, bndry_facets1)
+    bdofsW0_P2_0 = dolfin.fem.locate_pair_dofs_topological(W.sub(0), P2, facetdim, bndry_facets0)
+    bdofsW0_P2_1 = dolfin.fem.locate_pair_dofs_topological(W.sub(0), P2, facetdim, bndry_facets1)
 
-    bcs = [dolfin.DirichletBC(W.sub(0), u_bc_0, bdofsW0, bdofs0),
-           dolfin.DirichletBC(W.sub(0), u_bc_1, bdofsW1, bdofs1)]
+    bcs = [dolfin.DirichletBC(W.sub(0), u_bc_0, bdofsW0_P2_0[:, 0], bdofsW0_P2_0[:, 1]),
+           dolfin.DirichletBC(W.sub(0), u_bc_1, bdofsW0_P2_1[:, 0], bdofsW0_P2_1[:, 1])]
 
     Jmat2 = dolfin.fem.create_matrix(J)
     Pmat2 = dolfin.fem.create_matrix(P)
