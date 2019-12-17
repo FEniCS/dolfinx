@@ -587,12 +587,6 @@ int get_num_permutations(mesh::CellType cell_type)
       const int num_permutations = get_num_permutations(type);
       const int num_vertices_per_cell = mesh::num_cell_vertices(type);
 
-      // Find the total number of edges + faces + volumes
-      int entity_count = 0;
-      for (int dim = 1; dim < tdim; ++dim)
-        entity_count += mesh::cell_num_entities(type, dim);
-      entity_count += 1;
-
       // Get lists of vertices on each entity from the cell type
       std::vector<std::pair<std::function<Eigen::Array<std::int8_t, 1, 1>(
                                 const Eigen::Array<int, 1, Eigen::Dynamic>,
