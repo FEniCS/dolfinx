@@ -56,17 +56,19 @@ calculate_interval_orders(const Eigen::Array<int, 1, Eigen::Dynamic>& v,
 /// Calculates the number of times the rotation and reflection of a
 /// triangle should be applied to a triangle with the given global
 /// vertex numbers
-/// @param[in] vs The global vertex numbers of the triangle's vertices
+/// @param[in] v The local vertex numbers of the triangle's vertices
+/// @param[in] cell_vs The global vertex cell's vertices
 /// @return The rotation and reflection orders for the triangle
 Eigen::Array<std::int8_t, 1, 2>
-calculate_triangle_orders(const Eigen::Array<std::int64_t, 1, 3>& vs)
+calculate_triangle_orders(const Eigen::Array<int, 1, 3>& v,
+                          const std::vector<std::int64_t> cell_vs)
 {
-  if (vs[0] < vs[1] and vs[0] < vs[2])
-    return Eigen::Array<std::int8_t, 1, 2>(0, vs[1] > vs[2]);
-  else if (vs[1] < vs[0] and vs[1] < vs[2])
-    return Eigen::Array<std::int8_t, 1, 2>(1, vs[2] > vs[0]);
-  else if (vs[2] < vs[0] and vs[2] < vs[1])
-    return Eigen::Array<std::int8_t, 1, 2>(2, vs[0] > vs[1]);
+  if (cell_vs[v[0]] < cell_vs[v[1]] and cell_vs[v[0]] < cell_vs[v[2]])
+    return Eigen::Array<std::int8_t, 1, 2>(0, cell_vs[v[1]] > cell_vs[v[2]]);
+  else if (cell_vs[v[1]] < cell_vs[v[0]] and cell_vs[v[1]] < cell_vs[v[2]])
+    return Eigen::Array<std::int8_t, 1, 2>(1, cell_vs[v[2]] > cell_vs[v[0]]);
+  else if (cell_vs[v[2]] < cell_vs[v[0]] and cell_vs[v[2]] < cell_vs[v[1]])
+    return Eigen::Array<std::int8_t, 1, 2>(2, cell_vs[v[0]] > cell_vs[v[1]]);
   else
   {
     throw std::runtime_error(
@@ -77,34 +79,35 @@ calculate_triangle_orders(const Eigen::Array<std::int64_t, 1, 3>& vs)
 /// Calculates the number of times the rotations and reflection of a
 /// triangle should be applied to a tetrahedron with the given global
 /// vertex numbers
-/// @param[in] vs The global vertex numbers of the tetrahedron's
-///                vertices
+/// @param[in] v The local vertex numbers of the tetrahedron's vertices
+/// @param[in] cell_vs The global vertex cell's vertices
 /// @return The rotation and reflection orders for the tetrahedron
 Eigen::Array<std::int8_t, 1, 4>
-    calculate_tetrahedron_orders(Eigen::Array<std::int64_t, 1, 4> vs)
+    calculate_tetrahedron_orders(const Eigen::Array<int, 1, Eigen::Dynamic> v,
+                                 const std::vector<std::int64_t> cell_vs)
 {
-  if (vs[0] < vs[1] and vs[0] < vs[2] and vs[0] < vs[3])
+  if (cell_vs[v[0]] < cell_vs[v[1]] and cell_vs[v[0]] < cell_vs[v[2]] and cell_vs[v[0]] < cell_vs[v[3]])
   {
     const Eigen::Array<std::int8_t, 1, 2> tri_orders
-        = calculate_triangle_orders({vs[1], vs[2], vs[3]});
+        = calculate_triangle_orders({v[1], v[2], v[3]}, cell_vs);
     return Eigen::Array<std::int8_t, 1, 4>(0, 0, tri_orders[0], tri_orders[1]);
   }
-  else if (vs[1] < vs[0] and vs[1] < vs[2] and vs[1] < vs[3])
+  else if (cell_vs[v[1]] < cell_vs[v[0]] and cell_vs[v[1]] < cell_vs[v[2]] and cell_vs[v[1]] < cell_vs[v[3]])
   {
     const Eigen::Array<std::int8_t, 1, 2> tri_orders
-        = calculate_triangle_orders({vs[2], vs[0], vs[3]});
+        = calculate_triangle_orders({v[2], v[0], v[3]}, cell_vs);
     return Eigen::Array<std::int8_t, 1, 4>(1, 0, tri_orders[0], tri_orders[1]);
   }
-  else if (vs[2] < vs[0] and vs[2] < vs[1] and vs[2] < vs[3])
+  else if (cell_vs[v[2]] < cell_vs[v[0]] and cell_vs[v[2]] < cell_vs[v[1]] and cell_vs[v[2]] < cell_vs[v[3]])
   {
     const Eigen::Array<std::int8_t, 1, 2> tri_orders
-        = calculate_triangle_orders({vs[0], vs[1], vs[3]});
+        = calculate_triangle_orders({v[0], v[1], v[3]}, cell_vs);
     return Eigen::Array<std::int8_t, 1, 4>(2, 0, tri_orders[0], tri_orders[1]);
   }
-  else if (vs[3] < vs[0] and vs[3] < vs[1] and vs[3] < vs[2])
+  else if (cell_vs[v[3]] < cell_vs[v[0]] and cell_vs[v[3]] < cell_vs[v[1]] and cell_vs[v[3]] < cell_vs[v[2]])
   {
     const Eigen::Array<std::int8_t, 1, 2> tri_orders
-        = calculate_triangle_orders({vs[1], vs[0], vs[2]});
+        = calculate_triangle_orders({v[1], v[0], v[2]}, cell_vs);
     return Eigen::Array<std::int8_t, 1, 4>(0, 1, tri_orders[0], tri_orders[1]);
   }
   else
@@ -117,20 +120,21 @@ Eigen::Array<std::int8_t, 1, 4>
 /// Calculates the number of times the rotation and reflection of a
 /// quadrilateral should be applied to a quadrilateral with the given
 /// global vertex numbers
-/// @param[in] v The global vertex numbers of the quadrilateral's
-///              vertices
+/// @param[in] v The local vertex numbers of the quadrilateral's vertices
+/// @param[in] cell_vs The global vertex cell's vertices
 /// @return The rotation and reflection orders for the quadrilateral
 Eigen::Array<std::int8_t, 1, 2>
-    calculate_quadrilateral_orders(Eigen::Array<std::int64_t, 1, 4> vs)
+    calculate_quadrilateral_orders(const Eigen::Array<int, 1, Eigen::Dynamic> v,
+                                   const std::vector<std::int64_t> cell_vs)
 {
-  if (vs[0] < vs[1] and vs[0] < vs[2] and vs[0] < vs[3])
-    return Eigen::Array<std::int8_t, 1, 2>(0, vs[1] > vs[2]);
-  else if (vs[1] < vs[0] and vs[1] < vs[2] and vs[1] < vs[3])
-    return Eigen::Array<std::int8_t, 1, 2>(1, vs[3] > vs[0]);
-  else if (vs[3] < vs[0] and vs[3] < vs[1] and vs[3] < vs[2])
-    return Eigen::Array<std::int8_t, 1, 2>(2, vs[2] > vs[1]);
-  else if (vs[2] < vs[0] and vs[2] < vs[1] and vs[2] < vs[3])
-    return Eigen::Array<std::int8_t, 1, 2>(3, vs[0] > vs[3]);
+  if (cell_vs[v[0]] < cell_vs[v[1]] and cell_vs[v[0]] < cell_vs[v[2]] and cell_vs[v[0]] < cell_vs[v[3]])
+    return Eigen::Array<std::int8_t, 1, 2>(0, cell_vs[v[1]] > cell_vs[v[2]]);
+  else if (cell_vs[v[1]] < cell_vs[v[0]] and cell_vs[v[1]] < cell_vs[v[2]] and cell_vs[v[1]] < cell_vs[v[3]])
+    return Eigen::Array<std::int8_t, 1, 2>(1, cell_vs[v[3]] > cell_vs[v[0]]);
+  else if (cell_vs[v[3]] < cell_vs[v[0]] and cell_vs[v[3]] < cell_vs[v[1]] and cell_vs[v[3]] < cell_vs[v[2]])
+    return Eigen::Array<std::int8_t, 1, 2>(2, cell_vs[v[2]] > cell_vs[v[1]]);
+  else if (cell_vs[v[2]] < cell_vs[v[0]] and cell_vs[v[2]] < cell_vs[v[1]] and cell_vs[v[2]] < cell_vs[v[3]])
+    return Eigen::Array<std::int8_t, 1, 2>(3, cell_vs[v[0]] > cell_vs[v[3]]);
   else
   {
     throw std::runtime_error(
@@ -141,65 +145,67 @@ Eigen::Array<std::int8_t, 1, 2>
 /// Calculates the number of times the rotations and reflection of a
 /// triangle should be applied to a hexahedron with the given global
 /// vertex numbers
-/// @param[in] vs The global vertex numbers of the hexahedron's vertices
+/// @param[in] v The local vertex numbers of the hexahedron's vertices
+/// @param[in] cell_vs The global vertex cell's vertices
 /// @return The rotation and reflection orders for the hexahedron
 Eigen::Array<std::int8_t, 1, 4>
-calculate_hexahedron_orders(const Eigen::Array<std::int64_t, 1, 8>& vs)
+calculate_hexahedron_orders(const Eigen::Array<int, 1, Eigen::Dynamic>& v,
+                            const std::vector<std::int64_t> cell_vs)
 {
-  if (vs[0] < vs[1] and vs[0] < vs[2] and vs[0] < vs[3] and vs[0] < vs[4]
-      and vs[0] < vs[5] and vs[0] < vs[6] and vs[0] < vs[7])
+  if (cell_vs[v[0]] < cell_vs[v[1]] and cell_vs[v[0]] < cell_vs[v[2]] and cell_vs[v[0]] < cell_vs[v[3]] and cell_vs[v[0]] < cell_vs[v[4]]
+      and cell_vs[v[0]] < cell_vs[v[5]] and cell_vs[v[0]] < cell_vs[v[6]] and cell_vs[v[0]] < cell_vs[v[7]])
   {
     const Eigen::Array<std::int8_t, 1, 2> tri_orders
-        = calculate_triangle_orders({vs[1], vs[2], vs[4]});
+        = calculate_triangle_orders({v[1], v[2], v[4]}, cell_vs);
     return Eigen::Array<std::int8_t, 1, 4>(0, 0, tri_orders[0], tri_orders[1]);
   }
-  else if (vs[1] < vs[0] and vs[1] < vs[2] and vs[1] < vs[3] and vs[1] < vs[4]
-           and vs[1] < vs[5] and vs[1] < vs[6] and vs[1] < vs[7])
+  else if (cell_vs[v[1]] < cell_vs[v[0]] and cell_vs[v[1]] < cell_vs[v[2]] and cell_vs[v[1]] < cell_vs[v[3]] and cell_vs[v[1]] < cell_vs[v[4]]
+           and cell_vs[v[1]] < cell_vs[v[5]] and cell_vs[v[1]] < cell_vs[v[6]] and cell_vs[v[1]] < cell_vs[v[7]])
   {
     const Eigen::Array<std::int8_t, 1, 2> tri_orders
-        = calculate_triangle_orders({vs[3], vs[0], vs[5]});
+        = calculate_triangle_orders({v[3], v[0], v[5]}, cell_vs);
     return Eigen::Array<std::int8_t, 1, 4>(1, 0, tri_orders[0], tri_orders[1]);
   }
-  else if (vs[2] < vs[0] and vs[2] < vs[1] and vs[2] < vs[3] and vs[2] < vs[4]
-           and vs[2] < vs[5] and vs[2] < vs[6] and vs[2] < vs[7])
+  else if (cell_vs[v[2]] < cell_vs[v[0]] and cell_vs[v[2]] < cell_vs[v[1]] and cell_vs[v[2]] < cell_vs[v[3]] and cell_vs[v[2]] < cell_vs[v[4]]
+           and cell_vs[v[2]] < cell_vs[v[5]] and cell_vs[v[2]] < cell_vs[v[6]] and cell_vs[v[2]] < cell_vs[v[7]])
   {
     const Eigen::Array<std::int8_t, 1, 2> tri_orders
-        = calculate_triangle_orders({vs[0], vs[3], vs[6]});
+        = calculate_triangle_orders({v[0], v[3], v[6]}, cell_vs);
     return Eigen::Array<std::int8_t, 1, 4>(3, 0, tri_orders[0], tri_orders[1]);
   }
-  else if (vs[3] < vs[0] and vs[3] < vs[1] and vs[3] < vs[2] and vs[3] < vs[4]
-           and vs[3] < vs[5] and vs[3] < vs[6] and vs[3] < vs[7])
+  else if (cell_vs[v[3]] < cell_vs[v[0]] and cell_vs[v[3]] < cell_vs[v[1]] and cell_vs[v[3]] < cell_vs[v[2]] and cell_vs[v[3]] < cell_vs[v[4]]
+           and cell_vs[v[3]] < cell_vs[v[5]] and cell_vs[v[3]] < cell_vs[v[6]] and cell_vs[v[3]] < cell_vs[v[7]])
   {
     const Eigen::Array<std::int8_t, 1, 2> tri_orders
-        = calculate_triangle_orders({vs[1], vs[2], vs[7]});
+        = calculate_triangle_orders({v[1], v[2], v[7]}, cell_vs);
     return Eigen::Array<std::int8_t, 1, 4>(2, 0, tri_orders[0], tri_orders[1]);
   }
-  else if (vs[4] < vs[0] and vs[4] < vs[1] and vs[4] < vs[2] and vs[4] < vs[3]
-           and vs[4] < vs[5] and vs[4] < vs[6] and vs[4] < vs[7])
+  else if (cell_vs[v[4]] < cell_vs[v[0]] and cell_vs[v[4]] < cell_vs[v[1]] and cell_vs[v[4]] < cell_vs[v[2]] and cell_vs[v[4]] < cell_vs[v[3]]
+           and cell_vs[v[4]] < cell_vs[v[5]] and cell_vs[v[4]] < cell_vs[v[6]] and cell_vs[v[4]] < cell_vs[v[7]])
   {
     const Eigen::Array<std::int8_t, 1, 2> tri_orders
-        = calculate_triangle_orders({vs[0], vs[6], vs[5]});
+        = calculate_triangle_orders({v[0], v[6], v[5]}, cell_vs);
     return Eigen::Array<std::int8_t, 1, 4>(0, 1, tri_orders[0], tri_orders[1]);
   }
-  else if (vs[5] < vs[0] and vs[5] < vs[1] and vs[5] < vs[2] and vs[5] < vs[3]
-           and vs[5] < vs[4] and vs[5] < vs[6] and vs[5] < vs[7])
+  else if (cell_vs[v[5]] < cell_vs[v[0]] and cell_vs[v[5]] < cell_vs[v[1]] and cell_vs[v[5]] < cell_vs[v[2]] and cell_vs[v[5]] < cell_vs[v[3]]
+           and cell_vs[v[5]] < cell_vs[v[4]] and cell_vs[v[5]] < cell_vs[v[6]] and cell_vs[v[5]] < cell_vs[v[7]])
   {
     const Eigen::Array<std::int8_t, 1, 2> tri_orders
-        = calculate_triangle_orders({vs[4], vs[7], vs[1]});
+        = calculate_triangle_orders({v[4], v[7], v[1]}, cell_vs);
     return Eigen::Array<std::int8_t, 1, 4>(0, 2, tri_orders[0], tri_orders[1]);
   }
-  else if (vs[6] < vs[0] and vs[6] < vs[1] and vs[6] < vs[2] and vs[6] < vs[3]
-           and vs[6] < vs[4] and vs[6] < vs[5] and vs[6] < vs[7])
+  else if (cell_vs[v[6]] < cell_vs[v[0]] and cell_vs[v[6]] < cell_vs[v[1]] and cell_vs[v[6]] < cell_vs[v[2]] and cell_vs[v[6]] < cell_vs[v[3]]
+           and cell_vs[v[6]] < cell_vs[v[4]] and cell_vs[v[6]] < cell_vs[v[5]] and cell_vs[v[6]] < cell_vs[v[7]])
   {
     const Eigen::Array<std::int8_t, 1, 2> tri_orders
-        = calculate_triangle_orders({vs[7], vs[4], vs[2]});
+        = calculate_triangle_orders({v[7], v[4], v[2]}, cell_vs);
     return Eigen::Array<std::int8_t, 1, 4>(2, 2, tri_orders[0], tri_orders[1]);
   }
-  else if (vs[7] < vs[0] and vs[7] < vs[1] and vs[7] < vs[2] and vs[7] < vs[3]
-           and vs[7] < vs[4] and vs[7] < vs[5] and vs[7] < vs[6])
+  else if (cell_vs[v[7]] < cell_vs[v[0]] and cell_vs[v[7]] < cell_vs[v[1]] and cell_vs[v[7]] < cell_vs[v[2]] and cell_vs[v[7]] < cell_vs[v[3]]
+           and cell_vs[v[7]] < cell_vs[v[4]] and cell_vs[v[7]] < cell_vs[v[5]] and cell_vs[v[7]] < cell_vs[v[6]])
   {
     const Eigen::Array<std::int8_t, 1, 2> tri_orders
-        = calculate_triangle_orders({vs[3], vs[5], vs[6]});
+        = calculate_triangle_orders({v[3], v[5], v[6]}, cell_vs);
     return Eigen::Array<std::int8_t, 1, 4>(2, 1, tri_orders[0], tri_orders[1]);
   }
   else
@@ -224,7 +230,8 @@ get_ordering_function_1d(const mesh::CellType& cell_type)
 }
 //-----------------------------------------------------------------------------
 std::function<Eigen::Array<std::int8_t, 1, 2>(
-    Eigen::Array<std::int64_t, 1, Eigen::Dynamic>)>
+    const Eigen::Array<int, 1, Eigen::Dynamic>,
+    const std::vector<std::int64_t>)>
 get_ordering_function_2d(const mesh::CellType& cell_type)
 {
   switch (cell_type)
@@ -239,7 +246,8 @@ get_ordering_function_2d(const mesh::CellType& cell_type)
 }
 //-----------------------------------------------------------------------------
 std::function<Eigen::Array<std::int8_t, 1, 4>(
-    Eigen::Array<std::int64_t, 1, Eigen::Dynamic>)>
+    const Eigen::Array<int, 1, Eigen::Dynamic>,
+    const std::vector<std::int64_t>)>
 get_ordering_function_3d(const mesh::CellType& cell_type)
 {
   switch (cell_type)
@@ -518,11 +526,13 @@ compute_ordering(const mesh::Mesh& mesh)
               Eigen::Array<int, 1, Eigen::Dynamic>>> entities1d;
   std::vector<
     std::pair<std::function<Eigen::Array<std::int8_t, 1, 2>(
-                  Eigen::Array<std::int64_t, 1, Eigen::Dynamic>)>,
+                  const Eigen::Array<int, 1, Eigen::Dynamic>,
+                  const std::vector<std::int64_t>)>,
               Eigen::Array<int, 1, Eigen::Dynamic>>> entities2d;
   std::vector<
     std::pair<std::function<Eigen::Array<std::int8_t, 1, 4>(
-                  Eigen::Array<std::int64_t, 1, Eigen::Dynamic>)>,
+                  const Eigen::Array<int, 1, Eigen::Dynamic>,
+                  const std::vector<std::int64_t>)>,
               Eigen::Array<int, 1, Eigen::Dynamic>>> entities3d;
 
   if (1 < tdim) {
@@ -595,21 +605,13 @@ compute_ordering(const mesh::Mesh& mesh)
     // iterate over the cell's 2d entities
     for (std::size_t e = 0; e < entities2d.size(); ++e)
     {
-      Eigen::Array<int, 1, Eigen::Dynamic> v = entities2d[e].second;
-      Eigen::Array<std::int64_t, 1, Eigen::Dynamic> global_v(v.size());
-      for (int i = 0; i < v.size(); ++i)
-        global_v[i] = cell_vs[v[i]];
-      cell_orders.row(cell_n).segment(j, 2) = entities2d[e].first(global_v);
+      cell_orders.row(cell_n).segment(j, 2) = entities2d[e].first(entities2d[e].second, cell_vs);
       j += 2;
     }
     // iterate over the cell's 3d entities
     for (std::size_t e = 0; e < entities3d.size(); ++e)
     {
-      Eigen::Array<int, 1, Eigen::Dynamic> v = entities3d[e].second;
-      Eigen::Array<std::int64_t, 1, Eigen::Dynamic> global_v(v.size());
-      for (int i = 0; i < v.size(); ++i)
-        global_v[i] = cell_vs[v[i]];
-      cell_orders.row(cell_n).segment(j, 4) = entities3d[e].first(global_v);
+      cell_orders.row(cell_n).segment(j, 4) = entities3d[e].first(entities3d[e].second, cell_vs);
       j += 4;
     }
 
