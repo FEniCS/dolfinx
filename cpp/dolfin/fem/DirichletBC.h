@@ -36,7 +36,7 @@ using marking_function = std::function<Eigen::Array<bool, Eigen::Dynamic, 1>(
 
 /// Build an array of degree-of-freedom indices that are associated with
 /// give mesh entities (topological)
-Eigen::Array<PetscInt, Eigen::Dynamic, 2, Eigen::RowMajor>
+Eigen::Array<PetscInt, Eigen::Dynamic, 2>
 locate_pair_dofs_topological(
     const function::FunctionSpace& V0, const function::FunctionSpace& V1,
     const int dim,
@@ -105,14 +105,14 @@ public:
   /// @param[in] V The function (sub)space on which the boundary
   ///              condition is applied
   /// @param[in] g The boundary condition value
-  /// @param[in] V_dofs Degree-of-freedom indices in the space where the
-  ///                   the boundary condition is applied
-  /// @param[in] g_dofs Degree-of-freedom indices in the space of the
-  ///                   boundary value function applied to V_dofs[i]
+  /// @param[in] V_g_dofs 2D (column-major) array of degree-of-freedom indices.
+  ///                     First column are indices in the space where boundary
+  ///                     condition is applied, second column are indices in the
+  ///                     space of the boundary condition value function.
   DirichletBC(
       std::shared_ptr<const function::FunctionSpace> V,
       std::shared_ptr<const function::Function> g,
-      const Eigen::Ref<const Eigen::Array<PetscInt, Eigen::Dynamic, 2, Eigen::RowMajor>>& V_g_dofs);
+      const Eigen::Ref<const Eigen::Array<PetscInt, Eigen::Dynamic, 2>>& V_g_dofs);
 
   /// Copy constructor
   /// @param[in] bc The object to be copied

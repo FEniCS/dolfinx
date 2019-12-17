@@ -168,7 +168,7 @@ get_remote_bcs(const common::IndexMap& map,
   return dofs;
 }
 //-----------------------------------------------------------------------------
-Eigen::Array<PetscInt, Eigen::Dynamic, 2, Eigen::RowMajor>
+Eigen::Array<PetscInt, Eigen::Dynamic, 2>
 fem::locate_pair_dofs_topological(
     const function::FunctionSpace& V0, const function::FunctionSpace& V1,
     const int dim,
@@ -258,7 +258,7 @@ fem::locate_pair_dofs_topological(
   std::sort(bc_dofs.begin(), bc_dofs.end());
   bc_dofs.erase(std::unique(bc_dofs.begin(), bc_dofs.end()), bc_dofs.end());
 
-  Eigen::Array<PetscInt, Eigen::Dynamic, 2, Eigen::RowMajor> dofs(
+  Eigen::Array<PetscInt, Eigen::Dynamic, 2> dofs(
       bc_dofs.size(), 2);
   for (std::size_t i = 0; i < bc_dofs.size(); ++i)
   {
@@ -368,9 +368,9 @@ DirichletBC::DirichletBC(
     : _function_space(g->function_space()), _g(g)
 {
 
-  _dofs = Eigen::Array<PetscInt, Eigen::Dynamic, 2, Eigen::RowMajor>(
-      V_dofs.rows(), 2);
+  _dofs = Eigen::Array<PetscInt, Eigen::Dynamic, 2>(V_dofs.rows(), 2);
 
+  // Stack indices as columns, fits column-major _dofs layout
   _dofs.col(0) = V_dofs;
   _dofs.col(1) = V_dofs;
 
@@ -384,8 +384,7 @@ DirichletBC::DirichletBC(
 DirichletBC::DirichletBC(
     std::shared_ptr<const function::FunctionSpace> V,
     std::shared_ptr<const function::Function> g,
-    const Eigen::Ref<const Eigen::Array<PetscInt, Eigen::Dynamic, 2,
-                                        Eigen::RowMajor>>& V_g_dofs)
+    const Eigen::Ref<const Eigen::Array<PetscInt, Eigen::Dynamic, 2>>& V_g_dofs)
     : _function_space(V), _g(g), _dofs(V_g_dofs)
 {
   const int owned_size = _function_space->dofmap()->index_map->block_size
