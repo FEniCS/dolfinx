@@ -237,10 +237,8 @@ void fem(py::module& m)
       .def(py::init<std::shared_ptr<const dolfin::function::FunctionSpace>,
                     std::shared_ptr<const dolfin::function::Function>,
                     const Eigen::Ref<
-                        const Eigen::Array<PetscInt, Eigen::Dynamic, 1>>&,
-                    const Eigen::Ref<
-                        const Eigen::Array<PetscInt, Eigen::Dynamic, 1>>&>(),
-           py::arg("V"), py::arg("g"), py::arg("V_dofs"), py::arg("g_dofs"))
+                        const Eigen::Array<PetscInt, Eigen::Dynamic, 2, Eigen::RowMajor>>&>(),
+           py::arg("V"), py::arg("g"), py::arg("V_g_dofs"))
       .def(py::init<std::shared_ptr<const dolfin::function::Function>,
                     const Eigen::Ref<
                         const Eigen::Array<PetscInt, Eigen::Dynamic, 1>>&>(),

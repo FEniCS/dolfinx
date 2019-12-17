@@ -126,10 +126,10 @@ mesh.geometry.coord_mapping = cmap
 
 # Now, the Dirichlet boundary condition can be created using the class
 # :py:class:`DirichletBC <dolfin.fem.bcs.DirichletBC>`. A
-# :py:class:`DirichletBC <dolfin.fem.bcs.DirichletBC>` takes three
-# arguments: the function space the boundary condition applies to, the
-# value of the boundary condition, and the part of the boundary on which
-# the condition applies. This boundary part is identified with degrees of
+# :py:class:`DirichletBC <dolfin.fem.bcs.DirichletBC>` takes two
+# arguments: the value of the boundary condition 
+# and the part of the boundary on which the condition applies.
+# This boundary part is identified with degrees of
 # freedom in the function space to which we apply the boundary conditions.
 # A method ``locate_dofs_geometrical`` is provided to extract the boundary
 # degrees of freedom using a geometrical criterium.
@@ -144,7 +144,7 @@ u0 = Function(V)
 u0.vector.set(0.0)
 facets = compute_marked_boundary_entities(mesh, 1, lambda x: np.logical_or(x[0] < np.finfo(float).eps,
                                                                            x[0] > 1.0 - np.finfo(float).eps))
-bc = DirichletBC(V, u0, locate_dofs_topological(V, 1, facets))
+bc = DirichletBC(u0, locate_dofs_topological(V, 1, facets))
 
 
 # Next, we want to express the variational problem.  First, we need to

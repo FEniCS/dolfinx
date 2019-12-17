@@ -364,42 +364,30 @@ fem::locate_dofs_geometrical(const function::FunctionSpace& V,
 //-----------------------------------------------------------------------------
 DirichletBC::DirichletBC(
     std::shared_ptr<const function::Function> g,
-    const Eigen::Ref<const Eigen::Array<PetscInt, Eigen::Dynamic, 1>>& dofs)
-    : DirichletBC(g->function_space(), g, dofs, dofs)
+    const Eigen::Ref<const Eigen::Array<PetscInt, Eigen::Dynamic, 1>>& V_dofs)
+    : _function_space(g->function_space()), _g(g)
 {
-  // Do nothing
+
+  _dofs = Eigen::Array<PetscInt, Eigen::Dynamic, 2, Eigen::RowMajor>(
+      V_dofs.rows(), 2);
+
+  _dofs.col(0) = V_dofs;
+  _dofs.col(1) = V_dofs;
+
+  const int owned_size = _function_space->dofmap()->index_map->block_size
+                         * _function_space->dofmap()->index_map->size_local();
+  auto it = std::lower_bound(_dofs.col(0).data(),
+                             _dofs.col(0).data() + _dofs.rows(), owned_size);
+  _owned_indices = std::distance(_dofs.col(0).data(), it);
 }
 //-----------------------------------------------------------------------------
 DirichletBC::DirichletBC(
     std::shared_ptr<const function::FunctionSpace> V,
     std::shared_ptr<const function::Function> g,
-    const Eigen::Ref<const Eigen::Array<PetscInt, Eigen::Dynamic, 1>>& V_dofs,
-    const Eigen::Ref<const Eigen::Array<PetscInt, Eigen::Dynamic, 1>>& g_dofs)
-    : _function_space(V), _g(g)
+    const Eigen::Ref<const Eigen::Array<PetscInt, Eigen::Dynamic, 2,
+                                        Eigen::RowMajor>>& V_g_dofs)
+    : _function_space(V), _g(g), _dofs(V_g_dofs)
 {
-  if (V_dofs.rows() != g_dofs.rows())
-    throw std::runtime_error("Not matching number of degrees of freedom.");
-
-  // Copy the Eigen data structure into std::vector of arrays. This is
-  // needed for appending the remote dof indices and std::sort.
-  std::vector<std::array<PetscInt, 2>> dofs_local_vec(V_dofs.rows());
-  for (Eigen::Index i = 0; i < V_dofs.rows(); ++i)
-    dofs_local_vec[i] = {V_dofs[i], g_dofs[i]};
-
-  // Remove duplicates
-  std::sort(dofs_local_vec.begin(), dofs_local_vec.end());
-  dofs_local_vec.erase(
-      std::unique(dofs_local_vec.begin(), dofs_local_vec.end()),
-      dofs_local_vec.end());
-
-  _dofs = Eigen::Array<PetscInt, Eigen::Dynamic, 2, Eigen::RowMajor>(
-      dofs_local_vec.size(), 2);
-  for (std::size_t i = 0; i < dofs_local_vec.size(); ++i)
-  {
-    _dofs(i, 0) = dofs_local_vec[i][0];
-    _dofs(i, 1) = dofs_local_vec[i][1];
-  }
-
   const int owned_size = _function_space->dofmap()->index_map->block_size
                          * _function_space->dofmap()->index_map->size_local();
   auto it = std::lower_bound(_dofs.col(0).data(),

@@ -78,10 +78,10 @@ def locate_pair_dofs_topological(V0: typing.Union[function.FunctionSpace],
 class DirichletBC(cpp.fem.DirichletBC):
     def __init__(
             self,
-            V: typing.Union[function.FunctionSpace],
             value: typing.Union[ufl.Coefficient, function.Function, cpp.function.Function],
-            V_dofs: typing.List[int],
-            g_dofs: typing.List[int] = None):
+            dofs: typing.List[int],
+            V: typing.Union[function.FunctionSpace] = None
+            ):
         """Representation of Dirichlet boundary condition which is imposed on
         a linear system.
 
@@ -103,12 +103,6 @@ class DirichletBC(cpp.fem.DirichletBC):
         # FIXME: Handle (mesh function, index) marker type? If yes, use
         # tuple domain=(mf, index) to not have variable arguments
 
-        # Extract cpp function space
-        try:
-            _V = V._cpp_object
-        except AttributeError:
-            _V = V
-
         # Construct bc value
         if isinstance(value, ufl.Coefficient):
             _value = value._cpp_object
@@ -119,7 +113,12 @@ class DirichletBC(cpp.fem.DirichletBC):
         else:
             raise NotImplementedError
 
-        if g_dofs is None:
-            g_dofs = V_dofs
-
-        super().__init__(_V, _value, V_dofs, g_dofs)
+        if V is not None:
+            # Extract cpp function space
+            try:
+                _V = V._cpp_object
+            except AttributeError:
+                _V = V
+            super().__init__(_V, _value, dofs)
+        else:
+            super().__init__(_value, dofs)

@@ -52,7 +52,7 @@ def test_manufactured_poisson(n, filename, component, datadir):
     u_bc = Function(V)
     u_bc.interpolate(lambda x: x[component]**n)
     bdofs = locate_dofs_geometrical(V, lambda x: np.full(x.shape[1], True))
-    bc = DirichletBC(V, u_bc, bdofs)
+    bc = DirichletBC(u_bc, bdofs)
 
     b = assemble_vector(L)
     apply_lifting(b, [a], [[bc]])

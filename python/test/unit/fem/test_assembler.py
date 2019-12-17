@@ -136,7 +136,7 @@ def test_assembly_bcs():
     u_bc = dolfin.function.Function(V)
     with u_bc.vector.localForm() as u_local:
         u_local.set(1.0)
-    bc = dolfin.fem.dirichletbc.DirichletBC(V, u_bc, bdofsV)
+    bc = dolfin.fem.dirichletbc.DirichletBC(u_bc, bdofsV)
 
     # Assemble and apply 'global' lifting of bcs
     A = dolfin.fem.assemble_matrix(a)
@@ -188,7 +188,7 @@ def test_matrix_assembly_block():
     u_bc = dolfin.function.Function(V1)
     with u_bc.vector.localForm() as u_local:
         u_local.set(50.0)
-    bc = dolfin.fem.dirichletbc.DirichletBC(V1, u_bc, bdofsV1)
+    bc = dolfin.fem.dirichletbc.DirichletBC(u_bc, bdofsV1)
 
     # Define variational problem
     u, p = ufl.TrialFunction(V0), ufl.TrialFunction(V1)
@@ -244,7 +244,7 @@ def test_matrix_assembly_block():
 
     bdofsW_V1 = dolfin.fem.locate_pair_dofs_topological(W.sub(1), V1, mesh.topology.dim - 1, bndry_facets)
 
-    bc = dolfin.fem.dirichletbc.DirichletBC(W.sub(1), u_bc, bdofsW_V1[:, 0], bdofsW_V1[:, 1])
+    bc = dolfin.fem.dirichletbc.DirichletBC(u_bc, bdofsW_V1, W.sub(1))
     A2 = dolfin.fem.assemble_matrix(a, [bc])
     A2.assemble()
     b2 = dolfin.fem.assemble_vector(L)
@@ -285,8 +285,8 @@ def test_assembly_solve_block():
     u_bc1.vector.ghostUpdate(
         addv=PETSc.InsertMode.INSERT, mode=PETSc.ScatterMode.FORWARD)
     bcs = [
-        dolfin.fem.dirichletbc.DirichletBC(V0, u_bc0, bdofsV0),
-        dolfin.fem.dirichletbc.DirichletBC(V1, u_bc1, bdofsV1)
+        dolfin.fem.dirichletbc.DirichletBC(u_bc0, bdofsV0),
+        dolfin.fem.dirichletbc.DirichletBC(u_bc1, bdofsV1)
     ]
 
     # Variational problem
@@ -369,12 +369,12 @@ def test_assembly_solve_block():
     u1_bc.vector.ghostUpdate(
         addv=PETSc.InsertMode.INSERT, mode=PETSc.ScatterMode.FORWARD)
 
-    bdofsW0 = dolfin.fem.locate_dofs_topological(W.sub(0), facetdim, bndry_facets)
-    bdofsW1 = dolfin.fem.locate_dofs_topological(W.sub(1), facetdim, bndry_facets)
+    bdofsW0_V0 = dolfin.fem.locate_pair_dofs_topological(W.sub(0), V0, facetdim, bndry_facets)
+    bdofsW1_V1 = dolfin.fem.locate_pair_dofs_topological(W.sub(1), V1, facetdim, bndry_facets)
 
     bcs = [
-        dolfin.fem.dirichletbc.DirichletBC(W.sub(0), u0_bc, bdofsW0, bdofsV0),
-        dolfin.fem.dirichletbc.DirichletBC(W.sub(1), u1_bc, bdofsW1, bdofsV1)
+        dolfin.fem.dirichletbc.DirichletBC(u0_bc, bdofsW0_V0, W.sub(0)),
+        dolfin.fem.dirichletbc.DirichletBC(u1_bc, bdofsW1_V1, W.sub(1))
     ]
 
     A2 = dolfin.fem.assemble_matrix(a, bcs)
@@ -432,8 +432,8 @@ def test_assembly_solve_taylor_hood(mesh):
     u0 = dolfin.Function(P2)
     u0.vector.set(1.0)
     u0.vector.ghostUpdate(addv=PETSc.InsertMode.INSERT, mode=PETSc.ScatterMode.FORWARD)
-    bc0 = dolfin.DirichletBC(P2, u0, bdofs0)
-    bc1 = dolfin.DirichletBC(P2, u0, bdofs1)
+    bc0 = dolfin.DirichletBC(u0, bdofs0)
+    bc1 = dolfin.DirichletBC(u0, bdofs1)
 
     u, p = ufl.TrialFunction(P2), ufl.TrialFunction(P1)
     v, q = ufl.TestFunction(P2), ufl.TestFunction(P1)
@@ -526,9 +526,9 @@ def test_assembly_solve_taylor_hood(mesh):
 
     # -- Monolithic
 
-    P2 = ufl.VectorElement("Lagrange", mesh.ufl_cell(), 2)
-    P1 = ufl.FiniteElement("Lagrange", mesh.ufl_cell(), 1)
-    TH = P2 * P1
+    P2_el = ufl.VectorElement("Lagrange", mesh.ufl_cell(), 2)
+    P1_el = ufl.FiniteElement("Lagrange", mesh.ufl_cell(), 1)
+    TH = P2_el * P1_el
     W = dolfin.FunctionSpace(mesh, TH)
     (u, p) = ufl.TrialFunctions(W)
     (v, q) = ufl.TestFunctions(W)
@@ -547,11 +547,11 @@ def test_assembly_solve_taylor_hood(mesh):
     L1 = inner(p_zero, q) * dx
     L = L0 + L1
 
-    bdofsW0 = dolfin.fem.locate_dofs_topological(W.sub(0), facetdim, bndry_facets0)
-    bdofsW1 = dolfin.fem.locate_dofs_topological(W.sub(0), facetdim, bndry_facets1)
+    bdofsW0_P2_0 = dolfin.fem.locate_pair_dofs_topological(W.sub(0), P2, facetdim, bndry_facets0)
+    bdofsW0_P2_1 = dolfin.fem.locate_pair_dofs_topological(W.sub(0), P2, facetdim, bndry_facets1)
 
-    bc0 = dolfin.DirichletBC(W.sub(0), u0, bdofsW0, bdofs0)
-    bc1 = dolfin.DirichletBC(W.sub(0), u0, bdofsW1, bdofs1)
+    bc0 = dolfin.DirichletBC(u0, bdofsW0_P2_0, W.sub(0))
+    bc1 = dolfin.DirichletBC(u0, bdofsW0_P2_1, W.sub(0))
 
     A2 = dolfin.fem.assemble_matrix(a, [bc0, bc1])
     A2.assemble()

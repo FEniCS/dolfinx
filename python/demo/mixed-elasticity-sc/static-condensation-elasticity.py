@@ -56,7 +56,7 @@ bndry_facets = numpy.where(mf.values == 1)[0]
 
 # Displacement BC is applied to the right side
 bdofs = dolfin.fem.locate_dofs_topological(U, facetdim, bndry_facets)
-bc = dolfin.fem.DirichletBC(U, u_bc, bdofs)
+bc = dolfin.fem.DirichletBC(u_bc, bdofs)
 
 
 def free_end(x):

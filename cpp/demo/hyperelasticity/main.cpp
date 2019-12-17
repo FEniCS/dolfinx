@@ -155,8 +155,8 @@ int main(int argc, char* argv[])
           *V, [](auto& x) { return (x.row(0) - 1.0).abs() < DBL_EPSILON; });
 
   std::vector<std::shared_ptr<const fem::DirichletBC>> bcs
-      = {std::make_shared<fem::DirichletBC>(V, u_clamp, bdofs_left, bdofs_left),
-         std::make_shared<fem::DirichletBC>(V, u_rotation, bdofs_right, bdofs_right)};
+      = {std::make_shared<fem::DirichletBC>(u_clamp, bdofs_left),
+         std::make_shared<fem::DirichletBC>(u_rotation, bdofs_right)};
 
   HyperElasticProblem problem(u, L, a, bcs);
   nls::NewtonSolver newton_solver(MPI_COMM_WORLD);

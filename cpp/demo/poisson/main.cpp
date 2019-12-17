@@ -147,10 +147,9 @@ int main(int argc, char* argv[])
 
   // Now, the Dirichlet boundary condition (:math:`u = 0`) can be created
   // using the class :cpp:class:`DirichletBC`. A :cpp:class:`DirichletBC`
-  // takes four arguments: the function space the boundary condition
-  // applies to, the value of the boundary condition, and the part of the
-  // boundary on which the condition applies. In our example, the function
-  // space is ``V``, the value of the boundary condition (0.0) can
+  // takes two arguments: the value of the boundary condition,
+  // and the part of the boundary on which the condition applies.
+  // In our example, the value of the boundary condition (0.0) can
   // represented using a :cpp:class:`Function`, and the Dirichlet boundary
   // is defined by the indices of degrees of freedom to which the boundary
   // condition applies.
@@ -169,7 +168,7 @@ int main(int argc, char* argv[])
         });
 
   std::vector<std::shared_ptr<const fem::DirichletBC>> bc
-      = {std::make_shared<fem::DirichletBC>(V, u0, bdofs, bdofs)};
+      = {std::make_shared<fem::DirichletBC>(u0, bdofs)};
 
   f->interpolate([](auto& x) {
     auto dx = Eigen::square(x - 0.5);

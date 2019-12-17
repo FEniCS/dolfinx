@@ -118,7 +118,7 @@ with u0.vector.localForm() as bc_local:
     bc_local.set(0.0)
 
 # Set up boundary condition on inner surface
-bc = DirichletBC(V, u0, locate_dofs_geometrical(V, boundary))
+bc = DirichletBC(u0, locate_dofs_geometrical(V, boundary))
 
 # Assemble system, applying boundary conditions and preserving symmetry)
 A = assemble_matrix(a, [bc])

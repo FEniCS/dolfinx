@@ -112,9 +112,7 @@ public:
   DirichletBC(
       std::shared_ptr<const function::FunctionSpace> V,
       std::shared_ptr<const function::Function> g,
-      const Eigen::Ref<const Eigen::Array<PetscInt, Eigen::Dynamic, 1>>& V_dofs,
-      const Eigen::Ref<const Eigen::Array<PetscInt, Eigen::Dynamic, 1>>&
-          g_dofs);
+      const Eigen::Ref<const Eigen::Array<PetscInt, Eigen::Dynamic, 2, Eigen::RowMajor>>& V_g_dofs);
 
   /// Copy constructor
   /// @param[in] bc The object to be copied
