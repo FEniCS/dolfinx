@@ -127,7 +127,7 @@ mesh.geometry.coord_mapping = cmap
 # Now, the Dirichlet boundary condition can be created using the class
 # :py:class:`DirichletBC <dolfin.fem.bcs.DirichletBC>`. A
 # :py:class:`DirichletBC <dolfin.fem.bcs.DirichletBC>` takes two
-# arguments: the value of the boundary condition 
+# arguments: the value of the boundary condition
 # and the part of the boundary on which the condition applies.
 # This boundary part is identified with degrees of
 # freedom in the function space to which we apply the boundary conditions.

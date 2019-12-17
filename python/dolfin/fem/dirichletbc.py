@@ -80,8 +80,7 @@ class DirichletBC(cpp.fem.DirichletBC):
             self,
             value: typing.Union[ufl.Coefficient, function.Function, cpp.function.Function],
             dofs: typing.List[int],
-            V: typing.Union[function.FunctionSpace] = None
-            ):
+            V: typing.Union[function.FunctionSpace] = None):
         """Representation of Dirichlet boundary condition which is imposed on
         a linear system.
 
