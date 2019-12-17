@@ -39,22 +39,15 @@ int get_num_permutations(mesh::CellType cell_type)
   }
 }
 //-----------------------------------------------------------------------------
-/// Returns an empty array
-/// @param[in] vs The global vertex number of the point's vertex
-/// @return An empty array
-Eigen::Array<std::int8_t, 1, 0>
-calculate_point_orders(const Eigen::Array<std::int64_t, 1, 1>& vs)
-{
-  return {};
-}
-//-----------------------------------------------------------------------------
 /// Calculates whether or not an interval should be flipped
-/// @param[in] vs The global vertex numbers of the interval's vertices
+/// @param[in] v The local vertex numbers of the interval's vertices
+/// @param[in] cell_vs The global vertex cell's vertices
 /// @return The reflection order for the interval
 Eigen::Array<std::int8_t, 1, 1>
-calculate_interval_orders(const Eigen::Array<std::int64_t, 1, 2>& vs)
+calculate_interval_orders(const Eigen::Array<int, 1, Eigen::Dynamic>& v,
+                          const std::vector<std::int64_t> cell_vs)
 {
-  if (vs[0] > vs[1])
+  if (cell_vs[v[0]] > cell_vs[v[1]])
     return Eigen::Array<std::int8_t, 1, 1>(1);
   else
     return Eigen::Array<std::int8_t, 1, 1>(0);
@@ -216,49 +209,17 @@ calculate_hexahedron_orders(const Eigen::Array<std::int64_t, 1, 8>& vs)
   }
 }
 //-----------------------------------------------------------------------------
-std::function<Eigen::Array<std::int8_t, 1, Eigen::Dynamic>(
-    Eigen::Array<std::int64_t, 1, Eigen::Dynamic>)>
-get_ordering_function(const mesh::CellType& cell_type)
-{
-  switch (cell_type)
-  {
-  case (mesh::CellType::point):
-    return calculate_point_orders;
-  case (mesh::CellType::interval):
-    return calculate_interval_orders;
-  case (mesh::CellType::triangle):
-    return calculate_triangle_orders;
-  case (mesh::CellType::quadrilateral):
-    return calculate_quadrilateral_orders;
-  case (mesh::CellType::tetrahedron):
-    return calculate_tetrahedron_orders;
-  case (mesh::CellType::hexahedron):
-    return calculate_hexahedron_orders;
-  default:
-    throw std::runtime_error("Unrecognised cell type.");
-  }
-}
-//-----------------------------------------------------------------------------
 std::function<Eigen::Array<std::int8_t, 1, 1>(
-    Eigen::Array<std::int64_t, 1, Eigen::Dynamic>)>
+    const Eigen::Array<int, 1, Eigen::Dynamic>,
+    const std::vector<std::int64_t>)>
 get_ordering_function_1d(const mesh::CellType& cell_type)
 {
   switch (cell_type)
   {
-  case (mesh::CellType::point):
-    throw std::runtime_error("Cell type has incorrect dimension.");
   case (mesh::CellType::interval):
     return calculate_interval_orders;
-  case (mesh::CellType::triangle):
-    throw std::runtime_error("Cell type has incorrect dimension.");
-  case (mesh::CellType::quadrilateral):
-    throw std::runtime_error("Cell type has incorrect dimension.");
-  case (mesh::CellType::tetrahedron):
-    throw std::runtime_error("Cell type has incorrect dimension.");
-  case (mesh::CellType::hexahedron):
-    throw std::runtime_error("Cell type has incorrect dimension.");
   default:
-    throw std::runtime_error("Unrecognised cell type.");
+    throw std::runtime_error("Cell type has incorrect dimension.");
   }
 }
 //-----------------------------------------------------------------------------
@@ -268,20 +229,12 @@ get_ordering_function_2d(const mesh::CellType& cell_type)
 {
   switch (cell_type)
   {
-  case (mesh::CellType::point):
-    throw std::runtime_error("Cell type has incorrect dimension.");
-  case (mesh::CellType::interval):
-    throw std::runtime_error("Cell type has incorrect dimension.");
   case (mesh::CellType::triangle):
     return calculate_triangle_orders;
   case (mesh::CellType::quadrilateral):
     return calculate_quadrilateral_orders;
-  case (mesh::CellType::tetrahedron):
-    throw std::runtime_error("Cell type has incorrect dimension.");
-  case (mesh::CellType::hexahedron):
-    throw std::runtime_error("Cell type has incorrect dimension.");
   default:
-    throw std::runtime_error("Unrecognised cell type.");
+    throw std::runtime_error("Cell type has incorrect dimension.");
   }
 }
 //-----------------------------------------------------------------------------
@@ -291,20 +244,12 @@ get_ordering_function_3d(const mesh::CellType& cell_type)
 {
   switch (cell_type)
   {
-  case (mesh::CellType::point):
-    throw std::runtime_error("Cell type has incorrect dimension.");
-  case (mesh::CellType::interval):
-    throw std::runtime_error("Cell type has incorrect dimension.");
-  case (mesh::CellType::triangle):
-    throw std::runtime_error("Cell type has incorrect dimension.");
-  case (mesh::CellType::quadrilateral):
-    throw std::runtime_error("Cell type has incorrect dimension.");
   case (mesh::CellType::tetrahedron):
     return calculate_tetrahedron_orders;
   case (mesh::CellType::hexahedron):
     return calculate_hexahedron_orders;
   default:
-    throw std::runtime_error("Unrecognised cell type.");
+    throw std::runtime_error("Cell type has incorrect dimension.");
   }
 }
 //-----------------------------------------------------------------------------
@@ -568,25 +513,24 @@ compute_ordering(const mesh::Mesh& mesh)
   // Get lists of vertices on each entity from the cell type
   std::vector<
     std::pair<std::function<Eigen::Array<std::int8_t, 1, 1>(
-                  Eigen::Array<std::int64_t, 1, Eigen::Dynamic>)>,
-              Eigen::Array<int, 1, Eigen::Dynamic>>>
-        entities1d;
+                  const Eigen::Array<int, 1, Eigen::Dynamic>,
+                  const std::vector<std::int64_t>)>,
+              Eigen::Array<int, 1, Eigen::Dynamic>>> entities1d;
   std::vector<
     std::pair<std::function<Eigen::Array<std::int8_t, 1, 2>(
                   Eigen::Array<std::int64_t, 1, Eigen::Dynamic>)>,
-              Eigen::Array<int, 1, Eigen::Dynamic>>>
-        entities2d;
+              Eigen::Array<int, 1, Eigen::Dynamic>>> entities2d;
   std::vector<
     std::pair<std::function<Eigen::Array<std::int8_t, 1, 4>(
                   Eigen::Array<std::int64_t, 1, Eigen::Dynamic>)>,
-              Eigen::Array<int, 1, Eigen::Dynamic>>>
-        entities3d;
+              Eigen::Array<int, 1, Eigen::Dynamic>>> entities3d;
+
   if (1 < tdim) {
     const Eigen::Array<int, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
         vertices = mesh::get_entity_vertices(type, 1);
     auto f = get_ordering_function_1d(mesh::cell_entity_type(type, 1));
     // Store the ordering function and vertices associated with the ith
-    // entity of dimension dim
+    // 1d entity
     for (int i = 0; i < mesh::cell_num_entities(type, 1); ++i)
       entities1d.push_back({f, vertices.row(i)});
   } else if (1 == tdim){
@@ -602,7 +546,7 @@ compute_ordering(const mesh::Mesh& mesh)
         vertices = mesh::get_entity_vertices(type, 2);
     auto f = get_ordering_function_2d(mesh::cell_entity_type(type, 2));
     // Store the ordering function and vertices associated with the ith
-    // entity of dimension dim
+    // 2d entity
     for (int i = 0; i < mesh::cell_num_entities(type, 2); ++i)
       entities2d.push_back({f, vertices.row(i)});
   } else if (2 == tdim){
@@ -645,11 +589,7 @@ compute_ordering(const mesh::Mesh& mesh)
     // iterate over the cell's 1d entities
     for (std::size_t e = 0; e < entities1d.size(); ++e)
     {
-      Eigen::Array<int, 1, Eigen::Dynamic> v = entities1d[e].second;
-      Eigen::Array<std::int64_t, 1, Eigen::Dynamic> global_v(v.size());
-      for (int i = 0; i < v.size(); ++i)
-        global_v[i] = cell_vs[v[i]];
-      cell_orders.row(cell_n).segment(j, 1) = entities1d[e].first(global_v);
+      cell_orders.row(cell_n).segment(j, 1) = entities1d[e].first(entities1d[e].second, cell_vs);
       j += 1;
     }
     // iterate over the cell's 2d entities
