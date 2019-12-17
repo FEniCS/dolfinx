@@ -104,9 +104,8 @@ def test_krylov_samg_solver_elasticity():
         mf.mark(boundary, 1)
         bndry_facets = np.where(mf.values == 1)[0]
 
-        bdofs0 = locate_dofs_topological(V.sub(0), facetdim, bndry_facets)
-        bdofs = locate_dofs_topological(V, facetdim, bndry_facets)
-        bc = DirichletBC(V.sub(0), bc0, bdofs0, bdofs)
+        bdofs = locate_dofs_topological(V.sub(0), V, facetdim, bndry_facets)
+        bc = DirichletBC(bc0, bdofs, V.sub(0))
         u = TrialFunction(V)
         v = TestFunction(V)
 
