@@ -596,52 +596,25 @@ compute_ordering(const mesh::Mesh& mesh)
                  Eigen::Array<int, 1, Eigen::Dynamic>, int>>
       entities;
 
-  if (1 < tdim)
+  std::vector<int> perms = {0, 1, 2, 4};
+
+  for (int d = 1; d < tdim; ++d)
   {
     const Eigen::Array<int, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
-        vertices = mesh::get_entity_vertices(type, 1);
-    auto f = get_ordering_function(mesh::cell_entity_type(type, 1));
+        vertices = mesh::get_entity_vertices(type, d);
+    auto f = get_ordering_function(mesh::cell_entity_type(type, d));
     // Store the ordering function and vertices associated with the ith
-    // 1d entity
-    for (int i = 0; i < mesh::cell_num_entities(type, 1); ++i)
-      entities.push_back({f, vertices.row(i), 1});
+    // d dimensional entity
+    for (int i = 0; i < mesh::cell_num_entities(type, d); ++i)
+      entities.push_back({f, vertices.row(i), perms[d]});
   }
-  else if (1 == tdim)
-  {
+  { // scope
     // Add the cell itself as an entity
     auto f = get_ordering_function(type);
     Eigen::Array<int, 1, Eigen::Dynamic> row(num_vertices_per_cell);
     for (int i = 0; i < num_vertices_per_cell; ++i)
       row[i] = i;
-    entities.push_back({f, row, 1});
-  }
-  if (2 < tdim)
-  {
-    const Eigen::Array<int, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
-        vertices = mesh::get_entity_vertices(type, 2);
-    auto f = get_ordering_function(mesh::cell_entity_type(type, 2));
-    // Store the ordering function and vertices associated with the ith
-    // 2d entity
-    for (int i = 0; i < mesh::cell_num_entities(type, 2); ++i)
-      entities.push_back({f, vertices.row(i), 2});
-  }
-  else if (2 == tdim)
-  {
-    // Add the cell itself as an entity
-    auto f = get_ordering_function(type);
-    Eigen::Array<int, 1, Eigen::Dynamic> row(num_vertices_per_cell);
-    for (int i = 0; i < num_vertices_per_cell; ++i)
-      row[i] = i;
-    entities.push_back({f, row, 2});
-  }
-  if (3 == tdim)
-  {
-    // Add the cell itself as an entity
-    auto f = get_ordering_function(type);
-    Eigen::Array<int, 1, Eigen::Dynamic> row(num_vertices_per_cell);
-    for (int i = 0; i < num_vertices_per_cell; ++i)
-      row[i] = i;
-    entities.push_back({f, row, 4});
+    entities.push_back({f, row, perms[tdim]});
   }
 
   // Set orders for each cell
