@@ -101,21 +101,17 @@ class DirichletBC(cpp.fem.DirichletBC):
 
         Parameters
         ----------
-        V
-            Function space of a problem to which boundary conditions are applied.
         value
             Lifted boundary values function.
-        V_dofs
-            Local indices of degrees of freedom in V function space to which
+        dofs
+            Local indices of degrees of freedom in function space to which
             boundary condition applies.
-        g_dofs : optional
-            Local indices of degrees of freedom in the space of value function
-            to which boundary condition applies.
-            If not specified, ``V_dofs`` is used.
+            Expects array of size (number of dofs, 2) if function space of the
+            problem, ``V``, is passed. Otherwise assumes function space of the
+            problem is the same of function space of boundary values function.
+        V : optional
+            Function space of a problem to which boundary conditions are applied.
         """
-
-        # FIXME: Handle (mesh function, index) marker type? If yes, use
-        # tuple domain=(mf, index) to not have variable arguments
 
         # Construct bc value
         if isinstance(value, ufl.Coefficient):
@@ -133,6 +129,6 @@ class DirichletBC(cpp.fem.DirichletBC):
                 _V = V._cpp_object
             except AttributeError:
                 _V = V
-            super().__init__(_V, _value, dofs)
+            super().__init__(_value, dofs, _V)
         else:
             super().__init__(_value, dofs)

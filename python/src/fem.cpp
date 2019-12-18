@@ -234,10 +234,10 @@ void fem(py::module& m)
           "Object for representing Dirichlet (essential) boundary conditions");
 
   dirichletbc
-      .def(py::init<std::shared_ptr<const dolfin::function::FunctionSpace>,
-                    std::shared_ptr<const dolfin::function::Function>,
+      .def(py::init<std::shared_ptr<const dolfin::function::Function>,
                     const Eigen::Ref<
-                        const Eigen::Array<PetscInt, Eigen::Dynamic, 2>>&>(),
+                        const Eigen::Array<PetscInt, Eigen::Dynamic, 2>>&,
+                    std::shared_ptr<const dolfin::function::FunctionSpace>>(),
            py::arg("V"), py::arg("g"), py::arg("V_g_dofs"))
       .def(py::init<std::shared_ptr<const dolfin::function::Function>,
                     const Eigen::Ref<

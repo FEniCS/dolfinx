@@ -383,9 +383,9 @@ DirichletBC::DirichletBC(
 }
 //-----------------------------------------------------------------------------
 DirichletBC::DirichletBC(
-    std::shared_ptr<const function::FunctionSpace> V,
     std::shared_ptr<const function::Function> g,
-    const Eigen::Ref<const Eigen::Array<PetscInt, Eigen::Dynamic, 2>>& V_g_dofs)
+    const Eigen::Ref<const Eigen::Array<PetscInt, Eigen::Dynamic, 2>>& V_g_dofs,
+    std::shared_ptr<const function::FunctionSpace> V)
     : _function_space(V), _g(g), _dofs(V_g_dofs)
 {
   const int owned_size = _function_space->dofmap()->index_map->block_size

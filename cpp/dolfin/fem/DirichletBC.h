@@ -101,17 +101,17 @@ public:
 
   /// Create boundary condition
   ///
-  /// @param[in] V The function (sub)space on which the boundary
-  ///              condition is applied
   /// @param[in] g The boundary condition value
   /// @param[in] V_g_dofs 2D (column-major) array of degree-of-freedom indices.
   ///                     First column are indices in the space where boundary
   ///                     condition is applied, second column are indices in the
   ///                     space of the boundary condition value function.
+  /// @param[in] V The function (sub)space on which the boundary
+  ///              condition is applied
   DirichletBC(
-      std::shared_ptr<const function::FunctionSpace> V,
       std::shared_ptr<const function::Function> g,
-      const Eigen::Ref<const Eigen::Array<PetscInt, Eigen::Dynamic, 2>>& V_g_dofs);
+      const Eigen::Ref<const Eigen::Array<PetscInt, Eigen::Dynamic, 2>>& V_g_dofs,
+      std::shared_ptr<const function::FunctionSpace> V);
 
   /// Copy constructor
   /// @param[in] bc The object to be copied
