@@ -242,7 +242,7 @@ def test_matrix_assembly_block():
         u1, v0) * dx
     L = zero * inner(f, v0) * ufl.dx + inner(g, v1) * dx
 
-    bdofsW_V1 = dolfin.fem.locate_pair_dofs_topological(W.sub(1), V1, mesh.topology.dim - 1, bndry_facets)
+    bdofsW_V1 = dolfin.fem.locate_dofs_topological(W.sub(1), mesh.topology.dim - 1, bndry_facets, V1)
 
     bc = dolfin.fem.dirichletbc.DirichletBC(u_bc, bdofsW_V1, W.sub(1))
     A2 = dolfin.fem.assemble_matrix(a, [bc])
@@ -369,8 +369,8 @@ def test_assembly_solve_block():
     u1_bc.vector.ghostUpdate(
         addv=PETSc.InsertMode.INSERT, mode=PETSc.ScatterMode.FORWARD)
 
-    bdofsW0_V0 = dolfin.fem.locate_pair_dofs_topological(W.sub(0), V0, facetdim, bndry_facets)
-    bdofsW1_V1 = dolfin.fem.locate_pair_dofs_topological(W.sub(1), V1, facetdim, bndry_facets)
+    bdofsW0_V0 = dolfin.fem.locate_dofs_topological(W.sub(0), facetdim, bndry_facets, V0)
+    bdofsW1_V1 = dolfin.fem.locate_dofs_topological(W.sub(1), facetdim, bndry_facets, V1)
 
     bcs = [
         dolfin.fem.dirichletbc.DirichletBC(u0_bc, bdofsW0_V0, W.sub(0)),
@@ -547,8 +547,8 @@ def test_assembly_solve_taylor_hood(mesh):
     L1 = inner(p_zero, q) * dx
     L = L0 + L1
 
-    bdofsW0_P2_0 = dolfin.fem.locate_pair_dofs_topological(W.sub(0), P2, facetdim, bndry_facets0)
-    bdofsW0_P2_1 = dolfin.fem.locate_pair_dofs_topological(W.sub(0), P2, facetdim, bndry_facets1)
+    bdofsW0_P2_0 = dolfin.fem.locate_dofs_topological(W.sub(0), facetdim, bndry_facets0, P2)
+    bdofsW0_P2_1 = dolfin.fem.locate_dofs_topological(W.sub(0), facetdim, bndry_facets1, P2)
 
     bc0 = dolfin.DirichletBC(u0, bdofsW0_P2_0, W.sub(0))
     bc1 = dolfin.DirichletBC(u0, bdofsW0_P2_1, W.sub(0))

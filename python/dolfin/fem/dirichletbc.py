@@ -46,33 +46,48 @@ def locate_dofs_geometrical(V: typing.Union[function.FunctionSpace],
         return cpp.fem.locate_dofs_geometrical(V, marker)
 
 
-def locate_dofs_topological(V: typing.Union[function.FunctionSpace],
+def locate_dofs_topological(V: typing.Union[cpp.function.FunctionSpace, function.FunctionSpace],
                             entity_dim: int,
-                            entities: typing.List[int]):
-    """Return array of degree-of-freedom indices (local to the process)
-    for degrees-of-freedom belonging to the closure the mesh entities of
-    dimension `entity_dim` and index in `entities`.
+                            entities: typing.List[int],
+                            V1: typing.Union[cpp.function.FunctionSpace, function.FunctionSpace] = None):
+    """Locate degrees-of-freedom belonging to mesh entities topologically .
+
+    Parameters
+    ----------
+    V
+        Function space in which to search for degree-of-freedom indices.
+    entity_dim
+        Topological dimension of entities where degrees-of-freedom are located.
+    entities
+        Indices of mesh entities of dimension ``entity_dim`` where degrees-of-freedom are
+        located.
+    V1 : optional
+        Different function space in which to search for degree-of-freedom indices.
+
+    Returns
+    -------
+    numpy.ndarray
+        An array of degree-of-freedom indices (local to the process) for degrees-of-freedom
+        topologically belonging to mesh entities.
+        If function space ``V1`` is supplied returns 2-D array of shape (number of dofs, 2)
+        in column-major storage.
+        Returned degree-of-freedom indices are unique and ordered.
     """
 
     try:
-        return cpp.fem.locate_dofs_topological(V._cpp_object, entity_dim, entities)
+        _V = V._cpp_object
     except AttributeError:
-        return cpp.fem.locate_dofs_topological(V, entity_dim, entities)
+        _V = V
 
+    if V1 is not None:
+        try:
+            _V1 = V1._cpp_object
+        except AttributeError:
+            _V1 = V1
 
-def locate_pair_dofs_topological(V0: typing.Union[function.FunctionSpace],
-                                 V1: typing.Union[function.FunctionSpace],
-                                 entity_dim: int,
-                                 entities: typing.List[int]):
-    """Return 2D array of degree-of-freedom indices (local to the process)
-    for degrees-of-freedom belonging to the closure the mesh entities of
-    dimension `entity_dim` and index in `entities`.
-    """
-
-    try:
-        return cpp.fem.locate_pair_dofs_topological(V0._cpp_object, V1._cpp_object, entity_dim, entities)
-    except AttributeError:
-        return cpp.fem.locate_pair_dofs_topological(V0, V1, entity_dim, entities)
+        return cpp.fem.locate_dofs_topological(_V, entity_dim, entities, _V1)
+    else:
+        return cpp.fem.locate_dofs_topological(_V, entity_dim, entities)
 
 
 class DirichletBC(cpp.fem.DirichletBC):

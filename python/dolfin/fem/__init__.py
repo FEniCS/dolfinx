@@ -21,8 +21,7 @@ from dolfin.cpp.fem import FormIntegrals
 from dolfin.fem.formmanipulations import (derivative, adjoint, increase_order,
                                           tear)
 from dolfin.fem.solving import solve
-from dolfin.fem.dirichletbc import (locate_dofs_geometrical, locate_dofs_topological,
-                                    locate_pair_dofs_topological)
+from dolfin.fem.dirichletbc import locate_dofs_geometrical, locate_dofs_topological
 
 __all__ = [
     "create_vector", "create_vector_block", "create_vector_nest",
@@ -33,6 +32,5 @@ __all__ = [
     "assemble_matrix", "set_bc", "set_bc_nest", "create_coordinate_map",
     "DirichletBC", "DofMap", "Form", "FormIntegrals",
     "derivative", "adjoint", "increase_order",
-    "tear", "project", "solve", "locate_dofs_geometrical", "locate_dofs_topological",
-    "locate_pair_dofs_topological"
+    "tear", "project", "solve", "locate_dofs_geometrical", "locate_dofs_topological"
 ]

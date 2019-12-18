@@ -413,8 +413,19 @@ void fem(py::module& m)
       .def("check_ref_count", &dolfin::fem::PETScDMCollection::check_ref_count)
       .def("get_dm", &dolfin::fem::PETScDMCollection::get_dm);
 
-  m.def("locate_dofs_topological", &dolfin::fem::locate_dofs_topological);
-  m.def("locate_pair_dofs_topological", &dolfin::fem::locate_pair_dofs_topological);
+  m.def("locate_dofs_topological",
+        py::overload_cast<
+            const dolfin::function::FunctionSpace&, const int,
+            const Eigen::Ref<const Eigen::Array<int, Eigen::Dynamic, 1>>&,
+            const dolfin::function::FunctionSpace&>(
+            &dolfin::fem::locate_dofs_topological),
+        py::arg("V0"), py::arg("dim"), py::arg("entities"), py::arg("V1"));
+  m.def("locate_dofs_topological",
+        py::overload_cast<
+            const dolfin::function::FunctionSpace&, const int,
+            const Eigen::Ref<const Eigen::Array<int, Eigen::Dynamic, 1>>&>(
+            &dolfin::fem::locate_dofs_topological),
+        py::arg("V"), py::arg("dim"), py::arg("entities"));
   m.def("locate_dofs_geometrical", &dolfin::fem::locate_dofs_geometrical);
 
 } // namespace dolfin_wrappers

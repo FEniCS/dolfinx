@@ -89,7 +89,7 @@ import numpy as np
 import dolfin
 from dolfin import MPI, DirichletBC, Function, FunctionSpace, solve
 from dolfin.io import XDMFFile
-from dolfin.fem import locate_pair_dofs_topological
+from dolfin.fem import locate_dofs_topological
 from dolfin.plotting import plot
 from ufl import (FiniteElement, TestFunctions, TrialFunctions, VectorElement,
                  div, dx, grad, inner)
@@ -129,7 +129,7 @@ mf1 = np.where(mf == 1)[0]
 noslip = Function(W.sub(0).collapse())
 noslip.interpolate(lambda x: np.zeros_like(x[:mesh.geometry.dim]))
 
-bdofs = locate_pair_dofs_topological(W.sub(0), W.sub(0).collapse(), sub_domains.dim, mf0)
+bdofs = locate_dofs_topological(W.sub(0), sub_domains.dim, mf0, W.sub(0).collapse())
 bc0 = DirichletBC(noslip, bdofs, W.sub(0))
 
 # Inflow boundary condition for velocity
@@ -145,7 +145,7 @@ def inflow_eval(x):
 inflow = Function(W.sub(0).collapse())
 inflow.interpolate(inflow_eval)
 
-bdofs1 = locate_pair_dofs_topological(W.sub(0), W.sub(0).collapse(), sub_domains.dim, mf1)
+bdofs1 = locate_dofs_topological(W.sub(0), sub_domains.dim, mf1, W.sub(0).collapse())
 bc1 = DirichletBC(inflow, bdofs1, W.sub(0))
 
 # Collect boundary conditions

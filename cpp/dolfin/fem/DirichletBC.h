@@ -36,11 +36,10 @@ using marking_function = std::function<Eigen::Array<bool, Eigen::Dynamic, 1>(
 
 /// Build an array of degree-of-freedom indices that are associated with
 /// give mesh entities (topological)
-Eigen::Array<PetscInt, Eigen::Dynamic, 2>
-locate_pair_dofs_topological(
-    const function::FunctionSpace& V0, const function::FunctionSpace& V1,
-    const int dim,
-    const Eigen::Ref<const Eigen::Array<int, Eigen::Dynamic, 1>>& entities);
+Eigen::Array<PetscInt, Eigen::Dynamic, 2> locate_dofs_topological(
+    const function::FunctionSpace& V0, const int dim,
+    const Eigen::Ref<const Eigen::Array<int, Eigen::Dynamic, 1>>& entities,
+    const function::FunctionSpace& V1);
 
 /// Build an array of degree-of-freedom indices that are associated with
 /// give mesh entities (topological)

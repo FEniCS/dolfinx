@@ -169,10 +169,11 @@ get_remote_bcs(const common::IndexMap& map,
 }
 //-----------------------------------------------------------------------------
 Eigen::Array<PetscInt, Eigen::Dynamic, 2>
-fem::locate_pair_dofs_topological(
-    const function::FunctionSpace& V0, const function::FunctionSpace& V1,
+fem::locate_dofs_topological(
+    const function::FunctionSpace& V0,
     const int dim,
-    const Eigen::Ref<const Eigen::Array<int, Eigen::Dynamic, 1>>& entities)
+    const Eigen::Ref<const Eigen::Array<int, Eigen::Dynamic, 1>>& entities,
+    const function::FunctionSpace& V1)
 {
   // Get mesh
   assert(V0.mesh());
