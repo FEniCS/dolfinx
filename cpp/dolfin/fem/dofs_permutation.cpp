@@ -43,9 +43,10 @@ int get_num_permutations(mesh::CellType cell_type)
 /// @param[in] orders The array to write the orders to
 /// @param[in] v The local vertex numbers of the interval's vertices
 /// @param[in] cell_vs The global vertex cell's vertices
-void calculate_point_orders(Eigen::Array<std::int8_t, 1, Eigen::Dynamic> orders,
-                            const Eigen::Array<int, 1, Eigen::Dynamic>& v,
-                            const std::vector<std::int64_t> cell_vs)
+void calculate_point_orders(
+    Eigen::Ref<Eigen::Array<std::int8_t, 1, Eigen::Dynamic>> orders,
+    const Eigen::Array<int, 1, Eigen::Dynamic>& v,
+    const std::vector<std::int64_t> cell_vs)
 {
 }
 //-----------------------------------------------------------------------------
@@ -54,7 +55,7 @@ void calculate_point_orders(Eigen::Array<std::int8_t, 1, Eigen::Dynamic> orders,
 /// @param[in] cell_vs The global vertex cell's vertices
 /// @return The reflection order for the interval
 void calculate_interval_orders(
-    Eigen::Array<std::int8_t, 1, Eigen::Dynamic> orders,
+    Eigen::Ref<Eigen::Array<std::int8_t, 1, Eigen::Dynamic>> orders,
     const Eigen::Array<int, 1, Eigen::Dynamic>& v,
     const std::vector<std::int64_t> cell_vs)
 {
@@ -68,7 +69,7 @@ void calculate_interval_orders(
 /// @param[in] cell_vs The global vertex cell's vertices
 /// @return The rotation and reflection orders for the triangle
 void calculate_triangle_orders(
-    Eigen::Array<std::int8_t, 1, Eigen::Dynamic> orders,
+    Eigen::Ref<Eigen::Array<std::int8_t, 1, Eigen::Dynamic>> orders,
     const Eigen::Array<int, 1, Eigen::Dynamic>& v,
     const std::vector<std::int64_t> cell_vs)
 {
@@ -80,13 +81,13 @@ void calculate_triangle_orders(
   }
   else if (cell_vs[v[1]] < cell_vs[v[0]] and cell_vs[v[1]] < cell_vs[v[2]])
   {
-    orders[0] = 0;
+    orders[0] = 1;
     orders[1] = cell_vs[v[2]] > cell_vs[v[0]];
     return;
   }
   else if (cell_vs[v[2]] < cell_vs[v[0]] and cell_vs[v[2]] < cell_vs[v[1]])
   {
-    orders[0] = 0;
+    orders[0] = 2;
     orders[1] = cell_vs[v[0]] > cell_vs[v[1]];
     return;
   }
@@ -104,7 +105,7 @@ void calculate_triangle_orders(
 /// @param[in] cell_vs The global vertex cell's vertices
 /// @return The rotation and reflection orders for the tetrahedron
 void calculate_tetrahedron_orders(
-    Eigen::Array<std::int8_t, 1, Eigen::Dynamic> orders,
+    Eigen::Ref<Eigen::Array<std::int8_t, 1, Eigen::Dynamic>> orders,
     const Eigen::Array<int, 1, Eigen::Dynamic> v,
     const std::vector<std::int64_t> cell_vs)
 {
@@ -113,7 +114,7 @@ void calculate_tetrahedron_orders(
   {
     orders[0] = 0;
     orders[1] = 0;
-    calculate_triangle_orders(orders.block(1, 2, 1, 2),
+    calculate_triangle_orders(orders.segment(2, 2),
                               Eigen::Array<int, 1, 3>(v[1], v[2], v[3]),
                               cell_vs);
     return;
@@ -123,7 +124,7 @@ void calculate_tetrahedron_orders(
   {
     orders[0] = 1;
     orders[1] = 0;
-    calculate_triangle_orders(orders.block(1, 2, 1, 2),
+    calculate_triangle_orders(orders.segment(2, 2),
                               Eigen::Array<int, 1, 3>(v[2], v[0], v[3]),
                               cell_vs);
     return;
@@ -133,7 +134,7 @@ void calculate_tetrahedron_orders(
   {
     orders[0] = 2;
     orders[1] = 0;
-    calculate_triangle_orders(orders.block(1, 2, 1, 2),
+    calculate_triangle_orders(orders.segment(2, 2),
                               Eigen::Array<int, 1, 3>(v[0], v[1], v[3]),
                               cell_vs);
     return;
@@ -143,7 +144,7 @@ void calculate_tetrahedron_orders(
   {
     orders[0] = 0;
     orders[1] = 1;
-    calculate_triangle_orders(orders.block(1, 2, 1, 2),
+    calculate_triangle_orders(orders.segment(2, 2),
                               Eigen::Array<int, 1, 3>(v[1], v[0], v[2]),
                               cell_vs);
     return;
@@ -162,7 +163,7 @@ void calculate_tetrahedron_orders(
 /// @param[in] cell_vs The global vertex cell's vertices
 /// @return The rotation and reflection orders for the quadrilateral
 void calculate_quadrilateral_orders(
-    Eigen::Array<std::int8_t, 1, Eigen::Dynamic> orders,
+    Eigen::Ref<Eigen::Array<std::int8_t, 1, Eigen::Dynamic>> orders,
     const Eigen::Array<int, 1, Eigen::Dynamic> v,
     const std::vector<std::int64_t> cell_vs)
 {
@@ -204,7 +205,7 @@ void calculate_quadrilateral_orders(
 /// @param[in] cell_vs The global vertex cell's vertices
 /// @return The rotation and reflection orders for the hexahedron
 void calculate_hexahedron_orders(
-    Eigen::Array<std::int8_t, 1, Eigen::Dynamic> orders,
+    Eigen::Ref<Eigen::Array<std::int8_t, 1, Eigen::Dynamic>> orders,
     const Eigen::Array<int, 1, Eigen::Dynamic>& v,
     const std::vector<std::int64_t> cell_vs)
 {
@@ -215,7 +216,7 @@ void calculate_hexahedron_orders(
   {
     orders[0] = 0;
     orders[1] = 0;
-    calculate_triangle_orders(orders.block(1, 2, 1, 2),
+    calculate_triangle_orders(orders.segment(2, 2),
                               Eigen::Array<int, 1, 3>(v[1], v[2], v[4]),
                               cell_vs);
     return;
@@ -227,7 +228,7 @@ void calculate_hexahedron_orders(
   {
     orders[0] = 1;
     orders[1] = 0;
-    calculate_triangle_orders(orders.block(1, 2, 1, 2),
+    calculate_triangle_orders(orders.segment(2, 2),
                               Eigen::Array<int, 1, 3>(v[3], v[0], v[5]),
                               cell_vs);
     return;
@@ -239,7 +240,7 @@ void calculate_hexahedron_orders(
   {
     orders[0] = 3;
     orders[1] = 0;
-    calculate_triangle_orders(orders.block(1, 2, 1, 2),
+    calculate_triangle_orders(orders.segment(2, 2),
                               Eigen::Array<int, 1, 3>(v[0], v[3], v[6]),
                               cell_vs);
     return;
@@ -251,7 +252,7 @@ void calculate_hexahedron_orders(
   {
     orders[0] = 2;
     orders[1] = 0;
-    calculate_triangle_orders(orders.block(1, 2, 1, 2),
+    calculate_triangle_orders(orders.segment(2, 2),
                               Eigen::Array<int, 1, 3>(v[1], v[2], v[7]),
                               cell_vs);
     return;
@@ -263,7 +264,7 @@ void calculate_hexahedron_orders(
   {
     orders[0] = 0;
     orders[1] = 1;
-    calculate_triangle_orders(orders.block(1, 2, 1, 2),
+    calculate_triangle_orders(orders.segment(2, 2),
                               Eigen::Array<int, 1, 3>(v[0], v[6], v[5]),
                               cell_vs);
     return;
@@ -275,7 +276,7 @@ void calculate_hexahedron_orders(
   {
     orders[0] = 0;
     orders[1] = 2;
-    calculate_triangle_orders(orders.block(1, 2, 1, 2),
+    calculate_triangle_orders(orders.segment(2, 2),
                               Eigen::Array<int, 1, 3>(v[4], v[7], v[1]),
                               cell_vs);
     return;
@@ -287,7 +288,7 @@ void calculate_hexahedron_orders(
   {
     orders[0] = 2;
     orders[1] = 2;
-    calculate_triangle_orders(orders.block(1, 2, 1, 2),
+    calculate_triangle_orders(orders.segment(2, 2),
                               Eigen::Array<int, 1, 3>(v[7], v[4], v[2]),
                               cell_vs);
     return;
@@ -299,7 +300,7 @@ void calculate_hexahedron_orders(
   {
     orders[0] = 2;
     orders[1] = 1;
-    calculate_triangle_orders(orders.block(1, 2, 1, 2),
+    calculate_triangle_orders(orders.segment(2, 2),
                               Eigen::Array<int, 1, 3>(v[3], v[5], v[6]),
                               cell_vs);
     return;
@@ -311,7 +312,7 @@ void calculate_hexahedron_orders(
   }
 }
 //-----------------------------------------------------------------------------
-std::function<void(Eigen::Array<std::int8_t, 1, Eigen::Dynamic>,
+std::function<void(Eigen::Ref<Eigen::Array<std::int8_t, 1, Eigen::Dynamic>>,
                    const Eigen::Array<int, 1, Eigen::Dynamic>,
                    const std::vector<std::int64_t>)>
 get_ordering_function(const mesh::CellType& cell_type)
@@ -588,23 +589,12 @@ compute_ordering(const mesh::Mesh& mesh)
 
   // Get lists of vertices on each entity from the cell type
   std::vector<
-      std::pair<std::function<void(Eigen::Array<std::int8_t, 1, Eigen::Dynamic>,
-                                   const Eigen::Array<int, 1, Eigen::Dynamic>,
-                                   const std::vector<std::int64_t>)>,
-                Eigen::Array<int, 1, Eigen::Dynamic>>>
-      entities1d;
-  std::vector<
-      std::pair<std::function<void(Eigen::Array<std::int8_t, 1, Eigen::Dynamic>,
-                                   const Eigen::Array<int, 1, Eigen::Dynamic>,
-                                   const std::vector<std::int64_t>)>,
-                Eigen::Array<int, 1, Eigen::Dynamic>>>
-      entities2d;
-  std::vector<
-      std::pair<std::function<void(Eigen::Array<std::int8_t, 1, Eigen::Dynamic>,
-                                   const Eigen::Array<int, 1, Eigen::Dynamic>,
-                                   const std::vector<std::int64_t>)>,
-                Eigen::Array<int, 1, Eigen::Dynamic>>>
-      entities3d;
+      std::tuple<std::function<void(
+                     Eigen::Ref<Eigen::Array<std::int8_t, 1, Eigen::Dynamic>>,
+                     const Eigen::Array<int, 1, Eigen::Dynamic>,
+                     const std::vector<std::int64_t>)>,
+                 Eigen::Array<int, 1, Eigen::Dynamic>, int>>
+      entities;
 
   if (1 < tdim)
   {
@@ -614,7 +604,7 @@ compute_ordering(const mesh::Mesh& mesh)
     // Store the ordering function and vertices associated with the ith
     // 1d entity
     for (int i = 0; i < mesh::cell_num_entities(type, 1); ++i)
-      entities1d.push_back({f, vertices.row(i)});
+      entities.push_back({f, vertices.row(i), 1});
   }
   else if (1 == tdim)
   {
@@ -623,7 +613,7 @@ compute_ordering(const mesh::Mesh& mesh)
     Eigen::Array<int, 1, Eigen::Dynamic> row(num_vertices_per_cell);
     for (int i = 0; i < num_vertices_per_cell; ++i)
       row[i] = i;
-    entities1d.push_back({f, row});
+    entities.push_back({f, row, 1});
   }
   if (2 < tdim)
   {
@@ -633,7 +623,7 @@ compute_ordering(const mesh::Mesh& mesh)
     // Store the ordering function and vertices associated with the ith
     // 2d entity
     for (int i = 0; i < mesh::cell_num_entities(type, 2); ++i)
-      entities2d.push_back({f, vertices.row(i)});
+      entities.push_back({f, vertices.row(i), 2});
   }
   else if (2 == tdim)
   {
@@ -642,7 +632,7 @@ compute_ordering(const mesh::Mesh& mesh)
     Eigen::Array<int, 1, Eigen::Dynamic> row(num_vertices_per_cell);
     for (int i = 0; i < num_vertices_per_cell; ++i)
       row[i] = i;
-    entities2d.push_back({f, row});
+    entities.push_back({f, row, 2});
   }
   if (3 == tdim)
   {
@@ -651,7 +641,7 @@ compute_ordering(const mesh::Mesh& mesh)
     Eigen::Array<int, 1, Eigen::Dynamic> row(num_vertices_per_cell);
     for (int i = 0; i < num_vertices_per_cell; ++i)
       row[i] = i;
-    entities3d.push_back({f, row});
+    entities.push_back({f, row, 4});
   }
 
   // Set orders for each cell
@@ -674,26 +664,13 @@ compute_ordering(const mesh::Mesh& mesh)
     // vertex numbers to calculate the number of times each
     // permutation should be applied on this cell
     //
-    // iterate over the cell's 1d entities
-    for (std::size_t e = 0; e < entities1d.size(); ++e)
+    // iterate over the cell's entities
+    for (std::size_t e = 0; e < entities.size(); ++e)
     {
-      entities1d[e].first(cell_orders.row(cell_n).segment(j, 1),
-                          entities1d[e].second, cell_vs);
-      j += 1;
-    }
-    // iterate over the cell's 2d entities
-    for (std::size_t e = 0; e < entities2d.size(); ++e)
-    {
-      entities2d[e].first(cell_orders.row(cell_n).segment(j, 2),
-                          entities2d[e].second, cell_vs);
-      j += 2;
-    }
-    // iterate over the cell's 3d entities
-    for (std::size_t e = 0; e < entities3d.size(); ++e)
-    {
-      entities3d[e].first(cell_orders.row(cell_n).segment(j, 4),
-                          entities3d[e].second, cell_vs);
-      j += 4;
+      std::get<0>(entities[e])(
+          cell_orders.row(cell_n).segment(j, std::get<2>(entities[e])),
+          std::get<1>(entities[e]), cell_vs);
+      j += std::get<2>(entities[e]);
     }
 
     assert(j == num_permutations);
