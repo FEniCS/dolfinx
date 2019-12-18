@@ -92,7 +92,7 @@ def test_numba_assembly():
     assert (np.isclose(Anorm, 56.124860801609124))
     assert (np.isclose(bnorm, 0.0739710713711999))
 
-    list_timings([TimingType.wall])
+    list_timings(MPI.comm_world, [TimingType.wall])
 
 
 def test_coefficient():
@@ -237,4 +237,4 @@ def test_cffi_assembly():
     assert (np.isclose(Anorm, 56.124860801609124))
     assert (np.isclose(bnorm, 0.0739710713711999))
 
-    list_timings([TimingType.wall])
+    list_timings(MPI.comm_world, [TimingType.wall])

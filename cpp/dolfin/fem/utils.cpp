@@ -512,6 +512,17 @@ fem::get_constants_from_ufc_form(const ufc_form& ufc_form)
   return constants;
 }
 //-----------------------------------------------------------------------------
+std::shared_ptr<fem::Form> fem::create_form(
+    ufc_form* (*fptr)(void),
+    const std::vector<std::shared_ptr<const function::FunctionSpace>>& spaces)
+{
+  ufc_form* form = fptr();
+  auto L = std::make_shared<fem::Form>(dolfin::fem::create_form(*form, spaces));
+  std::free(form);
+
+  return L;
+}
+//-----------------------------------------------------------------------------
 fem::Form fem::create_form(
     const ufc_form& ufc_form,
     const std::vector<std::shared_ptr<const function::FunctionSpace>>& spaces)

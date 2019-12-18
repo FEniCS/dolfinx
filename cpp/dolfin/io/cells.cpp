@@ -20,7 +20,11 @@ std::vector<std::uint8_t> io::cells::dolfin_to_vtk(mesh::CellType type,
   case mesh::CellType::point:
     return {0};
   case mesh::CellType::interval:
-    return {0, 1};
+  {
+    std::vector<std::uint8_t> permutation(num_nodes);
+    std::iota(permutation.begin(), permutation.end(), 0);
+    return permutation;
+  }
   case mesh::CellType::triangle:
   {
     std::vector<std::uint8_t> permutation(num_nodes);
