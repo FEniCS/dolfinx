@@ -51,10 +51,9 @@ int MeshEntity::facet_permutation(const MeshEntity& entity) const
 
   if (entity._dim == 1)
   {
-    const std::int32_t* vertices = entities(0);
-    if (vertices[1] < vertices[0])
-      return 1;
-    return 0;
+    const std::int32_t* e_vertices = entity.entities(0);
+    return get_vertex_local_index(e_vertices[1])
+           < get_vertex_local_index(e_vertices[0]);
   }
 
   if (entity._dim == 2)

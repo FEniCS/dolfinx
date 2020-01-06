@@ -74,6 +74,20 @@ public:
   /// @return The index
   std::int32_t index() const { return _local_index; }
 
+  /// Returns the local index of the vertex with the given global index
+  /// @param[in] v_index The global index of the vertex
+  /// @return The local index
+  int get_vertex_local_index(const std::int32_t v_index) const
+  {
+    const int num_entities
+        = _mesh->topology().connectivity(_dim, 0)->size(_local_index);
+    const std::int32_t* vertices = entities(0);
+    for (int v = 0; v < num_entities; ++v)
+      if (vertices[v] == v_index)
+        return v;
+    throw std::runtime_error("Vertex was not found");
+  }
+
   /// Return array of indices for incident mesh entities of given
   /// topological dimension
   /// @param[in] dim The topological dimension

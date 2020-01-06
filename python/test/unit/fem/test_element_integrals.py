@@ -51,13 +51,16 @@ def randomly_ordered_unit_cell(cell_type):
     return mesh
 
 
-def randomly_ordered_two_unit_cells(cell_type):
+def randomly_ordered_two_unit_cells(cell_type, agree=False):
     if cell_type == CellType.triangle:
         # Define equilateral triangles with area 1
         root = 3 ** 0.25  # 4th root of 3
         points = np.array([[0., 0.], [2 / root, 0.],
                            [1 / root, root], [1 / root, -root]])
-        cells = [[0, 1, 2], [1, 0, 3]]
+        if agree:
+            cells = [[0, 1, 2], [0, 3, 1]]
+        else:
+            cells = [[0, 1, 2], [1, 0, 3]]
     elif cell_type == CellType.tetrahedron:
         # Define regular tetrahedra with volume 1
         s = 2 ** 0.5 * 3 ** (1 / 3)  # side length
@@ -65,18 +68,27 @@ def randomly_ordered_two_unit_cells(cell_type):
                            [s / 2, s * np.sqrt(3) / 2, 0.],
                            [s / 2, s / 2 / np.sqrt(3), s * np.sqrt(2 / 3)],
                            [s / 2, s / 2 / np.sqrt(3), -s * np.sqrt(2 / 3)]])
-        cells = [[0, 1, 2, 3], [0, 2, 1, 4]]
+        if agree:
+            cells = [[0, 1, 2, 3], [0, 1, 4, 2]]
+        else:
+            cells = [[0, 1, 2, 3], [0, 2, 1, 4]]
     elif cell_type == CellType.quadrilateral:
         # Define unit quadrilaterals (area 1)
         points = np.array([[0., 0.], [1., 0.], [0., 1.], [1., 1.], [0., -1.], [1., -1.]])
-        cells = [[0, 1, 2, 3], [5, 1, 4, 0]]
+        if agree:
+            cells = [[0, 1, 2, 3], [4, 5, 0, 1]]
+        else:
+            cells = [[0, 1, 2, 3], [5, 1, 4, 0]]
     elif cell_type == CellType.hexahedron:
         # Define unit hexahedra (volume 1)
         points = np.array([[0., 0., 0.], [1., 0., 0.], [0., 1., 0.],
                            [1., 1., 0.], [0., 0., 1.], [1., 0., 1.],
                            [0., 1., 1.], [1., 1., 1.], [0., 0., -1.],
                            [1., 0., -1.], [0., 1., -1.], [1., 1., -1.]])
-        cells = [[0, 1, 2, 3, 4, 5, 6, 7], [9, 11, 8, 10, 1, 3, 0, 2]]
+        if agree:
+            cells = [[0, 1, 2, 3, 4, 5, 6, 7], [8, 9, 10, 11, 0, 1, 2, 3]]
+        else:
+            cells = [[0, 1, 2, 3, 4, 5, 6, 7], [9, 11, 8, 10, 1, 3, 0, 2]]
     num_points = len(points)
 
     # Randomly number the points and create the mesh
@@ -187,33 +199,16 @@ def test_facet_normals(cell_type):
 
 
 @skip_in_parallel
+@pytest.mark.parametrize('agree', [True, False])
+@pytest.mark.parametrize('space_type', ["CG", "DG"])
 @pytest.mark.parametrize('cell_type', [CellType.triangle, CellType.tetrahedron,
                                        CellType.quadrilateral, CellType.hexahedron])
-def test_plus_minus(cell_type):
+def test_plus_minus(cell_type, space_type, agree):
     """Test that ('+') and ('-') give the same value for continuous functions"""
     for count in range(10):
-        mesh = randomly_ordered_two_unit_cells(cell_type)
+        mesh = randomly_ordered_two_unit_cells(cell_type, agree)
 
-        V = FunctionSpace(mesh, ("Lagrange", 1))
-        v = Function(V)
-        v.interpolate(lambda x: x[0] - 2 * x[1])
-        # Check that these two integrals are equal
-        a = v("+") * v("-") * dS
-        b = v("+") * v("+") * dS
-        result1 = fem.assemble_scalar(a)
-        result2 = fem.assemble_scalar(b)
-        assert np.isclose(result1, result2)
-
-
-@skip_in_parallel
-@pytest.mark.parametrize('cell_type', [CellType.triangle, CellType.tetrahedron,
-                                       CellType.quadrilateral, CellType.hexahedron])
-def test_plus_minus_dg(cell_type):
-    """Test that ('+') and ('-') give the same value for continuous functions"""
-    for count in range(10):
-        mesh = randomly_ordered_two_unit_cells(cell_type)
-
-        V = FunctionSpace(mesh, ("DG", 1))
+        V = FunctionSpace(mesh, (space_type, 1))
         v = Function(V)
         v.interpolate(lambda x: x[0] - 2 * x[1])
         # Check that these two integrals are equal
