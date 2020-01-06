@@ -76,7 +76,7 @@ def randomly_ordered_two_unit_cells(cell_type):
                            [1., 1., 0.], [0., 0., 1.], [1., 0., 1.],
                            [0., 1., 1.], [1., 1., 1.], [0., 0., -1.],
                            [1., 0., -1.], [0., 1., -1.], [1., 1., -1.]])
-    cells = [[0, 1, 2, 3, 4, 5, 6, 7], [9, 11, 8, 10, 1, 3, 0, 2]]
+        cells = [[0, 1, 2, 3, 4, 5, 6, 7], [9, 11, 8, 10, 1, 3, 0, 2]]
     num_points = len(points)
 
     # Randomly number the points and create the mesh
@@ -196,7 +196,7 @@ def test_plus_minus(cell_type):
 
         V = FunctionSpace(mesh, ("Lagrange", 1))
         v = Function(V)
-        v.interpolate(lambda x: x[0])
+        v.interpolate(lambda x: x[0] - 2 * x[1])
         # Check that these two integrals are equal
         a = v("+") * v("-") * dS
         b = v("+") * v("+") * dS
@@ -215,7 +215,7 @@ def test_plus_minus_dg(cell_type):
 
         V = FunctionSpace(mesh, ("DG", 1))
         v = Function(V)
-        v.interpolate(lambda x: x[0])
+        v.interpolate(lambda x: x[0] - 2 * x[1])
         # Check that these two integrals are equal
         a = v("+") * v("-") * dS
         b = v("+") * v("+") * dS
