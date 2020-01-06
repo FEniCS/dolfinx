@@ -172,7 +172,7 @@ public:
   void set_tabulate_tensor(
       FormIntegrals::Type type, int i,
       std::function<void(PetscScalar*, const PetscScalar*, const PetscScalar*,
-                         const double*, const int*, const int*)>
+                         const double*, const int*, const int*, const int*)>
           fn);
 
   /// Set cell domains

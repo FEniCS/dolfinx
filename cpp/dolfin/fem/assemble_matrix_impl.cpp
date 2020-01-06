@@ -104,7 +104,7 @@ void fem::impl::assemble_cells(
     const std::vector<bool>& bc1,
     const std::function<void(PetscScalar*, const PetscScalar*,
                              const PetscScalar*, const double*, const int*,
-                             const int*)>& kernel,
+                             const int*, const int*)>& kernel,
     const Eigen::Array<PetscScalar, Eigen::Dynamic, Eigen::Dynamic,
                        Eigen::RowMajor>& coeffs,
     const std::vector<PetscScalar>& constant_values)
@@ -140,11 +140,14 @@ void fem::impl::assemble_cells(
       for (int j = 0; j < gdim; ++j)
         coordinate_dofs(i, j) = x_g(cell_g[pos_g[cell_index] + i], j);
 
+    const mesh::MeshEntity cell(mesh, gdim, cell_index);
+    const int perm = cell.facet_permutation(cell);
+
     // Tabulate tensor
     auto coeff_cell = coeffs.row(cell_index);
     Ae.setZero(num_dofs_per_cell0, num_dofs_per_cell1);
     kernel(Ae.data(), coeff_cell.data(), constant_values.data(),
-           coordinate_dofs.data(), nullptr, &orientation);
+           coordinate_dofs.data(), nullptr, &orientation, &perm);
 
     // Zero rows/columns for essential bcs
     if (!bc0.empty())
@@ -184,7 +187,7 @@ void fem::impl::assemble_exterior_facets(
     const std::vector<bool>& bc1,
     const std::function<void(PetscScalar*, const PetscScalar*,
                              const PetscScalar*, const double*, const int*,
-                             const int*)>& fn,
+                             const int*, const int*)>& fn,
     const Eigen::Array<PetscScalar, Eigen::Dynamic, Eigen::Dynamic,
                        Eigen::RowMajor>& coeffs,
     const std::vector<PetscScalar> constant_values)
@@ -225,6 +228,7 @@ void fem::impl::assemble_exterior_facets(
     // Get local index of facet with respect to the cell
     const int local_facet = cell.index(facet);
     const int orient = 0;
+    const int perm = 0;
 
     // Get cell vertex coordinates
     const int cell_index = cell.index();
@@ -240,7 +244,7 @@ void fem::impl::assemble_exterior_facets(
     auto coeff_cell = coeffs.row(cell_index);
     Ae.setZero(dmap0.size(), dmap1.size());
     fn(Ae.data(), coeff_cell.data(), constant_values.data(),
-       coordinate_dofs.data(), &local_facet, &orient);
+       coordinate_dofs.data(), &local_facet, &orient, &perm);
 
     // Zero rows/columns for essential bcs
     if (!bc0.empty())
@@ -276,7 +280,7 @@ void fem::impl::assemble_interior_facets(
     const std::vector<bool>& bc1,
     const std::function<void(PetscScalar*, const PetscScalar*,
                              const PetscScalar*, const double*, const int*,
-                             const int*)>& fn,
+                             const int*, const int*)>& fn,
     const Eigen::Array<PetscScalar, Eigen::Dynamic, Eigen::Dynamic,
                        Eigen::RowMajor>& coeffs,
     const std::vector<int>& offsets,
@@ -326,6 +330,7 @@ void fem::impl::assemble_interior_facets(
     // Get local index of facet with respect to the cell
     const int local_facet[2] = {cell0.index(facet), cell1.index(facet)};
     const int orient[2] = {0, 0};
+    const int perm[2] = {cell0.facet_permutation(facet), cell1.facet_permutation(facet)};
 
     // Get cell vertex coordinates
     const int cell_index0 = cell0.index();
@@ -382,7 +387,7 @@ void fem::impl::assemble_interior_facets(
     // Tabulate tensor
     Ae.setZero(dmapjoint0.size(), dmapjoint1.size());
     fn(Ae.data(), coeff_array.data(), constant_values.data(),
-       coordinate_dofs.data(), local_facet, orient);
+       coordinate_dofs.data(), local_facet, orient, perm);
 
     // Zero rows/columns for essential bcs
     if (!bc0.empty())

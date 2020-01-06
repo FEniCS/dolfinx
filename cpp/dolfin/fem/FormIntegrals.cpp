@@ -21,7 +21,7 @@ FormIntegrals::FormIntegrals()
 }
 //-----------------------------------------------------------------------------
 const std::function<void(PetscScalar*, const PetscScalar*, const PetscScalar*,
-                         const double*, const int*, const int*)>&
+                         const double*, const int*, const int*, const int*)>&
 FormIntegrals::get_tabulate_tensor(FormIntegrals::Type type, int i) const
 {
   int type_index = static_cast<int>(type);
@@ -33,7 +33,7 @@ FormIntegrals::get_tabulate_tensor(FormIntegrals::Type type, int i) const
 void FormIntegrals::set_tabulate_tensor(
     FormIntegrals::Type type, int i,
     std::function<void(PetscScalar*, const PetscScalar*, const PetscScalar*,
-                       const double*, const int*, const int*)>
+                       const double*, const int*, const int*, const int*)>
         fn)
 
 {

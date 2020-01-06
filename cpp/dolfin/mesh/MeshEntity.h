@@ -98,6 +98,14 @@ public:
   /// @return The local index of given entity.
   int index(const MeshEntity& entity) const;
 
+  /// Return the identifier of the permutation of an entity.
+  /// 0 No permutation
+  /// 1 Reflect an edge
+  /// FIXME: This is hacky and should be replaced.
+  /// @param[in] entity The mesh entity.
+  /// @return The identifier of the permutation
+  int facet_permutation(const MeshEntity& entity) const;
+
   /// Return informal string representation (pretty-print)
   /// @param[in] verbose Flag to turn on additional output
   /// @return An informal representation of the function space

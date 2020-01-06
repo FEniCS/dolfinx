@@ -40,6 +40,36 @@ int MeshEntity::index(const MeshEntity& entity) const
   return -1;
 }
 //-----------------------------------------------------------------------------
+int MeshEntity::facet_permutation(const MeshEntity& entity) const
+{
+  // Must be in the same mesh to be incident
+  if (_mesh != entity._mesh)
+    throw std::runtime_error("Mesh entity is defined on a different mesh");
+
+  if (entity._dim == 0)
+    return 0;
+
+  if (entity._dim == 1)
+  {
+    const std::int32_t* vertices = entities(0);
+    if (vertices[1] < vertices[0])
+      return 1;
+    return 0;
+  }
+
+  if (entity._dim == 2)
+  {
+    // TODO
+  }
+
+  if (entity._dim == 3)
+  {
+    // TODO
+  }
+
+  return 0;
+}
+//-----------------------------------------------------------------------------
 std::string MeshEntity::str(bool verbose) const
 {
   if (verbose)
