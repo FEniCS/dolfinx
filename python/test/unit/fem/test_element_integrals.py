@@ -227,7 +227,9 @@ def test_plus_minus(cell_type, space_type):
 @skip_in_parallel
 @pytest.mark.parametrize('cell_type', [CellType.triangle, CellType.tetrahedron,
                                        CellType.quadrilateral, CellType.hexahedron])
-def test_plus_minus_vector(cell_type):
+@pytest.mark.parametrize('pm1', ["+", "-"])
+@pytest.mark.parametrize('pm2', ["+", "-"])
+def test_plus_minus_vector(cell_type, pm1, pm2):
     """Test that ('+') and ('-') match up with the correct DOFs for DG functions"""
     results = []
     spaces = []
@@ -240,7 +242,7 @@ def test_plus_minus_vector(cell_type):
             f = Function(V)
             f.interpolate(lambda x: x[0] - 2 * x[1])
             v = TestFunction(V)
-            a = f("+") * v("-") * dS
+            a = f(pm1) * v(pm2) * dS
             result = fem.assemble_vector(a)
             result.assemble()
             spaces.append(V)
@@ -260,7 +262,9 @@ def test_plus_minus_vector(cell_type):
 @skip_in_parallel
 @pytest.mark.parametrize('cell_type', [CellType.triangle, CellType.tetrahedron,
                                        CellType.quadrilateral, CellType.hexahedron])
-def test_plus_minus_matrix(cell_type):
+@pytest.mark.parametrize('pm1', ["+", "-"])
+@pytest.mark.parametrize('pm2', ["+", "-"])
+def test_plus_minus_matrix(cell_type, pm1, pm2):
     """Test that ('+') and ('-') match up with the correct DOFs for DG functions"""
     results = []
     spaces = []
@@ -271,7 +275,7 @@ def test_plus_minus_matrix(cell_type):
 
             V = FunctionSpace(mesh, ("DG", 1))
             u, v = TrialFunction(V), TestFunction(V)
-            a = u("+") * v("-") * dS
+            a = u(pm1) * v(pm2) * dS
             result = fem.assemble_matrix(a, [])
             result.assemble()
             spaces.append(V)
