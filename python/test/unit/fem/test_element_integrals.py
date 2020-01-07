@@ -1,4 +1,4 @@
-# Copyright (C) 2009-2019 Garth N. Wells, Matthew W. Scroggs and Jorgen S. Dokken
+# Copyright (C) 2009-2020 Garth N. Wells, Matthew W. Scroggs and Jorgen S. Dokken
 #
 # This file is part of DOLFIN (https://www.fenicsproject.org)
 #
@@ -6,17 +6,18 @@
 """Unit tests for the fem interface"""
 
 from random import shuffle
+from itertools import combinations
 
 import numpy as np
 import pytest
 from dolfin_utils.test.skips import skip_in_parallel
 
 from dolfin import MPI, cpp, fem, Mesh, FunctionSpace, VectorFunctionSpace, FacetNormal, Function, MeshFunction
-from ufl import inner, ds, dS
+from ufl import inner, ds, dS, TestFunction, TrialFunction
 from dolfin.cpp.mesh import CellType
 
 
-def randomly_ordered_unit_cell(cell_type):
+def unit_cell(cell_type, random_order=True):
     if cell_type == CellType.triangle:
         # Define equilateral triangle with area 1
         root = 3 ** 0.25  # 4th root of 3
@@ -40,7 +41,8 @@ def randomly_ordered_unit_cell(cell_type):
 
     # Randomly number the points and create the mesh
     order = list(range(num_points))
-    shuffle(order)
+    if random_order:
+        shuffle(order)
     ordered_points = np.zeros(points.shape)
     for i, j in enumerate(order):
         ordered_points[j] = points[i]
@@ -51,7 +53,7 @@ def randomly_ordered_unit_cell(cell_type):
     return mesh
 
 
-def randomly_ordered_two_unit_cells(cell_type, agree=False):
+def two_unit_cells(cell_type, agree=False, random_order=True):
     if cell_type == CellType.triangle:
         # Define equilateral triangles with area 1
         root = 3 ** 0.25  # 4th root of 3
@@ -93,7 +95,8 @@ def randomly_ordered_two_unit_cells(cell_type, agree=False):
 
     # Randomly number the points and create the mesh
     order = list(range(num_points))
-    shuffle(order)
+    if random_order:
+        shuffle(order)
     ordered_points = np.zeros(points.shape)
     for i, j in enumerate(order):
         ordered_points[j] = points[i]
@@ -110,7 +113,7 @@ def randomly_ordered_two_unit_cells(cell_type, agree=False):
 def test_facet_integral(cell_type):
     """Test that the integral of a function over a facet is correct"""
     for count in range(10):
-        mesh = randomly_ordered_unit_cell(cell_type)
+        mesh = unit_cell(cell_type)
 
         V = FunctionSpace(mesh, ("Lagrange", 2))
 
@@ -148,7 +151,7 @@ def test_facet_integral(cell_type):
 def test_facet_normals(cell_type):
     """Test that FacetNormal is outward facing"""
     for count in range(10):
-        mesh = randomly_ordered_unit_cell(cell_type)
+        mesh = unit_cell(cell_type)
 
         V = VectorFunctionSpace(mesh, ("Lagrange", 1))
         normal = FacetNormal(mesh)
@@ -199,21 +202,88 @@ def test_facet_normals(cell_type):
 
 
 @skip_in_parallel
-@pytest.mark.parametrize('agree', [True, False])
 @pytest.mark.parametrize('space_type', ["CG", "DG"])
 @pytest.mark.parametrize('cell_type', [CellType.triangle, CellType.tetrahedron,
                                        CellType.quadrilateral, CellType.hexahedron])
-def test_plus_minus(cell_type, space_type, agree):
+def test_plus_minus(cell_type, space_type):
     """Test that ('+') and ('-') give the same value for continuous functions"""
+    results = []
     for count in range(10):
-        mesh = randomly_ordered_two_unit_cells(cell_type, agree)
+        for agree in [True, False]:
+            mesh = two_unit_cells(cell_type, agree)
 
-        V = FunctionSpace(mesh, (space_type, 1))
-        v = Function(V)
-        v.interpolate(lambda x: x[0] - 2 * x[1])
-        # Check that these two integrals are equal
-        a = v("+") * v("-") * dS
-        b = v("+") * v("+") * dS
-        result1 = fem.assemble_scalar(a)
-        result2 = fem.assemble_scalar(b)
-        assert np.isclose(result1, result2)
+            V = FunctionSpace(mesh, (space_type, 1))
+            v = Function(V)
+            v.interpolate(lambda x: x[0] - 2 * x[1])
+            # Check that these two integrals are equal
+            a = v("+") * v("-") * dS
+            b = v("+") * v("+") * dS
+            results.append(fem.assemble_scalar(a))
+            results.append(fem.assemble_scalar(b))
+    for i, j in combinations(results, 2):
+        assert np.isclose(i, j)
+
+
+@skip_in_parallel
+@pytest.mark.parametrize('cell_type', [CellType.triangle, CellType.tetrahedron,
+                                       CellType.quadrilateral, CellType.hexahedron])
+def test_plus_minus_vector(cell_type):
+    """Test that ('+') and ('-') match up with the correct DOFs for DG functions"""
+    results = []
+    spaces = []
+    for count in range(10):
+        for agree in [True, False]:
+            pass
+            mesh = two_unit_cells(cell_type, agree)
+
+            V = FunctionSpace(mesh, ("DG", 1))
+            f = Function(V)
+            f.interpolate(lambda x: x[0] - 2 * x[1])
+            v = TestFunction(V)
+            a = f("+") * v("-") * dS
+            result = fem.assemble_vector(a)
+            result.assemble()
+            spaces.append(V)
+            results.append(result)
+
+    for i, j in combinations(zip(results, spaces), 2):
+        order = []
+        for a in i[1].tabulate_dof_coordinates():
+            for n, b in enumerate(j[1].tabulate_dof_coordinates()):
+                if n not in order and np.allclose(a, b):
+                    order.append(n)
+                    break
+        for a, b in enumerate(order):
+            assert np.isclose(i[0][a], j[0][b])
+
+
+@skip_in_parallel
+@pytest.mark.parametrize('cell_type', [CellType.triangle, CellType.tetrahedron,
+                                       CellType.quadrilateral, CellType.hexahedron])
+def test_plus_minus_matrix(cell_type):
+    """Test that ('+') and ('-') match up with the correct DOFs for DG functions"""
+    results = []
+    spaces = []
+    for count in range(10):
+        for agree in [True, False]:
+            pass
+            mesh = two_unit_cells(cell_type, agree)
+
+            V = FunctionSpace(mesh, ("DG", 1))
+            u, v = TrialFunction(V), TestFunction(V)
+            a = u("+") * v("-") * dS
+            result = fem.assemble_matrix(a, [])
+            result.assemble()
+            spaces.append(V)
+            results.append(result)
+
+    for i, j in combinations(zip(results, spaces), 2):
+        order = []
+        for a in i[1].tabulate_dof_coordinates():
+            for n, b in enumerate(j[1].tabulate_dof_coordinates()):
+                if n not in order and np.allclose(a, b):
+                    order.append(n)
+                    break
+        for a, b in enumerate(order):
+            for c, d in enumerate(order):
+                assert np.isclose(i[0][a, c], j[0][b, d])
