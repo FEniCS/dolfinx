@@ -241,7 +241,7 @@ void _lift_bc_exterior_facets(
     mesh::MeshEntity cell(mesh, tdim, cell_index);
     const int local_facet = cell.index(facet);
     const int orient = 0;
-    const int perm = 0;
+    const int perm = cell.facet_permutation(facet);
 
     // Get dof maps for cell
     auto dmap1 = dofmap1.cell_dofs(cell_index);
@@ -460,7 +460,7 @@ void fem::impl::assemble_exterior_facets(
     const mesh::MeshEntity cell(mesh, tdim, cell_index);
     const int local_facet = cell.index(facet);
     const int orient = 0;
-    const int perm = 0;
+    const int perm = cell.facet_permutation(facet);
 
     // Get cell vertex coordinates
     for (int i = 0; i < num_dofs_g; ++i)

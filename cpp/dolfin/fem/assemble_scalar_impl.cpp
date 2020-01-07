@@ -179,7 +179,7 @@ PetscScalar fem::impl::assemble_exterior_facets(
     // Get local index of facet with respect to the cell
     const int local_facet = cell.index(facet);
     const int orient = 0;
-    const int perm = 0;
+    const int perm = cell.facet_permutation(facet);
 
     // Get cell vertex coordinates
     const int cell_index = cell.index();

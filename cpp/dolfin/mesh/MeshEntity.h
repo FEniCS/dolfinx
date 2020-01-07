@@ -133,6 +133,8 @@ public:
   /// 0 No permutation
   /// 1 Reflect an edge
   /// 2 to 9 Rotate and reflect a face
+  ///   (n - 2)/2 gives the number of rotations
+  ///   (n - 2)%2 gives the number of reflections
   /// FIXME: This is hacky and should be replaced.
   /// @param[in] entity The mesh entity.
   /// @return The identifier of the permutation

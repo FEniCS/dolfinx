@@ -141,7 +141,7 @@ void fem::impl::assemble_cells(
         coordinate_dofs(i, j) = x_g(cell_g[pos_g[cell_index] + i], j);
 
     const mesh::MeshEntity cell(mesh, gdim, cell_index);
-    const int perm = cell.facet_permutation(cell);
+    const int perm = 0;
 
     // Tabulate tensor
     auto coeff_cell = coeffs.row(cell_index);
@@ -228,7 +228,7 @@ void fem::impl::assemble_exterior_facets(
     // Get local index of facet with respect to the cell
     const int local_facet = cell.index(facet);
     const int orient = 0;
-    const int perm = 0;
+    const int perm = cell.facet_permutation(facet);
 
     // Get cell vertex coordinates
     const int cell_index = cell.index();
