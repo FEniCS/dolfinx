@@ -70,7 +70,6 @@ public:
   int dim() const { return _dim; }
 
   /// Return index of mesh entity
-  ///
   /// @return The index
   std::int32_t index() const { return _local_index; }
 
@@ -79,13 +78,23 @@ public:
   /// @return The local index
   int get_vertex_local_index(const std::int32_t v_index) const
   {
-    const int num_entities
-        = _mesh->topology().connectivity(_dim, 0)->size(_local_index);
     const std::int32_t* vertices = entities(0);
-    for (int v = 0; v < num_entities; ++v)
+    for (int v = 0; v < num_entities(0); ++v)
       if (vertices[v] == v_index)
         return v;
     throw std::runtime_error("Vertex was not found");
+  }
+
+  /// Returns the local indices of vertex on the given entity
+  /// @param[in] entity The entity
+  /// @return The local indices
+  int* get_local_vertex_indices(const MeshEntity& entity) const
+  {
+    int* output = new int[entity.num_entities(0)];
+    const std::int32_t* vertices = entity.entities(0);
+    for (int v = 0; v < entity.num_entities(0); ++v)
+      output[v] = get_vertex_local_index(vertices[v]);
+    return output;
   }
 
   /// Return array of indices for incident mesh entities of given
@@ -107,6 +116,14 @@ public:
     }
   }
 
+  /// Return the number of mesh entities of given topological dimension
+  /// @param[in] dim The topological dimension
+  /// @return The number of entities
+  const int num_entities(int dim) const
+  {
+    return _mesh->topology().connectivity(_dim, dim)->size(_local_index);
+  }
+
   /// Compute local index of given incident entity (error if not found)
   /// @param[in] entity The mesh entity.
   /// @return The local index of given entity.
@@ -115,6 +132,7 @@ public:
   /// Return the identifier of the permutation of an entity.
   /// 0 No permutation
   /// 1 Reflect an edge
+  /// 2 to 9 Rotate and reflect a face
   /// FIXME: This is hacky and should be replaced.
   /// @param[in] entity The mesh entity.
   /// @return The identifier of the permutation
