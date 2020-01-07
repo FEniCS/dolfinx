@@ -6,7 +6,7 @@
 """Unit tests for the fem interface"""
 
 from random import shuffle
-from itertools import combinations
+from itertools import combinations, product
 
 import numpy as np
 import pytest
@@ -216,10 +216,9 @@ def test_plus_minus(cell_type, space_type):
             v = Function(V)
             v.interpolate(lambda x: x[0] - 2 * x[1])
             # Check that these two integrals are equal
-            a = v("+") * v("-") * dS
-            b = v("+") * v("+") * dS
-            results.append(fem.assemble_scalar(a))
-            results.append(fem.assemble_scalar(b))
+            for pm1, pm2 in product(["+", "-"], repeat=2):
+                a = v(pm1) * v(pm2) * dS
+                results.append(fem.assemble_scalar(a))
     for i, j in combinations(results, 2):
         assert np.isclose(i, j)
 
@@ -238,7 +237,10 @@ def test_plus_minus_vector(cell_type, pm1, pm2):
             pass
             mesh = two_unit_cells(cell_type, agree)
 
-            V = FunctionSpace(mesh, ("DG", 1))
+            if cell_type in [CellType.triangle, CellType.tetrahedron]:
+                V = FunctionSpace(mesh, ("DG", 1))
+            else:
+                V = FunctionSpace(mesh, ("DQ", 1))
             f = Function(V)
             f.interpolate(lambda x: x[0] - 2 * x[1])
             v = TestFunction(V)
@@ -273,7 +275,10 @@ def test_plus_minus_matrix(cell_type, pm1, pm2):
             pass
             mesh = two_unit_cells(cell_type, agree)
 
-            V = FunctionSpace(mesh, ("DG", 1))
+            if cell_type in [CellType.triangle, CellType.tetrahedron]:
+                V = FunctionSpace(mesh, ("DG", 1))
+            else:
+                V = FunctionSpace(mesh, ("DQ", 1))
             u, v = TrialFunction(V), TestFunction(V)
             a = u(pm1) * v(pm2) * dS
             result = fem.assemble_matrix(a, [])
