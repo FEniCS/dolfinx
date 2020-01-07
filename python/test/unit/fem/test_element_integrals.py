@@ -234,7 +234,6 @@ def test_plus_minus_vector(cell_type, pm1, pm2):
     spaces = []
     for count in range(10):
         for agree in [True, False]:
-            pass
             mesh = two_unit_cells(cell_type, agree)
 
             if cell_type in [CellType.triangle, CellType.tetrahedron]:
@@ -272,7 +271,6 @@ def test_plus_minus_matrix(cell_type, pm1, pm2):
     spaces = []
     for count in range(10):
         for agree in [True, False]:
-            pass
             mesh = two_unit_cells(cell_type, agree)
 
             if cell_type in [CellType.triangle, CellType.tetrahedron]:
