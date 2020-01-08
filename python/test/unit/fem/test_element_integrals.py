@@ -17,7 +17,14 @@ from ufl import inner, ds, dS, TestFunction, TrialFunction
 from dolfin.cpp.mesh import CellType
 
 
+parametrize_cell_types = pytest.mark.parametrize(
+    "cell_type",
+    [CellType.interval, CellType.triangle, CellType.tetrahedron, CellType.quadrilateral, CellType.hexahedron])
+
+
 def unit_cell(cell_type, random_order=True):
+    if cell_type == CellType.interval:
+        points = np.array([[0.], [1.]])
     if cell_type == CellType.triangle:
         # Define equilateral triangle with area 1
         root = 3 ** 0.25  # 4th root of 3
@@ -54,6 +61,12 @@ def unit_cell(cell_type, random_order=True):
 
 
 def two_unit_cells(cell_type, agree=False, random_order=True):
+    if cell_type == CellType.interval:
+        points = np.array([[0.], [1.], [-1.]])
+        if agree:
+            cells = [[0, 1], [2, 0]]
+        else:
+            cells = [[0, 1], [0, 2]]
     if cell_type == CellType.triangle:
         # Define equilateral triangles with area 1
         root = 3 ** 0.25  # 4th root of 3
@@ -108,8 +121,7 @@ def two_unit_cells(cell_type, agree=False, random_order=True):
 
 
 @skip_in_parallel
-@pytest.mark.parametrize('cell_type', [CellType.triangle, CellType.tetrahedron,
-                                       CellType.quadrilateral, CellType.hexahedron])
+@parametrize_cell_types
 def test_facet_integral(cell_type):
     """Test that the integral of a function over a facet is correct"""
     for count in range(10):
@@ -146,8 +158,7 @@ def test_facet_integral(cell_type):
 
 
 @skip_in_parallel
-@pytest.mark.parametrize('cell_type', [CellType.triangle, CellType.tetrahedron,
-                                       CellType.quadrilateral, CellType.hexahedron])
+@parametrize_cell_types
 def test_facet_normals(cell_type):
     """Test that FacetNormal is outward facing"""
     for count in range(10):
@@ -166,6 +177,9 @@ def test_facet_normals(cell_type):
         # the vector that has a positive normal component on only that facet
         # is positive
         for i in range(num_facets):
+            if cell_type == CellType.interval:
+                co = mesh.geometry.points[i]
+                v.interpolate(lambda x: x[0] - co[0])
             if cell_type == CellType.triangle:
                 co = mesh.geometry.points[i]
                 # Vector function that is zero at `co` and points away from `co`
@@ -203,8 +217,7 @@ def test_facet_normals(cell_type):
 
 @skip_in_parallel
 @pytest.mark.parametrize('space_type', ["CG", "DG"])
-@pytest.mark.parametrize('cell_type', [CellType.triangle, CellType.tetrahedron,
-                                       CellType.quadrilateral, CellType.hexahedron])
+@parametrize_cell_types
 def test_plus_minus(cell_type, space_type):
     """Test that ('+') and ('-') give the same value for continuous functions"""
     results = []
@@ -224,10 +237,42 @@ def test_plus_minus(cell_type, space_type):
 
 
 @skip_in_parallel
-@pytest.mark.parametrize('cell_type', [CellType.triangle, CellType.tetrahedron,
-                                       CellType.quadrilateral, CellType.hexahedron])
+@pytest.mark.parametrize('pm', ["+", "-"])
+@parametrize_cell_types
+def test_plus_minus_simple_vector(cell_type, pm):
+    """Test that ('+') and ('-') match up with the correct DOFs for DG functions"""
+    results = []
+    spaces = []
+    for count in range(10):
+        for agree in [True, False]:
+            mesh = two_unit_cells(cell_type, agree)
+
+            if cell_type in [CellType.interval, CellType.triangle, CellType.tetrahedron]:
+                V = FunctionSpace(mesh, ("DG", 1))
+            else:
+                V = FunctionSpace(mesh, ("DQ", 1))
+            v = TestFunction(V)
+            a = v(pm) * dS
+            result = fem.assemble_vector(a)
+            result.assemble()
+            spaces.append(V)
+            results.append(result)
+
+    for i, j in combinations(zip(results, spaces), 2):
+        order = []
+        for a in i[1].tabulate_dof_coordinates():
+            for n, b in enumerate(j[1].tabulate_dof_coordinates()):
+                if n not in order and np.allclose(a, b):
+                    order.append(n)
+                    break
+        for a, b in enumerate(order):
+            assert np.isclose(i[0][a], j[0][b])
+
+
+@skip_in_parallel
 @pytest.mark.parametrize('pm1', ["+", "-"])
 @pytest.mark.parametrize('pm2', ["+", "-"])
+@parametrize_cell_types
 def test_plus_minus_vector(cell_type, pm1, pm2):
     """Test that ('+') and ('-') match up with the correct DOFs for DG functions"""
     results = []
@@ -236,7 +281,7 @@ def test_plus_minus_vector(cell_type, pm1, pm2):
         for agree in [True, False]:
             mesh = two_unit_cells(cell_type, agree)
 
-            if cell_type in [CellType.triangle, CellType.tetrahedron]:
+            if cell_type in [CellType.interval, CellType.triangle, CellType.tetrahedron]:
                 V = FunctionSpace(mesh, ("DG", 1))
             else:
                 V = FunctionSpace(mesh, ("DQ", 1))
@@ -261,10 +306,9 @@ def test_plus_minus_vector(cell_type, pm1, pm2):
 
 
 @skip_in_parallel
-@pytest.mark.parametrize('cell_type', [CellType.triangle, CellType.tetrahedron,
-                                       CellType.quadrilateral, CellType.hexahedron])
 @pytest.mark.parametrize('pm1', ["+", "-"])
 @pytest.mark.parametrize('pm2', ["+", "-"])
+@parametrize_cell_types
 def test_plus_minus_matrix(cell_type, pm1, pm2):
     """Test that ('+') and ('-') match up with the correct DOFs for DG functions"""
     results = []
@@ -273,7 +317,7 @@ def test_plus_minus_matrix(cell_type, pm1, pm2):
         for agree in [True, False]:
             mesh = two_unit_cells(cell_type, agree)
 
-            if cell_type in [CellType.triangle, CellType.tetrahedron]:
+            if cell_type in [CellType.interval, CellType.triangle, CellType.tetrahedron]:
                 V = FunctionSpace(mesh, ("DG", 1))
             else:
                 V = FunctionSpace(mesh, ("DQ", 1))
