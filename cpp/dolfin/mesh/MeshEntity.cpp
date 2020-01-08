@@ -49,7 +49,7 @@ int MeshEntity::facet_permutation(const MeshEntity& entity) const
   if (entity._dim == 1)
   {
     const int* e_vertices = get_local_vertex_indices(entity);
-    return (e_vertices[1] < e_vertices[0]);
+    return e_vertices[1] < e_vertices[0];
   }
 
   if (entity._dim == 2)
