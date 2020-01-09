@@ -1,5 +1,11 @@
 version: 2.1
 
+# https://support.circleci.com/hc/en-us/articles/360041503393-A-workaround-to-trigger-a-single-job-with-2-1-config
+parameters:
+  build-and-push-docker-images:
+    type: boolean
+    default: false
+
 install-python-components: &install-python-components
   name: Install FEniCS Python components
   command: |
@@ -277,4 +283,20 @@ workflows:
       - build-and-push-dev-env-docker-images:
           context: quay.io
       - build-and-push-complete-build-docker-images:
+          context: quay.io
+
+  build-and-push-docker-images:
+    when: << pipeline.parameters.build-and-push-docker-images >>
+    jobs:
+      - build-and-push-dev-env-docker-images:
+          filters:
+            branches:
+              only:
+                - master
+          context: quay.io
+      - build-and-push-complete-build-docker-images:
+          filters:
+            branches:
+              only:
+                - master
           context: quay.io
