@@ -282,7 +282,17 @@ workflows:
     jobs:
       - build-and-push-dev-env-docker-images:
           context: quay.io
+      - build-real:
+          requires:
+            - build-and-push-dev-env-docker-images
+      - build-complex:
+          requires:
+            - build-and-push-dev-env-docker-images
       - build-and-push-complete-build-docker-images:
+          requires:
+            - build-and-push-dev-env-docker-images
+            - build-real
+            - build-complex
           context: quay.io
 
   build-and-push-docker-images:
@@ -295,6 +305,8 @@ workflows:
                 - master
           context: quay.io
       - build-and-push-complete-build-docker-images:
+          requires:
+            - build-and-push-dev-env-docker-images
           filters:
             branches:
               only:
