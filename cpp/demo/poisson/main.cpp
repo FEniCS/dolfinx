@@ -195,6 +195,7 @@ int main(int argc, char* argv[])
 
   MatZeroEntries(A.mat());
   dolfin::fem::assemble_matrix(A.mat(), *a, bc);
+  dolfin::fem::add_diagonal(A.mat(), *V, bc);
   MatAssemblyBegin(A.mat(), MAT_FINAL_ASSEMBLY);
   MatAssemblyEnd(A.mat(), MAT_FINAL_ASSEMBLY);
 

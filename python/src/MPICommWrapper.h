@@ -19,16 +19,19 @@ namespace dolfin_wrappers
 class MPICommWrapper
 {
 public:
-  MPICommWrapper();
+  MPICommWrapper() : _comm(MPI_COMM_NULL) {}
 
   /// Wrap a MPI_Comm object
-  MPICommWrapper(MPI_Comm comm);
+  MPICommWrapper(MPI_Comm comm) : _comm(comm) {}
 
   /// Assignment operator
-  MPICommWrapper& operator=(const MPI_Comm comm);
+  MPICommWrapper& operator=(const MPI_Comm comm) {
+    this->_comm = comm;
+    return *this;
+  }
 
   /// Get the underlying MPI communicator
-  MPI_Comm get() const;
+  MPI_Comm get() const { return _comm; }
 
 private:
   // The underlying communicator
