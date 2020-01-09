@@ -176,11 +176,9 @@ def test_facet_normals(cell_type):
         # For each facet, check that the inner product of the normal and
         # the vector that has a positive normal component on only that facet
         # is positive
-        print("------------")
         for i in range(num_facets):
             if cell_type == CellType.interval:
                 co = mesh.geometry.points[i]
-                print(co)
                 v.interpolate(lambda x: x[0] - co[0])
             if cell_type == CellType.triangle:
                 co = mesh.geometry.points[i]
@@ -209,7 +207,6 @@ def test_facet_normals(cell_type):
             for j in range(num_facets):
                 a = inner(v, normal) * ds(subdomain_data=facet_function, subdomain_id=j)
                 result = fem.assemble_scalar(a)
-                print(i, j, num_facets, result)
                 if np.isclose(result, 1):
                     ones += 1
                 else:
