@@ -276,15 +276,5 @@ workflows:
     jobs:
       - build-and-push-dev-env-docker-images:
           context: quay.io
-
-  daily:
-    triggers:
-      - schedule:
-          cron: "0 2 * * *"
-          filters:
-            branches:
-              only:
-                - master
-    jobs:
       - build-and-push-complete-build-docker-images:
           context: quay.io
