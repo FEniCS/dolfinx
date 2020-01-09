@@ -66,7 +66,7 @@ int MeshEntity::facet_permutation(const MeshEntity& entity) const
       const int post = num_min == entity.num_entities(0) - 1
                            ? e_vertices[0]
                            : e_vertices[num_min + 1];
-      return 2 + 2 * num_min + (post > pre);
+      return 2 * num_min + (post > pre);
     }
     if (entity.num_entities(0) == 4)
     { // quadrilateral
@@ -90,7 +90,7 @@ int MeshEntity::facet_permutation(const MeshEntity& entity) const
         post = 2;
         mult = 2;
       }
-      return 2 + 2 * mult + (e_vertices[post] > e_vertices[pre]);
+      return 2 * mult + (e_vertices[post] > e_vertices[pre]);
     }
   }
   LOG(WARNING) << "No facet permutation was found for a facet. Integrals "

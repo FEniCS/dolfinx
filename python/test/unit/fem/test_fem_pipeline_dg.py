@@ -4,53 +4,42 @@
 #
 # SPDX-License-Identifier:    LGPL-3.0-or-later
 
+import os
+
 import numpy as np
 import pytest
 from petsc4py import PETSc
-from random import shuffle
-from dolfin import (MPI, Function, FunctionSpace, UnitCubeMesh, UnitIntervalMesh,
-                    UnitSquareMesh, FacetNormal, CellDiameter, Mesh, fem)
-from dolfin.cpp.mesh import CellType, GhostMode
+from dolfin import (MPI, Function, FunctionSpace, FacetNormal, CellDiameter)
+from dolfin.cpp.mesh import GhostMode
 from dolfin.fem import (assemble_matrix, assemble_scalar, assemble_vector)
+from dolfin.io import XDMFFile
 from ufl import (SpatialCoordinate, div, dx, grad, inner, ds, dS, avg, jump,
                  TestFunction, TrialFunction)
 
 
-@pytest.mark.parametrize("p", [2, 3, 4])
+@pytest.mark.parametrize("n", [2, 3, 4])
 @pytest.mark.parametrize("component", [0, 1, 2])
-@pytest.mark.parametrize("mesh", [
-    UnitIntervalMesh(MPI.comm_world, 10),
-    UnitSquareMesh(MPI.comm_world, 3, 4, CellType.triangle),
-    UnitSquareMesh(MPI.comm_world, 3, 4, CellType.quadrilateral),
-    UnitCubeMesh(MPI.comm_world, 2, 3, 2, CellType.tetrahedron),
-    UnitCubeMesh(MPI.comm_world, 2, 3, 2, CellType.hexahedron)
-])
-def test_manufactured_poisson_dg(p, mesh, component):
-    """ Manufactured Poisson problem, solving u = x[component]**p, where p is the
+@pytest.mark.parametrize("filename", ["UnitCubeMesh_hexahedron.xdmf",
+                                      "UnitCubeMesh_tetra.xdmf",
+                                      "UnitSquareMesh_quad.xdmf",
+                                      "UnitSquareMesh_triangle.xdmf"])
+def test_manufactured_poisson_dg(n, filename, component, datadir):
+    """ Manufactured Poisson problem, solving u = x[component]**n, where n is the
     degree of the Lagrange function space.
+
     """
-
-    # Randomly reorder the mesh
-    order = [i for i, j in enumerate(mesh.geometry.points)]
-    shuffle(order)
-
-    points = np.zeros(mesh.geometry.points.shape)
-    for i, j in enumerate(order):
-        points[j] = mesh.geometry.points[i]
-    cells = [[order[i] for i in c] for c in mesh.cells()]
-    mesh = Mesh(MPI.comm_world, mesh.cell_type, points, cells,
-                [], GhostMode.none)
-    mesh.geometry.coord_mapping = fem.create_coordinate_map(mesh)
+    with XDMFFile(MPI.comm_world, os.path.join(datadir, filename)) as xdmf:
+        mesh = xdmf.read_mesh(GhostMode.none)
 
     if component >= mesh.geometry.dim:
         return
 
-    V = FunctionSpace(mesh, ("DG", p))
+    V = FunctionSpace(mesh, ("Lagrange", n))
     u, v = TrialFunction(V), TestFunction(V)
 
     # Exact solution
     x = SpatialCoordinate(mesh)
-    u_exact = x[component] ** p
+    u_exact = x[component] ** n
 
     # Coefficient
     k = Function(V)

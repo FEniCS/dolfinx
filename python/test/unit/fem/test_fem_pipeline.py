@@ -26,7 +26,7 @@ from ufl import (SpatialCoordinate, TestFunction, TrialFunction, div, dx, grad,
                                       "UnitSquareMesh_quad.xdmf",
                                       "UnitSquareMesh_triangle.xdmf"])
 def test_manufactured_poisson(n, filename, component, datadir):
-    """ Manufactured Poisson problem, solving u = x[component]**p, where p is the
+    """ Manufactured Poisson problem, solving u = x[component]**n, where n is the
     degree of the Lagrange function space.
 
     """
