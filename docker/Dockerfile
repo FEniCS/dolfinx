@@ -89,7 +89,7 @@ ONBUILD WORKDIR /root
 
 ########################################
 
-FROM complex-build as complex
+FROM complex-onbuild as complex
 LABEL description="DOLFIN-X in real mode"
 
 ########################################
