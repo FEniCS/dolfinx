@@ -26,6 +26,8 @@
 #    docker run -p 8888:8888 -v "$(pwd)":/tmp quay.io/fenicsproject/dolfinx:notebook
 #
 
+ARG TINI_VERSION=v0.18.0
+
 FROM quay.io/fenicsproject/dolfinx:dev-env-real as real-onbuild
 LABEL description="DOLFIN-X in real mode (ONBUILD)"
 
