@@ -60,7 +60,7 @@ def unit_cell(cell_type, random_order=True):
     return mesh
 
 
-def two_unit_cells(cell_type, agree=False, random_order=True):
+def two_unit_cells(cell_type, agree=False, random_order=True, return_order=False):
     if cell_type == CellType.interval:
         points = np.array([[0.], [1.], [-1.]])
         if agree:
@@ -117,6 +117,8 @@ def two_unit_cells(cell_type, agree=False, random_order=True):
     mesh = Mesh(MPI.comm_world, cell_type, ordered_points, ordered_cells,
                 [], cpp.mesh.GhostMode.none)
     mesh.geometry.coord_mapping = fem.create_coordinate_map(mesh)
+    if return_order:
+        return mesh, order
     return mesh
 
 
@@ -241,10 +243,11 @@ def test_plus_minus(cell_type, space_type):
 def test_plus_minus_simple_vector(cell_type, pm):
     """Test that ('+') and ('-') match up with the correct DOFs for DG functions"""
     results = []
+    orders = []
     spaces = []
     for count in range(10):
         for agree in [True, False]:
-            mesh = two_unit_cells(cell_type, agree)
+            mesh, order = two_unit_cells(cell_type, agree, return_order=True)
 
             if cell_type in [CellType.interval, CellType.triangle, CellType.tetrahedron]:
                 V = FunctionSpace(mesh, ("DG", 1))
@@ -256,15 +259,36 @@ def test_plus_minus_simple_vector(cell_type, pm):
             result.assemble()
             spaces.append(V)
             results.append(result)
+            orders.append(order)
 
-    for i, j in combinations(zip(results, spaces), 2):
-        order = []
-        for a in i[1].tabulate_dof_coordinates():
-            for n, b in enumerate(j[1].tabulate_dof_coordinates()):
-                if n not in order and np.allclose(a, b):
-                    order.append(n)
-                    break
-        for a, b in enumerate(order):
+    for i, j in combinations(zip(results, spaces, orders), 2):
+        dof_order = []
+        for cell in range(2):
+            for point in range(len(mesh.geometry.points)):
+                point_n = j[2][point]
+                cell_points = list(j[1].mesh.cells()[cell])
+                if point_n in cell_points:
+                    point_n_in_cell = cell_points.index(point_n)
+                    dofmap = j[1].dofmap.cell_dofs(cell)
+                    j_dof_n = dofmap[point_n_in_cell]
+                else:
+                    j_dof_n = None
+
+                point_n = i[2][point]
+                cell_points = list(i[1].mesh.cells()[cell])
+                if point_n in cell_points:
+                    point_n_in_cell = cell_points.index(point_n)
+                    dofmap = i[1].dofmap.cell_dofs(cell)
+                    i_dof_n = dofmap[point_n_in_cell]
+                else:
+                    i_dof_n = None
+
+                if i_dof_n is None:
+                    assert j_dof_n is None
+                else:
+                    dof_order.append((i_dof_n, j_dof_n))
+
+        for a, b in dof_order:
             assert np.isclose(i[0][a], j[0][b])
 
 
@@ -275,10 +299,11 @@ def test_plus_minus_simple_vector(cell_type, pm):
 def test_plus_minus_vector(cell_type, pm1, pm2):
     """Test that ('+') and ('-') match up with the correct DOFs for DG functions"""
     results = []
+    orders = []
     spaces = []
     for count in range(10):
         for agree in [True, False]:
-            mesh = two_unit_cells(cell_type, agree)
+            mesh, order = two_unit_cells(cell_type, agree, return_order=True)
 
             if cell_type in [CellType.interval, CellType.triangle, CellType.tetrahedron]:
                 V = FunctionSpace(mesh, ("DG", 1))
@@ -292,15 +317,36 @@ def test_plus_minus_vector(cell_type, pm1, pm2):
             result.assemble()
             spaces.append(V)
             results.append(result)
+            orders.append(order)
 
-    for i, j in combinations(zip(results, spaces), 2):
-        order = []
-        for a in i[1].tabulate_dof_coordinates():
-            for n, b in enumerate(j[1].tabulate_dof_coordinates()):
-                if n not in order and np.allclose(a, b):
-                    order.append(n)
-                    break
-        for a, b in enumerate(order):
+    for i, j in combinations(zip(results, spaces, orders), 2):
+        dof_order = []
+        for cell in range(2):
+            for point in range(len(mesh.geometry.points)):
+                point_n = j[2][point]
+                cell_points = list(j[1].mesh.cells()[cell])
+                if point_n in cell_points:
+                    point_n_in_cell = cell_points.index(point_n)
+                    dofmap = j[1].dofmap.cell_dofs(cell)
+                    j_dof_n = dofmap[point_n_in_cell]
+                else:
+                    j_dof_n = None
+
+                point_n = i[2][point]
+                cell_points = list(i[1].mesh.cells()[cell])
+                if point_n in cell_points:
+                    point_n_in_cell = cell_points.index(point_n)
+                    dofmap = i[1].dofmap.cell_dofs(cell)
+                    i_dof_n = dofmap[point_n_in_cell]
+                else:
+                    i_dof_n = None
+
+                if i_dof_n is None:
+                    assert j_dof_n is None
+                else:
+                    dof_order.append((i_dof_n, j_dof_n))
+
+        for a, b in dof_order:
             assert np.isclose(i[0][a], j[0][b])
 
 
@@ -312,28 +358,47 @@ def test_plus_minus_matrix(cell_type, pm1, pm2):
     """Test that ('+') and ('-') match up with the correct DOFs for DG functions"""
     results = []
     spaces = []
+    orders = []
     for count in range(10):
         for agree in [True, False]:
-            mesh = two_unit_cells(cell_type, agree)
+            mesh, order = two_unit_cells(cell_type, agree, return_order=True)
 
-            if cell_type in [CellType.interval, CellType.triangle, CellType.tetrahedron]:
-                V = FunctionSpace(mesh, ("DG", 1))
-            else:
-                V = FunctionSpace(mesh, ("DQ", 1))
+            V = FunctionSpace(mesh, ("DG", 1))
             u, v = TrialFunction(V), TestFunction(V)
             a = u(pm1) * v(pm2) * dS
             result = fem.assemble_matrix(a, [])
             result.assemble()
             spaces.append(V)
             results.append(result)
+            orders.append(order)
 
-    for i, j in combinations(zip(results, spaces), 2):
-        order = []
-        for a in i[1].tabulate_dof_coordinates():
-            for n, b in enumerate(j[1].tabulate_dof_coordinates()):
-                if n not in order and np.allclose(a, b):
-                    order.append(n)
-                    break
-        for a, b in enumerate(order):
-            for c, d in enumerate(order):
+    for i, j in combinations(zip(results, spaces, orders), 2):
+        dof_order = []
+        for cell in range(2):
+            for point in range(len(mesh.geometry.points)):
+                point_n = j[2][point]
+                cell_points = list(j[1].mesh.cells()[cell])
+                if point_n in cell_points:
+                    point_n_in_cell = cell_points.index(point_n)
+                    dofmap = j[1].dofmap.cell_dofs(cell)
+                    j_dof_n = dofmap[point_n_in_cell]
+                else:
+                    j_dof_n = None
+
+                point_n = i[2][point]
+                cell_points = list(i[1].mesh.cells()[cell])
+                if point_n in cell_points:
+                    point_n_in_cell = cell_points.index(point_n)
+                    dofmap = i[1].dofmap.cell_dofs(cell)
+                    i_dof_n = dofmap[point_n_in_cell]
+                else:
+                    i_dof_n = None
+
+                if i_dof_n is None:
+                    assert j_dof_n is None
+                else:
+                    dof_order.append((i_dof_n, j_dof_n))
+
+        for a, b in dof_order:
+            for c, d in dof_order:
                 assert np.isclose(i[0][a, c], j[0][b, d])
