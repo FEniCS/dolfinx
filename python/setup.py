@@ -62,13 +62,7 @@ class CMakeBuild(build_ext):
             build_args += ['--', '/m']
         else:
             cmake_args += ['-DCMAKE_BUILD_TYPE=' + cfg]
-            if "CI" in os.environ:
-                build_args += ['--', '-j3']
-            elif "CIRCLECI" in os.environ:
-                build_args += ['--', '-j3']
-            else:
-                num_build_threads = max(1, multiprocessing.cpu_count() - 1)
-                build_args += ['--', '-j' + str(num_build_threads)]
+            build_args += ['--', '-j3']
 
         env = os.environ.copy()
         env['CXXFLAGS'] = '{} -DVERSION_INFO=\\"{}\\"'.format(env.get('CXXFLAGS', ''),
