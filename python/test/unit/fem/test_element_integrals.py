@@ -254,7 +254,7 @@ def test_plus_minus_simple_vector(cell_type, pm):
             else:
                 V = FunctionSpace(mesh, ("DQ", 1))
             v = TestFunction(V)
-            a = v(pm) * dS
+            a = inner(1, v(pm)) * dS
             result = fem.assemble_vector(a)
             result.assemble()
             spaces.append(V)
@@ -312,7 +312,7 @@ def test_plus_minus_vector(cell_type, pm1, pm2):
             f = Function(V)
             f.interpolate(lambda x: x[0] - 2 * x[1])
             v = TestFunction(V)
-            a = f(pm1) * v(pm2) * dS
+            a = inner(f(pm1), v(pm2)) * dS
             result = fem.assemble_vector(a)
             result.assemble()
             spaces.append(V)
@@ -365,7 +365,7 @@ def test_plus_minus_matrix(cell_type, pm1, pm2):
 
             V = FunctionSpace(mesh, ("DG", 1))
             u, v = TrialFunction(V), TestFunction(V)
-            a = u(pm1) * v(pm2) * dS
+            a = inner(u(pm1), v(pm2)) * dS
             result = fem.assemble_matrix(a, [])
             result.assemble()
             spaces.append(V)
