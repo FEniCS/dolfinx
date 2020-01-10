@@ -48,61 +48,50 @@ int MeshEntity::facet_permutation(const MeshEntity& entity) const
 
   if (entity._dim == 1)
   {
-    const std::vector<std::int64_t>& global_indices
-      = _mesh->topology().global_indices(0);
-    const std::int32_t* eg_vertices = entity.entities(0);
-    const int* el_vertices = get_local_vertex_indices(entity);
-    if (global_indices[eg_vertices[0]] < global_indices[eg_vertices[1]])
-      return el_vertices[1] < el_vertices[0];
-    else
-      return el_vertices[0] < el_vertices[1];
+    const int* e_vertices = get_local_vertex_indices(entity);
+    return e_vertices[1] < e_vertices[0];
   }
 
   if (entity._dim == 2)
   {
-    const std::vector<std::int64_t>& global_indices
-      = _mesh->topology().global_indices(0);
-    const std::int32_t* eg_vertices = entity.entities(0);
-    const int* el_vertices = get_local_vertex_indices(entity);
-
-    const int num_ents = entity.num_entities(0);
-
-    std::vector<int> v_order(num_ents);
-
-    if (num_ents == 3)
-      v_order = {0, 1, 2};
-    else if (num_ents == 4)
-      v_order = {0, 1, 3, 2};
-    else
-    {
-      LOG(WARNING) << "No facet permutation was found for a facet. Integrals "
-                      "containing jumps may be incorrect.";
-      return 0;
+    int num_min = -1;
+    const int* e_vertices = get_local_vertex_indices(entity);
+    for (int v = 0; v < entity.num_entities(0); ++v)
+      if (num_min == -1 || e_vertices[v] < e_vertices[num_min])
+        num_min = v;
+    if (entity.num_entities(0) == 3)
+    { // triangle
+      const int pre = num_min == 0 ? e_vertices[entity.num_entities(0) - 1]
+                                   : e_vertices[num_min - 1];
+      const int post = num_min == entity.num_entities(0) - 1
+                           ? e_vertices[0]
+                           : e_vertices[num_min + 1];
+      return 2 * num_min + (post > pre);
     }
-
-    // Find the index of v_order that is associated with the highest local index
-    int l_num_min = -1;
-    for (int v = 0; v < num_ents; ++v)
-      if (l_num_min == -1 || el_vertices[v_order[v]] < el_vertices[v_order[l_num_min]])
-        l_num_min = v;
-    // Get the next and previous indices in v_order
-    const int l_pre = l_num_min == 0 ? num_ents - 1 : l_num_min - 1;
-    const int l_post = l_num_min == num_ents - 1 ? 0 : l_num_min + 1;
-    const bool l_rots = el_vertices[v_order[l_post]] > el_vertices[v_order[l_pre]];
-
-    // Find the index of v_otder that is associated with the highest global index
-    int g_num_min = -1;
-    for (int v = 0; v < num_ents; ++v)
-      if (g_num_min == -1 || global_indices[eg_vertices[v_order[v]]] < global_indices[eg_vertices[v_order[g_num_min]]])
-        g_num_min = v;
-    // Get the next and previous indices in v_order
-    const int g_pre = g_num_min == 0 ? num_ents - 1 : g_num_min - 1;
-    const int g_post = g_num_min == num_ents - 1 ? 0 : g_num_min + 1;
-    const bool g_rots = global_indices[eg_vertices[v_order[g_post]]] > global_indices[eg_vertices[v_order[g_pre]]];
-
-    const int rot = l_num_min < g_num_min ? num_ents + l_num_min - g_num_min : l_num_min - g_num_min;
-    const int ref = l_rots != g_rots;
-    return 2 * rot + ref;
+    if (entity.num_entities(0) == 4)
+    { // quadrilateral
+      int mult = num_min;
+      int pre = 2;
+      int post = 1;
+      if (num_min == 1)
+      {
+        pre = 0;
+        post = 3;
+      }
+      else if (num_min == 2)
+      {
+        pre = 3;
+        post = 0;
+        mult = 3;
+      }
+      else if (num_min == 3)
+      {
+        pre = 1;
+        post = 2;
+        mult = 2;
+      }
+      return 2 * mult + (e_vertices[post] > e_vertices[pre]);
+    }
   }
   LOG(WARNING) << "No facet permutation was found for a facet. Integrals "
                   "containing jumps may be incorrect.";
