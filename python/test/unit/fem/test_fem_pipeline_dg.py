@@ -19,10 +19,10 @@ from ufl import (SpatialCoordinate, div, dx, grad, inner, ds, dS, avg, jump,
 
 @pytest.mark.parametrize("n", [2, 3, 4])
 @pytest.mark.parametrize("component", [0, 1, 2])
-@pytest.mark.parametrize("filename", ["UnitCubeMesh_hexahedron.xdmf",
+@pytest.mark.parametrize("filename", ["UnitSquareMesh_triangle.xdmf",
                                       "UnitCubeMesh_tetra.xdmf",
                                       "UnitSquareMesh_quad.xdmf",
-                                      "UnitSquareMesh_triangle.xdmf"])
+                                      "UnitCubeMesh_hexahedron.xdmf"])
 def test_manufactured_poisson_dg(n, filename, component, datadir):
     """ Manufactured Poisson problem, solving u = x[component]**n, where n is the
     degree of the Lagrange function space.
@@ -57,14 +57,14 @@ def test_manufactured_poisson_dg(n, filename, component, datadir):
     alpha = 32
 
     a = inner(k * grad(u), grad(v)) * dx \
-        - inner(k("+") * avg(grad(u)), jump(v, n)) * dS \
-        - inner(k("+") * avg(grad(v)), jump(u, n)) * dS \
-        + (alpha / h_avg) * inner(k("+") * jump(u, n), jump(v, n)) * dS \
+        - k("+") * inner(avg(grad(u)), jump(v, n)) * dS \
+        - k("+") * inner(jump(u, n), avg(grad(v))) * dS \
+        + k("+") * (alpha / h_avg) * inner(jump(u, n), jump(v, n)) * dS \
         - inner(k * grad(u), v * n) * ds \
-        - inner(k * grad(v), u * n) * ds \
+        - inner(u * n, k * grad(v)) * ds \
         + (alpha / h) * inner(k * u, v) * ds
-    L = inner(f, v) * dx - inner(grad(v), k * u_exact * n) * ds + \
-        (alpha / h) * inner(k * u_exact, v) * ds
+    L = inner(f, v) * dx - inner(k * u_exact * n, grad(v)) * ds \
+        + (alpha / h) * inner(k * u_exact, v) * ds
 
     b = assemble_vector(L)
     b.ghostUpdate(addv=PETSc.InsertMode.ADD, mode=PETSc.ScatterMode.REVERSE)

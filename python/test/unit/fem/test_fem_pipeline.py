@@ -21,10 +21,10 @@ from ufl import (SpatialCoordinate, TestFunction, TrialFunction, div, dx, grad,
 
 @pytest.mark.parametrize("n", [2, 3, 4])
 @pytest.mark.parametrize("component", [0, 1, 2])
-@pytest.mark.parametrize("filename", ["UnitCubeMesh_hexahedron.xdmf",
+@pytest.mark.parametrize("filename", ["UnitSquareMesh_triangle.xdmf",
                                       "UnitCubeMesh_tetra.xdmf",
                                       "UnitSquareMesh_quad.xdmf",
-                                      "UnitSquareMesh_triangle.xdmf"])
+                                      "UnitCubeMesh_hexahedron.xdmf"])
 def test_manufactured_poisson(n, filename, component, datadir):
     """ Manufactured Poisson problem, solving u = x[component]**n, where n is the
     degree of the Lagrange function space.
