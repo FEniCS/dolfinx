@@ -126,7 +126,7 @@ def two_unit_cells(cell_type, agree=False, random_order=True, return_order=False
 @parametrize_cell_types
 def test_facet_integral(cell_type):
     """Test that the integral of a function over a facet is correct"""
-    for count in range(10):
+    for count in range(5):
         mesh = unit_cell(cell_type)
 
         V = FunctionSpace(mesh, ("Lagrange", 2))
@@ -163,7 +163,7 @@ def test_facet_integral(cell_type):
 @parametrize_cell_types
 def test_facet_normals(cell_type):
     """Test that FacetNormal is outward facing"""
-    for count in range(10):
+    for count in range(5):
         mesh = unit_cell(cell_type)
 
         V = VectorFunctionSpace(mesh, ("Lagrange", 1))
@@ -222,7 +222,7 @@ def test_facet_normals(cell_type):
 def test_plus_minus(cell_type, space_type):
     """Test that ('+') and ('-') give the same value for continuous functions"""
     results = []
-    for count in range(10):
+    for count in range(3):
         for agree in [True, False]:
             mesh = two_unit_cells(cell_type, agree)
 
@@ -245,7 +245,7 @@ def test_plus_minus_simple_vector(cell_type, pm):
     results = []
     orders = []
     spaces = []
-    for count in range(10):
+    for count in range(3):
         for agree in [True, False]:
             mesh, order = two_unit_cells(cell_type, agree, return_order=True)
 
@@ -301,7 +301,7 @@ def test_plus_minus_vector(cell_type, pm1, pm2):
     results = []
     orders = []
     spaces = []
-    for count in range(10):
+    for count in range(3):
         for agree in [True, False]:
             mesh, order = two_unit_cells(cell_type, agree, return_order=True)
 
@@ -359,7 +359,7 @@ def test_plus_minus_matrix(cell_type, pm1, pm2):
     results = []
     spaces = []
     orders = []
-    for count in range(10):
+    for count in range(3):
         for agree in [True, False]:
             mesh, order = two_unit_cells(cell_type, agree, return_order=True)
 
