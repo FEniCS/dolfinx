@@ -9,9 +9,9 @@ import os
 import numpy as np
 import pytest
 from petsc4py import PETSc
-from dolfin import (MPI, Function, FunctionSpace, FacetNormal, CellDiameter)
+from dolfin import MPI, Function, FunctionSpace, FacetNormal, CellDiameter
 from dolfin.cpp.mesh import GhostMode
-from dolfin.fem import (assemble_matrix, assemble_scalar, assemble_vector)
+from dolfin.fem import assemble_matrix, assemble_scalar, assemble_vector
 from dolfin.io import XDMFFile
 from ufl import (SpatialCoordinate, div, dx, grad, inner, ds, dS, avg, jump,
                  TestFunction, TrialFunction)
