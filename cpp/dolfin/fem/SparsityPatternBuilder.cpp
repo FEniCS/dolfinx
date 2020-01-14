@@ -55,30 +55,23 @@ void SparsityPatternBuilder::interior_facets(
     if (connectivity->size_global(facet.index()) == 1)
       continue;
 
-    if (connectivity->size(facet.index()) == 1)
-    {
-      // FIXME: sort out ghosting
-      throw std::runtime_error(
-          "SparsityPatternBuilder cannot yet deal with ghosts");
-    }
-    else
-    {
-      // Get cells incident with facet
-      assert(connectivity->size(facet.index()) == 2);
-      const mesh::MeshEntity cell0(mesh, D, facet.entities(D)[0]);
-      const mesh::MeshEntity cell1(mesh, D, facet.entities(D)[1]);
+    // FIXME: sort out ghosting
 
-      // Tabulate dofs for each dimension on macro element
-      for (std::size_t i = 0; i < 2; i++)
-      {
-        auto cell_dofs0 = dofmaps[i]->cell_dofs(cell0.index());
-        auto cell_dofs1 = dofmaps[i]->cell_dofs(cell1.index());
-        macro_dofs[i].resize(cell_dofs0.size() + cell_dofs1.size());
-        std::copy(cell_dofs0.data(), cell_dofs0.data() + cell_dofs0.size(),
-                  macro_dofs[i].data());
-        std::copy(cell_dofs1.data(), cell_dofs1.data() + cell_dofs1.size(),
-                  macro_dofs[i].data() + cell_dofs0.size());
-      }
+    // Get cells incident with facet
+    assert(connectivity->size(facet.index()) == 2);
+    const mesh::MeshEntity cell0(mesh, D, facet.entities(D)[0]);
+    const mesh::MeshEntity cell1(mesh, D, facet.entities(D)[1]);
+
+    // Tabulate dofs for each dimension on macro element
+    for (std::size_t i = 0; i < 2; i++)
+    {
+      auto cell_dofs0 = dofmaps[i]->cell_dofs(cell0.index());
+      auto cell_dofs1 = dofmaps[i]->cell_dofs(cell1.index());
+      macro_dofs[i].resize(cell_dofs0.size() + cell_dofs1.size());
+      std::copy(cell_dofs0.data(), cell_dofs0.data() + cell_dofs0.size(),
+                macro_dofs[i].data());
+      std::copy(cell_dofs1.data(), cell_dofs1.data() + cell_dofs1.size(),
+                macro_dofs[i].data() + cell_dofs0.size());
     }
 
     pattern.insert_local(macro_dofs[0], macro_dofs[1]);
