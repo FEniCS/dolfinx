@@ -8,7 +8,6 @@ import os
 
 import numpy as np
 import pytest
-from dolfin_utils.test.skips import skip_in_parallel
 
 from petsc4py import PETSc
 from dolfin import MPI, Function, FunctionSpace, FacetNormal, CellDiameter
@@ -19,7 +18,6 @@ from ufl import (SpatialCoordinate, div, dx, grad, inner, ds, dS, avg, jump,
                  TestFunction, TrialFunction)
 
 
-@skip_in_parallel  # FIXME: Remove this skip once SparsityPatternBuilder can deal with ghosts
 @pytest.mark.parametrize("n", [2, 3, 4])
 @pytest.mark.parametrize("component", [0, 1, 2])
 @pytest.mark.parametrize("filename", ["UnitSquareMesh_triangle.xdmf",
@@ -32,7 +30,10 @@ def test_manufactured_poisson_dg(n, filename, component, datadir):
 
     """
     with XDMFFile(MPI.comm_world, os.path.join(datadir, filename)) as xdmf:
-        mesh = xdmf.read_mesh(GhostMode.none)
+        if MPI.size(MPI.comm_world) == 1:  # Serial
+            mesh = xdmf.read_mesh(GhostMode.none)
+        else:
+            mesh = xdmf.read_mesh(GhostMode.shared_facet)
 
     if component >= mesh.geometry.dim:
         return
