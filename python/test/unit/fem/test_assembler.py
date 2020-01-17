@@ -181,7 +181,7 @@ def test_assemble_manifold():
     w = dolfin.Function(U)
 
     a = ufl.inner(ufl.grad(u), ufl.grad(v)) * ufl.dx(mesh)
-    L = v * ufl.dx(mesh)
+    L = ufl.inner(1.0, v) * ufl.dx(mesh)
 
     bcs = [dolfin.DirichletBC(U, w, lambda x: numpy.isclose(x[0], 0.0))]
     A = dolfin.fem.assemble_matrix(a, bcs)
