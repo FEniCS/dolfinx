@@ -159,6 +159,40 @@ def test_assembly_bcs():
     assert (f - b_bc).norm() == pytest.approx(0.0, rel=1e-12, abs=1e-12)
 
 
+def test_assemble_manifold():
+    """Test assembly of poisson problem on a mesh with topological dimension 1
+    but embedded in 2D (gdim=2).
+    """
+    points = numpy.array([[0.0, 0.0], [0.2, 0.0], [0.4, 0.0],
+                        [0.6, 0.0], [0.8, 0.0], [1.0, 0.0]], dtype=numpy.float)
+    cells = numpy.array([[0, 1], [1, 2], [2, 3], [3, 4], [4, 5]], dtype=numpy.int32)
+
+    mesh = dolfin.Mesh(dolfin.MPI.comm_world,
+                    dolfin.cpp.mesh.CellType.interval, points, cells, [], dolfin.cpp.mesh.GhostMode.none)
+
+    assert mesh.geometry.dim == 2
+    assert mesh.topology.dim == 1
+
+    U = dolfin.FunctionSpace(mesh, ("P", 1))
+
+    u, v = ufl.TrialFunction(U), ufl.TestFunction(U)
+    w = dolfin.Function(U)
+
+    a = ufl.inner(ufl.grad(u), ufl.grad(v)) * ufl.dx(mesh)
+    L = v * ufl.dx(mesh)
+
+    bcs = [dolfin.DirichletBC(U, w, lambda x: numpy.isclose(x[0], 0.0))]
+    A = dolfin.fem.assemble_matrix(a, bcs)
+    A.assemble()
+
+    b = dolfin.fem.assemble_vector(L)
+    dolfin.fem.apply_lifting(b, [a], [bcs])
+    dolfin.fem.set_bc(b, bcs)
+
+    assert numpy.isclose(b.norm(), 0.41231)
+    assert numpy.isclose(A.norm(), 25.0199)
+
+
 def test_matrix_assembly_block():
     """Test assembly of block matrices and vectors into (a) monolithic
     blocked structures, PETSc Nest structures, and monolithic structures.
