@@ -37,7 +37,9 @@ def test_plus_minus(filename, space_type, datadir):
     # Check that these two integrals are equal
     for pm1, pm2 in product(["+", "-"], repeat=2):
         a = v(pm1) * v(pm2) * dS
-        results.append(fem.assemble_scalar(a))
-    print(results)
+        result = fem.assemble_scalar(a)
+        result = MPI.sum(mesh.mpi_comm(), result)
+        results.append(result)
+
     for i, j in combinations(results, 2):
         assert np.isclose(i, j)
