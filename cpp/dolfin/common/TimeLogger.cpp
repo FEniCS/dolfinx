@@ -8,6 +8,7 @@
 #include <dolfin/common/MPI.h>
 #include <dolfin/common/log.h>
 #include <vector>
+#include <variant>
 
 using namespace dolfin;
 using namespace dolfin::common;
@@ -68,7 +69,7 @@ Table TimeLogger::timings(std::set<TimingType> type)
   {
     const std::string task = it.first;
     const auto [num_timings, wall, usr, sys] = it.second;
-    table.set(task, "reps", num_timings);
+    table.set(task, "reps", std::variant<std::string, int, double>(num_timings));
     if (time_wall)
     {
       table.set(task, "wall avg", wall / static_cast<double>(num_timings));
