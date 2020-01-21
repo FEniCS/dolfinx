@@ -14,6 +14,7 @@ from dolfin import MPI, fem, FunctionSpace, Function
 from ufl import dS
 from dolfin.cpp.mesh import GhostMode
 from dolfin.io import XDMFFile
+from petsc4py import PETSc
 
 
 @pytest.mark.parametrize('space_type', ["CG", "DG"])
@@ -32,6 +33,9 @@ def test_plus_minus(filename, space_type, datadir):
     V = FunctionSpace(mesh, (space_type, 1))
     v = Function(V)
     v.interpolate(lambda x: x[0] - 2 * x[1])
+
+    v.vector.ghostUpdate(addv=PETSc.InsertMode.INSERT,
+                         mode=PETSc.ScatterMode.FORWARD)
 
     results = []
     # Check that these two integrals are equal
