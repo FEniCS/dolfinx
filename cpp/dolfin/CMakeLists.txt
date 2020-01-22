@@ -185,7 +185,6 @@ install(TARGETS dolfin EXPORT DOLFINTargets
 
 install(EXPORT DOLFINTargets DESTINATION ${DOLFIN_SHARE_DIR}/cmake)
 
-
 #------------------------------------------------------------------------------
 # Generate CMake config files (DOLFINConfig{,Version}.cmake)
 
@@ -193,19 +192,6 @@ include(CMakePackageConfigHelpers)
 write_basic_package_version_file(${CMAKE_BINARY_DIR}/dolfin/DOLFINConfigVersion.cmake
   VERSION ${DOLFIN_VERSION}
   COMPATIBILITY ExactVersion)
-
-  # configure_package_config_file(<input> <output>
-  # INSTALL_DESTINATION <path>
-  # [PATH_VARS <var1> <var2> ... <varN>]
-  # [NO_SET_AND_CHECK_MACRO]
-  # [NO_CHECK_REQUIRED_COMPONENTS_MACRO]
-  # [INSTALL_PREFIX <path>]
-  # )
-
-configure_package_config_file(${DOLFIN_CMAKE_DIR}/templates/DOLFINConfig.cmake.in
-${CMAKE_BINARY_DIR}/dolfin/XXDOLFINConfig.cmake
-INSTALL_DESTINATION ${DOLFIN_SHARE_DIR}/cmake)
-
 
 configure_file(${DOLFIN_CMAKE_DIR}/templates/DOLFINConfig.cmake.in
   ${CMAKE_BINARY_DIR}/dolfin/DOLFINConfig.cmake @ONLY)
