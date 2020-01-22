@@ -121,6 +121,7 @@ commands:
       - run: >
           cd docker &&
           sudo DOCKER_CLI_EXPERIMENTAL=enabled docker buildx build --cache-to=type=inline,mode=all
+            --progress plain
             --build-arg MAKEFLAGS='-j3'
             --build-arg PETSC_SLEPC_OPTFLAGS='-O3'
             --target << parameters.docker-target >>
