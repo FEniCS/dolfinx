@@ -117,12 +117,12 @@ commands:
     steps:
       - run: >
           cd docker &&
-          docker build --build-arg MAKEFLAGS='-j3'
+          sudo docker build --build-arg MAKEFLAGS='-j3'
           --build-arg PETSC_SLEPC_OPTFLAGS='-O3'
           --target << parameters.docker-target >>
           --file << parameters.dockerfile >>
           -t quay.io/fenicsproject/dolfinx:<< parameters.docker-target >> . &&
-          docker push quay.io/fenicsproject/dolfinx:<< parameters.docker-target >>
+          sudo docker push quay.io/fenicsproject/dolfinx:<< parameters.docker-target >>
 
 jobs:
   build-real:
@@ -214,16 +214,16 @@ jobs:
       - run:
           name: Update Docker
           command: |
-            apt-get -y remove docker docker-engine docker.io containerd runc
-            apt-get -y update
-            apt-get -y install apt-transport-https ca-certificates curl gnupg-agent software-properties-common
+            sudo apt-get -y remove docker docker-engine docker.io containerd runc
+            sudo apt-get -y update
+            sudo apt-get -y install apt-transport-https ca-certificates curl gnupg-agent software-properties-common
             curl -fsSL https://download.docker.com/linux/ubuntu/gpg | sudo apt-key add -
-            add-apt-repository -y "deb [arch=amd64] https://download.docker.com/linux/ubuntu $(lsb_release -cs) stable"
-            apt-get -y install docker-ce docker-ce-cli containerd.io
-            docker run hello-world
+            sudo add-apt-repository -y "deb [arch=amd64] https://download.docker.com/linux/ubuntu $(lsb_release -cs) stable"
+            sudo apt-get -y install docker-ce docker-ce-cli containerd.io
+            sudo docker run hello-world
       - run:
           name: Login to quay.io
-          command: echo ${QUAYIO_TOKEN} | docker login -u ${QUAYIO_USERNAME} --password-stdin quay.io
+          command: echo ${QUAYIO_TOKEN} | sudo docker login -u ${QUAYIO_USERNAME} --password-stdin quay.io
       - build-and-push-target:
           docker-target: "base"
           dockerfile: "Dockerfile.dev-env"
@@ -242,21 +242,21 @@ jobs:
       - run:
           name: Update Docker
           command: |
-            apt-get -y remove docker docker-engine docker.io containerd runc
-            apt-get -y update
-            apt-get -y install apt-transport-https ca-certificates curl gnupg-agent software-properties-common
+            sudo apt-get -y remove docker docker-engine docker.io containerd runc
+            sudo apt-get -y update
+            sudo apt-get -y install apt-transport-https ca-certificates curl gnupg-agent software-properties-common
             curl -fsSL https://download.docker.com/linux/ubuntu/gpg | sudo apt-key add -
-            add-apt-repository -y "deb [arch=amd64] https://download.docker.com/linux/ubuntu $(lsb_release -cs) stable"
-            apt-get -y install docker-ce docker-ce-cli containerd.io
-            docker run hello-world
+            sudo add-apt-repository -y "deb [arch=amd64] https://download.docker.com/linux/ubuntu $(lsb_release -cs) stable"
+            sudo apt-get -y install docker-ce docker-ce-cli containerd.io
+            sudo docker run hello-world
       - run:
           name: Login to quay.io
-          command: echo ${QUAYIO_TOKEN} | docker login -u ${QUAYIO_USERNAME} --password-stdin quay.io
+          command: echo ${QUAYIO_TOKEN} | sudo docker login -u ${QUAYIO_USERNAME} --password-stdin quay.io
       - run:
           name: Pull dev-env images
           command: |
-            docker pull quay.io/fenicsproject/dolfinx:dev-env-real
-            docker pull quay.io/fenicsproject/dolfinx:dev-env-complex
+            sudo docker pull quay.io/fenicsproject/dolfinx:dev-env-real
+            sudo docker pull quay.io/fenicsproject/dolfinx:dev-env-complex
       - build-and-push-target:
           docker-target: "real-onbuild"
       - build-and-push-target:
