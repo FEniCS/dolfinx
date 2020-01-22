@@ -207,12 +207,20 @@ jobs:
           command: cd /tmp/cpp/doc/html && scp -r * docs@fenicsproject.org:/var/www/vhosts/fenicsproject.org/docs/dolfinx/dev/cpp/
 
   build-and-push-dev-env-docker-images:
-    docker:
-      - image: docker:18.09-git
+    machine:
+      image: ubuntu-1604:201903-01
     steps:
-      - setup_remote_docker:
-          version: 18.09.3
       - checkout
+      - run:
+          name: Update Docker
+          command: |
+            apt-get -y remove docker docker-engine docker.io containerd runc
+            apt-get -y update
+            apt-get -y install apt-transport-https ca-certificates curl gnupg-agent software-properties-common
+            curl -fsSL https://download.docker.com/linux/ubuntu/gpg | sudo apt-key add -
+            add-apt-repository -y "deb [arch=amd64] https://download.docker.com/linux/ubuntu $(lsb_release -cs) stable"
+            apt-get -y install docker-ce docker-ce-cli containerd.io
+            docker run hello-world
       - run:
           name: Login to quay.io
           command: echo ${QUAYIO_TOKEN} | docker login -u ${QUAYIO_USERNAME} --password-stdin quay.io
@@ -227,12 +235,20 @@ jobs:
           dockerfile: "Dockerfile.dev-env"
 
   build-and-push-complete-build-docker-images:
-    docker:
-      - image: docker:18.09-git
+    machine:
+      image: ubuntu-1604:201903-01
     steps:
-      - setup_remote_docker:
-          version: 18.09.3
       - checkout
+      - run:
+          name: Update Docker
+          command: |
+            apt-get -y remove docker docker-engine docker.io containerd runc
+            apt-get -y update
+            apt-get -y install apt-transport-https ca-certificates curl gnupg-agent software-properties-common
+            curl -fsSL https://download.docker.com/linux/ubuntu/gpg | sudo apt-key add -
+            add-apt-repository -y "deb [arch=amd64] https://download.docker.com/linux/ubuntu $(lsb_release -cs) stable"
+            apt-get -y install docker-ce docker-ce-cli containerd.io
+            docker run hello-world
       - run:
           name: Login to quay.io
           command: echo ${QUAYIO_TOKEN} | docker login -u ${QUAYIO_USERNAME} --password-stdin quay.io
