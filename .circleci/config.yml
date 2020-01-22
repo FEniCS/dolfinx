@@ -120,7 +120,7 @@ commands:
     steps:
       - run: >
           cd docker &&
-          sudo docker buildx --cache-to=type=inline,mode=all
+          sudo DOCKER_CLI_EXPERIMENTAL=enabled docker buildx build --cache-to=type=inline,mode=all
             --build-arg MAKEFLAGS='-j3'
             --build-arg PETSC_SLEPC_OPTFLAGS='-O3'
             --target << parameters.docker-target >>
