@@ -168,12 +168,10 @@ get_remote_bcs(const common::IndexMap& map,
   return dofs;
 }
 //-----------------------------------------------------------------------------
-Eigen::Array<PetscInt, Eigen::Dynamic, 2>
-fem::locate_dofs_topological(
-    const function::FunctionSpace& V0,
-    const int dim,
+Eigen::Array<PetscInt, Eigen::Dynamic, 2> fem::locate_dofs_topological(
+    const function::FunctionSpace& V0, const int dim,
     const Eigen::Ref<const Eigen::Array<int, Eigen::Dynamic, 1>>& entities,
-    const function::FunctionSpace& V1)
+    const function::FunctionSpace& V1, bool remote)
 {
   // Get mesh
   assert(V0.mesh());
@@ -244,20 +242,23 @@ fem::locate_dofs_topological(
   std::sort(bc_dofs.begin(), bc_dofs.end());
   bc_dofs.erase(std::unique(bc_dofs.begin(), bc_dofs.end()), bc_dofs.end());
 
-  // Get bc dof indices (local) in (V, Vg) spaces on this process that
-  // were found by other processes, e.g. a vertex dof on this process that
-  // has no connected facets on the boundary.
-  const std::vector<std::array<PetscInt, 2>> dofs_remote = get_remote_bcs(
-      *V0.dofmap()->index_map, *V1.dofmap()->index_map, bc_dofs);
+  if (remote)
+  {
+    // Get bc dof indices (local) in (V, Vg) spaces on this process that
+    // were found by other processes, e.g. a vertex dof on this process that
+    // has no connected facets on the boundary.
+    const std::vector<std::array<PetscInt, 2>> dofs_remote = get_remote_bcs(
+        *V0.dofmap()->index_map, *V1.dofmap()->index_map, bc_dofs);
 
-  // Add received bc indices to dofs_local
-  for (auto& dof_remote : dofs_remote)
-    bc_dofs.push_back(dof_remote);
+    // Add received bc indices to dofs_local
+    for (auto& dof_remote : dofs_remote)
+      bc_dofs.push_back(dof_remote);
 
-  // TODO: is removing duplicates at this point worth the effort?
-  // Remove duplicates
-  std::sort(bc_dofs.begin(), bc_dofs.end());
-  bc_dofs.erase(std::unique(bc_dofs.begin(), bc_dofs.end()), bc_dofs.end());
+    // TODO: is removing duplicates at this point worth the effort?
+    // Remove duplicates
+    std::sort(bc_dofs.begin(), bc_dofs.end());
+    bc_dofs.erase(std::unique(bc_dofs.begin(), bc_dofs.end()), bc_dofs.end());
+  }
 
   Eigen::Array<PetscInt, Eigen::Dynamic, 2> dofs(
       bc_dofs.size(), 2);
@@ -272,7 +273,8 @@ fem::locate_dofs_topological(
 //-----------------------------------------------------------------------------
 Eigen::Array<PetscInt, Eigen::Dynamic, 1> fem::locate_dofs_topological(
     const function::FunctionSpace& V, const int entity_dim,
-    const Eigen::Ref<const Eigen::Array<int, Eigen::Dynamic, 1>>& entities)
+    const Eigen::Ref<const Eigen::Array<int, Eigen::Dynamic, 1>>& entities,
+    bool remote)
 {
   assert(V.dofmap());
   const DofMap& dofmap = *V.dofmap();
@@ -319,17 +321,25 @@ Eigen::Array<PetscInt, Eigen::Dynamic, 1> fem::locate_dofs_topological(
     }
   }
 
-  const std::vector<PetscInt> dofs_remote = get_remote_bcs(
-      *V.dofmap()->index_map, dofs);
-
-  // Add received bc indices to dofs_local
-  for (auto& dof_remote : dofs_remote)
-    dofs.push_back(dof_remote);
-
   // TODO: is removing duplicates at this point worth the effort?
   // Remove duplicates
   std::sort(dofs.begin(), dofs.end());
   dofs.erase(std::unique(dofs.begin(), dofs.end()), dofs.end());
+
+  if (remote)
+  {
+    const std::vector<PetscInt> dofs_remote = get_remote_bcs(
+        *V.dofmap()->index_map, dofs);
+
+    // Add received bc indices to dofs_local
+    for (auto& dof_remote : dofs_remote)
+      dofs.push_back(dof_remote);
+
+    // TODO: is removing duplicates at this point worth the effort?
+    // Remove duplicates
+    std::sort(dofs.begin(), dofs.end());
+    dofs.erase(std::unique(dofs.begin(), dofs.end()), dofs.end());
+  }
 
   return Eigen::Map<Eigen::Array<PetscInt, Eigen::Dynamic, 1>>(dofs.data(),
                                                                dofs.size());

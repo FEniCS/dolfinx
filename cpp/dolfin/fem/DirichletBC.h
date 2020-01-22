@@ -36,10 +36,12 @@ using marking_function = std::function<Eigen::Array<bool, Eigen::Dynamic, 1>(
 
 /// Build an array of degree-of-freedom indices that are associated with
 /// give mesh entities (topological)
+///
+/// @see locate_dofs_topological
 Eigen::Array<PetscInt, Eigen::Dynamic, 2> locate_dofs_topological(
     const function::FunctionSpace& V0, const int dim,
     const Eigen::Ref<const Eigen::Array<int, Eigen::Dynamic, 1>>& entities,
-    const function::FunctionSpace& V1);
+    const function::FunctionSpace& V1, bool remote = true);
 
 /// Build an array of degree-of-freedom indices that are associated with
 /// give mesh entities (topological)
@@ -55,10 +57,17 @@ Eigen::Array<PetscInt, Eigen::Dynamic, 2> locate_dofs_topological(
 ///                       which degrees of freedom will be located
 /// @param[in] entities Indices of mesh entities. All dofs associated
 ///                     with these indices will be returned.
+/// @param[in] remote True to return also "remotely located" degree-of-freedom
+///                   indices. Remotely located degree-of-freedom indices are local/owned
+///                   by the current process, but current process wouldn't
+///                   locate them because it doesn't recognize mesh entity as a
+///                   marked. For example a boundary dof that is owned by an
+///                   interior cell.
 /// @return Array of local indices of located degrees of freedom
 Eigen::Array<PetscInt, Eigen::Dynamic, 1> locate_dofs_topological(
     const function::FunctionSpace& V, const int entity_dim,
-    const Eigen::Ref<const Eigen::Array<int, Eigen::Dynamic, 1>>& entities);
+    const Eigen::Ref<const Eigen::Array<int, Eigen::Dynamic, 1>>& entities,
+    bool remote = true);
 
 /// Build an array of degree-of-freedom indices based on coordinates of
 /// the degree-of-freedom (geometric).

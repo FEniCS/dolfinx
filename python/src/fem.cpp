@@ -417,15 +417,17 @@ void fem(py::module& m)
         py::overload_cast<
             const dolfin::function::FunctionSpace&, const int,
             const Eigen::Ref<const Eigen::Array<int, Eigen::Dynamic, 1>>&,
-            const dolfin::function::FunctionSpace&>(
+            const dolfin::function::FunctionSpace&, bool>(
             &dolfin::fem::locate_dofs_topological),
-        py::arg("V0"), py::arg("dim"), py::arg("entities"), py::arg("V1"));
+        py::arg("V0"), py::arg("dim"), py::arg("entities"), py::arg("V1"),
+        py::arg("remote") = true);
   m.def("locate_dofs_topological",
         py::overload_cast<
             const dolfin::function::FunctionSpace&, const int,
-            const Eigen::Ref<const Eigen::Array<int, Eigen::Dynamic, 1>>&>(
-            &dolfin::fem::locate_dofs_topological),
-        py::arg("V"), py::arg("dim"), py::arg("entities"));
+            const Eigen::Ref<const Eigen::Array<int, Eigen::Dynamic, 1>>&,
+            bool>(&dolfin::fem::locate_dofs_topological),
+        py::arg("V"), py::arg("dim"), py::arg("entities"),
+        py::arg("remote") = true);
   m.def("locate_dofs_geometrical", &dolfin::fem::locate_dofs_geometrical);
 
 } // namespace dolfin_wrappers

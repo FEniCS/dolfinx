@@ -49,7 +49,8 @@ def locate_dofs_geometrical(V: typing.Union[function.FunctionSpace],
 def locate_dofs_topological(V: typing.Union[cpp.function.FunctionSpace, function.FunctionSpace],
                             entity_dim: int,
                             entities: typing.List[int],
-                            V1: typing.Union[cpp.function.FunctionSpace, function.FunctionSpace] = None):
+                            V1: typing.Union[cpp.function.FunctionSpace, function.FunctionSpace] = None,
+                            remote: bool = True):
     """Locate degrees-of-freedom belonging to mesh entities topologically .
 
     Parameters
@@ -63,6 +64,8 @@ def locate_dofs_topological(V: typing.Union[cpp.function.FunctionSpace, function
         located.
     V1 : optional
         Different function space in which to search for degree-of-freedom indices.
+    remote : True
+        True to return also "remotely located" degree-of-freedom indices.
 
     Returns
     -------
@@ -85,9 +88,9 @@ def locate_dofs_topological(V: typing.Union[cpp.function.FunctionSpace, function
         except AttributeError:
             _V1 = V1
 
-        return cpp.fem.locate_dofs_topological(_V, entity_dim, entities, _V1)
+        return cpp.fem.locate_dofs_topological(_V, entity_dim, entities, _V1, remote)
     else:
-        return cpp.fem.locate_dofs_topological(_V, entity_dim, entities)
+        return cpp.fem.locate_dofs_topological(_V, entity_dim, entities, remote)
 
 
 class DirichletBC(cpp.fem.DirichletBC):
