@@ -114,14 +114,18 @@ commands:
       dockerfile:
         type: string
         default: "Dockerfile"
+      extra-args:
+        type: string
+        default: ""
     steps:
       - run: >
           cd docker &&
-          sudo DOCKER_BUILDKIT=1 docker build --build-arg MAKEFLAGS='-j3'
+          sudo docker buildx --cache-to=type=inline,mode=all
+            --build-arg MAKEFLAGS='-j3'
             --build-arg PETSC_SLEPC_OPTFLAGS='-O3'
             --target << parameters.docker-target >>
             --file << parameters.dockerfile >>
-            -t quay.io/fenicsproject/dolfinx:<< parameters.docker-target >> . &&
+            << parameters.extra-args >> -t quay.io/fenicsproject/dolfinx:<< parameters.docker-target >> . &&
           sudo docker push quay.io/fenicsproject/dolfinx:<< parameters.docker-target >>
 
 jobs:
@@ -256,8 +260,10 @@ jobs:
             sudo docker pull quay.io/fenicsproject/dolfinx:dev-env-complex
       - build-and-push-target:
           docker-target: "real-onbuild"
+          extra-args: "--cache-from quay.io/fenicsproject/dolfinx:dev-env-real"
       - build-and-push-target:
           docker-target: "complex-onbuild"
+          extra-args: "--cache-from quay.io/fenicsproject/dolfinx:dev-env-complex"
       - build-and-push-target:
           docker-target: "real"
       - build-and-push-target:
