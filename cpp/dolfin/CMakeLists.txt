@@ -193,6 +193,10 @@ write_basic_package_version_file(${CMAKE_BINARY_DIR}/dolfin/DOLFINConfigVersion.
   VERSION ${DOLFIN_VERSION}
   COMPATIBILITY ExactVersion)
 
+configure_package_config_file(${DOLFIN_CMAKE_DIR}/templates/DOLFINConfig.cmake.in
+${CMAKE_BINARY_DIR}/dolfin/DOLFINXConfig.cmake
+INSTALL_DESTINATION ${DOLFIN_SHARE_DIR}/cmake)
+
 configure_file(${DOLFIN_CMAKE_DIR}/templates/DOLFINConfig.cmake.in
   ${CMAKE_BINARY_DIR}/dolfin/DOLFINConfig.cmake @ONLY)
 configure_file(${DOLFIN_CMAKE_DIR}/templates/UseDOLFIN.cmake.in
@@ -203,6 +207,7 @@ install(
   ${CMAKE_SOURCE_DIR}/cmake/modules/FindPETSc.cmake
   ${CMAKE_SOURCE_DIR}/cmake/modules/FindSLEPc.cmake
   ${CMAKE_BINARY_DIR}/dolfin/DOLFINConfig.cmake
+  ${CMAKE_BINARY_DIR}/dolfin/DOLFINXConfig.cmake
   ${CMAKE_BINARY_DIR}/dolfin/DOLFINConfigVersion.cmake
   ${CMAKE_BINARY_DIR}/dolfin/UseDOLFIN.cmake
   DESTINATION ${DOLFIN_SHARE_DIR}/cmake

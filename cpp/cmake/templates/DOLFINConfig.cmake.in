@@ -5,6 +5,8 @@
 
 # FIXME: Check that naming conforms to CMake standards
 
+# @PACKAGE_INIT@
+
 if (POLICY CMP0011)
   cmake_policy(SET CMP0011 NEW)
 endif()
