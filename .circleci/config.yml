@@ -117,11 +117,11 @@ commands:
     steps:
       - run: >
           cd docker &&
-          sudo docker build --build-arg MAKEFLAGS='-j3'
-          --build-arg PETSC_SLEPC_OPTFLAGS='-O3'
-          --target << parameters.docker-target >>
-          --file << parameters.dockerfile >>
-          -t quay.io/fenicsproject/dolfinx:<< parameters.docker-target >> . &&
+          sudo DOCKER_BUILDKIT=1 docker build --build-arg MAKEFLAGS='-j3'
+            --build-arg PETSC_SLEPC_OPTFLAGS='-O3'
+            --target << parameters.docker-target >>
+            --file << parameters.dockerfile >>
+            -t quay.io/fenicsproject/dolfinx:<< parameters.docker-target >> . &&
           sudo docker push quay.io/fenicsproject/dolfinx:<< parameters.docker-target >>
 
 jobs:
@@ -209,8 +209,6 @@ jobs:
   build-and-push-dev-env-docker-images:
     machine:
       image: ubuntu-1604:201903-01
-    environment:
-      DOCKER_BUILDKIT: 1
     steps:
       - checkout
       - run:
@@ -236,8 +234,6 @@ jobs:
   build-and-push-complete-build-docker-images:
     machine:
       image: ubuntu-1604:201903-01
-    environment:
-      DOCKER_BUILDKIT: 1
     steps:
       - checkout
       - run:
