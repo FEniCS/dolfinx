@@ -38,7 +38,7 @@ def test_manufactured_poisson_dg(n, filename, component, datadir):
     if component >= mesh.geometry.dim:
         return
 
-    V = FunctionSpace(mesh, ("Lagrange", n))
+    V = FunctionSpace(mesh, ("DG", n))
     u, v = TrialFunction(V), TestFunction(V)
 
     # Exact solution
