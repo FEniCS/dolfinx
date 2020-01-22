@@ -116,7 +116,7 @@ commands:
         default: "Dockerfile"
       extra-args:
         type: string
-        default: ""
+        default: " "
     steps:
       - run: >
           cd docker &&
@@ -125,7 +125,7 @@ commands:
             --build-arg PETSC_SLEPC_OPTFLAGS='-O3'
             --target << parameters.docker-target >>
             --file << parameters.dockerfile >>
-            << parameters.extra-args >> -t quay.io/fenicsproject/dolfinx:<< parameters.docker-target >> . &&
+            << parameters.extra-args >> --tag quay.io/fenicsproject/dolfinx:<< parameters.docker-target >> . &&
           sudo docker push quay.io/fenicsproject/dolfinx:<< parameters.docker-target >>
 
 jobs:
