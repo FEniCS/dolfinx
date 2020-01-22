@@ -116,17 +116,17 @@ commands:
         default: "Dockerfile"
       extra-args:
         type: string
-        default: " "
+        default: ""
     steps:
       - run: >
-          cd docker &&
+          cd docker && \
           sudo DOCKER_CLI_EXPERIMENTAL=enabled docker buildx build --cache-to=type=inline,mode=all
-            --progress plain
-            --build-arg MAKEFLAGS='-j3'
-            --build-arg PETSC_SLEPC_OPTFLAGS='-O3'
-            --target << parameters.docker-target >>
-            --file << parameters.dockerfile >>
-            << parameters.extra-args >> --tag quay.io/fenicsproject/dolfinx:<< parameters.docker-target >> . &&
+          --progress plain
+          --build-arg MAKEFLAGS='-j3'
+          --build-arg PETSC_SLEPC_OPTFLAGS='-O3'
+          --target << parameters.docker-target >>
+          --file << parameters.dockerfile >> << parameters.extra-args >>
+          --tag quay.io/fenicsproject/dolfinx:<< parameters.docker-target >> . &&
           sudo docker push quay.io/fenicsproject/dolfinx:<< parameters.docker-target >>
 
 jobs:
