@@ -174,6 +174,9 @@ def test_assemble_manifold():
     mesh = dolfin.Mesh(dolfin.MPI.comm_world,
                        dolfin.cpp.mesh.CellType.interval, points, cells, [], dolfin.cpp.mesh.GhostMode.none)
 
+
+    mesh.geometry.coord_mapping = dolfin.fem.create_coordinate_map(mesh)
+
     assert mesh.geometry.dim == 2
     assert mesh.topology.dim == 1
 
@@ -185,7 +188,8 @@ def test_assemble_manifold():
     a = ufl.inner(ufl.grad(u), ufl.grad(v)) * ufl.dx(mesh)
     L = ufl.inner(1.0, v) * ufl.dx(mesh)
 
-    bcs = [dolfin.DirichletBC(U, w, lambda x: numpy.isclose(x[0], 0.0))]
+    bcdofs = dolfin.fem.locate_dofs_geometrical(U, lambda x: numpy.isclose(x[0], 0.0))
+    bcs = [dolfin.DirichletBC(w, bcdofs)]
     A = dolfin.fem.assemble_matrix(a, bcs)
     A.assemble()
 
