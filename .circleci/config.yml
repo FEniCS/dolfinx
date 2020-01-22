@@ -209,6 +209,8 @@ jobs:
   build-and-push-dev-env-docker-images:
     machine:
       image: ubuntu-1604:201903-01
+    environment:
+      DOCKER_BUILDKIT: 1
     steps:
       - checkout
       - run:
@@ -226,17 +228,16 @@ jobs:
           command: echo ${QUAYIO_TOKEN} | sudo docker login -u ${QUAYIO_USERNAME} --password-stdin quay.io
       - build-and-push-target:
           docker-target: "base"
-          dockerfile: "Dockerfile.dev-env"
       - build-and-push-target:
           docker-target: "dev-env-real"
-          dockerfile: "Dockerfile.dev-env"
       - build-and-push-target:
           docker-target: "dev-env-complex"
-          dockerfile: "Dockerfile.dev-env"
 
   build-and-push-complete-build-docker-images:
     machine:
       image: ubuntu-1604:201903-01
+    environment:
+      DOCKER_BUILDKIT: 1
     steps:
       - checkout
       - run:
