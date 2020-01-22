@@ -119,7 +119,7 @@ commands:
         default: ""
     steps:
       - run: >
-          cd docker && \
+          cd docker &&
           sudo DOCKER_CLI_EXPERIMENTAL=enabled docker buildx build --cache-to=type=inline,mode=all
           --progress plain
           --build-arg MAKEFLAGS='-j3'
