@@ -174,7 +174,6 @@ def test_assemble_manifold():
     mesh = dolfin.Mesh(dolfin.MPI.comm_world,
                        dolfin.cpp.mesh.CellType.interval, points, cells, [], dolfin.cpp.mesh.GhostMode.none)
 
-
     mesh.geometry.coord_mapping = dolfin.fem.create_coordinate_map(mesh)
 
     assert mesh.geometry.dim == 2
