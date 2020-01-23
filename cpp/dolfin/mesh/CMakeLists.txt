@@ -12,7 +12,6 @@ set(HEADERS
   MeshQuality.h
   Topology.h
   MeshValueCollection.h
-  Ordering.h
   PartitionData.h
   TopologyComputation.h
   cell_types.h
@@ -29,7 +28,6 @@ set(SOURCES
   Partitioning.cpp
   MeshQuality.cpp
   Topology.cpp
-  Ordering.cpp
   PartitionData.cpp
   TopologyComputation.cpp
   cell_types.cpp
