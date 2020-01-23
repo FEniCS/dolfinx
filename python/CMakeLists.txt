@@ -7,7 +7,8 @@ find_package(pybind11 REQUIRED CONFIG HINTS ${PYBIND11_DIR} ${PYBIND11_ROOT}
   $ENV{PYBIND11_DIR} $ENV{PYBIND11_ROOT})
 
 find_package(DOLFIN REQUIRED)
-include(${DOLFIN_USE_FILE})
+
+include_directories(${DOLFIN_INCLUDE_DIRS})
 
 # Strict compiler flags
 #include(CheckCXXCompilerFlag)

@@ -36,11 +36,13 @@ project(${PROJECT_NAME})
 # Set CMake behavior
 cmake_policy(SET CMP0004 NEW)
 
+# Use C++17
+set(CMAKE_CXX_STANDARD 17)
+set(CMAKE_CXX_STANDARD_REQUIRED ON)
+
 # Get DOLFIN configuration data (DOLFINConfig.cmake must be in
 # DOLFIN_CMAKE_CONFIG_PATH)
 find_package(DOLFIN REQUIRED)
-
-include(${DOLFIN_USE_FILE})
 
 # Default build type (can be overridden by user)
 if (NOT CMAKE_BUILD_TYPE)
@@ -55,6 +57,8 @@ CHECK_CXX_COMPILER_FLAG("-Wno-comment" HAVE_NO_MULTLINE)
 if (HAVE_NO_MULTLINE)
   set(CMAKE_CXX_FLAGS "-Wno-comment ${CMAKE_CXX_FLAGS}")
 endif()
+
+include_directories(${DOLFIN_INCLUDE_DIRS})
 
 # Executable
 %(executables)s
