@@ -126,13 +126,14 @@ void FiniteElement::transform_reference_basis(
                                         Eigen::RowMajor>>& X,
     const Eigen::Tensor<double, 3, Eigen::RowMajor>& J,
     const Eigen::Ref<const Eigen::Array<double, Eigen::Dynamic, 1>>& detJ,
-    const Eigen::Tensor<double, 3, Eigen::RowMajor>& K) const
+    const Eigen::Tensor<double, 3, Eigen::RowMajor>& K,
+    bool* entity_reflections) const
 {
   assert(_transform_reference_basis_derivatives);
   const int num_points = X.rows();
   int ret = _transform_reference_basis_derivatives(
       values.data(), 0, num_points, reference_values.data(), X.data(), J.data(),
-      detJ.data(), K.data(), 1);
+      detJ.data(), K.data(), 1, entity_reflections);
   if (ret == -1)
   {
     throw std::runtime_error("Generated code returned error "
@@ -147,13 +148,14 @@ void FiniteElement::transform_reference_basis_derivatives(
                                         Eigen::RowMajor>>& X,
     const Eigen::Tensor<double, 3, Eigen::RowMajor>& J,
     const Eigen::Ref<const Eigen::Array<double, Eigen::Dynamic, 1>>& detJ,
-    const Eigen::Tensor<double, 3, Eigen::RowMajor>& K) const
+    const Eigen::Tensor<double, 3, Eigen::RowMajor>& K,
+    bool* entity_reflections) const
 {
   assert(_transform_reference_basis_derivatives);
   const int num_points = X.rows();
   int ret = _transform_reference_basis_derivatives(
       values.data(), order, num_points, reference_values.data(), X.data(),
-      J.data(), detJ.data(), K.data(), 1);
+      J.data(), detJ.data(), K.data(), 1, entity_reflections);
   if (ret == -1)
   {
     throw std::runtime_error("Generated code returned error "

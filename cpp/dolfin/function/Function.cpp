@@ -254,7 +254,7 @@ void Function::eval(
 
     // Push basis forward to physical element
     element.transform_reference_basis(basis_values, basis_reference_values, X,
-                                      J, detJ, K);
+                                      J, detJ, K, dofmap.cell_entity_reflections(cell_index));
 
     // Get degrees of freedom for current cell
     auto dofs = dofmap.cell_dofs(cell_index);
