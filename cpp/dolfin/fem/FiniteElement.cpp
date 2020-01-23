@@ -127,7 +127,7 @@ void FiniteElement::transform_reference_basis(
     const Eigen::Tensor<double, 3, Eigen::RowMajor>& J,
     const Eigen::Ref<const Eigen::Array<double, Eigen::Dynamic, 1>>& detJ,
     const Eigen::Tensor<double, 3, Eigen::RowMajor>& K,
-    bool* entity_reflections) const
+    const bool* entity_reflections) const
 {
   assert(_transform_reference_basis_derivatives);
   const int num_points = X.rows();
@@ -149,7 +149,7 @@ void FiniteElement::transform_reference_basis_derivatives(
     const Eigen::Tensor<double, 3, Eigen::RowMajor>& J,
     const Eigen::Ref<const Eigen::Array<double, Eigen::Dynamic, 1>>& detJ,
     const Eigen::Tensor<double, 3, Eigen::RowMajor>& K,
-    bool* entity_reflections) const
+    const bool* entity_reflections) const
 {
   assert(_transform_reference_basis_derivatives);
   const int num_points = X.rows();

@@ -81,7 +81,7 @@ public:
       const Eigen::Tensor<double, 3, Eigen::RowMajor>& J,
       const Eigen::Ref<const Eigen::Array<double, Eigen::Dynamic, 1>>& detJ,
       const Eigen::Tensor<double, 3, Eigen::RowMajor>& K,
-      bool* entity_reflections) const;
+      const bool* entity_reflections) const;
 
   /// Push basis function (derivatives) forward to physical element
   void transform_reference_basis_derivatives(
@@ -92,8 +92,7 @@ public:
       const Eigen::Tensor<double, 3, Eigen::RowMajor>& J,
       const Eigen::Ref<const Eigen::Array<double, Eigen::Dynamic, 1>>& detJ,
       const Eigen::Tensor<double, 3, Eigen::RowMajor>& K,
-      bool* entity_reflections) const;
-
+      const bool* entity_reflections) const;
 
   /// Tabulate the reference coordinates of all dofs on an element
   /// @return The coordinates of all dofs on the reference cell
@@ -152,7 +151,8 @@ private:
       _evaluate_reference_basis_derivatives;
 
   std::function<int(double*, int, int, const double*, const double*,
-                    const double*, const double*, const double*, int, bool*)>
+                    const double*, const double*, const double*, int,
+                    const bool*)>
       _transform_reference_basis_derivatives;
 
   std::function<int(ufc_scalar_t*, const ufc_scalar_t*, const double*, int,

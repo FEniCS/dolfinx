@@ -218,6 +218,9 @@ public:
   /// Cell type for this Mesh
   mesh::CellType cell_type() const;
 
+  /// Get entity reflection for the given cell
+  bool* get_entity_reflections(int cell_n) const;
+
 private:
   // Cell type
   mesh::CellType _cell_type;

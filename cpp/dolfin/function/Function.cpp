@@ -252,9 +252,11 @@ void Function::eval(
     // Compute basis on reference element
     element.evaluate_reference_basis(basis_reference_values, X);
 
+    bool* cell_entity_reflections = mesh.get_entity_reflections(cell_index);
+
     // Push basis forward to physical element
     element.transform_reference_basis(basis_values, basis_reference_values, X,
-                                      J, detJ, K, dofmap.cell_entity_reflections(cell_index));
+                                      J, detJ, K, cell_entity_reflections);
 
     // Get degrees of freedom for current cell
     auto dofs = dofmap.cell_dofs(cell_index);

@@ -17,6 +17,7 @@
 #include "utils.h"
 #include <dolfin/common/MPI.h>
 #include <dolfin/common/Timer.h>
+#include <dolfin/common/log.h>
 #include <dolfin/common/utils.h>
 #include <dolfin/io/cells.h>
 #include <dolfin/mesh/cell_types.h>
@@ -392,6 +393,41 @@ const Geometry& Mesh::geometry() const
 {
   assert(_geometry);
   return *_geometry;
+}
+//-----------------------------------------------------------------------------
+bool* Mesh::get_entity_reflections(int cell_n) const
+{
+  // TODO: cache this somewhere to avoid computing it every time its needed
+  const int tdim = _topology->dim();
+  int entities_per_cell = 1;
+  for (int d = 0; d < tdim; ++d)
+    entities_per_cell += cell_num_entities(_cell_type, d);
+
+  bool* entity_reflections = new bool[entities_per_cell];
+
+  int j = 0;
+  const mesh::MeshEntity cell(*this, tdim, cell_n);
+  for (int d = 0; d < tdim; ++d)
+  {
+    create_entities(d);
+    for (int i = 0; i < cell_num_entities(_cell_type, d); ++i)
+    {
+      if (d == 0)
+        entity_reflections[j] = false;
+      else
+      {
+        const int sub_e_n = cell.entities(d)[i];
+        MeshEntity facet(*this, d, sub_e_n);
+        entity_reflections[j] = cell.facet_permutation(facet) % 2;
+      }
+      ++j;
+    }
+  }
+  // Leave the reflection for the whole cell equal to 0
+  entity_reflections[j] = false;
+  assert(j + 1 == entities_per_cell);
+
+  return entity_reflections;
 }
 //-----------------------------------------------------------------------------
 std::size_t Mesh::create_entities(int dim) const
