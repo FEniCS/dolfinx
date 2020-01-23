@@ -233,7 +233,14 @@ std::vector<std::uint8_t> io::cells::vtk_to_dolfin(mesh::CellType type,
   case mesh::CellType::point:
     return {0};
   case mesh::CellType::interval:
-    return {0, 1};
+  {
+    const std::vector<std::uint8_t> reversed
+        = io::cells::dolfin_to_vtk(type, num_nodes);
+    std::vector<std::uint8_t> perm(num_nodes);
+    for (int i = 0; i < num_nodes; ++i)
+      perm[reversed[i]] = i;
+    return perm;
+  }
   case mesh::CellType::triangle:
   {
     const std::vector<std::uint8_t> reversed
