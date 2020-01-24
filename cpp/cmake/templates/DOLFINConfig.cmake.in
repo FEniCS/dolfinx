@@ -19,9 +19,7 @@ endif()
 set_and_check(DOLFIN_CXX_COMPILER "@CMAKE_CXX_COMPILER@")
 
 # Include directories
-set_and_check(DOLFIN_INCLUDE_DIRS "@CMAKE_INSTALL_PREFIX@/@DOLFIN_INCLUDE_DIR@")
-
-check_required_components(DOLFIN)
+target_include_directories(dolfin INTERFACE "@CMAKE_INSTALL_PREFIX@/@DOLFIN_INCLUDE_DIR@")
 
 # Find MPI
 find_package(MPI REQUIRED)
@@ -36,18 +34,19 @@ endif()
 set(Boost_NO_BOOST_CMAKE true)
 
 set(Boost_USE_MULTITHREADED $ENV{BOOST_USE_MULTITHREADED})
-find_package(Boost 1.56 QUIET REQUIRED COMPONENTS
-@DOLFIN_BOOST_COMPONENTS_PUBLIC@)
+find_package(Boost 1.56 QUIET REQUIRED COMPONENTS @DOLFIN_BOOST_COMPONENTS_PUBLIC@)
 
 if (NOT PETSC::petsc)
-set(DOLFIN_SKIP_BUILD_TESTS TRUE)
-list(APPEND CMAKE_MODULE_PATH "@CMAKE_INSTALL_PREFIX@/@DOLFIN_SHARE_DIR@/cmake")
-find_package(PETSc REQUIRED QUIET)
+  set(DOLFIN_SKIP_BUILD_TESTS TRUE)
+  list(APPEND CMAKE_MODULE_PATH "@CMAKE_INSTALL_PREFIX@/@DOLFIN_SHARE_DIR@/cmake")
+  find_package(PETSc REQUIRED QUIET)
 endif()
 
 if (@SLEPC_FOUND@)
-if (NOT SLEPC::slepc)
+  if (NOT SLEPC::slepc)
     set(DOLFIN_SKIP_BUILD_TESTS TRUE)
     find_package(SLEPc REQUIRED QUIET)
+  endif()
 endif()
-endif()
+
+check_required_components(DOLFIN)

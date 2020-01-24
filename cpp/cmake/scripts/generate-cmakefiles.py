@@ -58,8 +58,6 @@ if (HAVE_NO_MULTLINE)
   set(CMAKE_CXX_FLAGS "-Wno-comment ${CMAKE_CXX_FLAGS}")
 endif()
 
-include_directories(${DOLFIN_INCLUDE_DIRS})
-
 # Executable
 %(executables)s
 
