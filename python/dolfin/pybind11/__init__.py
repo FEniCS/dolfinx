@@ -4,8 +4,8 @@
 #
 # SPDX-License-Identifier:    LGPL-3.0-or-later
 
+
 def get_include_path():
     """Return path to pybind11 wrapper header files"""
     import pathlib
     return pathlib.Path(__file__).parent
-
