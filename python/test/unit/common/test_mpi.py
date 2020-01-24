@@ -15,7 +15,7 @@ from dolfin_utils.test.fixtures import tempdir  # noqa: F401
 from mpi4py import MPI
 
 import dolfin
-from dolfin import pybind11
+from dolfin import wrappers
 from dolfin.jit import dolfin_pc, mpi_jit_decorator
 
 
@@ -38,7 +38,7 @@ def test_mpi_comm_wrapper_cppimport(tempdir):  # noqa: F811
         cpp_code_header = f"""
         <%
         setup_pybind11(cfg)
-        cfg['include_dirs'] += {dolfin_pc["include_dirs"] + [mpi4py.get_include()] + [str(pybind11.get_include_path())]}
+        cfg['include_dirs'] += {dolfin_pc["include_dirs"] + [mpi4py.get_include()] + [str(wrappers.get_include_path())]}
         %>
         """
 

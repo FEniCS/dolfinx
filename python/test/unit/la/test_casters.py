@@ -16,7 +16,7 @@ from dolfin_utils.test.fixtures import tempdir  # noqa: F401
 from petsc4py import PETSc
 
 import dolfin
-from dolfin.pybind11 import get_include_path as pybind_inc
+from dolfin.wrappers import get_include_path as pybind_inc
 from dolfin.jit import dolfin_pc, mpi_jit_decorator
 
 
