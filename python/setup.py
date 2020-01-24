@@ -4,6 +4,7 @@ import platform
 import re
 import subprocess
 import sys
+# from distutils.command.install_headers import install_headers
 from distutils.version import LooseVersion
 
 from setuptools import Extension, setup
@@ -84,6 +85,8 @@ setup(name='fenics-dolfin',
                 "dolfin.la",
                 "dolfin_utils.test"],
       ext_modules=[CMakeExtension('dolfin.cpp')],
+    #   headers=['src/MPICommWrapper.h'],
+    #   cmdclass=dict(install_headers=install_headers, build_ext=CMakeBuild),
       cmdclass=dict(build_ext=CMakeBuild),
       install_requires=REQUIREMENTS,
       zip_safe=False)
