@@ -68,17 +68,10 @@ if (DOLFIN_DEPRECATION_ERROR)
 endif()
 
 # Set 'Developer' build type flags
-set(CMAKE_CXX_FLAGS_DEVELOPER "${DOLFIN_CXX_DEVELOPER_FLAGS}" CACHE STRING
-  "Flags used by the compiler during development." FORCE)
-
-# FIXME: Do we want to add -DDEBUG to RelWithDebInfo?
+target_compile_options(dolfin PRIVATE $<$<CONFIG:Developer>:${DOLFIN_CXX_DEVELOPER_FLAGS}>)
 
 # Set debug definitions
-if (CMAKE_BUILD_TYPE STREQUAL "Developer" OR CMAKE_BUILD_TYPE STREQUAL "Debug")
-  target_compile_definitions(dolfin PUBLIC DEBUG)
-else()
-  target_compile_definitions(dolfin PUBLIC NDEBUG)
-endif()
+target_compile_definitions(dolfin PRIVATE $<$<OR:$<CONFIG:Debug>,$<CONFIG:Developer>>:DEBUG>)
 
 #------------------------------------------------------------------------------
 # Add include directories and libraries of required packages
