@@ -50,19 +50,17 @@ if (NOT CMAKE_BUILD_TYPE)
       "Choose the type of build, options are: Debug MinSizeRel Release RelWithDebInfo." FORCE)
 endif()
 
-# Do not throw error for 'multi-line comments' (these are typical in
-# rst which includes LaTeX)
-include(CheckCXXCompilerFlag)
-CHECK_CXX_COMPILER_FLAG("-Wno-comment" HAVE_NO_MULTLINE)
-if (HAVE_NO_MULTLINE)
-  set(CMAKE_CXX_FLAGS "-Wno-comment ${CMAKE_CXX_FLAGS}")
-endif()
-
 # Executable
 %(executables)s
 
 # Target libraries
 %(target_libraries)s
+
+# Do not throw error for 'multi-line comments' (these are typical in
+# rst which includes LaTeX)
+include(CheckCXXCompilerFlag)
+CHECK_CXX_COMPILER_FLAG("-Wno-comment" HAVE_NO_MULTLINE)
+target_compile_options(${PROJECT_NAME} PRIVATE $<$<BOOL:${HAVE_NO_MULTLINE}>:-Wno-comment>)
 
 # Test targets
 set(test_parameters -np 3 "./${PROJECT_NAME}")
