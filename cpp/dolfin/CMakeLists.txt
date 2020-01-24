@@ -15,22 +15,8 @@ include_directories(${CMAKE_BINARY_DIR})
 #------------------------------------------------------------------------------
 # DOLFIN source directories
 
-# All files and directories in this directory
-file(GLOB DOLFIN_CONTENT RELATIVE ${CMAKE_CURRENT_SOURCE_DIR} *)
-
-# Initialize list
-set(DOLFIN_DIRS)
-
-# List of excluded files and directories
-set(EXCLUDES ${DOLFIN_H} CMakeLists.txt)
-
-# Iterate over all directories and files and append to DOLFIN_DIRS
-foreach(_DIR_NAME ${DOLFIN_CONTENT})
-  list(FIND EXCLUDES ${_DIR_NAME} INDEX_EXCLUDES)
-  if (${INDEX_EXCLUDES} LESS 0)
-    list(APPEND DOLFIN_DIRS ${_DIR_NAME})
-  endif()
-endforeach()
+set(DOLFIN_DIRS common fem function generation geometry graph io la mesh nls
+                refinement)
 
 #------------------------------------------------------------------------------
 # Install header files
@@ -62,10 +48,6 @@ set_target_properties(dolfin PROPERTIES ${DOLFIN_LIBRARY_PROPERTIES})
 
 #------------------------------------------------------------------------------
 # General compiler defintions
-
-if (DOLFIN_DEPRECATION_ERROR)
-  target_compile_definitions(dolfin PUBLIC DOLFIN_DEPRECATION_ERROR)
-endif()
 
 # Set 'Developer' build type flags
 target_compile_options(dolfin PRIVATE $<$<CONFIG:Developer>:${DOLFIN_CXX_DEVELOPER_FLAGS}>)
