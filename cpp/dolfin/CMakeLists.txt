@@ -42,7 +42,13 @@ endforeach()
 #------------------------------------------------------------------------------
 # Define libraries
 
-add_library(dolfin ${DOLFIN_SOURCES})
+# message(${DOLFIN_SOURCES})
+# add_library(dolfin ${DOLFIN_SOURCES})
+add_library(dolfin)
+
+target_sources(dolfin PRIVATE ${DOLFIN_SOURCES})
+
+# add_subdirectory(fem)
 set_target_properties(dolfin PROPERTIES ${DOLFIN_LIBRARY_PROPERTIES})
 
 #------------------------------------------------------------------------------

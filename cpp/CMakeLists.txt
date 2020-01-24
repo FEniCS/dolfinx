@@ -392,14 +392,14 @@ install(DIRECTORY demo DESTINATION ${DOLFIN_SHARE_DIR}
 #------------------------------------------------------------------------------
 # Add tests
 
-enable_testing()
+# enable_testing()
 
-# Add target "unittests", but do not add to default target
-add_subdirectory(test/unit EXCLUDE_FROM_ALL)
+# # Add target "unittests", but do not add to default target
+# add_subdirectory(test/unit EXCLUDE_FROM_ALL)
 
-# Add demos but do not add to default target
-set(CMAKE_MODULE_PATH "${DOLFIN_CMAKE_DIR}/modules")
-add_subdirectory(demo EXCLUDE_FROM_ALL)
+# # Add demos but do not add to default target
+# set(CMAKE_MODULE_PATH "${DOLFIN_CMAKE_DIR}/modules")
+# add_subdirectory(demo EXCLUDE_FROM_ALL)
 
 #------------------------------------------------------------------------------
 # Add "make uninstall" target
