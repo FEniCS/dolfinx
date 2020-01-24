@@ -8,8 +8,6 @@ find_package(pybind11 REQUIRED CONFIG HINTS ${PYBIND11_DIR} ${PYBIND11_ROOT}
 
 find_package(DOLFIN REQUIRED)
 
-# include_directories(${DOLFIN_INCLUDE_DIRS})
-
 # Strict compiler flags
 #include(CheckCXXCompilerFlag)
 #CHECK_CXX_COMPILER_FLAG("-Wall -Werror -pedantic" HAVE_PEDANTIC)

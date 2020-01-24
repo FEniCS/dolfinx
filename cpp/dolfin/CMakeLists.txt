@@ -10,7 +10,6 @@ install(FILES ${CMAKE_BINARY_DIR}/dolfin/common/version.h
   DESTINATION ${DOLFIN_INCLUDE_DIR}/dolfin/common/
   COMPONENT Development
   )
-include_directories(${CMAKE_BINARY_DIR})
 
 #------------------------------------------------------------------------------
 # DOLFIN source directories
