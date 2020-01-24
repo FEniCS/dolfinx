@@ -397,7 +397,7 @@ const Geometry& Mesh::geometry() const
 //-----------------------------------------------------------------------------
 bool* Mesh::get_entity_reflections(int cell_n) const
 {
-  // TODO: cache this somewhere to avoid computing it every time its needed
+  // FIXME: cache this somewhere to avoid computing it every time its needed
   const int tdim = _topology->dim();
   int entities_per_cell = 1;
   for (int d = 0; d < tdim; ++d)
@@ -413,17 +413,20 @@ bool* Mesh::get_entity_reflections(int cell_n) const
     for (int i = 0; i < cell_num_entities(_cell_type, d); ++i)
     {
       if (d == 0)
+        // Points cannot be reflected so always false
         entity_reflections[j] = false;
       else
       {
+        // Get the facet
         const int sub_e_n = cell.entities(d)[i];
         MeshEntity facet(*this, d, sub_e_n);
+        // cell.facet_permutation(facet) % 2 is the number of reflections.
         entity_reflections[j] = cell.facet_permutation(facet) % 2;
       }
       ++j;
     }
   }
-  // Leave the reflection for the whole cell equal to 0
+  // The reflection for the whole cell is false
   entity_reflections[j] = false;
   assert(j + 1 == entities_per_cell);
 
