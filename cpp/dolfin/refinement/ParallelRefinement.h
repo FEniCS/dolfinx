@@ -10,6 +10,7 @@
 #include <map>
 #include <unordered_map>
 #include <vector>
+#include <dolfin/common/MPI.h>
 
 namespace dolfin
 {
@@ -96,6 +97,8 @@ public:
 private:
   // mesh::Mesh reference
   const mesh::Mesh& _mesh;
+
+  MPI_Comm _neighbour_comm;
 
   // Mapping from old local edge index to new global vertex, needed to
   // create new topology

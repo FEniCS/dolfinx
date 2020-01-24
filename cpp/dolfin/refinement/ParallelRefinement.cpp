@@ -22,12 +22,42 @@ using namespace dolfin;
 using namespace dolfin::refinement;
 
 //-----------------------------------------------------------------------------
+namespace
+{
+MPI_Comm find_edge_neighbours(const mesh::Mesh& mesh)
+{
+  // Look at all "shared edges" and find neighbours
+  if (!mesh.topology().connectivity(1, 0))
+    throw std::runtime_error("Edges must be initialised");
+
+  const std::map<std::int32_t, std::set<std::int32_t>>& shared_edges
+      = mesh.topology().shared_entities(1);
+
+  std::set<std::int32_t> neighbour_set;
+  for (auto q : shared_edges)
+    neighbour_set.insert(q.second.begin(), q.second.end());
+
+  std::vector<std::int32_t> neighbours(neighbour_set.begin(),
+                                       neighbour_set.end());
+
+  MPI_Comm neighbour_comm;
+  MPI_Dist_graph_create_adjacent(
+      mesh.mpi_comm(), neighbours.size(), neighbours.data(), MPI_UNWEIGHTED,
+      neighbours.size(), neighbours.data(), MPI_UNWEIGHTED, MPI_INFO_NULL,
+      false, &neighbour_comm);
+
+  return neighbour_comm;
+}
+} // namespace
+//-----------------------------------------------------------------------------
 ParallelRefinement::ParallelRefinement(const mesh::Mesh& mesh)
     : _mesh(mesh), _marked_edges(mesh.num_entities(1), false),
       _marked_for_update(MPI::size(mesh.mpi_comm()))
 {
   if (!_mesh.topology().connectivity(1, 0))
     throw std::runtime_error("Edges must be initialised");
+
+  _neighbour_comm = find_edge_neighbours(mesh);
 
   // Create a global-to-local map for shared edges
   const std::map<std::int32_t, std::set<std::int32_t>>& shared_edges
@@ -129,17 +159,54 @@ void ParallelRefinement::update_logical_edgefunction()
 {
   const std::size_t mpi_size = MPI::size(_mesh.mpi_comm());
 
+  // Get list of neighbours
+  int indegree(-1), outdegree(-2), weighted(-1);
+  MPI_Dist_graph_neighbors_count(_neighbour_comm, &indegree, &outdegree,
+                                 &weighted);
+  assert(indegree == outdegree);
+  std::vector<int> neighbours(indegree), neighbours1(indegree),
+      weights(indegree), weights1(indegree);
+
+  MPI_Dist_graph_neighbors(_neighbour_comm, indegree, neighbours.data(),
+                           weights.data(), outdegree, neighbours1.data(),
+                           weights1.data());
+
+  std::vector<std::int32_t> nsend(neighbours.size()), nrecv(neighbours.size());
+  for (std::size_t i = 0; i < neighbours.size(); ++i)
+    nsend[i] = _marked_for_update[neighbours[i]].size();
+
   // Send all shared edges marked for update and receive from other
   // processes
   std::vector<std::int64_t> received_values;
-  MPI::all_to_all(_mesh.mpi_comm(), _marked_for_update, received_values);
+  //  MPI::all_to_all(_mesh.mpi_comm(), _marked_for_update, received_values);
+
+  MPI_Neighbor_alltoall(nsend.data(), neighbours.size(),
+                        MPI::mpi_type<std::int32_t>(), nrecv.data(),
+                        neighbours.size(), MPI::mpi_type<std::int32_t>(),
+                        _neighbour_comm);
+
+  std::vector<int> displs_send(nsend.size() + 1, 0);
+  std::vector<int> displs_recv(nrecv.size() + 1, 0);
+  std::partial_sum(nsend.begin(), nsend.end(), displs_send.begin() + 1);
+  std::partial_sum(nrecv.begin(), nrecv.end(), displs_recv.begin() + 1);
+  std::vector<std::int64_t> data_to_send(displs_send.back());
+  std::vector<std::int64_t> data_to_recv(displs_recv.back());
+  for (std::size_t i = 0; i < neighbours.size(); ++i)
+    std::copy(_marked_for_update[neighbours[i]].begin(),
+              _marked_for_update[neighbours[i]].end(),
+              data_to_send.begin() + displs_send[i]);
+
+  MPI_Neighbor_alltoallv(data_to_send.data(), nsend.data(), displs_send.data(),
+                         MPI::mpi_type<std::int64_t>(), data_to_recv.data(),
+                         nrecv.data(), displs_recv.data(),
+                         MPI::mpi_type<std::int64_t>(), _neighbour_comm);
 
   // Clear marked_for_update vectors
   _marked_for_update = std::vector<std::vector<std::int64_t>>(mpi_size);
 
   // Flatten received values and set edges mesh::MeshFunction true at
   // each index received
-  for (auto const& global_index : received_values)
+  for (auto const& global_index : data_to_recv)
   {
     const auto map_it = _global_to_local_edge_map.find(global_index);
     assert(map_it != _global_to_local_edge_map.end());
