@@ -177,12 +177,9 @@ void ParallelRefinement::update_logical_edgefunction()
 
   // Send all shared edges marked for update and receive from other
   // processes
-  std::vector<std::int64_t> received_values;
-  //  MPI::all_to_all(_mesh.mpi_comm(), _marked_for_update, received_values);
 
-  MPI_Neighbor_alltoall(nsend.data(), neighbours.size(),
-                        MPI::mpi_type<std::int32_t>(), nrecv.data(),
-                        neighbours.size(), MPI::mpi_type<std::int32_t>(),
+  MPI_Neighbor_alltoall(nsend.data(), 1, MPI::mpi_type<std::int32_t>(),
+                        nrecv.data(), 1, MPI::mpi_type<std::int32_t>(),
                         _neighbour_comm);
 
   std::vector<int> displs_send(nsend.size() + 1, 0);
