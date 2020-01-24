@@ -164,8 +164,10 @@ endif()
 #------------------------------------------------------------------------------
 # Set compiler flags, include directories and library dependencies
 
-# Add compiler include directories
-include_directories(BEFORE ${DOLFIN_SOURCE_DIR})
+# Set target includes
+target_include_directories(dolfin PUBLIC
+                           $<INSTALL_INTERFACE:include>
+                           $<BUILD_INTERFACE:${DOLFIN_SOURCE_DIR}>)
 
 # Add CXX definitions
 target_compile_definitions(dolfin PUBLIC DOLFIN_VERSION="${DOLFIN_VERSION}")

@@ -18,9 +18,6 @@ endif()
 # Compilers
 set_and_check(DOLFIN_CXX_COMPILER "@CMAKE_CXX_COMPILER@")
 
-# Include directories
-target_include_directories(dolfin INTERFACE "@CMAKE_INSTALL_PREFIX@/@DOLFIN_INCLUDE_DIR@")
-
 # Find MPI
 find_package(MPI REQUIRED)
 
