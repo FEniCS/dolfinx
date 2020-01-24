@@ -18,7 +18,7 @@ from dolfin_utils.test.fixtures import tempdir  # noqa: F401
 from petsc4py import PETSc
 
 
-def test_petsc_casters_cppimport(tempdir):  # noqa: F811
+def xtest_petsc_casters_cppimport(tempdir):  # noqa: F811
     """
     Test casters of PETSc objects in codes compiled with cppimport
     """

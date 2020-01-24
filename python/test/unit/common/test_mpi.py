@@ -44,7 +44,6 @@ def xtest_mpi_comm_wrapper_cppimport(tempdir):  # noqa: F811
 
         cpp_code = """
         #include <pybind11/pybind11.h>
-
         #include <dolfin/pybind11/caster_mpi.h>
 
         dolfin_wrappers::MPICommWrapper
