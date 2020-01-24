@@ -18,9 +18,7 @@ from mpi4py import MPI
 
 
 def test_mpi_comm_wrapper():
-    """
-    Test MPICommWrapper <-> mpi4py.MPI.Comm conversion
-    """
+    """Test MPICommWrapper <-> mpi4py.MPI.Comm conversion"""
     w1 = MPI.COMM_WORLD
 
     m = dolfin.UnitSquareMesh(w1, 4, 4)
@@ -30,10 +28,8 @@ def test_mpi_comm_wrapper():
     assert isinstance(w2, MPI.Comm)
 
 
-def test_mpi_comm_wrapper_cppimport(tempdir):  # noqa: F811
-    """
-    Test MPICommWrapper <-> mpi4py.MPI.Comm conversion for code compiled with cppimport
-    """
+def xtest_mpi_comm_wrapper_cppimport(tempdir):  # noqa: F811
+    """Test MPICommWrapper <-> mpi4py.MPI.Comm conversion for code compiled with cppimport"""
 
     cppimport = pytest.importorskip("cppimport")
 
