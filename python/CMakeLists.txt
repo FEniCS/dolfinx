@@ -19,19 +19,19 @@ find_package(DOLFIN REQUIRED)
 
 # Create the binding library
 pybind11_add_module(cpp SHARED
-  dolfin/src/dolfin.cpp
-  dolfin/src/common.cpp
-  dolfin/src/fem.cpp
-  dolfin/src/function.cpp
-  dolfin/src/generation.cpp
-  dolfin/src/geometry.cpp
-  dolfin/src/graph.cpp
-  dolfin/src/io.cpp
-  dolfin/src/la.cpp
-  dolfin/src/log.cpp
-  dolfin/src/mesh.cpp
-  dolfin/src/nls.cpp
-  dolfin/src/refinement.cpp)
+  dolfin/pybind11/dolfin.cpp
+  dolfin/pybind11/common.cpp
+  dolfin/pybind11/fem.cpp
+  dolfin/pybind11/function.cpp
+  dolfin/pybind11/generation.cpp
+  dolfin/pybind11/geometry.cpp
+  dolfin/pybind11/graph.cpp
+  dolfin/pybind11/io.cpp
+  dolfin/pybind11/la.cpp
+  dolfin/pybind11/log.cpp
+  dolfin/pybind11/mesh.cpp
+  dolfin/pybind11/nls.cpp
+  dolfin/pybind11/refinement.cpp)
 
 # Add DOLFIN libraries and other config
 target_link_libraries(cpp PRIVATE pybind11::module dolfin)

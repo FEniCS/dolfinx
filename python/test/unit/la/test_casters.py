@@ -10,6 +10,7 @@ import os
 import sys
 
 import dolfin
+import dolfin.pybind11
 import numpy
 import petsc4py
 import pytest
@@ -18,7 +19,7 @@ from dolfin_utils.test.fixtures import tempdir  # noqa: F401
 from petsc4py import PETSc
 
 
-def xtest_petsc_casters_cppimport(tempdir):  # noqa: F811
+def test_petsc_casters_cppimport(tempdir):  # noqa: F811
     """
     Test casters of PETSc objects in codes compiled with cppimport
     """
@@ -30,7 +31,7 @@ def xtest_petsc_casters_cppimport(tempdir):  # noqa: F811
         cpp_code_header = f"""
         <%
         setup_pybind11(cfg)
-        cfg['include_dirs'] += {dolfin_pc["include_dirs"] + [petsc4py.get_include()]}
+        cfg['include_dirs'] += {dolfin_pc["include_dirs"] + [petsc4py.get_include()] + [dolfin.pybind11.get_include_path()]}
         cfg['compiler_args'] += {["-D" + dm for dm in dolfin_pc["define_macros"]]}
         cfg['libraries'] += {dolfin_pc["libraries"]}
         cfg['library_dirs'] += {dolfin_pc["library_dirs"]}
