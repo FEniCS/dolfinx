@@ -9,14 +9,15 @@
 import os
 import sys
 
-import dolfin
-import dolfin.pybind11
 import numpy
 import petsc4py
 import pytest
-from dolfin.jit import dolfin_pc, mpi_jit_decorator
 from dolfin_utils.test.fixtures import tempdir  # noqa: F401
 from petsc4py import PETSc
+
+import dolfin
+from dolfin.pybind11 import get_include_path as pybind_inc
+from dolfin.jit import dolfin_pc, mpi_jit_decorator
 
 
 def test_petsc_casters_cppimport(tempdir):  # noqa: F811
@@ -31,7 +32,7 @@ def test_petsc_casters_cppimport(tempdir):  # noqa: F811
         cpp_code_header = f"""
         <%
         setup_pybind11(cfg)
-        cfg['include_dirs'] += {dolfin_pc["include_dirs"] + [petsc4py.get_include()] + [str(dolfin.pybind11.get_include_path())]}
+        cfg['include_dirs'] += {dolfin_pc["include_dirs"] + [petsc4py.get_include()] + [str(pybind_inc())]}
         cfg['compiler_args'] += {["-D" + dm for dm in dolfin_pc["define_macros"]]}
         cfg['libraries'] += {dolfin_pc["libraries"]}
         cfg['library_dirs'] += {dolfin_pc["library_dirs"]}
