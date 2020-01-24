@@ -4,7 +4,6 @@ import platform
 import re
 import subprocess
 import sys
-# from distutils.command.install_headers import install_headers
 from distutils.version import LooseVersion
 
 from setuptools import Extension, setup
@@ -72,7 +71,6 @@ class CMakeBuild(build_ext):
             os.makedirs(self.build_temp)
         subprocess.check_call(['cmake', ext.sourcedir] + cmake_args, cwd=self.build_temp, env=env)
         subprocess.check_call(['cmake', '--build', '.'] + build_args, cwd=self.build_temp, env=env)
-        # subprocess.check_call(['cmake', '--build', '.', '--target', 'install'] + build_args, cwd=self.build_temp, env=env)
 
 
 setup(name='fenics-dolfin',
@@ -83,10 +81,14 @@ setup(name='fenics-dolfin',
       packages=["dolfin",
                 "dolfin.fem",
                 "dolfin.la",
-                "dolfin_utils.test"],
+                "dolfin_utils.test",
+                "dolfin.include"],
+      package_dir={'dolfin': 'dolfin',
+                   'dolfin.fem': 'dolfin/fem',
+                   'dolfin.la': 'dolfin/la',
+                   'dolfin.include': 'dolfin/src'},
+      package_data={'dolfin.include': ['*.h']},
       ext_modules=[CMakeExtension('dolfin.cpp')],
-    #   headers=['src/MPICommWrapper.h'],
-    #   cmdclass=dict(install_headers=install_headers, build_ext=CMakeBuild),
       cmdclass=dict(build_ext=CMakeBuild),
       install_requires=REQUIREMENTS,
       zip_safe=False)

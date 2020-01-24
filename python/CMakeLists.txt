@@ -19,29 +19,22 @@ find_package(DOLFIN REQUIRED)
 
 # Create the binding library
 pybind11_add_module(cpp SHARED
-  src/dolfin.cpp
-  src/common.cpp
-  src/fem.cpp
-  src/function.cpp
-  src/generation.cpp
-  src/geometry.cpp
-  src/graph.cpp
-  src/io.cpp
-  src/la.cpp
-  src/log.cpp
-  src/mesh.cpp
-  src/nls.cpp
-  src/refinement.cpp)
+  dolfin/src/dolfin.cpp
+  dolfin/src/common.cpp
+  dolfin/src/fem.cpp
+  dolfin/src/function.cpp
+  dolfin/src/generation.cpp
+  dolfin/src/geometry.cpp
+  dolfin/src/graph.cpp
+  dolfin/src/io.cpp
+  dolfin/src/la.cpp
+  dolfin/src/log.cpp
+  dolfin/src/mesh.cpp
+  dolfin/src/nls.cpp
+  dolfin/src/refinement.cpp)
 
 # Add DOLFIN libraries and other config
 target_link_libraries(cpp PRIVATE pybind11::module dolfin)
-
-# FIXME: This is bad because it mixes the C++ and Python code, and the
-#        user might not have write permissions to ${DOLFIN_INCLUDE_DIRS}.
-# Install headers of the binding library
-# install(FILES src/caster_mpi.h src/caster_petsc.h src/MPICommWrapper.h
-#   DESTINATION ${DOLFIN_INCLUDE_DIRS}/dolfin/pybind11
-#   COMPONENT Development)
 
 # Add to CMake search path
 set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH}
