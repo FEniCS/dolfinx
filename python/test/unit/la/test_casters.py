@@ -31,7 +31,7 @@ def test_petsc_casters_cppimport(tempdir):  # noqa: F811
         cpp_code_header = f"""
         <%
         setup_pybind11(cfg)
-        cfg['include_dirs'] += {dolfin_pc["include_dirs"] + [petsc4py.get_include()] + [dolfin.pybind11.get_include_path()]}
+        cfg['include_dirs'] += {dolfin_pc["include_dirs"] + [petsc4py.get_include()] + [str(dolfin.pybind11.get_include_path())]}
         cfg['compiler_args'] += {["-D" + dm for dm in dolfin_pc["define_macros"]]}
         cfg['libraries'] += {dolfin_pc["libraries"]}
         cfg['library_dirs'] += {dolfin_pc["library_dirs"]}
@@ -41,8 +41,7 @@ def test_petsc_casters_cppimport(tempdir):  # noqa: F811
         cpp_code = """
         #include <pybind11/pybind11.h>
         #include <petscvec.h>
-
-        #include <dolfin/pybind11/caster_petsc.h>
+        #include <caster_petsc.h>
 
         void PETSc_exp(Vec x)
         {

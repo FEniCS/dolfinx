@@ -30,20 +30,20 @@ def test_mpi_comm_wrapper():
 def test_mpi_comm_wrapper_cppimport(tempdir):  # noqa: F811
     """Test MPICommWrapper <-> mpi4py.MPI.Comm conversion for code compiled with cppimport"""
 
-    cppimport = pytest.importorskip("xcppimport")
+    cppimport = pytest.importorskip("cppimport")
 
     @mpi_jit_decorator
     def compile_module():
         cpp_code_header = f"""
         <%
         setup_pybind11(cfg)
-        cfg['include_dirs'] += {dolfin_pc["include_dirs"] + [mpi4py.get_include()] + [dolfin.pybind11.get_include_path()]}
+        cfg['include_dirs'] += {dolfin_pc["include_dirs"] + [mpi4py.get_include()] + [str(dolfin.pybind11.get_include_path())]}
         %>
         """
 
         cpp_code = """
         #include <pybind11/pybind11.h>
-        #include <dolfin/pybind11/caster_mpi.h>
+        #include <caster_mpi.h>
 
         dolfin_wrappers::MPICommWrapper
         test_comm_passing(const dolfin_wrappers::MPICommWrapper comm)
