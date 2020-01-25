@@ -1,24 +1,24 @@
-set(HEADERS
-  dolfin_la.h
-  PETScKrylovSolver.h
-  PETScMatrix.h
-  PETScOperator.h
-  PETScOptions.h
-  PETScVector.h
-  SLEPcEigenSolver.h
-  SparsityPattern.h
-  utils.h
-  VectorSpaceBasis.h
+set(HEADERS_la
+  ${CMAKE_CURRENT_SOURCE_DIR}/dolfin_la.h
+  ${CMAKE_CURRENT_SOURCE_DIR}/PETScKrylovSolver.h
+  ${CMAKE_CURRENT_SOURCE_DIR}/PETScMatrix.h
+  ${CMAKE_CURRENT_SOURCE_DIR}/PETScOperator.h
+  ${CMAKE_CURRENT_SOURCE_DIR}/PETScOptions.h
+  ${CMAKE_CURRENT_SOURCE_DIR}/PETScVector.h
+  ${CMAKE_CURRENT_SOURCE_DIR}/SLEPcEigenSolver.h
+  ${CMAKE_CURRENT_SOURCE_DIR}/SparsityPattern.h
+  ${CMAKE_CURRENT_SOURCE_DIR}/utils.h
+  ${CMAKE_CURRENT_SOURCE_DIR}/VectorSpaceBasis.h
   PARENT_SCOPE)
 
-set(SOURCES
-  PETScKrylovSolver.cpp
-  PETScMatrix.cpp
-  PETScOperator.cpp
-  PETScOptions.cpp
-  PETScVector.cpp
-  SLEPcEigenSolver.cpp
-  SparsityPattern.cpp
-  utils.cpp
-  VectorSpaceBasis.cpp
-  PARENT_SCOPE)
+target_sources(dolfin PRIVATE
+  ${CMAKE_CURRENT_SOURCE_DIR}/PETScKrylovSolver.cpp
+  ${CMAKE_CURRENT_SOURCE_DIR}/PETScMatrix.cpp
+  ${CMAKE_CURRENT_SOURCE_DIR}/PETScOperator.cpp
+  ${CMAKE_CURRENT_SOURCE_DIR}/PETScOptions.cpp
+  ${CMAKE_CURRENT_SOURCE_DIR}/PETScVector.cpp
+  ${CMAKE_CURRENT_SOURCE_DIR}/SLEPcEigenSolver.cpp
+  ${CMAKE_CURRENT_SOURCE_DIR}/SparsityPattern.cpp
+  ${CMAKE_CURRENT_SOURCE_DIR}/utils.cpp
+  ${CMAKE_CURRENT_SOURCE_DIR}/VectorSpaceBasis.cpp
+)

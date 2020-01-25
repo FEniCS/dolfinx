@@ -12,53 +12,50 @@ install(FILES ${CMAKE_BINARY_DIR}/dolfin/common/version.h
   )
 
 #------------------------------------------------------------------------------
-# DOLFIN source directories
+# Delcare the libray
 
-set(DOLFIN_DIRS common fem function generation geometry graph io la mesh nls
-                refinement)
-
-#------------------------------------------------------------------------------
-# Install header files
-
-# Initialize lists
-set(DOLFIN_HEADERS)
-set(DOLFIN_SOURCES)
-
-foreach(DIR ${DOLFIN_DIRS})
-  # Each subdirectory defines HEADERS and SOURCES
-  add_subdirectory(${DIR})
-  set(HEADERS_FULL_PATH)
-  foreach(HEADER_FILE ${HEADERS})
-    list(APPEND HEADERS_FULL_PATH ${CMAKE_CURRENT_SOURCE_DIR}/${DIR}/${HEADER_FILE})
-  endforeach()
-  install(FILES ${HEADERS_FULL_PATH} DESTINATION ${DOLFIN_INCLUDE_DIR}/dolfin/${DIR}
-    COMPONENT Development)
-  list(APPEND DOLFIN_HEADERS ${HEADERS_FULL_PATH})
-  foreach(SOURCE_FILE ${SOURCES})
-    list(APPEND DOLFIN_SOURCES ${CMAKE_CURRENT_SOURCE_DIR}/${DIR}/${SOURCE_FILE})
-  endforeach()
-endforeach()
-
-#------------------------------------------------------------------------------
-# Define libraries
-
-# message(${DOLFIN_SOURCES})
-# add_library(dolfin ${DOLFIN_SOURCES})
 add_library(dolfin)
 
-target_sources(dolfin PRIVATE ${DOLFIN_SOURCES})
+#------------------------------------------------------------------------------
+# Add source files and build list of header files
 
-# add_subdirectory(fem)
-set_target_properties(dolfin PROPERTIES ${DOLFIN_LIBRARY_PROPERTIES})
+set(DOLFIN_DIRS common fem function generation geometry graph io la mesh nls
+  refinement)
+
+foreach(DIR ${DOLFIN_DIRS})
+  # Add source to dolfin target, and get sets of header files
+  add_subdirectory(${DIR})
+
+  # Install the header files
+  install(FILES ${HEADERS_${DIR}} DESTINATION ${DOLFIN_INCLUDE_DIR}/dolfin/${DIR}
+    COMPONENT Development)
+endforeach()
+
+# Set target include location (for build and installed)
+target_include_directories(dolfin PUBLIC
+                           $<INSTALL_INTERFACE:include>
+                           $<BUILD_INTERFACE:${DOLFIN_SOURCE_DIR}>)
 
 #------------------------------------------------------------------------------
-# General compiler defintions
+# Set target properties
+
+set_target_properties(dolfin PROPERTIES ${DOLFIN_LIBRARY_PROPERTIES})
+
+# Add git revision flag to the one affected file
+set_source_files_properties(common/defines.cpp PROPERTIES COMPILE_FLAGS
+  "-DDOLFIN_GIT_COMMIT_HASH=\\\"${GIT_COMMIT_HASH}\\\" -DUFC_SIGNATURE=\\\"${UFC_SIGNATURE}\\\"")
+
+#------------------------------------------------------------------------------
+# Set compiler options and defintions
 
 # Set 'Developer' build type flags
 target_compile_options(dolfin PRIVATE $<$<CONFIG:Developer>:${DOLFIN_CXX_DEVELOPER_FLAGS}>)
 
 # Set debug definitions
 target_compile_definitions(dolfin PRIVATE $<$<OR:$<CONFIG:Debug>,$<CONFIG:Developer>>:DEBUG>)
+
+# Add version to definitions
+target_compile_definitions(dolfin PUBLIC DOLFIN_VERSION="${DOLFIN_VERSION}")
 
 #------------------------------------------------------------------------------
 # Add include directories and libraries of required packages
@@ -144,20 +141,9 @@ endif()
 #------------------------------------------------------------------------------
 # Set compiler flags, include directories and library dependencies
 
-# Set target includes
-target_include_directories(dolfin PUBLIC
-                           $<INSTALL_INTERFACE:include>
-                           $<BUILD_INTERFACE:${DOLFIN_SOURCE_DIR}>)
-
-# Add CXX definitions
-target_compile_definitions(dolfin PUBLIC DOLFIN_VERSION="${DOLFIN_VERSION}")
-
-# Just add git revision flag to the one affected file
-set_source_files_properties(common/defines.cpp PROPERTIES COMPILE_FLAGS
-  "-DDOLFIN_GIT_COMMIT_HASH=\\\"${GIT_COMMIT_HASH}\\\" -DUFC_SIGNATURE=\\\"${UFC_SIGNATURE}\\\"")
 
 #------------------------------------------------------------------------------
-# Install
+# Install library
 
 install(TARGETS dolfin EXPORT DOLFINTargets
   RUNTIME DESTINATION ${DOLFIN_LIB_DIR} COMPONENT RuntimeExecutables
