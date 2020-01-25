@@ -39,7 +39,7 @@ public:
   ParallelRefinement(const mesh::Mesh& mesh);
 
   /// Destructor
-  ~ParallelRefinement() = default;
+  ~ParallelRefinement();
 
   /// Original mesh associated with this refinement
   const mesh::Mesh& mesh() const;
