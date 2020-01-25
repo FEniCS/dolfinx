@@ -1,34 +1,33 @@
-set(DOLFIN_H dolfin.h)
-install(FILES ${DOLFIN_H} DESTINATION ${DOLFIN_INCLUDE_DIR}
-  COMPONENT Development)
-
+#------------------------------------------------------------------------------
 # Configure and install dolfin/common/version.h file
 string(REPLACE "+" "" DOLFIN_VERSION_MICRO_STRIPPED ${DOLFIN_VERSION_MICRO})
 configure_file(${DOLFIN_SOURCE_DIR}/dolfin/common/version.h.in
   ${CMAKE_BINARY_DIR}/dolfin/common/version.h @ONLY)
 install(FILES ${CMAKE_BINARY_DIR}/dolfin/common/version.h
-  DESTINATION ${DOLFIN_INCLUDE_DIR}/dolfin/common/
+  DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/dolfin/common/
   COMPONENT Development
   )
 
 #------------------------------------------------------------------------------
-# Delcare the libray
+# Delcare the library (target)
 
 add_library(dolfin)
 
 #------------------------------------------------------------------------------
-# Add source files and build list of header files
+# Add source files to the target, and build list of header files
 
 set(DOLFIN_DIRS common fem function generation geometry graph io la mesh nls
   refinement)
+
+install(FILES dolfin.h DESTINATION ${CMAKE_INSTALL_INCLUDEDIR} COMPONENT Development)
 
 foreach(DIR ${DOLFIN_DIRS})
   # Add source to dolfin target, and get sets of header files
   add_subdirectory(${DIR})
 
   # Install the header files
-  install(FILES ${HEADERS_${DIR}} DESTINATION ${DOLFIN_INCLUDE_DIR}/dolfin/${DIR}
-    COMPONENT Development)
+  install(FILES ${HEADERS_${DIR}} DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/dolfin/${DIR}
+      COMPONENT Development)
 endforeach()
 
 # Set target include location (for build and installed)
@@ -39,11 +38,13 @@ target_include_directories(dolfin PUBLIC
 #------------------------------------------------------------------------------
 # Set target properties
 
-set_target_properties(dolfin PROPERTIES ${DOLFIN_LIBRARY_PROPERTIES})
+set_target_properties(dolfin PROPERTIES
+  VERSION ${DOLFIN_VERSION}
+  SOVERSION ${DOLFIN_VERSION_MAJOR}.${DOLFIN_VERSION_MINOR})
 
 # Add git revision flag to the one affected file
-set_source_files_properties(common/defines.cpp PROPERTIES COMPILE_FLAGS
-  "-DDOLFIN_GIT_COMMIT_HASH=\\\"${GIT_COMMIT_HASH}\\\" -DUFC_SIGNATURE=\\\"${UFC_SIGNATURE}\\\"")
+set_source_files_properties(common/defines.cpp PROPERTIES
+  COMPILE_DEFINITIONS "UFC_SIGNATURE=\"${UFC_SIGNATURE}\";DOLFIN_GIT_COMMIT_HASH=\"${GIT_COMMIT_HASH}\"")
 
 #------------------------------------------------------------------------------
 # Set compiler options and defintions
@@ -139,16 +140,12 @@ if (DOLFIN_ENABLE_KAHIP AND KAHIP_FOUND)
 endif()
 
 #------------------------------------------------------------------------------
-# Set compiler flags, include directories and library dependencies
-
-
-#------------------------------------------------------------------------------
-# Install library
+# Install dolfin library
 
 install(TARGETS dolfin EXPORT DOLFINTargets
-  RUNTIME DESTINATION ${DOLFIN_LIB_DIR} COMPONENT RuntimeExecutables
-  LIBRARY DESTINATION ${DOLFIN_LIB_DIR} COMPONENT RuntimeLibraries
-  ARCHIVE DESTINATION ${DOLFIN_LIB_DIR} COMPONENT Development
+  RUNTIME DESTINATION ${CMAKE_INSTALL_LIBDIR} COMPONENT RuntimeExecutables
+  LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR} COMPONENT RuntimeLibraries
+  ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR} COMPONENT Development
   )
 
 install(EXPORT DOLFINTargets DESTINATION ${DOLFIN_SHARE_DIR}/cmake)
