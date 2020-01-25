@@ -2,7 +2,7 @@ cmake_minimum_required(VERSION 3.5)
 project(dolfin-tests)
 
 if (NOT dolfin)
-  find_package(DOLFIN REQUIRED)
+  find_package(DOLFIN)
 endif()
 
 set(CMAKE_CXX_STANDARD 17)
