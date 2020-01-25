@@ -1,11 +1,8 @@
 cmake_minimum_required(VERSION 3.5)
 project(dolfin-tests)
 
-get_target_property(PKGCONFIG_DOLFIN_TARGET_LINK_LIBRARIES dolfin INTERFACE_LINK_LIBRARIES)
-message("DDDDDD: ${PKGCONFIG_DOLFIN_TARGET_LINK_LIBRARIES}")
-
 if (NOT dolfin)
-  find_package(DOLFIN)
+  find_package(DOLFIN REQUIRED)
 endif()
 
 set(CMAKE_CXX_STANDARD 17)
