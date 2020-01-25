@@ -2,9 +2,9 @@
 include(GNUInstallDirs)
 
 #------------------------------------------------------------------------------
-# Configure and install dolfin/common/version.h file
+# Configure the dolfin/common/version.h file
 
-# NOTE: This modifies the source directory, which probably isn't good
+# NOTE: This modifies a file in the source directory, which probably isn't good
 configure_file(${DOLFIN_SOURCE_DIR}/dolfin/common/version.h.in
   ${DOLFIN_SOURCE_DIR}/dolfin/common/version.h @ONLY)
 
@@ -48,10 +48,10 @@ set_source_files_properties(common/defines.cpp PROPERTIES
 # Set 'Developer' build type flags
 target_compile_options(dolfin PRIVATE $<$<CONFIG:Developer>:${DOLFIN_CXX_DEVELOPER_FLAGS}>)
 
-# Set debug definitions
+# Set debug definitions (private)
 target_compile_definitions(dolfin PRIVATE $<$<OR:$<CONFIG:Debug>,$<CONFIG:Developer>>:DEBUG>)
 
-# Add version to definitions
+# Add version to definitions (public)
 target_compile_definitions(dolfin PUBLIC DOLFIN_VERSION="${DOLFIN_VERSION}")
 
 #------------------------------------------------------------------------------
