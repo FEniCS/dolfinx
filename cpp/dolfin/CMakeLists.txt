@@ -270,7 +270,7 @@ endforeach()
 get_target_property(BOOST_INCLUDE_DIR Boost::boost INTERFACE_INCLUDE_DIRECTORIES)
 
 # Configure and install pkg-config file
-configure_file(${DOLFIN_CMAKE_DIR}/templates/dolfin.pc.in ${CMAKE_BINARY_DIR}/dolfin.pc @ONLY)
+configure_file(${DOLFIN_SOURCE_DIR}/cmake/templates/dolfin.pc.in ${CMAKE_BINARY_DIR}/dolfin.pc @ONLY)
 install(FILES ${CMAKE_BINARY_DIR}/dolfin.pc
   DESTINATION ${CMAKE_INSTALL_LIBDIR}/pkgconfig
   COMPONENT Development
