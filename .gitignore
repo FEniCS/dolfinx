@@ -43,8 +43,6 @@ dolfin-version
 dolfin-config.cmake
 DOLFINConfig.cmake
 DOLFINConfigVersion.cmake
-UseDOLFIN.cmake
-dolfin-config-version.cmake
 
 # Demos
 build_demo.*

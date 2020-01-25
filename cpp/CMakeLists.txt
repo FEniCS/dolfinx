@@ -121,29 +121,26 @@ endif()
 include(CheckCXXCompilerFlag)
 CHECK_CXX_COMPILER_FLAG(-pipe HAVE_PIPE)
 if (HAVE_PIPE)
-  set(DOLFIN_CXX_DEVELOPER_FLAGS "-pipe ${DOLFIN_CXX_DEVELOPER_FLAGS}")
+  list(APPEND DOLFIN_CXX_DEVELOPER_FLAGS -pipe)
 endif()
 
 # Add some strict compiler checks
 CHECK_CXX_COMPILER_FLAG("-Wall -Werror -pedantic" HAVE_PEDANTIC)
 if (HAVE_PEDANTIC)
-  set(DOLFIN_CXX_DEVELOPER_FLAGS "-Wall -Werror -pedantic ${DOLFIN_CXX_DEVELOPER_FLAGS}")
+  list(APPEND DOLFIN_CXX_DEVELOPER_FLAGS -Wall;-Werror;-pedantic)
 endif()
 
 # Debug flags
 CHECK_CXX_COMPILER_FLAG(-g HAVE_DEBUG)
 if (HAVE_DEBUG)
-  set(DOLFIN_CXX_DEVELOPER_FLAGS "-g ${DOLFIN_CXX_DEVELOPER_FLAGS}")
+  list(APPEND DOLFIN_CXX_DEVELOPER_FLAGS -g)
 endif()
 
+# Optimisation
 CHECK_CXX_COMPILER_FLAG(-O2 HAVE_O2_OPTIMISATION)
 if (HAVE_O2_OPTIMISATION)
-  set(DOLFIN_CXX_DEVELOPER_FLAGS "-O2 ${DOLFIN_CXX_DEVELOPER_FLAGS}")
+  list(APPEND DOLFIN_CXX_DEVELOPER_FLAGS -O2)
 endif()
-
-# Set 'Developer' build type flags
-set(CMAKE_CXX_FLAGS_DEVELOPER "${DOLFIN_CXX_DEVELOPER_FLAGS}" CACHE STRING
-  "Flags used by the compiler during development." FORCE)
 
 #------------------------------------------------------------------------------
 # Run tests to find required packages

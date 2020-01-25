@@ -36,11 +36,13 @@ project(${PROJECT_NAME})
 # Set CMake behavior
 cmake_policy(SET CMP0004 NEW)
 
+# Use C++17
+set(CMAKE_CXX_STANDARD 17)
+set(CMAKE_CXX_STANDARD_REQUIRED ON)
+
 # Get DOLFIN configuration data (DOLFINConfig.cmake must be in
 # DOLFIN_CMAKE_CONFIG_PATH)
 find_package(DOLFIN REQUIRED)
-
-include(${DOLFIN_USE_FILE})
 
 # Default build type (can be overridden by user)
 if (NOT CMAKE_BUILD_TYPE)
@@ -48,19 +50,17 @@ if (NOT CMAKE_BUILD_TYPE)
       "Choose the type of build, options are: Debug MinSizeRel Release RelWithDebInfo." FORCE)
 endif()
 
-# Do not throw error for 'multi-line comments' (these are typical in
-# rst which includes LaTeX)
-include(CheckCXXCompilerFlag)
-CHECK_CXX_COMPILER_FLAG("-Wno-comment" HAVE_NO_MULTLINE)
-if (HAVE_NO_MULTLINE)
-  set(CMAKE_CXX_FLAGS "-Wno-comment ${CMAKE_CXX_FLAGS}")
-endif()
-
 # Executable
 %(executables)s
 
 # Target libraries
 %(target_libraries)s
+
+# Do not throw error for 'multi-line comments' (these are typical in
+# rst which includes LaTeX)
+include(CheckCXXCompilerFlag)
+CHECK_CXX_COMPILER_FLAG("-Wno-comment" HAVE_NO_MULTLINE)
+target_compile_options(${PROJECT_NAME} PRIVATE $<$<BOOL:${HAVE_NO_MULTLINE}>:-Wno-comment>)
 
 # Test targets
 set(test_parameters -np 3 "./${PROJECT_NAME}")

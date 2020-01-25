@@ -10,27 +10,12 @@ install(FILES ${CMAKE_BINARY_DIR}/dolfin/common/version.h
   DESTINATION ${DOLFIN_INCLUDE_DIR}/dolfin/common/
   COMPONENT Development
   )
-include_directories(${CMAKE_BINARY_DIR})
 
 #------------------------------------------------------------------------------
 # DOLFIN source directories
 
-# All files and directories in this directory
-file(GLOB DOLFIN_CONTENT RELATIVE ${CMAKE_CURRENT_SOURCE_DIR} *)
-
-# Initialize list
-set(DOLFIN_DIRS)
-
-# List of excluded files and directories
-set(EXCLUDES ${DOLFIN_H} CMakeLists.txt)
-
-# Iterate over all directories and files and append to DOLFIN_DIRS
-foreach(_DIR_NAME ${DOLFIN_CONTENT})
-  list(FIND EXCLUDES ${_DIR_NAME} INDEX_EXCLUDES)
-  if (${INDEX_EXCLUDES} LESS 0)
-    list(APPEND DOLFIN_DIRS ${_DIR_NAME})
-  endif()
-endforeach()
+set(DOLFIN_DIRS common fem function generation geometry graph io la mesh nls
+                refinement)
 
 #------------------------------------------------------------------------------
 # Install header files
@@ -57,28 +42,17 @@ endforeach()
 #------------------------------------------------------------------------------
 # Define libraries
 
-add_library(dolfin ${DOLFIN_H} ${DOLFIN_HEADERS} ${DOLFIN_SOURCES})
+add_library(dolfin ${DOLFIN_SOURCES})
 set_target_properties(dolfin PROPERTIES ${DOLFIN_LIBRARY_PROPERTIES})
 
 #------------------------------------------------------------------------------
 # General compiler defintions
 
-if (DOLFIN_DEPRECATION_ERROR)
-  target_compile_definitions(dolfin PUBLIC DOLFIN_DEPRECATION_ERROR)
-endif()
-
 # Set 'Developer' build type flags
-set(CMAKE_CXX_FLAGS_DEVELOPER "${DOLFIN_CXX_DEVELOPER_FLAGS}" CACHE STRING
-  "Flags used by the compiler during development." FORCE)
-
-# FIXME: Do we want to add -DDEBUG to RelWithDebInfo?
+target_compile_options(dolfin PRIVATE $<$<CONFIG:Developer>:${DOLFIN_CXX_DEVELOPER_FLAGS}>)
 
 # Set debug definitions
-if (CMAKE_BUILD_TYPE STREQUAL "Developer" OR CMAKE_BUILD_TYPE STREQUAL "Debug")
-  target_compile_definitions(dolfin PUBLIC DEBUG)
-else()
-  target_compile_definitions(dolfin PUBLIC NDEBUG)
-endif()
+target_compile_definitions(dolfin PRIVATE $<$<OR:$<CONFIG:Debug>,$<CONFIG:Developer>>:DEBUG>)
 
 #------------------------------------------------------------------------------
 # Add include directories and libraries of required packages
@@ -164,8 +138,10 @@ endif()
 #------------------------------------------------------------------------------
 # Set compiler flags, include directories and library dependencies
 
-# Add compiler include directories
-include_directories(BEFORE ${DOLFIN_SOURCE_DIR})
+# Set target includes
+target_include_directories(dolfin PUBLIC
+                           $<INSTALL_INTERFACE:include>
+                           $<BUILD_INTERFACE:${DOLFIN_SOURCE_DIR}>)
 
 # Add CXX definitions
 target_compile_definitions(dolfin PUBLIC DOLFIN_VERSION="${DOLFIN_VERSION}")
@@ -188,12 +164,14 @@ install(EXPORT DOLFINTargets DESTINATION ${DOLFIN_SHARE_DIR}/cmake)
 #------------------------------------------------------------------------------
 # Generate CMake config files (DOLFINConfig{,Version}.cmake)
 
-configure_file(${DOLFIN_CMAKE_DIR}/templates/DOLFINConfig.cmake.in
-  ${CMAKE_BINARY_DIR}/dolfin/DOLFINConfig.cmake @ONLY)
-configure_file(${DOLFIN_CMAKE_DIR}/templates/DOLFINConfigVersion.cmake.in
-  ${CMAKE_BINARY_DIR}/dolfin/DOLFINConfigVersion.cmake @ONLY)
-configure_file(${DOLFIN_CMAKE_DIR}/templates/UseDOLFIN.cmake.in
-  ${CMAKE_BINARY_DIR}/dolfin/UseDOLFIN.cmake @ONLY)
+include(CMakePackageConfigHelpers)
+write_basic_package_version_file(${CMAKE_BINARY_DIR}/dolfin/DOLFINConfigVersion.cmake
+  VERSION ${DOLFIN_VERSION}
+  COMPATIBILITY ExactVersion)
+
+configure_package_config_file(${DOLFIN_CMAKE_DIR}/templates/DOLFINConfig.cmake.in
+${CMAKE_BINARY_DIR}/dolfin/DOLFINConfig.cmake
+INSTALL_DESTINATION ${DOLFIN_SHARE_DIR}/cmake)
 
 install(
   FILES
@@ -201,7 +179,6 @@ install(
   ${CMAKE_SOURCE_DIR}/cmake/modules/FindSLEPc.cmake
   ${CMAKE_BINARY_DIR}/dolfin/DOLFINConfig.cmake
   ${CMAKE_BINARY_DIR}/dolfin/DOLFINConfigVersion.cmake
-  ${CMAKE_BINARY_DIR}/dolfin/UseDOLFIN.cmake
   DESTINATION ${DOLFIN_SHARE_DIR}/cmake
   COMPONENT Development)
 
