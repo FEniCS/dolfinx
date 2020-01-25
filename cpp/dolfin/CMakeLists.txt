@@ -11,7 +11,7 @@ configure_file(${DOLFIN_SOURCE_DIR}/dolfin/common/version.h.in
 #------------------------------------------------------------------------------
 # Delcare the library (target)
 
-add_library(dolfin)
+add_library(dolfin "")  # The "" is needed for older CMake. Remove later.
 
 #------------------------------------------------------------------------------
 # Add source files to the target

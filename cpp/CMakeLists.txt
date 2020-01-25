@@ -1,5 +1,6 @@
+#------------------------------------------------------------------------------
 # Top level CMakeLists.txt file for DOLFIN
-cmake_minimum_required(VERSION 3.10)
+cmake_minimum_required(VERSION 3.12)
 
 #------------------------------------------------------------------------------
 # Set project name and version number
@@ -17,14 +18,6 @@ endif()
 #------------------------------------------------------------------------------
 # Set CMake options, see `cmake --help-policy CMP000x`
 
-cmake_policy(VERSION 3.10)
-if (POLICY CMP0074)
-  cmake_policy(SET CMP0074 NEW)
-endif()
-if (POLICY CMP0075)
-  cmake_policy(SET CMP0075 NEW)
-endif()
-
 #------------------------------------------------------------------------------
 # Use C++17
 set(CMAKE_CXX_STANDARD 17)
@@ -38,9 +31,7 @@ set(CMAKE_CXX_EXTENSIONS OFF)
 #------------------------------------------------------------------------------
 # Get GIT changeset, if available
 
-# Check for git
 find_program(GIT_FOUND git)
-
 if (GIT_FOUND)
   # Get the commit hash of the working branch
   execute_process(COMMAND git rev-parse HEAD
@@ -80,7 +71,6 @@ add_feature_info(CMAKE_INSTALL_RPATH_USE_LINK_PATH CMAKE_INSTALL_RPATH_USE_LINK_
 # Enable or disable optional packages
 
 # List optional packages
-set(OPTIONAL_PACKAGES "")
 list(APPEND OPTIONAL_PACKAGES "SLEPc")
 list(APPEND OPTIONAL_PACKAGES "ParMETIS")
 list(APPEND OPTIONAL_PACKAGES "KaHIP")
@@ -264,7 +254,7 @@ install(FILES ${CMAKE_BINARY_DIR}/dolfin.conf
 #------------------------------------------------------------------------------
 # Generate form files for tests and demos and DOLFIN if not exists
 # FIXME: Generate files in Build directory instead, at least for demo
-# and tests
+#        and tests?
 
 set(COPY_DEMO_TEST_DEMO_DATA FALSE)
 if (PYTHONINTERP_FOUND AND NOT EXISTS ${DOLFIN_SOURCE_DIR}/demo/poisson/Poisson.h)
