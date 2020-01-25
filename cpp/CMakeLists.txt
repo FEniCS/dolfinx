@@ -67,11 +67,9 @@ set(CMAKE_PREFIX_PATH ${CMAKE_PREFIX_PATH} ${CMAKE_CURRENT_BINARY_DIR}/dolfin)
 include(FeatureSummary)
 
 option(BUILD_SHARED_LIBS "Build DOLFIN with shared libraries." ON)
-option(CMAKE_USE_RELATIVE_PATHS "Use relative paths in makefiles and projects." OFF)
 option(DOLFIN_SKIP_BUILD_TESTS "Skip build tests for testing usability of dependency packages." OFF)
 
 add_feature_info(BUILD_SHARED_LIBS BUILD_SHARED_LIBS "Build DOLFIN with shared libraries.")
-add_feature_info(CMAKE_USE_RELATIVE_PATHS CMAKE_USE_RELATIVE_PATHS "Use relative paths in makefiles and projects.")
 add_feature_info(DOLFIN_SKIP_BUILD_TESTS DOLFIN_SKIP_BUILD_TESTS "Skip build tests for testing usability of dependency packages.")
 
 # Add shared library paths so shared libs in non-system paths are found
@@ -292,7 +290,7 @@ if (PYTHONINTERP_FOUND AND NOT EXISTS ${DOLFIN_SOURCE_DIR}/demo/poisson/Poisson.
 endif()
 
 #------------------------------------------------------------------------------
-# Generate CMakeLists.txt files for demos if not existing
+# Generate CMakeLists.txt files for demos if needed
 
 # FIXME: Generate files in Build directory instead?
 # NOTE: We need to call this script after generate-formfiles

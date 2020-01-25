@@ -4,11 +4,9 @@ include(GNUInstallDirs)
 #------------------------------------------------------------------------------
 # Configure and install dolfin/common/version.h file
 
+# NOTE: This modifies the source directory, which probably isn't good
 configure_file(${DOLFIN_SOURCE_DIR}/dolfin/common/version.h.in
-  ${CMAKE_BINARY_DIR}/dolfin/common/version.h @ONLY)
-install(FILES ${CMAKE_BINARY_DIR}/dolfin/common/version.h
-  DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/dolfin/common/
-  COMPONENT Development)
+  ${DOLFIN_SOURCE_DIR}/dolfin/common/version.h @ONLY)
 
 #------------------------------------------------------------------------------
 # Delcare the library (target)
@@ -31,7 +29,7 @@ endforeach()
 # Set target include location (for build and installed)
 target_include_directories(dolfin PUBLIC
                            $<INSTALL_INTERFACE:include>
-                           $<BUILD_INTERFACE:${DOLFIN_SOURCE_DIR}>)
+                           "$<BUILD_INTERFACE:${DOLFIN_SOURCE_DIR};${DOLFIN_SOURCE_DIR}/dolfin>")
 
 #------------------------------------------------------------------------------
 # Set target properties
