@@ -56,8 +56,7 @@ endif()
 # General configuration
 
 # Set location of our FindFoo.cmake modules
-set(DOLFIN_CMAKE_DIR "${DOLFIN_SOURCE_DIR}/cmake" CACHE INTERNAL "")
-set(CMAKE_MODULE_PATH "${DOLFIN_CMAKE_DIR}/modules")
+set(CMAKE_MODULE_PATH "${DOLFIN_SOURCE_DIR}/cmake/modules")
 
 # Make sure CMake uses the correct DOLFINConfig.cmake for tests and demos
 set(CMAKE_PREFIX_PATH ${CMAKE_PREFIX_PATH} ${CMAKE_CURRENT_BINARY_DIR}/dolfin)
@@ -94,11 +93,6 @@ foreach (OPTIONAL_PACKAGE ${OPTIONAL_PACKAGES})
   option(${OPTION_NAME} "Compile with support for ${OPTIONAL_PACKAGE}." ON)
   add_feature_info(${OPTION_NAME} ${OPTION_NAME} "Compile with support for ${OPTIONAL_PACKAGE}.")
 endforeach()
-
-#------------------------------------------------------------------------------
-# Package-specific options
-
-# None at the moment
 
 #------------------------------------------------------------------------------
 # Check for MPI
@@ -249,12 +243,6 @@ feature_summary(WHAT ALL)
 #------------------------------------------------------------------------------
 # Installation of DOLFIN library
 
-# Set DOLFIN install sub-directories
-include(GNUInstallDirs)
-set(DOLFIN_PKGCONFIG_DIR "${CMAKE_INSTALL_LIBDIR}/pkgconfig" CACHE PATH "pkg-config file installation directory.")
-set(DOLFIN_SHARE_DIR "${CMAKE_INSTALL_DATAROOTDIR}/dolfin" CACHE PATH "Shared data installation directory.")
-
-# Add source directory
 add_subdirectory(dolfin)
 
 #------------------------------------------------------------------------------
@@ -269,10 +257,10 @@ endif()
 
 # FIXME: not cross-platform compatible
 # Create and install dolfin.conf file
-configure_file(${DOLFIN_CMAKE_DIR}/templates/dolfin.conf.in
+configure_file(${DOLFIN_SOURCE_DIR}/cmake/templates/dolfin.conf.in
                ${CMAKE_BINARY_DIR}/dolfin.conf @ONLY)
 install(FILES ${CMAKE_BINARY_DIR}/dolfin.conf
-        DESTINATION ${DOLFIN_SHARE_DIR}
+        DESTINATION ${CMAKE_INSTALL_DATAROOTDIR}/dolfin
         COMPONENT Development)
 
 #------------------------------------------------------------------------------
@@ -364,7 +352,7 @@ else()
 endif()
 
 # Install the demo source files
-install(DIRECTORY demo DESTINATION ${DOLFIN_SHARE_DIR}
+install(DIRECTORY demo DESTINATION ${CMAKE_INSTALL_DATAROOTDIR}/dolfin
   FILES_MATCHING
   PATTERN "CMakeLists.txt"
   PATTERN "*.cpp"
@@ -383,14 +371,14 @@ enable_testing()
 add_subdirectory(test/unit EXCLUDE_FROM_ALL)
 
 # Add demos but do not add to default target
-set(CMAKE_MODULE_PATH "${DOLFIN_CMAKE_DIR}/modules")
+set(CMAKE_MODULE_PATH "${DOLFIN_SOURCE_DIR}/cmake/modules")
 add_subdirectory(demo EXCLUDE_FROM_ALL)
 
 #------------------------------------------------------------------------------
 # Add "make uninstall" target
 
 configure_file(
-  "${DOLFIN_CMAKE_DIR}/templates/cmake_uninstall.cmake.in"
+  "${DOLFIN_SOURCE_DIR}/cmake/templates/cmake_uninstall.cmake.in"
   "${CMAKE_CURRENT_BINARY_DIR}/cmake_uninstall.cmake"
   IMMEDIATE @ONLY)
 

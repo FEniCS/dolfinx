@@ -1,12 +1,14 @@
 #------------------------------------------------------------------------------
+include(GNUInstallDirs)
+
+#------------------------------------------------------------------------------
 # Configure and install dolfin/common/version.h file
-string(REPLACE "+" "" DOLFIN_VERSION_MICRO_STRIPPED ${DOLFIN_VERSION_MICRO})
+
 configure_file(${DOLFIN_SOURCE_DIR}/dolfin/common/version.h.in
   ${CMAKE_BINARY_DIR}/dolfin/common/version.h @ONLY)
 install(FILES ${CMAKE_BINARY_DIR}/dolfin/common/version.h
   DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/dolfin/common/
-  COMPONENT Development
-  )
+  COMPONENT Development)
 
 #------------------------------------------------------------------------------
 # Delcare the library (target)
@@ -14,20 +16,16 @@ install(FILES ${CMAKE_BINARY_DIR}/dolfin/common/version.h
 add_library(dolfin)
 
 #------------------------------------------------------------------------------
-# Add source files to the target, and build list of header files
+# Add source files to the target
 
 set(DOLFIN_DIRS common fem function generation geometry graph io la mesh nls
   refinement)
 
 install(FILES dolfin.h DESTINATION ${CMAKE_INSTALL_INCLUDEDIR} COMPONENT Development)
 
+# Add source to dolfin target, and get sets of header files
 foreach(DIR ${DOLFIN_DIRS})
-  # Add source to dolfin target, and get sets of header files
   add_subdirectory(${DIR})
-
-  # Install the header files
-  install(FILES ${HEADERS_${DIR}} DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/dolfin/${DIR}
-      COMPONENT Development)
 endforeach()
 
 # Set target include location (for build and installed)
@@ -140,15 +138,23 @@ if (DOLFIN_ENABLE_KAHIP AND KAHIP_FOUND)
 endif()
 
 #------------------------------------------------------------------------------
-# Install dolfin library
+# Install dolfin library and header files
 
-install(TARGETS dolfin EXPORT DOLFINTargets
-  RUNTIME DESTINATION ${CMAKE_INSTALL_LIBDIR} COMPONENT RuntimeExecutables
+install(TARGETS dolfin
+  EXPORT DOLFINTargets
+  RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR} COMPONENT RuntimeExecutables
   LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR} COMPONENT RuntimeLibraries
   ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR} COMPONENT Development
   )
 
-install(EXPORT DOLFINTargets DESTINATION ${DOLFIN_SHARE_DIR}/cmake)
+# Generate DOLFINTargets.cmake
+install(EXPORT DOLFINTargets DESTINATION ${CMAKE_INSTALL_DATAROOTDIR}/dolfin/cmake)
+
+# Install the header files
+foreach(DIR ${DOLFIN_DIRS})
+  install(FILES ${HEADERS_${DIR}} DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/dolfin/${DIR}
+    COMPONENT Development)
+endforeach()
 
 #------------------------------------------------------------------------------
 # Generate CMake config files (DOLFINConfig{,Version}.cmake)
@@ -160,15 +166,16 @@ write_basic_package_version_file(${CMAKE_BINARY_DIR}/dolfin/DOLFINConfigVersion.
 
 configure_package_config_file(${DOLFIN_CMAKE_DIR}/templates/DOLFINConfig.cmake.in
 ${CMAKE_BINARY_DIR}/dolfin/DOLFINConfig.cmake
-INSTALL_DESTINATION ${DOLFIN_SHARE_DIR}/cmake)
+INSTALL_DESTINATION ${CMAKE_INSTALL_DATAROOTDIR}/dolfin/cmake)
 
+# Install CMake helper files
 install(
   FILES
   ${CMAKE_SOURCE_DIR}/cmake/modules/FindPETSc.cmake
   ${CMAKE_SOURCE_DIR}/cmake/modules/FindSLEPc.cmake
   ${CMAKE_BINARY_DIR}/dolfin/DOLFINConfig.cmake
   ${CMAKE_BINARY_DIR}/dolfin/DOLFINConfigVersion.cmake
-  DESTINATION ${DOLFIN_SHARE_DIR}/cmake
+  DESTINATION ${CMAKE_INSTALL_DATAROOTDIR}/dolfin/cmake
   COMPONENT Development)
 
 #------------------------------------------------------------------------------
@@ -267,7 +274,7 @@ get_target_property(BOOST_INCLUDE_DIR Boost::boost INTERFACE_INCLUDE_DIRECTORIES
 # Configure and install pkg-config file
 configure_file(${DOLFIN_CMAKE_DIR}/templates/dolfin.pc.in ${CMAKE_BINARY_DIR}/dolfin.pc @ONLY)
 install(FILES ${CMAKE_BINARY_DIR}/dolfin.pc
-  DESTINATION ${DOLFIN_PKGCONFIG_DIR}
+  DESTINATION ${CMAKE_INSTALL_LIBDIR}/pkgconfig
   COMPONENT Development
   )
 #------------------------------------------------------------------------------
