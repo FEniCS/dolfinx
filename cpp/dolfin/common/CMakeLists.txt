@@ -17,6 +17,7 @@ set(HEADERS_common
   ${CMAKE_CURRENT_SOURCE_DIR}/types.h
   ${CMAKE_CURRENT_SOURCE_DIR}/UniqueIdGenerator.h
   ${CMAKE_CURRENT_SOURCE_DIR}/utils.h
+  ${CMAKE_CURRENT_SOURCE_DIR}/version.h
   PARENT_SCOPE)
 
 target_sources(dolfin PRIVATE
