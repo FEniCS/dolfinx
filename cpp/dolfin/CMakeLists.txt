@@ -184,7 +184,7 @@ set(PKG_REQUIRES "")
 
 # Get link libraries and includes
 get_target_property(PKGCONFIG_DOLFIN_TARGET_LINK_LIBRARIES dolfin INTERFACE_LINK_LIBRARIES)
-get_target_property(PKGCONFIG_DOLFIN_INCLUDE_DIRECTORIES dolfin INTERFACE_INCLUDE_DIRECTORIES)
+get_target_property(PKGCONFIG_DOLFIN_INCLUDE_DIRECTORIES dolfin INTERFACE_SYSTEM_INCLUDE_DIRECTORIES)
 
 # Add imported targets to lists for creating pkg-config file
 set(PKGCONFIG_DOLFIN_LIBS)
@@ -231,7 +231,7 @@ endforeach()
 get_target_property(PKG_DOLFIN_DEFINITIONS dolfin INTERFACE_COMPILE_DEFINITIONS)
 set(PKG_DEFINITIONS)
 foreach(_def ${PKG_DOLFIN_DEFINITIONS})
-    set(PKG_DEFINITIONS "${PKG_DEFINITIONS} -D${_def}")
+  set(PKG_DEFINITIONS "${PKG_DEFINITIONS} -D${_def}")
 endforeach()
 
 # Convert compiler flags and definitions into space separated strings
