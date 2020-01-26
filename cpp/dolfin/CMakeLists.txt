@@ -190,30 +190,34 @@ get_target_property(PKGCONFIG_DOLFIN_INCLUDE_DIRECTORIES dolfin INTERFACE_SYSTEM
 set(PKGCONFIG_DOLFIN_LIBS)
 foreach(_target ${PKGCONFIG_DOLFIN_TARGET_LINK_LIBRARIES})
 
-  if ("${_target}" MATCHES "^.*::.*$")
-    # Get include paths
-    get_target_property(_inc_dirs ${_target} INTERFACE_INCLUDE_DIRECTORIES)
-    if (_inc_dirs)
-      list(APPEND PKGCONFIG_DOLFIN_INCLUDE_DIRECTORIES ${_inc_dirs})
+  if ("${_target}" MATCHES "^[^<>]+$")  # Skip "$<foo...>", which we get with static libs
+
+    if ("${_target}" MATCHES "^.*::.*$")
+      # Get include paths
+      get_target_property(_inc_dirs ${_target} INTERFACE_INCLUDE_DIRECTORIES)
+      if (_inc_dirs)
+        list(APPEND PKGCONFIG_DOLFIN_INCLUDE_DIRECTORIES ${_inc_dirs})
+      endif()
+
+      # Get libraries
+      get_target_property(_libs ${_target} INTERFACE_LINK_LIBRARIES)
+      if (_libs)
+        list(APPEND PKGCONFIG_DOLFIN_LIBS ${_libs})
+      endif()
+
+    else()
+      # 'regular' libs, i.e. not imported targets
+      list(APPEND PKGCONFIG_DOLFIN_LIBS ${_target})
     endif()
 
-    # Get libraries
-    get_target_property(_libs ${_target} INTERFACE_LINK_LIBRARIES)
-    if (_libs)
-      list(APPEND PKGCONFIG_DOLFIN_LIBS ${_libs})
+    # Special handling for compiled Boost imported targets
+    if (("${_target}" MATCHES "^.*Boost::.*$") AND NOT "${_target}" STREQUAL "Boost::boost")
+      get_target_property(_libs ${_target} IMPORTED_LOCATION_RELEASE)
+      if (_libs)
+        list(APPEND PKGCONFIG_DOLFIN_LIBS ${_libs})
+      endif()
     endif()
 
-  else()
-    # 'regular' libs, i.e. not imported targets
-    list(APPEND PKGCONFIG_DOLFIN_LIBS ${_target})
-  endif()
-
-  # Special handling for compiled Boost imported targets
-  if (("${_target}" MATCHES "^.*Boost::.*$") AND NOT "${_target}" STREQUAL "Boost::boost")
-    get_target_property(_libs ${_target} IMPORTED_LOCATION_RELEASE)
-    if (_libs)
-      list(APPEND PKGCONFIG_DOLFIN_LIBS ${_libs})
-    endif()
   endif()
 
 endforeach()
