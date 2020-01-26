@@ -9,8 +9,8 @@
 #include <dolfin/common/MPI.h>
 #include <dolfin/mesh/Partitioning.h>
 
-using namespace dolfin;
-using namespace dolfin::generation;
+using namespace dolfinx;
+using namespace dolfinx::generation;
 
 //-----------------------------------------------------------------------------
 mesh::Mesh UnitTetrahedronMesh::create()

@@ -22,8 +22,8 @@
 #include <petscdmshell.h>
 #include <petscmat.h>
 
-using namespace dolfin;
-using namespace dolfin::fem;
+using namespace dolfinx;
+using namespace dolfinx::fem;
 
 namespace
 {

@@ -10,8 +10,8 @@
 #include <cmath>
 #include <dolfin/common/log.h>
 
-using namespace dolfin;
-using namespace dolfin::geometry;
+using namespace dolfinx;
+using namespace dolfinx::geometry;
 
 //-----------------------------------------------------------------------------
 bool GeometryPredicates::is_degenerate(

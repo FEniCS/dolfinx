@@ -6,7 +6,7 @@
 
 #pragma once
 
-namespace dolfin
+namespace dolfinx
 {
 
 /// Initialize DOLFIN (and PETSc) with command-line arguments. This

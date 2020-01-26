@@ -26,8 +26,8 @@
 #include <dolfin/mesh/MeshIterator.h>
 #include <dolfin/mesh/Topology.h>
 
-using namespace dolfin;
-using namespace dolfin::io;
+using namespace dolfinx;
+using namespace dolfinx::io;
 
 namespace
 {
@@ -64,7 +64,7 @@ void remap_meshfunction_data(mesh::MeshFunction<T>& meshfunction,
   // FIXME : get vertices_per_entity properly
   const int vertices_per_entity = meshfunction.dim() + 1;
   const MPI_Comm comm = mesh->mpi_comm();
-  const std::size_t num_processes = dolfin::MPI::size(comm);
+  const std::size_t num_processes = dolfinx::MPI::size(comm);
 
   // Wrap topology data in boost array
   assert(topology_data.size() % vertices_per_entity == 0);
@@ -84,7 +84,7 @@ void remap_meshfunction_data(mesh::MeshFunction<T>& meshfunction,
 
     // Use first vertex to decide where to send this data
     const std::size_t destination_process
-        = dolfin::MPI::index_owner(comm, cell_topology.front(), max_vertex);
+        = dolfinx::MPI::index_owner(comm, cell_topology.front(), max_vertex);
 
     send_topology[destination_process].insert(
         send_topology[destination_process].end(), cell_topology.begin(),
@@ -94,15 +94,15 @@ void remap_meshfunction_data(mesh::MeshFunction<T>& meshfunction,
 
   std::vector<std::vector<std::int64_t>> receive_topology(num_processes);
   std::vector<std::vector<T>> receive_values(num_processes);
-  dolfin::MPI::all_to_all(comm, send_topology, receive_topology);
-  dolfin::MPI::all_to_all(comm, send_values, receive_values);
+  dolfinx::MPI::all_to_all(comm, send_topology, receive_topology);
+  dolfinx::MPI::all_to_all(comm, send_values, receive_values);
 
   // Generate requests for data from remote processes, based on the
   // first vertex of the mesh::MeshEntities which belong on this process
   // Send our process number, and our local index, so it can come back
   // directly to the right place
   std::vector<std::vector<std::int64_t>> send_requests(num_processes);
-  const std::size_t rank = dolfin::MPI::rank(comm);
+  const std::size_t rank = dolfinx::MPI::rank(comm);
   const std::vector<std::int64_t>& global_indices
       = mesh->topology().global_indices(0);
   for (auto& cell : mesh::MeshRange(*mesh, cell_dim, mesh::MeshRangeType::ALL))
@@ -120,7 +120,7 @@ void remap_meshfunction_data(mesh::MeshFunction<T>& meshfunction,
 
     // Use first vertex to decide where to send this request
     std::size_t send_to_process
-        = dolfin::MPI::index_owner(comm, cell_topology.front(), max_vertex);
+        = dolfinx::MPI::index_owner(comm, cell_topology.front(), max_vertex);
     // Map to this process and local index by appending to send data
     cell_topology.push_back(cell.index());
     cell_topology.push_back(rank);
@@ -130,7 +130,7 @@ void remap_meshfunction_data(mesh::MeshFunction<T>& meshfunction,
   }
 
   std::vector<std::vector<std::int64_t>> receive_requests(num_processes);
-  dolfin::MPI::all_to_all(comm, send_requests, receive_requests);
+  dolfinx::MPI::all_to_all(comm, send_requests, receive_requests);
 
   // At this point, the data with its associated vertices is in
   // receive_values and receive_topology and the final destinations
@@ -178,8 +178,8 @@ void remap_meshfunction_data(mesh::MeshFunction<T>& meshfunction,
     }
   }
 
-  dolfin::MPI::all_to_all(comm, send_topology, receive_topology);
-  dolfin::MPI::all_to_all(comm, send_values, receive_values);
+  dolfinx::MPI::all_to_all(comm, send_topology, receive_topology);
+  dolfinx::MPI::all_to_all(comm, send_values, receive_values);
 
   // Get reference to mesh function data array
   Eigen::Ref<Eigen::Array<T, Eigen::Dynamic, 1>> mf_values
@@ -223,7 +223,7 @@ std::vector<std::int64_t> compute_topology_data(const mesh::Mesh& mesh,
 
   const int tdim = mesh.topology().dim();
   const auto& global_vertices = mesh.topology().global_indices(0);
-  if (dolfin::MPI::size(comm) == 1 or cell_dim == tdim)
+  if (dolfinx::MPI::size(comm) == 1 or cell_dim == tdim)
   {
     // Simple case when nothing is shared between processes
     if (cell_dim == 0)
@@ -308,7 +308,7 @@ std::vector<T> get_dataset(MPI_Comm comm, const pugi::xml_node& dataset_node,
   // Only read ASCII on process 0
   if (format == "XML")
   {
-    if (dolfin::MPI::rank(comm) == 0)
+    if (dolfinx::MPI::rank(comm) == 0)
     {
       // Read data and trim any leading/trailing whitespace
       pugi::xml_node data_node = dataset_node.first_child();
@@ -361,7 +361,7 @@ std::vector<T> get_dataset(MPI_Comm comm, const pugi::xml_node& dataset_node,
     if (range[0] == 0 and range[1] == 0)
     {
       if (shape_xml == shape_hdf5)
-        range = dolfin::MPI::local_range(comm, shape_hdf5[0]);
+        range = dolfinx::MPI::local_range(comm, shape_hdf5[0]);
       else if (!shape_xml.empty() and shape_hdf5.size() == 1)
       {
         // Size of dims > 0
@@ -377,7 +377,7 @@ std::vector<T> get_dataset(MPI_Comm comm, const pugi::xml_node& dataset_node,
         }
 
         // Compute data range to read
-        range = dolfin::MPI::local_range(comm, shape_xml[0]);
+        range = dolfinx::MPI::local_range(comm, shape_xml[0]);
         range[0] *= d;
         range[1] *= d;
       }
@@ -403,7 +403,7 @@ std::vector<T> get_dataset(MPI_Comm comm, const pugi::xml_node& dataset_node,
     for (auto dim : shape_xml)
       size *= dim;
 
-    if (size != (std::int64_t)dolfin::MPI::sum(comm, data_vector.size()))
+    if (size != (std::int64_t)dolfinx::MPI::sum(comm, data_vector.size()))
     {
       throw std::runtime_error(
           "Data sizes in attribute and size of data read are inconsistent");
@@ -440,7 +440,7 @@ std::string to_string(X x, Y y)
 std::set<std::uint32_t>
 xdmf_write::compute_nonlocal_entities(const mesh::Mesh& mesh, int cell_dim)
 {
-  const int mpi_rank = dolfin::MPI::rank(mesh.mpi_comm());
+  const int mpi_rank = dolfinx::MPI::rank(mesh.mpi_comm());
   const mesh::Topology& topology = mesh.topology();
   const std::map<std::int32_t, std::set<std::int32_t>>& shared_entities
       = topology.shared_entities(cell_dim);
@@ -501,7 +501,7 @@ void xdmf_write::add_points(
   pugi::xml_node topology_node = grid_node.append_child("Topology");
   assert(topology_node);
   const std::size_t n = points.rows();
-  const std::int64_t nglobal = dolfin::MPI::sum(comm, n);
+  const std::int64_t nglobal = dolfinx::MPI::sum(comm, n);
   topology_node.append_attribute("NumberOfElements")
       = std::to_string(nglobal).c_str();
   topology_node.append_attribute("TopologyType") = "PolyVertex";

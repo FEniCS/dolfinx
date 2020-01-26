@@ -8,8 +8,8 @@
 #include <boost/functional/hash.hpp>
 #include <sstream>
 
-using namespace dolfin;
-using namespace dolfin::mesh;
+using namespace dolfinx;
+using namespace dolfinx::mesh;
 
 //-----------------------------------------------------------------------------
 Geometry::Geometry(std::int64_t num_points_global,

@@ -13,7 +13,7 @@
 #include <variant>
 #include <vector>
 
-namespace dolfin
+namespace dolfinx
 {
 class TableEntry;
 

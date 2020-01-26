@@ -12,8 +12,8 @@
 #include "Topology.h"
 #include <dolfin/common/log.h>
 
-using namespace dolfin;
-using namespace dolfin::mesh;
+using namespace dolfinx;
+using namespace dolfinx::mesh;
 
 //-----------------------------------------------------------------------------
 int MeshEntity::index(const MeshEntity& entity) const

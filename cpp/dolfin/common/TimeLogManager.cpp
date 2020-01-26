@@ -11,9 +11,9 @@
 // to avoid "static initialisation order fiasco". Logger's destructor
 // may therefore never be called.
 
-dolfin::common::TimeLogger& dolfin::common::TimeLogManager::logger()
+dolfinx::common::TimeLogger& dolfinx::common::TimeLogManager::logger()
 {
   // NB static - this only allocates a new Logger on the first call to logger()
-  static dolfin::common::TimeLogger* lg = new (dolfin::common::TimeLogger);
+  static dolfinx::common::TimeLogger* lg = new (dolfinx::common::TimeLogger);
   return *lg;
 }

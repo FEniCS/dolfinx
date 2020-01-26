@@ -17,7 +17,7 @@
 struct ufc_coordinate_mapping;
 struct ufc_finite_element;
 
-namespace dolfin
+namespace dolfinx
 {
 
 namespace fem

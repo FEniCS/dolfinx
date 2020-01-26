@@ -1,8 +1,8 @@
 #pragma once
 
-namespace dolfin
+namespace dolfinx
 {
-/*! \namespace dolfin::la
+/*! \namespace dolfinx::la
     \brief Linear algebra interface
 
     Interface to linear algebra data structures and solvers

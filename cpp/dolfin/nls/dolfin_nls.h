@@ -1,8 +1,8 @@
 #pragma once
 
-namespace dolfin
+namespace dolfinx
 {
-/*! \namespace dolfin::nls
+/*! \namespace dolfinx::nls
     \brief Nonlinear solvers
 
     Methods for solving nonlinear equations.

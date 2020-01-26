@@ -13,7 +13,7 @@
 #include <tuple>
 #include <vector>
 
-namespace dolfin
+namespace dolfinx
 {
 
 namespace common

@@ -2,7 +2,7 @@
 #include <cfloat>
 #include <dolfin.h>
 
-using namespace dolfin;
+using namespace dolfinx;
 
 // Next:
 //

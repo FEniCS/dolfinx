@@ -15,8 +15,8 @@
 #include <petscmat.h>
 #include <slepcversion.h>
 
-using namespace dolfin;
-using namespace dolfin::la;
+using namespace dolfinx;
+using namespace dolfinx::la;
 
 //-----------------------------------------------------------------------------
 SLEPcEigenSolver::SLEPcEigenSolver(MPI_Comm comm) { EPSCreate(comm, &_eps); }

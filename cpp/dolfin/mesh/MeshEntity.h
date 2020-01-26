@@ -10,7 +10,7 @@
 #include "Mesh.h"
 #include "Topology.h"
 
-namespace dolfin
+namespace dolfinx
 {
 
 namespace mesh

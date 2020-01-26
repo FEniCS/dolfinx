@@ -11,11 +11,11 @@
 #include <dolfin/mesh/MeshEntity.h>
 #include <dolfin/mesh/MeshFunction.h>
 
-using namespace dolfin;
+using namespace dolfinx;
 using namespace refinement;
 
 //-----------------------------------------------------------------------------
-mesh::Mesh dolfin::refinement::refine(const mesh::Mesh& mesh, bool redistribute)
+mesh::Mesh dolfinx::refinement::refine(const mesh::Mesh& mesh, bool redistribute)
 {
   if (mesh.cell_type() != mesh::CellType::triangle
       and mesh.cell_type() != mesh::CellType::tetrahedron)
@@ -37,7 +37,7 @@ mesh::Mesh dolfin::refinement::refine(const mesh::Mesh& mesh, bool redistribute)
 }
 //-----------------------------------------------------------------------------
 mesh::Mesh
-dolfin::refinement::refine(const mesh::Mesh& mesh,
+dolfinx::refinement::refine(const mesh::Mesh& mesh,
                            const mesh::MeshFunction<int>& cell_markers,
                            bool redistribute)
 {

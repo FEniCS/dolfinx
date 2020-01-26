@@ -15,7 +15,7 @@
 #include <parmetis.h>
 #endif
 
-using namespace dolfin;
+using namespace dolfinx;
 
 #ifdef HAS_PARMETIS
 
@@ -23,7 +23,7 @@ using namespace dolfin;
 // {
 // // Create a dual graph from the cell-vertex topology using ParMETIS
 // // built in ParMETIS_V3_Mesh2Dual
-// dolfin::graph::CSRGraph<idx_t>
+// dolfinx::graph::CSRGraph<idx_t>
 // build_dual_graph(MPI_Comm mpi_comm,
 //                  Eigen::Ref<const EigenRowArrayXXi64> cell_vertices,
 //                  const int num_vertices_per_cell)
@@ -34,7 +34,7 @@ using namespace dolfin;
 //   std::vector<idx_t> elmdist, eptr, eind;
 
 //   // Get number of processes and process number
-//   const std::int32_t num_processes = dolfin::MPI::size(mpi_comm);
+//   const std::int32_t num_processes = dolfinx::MPI::size(mpi_comm);
 
 //   // Get dimensions of local mesh_data
 //   const std::int32_t num_local_cells = cell_vertices.rows();
@@ -51,7 +51,7 @@ using namespace dolfin;
 
 //   // Communicate number of cells on each process between all processors
 //   std::vector<std::int32_t> num_cells;
-//   dolfin::MPI::all_gather(mpi_comm, num_local_cells, num_cells);
+//   dolfinx::MPI::all_gather(mpi_comm, num_local_cells, num_cells);
 
 //   // Build elmdist array with cell offsets for all processors
 //   elmdist.assign(num_processes + 1, 0);
@@ -89,7 +89,7 @@ using namespace dolfin;
 //   timer1.stop();
 
 //   // Build graph
-//   dolfin::graph::CSRGraph<idx_t> csr_graph(mpi_comm, xadj, adjncy,
+//   dolfinx::graph::CSRGraph<idx_t> csr_graph(mpi_comm, xadj, adjncy,
 //                                            num_local_cells);
 
 //   // Clean up ParMETIS
@@ -102,7 +102,7 @@ using namespace dolfin;
 
 //-----------------------------------------------------------------------------
 std::pair<std::vector<int>, std::map<std::int64_t, std::vector<int>>>
-dolfin::graph::ParMETIS::partition(MPI_Comm mpi_comm, idx_t nparts,
+dolfinx::graph::ParMETIS::partition(MPI_Comm mpi_comm, idx_t nparts,
                                    const CSRGraph<idx_t>& csr_graph)
 {
   std::map<std::int64_t, std::vector<int>> ghost_procs;
@@ -149,8 +149,8 @@ dolfin::graph::ParMETIS::partition(MPI_Comm mpi_comm, idx_t nparts,
   const auto& elmdist = csr_graph.node_distribution();
   const auto& xadj = csr_graph.nodes();
   const auto& adjncy = csr_graph.edges();
-  const std::int32_t num_processes = dolfin::MPI::size(mpi_comm);
-  const std::int32_t process_number = dolfin::MPI::rank(mpi_comm);
+  const std::int32_t num_processes = dolfinx::MPI::size(mpi_comm);
+  const std::int32_t process_number = dolfinx::MPI::rank(mpi_comm);
   const idx_t elm_begin = elmdist[process_number];
   const idx_t elm_end = elmdist[process_number + 1];
   const std::int32_t ncells = elm_end - elm_begin;
@@ -195,7 +195,7 @@ dolfin::graph::ParMETIS::partition(MPI_Comm mpi_comm, idx_t nparts,
   }
 
   // Actual halo exchange
-  dolfin::MPI::all_to_all(mpi_comm, send_cell_partition, recv_cell_partition);
+  dolfinx::MPI::all_to_all(mpi_comm, send_cell_partition, recv_cell_partition);
 
   // Construct a map from all currently foreign cells to their new
   // partition number
@@ -253,7 +253,7 @@ dolfin::graph::ParMETIS::partition(MPI_Comm mpi_comm, idx_t nparts,
 }
 //-----------------------------------------------------------------------------
 template <typename T>
-std::vector<int> dolfin::graph::ParMETIS::adaptive_repartition(
+std::vector<int> dolfinx::graph::ParMETIS::adaptive_repartition(
     MPI_Comm mpi_comm, const CSRGraph<T>& csr_graph, double weight)
 {
   common::Timer timer(
@@ -276,7 +276,7 @@ std::vector<int> dolfin::graph::ParMETIS::adaptive_repartition(
   assert(!part.empty());
 
   // Number of partitions (one for each process)
-  idx_t nparts = dolfin::MPI::size(mpi_comm);
+  idx_t nparts = dolfinx::MPI::size(mpi_comm);
 
   // Remaining ParMETIS parameters
   idx_t ncon = 1;
@@ -301,13 +301,13 @@ std::vector<int> dolfin::graph::ParMETIS::adaptive_repartition(
 }
 //-----------------------------------------------------------------------------
 template <typename T>
-std::vector<int> dolfin::graph::ParMETIS::refine(MPI_Comm mpi_comm,
+std::vector<int> dolfinx::graph::ParMETIS::refine(MPI_Comm mpi_comm,
                                                  const CSRGraph<T>& csr_graph)
 {
   common::Timer timer("Compute graph partition (ParMETIS Refine)");
 
   // Get some MPI data
-  const std::int32_t process_number = dolfin::MPI::rank(mpi_comm);
+  const std::int32_t process_number = dolfinx::MPI::rank(mpi_comm);
 
   // Options for ParMETIS
   idx_t options[4];
@@ -327,7 +327,7 @@ std::vector<int> dolfin::graph::ParMETIS::refine(MPI_Comm mpi_comm,
   assert(!part.empty());
 
   // Number of partitions (one for each process)
-  idx_t nparts = dolfin::MPI::size(mpi_comm);
+  idx_t nparts = dolfinx::MPI::size(mpi_comm);
   // Remaining ParMETIS parameters
   idx_t ncon = 1;
   idx_t* elmwgt = nullptr;

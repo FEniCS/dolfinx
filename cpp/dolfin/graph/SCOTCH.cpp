@@ -23,11 +23,11 @@ extern "C"
 #include <stdint.h>
 }
 
-using namespace dolfin;
+using namespace dolfinx;
 
 //-----------------------------------------------------------------------------
 std::pair<std::vector<int>, std::vector<int>>
-dolfin::graph::SCOTCH::compute_gps(const Graph& graph, std::size_t num_passes)
+dolfinx::graph::SCOTCH::compute_gps(const Graph& graph, std::size_t num_passes)
 {
   // Create strategy string for Gibbs-Poole-Stockmeyer ordering
   std::string strategy = "g{pass= " + std::to_string(num_passes) + "}";
@@ -36,7 +36,7 @@ dolfin::graph::SCOTCH::compute_gps(const Graph& graph, std::size_t num_passes)
 }
 //-----------------------------------------------------------------------------
 std::pair<std::vector<int>, std::vector<int>>
-dolfin::graph::SCOTCH::compute_reordering(const Graph& graph,
+dolfinx::graph::SCOTCH::compute_reordering(const Graph& graph,
                                           std::string scotch_strategy)
 {
   common::Timer timer("Compute SCOTCH graph re-ordering");
@@ -138,7 +138,7 @@ dolfin::graph::SCOTCH::compute_reordering(const Graph& graph,
 }
 //-----------------------------------------------------------------------------
 std::pair<std::vector<int>, std::map<std::int64_t, std::vector<int>>>
-dolfin::graph::SCOTCH::partition(const MPI_Comm mpi_comm,
+dolfinx::graph::SCOTCH::partition(const MPI_Comm mpi_comm,
                                  const SCOTCH_Num nparts,
                                  const CSRGraph<SCOTCH_Num>& local_graph,
                                  const std::vector<std::size_t>& node_weights,

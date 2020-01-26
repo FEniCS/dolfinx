@@ -30,32 +30,32 @@ namespace dolfin_wrappers
 
 void function(py::module& m)
 {
-  // dolfin::function::Function
-  py::class_<dolfin::function::Function,
-             std::shared_ptr<dolfin::function::Function>>(
+  // dolfinx::function::Function
+  py::class_<dolfinx::function::Function,
+             std::shared_ptr<dolfinx::function::Function>>(
       m, "Function", "A finite element function")
-      .def(py::init<std::shared_ptr<const dolfin::function::FunctionSpace>>(),
+      .def(py::init<std::shared_ptr<const dolfinx::function::FunctionSpace>>(),
            "Create a function on the given function space")
-      .def(py::init<std::shared_ptr<dolfin::function::FunctionSpace>, Vec>())
-      .def_readwrite("name", &dolfin::function::Function::name)
-      .def_property_readonly("id", &dolfin::function::Function::id)
-      .def("sub", &dolfin::function::Function::sub,
+      .def(py::init<std::shared_ptr<dolfinx::function::FunctionSpace>, Vec>())
+      .def_readwrite("name", &dolfinx::function::Function::name)
+      .def_property_readonly("id", &dolfinx::function::Function::id)
+      .def("sub", &dolfinx::function::Function::sub,
            "Return sub-function (view into parent Function")
-      .def("collapse", &dolfin::function::Function::collapse,
+      .def("collapse", &dolfinx::function::Function::collapse,
            "Collapse sub-function view")
       .def("interpolate",
            py::overload_cast<const std::function<Eigen::Array<
                PetscScalar, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>(
                const Eigen::Ref<const Eigen::Array<double, 3, Eigen::Dynamic,
                                                    Eigen::RowMajor>>&)>&>(
-               &dolfin::function::Function::interpolate),
+               &dolfinx::function::Function::interpolate),
            py::arg("f"), "Interpolate an expression")
       .def("interpolate",
-           py::overload_cast<const dolfin::function::Function&>(
-               &dolfin::function::Function::interpolate),
+           py::overload_cast<const dolfinx::function::Function&>(
+               &dolfinx::function::Function::interpolate),
            py::arg("u"), "Interpolate a finite element function")
       .def("interpolate_ptr",
-           [](dolfin::function::Function& self, std::uintptr_t addr) {
+           [](dolfinx::function::Function& self, std::uintptr_t addr) {
              const std::function<void(PetscScalar*, int, int, const double*)> f
                  = reinterpret_cast<void (*)(PetscScalar*, int, int,
                                              const double*)>(addr);
@@ -73,54 +73,54 @@ void function(py::module& m)
            "Interpolate using a pointer to an expression with a C signature")
       .def_property_readonly(
           "vector",
-          [](const dolfin::function::Function&
+          [](const dolfinx::function::Function&
                  self) { return self.vector().vec(); },
           "Return the vector associated with the finite element Function")
-      .def("value_dimension", &dolfin::function::Function::value_dimension)
+      .def("value_dimension", &dolfinx::function::Function::value_dimension)
       .def_property_readonly("value_size",
-                             &dolfin::function::Function::value_size)
+                             &dolfinx::function::Function::value_size)
       .def_property_readonly("value_rank",
-                             &dolfin::function::Function::value_rank)
+                             &dolfinx::function::Function::value_rank)
       .def_property_readonly("value_shape",
-                             &dolfin::function::Function::value_shape)
-      .def("eval", &dolfin::function::Function::eval, py::arg("x"),
+                             &dolfinx::function::Function::value_shape)
+      .def("eval", &dolfinx::function::Function::eval, py::arg("x"),
            py::arg("cells"), py::arg("values"), "Evaluate Function")
       .def("compute_point_values",
-           &dolfin::function::Function::compute_point_values,
+           &dolfinx::function::Function::compute_point_values,
            "Compute values at all mesh points")
       .def_property_readonly("function_space",
-                             &dolfin::function::Function::function_space);
+                             &dolfinx::function::Function::function_space);
 
-  // dolfin::function::FunctionSpace
-  py::class_<dolfin::function::FunctionSpace,
-             std::shared_ptr<dolfin::function::FunctionSpace>>(
+  // dolfinx::function::FunctionSpace
+  py::class_<dolfinx::function::FunctionSpace,
+             std::shared_ptr<dolfinx::function::FunctionSpace>>(
       m, "FunctionSpace", py::dynamic_attr())
-      .def(py::init<std::shared_ptr<dolfin::mesh::Mesh>,
-                    std::shared_ptr<dolfin::fem::FiniteElement>,
-                    std::shared_ptr<dolfin::fem::DofMap>>())
-      .def_property_readonly("id", &dolfin::function::FunctionSpace::id)
-      .def("__eq__", &dolfin::function::FunctionSpace::operator==)
-      .def("dim", &dolfin::function::FunctionSpace::dim)
-      .def("collapse", &dolfin::function::FunctionSpace::collapse)
-      .def("component", &dolfin::function::FunctionSpace::component)
-      .def("contains", &dolfin::function::FunctionSpace::contains)
+      .def(py::init<std::shared_ptr<dolfinx::mesh::Mesh>,
+                    std::shared_ptr<dolfinx::fem::FiniteElement>,
+                    std::shared_ptr<dolfinx::fem::DofMap>>())
+      .def_property_readonly("id", &dolfinx::function::FunctionSpace::id)
+      .def("__eq__", &dolfinx::function::FunctionSpace::operator==)
+      .def("dim", &dolfinx::function::FunctionSpace::dim)
+      .def("collapse", &dolfinx::function::FunctionSpace::collapse)
+      .def("component", &dolfinx::function::FunctionSpace::component)
+      .def("contains", &dolfinx::function::FunctionSpace::contains)
       .def_property_readonly("element",
-                             &dolfin::function::FunctionSpace::element)
-      .def_property_readonly("mesh", &dolfin::function::FunctionSpace::mesh)
-      .def_property_readonly("dofmap", &dolfin::function::FunctionSpace::dofmap)
-      .def("set_x", &dolfin::function::FunctionSpace::set_x)
-      .def("sub", &dolfin::function::FunctionSpace::sub)
+                             &dolfinx::function::FunctionSpace::element)
+      .def_property_readonly("mesh", &dolfinx::function::FunctionSpace::mesh)
+      .def_property_readonly("dofmap", &dolfinx::function::FunctionSpace::dofmap)
+      .def("set_x", &dolfinx::function::FunctionSpace::set_x)
+      .def("sub", &dolfinx::function::FunctionSpace::sub)
       .def("tabulate_dof_coordinates",
-           &dolfin::function::FunctionSpace::tabulate_dof_coordinates);
+           &dolfinx::function::FunctionSpace::tabulate_dof_coordinates);
 
-  // dolfin::function::Constant
-  py::class_<dolfin::function::Constant,
-             std::shared_ptr<dolfin::function::Constant>>(
+  // dolfinx::function::Constant
+  py::class_<dolfinx::function::Constant,
+             std::shared_ptr<dolfinx::function::Constant>>(
       m, "Constant", "A value constant with respect to integration domain")
       .def(py::init<std::vector<int>, std::vector<PetscScalar>>(),
            "Create a constant from a scalar value array")
       .def("value",
-           [](dolfin::function::Constant& self) {
+           [](dolfinx::function::Constant& self) {
              return py::array(self.shape, self.value.data(), py::none());
            },
            py::return_value_policy::reference_internal);

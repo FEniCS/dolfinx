@@ -41,8 +41,8 @@
 #include <string>
 #include <vector>
 
-using namespace dolfin;
-using namespace dolfin::io;
+using namespace dolfinx;
+using namespace dolfinx::io;
 
 namespace
 {
@@ -1574,7 +1574,7 @@ XDMFFile::read_checkpoint(std::shared_ptr<const function::FunctionSpace> V,
 
   // Divide cells equally between processes
   std::array<std::int64_t, 2> cell_range
-      = dolfin::MPI::local_range(_mpi_comm.comm(), x_cell_dofs_shape[0]);
+      = dolfinx::MPI::local_range(_mpi_comm.comm(), x_cell_dofs_shape[0]);
 
   // Read number of dofs per cell
   std::vector<std::int64_t> x_cell_dofs = xdmf_read::get_dataset<std::int64_t>(

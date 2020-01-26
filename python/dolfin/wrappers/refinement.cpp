@@ -17,16 +17,16 @@ namespace dolfin_wrappers
 void refinement(py::module& m)
 {
 
-  // dolfin::refinement::refine
+  // dolfinx::refinement::refine
   m.def("refine",
-        py::overload_cast<const dolfin::mesh::Mesh&, bool>(
-            &dolfin::refinement::refine),
+        py::overload_cast<const dolfinx::mesh::Mesh&, bool>(
+            &dolfinx::refinement::refine),
         py::arg("mesh"), py::arg("redistribute") = true);
 
   m.def("refine",
-        py::overload_cast<const dolfin::mesh::Mesh&,
-                          const dolfin::mesh::MeshFunction<int>&, bool>(
-            &dolfin::refinement::refine),
+        py::overload_cast<const dolfinx::mesh::Mesh&,
+                          const dolfinx::mesh::MeshFunction<int>&, bool>(
+            &dolfinx::refinement::refine),
         py::arg("mesh"), py::arg("marker"), py::arg("redistribute") = true);
 }
 

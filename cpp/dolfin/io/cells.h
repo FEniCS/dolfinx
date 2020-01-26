@@ -11,7 +11,7 @@
 #include <dolfin/mesh/cell_types.h>
 #include <vector>
 
-namespace dolfin
+namespace dolfinx
 {
 namespace io
 {

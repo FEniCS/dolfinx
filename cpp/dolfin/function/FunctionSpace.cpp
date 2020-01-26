@@ -20,8 +20,8 @@
 #include <dolfin/mesh/MeshIterator.h>
 #include <vector>
 
-using namespace dolfin;
-using namespace dolfin::function;
+using namespace dolfinx;
+using namespace dolfinx::function;
 
 //-----------------------------------------------------------------------------
 FunctionSpace::FunctionSpace(std::shared_ptr<const mesh::Mesh> mesh,

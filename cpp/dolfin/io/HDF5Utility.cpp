@@ -17,8 +17,8 @@
 #include <iostream>
 #include <petscvec.h>
 
-using namespace dolfin;
-using namespace dolfin::io;
+using namespace dolfinx;
+using namespace dolfinx::io;
 
 //-----------------------------------------------------------------------------
 std::pair<std::vector<std::size_t>, std::vector<std::size_t>>

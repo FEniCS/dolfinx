@@ -24,8 +24,8 @@
 #include <random>
 #include <utility>
 
-using namespace dolfin;
-using namespace dolfin::fem;
+using namespace dolfinx;
+using namespace dolfinx::fem;
 
 namespace
 {
@@ -122,8 +122,8 @@ compute_ownership(const DofMapStructure& dofmap,
 
   // Communication buffers
   const MPI_Comm mpi_comm = mesh.mpi_comm();
-  const std::int32_t num_processes = dolfin::MPI::size(mpi_comm);
-  const std::int32_t process_number = dolfin::MPI::rank(mpi_comm);
+  const std::int32_t num_processes = dolfinx::MPI::size(mpi_comm);
+  const std::int32_t process_number = dolfinx::MPI::rank(mpi_comm);
   std::vector<std::vector<std::int64_t>> send_buffer(num_processes);
 
   // Add a counter to the start of each send buffer
@@ -145,7 +145,7 @@ compute_ownership(const DofMapStructure& dofmap,
       // Send global index
       const std::int64_t global_index = dofmap.global_indices[i];
       const std::int32_t dest
-          = dolfin::MPI::index_owner(mpi_comm, global_index, global_dim);
+          = dolfinx::MPI::index_owner(mpi_comm, global_index, global_dim);
       send_buffer[dest].push_back(global_index);
       global_to_local.insert(std::pair(global_index, i));
     }
@@ -166,7 +166,7 @@ compute_ownership(const DofMapStructure& dofmap,
       // Send global index
       const std::int64_t global_index = dofmap.global_indices[i];
       const std::int32_t dest
-          = dolfin::MPI::index_owner(mpi_comm, global_index, global_dim);
+          = dolfinx::MPI::index_owner(mpi_comm, global_index, global_dim);
       send_buffer[dest].push_back(global_index);
       global_to_local.insert(std::pair(global_index, i));
     }
@@ -174,7 +174,7 @@ compute_ownership(const DofMapStructure& dofmap,
 
   // Send to sorting process
   std::vector<std::vector<std::int64_t>> recv_buffer(num_processes);
-  dolfin::MPI::all_to_all(mpi_comm, send_buffer, recv_buffer);
+  dolfinx::MPI::all_to_all(mpi_comm, send_buffer, recv_buffer);
 
   // Map from global index to sharing processes
   std::map<std::int64_t, std::vector<std::int32_t>> global_to_procs;
@@ -232,7 +232,7 @@ compute_ownership(const DofMapStructure& dofmap,
   std::vector<ownership> node_ownership(num_nodes_local,
                                         ownership::owned_exclusive);
 
-  dolfin::MPI::all_to_all(mpi_comm, send_response, recv_buffer);
+  dolfinx::MPI::all_to_all(mpi_comm, send_response, recv_buffer);
   // [n_sharing, owner, others]
   std::unordered_map<int, std::vector<int>> shared_node_to_processes;
   for (std::int32_t i = 0; i < num_processes; ++i)
@@ -510,7 +510,7 @@ compute_reordering_map(const DofMapStructure& dofmap,
 
   // Build local graph, based on dof map with contiguous numbering
   // (unowned dofs excluded)
-  dolfin::graph::Graph graph(owned_size);
+  dolfinx::graph::Graph graph(owned_size);
   std::vector<int> local_old;
   for (std::int32_t cell = 0; cell < dofmap.num_cells(); ++cell)
   {
@@ -619,7 +619,7 @@ Eigen::Array<std::int64_t, Eigen::Dynamic, 1> compute_global_indices(
                                                             node_pairs.end());
 
   // Buffer nodes that are owned and shared with another process
-  const std::int32_t mpi_size = dolfin::MPI::size(mpi_comm);
+  const std::int32_t mpi_size = dolfinx::MPI::size(mpi_comm);
   std::vector<std::vector<std::int64_t>> send_buffer(mpi_size);
   for (std::size_t old_index = 0; old_index < node_ownership.size();
        ++old_index)
@@ -643,7 +643,7 @@ Eigen::Array<std::int64_t, Eigen::Dynamic, 1> compute_global_indices(
   }
 
   std::vector<std::vector<std::int64_t>> recv_buffer(mpi_size);
-  dolfin::MPI::all_to_all(mpi_comm, send_buffer, recv_buffer);
+  dolfinx::MPI::all_to_all(mpi_comm, send_buffer, recv_buffer);
 
   Eigen::Array<std::int64_t, Eigen::Dynamic, 1> local_to_global_unowned(
       unowned_local_size);
@@ -777,7 +777,7 @@ DofMapBuilder::build(const mesh::Mesh& mesh,
   // Compute process offset for owned nodes. Global indices for owned
   // dofs are (index_local + process_offset)
   const std::int64_t process_offset
-      = dolfin::MPI::global_offset(mesh.mpi_comm(), num_owned_nodes, true);
+      = dolfinx::MPI::global_offset(mesh.mpi_comm(), num_owned_nodes, true);
 
   // Get global indices for unowned unowned dofs
   const Eigen::Array<std::int64_t, Eigen::Dynamic, 1> local_to_global_unowned
@@ -790,7 +790,7 @@ DofMapBuilder::build(const mesh::Mesh& mesh,
       mesh.mpi_comm(), num_owned_nodes, local_to_global_unowned, block_size);
   assert(index_map);
   assert(
-      dolfin::MPI::sum(mesh.mpi_comm(), (std::int64_t)index_map->size_local())
+      dolfinx::MPI::sum(mesh.mpi_comm(), (std::int64_t)index_map->size_local())
       == global_dimension);
 
   // FIXME: There is an assumption here on the dof order for an element.

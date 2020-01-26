@@ -11,8 +11,8 @@
 #include <memory>
 #include <string>
 
-using namespace dolfin;
-using namespace dolfin::fem;
+using namespace dolfinx;
+using namespace dolfinx::fem;
 
 //-----------------------------------------------------------------------------
 FormCoefficients::FormCoefficients(

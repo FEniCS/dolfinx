@@ -14,7 +14,7 @@
 #include <string>
 #include <utility>
 
-namespace dolfin
+namespace dolfinx
 {
 
 namespace function
@@ -238,7 +238,7 @@ private:
   std::int32_t _degree;
 
   // MPI communicator
-  dolfin::MPI::Comm _mpi_comm;
+  dolfinx::MPI::Comm _mpi_comm;
 
   // Ghost mode used for partitioning
   GhostMode _ghost_mode;

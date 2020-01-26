@@ -29,7 +29,7 @@ class xml_node;
 class xml_document;
 } // namespace pugi
 
-namespace dolfin
+namespace dolfinx
 {
 namespace function
 {
@@ -342,7 +342,7 @@ private:
   void write_mesh_function(const mesh::MeshFunction<T>& meshfunction);
 
   // MPI communicator
-  dolfin::MPI::Comm _mpi_comm;
+  dolfinx::MPI::Comm _mpi_comm;
 
   // HDF5 data file
   std::unique_ptr<HDF5File> _hdf5_file;

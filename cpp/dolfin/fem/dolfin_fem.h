@@ -1,8 +1,8 @@
 #pragma once
 
-namespace dolfin
+namespace dolfinx
 {
-/*! \namespace dolfin::fem
+/*! \namespace dolfinx::fem
     \brief Finite element method functionality
 
     Classes and algorithms for finite element method operations, e.g. assembly.

@@ -12,7 +12,7 @@
 #include <petscvec.h>
 #include <utility>
 
-namespace dolfin
+namespace dolfinx
 {
 
 namespace la
@@ -122,7 +122,7 @@ private:
   Vec _dx;
 
   // MPI communicator
-  dolfin::MPI::Comm _mpi_comm;
+  dolfinx::MPI::Comm _mpi_comm;
 };
 } // namespace nls
 } // namespace dolfin

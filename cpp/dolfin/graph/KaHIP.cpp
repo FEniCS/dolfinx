@@ -15,19 +15,19 @@
 #include <parhip_interface.h>
 #endif
 
-using namespace dolfin;
+using namespace dolfinx;
 
 #ifdef HAS_KAHIP
 
 std::pair<std::vector<int>, std::map<std::int64_t, std::vector<int>>>
-dolfin::graph::KaHIP::partition(MPI_Comm mpi_comm, int nparts,
+dolfinx::graph::KaHIP::partition(MPI_Comm mpi_comm, int nparts,
                                 const CSRGraph<unsigned long long>& csr_graph)
 {
   std::map<std::int64_t, std::vector<int>> ghost_procs;
   common::Timer timer("Compute graph partition (KaHIP)");
 
-  const std::int32_t num_processes = dolfin::MPI::size(mpi_comm);
-  const std::int32_t process_number = dolfin::MPI::rank(mpi_comm);
+  const std::int32_t num_processes = dolfinx::MPI::size(mpi_comm);
+  const std::int32_t process_number = dolfinx::MPI::rank(mpi_comm);
 
   // Graph does not have vertex or adjacency weights,
   // so we use null pointers as arguments.
@@ -108,7 +108,7 @@ dolfin::graph::KaHIP::partition(MPI_Comm mpi_comm, int nparts,
   }
 
   // Actual halo exchange
-  dolfin::MPI::all_to_all(mpi_comm, send_cell_partition, recv_cell_partition);
+  dolfinx::MPI::all_to_all(mpi_comm, send_cell_partition, recv_cell_partition);
 
   // Construct a map from all currently foreign cells to their new
   // partition number

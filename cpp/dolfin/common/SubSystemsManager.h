@@ -9,7 +9,7 @@
 #include <petsc.h>
 #include <string>
 
-namespace dolfin
+namespace dolfinx
 {
 
 namespace common

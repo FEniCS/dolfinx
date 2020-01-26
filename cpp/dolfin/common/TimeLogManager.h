@@ -8,7 +8,7 @@
 
 #include "TimeLogger.h"
 
-namespace dolfin
+namespace dolfinx
 {
 
 namespace common

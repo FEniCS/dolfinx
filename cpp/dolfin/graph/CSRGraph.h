@@ -9,7 +9,7 @@
 #include <dolfin/common/MPI.h>
 #include <vector>
 
-namespace dolfin
+namespace dolfinx
 {
 namespace graph
 {
@@ -187,7 +187,7 @@ private:
   std::vector<T> _node_distribution;
 
   // MPI communicator attached to graph
-  dolfin::MPI::Comm _mpi_comm;
+  dolfinx::MPI::Comm _mpi_comm;
 };
 } // namespace graph
 } // namespace dolfin

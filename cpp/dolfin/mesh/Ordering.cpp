@@ -13,7 +13,7 @@
 #include <array>
 #include <vector>
 
-using namespace dolfin;
+using namespace dolfinx;
 
 namespace
 {

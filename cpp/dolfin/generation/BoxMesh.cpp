@@ -12,8 +12,8 @@
 #include <dolfin/common/Timer.h>
 #include <dolfin/io/cells.h>
 
-using namespace dolfin;
-using namespace dolfin::generation;
+using namespace dolfinx;
+using namespace dolfinx::generation;
 
 namespace
 {
@@ -31,7 +31,7 @@ create_geom(MPI_Comm comm, const std::array<Eigen::Vector3d, 2>& p,
 
   const std::int64_t n_points = (nx + 1) * (ny + 1) * (nz + 1);
   std::array<std::int64_t, 2> range_p
-      = dolfin::MPI::local_range(comm, n_points);
+      = dolfinx::MPI::local_range(comm, n_points);
 
   // Extract minimum and maximum coordinates
   const double x0 = std::min(p0[0], p1[0]);
@@ -98,7 +98,7 @@ mesh::Mesh build_tet(MPI_Comm comm, const std::array<Eigen::Vector3d, 2>& p,
   std::int64_t ny = n[1];
   std::int64_t nz = n[2];
   const std::int64_t n_cells = nx * ny * nz;
-  std::array<std::int64_t, 2> range_c = dolfin::MPI::local_range(comm, n_cells);
+  std::array<std::int64_t, 2> range_c = dolfinx::MPI::local_range(comm, n_cells);
   Eigen::Array<std::int64_t, Eigen::Dynamic, 4, Eigen::RowMajor> topo(
       6 * (range_c[1] - range_c[0]), 4);
 
@@ -152,7 +152,7 @@ mesh::Mesh build_hex(MPI_Comm comm, const std::array<Eigen::Vector3d, 2>& p,
   const std::int64_t ny = n[1];
   const std::int64_t nz = n[2];
   const std::int64_t n_cells = nx * ny * nz;
-  std::array<std::int64_t, 2> range_c = dolfin::MPI::local_range(comm, n_cells);
+  std::array<std::int64_t, 2> range_c = dolfinx::MPI::local_range(comm, n_cells);
   Eigen::Array<std::int64_t, Eigen::Dynamic, 8, Eigen::RowMajor> topo(
       range_c[1] - range_c[0], 8);
 

@@ -10,7 +10,7 @@
 #include <dolfin/common/types.h>
 #include <vector>
 
-namespace dolfin
+namespace dolfinx
 {
 
 namespace function

@@ -8,8 +8,8 @@
 #include <Eigen/Dense>
 #include <vector>
 
-using namespace dolfin;
-using namespace dolfin::function;
+using namespace dolfinx;
+using namespace dolfinx::function;
 
 //-----------------------------------------------------------------------------
 Constant::Constant(PetscScalar c) : value({c})

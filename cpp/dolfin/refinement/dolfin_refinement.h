@@ -1,8 +1,8 @@
 #pragma once
 
-namespace dolfin
+namespace dolfinx
 {
-/*! \namespace dolfin::refinement
+/*! \namespace dolfinx::refinement
     \brief Mesh refinement algorithms
 
     Methods for refining meshes uniformly, or with markers, using

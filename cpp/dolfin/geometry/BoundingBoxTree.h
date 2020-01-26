@@ -11,7 +11,7 @@
 #include <memory>
 #include <vector>
 
-namespace dolfin
+namespace dolfinx
 {
 
 // Forward declarations

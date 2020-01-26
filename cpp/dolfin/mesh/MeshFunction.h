@@ -18,7 +18,7 @@
 #include <memory>
 #include <unordered_set>
 
-namespace dolfin
+namespace dolfinx
 {
 namespace mesh
 {

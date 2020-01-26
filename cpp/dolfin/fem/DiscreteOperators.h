@@ -8,7 +8,7 @@
 
 #include <memory>
 
-namespace dolfin
+namespace dolfinx
 {
 
 namespace function

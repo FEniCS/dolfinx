@@ -11,7 +11,7 @@
 #include <unordered_map>
 #include <vector>
 
-namespace dolfin
+namespace dolfinx
 {
 
 namespace mesh

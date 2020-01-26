@@ -10,7 +10,7 @@
 #include <dolfin/mesh/MeshEntity.h>
 #include <dolfin/mesh/MeshIterator.h>
 
-using namespace dolfin;
+using namespace dolfinx;
 
 namespace
 {

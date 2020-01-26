@@ -9,7 +9,7 @@
 #include <dolfin/common/MPI.h>
 #include <dolfin/mesh/Mesh.h>
 
-namespace dolfin
+namespace dolfinx
 {
 namespace generation
 {

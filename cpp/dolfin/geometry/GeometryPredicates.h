@@ -9,7 +9,7 @@
 #include <Eigen/Dense>
 #include <vector>
 
-namespace dolfin
+namespace dolfinx
 {
 
 namespace geometry

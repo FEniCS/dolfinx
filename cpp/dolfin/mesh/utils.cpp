@@ -15,7 +15,7 @@
 #include <cstdlib>
 #include <stdexcept>
 
-using namespace dolfin;
+using namespace dolfinx;
 
 namespace
 {

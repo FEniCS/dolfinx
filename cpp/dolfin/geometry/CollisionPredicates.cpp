@@ -11,8 +11,8 @@
 #include <dolfin/mesh/MeshEntity.h>
 #include <dolfin/mesh/cell_types.h>
 
-using namespace dolfin;
-using namespace dolfin::geometry;
+using namespace dolfinx;
+using namespace dolfinx::geometry;
 
 /// Compute numerically stable cross product (a - c) x (b - c)
 namespace

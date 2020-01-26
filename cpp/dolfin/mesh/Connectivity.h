@@ -11,7 +11,7 @@
 #include <numeric>
 #include <vector>
 
-namespace dolfin
+namespace dolfinx
 {
 namespace mesh
 {

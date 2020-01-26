@@ -11,7 +11,7 @@
 #include <set>
 #include <vector>
 
-using namespace dolfin;
+using namespace dolfinx;
 
 namespace
 {
@@ -20,8 +20,8 @@ void test_scatter_fwd()
   // Block size
   auto n = GENERATE(1, 5, 10);
 
-  const int mpi_size = dolfin::MPI::size(MPI_COMM_WORLD);
-  const int mpi_rank = dolfin::MPI::rank(MPI_COMM_WORLD);
+  const int mpi_size = dolfinx::MPI::size(MPI_COMM_WORLD);
+  const int mpi_rank = dolfinx::MPI::rank(MPI_COMM_WORLD);
   const int size_local = 100;
 
   // Create some ghost entries on next process
@@ -51,8 +51,8 @@ void test_scatter_rev()
   // Block size
   auto n = GENERATE(1, 5, 10);
 
-  const int mpi_size = dolfin::MPI::size(MPI_COMM_WORLD);
-  const int mpi_rank = dolfin::MPI::rank(MPI_COMM_WORLD);
+  const int mpi_size = dolfinx::MPI::size(MPI_COMM_WORLD);
+  const int mpi_rank = dolfinx::MPI::rank(MPI_COMM_WORLD);
   const int size_local = 100;
 
   // Create some ghost entries on next process

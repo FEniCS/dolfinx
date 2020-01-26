@@ -1,8 +1,8 @@
 #pragma once
 
-namespace dolfin
+namespace dolfinx
 {
-/*! \namespace dolfin::function
+/*! \namespace dolfinx::function
     \brief Functions tools, including FEM functions and pointwise defined
    functions
 

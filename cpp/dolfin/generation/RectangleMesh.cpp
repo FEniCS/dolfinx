@@ -11,8 +11,8 @@
 #include <dolfin/common/MPI.h>
 #include <dolfin/mesh/Partitioning.h>
 
-using namespace dolfin;
-using namespace dolfin::generation;
+using namespace dolfinx;
+using namespace dolfinx::generation;
 
 namespace
 {
@@ -22,7 +22,7 @@ mesh::Mesh build_tri(MPI_Comm comm, const std::array<Eigen::Vector3d, 2>& p,
                      const mesh::GhostMode ghost_mode, std::string diagonal)
 {
   // Receive mesh if not rank 0
-  if (dolfin::MPI::rank(comm) != 0)
+  if (dolfinx::MPI::rank(comm) != 0)
   {
     Eigen::Array<double, 0, 2, Eigen::RowMajor> geom(0, 2);
     Eigen::Array<std::int64_t, 0, 3, Eigen::RowMajor> topo(0, 3);
@@ -200,7 +200,7 @@ mesh::Mesh build_quad(MPI_Comm comm, const std::array<Eigen::Vector3d, 2>& p,
                       const mesh::GhostMode ghost_mode)
 {
   // Receive mesh if not rank 0
-  if (dolfin::MPI::rank(comm) != 0)
+  if (dolfinx::MPI::rank(comm) != 0)
   {
     Eigen::Array<double, 0, 2, Eigen::RowMajor> geom(0, 2);
     Eigen::Array<std::int64_t, Eigen::Dynamic, 4, Eigen::RowMajor> topo(0, 4);

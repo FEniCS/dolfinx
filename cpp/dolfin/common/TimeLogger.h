@@ -17,7 +17,7 @@
 #include <thread>
 #include <tuple>
 
-namespace dolfin
+namespace dolfinx
 {
 
 namespace common

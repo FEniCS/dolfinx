@@ -9,7 +9,7 @@
 #include <numeric>
 #include <stdexcept>
 
-using namespace dolfin;
+using namespace dolfinx;
 
 //-----------------------------------------------------------------------------
 std::vector<std::uint8_t> io::cells::dolfin_to_vtk(mesh::CellType type,

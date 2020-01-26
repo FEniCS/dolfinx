@@ -9,15 +9,15 @@
 #include <catch.hpp>
 #include <dolfin.h>
 
-using namespace dolfin;
+using namespace dolfinx;
 
 namespace
 {
 void test_ci_failure()
 {
 
-  auto mpi_comm = dolfin::MPI::Comm(MPI_COMM_WORLD);
-  int mpi_rank = dolfin::MPI::rank(mpi_comm.comm());
+  auto mpi_comm = dolfinx::MPI::Comm(MPI_COMM_WORLD);
+  int mpi_rank = dolfinx::MPI::rank(mpi_comm.comm());
 
   REQUIRE_FALSE(mpi_rank == -1);
 }

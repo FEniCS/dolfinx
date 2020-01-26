@@ -18,7 +18,7 @@
 #include <utility>
 #include <vector>
 
-namespace dolfin
+namespace dolfinx
 {
 namespace la
 {
@@ -233,7 +233,7 @@ private:
   hid_t _hdf5_file_id;
 
   // MPI communicator
-  dolfin::MPI::Comm _mpi_comm;
+  dolfinx::MPI::Comm _mpi_comm;
 };
 
 //---------------------------------------------------------------------------

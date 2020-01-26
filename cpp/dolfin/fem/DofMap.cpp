@@ -15,8 +15,8 @@
 #include <dolfin/mesh/MeshEntity.h>
 #include <dolfin/mesh/MeshIterator.h>
 
-using namespace dolfin;
-using namespace dolfin::fem;
+using namespace dolfinx;
+using namespace dolfinx::fem;
 
 namespace
 {
@@ -79,7 +79,7 @@ fem::DofMap build_collapsed_dofmap(const DofMap& dofmap_view,
 
   // Get process offset for new dofmap
   const std::int64_t process_offset
-      = dolfin::MPI::global_offset(mesh.mpi_comm(), num_owned, true);
+      = dolfinx::MPI::global_offset(mesh.mpi_comm(), num_owned, true);
 
   // For owned dofs, compute new global index
   std::vector<std::int64_t> global_index(dofmap_view.index_map->size_local(),

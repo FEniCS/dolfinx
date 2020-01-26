@@ -15,7 +15,7 @@
 #include <utility>
 #include <vector>
 
-namespace dolfin
+namespace dolfinx
 {
 
 namespace common
@@ -35,7 +35,7 @@ class SparsityPattern
   // NOTE: Do not change this typedef without performing careful
   //       performance profiling
   /// Set type used for the rows of the sparsity pattern
-  typedef dolfin::common::Set<std::size_t> set_type;
+  typedef dolfinx::common::Set<std::size_t> set_type;
 
 public:
   /// Whether SparsityPattern is sorted
@@ -139,7 +139,7 @@ private:
   void info_statistics() const;
 
   // MPI communicator
-  dolfin::MPI::Comm _mpi_comm;
+  dolfinx::MPI::Comm _mpi_comm;
 
   // common::IndexMaps for each dimension
   std::array<std::shared_ptr<const common::IndexMap>, 2> _index_maps;

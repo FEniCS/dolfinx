@@ -13,7 +13,7 @@
 #include <dolfin/mesh/MeshEntity.h>
 #include <dolfin/mesh/utils.h>
 
-using namespace dolfin;
+using namespace dolfinx;
 
 namespace
 {

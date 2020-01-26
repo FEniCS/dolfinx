@@ -30,8 +30,8 @@
 #include <numeric>
 #include <set>
 
-using namespace dolfin;
-using namespace dolfin::mesh;
+using namespace dolfinx;
+using namespace dolfinx::mesh;
 
 namespace
 {
@@ -42,7 +42,7 @@ distribute_points_sharing(MPI_Comm mpi_comm,
                           const std::vector<int>& offsets)
 {
   common::Timer timer("Distribute shared point information");
-  const int mpi_size = dolfin::MPI::size(mpi_comm);
+  const int mpi_size = dolfinx::MPI::size(mpi_comm);
 
   // Map for sharing information
   std::map<std::int64_t, std::set<int>> point_to_procs;
@@ -70,7 +70,7 @@ distribute_points_sharing(MPI_Comm mpi_comm,
       }
     }
   }
-  dolfin::MPI::all_to_all(mpi_comm, send_sharing, recv_sharing);
+  dolfinx::MPI::all_to_all(mpi_comm, send_sharing, recv_sharing);
 
   // Reuse points to procs for received data
   point_to_procs.clear();
@@ -115,12 +115,12 @@ distribute_cells(
 
   common::Timer timer("Distribute cells");
 
-  const std::size_t mpi_size = dolfin::MPI::size(mpi_comm);
-  const std::size_t mpi_rank = dolfin::MPI::rank(mpi_comm);
+  const std::size_t mpi_size = dolfinx::MPI::size(mpi_comm);
+  const std::size_t mpi_rank = dolfinx::MPI::rank(mpi_comm);
 
   // Global offset, used to build global cell index, if not given
   std::int64_t global_offset
-      = dolfin::MPI::global_offset(mpi_comm, cell_vertices.rows(), true);
+      = dolfinx::MPI::global_offset(mpi_comm, cell_vertices.rows(), true);
   bool build_global_index = global_cell_indices.empty();
 
   // Get dimensions
@@ -175,7 +175,7 @@ distribute_cells(
 
   // Distribute cell-vertex connectivity and ownership information
   std::vector<std::vector<std::size_t>> received_cell_vertices(mpi_size);
-  dolfin::MPI::all_to_all(mpi_comm, send_cell_vertices, received_cell_vertices);
+  dolfinx::MPI::all_to_all(mpi_comm, send_cell_vertices, received_cell_vertices);
 
   // Count number of received cells (first entry in vector) and find out
   // how many ghost cells there are...
@@ -262,8 +262,8 @@ void distribute_cell_layer(
 {
   common::Timer timer("Distribute cell layer");
 
-  const int mpi_size = dolfin::MPI::size(mpi_comm);
-  const int mpi_rank = dolfin::MPI::rank(mpi_comm);
+  const int mpi_size = dolfinx::MPI::size(mpi_comm);
+  const int mpi_rank = dolfinx::MPI::rank(mpi_comm);
 
   // Map from shared vertex to the set of cells containing it
   std::map<std::int64_t, std::vector<std::int64_t>> sh_vert_to_cell;
@@ -326,7 +326,7 @@ void distribute_cell_layer(
     }
   }
 
-  dolfin::MPI::all_to_all(mpi_comm, send_vertcells, recv_vertcells);
+  dolfinx::MPI::all_to_all(mpi_comm, send_vertcells, recv_vertcells);
 
   const std::int32_t num_cell_vertices = cell_vertices.cols();
 
@@ -367,7 +367,7 @@ void distribute_cell_layer(
     }
   }
 
-  dolfin::MPI::all_to_all(mpi_comm, send_vertcells, recv_vertcells);
+  dolfinx::MPI::all_to_all(mpi_comm, send_vertcells, recv_vertcells);
 
   // Count up new cells, assign local index, set owner and initialise
   // shared_cells
@@ -624,7 +624,7 @@ mesh::Mesh Partitioning::build_from_partition(
   common::Timer timer("Distribute mesh cells");
 
   // Check that we have some ghost information.
-  int all_ghosts = dolfin::MPI::sum(comm, cell_partition.num_ghosts());
+  int all_ghosts = dolfinx::MPI::sum(comm, cell_partition.num_ghosts());
   if (all_ghosts == 0 and ghost_mode != mesh::GhostMode::none)
     throw std::runtime_error("Ghost cell information not available");
 
@@ -717,7 +717,7 @@ mesh::Mesh Partitioning::build_distributed_mesh(
 
   // By default all processes are used to partition the mesh
   // nparts = MPI size
-  const int nparts = dolfin::MPI::size(comm);
+  const int nparts = dolfinx::MPI::size(comm);
 
   // Compute the cell partition
   PartitionData cell_partition
@@ -746,8 +746,8 @@ Partitioning::build_global_vertex_indices(
 {
   // Find out how many vertices are locally 'owned' and number them
   std::vector<std::int64_t> global_vertex_indices(num_vertices);
-  const std::int32_t mpi_rank = dolfin::MPI::rank(mpi_comm);
-  const std::int32_t mpi_size = dolfin::MPI::size(mpi_comm);
+  const std::int32_t mpi_rank = dolfinx::MPI::rank(mpi_comm);
+  const std::int32_t mpi_size = dolfinx::MPI::size(mpi_comm);
   std::vector<std::vector<std::int64_t>> send_data(mpi_size);
   std::vector<std::int64_t> recv_data(mpi_size);
 
@@ -779,8 +779,8 @@ Partitioning::build_global_vertex_indices(
 
   // Now have numbered all vertices locally so can get global size and
   // local offset
-  std::int64_t num_vertices_global = dolfin::MPI::sum(mpi_comm, v);
-  std::int64_t offset = dolfin::MPI::global_offset(mpi_comm, v, true);
+  std::int64_t num_vertices_global = dolfinx::MPI::sum(mpi_comm, v);
+  std::int64_t offset = dolfinx::MPI::global_offset(mpi_comm, v, true);
 
   // Add offset to send_data
   for (auto& p : send_data)
@@ -788,7 +788,7 @@ Partitioning::build_global_vertex_indices(
       *(q + 1) += offset;
 
   // Receive indices of vertices owned elsewhere into map
-  dolfin::MPI::all_to_all(mpi_comm, send_data, recv_data);
+  dolfinx::MPI::all_to_all(mpi_comm, send_data, recv_data);
   std::map<std::int64_t, std::int64_t> global_point_to_vertex;
   for (auto p = recv_data.begin(); p != recv_data.end(); p += 2)
   {
@@ -829,8 +829,8 @@ std::map<std::int64_t, std::vector<int>> Partitioning::compute_halo_cells(
   const std::vector<std::int64_t>& elmdist = csr_graph.node_distribution();
   const std::vector<std::int64_t>& xadj = csr_graph.nodes();
   const std::vector<std::int64_t>& adjncy = csr_graph.edges();
-  const std::int32_t num_processes = dolfin::MPI::size(mpi_comm);
-  const std::int32_t process_number = dolfin::MPI::rank(mpi_comm);
+  const std::int32_t num_processes = dolfinx::MPI::size(mpi_comm);
+  const std::int32_t process_number = dolfinx::MPI::rank(mpi_comm);
   const std::int32_t elm_begin = elmdist[process_number];
   const std::int32_t elm_end = elmdist[process_number + 1];
   const std::int32_t ncells = elm_end - elm_begin;
@@ -873,7 +873,7 @@ std::map<std::int64_t, std::vector<int>> Partitioning::compute_halo_cells(
   }
 
   // Actual halo exchange
-  dolfin::MPI::all_to_all(mpi_comm, send_cell_partition, recv_cell_partition);
+  dolfinx::MPI::all_to_all(mpi_comm, send_cell_partition, recv_cell_partition);
 
   // Construct a map from all currently foreign cells to their new
   // partition number

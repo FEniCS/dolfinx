@@ -28,13 +28,13 @@
   } while (0)
 
 //-----------------------------------------------------------------------------
-Vec dolfin::la::create_petsc_vector(const dolfin::common::IndexMap& map)
+Vec dolfinx::la::create_petsc_vector(const dolfinx::common::IndexMap& map)
 {
-  return dolfin::la::create_petsc_vector(map.mpi_comm(), map.local_range(),
+  return dolfinx::la::create_petsc_vector(map.mpi_comm(), map.local_range(),
                                          map.ghosts(), map.block_size);
 }
 //-----------------------------------------------------------------------------
-Vec dolfin::la::create_petsc_vector(
+Vec dolfinx::la::create_petsc_vector(
     MPI_Comm comm, std::array<std::int64_t, 2> range,
     const Eigen::Array<PetscInt, Eigen::Dynamic, 1>& ghost_indices,
     int block_size)
@@ -77,8 +77,8 @@ Vec dolfin::la::create_petsc_vector(
   return x;
 }
 //-----------------------------------------------------------------------------
-Mat dolfin::la::create_petsc_matrix(
-    MPI_Comm comm, const dolfin::la::SparsityPattern& sparsity_pattern)
+Mat dolfinx::la::create_petsc_matrix(
+    MPI_Comm comm, const dolfinx::la::SparsityPattern& sparsity_pattern)
 {
   PetscErrorCode ierr;
   Mat A;
@@ -209,8 +209,8 @@ Mat dolfin::la::create_petsc_matrix(
   return A;
 }
 //-----------------------------------------------------------------------------
-MatNullSpace dolfin::la::create_petsc_nullspace(
-    MPI_Comm comm, const dolfin::la::VectorSpaceBasis& nullspace)
+MatNullSpace dolfinx::la::create_petsc_nullspace(
+    MPI_Comm comm, const dolfinx::la::VectorSpaceBasis& nullspace)
 {
   PetscErrorCode ierr;
 
@@ -236,7 +236,7 @@ MatNullSpace dolfin::la::create_petsc_nullspace(
   return petsc_nullspace;
 }
 //-----------------------------------------------------------------------------
-std::vector<IS> dolfin::la::create_petsc_index_sets(
+std::vector<IS> dolfinx::la::create_petsc_index_sets(
     const std::vector<const common::IndexMap*>& maps)
 {
   std::vector<IS> is(maps.size());
@@ -260,7 +260,7 @@ std::vector<IS> dolfin::la::create_petsc_index_sets(
   return is;
 }
 //-----------------------------------------------------------------------------
-void dolfin::la::petsc_error(int error_code, std::string filename,
+void dolfinx::la::petsc_error(int error_code, std::string filename,
                              std::string petsc_function)
 {
   // Fetch PETSc error description
@@ -269,7 +269,7 @@ void dolfin::la::petsc_error(int error_code, std::string filename,
 
   // Fetch and clear PETSc error message
   const std::string msg = common::SubSystemsManager::singleton().petsc_err_msg;
-  dolfin::common::SubSystemsManager::singleton().petsc_err_msg = "";
+  dolfinx::common::SubSystemsManager::singleton().petsc_err_msg = "";
 
   // // Log detailed error info
   DLOG(INFO) << "PETSc error in '" << filename.c_str() << "', '"
@@ -290,7 +290,7 @@ void dolfin::la::petsc_error(int error_code, std::string filename,
                            + std::string(desc));
 }
 //-----------------------------------------------------------------------------
-dolfin::la::VecWrapper::VecWrapper(Vec y, bool ghosted)
+dolfinx::la::VecWrapper::VecWrapper(Vec y, bool ghosted)
     : x(nullptr, 0), _y(y), _y_local(nullptr), _ghosted(ghosted)
 {
   assert(_y);
@@ -306,7 +306,7 @@ dolfin::la::VecWrapper::VecWrapper(Vec y, bool ghosted)
   new (&x) Eigen::Map<Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1>>(array, n);
 }
 //-----------------------------------------------------------------------------
-dolfin::la::VecWrapper::VecWrapper(VecWrapper&& w)
+dolfinx::la::VecWrapper::VecWrapper(VecWrapper&& w)
     : x(std::move(w.x)), _y(std::exchange(w._y, nullptr)),
       _y_local(std::exchange(w._y_local, nullptr)),
       _ghosted(std::move(w._ghosted))
@@ -314,7 +314,7 @@ dolfin::la::VecWrapper::VecWrapper(VecWrapper&& w)
   // Do nothing
 }
 //-----------------------------------------------------------------------------
-dolfin::la::VecWrapper::~VecWrapper()
+dolfinx::la::VecWrapper::~VecWrapper()
 {
   if (_y_local)
   {
@@ -324,7 +324,7 @@ dolfin::la::VecWrapper::~VecWrapper()
   }
 }
 //-----------------------------------------------------------------------------
-dolfin::la::VecWrapper& dolfin::la::VecWrapper::operator=(VecWrapper&& w)
+dolfinx::la::VecWrapper& dolfinx::la::VecWrapper::operator=(VecWrapper&& w)
 {
   _y = std::exchange(w._y, nullptr);
   _y_local = std::exchange(w._y_local, nullptr);
@@ -333,7 +333,7 @@ dolfin::la::VecWrapper& dolfin::la::VecWrapper::operator=(VecWrapper&& w)
   return *this;
 }
 //-----------------------------------------------------------------------------
-void dolfin::la::VecWrapper::restore()
+void dolfinx::la::VecWrapper::restore()
 {
   assert(_y);
   assert(_y_local);
@@ -347,7 +347,7 @@ void dolfin::la::VecWrapper::restore()
       Eigen::Map<Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1>>(nullptr, 0);
 }
 //-----------------------------------------------------------------------------
-dolfin::la::VecReadWrapper::VecReadWrapper(const Vec y, bool ghosted)
+dolfinx::la::VecReadWrapper::VecReadWrapper(const Vec y, bool ghosted)
     : x(nullptr, 0), _y(y), _y_local(nullptr), _ghosted(ghosted)
 {
   assert(_y);
@@ -363,7 +363,7 @@ dolfin::la::VecReadWrapper::VecReadWrapper(const Vec y, bool ghosted)
       Eigen::Map<const Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1>>(array, n);
 }
 //-----------------------------------------------------------------------------
-dolfin::la::VecReadWrapper::VecReadWrapper(VecReadWrapper&& w)
+dolfinx::la::VecReadWrapper::VecReadWrapper(VecReadWrapper&& w)
     : x(std::move(w.x)), _y(std::exchange(w._y, nullptr)),
       _y_local(std::exchange(w._y_local, nullptr)),
       _ghosted(std::move(w._ghosted))
@@ -371,7 +371,7 @@ dolfin::la::VecReadWrapper::VecReadWrapper(VecReadWrapper&& w)
   // Do nothing
 }
 //-----------------------------------------------------------------------------
-dolfin::la::VecReadWrapper::~VecReadWrapper()
+dolfinx::la::VecReadWrapper::~VecReadWrapper()
 {
   if (_y_local)
   {
@@ -381,7 +381,7 @@ dolfin::la::VecReadWrapper::~VecReadWrapper()
   }
 }
 //-----------------------------------------------------------------------------
-dolfin::la::VecReadWrapper& dolfin::la::VecReadWrapper::
+dolfinx::la::VecReadWrapper& dolfinx::la::VecReadWrapper::
 operator=(VecReadWrapper&& w)
 {
   _y = std::exchange(w._y, nullptr);
@@ -391,7 +391,7 @@ operator=(VecReadWrapper&& w)
   return *this;
 }
 //-----------------------------------------------------------------------------
-void dolfin::la::VecReadWrapper::restore()
+void dolfinx::la::VecReadWrapper::restore()
 {
   assert(_y);
   assert(_y_local);
@@ -405,14 +405,14 @@ void dolfin::la::VecReadWrapper::restore()
       Eigen::Map<Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1>>(nullptr, 0);
 }
 //-----------------------------------------------------------------------------
-// Mat dolfin::la::get_local_submatrix(const Mat A, const IS row, const IS col);
+// Mat dolfinx::la::get_local_submatrix(const Mat A, const IS row, const IS col);
 
 // void restore_local_submatrix(const Mat A, const IS row, const IS col, Mat*
 // Asub);
 
 //-----------------------------------------------------------------------------
 std::vector<Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1>>
-dolfin::la::get_local_vectors(const Vec x,
+dolfinx::la::get_local_vectors(const Vec x,
                               const std::vector<const common::IndexMap*>& maps)
 {
   // Get ghost offset
@@ -449,7 +449,7 @@ dolfin::la::get_local_vectors(const Vec x,
   return x_b;
 }
 //-----------------------------------------------------------------------------
-// std::vector<Vec> dolfin::la::get_local_petsc_vectors(
+// std::vector<Vec> dolfinx::la::get_local_petsc_vectors(
 //     const Vec x, const std::vector<const common::IndexMap*>& maps)
 // {
 //     // Get ghost offset
@@ -491,7 +491,7 @@ dolfin::la::get_local_vectors(const Vec x,
 
 // }
 //-----------------------------------------------------------------------------
-void dolfin::la::scatter_local_vectors(
+void dolfinx::la::scatter_local_vectors(
     Vec x,
     const std::vector<Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1>>& x_b,
     const std::vector<const common::IndexMap*>& maps)

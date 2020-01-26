@@ -11,8 +11,8 @@
 #include <cfloat>
 #include <cmath>
 
-using namespace dolfin;
-using namespace dolfin::generation;
+using namespace dolfinx;
+using namespace dolfinx::generation;
 
 namespace
 {
@@ -20,7 +20,7 @@ mesh::Mesh build(MPI_Comm comm, std::size_t nx, std::array<double, 2> x,
                  const mesh::GhostMode ghost_mode)
 {
   // Receive mesh according to parallel policy
-  if (dolfin::MPI::rank(comm) != 0)
+  if (dolfinx::MPI::rank(comm) != 0)
   {
     Eigen::Array<double, 0, 1> geom(0, 1);
     Eigen::Array<std::int64_t, 0, 2, Eigen::RowMajor> topo(0, 2);

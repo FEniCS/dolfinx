@@ -10,8 +10,8 @@
 #include <numeric>
 #include <sstream>
 
-using namespace dolfin;
-using namespace dolfin::mesh;
+using namespace dolfinx;
+using namespace dolfinx::mesh;
 
 //-----------------------------------------------------------------------------
 Topology::Topology(std::size_t dim, std::int32_t num_vertices,

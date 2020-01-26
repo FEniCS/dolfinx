@@ -26,7 +26,7 @@
 #include <string>
 #include <ufc.h>
 
-using namespace dolfin;
+using namespace dolfinx;
 
 namespace
 {
@@ -111,7 +111,7 @@ fem::block_function_spaces(
   return V;
 }
 //-----------------------------------------------------------------------------
-la::PETScMatrix dolfin::fem::create_matrix(const Form& a)
+la::PETScMatrix dolfinx::fem::create_matrix(const Form& a)
 {
   bool keep_diagonal = false;
   if (a.rank() != 2)
@@ -377,7 +377,7 @@ fem::create_vector_nest(const std::vector<const common::IndexMap*>& maps)
 }
 //-----------------------------------------------------------------------------
 std::int64_t
-dolfin::fem::get_global_index(const std::vector<const common::IndexMap*>& maps,
+dolfinx::fem::get_global_index(const std::vector<const common::IndexMap*>& maps,
                               const int field, const int index)
 {
   // FIXME: handle/check block size > 1
@@ -517,7 +517,7 @@ std::shared_ptr<fem::Form> fem::create_form(
     const std::vector<std::shared_ptr<const function::FunctionSpace>>& spaces)
 {
   ufc_form* form = fptr();
-  auto L = std::make_shared<fem::Form>(dolfin::fem::create_form(*form, spaces));
+  auto L = std::make_shared<fem::Form>(dolfinx::fem::create_form(*form, spaces));
   std::free(form);
 
   return L;

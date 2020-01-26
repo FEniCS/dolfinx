@@ -13,8 +13,8 @@
 #include <math.h>
 #include <sstream>
 
-using namespace dolfin;
-using namespace dolfin::mesh;
+using namespace dolfinx;
+using namespace dolfinx::mesh;
 
 //-----------------------------------------------------------------------------
 std::array<double, 6> MeshQuality::dihedral_angles(const MeshEntity& cell)

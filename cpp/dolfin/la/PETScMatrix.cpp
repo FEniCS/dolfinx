@@ -16,8 +16,8 @@
 // Ceiling division of nonnegative integers
 #define dolfin_ceil_div(x, y) (x / y + int(x % y != 0))
 
-using namespace dolfin;
-using namespace dolfin::la;
+using namespace dolfinx;
+using namespace dolfinx::la;
 
 //-----------------------------------------------------------------------------
 PETScMatrix::PETScMatrix(MPI_Comm comm, const SparsityPattern& sparsity_pattern)

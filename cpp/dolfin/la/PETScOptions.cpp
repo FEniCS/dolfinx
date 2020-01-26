@@ -6,8 +6,8 @@
 
 #include "PETScOptions.h"
 
-using namespace dolfin;
-using namespace dolfin::la;
+using namespace dolfinx;
+using namespace dolfinx::la;
 
 //-----------------------------------------------------------------------------
 void PETScOptions::set(std::string option)

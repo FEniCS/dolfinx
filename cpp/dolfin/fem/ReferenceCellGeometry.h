@@ -9,7 +9,7 @@
 #include <Eigen/Dense>
 #include <dolfin/mesh/cell_types.h>
 
-namespace dolfin
+namespace dolfinx
 {
 
 namespace fem

@@ -6,12 +6,12 @@
 
 #include "UniqueIdGenerator.h"
 
-using namespace dolfin;
-using namespace dolfin::common;
+using namespace dolfinx;
+using namespace dolfinx::common;
 
 // Initialise static data
-dolfin::common::UniqueIdGenerator
-    dolfin::common::UniqueIdGenerator::unique_id_generator;
+dolfinx::common::UniqueIdGenerator
+    dolfinx::common::UniqueIdGenerator::unique_id_generator;
 
 //-----------------------------------------------------------------------------
 UniqueIdGenerator::UniqueIdGenerator() : _next_id(0)

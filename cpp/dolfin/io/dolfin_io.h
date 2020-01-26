@@ -1,8 +1,8 @@
 #pragma once
 
-namespace dolfin
+namespace dolfinx
 {
-/*! \namespace dolfin::io
+/*! \namespace dolfinx::io
     \brief Support for file IO
 
     Support IO to files for checkpointing and visualisation.

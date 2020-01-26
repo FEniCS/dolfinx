@@ -8,7 +8,7 @@
 
 #include <string>
 
-namespace dolfin
+namespace dolfinx
 {
 
 /// Return DOLFIN version string

@@ -10,7 +10,7 @@
 #include <numeric>
 
 //-----------------------------------------------------------------------------
-dolfin::MPI::Comm::Comm(MPI_Comm comm)
+dolfinx::MPI::Comm::Comm(MPI_Comm comm)
 {
   // Duplicate communicator
   if (comm != MPI_COMM_NULL)
@@ -26,18 +26,18 @@ dolfin::MPI::Comm::Comm(MPI_Comm comm)
     _comm = MPI_COMM_NULL;
 }
 //-----------------------------------------------------------------------------
-dolfin::MPI::Comm::Comm(const Comm& comm) : Comm(comm._comm)
+dolfinx::MPI::Comm::Comm(const Comm& comm) : Comm(comm._comm)
 {
   // Do nothing
 }
 //-----------------------------------------------------------------------------
-dolfin::MPI::Comm::Comm(Comm&& comm)
+dolfinx::MPI::Comm::Comm(Comm&& comm)
 {
   this->_comm = comm._comm;
   comm._comm = MPI_COMM_NULL;
 }
 //-----------------------------------------------------------------------------
-dolfin::MPI::Comm::~Comm()
+dolfinx::MPI::Comm::~Comm()
 {
   // Free the comm
   if (_comm != MPI_COMM_NULL)
@@ -51,25 +51,25 @@ dolfin::MPI::Comm::~Comm()
   }
 }
 //-----------------------------------------------------------------------------
-MPI_Comm dolfin::MPI::Comm::comm() const { return _comm; }
+MPI_Comm dolfinx::MPI::Comm::comm() const { return _comm; }
 //-----------------------------------------------------------------------------
-std::uint32_t dolfin::MPI::rank(const MPI_Comm comm)
+std::uint32_t dolfinx::MPI::rank(const MPI_Comm comm)
 {
   int rank;
   MPI_Comm_rank(comm, &rank);
   return rank;
 }
 //-----------------------------------------------------------------------------
-std::uint32_t dolfin::MPI::size(const MPI_Comm comm)
+std::uint32_t dolfinx::MPI::size(const MPI_Comm comm)
 {
   int size;
   MPI_Comm_size(comm, &size);
   return size;
 }
 //-----------------------------------------------------------------------------
-void dolfin::MPI::barrier(const MPI_Comm comm) { MPI_Barrier(comm); }
+void dolfinx::MPI::barrier(const MPI_Comm comm) { MPI_Barrier(comm); }
 //-----------------------------------------------------------------------------
-std::size_t dolfin::MPI::global_offset(const MPI_Comm comm, std::size_t range,
+std::size_t dolfinx::MPI::global_offset(const MPI_Comm comm, std::size_t range,
                                        bool exclusive)
 {
   // Compute inclusive or exclusive partial reduction
@@ -80,20 +80,20 @@ std::size_t dolfin::MPI::global_offset(const MPI_Comm comm, std::size_t range,
   return offset;
 }
 //-----------------------------------------------------------------------------
-std::array<std::int64_t, 2> dolfin::MPI::local_range(const MPI_Comm comm,
+std::array<std::int64_t, 2> dolfinx::MPI::local_range(const MPI_Comm comm,
                                                      std::int64_t N)
 {
   return local_range(comm, rank(comm), N);
 }
 //-----------------------------------------------------------------------------
 std::array<std::int64_t, 2>
-dolfin::MPI::local_range(const MPI_Comm comm, int process, std::int64_t N)
+dolfinx::MPI::local_range(const MPI_Comm comm, int process, std::int64_t N)
 {
   return compute_local_range(process, N, size(comm));
 }
 //-----------------------------------------------------------------------------
 std::array<std::int64_t, 2>
-dolfin::MPI::compute_local_range(int process, std::int64_t N, int size)
+dolfinx::MPI::compute_local_range(int process, std::int64_t N, int size)
 {
   assert(process >= 0);
   assert(N >= 0);
@@ -110,7 +110,7 @@ dolfin::MPI::compute_local_range(int process, std::int64_t N, int size)
     return {{process * n + r, process * n + r + n}};
 }
 //-----------------------------------------------------------------------------
-std::uint32_t dolfin::MPI::index_owner(const MPI_Comm comm, std::size_t index,
+std::uint32_t dolfinx::MPI::index_owner(const MPI_Comm comm, std::size_t index,
                                        std::size_t N)
 {
   assert(index < N);
@@ -130,7 +130,7 @@ std::uint32_t dolfin::MPI::index_owner(const MPI_Comm comm, std::size_t index,
   return r + (index - r * (n + 1)) / n;
 }
 //-----------------------------------------------------------------------------
-MPI_Comm dolfin::MPI::SubsetComm(MPI_Comm comm, int num_processes)
+MPI_Comm dolfinx::MPI::SubsetComm(MPI_Comm comm, int num_processes)
 {
 
   int comm_size = MPI::size(comm);

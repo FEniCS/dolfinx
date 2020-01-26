@@ -9,7 +9,7 @@
 #include <petscmat.h>
 #include <petscvec.h>
 
-namespace dolfin
+namespace dolfinx
 {
 
 namespace nls

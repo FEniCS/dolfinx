@@ -20,8 +20,8 @@
 #include <dolfin/mesh/Mesh.h>
 #include <dolfin/mesh/MeshIterator.h>
 
-using namespace dolfin;
-using namespace dolfin::fem;
+using namespace dolfinx;
+using namespace dolfinx::fem;
 
 using MatArray
     = Eigen::Array<Mat, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>;

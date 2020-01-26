@@ -21,7 +21,7 @@
 // class xml_node;
 // } // namespace pugi
 
-namespace dolfin
+namespace dolfinx
 {
 
 namespace function
@@ -119,7 +119,7 @@ void add_data_item(MPI_Comm comm, pugi::xml_node& xml_node, hid_t h5_id,
     for (auto n : shape)
       num_items_total *= n;
 
-    assert(num_items_total == (std::int64_t)dolfin::MPI::sum(comm, x.size()));
+    assert(num_items_total == (std::int64_t)dolfinx::MPI::sum(comm, x.size()));
 
     // Compute data offset and range of values
     std::int64_t local_shape0 = x.size();
@@ -129,19 +129,19 @@ void add_data_item(MPI_Comm comm, pugi::xml_node& xml_node, hid_t h5_id,
       local_shape0 /= shape[i];
     }
     const std::int64_t offset
-        = dolfin::MPI::global_offset(comm, local_shape0, true);
+        = dolfinx::MPI::global_offset(comm, local_shape0, true);
     const std::array<std::int64_t, 2> local_range
         = {{offset, offset + local_shape0}};
 
-    const bool use_mpi_io = (dolfin::MPI::size(comm) > 1);
+    const bool use_mpi_io = (dolfinx::MPI::size(comm) > 1);
     HDF5Interface::write_dataset(h5_id, h5_path, x.data(), local_range, shape,
                                  use_mpi_io, false);
 
     // Add partitioning attribute to dataset
     std::vector<std::size_t> partitions;
     std::vector<std::size_t> offset_tmp(1, offset);
-    dolfin::MPI::gather(comm, offset_tmp, partitions);
-    dolfin::MPI::broadcast(comm, partitions);
+    dolfinx::MPI::gather(comm, offset_tmp, partitions);
+    dolfinx::MPI::broadcast(comm, partitions);
     HDF5Interface::add_attribute(h5_id, h5_path, "partition", partitions);
   }
 }
@@ -161,7 +161,7 @@ std::vector<T> compute_value_data(const mesh::MeshFunction<T>& meshfunction)
   const int tdim = mesh->topology().dim();
   const int cell_dim = meshfunction.dim();
 
-  if (dolfin::MPI::size(comm) == 1 or cell_dim == tdim)
+  if (dolfinx::MPI::size(comm) == 1 or cell_dim == tdim)
   {
     // FIXME: fail with ghosts?
     value_data.resize(meshfunction.values().size());

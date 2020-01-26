@@ -14,8 +14,8 @@
 #include <dolfin/mesh/MeshIterator.h>
 #include <dolfin/mesh/utils.h>
 
-using namespace dolfin;
-using namespace dolfin::geometry;
+using namespace dolfinx;
+using namespace dolfinx::geometry;
 
 namespace
 {

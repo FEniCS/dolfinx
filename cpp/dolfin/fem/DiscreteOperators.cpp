@@ -16,8 +16,8 @@
 #include <dolfin/mesh/MeshIterator.h>
 #include <vector>
 
-using namespace dolfin;
-using namespace dolfin::fem;
+using namespace dolfinx;
+using namespace dolfinx::fem;
 
 //-----------------------------------------------------------------------------
 la::PETScMatrix

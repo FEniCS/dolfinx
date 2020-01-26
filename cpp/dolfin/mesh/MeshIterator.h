@@ -12,7 +12,7 @@
 #include "Topology.h"
 #include <iterator>
 
-namespace dolfin
+namespace dolfinx
 {
 
 namespace mesh

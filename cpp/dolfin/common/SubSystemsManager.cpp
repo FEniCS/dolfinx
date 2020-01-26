@@ -19,7 +19,7 @@
 
 #include "SubSystemsManager.h"
 
-using namespace dolfin::common;
+using namespace dolfinx::common;
 
 // Return singleton instance. Do NOT make the singleton a global
 // static object; the method here ensures that the singleton is

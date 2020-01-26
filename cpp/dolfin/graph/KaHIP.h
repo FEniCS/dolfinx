@@ -11,7 +11,7 @@
 #include <dolfin/common/MPI.h>
 #include <map>
 
-namespace dolfin
+namespace dolfinx
 {
 
 namespace graph

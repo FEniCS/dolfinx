@@ -16,7 +16,7 @@
 #include <slepceps.h>
 #include <string>
 
-namespace dolfin
+namespace dolfinx
 {
 namespace la
 {

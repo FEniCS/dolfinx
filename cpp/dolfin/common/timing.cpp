@@ -11,25 +11,25 @@
 
 namespace
 {
-dolfin::common::Timer __global_timer;
-dolfin::common::Timer __tic_timer;
+dolfinx::common::Timer __global_timer;
+dolfinx::common::Timer __tic_timer;
 } // namespace
 
-using namespace dolfin;
-using namespace dolfin::common;
+using namespace dolfinx;
+using namespace dolfinx::common;
 
 //-----------------------------------------------------------------------
-Table dolfin::timings(std::set<TimingType> type)
+Table dolfinx::timings(std::set<TimingType> type)
 {
   return TimeLogManager::logger().timings(type);
 }
 //-----------------------------------------------------------------------------
-void dolfin::list_timings(MPI_Comm mpi_comm, std::set<TimingType> type)
+void dolfinx::list_timings(MPI_Comm mpi_comm, std::set<TimingType> type)
 {
   TimeLogManager::logger().list_timings(mpi_comm, type);
 }
 //-----------------------------------------------------------------------------
-std::tuple<std::size_t, double, double, double> dolfin::timing(std::string task)
+std::tuple<std::size_t, double, double, double> dolfinx::timing(std::string task)
 {
   return TimeLogManager::logger().timing(task);
 }

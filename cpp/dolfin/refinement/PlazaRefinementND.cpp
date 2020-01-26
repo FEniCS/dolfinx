@@ -15,8 +15,8 @@
 #include <map>
 #include <vector>
 
-using namespace dolfin;
-using namespace dolfin::refinement;
+using namespace dolfinx;
+using namespace dolfinx::refinement;
 
 namespace
 {
@@ -50,7 +50,7 @@ void enforce_rules(ParallelRefinement& p_ref, const mesh::Mesh& mesh,
         ++update_count;
       }
     }
-    update_count = dolfin::MPI::sum(mesh.mpi_comm(), update_count);
+    update_count = dolfinx::MPI::sum(mesh.mpi_comm(), update_count);
   }
 }
 //-----------------------------------------------------------------------------
@@ -148,7 +148,7 @@ mesh::Mesh compute_refinement(const mesh::Mesh& mesh, ParallelRefinement& p_ref,
     }
   }
 
-  const bool serial = (dolfin::MPI::size(mesh.mpi_comm()) == 1);
+  const bool serial = (dolfinx::MPI::size(mesh.mpi_comm()) == 1);
   if (serial)
     return p_ref.build_local();
   else

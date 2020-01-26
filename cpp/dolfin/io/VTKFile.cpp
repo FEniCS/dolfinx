@@ -25,8 +25,8 @@
 #include <sstream>
 #include <vector>
 
-using namespace dolfin;
-using namespace dolfin::io;
+using namespace dolfinx;
+using namespace dolfinx::io;
 
 namespace
 {

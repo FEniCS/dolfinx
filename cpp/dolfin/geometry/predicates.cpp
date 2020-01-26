@@ -1,7 +1,7 @@
 #include "predicates.h"
 
 //-----------------------------------------------------------------------------
-double dolfin::geometry::orient1d(double a, double b, double x)
+double dolfinx::geometry::orient1d(double a, double b, double x)
 {
   if (x > std::max(a, b))
     return 1.0;
@@ -10,19 +10,19 @@ double dolfin::geometry::orient1d(double a, double b, double x)
   return 0.0;
 }
 //-----------------------------------------------------------------------------
-double dolfin::geometry::orient2d(const Eigen::Vector3d& a,
+double dolfinx::geometry::orient2d(const Eigen::Vector3d& a,
                                   const Eigen::Vector3d& b,
                                   const Eigen::Vector3d& c)
 {
-  return dolfin::geometry::_orient2d(a.data(), b.data(), c.data());
+  return dolfinx::geometry::_orient2d(a.data(), b.data(), c.data());
 }
 //-----------------------------------------------------------------------------
-double dolfin::geometry::orient3d(const Eigen::Vector3d& a,
+double dolfinx::geometry::orient3d(const Eigen::Vector3d& a,
                                   const Eigen::Vector3d& b,
                                   const Eigen::Vector3d& c,
                                   const Eigen::Vector3d& d)
 {
-  return dolfin::geometry::_orient3d(a.data(), b.data(), c.data(), d.data());
+  return dolfinx::geometry::_orient3d(a.data(), b.data(), c.data(), d.data());
 }
 //-----------------------------------------------------------------------------
 
@@ -675,7 +675,7 @@ float uniformfloatrand()
 /*                                                                           */
 /*****************************************************************************/
 
-void dolfin::geometry::exactinit()
+void dolfinx::geometry::exactinit()
 {
   REAL half;
   REAL check, lastcheck;
@@ -1749,7 +1749,7 @@ REAL orient2dadapt(const REAL* pa, const REAL* pb, const REAL* pc,
   return (D[Dlength - 1]);
 }
 
-double dolfin::geometry::_orient2d(const double* pa, const double* pb,
+double dolfinx::geometry::_orient2d(const double* pa, const double* pb,
                                    const double* pc)
 /* REAL *pa; */
 /* REAL *pb; */
@@ -2525,7 +2525,7 @@ REAL orient3dadapt(const REAL* pa, const REAL* pb, const REAL* pc,
   return finnow[finlength - 1];
 }
 
-double dolfin::geometry::_orient3d(const double* pa, const double* pb,
+double dolfinx::geometry::_orient3d(const double* pa, const double* pb,
                                    const double* pc, const double* pd)
 /* REAL *pa; */
 /* REAL *pb; */
@@ -2575,7 +2575,7 @@ double dolfin::geometry::_orient3d(const double* pa, const double* pb,
 
 #include "predicates.h"
 
-namespace dolfin
+namespace dolfinx
 {
 namespace geometry
 {

@@ -7,8 +7,8 @@
 #include "Timer.h"
 #include "TimeLogManager.h"
 
-using namespace dolfin;
-using namespace dolfin::common;
+using namespace dolfinx;
+using namespace dolfinx::common;
 
 //-----------------------------------------------------------------------------
 Timer::Timer() : Timer::Timer("")

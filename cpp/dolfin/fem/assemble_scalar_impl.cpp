@@ -20,11 +20,11 @@
 #include <dolfin/mesh/MeshIterator.h>
 #include <petscsys.h>
 
-using namespace dolfin;
-using namespace dolfin::fem;
+using namespace dolfinx;
+using namespace dolfinx::fem;
 
 //-----------------------------------------------------------------------------
-PetscScalar dolfin::fem::impl::assemble_scalar(const dolfin::fem::Form& M)
+PetscScalar dolfinx::fem::impl::assemble_scalar(const dolfinx::fem::Form& M)
 {
   assert(M.mesh());
   const mesh::Mesh& mesh = *M.mesh();

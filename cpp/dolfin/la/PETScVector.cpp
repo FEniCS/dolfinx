@@ -12,8 +12,8 @@
 #include <dolfin/common/IndexMap.h>
 #include <dolfin/common/Timer.h>
 
-using namespace dolfin;
-using namespace dolfin::la;
+using namespace dolfinx;
+using namespace dolfinx::la;
 
 #define CHECK_ERROR(NAME)                                                      \
   do                                                                           \

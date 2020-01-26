@@ -14,7 +14,7 @@
 #include <dolfin/la/PETScVector.h>
 #include <string>
 
-using namespace dolfin;
+using namespace dolfinx;
 
 //-----------------------------------------------------------------------------
 nls::NewtonSolver::NewtonSolver(MPI_Comm comm)
@@ -38,7 +38,7 @@ nls::NewtonSolver::~NewtonSolver()
 }
 //-----------------------------------------------------------------------------
 std::pair<int, bool>
-dolfin::nls::NewtonSolver::solve(NonlinearProblem& nonlinear_problem, Vec x)
+dolfinx::nls::NewtonSolver::solve(NonlinearProblem& nonlinear_problem, Vec x)
 {
   // Reset iteration counts
   int newton_iteration = 0;

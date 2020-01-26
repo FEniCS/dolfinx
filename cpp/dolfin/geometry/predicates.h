@@ -2,7 +2,7 @@
 
 #pragma once
 
-namespace dolfin
+namespace dolfinx
 {
 namespace geometry
 {

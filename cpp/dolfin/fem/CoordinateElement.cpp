@@ -7,8 +7,8 @@
 #include "CoordinateElement.h"
 #include <unsupported/Eigen/CXX11/Tensor>
 
-using namespace dolfin;
-using namespace dolfin::fem;
+using namespace dolfinx;
+using namespace dolfinx::fem;
 
 //-----------------------------------------------------------------------------
 CoordinateElement::CoordinateElement(

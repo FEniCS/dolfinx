@@ -26,7 +26,7 @@ namespace pugi
 class xml_node;
 } // namespace pugi
 
-namespace dolfin
+namespace dolfinx
 {
 
 namespace function

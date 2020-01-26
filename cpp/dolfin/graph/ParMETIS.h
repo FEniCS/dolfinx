@@ -21,7 +21,7 @@
 #include <parmetis.h>
 #endif
 
-namespace dolfin
+namespace dolfinx
 {
 
 namespace graph

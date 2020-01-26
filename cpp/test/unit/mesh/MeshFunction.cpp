@@ -9,7 +9,7 @@
 #include <catch.hpp>
 #include <dolfin.h>
 
-using namespace dolfin;
+using namespace dolfinx;
 
 namespace
 {

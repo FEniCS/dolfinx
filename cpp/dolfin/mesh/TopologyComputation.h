@@ -6,7 +6,7 @@
 
 #pragma once
 
-namespace dolfin
+namespace dolfinx
 {
 
 namespace mesh

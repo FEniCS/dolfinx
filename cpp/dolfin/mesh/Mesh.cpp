@@ -21,8 +21,8 @@
 #include <dolfin/io/cells.h>
 #include <dolfin/mesh/cell_types.h>
 
-using namespace dolfin;
-using namespace dolfin::mesh;
+using namespace dolfinx;
+using namespace dolfinx::mesh;
 
 namespace
 {
@@ -76,7 +76,7 @@ compute_local_to_global_point_map(
         cell_nodes,
     mesh::CellType type)
 {
-  int mpi_rank = dolfin::MPI::rank(mpi_comm);
+  int mpi_rank = dolfinx::MPI::rank(mpi_comm);
   std::vector<std::int64_t> local_to_global;
   std::array<int, 4> num_vertices_local;
 

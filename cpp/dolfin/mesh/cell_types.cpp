@@ -14,7 +14,7 @@
 #include <dolfin/common/log.h>
 #include <stdexcept>
 
-using namespace dolfin;
+using namespace dolfinx;
 
 namespace
 {

@@ -39,7 +39,7 @@ std::string to_str(std::variant<std::string, int, double> value)
 
 } // namespace
 
-using namespace dolfin;
+using namespace dolfinx;
 
 //-----------------------------------------------------------------------------
 Table::Table(std::string title, bool right_justify)

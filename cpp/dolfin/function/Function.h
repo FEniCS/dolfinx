@@ -17,7 +17,7 @@
 #include <petscvec.h>
 #include <vector>
 
-namespace dolfin
+namespace dolfinx
 {
 
 namespace geometry

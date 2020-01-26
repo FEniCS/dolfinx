@@ -15,7 +15,7 @@
 #include <dolfin/common/Timer.h>
 #include <numeric>
 
-using namespace dolfin;
+using namespace dolfinx;
 
 namespace
 {
@@ -31,7 +31,7 @@ T build_undirected_graph(const X& graph)
   // Build Boost graph
   T boost_graph(n);
   typename X::const_iterator vertex;
-  dolfin::graph::graph_set_type::const_iterator edge;
+  dolfinx::graph::graph_set_type::const_iterator edge;
   for (vertex = graph.begin(); vertex != graph.end(); ++vertex)
   {
     const std::size_t vertex_index = vertex - graph.begin();
@@ -56,7 +56,7 @@ T build_directed_graph(const X& graph)
   // Build Boost graph
   T boost_graph(n);
   typename X::const_iterator vertex;
-  dolfin::graph::graph_set_type::const_iterator edge;
+  dolfinx::graph::graph_set_type::const_iterator edge;
   for (vertex = graph.begin(); vertex != graph.end(); ++vertex)
   {
     const std::size_t vertex_index = vertex - graph.begin();
@@ -76,7 +76,7 @@ T build_csr_directed_graph(const X& graph)
   common::Timer timer("Build Boost CSR graph");
 
   // Count number of edges
-  dolfin::graph::Graph::const_iterator vertex;
+  dolfinx::graph::Graph::const_iterator vertex;
   std::size_t num_edges = 0;
   for (vertex = graph.begin(); vertex != graph.end(); ++vertex)
     num_edges += vertex->size();
@@ -100,11 +100,11 @@ T build_csr_directed_graph(const X& graph)
 
 //-----------------------------------------------------------------------------
 std::vector<int>
-dolfin::graph::BoostGraphOrdering::compute_cuthill_mckee(const Graph& graph,
+dolfinx::graph::BoostGraphOrdering::compute_cuthill_mckee(const Graph& graph,
                                                          bool reverse)
 {
   common::Timer timer(
-      "Boost Cuthill-McKee graph ordering (from dolfin::Graph)");
+      "Boost Cuthill-McKee graph ordering (from dolfinx::Graph)");
 
   // Number of vertices
   const std::size_t n = graph.size();
@@ -144,7 +144,7 @@ dolfin::graph::BoostGraphOrdering::compute_cuthill_mckee(const Graph& graph,
   return map;
 }
 //-----------------------------------------------------------------------------
-std::vector<int> dolfin::graph::BoostGraphOrdering::compute_cuthill_mckee(
+std::vector<int> dolfinx::graph::BoostGraphOrdering::compute_cuthill_mckee(
     const std::set<std::pair<std::size_t, std::size_t>>& edges,
     std::size_t size, bool reverse)
 {

@@ -19,7 +19,7 @@
 // Forward declaration
 struct ufc_form;
 
-namespace dolfin
+namespace dolfinx
 {
 
 namespace fem

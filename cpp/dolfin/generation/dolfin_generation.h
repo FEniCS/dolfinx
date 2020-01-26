@@ -1,8 +1,8 @@
 #pragma once
 
-namespace dolfin
+namespace dolfinx
 {
-/*! \namespace dolfin::generation
+/*! \namespace dolfinx::generation
     \brief Generators for simple meshes
 
     Generators for structured meshes for simple shapes.

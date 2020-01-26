@@ -8,7 +8,7 @@
 
 #include <cstddef>
 
-namespace dolfin
+namespace dolfinx
 {
 
 namespace common

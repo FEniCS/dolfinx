@@ -22,7 +22,7 @@ extern "C"
 #include <ptscotch.h>
 }
 
-namespace dolfin
+namespace dolfinx
 {
 
 namespace graph

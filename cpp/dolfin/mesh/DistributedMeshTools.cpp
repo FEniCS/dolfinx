@@ -18,8 +18,8 @@
 #include <complex>
 #include <dolfin/common/log.h>
 
-using namespace dolfin;
-using namespace dolfin::mesh;
+using namespace dolfinx;
+using namespace dolfinx::mesh;
 
 //-----------------------------------------------------------------------------
 namespace
@@ -60,8 +60,8 @@ compute_entity_numbering(const Mesh& mesh, int d)
   const MPI_Comm mpi_comm = mesh.mpi_comm();
 
   // Get number of processes and process number
-  const int mpi_size = dolfin::MPI::size(mpi_comm);
-  const int mpi_rank = dolfin::MPI::rank(mpi_comm);
+  const int mpi_size = dolfinx::MPI::size(mpi_comm);
+  const int mpi_rank = dolfinx::MPI::rank(mpi_comm);
 
   // Get vertex global indices
   const std::vector<std::int64_t>& global_vertex_indices
@@ -166,7 +166,7 @@ compute_entity_numbering(const Mesh& mesh, int d)
       }
     }
 
-    dolfin::MPI::all_to_all(mpi_comm, send_entities, recv_entities);
+    dolfinx::MPI::all_to_all(mpi_comm, send_entities, recv_entities);
 
     // Check off received entities against sent entities
     // (any which don't match need to be revised).
@@ -244,8 +244,8 @@ compute_entity_numbering(const Mesh& mesh, int d)
   }
 
   const std::int64_t local_offset
-      = dolfin::MPI::global_offset(mpi_comm, num_local, true);
-  const std::int64_t num_global = dolfin::MPI::sum(mpi_comm, num_local);
+      = dolfinx::MPI::global_offset(mpi_comm, num_local, true);
+  const std::int64_t num_global = dolfinx::MPI::sum(mpi_comm, num_local);
   std::int64_t n = local_offset;
 
   // Owned
@@ -284,7 +284,7 @@ compute_entity_numbering(const Mesh& mesh, int d)
       send_indices[p].push_back(global_entity_indices[q]);
   }
 
-  dolfin::MPI::all_to_all(mpi_comm, send_indices, recv_indices);
+  dolfinx::MPI::all_to_all(mpi_comm, send_indices, recv_indices);
 
   // Revisit the entities we received before, now with the global
   // index from remote
@@ -312,7 +312,7 @@ reorder_values_by_global_indices(
                                         Eigen::RowMajor>>& values,
     const std::vector<std::int64_t>& global_indices)
 {
-  dolfin::common::Timer t("DistributedMeshTools: reorder values");
+  dolfinx::common::Timer t("DistributedMeshTools: reorder values");
 
   // Number of items to redistribute
   const std::size_t num_local_indices = global_indices.size();
@@ -321,12 +321,12 @@ reorder_values_by_global_indices(
   // Calculate size of overall global vector by finding max index value
   // anywhere
   const std::size_t global_vector_size
-      = dolfin::MPI::max(mpi_comm, *std::max_element(global_indices.begin(),
+      = dolfinx::MPI::max(mpi_comm, *std::max_element(global_indices.begin(),
                                                      global_indices.end()))
         + 1;
 
   // Send unwanted values off process
-  const std::size_t mpi_size = dolfin::MPI::size(mpi_comm);
+  const std::size_t mpi_size = dolfinx::MPI::size(mpi_comm);
   std::vector<std::vector<std::size_t>> indices_to_send(mpi_size);
   std::vector<std::vector<T>> values_to_send(mpi_size);
 
@@ -336,7 +336,7 @@ reorder_values_by_global_indices(
   {
     const std::size_t global_i = global_indices[i];
     const std::size_t process_i
-        = dolfin::MPI::index_owner(mpi_comm, global_i, global_vector_size);
+        = dolfinx::MPI::index_owner(mpi_comm, global_i, global_vector_size);
     indices_to_send[process_i].push_back(global_i);
     values_to_send[process_i].insert(values_to_send[process_i].end(),
                                      values.row(i).data(),
@@ -348,8 +348,8 @@ reorder_values_by_global_indices(
   // arrays.
   std::vector<std::size_t> received_indices;
   std::vector<T> received_values;
-  dolfin::MPI::all_to_all(mpi_comm, indices_to_send, received_indices);
-  dolfin::MPI::all_to_all(mpi_comm, values_to_send, received_values);
+  dolfinx::MPI::all_to_all(mpi_comm, indices_to_send, received_indices);
+  dolfinx::MPI::all_to_all(mpi_comm, values_to_send, received_values);
 
   // Map over received values as Eigen array
   assert(received_indices.size() * values.cols() == received_values.size());
@@ -360,7 +360,7 @@ reorder_values_by_global_indices(
   // Create array for new data. Note that any indices which are not
   // received will be uninitialised.
   const std::array<std::int64_t, 2> range
-      = dolfin::MPI::local_range(mpi_comm, global_vector_size);
+      = dolfinx::MPI::local_range(mpi_comm, global_vector_size);
   Eigen::Array<T, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor> new_values(
       range[1] - range[0], values.cols());
 
@@ -391,7 +391,7 @@ void DistributedMeshTools::number_entities(const Mesh& mesh, int d)
   // Const-cast to allow data to be attached
   Mesh& _mesh = const_cast<Mesh&>(mesh);
 
-  if (dolfin::MPI::size(mesh.mpi_comm()) == 1)
+  if (dolfinx::MPI::size(mesh.mpi_comm()) == 1)
   {
     // Set global entity numbers in mesh
     mesh.create_entities(d);

@@ -1,8 +1,8 @@
 #pragma once
 
-namespace dolfin
+namespace dolfinx
 {
-/*! \namespace dolfin::graph
+/*! \namespace dolfinx::graph
     \brief Graph data structures and algorithms
 
     Data structures for building and representing graphs, and algorithms on

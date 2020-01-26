@@ -16,7 +16,7 @@
 #include <petscsys.h>
 #include <vector>
 
-namespace dolfin
+namespace dolfinx
 {
 
 namespace fem

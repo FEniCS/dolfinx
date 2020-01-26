@@ -13,7 +13,7 @@
 #include <string>
 #include <unsupported/Eigen/CXX11/Tensor>
 
-namespace dolfin
+namespace dolfinx
 {
 
 namespace fem

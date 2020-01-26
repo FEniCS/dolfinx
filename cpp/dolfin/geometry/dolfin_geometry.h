@@ -1,8 +1,8 @@
 #pragma once
 
-namespace dolfin
+namespace dolfinx
 {
-/*! \namespace dolfin::geometry
+/*! \namespace dolfinx::geometry
     \brief Geometry data structures and algorithms
 
     Tools for geometric data structures and operations, e.g. searching.

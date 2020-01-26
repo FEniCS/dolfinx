@@ -16,7 +16,7 @@
 #include <dolfin/mesh/MeshFunction.h>
 #include <dolfin/mesh/MeshIterator.h>
 
-namespace dolfin
+namespace dolfinx
 {
 
 namespace io
@@ -52,7 +52,7 @@ std::vector<T> get_dataset(MPI_Comm comm, const pugi::xml_node& dataset_node,
   // Only read ASCII on process 0
   if (format == "XML")
   {
-    if (dolfin::MPI::rank(comm) == 0)
+    if (dolfinx::MPI::rank(comm) == 0)
     {
       // Read data and trim any leading/trailing whitespace
       pugi::xml_node data_node = dataset_node.first_child();
@@ -105,7 +105,7 @@ std::vector<T> get_dataset(MPI_Comm comm, const pugi::xml_node& dataset_node,
     if (range[0] == 0 and range[1] == 0)
     {
       if (shape_xml == shape_hdf5)
-        range = dolfin::MPI::local_range(comm, shape_hdf5[0]);
+        range = dolfinx::MPI::local_range(comm, shape_hdf5[0]);
       else if (!shape_xml.empty() and shape_hdf5.size() == 1)
       {
         // Size of dims > 0
@@ -121,7 +121,7 @@ std::vector<T> get_dataset(MPI_Comm comm, const pugi::xml_node& dataset_node,
         }
 
         // Compute data range to read
-        range = dolfin::MPI::local_range(comm, shape_xml[0]);
+        range = dolfinx::MPI::local_range(comm, shape_xml[0]);
         range[0] *= d;
         range[1] *= d;
       }
@@ -147,7 +147,7 @@ std::vector<T> get_dataset(MPI_Comm comm, const pugi::xml_node& dataset_node,
     for (auto dim : shape_xml)
       size *= dim;
 
-    if (size != (std::int64_t)dolfin::MPI::sum(comm, data_vector.size()))
+    if (size != (std::int64_t)dolfinx::MPI::sum(comm, data_vector.size()))
     {
       throw std::runtime_error(
           "Data sizes in attribute and size of data read are inconsistent");

@@ -11,8 +11,8 @@
 #include <memory>
 #include <ufc.h>
 
-using namespace dolfin;
-using namespace dolfin::fem;
+using namespace dolfinx;
+using namespace dolfinx::fem;
 
 //-----------------------------------------------------------------------------
 FiniteElement::FiniteElement(const ufc_finite_element& ufc_element)

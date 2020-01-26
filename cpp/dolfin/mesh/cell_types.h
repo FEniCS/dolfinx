@@ -13,7 +13,7 @@
 #include <string>
 #include <vector>
 
-namespace dolfin
+namespace dolfinx
 {
 namespace mesh
 {

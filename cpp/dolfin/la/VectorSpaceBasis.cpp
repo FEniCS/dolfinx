@@ -8,8 +8,8 @@
 #include "PETScVector.h"
 #include <cmath>
 
-using namespace dolfin;
-using namespace dolfin::la;
+using namespace dolfinx;
+using namespace dolfinx::la;
 
 //-----------------------------------------------------------------------------
 VectorSpaceBasis::VectorSpaceBasis(

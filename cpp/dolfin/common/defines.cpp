@@ -10,16 +10,16 @@
 #include <petscversion.h>
 
 //-------------------------------------------------------------------------
-std::string dolfin::dolfin_version() { return std::string(DOLFIN_VERSION); }
+std::string dolfinx::dolfin_version() { return std::string(DOLFIN_VERSION); }
 //-------------------------------------------------------------------------
-std::string dolfin::ufc_signature() { return std::string(UFC_SIGNATURE); }
+std::string dolfinx::ufc_signature() { return std::string(UFC_SIGNATURE); }
 //-------------------------------------------------------------------------
-std::string dolfin::git_commit_hash()
+std::string dolfinx::git_commit_hash()
 {
   return std::string(DOLFIN_GIT_COMMIT_HASH);
 }
 //-------------------------------------------------------------------------
-bool dolfin::has_debug()
+bool dolfinx::has_debug()
 {
 #ifdef DEBUG
   return true;
@@ -28,7 +28,7 @@ bool dolfin::has_debug()
 #endif
 }
 //-------------------------------------------------------------------------
-bool dolfin::has_petsc_complex()
+bool dolfinx::has_petsc_complex()
 {
 #ifdef PETSC_USE_COMPLEX
   return true;
@@ -37,7 +37,7 @@ bool dolfin::has_petsc_complex()
 #endif
 }
 //-------------------------------------------------------------------------
-bool dolfin::has_slepc()
+bool dolfinx::has_slepc()
 {
 #ifdef HAS_SLEPC
   return true;
@@ -46,7 +46,7 @@ bool dolfin::has_slepc()
 #endif
 }
 //-------------------------------------------------------------------------
-bool dolfin::has_parmetis()
+bool dolfinx::has_parmetis()
 {
 #ifdef HAS_PARMETIS
   return true;
@@ -55,7 +55,7 @@ bool dolfin::has_parmetis()
 #endif
 }
 //-------------------------------------------------------------------------
-bool dolfin::has_kahip()
+bool dolfinx::has_kahip()
 {
 #ifdef HAS_KAHIP
   return true;

@@ -10,7 +10,7 @@
 #include <boost/timer/timer.hpp>
 #include <string>
 
-namespace dolfin
+namespace dolfinx
 {
 
 namespace common

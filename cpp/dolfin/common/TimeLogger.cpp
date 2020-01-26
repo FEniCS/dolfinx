@@ -9,8 +9,8 @@
 #include <dolfin/common/log.h>
 #include <vector>
 
-using namespace dolfin;
-using namespace dolfin::common;
+using namespace dolfinx;
+using namespace dolfinx::common;
 
 //-----------------------------------------------------------------------------
 TimeLogger::TimeLogger()
@@ -51,7 +51,7 @@ void TimeLogger::list_timings(MPI_Comm mpi_comm, std::set<TimingType> type)
   const std::string str = "\n" + timings.str();
 
   // Print just on rank 0
-  if (dolfin::MPI::rank(mpi_comm) == 0)
+  if (dolfinx::MPI::rank(mpi_comm) == 0)
     std::cout << str << std::endl;
 }
 //-----------------------------------------------------------------------------

@@ -12,7 +12,7 @@
 #include <petscvec.h>
 #include <string>
 
-namespace dolfin
+namespace dolfinx
 {
 namespace fem
 {

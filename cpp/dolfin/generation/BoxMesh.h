@@ -12,7 +12,7 @@
 #include <dolfin/mesh/Mesh.h>
 #include <dolfin/mesh/Partitioning.h>
 
-namespace dolfin
+namespace dolfinx
 {
 
 namespace generation

@@ -14,8 +14,8 @@
 #include <dolfin/fem/PETScDMCollection.h>
 #include <petsclog.h>
 
-using namespace dolfin;
-using namespace dolfin::la;
+using namespace dolfinx;
+using namespace dolfinx::la;
 
 //-----------------------------------------------------------------------------
 PETScKrylovSolver::PETScKrylovSolver(MPI_Comm comm) : _ksp(nullptr)
@@ -86,7 +86,7 @@ int PETScKrylovSolver::solve(Vec x, const Vec b, bool transpose)
   // }
 
   // Solve linear system
-  if (dolfin::MPI::rank(this->mpi_comm()) == 0)
+  if (dolfinx::MPI::rank(this->mpi_comm()) == 0)
     LOG(INFO) << "PETSc Krylov solver starting to solve system.";
 
   // Solve system
@@ -157,7 +157,7 @@ int PETScKrylovSolver::solve(Vec x, const Vec b, bool transpose)
   }
 
   // Report results
-  // if (report && dolfin::MPI::rank(this->mpi_comm()) == 0)
+  // if (report && dolfinx::MPI::rank(this->mpi_comm()) == 0)
   //  write_report(num_iterations, reason);
 
   return num_iterations;

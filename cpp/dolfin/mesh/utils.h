@@ -8,7 +8,7 @@
 
 #include <Eigen/Dense>
 
-namespace dolfin
+namespace dolfinx
 {
 namespace mesh
 {

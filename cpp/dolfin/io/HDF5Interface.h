@@ -17,7 +17,7 @@
 #include <dolfin/common/log.h>
 #include <hdf5.h>
 
-namespace dolfin
+namespace dolfinx
 {
 
 namespace io

@@ -10,7 +10,7 @@
 #include <petscmat.h>
 #include <vector>
 
-namespace dolfin
+namespace dolfinx
 {
 namespace la
 {

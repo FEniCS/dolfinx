@@ -10,7 +10,7 @@
 #include <cstddef>
 #include <vector>
 
-namespace dolfin
+namespace dolfinx
 {
 
 namespace common
@@ -36,16 +36,16 @@ public:
   Set(std::vector<T>& x) : _x(x) { _x.clear(); }
 
   /// Copy constructor
-  Set(const dolfin::common::Set<T>& x) = default;
+  Set(const dolfinx::common::Set<T>& x) = default;
 
   /// Move constructor
-  Set(dolfin::common::Set<T>&& x) = default;
+  Set(dolfinx::common::Set<T>&& x) = default;
 
   /// Destructor
   ~Set() = default;
 
   /// Move assignment
-  Set& operator=(dolfin::common::Set<T>&& x) = default;
+  Set& operator=(dolfinx::common::Set<T>&& x) = default;
 
   /// Find entry in set and return an iterator to the entry
   iterator find(const T& x) { return std::find(_x.begin(), _x.end(), x); }

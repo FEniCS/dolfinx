@@ -7,7 +7,7 @@
 #include "CoordinateDofs.h"
 #include "Connectivity.h"
 
-using namespace dolfin;
+using namespace dolfinx;
 
 //-----------------------------------------------------------------------------
 mesh::CoordinateDofs::CoordinateDofs(

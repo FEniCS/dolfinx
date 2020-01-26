@@ -10,8 +10,8 @@
 #include <dolfin/io/cells.h>
 #include <dolfin/mesh/Partitioning.h>
 
-using namespace dolfin;
-using namespace dolfin::generation;
+using namespace dolfinx;
+using namespace dolfinx::generation;
 
 //-----------------------------------------------------------------------------
 mesh::Mesh UnitDiscMesh::create(MPI_Comm comm, int n,
@@ -20,7 +20,7 @@ mesh::Mesh UnitDiscMesh::create(MPI_Comm comm, int n,
   assert(n > 0);
 
   // Receive mesh if not rank 0
-  if (dolfin::MPI::rank(comm) != 0)
+  if (dolfinx::MPI::rank(comm) != 0)
   {
     Eigen::Array<double, 0, 2, Eigen::RowMajor> geom(0, 2);
     Eigen::Array<std::int64_t, 0, 6, Eigen::RowMajor> topo(0, 6);

@@ -9,7 +9,7 @@
 #include <array>
 #include <dolfin/la/SparsityPattern.h>
 
-namespace dolfin
+namespace dolfinx
 {
 namespace la
 {

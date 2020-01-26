@@ -13,7 +13,7 @@
 #include <string>
 #include <tuple>
 
-namespace dolfin
+namespace dolfinx
 {
 
 /// Timing types:

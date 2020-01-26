@@ -1,8 +1,8 @@
 #pragma once
 
-namespace dolfin
+namespace dolfinx
 {
-/*! \namespace dolfin::common
+/*! \namespace dolfinx::common
     \brief Miscellaneous classes, functions and types
 
     This namespace provides utility type functions for managing subsystems,

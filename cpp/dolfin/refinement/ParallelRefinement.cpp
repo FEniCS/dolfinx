@@ -18,8 +18,8 @@
 #include <map>
 #include <vector>
 
-using namespace dolfin;
-using namespace dolfin::refinement;
+using namespace dolfinx;
+using namespace dolfinx::refinement;
 
 //-----------------------------------------------------------------------------
 ParallelRefinement::ParallelRefinement(const mesh::Mesh& mesh)

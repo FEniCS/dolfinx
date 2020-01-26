@@ -6,8 +6,8 @@
 
 #include "PartitionData.h"
 
-using namespace dolfin;
-using namespace dolfin::mesh;
+using namespace dolfinx;
+using namespace dolfinx::mesh;
 
 //-----------------------------------------------------------------------------
 PartitionData::PartitionData(

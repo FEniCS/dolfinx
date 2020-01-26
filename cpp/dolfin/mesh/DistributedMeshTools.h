@@ -18,7 +18,7 @@
 #include <utility>
 #include <vector>
 
-namespace dolfin
+namespace dolfinx
 {
 
 namespace mesh

@@ -15,7 +15,7 @@
 #include <string>
 #include <vector>
 
-namespace dolfin
+namespace dolfinx
 {
 namespace common
 {

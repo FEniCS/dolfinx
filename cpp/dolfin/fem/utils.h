@@ -20,7 +20,7 @@ struct ufc_form;
 struct ufc_coordinate_mapping;
 struct ufc_function_space;
 
-namespace dolfin
+namespace dolfinx
 {
 namespace common
 {
@@ -124,7 +124,7 @@ get_coeffs_from_ufc_form(const ufc_form& ufc_form);
 std::vector<std::pair<std::string, std::shared_ptr<const function::Constant>>>
 get_constants_from_ufc_form(const ufc_form& ufc_form);
 
-/// Get dolfin::fem::CoordinateElement from ufc
+/// Get dolfinx::fem::CoordinateElement from ufc
 std::shared_ptr<const fem::CoordinateElement>
 get_cmap_from_ufc_cmap(const ufc_coordinate_mapping& ufc_cmap);
 

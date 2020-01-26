@@ -22,7 +22,7 @@
 #include <utility>
 #include <vector>
 
-using namespace dolfin;
+using namespace dolfinx;
 
 namespace
 {
@@ -61,7 +61,7 @@ compute_local_dual_graph_keyed(
 
   // Get offset for this process
   const std::int64_t cell_offset
-      = dolfin::MPI::global_offset(mpi_comm, num_local_cells, true);
+      = dolfinx::MPI::global_offset(mpi_comm, num_local_cells, true);
 
   // Create map from cell vertices to entity vertices
   const Eigen::Array<int, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
@@ -165,7 +165,7 @@ std::pair<std::int32_t, std::int32_t> compute_nonlocal_dual_graph(
   common::Timer timer("Compute non-local part of mesh dual graph");
 
   // Get number of MPI processes, and return if mesh is not distributed
-  const int num_processes = dolfin::MPI::size(mpi_comm);
+  const int num_processes = dolfinx::MPI::size(mpi_comm);
   if (num_processes == 1)
     return std::pair(0, 0);
 
@@ -187,11 +187,11 @@ std::pair<std::int32_t, std::int32_t> compute_nonlocal_dual_graph(
 
   // Get offset for this process
   const std::int64_t offset
-      = dolfin::MPI::global_offset(mpi_comm, num_local_cells, true);
+      = dolfinx::MPI::global_offset(mpi_comm, num_local_cells, true);
 
   // Get global range of vertex indices
   const std::int64_t num_global_vertices
-      = dolfin::MPI::max(
+      = dolfinx::MPI::max(
             mpi_comm, (cell_vertices.rows() > 0) ? cell_vertices.maxCoeff() : 0)
         + 1;
 
@@ -206,7 +206,7 @@ std::pair<std::int32_t, std::int32_t> compute_nonlocal_dual_graph(
     //        skewed towards low values - may not be important
 
     // Use first vertex of facet to partition into blocks
-    const int dest_proc = dolfin::MPI::index_owner(mpi_comm, (it.first)[0],
+    const int dest_proc = dolfinx::MPI::index_owner(mpi_comm, (it.first)[0],
                                                    num_global_vertices);
 
     // Pack map into vectors to send
@@ -218,7 +218,7 @@ std::pair<std::int32_t, std::int32_t> compute_nonlocal_dual_graph(
   }
 
   // Send data
-  dolfin::MPI::all_to_all(mpi_comm, send_buffer, received_buffer);
+  dolfinx::MPI::all_to_all(mpi_comm, send_buffer, received_buffer);
 
   // Clear send buffer
   send_buffer = std::vector<std::vector<std::size_t>>(num_processes);
@@ -269,7 +269,7 @@ std::pair<std::int32_t, std::int32_t> compute_nonlocal_dual_graph(
 
   // Send matches to other processes
   std::vector<std::size_t> cell_list;
-  dolfin::MPI::all_to_all(mpi_comm, send_buffer, cell_list);
+  dolfinx::MPI::all_to_all(mpi_comm, send_buffer, cell_list);
 
   // Ghost nodes
   std::set<std::int64_t> ghost_nodes;
@@ -299,8 +299,8 @@ std::pair<std::int32_t, std::int32_t> compute_nonlocal_dual_graph(
 } // namespace
 
 //-----------------------------------------------------------------------------
-dolfin::graph::Graph
-dolfin::graph::GraphBuilder::local_graph(const mesh::Mesh& mesh,
+dolfinx::graph::Graph
+dolfinx::graph::GraphBuilder::local_graph(const mesh::Mesh& mesh,
                                          const fem::DofMap& dofmap0,
                                          const fem::DofMap& dofmap1)
 {
@@ -338,7 +338,7 @@ dolfin::graph::GraphBuilder::local_graph(const mesh::Mesh& mesh,
   return graph;
 }
 //-----------------------------------------------------------------------------
-dolfin::graph::Graph dolfin::graph::GraphBuilder::local_graph(
+dolfinx::graph::Graph dolfinx::graph::GraphBuilder::local_graph(
     const mesh::Mesh& mesh, const std::vector<std::size_t>& coloring_type)
 {
   // Initialise mesh
@@ -388,8 +388,8 @@ dolfin::graph::Graph dolfin::graph::GraphBuilder::local_graph(
   return graph;
 }
 //-----------------------------------------------------------------------------
-dolfin::graph::Graph
-dolfin::graph::GraphBuilder::local_graph(const mesh::Mesh& mesh,
+dolfinx::graph::Graph
+dolfinx::graph::GraphBuilder::local_graph(const mesh::Mesh& mesh,
                                          std::size_t dim0, std::size_t dim1)
 {
   mesh.create_entities(dim0);
@@ -449,7 +449,7 @@ graph::GraphBuilder::compute_dual_graph(
 std::tuple<std::vector<std::vector<std::size_t>>,
            std::vector<std::pair<std::vector<std::size_t>, std::int32_t>>,
            std::int32_t>
-dolfin::graph::GraphBuilder::compute_local_dual_graph(
+dolfinx::graph::GraphBuilder::compute_local_dual_graph(
     const MPI_Comm mpi_comm,
     const Eigen::Ref<const Eigen::Array<std::int64_t, Eigen::Dynamic,
                                         Eigen::Dynamic, Eigen::RowMajor>>&

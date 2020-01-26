@@ -10,8 +10,8 @@
 #include <dolfin/common/log.h>
 #include <petscvec.h>
 
-using namespace dolfin;
-using namespace dolfin::la;
+using namespace dolfinx;
+using namespace dolfinx::la;
 
 //-----------------------------------------------------------------------------
 PETScOperator::PETScOperator(Mat A, bool inc_ref_count) : _matA(A)

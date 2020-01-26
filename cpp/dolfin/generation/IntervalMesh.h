@@ -10,7 +10,7 @@
 #include <cstddef>
 #include <dolfin/mesh/Mesh.h>
 
-namespace dolfin
+namespace dolfinx
 {
 namespace generation
 {

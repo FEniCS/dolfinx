@@ -13,7 +13,7 @@
 #include <cstdint>
 #include <petscvec.h>
 
-namespace dolfin
+namespace dolfinx
 {
 namespace la
 {

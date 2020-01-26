@@ -8,8 +8,8 @@
 #include <algorithm>
 #include <numeric>
 
-using namespace dolfin;
-using namespace dolfin::common;
+using namespace dolfinx;
+using namespace dolfinx::common;
 
 //-----------------------------------------------------------------------------
 IndexMap::IndexMap(

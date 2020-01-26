@@ -19,7 +19,7 @@
 #define MPICH_IGNORE_CXX_SEEK 1
 #include <mpi.h>
 
-namespace dolfin
+namespace dolfinx
 {
 
 /// This class provides utility functions for easy communication with
@@ -270,7 +270,7 @@ inline MPI_Datatype MPI::mpi_type<unsigned long long>()
 /// @endcond
 //---------------------------------------------------------------------------
 template <typename T>
-void dolfin::MPI::broadcast(MPI_Comm comm, std::vector<T>& value,
+void dolfinx::MPI::broadcast(MPI_Comm comm, std::vector<T>& value,
                             std::uint32_t broadcaster)
 {
   // Broadcast cast size
@@ -284,14 +284,14 @@ void dolfin::MPI::broadcast(MPI_Comm comm, std::vector<T>& value,
 }
 //---------------------------------------------------------------------------
 template <typename T>
-void dolfin::MPI::broadcast(MPI_Comm comm, T& value, std::uint32_t broadcaster)
+void dolfinx::MPI::broadcast(MPI_Comm comm, T& value, std::uint32_t broadcaster)
 {
   MPI_Bcast(&value, 1, mpi_type<T>(), broadcaster, comm);
 }
 //---------------------------------------------------------------------------
 #ifdef DOLFIN_MPI_USE_PUT_GET
 template <typename T>
-void dolfin::MPI::all_to_all_common(
+void dolfinx::MPI::all_to_all_common(
     MPI_Comm comm, const std::vector<std::vector<T>>& in_values,
     std::vector<T>& out_values, std::vector<std::int32_t>& local_data_offsets)
 {
@@ -362,7 +362,7 @@ void dolfin::MPI::all_to_all_common(
 #else
 // Implementation using MPI_alltoallv
 template <typename T>
-void dolfin::MPI::all_to_all_common(
+void dolfinx::MPI::all_to_all_common(
     MPI_Comm comm, const std::vector<std::vector<T>>& in_values,
     std::vector<T>& out_values, std::vector<std::int32_t>& data_offset_recv)
 {
@@ -408,7 +408,7 @@ void dolfin::MPI::all_to_all_common(
 #endif
 //-----------------------------------------------------------------------------
 template <typename T>
-void dolfin::MPI::all_to_all(MPI_Comm comm,
+void dolfinx::MPI::all_to_all(MPI_Comm comm,
                              const std::vector<std::vector<T>>& in_values,
                              std::vector<std::vector<T>>& out_values)
 {
@@ -423,7 +423,7 @@ void dolfin::MPI::all_to_all(MPI_Comm comm,
 }
 //---------------------------------------------------------------------------
 template <typename T>
-void dolfin::MPI::all_to_all(MPI_Comm comm,
+void dolfinx::MPI::all_to_all(MPI_Comm comm,
                              const std::vector<std::vector<T>>& in_values,
                              std::vector<T>& out_values)
 {
@@ -432,7 +432,7 @@ void dolfin::MPI::all_to_all(MPI_Comm comm,
 }
 //---------------------------------------------------------------------------
 template <typename T>
-void dolfin::MPI::scatter(MPI_Comm comm,
+void dolfinx::MPI::scatter(MPI_Comm comm,
                           const std::vector<std::vector<T>>& in_values,
                           std::vector<T>& out_value,
                           std::uint32_t sending_process)
@@ -479,7 +479,7 @@ void dolfin::MPI::scatter(MPI_Comm comm,
 }
 //---------------------------------------------------------------------------
 template <typename T>
-void dolfin::MPI::scatter(MPI_Comm comm, const std::vector<T>& in_values,
+void dolfinx::MPI::scatter(MPI_Comm comm, const std::vector<T>& in_values,
                           T& out_value, std::uint32_t sending_process)
 {
   if (MPI::rank(comm) == sending_process)
@@ -490,7 +490,7 @@ void dolfin::MPI::scatter(MPI_Comm comm, const std::vector<T>& in_values,
 }
 //---------------------------------------------------------------------------
 template <typename T>
-void dolfin::MPI::gather(MPI_Comm comm, const std::vector<T>& in_values,
+void dolfinx::MPI::gather(MPI_Comm comm, const std::vector<T>& in_values,
                          std::vector<T>& out_values,
                          std::uint32_t receiving_process)
 {
@@ -514,7 +514,7 @@ void dolfin::MPI::gather(MPI_Comm comm, const std::vector<T>& in_values,
               receiving_process, comm);
 }
 //---------------------------------------------------------------------------
-inline void dolfin::MPI::gather(MPI_Comm comm, const std::string& in_values,
+inline void dolfinx::MPI::gather(MPI_Comm comm, const std::string& in_values,
                                 std::vector<std::string>& out_values,
                                 std::uint32_t receiving_process)
 {
@@ -547,7 +547,7 @@ inline void dolfin::MPI::gather(MPI_Comm comm, const std::string& in_values,
   }
 }
 //---------------------------------------------------------------------------
-inline void dolfin::MPI::all_gather(MPI_Comm comm, const std::string& in_values,
+inline void dolfinx::MPI::all_gather(MPI_Comm comm, const std::string& in_values,
                                     std::vector<std::string>& out_values)
 {
   const std::size_t comm_size = MPI::size(comm);
@@ -579,7 +579,7 @@ inline void dolfin::MPI::all_gather(MPI_Comm comm, const std::string& in_values,
 }
 //-------------------------------------------------------------------------
 template <typename T>
-void dolfin::MPI::all_gather(MPI_Comm comm, const std::vector<T>& in_values,
+void dolfinx::MPI::all_gather(MPI_Comm comm, const std::vector<T>& in_values,
                              std::vector<T>& out_values)
 {
   out_values.resize(in_values.size() * MPI::size(comm));
@@ -589,7 +589,7 @@ void dolfin::MPI::all_gather(MPI_Comm comm, const std::vector<T>& in_values,
 }
 //---------------------------------------------------------------------------
 template <typename T>
-void dolfin::MPI::all_gather(MPI_Comm comm, const std::vector<T>& in_values,
+void dolfinx::MPI::all_gather(MPI_Comm comm, const std::vector<T>& in_values,
                              std::vector<std::vector<T>>& out_values)
 {
   const std::size_t comm_size = MPI::size(comm);
@@ -623,7 +623,7 @@ void dolfin::MPI::all_gather(MPI_Comm comm, const std::vector<T>& in_values,
 }
 //---------------------------------------------------------------------------
 template <typename T>
-void dolfin::MPI::all_gather(MPI_Comm comm, const T in_value,
+void dolfinx::MPI::all_gather(MPI_Comm comm, const T in_value,
                              std::vector<T>& out_values)
 {
   out_values.resize(MPI::size(comm));
@@ -632,7 +632,7 @@ void dolfin::MPI::all_gather(MPI_Comm comm, const T in_value,
 }
 //---------------------------------------------------------------------------
 template <typename T, typename X>
-T dolfin::MPI::all_reduce(MPI_Comm comm, const T& value, X op)
+T dolfinx::MPI::all_reduce(MPI_Comm comm, const T& value, X op)
 {
   T out;
   MPI_Allreduce(const_cast<T*>(&value), &out, 1, mpi_type<T>(), op, comm);
@@ -640,7 +640,7 @@ T dolfin::MPI::all_reduce(MPI_Comm comm, const T& value, X op)
 }
 //-----------------------------------------------------------------------------
 template <typename T>
-T dolfin::MPI::max(MPI_Comm comm, const T& value)
+T dolfinx::MPI::max(MPI_Comm comm, const T& value)
 {
   // Enforce cast to MPI_Op; this is needed because template dispatch may
   // not recognize this is possible, e.g. C-enum to std::uint32_t in SGI MPT
@@ -649,7 +649,7 @@ T dolfin::MPI::max(MPI_Comm comm, const T& value)
 }
 //---------------------------------------------------------------------------
 template <typename T>
-T dolfin::MPI::min(MPI_Comm comm, const T& value)
+T dolfinx::MPI::min(MPI_Comm comm, const T& value)
 {
   // Enforce cast to MPI_Op; this is needed because template dispatch may
   // not recognize this is possible, e.g. C-enum to std::uint32_t in SGI MPT
@@ -658,7 +658,7 @@ T dolfin::MPI::min(MPI_Comm comm, const T& value)
 }
 //---------------------------------------------------------------------------
 template <typename T>
-T dolfin::MPI::sum(MPI_Comm comm, const T& value)
+T dolfinx::MPI::sum(MPI_Comm comm, const T& value)
 {
   // Enforce cast to MPI_Op; this is needed because template dispatch may
   // not recognize this is possible, e.g. C-enum to std::uint32_t in SGI MPT
@@ -667,7 +667,7 @@ T dolfin::MPI::sum(MPI_Comm comm, const T& value)
 }
 //---------------------------------------------------------------------------
 template <typename T>
-void dolfin::MPI::send_recv(MPI_Comm comm, const std::vector<T>& send_value,
+void dolfinx::MPI::send_recv(MPI_Comm comm, const std::vector<T>& send_value,
                             std::uint32_t dest, int send_tag,
                             std::vector<T>& recv_value, std::uint32_t source,
                             int recv_tag)
@@ -686,7 +686,7 @@ void dolfin::MPI::send_recv(MPI_Comm comm, const std::vector<T>& send_value,
 }
 //---------------------------------------------------------------------------
 template <typename T>
-void dolfin::MPI::send_recv(MPI_Comm comm, const std::vector<T>& send_value,
+void dolfinx::MPI::send_recv(MPI_Comm comm, const std::vector<T>& send_value,
                             std::uint32_t dest, std::vector<T>& recv_value,
                             std::uint32_t source)
 {

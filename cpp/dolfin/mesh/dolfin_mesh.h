@@ -1,8 +1,8 @@
 #pragma once
 
-namespace dolfin
+namespace dolfinx
 {
-/*! \namespace dolfin::mesh
+/*! \namespace dolfinx::mesh
     \brief Mesh data structures
 
     Representations of meshes and support for operations on meshes.

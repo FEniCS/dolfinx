@@ -9,7 +9,7 @@
 #include <Eigen/Dense>
 #include <cstddef>
 
-namespace dolfin
+namespace dolfinx
 {
 namespace mesh
 {

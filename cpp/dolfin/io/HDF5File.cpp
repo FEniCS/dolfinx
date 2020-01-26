@@ -37,8 +37,8 @@
 #include <petscvec.h>
 #include <string>
 
-using namespace dolfin;
-using namespace dolfin::io;
+using namespace dolfinx;
+using namespace dolfinx::io;
 
 //-----------------------------------------------------------------------------
 HDF5File::HDF5File(MPI_Comm comm, const std::string filename,
@@ -1384,7 +1384,7 @@ mesh::Mesh HDF5File::read_mesh(const std::string data_path,
 
     // Get offset for this process
     const std::int64_t offset
-        = dolfin::MPI::global_offset(_mpi_comm.comm(), num_local_cells, true);
+        = dolfinx::MPI::global_offset(_mpi_comm.comm(), num_local_cells, true);
 
     // Convert cell distribution to an array of proces destination for each
     // local cell

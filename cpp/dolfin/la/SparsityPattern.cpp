@@ -11,8 +11,8 @@
 #include <dolfin/common/log.h>
 #include <dolfin/fem/utils.h>
 
-using namespace dolfin;
-using namespace dolfin::la;
+using namespace dolfinx;
+using namespace dolfinx::la;
 
 //-----------------------------------------------------------------------------
 SparsityPattern::SparsityPattern(

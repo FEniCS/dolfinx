@@ -11,7 +11,7 @@
 #include <dolfin/mesh/Mesh.h>
 #include <string>
 
-namespace dolfin
+namespace dolfinx
 {
 
 namespace generation

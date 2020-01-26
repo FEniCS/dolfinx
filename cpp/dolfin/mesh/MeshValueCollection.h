@@ -13,7 +13,7 @@
 #include <memory>
 #include <utility>
 
-namespace dolfin
+namespace dolfinx
 {
 namespace mesh
 {

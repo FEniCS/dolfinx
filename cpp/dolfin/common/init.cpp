@@ -9,7 +9,7 @@
 #include <dolfin/common/log.h>
 
 //-----------------------------------------------------------------------------
-void dolfin::init(int argc, char* argv[])
+void dolfinx::init(int argc, char* argv[])
 {
   common::SubSystemsManager::init_logging(argc, argv);
   LOG(INFO) << "Initializing DOLFIN version" << DOLFIN_VERSION;
