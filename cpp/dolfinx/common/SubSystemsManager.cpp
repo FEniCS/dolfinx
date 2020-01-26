@@ -1,6 +1,6 @@
 // Copyright (C) 2008-2017 Garth N. Wells, Anders Logg, Jan Blechta
 //
-// This file is part of DOLFIN (https://www.fenicsproject.org)
+// This file is part of DOLFINX (https://www.fenicsproject.org)
 //
 // SPDX-License-Identifier:    LGPL-3.0-or-later
 
@@ -152,14 +152,11 @@ void SubSystemsManager::finalize_mpi()
     else
     {
       // Use std::cout since log system may fail because MPI has been shut down.
-      std::cout << "DOLFIN is responsible for MPI, but it has been finalized "
+      std::cout << "DOLFINX is responsible for MPI, but it has been finalized "
                    "elsewhere prematurely."
                 << std::endl;
       std::cout << "This is usually due to a bug in a 3rd party library, and "
                    "can lead to unpredictable behaviour."
-                << std::endl;
-      std::cout << "If using PyTrilinos, make sure that PyTrilinos modules are "
-                   "imported before the DOLFIN module."
                 << std::endl;
     }
 

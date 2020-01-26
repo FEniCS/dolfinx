@@ -1,6 +1,6 @@
 // Copyright (C) 2012 Chris N. Richardson
 //
-// This file is part of DOLFIN (https://www.fenicsproject.org)
+// This file is part of DOLFINX (https://www.fenicsproject.org)
 //
 // SPDX-License-Identifier:    LGPL-3.0-or-later
 
@@ -44,7 +44,7 @@ namespace io
 namespace xdmf_utils
 {
 
-// Get DOLFIN cell type string from XML topology node
+// Get DOLFINX cell type string from XML topology node
 std::pair<std::string, int> get_cell_type(const pugi::xml_node& topology_node);
 
 // Return (0) HDF5 filename and (1) path in HDF5 file from a DataItem

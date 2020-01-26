@@ -1,6 +1,6 @@
 // Copyright (C) 2007-2014 Magnus Vikstrøm and Garth N. Wells
 //
-// This file is part of DOLFIN (https://www.fenicsproject.org)
+// This file is part of DOLFINX (https://www.fenicsproject.org)
 //
 // SPDX-License-Identifier:    LGPL-3.0-or-later
 
@@ -23,7 +23,7 @@ namespace dolfinx
 {
 
 /// This class provides utility functions for easy communication with
-/// MPI and handles cases when DOLFIN is not configured with MPI.
+/// MPI and handles cases when DOLFINX is not configured with MPI.
 class MPI
 {
 public:
@@ -289,7 +289,7 @@ void dolfinx::MPI::broadcast(MPI_Comm comm, T& value, std::uint32_t broadcaster)
   MPI_Bcast(&value, 1, mpi_type<T>(), broadcaster, comm);
 }
 //---------------------------------------------------------------------------
-#ifdef DOLFIN_MPI_USE_PUT_GET
+#ifdef DOLFINX_MPI_USE_PUT_GET
 template <typename T>
 void dolfinx::MPI::all_to_all_common(
     MPI_Comm comm, const std::vector<std::vector<T>>& in_values,

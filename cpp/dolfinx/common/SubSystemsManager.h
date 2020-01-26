@@ -1,6 +1,6 @@
 // Copyright (C) 2008-2017 Garth N. Wells
 //
-// This file is part of DOLFIN (https://www.fenicsproject.org)
+// This file is part of DOLFINX (https://www.fenicsproject.org)
 //
 // SPDX-License-Identifier:    LGPL-3.0-or-later
 
@@ -50,11 +50,11 @@ public:
   /// special cases it may be necessary to call finalize() explicitly.
   static void finalize();
 
-  /// Return true if DOLFIN initialised MPI (and is therefore
+  /// Return true if DOLFINX initialised MPI (and is therefore
   /// responsible for finalization)
   static bool responsible_mpi();
 
-  /// Return true if DOLFIN initialised PETSc (and is therefore
+  /// Return true if DOLFINX initialised PETSc (and is therefore
   /// responsible for finalization)
   static bool responsible_petsc();
 
@@ -66,7 +66,7 @@ public:
   /// finalised)
   static bool mpi_finalized();
 
-  /// PETSc error handler. Logs everything known to DOLFIN logging
+  /// PETSc error handler. Logs everything known to DOLFINX logging
   /// system (with level TRACE) and stores the error message into
   /// pests_err_msg member.
   static PetscErrorCode

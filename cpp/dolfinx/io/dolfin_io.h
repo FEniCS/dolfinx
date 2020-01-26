@@ -9,7 +9,7 @@ namespace dolfinx
 */
 }
 
-// DOLFIN io interface
+// DOLFINX io interface
 
 #include <dolfinx/io/HDF5File.h>
 #include <dolfinx/io/VTKFile.h>

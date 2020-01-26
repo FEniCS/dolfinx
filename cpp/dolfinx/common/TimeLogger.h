@@ -1,6 +1,6 @@
 // Copyright (C) 2003-2016 Anders Logg, 2015 Jan Blechta
 //
-// This file is part of DOLFIN (https://www.fenicsproject.org)
+// This file is part of DOLFINX (https://www.fenicsproject.org)
 //
 // SPDX-License-Identifier:    LGPL-3.0-or-later
 

@@ -1,6 +1,6 @@
 // Copyright (C) 2009-2011 Johan Hake
 //
-// This file is part of DOLFIN (https://www.fenicsproject.org)
+// This file is part of DOLFINX (https://www.fenicsproject.org)
 //
 // SPDX-License-Identifier:    LGPL-3.0-or-later
 
@@ -10,7 +10,7 @@
 #include <petscversion.h>
 
 //-------------------------------------------------------------------------
-std::string dolfinx::dolfin_version() { return std::string(DOLFINX_VERSION); }
+std::string dolfinx::version() { return std::string(DOLFINX_VERSION); }
 //-------------------------------------------------------------------------
 std::string dolfinx::ufc_signature() { return std::string(UFC_SIGNATURE); }
 //-------------------------------------------------------------------------
