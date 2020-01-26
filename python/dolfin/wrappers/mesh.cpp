@@ -246,7 +246,7 @@ void mesh(py::module& m)
            py::overload_cast<>(&dolfin::mesh::MeshEntity::index, py::const_),
            "Entity index")
       .def("entities",
-           [](dolfin::mesh::MeshEntity& self, std::size_t dim) {
+           [](dolfin::mesh::MeshEntity& self, int dim) {
              if (self.dim() == dim)
                return py::array(1, self.entities(dim));
              else
