@@ -1,7 +1,7 @@
 cmake_minimum_required(VERSION 3.10)
 project(dolfin-tests)
 
-if (NOT dolfin)
+if (NOT TARGET dolfin)
   find_package(DOLFIN REQUIRED)
 endif()
 

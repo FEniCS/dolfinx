@@ -19,7 +19,9 @@ project(${{PROJECT_NAME}})
 
 # Get DOLFIN configuration data (DOLFINConfig.cmake must be in
 # DOLFIN_CMAKE_CONFIG_PATH)
-find_package(DOLFIN REQUIRED)
+if (NOT TARGET dolfin)
+  find_package(DOLFIN REQUIRED)
+endif()
 
 # Executable
 add_executable(${{PROJECT_NAME}} {src_files})
