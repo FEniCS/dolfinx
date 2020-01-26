@@ -1,12 +1,12 @@
 // Copyright (C) 2017 Tormod Landet
 //
-// This file is part of DOLFIN (https://www.fenicsproject.org)
+// This file is part of DOLFINX (https://www.fenicsproject.org)
 //
 // SPDX-License-Identifier:    LGPL-3.0-or-later
 
 #pragma once
 
-#include <dolfin/common/MPI.h>
+#include <dolfinx/common/MPI.h>
 
 namespace dolfin_wrappers
 {

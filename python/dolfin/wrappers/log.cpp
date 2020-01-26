@@ -1,11 +1,11 @@
 // Copyright (C) 2017 Chris Richardson and Garth N. Wells
 //
-// This file is part of DOLFIN (https://www.fenicsproject.org)
+// This file is part of DOLFINX (https://www.fenicsproject.org)
 //
 // SPDX-License-Identifier:    LGPL-3.0-or-later
 
-#include <dolfin/common/log.h>
-#include <dolfin/mesh/Mesh.h>
+#include <dolfinx/common/log.h>
+#include <dolfinx/mesh/Mesh.h>
 #include <memory>
 #include <pybind11/pybind11.h>
 #include <pybind11/stl.h>

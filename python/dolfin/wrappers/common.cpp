@@ -1,6 +1,6 @@
 // Copyright (C) 2017-2019 Chris Richardson and Garth N. Wells
 //
-// This file is part of DOLFIN (https://www.fenicsproject.org)
+// This file is part of DOLFINX (https://www.fenicsproject.org)
 //
 // SPDX-License-Identifier:    LGPL-3.0-or-later
 
@@ -9,13 +9,13 @@
 #include "caster_petsc.h"
 #include <Eigen/Dense>
 #include <complex>
-#include <dolfin/common/IndexMap.h>
-#include <dolfin/common/MPI.h>
-#include <dolfin/common/SubSystemsManager.h>
-#include <dolfin/common/Table.h>
-#include <dolfin/common/Timer.h>
-#include <dolfin/common/defines.h>
-#include <dolfin/common/timing.h>
+#include <dolfinx/common/IndexMap.h>
+#include <dolfinx/common/MPI.h>
+#include <dolfinx/common/SubSystemsManager.h>
+#include <dolfinx/common/Table.h>
+#include <dolfinx/common/Timer.h>
+#include <dolfinx/common/defines.h>
+#include <dolfinx/common/timing.h>
 #include <memory>
 #include <pybind11/eigen.h>
 #include <pybind11/pybind11.h>
@@ -32,86 +32,86 @@ namespace dolfin_wrappers
 void common(py::module& m)
 {
   // From dolfin/common/defines.h
-  m.attr("has_debug") = dolfin::has_debug();
-  m.attr("has_parmetis") = dolfin::has_parmetis();
-  m.attr("has_kahip") = dolfin::has_kahip();
-  m.attr("has_petsc_complex") = dolfin::has_petsc_complex();
-  m.attr("has_slepc") = dolfin::has_slepc();
+  m.attr("has_debug") = dolfinx::has_debug();
+  m.attr("has_parmetis") = dolfinx::has_parmetis();
+  m.attr("has_kahip") = dolfinx::has_kahip();
+  m.attr("has_petsc_complex") = dolfinx::has_petsc_complex();
+  m.attr("has_slepc") = dolfinx::has_slepc();
 #ifdef HAS_PYBIND11_SLEPC4PY
   m.attr("has_slepc4py") = true;
 #else
   m.attr("has_slepc4py") = false;
 #endif
-  m.attr("git_commit_hash") = dolfin::git_commit_hash();
+  m.attr("git_commit_hash") = dolfinx::git_commit_hash();
 
-  // dolfin::common::IndexMap
-  py::class_<dolfin::common::IndexMap,
-             std::shared_ptr<dolfin::common::IndexMap>>(m, "IndexMap")
+  // dolfinx::common::IndexMap
+  py::class_<dolfinx::common::IndexMap,
+             std::shared_ptr<dolfinx::common::IndexMap>>(m, "IndexMap")
       .def_property_readonly("size_local",
-                             &dolfin::common::IndexMap::size_local)
+                             &dolfinx::common::IndexMap::size_local)
       .def_property_readonly("size_global",
-                             &dolfin::common::IndexMap::size_global)
+                             &dolfinx::common::IndexMap::size_global)
       .def_property_readonly("num_ghosts",
-                             &dolfin::common::IndexMap::num_ghosts)
-      .def_readonly("block_size", &dolfin::common::IndexMap::block_size,
+                             &dolfinx::common::IndexMap::num_ghosts)
+      .def_readonly("block_size", &dolfinx::common::IndexMap::block_size,
                     "Return block size")
       .def_property_readonly("local_range",
-                             &dolfin::common::IndexMap::local_range,
+                             &dolfinx::common::IndexMap::local_range,
                              "Range of indices owned by this map")
       .def_property_readonly("ghost_owners",
-                             &dolfin::common::IndexMap::ghost_owners,
+                             &dolfinx::common::IndexMap::ghost_owners,
                              py::return_value_policy::reference_internal,
                              "Return owning process for each ghost index")
-      .def_property_readonly("ghosts", &dolfin::common::IndexMap::ghosts,
+      .def_property_readonly("ghosts", &dolfinx::common::IndexMap::ghosts,
                              py::return_value_policy::reference_internal,
                              "Return list of ghost indices")
       .def("compute_forward_processes",
-           &dolfin::common::IndexMap::compute_forward_processes,
+           &dolfinx::common::IndexMap::compute_forward_processes,
            "Return mapping from local indices to remote processes where "
            "each index is ghosted")
-      .def("indices", &dolfin::common::IndexMap::indices,
+      .def("indices", &dolfinx::common::IndexMap::indices,
            "Return array of global indices for all indices on this process");
 
-  // dolfin::common::Timer
-  py::class_<dolfin::common::Timer, std::shared_ptr<dolfin::common::Timer>>(
+  // dolfinx::common::Timer
+  py::class_<dolfinx::common::Timer, std::shared_ptr<dolfinx::common::Timer>>(
       m, "Timer", "Timer class")
       .def(py::init<>())
       .def(py::init<std::string>())
-      .def("start", &dolfin::common::Timer::start, "Start timer")
-      .def("stop", &dolfin::common::Timer::stop, "Stop timer")
-      .def("resume", &dolfin::common::Timer::resume)
-      .def("elapsed", &dolfin::common::Timer::elapsed);
+      .def("start", &dolfinx::common::Timer::start, "Start timer")
+      .def("stop", &dolfinx::common::Timer::stop, "Stop timer")
+      .def("resume", &dolfinx::common::Timer::resume)
+      .def("elapsed", &dolfinx::common::Timer::elapsed);
 
-  // dolfin::common::Timer enum
-  py::enum_<dolfin::TimingType>(m, "TimingType")
-      .value("wall", dolfin::TimingType::wall)
-      .value("system", dolfin::TimingType::system)
-      .value("user", dolfin::TimingType::user);
+  // dolfinx::common::Timer enum
+  py::enum_<dolfinx::TimingType>(m, "TimingType")
+      .value("wall", dolfinx::TimingType::wall)
+      .value("system", dolfinx::TimingType::system)
+      .value("user", dolfinx::TimingType::user);
 
   // dolfin/common free functions
-  m.def("timing", &dolfin::timing);
-  m.def("timings", [](std::vector<dolfin::TimingType> type) {
-    std::set<dolfin::TimingType> _type(type.begin(), type.end());
-    return dolfin::timings(_type);
+  m.def("timing", &dolfinx::timing);
+  m.def("timings", [](std::vector<dolfinx::TimingType> type) {
+    std::set<dolfinx::TimingType> _type(type.begin(), type.end());
+    return dolfinx::timings(_type);
   });
   m.def("list_timings",
-        [](const MPICommWrapper comm, std::vector<dolfin::TimingType> type) {
-          std::set<dolfin::TimingType> _type(type.begin(), type.end());
-          dolfin::list_timings(comm.get(), _type);
+        [](const MPICommWrapper comm, std::vector<dolfinx::TimingType> type) {
+          std::set<dolfinx::TimingType> _type(type.begin(), type.end());
+          dolfinx::list_timings(comm.get(), _type);
         });
 
-  // dolfin::SubSystemsManager
-  py::class_<dolfin::common::SubSystemsManager,
-             std::unique_ptr<dolfin::common::SubSystemsManager, py::nodelete>>(
+  // dolfinx::SubSystemsManager
+  py::class_<dolfinx::common::SubSystemsManager,
+             std::unique_ptr<dolfinx::common::SubSystemsManager, py::nodelete>>(
       m, "SubSystemsManager")
       .def_static("init_petsc",
-                  (void (*)()) & dolfin::common::SubSystemsManager::init_petsc)
+                  (void (*)()) & dolfinx::common::SubSystemsManager::init_petsc)
       .def_static("init_petsc",
                   [](std::vector<std::string> args) {
                     std::vector<char*> argv(args.size());
                     for (std::size_t i = 0; i < args.size(); ++i)
                       argv[i] = const_cast<char*>(args[i].data());
-                    dolfin::common::SubSystemsManager::init_petsc(args.size(),
+                    dolfinx::common::SubSystemsManager::init_petsc(args.size(),
                                                                   argv.data());
                   })
       .def_static("init_logging",
@@ -119,18 +119,18 @@ void common(py::module& m)
                     std::vector<char*> argv(args.size() + 1, nullptr);
                     for (std::size_t i = 0; i < args.size(); ++i)
                       argv[i] = const_cast<char*>(args[i].data());
-                    dolfin::common::SubSystemsManager::init_logging(
+                    dolfinx::common::SubSystemsManager::init_logging(
                         args.size(), argv.data());
                   })
-      .def_static("finalize", &dolfin::common::SubSystemsManager::finalize)
+      .def_static("finalize", &dolfinx::common::SubSystemsManager::finalize)
       .def_static("responsible_mpi",
-                  &dolfin::common::SubSystemsManager::responsible_mpi)
+                  &dolfinx::common::SubSystemsManager::responsible_mpi)
       .def_static("responsible_petsc",
-                  &dolfin::common::SubSystemsManager::responsible_petsc)
+                  &dolfinx::common::SubSystemsManager::responsible_petsc)
       .def_static("mpi_initialized",
-                  &dolfin::common::SubSystemsManager::mpi_initialized)
+                  &dolfinx::common::SubSystemsManager::mpi_initialized)
       .def_static("mpi_finalized",
-                  &dolfin::common::SubSystemsManager::mpi_finalized);
+                  &dolfinx::common::SubSystemsManager::mpi_finalized);
 }
 
 // Interface for MPI
@@ -151,8 +151,8 @@ void mpi(py::module& m)
            "implementation.");
 #endif
 
-  // dolfin::MPI
-  py::class_<dolfin::MPI>(m, "MPI", "MPI utilities")
+  // dolfinx::MPI
+  py::class_<dolfinx::MPI>(m, "MPI", "MPI utilities")
       .def_property_readonly_static(
           "comm_world",
           [](py::object) { return MPICommWrapper(MPI_COMM_WORLD); })
@@ -161,7 +161,7 @@ void mpi(py::module& m)
       .def_property_readonly_static(
           "comm_null", [](py::object) { return MPICommWrapper(MPI_COMM_NULL); })
       .def_static("init",
-                  (void (*)()) & dolfin::common::SubSystemsManager::init_mpi,
+                  (void (*)()) & dolfinx::common::SubSystemsManager::init_mpi,
                   "Initialise MPI")
       .def_static(
           "init",
@@ -169,53 +169,53 @@ void mpi(py::module& m)
             std::vector<char*> argv(args.size());
             for (std::size_t i = 0; i < args.size(); ++i)
               argv[i] = const_cast<char*>(args[i].data());
-            return dolfin::common::SubSystemsManager::init_mpi(
+            return dolfinx::common::SubSystemsManager::init_mpi(
                 args.size(), argv.data(), required_thread_level);
           },
           "Initialise MPI with command-line args and required level "
           "of thread support. Return provided thread level.")
       .def_static("responsible",
-                  &dolfin::common::SubSystemsManager::responsible_mpi,
+                  &dolfinx::common::SubSystemsManager::responsible_mpi,
                   "Return true if DOLFIN initialised MPI (and is therefore "
                   "responsible for finalization)")
       .def_static("initialized",
-                  &dolfin::common::SubSystemsManager::mpi_initialized,
+                  &dolfinx::common::SubSystemsManager::mpi_initialized,
                   "Check if MPI has been initialised")
       .def_static("finalized",
-                  &dolfin::common::SubSystemsManager::mpi_finalized,
+                  &dolfinx::common::SubSystemsManager::mpi_finalized,
                   "Check if MPI has been finalized")
       .def_static("barrier",
                   [](const MPICommWrapper comm) {
-                    return dolfin::MPI::barrier(comm.get());
+                    return dolfinx::MPI::barrier(comm.get());
                   })
       .def_static("rank",
                   [](const MPICommWrapper comm) {
-                    return dolfin::MPI::rank(comm.get());
+                    return dolfinx::MPI::rank(comm.get());
                   })
       .def_static("size",
                   [](const MPICommWrapper comm) {
-                    return dolfin::MPI::size(comm.get());
+                    return dolfinx::MPI::size(comm.get());
                   })
       .def_static("local_range",
                   [](MPICommWrapper comm, std::int64_t N) {
-                    return dolfin::MPI::local_range(comm.get(), N);
+                    return dolfinx::MPI::local_range(comm.get(), N);
                   })
       // templated for double
       .def_static("max",
                   [](const MPICommWrapper comm, double value) {
-                    return dolfin::MPI::max(comm.get(), value);
+                    return dolfinx::MPI::max(comm.get(), value);
                   })
       .def_static("min",
                   [](const MPICommWrapper comm, double value) {
-                    return dolfin::MPI::min(comm.get(), value);
+                    return dolfinx::MPI::min(comm.get(), value);
                   })
       .def_static("sum",
                   [](const MPICommWrapper comm, double value) {
-                    return dolfin::MPI::sum(comm.get(), value);
+                    return dolfinx::MPI::sum(comm.get(), value);
                   })
       .def_static("sum",
                   [](const MPICommWrapper comm, std::complex<double> value) {
-                    return dolfin::MPI::sum(comm.get(), value);
+                    return dolfinx::MPI::sum(comm.get(), value);
                   });
 }
 } // namespace dolfin_wrappers
