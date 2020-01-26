@@ -11,7 +11,7 @@ import numpy as np
 from petsc4py import PETSc
 
 import ufl
-import dolfin
+import dolfinx
 
 
 def test_rank0():
@@ -28,11 +28,11 @@ def test_rank0():
     gradient grad f(x, y) = [2*x, 4*y].
 
     """
-    mesh = dolfin.generation.UnitSquareMesh(dolfin.MPI.comm_world, 5, 5)
-    P2 = dolfin.FunctionSpace(mesh, ("P", 2))
-    vP1 = dolfin.VectorFunctionSpace(mesh, ("P", 1))
+    mesh = dolfinx.generation.UnitSquareMesh(dolfinx.MPI.comm_world, 5, 5)
+    P2 = dolfinx.FunctionSpace(mesh, ("P", 2))
+    vP1 = dolfinx.VectorFunctionSpace(mesh, ("P", 1))
 
-    f = dolfin.Function(P2)
+    f = dolfinx.Function(P2)
 
     def expr1(x):
         return x[0] ** 2 + 2.0 * x[1] ** 2
@@ -42,7 +42,7 @@ def test_rank0():
     ufl_expr = ufl.grad(f)
     points = np.array([[0.0, 0.0], [1.0, 0.0], [0.0, 1.0]])
 
-    compiled_expr = dolfin.jit.ffc_jit((ufl_expr, points))
+    compiled_expr = dolfinx.jit.ffc_jit((ufl_expr, points))
 
     ffi = cffi.FFI()
 
@@ -80,7 +80,7 @@ def test_rank0():
     dofmap = vP1.dofmap.dof_array
 
     # Data structure for the result
-    b = dolfin.Function(vP1)
+    b = dolfinx.Function(vP1)
 
     assemble_expression(b.vector.array, compiled_expr.tabulate_expression,
                         (c, pos), geom, dofmap, f.vector.array, coeff_dofmap)
@@ -92,7 +92,7 @@ def test_rank0():
 
         return values
 
-    b2 = dolfin.Function(vP1)
+    b2 = dolfinx.Function(vP1)
     b2.interpolate(grad_expr1)
 
     assert np.isclose((b2.vector - b.vector).norm(), 0.0)

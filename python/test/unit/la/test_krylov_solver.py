@@ -13,10 +13,10 @@ import pytest
 from petsc4py import PETSc
 
 import ufl
-from dolfin import (MPI, DirichletBC, Function, FunctionSpace, UnitSquareMesh,
+from dolfinx import (MPI, DirichletBC, Function, FunctionSpace, UnitSquareMesh,
                     VectorFunctionSpace)
-from dolfin.fem import apply_lifting, assemble_matrix, assemble_vector, set_bc
-from dolfin.la import VectorSpaceBasis
+from dolfinx.fem import apply_lifting, assemble_matrix, assemble_vector, set_bc
+from dolfinx.la import VectorSpaceBasis
 from ufl import (Identity, TestFunction, TrialFunction, dot, dx, grad, inner,
                  sym, tr)
 

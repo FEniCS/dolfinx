@@ -6,10 +6,10 @@
 
 import os
 
-from dolfin import (MPI, Function, FunctionSpace, VectorFunctionSpace, cpp,
+from dolfinx import (MPI, Function, FunctionSpace, VectorFunctionSpace, cpp,
                     fem, has_petsc_complex)
-from dolfin.io import XDMFFile
-from dolfin_utils.test.fixtures import tempdir
+from dolfinx.io import XDMFFile
+from dolfinx_utils.test.fixtures import tempdir
 
 assert (tempdir)
 

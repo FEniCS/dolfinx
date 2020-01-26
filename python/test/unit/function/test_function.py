@@ -11,11 +11,11 @@ import math
 import cffi
 import numpy as np
 import pytest
-from dolfin_utils.test.skips import skip_if_complex, skip_in_parallel
+from dolfinx_utils.test.skips import skip_if_complex, skip_in_parallel
 from petsc4py import PETSc
 
 import ufl
-from dolfin import (MPI, Function, FunctionSpace, TensorFunctionSpace,
+from dolfinx import (MPI, Function, FunctionSpace, TensorFunctionSpace,
                     UnitCubeMesh, VectorFunctionSpace, cpp, geometry)
 
 

@@ -8,10 +8,10 @@
 import numpy
 import pytest
 
-from dolfin import (MPI, UnitCubeMesh, UnitIntervalMesh, UnitSquareMesh, cpp,
+from dolfinx import (MPI, UnitCubeMesh, UnitIntervalMesh, UnitSquareMesh, cpp,
                     geometry)
-from dolfin.geometry import BoundingBoxTree
-from dolfin_utils.test.skips import skip_in_parallel
+from dolfinx.geometry import BoundingBoxTree
+from dolfinx_utils.test.skips import skip_in_parallel
 
 # --- compute_collisions with point ---
 
