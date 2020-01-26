@@ -13,7 +13,7 @@ import pytest
 
 import ufl
 from dolfinx import (MPI, UnitCubeMesh, UnitSquareMesh, VectorFunctionSpace,
-                    cpp, fem, la)
+                     cpp, fem, la)
 from dolfinx.cpp.mesh import CellType, GhostMode
 from dolfinx.fem import assemble_matrix
 from dolfinx.generation import BoxMesh

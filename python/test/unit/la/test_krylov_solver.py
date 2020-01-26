@@ -14,7 +14,7 @@ from petsc4py import PETSc
 
 import ufl
 from dolfinx import (MPI, DirichletBC, Function, FunctionSpace, UnitSquareMesh,
-                    VectorFunctionSpace)
+                     VectorFunctionSpace)
 from dolfinx.fem import apply_lifting, assemble_matrix, assemble_vector, set_bc
 from dolfinx.la import VectorSpaceBasis
 from ufl import (Identity, TestFunction, TrialFunction, dot, dx, grad, inner,

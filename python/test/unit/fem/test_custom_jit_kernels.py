@@ -12,7 +12,7 @@ from petsc4py import PETSc
 
 import dolfinx
 from dolfinx import (MPI, FunctionSpace, TimingType, UnitSquareMesh, cpp,
-                    list_timings, Function)
+                     list_timings, Function)
 from dolfinx_utils.test.skips import skip_if_complex
 from dolfinx.fem import FormIntegrals
 

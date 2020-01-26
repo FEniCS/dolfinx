@@ -8,7 +8,7 @@
 import pytest
 
 from dolfinx import (MPI, Function, FunctionSpace, UnitCubeMesh,
-                    VectorFunctionSpace)
+                     VectorFunctionSpace)
 from ufl import (FiniteElement, TestFunction, TrialFunction, VectorElement,
                  grad, triangle)
 from ufl.log import UFLException

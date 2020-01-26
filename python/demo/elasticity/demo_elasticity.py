@@ -15,7 +15,7 @@ from petsc4py import PETSc
 
 import dolfinx
 from dolfinx import (MPI, BoxMesh, DirichletBC, Function, VectorFunctionSpace,
-                    cpp)
+                     cpp)
 from dolfinx.cpp.mesh import CellType
 from dolfinx.fem import apply_lifting, assemble_matrix, assemble_vector, set_bc
 from dolfinx.io import XDMFFile

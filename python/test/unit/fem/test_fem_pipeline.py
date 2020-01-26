@@ -13,7 +13,7 @@ from petsc4py import PETSc
 from dolfinx import MPI, DirichletBC, Function, FunctionSpace
 from dolfinx.cpp.mesh import GhostMode
 from dolfinx.fem import (apply_lifting, assemble_matrix, assemble_scalar,
-                        assemble_vector, set_bc)
+                         assemble_vector, set_bc)
 from dolfinx.io import XDMFFile
 from ufl import (SpatialCoordinate, TestFunction, TrialFunction, div, dx, grad,
                  inner)

@@ -14,8 +14,8 @@ import pytest
 import dolfinx
 import FIAT
 from dolfinx import (MPI, BoxMesh, Mesh, MeshEntity, MeshFunction,
-                    RectangleMesh, UnitCubeMesh, UnitIntervalMesh,
-                    UnitSquareMesh, cpp, has_kahip)
+                     RectangleMesh, UnitCubeMesh, UnitIntervalMesh,
+                     UnitSquareMesh, cpp, has_kahip)
 from dolfinx.cpp.mesh import CellType, Partitioner, is_simplex
 from dolfinx.fem import assemble_scalar
 from dolfinx.io import XDMFFile

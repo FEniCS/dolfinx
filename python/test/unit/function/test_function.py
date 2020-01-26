@@ -16,7 +16,7 @@ from petsc4py import PETSc
 
 import ufl
 from dolfinx import (MPI, Function, FunctionSpace, TensorFunctionSpace,
-                    UnitCubeMesh, VectorFunctionSpace, cpp, geometry)
+                     UnitCubeMesh, VectorFunctionSpace, cpp, geometry)
 
 
 @pytest.fixture
