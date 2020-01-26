@@ -1063,9 +1063,6 @@ XDMFFile::read_mesh_value_collection(std::shared_ptr<const mesh::Mesh> mesh,
   auto cell_type_str = xdmf_utils::get_cell_type(topology_node);
 
   const int degree = cell_type_str.second;
-  assert(degree == mesh->degree()
-         && "Degree of mesh doesn't match degree of MeshValueCollection.");
-
   const mesh::CellType cell_type = mesh::to_type(cell_type_str.first);
   const int dim = mesh::cell_dim(cell_type);
   const int num_verts_per_entity = mesh::num_cell_vertices(cell_type);
