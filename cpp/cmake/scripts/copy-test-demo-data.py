@@ -19,9 +19,9 @@
 # source directory
 
 import os
-import sys
 import re
 import shutil
+import sys
 
 # Subdirectories
 sub_directories = ['demo', 'test', 'bench']
@@ -36,12 +36,14 @@ suffix_pattern = re.compile("(%s)," % ("|".join("[\w-]+\.%s" % pattern
 
 script_rel_path = os.sep.join(__file__.split(os.sep)[:-1])
 script_rel_path = script_rel_path or "."
-dolfin_dir = os.path.abspath(os.path.join(script_rel_path, os.pardir, os.pardir))
+dolfin_dir = os.path.abspath(os.path.join(
+    script_rel_path, os.pardir, os.pardir))
 
 
 def copy_data(top_destdir):
 
-    abs_destdir = top_destdir if os.path.isabs(top_destdir) else os.path.join(dolfin_dir, top_destdir)
+    abs_destdir = top_destdir if os.path.isabs(
+        top_destdir) else os.path.join(dolfin_dir, top_destdir)
 
     if abs_destdir == dolfin_dir:
         raise RuntimeError("destination directory cannot be the same as "
@@ -65,6 +67,7 @@ def copy_data(top_destdir):
 if __name__ == "__main__":
     # Expecting a destination argument
     if len(sys.argv) != 2:
-        raise RuntimeError("Expecting 1 argument with the destination directory")
+        raise RuntimeError(
+            "Expecting 1 argument with the destination directory")
 
     copy_data(sys.argv[-1])

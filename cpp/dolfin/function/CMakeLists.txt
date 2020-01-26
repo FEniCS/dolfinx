@@ -1,12 +1,12 @@
-set(HEADERS
-  dolfin_function.h
-  Constant.h
-  Function.h
-  FunctionSpace.h
+set(HEADERS_function
+  ${CMAKE_CURRENT_SOURCE_DIR}/dolfin_function.h
+  ${CMAKE_CURRENT_SOURCE_DIR}/Constant.h
+  ${CMAKE_CURRENT_SOURCE_DIR}/Function.h
+  ${CMAKE_CURRENT_SOURCE_DIR}/FunctionSpace.h
   PARENT_SCOPE)
 
-set(SOURCES
-  Constant.cpp
-  Function.cpp
-  FunctionSpace.cpp
-  PARENT_SCOPE)
+target_sources(dolfin PRIVATE
+  ${CMAKE_CURRENT_SOURCE_DIR}/Constant.cpp
+  ${CMAKE_CURRENT_SOURCE_DIR}/Function.cpp
+  ${CMAKE_CURRENT_SOURCE_DIR}/FunctionSpace.cpp
+)

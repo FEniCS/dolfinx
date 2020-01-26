@@ -1,18 +1,11 @@
+#------------------------------------------------------------------------------
 # Top level CMakeLists.txt file for DOLFIN
 cmake_minimum_required(VERSION 3.10)
 
 #------------------------------------------------------------------------------
 # Set project name and version number
 
-project(DOLFIN)
-set(DOLFIN_VERSION_RELEASE 0)
-set(DOLFIN_VERSION_MAJOR "2019")
-set(DOLFIN_VERSION_MINOR "2")
-set(DOLFIN_VERSION_MICRO "0")
-set(DOLFIN_VERSION "${DOLFIN_VERSION_MAJOR}.${DOLFIN_VERSION_MINOR}.${DOLFIN_VERSION_MICRO}")
-if (NOT DOLFIN_VERSION_RELEASE)
-  set(DOLFIN_VERSION "${DOLFIN_VERSION}.dev0")
-endif()
+project(DOLFIN VERSION 2019.2.9.99)
 
 #------------------------------------------------------------------------------
 # Set CMake options, see `cmake --help-policy CMP000x`
@@ -38,9 +31,7 @@ set(CMAKE_CXX_EXTENSIONS OFF)
 #------------------------------------------------------------------------------
 # Get GIT changeset, if available
 
-# Check for git
 find_program(GIT_FOUND git)
-
 if (GIT_FOUND)
   # Get the commit hash of the working branch
   execute_process(COMMAND git rev-parse HEAD
@@ -56,8 +47,7 @@ endif()
 # General configuration
 
 # Set location of our FindFoo.cmake modules
-set(DOLFIN_CMAKE_DIR "${DOLFIN_SOURCE_DIR}/cmake" CACHE INTERNAL "")
-set(CMAKE_MODULE_PATH "${DOLFIN_CMAKE_DIR}/modules")
+set(CMAKE_MODULE_PATH "${DOLFIN_SOURCE_DIR}/cmake/modules")
 
 # Make sure CMake uses the correct DOLFINConfig.cmake for tests and demos
 set(CMAKE_PREFIX_PATH ${CMAKE_PREFIX_PATH} ${CMAKE_CURRENT_BINARY_DIR}/dolfin)
@@ -68,13 +58,9 @@ set(CMAKE_PREFIX_PATH ${CMAKE_PREFIX_PATH} ${CMAKE_CURRENT_BINARY_DIR}/dolfin)
 include(FeatureSummary)
 
 option(BUILD_SHARED_LIBS "Build DOLFIN with shared libraries." ON)
-option(CMAKE_USE_RELATIVE_PATHS "Use relative paths in makefiles and projects." OFF)
-option(DOLFIN_SKIP_BUILD_TESTS "Skip build tests for testing usability of dependency packages." OFF)
-option(DOLFIN_WITH_LIBRARY_VERSION "Build with library version information." ON)
-
 add_feature_info(BUILD_SHARED_LIBS BUILD_SHARED_LIBS "Build DOLFIN with shared libraries.")
-add_feature_info(CMAKE_USE_RELATIVE_PATHS CMAKE_USE_RELATIVE_PATHS "Use relative paths in makefiles and projects.")
-add_feature_info(DOLFIN_WITH_LIBRARY_VERSION DOLFIN_WITH_LIBRARY_VERSION "Build with library version information.")
+
+option(DOLFIN_SKIP_BUILD_TESTS "Skip build tests for testing usability of dependency packages." OFF)
 add_feature_info(DOLFIN_SKIP_BUILD_TESTS DOLFIN_SKIP_BUILD_TESTS "Skip build tests for testing usability of dependency packages.")
 
 # Add shared library paths so shared libs in non-system paths are found
@@ -85,7 +71,6 @@ add_feature_info(CMAKE_INSTALL_RPATH_USE_LINK_PATH CMAKE_INSTALL_RPATH_USE_LINK_
 # Enable or disable optional packages
 
 # List optional packages
-set(OPTIONAL_PACKAGES "")
 list(APPEND OPTIONAL_PACKAGES "SLEPc")
 list(APPEND OPTIONAL_PACKAGES "ParMETIS")
 list(APPEND OPTIONAL_PACKAGES "KaHIP")
@@ -96,11 +81,6 @@ foreach (OPTIONAL_PACKAGE ${OPTIONAL_PACKAGES})
   option(${OPTION_NAME} "Compile with support for ${OPTIONAL_PACKAGE}." ON)
   add_feature_info(${OPTION_NAME} ${OPTION_NAME} "Compile with support for ${OPTIONAL_PACKAGE}.")
 endforeach()
-
-#------------------------------------------------------------------------------
-# Package-specific options
-
-# None at the moment
 
 #------------------------------------------------------------------------------
 # Check for MPI
@@ -121,29 +101,26 @@ endif()
 include(CheckCXXCompilerFlag)
 CHECK_CXX_COMPILER_FLAG(-pipe HAVE_PIPE)
 if (HAVE_PIPE)
-  set(DOLFIN_CXX_DEVELOPER_FLAGS "-pipe ${DOLFIN_CXX_DEVELOPER_FLAGS}")
+  list(APPEND DOLFIN_CXX_DEVELOPER_FLAGS -pipe)
 endif()
 
 # Add some strict compiler checks
 CHECK_CXX_COMPILER_FLAG("-Wall -Werror -pedantic" HAVE_PEDANTIC)
 if (HAVE_PEDANTIC)
-  set(DOLFIN_CXX_DEVELOPER_FLAGS "-Wall -Werror -pedantic ${DOLFIN_CXX_DEVELOPER_FLAGS}")
+  list(APPEND DOLFIN_CXX_DEVELOPER_FLAGS -Wall;-Werror;-pedantic)
 endif()
 
 # Debug flags
 CHECK_CXX_COMPILER_FLAG(-g HAVE_DEBUG)
 if (HAVE_DEBUG)
-  set(DOLFIN_CXX_DEVELOPER_FLAGS "-g ${DOLFIN_CXX_DEVELOPER_FLAGS}")
+  list(APPEND DOLFIN_CXX_DEVELOPER_FLAGS -g)
 endif()
 
+# Optimisation
 CHECK_CXX_COMPILER_FLAG(-O2 HAVE_O2_OPTIMISATION)
 if (HAVE_O2_OPTIMISATION)
-  set(DOLFIN_CXX_DEVELOPER_FLAGS "-O2 ${DOLFIN_CXX_DEVELOPER_FLAGS}")
+  list(APPEND DOLFIN_CXX_DEVELOPER_FLAGS -O2)
 endif()
-
-# Set 'Developer' build type flags
-set(CMAKE_CXX_FLAGS_DEVELOPER "${DOLFIN_CXX_DEVELOPER_FLAGS}" CACHE STRING
-  "Flags used by the compiler during development." FORCE)
 
 #------------------------------------------------------------------------------
 # Run tests to find required packages
@@ -254,25 +231,6 @@ feature_summary(WHAT ALL)
 #------------------------------------------------------------------------------
 # Installation of DOLFIN library
 
-# Append the library version information to the library target properties
-if (DOLFIN_WITH_LIBRARY_VERSION)
-  string(REPLACE "+" "" DOLFIN_LIBRARY_VERSION ${DOLFIN_VERSION})
-  # This setting of SOVERSION assumes that any API change
-  # will increment either the minor or major version number.
-  set(DOLFIN_LIBRARY_PROPERTIES ${DOLFIN_LIBRARY_PROPERTIES}
-    VERSION ${DOLFIN_LIBRARY_VERSION}
-    SOVERSION ${DOLFIN_VERSION_MAJOR}.${DOLFIN_VERSION_MINOR}
-  )
-endif()
-
-# Set DOLFIN install sub-directories
-include(GNUInstallDirs)
-set(DOLFIN_LIB_DIR "${CMAKE_INSTALL_LIBDIR}" CACHE PATH "Library installation directory.")
-set(DOLFIN_INCLUDE_DIR "${CMAKE_INSTALL_INCLUDEDIR}" CACHE PATH "C/C++ header installation directory.")
-set(DOLFIN_PKGCONFIG_DIR "${CMAKE_INSTALL_LIBDIR}/pkgconfig" CACHE PATH "pkg-config file installation directory.")
-set(DOLFIN_SHARE_DIR "${CMAKE_INSTALL_DATAROOTDIR}/dolfin" CACHE PATH "Shared data installation directory.")
-
-# Add source directory
 add_subdirectory(dolfin)
 
 #------------------------------------------------------------------------------
@@ -287,16 +245,16 @@ endif()
 
 # FIXME: not cross-platform compatible
 # Create and install dolfin.conf file
-configure_file(${DOLFIN_CMAKE_DIR}/templates/dolfin.conf.in
+configure_file(${DOLFIN_SOURCE_DIR}/cmake/templates/dolfin.conf.in
                ${CMAKE_BINARY_DIR}/dolfin.conf @ONLY)
 install(FILES ${CMAKE_BINARY_DIR}/dolfin.conf
-        DESTINATION ${DOLFIN_SHARE_DIR}
+        DESTINATION ${CMAKE_INSTALL_DATAROOTDIR}/dolfin
         COMPONENT Development)
 
 #------------------------------------------------------------------------------
 # Generate form files for tests and demos and DOLFIN if not exists
 # FIXME: Generate files in Build directory instead, at least for demo
-# and tests
+#        and tests?
 
 set(COPY_DEMO_TEST_DEMO_DATA FALSE)
 if (PYTHONINTERP_FOUND AND NOT EXISTS ${DOLFIN_SOURCE_DIR}/demo/poisson/Poisson.h)
@@ -322,7 +280,7 @@ if (PYTHONINTERP_FOUND AND NOT EXISTS ${DOLFIN_SOURCE_DIR}/demo/poisson/Poisson.
 endif()
 
 #------------------------------------------------------------------------------
-# Generate CMakeLists.txt files for demos if not existing
+# Generate CMakeLists.txt files for demos if needed
 
 # FIXME: Generate files in Build directory instead?
 # NOTE: We need to call this script after generate-formfiles
@@ -382,7 +340,7 @@ else()
 endif()
 
 # Install the demo source files
-install(DIRECTORY demo DESTINATION ${DOLFIN_SHARE_DIR}
+install(DIRECTORY demo DESTINATION ${CMAKE_INSTALL_DATAROOTDIR}/dolfin
   FILES_MATCHING
   PATTERN "CMakeLists.txt"
   PATTERN "*.cpp"
@@ -401,14 +359,14 @@ enable_testing()
 add_subdirectory(test/unit EXCLUDE_FROM_ALL)
 
 # Add demos but do not add to default target
-set(CMAKE_MODULE_PATH "${DOLFIN_CMAKE_DIR}/modules")
+set(CMAKE_MODULE_PATH "${DOLFIN_SOURCE_DIR}/cmake/modules")
 add_subdirectory(demo EXCLUDE_FROM_ALL)
 
 #------------------------------------------------------------------------------
 # Add "make uninstall" target
 
 configure_file(
-  "${DOLFIN_CMAKE_DIR}/templates/cmake_uninstall.cmake.in"
+  "${DOLFIN_SOURCE_DIR}/cmake/templates/cmake_uninstall.cmake.in"
   "${CMAKE_CURRENT_BINARY_DIR}/cmake_uninstall.cmake"
   IMMEDIATE @ONLY)
 
