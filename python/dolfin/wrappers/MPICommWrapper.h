@@ -6,7 +6,7 @@
 
 #pragma once
 
-#include <dolfin/common/MPI.h>
+#include <dolfinx/common/MPI.h>
 
 namespace dolfin_wrappers
 {

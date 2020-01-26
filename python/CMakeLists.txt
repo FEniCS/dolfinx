@@ -1,8 +1,8 @@
 cmake_minimum_required(VERSION 3.10)
 
-PROJECT(dolfin_pybind11)
+PROJECT(dolfinx_pybind11)
 
-find_package(DOLFIN REQUIRED)
+find_package(DOLFINX REQUIRED)
 
 # Set C++ standard before finding pybind11
 set(CMAKE_CXX_STANDARD 17)
@@ -36,7 +36,7 @@ if (HAVE_PEDANTIC)
 endif()
 
 # Add DOLFIN libraries and other config
-target_link_libraries(cpp PRIVATE pybind11::module dolfin)
+target_link_libraries(cpp PRIVATE pybind11::module dolfinx)
 
 # Add to CMake search path
 set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} ${CMAKE_CURRENT_SOURCE_DIR}/cmake)

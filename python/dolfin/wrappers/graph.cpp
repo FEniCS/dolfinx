@@ -4,9 +4,9 @@
 //
 // SPDX-License-Identifier:    LGPL-3.0-or-later
 
-#include <dolfin/graph/Graph.h>
-#include <dolfin/graph/GraphBuilder.h>
-#include <dolfin/mesh/Mesh.h>
+#include <dolfinx/graph/Graph.h>
+#include <dolfinx/graph/GraphBuilder.h>
+#include <dolfinx/mesh/Mesh.h>
 #include <pybind11/pybind11.h>
 #include <pybind11/stl.h>
 #include <vector>
@@ -17,23 +17,23 @@ namespace dolfin_wrappers
 {
 void graph(py::module& m)
 {
-  // dolfin::Set
-  py::class_<dolfin::common::Set<int>>(m, "DOLFINIntSet");
+  // dolfinx::Set
+  py::class_<dolfinx::common::Set<int>>(m, "DOLFINIntSet");
 
-  // dolfin::Graph
-  py::class_<dolfin::graph::Graph>(m, "Graph");
+  // dolfinx::Graph
+  py::class_<dolfinx::graph::Graph>(m, "Graph");
 
-  // dolfin::GraphBuilder
-  py::class_<dolfin::graph::GraphBuilder>(m, "GraphBuilder")
+  // dolfinx::GraphBuilder
+  py::class_<dolfinx::graph::GraphBuilder>(m, "GraphBuilder")
       .def_static("local_graph",
-                  [](const dolfin::mesh::Mesh& mesh,
+                  [](const dolfinx::mesh::Mesh& mesh,
                      const std::vector<std::size_t>& coloring) {
-                    return dolfin::graph::GraphBuilder::local_graph(mesh,
+                    return dolfinx::graph::GraphBuilder::local_graph(mesh,
                                                                     coloring);
                   })
-      .def_static("local_graph", [](const dolfin::mesh::Mesh& mesh,
+      .def_static("local_graph", [](const dolfinx::mesh::Mesh& mesh,
                                     std::size_t dim0, std::size_t dim1) {
-        return dolfin::graph::GraphBuilder::local_graph(mesh, dim0, dim1);
+        return dolfinx::graph::GraphBuilder::local_graph(mesh, dim0, dim1);
       });
 }
 } // namespace dolfin_wrappers

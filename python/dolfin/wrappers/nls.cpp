@@ -6,8 +6,8 @@
 
 #include "caster_mpi.h"
 #include "caster_petsc.h"
-#include <dolfin/nls/NewtonSolver.h>
-#include <dolfin/nls/NonlinearProblem.h>
+#include <dolfinx/nls/NewtonSolver.h>
+#include <dolfinx/nls/NonlinearProblem.h>
 #include <memory>
 #include <pybind11/numpy.h>
 #include <pybind11/pybind11.h>
@@ -26,68 +26,68 @@ namespace dolfin_wrappers
 {
 void nls(py::module& m)
 {
-  // dolfin::NewtonSolver 'trampoline' for overloading virtual
+  // dolfinx::NewtonSolver 'trampoline' for overloading virtual
   // functions from Python
-  class PyNewtonSolver : public dolfin::nls::NewtonSolver
+  class PyNewtonSolver : public dolfinx::nls::NewtonSolver
   {
-    using dolfin::nls::NewtonSolver::NewtonSolver;
+    using dolfinx::nls::NewtonSolver::NewtonSolver;
 
     // pybdind11 has some issues when passing by reference (due to
     // the return value policy), so the below is non-standard.  See
     // https://github.com/pybind/pybind11/issues/250.
 
     bool converged(const Vec r,
-                   const dolfin::nls::NonlinearProblem& nonlinear_problem,
+                   const dolfinx::nls::NonlinearProblem& nonlinear_problem,
                    std::size_t iteration)
     {
-      PYBIND11_OVERLOAD_INT(bool, dolfin::nls::NewtonSolver, "converged", &r,
+      PYBIND11_OVERLOAD_INT(bool, dolfinx::nls::NewtonSolver, "converged", &r,
                             &nonlinear_problem, iteration);
-      return dolfin::nls::NewtonSolver::converged(r, nonlinear_problem,
+      return dolfinx::nls::NewtonSolver::converged(r, nonlinear_problem,
                                                   iteration);
     }
 
     void update_solution(Vec x, const Vec dx, double relaxation,
-                         const dolfin::nls::NonlinearProblem& nonlinear_problem,
+                         const dolfinx::nls::NonlinearProblem& nonlinear_problem,
                          std::size_t iteration)
     {
-      PYBIND11_OVERLOAD_INT(void, dolfin::nls::NewtonSolver, "update_solution",
+      PYBIND11_OVERLOAD_INT(void, dolfinx::nls::NewtonSolver, "update_solution",
                             x, &dx, relaxation, &nonlinear_problem, iteration);
-      return dolfin::nls::NewtonSolver::update_solution(
+      return dolfinx::nls::NewtonSolver::update_solution(
           x, dx, relaxation, nonlinear_problem, iteration);
     }
   };
 
-  // Class used to expose protected dolfin::NewtonSolver members
+  // Class used to expose protected dolfinx::NewtonSolver members
   // (see https://github.com/pybind/pybind11/issues/991)
-  class PyPublicNewtonSolver : public dolfin::nls::NewtonSolver
+  class PyPublicNewtonSolver : public dolfinx::nls::NewtonSolver
   {
   public:
-    using dolfin::nls::NewtonSolver::converged;
-    // using dolfin::nls::NewtonSolver::solver_setup;
-    using dolfin::nls::NewtonSolver::update_solution;
+    using dolfinx::nls::NewtonSolver::converged;
+    // using dolfinx::nls::NewtonSolver::solver_setup;
+    using dolfinx::nls::NewtonSolver::update_solution;
   };
 
-  // dolfin::NewtonSolver
-  py::class_<dolfin::nls::NewtonSolver,
-             std::shared_ptr<dolfin::nls::NewtonSolver>, PyNewtonSolver>(
+  // dolfinx::NewtonSolver
+  py::class_<dolfinx::nls::NewtonSolver,
+             std::shared_ptr<dolfinx::nls::NewtonSolver>, PyNewtonSolver>(
       m, "NewtonSolver")
       .def(py::init([](const MPICommWrapper comm) {
         return std::make_unique<PyNewtonSolver>(comm.get());
       }))
-      .def("solve", &dolfin::nls::NewtonSolver::solve)
+      .def("solve", &dolfinx::nls::NewtonSolver::solve)
       .def("converged", &PyPublicNewtonSolver::converged)
       .def("update_solution", &PyPublicNewtonSolver::update_solution)
-      .def_readwrite("atol", &dolfin::nls::NewtonSolver::atol)
-      .def_readwrite("rtol", &dolfin::nls::NewtonSolver::rtol)
-      .def_readwrite("max_it", &dolfin::nls::NewtonSolver::max_it)
+      .def_readwrite("atol", &dolfinx::nls::NewtonSolver::atol)
+      .def_readwrite("rtol", &dolfinx::nls::NewtonSolver::rtol)
+      .def_readwrite("max_it", &dolfinx::nls::NewtonSolver::max_it)
       .def_readwrite("convergence_criterion",
-                     &dolfin::nls::NewtonSolver::convergence_criterion);
+                     &dolfinx::nls::NewtonSolver::convergence_criterion);
 
-  // dolfin::NonlinearProblem 'trampoline' for overloading from
+  // dolfinx::NonlinearProblem 'trampoline' for overloading from
   // Python
-  class PyNonlinearProblem : public dolfin::nls::NonlinearProblem
+  class PyNonlinearProblem : public dolfinx::nls::NonlinearProblem
   {
-    using dolfin::nls::NonlinearProblem::NonlinearProblem;
+    using dolfinx::nls::NonlinearProblem::NonlinearProblem;
 
     // pybdind11 has some issues when passing by reference (due to
     // the return value policy), so the below is non-standard.  See
@@ -95,33 +95,33 @@ void nls(py::module& m)
 
     Mat J(const Vec x) override
     {
-      PYBIND11_OVERLOAD_INT(Mat, dolfin::nls::NonlinearProblem, "J", x);
+      PYBIND11_OVERLOAD_INT(Mat, dolfinx::nls::NonlinearProblem, "J", x);
       py::pybind11_fail(
-          "Tried to call pure virtual function dolfin::NonlinerProblem::J");
+          "Tried to call pure virtual function dolfinx::NonlinerProblem::J");
     }
 
     Vec F(const Vec x) override
     {
-      PYBIND11_OVERLOAD_INT(Vec, dolfin::nls::NonlinearProblem, "F", x);
+      PYBIND11_OVERLOAD_INT(Vec, dolfinx::nls::NonlinearProblem, "F", x);
       py::pybind11_fail(
-          "Tried to call pure virtual function dolfin::NonlinearProblem::F");
+          "Tried to call pure virtual function dolfinx::NonlinearProblem::F");
     }
 
     void form(Vec x) override
     {
-      PYBIND11_OVERLOAD_INT(void, dolfin::nls::NonlinearProblem, "form", x);
-      return dolfin::nls::NonlinearProblem::form(x);
+      PYBIND11_OVERLOAD_INT(void, dolfinx::nls::NonlinearProblem, "form", x);
+      return dolfinx::nls::NonlinearProblem::form(x);
     }
   };
 
-  // dolfin::NonlinearProblem
-  py::class_<dolfin::nls::NonlinearProblem,
-             std::shared_ptr<dolfin::nls::NonlinearProblem>,
+  // dolfinx::NonlinearProblem
+  py::class_<dolfinx::nls::NonlinearProblem,
+             std::shared_ptr<dolfinx::nls::NonlinearProblem>,
              PyNonlinearProblem>(m, "NonlinearProblem")
       .def(py::init<>())
-      .def("F", &dolfin::nls::NonlinearProblem::F)
-      .def("J", &dolfin::nls::NonlinearProblem::J)
-      .def("P", &dolfin::nls::NonlinearProblem::P)
-      .def("form", &dolfin::nls::NonlinearProblem::form);
+      .def("F", &dolfinx::nls::NonlinearProblem::F)
+      .def("J", &dolfinx::nls::NonlinearProblem::J)
+      .def("P", &dolfinx::nls::NonlinearProblem::P)
+      .def("form", &dolfinx::nls::NonlinearProblem::form);
 }
 } // namespace dolfin_wrappers
