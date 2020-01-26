@@ -708,7 +708,7 @@ void dolfinx::MPI::send_recv(MPI_Comm comm, const std::vector<T>& send_value,
 }
 //-----------------------------------------------------------------------------
 template <typename T>
-void dolfin::MPI::neighbor_all_to_all(MPI_Comm neighbor_comm,
+void dolfinx::MPI::neighbor_all_to_all(MPI_Comm neighbor_comm,
                                       const std::vector<int>& send_offsets,
                                       const std::vector<T>& send_data,
                                       std::vector<int>& recv_offsets,

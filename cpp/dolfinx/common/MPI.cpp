@@ -190,7 +190,7 @@ MPI_Comm dolfinx::MPI::SubsetComm(MPI_Comm comm, int num_processes)
   }
 }
 //-----------------------------------------------------------------------------
-std::vector<int> dolfin::MPI::neighbors(MPI_Comm neighbor_comm)
+std::vector<int> dolfinx::MPI::neighbors(MPI_Comm neighbor_comm)
 {
   // Get list of neighbours
   int indegree(-1), outdegree(-2), weighted(-1);
