@@ -89,8 +89,8 @@
 
 #include "poisson.h"
 #include <cfloat>
-#include <dolfin.h>
-#include <dolfin/function/Constant.h>
+#include <dolfinx.h>
+#include <dolfinx/function/Constant.h>
 
 using namespace dolfinx;
 

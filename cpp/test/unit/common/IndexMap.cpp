@@ -5,8 +5,8 @@
 // SPDX-License-Identifier:    LGPL-3.0-or-later
 
 #include <catch.hpp>
-#include <dolfin/common/IndexMap.h>
-#include <dolfin/common/MPI.h>
+#include <dolfinx/common/IndexMap.h>
+#include <dolfinx/common/MPI.h>
 #include <numeric>
 #include <set>
 #include <vector>

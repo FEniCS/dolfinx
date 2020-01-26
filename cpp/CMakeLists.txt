@@ -5,7 +5,7 @@ cmake_minimum_required(VERSION 3.10)
 #------------------------------------------------------------------------------
 # Set project name and version number
 
-project(DOLFIN VERSION 2019.2.9.99)
+project(DOLFINX VERSION 2019.2.9.99)
 
 #------------------------------------------------------------------------------
 # Set CMake options, see `cmake --help-policy CMP000x`
@@ -47,10 +47,10 @@ endif()
 # General configuration
 
 # Set location of our FindFoo.cmake modules
-set(CMAKE_MODULE_PATH "${DOLFIN_SOURCE_DIR}/cmake/modules")
+set(CMAKE_MODULE_PATH "${DOLFINX_SOURCE_DIR}/cmake/modules")
 
 # Make sure CMake uses the correct DOLFINConfig.cmake for tests and demos
-set(CMAKE_PREFIX_PATH ${CMAKE_PREFIX_PATH} ${CMAKE_CURRENT_BINARY_DIR}/dolfin)
+set(CMAKE_PREFIX_PATH ${CMAKE_PREFIX_PATH} ${CMAKE_CURRENT_BINARY_DIR}/dolfinx)
 
 #------------------------------------------------------------------------------
 # Configurable options for how we want to build
@@ -172,7 +172,7 @@ set_package_properties(PETSc PROPERTIES TYPE REQUIRED
   PURPOSE "PETSc linear algebra backend")
 
 # Check for required package UFC
-find_package(UFC MODULE ${DOLFIN_VERSION_MAJOR}.${DOLFIN_VERSION_MINOR})
+find_package(UFC MODULE ${DOLFINX_VERSION_MAJOR}.${DOLFINX_VERSION_MINOR})
 set_package_properties(UFC PROPERTIES TYPE REQUIRED
   DESCRIPTION "Unified language for form-compilers (part of FFC-X)"
   URL "https://github.com/fenics/ffcx")
@@ -231,10 +231,10 @@ feature_summary(WHAT ALL)
 #------------------------------------------------------------------------------
 # Installation of DOLFIN library
 
-add_subdirectory(dolfin)
+add_subdirectory(dolfinx)
 
 #------------------------------------------------------------------------------
-# Generate and install helper file dolfin.conf
+# Generate and install helper file dolfinx.conf
 
 # FIXME: Can CMake provide the library path name variable?
 if (APPLE)
@@ -244,11 +244,11 @@ else()
 endif()
 
 # FIXME: not cross-platform compatible
-# Create and install dolfin.conf file
-configure_file(${DOLFIN_SOURCE_DIR}/cmake/templates/dolfin.conf.in
-               ${CMAKE_BINARY_DIR}/dolfin.conf @ONLY)
-install(FILES ${CMAKE_BINARY_DIR}/dolfin.conf
-        DESTINATION ${CMAKE_INSTALL_DATAROOTDIR}/dolfin
+# Create and install dolfinx.conf file
+configure_file(${DOLFINX_SOURCE_DIR}/cmake/templates/dolfinx.conf.in
+               ${CMAKE_BINARY_DIR}/dolfinx.conf @ONLY)
+install(FILES ${CMAKE_BINARY_DIR}/dolfinx.conf
+        DESTINATION ${CMAKE_INSTALL_DATAROOTDIR}/dolfinx
         COMPONENT Development)
 
 #------------------------------------------------------------------------------
@@ -257,13 +257,13 @@ install(FILES ${CMAKE_BINARY_DIR}/dolfin.conf
 #        and tests?
 
 set(COPY_DEMO_TEST_DEMO_DATA FALSE)
-if (PYTHONINTERP_FOUND AND NOT EXISTS ${DOLFIN_SOURCE_DIR}/demo/poisson/Poisson.h)
+if (PYTHONINTERP_FOUND AND NOT EXISTS ${DOLFINX_SOURCE_DIR}/demo/poisson/Poisson.h)
   message(STATUS "")
   message(STATUS "Generating form files in demo and test and directories. May take some time...")
   message(STATUS "----------------------------------------------------------------------------------------")
   execute_process(
-    COMMAND ${PYTHON_EXECUTABLE} "-B" "-u" ${DOLFIN_SOURCE_DIR}/cmake/scripts/generate-form-files.py ${PETSC_SCALAR_COMPLEX}
-    WORKING_DIRECTORY ${DOLFIN_SOURCE_DIR}
+    COMMAND ${PYTHON_EXECUTABLE} "-B" "-u" ${DOLFINX_SOURCE_DIR}/cmake/scripts/generate-form-files.py ${PETSC_SCALAR_COMPLEX}
+    WORKING_DIRECTORY ${DOLFINX_SOURCE_DIR}
     RESULT_VARIABLE FORM_GENERATION_RESULT
     OUTPUT_VARIABLE FORM_GENERATION_OUTPUT
     ERROR_VARIABLE FORM_GENERATION_OUTPUT
@@ -271,8 +271,8 @@ if (PYTHONINTERP_FOUND AND NOT EXISTS ${DOLFIN_SOURCE_DIR}/demo/poisson/Poisson.
 
   if (FORM_GENERATION_RESULT)
     # Cleanup so download is triggered next time we run cmake
-    if (EXISTS ${DOLFIN_SOURCE_DIR}/demo/poisson/Poisson.h)
-      file(REMOVE ${DOLFIN_SOURCE_DIR}/demo/poisson/Poisson.h)
+    if (EXISTS ${DOLFINX_SOURCE_DIR}/demo/poisson/Poisson.h)
+      file(REMOVE ${DOLFINX_SOURCE_DIR}/demo/poisson/Poisson.h)
     endif()
     message(FATAL_ERROR "Generation of form files failed: \n${FORM_GENERATION_OUTPUT}")
   endif()
@@ -285,13 +285,13 @@ endif()
 # FIXME: Generate files in Build directory instead?
 # NOTE: We need to call this script after generate-formfiles
 
-if (PYTHONINTERP_FOUND AND NOT EXISTS ${DOLFIN_SOURCE_DIR}/demo/poisson/CMakeLists.txt)
+if (PYTHONINTERP_FOUND AND NOT EXISTS ${DOLFINX_SOURCE_DIR}/demo/poisson/CMakeLists.txt)
   message(STATUS "")
   message(STATUS "Generating CMakeLists.txt files in demo and test directories")
   message(STATUS "-------------------------------------------------------------------")
   execute_process(
-    COMMAND ${PYTHON_EXECUTABLE} ${DOLFIN_SOURCE_DIR}/cmake/scripts/generate-cmakefiles.py
-    WORKING_DIRECTORY ${DOLFIN_SOURCE_DIR}
+    COMMAND ${PYTHON_EXECUTABLE} ${DOLFINX_SOURCE_DIR}/cmake/scripts/generate-cmakefiles.py
+    WORKING_DIRECTORY ${DOLFINX_SOURCE_DIR}
     RESULT_VARIABLE CMAKE_GENERATION_RESULT
     OUTPUT_VARIABLE CMAKE_GENERATION_OUTPUT
     ERROR_VARIABLE CMAKE_GENERATION_OUTPUT
@@ -299,8 +299,8 @@ if (PYTHONINTERP_FOUND AND NOT EXISTS ${DOLFIN_SOURCE_DIR}/demo/poisson/CMakeLis
   if (CMAKE_GENERATION_RESULT)
 
     # Cleanup so FFC rebuild is triggered next time we run cmake
-    if (EXISTS ${DOLFIN_SOURCE_DIR}/demo/poisson/CMakeLists.txt)
-      file(REMOVE ${DOLFIN_SOURCE_DIR}/demo/poisson/CMakeLists.txt)
+    if (EXISTS ${DOLFINX_SOURCE_DIR}/demo/poisson/CMakeLists.txt)
+      file(REMOVE ${DOLFINX_SOURCE_DIR}/demo/poisson/CMakeLists.txt)
     endif()
     message(FATAL_ERROR "Generation of CMakeLists.txt files failed: \n${CMAKE_GENERATION_OUTPUT}")
   endif()
@@ -319,7 +319,7 @@ if (PYTHONINTERP_FOUND AND COPY_DEMO_TEST_DEMO_DATA)
   message(STATUS "Copying demo and test data to build directory.")
   message(STATUS "----------------------------------------------")
   execute_process(
-    COMMAND ${PYTHON_EXECUTABLE} "-B" "-u" ${DOLFIN_SOURCE_DIR}/cmake/scripts/copy-test-demo-data.py ${CMAKE_CURRENT_BINARY_DIR}
+    COMMAND ${PYTHON_EXECUTABLE} "-B" "-u" ${DOLFINX_SOURCE_DIR}/cmake/scripts/copy-test-demo-data.py ${CMAKE_CURRENT_BINARY_DIR}
     WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
     RESULT_VARIABLE COPY_DEMO_DATA_RESULT
     OUTPUT_VARIABLE COPY_DEMO_DATA_OUTPUT
@@ -340,7 +340,7 @@ else()
 endif()
 
 # Install the demo source files
-install(DIRECTORY demo DESTINATION ${CMAKE_INSTALL_DATAROOTDIR}/dolfin
+install(DIRECTORY demo DESTINATION ${CMAKE_INSTALL_DATAROOTDIR}/dolfinx
   FILES_MATCHING
   PATTERN "CMakeLists.txt"
   PATTERN "*.cpp"
@@ -359,14 +359,14 @@ enable_testing()
 add_subdirectory(test/unit EXCLUDE_FROM_ALL)
 
 # Add demos but do not add to default target
-set(CMAKE_MODULE_PATH "${DOLFIN_SOURCE_DIR}/cmake/modules")
+set(CMAKE_MODULE_PATH "${DOLFINX_SOURCE_DIR}/cmake/modules")
 add_subdirectory(demo EXCLUDE_FROM_ALL)
 
 #------------------------------------------------------------------------------
 # Add "make uninstall" target
 
 configure_file(
-  "${DOLFIN_SOURCE_DIR}/cmake/templates/cmake_uninstall.cmake.in"
+  "${DOLFINX_SOURCE_DIR}/cmake/templates/cmake_uninstall.cmake.in"
   "${CMAKE_CURRENT_BINARY_DIR}/cmake_uninstall.cmake"
   IMMEDIATE @ONLY)
 

@@ -8,10 +8,10 @@
 
 #include <catch.hpp>
 #include <cmath>
-#include <dolfin.h>
-#include <dolfin/common/MPI.h>
-#include <dolfin/mesh/PartitionData.h>
-#include <dolfin/mesh/Partitioning.h>
+#include <dolfinx.h>
+#include <dolfinx/common/MPI.h>
+#include <dolfinx/mesh/PartitionData.h>
+#include <dolfinx/mesh/Partitioning.h>
 
 using namespace dolfinx;
 
