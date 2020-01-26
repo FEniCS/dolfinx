@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.5.0)
+cmake_minimum_required(VERSION 3.10)
 
 PROJECT(dolfin_pybind11)
 
@@ -7,13 +7,6 @@ find_package(pybind11 REQUIRED CONFIG HINTS ${PYBIND11_DIR} ${PYBIND11_ROOT}
   $ENV{PYBIND11_DIR} $ENV{PYBIND11_ROOT})
 
 find_package(DOLFIN REQUIRED)
-
-# Strict compiler flags
-#include(CheckCXXCompilerFlag)
-#CHECK_CXX_COMPILER_FLAG("-Wall -Werror -pedantic" HAVE_PEDANTIC)
-#if (HAVE_PEDANTIC)
-#   set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall -Werror -pedantic")
-#endif()
 
 # Create the binding library
 pybind11_add_module(cpp SHARED
@@ -31,12 +24,18 @@ pybind11_add_module(cpp SHARED
   dolfin/wrappers/nls.cpp
   dolfin/wrappers/refinement.cpp)
 
+# Add srict compiler flags
+include(CheckCXXCompilerFlag)
+CHECK_CXX_COMPILER_FLAG("-Wall -Werror -pedantic" HAVE_PEDANTIC)
+if (HAVE_PEDANTIC)
+  target_compile_options(cpp PRIVATE -Wall;-Werror;-pedantic)
+endif()
+
 # Add DOLFIN libraries and other config
 target_link_libraries(cpp PRIVATE pybind11::module dolfin)
 
 # Add to CMake search path
-set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH}
-  ${CMAKE_CURRENT_SOURCE_DIR}/cmake)
+set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} ${CMAKE_CURRENT_SOURCE_DIR}/cmake)
 
 # Check for petsc4py
 find_package(PETSc4py REQUIRED)

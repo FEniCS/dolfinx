@@ -1,58 +1,58 @@
-set(DOLFIN_H dolfin.h)
-install(FILES ${DOLFIN_H} DESTINATION ${DOLFIN_INCLUDE_DIR}
-  COMPONENT Development)
-
-# Configure and install dolfin/common/version.h file
-string(REPLACE "+" "" DOLFIN_VERSION_MICRO_STRIPPED ${DOLFIN_VERSION_MICRO})
-configure_file(${DOLFIN_SOURCE_DIR}/dolfin/common/version.h.in
-  ${CMAKE_BINARY_DIR}/dolfin/common/version.h @ONLY)
-install(FILES ${CMAKE_BINARY_DIR}/dolfin/common/version.h
-  DESTINATION ${DOLFIN_INCLUDE_DIR}/dolfin/common/
-  COMPONENT Development
-  )
+#------------------------------------------------------------------------------
+include(GNUInstallDirs)
 
 #------------------------------------------------------------------------------
-# DOLFIN source directories
+# Configure the dolfin/common/version.h file
+
+# NOTE: This modifies a file in the source directory, which probably isn't good
+configure_file(${DOLFIN_SOURCE_DIR}/dolfin/common/version.h.in
+  ${DOLFIN_SOURCE_DIR}/dolfin/common/version.h @ONLY)
+
+#------------------------------------------------------------------------------
+# Delcare the library (target)
+
+add_library(dolfin "")  # The "" is needed for older CMake. Remove later.
+
+#------------------------------------------------------------------------------
+# Add source files to the target
 
 set(DOLFIN_DIRS common fem function generation geometry graph io la mesh nls
-                refinement)
+  refinement)
 
-#------------------------------------------------------------------------------
-# Install header files
+install(FILES dolfin.h DESTINATION ${CMAKE_INSTALL_INCLUDEDIR} COMPONENT Development)
 
-# Initialize lists
-set(DOLFIN_HEADERS)
-set(DOLFIN_SOURCES)
-
+# Add source to dolfin target, and get sets of header files
 foreach(DIR ${DOLFIN_DIRS})
-  # Each subdirectory defines HEADERS and SOURCES
   add_subdirectory(${DIR})
-  set(HEADERS_FULL_PATH)
-  foreach(HEADER_FILE ${HEADERS})
-    list(APPEND HEADERS_FULL_PATH ${CMAKE_CURRENT_SOURCE_DIR}/${DIR}/${HEADER_FILE})
-  endforeach()
-  install(FILES ${HEADERS_FULL_PATH} DESTINATION ${DOLFIN_INCLUDE_DIR}/dolfin/${DIR}
-    COMPONENT Development)
-  list(APPEND DOLFIN_HEADERS ${HEADERS_FULL_PATH})
-  foreach(SOURCE_FILE ${SOURCES})
-    list(APPEND DOLFIN_SOURCES ${CMAKE_CURRENT_SOURCE_DIR}/${DIR}/${SOURCE_FILE})
-  endforeach()
 endforeach()
 
-#------------------------------------------------------------------------------
-# Define libraries
+# Set target include location (for build and installed)
+target_include_directories(dolfin PUBLIC
+                           $<INSTALL_INTERFACE:include>
+                           "$<BUILD_INTERFACE:${DOLFIN_SOURCE_DIR};${DOLFIN_SOURCE_DIR}/dolfin>")
 
-add_library(dolfin ${DOLFIN_SOURCES})
-set_target_properties(dolfin PROPERTIES ${DOLFIN_LIBRARY_PROPERTIES})
+#------------------------------------------------------------------------------
+# Set target properties
+
+set_target_properties(dolfin PROPERTIES
+  VERSION ${DOLFIN_VERSION}
+  SOVERSION ${DOLFIN_VERSION_MAJOR}.${DOLFIN_VERSION_MINOR})
+
+# Add git revision flag to the one affected file
+set_source_files_properties(common/defines.cpp PROPERTIES
+  COMPILE_DEFINITIONS "UFC_SIGNATURE=\"${UFC_SIGNATURE}\";DOLFIN_GIT_COMMIT_HASH=\"${GIT_COMMIT_HASH}\"")
 
 #------------------------------------------------------------------------------
-# General compiler defintions
+# Set compiler options and defintions
 
 # Set 'Developer' build type flags
 target_compile_options(dolfin PRIVATE $<$<CONFIG:Developer>:${DOLFIN_CXX_DEVELOPER_FLAGS}>)
 
-# Set debug definitions
+# Set debug definitions (private)
 target_compile_definitions(dolfin PRIVATE $<$<OR:$<CONFIG:Debug>,$<CONFIG:Developer>>:DEBUG>)
+
+# Add version to definitions (public)
+target_compile_definitions(dolfin PUBLIC DOLFIN_VERSION="${DOLFIN_VERSION}")
 
 #------------------------------------------------------------------------------
 # Add include directories and libraries of required packages
@@ -136,30 +136,23 @@ if (DOLFIN_ENABLE_KAHIP AND KAHIP_FOUND)
 endif()
 
 #------------------------------------------------------------------------------
-# Set compiler flags, include directories and library dependencies
+# Install dolfin library and header files
 
-# Set target includes
-target_include_directories(dolfin PUBLIC
-                           $<INSTALL_INTERFACE:include>
-                           $<BUILD_INTERFACE:${DOLFIN_SOURCE_DIR}>)
-
-# Add CXX definitions
-target_compile_definitions(dolfin PUBLIC DOLFIN_VERSION="${DOLFIN_VERSION}")
-
-# Just add git revision flag to the one affected file
-set_source_files_properties(common/defines.cpp PROPERTIES COMPILE_FLAGS
-  "-DDOLFIN_GIT_COMMIT_HASH=\\\"${GIT_COMMIT_HASH}\\\" -DUFC_SIGNATURE=\\\"${UFC_SIGNATURE}\\\"")
-
-#------------------------------------------------------------------------------
-# Install
-
-install(TARGETS dolfin EXPORT DOLFINTargets
-  RUNTIME DESTINATION ${DOLFIN_LIB_DIR} COMPONENT RuntimeExecutables
-  LIBRARY DESTINATION ${DOLFIN_LIB_DIR} COMPONENT RuntimeLibraries
-  ARCHIVE DESTINATION ${DOLFIN_LIB_DIR} COMPONENT Development
+install(TARGETS dolfin
+  EXPORT DOLFINTargets
+  RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR} COMPONENT RuntimeExecutables
+  LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR} COMPONENT RuntimeLibraries
+  ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR} COMPONENT Development
   )
 
-install(EXPORT DOLFINTargets DESTINATION ${DOLFIN_SHARE_DIR}/cmake)
+# Generate DOLFINTargets.cmake
+install(EXPORT DOLFINTargets DESTINATION ${CMAKE_INSTALL_DATAROOTDIR}/dolfin/cmake)
+
+# Install the header files
+foreach(DIR ${DOLFIN_DIRS})
+  install(FILES ${HEADERS_${DIR}} DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/dolfin/${DIR}
+    COMPONENT Development)
+endforeach()
 
 #------------------------------------------------------------------------------
 # Generate CMake config files (DOLFINConfig{,Version}.cmake)
@@ -169,17 +162,18 @@ write_basic_package_version_file(${CMAKE_BINARY_DIR}/dolfin/DOLFINConfigVersion.
   VERSION ${DOLFIN_VERSION}
   COMPATIBILITY ExactVersion)
 
-configure_package_config_file(${DOLFIN_CMAKE_DIR}/templates/DOLFINConfig.cmake.in
+configure_package_config_file(${DOLFIN_SOURCE_DIR}/cmake/templates/DOLFINConfig.cmake.in
 ${CMAKE_BINARY_DIR}/dolfin/DOLFINConfig.cmake
-INSTALL_DESTINATION ${DOLFIN_SHARE_DIR}/cmake)
+INSTALL_DESTINATION ${CMAKE_INSTALL_DATAROOTDIR}/dolfin/cmake)
 
+# Install CMake helper files
 install(
   FILES
   ${CMAKE_SOURCE_DIR}/cmake/modules/FindPETSc.cmake
   ${CMAKE_SOURCE_DIR}/cmake/modules/FindSLEPc.cmake
   ${CMAKE_BINARY_DIR}/dolfin/DOLFINConfig.cmake
   ${CMAKE_BINARY_DIR}/dolfin/DOLFINConfigVersion.cmake
-  DESTINATION ${DOLFIN_SHARE_DIR}/cmake
+  DESTINATION ${CMAKE_INSTALL_DATAROOTDIR}/dolfin/cmake
   COMPONENT Development)
 
 #------------------------------------------------------------------------------
@@ -190,36 +184,40 @@ set(PKG_REQUIRES "")
 
 # Get link libraries and includes
 get_target_property(PKGCONFIG_DOLFIN_TARGET_LINK_LIBRARIES dolfin INTERFACE_LINK_LIBRARIES)
-get_target_property(PKGCONFIG_DOLFIN_INCLUDE_DIRECTORIES dolfin INTERFACE_INCLUDE_DIRECTORIES)
+get_target_property(PKGCONFIG_DOLFIN_INCLUDE_DIRECTORIES dolfin INTERFACE_SYSTEM_INCLUDE_DIRECTORIES)
 
 # Add imported targets to lists for creating pkg-config file
 set(PKGCONFIG_DOLFIN_LIBS)
 foreach(_target ${PKGCONFIG_DOLFIN_TARGET_LINK_LIBRARIES})
 
-  if ("${_target}" MATCHES "^.*::.*$")
-    # Get include paths
-    get_target_property(_inc_dirs ${_target} INTERFACE_INCLUDE_DIRECTORIES)
-    if (_inc_dirs)
-      list(APPEND PKGCONFIG_DOLFIN_INCLUDE_DIRECTORIES ${_inc_dirs})
+  if ("${_target}" MATCHES "^[^<>]+$")  # Skip "$<foo...>", which we get with static libs
+
+    if ("${_target}" MATCHES "^.*::.*$")
+      # Get include paths
+      get_target_property(_inc_dirs ${_target} INTERFACE_INCLUDE_DIRECTORIES)
+      if (_inc_dirs)
+        list(APPEND PKGCONFIG_DOLFIN_INCLUDE_DIRECTORIES ${_inc_dirs})
+      endif()
+
+      # Get libraries
+      get_target_property(_libs ${_target} INTERFACE_LINK_LIBRARIES)
+      if (_libs)
+        list(APPEND PKGCONFIG_DOLFIN_LIBS ${_libs})
+      endif()
+
+    else()
+      # 'regular' libs, i.e. not imported targets
+      list(APPEND PKGCONFIG_DOLFIN_LIBS ${_target})
     endif()
 
-    # Get libraries
-    get_target_property(_libs ${_target} INTERFACE_LINK_LIBRARIES)
-    if (_libs)
-      list(APPEND PKGCONFIG_DOLFIN_LIBS ${_libs})
+    # Special handling for compiled Boost imported targets
+    if (("${_target}" MATCHES "^.*Boost::.*$") AND NOT "${_target}" STREQUAL "Boost::boost")
+      get_target_property(_libs ${_target} IMPORTED_LOCATION_RELEASE)
+      if (_libs)
+        list(APPEND PKGCONFIG_DOLFIN_LIBS ${_libs})
+      endif()
     endif()
 
-  else()
-    # 'regular' libs, i.e. not imported targets
-    list(APPEND PKGCONFIG_DOLFIN_LIBS ${_target})
-  endif()
-
-  # Special handling for compiled Boost imported targets
-  if (("${_target}" MATCHES "^.*Boost::.*$") AND NOT "${_target}" STREQUAL "Boost::boost")
-    get_target_property(_libs ${_target} IMPORTED_LOCATION_RELEASE)
-    if (_libs)
-      list(APPEND PKGCONFIG_DOLFIN_LIBS ${_libs})
-    endif()
   endif()
 
 endforeach()
@@ -237,7 +235,7 @@ endforeach()
 get_target_property(PKG_DOLFIN_DEFINITIONS dolfin INTERFACE_COMPILE_DEFINITIONS)
 set(PKG_DEFINITIONS)
 foreach(_def ${PKG_DOLFIN_DEFINITIONS})
-    set(PKG_DEFINITIONS "${PKG_DEFINITIONS} -D${_def}")
+  set(PKG_DEFINITIONS "${PKG_DEFINITIONS} -D${_def}")
 endforeach()
 
 # Convert compiler flags and definitions into space separated strings
@@ -276,9 +274,9 @@ endforeach()
 get_target_property(BOOST_INCLUDE_DIR Boost::boost INTERFACE_INCLUDE_DIRECTORIES)
 
 # Configure and install pkg-config file
-configure_file(${DOLFIN_CMAKE_DIR}/templates/dolfin.pc.in ${CMAKE_BINARY_DIR}/dolfin.pc @ONLY)
+configure_file(${DOLFIN_SOURCE_DIR}/cmake/templates/dolfin.pc.in ${CMAKE_BINARY_DIR}/dolfin.pc @ONLY)
 install(FILES ${CMAKE_BINARY_DIR}/dolfin.pc
-  DESTINATION ${DOLFIN_PKGCONFIG_DIR}
+  DESTINATION ${CMAKE_INSTALL_LIBDIR}/pkgconfig
   COMPONENT Development
   )
 #------------------------------------------------------------------------------
