@@ -11,7 +11,7 @@ namespace dolfinx
 */
 }
 
-// DOLFIN function interface
+// DOLFINX function interface
 
 #include <dolfinx/function/Function.h>
 #include <dolfinx/function/FunctionSpace.h>

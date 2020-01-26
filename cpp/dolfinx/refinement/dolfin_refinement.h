@@ -10,6 +10,6 @@ namespace dolfinx
 */
 }
 
-// DOLFIN refinement interface
+// DOLFINX refinement interface
 
 #include <dolfinx/refinement/refine.h>
