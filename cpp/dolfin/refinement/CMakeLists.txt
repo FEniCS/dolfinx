@@ -1,12 +1,12 @@
-set(HEADERS
-  dolfin_refinement.h
-  ParallelRefinement.h
-  PlazaRefinementND.h
-  refine.h
+set(HEADERS_refinement
+  ${CMAKE_CURRENT_SOURCE_DIR}/dolfin_refinement.h
+  ${CMAKE_CURRENT_SOURCE_DIR}/ParallelRefinement.h
+  ${CMAKE_CURRENT_SOURCE_DIR}/PlazaRefinementND.h
+  ${CMAKE_CURRENT_SOURCE_DIR}/refine.h
   PARENT_SCOPE)
 
-set(SOURCES
-  ParallelRefinement.cpp
-  PlazaRefinementND.cpp
-  refine.cpp
-  PARENT_SCOPE)
+target_sources(dolfin PRIVATE
+  ${CMAKE_CURRENT_SOURCE_DIR}/ParallelRefinement.cpp
+  ${CMAKE_CURRENT_SOURCE_DIR}/PlazaRefinementND.cpp
+  ${CMAKE_CURRENT_SOURCE_DIR}/refine.cpp
+)
