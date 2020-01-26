@@ -12,7 +12,7 @@ namespace dolfinx
 {
 
 /// Return DOLFINX version string
-std::string dolfin_version();
+std::string version();
 
 /// Return UFC signature string
 std::string ufc_signature();

@@ -10,7 +10,7 @@
 #include <petscversion.h>
 
 //-------------------------------------------------------------------------
-std::string dolfinx::dolfin_version() { return std::string(DOLFINX_VERSION); }
+std::string dolfinx::version() { return std::string(DOLFINX_VERSION); }
 //-------------------------------------------------------------------------
 std::string dolfinx::ufc_signature() { return std::string(UFC_SIGNATURE); }
 //-------------------------------------------------------------------------
