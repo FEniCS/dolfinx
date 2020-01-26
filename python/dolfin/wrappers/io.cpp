@@ -6,16 +6,16 @@
 
 #include "caster_mpi.h"
 #include "caster_petsc.h"
-#include <dolfin/function/Function.h>
-#include <dolfin/function/FunctionSpace.h>
-#include <dolfin/io/HDF5File.h>
-#include <dolfin/io/VTKFile.h>
-#include <dolfin/io/XDMFFile.h>
-#include <dolfin/io/cells.h>
-#include <dolfin/la/PETScVector.h>
-#include <dolfin/mesh/Mesh.h>
-#include <dolfin/mesh/MeshFunction.h>
-#include <dolfin/mesh/MeshValueCollection.h>
+#include <dolfinx/function/Function.h>
+#include <dolfinx/function/FunctionSpace.h>
+#include <dolfinx/io/HDF5File.h>
+#include <dolfinx/io/VTKFile.h>
+#include <dolfinx/io/XDMFFile.h>
+#include <dolfinx/io/cells.h>
+#include <dolfinx/la/PETScVector.h>
+#include <dolfinx/mesh/Mesh.h>
+#include <dolfinx/mesh/MeshFunction.h>
+#include <dolfinx/mesh/MeshValueCollection.h>
 #include <memory>
 #include <pybind11/eigen.h>
 #include <pybind11/numpy.h>

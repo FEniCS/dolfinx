@@ -6,14 +6,14 @@
 
 #include "caster_petsc.h"
 #include <cstdint>
-#include <dolfin/fem/DofMap.h>
-#include <dolfin/fem/FiniteElement.h>
-#include <dolfin/function/Constant.h>
-#include <dolfin/function/Function.h>
-#include <dolfin/function/FunctionSpace.h>
-#include <dolfin/geometry/BoundingBoxTree.h>
-#include <dolfin/la/PETScVector.h>
-#include <dolfin/mesh/Mesh.h>
+#include <dolfinx/fem/DofMap.h>
+#include <dolfinx/fem/FiniteElement.h>
+#include <dolfinx/function/Constant.h>
+#include <dolfinx/function/Function.h>
+#include <dolfinx/function/FunctionSpace.h>
+#include <dolfinx/geometry/BoundingBoxTree.h>
+#include <dolfinx/la/PETScVector.h>
+#include <dolfinx/mesh/Mesh.h>
 #include <memory>
 #include <petsc4py/petsc4py.h>
 #include <pybind11/eigen.h>

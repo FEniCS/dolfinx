@@ -4,8 +4,8 @@
 //
 // SPDX-License-Identifier:    LGPL-3.0-or-later
 
-#include <dolfin/common/log.h>
-#include <dolfin/mesh/Mesh.h>
+#include <dolfinx/common/log.h>
+#include <dolfinx/mesh/Mesh.h>
 #include <memory>
 #include <pybind11/pybind11.h>
 #include <pybind11/stl.h>

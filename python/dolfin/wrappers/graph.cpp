@@ -4,9 +4,9 @@
 //
 // SPDX-License-Identifier:    LGPL-3.0-or-later
 
-#include <dolfin/graph/Graph.h>
-#include <dolfin/graph/GraphBuilder.h>
-#include <dolfin/mesh/Mesh.h>
+#include <dolfinx/graph/Graph.h>
+#include <dolfinx/graph/GraphBuilder.h>
+#include <dolfinx/mesh/Mesh.h>
 #include <pybind11/pybind11.h>
 #include <pybind11/stl.h>
 #include <vector>

@@ -7,11 +7,11 @@
 #include "MPICommWrapper.h"
 #include "caster_mpi.h"
 #include <array>
-#include <dolfin/generation/BoxMesh.h>
-#include <dolfin/generation/IntervalMesh.h>
-#include <dolfin/generation/RectangleMesh.h>
-#include <dolfin/generation/UnitDiscMesh.h>
-#include <dolfin/generation/UnitTriangleMesh.h>
+#include <dolfinx/generation/BoxMesh.h>
+#include <dolfinx/generation/IntervalMesh.h>
+#include <dolfinx/generation/RectangleMesh.h>
+#include <dolfinx/generation/UnitDiscMesh.h>
+#include <dolfinx/generation/UnitTriangleMesh.h>
 #include <iostream>
 #include <memory>
 #include <pybind11/eigen.h>

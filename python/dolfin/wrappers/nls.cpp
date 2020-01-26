@@ -6,8 +6,8 @@
 
 #include "caster_mpi.h"
 #include "caster_petsc.h"
-#include <dolfin/nls/NewtonSolver.h>
-#include <dolfin/nls/NonlinearProblem.h>
+#include <dolfinx/nls/NewtonSolver.h>
+#include <dolfinx/nls/NonlinearProblem.h>
 #include <memory>
 #include <pybind11/numpy.h>
 #include <pybind11/pybind11.h>

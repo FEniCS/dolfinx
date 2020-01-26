@@ -6,11 +6,11 @@
 
 #include "caster_mpi.h"
 #include "caster_petsc.h"
-#include <dolfin/common/IndexMap.h>
-#include <dolfin/la/PETScVector.h>
-#include <dolfin/la/SparsityPattern.h>
-#include <dolfin/la/VectorSpaceBasis.h>
-#include <dolfin/la/utils.h>
+#include <dolfinx/common/IndexMap.h>
+#include <dolfinx/la/PETScVector.h>
+#include <dolfinx/la/SparsityPattern.h>
+#include <dolfinx/la/VectorSpaceBasis.h>
+#include <dolfinx/la/utils.h>
 #include <memory>
 #include <petsc4py/petsc4py.h>
 #include <pybind11/complex.h>

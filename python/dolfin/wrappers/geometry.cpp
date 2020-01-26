@@ -5,11 +5,11 @@
 // SPDX-License-Identifier:    LGPL-3.0-or-later
 
 #include <Eigen/Dense>
-#include <dolfin/geometry/BoundingBoxTree.h>
-#include <dolfin/geometry/CollisionPredicates.h>
-#include <dolfin/geometry/utils.h>
-#include <dolfin/mesh/Mesh.h>
-#include <dolfin/mesh/MeshEntity.h>
+#include <dolfinx/geometry/BoundingBoxTree.h>
+#include <dolfinx/geometry/CollisionPredicates.h>
+#include <dolfinx/geometry/utils.h>
+#include <dolfinx/mesh/Mesh.h>
+#include <dolfinx/mesh/MeshEntity.h>
 #include <memory>
 #include <pybind11/eigen.h>
 #include <pybind11/numpy.h>

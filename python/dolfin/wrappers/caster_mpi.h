@@ -7,7 +7,7 @@
 #pragma once
 
 #include "MPICommWrapper.h"
-#include <dolfin/common/SubSystemsManager.h>
+#include <dolfinx/common/SubSystemsManager.h>
 #include <mpi4py/mpi4py.h>
 #include <pybind11/pybind11.h>
 

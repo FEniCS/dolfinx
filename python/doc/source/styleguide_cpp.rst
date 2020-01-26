@@ -195,7 +195,7 @@ Implementation files should follow the below template:
     //
     // SPDX-License-Identifier:    LGPL-3.0-or-later
 
-    #include <dolfin/Foo.h>
+    #include <dolfinx/Foo.h>
 
     using namespace dolfin;
 
@@ -216,7 +216,7 @@ Including header files and using forward declarations
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 Do not use ``#include <dolfin.h>`` or ``#include``
-``<dolfin/dolfin_foo.h>`` inside the DOLFIN source tree. Only include
+``<dolfinx/dolfin_foo.h>`` inside the DOLFIN source tree. Only include
 the portions of DOLFIN you are actually using.
 
 Include as few header files as possible and use forward declarations
