@@ -1,19 +1,19 @@
-set(HEADERS
-  BoostGraphColoring.h
-  BoostGraphOrdering.h
-  CSRGraph.h
-  dolfin_graph.h
-  GraphBuilder.h
-  Graph.h
-  KaHIP.h
-  ParMETIS.h
-  SCOTCH.h
+set(HEADERS_graph
+  ${CMAKE_CURRENT_SOURCE_DIR}/BoostGraphColoring.h
+  ${CMAKE_CURRENT_SOURCE_DIR}/BoostGraphOrdering.h
+  ${CMAKE_CURRENT_SOURCE_DIR}/CSRGraph.h
+  ${CMAKE_CURRENT_SOURCE_DIR}/dolfin_graph.h
+  ${CMAKE_CURRENT_SOURCE_DIR}/GraphBuilder.h
+  ${CMAKE_CURRENT_SOURCE_DIR}/Graph.h
+  ${CMAKE_CURRENT_SOURCE_DIR}/KaHIP.h
+  ${CMAKE_CURRENT_SOURCE_DIR}/ParMETIS.h
+  ${CMAKE_CURRENT_SOURCE_DIR}/SCOTCH.h
   PARENT_SCOPE)
 
-set(SOURCES
-  BoostGraphOrdering.cpp
-  GraphBuilder.cpp
-  KaHIP.cpp
-  ParMETIS.cpp
-  SCOTCH.cpp
-  PARENT_SCOPE)
+target_sources(dolfin PRIVATE
+  ${CMAKE_CURRENT_SOURCE_DIR}/BoostGraphOrdering.cpp
+  ${CMAKE_CURRENT_SOURCE_DIR}/GraphBuilder.cpp
+  ${CMAKE_CURRENT_SOURCE_DIR}/KaHIP.cpp
+  ${CMAKE_CURRENT_SOURCE_DIR}/ParMETIS.cpp
+  ${CMAKE_CURRENT_SOURCE_DIR}/SCOTCH.cpp
+)
