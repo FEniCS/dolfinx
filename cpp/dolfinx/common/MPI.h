@@ -289,7 +289,7 @@ void dolfinx::MPI::broadcast(MPI_Comm comm, T& value, std::uint32_t broadcaster)
   MPI_Bcast(&value, 1, mpi_type<T>(), broadcaster, comm);
 }
 //---------------------------------------------------------------------------
-#ifdef DOLFIN_MPI_USE_PUT_GET
+#ifdef DOLFINX_MPI_USE_PUT_GET
 template <typename T>
 void dolfinx::MPI::all_to_all_common(
     MPI_Comm comm, const std::vector<std::vector<T>>& in_values,

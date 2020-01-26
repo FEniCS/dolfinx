@@ -65,7 +65,7 @@ if (MPI_CXX_FOUND)
   endif()
 
   # Try compiling and running test program
-  if (DOLFIN_SKIP_BUILD_TESTS)
+  if (DOLFINX_SKIP_BUILD_TESTS)
     set(PARMETIS_TEST_RUNS TRUE)
     set(PARMETIS_VERSION "UNKNOWN")
     set(PARMETIS_VERSION_OK TRUE)

@@ -60,8 +60,8 @@ include(FeatureSummary)
 option(BUILD_SHARED_LIBS "Build DOLFIN with shared libraries." ON)
 add_feature_info(BUILD_SHARED_LIBS BUILD_SHARED_LIBS "Build DOLFIN with shared libraries.")
 
-option(DOLFIN_SKIP_BUILD_TESTS "Skip build tests for testing usability of dependency packages." OFF)
-add_feature_info(DOLFIN_SKIP_BUILD_TESTS DOLFIN_SKIP_BUILD_TESTS "Skip build tests for testing usability of dependency packages.")
+option(DOLFINX_SKIP_BUILD_TESTS "Skip build tests for testing usability of dependency packages." OFF)
+add_feature_info(DOLFINX_SKIP_BUILD_TESTS DOLFINX_SKIP_BUILD_TESTS "Skip build tests for testing usability of dependency packages.")
 
 # Add shared library paths so shared libs in non-system paths are found
 option(CMAKE_INSTALL_RPATH_USE_LINK_PATH "Add paths to linker search and installed rpath." ON)
@@ -77,7 +77,7 @@ list(APPEND OPTIONAL_PACKAGES "KaHIP")
 
 # Add options
 foreach (OPTIONAL_PACKAGE ${OPTIONAL_PACKAGES})
-  string(TOUPPER "DOLFIN_ENABLE_${OPTIONAL_PACKAGE}" OPTION_NAME)
+  string(TOUPPER "DOLFINX_ENABLE_${OPTIONAL_PACKAGE}" OPTION_NAME)
   option(${OPTION_NAME} "Compile with support for ${OPTIONAL_PACKAGE}." ON)
   add_feature_info(${OPTION_NAME} ${OPTION_NAME} "Compile with support for ${OPTIONAL_PACKAGE}.")
 endforeach()
@@ -101,25 +101,25 @@ endif()
 include(CheckCXXCompilerFlag)
 CHECK_CXX_COMPILER_FLAG(-pipe HAVE_PIPE)
 if (HAVE_PIPE)
-  list(APPEND DOLFIN_CXX_DEVELOPER_FLAGS -pipe)
+  list(APPEND DOLFINX_CXX_DEVELOPER_FLAGS -pipe)
 endif()
 
 # Add some strict compiler checks
 CHECK_CXX_COMPILER_FLAG("-Wall -Werror -pedantic" HAVE_PEDANTIC)
 if (HAVE_PEDANTIC)
-  list(APPEND DOLFIN_CXX_DEVELOPER_FLAGS -Wall;-Werror;-pedantic)
+  list(APPEND DOLFINX_CXX_DEVELOPER_FLAGS -Wall;-Werror;-pedantic)
 endif()
 
 # Debug flags
 CHECK_CXX_COMPILER_FLAG(-g HAVE_DEBUG)
 if (HAVE_DEBUG)
-  list(APPEND DOLFIN_CXX_DEVELOPER_FLAGS -g)
+  list(APPEND DOLFINX_CXX_DEVELOPER_FLAGS -g)
 endif()
 
 # Optimisation
 CHECK_CXX_COMPILER_FLAG(-O2 HAVE_O2_OPTIMISATION)
 if (HAVE_O2_OPTIMISATION)
-  list(APPEND DOLFIN_CXX_DEVELOPER_FLAGS -O2)
+  list(APPEND DOLFINX_CXX_DEVELOPER_FLAGS -O2)
 endif()
 
 #------------------------------------------------------------------------------
@@ -145,16 +145,16 @@ find_package(Boost 1.56 QUIET REQUIRED)
 # Boost or CMake. Ubuntu 16.04 requires linking DOLFIN programs with
 # filesystem, whereas Ubuntu 16.10 and macOS (Homebrew) do not.
 if (Boost_VERSION VERSION_LESS 106100)
-  set(DOLFIN_BOOST_COMPONENTS_PUBLIC filesystem timer)
-  set(DOLFIN_BOOST_COMPONENTS_PRIVATE program_options)
+  set(DOLFINX_BOOST_COMPONENTS_PUBLIC filesystem timer)
+  set(DOLFINX_BOOST_COMPONENTS_PRIVATE program_options)
 else()
-  set(DOLFIN_BOOST_COMPONENTS_PUBLIC timer)
-  set(DOLFIN_BOOST_COMPONENTS_PRIVATE filesystem program_options)
+  set(DOLFINX_BOOST_COMPONENTS_PUBLIC timer)
+  set(DOLFINX_BOOST_COMPONENTS_PRIVATE filesystem program_options)
 endif()
 
 # Find required Boost libraries
 find_package(Boost COMPONENTS
-  ${DOLFIN_BOOST_COMPONENTS_PUBLIC} ${DOLFIN_BOOST_COMPONENTS_PRIVATE} REQUIRED)
+  ${DOLFINX_BOOST_COMPONENTS_PUBLIC} ${DOLFINX_BOOST_COMPONENTS_PRIVATE} REQUIRED)
 set_package_properties(Boost PROPERTIES TYPE REQUIRED
   DESCRIPTION "Boost C++ libraries"
   URL "http://www.boost.org")
@@ -198,7 +198,7 @@ set_package_properties(SCOTCH PROPERTIES TYPE REQUIRED
 
 # Check for SLEPc
 set(SLEPC_FOUND FALSE)
-if (DOLFIN_ENABLE_SLEPC)
+if (DOLFINX_ENABLE_SLEPC)
   find_package(SLEPc 3.10)
   set_package_properties(SLEPc PROPERTIES TYPE OPTIONAL
     DESCRIPTION "Scalable Library for Eigenvalue Problem Computations"
@@ -206,7 +206,7 @@ if (DOLFIN_ENABLE_SLEPC)
 endif()
 
 # Check for ParMETIS
-if (DOLFIN_ENABLE_PARMETIS)
+if (DOLFINX_ENABLE_PARMETIS)
   find_package(ParMETIS 4.0.2)
   set_package_properties(ParMETIS PROPERTIES TYPE OPTIONAL
     DESCRIPTION "Parallel Graph Partitioning and Fill-reducing Matrix Ordering"
@@ -215,7 +215,7 @@ if (DOLFIN_ENABLE_PARMETIS)
 endif()
 
 # Check for KaHIP
-if (DOLFIN_ENABLE_KAHIP)
+if (DOLFINX_ENABLE_KAHIP)
   find_package(KaHIP)
   set_package_properties(KaHIP PROPERTIES TYPE OPTIONAL
     DESCRIPTION "A family of graph partitioning programs"
