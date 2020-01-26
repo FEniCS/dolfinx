@@ -63,3 +63,13 @@ import sys
 cpp.common.SubSystemsManager.init_logging(sys.argv)
 del sys
 cpp.common.SubSystemsManager.init_petsc()
+
+def get_include(user=False):
+    import os
+    d = os.path.dirname(__file__)
+    if os.path.exists(os.path.join(d, "include")):
+        # Package is installed
+        return os.path.join(d, "include")
+    else:
+        # Package is from a source directory
+        return os.path.join(os.path.dirname(d), "src")

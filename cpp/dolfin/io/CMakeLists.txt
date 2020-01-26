@@ -1,27 +1,27 @@
-set(HEADERS
-  dolfin_io.h
-  cells.h
-  HDF5File.h
-  HDF5Interface.h
-  HDF5Utility.h
-  VTKFile.h
-  VTKWriter.h
-  XDMFFile.h
-  xdmf_read.h
-  xdmf_utils.h
-  xdmf_write.h
+set(HEADERS_io
+  ${CMAKE_CURRENT_SOURCE_DIR}/dolfin_io.h
+  ${CMAKE_CURRENT_SOURCE_DIR}/cells.h
+  ${CMAKE_CURRENT_SOURCE_DIR}/HDF5File.h
+  ${CMAKE_CURRENT_SOURCE_DIR}/HDF5Interface.h
+  ${CMAKE_CURRENT_SOURCE_DIR}/HDF5Utility.h
+  ${CMAKE_CURRENT_SOURCE_DIR}/VTKFile.h
+  ${CMAKE_CURRENT_SOURCE_DIR}/VTKWriter.h
+  ${CMAKE_CURRENT_SOURCE_DIR}/XDMFFile.h
+  ${CMAKE_CURRENT_SOURCE_DIR}/xdmf_read.h
+  ${CMAKE_CURRENT_SOURCE_DIR}/xdmf_utils.h
+  ${CMAKE_CURRENT_SOURCE_DIR}/xdmf_write.h
   PARENT_SCOPE)
 
-set(SOURCES
-  cells.cpp
-  HDF5File.cpp
-  HDF5Interface.cpp
-  HDF5Utility.cpp
-  pugixml.cpp
-  VTKFile.cpp
-  VTKWriter.cpp
-  XDMFFile.cpp
-  xdmf_read.cpp
-  xdmf_utils.cpp
-  xdmf_write.cpp
-  PARENT_SCOPE)
+target_sources(dolfin PRIVATE
+  ${CMAKE_CURRENT_SOURCE_DIR}/cells.cpp
+  ${CMAKE_CURRENT_SOURCE_DIR}/HDF5File.cpp
+  ${CMAKE_CURRENT_SOURCE_DIR}/HDF5Interface.cpp
+  ${CMAKE_CURRENT_SOURCE_DIR}/HDF5Utility.cpp
+  ${CMAKE_CURRENT_SOURCE_DIR}/pugixml.cpp
+  ${CMAKE_CURRENT_SOURCE_DIR}/VTKFile.cpp
+  ${CMAKE_CURRENT_SOURCE_DIR}/VTKWriter.cpp
+  ${CMAKE_CURRENT_SOURCE_DIR}/XDMFFile.cpp
+  ${CMAKE_CURRENT_SOURCE_DIR}/xdmf_read.cpp
+  ${CMAKE_CURRENT_SOURCE_DIR}/xdmf_utils.cpp
+  ${CMAKE_CURRENT_SOURCE_DIR}/xdmf_write.cpp
+)

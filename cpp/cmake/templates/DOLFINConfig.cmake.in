@@ -5,51 +5,41 @@
 
 # FIXME: Check that naming conforms to CMake standards
 
-if (POLICY CMP0011)
-  cmake_policy(SET CMP0011 NEW)
-endif()
-
-if (POLICY CMP0012)
-  cmake_policy(SET CMP0012 NEW)
-endif()
-
-# Compute path
-get_filename_component(DOLFIN_CMAKE_DIR "${CMAKE_CURRENT_LIST_FILE}" PATH)
-
-# Library dependencies (contains definitions for IMPORTED targets)
-# NOTE: DOLFIN demo CMakeLists.txt are written to be stand-alone, as
-# well as the build system building the demo. Therefore, we need the
-# below guard to avoid exporting the targets twice.
-if (NOT TARGET dolfin)
-  include("${DOLFIN_CMAKE_DIR}/DOLFINTargets.cmake")
-endif()
+@PACKAGE_INIT@
 
 # Compilers
-set(DOLFIN_CXX_COMPILER "@CMAKE_CXX_COMPILER@")
+set_and_check(DOLFIN_CXX_COMPILER "@CMAKE_CXX_COMPILER@")
 
-# Compiler defintions
-set(DOLFIN_CXX_DEFINITIONS "-DDOLFIN_VERSION=\"@DOLFIN_VERSION@\";@DOLFIN_CXX_DEFINITIONS@")
+include(CMakeFindDependencyMacro)
+find_dependency(MPI REQUIRED)
 
-# Compiler flags
-set(DOLFIN_CXX_FLAGS "@CMAKE_CXX_FLAGS@")
+# Check for Boost
+set(BOOST_ROOT $ENV{BOOST_DIR} $ENV{BOOST_HOME})
+if (BOOST_ROOT)
+  set(Boost_NO_SYSTEM_PATHS on)
+endif()
 
-# Linker flags
-set(DOLFIN_LINK_FLAGS "@CMAKE_EXE_LINKER_FLAGS@")
+# Prevent FindBoost.cmake from looking for system Boost{foo}.cmake files
+set(Boost_NO_BOOST_CMAKE true)
 
-# Include directories
-set(DOLFIN_INCLUDE_DIRS "@CMAKE_INSTALL_PREFIX@/@DOLFIN_INCLUDE_DIR@")
+set(Boost_USE_MULTITHREADED $ENV{BOOST_USE_MULTITHREADED})
+find_dependency(Boost 1.56 QUIET REQUIRED COMPONENTS @DOLFIN_BOOST_COMPONENTS_PUBLIC@;@DOLFIN_BOOST_COMPONENTS_PRIVATE@)
 
-# Third party include directories
-set(DOLFIN_3RD_PARTY_INCLUDE_DIRS "@DOLFIN_DEP_INCLUDE_DIRECTORIES@;@DOLFIN_DEP_SYSTEM_INCLUDE_DIRECTORIES@")
+if (NOT TARGET PETSC::petsc)
+  set(DOLFIN_SKIP_BUILD_TESTS TRUE)
+  list(APPEND CMAKE_MODULE_PATH "@CMAKE_INSTALL_PREFIX@/@CMAKE_INSTALL_DATAROOTDIR@/dolfin/cmake")
+  find_dependency(PETSc REQUIRED QUIET)
+endif()
 
-# DOLFIN library
-set(DOLFIN_LIBRARIES dolfin)
+if (@SLEPC_FOUND@)
+  if (NOT TARGET SLEPC::slepc)
+    set(DOLFIN_SKIP_BUILD_TESTS TRUE)
+    find_dependency(SLEPc REQUIRED QUIET)
+  endif()
+endif()
 
-# Version
-set(DOLFIN_VERSION_MAJOR "@DOLFIN_VERSION_MAJOR@")
-set(DOLFIN_VERSION_MINOR "@DOLFIN_VERSION_MINOR@")
-set(DOLFIN_VERSION_MICRO "@DOLFIN_VERSION_MICRO@")
-set(DOLFIN_VERSION_STR   "@DOLFIN_VERSION@")
+if (NOT TARGET dolfin)
+  include("${CMAKE_CURRENT_LIST_DIR}/DOLFINTargets.cmake")
+endif()
 
-# The location of the UseDOLFIN.cmake file
-set(DOLFIN_USE_FILE "${DOLFIN_CMAKE_DIR}/UseDOLFIN.cmake")
+check_required_components(DOLFIN)
