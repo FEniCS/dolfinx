@@ -10,7 +10,7 @@ namespace dolfinx
 */
 }
 
-// DOLFIN common
+// DOLFINX common
 
 #include <dolfinx/common/MPI.h>
 #include <dolfinx/common/Set.h>

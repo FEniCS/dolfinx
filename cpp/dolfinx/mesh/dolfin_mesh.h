@@ -9,7 +9,7 @@ namespace dolfinx
 */
 }
 
-// DOLFIN mesh interface
+// DOLFINX mesh interface
 
 #include <dolfinx/mesh/Connectivity.h>
 #include <dolfinx/mesh/Geometry.h>

@@ -1,6 +1,6 @@
 // Copyright (C) 2012-2016 Chris N. Richardson and Garth N. Wells
 //
-// This file is part of DOLFIN (https://www.fenicsproject.org)
+// This file is part of DOLFINX (https://www.fenicsproject.org)
 //
 // SPDX-License-Identifier:    LGPL-3.0-or-later
 
@@ -82,7 +82,7 @@ xdmf_utils::get_cell_type(const pugi::xml_node& topology_node)
          {"quadrilateral", {"quadrilateral", 1}},
          {"hexahedron", {"hexahedron", 1}}};
 
-  // Convert XDMF cell type string to DOLFIN cell type string
+  // Convert XDMF cell type string to DOLFINX cell type string
   std::string cell_type = type_attr.as_string();
   boost::algorithm::to_lower(cell_type);
   auto it = xdmf_to_dolfin.find(cell_type);

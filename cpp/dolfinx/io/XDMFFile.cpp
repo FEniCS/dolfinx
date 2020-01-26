@@ -1,6 +1,6 @@
 // Copyright (C) 2012-2016 Chris N. Richardson and Garth N. Wells
 //
-// This file is part of DOLFIN (https://www.fenicsproject.org)
+// This file is part of DOLFINX (https://www.fenicsproject.org)
 //
 // SPDX-License-Identifier:    LGPL-3.0-or-later
 
@@ -1462,7 +1462,7 @@ mesh::Mesh XDMFFile::read_mesh(const mesh::GhostMode ghost_mode) const
   auto [cell_type, points, cells, global_cell_indices]
       = read_mesh_data(_mpi_comm.comm());
 
-  //  Permute cells to DOLFIN ordering
+  //  Permute cells to DOLFINX ordering
   cells = io::cells::permute_ordering(
       cells, io::cells::vtk_to_dolfin(cell_type, cells.cols()));
 

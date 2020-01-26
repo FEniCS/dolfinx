@@ -1,6 +1,6 @@
 #pragma once
 
-// DOLFIN interface
+// DOLFINX interface
 
 #include <dolfinx/common/dolfin_common.h>
 #include <dolfinx/fem/dolfin_fem.h>

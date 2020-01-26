@@ -1,6 +1,6 @@
 // Copyright (C) 2016 Patrick E. Farrell and Garth N. Wells
 //
-// This file is part of DOLFIN (https://www.fenicsproject.org)
+// This file is part of DOLFINX (https://www.fenicsproject.org)
 //
 // SPDX-License-Identifier:    LGPL-3.0-or-later
 
@@ -773,7 +773,7 @@ void PETScDMCollection::find_exterior_points(
 //-----------------------------------------------------------------------------
 PetscErrorCode PETScDMCollection::create_global_vector(DM dm, Vec* vec)
 {
-  // Get DOLFIN FunctiobSpace from the PETSc DM object
+  // Get DOLFINX FunctionSpace from the PETSc DM object
   std::shared_ptr<function::FunctionSpace>* V;
   DMShellGetContext(dm, (void**)&V);
 
@@ -791,8 +791,8 @@ PetscErrorCode PETScDMCollection::create_global_vector(DM dm, Vec* vec)
 PetscErrorCode PETScDMCollection::create_interpolation(DM dmc, DM dmf, Mat* mat,
                                                        Vec* vec)
 {
-  // Get DOLFIN function::FunctionSpaces from PETSc DM objects (V0 is coarse
-  // space, V1 is fine space)
+  // Get DOLFINX function::FunctionSpaces from PETSc DM objects (V0 is
+  // coarse space, V1 is fine space)
   function::FunctionSpace *V0(nullptr), *V1(nullptr);
   DMShellGetContext(dmc, (void**)&V0);
   DMShellGetContext(dmf, (void**)&V1);

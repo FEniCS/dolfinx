@@ -1,4 +1,4 @@
-# Helper file for setting non-default DOLFIN environment variables
+# Helper file for setting non-default DOLFINX environment variables
 
 # Common Unix variables
 export @OS_LIBRARY_PATH_NAME@=@CMAKE_INSTALL_PREFIX@/@CMAKE_INSTALL_LIBDIR@:$@OS_LIBRARY_PATH_NAME@

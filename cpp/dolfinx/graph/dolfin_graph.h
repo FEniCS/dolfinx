@@ -10,7 +10,7 @@ namespace dolfinx
 */
 }
 
-// DOLFIN graph interface
+// DOLFINX graph interface
 
 #include <dolfinx/graph/BoostGraphOrdering.h>
 #include <dolfinx/graph/Graph.h>
