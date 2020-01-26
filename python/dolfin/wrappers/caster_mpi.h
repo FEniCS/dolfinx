@@ -1,13 +1,13 @@
 // Copyright (C) 2017 Chris Richardson, Garth N. Wells and Tormod Landet
 //
-// This file is part of DOLFIN (https://www.fenicsproject.org)
+// This file is part of DOLFINX (https://www.fenicsproject.org)
 //
 // SPDX-License-Identifier:    LGPL-3.0-or-later
 
 #pragma once
 
 #include "MPICommWrapper.h"
-#include <dolfin/common/SubSystemsManager.h>
+#include <dolfinx/common/SubSystemsManager.h>
 #include <mpi4py/mpi4py.h>
 #include <pybind11/pybind11.h>
 
@@ -15,7 +15,7 @@
 #define VERIFY_MPI4PY(func)                                                    \
   if (!func)                                                                   \
   {                                                                            \
-    dolfin::common::SubSystemsManager::init_mpi();                             \
+    dolfinx::common::SubSystemsManager::init_mpi();                             \
     int rc = import_mpi4py();                                                  \
     if (rc != 0)                                                               \
     {                                                                          \

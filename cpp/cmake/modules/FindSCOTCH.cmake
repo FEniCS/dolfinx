@@ -140,7 +140,7 @@ if (NOT "${SCOTCH_VERSION}" VERSION_LESS "6")
 endif()
 
 # Try compiling and running test program
-if (DOLFIN_SKIP_BUILD_TESTS)
+if (DOLFINX_SKIP_BUILD_TESTS)
   message(STATUS "Found SCOTCH (version ${SCOTCH_VERSION})")
   set(SCOTCH_TEST_RUNS TRUE)
 elseif (SCOTCH_INCLUDE_DIRS AND SCOTCH_LIBRARIES)
