@@ -23,7 +23,7 @@ from ufl import (SpatialCoordinate, div, dx, grad, inner, ds, dS, avg, jump,
                                       "UnitCubeMesh_tetra.xdmf",
                                       "UnitSquareMesh_quad.xdmf",
                                       "UnitCubeMesh_hexahedron.xdmf"])
-def test_manufactured_poisson_dg(degree, filename, component, datadir):
+def test_manufactured_poisson_dg(degree, filename, datadir):
     """ Manufactured Poisson problem, solving u = x[component]**n, where n is the
     degree of the Lagrange function space.
 
