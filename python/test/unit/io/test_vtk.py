@@ -8,13 +8,13 @@ import os
 
 import pytest
 
-from dolfin import (MPI, Function, FunctionSpace, MeshFunction,
-                    TensorFunctionSpace, UnitCubeMesh, UnitIntervalMesh,
-                    UnitSquareMesh, VectorFunctionSpace)
-from dolfin.cpp.mesh import CellType
-from dolfin.io import VTKFile
-from dolfin_utils.test.fixtures import tempdir
-from dolfin_utils.test.skips import skip_in_parallel
+from dolfinx import (MPI, Function, FunctionSpace, MeshFunction,
+                     TensorFunctionSpace, UnitCubeMesh, UnitIntervalMesh,
+                     UnitSquareMesh, VectorFunctionSpace)
+from dolfinx.cpp.mesh import CellType
+from dolfinx.io import VTKFile
+from dolfinx_utils.test.fixtures import tempdir
+from dolfinx_utils.test.skips import skip_in_parallel
 
 assert (tempdir)
 

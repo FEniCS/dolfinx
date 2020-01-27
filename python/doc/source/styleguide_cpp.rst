@@ -215,7 +215,7 @@ Implementation files should follow the below template:
 Including header files and using forward declarations
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Do not use ``#include <dolfin.h>`` or ``#include``
+Do not use ``#include <dolfinx.h>`` or ``#include``
 ``<dolfinx/dolfin_foo.h>`` inside the DOLFIN source tree. Only include
 the portions of DOLFIN you are actually using.
 

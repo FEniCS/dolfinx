@@ -14,19 +14,19 @@ find_package(pybind11 REQUIRED CONFIG HINTS ${PYBIND11_DIR} ${PYBIND11_ROOT}
 
 # Create the binding library
 pybind11_add_module(cpp SHARED
-  dolfin/wrappers/dolfin.cpp
-  dolfin/wrappers/common.cpp
-  dolfin/wrappers/fem.cpp
-  dolfin/wrappers/function.cpp
-  dolfin/wrappers/generation.cpp
-  dolfin/wrappers/geometry.cpp
-  dolfin/wrappers/graph.cpp
-  dolfin/wrappers/io.cpp
-  dolfin/wrappers/la.cpp
-  dolfin/wrappers/log.cpp
-  dolfin/wrappers/mesh.cpp
-  dolfin/wrappers/nls.cpp
-  dolfin/wrappers/refinement.cpp)
+  dolfinx/wrappers/dolfin.cpp
+  dolfinx/wrappers/common.cpp
+  dolfinx/wrappers/fem.cpp
+  dolfinx/wrappers/function.cpp
+  dolfinx/wrappers/generation.cpp
+  dolfinx/wrappers/geometry.cpp
+  dolfinx/wrappers/graph.cpp
+  dolfinx/wrappers/io.cpp
+  dolfinx/wrappers/la.cpp
+  dolfinx/wrappers/log.cpp
+  dolfinx/wrappers/mesh.cpp
+  dolfinx/wrappers/nls.cpp
+  dolfinx/wrappers/refinement.cpp)
 
 # Add srict compiler flags
 include(CheckCXXCompilerFlag)
@@ -35,7 +35,7 @@ if (HAVE_PEDANTIC)
   target_compile_options(cpp PRIVATE -Wall;-Werror;-pedantic)
 endif()
 
-# Add DOLFIN libraries and other config
+# Add DOLFINX libraries and other config
 target_link_libraries(cpp PRIVATE pybind11::module dolfinx)
 
 # Add to CMake search path
