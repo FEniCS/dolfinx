@@ -85,18 +85,6 @@ public:
     throw std::runtime_error("Vertex was not found");
   }
 
-  /// Returns the local indices of vertex on the given entity
-  /// @param[in] entity The entity
-  /// @return The local indices
-  int* get_local_vertex_indices(const MeshEntity& entity) const
-  {
-    int* output = new int[entity.num_entities(0)];
-    const std::int32_t* vertices = entity.entities(0);
-    for (int v = 0; v < entity.num_entities(0); ++v)
-      output[v] = get_vertex_local_index(vertices[v]);
-    return output;
-  }
-
   /// Return array of indices for incident mesh entities of given
   /// topological dimension
   /// @param[in] dim The topological dimension

@@ -53,7 +53,8 @@ int MeshEntity::facet_permutation(const MeshEntity& entity) const
   // lowest numbered vertex to the highest numbered vertex
   if (entity._dim == 1)
   {
-    const int* e_vertices = get_local_vertex_indices(entity);
+    const std::int32_t* vertices = entity.entities(0);
+    const int e_vertices[2] = {get_vertex_local_index(vertices[0]), get_vertex_local_index(vertices[1])};
     // Return the number of reflections
     return e_vertices[1] < e_vertices[0];
   }
@@ -61,14 +62,16 @@ int MeshEntity::facet_permutation(const MeshEntity& entity) const
   // Triangles and quadrilaterals
   if (entity._dim == 2)
   {
-    // Find the index of the lowest numbered vertex
-    int num_min = -1;
-    const int* e_vertices = get_local_vertex_indices(entity);
-    for (int v = 0; v < entity.num_entities(0); ++v)
-      if (num_min == -1 || e_vertices[v] < e_vertices[num_min])
-        num_min = v;
     if (entity.num_entities(0) == 3)
     { // triangle
+      // Find the index of the lowest numbered vertex
+      int num_min = -1;
+      const std::int32_t* vertices = entity.entities(0);
+      const int e_vertices[3] = {get_vertex_local_index(vertices[0]), get_vertex_local_index(vertices[1]),
+                                 get_vertex_local_index(vertices[2])};
+      for (int v = 0; v < 3; ++v)
+        if (num_min == -1 || e_vertices[v] < e_vertices[num_min])
+          num_min = v;
       // pre is the number of the next vertex clockwise from the lowest numbered
       // vertex
       const int pre = num_min == 0 ? e_vertices[entity.num_entities(0) - 1]
@@ -86,6 +89,14 @@ int MeshEntity::facet_permutation(const MeshEntity& entity) const
     }
     if (entity.num_entities(0) == 4)
     { // quadrilateral
+      // Find the index of the lowest numbered vertex
+      int num_min = -1;
+      const std::int32_t* vertices = entity.entities(0);
+      const int e_vertices[4] = {get_vertex_local_index(vertices[0]), get_vertex_local_index(vertices[1]),
+                                 get_vertex_local_index(vertices[2]), get_vertex_local_index(vertices[3])};
+      for (int v = 0; v < 4; ++v)
+        if (num_min == -1 || e_vertices[v] < e_vertices[num_min])
+          num_min = v;
       // rots is the number of rotations to get the lowest numbered vertex to
       // the origin
       int rots = num_min;
