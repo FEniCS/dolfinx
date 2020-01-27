@@ -19,17 +19,18 @@ from ufl import (SpatialCoordinate, TestFunction, TrialFunction, div, dx, grad,
                  inner)
 
 
-@pytest.mark.parametrize("n", [2, 3, 4])
-@pytest.mark.parametrize("component", [0, 1, 2])
 @pytest.mark.parametrize("filename", ["UnitCubeMesh_hexahedron.xdmf",
                                       "UnitCubeMesh_tetra.xdmf",
                                       "UnitSquareMesh_quad.xdmf",
                                       "UnitSquareMesh_triangle.xdmf"])
+@pytest.mark.parametrize("component", [0, 1, 2])
+@pytest.mark.parametrize("n", [2, 3, 4])
 def test_manufactured_poisson(n, filename, component, datadir):
     """ Manufactured Poisson problem, solving u = x[component]**p, where p is the
     degree of the Lagrange function space.
 
     """
+
     with XDMFFile(MPI.comm_world, os.path.join(datadir, filename)) as xdmf:
         mesh = xdmf.read_mesh(GhostMode.none)
 
