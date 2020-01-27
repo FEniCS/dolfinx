@@ -12,7 +12,7 @@
 #    docker build --target dev-env-real -f Dockerfile.dev-env .
 #    docker build --target dev-env-complex -f Dockerfile.dev-env .
 
-ARG GMSH_VERSION=4.4.1
+ARG GMSH_VERSION=4.5.1
 ARG PYBIND11_VERSION=2.4.3
 ARG PETSC_VERSION=3.12.3
 ARG SLEPC_VERSION=3.12.1
@@ -104,7 +104,7 @@ ENV PYTHONPATH=/usr/local/gmsh-${GMSH_VERSION}-Linux64-sdk/lib
 # - Second set of packages are recommended and/or required to build
 #   documentation or run tests.
 # - Third set of packages are optional but required for
-#   pygmsh/meshio/DOLFIN mesh pipeline.
+#   pygmsh/meshio/DOLFINX mesh pipeline.
 RUN pip3 install --no-cache-dir mpi4py numba && \
     pip3 install --no-cache-dir cffi cppimport flake8 pytest pytest-xdist sphinx sphinx_rtd_theme && \
     export HDF5_MPI="ON" && \
