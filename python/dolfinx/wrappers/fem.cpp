@@ -226,7 +226,7 @@ void fem(py::module& m)
       m, "CoordinateElement", "Coordinate mapping object")
       .def("push_forward", &dolfinx::fem::CoordinateElement::push_forward);
 
-  // dolfin::fem::DirichletBC
+  // dolfinx::fem::DirichletBC
   py::class_<dolfinx::fem::DirichletBC,
              std::shared_ptr<dolfinx::fem::DirichletBC>>
       dirichletbc(

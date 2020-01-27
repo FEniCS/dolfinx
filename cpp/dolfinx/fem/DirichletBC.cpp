@@ -279,7 +279,7 @@ Eigen::Array<PetscInt, Eigen::Dynamic, 1> fem::locate_dofs_topological(
   assert(V.dofmap());
   const DofMap& dofmap = *V.dofmap();
   assert(V.mesh());
-  dolfin::mesh::Mesh mesh = *V.mesh();
+  mesh::Mesh mesh = *V.mesh();
 
   const int tdim = mesh.topology().dim();
 
