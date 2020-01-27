@@ -183,7 +183,7 @@ def test_global_dof_builder(mesh_factory):
 
 
 def test_entity_dofs(mesh):
-    """Test that num entity dofs is correctly wrapped to dolfin::DofMap"""
+    """Test that num entity dofs is correctly wrapped to dolfinx::DofMap"""
     V = FunctionSpace(mesh, ("CG", 1))
     assert V.dofmap.dof_layout.num_entity_dofs(0) == 1
     assert V.dofmap.dof_layout.num_entity_dofs(1) == 0

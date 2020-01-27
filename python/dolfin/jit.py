@@ -14,11 +14,11 @@ import ffc.codegeneration.jit
 import ufl
 from dolfin import common, cpp
 
-if dolfin.pkgconfig.exists("dolfin"):
-    dolfin_pc = dolfin.pkgconfig.parse("dolfin")
+if dolfin.pkgconfig.exists("dolfinx"):
+    dolfin_pc = dolfin.pkgconfig.parse("dolfinx")
 else:
     raise RuntimeError(
-        "Could not find DOLFIN pkg-config file. Make sure appropriate paths are set."
+        "Could not find DOLFINX pkg-config file. Make sure appropriate paths are set."
     )
 
 

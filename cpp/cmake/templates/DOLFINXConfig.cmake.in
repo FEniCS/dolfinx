@@ -1,0 +1,45 @@
+# - Build details for DOLFIN: Dynamic Object-oriented Library for
+# - FINite element computation
+#
+# This file has been automatically generated.
+
+# FIXME: Check that naming conforms to CMake standards
+
+@PACKAGE_INIT@
+
+# Compilers
+set_and_check(DOLFINX_CXX_COMPILER "@CMAKE_CXX_COMPILER@")
+
+include(CMakeFindDependencyMacro)
+find_dependency(MPI REQUIRED)
+
+# Check for Boost
+set(BOOST_ROOT $ENV{BOOST_DIR} $ENV{BOOST_HOME})
+if (BOOST_ROOT)
+  set(Boost_NO_SYSTEM_PATHS on)
+endif()
+
+# Prevent FindBoost.cmake from looking for system Boost{foo}.cmake files
+set(Boost_NO_BOOST_CMAKE true)
+
+set(Boost_USE_MULTITHREADED $ENV{BOOST_USE_MULTITHREADED})
+find_dependency(Boost 1.56 QUIET REQUIRED COMPONENTS @DOLFINX_BOOST_COMPONENTS_PUBLIC@;@DOLFINX_BOOST_COMPONENTS_PRIVATE@)
+
+if (NOT TARGET PETSC::petsc)
+  set(DOLFINX_SKIP_BUILD_TESTS TRUE)
+  list(APPEND CMAKE_MODULE_PATH "@CMAKE_INSTALL_PREFIX@/@CMAKE_INSTALL_DATAROOTDIR@/dolfinx/cmake")
+  find_dependency(PETSc REQUIRED QUIET)
+endif()
+
+if (@SLEPC_FOUND@)
+  if (NOT TARGET SLEPC::slepc)
+    set(DOLFINX_SKIP_BUILD_TESTS TRUE)
+    find_dependency(SLEPc REQUIRED QUIET)
+  endif()
+endif()
+
+if (NOT TARGET dolfinx)
+  include("${CMAKE_CURRENT_LIST_DIR}/DOLFINXTargets.cmake")
+endif()
+
+check_required_components(DOLFINX)
