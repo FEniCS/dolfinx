@@ -76,15 +76,15 @@ def test_second_order_tri():
     #  |       \   |   |      \   |
     #  |         \ |   |        \ |
     #  *-----*-----*   0----4-----1
-    for H in (1.0, 2.0)
-        for Z in (0.0, 0.5)
+    for H in (1.0, 2.0):
+        for Z in (0.0, 0.5):
             L = 1
             points = np.array([[0, 0, 0], [L, 0, 0], [L, H, Z], [0, H, Z],
-                            [L / 2, 0, 0], [L, H / 2, 0], [L / 2, H, Z],
-                            [0, H / 2, 0], [L / 2, H / 2, 0]])
+                               [L / 2, 0, 0], [L, H / 2, 0], [L / 2, H, Z],
+                               [0, H / 2, 0], [L / 2, H / 2, 0]])
 
             cells = np.array([[0, 1, 3, 4, 8, 7],
-                            [1, 2, 3, 5, 6, 8]])
+                              [1, 2, 3, 5, 6, 8]])
             cells = permute_cell_ordering(cells, permutation_vtk_to_dolfin(CellType.triangle, cells.shape[1]))
             mesh = Mesh(MPI.comm_world, CellType.triangle, points, cells, [], GhostMode.none)
 
@@ -116,19 +116,19 @@ def test_third_order_tri():
     #  *  *    *   *   9  14  6   12
     #  |         \ |   |        \ |
     #  *---*---*---*   0--4---5---1
-    for H in (1.0, 2.0)
-        for Z in (0.0, 0.5)
+    for H in (1.0, 2.0):
+        for Z in (0.0, 0.5):
             L = 1
             points = np.array([[0, 0, 0], [L, 0, 0], [L, H, Z], [0, H, Z],  # 0, 1, 2, 3
-                            [L / 3, 0, 0], [2 * L / 3, 0, 0],            # 4, 5
-                            [2 * L / 3, H / 3, 0], [L / 3, 2 * H / 3, 0],  # 6, 7
-                            [0, 2 * H / 3, 0], [0, H / 3, 0],        # 8, 9
-                            [2 * L / 3, H, Z], [L / 3, H, Z],              # 10, 11
-                            [L, H / 3, 0], [L, 2 * H / 3, 0],  # 12, 13
-                            [L / 3, H / 3, 0],                         # 14
-                            [2 * L / 3, 2 * H / 3, 0]])            # 15
+                               [L / 3, 0, 0], [2 * L / 3, 0, 0],            # 4, 5
+                               [2 * L / 3, H / 3, 0], [L / 3, 2 * H / 3, 0],  # 6, 7
+                               [0, 2 * H / 3, 0], [0, H / 3, 0],        # 8, 9
+                               [2 * L / 3, H, Z], [L / 3, H, Z],              # 10, 11
+                               [L, H / 3, 0], [L, 2 * H / 3, 0],  # 12, 13
+                               [L / 3, H / 3, 0],                         # 14
+                               [2 * L / 3, 2 * H / 3, 0]])            # 15
             cells = np.array([[0, 1, 3, 4, 5, 6, 7, 8, 9, 14],
-                            [1, 2, 3, 12, 13, 10, 11, 7, 6, 15]])
+                              [1, 2, 3, 12, 13, 10, 11, 7, 6, 15]])
             cells = permute_cell_ordering(cells, permutation_vtk_to_dolfin(CellType.triangle, cells.shape[1]))
             mesh = Mesh(MPI.comm_world, CellType.triangle, points, cells,
                         [], GhostMode.none)
@@ -163,23 +163,23 @@ def test_fourth_order_tri():
     #  *  * *   *  *   12 13 14 7  16
     #  |         \ |   |         \ |
     #  *--*--*--*--*   0--4--5--6--1
-    for H in (1.0, 2.0)
-        for Z in (0.0, 0.5)
+    for H in (1.0, 2.0):
+        for Z in (0.0, 0.5):
             points = np.array(
                 [[0, 0, 0], [L, 0, 0], [L, H, Z], [0, H, Z],   # 0, 1, 2, 3
-                [L / 4, 0, 0], [L / 2, 0, 0], [3 * L / 4, 0, 0],  # 4, 5, 6
-                [3 / 4 * L, H / 4, Z / 2], [L / 2, H / 2, 0],         # 7, 8
-                [L / 4, 3 * H / 4, 0], [0, 3 * H / 4, 0],         # 9, 10
-                [0, H / 2, 0], [0, H / 4, Z / 2],                     # 11, 12
-                [L / 4, H / 4, Z / 2], [L / 2, H / 4, Z / 2], [L / 4, H / 2, 0],  # 13, 14, 15
-                [L, H / 4, Z / 2], [L, H / 2, 0], [L, 3 * H / 4, 0],          # 16, 17, 18
-                [3 * L / 4, H, Z], [L / 2, H, Z], [L / 4, H, Z],          # 19, 20, 21
-                [3 * L / 4, H / 2, 0], [3 * L / 4, 3 * H / 4, 0],         # 22, 23
-                [L / 2, 3 * H / 4, 0]]                                    # 24
+                 [L / 4, 0, 0], [L / 2, 0, 0], [3 * L / 4, 0, 0],  # 4, 5, 6
+                 [3 / 4 * L, H / 4, Z / 2], [L / 2, H / 2, 0],         # 7, 8
+                 [L / 4, 3 * H / 4, 0], [0, 3 * H / 4, 0],         # 9, 10
+                 [0, H / 2, 0], [0, H / 4, Z / 2],                     # 11, 12
+                 [L / 4, H / 4, Z / 2], [L / 2, H / 4, Z / 2], [L / 4, H / 2, 0],  # 13, 14, 15
+                 [L, H / 4, Z / 2], [L, H / 2, 0], [L, 3 * H / 4, 0],          # 16, 17, 18
+                 [3 * L / 4, H, Z], [L / 2, H, Z], [L / 4, H, Z],          # 19, 20, 21
+                 [3 * L / 4, H / 2, 0], [3 * L / 4, 3 * H / 4, 0],         # 22, 23
+                 [L / 2, 3 * H / 4, 0]]                                    # 24
             )
 
             cells = np.array([[0, 1, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15],
-                            [1, 2, 3, 16, 17, 18, 19, 20, 21, 9, 8, 7, 22, 23, 24]])
+                              [1, 2, 3, 16, 17, 18, 19, 20, 21, 9, 8, 7, 22, 23, 24]])
             cells = permute_cell_ordering(cells, permutation_vtk_to_dolfin(CellType.triangle, cells.shape[1]))
 
             mesh = Mesh(MPI.comm_world, CellType.triangle, points, cells,
