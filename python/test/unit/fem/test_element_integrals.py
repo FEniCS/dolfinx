@@ -10,11 +10,11 @@ from itertools import combinations, product
 
 import numpy as np
 import pytest
-from dolfin_utils.test.skips import skip_in_parallel
+from dolfinx_utils.test.skips import skip_in_parallel
 
-from dolfin import MPI, cpp, fem, Mesh, FunctionSpace, VectorFunctionSpace, FacetNormal, Function, MeshFunction
+from dolfinx import MPI, cpp, fem, Mesh, FunctionSpace, VectorFunctionSpace, FacetNormal, Function, MeshFunction
 from ufl import inner, ds, dS, TestFunction, TrialFunction
-from dolfin.cpp.mesh import CellType
+from dolfinx.cpp.mesh import CellType
 
 
 parametrize_cell_types = pytest.mark.parametrize(

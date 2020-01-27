@@ -10,21 +10,20 @@ import numpy as np
 import pytest
 
 from petsc4py import PETSc
-from dolfin import MPI, Function, FunctionSpace, FacetNormal, CellDiameter
-from dolfin.cpp.mesh import GhostMode
-from dolfin.fem import assemble_matrix, assemble_scalar, assemble_vector
-from dolfin.io import XDMFFile
+from dolfinx import MPI, Function, FunctionSpace, FacetNormal, CellDiameter
+from dolfinx.cpp.mesh import GhostMode
+from dolfinx.fem import assemble_matrix, assemble_scalar, assemble_vector
+from dolfinx.io import XDMFFile
 from ufl import (SpatialCoordinate, div, dx, grad, inner, ds, dS, avg, jump,
                  TestFunction, TrialFunction)
 
 
-@pytest.mark.parametrize("n", [2, 3, 4])
-@pytest.mark.parametrize("component", [0, 1, 2])
+@pytest.mark.parametrize("degree", [2, 3, 4])
 @pytest.mark.parametrize("filename", ["UnitSquareMesh_triangle.xdmf",
                                       "UnitCubeMesh_tetra.xdmf",
                                       "UnitSquareMesh_quad.xdmf",
                                       "UnitCubeMesh_hexahedron.xdmf"])
-def test_manufactured_poisson_dg(n, filename, component, datadir):
+def test_manufactured_poisson_dg(degree, filename, component, datadir):
     """ Manufactured Poisson problem, solving u = x[component]**n, where n is the
     degree of the Lagrange function space.
 
@@ -35,60 +34,58 @@ def test_manufactured_poisson_dg(n, filename, component, datadir):
         else:
             mesh = xdmf.read_mesh(GhostMode.shared_facet)
 
-    if component >= mesh.geometry.dim:
-        return
+    for component in range(mesh.geometry.dim):
+        V = FunctionSpace(mesh, ("DG", degree))
+        u, v = TrialFunction(V), TestFunction(V)
 
-    V = FunctionSpace(mesh, ("DG", n))
-    u, v = TrialFunction(V), TestFunction(V)
+        # Exact solution
+        x = SpatialCoordinate(mesh)
+        u_exact = x[component] ** degree
 
-    # Exact solution
-    x = SpatialCoordinate(mesh)
-    u_exact = x[component] ** n
+        # Coefficient
+        k = Function(V)
+        k.vector.set(2.0)
 
-    # Coefficient
-    k = Function(V)
-    k.vector.set(2.0)
+        # Source term
+        f = - div(k * grad(u_exact))
 
-    # Source term
-    f = - div(k * grad(u_exact))
+        # Mesh normals and element size
+        n = FacetNormal(mesh)
+        h = CellDiameter(mesh)
+        h_avg = (h("+") + h("-")) / 2.0
 
-    # Mesh normals and element size
-    n = FacetNormal(mesh)
-    h = CellDiameter(mesh)
-    h_avg = (h("+") + h("-")) / 2.0
+        # Penalty parameter
+        alpha = 32
 
-    # Penalty parameter
-    alpha = 32
+        a = inner(k * grad(u), grad(v)) * dx \
+            - k("+") * inner(avg(grad(u)), jump(v, n)) * dS \
+            - k("+") * inner(jump(u, n), avg(grad(v))) * dS \
+            + k("+") * (alpha / h_avg) * inner(jump(u, n), jump(v, n)) * dS \
+            - inner(k * grad(u), v * n) * ds \
+            - inner(u * n, k * grad(v)) * ds \
+            + (alpha / h) * inner(k * u, v) * ds
+        L = inner(f, v) * dx - inner(k * u_exact * n, grad(v)) * ds \
+            + (alpha / h) * inner(k * u_exact, v) * ds
 
-    a = inner(k * grad(u), grad(v)) * dx \
-        - k("+") * inner(avg(grad(u)), jump(v, n)) * dS \
-        - k("+") * inner(jump(u, n), avg(grad(v))) * dS \
-        + k("+") * (alpha / h_avg) * inner(jump(u, n), jump(v, n)) * dS \
-        - inner(k * grad(u), v * n) * ds \
-        - inner(u * n, k * grad(v)) * ds \
-        + (alpha / h) * inner(k * u, v) * ds
-    L = inner(f, v) * dx - inner(k * u_exact * n, grad(v)) * ds \
-        + (alpha / h) * inner(k * u_exact, v) * ds
+        b = assemble_vector(L)
+        b.ghostUpdate(addv=PETSc.InsertMode.ADD, mode=PETSc.ScatterMode.REVERSE)
 
-    b = assemble_vector(L)
-    b.ghostUpdate(addv=PETSc.InsertMode.ADD, mode=PETSc.ScatterMode.REVERSE)
+        A = assemble_matrix(a, [])
+        A.assemble()
 
-    A = assemble_matrix(a, [])
-    A.assemble()
+        # Create LU linear solver
+        solver = PETSc.KSP().create(MPI.comm_world)
+        solver.setType(PETSc.KSP.Type.PREONLY)
+        solver.getPC().setType(PETSc.PC.Type.LU)
+        solver.setOperators(A)
 
-    # Create LU linear solver
-    solver = PETSc.KSP().create(MPI.comm_world)
-    solver.setType(PETSc.KSP.Type.PREONLY)
-    solver.getPC().setType(PETSc.PC.Type.LU)
-    solver.setOperators(A)
+        # Solve
+        uh = Function(V)
+        solver.solve(b, uh.vector)
+        uh.vector.ghostUpdate(addv=PETSc.InsertMode.INSERT,
+                              mode=PETSc.ScatterMode.FORWARD)
 
-    # Solve
-    uh = Function(V)
-    solver.solve(b, uh.vector)
-    uh.vector.ghostUpdate(addv=PETSc.InsertMode.INSERT,
-                          mode=PETSc.ScatterMode.FORWARD)
+        error = assemble_scalar((u_exact - uh)**2 * dx)
+        error = MPI.sum(mesh.mpi_comm(), error)
 
-    error = assemble_scalar((u_exact - uh)**2 * dx)
-    error = MPI.sum(mesh.mpi_comm(), error)
-
-    assert np.absolute(error) < 1.0e-14
+        assert np.absolute(error) < 1.0e-14
