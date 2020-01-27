@@ -412,5 +412,22 @@ void fem(py::module& m)
           py::return_value_policy::take_ownership)
       .def("check_ref_count", &dolfinx::fem::PETScDMCollection::check_ref_count)
       .def("get_dm", &dolfinx::fem::PETScDMCollection::get_dm);
+
+  m.def("locate_dofs_topological",
+        py::overload_cast<
+            const dolfinx::function::FunctionSpace&, const int,
+            const Eigen::Ref<const Eigen::Array<int, Eigen::Dynamic, 1>>&,
+            const dolfinx::function::FunctionSpace&, bool>(
+            &dolfinx::fem::locate_dofs_topological),
+        py::arg("V0"), py::arg("dim"), py::arg("entities"), py::arg("V1"),
+        py::arg("remote") = true);
+  m.def("locate_dofs_topological",
+        py::overload_cast<
+            const dolfinx::function::FunctionSpace&, const int,
+            const Eigen::Ref<const Eigen::Array<int, Eigen::Dynamic, 1>>&,
+            bool>(&dolfinx::fem::locate_dofs_topological),
+        py::arg("V"), py::arg("dim"), py::arg("entities"),
+        py::arg("remote") = true);
+  m.def("locate_dofs_geometrical", &dolfinx::fem::locate_dofs_geometrical);
 } // namespace dolfin_wrappers
 } // namespace dolfin_wrappers
