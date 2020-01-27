@@ -39,6 +39,8 @@ int MeshEntity::index(const MeshEntity& entity) const
 //-----------------------------------------------------------------------------
 int MeshEntity::facet_permutation(const MeshEntity& entity) const
 {
+  // FIXME: cache this somewhere to avoid computing it every time its needed
+
   // Must be in the same mesh to be incident
   if (_mesh != entity._mesh)
     throw std::runtime_error("Mesh entity is defined on a different mesh");
