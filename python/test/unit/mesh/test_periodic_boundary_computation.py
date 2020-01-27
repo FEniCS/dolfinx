@@ -6,9 +6,9 @@
 
 # import numpy as np
 
-# from dolfin import MPI, UnitSquareMesh
-# from dolfin.cpp.mesh import PeriodicBoundaryComputation
-# from dolfin_utils.test.skips import skip_in_parallel
+# from dolfinx import MPI, UnitSquareMesh
+# from dolfinx.cpp.mesh import PeriodicBoundaryComputation
+# from dolfinx_utils.test.skips import skip_in_parallel
 
 
 # def periodic_boundary(x):

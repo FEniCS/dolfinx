@@ -91,7 +91,7 @@ endif()
 
 
 # Compile and run test
-if (DOLFIN_SKIP_BUILD_TESTS)
+if (DOLFINX_SKIP_BUILD_TESTS)
 
   # Assume SLEPc works
   set(SLEPC_TEST_RUNS TRUE)
