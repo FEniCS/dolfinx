@@ -3,7 +3,7 @@ import os
 
 import pytest
 
-from dolfin import MPI
+from dolfinx import MPI
 
 
 def pytest_runtest_teardown(item):

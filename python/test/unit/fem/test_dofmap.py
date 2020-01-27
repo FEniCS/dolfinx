@@ -9,12 +9,12 @@ import sys
 
 import numpy as np
 import pytest
-from dolfin_utils.test.skips import skip_in_parallel
+from dolfinx_utils.test.skips import skip_in_parallel
 
-from dolfin import (MPI, FunctionSpace, Mesh, MeshEntity, UnitCubeMesh,
-                    UnitIntervalMesh, UnitSquareMesh, VectorFunctionSpace,
-                    fem)
-from dolfin.cpp.mesh import CellType, GhostMode
+from dolfinx import (MPI, FunctionSpace, Mesh, MeshEntity, UnitCubeMesh,
+                     UnitIntervalMesh, UnitSquareMesh, VectorFunctionSpace,
+                     fem)
+from dolfinx.cpp.mesh import CellType, GhostMode
 from ufl import FiniteElement, MixedElement, VectorElement
 
 xfail = pytest.mark.xfail(strict=True)
@@ -218,7 +218,7 @@ def test_entity_dofs(mesh):
 
     # Note this numbering is dependent on FFC and can change This test
     # is here just to check that we get correct numbers mapped from ufc
-    # generated code to dolfin
+    # generated code to dolfinx
     for i, cdofs in enumerate([[0, 3], [1, 4], [2, 5]]):
         dofs = V.dofmap.dof_layout.entity_dofs(0, i)
         assert all(d == cd for d, cd in zip(dofs, cdofs))

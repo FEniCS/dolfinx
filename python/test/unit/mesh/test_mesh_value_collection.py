@@ -4,7 +4,7 @@
 #
 # SPDX-License-Identifier:    LGPL-3.0-or-later
 
-from dolfin import MPI, MeshFunction, MeshValueCollection, UnitSquareMesh, cpp
+from dolfinx import MPI, MeshFunction, MeshValueCollection, UnitSquareMesh, cpp
 
 
 def test_assign_2D_cells():
