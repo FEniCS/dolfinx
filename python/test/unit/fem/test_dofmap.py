@@ -216,7 +216,7 @@ def test_entity_dofs(mesh):
 
     V = VectorFunctionSpace(mesh, ("CG", 1))
 
-    # Note this numbering is dependent on FFC and can change This test
+    # Note this numbering is dependent on FFCX and can change This test
     # is here just to check that we get correct numbers mapped from ufc
     # generated code to dolfinx
     for i, cdofs in enumerate([[0, 3], [1, 4], [2, 5]]):
@@ -370,8 +370,8 @@ def test_local_dimension(mesh_factory):
         #    dofmap().index_map.size('foo')
 
 
-# Failures in FFC on quads/hexes
-xfail_ffc = pytest.mark.xfail(raises=Exception)
+# Failures in FFCX on quads/hexes
+xfail_ffcx = pytest.mark.xfail(raises=Exception)
 
 
 @skip_in_parallel

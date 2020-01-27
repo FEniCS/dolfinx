@@ -35,12 +35,12 @@ ONBUILD ARG MAKEFLAGS
 
 ONBUILD WORKDIR /tmp
 
-# Install ipython (optional), FIAT, UFL and ffcX (development
+# Install ipython (optional), FIAT, UFL and FFCX (development
 # versions, master branch)
 ONBUILD RUN pip3 install --no-cache-dir ipython && \
             pip3 install --no-cache-dir git+https://github.com/FEniCS/fiat.git && \
             pip3 install --no-cache-dir git+https://github.com/FEniCS/ufl.git && \
-            pip3 install --no-cache-dir git+https://github.com/fenics/ffcX
+            pip3 install --no-cache-dir git+https://github.com/FEniCS/ffcx.git
 
 # Install dolfinx
 ONBUILD RUN git clone https://github.com/fenics/dolfinx.git && \
@@ -69,12 +69,12 @@ ONBUILD ARG MAKEFLAGS
 
 ONBUILD WORKDIR /tmp
 
-# Install ipython (optional), FIAT, UFL and ffcX (development versions,
+# Install ipython (optional), FIAT, UFL and FFCX (development versions,
 # master branch)
 ONBUILD RUN pip3 install --no-cache-dir ipython && \
             pip3 install --no-cache-dir git+https://github.com/FEniCS/fiat.git && \
             pip3 install --no-cache-dir git+https://github.com/FEniCS/ufl.git && \
-            pip3 install --no-cache-dir git+https://github.com/fenics/ffcX
+            pip3 install --no-cache-dir git+https://github.com/FEniCS/ffcx.git
 
 # Install dolfinx
 ONBUILD RUN git clone https://github.com/fenics/dolfinx.git && \
