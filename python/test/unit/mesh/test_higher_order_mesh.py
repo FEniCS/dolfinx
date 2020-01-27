@@ -153,9 +153,7 @@ def test_third_order_tri(H, Z):
 
 
 @skip_in_parallel
-@pytest.mark.parametrize('H', [1, 2])
-@pytest.mark.parametrize('Z', [0, 0.5])
-def test_fourth_order_tri(H, Z):
+def test_fourth_order_tri():
     L = 1
     #  *--*--*--*--*   3-21-20-19--2
     #  | \         |   | \         |
@@ -166,41 +164,43 @@ def test_fourth_order_tri(H, Z):
     #  *  * *   *  *   12 13 14 7  16
     #  |         \ |   |         \ |
     #  *--*--*--*--*   0--4--5--6--1
-    points = np.array(
-        [[0, 0, 0], [L, 0, 0], [L, H, Z], [0, H, Z],   # 0, 1, 2, 3
-         [L / 4, 0, 0], [L / 2, 0, 0], [3 * L / 4, 0, 0],  # 4, 5, 6
-         [3 / 4 * L, H / 4, Z / 2], [L / 2, H / 2, 0],         # 7, 8
-         [L / 4, 3 * H / 4, 0], [0, 3 * H / 4, 0],         # 9, 10
-         [0, H / 2, 0], [0, H / 4, Z / 2],                     # 11, 12
-         [L / 4, H / 4, Z / 2], [L / 2, H / 4, Z / 2], [L / 4, H / 2, 0],  # 13, 14, 15
-         [L, H / 4, Z / 2], [L, H / 2, 0], [L, 3 * H / 4, 0],          # 16, 17, 18
-         [3 * L / 4, H, Z], [L / 2, H, Z], [L / 4, H, Z],          # 19, 20, 21
-         [3 * L / 4, H / 2, 0], [3 * L / 4, 3 * H / 4, 0],         # 22, 23
-         [L / 2, 3 * H / 4, 0]]                                    # 24
-    )
+    for H in (1.0, 2.0)
+        for Z in (0.0, 0.5)
+            points = np.array(
+                [[0, 0, 0], [L, 0, 0], [L, H, Z], [0, H, Z],   # 0, 1, 2, 3
+                [L / 4, 0, 0], [L / 2, 0, 0], [3 * L / 4, 0, 0],  # 4, 5, 6
+                [3 / 4 * L, H / 4, Z / 2], [L / 2, H / 2, 0],         # 7, 8
+                [L / 4, 3 * H / 4, 0], [0, 3 * H / 4, 0],         # 9, 10
+                [0, H / 2, 0], [0, H / 4, Z / 2],                     # 11, 12
+                [L / 4, H / 4, Z / 2], [L / 2, H / 4, Z / 2], [L / 4, H / 2, 0],  # 13, 14, 15
+                [L, H / 4, Z / 2], [L, H / 2, 0], [L, 3 * H / 4, 0],          # 16, 17, 18
+                [3 * L / 4, H, Z], [L / 2, H, Z], [L / 4, H, Z],          # 19, 20, 21
+                [3 * L / 4, H / 2, 0], [3 * L / 4, 3 * H / 4, 0],         # 22, 23
+                [L / 2, 3 * H / 4, 0]]                                    # 24
+            )
 
-    cells = np.array([[0, 1, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15],
-                      [1, 2, 3, 16, 17, 18, 19, 20, 21, 9, 8, 7, 22, 23, 24]])
-    cells = permute_cell_ordering(cells, permutation_vtk_to_dolfin(CellType.triangle, cells.shape[1]))
+            cells = np.array([[0, 1, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15],
+                            [1, 2, 3, 16, 17, 18, 19, 20, 21, 9, 8, 7, 22, 23, 24]])
+            cells = permute_cell_ordering(cells, permutation_vtk_to_dolfin(CellType.triangle, cells.shape[1]))
 
-    mesh = Mesh(MPI.comm_world, CellType.triangle, points, cells,
-                [], GhostMode.none)
+            mesh = Mesh(MPI.comm_world, CellType.triangle, points, cells,
+                        [], GhostMode.none)
 
-    def e2(x):
-        return x[2] + x[0] * x[1]
-    degree = mesh.degree()
-    # Interpolate function
-    V = FunctionSpace(mesh, ("CG", degree))
-    u = Function(V)
-    cmap = fem.create_coordinate_map(mesh.ufl_domain())
-    mesh.geometry.coord_mapping = cmap
-    u.interpolate(e2)
+            def e2(x):
+                return x[2] + x[0] * x[1]
+            degree = mesh.degree()
+            # Interpolate function
+            V = FunctionSpace(mesh, ("CG", degree))
+            u = Function(V)
+            cmap = fem.create_coordinate_map(mesh.ufl_domain())
+            mesh.geometry.coord_mapping = cmap
+            u.interpolate(e2)
 
-    intu = assemble_scalar(u * dx(metadata={"quadrature_degree": 50}))
-    intu = MPI.sum(mesh.mpi_comm(), intu)
-    nodes = [0, 3, 10, 11, 12]
-    ref = sympy_scipy(points, nodes, L, H)
-    assert ref == pytest.approx(intu, rel=1e-4)
+            intu = assemble_scalar(u * dx(metadata={"quadrature_degree": 50}))
+            intu = MPI.sum(mesh.mpi_comm(), intu)
+            nodes = [0, 3, 10, 11, 12]
+            ref = sympy_scipy(points, nodes, L, H)
+            assert ref == pytest.approx(intu, rel=1e-4)
 
 
 def scipy_one_cell(points, nodes):
