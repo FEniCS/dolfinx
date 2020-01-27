@@ -20,11 +20,11 @@ class Form(ufl.Form):
         form
             Pure UFL form
         form_compiler_parameters
-            Parameters used in JIT FFC compilation of this form
+            Parameters used in JIT FFCX compilation of this form
 
         Note
         ----
-        This wrapper for UFL form is responsible for the actual FFC compilation
+        This wrapper for UFL form is responsible for the actual FFCX compilation
         and attaching coefficients and domains specific data to the underlying
         C++ Form.
         """
@@ -37,7 +37,7 @@ class Form(ufl.Form):
         mesh = domain.ufl_cargo()
 
         # Compile UFL form with JIT
-        ufc_form = jit.ffc_jit(
+        ufc_form = jit.ffcx_jit(
             form,
             form_compiler_parameters=self.form_compiler_parameters,
             mpi_comm=mesh.mpi_comm())

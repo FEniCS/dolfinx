@@ -163,7 +163,7 @@ def test_save_3d_scalar(tempfile, file_options):
         VTKFile(tempfile + "u.pvd", file_option).write(u)
 
 
-@pytest.mark.xfail(reason="FFC fails for tensor spaces in 1D")
+@pytest.mark.xfail(reason="FFCX fails for tensor spaces in 1D")
 @skip_in_parallel
 def test_save_1d_vector(tempfile, file_options):
     mesh = UnitIntervalMesh(MPI.comm_world, 32)
@@ -200,7 +200,7 @@ def test_save_3d_vector(tempfile, file_options):
         VTKFile(tempfile + "u.pvd", file_option).write(u)
 
 
-@pytest.mark.xfail(reason="FFC fails for tensor spaces in 1D")
+@pytest.mark.xfail(reason="FFCX fails for tensor spaces in 1D")
 @skip_in_parallel
 def test_save_1d_tensor(tempfile, file_options):
     mesh = UnitIntervalMesh(MPI.comm_world, 32)
