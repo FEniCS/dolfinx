@@ -1,4 +1,3 @@
-import multiprocessing
 import os
 import platform
 import re
@@ -20,7 +19,7 @@ REQUIREMENTS = [
     "numpy",
     "mpi4py",
     "petsc4py",
-    "fenics-ffc",
+    "fenics-ffcx",
     "fenics-ufl{}".format(RESTRICT_REQUIREMENTS),
 ]
 

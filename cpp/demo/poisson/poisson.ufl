@@ -36,8 +36,8 @@ a = kappa * inner(grad(u), grad(v)) * dx
 L = inner(f, v) * dx + inner(g, v) * ds
 
 # Before the form file can be used in the C++ program, it must be
-# compiled using FFC by running (on the command-line):
+# compiled using FFCX by running (on the command-line):
 #
 # .. code-block:: sh
 #
-#    ffc Poisson.ufl
+#    ffcx Poisson.ufl
