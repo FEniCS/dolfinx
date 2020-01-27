@@ -10,8 +10,8 @@ import math
 import numpy
 import pytest
 
-from dolfin import MPI, FacetNormal, RectangleMesh, UnitIntervalMesh
-from dolfin.specialfunctions import SpatialCoordinate
+from dolfinx import MPI, FacetNormal, RectangleMesh, UnitIntervalMesh
+from dolfinx.specialfunctions import SpatialCoordinate
 from ufl import (acos, as_matrix, as_vector, asin, atan, cos, cross, det, dev,
                  diff, div, dot, ds, dx, elem_div, elem_mult, elem_op,
                  elem_pow, erf, exp, grad, inner, ln, outer, sin, skew, sym,
@@ -43,7 +43,7 @@ def test_diff_then_integrate():
         for expr in exprs:
             F_list.append((expr, acc))
 
-    # FIXME: 0*dx and 1*dx fails in the ufl-ffc-jit framework somewhere
+    # FIXME: 0*dx and 1*dx fails in the ufl-ffcx-jit framework somewhere
     # reg([Constant(0.0, cell=cell)])
     # reg([Constant(1.0, cell=cell)])
     monomial_list = [x**q for q in range(2, 6)]
@@ -168,7 +168,7 @@ def test_div_grad_then_integrate_over_cells_and_boundary():
         for expr in exprs:
             F_list.append((expr, acc))
 
-    # FIXME: 0*dx and 1*dx fails in the ufl-ffc-jit framework somewhere
+    # FIXME: 0*dx and 1*dx fails in the ufl-ffcx-jit framework somewhere
     # reg([Constant(0.0, cell=cell)])
     # reg([Constant(1.0, cell=cell)])
     monomial_list = [x**q for q in range(2, 6)]

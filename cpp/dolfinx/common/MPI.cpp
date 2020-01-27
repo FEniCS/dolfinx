@@ -189,3 +189,20 @@ MPI_Comm dolfinx::MPI::SubsetComm(MPI_Comm comm, int num_processes)
     return new_comm;
   }
 }
+//-----------------------------------------------------------------------------
+std::vector<int> dolfinx::MPI::neighbors(MPI_Comm neighbor_comm)
+{
+  // Get list of neighbours
+  int indegree(-1), outdegree(-2), weighted(-1);
+  MPI_Dist_graph_neighbors_count(neighbor_comm, &indegree, &outdegree,
+                                 &weighted);
+  assert(indegree == outdegree);
+  std::vector<int> neighbors(indegree), neighbors1(indegree), weights(indegree),
+      weights1(indegree);
+
+  MPI_Dist_graph_neighbors(neighbor_comm, indegree, neighbors.data(),
+                           weights.data(), outdegree, neighbors1.data(),
+                           weights1.data());
+  return neighbors;
+}
+//-----------------------------------------------------------------------------
