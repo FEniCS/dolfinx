@@ -95,6 +95,20 @@ public:
                          const std::vector<std::vector<T>>& in_values,
                          std::vector<T>& out_values);
 
+  /// Neighbourhood all-to-all. Send data to neighbours using offsets into
+  /// contiguous data array. Offset array should contain (num_neighbours + 1)
+  /// entries, starting from zero.
+  template <typename T>
+  static void neighbor_all_to_all(MPI_Comm neighbor_comm,
+                                  const std::vector<int>& send_offsets,
+                                  const std::vector<T>& send_data,
+                                  std::vector<int>& recv_offsets,
+                                  std::vector<T>& recv_data);
+
+  /// Return list of neighbours for a neighbourhood comm
+  /// @param neighbor_comm
+  static std::vector<int> neighbors(MPI_Comm neighbor_comm);
+
   /// Broadcast vector of value from broadcaster to all processes
   template <typename T>
   static void broadcast(MPI_Comm comm, std::vector<T>& value,
@@ -692,4 +706,36 @@ void dolfinx::MPI::send_recv(MPI_Comm comm, const std::vector<T>& send_value,
 {
   MPI::send_recv(comm, send_value, dest, 0, recv_value, source, 0);
 }
+//-----------------------------------------------------------------------------
+template <typename T>
+void dolfinx::MPI::neighbor_all_to_all(MPI_Comm neighbor_comm,
+                                      const std::vector<int>& send_offsets,
+                                      const std::vector<T>& send_data,
+                                      std::vector<int>& recv_offsets,
+                                      std::vector<T>& recv_data)
+{
+  assert((int)send_data.size() == send_offsets.back());
+  assert(send_offsets[0] == 0);
+
+  // Get receive sizes
+  std::vector<int> send_sizes(send_offsets.size() - 1, 0);
+  std::vector<int> recv_sizes(send_sizes.size());
+  for (std::size_t i = 0; i < send_sizes.size(); ++i)
+    send_sizes[i] = send_offsets[i + 1] - send_offsets[i];
+  MPI_Neighbor_alltoall(send_sizes.data(), 1, MPI::mpi_type<int>(),
+                        recv_sizes.data(), 1, MPI::mpi_type<int>(),
+                        neighbor_comm);
+
+  // Work out recv offsets
+  recv_offsets.resize(recv_sizes.size() + 1, 0);
+  std::partial_sum(recv_sizes.begin(), recv_sizes.end(),
+                   recv_offsets.begin() + 1);
+  recv_data.resize(recv_offsets.back());
+
+  MPI_Neighbor_alltoallv(
+      send_data.data(), send_sizes.data(), send_offsets.data(),
+      MPI::mpi_type<T>(), recv_data.data(), recv_sizes.data(),
+      recv_offsets.data(), MPI::mpi_type<T>(), neighbor_comm);
+}
+
 } // namespace dolfin
