@@ -9,8 +9,8 @@ import os
 from pathlib import Path
 
 import dolfinx.pkgconfig
-import ffc
-import ffc.codegeneration.jit
+import ffcx
+import ffcx.codegeneration.jit
 import ufl
 from dolfinx import common, cpp
 
@@ -92,9 +92,9 @@ def mpi_jit_decorator(local_jit, *args, **kwargs):
 
 
 @mpi_jit_decorator
-def ffc_jit(ufl_object, form_compiler_parameters=None):
+def ffcx_jit(ufl_object, form_compiler_parameters=None):
     # Prepare form compiler parameters with overrides from dolfinx
-    p = ffc.default_parameters()
+    p = ffcx.default_parameters()
     p["scalar_type"] = "double complex" if common.has_petsc_complex else "double"
     p.update(form_compiler_parameters or {})
 
@@ -106,21 +106,21 @@ def ffc_jit(ufl_object, form_compiler_parameters=None):
     cffi_options = dict(cffi_extra_compile_args=extra_compile_args, cffi_verbose=False,
                         cffi_debug=False)
 
-    # Set FFC cache location
+    # Set FFCX cache location
     cache_dir = "~/.cache/fenics"
     cache_dir = os.getenv('FENICS_CACHE_DIR', cache_dir)
     cache_dir = Path(cache_dir).expanduser()
 
     # Switch on type and compile, returning cffi object
     if isinstance(ufl_object, ufl.Form):
-        r = ffc.codegeneration.jit.compile_forms([ufl_object], parameters=p, cache_dir=cache_dir, **cffi_options)
+        r = ffcx.codegeneration.jit.compile_forms([ufl_object], parameters=p, cache_dir=cache_dir, **cffi_options)
     elif isinstance(ufl_object, ufl.FiniteElementBase):
-        r = ffc.codegeneration.jit.compile_elements([ufl_object], parameters=p, cache_dir=cache_dir, **cffi_options)
+        r = ffcx.codegeneration.jit.compile_elements([ufl_object], parameters=p, cache_dir=cache_dir, **cffi_options)
     elif isinstance(ufl_object, ufl.Mesh):
-        r = ffc.codegeneration.jit.compile_coordinate_maps(
+        r = ffcx.codegeneration.jit.compile_coordinate_maps(
             [ufl_object], parameters=p, cache_dir=cache_dir, **cffi_options)
     elif isinstance(ufl_object, tuple) and isinstance(ufl_object[0], ufl.core.expr.Expr):
-        r = ffc.codegeneration.jit.compile_expressions([ufl_object], parameters=p, cache_dir=cache_dir, **cffi_options)
+        r = ffcx.codegeneration.jit.compile_expressions([ufl_object], parameters=p, cache_dir=cache_dir, **cffi_options)
     else:
         raise TypeError(type(ufl_object))
 
