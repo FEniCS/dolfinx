@@ -184,7 +184,7 @@ PetscScalar fem::impl::assemble_exterior_facets(
     // Get cell vertex coordinates
     const int cell_index = cell.index();
 
-    const int perm = mesh.topology().get_facet_permutation(
+    const std:int8_t perm = mesh.topology().get_facet_permutation(
         cell_index, facet.dim(), local_facet);
 
     for (int i = 0; i < num_dofs_g; ++i)
@@ -254,7 +254,7 @@ PetscScalar fem::impl::assemble_interior_facets(
     const int cell_index0 = cell0.index();
     const int cell_index1 = cell1.index();
 
-    const int perm[2] = {mesh.topology().get_facet_permutation(
+    const std:int8_t perm[2] = {mesh.topology().get_facet_permutation(
                              cell_index0, facet.dim(), local_facet[0]),
                          mesh.topology().get_facet_permutation(
                              cell_index1, facet.dim(), local_facet[1])};

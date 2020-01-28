@@ -242,7 +242,7 @@ void _lift_bc_exterior_facets(
     mesh::MeshEntity cell(mesh, tdim, cell_index);
     const int local_facet = cell.index(facet);
     const int orient = 0;
-    const int perm = mesh.topology().get_facet_permutation(
+    const std:int8_t perm = mesh.topology().get_facet_permutation(
         cell_index, facet.dim(), local_facet);
 
     // Get dof maps for cell
@@ -463,7 +463,7 @@ void fem::impl::assemble_exterior_facets(
     const mesh::MeshEntity cell(mesh, tdim, cell_index);
     const int local_facet = cell.index(facet);
     const int orient = 0;
-    const int perm = mesh.topology().get_facet_permutation(
+    const std:int8_t perm = mesh.topology().get_facet_permutation(
         cell_index, facet.dim(), local_facet);
 
     // Get cell vertex coordinates
@@ -542,7 +542,7 @@ void fem::impl::assemble_interior_facets(
 
     // Orientation
     const int orient[2] = {0, 0};
-    const int perm[2] = {mesh.topology().get_facet_permutation(
+    const std:int8_t perm[2] = {mesh.topology().get_facet_permutation(
                              cell_index0, facet.dim(), local_facet[0]),
                          mesh.topology().get_facet_permutation(
                              cell_index1, facet.dim(), local_facet[1])};

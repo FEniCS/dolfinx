@@ -237,7 +237,7 @@ void fem::impl::assemble_exterior_facets(
         coordinate_dofs(i, j) = x_g(cell_g[pos_g[cell_index] + i], j);
 
     // Get the permutation of the facet
-    const int perm = mesh.topology().get_facet_permutation(
+    const std:int8_t perm = mesh.topology().get_facet_permutation(
         cell_index, facet.dim(), local_facet);
 
     // Get dof maps for cell
@@ -341,7 +341,7 @@ void fem::impl::assemble_interior_facets(
     const int cell_index0 = cell0.index();
     const int cell_index1 = cell1.index();
 
-    const int perm[2] = {mesh.topology().get_facet_permutation(
+    const std:int8_t perm[2] = {mesh.topology().get_facet_permutation(
                              cell_index0, facet.dim(), local_facet[0]),
                          mesh.topology().get_facet_permutation(
                              cell_index1, facet.dim(), local_facet[1])};
