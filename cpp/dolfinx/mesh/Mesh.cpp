@@ -439,6 +439,7 @@ void Mesh::create_connectivity(std::size_t d0, std::size_t d1) const
 //-----------------------------------------------------------------------------
 void Mesh::create_entity_reflections() const
 {
+
   if (_topology->entity_reflection_size(1) > 0)
     return;
 

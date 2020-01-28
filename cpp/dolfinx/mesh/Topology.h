@@ -183,6 +183,7 @@ private:
 
   // The entity reflections
   Eigen::Array<bool, Eigen::Dynamic, Eigen::Dynamic> _entity_reflections;
+
 }; // namespace mesh
 } // namespace mesh
 } // namespace dolfin
