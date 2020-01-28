@@ -20,7 +20,8 @@ Topology::Topology(std::size_t dim, std::int32_t num_vertices,
       _global_num_entities(dim + 1, -1), _global_indices(dim + 1),
       _shared_entities(dim + 1),
       _connectivity(dim + 1,
-                    std::vector<std::shared_ptr<Connectivity>>(dim + 1))
+                    std::vector<std::shared_ptr<Connectivity>>(dim + 1)),
+      _entity_reflections(0,0)
 {
   assert(!_global_num_entities.empty());
   _global_num_entities[0] = num_vertices_global;

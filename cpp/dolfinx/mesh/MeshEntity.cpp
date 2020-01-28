@@ -40,6 +40,8 @@ int MeshEntity::index(const MeshEntity& entity) const
 int MeshEntity::facet_permutation(const MeshEntity& entity) const
 {
   // FIXME: cache this somewhere to avoid computing it every time its needed
+  // AIM:
+  // return facet_perm[entity._dim][index(entity)]
 
   // Must be in the same mesh to be incident
   if (_mesh != entity._mesh)
@@ -54,7 +56,8 @@ int MeshEntity::facet_permutation(const MeshEntity& entity) const
   if (entity._dim == 1)
   {
     const std::int32_t* vertices = entity.entities(0);
-    const int e_vertices[2] = {get_vertex_local_index(vertices[0]), get_vertex_local_index(vertices[1])};
+    const int e_vertices[2] = {get_vertex_local_index(vertices[0]),
+                               get_vertex_local_index(vertices[1])};
     // Return the number of reflections
     return e_vertices[1] < e_vertices[0];
   }
@@ -67,7 +70,8 @@ int MeshEntity::facet_permutation(const MeshEntity& entity) const
       // Find the index of the lowest numbered vertex
       int num_min = -1;
       const std::int32_t* vertices = entity.entities(0);
-      const int e_vertices[3] = {get_vertex_local_index(vertices[0]), get_vertex_local_index(vertices[1]),
+      const int e_vertices[3] = {get_vertex_local_index(vertices[0]),
+                                 get_vertex_local_index(vertices[1]),
                                  get_vertex_local_index(vertices[2])};
       for (int v = 0; v < 3; ++v)
         if (num_min == -1 || e_vertices[v] < e_vertices[num_min])
@@ -92,8 +96,10 @@ int MeshEntity::facet_permutation(const MeshEntity& entity) const
       // Find the index of the lowest numbered vertex
       int num_min = -1;
       const std::int32_t* vertices = entity.entities(0);
-      const int e_vertices[4] = {get_vertex_local_index(vertices[0]), get_vertex_local_index(vertices[1]),
-                                 get_vertex_local_index(vertices[2]), get_vertex_local_index(vertices[3])};
+      const int e_vertices[4] = {get_vertex_local_index(vertices[0]),
+                                 get_vertex_local_index(vertices[1]),
+                                 get_vertex_local_index(vertices[2]),
+                                 get_vertex_local_index(vertices[3])};
       for (int v = 0; v < 4; ++v)
         if (num_min == -1 || e_vertices[v] < e_vertices[num_min])
           num_min = v;

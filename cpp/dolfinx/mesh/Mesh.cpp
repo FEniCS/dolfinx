@@ -395,44 +395,6 @@ const Geometry& Mesh::geometry() const
   return *_geometry;
 }
 //-----------------------------------------------------------------------------
-bool* Mesh::get_entity_reflections(int cell_n) const
-{
-  // FIXME: cache this somewhere to avoid computing it every time its needed
-  const int tdim = _topology->dim();
-  int entities_per_cell = 1;
-  for (int d = 0; d < tdim; ++d)
-    entities_per_cell += cell_num_entities(_cell_type, d);
-
-  bool* entity_reflections = new bool[entities_per_cell];
-
-  int j = 0;
-  const mesh::MeshEntity cell(*this, tdim, cell_n);
-  for (int d = 0; d < tdim; ++d)
-  {
-    create_entities(d);
-    for (int i = 0; i < cell_num_entities(_cell_type, d); ++i)
-    {
-      if (d == 0)
-        // Points cannot be reflected so always false
-        entity_reflections[j] = false;
-      else
-      {
-        // Get the facet
-        const int sub_e_n = cell.entities(d)[i];
-        MeshEntity facet(*this, d, sub_e_n);
-        // cell.facet_permutation(facet) % 2 is the number of reflections.
-        entity_reflections[j] = cell.facet_permutation(facet) % 2;
-      }
-      ++j;
-    }
-  }
-  // The reflection for the whole cell is false
-  entity_reflections[j] = false;
-  assert(j + 1 == entities_per_cell);
-
-  return entity_reflections;
-}
-//-----------------------------------------------------------------------------
 std::size_t Mesh::create_entities(int dim) const
 {
   // This function is obviously not const since it may potentially
@@ -473,6 +435,44 @@ void Mesh::create_connectivity(std::size_t d0, std::size_t d1) const
   // Compute connectivity
   Mesh* mesh = const_cast<Mesh*>(this);
   TopologyComputation::compute_connectivity(*mesh, d0, d1);
+}
+//-----------------------------------------------------------------------------
+void Mesh::create_entity_reflections() const
+{
+  if (_topology->entity_reflection_size(1) > 0)
+    return;
+
+  const int tdim = _topology->dim();
+  const int num_cells = _topology->size(tdim);
+  int entities_per_cell = 1;
+  for (int d = 0; d < tdim; ++d)
+    entities_per_cell += cell_num_entities(_cell_type, d);
+
+  _topology->resize_entity_reflections(num_cells, entities_per_cell);
+
+  for (int cell_n = 0; cell_n < num_cells; ++cell_n)
+  {
+    int j = 0;
+    const mesh::MeshEntity cell(*this, tdim, cell_n);
+    for (int d = 0; d < tdim; ++d)
+    {
+      create_entities(d);
+      for (int i = 0; i < cell_num_entities(_cell_type, d); ++i)
+      {
+        if (d > 0)
+        {
+          // Get the facet
+          const int sub_e_n = cell.entities(d)[i];
+          MeshEntity facet(*this, d, sub_e_n);
+          // cell.facet_permutation(facet) % 2 is the number of reflections.
+          if (cell.facet_permutation(facet) % 2)
+            _topology->set_entity_reflection(cell_n, j, true);
+        }
+        ++j;
+      }
+    }
+    assert(j + 1 == entities_per_cell);
+  }
 }
 //-----------------------------------------------------------------------------
 void Mesh::create_connectivity_all() const

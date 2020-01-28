@@ -12,6 +12,7 @@
 #include <memory>
 #include <set>
 #include <vector>
+#include <Eigen/Dense>
 
 namespace dolfinx
 {
@@ -126,6 +127,31 @@ public:
   /// Return informal string representation (pretty-print)
   std::string str(bool verbose) const;
 
+  /// Get an array of bools that say whether each entity needs to be reflected
+  /// to match the low->high ordering of the cell.
+  /// The entities are ordered: points, edges, faces, volumes
+  /// @param[in] cell_n The index of the cell.
+  /// @return A pointer to an array of bools
+  Eigen::Array<bool, 1, Eigen::Dynamic> get_entity_reflections(int cell_n) const
+  { return _entity_reflections.row(cell_n); }
+
+  void resize_entity_reflections(std::size_t rows, std::size_t cols){
+    _entity_reflections.resize(rows, cols);
+    _entity_reflections.fill(false);
+  }
+
+  std::size_t entity_reflection_size(int i) const
+  {
+    if (i==1) return _entity_reflections.cols();
+    return _entity_reflections.rows();
+  }
+  /// Set the entitiy reflections array
+  /// @param[in] reflections The entity reflections array
+  void set_entity_reflection(std::size_t row, std::size_t col, bool reflection)
+  {
+    _entity_reflections(row,col) = reflection;
+  }
+
 private:
   // Number of mesh vertices
   std::int32_t _num_vertices;
@@ -154,6 +180,9 @@ private:
 
   // Connectivity for pairs of topological dimensions
   std::vector<std::vector<std::shared_ptr<Connectivity>>> _connectivity;
+
+  // The entity reflections
+  Eigen::Array<bool, Eigen::Dynamic, Eigen::Dynamic> _entity_reflections;
 }; // namespace mesh
 } // namespace mesh
 } // namespace dolfin

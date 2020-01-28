@@ -156,6 +156,9 @@ public:
   /// Compute all entities and connectivity
   void create_connectivity_all() const;
 
+  /// Compute entity reflections
+  void create_entity_reflections() const;
+
   /// Clean out all auxiliary topology data. This clears all topological
   /// data, except the connectivity between cells and vertices.
   void clean();
@@ -217,13 +220,6 @@ public:
 
   /// Cell type for this Mesh
   mesh::CellType cell_type() const;
-
-  /// Get an array of bools that say whether each entity needs to be reflected
-  /// to match the low->high ordering of the cell.
-  /// The entities are ordered: points, edges, faces, volumes
-  /// @param[in] cell_n The index of the cell.
-  /// @return A pointer to an array of bools
-  bool* get_entity_reflections(int cell_n) const;
 
 private:
   // Cell type
