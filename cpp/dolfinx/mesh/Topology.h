@@ -126,9 +126,10 @@ public:
   /// Return informal string representation (pretty-print)
   std::string str(bool verbose) const;
 
-  /// Get an array of bools that say whether each entity needs to be reflected
-  /// to match the low->high ordering of the cell.
-  /// The entities are ordered: points, edges, faces, volumes
+  // TODO: Use std::vector<int32_t> to store 1/0 marker for each edge/face
+  /// Get an array of bools that say whether each entity needs to be
+  /// reflected to match the low->high ordering of the cell. The
+  /// entities are ordered: points, edges, faces, volumes
   /// @param[in] cell_n The index of the cell.
   /// @return A pointer to an array of bools
   Eigen::Array<bool, 1, Eigen::Dynamic>
@@ -231,9 +232,11 @@ private:
   // Connectivity for pairs of topological dimensions
   std::vector<std::vector<std::shared_ptr<Connectivity>>> _connectivity;
 
+  // TODO: Use std::vector<int32_t> to store 1/0 marker for each edge/face
   // The entity reflections
   Eigen::Array<bool, Eigen::Dynamic, Eigen::Dynamic> _entity_reflections;
 
+  // TODO: Shrink to faces only
   // The entity permutations
   Eigen::Array<std::int8_t, Eigen::Dynamic, Eigen::Dynamic>
       _entity_permutations;
