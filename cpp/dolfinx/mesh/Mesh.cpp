@@ -483,8 +483,8 @@ void Mesh::create_entity_permutations() const
         MeshEntity facet(*this, d, sub_e_n);
 
         // Number of rotations and reflections to apply to the facet
-        int rots = 0;
-        int refs = 0;
+        std::uint8_t rots = 0;
+        std::uint8_t refs = 0;
 
         // If the entity is an interval, it should be oriented pointing from the
         // lowest numbered vertex to the highest numbered vertex

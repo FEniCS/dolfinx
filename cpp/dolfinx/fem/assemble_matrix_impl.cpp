@@ -104,7 +104,7 @@ void fem::impl::assemble_cells(
     const std::vector<bool>& bc1,
     const std::function<void(PetscScalar*, const PetscScalar*,
                              const PetscScalar*, const double*, const int*,
-                             const int*, const int*)>& kernel,
+                             const int*, const std::uint8_t*)>& kernel,
     const Eigen::Array<PetscScalar, Eigen::Dynamic, Eigen::Dynamic,
                        Eigen::RowMajor>& coeffs,
     const std::vector<PetscScalar>& constant_values)
@@ -186,7 +186,7 @@ void fem::impl::assemble_exterior_facets(
     const std::vector<bool>& bc1,
     const std::function<void(PetscScalar*, const PetscScalar*,
                              const PetscScalar*, const double*, const int*,
-                             const int*, const int*)>& fn,
+                             const int*, const std::uint8_t*)>& fn,
     const Eigen::Array<PetscScalar, Eigen::Dynamic, Eigen::Dynamic,
                        Eigen::RowMajor>& coeffs,
     const std::vector<PetscScalar> constant_values)
@@ -237,7 +237,7 @@ void fem::impl::assemble_exterior_facets(
         coordinate_dofs(i, j) = x_g(cell_g[pos_g[cell_index] + i], j);
 
     // Get the permutation of the facet
-    const std:int8_t perm = mesh.topology().get_facet_permutation(
+    const std::uint8_t perm = mesh.topology().get_facet_permutation(
         cell_index, facet.dim(), local_facet);
 
     // Get dof maps for cell
@@ -284,7 +284,7 @@ void fem::impl::assemble_interior_facets(
     const std::vector<bool>& bc1,
     const std::function<void(PetscScalar*, const PetscScalar*,
                              const PetscScalar*, const double*, const int*,
-                             const int*, const int*)>& fn,
+                             const int*, const std::uint8_t*)>& fn,
     const Eigen::Array<PetscScalar, Eigen::Dynamic, Eigen::Dynamic,
                        Eigen::RowMajor>& coeffs,
     const std::vector<int>& offsets,
@@ -341,10 +341,11 @@ void fem::impl::assemble_interior_facets(
     const int cell_index0 = cell0.index();
     const int cell_index1 = cell1.index();
 
-    const std:int8_t perm[2] = {mesh.topology().get_facet_permutation(
-                             cell_index0, facet.dim(), local_facet[0]),
-                         mesh.topology().get_facet_permutation(
-                             cell_index1, facet.dim(), local_facet[1])};
+    const std::uint8_t perm[2]
+        = {mesh.topology().get_facet_permutation(cell_index0, facet.dim(),
+                                                 local_facet[0]),
+           mesh.topology().get_facet_permutation(cell_index1, facet.dim(),
+                                                 local_facet[1])};
 
     for (int i = 0; i < num_dofs_g; ++i)
     {

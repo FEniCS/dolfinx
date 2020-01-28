@@ -146,8 +146,8 @@ public:
   /// @param[in] dim The dimension of the facet
   /// @param[in] facet_index The local index of the facet
   /// @return The permutation number
-  std::int8_t get_facet_permutation(const int cell_n, const int dim,
-                                    const int facet_index) const
+  std::uint8_t get_facet_permutation(const int cell_n, const int dim,
+                                     const int facet_index) const
   {
     return _entity_permutations(cell_n, _facet_offsets[dim] + facet_index);
   }
@@ -184,7 +184,7 @@ public:
   /// @param[in] rots The number of rotations to be applied
   /// @param[in] refs The number of reflections to be applied
   void set_entity_permutation(std::size_t row, std::size_t col,
-                              std::int8_t rots, std::int8_t refs)
+                              std::uint8_t rots, std::uint8_t refs)
   {
     _entity_permutations(row, col) = 2 * rots + refs;
   }
@@ -238,7 +238,7 @@ private:
 
   // TODO: Shrink to faces only
   // The entity permutations
-  Eigen::Array<std::int8_t, Eigen::Dynamic, Eigen::Dynamic>
+  Eigen::Array<std::uint8_t, Eigen::Dynamic, Eigen::Dynamic>
       _entity_permutations;
 
   std::size_t _facet_offsets[4];
