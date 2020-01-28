@@ -23,7 +23,8 @@ from ufl import (SpatialCoordinate, TestFunction, TrialFunction, div, dx, grad,
                                       "UnitCubeMesh_tetra.xdmf",
                                       "UnitCubeMesh_hexahedron.xdmf",
                                       "UnitSquareMesh_quad.xdmf"])
-@pytest.mark.parametrize("degree", [2, 3, 4])
+# @pytest.mark.parametrize("degree", [2, 3, 4])
+@pytest.mark.parametrize("degree", [2, 3])
 def test_manufactured_poisson(degree, filename, datadir):
     """ Manufactured Poisson problem, solving u = x[i]**p, where p is the
     degree of the Lagrange function space.
@@ -36,7 +37,7 @@ def test_manufactured_poisson(degree, filename, datadir):
     V = FunctionSpace(mesh, ("Lagrange", degree))
     u, v = TrialFunction(V), TestFunction(V)
 
-    for component in range(mesh.geometry.dim):
+    for component in range(1):
         # Exact solution
         x = SpatialCoordinate(mesh)
         u_exact = x[component]**degree

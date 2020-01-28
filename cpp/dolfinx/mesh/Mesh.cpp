@@ -15,9 +15,9 @@
 #include "Topology.h"
 #include "TopologyComputation.h"
 #include "utils.h"
-#include <dolfinx/common/log.h>
 #include <dolfinx/common/MPI.h>
 #include <dolfinx/common/Timer.h>
+#include <dolfinx/common/log.h>
 #include <dolfinx/common/utils.h>
 #include <dolfinx/io/cells.h>
 #include <dolfinx/mesh/cell_types.h>
@@ -456,12 +456,19 @@ void Mesh::create_entity_permutations() const
   else if (tdim == 1)
     _topology->set_facet_offsets(cell_num_entities(_cell_type, 0), 1, 0, 0);
   else if (tdim == 2)
+  {
     _topology->set_facet_offsets(cell_num_entities(_cell_type, 0),
                                  cell_num_entities(_cell_type, 1), 1, 0);
+  }
   else if (tdim == 3)
+  {
     _topology->set_facet_offsets(cell_num_entities(_cell_type, 0),
                                  cell_num_entities(_cell_type, 1),
                                  cell_num_entities(_cell_type, 2), 1);
+  }
+
+  for (int d = 0; d < tdim; ++d)
+    create_entities(d);
 
   for (int cell_n = 0; cell_n < num_cells; ++cell_n)
   {
@@ -469,12 +476,12 @@ void Mesh::create_entity_permutations() const
     const mesh::MeshEntity cell(*this, tdim, cell_n);
     for (int d = 0; d < tdim; ++d)
     {
-      create_entities(d);
       for (int i = 0; i < cell_num_entities(_cell_type, d); ++i)
       {
         // Get the facet
         const int sub_e_n = cell.entities(d)[i];
         MeshEntity facet(*this, d, sub_e_n);
+
         // Number of rotations and reflections to apply to the facet
         int rots = 0;
         int refs = 0;
@@ -493,7 +500,8 @@ void Mesh::create_entity_permutations() const
         else if (d == 2)
         {
           if (facet.num_entities(0) == 3)
-          { // triangle
+          {
+            // triangle
             // Orient that triangle so the the lowest numbered vertex is the
             // origin, and the next vertex anticlockwise from the lowest has a
             // lower number than the next vertex clockwise. Find the index of
@@ -507,6 +515,7 @@ void Mesh::create_entity_permutations() const
             for (int v = 0; v < 3; ++v)
               if (rots == -1 || e_vertices[v] < e_vertices[rots])
                 rots = v;
+
             // pre is the number of the next vertex clockwise from the lowest
             // numbered vertex
             const int pre = rots == 0 ? e_vertices[facet.num_entities(0) - 1]
@@ -519,8 +528,9 @@ void Mesh::create_entity_permutations() const
             // The number of reflections
             refs = post > pre;
           }
-          if (facet.num_entities(0) == 4)
-          { // quadrilateral
+          else if (facet.num_entities(0) == 4)
+          {
+            // quadrilateral
             // Orient that quad so the the lowest numbered vertex is the origin,
             // and the next vertex anticlockwise from the lowest has a lower
             // number than the next vertex clockwise. Find the index of the
@@ -536,15 +546,19 @@ void Mesh::create_entity_permutations() const
             for (int v = 0; v < 4; ++v)
               if (num_min == -1 || e_vertices[v] < e_vertices[num_min])
                 num_min = v;
+
             // rots is the number of rotations to get the lowest numbered vertex
             // to the origin
             rots = num_min;
+
             // pre is the (local) number of the next vertex clockwise from the
             // lowest numbered vertex
             int pre = 2;
+
             // post is the (local) number of the next vertex anticlockwise from
             // the lowest numbered vertex
             int post = 1;
+
             // The tensor product ordering of quads must be taken into account
             if (num_min == 1)
             {
@@ -567,6 +581,7 @@ void Mesh::create_entity_permutations() const
             refs = (e_vertices[post] > e_vertices[pre]);
           }
         }
+
         _topology->set_entity_reflection(cell_n, j, refs);
         _topology->set_entity_permutation(cell_n, j, rots, refs);
         ++j;

@@ -35,7 +35,7 @@ def test_manufactured_poisson_dg(degree, filename, datadir):
         else:
             mesh = xdmf.read_mesh(GhostMode.shared_facet)
 
-    for component in range(mesh.geometry.dim):
+    for component in range(1):
         V = FunctionSpace(mesh, ("DG", degree))
         u, v = TrialFunction(V), TestFunction(V)
 
