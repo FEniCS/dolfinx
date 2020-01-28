@@ -156,8 +156,8 @@ public:
   /// Compute all entities and connectivity
   void create_connectivity_all() const;
 
-  /// Compute entity reflections
-  void create_entity_reflections() const;
+  /// Compute entity permutations and reflections
+  void create_entity_permutations() const;
 
   /// Clean out all auxiliary topology data. This clears all topological
   /// data, except the connectivity between cells and vertices.

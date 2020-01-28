@@ -97,7 +97,6 @@ void _lift_bc_cells(
   // Iterate over all cells
   const int tdim = mesh.topology().dim();
   const int orient = 0;
-  const int perm = 0;
   for (const mesh::MeshEntity& cell : mesh::MeshRange(mesh, tdim))
   {
     // Get dof maps for cell
@@ -130,7 +129,7 @@ void _lift_bc_cells(
     auto coeff_array = coeffs.row(cell_index);
     Ae.setZero(dmap0.size(), dmap1.size());
     fn(Ae.data(), coeff_array.data(), constant_values.data(),
-       coordinate_dofs.data(), nullptr, &orient, &perm);
+       coordinate_dofs.data(), nullptr, &orient, nullptr);
 
     // Size data structure for assembly
     be.setZero(dmap0.size());
@@ -222,6 +221,8 @@ void _lift_bc_exterior_facets(
                            array.data() + array.size());
   }
 
+  mesh.create_entity_permutations();
+
   // Iterate over all cells
   std::shared_ptr<const mesh::Connectivity> connectivity
       = mesh.topology().connectivity(tdim - 1, tdim);
@@ -241,7 +242,8 @@ void _lift_bc_exterior_facets(
     mesh::MeshEntity cell(mesh, tdim, cell_index);
     const int local_facet = cell.index(facet);
     const int orient = 0;
-    const int perm = cell.facet_permutation(facet);
+    const int perm = mesh.topology().get_facet_permutation(
+        cell_index, facet.dim(), local_facet);
 
     // Get dof maps for cell
     auto dmap1 = dofmap1.cell_dofs(cell_index);
@@ -396,7 +398,6 @@ void fem::impl::assemble_cells(
 
   // Iterate over active cells
   const int orientation = 0;
-  const int perm = 0;
   for (std::int32_t cell_index : active_cells)
   {
     // Get cell coordinates/geometry
@@ -408,7 +409,7 @@ void fem::impl::assemble_cells(
     auto coeff_cell = coeffs.row(cell_index);
     be.setZero();
     kernel(be.data(), coeff_cell.data(), constant_values.data(),
-           coordinate_dofs.data(), nullptr, &orientation, &perm);
+           coordinate_dofs.data(), nullptr, &orientation, nullptr);
 
     // Scatter cell vector to 'global' vector array
     for (Eigen::Index i = 0; i < num_dofs_per_cell; ++i)
@@ -444,7 +445,9 @@ void fem::impl::assemble_exterior_facets(
   const Eigen::Array<double, Eigen::Dynamic, 3, Eigen::RowMajor>& x_g
       = mesh.geometry().points();
 
-  // Creat data structures used in assembly
+  mesh.create_entity_permutations();
+
+  // Create data structures used in assembly
   Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
       coordinate_dofs(num_dofs_g, gdim);
   Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1> be;
@@ -460,7 +463,8 @@ void fem::impl::assemble_exterior_facets(
     const mesh::MeshEntity cell(mesh, tdim, cell_index);
     const int local_facet = cell.index(facet);
     const int orient = 0;
-    const int perm = cell.facet_permutation(facet);
+    const int perm = mesh.topology().get_facet_permutation(
+        cell_index, facet.dim(), local_facet);
 
     // Get cell vertex coordinates
     for (int i = 0; i < num_dofs_g; ++i)
@@ -518,6 +522,8 @@ void fem::impl::assemble_interior_facets(
   Eigen::Array<PetscScalar, Eigen::Dynamic, 1> coeff_array(2 * offsets.back());
   assert(offsets.back() == coeffs.cols());
 
+  mesh.create_entity_permutations();
+
   for (const auto& facet_index : active_facets)
   {
     const mesh::MeshEntity facet(mesh, tdim - 1, facet_index);
@@ -536,7 +542,10 @@ void fem::impl::assemble_interior_facets(
 
     // Orientation
     const int orient[2] = {0, 0};
-    const int perm[2] = {cell0.facet_permutation(facet), cell1.facet_permutation(facet)};
+    const int perm[2] = {mesh.topology().get_facet_permutation(
+                             cell_index0, facet.dim(), local_facet[0]),
+                         mesh.topology().get_facet_permutation(
+                             cell_index1, facet.dim(), local_facet[1])};
 
     // Get cell vertex coordinates
     for (int i = 0; i < num_dofs_g; ++i)

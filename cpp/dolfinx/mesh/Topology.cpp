@@ -21,7 +21,7 @@ Topology::Topology(std::size_t dim, std::int32_t num_vertices,
       _shared_entities(dim + 1),
       _connectivity(dim + 1,
                     std::vector<std::shared_ptr<Connectivity>>(dim + 1)),
-      _entity_reflections(0,0)
+      _entity_reflections(0, 0), _entity_permutations(0, 0)
 
 {
   assert(!_global_num_entities.empty());

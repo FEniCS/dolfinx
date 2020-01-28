@@ -76,14 +76,7 @@ public:
   /// Returns the local index of the vertex with the given global index
   /// @param[in] v_index The global index of the vertex
   /// @return The local index
-  int get_vertex_local_index(const std::int32_t v_index) const
-  {
-    const std::int32_t* vertices = entities(0);
-    for (int v = 0; v < num_entities(0); ++v)
-      if (vertices[v] == v_index)
-        return v;
-    throw std::runtime_error("Vertex was not found");
-  }
+  int get_vertex_local_index(const std::int32_t v_index) const;
 
   /// Return array of indices for incident mesh entities of given
   /// topological dimension
@@ -116,17 +109,6 @@ public:
   /// @param[in] entity The mesh entity.
   /// @return The local index of given entity.
   int index(const MeshEntity& entity) const;
-
-  /// Return the identifier of the permutation of an entity.
-  /// 0 No permutation
-  /// 1 Reflect an edge
-  /// 2 to 9 Rotate and reflect a face
-  ///   (n - 2)/2 gives the number of rotations
-  ///   (n - 2)%2 gives the number of reflections
-  /// FIXME: This is hacky and should be replaced.
-  /// @param[in] entity The mesh entity.
-  /// @return The identifier of the permutation
-  int facet_permutation(const MeshEntity& entity) const;
 
   /// Return informal string representation (pretty-print)
   /// @param[in] verbose Flag to turn on additional output

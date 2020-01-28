@@ -228,7 +228,7 @@ void Function::eval(
   assert(_function_space->dofmap());
   const fem::DofMap& dofmap = *_function_space->dofmap();
 
-  mesh.create_entity_reflections();
+  mesh.create_entity_permutations();
 
   // Loop over points
   u.setZero();

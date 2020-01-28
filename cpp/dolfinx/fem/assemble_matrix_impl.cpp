@@ -141,13 +141,12 @@ void fem::impl::assemble_cells(
         coordinate_dofs(i, j) = x_g(cell_g[pos_g[cell_index] + i], j);
 
     const mesh::MeshEntity cell(mesh, gdim, cell_index);
-    const int perm = 0;
 
     // Tabulate tensor
     auto coeff_cell = coeffs.row(cell_index);
     Ae.setZero(num_dofs_per_cell0, num_dofs_per_cell1);
     kernel(Ae.data(), coeff_cell.data(), constant_values.data(),
-           coordinate_dofs.data(), nullptr, &orientation, &perm);
+           coordinate_dofs.data(), nullptr, &orientation, nullptr);
 
     // Zero rows/columns for essential bcs
     if (!bc0.empty())
@@ -215,6 +214,8 @@ void fem::impl::assemble_exterior_facets(
   Eigen::Matrix<PetscScalar, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
       Ae;
 
+  mesh.create_entity_permutations();
+
   // Iterate over all facets
   PetscErrorCode ierr;
   for (const auto& facet_index : active_facets)
@@ -228,13 +229,16 @@ void fem::impl::assemble_exterior_facets(
     // Get local index of facet with respect to the cell
     const int local_facet = cell.index(facet);
     const int orient = 0;
-    const int perm = cell.facet_permutation(facet);
 
     // Get cell vertex coordinates
     const int cell_index = cell.index();
     for (int i = 0; i < num_dofs_g; ++i)
       for (int j = 0; j < gdim; ++j)
         coordinate_dofs(i, j) = x_g(cell_g[pos_g[cell_index] + i], j);
+
+    // Get the permutation of the facet
+    const int perm = mesh.topology().get_facet_permutation(
+        cell_index, facet.dim(), local_facet);
 
     // Get dof maps for cell
     auto dmap0 = dofmap0.cell_dofs(cell_index);
@@ -314,6 +318,8 @@ void fem::impl::assemble_interior_facets(
   // Temporaries for joint dofmaps
   Eigen::Array<PetscInt, Eigen::Dynamic, 1> dmapjoint0, dmapjoint1;
 
+  mesh.create_entity_permutations();
+
   // Iterate over all facets
   PetscErrorCode ierr;
   for (const auto& facet_index : active_facets)
@@ -330,11 +336,16 @@ void fem::impl::assemble_interior_facets(
     // Get local index of facet with respect to the cell
     const int local_facet[2] = {cell0.index(facet), cell1.index(facet)};
     const int orient[2] = {0, 0};
-    const int perm[2] = {cell0.facet_permutation(facet), cell1.facet_permutation(facet)};
 
     // Get cell vertex coordinates
     const int cell_index0 = cell0.index();
     const int cell_index1 = cell1.index();
+
+    const int perm[2] = {mesh.topology().get_facet_permutation(
+                             cell_index0, facet.dim(), local_facet[0]),
+                         mesh.topology().get_facet_permutation(
+                             cell_index1, facet.dim(), local_facet[1])};
+
     for (int i = 0; i < num_dofs_g; ++i)
     {
       for (int j = 0; j < gdim; ++j)
