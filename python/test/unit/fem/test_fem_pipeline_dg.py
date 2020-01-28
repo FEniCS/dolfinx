@@ -18,7 +18,7 @@ from ufl import (SpatialCoordinate, div, dx, grad, inner, ds, dS, avg, jump,
                  TestFunction, TrialFunction)
 
 
-@pytest.mark.parametrize("degree", [2, 3, 4])
+@pytest.mark.parametrize("degree", [2, 3])
 @pytest.mark.parametrize("filename", ["UnitSquareMesh_triangle.xdmf",
                                       "UnitCubeMesh_tetra.xdmf",
                                       "UnitSquareMesh_quad.xdmf",
