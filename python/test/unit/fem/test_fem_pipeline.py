@@ -19,10 +19,10 @@ from ufl import (SpatialCoordinate, TestFunction, TrialFunction, div, dx, grad,
                  inner)
 
 
-@pytest.mark.parametrize("filename", ["UnitCubeMesh_hexahedron.xdmf",
+@pytest.mark.parametrize("filename", ["UnitSquareMesh_triangle.xdmf",
                                       "UnitCubeMesh_tetra.xdmf",
-                                      "UnitSquareMesh_quad.xdmf",
-                                      "UnitSquareMesh_triangle.xdmf"])
+                                      "UnitCubeMesh_hexahedron.xdmf",
+                                      "UnitSquareMesh_quad.xdmf"])
 @pytest.mark.parametrize("degree", [2, 3, 4])
 def test_manufactured_poisson(degree, filename, datadir):
     """ Manufactured Poisson problem, solving u = x[i]**p, where p is the
