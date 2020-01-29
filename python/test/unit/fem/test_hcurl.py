@@ -1,6 +1,6 @@
 # Copyright (C) 2020 Igor A Baratta
 #
-# This file is part of DOLFIN (https://www.fenicsproject.org)
+# This file is part of DOLFINX (https://www.fenicsproject.org)
 #
 # SPDX-License-Identifier:    LGPL-3.0-or-later
 
@@ -18,7 +18,6 @@ import ufl
 def test_assembly_hcurl(space, degree):
     """ Manufactured solution for the curl-curl problem with homogeneous
     Dirichlet boundary condition on the tangencial trace.
-
     """
     mesh = dolfinx.UnitSquareMesh(dolfinx.MPI.comm_world, 32, 32)
     k = 1
