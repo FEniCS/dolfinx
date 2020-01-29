@@ -86,7 +86,7 @@ def test_manufactured_poisson(degree, filename, datadir):
 # @pytest.mark.parametrize("degree", [1])
 # def test_manufactured_poisson_mixed(degree, filename, datadir):
 @skip_in_parallel
-def xtest_manufactured_poisson_mixed(datadir):
+def test_manufactured_poisson_mixed(datadir):
     """ Manufactured Poisson problem, solving u = x[i]**p, where p is the
     degree of the Lagrange function space.
 
@@ -106,37 +106,36 @@ def xtest_manufactured_poisson_mixed(datadir):
     tree = geometry.BoundingBoxTree(mesh, mesh.geometry.dim)
     cells = geometry.compute_first_entity_collision(tree, mesh, xp)
 
-    for component in range(1):
-        # Source term
-        x = SpatialCoordinate(mesh)
-        u_ref = x[0]**degree
-        L = inner(u_ref, v[0]) * dx
+    # Source term
+    x = SpatialCoordinate(mesh)
+    u_ref = x[0]**degree
+    L = inner(u_ref, v[0]) * dx
 
-        b = assemble_vector(L)
-        b.ghostUpdate(addv=PETSc.InsertMode.ADD, mode=PETSc.ScatterMode.REVERSE)
+    b = assemble_vector(L)
+    b.ghostUpdate(addv=PETSc.InsertMode.ADD, mode=PETSc.ScatterMode.REVERSE)
 
-        A = assemble_matrix(a)
-        A.assemble()
+    A = assemble_matrix(a)
+    A.assemble()
 
-        # Create LU linear solver (Note: need to use a solver that
-        # re-orders to handle pivots, e.g. not the PETSc built-in LU
-        # solver)
-        solver = PETSc.KSP().create(MPI.comm_world)
-        solver.setType("preonly")
-        solver.getPC().setType('lu')
-        # solver.getPC().setFactorSolverType('umfpack')
-        solver.setOperators(A)
+    # Create LU linear solver (Note: need to use a solver that
+    # re-orders to handle pivots, e.g. not the PETSc built-in LU
+    # solver)
+    solver = PETSc.KSP().create(MPI.comm_world)
+    solver.setType("preonly")
+    solver.getPC().setType('lu')
+    # solver.getPC().setFactorSolverType('umfpack')
+    solver.setOperators(A)
 
-        # Solve
-        uh = Function(V)
-        solver.solve(b, uh.vector)
-        uh.vector.ghostUpdate(addv=PETSc.InsertMode.INSERT, mode=PETSc.ScatterMode.FORWARD)
+    # Solve
+    uh = Function(V)
+    solver.solve(b, uh.vector)
+    uh.vector.ghostUpdate(addv=PETSc.InsertMode.INSERT, mode=PETSc.ScatterMode.FORWARD)
 
-        up = uh.eval(xp, cells[0])
-        print("test0:", up)
-        print("test1:", xp[0]**degree)
+    up = uh.eval(xp, cells[0])
+    print("test0:", up)
+    print("test1:", xp[0]**degree)
 
-        u_exact = np.zeros(mesh.geometry.dim)
-        u_exact[0] = xp[0]**degree
-        assert np.allclose(up, u_exact)
+    u_exact = np.zeros(mesh.geometry.dim)
+    u_exact[0] = xp[0]**degree
+    assert np.allclose(up, u_exact)
 
