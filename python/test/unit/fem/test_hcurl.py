@@ -16,7 +16,11 @@ import ufl
                                     pytest.param(2, marks=pytest.mark.xfail),
                                     pytest.param(3, marks=pytest.mark.xfail)])
 def test_assembly_hcurl(space, degree):
-    mesh = dolfinx.UnitSquareMesh(dolfinx.MPI.comm_world, 10, 10)
+    """ Manufactured solution for the curl-curl problem with homogeneous
+    Dirichlet boundary condition on the tangencial trace.
+
+    """
+    mesh = dolfinx.UnitSquareMesh(dolfinx.MPI.comm_world, 32, 32)
     k = 1
     alpha = (2 * numpy.pi**2 + k)
 
