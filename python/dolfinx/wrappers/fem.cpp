@@ -396,7 +396,8 @@ void fem(py::module& m)
               int i, std::intptr_t addr) {
              auto tabulate_tensor_ptr = (void (*)(
                  PetscScalar*, const PetscScalar*, const PetscScalar*,
-                 const double*, const int*, const std::uint8_t*))addr;
+                 const double*, const int*, const std::uint8_t*, const bool*,
+                 const bool*))addr;
              self.set_tabulate_tensor(type, i, tabulate_tensor_ptr);
            })
       .def_property_readonly("rank", &dolfinx::fem::Form::rank)

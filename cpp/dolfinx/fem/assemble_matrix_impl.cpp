@@ -102,9 +102,9 @@ void fem::impl::assemble_cells(
     const Eigen::Ref<const Eigen::Array<PetscInt, Eigen::Dynamic, 1>>& dofmap1,
     int num_dofs_per_cell1, const std::vector<bool>& bc0,
     const std::vector<bool>& bc1,
-    const std::function<void(PetscScalar*, const PetscScalar*,
-                             const PetscScalar*, const double*, const int*,
-                             const std::uint8_t*)>& kernel,
+    const std::function<void(
+        PetscScalar*, const PetscScalar*, const PetscScalar*, const double*,
+        const int*, const std::uint8_t*, const bool*, const bool*)>& kernel,
     const Eigen::Array<PetscScalar, Eigen::Dynamic, Eigen::Dynamic,
                        Eigen::RowMajor>& coeffs,
     const std::vector<PetscScalar>& constant_values)
@@ -141,11 +141,17 @@ void fem::impl::assemble_cells(
 
     const mesh::MeshEntity cell(mesh, gdim, cell_index);
 
+    Eigen::Array<bool, 1, Eigen::Dynamic> cell_edge_reflections
+        = mesh.topology().get_edge_reflections(cell_index);
+    Eigen::Array<bool, 1, Eigen::Dynamic> cell_face_reflections
+        = mesh.topology().get_face_reflections(cell_index);
+
     // Tabulate tensor
     auto coeff_cell = coeffs.row(cell_index);
     Ae.setZero(num_dofs_per_cell0, num_dofs_per_cell1);
     kernel(Ae.data(), coeff_cell.data(), constant_values.data(),
-           coordinate_dofs.data(), nullptr, nullptr);
+           coordinate_dofs.data(), nullptr, nullptr,
+           cell_edge_reflections.data(), cell_face_reflections.data());
 
     // Zero rows/columns for essential bcs
     if (!bc0.empty())
@@ -183,9 +189,9 @@ void fem::impl::assemble_exterior_facets(
     const std::vector<std::int32_t>& active_facets, const DofMap& dofmap0,
     const DofMap& dofmap1, const std::vector<bool>& bc0,
     const std::vector<bool>& bc1,
-    const std::function<void(PetscScalar*, const PetscScalar*,
-                             const PetscScalar*, const double*, const int*,
-                             const std::uint8_t*)>& fn,
+    const std::function<void(
+        PetscScalar*, const PetscScalar*, const PetscScalar*, const double*,
+        const int*, const std::uint8_t*, const bool*, const bool*)>& fn,
     const Eigen::Array<PetscScalar, Eigen::Dynamic, Eigen::Dynamic,
                        Eigen::RowMajor>& coeffs,
     const std::vector<PetscScalar> constant_values)
@@ -242,11 +248,17 @@ void fem::impl::assemble_exterior_facets(
     auto dmap0 = dofmap0.cell_dofs(cell_index);
     auto dmap1 = dofmap1.cell_dofs(cell_index);
 
+    Eigen::Array<bool, 1, Eigen::Dynamic> cell_edge_reflections
+        = mesh.topology().get_edge_reflections(cell_index);
+    Eigen::Array<bool, 1, Eigen::Dynamic> cell_face_reflections
+        = mesh.topology().get_face_reflections(cell_index);
+
     // Tabulate tensor
     auto coeff_cell = coeffs.row(cell_index);
     Ae.setZero(dmap0.size(), dmap1.size());
     fn(Ae.data(), coeff_cell.data(), constant_values.data(),
-       coordinate_dofs.data(), &local_facet, &perm);
+       coordinate_dofs.data(), &local_facet, &perm,
+       cell_edge_reflections.data(), cell_face_reflections.data());
 
     // Zero rows/columns for essential bcs
     if (!bc0.empty())
@@ -280,9 +292,9 @@ void fem::impl::assemble_interior_facets(
     const std::vector<std::int32_t>& active_facets, const DofMap& dofmap0,
     const DofMap& dofmap1, const std::vector<bool>& bc0,
     const std::vector<bool>& bc1,
-    const std::function<void(PetscScalar*, const PetscScalar*,
-                             const PetscScalar*, const double*, const int*,
-                             const std::uint8_t*)>& fn,
+    const std::function<void(
+        PetscScalar*, const PetscScalar*, const PetscScalar*, const double*,
+        const int*, const std::uint8_t*, const bool*, const bool*)>& fn,
     const Eigen::Array<PetscScalar, Eigen::Dynamic, Eigen::Dynamic,
                        Eigen::RowMajor>& coeffs,
     const std::vector<int>& offsets,
@@ -393,10 +405,16 @@ void fem::impl::assemble_interior_facets(
           = coeff_cell1.segment(offsets[i], num_entries);
     }
 
+    Eigen::Array<bool, 1, Eigen::Dynamic> cell_edge_reflections
+        = mesh.topology().get_edge_reflections(cell_index0);
+    Eigen::Array<bool, 1, Eigen::Dynamic> cell_face_reflections
+        = mesh.topology().get_face_reflections(cell_index0);
+
     // Tabulate tensor
     Ae.setZero(dmapjoint0.size(), dmapjoint1.size());
     fn(Ae.data(), coeff_array.data(), constant_values.data(),
-       coordinate_dofs.data(), local_facet, perm);
+       coordinate_dofs.data(), local_facet, perm, cell_edge_reflections.data(),
+       cell_face_reflections.data());
 
     // Zero rows/columns for essential bcs
     if (!bc0.empty())
