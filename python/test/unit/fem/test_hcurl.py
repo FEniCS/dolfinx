@@ -19,7 +19,23 @@ def test_assembly_hcurl(space, degree):
     """ Manufactured solution for the curl-curl problem with homogeneous
     Dirichlet boundary condition on the tangencial trace.
     """
-    mesh = dolfinx.UnitSquareMesh(dolfinx.MPI.comm_world, 32, 32)
+    pygmsh = pytest.importorskip("pygmsh")
+
+    if dolfinx.MPI.rank(dolfinx.MPI.comm_world) == 0:
+        geom = pygmsh.built_in.Geometry()
+        geom.add_rectangle(0., 1., 0., 1., 0., lcar=0.01)
+        mesh = pygmsh.generate_mesh(geom, verbose=True)
+        mesh.prune()
+        points, cells = mesh.points, mesh.cells
+    else:
+        points = numpy.zeros([0, 3])
+        cells = {"triangle": numpy.zeros([0, 3], dtype=numpy.int64)}
+
+    mesh = dolfinx.Mesh(dolfinx.MPI.comm_world, dolfinx.cpp.mesh.CellType.triangle, points[:, :2],
+                        cells['triangle'], [], dolfinx.cpp.mesh.GhostMode.none)
+    cmap = dolfinx.fem.create_coordinate_map(mesh.ufl_domain())
+    mesh.geometry.coord_mapping = cmap
+
     k = 1
     alpha = (2 * numpy.pi**2 + k)
 
