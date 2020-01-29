@@ -9,10 +9,10 @@ import pytest
 from petsc4py import PETSc
 
 import ufl
-from dolfin import MPI, MeshFunction, fem
-from dolfin.cpp.mesh import GhostMode
-from dolfin.function import Function, FunctionSpace
-from dolfin.generation import UnitSquareMesh
+from dolfinx import MPI, MeshFunction, fem
+from dolfinx.cpp.mesh import GhostMode
+from dolfinx.function import Function, FunctionSpace
+from dolfinx.generation import UnitSquareMesh
 from ufl import Measure, avg, inner
 
 

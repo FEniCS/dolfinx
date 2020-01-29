@@ -1,8 +1,8 @@
 #include "hyperelasticity.h"
 #include <cfloat>
-#include <dolfin.h>
+#include <dolfinx.h>
 
-using namespace dolfin;
+using namespace dolfinx;
 
 // Next:
 //

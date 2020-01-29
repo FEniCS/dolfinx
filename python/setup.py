@@ -62,13 +62,7 @@ class CMakeBuild(build_ext):
             build_args += ['--', '/m']
         else:
             cmake_args += ['-DCMAKE_BUILD_TYPE=' + cfg]
-            if "CI" in os.environ:
-                build_args += ['--', '-j3']
-            elif "CIRCLECI" in os.environ:
-                build_args += ['--', '-j3']
-            else:
-                num_build_threads = max(1, multiprocessing.cpu_count() - 1)
-                build_args += ['--', '-j' + str(num_build_threads)]
+            build_args += ['--', '-j3']
 
         env = os.environ.copy()
         env['CXXFLAGS'] = '{} -DVERSION_INFO=\\"{}\\"'.format(env.get('CXXFLAGS', ''),
@@ -79,16 +73,18 @@ class CMakeBuild(build_ext):
         subprocess.check_call(['cmake', '--build', '.'] + build_args, cwd=self.build_temp, env=env)
 
 
-setup(name='fenics-dolfin',
+setup(name='fenics-dolfinx',
       version=VERSION,
       author='FEniCS Project',
       description='DOLFIN Python interface',
       long_description='',
-      packages=["dolfin",
-                "dolfin.fem",
-                "dolfin.la",
-                "dolfin_utils.test"],
-      ext_modules=[CMakeExtension('dolfin.cpp')],
+      packages=["dolfinx",
+                "dolfinx.fem",
+                "dolfinx.la",
+                "dolfinx.wrappers",
+                "dolfinx_utils.test"],
+      package_data={'dolfinx.wrappers': ['*.h']},
+      ext_modules=[CMakeExtension('dolfinx.cpp')],
       cmdclass=dict(build_ext=CMakeBuild),
       install_requires=REQUIREMENTS,
       zip_safe=False)
