@@ -10,7 +10,6 @@ import numpy as np
 import pytest
 from petsc4py import PETSc
 
-import dolfinx
 import ufl
 from dolfinx import MPI, DirichletBC, Function, FunctionSpace, geometry
 from dolfinx.cpp.mesh import GhostMode
@@ -138,4 +137,3 @@ def test_manufactured_poisson_mixed(datadir):
     u_exact = np.zeros(mesh.geometry.dim)
     u_exact[0] = xp[0]**degree
     assert np.allclose(up, u_exact)
-
