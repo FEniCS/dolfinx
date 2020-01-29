@@ -108,19 +108,19 @@ c_signature = numba.types.void(
 
 
 @numba.cfunc(c_signature, nopython=True)
-def tabulate_condensed_tensor_A(A_, w_, c_, coords_, entity_local_index, cell_orientation, permutation=ffi.NULL):
+def tabulate_condensed_tensor_A(A_, w_, c_, coords_, entity_local_index, permutation=ffi.NULL):
     # Prepare target condensed local elem tensor
     A = numba.carray(A_, (Usize, Usize), dtype=PETSc.ScalarType)
 
     # Tabulate all sub blocks locally
     A00 = numpy.zeros((Ssize, Ssize), dtype=PETSc.ScalarType)
-    kernel00(ffi.from_buffer(A00), w_, c_, coords_, entity_local_index, cell_orientation, permutation)
+    kernel00(ffi.from_buffer(A00), w_, c_, coords_, entity_local_index, permutation)
 
     A01 = numpy.zeros((Ssize, Usize), dtype=PETSc.ScalarType)
-    kernel01(ffi.from_buffer(A01), w_, c_, coords_, entity_local_index, cell_orientation, permutation)
+    kernel01(ffi.from_buffer(A01), w_, c_, coords_, entity_local_index, permutation)
 
     A10 = numpy.zeros((Usize, Ssize), dtype=PETSc.ScalarType)
-    kernel10(ffi.from_buffer(A10), w_, c_, coords_, entity_local_index, cell_orientation, permutation)
+    kernel10(ffi.from_buffer(A10), w_, c_, coords_, entity_local_index, permutation)
 
     # A = - A10 * A00^{-1} * A01
     A[:, :] = - A10 @ numpy.linalg.solve(A00, A01)
