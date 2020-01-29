@@ -1,6 +1,6 @@
 # Copyright (C) 2013-2014 Anders Logg
 #
-# This file is part of DOLFIN (https://www.fenicsproject.org)
+# This file is part of DOLFINX (https://www.fenicsproject.org)
 #
 # SPDX-License-Identifier:    LGPL-3.0-or-later
 """Unit tests for BoundingBoxTree"""
@@ -253,7 +253,7 @@ def test_compute_first_collision_1d():
 @skip_in_parallel
 def test_compute_first_collision_2d():
     # FIXME: This test should not use facet indices as there are no
-    # guarantees on how DOLFIN numbers facets
+    # guarantees on how DOLFINX numbers facets
     reference = {1: [226], 2: [136, 137]}
 
     p = numpy.array([0.3, 0.3, 0.0])
@@ -271,7 +271,7 @@ def test_compute_first_collision_2d():
 @skip_in_parallel
 def test_compute_first_collision_3d():
     # FIXME: This test should not use facet indices as there are no
-    # guarantees on how DOLFIN numbers facets
+    # guarantees on how DOLFINX numbers facets
     reference = {
         1: [1364],
         2: [1967, 1968, 1970, 1972, 1974, 1976],

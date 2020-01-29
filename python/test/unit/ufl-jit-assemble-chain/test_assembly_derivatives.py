@@ -2,7 +2,7 @@
 
 # Copyright (C) 2011 Martin S. Alnaes
 #
-# This file is part of DOLFIN (https://www.fenicsproject.org)
+# This file is part of DOLFINX (https://www.fenicsproject.org)
 #
 # SPDX-License-Identifier:    LGPL-3.0-or-later
 
@@ -129,14 +129,14 @@ def test_diff_then_integrate():
             print(x)
             print(f)
 
-        # Apply integration with DOLFIN
+        # Apply integration with DOLFINX
         # (also passes through form compilation and jit)
         M = f * dx
         f_integral = assemble_scalar(M)  # noqa
         f_integral = MPI.sum(mesh.mpi_comm(), f_integral)
 
         # Compute integral of f manually from anti-derivative F
-        # (passes through PyDOLFIN interface and uses UFL evaluation)
+        # (passes through pybind11 interface and uses UFL evaluation)
         F_diff = F((x1,)) - F((x0,))
 
         # Compare results. Using custom relative delta instead

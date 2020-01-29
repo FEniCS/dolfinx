@@ -13,7 +13,7 @@
 
 namespace py = pybind11;
 
-namespace dolfin_wrappers
+namespace dolfinx_wrappers
 {
 void log(py::module& m)
 {
@@ -52,4 +52,4 @@ void log(py::module& m)
     }
   });
 }
-} // namespace dolfin_wrappers
+} // namespace dolfinx_wrappers

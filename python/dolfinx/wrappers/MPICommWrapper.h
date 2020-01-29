@@ -8,7 +8,7 @@
 
 #include <dolfinx/common/MPI.h>
 
-namespace dolfin_wrappers
+namespace dolfinx_wrappers
 {
 
 /// This class wraps the MPI_Comm type for use in the pybind11
@@ -37,4 +37,4 @@ private:
   // The underlying communicator
   MPI_Comm _comm;
 };
-} // namespace dolfin_wrappers
+} // namespace dolfinx_wrappers

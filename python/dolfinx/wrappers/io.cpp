@@ -26,7 +26,7 @@
 
 namespace py = pybind11;
 
-namespace dolfin_wrappers
+namespace dolfinx_wrappers
 {
 
 void io(py::module& m)
@@ -308,4 +308,4 @@ void io(py::module& m)
       .def("read_checkpoint", &dolfinx::io::XDMFFile::read_checkpoint,
            py::arg("V"), py::arg("name"), py::arg("counter") = -1);
 }
-} // namespace dolfin_wrappers
+} // namespace dolfinx_wrappers

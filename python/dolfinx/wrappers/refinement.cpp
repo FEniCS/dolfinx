@@ -11,7 +11,7 @@
 
 namespace py = pybind11;
 
-namespace dolfin_wrappers
+namespace dolfinx_wrappers
 {
 
 void refinement(py::module& m)
@@ -30,4 +30,4 @@ void refinement(py::module& m)
         py::arg("mesh"), py::arg("marker"), py::arg("redistribute") = true);
 }
 
-} // namespace dolfin_wrappers
+} // namespace dolfinx_wrappers
