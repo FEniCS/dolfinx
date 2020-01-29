@@ -262,3 +262,49 @@ std::string Topology::str(bool verbose) const
   return s.str();
 }
 //-----------------------------------------------------------------------------
+Eigen::Array<bool, 1, Eigen::Dynamic>
+Topology::get_entity_reflections(const int cell_n) const
+{
+  return _entity_reflections.row(cell_n);
+}
+//-----------------------------------------------------------------------------
+std::uint8_t Topology::get_facet_permutation(const int cell_n, const int dim,
+                                             const int facet_index) const
+{
+  return _entity_permutations(cell_n, _facet_offsets[dim] + facet_index);
+}
+//-----------------------------------------------------------------------------
+void Topology::resize_entity_permutations(std::size_t rows, std::size_t cols)
+{
+  _entity_permutations.resize(rows, cols);
+  _entity_permutations.fill(0);
+  _entity_reflections.resize(rows, cols);
+  _entity_reflections.fill(false);
+}
+//-----------------------------------------------------------------------------
+std::size_t Topology::entity_reflection_size() const
+{
+  return _entity_reflections.rows();
+}
+//-----------------------------------------------------------------------------
+void Topology::set_entity_reflection(std::size_t row, std::size_t col,
+                                     bool reflection)
+{
+  _entity_reflections(row, col) = reflection;
+}
+//-----------------------------------------------------------------------------
+void Topology::set_entity_permutation(std::size_t row, std::size_t col,
+                                      std::uint8_t rots, std::uint8_t refs)
+{
+  _entity_permutations(row, col) = 2 * rots + refs;
+}
+//-----------------------------------------------------------------------------
+void Topology::set_facet_offsets(std::size_t ent0count, std::size_t ent1count,
+                                 std::size_t ent2count, std::size_t ent3count)
+{
+  _facet_offsets[0] = 0;
+  _facet_offsets[1] = ent0count;
+  _facet_offsets[2] = ent0count + ent1count;
+  _facet_offsets[3] = ent0count + ent1count + ent2count;
+}
+//-----------------------------------------------------------------------------

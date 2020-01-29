@@ -133,10 +133,7 @@ public:
   /// @param[in] cell_n The index of the cell.
   /// @return A pointer to an array of bools
   Eigen::Array<bool, 1, Eigen::Dynamic>
-  get_entity_reflections(const int cell_n) const
-  {
-    return _entity_reflections.row(cell_n);
-  }
+  get_entity_reflections(const int cell_n) const;
 
   /// Get the permutation number to apply to a facet.
   /// The permutations are numbered so that:
@@ -147,36 +144,21 @@ public:
   /// @param[in] facet_index The local index of the facet
   /// @return The permutation number
   std::uint8_t get_facet_permutation(const int cell_n, const int dim,
-                                     const int facet_index) const
-  {
-    return _entity_permutations(cell_n, _facet_offsets[dim] + facet_index);
-  }
+                                     const int facet_index) const;
 
   /// Resize the arrays of permutations and reflections
   /// @param[in] rows The number of cells in the mesh
   /// @param[in] cols The number of entities per mesh cell
-  void resize_entity_permutations(std::size_t rows, std::size_t cols)
-  {
-    _entity_permutations.resize(rows, cols);
-    _entity_permutations.fill(0);
-    _entity_reflections.resize(rows, cols);
-    _entity_reflections.fill(false);
-  }
+  void resize_entity_permutations(std::size_t rows, std::size_t cols);
 
   /// Retuns the number of rows in the entity_permutations array
-  std::size_t entity_reflection_size() const
-  {
-    return _entity_reflections.rows();
-  }
+  std::size_t entity_reflection_size() const;
 
   /// Set the entity reflections array
   /// @param[in] row The cell index
   /// @param[in] col The entity number
   /// @param[in] reflection The entity reflection
-  void set_entity_reflection(std::size_t row, std::size_t col, bool reflection)
-  {
-    _entity_reflections(row,col) = reflection;
-  }
+  void set_entity_reflection(std::size_t row, std::size_t col, bool reflection);
 
   /// Set the entity permutations array
   /// @param[in] row The cell index
@@ -184,10 +166,7 @@ public:
   /// @param[in] rots The number of rotations to be applied
   /// @param[in] refs The number of reflections to be applied
   void set_entity_permutation(std::size_t row, std::size_t col,
-                              std::uint8_t rots, std::uint8_t refs)
-  {
-    _entity_permutations(row, col) = 2 * rots + refs;
-  }
+                              std::uint8_t rots, std::uint8_t refs);
 
   /// Sets the facet offsets
   /// @param[in] ent0count The number of entities of dimension 0
@@ -195,13 +174,7 @@ public:
   /// @param[in] ent2count The number of entities of dimension 2
   /// @param[in] ent3count The number of entities of dimension 3
   void set_facet_offsets(std::size_t ent0count, std::size_t ent1count,
-                         std::size_t ent2count, std::size_t ent3count)
-  {
-    _facet_offsets[0] = 0;
-    _facet_offsets[1] = ent0count;
-    _facet_offsets[2] = ent0count + ent1count;
-    _facet_offsets[3] = ent0count + ent1count + ent2count;
-  }
+                         std::size_t ent2count, std::size_t ent3count);
 
 private:
   // Number of mesh vertices
