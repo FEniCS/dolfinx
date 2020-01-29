@@ -93,5 +93,8 @@ int cell_degree(CellType type, int num_nodes);
 /// @return List of vertex indices
 std::vector<int> cell_vertex_indices(mesh::CellType type, int num_nodes);
 
+/// Number of nodes of a given cell type and order
+int num_cell_nodes(mesh::CellType type, int degree);
+
 } // namespace mesh
 } // namespace dolfin

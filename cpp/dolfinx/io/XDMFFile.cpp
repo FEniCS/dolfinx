@@ -1061,10 +1061,12 @@ XDMFFile::read_mesh_value_collection(std::shared_ptr<const mesh::Mesh> mesh,
 
   // Get description of MVC cell type and dimension from topology node
   auto cell_type_str = xdmf_utils::get_cell_type(topology_node);
-  assert(cell_type_str.second == 1);
+
+  const int degree = cell_type_str.second;
   const mesh::CellType cell_type = mesh::to_type(cell_type_str.first);
   const int dim = mesh::cell_dim(cell_type);
   const int num_verts_per_entity = mesh::num_cell_vertices(cell_type);
+  const int num_nodes_per_entity = mesh::num_cell_nodes(cell_type, degree);
 
   // Read MVC topology
   pugi::xml_node topology_data_node = topology_node.child("DataItem");
@@ -1139,11 +1141,20 @@ XDMFFile::read_mesh_value_collection(std::shared_ptr<const mesh::Mesh> mesh,
   send_entities = std::vector<std::vector<std::int32_t>>(num_processes);
   recv_entities = std::vector<std::vector<std::int32_t>>(num_processes);
 
+  std::vector<int> nodes_to_verts
+      = mesh::cell_vertex_indices(cell_type, num_nodes_per_entity);
+  std::vector<std::int32_t> entity_nodes(num_nodes_per_entity);
+
   std::int32_t i = 0;
   for (auto it = topology_data.begin(); it != topology_data.end();
-       it += num_verts_per_entity)
+       it += num_nodes_per_entity)
   {
-    std::partial_sort_copy(it, it + num_verts_per_entity, v.begin(), v.end());
+    // Apply node to vertices mapping, this throws away
+    // nodes read from the file
+    for (int j = 0; j < num_verts_per_entity; ++j)
+      v[j] = *(it + nodes_to_verts[j]);
+    std::sort(v.begin(), v.end());
+
     std::size_t dest
         = MPI::index_owner(_mpi_comm.comm(), v[0], global_vertex_range);
     send_entities[dest].insert(send_entities[dest].end(), v.begin(), v.end());
@@ -1459,7 +1470,7 @@ XDMFFile::read_mesh_data(MPI_Comm comm) const
 mesh::Mesh XDMFFile::read_mesh(const mesh::GhostMode ghost_mode) const
 {
   // Read local mesh data
-  auto [cell_type, points, cells, global_cell_indices]
+  auto[cell_type, points, cells, global_cell_indices]
       = read_mesh_data(_mpi_comm.comm());
 
   //  Permute cells to DOLFINX ordering
