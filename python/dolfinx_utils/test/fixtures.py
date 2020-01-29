@@ -1,6 +1,6 @@
 # Copyright (C) 2014-2014 Martin Sandve Alnæs and Aslak Wigdahl Bergersen
 #
-# This file is part of DOLFIN (https://www.fenicsproject.org)
+# This file is part of DOLFINX (https://www.fenicsproject.org)
 #
 # SPDX-License-Identifier:    LGPL-3.0-or-later
 """Shared fixtures for unit tests."""

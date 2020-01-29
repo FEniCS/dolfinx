@@ -13,7 +13,7 @@
 
 namespace py = pybind11;
 
-namespace dolfin_wrappers
+namespace dolfinx_wrappers
 {
 void graph(py::module& m)
 {
@@ -36,4 +36,4 @@ void graph(py::module& m)
         return dolfinx::graph::GraphBuilder::local_graph(mesh, dim0, dim1);
       });
 }
-} // namespace dolfin_wrappers
+} // namespace dolfinx_wrappers

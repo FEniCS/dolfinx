@@ -19,7 +19,7 @@
 
 namespace py = pybind11;
 
-namespace dolfin_wrappers
+namespace dolfinx_wrappers
 {
 void geometry(py::module& m)
 {
@@ -143,4 +143,4 @@ void geometry(py::module& m)
           "collides_segment_segment_2d",
           &dolfinx::geometry::CollisionPredicates::collides_segment_segment_2d);
 }
-} // namespace dolfin_wrappers
+} // namespace dolfinx_wrappers

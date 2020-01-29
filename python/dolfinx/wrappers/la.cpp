@@ -22,7 +22,7 @@
 
 namespace py = pybind11;
 
-namespace dolfin_wrappers
+namespace dolfinx_wrappers
 {
 
 void la(py::module& m)
@@ -120,4 +120,4 @@ void la(py::module& m)
   //         py::return_value_policy::take_ownership,
   //         "Create a PETSc MatNullSpace.");
 }
-} // namespace dolfin_wrappers
+} // namespace dolfinx_wrappers

@@ -34,7 +34,7 @@
 
 namespace py = pybind11;
 
-namespace dolfin_wrappers
+namespace dolfinx_wrappers
 {
 
 void mesh(py::module& m)
@@ -423,4 +423,4 @@ void mesh(py::module& m)
                                                               cell_type, cells);
       });
 }
-} // namespace dolfin_wrappers
+} // namespace dolfinx_wrappers
