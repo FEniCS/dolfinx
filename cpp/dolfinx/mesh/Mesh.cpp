@@ -506,16 +506,15 @@ void Mesh::create_entity_permutations() const
             // origin, and the next vertex anticlockwise from the lowest has a
             // lower number than the next vertex clockwise. Find the index of
             // the lowest numbered vertex
-            rots = -1;
+            rots = 0;
             const std::int32_t* vertices = facet.entities(0);
             const int e_vertices[3]
                 = {cell.get_vertex_local_index(vertices[0]),
                    cell.get_vertex_local_index(vertices[1]),
                    cell.get_vertex_local_index(vertices[2])};
-            for (int v = 0; v < 3; ++v)
-              if (rots == -1 || e_vertices[v] < e_vertices[rots])
+            for (int v = 1; v < 3; ++v)
+              if (e_vertices[v] < e_vertices[rots])
                 rots = v;
-
             // pre is the number of the next vertex clockwise from the lowest
             // numbered vertex
             const int pre = rots == 0 ? e_vertices[facet.num_entities(0) - 1]
