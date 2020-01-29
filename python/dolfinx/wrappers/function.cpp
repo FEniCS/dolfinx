@@ -25,7 +25,7 @@
 
 namespace py = pybind11;
 
-namespace dolfin_wrappers
+namespace dolfinx_wrappers
 {
 
 void function(py::module& m)
@@ -125,4 +125,4 @@ void function(py::module& m)
            },
            py::return_value_policy::reference_internal);
 }
-} // namespace dolfin_wrappers
+} // namespace dolfinx_wrappers

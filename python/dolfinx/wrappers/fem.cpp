@@ -68,7 +68,7 @@ forms_vector_to_array(
 
 } // namespace
 
-namespace dolfin_wrappers
+namespace dolfinx_wrappers
 {
 void fem(py::module& m)
 {
@@ -422,5 +422,5 @@ void fem(py::module& m)
           py::return_value_policy::take_ownership)
       .def("check_ref_count", &dolfinx::fem::PETScDMCollection::check_ref_count)
       .def("get_dm", &dolfinx::fem::PETScDMCollection::get_dm);
-} // namespace dolfin_wrappers
-} // namespace dolfin_wrappers
+} // namespace dolfinx_wrappers
+} // namespace dolfinx_wrappers
