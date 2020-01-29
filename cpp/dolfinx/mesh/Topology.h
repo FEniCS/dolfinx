@@ -212,8 +212,6 @@ private:
   // The entity permutations
   Eigen::Array<std::uint8_t, Eigen::Dynamic, Eigen::Dynamic> _face_permutations;
 
-  std::size_t _facet_offsets[4];
-
 }; // namespace mesh
 } // namespace mesh
 } // namespace dolfin
