@@ -131,9 +131,11 @@ public:
   /// reflected to match the low->high ordering of the cell. The
   /// entities are ordered: points, edges, faces, volumes
   /// @param[in] cell_n The index of the cell.
-  /// @return A pointer to an array of bools
+  /// @return An Eigen::Array or bools
   Eigen::Array<bool, 1, Eigen::Dynamic>
-  get_entity_reflections(const int cell_n) const;
+  get_edge_reflections(const int cell_n) const;
+  Eigen::Array<bool, 1, Eigen::Dynamic>
+  get_face_reflections(const int cell_n) const;
 
   /// Get the permutation number to apply to a facet.
   /// The permutations are numbered so that:
@@ -149,32 +151,21 @@ public:
   /// Resize the arrays of permutations and reflections
   /// @param[in] rows The number of cells in the mesh
   /// @param[in] cols The number of entities per mesh cell
-  void resize_entity_permutations(std::size_t rows, std::size_t cols);
+  void resize_entity_permutations(std::size_t cell_count, int edges_per_cell,
+                                  int faces_per_cell);
 
   /// Retuns the number of rows in the entity_permutations array
   std::size_t entity_reflection_size() const;
 
-  /// Set the entity reflections array
-  /// @param[in] row The cell index
-  /// @param[in] col The entity number
-  /// @param[in] reflection The entity reflection
-  void set_entity_reflection(std::size_t row, std::size_t col, bool reflection);
-
   /// Set the entity permutations array
-  /// @param[in] row The cell index
-  /// @param[in] col The entity number
+  /// @param[in] cell_n The cell index
+  /// @param[in] entity_dim The topological dimension of the entity
+  /// @param[in] entity_index The entity number
   /// @param[in] rots The number of rotations to be applied
   /// @param[in] refs The number of reflections to be applied
-  void set_entity_permutation(std::size_t row, std::size_t col,
-                              std::uint8_t rots, std::uint8_t refs);
-
-  /// Sets the facet offsets
-  /// @param[in] ent0count The number of entities of dimension 0
-  /// @param[in] ent1count The number of entities of dimension 1
-  /// @param[in] ent2count The number of entities of dimension 2
-  /// @param[in] ent3count The number of entities of dimension 3
-  void set_facet_offsets(std::size_t ent0count, std::size_t ent1count,
-                         std::size_t ent2count, std::size_t ent3count);
+  void set_entity_permutation(std::size_t cell_n, int entity_dim,
+                              std::size_t entity_index, std::uint8_t rots,
+                              std::uint8_t refs);
 
 private:
   // Number of mesh vertices
@@ -206,13 +197,13 @@ private:
   std::vector<std::vector<std::shared_ptr<Connectivity>>> _connectivity;
 
   // TODO: Use std::vector<int32_t> to store 1/0 marker for each edge/face
-  // The entity reflections
-  Eigen::Array<bool, Eigen::Dynamic, Eigen::Dynamic> _entity_reflections;
+  // The entity reflections of faces and edges
+  Eigen::Array<bool, Eigen::Dynamic, Eigen::Dynamic> _edge_reflections;
+  Eigen::Array<bool, Eigen::Dynamic, Eigen::Dynamic> _face_reflections;
 
   // TODO: Shrink to faces only
   // The entity permutations
-  Eigen::Array<std::uint8_t, Eigen::Dynamic, Eigen::Dynamic>
-      _entity_permutations;
+  Eigen::Array<std::uint8_t, Eigen::Dynamic, Eigen::Dynamic> _face_permutations;
 
   std::size_t _facet_offsets[4];
 

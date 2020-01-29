@@ -445,36 +445,18 @@ void Mesh::create_entity_permutations() const
 
   const int tdim = _topology->dim();
   const int num_cells = _topology->size(tdim);
-  int entities_per_cell = 1;
-  for (int d = 0; d < tdim; ++d)
-    entities_per_cell += cell_num_entities(_cell_type, d);
 
-  _topology->resize_entity_permutations(num_cells, entities_per_cell);
-
-  if (tdim == 0)
-    _topology->set_facet_offsets(1, 0, 0, 0);
-  else if (tdim == 1)
-    _topology->set_facet_offsets(cell_num_entities(_cell_type, 0), 1, 0, 0);
-  else if (tdim == 2)
-  {
-    _topology->set_facet_offsets(cell_num_entities(_cell_type, 0),
-                                 cell_num_entities(_cell_type, 1), 1, 0);
-  }
-  else if (tdim == 3)
-  {
-    _topology->set_facet_offsets(cell_num_entities(_cell_type, 0),
-                                 cell_num_entities(_cell_type, 1),
-                                 cell_num_entities(_cell_type, 2), 1);
-  }
+  _topology->resize_entity_permutations(num_cells,
+                                        cell_num_entities(_cell_type, 1),
+                                        cell_num_entities(_cell_type, 2));
 
   for (int d = 0; d < tdim; ++d)
     create_entities(d);
 
   for (int cell_n = 0; cell_n < num_cells; ++cell_n)
   {
-    int j = 0;
     const mesh::MeshEntity cell(*this, tdim, cell_n);
-    for (int d = 0; d < tdim; ++d)
+    for (int d = 1; d < tdim; ++d)
     {
       for (int i = 0; i < cell_num_entities(_cell_type, d); ++i)
       {
@@ -581,12 +563,9 @@ void Mesh::create_entity_permutations() const
           }
         }
 
-        _topology->set_entity_reflection(cell_n, j, refs);
-        _topology->set_entity_permutation(cell_n, j, rots, refs);
-        ++j;
+        _topology->set_entity_permutation(cell_n, d, i, rots, refs);
       }
     }
-    assert(j + 1 == entities_per_cell);
   }
 }
 

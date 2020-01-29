@@ -21,7 +21,7 @@ Topology::Topology(std::size_t dim, std::int32_t num_vertices,
       _shared_entities(dim + 1),
       _connectivity(dim + 1,
                     std::vector<std::shared_ptr<Connectivity>>(dim + 1)),
-      _entity_reflections(0, 0), _entity_permutations(0, 0)
+      _edge_reflections(0, 0), _face_reflections(0, 0), _face_permutations(0, 0)
 
 {
   assert(!_global_num_entities.empty());
@@ -263,48 +263,54 @@ std::string Topology::str(bool verbose) const
 }
 //-----------------------------------------------------------------------------
 Eigen::Array<bool, 1, Eigen::Dynamic>
-Topology::get_entity_reflections(const int cell_n) const
+Topology::get_edge_reflections(const int cell_n) const
 {
-  return _entity_reflections.row(cell_n);
+  return _edge_reflections.row(cell_n);
+}
+//-----------------------------------------------------------------------------
+Eigen::Array<bool, 1, Eigen::Dynamic>
+Topology::get_face_reflections(const int cell_n) const
+{
+  return _face_reflections.row(cell_n);
 }
 //-----------------------------------------------------------------------------
 std::uint8_t Topology::get_facet_permutation(const int cell_n, const int dim,
                                              const int facet_index) const
 {
-  return _entity_permutations(cell_n, _facet_offsets[dim] + facet_index);
+  if (dim == 1)
+    return _edge_reflections(cell_n, facet_index);
+  if (dim == 2)
+    return _face_permutations(cell_n, facet_index);
+  return 0;
 }
 //-----------------------------------------------------------------------------
-void Topology::resize_entity_permutations(std::size_t rows, std::size_t cols)
+void Topology::resize_entity_permutations(std::size_t cell_count,
+                                          int edges_per_cell,
+                                          int faces_per_cell)
 {
-  _entity_permutations.resize(rows, cols);
-  _entity_permutations.fill(0);
-  _entity_reflections.resize(rows, cols);
-  _entity_reflections.fill(false);
+  _face_permutations.resize(cell_count, faces_per_cell);
+  _face_permutations.fill(0);
+  _edge_reflections.resize(cell_count, edges_per_cell);
+  _edge_reflections.fill(false);
+  _face_reflections.resize(cell_count, faces_per_cell);
+  _face_reflections.fill(false);
 }
 //-----------------------------------------------------------------------------
 std::size_t Topology::entity_reflection_size() const
 {
-  return _entity_reflections.rows();
+  return _edge_reflections.rows();
 }
 //-----------------------------------------------------------------------------
-void Topology::set_entity_reflection(std::size_t row, std::size_t col,
-                                     bool reflection)
-{
-  _entity_reflections(row, col) = reflection;
-}
-//-----------------------------------------------------------------------------
-void Topology::set_entity_permutation(std::size_t row, std::size_t col,
+void Topology::set_entity_permutation(std::size_t cell_n, int entity_dim,
+                                      std::size_t entity_index,
                                       std::uint8_t rots, std::uint8_t refs)
 {
-  _entity_permutations(row, col) = 2 * rots + refs;
-}
-//-----------------------------------------------------------------------------
-void Topology::set_facet_offsets(std::size_t ent0count, std::size_t ent1count,
-                                 std::size_t ent2count, std::size_t ent3count)
-{
-  _facet_offsets[0] = 0;
-  _facet_offsets[1] = ent0count;
-  _facet_offsets[2] = ent0count + ent1count;
-  _facet_offsets[3] = ent0count + ent1count + ent2count;
+  if (entity_dim == 2)
+  {
+    _face_permutations(cell_n, entity_index) = 2 * rots + refs;
+    _face_reflections(cell_n, entity_index) = refs;
+  }
+  else if (entity_dim == 1)
+    _edge_reflections(cell_n, entity_index) = refs;
 }
 //-----------------------------------------------------------------------------
