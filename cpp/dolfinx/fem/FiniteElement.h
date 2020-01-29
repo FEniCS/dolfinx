@@ -151,11 +151,10 @@ private:
       _evaluate_reference_basis_derivatives;
 
   std::function<int(double*, int, int, const double*, const double*,
-                    const double*, const double*, const double*, int,
-                    const bool*)>
+                    const double*, const double*, const double*, const bool*)>
       _transform_reference_basis_derivatives;
 
-  std::function<int(ufc_scalar_t*, const ufc_scalar_t*, const double*, int,
+  std::function<int(ufc_scalar_t*, const ufc_scalar_t*, const double*,
                     const ufc_coordinate_mapping*)>
       _transform_values;
 };

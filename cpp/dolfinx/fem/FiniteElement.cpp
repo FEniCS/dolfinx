@@ -133,7 +133,7 @@ void FiniteElement::transform_reference_basis(
   const int num_points = X.rows();
   int ret = _transform_reference_basis_derivatives(
       values.data(), 0, num_points, reference_values.data(), X.data(), J.data(),
-      detJ.data(), K.data(), 1, entity_reflections);
+      detJ.data(), K.data(), entity_reflections);
   if (ret == -1)
   {
     throw std::runtime_error("Generated code returned error "
@@ -155,7 +155,7 @@ void FiniteElement::transform_reference_basis_derivatives(
   const int num_points = X.rows();
   int ret = _transform_reference_basis_derivatives(
       values.data(), order, num_points, reference_values.data(), X.data(),
-      J.data(), detJ.data(), K.data(), 1, entity_reflections);
+      J.data(), detJ.data(), K.data(), entity_reflections);
   if (ret == -1)
   {
     throw std::runtime_error("Generated code returned error "
@@ -180,7 +180,7 @@ void FiniteElement::transform_values(
 {
   assert(_transform_values);
   _transform_values(reference_values, physical_values.data(),
-                    coordinate_dofs.data(), 1, nullptr);
+                    coordinate_dofs.data(), nullptr);
 }
 
 //-----------------------------------------------------------------------------

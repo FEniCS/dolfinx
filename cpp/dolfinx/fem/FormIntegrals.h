@@ -48,8 +48,7 @@ public:
   /// @param[in] i Integral number
   /// @return Function to call for tabulate_tensor
   const std::function<void(PetscScalar*, const PetscScalar*, const PetscScalar*,
-                           const double*, const int*, const int*,
-                           const std::uint8_t*)>&
+                           const double*, const int*, const std::uint8_t*)>&
   get_tabulate_tensor(FormIntegrals::Type type, int i) const;
 
   /// Set the function for 'tabulate_tensor' for integral i of
@@ -60,8 +59,7 @@ public:
   void set_tabulate_tensor(
       FormIntegrals::Type type, int i,
       std::function<void(PetscScalar*, const PetscScalar*, const PetscScalar*,
-                         const double*, const int*, const int*,
-                         const std::uint8_t*)>
+                         const double*, const int*, const std::uint8_t*)>
           fn);
 
   /// Number of integrals of given type
@@ -110,8 +108,7 @@ private:
   struct Integral
   {
     std::function<void(PetscScalar*, const PetscScalar*, const PetscScalar*,
-                       const double*, const int*, const int*,
-                       const std::uint8_t*)>
+                       const double*, const int*, const std::uint8_t*)>
         tabulate;
     int id;
     std::vector<std::int32_t> active_entities;
