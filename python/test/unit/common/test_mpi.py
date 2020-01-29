@@ -48,11 +48,11 @@ def test_mpi_comm_wrapper_cppimport(tempdir):  # noqa: F811
         #include <pybind11/pybind11.h>
         #include <caster_mpi.h>
 
-        dolfin_wrappers::MPICommWrapper
-        test_comm_passing(const dolfin_wrappers::MPICommWrapper comm)
+        dolfinx_wrappers::MPICommWrapper
+        test_comm_passing(const dolfinx_wrappers::MPICommWrapper comm)
         {
           MPI_Comm c = comm.get();
-          return dolfin_wrappers::MPICommWrapper(c);
+          return dolfinx_wrappers::MPICommWrapper(c);
         }
 
         PYBIND11_MODULE(test_mpi_comm_wrapper, m)

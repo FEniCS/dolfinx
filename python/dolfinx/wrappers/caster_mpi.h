@@ -29,11 +29,11 @@ namespace pybind11
 namespace detail
 {
 template <>
-class type_caster<dolfin_wrappers::MPICommWrapper>
+class type_caster<dolfinx_wrappers::MPICommWrapper>
 {
 public:
   // Define this->value of type MPICommWrapper
-  PYBIND11_TYPE_CASTER(dolfin_wrappers::MPICommWrapper, _("MPICommWrapper"));
+  PYBIND11_TYPE_CASTER(dolfinx_wrappers::MPICommWrapper, _("MPICommWrapper"));
 
   // Python to C++
   bool load(handle src, bool)
@@ -44,19 +44,19 @@ public:
     if (not hasattr(src, "Allgather"))
       return false;
     VERIFY_MPI4PY(PyMPIComm_Get);
-    value = dolfin_wrappers::MPICommWrapper(*PyMPIComm_Get(src.ptr()));
+    value = dolfinx_wrappers::MPICommWrapper(*PyMPIComm_Get(src.ptr()));
     return true;
   }
 
   // C++ to Python
-  static handle cast(dolfin_wrappers::MPICommWrapper src,
+  static handle cast(dolfinx_wrappers::MPICommWrapper src,
                      pybind11::return_value_policy policy, handle parent)
   {
     VERIFY_MPI4PY(PyMPIComm_New);
     return pybind11::handle(PyMPIComm_New(src.get()));
   }
 
-  operator dolfin_wrappers::MPICommWrapper() { return this->value; }
+  operator dolfinx_wrappers::MPICommWrapper() { return this->value; }
 };
 } // namespace detail
 } // namespace pybind11

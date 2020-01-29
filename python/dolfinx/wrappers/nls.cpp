@@ -22,7 +22,7 @@
 
 namespace py = pybind11;
 
-namespace dolfin_wrappers
+namespace dolfinx_wrappers
 {
 void nls(py::module& m)
 {
@@ -124,4 +124,4 @@ void nls(py::module& m)
       .def("P", &dolfinx::nls::NonlinearProblem::P)
       .def("form", &dolfinx::nls::NonlinearProblem::form);
 }
-} // namespace dolfin_wrappers
+} // namespace dolfinx_wrappers

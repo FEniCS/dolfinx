@@ -22,7 +22,7 @@
 
 namespace py = pybind11;
 
-namespace dolfin_wrappers
+namespace dolfinx_wrappers
 {
 
 void generation(py::module& m)
@@ -79,4 +79,4 @@ void generation(py::module& m)
           py::arg("comm"), py::arg("p"), py::arg("n"), py::arg("cell_type"),
           py::arg("ghost_mode"));
 }
-} // namespace dolfin_wrappers
+} // namespace dolfinx_wrappers
