@@ -12,7 +12,7 @@ from petsc4py import PETSc
 
 import dolfinx
 import ufl
-from dolfinx import MPI, DirichletBC, Function, FunctionSpace
+from dolfinx import MPI, DirichletBC, Function, FunctionSpace, geometry
 from dolfinx.cpp.mesh import GhostMode
 from dolfinx.fem import (apply_lifting, assemble_matrix, assemble_scalar,
                          assemble_vector, set_bc)
@@ -85,36 +85,31 @@ def test_manufactured_poisson(degree, filename, datadir):
 # @pytest.mark.parametrize("degree", [1])
 # def test_manufactured_poisson_mixed(degree, filename, datadir):
 @skip_in_parallel
-def test_manufactured_poisson_mixed():
+def xtest_manufactured_poisson_mixed(datadir):
     """ Manufactured Poisson problem, solving u = x[i]**p, where p is the
     degree of the Lagrange function space.
 
     """
 
-    mesh = dolfinx.UnitSquareMesh(dolfinx.MPI.comm_world, 16, 16)
+    # mesh = dolfinx.UnitSquareMesh(dolfinx.MPI.comm_world, 16, 16)
+    filename = "UnitSquareMesh_triangle.xdmf"
+    with XDMFFile(MPI.comm_world, os.path.join(datadir, filename)) as xdmf:
+        mesh = xdmf.read_mesh(GhostMode.none)
 
-    # with XDMFFile(MPI.comm_world, os.path.join(datadir, filename)) as xdmf:
-    #     mesh = xdmf.read_mesh(GhostMode.none)
+    degree = 1
+    V = FunctionSpace(mesh, ("BDM", degree))
+    u, v = ufl.TrialFunction(V), ufl.TestFunction(V)
+    a = inner(u, v) * dx
 
-    BDM = ufl.FiniteElement("RT", mesh.ufl_cell(), 2)
-    # BDM = ufl.VectorElement("Lagrange", mesh.ufl_cell(), 2)
-    DG = ufl.FiniteElement("DG", mesh.ufl_cell(), 1)
-    W = FunctionSpace(mesh, BDM * DG)
-
-    (sigma, u) = ufl.TrialFunctions(W)
-    (tau, v) = ufl.TestFunctions(W)
-    a = inner(sigma, tau) * dx + div(tau) * u * dx + div(sigma) * v * dx
+    xp = np.array([0.51, 0.51, 0.0])
+    tree = geometry.BoundingBoxTree(mesh, mesh.geometry.dim)
+    cells = geometry.compute_first_entity_collision(tree, mesh, xp)
 
     for component in range(1):
-        # Exact solution
-        x = SpatialCoordinate(mesh)
-        # u_exact = x[component]**degree
-        # u_exact = x[component]**2
-
         # Source term
-        # f = - div(grad(u_exact))
-        f = (x[0] - 0.5)**2 + (x[1] - 0.5)**2
-        L = inner(f, v) * dx
+        x = SpatialCoordinate(mesh)
+        u_ref = x[0]**degree
+        L = inner(u_ref, v[0]) * dx
 
         b = assemble_vector(L)
         b.ghostUpdate(addv=PETSc.InsertMode.ADD, mode=PETSc.ScatterMode.REVERSE)
@@ -128,18 +123,19 @@ def test_manufactured_poisson_mixed():
         solver = PETSc.KSP().create(MPI.comm_world)
         solver.setType("preonly")
         solver.getPC().setType('lu')
-        solver.getPC().setFactorSolverType('umfpack')
+        # solver.getPC().setFactorSolverType('umfpack')
         solver.setOperators(A)
 
         # Solve
-        Uh = Function(W)
-        solver.solve(b, Uh.vector)
-        Uh.vector.ghostUpdate(addv=PETSc.InsertMode.INSERT, mode=PETSc.ScatterMode.FORWARD)
+        uh = Function(V)
+        solver.solve(b, uh.vector)
+        uh.vector.ghostUpdate(addv=PETSc.InsertMode.INSERT, mode=PETSc.ScatterMode.FORWARD)
 
-        # error = assemble_scalar((u_exact - uh)**2 * dx)
-        # error = MPI.sum(mesh.mpi_comm(), error)
-        # assert np.absolute(error) < 1.0e-14
+        up = uh.eval(xp, cells[0])
+        print("test0:", up)
+        print("test1:", xp[0]**degree)
 
-        uh = Uh.sub(1).collapse()
-        with XDMFFile(MPI.comm_world, "uh.xdmf") as ufile_xdmf:
-            ufile_xdmf.write(uh)
+        u_exact = np.zeros(mesh.geometry.dim)
+        u_exact[0] = xp[0]**degree
+        assert np.allclose(up, u_exact)
+
