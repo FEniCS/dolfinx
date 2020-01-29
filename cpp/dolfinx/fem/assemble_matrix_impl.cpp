@@ -111,6 +111,7 @@ void fem::impl::assemble_cells(
 {
   assert(A);
   const int gdim = mesh.geometry().dim();
+  mesh.create_entity_permutations();
 
   // Prepare cell geometry
   const mesh::Connectivity& connectivity_g
@@ -200,6 +201,7 @@ void fem::impl::assemble_exterior_facets(
   const int tdim = mesh.topology().dim();
   mesh.create_entities(tdim - 1);
   mesh.create_connectivity(tdim - 1, tdim);
+  mesh.create_entity_permutations();
 
   // Prepare cell geometry
   const mesh::Connectivity& connectivity_g
@@ -218,8 +220,6 @@ void fem::impl::assemble_exterior_facets(
       coordinate_dofs(num_dofs_g, gdim);
   Eigen::Matrix<PetscScalar, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
       Ae;
-
-  mesh.create_entity_permutations();
 
   // Iterate over all facets
   PetscErrorCode ierr;
@@ -304,6 +304,7 @@ void fem::impl::assemble_interior_facets(
   const int tdim = mesh.topology().dim();
   mesh.create_entities(tdim - 1);
   mesh.create_connectivity(tdim - 1, tdim);
+  mesh.create_entity_permutations();
 
   // Prepare cell geometry
   const mesh::Connectivity& connectivity_g
@@ -327,8 +328,6 @@ void fem::impl::assemble_interior_facets(
 
   // Temporaries for joint dofmaps
   Eigen::Array<PetscInt, Eigen::Dynamic, 1> dmapjoint0, dmapjoint1;
-
-  mesh.create_entity_permutations();
 
   // Iterate over all facets
   PetscErrorCode ierr;

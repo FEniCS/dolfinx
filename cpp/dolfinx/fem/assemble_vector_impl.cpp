@@ -42,6 +42,8 @@ void _lift_bc_cells(
   assert(a.mesh());
   const mesh::Mesh& mesh = *a.mesh();
 
+  mesh.create_entity_permutations();
+
   // Get dofmap for columns and rows of a
   assert(a.function_space(0));
   assert(a.function_space(0)->dofmap());
@@ -170,10 +172,13 @@ void _lift_bc_exterior_facets(
   assert(a.mesh());
   const mesh::Mesh& mesh = *a.mesh();
 
+  mesh.create_entity_permutations();
+
   const int gdim = mesh.geometry().dim();
   const int tdim = mesh.topology().dim();
   mesh.create_entities(tdim - 1);
   mesh.create_connectivity(tdim - 1, tdim);
+  mesh.create_entity_permutations();
 
   // Get dofmap for columns and rows of a
   assert(a.function_space(0));
@@ -225,8 +230,6 @@ void _lift_bc_exterior_facets(
     constant_values.insert(constant_values.end(), array.data(),
                            array.data() + array.size());
   }
-
-  mesh.create_entity_permutations();
 
   // Iterate over all cells
   std::shared_ptr<const mesh::Connectivity> connectivity
@@ -389,6 +392,8 @@ void fem::impl::assemble_cells(
 {
   const int gdim = mesh.geometry().dim();
 
+  mesh.create_entity_permutations();
+
   // Prepare cell geometry
   const mesh::Connectivity& connectivity_g
       = mesh.coordinate_dofs().entity_points();
@@ -447,6 +452,7 @@ void fem::impl::assemble_exterior_facets(
   const int tdim = mesh.topology().dim();
   mesh.create_entities(tdim - 1);
   mesh.create_connectivity(tdim - 1, tdim);
+  mesh.create_entity_permutations();
 
   // Prepare cell geometry
   const mesh::Connectivity& connectivity_g
@@ -459,8 +465,6 @@ void fem::impl::assemble_exterior_facets(
   const int num_dofs_g = connectivity_g.size(0);
   const Eigen::Array<double, Eigen::Dynamic, 3, Eigen::RowMajor>& x_g
       = mesh.geometry().points();
-
-  mesh.create_entity_permutations();
 
   // Create data structures used in assembly
   Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
@@ -523,6 +527,7 @@ void fem::impl::assemble_interior_facets(
   const int tdim = mesh.topology().dim();
   mesh.create_entities(tdim - 1);
   mesh.create_connectivity(tdim - 1, tdim);
+  mesh.create_entity_permutations();
 
   // Prepare cell geometry
   const mesh::Connectivity& connectivity_g
@@ -542,8 +547,6 @@ void fem::impl::assemble_interior_facets(
   Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1> be;
   Eigen::Array<PetscScalar, Eigen::Dynamic, 1> coeff_array(2 * offsets.back());
   assert(offsets.back() == coeffs.cols());
-
-  mesh.create_entity_permutations();
 
   for (const auto& facet_index : active_facets)
   {

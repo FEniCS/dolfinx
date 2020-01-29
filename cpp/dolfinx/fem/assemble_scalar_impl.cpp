@@ -97,6 +97,7 @@ PetscScalar fem::impl::assemble_cells(
   const int gdim = mesh.geometry().dim();
   const int tdim = mesh.topology().dim();
   mesh.create_entities(tdim);
+  mesh.create_entity_permutations();
 
   // Prepare cell geometry
   const mesh::Connectivity& connectivity_g
@@ -152,6 +153,7 @@ PetscScalar fem::impl::assemble_exterior_facets(
   const int tdim = mesh.topology().dim();
   mesh.create_entities(tdim - 1);
   mesh.create_connectivity(tdim - 1, tdim);
+  mesh.create_entity_permutations();
 
   // Prepare cell geometry
   const mesh::Connectivity& connectivity_g
@@ -168,8 +170,6 @@ PetscScalar fem::impl::assemble_exterior_facets(
   // Creat data structures used in assembly
   Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
       coordinate_dofs(num_dofs_g, gdim);
-
-  mesh.create_entity_permutations();
 
   // Iterate over all facets
   PetscScalar value(0);
@@ -223,6 +223,7 @@ PetscScalar fem::impl::assemble_interior_facets(
   const int tdim = mesh.topology().dim();
   mesh.create_entities(tdim - 1);
   mesh.create_connectivity(tdim - 1, tdim);
+  mesh.create_entity_permutations();
 
   // Prepare cell geometry
   const mesh::Connectivity& connectivity_g
@@ -241,8 +242,6 @@ PetscScalar fem::impl::assemble_interior_facets(
       coordinate_dofs(2 * num_dofs_g, gdim);
   Eigen::Array<PetscScalar, Eigen::Dynamic, 1> coeff_array(2 * offsets.back());
   assert(offsets.back() == coeffs.cols());
-
-  mesh.create_entity_permutations();
 
   // Iterate over all facets
   PetscScalar value(0);
