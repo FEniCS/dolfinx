@@ -583,3 +583,24 @@ std::vector<int> mesh::cell_vertex_indices(mesh::CellType type, int num_nodes)
   }
 }
 //-----------------------------------------------------------------------------
+int mesh::num_cell_nodes(mesh::CellType type, int degree)
+{
+  switch (type)
+  {
+  case mesh::CellType::point:
+    return 1;
+  case mesh::CellType::interval:
+    return degree + 1;
+  case mesh::CellType::triangle:
+    return (int) (degree + 2) * (degree + 1) / 2;
+  case mesh::CellType::tetrahedron:
+    return (int) (degree + 3) * (degree + 2) * (degree + 1) / 6;
+  case mesh::CellType::quadrilateral:
+    return (int) (degree + 1) * (degree + 1);
+  case mesh::CellType::hexahedron:
+    return (int) (degree + 1) * (degree + 1) * (degree + 1);
+  default:
+    throw std::runtime_error("Unknown cell type.");
+  }
+}
+//-----------------------------------------------------------------------------
