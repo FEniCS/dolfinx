@@ -194,7 +194,6 @@ def assemble_vector_ufc(b, kernel, mesh, x, dofmap):
         kernel(ffi.from_buffer(b_local), ffi.from_buffer(coeffs),
                ffi.from_buffer(constants),
                ffi.from_buffer(geometry), ffi.from_buffer(orientation),
-               ffi.from_buffer(orientation),
                ffi.from_buffer(perm))
         for j in range(3):
             b[dofmap[i * 3 + j]] += b_local[j]
