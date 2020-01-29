@@ -77,7 +77,7 @@
 #
 # In this example, different boundary conditions are prescribed on
 # different parts of the boundaries. Each sub-regions is tagged with
-# different (integer) labels. For this purpose, DOLFIN provides
+# different (integer) labels. For this purpose, DOLFINX provides
 # a :py:class:`MeshFunction <dolfinx.cpp.mesh.MeshFunction>` class
 # representing functions over mesh entities (such as over cells or over
 # facets). Mesh and mesh functions can be read from file in the
