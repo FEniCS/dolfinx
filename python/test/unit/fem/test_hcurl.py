@@ -49,4 +49,4 @@ def test_assembly_hcurl(space, degree):
 
     # Compute L2 error
     e = dolfinx.fem.assemble_scalar(ufl.inner(u - u_ex, u - u_ex) * ufl.dx)
-    assert abs(e) < 5e-3
+    assert abs(e) < 1e-2
