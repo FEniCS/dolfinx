@@ -80,27 +80,27 @@ void mesh(py::module& m)
   py::class_<dolfinx::mesh::CoordinateDofs,
              std::shared_ptr<dolfinx::mesh::CoordinateDofs>>(
       m, "CoordinateDofs", "CoordinateDofs object")
-      .def("entity_points",
-           [](const dolfinx::mesh::CoordinateDofs& self) {
-             const dolfinx::mesh::Connectivity& connectivity
-                 = self.entity_points();
-             Eigen::Ref<const Eigen::Array<std::int32_t, Eigen::Dynamic, 1>>
-                 connections = connectivity.connections();
-             const int num_entities
-                 = connectivity.entity_positions().size() - 1;
+      .def(
+          "entity_points",
+          [](const dolfinx::mesh::CoordinateDofs& self) {
+            const dolfinx::mesh::Connectivity& connectivity
+                = self.entity_points();
+            Eigen::Ref<const Eigen::Array<std::int32_t, Eigen::Dynamic, 1>>
+                connections = connectivity.connections();
+            const int num_entities = connectivity.entity_positions().size() - 1;
 
-             // FIXME: mesh::CoordinateDofs should know its dimension
-             // (entity_size) to handle empty case on a process.
-             int entity_size = 0;
-             if (num_entities > 0)
-             {
-               assert(connections.size() % num_entities == 0);
-               entity_size = connections.size() / num_entities;
-             }
-             return py::array({num_entities, entity_size}, connections.data(),
-                              py::none());
-           },
-           py::return_value_policy::reference_internal);
+            // FIXME: mesh::CoordinateDofs should know its dimension
+            // (entity_size) to handle empty case on a process.
+            int entity_size = 0;
+            if (num_entities > 0)
+            {
+              assert(connections.size() % num_entities == 0);
+              entity_size = connections.size() / num_entities;
+            }
+            return py::array({num_entities, entity_size}, connections.data(),
+                             py::none());
+          },
+          py::return_value_policy::reference_internal);
 
   // dolfinx::mesh::Geometry class
   py::class_<dolfinx::mesh::Geometry, std::shared_ptr<dolfinx::mesh::Geometry>>(
@@ -142,13 +142,14 @@ void mesh(py::module& m)
            py::overload_cast<int>(&dolfinx::mesh::Topology::entity_owner,
                                   py::const_))
       .def("on_boundary", &dolfinx::mesh::Topology::on_boundary)
-      .def("global_indices",
-           [](const dolfinx::mesh::Topology& self, int dim) {
-             auto& indices = self.global_indices(dim);
-             return py::array_t<std::int64_t>(indices.size(), indices.data(),
-                                              py::none());
-           },
-           py::return_value_policy::reference_internal)
+      .def(
+          "global_indices",
+          [](const dolfinx::mesh::Topology& self, int dim) {
+            auto& indices = self.global_indices(dim);
+            return py::array_t<std::int64_t>(indices.size(), indices.data(),
+                                             py::none());
+          },
+          py::return_value_policy::reference_internal)
       .def("shared_entities", &dolfinx::mesh::Topology::shared_entities)
       .def("str", &dolfinx::mesh::Topology::str);
 
@@ -215,16 +216,17 @@ void mesh(py::module& m)
 
   // dolfinx::mesh::Connectivity class
   py::class_<dolfinx::mesh::Connectivity,
-             std::shared_ptr<dolfinx::mesh::Connectivity>>(m, "Connectivity",
-                                                          "Connectivity object")
-      .def("connections",
-           [](const dolfinx::mesh::Connectivity& self, std::size_t i) {
-             return Eigen::Map<
-                 const Eigen::Array<std::int32_t, Eigen::Dynamic, 1>>(
-                 self.connections(i), self.size(i));
-           },
-           "Connections for a single mesh entity",
-           py::return_value_policy::reference_internal)
+             std::shared_ptr<dolfinx::mesh::Connectivity>>(
+      m, "Connectivity", "Connectivity object")
+      .def(
+          "connections",
+          [](const dolfinx::mesh::Connectivity& self, std::size_t i) {
+            return Eigen::Map<
+                const Eigen::Array<std::int32_t, Eigen::Dynamic, 1>>(
+                self.connections(i), self.size(i));
+          },
+          "Connections for a single mesh entity",
+          py::return_value_policy::reference_internal)
       .def("connections",
            py::overload_cast<>(&dolfinx::mesh::Connectivity::connections),
            "Connections for all mesh entities")
@@ -236,7 +238,7 @@ void mesh(py::module& m)
   // dolfinx::mesh::MeshEntity class
   py::class_<dolfinx::mesh::MeshEntity,
              std::shared_ptr<dolfinx::mesh::MeshEntity>>(m, "MeshEntity",
-                                                        "MeshEntity object")
+                                                         "MeshEntity object")
       .def(py::init<const dolfinx::mesh::Mesh&, std::size_t, std::size_t>())
       .def_property_readonly("dim", &dolfinx::mesh::MeshEntity::dim,
                              "Topological dimension")
@@ -244,21 +246,22 @@ void mesh(py::module& m)
       .def("index",
            py::overload_cast<>(&dolfinx::mesh::MeshEntity::index, py::const_),
            "Entity index")
-      .def("entities",
-           [](dolfinx::mesh::MeshEntity& self, int dim) {
-             if (self.dim() == dim)
-               return py::array(1, self.entities(dim));
-             else
-             {
-               assert(self.mesh().topology().connectivity(self.dim(), dim));
-               const int num_entities = self.mesh()
-                                            .topology()
-                                            .connectivity(self.dim(), dim)
-                                            ->size(self.index());
-               return py::array(num_entities, self.entities(dim));
-             }
-           },
-           py::return_value_policy::reference_internal)
+      .def(
+          "entities",
+          [](dolfinx::mesh::MeshEntity& self, int dim) {
+            if (self.dim() == dim)
+              return py::array(1, self.entities(dim));
+            else
+            {
+              assert(self.mesh().topology().connectivity(self.dim(), dim));
+              const int num_entities = self.mesh()
+                                           .topology()
+                                           .connectivity(self.dim(), dim)
+                                           ->size(self.index());
+              return py::array(num_entities, self.entities(dim));
+            }
+          },
+          py::return_value_policy::reference_internal)
       .def("__str__",
            [](dolfinx::mesh::MeshEntity& self) { return self.str(false); });
 
@@ -272,22 +275,22 @@ void mesh(py::module& m)
 
 // dolfinx::mesh::MeshFunction
 #define MESHFUNCTION_MACRO(SCALAR, SCALAR_NAME)                                \
-  py::class_<dolfinx::mesh::MeshFunction<SCALAR>,                               \
-             std::shared_ptr<dolfinx::mesh::MeshFunction<SCALAR>>>(             \
+  py::class_<dolfinx::mesh::MeshFunction<SCALAR>,                              \
+             std::shared_ptr<dolfinx::mesh::MeshFunction<SCALAR>>>(            \
       m, "MeshFunction" #SCALAR_NAME, "DOLFIN MeshFunction object")            \
-      .def(py::init<std::shared_ptr<const dolfinx::mesh::Mesh>, std::size_t,    \
+      .def(py::init<std::shared_ptr<const dolfinx::mesh::Mesh>, std::size_t,   \
                     SCALAR>())                                                 \
-      .def(py::init<std::shared_ptr<const dolfinx::mesh::Mesh>,                 \
-                    const dolfinx::mesh::MeshValueCollection<SCALAR>&,          \
+      .def(py::init<std::shared_ptr<const dolfinx::mesh::Mesh>,                \
+                    const dolfinx::mesh::MeshValueCollection<SCALAR>&,         \
                     const SCALAR&>())                                          \
-      .def_property_readonly("dim", &dolfinx::mesh::MeshFunction<SCALAR>::dim)  \
-      .def_readwrite("name", &dolfinx::mesh::MeshFunction<SCALAR>::name)        \
-      .def("mesh", &dolfinx::mesh::MeshFunction<SCALAR>::mesh)                  \
+      .def_property_readonly("dim", &dolfinx::mesh::MeshFunction<SCALAR>::dim) \
+      .def_readwrite("name", &dolfinx::mesh::MeshFunction<SCALAR>::name)       \
+      .def("mesh", &dolfinx::mesh::MeshFunction<SCALAR>::mesh)                 \
       .def("ufl_id",                                                           \
-           [](const dolfinx::mesh::MeshFunction<SCALAR>& self) {                \
+           [](const dolfinx::mesh::MeshFunction<SCALAR>& self) {               \
              return self.id;                                                   \
            })                                                                  \
-      .def("mark", &dolfinx::mesh::MeshFunction<SCALAR>::mark)                  \
+      .def("mark", &dolfinx::mesh::MeshFunction<SCALAR>::mark)                 \
       .def_property_readonly(                                                  \
           "values",                                                            \
           py::overload_cast<>(&dolfinx::mesh::MeshFunction<SCALAR>::values));
@@ -299,36 +302,39 @@ void mesh(py::module& m)
 
 // dolfinx::mesh::MeshValueCollection
 #define MESHVALUECOLLECTION_MACRO(SCALAR, SCALAR_NAME)                         \
-  py::class_<dolfinx::mesh::MeshValueCollection<SCALAR>,                        \
-             std::shared_ptr<dolfinx::mesh::MeshValueCollection<SCALAR>>>(      \
+  py::class_<dolfinx::mesh::MeshValueCollection<SCALAR>,                       \
+             std::shared_ptr<dolfinx::mesh::MeshValueCollection<SCALAR>>>(     \
       m, "MeshValueCollection_" #SCALAR_NAME,                                  \
       "DOLFIN MeshValueCollection object")                                     \
-      .def(py::init<std::shared_ptr<const dolfinx::mesh::Mesh>, std::size_t>()) \
-      .def_readwrite("name", &dolfinx::mesh::MeshValueCollection<SCALAR>::name) \
+      .def(                                                                    \
+          py::init<std::shared_ptr<const dolfinx::mesh::Mesh>, std::size_t>()) \
+      .def_readwrite("name",                                                   \
+                     &dolfinx::mesh::MeshValueCollection<SCALAR>::name)        \
       .def_property_readonly("dim",                                            \
-                             &dolfinx::mesh::MeshValueCollection<SCALAR>::dim)  \
-      .def("size", &dolfinx::mesh::MeshValueCollection<SCALAR>::size)           \
-      .def("get_value", &dolfinx::mesh::MeshValueCollection<SCALAR>::get_value) \
+                             &dolfinx::mesh::MeshValueCollection<SCALAR>::dim) \
+      .def("size", &dolfinx::mesh::MeshValueCollection<SCALAR>::size)          \
+      .def("get_value",                                                        \
+           &dolfinx::mesh::MeshValueCollection<SCALAR>::get_value)             \
       .def("set_value",                                                        \
-           (bool (dolfinx::mesh::MeshValueCollection<SCALAR>::*)(               \
+           (bool (dolfinx::mesh::MeshValueCollection<SCALAR>::*)(              \
                std::size_t, const SCALAR&))                                    \
-               & dolfinx::mesh::MeshValueCollection<SCALAR>::set_value)         \
+               & dolfinx::mesh::MeshValueCollection<SCALAR>::set_value)        \
       .def("set_value",                                                        \
-           (bool (dolfinx::mesh::MeshValueCollection<SCALAR>::*)(               \
+           (bool (dolfinx::mesh::MeshValueCollection<SCALAR>::*)(              \
                std::size_t, std::size_t, const SCALAR&))                       \
-               & dolfinx::mesh::MeshValueCollection<SCALAR>::set_value)         \
+               & dolfinx::mesh::MeshValueCollection<SCALAR>::set_value)        \
       .def("values",                                                           \
            (std::map<                                                          \
                 std::pair<std::size_t, std::size_t>,                           \
-                SCALAR> & (dolfinx::mesh::MeshValueCollection<SCALAR>::*)())    \
-               & dolfinx::mesh::MeshValueCollection<SCALAR>::values,            \
+                SCALAR> & (dolfinx::mesh::MeshValueCollection<SCALAR>::*)())   \
+               & dolfinx::mesh::MeshValueCollection<SCALAR>::values,           \
            py::return_value_policy::reference)                                 \
       .def("assign",                                                           \
-           [](dolfinx::mesh::MeshValueCollection<SCALAR>& self,                 \
-              const dolfinx::mesh::MeshFunction<SCALAR>& mf) { self = mf; })    \
+           [](dolfinx::mesh::MeshValueCollection<SCALAR>& self,                \
+              const dolfinx::mesh::MeshFunction<SCALAR>& mf) { self = mf; })   \
       .def("assign",                                                           \
-           [](dolfinx::mesh::MeshValueCollection<SCALAR>& self,                 \
-              const dolfinx::mesh::MeshValueCollection<SCALAR>& other) {        \
+           [](dolfinx::mesh::MeshValueCollection<SCALAR>& self,                \
+              const dolfinx::mesh::MeshValueCollection<SCALAR>& other) {       \
              self = other;                                                     \
            })
 
@@ -413,8 +419,8 @@ void mesh(py::module& m)
              cells) {
         std::vector<int> part(parttition.data(),
                               parttition.data() + parttition.size());
-        return dolfinx::mesh::Partitioning::compute_halo_cells(comm.get(), part,
-                                                              cell_type, cells);
+        return dolfinx::mesh::Partitioning::compute_halo_cells(
+            comm.get(), part, cell_type, cells);
       });
 }
 } // namespace dolfinx_wrappers
