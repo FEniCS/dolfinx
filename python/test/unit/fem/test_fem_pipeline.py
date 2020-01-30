@@ -40,7 +40,7 @@ def test_manufactured_poisson(degree, filename, datadir):
     V = FunctionSpace(mesh, ("Lagrange", degree))
     u, v = TrialFunction(V), TestFunction(V)
 
-    # Get polynomial degree for bilinear form integrand (ignores effect
+    # Get quadrature degree for bilinear form integrand (ignores effect
     # of non-affine map)
     a = inner(grad(u), grad(v)) * dx(metadata={"quadrature_degree": -1})
     a.integrals()[0].metadata()["quadrature_degree"] = ufl.algorithms.estimate_total_polynomial_degree(a)
@@ -49,6 +49,9 @@ def test_manufactured_poisson(degree, filename, datadir):
     x = SpatialCoordinate(mesh)
     u_exact = x[1]**degree
     f = - div(grad(u_exact))
+
+    # Set quadrature degree for linear form integrand (ignores effect of
+    # non-affine map)
     L = inner(f, v) * dx(metadata={"quadrature_degree": -1})
     L.integrals()[0].metadata()["quadrature_degree"] = ufl.algorithms.estimate_total_polynomial_degree(L)
 
@@ -56,10 +59,6 @@ def test_manufactured_poisson(degree, filename, datadir):
     L = fem.Form(L)
     t1 = time.time()
     print("Linear form compile time:", t1 - t0)
-
-    # Get polynomial degree for linear form integrand (ignores effect of
-    # non-affine map)
-    q1 = ufl.algorithms.estimate_total_polynomial_degree(inner(f, v) * dx)
 
     u_bc = Function(V)
     u_bc.interpolate(lambda x: x[1]**degree)
