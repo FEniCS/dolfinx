@@ -104,8 +104,8 @@ c_signature = numba.types.void(
     numba.types.CPointer(numba.types.double),
     numba.types.CPointer(numba.types.int32),
     numba.types.CPointer(numba.types.uint8),
-    numba.types.CPointer(numba.types.bool),
-    numba.types.CPointer(numba.types.bool))
+    numba.types.CPointer(numba.types.boolean),
+    numba.types.CPointer(numba.types.boolean))
 
 
 @numba.cfunc(c_signature, nopython=True)
