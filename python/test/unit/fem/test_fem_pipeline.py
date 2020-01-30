@@ -13,7 +13,6 @@ from petsc4py import PETSc
 
 import ufl
 from dolfinx import MPI, DirichletBC, Function, FunctionSpace, fem, geometry
-from dolfinx import MPI, DirichletBC, Function, FunctionSpace, fem
 from dolfinx.cpp.mesh import GhostMode
 from dolfinx.fem import (apply_lifting, assemble_matrix, assemble_scalar,
                          assemble_vector, set_bc)
@@ -112,3 +111,59 @@ def test_manufactured_poisson(degree, filename, datadir):
     t1 = time.time()
     print("Error assembly time:", t1 - t0)
     assert np.absolute(error) < 1.0e-14
+
+
+@skip_in_parallel
+# @pytest.mark.parametrize("filename", ["UnitSquareMesh_triangle.xdmf",
+#                                       #   "UnitCubeMesh_tetra.xdmf",
+#                                       #   "UnitCubeMesh_hexahedron.xdmf",
+#                                       #   "UnitSquareMesh_quad.xdmf"
+#                                       ])
+@pytest.mark.parametrize("degree", [1])
+def test_manufactured_h_div(degree, datadir):
+    """Projection into H(div) spaces"""
+
+    # mesh = dolfinx.UnitSquareMesh(dolfinx.MPI.comm_world, 16, 16)
+    filename = "UnitSquareMesh_triangle.xdmf"
+    with XDMFFile(MPI.comm_world, os.path.join(datadir, filename)) as xdmf:
+        mesh = xdmf.read_mesh(GhostMode.none)
+
+    V = FunctionSpace(mesh, ("BDM", degree))
+    u, v = ufl.TrialFunction(V), ufl.TestFunction(V)
+    a = inner(u, v) * dx
+
+    xp = np.array([0.51, 0.51, 0.0])
+    tree = geometry.BoundingBoxTree(mesh, mesh.geometry.dim)
+    cells = geometry.compute_first_entity_collision(tree, mesh, xp)
+
+    # Source term
+    x = SpatialCoordinate(mesh)
+    u_ref = x[0]**degree
+    L = inner(u_ref, v[0]) * dx
+
+    b = assemble_vector(L)
+    b.ghostUpdate(addv=PETSc.InsertMode.ADD, mode=PETSc.ScatterMode.REVERSE)
+
+    A = assemble_matrix(a)
+    A.assemble()
+
+    # Create LU linear solver (Note: need to use a solver that
+    # re-orders to handle pivots, e.g. not the PETSc built-in LU
+    # solver)
+    solver = PETSc.KSP().create(MPI.comm_world)
+    solver.setType("preonly")
+    solver.getPC().setType('lu')
+    solver.setOperators(A)
+
+    # Solve
+    uh = Function(V)
+    solver.solve(b, uh.vector)
+    uh.vector.ghostUpdate(addv=PETSc.InsertMode.INSERT, mode=PETSc.ScatterMode.FORWARD)
+
+    up = uh.eval(xp, cells[0])
+    print("test0:", up)
+    print("test1:", xp[0]**degree)
+
+    u_exact = np.zeros(mesh.geometry.dim)
+    u_exact[0] = xp[0]**degree
+    assert np.allclose(up, u_exact)
