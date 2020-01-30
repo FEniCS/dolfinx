@@ -139,4 +139,4 @@ def test_manufactured_poisson_mixed(datadir):
 
     u_exact = np.zeros(mesh.geometry.dim)
     u_exact[0] = xp[0]**degree
-    # assert np.allclose(up, u_exact)
+    assert np.allclose(up, u_exact)
