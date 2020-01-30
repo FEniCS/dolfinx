@@ -5,12 +5,13 @@
 # SPDX-License-Identifier:    LGPL-3.0-or-later
 
 import os
+import time
 
 import numpy as np
 import pytest
 from petsc4py import PETSc
 
-from dolfinx import MPI, DirichletBC, Function, FunctionSpace
+from dolfinx import MPI, DirichletBC, Function, FunctionSpace, fem
 from dolfinx.cpp.mesh import GhostMode
 from dolfinx.fem import (apply_lifting, assemble_matrix, assemble_scalar,
                          assemble_vector, set_bc)
@@ -30,6 +31,7 @@ def test_manufactured_poisson(degree, filename, datadir):
 
     """
 
+    print("---------------------------:", filename, degree)
     with XDMFFile(MPI.comm_world, os.path.join(datadir, filename)) as xdmf:
         mesh = xdmf.read_mesh(GhostMode.none)
 
@@ -37,11 +39,9 @@ def test_manufactured_poisson(degree, filename, datadir):
     u, v = TrialFunction(V), TestFunction(V)
 
     for component in range(mesh.geometry.dim):
-        # Exact solution
+        # Source term
         x = SpatialCoordinate(mesh)
         u_exact = x[component]**degree
-
-        # Source term
         f = - div(grad(u_exact))
 
         a = inner(grad(u), grad(v)) * dx
@@ -51,13 +51,29 @@ def test_manufactured_poisson(degree, filename, datadir):
         u_bc.interpolate(lambda x: x[component]**degree)
         bc = DirichletBC(V, u_bc, lambda x: np.full(x.shape[1], True))
 
+        t0 = time.time()
+        L = fem.Form(L)
+        t1 = time.time()
+        print("Linear form compile time:", t1 - t0)
+
+        t0 = time.time()
         b = assemble_vector(L)
         apply_lifting(b, [a], [[bc]])
         b.ghostUpdate(addv=PETSc.InsertMode.ADD, mode=PETSc.ScatterMode.REVERSE)
         set_bc(b, [bc])
+        t1 = time.time()
+        print("Vector assembly time:", t1 - t0)
 
+        t0 = time.time()
+        a = fem.Form(a)
+        t1 = time.time()
+        print("Bilinear form compile time:", t1 - t0)
+
+        t0 = time.time()
         A = assemble_matrix(a, [bc])
         A.assemble()
+        t1 = time.time()
+        print("Matrix assembly time:", t1 - t0)
 
         # Create LU linear solver
         solver = PETSc.KSP().create(MPI.comm_world)
@@ -66,10 +82,22 @@ def test_manufactured_poisson(degree, filename, datadir):
         solver.setOperators(A)
 
         # Solve
+        t0 = time.time()
         uh = Function(V)
         solver.solve(b, uh.vector)
         uh.vector.ghostUpdate(addv=PETSc.InsertMode.INSERT, mode=PETSc.ScatterMode.FORWARD)
+        t1 = time.time()
+        print("Linear solver time:", t1 - t0)
 
-        error = assemble_scalar((u_exact - uh)**2 * dx)
+        M = (u_exact - uh)**2 * dx
+        t0 = time.time()
+        M = fem.Form(M)
+        t1 = time.time()
+        print("Error functional compile time:", t1 - t0)
+
+        t0 = time.time()
+        error = assemble_scalar(M)
         error = MPI.sum(mesh.mpi_comm(), error)
+        t1 = time.time()
+        print("Error assembly time:", t1 - t0)
         assert np.absolute(error) < 1.0e-14
