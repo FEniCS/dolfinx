@@ -18,12 +18,13 @@ import numba.cffi_support
 import numpy as np
 import pytest
 from petsc4py import PETSc
+from petsc4py import get_config as PETSc_get_config
 
 import dolfinx
 import ufl
 from ufl import dx, inner
 
-petsc_dir = os.environ.get('PETSC_DIR', None)
+petsc_dir = PETSc_get_config()['PETSC_DIR']
 
 # Get PETSc int and scalar types
 if np.dtype(PETSc.ScalarType).kind == 'c':
@@ -113,7 +114,6 @@ worker = os.getenv('PYTEST_XDIST_WORKER', None)
 module_name = "_petsc_cffi_{}".format(worker)
 if dolfinx.MPI.comm_world.Get_rank() == 0:
     os.environ["CC"] = "mpicc"
-    petsc_dir = os.environ.get('PETSC_DIR', None)
     ffibuilder = cffi.FFI()
     ffibuilder.cdef("""
         typedef int... PetscInt;
