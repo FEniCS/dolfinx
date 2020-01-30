@@ -11,6 +11,7 @@ import numpy as np
 import pytest
 from petsc4py import PETSc
 
+import ufl
 from dolfinx import MPI, DirichletBC, Function, FunctionSpace, fem
 from dolfinx.cpp.mesh import GhostMode
 from dolfinx.fem import (apply_lifting, assemble_matrix, assemble_scalar,
@@ -20,10 +21,12 @@ from ufl import (SpatialCoordinate, TestFunction, TrialFunction, div, dx, grad,
                  inner)
 
 
-@pytest.mark.parametrize("filename", ["UnitCubeMesh_hexahedron.xdmf",
-                                      "UnitCubeMesh_tetra.xdmf",
-                                      "UnitSquareMesh_quad.xdmf",
-                                      "UnitSquareMesh_triangle.xdmf"])
+@pytest.mark.parametrize("filename", [
+    "UnitCubeMesh_hexahedron.xdmf",
+    "UnitCubeMesh_tetra.xdmf",
+    "UnitSquareMesh_quad.xdmf",
+    "UnitSquareMesh_triangle.xdmf"
+])
 @pytest.mark.parametrize("degree", [2, 3, 4])
 def test_manufactured_poisson(degree, filename, datadir):
     """ Manufactured Poisson problem, solving u = x[i]**p, where p is the
@@ -31,21 +34,30 @@ def test_manufactured_poisson(degree, filename, datadir):
 
     """
 
-    print("---------------------------:", filename, degree)
     with XDMFFile(MPI.comm_world, os.path.join(datadir, filename)) as xdmf:
         mesh = xdmf.read_mesh(GhostMode.none)
 
     V = FunctionSpace(mesh, ("Lagrange", degree))
     u, v = TrialFunction(V), TestFunction(V)
 
+    # Get polynomial degree for bilinear form integrand (ignores effect
+    # of non-affine map)
+    q2 = ufl.algorithms.estimate_total_polynomial_degree(inner(grad(u), grad(v)) * dx)
+
+    # a = inner(grad(u), grad(v)) * dx
     for component in range(mesh.geometry.dim):
+
+        a = inner(grad(u), grad(v)) * dx(metadata={"quadrature_degree": q2})
+
         # Source term
         x = SpatialCoordinate(mesh)
         u_exact = x[component]**degree
         f = - div(grad(u_exact))
 
-        a = inner(grad(u), grad(v)) * dx
-        L = inner(f, v) * dx
+        # Get polynomial degree for linear form integrand (ignores
+        # effect of non-affine map)
+        q1 = ufl.algorithms.estimate_total_polynomial_degree(inner(f, v) * dx)
+        L = inner(f, v) * dx(metadata={"quadrature_degree": q1})
 
         u_bc = Function(V)
         u_bc.interpolate(lambda x: x[component]**degree)
