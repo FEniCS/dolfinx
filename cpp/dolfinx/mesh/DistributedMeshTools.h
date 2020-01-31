@@ -67,4 +67,4 @@ public:
       const std::vector<std::int64_t>& global_indices);
 };
 } // namespace mesh
-} // namespace dolfin
+} // namespace dolfinx

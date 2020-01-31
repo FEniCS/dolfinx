@@ -83,4 +83,4 @@ std::size_t hash_global(const MPI_Comm mpi_comm, const T& x)
   return global_hash;
 }
 } // namespace common
-} // namespace dolfin
+} // namespace dolfinx

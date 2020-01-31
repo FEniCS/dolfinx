@@ -90,4 +90,4 @@ private:
   std::size_t _counter;
 };
 } // namespace io
-} // namespace dolfin
+} // namespace dolfinx

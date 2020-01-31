@@ -48,4 +48,4 @@ public:
   virtual Mat P(const Vec x) { return nullptr; }
 };
 } // namespace nls
-} // namespace dolfin
+} // namespace dolfinx

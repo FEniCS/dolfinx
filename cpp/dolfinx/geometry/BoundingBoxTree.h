@@ -105,4 +105,4 @@ public:
   std::unique_ptr<BoundingBoxTree> global_tree;
 };
 } // namespace geometry
-} // namespace dolfin
+} // namespace dolfinx

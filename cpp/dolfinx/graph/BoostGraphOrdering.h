@@ -35,4 +35,4 @@ public:
       std::size_t size, bool reverse = false);
 };
 } // namespace graph
-} // namespace dolfin
+} // namespace dolfinx

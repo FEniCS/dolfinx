@@ -33,4 +33,4 @@ public:
 #endif
 };
 } // namespace graph
-} // namespace dolfin
+} // namespace dolfinx

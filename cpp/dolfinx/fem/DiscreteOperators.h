@@ -51,4 +51,4 @@ public:
                                         const function::FunctionSpace& V1);
 };
 } // namespace fem
-} // namespace dolfin
+} // namespace dolfinx

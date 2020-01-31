@@ -105,4 +105,4 @@ private:
       _compute_reference_geometry;
 };
 } // namespace fem
-} // namespace dolfin
+} // namespace dolfinx

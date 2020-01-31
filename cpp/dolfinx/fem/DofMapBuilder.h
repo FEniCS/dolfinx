@@ -54,4 +54,4 @@ public:
         const std::int32_t block_size);
 };
 } // namespace fem
-} // namespace dolfin
+} // namespace dolfinx

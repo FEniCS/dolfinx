@@ -44,4 +44,4 @@ double _orient3d(const double* a, const double* b, const double* c,
                  const double* d);
 
 } // namespace geometry
-} // namespace dolfin
+} // namespace dolfinx

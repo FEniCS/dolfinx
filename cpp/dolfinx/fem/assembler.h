@@ -224,4 +224,4 @@ bcs_cols(const std::vector<std::vector<std::shared_ptr<const Form>>>& a,
          const std::vector<std::shared_ptr<const DirichletBC>>& bcs);
 
 } // namespace fem
-} // namespace dolfin
+} // namespace dolfinx

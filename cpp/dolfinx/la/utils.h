@@ -149,4 +149,4 @@ void scatter_local_vectors(
     const std::vector<const common::IndexMap*>& maps);
 
 } // namespace la
-} // namespace dolfin
+} // namespace dolfinx

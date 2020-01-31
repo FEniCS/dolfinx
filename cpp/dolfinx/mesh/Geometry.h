@@ -97,4 +97,4 @@ private:
   std::uint64_t _num_points_global;
 };
 } // namespace mesh
-} // namespace dolfin
+} // namespace dolfinx

@@ -107,4 +107,4 @@ private:
   Vec _x;
 };
 } // namespace la
-} // namespace dolfin
+} // namespace dolfinx

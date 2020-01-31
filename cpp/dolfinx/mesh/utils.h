@@ -50,4 +50,4 @@ Eigen::Array<double, Eigen::Dynamic, 3, Eigen::RowMajor> midpoints(
     const Eigen::Ref<const Eigen::Array<int, Eigen::Dynamic, 1>>& entities);
 
 } // namespace mesh
-} // namespace dolfin
+} // namespace dolfinx

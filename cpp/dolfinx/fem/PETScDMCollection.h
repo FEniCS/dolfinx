@@ -95,4 +95,4 @@ private:
   std::vector<DM> _dms;
 };
 } // namespace fem
-} // namespace dolfin
+} // namespace dolfinx

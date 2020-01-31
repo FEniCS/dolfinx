@@ -50,4 +50,4 @@ public:
   static void clear();
 };
 } // namespace la
-} // namespace dolfin
+} // namespace dolfinx

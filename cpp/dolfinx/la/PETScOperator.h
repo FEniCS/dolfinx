@@ -64,4 +64,4 @@ protected:
   Mat _matA;
 };
 } // namespace la
-} // namespace dolfin
+} // namespace dolfinx

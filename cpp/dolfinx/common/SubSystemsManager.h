@@ -95,4 +95,4 @@ private:
   bool control_mpi;
 };
 } // namespace common
-} // namespace dolfin
+} // namespace dolfinx

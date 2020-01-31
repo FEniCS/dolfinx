@@ -191,4 +191,4 @@ public:
       const Eigen::Vector3d& q2, const Eigen::Vector3d& q3);
 };
 } // namespace geometry
-} // namespace dolfin
+} // namespace dolfinx

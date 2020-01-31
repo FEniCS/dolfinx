@@ -79,4 +79,4 @@ private:
   std::vector<std::string> _names;
 };
 } // namespace fem
-} // namespace dolfin
+} // namespace dolfinx

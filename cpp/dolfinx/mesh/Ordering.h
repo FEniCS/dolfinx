@@ -30,4 +30,4 @@ public:
 };
 
 } // namespace mesh
-} // namespace dolfin
+} // namespace dolfinx
