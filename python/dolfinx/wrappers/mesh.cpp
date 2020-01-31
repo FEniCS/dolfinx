@@ -34,7 +34,7 @@
 
 namespace py = pybind11;
 
-namespace dolfin_wrappers
+namespace dolfinx_wrappers
 {
 
 void mesh(py::module& m)
@@ -426,4 +426,4 @@ void mesh(py::module& m)
   m.def("compute_marked_boundary_entities",
         &dolfinx::mesh::compute_marked_boundary_entities);
 }
-} // namespace dolfin_wrappers
+} // namespace dolfinx_wrappers

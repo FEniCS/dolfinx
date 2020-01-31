@@ -9,7 +9,7 @@
 
 namespace py = pybind11;
 
-namespace dolfin_wrappers
+namespace dolfinx_wrappers
 {
 void common(py::module& m);
 void mpi(py::module& m);
@@ -25,7 +25,7 @@ void la(py::module& m);
 void mesh(py::module& m);
 void nls(py::module& m);
 void refinement(py::module& m);
-} // namespace dolfin_wrappers
+} // namespace dolfinx_wrappers
 
 PYBIND11_MODULE(cpp, m)
 {
@@ -35,53 +35,53 @@ PYBIND11_MODULE(cpp, m)
 
   // Create common submodule [common]
   py::module common = m.def_submodule("common", "Common module");
-  dolfin_wrappers::common(common);
+  dolfinx_wrappers::common(common);
 
   // Create MPI class [common]
-  dolfin_wrappers::mpi(m);
+  dolfinx_wrappers::mpi(m);
 
   // Create common submodule [log]
   py::module log = m.def_submodule("log", "Logging module");
-  dolfin_wrappers::log(log);
+  dolfinx_wrappers::log(log);
 
   // Create function submodule [function]
   py::module function = m.def_submodule("function", "Function module");
-  dolfin_wrappers::function(function);
+  dolfinx_wrappers::function(function);
 
   // Create mesh submodule [mesh]
   py::module mesh = m.def_submodule("mesh", "Mesh library module");
-  dolfin_wrappers::mesh(mesh);
+  dolfinx_wrappers::mesh(mesh);
 
   // Create graph submodule [graph]
   py::module graph = m.def_submodule("graph", "Graph module");
-  dolfin_wrappers::graph(graph);
+  dolfinx_wrappers::graph(graph);
 
   // Create fem submodule [fem]
   py::module fem = m.def_submodule("fem", "FEM module");
-  dolfin_wrappers::fem(fem);
+  dolfinx_wrappers::fem(fem);
 
   // Create generation submodule [generation]
   py::module generation
       = m.def_submodule("generation", "Mesh generation module");
-  dolfin_wrappers::generation(generation);
+  dolfinx_wrappers::generation(generation);
 
   // Create geometry submodule
   py::module geometry = m.def_submodule("geometry", "Geometry module");
-  dolfin_wrappers::geometry(geometry);
+  dolfinx_wrappers::geometry(geometry);
 
   // Create io submodule
   py::module io = m.def_submodule("io", "I/O module");
-  dolfin_wrappers::io(io);
+  dolfinx_wrappers::io(io);
 
   // Create la submodule
   py::module la = m.def_submodule("la", "Linear algebra module");
-  dolfin_wrappers::la(la);
+  dolfinx_wrappers::la(la);
 
   // Create nls submodule
   py::module nls = m.def_submodule("nls", "Nonlinear solver module");
-  dolfin_wrappers::nls(nls);
+  dolfinx_wrappers::nls(nls);
 
   // Create refinement submodule
   py::module refinement = m.def_submodule("refinement", "Refinement module");
-  dolfin_wrappers::refinement(refinement);
+  dolfinx_wrappers::refinement(refinement);
 }

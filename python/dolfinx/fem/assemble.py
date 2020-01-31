@@ -1,6 +1,6 @@
 # Copyright (C) 2018-2019 Garth N. Wells
 #
-# This file is part of DOLFIN (https://www.fenicsproject.org)
+# This file is part of DOLFINX (https://www.fenicsproject.org)
 #
 # SPDX-License-Identifier:    LGPL-3.0-or-later
 """Assembly functions for variational forms."""
@@ -20,7 +20,9 @@ def _create_cpp_form(form):
     """Recursively look for ufl.Forms and convert to dolfinx.fem.Form, otherwise
     return form argument
     """
-    if isinstance(form, ufl.Form):
+    if isinstance(form, Form):
+        return form._cpp_object
+    elif isinstance(form, ufl.Form):
         return Form(form)._cpp_object
     elif isinstance(form, (tuple, list)):
         return list(map(lambda sub_form: _create_cpp_form(sub_form), form))
@@ -79,10 +81,11 @@ def assemble_vector(L: typing.Union[Form, cpp.fem.Form]) -> PETSc.Vec:
     processes.
 
     """
-    b = cpp.la.create_vector(_create_cpp_form(L).function_space(0).dofmap.index_map)
+    _L = _create_cpp_form(L)
+    b = cpp.la.create_vector(_L.function_space(0).dofmap.index_map)
     with b.localForm() as b_local:
         b_local.set(0.0)
-    cpp.fem.assemble_vector(b, _create_cpp_form(L))
+    cpp.fem.assemble_vector(b, _L)
     return b
 
 

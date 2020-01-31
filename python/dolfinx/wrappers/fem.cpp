@@ -68,7 +68,7 @@ forms_vector_to_array(
 
 } // namespace
 
-namespace dolfin_wrappers
+namespace dolfinx_wrappers
 {
 void fem(py::module& m)
 {
@@ -429,5 +429,5 @@ void fem(py::module& m)
         py::arg("V"), py::arg("dim"), py::arg("entities"),
         py::arg("remote") = true);
   m.def("locate_dofs_geometrical", &dolfinx::fem::locate_dofs_geometrical);
-} // namespace dolfin_wrappers
-} // namespace dolfin_wrappers
+} // namespace dolfinx_wrappers
+} // namespace dolfinx_wrappers

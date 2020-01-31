@@ -1,6 +1,6 @@
 # Copyright (C) 2017-2018 Chris N. Richardson, Garth N. Wells and Michal Habera
 #
-# This file is part of DOLFIN (https://www.fenicsproject.org)
+# This file is part of DOLFINX (https://www.fenicsproject.org)
 #
 # SPDX-License-Identifier:    LGPL-3.0-or-later
 """IO module for input data, post-processing and checkpointing"""
