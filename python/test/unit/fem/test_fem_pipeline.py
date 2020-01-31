@@ -116,17 +116,21 @@ def test_manufactured_poisson(degree, filename, datadir):
 @skip_in_parallel
 @pytest.mark.parametrize("filename", ["UnitSquareMesh_triangle.xdmf",
                                       "UnitCubeMesh_tetra.xdmf",
-                                      #   "UnitCubeMesh_hexahedron.xdmf",
-                                      #   "UnitSquareMesh_quad.xdmf"
+                                      # "UnitCubeMesh_hexahedron.xdmf",
+                                      # "UnitSquareMesh_quad.xdmf"
                                       ])
 @pytest.mark.parametrize("degree", [1])
-def test_manufactured_h_div(degree, filename, datadir):
-    """Projection into H(div) spaces"""
+@pytest.mark.parametrize("space", [
+    "BDM",
+    # "N2curl"
+])
+def test_manufactured_h_vector(space, degree, filename, datadir):
+    """Projection into H(div/curl) spaces"""
 
     with XDMFFile(MPI.comm_world, os.path.join(datadir, filename)) as xdmf:
         mesh = xdmf.read_mesh(GhostMode.none)
 
-    V = FunctionSpace(mesh, ("BDM", degree))
+    V = FunctionSpace(mesh, (space, degree))
     u, v = ufl.TrialFunction(V), ufl.TestFunction(V)
     a = inner(u, v) * dx
 
