@@ -57,4 +57,4 @@ private:
   std::shared_ptr<Connectivity> _coord_dofs;
 };
 } // namespace mesh
-} // namespace dolfin
+} // namespace dolfinx

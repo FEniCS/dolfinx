@@ -47,4 +47,4 @@ mesh::Mesh refine(const mesh::Mesh& mesh,
                   bool redistribute = true);
 
 } // namespace refinement
-} // namespace dolfin
+} // namespace dolfinx

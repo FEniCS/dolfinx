@@ -78,4 +78,4 @@ public:
       const mesh::CellType cell_type);
 };
 } // namespace graph
-} // namespace dolfin
+} // namespace dolfinx

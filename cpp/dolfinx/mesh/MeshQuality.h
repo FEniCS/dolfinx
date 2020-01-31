@@ -46,4 +46,4 @@ public:
   dihedral_angle_histogram_data(const Mesh& mesh, std::size_t num_bins);
 };
 } // namespace mesh
-} // namespace dolfin
+} // namespace dolfinx

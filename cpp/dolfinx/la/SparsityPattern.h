@@ -153,4 +153,4 @@ private:
   std::vector<std::size_t> _non_local;
 };
 } // namespace la
-} // namespace dolfin
+} // namespace dolfinx

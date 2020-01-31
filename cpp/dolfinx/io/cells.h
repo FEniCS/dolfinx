@@ -79,4 +79,4 @@ permute_ordering(
 
 } // namespace cells
 } // namespace io
-} // namespace dolfin
+} // namespace dolfinx

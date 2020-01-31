@@ -45,4 +45,4 @@ public:
          mesh::Partitioner partitioner = mesh::Partitioner::scotch);
 };
 } // namespace generation
-} // namespace dolfin
+} // namespace dolfinx

@@ -247,4 +247,4 @@ private:
   std::size_t _unique_id;
 };
 } // namespace mesh
-} // namespace dolfin
+} // namespace dolfinx

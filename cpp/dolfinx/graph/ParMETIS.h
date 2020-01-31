@@ -54,4 +54,4 @@ private:
 #endif
 };
 } // namespace graph
-} // namespace dolfin
+} // namespace dolfinx

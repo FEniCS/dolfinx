@@ -11,8 +11,8 @@
 #include <cstdint>
 #include <dolfinx/common/MPI.h>
 #include <map>
-#include <set>
 #include <petscsys.h>
+#include <set>
 #include <vector>
 
 namespace dolfinx
@@ -240,4 +240,4 @@ private:
 };
 
 } // namespace common
-} // namespace dolfin
+} // namespace dolfinx

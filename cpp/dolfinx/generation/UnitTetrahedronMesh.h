@@ -29,4 +29,4 @@ public:
   static mesh::Mesh create();
 };
 } // namespace generation
-} // namespace dolfin
+} // namespace dolfinx

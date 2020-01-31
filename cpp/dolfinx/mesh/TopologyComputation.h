@@ -29,4 +29,4 @@ public:
   static void compute_connectivity(Mesh& mesh, int d0, int d1);
 };
 } // namespace mesh
-} // namespace dolfin
+} // namespace dolfinx

@@ -131,4 +131,4 @@ double squared_distance_interval(const Eigen::Vector3d& point,
                                  const Eigen::Vector3d& b);
 
 } // namespace geometry
-} // namespace dolfin
+} // namespace dolfinx
