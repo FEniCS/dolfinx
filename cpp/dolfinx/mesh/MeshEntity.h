@@ -132,4 +132,4 @@ protected:
 };
 
 } // namespace mesh
-} // namespace dolfin
+} // namespace dolfinx

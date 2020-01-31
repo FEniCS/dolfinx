@@ -39,4 +39,4 @@ public:
          const mesh::GhostMode ghost_mode, std::string diagonal = "right");
 };
 } // namespace generation
-} // namespace dolfin
+} // namespace dolfinx

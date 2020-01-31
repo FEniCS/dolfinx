@@ -125,4 +125,4 @@ private:
   dolfinx::MPI::Comm _mpi_comm;
 };
 } // namespace nls
-} // namespace dolfin
+} // namespace dolfinx

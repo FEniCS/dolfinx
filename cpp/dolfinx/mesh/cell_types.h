@@ -97,4 +97,4 @@ std::vector<int> cell_vertex_indices(mesh::CellType type, int num_nodes);
 int num_cell_nodes(mesh::CellType type, int degree);
 
 } // namespace mesh
-} // namespace dolfin
+} // namespace dolfinx

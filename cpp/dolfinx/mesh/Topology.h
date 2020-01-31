@@ -214,4 +214,4 @@ private:
 
 }; // namespace mesh
 } // namespace mesh
-} // namespace dolfin
+} // namespace dolfinx

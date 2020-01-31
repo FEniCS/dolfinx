@@ -46,4 +46,4 @@ public:
                               const std::array<const fem::DofMap*, 2> dofmaps);
 };
 } // namespace fem
-} // namespace dolfin
+} // namespace dolfinx

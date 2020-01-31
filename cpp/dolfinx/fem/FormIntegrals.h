@@ -122,4 +122,4 @@ private:
   std::array<std::vector<struct Integral>, 4> _integrals;
 };
 } // namespace fem
-} // namespace dolfin
+} // namespace dolfinx

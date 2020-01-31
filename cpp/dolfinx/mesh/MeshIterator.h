@@ -259,4 +259,4 @@ private:
   const int _dim;
 };
 } // namespace mesh
-} // namespace dolfin
+} // namespace dolfinx

@@ -167,7 +167,6 @@ mesh::Mesh build_tri(MPI_Comm comm, const std::array<Eigen::Vector3d, 2>& p,
         const std::size_t v1 = v0 + 1;
         const std::size_t v2 = v0 + (nx + 1);
         const std::size_t v3 = v1 + (nx + 1);
-        std::vector<std::size_t> cell_data;
 
         if (local_diagonal == "left")
         {

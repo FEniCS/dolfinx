@@ -153,4 +153,4 @@ private:
   std::array<int, 4> _entity_block_size;
 };
 } // namespace fem
-} // namespace dolfin
+} // namespace dolfinx

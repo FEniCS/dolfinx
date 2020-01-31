@@ -104,4 +104,4 @@ public:
   }
 };
 } // namespace graph
-} // namespace dolfin
+} // namespace dolfinx

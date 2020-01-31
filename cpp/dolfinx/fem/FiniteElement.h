@@ -160,4 +160,4 @@ private:
       _transform_values;
 };
 } // namespace fem
-} // namespace dolfin
+} // namespace dolfinx

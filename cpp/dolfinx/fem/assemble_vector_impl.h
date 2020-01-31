@@ -144,4 +144,4 @@ void lift_bc(
 
 } // namespace impl
 } // namespace fem
-} // namespace dolfin
+} // namespace dolfinx

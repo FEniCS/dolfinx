@@ -238,4 +238,4 @@ private:
   std::shared_ptr<const fem::CoordinateElement> _coord_mapping;
 };
 } // namespace fem
-} // namespace dolfin
+} // namespace dolfinx

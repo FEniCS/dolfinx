@@ -251,4 +251,4 @@ void MeshFunction<T>::mark(
 //---------------------------------------------------------------------------
 
 } // namespace mesh
-} // namespace dolfin
+} // namespace dolfinx

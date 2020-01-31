@@ -306,4 +306,4 @@ void remap_meshfunction_data(mesh::MeshFunction<T>& meshfunction,
 
 } // namespace xdmf_read
 } // namespace io
-} // namespace dolfin
+} // namespace dolfinx
