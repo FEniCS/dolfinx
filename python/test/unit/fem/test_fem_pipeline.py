@@ -180,7 +180,7 @@ def test_manufactured_h_div_rt(degree, filename, datadir):
     with XDMFFile(MPI.comm_world, os.path.join(datadir, filename)) as xdmf:
         mesh = xdmf.read_mesh(GhostMode.none)
 
-    V = FunctionSpace(mesh, ("RT", degree+1))
+    V = FunctionSpace(mesh, ("RT", degree + 1))
     u, v = ufl.TrialFunction(V), ufl.TestFunction(V)
     a = inner(u, v) * dx
 
