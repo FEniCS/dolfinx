@@ -115,7 +115,7 @@ def test_manufactured_poisson(degree, filename, datadir):
 
 @skip_in_parallel
 @pytest.mark.parametrize("filename", ["UnitSquareMesh_triangle.xdmf",
-                                     "UnitCubeMesh_tetra.xdmf",
+                                      "UnitCubeMesh_tetra.xdmf",
                                       #   "UnitCubeMesh_hexahedron.xdmf",
                                       #   "UnitSquareMesh_quad.xdmf"
                                       ])
