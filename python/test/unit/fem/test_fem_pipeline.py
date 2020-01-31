@@ -114,19 +114,27 @@ def test_manufactured_poisson(degree, filename, datadir):
 
 
 @skip_in_parallel
-@pytest.mark.parametrize("filename", ["UnitSquareMesh_triangle.xdmf",
-                                      "UnitCubeMesh_tetra.xdmf",
-                                      # "UnitSquareMesh_quad.xdmf",
-                                      # "UnitCubeMesh_hexahedron.xdmf"
-                                      ])
-@pytest.mark.parametrize("degree", [1])
-def test_manufactured_h_div_bdm(degree, filename, datadir):
-    """Projection into H(div) spaces"""
+@pytest.mark.parametrize("filename", [
+    "UnitSquareMesh_triangle.xdmf",
+    # "UnitCubeMesh_tetra.xdmf",
+    # "UnitSquareMesh_quad.xdmf",
+    # "UnitCubeMesh_hexahedron.xdmf"
+])
+@pytest.mark.parametrize("family",
+                         [
+                             ("BDM", 0),
+                             ("RT", 1),
+                             #   ("N2curl", 0),
+                             #   ("N1curl", 1),
+                         ])
+@pytest.mark.parametrize("degree", [1, 2])
+def test_manufactured_vector1(family, degree, filename, datadir):
+    """Projection into H(div/curl) spaces"""
 
     with XDMFFile(MPI.comm_world, os.path.join(datadir, filename)) as xdmf:
         mesh = xdmf.read_mesh(GhostMode.none)
 
-    V = FunctionSpace(mesh, ("BDM", degree))
+    V = FunctionSpace(mesh, (family[0], degree + family[1]))
     u, v = ufl.TrialFunction(V), ufl.TestFunction(V)
     a = inner(u, v) * dx
 
@@ -173,14 +181,19 @@ def test_manufactured_h_div_bdm(degree, filename, datadir):
                                       # "UnitSquareMesh_quad.xdmf",
                                       # "UnitCubeMesh_hexahedron.xdmf"
                                       ])
+@pytest.mark.parametrize("family",
+                         [
+                             "RT",
+                             #  "N1curl",
+                         ])
 @pytest.mark.parametrize("degree", [1, 2, 3])
-def test_manufactured_h_div_rt(degree, filename, datadir):
-    """Projection into H(div) spaces"""
+def test_manufactured_vector2(family, degree, filename, datadir):
+    """Projection into H(div/curl) spaces"""
 
     with XDMFFile(MPI.comm_world, os.path.join(datadir, filename)) as xdmf:
         mesh = xdmf.read_mesh(GhostMode.none)
 
-    V = FunctionSpace(mesh, ("RT", degree + 1))
+    V = FunctionSpace(mesh, (family, degree + 1))
     u, v = ufl.TrialFunction(V), ufl.TestFunction(V)
     a = inner(u, v) * dx
 

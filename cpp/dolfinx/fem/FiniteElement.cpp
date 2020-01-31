@@ -8,6 +8,7 @@
 #include <dolfinx/common/log.h>
 #include <dolfinx/mesh/utils.h>
 #include <functional>
+#include <iostream>
 #include <memory>
 #include <ufc.h>
 
@@ -34,8 +35,8 @@ FiniteElement::FiniteElement(const ufc_finite_element& ufc_element)
   _refX.resize(_space_dim, _tdim);
   if (ufc_element.tabulate_reference_dof_coordinates(_refX.data()) == -1)
   {
-    throw std::runtime_error(
-        "Generated code returned error in tabulate_reference_dof_coordinates");
+    // tabulate_reference_dof_coordinates is not supported
+    _refX.resize(0, 0);
   }
 
   const ufc_shape _shape = ufc_element.cell_shape;
@@ -166,6 +167,12 @@ void FiniteElement::transform_reference_basis_derivatives(
 const Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>&
 FiniteElement::dof_reference_coordinates() const
 {
+  if (_refX.rows() == 0 and _refX.cols())
+  {
+    throw std::runtime_error(
+        "Generated code returned error in tabulate_reference_dof_coordinates");
+  }
+
   return _refX;
 }
 //-----------------------------------------------------------------------------
@@ -206,15 +213,15 @@ FiniteElement::extract_sub_element(const FiniteElement& finite_element,
   // Check if there are any sub systems
   if (finite_element.num_sub_elements() == 0)
   {
-    throw std::runtime_error(
-        "Cannot extract subsystem of finite element. There are no subsystems.");
+    throw std::runtime_error("Cannot extract subsystem of finite element. "
+                             "There are no subsystems.");
   }
 
   // Check that a sub system has been specified
   if (component.empty())
   {
-    throw std::runtime_error(
-        "Cannot extract subsystem of finite element. No system was specified");
+    throw std::runtime_error("Cannot extract subsystem of finite element. No "
+                             "system was specified");
   }
 
   // Check the number of available sub systems
