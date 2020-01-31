@@ -114,17 +114,15 @@ def test_manufactured_poisson(degree, filename, datadir):
 
 
 @skip_in_parallel
-# @pytest.mark.parametrize("filename", ["UnitSquareMesh_triangle.xdmf",
-#                                       #   "UnitCubeMesh_tetra.xdmf",
-#                                       #   "UnitCubeMesh_hexahedron.xdmf",
-#                                       #   "UnitSquareMesh_quad.xdmf"
-#                                       ])
+@pytest.mark.parametrize("filename", ["UnitSquareMesh_triangle.xdmf",
+                                     "UnitCubeMesh_tetra.xdmf",
+                                      #   "UnitCubeMesh_hexahedron.xdmf",
+                                      #   "UnitSquareMesh_quad.xdmf"
+                                      ])
 @pytest.mark.parametrize("degree", [1])
-def test_manufactured_h_div(degree, datadir):
+def test_manufactured_h_div(degree, filename, datadir):
     """Projection into H(div) spaces"""
 
-    # mesh = dolfinx.UnitSquareMesh(dolfinx.MPI.comm_world, 16, 16)
-    filename = "UnitSquareMesh_triangle.xdmf"
     with XDMFFile(MPI.comm_world, os.path.join(datadir, filename)) as xdmf:
         mesh = xdmf.read_mesh(GhostMode.none)
 
