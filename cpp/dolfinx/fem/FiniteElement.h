@@ -1,4 +1,4 @@
-// Copyright (C) 2008-2013 Anders Logg and Garth N. Wells
+// Copyright (C) 2008-2020 Anders Logg and Garth N. Wells
 //
 // This file is part of DOLFINX (https://www.fenicsproject.org)
 //
@@ -17,11 +17,9 @@
 struct ufc_coordinate_mapping;
 struct ufc_finite_element;
 
-namespace dolfinx
+namespace dolfinx::fem
 {
 
-namespace fem
-{
 /// Finite Element, containing the dof layout on a reference element, and
 /// various methods for evaluating and transforming the basis.
 class FiniteElement
@@ -34,24 +32,29 @@ public:
   /// Destructor
   virtual ~FiniteElement() = default;
 
-  /// Return a string identifying the finite element
+  /// String identifying the finite element
+  /// @return Element signature
   std::string signature() const;
 
-  /// Return the cell shape
+  /// Cell shape
+  /// @return Element cell shape
   mesh::CellType cell_shape() const;
 
-  /// Return the dimension of the finite element function space
-  std::size_t space_dimension() const;
+  /// Dimension of the finite element function space
+  /// @return Dimension of the finite element space
+  int space_dimension() const;
 
-  /// Return the value size, e.g. 1 for a scalar function, 2 for a 2D
-  /// vector
-  std::size_t value_size() const;
+  /// The value size, e.g. 1 for a scalar function, 2 for a 2D vector
+  /// @return The value size
+  int value_size() const;
 
-  /// Return the value size, e.g. 1 for a scalar function, 2 for a 2D
-  /// vector
-  std::size_t reference_value_size() const;
+  /// The value size, e.g. 1 for a scalar function, 2 for a 2D vector
+  /// for the reference element
+  /// @return The value size for the reference element
+  int reference_value_size() const;
 
-  /// Return the rank of the value space
+  /// Rank of the value space
+  /// @return The value rank
   int value_rank() const;
 
   /// Return the dimension of the value space for axis i
@@ -62,7 +65,8 @@ public:
   /// Return the maximum polynomial degree
   std::size_t degree() const;
 
-  /// Return the finite element family
+  /// The finite element family
+  /// @return The string of the finite element family
   std::string family() const;
 
   /// Evaluate all basis functions at given point in reference cell
@@ -91,6 +95,10 @@ public:
       const Eigen::Tensor<double, 3, Eigen::RowMajor>& J,
       const Eigen::Ref<const Eigen::Array<double, Eigen::Dynamic, 1>>& detJ,
       const Eigen::Tensor<double, 3, Eigen::RowMajor>& K) const;
+
+  /// Check if reference coordinates for dofs are defined
+  /// @return True if the dof coordinates are available
+  bool has_dof_reference_coordinates() const noexcept;
 
   /// Tabulate the reference coordinates of all dofs on an element
   /// @return The coordinates of all dofs on the reference cell
@@ -126,6 +134,7 @@ private:
   int _tdim, _space_dim, _value_size, _reference_value_size, _degree;
 
   // Dof coordinates on the reference element
+  bool _has_refX;
   Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor> _refX;
 
   // List of sub-elements (if any)
@@ -156,5 +165,4 @@ private:
                     const ufc_coordinate_mapping*)>
       _transform_values;
 };
-} // namespace fem
-} // namespace dolfinx
+} // namespace dolfinx::fem

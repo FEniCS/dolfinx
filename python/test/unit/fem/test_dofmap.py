@@ -409,9 +409,9 @@ xfail_ffcx = pytest.mark.xfail(raises=Exception)
     pytest.param(
         "FunctionSpace(UnitCubeMesh(MPI.comm_world, 2, 2, 2, CellType.hexahedron),         ('N1curl', 1))",
         marks=pytest.mark.xfail),
-    pytest.param(
-        "FunctionSpace(UnitSquareMesh(MPI.comm_world, 6, 6, CellType.triangle),            ('N1curl', 2))",
-        marks=pytest.mark.xfail),
+    # pytest.param(
+    #     "FunctionSpace(UnitSquareMesh(MPI.comm_world, 6, 6, CellType.triangle),            ('N1curl', 2))",
+    #     marks=pytest.mark.xfail),
     "FunctionSpace(UnitCubeMesh(MPI.comm_world, 2, 2, 2, CellType.tetrahedron),            ('N1curl', 2))",
     pytest.param(
         "FunctionSpace(UnitSquareMesh(MPI.comm_world, 6, 6, CellType.quadrilateral),       ('N1curl', 2))",
