@@ -9,7 +9,6 @@ import time
 
 import numpy as np
 import pytest
-from petsc4py import PETSc
 
 import ufl
 from dolfinx import MPI, DirichletBC, Function, FunctionSpace, fem, geometry
@@ -17,7 +16,8 @@ from dolfinx.cpp.mesh import GhostMode
 from dolfinx.fem import (apply_lifting, assemble_matrix, assemble_scalar,
                          assemble_vector, set_bc)
 from dolfinx.io import XDMFFile
-from dolfinx_utils.test.skips import skip_in_parallel
+from dolfinx_utils.test.skips import skip_if_complex, skip_in_parallel
+from petsc4py import PETSc
 from ufl import (SpatialCoordinate, TestFunction, TrialFunction, div, dx, grad,
                  inner)
 
@@ -175,6 +175,7 @@ def test_manufactured_vector1(family, degree, filename, datadir):
     assert np.allclose(up, u_exact)
 
 
+@skip_if_complex
 @skip_in_parallel
 @pytest.mark.parametrize("filename", ["UnitSquareMesh_triangle.xdmf",
                                       "UnitCubeMesh_tetra.xdmf",
