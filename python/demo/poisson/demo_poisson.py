@@ -84,6 +84,8 @@ from dolfinx import (MPI, DirichletBC, Function, FunctionSpace, RectangleMesh,
                      solve)
 from dolfinx.cpp.mesh import CellType
 from dolfinx.io import XDMFFile
+from dolfinx.mesh import compute_marked_boundary_entities
+from dolfinx.fem import locate_dofs_topological
 from dolfinx.specialfunctions import SpatialCoordinate
 from ufl import ds, dx, grad, inner
 
@@ -124,10 +126,14 @@ mesh.geometry.coord_mapping = cmap
 
 # Now, the Dirichlet boundary condition can be created using the class
 # :py:class:`DirichletBC <dolfinx.fem.bcs.DirichletBC>`. A
-# :py:class:`DirichletBC <dolfinx.fem.bcs.DirichletBC>` takes three
-# arguments: the function space the boundary condition applies to, the
-# value of the boundary condition, and the part of the boundary on which
-# the condition applies. In our example, the function space is ``V``,
+# :py:class:`DirichletBC <dolfinx.fem.bcs.DirichletBC>` takes two
+# arguments: the value of the boundary condition
+# and the part of the boundary on which the condition applies.
+# This boundary part is identified with degrees of
+# freedom in the function space to which we apply the boundary conditions.
+# A method ``locate_dofs_geometrical`` is provided to extract the boundary
+# degrees of freedom using a geometrical criterium.
+# In our example, the function space is ``V``,
 # the value of the boundary condition (0.0) can represented using a
 # :py:class:`Function <dolfinx.functions.Function>` and the Dirichlet
 # boundary is defined immediately above. The definition of the Dirichlet
@@ -136,8 +142,10 @@ mesh.geometry.coord_mapping = cmap
 # Define boundary condition on x = 0 or x = 1
 u0 = Function(V)
 u0.vector.set(0.0)
-bc = DirichletBC(V, u0, lambda x: np.logical_or(x[0] < np.finfo(float).eps,
-                                                x[0] > 1.0 - np.finfo(float).eps))
+facets = compute_marked_boundary_entities(mesh, 1, lambda x: np.logical_or(x[0] < np.finfo(float).eps,
+                                                                           x[0] > 1.0 - np.finfo(float).eps))
+bc = DirichletBC(u0, locate_dofs_topological(V, 1, facets))
+
 
 # Next, we want to express the variational problem.  First, we need to
 # specify the trial function :math:`u` and the test function :math:`v`,

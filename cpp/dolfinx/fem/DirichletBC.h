@@ -1,4 +1,4 @@
-// Copyright (C) 2007-2019 Anders Logg and Garth N. Wells
+// Copyright (C) 2007-2020 Michal Habera, Anders Logg and Garth N. Wells
 //
 // This file is part of DOLFINX (https://www.fenicsproject.org)
 //
@@ -29,6 +29,56 @@ class Mesh;
 namespace fem
 {
 
+/// Marking function to define facets when DirichletBC applies
+using marking_function = std::function<Eigen::Array<bool, Eigen::Dynamic, 1>(
+    const Eigen::Ref<
+        const Eigen::Array<double, 3, Eigen::Dynamic, Eigen::RowMajor>>&)>;
+
+/// Build an array of degree-of-freedom indices that are associated with
+/// give mesh entities (topological)
+///
+/// Finds degrees-of-freedom which belong to provided mesh entities.
+/// Note that degrees-of-freedom for discontinuous elements are
+/// associated with the cell even if they may appear to be associated
+/// with a facet/edge/vertex.
+///
+/// @param[in] V The function (sub)space(s) on which degrees-of-freedom
+///     (DOFs) will be located. The spaces must share the same mesh and
+///     element type.
+/// @param[in] entity_dim Topological dimension of mesh entities on
+///     which degrees-of-freedom will be located
+/// @param[in] entities Indices of mesh entities. All DOFs associated
+///     with the closure of these indices will be returned
+/// @param[in] remote True to return also "remotely located"
+///     degree-of-freedom indices. Remotely located degree-of-freedom
+///     indices are local/owned by the current process, but which the
+///     current process cannot identify because it does not recognize
+///     mesh entity as a marked. For example, a boundary condition dof
+///     at a vertex where this process does not have the associated
+///     boundary facet. This commonly occurs with partitioned meshes.
+/// @return Array of local DOF indices in the spaces V[0] (and V[1] is
+///     two spaces are passed in). If two spaces are passed in, the (i,
+///     0) entry is the DOF index in the space V[0] and (i, 1) is the
+///     correspinding DOF entry in the space V[1].
+Eigen::Array<PetscInt, Eigen::Dynamic, Eigen::Dynamic> locate_dofs_topological(
+    const std::vector<std::reference_wrapper<function::FunctionSpace>>& V,
+    const int dim, const Eigen::Ref<const Eigen::ArrayXi>& entities,
+    bool remote = true);
+
+/// Build an array of degree-of-freedom indices based on coordinates of
+/// the degree-of-freedom (geometric).
+///
+/// Finds degrees of freedom whose geometric coordinate is true for the
+/// provided marking function.
+///
+/// @param[in] V The function (sub)space on which degrees of freedom
+///     will be located
+/// @param[in] marker Function marking tabulated degrees of freedom
+/// @return Array of local indices of located degrees of freedom
+Eigen::Array<PetscInt, Eigen::Dynamic, 1>
+locate_dofs_geometrical(const function::FunctionSpace& V,
+                        marking_function marker);
+
 /// Interface for setting (strong) Dirichlet boundary conditions.
 ///
 ///     u = g on G,
@@ -37,121 +87,72 @@ namespace fem
 /// sub domain of the mesh.
 ///
 /// A DirichletBC is specified by the function g, the function space
-/// (trial space) and boundary indicators on (a subset of) the mesh
-/// boundary.
-///
-/// The boundary indicators may be specified in a number of different
-/// ways:
-///
-/// 1. Providing a marking function, mark(x, only_boundary), to specify
-///    on which facets the boundary conditions should be applied.
-/// 2. Providing list of facets (by index, local to a process).
-///
-/// The degrees-of-freedom to which boundary conditions are applied are
-/// computed at construction and cannot be changed afterwards.
-///
-/// The 'method' variable may be used to specify the type of method used
-/// to identify degrees of freedom on the boundary. Available methods
-/// are:
-///
-/// 1. topological approach (default)
-///
-///    Fastest, but will only identify degrees of freedom that are
-///    located on a facet that is entirely on the / boundary. In
-///    particular, the topological approach will not identify degrees of
-///    freedom for discontinuous elements (which are all internal to the
-///    cell).
-///
-/// 2. (not yet implemented) geometric approach
-///
-///    Each dof on each facet that matches the boundary condition will
-///    be checked.
-///
-/// 3. (not yet implemented) pointwise approach.
-///
-///    For pointwise boundary conditions e.g. pointloads.
+/// (trial space) and degrees of freedom to which the boundary condition
+/// applies.
 
 class DirichletBC
 {
 
 public:
-  /// Method of boundary condition application
-  enum class Method
-  {
-    topological,
-    geometric,
-    pointwise
-  };
-
-  /// Marking function to define facets when DirichletBC applies
-  using marking_function = std::function<Eigen::Array<bool, Eigen::Dynamic, 1>(
-      const Eigen::Ref<
-          const Eigen::Array<double, 3, Eigen::Dynamic, Eigen::RowMajor>>&)>;
-
-  /// Create boundary condition with marking method
+  /// Create boundary condition
   ///
-  /// @param[in] V The function (sub)space on which the boundary
-  ///              condition is applied
-  /// @param[in] g The boundary condition value
-  /// @param[in] mark The marking function. Only boundary facet are
-  ///                 tested.
-  /// @param[in] method Optional argument: A string specifying the
-  ///                   method to identify dofs
-  DirichletBC(std::shared_ptr<const function::FunctionSpace> V,
-              std::shared_ptr<const function::Function> g,
-              const marking_function& mark,
-              Method method = Method::topological);
+  /// @param[in] g The boundary condition value. The boundary condition
+  /// can be applied to a a function on the same space as g.
+  /// @param[in] dofs Degree-of-freedom indices in the space of the
+  ///   boundary value function applied to V_dofs[i]
+  DirichletBC(
+      std::shared_ptr<const function::Function> g,
+      const Eigen::Ref<const Eigen::Array<PetscInt, Eigen::Dynamic, 1>>& dofs);
 
-  /// Create boundary condition with facet indices
+  /// Create boundary condition
   ///
-  /// @param[in] V The function (sub)space on which the boundary
-  ///              condition is applied
   /// @param[in] g The boundary condition value
-  /// @param[in] facet_indices Facets on which the boundary condition is
-  ///                           applied (facet index local to process)
-  /// @param[in] method Optional argument: A string specifying the
-  ///                   method to identify dofs.
-  DirichletBC(std::shared_ptr<const function::FunctionSpace> V,
-              std::shared_ptr<const function::Function> g,
-              const std::vector<std::int32_t>& facet_indices,
-              Method method = Method::topological);
+  /// @param[in] V_g_dofs 2D array of degree-of-freedom indices. First
+  ///   column are indices in the space where boundary condition is
+  ///   applied (V), second column are indices in the space of the
+  ///   boundary condition value function g.
+  /// @param[in] V The function (sub)space on which the boundary
+  ///   condition is applied
+  DirichletBC(std::shared_ptr<const function::Function> g,
+              const Eigen::Ref<const Eigen::Array<PetscInt, Eigen::Dynamic, 2>>&
+                  V_g_dofs,
+              std::shared_ptr<const function::FunctionSpace> V);
 
-  /// Copy constructor. Either cached DOF data are copied.
-  /// @param[in] bc The object to be copied.
+  /// Copy constructor
+  /// @param[in] bc The object to be copied
   DirichletBC(const DirichletBC& bc) = default;
 
   /// Move constructor
+  /// @param[in] bc The object to be moved
   DirichletBC(DirichletBC&& bc) = default;
 
   /// Destructor
   ~DirichletBC() = default;
 
-  /// Assignment operator. Either cached DOF data are assigned.
-  /// @param[in] bc Another DirichletBC object.
+  /// Assignment operator
+  /// @param[in] bc Another DirichletBC object
   DirichletBC& operator=(const DirichletBC& bc) = default;
 
   /// Move assignment operator
   DirichletBC& operator=(DirichletBC&& bc) = default;
 
-  /// Return function space V
-  /// @return The function space to which boundary conditions are
-  ///          applied.
+  /// The function space to which boundary conditions are applied
+  /// @return The function space
   std::shared_ptr<const function::FunctionSpace> function_space() const;
 
-  /// Return boundary value g
-  /// @return The boundary values Function. Returns null if it does not
-  ///         exist.
+  /// Return boundary value function g
+  /// @return The boundary values Function
   std::shared_ptr<const function::Function> value() const;
 
-  /// Get array of dof indices to which a Dirichlet BC is applied. The
-  /// array is sorted and may contain ghost entries.
-  const Eigen::Array<PetscInt, Eigen::Dynamic, 1>& dof_indices() const;
+  /// Get array of dof indices to which a Dirichlet boundary condition
+  /// is applied. The array is sorted and may contain ghost entries.
+  Eigen::Array<PetscInt, Eigen::Dynamic, 2>& dofs();
 
   /// Get array of dof indices owned by this process to which a
-  /// Dirichlet BC is applied. The array is sorted and goes not contain ghost
-  /// entries.
-  Eigen::Map<const Eigen::Array<PetscInt, Eigen::Dynamic, 1>>
-  dof_indices_owned() const;
+  /// Dirichlet BC is applied. The array is sorted and does not contain
+  /// ghost entries.
+  const Eigen::Ref<const Eigen::Array<PetscInt, Eigen::Dynamic, 2>>
+  dofs_owned() const;
 
   // FIXME: clarify w.r.t ghosts
   /// Set bc entries in x to scale*x_bc
@@ -160,20 +161,21 @@ public:
 
   // FIXME: clarify w.r.t ghosts
   /// Set bc entries in x to scale*(x0 - x_bc).
-  void set(
-      Eigen::Ref<Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1>> x,
+  void
+  set(Eigen::Ref<Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1>> x,
       const Eigen::Ref<const Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1>>& x0,
       double scale = 1.0) const;
 
   // FIXME: clarify  w.r.t ghosts
+
   /// Set boundary condition value for entres with an applied boundary
   /// condition. Other entries are not modified.
   void dof_values(
       Eigen::Ref<Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1>> values) const;
 
   // FIXME: clarify w.r.t ghosts
-  /// Set markers[i] = true if dof i has a boundary condition applied.
-  /// Value of markers[i] is not changed otherwise.
+  /// Set markers[i] = true if dof i has a boundary condition applied
+  /// Value of markers[i] is not changed otherwise
   void mark_dofs(std::vector<bool>& markers) const;
 
 private:
@@ -183,15 +185,10 @@ private:
   // The function
   std::shared_ptr<const function::Function> _g;
 
-  // Vector tuples (dof in _function_space, dof in g-space) to which bcs
-  // are applied, i.e. u[dofs[i][0]] = g[dofs[i][1]] where u is in
-  // _function_space.
-  Eigen::Array<PetscInt, Eigen::Dynamic, 2, Eigen::RowMajor> _dofs;
+  // Indices of dofs in _function_space and in the space of _g
+  Eigen::Array<PetscInt, Eigen::Dynamic, 2> _dofs;
 
-  // Indices in _function_space to which bcs are applied. Must be sorted.
-  Eigen::Array<PetscInt, Eigen::Dynamic, 1> _dof_indices;
-
-  // The first _owned_indices in  _dof_indices are owned by this process
+  // The first _owned_indices in _dofs are owned by this process
   int _owned_indices = -1;
 };
 } // namespace fem

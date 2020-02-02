@@ -7,21 +7,21 @@
 """Tools for assembling and manipulating finite element forms"""
 
 from dolfinx.fem.assemble import (create_vector, create_vector_block, create_vector_nest,
-                                 create_matrix, create_matrix_block, create_matrix_nest,
-                                 assemble_scalar,
-                                 assemble_vector, assemble_vector_nest, assemble_vector_block,
-                                 assemble_matrix, assemble_matrix_nest, assemble_matrix_block,
-                                 set_bc, set_bc_nest,
-                                 apply_lifting, apply_lifting_nest)
+                                  create_matrix, create_matrix_block, create_matrix_nest,
+                                  assemble_scalar,
+                                  assemble_vector, assemble_vector_nest, assemble_vector_block,
+                                  assemble_matrix, assemble_matrix_nest, assemble_matrix_block,
+                                  set_bc, set_bc_nest,
+                                  apply_lifting, apply_lifting_nest)
 from dolfinx.fem.coordinatemapping import create_coordinate_map
 from dolfinx.fem.dirichletbc import DirichletBC
 from dolfinx.fem.dofmap import DofMap
 from dolfinx.fem.form import Form
 from dolfinx.cpp.fem import FormIntegrals
 from dolfinx.fem.formmanipulations import (derivative, adjoint, increase_order,
-                                          tear)
+                                           tear)
 from dolfinx.fem.solving import solve
-
+from dolfinx.fem.dirichletbc import locate_dofs_geometrical, locate_dofs_topological
 
 __all__ = [
     "create_vector", "create_vector_block", "create_vector_nest",
@@ -32,5 +32,5 @@ __all__ = [
     "assemble_matrix", "set_bc", "set_bc_nest", "create_coordinate_map",
     "DirichletBC", "DofMap", "Form", "FormIntegrals",
     "derivative", "adjoint", "increase_order",
-    "tear", "project", "solve"
+    "tear", "project", "solve", "locate_dofs_geometrical", "locate_dofs_topological"
 ]
