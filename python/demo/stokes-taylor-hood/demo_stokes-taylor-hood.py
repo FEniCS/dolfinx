@@ -89,6 +89,7 @@ import numpy as np
 import dolfinx
 from dolfinx import MPI, DirichletBC, Function, FunctionSpace, solve
 from dolfinx.io import XDMFFile
+from dolfinx.fem import locate_dofs_topological
 from dolfinx.plotting import plot
 from ufl import (FiniteElement, TestFunctions, TrialFunctions, VectorElement,
                  div, dx, grad, inner)
@@ -120,15 +121,16 @@ W = FunctionSpace(mesh, TH)
 
 # Extract subdomain facet arrays
 mf = sub_domains.values
-mf0 = np.where(mf == 0)
-mf1 = np.where(mf == 1)
+mf0 = np.where(mf == 0)[0]
+mf1 = np.where(mf == 1)[0]
 
 # No-slip boundary condition for velocity
 # x1 = 0, x1 = 1 and around the dolphin
 noslip = Function(W.sub(0).collapse())
 noslip.interpolate(lambda x: np.zeros_like(x[:mesh.geometry.dim]))
 
-bc0 = DirichletBC(W.sub(0), noslip, mf0[0])
+bdofs = locate_dofs_topological((W.sub(0), noslip.function_space), sub_domains.dim, mf0)
+bc0 = DirichletBC(noslip, bdofs, W.sub(0))
 
 # Inflow boundary condition for velocity
 # x0 = 1
@@ -142,7 +144,9 @@ def inflow_eval(x):
 
 inflow = Function(W.sub(0).collapse())
 inflow.interpolate(inflow_eval)
-bc1 = DirichletBC(W.sub(0), inflow, mf1[0])
+
+bdofs1 = locate_dofs_topological((W.sub(0), inflow.function_space), sub_domains.dim, mf1)
+bc1 = DirichletBC(inflow, bdofs1, W.sub(0))
 
 # Collect boundary conditions
 bcs = [bc0, bc1]
@@ -155,9 +159,7 @@ bcs = [bc0, bc1]
 # ``W.sub(0)`` for the velocity component of the space, and
 # ``W.sub(1)`` for the pressure component of the space.
 # The second argument specifies the value on the Dirichlet
-# boundary. The last two arguments specify the marking of the subdomains:
-# ``sub_domains`` contains the subdomain markers, and the final argument is the subdomain index.
-#
+# boundary.
 # The bilinear and linear forms corresponding to the weak mixed
 # formulation of the Stokes equations are defined as follows::
 

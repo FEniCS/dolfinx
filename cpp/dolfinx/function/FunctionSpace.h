@@ -1,4 +1,4 @@
-// Copyright (C) 2008-2011 Anders Logg
+// Copyright (C) 2008-2019 Anders Logg and Garth N. Wells
 //
 // This file is part of DOLFINX (https://www.fenicsproject.org)
 //
@@ -160,10 +160,7 @@ public:
   ///         W.sub(1).sub(0) == [1, 0]
   std::vector<int> component() const;
 
-  /// Tabulate the coordinates of all dofs on this process. This
-  /// function is typically used by preconditioners that require the
-  /// spatial coordinates of dofs, for example for re-partitioning or
-  /// nullspace computations.
+  /// Tabulate the physical coordinates of all dofs on this process.
   /// @return The dof coordinates [([x0, y0, z0], [x1, y1, z1], ...)
   Eigen::Array<double, Eigen::Dynamic, 3, Eigen::RowMajor>
   tabulate_dof_coordinates() const;
