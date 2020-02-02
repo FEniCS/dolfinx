@@ -54,7 +54,7 @@ namespace
 //   {
 //     const int index_block = dof / bs;
 //     const int pos = dof % bs;
-//     dofs_global.push_back(map.local_to_global(index_block) + pos);
+//     dofs_global.push_back(bs * map.local_to_global(index_block) + pos);
 //   }
 
 //   std::vector<std::int64_t> dofs_received(disp.back());
@@ -67,19 +67,38 @@ namespace
 //   dofs_received.erase(std::unique(dofs_received.begin(), dofs_received.end()),
 //                       dofs_received.end());
 
+//   std::vector<PetscInt> dofs;
 
+//   // Handle owned entries
 //   const std::array<std::int64_t, 2> range = map.local_range();
-//   const std::int64_t offset = range[0];
+//   for (auto dof : dofs_received)
+//   {
+//     if (dof >= bs * range[0] and dof < bs * range[1])
+//       dofs.push_back(dof - bs * range[0]);
+//   }
 
-
-//   // Build global-to-local map for ghost indices (blocks) in map_g
+//   // Build global-to-local map for ghost indices (blocks)
+//   const std::int32_t size_owned = map.size_local();
 //   std::map<std::int64_t, std::int32_t> global_to_local;
 //   const Eigen::Array<PetscInt, Eigen::Dynamic, 1>& ghosts = map.ghosts();
-//   for (Eigen::Index i = 0; i < ghosts*map.block_size; ++i)
-//     global_to_local_g.insert({ghosts_g[i], i + size_owned_g});
+//   for (Eigen::Index i = 0; i < ghosts.rows(); ++i)
+//     global_to_local.insert({ghosts[i], i + size_owned});
 
+//   for (auto dof : dofs_received)
+//   {
+//     if (!(dof >= bs * range[0] and dof < bs * range[1]))
+//     {
+//       const std::int64_t _dof = dof / bs;
+//       const std::int64_t pos = dof % bs;
+//       auto it = global_to_local.find(_dof);
+//       if (it != global_to_local.end())
+//       {
+//         dofs.push_back(it->second * bs + pos);
+//       }
+//     }
+//   }
 
-//   // return std::vector<PetscInt>(10);
+//   return dofs;
 // }
 //-----------------------------------------------------------------------------
 // TODO: add some docs
