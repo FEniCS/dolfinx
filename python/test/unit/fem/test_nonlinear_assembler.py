@@ -134,7 +134,7 @@ def test_matrix_assembly_block():
         - inner(f, v0) * ufl.dx - inner(g, v1) * dx
     J = derivative(F, U, dU)
 
-    bdofsW_V1 = dolfinx.fem.locate_dofs_topological(W.sub(1), facetdim, bndry_facets, V1)
+    bdofsW_V1 = dolfinx.fem.locate_dofs_topological((W.sub(1), V1), facetdim, bndry_facets)
 
     bc = dolfinx.fem.dirichletbc.DirichletBC(u_bc, bdofsW_V1, W.sub(1))
     A2 = dolfinx.fem.assemble_matrix(J, [bc])
@@ -398,8 +398,8 @@ def test_assembly_solve_block():
     u1_bc = dolfinx.function.Function(V1)
     u1_bc.interpolate(bc_val_1)
 
-    bdofsW0_V0 = dolfinx.fem.locate_dofs_topological(W.sub(0), facetdim, bndry_facets, V0)
-    bdofsW1_V1 = dolfinx.fem.locate_dofs_topological(W.sub(1), facetdim, bndry_facets, V1)
+    bdofsW0_V0 = dolfinx.fem.locate_dofs_topological((W.sub(0), V0), facetdim, bndry_facets)
+    bdofsW1_V1 = dolfinx.fem.locate_dofs_topological((W.sub(1), V1), facetdim, bndry_facets)
 
     bcs = [dolfinx.fem.dirichletbc.DirichletBC(u0_bc, bdofsW0_V0, W.sub(0)),
            dolfinx.fem.dirichletbc.DirichletBC(u1_bc, bdofsW1_V1, W.sub(1))]
@@ -588,8 +588,8 @@ def test_assembly_solve_taylor_hood(mesh):
     J = derivative(F, U, dU)
     P = inner(ufl.grad(du), ufl.grad(v)) * dx + inner(dp, q) * dx
 
-    bdofsW0_P2_0 = dolfinx.fem.locate_dofs_topological(W.sub(0), facetdim, bndry_facets0, P2)
-    bdofsW0_P2_1 = dolfinx.fem.locate_dofs_topological(W.sub(0), facetdim, bndry_facets1, P2)
+    bdofsW0_P2_0 = dolfinx.fem.locate_dofs_topological((W.sub(0), P2), facetdim, bndry_facets0)
+    bdofsW0_P2_1 = dolfinx.fem.locate_dofs_topological((W.sub(0), P2), facetdim, bndry_facets1)
 
     bcs = [dolfinx.DirichletBC(u_bc_0, bdofsW0_P2_0, W.sub(0)),
            dolfinx.DirichletBC(u_bc_1, bdofsW0_P2_1, W.sub(0))]

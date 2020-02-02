@@ -11,6 +11,7 @@ via modification of linear systems.
 
 import types
 import typing
+import collections.abc
 
 import ufl
 from dolfinx import cpp, function
@@ -49,7 +50,6 @@ def locate_dofs_geometrical(V: typing.Union[function.FunctionSpace],
 def locate_dofs_topological(V: typing.Union[cpp.function.FunctionSpace, function.FunctionSpace],
                             entity_dim: int,
                             entities: typing.List[int],
-                            V1: typing.Union[cpp.function.FunctionSpace, function.FunctionSpace] = None,
                             remote: bool = True):
     """Locate degrees-of-freedom belonging to mesh entities topologically .
 
@@ -77,20 +77,18 @@ def locate_dofs_topological(V: typing.Union[cpp.function.FunctionSpace, function
         Returned degree-of-freedom indices are unique and ordered.
     """
 
-    try:
-        _V = V._cpp_object
-    except AttributeError:
-        _V = V
-
-    if V1 is not None:
+    if isinstance(V, collections.abc.Sequence):
         try:
-            _V1 = V1._cpp_object
+            _V = [space._cpp_object for space in V]
         except AttributeError:
-            _V1 = V1
-
-        return cpp.fem.locate_dofs_topological(_V, entity_dim, entities, _V1, remote)
+            _V = V
     else:
-        return cpp.fem.locate_dofs_topological(_V, entity_dim, entities, remote)
+        try:
+            _V = V._cpp_object
+        except AttributeError:
+            _V = V
+
+    return cpp.fem.locate_dofs_topological(_V, entity_dim, entities, remote)
 
 
 class DirichletBC(cpp.fem.DirichletBC):

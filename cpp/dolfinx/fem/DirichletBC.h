@@ -39,9 +39,10 @@ using marking_function = std::function<Eigen::Array<bool, Eigen::Dynamic, 1>(
 ///
 /// @see locate_dofs_topological
 Eigen::Array<PetscInt, Eigen::Dynamic, 2> locate_dofs_topological(
-    const function::FunctionSpace& V0, const int dim,
+    const std::vector<std::reference_wrapper<function::FunctionSpace>>& V,
+    const int dim,
     const Eigen::Ref<const Eigen::Array<int, Eigen::Dynamic, 1>>& entities,
-    const function::FunctionSpace& V1, bool remote = true);
+    bool remote = true);
 
 /// Build an array of degree-of-freedom indices that are associated with
 /// give mesh entities (topological)
@@ -77,7 +78,7 @@ Eigen::Array<PetscInt, Eigen::Dynamic, 1> locate_dofs_topological(
 /// provided marking function.
 ///
 /// @param[in] V The function (sub)space on which degrees of freedom
-///              will be located
+///     will be located
 /// @param[in] marker Function marking tabulated degrees of freedom
 /// @return Array of local indices of located degrees of freedom
 Eigen::Array<PetscInt, Eigen::Dynamic, 1>
@@ -104,7 +105,7 @@ public:
   ///
   /// @param[in] g The boundary condition value
   /// @param[in] dofs Degree-of-freedom indices in the space of the
-  ///                 boundary value function applied to V_dofs[i]
+  ///                boundary value function applied to V_dofs[i]
   DirichletBC(
       std::shared_ptr<const function::Function> g,
       const Eigen::Ref<const Eigen::Array<PetscInt, Eigen::Dynamic, 1>>& dofs);
@@ -112,12 +113,12 @@ public:
   /// Create boundary condition
   ///
   /// @param[in] g The boundary condition value
-  /// @param[in] V_g_dofs 2D (column-major) array of degree-of-freedom indices.
-  ///                     First column are indices in the space where boundary
-  ///                     condition is applied, second column are indices in the
-  ///                     space of the boundary condition value function.
+  /// @param[in] V_g_dofs 2D array of degree-of-freedom indices. First
+  ///   column are indices in the space where boundary condition is
+  ///   applied (V), second column are indices in the space of the
+  ///   boundary condition value function g.
   /// @param[in] V The function (sub)space on which the boundary
-  ///              condition is applied
+  ///   condition is applied
   DirichletBC(std::shared_ptr<const function::Function> g,
               const Eigen::Ref<const Eigen::Array<PetscInt, Eigen::Dynamic, 2>>&
                   V_g_dofs,

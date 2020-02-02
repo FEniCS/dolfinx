@@ -168,10 +168,14 @@ std::vector<PetscInt> get_remote_bcs(const common::IndexMap& map,
 //-----------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
 Eigen::Array<PetscInt, Eigen::Dynamic, 2> fem::locate_dofs_topological(
-    const function::FunctionSpace& V0, const int dim,
+    const std::vector<std::reference_wrapper<function::FunctionSpace>>& V,
+    const int dim,
     const Eigen::Ref<const Eigen::Array<int, Eigen::Dynamic, 1>>& entities,
-    const function::FunctionSpace& V1, bool remote)
+    bool remote)
 {
+  const function::FunctionSpace& V0 = V.at(0).get();
+  const function::FunctionSpace& V1 = V.at(1).get();
+
   // Get mesh
   assert(V0.mesh());
   assert(V1.mesh());
