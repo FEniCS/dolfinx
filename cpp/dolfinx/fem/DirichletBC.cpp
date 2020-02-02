@@ -1,4 +1,4 @@
-// Copyright (C) 2007-2018 Anders Logg and Garth N. Wells
+// Copyright (C) 2007-2020 Anders Logg and Garth N. Wells
 //
 // This file is part of DOLFINX (https://www.fenicsproject.org)
 //
@@ -7,6 +7,7 @@
 #include "DirichletBC.h"
 #include "DofMap.h"
 #include "FiniteElement.h"
+#include <algorithm>
 #include <array>
 #include <dolfinx/common/IndexMap.h>
 #include <dolfinx/fem/CoordinateElement.h>
@@ -24,6 +25,8 @@ using namespace dolfinx::fem;
 
 namespace
 {
+//-----------------------------------------------------------------------------
+// TODO: add some docs
 std::vector<std::array<PetscInt, 2>>
 get_remote_bcs(const common::IndexMap& map, const common::IndexMap& map_g,
                const std::vector<std::array<PetscInt, 2>>& dofs_local)
@@ -106,11 +109,9 @@ get_remote_bcs(const common::IndexMap& map, const common::IndexMap& map_g,
 
   return dof_dof_g;
 }
-} // namespace
 //-----------------------------------------------------------------------------
-std::vector<PetscInt>
-get_remote_bcs(const common::IndexMap& map,
-               const std::vector<PetscInt>& dofs_local)
+std::vector<PetscInt> get_remote_bcs(const common::IndexMap& map,
+                                     const std::vector<PetscInt>& dofs_local)
 {
   const std::int32_t bs = map.block_size;
   const std::int32_t size_owned = map.size_local();
@@ -127,10 +128,7 @@ get_remote_bcs(const common::IndexMap& map,
     const PetscInt index_block = dofs / bs;
     const PetscInt pos = dofs % bs;
     if (dofs < bs * size_owned)
-    {
-      marker_owned[dofs]
-          = bs * map.local_to_global(index_block) + pos;
-    }
+      marker_owned[dofs] = bs * map.local_to_global(index_block) + pos;
     else
     {
       marker_ghost[dofs - (bs * size_owned)]
@@ -151,9 +149,8 @@ get_remote_bcs(const common::IndexMap& map,
   std::vector<PetscInt> marker_ghost_rcvd = map.scatter_fwd(marker_owned, bs);
   assert((int)marker_ghost_rcvd.size() == size_ghost * bs);
 
-  std::vector<PetscInt> dofs;
-
   // Add to local indices map
+  std::vector<PetscInt> dofs;
   for (std::size_t i = 0; i < marker_ghost_rcvd.size(); ++i)
   {
     if (marker_ghost_rcvd[i] > -1)
@@ -167,6 +164,8 @@ get_remote_bcs(const common::IndexMap& map,
 
   return dofs;
 }
+} // namespace
+//-----------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
 Eigen::Array<PetscInt, Eigen::Dynamic, 2> fem::locate_dofs_topological(
     const function::FunctionSpace& V0, const int dim,
@@ -183,7 +182,6 @@ Eigen::Array<PetscInt, Eigen::Dynamic, 2> fem::locate_dofs_topological(
 
   assert(V0.element());
   assert(V1.element());
-
   if (!V0.has_element(*V1.element()))
   {
     throw std::runtime_error("Function spaces must have the same elements or "
@@ -245,14 +243,13 @@ Eigen::Array<PetscInt, Eigen::Dynamic, 2> fem::locate_dofs_topological(
   if (remote)
   {
     // Get bc dof indices (local) in (V, Vg) spaces on this process that
-    // were found by other processes, e.g. a vertex dof on this process that
-    // has no connected facets on the boundary.
+    // were found by other processes, e.g. a vertex dof on this process
+    // that has no connected facets on the boundary.
     const std::vector<std::array<PetscInt, 2>> dofs_remote = get_remote_bcs(
         *V0.dofmap()->index_map, *V1.dofmap()->index_map, bc_dofs);
 
     // Add received bc indices to dofs_local
-    for (auto& dof_remote : dofs_remote)
-      bc_dofs.push_back(dof_remote);
+    bc_dofs.insert(bc_dofs.end(), dofs_remote.begin(), dofs_remote.end());
 
     // TODO: is removing duplicates at this point worth the effort?
     // Remove duplicates
@@ -260,8 +257,7 @@ Eigen::Array<PetscInt, Eigen::Dynamic, 2> fem::locate_dofs_topological(
     bc_dofs.erase(std::unique(bc_dofs.begin(), bc_dofs.end()), bc_dofs.end());
   }
 
-  Eigen::Array<PetscInt, Eigen::Dynamic, 2> dofs(
-      bc_dofs.size(), 2);
+  Eigen::Array<PetscInt, Eigen::Dynamic, 2> dofs(bc_dofs.size(), 2);
   for (std::size_t i = 0; i < bc_dofs.size(); ++i)
   {
     dofs(i, 0) = bc_dofs[i][0];
@@ -328,12 +324,11 @@ Eigen::Array<PetscInt, Eigen::Dynamic, 1> fem::locate_dofs_topological(
 
   if (remote)
   {
-    const std::vector<PetscInt> dofs_remote = get_remote_bcs(
-        *V.dofmap()->index_map, dofs);
+    const std::vector<PetscInt> dofs_remote
+        = get_remote_bcs(*V.dofmap()->index_map, dofs);
 
     // Add received bc indices to dofs_local
-    for (auto& dof_remote : dofs_remote)
-      dofs.push_back(dof_remote);
+    dofs.insert(dofs.end(), dofs_remote.begin(), dofs_remote.end());
 
     // TODO: is removing duplicates at this point worth the effort?
     // Remove duplicates
@@ -363,7 +358,7 @@ fem::locate_dofs_geometrical(const function::FunctionSpace& V,
 
   std::vector<PetscInt> dofs;
   dofs.reserve(marked_dofs.count());
-  for (Eigen::Index i = 0; i < marked_dofs.size(); ++i)
+  for (Eigen::Index i = 0; i < marked_dofs.rows(); ++i)
   {
     if (marked_dofs[i])
       dofs.push_back(i);
@@ -376,11 +371,8 @@ fem::locate_dofs_geometrical(const function::FunctionSpace& V,
 DirichletBC::DirichletBC(
     std::shared_ptr<const function::Function> g,
     const Eigen::Ref<const Eigen::Array<PetscInt, Eigen::Dynamic, 1>>& V_dofs)
-    : _function_space(g->function_space()), _g(g)
+    : _function_space(g->function_space()), _g(g), _dofs(V_dofs.rows(), 2)
 {
-
-  _dofs = Eigen::Array<PetscInt, Eigen::Dynamic, 2>(V_dofs.rows(), 2);
-
   // Stack indices as columns, fits column-major _dofs layout
   _dofs.col(0) = V_dofs;
   _dofs.col(1) = V_dofs;

@@ -1,4 +1,4 @@
-// Copyright (C) 2007-2019 Anders Logg and Garth N. Wells
+// Copyright (C) 2007-2020 Anders Logg and Garth N. Wells
 //
 // This file is part of DOLFINX (https://www.fenicsproject.org)
 //
@@ -52,17 +52,18 @@ Eigen::Array<PetscInt, Eigen::Dynamic, 2> locate_dofs_topological(
 /// with a facet/edge/vertex.
 ///
 /// @param[in] V The function (sub)space on which degrees of freedom
-///              will be located
+///     will be located
 /// @param[in] entity_dim Topological dimension of mesh entities on
-///                       which degrees of freedom will be located
+///     which degrees of freedom will be located
 /// @param[in] entities Indices of mesh entities. All dofs associated
-///                     with these indices will be returned.
-/// @param[in] remote True to return also "remotely located" degree-of-freedom
-///                   indices. Remotely located degree-of-freedom indices are local/owned
-///                   by the current process, but current process wouldn't
-///                   locate them because it doesn't recognize mesh entity as a
-///                   marked. For example a boundary dof that is owned by an
-///                   interior cell.
+///     with these indices will be returned.
+/// @param[in] remote True to return also "remotely located"
+///     degree-of-freedom indices. Remotely located degree-of-freedom
+///     indices are local/owned by the current process, but which the
+///     current process cannot identify because it does not recognize
+///     mesh entity as a marked. For example, a boundary condition dof
+///     at a vertex where this process does not have the associated
+///     boundary facet. This commonly occurs with partitioned meshes.
 /// @return Array of local indices of located degrees of freedom
 Eigen::Array<PetscInt, Eigen::Dynamic, 1> locate_dofs_topological(
     const function::FunctionSpace& V, const int entity_dim,
@@ -117,10 +118,10 @@ public:
   ///                     space of the boundary condition value function.
   /// @param[in] V The function (sub)space on which the boundary
   ///              condition is applied
-  DirichletBC(
-      std::shared_ptr<const function::Function> g,
-      const Eigen::Ref<const Eigen::Array<PetscInt, Eigen::Dynamic, 2>>& V_g_dofs,
-      std::shared_ptr<const function::FunctionSpace> V);
+  DirichletBC(std::shared_ptr<const function::Function> g,
+              const Eigen::Ref<const Eigen::Array<PetscInt, Eigen::Dynamic, 2>>&
+                  V_g_dofs,
+              std::shared_ptr<const function::FunctionSpace> V);
 
   /// Copy constructor
   /// @param[in] bc The object to be copied
@@ -165,8 +166,8 @@ public:
 
   // FIXME: clarify w.r.t ghosts
   /// Set bc entries in x to scale*(x0 - x_bc).
-  void set(
-      Eigen::Ref<Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1>> x,
+  void
+  set(Eigen::Ref<Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1>> x,
       const Eigen::Ref<const Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1>>& x0,
       double scale = 1.0) const;
 
