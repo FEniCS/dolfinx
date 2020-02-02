@@ -164,13 +164,10 @@ std::vector<PetscInt> get_remote_bcs(const common::IndexMap& map,
 
   return dofs;
 }
-} // namespace
 //-----------------------------------------------------------------------------
-//-----------------------------------------------------------------------------
-Eigen::Array<PetscInt, Eigen::Dynamic, 2> fem::locate_dofs_topological(
+Eigen::Array<PetscInt, Eigen::Dynamic, 2> _locate_dofs_topological(
     const std::vector<std::reference_wrapper<function::FunctionSpace>>& V,
-    const int dim,
-    const Eigen::Ref<const Eigen::Array<int, Eigen::Dynamic, 1>>& entities,
+    const int dim, const Eigen::Ref<const Eigen::ArrayXi>& entities,
     bool remote)
 {
   const function::FunctionSpace& V0 = V.at(0).get();
@@ -233,9 +230,7 @@ Eigen::Array<PetscInt, Eigen::Dynamic, 2> fem::locate_dofs_topological(
     for (int i = 0; i < num_entity_dofs; ++i)
     {
       const int index = entity_dofs[entity_local_index][i];
-      const PetscInt dof_index0 = cell_dofs0[index];
-      const PetscInt dof_index1 = cell_dofs1[index];
-      bc_dofs.push_back({{dof_index0, dof_index1}});
+      bc_dofs.push_back({cell_dofs0[index], cell_dofs1[index]});
     }
   }
 
@@ -271,10 +266,10 @@ Eigen::Array<PetscInt, Eigen::Dynamic, 2> fem::locate_dofs_topological(
   return dofs;
 }
 //-----------------------------------------------------------------------------
-Eigen::Array<PetscInt, Eigen::Dynamic, 1> fem::locate_dofs_topological(
-    const function::FunctionSpace& V, const int entity_dim,
-    const Eigen::Ref<const Eigen::Array<int, Eigen::Dynamic, 1>>& entities,
-    bool remote)
+Eigen::Array<PetscInt, Eigen::Dynamic, 1>
+_locate_dofs_topological(const function::FunctionSpace& V, const int entity_dim,
+                         const Eigen::Ref<const Eigen::ArrayXi>& entities,
+                         bool remote)
 {
   assert(V.dofmap());
   const DofMap& dofmap = *V.dofmap();
@@ -316,8 +311,7 @@ Eigen::Array<PetscInt, Eigen::Dynamic, 1> fem::locate_dofs_topological(
     for (int j = 0; j < num_entity_closure_dofs; j++)
     {
       const int index = entity_dofs[entity_local_index][j];
-      const PetscInt dof_index = cell_dofs[index];
-      dofs.push_back(dof_index);
+      dofs.push_back(cell_dofs[index]);
     }
   }
 
@@ -342,6 +336,21 @@ Eigen::Array<PetscInt, Eigen::Dynamic, 1> fem::locate_dofs_topological(
 
   return Eigen::Map<Eigen::Array<PetscInt, Eigen::Dynamic, 1>>(dofs.data(),
                                                                dofs.size());
+}
+} // namespace
+//-----------------------------------------------------------------------------
+Eigen::Array<PetscInt, Eigen::Dynamic, Eigen::Dynamic>
+fem::locate_dofs_topological(
+    const std::vector<std::reference_wrapper<function::FunctionSpace>>& V,
+    const int dim, const Eigen::Ref<const Eigen::ArrayXi>& entities,
+    bool remote)
+{
+  if (V.size() == 2)
+    return _locate_dofs_topological(V, dim, entities, remote);
+  else if (V.size() == 1)
+    return _locate_dofs_topological(V[0].get(), dim, entities, remote);
+  else
+    throw std::runtime_error("Expected only 1 or 2 function spaces.");
 }
 //-----------------------------------------------------------------------------
 Eigen::Array<PetscInt, Eigen::Dynamic, 1>
@@ -371,6 +380,7 @@ fem::locate_dofs_geometrical(const function::FunctionSpace& V,
   return Eigen::Map<Eigen::Array<PetscInt, Eigen::Dynamic, 1>>(dofs.data(),
                                                                dofs.size());
 }
+//-----------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
 DirichletBC::DirichletBC(
     std::shared_ptr<const function::Function> g,

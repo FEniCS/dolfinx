@@ -1,4 +1,4 @@
-// Copyright (C) 2007-2020 Anders Logg and Garth N. Wells
+// Copyright (C) 2007-2020 Michal Habera, Anders Logg and Garth N. Wells
 //
 // This file is part of DOLFINX (https://www.fenicsproject.org)
 //
@@ -37,27 +37,18 @@ using marking_function = std::function<Eigen::Array<bool, Eigen::Dynamic, 1>(
 /// Build an array of degree-of-freedom indices that are associated with
 /// give mesh entities (topological)
 ///
-/// @see locate_dofs_topological
-Eigen::Array<PetscInt, Eigen::Dynamic, 2> locate_dofs_topological(
-    const std::vector<std::reference_wrapper<function::FunctionSpace>>& V,
-    const int dim,
-    const Eigen::Ref<const Eigen::Array<int, Eigen::Dynamic, 1>>& entities,
-    bool remote = true);
-
-/// Build an array of degree-of-freedom indices that are associated with
-/// give mesh entities (topological)
-///
 /// Finds degrees-of-freedom which belong to provided mesh entities.
 /// Note that degrees-of-freedom for discontinuous elements are
 /// associated with the cell even if they may appear to be associated
 /// with a facet/edge/vertex.
 ///
-/// @param[in] V The function (sub)space on which degrees of freedom
-///     will be located
+/// @param[in] V The function (sub)space(s) on which degrees-of-freedom
+///     (DOFs) will be located. The spaces must share the same mesh and
+///     element type.
 /// @param[in] entity_dim Topological dimension of mesh entities on
-///     which degrees of freedom will be located
-/// @param[in] entities Indices of mesh entities. All dofs associated
-///     with these indices will be returned.
+///     which degrees-of-freedom will be located
+/// @param[in] entities Indices of mesh entities. All DOFs associated
+///     with the closure of these indices will be returned
 /// @param[in] remote True to return also "remotely located"
 ///     degree-of-freedom indices. Remotely located degree-of-freedom
 ///     indices are local/owned by the current process, but which the
@@ -65,10 +56,13 @@ Eigen::Array<PetscInt, Eigen::Dynamic, 2> locate_dofs_topological(
 ///     mesh entity as a marked. For example, a boundary condition dof
 ///     at a vertex where this process does not have the associated
 ///     boundary facet. This commonly occurs with partitioned meshes.
-/// @return Array of local indices of located degrees of freedom
-Eigen::Array<PetscInt, Eigen::Dynamic, 1> locate_dofs_topological(
-    const function::FunctionSpace& V, const int entity_dim,
-    const Eigen::Ref<const Eigen::Array<int, Eigen::Dynamic, 1>>& entities,
+/// @return Array of local DOF indices in the spaces V[0] (and V[1] is
+///     two spaces are passed in). If two spaces are passed in, the (i,
+///     0) entry is the DOF index in the space V[0] and (i, 1) is the
+///     correspinding DOF entry in the space V[1].
+Eigen::Array<PetscInt, Eigen::Dynamic, Eigen::Dynamic> locate_dofs_topological(
+    const std::vector<std::reference_wrapper<function::FunctionSpace>>& V,
+    const int dim, const Eigen::Ref<const Eigen::ArrayXi>& entities,
     bool remote = true);
 
 /// Build an array of degree-of-freedom indices based on coordinates of
@@ -95,7 +89,6 @@ locate_dofs_geometrical(const function::FunctionSpace& V,
 /// A DirichletBC is specified by the function g, the function space
 /// (trial space) and degrees of freedom to which the boundary condition
 /// applies.
-///
 
 class DirichletBC
 {
@@ -103,9 +96,10 @@ class DirichletBC
 public:
   /// Create boundary condition
   ///
-  /// @param[in] g The boundary condition value
+  /// @param[in] g The boundary condition value. The boundary condition
+  /// can be applied to a a function on the same space as g.
   /// @param[in] dofs Degree-of-freedom indices in the space of the
-  ///                boundary value function applied to V_dofs[i]
+  ///   boundary value function applied to V_dofs[i]
   DirichletBC(
       std::shared_ptr<const function::Function> g,
       const Eigen::Ref<const Eigen::Array<PetscInt, Eigen::Dynamic, 1>>& dofs);
@@ -142,7 +136,7 @@ public:
   /// Move assignment operator
   DirichletBC& operator=(DirichletBC&& bc) = default;
 
-  /// Return function space to which boundary conditions are applied
+  /// The function space to which boundary conditions are applied
   /// @return The function space
   std::shared_ptr<const function::FunctionSpace> function_space() const;
 

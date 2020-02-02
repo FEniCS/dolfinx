@@ -428,24 +428,9 @@ void fem(py::module& m)
       .def("check_ref_count", &dolfinx::fem::PETScDMCollection::check_ref_count)
       .def("get_dm", &dolfinx::fem::PETScDMCollection::get_dm);
 
-  m.def(
-      "locate_dofs_topological",
-      py::overload_cast<
-          const std::vector<
-              std::reference_wrapper<dolfinx::function::FunctionSpace>>&,
-          const int,
-          const Eigen::Ref<const Eigen::Array<int, Eigen::Dynamic, 1>>&, bool>(
-          &dolfinx::fem::locate_dofs_topological),
-      py::arg("V"), py::arg("dim"), py::arg("entities"),
-      py::arg("remote") = true);
-  m.def(
-      "locate_dofs_topological",
-      py::overload_cast<
-          const dolfinx::function::FunctionSpace&, const int,
-          const Eigen::Ref<const Eigen::Array<int, Eigen::Dynamic, 1>>&, bool>(
-          &dolfinx::fem::locate_dofs_topological),
-      py::arg("V"), py::arg("dim"), py::arg("entities"),
-      py::arg("remote") = true);
+  m.def("locate_dofs_topological", &dolfinx::fem::locate_dofs_topological,
+        py::arg("V"), py::arg("dim"), py::arg("entities"),
+        py::arg("remote") = true);
   m.def("locate_dofs_geometrical", &dolfinx::fem::locate_dofs_geometrical);
 } // namespace dolfinx_wrappers
 } // namespace dolfinx_wrappers

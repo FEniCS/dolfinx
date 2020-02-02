@@ -47,46 +47,49 @@ def locate_dofs_geometrical(V: typing.Union[function.FunctionSpace],
         return cpp.fem.locate_dofs_geometrical(V, marker)
 
 
-def locate_dofs_topological(V: typing.Union[cpp.function.FunctionSpace, function.FunctionSpace],
+def locate_dofs_topological(V: typing.Iterable[typing.Union[cpp.function.FunctionSpace, function.FunctionSpace]],
                             entity_dim: int,
                             entities: typing.List[int],
                             remote: bool = True):
-    """Locate degrees-of-freedom belonging to mesh entities topologically .
+    """Locate degrees-of-freedom belonging to mesh entities topologically.
 
     Parameters
     ----------
     V
-        Function space in which to search for degree-of-freedom indices.
+        Function space(s) in which to search for degree-of-freedom indices.
     entity_dim
         Topological dimension of entities where degrees-of-freedom are located.
     entities
-        Indices of mesh entities of dimension ``entity_dim`` where degrees-of-freedom are
-        located.
-    V1 : optional
-        Different function space in which to search for degree-of-freedom indices.
+        Indices of mesh entities of dimension ``entity_dim`` where
+        degrees-of-freedom are located.
     remote : True
         True to return also "remotely located" degree-of-freedom indices.
 
     Returns
     -------
     numpy.ndarray
-        An array of degree-of-freedom indices (local to the process) for degrees-of-freedom
-        topologically belonging to mesh entities.
-        If function space ``V1`` is supplied returns 2-D array of shape (number of dofs, 2)
-        in column-major storage.
-        Returned degree-of-freedom indices are unique and ordered.
+        An array of degree-of-freedom indices (local to the process) for
+        degrees-of-freedom topologically belonging to mesh entities.
+
+        If ``V`` is a list of two function spaces, then a 2-D array of
+        shape (number of dofs, 2) is returned.
+
+        Returned degree-of-freedom indices are unique and ordered by the
+        first column.
     """
 
     if isinstance(V, collections.abc.Sequence):
-        try:
-            _V = [space._cpp_object for space in V]
-        except AttributeError:
-            _V = V
+        _V = []
+        for space in V:
+            try:
+                _V.append(space._cpp_object)
+            except AttributeError:
+                _V.append(space)
     else:
         try:
-            _V = V._cpp_object
+            _V = [V._cpp_object]
         except AttributeError:
-            _V = V
+            _V = [V]
 
     return cpp.fem.locate_dofs_topological(_V, entity_dim, entities, remote)
 
