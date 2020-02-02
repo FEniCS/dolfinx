@@ -26,6 +26,62 @@ using namespace dolfinx::fem;
 namespace
 {
 //-----------------------------------------------------------------------------
+// std::vector<PetscInt>
+// get_remote_bcs_new(const common::IndexMap& map,
+//                    const std::vector<PetscInt>& dofs_local)
+// {
+//   // Get number of processes in neighbourhood
+//   MPI_Comm comm = map.mpi_comm_neighborhood();
+//   int num_neighbours(-1), outdegree(-2), weighted(-1);
+//   MPI_Dist_graph_neighbors_count(comm, &num_neighbours, &outdegree, &weighted);
+//   assert(num_neighbours == outdegree);
+
+//   // Figure out how many entries to receive from each neighbour
+//   const int num_dofs = dofs_local.size();
+//   std::vector<int> num_dofs_recv(num_neighbours);
+//   MPI_Neighbor_allgather(&num_dofs, 1, MPI_INT, num_dofs_recv.data(), 1,
+//                          MPI_INT, comm);
+
+//   // Compute displacements for data to receive
+//   std::vector<int> disp(num_neighbours + 1, 0);
+//   std::partial_sum(num_dofs_recv.begin(), num_dofs_recv.end(),
+//                    disp.begin() + 1);
+
+//   const int bs = map.block_size;
+//   std::vector<std::int64_t> dofs_global(dofs_local.size());
+//   dofs_global.reserve(dofs_local.size());
+//   for (auto dof : dofs_local)
+//   {
+//     const int index_block = dof / bs;
+//     const int pos = dof % bs;
+//     dofs_global.push_back(map.local_to_global(index_block) + pos);
+//   }
+
+//   std::vector<std::int64_t> dofs_received(disp.back());
+//   MPI_Neighbor_allgatherv(dofs_global.data(), dofs_global.size(), MPI_INT64_T,
+//                           dofs_received.data(), num_dofs_recv.data(),
+//                           disp.data(), MPI_INT64_T, comm);
+
+//   // Remove duplicates
+//   std::sort(dofs_received.begin(), dofs_received.end());
+//   dofs_received.erase(std::unique(dofs_received.begin(), dofs_received.end()),
+//                       dofs_received.end());
+
+
+//   const std::array<std::int64_t, 2> range = map.local_range();
+//   const std::int64_t offset = range[0];
+
+
+//   // Build global-to-local map for ghost indices (blocks) in map_g
+//   std::map<std::int64_t, std::int32_t> global_to_local;
+//   const Eigen::Array<PetscInt, Eigen::Dynamic, 1>& ghosts = map.ghosts();
+//   for (Eigen::Index i = 0; i < ghosts*map.block_size; ++i)
+//     global_to_local_g.insert({ghosts_g[i], i + size_owned_g});
+
+
+//   // return std::vector<PetscInt>(10);
+// }
+//-----------------------------------------------------------------------------
 // TODO: add some docs
 std::vector<std::array<PetscInt, 2>>
 get_remote_bcs(const common::IndexMap& map, const common::IndexMap& map_g,

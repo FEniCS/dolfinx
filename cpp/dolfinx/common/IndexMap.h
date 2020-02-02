@@ -82,7 +82,7 @@ public:
   const Eigen::Array<PetscInt, Eigen::Dynamic, 1>& ghosts() const;
 
   /// Get global index for local index i (index of the block)
-  std::int64_t local_to_global(std::int64_t local_index) const
+  std::int64_t local_to_global(std::int32_t local_index) const
   {
     assert(local_index >= 0);
     const std::int64_t local_size

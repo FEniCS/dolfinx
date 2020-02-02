@@ -428,7 +428,7 @@ void SparsityPattern::assemble()
                    disp.begin() + 1);
 
   // NOTE: Send unowned rows to all neighbours could be a bit 'lazy' and
-  // MPI_Neighbor_alltoallv could be use to send just to the owner, but
+  // MPI_Neighbor_alltoallv could be used to send just to the owner, but
   // maybe the number of rows exchanged in the neighbourhood are
   // relatively small that MPI_Neighbor_allgatherv is simpler.
 
