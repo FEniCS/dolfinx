@@ -88,4 +88,4 @@ public:
       const fem::DofMap& dofmap);
 };
 } // namespace io
-} // namespace dolfin
+} // namespace dolfinx

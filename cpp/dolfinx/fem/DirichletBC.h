@@ -196,4 +196,4 @@ private:
   int _owned_indices = -1;
 };
 } // namespace fem
-} // namespace dolfin
+} // namespace dolfinx

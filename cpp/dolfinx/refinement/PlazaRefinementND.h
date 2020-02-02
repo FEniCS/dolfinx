@@ -74,4 +74,4 @@ public:
                 std::int32_t tdim, bool uniform);
 };
 } // namespace refinement
-} // namespace dolfin
+} // namespace dolfinx

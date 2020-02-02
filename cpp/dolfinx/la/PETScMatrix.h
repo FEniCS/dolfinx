@@ -103,4 +103,4 @@ public:
   void set_near_nullspace(const la::VectorSpaceBasis& nullspace);
 };
 } // namespace la
-} // namespace dolfin
+} // namespace dolfinx

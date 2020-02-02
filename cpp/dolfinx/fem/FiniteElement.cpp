@@ -1,4 +1,4 @@
-// Copyright (C) 2008-2011 Anders Logg
+// Copyright (C) 2008-2020 Anders Logg and Garth N. Wells
 //
 // This file is part of DOLFINX (https://www.fenicsproject.org)
 //
@@ -21,7 +21,8 @@ FiniteElement::FiniteElement(const ufc_finite_element& ufc_element)
       _space_dim(ufc_element.space_dimension),
       _value_size(ufc_element.value_size),
       _reference_value_size(ufc_element.reference_value_size),
-      _degree(ufc_element.degree), _hash(std::hash<std::string>{}(_signature)),
+      _degree(ufc_element.degree), _has_refX(false),
+      _hash(std::hash<std::string>{}(_signature)),
       _evaluate_reference_basis(ufc_element.evaluate_reference_basis),
       _evaluate_reference_basis_derivatives(
           ufc_element.evaluate_reference_basis_derivatives),
@@ -29,14 +30,16 @@ FiniteElement::FiniteElement(const ufc_finite_element& ufc_element)
           ufc_element.transform_reference_basis_derivatives),
       _transform_values(ufc_element.transform_values)
 {
-  // Store dof coordinates on reference element
+  // Store dof coordinates on reference element if they exist
   assert(ufc_element.tabulate_reference_dof_coordinates);
   _refX.resize(_space_dim, _tdim);
   if (ufc_element.tabulate_reference_dof_coordinates(_refX.data()) == -1)
   {
-    throw std::runtime_error(
-        "Generated code returned error in tabulate_reference_dof_coordinates");
+    _refX.resize(0, 0);
+    _has_refX = false;
   }
+  else
+    _has_refX = true;
 
   const ufc_shape _shape = ufc_element.cell_shape;
   switch (_shape)
@@ -81,11 +84,11 @@ mesh::CellType FiniteElement::cell_shape() const { return _cell_shape; }
 //-----------------------------------------------------------------------------
 // std::size_t FiniteElement::topological_dimension() const { return _tdim; }
 //-----------------------------------------------------------------------------
-std::size_t FiniteElement::space_dimension() const { return _space_dim; }
+int FiniteElement::space_dimension() const { return _space_dim; }
 //-----------------------------------------------------------------------------
-std::size_t FiniteElement::value_size() const { return _value_size; }
+int FiniteElement::value_size() const { return _value_size; }
 //-----------------------------------------------------------------------------
-std::size_t FiniteElement::reference_value_size() const
+int FiniteElement::reference_value_size() const
 {
   return _reference_value_size;
 }
@@ -96,7 +99,7 @@ int FiniteElement::value_dimension(int i) const
 {
   if (i >= (int)_value_dimension.size())
     return 1;
-  return _value_dimension[i];
+  return _value_dimension.at(i);
 }
 //-----------------------------------------------------------------------------
 std::size_t FiniteElement::degree() const { return _degree; }
@@ -161,9 +164,20 @@ void FiniteElement::transform_reference_basis_derivatives(
   }
 }
 //-----------------------------------------------------------------------------
+bool FiniteElement::has_dof_reference_coordinates() const noexcept
+{
+  return _has_refX;
+}
+//-----------------------------------------------------------------------------
 const Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>&
 FiniteElement::dof_reference_coordinates() const
 {
+  if (!_has_refX)
+  {
+    throw std::runtime_error(
+        "Dof reference coordinates do not exist for this element.");
+  }
+
   return _refX;
 }
 //-----------------------------------------------------------------------------
@@ -201,18 +215,18 @@ std::shared_ptr<const FiniteElement>
 FiniteElement::extract_sub_element(const FiniteElement& finite_element,
                                    const std::vector<int>& component)
 {
-  // Check if there are any sub systems
-  if (finite_element.num_sub_elements() == 0)
-  {
-    throw std::runtime_error(
-        "Cannot extract subsystem of finite element. There are no subsystems.");
-  }
-
   // Check that a sub system has been specified
   if (component.empty())
   {
     throw std::runtime_error(
         "Cannot extract subsystem of finite element. No system was specified");
+  }
+
+  // Check if there are any sub systems
+  if (finite_element.num_sub_elements() == 0)
+  {
+    throw std::runtime_error(
+        "Cannot extract subsystem of finite element. There are no subsystems.");
   }
 
   // Check the number of available sub systems

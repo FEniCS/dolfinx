@@ -79,4 +79,4 @@ private:
   KSP _ksp;
 };
 } // namespace la
-} // namespace dolfin
+} // namespace dolfinx

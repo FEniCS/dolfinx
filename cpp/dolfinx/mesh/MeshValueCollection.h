@@ -426,4 +426,4 @@ std::string MeshValueCollection<T>::str(bool verbose) const
 }
 //---------------------------------------------------------------------------
 } // namespace mesh
-} // namespace dolfin
+} // namespace dolfinx

@@ -63,4 +63,4 @@ private:
   boost::timer::cpu_timer _timer;
 };
 } // namespace common
-} // namespace dolfin
+} // namespace dolfinx

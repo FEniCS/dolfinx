@@ -129,4 +129,4 @@ private:
   Eigen::Array<std::int32_t, Eigen::Dynamic, 1> _num_global_connections;
 };
 } // namespace mesh
-} // namespace dolfin
+} // namespace dolfinx

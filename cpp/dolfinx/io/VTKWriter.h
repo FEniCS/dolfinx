@@ -38,4 +38,4 @@ public:
   static void write_cell_data(const function::Function& u, std::string file);
 };
 } // namespace io
-} // namespace dolfin
+} // namespace dolfinx

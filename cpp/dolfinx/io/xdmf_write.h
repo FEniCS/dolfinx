@@ -190,4 +190,4 @@ std::vector<T> compute_value_data(const mesh::MeshFunction<T>& meshfunction)
 
 } // namespace xdmf_write
 } // namespace io
-} // namespace dolfin
+} // namespace dolfinx

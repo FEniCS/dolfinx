@@ -76,4 +76,4 @@ private:
   std::vector<std::int32_t> _offset;
 };
 } // namespace mesh
-} // namespace dolfin
+} // namespace dolfinx

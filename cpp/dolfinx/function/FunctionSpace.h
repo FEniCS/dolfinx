@@ -226,4 +226,4 @@ private:
   mutable std::map<std::vector<int>, std::weak_ptr<FunctionSpace>> _subspaces;
 };
 } // namespace function
-} // namespace dolfin
+} // namespace dolfinx

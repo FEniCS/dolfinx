@@ -32,7 +32,7 @@ namespace fem
 /// is the creation of algebraic multigrid solvers for H(curl) and
 /// H(div) problems.
 
-/// NOTE: This class is highly experimental and likely to change. It
+/// @warning This class is highly experimental and likely to change. It
 /// will eventually be expanded to provide the discrete curl and
 /// divergence.
 
@@ -51,4 +51,4 @@ public:
                                         const function::FunctionSpace& V1);
 };
 } // namespace fem
-} // namespace dolfin
+} // namespace dolfinx

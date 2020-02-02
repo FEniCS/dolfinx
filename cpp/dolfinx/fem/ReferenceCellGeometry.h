@@ -24,4 +24,4 @@ public:
   get_vertices(mesh::CellType cell_type);
 };
 } // namespace fem
-} // namespace dolfin
+} // namespace dolfinx

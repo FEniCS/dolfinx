@@ -23,4 +23,4 @@ typedef dolfinx::common::Set<int> graph_set_type;
 typedef std::vector<graph_set_type> Graph;
 
 } // namespace graph
-} // namespace dolfin
+} // namespace dolfinx

@@ -42,4 +42,4 @@ public:
                                         std::size_t gdim);
 };
 } // namespace geometry
-} // namespace dolfin
+} // namespace dolfinx

@@ -68,4 +68,4 @@ Eigen::Array<std::int32_t, Eigen::Dynamic, 1> compute_marked_boundary_entities(
                                             Eigen::RowMajor>>&)>& marker);
 
 } // namespace mesh
-} // namespace dolfin
+} // namespace dolfinx

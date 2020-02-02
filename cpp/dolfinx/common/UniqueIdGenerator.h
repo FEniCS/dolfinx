@@ -33,4 +33,4 @@ private:
   std::size_t _next_id;
 };
 } // namespace common
-} // namespace dolfin
+} // namespace dolfinx

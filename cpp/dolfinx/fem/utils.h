@@ -142,4 +142,4 @@ Eigen::Array<PetscScalar, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
 pack_coefficients(const fem::Form& form);
 
 } // namespace fem
-} // namespace dolfin
+} // namespace dolfinx
