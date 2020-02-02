@@ -129,7 +129,7 @@ mf1 = np.where(mf == 1)[0]
 noslip = Function(W.sub(0).collapse())
 noslip.interpolate(lambda x: np.zeros_like(x[:mesh.geometry.dim]))
 
-bdofs = locate_dofs_topological(W.sub(0), sub_domains.dim, mf0, W.sub(0).collapse())
+bdofs = locate_dofs_topological((W.sub(0), noslip.function_space), sub_domains.dim, mf0)
 bc0 = DirichletBC(noslip, bdofs, W.sub(0))
 
 # Inflow boundary condition for velocity
@@ -145,7 +145,7 @@ def inflow_eval(x):
 inflow = Function(W.sub(0).collapse())
 inflow.interpolate(inflow_eval)
 
-bdofs1 = locate_dofs_topological(W.sub(0), sub_domains.dim, mf1, W.sub(0).collapse())
+bdofs1 = locate_dofs_topological((W.sub(0), inflow.function_space), sub_domains.dim, mf1)
 bc1 = DirichletBC(inflow, bdofs1, W.sub(0))
 
 # Collect boundary conditions
