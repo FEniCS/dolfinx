@@ -33,7 +33,7 @@ namespace
 /// @param[in] map The IndexMap with the dof layout
 /// @param[in] dofs_local The IndexMap with the dof layout
 /// @return List of local dofs with boundary conditions applied but
-///   detected by other processes
+///   detected by other processes. It may contain duplicate entries.
 std::vector<std::int32_t>
 get_remote_bcs_new(const common::IndexMap& map,
                    const std::vector<std::int32_t>& dofs_local)
@@ -65,10 +65,11 @@ get_remote_bcs_new(const common::IndexMap& map,
     dofs_global.push_back(bs * map.local_to_global(index_block) + pos);
   }
 
-  // Compute displacements for data to receive
+  // Compute displacements for data to receive. Last entry has total
+  // number of received items.
   std::vector<int> disp(num_neighbours + 1, 0);
-  std::partial_sum(num_dofs_recv.begin(), num_dofs_recv.end(),
-                   disp.begin() + 1);
+  std::inclusive_scan(num_dofs_recv.begin(), num_dofs_recv.end(),
+                      disp.begin() + 1);
 
   // Send/receive global index of dofs with bcs to all neighbours
   std::vector<std::int64_t> dofs_received(disp.back());
@@ -76,22 +77,16 @@ get_remote_bcs_new(const common::IndexMap& map,
                           dofs_received.data(), num_dofs_recv.data(),
                           disp.data(), MPI_INT64_T, comm);
 
-  // TODO: Put local dofs at end of received array for cheap removal
-  dofs_received.erase(dofs_received.begin(),
-                      dofs_received.begin() + num_dofs_recv[1]);
-
-  // Remove duplicates
-  std::sort(dofs_received.begin(), dofs_received.end());
-  dofs_received.erase(std::unique(dofs_received.begin(), dofs_received.end()),
-                      dofs_received.end());
-
-  // Build global-to-local map for ghost indices (blocks)
+  // Build global-to-local map for ghost indices (blocks) on this
+  // process
   const std::int32_t size_owned = map.size_local();
   std::map<std::int64_t, std::int32_t> global_to_local_blocked;
   const Eigen::Array<PetscInt, Eigen::Dynamic, 1>& ghosts = map.ghosts();
   for (Eigen::Index i = 0; i < ghosts.rows(); ++i)
     global_to_local_blocked.insert({ghosts[i], i + size_owned});
 
+  // Build vector of local dof indicies that have been marked by another
+  // process
   std::vector<std::int32_t> dofs;
   const std::array<std::int64_t, 2> range = map.local_range();
   for (auto dof : dofs_received)
