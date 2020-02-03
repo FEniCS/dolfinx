@@ -18,6 +18,7 @@
 #include <dolfinx/mesh/MeshIterator.h>
 #include <dolfinx/mesh/cell_types.h>
 #include <map>
+#include <numeric>
 #include <utility>
 
 using namespace dolfinx;
