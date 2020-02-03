@@ -55,8 +55,9 @@ get_remote_bcs_new(const common::IndexMap& map,
   std::partial_sum(num_dofs_recv.begin(), num_dofs_recv.end(),
                    disp.begin() + 1);
 
+  // Build array of global indices of dofs
   const int bs = map.block_size;
-  std::vector<std::int64_t> dofs_global(dofs_local.size());
+  std::vector<std::int64_t> dofs_global;
   dofs_global.reserve(dofs_local.size());
   for (auto dof : dofs_local)
   {
@@ -65,11 +66,13 @@ get_remote_bcs_new(const common::IndexMap& map,
     dofs_global.push_back(bs * map.local_to_global(index_block) + pos);
   }
 
-  // Send global index of dofs with bcs to all neighbours
+  // Send/receive global index of dofs with bcs to all neighbours
   std::vector<std::int64_t> dofs_received(disp.back());
   MPI_Neighbor_allgatherv(dofs_global.data(), dofs_global.size(), MPI_INT64_T,
                           dofs_received.data(), num_dofs_recv.data(),
                           disp.data(), MPI_INT64_T, comm);
+
+  // TODO: remove local dofs already detected
 
   // Remove duplicates
   std::sort(dofs_received.begin(), dofs_received.end());
