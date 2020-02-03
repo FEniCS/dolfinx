@@ -116,7 +116,8 @@ get_remote_bcs1(const common::IndexMap& map,
 /// Find DOFs on this processes that are constrained by a Dirichlet
 /// condition detected by another process
 ///
-/// @param[in] map The IndexMap with the dof layout
+/// @param[in] map0 The IndexMap with the dof layout
+/// @param[in] map1 The IndexMap with the dof layout
 /// @param[in] dofs_local The IndexMap with the dof layout
 /// @return List of local dofs with boundary conditions applied but
 ///   detected by other processes. It may contain duplicate entries.
@@ -194,42 +195,62 @@ get_remote_bcs2(const common::IndexMap& map0, const common::IndexMap& map1,
 
   // Build vector of local dof indicies that have been marked by another
   // process
-  std::vector<std::array<std::int32_t, 2>> dofs;
+  std::vector<std::int32_t> dofs0, dofs1;
   const std::array<std::int64_t, 2> range0 = map0.local_range();
   const std::array<std::int64_t, 2> range1 = map1.local_range();
   for (Eigen::Index i = 0; i < dofs_received.rows(); ++i)
   {
+    bool insert0(false), insert1(false);
+
     const std::int64_t dof0 = dofs_received(i, 0);
-    const std::int64_t dof1 = dofs_received(i, 1);
     if (dof0 >= bs0 * range0[0] and dof0 < bs0 * range0[1])
     {
-      assert(dof1 >= bs1 * range1[0] and dof1 < bs1 * range1[1]);
-      const std::int32_t dof_local0 = dof0 - bs0 * range0[0];
-      const std::int32_t dof_local1 = dof1 - bs1 * range1[0];
-      dofs.push_back({dof_local0, dof_local1});
+      dofs0.push_back(dof0 - bs0 * range0[0]);
+      insert0 = true;
     }
     else
     {
       const std::int64_t index_block0 = dof0 / bs0;
-      const std::int64_t index_block1 = dof1 / bs1;
-      auto it0 = global_to_local_blocked0.find(index_block0);
-      auto it1 = global_to_local_blocked1.find(index_block1);
-      if (it0 != global_to_local_blocked0.end())
+      auto it = global_to_local_blocked0.find(index_block0);
+      if (it != global_to_local_blocked0.end())
       {
-        assert(it1 != global_to_local_blocked1.end());
-        const std::int32_t dof_local0 = it0->second * bs0 + dof0 % bs0;
-        const std::int32_t dof_local1 = it1->second * bs1 + dof1 % bs1;
-        dofs.push_back({dof_local0, dof_local1});
+        dofs0.push_back(it->second * bs0 + dof0 % bs0);
+        insert0 = true;
       }
     }
+
+    const std::int64_t dof1 = dofs_received(i, 1);
+    if (dof1 >= bs1 * range1[0] and dof1 < bs1 * range1[1])
+    {
+      dofs1.push_back(dof1 - bs1 * range1[0]);
+      insert1 = true;
+    }
+    else
+    {
+      const std::int64_t index_block1 = dof1 / bs1;
+      auto it = global_to_local_blocked1.find(index_block1);
+      if (it != global_to_local_blocked1.end())
+      {
+        dofs1.push_back(it->second * bs1 + dof1 % bs1);
+        insert1 = true;
+      }
+    }
+    if (insert0 != insert1)
+      throw std::runtime_error("Could not find matching Dirichlet DOF pairs.");
   }
+
+  assert(dofs0.size() == dofs1.size());
+  std::vector<std::array<std::int32_t, 2>> dofs;
+  for (std::size_t i = 0; i < dofs0.size(); ++i)
+    dofs.push_back({dofs0[i], dofs1[i]});
 
   return dofs;
 }
 //-----------------------------------------------------------------------------
 // // TODO: add some docs
 // std::vector<std::array<PetscInt, 2>>
-// get_remote_bcs(const common::IndexMap& map, const common::IndexMap& map_g,
+// get_remote_bcs(const common::IndexMap& map, const common::IndexMap&
+// map_g,
 //                const std::vector<std::array<PetscInt, 2>>& dofs_local)
 // {
 //   std::vector<std::array<PetscInt, 2>> dof_dof_g;
@@ -265,8 +286,8 @@ get_remote_bcs2(const common::IndexMap& map0, const common::IndexMap& map1,
 
 //   // Build global-to-local map for ghost indices (blocks) in map_g
 //   std::map<PetscInt, PetscInt> global_to_local_g;
-//   const Eigen::Array<PetscInt, Eigen::Dynamic, 1>& ghosts_g = map_g.ghosts();
-//   for (Eigen::Index i = 0; i < size_owned_g; ++i)
+//   const Eigen::Array<PetscInt, Eigen::Dynamic, 1>& ghosts_g =
+//   map_g.ghosts(); for (Eigen::Index i = 0; i < size_owned_g; ++i)
 //     global_to_local_g.insert({i + offset_g, i});
 //   for (Eigen::Index i = 0; i < size_ghost_g; ++i)
 //     global_to_local_g.insert({ghosts_g[i], i + size_owned_g});
