@@ -26,9 +26,17 @@ using namespace dolfinx::fem;
 namespace
 {
 //-----------------------------------------------------------------------------
-std::vector<PetscInt>
+
+/// Find DOFs on this processes that are constrained by a Dirichlet
+/// condition detected by another process
+///
+/// @param[in] map The IndexMap with the dof layout
+/// @param[in] dofs_local The IndexMap with the dof layout
+/// @return List of local dofs with boundary conditions applied but
+///   detected by other processes
+std::vector<std::int32_t>
 get_remote_bcs_new(const common::IndexMap& map,
-                   const std::vector<PetscInt>& dofs_local)
+                   const std::vector<std::int32_t>& dofs_local)
 {
   // Get number of processes in neighbourhood
   MPI_Comm comm = map.mpi_comm_neighborhood();
@@ -70,12 +78,12 @@ get_remote_bcs_new(const common::IndexMap& map,
 
   // Build global-to-local map for ghost indices (blocks)
   const std::int32_t size_owned = map.size_local();
-  std::map<std::int64_t, std::int32_t> global_to_local;
+  std::map<std::int64_t, std::int32_t> global_to_local_blocked;
   const Eigen::Array<PetscInt, Eigen::Dynamic, 1>& ghosts = map.ghosts();
   for (Eigen::Index i = 0; i < ghosts.rows(); ++i)
-    global_to_local.insert({ghosts[i], i + size_owned});
+    global_to_local_blocked.insert({ghosts[i], i + size_owned});
 
-  std::vector<PetscInt> dofs;
+  std::vector<std::int32_t> dofs;
   const std::array<std::int64_t, 2> range = map.local_range();
   for (auto dof : dofs_received)
   {
@@ -84,12 +92,9 @@ get_remote_bcs_new(const common::IndexMap& map,
     else
     {
       const std::int64_t index_block = dof / bs;
-      auto it = global_to_local.find(index_block);
-      if (it != global_to_local.end())
-      {
-        const std::int64_t pos = dof % bs;
-        dofs.push_back(it->second + pos);
-      }
+      auto it = global_to_local_blocked.find(index_block);
+      if (it != global_to_local_blocked.end())
+        dofs.push_back(it->second * bs + dof % bs);
     }
   }
 
@@ -365,7 +370,7 @@ _locate_dofs_topological(const function::FunctionSpace& V, const int entity_dim,
 
   const int num_entity_closure_dofs
       = dofmap.element_dof_layout->num_entity_closure_dofs(entity_dim);
-  std::vector<PetscInt> dofs;
+  std::vector<std::int32_t> dofs;
   for (Eigen::Index i = 0; i < entities.rows(); ++i)
   {
     // Create entity and attached cell
@@ -392,20 +397,23 @@ _locate_dofs_topological(const function::FunctionSpace& V, const int entity_dim,
 
   if (remote)
   {
-    const std::vector<PetscInt> dofs_remote
+    const std::vector<std::int32_t> dofs_remote
         = get_remote_bcs_new(*V.dofmap()->index_map, dofs);
 
     // Add received bc indices to dofs_local
     dofs.insert(dofs.end(), dofs_remote.begin(), dofs_remote.end());
 
-    // TODO: is removing duplicates at this point worth the effort?
     // Remove duplicates
     std::sort(dofs.begin(), dofs.end());
     dofs.erase(std::unique(dofs.begin(), dofs.end()), dofs.end());
   }
 
-  return Eigen::Map<Eigen::Array<PetscInt, Eigen::Dynamic, 1>>(dofs.data(),
-                                                               dofs.size());
+  // Copy to array of PetscInt type
+  Eigen::Array<PetscInt, Eigen::Dynamic, 1> _dofs
+      = Eigen::Map<Eigen::Array<std::int32_t, Eigen::Dynamic, 1>>(dofs.data(),
+                                                                  dofs.size());
+
+  return _dofs;
 }
 } // namespace
 //-----------------------------------------------------------------------------
