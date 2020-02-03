@@ -78,14 +78,6 @@ get_remote_bcs1(const common::IndexMap& map,
                           dofs_received.data(), num_dofs_recv.data(),
                           disp.data(), MPI_INT64_T, comm);
 
-  // Build global-to-local map for ghost indices (blocks) on this
-  // process
-  const std::int32_t size_owned = map.size_local();
-  std::map<std::int64_t, std::int32_t> global_to_local_blocked;
-  const Eigen::Array<PetscInt, Eigen::Dynamic, 1>& ghosts = map.ghosts();
-  for (Eigen::Index i = 0; i < ghosts.rows(); ++i)
-    global_to_local_blocked.insert({ghosts[i], i + size_owned});
-
   // Build vector of local dof indicies that have been marked by another
   // process
   const std::vector<std::int32_t> dofs
