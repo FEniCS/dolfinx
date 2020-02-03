@@ -77,8 +77,8 @@ get_remote_bcs_new(const common::IndexMap& map,
                           disp.data(), MPI_INT64_T, comm);
 
   // TODO: Put local dofs at end of received array for cheap removal
-  // dofs_received.erase(dofs_received.begin(),
-  //                     dofs_received.begin() + dofs_local.size());
+  dofs_received.erase(dofs_received.begin(),
+                      dofs_received.begin() + num_dofs_recv[1]);
 
   // Remove duplicates
   std::sort(dofs_received.begin(), dofs_received.end());
