@@ -796,12 +796,16 @@ generate_permutations_tetrahedron(const mesh::Mesh& mesh,
   const int num_permutations = get_num_permutations(mesh.cell_type());
   const int dof_count = dof_layout.num_dofs();
 
-  const int edge_dofs = dof_layout.num_entity_dofs(1);
-  const int face_dofs = dof_layout.num_entity_dofs(2);
-  const int volume_dofs = dof_layout.num_entity_dofs(3);
+  const int num_edge_dofs = dof_layout.num_entity_dofs(1);
+  const int num_face_dofs = dof_layout.num_entity_dofs(2);
+  const int num_volume_dofs = dof_layout.num_entity_dofs(3);
   const int edge_bs = dof_layout.entity_block_size(1);
   const int face_bs = dof_layout.entity_block_size(2);
   const int volume_bs = dof_layout.entity_block_size(3);
+
+  const std::vector<int> edge_dofs = dof_layout.entity_dofs_to_permute(1);
+  const std::vector<int> face_dofs = dof_layout.entity_dofs_to_permute(2);
+  const std::vector<int> volume_dofs = dof_layout.entity_dofs_to_permute(3);
 
   int perm_n = 0;
 
@@ -811,18 +815,18 @@ generate_permutations_tetrahedron(const mesh::Mesh& mesh,
     permutations.col(i) = i;
 
   // Make edge flipping permutations
-  std::vector<int> base_flip = edge_flip(edge_dofs, edge_bs);
+  std::vector<int> base_flip = edge_flip(num_edge_dofs, edge_bs);
   for (int edge_n = 0; edge_n < 6; ++edge_n)
   {
     const Eigen::Array<int, Eigen::Dynamic, 1> edge
         = dof_layout.entity_dofs(1, edge_n);
     for (std::size_t i = 0; i < base_flip.size(); ++i)
-      permutations(perm_n, edge(i)) = edge(base_flip[i]);
+      permutations(perm_n, edge(edge_dofs[i])) = edge(edge_dofs[base_flip[i]]);
     ++perm_n;
   }
   // Make permutations that rotate and reflect the face dofs
   const std::array<std::vector<int>, 2> base_faces
-      = triangle_rotation_and_reflection(face_dofs, face_bs);
+      = triangle_rotation_and_reflection(num_face_dofs, face_bs);
   for (int face_n = 0; face_n < 4; ++face_n)
   {
     const Eigen::Array<int, Eigen::Dynamic, 1> face
@@ -830,19 +834,21 @@ generate_permutations_tetrahedron(const mesh::Mesh& mesh,
     for (int f_n = 0; f_n < 2; ++f_n)
     {
       for (std::size_t i = 0; i < base_faces[f_n].size(); ++i)
-        permutations(perm_n, face(i)) = face(base_faces[f_n][i]);
+        permutations(perm_n, face(face_dofs[i]))
+            = face(face_dofs[base_faces[f_n][i]]);
       ++perm_n;
     }
   }
   // Make permutations that rotate and reflect the volume dofs
   const std::array<std::vector<int>, 4> base_volumes
-      = tetrahedron_rotations_and_reflection(volume_dofs, volume_bs);
+      = tetrahedron_rotations_and_reflection(num_volume_dofs, volume_bs);
   const Eigen::Array<int, Eigen::Dynamic, 1> volume
       = dof_layout.entity_dofs(3, 0);
   for (int v_n = 0; v_n < 4; ++v_n)
   {
     for (std::size_t i = 0; i < base_volumes[v_n].size(); ++i)
-      permutations(perm_n, volume(i)) = volume(base_volumes[v_n][i]);
+      permutations(perm_n, volume(volume_dofs[i]))
+          = volume(volume_dofs[base_volumes[v_n][i]]);
     ++perm_n;
   }
 
@@ -858,12 +864,16 @@ generate_permutations_hexahedron(const mesh::Mesh& mesh,
   const int num_permutations = get_num_permutations(mesh.cell_type());
   const int dof_count = dof_layout.num_dofs();
 
-  const int edge_dofs = dof_layout.num_entity_dofs(1);
-  const int face_dofs = dof_layout.num_entity_dofs(2);
-  const int volume_dofs = dof_layout.num_entity_dofs(3);
+  const int num_edge_dofs = dof_layout.num_entity_dofs(1);
+  const int num_face_dofs = dof_layout.num_entity_dofs(2);
+  const int num_volume_dofs = dof_layout.num_entity_dofs(3);
   const int edge_bs = dof_layout.entity_block_size(1);
   const int face_bs = dof_layout.entity_block_size(2);
   const int volume_bs = dof_layout.entity_block_size(3);
+
+  const std::vector<int> edge_dofs = dof_layout.entity_dofs_to_permute(1);
+  const std::vector<int> face_dofs = dof_layout.entity_dofs_to_permute(2);
+  const std::vector<int> volume_dofs = dof_layout.entity_dofs_to_permute(3);
 
   int perm_n = 0;
 
@@ -873,18 +883,18 @@ generate_permutations_hexahedron(const mesh::Mesh& mesh,
     permutations.col(i) = i;
 
   // Make edge flipping permutations
-  std::vector<int> base_flip = edge_flip(edge_dofs, edge_bs);
+  std::vector<int> base_flip = edge_flip(num_edge_dofs, edge_bs);
   for (int edge_n = 0; edge_n < 12; ++edge_n)
   {
     const Eigen::Array<int, Eigen::Dynamic, 1> edge
         = dof_layout.entity_dofs(1, edge_n);
     for (std::size_t i = 0; i < base_flip.size(); ++i)
-      permutations(perm_n, edge(i)) = edge(base_flip[i]);
+      permutations(perm_n, edge(edge_dofs[i])) = edge(edge_dofs[base_flip[i]]);
     ++perm_n;
   }
   // Make permutations that rotate and reflect the face dofs
   const std::array<std::vector<int>, 2> base_faces
-      = quadrilateral_rotation_and_reflection(face_dofs, face_bs);
+      = quadrilateral_rotation_and_reflection(num_face_dofs, face_bs);
   for (int face_n = 0; face_n < 6; ++face_n)
   {
     const Eigen::Array<int, Eigen::Dynamic, 1> face
@@ -892,19 +902,21 @@ generate_permutations_hexahedron(const mesh::Mesh& mesh,
     for (int f_n = 0; f_n < 2; ++f_n)
     {
       for (std::size_t i = 0; i < base_faces[f_n].size(); ++i)
-        permutations(perm_n, face(i)) = face(base_faces[f_n][i]);
+        permutations(perm_n, face(face_dofs[i]))
+            = face(face_dofs[base_faces[f_n][i]]);
       ++perm_n;
     }
   }
   // Make permutations that rotate and reflect the volume dofs
   const std::array<std::vector<int>, 4> base_volumes
-      = hexahedron_rotations_and_reflection(volume_dofs, volume_bs);
+      = hexahedron_rotations_and_reflection(num_volume_dofs, volume_bs);
   const Eigen::Array<int, Eigen::Dynamic, 1> volume
       = dof_layout.entity_dofs(3, 0);
   for (int v_n = 0; v_n < 4; ++v_n)
   {
     for (std::size_t i = 0; i < base_volumes[v_n].size(); ++i)
-      permutations(perm_n, volume(i)) = volume(base_volumes[v_n][i]);
+      permutations(perm_n, volume(volume_dofs[i]))
+          = volume(volume_dofs[base_volumes[v_n][i]]);
     ++perm_n;
   }
 
