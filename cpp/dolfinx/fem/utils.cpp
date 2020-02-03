@@ -475,14 +475,14 @@ fem::create_element_dof_layout(const ufc_dofmap& dofmap,
   std::vector<bool> dofs_need_permuting(dof_count);
   for (int i=0; i<dof_count; ++i)
     if (dofmap.dof_types[i] == PointEval
-|| dofmap.dof_types[i] == ComponentPointEval
-|| dofmap.dof_types[i] == PointNormalDeriv
-|| dofmap.dof_types[i] == PointEdgeTangent
-|| dofmap.dof_types[i] == PointFaceTangent
-|| dofmap.dof_types[i] == PointScaledNormalEval
-|| dofmap.dof_types[i] == PointDeriv
-|| dofmap.dof_types[i] == PointNormalEval
-|| dofmap.dof_types[i] == PointwiseInnerProductEval)
+        || dofmap.dof_types[i] == ComponentPointEval
+        || dofmap.dof_types[i] == PointNormalDeriv
+        || dofmap.dof_types[i] == PointEdgeTangent
+        || dofmap.dof_types[i] == PointFaceTangent
+        || dofmap.dof_types[i] == PointScaledNormalEval
+        || dofmap.dof_types[i] == PointDeriv
+        || dofmap.dof_types[i] == PointNormalEval
+        || dofmap.dof_types[i] == PointwiseInnerProductEval)
       dofs_need_permuting[i] = true;
     else
       dofs_need_permuting[i] = false;
