@@ -714,8 +714,10 @@ generate_permutations_interval(const mesh::Mesh& mesh,
   const int num_permutations = get_num_permutations(mesh.cell_type());
   const int dof_count = dof_layout.num_dofs();
 
-  const int edge_dofs = dof_layout.num_entity_dofs(1);
+  const int num_edge_dofs = dof_layout.num_entity_dofs_to_permute(1);
   const int edge_bs = dof_layout.entity_block_size(1);
+
+  const std::vector<int> edge_dofs = dof_layout.entity_dofs_to_permute(1);
 
   int perm_n = 0;
 
@@ -725,11 +727,11 @@ generate_permutations_interval(const mesh::Mesh& mesh,
     permutations.col(i) = i;
 
   // Make edge flipping permutations
-  const std::vector<int> base_flip = edge_flip(edge_dofs, edge_bs);
+  const std::vector<int> base_flip = edge_flip(num_edge_dofs, edge_bs);
   const Eigen::Array<int, Eigen::Dynamic, 1> edge
       = dof_layout.entity_dofs(1, 0);
   for (std::size_t i = 0; i < base_flip.size(); ++i)
-    permutations(perm_n, edge(i)) = edge(base_flip[i]);
+    permutations(perm_n, edge(edge_dofs[i])) = edge(edge_dofs[base_flip[i]]);
   ++perm_n;
 
   assert(perm_n == get_num_permutations(mesh::CellType::interval));
@@ -744,10 +746,13 @@ generate_permutations_quadrilateral(const mesh::Mesh& mesh,
   const int num_permutations = get_num_permutations(mesh.cell_type());
   const int dof_count = dof_layout.num_dofs();
 
-  const int edge_dofs = dof_layout.num_entity_dofs(1);
-  const int face_dofs = dof_layout.num_entity_dofs(2);
+  const int num_edge_dofs = dof_layout.num_entity_dofs(1);
+  const int num_face_dofs = dof_layout.num_entity_dofs(2);
   const int edge_bs = dof_layout.entity_block_size(1);
   const int face_bs = dof_layout.entity_block_size(2);
+
+  const std::vector<int> edge_dofs = dof_layout.entity_dofs_to_permute(1);
+  const std::vector<int> face_dofs = dof_layout.entity_dofs_to_permute(2);
 
   int perm_n = 0;
 
@@ -757,24 +762,25 @@ generate_permutations_quadrilateral(const mesh::Mesh& mesh,
     permutations.col(i) = i;
 
   // Make edge flipping permutations
-  const std::vector<int> base_flip = edge_flip(edge_dofs, edge_bs);
+  const std::vector<int> base_flip = edge_flip(num_edge_dofs, edge_bs);
   for (int edge_n = 0; edge_n < 4; ++edge_n)
   {
     const Eigen::Array<int, Eigen::Dynamic, 1> edge
         = dof_layout.entity_dofs(1, edge_n);
     for (std::size_t i = 0; i < base_flip.size(); ++i)
-      permutations(perm_n, edge(i)) = edge(base_flip[i]);
+      permutations(perm_n, edge(edge_dofs[i])) = edge(edge_dofs[base_flip[i]]);
     ++perm_n;
   }
   // Make permutations that rotate and reflect the face dofs
   const std::array<std::vector<int>, 2> base_faces
-      = quadrilateral_rotation_and_reflection(face_dofs, face_bs);
+      = quadrilateral_rotation_and_reflection(num_face_dofs, face_bs);
   const Eigen::Array<int, Eigen::Dynamic, 1> face
       = dof_layout.entity_dofs(2, 0);
   for (int f_n = 0; f_n < 2; ++f_n)
   {
     for (std::size_t i = 0; i < base_faces[f_n].size(); ++i)
-      permutations(perm_n, face(i)) = face(base_faces[f_n][i]);
+      permutations(perm_n, face(face_dofs[i]))
+          = face(face_dofs[base_faces[f_n][i]]);
     ++perm_n;
   }
 
