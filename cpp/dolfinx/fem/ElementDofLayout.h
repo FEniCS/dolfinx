@@ -39,7 +39,8 @@ public:
       const std::vector<int>& parent_map,
       const std::vector<std::shared_ptr<const ElementDofLayout>> sub_dofmaps,
       const mesh::CellType cell_type,
-      const std::array<int, 4> entity_block_size);
+      const std::array<int, 4> entity_block_size,
+      const std::vector<bool> dofs_need_permuting);
 
   /// Copy-like constructor with option to reset (clear) parent map
   ElementDofLayout(const ElementDofLayout& element_dof_layout,
@@ -70,11 +71,21 @@ public:
   /// @return Number of dofs associated with given entity dimension
   int num_entity_dofs(int dim) const;
 
+  /// Return the number of dofs for a given entity dimension that need to be permuted
+  /// @param[in] dim Entity dimension
+  /// @return Number of dofs associated with given entity dimension that need to be permuted
+  int num_entity_dofs_to_permute(int dim) const;
+
   /// Return the number of closure dofs for a given entity dimension
   /// @param[in] dim Entity dimension
   /// @return Number of dofs associated with closure of given entity
   ///         dimension
   int num_entity_closure_dofs(int dim) const;
+
+  /// Return the dofs for a given entity dimension that need to be permuted
+  /// @param[in] dim Entity dimension
+  /// @return Dofs associated with given entity dimension that need to be permuted
+  std::vector<int> entity_dofs_to_permute(int dim) const;
 
   /// Local-local mapping of dofs on entity of cell
   /// @param[in] entity_dim The entity dimension
@@ -136,6 +147,12 @@ private:
   // The number of dofs associated with each entity type
   std::array<int, 4> _num_entity_dofs;
 
+  // The number of dofs associated with each entity type that need permuting
+  std::array<int, 4> _num_entity_dofs_to_permute;
+
+  // Local ids of dofs on entity that need permuting
+  std::array<std::vector<int>, 4> _entity_dofs_to_permute;
+
   // The number of dofs associated with each entity type, including all
   // connected entities of lower dimension.
   std::array<int, 4> _num_entity_closure_dofs;
@@ -151,6 +168,10 @@ private:
   std::vector<std::shared_ptr<const ElementDofLayout>> _sub_dofmaps;
 
   std::array<int, 4> _entity_block_size;
+
+
+  // Bools to say which dofs need to be permuted
+  std::vector<bool> _dofs_need_permuting;
 };
 } // namespace fem
 } // namespace dolfinx

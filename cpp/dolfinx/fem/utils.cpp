@@ -418,12 +418,14 @@ fem::create_element_dof_layout(const ufc_dofmap& dofmap,
             num_entity_dofs.data());
 
   // Fill entity dof indices
+  int dof_count = 0;
   const int tdim = mesh::cell_dim(cell_type);
   std::vector<std::vector<std::set<int>>> entity_dofs(tdim + 1);
   std::vector<int> work_array;
   for (int dim = 0; dim <= tdim; ++dim)
   {
     const int num_entities = mesh::cell_num_entities(cell_type, dim);
+    dof_count += num_entities * num_entity_dofs[dim];
     entity_dofs[dim].resize(num_entities);
     for (int i = 0; i < num_entities; ++i)
     {
@@ -470,8 +472,23 @@ fem::create_element_dof_layout(const ufc_dofmap& dofmap,
   for (int i = 0; i < 4; ++i)
     entity_block_size[i] = dofmap.entity_block_size[i];
 
+  std::vector<bool> dofs_need_permuting(dof_count);
+  for (int i=0; i<dof_count; ++i)
+    if (dofmap.dof_types[i] == PointEval
+|| dofmap.dof_types[i] == ComponentPointEval
+|| dofmap.dof_types[i] == PointNormalDeriv
+|| dofmap.dof_types[i] == PointEdgeTangent
+|| dofmap.dof_types[i] == PointFaceTangent
+|| dofmap.dof_types[i] == PointScaledNormalEval
+|| dofmap.dof_types[i] == PointDeriv
+|| dofmap.dof_types[i] == PointNormalEval
+|| dofmap.dof_types[i] == PointwiseInnerProductEval)
+      dofs_need_permuting[i] = true;
+    else
+      dofs_need_permuting[i] = false;
+
   return fem::ElementDofLayout(block_size, entity_dofs, parent_map, sub_dofmaps,
-                               cell_type, entity_block_size);
+                               cell_type, entity_block_size, dofs_need_permuting);
 }
 //-----------------------------------------------------------------------------
 fem::DofMap fem::create_dofmap(const ufc_dofmap& ufc_dofmap,
