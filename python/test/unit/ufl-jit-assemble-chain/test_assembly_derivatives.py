@@ -6,7 +6,6 @@
 #
 # SPDX-License-Identifier:    LGPL-3.0-or-later
 
-import math
 import numpy
 import pytest
 
