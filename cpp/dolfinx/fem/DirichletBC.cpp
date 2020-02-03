@@ -54,10 +54,17 @@ get_remote_bcs1(const common::IndexMap& map,
   MPI_Neighbor_allgather(&num_dofs, 1, MPI_INT, num_dofs_recv.data(), 1,
                          MPI_INT, comm);
 
-  // NOTE: we could consider only dofs that we know are shared
+  // NOTE: we consider only dofs that we know are shared
   // Build array of global indices of dofs
-  const std::vector<std::int64_t> dofs_global
-      = map.local_to_global(dofs_local, false);
+  const int bs = map.block_size;
+  std::vector<std::int64_t> dofs_global;
+  dofs_global.reserve(dofs_local.size());
+  for (auto dof : dofs_local)
+  {
+    const int index_block = dof / bs;
+    const int pos = dof % bs;
+    dofs_global.push_back(bs * map.local_to_global(index_block) + pos);
+  }
 
   // Compute displacements for data to receive. Last entry has total
   // number of received items.
@@ -78,10 +85,30 @@ get_remote_bcs1(const common::IndexMap& map,
                           dofs_received.data(), num_dofs_recv.data(),
                           disp.data(), MPI_INT64_T, comm);
 
+  // Build global-to-local map for ghost indices (blocks) on this
+  // process
+  const std::int32_t size_owned = map.size_local();
+  std::map<std::int64_t, std::int32_t> global_to_local_blocked;
+  const Eigen::Array<PetscInt, Eigen::Dynamic, 1>& ghosts = map.ghosts();
+  for (Eigen::Index i = 0; i < ghosts.rows(); ++i)
+    global_to_local_blocked.insert({ghosts[i], i + size_owned});
+
   // Build vector of local dof indicies that have been marked by another
   // process
-  const std::vector<std::int32_t> dofs
-      = map.global_to_local(dofs_received, false);
+  std::vector<std::int32_t> dofs;
+  const std::array<std::int64_t, 2> range = map.local_range();
+  for (auto dof : dofs_received)
+  {
+    if (dof >= bs * range[0] and dof < bs * range[1])
+      dofs.push_back(dof - bs * range[0]);
+    else
+    {
+      const std::int64_t index_block = dof / bs;
+      auto it = global_to_local_blocked.find(index_block);
+      if (it != global_to_local_blocked.end())
+        dofs.push_back(it->second * bs + dof % bs);
+    }
+  }
 
   return dofs;
 }
@@ -219,6 +246,91 @@ get_remote_bcs2(const common::IndexMap& map0, const common::IndexMap& map1,
 
   return dofs;
 }
+//-----------------------------------------------------------------------------
+// // TODO: add some docs
+// std::vector<std::array<PetscInt, 2>>
+// get_remote_bcs(const common::IndexMap& map, const common::IndexMap&
+// map_g,
+//                const std::vector<std::array<PetscInt, 2>>& dofs_local)
+// {
+//   std::vector<std::array<PetscInt, 2>> dof_dof_g;
+
+//   const std::int32_t bs = map.block_size;
+//   const std::int32_t size_owned = map.size_local();
+//   const std::int32_t size_ghost = map.num_ghosts();
+
+//   const std::int32_t bs_g = map_g.block_size;
+//   const std::int32_t size_owned_g = map_g.size_local();
+//   const std::int32_t size_ghost_g = map_g.num_ghosts();
+//   const std::array<std::int64_t, 2> range_g = map_g.local_range();
+//   const std::int64_t offset_g = range_g[0];
+
+//   // For each dof local index, store global index in Vg (-1 if no bc)
+//   std::vector<PetscInt> marker_owned(bs * size_owned, -1);
+//   std::vector<PetscInt> marker_ghost(bs * size_ghost, -1);
+//   for (auto& dofs : dofs_local)
+//   {
+//     const PetscInt index_block_g = dofs[1] / bs_g;
+//     const PetscInt pos_g = dofs[1] % bs_g;
+//     if (dofs[0] < bs * size_owned)
+//     {
+//       marker_owned[dofs[0]]
+//           = bs_g * map_g.local_to_global(index_block_g) + pos_g;
+//     }
+//     else
+//     {
+//       marker_ghost[dofs[0] - (bs * size_owned)]
+//           = bs_g * map_g.local_to_global(index_block_g) + pos_g;
+//     }
+//   }
+
+//   // Build global-to-local map for ghost indices (blocks) in map_g
+//   std::map<PetscInt, PetscInt> global_to_local_g;
+//   const Eigen::Array<PetscInt, Eigen::Dynamic, 1>& ghosts_g =
+//   map_g.ghosts(); for (Eigen::Index i = 0; i < size_owned_g; ++i)
+//     global_to_local_g.insert({i + offset_g, i});
+//   for (Eigen::Index i = 0; i < size_ghost_g; ++i)
+//     global_to_local_g.insert({ghosts_g[i], i + size_owned_g});
+
+//   // For each owned bc index, scatter associated g global index to ghost
+//   // processes
+//   std::vector<PetscInt> marker_ghost_rcvd = map.scatter_fwd(marker_owned,
+//   bs); assert((int)marker_ghost_rcvd.size() == size_ghost * bs);
+
+//   // Add to (local index)-(local g index) map
+//   for (std::size_t i = 0; i < marker_ghost_rcvd.size(); ++i)
+//   {
+//     if (marker_ghost_rcvd[i] > -1)
+//     {
+//       const PetscInt index_block_g = marker_ghost_rcvd[i] / bs_g;
+//       const PetscInt pos_g = marker_ghost_rcvd[i] % bs_g;
+//       const auto it = global_to_local_g.find(index_block_g);
+//       assert(it != global_to_local_g.end());
+//       dof_dof_g.push_back(
+//           {(PetscInt)(bs * size_owned + i), bs_g * it->second + pos_g});
+//     }
+//   }
+
+//   // Scatter (reverse) data from ghost processes to owner
+//   std::vector<PetscInt> marker_owner_rcvd(bs * size_owned, -1);
+//   map.scatter_rev(marker_owner_rcvd, marker_ghost, bs,
+//                   common::IndexMap::Mode::insert);
+//   assert((int)marker_owner_rcvd.size() == size_owned * bs);
+//   for (std::size_t i = 0; i < marker_owner_rcvd.size(); ++i)
+//   {
+//     if (marker_owner_rcvd[i] >= 0)
+//     {
+//       const PetscInt index_global_g = marker_owner_rcvd[i];
+//       const PetscInt index_block_g = index_global_g / bs_g;
+//       const PetscInt pos_g = index_global_g % bs_g;
+//       const auto it = global_to_local_g.find(index_block_g);
+//       assert(it != global_to_local_g.end());
+//       dof_dof_g.push_back({(PetscInt)i, bs_g * it->second + pos_g});
+//     }
+//   }
+
+//   return dof_dof_g;
+// }
 //-----------------------------------------------------------------------------
 Eigen::Array<PetscInt, Eigen::Dynamic, 2> _locate_dofs_topological(
     const std::vector<std::reference_wrapper<function::FunctionSpace>>& V,
