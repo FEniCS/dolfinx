@@ -128,7 +128,11 @@ IndexMap::IndexMap(
   _forward_sizes = std::move(in_edges_num);
 }
 //-----------------------------------------------------------------------------
-IndexMap::~IndexMap() { MPI_Comm_free(&_neighbour_comm); }
+IndexMap::~IndexMap()
+{
+  assert(_neighbour_comm);
+  MPI_Comm_free(&_neighbour_comm);
+}
 //-----------------------------------------------------------------------------
 std::array<std::int64_t, 2> IndexMap::local_range() const
 {
@@ -152,6 +156,8 @@ const Eigen::Array<PetscInt, Eigen::Dynamic, 1>& IndexMap::ghosts() const
 std::map<std::int32_t, std::set<int>>
 IndexMap::compute_forward_processes() const
 {
+  assert(_neighbour_comm);
+
   // Get neighbour processes
   int indegree(-1), outdegree(-2), weighted(-1);
   MPI_Dist_graph_neighbors_count(_neighbour_comm, &indegree, &outdegree,
@@ -190,6 +196,8 @@ int IndexMap::owner(std::int64_t global_index) const
 //-----------------------------------------------------------------------------
 Eigen::Array<std::int32_t, Eigen::Dynamic, 1> IndexMap::ghost_owners() const
 {
+  assert(_neighbour_comm);
+
   int indegree(-1), outdegree(-2), weighted(-1);
   MPI_Dist_graph_neighbors_count(_neighbour_comm, &indegree, &outdegree,
                                  &weighted);
