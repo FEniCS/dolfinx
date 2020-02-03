@@ -9,7 +9,10 @@ import os
 
 import numpy as np
 import pytest
+import scipy.integrate
+import sympy as sp
 from dolfinx_utils.test.skips import skip_in_parallel
+from sympy.vector import CoordSys3D, matrix_to_vector
 
 from dolfinx import MPI, Function, FunctionSpace, Mesh, fem
 from dolfinx.cpp.io import permutation_vtk_to_dolfin, permute_cell_ordering
@@ -17,11 +20,6 @@ from dolfinx.cpp.mesh import CellType, GhostMode
 from dolfinx.fem import assemble_scalar
 from dolfinx.io import XDMFFile
 from ufl import dx
-
-
-scipy = pytest.importorskip("scipy")
-sympy = pytest.importorskip("sympy")
-sympy.vector = pytest.importorskip("sympy.vector")
 
 
 def sympy_scipy(points, nodes, L, H):
@@ -34,8 +32,8 @@ def sympy_scipy(points, nodes, L, H):
     """
     degree = len(nodes) - 1
 
-    x, y, z = sympy.symbols("x y z")
-    a = [sympy.Symbol("a{0:d}".format(i)) for i in range(degree + 1)]
+    x, y, z = sp.symbols("x y z")
+    a = [sp.Symbol("a{0:d}".format(i)) for i in range(degree + 1)]
 
     # Find polynomial for variation in z-direction
     poly = 0
@@ -44,25 +42,25 @@ def sympy_scipy(points, nodes, L, H):
     eqs = []
     for node in nodes:
         eqs.append(poly.subs(y, points[node][-2]) - points[node][-1])
-    coeffs = sympy.solve(eqs, a)
+    coeffs = sp.solve(eqs, a)
     transform = poly
     for i in range(len(a)):
         transform = transform.subs(a[i], coeffs[a[i]])
 
     # Compute integral
-    C = sympy.vector.CoordSys3D("C")
-    para = sympy.Matrix([x, y, transform])
-    vec = sympy.vector.matrix_to_vector(para, C)
+    C = CoordSys3D("C")
+    para = sp.Matrix([x, y, transform])
+    vec = matrix_to_vector(para, C)
     cross = (vec.diff(x) ^ vec.diff(y)).magnitude()
 
     expr = (transform + x * y) * cross
-    approx = sympy.lambdify((x, y), expr)
+    approx = sp.lambdify((x, y), expr)
 
     ref = scipy.integrate.nquad(approx, [[0, L], [0, H]])[0]
 
     # Slow and only works for simple integrals
-    # integral = sympy.integrate(expr, (y, 0, H))
-    # integral = sympy.integrate(integral, (x, 0, L))
+    # integral = sp.integrate(expr, (y, 0, H))
+    # integral = sp.integrate(integral, (x, 0, L))
     # ex = integral.evalf()
 
     return ref
@@ -207,8 +205,8 @@ def test_fourth_order_tri():
 def scipy_one_cell(points, nodes):
     degree = len(nodes) - 1
 
-    x, y, z = sympy.symbols("x y z")
-    a = [sympy.Symbol("a{0:d}".format(i)) for i in range(degree + 1)]
+    x, y, z = sp.symbols("x y z")
+    a = [sp.Symbol("a{0:d}".format(i)) for i in range(degree + 1)]
 
     # Find polynomial for variation in z-direction
     poly = 0
@@ -217,20 +215,20 @@ def scipy_one_cell(points, nodes):
     eqs = []
     for node in nodes:
         eqs.append(poly.subs(y, points[node][-2]) - points[node][-1])
-    coeffs = sympy.solve(eqs, a)
+    coeffs = sp.solve(eqs, a)
     transform = poly
 
     for i in range(len(a)):
         transform = transform.subs(a[i], coeffs[a[i]])
     # Compute integral
-    C = sympy.vector.CoordSys3D("C")
-    para = sympy.Matrix([x, y, transform])
-    vec = sympy.vector.matrix_to_vector(para, C)
+    C = CoordSys3D("C")
+    para = sp.Matrix([x, y, transform])
+    vec = matrix_to_vector(para, C)
     cross = (vec.diff(x) ^ vec.diff(y)).magnitude()
 
     expr = (transform + x * y) * cross
 
-    approx = sympy.lambdify((x, y), expr)
+    approx = sp.lambdify((x, y), expr)
     ref = scipy.integrate.dblquad(approx, 0, 1, lambda x: 0, lambda x: 1 - x)[0]
     return ref
 
