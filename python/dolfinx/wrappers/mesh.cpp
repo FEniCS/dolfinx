@@ -305,7 +305,7 @@ void mesh(py::module& m)
       m, "MeshValueCollection_" #SCALAR_NAME,                                  \
       "DOLFIN MeshValueCollection object")                                     \
       .def(py::init<std::shared_ptr<const dolfinx::mesh::Mesh>, std::size_t>()) \
-      .def(py::init<std::shared_ptr<const dolfin::mesh::Mesh>,                 \
+      .def(py::init<std::shared_ptr<const dolfinx::mesh::Mesh>,                 \
         std::size_t,                                                           \
         std::vector<std::vector<SCALAR>>&,                                     \
         std::vector<SCALAR>&>())                                               \

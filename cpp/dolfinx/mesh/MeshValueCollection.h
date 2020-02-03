@@ -168,8 +168,7 @@ MeshValueCollection<T>::MeshValueCollection(std::shared_ptr<const Mesh> mesh,
 {
   // Do nothing
 }
-
-
+//---------------------------------------------------------------------------
 template <typename T>
 MeshValueCollection<T>::MeshValueCollection(
                       std::shared_ptr<const Mesh> mesh,
