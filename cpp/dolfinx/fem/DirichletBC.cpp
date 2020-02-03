@@ -55,6 +55,7 @@ get_remote_bcs_new(const common::IndexMap& map,
   MPI_Neighbor_allgather(&num_dofs, 1, MPI_INT, num_dofs_recv.data(), 1,
                          MPI_INT, comm);
 
+  // NOTE: we consider only dofs that we know are shared
   // Build array of global indices of dofs
   const int bs = map.block_size;
   std::vector<std::int64_t> dofs_global;
@@ -68,7 +69,6 @@ get_remote_bcs_new(const common::IndexMap& map,
 
   // Compute displacements for data to receive. Last entry has total
   // number of received items.
-
   // Note: std::inclusive_scan would be better, but gcc 7.4.0 (Ubuntu
   // 18.04) does not have full C++17 support
   std::vector<int> disp(num_neighbours + 1, 0);
@@ -76,6 +76,10 @@ get_remote_bcs_new(const common::IndexMap& map,
                    disp.begin() + 1);
   // std::inclusive_scan(num_dofs_recv.begin(), num_dofs_recv.end(),
   //                     disp.begin() + 1);
+
+
+  // NOTE: we could use MPI_Neighbor_alltoallv to send only to relevant
+  // processes
 
   // Send/receive global index of dofs with bcs to all neighbours
   std::vector<std::int64_t> dofs_received(disp.back());
