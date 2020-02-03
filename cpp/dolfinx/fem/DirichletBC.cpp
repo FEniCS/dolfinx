@@ -54,17 +54,10 @@ get_remote_bcs1(const common::IndexMap& map,
   MPI_Neighbor_allgather(&num_dofs, 1, MPI_INT, num_dofs_recv.data(), 1,
                          MPI_INT, comm);
 
-  // NOTE: we consider only dofs that we know are shared
+  // NOTE: we could consider only dofs that we know are shared
   // Build array of global indices of dofs
-  const int bs = map.block_size;
-  std::vector<std::int64_t> dofs_global;
-  dofs_global.reserve(dofs_local.size());
-  for (auto dof : dofs_local)
-  {
-    const int index_block = dof / bs;
-    const int pos = dof % bs;
-    dofs_global.push_back(bs * map.local_to_global(index_block) + pos);
-  }
+  const std::vector<std::int64_t> dofs_global
+      = map.local_to_global(dofs_local, false);
 
   // Compute displacements for data to receive. Last entry has total
   // number of received items.
@@ -95,20 +88,8 @@ get_remote_bcs1(const common::IndexMap& map,
 
   // Build vector of local dof indicies that have been marked by another
   // process
-  std::vector<std::int32_t> dofs;
-  const std::array<std::int64_t, 2> range = map.local_range();
-  for (auto dof : dofs_received)
-  {
-    if (dof >= bs * range[0] and dof < bs * range[1])
-      dofs.push_back(dof - bs * range[0]);
-    else
-    {
-      const std::int64_t index_block = dof / bs;
-      auto it = global_to_local_blocked.find(index_block);
-      if (it != global_to_local_blocked.end())
-        dofs.push_back(it->second * bs + dof % bs);
-    }
-  }
+  const std::vector<std::int32_t> dofs
+      = map.global_to_local(dofs_received, false);
 
   return dofs;
 }

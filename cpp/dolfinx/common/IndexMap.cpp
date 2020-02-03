@@ -153,6 +153,83 @@ const Eigen::Array<PetscInt, Eigen::Dynamic, 1>& IndexMap::ghosts() const
   return _ghosts;
 }
 //-----------------------------------------------------------------------------
+std::vector<std::int64_t>
+IndexMap::local_to_global(const std::vector<std::int32_t>& indices,
+                          bool blocked) const
+{
+  const std::int64_t global_offset = _all_ranges[_myrank];
+  const std::int32_t local_size
+      = _all_ranges[_myrank + 1] - _all_ranges[_myrank];
+
+  std::vector<std::int64_t> global;
+  global.reserve(indices.size());
+  if (blocked)
+  {
+    for (auto index : indices)
+    {
+      if (index < local_size)
+        global.push_back(global_offset + index);
+      else
+      {
+        assert((index - local_size) < _ghosts.size());
+        global.push_back(_ghosts[index - local_size]);
+      }
+    }
+  }
+  else
+  {
+    for (auto index : indices)
+    {
+      const std::int32_t index_block = index / block_size;
+      const std::int32_t pos = index % block_size;
+      if (index_block < local_size)
+        global.push_back(block_size * (global_offset + index_block) + pos);
+      else
+      {
+        assert((index_block - local_size) < _ghosts.size());
+        global.push_back(block_size * _ghosts[index_block - local_size] + pos);
+      }
+    }
+  }
+
+  return global;
+}
+//-----------------------------------------------------------------------------
+std::vector<std::int32_t>
+IndexMap::global_to_local(const std::vector<std::int64_t>& indices,
+                          bool blocked) const
+{
+  const std::int32_t local_size
+      = _all_ranges[_myrank + 1] - _all_ranges[_myrank];
+
+  std::vector<std::pair<std::int64_t, std::int32_t>> global_local_ghosts;
+  for (Eigen::Index i = 0; i < _ghosts.rows(); ++i)
+    global_local_ghosts.push_back({_ghosts[i], i + local_size});
+  std::map<std::int64_t, std::int32_t> global_to_local(
+      global_local_ghosts.begin(), global_local_ghosts.end());
+
+  const int bs = blocked ? 1 : block_size;
+
+  std::vector<std::int32_t> local;
+  const std::array<std::int64_t, 2> range = this->local_range();
+  for (auto index : indices)
+  {
+    if (index >= bs * range[0] and index < bs * range[1])
+      local.push_back(index - bs * range[0]);
+    else
+    {
+      const std::int64_t index_block = index / bs;
+      auto it = global_to_local.find(index_block);
+      if (it != global_to_local.end())
+        local.push_back(it->second * bs + index % bs);
+      else
+        local.push_back(-1);
+    }
+  }
+
+  return local;
+}
+//-----------------------------------------------------------------------------
 std::map<std::int32_t, std::set<int>>
 IndexMap::compute_forward_processes() const
 {
