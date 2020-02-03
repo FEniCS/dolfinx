@@ -44,16 +44,15 @@ get_remote_bcs_new(const common::IndexMap& map,
   MPI_Dist_graph_neighbors_count(comm, &num_neighbours, &outdegree, &weighted);
   assert(num_neighbours == outdegree);
 
+  // Return early if there are no neighbours
+  if (num_neighbours == 0)
+    return std::vector<std::int32_t>();
+
   // Figure out how many entries to receive from each neighbour
   const int num_dofs = dofs_local.size();
   std::vector<int> num_dofs_recv(num_neighbours);
   MPI_Neighbor_allgather(&num_dofs, 1, MPI_INT, num_dofs_recv.data(), 1,
                          MPI_INT, comm);
-
-  // Compute displacements for data to receive
-  std::vector<int> disp(num_neighbours + 1, 0);
-  std::partial_sum(num_dofs_recv.begin(), num_dofs_recv.end(),
-                   disp.begin() + 1);
 
   // Build array of global indices of dofs
   const int bs = map.block_size;
@@ -66,13 +65,20 @@ get_remote_bcs_new(const common::IndexMap& map,
     dofs_global.push_back(bs * map.local_to_global(index_block) + pos);
   }
 
+  // Compute displacements for data to receive
+  std::vector<int> disp(num_neighbours + 1, 0);
+  std::partial_sum(num_dofs_recv.begin(), num_dofs_recv.end(),
+                   disp.begin() + 1);
+
   // Send/receive global index of dofs with bcs to all neighbours
   std::vector<std::int64_t> dofs_received(disp.back());
   MPI_Neighbor_allgatherv(dofs_global.data(), dofs_global.size(), MPI_INT64_T,
                           dofs_received.data(), num_dofs_recv.data(),
                           disp.data(), MPI_INT64_T, comm);
 
-  // TODO: remove local dofs already detected
+  // TODO: Put local dofs at end of received array for cheap removal
+  dofs_received.erase(dofs_received.begin(),
+                      dofs_received.begin() + dofs_local.size());
 
   // Remove duplicates
   std::sort(dofs_received.begin(), dofs_received.end());
