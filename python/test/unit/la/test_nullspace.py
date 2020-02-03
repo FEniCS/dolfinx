@@ -2,7 +2,7 @@
 
 # Copyright (C) 2014-2018 Garth N. Wells
 #
-# This file is part of DOLFIN (https://www.fenicsproject.org)
+# This file is part of DOLFINX (https://www.fenicsproject.org)
 #
 # SPDX-License-Identifier:    LGPL-3.0-or-later
 
@@ -12,11 +12,11 @@ import numpy as np
 import pytest
 
 import ufl
-from dolfin import (MPI, UnitCubeMesh, UnitSquareMesh, VectorFunctionSpace,
-                    cpp, fem, la)
-from dolfin.cpp.mesh import CellType, GhostMode
-from dolfin.fem import assemble_matrix
-from dolfin.generation import BoxMesh
+from dolfinx import (MPI, UnitCubeMesh, UnitSquareMesh, VectorFunctionSpace,
+                     cpp, fem, la)
+from dolfinx.cpp.mesh import CellType, GhostMode
+from dolfinx.fem import assemble_matrix
+from dolfinx.generation import BoxMesh
 from ufl import TestFunction, TrialFunction, dx, grad, inner
 
 

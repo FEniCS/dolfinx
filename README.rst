@@ -1,11 +1,11 @@
-========
-DOLFIN-X
-========
+=======
+DOLFINX
+=======
 
 .. image:: https://circleci.com/gh/FEniCS/dolfinx.svg?style=shield
     :target: https://circleci.com/gh/FEniCS/dolfinx
 
-DOLFIN-X is an experimental version of DOLFIN. It is being actively
+DOLFINX is an experimental version of DOLFIN. It is being actively
 developed, but is **not ready for production use**. New experimental
 features may come and go as development proceeds.
 

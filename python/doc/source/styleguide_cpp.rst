@@ -155,7 +155,7 @@ Header files should follow the below template:
 
     // Copyright (C) 2018 Foo Bar
     //
-    // This file is part of DOLFIN (https://www.fenicsproject.org)
+    // This file is part of DOLFINX (https://www.fenicsproject.org)
     //
     // SPDX-License-Identifier:    LGPL-3.0-or-later
 
@@ -191,11 +191,11 @@ Implementation files should follow the below template:
 
     // Copyright (C) 2018 Foo Bar
     //
-    // This file is part of DOLFIN (https://www.fenicsproject.org)
+    // This file is part of DOLFINX (https://www.fenicsproject.org)
     //
     // SPDX-License-Identifier:    LGPL-3.0-or-later
 
-    #include <dolfin/Foo.h>
+    #include <dolfinx/Foo.h>
 
     using namespace dolfin;
 
@@ -215,8 +215,8 @@ Implementation files should follow the below template:
 Including header files and using forward declarations
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Do not use ``#include <dolfin.h>`` or ``#include``
-``<dolfin/dolfin_foo.h>`` inside the DOLFIN source tree. Only include
+Do not use ``#include <dolfinx.h>`` or ``#include``
+``<dolfinx/dolfin_foo.h>`` inside the DOLFIN source tree. Only include
 the portions of DOLFIN you are actually using.
 
 Include as few header files as possible and use forward declarations

@@ -1,6 +1,6 @@
 # Copyright (C) 2019 Chris Richardson
 #
-# This file is part of DOLFIN (https://www.fenicsproject.org)
+# This file is part of DOLFINX (https://www.fenicsproject.org)
 #
 # SPDX-License-Identifier:    LGPL-3.0-or-later
 """Unit tests for the Constant class"""
@@ -8,7 +8,7 @@
 import numpy as np
 import pytest
 
-from dolfin import MPI, Constant, UnitCubeMesh
+from dolfinx import MPI, Constant, UnitCubeMesh
 
 
 def test_scalar_constant():

@@ -15,13 +15,13 @@
 # You should have received a copy of the GNU Lesser General Public License
 # along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
 #
-# Copy all data, tests and demo to a given directory relative to the top dolfin
+# Copy all data, tests and demo to a given directory relative to the top dolfinx
 # source directory
 
 import os
-import sys
 import re
 import shutil
+import sys
 
 # Subdirectories
 sub_directories = ['demo', 'test', 'bench']
@@ -36,25 +36,27 @@ suffix_pattern = re.compile("(%s)," % ("|".join("[\w-]+\.%s" % pattern
 
 script_rel_path = os.sep.join(__file__.split(os.sep)[:-1])
 script_rel_path = script_rel_path or "."
-dolfin_dir = os.path.abspath(os.path.join(script_rel_path, os.pardir, os.pardir))
+dolfinx_dir = os.path.abspath(os.path.join(
+    script_rel_path, os.pardir, os.pardir))
 
 
 def copy_data(top_destdir):
 
-    abs_destdir = top_destdir if os.path.isabs(top_destdir) else os.path.join(dolfin_dir, top_destdir)
+    abs_destdir = top_destdir if os.path.isabs(
+        top_destdir) else os.path.join(dolfinx_dir, top_destdir)
 
-    if abs_destdir == dolfin_dir:
+    if abs_destdir == dolfinx_dir:
         raise RuntimeError("destination directory cannot be the same as "
-                           "the dolfin source directory")
+                           "the dolfinx source directory")
 
     if not os.path.isdir(abs_destdir):
         raise RuntimeError("%s is not a directory." % abs_destdir)
 
     for subdir in sub_directories:
 
-        top_dir = os.path.join(dolfin_dir, subdir)
+        top_dir = os.path.join(dolfinx_dir, subdir)
         for dirpath, dirnames, filenames in os.walk(top_dir):
-            destdir = dirpath.replace(dolfin_dir, abs_destdir)
+            destdir = dirpath.replace(dolfinx_dir, abs_destdir)
             if not os.path.isdir(destdir):
                 os.makedirs(destdir)
             for f in re.findall(suffix_pattern, " ".join("%s," % f for f in filenames)):
@@ -65,6 +67,7 @@ def copy_data(top_destdir):
 if __name__ == "__main__":
     # Expecting a destination argument
     if len(sys.argv) != 2:
-        raise RuntimeError("Expecting 1 argument with the destination directory")
+        raise RuntimeError(
+            "Expecting 1 argument with the destination directory")
 
     copy_data(sys.argv[-1])

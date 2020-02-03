@@ -3,9 +3,9 @@ import os
 import pytest
 
 from mpi4py import MPI as MPI4PY
-from dolfin import MPI, cpp
-from dolfin.io import VTKFile, HDF5File
-from dolfin_utils.test.fixtures import tempdir
+from dolfinx import MPI, cpp
+from dolfinx.io import VTKFile, HDF5File
+from dolfinx_utils.test.fixtures import tempdir
 
 assert(tempdir)
 
