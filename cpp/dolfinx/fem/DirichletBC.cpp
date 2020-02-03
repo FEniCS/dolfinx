@@ -68,9 +68,14 @@ get_remote_bcs_new(const common::IndexMap& map,
 
   // Compute displacements for data to receive. Last entry has total
   // number of received items.
+
+  // Note: std::inclusive_scan would be better, but gcc 7.4.0 (Ubuntu
+  // 18.04) does not have full C++17 support
   std::vector<int> disp(num_neighbours + 1, 0);
-  std::inclusive_scan(num_dofs_recv.begin(), num_dofs_recv.end(),
-                      disp.begin() + 1);
+  std::partial_sum(num_dofs_recv.begin(), num_dofs_recv.end(),
+                   disp.begin() + 1);
+  // std::inclusive_scan(num_dofs_recv.begin(), num_dofs_recv.end(),
+  //                     disp.begin() + 1);
 
   // Send/receive global index of dofs with bcs to all neighbours
   std::vector<std::int64_t> dofs_received(disp.back());
