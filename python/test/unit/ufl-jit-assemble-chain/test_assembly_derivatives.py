@@ -59,16 +59,7 @@ def test_diff_then_integrate():
     reg([ln(xs), pow(x, 2.7), pow(2.7, x)], 3)
     reg([asin(xs), acos(xs)], 1)
     reg([tan(xs)], 7)
-
-    try:
-        import scipy
-    except ImportError:
-        scipy = None
-
-    if hasattr(math, 'erf') or scipy is not None:
-        reg([erf(xs)])
-    else:
-        print("Warning: skipping test of erf, old python version and no scipy.")
+    reg([erf(xs)])
 
     # if 0:
     #     print("Warning: skipping tests of bessel functions, doesn't build on all platforms.")
