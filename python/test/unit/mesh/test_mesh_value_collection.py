@@ -7,7 +7,6 @@
 import numpy
 
 from dolfinx import MPI, MeshFunction, MeshValueCollection, UnitSquareMesh, cpp
-from dolfinx_utils.test.skips import skip_in_parallel
 
 
 def test_assign_2D_cells():
@@ -171,7 +170,6 @@ def test_mesh_function_assign_2D_vertices():
             assert f2.values[vertices[i]] == g.get_value(c, i)
 
 
-@skip_in_parallel
 def test_mvc_construction_array_tet_tri():
     import pygmsh
 
@@ -244,7 +242,6 @@ def test_mvc_construction_array_tet_tri():
     assert mvc_tetra.get_value(0, 0) == 6
 
 
-@skip_in_parallel
 def test_mvc_construction_array_hex_quad():
     import pygmsh
 
