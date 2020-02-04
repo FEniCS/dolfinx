@@ -50,26 +50,25 @@ public:
   MeshValueCollection(std::shared_ptr<const Mesh> mesh, std::size_t dim);
 
   /// Create a mesh value collection of entities of given dimension
-  /// on a given mesh from topological data (cells) speifying entities
-  /// to be marked and values_data specifying the marker.
+  /// on a given mesh from topological data speifying entities
+  /// to be marked and data specifying the value of the marker.
   ///
-  /// @param    mesh (_Mesh_)
-  ///         The mesh associated with the collection.
-  /// @param    dim (std::size_t)
-  ///         The mesh entity dimension for the mesh value collection.
-  /// @param    cells (std::vector<std::vector<T>>)
-  ///         Array of cells to be marked (containing the global point
-  ///         indices for each cell)
+  /// @param[in] mesh The mesh associated with the collection.
+  /// @param[in] dim The mesh entity dimension for the mesh value collection.
+  /// @param[in] cells 
   /// @param    values_data (std::vector<T>)
   ///         Array of marker corresponding to each cell. This must be
   ///         same size as the number of rows in cells.
-  MeshValueCollection(std::shared_ptr<const Mesh> mesh,
-                    std::size_t dim,
-                    std::vector<std::vector<T>>& cells,
-                    std::vector<T>& values_data);
+  MeshValueCollection(
+      std::shared_ptr<const Mesh> mesh, std::size_t dim,
+      const Eigen::Ref<const Eigen::Array<T, Eigen::Dynamic, Eigen::Dynamic,
+                                          Eigen::RowMajor>>& cells,
+      const Eigen::Ref<const Eigen::Array<T, 1, Eigen::Dynamic,
+                                          Eigen::RowMajor>>& values_data);
 
   /// Destructor
-  ~MeshValueCollection() = default;
+  ~MeshValueCollection()
+  = default;
 
   /// Assignment operator
   /// @param[in] mesh_value_collection A MeshValueCollection object used
@@ -171,35 +170,37 @@ MeshValueCollection<T>::MeshValueCollection(std::shared_ptr<const Mesh> mesh,
 //---------------------------------------------------------------------------
 template <typename T>
 MeshValueCollection<T>::MeshValueCollection(
-                      std::shared_ptr<const Mesh> mesh,
-                      std::size_t dim,
-                      std::vector<std::vector<T>>& cells,
-                      std::vector<T>& values_data): _mesh(mesh), _dim(dim)
+    std::shared_ptr<const Mesh> mesh, std::size_t dim,
+    const Eigen::Ref<const Eigen::Array<T, Eigen::Dynamic, Eigen::Dynamic,
+                                        Eigen::RowMajor>>& cells,
+    const Eigen::Ref<const Eigen::Array<T, 1, Eigen::Dynamic, Eigen::RowMajor>>&
+        values_data)
+    : _mesh(mesh), _dim(dim)
 { 
   // Ensure the mesh dimension is initialised. 
   // If the mesh is created from arrays, entities 
   // of all dimesions are not initialized.
   _mesh->create_entities(dim);
 
-  const std::size_t D = _mesh->topology().dim();
+  const int D = _mesh->topology().dim();
 
   // Handle cells and vertex as a special case
-  if (((int)D == _dim) || (_dim == 0))
+  if ((D == _dim) || (_dim == 0))
   {
-    for (std::size_t cell_index = 0; cell_index < values_data.size();
+    for (Eigen::Index cell_index = 0; cell_index < values_data.cols();
          ++cell_index)
     {
       const std::pair<std::size_t, std::size_t> key(cell_index, 0);
-      _values.insert({key, values_data[cell_index]});
+      _values.insert({key, values_data(cell_index)});
     }
   }
   else
   {
     // Number of vertices per cell is equal to the size of first
     // array of connectivity.
-    const std::int32_t num_vertices_per_cell 
+    const int num_vertices_per_entity
           = _mesh->topology().connectivity(_dim, 0)->size(0);
-    std::vector<std::int32_t> v(num_vertices_per_cell);
+    std::vector<std::int32_t> v(num_vertices_per_entity);
 
     // Map from {entity vertex indices} to entity index
     std::map<std::vector<int>, size_t> entity_map;
@@ -215,12 +216,10 @@ MeshValueCollection<T>::MeshValueCollection(
       else
       {
         v.clear();
-        for (auto& vtx : mesh::EntityRange(m, 0)){
+        for (auto& vtx : mesh::EntityRange(m, 0))
           v.push_back(global_indices[vtx.index()]);
-        }
         std::sort(v.begin(), v.end());
       }
-      // The vector of vertex number is key and entity index is value
       entity_map[v] = m.index();
     }
     _mesh->create_connectivity(_dim, D);
@@ -228,19 +227,23 @@ MeshValueCollection<T>::MeshValueCollection(
     assert(_mesh->topology().connectivity(_dim, D));
     const Connectivity& connectivity = *_mesh->topology().connectivity(_dim, D);
 
-    for (std::size_t j = 0; j < values_data.size();
-         ++j)
+    for (Eigen::Index j = 0; j < values_data.cols(); ++j)
     {
       // Find the cell
       v.clear();
-      // cells[j] is a vector of length num_vertices_per_cell
-      for (std::size_t i = 0; i < num_vertices_per_cell; ++i){
-        v.push_back(cells[j][i]);
-      }
+      for (int i = 0; i < num_vertices_per_entity; ++i)
+        v.push_back(cells(j, i));
+
       std::sort(v.begin(), v.end());
 
       auto map_it = entity_map.find(v);
-      std::size_t entity_index = map_it->second;
+      if (map_it == entity_map.end())
+      {
+        throw std::runtime_error(
+            "Entity not found in the mesh. Check local mesh ordering.");
+      }
+
+      const std::size_t entity_index = map_it->second;
       assert(connectivity.size(entity_index) > 0);
 
       const MeshEntity entity(*_mesh, _dim, entity_index);
@@ -256,7 +259,7 @@ MeshValueCollection<T>::MeshValueCollection(
         // Insert into map
         const std::pair<std::size_t, std::size_t> key(cell.index(),
                                                       local_entity);
-        _values.insert({key, values_data[j]});
+        _values.insert({key, values_data(j)});
       }
     }
   }

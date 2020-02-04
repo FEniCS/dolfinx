@@ -300,40 +300,45 @@ void mesh(py::module& m)
 
 // dolfinx::mesh::MeshValueCollection
 #define MESHVALUECOLLECTION_MACRO(SCALAR, SCALAR_NAME)                         \
-  py::class_<dolfinx::mesh::MeshValueCollection<SCALAR>,                        \
-             std::shared_ptr<dolfinx::mesh::MeshValueCollection<SCALAR>>>(      \
+  py::class_<dolfinx::mesh::MeshValueCollection<SCALAR>,                       \
+             std::shared_ptr<dolfinx::mesh::MeshValueCollection<SCALAR>>>(     \
       m, "MeshValueCollection_" #SCALAR_NAME,                                  \
       "DOLFIN MeshValueCollection object")                                     \
-      .def(py::init<std::shared_ptr<const dolfinx::mesh::Mesh>, std::size_t>()) \
-      .def(py::init<std::shared_ptr<const dolfinx::mesh::Mesh>,                 \
-        std::size_t,                                                           \
-        std::vector<std::vector<SCALAR>>&,                                     \
-        std::vector<SCALAR>&>())                                               \
-      .def_readwrite("name", &dolfinx::mesh::MeshValueCollection<SCALAR>::name) \
+      .def(                                                                    \
+          py::init<std::shared_ptr<const dolfinx::mesh::Mesh>, std::size_t>()) \
+      .def(py::init<                                                           \
+           std::shared_ptr<const dolfinx::mesh::Mesh>, std::size_t,            \
+           const Eigen::Ref<const Eigen::Array<                                \
+               SCALAR, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>>&,     \
+           const Eigen::Ref<const Eigen::Array<SCALAR, 1, Eigen::Dynamic,      \
+                                               Eigen::RowMajor>>&>())          \
+      .def_readwrite("name",                                                   \
+                     &dolfinx::mesh::MeshValueCollection<SCALAR>::name)        \
       .def_property_readonly("dim",                                            \
-                             &dolfinx::mesh::MeshValueCollection<SCALAR>::dim)  \
-      .def("size", &dolfinx::mesh::MeshValueCollection<SCALAR>::size)           \
-      .def("get_value", &dolfinx::mesh::MeshValueCollection<SCALAR>::get_value) \
+                             &dolfinx::mesh::MeshValueCollection<SCALAR>::dim) \
+      .def("size", &dolfinx::mesh::MeshValueCollection<SCALAR>::size)          \
+      .def("get_value",                                                        \
+           &dolfinx::mesh::MeshValueCollection<SCALAR>::get_value)             \
       .def("set_value",                                                        \
-           (bool (dolfinx::mesh::MeshValueCollection<SCALAR>::*)(               \
+           (bool (dolfinx::mesh::MeshValueCollection<SCALAR>::*)(              \
                std::size_t, const SCALAR&))                                    \
-               & dolfinx::mesh::MeshValueCollection<SCALAR>::set_value)         \
+               & dolfinx::mesh::MeshValueCollection<SCALAR>::set_value)        \
       .def("set_value",                                                        \
-           (bool (dolfinx::mesh::MeshValueCollection<SCALAR>::*)(               \
+           (bool (dolfinx::mesh::MeshValueCollection<SCALAR>::*)(              \
                std::size_t, std::size_t, const SCALAR&))                       \
-               & dolfinx::mesh::MeshValueCollection<SCALAR>::set_value)         \
+               & dolfinx::mesh::MeshValueCollection<SCALAR>::set_value)        \
       .def("values",                                                           \
            (std::map<                                                          \
                 std::pair<std::size_t, std::size_t>,                           \
-                SCALAR> & (dolfinx::mesh::MeshValueCollection<SCALAR>::*)())    \
-               & dolfinx::mesh::MeshValueCollection<SCALAR>::values,            \
+                SCALAR> & (dolfinx::mesh::MeshValueCollection<SCALAR>::*)())   \
+               & dolfinx::mesh::MeshValueCollection<SCALAR>::values,           \
            py::return_value_policy::reference)                                 \
       .def("assign",                                                           \
-           [](dolfinx::mesh::MeshValueCollection<SCALAR>& self,                 \
-              const dolfinx::mesh::MeshFunction<SCALAR>& mf) { self = mf; })    \
+           [](dolfinx::mesh::MeshValueCollection<SCALAR>& self,                \
+              const dolfinx::mesh::MeshFunction<SCALAR>& mf) { self = mf; })   \
       .def("assign",                                                           \
-           [](dolfinx::mesh::MeshValueCollection<SCALAR>& self,                 \
-              const dolfinx::mesh::MeshValueCollection<SCALAR>& other) {        \
+           [](dolfinx::mesh::MeshValueCollection<SCALAR>& self,                \
+              const dolfinx::mesh::MeshValueCollection<SCALAR>& other) {       \
              self = other;                                                     \
            })
 

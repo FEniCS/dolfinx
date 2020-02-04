@@ -4,8 +4,10 @@
 #
 # SPDX-License-Identifier:    LGPL-3.0-or-later
 
-from dolfinx import MPI, MeshFunction, MeshValueCollection, UnitSquareMesh, cpp
+import numpy
 
+from dolfinx import MPI, MeshFunction, MeshValueCollection, UnitSquareMesh, cpp
+from dolfinx_utils.test.skips import skip_in_parallel
 
 def test_assign_2D_cells():
     mesh = UnitSquareMesh(MPI.comm_world, 3, 3)
@@ -168,6 +170,7 @@ def test_mesh_function_assign_2D_vertices():
             assert f2.values[vertices[i]] == g.get_value(c, i)
 
 
+@skip_in_parallel
 def test_mvc_construction_array_tet_tri():
     import pygmsh
 
@@ -240,6 +243,7 @@ def test_mvc_construction_array_tet_tri():
     assert mvc_tetra.get_value(0, 0) == 6
 
 
+@skip_in_parallel
 def test_mvc_construction_array_hex_quad():
     import pygmsh
 
@@ -278,6 +282,9 @@ def test_mvc_construction_array_hex_quad():
         pygmsh_mesh.cell_data,
     )
 
+    vtk_to_dolfin = numpy.argsort([0, 4, 6, 2, 1, 5, 7, 3])
+    cells["hexahedron"] = cells["hexahedron"][:, vtk_to_dolfin]
+
     mesh = cpp.mesh.Mesh(
         MPI.comm_world,
         cpp.mesh.CellType.hexahedron,
@@ -301,12 +308,12 @@ def test_mvc_construction_array_hex_quad():
         "size_t", mesh, 1, cells["line"], cell_data["line"]["gmsh:physical"]
     )
     mvc_line.values()
-    assert mvc_line.get_value(0, 0) == 3
+    assert mvc_line.get_value(0, 8) == 3
 
     mvc_quad = MeshValueCollection(
         "size_t", mesh, 2, cells["quad"], cell_data["quad"]["gmsh:physical"]
     )
-    assert mvc_quad.get_value(0, 0) == 5
+    assert mvc_quad.get_value(0, 4) == 5
 
     mvc_hexa = MeshValueCollection(
         "size_t", mesh, 3, cells["hexahedron"],
