@@ -86,4 +86,4 @@ void assemble_interior_facets(
 
 } // namespace impl
 } // namespace fem
-} // namespace dolfin
+} // namespace dolfinx

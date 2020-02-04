@@ -30,4 +30,4 @@ compute_dof_permutations(const mesh::Mesh& mesh,
                          const fem::ElementDofLayout& dof_layout);
 
 } // namespace fem
-} // namespace dolfin
+} // namespace dolfinx

@@ -1,6 +1,6 @@
 # Copyright (C) 2019 Michal Habera
 #
-# This file is part of DOLFIN (https://www.fenicsproject.org)
+# This file is part of DOLFINX (https://www.fenicsproject.org)
 #
 # SPDX-License-Identifier:    LGPL-3.0-or-later
 
@@ -42,7 +42,7 @@ def test_rank0():
     ufl_expr = ufl.grad(f)
     points = np.array([[0.0, 0.0], [1.0, 0.0], [0.0, 1.0]])
 
-    compiled_expr = dolfinx.jit.ffc_jit((ufl_expr, points))
+    compiled_expr = dolfinx.jit.ffcx_jit((ufl_expr, points))
 
     ffi = cffi.FFI()
 

@@ -1,6 +1,6 @@
 # Copyright (C) 2019 Garth N. Wells
 #
-# This file is part of DOLFIN (https://www.fenicsproject.org)
+# This file is part of DOLFINX (https://www.fenicsproject.org)
 #
 # SPDX-License-Identifier:    LGPL-3.0-or-later
 """Tests for custom Python assemblers"""
@@ -17,13 +17,13 @@ import numba
 import numba.cffi_support
 import numpy as np
 import pytest
-from petsc4py import PETSc
+from petsc4py import PETSc, get_config as PETSc_get_config
 
 import dolfinx
 import ufl
 from ufl import dx, inner
 
-petsc_dir = os.environ.get('PETSC_DIR', None)
+petsc_dir = PETSc_get_config()['PETSC_DIR']
 
 # Get PETSc int and scalar types
 if np.dtype(PETSc.ScalarType).kind == 'c':
@@ -113,7 +113,6 @@ worker = os.getenv('PYTEST_XDIST_WORKER', None)
 module_name = "_petsc_cffi_{}".format(worker)
 if dolfinx.MPI.comm_world.Get_rank() == 0:
     os.environ["CC"] = "mpicc"
-    petsc_dir = os.environ.get('PETSC_DIR', None)
     ffibuilder = cffi.FFI()
     ffibuilder.cdef("""
         typedef int... PetscInt;
@@ -175,7 +174,7 @@ def assemble_vector(b, mesh, x, dofmap):
 
 @numba.njit
 def assemble_vector_ufc(b, kernel, mesh, x, dofmap):
-    """Assemble provided FFC/UFC kernel over a mesh into the array b"""
+    """Assemble provided FFCX/UFC kernel over a mesh into the array b"""
     connections, pos = mesh
     orientation = np.array([0], dtype=np.int32)
     geometry = np.zeros((3, 2))
@@ -304,7 +303,7 @@ def test_custom_mesh_loop_rank1():
 
     # Assemble using generated tabulate_tensor kernel and Numba assembler
     b3 = dolfinx.Function(V)
-    ufc_form = dolfinx.jit.ffc_jit(L)
+    ufc_form = dolfinx.jit.ffcx_jit(L)
     kernel = ufc_form.create_cell_integral(-1).tabulate_tensor
     for i in range(2):
         with b3.vector.localForm() as b:

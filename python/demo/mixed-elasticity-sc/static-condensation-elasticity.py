@@ -1,6 +1,6 @@
 # Copyright (C) 2019 Michal Habera and Andreas Zilian
 #
-# This file is part of DOLFIN (https://www.fenicsproject.org)
+# This file is part of DOLFINX (https://www.fenicsproject.org)
 #
 # SPDX-License-Identifier:    LGPL-3.0-or-later
 
@@ -49,8 +49,14 @@ u_bc = dolfinx.Function(U)
 with u_bc.vector.localForm() as loc:
     loc.set(0.0)
 
+facetdim = mesh.topology.dim - 1
+mf = dolfinx.MeshFunction("size_t", mesh, facetdim, 0)
+mf.mark(lambda x: numpy.isclose(x[0], 0.0), 1)
+bndry_facets = numpy.where(mf.values == 1)[0]
+
 # Displacement BC is applied to the right side
-bc = dolfinx.fem.DirichletBC(U, u_bc, lambda x: numpy.isclose(x[0], 0.0))
+bdofs = dolfinx.fem.locate_dofs_topological(U, facetdim, bndry_facets)
+bc = dolfinx.fem.DirichletBC(u_bc, bdofs)
 
 
 def free_end(x):
@@ -83,13 +89,13 @@ f = ufl.as_vector([0.0, 1.0 / 16])
 b1 = - ufl.inner(f, v) * ds(1)
 
 # JIT compile individual blocks tabulation kernels
-ufc_form00 = dolfinx.jit.ffc_jit(a00)
+ufc_form00 = dolfinx.jit.ffcx_jit(a00)
 kernel00 = ufc_form00.create_cell_integral(-1).tabulate_tensor
 
-ufc_form01 = dolfinx.jit.ffc_jit(a01)
+ufc_form01 = dolfinx.jit.ffcx_jit(a01)
 kernel01 = ufc_form01.create_cell_integral(-1).tabulate_tensor
 
-ufc_form10 = dolfinx.jit.ffc_jit(a10)
+ufc_form10 = dolfinx.jit.ffcx_jit(a10)
 kernel10 = ufc_form10.create_cell_integral(-1).tabulate_tensor
 
 ffi = cffi.FFI()

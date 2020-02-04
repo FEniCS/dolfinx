@@ -175,4 +175,4 @@ public:
           cell_vertices);
 };
 } // namespace mesh
-} // namespace dolfin
+} // namespace dolfinx

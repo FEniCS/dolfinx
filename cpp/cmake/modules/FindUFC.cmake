@@ -38,7 +38,7 @@
 # POSSIBILITY OF SUCH DAMAGE.
 #=============================================================================
 
-# Two paths: Set UFC_INCLUDE_DIR manually, or ask Python/FFC for location
+# Two paths: Set UFC_INCLUDE_DIR manually, or ask Python/FFCX for location
 # of UFC headers.
 
 if (DEFINED UFC_INCLUDE_DIR)
@@ -56,10 +56,10 @@ if (DEFINED UFC_INCLUDE_DIR)
        MESSAGE(STATUS "Could not find UFC header.")
    endif()
 else()
-  MESSAGE(STATUS "Asking Python module FFC for location of UFC...")
+  MESSAGE(STATUS "Asking Python module FFCX for location of UFC...")
   find_package(PythonInterp 3 REQUIRED)
   execute_process(
-    COMMAND ${PYTHON_EXECUTABLE} -c "import ffc, sys; sys.stdout.write(ffc.codegeneration.get_include_path())"
+    COMMAND ${PYTHON_EXECUTABLE} -c "import ffcx, sys; sys.stdout.write(ffcx.codegeneration.get_include_path())"
     OUTPUT_VARIABLE UFC_INCLUDE_DIR
     )
 
@@ -67,7 +67,7 @@ else()
     set(UFC_INCLUDE_DIRS ${UFC_INCLUDE_DIR} CACHE STRING "Where to find ufc.h and ufc_geometry.h")
 
     execute_process(
-      COMMAND ${PYTHON_EXECUTABLE} -c "import ffc, sys; sys.stdout.write(ffc.__version__)"
+      COMMAND ${PYTHON_EXECUTABLE} -c "import ffcx, sys; sys.stdout.write(ffcx.__version__)"
       OUTPUT_VARIABLE UFC_VERSION
       )
 
@@ -83,7 +83,7 @@ else()
   endif()
 
   execute_process(
-    COMMAND ${PYTHON_EXECUTABLE} -c "import ffc.codegeneration, sys; sys.stdout.write(ffc.codegeneration.get_signature())"
+    COMMAND ${PYTHON_EXECUTABLE} -c "import ffcx.codegeneration, sys; sys.stdout.write(ffcx.codegeneration.get_signature())"
     OUTPUT_VARIABLE UFC_SIGNATURE
   )
 endif()

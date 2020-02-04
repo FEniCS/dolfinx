@@ -171,4 +171,4 @@ private:
   std::vector<std::vector<std::shared_ptr<Connectivity>>> _connectivity;
 }; // namespace mesh
 } // namespace mesh
-} // namespace dolfin
+} // namespace dolfinx

@@ -28,4 +28,4 @@ public:
                            const mesh::GhostMode ghost_mode);
 };
 } // namespace generation
-} // namespace dolfin
+} // namespace dolfinx

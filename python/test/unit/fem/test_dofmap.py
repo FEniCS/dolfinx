@@ -1,6 +1,6 @@
 # Copyright (C) 2009-2019 Garth N. Wells, Matthew W. Scroggs and Jorgen S. Dokken
 #
-# This file is part of DOLFIN (https://www.fenicsproject.org)
+# This file is part of DOLFINX (https://www.fenicsproject.org)
 #
 # SPDX-License-Identifier:    LGPL-3.0-or-later
 """Unit tests for the fem interface"""
@@ -216,7 +216,7 @@ def test_entity_dofs(mesh):
 
     V = VectorFunctionSpace(mesh, ("CG", 1))
 
-    # Note this numbering is dependent on FFC and can change This test
+    # Note this numbering is dependent on FFCX and can change This test
     # is here just to check that we get correct numbers mapped from ufc
     # generated code to dolfinx
     for i, cdofs in enumerate([[0, 3], [1, 4], [2, 5]]):
@@ -370,8 +370,8 @@ def test_local_dimension(mesh_factory):
         #    dofmap().index_map.size('foo')
 
 
-# Failures in FFC on quads/hexes
-xfail_ffc = pytest.mark.xfail(raises=Exception)
+# Failures in FFCX on quads/hexes
+xfail_ffcx = pytest.mark.xfail(raises=Exception)
 
 
 @skip_in_parallel
@@ -409,9 +409,9 @@ xfail_ffc = pytest.mark.xfail(raises=Exception)
     pytest.param(
         "FunctionSpace(UnitCubeMesh(MPI.comm_world, 2, 2, 2, CellType.hexahedron),         ('N1curl', 1))",
         marks=pytest.mark.xfail),
-    pytest.param(
-        "FunctionSpace(UnitSquareMesh(MPI.comm_world, 6, 6, CellType.triangle),            ('N1curl', 2))",
-        marks=pytest.mark.xfail),
+    # pytest.param(
+    #     "FunctionSpace(UnitSquareMesh(MPI.comm_world, 6, 6, CellType.triangle),            ('N1curl', 2))",
+    #     marks=pytest.mark.xfail),
     "FunctionSpace(UnitCubeMesh(MPI.comm_world, 2, 2, 2, CellType.tetrahedron),            ('N1curl', 2))",
     pytest.param(
         "FunctionSpace(UnitSquareMesh(MPI.comm_world, 6, 6, CellType.quadrilateral),       ('N1curl', 2))",

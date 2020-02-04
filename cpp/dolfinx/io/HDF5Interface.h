@@ -654,4 +654,4 @@ inline void HDF5Interface::get_attribute_value(const hid_t attr_type,
 //---------------------------------------------------------------------------
 /// @endcond
 } // namespace io
-} // namespace dolfin
+} // namespace dolfinx

@@ -7,10 +7,10 @@
 #pragma once
 
 #include <cstdint>
+#include <dolfinx/common/MPI.h>
 #include <map>
 #include <unordered_map>
 #include <vector>
-#include <dolfinx/common/MPI.h>
 
 namespace dolfinx
 {
@@ -121,4 +121,4 @@ private:
   std::map<std::int64_t, std::int32_t> _global_to_local_edge_map;
 };
 } // namespace refinement
-} // namespace dolfin
+} // namespace dolfinx

@@ -361,4 +361,4 @@ private:
 };
 
 } // namespace io
-} // namespace dolfin
+} // namespace dolfinx

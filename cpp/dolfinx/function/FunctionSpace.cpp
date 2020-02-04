@@ -271,8 +271,7 @@ FunctionSpace::collapse() const
   auto collapsed_sub_space
       = std::make_shared<FunctionSpace>(_mesh, _element, collapsed_dofmap);
 
-  return std::pair(std::move(collapsed_sub_space),
-                   std::move(collapsed_dofs));
+  return std::pair(std::move(collapsed_sub_space), std::move(collapsed_dofs));
 }
 //-----------------------------------------------------------------------------
 std::vector<int> FunctionSpace::component() const { return _component; }
@@ -304,11 +303,6 @@ FunctionSpace::tabulate_dof_coordinates() const
   const Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>& X
       = _element->dof_reference_coordinates();
 
-  // Array to hold coordinates to return
-  Eigen::Array<double, Eigen::Dynamic, 3, Eigen::RowMajor> x
-      = Eigen::Array<double, Eigen::Dynamic, 3, Eigen::RowMajor>::Zero(
-          local_size, 3);
-
   // Get coordinate mapping
   if (!_mesh->geometry().coord_mapping)
   {
@@ -317,7 +311,6 @@ FunctionSpace::tabulate_dof_coordinates() const
   }
   const fem::CoordinateElement& cmap = *_mesh->geometry().coord_mapping;
 
-  // Cell coordinates (re-allocated inside function for thread safety)
   // Prepare cell geometry
   const mesh::Connectivity& connectivity_g
       = _mesh->coordinate_dofs().entity_points();
@@ -330,6 +323,11 @@ FunctionSpace::tabulate_dof_coordinates() const
   const Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>&
       x_g
       = _mesh->geometry().points();
+
+  // Array to hold coordinates to return
+  Eigen::Array<double, Eigen::Dynamic, 3, Eigen::RowMajor> x
+      = Eigen::Array<double, Eigen::Dynamic, 3, Eigen::RowMajor>::Zero(
+          local_size, 3);
 
   // Loop over cells and tabulate dofs
   Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>

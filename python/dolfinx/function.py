@@ -1,6 +1,6 @@
 # Copyright (C) 2009-2019 Chris N. Richardson, Garth N. Wells and Michal Habera
 #
-# This file is part of DOLFIN (https://www.fenicsproject.org)
+# This file is part of DOLFINX (https://www.fenicsproject.org)
 #
 # SPDX-License-Identifier:    LGPL-3.0-or-later
 """Collection of functions and function spaces"""
@@ -252,7 +252,7 @@ class FunctionSpace(ufl.FunctionSpace):
             super().__init__(mesh.ufl_domain(), ufl_element)
 
         # Compile dofmap and element and create DOLFIN objects
-        ufc_element, ufc_dofmap_ptr = jit.ffc_jit(
+        ufc_element, ufc_dofmap_ptr = jit.ffcx_jit(
             self.ufl_element(), form_compiler_parameters=None, mpi_comm=mesh.mpi_comm())
 
         ffi = cffi.FFI()

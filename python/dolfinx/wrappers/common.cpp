@@ -26,7 +26,7 @@
 
 namespace py = pybind11;
 
-namespace dolfin_wrappers
+namespace dolfinx_wrappers
 {
 // Interface for dolfin/common
 void common(py::module& m)
@@ -218,4 +218,4 @@ void mpi(py::module& m)
                     return dolfinx::MPI::sum(comm.get(), value);
                   });
 }
-} // namespace dolfin_wrappers
+} // namespace dolfinx_wrappers

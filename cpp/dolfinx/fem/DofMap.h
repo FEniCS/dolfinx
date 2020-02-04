@@ -127,4 +127,4 @@ private:
   Eigen::Array<PetscInt, Eigen::Dynamic, 1> _dofmap;
 };
 } // namespace fem
-} // namespace dolfin
+} // namespace dolfinx

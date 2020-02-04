@@ -11,16 +11,16 @@ double dolfinx::geometry::orient1d(double a, double b, double x)
 }
 //-----------------------------------------------------------------------------
 double dolfinx::geometry::orient2d(const Eigen::Vector3d& a,
-                                  const Eigen::Vector3d& b,
-                                  const Eigen::Vector3d& c)
+                                   const Eigen::Vector3d& b,
+                                   const Eigen::Vector3d& c)
 {
   return dolfinx::geometry::_orient2d(a.data(), b.data(), c.data());
 }
 //-----------------------------------------------------------------------------
 double dolfinx::geometry::orient3d(const Eigen::Vector3d& a,
-                                  const Eigen::Vector3d& b,
-                                  const Eigen::Vector3d& c,
-                                  const Eigen::Vector3d& d)
+                                   const Eigen::Vector3d& b,
+                                   const Eigen::Vector3d& c,
+                                   const Eigen::Vector3d& d)
 {
   return dolfinx::geometry::_orient3d(a.data(), b.data(), c.data(), d.data());
 }
@@ -1750,7 +1750,7 @@ REAL orient2dadapt(const REAL* pa, const REAL* pb, const REAL* pc,
 }
 
 double dolfinx::geometry::_orient2d(const double* pa, const double* pb,
-                                   const double* pc)
+                                    const double* pc)
 /* REAL *pa; */
 /* REAL *pb; */
 /* REAL *pc; */
@@ -2526,7 +2526,7 @@ REAL orient3dadapt(const REAL* pa, const REAL* pb, const REAL* pc,
 }
 
 double dolfinx::geometry::_orient3d(const double* pa, const double* pb,
-                                   const double* pc, const double* pd)
+                                    const double* pc, const double* pd)
 /* REAL *pa; */
 /* REAL *pb; */
 /* REAL *pc; */
@@ -2582,4 +2582,4 @@ namespace geometry
 /// Initialize the predicate
 PredicateInitialization predicate_initialization;
 } // namespace geometry
-} // namespace dolfin
+} // namespace dolfinx

@@ -1,6 +1,6 @@
 # Copyright (C) 2018-2019 Garth N. Wells
 #
-# This file is part of DOLFIN (https://www.fenicsproject.org)
+# This file is part of DOLFINX (https://www.fenicsproject.org)
 #
 # SPDX-License-Identifier:    LGPL-3.0-or-later
 """Unit tests for assembly"""
@@ -132,10 +132,12 @@ def test_assembly_bcs():
     def boundary(x):
         return numpy.logical_or(x[0] < 1.0e-6, x[0] > 1.0 - 1.0e-6)
 
+    bdofsV = dolfinx.fem.locate_dofs_geometrical(V, boundary)
+
     u_bc = dolfinx.function.Function(V)
     with u_bc.vector.localForm() as u_local:
         u_local.set(1.0)
-    bc = dolfinx.fem.dirichletbc.DirichletBC(V, u_bc, boundary)
+    bc = dolfinx.fem.dirichletbc.DirichletBC(u_bc, bdofsV)
 
     # Assemble and apply 'global' lifting of bcs
     A = dolfinx.fem.assemble_matrix(a)
@@ -173,6 +175,8 @@ def test_assemble_manifold():
                         dolfinx.cpp.mesh.CellType.interval,
                         points, cells, [], dolfinx.cpp.mesh.GhostMode.none)
 
+    mesh.geometry.coord_mapping = dolfinx.fem.create_coordinate_map(mesh)
+
     assert mesh.geometry.dim == 2
     assert mesh.topology.dim == 1
 
@@ -184,7 +188,8 @@ def test_assemble_manifold():
     a = ufl.inner(ufl.grad(u), ufl.grad(v)) * ufl.dx(mesh)
     L = ufl.inner(1.0, v) * ufl.dx(mesh)
 
-    bcs = [dolfinx.DirichletBC(U, w, lambda x: numpy.isclose(x[0], 0.0))]
+    bcdofs = dolfinx.fem.locate_dofs_geometrical(U, lambda x: numpy.isclose(x[0], 0.0))
+    bcs = [dolfinx.DirichletBC(w, bcdofs)]
     A = dolfinx.fem.assemble_matrix(a, bcs)
     A.assemble()
 
@@ -212,10 +217,18 @@ def test_matrix_assembly_block():
     def boundary(x):
         return numpy.logical_or(x[0] < 1.0e-6, x[0] > 1.0 - 1.0e-6)
 
+    # Prepare a MeshFunction used for boundary conditions
+    facetdim = mesh.topology.dim - 1
+    mf = dolfinx.MeshFunction("size_t", mesh, facetdim, 0)
+    mf.mark(boundary, 1)
+    bndry_facets = numpy.where(mf.values == 1)[0]
+
+    bdofsV1 = dolfinx.fem.locate_dofs_topological(V1, facetdim, bndry_facets)
+
     u_bc = dolfinx.function.Function(V1)
     with u_bc.vector.localForm() as u_local:
         u_local.set(50.0)
-    bc = dolfinx.fem.dirichletbc.DirichletBC(V1, u_bc, boundary)
+    bc = dolfinx.fem.dirichletbc.DirichletBC(u_bc, bdofsV1)
 
     # Define variational problem
     u, p = ufl.TrialFunction(V0), ufl.TrialFunction(V1)
@@ -269,7 +282,9 @@ def test_matrix_assembly_block():
         u1, v0) * dx
     L = zero * inner(f, v0) * ufl.dx + inner(g, v1) * dx
 
-    bc = dolfinx.fem.dirichletbc.DirichletBC(W.sub(1), u_bc, boundary)
+    bdofsW_V1 = dolfinx.fem.locate_dofs_topological((W.sub(1), V1), mesh.topology.dim - 1, bndry_facets)
+
+    bc = dolfinx.fem.dirichletbc.DirichletBC(u_bc, bdofsW_V1, W.sub(1))
     A2 = dolfinx.fem.assemble_matrix(a, [bc])
     A2.assemble()
     b2 = dolfinx.fem.assemble_vector(L)
@@ -293,6 +308,14 @@ def test_assembly_solve_block():
     def boundary(x):
         return numpy.logical_or(x[0] < 1.0e-6, x[0] > 1.0 - 1.0e-6)
 
+    facetdim = mesh.topology.dim - 1
+    mf = dolfinx.MeshFunction("size_t", mesh, facetdim, 0)
+    mf.mark(boundary, 1)
+    bndry_facets = numpy.where(mf.values == 1)[0]
+
+    bdofsV0 = dolfinx.fem.locate_dofs_topological(V0, facetdim, bndry_facets)
+    bdofsV1 = dolfinx.fem.locate_dofs_topological(V1, facetdim, bndry_facets)
+
     u_bc0 = dolfinx.function.Function(V0)
     u_bc0.vector.set(50.0)
     u_bc0.vector.ghostUpdate(
@@ -302,8 +325,8 @@ def test_assembly_solve_block():
     u_bc1.vector.ghostUpdate(
         addv=PETSc.InsertMode.INSERT, mode=PETSc.ScatterMode.FORWARD)
     bcs = [
-        dolfinx.fem.dirichletbc.DirichletBC(V0, u_bc0, boundary),
-        dolfinx.fem.dirichletbc.DirichletBC(V1, u_bc1, boundary)
+        dolfinx.fem.dirichletbc.DirichletBC(u_bc0, bdofsV0),
+        dolfinx.fem.dirichletbc.DirichletBC(u_bc1, bdofsV1)
     ]
 
     # Variational problem
@@ -386,9 +409,12 @@ def test_assembly_solve_block():
     u1_bc.vector.ghostUpdate(
         addv=PETSc.InsertMode.INSERT, mode=PETSc.ScatterMode.FORWARD)
 
+    bdofsW0_V0 = dolfinx.fem.locate_dofs_topological((W.sub(0), V0), facetdim, bndry_facets)
+    bdofsW1_V1 = dolfinx.fem.locate_dofs_topological((W.sub(1), V1), facetdim, bndry_facets)
+
     bcs = [
-        dolfinx.fem.dirichletbc.DirichletBC(W.sub(0), u0_bc, boundary),
-        dolfinx.fem.dirichletbc.DirichletBC(W.sub(1), u1_bc, boundary)
+        dolfinx.fem.dirichletbc.DirichletBC(u0_bc, bdofsW0_V0, W.sub(0)),
+        dolfinx.fem.dirichletbc.DirichletBC(u1_bc, bdofsW1_V1, W.sub(1))
     ]
 
     A2 = dolfinx.fem.assemble_matrix(a, bcs)
@@ -433,11 +459,21 @@ def test_assembly_solve_taylor_hood(mesh):
         """Define boundary x = 1"""
         return x[0] > (1.0 - 10 * numpy.finfo(float).eps)
 
+    facetdim = mesh.topology.dim - 1
+    mf = dolfinx.MeshFunction("size_t", mesh, facetdim, 0)
+    mf.mark(boundary0, 1)
+    mf.mark(boundary1, 2)
+    bndry_facets0 = numpy.where(mf.values == 1)[0]
+    bndry_facets1 = numpy.where(mf.values == 2)[0]
+
+    bdofs0 = dolfinx.fem.locate_dofs_topological(P2, facetdim, bndry_facets0)
+    bdofs1 = dolfinx.fem.locate_dofs_topological(P2, facetdim, bndry_facets1)
+
     u0 = dolfinx.Function(P2)
     u0.vector.set(1.0)
     u0.vector.ghostUpdate(addv=PETSc.InsertMode.INSERT, mode=PETSc.ScatterMode.FORWARD)
-    bc0 = dolfinx.DirichletBC(P2, u0, boundary0)
-    bc1 = dolfinx.DirichletBC(P2, u0, boundary1)
+    bc0 = dolfinx.DirichletBC(u0, bdofs0)
+    bc1 = dolfinx.DirichletBC(u0, bdofs1)
 
     u, p = ufl.TrialFunction(P2), ufl.TrialFunction(P1)
     v, q = ufl.TestFunction(P2), ufl.TestFunction(P1)
@@ -530,9 +566,9 @@ def test_assembly_solve_taylor_hood(mesh):
 
     # -- Monolithic
 
-    P2 = ufl.VectorElement("Lagrange", mesh.ufl_cell(), 2)
-    P1 = ufl.FiniteElement("Lagrange", mesh.ufl_cell(), 1)
-    TH = P2 * P1
+    P2_el = ufl.VectorElement("Lagrange", mesh.ufl_cell(), 2)
+    P1_el = ufl.FiniteElement("Lagrange", mesh.ufl_cell(), 1)
+    TH = P2_el * P1_el
     W = dolfinx.FunctionSpace(mesh, TH)
     (u, p) = ufl.TrialFunctions(W)
     (v, q) = ufl.TestFunctions(W)
@@ -551,8 +587,11 @@ def test_assembly_solve_taylor_hood(mesh):
     L1 = inner(p_zero, q) * dx
     L = L0 + L1
 
-    bc0 = dolfinx.DirichletBC(W.sub(0), u0, boundary0)
-    bc1 = dolfinx.DirichletBC(W.sub(0), u0, boundary1)
+    bdofsW0_P2_0 = dolfinx.fem.locate_dofs_topological((W.sub(0), P2), facetdim, bndry_facets0)
+    bdofsW0_P2_1 = dolfinx.fem.locate_dofs_topological((W.sub(0), P2), facetdim, bndry_facets1)
+
+    bc0 = dolfinx.DirichletBC(u0, bdofsW0_P2_0, W.sub(0))
+    bc1 = dolfinx.DirichletBC(u0, bdofsW0_P2_1, W.sub(0))
 
     A2 = dolfinx.fem.assemble_matrix(a, [bc0, bc1])
     A2.assemble()

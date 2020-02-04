@@ -123,28 +123,6 @@ int main(int argc, char* argv[])
 
   auto V = fem::create_functionspace(poisson_functionspace_create, mesh);
 
-  // Now, the Dirichlet boundary condition (:math:`u = 0`) can be created
-  // using the class :cpp:class:`DirichletBC`. A :cpp:class:`DirichletBC`
-  // takes three arguments: the function space the boundary condition
-  // applies to, the value of the boundary condition, and the part of the
-  // boundary on which the condition applies. In our example, the function
-  // space is ``V``, the value of the boundary condition (0.0) can
-  // represented using a :cpp:class:`Function`, and the Dirichlet boundary
-  // is defined by the lambda expression.
-  // The definition of the Dirichlet boundary condition then looks
-  // as follows:
-  //
-  // .. code-block:: cpp
-
-  // FIXME: zero function and make sure ghosts are updated
-  // Define boundary condition
-  auto u0 = std::make_shared<function::Function>(V);
-
-  std::vector<std::shared_ptr<const fem::DirichletBC>> bc
-      = {std::make_shared<fem::DirichletBC>(V, u0, [](auto& x) {
-          return (x.row(0) < DBL_EPSILON or x.row(0) > 1.0 - DBL_EPSILON);
-        })};
-
   // Next, we define the variational formulation by initializing the
   // bilinear and linear forms (:math:`a`, :math:`L`) using the previously
   // defined :cpp:class:`FunctionSpace` ``V``.  Then we can create the
@@ -166,6 +144,31 @@ int main(int argc, char* argv[])
   // Attach 'coordinate mapping' to mesh
   auto cmap = a->coordinate_mapping();
   mesh->geometry().coord_mapping = cmap;
+
+  // Now, the Dirichlet boundary condition (:math:`u = 0`) can be created
+  // using the class :cpp:class:`DirichletBC`. A :cpp:class:`DirichletBC`
+  // takes two arguments: the value of the boundary condition,
+  // and the part of the boundary on which the condition applies.
+  // In our example, the value of the boundary condition (0.0) can
+  // represented using a :cpp:class:`Function`, and the Dirichlet boundary
+  // is defined by the indices of degrees of freedom to which the boundary
+  // condition applies.
+  // The definition of the Dirichlet boundary condition then looks
+  // as follows:
+  //
+  // .. code-block:: cpp
+
+  // FIXME: zero function and make sure ghosts are updated
+  // Define boundary condition
+  auto u0 = std::make_shared<function::Function>(V);
+
+  const Eigen::Array<PetscInt, Eigen::Dynamic, 1> bdofs
+      = fem::locate_dofs_geometrical(*V, [](auto& x) {
+          return (x.row(0) < DBL_EPSILON or x.row(0) > 1.0 - DBL_EPSILON);
+        });
+
+  std::vector<std::shared_ptr<const fem::DirichletBC>> bc
+      = {std::make_shared<fem::DirichletBC>(u0, bdofs)};
 
   f->interpolate([](auto& x) {
     auto dx = Eigen::square(x - 0.5);

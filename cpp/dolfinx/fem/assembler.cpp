@@ -129,7 +129,10 @@ void fem::add_diagonal(
     assert(bc);
     if (V.contains(*bc->function_space()))
     {
-      add_diagonal(A, bc->dof_indices_owned(), diagonal);
+      const Eigen::Ref<const Eigen::Array<PetscInt, Eigen::Dynamic, 1>>&
+          owned_dofs
+          = bc->dofs_owned().col(0);
+      add_diagonal(A, owned_dofs, diagonal);
     }
   }
 }
