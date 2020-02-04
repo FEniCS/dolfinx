@@ -163,70 +163,22 @@ get_remote_bcs2(const common::IndexMap& map0, const common::IndexMap& map1,
                           dofs_received.data(), num_dofs_recv.data(),
                           disp.data(), MPI_INT64_T, comm0);
 
-  const int bs0 = map0.block_size;
-  const int bs1 = map1.block_size;
-
-  // Build global-to-local map for ghost indices (blocks) on this
-  // process
-  const std::int32_t size_owned0 = map0.size_local();
-  const std::int32_t size_owned1 = map1.size_local();
-  std::map<std::int64_t, std::int32_t> global_to_local_blocked0,
-      global_to_local_blocked1;
-  const Eigen::Array<std::int64_t, Eigen::Dynamic, 1>& ghosts0 = map0.ghosts();
-  const Eigen::Array<std::int64_t, Eigen::Dynamic, 1>& ghosts1 = map1.ghosts();
-  for (Eigen::Index i = 0; i < ghosts0.rows(); ++i)
-    global_to_local_blocked0.insert({ghosts0[i], i + size_owned0});
-  for (Eigen::Index i = 0; i < ghosts1.rows(); ++i)
-    global_to_local_blocked1.insert({ghosts1[i], i + size_owned1});
-
-  // Build vector of local dof indicies that have been marked by another
-  // process
-  std::vector<std::int32_t> dofs0, dofs1;
-  const std::array<std::int64_t, 2> range0 = map0.local_range();
-  const std::array<std::int64_t, 2> range1 = map1.local_range();
+  std::vector<std::int64_t> dofs_received0(dofs_received.rows()),
+      dofs_received1(dofs_received.rows());
   for (Eigen::Index i = 0; i < dofs_received.rows(); ++i)
   {
-    bool insert0(false), insert1(false);
-
-    const std::int64_t dof0 = dofs_received(i, 0);
-    if (dof0 >= bs0 * range0[0] and dof0 < bs0 * range0[1])
-    {
-      dofs0.push_back(dof0 - bs0 * range0[0]);
-      insert0 = true;
-    }
-    else
-    {
-      const std::int64_t index_block0 = dof0 / bs0;
-      auto it = global_to_local_blocked0.find(index_block0);
-      if (it != global_to_local_blocked0.end())
-      {
-        dofs0.push_back(it->second * bs0 + dof0 % bs0);
-        insert0 = true;
-      }
-    }
-
-    const std::int64_t dof1 = dofs_received(i, 1);
-    if (dof1 >= bs1 * range1[0] and dof1 < bs1 * range1[1])
-    {
-      dofs1.push_back(dof1 - bs1 * range1[0]);
-      insert1 = true;
-    }
-    else
-    {
-      const std::int64_t index_block1 = dof1 / bs1;
-      auto it = global_to_local_blocked1.find(index_block1);
-      if (it != global_to_local_blocked1.end())
-      {
-        dofs1.push_back(it->second * bs1 + dof1 % bs1);
-        insert1 = true;
-      }
-    }
-    if (insert0 != insert1)
-      throw std::runtime_error("Could not find matching Dirichlet DOF pairs.");
+    dofs_received0[i] = dofs_received(i, 0);
+    dofs_received1[i] = dofs_received(i, 1);
   }
 
-  assert(dofs0.size() == dofs1.size());
+  std::vector<std::int32_t> dofs0 = map0.global_to_local(dofs_received0, false);
+  std::vector<std::int32_t> dofs1 = map1.global_to_local(dofs_received1, false);
+
+  dofs0.erase(std::remove(dofs0.begin(), dofs0.end(), -1), dofs0.end());
+  dofs1.erase(std::remove(dofs1.begin(), dofs1.end(), -1), dofs1.end());
+
   std::vector<std::array<std::int32_t, 2>> dofs;
+  dofs.reserve(dofs0.size());
   for (std::size_t i = 0; i < dofs0.size(); ++i)
     dofs.push_back({dofs0[i], dofs1[i]});
 
