@@ -115,7 +115,7 @@ get_remote_bcs2(const common::IndexMap& map0, const common::IndexMap& map1,
   MPI_Neighbor_allgather(&num_dofs, 1, MPI_INT, num_dofs_recv.data(), 1,
                          MPI_INT, comm0);
 
-  std::vector<std::int32_t> dofs_local0(dofs_local.size()),
+  Eigen::Array<std::int32_t, Eigen::Dynamic, 1> dofs_local0(dofs_local.size()),
       dofs_local1(dofs_local.size());
   for (std::size_t i = 0; i < dofs_local.size(); ++i)
   {
@@ -125,21 +125,10 @@ get_remote_bcs2(const common::IndexMap& map0, const common::IndexMap& map1,
 
   // NOTE: we consider only dofs that we know are shared
   // Build array of global indices of dofs
-  std::vector<std::int64_t> dofs_global0
-      = map0.local_to_global(dofs_local0, false);
-  std::vector<std::int64_t> dofs_global1
-      = map1.local_to_global(dofs_local1, false);
-  assert(dofs_global0.size() == dofs_global1.size());
-
-  // NOTE: we consider only dofs that we know are shared
-  // Build array of global indices of dofs
-  std::vector<std::int64_t> dofs_global;
-  dofs_global.reserve(2 * dofs_local.size());
-  for (std::size_t i = 0; i < dofs_global0.size(); ++i)
-  {
-    dofs_global.push_back(dofs_global0[i]);
-    dofs_global.push_back(dofs_global1[i]);
-  }
+  Eigen::Array<std::int64_t, Eigen::Dynamic, 2, Eigen::RowMajor> dofs_global(
+      dofs_local.size(), 2);
+  dofs_global.col(0) = map0.local_to_global(dofs_local0, false);
+  dofs_global.col(1) = map1.local_to_global(dofs_local1, false);
 
   // Compute displacements for data to receive. Last entry has total
   // number of received items.

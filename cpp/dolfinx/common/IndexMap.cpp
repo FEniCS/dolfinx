@@ -11,6 +11,49 @@
 using namespace dolfinx;
 using namespace dolfinx::common;
 
+namespace
+{
+//-----------------------------------------------------------------------------
+void local_to_global_impl(
+    Eigen::Ref<Eigen::Array<std::int64_t, Eigen::Dynamic, 1>> global,
+    const Eigen::Ref<const Eigen::Array<std::int32_t, Eigen::Dynamic, 1>>&
+        indices,
+    const std::int64_t global_offset, const std::int32_t local_size,
+    const int block_size,
+    const Eigen::Array<std::int64_t, Eigen::Dynamic, 1>& ghosts, bool blocked)
+{
+  if (blocked)
+  {
+    for (Eigen::Index i = 0; i < indices.rows(); ++i)
+    {
+      if (indices[i] < local_size)
+        global[i] = global_offset + indices[i];
+      else
+      {
+        assert((indices[i] - local_size) < ghosts.size());
+        global[i] = ghosts[indices[i] - local_size];
+      }
+    }
+  }
+  else
+  {
+    for (Eigen::Index i = 0; i < indices.rows(); ++i)
+    {
+      const std::int32_t index_block = indices[i] / block_size;
+      const std::int32_t pos = indices[i] % block_size;
+      if (index_block < local_size)
+        global[i] = block_size * (global_offset + index_block) + pos;
+      else
+      {
+        assert((index_block - local_size) < ghosts.size());
+        global[i] = block_size * ghosts[index_block - local_size] + pos;
+      }
+    }
+  }
+}
+//-----------------------------------------------------------------------------
+} // namespace
+
 //-----------------------------------------------------------------------------
 IndexMap::IndexMap(
     MPI_Comm mpi_comm, std::int32_t local_size,
@@ -135,7 +178,7 @@ std::array<std::int64_t, 2> IndexMap::local_range() const
   return {{_all_ranges[_myrank], _all_ranges[_myrank + 1]}};
 }
 //-----------------------------------------------------------------------------
-std::int32_t IndexMap::num_ghosts() const { return _ghosts.size(); }
+std::int32_t IndexMap::num_ghosts() const { return _ghosts.rows(); }
 //-----------------------------------------------------------------------------
 std::int32_t IndexMap::size_local() const
 {
@@ -149,6 +192,21 @@ const Eigen::Array<std::int64_t, Eigen::Dynamic, 1>& IndexMap::ghosts() const
   return _ghosts;
 }
 //-----------------------------------------------------------------------------
+Eigen::Array<std::int64_t, Eigen::Dynamic, 1> IndexMap::local_to_global(
+    const Eigen::Ref<const Eigen::Array<std::int32_t, Eigen::Dynamic, 1>>&
+        indices,
+    bool blocked) const
+{
+  const std::int64_t global_offset = _all_ranges[_myrank];
+  const std::int32_t local_size
+      = _all_ranges[_myrank + 1] - _all_ranges[_myrank];
+  Eigen::Array<std::int64_t, Eigen::Dynamic, 1> global(indices.rows());
+  local_to_global_impl(global, indices, global_offset, local_size, block_size,
+                       _ghosts, blocked);
+
+  return global;
+}
+//-----------------------------------------------------------------------------
 std::vector<std::int64_t>
 IndexMap::local_to_global(const std::vector<std::int32_t>& indices,
                           bool blocked) const
@@ -157,35 +215,31 @@ IndexMap::local_to_global(const std::vector<std::int32_t>& indices,
   const std::int32_t local_size
       = _all_ranges[_myrank + 1] - _all_ranges[_myrank];
 
-  std::vector<std::int64_t> global;
-  global.reserve(indices.size());
-  if (blocked)
+  std::vector<std::int64_t> global(indices.size());
+  Eigen::Map<Eigen::Array<std::int64_t, Eigen::Dynamic, 1>> _global(
+      global.data(), global.size());
+  const Eigen::Map<const Eigen::Array<std::int32_t, Eigen::Dynamic, 1>>
+      _indices(indices.data(), indices.size());
+  local_to_global_impl(_global, _indices, global_offset, local_size, block_size,
+                       _ghosts, blocked);
+  return global;
+}
+//-----------------------------------------------------------------------------
+std::vector<std::int64_t> IndexMap::global_indices(bool blocked) const
+{
+  const std::int32_t local_size
+      = _all_ranges[_myrank + 1] - _all_ranges[_myrank];
+  const std::int32_t num_ghosts = _ghosts.rows();
+  const std::int64_t global_offset = _all_ranges[_myrank];
+  const int bs = blocked ? 1 : block_size;
+
+  std::vector<std::int64_t> global(bs * (local_size + num_ghosts));
+  std::iota(global.begin(), global.begin() + bs * local_size,
+            bs * global_offset);
+  for (Eigen::Index i = 0; i < _ghosts.rows(); ++i)
   {
-    for (auto index : indices)
-    {
-      if (index < local_size)
-        global.push_back(global_offset + index);
-      else
-      {
-        assert((index - local_size) < _ghosts.size());
-        global.push_back(_ghosts[index - local_size]);
-      }
-    }
-  }
-  else
-  {
-    for (auto index : indices)
-    {
-      const std::int32_t index_block = index / block_size;
-      const std::int32_t pos = index % block_size;
-      if (index_block < local_size)
-        global.push_back(block_size * (global_offset + index_block) + pos);
-      else
-      {
-        assert((index_block - local_size) < _ghosts.size());
-        global.push_back(block_size * _ghosts[index_block - local_size] + pos);
-      }
-    }
+    for (int j = 0; j < bs; ++j)
+      global[bs * (local_size + i) + j] = bs * _ghosts[i] + j;
   }
 
   return global;

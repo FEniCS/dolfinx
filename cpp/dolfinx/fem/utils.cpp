@@ -246,17 +246,11 @@ la::PETScMatrix fem::create_matrix_block(
     for (std::size_t i = 0; i < V[d].size(); ++i)
     {
       auto map = V[d][i]->dofmap()->index_map;
-      int size = map->size_local() + map->num_ghosts();
-      const int bs = map->block_size;
-      for (int k = 0; k < size; ++k)
+      const std::vector<std::int64_t> global = map->global_indices(false);
+      for (auto global_index : global)
       {
-        std::int64_t index_k = map->local_to_global(k);
-        for (int block = 0; block < bs; ++block)
-        {
-          std::int64_t index
-              = get_global_index(index_maps[d], i, index_k * bs + block);
-          _maps[d].push_back(index);
-        }
+        std::int64_t index = get_global_index(index_maps[d], i, global_index);
+        _maps[d].push_back(index);
       }
     }
   }
@@ -378,7 +372,7 @@ fem::create_vector_nest(const std::vector<const common::IndexMap*>& maps)
 //-----------------------------------------------------------------------------
 std::int64_t
 dolfinx::fem::get_global_index(const std::vector<const common::IndexMap*>& maps,
-                              const int field, const int index)
+                               const int field, const int index)
 {
   // FIXME: handle/check block size > 1
 
@@ -517,7 +511,8 @@ std::shared_ptr<fem::Form> fem::create_form(
     const std::vector<std::shared_ptr<const function::FunctionSpace>>& spaces)
 {
   ufc_form* form = fptr();
-  auto L = std::make_shared<fem::Form>(dolfinx::fem::create_form(*form, spaces));
+  auto L
+      = std::make_shared<fem::Form>(dolfinx::fem::create_form(*form, spaces));
   std::free(form);
 
   return L;

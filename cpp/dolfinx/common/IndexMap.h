@@ -86,6 +86,17 @@ public:
   ///   input indices are not block-wise.
   /// @return The global index of the corresponding local index in
   ///   indices.
+  Eigen::Array<std::int64_t, Eigen::Dynamic, 1> local_to_global(
+      const Eigen::Ref<const Eigen::Array<std::int32_t, Eigen::Dynamic, 1>>&
+          indices,
+      bool blocked = true) const;
+
+  /// Compute global indices for array of local indices
+  /// @param[in] indices Local indices
+  /// @param[in] blocked If true work with blocked indices. If false the
+  ///   input indices are not block-wise.
+  /// @return The global index of the corresponding local index in
+  ///   indices.
   std::vector<std::int64_t>
   local_to_global(const std::vector<std::int32_t>& indices,
                   bool blocked = true) const;
@@ -100,6 +111,12 @@ public:
   global_to_local(const std::vector<std::int64_t>& indices,
                   bool blocked = true) const;
 
+  /// Global indices
+  /// @return The global index for all local indices (0, 1, 2, ...) on this
+  /// process, including ghosts
+  std::vector<std::int64_t> global_indices(bool blocked = true) const;
+
+  /// @todo Remove this function
   /// Get global index for local index i (index of the block)
   std::int64_t local_to_global(std::int32_t local_index) const
   {
