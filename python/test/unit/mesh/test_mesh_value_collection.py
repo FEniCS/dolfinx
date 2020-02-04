@@ -9,6 +9,7 @@ import numpy
 from dolfinx import MPI, MeshFunction, MeshValueCollection, UnitSquareMesh, cpp
 from dolfinx_utils.test.skips import skip_in_parallel
 
+
 def test_assign_2D_cells():
     mesh = UnitSquareMesh(MPI.comm_world, 3, 3)
     ncells = mesh.num_cells()
