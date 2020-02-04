@@ -75,7 +75,7 @@ SparsityPattern::SparsityPattern(
     const int bs0 = patterns[row][0]->_index_maps[0]->block_size;
 
     // FIXME: Issue somewhere here when block size > 1
-    assert(bs0 * row_size == (std::int32_t) patterns[row][0]->_diagonal.size());
+    assert(bs0 * row_size == (std::int32_t)patterns[row][0]->_diagonal.size());
     // if (!patterns[row][0]->_diagonal.empty())
     // {
     //   if (row_size != patterns[row][0]->_diagonal.size())
@@ -88,7 +88,8 @@ SparsityPattern::SparsityPattern(
     this->_diagonal.resize(this->_diagonal.size() + bs0 * row_size);
     if (distributed)
     {
-      assert(bs0 * row_size == patterns[row][0]->_off_diagonal.size());
+      assert(bs0 * row_size
+             == (std::int32_t)patterns[row][0]->_off_diagonal.size());
       this->_off_diagonal.resize(this->_off_diagonal.size() + bs0 * row_size);
     }
 
