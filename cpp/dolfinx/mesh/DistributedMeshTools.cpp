@@ -10,6 +10,7 @@
 #include "MeshFunction.h"
 #include "MeshIterator.h"
 #include "cell_types.h"
+#include "dolfinx/common/IndexMap.h"
 #include "dolfinx/common/MPI.h"
 #include "dolfinx/common/Timer.h"
 #include "dolfinx/graph/Graph.h"
@@ -25,7 +26,8 @@ using namespace dolfinx::mesh;
 namespace
 {
 std::tuple<std::vector<std::int64_t>,
-           std::map<std::int32_t, std::set<std::int32_t>>, std::size_t>
+           std::map<std::int32_t, std::set<std::int32_t>>, std::size_t,
+           std::shared_ptr<const common::IndexMap>>
 compute_entity_numbering(const Mesh& mesh, int d)
 {
   LOG(INFO)
@@ -50,9 +52,11 @@ compute_entity_numbering(const Mesh& mesh, int d)
     // Numbering cells.
     // FIXME: Should be redundant?
     shared_entities.clear();
+    std::shared_ptr<common::IndexMap> index_map;
     global_entity_indices = mesh.topology().global_indices(d);
     return std::tuple(std::move(global_entity_indices),
-                      std::move(shared_entities), mesh.num_entities_global(d));
+                      std::move(shared_entities), mesh.num_entities_global(d),
+                      index_map);
   }
 
   // MPI communicator
@@ -299,8 +303,16 @@ compute_entity_numbering(const Mesh& mesh, int d)
     }
   }
 
+  Eigen::Array<std::int64_t, Eigen::Dynamic, 1> ghosts(
+      global_entity_indices.size() - num_local);
+  std::copy(global_entity_indices.begin() + num_local,
+            global_entity_indices.end(), ghosts.data());
+
+  auto index_map
+      = std::make_shared<common::IndexMap>(mpi_comm, num_local, ghosts, 1);
+
   return std::tuple(std::move(global_entity_indices),
-                    std::move(shared_entities), num_global);
+                    std::move(shared_entities), num_global, index_map);
 }
 //-----------------------------------------------------------------------------
 template <typename T>
@@ -321,7 +333,7 @@ reorder_values_by_global_indices(
   // anywhere
   const std::size_t global_vector_size
       = dolfinx::MPI::max(mpi_comm, *std::max_element(global_indices.begin(),
-                                                     global_indices.end()))
+                                                      global_indices.end()))
         + 1;
 
   // Send unwanted values off process
@@ -402,8 +414,11 @@ void DistributedMeshTools::number_entities(const Mesh& mesh, int d)
   }
 
   // Number entities
-  auto [global_entity_indices, shared_entities, num_global_entities]
+  auto [global_entity_indices, shared_entities, num_global_entities, index_map]
       = compute_entity_numbering(mesh, d);
+
+  // Set IndexMap
+  _mesh.topology().set_index_map(d, index_map);
 
   // Set shared entities
   _mesh.topology().set_shared_entities(d, shared_entities);
