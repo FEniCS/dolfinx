@@ -257,17 +257,14 @@ compute_entity_numbering(const Mesh& mesh, int d)
     const auto it = shared_entities.find(i);
     if (it == shared_entities.end())
     {
+      // Owned but not shared
       global_entity_indices[i] = n;
       ++n;
     }
-  }
-
-  // Owned and shared
-  for (const auto& q : shared_entities)
-  {
-    if (*q.second.begin() > mpi_rank)
+    else if (*(it->second.begin()) > mpi_rank)
     {
-      global_entity_indices[q.first] = n;
+      // Owned and shared
+      global_entity_indices[it->first] = n;
       ++n;
     }
   }
@@ -317,8 +314,7 @@ compute_entity_numbering(const Mesh& mesh, int d)
     s << i << " = " << global_entity_indices[i] << "\n";
   std::cout << s.str();
 
-  auto index_map
-      = std::make_shared<common::IndexMap>(mpi_comm, num_local, ghosts, 1);
+  std::shared_ptr<common::IndexMap> index_map;
 
   return std::tuple(std::move(global_entity_indices),
                     std::move(shared_entities), num_global, index_map);
