@@ -308,8 +308,10 @@ compute_entity_numbering(const Mesh& mesh, int d)
   std::copy(global_entity_indices.begin() + num_local,
             global_entity_indices.end(), ghosts.data());
 
-  auto index_map
-      = std::make_shared<common::IndexMap>(mpi_comm, num_local, ghosts, 1);
+  //   auto index_map
+  //      = std::make_shared<common::IndexMap>(mpi_comm, num_local, ghosts, 1);
+
+  std::shared_ptr<common::IndexMap> index_map;
 
   return std::tuple(std::move(global_entity_indices),
                     std::move(shared_entities), num_global, index_map);
