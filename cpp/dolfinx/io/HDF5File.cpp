@@ -212,7 +212,7 @@ la::PETScVector HDF5File::read_vector(MPI_Comm comm,
   {
     range = MPI::local_range(comm, data_shape[0]);
   }
-  Eigen::Array<PetscInt, Eigen::Dynamic, 1> ghosts;
+  Eigen::Array<std::int64_t, Eigen::Dynamic, 1> ghosts;
   la::PETScVector x(comm, range, ghosts, 1);
 
   // Get local range
@@ -1034,9 +1034,10 @@ HDF5File::read(std::shared_ptr<const function::FunctionSpace> V,
           {{cell_range[0], cell_range[1] + 1}});
 
   // Read cell-DOF maps
-  std::vector<PetscInt> input_cell_dofs = HDF5Interface::read_dataset<PetscInt>(
-      _hdf5_file_id, cell_dofs_dataset_name,
-      {{x_cell_dofs.front(), x_cell_dofs.back()}});
+  std::vector<std::int64_t> input_cell_dofs
+      = HDF5Interface::read_dataset<std::int64_t>(
+          _hdf5_file_id, cell_dofs_dataset_name,
+          {{x_cell_dofs.front(), x_cell_dofs.back()}});
 
   la::PETScVector& x = u.vector();
 

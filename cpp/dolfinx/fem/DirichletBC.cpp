@@ -159,8 +159,8 @@ get_remote_bcs2(const common::IndexMap& map0, const common::IndexMap& map1,
   const std::int32_t size_owned1 = map1.size_local();
   std::map<std::int64_t, std::int32_t> global_to_local_blocked0,
       global_to_local_blocked1;
-  const Eigen::Array<PetscInt, Eigen::Dynamic, 1>& ghosts0 = map0.ghosts();
-  const Eigen::Array<PetscInt, Eigen::Dynamic, 1>& ghosts1 = map1.ghosts();
+  const Eigen::Array<std::int64_t, Eigen::Dynamic, 1>& ghosts0 = map0.ghosts();
+  const Eigen::Array<std::int64_t, Eigen::Dynamic, 1>& ghosts1 = map1.ghosts();
   for (Eigen::Index i = 0; i < ghosts0.rows(); ++i)
     global_to_local_blocked0.insert({ghosts0[i], i + size_owned0});
   for (Eigen::Index i = 0; i < ghosts1.rows(); ++i)

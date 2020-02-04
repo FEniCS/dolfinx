@@ -11,7 +11,6 @@
 #include <cstdint>
 #include <dolfinx/common/MPI.h>
 #include <map>
-#include <petscsys.h>
 #include <set>
 #include <vector>
 
@@ -79,7 +78,7 @@ public:
 
   /// Local-to-global map for ghosts (local indexing beyond end of local
   /// range)
-  const Eigen::Array<PetscInt, Eigen::Dynamic, 1>& ghosts() const;
+  const Eigen::Array<std::int64_t, Eigen::Dynamic, 1>& ghosts() const;
 
   /// Compute global indices for array of local indices
   /// @param[in] indices Local indices
@@ -238,7 +237,7 @@ public:
 
 private:
   // Local-to-global map for ghost indices
-  Eigen::Array<PetscInt, Eigen::Dynamic, 1> _ghosts;
+  Eigen::Array<std::int64_t, Eigen::Dynamic, 1> _ghosts;
 
   // Owning neighbour for each ghost index
   Eigen::Array<std::int32_t, Eigen::Dynamic, 1> _ghost_owners;

@@ -380,7 +380,7 @@ void SparsityPattern::assemble()
   assert(_non_local.size() % 2 == 0);
 
   // Get local-to-global for unowned (ghost) blocks
-  const Eigen::Array<PetscInt, Eigen::Dynamic, 1>& local_to_global
+  const Eigen::Array<std::int64_t, Eigen::Dynamic, 1>& local_to_global
       = _index_maps[0]->ghosts();
 
   // Pack off-process row data to send

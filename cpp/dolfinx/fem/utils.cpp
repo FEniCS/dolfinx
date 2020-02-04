@@ -330,7 +330,7 @@ fem::create_vector_block(const std::vector<const common::IndexMap*>& maps)
     const int bs = maps[i]->block_size;
     local_size += maps[i]->size_local() * bs;
 
-    const Eigen::Array<PetscInt, Eigen::Dynamic, 1>& field_ghosts
+    const Eigen::Array<std::int64_t, Eigen::Dynamic, 1>& field_ghosts
         = maps[i]->ghosts();
     for (Eigen::Index j = 0; j < field_ghosts.size(); ++j)
     {

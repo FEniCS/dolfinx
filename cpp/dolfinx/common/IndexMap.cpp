@@ -18,12 +18,8 @@ IndexMap::IndexMap(
         ghosts,
     int block_size)
     : block_size(block_size), _mpi_comm(mpi_comm), _myrank(MPI::rank(mpi_comm)),
-      _ghosts(ghosts.size()), _ghost_owners(ghosts.size())
+      _ghosts(ghosts), _ghost_owners(ghosts.size())
 {
-  // Copy ghosts vector
-  for (int i = 0; i < ghosts.size(); ++i)
-    _ghosts[i] = ghosts[i];
-
   // Calculate offsets
   int mpi_size = -1;
   MPI_Comm_size(mpi_comm, &mpi_size);
@@ -148,7 +144,7 @@ std::int32_t IndexMap::size_local() const
 //-----------------------------------------------------------------------------
 std::int64_t IndexMap::size_global() const { return _all_ranges.back(); }
 //-----------------------------------------------------------------------------
-const Eigen::Array<PetscInt, Eigen::Dynamic, 1>& IndexMap::ghosts() const
+const Eigen::Array<std::int64_t, Eigen::Dynamic, 1>& IndexMap::ghosts() const
 {
   return _ghosts;
 }

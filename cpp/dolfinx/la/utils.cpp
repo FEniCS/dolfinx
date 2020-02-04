@@ -31,12 +31,13 @@
 Vec dolfinx::la::create_petsc_vector(const dolfinx::common::IndexMap& map)
 {
   return dolfinx::la::create_petsc_vector(map.mpi_comm(), map.local_range(),
-                                         map.ghosts(), map.block_size);
+                                          map.ghosts(), map.block_size);
 }
 //-----------------------------------------------------------------------------
 Vec dolfinx::la::create_petsc_vector(
     MPI_Comm comm, std::array<std::int64_t, 2> range,
-    const Eigen::Array<PetscInt, Eigen::Dynamic, 1>& ghost_indices,
+    const Eigen::Ref<const Eigen::Array<std::int64_t, Eigen::Dynamic, 1>>&
+        ghost_indices,
     int block_size)
 {
   PetscErrorCode ierr;
@@ -46,9 +47,12 @@ Vec dolfinx::la::create_petsc_vector(
   const std::size_t local_size = range[1] - range[0];
 
   Vec x;
+  std::vector<PetscInt> _ghost_indices(ghost_indices.rows());
+  for (std::size_t i = 0; i < _ghost_indices.size(); ++i)
+    _ghost_indices[i] = ghost_indices(i);
   ierr = VecCreateGhostBlock(comm, block_size, block_size * local_size,
-                             PETSC_DECIDE, ghost_indices.size(),
-                             ghost_indices.data(), &x);
+                             PETSC_DECIDE, _ghost_indices.size(),
+                             _ghost_indices.data(), &x);
   CHECK_ERROR("VecCreateGhostBlock");
   assert(x);
 
@@ -261,7 +265,7 @@ std::vector<IS> dolfinx::la::create_petsc_index_sets(
 }
 //-----------------------------------------------------------------------------
 void dolfinx::la::petsc_error(int error_code, std::string filename,
-                             std::string petsc_function)
+                              std::string petsc_function)
 {
   // Fetch PETSc error description
   const char* desc;
@@ -381,8 +385,8 @@ dolfinx::la::VecReadWrapper::~VecReadWrapper()
   }
 }
 //-----------------------------------------------------------------------------
-dolfinx::la::VecReadWrapper& dolfinx::la::VecReadWrapper::
-operator=(VecReadWrapper&& w)
+dolfinx::la::VecReadWrapper&
+dolfinx::la::VecReadWrapper::operator=(VecReadWrapper&& w)
 {
   _y = std::exchange(w._y, nullptr);
   _y_local = std::exchange(w._y_local, nullptr);
@@ -405,7 +409,8 @@ void dolfinx::la::VecReadWrapper::restore()
       Eigen::Map<Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1>>(nullptr, 0);
 }
 //-----------------------------------------------------------------------------
-// Mat dolfinx::la::get_local_submatrix(const Mat A, const IS row, const IS col);
+// Mat dolfinx::la::get_local_submatrix(const Mat A, const IS row, const IS
+// col);
 
 // void restore_local_submatrix(const Mat A, const IS row, const IS col, Mat*
 // Asub);
@@ -413,7 +418,7 @@ void dolfinx::la::VecReadWrapper::restore()
 //-----------------------------------------------------------------------------
 std::vector<Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1>>
 dolfinx::la::get_local_vectors(const Vec x,
-                              const std::vector<const common::IndexMap*>& maps)
+                               const std::vector<const common::IndexMap*>& maps)
 {
   // Get ghost offset
   int offset_owned = 0;
