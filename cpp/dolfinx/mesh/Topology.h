@@ -79,6 +79,7 @@ public:
                           const std::vector<std::int64_t>& global_indices);
 
   /// Set the IndexMap for dimension dim
+  /// @warning This experimental and likely to change
   void set_index_map(int dim, std::shared_ptr<const common::IndexMap> index_map);
 
   /// Get the IndexMap for dimension dim
@@ -167,6 +168,7 @@ private:
   // IndexMap to store ghosting for each entity dimension
   std::array<std::shared_ptr<const common::IndexMap>, 4> _index_map;
 
+  // FIXME: Make this a 4x4 array
   // Connectivity for pairs of topological dimensions
   std::vector<std::vector<std::shared_ptr<Connectivity>>> _connectivity;
 }; // namespace mesh
