@@ -152,7 +152,7 @@ DofMap DofMap::extract_sub_dofmap(const std::vector<int>& component,
   return DofMapBuilder::build_submap(*this, component, mesh);
 }
 //-----------------------------------------------------------------------------
-std::pair<std::unique_ptr<DofMap>, std::vector<PetscInt>>
+std::pair<std::unique_ptr<DofMap>, std::vector<std::int32_t>>
 DofMap::collapse(const mesh::Mesh& mesh) const
 {
   assert(element_dof_layout);
@@ -183,7 +183,7 @@ DofMap::collapse(const mesh::Mesh& mesh) const
   std::int32_t size
       = (index_map_new->size_local() + index_map_new->num_ghosts())
         * index_map_new->block_size;
-  std::vector<PetscInt> collapsed_map(size);
+  std::vector<std::int32_t> collapsed_map(size);
   const int tdim = mesh.topology().dim();
   for (std::int64_t c = 0; c < mesh.num_entities(tdim); ++c)
   {
@@ -253,8 +253,8 @@ std::string DofMap::str(bool verbose) const
   return s.str();
 }
 //-----------------------------------------------------------------------------
-Eigen::Array<PetscInt, Eigen::Dynamic, 1> DofMap::dofs(const mesh::Mesh& mesh,
-                                                       std::size_t dim) const
+Eigen::Array<std::int32_t, Eigen::Dynamic, 1>
+DofMap::dofs(const mesh::Mesh& mesh, std::size_t dim) const
 {
   assert(element_dof_layout);
 
@@ -263,11 +263,11 @@ Eigen::Array<PetscInt, Eigen::Dynamic, 1> DofMap::dofs(const mesh::Mesh& mesh,
 
   // Return empty vector if not dofs on requested entity
   if (num_dofs_per_entity == 0)
-    return Eigen::Array<PetscInt, Eigen::Dynamic, 1>();
+    return Eigen::Array<std::int32_t, Eigen::Dynamic, 1>();
 
   // Vector to hold list of dofs
-  Eigen::Array<PetscInt, Eigen::Dynamic, 1> dof_list(mesh.num_entities(dim)
-                                                     * num_dofs_per_entity);
+  Eigen::Array<std::int32_t, Eigen::Dynamic, 1> dof_list(mesh.num_entities(dim)
+                                                         * num_dofs_per_entity);
 
   // Build local dofs for each entity of dimension dim
   std::vector<Eigen::Array<int, Eigen::Dynamic, 1>> entity_dofs_local;

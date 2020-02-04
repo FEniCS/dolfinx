@@ -162,7 +162,7 @@ int main(int argc, char* argv[])
   // Define boundary condition
   auto u0 = std::make_shared<function::Function>(V);
 
-  const Eigen::Array<PetscInt, Eigen::Dynamic, 1> bdofs
+  const Eigen::Array<std::int32_t, Eigen::Dynamic, 1> bdofs
       = fem::locate_dofs_geometrical(*V, [](auto& x) {
           return (x.row(0) < DBL_EPSILON or x.row(0) > 1.0 - DBL_EPSILON);
         });
