@@ -59,16 +59,6 @@ get_remote_bcs1(const common::IndexMap& map,
   const std::vector<std::int64_t> dofs_global
       = map.local_to_global(dofs_local, false);
 
-  // const int bs = map.block_size;
-  // std::vector<std::int64_t> dofs_global;
-  // dofs_global.reserve(dofs_local.size());
-  // for (auto dof : dofs_local)
-  // {
-  //   const int index_block = dof / bs;
-  //   const int pos = dof % bs;
-  //   dofs_global.push_back(bs * map.local_to_global(index_block) + pos);
-  // }
-
   // Compute displacements for data to receive. Last entry has total
   // number of received items.
   // Note: std::inclusive_scan would be better, but gcc 7.4.0 (Ubuntu
@@ -87,14 +77,6 @@ get_remote_bcs1(const common::IndexMap& map,
   MPI_Neighbor_allgatherv(dofs_global.data(), dofs_global.size(), MPI_INT64_T,
                           dofs_received.data(), num_dofs_recv.data(),
                           disp.data(), MPI_INT64_T, comm);
-
-  // Build global-to-local map for ghost indices (blocks) on this
-  // process
-  const std::int32_t size_owned = map.size_local();
-  std::map<std::int64_t, std::int32_t> global_to_local_blocked;
-  const Eigen::Array<PetscInt, Eigen::Dynamic, 1>& ghosts = map.ghosts();
-  for (Eigen::Index i = 0; i < ghosts.rows(); ++i)
-    global_to_local_blocked.insert({ghosts[i], i + size_owned});
 
   // Build vector of local dof indicies that have been marked by another
   // process
