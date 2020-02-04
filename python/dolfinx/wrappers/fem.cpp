@@ -226,6 +226,7 @@ void fem(py::module& m)
       .def_readonly("index_map", &dolfinx::fem::DofMap::index_map)
       .def_readonly("dof_layout", &dolfinx::fem::DofMap::element_dof_layout)
       .def("cell_dofs", &dolfinx::fem::DofMap::cell_dofs)
+      .def("dofs", &dolfinx::fem::DofMap::dofs)
       .def("set", &dolfinx::fem::DofMap::set)
       .def("dof_array", &dolfinx::fem::DofMap::dof_array);
 
@@ -252,6 +253,7 @@ void fem(py::module& m)
                     const Eigen::Ref<
                         const Eigen::Array<PetscInt, Eigen::Dynamic, 1>>&>(),
            py::arg("g"), py::arg("dofs"))
+      .def_property_readonly("dof_indices", &dolfinx::fem::DirichletBC::dofs)
       .def_property_readonly("function_space",
                              &dolfinx::fem::DirichletBC::function_space)
       .def_property_readonly("value", &dolfinx::fem::DirichletBC::value);

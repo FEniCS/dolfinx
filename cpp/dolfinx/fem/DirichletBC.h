@@ -147,6 +147,10 @@ public:
   /// @return The boundary values Function
   std::shared_ptr<const function::Function> value() const;
 
+  /// Get array of dof indices to which a Dirichlet boundary condition
+  /// is applied. The array is sorted and may contain ghost entries.
+  const Eigen::Array<std::int32_t, Eigen::Dynamic, 2>& dofs() const;
+
   /// Get array of dof indices owned by this process to which a
   /// Dirichlet BC is applied. The array is sorted and does not contain
   /// ghost entries.
@@ -185,7 +189,7 @@ private:
   std::shared_ptr<const function::Function> _g;
 
   // Indices of dofs in _function_space and in the space of _g
-  Eigen::Array<PetscInt, Eigen::Dynamic, 2> _dofs;
+  Eigen::Array<std::int32_t, Eigen::Dynamic, 2> _dofs;
 
   // The first _owned_indices in _dofs are owned by this process
   int _owned_indices = -1;

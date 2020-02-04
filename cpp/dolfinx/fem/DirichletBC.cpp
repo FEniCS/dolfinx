@@ -482,6 +482,11 @@ std::shared_ptr<const function::Function> DirichletBC::value() const
   return _g;
 }
 //-----------------------------------------------------------------------------
+const Eigen::Array<std::int32_t, Eigen::Dynamic, 2>& DirichletBC::dofs() const
+{
+  return _dofs;
+}
+//-----------------------------------------------------------------------------
 const Eigen::Ref<const Eigen::Array<std::int32_t, Eigen::Dynamic, 2>>
 DirichletBC::dofs_owned() const
 {
