@@ -220,7 +220,7 @@ get_remote_bcs2(const common::IndexMap& map0, const common::IndexMap& map1,
   return dofs;
 }
 //-----------------------------------------------------------------------------
-Eigen::Array<PetscInt, Eigen::Dynamic, 2> _locate_dofs_topological(
+Eigen::Array<std::int32_t, Eigen::Dynamic, 2> _locate_dofs_topological(
     const std::vector<std::reference_wrapper<function::FunctionSpace>>& V,
     const int dim, const Eigen::Ref<const Eigen::ArrayXi>& entities,
     bool remote)
@@ -268,7 +268,7 @@ Eigen::Array<PetscInt, Eigen::Dynamic, 2> _locate_dofs_topological(
   }
 
   // Iterate over marked facets
-  std::vector<std::array<PetscInt, 2>> bc_dofs;
+  std::vector<std::array<std::int32_t, 2>> bc_dofs;
   for (Eigen::Index e = 0; e < entities.rows(); ++e)
   {
     // Create facet and attached cell
@@ -311,7 +311,7 @@ Eigen::Array<PetscInt, Eigen::Dynamic, 2> _locate_dofs_topological(
     bc_dofs.erase(std::unique(bc_dofs.begin(), bc_dofs.end()), bc_dofs.end());
   }
 
-  Eigen::Array<PetscInt, Eigen::Dynamic, 2> dofs(bc_dofs.size(), 2);
+  Eigen::Array<std::int32_t, Eigen::Dynamic, 2> dofs(bc_dofs.size(), 2);
   for (std::size_t i = 0; i < bc_dofs.size(); ++i)
   {
     dofs(i, 0) = bc_dofs[i][0];
@@ -321,7 +321,7 @@ Eigen::Array<PetscInt, Eigen::Dynamic, 2> _locate_dofs_topological(
   return dofs;
 }
 //-----------------------------------------------------------------------------
-Eigen::Array<PetscInt, Eigen::Dynamic, 1>
+Eigen::Array<std::int32_t, Eigen::Dynamic, 1>
 _locate_dofs_topological(const function::FunctionSpace& V, const int entity_dim,
                          const Eigen::Ref<const Eigen::ArrayXi>& entities,
                          bool remote)
@@ -388,8 +388,8 @@ _locate_dofs_topological(const function::FunctionSpace& V, const int entity_dim,
     dofs.erase(std::unique(dofs.begin(), dofs.end()), dofs.end());
   }
 
-  // Copy to array of PetscInt type
-  Eigen::Array<PetscInt, Eigen::Dynamic, 1> _dofs
+  // Copy to Eigen array
+  Eigen::Array<std::int32_t, Eigen::Dynamic, 1> _dofs
       = Eigen::Map<Eigen::Array<std::int32_t, Eigen::Dynamic, 1>>(dofs.data(),
                                                                   dofs.size());
 
@@ -397,7 +397,7 @@ _locate_dofs_topological(const function::FunctionSpace& V, const int entity_dim,
 }
 } // namespace
 //-----------------------------------------------------------------------------
-Eigen::Array<PetscInt, Eigen::Dynamic, Eigen::Dynamic>
+Eigen::Array<std::int32_t, Eigen::Dynamic, Eigen::Dynamic>
 fem::locate_dofs_topological(
     const std::vector<std::reference_wrapper<function::FunctionSpace>>& V,
     const int dim, const Eigen::Ref<const Eigen::ArrayXi>& entities,
@@ -411,7 +411,7 @@ fem::locate_dofs_topological(
     throw std::runtime_error("Expected only 1 or 2 function spaces.");
 }
 //-----------------------------------------------------------------------------
-Eigen::Array<PetscInt, Eigen::Dynamic, 1>
+Eigen::Array<std::int32_t, Eigen::Dynamic, 1>
 fem::locate_dofs_geometrical(const function::FunctionSpace& V,
                              marking_function marker)
 {
@@ -427,7 +427,7 @@ fem::locate_dofs_geometrical(const function::FunctionSpace& V,
   const Eigen::Array<bool, Eigen::Dynamic, 1> marked_dofs
       = marker(dof_coordinates);
 
-  std::vector<PetscInt> dofs;
+  std::vector<std::int32_t> dofs;
   dofs.reserve(marked_dofs.count());
   for (Eigen::Index i = 0; i < marked_dofs.rows(); ++i)
   {
@@ -435,14 +435,15 @@ fem::locate_dofs_geometrical(const function::FunctionSpace& V,
       dofs.push_back(i);
   }
 
-  return Eigen::Map<Eigen::Array<PetscInt, Eigen::Dynamic, 1>>(dofs.data(),
-                                                               dofs.size());
+  return Eigen::Map<Eigen::Array<std::int32_t, Eigen::Dynamic, 1>>(dofs.data(),
+                                                                   dofs.size());
 }
 //-----------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
 DirichletBC::DirichletBC(
     std::shared_ptr<const function::Function> g,
-    const Eigen::Ref<const Eigen::Array<PetscInt, Eigen::Dynamic, 1>>& V_dofs)
+    const Eigen::Ref<const Eigen::Array<std::int32_t, Eigen::Dynamic, 1>>&
+        V_dofs)
     : _function_space(g->function_space()), _g(g), _dofs(V_dofs.rows(), 2)
 {
   // Stack indices as columns, fits column-major _dofs layout
@@ -458,7 +459,8 @@ DirichletBC::DirichletBC(
 //-----------------------------------------------------------------------------
 DirichletBC::DirichletBC(
     std::shared_ptr<const function::Function> g,
-    const Eigen::Ref<const Eigen::Array<PetscInt, Eigen::Dynamic, 2>>& V_g_dofs,
+    const Eigen::Ref<const Eigen::Array<std::int32_t, Eigen::Dynamic, 2>>&
+        V_g_dofs,
     std::shared_ptr<const function::FunctionSpace> V)
     : _function_space(V), _g(g), _dofs(V_g_dofs)
 {
@@ -480,14 +482,12 @@ std::shared_ptr<const function::Function> DirichletBC::value() const
   return _g;
 }
 //-----------------------------------------------------------------------------
-Eigen::Array<PetscInt, Eigen::Dynamic, 2>& DirichletBC::dofs() { return _dofs; }
-//-----------------------------------------------------------------------------
-const Eigen::Ref<const Eigen::Array<PetscInt, Eigen::Dynamic, 2>>
+const Eigen::Ref<const Eigen::Array<std::int32_t, Eigen::Dynamic, 2>>
 DirichletBC::dofs_owned() const
 {
   return _dofs.block<Eigen::Dynamic, 2>(0, 0, _owned_indices, 2);
 }
-//-----------------------------------------------------------------------------
+// -----------------------------------------------------------------------------
 void DirichletBC::set(
     Eigen::Ref<Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1>> x,
     double scale) const
