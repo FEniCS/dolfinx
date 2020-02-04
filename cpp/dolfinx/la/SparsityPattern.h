@@ -82,7 +82,7 @@ public:
   std::array<std::int64_t, 2> local_range(int dim) const;
 
   /// Return index map for dimension dim
-  std::shared_ptr<const common::IndexMap> index_map(std::size_t dim) const;
+  std::shared_ptr<const common::IndexMap> index_map(int dim) const;
 
   /// Return number of local nonzeros
   std::size_t num_nonzeros() const;

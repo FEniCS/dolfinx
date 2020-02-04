@@ -75,7 +75,7 @@ SparsityPattern::SparsityPattern(
     const int bs0 = patterns[row][0]->_index_maps[0]->block_size;
 
     // FIXME: Issue somewhere here when block size > 1
-    assert(bs0 * row_size == patterns[row][0]->_diagonal.size());
+    assert(bs0 * row_size == (std::int32_t) patterns[row][0]->_diagonal.size());
     // if (!patterns[row][0]->_diagonal.empty())
     // {
     //   if (row_size != patterns[row][0]->_diagonal.size())
@@ -120,7 +120,7 @@ SparsityPattern::SparsityPattern(
         for (std::size_t c : edges0)
         {
           // Get new index
-          std::size_t c_new = fem::get_global_index(cmaps, col, c);
+          std::int64_t c_new = fem::get_global_index(cmaps, col, c);
           this->_diagonal[k + row_local_offset].insert(c_new);
         }
 
@@ -131,7 +131,7 @@ SparsityPattern::SparsityPattern(
           for (std::size_t c : edges1)
           {
             // Get new index
-            std::size_t c_new = fem::get_global_index(cmaps, col, c);
+            std::int64_t c_new = fem::get_global_index(cmaps, col, c);
             this->_off_diagonal[k + row_local_offset].insert(c_new);
           }
           // std::transform(edges1.begin(), edges1.end(), edges1.begin(),
@@ -221,10 +221,10 @@ void SparsityPattern::insert_entries(
   const common::IndexMap& index_map0 = *_index_maps[0];
   const common::IndexMap& index_map1 = *_index_maps[1];
 
-  std::size_t bs0 = index_map0.block_size;
+  const int bs0 = index_map0.block_size;
   const std::size_t local_size0 = bs0 * index_map0.size_local();
 
-  std::size_t bs1 = index_map1.block_size;
+  const int bs1 = index_map1.block_size;
   const auto local_range1 = index_map1.local_range();
 
   // Programmers' note:
@@ -301,7 +301,7 @@ std::array<std::int64_t, 2> SparsityPattern::local_range(int dim) const
 }
 //-----------------------------------------------------------------------------
 std::shared_ptr<const common::IndexMap>
-SparsityPattern::index_map(std::size_t dim) const
+SparsityPattern::index_map(int dim) const
 {
   assert(dim < 2);
   return _index_maps[dim];
