@@ -308,10 +308,17 @@ compute_entity_numbering(const Mesh& mesh, int d)
   std::copy(global_entity_indices.begin() + num_local,
             global_entity_indices.end(), ghosts.data());
 
-  //   auto index_map
-  //      = std::make_shared<common::IndexMap>(mpi_comm, num_local, ghosts, 1);
+  std::stringstream s;
 
-  std::shared_ptr<common::IndexMap> index_map;
+  s << mpi_rank << " local range = " << local_offset << ", "
+    << local_offset + num_local << " ghost = [" << ghosts.transpose() << "]\n";
+
+  for (std::size_t i = 0; i < global_entity_indices.size(); ++i)
+    s << i << " = " << global_entity_indices[i] << "\n";
+  std::cout << s.str();
+
+  auto index_map
+      = std::make_shared<common::IndexMap>(mpi_comm, num_local, ghosts, 1);
 
   return std::tuple(std::move(global_entity_indices),
                     std::move(shared_entities), num_global, index_map);
