@@ -1,4 +1,5 @@
-// Copyright (C) 2011-2013 Anders Logg and Garth N. Wells
+// Copyright (C) 2011-2020 Anders Logg, Garth N. Wells, Michal Habera and
+// Abhinav Gupta
 //
 // This file is part of DOLFINX (https://www.fenicsproject.org)
 //
@@ -177,9 +178,16 @@ MeshValueCollection<T>::MeshValueCollection(
     const Eigen::Ref<const Eigen::Array<T, 1, Eigen::Dynamic, Eigen::RowMajor>>&
         values_data)
     : _mesh(mesh), _dim(dim)
-{ 
-  // Ensure the mesh dimension is initialised. 
-  // If the mesh is created from arrays, entities 
+{
+
+  if (cells.rows() != values_data.cols())
+  {
+    throw std::runtime_error(
+        "Not matching number of mesh entities and data attached to it.");
+  }
+
+  // Ensure the mesh dimension is initialised.
+  // If the mesh is created from arrays, entities
   // of all dimesions are not initialized.
   _mesh->create_entities(dim);
 
@@ -228,15 +236,29 @@ MeshValueCollection<T>::MeshValueCollection(
     assert(_mesh->topology().connectivity(_dim, D));
     const Connectivity& connectivity = *_mesh->topology().connectivity(_dim, D);
 
+    // Get cell type for entity on which the MVC lives
+    const mesh::CellType entity_cell_type
+        = mesh::cell_entity_type(_mesh->cell_type(), _dim);
+
+    // Number of nodes per entity is deduced from the size
+    // of provided entity topology
+    const int num_nodes_per_entity = cells.cols();
+
+    // Fetch nodes-to-vertices mapping for the case of higher order
+    // meshes
+    const std::vector<int> nodes_to_verts
+        = mesh::cell_vertex_indices(entity_cell_type, num_nodes_per_entity);
+
     for (Eigen::Index j = 0; j < values_data.cols(); ++j)
     {
-      // Find the cell
-      v.clear();
+      // Apply node to vertices mapping, this throws away
+      // nodes read from the file
       for (int i = 0; i < num_vertices_per_entity; ++i)
-        v.push_back(cells(j, i));
+        v[i] = cells(j, nodes_to_verts[i]);
 
       std::sort(v.begin(), v.end());
 
+      // Find mesh entity given its vertex indices
       auto map_it = entity_map.find(v);
       if (map_it == entity_map.end())
       {
