@@ -115,20 +115,30 @@ get_remote_bcs2(const common::IndexMap& map0, const common::IndexMap& map1,
   MPI_Neighbor_allgather(&num_dofs, 1, MPI_INT, num_dofs_recv.data(), 1,
                          MPI_INT, comm0);
 
+  std::vector<std::int32_t> dofs_local0(dofs_local.size()),
+      dofs_local1(dofs_local.size());
+  for (std::size_t i = 0; i < dofs_local.size(); ++i)
+  {
+    dofs_local0[i] = dofs_local[i][0];
+    dofs_local1[i] = dofs_local[i][1];
+  }
+
   // NOTE: we consider only dofs that we know are shared
   // Build array of global indices of dofs
-  const int bs0 = map0.block_size;
-  const int bs1 = map1.block_size;
+  std::vector<std::int64_t> dofs_global0
+      = map0.local_to_global(dofs_local0, false);
+  std::vector<std::int64_t> dofs_global1
+      = map1.local_to_global(dofs_local1, false);
+  assert(dofs_global0.size() == dofs_global1.size());
+
+  // NOTE: we consider only dofs that we know are shared
+  // Build array of global indices of dofs
   std::vector<std::int64_t> dofs_global;
-  dofs_global.reserve(dofs_local.size());
-  for (auto dof : dofs_local)
+  dofs_global.reserve(2 * dofs_local.size());
+  for (std::size_t i = 0; i < dofs_global0.size(); ++i)
   {
-    const int index_block0 = dof[0] / bs0;
-    const int pos0 = dof[0] % bs0;
-    const int index_block1 = dof[1] / bs1;
-    const int pos1 = dof[1] % bs1;
-    dofs_global.push_back(bs0 * map0.local_to_global(index_block0) + pos0);
-    dofs_global.push_back(bs1 * map1.local_to_global(index_block1) + pos1);
+    dofs_global.push_back(dofs_global0[i]);
+    dofs_global.push_back(dofs_global1[i]);
   }
 
   // Compute displacements for data to receive. Last entry has total
@@ -152,6 +162,9 @@ get_remote_bcs2(const common::IndexMap& map0, const common::IndexMap& map1,
   MPI_Neighbor_allgatherv(dofs_global.data(), dofs_global.size(), MPI_INT64_T,
                           dofs_received.data(), num_dofs_recv.data(),
                           disp.data(), MPI_INT64_T, comm0);
+
+  const int bs0 = map0.block_size;
+  const int bs1 = map1.block_size;
 
   // Build global-to-local map for ghost indices (blocks) on this
   // process
