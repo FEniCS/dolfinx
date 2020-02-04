@@ -55,10 +55,11 @@ public:
   ///
   /// @param[in] mesh The mesh associated with the collection.
   /// @param[in] dim The mesh entity dimension for the mesh value collection.
-  /// @param[in] cells 
-  /// @param    values_data (std::vector<T>)
-  ///         Array of marker corresponding to each cell. This must be
-  ///         same size as the number of rows in cells.
+  /// @param[in] cells An array describing topology of marked mesh entities.
+  ///                  Use parallel-global vertex indices.
+  /// @param[in] values_data An array of values attached to marked mesh
+  ///                        entities. Size of this array must agree with
+  ///                        number of columns in `cells`.
   MeshValueCollection(
       std::shared_ptr<const Mesh> mesh, std::size_t dim,
       const Eigen::Ref<const Eigen::Array<T, Eigen::Dynamic, Eigen::Dynamic,
