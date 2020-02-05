@@ -31,6 +31,31 @@ using namespace dolfinx::mesh;
 namespace
 {
 
+// Takes an Eigen::Array and obtains the sort permutation to reorder the
+// rows in ascending order. Each row must be sorted beforehand.
+std::vector<int> sort_by_perm(
+    const Eigen::Ref<const Eigen::Array<std::int32_t, Eigen::Dynamic,
+                                        Eigen::Dynamic, Eigen::RowMajor>>&
+        arr_data)
+{
+  // Sort an Eigen::Array by creating a permutation vector
+  std::vector<int> index(arr_data.rows());
+  std::iota(index.begin(), index.end(), 0);
+  const int cols = arr_data.cols();
+
+  // Lambda with capture for sort comparison
+  const auto cmp = [&arr_data, &cols](int a, int b) {
+    const auto row_a = arr_data.row(a).data();
+    const auto row_b = arr_data.row(b).data();
+    return std::lexicographical_compare(row_a, row_a + cols, row_b,
+                                        row_b + cols);
+  };
+
+  std::sort(index.begin(), index.end(), cmp);
+  return index;
+}
+//-----------------------------------------------------------------------------
+
 // cell-to-entity (tdim, dim). Ths functions builds a list of all
 // entities of Compute mesh entities of given topological dimension, and
 // connectivity dimension dim for every cell, keyed by the sorted lists
@@ -46,6 +71,7 @@ namespace
 // The function is templated over the number of vertices that make up an
 // entity of dimension dim. This avoid dynamic memory allocations,
 // yielding significant performance improvements
+
 template <int N>
 std::tuple<std::shared_ptr<Connectivity>, std::shared_ptr<Connectivity>,
            std::int32_t>
@@ -212,6 +238,109 @@ compute_entities_by_key_matching(const Mesh& mesh, int dim)
 
   return {ce, ev, num_nonghost_entities};
 }
+
+template <int N>
+std::tuple<std::shared_ptr<Connectivity>, std::shared_ptr<Connectivity>,
+           std::int32_t>
+compute_entities_by_key_matching_new(const Mesh& mesh, int dim)
+{
+  if (dim == 0)
+  {
+    throw std::runtime_error(
+        "Cannot create vertices for topology. Should already exist.");
+  }
+
+  // Get mesh topology and connectivity
+  const Topology& topology = mesh.topology();
+  const int tdim = topology.dim();
+
+  // Check if entities have already been computed
+  if (topology.connectivity(dim, 0))
+  {
+    // Check that we have cell-entity connectivity
+    if (!topology.connectivity(tdim, dim))
+      throw std::runtime_error("Missing cell-entity connectivity");
+
+    return {nullptr, nullptr, topology.size(dim)};
+  }
+
+  // Start timer
+  common::Timer timer("Compute entities of dim = " + std::to_string(dim));
+
+  // Initialize local array of entities
+  const std::int8_t num_entities
+      = mesh::cell_num_entities(mesh.cell_type(), dim);
+  const int num_vertices
+      = mesh::num_cell_vertices(mesh::cell_entity_type(mesh.cell_type(), dim));
+
+  // Create map from cell vertices to entity vertices
+  Eigen::Array<int, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor> e_vertices
+      = mesh::get_entity_vertices(mesh.cell_type(), dim);
+
+  assert(N == num_vertices);
+
+  // List of vertices for each entity in each cell.
+  Eigen::Array<std::int32_t, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
+      entity_list(mesh.num_entities(tdim) * num_entities, num_vertices);
+
+  int k = 0;
+  for (auto& c : MeshRange(mesh, tdim, MeshRangeType::ALL))
+  {
+    // Get vertices from cell
+    const std::int32_t* vertices = c.entities(0);
+    assert(vertices);
+
+    // Iterate over entities of cell
+    for (int i = 0; i < num_entities; ++i)
+    {
+      // Get entity vertices
+      for (int j = 0; j < num_vertices; ++j)
+        entity_list(k, j) = vertices[e_vertices(i, j)];
+
+      ++k;
+    }
+  }
+  assert(k == entity_list.rows());
+
+  std::vector<std::int32_t> entity_index(entity_list.rows());
+  std::int32_t entity_count = 0;
+
+  {
+    // Copy list and sort vertices of each entity into order
+    Eigen::Array<std::int32_t, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
+        entity_list_sorted = entity_list;
+    for (int i = 0; i < entity_list_sorted.rows(); ++i)
+      std::sort(entity_list_sorted.row(i).data(),
+                entity_list_sorted.row(i).data() + num_vertices);
+
+    // Sort the list and label (first pass)
+    std::vector<std::int32_t> sort_order = sort_by_perm(entity_list_sorted);
+    std::int32_t last = sort_order[0];
+    entity_index[last] = 0;
+    for (std::size_t i = 1; i < sort_order.size(); ++i)
+    {
+      std::int32_t j = sort_order[i];
+      if ((entity_list_sorted.row(j) != entity_list_sorted.row(last)).any())
+        ++entity_count;
+      entity_index[j] = entity_count;
+      last = j;
+    }
+  }
+
+  Eigen::Array<std::int32_t, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
+      connectivity_ce(mesh.num_entities(tdim), num_entities);
+  std::copy(entity_index.begin(), entity_index.end(), connectivity_ce.data());
+
+  // Cell-entity connectivity
+  auto ce = std::make_shared<Connectivity>(connectivity_ce);
+
+  // Entity-vertex connectivity
+  Eigen::Array<std::int32_t, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
+      connectivity_ev(entity_count, num_vertices);
+  auto ev = std::make_shared<Connectivity>(connectivity_ev);
+
+  return {ce, ev, entity_count};
+}
 //-----------------------------------------------------------------------------
 // Compute connectivity from transpose
 Connectivity compute_from_transpose(const Mesh& mesh, int d0, int d1)
@@ -349,16 +478,16 @@ void TopologyComputation::compute_entities(Mesh& mesh, int dim)
   switch (num_entity_vertices)
   {
   case 1:
-    data = compute_entities_by_key_matching<1>(mesh, dim);
+    data = compute_entities_by_key_matching_new<1>(mesh, dim);
     break;
   case 2:
-    data = compute_entities_by_key_matching<2>(mesh, dim);
+    data = compute_entities_by_key_matching_new<2>(mesh, dim);
     break;
   case 3:
-    data = compute_entities_by_key_matching<3>(mesh, dim);
+    data = compute_entities_by_key_matching_new<3>(mesh, dim);
     break;
   case 4:
-    data = compute_entities_by_key_matching<4>(mesh, dim);
+    data = compute_entities_by_key_matching_new<4>(mesh, dim);
     break;
   default:
     throw std::runtime_error("Topology computation of entities with "
