@@ -171,7 +171,7 @@ void mesh(py::module& m)
            [](const dolfinx::mesh::Mesh& self) {
              const int tdim = self.topology().dim();
               auto map = self.topology().index_map(tdim);
-            assert(map);
+              assert(map);
              const std::int32_t size =map->size_local() + map->num_ghosts();
              return py::array(
                  {size,
