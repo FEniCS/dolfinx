@@ -385,16 +385,28 @@ void DistributedMeshTools::number_entities(const Mesh& mesh, int d)
 
   if (dolfinx::MPI::size(mesh.mpi_comm()) == 1)
   {
+    // const std::int32_t num_new_entities = mesh.create_entities(d);
+    if (d != 0 and !mesh.topology().connectivity(d, 0))
+    {
+      throw std::runtime_error("Cannot globally number mesh entities. Local "
+                               "entities have not been computed.");
+    }
+
     // Set global entity numbers in mesh
-    mesh.create_entities(d);
+    std::cout << "** A: global indices" << std::endl;
     std::vector<std::int64_t> global_indices(mesh.num_entities(d), 0);
     std::iota(global_indices.begin(), global_indices.end(), 0);
     _mesh.topology().set_global_indices(d, global_indices);
+
+    std::cout << "** B: global indices" << std::endl;
     // Set IndexMap
     Eigen::Array<std::int64_t, Eigen::Dynamic, 1> ghosts(0);
     auto index_map = std::make_shared<common::IndexMap>(
         mesh.mpi_comm(), mesh.num_entities(d), ghosts, 1);
+    std::cout << "** C: global indices" << std::endl;
+
     _mesh.topology().set_index_map(d, index_map);
+    std::cout << "** D: global indices" << std::endl;
     return;
   }
 

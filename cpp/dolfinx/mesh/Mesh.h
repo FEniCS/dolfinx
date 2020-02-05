@@ -145,8 +145,9 @@ public:
 
   /// Create entities of given topological dimension.
   /// @param[in] dim Topological dimension
-  /// @return Number of created entities
-  std::size_t create_entities(int dim) const;
+  /// @return Number of newly created entities, returns -1 if entities
+  ///   already existed
+  std::int32_t create_entities(int dim) const;
 
   /// Create connectivity between given pair of dimensions, d0 -> d1
   /// @param[in] d0 Topological dimension

@@ -444,7 +444,7 @@ const Geometry& Mesh::geometry() const
   return *_geometry;
 }
 //-----------------------------------------------------------------------------
-std::size_t Mesh::create_entities(int dim) const
+std::int32_t Mesh::create_entities(int dim) const
 {
   // This function is obviously not const since it may potentially
   // compute new connectivity. However, in a sense all connectivity of a
@@ -456,25 +456,19 @@ std::size_t Mesh::create_entities(int dim) const
 
   // Skip if already computed (vertices (dim=0) should always exist)
   if (_topology->connectivity(dim, 0) or dim == 0)
-  {
-    auto map = _topology->index_map(dim);
-    assert(map);
-    assert(map->block_size == 1);
-    return map->size_local() + map->num_ghosts();
-  }
+    return -1;
 
   // Compute connectivity to vertices
   Mesh* mesh = const_cast<Mesh*>(this);
 
   // Create local entities
-  TopologyComputation::compute_entities(*mesh, dim);
+  const std::int32_t num_new_entities
+      = TopologyComputation::compute_entities(*mesh, dim);
+
   // Number globally
   DistributedMeshTools::number_entities(*mesh, dim);
 
-  auto map = _topology->index_map(dim);
-  assert(map);
-  assert(map->block_size == 1);
-  return map->size_local() + map->num_ghosts();
+  return num_new_entities;
 }
 //-----------------------------------------------------------------------------
 void Mesh::create_connectivity(std::size_t d0, std::size_t d1) const

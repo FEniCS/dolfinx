@@ -193,10 +193,7 @@ compute_entities_by_key_matching(const Mesh& mesh, int dim)
     if (!topology.connectivity(tdim, dim))
       throw std::runtime_error("Missing cell-entity connectivity");
 
-    auto map = topology.index_map(dim);
-    assert(map);
-    const int size = map->size_local() + map->num_ghosts();
-    return {nullptr, nullptr, size};
+    return {nullptr, nullptr, -1};
   }
 
   // Start timer
@@ -392,7 +389,7 @@ Connectivity compute_from_map(const Mesh& mesh, int d0, int d1)
 } // namespace
 
 //-----------------------------------------------------------------------------
-void TopologyComputation::compute_entities(Mesh& mesh, int dim)
+std::int32_t TopologyComputation::compute_entities(Mesh& mesh, int dim)
 {
   LOG(INFO) << "Computing mesh entities of dimension " << dim;
 
@@ -401,7 +398,7 @@ void TopologyComputation::compute_entities(Mesh& mesh, int dim)
 
   // Vertices must always exist
   if (dim == 0)
-    return;
+    return -1;
 
   if (topology.connectivity(dim, 0))
   {
@@ -413,7 +410,7 @@ void TopologyComputation::compute_entities(Mesh& mesh, int dim)
           "dimension "
           + std::to_string(dim) + " exist but connectivity is missing.");
     }
-    return;
+    return -1;
   }
 
   std::tuple<std::shared_ptr<Connectivity>, std::shared_ptr<Connectivity>,
@@ -427,6 +424,8 @@ void TopologyComputation::compute_entities(Mesh& mesh, int dim)
   // Set entity-vertex connectivity
   if (std::get<1>(data))
     topology.set_connectivity(std::get<1>(data), dim, 0);
+
+  return std::get<2>(data);
 }
 //-----------------------------------------------------------------------------
 void TopologyComputation::compute_connectivity(Mesh& mesh, int d0, int d1)
