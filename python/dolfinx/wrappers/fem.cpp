@@ -24,6 +24,7 @@
 #include <dolfinx/function/FunctionSpace.h>
 #include <dolfinx/la/PETScMatrix.h>
 #include <dolfinx/la/PETScVector.h>
+#include <dolfinx/la/SparsityPattern.h>
 #include <dolfinx/mesh/Mesh.h>
 #include <dolfinx/mesh/MeshFunction.h>
 #include <memory>
