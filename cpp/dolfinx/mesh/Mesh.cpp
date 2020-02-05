@@ -363,6 +363,12 @@ Mesh::Mesh(
   _topology->set_entity_owner(0, vertex_owner);
 
   // Initialise cell topology
+  Eigen::Array<std::int64_t, Eigen::Dynamic, 1> cell_ghosts(num_ghost_cells);
+  assert(num_ghost_cells == 0); // Ghost cells not enabled at the moment
+  auto cell_index_map = std::make_shared<common::IndexMap>(
+      _mpi_comm.comm(), num_cells_local, cell_ghosts, 1);
+  _topology->set_index_map(tdim, cell_index_map);
+
   _topology->set_num_entities_global(tdim, num_cells_global);
   _topology->init_ghost(tdim, num_cells_local);
 
