@@ -15,6 +15,7 @@
 #include <algorithm>
 #include <boost/unordered_map.hpp>
 #include <cstdint>
+#include <dolfinx/common/MPI.h>
 #include <dolfinx/common/Timer.h>
 #include <dolfinx/common/log.h>
 #include <dolfinx/common/utils.h>
@@ -33,10 +34,10 @@ namespace
 
 // Takes an Eigen::Array and obtains the sort permutation to reorder the
 // rows in ascending order. Each row must be sorted beforehand.
+template <typename T>
 std::vector<int> sort_by_perm(
-    const Eigen::Ref<const Eigen::Array<std::int32_t, Eigen::Dynamic,
-                                        Eigen::Dynamic, Eigen::RowMajor>>&
-        arr_data)
+    const Eigen::Ref<const Eigen::Array<T, Eigen::Dynamic, Eigen::Dynamic,
+                                        Eigen::RowMajor>>& arr_data)
 {
   // Sort an Eigen::Array by creating a permutation vector
   std::vector<int> index(arr_data.rows());
@@ -45,8 +46,8 @@ std::vector<int> sort_by_perm(
 
   // Lambda with capture for sort comparison
   const auto cmp = [&arr_data, &cols](int a, int b) {
-    const auto row_a = arr_data.row(a).data();
-    const auto row_b = arr_data.row(b).data();
+    const T* row_a = arr_data.row(a).data();
+    const T* row_b = arr_data.row(b).data();
     return std::lexicographical_compare(row_a, row_a + cols, row_b,
                                         row_b + cols);
   };
@@ -55,190 +56,6 @@ std::vector<int> sort_by_perm(
   return index;
 }
 //-----------------------------------------------------------------------------
-
-// cell-to-entity (tdim, dim). Ths functions builds a list of all
-// entities of Compute mesh entities of given topological dimension, and
-// connectivity dimension dim for every cell, keyed by the sorted lists
-// of vertex indices that make up the entity. Also attached is whether
-// or nor the entity is a ghost, the local entity index (relative to the
-// generating cell) and the generating cell index. This list is then
-// sorted, with matching keys corresponding to a single entity. The
-// entities are numbered such that ghost entities come after al regular
-// entities.
-//
-// Returns the number of entities
-//
-// The function is templated over the number of vertices that make up an
-// entity of dimension dim. This avoid dynamic memory allocations,
-// yielding significant performance improvements
-
-template <int N>
-std::tuple<std::shared_ptr<Connectivity>, std::shared_ptr<Connectivity>,
-           std::int32_t>
-compute_entities_by_key_matching(const Mesh& mesh, int dim)
-{
-  if (dim == 0)
-  {
-    throw std::runtime_error(
-        "Cannot create vertices fo topology. Should already exist.");
-  }
-
-  // Get mesh topology and connectivity
-  const Topology& topology = mesh.topology();
-  const int tdim = topology.dim();
-
-  // Check if entities have already been computed
-  if (topology.connectivity(dim, 0))
-  {
-    // Check that we have cell-entity connectivity
-    if (!topology.connectivity(tdim, dim))
-      throw std::runtime_error("Missing cell-entity connectivity");
-
-    return {nullptr, nullptr, topology.size(dim)};
-  }
-
-  // Start timer
-  common::Timer timer("Compute entities of dim = " + std::to_string(dim));
-
-  // Initialize local array of entities
-  const std::int8_t num_entities
-      = mesh::cell_num_entities(mesh.cell_type(), dim);
-  const int num_vertices
-      = mesh::num_cell_vertices(mesh::cell_entity_type(mesh.cell_type(), dim));
-
-  // Create map from cell vertices to entity vertices
-  Eigen::Array<int, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor> e_vertices
-      = mesh::get_entity_vertices(mesh.cell_type(), dim);
-
-  assert(N == num_vertices);
-
-  // Create data structure to hold entities ([vertices key],
-  // (cell_local_index, cell index), [entity vertices], entity index)
-  std::vector<std::tuple<std::array<std::int32_t, N>,
-                         std::pair<std::int8_t, std::int32_t>,
-                         std::array<std::int32_t, N>, std::int32_t>>
-      keyed_entities(num_entities * mesh.num_entities(tdim));
-
-  // Loop over cells to build list of keyed (by vertices) entities
-  int entity_counter = 0;
-  const std::int32_t ghost_offset_c = mesh.topology().ghost_offset(tdim);
-  for (auto& c : MeshRange(mesh, tdim, MeshRangeType::ALL))
-  {
-    // Get vertices from cell
-    const std::int32_t* vertices = c.entities(0);
-    assert(vertices);
-
-    // Iterate over entities of cell
-    const int cell_index = c.index();
-    for (std::int8_t i = 0; i < num_entities; ++i)
-    {
-      // Get entity vertices
-      auto& entity = std::get<2>(keyed_entities[entity_counter]);
-      for (std::int8_t j = 0; j < num_vertices; ++j)
-        entity[j] = vertices[e_vertices(i, j)];
-
-      // Sort entity vertices to create key
-      auto& entity_key = std::get<0>(keyed_entities[entity_counter]);
-      std::partial_sort_copy(entity.begin(), entity.end(), entity_key.begin(),
-                             entity_key.end());
-
-      // Attach (local index, cell index), making local_index negative
-      // if it is not a ghost cell. This ensures that non-ghosts come
-      // before ghosts when sorted. The index is corrected later.
-      if (c.index() < ghost_offset_c)
-        std::get<1>(keyed_entities[entity_counter]) = {-i - 1, cell_index};
-      else
-        std::get<1>(keyed_entities[entity_counter]) = {i, cell_index};
-
-      // Increment entity counter
-      ++entity_counter;
-    }
-  }
-
-  // Sort entities by key. For the same key, those belonging to
-  // non-ghost cells will appear before those belonging to ghost cells.
-  std::sort(keyed_entities.begin(), keyed_entities.end());
-
-  // Compute entity indices (using -1, -2, -3, etc, for ghost entities)
-  std::int32_t nonghost_index(0), ghost_index(-1);
-  std::array<std::int32_t, N> previous_key;
-  std::fill(previous_key.begin(), previous_key.end(), -1);
-  for (auto e = keyed_entities.begin(); e != keyed_entities.end(); ++e)
-  {
-    const auto& key = std::get<0>(*e);
-    if (key == previous_key)
-    {
-      // Repeated entity, reuse entity index
-      std::get<3>(*e) = std::get<3>(*(e - 1));
-    }
-    else
-    {
-      // New entity, so give index (negative for ghosts)
-      const auto local_index = std::get<1>(*e).first;
-      if (local_index < 0)
-        std::get<3>(*e) = nonghost_index++;
-      else
-        std::get<3>(*e) = ghost_index--;
-
-      // Update key
-      previous_key = key;
-    }
-
-    // Re-map local index (make all positive)
-    auto& local_index = std::get<1>(*e).first;
-    local_index = (local_index < 0) ? (-local_index - 1) : local_index;
-  }
-
-  // Total number of entities
-  const std::int32_t num_nonghost_entities = nonghost_index;
-  const std::int32_t num_ghost_entities = -(ghost_index + 1);
-  const std::int32_t num_mesh_entities
-      = num_nonghost_entities + num_ghost_entities;
-
-  // List of vertex indices connected to entity e
-  std::vector<std::array<int, N>> connectivity_ev(num_mesh_entities);
-
-  // List of entity e indices connected to cell
-  Eigen::Array<std::int32_t, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
-      connectivity_ce(mesh.num_entities(tdim), num_entities);
-
-  // Build connectivity arrays (with ghost entities at the end)
-  // std::int32_t previous_index = -1;
-  std::int32_t previous_index = std::numeric_limits<std::int32_t>::min();
-  for (auto& entity : keyed_entities)
-  {
-    // Get entity index, and remap for ghosts (negative entity index) to
-    // true index
-    auto& e_index = std::get<3>(entity);
-    if (e_index < 0)
-      e_index = num_nonghost_entities - (e_index + 1);
-
-    // Add to enity-to-vertex map if entity is new
-    if (e_index != previous_index)
-    {
-      assert(e_index < (std::int32_t)connectivity_ev.size());
-      connectivity_ev[e_index] = std::get<2>(entity);
-
-      // Update index
-      previous_index = e_index;
-    }
-
-    // Add to cell-to-entity map
-    const auto& cell = std::get<1>(entity);
-    const auto local_index = cell.first;
-    const auto cell_index = cell.second;
-    connectivity_ce(cell_index, local_index) = e_index;
-  }
-
-  // FIXME: move this out some Mesh can be const
-
-  // Set cell-entity connectivity
-  auto ce = std::make_shared<Connectivity>(connectivity_ce);
-  auto ev = std::make_shared<Connectivity>(connectivity_ev);
-
-  return {ce, ev, num_nonghost_entities};
-}
-
 std::tuple<std::shared_ptr<Connectivity>, std::shared_ptr<Connectivity>,
            std::int32_t>
 compute_entities_by_key_matching_new(const Mesh& mesh, int dim)
@@ -310,7 +127,8 @@ compute_entities_by_key_matching_new(const Mesh& mesh, int dim)
               entity_list_sorted.row(i).data() + num_vertices);
 
   // Sort the list and label (first pass)
-  std::vector<std::int32_t> sort_order = sort_by_perm(entity_list_sorted);
+  std::vector<std::int32_t> sort_order
+      = sort_by_perm<std::int32_t>(entity_list_sorted);
   std::int32_t last = sort_order[0];
   entity_index[last] = 0;
   for (std::size_t i = 1; i < sort_order.size(); ++i)
@@ -325,8 +143,87 @@ compute_entities_by_key_matching_new(const Mesh& mesh, int dim)
 
   // FIXME: Need to find ghosts, so we can put at end of range
 
+  // Get a single row in entity list for each entity
+  std::vector<std::int32_t> unique_row(entity_count);
+  for (int i = 0; i < entity_list.rows(); ++i)
+    unique_row[entity_index[i]] = i;
+
+  int mpi_size = dolfinx::MPI::size(mesh.mpi_comm());
+  std::vector<std::vector<std::int64_t>> send_entities(mpi_size);
+  std::vector<std::vector<std::int64_t>> send_index(mpi_size);
+  std::vector<std::vector<std::int64_t>> recv_entities(mpi_size);
+
   // Get all "possibly shared" entities, based on vertex sharing
   // Send to other processes, and see if we get the same back
+  const std::map<std::int32_t, std::set<std::int32_t>>& shared_vertices
+      = mesh.topology().shared_entities(0);
+  const std::vector<std::int64_t>& global_vertex_indices
+      = mesh.topology().global_indices(0);
+
+  std::stringstream s;
+
+  std::map<int, int> procs;
+  for (int i : unique_row)
+  {
+    procs.clear();
+    for (int j = 0; j < num_vertices; ++j)
+    {
+      const int v = entity_list_sorted(i, j);
+      const auto it = shared_vertices.find(v);
+      if (it != shared_vertices.end())
+        for (std::int32_t p : it->second)
+          ++procs[p];
+    }
+    for (const auto& q : procs)
+      if (q.second == num_vertices)
+      {
+        const int p = q.first;
+
+        s << "Entity " << entity_index[i] << " may be shared with process " << p
+          << "\n";
+        for (int j = 0; j < num_vertices; ++j)
+        {
+          std::int64_t vglobal = global_vertex_indices[entity_list(i, j)];
+          send_entities[p].push_back(vglobal);
+        }
+        send_index[p].push_back(entity_index[i]);
+        std::sort(send_entities[p].end() - num_vertices,
+                  send_entities[p].end());
+      }
+  }
+
+  dolfinx::MPI::all_to_all(mesh.mpi_comm(), send_entities, recv_entities);
+
+  // Compare received with sent for each process
+  for (std::size_t p = 0; p < send_entities.size(); ++p)
+  {
+    const std::vector<std::int64_t>& sendp = send_entities[p];
+    const std::vector<std::int64_t>& recvp = recv_entities[p];
+    std::set<std::vector<std::int64_t>> recv_set;
+    for (std::size_t i = 0; i < recvp.size() / num_vertices; ++i)
+    {
+      recv_set.insert(
+          std::vector<std::int64_t>(recvp.begin() + i * num_vertices,
+                                    recvp.begin() + (i + 1) * num_vertices));
+    }
+    for (std::size_t i = 0; i < sendp.size() / num_vertices; ++i)
+    {
+      const std::vector<std::int64_t> b(sendp.begin() + i * num_vertices,
+                                        sendp.begin() + (i + 1) * num_vertices);
+      if (recv_set.find(b) == recv_set.end())
+      {
+        s << "Sent, but did not receive back - " << send_index[p][i]
+          << " not shared\n";
+      }
+      else
+      {
+        s << "entity " << send_index[p][i] << " shared with " << p << "\n";
+        // shared with process p - decide owner
+      }
+    }
+  }
+
+  std::cout << s.str() << "\n";
 
   Eigen::Array<std::int32_t, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
       connectivity_ce(mesh.num_entities(tdim), num_entities);
