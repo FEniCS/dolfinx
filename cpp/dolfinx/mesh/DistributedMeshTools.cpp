@@ -44,6 +44,11 @@ compute_entity_numbering(const Mesh& mesh, int d)
         "Global vertex and cell indices exist at input. Cannot be renumbered.");
   }
 
+  // Get number of entities of dimension d on this process
+  auto c = mesh.topology().connectivity(d, 0);
+  assert(c);
+  const std::int32_t size = c->entity_positions().rows() - 1;
+
   // MPI communicator
   const MPI_Comm mpi_comm = mesh.mpi_comm();
 
@@ -89,8 +94,11 @@ compute_entity_numbering(const Mesh& mesh, int d)
     for (const auto& v : shared_vertices_local)
       vertex_shared[v.first] = true;
 
-    for (auto& e : mesh::MeshRange(mesh, d, mesh::MeshRangeType::ALL))
+    // for (auto& e : mesh::MeshRange(mesh, d, mesh::MeshRangeType::ALL))
+    for (int _e = 0; _e < size; ++_e)
     {
+      mesh::MeshEntity e(mesh, d, _e);
+
       const std::size_t local_index = e.index();
       const std::int32_t* v = e.entities(0);
 
@@ -219,12 +227,12 @@ compute_entity_numbering(const Mesh& mesh, int d)
   // We now know which entities are shared (and with which processes).
   // Three categories: owned, owned+shared, remote+shared=ghost
 
-  global_entity_indices.resize(mesh.num_entities(d), -1);
+  global_entity_indices.resize(size, -1);
 
   // Start numbering
 
   // Calculate all locally owned entities, and get a local offset
-  std::int64_t num_local = mesh.num_entities(d) - shared_entities.size();
+  std::int32_t num_local = size - shared_entities.size();
   for (const auto& q : shared_entities)
   {
     if (*q.second.begin() > mpi_rank)
@@ -236,7 +244,7 @@ compute_entity_numbering(const Mesh& mesh, int d)
   std::int64_t n = local_offset;
 
   // Owned
-  for (int i = 0; i < mesh.num_entities(d); ++i)
+  for (int i = 0; i < size; ++i)
   {
     const auto it = shared_entities.find(i);
     if (it == shared_entities.end())
@@ -388,8 +396,9 @@ void DistributedMeshTools::number_entities(const Mesh& mesh, int d)
     // const std::int32_t num_new_entities = mesh.create_entities(d);
     if (d != 0 and !mesh.topology().connectivity(d, 0))
     {
-      throw std::runtime_error("Cannot globally number mesh entities. Local "
-                               "entities have not been computed.");
+      throw std::runtime_error(
+          "Cannot globally number mesh entities. Local entities of dimension "
+          + std::to_string(d) + " have not been computed.");
     }
 
     // FIXME: Hack to get number of entities
