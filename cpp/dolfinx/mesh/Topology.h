@@ -6,6 +6,7 @@
 
 #pragma once
 
+#include <Eigen/Dense>
 #include <array>
 #include <cstdint>
 #include <map>
@@ -119,7 +120,6 @@ public:
   std::string str(bool verbose) const;
 
 private:
-
   // Global indices for mesh entities
   std::vector<std::vector<std::int64_t>> _global_indices;
 
@@ -131,9 +131,9 @@ private:
   // IndexMap to store ghosting for each entity dimension
   std::array<std::shared_ptr<const common::IndexMap>, 4> _index_map;
 
-  // FIXME: Make this a 4x4 array
   // Connectivity for pairs of topological dimensions
-  std::vector<std::vector<std::shared_ptr<Connectivity>>> _connectivity;
-}; // namespace mesh
+  Eigen::Array<std::shared_ptr<Connectivity>, 4, 4, Eigen::RowMajor>
+      _connectivity;
+};
 } // namespace mesh
 } // namespace dolfinx
