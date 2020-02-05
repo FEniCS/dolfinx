@@ -132,7 +132,8 @@ private:
   std::array<std::shared_ptr<const common::IndexMap>, 4> _index_map;
 
   // Connectivity for pairs of topological dimensions
-  Eigen::Array<std::shared_ptr<Connectivity>, 4, 4, Eigen::RowMajor>
+  Eigen::Array<std::shared_ptr<Connectivity>, Eigen::Dynamic, Eigen::Dynamic,
+               Eigen::RowMajor>
       _connectivity;
 };
 } // namespace mesh

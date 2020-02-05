@@ -16,12 +16,13 @@ using namespace dolfinx::mesh;
 
 //-----------------------------------------------------------------------------
 Topology::Topology(std::size_t dim)
-    : _global_indices(dim + 1), _shared_entities(dim + 1)
+    : _global_indices(dim + 1), _shared_entities(dim + 1),
+      _connectivity(dim + 1, dim + 1)
 {
   // Do nothing
 }
 //-----------------------------------------------------------------------------
-int Topology::dim() const { return _connectivity.size() - 1; }
+int Topology::dim() const { return _connectivity.rows() - 1; }
 //-----------------------------------------------------------------------------
 std::int32_t Topology::size(int dim) const
 {
