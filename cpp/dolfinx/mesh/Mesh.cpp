@@ -418,6 +418,7 @@ std::int32_t Mesh::num_entities(int d) const
 //-----------------------------------------------------------------------------
 std::int64_t Mesh::num_entities_global(int dim) const
 {
+  std::cout << "Testing d: " << dim << std::endl;
   assert(_topology);
   assert(_topology->index_map(dim));
   assert(_topology->index_map(dim)->block_size == 1);

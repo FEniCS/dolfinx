@@ -404,19 +404,21 @@ void DistributedMeshTools::number_entities(const Mesh& mesh, int d)
     // FIXME: Hack to get number of entities
     auto c = mesh.topology().connectivity(d, 0);
     assert(c);
-    const std::int32_t size = c->entity_positions().rows() - 1;
+    const std::int32_t size_d = c->entity_positions().rows() - 1;
+    std::cout << "E size: " << size_d << std::endl;
 
     // Set global entity numbers in mesh
-    std::vector<std::int64_t> global_indices(size, 0);
+    std::vector<std::int64_t> global_indices(size_d, 0);
     std::iota(global_indices.begin(), global_indices.end(), 0);
     _mesh.topology().set_global_indices(d, global_indices);
 
     // Set IndexMap
     Eigen::Array<std::int64_t, Eigen::Dynamic, 1> ghosts(0);
     auto index_map
-        = std::make_shared<common::IndexMap>(mesh.mpi_comm(), size, ghosts, 1);
-
+        = std::make_shared<common::IndexMap>(mesh.mpi_comm(), size_d, ghosts, 1);
     _mesh.topology().set_index_map(d, index_map);
+    std::cout << "Have set map: " << d << std::endl;
+
     return;
   }
 

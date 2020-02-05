@@ -749,8 +749,12 @@ DofMapBuilder::build(const mesh::Mesh& mesh,
   std::int64_t global_dimension = 0;
   for (int d = 0; d < D + 1; ++d)
   {
-    const std::int64_t n = mesh.num_entities_global(d);
-    global_dimension += n * element_dof_layout.num_entity_dofs(d);
+    if (element_dof_layout.num_entity_dofs(d) > 0)
+    {
+      mesh.create_entities(d);
+      const std::int64_t n = mesh.num_entities_global(d);
+      global_dimension += n * element_dof_layout.num_entity_dofs(d);
+    }
   }
 
   // Mark shared and non-shared nodes. Boundary nodes are assigned a
