@@ -141,7 +141,8 @@ compute_entities_by_key_matching_new(const Mesh& mesh, int dim)
   }
   ++entity_count;
 
-  // FIXME: Need to find ghosts, so we can put at end of range
+  //--------------------------------------------
+  // FIXME: make this into a separate function....
 
   // Get a single row in entity list for each entity
   std::vector<std::int32_t> unique_row(entity_count);
@@ -194,6 +195,7 @@ compute_entities_by_key_matching_new(const Mesh& mesh, int dim)
 
   dolfinx::MPI::all_to_all(mesh.mpi_comm(), send_entities, recv_entities);
 
+  std::map<std::int32_t, std::set<std::int32_t>> shared_entities;
   // Compare received with sent for each process
   for (std::size_t p = 0; p < send_entities.size(); ++p)
   {
@@ -218,12 +220,52 @@ compute_entities_by_key_matching_new(const Mesh& mesh, int dim)
       else
       {
         s << "entity " << send_index[p][i] << " shared with " << p << "\n";
-        // shared with process p - decide owner
+        // shared with process p
+        shared_entities[send_index[p][i]].insert(p);
       }
     }
   }
 
+  int mpi_rank = dolfinx::MPI::rank(mesh.mpi_comm());
+
+  // send ghosts to end of range by remapping
+  std::vector<std::int32_t> mapping(entity_count, -1);
+  std::int32_t c = 0;
+  for (int i = 0; i < entity_count; ++i)
+  {
+    const auto it = shared_entities.find(i);
+    if (it == shared_entities.end() or *(it->second.begin()) > mpi_rank)
+    {
+      // Owned index
+      mapping[i] = c;
+      ++c;
+    }
+  }
+  for (int i = 0; i < entity_count; ++i)
+    if (mapping[i] == -1)
+    {
+      mapping[i] = c;
+      ++c;
+    }
+  assert(c == entity_count);
+
+  // Do the actual remap
+  for (std::int32_t& q : entity_index)
+    q = mapping[q];
+
+  s << "\nshared_entities = {";
+  for (auto q : shared_entities)
+  {
+    s << q.first << ":{";
+    for (std::int32_t r : q.second)
+      s << r << " ";
+    s << "}, ";
+  }
+  s << "}\n";
+
   std::cout << s.str() << "\n";
+
+  //--------------------------------------------
 
   Eigen::Array<std::int32_t, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
       connectivity_ce(mesh.num_entities(tdim), num_entities);
@@ -421,7 +463,7 @@ void TopologyComputation::compute_connectivity(Mesh& mesh, int d0, int d1)
   // Decide how to compute the connectivity
   if (d0 == d1)
   {
-    // For d0-d1, use indentity connecticity
+    // For d0=d1, use identity connecticity
     std::vector<std::vector<std::size_t>> connectivity_dd(
         topology.size(d0), std::vector<std::size_t>(1));
     for (auto& e : MeshRange(mesh, d0, MeshRangeType::ALL))
