@@ -144,6 +144,15 @@ void fem(py::module& m)
       py::return_value_policy::take_ownership,
       "Create nested vector for multiple (stacked) linear forms.");
   m.def(
+      "create_sparsity_pattern",
+      [](const dolfinx::fem::Form& a) {
+        dolfinx::la::SparsityPattern pattern
+            = dolfinx::fem::create_sparsity_pattern(a);
+        return pattern;
+      },
+      py::return_value_policy::take_ownership,
+      "Create a Sparsity-pattern for bilinear form.");
+  m.def(
       "create_matrix",
       [](const dolfinx::fem::Form& a) {
         auto A = dolfinx::fem::create_matrix(a);

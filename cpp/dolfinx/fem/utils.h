@@ -63,6 +63,9 @@ block_function_spaces(
 /// Create matrix. Matrix is not zeroed.
 la::PETScMatrix create_matrix(const Form& a);
 
+/// Create sparsity pattern for a given form. Does not assemble the pattern.
+la::SparsityPattern create_sparsity_pattern(const Form& a);
+
 /// Initialise monolithic matrix for an array for bilinear forms. Matrix
 /// is not zeroed.
 la::PETScMatrix create_matrix_block(

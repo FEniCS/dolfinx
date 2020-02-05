@@ -111,13 +111,12 @@ fem::block_function_spaces(
   return V;
 }
 //-----------------------------------------------------------------------------
-la::PETScMatrix dolfinx::fem::create_matrix(const Form& a)
+la::SparsityPattern dolfinx::fem::create_sparsity_pattern(const Form& a)
 {
-  bool keep_diagonal = false;
   if (a.rank() != 2)
   {
     throw std::runtime_error(
-        "Cannot initialise matrx. Form is not a bilinear form");
+        "Cannot create sparsity pattern. Form is not a bilinear form");
   }
 
   // Get dof maps
@@ -145,8 +144,20 @@ la::PETScMatrix dolfinx::fem::create_matrix(const Form& a)
   if (a.integrals().num_integrals(fem::FormIntegrals::Type::exterior_facet) > 0)
     SparsityPatternBuilder::exterior_facets(pattern, mesh,
                                             {{dofmaps[0], dofmaps[1]}});
-  pattern.assemble();
+
   t0.stop();
+
+  return pattern;
+}
+
+la::PETScMatrix dolfinx::fem::create_matrix(const Form& a)
+{
+  bool keep_diagonal = false;
+  // Build sparsitypattern
+  la::SparsityPattern pattern = fem::create_sparsity_pattern(a);
+
+  // pattern.info_statistics();
+  pattern.assemble();
 
   // Initialize matrix
   common::Timer t1("Init tensor");
@@ -378,7 +389,7 @@ fem::create_vector_nest(const std::vector<const common::IndexMap*>& maps)
 //-----------------------------------------------------------------------------
 std::int64_t
 dolfinx::fem::get_global_index(const std::vector<const common::IndexMap*>& maps,
-                              const int field, const int index)
+                               const int field, const int index)
 {
   // FIXME: handle/check block size > 1
 
@@ -517,7 +528,8 @@ std::shared_ptr<fem::Form> fem::create_form(
     const std::vector<std::shared_ptr<const function::FunctionSpace>>& spaces)
 {
   ufc_form* form = fptr();
-  auto L = std::make_shared<fem::Form>(dolfinx::fem::create_form(*form, spaces));
+  auto L
+      = std::make_shared<fem::Form>(dolfinx::fem::create_form(*form, spaces));
   std::free(form);
 
   return L;
