@@ -887,7 +887,7 @@ void XDMFFile::write_mesh_value_collection(
     // Check topology
     pugi::xml_node topology_node = grid_node.child("Topology");
     assert(topology_node);
-    const std::int64_t ncells = mesh->topology().size_global(tdim);
+    const std::int64_t ncells = mesh->num_entities_global(tdim);
     pugi::xml_attribute num_cells_attr
         = topology_node.attribute("NumberOfElements");
     assert(num_cells_attr);

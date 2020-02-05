@@ -134,7 +134,7 @@ void mesh(py::module& m)
       .def_property_readonly("dim", &dolfinx::mesh::Topology::dim,
                              "Topological dimension")
       .def("connectivity",
-           py::overload_cast<std::size_t, std::size_t>(
+           py::overload_cast<int, int>(
                &dolfinx::mesh::Topology::connectivity, py::const_))
       .def("size", &dolfinx::mesh::Topology::size)
       .def("hash", &dolfinx::mesh::Topology::hash)

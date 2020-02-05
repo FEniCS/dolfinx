@@ -40,7 +40,7 @@ class Topology
 {
 public:
   /// Create empty mesh topology
-  Topology(std::size_t dim);
+  Topology(int dim);
 
   /// Copy constructor
   Topology(const Topology& topology) = default;
@@ -60,9 +60,6 @@ public:
   /// Return number of entities for given dimension (local to process)
   std::int32_t size(int dim) const;
 
-  /// Return global number of entities for given dimension
-  std::int64_t size_global(int dim) const;
-
   /// Clear data for given pair of topological dimensions
   void clear(int d0, int d1);
 
@@ -81,7 +78,7 @@ public:
 
   /// Get local-to-global index map for entities of topological
   /// dimension d
-  const std::vector<std::int64_t>& global_indices(std::size_t d) const;
+  const std::vector<std::int64_t>& global_indices(int d) const;
 
   /// Set the map from shared entities (local index) to processes that
   /// share the entity
@@ -103,15 +100,13 @@ public:
   std::vector<bool> on_boundary(int dim) const;
 
   /// Return connectivity for given pair of topological dimensions
-  std::shared_ptr<Connectivity> connectivity(std::size_t d0, std::size_t d1);
+  std::shared_ptr<Connectivity> connectivity(int d0, int d1);
 
   /// Return connectivity for given pair of topological dimensions
-  std::shared_ptr<const Connectivity> connectivity(std::size_t d0,
-                                                   std::size_t d1) const;
+  std::shared_ptr<const Connectivity> connectivity(int d0, int d1) const;
 
   /// Set connectivity for given pair of topological dimensions
-  void set_connectivity(std::shared_ptr<Connectivity> c, std::size_t d0,
-                        std::size_t d1);
+  void set_connectivity(std::shared_ptr<Connectivity> c, int d0, int d1);
 
   /// Return hash based on the hash of cell-vertex connectivity
   size_t hash() const;

@@ -409,10 +409,12 @@ std::int32_t Mesh::num_entities(int d) const
   return _topology->size(d);
 }
 //-----------------------------------------------------------------------------
-std::int64_t Mesh::num_entities_global(std::size_t dim) const
+std::int64_t Mesh::num_entities_global(int dim) const
 {
   assert(_topology);
-  return _topology->size_global(dim);
+  assert(_topology->index_map(dim));
+  assert(_topology->index_map(dim)->block_size == 1);
+  return _topology->index_map(dim)->size_global();
 }
 //-----------------------------------------------------------------------------
 Topology& Mesh::topology()

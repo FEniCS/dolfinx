@@ -530,7 +530,7 @@ void xdmf_write::add_topology_data(MPI_Comm comm, pugi::xml_node& xml_node,
                                    const mesh::Mesh& mesh, int cell_dim)
 {
   // Get number of cells (global) and vertices per cell from mesh
-  const std::int64_t num_cells = mesh.topology().size_global(cell_dim);
+  const std::int64_t num_cells = mesh.num_entities_global(cell_dim);
   int num_nodes_per_cell = mesh::num_cell_vertices(
       mesh::cell_entity_type(mesh.cell_type(), cell_dim));
 

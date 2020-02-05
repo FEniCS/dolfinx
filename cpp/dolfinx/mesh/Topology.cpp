@@ -15,7 +15,7 @@ using namespace dolfinx;
 using namespace dolfinx::mesh;
 
 //-----------------------------------------------------------------------------
-Topology::Topology(std::size_t dim)
+Topology::Topology(int dim)
     : _global_indices(dim + 1), _shared_entities(dim + 1),
       _connectivity(dim + 1, dim + 1)
 {
@@ -41,13 +41,6 @@ std::int32_t Topology::size(int dim) const
   }
 
   return c->entity_positions().rows() - 1;
-}
-//-----------------------------------------------------------------------------
-std::int64_t Topology::size_global(int dim) const
-{
-  if (!_index_map[dim])
-    return 0;
-  return _index_map[dim]->size_global();
 }
 //-----------------------------------------------------------------------------
 void Topology::clear(int d0, int d1)
@@ -77,9 +70,9 @@ std::shared_ptr<const common::IndexMap> Topology::index_map(int dim) const
   return _index_map[dim];
 }
 //-----------------------------------------------------------------------------
-const std::vector<std::int64_t>& Topology::global_indices(std::size_t d) const
+const std::vector<std::int64_t>& Topology::global_indices(int d) const
 {
-  assert(d < _global_indices.size());
+  assert(d < (int)_global_indices.size());
   return _global_indices[d];
 }
 //-----------------------------------------------------------------------------
@@ -149,24 +142,21 @@ std::vector<bool> Topology::on_boundary(int dim) const
   return marker;
 }
 //-----------------------------------------------------------------------------
-std::shared_ptr<Connectivity> Topology::connectivity(std::size_t d0,
-                                                     std::size_t d1)
+std::shared_ptr<Connectivity> Topology::connectivity(int d0, int d1)
 {
   assert(d0 < _connectivity.rows());
   assert(d1 < _connectivity.cols());
   return _connectivity(d0, d1);
 }
 //-----------------------------------------------------------------------------
-std::shared_ptr<const Connectivity> Topology::connectivity(std::size_t d0,
-                                                           std::size_t d1) const
+std::shared_ptr<const Connectivity> Topology::connectivity(int d0, int d1) const
 {
   assert(d0 < _connectivity.rows());
   assert(d1 < _connectivity.cols());
   return _connectivity(d0, d1);
 }
 //-----------------------------------------------------------------------------
-void Topology::set_connectivity(std::shared_ptr<Connectivity> c, std::size_t d0,
-                                std::size_t d1)
+void Topology::set_connectivity(std::shared_ptr<Connectivity> c, int d0, int d1)
 {
   assert(d0 < _connectivity.rows());
   assert(d1 < _connectivity.cols());
@@ -201,7 +191,7 @@ std::string Topology::str(bool verbose) const
     for (int d0 = 0; d0 <= _dim; d0++)
     {
       s << "    " << d0;
-      for (std::size_t d1 = 0; d1 <= _dim; d1++)
+      for (int d1 = 0; d1 <= _dim; d1++)
       {
         if (_connectivity(d0, d1))
           s << " x";
