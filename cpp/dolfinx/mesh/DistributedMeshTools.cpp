@@ -47,6 +47,8 @@ compute_entity_numbering(const Mesh& mesh, int d)
         "Global vertex indices exist at input. Cannot be renumbered");
   }
 
+  assert(d != mesh.topology().dim());
+
   if (d == mesh.topology().dim())
   {
     // Numbering cells.
@@ -414,6 +416,11 @@ void DistributedMeshTools::number_entities(const Mesh& mesh, int d)
     std::vector<std::int64_t> global_indices(mesh.num_entities(d), 0);
     std::iota(global_indices.begin(), global_indices.end(), 0);
     _mesh.topology().set_global_indices(d, global_indices);
+    // Set IndexMap
+    Eigen::Array<std::int64_t, Eigen::Dynamic, 1> ghosts(0);
+    auto index_map = std::make_shared<common::IndexMap>(
+        mesh.mpi_comm(), mesh.num_entities(d), ghosts, 1);
+    _mesh.topology().set_index_map(d, index_map);
     return;
   }
 
