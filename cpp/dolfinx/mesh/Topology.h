@@ -17,7 +17,7 @@ namespace dolfinx
 {
 namespace common
 {
-  class IndexMap;
+class IndexMap;
 }
 
 namespace mesh
@@ -80,7 +80,8 @@ public:
 
   /// Set the IndexMap for dimension dim
   /// @warning This experimental and likely to change
-  void set_index_map(int dim, std::shared_ptr<const common::IndexMap> index_map);
+  void set_index_map(int dim,
+                     std::shared_ptr<const common::IndexMap> index_map);
 
   /// Get the IndexMap for dimension dim
   /// (Currently partially working)

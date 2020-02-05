@@ -302,28 +302,31 @@ compute_entities_by_key_matching_new(const Mesh& mesh, int dim)
   std::vector<std::int32_t> entity_index(entity_list.rows());
   std::int32_t entity_count = 0;
 
-  {
-    // Copy list and sort vertices of each entity into order
-    Eigen::Array<std::int32_t, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
-        entity_list_sorted = entity_list;
-    for (int i = 0; i < entity_list_sorted.rows(); ++i)
-      std::sort(entity_list_sorted.row(i).data(),
-                entity_list_sorted.row(i).data() + num_vertices);
+  // Copy list and sort vertices of each entity into order
+  Eigen::Array<std::int32_t, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
+      entity_list_sorted = entity_list;
+  for (int i = 0; i < entity_list_sorted.rows(); ++i)
+    std::sort(entity_list_sorted.row(i).data(),
+              entity_list_sorted.row(i).data() + num_vertices);
 
-    // Sort the list and label (first pass)
-    std::vector<std::int32_t> sort_order = sort_by_perm(entity_list_sorted);
-    std::int32_t last = sort_order[0];
-    entity_index[last] = 0;
-    for (std::size_t i = 1; i < sort_order.size(); ++i)
-    {
-      std::int32_t j = sort_order[i];
-      if ((entity_list_sorted.row(j) != entity_list_sorted.row(last)).any())
-        ++entity_count;
-      entity_index[j] = entity_count;
-      last = j;
-    }
+  // Sort the list and label (first pass)
+  std::vector<std::int32_t> sort_order = sort_by_perm(entity_list_sorted);
+  std::int32_t last = sort_order[0];
+  entity_index[last] = 0;
+  for (std::size_t i = 1; i < sort_order.size(); ++i)
+  {
+    std::int32_t j = sort_order[i];
+    if ((entity_list_sorted.row(j) != entity_list_sorted.row(last)).any())
+      ++entity_count;
+    entity_index[j] = entity_count;
+    last = j;
   }
   ++entity_count;
+
+  // FIXME: Need to find ghosts, so we can put at end of range
+
+  // Get all "possibly shared" entities, based on vertex sharing
+  // Send to other processes, and see if we get the same back
 
   Eigen::Array<std::int32_t, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
       connectivity_ce(mesh.num_entities(tdim), num_entities);
