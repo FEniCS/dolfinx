@@ -336,7 +336,7 @@ void VTKWriter::write_cell_data(const function::Function& u,
   const std::size_t size = num_cells * data_dim;
 
   // Build lists of dofs and create map
-  std::vector<PetscInt> dof_set;
+  std::vector<std::int32_t> dof_set;
   std::vector<std::size_t> offset(size + 1);
   std::vector<std::size_t>::iterator cell_offset = offset.begin();
   assert(dofmap.element_dof_layout);
