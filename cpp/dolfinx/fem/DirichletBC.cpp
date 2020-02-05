@@ -239,7 +239,8 @@ Eigen::Array<std::int32_t, Eigen::Dynamic, 2> _locate_dofs_topological(
     for (int i = 0; i < num_entity_dofs; ++i)
     {
       const int index = entity_dofs[entity_local_index][i];
-      bc_dofs.push_back({cell_dofs0[index], cell_dofs1[index]});
+      bc_dofs.push_back(
+          {(std::int32_t)cell_dofs0[index], (std::int32_t)cell_dofs1[index]});
     }
   }
 

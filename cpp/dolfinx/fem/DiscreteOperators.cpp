@@ -58,9 +58,9 @@ DiscreteOperators::build_gradient(const function::FunctionSpace& V0,
   }
 
   // Build maps from entities to local dof indices
-  const Eigen::Array<PetscInt, Eigen::Dynamic, 1> edge_to_dof
+  const Eigen::Array<std::int32_t, Eigen::Dynamic, 1> edge_to_dof
       = V0.dofmap()->dofs(mesh, 1);
-  const Eigen::Array<PetscInt, Eigen::Dynamic, 1> vertex_to_dof
+  const Eigen::Array<std::int32_t, Eigen::Dynamic, 1> vertex_to_dof
       = V1.dofmap()->dofs(mesh, 0);
 
   // Build maps from local dof numbering to global

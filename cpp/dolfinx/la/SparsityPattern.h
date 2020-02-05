@@ -127,12 +127,14 @@ private:
   // The primary_codim entries must be global
   template <typename X, typename Y>
   void insert_entries(
-      const Eigen::Ref<const Eigen::Array<std::int32_t, Eigen::Dynamic, 1>>&
+      const Eigen::Ref<const Eigen::Array<PetscInt, Eigen::Dynamic, 1>>&
           rows,
-      const Eigen::Ref<const Eigen::Array<std::int32_t, Eigen::Dynamic, 1>>&
+      const Eigen::Ref<const Eigen::Array<PetscInt, Eigen::Dynamic, 1>>&
           cols,
-      const std::function<PetscInt(const X, const common::IndexMap&)>& row_map,
-      const std::function<PetscInt(const Y, const common::IndexMap&)>& col_map);
+      const std::function<std::int32_t(const X, const common::IndexMap&)>&
+          row_map,
+      const std::function<std::int64_t(const Y, const common::IndexMap&)>&
+          col_map);
 
   // Print some useful information
   void info_statistics() const;

@@ -214,8 +214,8 @@ template <typename X, typename Y>
 void SparsityPattern::insert_entries(
     const Eigen::Ref<const Eigen::Array<PetscInt, Eigen::Dynamic, 1>>& rows,
     const Eigen::Ref<const Eigen::Array<PetscInt, Eigen::Dynamic, 1>>& cols,
-    const std::function<PetscInt(const X, const common::IndexMap&)>& row_map,
-    const std::function<PetscInt(const Y, const common::IndexMap&)>& col_map)
+    const std::function<std::int32_t(const X, const common::IndexMap&)>& row_map,
+    const std::function<std::int64_t(const Y, const common::IndexMap&)>& col_map)
 {
   const Eigen::Array<PetscInt, Eigen::Dynamic, 1>& map_i = rows;
   const Eigen::Array<PetscInt, Eigen::Dynamic, 1>& map_j = cols;

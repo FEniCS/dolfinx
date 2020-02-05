@@ -139,7 +139,7 @@ void fem::add_diagonal(
 //-----------------------------------------------------------------------------
 void fem::add_diagonal(
     Mat A,
-    const Eigen::Ref<const Eigen::Array<PetscInt, Eigen::Dynamic, 1>>& rows,
+    const Eigen::Ref<const Eigen::Array<std::int32_t, Eigen::Dynamic, 1>>& rows,
     PetscScalar diagonal)
 {
   // NOTE: We use MatSetValuesLocal rather than MatZeroRowsLocal because

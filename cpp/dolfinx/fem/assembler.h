@@ -165,7 +165,7 @@ void add_diagonal(Mat A, const function::FunctionSpace& V,
 ///                     specified rows
 void add_diagonal(
     Mat A,
-    const Eigen::Ref<const Eigen::Array<PetscInt, Eigen::Dynamic, 1>>& rows,
+    const Eigen::Ref<const Eigen::Array<std::int32_t, Eigen::Dynamic, 1>>& rows,
     PetscScalar diagonal = 1.0);
 
 // -- Setting bcs ------------------------------------------------------------
