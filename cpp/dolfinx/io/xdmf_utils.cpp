@@ -271,7 +271,7 @@ xdmf_utils::get_cell_data_values(const function::Function& u)
   const std::int32_t local_size = num_local_cells * value_size;
 
   // Build lists of dofs and create map
-  std::vector<PetscInt> dof_set;
+  std::vector<std::int32_t> dof_set;
   dof_set.reserve(local_size);
   const auto dofmap = u.function_space()->dofmap();
   assert(dofmap->element_dof_layout);

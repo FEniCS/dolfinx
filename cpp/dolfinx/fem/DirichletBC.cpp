@@ -490,7 +490,7 @@ void DirichletBC::mark_dofs(std::vector<bool>& markers) const
 {
   for (Eigen::Index i = 0; i < _dofs.rows(); ++i)
   {
-    assert(_dofs(i, 0) < (PetscInt)markers.size());
+    assert(_dofs(i, 0) < (std::int32_t)markers.size());
     markers[_dofs(i, 0)] = true;
   }
 }

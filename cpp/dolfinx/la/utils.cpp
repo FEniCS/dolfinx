@@ -146,8 +146,8 @@ Mat dolfinx::la::create_petsc_matrix(
       = index_maps[0]->global_indices(blocked);
   const std::vector<std::int64_t> _map1
       = index_maps[1]->global_indices(blocked);
-  std::vector<PetscInt> map0(_map0.begin(), _map0.end());
-  std::vector<PetscInt> map1(_map1.begin(), _map1.end());
+  const std::vector<PetscInt> map0(_map0.begin(), _map0.end());
+  const std::vector<PetscInt> map1(_map1.begin(), _map1.end());
 
   ISLocalToGlobalMapping petsc_local_to_global0, petsc_local_to_global1;
   ierr = ISLocalToGlobalMappingCreate(MPI_COMM_SELF, bs, map0.size(),

@@ -111,9 +111,9 @@ fem::DofMap build_collapsed_dofmap(const DofMap& dofmap_view,
   auto index_map = std::make_shared<common::IndexMap>(mesh.mpi_comm(),
                                                       num_owned, ghosts, bs);
 
-  // Creat array from dofs in view to new dof indices
+  // Create array from dofs in view to new dof indices
   std::vector<std::int32_t> old_to_new(dofs_view.back() + 1, -1);
-  PetscInt count = 0;
+  std::int32_t count = 0;
   for (auto& dof : dofs_view)
     old_to_new[dof] = count++;
 
@@ -122,10 +122,7 @@ fem::DofMap build_collapsed_dofmap(const DofMap& dofmap_view,
       = dofmap_view.dof_array();
   Eigen::Array<PetscInt, Eigen::Dynamic, 1> _dofmap(dof_array_view.size());
   for (Eigen::Index i = 0; i < _dofmap.size(); ++i)
-  {
-    PetscInt dof_view = dof_array_view[i];
-    _dofmap[i] = old_to_new[dof_view];
-  }
+    _dofmap[i] = old_to_new[dof_array_view[i]];
 
   // Dimension sanity checks
   assert(element_dof_layout);
@@ -288,11 +285,11 @@ DofMap::dofs(const mesh::Mesh& mesh, std::size_t dim) const
       // Get dof index and add to list
       for (Eigen::Index i = 0; i < entity_dofs_local[local_index].size(); ++i)
       {
-        const std::size_t entity_dof_local = entity_dofs_local[local_index][i];
-        const PetscInt dof_index = cell_dof_list[entity_dof_local];
+        const int entity_dof_local = entity_dofs_local[local_index][i];
         assert((Eigen::Index)(e.index() * num_dofs_per_entity + i)
                < dof_list.size());
-        dof_list[e.index() * num_dofs_per_entity + i] = dof_index;
+        dof_list[e.index() * num_dofs_per_entity + i]
+            = cell_dof_list[entity_dof_local];
       }
       ++local_index;
     }

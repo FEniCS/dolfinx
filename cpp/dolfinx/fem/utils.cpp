@@ -163,7 +163,6 @@ la::PETScMatrix dolfinx::fem::create_matrix(const Form& a)
     std::array<PetscInt, 2> row_range;
     MatGetOwnershipRange(A.mat(), &row_range[0], &row_range[1]);
     const std::int64_t range = std::min(row_range[1], (PetscInt)A.size()[1]);
-
     for (std::int64_t i = row_range[0]; i < range; i++)
     {
       const PetscInt _i = i;
