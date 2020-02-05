@@ -24,31 +24,31 @@ using namespace dolfinx::refinement;
 //-----------------------------------------------------------------------------
 namespace
 {
-MPI_Comm create_neighbor_comm_via_edge(const mesh::Mesh& mesh)
-{
-  // Create a neighbourhood comm for processes sharing edges in the Mesh
+// MPI_Comm create_neighbor_comm_via_edge(const mesh::Mesh& mesh)
+// {
+//   // Create a neighbourhood comm for processes sharing edges in the Mesh
 
-  // Look at all "shared edges" and find neighbours
-  if (!mesh.topology().connectivity(1, 0))
-    throw std::runtime_error("Edges must be initialised");
+//   // Look at all "shared edges" and find neighbours
+//   if (!mesh.topology().connectivity(1, 0))
+//     throw std::runtime_error("Edges must be initialised");
 
-  const std::map<std::int32_t, std::set<std::int32_t>>& shared_edges
-      = mesh.topology().shared_entities(1);
+//   const std::map<std::int32_t, std::set<std::int32_t>>& shared_edges
+//       = mesh.topology().shared_entities(1);
 
-  std::set<std::int32_t> neighbour_set;
-  for (auto q : shared_edges)
-    neighbour_set.insert(q.second.begin(), q.second.end());
+//   std::set<std::int32_t> neighbour_set;
+//   for (auto q : shared_edges)
+//     neighbour_set.insert(q.second.begin(), q.second.end());
 
-  std::vector<std::int32_t> neighbours(neighbour_set.begin(),
-                                       neighbour_set.end());
-  MPI_Comm neighbour_comm;
-  MPI_Dist_graph_create_adjacent(
-      mesh.mpi_comm(), neighbours.size(), neighbours.data(), MPI_UNWEIGHTED,
-      neighbours.size(), neighbours.data(), MPI_UNWEIGHTED, MPI_INFO_NULL,
-      false, &neighbour_comm);
+//   std::vector<std::int32_t> neighbours(neighbour_set.begin(),
+//                                        neighbour_set.end());
+//   MPI_Comm neighbour_comm;
+//   MPI_Dist_graph_create_adjacent(
+//       mesh.mpi_comm(), neighbours.size(), neighbours.data(), MPI_UNWEIGHTED,
+//       neighbours.size(), neighbours.data(), MPI_UNWEIGHTED, MPI_INFO_NULL,
+//       false, &neighbour_comm);
 
-  return neighbour_comm;
-}
+//   return neighbour_comm;
+// }
 } // namespace
 //-----------------------------------------------------------------------------
 ParallelRefinement::ParallelRefinement(const mesh::Mesh& mesh)
@@ -58,7 +58,8 @@ ParallelRefinement::ParallelRefinement(const mesh::Mesh& mesh)
   if (!_mesh.topology().connectivity(1, 0))
     throw std::runtime_error("Edges must be initialised");
 
-  _neighbour_comm = create_neighbor_comm_via_edge(mesh);
+  _neighbour_comm = mesh.topology().index_map(1)->mpi_comm_neighborhood();
+  // create_neighbor_comm_via_edge(mesh);
 
   // Create a global-to-local map for shared edges
   const std::map<std::int32_t, std::set<std::int32_t>>& shared_edges
