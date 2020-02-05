@@ -256,7 +256,7 @@ FunctionSpace::sub(const std::vector<int>& component) const
   return sub_space;
 }
 //-----------------------------------------------------------------------------
-std::pair<std::shared_ptr<FunctionSpace>, std::vector<PetscInt>>
+std::pair<std::shared_ptr<FunctionSpace>, std::vector<std::int32_t>>
 FunctionSpace::collapse() const
 {
   if (_component.empty())
@@ -264,7 +264,7 @@ FunctionSpace::collapse() const
 
   // Create collapsed DofMap
   std::shared_ptr<fem::DofMap> collapsed_dofmap;
-  std::vector<PetscInt> collapsed_dofs;
+  std::vector<std::int32_t> collapsed_dofs;
   std::tie(collapsed_dofmap, collapsed_dofs) = _dofmap->collapse(*_mesh);
 
   // Create new FunctionSpace and return
@@ -353,7 +353,7 @@ FunctionSpace::tabulate_dof_coordinates() const
     // Copy dof coordinates into vector
     for (Eigen::Index i = 0; i < dofs.size(); ++i)
     {
-      const PetscInt dof = dofs[i];
+      const std::int32_t dof = dofs[i];
       x.row(dof).head(gdim) = coordinates.row(i);
     }
   }

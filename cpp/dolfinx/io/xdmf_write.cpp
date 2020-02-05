@@ -731,7 +731,7 @@ void xdmf_write::add_function(MPI_Comm mpi_comm, pugi::xml_node& xml_node,
   const fem::DofMap& dofmap = *u.function_space()->dofmap();
 
   const std::size_t tdim = mesh.topology().dim();
-  std::vector<PetscInt> cell_dofs;
+  std::vector<std::int32_t> cell_dofs;
   std::vector<std::size_t> x_cell_dofs;
   const std::size_t n_cells = mesh.topology().index_map(tdim)->size_local();
   x_cell_dofs.reserve(n_cells);
@@ -748,7 +748,7 @@ void xdmf_write::add_function(MPI_Comm mpi_comm, pugi::xml_node& xml_node,
     for (Eigen::Index j = 0; j < cell_dofs_i.size(); ++j)
     {
       auto p = cell_dofs_i[j];
-      assert(p < (PetscInt)local_to_global_map.size());
+      assert(p < (std::int32_t)local_to_global_map.size());
       cell_dofs.push_back(local_to_global_map[p]);
     }
   }

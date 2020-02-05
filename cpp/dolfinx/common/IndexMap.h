@@ -11,7 +11,6 @@
 #include <cstdint>
 #include <dolfinx/common/MPI.h>
 #include <map>
-#include <petscsys.h>
 #include <set>
 #include <vector>
 
@@ -44,7 +43,7 @@ public:
   /// Collective
   /// @param[in] mpi_comm The MPI communicator
   /// @param[in] local_size Local size of the IndexMap, i.e. the number
-  ///                       of owned entries
+  ///   of owned entries
   /// @param[in] ghosts The global indices of ghost entries
   /// @param[in] block_size The block size of the IndexMap
   IndexMap(
@@ -79,13 +78,50 @@ public:
 
   /// Local-to-global map for ghosts (local indexing beyond end of local
   /// range)
-  const Eigen::Array<PetscInt, Eigen::Dynamic, 1>& ghosts() const;
+  const Eigen::Array<std::int64_t, Eigen::Dynamic, 1>& ghosts() const;
 
+  /// Compute global indices for array of local indices
+  /// @param[in] indices Local indices
+  /// @param[in] blocked If true work with blocked indices. If false the
+  ///   input indices are not block-wise.
+  /// @return The global index of the corresponding local index in
+  ///   indices.
+  Eigen::Array<std::int64_t, Eigen::Dynamic, 1> local_to_global(
+      const Eigen::Ref<const Eigen::Array<std::int32_t, Eigen::Dynamic, 1>>&
+          indices,
+      bool blocked = true) const;
+
+  /// Compute global indices for array of local indices
+  /// @param[in] indices Local indices
+  /// @param[in] blocked If true work with blocked indices. If false the
+  ///   input indices are not block-wise.
+  /// @return The global index of the corresponding local index in
+  ///   indices.
+  std::vector<std::int64_t>
+  local_to_global(const std::vector<std::int32_t>& indices,
+                  bool blocked = true) const;
+
+  /// Compute local indices for array of global indices
+  /// @param[in] indices Global indices
+  /// @param[in] blocked If true work with blocked indices. If false the
+  ///   input indices are not block-wise.
+  /// @return The local of the corresponding global index in indices.
+  ///   Return -1 if the local index does not exist on this process.
+  std::vector<std::int32_t>
+  global_to_local(const std::vector<std::int64_t>& indices,
+                  bool blocked = true) const;
+
+  /// Global indices
+  /// @return The global index for all local indices (0, 1, 2, ...) on this
+  /// process, including ghosts
+  std::vector<std::int64_t> global_indices(bool blocked = true) const;
+
+  /// @todo Remove this function
   /// Get global index for local index i (index of the block)
-  std::int64_t local_to_global(std::int64_t local_index) const
+  std::int64_t local_to_global(std::int32_t local_index) const
   {
     assert(local_index >= 0);
-    const std::int64_t local_size
+    const std::int32_t local_size
         = _all_ranges[_myrank + 1] - _all_ranges[_myrank];
     if (local_index < local_size)
     {
@@ -218,7 +254,7 @@ public:
 
 private:
   // Local-to-global map for ghost indices
-  Eigen::Array<PetscInt, Eigen::Dynamic, 1> _ghosts;
+  Eigen::Array<std::int64_t, Eigen::Dynamic, 1> _ghosts;
 
   // Owning neighbour for each ghost index
   Eigen::Array<std::int32_t, Eigen::Dynamic, 1> _ghost_owners;
