@@ -97,16 +97,6 @@ public:
   const std::map<std::int32_t, std::set<std::int32_t>>&
   shared_entities(int dim) const;
 
-  /// Set map from local ghost cell index to owning process. Since
-  /// ghost cells are at the end of the range, this is just a vector
-  /// over those cells
-  void set_entity_owner(int dim, const std::vector<std::int32_t>& owners);
-
-  /// Return mapping from local ghost cell index to owning process
-  /// (const version). Since ghost cells are at the end of the range,
-  /// this is just a vector over those cells
-  const std::vector<std::int32_t>& entity_owner(int dim) const;
-
   /// Marker for entities of dimension dim on the boundary. An entity of
   /// co-dimension < 0 is on the boundary if it is connected to a boundary
   /// facet. It is not defined for codimension 0.
@@ -147,12 +137,6 @@ private:
   // For entities of a given dimension d, maps each shared entity
   // (local index) to a list of the processes sharing the vertex
   std::vector<std::map<std::int32_t, std::set<std::int32_t>>> _shared_entities;
-
-  // TODO: Could IndexMap be used here
-  // For cells which are "ghosted", locate the owning process, using a
-  // vector rather than a map, since ghost cells are always at the end
-  // of the range.
-  std::array<std::vector<std::int32_t>, 4> _entity_owner;
 
   // IndexMap to store ghosting for each entity dimension
   std::array<std::shared_ptr<const common::IndexMap>, 4> _index_map;

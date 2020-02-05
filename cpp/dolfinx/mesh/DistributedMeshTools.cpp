@@ -489,8 +489,8 @@ void DistributedMeshTools::init_facet_cell_connections(Mesh& mesh)
     // Map shared facets
     std::map<std::size_t, std::size_t> global_to_local_facet;
 
-    const std::vector<std::int32_t>& cell_owners
-        = mesh.topology().entity_owner(D);
+    const Eigen::Array<int, Eigen::Dynamic, 1>& cell_owners
+        = mesh.topology().index_map(D)->ghost_owners();
     const std::int32_t ghost_offset_c
         = mesh.topology().index_map(D)->size_local();
     const std::int32_t ghost_offset_f

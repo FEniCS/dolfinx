@@ -146,8 +146,8 @@ void FormIntegrals::set_domains(FormIntegrals::Type type,
   else if (type == Type::interior_facet)
   {
     const int rank = MPI::rank(mesh->mpi_comm());
-    const std::vector<std::int32_t>& cell_owners
-        = mesh->topology().entity_owner(tdim);
+    const Eigen::Array<int, Eigen::Dynamic, 1>& cell_owners
+        = mesh->topology().index_map(tdim)->ghost_owners();
     const std::int32_t cell_ghost_offset
         = mesh->topology().index_map(tdim)->size_local();
     std::shared_ptr<const mesh::Connectivity> connectivity
@@ -241,8 +241,8 @@ void FormIntegrals::set_default_domains(const mesh::Mesh& mesh)
     if (MPI::size(mesh.mpi_comm()) > 1)
     {
       // Get owner (MPI ranks) of ghost cells
-      const std::vector<std::int32_t>& cell_owners
-          = mesh.topology().entity_owner(tdim);
+      const Eigen::Array<int, Eigen::Dynamic, 1>& cell_owners
+          = mesh.topology().index_map(tdim)->ghost_owners();
       const std::int32_t ghost_offset
           = mesh.topology().index_map(tdim)->size_local();
 

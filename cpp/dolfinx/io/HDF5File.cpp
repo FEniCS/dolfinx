@@ -384,8 +384,8 @@ void HDF5File::write(const mesh::Mesh& mesh, int cell_dim,
           // Iterate through ghost cells, adding non-ghost entities
           // which are in lower rank process cells to a set for
           // exclusion from output
-          const std::vector<std::int32_t>& cell_owners
-              = mesh.topology().entity_owner(tdim);
+          const Eigen::Array<int, Eigen::Dynamic, 1>& cell_owners
+              = mesh.topology().index_map(tdim)->ghost_owners();
           const std::int32_t ghost_offset_c
               = mesh.topology().index_map(tdim)->size_local();
           const std::int32_t ghost_offset_e
@@ -767,8 +767,8 @@ void HDF5File::write_mesh_function(const mesh::MeshFunction<T>& meshfunction,
       // Iterate through ghost cells, adding non-ghost entities which are
       // shared from lower rank process cells to a set for exclusion
       // from output
-      const std::vector<std::int32_t>& cell_owners
-          = mesh.topology().entity_owner(tdim);
+      const Eigen::Array<int, Eigen::Dynamic, 1>& cell_owners
+          = mesh.topology().index_map(tdim)->ghost_owners();
       const std::int32_t ghost_offset_c
           = mesh.topology().index_map(tdim)->size_local();
       const std::int32_t ghost_offset_e

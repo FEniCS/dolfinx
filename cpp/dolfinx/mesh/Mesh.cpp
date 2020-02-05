@@ -355,12 +355,6 @@ Mesh::Mesh(
   _topology->set_shared_entities(0, shared_vertices);
   _topology->set_index_map(0, vertex_index_map);
 
-  // Set vertex ownership from IndexMap (TODO: remove?)
-  std::vector<int> vertex_owner(vertex_index_map->num_ghosts());
-  auto owners = vertex_index_map->ghost_owners();
-  std::copy(owners.data(), owners.data() + owners.size(), vertex_owner.begin());
-  _topology->set_entity_owner(0, vertex_owner);
-
   // Initialise cell topology
   Eigen::Array<std::int64_t, Eigen::Dynamic, 1> cell_ghosts(num_ghost_cells);
   assert(num_ghost_cells == 0); // Ghost cells not enabled at the moment

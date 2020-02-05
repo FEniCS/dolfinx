@@ -138,10 +138,6 @@ void mesh(py::module& m)
                &dolfinx::mesh::Topology::connectivity, py::const_))
       .def("size", &dolfinx::mesh::Topology::size)
       .def("hash", &dolfinx::mesh::Topology::hash)
-      .def("ghost_offset", &dolfinx::mesh::Topology::ghost_offset)
-      .def("entity_owner",
-           py::overload_cast<int>(&dolfinx::mesh::Topology::entity_owner,
-                                  py::const_))
       .def("on_boundary", &dolfinx::mesh::Topology::on_boundary)
       .def("global_indices",
            [](const dolfinx::mesh::Topology& self, int dim) {

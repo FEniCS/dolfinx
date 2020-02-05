@@ -751,7 +751,6 @@ mesh::Mesh Partitioning::build_from_partition(
                                          new_cell_partition.end());
 
     // Assign map of shared cells (only needed for ghost cells)
-    mesh.topology().set_entity_owner(tdim, cell_owner);
     mesh.topology().set_shared_entities(tdim, shared_cells);
   }
 

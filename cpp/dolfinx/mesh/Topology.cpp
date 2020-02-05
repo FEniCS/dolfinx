@@ -120,18 +120,6 @@ Topology::shared_entities(int dim) const
   return _shared_entities[dim];
 }
 //-----------------------------------------------------------------------------
-void Topology::set_entity_owner(int dim,
-                                const std::vector<std::int32_t>& owners)
-{
-  assert(dim <= this->dim());
-  _entity_owner[dim] = owners;
-}
-//-----------------------------------------------------------------------------
-const std::vector<std::int32_t>& Topology::entity_owner(int dim) const
-{
-  return _entity_owner[dim];
-}
-//-----------------------------------------------------------------------------
 std::vector<bool> Topology::on_boundary(int dim) const
 {
   const int tdim = this->dim();
