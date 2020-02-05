@@ -45,7 +45,8 @@ std::int32_t Topology::size(int dim) const
 //-----------------------------------------------------------------------------
 std::int64_t Topology::size_global(int dim) const
 {
-  assert(_index_map[dim]);
+  if (!_index_map[dim])
+    return 0;
   return _index_map[dim]->size_global();
 }
 //-----------------------------------------------------------------------------

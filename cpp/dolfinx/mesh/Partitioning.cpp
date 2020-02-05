@@ -484,7 +484,6 @@ Partitioning::distribute_points(
                    count_sum.begin() + 1);
   const std::int64_t local_size = count_sum.back();
   count_sum[0] = local_size;
-  std::cout << "size on process " << mpi_rank << " = " << local_size << "\n";
 
   // Send offsets back to holding processes
   MPI_Alltoall(count_sum.data(), 1, MPI_INT, count_remote.data(), 1, MPI_INT,
@@ -495,12 +494,10 @@ Partitioning::distribute_points(
     std::partial_sum(count_remote.begin(), count_remote.end(),
                      count_sum.begin() + 1);
     std::fill(count_remote.begin(), count_remote.end(), 0);
-    std::cout << "total verts = " << count_sum.back() << "!!\n";
   }
   MPI_Bcast(count_sum.data(), mpi_size, MPI_INT, 0, comm);
   std::int64_t local_offset = count_sum[mpi_rank];
-  std::cout << "Offset of process " << mpi_rank << " = " << local_offset
-            << "\n";
+
   for (int i = 0; i < mpi_size; ++i)
     count_sum[i] += count_remote[i];
 
@@ -518,8 +515,6 @@ Partitioning::distribute_points(
         new_global_index0[gi] = count_sum[i];
         ++count_sum[i];
       }
-      else
-        std::cout << "+";
     }
   }
 
@@ -554,17 +549,12 @@ Partitioning::distribute_points(
     else
       new_local.push_back(rlocal);
   }
-  std::cout << "ghosts.size=" << ghosts.size() << "\n";
 
   Eigen::Map<Eigen::Array<std::int64_t, Eigen::Dynamic, 1>> garr(ghosts.data(),
                                                                  ghosts.size());
 
   auto v_idx_map
       = std::make_shared<common::IndexMap>(comm, local_size, garr, 1);
-
-  std::cout << mpi_rank << "] " << v_idx_map->size_local() << " "
-            << v_idx_map->size_global() << " " << v_idx_map->num_ghosts() << " "
-            << "\n";
 
   // Create compound datatype of gdim*doubles (point coords)
   MPI_Datatype compound_f64;
