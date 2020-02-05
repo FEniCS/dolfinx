@@ -80,11 +80,15 @@ public:
   /// Move assignment
   Connectivity& operator=(Connectivity&& connectivity) = default;
 
+  /// Number of entities on this process
+  /// @return The number of entities
+  std::int32_t size() const;
+
   /// Return number of connections for given entity
-  std::size_t size(std::int32_t entity) const;
+  int size(std::int32_t entity) const;
 
   /// Return global number of connections for given entity
-  std::size_t size_global(std::int32_t entity) const;
+  std::int64_t size_global(std::int32_t entity) const;
 
   /// Return array of connections for given entity
   std::int32_t* connections(int entity);

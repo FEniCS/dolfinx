@@ -233,7 +233,10 @@ void mesh(py::module& m)
       .def("pos",
            py::overload_cast<>(&dolfinx::mesh::Connectivity::entity_positions),
            "Index to each entity in the connectivity array")
-      .def("size", &dolfinx::mesh::Connectivity::size);
+      .def("size",
+           py::overload_cast<>(&dolfinx::mesh::Connectivity::size, py::const_))
+      .def("size", py::overload_cast<std::int32_t>(
+                       &dolfinx::mesh::Connectivity::size, py::const_));
 
   // dolfinx::mesh::MeshEntity class
   py::class_<dolfinx::mesh::MeshEntity,

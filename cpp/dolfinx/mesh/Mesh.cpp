@@ -476,7 +476,7 @@ std::int32_t Mesh::create_entities(int dim) const
   return num_new_entities;
 }
 //-----------------------------------------------------------------------------
-void Mesh::create_connectivity(std::size_t d0, std::size_t d1) const
+void Mesh::create_connectivity(int d0, int d1) const
 {
   // This function is obviously not const since it may potentially
   // compute new connectivity. However, in a sense all connectivity of a
@@ -507,10 +507,10 @@ void Mesh::create_connectivity_all() const
 //-----------------------------------------------------------------------------
 void Mesh::clean()
 {
-  const std::size_t D = _topology->dim();
-  for (std::size_t d0 = 0; d0 <= D; d0++)
+  const int D = _topology->dim();
+  for (int d0 = 0; d0 <= D; d0++)
   {
-    for (std::size_t d1 = 0; d1 <= D; d1++)
+    for (int d1 = 0; d1 <= D; d1++)
     {
       if (!(d0 == D && d1 == 0))
         _topology->clear(d0, d1);

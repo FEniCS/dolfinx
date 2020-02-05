@@ -24,25 +24,6 @@ Topology::Topology(int dim)
 //-----------------------------------------------------------------------------
 int Topology::dim() const { return _connectivity.rows() - 1; }
 //-----------------------------------------------------------------------------
-// std::int32_t Topology::size(int dim) const
-// {
-//   if (dim == 0)
-//   {
-//     assert(_index_map[0]);
-//     return _index_map[0]->size_local() + _index_map[0]->num_ghosts();
-//   }
-
-//   assert(dim < _connectivity.rows());
-//   auto c = _connectivity(dim, 0);
-//   if (!c)
-//   {
-//     throw std::runtime_error("Entities of dimension " + std::to_string(dim)
-//                              + " have not been created.");
-//   }
-
-//   return c->entity_positions().rows() - 1;
-// }
-//-----------------------------------------------------------------------------
 void Topology::clear(int d0, int d1)
 {
   assert(d0 < (int)_connectivity.rows());
@@ -180,7 +161,6 @@ std::string Topology::str(bool verbose) const
   if (verbose)
   {
     s << str(false) << std::endl << std::endl;
-
     s << "  Number of entities:" << std::endl << std::endl;
     for (int d = 0; d <= _dim; d++)
     {

@@ -152,7 +152,7 @@ public:
   /// Create connectivity between given pair of dimensions, d0 -> d1
   /// @param[in] d0 Topological dimension
   /// @param[in] d1 Topological dimension
-  void create_connectivity(std::size_t d0, std::size_t d1) const;
+  void create_connectivity(int d0, int d1) const;
 
   /// Compute all entities and connectivity
   void create_connectivity_all() const;

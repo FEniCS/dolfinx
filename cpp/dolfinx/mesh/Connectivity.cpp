@@ -42,14 +42,19 @@ Connectivity::Connectivity(
     _index_to_position[e] = e * num_connections_per_entity;
 }
 //-----------------------------------------------------------------------------
-std::size_t Connectivity::size(std::int32_t entity) const
+std::int32_t Connectivity::size() const
+{
+  return _index_to_position.rows() - 1;
+}
+//-----------------------------------------------------------------------------
+int_fast32_t Connectivity::size(std::int32_t entity) const
 {
   return (entity + 1) < _index_to_position.size()
              ? _index_to_position[entity + 1] - _index_to_position[entity]
              : 0;
 }
 //-----------------------------------------------------------------------------
-std::size_t Connectivity::size_global(std::int32_t entity) const
+std::int64_t Connectivity::size_global(std::int32_t entity) const
 {
   if (_num_global_connections.size() == 0)
     return size(entity);

@@ -45,9 +45,8 @@ compute_entity_numbering(const Mesh& mesh, int d)
   }
 
   // Get number of entities of dimension d on this process
-  auto c = mesh.topology().connectivity(d, 0);
-  assert(c);
-  const std::int32_t size = c->entity_positions().rows() - 1;
+  assert(mesh.topology().connectivity(d, 0));
+  const std::int32_t size = mesh.topology().connectivity(d, 0)->size();
 
   // MPI communicator
   const MPI_Comm mpi_comm = mesh.mpi_comm();
@@ -401,11 +400,9 @@ void DistributedMeshTools::number_entities(const Mesh& mesh, int d)
           + std::to_string(d) + " have not been computed.");
     }
 
-    // FIXME: Hack to get number of entities
-    auto c = mesh.topology().connectivity(d, 0);
-    assert(c);
-    const std::int32_t size_d = c->entity_positions().rows() - 1;
-    std::cout << "E size: " << size_d << std::endl;
+    // Get number of mesh entities of dimension d on this process
+    assert(mesh.topology().connectivity(d, 0));
+    const std::int32_t size_d = mesh.topology().connectivity(d, 0)->size();
 
     // Set global entity numbers in mesh
     std::vector<std::int64_t> global_indices(size_d, 0);
@@ -414,8 +411,8 @@ void DistributedMeshTools::number_entities(const Mesh& mesh, int d)
 
     // Set IndexMap
     Eigen::Array<std::int64_t, Eigen::Dynamic, 1> ghosts(0);
-    auto index_map
-        = std::make_shared<common::IndexMap>(mesh.mpi_comm(), size_d, ghosts, 1);
+    auto index_map = std::make_shared<common::IndexMap>(mesh.mpi_comm(), size_d,
+                                                        ghosts, 1);
     _mesh.topology().set_index_map(d, index_map);
     std::cout << "Have set map: " << d << std::endl;
 
