@@ -55,8 +55,9 @@ std::int64_t Topology::size_global(int dim) const
     assert(dim < (int)_global_num_entities.size());
     if (_index_map[dim])
     {
-      std::cout << "GLOBAL: " << _global_num_entities[dim]
-                << "==" << _index_map[dim]->size_global() << "\n";
+      std::cout << "GLOBAL SIZE: " << _global_num_entities[dim]
+                << "(OLD) ==" << _index_map[dim]->size_global()
+                << "(INDEXMAP)\n";
     }
     return _global_num_entities[dim];
   }
@@ -70,6 +71,7 @@ std::int32_t Topology::ghost_offset(int dim) const
     std::cout << "INDEX_MAP:" << MPI::rank(_index_map[dim]->mpi_comm()) << "]"
               << _ghost_offset_index[dim]
               << "==" << _index_map[dim]->size_local() << "\n";
+    return _index_map[dim]->size_local();
   }
 
   return _ghost_offset_index[dim];
@@ -91,10 +93,6 @@ void Topology::set_num_entities_global(int dim, std::int64_t global_size)
   }
   assert(dim < (int)_global_num_entities.size());
   _global_num_entities[dim] = global_size;
-
-  // If mesh is local, make shared vertices empty
-  // if (dim == 0 && (local_size == global_size))
-  //   shared_entities(0);
 }
 //-----------------------------------------------------------------------------
 void Topology::set_global_indices(
