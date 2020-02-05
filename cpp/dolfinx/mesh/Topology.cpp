@@ -104,8 +104,11 @@ std::vector<bool> Topology::on_boundary(int dim) const
   if (!connectivity_facet_cell)
     throw std::runtime_error("Facet-cell connectivity missing");
 
-  std::vector<bool> marker(this->size(dim), false);
-  const int num_facets = this->size(tdim - 1);
+  assert(_index_map[dim]);
+  std::vector<bool> marker(
+      _index_map[dim]->size_local() + _index_map[dim]->num_ghosts(), false);
+  const int num_facets
+      = _index_map[tdim - 1]->size_local() + _index_map[tdim - 1]->num_ghosts();
 
   // Special case for facets
   if (dim == tdim - 1)
@@ -180,7 +183,14 @@ std::string Topology::str(bool verbose) const
 
     s << "  Number of entities:" << std::endl << std::endl;
     for (int d = 0; d <= _dim; d++)
-      s << "    dim = " << d << ": " << size(d) << std::endl;
+    {
+      if (_index_map[d])
+      {
+        const int size
+            = _index_map[d]->size_local() + _index_map[d]->num_ghosts();
+        s << "    dim = " << d << ": " << size << std::endl;
+      }
+    }
     s << std::endl;
 
     s << "  Connectivity matrix:" << std::endl << std::endl;

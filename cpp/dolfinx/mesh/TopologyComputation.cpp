@@ -193,7 +193,10 @@ compute_entities_by_key_matching(const Mesh& mesh, int dim)
     if (!topology.connectivity(tdim, dim))
       throw std::runtime_error("Missing cell-entity connectivity");
 
-    return {nullptr, nullptr, topology.size(dim)};
+    auto map = topology.index_map(dim);
+    assert(map);
+    const int size = map->size_local() + map->num_ghosts();
+    return {nullptr, nullptr, size};
   }
 
   // Start timer
@@ -308,7 +311,10 @@ Connectivity compute_from_transpose(const Mesh& mesh, int d0, int d1)
     throw std::runtime_error("Missing required connectivity d1-d0.");
 
   // Compute number of connections for each e0
-  std::vector<std::int32_t> num_connections(topology.size(d0), 0);
+  auto map_d0 = topology.index_map(d0);
+  assert(map_d0);
+  const int size_d0 = map_d0->size_local() + map_d0->num_ghosts();
+  std::vector<std::int32_t> num_connections(size_d0, 0);
   for (auto& e1 : MeshRange(mesh, d1, MeshRangeType::ALL))
     for (auto& e0 : EntityRange(e1, d0))
       num_connections[e0.index()]++;
@@ -458,9 +464,12 @@ void TopologyComputation::compute_connectivity(Mesh& mesh, int d0, int d1)
   // Decide how to compute the connectivity
   if (d0 == d1)
   {
-    // For d0=d1, use identity connecticity
+    // For d0==d1, use identity connectivity
+    auto map_d0 = topology.index_map(d0);
+    assert(map_d0);
+    const int size_d0 = map_d0->size_local() + map_d0->num_ghosts();
     std::vector<std::vector<std::size_t>> connectivity_dd(
-        topology.size(d0), std::vector<std::size_t>(1));
+        size_d0, std::vector<std::size_t>(1));
     for (auto& e : MeshRange(mesh, d0, MeshRangeType::ALL))
       connectivity_dd[e.index()][0] = e.index();
     auto connectivity = std::make_shared<Connectivity>(connectivity_dd);
