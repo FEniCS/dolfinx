@@ -142,7 +142,7 @@ MeshFunction<T>::MeshFunction(std::shared_ptr<const Mesh> mesh,
 
   // Initialise values with default
   auto map = _mesh->topology().index_map(_dim);
-  _values.resize(map->local_size() + map->num_ghosts());
+  _values.resize(map->size_local() + map->num_ghosts());
   _values = default_value;
 
   // Get mesh connectivity D --> d
