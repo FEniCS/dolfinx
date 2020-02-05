@@ -239,7 +239,6 @@ compute_entities_by_key_matching(const Mesh& mesh, int dim)
   return {ce, ev, num_nonghost_entities};
 }
 
-template <int N>
 std::tuple<std::shared_ptr<Connectivity>, std::shared_ptr<Connectivity>,
            std::int32_t>
 compute_entities_by_key_matching_new(const Mesh& mesh, int dim)
@@ -276,8 +275,6 @@ compute_entities_by_key_matching_new(const Mesh& mesh, int dim)
   // Create map from cell vertices to entity vertices
   Eigen::Array<int, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor> e_vertices
       = mesh::get_entity_vertices(mesh.cell_type(), dim);
-
-  assert(N == num_vertices);
 
   // List of vertices for each entity in each cell.
   Eigen::Array<std::int32_t, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
@@ -326,6 +323,7 @@ compute_entities_by_key_matching_new(const Mesh& mesh, int dim)
       last = j;
     }
   }
+  ++entity_count;
 
   Eigen::Array<std::int32_t, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
       connectivity_ce(mesh.num_entities(tdim), num_entities);
@@ -337,6 +335,9 @@ compute_entities_by_key_matching_new(const Mesh& mesh, int dim)
   // Entity-vertex connectivity
   Eigen::Array<std::int32_t, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
       connectivity_ev(entity_count, num_vertices);
+  for (int i = 0; i < entity_list.rows(); ++i)
+    connectivity_ev.row(entity_index[i]) = entity_list.row(i);
+
   auto ev = std::make_shared<Connectivity>(connectivity_ev);
 
   return {ce, ev, entity_count};
@@ -468,32 +469,10 @@ void TopologyComputation::compute_entities(Mesh& mesh, int dim)
     return;
   }
 
-  // Call specialised function to compute entities
-  const std::int8_t num_entity_vertices
-      = mesh::num_cell_vertices(mesh::cell_entity_type(mesh.cell_type(), dim));
-
   std::tuple<std::shared_ptr<Connectivity>, std::shared_ptr<Connectivity>,
              std::int32_t>
-      data;
-  switch (num_entity_vertices)
-  {
-  case 1:
-    data = compute_entities_by_key_matching_new<1>(mesh, dim);
-    break;
-  case 2:
-    data = compute_entities_by_key_matching_new<2>(mesh, dim);
-    break;
-  case 3:
-    data = compute_entities_by_key_matching_new<3>(mesh, dim);
-    break;
-  case 4:
-    data = compute_entities_by_key_matching_new<4>(mesh, dim);
-    break;
-  default:
-    throw std::runtime_error("Topology computation of entities with "
-                             + std::to_string(num_entity_vertices)
-                             + "not supported");
-  }
+      data = compute_entities_by_key_matching_new(mesh, dim);
+
   // Set cell-entity connectivity
   if (std::get<0>(data))
     topology.set_connectivity(std::get<0>(data), topology.dim(), dim);
