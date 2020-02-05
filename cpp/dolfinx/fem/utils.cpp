@@ -174,7 +174,6 @@ la::PETScMatrix dolfinx::fem::create_matrix(const Form& a)
     std::array<PetscInt, 2> row_range;
     MatGetOwnershipRange(A.mat(), &row_range[0], &row_range[1]);
     const std::int64_t range = std::min(row_range[1], (PetscInt)A.size()[1]);
-
     for (std::int64_t i = row_range[0]; i < range; i++)
     {
       const PetscInt _i = i;
@@ -257,17 +256,11 @@ la::PETScMatrix fem::create_matrix_block(
     for (std::size_t i = 0; i < V[d].size(); ++i)
     {
       auto map = V[d][i]->dofmap()->index_map;
-      int size = map->size_local() + map->num_ghosts();
-      const int bs = map->block_size;
-      for (int k = 0; k < size; ++k)
+      const std::vector<std::int64_t> global = map->global_indices(false);
+      for (auto global_index : global)
       {
-        std::int64_t index_k = map->local_to_global(k);
-        for (int block = 0; block < bs; ++block)
-        {
-          std::int64_t index
-              = get_global_index(index_maps[d], i, index_k * bs + block);
-          _maps[d].push_back(index);
-        }
+        std::int64_t index = get_global_index(index_maps[d], i, global_index);
+        _maps[d].push_back(index);
       }
     }
   }
@@ -341,7 +334,7 @@ fem::create_vector_block(const std::vector<const common::IndexMap*>& maps)
     const int bs = maps[i]->block_size;
     local_size += maps[i]->size_local() * bs;
 
-    const Eigen::Array<PetscInt, Eigen::Dynamic, 1>& field_ghosts
+    const Eigen::Array<std::int64_t, Eigen::Dynamic, 1>& field_ghosts
         = maps[i]->ghosts();
     for (Eigen::Index j = 0; j < field_ghosts.size(); ++j)
     {

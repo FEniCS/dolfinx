@@ -60,7 +60,8 @@ using marking_function = std::function<Eigen::Array<bool, Eigen::Dynamic, 1>(
 ///     two spaces are passed in). If two spaces are passed in, the (i,
 ///     0) entry is the DOF index in the space V[0] and (i, 1) is the
 ///     correspinding DOF entry in the space V[1].
-Eigen::Array<PetscInt, Eigen::Dynamic, Eigen::Dynamic> locate_dofs_topological(
+Eigen::Array<std::int32_t, Eigen::Dynamic, Eigen::Dynamic>
+locate_dofs_topological(
     const std::vector<std::reference_wrapper<function::FunctionSpace>>& V,
     const int dim, const Eigen::Ref<const Eigen::ArrayXi>& entities,
     bool remote = true);
@@ -75,7 +76,7 @@ Eigen::Array<PetscInt, Eigen::Dynamic, Eigen::Dynamic> locate_dofs_topological(
 ///     will be located
 /// @param[in] marker Function marking tabulated degrees of freedom
 /// @return Array of local indices of located degrees of freedom
-Eigen::Array<PetscInt, Eigen::Dynamic, 1>
+Eigen::Array<std::int32_t, Eigen::Dynamic, 1>
 locate_dofs_geometrical(const function::FunctionSpace& V,
                         marking_function marker);
 
@@ -102,7 +103,8 @@ public:
   ///   boundary value function applied to V_dofs[i]
   DirichletBC(
       std::shared_ptr<const function::Function> g,
-      const Eigen::Ref<const Eigen::Array<PetscInt, Eigen::Dynamic, 1>>& dofs);
+      const Eigen::Ref<const Eigen::Array<std::int32_t, Eigen::Dynamic, 1>>&
+          dofs);
 
   /// Create boundary condition
   ///
@@ -113,10 +115,11 @@ public:
   ///   boundary condition value function g.
   /// @param[in] V The function (sub)space on which the boundary
   ///   condition is applied
-  DirichletBC(std::shared_ptr<const function::Function> g,
-              const Eigen::Ref<const Eigen::Array<PetscInt, Eigen::Dynamic, 2>>&
-                  V_g_dofs,
-              std::shared_ptr<const function::FunctionSpace> V);
+  DirichletBC(
+      std::shared_ptr<const function::Function> g,
+      const Eigen::Ref<const Eigen::Array<std::int32_t, Eigen::Dynamic, 2>>&
+          V_g_dofs,
+      std::shared_ptr<const function::FunctionSpace> V);
 
   /// Copy constructor
   /// @param[in] bc The object to be copied
@@ -146,12 +149,12 @@ public:
 
   /// Get array of dof indices to which a Dirichlet boundary condition
   /// is applied. The array is sorted and may contain ghost entries.
-  Eigen::Array<PetscInt, Eigen::Dynamic, 2>& dofs();
+  const Eigen::Array<std::int32_t, Eigen::Dynamic, 2>& dofs() const;
 
   /// Get array of dof indices owned by this process to which a
   /// Dirichlet BC is applied. The array is sorted and does not contain
   /// ghost entries.
-  const Eigen::Ref<const Eigen::Array<PetscInt, Eigen::Dynamic, 2>>
+  const Eigen::Ref<const Eigen::Array<std::int32_t, Eigen::Dynamic, 2>>
   dofs_owned() const;
 
   // FIXME: clarify w.r.t ghosts
@@ -186,7 +189,7 @@ private:
   std::shared_ptr<const function::Function> _g;
 
   // Indices of dofs in _function_space and in the space of _g
-  Eigen::Array<PetscInt, Eigen::Dynamic, 2> _dofs;
+  Eigen::Array<std::int32_t, Eigen::Dynamic, 2> _dofs;
 
   // The first _owned_indices in _dofs are owned by this process
   int _owned_indices = -1;
