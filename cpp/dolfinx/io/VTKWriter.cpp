@@ -99,7 +99,8 @@ std::string ascii_cell_data(const mesh::Mesh& mesh,
   ss << std::scientific;
   ss << std::setprecision(16);
   std::vector<std::size_t>::const_iterator cell_offset = offset.begin();
-  for (int i = 0; i < mesh.topology().ghost_offset(mesh.topology().dim()); ++i)
+  for (int i = 0;
+       i < mesh.topology().index_map(mesh.topology().dim())->size_local(); ++i)
   {
     if (rank == 1 && data_dim == 2)
     {
@@ -137,8 +138,7 @@ std::string ascii_cell_data(const mesh::Mesh& mesh,
 void write_ascii_mesh(const mesh::Mesh& mesh, int cell_dim,
                       std::string filename)
 {
-  // FIXME: 'mesh.topology().ghost_offset' is plain confusing
-  const int num_cells = mesh.topology().ghost_offset(cell_dim);
+  const int num_cells = mesh.topology().index_map(cell_dim)->size_local();
   const int element_degree = mesh.degree();
 
   // Get VTK cell type
@@ -273,7 +273,7 @@ void VTKWriter::write_cell_data(const function::Function& u,
   const mesh::Mesh& mesh = *u.function_space()->mesh();
   const fem::DofMap& dofmap = *u.function_space()->dofmap();
   const std::size_t tdim = mesh.topology().dim();
-  const std::size_t num_cells = mesh.topology().ghost_offset(tdim);
+  const std::size_t num_cells = mesh.topology().index_map(tdim)->size_local();
 
   std::string encode_string = "ascii";
 

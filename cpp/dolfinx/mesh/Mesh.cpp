@@ -353,7 +353,6 @@ Mesh::Mesh(
       vertex_index_map->size_global());
   _topology->set_global_indices(0, vertex_indices_global);
   _topology->set_shared_entities(0, shared_vertices);
-  _topology->init_ghost(0, vertex_index_map->size_local());
   _topology->set_index_map(0, vertex_index_map);
 
   // Set vertex ownership from IndexMap (TODO: remove?)
@@ -368,9 +367,7 @@ Mesh::Mesh(
   auto cell_index_map = std::make_shared<common::IndexMap>(
       _mpi_comm.comm(), num_cells_local, cell_ghosts, 1);
   _topology->set_index_map(tdim, cell_index_map);
-
   _topology->set_num_entities_global(tdim, num_cells_global);
-  _topology->init_ghost(tdim, num_cells_local);
 
   auto cv = std::make_shared<Connectivity>(vertex_cols);
 

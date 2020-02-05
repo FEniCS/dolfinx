@@ -17,9 +17,8 @@ using namespace dolfinx::mesh;
 //-----------------------------------------------------------------------------
 Topology::Topology(std::size_t dim, std::int32_t num_vertices,
                    std::int64_t num_vertices_global)
-    : _num_vertices(num_vertices), _ghost_offset_index(dim + 1, 0),
-      _global_num_entities(dim + 1, -1), _global_indices(dim + 1),
-      _shared_entities(dim + 1),
+    : _num_vertices(num_vertices), _global_num_entities(dim + 1, -1),
+      _global_indices(dim + 1), _shared_entities(dim + 1),
       _connectivity(dim + 1,
                     std::vector<std::shared_ptr<Connectivity>>(dim + 1))
 {
@@ -63,20 +62,6 @@ std::int64_t Topology::size_global(int dim) const
   }
 }
 //-----------------------------------------------------------------------------
-std::int32_t Topology::ghost_offset(int dim) const
-{
-  assert(dim < (int)_ghost_offset_index.size());
-  if (_index_map[dim])
-  {
-    std::cout << "INDEX_MAP:" << MPI::rank(_index_map[dim]->mpi_comm()) << "]"
-              << _ghost_offset_index[dim]
-              << "==" << _index_map[dim]->size_local() << "\n";
-    return _index_map[dim]->size_local();
-  }
-
-  return _ghost_offset_index[dim];
-}
-//-----------------------------------------------------------------------------
 void Topology::clear(int d0, int d1)
 {
   assert(d0 < (int)_connectivity.size());
@@ -109,16 +94,10 @@ void Topology::set_index_map(int dim,
   _index_map[dim] = index_map;
 }
 //-----------------------------------------------------------------------------
-std::shared_ptr<const common::IndexMap> Topology::index_map(int dim)
+std::shared_ptr<const common::IndexMap> Topology::index_map(int dim) const
 {
   assert(dim < (int)_index_map.size());
   return _index_map[dim];
-}
-//-----------------------------------------------------------------------------
-void Topology::init_ghost(std::size_t dim, std::size_t index)
-{
-  assert(dim < _ghost_offset_index.size());
-  _ghost_offset_index[dim] = index;
 }
 //-----------------------------------------------------------------------------
 const std::vector<std::int64_t>& Topology::global_indices(std::size_t d) const

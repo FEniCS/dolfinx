@@ -122,7 +122,7 @@ void FormIntegrals::set_domains(FormIntegrals::Type type,
   // Get reference to mesh function data array
   const Eigen::Array<std::size_t, Eigen::Dynamic, 1>& mf_values
       = marker.values();
-  const int num_entities = mesh->topology().ghost_offset(dim);
+  const int num_entities = mesh->topology().index_map(dim)->size_local();
 
   if (type == Type::exterior_facet)
   {
@@ -148,7 +148,8 @@ void FormIntegrals::set_domains(FormIntegrals::Type type,
     const int rank = MPI::rank(mesh->mpi_comm());
     const std::vector<std::int32_t>& cell_owners
         = mesh->topology().entity_owner(tdim);
-    const std::int32_t cell_ghost_offset = mesh->topology().ghost_offset(tdim);
+    const std::int32_t cell_ghost_offset
+        = mesh->topology().index_map(tdim)->size_local();
     std::shared_ptr<const mesh::Connectivity> connectivity
         = mesh->topology().connectivity(tdim - 1, tdim);
     if (!connectivity)
@@ -202,7 +203,7 @@ void FormIntegrals::set_default_domains(const mesh::Mesh& mesh)
   // ghost cells)
   if (cell_integrals.size() > 0 and cell_integrals[0].id == -1)
   {
-    const int num_regular_cells = mesh.topology().ghost_offset(tdim);
+    const int num_regular_cells = mesh.topology().index_map(tdim)->size_local();
     cell_integrals[0].active_entities.resize(num_regular_cells);
     std::iota(cell_integrals[0].active_entities.begin(),
               cell_integrals[0].active_entities.end(), 0);
@@ -242,7 +243,8 @@ void FormIntegrals::set_default_domains(const mesh::Mesh& mesh)
       // Get owner (MPI ranks) of ghost cells
       const std::vector<std::int32_t>& cell_owners
           = mesh.topology().entity_owner(tdim);
-      const std::int32_t ghost_offset = mesh.topology().ghost_offset(tdim);
+      const std::int32_t ghost_offset
+          = mesh.topology().index_map(tdim)->size_local();
 
       std::shared_ptr<const mesh::Connectivity> connectivity
           = mesh.topology().connectivity(tdim - 1, tdim);

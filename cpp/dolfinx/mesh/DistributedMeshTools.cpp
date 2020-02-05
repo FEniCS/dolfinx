@@ -458,7 +458,7 @@ void DistributedMeshTools::init_facet_cell_connections(Mesh& mesh)
       = mesh.topology().shared_entities(D - 1);
 
   // Check if no ghost cells
-  if (mesh.topology().ghost_offset(D) == mesh.topology().size(D))
+  if (mesh.topology().index_map(D)->size_local() == mesh.topology().size(D))
   {
     // Copy local values
     assert(mesh.topology().connectivity(D - 1, D));
@@ -484,8 +484,10 @@ void DistributedMeshTools::init_facet_cell_connections(Mesh& mesh)
 
     const std::vector<std::int32_t>& cell_owners
         = mesh.topology().entity_owner(D);
-    const std::int32_t ghost_offset_c = mesh.topology().ghost_offset(D);
-    const std::int32_t ghost_offset_f = mesh.topology().ghost_offset(D - 1);
+    const std::int32_t ghost_offset_c
+        = mesh.topology().index_map(D)->size_local();
+    const std::int32_t ghost_offset_f
+        = mesh.topology().index_map(D - 1)->size_local();
     const std::map<std::int32_t, std::set<std::int32_t>>& sharing_map_f
         = mesh.topology().shared_entities(D - 1);
     const auto& global_facets = mesh.topology().global_indices(D - 1);

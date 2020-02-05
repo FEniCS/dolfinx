@@ -31,7 +31,6 @@ using namespace dolfinx::mesh;
 
 namespace
 {
-
 // Takes an Eigen::Array and obtains the sort permutation to reorder the
 // rows in ascending order. Each row must be sorted beforehand.
 template <typename T>
@@ -56,9 +55,126 @@ std::vector<int> sort_by_perm(
   return index;
 }
 //-----------------------------------------------------------------------------
+// Communicate with sharing processes to find out which entities are ghost
+// and return a mapping vector to move them to the end of the local range.
+std::vector<int> get_ghost_mapping(
+    const Mesh& mesh,
+    const Eigen::Ref<const Eigen::Array<std::int32_t, Eigen::Dynamic,
+                                        Eigen::Dynamic, Eigen::RowMajor>>&
+        entity_list,
+    const std::vector<std::int32_t>& entity_index, int entity_count)
+{
+  const int num_vertices = entity_list.cols();
+
+  // Get a single row in entity list for each entity
+  std::vector<std::int32_t> unique_row(entity_count);
+  for (int i = 0; i < entity_list.rows(); ++i)
+    unique_row[entity_index[i]] = i;
+
+  int mpi_size = dolfinx::MPI::size(mesh.mpi_comm());
+  std::vector<std::vector<std::int64_t>> send_entities(mpi_size);
+  std::vector<std::vector<std::int64_t>> send_index(mpi_size);
+  std::vector<std::vector<std::int64_t>> recv_entities(mpi_size);
+
+  // Get all "possibly shared" entities, based on vertex sharing
+  // Send to other processes, and see if we get the same back
+  const std::map<std::int32_t, std::set<std::int32_t>>& shared_vertices
+      = mesh.topology().shared_entities(0);
+  const std::vector<std::int64_t>& global_vertex_indices
+      = mesh.topology().global_indices(0);
+
+  // Set of sharing procs for each entity, counting vertex hits
+  std::map<int, int> procs;
+  for (int i : unique_row)
+  {
+    procs.clear();
+    for (int j = 0; j < num_vertices; ++j)
+    {
+      const int v = entity_list(i, j);
+      const auto it = shared_vertices.find(v);
+      if (it != shared_vertices.end())
+        for (std::int32_t p : it->second)
+          ++procs[p];
+    }
+    for (const auto& q : procs)
+      if (q.second == num_vertices)
+      {
+        const int p = q.first;
+        // Entity entity_index[i] may be shared with process p
+        for (int j = 0; j < num_vertices; ++j)
+        {
+          std::int64_t vglobal = global_vertex_indices[entity_list(i, j)];
+          send_entities[p].push_back(vglobal);
+        }
+        send_index[p].push_back(entity_index[i]);
+        std::sort(send_entities[p].end() - num_vertices,
+                  send_entities[p].end());
+      }
+  }
+
+  dolfinx::MPI::all_to_all(mesh.mpi_comm(), send_entities, recv_entities);
+
+  std::map<std::int32_t, std::set<std::int32_t>> shared_entities;
+  // Compare received with sent for each process
+  for (std::size_t p = 0; p < send_entities.size(); ++p)
+  {
+    const std::vector<std::int64_t>& sendp = send_entities[p];
+    const std::vector<std::int64_t>& recvp = recv_entities[p];
+
+    // Set of entity vertices received from process p
+    std::set<std::vector<std::int64_t>> recv_set;
+    for (std::size_t i = 0; i < recvp.size() / num_vertices; ++i)
+    {
+      recv_set.insert(
+          std::vector<std::int64_t>(recvp.begin() + i * num_vertices,
+                                    recvp.begin() + (i + 1) * num_vertices));
+    }
+    // Compare with sent values
+    for (std::size_t i = 0; i < sendp.size() / num_vertices; ++i)
+    {
+      const std::vector<std::int64_t> b(sendp.begin() + i * num_vertices,
+                                        sendp.begin() + (i + 1) * num_vertices);
+      if (recv_set.find(b) != recv_set.end())
+      {
+        // This entity was sent, and the same was received back, confirming
+        // sharing.
+        shared_entities[send_index[p][i]].insert(p);
+      }
+    }
+  }
+
+  int mpi_rank = dolfinx::MPI::rank(mesh.mpi_comm());
+
+  // Put ghosts at end of range by remapping
+  std::vector<std::int32_t> mapping(entity_count, -1);
+  std::int32_t c = 0;
+  // Index non-ghost entities
+  for (int i = 0; i < entity_count; ++i)
+  {
+    const auto it = shared_entities.find(i);
+    if (it == shared_entities.end() or *(it->second.begin()) > mpi_rank)
+    {
+      // Owned index
+      mapping[i] = c;
+      ++c;
+    }
+  }
+  // Now index the ghosts
+  for (int i = 0; i < entity_count; ++i)
+    if (mapping[i] == -1)
+    {
+      mapping[i] = c;
+      ++c;
+    }
+  assert(c == entity_count);
+
+  // FIXME - also return shared_entities
+  return mapping;
+}
+//-----------------------------------------------------------------------------
 std::tuple<std::shared_ptr<Connectivity>, std::shared_ptr<Connectivity>,
            std::int32_t>
-compute_entities_by_key_matching_new(const Mesh& mesh, int dim)
+compute_entities_by_key_matching(const Mesh& mesh, int dim)
 {
   if (dim == 0)
   {
@@ -141,131 +257,14 @@ compute_entities_by_key_matching_new(const Mesh& mesh, int dim)
   }
   ++entity_count;
 
-  //--------------------------------------------
-  // FIXME: make this into a separate function....
-
-  // Get a single row in entity list for each entity
-  std::vector<std::int32_t> unique_row(entity_count);
-  for (int i = 0; i < entity_list.rows(); ++i)
-    unique_row[entity_index[i]] = i;
-
-  int mpi_size = dolfinx::MPI::size(mesh.mpi_comm());
-  std::vector<std::vector<std::int64_t>> send_entities(mpi_size);
-  std::vector<std::vector<std::int64_t>> send_index(mpi_size);
-  std::vector<std::vector<std::int64_t>> recv_entities(mpi_size);
-
-  // Get all "possibly shared" entities, based on vertex sharing
-  // Send to other processes, and see if we get the same back
-  const std::map<std::int32_t, std::set<std::int32_t>>& shared_vertices
-      = mesh.topology().shared_entities(0);
-  const std::vector<std::int64_t>& global_vertex_indices
-      = mesh.topology().global_indices(0);
-
-  std::stringstream s;
-
-  std::map<int, int> procs;
-  for (int i : unique_row)
-  {
-    procs.clear();
-    for (int j = 0; j < num_vertices; ++j)
-    {
-      const int v = entity_list_sorted(i, j);
-      const auto it = shared_vertices.find(v);
-      if (it != shared_vertices.end())
-        for (std::int32_t p : it->second)
-          ++procs[p];
-    }
-    for (const auto& q : procs)
-      if (q.second == num_vertices)
-      {
-        const int p = q.first;
-
-        s << "Entity " << entity_index[i] << " may be shared with process " << p
-          << "\n";
-        for (int j = 0; j < num_vertices; ++j)
-        {
-          std::int64_t vglobal = global_vertex_indices[entity_list(i, j)];
-          send_entities[p].push_back(vglobal);
-        }
-        send_index[p].push_back(entity_index[i]);
-        std::sort(send_entities[p].end() - num_vertices,
-                  send_entities[p].end());
-      }
-  }
-
-  dolfinx::MPI::all_to_all(mesh.mpi_comm(), send_entities, recv_entities);
-
-  std::map<std::int32_t, std::set<std::int32_t>> shared_entities;
-  // Compare received with sent for each process
-  for (std::size_t p = 0; p < send_entities.size(); ++p)
-  {
-    const std::vector<std::int64_t>& sendp = send_entities[p];
-    const std::vector<std::int64_t>& recvp = recv_entities[p];
-    std::set<std::vector<std::int64_t>> recv_set;
-    for (std::size_t i = 0; i < recvp.size() / num_vertices; ++i)
-    {
-      recv_set.insert(
-          std::vector<std::int64_t>(recvp.begin() + i * num_vertices,
-                                    recvp.begin() + (i + 1) * num_vertices));
-    }
-    for (std::size_t i = 0; i < sendp.size() / num_vertices; ++i)
-    {
-      const std::vector<std::int64_t> b(sendp.begin() + i * num_vertices,
-                                        sendp.begin() + (i + 1) * num_vertices);
-      if (recv_set.find(b) == recv_set.end())
-      {
-        s << "Sent, but did not receive back - " << send_index[p][i]
-          << " not shared\n";
-      }
-      else
-      {
-        s << "entity " << send_index[p][i] << " shared with " << p << "\n";
-        // shared with process p
-        shared_entities[send_index[p][i]].insert(p);
-      }
-    }
-  }
-
-  int mpi_rank = dolfinx::MPI::rank(mesh.mpi_comm());
-
-  // send ghosts to end of range by remapping
-  std::vector<std::int32_t> mapping(entity_count, -1);
-  std::int32_t c = 0;
-  for (int i = 0; i < entity_count; ++i)
-  {
-    const auto it = shared_entities.find(i);
-    if (it == shared_entities.end() or *(it->second.begin()) > mpi_rank)
-    {
-      // Owned index
-      mapping[i] = c;
-      ++c;
-    }
-  }
-  for (int i = 0; i < entity_count; ++i)
-    if (mapping[i] == -1)
-    {
-      mapping[i] = c;
-      ++c;
-    }
-  assert(c == entity_count);
+  // Communicate with other processes to find out which entities are ghosted
+  // and shared. Remap the numbering so that ghosts are at the end.
+  std::vector<int> mapping
+      = get_ghost_mapping(mesh, entity_list, entity_index, entity_count);
 
   // Do the actual remap
   for (std::int32_t& q : entity_index)
     q = mapping[q];
-
-  s << "\nshared_entities = {";
-  for (auto q : shared_entities)
-  {
-    s << q.first << ":{";
-    for (std::int32_t r : q.second)
-      s << r << " ";
-    s << "}, ";
-  }
-  s << "}\n";
-
-  std::cout << s.str() << "\n";
-
-  //--------------------------------------------
 
   Eigen::Array<std::int32_t, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
       connectivity_ce(mesh.num_entities(tdim), num_entities);
@@ -413,7 +412,7 @@ void TopologyComputation::compute_entities(Mesh& mesh, int dim)
 
   std::tuple<std::shared_ptr<Connectivity>, std::shared_ptr<Connectivity>,
              std::int32_t>
-      data = compute_entities_by_key_matching_new(mesh, dim);
+      data = compute_entities_by_key_matching(mesh, dim);
 
   // Set cell-entity connectivity
   if (std::get<0>(data))
@@ -422,9 +421,6 @@ void TopologyComputation::compute_entities(Mesh& mesh, int dim)
   // Set entity-vertex connectivity
   if (std::get<1>(data))
     topology.set_connectivity(std::get<1>(data), dim, 0);
-
-  // Initialise ghost entity offset
-  topology.init_ghost(dim, std::get<2>(data));
 }
 //-----------------------------------------------------------------------------
 void TopologyComputation::compute_connectivity(Mesh& mesh, int d0, int d1)
@@ -436,7 +432,6 @@ void TopologyComputation::compute_connectivity(Mesh& mesh, int d0, int d1)
   //
   //   1. compute_entities():     d  - 0  from dim - 0
   //   2. compute_transpose():    d0 - d1 from d1 - d0
-  //   3. compute_intersection(): d0 - d1 from d0 - d' - d1
   //   4. compute_from_map():     d0 - d1 from d1 - 0 and d0 - 0
   // Each of these functions assume a set of preconditions that we
   // need to satisfy.

@@ -63,10 +63,6 @@ public:
   /// Return global number of entities for given dimension
   std::int64_t size_global(int dim) const;
 
-  /// Return number of regular (non-ghost) entities or equivalently, the
-  /// offset of where ghost entities begin
-  std::int32_t ghost_offset(int dim) const;
-
   /// Clear data for given pair of topological dimensions
   void clear(int d0, int d1);
 
@@ -79,16 +75,13 @@ public:
                           const std::vector<std::int64_t>& global_indices);
 
   /// Set the IndexMap for dimension dim
-  /// @warning This experimental and likely to change
+  /// @warning This is experimental and likely to change
   void set_index_map(int dim,
                      std::shared_ptr<const common::IndexMap> index_map);
 
   /// Get the IndexMap for dimension dim
   /// (Currently partially working)
-  std::shared_ptr<const common::IndexMap> index_map(int dim);
-
-  /// Initialise the offset index of ghost entities for this dimension
-  void init_ghost(std::size_t dim, std::size_t index);
+  std::shared_ptr<const common::IndexMap> index_map(int dim) const;
 
   /// Get local-to-global index map for entities of topological
   /// dimension d
@@ -143,11 +136,6 @@ public:
 private:
   // Number of mesh vertices
   std::int32_t _num_vertices;
-
-  // Local index of first ghost entity, for each topological dimension.
-  // Since ghost entities come after non-ghost entities, this is
-  // also the number of local non-ghost entities for each dimension.
-  std::vector<std::size_t> _ghost_offset_index;
 
   // Global number of mesh entities for each topological dimension
   std::vector<std::int64_t> _global_num_entities;
