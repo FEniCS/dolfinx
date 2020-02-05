@@ -132,7 +132,8 @@ void ParallelRefinement::mark(const mesh::MeshFunction<int>& refinement_marker)
   const Eigen::Array<int, Eigen::Dynamic, 1>& mf_values
       = refinement_marker.values();
 
-  for (const auto& entity : mesh::MeshRange(_mesh, entity_dim))
+  for (const auto& entity :
+       mesh::MeshRange(_mesh, entity_dim, mesh::MeshRangeType::ALL))
   {
     if (mf_values[entity.index()] == 1)
     {
