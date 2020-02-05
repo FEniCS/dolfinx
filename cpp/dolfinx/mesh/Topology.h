@@ -66,10 +66,6 @@ public:
   /// Clear data for given pair of topological dimensions
   void clear(int d0, int d1);
 
-  /// Set number of global entities (global_size) for given topological
-  /// dimension dim
-  void set_num_entities_global(int dim, std::int64_t global_size);
-
   /// Set the global indices for entities of dimension dim
   void set_global_indices(int dim,
                           const std::vector<std::int64_t>& global_indices);
@@ -126,9 +122,6 @@ public:
 private:
   // Number of mesh vertices
   std::int32_t _num_vertices;
-
-  // Global number of mesh entities for each topological dimension
-  std::vector<std::int64_t> _global_num_entities;
 
   // Global indices for mesh entities
   std::vector<std::vector<std::int64_t>> _global_indices;

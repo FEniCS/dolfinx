@@ -26,39 +26,22 @@ using namespace dolfinx::mesh;
 namespace
 {
 std::tuple<std::vector<std::int64_t>,
-           std::map<std::int32_t, std::set<std::int32_t>>, std::size_t,
+           std::map<std::int32_t, std::set<std::int32_t>>,
            std::shared_ptr<const common::IndexMap>>
 compute_entity_numbering(const Mesh& mesh, int d)
 {
-  LOG(INFO)
-      << "Number mesh entities for distributed mesh (for specified vertex ids)."
-      << d;
-  common::Timer timer(
-      "Number mesh entities for distributed mesh (for specified vertex ids)");
+  LOG(INFO) << "Number mesh entities for distributed mesh. " << d;
+  common::Timer timer("Number mesh entities for distributed mesh");
 
   std::vector<std::int64_t> global_entity_indices;
   std::map<std::int32_t, std::set<std::int32_t>> shared_entities;
 
   // Check that we're not re-numbering vertices (these are fixed at mesh
   // construction)
-  if (d == 0)
+  if (d == 0 or d == mesh.topology().dim())
   {
     throw std::runtime_error(
-        "Global vertex indices exist at input. Cannot be renumbered");
-  }
-
-  assert(d != mesh.topology().dim());
-
-  if (d == mesh.topology().dim())
-  {
-    // Numbering cells.
-    // FIXME: Should be redundant?
-    shared_entities.clear();
-    std::shared_ptr<common::IndexMap> index_map;
-    global_entity_indices = mesh.topology().global_indices(d);
-    return std::tuple(std::move(global_entity_indices),
-                      std::move(shared_entities), mesh.num_entities_global(d),
-                      index_map);
+        "Global vertex and cell indices exist at input. Cannot be renumbered.");
   }
 
   // MPI communicator
@@ -250,7 +233,6 @@ compute_entity_numbering(const Mesh& mesh, int d)
 
   const std::int64_t local_offset
       = dolfinx::MPI::global_offset(mpi_comm, num_local, true);
-  const std::int64_t num_global = dolfinx::MPI::sum(mpi_comm, num_local);
   std::int64_t n = local_offset;
 
   // Owned
@@ -318,7 +300,7 @@ compute_entity_numbering(const Mesh& mesh, int d)
       = std::make_shared<common::IndexMap>(mpi_comm, num_local, ghosts, 1);
 
   return std::tuple(std::move(global_entity_indices),
-                    std::move(shared_entities), num_global, index_map);
+                    std::move(shared_entities), index_map);
 }
 //-----------------------------------------------------------------------------
 template <typename T>
@@ -412,7 +394,6 @@ void DistributedMeshTools::number_entities(const Mesh& mesh, int d)
   {
     // Set global entity numbers in mesh
     mesh.create_entities(d);
-    _mesh.topology().set_num_entities_global(d, mesh.num_entities(d));
     std::vector<std::int64_t> global_indices(mesh.num_entities(d), 0);
     std::iota(global_indices.begin(), global_indices.end(), 0);
     _mesh.topology().set_global_indices(d, global_indices);
@@ -425,7 +406,7 @@ void DistributedMeshTools::number_entities(const Mesh& mesh, int d)
   }
 
   // Number entities
-  auto [global_entity_indices, shared_entities, num_global_entities, index_map]
+  auto [global_entity_indices, shared_entities, index_map]
       = compute_entity_numbering(mesh, d);
 
   // Set IndexMap
@@ -435,7 +416,6 @@ void DistributedMeshTools::number_entities(const Mesh& mesh, int d)
   _mesh.topology().set_shared_entities(d, shared_entities);
 
   // Set global entity numbers in mesh
-  _mesh.topology().set_num_entities_global(d, num_global_entities);
   _mesh.topology().set_global_indices(d, global_entity_indices);
 }
 //-----------------------------------------------------------------------------
@@ -465,7 +445,7 @@ void DistributedMeshTools::init_facet_cell_connections(Mesh& mesh)
       = mesh.topology().shared_entities(D - 1);
 
   // Check if no ghost cells
-  if (mesh.topology().index_map(D)->size_local() == mesh.topology().size(D))
+  if (mesh.topology().index_map(D)->num_ghosts() == 0)
   {
     // Copy local values
     assert(mesh.topology().connectivity(D - 1, D));

@@ -260,9 +260,6 @@ Mesh::Mesh(
   assert(num_ghost_cells <= num_cells);
   const std::int32_t num_cells_local = num_cells - num_ghost_cells;
 
-  // Number of cells (global)
-  const std::int64_t num_cells_global = MPI::sum(comm, num_cells_local);
-
   // Compute node local-to-global map from global indices, and compute
   // cell topology using new local indices
   auto [point_index_map, node_indices_global, coordinate_nodes, points_received]
@@ -361,7 +358,6 @@ Mesh::Mesh(
   auto cell_index_map = std::make_shared<common::IndexMap>(
       _mpi_comm.comm(), num_cells_local, cell_ghosts, 1);
   _topology->set_index_map(tdim, cell_index_map);
-  _topology->set_num_entities_global(tdim, num_cells_global);
 
   auto cv = std::make_shared<Connectivity>(vertex_cols);
 
