@@ -58,7 +58,7 @@ public:
   int dim() const;
 
   /// Return number of entities for given dimension (local to process)
-  std::int32_t size(int dim) const;
+  // std::int32_t size(int dim) const;
 
   /// Clear data for given pair of topological dimensions
   void clear(int d0, int d1);

@@ -366,8 +366,7 @@ void HDF5File::write(const mesh::Mesh& mesh, int cell_dim,
             = mesh.topology().shared_entities(cell_dim);
 
         std::set<int> non_local_entities;
-        if (mesh.topology().size(tdim)
-            == mesh.topology().index_map(tdim)->size_local())
+        if (mesh.topology().index_map(tdim)->num_ghosts() == 0)
         {
           // No ghost cells - exclude shared entities which are on lower
           // rank processes
@@ -750,8 +749,7 @@ void HDF5File::write_mesh_function(const mesh::MeshFunction<T>& meshfunction,
         = mesh.topology().shared_entities(cell_dim);
 
     std::set<int> non_local_entities;
-    if (mesh.topology().size(tdim)
-        == mesh.topology().index_map(tdim)->size_local())
+    if (mesh.topology().index_map(tdim)->num_ghosts() == 0)
     {
       // No ghost cells
       // Exclude shared entities which are on lower rank processes

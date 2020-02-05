@@ -6,11 +6,11 @@
 
 #pragma once
 
-#include "dolfinx/common/IndexMap.h"
 #include "Connectivity.h"
 #include "Mesh.h"
 #include "MeshEntity.h"
 #include "Topology.h"
+#include "dolfinx/common/IndexMap.h"
 #include <iterator>
 
 namespace dolfinx
@@ -187,7 +187,8 @@ public:
   const MeshIterator begin() const
   {
     if (_type == MeshRangeType::GHOST)
-      return MeshIterator(_mesh, _dim, _mesh.topology().index_map(_dim)->size_local());
+      return MeshIterator(_mesh, _dim,
+                          _mesh.topology().index_map(_dim)->size_local());
 
     return MeshIterator(_mesh, _dim, 0);
   }
@@ -196,7 +197,8 @@ public:
   MeshIterator begin()
   {
     if (_type == MeshRangeType::GHOST)
-      return MeshIterator(_mesh, _dim, _mesh.topology().index_map(_dim)->size_local());
+      return MeshIterator(_mesh, _dim,
+                          _mesh.topology().index_map(_dim)->size_local());
 
     return MeshIterator(_mesh, _dim, 0);
   }
@@ -204,10 +206,12 @@ public:
   /// MeshIterator of MeshEntity pointing to end of range (const)
   const MeshIterator end() const
   {
+    auto map = _mesh.topology().index_map(_dim);
+    assert(map);
     if (_type == MeshRangeType::REGULAR)
-      return MeshIterator(_mesh, _dim, _mesh.topology().index_map(_dim)->size_local());
-
-    return MeshIterator(_mesh, _dim, _mesh.topology().size(_dim));
+      return MeshIterator(_mesh, _dim, map->size_local());
+    else
+      return MeshIterator(_mesh, _dim, map->size_local() + map->num_ghosts());
   }
 
 private:

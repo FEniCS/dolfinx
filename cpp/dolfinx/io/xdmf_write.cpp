@@ -448,7 +448,7 @@ xdmf_write::compute_nonlocal_entities(const mesh::Mesh& mesh, int cell_dim)
   std::set<std::uint32_t> non_local_entities;
 
   const int tdim = mesh.topology().dim();
-  bool ghosted = (topology.size(tdim) > topology.index_map(tdim)->size_local());
+  bool ghosted = (topology.index_map(tdim)->num_ghosts() > 0);
   if (!ghosted)
   {
     // No ghost cells - exclude shared entities which are on lower rank

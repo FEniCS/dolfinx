@@ -406,7 +406,10 @@ Mesh::~Mesh()
 std::int32_t Mesh::num_entities(int d) const
 {
   assert(_topology);
-  return _topology->size(d);
+  auto map = _topology->index_map(d);
+  assert(map);
+  assert(map->block_size == 1);
+  return map->size_local() + map->num_ghosts();
 }
 //-----------------------------------------------------------------------------
 std::int64_t Mesh::num_entities_global(int dim) const
@@ -453,7 +456,12 @@ std::size_t Mesh::create_entities(int dim) const
 
   // Skip if already computed (vertices (dim=0) should always exist)
   if (_topology->connectivity(dim, 0) or dim == 0)
-    return _topology->size(dim);
+  {
+    auto map = _topology->index_map(dim);
+    assert(map);
+    assert(map->block_size == 1);
+    return map->size_local() + map->num_ghosts();
+  }
 
   // Compute connectivity to vertices
   Mesh* mesh = const_cast<Mesh*>(this);
@@ -463,7 +471,10 @@ std::size_t Mesh::create_entities(int dim) const
   // Number globally
   DistributedMeshTools::number_entities(*mesh, dim);
 
-  return _topology->size(dim);
+  auto map = _topology->index_map(dim);
+  assert(map);
+  assert(map->block_size == 1);
+  return map->size_local() + map->num_ghosts();
 }
 //-----------------------------------------------------------------------------
 void Mesh::create_connectivity(std::size_t d0, std::size_t d1) const
