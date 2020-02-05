@@ -345,9 +345,7 @@ Mesh::Mesh(
   }
 
   // Initialise vertex topology
-  _topology = std::make_unique<Topology>(
-      tdim, vertex_index_map->size_local() + vertex_index_map->num_ghosts(),
-      vertex_index_map->size_global());
+  _topology = std::make_unique<Topology>(tdim);
   _topology->set_global_indices(0, vertex_indices_global);
   _topology->set_shared_entities(0, shared_vertices);
   _topology->set_index_map(0, vertex_index_map);

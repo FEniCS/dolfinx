@@ -15,10 +15,8 @@ using namespace dolfinx;
 using namespace dolfinx::mesh;
 
 //-----------------------------------------------------------------------------
-Topology::Topology(std::size_t dim, std::int32_t num_vertices,
-                   std::int64_t num_vertices_global)
-    : _num_vertices(num_vertices), _global_indices(dim + 1),
-      _shared_entities(dim + 1),
+Topology::Topology(std::size_t dim)
+    : _global_indices(dim + 1), _shared_entities(dim + 1),
       _connectivity(dim + 1,
                     std::vector<std::shared_ptr<Connectivity>>(dim + 1))
 {
@@ -29,7 +27,7 @@ int Topology::dim() const { return _connectivity.size() - 1; }
 std::int32_t Topology::size(int dim) const
 {
   if (dim == 0)
-    return _num_vertices;
+    return _index_map[0]->size_local() + _index_map[0]->num_ghosts();
 
   assert(dim < (int)_connectivity.size());
   assert(!_connectivity[dim].empty());

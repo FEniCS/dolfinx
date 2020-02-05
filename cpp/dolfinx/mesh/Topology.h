@@ -39,8 +39,7 @@ class Topology
 {
 public:
   /// Create empty mesh topology
-  Topology(std::size_t dim, std::int32_t num_vertices,
-           std::int64_t num_vertices_global);
+  Topology(std::size_t dim);
 
   /// Copy constructor
   Topology(const Topology& topology) = default;
@@ -120,8 +119,6 @@ public:
   std::string str(bool verbose) const;
 
 private:
-  // Number of mesh vertices
-  std::int32_t _num_vertices;
 
   // Global indices for mesh entities
   std::vector<std::vector<std::int64_t>> _global_indices;
