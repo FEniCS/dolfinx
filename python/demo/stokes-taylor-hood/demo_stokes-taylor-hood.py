@@ -74,13 +74,13 @@ import matplotlib.pyplot as plt
 import numpy as np
 from petsc4py import PETSc
 
-import dolfin
+import dolfinx
 import ufl
-from dolfin import MPI, DirichletBC, Function, FunctionSpace, RectangleMesh
-from dolfin.cpp.mesh import CellType
-from dolfin.io import XDMFFile
-from dolfin.la import VectorSpaceBasis
-from dolfin.plotting import plot
+from dolfinx import MPI, DirichletBC, Function, FunctionSpace, RectangleMesh
+from dolfinx.cpp.mesh import CellType
+from dolfinx.io import XDMFFile
+from dolfinx.la import VectorSpaceBasis
+from dolfinx.plotting import plot
 from ufl import div, dx, grad, inner
 
 # We create a Mesh and attach a coordinate map to the mesh::
@@ -89,13 +89,13 @@ from ufl import div, dx, grad, inner
 mesh = RectangleMesh(
     MPI.comm_world,
     [np.array([0, 0, 0]), np.array([1, 1, 0])], [32, 32],
-    CellType.triangle, dolfin.cpp.mesh.GhostMode.none)
+    CellType.triangle, dolfinx.cpp.mesh.GhostMode.none)
 
-cmap = dolfin.fem.create_coordinate_map(mesh.ufl_domain())
+cmap = dolfinx.fem.create_coordinate_map(mesh.ufl_domain())
 mesh.geometry.coord_mapping = cmap
 
 # We define two :py:class:`FunctionSpace
-# <dolfin.function.FunctionSpace>` instances with different finite
+# <dolfinx.function.FunctionSpace>` instances with different finite
 # elements. ``P2`` corresponds to piecewise quadratics for the velocity
 # field and ``P1`` to continuous piecewise linears for the pressure
 # field::
@@ -109,6 +109,7 @@ V, Q = FunctionSpace(mesh, P2), FunctionSpace(mesh, P1)
 # No-slip boundary condition for velocity field (`V`) on boundaries
 # where x = 0, x = 1, and y = 0
 noslip = Function(V)
+
 bc0 = DirichletBC(V, noslip,
                   lambda x: np.logical_or(np.logical_or(np.isclose(x[0], 0.0),
                                                         np.isclose(x[0], 1.0)),
@@ -129,13 +130,13 @@ bcs = [bc0, bc1]
 # Define variational problem
 (u, p) = ufl.TrialFunction(V), ufl.TrialFunction(Q)
 (v, q) = ufl.TestFunction(V), ufl.TestFunction(Q)
-f = dolfin.Constant(mesh, (0, 0))
+f = dolfinx.Constant(mesh, (0, 0))
 
 a = [[inner(grad(u), grad(v)) * dx, inner(p, div(v)) * dx],
      [inner(div(u), q) * dx, None]]
 
 L = [inner(f, v) * dx,
-     inner(dolfin.Constant(mesh, 0), q) * dx]
+     inner(dolfinx.Constant(mesh, 0), q) * dx]
 
 # We will use a block-diagonal preconditioner to solve this problem::
 
@@ -152,32 +153,32 @@ a_p = [[a[0][0], None],
 # Dirichlet boundary conditions are zeroed and a value of 1 is set on
 # the diagonal.
 
-A = dolfin.fem.assemble_matrix_nest(a, bcs)
+A = dolfinx.fem.assemble_matrix_nest(a, bcs)
 A.assemble()
 
 # We create a nested matrix `P` to use as the preconditioner. The
 # top-left block of `P` is shared with the top-left block of `A`. The
 # bottom-right diagonal entry is assembled from the form `a_p11`::
 
-P11 = dolfin.fem.assemble_matrix(a_p11, [])
+P11 = dolfinx.fem.assemble_matrix(a_p11, [])
 P = PETSc.Mat().createNest([[A.getNestSubMatrix(0, 0), None], [None, P11]])
 P.assemble()
 
 # Next, the right-hand side vector is assembled and then modified to
 # account for non-homogeneous Dirichlet boundary conditions::
 
-b = dolfin.fem.assemble.assemble_vector_nest(L)
+b = dolfinx.fem.assemble.assemble_vector_nest(L)
 
 # Modify ('lift') the RHS for Dirichlet boundary conditions
-dolfin.fem.assemble.apply_lifting_nest(b, a, bcs)
+dolfinx.fem.assemble.apply_lifting_nest(b, a, bcs)
 
 # Sum contributions from ghost entries on the owner
 for b_sub in b.getNestSubVecs():
     b_sub.ghostUpdate(addv=PETSc.InsertMode.ADD, mode=PETSc.ScatterMode.REVERSE)
 
 # Set Dirichlet boundary condition values in the RHS
-bcs0 = dolfin.cpp.fem.bcs_rows(dolfin.fem.assemble._create_cpp_form(L), bcs)
-dolfin.fem.assemble.set_bc_nest(b, bcs0)
+bcs0 = dolfinx.cpp.fem.bcs_rows(dolfinx.fem.assemble._create_cpp_form(L), bcs)
+dolfinx.fem.assemble.set_bc_nest(b, bcs0)
 
 # Ths pressure field for this problem is determined only up to a
 # constant. We can supply the vector that spans the nullspace and any
@@ -185,7 +186,7 @@ dolfin.fem.assemble.set_bc_nest(b, bcs0)
 # the iterative linear solution process.
 
 # Create nullspace vector
-null_vec = dolfin.fem.create_vector_nest(L)
+null_vec = dolfinx.fem.create_vector_nest(L)
 
 # Set velocity part tp zero and the pressure part to a non-zero constant
 null_vecs = null_vec.getNestSubVecs()
@@ -230,7 +231,7 @@ opts["ksp_view"] = None
 ksp.setFromOptions()
 
 # To compute the solution, we create finite element :py:class:`Function
-# <dolfin.function.Function>` for the velocity (on the space `V`) and
+# <dolfinx.function.Function>` for the velocity (on the space `V`) and
 # for the pressure (on the space `Q`). The vectors for `u` and `p` are
 # combined to form a nested vector and the system is solved::
 
@@ -265,11 +266,11 @@ with XDMFFile(MPI.comm_world, "pressure.xdmf") as pfile_xdmf:
 # Next, we solve same problem, but now with monolithic (non-nested)
 # matrices and iterative solvers.
 
-A = dolfin.fem.assemble_matrix_block(a, bcs)
+A = dolfinx.fem.assemble_matrix_block(a, bcs)
 A.assemble()
-P = dolfin.fem.assemble_matrix_block(a_p, bcs)
+P = dolfinx.fem.assemble_matrix_block(a_p, bcs)
 P.assemble()
-b = dolfin.fem.assemble.assemble_vector_block(L, a, bcs)
+b = dolfinx.fem.assemble.assemble_vector_block(L, a, bcs)
 
 # Set near null space for pressure
 null_vec = A.createVecLeft()
@@ -409,15 +410,15 @@ f = Function(W0)
 a = (inner(grad(u), grad(v)) + inner(p, div(v)) + inner(div(u), q)) * dx
 L = inner(f, v) * dx
 
-A = dolfin.fem.assemble_matrix(a, bcs)
+A = dolfinx.fem.assemble_matrix(a, bcs)
 A.assemble()
-b = dolfin.fem.assemble.assemble_vector(L)
+b = dolfinx.fem.assemble.assemble_vector(L)
 
-dolfin.fem.assemble.apply_lifting(b, [a], [bcs])
+dolfinx.fem.assemble.apply_lifting(b, [a], [bcs])
 b.ghostUpdate(addv=PETSc.InsertMode.ADD, mode=PETSc.ScatterMode.REVERSE)
 
 # Set Dirichlet boundary condition values in the RHS
-dolfin.fem.assemble.set_bc(b, bcs)
+dolfinx.fem.assemble.set_bc(b, bcs)
 
 U = Function(W)
 
