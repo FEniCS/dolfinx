@@ -91,7 +91,8 @@ std::vector<int> get_ghost_mapping(
     proc_to_neighbour.insert({neighbours[i], i});
 
   std::vector<std::vector<std::int64_t>> send_entities(neighbour_size);
-  std::vector<std::vector<std::int64_t>> send_index(neighbour_size);
+  std::vector<std::vector<std::int32_t>> send_index(neighbour_size);
+  std::vector<std::vector<std::int32_t>> recv_index(neighbour_size);
 
   // Get all "possibly shared" entities, based on vertex sharing
   // Send to other processes, and see if we get the same back
@@ -108,10 +109,13 @@ std::vector<int> get_ghost_mapping(
       const int v = entity_list(i, j);
       const auto it = shared_vertices.find(v);
       if (it != shared_vertices.end())
+      {
         for (std::int32_t p : it->second)
           ++procs[p];
+      }
     }
     for (const auto& q : procs)
+    {
       if (q.second == num_vertices)
       {
         const int p = q.first;
@@ -129,8 +133,10 @@ std::vector<int> get_ghost_mapping(
         std::sort(send_entities[np].end() - num_vertices,
                   send_entities[np].end());
       }
+    }
   }
 
+  // prepare data for neighbour all to all
   std::vector<std::int64_t> send_entities_data;
   std::vector<std::int64_t> recv_entities_data;
   std::vector<int> send_offsets = {0};
@@ -150,27 +156,34 @@ std::vector<int> get_ghost_mapping(
   // Compare received with sent for each process
   for (int np = 0; np < neighbour_size; ++np)
   {
-    const std::vector<std::int64_t>& sendp = send_entities[np];
+    Eigen::Map<const Eigen::Array<std::int64_t, Eigen::Dynamic, Eigen::Dynamic,
+                                  Eigen::RowMajor>>
+        send_array(send_entities_data.data() + send_offsets[np],
+                   (send_offsets[np + 1] - send_offsets[np]) / num_vertices,
+                   num_vertices);
 
-    // Set of entity vertices received from neighbour np
-    std::set<std::vector<std::int64_t>> recv_set;
-    for (int i = recv_offsets[np]; i < recv_offsets[np + 1]; i += num_vertices)
-    {
-      recv_set.insert(std::vector<std::int64_t>(recv_entities_data.begin() + i,
-                                                recv_entities_data.begin() + i
-                                                    + num_vertices));
-    }
+    Eigen::Map<const Eigen::Array<std::int64_t, Eigen::Dynamic, Eigen::Dynamic,
+                                  Eigen::RowMajor>>
+        recv_array(recv_entities_data.data() + recv_offsets[np],
+                   (recv_offsets[np + 1] - recv_offsets[np]) / num_vertices,
+                   num_vertices);
+
+    recv_index[np].resize(recv_array.rows(), -1);
+
     // Compare with sent values
-    for (std::size_t i = 0; i < sendp.size() / num_vertices; ++i)
+    for (int i = 0; i < send_array.rows(); ++i)
     {
-      const std::vector<std::int64_t> b(sendp.begin() + i * num_vertices,
-                                        sendp.begin() + (i + 1) * num_vertices);
-      if (recv_set.find(b) != recv_set.end())
+      for (int j = 0; j < recv_array.rows(); ++j)
       {
-        // This entity was sent, and the same was received back, confirming
-        // sharing.
-        const int p = neighbours[np];
-        shared_entities[send_index[np][i]].insert(p);
+        if ((recv_array.row(j) == send_array.row(i)).all())
+        {
+          // This entity was sent, and the same was received back, confirming
+          // sharing.
+          const int p = neighbours[np];
+          shared_entities[send_index[np][i]].insert(p);
+          recv_index[np][j] = send_index[np][i];
+          break;
+        }
       }
     }
   }
@@ -192,27 +205,32 @@ std::vector<int> get_ghost_mapping(
     }
   }
 
-  // // Create global indices
-  // const std::int32_t num_local = c;
-  // const std::int64_t local_offset
-  //     = dolfinx::MPI::global_offset(mesh.mpi_comm(), num_local, true);
-  // std::vector<std::int64_t> global_indexing(entity_count, -1);
-  // std::iota(global_indexing.begin(), global_indexing.begin() + num_local,
-  //           local_offset);
+  // Create global indices
+  const std::int32_t num_local = c;
+  const std::int64_t local_offset
+      = dolfinx::MPI::global_offset(mesh.mpi_comm(), num_local, true);
+  std::vector<std::int64_t> global_indexing(entity_count, -1);
+  std::iota(global_indexing.begin(), global_indexing.begin() + num_local,
+            local_offset);
 
-  // std::vector<std::vector<std::int64_t>> send_global_indices(mpi_size);
-  // std::vector<std::vector<std::int64_t>> recv_global_indices(mpi_size);
+  std::vector<std::int64_t> send_global_index_data;
+  std::vector<int> send_global_index_offsets = {0};
+  std::vector<std::int64_t> recv_global_index_data;
+  std::vector<int> recv_global_index_offsets;
 
-  // // Send global indices for same entities that we sent before
-  // for (int p = 0; p < mpi_size; ++p)
-  // {
-  //   for (std::int32_t index : send_index[p])
-  //     send_global_indices[p].push_back(global_indexing[index]);
-  // }
+  // Send global indices for same entities that we sent before
+  for (int np = 0; np < neighbour_size; ++np)
+  {
+    for (std::int32_t index : send_index[np])
+      send_global_index_data.push_back(global_indexing[index]);
+    send_global_index_offsets.push_back(send_global_index_data.size());
+  }
 
-  // dolfinx::MPI::all_to_all(mesh.mpi_comm(), send_global_indices,
-  //                          recv_global_indices);
-  // // How to map back received indices?
+  dolfinx::MPI::neighbor_all_to_all(
+      mesh.mpi_comm(), send_global_index_offsets, send_global_index_data,
+      recv_global_index_offsets, recv_global_index_data);
+
+  // Map back received indices?
 
   // Now index the ghosts
   for (int i = 0; i < entity_count; ++i)
@@ -222,6 +240,8 @@ std::vector<int> get_ghost_mapping(
       ++c;
     }
   assert(c == entity_count);
+
+  // FIXME - Remap shared entities to new indices
 
   // FIXME - also return shared_entities, and global numbering
   return mapping;
