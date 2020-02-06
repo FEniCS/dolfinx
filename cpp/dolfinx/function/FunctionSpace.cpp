@@ -312,7 +312,7 @@ FunctionSpace::tabulate_dof_coordinates() const
   const fem::CoordinateElement& cmap = *_mesh->geometry().coord_mapping;
 
   // Prepare cell geometry
-  const mesh::Connectivity& connectivity_g
+  const mesh::Connectivity<std::int32_t>& connectivity_g
       = _mesh->coordinate_dofs().entity_points();
   const Eigen::Array<std::int32_t, Eigen::Dynamic, 1>& pos_g
       = connectivity_g.offsets();
@@ -374,7 +374,7 @@ void FunctionSpace::set_x(
   std::vector<PetscScalar> x_values;
 
   // Prepare cell geometry
-  const mesh::Connectivity& connectivity_g
+  const mesh::Connectivity<std::int32_t>& connectivity_g
       = _mesh->coordinate_dofs().entity_points();
   const Eigen::Array<std::int32_t, Eigen::Dynamic, 1>& pos_g
       = connectivity_g.offsets();

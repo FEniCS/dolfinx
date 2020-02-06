@@ -174,7 +174,7 @@ MeshValueCollection<T>::MeshValueCollection(
   else
   {
     _mesh->create_connectivity(_dim, D);
-    const Connectivity& connectivity = _mesh->topology().connectivity(_dim, D);
+    const Connectivity<std::int32_t>& connectivity = _mesh->topology().connectivity(_dim, D);
     for (Eigen::Index entity_index = 0; entity_index < mf_values.size();
          ++entity_index)
     {
@@ -228,7 +228,7 @@ MeshValueCollection<T>::operator=(const MeshFunction<T>& mesh_function)
   {
     _mesh->create_connectivity(_dim, D);
     assert(_mesh->topology().connectivity(_dim, D));
-    const Connectivity& connectivity = *_mesh->topology().connectivity(_dim, D);
+    const Connectivity<std::int32_t>& connectivity = *_mesh->topology().connectivity(_dim, D);
     for (Eigen::Index entity_index = 0; entity_index < mf_values.size();
          ++entity_index)
     {
@@ -339,7 +339,7 @@ bool MeshValueCollection<T>::set_value(std::size_t entity_index, const T& value)
   // Get mesh connectivity d --> D
   _mesh->create_connectivity(_dim, D);
   assert(_mesh->topology().connectivity(_dim, D));
-  const Connectivity& connectivity = *_mesh->topology().connectivity(_dim, D);
+  const Connectivity<std::int32_t>& connectivity = *_mesh->topology().connectivity(_dim, D);
 
   // Find the cell
   assert(connectivity.num_edges(entity_index) > 0);

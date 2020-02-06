@@ -80,7 +80,7 @@ std::vector<bool> Topology::on_boundary(int dim) const
                              + std::to_string(dim));
   }
 
-  std::shared_ptr<const Connectivity> connectivity_facet_cell
+  std::shared_ptr<const Connectivity<std::int32_t>> connectivity_facet_cell
       = connectivity(tdim - 1, tdim);
   if (!connectivity_facet_cell)
     throw std::runtime_error("Facet-cell connectivity missing");
@@ -103,7 +103,7 @@ std::vector<bool> Topology::on_boundary(int dim) const
   }
 
   // Get connectivity from facet to entities of interest (vertices or edges)
-  std::shared_ptr<const Connectivity> connectivity_facet_entity
+  std::shared_ptr<const Connectivity<std::int32_t>> connectivity_facet_entity
       = connectivity(tdim - 1, dim);
   if (!connectivity_facet_entity)
     throw std::runtime_error("Facet-entity connectivity missing");
@@ -126,21 +126,24 @@ std::vector<bool> Topology::on_boundary(int dim) const
   return marker;
 }
 //-----------------------------------------------------------------------------
-std::shared_ptr<Connectivity> Topology::connectivity(int d0, int d1)
+std::shared_ptr<Connectivity<std::int32_t>> Topology::connectivity(int d0,
+                                                                   int d1)
 {
   assert(d0 < _connectivity.rows());
   assert(d1 < _connectivity.cols());
   return _connectivity(d0, d1);
 }
 //-----------------------------------------------------------------------------
-std::shared_ptr<const Connectivity> Topology::connectivity(int d0, int d1) const
+std::shared_ptr<const Connectivity<std::int32_t>>
+Topology::connectivity(int d0, int d1) const
 {
   assert(d0 < _connectivity.rows());
   assert(d1 < _connectivity.cols());
   return _connectivity(d0, d1);
 }
 //-----------------------------------------------------------------------------
-void Topology::set_connectivity(std::shared_ptr<Connectivity> c, int d0, int d1)
+void Topology::set_connectivity(std::shared_ptr<Connectivity<std::int32_t>> c,
+                                int d0, int d1)
 {
   assert(d0 < _connectivity.rows());
   assert(d1 < _connectivity.cols());

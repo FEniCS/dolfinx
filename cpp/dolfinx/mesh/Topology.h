@@ -24,6 +24,7 @@ class IndexMap;
 namespace mesh
 {
 
+template <typename T>
 class Connectivity;
 
 /// Topology stores the topology of a mesh, consisting of mesh entities
@@ -100,13 +101,15 @@ public:
   std::vector<bool> on_boundary(int dim) const;
 
   /// Return connectivity for given pair of topological dimensions
-  std::shared_ptr<Connectivity> connectivity(int d0, int d1);
+  std::shared_ptr<Connectivity<std::int32_t>> connectivity(int d0, int d1);
 
   /// Return connectivity for given pair of topological dimensions
-  std::shared_ptr<const Connectivity> connectivity(int d0, int d1) const;
+  std::shared_ptr<const Connectivity<std::int32_t>> connectivity(int d0,
+                                                                 int d1) const;
 
   /// Set connectivity for given pair of topological dimensions
-  void set_connectivity(std::shared_ptr<Connectivity> c, int d0, int d1);
+  void set_connectivity(std::shared_ptr<Connectivity<std::int32_t>> c, int d0,
+                        int d1);
 
   /// Return hash based on the hash of cell-vertex connectivity
   size_t hash() const;
@@ -127,8 +130,8 @@ private:
   std::array<std::shared_ptr<const common::IndexMap>, 4> _index_map;
 
   // Connectivity for pairs of topological dimensions
-  Eigen::Array<std::shared_ptr<Connectivity>, Eigen::Dynamic, Eigen::Dynamic,
-               Eigen::RowMajor>
+  Eigen::Array<std::shared_ptr<Connectivity<std::int32_t>>, Eigen::Dynamic,
+               Eigen::Dynamic, Eigen::RowMajor>
       _connectivity;
 };
 } // namespace mesh

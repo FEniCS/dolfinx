@@ -27,12 +27,13 @@ namespace mesh
 /// which may either be equal for all entities or different, or by
 /// giving the entire (sparse) connectivity pattern.
 
+template <typename T>
 class Connectivity
 {
 public:
   /// Initialize with all connections and pointer to each entity
   /// position
-  Connectivity(const std::vector<std::int32_t>& connections,
+  Connectivity(const std::vector<T>& connections,
                const std::vector<std::int32_t>& positions)
   {
     assert(positions.back() == (std::int32_t)connections.size());
@@ -45,9 +46,8 @@ public:
   /// Initialize with all connections for case where each entity has the
   /// same number of connections
   Connectivity(
-      const Eigen::Ref<const Eigen::Array<std::int32_t, Eigen::Dynamic,
-                                          Eigen::Dynamic, Eigen::RowMajor>>&
-          connections)
+      const Eigen::Ref<const Eigen::Array<T, Eigen::Dynamic, Eigen::Dynamic,
+                                          Eigen::RowMajor>>& connections)
   {
     // NOTE: cannot directly copy data from connections because it may be
     // a view into a larger array, e.g. for non-affine cells
@@ -64,8 +64,8 @@ public:
   /// Set all connections for all entities (T is a '2D' container, e.g.
   /// a std::vector<<std::vector<std::size_t>>,
   /// std::vector<<std::set<std::size_t>>, etc)
-  template <typename T>
-  Connectivity(const std::vector<T>& connections)
+  template <typename X>
+  Connectivity(const std::vector<X>& connections)
       : _offsets(connections.size() + 1)
   {
     // Initialize offsets and compute total size
@@ -77,12 +77,12 @@ public:
     }
     _offsets[connections.size()] = size;
 
-    std::vector<std::int32_t> c;
+    std::vector<T> c;
     c.reserve(size);
     for (auto e = connections.begin(); e != connections.end(); ++e)
       c.insert(c.end(), e->begin(), e->end());
 
-    _array = Eigen::Array<std::int32_t, Eigen::Dynamic, 1>(c.size());
+    _array = Eigen::Array<T, Eigen::Dynamic, 1>(c.size());
     std::copy(c.begin(), c.end(), _array.data());
   }
 
@@ -143,14 +143,11 @@ public:
   }
 
   /// Return contiguous array of connections for all entities
-  Eigen::Array<std::int32_t, Eigen::Dynamic, 1>& array() { return _array; }
+  Eigen::Array<T, Eigen::Dynamic, 1>& array() { return _array; }
 
   /// Return contiguous array of connections for all entities (const
   /// version)
-  const Eigen::Array<std::int32_t, Eigen::Dynamic, 1>& array() const
-  {
-    return _array;
-  }
+  const Eigen::Array<T, Eigen::Dynamic, 1>& array() const { return _array; }
 
   /// Position of first connection in connections() for each entity
   /// (using local index)
@@ -200,7 +197,7 @@ public:
 
 private:
   // Connections for all entities stored as a contiguous array
-  Eigen::Array<std::int32_t, Eigen::Dynamic, 1> _array;
+  Eigen::Array<T, Eigen::Dynamic, 1> _array;
 
   // Position of first connection for each entity (using local index)
   Eigen::Array<std::int32_t, Eigen::Dynamic, 1> _offsets;

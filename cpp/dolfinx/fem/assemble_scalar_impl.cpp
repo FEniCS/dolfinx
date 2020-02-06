@@ -99,7 +99,7 @@ PetscScalar fem::impl::assemble_cells(
   mesh.create_entities(tdim);
 
   // Prepare cell geometry
-  const mesh::Connectivity& connectivity_g
+  const mesh::Connectivity<std::int32_t>& connectivity_g
       = mesh.coordinate_dofs().entity_points();
   const Eigen::Array<std::int32_t, Eigen::Dynamic, 1>& pos_g
       = connectivity_g.offsets();
@@ -149,7 +149,7 @@ PetscScalar fem::impl::assemble_exterior_facets(
   mesh.create_connectivity(tdim - 1, tdim);
 
   // Prepare cell geometry
-  const mesh::Connectivity& connectivity_g
+  const mesh::Connectivity<std::int32_t>& connectivity_g
       = mesh.coordinate_dofs().entity_points();
   const Eigen::Array<std::int32_t, Eigen::Dynamic, 1>& pos_g
       = connectivity_g.offsets();
@@ -209,7 +209,7 @@ PetscScalar fem::impl::assemble_interior_facets(
   mesh.create_connectivity(tdim - 1, tdim);
 
   // Prepare cell geometry
-  const mesh::Connectivity& connectivity_g
+  const mesh::Connectivity<std::int32_t>& connectivity_g
       = mesh.coordinate_dofs().entity_points();
   const Eigen::Array<std::int32_t, Eigen::Dynamic, 1>& pos_g
       = connectivity_g.offsets();

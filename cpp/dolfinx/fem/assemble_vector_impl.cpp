@@ -60,7 +60,7 @@ void _lift_bc_cells(
 
   // Prepare cell geometry
   const int gdim = mesh.geometry().dim();
-  const mesh::Connectivity& connectivity_g
+  const mesh::Connectivity<std::int32_t>& connectivity_g
       = mesh.coordinate_dofs().entity_points();
   const Eigen::Array<std::int32_t, Eigen::Dynamic, 1>& pos_g
       = connectivity_g.offsets();
@@ -187,7 +187,7 @@ void _lift_bc_exterior_facets(
                                           0);
 
   // Prepare cell geometry
-  const mesh::Connectivity& connectivity_g
+  const mesh::Connectivity<std::int32_t>& connectivity_g
       = mesh.coordinate_dofs().entity_points();
   const Eigen::Array<std::int32_t, Eigen::Dynamic, 1>& pos_g
       = connectivity_g.offsets();
@@ -220,7 +220,7 @@ void _lift_bc_exterior_facets(
   }
 
   // Iterate over all cells
-  std::shared_ptr<const mesh::Connectivity> connectivity
+  std::shared_ptr<const mesh::Connectivity<std::int32_t>> connectivity
       = mesh.topology().connectivity(tdim - 1, tdim);
   assert(connectivity);
   for (const mesh::MeshEntity& facet : mesh::MeshRange(mesh, tdim - 1))
@@ -374,7 +374,7 @@ void fem::impl::assemble_cells(
   const int gdim = mesh.geometry().dim();
 
   // Prepare cell geometry
-  const mesh::Connectivity& connectivity_g
+  const mesh::Connectivity<std::int32_t>& connectivity_g
       = mesh.coordinate_dofs().entity_points();
   const Eigen::Ref<const Eigen::Array<std::int32_t, Eigen::Dynamic, 1>> pos_g
       = connectivity_g.offsets();
@@ -428,7 +428,7 @@ void fem::impl::assemble_exterior_facets(
   mesh.create_connectivity(tdim - 1, tdim);
 
   // Prepare cell geometry
-  const mesh::Connectivity& connectivity_g
+  const mesh::Connectivity<std::int32_t>& connectivity_g
       = mesh.coordinate_dofs().entity_points();
   const Eigen::Array<std::int32_t, Eigen::Dynamic, 1>& pos_g
       = connectivity_g.offsets();
@@ -494,7 +494,7 @@ void fem::impl::assemble_interior_facets(
   mesh.create_connectivity(tdim - 1, tdim);
 
   // Prepare cell geometry
-  const mesh::Connectivity& connectivity_g
+  const mesh::Connectivity<std::int32_t>& connectivity_g
       = mesh.coordinate_dofs().entity_points();
   const Eigen::Array<std::int32_t, Eigen::Dynamic, 1>& pos_g
       = connectivity_g.offsets();

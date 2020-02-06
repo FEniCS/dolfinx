@@ -126,7 +126,7 @@ void FormIntegrals::set_domains(FormIntegrals::Type type,
 
   if (type == Type::exterior_facet)
   {
-    std::shared_ptr<const mesh::Connectivity> connectivity
+    std::shared_ptr<const mesh::Connectivity<std::int32_t>> connectivity
         = mesh->topology().connectivity(tdim - 1, tdim);
     if (!connectivity)
     {
@@ -150,7 +150,7 @@ void FormIntegrals::set_domains(FormIntegrals::Type type,
         = mesh->topology().index_map(tdim)->ghost_owners();
     const std::int32_t cell_ghost_offset
         = mesh->topology().index_map(tdim)->size_local();
-    std::shared_ptr<const mesh::Connectivity> connectivity
+    std::shared_ptr<const mesh::Connectivity<std::int32_t>> connectivity
         = mesh->topology().connectivity(tdim - 1, tdim);
     if (!connectivity)
     {
@@ -215,7 +215,7 @@ void FormIntegrals::set_default_domains(const mesh::Mesh& mesh)
   {
     // If there is a default integral, define it only on surface facets
     exf_integrals[0].active_entities.clear();
-    std::shared_ptr<const mesh::Connectivity> connectivity
+    std::shared_ptr<const mesh::Connectivity<std::int32_t>> connectivity
         = mesh.topology().connectivity(tdim - 1, tdim);
     if (!connectivity)
     {
@@ -246,7 +246,7 @@ void FormIntegrals::set_default_domains(const mesh::Mesh& mesh)
       const std::int32_t ghost_offset
           = mesh.topology().index_map(tdim)->size_local();
 
-      std::shared_ptr<const mesh::Connectivity> connectivity
+      std::shared_ptr<const mesh::Connectivity<std::int32_t>> connectivity
           = mesh.topology().connectivity(tdim - 1, tdim);
       if (!connectivity)
       {
@@ -273,7 +273,7 @@ void FormIntegrals::set_default_domains(const mesh::Mesh& mesh)
     }
     else
     {
-      std::shared_ptr<const mesh::Connectivity> connectivity
+      std::shared_ptr<const mesh::Connectivity<std::int32_t>> connectivity
           = mesh.topology().connectivity(tdim - 1, tdim);
       if (!connectivity)
       {

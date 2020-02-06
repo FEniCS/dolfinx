@@ -14,19 +14,20 @@ mesh::CoordinateDofs::CoordinateDofs(
     const Eigen::Ref<const Eigen::Array<std::int32_t, Eigen::Dynamic,
                                         Eigen::Dynamic, Eigen::RowMajor>>&
         point_dofs)
-    : _coord_dofs(new Connectivity(point_dofs))
+    : _coord_dofs(new Connectivity<std::int32_t>(point_dofs))
 
 {
   // Do nothing
 }
 //-----------------------------------------------------------------------------
-mesh::Connectivity& mesh::CoordinateDofs::entity_points()
+mesh::Connectivity<std::int32_t>& mesh::CoordinateDofs::entity_points()
 {
   assert(_coord_dofs);
   return *_coord_dofs;
 }
 //-----------------------------------------------------------------------------
-const mesh::Connectivity& mesh::CoordinateDofs::entity_points() const
+const mesh::Connectivity<std::int32_t>&
+mesh::CoordinateDofs::entity_points() const
 {
   assert(_coord_dofs);
   return *_coord_dofs;

@@ -14,6 +14,7 @@ namespace dolfinx
 {
 namespace mesh
 {
+template <typename T>
 class Connectivity;
 
 /// CoordinateDofs contains the connectivity from MeshEntities to the
@@ -27,7 +28,7 @@ public:
   CoordinateDofs(
       const Eigen::Ref<const Eigen::Array<std::int32_t, Eigen::Dynamic,
                                           Eigen::Dynamic, Eigen::RowMajor>>&
-      point_dofs);
+          point_dofs);
 
   /// Copy constructor
   CoordinateDofs(const CoordinateDofs& topology) = default;
@@ -46,15 +47,15 @@ public:
 
   /// Get the entity points associated with cells (const version)
   /// @return Connections from cells to points
-  Connectivity& entity_points();
+  Connectivity<std::int32_t>& entity_points();
 
   /// Get the entity points associated with cells (const version)
   /// @return Connections from cells to points
-  const Connectivity& entity_points() const;
+  const Connectivity<std::int32_t>& entity_points() const;
 
 private:
-  // Connectivity from cells to points
-  std::shared_ptr<Connectivity> _coord_dofs;
+  // Connectivity<std::int32_t> from cells to points
+  std::shared_ptr<Connectivity<std::int32_t>> _coord_dofs;
 };
 } // namespace mesh
 } // namespace dolfinx

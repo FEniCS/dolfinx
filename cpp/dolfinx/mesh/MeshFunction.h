@@ -153,7 +153,7 @@ MeshFunction<T>::MeshFunction(std::shared_ptr<const Mesh> mesh,
   // Generate connectivity if it does not exist
   _mesh->create_connectivity(D, d);
   assert(_mesh->topology().connectivity(D, d));
-  const Connectivity& connectivity = *_mesh->topology().connectivity(D, d);
+  const Connectivity<std::int32_t>& connectivity = *_mesh->topology().connectivity(D, d);
 
   // Iterate over all values
   std::unordered_set<std::size_t> entities_values_set;
