@@ -71,9 +71,20 @@ std::vector<int> get_ghost_mapping(
   for (int i = 0; i < entity_list.rows(); ++i)
     unique_row[entity_index[i]] = i;
 
-  MPI_Comm neighbour_comm
-      = mesh.topology().index_map(0)->mpi_comm_neighborhood();
-  std::vector<int> neighbours = dolfinx::MPI::neighbors(neighbour_comm);
+  // Create an expanded neighbour_comm from shared_vertices
+  const std::map<std::int32_t, std::set<std::int32_t>>& shared_vertices
+      = mesh.topology().shared_entities(0);
+  std::set<std::int32_t> neighbour_set;
+  for (auto q : shared_vertices)
+    neighbour_set.insert(q.second.begin(), q.second.end());
+  std::vector<std::int32_t> neighbours(neighbour_set.begin(),
+                                       neighbour_set.end());
+  MPI_Comm neighbour_comm;
+  MPI_Dist_graph_create_adjacent(
+      mesh.mpi_comm(), neighbours.size(), neighbours.data(), MPI_UNWEIGHTED,
+      neighbours.size(), neighbours.data(), MPI_UNWEIGHTED, MPI_INFO_NULL,
+      false, &neighbour_comm);
+
   const int neighbour_size = neighbours.size();
   std::map<int, int> proc_to_neighbour;
   for (int i = 0; i < neighbour_size; ++i)
@@ -84,8 +95,6 @@ std::vector<int> get_ghost_mapping(
 
   // Get all "possibly shared" entities, based on vertex sharing
   // Send to other processes, and see if we get the same back
-  const std::map<std::int32_t, std::set<std::int32_t>>& shared_vertices
-      = mesh.topology().shared_entities(0);
   const std::vector<std::int64_t>& global_vertex_indices
       = mesh.topology().global_indices(0);
 
