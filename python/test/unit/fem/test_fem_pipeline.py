@@ -117,7 +117,7 @@ def test_manufactured_poisson(degree, filename, datadir):
 @skip_in_parallel
 @pytest.mark.parametrize("filename", [
     "UnitSquareMesh_triangle.xdmf",
-    # "UnitCubeMesh_tetra.xdmf",
+    "UnitCubeMesh_tetra.xdmf",
     # "UnitSquareMesh_quad.xdmf",
     # "UnitCubeMesh_hexahedron.xdmf"
 ])
@@ -125,8 +125,8 @@ def test_manufactured_poisson(degree, filename, datadir):
                          [
                              ("BDM", 0),
                              ("RT", 1),
-                             #   ("N2curl", 0),
-                             #   ("N1curl", 1),
+                             # ("N2curl", 0),
+                             # ("N1curl", 1),
                          ])
 @pytest.mark.parametrize("degree", [1, 2])
 def test_manufactured_vector1(family, degree, filename, datadir):
@@ -186,7 +186,7 @@ def test_manufactured_vector1(family, degree, filename, datadir):
 @pytest.mark.parametrize("family",
                          [
                              "RT",
-                             #  "N1curl",
+                             # "N1curl",
                          ])
 @pytest.mark.parametrize("degree", [1, 2, 3])
 def test_manufactured_vector2(family, degree, filename, datadir):
