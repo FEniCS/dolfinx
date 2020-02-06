@@ -5,7 +5,7 @@
 // SPDX-License-Identifier:    LGPL-3.0-or-later
 
 #include "CoordinateDofs.h"
-#include "Connectivity.h"
+#include <dolfinx/graph/AdjacencyGraph.h>
 
 using namespace dolfinx;
 

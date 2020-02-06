@@ -5,7 +5,7 @@
 // SPDX-License-Identifier:    LGPL-3.0-or-later
 
 #include "TopologyComputation.h"
-#include "Connectivity.h"
+#include <dolfinx/graph/AdjacencyGraph.h>
 #include "Mesh.h"
 #include "MeshEntity.h"
 #include "MeshIterator.h"

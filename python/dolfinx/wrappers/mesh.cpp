@@ -9,7 +9,7 @@
 #include <cfloat>
 #include <dolfinx/common/types.h>
 #include <dolfinx/fem/CoordinateElement.h>
-#include <dolfinx/mesh/Connectivity.h>
+#include <dolfinx/graph/AdjacencyGraph.h>
 #include <dolfinx/mesh/CoordinateDofs.h>
 #include <dolfinx/mesh/Geometry.h>
 #include <dolfinx/mesh/Mesh.h>
@@ -229,9 +229,12 @@ void mesh(py::module& m)
           "Connections for a single mesh entity",
           py::return_value_policy::reference_internal)
       .def("connections",
-           py::overload_cast<>(&dolfinx::mesh::AdjacencyGraph<std::int32_t>::array),
+           py::overload_cast<>(
+               &dolfinx::mesh::AdjacencyGraph<std::int32_t>::array),
            "Connections for all mesh entities")
-      .def("pos", py::overload_cast<>(&dolfinx::mesh::AdjacencyGraph<std::int32_t>::offsets),
+      .def("pos",
+           py::overload_cast<>(
+               &dolfinx::mesh::AdjacencyGraph<std::int32_t>::offsets),
            "Index to each entity in the connectivity array")
       .def("size", &dolfinx::mesh::AdjacencyGraph<std::int32_t>::num_nodes)
       .def("size", &dolfinx::mesh::AdjacencyGraph<std::int32_t>::num_edges);

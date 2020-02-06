@@ -11,7 +11,7 @@ namespace dolfinx
 
 // DOLFINX mesh interface
 
-#include <dolfinx/mesh/Connectivity.h>
+#include <dolfinx/graph/AdjacencyGraph.h>
 #include <dolfinx/mesh/Geometry.h>
 #include <dolfinx/mesh/Mesh.h>
 #include <dolfinx/mesh/MeshEntity.h>

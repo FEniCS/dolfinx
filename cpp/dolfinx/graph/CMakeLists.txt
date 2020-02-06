@@ -1,4 +1,5 @@
 set(HEADERS_graph
+  ${CMAKE_CURRENT_SOURCE_DIR}/AdjacencyGraph.h
   ${CMAKE_CURRENT_SOURCE_DIR}/BoostGraphColoring.h
   ${CMAKE_CURRENT_SOURCE_DIR}/BoostGraphOrdering.h
   ${CMAKE_CURRENT_SOURCE_DIR}/CSRGraph.h

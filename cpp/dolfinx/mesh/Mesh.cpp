@@ -5,7 +5,7 @@
 // SPDX-License-Identifier:    LGPL-3.0-or-later
 
 #include "Mesh.h"
-#include "Connectivity.h"
+#include <dolfinx/graph/AdjacencyGraph.h>
 #include "CoordinateDofs.h"
 #include "DistributedMeshTools.h"
 #include "Geometry.h"

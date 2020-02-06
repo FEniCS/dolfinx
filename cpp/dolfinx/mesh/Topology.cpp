@@ -5,7 +5,7 @@
 // SPDX-License-Identifier:    LGPL-3.0-or-later
 
 #include "Topology.h"
-#include "Connectivity.h"
+#include <dolfinx/graph/AdjacencyGraph.h>
 #include <dolfinx/common/IndexMap.h>
 #include <dolfinx/common/utils.h>
 #include <numeric>

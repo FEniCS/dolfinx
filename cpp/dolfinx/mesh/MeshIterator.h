@@ -6,7 +6,7 @@
 
 #pragma once
 
-#include "Connectivity.h"
+#include <dolfinx/graph/AdjacencyGraph.h>
 #include "Mesh.h"
 #include "MeshEntity.h"
 #include "Topology.h"

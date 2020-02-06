@@ -25,7 +25,7 @@
 #include <dolfinx/function/FunctionSpace.h>
 // #include <dolfinx/la/PETScVector.h>
 // #include <dolfinx/la/utils.h>
-// #include <dolfinx/mesh/Connectivity.h>
+// #include <dolfinx/graph/AdjacencyGraph.h>
 #include <dolfinx/mesh/DistributedMeshTools.h>
 // #include <dolfinx/mesh/Mesh.h>
 #include <dolfinx/mesh/Geometry.h>
