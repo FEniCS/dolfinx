@@ -82,6 +82,7 @@ from dolfinx.io import XDMFFile
 from dolfinx.la import VectorSpaceBasis
 from dolfinx.plotting import plot
 from ufl import div, dx, grad, inner
+from dolfinx.fem import locate_dofs_geometrical
 
 # We create a Mesh and attach a coordinate map to the mesh::
 
@@ -109,17 +110,18 @@ V, Q = FunctionSpace(mesh, P2), FunctionSpace(mesh, P1)
 # No-slip boundary condition for velocity field (`V`) on boundaries
 # where x = 0, x = 1, and y = 0
 noslip = Function(V)
-
-bc0 = DirichletBC(V, noslip,
-                  lambda x: np.logical_or(np.logical_or(np.isclose(x[0], 0.0),
-                                                        np.isclose(x[0], 1.0)),
-                                          np.isclose(x[1], 0.0)))
+with noslip.vector.localForm() as bc_local:
+    bc_local.set(0.0)
+bc0 = DirichletBC(noslip,
+                  locate_dofs_geometrical(V, lambda x: np.logical_or(np.logical_or(np.isclose(x[0], 0.0),
+                                                                                   np.isclose(x[0], 1.0)),
+                                                                     np.isclose(x[1], 0.0))))
 
 
 # Driving velocity condition u = (1, 0) on top boundary (y = 1)
 lid_velocity = Function(V)
 lid_velocity.interpolate(lambda x: np.stack((np.ones(x.shape[1]), np.zeros(x.shape[1]))))
-bc1 = DirichletBC(V, lid_velocity, lambda x: np.isclose(x[1], 1.0))
+bc1 = DirichletBC(lid_velocity, locate_dofs_geometrical(V, lambda x: np.isclose(x[1], 1.0)))
 
 # Collect Dirichlet boundary conditions
 bcs = [bc0, bc1]
