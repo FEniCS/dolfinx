@@ -20,11 +20,11 @@ ElementDofLayout::ElementDofLayout(
     const std::vector<int>& parent_map,
     const std::vector<std::shared_ptr<const ElementDofLayout>> sub_dofmaps,
     const mesh::CellType cell_type, const std::array<int, 4> entity_block_size,
-    const std::vector<bool> dofs_need_permuting)
+    const std::array<ufc_dof_arrangement, 4> entity_dof_arrangement)
     : _block_size(block_size), _parent_map(parent_map), _num_dofs(0),
       _entity_dofs(entity_dofs_), _sub_dofmaps(sub_dofmaps),
       _entity_block_size(entity_block_size),
-      _dofs_need_permuting(dofs_need_permuting)
+      _entity_dof_arrangement(entity_dof_arrangement)
 {
   // TODO: Handle global support dofs
 
@@ -54,8 +54,6 @@ ElementDofLayout::ElementDofLayout(
 
   // dof = _entity_dofs[dim][entity_index][i]
   _num_entity_dofs.fill(0);
-  _num_entity_dofs_to_permute.fill(0);
-  _entity_dofs_to_permute.fill({});
   _num_entity_closure_dofs.fill(0);
   assert(entity_dofs_.size() == _entity_closure_dofs.size());
   for (std::size_t dim = 0; dim < entity_dofs_.size(); ++dim)
@@ -64,16 +62,6 @@ ElementDofLayout::ElementDofLayout(
     assert(!_entity_closure_dofs[dim].empty());
     _num_entity_dofs[dim] = entity_dofs_[dim][0].size();
     _num_entity_closure_dofs[dim] = _entity_closure_dofs[dim][0].size();
-
-    const Eigen::Array<int, Eigen::Dynamic, 1> ent = entity_dofs(dim, 0);
-    for (int dof_i = 0; dof_i < _num_entity_dofs[dim]; ++dof_i)
-    {
-      if (dofs_need_permuting[ent[dof_i]])
-      {
-        ++_num_entity_dofs_to_permute[dim];
-        _entity_dofs_to_permute[dim].push_back(dof_i);
-      }
-    }
 
     for (std::size_t entity_index = 0; entity_index < entity_dofs_[dim].size();
          ++entity_index)
@@ -95,16 +83,6 @@ int ElementDofLayout::num_dofs() const { return _num_dofs; }
 int ElementDofLayout::num_entity_dofs(int dim) const
 {
   return _num_entity_dofs.at(dim);
-}
-//-----------------------------------------------------------------------------
-int ElementDofLayout::num_entity_dofs_to_permute(int dim) const
-{
-  return _num_entity_dofs_to_permute.at(dim);
-}
-//-----------------------------------------------------------------------------
-std::vector<int> ElementDofLayout::entity_dofs_to_permute(int dim) const
-{
-  return _entity_dofs_to_permute.at(dim);
 }
 //-----------------------------------------------------------------------------
 int ElementDofLayout::num_entity_closure_dofs(int dim) const
@@ -192,6 +170,12 @@ int ElementDofLayout::block_size() const { return _block_size; }
 int ElementDofLayout::entity_block_size(const int dim) const
 {
   return _entity_block_size[dim] * _block_size;
+}
+//-----------------------------------------------------------------------------
+ufc_dof_arrangement
+ElementDofLayout::entity_dof_arrangement(const int dim) const
+{
+  return _entity_dof_arrangement[dim];
 }
 //-----------------------------------------------------------------------------
 bool ElementDofLayout::is_view() const { return !_parent_map.empty(); }

@@ -465,23 +465,13 @@ fem::create_element_dof_layout(const ufc_dofmap& dofmap,
   for (int i = 0; i < 4; ++i)
     entity_block_size[i] = dofmap.entity_block_size[i];
 
-  std::vector<bool> dofs_need_permuting(dof_count);
-  for (int i=0; i<dof_count; ++i)
-    if (dofmap.dof_types[i] == PointEval
-        || dofmap.dof_types[i] == ComponentPointEval
-        || dofmap.dof_types[i] == PointNormalDeriv
-        || dofmap.dof_types[i] == PointEdgeTangent
-        || dofmap.dof_types[i] == PointFaceTangent
-        || dofmap.dof_types[i] == PointScaledNormalEval
-        || dofmap.dof_types[i] == PointDeriv
-        || dofmap.dof_types[i] == PointNormalEval
-        || dofmap.dof_types[i] == PointwiseInnerProductEval)
-      dofs_need_permuting[i] = true;
-    else
-      dofs_need_permuting[i] = false;
+  std::array<ufc_dof_arrangement, 4> entity_dof_arrangement;
+  for (int i = 0; i < 4; ++i)
+    entity_dof_arrangement[i] = dofmap.entity_dof_arrangement[i];
 
   return fem::ElementDofLayout(block_size, entity_dofs, parent_map, sub_dofmaps,
-                               cell_type, entity_block_size, dofs_need_permuting);
+                               cell_type, entity_block_size,
+                               entity_dof_arrangement);
 }
 //-----------------------------------------------------------------------------
 fem::DofMap fem::create_dofmap(const ufc_dofmap& ufc_dofmap,
