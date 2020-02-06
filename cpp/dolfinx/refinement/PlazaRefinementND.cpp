@@ -199,7 +199,7 @@ std::vector<std::int32_t>
 get_tetrahedra(const std::vector<bool>& marked_edges,
                const std::vector<std::int32_t>& longest_edge)
 {
-  // Connectivity matrix for ten possible points (4 vertices + 6 edge midpoints)
+  // AdjacencyGraph matrix for ten possible points (4 vertices + 6 edge midpoints)
   // ordered {v0, v1, v2, v3, e0, e1, e2, e3, e4, e5}
   // Only need upper triangle, but sometimes it is easier just to insert
   // both entries (j,i) and (i,j).

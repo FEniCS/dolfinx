@@ -357,7 +357,7 @@ Mesh::Mesh(
       _mpi_comm.comm(), num_cells_local, cell_ghosts, 1);
   _topology->set_index_map(tdim, cell_index_map);
 
-  auto cv = std::make_shared<Connectivity<std::int32_t>>(vertex_cols);
+  auto cv = std::make_shared<AdjacencyGraph<std::int32_t>>(vertex_cols);
 
   _topology->set_connectivity(cv, tdim, 0);
 

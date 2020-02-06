@@ -25,7 +25,7 @@ namespace mesh
 {
 
 template <typename T>
-class Connectivity;
+class AdjacencyGraph;
 
 /// Topology stores the topology of a mesh, consisting of mesh entities
 /// and connectivity (incidence relations for the mesh entities). Note
@@ -101,14 +101,14 @@ public:
   std::vector<bool> on_boundary(int dim) const;
 
   /// Return connectivity for given pair of topological dimensions
-  std::shared_ptr<Connectivity<std::int32_t>> connectivity(int d0, int d1);
+  std::shared_ptr<AdjacencyGraph<std::int32_t>> connectivity(int d0, int d1);
 
   /// Return connectivity for given pair of topological dimensions
-  std::shared_ptr<const Connectivity<std::int32_t>> connectivity(int d0,
+  std::shared_ptr<const AdjacencyGraph<std::int32_t>> connectivity(int d0,
                                                                  int d1) const;
 
   /// Set connectivity for given pair of topological dimensions
-  void set_connectivity(std::shared_ptr<Connectivity<std::int32_t>> c, int d0,
+  void set_connectivity(std::shared_ptr<AdjacencyGraph<std::int32_t>> c, int d0,
                         int d1);
 
   /// Return hash based on the hash of cell-vertex connectivity
@@ -129,8 +129,8 @@ private:
   // IndexMap to store ghosting for each entity dimension
   std::array<std::shared_ptr<const common::IndexMap>, 4> _index_map;
 
-  // Connectivity for pairs of topological dimensions
-  Eigen::Array<std::shared_ptr<Connectivity<std::int32_t>>, Eigen::Dynamic,
+  // AdjacencyGraph for pairs of topological dimensions
+  Eigen::Array<std::shared_ptr<AdjacencyGraph<std::int32_t>>, Eigen::Dynamic,
                Eigen::Dynamic, Eigen::RowMajor>
       _connectivity;
 };

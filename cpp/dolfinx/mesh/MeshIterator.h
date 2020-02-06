@@ -98,7 +98,7 @@ public:
 
     // Get connectivity
     assert(e.mesh().topology().connectivity(e.dim(), _entity.dim()));
-    const Connectivity<std::int32_t>& c
+    const AdjacencyGraph<std::int32_t>& c
         = *e.mesh().topology().connectivity(e.dim(), _entity.dim());
 
     // Pointer to array of connections

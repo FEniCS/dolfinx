@@ -28,12 +28,12 @@ namespace mesh
 /// giving the entire (sparse) connectivity pattern.
 
 template <typename T>
-class Connectivity
+class AdjacencyGraph
 {
 public:
   /// Initialize with all connections and pointer to each entity
   /// position
-  Connectivity(const std::vector<T>& connections,
+  AdjacencyGraph(const std::vector<T>& connections,
                const std::vector<std::int32_t>& positions)
       : _array(connections.size()), _offsets(positions.size())
   {
@@ -46,7 +46,7 @@ public:
 
   /// Initialize with all connections for case where each entity has the
   /// same number of connections
-  Connectivity(
+  AdjacencyGraph(
       const Eigen::Ref<const Eigen::Array<T, Eigen::Dynamic, Eigen::Dynamic,
                                           Eigen::RowMajor>>& connections)
       : _array(connections.rows() * connections.cols()),
@@ -68,7 +68,7 @@ public:
   /// a std::vector<<std::vector<std::size_t>>,
   /// std::vector<<std::set<std::size_t>>, etc)
   template <typename X>
-  Connectivity(const std::vector<X>& connections)
+  AdjacencyGraph(const std::vector<X>& connections)
       : _offsets(connections.size() + 1)
   {
     // Initialize offsets and compute total size
@@ -90,19 +90,19 @@ public:
   }
 
   /// Copy constructor
-  Connectivity(const Connectivity& connectivity) = default;
+  AdjacencyGraph(const AdjacencyGraph& connectivity) = default;
 
   /// Move constructor
-  Connectivity(Connectivity&& connectivity) = default;
+  AdjacencyGraph(AdjacencyGraph&& connectivity) = default;
 
   /// Destructor
-  ~Connectivity() = default;
+  ~AdjacencyGraph() = default;
 
   /// Assignment
-  Connectivity& operator=(const Connectivity& connectivity) = default;
+  AdjacencyGraph& operator=(const AdjacencyGraph& connectivity) = default;
 
   /// Move assignment
-  Connectivity& operator=(Connectivity&& connectivity) = default;
+  AdjacencyGraph& operator=(AdjacencyGraph&& connectivity) = default;
 
   /// Number of nodes
   /// @return The number of nodes
@@ -130,7 +130,7 @@ public:
   /// Edges for given node
   /// @param [in] node Node index
   /// @return Array of outgoing edges for the node. The length will be
-  ///   Connectivity:num_edges(node).
+  ///   AdjacencyGraph:num_edges(node).
   std::int32_t* edges(int node)
   {
     return (node + 1) < _offsets.size() ? &_array[_offsets[node]] : nullptr;
@@ -139,7 +139,7 @@ public:
   /// Edges for given node (const version)
   /// @param [in] node Node index
   /// @return Array of outgoing edges for the node. The length will be
-  ///   Connectivity:num_edges(node).
+  ///   AdjacencyGraph:num_edges(node).
   const std::int32_t* edges(int node) const
   {
     return (node + 1) < _offsets.size() ? &_array[_offsets[node]] : nullptr;
