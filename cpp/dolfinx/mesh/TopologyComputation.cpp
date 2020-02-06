@@ -71,10 +71,16 @@ std::vector<int> get_ghost_mapping(
   for (int i = 0; i < entity_list.rows(); ++i)
     unique_row[entity_index[i]] = i;
 
-  int mpi_size = dolfinx::MPI::size(mesh.mpi_comm());
-  std::vector<std::vector<std::int64_t>> send_entities(mpi_size);
-  std::vector<std::vector<std::int64_t>> send_index(mpi_size);
-  std::vector<std::vector<std::int64_t>> recv_entities(mpi_size);
+  MPI_Comm neighbour_comm
+      = mesh.topology().index_map(0)->mpi_comm_neighborhood();
+  std::vector<int> neighbours = dolfinx::MPI::neighbors(neighbour_comm);
+  const int neighbour_size = neighbours.size();
+  std::map<int, int> proc_to_neighbour;
+  for (int i = 0; i < neighbour_size; ++i)
+    proc_to_neighbour.insert({neighbours[i], i});
+
+  std::vector<std::vector<std::int64_t>> send_entities(neighbour_size);
+  std::vector<std::vector<std::int64_t>> send_index(neighbour_size);
 
   // Get all "possibly shared" entities, based on vertex sharing
   // Send to other processes, and see if we get the same back
@@ -100,34 +106,50 @@ std::vector<int> get_ghost_mapping(
       if (q.second == num_vertices)
       {
         const int p = q.first;
+        auto it = proc_to_neighbour.find(p);
+        assert(it != proc_to_neighbour.end());
+        const int np = it->second;
+
         // Entity entity_index[i] may be shared with process p
         for (int j = 0; j < num_vertices; ++j)
         {
           std::int64_t vglobal = global_vertex_indices[entity_list(i, j)];
-          send_entities[p].push_back(vglobal);
+          send_entities[np].push_back(vglobal);
         }
-        send_index[p].push_back(entity_index[i]);
-        std::sort(send_entities[p].end() - num_vertices,
-                  send_entities[p].end());
+        send_index[np].push_back(entity_index[i]);
+        std::sort(send_entities[np].end() - num_vertices,
+                  send_entities[np].end());
       }
   }
 
-  dolfinx::MPI::all_to_all(mesh.mpi_comm(), send_entities, recv_entities);
+  std::vector<std::int64_t> send_entities_data;
+  std::vector<std::int64_t> recv_entities_data;
+  std::vector<int> send_offsets = {0};
+  std::vector<int> recv_offsets;
+  for (std::size_t i = 0; i < send_entities.size(); ++i)
+  {
+    send_entities_data.insert(send_entities_data.end(),
+                              send_entities[i].begin(), send_entities[i].end());
+    send_offsets.push_back(send_entities_data.size());
+  }
+
+  dolfinx::MPI::neighbor_all_to_all(neighbour_comm, send_offsets,
+                                    send_entities_data, recv_offsets,
+                                    recv_entities_data);
 
   std::map<std::int32_t, std::set<std::int32_t>> shared_entities;
   // Compare received with sent for each process
-  for (std::size_t p = 0; p < send_entities.size(); ++p)
+  for (int np = 0; np < neighbour_size; ++np)
   {
-    const std::vector<std::int64_t>& sendp = send_entities[p];
-    const std::vector<std::int64_t>& recvp = recv_entities[p];
+    const std::vector<std::int64_t>& sendp = send_entities[np];
 
-    // Set of entity vertices received from process p
+    // Set of entity vertices received from neighbour np
     std::set<std::vector<std::int64_t>> recv_set;
-    for (std::size_t i = 0; i < recvp.size() / num_vertices; ++i)
+    for (int i = recv_offsets[np]; i < recv_offsets[np + 1]; i += num_vertices)
     {
-      recv_set.insert(
-          std::vector<std::int64_t>(recvp.begin() + i * num_vertices,
-                                    recvp.begin() + (i + 1) * num_vertices));
+      recv_set.insert(std::vector<std::int64_t>(recv_entities_data.begin() + i,
+                                                recv_entities_data.begin() + i
+                                                    + num_vertices));
     }
     // Compare with sent values
     for (std::size_t i = 0; i < sendp.size() / num_vertices; ++i)
@@ -138,7 +160,8 @@ std::vector<int> get_ghost_mapping(
       {
         // This entity was sent, and the same was received back, confirming
         // sharing.
-        shared_entities[send_index[p][i]].insert(p);
+        const int p = neighbours[np];
+        shared_entities[send_index[np][i]].insert(p);
       }
     }
   }
@@ -159,6 +182,29 @@ std::vector<int> get_ghost_mapping(
       ++c;
     }
   }
+
+  // // Create global indices
+  // const std::int32_t num_local = c;
+  // const std::int64_t local_offset
+  //     = dolfinx::MPI::global_offset(mesh.mpi_comm(), num_local, true);
+  // std::vector<std::int64_t> global_indexing(entity_count, -1);
+  // std::iota(global_indexing.begin(), global_indexing.begin() + num_local,
+  //           local_offset);
+
+  // std::vector<std::vector<std::int64_t>> send_global_indices(mpi_size);
+  // std::vector<std::vector<std::int64_t>> recv_global_indices(mpi_size);
+
+  // // Send global indices for same entities that we sent before
+  // for (int p = 0; p < mpi_size; ++p)
+  // {
+  //   for (std::int32_t index : send_index[p])
+  //     send_global_indices[p].push_back(global_indexing[index]);
+  // }
+
+  // dolfinx::MPI::all_to_all(mesh.mpi_comm(), send_global_indices,
+  //                          recv_global_indices);
+  // // How to map back received indices?
+
   // Now index the ghosts
   for (int i = 0; i < entity_count; ++i)
     if (mapping[i] == -1)
@@ -168,7 +214,7 @@ std::vector<int> get_ghost_mapping(
     }
   assert(c == entity_count);
 
-  // FIXME - also return shared_entities
+  // FIXME - also return shared_entities, and global numbering
   return mapping;
 }
 //-----------------------------------------------------------------------------
