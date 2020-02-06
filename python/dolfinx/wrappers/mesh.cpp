@@ -223,7 +223,7 @@ void mesh(py::module& m)
           [](const dolfinx::mesh::Connectivity& self, std::size_t i) {
             return Eigen::Map<
                 const Eigen::Array<std::int32_t, Eigen::Dynamic, 1>>(
-                self.connections(i), self.size(i));
+                self.edges(i), self.num_edges(i));
           },
           "Connections for a single mesh entity",
           py::return_value_policy::reference_internal)
@@ -233,10 +233,8 @@ void mesh(py::module& m)
       .def("pos",
            py::overload_cast<>(&dolfinx::mesh::Connectivity::entity_positions),
            "Index to each entity in the connectivity array")
-      .def("size",
-           py::overload_cast<>(&dolfinx::mesh::Connectivity::size, py::const_))
-      .def("size", py::overload_cast<std::int32_t>(
-                       &dolfinx::mesh::Connectivity::size, py::const_));
+      .def("size", &dolfinx::mesh::Connectivity::num_nodes)
+      .def("size", &dolfinx::mesh::Connectivity::num_edges);
 
   // dolfinx::mesh::MeshEntity class
   py::class_<dolfinx::mesh::MeshEntity,
@@ -260,7 +258,7 @@ void mesh(py::module& m)
               const int num_entities = self.mesh()
                                            .topology()
                                            .connectivity(self.dim(), dim)
-                                           ->size(self.index());
+                                           ->num_edges(self.index());
               return py::array(num_entities, self.entities(dim));
             }
           },

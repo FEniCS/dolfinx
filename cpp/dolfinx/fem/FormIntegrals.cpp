@@ -159,10 +159,10 @@ void FormIntegrals::set_domains(FormIntegrals::Type type,
     }
     for (Eigen::Index i = 0; i < num_entities; ++i)
     {
-      if ((int)connectivity->size(i) == 2)
+      if ((int)connectivity->num_edges(i) == 2)
       {
         // Get connected cells and check if they are ghost or not
-        const std::int32_t* c = connectivity->connections(i);
+        const std::int32_t* c = connectivity->edges(i);
         const int owner0 = c[0] >= cell_ghost_offset
                                ? cell_owners[c[0] - cell_ghost_offset]
                                : rank;
@@ -257,7 +257,7 @@ void FormIntegrals::set_default_domains(const mesh::Mesh& mesh)
       for (const mesh::MeshEntity& facet :
            mesh::MeshRange(mesh, tdim - 1, mesh::MeshRangeType::ALL))
       {
-        if (connectivity->size(facet.index()) == 2)
+        if (connectivity->num_edges(facet.index()) == 2)
         {
           const std::int32_t* c = facet.entities(tdim);
           const int owner0

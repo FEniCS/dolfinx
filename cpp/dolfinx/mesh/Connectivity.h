@@ -80,21 +80,30 @@ public:
   /// Move assignment
   Connectivity& operator=(Connectivity&& connectivity) = default;
 
-  /// Number of entities on this process
-  /// @return The number of entities
-  std::int32_t size() const;
+  /// Number of nodes
+  /// @return The number of nodes
+  std::int32_t num_nodes() const;
 
-  /// Return number of connections for given entity
-  int size(std::int32_t entity) const;
+  /// Number of connections for given node
+  /// @param [in] Node index
+  /// @return The number of outgoing edges from the node
+  int num_edges(int node) const;
 
+  /// @todo Can this be removed?
   /// Return global number of connections for given entity
   std::int64_t size_global(std::int32_t entity) const;
 
-  /// Return array of connections for given entity
-  std::int32_t* connections(int entity);
+  /// Edges for given node
+  /// @param [in] node Node index
+  /// @return Array of outgoing edges for the node. The length will be
+  ///   Connectivity:num_edges(node).
+  std::int32_t* edges(int node);
 
-  /// Return array of connections for given entity (const version)
-  const std::int32_t* connections(int entity) const;
+  /// Edges for given node (const version)
+  /// @param [in] node Node index
+  /// @return Array of outgoing edges for the node. The length will be
+  ///   Connectivity:num_edges(node).
+  const std::int32_t* edges(int node) const;
 
   /// Return contiguous array of connections for all entities
   Eigen::Array<std::int32_t, Eigen::Dynamic, 1>& connections();

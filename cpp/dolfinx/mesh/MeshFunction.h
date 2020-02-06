@@ -172,7 +172,7 @@ MeshFunction<T>::MeshFunction(std::shared_ptr<const Mesh> mesh,
     {
       // Get global (local to to process) entity index
       assert(cell_index < _mesh->num_entities(D));
-      entity_index = connectivity.connections(cell_index)[local_entity];
+      entity_index = connectivity.edges(cell_index)[local_entity];
     }
     else
     {
@@ -230,7 +230,8 @@ void MeshFunction<T>::mark(
 
   // Iterate over all mesh entities of the dimension of this
   // MeshFunction
-  for (const auto& entity : mesh::MeshRange(*_mesh.get(), _dim, mesh::MeshRangeType::ALL))
+  for (const auto& entity :
+       mesh::MeshRange(*_mesh.get(), _dim, mesh::MeshRangeType::ALL))
   {
 
     // By default, assume maker is 'true' at all vertices of this entity

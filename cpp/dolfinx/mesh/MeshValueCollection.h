@@ -179,13 +179,13 @@ MeshValueCollection<T>::MeshValueCollection(
          ++entity_index)
     {
       // Find the cell
-      assert(connectivity.size(entity_index) > 0);
+      assert(connectivity.num_edges(entity_index) > 0);
       const MeshEntity entity(*_mesh, _dim, entity_index);
-      for (int i = 0; i < connectivity.size(entity_index); ++i)
+      for (int i = 0; i < connectivity.num_edges(entity_index); ++i)
       {
         // Create cell
         const mesh::MeshEntity cell(*_mesh, D,
-                                    connectivity.connections(entity_index)[i]);
+                                    connectivity.edges(entity_index)[i]);
 
         // Find the local entity index
         const std::size_t local_entity = cell.index(entity);
@@ -200,8 +200,8 @@ MeshValueCollection<T>::MeshValueCollection(
 }
 //---------------------------------------------------------------------------
 template <typename T>
-MeshValueCollection<T>& MeshValueCollection<T>::
-operator=(const MeshFunction<T>& mesh_function)
+MeshValueCollection<T>&
+MeshValueCollection<T>::operator=(const MeshFunction<T>& mesh_function)
 {
   _mesh = mesh_function.mesh();
   _dim = mesh_function.dim();
@@ -233,13 +233,13 @@ operator=(const MeshFunction<T>& mesh_function)
          ++entity_index)
     {
       // Find the cell
-      assert(connectivity.size(entity_index) > 0);
+      assert(connectivity.num_edges(entity_index) > 0);
       const MeshEntity entity(*_mesh, _dim, entity_index);
-      for (std::size_t i = 0; i < connectivity.size(entity_index); ++i)
+      for (int i = 0; i < connectivity.num_edges(entity_index); ++i)
       {
         // Create cell
         const mesh::MeshEntity cell(*_mesh, D,
-                                    connectivity.connections(entity_index)[i]);
+                                    connectivity.edges(entity_index)[i]);
 
         // Find the local entity index
         const std::size_t local_entity = cell.index(entity);
@@ -342,10 +342,10 @@ bool MeshValueCollection<T>::set_value(std::size_t entity_index, const T& value)
   const Connectivity& connectivity = *_mesh->topology().connectivity(_dim, D);
 
   // Find the cell
-  assert(connectivity.size(entity_index) > 0);
+  assert(connectivity.num_edges(entity_index) > 0);
   const MeshEntity entity(*_mesh, _dim, entity_index);
   const mesh::MeshEntity cell(
-      *_mesh, D, connectivity.connections(entity_index)[0]); // choose first
+      *_mesh, D, connectivity.edges(entity_index)[0]); // choose first
 
   // Find the local entity index
   const std::size_t local_entity = cell.index(entity);

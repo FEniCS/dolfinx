@@ -42,22 +42,22 @@ Connectivity::Connectivity(
     _index_to_position[e] = e * num_connections_per_entity;
 }
 //-----------------------------------------------------------------------------
-std::int32_t Connectivity::size() const
+std::int32_t Connectivity::num_nodes() const
 {
   return _index_to_position.rows() - 1;
 }
 //-----------------------------------------------------------------------------
-std::int32_t Connectivity::size(std::int32_t entity) const
+std::int32_t Connectivity::num_edges(int node) const
 {
-  return (entity + 1) < _index_to_position.size()
-             ? _index_to_position[entity + 1] - _index_to_position[entity]
+  return (node + 1) < _index_to_position.size()
+             ? _index_to_position[node + 1] - _index_to_position[node]
              : 0;
 }
 //-----------------------------------------------------------------------------
 std::int64_t Connectivity::size_global(std::int32_t entity) const
 {
   if (_num_global_connections.size() == 0)
-    return size(entity);
+    return this->num_edges(entity);
   else
   {
     assert(entity < _num_global_connections.size());
@@ -65,17 +65,17 @@ std::int64_t Connectivity::size_global(std::int32_t entity) const
   }
 }
 //-----------------------------------------------------------------------------
-std::int32_t* Connectivity::connections(int entity)
+std::int32_t* Connectivity::edges(int node)
 {
-  return (entity + 1) < _index_to_position.size()
-             ? &_connections[_index_to_position[entity]]
+  return (node + 1) < _index_to_position.size()
+             ? &_connections[_index_to_position[node]]
              : nullptr;
 }
 //-----------------------------------------------------------------------------
-const std::int32_t* Connectivity::connections(int entity) const
+const std::int32_t* Connectivity::edges(int node) const
 {
-  return (entity + 1) < _index_to_position.size()
-             ? &_connections[_index_to_position[entity]]
+  return (node + 1) < _index_to_position.size()
+             ? &_connections[_index_to_position[node]]
              : nullptr;
 }
 //-----------------------------------------------------------------------------

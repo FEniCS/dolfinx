@@ -46,7 +46,7 @@ compute_entity_numbering(const Mesh& mesh, int d)
 
   // Get number of entities of dimension d on this process
   assert(mesh.topology().connectivity(d, 0));
-  const std::int32_t size = mesh.topology().connectivity(d, 0)->size();
+  const std::int32_t size = mesh.topology().connectivity(d, 0)->num_nodes();
 
   // MPI communicator
   const MPI_Comm mpi_comm = mesh.mpi_comm();
@@ -402,7 +402,7 @@ void DistributedMeshTools::number_entities(const Mesh& mesh, int d)
 
     // Get number of mesh entities of dimension d on this process
     assert(mesh.topology().connectivity(d, 0));
-    const std::int32_t size_d = mesh.topology().connectivity(d, 0)->size();
+    const std::int32_t size_d = mesh.topology().connectivity(d, 0)->num_nodes();
 
     // Set global entity numbers in mesh
     std::vector<std::int64_t> global_indices(size_d, 0);
@@ -465,7 +465,7 @@ void DistributedMeshTools::init_facet_cell_connections(Mesh& mesh)
     assert(mesh.topology().connectivity(D - 1, D));
     auto connectivity = mesh.topology().connectivity(D - 1, D);
     for (auto& f : mesh::MeshRange(mesh, D - 1))
-      num_global_neighbors[f.index()] = connectivity->size(f.index());
+      num_global_neighbors[f.index()] = connectivity->num_edges(f.index());
 
     // All shared facets must have two cells, if no ghost cells
     for (const auto& f_it : shared_facets)
@@ -501,7 +501,7 @@ void DistributedMeshTools::init_facet_cell_connections(Mesh& mesh)
         global_to_local_facet.insert({global_facets[f.index()], f.index()});
 
       // Copy local values
-      const int n_cells = connectivity->size(f.index());
+      const int n_cells = connectivity->num_edges(f.index());
       num_global_neighbors[f.index()] = n_cells;
 
       if ((f.index() >= ghost_offset_f) and n_cells == 1)
@@ -526,7 +526,7 @@ void DistributedMeshTools::init_facet_cell_connections(Mesh& mesh)
         auto map_it = global_to_local_facet.find(*r);
         assert(map_it != global_to_local_facet.end());
         const mesh::MeshEntity local_facet(mesh, D - 1, map_it->second);
-        const int n_cells = connectivity->size(map_it->second);
+        const int n_cells = connectivity->num_edges(map_it->second);
         send_response[p].push_back(n_cells);
       }
     }

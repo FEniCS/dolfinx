@@ -64,7 +64,7 @@ void sort_1_0(mesh::Connectivity& connect_1_0, const mesh::MeshEntity& cell,
   assert(cell_edges);
   for (int i = 0; i < num_edges; ++i)
   {
-    std::int32_t* edge_vertices = connect_1_0.connections(cell_edges[i]);
+    std::int32_t* edge_vertices = connect_1_0.edges(cell_edges[i]);
     assert(edge_vertices);
     std::sort(edge_vertices, edge_vertices + 2, [&](auto& a, auto& b) {
       return global_vertex_indices[a] < global_vertex_indices[b];
@@ -81,7 +81,7 @@ void sort_2_0(mesh::Connectivity& connect_2_0, const mesh::MeshEntity& cell,
   assert(cell_faces);
   for (int i = 0; i < num_faces; ++i)
   {
-    std::int32_t* face_vertices = connect_2_0.connections(cell_faces[i]);
+    std::int32_t* face_vertices = connect_2_0.edges(cell_faces[i]);
     assert(face_vertices);
     std::sort(face_vertices, face_vertices + 3, [&](auto& a, auto& b) {
       return global_vertex_indices[a] < global_vertex_indices[b];
@@ -102,11 +102,11 @@ void sort_2_1(mesh::Connectivity& connect_2_1,
   for (int i = 0; i < num_faces; ++i)
   {
     // For each face number get the global vertex numbers
-    const std::int32_t* face_vertices = connect_2_0.connections(cell_faces[i]);
+    const std::int32_t* face_vertices = connect_2_0.edges(cell_faces[i]);
     assert(face_vertices);
 
     // For each facet number get the global edge number
-    std::int32_t* cell_edges = connect_2_1.connections(cell_faces[i]);
+    std::int32_t* cell_edges = connect_2_1.edges(cell_faces[i]);
     assert(cell_edges);
 
     // Loop over vertices on face
@@ -117,8 +117,7 @@ void sort_2_1(mesh::Connectivity& connect_2_1,
       for (int k = m; k < 3; ++k)
       {
         // For each edge number get the global vertex numbers
-        const std::int32_t* edge_vertices
-            = connect_1_0.connections(cell_edges[k]);
+        const std::int32_t* edge_vertices = connect_1_0.edges(cell_edges[k]);
         assert(edge_vertices);
 
         // Check if the jth vertex of facet i is non-incident on edge k
@@ -137,7 +136,7 @@ void sort_2_1(mesh::Connectivity& connect_2_1,
 void sort_3_0(mesh::Connectivity& connect_3_0, const mesh::MeshEntity& cell,
               const std::vector<std::int64_t>& global_vertex_indices)
 {
-  std::int32_t* cell_vertices = connect_3_0.connections(cell.index());
+  std::int32_t* cell_vertices = connect_3_0.edges(cell.index());
   assert(cell_vertices);
   std::sort(cell_vertices, cell_vertices + 4, [&](auto& a, auto& b) {
     return global_vertex_indices[a] < global_vertex_indices[b];
@@ -152,7 +151,7 @@ void sort_3_1(mesh::Connectivity& connect_3_1,
   // Get cell vertices and edge numbers
   const std::int32_t* cell_vertices = cell.entities(0);
   assert(cell_vertices);
-  std::int32_t* cell_edges = connect_3_1.connections(cell.index());
+  std::int32_t* cell_edges = connect_3_1.edges(cell.index());
   assert(cell_edges);
 
   // Loop two vertices on cell as a lexicographical tuple
@@ -166,8 +165,7 @@ void sort_3_1(mesh::Connectivity& connect_3_1,
       for (int k = m; k < 6; ++k)
       {
         // Get local vertices on edge
-        const std::int32_t* edge_vertices
-            = connect_1_0.connections(cell_edges[k]);
+        const std::int32_t* edge_vertices = connect_1_0.edges(cell_edges[k]);
         assert(edge_vertices);
 
         // Check if the ith and jth vertex of the cell are
@@ -193,7 +191,7 @@ void sort_3_2(mesh::Connectivity& connect_3_2,
   // Get cell vertices and facet numbers
   const std::int32_t* cell_vertices = cell.entities(0);
   assert(cell_vertices);
-  std::int32_t* cell_faces = connect_3_2.connections(cell.index());
+  std::int32_t* cell_faces = connect_3_2.edges(cell.index());
   assert(cell_faces);
 
   // Loop vertices on cell
@@ -202,8 +200,7 @@ void sort_3_2(mesh::Connectivity& connect_3_2,
     // Loop facets on cell
     for (int j = i; j < 4; ++j)
     {
-      const std::int32_t* face_vertices
-          = connect_2_0.connections(cell_faces[j]);
+      const std::int32_t* face_vertices = connect_2_0.edges(cell_faces[j]);
       assert(face_vertices);
 
       // Check if the ith vertex of the cell is non-incident on facet j
@@ -231,8 +228,8 @@ bool ordered_cell_simplex(
       = topology.connectivity(tdim, 0);
   assert(connect_tdim_0);
 
-  const int num_vertices = connect_tdim_0->size(c);
-  const std::int32_t* vertices = connect_tdim_0->connections(c);
+  const int num_vertices = connect_tdim_0->num_edges(c);
+  const std::int32_t* vertices = connect_tdim_0->edges(c);
   assert(vertices);
 
   // Check that vertices are in ascending order
@@ -258,21 +255,21 @@ bool ordered_cell_simplex(
     std::shared_ptr<const mesh::Connectivity> connect_tdim_d
         = topology.connectivity(tdim, d);
     assert(connect_tdim_d);
-    const int num_entities = connect_tdim_d->size(c);
-    const std::int32_t* entities = connect_tdim_d->connections(c);
+    const int num_entities = connect_tdim_d->num_edges(c);
+    const std::int32_t* entities = connect_tdim_d->edges(c);
 
     // Iterate over entities
     for (int e = 1; e < num_entities; ++e)
     {
       // Get vertices for first entity
       const int e0 = entities[e - 1];
-      const int n0 = connect_d_0->size(e0);
-      const std::int32_t* v0 = connect_d_0->connections(e0);
+      const int n0 = connect_d_0->num_edges(e0);
+      const std::int32_t* v0 = connect_d_0->edges(e0);
 
       // Get vertices for second entity
       const int e1 = entities[e];
-      const int n1 = connect_d_0->size(e1);
-      const std::int32_t* v1 = connect_d_0->connections(e1);
+      const int n1 = connect_d_0->num_edges(e1);
+      const std::int32_t* v1 = connect_d_0->edges(e1);
 
       // Check ordering of entities
       assert(n0 == n1);

@@ -23,11 +23,11 @@ int MeshEntity::index(const MeshEntity& entity) const
     throw std::runtime_error("Mesh entity is defined on a different mesh");
 
   // Get list of entities for given topological dimension
-  const std::int32_t* entities = _mesh->topology()
-                                     .connectivity(_dim, entity._dim)
-                                     ->connections(_local_index);
-  const int num_entities
-      = _mesh->topology().connectivity(_dim, entity._dim)->size(_local_index);
+  const std::int32_t* entities
+      = _mesh->topology().connectivity(_dim, entity._dim)->edges(_local_index);
+  const int num_entities = _mesh->topology()
+                               .connectivity(_dim, entity._dim)
+                               ->num_edges(_local_index);
 
   // Check if any entity matches
   for (int i = 0; i < num_entities; ++i)

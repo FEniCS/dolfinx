@@ -185,7 +185,7 @@ void Function::eval(
       = connectivity_g.connections();
 
   // FIXME: Add proper interface for num coordinate dofs
-  const int num_dofs_g = connectivity_g.size(0);
+  const int num_dofs_g = connectivity_g.num_edges(0);
   const Eigen::Array<double, Eigen::Dynamic, 3, Eigen::RowMajor>& x_g
       = mesh.geometry().points();
   Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
@@ -352,7 +352,7 @@ Function::compute_point_values() const
   const Eigen::Array<std::int32_t, Eigen::Dynamic, 1>& cell_g
       = connectivity_g.connections();
   // FIXME: Add proper interface for num coordinate dofs
-  const int num_dofs_g = connectivity_g.size(0);
+  const int num_dofs_g = connectivity_g.num_edges(0);
   const Eigen::Array<double, Eigen::Dynamic, 3, Eigen::RowMajor>& x_g
       = mesh.geometry().points();
 
@@ -376,7 +376,7 @@ Function::compute_point_values() const
     eval(x, cells, values);
 
     // Copy values to array of point values
-    const std::int32_t* dofs = cell_dofs.connections(cell.index());
+    const std::int32_t* dofs = cell_dofs.edges(cell.index());
     for (int i = 0; i < x.rows(); ++i)
       point_values.row(dofs[i]) = values.row(i);
   }
