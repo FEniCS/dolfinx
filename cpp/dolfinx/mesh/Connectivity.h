@@ -106,19 +106,19 @@ public:
   const std::int32_t* edges(int node) const;
 
   /// Return contiguous array of connections for all entities
-  Eigen::Array<std::int32_t, Eigen::Dynamic, 1>& connections();
+  Eigen::Array<std::int32_t, Eigen::Dynamic, 1>& array();
 
   /// Return contiguous array of connections for all entities (const
   /// version)
-  const Eigen::Array<std::int32_t, Eigen::Dynamic, 1>& connections() const;
+  const Eigen::Array<std::int32_t, Eigen::Dynamic, 1>& array() const;
 
   /// Position of first connection in connections() for each entity
   /// (using local index)
-  Eigen::Array<std::int32_t, Eigen::Dynamic, 1>& entity_positions();
+  Eigen::Array<std::int32_t, Eigen::Dynamic, 1>& offsets();
 
   /// Position of first connection in connections() for each entity
   /// (using local index) (const version)
-  const Eigen::Array<std::int32_t, Eigen::Dynamic, 1>& entity_positions() const;
+  const Eigen::Array<std::int32_t, Eigen::Dynamic, 1>& offsets() const;
 
   /// Set global number of connections for each local entities
   void set_global_size(const Eigen::Array<std::int32_t, Eigen::Dynamic, 1>&

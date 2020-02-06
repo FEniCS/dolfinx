@@ -79,24 +79,23 @@ const std::int32_t* Connectivity::edges(int node) const
              : nullptr;
 }
 //-----------------------------------------------------------------------------
-Eigen::Array<std::int32_t, Eigen::Dynamic, 1>& Connectivity::connections()
+Eigen::Array<std::int32_t, Eigen::Dynamic, 1>& Connectivity::array()
 {
   return _connections;
 }
 //-----------------------------------------------------------------------------
-const Eigen::Array<std::int32_t, Eigen::Dynamic, 1>&
-Connectivity::connections() const
+const Eigen::Array<std::int32_t, Eigen::Dynamic, 1>& Connectivity::array() const
 {
   return _connections;
 }
 //-----------------------------------------------------------------------------
-Eigen::Array<std::int32_t, Eigen::Dynamic, 1>& Connectivity::entity_positions()
+Eigen::Array<std::int32_t, Eigen::Dynamic, 1>& Connectivity::offsets()
 {
   return _index_to_position;
 }
 //-----------------------------------------------------------------------------
 const Eigen::Array<std::int32_t, Eigen::Dynamic, 1>&
-Connectivity::entity_positions() const
+Connectivity::offsets() const
 {
   return _index_to_position;
 }

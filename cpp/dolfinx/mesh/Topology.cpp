@@ -109,9 +109,9 @@ std::vector<bool> Topology::on_boundary(int dim) const
     throw std::runtime_error("Facet-entity connectivity missing");
 
   const Eigen::Array<std::int32_t, Eigen::Dynamic, 1>& fe_offsets
-      = connectivity_facet_entity->entity_positions();
+      = connectivity_facet_entity->offsets();
   const Eigen::Array<std::int32_t, Eigen::Dynamic, 1>& fe_indices
-      = connectivity_facet_entity->connections();
+      = connectivity_facet_entity->array();
 
   // Iterate over all facets, selecting only those with one cell attached
   for (int i = 0; i < num_facets; ++i)

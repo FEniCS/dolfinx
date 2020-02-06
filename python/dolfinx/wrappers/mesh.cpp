@@ -87,8 +87,8 @@ void mesh(py::module& m)
             const dolfinx::mesh::Connectivity& connectivity
                 = self.entity_points();
             Eigen::Ref<const Eigen::Array<std::int32_t, Eigen::Dynamic, 1>>
-                connections = connectivity.connections();
-            const int num_entities = connectivity.entity_positions().size() - 1;
+                connections = connectivity.array();
+            const int num_entities = connectivity.offsets().size() - 1;
 
             // FIXME: mesh::CoordinateDofs should know its dimension
             // (entity_size) to handle empty case on a process.
@@ -169,15 +169,15 @@ void mesh(py::module& m)
           }))
       .def("cells",
            [](const dolfinx::mesh::Mesh& self) {
-             const int tdim = self.topology().dim();
+              const int tdim = self.topology().dim();
               auto map = self.topology().index_map(tdim);
               assert(map);
-             const std::int32_t size =map->size_local() + map->num_ghosts();
-             return py::array(
+              const std::int32_t size =map->size_local() + map->num_ghosts();
+              return py::array(
                  {size,
                   (std::int32_t)dolfinx::mesh::num_cell_vertices(
                       self.cell_type())},
-                 self.topology().connectivity(tdim, 0)->connections().data(),
+                 self.topology().connectivity(tdim, 0)->array().data(),
                  py::none());
            },
            py::return_value_policy::reference_internal)
@@ -228,10 +228,9 @@ void mesh(py::module& m)
           "Connections for a single mesh entity",
           py::return_value_policy::reference_internal)
       .def("connections",
-           py::overload_cast<>(&dolfinx::mesh::Connectivity::connections),
+           py::overload_cast<>(&dolfinx::mesh::Connectivity::array),
            "Connections for all mesh entities")
-      .def("pos",
-           py::overload_cast<>(&dolfinx::mesh::Connectivity::entity_positions),
+      .def("pos", py::overload_cast<>(&dolfinx::mesh::Connectivity::offsets),
            "Index to each entity in the connectivity array")
       .def("size", &dolfinx::mesh::Connectivity::num_nodes)
       .def("size", &dolfinx::mesh::Connectivity::num_edges);

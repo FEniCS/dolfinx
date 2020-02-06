@@ -93,9 +93,9 @@ tabulate_coordinates_to_dofs(const function::FunctionSpace& V)
   const mesh::Connectivity& connectivity_g
       = mesh.coordinate_dofs().entity_points();
   const Eigen::Array<std::int32_t, Eigen::Dynamic, 1>& pos_g
-      = connectivity_g.entity_positions();
+      = connectivity_g.offsets();
   const Eigen::Array<std::int32_t, Eigen::Dynamic, 1>& cell_g
-      = connectivity_g.connections();
+      = connectivity_g.array();
   // FIXME: Add proper interface for num coordinate dofs
   const int num_dofs_g = connectivity_g.num_edges(0);
   const Eigen::Array<double, Eigen::Dynamic, 3, Eigen::RowMajor>& x_g
@@ -537,9 +537,9 @@ la::PETScMatrix PETScDMCollection::create_transfer_matrix(
   const mesh::Connectivity& connectivity_g
       = meshc.coordinate_dofs().entity_points();
   const Eigen::Array<std::int32_t, Eigen::Dynamic, 1>& pos_g
-      = connectivity_g.entity_positions();
+      = connectivity_g.offsets();
   const Eigen::Array<std::int32_t, Eigen::Dynamic, 1>& cell_g
-      = connectivity_g.connections();
+      = connectivity_g.array();
   // FIXME: Add proper interface for num coordinate dofs
   const int num_dofs_g = connectivity_g.num_edges(0);
   const Eigen::Array<double, Eigen::Dynamic, 3, Eigen::RowMajor>& x_g

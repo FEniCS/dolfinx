@@ -187,9 +187,9 @@ void write_ascii_mesh(const mesh::Mesh& mesh, int cell_dim,
     const mesh::Connectivity& connectivity_g
         = mesh.coordinate_dofs().entity_points();
     const Eigen::Array<std::int32_t, Eigen::Dynamic, 1>& cell_connections
-        = connectivity_g.connections();
+        = connectivity_g.array();
     const Eigen::Array<std::int32_t, Eigen::Dynamic, 1>& pos_g
-        = connectivity_g.entity_positions();
+        = connectivity_g.offsets();
     num_nodes = connectivity_g.num_edges(0);
 
     const std::vector<std::uint8_t> perm
@@ -219,9 +219,9 @@ void write_ascii_mesh(const mesh::Mesh& mesh, int cell_dim,
         = io::cells::dolfin_to_vtk(e_type, num_vertices);
     auto vertex_connectivity = mesh.topology().connectivity(cell_dim, 0);
     const Eigen::Array<std::int32_t, Eigen::Dynamic, 1>& vertex_connections
-        = vertex_connectivity->connections();
+        = vertex_connectivity->array();
     const Eigen::Array<std::int32_t, Eigen::Dynamic, 1>& pos_vertex
-        = vertex_connectivity->entity_positions();
+        = vertex_connectivity->offsets();
     for (int j = 0; j < mesh.num_entities(cell_dim); ++j)
     {
       for (int i = 0; i < num_vertices; ++i)
