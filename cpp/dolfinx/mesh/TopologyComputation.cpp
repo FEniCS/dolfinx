@@ -227,7 +227,7 @@ std::vector<int> get_ghost_mapping(
   }
 
   dolfinx::MPI::neighbor_all_to_all(
-      mesh.mpi_comm(), send_global_index_offsets, send_global_index_data,
+      neighbour_comm, send_global_index_offsets, send_global_index_data,
       recv_global_index_offsets, recv_global_index_data);
 
   // Map back received indices?
