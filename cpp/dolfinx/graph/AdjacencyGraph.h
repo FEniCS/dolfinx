@@ -18,23 +18,22 @@ namespace dolfinx
 namespace mesh
 {
 
-/// Mesh connectivity stores a sparse data structure of connections
-/// (incidence relations) between mesh entities for a fixed pair of
-/// topological dimensions.
-///
-/// The connectivity can be specified either by first giving the
-/// number of entities and the number of connections for each entity,
-/// which may either be equal for all entities or different, or by
-/// giving the entire (sparse) connectivity pattern.
+/// This class provides an a adjacency representation of graphs, and is
+/// typically used to store mesh connectivity. For each node in the list
+/// of nodes [0, 1, 2, ..., n) it stores the connected nodes. It
+/// represents a directed graph. The representation is strictly local,
+/// i.e. it is not parallel aware.
 
 template <typename T>
 class AdjacencyGraph
 {
 public:
-  /// Initialize with all connections and pointer to each entity
-  /// position
+  /// Initialize with all edges and pointer to each entity
+  /// node
+  /// @param [in] connections TODO
+  /// @param [in] positions TODO
   AdjacencyGraph(const std::vector<T>& connections,
-               const std::vector<std::int32_t>& positions)
+                 const std::vector<std::int32_t>& positions)
       : _array(connections.size()), _offsets(positions.size())
   {
     assert(positions.back() == (std::int32_t)connections.size());
@@ -44,8 +43,9 @@ public:
       _offsets[i] = positions[i];
   }
 
-  /// Initialize with all connections for case where each entity has the
-  /// same number of connections
+  /// Initialize with all edges for case where each node has the
+  /// same number of outgoing edges
+  /// @param [in] connections TODO
   AdjacencyGraph(
       const Eigen::Ref<const Eigen::Array<T, Eigen::Dynamic, Eigen::Dynamic,
                                           Eigen::RowMajor>>& connections)
@@ -67,6 +67,7 @@ public:
   /// Set all connections for all entities (T is a '2D' container, e.g.
   /// a std::vector<<std::vector<std::size_t>>,
   /// std::vector<<std::set<std::size_t>>, etc)
+  /// @param [in] connections TODO
   template <typename X>
   AdjacencyGraph(const std::vector<X>& connections)
       : _offsets(connections.size() + 1)
@@ -145,24 +146,22 @@ public:
     return (node + 1) < _offsets.size() ? &_array[_offsets[node]] : nullptr;
   }
 
-  /// Return contiguous array of connections for all entities
+  /// Return contiguous array of edges for all nodes
   Eigen::Array<T, Eigen::Dynamic, 1>& array() { return _array; }
 
-  /// Return contiguous array of connections for all entities (const
-  /// version)
+  /// Return contiguous array of edges for all nodes (const version)
   const Eigen::Array<T, Eigen::Dynamic, 1>& array() const { return _array; }
 
-  /// Position of first connection in connections() for each entity
-  /// (using local index)
+  /// Offset for each node in array()
   Eigen::Array<std::int32_t, Eigen::Dynamic, 1>& offsets() { return _offsets; }
 
-  /// Position of first connection in connections() for each entity
-  /// (using local index) (const version)
+  /// Offset for each node in array() (const version)
   const Eigen::Array<std::int32_t, Eigen::Dynamic, 1>& offsets() const
   {
     return _offsets;
   }
 
+  /// @todo Move this outside of this class
   /// Set global number of connections for each local entities
   void set_global_size(const Eigen::Array<std::int32_t, Eigen::Dynamic, 1>&
                            num_global_connections)
@@ -171,7 +170,7 @@ public:
     _num_global_connections = num_global_connections;
   }
 
-  /// Hash of connections
+  /// Hash of graph
   std::size_t hash() const
   {
     return boost::hash_range(_array.data(), _array.data() + _array.size());
