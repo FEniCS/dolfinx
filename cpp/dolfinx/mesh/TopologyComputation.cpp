@@ -244,12 +244,12 @@ std::vector<int> get_ghost_mapping(
   //   }
   // }
 
-  std::stringstream s;
-  s << mpi_rank << "] gi = [";
-  for (auto q : global_indexing)
-    s << q << " ";
-  s << "]\n";
-  std::cout << s.str();
+  // std::stringstream s;
+  // s << mpi_rank << "] gi = [";
+  // for (auto q : global_indexing)
+  //   s << q << " ";
+  // s << "]\n";
+  // std::cout << s.str();
 
   // Now index the ghosts
   for (int i = 0; i < entity_count; ++i)

@@ -414,7 +414,6 @@ void DistributedMeshTools::number_entities(const Mesh& mesh, int d)
     auto index_map = std::make_shared<common::IndexMap>(mesh.mpi_comm(), size_d,
                                                         ghosts, 1);
     _mesh.topology().set_index_map(d, index_map);
-    std::cout << "Have set map: " << d << std::endl;
 
     return;
   }

@@ -35,6 +35,7 @@ public:
   /// position
   Connectivity(const std::vector<T>& connections,
                const std::vector<std::int32_t>& positions)
+      : _array(connections.size()), _offsets(positions.size())
   {
     assert(positions.back() == (std::int32_t)connections.size());
     for (std::size_t i = 0; i < connections.size(); ++i)
@@ -48,6 +49,8 @@ public:
   Connectivity(
       const Eigen::Ref<const Eigen::Array<T, Eigen::Dynamic, Eigen::Dynamic,
                                           Eigen::RowMajor>>& connections)
+      : _array(connections.rows() * connections.cols()),
+        _offsets(connections.rows() + 1)
   {
     // NOTE: cannot directly copy data from connections because it may be
     // a view into a larger array, e.g. for non-affine cells
