@@ -746,8 +746,8 @@ generate_permutations_quadrilateral(const mesh::Mesh& mesh,
   const int num_permutations = get_num_permutations(mesh.cell_type());
   const int dof_count = dof_layout.num_dofs();
 
-  const int num_edge_dofs = dof_layout.num_entity_dofs(1);
-  const int num_face_dofs = dof_layout.num_entity_dofs(2);
+  const int num_edge_dofs = dof_layout.num_entity_dofs_to_permute(1);
+  const int num_face_dofs = dof_layout.num_entity_dofs_to_permute(2);
   const int edge_bs = dof_layout.entity_block_size(1);
   const int face_bs = dof_layout.entity_block_size(2);
 
@@ -796,9 +796,9 @@ generate_permutations_tetrahedron(const mesh::Mesh& mesh,
   const int num_permutations = get_num_permutations(mesh.cell_type());
   const int dof_count = dof_layout.num_dofs();
 
-  const int num_edge_dofs = dof_layout.num_entity_dofs(1);
-  const int num_face_dofs = dof_layout.num_entity_dofs(2);
-  const int num_volume_dofs = dof_layout.num_entity_dofs(3);
+  const int num_edge_dofs = dof_layout.num_entity_dofs_to_permute(1);
+  const int num_face_dofs = dof_layout.num_entity_dofs_to_permute(2);
+  const int num_volume_dofs = dof_layout.num_entity_dofs_to_permute(3);
   const int edge_bs = dof_layout.entity_block_size(1);
   const int face_bs = dof_layout.entity_block_size(2);
   const int volume_bs = dof_layout.entity_block_size(3);
@@ -864,9 +864,9 @@ generate_permutations_hexahedron(const mesh::Mesh& mesh,
   const int num_permutations = get_num_permutations(mesh.cell_type());
   const int dof_count = dof_layout.num_dofs();
 
-  const int num_edge_dofs = dof_layout.num_entity_dofs(1);
-  const int num_face_dofs = dof_layout.num_entity_dofs(2);
-  const int num_volume_dofs = dof_layout.num_entity_dofs(3);
+  const int num_edge_dofs = dof_layout.num_entity_dofs_to_permute(1);
+  const int num_face_dofs = dof_layout.num_entity_dofs_to_permute(2);
+  const int num_volume_dofs = dof_layout.num_entity_dofs_to_permute(3);
   const int edge_bs = dof_layout.entity_block_size(1);
   const int face_bs = dof_layout.entity_block_size(2);
   const int volume_bs = dof_layout.entity_block_size(3);
