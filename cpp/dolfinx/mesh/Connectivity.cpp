@@ -47,7 +47,7 @@ std::int32_t Connectivity::size() const
   return _index_to_position.rows() - 1;
 }
 //-----------------------------------------------------------------------------
-int_fast32_t Connectivity::size(std::int32_t entity) const
+std::int32_t Connectivity::size(std::int32_t entity) const
 {
   return (entity + 1) < _index_to_position.size()
              ? _index_to_position[entity + 1] - _index_to_position[entity]
