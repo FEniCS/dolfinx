@@ -22,44 +22,12 @@ using namespace dolfinx;
 using namespace dolfinx::refinement;
 
 //-----------------------------------------------------------------------------
-namespace
-{
-// MPI_Comm create_neighbor_comm_via_edge(const mesh::Mesh& mesh)
-// {
-//   // Create a neighbourhood comm for processes sharing edges in the Mesh
-
-//   // Look at all "shared edges" and find neighbours
-//   if (!mesh.topology().connectivity(1, 0))
-//     throw std::runtime_error("Edges must be initialised");
-
-//   const std::map<std::int32_t, std::set<std::int32_t>>& shared_edges
-//       = mesh.topology().shared_entities(1);
-
-//   std::set<std::int32_t> neighbour_set;
-//   for (auto q : shared_edges)
-//     neighbour_set.insert(q.second.begin(), q.second.end());
-
-//   std::vector<std::int32_t> neighbours(neighbour_set.begin(),
-//                                        neighbour_set.end());
-//   MPI_Comm neighbour_comm;
-//   MPI_Dist_graph_create_adjacent(
-//       mesh.mpi_comm(), neighbours.size(), neighbours.data(), MPI_UNWEIGHTED,
-//       neighbours.size(), neighbours.data(), MPI_UNWEIGHTED, MPI_INFO_NULL,
-//       false, &neighbour_comm);
-
-//   return neighbour_comm;
-// }
-} // namespace
-//-----------------------------------------------------------------------------
 ParallelRefinement::ParallelRefinement(const mesh::Mesh& mesh)
     : _mesh(mesh), _marked_edges(mesh.num_entities(1), false),
       _marked_for_update(MPI::size(mesh.mpi_comm()))
 {
   if (!_mesh.topology().connectivity(1, 0))
     throw std::runtime_error("Edges must be initialised");
-
-  _neighbour_comm = mesh.topology().index_map(1)->mpi_comm_neighborhood();
-  // create_neighbor_comm_via_edge(mesh);
 
   // Create a global-to-local map for shared edges
   const std::map<std::int32_t, std::set<std::int32_t>>& shared_edges
@@ -73,8 +41,6 @@ ParallelRefinement::ParallelRefinement(const mesh::Mesh& mesh)
         {global_edge_indices[edge.first], edge.first});
   }
 }
-//-----------------------------------------------------------------------------
-ParallelRefinement::~ParallelRefinement() { MPI_Comm_free(&_neighbour_comm); }
 //-----------------------------------------------------------------------------
 const mesh::Mesh& ParallelRefinement::mesh() const { return _mesh; }
 //-----------------------------------------------------------------------------
@@ -162,9 +128,10 @@ ParallelRefinement::marked_edge_list(const mesh::MeshEntity& cell) const
 void ParallelRefinement::update_logical_edgefunction()
 {
   const std::size_t mpi_size = MPI::size(_mesh.mpi_comm());
-
+  MPI_Comm neighbour_comm
+      = _mesh.topology().index_map(1)->mpi_comm_neighborhood();
   // Get neighbour processes
-  std::vector<int> neighbours = MPI::neighbors(_neighbour_comm);
+  std::vector<int> neighbours = MPI::neighbors(neighbour_comm);
   std::vector<std::int32_t> send_offsets(1, 0), recv_offsets;
   std::vector<std::int64_t> data_to_send, data_to_recv;
   for (std::size_t i = 0; i < neighbours.size(); ++i)
@@ -178,7 +145,7 @@ void ParallelRefinement::update_logical_edgefunction()
   // Send all shared edges marked for update and receive from other
   // processes
 
-  MPI::neighbor_all_to_all(_neighbour_comm, send_offsets, data_to_send,
+  MPI::neighbor_all_to_all(neighbour_comm, send_offsets, data_to_send,
                            recv_offsets, data_to_recv);
 
   // Clear marked_for_update vectors
@@ -259,7 +226,9 @@ void ParallelRefinement::create_new_vertices()
   // sent off-process.  Add offset to map, and collect up any shared
   // new vertices that need to send the new index off-process
 
-  std::vector<int> neighbours = MPI::neighbors(_neighbour_comm);
+  MPI_Comm neighbour_comm
+      = _mesh.topology().index_map(1)->mpi_comm_neighborhood();
+  std::vector<int> neighbours = MPI::neighbors(neighbour_comm);
   std::vector<std::vector<std::int64_t>> values_to_send(neighbours.size());
   std::map<int, int> proc_to_neighbour;
   for (std::size_t i = 0; i < neighbours.size(); ++i)
@@ -299,7 +268,7 @@ void ParallelRefinement::create_new_vertices()
     send_offsets.push_back(send_values.size());
   }
 
-  MPI::neighbor_all_to_all(_neighbour_comm, send_offsets, send_values,
+  MPI::neighbor_all_to_all(neighbour_comm, send_offsets, send_values,
                            recv_offsets, received_values);
 
   // Add received remote global vertex indices to map

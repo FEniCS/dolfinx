@@ -39,7 +39,7 @@ public:
   ParallelRefinement(const mesh::Mesh& mesh);
 
   /// Destructor
-  ~ParallelRefinement();
+  ~ParallelRefinement() = default;
 
   /// Original mesh associated with this refinement
   const mesh::Mesh& mesh() const;
@@ -97,8 +97,6 @@ public:
 private:
   // mesh::Mesh reference
   const mesh::Mesh& _mesh;
-
-  MPI_Comm _neighbour_comm;
 
   // Mapping from old local edge index to new global vertex, needed to
   // create new topology
