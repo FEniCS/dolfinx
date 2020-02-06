@@ -427,7 +427,7 @@ U = Function(W)
 # Set near null space for pressure
 null_vec = U.vector.copy()
 null_vec.set(0.0)
-with  null_vec.localForm() as _null_vec:
+with null_vec.localForm() as _null_vec:
     W.sub(1).dofmap.set(_null_vec.array, 1.0)
 null_vec.normalize()
 nsp = PETSc.NullSpace().create(vectors=[null_vec])
