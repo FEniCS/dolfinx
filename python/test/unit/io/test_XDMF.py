@@ -1,6 +1,6 @@
 # Copyright (C) 2012-2019 Garth N. Wells
 #
-# This file is part of DOLFIN (https://www.fenicsproject.org)
+# This file is part of DOLFINX (https://www.fenicsproject.org)
 #
 # SPDX-License-Identifier:    LGPL-3.0-or-later
 
@@ -10,13 +10,13 @@ import numpy as np
 import pytest
 from petsc4py import PETSc
 
-from dolfin import (MPI, Function, FunctionSpace, Mesh, MeshFunction,
-                    MeshValueCollection, TensorFunctionSpace, UnitCubeMesh,
-                    UnitIntervalMesh, UnitSquareMesh, VectorFunctionSpace, cpp,
-                    has_petsc_complex)
-from dolfin.cpp.mesh import CellType
-from dolfin.io import XDMFFile
-from dolfin_utils.test.fixtures import tempdir
+from dolfinx import (MPI, Function, FunctionSpace, Mesh, MeshFunction,
+                     MeshValueCollection, TensorFunctionSpace, UnitCubeMesh,
+                     UnitIntervalMesh, UnitSquareMesh, VectorFunctionSpace, cpp,
+                     has_petsc_complex)
+from dolfinx.cpp.mesh import CellType
+from dolfinx.io import XDMFFile
+from dolfinx_utils.test.fixtures import tempdir
 from ufl import FiniteElement, VectorElement
 
 assert (tempdir)
