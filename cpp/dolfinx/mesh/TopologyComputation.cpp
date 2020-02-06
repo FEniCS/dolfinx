@@ -230,18 +230,19 @@ std::vector<int> get_ghost_mapping(
       neighbour_comm, send_global_index_offsets, send_global_index_data,
       recv_global_index_offsets, recv_global_index_data);
 
-  for (int np = 0; np < neighbour_size; ++np)
-  {
-    for (int j = 0; j < (recv_global_index_offsets[np + 1]
-                         - recv_global_index_offsets[np]);
-         ++j)
-    {
-      const std::int64_t gi
-          = recv_global_index_data[j + recv_global_index_offsets[np]];
-      if (gi != -1)
-        global_indexing[recv_index[np][j]] = gi;
-    }
-  }
+  // Map back received indices?
+  // for (int np = 0; np < neighbour_size; ++np)
+  // {
+  //   for (int j = 0; j < (recv_global_index_offsets[np + 1]
+  //                        - recv_global_index_offsets[np]);
+  //        ++j)
+  //   {
+  //     const std::int64_t gi
+  //         = recv_global_index_data[j + recv_global_index_offsets[np]];
+  //     if (gi != -1)
+  //       global_indexing[recv_index[np][j]] = gi;
+  //   }
+  // }
 
   std::stringstream s;
   s << mpi_rank << "] gi = [";
