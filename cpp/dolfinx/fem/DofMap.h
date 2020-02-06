@@ -88,7 +88,7 @@ public:
   /// Create a "collapsed" dofmap (collapses a sub-dofmap)
   /// @param[in] mesh The mesh that the dofmap is defined on
   /// @return The collapsed dofmap
-  std::pair<std::unique_ptr<DofMap>, std::vector<PetscInt>>
+  std::pair<std::unique_ptr<DofMap>, std::vector<std::int32_t>>
   collapse(const mesh::Mesh& mesh) const;
 
   /// Set dof entries in vector to a specified value. Parallel layout
@@ -112,8 +112,8 @@ public:
   // FIXME: can this be removed?
   /// Return list of dof indices on this process that belong to mesh
   /// entities of dimension dim
-  Eigen::Array<PetscInt, Eigen::Dynamic, 1> dofs(const mesh::Mesh& mesh,
-                                                 std::size_t dim) const;
+  Eigen::Array<std::int32_t, Eigen::Dynamic, 1> dofs(const mesh::Mesh& mesh,
+                                                     std::size_t dim) const;
 
   /// Layout of dofs on an element
   std::shared_ptr<const ElementDofLayout> element_dof_layout;

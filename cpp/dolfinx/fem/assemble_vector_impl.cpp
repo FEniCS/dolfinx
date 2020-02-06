@@ -142,7 +142,7 @@ void _lift_bc_cells(
     be.setZero(dmap0.size());
     for (Eigen::Index j = 0; j < dmap1.size(); ++j)
     {
-      const PetscInt jj = dmap1[j];
+      const std::int32_t jj = dmap1[j];
       if (bc_markers1[jj])
       {
         const PetscScalar bc = bc_values1[jj];
@@ -295,7 +295,7 @@ void _lift_bc_exterior_facets(
     be.setZero(dmap0.size());
     for (Eigen::Index j = 0; j < dmap1.size(); ++j)
     {
-      const PetscInt jj = dmap1[j];
+      const std::int32_t jj = dmap1[j];
       if (bc_markers1[jj])
       {
         const PetscScalar bc = bc_values1[jj];
