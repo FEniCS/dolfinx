@@ -489,16 +489,18 @@ graph::AdjacencyList<std::int32_t> compute_from_map(const Mesh& mesh, int d0,
 } // namespace
 
 //-----------------------------------------------------------------------------
-std::int32_t TopologyComputation::compute_entities(Mesh& mesh, int dim)
+std::tuple<std::shared_ptr<graph::AdjacencyList<std::int32_t>>,
+           std::shared_ptr<graph::AdjacencyList<std::int32_t>>, std::int32_t>
+TopologyComputation::compute_entities(const Mesh& mesh, int dim)
 {
   LOG(INFO) << "Computing mesh entities of dimension " << dim;
 
   // Check if entities have already been computed
-  Topology& topology = mesh.topology();
+  const Topology& topology = mesh.topology();
 
   // Vertices must always exist
   if (dim == 0)
-    return -1;
+    return {nullptr, nullptr, -1};
 
   if (topology.connectivity(dim, 0))
   {
@@ -510,22 +512,14 @@ std::int32_t TopologyComputation::compute_entities(Mesh& mesh, int dim)
           "dimension "
           + std::to_string(dim) + " exist but connectivity is missing.");
     }
-    return -1;
+    return {nullptr, nullptr, -1};
   }
 
   std::tuple<std::shared_ptr<graph::AdjacencyList<std::int32_t>>,
              std::shared_ptr<graph::AdjacencyList<std::int32_t>>, std::int32_t>
       data = compute_entities_by_key_matching(mesh, dim);
 
-  // Set cell-entity connectivity
-  if (std::get<0>(data))
-    topology.set_connectivity(std::get<0>(data), topology.dim(), dim);
-
-  // Set entity-vertex connectivity
-  if (std::get<1>(data))
-    topology.set_connectivity(std::get<1>(data), dim, 0);
-
-  return std::get<2>(data);
+  return data;
 }
 //-----------------------------------------------------------------------------
 void TopologyComputation::compute_connectivity(Mesh& mesh, int d0, int d1)

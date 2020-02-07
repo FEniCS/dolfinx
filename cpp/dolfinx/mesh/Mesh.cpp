@@ -470,8 +470,16 @@ std::int32_t Mesh::create_entities(int dim) const
   Mesh* mesh = const_cast<Mesh*>(this);
 
   // Create local entities
-  const std::int32_t num_new_entities
+  auto [cell_entity, entity_vertex, num_new_entities]
       = TopologyComputation::compute_entities(*mesh, dim);
+  if (cell_entity)
+    _topology->set_connectivity(cell_entity, _topology->dim(), dim);
+  if (entity_vertex)
+    _topology->set_connectivity(entity_vertex, dim, 0);
+
+  // // Set entity-vertex connectivity
+  // if (std::get<1>(data))
+  //   topology.set_connectivity(std::get<1>(data), dim, 0);
 
   // Number globally
   DistributedMeshTools::number_entities(*mesh, dim);
