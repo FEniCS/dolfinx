@@ -328,7 +328,7 @@ workflows:
       - build-and-push-complete-build-docker-images:
           requires:
             - build-and-push-dev-env-docker-images
-        filters:
+          filters:
             branches:
               only:
                 - master
