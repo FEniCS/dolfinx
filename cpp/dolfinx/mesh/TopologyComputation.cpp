@@ -55,6 +55,73 @@ std::vector<int> sort_by_perm(
   return index;
 }
 //-----------------------------------------------------------------------------
+std::tuple<std::map<std::int32_t, std::set<std::int32_t>>,
+           std::vector<std::vector<std::int32_t>>>
+get_shared_entities(MPI_Comm neighbour_comm,
+                    const std::vector<std::vector<std::int64_t>>& send_entities,
+                    const std::vector<std::vector<std::int32_t>>& send_index,
+                    int num_vertices)
+{
+  const std::vector<int> neighbours = dolfinx::MPI::neighbors(neighbour_comm);
+  const int neighbour_size = neighbours.size();
+
+  // Items to return
+  std::map<std::int32_t, std::set<std::int32_t>> shared_entities;
+  std::vector<std::vector<std::int32_t>> recv_index(neighbour_size);
+
+  // prepare data for neighbour all to all
+  std::vector<std::int64_t> send_entities_data;
+  std::vector<std::int64_t> recv_entities_data;
+  std::vector<int> send_offsets = {0};
+  std::vector<int> recv_offsets;
+  for (std::size_t i = 0; i < send_entities.size(); ++i)
+  {
+    send_entities_data.insert(send_entities_data.end(),
+                              send_entities[i].begin(), send_entities[i].end());
+    send_offsets.push_back(send_entities_data.size());
+  }
+
+  dolfinx::MPI::neighbor_all_to_all(neighbour_comm, send_offsets,
+                                    send_entities_data, recv_offsets,
+                                    recv_entities_data);
+
+  // Compare received with sent for each process
+  for (int np = 0; np < neighbour_size; ++np)
+  {
+    Eigen::Map<const Eigen::Array<std::int64_t, Eigen::Dynamic, Eigen::Dynamic,
+                                  Eigen::RowMajor>>
+        send_array(send_entities_data.data() + send_offsets[np],
+                   (send_offsets[np + 1] - send_offsets[np]) / num_vertices,
+                   num_vertices);
+
+    Eigen::Map<const Eigen::Array<std::int64_t, Eigen::Dynamic, Eigen::Dynamic,
+                                  Eigen::RowMajor>>
+        recv_array(recv_entities_data.data() + recv_offsets[np],
+                   (recv_offsets[np + 1] - recv_offsets[np]) / num_vertices,
+                   num_vertices);
+
+    recv_index[np].resize(recv_array.rows(), -1);
+
+    // Compare with sent values
+    for (int i = 0; i < send_array.rows(); ++i)
+    {
+      for (int j = 0; j < recv_array.rows(); ++j)
+      {
+        if ((recv_array.row(j) == send_array.row(i)).all())
+        {
+          // This entity was sent, and the same was received back, confirming
+          // sharing.
+          const int p = neighbours[np];
+          shared_entities[send_index[np][i]].insert(p);
+          recv_index[np][j] = send_index[np][i];
+          break;
+        }
+      }
+    }
+  }
+  return {shared_entities, recv_index};
+}
+//-----------------------------------------------------------------------------
 // Communicate with sharing processes to find out which entities are ghost
 // and return a mapping vector to move them to the end of the local range.
 std::vector<int> get_ghost_mapping(
@@ -92,7 +159,6 @@ std::vector<int> get_ghost_mapping(
 
   std::vector<std::vector<std::int64_t>> send_entities(neighbour_size);
   std::vector<std::vector<std::int32_t>> send_index(neighbour_size);
-  std::vector<std::vector<std::int32_t>> recv_index(neighbour_size);
 
   // Get all "possibly shared" entities, based on vertex sharing
   // Send to other processes, and see if we get the same back
@@ -136,57 +202,11 @@ std::vector<int> get_ghost_mapping(
     }
   }
 
-  // prepare data for neighbour all to all
-  std::vector<std::int64_t> send_entities_data;
-  std::vector<std::int64_t> recv_entities_data;
-  std::vector<int> send_offsets = {0};
-  std::vector<int> recv_offsets;
-  for (std::size_t i = 0; i < send_entities.size(); ++i)
-  {
-    send_entities_data.insert(send_entities_data.end(),
-                              send_entities[i].begin(), send_entities[i].end());
-    send_offsets.push_back(send_entities_data.size());
-  }
-
-  dolfinx::MPI::neighbor_all_to_all(neighbour_comm, send_offsets,
-                                    send_entities_data, recv_offsets,
-                                    recv_entities_data);
-
-  std::map<std::int32_t, std::set<std::int32_t>> shared_entities;
-  // Compare received with sent for each process
-  for (int np = 0; np < neighbour_size; ++np)
-  {
-    Eigen::Map<const Eigen::Array<std::int64_t, Eigen::Dynamic, Eigen::Dynamic,
-                                  Eigen::RowMajor>>
-        send_array(send_entities_data.data() + send_offsets[np],
-                   (send_offsets[np + 1] - send_offsets[np]) / num_vertices,
-                   num_vertices);
-
-    Eigen::Map<const Eigen::Array<std::int64_t, Eigen::Dynamic, Eigen::Dynamic,
-                                  Eigen::RowMajor>>
-        recv_array(recv_entities_data.data() + recv_offsets[np],
-                   (recv_offsets[np + 1] - recv_offsets[np]) / num_vertices,
-                   num_vertices);
-
-    recv_index[np].resize(recv_array.rows(), -1);
-
-    // Compare with sent values
-    for (int i = 0; i < send_array.rows(); ++i)
-    {
-      for (int j = 0; j < recv_array.rows(); ++j)
-      {
-        if ((recv_array.row(j) == send_array.row(i)).all())
-        {
-          // This entity was sent, and the same was received back, confirming
-          // sharing.
-          const int p = neighbours[np];
-          shared_entities[send_index[np][i]].insert(p);
-          recv_index[np][j] = send_index[np][i];
-          break;
-        }
-      }
-    }
-  }
+  // Get shared entities of this dimension, and also match up
+  // an index for the received entities (from other processes)
+  // with the indices of the sent entities (to other processes)
+  auto [shared_entities, recv_index] = get_shared_entities(
+      neighbour_comm, send_entities, send_index, num_vertices);
 
   int mpi_rank = dolfinx::MPI::rank(comm);
 
@@ -233,7 +253,7 @@ std::vector<int> get_ghost_mapping(
       neighbour_comm, send_global_index_offsets, send_global_index_data,
       recv_global_index_offsets, recv_global_index_data);
 
-  // Map back received indices - need to check
+  // Map back received indices
   for (int np = 0; np < neighbour_size; ++np)
   {
     for (int j = 0; j < (recv_global_index_offsets[np + 1]
