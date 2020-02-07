@@ -117,21 +117,24 @@ public:
   /// @param [in] node Node index
   /// @return Array of outgoing edges for the node. The length will be
   ///   AdjacencyList:num_edges(node).
-  std::int32_t* edges(int node)
+  auto edges(int node)
   {
-    // assert(node + 1) < _offsets.size())
-    return &_array[_offsets[node]];
-    // return (node + 1) < _offsets.size() ? &_array[_offsets[node]] : nullptr;
+    return _array.segment(_offsets[node], _offsets[node + 1] - _offsets[node]);
   }
 
   /// Edges for given node (const version)
   /// @param [in] node Node index
   /// @return Array of outgoing edges for the node. The length will be
   ///   AdjacencyList:num_edges(node).
-  const std::int32_t* edges(int node) const
+  auto edges(int node) const
+  {
+    return _array.segment(_offsets[node], _offsets[node + 1] - _offsets[node]);
+  }
+
+  /// TODO: attempt to remove
+  const std::int32_t* edges_ptr(int node) const
   {
     return &_array[_offsets[node]];
-    // return (node + 1) < _offsets.size() ? &_array[_offsets[node]] : nullptr;
   }
 
   /// Return contiguous array of edges for all nodes

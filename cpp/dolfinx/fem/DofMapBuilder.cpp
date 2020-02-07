@@ -84,10 +84,8 @@ void get_cell_entities(
           = topology.global_indices(d);
       assert(global_indices.size() > 0);
 
-      const int cell_num_entities
-          = mesh::cell_num_entities(cell.mesh().cell_type(), d);
-      const std::int32_t* entities = cell.entities(d);
-      for (int i = 0; i < cell_num_entities; ++i)
+      auto entities = cell.entities(d);
+      for (int i = 0; i < entities.rows(); ++i)
       {
         entity_indices_local[d][i] = entities[i];
         entity_indices_global[d][i] = global_indices[entities[i]];

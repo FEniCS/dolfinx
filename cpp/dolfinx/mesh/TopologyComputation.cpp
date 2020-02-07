@@ -5,7 +5,6 @@
 // SPDX-License-Identifier:    LGPL-3.0-or-later
 
 #include "TopologyComputation.h"
-#include <dolfinx/graph/AdjacencyList.h>
 #include "Mesh.h"
 #include "MeshEntity.h"
 #include "MeshIterator.h"
@@ -19,6 +18,7 @@
 #include <dolfinx/common/Timer.h>
 #include <dolfinx/common/log.h>
 #include <dolfinx/common/utils.h>
+#include <dolfinx/graph/AdjacencyList.h>
 #include <memory>
 #include <numeric>
 #include <string>
@@ -311,8 +311,7 @@ compute_entities_by_key_matching(const Mesh& mesh, int dim)
   for (auto& c : MeshRange(mesh, tdim, MeshRangeType::ALL))
   {
     // Get vertices from cell
-    const std::int32_t* vertices = c.entities(0);
-    assert(vertices);
+    auto vertices = c.entities(0);
 
     // Iterate over entities of cell
     for (int i = 0; i < num_entities; ++i)
@@ -380,7 +379,7 @@ compute_entities_by_key_matching(const Mesh& mesh, int dim)
 //-----------------------------------------------------------------------------
 // Compute connectivity from transpose
 AdjacencyList<std::int32_t> compute_from_transpose(const Mesh& mesh, int d0,
-                                                  int d1)
+                                                   int d1)
 {
   // The transpose is computed in three steps:
   //
@@ -444,8 +443,8 @@ AdjacencyList<std::int32_t> compute_from_map(const Mesh& mesh, int d0, int d1)
   std::vector<std::int32_t> key(num_verts_d1);
   for (auto& e : MeshRange(mesh, d1, MeshRangeType::ALL))
   {
-    std::partial_sort_copy(e.entities(0), e.entities(0) + num_verts_d1,
-                           key.begin(), key.end());
+    const std::int32_t* v = e.entities_ptr(0);
+    std::partial_sort_copy(v, v + num_verts_d1, key.begin(), key.end());
     entity_to_index.insert({key, e.index()});
   }
 
@@ -462,7 +461,7 @@ AdjacencyList<std::int32_t> compute_from_map(const Mesh& mesh, int d0, int d1)
   for (auto& e : MeshRange(mesh, d0, MeshRangeType::ALL))
   {
     entities.clear();
-    const std::int32_t* e0 = e.entities(0);
+    auto e0 = e.entities(0);
     for (Eigen::Index i = 0; i < e_vertices_ref.rows(); ++i)
       for (Eigen::Index j = 0; j < e_vertices_ref.cols(); ++j)
         keys(i, j) = e0[e_vertices_ref(i, j)];

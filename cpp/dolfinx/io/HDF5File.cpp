@@ -315,7 +315,7 @@ void HDF5File::write(const mesh::Mesh& mesh, int cell_dim,
 
       for (std::int32_t c = 0; c < mesh.num_entities(tdim); ++c)
       {
-        const std::int32_t* points = cell_points.edges(c);
+        auto points = cell_points.edges(c);
         for (std::int32_t i = 0; i < num_nodes_per_cell; ++i)
         {
           topological_data.push_back(global_points[points[perm[i]]]);

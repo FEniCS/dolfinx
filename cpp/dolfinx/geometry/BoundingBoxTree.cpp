@@ -26,11 +26,8 @@ compute_bbox_of_entity(const mesh::MeshEntity& entity)
 {
   // Get mesh entity data
   const mesh::Geometry& geometry = entity.mesh().geometry();
-  const mesh::CellType entity_type
-      = mesh::cell_entity_type(entity.mesh().cell_type(), entity.dim());
-  const int num_vertices = mesh::cell_num_entities(entity_type, 0);
-  const std::int32_t* vertices = entity.entities(0);
-  assert(num_vertices >= 2);
+  auto vertices = entity.entities(0);
+  assert(vertices.rows() >= 2);
 
   const Eigen::Vector3d x0 = geometry.x(vertices[0]);
   Eigen::Array<double, 2, 3, Eigen::RowMajor> b;
@@ -38,7 +35,7 @@ compute_bbox_of_entity(const mesh::MeshEntity& entity)
   b.row(1) = x0;
 
   // Compute min and max over remaining vertices
-  for (int i = 1; i < num_vertices; ++i)
+  for (int i = 1; i < vertices.rows(); ++i)
   {
     const Eigen::Vector3d x = geometry.x(vertices[i]);
     b.row(0) = b.row(0).min(x.transpose().array());

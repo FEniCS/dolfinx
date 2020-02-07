@@ -102,7 +102,7 @@ public:
         = *e.mesh().topology().connectivity(e.dim(), _entity.dim());
 
     // Pointer to array of connections
-    _connections = c.edges(e.index()) + pos;
+    _connections = c.edges_ptr(e.index()) + pos;
   }
 
   /// Copy constructor

@@ -319,7 +319,7 @@ face_long_edge(const mesh::Mesh& mesh)
   std::vector<double> edge_length(mesh.num_entities(1));
   for (const auto& e : mesh::MeshRange(mesh, 1, mesh::MeshRangeType::ALL))
   {
-    const std::int32_t* v = e.entities(0);
+    auto v = e.entities(0);
     edge_length[e.index()] = (geometry.x(v[0]) - geometry.x(v[1])).norm();
   }
 
@@ -328,7 +328,7 @@ face_long_edge(const mesh::Mesh& mesh)
       = mesh.topology().global_indices(0);
   for (const auto& f : mesh::MeshRange(mesh, 2, mesh::MeshRangeType::ALL))
   {
-    const std::int32_t* face_edges = f.entities(1);
+    auto face_edges = f.entities(1);
 
     std::int32_t imax = 0;
     double max_len = 0.0;

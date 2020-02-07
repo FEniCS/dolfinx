@@ -218,16 +218,11 @@ void mesh(py::module& m)
   py::class_<dolfinx::mesh::AdjacencyList<std::int32_t>,
              std::shared_ptr<dolfinx::mesh::AdjacencyList<std::int32_t>>>(
       m, "Connectivity", "Connectivity object")
-      .def(
-          "connections",
-          [](const dolfinx::mesh::AdjacencyList<std::int32_t>& self,
-             std::size_t i) {
-            return Eigen::Map<
-                const Eigen::Array<std::int32_t, Eigen::Dynamic, 1>>(
-                self.edges(i), self.num_edges(i));
-          },
-          "Connections for a single mesh entity",
-          py::return_value_policy::reference_internal)
+      .def("connections",
+           py::overload_cast<int>(
+               &dolfinx::mesh::AdjacencyList<std::int32_t>::edges),
+           "Connections for a single mesh entity",
+           py::return_value_policy::reference_internal)
       .def("connections",
            py::overload_cast<>(
                &dolfinx::mesh::AdjacencyList<std::int32_t>::array),
@@ -251,20 +246,7 @@ void mesh(py::module& m)
            py::overload_cast<>(&dolfinx::mesh::MeshEntity::index, py::const_),
            "Entity index")
       .def(
-          "entities",
-          [](dolfinx::mesh::MeshEntity& self, int dim) {
-            if (self.dim() == dim)
-              return py::array(1, self.entities(dim));
-            else
-            {
-              assert(self.mesh().topology().connectivity(self.dim(), dim));
-              const int num_entities = self.mesh()
-                                           .topology()
-                                           .connectivity(self.dim(), dim)
-                                           ->num_edges(self.index());
-              return py::array(num_entities, self.entities(dim));
-            }
-          },
+          "entities", &dolfinx::mesh::MeshEntity::entities,
           py::return_value_policy::reference_internal)
       .def("__str__",
            [](dolfinx::mesh::MeshEntity& self) { return self.str(false); });
