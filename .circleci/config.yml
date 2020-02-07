@@ -320,16 +320,16 @@ workflows:
     when: << pipeline.parameters.build-and-push-docker-images >>
     jobs:
       - build-and-push-dev-env-docker-images:
-        #  filters:
-        #    branches:
-        #      only:
-        #        - master
+          filters:
+            branches:
+              only:
+                - master
           context: quay.io
       - build-and-push-complete-build-docker-images:
           requires:
             - build-and-push-dev-env-docker-images
-        #filters:
-        #    branches:
-        #      only:
-        #        - master
+        filters:
+            branches:
+              only:
+                - master
           context: quay.io
