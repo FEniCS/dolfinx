@@ -52,8 +52,9 @@ std::vector<int> sort_by_perm(
   return index;
 }
 //-----------------------------------------------------------------------------
-// Communicate with sharing processes to find out which entities are ghost
-// and return a mapping vector to move them to the end of the local range.
+// Communicate with sharing processes to find out which entities are
+// ghost and return a mapping vector to move them to the end of the
+// local range.
 std::vector<int> get_ghost_mapping(
     MPI_Comm comm, const Topology& topology,
     const Eigen::Ref<const Eigen::Array<std::int32_t, Eigen::Dynamic,
