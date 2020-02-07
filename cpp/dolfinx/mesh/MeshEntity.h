@@ -80,9 +80,6 @@ public:
   /// @return The index for incident mesh entities of given dimension
   auto entities(int dim) const
   {
-    if (dim == _dim)
-      throw std::runtime_error("Need to fix");
-
     assert(_mesh->topology().connectivity(_dim, dim));
     return _mesh->topology().connectivity(_dim, dim)->edges(_local_index);
   }
