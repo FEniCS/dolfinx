@@ -933,6 +933,14 @@ generate_permutations(const mesh::Mesh& mesh,
   // shape of the element (eg AAF on the periodical table of finite elements)
   if (dof_layout.num_sub_dofmaps() == 0)
   {
+    for (int dim = 1; dim <= mesh.topology().dim(); ++dim)
+    {
+      if (dof_layout.num_entity_dofs_to_permute(dim)
+          != dof_layout.num_entity_dofs(dim))
+        LOG(WARNING) << "This element type may currently not behave as "
+                        "expected on non-ordered meshes.";
+    }
+
     switch (mesh.cell_type())
     {
     case (mesh::CellType::point):
