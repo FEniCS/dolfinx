@@ -49,8 +49,8 @@ public:
 
   /// Compute connectivity (d0, d1) for given pair of topological
   /// dimensions
-  static void compute_connectivity(Mesh& mesh, Topology& topology, int d0,
-                                   int d1);
+  static void compute_connectivity(Mesh& mesh, Topology& topology,
+                                   CellType cell_type, int d0, int d1);
 };
 } // namespace mesh
 } // namespace dolfinx
