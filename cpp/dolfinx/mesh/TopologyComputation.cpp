@@ -227,52 +227,54 @@ std::vector<int> get_ghost_mapping(
   const std::int32_t num_local = c;
 
   // Create global indices
-  const std::int64_t local_offset
-      = dolfinx::MPI::global_offset(comm, num_local, true);
-  std::vector<std::int64_t> global_indexing(entity_count, -1);
-  for (int i = 0; i < entity_count; ++i)
   {
-    if (mapping[i] != -1)
-      global_indexing[i] = local_offset + mapping[i];
-  }
-
-  std::vector<std::int64_t> send_global_index_data;
-  std::vector<int> send_global_index_offsets = {0};
-  std::vector<std::int64_t> recv_global_index_data;
-  std::vector<int> recv_global_index_offsets;
-
-  // Send global indices for same entities that we sent before
-  for (int np = 0; np < neighbour_size; ++np)
-  {
-    for (std::int32_t index : send_index[np])
-      send_global_index_data.push_back(global_indexing[index]);
-    send_global_index_offsets.push_back(send_global_index_data.size());
-  }
-
-  dolfinx::MPI::neighbor_all_to_all(
-      neighbour_comm, send_global_index_offsets, send_global_index_data,
-      recv_global_index_offsets, recv_global_index_data);
-
-  // Map back received indices
-  for (int np = 0; np < neighbour_size; ++np)
-  {
-    for (int j = 0; j < (recv_global_index_offsets[np + 1]
-                         - recv_global_index_offsets[np]);
-         ++j)
+    const std::int64_t local_offset
+        = dolfinx::MPI::global_offset(comm, num_local, true);
+    std::vector<std::int64_t> global_indexing(entity_count, -1);
+    for (int i = 0; i < entity_count; ++i)
     {
-      const std::int64_t gi
-          = recv_global_index_data[j + recv_global_index_offsets[np]];
-      if (gi != -1 and recv_index[np][j] != -1)
-        global_indexing[recv_index[np][j]] = gi;
+      if (mapping[i] != -1)
+        global_indexing[i] = local_offset + mapping[i];
     }
-  }
 
-  // std::stringstream s;
-  // s << mpi_rank << "] gi = [";
-  // for (auto q : global_indexing)
-  //   s << q << " ";
-  // s << "]\n";
-  // std::cout << s.str();
+    std::vector<std::int64_t> send_global_index_data;
+    std::vector<int> send_global_index_offsets = {0};
+    std::vector<std::int64_t> recv_global_index_data;
+    std::vector<int> recv_global_index_offsets;
+
+    // Send global indices for same entities that we sent before
+    for (int np = 0; np < neighbour_size; ++np)
+    {
+      for (std::int32_t index : send_index[np])
+        send_global_index_data.push_back(global_indexing[index]);
+      send_global_index_offsets.push_back(send_global_index_data.size());
+    }
+
+    dolfinx::MPI::neighbor_all_to_all(
+        neighbour_comm, send_global_index_offsets, send_global_index_data,
+        recv_global_index_offsets, recv_global_index_data);
+
+    // Map back received indices
+    for (int np = 0; np < neighbour_size; ++np)
+    {
+      for (int j = 0; j < (recv_global_index_offsets[np + 1]
+                           - recv_global_index_offsets[np]);
+           ++j)
+      {
+        const std::int64_t gi
+            = recv_global_index_data[j + recv_global_index_offsets[np]];
+        if (gi != -1 and recv_index[np][j] != -1)
+          global_indexing[recv_index[np][j]] = gi;
+      }
+    }
+
+    // std::stringstream s;
+    // s << mpi_rank << "] gi = [";
+    // for (auto q : global_indexing)
+    //   s << q << " ";
+    // s << "]\n";
+    // std::cout << s.str();
+  }
 
   // Now index the ghosts locally
   for (int i = 0; i < entity_count; ++i)
@@ -284,8 +286,7 @@ std::vector<int> get_ghost_mapping(
   assert(c == entity_count);
 
   // FIXME - Remap shared entities to new indices
-
-  // FIXME - also return shared_entities, and global numbering
+  // FIXME - also return shared_entities, and global numbering (remapped?)
   return mapping;
 }
 //-----------------------------------------------------------------------------
