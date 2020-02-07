@@ -24,7 +24,6 @@ class AdjacencyList;
 
 namespace mesh
 {
-class Mesh;
 class Topology;
 
 /// This class implements a set of basic algorithms that automate the
@@ -49,7 +48,8 @@ public:
 
   /// Compute connectivity (d0, d1) for given pair of topological
   /// dimensions
-  static void compute_connectivity(Mesh& mesh, int d0, int d1);
+  static void compute_connectivity(Topology& topology, CellType cell_type,
+                                   int d0, int d1);
 };
 } // namespace mesh
 } // namespace dolfinx
