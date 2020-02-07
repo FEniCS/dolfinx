@@ -9,7 +9,7 @@
 #include <cfloat>
 #include <dolfinx/common/types.h>
 #include <dolfinx/fem/CoordinateElement.h>
-#include <dolfinx/graph/AdjacencyGraph.h>
+#include <dolfinx/graph/AdjacencyList.h>
 #include <dolfinx/mesh/CoordinateDofs.h>
 #include <dolfinx/mesh/Geometry.h>
 #include <dolfinx/mesh/Mesh.h>
@@ -84,7 +84,7 @@ void mesh(py::module& m)
       .def(
           "entity_points",
           [](const dolfinx::mesh::CoordinateDofs& self) {
-            const dolfinx::mesh::AdjacencyGraph<std::int32_t>& connectivity
+            const dolfinx::mesh::AdjacencyList<std::int32_t>& connectivity
                 = self.entity_points();
             Eigen::Ref<const Eigen::Array<std::int32_t, Eigen::Dynamic, 1>>
                 connections = connectivity.array();
@@ -214,13 +214,13 @@ void mesh(py::module& m)
         return dolfinx::mesh::to_string(self.cell_type());
       });
 
-  // dolfinx::mesh::AdjacencyGraph class
-  py::class_<dolfinx::mesh::AdjacencyGraph<std::int32_t>,
-             std::shared_ptr<dolfinx::mesh::AdjacencyGraph<std::int32_t>>>(
+  // dolfinx::mesh::AdjacencyList class
+  py::class_<dolfinx::mesh::AdjacencyList<std::int32_t>,
+             std::shared_ptr<dolfinx::mesh::AdjacencyList<std::int32_t>>>(
       m, "Connectivity", "Connectivity object")
       .def(
           "connections",
-          [](const dolfinx::mesh::AdjacencyGraph<std::int32_t>& self,
+          [](const dolfinx::mesh::AdjacencyList<std::int32_t>& self,
              std::size_t i) {
             return Eigen::Map<
                 const Eigen::Array<std::int32_t, Eigen::Dynamic, 1>>(
@@ -230,14 +230,14 @@ void mesh(py::module& m)
           py::return_value_policy::reference_internal)
       .def("connections",
            py::overload_cast<>(
-               &dolfinx::mesh::AdjacencyGraph<std::int32_t>::array),
+               &dolfinx::mesh::AdjacencyList<std::int32_t>::array),
            "Connections for all mesh entities")
       .def("pos",
            py::overload_cast<>(
-               &dolfinx::mesh::AdjacencyGraph<std::int32_t>::offsets),
+               &dolfinx::mesh::AdjacencyList<std::int32_t>::offsets),
            "Index to each entity in the connectivity array")
-      .def("size", &dolfinx::mesh::AdjacencyGraph<std::int32_t>::num_nodes)
-      .def("size", &dolfinx::mesh::AdjacencyGraph<std::int32_t>::num_edges);
+      .def("size", &dolfinx::mesh::AdjacencyList<std::int32_t>::num_nodes)
+      .def("size", &dolfinx::mesh::AdjacencyList<std::int32_t>::num_edges);
 
   // dolfinx::mesh::MeshEntity class
   py::class_<dolfinx::mesh::MeshEntity,

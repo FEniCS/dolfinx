@@ -14,7 +14,7 @@
 #include <set>
 #include <vector>
 
-#include <dolfinx/graph/AdjacencyGraph.h>
+#include <dolfinx/graph/AdjacencyList.h>
 
 
 namespace dolfinx
@@ -28,7 +28,7 @@ namespace mesh
 {
 
 template <typename T>
-class AdjacencyGraph;
+class AdjacencyList;
 
 /// Topology stores the topology of a mesh, consisting of mesh entities
 /// and connectivity (incidence relations for the mesh entities). Note
@@ -104,14 +104,14 @@ public:
   std::vector<bool> on_boundary(int dim) const;
 
   /// Return connectivity for given pair of topological dimensions
-  std::shared_ptr<AdjacencyGraph<std::int32_t>> connectivity(int d0, int d1);
+  std::shared_ptr<AdjacencyList<std::int32_t>> connectivity(int d0, int d1);
 
   /// Return connectivity for given pair of topological dimensions
-  std::shared_ptr<const AdjacencyGraph<std::int32_t>>
+  std::shared_ptr<const AdjacencyList<std::int32_t>>
   connectivity(int d0, int d1) const;
 
   /// Set connectivity for given pair of topological dimensions
-  void set_connectivity(std::shared_ptr<AdjacencyGraph<std::int32_t>> c, int d0,
+  void set_connectivity(std::shared_ptr<AdjacencyList<std::int32_t>> c, int d0,
                         int d1);
 
   /// Return hash based on the hash of cell-vertex connectivity
@@ -132,7 +132,7 @@ public:
 
   /// @todo Can this be removed?
   /// Return global number of connections for given entity
-  std::int64_t size_global(std::array<int, 2> d, std::int32_t entity) const
+  int size_global(std::array<int, 2> d, std::int32_t entity) const
   {
     if (_num_global_connections(d[0], d[1]).size() == 0)
       return _connectivity(d[0], d[1])->num_edges(entity);
@@ -152,11 +152,12 @@ private:
   // IndexMap to store ghosting for each entity dimension
   std::array<std::shared_ptr<const common::IndexMap>, 4> _index_map;
 
-  // AdjacencyGraph for pairs of topological dimensions
-  Eigen::Array<std::shared_ptr<AdjacencyGraph<std::int32_t>>, Eigen::Dynamic,
+  // AdjacencyList for pairs of topological dimensions
+  Eigen::Array<std::shared_ptr<AdjacencyList<std::int32_t>>, Eigen::Dynamic,
                Eigen::Dynamic, Eigen::RowMajor>
       _connectivity;
 
+  // TODO: revise
   // Global number of connections for each entity (possibly not
   // computed)
   Eigen::Array<Eigen::Array<std::int32_t, Eigen::Dynamic, 1>, 4, 4>

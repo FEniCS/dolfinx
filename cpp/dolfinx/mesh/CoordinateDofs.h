@@ -15,7 +15,7 @@ namespace dolfinx
 namespace mesh
 {
 template <typename T>
-class AdjacencyGraph;
+class AdjacencyList;
 
 /// CoordinateDofs contains the connectivity from MeshEntities to the
 /// geometric points which make up the mesh.
@@ -47,15 +47,15 @@ public:
 
   /// Get the entity points associated with cells (const version)
   /// @return Connections from cells to points
-  AdjacencyGraph<std::int32_t>& entity_points();
+  AdjacencyList<std::int32_t>& entity_points();
 
   /// Get the entity points associated with cells (const version)
   /// @return Connections from cells to points
-  const AdjacencyGraph<std::int32_t>& entity_points() const;
+  const AdjacencyList<std::int32_t>& entity_points() const;
 
 private:
-  // AdjacencyGraph<std::int32_t> from cells to points
-  std::shared_ptr<AdjacencyGraph<std::int32_t>> _coord_dofs;
+  // AdjacencyList<std::int32_t> from cells to points
+  std::shared_ptr<AdjacencyList<std::int32_t>> _coord_dofs;
 };
 } // namespace mesh
 } // namespace dolfinx

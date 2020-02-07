@@ -6,7 +6,7 @@
 
 #pragma once
 
-#include <dolfinx/graph/AdjacencyGraph.h>
+#include <dolfinx/graph/AdjacencyList.h>
 #include "Mesh.h"
 #include "MeshEntity.h"
 #include "Topology.h"
@@ -98,7 +98,7 @@ public:
 
     // Get connectivity
     assert(e.mesh().topology().connectivity(e.dim(), _entity.dim()));
-    const AdjacencyGraph<std::int32_t>& c
+    const AdjacencyList<std::int32_t>& c
         = *e.mesh().topology().connectivity(e.dim(), _entity.dim());
 
     // Pointer to array of connections

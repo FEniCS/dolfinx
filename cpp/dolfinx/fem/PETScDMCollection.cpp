@@ -90,7 +90,7 @@ tabulate_coordinates_to_dofs(const function::FunctionSpace& V)
   const CoordinateElement& cmap = *mesh.geometry().coord_mapping;
 
   // Prepare cell geometry
-  const mesh::AdjacencyGraph<std::int32_t>& connectivity_g
+  const mesh::AdjacencyList<std::int32_t>& connectivity_g
       = mesh.coordinate_dofs().entity_points();
   const Eigen::Array<std::int32_t, Eigen::Dynamic, 1>& pos_g
       = connectivity_g.offsets();
@@ -534,7 +534,7 @@ la::PETScMatrix PETScDMCollection::create_transfer_matrix(
   Eigen::Tensor<double, 3, Eigen::RowMajor> K(1, tdim, gdim);
 
   // Prepare cell geometry
-  const mesh::AdjacencyGraph<std::int32_t>& connectivity_g
+  const mesh::AdjacencyList<std::int32_t>& connectivity_g
       = meshc.coordinate_dofs().entity_points();
   const Eigen::Array<std::int32_t, Eigen::Dynamic, 1>& pos_g
       = connectivity_g.offsets();

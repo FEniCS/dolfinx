@@ -36,7 +36,7 @@ class GraphBuilder
 {
 
 public:
-  /// AdjacencyGraph from facets (defined by their global vertex indices) to cells
+  /// AdjacencyList from facets (defined by their global vertex indices) to cells
   typedef std::vector<std::pair<std::vector<std::size_t>, std::int32_t>>
       FacetCellMap;
 

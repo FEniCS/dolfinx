@@ -5,7 +5,7 @@
 // SPDX-License-Identifier:    LGPL-3.0-or-later
 
 #include "Mesh.h"
-#include <dolfinx/graph/AdjacencyGraph.h>
+#include <dolfinx/graph/AdjacencyList.h>
 #include "CoordinateDofs.h"
 #include "DistributedMeshTools.h"
 #include "Geometry.h"
@@ -357,7 +357,7 @@ Mesh::Mesh(
       _mpi_comm.comm(), num_cells_local, cell_ghosts, 1);
   _topology->set_index_map(tdim, cell_index_map);
 
-  auto cv = std::make_shared<AdjacencyGraph<std::int32_t>>(vertex_cols);
+  auto cv = std::make_shared<AdjacencyList<std::int32_t>>(vertex_cols);
 
   _topology->set_connectivity(cv, tdim, 0);
 
