@@ -218,11 +218,13 @@ void mesh(py::module& m)
   py::class_<dolfinx::mesh::AdjacencyList<std::int32_t>,
              std::shared_ptr<dolfinx::mesh::AdjacencyList<std::int32_t>>>(
       m, "Connectivity", "Connectivity object")
-      .def("connections",
-           py::overload_cast<int>(
-               &dolfinx::mesh::AdjacencyList<std::int32_t>::edges),
-           "Connections for a single mesh entity",
-           py::return_value_policy::reference_internal)
+      .def(
+          "connections",
+          [](dolfinx::mesh::AdjacencyList<std::int32_t>& self, int i) {
+            return self.edges(i);
+          },
+          "Connections for a single mesh entity",
+          py::return_value_policy::reference_internal)
       .def("connections",
            py::overload_cast<>(
                &dolfinx::mesh::AdjacencyList<std::int32_t>::array),
@@ -245,9 +247,8 @@ void mesh(py::module& m)
       .def("index",
            py::overload_cast<>(&dolfinx::mesh::MeshEntity::index, py::const_),
            "Entity index")
-      .def(
-          "entities", &dolfinx::mesh::MeshEntity::entities,
-          py::return_value_policy::reference_internal)
+      .def("entities", &dolfinx::mesh::MeshEntity::entities,
+           py::return_value_policy::reference_internal)
       .def("__str__",
            [](dolfinx::mesh::MeshEntity& self) { return self.str(false); });
 
