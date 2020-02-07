@@ -6,7 +6,9 @@
 
 #pragma once
 
+#include "cell_types.h"
 #include <cstdint>
+#include <dolfinx/common/MPI.h>
 #include <memory>
 #include <tuple>
 
@@ -23,6 +25,7 @@ class AdjacencyList;
 namespace mesh
 {
 class Mesh;
+class Topology;
 
 /// This class implements a set of basic algorithms that automate the
 /// computation of mesh entities and connectivity
@@ -41,7 +44,8 @@ public:
   static std::tuple<std::shared_ptr<graph::AdjacencyList<std::int32_t>>,
                     std::shared_ptr<graph::AdjacencyList<std::int32_t>>,
                     std::int32_t>
-  compute_entities(const Mesh& mesh, int dim);
+  compute_entities(MPI_Comm comm, const Topology& topology,
+                   mesh::CellType cell_type, int dim);
 
   /// Compute connectivity (d0, d1) for given pair of topological
   /// dimensions
