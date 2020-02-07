@@ -233,6 +233,12 @@ void fem(py::module& m)
   // dolfinx::fem::DofMap
   py::class_<dolfinx::fem::DofMap, std::shared_ptr<dolfinx::fem::DofMap>>(
       m, "DofMap", "DofMap object")
+
+      .def(py::init<std::shared_ptr<const dolfinx::fem::ElementDofLayout>,
+                    std::shared_ptr<const dolfinx::common::IndexMap>,
+                    const Eigen::Array<PetscInt, Eigen::Dynamic, 1>&>(),
+           py::arg("element_dof_layout"), py::arg("index_map"),
+           py::arg("dofmap"))
       .def_readonly("index_map", &dolfinx::fem::DofMap::index_map)
       .def_readonly("dof_layout", &dolfinx::fem::DofMap::element_dof_layout)
       .def("cell_dofs", &dolfinx::fem::DofMap::cell_dofs)
