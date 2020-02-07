@@ -5,7 +5,6 @@
 // SPDX-License-Identifier:    LGPL-3.0-or-later
 
 #include "TopologyComputation.h"
-#include <dolfinx/graph/AdjacencyList.h>
 #include "Mesh.h"
 #include "MeshEntity.h"
 #include "MeshIterator.h"
@@ -19,6 +18,7 @@
 #include <dolfinx/common/Timer.h>
 #include <dolfinx/common/log.h>
 #include <dolfinx/common/utils.h>
+#include <dolfinx/graph/AdjacencyList.h>
 #include <memory>
 #include <numeric>
 #include <string>
@@ -204,14 +204,17 @@ std::vector<int> get_ghost_mapping(
       ++c;
     }
   }
+  const std::int32_t num_local = c;
 
   // Create global indices
-  const std::int32_t num_local = c;
   const std::int64_t local_offset
       = dolfinx::MPI::global_offset(mesh.mpi_comm(), num_local, true);
   std::vector<std::int64_t> global_indexing(entity_count, -1);
-  std::iota(global_indexing.begin(), global_indexing.begin() + num_local,
-            local_offset);
+  for (int i = 0; i < entity_count; ++i)
+  {
+    if (mapping[i] != -1)
+      global_indexing[i] = local_offset + mapping[i];
+  }
 
   std::vector<std::int64_t> send_global_index_data;
   std::vector<int> send_global_index_offsets = {0};
@@ -230,28 +233,28 @@ std::vector<int> get_ghost_mapping(
       neighbour_comm, send_global_index_offsets, send_global_index_data,
       recv_global_index_offsets, recv_global_index_data);
 
-  // Map back received indices?
-  // for (int np = 0; np < neighbour_size; ++np)
-  // {
-  //   for (int j = 0; j < (recv_global_index_offsets[np + 1]
-  //                        - recv_global_index_offsets[np]);
-  //        ++j)
-  //   {
-  //     const std::int64_t gi
-  //         = recv_global_index_data[j + recv_global_index_offsets[np]];
-  //     if (gi != -1)
-  //       global_indexing[recv_index[np][j]] = gi;
-  //   }
-  // }
+  // Map back received indices - need to check
+  for (int np = 0; np < neighbour_size; ++np)
+  {
+    for (int j = 0; j < (recv_global_index_offsets[np + 1]
+                         - recv_global_index_offsets[np]);
+         ++j)
+    {
+      const std::int64_t gi
+          = recv_global_index_data[j + recv_global_index_offsets[np]];
+      if (gi != -1 and recv_index[np][j] != -1)
+        global_indexing[recv_index[np][j]] = gi;
+    }
+  }
 
-  // std::stringstream s;
-  // s << mpi_rank << "] gi = [";
-  // for (auto q : global_indexing)
-  //   s << q << " ";
-  // s << "]\n";
-  // std::cout << s.str();
+  std::stringstream s;
+  s << mpi_rank << "] gi = [";
+  for (auto q : global_indexing)
+    s << q << " ";
+  s << "]\n";
+  std::cout << s.str();
 
-  // Now index the ghosts
+  // Now index the ghosts locally
   for (int i = 0; i < entity_count; ++i)
     if (mapping[i] == -1)
     {
@@ -380,7 +383,7 @@ compute_entities_by_key_matching(const Mesh& mesh, int dim)
 //-----------------------------------------------------------------------------
 // Compute connectivity from transpose
 AdjacencyList<std::int32_t> compute_from_transpose(const Mesh& mesh, int d0,
-                                                  int d1)
+                                                   int d1)
 {
   // The transpose is computed in three steps:
   //
