@@ -745,6 +745,7 @@ mesh::compute_marked_boundary_entities(
       {
         const std::int32_t idx = v.index();
         assert(boundary_vertex[idx] < boundary_marked.rows());
+        assert(boundary_vertex[idx] != -1);
         if (!boundary_marked[boundary_vertex[idx]])
         {
           all_vertices_marked = false;

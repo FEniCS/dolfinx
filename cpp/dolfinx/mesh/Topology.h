@@ -16,6 +16,7 @@
 
 #include <dolfinx/graph/AdjacencyGraph.h>
 
+
 namespace dolfinx
 {
 namespace common

@@ -116,7 +116,7 @@ std::vector<bool> Topology::on_boundary(int dim) const
   // Iterate over all facets, selecting only those with one cell attached
   for (int i = 0; i < num_facets; ++i)
   {
-    if (this->size_global({tdim - 1, dim}, i) == 1)
+    if (this->size_global({tdim - 1, tdim}, i) == 1)
     {
       for (int j = fe_offsets[i]; j < fe_offsets[i + 1]; ++j)
         marker[fe_indices[j]] = true;
