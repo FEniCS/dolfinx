@@ -247,12 +247,12 @@ std::vector<int> get_ghost_mapping(
     }
   }
 
-  std::stringstream s;
-  s << mpi_rank << "] gi = [";
-  for (auto q : global_indexing)
-    s << q << " ";
-  s << "]\n";
-  std::cout << s.str();
+  // std::stringstream s;
+  // s << mpi_rank << "] gi = [";
+  // for (auto q : global_indexing)
+  //   s << q << " ";
+  // s << "]\n";
+  // std::cout << s.str();
 
   // Now index the ghosts locally
   for (int i = 0; i < entity_count; ++i)
@@ -436,44 +436,47 @@ graph::AdjacencyList<std::int32_t> compute_from_transpose(const Mesh& mesh,
 }
 //-----------------------------------------------------------------------------
 // Direct lookup of entity from vertices in a map
-graph::AdjacencyList<std::int32_t> compute_from_map(const Mesh& mesh, int d0,
-                                                    int d1)
+graph::AdjacencyList<std::int32_t> compute_from_map(const Topology& topology,
+                                                    CellType cell_type_d0,
+                                                    int d0, int d1)
 {
   assert(d1 > 0);
   assert(d0 > d1);
 
-  // Get the type of entity d0
-  mesh::CellType cell_type = mesh::cell_entity_type(mesh.cell_type(), d0);
+  auto c_d1_0 = topology.connectivity(d1, 0);
+  assert(c_d1_0);
 
   // Make a map from the sorted d1 entity vertices to the d1 entity index
   boost::unordered_map<std::vector<std::int32_t>, std::int32_t> entity_to_index;
-  entity_to_index.reserve(mesh.num_entities(d1));
+  entity_to_index.reserve(c_d1_0->num_nodes());
 
   const std::size_t num_verts_d1
-      = mesh::num_cell_vertices(mesh::cell_entity_type(mesh.cell_type(), d1));
+      = mesh::num_cell_vertices(mesh::cell_entity_type(cell_type_d0, d1));
 
   std::vector<std::int32_t> key(num_verts_d1);
-  for (auto& e : MeshRange(mesh, d1, MeshRangeType::ALL))
+  for (int e = 0; e < c_d1_0->num_nodes(); ++e)
   {
-    const std::int32_t* v = e.entities_ptr(0);
+    const std::int32_t* v = c_d1_0->edges_ptr(e);
     std::partial_sort_copy(v, v + num_verts_d1, key.begin(), key.end());
-    entity_to_index.insert({key, e.index()});
+    entity_to_index.insert({key, e});
   }
 
+  auto c_d0_0 = topology.connectivity(d0, 0);
+  assert(c_d0_0);
   Eigen::Array<std::int32_t, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
-      connections(mesh.num_entities(d0),
-                  mesh::cell_num_entities(cell_type, d1));
+      connections(c_d0_0->num_nodes(),
+                  mesh::cell_num_entities(cell_type_d0, d1));
 
   // Search for d1 entities of d0 in map, and recover index
   std::vector<std::int32_t> entities;
   const Eigen::Array<int, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
-      e_vertices_ref = mesh::get_entity_vertices(cell_type, d1);
+      e_vertices_ref = mesh::get_entity_vertices(cell_type_d0, d1);
   Eigen::Array<int, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor> keys
       = e_vertices_ref;
-  for (auto& e : MeshRange(mesh, d0, MeshRangeType::ALL))
+  for (int e = 0; e < c_d0_0->num_nodes(); ++e)
   {
     entities.clear();
-    auto e0 = e.entities(0);
+    auto e0 = c_d0_0->edges(e);
     for (Eigen::Index i = 0; i < e_vertices_ref.rows(); ++i)
       for (Eigen::Index j = 0; j < e_vertices_ref.cols(); ++j)
         keys(i, j) = e0[e_vertices_ref(i, j)];
@@ -487,7 +490,7 @@ graph::AdjacencyList<std::int32_t> compute_from_map(const Mesh& mesh, int d0,
       entities.push_back(it->second);
     }
     for (std::size_t k = 0; k < entities.size(); ++k)
-      connections(e.index(), k) = entities[k];
+      connections(e, k) = entities[k];
   }
 
   return graph::AdjacencyList<std::int32_t>(connections);
@@ -586,7 +589,8 @@ void TopologyComputation::compute_connectivity(Mesh& mesh, int d0, int d1)
     // Compute by mapping vertices from a lower dimension entity to
     // those of a higher dimension entity
     auto c = std::make_shared<graph::AdjacencyList<std::int32_t>>(
-        compute_from_map(mesh, d0, d1));
+        compute_from_map(mesh.topology(),
+                         mesh::cell_entity_type(mesh.cell_type(), d0), d0, d1));
     topology.set_connectivity(c, d0, d1);
   }
   else
