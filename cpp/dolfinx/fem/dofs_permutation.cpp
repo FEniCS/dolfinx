@@ -442,7 +442,7 @@ compute_ordering_triangle(const mesh::Mesh& mesh)
   for (int cell_n = 0; cell_n < num_cells; ++cell_n)
   {
     const mesh::MeshEntity cell(mesh, 2, cell_n);
-    const int* vertices = cell.entities(0);
+    auto vertices = cell.entities(0);
     const std::int64_t v0 = global_indices[vertices[0]];
     const std::int64_t v1 = global_indices[vertices[1]];
     const std::int64_t v2 = global_indices[vertices[2]];
@@ -476,7 +476,7 @@ compute_ordering_interval(const mesh::Mesh& mesh)
   for (int cell_n = 0; cell_n < num_cells; ++cell_n)
   {
     const mesh::MeshEntity cell(mesh, 1, cell_n);
-    const int* vertices = cell.entities(0);
+    auto vertices = cell.entities(0);
     const std::int64_t v0 = global_indices[vertices[0]];
     const std::int64_t v1 = global_indices[vertices[1]];
 
@@ -501,7 +501,7 @@ compute_ordering_quadrilateral(const mesh::Mesh& mesh)
   for (int cell_n = 0; cell_n < num_cells; ++cell_n)
   {
     const mesh::MeshEntity cell(mesh, 2, cell_n);
-    const int* vertices = cell.entities(0);
+    auto vertices = cell.entities(0);
     const std::int64_t v0 = global_indices[vertices[0]];
     const std::int64_t v1 = global_indices[vertices[1]];
     const std::int64_t v2 = global_indices[vertices[2]];
@@ -537,7 +537,7 @@ compute_ordering_tetrahedron(const mesh::Mesh& mesh)
   for (int cell_n = 0; cell_n < num_cells; ++cell_n)
   {
     const mesh::MeshEntity cell(mesh, 3, cell_n);
-    const int* vertices = cell.entities(0);
+    auto vertices = cell.entities(0);
     const std::int64_t v0 = global_indices[vertices[0]];
     const std::int64_t v1 = global_indices[vertices[1]];
     const std::int64_t v2 = global_indices[vertices[2]];
@@ -595,7 +595,7 @@ compute_ordering_hexahedron(const mesh::Mesh& mesh)
   for (int cell_n = 0; cell_n < num_cells; ++cell_n)
   {
     const mesh::MeshEntity cell(mesh, 3, cell_n);
-    const int* vertices = cell.entities(0);
+    auto vertices = cell.entities(0);
     const std::int64_t v0 = global_indices[vertices[0]];
     const std::int64_t v1 = global_indices[vertices[1]];
     const std::int64_t v2 = global_indices[vertices[2]];

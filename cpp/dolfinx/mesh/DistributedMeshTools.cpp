@@ -99,7 +99,7 @@ compute_entity_numbering(const Mesh& mesh, int d)
       mesh::MeshEntity e(mesh, d, _e);
 
       const std::size_t local_index = e.index();
-      const std::int32_t* v = e.entities(0);
+      auto v = e.entities(0);
 
       // Entity can only be shared if all vertices are shared
       // but this is not a sufficient condition

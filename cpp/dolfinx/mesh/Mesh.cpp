@@ -5,7 +5,6 @@
 // SPDX-License-Identifier:    LGPL-3.0-or-later
 
 #include "Mesh.h"
-#include <dolfinx/graph/AdjacencyList.h>
 #include "CoordinateDofs.h"
 #include "DistributedMeshTools.h"
 #include "Geometry.h"
@@ -19,6 +18,7 @@
 #include <dolfinx/common/MPI.h>
 #include <dolfinx/common/Timer.h>
 #include <dolfinx/common/utils.h>
+#include <dolfinx/graph/AdjacencyList.h>
 #include <dolfinx/io/cells.h>
 #include <dolfinx/mesh/cell_types.h>
 
@@ -349,6 +349,10 @@ Mesh::Mesh(
   _topology->set_global_indices(0, vertex_indices_global);
   _topology->set_shared_entities(0, shared_vertices);
   _topology->set_index_map(0, vertex_index_map);
+  const std::int32_t num_vertices
+      = vertex_index_map->size_local() + vertex_index_map->num_ghosts();
+  auto c0 = std::make_shared<AdjacencyList<std::int32_t>>(num_vertices);
+  _topology->set_connectivity(c0, 0, 0);
 
   // Initialise cell topology
   Eigen::Array<std::int64_t, Eigen::Dynamic, 1> cell_ghosts(num_ghost_cells);
@@ -459,7 +463,7 @@ std::int32_t Mesh::create_entities(int dim) const
   assert(_topology);
 
   // Skip if already computed (vertices (dim=0) should always exist)
-  if (_topology->connectivity(dim, 0) or dim == 0)
+  if (_topology->connectivity(dim, 0))
     return -1;
 
   // Compute connectivity to vertices

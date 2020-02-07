@@ -237,7 +237,7 @@ std::vector<std::int64_t> compute_topology_data(const mesh::Mesh& mesh,
           mesh::cell_entity_type(mesh.cell_type(), cell_dim), 0);
       for (auto& c : mesh::MeshRange(mesh, cell_dim))
       {
-        const std::int32_t* entities = c.entities(0);
+        auto entities = c.entities(0);
         for (int i = 0; i < num_vertices; ++i)
           topology_data.push_back(global_vertices[entities[perm[i]]]);
       }
@@ -571,7 +571,7 @@ void xdmf_write::add_topology_data(MPI_Comm comm, pugi::xml_node& xml_node,
 
     for (std::int32_t c = 0; c < mesh.num_entities(tdim); ++c)
     {
-      const std::int32_t* points = cell_points.edges(c);
+      auto points = cell_points.edges(c);
       for (std::int32_t i = 0; i < num_nodes_per_cell; ++i)
         topology_data.push_back(global_points[points[perm[i]]]);
     }

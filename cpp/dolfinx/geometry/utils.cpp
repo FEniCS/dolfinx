@@ -547,14 +547,14 @@ double geometry::squared_distance(const mesh::MeshEntity& entity,
   {
   case (mesh::CellType::interval):
   {
-    const std::int32_t* vertices = entity.entities(0);
+    auto vertices = entity.entities(0);
     const Eigen::Vector3d a = geometry.x(vertices[0]);
     const Eigen::Vector3d b = geometry.x(vertices[1]);
     return geometry::squared_distance_interval(p, a, b);
   }
   case (mesh::CellType::triangle):
   {
-    const std::int32_t* vertices = entity.entities(0);
+    auto vertices = entity.entities(0);
     const Eigen::Vector3d a = geometry.x(vertices[0]);
     const Eigen::Vector3d b = geometry.x(vertices[1]);
     const Eigen::Vector3d c = geometry.x(vertices[2]);
@@ -569,7 +569,7 @@ double geometry::squared_distance(const mesh::MeshEntity& entity,
     // only return the distance to that point.
 
     // Get the vertices as points
-    const std::int32_t* vertices = entity.entities(0);
+    auto vertices = entity.entities(0);
     const Eigen::Vector3d a = geometry.x(vertices[0]);
     const Eigen::Vector3d b = geometry.x(vertices[1]);
     const Eigen::Vector3d c = geometry.x(vertices[2]);

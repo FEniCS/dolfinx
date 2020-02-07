@@ -376,7 +376,7 @@ Function::compute_point_values() const
     eval(x, cells, values);
 
     // Copy values to array of point values
-    const std::int32_t* dofs = cell_dofs.edges(cell.index());
+    auto dofs = cell_dofs.edges(cell.index());
     for (int i = 0; i < x.rows(); ++i)
       point_values.row(dofs[i]) = values.row(i);
   }
