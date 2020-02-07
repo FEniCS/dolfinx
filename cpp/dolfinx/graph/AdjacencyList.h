@@ -63,7 +63,7 @@ public:
   /// Set all connections for all entities (T is a '2D' container, e.g.
   /// a std::vector<<std::vector<std::size_t>>,
   /// std::vector<<std::set<std::size_t>>, etc)
-  /// @param [in] connections TODO
+  /// @param [in] data TODO
   template <typename X>
   AdjacencyList(const std::vector<X>& data) : _offsets(data.size() + 1)
   {
@@ -119,7 +119,9 @@ public:
   ///   AdjacencyList:num_edges(node).
   std::int32_t* edges(int node)
   {
-    return (node + 1) < _offsets.size() ? &_array[_offsets[node]] : nullptr;
+    // assert(node + 1) < _offsets.size())
+    return &_array[_offsets[node]];
+    // return (node + 1) < _offsets.size() ? &_array[_offsets[node]] : nullptr;
   }
 
   /// Edges for given node (const version)
@@ -128,7 +130,8 @@ public:
   ///   AdjacencyList:num_edges(node).
   const std::int32_t* edges(int node) const
   {
-    return (node + 1) < _offsets.size() ? &_array[_offsets[node]] : nullptr;
+    return &_array[_offsets[node]];
+    // return (node + 1) < _offsets.size() ? &_array[_offsets[node]] : nullptr;
   }
 
   /// Return contiguous array of edges for all nodes
