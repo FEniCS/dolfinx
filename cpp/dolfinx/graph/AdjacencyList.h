@@ -18,50 +18,46 @@ namespace dolfinx
 namespace mesh
 {
 
-/// This class provides an a adjacency representation of graphs, and is
-/// typically used to store mesh connectivity. For each node in the list
-/// of nodes [0, 1, 2, ..., n) it stores the connected nodes. It
-/// represents a directed graph. The representation is strictly local,
-/// i.e. it is not parallel aware.
+/// This class provides a static adjacency list data structure. It is
+/// commonly used to store directed graphs. For each node in the
+/// contiguous list of nodes [0, 1, 2, ..., n) it stores the connected
+/// nodes. The representation is strictly local, i.e. it is not parallel
+/// aware.
 
 template <typename T>
 class AdjacencyList
 {
 public:
-  /// Initialize with all edges and pointer to each entity
-  /// node
-  /// @param [in] connections TODO
-  /// @param [in] positions TODO
-  AdjacencyList(const std::vector<T>& connections,
-                 const std::vector<std::int32_t>& positions)
-      : _array(connections.size()), _offsets(positions.size())
+  /// Construct adjacency list from array of data
+  /// @param [in] data Adjacency array
+  /// @param [in] offsets The index to the adjacency list in the data
+  ///   array for node i
+  AdjacencyList(const std::vector<T>& data,
+                const std::vector<std::int32_t>& offsets)
+      : _array(data.size()), _offsets(offsets.size())
   {
-    assert(positions.back() == (std::int32_t)connections.size());
-    for (std::size_t i = 0; i < connections.size(); ++i)
-      _array[i] = connections[i];
-    for (std::size_t i = 0; i < positions.size(); ++i)
-      _offsets[i] = positions[i];
+    assert(offsets.back() == (std::int32_t)data.size());
+    std::copy(data.begin(), data.end(), _array.data());
+    std::copy(offsets.begin(), offsets.end(), _offsets.data());
   }
 
-  /// Initialize with all edges for case where each node has the
-  /// same number of outgoing edges
-  /// @param [in] connections TODO
+  /// Construct adjacency list for a problem with a fixed number of
+  /// edges for each node
+  /// @param [in] matrix Two-dimensional array of adjacency data where
+  ///   matrix(i, j) is the jth neighbor of the ith node
   AdjacencyList(
       const Eigen::Ref<const Eigen::Array<T, Eigen::Dynamic, Eigen::Dynamic,
-                                          Eigen::RowMajor>>& connections)
-      : _array(connections.rows() * connections.cols()),
-        _offsets(connections.rows() + 1)
+                                          Eigen::RowMajor>>& matrix)
+      : _array(matrix.rows() * matrix.cols()), _offsets(matrix.rows() + 1)
   {
-    // NOTE: cannot directly copy data from connections because it may be
-    // a view into a larger array, e.g. for non-affine cells
-    Eigen::Index k = 0;
-    for (Eigen::Index i = 0; i < connections.rows(); ++i)
-      for (Eigen::Index j = 0; j < connections.cols(); ++j)
-        _array[k++] = connections(i, j);
-
-    const std::int32_t num_connections_per_entity = connections.cols();
+    const std::int32_t num_edges = matrix.cols();
     for (Eigen::Index e = 0; e < _offsets.rows(); e++)
-      _offsets[e] = e * num_connections_per_entity;
+      _offsets[e] = e * num_edges;
+
+    // NOTE: Do not directly copy data from matrix because it may be a
+    // view into a larger array
+    for (Eigen::Index i = 0; i < matrix.rows(); ++i)
+      _array.segment(_offsets(i), num_edges) = matrix.row(i);
   }
 
   /// Set all connections for all entities (T is a '2D' container, e.g.
@@ -69,21 +65,20 @@ public:
   /// std::vector<<std::set<std::size_t>>, etc)
   /// @param [in] connections TODO
   template <typename X>
-  AdjacencyList(const std::vector<X>& connections)
-      : _offsets(connections.size() + 1)
+  AdjacencyList(const std::vector<X>& data) : _offsets(data.size() + 1)
   {
     // Initialize offsets and compute total size
     std::int32_t size = 0;
-    for (std::size_t e = 0; e < connections.size(); e++)
+    for (std::size_t e = 0; e < data.size(); e++)
     {
       _offsets[e] = size;
-      size += connections[e].size();
+      size += data[e].size();
     }
-    _offsets[connections.size()] = size;
+    _offsets[data.size()] = size;
 
     std::vector<T> c;
     c.reserve(size);
-    for (auto e = connections.begin(); e != connections.end(); ++e)
+    for (auto e = data.begin(); e != data.end(); ++e)
       c.insert(c.end(), e->begin(), e->end());
 
     _array = Eigen::Array<T, Eigen::Dynamic, 1>(c.size());
@@ -118,16 +113,6 @@ public:
                                         : 0;
   }
 
-  // /// @todo Can this be removed?
-  // /// Return global number of connections for given entity
-  // std::int64_t size_global(std::int32_t entity) const
-  // {
-  //   if (_num_global_connections.size() == 0)
-  //     return this->num_edges(entity);
-  //   else
-  //     return _num_global_connections[entity];
-  // }
-
   /// Edges for given node
   /// @param [in] node Node index
   /// @return Array of outgoing edges for the node. The length will be
@@ -160,15 +145,6 @@ public:
   {
     return _offsets;
   }
-
-  // /// @todo Move this outside of this class
-  // /// Set global number of connections for each local entities
-  // void set_global_size(const Eigen::Array<std::int32_t, Eigen::Dynamic, 1>&
-  //                          num_global_connections)
-  // {
-  //   assert(num_global_connections.size() == _offsets.size() - 1);
-  //   _num_global_connections = num_global_connections;
-  // }
 
   /// Hash of graph
   std::size_t hash() const
