@@ -24,7 +24,7 @@ using namespace dolfinx::io;
 std::pair<std::vector<std::size_t>, std::vector<std::size_t>>
 HDF5Utility::map_gdof_to_cell(const MPI_Comm mpi_comm,
                               const std::vector<std::size_t>& input_cells,
-                              const std::vector<PetscInt>& input_cell_dofs,
+                              const std::vector<std::int64_t>& input_cell_dofs,
                               const std::vector<std::int64_t>& x_cell_dofs,
                               const std::array<std::int64_t, 2> vector_range)
 {
@@ -92,7 +92,7 @@ HDF5Utility::map_gdof_to_cell(const MPI_Comm mpi_comm,
   return std::pair(std::move(global_cells), std::move(remote_local_dofi));
 }
 //-----------------------------------------------------------------------------
-std::vector<PetscInt> HDF5Utility::get_global_dof(
+std::vector<std::int64_t> HDF5Utility::get_global_dof(
     const MPI_Comm mpi_comm,
     const std::vector<std::pair<std::size_t, std::size_t>>& cell_ownership,
     const std::vector<std::size_t>& remote_local_dofi,
@@ -102,7 +102,7 @@ std::vector<PetscInt> HDF5Utility::get_global_dof(
   std::vector<std::vector<std::size_t>> send_cell_dofs(num_processes);
   const std::size_t n_vector_vals = vector_range[1] - vector_range[0];
 
-  std::vector<PetscInt> global_dof(n_vector_vals);
+  std::vector<std::int64_t> global_dof(n_vector_vals);
   for (std::size_t i = 0; i != n_vector_vals; ++i)
   {
     const std::size_t dest = cell_ownership[i].first;
@@ -279,7 +279,8 @@ void HDF5Utility::cell_owners_in_range(
 //-----------------------------------------------------------------------------
 void HDF5Utility::set_local_vector_values(
     const MPI_Comm mpi_comm, la::PETScVector& x, const mesh::Mesh& mesh,
-    const std::vector<size_t>& cells, const std::vector<PetscInt>& cell_dofs,
+    const std::vector<size_t>& cells,
+    const std::vector<std::int64_t>& cell_dofs,
     const std::vector<std::int64_t>& x_cell_dofs,
     const std::vector<PetscScalar>& vector,
     const std::array<std::int64_t, 2> input_vector_range,
@@ -303,7 +304,7 @@ void HDF5Utility::set_local_vector_values(
   // Having found the cell location, the actual global_dof index held
   // by that (cell, local_dof) is needed on the process which holds
   // the data values
-  std::vector<PetscInt> global_dof = HDF5Utility::get_global_dof(
+  std::vector<std::int64_t> global_dof = HDF5Utility::get_global_dof(
       mpi_comm, cell_ownership, remote_local_dofi, input_vector_range, dofmap);
 
   const std::size_t num_processes = MPI::size(mpi_comm);

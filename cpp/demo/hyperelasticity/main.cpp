@@ -145,11 +145,11 @@ int main(int argc, char* argv[])
   // Create Dirichlet boundary conditions
   auto u0 = std::make_shared<function::Function>(V);
 
-  const Eigen::Array<PetscInt, Eigen::Dynamic, 1> bdofs_left
+  const Eigen::Array<std::int32_t, Eigen::Dynamic, 1> bdofs_left
       = fem::locate_dofs_geometrical(
           *V, [](auto x) { return x.row(0) < DBL_EPSILON; });
 
-  const Eigen::Array<PetscInt, Eigen::Dynamic, 1> bdofs_right
+  const Eigen::Array<std::int32_t, Eigen::Dynamic, 1> bdofs_right
       = fem::locate_dofs_geometrical(
           *V, [](auto& x) { return (x.row(0) - 1.0).abs() < DBL_EPSILON; });
 

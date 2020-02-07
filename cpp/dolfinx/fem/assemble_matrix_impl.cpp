@@ -151,7 +151,7 @@ void fem::impl::assemble_cells(
     {
       for (Eigen::Index i = 0; i < Ae.rows(); ++i)
       {
-        const PetscInt dof = dofmap0[cell_index * num_dofs_per_cell0 + i];
+        const std::int32_t dof = dofmap0[cell_index * num_dofs_per_cell0 + i];
         if (bc0[dof])
           Ae.row(i).setZero();
       }
@@ -160,7 +160,7 @@ void fem::impl::assemble_cells(
     {
       for (Eigen::Index j = 0; j < Ae.cols(); ++j)
       {
-        const PetscInt dof = dofmap1[cell_index * num_dofs_per_cell1 + j];
+        const std::int32_t dof = dofmap1[cell_index * num_dofs_per_cell1 + j];
         if (bc1[dof])
           Ae.col(j).setZero();
       }
