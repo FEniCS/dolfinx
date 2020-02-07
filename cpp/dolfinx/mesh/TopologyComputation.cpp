@@ -58,7 +58,7 @@ std::vector<int> sort_by_perm(
 // Communicate with sharing processes to find out which entities are ghost
 // and return a mapping vector to move them to the end of the local range.
 std::vector<int> get_ghost_mapping(
-    const Mesh& mesh,
+    const Topology& topology, MPI_Comm comm,
     const Eigen::Ref<const Eigen::Array<std::int32_t, Eigen::Dynamic,
                                         Eigen::Dynamic, Eigen::RowMajor>>&
         entity_list,
@@ -73,17 +73,17 @@ std::vector<int> get_ghost_mapping(
 
   // Create an expanded neighbour_comm from shared_vertices
   const std::map<std::int32_t, std::set<std::int32_t>>& shared_vertices
-      = mesh.topology().shared_entities(0);
+      = topology.shared_entities(0);
   std::set<std::int32_t> neighbour_set;
   for (auto q : shared_vertices)
     neighbour_set.insert(q.second.begin(), q.second.end());
   std::vector<std::int32_t> neighbours(neighbour_set.begin(),
                                        neighbour_set.end());
   MPI_Comm neighbour_comm;
-  MPI_Dist_graph_create_adjacent(
-      mesh.mpi_comm(), neighbours.size(), neighbours.data(), MPI_UNWEIGHTED,
-      neighbours.size(), neighbours.data(), MPI_UNWEIGHTED, MPI_INFO_NULL,
-      false, &neighbour_comm);
+  MPI_Dist_graph_create_adjacent(comm, neighbours.size(), neighbours.data(),
+                                 MPI_UNWEIGHTED, neighbours.size(),
+                                 neighbours.data(), MPI_UNWEIGHTED,
+                                 MPI_INFO_NULL, false, &neighbour_comm);
 
   const int neighbour_size = neighbours.size();
   std::map<int, int> proc_to_neighbour;
@@ -97,7 +97,7 @@ std::vector<int> get_ghost_mapping(
   // Get all "possibly shared" entities, based on vertex sharing
   // Send to other processes, and see if we get the same back
   const std::vector<std::int64_t>& global_vertex_indices
-      = mesh.topology().global_indices(0);
+      = topology.global_indices(0);
 
   // Set of sharing procs for each entity, counting vertex hits
   std::map<int, int> procs;
@@ -188,7 +188,7 @@ std::vector<int> get_ghost_mapping(
     }
   }
 
-  int mpi_rank = dolfinx::MPI::rank(mesh.mpi_comm());
+  int mpi_rank = dolfinx::MPI::rank(comm);
 
   // Put ghosts at end of range by remapping
   std::vector<std::int32_t> mapping(entity_count, -1);
@@ -208,7 +208,7 @@ std::vector<int> get_ghost_mapping(
 
   // Create global indices
   const std::int64_t local_offset
-      = dolfinx::MPI::global_offset(mesh.mpi_comm(), num_local, true);
+      = dolfinx::MPI::global_offset(comm, num_local, true);
   std::vector<std::int64_t> global_indexing(entity_count, -1);
   for (int i = 0; i < entity_count; ++i)
   {
@@ -271,7 +271,8 @@ std::vector<int> get_ghost_mapping(
 //-----------------------------------------------------------------------------
 std::tuple<std::shared_ptr<graph::AdjacencyList<std::int32_t>>,
            std::shared_ptr<graph::AdjacencyList<std::int32_t>>, std::int32_t>
-compute_entities_by_key_matching(const Mesh& mesh, int dim)
+compute_entities_by_key_matching(const Mesh& mesh, const Topology& topology,
+                                 mesh::CellType cell_type, int dim)
 {
   if (dim == 0)
   {
@@ -280,7 +281,7 @@ compute_entities_by_key_matching(const Mesh& mesh, int dim)
   }
 
   // Get mesh topology and connectivity
-  const Topology& topology = mesh.topology();
+  // const Topology& topology = mesh.topology();
   const int tdim = topology.dim();
 
   // Check if entities have already been computed
@@ -298,25 +299,26 @@ compute_entities_by_key_matching(const Mesh& mesh, int dim)
 
   // Initialize local array of entities
   const std::int8_t num_entities_per_cell
-      = mesh::cell_num_entities(mesh.cell_type(), dim);
+      = mesh::cell_num_entities(cell_type, dim);
   const int num_vertices_per_entity
-      = mesh::num_cell_vertices(mesh::cell_entity_type(mesh.cell_type(), dim));
+      = mesh::num_cell_vertices(mesh::cell_entity_type(cell_type, dim));
 
   // Create map from cell vertices to entity vertices
   Eigen::Array<int, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor> e_vertices
-      = mesh::get_entity_vertices(mesh.cell_type(), dim);
+      = mesh::get_entity_vertices(cell_type, dim);
 
-  const int num_cells = mesh.num_entities(tdim);
+  auto cells = topology.connectivity(tdim, 0);
+  assert(cells);
+  const int num_cells = cells->num_nodes();
 
-  // List of vertices for each entity in each cell.
+  // List of vertices for each entity in each cell
   Eigen::Array<std::int32_t, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
       entity_list(num_cells * num_entities_per_cell, num_vertices_per_entity);
-
   int k = 0;
-  for (auto& c : MeshRange(mesh, tdim, MeshRangeType::ALL))
+  for (int c = 0; c < num_cells; ++c)
   {
     // Get vertices from cell
-    auto vertices = c.entities(0);
+    auto vertices = cells->edges(c);
 
     // Iterate over entities of cell
     for (int i = 0; i < num_entities_per_cell; ++i)
@@ -337,8 +339,10 @@ compute_entities_by_key_matching(const Mesh& mesh, int dim)
   Eigen::Array<std::int32_t, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
       entity_list_sorted = entity_list;
   for (int i = 0; i < entity_list_sorted.rows(); ++i)
+  {
     std::sort(entity_list_sorted.row(i).data(),
               entity_list_sorted.row(i).data() + num_vertices_per_entity);
+  }
 
   // Sort the list and label (first pass)
   std::vector<std::int32_t> sort_order
@@ -357,8 +361,8 @@ compute_entities_by_key_matching(const Mesh& mesh, int dim)
 
   // Communicate with other processes to find out which entities are ghosted
   // and shared. Remap the numbering so that ghosts are at the end.
-  std::vector<int> mapping
-      = get_ghost_mapping(mesh, entity_list, entity_index, entity_count);
+  std::vector<int> mapping = get_ghost_mapping(
+      topology, mesh.mpi_comm(), entity_list, entity_index, entity_count);
 
   // Do the actual remap
   for (std::int32_t& q : entity_index)
@@ -519,7 +523,8 @@ TopologyComputation::compute_entities(const Mesh& mesh, int dim)
 
   std::tuple<std::shared_ptr<graph::AdjacencyList<std::int32_t>>,
              std::shared_ptr<graph::AdjacencyList<std::int32_t>>, std::int32_t>
-      data = compute_entities_by_key_matching(mesh, dim);
+      data
+      = compute_entities_by_key_matching(mesh, topology, mesh.cell_type(), dim);
 
   return data;
 }
