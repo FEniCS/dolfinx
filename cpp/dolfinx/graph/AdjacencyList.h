@@ -118,8 +118,8 @@ public:
   /// @return The number of outgoing edges from the node
   int num_edges(int node) const
   {
-    return (node + 1) < _offsets.size() ? _offsets[node + 1] - _offsets[node]
-                                        : 0;
+    assert((node + 1) < _offsets.rows());
+    return _offsets[node + 1] - _offsets[node];
   }
 
   /// Edges for given node
