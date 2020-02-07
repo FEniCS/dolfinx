@@ -119,7 +119,7 @@ ENV PYTHONPATH=/usr/local/gmsh-${GMSH_VERSION}-Linux64-sdk/lib
 # - Second set of packages are recommended and/or required to build
 #   documentation or run tests.
 # - Third set of packages are optional but required for
-#   pygmsh/meshio/DOLFIN mesh pipeline.
+#   pygmsh/meshio/DOLFINX mesh pipeline.
 RUN pip3 install --no-cache-dir mpi4py numba && \
     pip3 install --no-cache-dir cffi cppimport flake8 pytest pytest-xdist sphinx sphinx_rtd_theme && \
     export HDF5_MPI="ON" && \
@@ -280,12 +280,12 @@ ONBUILD ARG MAKEFLAGS
 
 ONBUILD WORKDIR /tmp
 
-# Install ipython (optional), FIAT, UFL and ffcX (development
+# Install ipython (optional), FIAT, UFL and FFCX (development
 # versions, master branch)
 ONBUILD RUN pip3 install --no-cache-dir ipython && \
             pip3 install --no-cache-dir git+https://github.com/FEniCS/fiat.git && \
             pip3 install --no-cache-dir git+https://github.com/FEniCS/ufl.git && \
-            pip3 install --no-cache-dir git+https://github.com/fenics/ffcX
+            pip3 install --no-cache-dir git+https://github.com/FEniCS/ffcx.git
 
 # Install dolfinx
 ONBUILD RUN git clone https://github.com/fenics/dolfinx.git && \
@@ -314,12 +314,12 @@ ONBUILD ARG MAKEFLAGS
 
 ONBUILD WORKDIR /tmp
 
-# Install ipython (optional), FIAT, UFL and ffcX (development versions,
+# Install ipython (optional), FIAT, UFL and FFCX (development versions,
 # master branch)
 ONBUILD RUN pip3 install --no-cache-dir ipython && \
             pip3 install --no-cache-dir git+https://github.com/FEniCS/fiat.git && \
             pip3 install --no-cache-dir git+https://github.com/FEniCS/ufl.git && \
-            pip3 install --no-cache-dir git+https://github.com/fenics/ffcX
+            pip3 install --no-cache-dir git+https://github.com/FEniCS/ffcx.git
 
 # Install dolfinx
 ONBUILD RUN git clone https://github.com/fenics/dolfinx.git && \

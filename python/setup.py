@@ -1,4 +1,3 @@
-import multiprocessing
 import os
 import platform
 import re
@@ -20,7 +19,7 @@ REQUIREMENTS = [
     "numpy",
     "mpi4py",
     "petsc4py",
-    "fenics-ffc",
+    "fenics-ffcx",
     "fenics-ufl{}".format(RESTRICT_REQUIREMENTS),
 ]
 
@@ -71,19 +70,20 @@ class CMakeBuild(build_ext):
             os.makedirs(self.build_temp)
         subprocess.check_call(['cmake', ext.sourcedir] + cmake_args, cwd=self.build_temp, env=env)
         subprocess.check_call(['cmake', '--build', '.'] + build_args, cwd=self.build_temp, env=env)
-        subprocess.check_call(['cmake', '--build', '.', '--target', 'install'] + build_args, cwd=self.build_temp, env=env)
 
 
-setup(name='fenics-dolfin',
+setup(name='fenics-dolfinx',
       version=VERSION,
       author='FEniCS Project',
       description='DOLFIN Python interface',
       long_description='',
-      packages=["dolfin",
-                "dolfin.fem",
-                "dolfin.la",
-                "dolfin_utils.test"],
-      ext_modules=[CMakeExtension('dolfin.cpp')],
+      packages=["dolfinx",
+                "dolfinx.fem",
+                "dolfinx.la",
+                "dolfinx.wrappers",
+                "dolfinx_utils.test"],
+      package_data={'dolfinx.wrappers': ['*.h']},
+      ext_modules=[CMakeExtension('dolfinx.cpp')],
       cmdclass=dict(build_ext=CMakeBuild),
       install_requires=REQUIREMENTS,
       zip_safe=False)

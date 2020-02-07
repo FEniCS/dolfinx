@@ -103,7 +103,7 @@ if (PETSC_FOUND AND NOT TARGET PETSC::petsc_static)
 endif()
 
 # Attempt to build and run PETSc test program
-if (DOLFIN_SKIP_BUILD_TESTS)
+if (DOLFINX_SKIP_BUILD_TESTS)
 
   # Assume PETSc works
   set(PETSC_TEST_RUNS TRUE)

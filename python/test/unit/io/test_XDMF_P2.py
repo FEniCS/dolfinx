@@ -1,15 +1,15 @@
 # Copyright (C) 2018 Chris Richardson
 #
-# This file is part of DOLFIN (https://www.fenicsproject.org)
+# This file is part of DOLFINX (https://www.fenicsproject.org)
 #
 # SPDX-License-Identifier:    LGPL-3.0-or-later
 
 import os
 
-from dolfin import (MPI, Function, FunctionSpace, VectorFunctionSpace, cpp,
-                    fem, has_petsc_complex)
-from dolfin.io import XDMFFile
-from dolfin_utils.test.fixtures import tempdir
+from dolfinx import (MPI, Function, FunctionSpace, VectorFunctionSpace, cpp,
+                     fem, has_petsc_complex)
+from dolfinx.io import XDMFFile
+from dolfinx_utils.test.fixtures import tempdir
 
 assert (tempdir)
 

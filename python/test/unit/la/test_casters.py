@@ -2,20 +2,22 @@
 
 # Copyright (C) 2019 Francesco Ballarin
 #
-# This file is part of DOLFIN (https://www.fenicsproject.org)
+# This file is part of DOLFINX (https://www.fenicsproject.org)
 #
 # SPDX-License-Identifier:    LGPL-3.0-or-later
 
 import os
 import sys
 
-import dolfin
 import numpy
 import petsc4py
 import pytest
-from dolfin.jit import dolfin_pc, mpi_jit_decorator
-from dolfin_utils.test.fixtures import tempdir  # noqa: F401
+from dolfinx_utils.test.fixtures import tempdir  # noqa: F401
 from petsc4py import PETSc
+
+import dolfinx
+from dolfinx.wrappers import get_include_path as pybind_inc
+from dolfinx.jit import dolfinx_pc, mpi_jit_decorator
 
 
 def test_petsc_casters_cppimport(tempdir):  # noqa: F811
@@ -30,18 +32,17 @@ def test_petsc_casters_cppimport(tempdir):  # noqa: F811
         cpp_code_header = f"""
         <%
         setup_pybind11(cfg)
-        cfg['include_dirs'] += {dolfin_pc["include_dirs"] + [petsc4py.get_include()]}
-        cfg['compiler_args'] += {["-D" + dm for dm in dolfin_pc["define_macros"]]}
-        cfg['libraries'] += {dolfin_pc["libraries"]}
-        cfg['library_dirs'] += {dolfin_pc["library_dirs"]}
+        cfg['include_dirs'] += {dolfinx_pc["include_dirs"] + [petsc4py.get_include()] + [str(pybind_inc())]}
+        cfg['compiler_args'] += {["-D" + dm for dm in dolfinx_pc["define_macros"]]}
+        cfg['libraries'] += {dolfinx_pc["libraries"]}
+        cfg['library_dirs'] += {dolfinx_pc["library_dirs"]}
         %>
         """
 
         cpp_code = """
         #include <pybind11/pybind11.h>
         #include <petscvec.h>
-
-        #include <dolfin/pybind11/caster_petsc.h>
+        #include <caster_petsc.h>
 
         void PETSc_exp(Vec x)
         {
@@ -62,9 +63,9 @@ def test_petsc_casters_cppimport(tempdir):  # noqa: F811
     module = compile_module()
 
     # Create a PETSc vector
-    local_range = dolfin.MPI.local_range(dolfin.MPI.comm_world, 10)
+    local_range = dolfinx.MPI.local_range(dolfinx.MPI.comm_world, 10)
     x1 = PETSc.Vec()
-    x1.create(dolfin.MPI.comm_world)
+    x1.create(dolfinx.MPI.comm_world)
     x1.setSizes((local_range[1] - local_range[0], None))
     x1.setFromOptions()
     x1.setArray(numpy.arange(local_range[0], local_range[1]))
