@@ -297,18 +297,20 @@ compute_entities_by_key_matching(const Mesh& mesh, int dim)
   common::Timer timer("Compute entities of dim = " + std::to_string(dim));
 
   // Initialize local array of entities
-  const std::int8_t num_entities
+  const std::int8_t num_entities_per_cell
       = mesh::cell_num_entities(mesh.cell_type(), dim);
-  const int num_vertices
+  const int num_vertices_per_entity
       = mesh::num_cell_vertices(mesh::cell_entity_type(mesh.cell_type(), dim));
 
   // Create map from cell vertices to entity vertices
   Eigen::Array<int, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor> e_vertices
       = mesh::get_entity_vertices(mesh.cell_type(), dim);
 
+  const int num_cells = mesh.num_entities(tdim);
+
   // List of vertices for each entity in each cell.
   Eigen::Array<std::int32_t, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
-      entity_list(mesh.num_entities(tdim) * num_entities, num_vertices);
+      entity_list(num_cells * num_entities_per_cell, num_vertices_per_entity);
 
   int k = 0;
   for (auto& c : MeshRange(mesh, tdim, MeshRangeType::ALL))
@@ -317,10 +319,10 @@ compute_entities_by_key_matching(const Mesh& mesh, int dim)
     auto vertices = c.entities(0);
 
     // Iterate over entities of cell
-    for (int i = 0; i < num_entities; ++i)
+    for (int i = 0; i < num_entities_per_cell; ++i)
     {
       // Get entity vertices
-      for (int j = 0; j < num_vertices; ++j)
+      for (int j = 0; j < num_vertices_per_entity; ++j)
         entity_list(k, j) = vertices[e_vertices(i, j)];
 
       ++k;
@@ -336,7 +338,7 @@ compute_entities_by_key_matching(const Mesh& mesh, int dim)
       entity_list_sorted = entity_list;
   for (int i = 0; i < entity_list_sorted.rows(); ++i)
     std::sort(entity_list_sorted.row(i).data(),
-              entity_list_sorted.row(i).data() + num_vertices);
+              entity_list_sorted.row(i).data() + num_vertices_per_entity);
 
   // Sort the list and label (first pass)
   std::vector<std::int32_t> sort_order
@@ -363,7 +365,7 @@ compute_entities_by_key_matching(const Mesh& mesh, int dim)
     q = mapping[q];
 
   Eigen::Array<std::int32_t, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
-      connectivity_ce(mesh.num_entities(tdim), num_entities);
+      connectivity_ce(mesh.num_entities(tdim), num_entities_per_cell);
   std::copy(entity_index.begin(), entity_index.end(), connectivity_ce.data());
 
   // Cell-entity connectivity
@@ -372,7 +374,7 @@ compute_entities_by_key_matching(const Mesh& mesh, int dim)
 
   // Entity-vertex connectivity
   Eigen::Array<std::int32_t, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
-      connectivity_ev(entity_count, num_vertices);
+      connectivity_ev(entity_count, num_vertices_per_entity);
   for (int i = 0; i < entity_list.rows(); ++i)
     connectivity_ev.row(entity_index[i]) = entity_list.row(i);
 
