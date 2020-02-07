@@ -132,11 +132,6 @@ def test_manufactured_poisson(degree, filename, datadir):
 def test_manufactured_vector1(family, degree, filename, datadir):
     """Projection into H(div/curl) spaces"""
 
-    # FIXME: these test are currently failing, so skip them
-    if "tetra" in filename:
-        if family[0] == "N1curl" or family[0] == "N2curl" and degree == 2:
-            return
-
     with XDMFFile(MPI.comm_world, os.path.join(datadir, filename)) as xdmf:
         mesh = xdmf.read_mesh(GhostMode.none)
 

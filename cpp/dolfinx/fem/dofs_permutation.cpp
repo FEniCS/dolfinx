@@ -207,7 +207,8 @@ std::vector<int> edge_flip(const int edge_dofs, const int blocksize)
 /// @param[in] edge_dofs Number of dofs on the face of the triangle
 /// @return Permutations to rotate and reflect the dofs
 std::array<std::vector<int>, 2>
-triangle_rotation_and_reflection(const int face_dofs, const int blocksize)
+triangle_rotation_and_reflection(const int face_dofs, const int blocksize,
+                                 const bool flip_blocks = false)
 {
   // This will only be called at most once for each mesh
   const int blocks = face_dofs / blocksize;
@@ -241,13 +242,85 @@ triangle_rotation_and_reflection(const int face_dofs, const int blocksize)
       int dof = st;
       for (int add = side_length; add > st; --add)
       {
-        for (int k = 0; k < blocksize; ++k)
-          reflection[j++] = blocksize * dof + k;
+        if (flip_blocks)
+          for (int k = blocksize - 1; k >= 0; --k)
+            reflection[j++] = blocksize * dof + k;
+        else
+          for (int k = 0; k < blocksize; ++k)
+            reflection[j++] = blocksize * dof + k;
         dof += add;
       }
     }
     assert(j == face_dofs);
   }
+
+  return {rotation, reflection};
+}
+//-----------------------------------------------------------------------------
+/// Makes permutations to rotate and reflect the dofs on a triangle
+/// @param[in] edge_dofs Number of dofs on the face of the triangle
+/// @return Permutations to rotate and reflect the dofs
+std::array<std::vector<int>, 2>
+triangle_bdm_type_rotation_and_reflection(const int face_dofs,
+                                          const int blocksize)
+{
+  // This will only be called at most once for each mesh
+  const int blocks = face_dofs / blocksize;
+  float root = std::sqrt(1 + blocks);
+  assert(root == std::floor(root));
+  int side_length = root - 1; // length of the line
+
+  std::array<std::vector<int>, 2> centre = triangle_rotation_and_reflection(
+      face_dofs - 3 * side_length * blocksize, 2 * blocksize, true);
+
+  std::vector<int> rotation(face_dofs);
+  {
+    int j = 0;
+    for (int dof = 2 * side_length - 1; dof >= side_length; --dof)
+      for (int k = 0; k < blocksize; ++k)
+        rotation[j++] = blocksize * dof + k;
+    for (int dof = 3 * side_length - 1; dof >= 2 * side_length; --dof)
+      for (int k = 0; k < blocksize; ++k)
+        rotation[j++] = blocksize * dof + k;
+    for (int dof = 0; dof < side_length; ++dof)
+      for (int k = 0; k < blocksize; ++k)
+        rotation[j++] = blocksize * dof + k;
+
+    for (int i = 0; i < face_dofs - 3 * side_length * blocksize; ++i)
+      rotation[j++] = 3 * side_length * blocksize + centre[0][i];
+
+    assert(j == face_dofs);
+  }
+
+  std::vector<int> reflection(face_dofs);
+  {
+    int j = 0;
+    for (int dof = side_length - 1; dof >= 0; --dof)
+      for (int k = 0; k < blocksize; ++k)
+        reflection[j++] = blocksize * dof + k;
+    for (int dof = 2 * side_length; dof < 3 * side_length; ++dof)
+      for (int k = 0; k < blocksize; ++k)
+        reflection[j++] = blocksize * dof + k;
+    for (int dof = side_length; dof < 2 * side_length; ++dof)
+      for (int k = 0; k < blocksize; ++k)
+        reflection[j++] = blocksize * dof + k;
+
+    for (int i = 0; i < face_dofs - 3 * side_length * blocksize; ++i)
+      reflection[j++] = 3 * side_length * blocksize + centre[1][i];
+
+    assert(j == face_dofs);
+  }
+
+  std::cout << std::endl;
+  std::cout << std::endl;
+  std::cout << "rotation" << std::endl;
+  for (int i = 0; i < face_dofs; ++i)
+    std::cout << rotation[i] << " ";
+  std::cout << std::endl;
+  std::cout << "reflection" << std::endl;
+  for (int i = 0; i < face_dofs; ++i)
+    std::cout << reflection[i] << " ";
+  std::cout << std::endl;
 
   return {rotation, reflection};
 }
@@ -460,10 +533,12 @@ std::array<std::vector<int>, 2> base_d2(const ufc_dof_arrangement ar,
 
   if (ar == ufcda_triangle)
     return triangle_rotation_and_reflection(dofs, blocksize);
+  if (ar == ufcda_triangle_flipblocks)
+    return triangle_rotation_and_reflection(dofs, blocksize, true);
   if (ar == ufcda_quadrilateral)
     return quadrilateral_rotation_and_reflection(dofs, blocksize);
-  //  if (ar == ufcda_triangle_in_lines)
-  //    return triangle_in_lines_rotation_and_reflection(dofs, blocksize);
+  if (ar == ufcda_triangle_bdm_type)
+    return triangle_bdm_type_rotation_and_reflection(dofs, blocksize);
 
   // If the arrangement type is not one of the above, then it must be that no
   // permutation is necessary
