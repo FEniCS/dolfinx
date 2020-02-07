@@ -498,8 +498,8 @@ void Mesh::create_connectivity(int d0, int d1) const
 
   // Compute connectivity
   Mesh* mesh = const_cast<Mesh*>(this);
-  TopologyComputation::compute_connectivity(*mesh, mesh->topology(),
-                                            mesh->cell_type(), d0, d1);
+  TopologyComputation::compute_connectivity(mesh->topology(), mesh->cell_type(),
+                                            d0, d1);
 }
 //-----------------------------------------------------------------------------
 void Mesh::create_connectivity_all() const

@@ -5,9 +5,6 @@
 // SPDX-License-Identifier:    LGPL-3.0-or-later
 
 #include "TopologyComputation.h"
-#include "Mesh.h"
-#include "MeshEntity.h"
-#include "MeshIterator.h"
 #include "Topology.h"
 #include "cell_types.h"
 #include <Eigen/Dense>
@@ -281,7 +278,6 @@ compute_entities_by_key_matching(MPI_Comm comm, const Topology& topology,
   }
 
   // Get mesh topology and connectivity
-  // const Topology& topology = mesh.topology();
   const int tdim = topology.dim();
 
   // Check if entities have already been computed
@@ -411,10 +407,9 @@ compute_from_transpose(const Topology& topology, int d0, int d1)
     throw std::runtime_error("Missing required connectivity d1-d0.");
 
   // Compute number of connections for each e0
-  auto map_d0 = topology.index_map(d0);
-  assert(map_d0);
-  const int size_d0 = map_d0->size_local() + map_d0->num_ghosts();
-  std::vector<std::int32_t> num_connections(size_d0, 0);
+  auto c_d0_0 = topology.connectivity(d0, 0);
+  assert(c_d0_0);
+  std::vector<std::int32_t> num_connections(c_d0_0->num_nodes(), 0);
 
   auto c_d1_0 = topology.connectivity(d1, 0);
   assert(c_d1_0);
@@ -454,7 +449,8 @@ graph::AdjacencyList<std::int32_t> compute_from_map(const Topology& topology,
   auto c_d1_0 = topology.connectivity(d1, 0);
   assert(c_d1_0);
 
-  // Make a map from the sorted d1 entity vertices to the d1 entity index
+  // Make a map from the sorted d1 entity vertices to the d1 entity
+  // index
   boost::unordered_map<std::vector<std::int32_t>, std::int32_t> entity_to_index;
   entity_to_index.reserve(c_d1_0->num_nodes());
 
@@ -537,7 +533,7 @@ TopologyComputation::compute_entities(MPI_Comm comm, const Topology& topology,
   return data;
 }
 //-----------------------------------------------------------------------------
-void TopologyComputation::compute_connectivity(Mesh& mesh, Topology& topology,
+void TopologyComputation::compute_connectivity(Topology& topology,
                                                CellType cell_type, int d0,
                                                int d1)
 {
@@ -587,7 +583,7 @@ void TopologyComputation::compute_connectivity(Mesh& mesh, Topology& topology,
   else if (d0 < d1)
   {
     // Compute connectivity d1 - d0 and take transpose
-    compute_connectivity(mesh, topology, cell_type, d1, d0);
+    compute_connectivity(topology, cell_type, d1, d0);
     auto c = std::make_shared<graph::AdjacencyList<std::int32_t>>(
         compute_from_transpose(topology, d0, d1));
     topology.set_connectivity(c, d0, d1);
