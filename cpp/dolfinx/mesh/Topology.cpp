@@ -80,7 +80,7 @@ std::vector<bool> Topology::on_boundary(int dim) const
                              + std::to_string(dim));
   }
 
-  std::shared_ptr<const AdjacencyList<std::int32_t>> connectivity_facet_cell
+  std::shared_ptr<const graph::AdjacencyList<std::int32_t>> connectivity_facet_cell
       = connectivity(tdim - 1, tdim);
   if (!connectivity_facet_cell)
     throw std::runtime_error("Facet-cell connectivity missing");
@@ -103,7 +103,7 @@ std::vector<bool> Topology::on_boundary(int dim) const
   }
 
   // Get connectivity from facet to entities of interest (vertices or edges)
-  std::shared_ptr<const AdjacencyList<std::int32_t>> connectivity_facet_entity
+  std::shared_ptr<const graph::AdjacencyList<std::int32_t>> connectivity_facet_entity
       = connectivity(tdim - 1, dim);
   if (!connectivity_facet_entity)
     throw std::runtime_error("Facet-entity connectivity missing");
@@ -126,7 +126,7 @@ std::vector<bool> Topology::on_boundary(int dim) const
   return marker;
 }
 //-----------------------------------------------------------------------------
-std::shared_ptr<AdjacencyList<std::int32_t>> Topology::connectivity(int d0,
+std::shared_ptr<graph::AdjacencyList<std::int32_t>> Topology::connectivity(int d0,
                                                                      int d1)
 {
   assert(d0 < _connectivity.rows());
@@ -134,7 +134,7 @@ std::shared_ptr<AdjacencyList<std::int32_t>> Topology::connectivity(int d0,
   return _connectivity(d0, d1);
 }
 //-----------------------------------------------------------------------------
-std::shared_ptr<const AdjacencyList<std::int32_t>>
+std::shared_ptr<const graph::AdjacencyList<std::int32_t>>
 Topology::connectivity(int d0, int d1) const
 {
   assert(d0 < _connectivity.rows());
@@ -142,7 +142,7 @@ Topology::connectivity(int d0, int d1) const
   return _connectivity(d0, d1);
 }
 //-----------------------------------------------------------------------------
-void Topology::set_connectivity(std::shared_ptr<AdjacencyList<std::int32_t>> c,
+void Topology::set_connectivity(std::shared_ptr<graph::AdjacencyList<std::int32_t>> c,
                                 int d0, int d1)
 {
   assert(d0 < _connectivity.rows());

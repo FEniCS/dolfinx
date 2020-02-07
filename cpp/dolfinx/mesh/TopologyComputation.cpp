@@ -269,8 +269,8 @@ std::vector<int> get_ghost_mapping(
   return mapping;
 }
 //-----------------------------------------------------------------------------
-std::tuple<std::shared_ptr<AdjacencyList<std::int32_t>>,
-           std::shared_ptr<AdjacencyList<std::int32_t>>, std::int32_t>
+std::tuple<std::shared_ptr<graph::AdjacencyList<std::int32_t>>,
+           std::shared_ptr<graph::AdjacencyList<std::int32_t>>, std::int32_t>
 compute_entities_by_key_matching(const Mesh& mesh, int dim)
 {
   if (dim == 0)
@@ -367,7 +367,8 @@ compute_entities_by_key_matching(const Mesh& mesh, int dim)
   std::copy(entity_index.begin(), entity_index.end(), connectivity_ce.data());
 
   // Cell-entity connectivity
-  auto ce = std::make_shared<AdjacencyList<std::int32_t>>(connectivity_ce);
+  auto ce
+      = std::make_shared<graph::AdjacencyList<std::int32_t>>(connectivity_ce);
 
   // Entity-vertex connectivity
   Eigen::Array<std::int32_t, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
@@ -375,14 +376,15 @@ compute_entities_by_key_matching(const Mesh& mesh, int dim)
   for (int i = 0; i < entity_list.rows(); ++i)
     connectivity_ev.row(entity_index[i]) = entity_list.row(i);
 
-  auto ev = std::make_shared<AdjacencyList<std::int32_t>>(connectivity_ev);
+  auto ev
+      = std::make_shared<graph::AdjacencyList<std::int32_t>>(connectivity_ev);
 
   return {ce, ev, entity_count};
 }
 //-----------------------------------------------------------------------------
 // Compute connectivity from transpose
-AdjacencyList<std::int32_t> compute_from_transpose(const Mesh& mesh, int d0,
-                                                   int d1)
+graph::AdjacencyList<std::int32_t> compute_from_transpose(const Mesh& mesh,
+                                                          int d0, int d1)
 {
   // The transpose is computed in three steps:
   //
@@ -424,11 +426,12 @@ AdjacencyList<std::int32_t> compute_from_transpose(const Mesh& mesh, int d0,
     for (auto& e0 : EntityRange(e1, d0))
       connections[offsets[e0.index()] + counter[e0.index()]++] = e1.index();
 
-  return AdjacencyList<std::int32_t>(connections, offsets);
+  return graph::AdjacencyList<std::int32_t>(connections, offsets);
 }
 //-----------------------------------------------------------------------------
 // Direct lookup of entity from vertices in a map
-AdjacencyList<std::int32_t> compute_from_map(const Mesh& mesh, int d0, int d1)
+graph::AdjacencyList<std::int32_t> compute_from_map(const Mesh& mesh, int d0,
+                                                    int d1)
 {
   assert(d1 > 0);
   assert(d0 > d1);
@@ -481,7 +484,7 @@ AdjacencyList<std::int32_t> compute_from_map(const Mesh& mesh, int d0, int d1)
       connections(e.index(), k) = entities[k];
   }
 
-  return AdjacencyList<std::int32_t>(connections);
+  return graph::AdjacencyList<std::int32_t>(connections);
 }
 } // namespace
 
@@ -510,8 +513,8 @@ std::int32_t TopologyComputation::compute_entities(Mesh& mesh, int dim)
     return -1;
   }
 
-  std::tuple<std::shared_ptr<AdjacencyList<std::int32_t>>,
-             std::shared_ptr<AdjacencyList<std::int32_t>>, std::int32_t>
+  std::tuple<std::shared_ptr<graph::AdjacencyList<std::int32_t>>,
+             std::shared_ptr<graph::AdjacencyList<std::int32_t>>, std::int32_t>
       data = compute_entities_by_key_matching(mesh, dim);
 
   // Set cell-entity connectivity
@@ -569,14 +572,14 @@ void TopologyComputation::compute_connectivity(Mesh& mesh, int d0, int d1)
     for (auto& e : MeshRange(mesh, d0, MeshRangeType::ALL))
       connectivity_dd[e.index()][0] = e.index();
     auto connectivity
-        = std::make_shared<AdjacencyList<std::int32_t>>(connectivity_dd);
+        = std::make_shared<graph::AdjacencyList<std::int32_t>>(connectivity_dd);
     topology.set_connectivity(connectivity, d0, d1);
   }
   else if (d0 < d1)
   {
     // Compute connectivity d1 - d0 and take transpose
     compute_connectivity(mesh, d1, d0);
-    auto c = std::make_shared<AdjacencyList<std::int32_t>>(
+    auto c = std::make_shared<graph::AdjacencyList<std::int32_t>>(
         compute_from_transpose(mesh, d0, d1));
     topology.set_connectivity(c, d0, d1);
   }
@@ -584,7 +587,7 @@ void TopologyComputation::compute_connectivity(Mesh& mesh, int d0, int d1)
   {
     // Compute by mapping vertices from a lower dimension entity to
     // those of a higher dimension entity
-    auto c = std::make_shared<AdjacencyList<std::int32_t>>(
+    auto c = std::make_shared<graph::AdjacencyList<std::int32_t>>(
         compute_from_map(mesh, d0, d1));
     topology.set_connectivity(c, d0, d1);
   }

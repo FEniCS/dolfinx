@@ -351,7 +351,7 @@ Mesh::Mesh(
   _topology->set_index_map(0, vertex_index_map);
   const std::int32_t num_vertices
       = vertex_index_map->size_local() + vertex_index_map->num_ghosts();
-  auto c0 = std::make_shared<AdjacencyList<std::int32_t>>(num_vertices);
+  auto c0 = std::make_shared<graph::AdjacencyList<std::int32_t>>(num_vertices);
   _topology->set_connectivity(c0, 0, 0);
 
   // Initialise cell topology
@@ -361,7 +361,7 @@ Mesh::Mesh(
       _mpi_comm.comm(), num_cells_local, cell_ghosts, 1);
   _topology->set_index_map(tdim, cell_index_map);
 
-  auto cv = std::make_shared<AdjacencyList<std::int32_t>>(vertex_cols);
+  auto cv = std::make_shared<graph::AdjacencyList<std::int32_t>>(vertex_cols);
 
   _topology->set_connectivity(cv, tdim, 0);
 

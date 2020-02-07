@@ -27,7 +27,7 @@ T volume_interval(const mesh::Mesh& mesh,
   const mesh::Geometry& geometry = mesh.geometry();
   const mesh::Topology& topology = mesh.topology();
   assert(topology.connectivity(1, 0));
-  const mesh::AdjacencyList<std::int32_t>& connectivity
+  const graph::AdjacencyList<std::int32_t>& connectivity
       = *topology.connectivity(1, 0);
 
   T v(entities.rows());
@@ -50,7 +50,7 @@ T volume_triangle(const mesh::Mesh& mesh,
   const mesh::Geometry& geometry = mesh.geometry();
   const mesh::Topology& topology = mesh.topology();
   assert(topology.connectivity(2, 0));
-  const mesh::AdjacencyList<std::int32_t>& connectivity
+  const graph::AdjacencyList<std::int32_t>& connectivity
       = *topology.connectivity(2, 0);
 
   const int gdim = geometry.dim();
@@ -107,7 +107,7 @@ T volume_tetrahedron(const mesh::Mesh& mesh,
   const mesh::Geometry& geometry = mesh.geometry();
   const mesh::Topology& topology = mesh.topology();
   assert(topology.connectivity(3, 0));
-  const mesh::AdjacencyList<std::int32_t>& connectivity
+  const graph::AdjacencyList<std::int32_t>& connectivity
       = *topology.connectivity(3, 0);
 
   Eigen::ArrayXd v(entities.rows());
@@ -148,7 +148,7 @@ T volume_quadrilateral(const mesh::Mesh& mesh,
   const mesh::Geometry& geometry = mesh.geometry();
   const mesh::Topology& topology = mesh.topology();
   assert(topology.connectivity(2, 0));
-  const mesh::AdjacencyList<std::int32_t>& connectivity
+  const graph::AdjacencyList<std::int32_t>& connectivity
       = *topology.connectivity(2, 0);
 
   const int gdim = geometry.dim();
@@ -228,7 +228,7 @@ T circumradius_triangle(const mesh::Mesh& mesh,
   const mesh::Geometry& geometry = mesh.geometry();
   const mesh::Topology& topology = mesh.topology();
   assert(topology.connectivity(2, 0));
-  const mesh::AdjacencyList<std::int32_t>& connectivity
+  const graph::AdjacencyList<std::int32_t>& connectivity
       = *topology.connectivity(2, 0);
 
   T volumes = volume_entities_tmpl<T>(mesh, entities, 2);
@@ -261,7 +261,7 @@ T circumradius_tetrahedron(const mesh::Mesh& mesh,
   const mesh::Geometry& geometry = mesh.geometry();
   const mesh::Topology& topology = mesh.topology();
   assert(topology.connectivity(3, 0));
-  const mesh::AdjacencyList<std::int32_t>& connectivity
+  const graph::AdjacencyList<std::int32_t>& connectivity
       = *topology.connectivity(3, 0);
 
   T volumes = volume_entities_tmpl<T>(mesh, entities, 3);
@@ -349,7 +349,7 @@ Eigen::ArrayXd mesh::h(const Mesh& mesh,
   const mesh::Geometry& geometry = mesh.geometry();
   const mesh::Topology& topology = mesh.topology();
   assert(topology.connectivity(dim, 0));
-  const mesh::AdjacencyList<std::int32_t>& connectivity
+  const graph::AdjacencyList<std::int32_t>& connectivity
       = *topology.connectivity(dim, 0);
 
   Eigen::ArrayXd h_cells = Eigen::ArrayXd::Zero(entities.rows());
@@ -397,7 +397,7 @@ Eigen::ArrayXd mesh::inradius(const mesh::Mesh& mesh,
   const int d = mesh::cell_dim(type);
   const mesh::Topology& topology = mesh.topology();
   assert(topology.connectivity(d, d - 1));
-  const mesh::AdjacencyList<std::int32_t>& connectivity
+  const graph::AdjacencyList<std::int32_t>& connectivity
       = *topology.connectivity(d, d - 1);
 
   const Eigen::ArrayXd volumes = mesh::volume_entities(mesh, entities, d);
@@ -660,7 +660,7 @@ Eigen::Array<double, Eigen::Dynamic, 3, Eigen::RowMajor> mesh::midpoints(
   {
     const mesh::Topology& topology = mesh.topology();
     assert(topology.connectivity(dim, 0));
-    std::shared_ptr<const mesh::AdjacencyList<std::int32_t>> connectivity
+    std::shared_ptr<const graph::AdjacencyList<std::int32_t>> connectivity
         = topology.connectivity(dim, 0);
     const int num_vertices
         = mesh::cell_num_entities(cell_entity_type(mesh.cell_type(), dim), 0);

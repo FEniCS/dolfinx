@@ -20,13 +20,13 @@ mesh::CoordinateDofs::CoordinateDofs(
   // Do nothing
 }
 //-----------------------------------------------------------------------------
-mesh::AdjacencyList<std::int32_t>& mesh::CoordinateDofs::entity_points()
+graph::AdjacencyList<std::int32_t>& mesh::CoordinateDofs::entity_points()
 {
   assert(_coord_dofs);
   return *_coord_dofs;
 }
 //-----------------------------------------------------------------------------
-const mesh::AdjacencyList<std::int32_t>&
+const graph::AdjacencyList<std::int32_t>&
 mesh::CoordinateDofs::entity_points() const
 {
   assert(_coord_dofs);

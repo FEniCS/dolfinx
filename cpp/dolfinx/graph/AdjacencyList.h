@@ -15,7 +15,7 @@
 
 namespace dolfinx
 {
-namespace mesh
+namespace graph
 {
 
 /// This class provides a static adjacency list data structure. It is

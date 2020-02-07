@@ -255,7 +255,7 @@ void HDF5File::write(const mesh::Mesh& mesh, int cell_dim,
   assert(_hdf5_file_id > 0);
 
   mesh::CellType cell_type = mesh::cell_entity_type(mesh.cell_type(), cell_dim);
-  const mesh::AdjacencyList<std::int32_t>& cell_points
+  const graph::AdjacencyList<std::int32_t>& cell_points
       = mesh.coordinate_dofs().entity_points();
 
   // Allowing for higher order meshes to be written to file

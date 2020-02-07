@@ -55,7 +55,7 @@ bool increasing(const int n, const std::int32_t* v0, const std::int32_t* v1,
   return w0 < w1;
 }
 //-----------------------------------------------------------------------------
-void sort_1_0(mesh::AdjacencyList<std::int32_t>& connect_1_0,
+void sort_1_0(graph::AdjacencyList<std::int32_t>& connect_1_0,
               const mesh::MeshEntity& cell,
               const std::vector<std::int64_t>& global_vertex_indices,
               const int num_edges)
@@ -73,7 +73,7 @@ void sort_1_0(mesh::AdjacencyList<std::int32_t>& connect_1_0,
   }
 }
 //-----------------------------------------------------------------------------
-void sort_2_0(mesh::AdjacencyList<std::int32_t>& connect_2_0,
+void sort_2_0(graph::AdjacencyList<std::int32_t>& connect_2_0,
               const mesh::MeshEntity& cell,
               const std::vector<std::int64_t>& global_vertex_indices,
               const int num_faces)
@@ -91,9 +91,9 @@ void sort_2_0(mesh::AdjacencyList<std::int32_t>& connect_2_0,
   }
 }
 //-----------------------------------------------------------------------------
-void sort_2_1(mesh::AdjacencyList<std::int32_t>& connect_2_1,
-              const mesh::AdjacencyList<std::int32_t>& connect_2_0,
-              const mesh::AdjacencyList<std::int32_t>& connect_1_0,
+void sort_2_1(graph::AdjacencyList<std::int32_t>& connect_2_1,
+              const graph::AdjacencyList<std::int32_t>& connect_2_0,
+              const graph::AdjacencyList<std::int32_t>& connect_1_0,
               const mesh::MeshEntity& cell,
               const std::vector<std::int64_t>& global_vertex_indices,
               const int num_faces)
@@ -133,7 +133,7 @@ void sort_2_1(mesh::AdjacencyList<std::int32_t>& connect_2_1,
   }
 }
 //-----------------------------------------------------------------------------
-void sort_3_0(mesh::AdjacencyList<std::int32_t>& connect_3_0,
+void sort_3_0(graph::AdjacencyList<std::int32_t>& connect_3_0,
               const mesh::MeshEntity& cell,
               const std::vector<std::int64_t>& global_vertex_indices)
 {
@@ -144,8 +144,8 @@ void sort_3_0(mesh::AdjacencyList<std::int32_t>& connect_3_0,
             });
 }
 //-----------------------------------------------------------------------------
-void sort_3_1(mesh::AdjacencyList<std::int32_t>& connect_3_1,
-              const mesh::AdjacencyList<std::int32_t>& connect_1_0,
+void sort_3_1(graph::AdjacencyList<std::int32_t>& connect_3_1,
+              const graph::AdjacencyList<std::int32_t>& connect_1_0,
               const mesh::MeshEntity& cell,
               const std::vector<std::int64_t>& global_vertex_indices)
 {
@@ -184,8 +184,8 @@ void sort_3_1(mesh::AdjacencyList<std::int32_t>& connect_3_1,
   }
 }
 //-----------------------------------------------------------------------------
-void sort_3_2(mesh::AdjacencyList<std::int32_t>& connect_3_2,
-              const mesh::AdjacencyList<std::int32_t>& connect_2_0,
+void sort_3_2(graph::AdjacencyList<std::int32_t>& connect_3_2,
+              const graph::AdjacencyList<std::int32_t>& connect_2_0,
               const mesh::MeshEntity& cell,
               const std::vector<std::int64_t>& global_vertex_indices)
 {
@@ -224,7 +224,7 @@ bool ordered_cell_simplex(
   const int c = cell.index();
 
   // Get vertices
-  std::shared_ptr<const mesh::AdjacencyList<std::int32_t>> connect_tdim_0
+  std::shared_ptr<const graph::AdjacencyList<std::int32_t>> connect_tdim_0
       = topology.connectivity(tdim, 0);
   assert(connect_tdim_0);
 
@@ -247,13 +247,13 @@ bool ordered_cell_simplex(
   for (int d = 1; d + 1 < tdim; ++d)
   {
     // Check if entities exist, otherwise skip
-    std::shared_ptr<const mesh::AdjacencyList<std::int32_t>> connect_d_0
+    std::shared_ptr<const graph::AdjacencyList<std::int32_t>> connect_d_0
         = topology.connectivity(d, 0);
     if (!connect_d_0)
       continue;
 
     // Get entities
-    std::shared_ptr<const mesh::AdjacencyList<std::int32_t>> connect_tdim_d
+    std::shared_ptr<const graph::AdjacencyList<std::int32_t>> connect_tdim_d
         = topology.connectivity(tdim, d);
     assert(connect_tdim_d);
     const int num_entities = connect_tdim_d->num_edges(c);
@@ -308,7 +308,7 @@ void mesh::Ordering::order_simplex(mesh::Mesh& mesh)
   if (tdim == 0)
     return;
 
-  mesh::AdjacencyList<std::int32_t>& connect_g
+  graph::AdjacencyList<std::int32_t>& connect_g
       = mesh.coordinate_dofs().entity_points();
 
   // Get global vertex numbering
@@ -319,7 +319,7 @@ void mesh::Ordering::order_simplex(mesh::Mesh& mesh)
   const int num_faces
       = (tdim > 1) ? mesh::cell_num_entities(mesh.cell_type(), 2) : -1;
 
-  std::shared_ptr<mesh::AdjacencyList<std::int32_t>> connect_1_0, connect_2_0,
+  std::shared_ptr<graph::AdjacencyList<std::int32_t>> connect_1_0, connect_2_0,
       connect_2_1, connect_3_0, connect_3_1, connect_3_2;
   connect_1_0 = topology.connectivity(1, 0);
   if (tdim > 1)
