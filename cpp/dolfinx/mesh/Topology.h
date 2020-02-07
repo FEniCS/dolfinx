@@ -14,6 +14,8 @@
 #include <set>
 #include <vector>
 
+#include <dolfinx/graph/AdjacencyGraph.h>
+
 namespace dolfinx
 {
 namespace common
@@ -104,8 +106,8 @@ public:
   std::shared_ptr<AdjacencyGraph<std::int32_t>> connectivity(int d0, int d1);
 
   /// Return connectivity for given pair of topological dimensions
-  std::shared_ptr<const AdjacencyGraph<std::int32_t>> connectivity(int d0,
-                                                                 int d1) const;
+  std::shared_ptr<const AdjacencyGraph<std::int32_t>>
+  connectivity(int d0, int d1) const;
 
   /// Set connectivity for given pair of topological dimensions
   void set_connectivity(std::shared_ptr<AdjacencyGraph<std::int32_t>> c, int d0,
@@ -116,6 +118,26 @@ public:
 
   /// Return informal string representation (pretty-print)
   std::string str(bool verbose) const;
+
+  /// @todo Move this outside of this class
+  /// Set global number of connections for each local entities
+  void set_global_size(std::array<int, 2> d,
+                       const Eigen::Array<std::int32_t, Eigen::Dynamic, 1>&
+                           num_global_connections)
+  {
+    // assert(num_global_connections.size() == _offsets.size() - 1);
+    _num_global_connections(d[0], d[1]) = num_global_connections;
+  }
+
+  /// @todo Can this be removed?
+  /// Return global number of connections for given entity
+  std::int64_t size_global(std::array<int, 2> d, std::int32_t entity) const
+  {
+    if (_num_global_connections(d[0], d[1]).size() == 0)
+      return _connectivity(d[0], d[1])->num_edges(entity);
+    else
+      return _num_global_connections(d[0], d[1])[entity];
+  }
 
 private:
   // Global indices for mesh entities
@@ -133,6 +155,11 @@ private:
   Eigen::Array<std::shared_ptr<AdjacencyGraph<std::int32_t>>, Eigen::Dynamic,
                Eigen::Dynamic, Eigen::RowMajor>
       _connectivity;
+
+  // Global number of connections for each entity (possibly not
+  // computed)
+  Eigen::Array<Eigen::Array<std::int32_t, Eigen::Dynamic, 1>, 4, 4>
+      _num_global_connections;
 };
 } // namespace mesh
 } // namespace dolfinx

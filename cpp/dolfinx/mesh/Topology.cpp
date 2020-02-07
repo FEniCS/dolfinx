@@ -5,9 +5,9 @@
 // SPDX-License-Identifier:    LGPL-3.0-or-later
 
 #include "Topology.h"
-#include <dolfinx/graph/AdjacencyGraph.h>
 #include <dolfinx/common/IndexMap.h>
 #include <dolfinx/common/utils.h>
+#include <dolfinx/graph/AdjacencyGraph.h>
 #include <numeric>
 #include <sstream>
 
@@ -96,7 +96,7 @@ std::vector<bool> Topology::on_boundary(int dim) const
   {
     for (int i = 0; i < num_facets; ++i)
     {
-      if (connectivity_facet_cell->size_global(i) == 1)
+      if (this->size_global({tdim - 1, tdim}, i) == 1)
         marker[i] = true;
     }
     return marker;
@@ -116,7 +116,7 @@ std::vector<bool> Topology::on_boundary(int dim) const
   // Iterate over all facets, selecting only those with one cell attached
   for (int i = 0; i < num_facets; ++i)
   {
-    if (connectivity_facet_cell->size_global(i) == 1)
+    if (this->size_global({tdim - 1, dim}, i) == 1)
     {
       for (int j = fe_offsets[i]; j < fe_offsets[i + 1]; ++j)
         marker[fe_indices[j]] = true;
@@ -127,7 +127,7 @@ std::vector<bool> Topology::on_boundary(int dim) const
 }
 //-----------------------------------------------------------------------------
 std::shared_ptr<AdjacencyGraph<std::int32_t>> Topology::connectivity(int d0,
-                                                                   int d1)
+                                                                     int d1)
 {
   assert(d0 < _connectivity.rows());
   assert(d1 < _connectivity.cols());

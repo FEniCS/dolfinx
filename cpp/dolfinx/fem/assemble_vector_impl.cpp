@@ -220,13 +220,14 @@ void _lift_bc_exterior_facets(
   }
 
   // Iterate over all cells
+  const mesh::Topology& topology = mesh.topology();
   std::shared_ptr<const mesh::AdjacencyGraph<std::int32_t>> connectivity
-      = mesh.topology().connectivity(tdim - 1, tdim);
+      = topology.connectivity(tdim - 1, tdim);
   assert(connectivity);
   for (const mesh::MeshEntity& facet : mesh::MeshRange(mesh, tdim - 1))
   {
     // Move to next facet if this one is an interior facet
-    if (connectivity->size_global(facet.index()) != 1)
+    if (topology.size_global({tdim - 1, tdim}, facet.index()) != 1)
       continue;
 
     // FIXME: sort out ghosts

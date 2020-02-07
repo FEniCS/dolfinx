@@ -38,21 +38,22 @@ void SparsityPatternBuilder::interior_facets(
   assert(dofmaps[0]);
   assert(dofmaps[1]);
 
-  const std::size_t D = mesh.topology().dim();
+  const int D = mesh.topology().dim();
   mesh.create_entities(D - 1);
   mesh.create_connectivity(D - 1, D);
 
   // Array to store macro-dofs, if required (for interior facets)
   std::array<Eigen::Array<PetscInt, Eigen::Dynamic, 1>, 2> macro_dofs;
+  const mesh::Topology& topology = mesh.topology();
   std::shared_ptr<const mesh::AdjacencyGraph<std::int32_t>> connectivity
-      = mesh.topology().connectivity(D - 1, D);
+      = topology.connectivity(D - 1, D);
   if (!connectivity)
     throw std::runtime_error("Facet-cell connectivity has not been computed.");
 
   for (auto& facet : mesh::MeshRange(mesh, D - 1))
   {
     // Continue if facet is exterior facet
-    if (connectivity->size_global(facet.index()) == 1)
+    if (topology.size_global({D - 1, D}, facet.index()) == 1)
       continue;
 
     // FIXME: sort out ghosting
@@ -82,18 +83,19 @@ void SparsityPatternBuilder::exterior_facets(
     la::SparsityPattern& pattern, const mesh::Mesh& mesh,
     const std::array<const fem::DofMap*, 2> dofmaps)
 {
-  const std::size_t D = mesh.topology().dim();
+  const mesh::Topology& topology = mesh.topology();
+  const int D = topology.dim();
   mesh.create_entities(D - 1);
   mesh.create_connectivity(D - 1, D);
 
   std::shared_ptr<const mesh::AdjacencyGraph<std::int32_t>> connectivity
-      = mesh.topology().connectivity(D - 1, D);
+      = topology.connectivity(D - 1, D);
   if (!connectivity)
     throw std::runtime_error("Facet-cell connectivity has not been computed.");
   for (auto& facet : mesh::MeshRange(mesh, D - 1))
   {
     // Skip interior facets
-    if (connectivity->size_global(facet.index()) > 1)
+    if (topology.size_global({D - 1, D}, facet.index()) > 1)
       continue;
 
     // FIXME: sort out ghosting

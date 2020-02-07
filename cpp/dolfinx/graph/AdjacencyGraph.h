@@ -118,15 +118,15 @@ public:
                                         : 0;
   }
 
-  /// @todo Can this be removed?
-  /// Return global number of connections for given entity
-  std::int64_t size_global(std::int32_t entity) const
-  {
-    if (_num_global_connections.size() == 0)
-      return this->num_edges(entity);
-    else
-      return _num_global_connections[entity];
-  }
+  // /// @todo Can this be removed?
+  // /// Return global number of connections for given entity
+  // std::int64_t size_global(std::int32_t entity) const
+  // {
+  //   if (_num_global_connections.size() == 0)
+  //     return this->num_edges(entity);
+  //   else
+  //     return _num_global_connections[entity];
+  // }
 
   /// Edges for given node
   /// @param [in] node Node index
@@ -161,14 +161,14 @@ public:
     return _offsets;
   }
 
-  /// @todo Move this outside of this class
-  /// Set global number of connections for each local entities
-  void set_global_size(const Eigen::Array<std::int32_t, Eigen::Dynamic, 1>&
-                           num_global_connections)
-  {
-    assert(num_global_connections.size() == _offsets.size() - 1);
-    _num_global_connections = num_global_connections;
-  }
+  // /// @todo Move this outside of this class
+  // /// Set global number of connections for each local entities
+  // void set_global_size(const Eigen::Array<std::int32_t, Eigen::Dynamic, 1>&
+  //                          num_global_connections)
+  // {
+  //   assert(num_global_connections.size() == _offsets.size() - 1);
+  //   _num_global_connections = num_global_connections;
+  // }
 
   /// Hash of graph
   std::size_t hash() const
@@ -204,9 +204,9 @@ private:
   // Position of first connection for each entity (using local index)
   Eigen::Array<std::int32_t, Eigen::Dynamic, 1> _offsets;
 
-  // Global number of connections for each entity (possibly not
-  // computed)
-  Eigen::Array<std::int32_t, Eigen::Dynamic, 1> _num_global_connections;
+  // // Global number of connections for each entity (possibly not
+  // // computed)
+  // Eigen::Array<std::int32_t, Eigen::Dynamic, 1> _num_global_connections;
 };
 } // namespace mesh
 } // namespace dolfinx

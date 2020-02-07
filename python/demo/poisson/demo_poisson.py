@@ -106,6 +106,8 @@ V = FunctionSpace(mesh, ("Lagrange", 1))
 cmap = dolfinx.fem.create_coordinate_map(mesh.ufl_domain())
 mesh.geometry.coord_mapping = cmap
 
+return(0)
+
 # The second argument to :py:class:`FunctionSpace
 # <dolfinx.function.FunctionSpace>` is the finite element
 # family, while the third argument specifies the polynomial

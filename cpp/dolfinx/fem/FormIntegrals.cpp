@@ -126,8 +126,9 @@ void FormIntegrals::set_domains(FormIntegrals::Type type,
 
   if (type == Type::exterior_facet)
   {
+    const mesh::Topology& topology = mesh->topology();
     std::shared_ptr<const mesh::AdjacencyGraph<std::int32_t>> connectivity
-        = mesh->topology().connectivity(tdim - 1, tdim);
+        = topology.connectivity(tdim - 1, tdim);
     if (!connectivity)
     {
       throw std::runtime_error(
@@ -135,7 +136,7 @@ void FormIntegrals::set_domains(FormIntegrals::Type type,
     }
     for (Eigen::Index i = 0; i < num_entities; ++i)
     {
-      if ((int)connectivity->size_global(i) == 1)
+      if ((int)topology.size_global({tdim - 1, tdim}, i) == 1)
       {
         auto it = id_to_integral.find(mf_values[i]);
         if (it != id_to_integral.end())
@@ -215,8 +216,9 @@ void FormIntegrals::set_default_domains(const mesh::Mesh& mesh)
   {
     // If there is a default integral, define it only on surface facets
     exf_integrals[0].active_entities.clear();
+    const mesh::Topology& topology = mesh.topology();
     std::shared_ptr<const mesh::AdjacencyGraph<std::int32_t>> connectivity
-        = mesh.topology().connectivity(tdim - 1, tdim);
+        = topology.connectivity(tdim - 1, tdim);
     if (!connectivity)
     {
       throw std::runtime_error(
@@ -225,7 +227,7 @@ void FormIntegrals::set_default_domains(const mesh::Mesh& mesh)
     for (const mesh::MeshEntity& facet :
          mesh::MeshRange(mesh, tdim - 1, mesh::MeshRangeType::REGULAR))
     {
-      if (connectivity->size_global(facet.index()) == 1)
+      if (topology.size_global({tdim - 1, tdim}, facet.index()) == 1)
         exf_integrals[0].active_entities.push_back(facet.index());
     }
   }
@@ -273,8 +275,9 @@ void FormIntegrals::set_default_domains(const mesh::Mesh& mesh)
     }
     else
     {
+      const mesh::Topology& topology = mesh.topology();
       std::shared_ptr<const mesh::AdjacencyGraph<std::int32_t>> connectivity
-          = mesh.topology().connectivity(tdim - 1, tdim);
+          = topology.connectivity(tdim - 1, tdim);
       if (!connectivity)
       {
         throw std::runtime_error(
@@ -284,7 +287,7 @@ void FormIntegrals::set_default_domains(const mesh::Mesh& mesh)
       for (const mesh::MeshEntity& facet :
            mesh::MeshRange(mesh, tdim - 1, mesh::MeshRangeType::REGULAR))
       {
-        if (connectivity->size_global(facet.index()) != 1)
+        if (topology.size_global({tdim - 1, tdim}, facet.index()) != 1)
           inf_integrals[0].active_entities.push_back(facet.index());
       }
     }
