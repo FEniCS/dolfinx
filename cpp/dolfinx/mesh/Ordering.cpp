@@ -61,7 +61,8 @@ void sort_1_0(mesh::AdjacencyList<std::int32_t>& connect_1_0,
               const int num_edges)
 {
   // Sort vertices on each edge
-  auto cell_edges = cell.entities(1);
+  const std::int32_t* cell_edges = cell.entities_ptr(1);
+  assert(cell_edges);
   for (int i = 0; i < num_edges; ++i)
   {
     auto edge_vertices = connect_1_0.edges(cell_edges[i]);
@@ -78,7 +79,8 @@ void sort_2_0(mesh::AdjacencyList<std::int32_t>& connect_2_0,
               const int num_faces)
 {
   // Sort vertices on each facet
-  auto cell_faces = cell.entities(2);
+  const std::int32_t* cell_faces = cell.entities_ptr(2);
+  assert(cell_faces);
   for (int i = 0; i < num_faces; ++i)
   {
     auto face_vertices = connect_2_0.edges(cell_faces[i]);
@@ -97,7 +99,8 @@ void sort_2_1(mesh::AdjacencyList<std::int32_t>& connect_2_1,
               const int num_faces)
 {
   // Loop over faces on cell
-  auto cell_faces = cell.entities(2);
+  const std::int32_t* cell_faces = cell.entities_ptr(2);
+  assert(cell_faces);
   for (int i = 0; i < num_faces; ++i)
   {
     // For each face number get the global vertex numbers
@@ -147,7 +150,8 @@ void sort_3_1(mesh::AdjacencyList<std::int32_t>& connect_3_1,
               const std::vector<std::int64_t>& global_vertex_indices)
 {
   // Get cell vertices and edge numbers
-  auto cell_vertices = cell.entities(0);
+  const std::int32_t* cell_vertices = cell.entities_ptr(0);
+  assert(cell_vertices);
   auto cell_edges = connect_3_1.edges(cell.index());
 
   // Loop two vertices on cell as a lexicographical tuple
@@ -186,7 +190,8 @@ void sort_3_2(mesh::AdjacencyList<std::int32_t>& connect_3_2,
               const std::vector<std::int64_t>& global_vertex_indices)
 {
   // Get cell vertices and facet numbers
-  auto cell_vertices = cell.entities(0);
+  const std::int32_t* cell_vertices = cell.entities_ptr(0);
+  assert(cell_vertices);
   auto cell_faces = connect_3_2.edges(cell.index());
 
   // Loop vertices on cell
