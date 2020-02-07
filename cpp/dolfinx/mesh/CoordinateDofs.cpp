@@ -14,7 +14,7 @@ mesh::CoordinateDofs::CoordinateDofs(
     const Eigen::Ref<const Eigen::Array<std::int32_t, Eigen::Dynamic,
                                         Eigen::Dynamic, Eigen::RowMajor>>&
         point_dofs)
-    : _coord_dofs(new AdjacencyList<std::int32_t>(point_dofs))
+    : _coord_dofs(new graph::AdjacencyList<std::int32_t>(point_dofs))
 
 {
   // Do nothing
