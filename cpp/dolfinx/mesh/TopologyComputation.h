@@ -39,8 +39,8 @@ public:
   /// @param [in] mesh The mesh
   /// @param [in] dim The dimension of the entities to create
   /// @return Tuple of (cell-entity connectivity, entity-vertex
-  ///   connectivity, number of created entities). The entities already
-  ///   exists, then {nullptr, nullptr, -1} is returned.
+  ///   connectivity, number of created entities). If the entities
+  ///   already exists, then {nullptr, nullptr, -1} is returned.
   static std::tuple<std::shared_ptr<graph::AdjacencyList<std::int32_t>>,
                     std::shared_ptr<graph::AdjacencyList<std::int32_t>>,
                     std::int32_t>

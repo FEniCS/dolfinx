@@ -122,7 +122,9 @@ get_shared_entities(MPI_Comm neighbour_comm,
 // Communicate with sharing processes to find out which entities are ghost
 // and return a mapping vector to move them to the end of the local range.
 std::vector<int> get_ghost_mapping(
-    MPI_Comm comm, const Topology& topology,
+    MPI_Comm comm,
+    const std::map<std::int32_t, std::set<std::int32_t>>& shared_vertices,
+    const std::vector<std::int64_t>& global_vertex_indices,
     const Eigen::Ref<const Eigen::Array<std::int32_t, Eigen::Dynamic,
                                         Eigen::Dynamic, Eigen::RowMajor>>&
         entity_list,
@@ -136,8 +138,6 @@ std::vector<int> get_ghost_mapping(
     unique_row[entity_index[i]] = i;
 
   // Create an expanded neighbour_comm from shared_vertices
-  const std::map<std::int32_t, std::set<std::int32_t>>& shared_vertices
-      = topology.shared_entities(0);
   std::set<std::int32_t> neighbour_set;
   for (auto q : shared_vertices)
     neighbour_set.insert(q.second.begin(), q.second.end());
@@ -159,8 +159,6 @@ std::vector<int> get_ghost_mapping(
 
   // Get all "possibly shared" entities, based on vertex sharing
   // Send to other processes, and see if we get the same back
-  const std::vector<std::int64_t>& global_vertex_indices
-      = topology.global_indices(0);
 
   // Set of sharing procs for each entity, counting vertex hits
   std::map<int, int> procs;
@@ -378,8 +376,9 @@ compute_entities_by_key_matching(MPI_Comm comm, const Topology& topology,
 
   // Communicate with other processes to find out which entities are ghosted
   // and shared. Remap the numbering so that ghosts are at the end.
-  std::vector<int> mapping = get_ghost_mapping(comm, topology, entity_list,
-                                               entity_index, entity_count);
+  std::vector<int> mapping = get_ghost_mapping(
+      comm, topology.shared_entities(0), topology.global_indices(0),
+      entity_list, entity_index, entity_count);
 
   // Do the actual remap
   for (std::int32_t& q : entity_index)
