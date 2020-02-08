@@ -200,7 +200,7 @@ std::vector<int> get_ghost_mapping(
   // Get shared entities of this dimension, and also match up
   // an index for the received entities (from other processes)
   // with the indices of the sent entities (to other processes)
-  auto [shared_entities, recv_index] = get_shared_entities(
+  const auto [shared_entities, recv_index] = get_shared_entities(
       neighbour_comm, send_entities, send_index, num_vertices);
 
   int mpi_rank = dolfinx::MPI::rank(comm);

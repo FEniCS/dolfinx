@@ -206,7 +206,7 @@ compute_point_distribution(
 
   // Distribute points to processes that need them, and calculate
   // IndexMap.
-  auto [point_index_map, local_to_global, points_local]
+  const auto [point_index_map, local_to_global, points_local]
       = Partitioning::distribute_points(mpi_comm, points, global_index_set);
 
   // Reverse map
@@ -262,7 +262,8 @@ Mesh::Mesh(
 
   // Compute node local-to-global map from global indices, and compute
   // cell topology using new local indices
-  auto [point_index_map, node_indices_global, coordinate_nodes, points_received]
+  const auto [point_index_map, node_indices_global, coordinate_nodes,
+              points_received]
       = compute_point_distribution(comm, cells, points, type);
 
   _coordinate_dofs = std::make_unique<CoordinateDofs>(coordinate_nodes);
@@ -467,7 +468,7 @@ std::int32_t Mesh::create_entities(int dim) const
     return -1;
 
   // Create local entities
-  auto [cell_entity, entity_vertex, num_new_entities]
+  const auto [cell_entity, entity_vertex, num_new_entities]
       = TopologyComputation::compute_entities(_mpi_comm.comm(), *_topology,
                                               _cell_type, dim);
 
@@ -498,7 +499,7 @@ void Mesh::create_connectivity(int d0, int d1) const
 
   // Compute connectivity
   assert(_topology);
-  auto [c_d0_d1, c_d1_d0] = TopologyComputation::compute_connectivity(
+  const auto [c_d0_d1, c_d1_d0] = TopologyComputation::compute_connectivity(
       *_topology, _cell_type, d0, d1);
 
   // NOTE: that to compute the (d0, d1) connections is it sometimes
@@ -512,9 +513,9 @@ void Mesh::create_connectivity(int d0, int d1) const
   // Attach connectivities
   Mesh* mesh = const_cast<Mesh*>(this);
   if (c_d0_d1)
-      mesh->topology().set_connectivity(c_d0_d1, d0, d1);
+    mesh->topology().set_connectivity(c_d0_d1, d0, d1);
   if (c_d1_d0)
-      mesh->topology().set_connectivity(c_d1_d0, d1, d0);
+    mesh->topology().set_connectivity(c_d1_d0, d1, d0);
 }
 //-----------------------------------------------------------------------------
 void Mesh::create_connectivity_all() const

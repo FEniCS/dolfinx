@@ -379,7 +379,7 @@ mesh::Mesh PlazaRefinementND::refine(const mesh::Mesh& mesh, bool redistribute)
   }
 
   common::Timer t0("PLAZA: refine");
-  auto [long_edge, edge_ratio_ok] = face_long_edge(mesh);
+  const auto [long_edge, edge_ratio_ok] = face_long_edge(mesh);
 
   ParallelRefinement p_ref(mesh);
   p_ref.mark_all();
@@ -400,7 +400,7 @@ PlazaRefinementND::refine(const mesh::Mesh& mesh,
   }
 
   common::Timer t0("PLAZA: refine");
-  auto [long_edge, edge_ratio_ok] = face_long_edge(mesh);
+  const auto [long_edge, edge_ratio_ok] = face_long_edge(mesh);
 
   ParallelRefinement p_ref(mesh);
   p_ref.mark(refinement_marker);

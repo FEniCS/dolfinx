@@ -100,7 +100,7 @@ Function Function::sub(int i) const
 Function Function::collapse() const
 {
   // Create new collapsed FunctionSpace
-  auto [function_space_new, collapsed_map] = _function_space->collapse();
+  const auto [function_space_new, collapsed_map] = _function_space->collapse();
 
   // Create new vector
   assert(function_space_new);

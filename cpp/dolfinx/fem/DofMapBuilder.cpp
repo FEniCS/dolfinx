@@ -769,7 +769,7 @@ DofMapBuilder::build(const mesh::Mesh& mesh,
   // (b) owned and shared nodes (and owned and un-owned):
   //    -1: unowned, 0: owned and shared, 1: owned and not shared; and
   // (c) map from shared node to sharing processes.
-  auto [num_owned_nodes, node_ownership0, shared_node_to_processes0]
+  const auto [num_owned_nodes, node_ownership0, shared_node_to_processes0]
       = compute_ownership(node_graph0, shared_nodes, mesh, global_dimension);
 
   // Build re-ordering map for data locality. Owned dofs are re-ordred

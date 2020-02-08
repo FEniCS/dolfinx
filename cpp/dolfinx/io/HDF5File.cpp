@@ -1371,7 +1371,7 @@ mesh::Mesh HDF5File::read_mesh(const std::string data_path,
                                const mesh::GhostMode ghost_mode) const
 {
   // Read local mesh data
-  auto [cell_type, points, cells, global_cell_indices, cell_distribution]
+  const auto [cell_type, points, cells, global_cell_indices, cell_distribution]
       = read_mesh_data(data_path);
 
   if (use_partition_from_file)

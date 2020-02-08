@@ -419,7 +419,7 @@ void DistributedMeshTools::number_entities(const Mesh& mesh, int d)
   }
 
   // Number entities
-  auto [global_entity_indices, shared_entities, index_map]
+  const auto [global_entity_indices, shared_entities, index_map]
       = compute_entity_numbering(mesh, d);
 
   // Set IndexMap
