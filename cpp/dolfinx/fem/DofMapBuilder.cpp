@@ -68,41 +68,6 @@ struct DofMapStructure
   PetscInt* dofs(int cell) { return &data[cell_ptr[cell]]; }
 };
 //-----------------------------------------------------------------------------
-void get_cell_entities(
-    std::vector<std::vector<std::int32_t>>& entity_indices_local,
-    std::vector<std::vector<std::int64_t>>& entity_indices_global,
-    const mesh::MeshEntity& cell, const std::vector<bool>& needs_mesh_entities)
-{
-  const mesh::Topology& topology = cell.mesh().topology();
-  const int D = topology.dim();
-  assert(cell.dim() == D);
-  for (int d = 0; d < D; ++d)
-  {
-    if (needs_mesh_entities[d])
-    {
-      const std::vector<std::int64_t>& global_indices
-          = topology.global_indices(d);
-      assert(global_indices.size() > 0);
-
-      auto entities = cell.entities(d);
-      for (int i = 0; i < entities.rows(); ++i)
-      {
-        entity_indices_local[d][i] = entities[i];
-        entity_indices_global[d][i] = global_indices[entities[i]];
-      }
-    }
-  }
-
-  // Handle cell index separately because cell.entities(D) doesn't work.
-  if (needs_mesh_entities[D])
-  {
-    const std::vector<std::int64_t>& global_indices
-        = topology.global_indices(D);
-    entity_indices_global[D][0] = global_indices[cell.index()];
-    entity_indices_local[D][0] = cell.index();
-  }
-}
-//-----------------------------------------------------------------------------
 // Compute which process 'owns' each node (point at which dofs live).
 // Also computes map from shared node to sharing processes and a set of
 // process that share dofs on this process.
@@ -309,6 +274,12 @@ DofMapStructure build_basic_dofmap(const mesh::Mesh& mesh,
     }
   }
 
+  // Collect cell -> entity connectivities
+  std::vector<std::shared_ptr<const graph::AdjacencyList<std::int32_t>>>
+      connectivity;
+  for (int d = 0; d <= D; ++d)
+    connectivity.push_back(mesh.topology().connectivity(D, d));
+
   // Number of dofs on this process
   std::int32_t local_size(0), d(0);
   for (std::int32_t n : num_mesh_entities_local)
@@ -345,11 +316,34 @@ DofMapStructure build_basic_dofmap(const mesh::Mesh& mesh,
       permutations = fem::compute_dof_permutations(mesh, element_dof_layout);
 
   // Build dofmaps from ElementDofmap
-  for (auto& cell : mesh::MeshRange(mesh, D, mesh::MeshRangeType::ALL))
+  // for (auto& cell : mesh::MeshRange(mesh, D, mesh::MeshRangeType::ALL))
+  for (int c = 0; c < connectivity[0]->num_nodes(); ++c)
   {
     // Get local (process) and global cell entity indices
-    get_cell_entities(entity_indices_local, entity_indices_global, cell,
-                      needs_entities);
+    for (int d = 0; d < D; ++d)
+    {
+      if (needs_entities[d])
+      {
+        const std::vector<std::int64_t>& global_indices
+            = mesh.topology().global_indices(d);
+        assert(global_indices.size() > 0);
+        auto entities = connectivity[d]->edges(c);
+        for (int i = 0; i < entities.rows(); ++i)
+        {
+          entity_indices_local[d][i] = entities[i];
+          entity_indices_global[d][i] = global_indices[entities[i]];
+        }
+      }
+    }
+
+    // Handle cell index separately because cell.entities(D) doesn't work.
+    if (needs_entities[D])
+    {
+      const std::vector<std::int64_t>& global_indices
+          = mesh.topology().global_indices(D);
+      entity_indices_global[D][0] = global_indices[c];
+      entity_indices_local[D][0] = c;
+    }
 
     // Iterate over topological dimensions
     std::int32_t offset_local = 0;
@@ -379,8 +373,7 @@ DofMapStructure build_basic_dofmap(const mesh::Mesh& mesh,
           const std::int32_t count = std::distance(e_dofs->begin(), dof_local);
           const std::int32_t dof
               = offset_local + num_entity_dofs * e_index_local + count;
-          dofmap.dof(cell.index(), permutations(cell.index(), *dof_local))
-              = dof;
+          dofmap.dof(c, permutations(c, *dof_local)) = dof;
           dofmap.global_indices[dof]
               = offset_global + num_entity_dofs * e_index_global + count;
         }
