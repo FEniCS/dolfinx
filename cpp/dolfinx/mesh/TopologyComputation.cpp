@@ -287,26 +287,16 @@ std::vector<int> get_ghost_mapping(
 //-----------------------------------------------------------------------------
 std::tuple<std::shared_ptr<graph::AdjacencyList<std::int32_t>>,
            std::shared_ptr<graph::AdjacencyList<std::int32_t>>, std::int32_t>
-compute_entities_by_key_matching(MPI_Comm comm, const Topology& topology,
-                                 mesh::CellType cell_type, int dim)
+compute_entities_by_key_matching(
+    MPI_Comm comm, const graph::AdjacencyList<std::int32_t>& cells,
+    const std::map<std::int32_t, std::set<std::int32_t>>& shared_vertices,
+    const std::vector<std::int64_t>& global_vertex_indices,
+    mesh::CellType cell_type, int dim)
 {
   if (dim == 0)
   {
     throw std::runtime_error(
         "Cannot create vertices for topology. Should already exist.");
-  }
-
-  // Get mesh topology and connectivity
-  const int tdim = topology.dim();
-
-  // Check if entities have already been computed
-  if (topology.connectivity(dim, 0))
-  {
-    // Check that we have cell-entity connectivity
-    if (!topology.connectivity(tdim, dim))
-      throw std::runtime_error("Missing cell-entity connectivity");
-
-    return {nullptr, nullptr, -1};
   }
 
   // Start timer
@@ -322,9 +312,7 @@ compute_entities_by_key_matching(MPI_Comm comm, const Topology& topology,
   Eigen::Array<int, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor> e_vertices
       = mesh::get_entity_vertices(cell_type, dim);
 
-  auto cells = topology.connectivity(tdim, 0);
-  assert(cells);
-  const int num_cells = cells->num_nodes();
+  const int num_cells = cells.num_nodes();
 
   // List of vertices for each entity in each cell
   Eigen::Array<std::int32_t, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
@@ -333,7 +321,7 @@ compute_entities_by_key_matching(MPI_Comm comm, const Topology& topology,
   for (int c = 0; c < num_cells; ++c)
   {
     // Get vertices from cell
-    auto vertices = cells->edges(c);
+    auto vertices = cells.edges(c);
 
     // Iterate over entities of cell
     for (int i = 0; i < num_entities_per_cell; ++i)
@@ -376,9 +364,9 @@ compute_entities_by_key_matching(MPI_Comm comm, const Topology& topology,
 
   // Communicate with other processes to find out which entities are ghosted
   // and shared. Remap the numbering so that ghosts are at the end.
-  std::vector<int> mapping = get_ghost_mapping(
-      comm, topology.shared_entities(0), topology.global_indices(0),
-      entity_list, entity_index, entity_count);
+  std::vector<int> mapping
+      = get_ghost_mapping(comm, shared_vertices, global_vertex_indices,
+                          entity_list, entity_index, entity_count);
 
   // Do the actual remap
   for (std::int32_t& q : entity_index)
@@ -535,9 +523,15 @@ TopologyComputation::compute_entities(MPI_Comm comm, const Topology& topology,
     return {nullptr, nullptr, -1};
   }
 
+  const int tdim = topology.dim();
+  auto cells = topology.connectivity(tdim, 0);
+  if (!cells)
+    throw std::runtime_error("Cell connectivity missing.");
   std::tuple<std::shared_ptr<graph::AdjacencyList<std::int32_t>>,
              std::shared_ptr<graph::AdjacencyList<std::int32_t>>, std::int32_t>
-      data = compute_entities_by_key_matching(comm, topology, cell_type, dim);
+      data = compute_entities_by_key_matching(
+          comm, *cells, topology.shared_entities(0), topology.global_indices(0),
+          cell_type, dim);
 
   return data;
 }
