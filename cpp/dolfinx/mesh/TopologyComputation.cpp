@@ -23,6 +23,8 @@
 #include <utility>
 #include <vector>
 
+#include <iostream>
+
 using namespace dolfinx;
 using namespace dolfinx::mesh;
 
@@ -407,7 +409,9 @@ compute_entities_by_key_matching(MPI_Comm comm, const Topology& topology,
 //-----------------------------------------------------------------------------
 // Compute connectivity from transpose
 graph::AdjacencyList<std::int32_t>
-compute_from_transpose(const Topology& topology, int d0, int d1)
+compute_from_transpose(const graph::AdjacencyList<std::int32_t>& c_d1_d0,
+                       const int num_entities_d0, const int num_entities_d1,
+                       int d0, int d1)
 {
   // The transpose is computed in three steps:
   //
@@ -422,21 +426,12 @@ compute_from_transpose(const Topology& topology, int d0, int d1)
   LOG(INFO) << "Computing mesh connectivity " << d0 << " - " << d1
             << "from transpose.";
 
-  // Need connectivity d1 - d0
-  auto c_d1_d0 = topology.connectivity(d1, d0);
-  if (!c_d1_d0)
-    throw std::runtime_error("Missing required connectivity d1-d0.");
-
   // Compute number of connections for each e0
-  auto c_d0_0 = topology.connectivity(d0, 0);
-  assert(c_d0_0);
-  std::vector<std::int32_t> num_connections(c_d0_0->num_nodes(), 0);
+  std::vector<std::int32_t> num_connections(num_entities_d0, 0);
 
-  auto c_d1_0 = topology.connectivity(d1, 0);
-  assert(c_d1_0);
-  for (int e1 = 0; e1 < c_d1_0->num_nodes(); ++e1)
+  for (int e1 = 0; e1 < num_entities_d1; ++e1)
   {
-    auto e = c_d1_d0->edges(e1);
+    auto e = c_d1_d0.edges(e1);
     for (int i = 0; i < e.rows(); ++i)
       num_connections[e[i]]++;
   }
@@ -449,9 +444,9 @@ compute_from_transpose(const Topology& topology, int d0, int d1)
   std::vector<std::int32_t> counter(num_connections.size(), 0);
   std::vector<std::int32_t> connections(offsets.back());
 
-  for (int e1 = 0; e1 < c_d1_0->num_nodes(); ++e1)
+  for (int e1 = 0; e1 < num_entities_d1; ++e1)
   {
-    auto e = c_d1_d0->edges(e1);
+    auto e = c_d1_d0.edges(e1);
     for (int e0 = 0; e0 < e.rows(); ++e0)
       connections[offsets[e[e0]] + counter[e[e0]]++] = e1;
   }
@@ -460,36 +455,32 @@ compute_from_transpose(const Topology& topology, int d0, int d1)
 }
 //-----------------------------------------------------------------------------
 // Direct lookup of entity from vertices in a map
-graph::AdjacencyList<std::int32_t> compute_from_map(const Topology& topology,
-                                                    CellType cell_type_d0,
-                                                    int d0, int d1)
+graph::AdjacencyList<std::int32_t>
+compute_from_map(const graph::AdjacencyList<std::int32_t>& c_d0_0,
+                 const graph::AdjacencyList<std::int32_t>& c_d1_0,
+                 CellType cell_type_d0, int d0, int d1)
 {
   assert(d1 > 0);
   assert(d0 > d1);
 
-  auto c_d1_0 = topology.connectivity(d1, 0);
-  assert(c_d1_0);
-
   // Make a map from the sorted d1 entity vertices to the d1 entity
   // index
   boost::unordered_map<std::vector<std::int32_t>, std::int32_t> entity_to_index;
-  entity_to_index.reserve(c_d1_0->num_nodes());
+  entity_to_index.reserve(c_d1_0.num_nodes());
 
   const std::size_t num_verts_d1
       = mesh::num_cell_vertices(mesh::cell_entity_type(cell_type_d0, d1));
 
   std::vector<std::int32_t> key(num_verts_d1);
-  for (int e = 0; e < c_d1_0->num_nodes(); ++e)
+  for (int e = 0; e < c_d1_0.num_nodes(); ++e)
   {
-    const std::int32_t* v = c_d1_0->edges_ptr(e);
+    const std::int32_t* v = c_d1_0.edges_ptr(e);
     std::partial_sort_copy(v, v + num_verts_d1, key.begin(), key.end());
     entity_to_index.insert({key, e});
   }
 
-  auto c_d0_0 = topology.connectivity(d0, 0);
-  assert(c_d0_0);
   Eigen::Array<std::int32_t, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
-      connections(c_d0_0->num_nodes(),
+      connections(c_d0_0.num_nodes(),
                   mesh::cell_num_entities(cell_type_d0, d1));
 
   // Search for d1 entities of d0 in map, and recover index
@@ -498,10 +489,10 @@ graph::AdjacencyList<std::int32_t> compute_from_map(const Topology& topology,
       e_vertices_ref = mesh::get_entity_vertices(cell_type_d0, d1);
   Eigen::Array<int, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor> keys
       = e_vertices_ref;
-  for (int e = 0; e < c_d0_0->num_nodes(); ++e)
+  for (int e = 0; e < c_d0_0.num_nodes(); ++e)
   {
     entities.clear();
-    auto e0 = c_d0_0->edges(e);
+    auto e0 = c_d0_0.edges(e);
     for (Eigen::Index i = 0; i < e_vertices_ref.rows(); ++i)
       for (Eigen::Index j = 0; j < e_vertices_ref.cols(); ++j)
         keys(i, j) = e0[e_vertices_ref(i, j)];
@@ -554,9 +545,10 @@ TopologyComputation::compute_entities(MPI_Comm comm, const Topology& topology,
   return data;
 }
 //-----------------------------------------------------------------------------
-void TopologyComputation::compute_connectivity(Topology& topology,
-                                               CellType cell_type, int d0,
-                                               int d1)
+std::map<std::array<int, 2>,
+         std::shared_ptr<graph::AdjacencyList<std::int32_t>>>
+TopologyComputation::compute_connectivity(const Topology& topology,
+                                          CellType cell_type, int d0, int d1)
 {
   // This is where all the logic takes place to find a strategy for
   // the connectivity computation. For any given pair (d0, d1), the
@@ -571,15 +563,34 @@ void TopologyComputation::compute_connectivity(Topology& topology,
 
   LOG(INFO) << "Requesting connectivity " << d0 << " - " << d1;
 
+  // Map for newly computed connectivity
+  std::map<std::array<int, 2>,
+           std::shared_ptr<graph::AdjacencyList<std::int32_t>>>
+      c;
+
   // Return if connectivity has already been computed
   if (topology.connectivity(d0, d1))
-    return;
+  {
+    c.insert({{d0, d1}, nullptr});
+    return c;
+  }
 
-  // Make sure entities exist
-  if (d0 > 0)
-    assert(topology.connectivity(d0, 0));
-  if (d1 > 0)
-    assert(topology.connectivity(d1, 0));
+  // Get entities exist
+  std::shared_ptr<const graph::AdjacencyList<std::int32_t>> c_d0_0
+      = topology.connectivity(d0, 0);
+  if (d0 > 0 and !topology.connectivity(d0, 0))
+  {
+    std::runtime_error("Missing entities of dimension " + std::to_string(d0)
+                       + ".");
+  }
+
+  std::shared_ptr<const graph::AdjacencyList<std::int32_t>> c_d1_0
+      = topology.connectivity(d1, 0);
+  if (d1 > 0 and !topology.connectivity(d1, 0))
+  {
+    std::runtime_error("Missing entities of dimension " + std::to_string(d1)
+                       + ".");
+  }
 
   // Start timer
   common::Timer timer("Compute connectivity " + std::to_string(d0) + "-"
@@ -588,37 +599,48 @@ void TopologyComputation::compute_connectivity(Topology& topology,
   // Decide how to compute the connectivity
   if (d0 == d1)
   {
-    // For d0==d1, use identity connectivity
-    auto c_d0_0 = topology.connectivity(d0, 0);
-    assert(c_d0_0);
-
-    std::vector<std::vector<std::size_t>> connectivity_dd(
-        c_d0_0->num_nodes(), std::vector<std::size_t>(1));
+    std::vector<std::vector<std::size_t>> c_dd(c_d0_0->num_nodes(),
+                                               std::vector<std::size_t>(1));
     for (int e = 0; e < c_d0_0->num_nodes(); ++e)
-      connectivity_dd[e][0] = e;
-
-    auto connectivity
-        = std::make_shared<graph::AdjacencyList<std::int32_t>>(connectivity_dd);
-    topology.set_connectivity(connectivity, d0, d1);
+      c_dd[e][0] = e;
+    auto c_d0_d0 = std::make_shared<graph::AdjacencyList<std::int32_t>>(c_dd);
+    c.insert({{d0, d1}, c_d0_d0});
   }
   else if (d0 < d1)
   {
-    // Compute connectivity d1 - d0 and take transpose
-    compute_connectivity(topology, cell_type, d1, d0);
-    auto c = std::make_shared<graph::AdjacencyList<std::int32_t>>(
-        compute_from_transpose(topology, d0, d1));
-    topology.set_connectivity(c, d0, d1);
+    // Compute connectivity d1 - d0 (if needed), and take transpose
+    if (!topology.connectivity(d1, d0))
+    {
+      auto c_d1_d0 = std::make_shared<graph::AdjacencyList<std::int32_t>>(
+          compute_from_map(*c_d1_0, *c_d0_0,
+                           mesh::cell_entity_type(cell_type, d1), d1, d0));
+      auto c_d0_d1 = std::make_shared<graph::AdjacencyList<std::int32_t>>(
+          compute_from_transpose(*c_d1_d0, c_d0_0->num_nodes(),
+                                 c_d1_0->num_nodes(), d0, d1));
+      c.insert({{d1, d0}, c_d1_d0});
+      c.insert({{d0, d1}, c_d0_d1});
+    }
+    else
+    {
+      auto c_d0_d1 = std::make_shared<graph::AdjacencyList<std::int32_t>>(
+          compute_from_transpose(*topology.connectivity(d1, d0),
+                                 c_d0_0->num_nodes(), c_d1_0->num_nodes(), d0,
+                                 d1));
+      c.insert({{d0, d1}, c_d0_d1});
+    }
   }
   else if (d0 > d1)
   {
     // Compute by mapping vertices from a lower dimension entity to
     // those of a higher dimension entity
-    auto c
+    auto c_d0_d1
         = std::make_shared<graph::AdjacencyList<std::int32_t>>(compute_from_map(
-            topology, mesh::cell_entity_type(cell_type, d0), d0, d1));
-    topology.set_connectivity(c, d0, d1);
+            *c_d0_0, *c_d1_0, mesh::cell_entity_type(cell_type, d0), d0, d1));
+    c.insert({{d0, d1}, c_d0_d1});
   }
   else
     throw std::runtime_error("Entity dimension error when computing topology.");
+
+  return c;
 }
 //--------------------------------------------------------------------------

@@ -497,9 +497,25 @@ void Mesh::create_connectivity(int d0, int d1) const
   create_entities(d1);
 
   // Compute connectivity
+  assert(_topology);
+  auto connections = TopologyComputation::compute_connectivity(
+      *_topology, _cell_type, d0, d1);
+
+  // NOTE: that to compute the (d0, d1) connections, other connections
+  // may also be computed. We store these for later use, but there is a
+  // memory overhead if they are not required. It may be better to not
+  // automatically store connectivity that was not requested, but advise
+  // in a docstring the most efficient order in which to call this
+  // function if several connectivities are needed.
+
+  // Attach connectivities
   Mesh* mesh = const_cast<Mesh*>(this);
-  TopologyComputation::compute_connectivity(mesh->topology(), mesh->cell_type(),
-                                            d0, d1);
+  for (auto c : connections)
+  {
+    const std::array<int, 2> d = c.first;
+    if (c.second)
+      mesh->topology().set_connectivity(c.second, d[0], d[1]);
+  }
 }
 //-----------------------------------------------------------------------------
 void Mesh::create_connectivity_all() const
