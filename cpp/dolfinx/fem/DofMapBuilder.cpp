@@ -53,19 +53,21 @@ struct DofMapStructure
   std::vector<std::int32_t> cell_ptr;
   std::vector<std::int64_t> global_indices;
 
+  std::vector<std::pair<std::int8_t, std::int32_t>> dof_entity;
+
   std::int32_t num_cells() const { return cell_ptr.size() - 1; }
   std::int32_t num_dofs(std::int32_t cell) const
   {
     return cell_ptr[cell + 1] - cell_ptr[cell];
   }
-  const PetscInt& dof(int cell, int i) const
+  const std::int32_t& dof(int cell, int i) const
   {
     return data[cell_ptr[cell] + i];
   }
-  PetscInt& dof(int cell, int i) { return data[cell_ptr[cell] + i]; }
+  std::int32_t& dof(int cell, int i) { return data[cell_ptr[cell] + i]; }
 
-  const PetscInt* dofs(int cell) const { return &data[cell_ptr[cell]]; }
-  PetscInt* dofs(int cell) { return &data[cell_ptr[cell]]; }
+  const std::int32_t* dofs(int cell) const { return &data[cell_ptr[cell]]; }
+  std::int32_t* dofs(int cell) { return &data[cell_ptr[cell]]; }
 };
 //-----------------------------------------------------------------------------
 // Compute which process 'owns' each node (point at which dofs live).
@@ -297,6 +299,9 @@ DofMapStructure build_basic_dofmap(const mesh::Mesh& mesh,
   std::partial_sum(dofmap.cell_ptr.begin() + 1, dofmap.cell_ptr.end(),
                    dofmap.cell_ptr.begin() + 1);
 
+  // Dof (dim, entity index) marker
+  dofmap.dof_entity.resize(local_size);
+
   // Allocate entity indices array
   std::vector<std::vector<int32_t>> entity_indices_local(D + 1);
   std::vector<std::vector<int64_t>> entity_indices_global(D + 1);
@@ -345,13 +350,13 @@ DofMapStructure build_basic_dofmap(const mesh::Mesh& mesh,
       entity_indices_local[D][0] = c;
     }
 
-    // Iterate over topological dimensions
+    // Iterate over each topological dimension of cell
     std::int32_t offset_local = 0;
     std::int64_t offset_global = 0;
     for (auto e_dofs_d = entity_dofs.begin(); e_dofs_d != entity_dofs.end();
          ++e_dofs_d)
     {
-      const std::int32_t d = std::distance(entity_dofs.begin(), e_dofs_d);
+      const std::int8_t d = std::distance(entity_dofs.begin(), e_dofs_d);
 
       // Iterate over each entity of current dimension d
       for (auto e_dofs = e_dofs_d->begin(); e_dofs != e_dofs_d->end(); ++e_dofs)
@@ -376,6 +381,7 @@ DofMapStructure build_basic_dofmap(const mesh::Mesh& mesh,
           dofmap.dof(c, permutations(c, *dof_local)) = dof;
           dofmap.global_indices[dof]
               = offset_global + num_entity_dofs * e_index_global + count;
+          dofmap.dof_entity[dof] = {d, e_index_local};
         }
       }
       offset_local += entity_dofs[d][0].size() * num_mesh_entities_local[d];
@@ -661,6 +667,109 @@ Eigen::Array<std::int64_t, Eigen::Dynamic, 1> compute_global_indices(
   return local_to_global_unowned;
 }
 //-----------------------------------------------------------------------------
+// Compute re-ordering map of indices
+std::vector<std::int32_t>
+compute_reordering_map_new(const DofMapStructure& dofmap,
+                           const mesh::Topology& topology)
+{
+  // Get ownership offset for each dimension
+  const int D = topology.dim();
+  std::vector<std::int32_t> offset(D + 1, -1);
+  for (std::size_t d = 0; d < offset.size(); ++d)
+  {
+    auto map = topology.index_map(d);
+    if (map)
+      offset[d] = map->size_local();
+  }
+
+  // Count locally owned dofs
+  std::vector<bool> owned(dofmap.dof_entity.size(), false);
+  for (auto e = dofmap.dof_entity.begin(); e != dofmap.dof_entity.end(); ++e)
+  {
+    if (e->second < offset[e->first])
+    {
+      const std::size_t i = std::distance(dofmap.dof_entity.begin(), e);
+      owned[i] = true;
+    }
+  }
+
+  // Create map from old index to new contiguous numbering for locally
+  // owned dofs. Set to -1 for unowned dofs.
+  std::vector<int> original_to_contiguous(dofmap.dof_entity.size(), -1);
+  std::int32_t owned_size = 0;
+  for (std::size_t i = 0; i < original_to_contiguous.size(); ++i)
+  {
+    if (owned[i])
+      original_to_contiguous[i] = owned_size++;
+  }
+
+  // Build local graph, based on dof map with contiguous numbering
+  // (unowned dofs excluded)
+  dolfinx::graph::Graph graph(owned_size);
+  std::vector<int> local_old;
+  for (std::int32_t cell = 0; cell < dofmap.num_cells(); ++cell)
+  {
+    // Loop over nodes collecting valid local nodes
+    local_old.clear();
+    const std::int32_t* nodes = dofmap.dofs(cell);
+    for (std::int32_t i = 0; i < dofmap.num_dofs(cell); ++i)
+    {
+      // Add to graph if node is owned
+      assert(nodes[i] < (int)original_to_contiguous.size());
+      const int n = original_to_contiguous[nodes[i]];
+      if (n != -1)
+      {
+        assert(n < (int)graph.size());
+        local_old.push_back(n);
+      }
+    }
+
+    for (std::size_t i = 0; i < local_old.size(); ++i)
+      for (std::size_t j = 0; j < local_old.size(); ++j)
+        if (i != j)
+          graph[local_old[i]].insert(local_old[j]);
+  }
+
+  // Reorder owned nodes
+  const std::string ordering_library = "SCOTCH";
+  std::vector<int> node_remap;
+  if (ordering_library == "Boost")
+    node_remap = graph::BoostGraphOrdering::compute_cuthill_mckee(graph, true);
+  else if (ordering_library == "SCOTCH")
+    std::tie(node_remap, std::ignore) = graph::SCOTCH::compute_gps(graph);
+  else if (ordering_library == "random")
+  {
+    // NOTE: Randomised dof ordering should only be used for
+    // testing/benchmarking
+    node_remap.resize(graph.size());
+    std::iota(node_remap.begin(), node_remap.end(), 0);
+    std::random_device rd;
+    std::default_random_engine g(rd());
+    std::shuffle(node_remap.begin(), node_remap.end(), g);
+  }
+  else
+  {
+    throw std::runtime_error("Requested library '" + ordering_library
+                             + "' is unknown");
+  }
+
+  // Reconstruct remaped nodes, and place un-owned nodes at the end
+  std::vector<int> old_to_new(dofmap.dof_entity.size(), -1);
+  std::int32_t unowned_pos = owned_size;
+  assert(old_to_new.size() == original_to_contiguous.size());
+  for (std::size_t i = 0; i < original_to_contiguous.size(); ++i)
+  {
+    // Put nodes that are not owned at the end, otherwise re-number
+    const std::int32_t index = original_to_contiguous[i];
+    if (index >= 0)
+      old_to_new[i] = node_remap[index];
+    else
+      old_to_new[i] = unowned_pos++;
+  }
+
+  return old_to_new;
+}
+//-----------------------------------------------------------------------------
 
 } // namespace
 
@@ -747,6 +856,13 @@ DofMapBuilder::build(const mesh::Mesh& mesh,
       global_dimension += n * element_dof_layout.num_entity_dofs(d);
     }
   }
+
+  // Build re-ordering map for data locality. Owned dofs are re-ordred
+  // via an ordering algorithm and placed at start, [0, ...,
+  // num_owned_nodes -1]. Unowned dofs are placed at end of the
+  // re-ordered list. [num_owned_nodes, ..., num_nodes -1].
+  const std::vector<std::int32_t> old_to_new_tmp
+      = compute_reordering_map_new(node_graph0, mesh.topology());
 
   // Mark shared and non-shared nodes. Boundary nodes are assigned a
   // random positive integer, interior nodes are marked as -1, interior
