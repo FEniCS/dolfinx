@@ -23,8 +23,6 @@
 #include <utility>
 #include <vector>
 
-#include <iostream>
-
 using namespace dolfinx;
 using namespace dolfinx::mesh;
 
@@ -545,8 +543,7 @@ TopologyComputation::compute_entities(MPI_Comm comm, const Topology& topology,
   return data;
 }
 //-----------------------------------------------------------------------------
-std::map<std::array<int, 2>,
-         std::shared_ptr<graph::AdjacencyList<std::int32_t>>>
+std::array<std::shared_ptr<graph::AdjacencyList<std::int32_t>>, 2>
 TopologyComputation::compute_connectivity(const Topology& topology,
                                           CellType cell_type, int d0, int d1)
 {
@@ -563,17 +560,9 @@ TopologyComputation::compute_connectivity(const Topology& topology,
 
   LOG(INFO) << "Requesting connectivity " << d0 << " - " << d1;
 
-  // Map for newly computed connectivity
-  std::map<std::array<int, 2>,
-           std::shared_ptr<graph::AdjacencyList<std::int32_t>>>
-      c;
-
   // Return if connectivity has already been computed
   if (topology.connectivity(d0, d1))
-  {
-    c.insert({{d0, d1}, nullptr});
-    return c;
-  }
+    return {nullptr, nullptr};
 
   // Get entities exist
   std::shared_ptr<const graph::AdjacencyList<std::int32_t>> c_d0_0
@@ -599,12 +588,9 @@ TopologyComputation::compute_connectivity(const Topology& topology,
   // Decide how to compute the connectivity
   if (d0 == d1)
   {
-    std::vector<std::vector<std::size_t>> c_dd(c_d0_0->num_nodes(),
-                                               std::vector<std::size_t>(1));
-    for (int e = 0; e < c_d0_0->num_nodes(); ++e)
-      c_dd[e][0] = e;
-    auto c_d0_d0 = std::make_shared<graph::AdjacencyList<std::int32_t>>(c_dd);
-    c.insert({{d0, d1}, c_d0_d0});
+    auto c_d0_d0 = std::make_shared<graph::AdjacencyList<std::int32_t>>(
+        c_d0_0->num_nodes());
+    return {c_d0_d0, nullptr};
   }
   else if (d0 < d1)
   {
@@ -617,8 +603,7 @@ TopologyComputation::compute_connectivity(const Topology& topology,
       auto c_d0_d1 = std::make_shared<graph::AdjacencyList<std::int32_t>>(
           compute_from_transpose(*c_d1_d0, c_d0_0->num_nodes(),
                                  c_d1_0->num_nodes(), d0, d1));
-      c.insert({{d1, d0}, c_d1_d0});
-      c.insert({{d0, d1}, c_d0_d1});
+      return {c_d0_d1, c_d1_d0};
     }
     else
     {
@@ -626,7 +611,7 @@ TopologyComputation::compute_connectivity(const Topology& topology,
           compute_from_transpose(*topology.connectivity(d1, d0),
                                  c_d0_0->num_nodes(), c_d1_0->num_nodes(), d0,
                                  d1));
-      c.insert({{d0, d1}, c_d0_d1});
+      return {c_d0_d1, nullptr};
     }
   }
   else if (d0 > d1)
@@ -636,11 +621,9 @@ TopologyComputation::compute_connectivity(const Topology& topology,
     auto c_d0_d1
         = std::make_shared<graph::AdjacencyList<std::int32_t>>(compute_from_map(
             *c_d0_0, *c_d1_0, mesh::cell_entity_type(cell_type, d0), d0, d1));
-    c.insert({{d0, d1}, c_d0_d1});
+    return {c_d0_d1, nullptr};
   }
   else
     throw std::runtime_error("Entity dimension error when computing topology.");
-
-  return c;
 }
 //--------------------------------------------------------------------------

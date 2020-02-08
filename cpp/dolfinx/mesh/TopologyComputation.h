@@ -7,6 +7,7 @@
 #pragma once
 
 #include "cell_types.h"
+#include <array>
 #include <cstdint>
 #include <dolfinx/common/MPI.h>
 #include <memory>
@@ -46,10 +47,18 @@ public:
   compute_entities(MPI_Comm comm, const Topology& topology,
                    mesh::CellType cell_type, int dim);
 
-  /// Compute connectivity (d0, d1) for given pair of topological
+  /// Compute connectivity (d0 -> d1) for given pair of topological
   /// dimensions
-  static std::map<std::array<int, 2>,
-                  std::shared_ptr<graph::AdjacencyList<std::int32_t>>>
+  /// @param [in] topology The topology
+  /// @param [in] cell_type The cell type
+  /// @param [in] d0 The dimension of the nodes in the adjacency list
+  /// @param [in] d1 The dimension of the edges in the adjacency list
+  /// @returns The connectivities [(d0, d1), (d1, d0)] if they are
+  ///   computed. If (d0, d1) already exists then a nullptr is returned.
+  ///   If (d0, d1) is computed and the computation of (d1, d0) was
+  ///   required as part of computing (d0, d1), the (d1, d0) is returned
+  ///   as the second entry. The second entry is otherwise nullptr.
+  static std::array<std::shared_ptr<graph::AdjacencyList<std::int32_t>>, 2>
   compute_connectivity(const Topology& topology, CellType cell_type, int d0,
                        int d1);
 };

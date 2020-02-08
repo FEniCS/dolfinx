@@ -498,24 +498,23 @@ void Mesh::create_connectivity(int d0, int d1) const
 
   // Compute connectivity
   assert(_topology);
-  auto connections = TopologyComputation::compute_connectivity(
+  auto [c_d0_d1, c_d1_d0] = TopologyComputation::compute_connectivity(
       *_topology, _cell_type, d0, d1);
 
-  // NOTE: that to compute the (d0, d1) connections, other connections
-  // may also be computed. We store these for later use, but there is a
-  // memory overhead if they are not required. It may be better to not
-  // automatically store connectivity that was not requested, but advise
-  // in a docstring the most efficient order in which to call this
-  // function if several connectivities are needed.
+  // NOTE: that to compute the (d0, d1) connections is it sometimes
+  // necessary to compute the (d1, d0) connections. We store the (d1,
+  // d0) for possible later use, but there is a memory overhead if they
+  // are not required. It may be better to not automatically store
+  // connectivity that was not requested, but advise in a docstring the
+  // most efficient order in which to call this function if several
+  // connectivities are needed.
 
   // Attach connectivities
   Mesh* mesh = const_cast<Mesh*>(this);
-  for (auto c : connections)
-  {
-    const std::array<int, 2> d = c.first;
-    if (c.second)
-      mesh->topology().set_connectivity(c.second, d[0], d[1]);
-  }
+  if (c_d0_d1)
+      mesh->topology().set_connectivity(c_d0_d1, d0, d1);
+  if (c_d1_d0)
+      mesh->topology().set_connectivity(c_d1_d0, d1, d0);
 }
 //-----------------------------------------------------------------------------
 void Mesh::create_connectivity_all() const
