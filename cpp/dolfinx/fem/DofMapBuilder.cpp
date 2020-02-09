@@ -33,21 +33,25 @@ namespace
 
 /// Build a simple dofmap from ElementDofmap based on mesh entity
 /// indices (local and global)
+/// @todo Remove mesh argument
 /// @param [in] mesh The mesh to build the dofmap on
+/// @param [in] topology The mesh topology
+/// @param [in] cell_type The mesh cell type
 /// @param [in] element_dof_layout The layout of dofs on a cell
 /// @return Returns {dofmap (local to the process), local-to-global map
 ///   to get the global index of local dof i, dof indices, vector of
 ///   {dimension, mesh entity index} for each local dof i}
 std::tuple<graph::AdjacencyList<std::int32_t>, std::vector<std::int64_t>,
            std::vector<std::pair<std::int8_t, std::int32_t>>>
-build_basic_dofmap(const mesh::Mesh& mesh,
+build_basic_dofmap(const mesh::Mesh& mesh, const mesh::Topology& topology,
+                   const mesh::CellType cell_type,
                    const ElementDofLayout& element_dof_layout)
 {
   // Start timer for dofmap initialization
   common::Timer t0("Init dofmap from element dofmap");
 
   // Topological dimension
-  const int D = mesh.topology().dim();
+  const int D = topology.dim();
 
   // Generate and number required mesh entities
   std::vector<bool> needs_entities(D + 1, false);
@@ -57,10 +61,16 @@ build_basic_dofmap(const mesh::Mesh& mesh,
   {
     if (element_dof_layout.num_entity_dofs(d) > 0)
     {
+      if (!topology.connectivity(d, 0))
+      {
+        std::runtime_error(
+            "Cannot create basic dofmap. Missing entities of dimension "
+            + std::to_string(d) + " .");
+      }
       needs_entities[d] = true;
-      mesh.create_entities(d);
-      num_mesh_entities_local[d] = mesh.num_entities(d);
-      num_mesh_entities_global[d] = mesh.num_entities_global(d);
+      num_mesh_entities_local[d] = topology.connectivity(d, 0)->num_nodes();
+      assert(topology.index_map(d));
+      num_mesh_entities_global[d] = topology.index_map(d)->size_global();
     }
   }
 
@@ -68,7 +78,7 @@ build_basic_dofmap(const mesh::Mesh& mesh,
   std::vector<std::shared_ptr<const graph::AdjacencyList<std::int32_t>>>
       connectivity;
   for (int d = 0; d <= D; ++d)
-    connectivity.push_back(mesh.topology().connectivity(D, d));
+    connectivity.push_back(topology.connectivity(D, d));
 
   // Number of dofs on this process
   std::int32_t local_size(0), d(0);
@@ -79,9 +89,9 @@ build_basic_dofmap(const mesh::Mesh& mesh,
   const int local_dim = element_dof_layout.num_dofs();
 
   // Allocate dofmap memory
-  // DofMapStructure dofmap;
-  std::vector<PetscInt> dofs(mesh.num_entities(D) * local_dim);
-  std::vector<std::int32_t> cell_ptr(mesh.num_entities(D) + 1, local_dim);
+  const int num_cells = topology.connectivity(D, 0)->num_nodes();
+  std::vector<PetscInt> dofs(num_cells * local_dim);
+  std::vector<std::int32_t> cell_ptr(num_cells + 1, local_dim);
   cell_ptr[0] = 0;
   std::partial_sum(cell_ptr.begin() + 1, cell_ptr.end(), cell_ptr.begin() + 1);
 
@@ -90,7 +100,7 @@ build_basic_dofmap(const mesh::Mesh& mesh,
   std::vector<std::vector<int64_t>> entity_indices_global(D + 1);
   for (int d = 0; d <= D; ++d)
   {
-    const int num_entities = mesh::cell_num_entities(mesh.cell_type(), d);
+    const int num_entities = mesh::cell_num_entities(cell_type, d);
     entity_indices_local[d].resize(num_entities);
     entity_indices_global[d].resize(num_entities);
   }
@@ -118,7 +128,7 @@ build_basic_dofmap(const mesh::Mesh& mesh,
       if (needs_entities[d])
       {
         const std::vector<std::int64_t>& global_indices
-            = mesh.topology().global_indices(d);
+            = topology.global_indices(d);
         assert(global_indices.size() > 0);
         auto entities = connectivity[d]->edges(c);
         for (int i = 0; i < entities.rows(); ++i)
@@ -133,7 +143,7 @@ build_basic_dofmap(const mesh::Mesh& mesh,
     if (needs_entities[D])
     {
       const std::vector<std::int64_t>& global_indices
-          = mesh.topology().global_indices(D);
+          = topology.global_indices(D);
       entity_indices_global[D][0] = global_indices[c];
       entity_indices_local[D][0] = c;
     }
@@ -489,12 +499,19 @@ DofMapBuilder::build(const mesh::Mesh& mesh,
 
   const int D = mesh.topology().dim();
 
+  // Create required mesh entities
+  for (int d = 0; d <= D; ++d)
+  {
+    if (element_dof_layout.num_entity_dofs(d) > 0)
+      mesh.create_entities(d);
+  }
+
   // Build a simple dofmap based on mesh entity numbering, returning (i)
   // a local dofmap, (ii) local-to-global map for dof indices, and (iii)
   // pair {dimension, mesh entity index} giving the mesh entity that dof
   // i is associated with.
-  const auto [node_graph0, local_to_global0, dof_entity0]
-      = build_basic_dofmap(mesh, element_dof_layout);
+  const auto [node_graph0, local_to_global0, dof_entity0] = build_basic_dofmap(
+      mesh, mesh.topology(), mesh.cell_type(), element_dof_layout);
 
   // Compute global dofmap dimension
   std::int64_t global_dimension = 0;
