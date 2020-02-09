@@ -12,6 +12,7 @@
 #include <dolfinx/common/MPI.h>
 #include <dolfinx/common/Timer.h>
 #include <dolfinx/common/utils.h>
+#include <dolfinx/graph/AdjacencyList.h>
 #include <dolfinx/graph/BoostGraphOrdering.h>
 #include <dolfinx/graph/GraphBuilder.h>
 #include <dolfinx/graph/SCOTCH.h>
@@ -51,7 +52,7 @@ struct DofMapStructure
 };
 //-----------------------------------------------------------------------------
 // Build a simple dofmap from ElementDofmap based on mesh entity indices
-std::tuple<DofMapStructure, std::vector<std::int64_t>,
+std::tuple<graph::AdjacencyList<std::int32_t>, std::vector<std::int64_t>,
            std::vector<std::pair<std::int8_t, std::int32_t>>>
 build_basic_dofmap(const mesh::Mesh& mesh,
                    const ElementDofLayout& element_dof_layout)
@@ -191,7 +192,8 @@ build_basic_dofmap(const mesh::Mesh& mesh,
     }
   }
 
-  return {dofmap, local_to_global, dof_entity};
+  return {graph::AdjacencyList<std::int32_t>(dofmap.data, dofmap.cell_ptr),
+          local_to_global, dof_entity};
 }
 //-----------------------------------------------------------------------------
 
@@ -206,7 +208,7 @@ build_basic_dofmap(const mesh::Mesh& mesh,
 /// @return The pair (old-to-new local index map, M), where M is the
 ///   number of dofs owned by this process
 std::pair<std::vector<std::int32_t>, std::int32_t> compute_reordering_map(
-    const DofMapStructure& dofmap,
+    const graph::AdjacencyList<std::int32_t>& dofmap,
     const std::vector<std::pair<std::int8_t, std::int32_t>>& dof_entity,
     const mesh::Topology& topology)
 {
@@ -245,12 +247,12 @@ std::pair<std::vector<std::int32_t>, std::int32_t> compute_reordering_map(
   // (unowned dofs excluded)
   dolfinx::graph::Graph graph(owned_size);
   std::vector<int> local_old;
-  for (std::int32_t cell = 0; cell < dofmap.num_cells(); ++cell)
+  for (std::int32_t cell = 0; cell < dofmap.num_nodes(); ++cell)
   {
     // Loop over nodes collecting valid local nodes
     local_old.clear();
-    const std::int32_t* nodes = dofmap.dofs(cell);
-    for (std::int32_t i = 0; i < dofmap.num_dofs(cell); ++i)
+    auto nodes = dofmap.edges(cell);
+    for (std::int32_t i = 0; i < nodes.rows(); ++i)
     {
       // Add to graph if node is owned
       assert(nodes[i] < (int)original_to_contiguous.size());
@@ -539,14 +541,15 @@ DofMapBuilder::build(const mesh::Mesh& mesh,
   // FIXME: There is an assumption here on the dof order for an element.
   //        It should come from the ElementDofLayout.
   // Build re-ordered dofmap, accounting for block size
-  Eigen::Array<PetscInt, Eigen::Dynamic, 1> dofmap(node_graph0.data.size()
+  Eigen::Array<PetscInt, Eigen::Dynamic, 1> dofmap(node_graph0.array().rows()
                                                    * block_size);
-  for (std::int32_t cell = 0; cell < node_graph0.num_cells(); ++cell)
+  for (std::int32_t cell = 0; cell < node_graph0.num_nodes(); ++cell)
   {
-    const std::int32_t local_dim0 = node_graph0.num_dofs(cell);
+    const std::int32_t local_dim0 = node_graph0.num_edges(cell);
+    auto old_nodes = node_graph0.edges(cell);
     for (std::int32_t j = 0; j < local_dim0; ++j)
     {
-      const std::int32_t old_node = node_graph0.dof(cell, j);
+      const std::int32_t old_node = old_nodes[j];
       const std::int32_t new_node = old_to_new[old_node];
       for (std::int32_t block = 0; block < block_size; ++block)
       {
