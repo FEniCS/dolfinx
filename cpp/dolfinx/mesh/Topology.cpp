@@ -50,31 +50,6 @@ const std::vector<std::int64_t>& Topology::global_indices(int d) const
   return _global_indices[d];
 }
 //-----------------------------------------------------------------------------
-// std::int32_t Topology::create_entities(int dim) const
-// {
-//   // Skip if already computed (vertices (dim=0) should always exist)
-//   if (connectivity(dim, 0))
-//     return -1;
-
-//   // Create local entities
-//   const auto [cell_entity, entity_vertex, num_new_entities]
-//       = TopologyComputation::compute_entities(_mpi_comm.comm(), *this,
-//                                               _cell_type, dim);
-
-//   Topology* topology = const_cast<Topology*>(this);
-
-//   if (cell_entity)
-//     set_connectivity(cell_entity, this->dim(), dim);
-//   if (entity_vertex)
-//     set_connectivity(entity_vertex, dim, 0);
-
-//   // Number globally
-//   DistributedMeshTools::number_entities(*mesh, dim);
-
-//   return num_new_entities;
-
-// }
-//-----------------------------------------------------------------------------
 void Topology::set_shared_entities(
     int dim, const std::map<std::int32_t, std::set<std::int32_t>>& entities)
 {

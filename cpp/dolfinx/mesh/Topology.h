@@ -82,12 +82,6 @@ public:
   /// dimension d
   const std::vector<std::int64_t>& global_indices(int d) const;
 
-  /// Create entities of given topological dimension.
-  /// @param[in] dim Topological dimension
-  /// @return Number of newly created entities, returns -1 if entities
-  ///   already existed
-  // std::int32_t create_entities(int dim) const;
-
   /// Set the map from shared entities (local index) to processes that
   /// share the entity
   void set_shared_entities(

@@ -472,7 +472,7 @@ std::int32_t Mesh::create_entities(int dim) const
       = TopologyComputation::compute_entities(_mpi_comm.comm(), *_topology,
                                               _cell_type, dim);
 
-  Mesh* mesh = const_cast<Mesh*>(this);
+  // Mesh* mesh = const_cast<Mesh*>(this);
 
   if (cell_entity)
     _topology->set_connectivity(cell_entity, _topology->dim(), dim);
@@ -480,7 +480,8 @@ std::int32_t Mesh::create_entities(int dim) const
     _topology->set_connectivity(entity_vertex, dim, 0);
 
   // Number globally
-  DistributedMeshTools::number_entities(*mesh, dim);
+  DistributedMeshTools::number_entities(this->mpi_comm(), *_topology,
+                                        _cell_type, dim);
 
   return num_new_entities;
 }
