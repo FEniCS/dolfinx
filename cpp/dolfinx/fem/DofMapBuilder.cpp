@@ -34,10 +34,6 @@ struct DofMapStructure
 {
   std::vector<PetscInt> data;
   std::vector<std::int32_t> cell_ptr;
-  std::vector<std::int64_t> global_indices;
-
-  // entity dim, local mesh entity index
-  std::vector<std::pair<std::int8_t, std::int32_t>> dof_entity;
 
   std::int32_t num_cells() const { return cell_ptr.size() - 1; }
   std::int32_t num_dofs(std::int32_t cell) const
@@ -55,8 +51,10 @@ struct DofMapStructure
 };
 //-----------------------------------------------------------------------------
 // Build a simple dofmap from ElementDofmap based on mesh entity indices
-DofMapStructure build_basic_dofmap(const mesh::Mesh& mesh,
-                                   const ElementDofLayout& element_dof_layout)
+std::tuple<DofMapStructure, std::vector<std::int64_t>,
+           std::vector<std::pair<std::int8_t, std::int32_t>>>
+build_basic_dofmap(const mesh::Mesh& mesh,
+                   const ElementDofLayout& element_dof_layout)
 {
   // Start timer for dofmap initialization
   common::Timer t0("Init dofmap from element dofmap");
@@ -95,15 +93,11 @@ DofMapStructure build_basic_dofmap(const mesh::Mesh& mesh,
 
   // Allocate dofmap memory
   DofMapStructure dofmap;
-  dofmap.global_indices.resize(local_size);
   dofmap.data.resize(mesh.num_entities(D) * local_dim);
   dofmap.cell_ptr.resize(mesh.num_entities(D) + 1, local_dim);
   dofmap.cell_ptr[0] = 0;
   std::partial_sum(dofmap.cell_ptr.begin() + 1, dofmap.cell_ptr.end(),
                    dofmap.cell_ptr.begin() + 1);
-
-  // Dof (dim, entity index) marker
-  dofmap.dof_entity.resize(local_size);
 
   // Allocate entity indices array
   std::vector<std::vector<int32_t>> entity_indices_local(D + 1);
@@ -123,8 +117,13 @@ DofMapStructure build_basic_dofmap(const mesh::Mesh& mesh,
   const Eigen::Array<int, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
       permutations = fem::compute_dof_permutations(mesh, element_dof_layout);
 
+  // Storage for local-to-global map
+  std::vector<std::int64_t> local_to_global(local_size);
+
+  // Dof (dim, entity index) marker
+  std::vector<std::pair<std::int8_t, std::int32_t>> dof_entity(local_size);
+
   // Build dofmaps from ElementDofmap
-  // for (auto& cell : mesh::MeshRange(mesh, D, mesh::MeshRangeType::ALL))
   for (int c = 0; c < connectivity[0]->num_nodes(); ++c)
   {
     // Get local (process) and global cell entity indices
@@ -182,9 +181,9 @@ DofMapStructure build_basic_dofmap(const mesh::Mesh& mesh,
           const std::int32_t dof
               = offset_local + num_entity_dofs * e_index_local + count;
           dofmap.dof(c, permutations(c, *dof_local)) = dof;
-          dofmap.global_indices[dof]
+          local_to_global[dof]
               = offset_global + num_entity_dofs * e_index_global + count;
-          dofmap.dof_entity[dof] = {d, e_index_local};
+          dof_entity[dof] = {d, e_index_local};
         }
       }
       offset_local += entity_dofs[d][0].size() * num_mesh_entities_local[d];
@@ -192,7 +191,7 @@ DofMapStructure build_basic_dofmap(const mesh::Mesh& mesh,
     }
   }
 
-  return dofmap;
+  return {dofmap, local_to_global, dof_entity};
 }
 //-----------------------------------------------------------------------------
 
@@ -206,9 +205,10 @@ DofMapStructure build_basic_dofmap(const mesh::Mesh& mesh,
 /// @param [in] topology The mesh topology
 /// @return The pair (old-to-new local index map, M), where M is the
 ///   number of dofs owned by this process
-std::pair<std::vector<std::int32_t>, std::int32_t>
-compute_reordering_map(const DofMapStructure& dofmap,
-                       const mesh::Topology& topology)
+std::pair<std::vector<std::int32_t>, std::int32_t> compute_reordering_map(
+    const DofMapStructure& dofmap,
+    const std::vector<std::pair<std::int8_t, std::int32_t>>& dof_entity,
+    const mesh::Topology& topology)
 {
   // Get ownership offset for each dimension
   const int D = topology.dim();
@@ -221,19 +221,19 @@ compute_reordering_map(const DofMapStructure& dofmap,
   }
 
   // Count locally owned dofs
-  std::vector<bool> owned(dofmap.dof_entity.size(), false);
-  for (auto e = dofmap.dof_entity.begin(); e != dofmap.dof_entity.end(); ++e)
+  std::vector<bool> owned(dof_entity.size(), false);
+  for (auto e = dof_entity.begin(); e != dof_entity.end(); ++e)
   {
     if (e->second < offset[e->first])
     {
-      const std::size_t i = std::distance(dofmap.dof_entity.begin(), e);
+      const std::size_t i = std::distance(dof_entity.begin(), e);
       owned[i] = true;
     }
   }
 
   // Create map from old index to new contiguous numbering for locally
   // owned dofs. Set to -1 for unowned dofs.
-  std::vector<int> original_to_contiguous(dofmap.dof_entity.size(), -1);
+  std::vector<int> original_to_contiguous(dof_entity.size(), -1);
   std::int32_t owned_size = 0;
   for (std::size_t i = 0; i < original_to_contiguous.size(); ++i)
   {
@@ -292,7 +292,7 @@ compute_reordering_map(const DofMapStructure& dofmap,
   }
 
   // Reconstruct remaped nodes, and place un-owned nodes at the end
-  std::vector<int> old_to_new(dofmap.dof_entity.size(), -1);
+  std::vector<int> old_to_new(dof_entity.size(), -1);
   std::int32_t unowned_pos = owned_size;
   assert(old_to_new.size() == original_to_contiguous.size());
   for (std::size_t i = 0; i < original_to_contiguous.size(); ++i)
@@ -499,7 +499,7 @@ DofMapBuilder::build(const mesh::Mesh& mesh,
   // Build a simple dofmap based on mesh entity numbering. Returns:
   //  - dofmap (local indices)
   //  - local-to-global dof index map
-  const DofMapStructure node_graph0
+  const auto [node_graph0, local_to_global0, dof_entity0]
       = build_basic_dofmap(mesh, element_dof_layout);
 
   // Compute global dofmap dimension
@@ -517,16 +517,16 @@ DofMapBuilder::build(const mesh::Mesh& mesh,
   // Build re-ordering map for data locality and get number of owned
   // nodes
   const auto [old_to_new, num_owned]
-      = compute_reordering_map(node_graph0, mesh.topology());
+      = compute_reordering_map(node_graph0, dof_entity0, mesh.topology());
 
   // Compute process offset for owned nodes
   const std::int64_t process_offset
       = dolfinx::MPI::global_offset(mesh.mpi_comm(), num_owned, true);
 
   // Get global indices for unowned dofs
-  const std::vector<std::int64_t> local_to_global_unowned = get_global_indices(
-      mesh.topology(), num_owned, process_offset, node_graph0.global_indices,
-      old_to_new, node_graph0.dof_entity);
+  const std::vector<std::int64_t> local_to_global_unowned
+      = get_global_indices(mesh.topology(), num_owned, process_offset,
+                           local_to_global0, old_to_new, dof_entity0);
 
   // Create IndexMap for dofs range on this process
   auto index_map = std::make_unique<common::IndexMap>(
