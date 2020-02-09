@@ -24,13 +24,6 @@ Topology::Topology(int dim)
 //-----------------------------------------------------------------------------
 int Topology::dim() const { return _connectivity.rows() - 1; }
 //-----------------------------------------------------------------------------
-void Topology::clear(int d0, int d1)
-{
-  assert(d0 < (int)_connectivity.rows());
-  assert(d1 < (int)_connectivity.cols());
-  _connectivity(d0, d1).reset();
-}
-//-----------------------------------------------------------------------------
 void Topology::set_global_indices(
     int dim, const std::vector<std::int64_t>& global_indices)
 {

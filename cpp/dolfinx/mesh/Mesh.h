@@ -157,10 +157,6 @@ public:
   /// Compute all entities and connectivity
   void create_connectivity_all() const;
 
-  /// Clean out all auxiliary topology data. This clears all topological
-  /// data, except the connectivity between cells and vertices.
-  void clean();
-
   /// Compute minimum cell size in mesh, measured greatest distance
   /// between any two vertices of a cell.
   /// @return The minimum cell size. The size is computed using

@@ -63,12 +63,7 @@ public:
   /// Return topological dimension
   int dim() const;
 
-  /// Return number of entities for given dimension (local to process)
-  // std::int32_t size(int dim) const;
-
-  /// Clear data for given pair of topological dimensions
-  void clear(int d0, int d1);
-
+  /// @todo Remove this function. Use IndexMap instead
   /// Set the global indices for entities of dimension dim
   void set_global_indices(int dim,
                           const std::vector<std::int64_t>& global_indices);
@@ -82,6 +77,7 @@ public:
   /// (Currently partially working)
   std::shared_ptr<const common::IndexMap> index_map(int dim) const;
 
+  /// @todo Remove this function. Use IndexMap instead
   /// Get local-to-global index map for entities of topological
   /// dimension d
   const std::vector<std::int64_t>& global_indices(int d) const;
@@ -91,6 +87,7 @@ public:
   void set_shared_entities(
       int dim, const std::map<std::int32_t, std::set<std::int32_t>>& entities);
 
+  /// @todo Remove this function
   /// Return map from shared entities (local index) to process that
   /// share the entity (const version)
   const std::map<std::int32_t, std::set<std::int32_t>>&
@@ -110,8 +107,8 @@ public:
                                                                    int d1);
 
   /// Return connectivity for given pair of topological dimensions
-  std::shared_ptr<const graph::AdjacencyList<std::int32_t>> connectivity(int d0,
-                                                                  int d1) const;
+  std::shared_ptr<const graph::AdjacencyList<std::int32_t>>
+  connectivity(int d0, int d1) const;
 
   /// Set connectivity for given pair of topological dimensions
   void set_connectivity(std::shared_ptr<graph::AdjacencyList<std::int32_t>> c,
@@ -157,7 +154,8 @@ private:
 
   // AdjacencyList for pairs of topological dimensions
   Eigen::Array<std::shared_ptr<graph::AdjacencyList<std::int32_t>>,
-      Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor > _connectivity;
+               Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
+      _connectivity;
 
   // TODO: revise
   // Global number of connections for each entity (possibly not

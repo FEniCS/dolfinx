@@ -438,6 +438,7 @@ compute_ordering_triangle(const mesh::Mesh& mesh)
 
   const std::vector<std::int64_t>& global_indices
       = mesh.topology().global_indices(0);
+
   // Set orders for each cell
   for (int cell_n = 0; cell_n < num_cells; ++cell_n)
   {

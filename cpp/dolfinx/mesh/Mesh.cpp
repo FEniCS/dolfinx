@@ -530,19 +530,6 @@ void Mesh::create_connectivity_all() const
       create_connectivity(d0, d1);
 }
 //-----------------------------------------------------------------------------
-void Mesh::clean()
-{
-  const int D = _topology->dim();
-  for (int d0 = 0; d0 <= D; d0++)
-  {
-    for (int d1 = 0; d1 <= D; d1++)
-    {
-      if (!(d0 == D && d1 == 0))
-        _topology->clear(d0, d1);
-    }
-  }
-}
-//-----------------------------------------------------------------------------
 double Mesh::hmin() const { return cell_h(*this).minCoeff(); }
 //-----------------------------------------------------------------------------
 double Mesh::hmax() const { return cell_h(*this).maxCoeff(); }

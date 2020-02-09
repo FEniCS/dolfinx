@@ -30,7 +30,14 @@ using namespace dolfinx::fem;
 namespace
 {
 //-----------------------------------------------------------------------------
-// Build a simple dofmap from ElementDofmap based on mesh entity indices
+
+/// Build a simple dofmap from ElementDofmap based on mesh entity
+/// indices (local and global)
+/// @param [in] mesh The mesh to build the dofmap on
+/// @param [in] element_dof_layout The layout of dofs on a cell
+/// @return Returns {dofmap (local to the process), local-to-global map
+///   to get the global index of local dof i, dof indices, vector of
+///   {dimension, mesh entity index} for each local dof i}
 std::tuple<graph::AdjacencyList<std::int32_t>, std::vector<std::int64_t>,
            std::vector<std::pair<std::int8_t, std::int32_t>>>
 build_basic_dofmap(const mesh::Mesh& mesh,
@@ -482,9 +489,10 @@ DofMapBuilder::build(const mesh::Mesh& mesh,
 
   const int D = mesh.topology().dim();
 
-  // Build a simple dofmap based on mesh entity numbering. Returns:
-  //  - dofmap (local indices)
-  //  - local-to-global dof index map
+  // Build a simple dofmap based on mesh entity numbering, returning (i)
+  // a local dofmap, (ii) local-to-global map for dof indices, and (iii)
+  // pair {dimension, mesh entity index} giving the mesh entity that dof
+  // i is associated with.
   const auto [node_graph0, local_to_global0, dof_entity0]
       = build_basic_dofmap(mesh, element_dof_layout);
 
@@ -494,8 +502,8 @@ DofMapBuilder::build(const mesh::Mesh& mesh,
   {
     if (element_dof_layout.num_entity_dofs(d) > 0)
     {
-      mesh.create_entities(d);
-      const std::int64_t n = mesh.num_entities_global(d);
+      assert(mesh.topology().index_map(d));
+      const std::int64_t n = mesh.topology().index_map(d)->size_global();
       global_dimension += n * element_dof_layout.num_entity_dofs(d);
     }
   }
