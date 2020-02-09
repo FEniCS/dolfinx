@@ -12,11 +12,11 @@
 #include <dolfinx/common/MPI.h>
 #include <dolfinx/common/Timer.h>
 #include <dolfinx/common/utils.h>
+#include <dolfinx/fem/dofs_permutation.h>
 #include <dolfinx/graph/AdjacencyList.h>
 #include <dolfinx/graph/BoostGraphOrdering.h>
 #include <dolfinx/graph/GraphBuilder.h>
 #include <dolfinx/graph/SCOTCH.h>
-#include <dolfinx/mesh/DistributedMeshTools.h>
 #include <dolfinx/mesh/Mesh.h>
 #include <dolfinx/mesh/MeshEntity.h>
 #include <dolfinx/mesh/MeshIterator.h>
@@ -30,26 +30,6 @@ using namespace dolfinx::fem;
 
 namespace
 {
-//-----------------------------------------------------------------------------
-struct DofMapStructure
-{
-  std::vector<PetscInt> data;
-  std::vector<std::int32_t> cell_ptr;
-
-  std::int32_t num_cells() const { return cell_ptr.size() - 1; }
-  std::int32_t num_dofs(std::int32_t cell) const
-  {
-    return cell_ptr[cell + 1] - cell_ptr[cell];
-  }
-  const std::int32_t& dof(int cell, int i) const
-  {
-    return data[cell_ptr[cell] + i];
-  }
-  std::int32_t& dof(int cell, int i) { return data[cell_ptr[cell] + i]; }
-
-  const std::int32_t* dofs(int cell) const { return &data[cell_ptr[cell]]; }
-  std::int32_t* dofs(int cell) { return &data[cell_ptr[cell]]; }
-};
 //-----------------------------------------------------------------------------
 // Build a simple dofmap from ElementDofmap based on mesh entity indices
 std::tuple<graph::AdjacencyList<std::int32_t>, std::vector<std::int64_t>,
@@ -93,12 +73,11 @@ build_basic_dofmap(const mesh::Mesh& mesh,
   const int local_dim = element_dof_layout.num_dofs();
 
   // Allocate dofmap memory
-  DofMapStructure dofmap;
-  dofmap.data.resize(mesh.num_entities(D) * local_dim);
-  dofmap.cell_ptr.resize(mesh.num_entities(D) + 1, local_dim);
-  dofmap.cell_ptr[0] = 0;
-  std::partial_sum(dofmap.cell_ptr.begin() + 1, dofmap.cell_ptr.end(),
-                   dofmap.cell_ptr.begin() + 1);
+  // DofMapStructure dofmap;
+  std::vector<PetscInt> dofs(mesh.num_entities(D) * local_dim);
+  std::vector<std::int32_t> cell_ptr(mesh.num_entities(D) + 1, local_dim);
+  cell_ptr[0] = 0;
+  std::partial_sum(cell_ptr.begin() + 1, cell_ptr.end(), cell_ptr.begin() + 1);
 
   // Allocate entity indices array
   std::vector<std::vector<int32_t>> entity_indices_local(D + 1);
@@ -181,7 +160,8 @@ build_basic_dofmap(const mesh::Mesh& mesh,
           const std::int32_t count = std::distance(e_dofs->begin(), dof_local);
           const std::int32_t dof
               = offset_local + num_entity_dofs * e_index_local + count;
-          dofmap.dof(c, permutations(c, *dof_local)) = dof;
+          dofs[cell_ptr[c] + permutations(c, *dof_local)] = dof;
+          // dofmap.dof(c, permutations(c, *dof_local)) = dof;
           local_to_global[dof]
               = offset_global + num_entity_dofs * e_index_global + count;
           dof_entity[dof] = {d, e_index_local};
@@ -192,8 +172,8 @@ build_basic_dofmap(const mesh::Mesh& mesh,
     }
   }
 
-  return {graph::AdjacencyList<std::int32_t>(dofmap.data, dofmap.cell_ptr),
-          local_to_global, dof_entity};
+  return {graph::AdjacencyList<std::int32_t>(dofs, cell_ptr), local_to_global,
+          dof_entity};
 }
 //-----------------------------------------------------------------------------
 

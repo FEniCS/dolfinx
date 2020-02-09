@@ -7,7 +7,6 @@
 #pragma once
 
 #include <dolfinx/fem/DofMap.h>
-#include <dolfinx/fem/dofs_permutation.h>
 #include <memory>
 #include <petscsys.h>
 #include <tuple>
