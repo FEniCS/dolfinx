@@ -23,6 +23,7 @@ class IndexMap;
 namespace mesh
 {
 class Mesh;
+class Topology;
 } // namespace mesh
 
 namespace fem
@@ -44,7 +45,7 @@ public:
   /// Build sub-dofmap view
   static DofMap build_submap(const DofMap& dofmap_parent,
                              const std::vector<int>& component,
-                             const mesh::Mesh& mesh);
+                             const mesh::Topology& topology);
 
   /// Build dofmap
   static std::tuple<std::unique_ptr<common::IndexMap>,

@@ -146,7 +146,7 @@ DofMap::DofMap(std::shared_ptr<const ElementDofLayout> element_dof_layout,
 DofMap DofMap::extract_sub_dofmap(const std::vector<int>& component,
                                   const mesh::Mesh& mesh) const
 {
-  return DofMapBuilder::build_submap(*this, component, mesh);
+  return DofMapBuilder::build_submap(*this, component, mesh.topology());
 }
 //-----------------------------------------------------------------------------
 std::pair<std::unique_ptr<DofMap>, std::vector<std::int32_t>>
