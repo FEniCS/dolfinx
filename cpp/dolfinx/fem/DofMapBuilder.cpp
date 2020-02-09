@@ -29,23 +29,6 @@ using namespace dolfinx::fem;
 
 namespace
 {
-// Sharing marker for a node
-enum class sharing_marker : std::int8_t
-{
-  boundary,
-  interior,
-  interior_ghost_layer,
-  ghost
-};
-
-// Ownership marker for a node
-enum class ownership : std::int8_t
-{
-  not_owned,      // Shared but not 'owned'
-  owned_shared,   // Owned and shared with other processes
-  owned_exclusive // Owned and not shared with other processes
-};
-
 //-----------------------------------------------------------------------------
 struct DofMapStructure
 {
@@ -70,187 +53,6 @@ struct DofMapStructure
   const std::int32_t* dofs(int cell) const { return &data[cell_ptr[cell]]; }
   std::int32_t* dofs(int cell) { return &data[cell_ptr[cell]]; }
 };
-//-----------------------------------------------------------------------------
-// Compute which process 'owns' each node (point at which dofs live).
-// Also computes map from shared node to sharing processes and a set of
-// process that share dofs on this process.
-std::tuple<std::int32_t, std::vector<ownership>,
-           std::unordered_map<std::int32_t, std::vector<std::int32_t>>>
-compute_ownership(const DofMapStructure& dofmap,
-                  const std::vector<sharing_marker>& shared_nodes,
-                  const mesh::Mesh& mesh, const std::int64_t global_dim)
-{
-  // Get number of nodes
-  const std::int32_t num_nodes_local = dofmap.global_indices.size();
-
-  // Global-to-local node map for nodes on boundary
-  std::map<std::int64_t, std::int32_t> global_to_local;
-
-  // Communication buffers
-  const MPI_Comm mpi_comm = mesh.mpi_comm();
-  const std::int32_t num_processes = dolfinx::MPI::size(mpi_comm);
-  const std::int32_t process_number = dolfinx::MPI::rank(mpi_comm);
-  std::vector<std::vector<std::int64_t>> send_buffer(num_processes);
-
-  // Add a counter to the start of each send buffer
-  for (std::int32_t i = 0; i < num_processes; ++i)
-    send_buffer[i].push_back(0);
-
-  // FIXME: could get rid of global_to_local map since response will
-  // come back in same order
-
-  // Loop over nodes and buffer global indices of nodes on process
-  // boundaries
-  for (std::int32_t i = 0; i < num_nodes_local; ++i)
-  {
-    if (shared_nodes[i] == sharing_marker::boundary)
-    {
-      // Shared node - send out to matching process to determine
-      // ownership and other sharing processes
-
-      // Send global index
-      const std::int64_t global_index = dofmap.global_indices[i];
-      const std::int32_t dest
-          = dolfinx::MPI::index_owner(mpi_comm, global_index, global_dim);
-      send_buffer[dest].push_back(global_index);
-      global_to_local.insert(std::pair(global_index, i));
-    }
-  }
-
-  // Make note of current size of each send buffer i.e. the number of
-  // boundary nodes
-  for (std::int32_t i = 0; i < num_processes; ++i)
-    send_buffer[i][0] = send_buffer[i].size() - 1;
-
-  // Additionally send any ghost or ghost-shared nodes to determine
-  // sharing (but not ownership)
-  for (std::int32_t i = 0; i < num_nodes_local; ++i)
-  {
-    if (shared_nodes[i] == sharing_marker::ghost
-        or shared_nodes[i] == sharing_marker::interior_ghost_layer)
-    {
-      // Send global index
-      const std::int64_t global_index = dofmap.global_indices[i];
-      const std::int32_t dest
-          = dolfinx::MPI::index_owner(mpi_comm, global_index, global_dim);
-      send_buffer[dest].push_back(global_index);
-      global_to_local.insert(std::pair(global_index, i));
-    }
-  }
-
-  // Send to sorting process
-  std::vector<std::vector<std::int64_t>> recv_buffer(num_processes);
-  dolfinx::MPI::all_to_all(mpi_comm, send_buffer, recv_buffer);
-
-  // Map from global index to sharing processes
-  std::map<std::int64_t, std::vector<std::int32_t>> global_to_procs;
-  for (std::int32_t i = 0; i < num_processes; ++i)
-  {
-    const std::vector<std::int64_t>& recv_i = recv_buffer[i];
-    const std::int32_t num_boundary_nodes = recv_i[0];
-
-    for (std::int32_t j = 1; j < num_boundary_nodes + 1; ++j)
-    {
-      auto map_it = global_to_procs.find(recv_i[j]);
-      if (map_it == global_to_procs.end())
-        global_to_procs.insert({recv_i[j], std::vector<std::int32_t>(1, i)});
-      else
-        map_it->second.push_back(i);
-    }
-  }
-
-  // Randomise process order. First process will be owner.
-  const std::size_t seed = process_number;
-  std::default_random_engine random_engine(seed);
-  for (auto p = global_to_procs.begin(); p != global_to_procs.end(); ++p)
-    std::shuffle(p->second.begin(), p->second.end(), random_engine);
-
-  // Add other sharing processes (ghosts etc) which cannot be owners
-  for (std::int32_t i = 0; i < num_processes; ++i)
-  {
-    const std::vector<std::int64_t>& recv_i = recv_buffer[i];
-    const std::int32_t num_boundary_nodes = recv_i[0];
-
-    for (std::size_t j = num_boundary_nodes + 1; j < recv_i.size(); ++j)
-    {
-      auto map_it = global_to_procs.find(recv_i[j]);
-      if (map_it == global_to_procs.end())
-        global_to_procs.insert({recv_i[j], std::vector<std::int32_t>(1, i)});
-      else
-        map_it->second.push_back(i);
-    }
-  }
-
-  // Send response back to originators in same order
-  std::vector<std::vector<std::int64_t>> send_response(num_processes);
-  for (std::int32_t i = 0; i < num_processes; ++i)
-  {
-    for (auto q = recv_buffer[i].begin() + 1; q != recv_buffer[i].end(); ++q)
-    {
-      std::vector<std::int32_t>& gprocs = global_to_procs[*q];
-      send_response[i].push_back(gprocs.size());
-      send_response[i].insert(send_response[i].end(), gprocs.begin(),
-                              gprocs.end());
-    }
-  }
-
-  // Initialise node ownership array, provisionally all owned exclusively
-  std::vector<ownership> node_ownership(num_nodes_local,
-                                        ownership::owned_exclusive);
-
-  dolfinx::MPI::all_to_all(mpi_comm, send_response, recv_buffer);
-  // [n_sharing, owner, others]
-  std::unordered_map<int, std::vector<int>> shared_node_to_processes;
-  for (std::int32_t i = 0; i < num_processes; ++i)
-  {
-    auto q = recv_buffer[i].begin();
-    for (auto p = send_buffer[i].begin() + 1; p != send_buffer[i].end(); ++p)
-    {
-      const std::int32_t num_sharing = *q;
-      if (num_sharing > 1)
-      {
-        const std::int64_t global_index = *p;
-        const std::int32_t owner = *(q + 1);
-        std::set<std::int32_t> sharing_procs(q + 1, q + 1 + num_sharing);
-        sharing_procs.erase(process_number);
-
-        auto it = global_to_local.find(global_index);
-        assert(it != global_to_local.end());
-        const std::int32_t received_node_local = it->second;
-        const sharing_marker node_status = shared_nodes[received_node_local];
-        assert(node_status != sharing_marker::interior);
-
-        // First check to see if this is a ghost/ghost-shared node, and
-        // set ownership accordingly. Otherwise use the ownership from
-        // the sorting process
-        if (node_status == sharing_marker::interior_ghost_layer)
-          node_ownership[received_node_local] = ownership::owned_shared;
-        else if (node_status == sharing_marker::ghost)
-          node_ownership[received_node_local] = ownership::not_owned;
-        else if (owner == process_number)
-          node_ownership[received_node_local] = ownership::owned_shared;
-        else
-          node_ownership[received_node_local] = ownership::not_owned;
-
-        shared_node_to_processes[received_node_local]
-            = std::vector<int>(sharing_procs.begin(), sharing_procs.end());
-      }
-
-      q += num_sharing + 1;
-    }
-  }
-
-  // Count number of owned nodes
-  int num_owned_nodes = 0;
-  for (std::size_t i = 0; i < node_ownership.size(); ++i)
-  {
-    if (node_ownership[i] != ownership::not_owned)
-      ++num_owned_nodes;
-  }
-
-  return std::tuple(std::move(num_owned_nodes), std::move(node_ownership),
-                    std::move(shared_node_to_processes));
-}
 //-----------------------------------------------------------------------------
 // Build a simple dofmap from ElementDofmap based on mesh entity indices
 DofMapStructure build_basic_dofmap(const mesh::Mesh& mesh,
@@ -393,285 +195,20 @@ DofMapStructure build_basic_dofmap(const mesh::Mesh& mesh,
   return dofmap;
 }
 //-----------------------------------------------------------------------------
-// Compute sharing marker for each node
-std::vector<sharing_marker>
-compute_sharing_markers(const DofMapStructure& dofmap,
-                        const ElementDofLayout& element_dof_layout,
-                        const mesh::Mesh& mesh)
-{
-  // Initialise mesh
-  const int D = mesh.topology().dim();
 
-  // Allocate data and initialise all nodes to 'interior'
-  // (provisionally, owned and not shared)
-  std::vector<sharing_marker> shared_nodes(dofmap.global_indices.size(),
-                                           sharing_marker::interior);
-
-  // Get facet closure dofs
-  const std::vector<std::set<int>>& facet_table
-      = element_dof_layout.entity_closure_dofs_all()[D - 1];
-
-  // Mark dofs associated ghost cells as ghost dofs, provisionally
-  bool has_ghost_cells = false;
-  const std::int32_t ghost_offset_c
-      = mesh.topology().index_map(D)->size_local();
-  const std::int32_t ghost_offset_f
-      = mesh.topology().index_map(D - 1)->size_local();
-
-  const std::map<std::int32_t, std::set<std::int32_t>>& sharing_map_c
-      = mesh.topology().shared_entities(D);
-  for (auto& c : mesh::MeshRange(mesh, D, mesh::MeshRangeType::ALL))
-  {
-    const bool ghost_cell = c.index() >= ghost_offset_c;
-    const PetscInt* cell_nodes = dofmap.dofs(c.index());
-    if (sharing_map_c.find(c.index()) != sharing_map_c.end())
-    {
-      // Cell is shared
-      const sharing_marker status = ghost_cell
-                                        ? sharing_marker::ghost
-                                        : sharing_marker::interior_ghost_layer;
-      for (std::int32_t i = 0; i < dofmap.num_dofs(c.index()); ++i)
-      {
-        // Ensure not already set (for R space)
-        if (shared_nodes[cell_nodes[i]] == sharing_marker::interior)
-          shared_nodes[cell_nodes[i]] = status;
-      }
-    }
-
-    // Change all non-ghost facet dofs of ghost cells to boundary dofs
-    if (ghost_cell)
-    {
-      // Is a ghost cell
-      has_ghost_cells = true;
-      for (auto& f : mesh::EntityRange(c, D - 1))
-      {
-        if (!(f.index() >= ghost_offset_f))
-        {
-          // Not a ghost facet
-          const std::set<int>& facet_nodes = facet_table[c.index(f)];
-          for (auto facet_node : facet_nodes)
-          {
-            const int facet_node_local = cell_nodes[facet_node];
-            shared_nodes[facet_node_local] = sharing_marker::boundary;
-          }
-        }
-      }
-    }
-  }
-
-  if (has_ghost_cells)
-    return shared_nodes;
-
-  // Mark nodes on inter-process boundary
-  const std::map<std::int32_t, std::set<std::int32_t>>& sharing_map_f
-      = mesh.topology().shared_entities(D - 1);
-  for (auto& f : mesh::MeshRange(mesh, D - 1, mesh::MeshRangeType::ALL))
-  {
-    // Skip if facet is not shared
-    // NOTE: second test is for periodic problems
-    if (sharing_map_f.find(f.index()) == sharing_map_f.end())
-      continue;
-
-    // Get cell to which facet belongs (pick first)
-    const mesh::MeshEntity cell0(mesh, D, f.entities(D)[0]);
-
-    // Get dofs (process-wise indices) on cell
-    const PetscInt* cell_nodes = dofmap.dofs(cell0.index());
-
-    // Get dofs which are on the facet
-    const std::set<int>& facet_nodes = facet_table[cell0.index(f)];
-
-    // Mark boundary nodes and insert into map
-    for (auto facet_node : facet_nodes)
-    {
-      // Get facet node local index and assign "boundary"  - shared,
-      // owner unassigned
-      PetscInt facet_node_local = cell_nodes[facet_node];
-      shared_nodes[facet_node_local] = sharing_marker::boundary;
-    }
-  }
-
-  return shared_nodes;
-}
-//-----------------------------------------------------------------------------
-// Compute re-ordering map of indices.
-std::vector<std::int32_t>
-compute_reordering_map(const DofMapStructure& dofmap,
-                       const std::vector<ownership>& node_ownership)
-{
-  // Create map from old index to new contiguous numbering for locally
-  // owned dofs. Set to -1 for unowned dofs.
-  std::int32_t owned_size = 0;
-  std::vector<int> original_to_contiguous(node_ownership.size(), -1);
-  for (std::size_t i = 0; i < original_to_contiguous.size(); ++i)
-  {
-    if (node_ownership[i] != ownership::not_owned)
-      original_to_contiguous[i] = owned_size++;
-  }
-
-  // Build local graph, based on dof map with contiguous numbering
-  // (unowned dofs excluded)
-  dolfinx::graph::Graph graph(owned_size);
-  std::vector<int> local_old;
-  for (std::int32_t cell = 0; cell < dofmap.num_cells(); ++cell)
-  {
-    // Loop over nodes collecting valid local nodes
-    local_old.clear();
-    const PetscInt* nodes = dofmap.dofs(cell);
-    for (std::int32_t i = 0; i < dofmap.num_dofs(cell); ++i)
-    {
-      // Add to graph if node is owned
-      assert(nodes[i] < (int)original_to_contiguous.size());
-      const int n = original_to_contiguous[nodes[i]];
-      if (n != -1)
-      {
-        assert(n < (int)graph.size());
-        local_old.push_back(n);
-      }
-    }
-
-    for (std::size_t i = 0; i < local_old.size(); ++i)
-      for (std::size_t j = 0; j < local_old.size(); ++j)
-        if (i != j)
-          graph[local_old[i]].insert(local_old[j]);
-  }
-
-  // Reorder owned nodes
-  const std::string ordering_library = "SCOTCH";
-  std::vector<int> node_remap;
-  if (ordering_library == "Boost")
-    node_remap = graph::BoostGraphOrdering::compute_cuthill_mckee(graph, true);
-  else if (ordering_library == "SCOTCH")
-    std::tie(node_remap, std::ignore) = graph::SCOTCH::compute_gps(graph);
-  else if (ordering_library == "random")
-  {
-    // NOTE: Randomised dof ordering should only be used for
-    // testing/benchmarking
-    node_remap.resize(graph.size());
-    std::iota(node_remap.begin(), node_remap.end(), 0);
-    std::random_device rd;
-    std::default_random_engine g(rd());
-    std::shuffle(node_remap.begin(), node_remap.end(), g);
-  }
-  else
-  {
-    throw std::runtime_error("Requested library '" + ordering_library
-                             + "' is unknown");
-  }
-
-  // Reconstruct remaped nodes, with -1 for unowned
-  std::vector<int> old_to_new(node_ownership.size(), -1);
-  std::int32_t unowned_pos = owned_size;
-  for (std::size_t old_index = 0; old_index < node_ownership.size();
-       ++old_index)
-  {
-    const std::int32_t index = original_to_contiguous[old_index];
-
-    // Put nodes that are not owned at the end, otherwise re-number
-    if (index < 0)
-    {
-      assert(old_index < old_to_new.size());
-      old_to_new[old_index] = unowned_pos++;
-    }
-    else
-    {
-      assert(old_index < old_to_new.size());
-      old_to_new[old_index] = node_remap[index];
-    }
-  }
-
-  return old_to_new;
-}
-//-----------------------------------------------------------------------------
-// Compute global indices for unowned dofs
-Eigen::Array<std::int64_t, Eigen::Dynamic, 1> compute_global_indices(
-    const std::int64_t process_offset,
-    const std::vector<std::int32_t>& old_to_new,
-    const std::unordered_map<int, std::vector<int>>& node_to_sharing_processes,
-    const DofMapStructure& dofmap, const std::vector<ownership>& node_ownership,
-    MPI_Comm mpi_comm)
-{
-  // Count number of locally owned and unowned nodes
-  std::int32_t owned_local_size(0), unowned_local_size(0);
-  for (auto node : node_ownership)
-  {
-    switch (node)
-    {
-    case ownership::not_owned:
-      ++unowned_local_size;
-      break;
-    default:
-      ++owned_local_size;
-    }
-  }
-  assert((unowned_local_size + owned_local_size)
-         == (std::int32_t)dofmap.global_indices.size());
-
-  // Create global-to-local index map for local un-owned nodes
-  std::vector<std::pair<std::int64_t, int>> node_pairs;
-  node_pairs.reserve(unowned_local_size);
-  for (std::size_t i = 0; i < node_ownership.size(); ++i)
-  {
-    // if (node_ownership[i] == -1)
-    if (node_ownership[i] == ownership::not_owned)
-      node_pairs.push_back(std::pair(dofmap.global_indices[i], i));
-  }
-  std::map<std::int64_t, int> global_to_local_nodes_unowned(node_pairs.begin(),
-                                                            node_pairs.end());
-
-  // Buffer nodes that are owned and shared with another process
-  const std::int32_t mpi_size = dolfinx::MPI::size(mpi_comm);
-  std::vector<std::vector<std::int64_t>> send_buffer(mpi_size);
-  for (std::size_t old_index = 0; old_index < node_ownership.size();
-       ++old_index)
-  {
-    // If this node is shared and owned, buffer old and new (global)
-    // node index for sending
-    // if (node_ownership[old_index] == 0)
-    if (node_ownership[old_index] == ownership::owned_shared)
-    {
-      auto it = node_to_sharing_processes.find(old_index);
-      if (it != node_to_sharing_processes.end())
-      {
-        for (auto p = it->second.begin(); p != it->second.end(); ++p)
-        {
-          // Buffer old and new global indices to send
-          send_buffer[*p].push_back(dofmap.global_indices[old_index]);
-          send_buffer[*p].push_back(process_offset + old_to_new[old_index]);
-        }
-      }
-    }
-  }
-
-  std::vector<std::vector<std::int64_t>> recv_buffer(mpi_size);
-  dolfinx::MPI::all_to_all(mpi_comm, send_buffer, recv_buffer);
-
-  Eigen::Array<std::int64_t, Eigen::Dynamic, 1> local_to_global_unowned(
-      unowned_local_size);
-  for (std::int32_t src = 0; src < mpi_size; ++src)
-  {
-    for (auto q = recv_buffer[src].begin(); q != recv_buffer[src].end(); q += 2)
-    {
-      const std::int64_t received_old_index_global = *q;
-      const std::int64_t received_new_index_global = *(q + 1);
-      auto it = global_to_local_nodes_unowned.find(received_old_index_global);
-      assert(it != global_to_local_nodes_unowned.end());
-
-      const int received_old_index_local = it->second;
-      const int pos = old_to_new[received_old_index_local] - owned_local_size;
-      assert(pos >= 0);
-      assert(pos < unowned_local_size);
-      local_to_global_unowned[pos] = received_new_index_global;
-    }
-  }
-
-  return local_to_global_unowned;
-}
-//-----------------------------------------------------------------------------
-// Compute re-ordering map of indices
+/// Compute re-ordering map from old local index to new local index. The
+/// M dofs owned by this process are reordered for locality and fill the
+/// positions [0, ..., M). Dof owned by another process are placed at
+/// the end, i.e. in the positions [M, ..., N), where N is the total
+/// number of dofs on this process.
+///
+/// @param [in] dofmap The basic dofmap data
+/// @param [in] topology The mesh topology
+/// @return The pair (old-to-new local index map, M), where M is the
+///   number of dofs owned by this process
 std::pair<std::vector<std::int32_t>, std::int32_t>
-compute_reordering_map_new(const DofMapStructure& dofmap,
-                           const mesh::Topology& topology)
+compute_reordering_map(const DofMapStructure& dofmap,
+                       const mesh::Topology& topology)
 {
   // Get ownership offset for each dimension
   const int D = topology.dim();
@@ -680,12 +217,7 @@ compute_reordering_map_new(const DofMapStructure& dofmap,
   {
     auto map = topology.index_map(d);
     if (map)
-    {
-      // std::cout << "Getting offset for dim: " << d << ", " <<
-      // map->size_local()
-      //           << std::endl;
       offset[d] = map->size_local();
-    }
   }
 
   // Count locally owned dofs
@@ -979,85 +511,22 @@ DofMapBuilder::build(const mesh::Mesh& mesh,
     }
   }
 
-  // NEW (no communication)
   // Build re-ordering map for data locality. Owned dofs are re-ordred
   // via an ordering algorithm and placed at start, [0, ...,
   // num_owned_nodes -1]. Unowned dofs are placed at end of the
   // re-ordered list. [num_owned_nodes, ..., num_nodes -1].
   // std::cout << "Build re-ordering map" << std::endl;
   const auto [old_to_new, num_owned]
-      = compute_reordering_map_new(node_graph0, mesh.topology());
+      = compute_reordering_map(node_graph0, mesh.topology());
 
-  // NEW
   // Compute process offset for owned nodes
   const std::int64_t process_offset
       = dolfinx::MPI::global_offset(mesh.mpi_comm(), num_owned, true);
-  // std::cout << "Offset: " << process_offset << std::endl;
 
-  // NEW (TODO)
   // Get global indices for unowned dofs
-  // std::cout << "Get ghost indices" << std::endl;
-  const std::vector<std::int64_t> local_to_global_unowned =
-  get_global_indices(
+  const std::vector<std::int64_t> local_to_global_unowned = get_global_indices(
       mesh.topology(), num_owned, process_offset, node_graph0.global_indices,
       old_to_new, node_graph0.dof_entity);
-
-  // const int rank = MPI::rank(MPI_COMM_WORLD);
-  // // std::cout << "Owned: " << rank << ", " << num_owned << std::endl;
-  // // std::cout << "Offset: " << rank << ", " << num_owned << std::endl;
-  // if (rank == 2)
-  // {
-  //   std::cout << "Owned: " << rank << ", " << num_owned << std::endl;
-  //   std::cout << "Offset: " << rank << ", " << process_offset <<
-  // std::endl;
-  //   std::cout << "Num ghosts: " << rank << ", "
-  //             << local_to_global_unowned.size() << std::endl;
-  //   for (std::size_t i = 0; i < local_to_global_unowned.size(); ++i)
-  //   {
-  //     std::cout << "  Ghosts: " << rank << ", " <<
-  // local_to_global_unowned[i]
-  //               << std::endl;
-  //   }
-  // }
-
-  // OLD
-
-  // Mark shared and non-shared nodes. Boundary nodes are assigned a
-  // random positive integer, interior nodes are marked as -1, interior
-  // nodes in ghost layer of other processes are marked -2, and ghost
-  // nodes are marked as -3,
-  // mesh.create_entities(D - 1);
-  // mesh.create_connectivity(D - 1, D);
-  // const std::vector<sharing_marker> shared_nodes
-  //     = compute_sharing_markers(node_graph0, element_dof_layout, mesh);
-
-  // // Compute node ownership:
-  // // (a) Number of owned nodes;
-  // // (b) owned and shared nodes (and owned and un-owned):
-  // //    -1: unowned, 0: owned and shared, 1: owned and not shared; and
-  // // (c) map from shared node to sharing processes.
-  // const auto [num_owned, node_ownership0, shared_node_to_processes0]
-  //     = compute_ownership(node_graph0, shared_nodes, mesh, global_dimension);
-
-  // // Build re-ordering map for data locality. Owned dofs are re-ordred
-  // // via an ordering algorithm and placed at start, [0, ...,
-  // // num_owned_nodes -1]. Unowned dofs are placed at end of the
-  // // re-ordered list. [num_owned_nodes, ..., num_nodes -1].
-  // const std::vector<std::int32_t> old_to_new
-  //     = compute_reordering_map(node_graph0, node_ownership0);
-
-  // // Compute process offset for owned nodes. Global indices for owned
-  // // dofs are (index_local + process_offset)
-  // const std::int64_t process_offset
-  //     = dolfinx::MPI::global_offset(mesh.mpi_comm(), num_owned, true);
-
-  // // Get global indices for unowned unowned dofs
-  // const Eigen::Array<std::int64_t, Eigen::Dynamic, 1> local_to_global_unowned
-  //     = compute_global_indices(process_offset, old_to_new,
-  //                              shared_node_to_processes0, node_graph0,
-  //                              node_ownership0, mesh.mpi_comm());
-
-  // std::cout << "Create index map" << std::endl;
 
   // Create IndexMap for dofs range on this process
   auto index_map = std::make_unique<common::IndexMap>(
@@ -1066,8 +535,6 @@ DofMapBuilder::build(const mesh::Mesh& mesh,
   assert(
       dolfinx::MPI::sum(mesh.mpi_comm(), (std::int64_t)index_map->size_local())
       == global_dimension);
-
-  // std::cout << "Build dof map" << std::endl;
 
   // FIXME: There is an assumption here on the dof order for an element.
   //        It should come from the ElementDofLayout.
