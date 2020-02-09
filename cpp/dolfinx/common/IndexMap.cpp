@@ -413,7 +413,6 @@ template <typename T>
 void IndexMap::scatter_fwd_impl(const std::vector<T>& local_data,
                                 std::vector<T>& remote_data, int n) const
 {
-
 #ifdef DEBUG
   // Check size of neighbourhood
   int indegree(-1), outdegree(-2), weighted(-1);
