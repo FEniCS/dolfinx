@@ -28,7 +28,8 @@ namespace
 std::tuple<std::vector<std::int64_t>,
            std::map<std::int32_t, std::set<std::int32_t>>,
            std::shared_ptr<const common::IndexMap>>
-compute_entity_numbering(const Mesh& mesh, int d)
+compute_entity_numbering(MPI_Comm comm, const Topology& topology,
+                         const mesh::CellType cell_type, int d)
 {
   LOG(INFO) << "Number mesh entities for distributed mesh. " << d;
   common::Timer timer("Number mesh entities for distributed mesh");
@@ -38,31 +39,29 @@ compute_entity_numbering(const Mesh& mesh, int d)
 
   // Check that we're not re-numbering vertices (these are fixed at mesh
   // construction)
-  if (d == 0 or d == mesh.topology().dim())
+  if (d == 0 or d == topology.dim())
   {
     throw std::runtime_error(
         "Global vertex and cell indices exist at input. Cannot be renumbered.");
   }
 
-  // Get number of entities of dimension d on this process
-  assert(mesh.topology().connectivity(d, 0));
-  const std::int32_t size = mesh.topology().connectivity(d, 0)->num_nodes();
-
-  // MPI communicator
-  const MPI_Comm mpi_comm = mesh.mpi_comm();
-
   // Get number of processes and process number
-  const int mpi_size = dolfinx::MPI::size(mpi_comm);
-  const int mpi_rank = dolfinx::MPI::rank(mpi_comm);
+  const int mpi_size = dolfinx::MPI::size(comm);
+  const int mpi_rank = dolfinx::MPI::rank(comm);
 
   // Get vertex global indices
   const std::vector<std::int64_t>& global_vertex_indices
-      = mesh.topology().global_indices(0);
+      = topology.global_indices(0);
 
   // Get shared vertices (local index, [sharing processes])
   // already determined in Mesh distribution
   const std::map<std::int32_t, std::set<std::int32_t>>& shared_vertices_local
-      = mesh.topology().shared_entities(0);
+      = topology.shared_entities(0);
+
+  // Get number of entities of dimension d on this process
+  auto c_d_0 = topology.connectivity(d, 0);
+  assert(c_d_0);
+  const std::int32_t size = c_d_0->num_nodes();
 
   // Send and receive shared entities.
   // In order to communicate with remote processes, the entities are sent
@@ -84,25 +83,23 @@ compute_entity_numbering(const Mesh& mesh, int d)
     std::map<std::vector<std::int64_t>, std::int32_t> entity_to_local_index;
 
     // Get number of vertices in this entity type
-    const mesh::CellType& ct = mesh.cell_type();
-    const mesh::CellType& et = mesh::cell_entity_type(ct, d);
+    const mesh::CellType& et = mesh::cell_entity_type(cell_type, d);
     const int num_entity_vertices = mesh::num_cell_vertices(et);
 
     // Make a mask listing all shared vertices (true if shared)
-    std::vector<bool> vertex_shared(mesh.num_entities(0), false);
+    auto map0 = topology.index_map(0);
+    assert(map0);
+    const int num_vertices = map0->size_local() + map0->num_ghosts();
+    std::vector<bool> vertex_shared(num_vertices, false);
     for (const auto& v : shared_vertices_local)
       vertex_shared[v.first] = true;
 
-    // for (auto& e : mesh::MeshRange(mesh, d, mesh::MeshRangeType::ALL))
-    for (int _e = 0; _e < size; ++_e)
+    for (int e = 0; e < size; ++e)
     {
-      mesh::MeshEntity e(mesh, d, _e);
+      auto v = c_d_0->edges(e);
 
-      const std::size_t local_index = e.index();
-      auto v = e.entities(0);
-
-      // Entity can only be shared if all vertices are shared
-      // but this is not a sufficient condition
+      // Entity can only be shared if all vertices are shared but this
+      // is not a sufficient condition
       bool may_be_shared = true;
       for (int i = 0; i < num_entity_vertices; ++i)
         may_be_shared &= vertex_shared[v[i]];
@@ -144,16 +141,16 @@ compute_entity_numbering(const Mesh& mesh, int d)
 
           // Record processes this entity belongs to (possibly)
           shared_entities.insert(
-              {local_index,
+              {e,
                std::set<int>(sharing_procs.begin(), sharing_procs.end())});
 
           // Record mapping from vertex global indices to local entity index
-          entity_to_local_index.insert({g_index, local_index});
+          entity_to_local_index.insert({g_index, e});
 
           // Send all possible entities to remote processes
           for (auto p : sharing_procs)
           {
-            send_local_entities[p].push_back(local_index);
+            send_local_entities[p].push_back(e);
             send_entities[p].insert(send_entities[p].end(), g_index.begin(),
                                     g_index.end());
           }
@@ -161,7 +158,7 @@ compute_entity_numbering(const Mesh& mesh, int d)
       }
     }
 
-    dolfinx::MPI::all_to_all(mpi_comm, send_entities, recv_entities);
+    dolfinx::MPI::all_to_all(comm, send_entities, recv_entities);
 
     // Check off received entities against sent entities
     // (any which don't match need to be revised).
@@ -239,7 +236,7 @@ compute_entity_numbering(const Mesh& mesh, int d)
   }
 
   const std::int64_t local_offset
-      = dolfinx::MPI::global_offset(mpi_comm, num_local, true);
+      = dolfinx::MPI::global_offset(comm, num_local, true);
   std::int64_t n = local_offset;
 
   // Owned
@@ -275,7 +272,7 @@ compute_entity_numbering(const Mesh& mesh, int d)
       send_indices[p].push_back(global_entity_indices[q]);
   }
 
-  dolfinx::MPI::all_to_all(mpi_comm, send_indices, recv_indices);
+  dolfinx::MPI::all_to_all(comm, send_indices, recv_indices);
 
   // Revisit the entities we received before, now with the global
   // index from remote
@@ -297,7 +294,7 @@ compute_entity_numbering(const Mesh& mesh, int d)
             global_entity_indices.end(), ghosts.data());
 
   std::shared_ptr<common::IndexMap> index_map
-      = std::make_shared<common::IndexMap>(mpi_comm, num_local, ghosts, 1);
+      = std::make_shared<common::IndexMap>(comm, num_local, ghosts, 1);
 
   return std::tuple(std::move(global_entity_indices),
                     std::move(shared_entities), index_map);
@@ -420,7 +417,8 @@ void DistributedMeshTools::number_entities(const Mesh& mesh, int d)
 
   // Number entities
   const auto [global_entity_indices, shared_entities, index_map]
-      = compute_entity_numbering(mesh, d);
+      = compute_entity_numbering(mesh.mpi_comm(), mesh.topology(),
+                                 mesh.cell_type(), d);
 
   // Set IndexMap
   _mesh.topology().set_index_map(d, index_map);
