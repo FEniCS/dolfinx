@@ -55,6 +55,16 @@ void local_to_global_impl(
 } // namespace
 
 //-----------------------------------------------------------------------------
+IndexMap::IndexMap(MPI_Comm mpi_comm, std::int32_t local_size,
+                   const std::vector<std::int64_t>& ghosts, int block_size)
+    : IndexMap(mpi_comm, local_size,
+               Eigen::Map<const Eigen::Array<std::int64_t, Eigen::Dynamic, 1>>(
+                   ghosts.data(), ghosts.size()),
+               block_size)
+{
+  // Do nothing
+}
+//-----------------------------------------------------------------------------
 IndexMap::IndexMap(
     MPI_Comm mpi_comm, std::int32_t local_size,
     const Eigen::Ref<const Eigen::Array<std::int64_t, Eigen::Dynamic, 1>>&

@@ -46,6 +46,18 @@ public:
   ///   of owned entries
   /// @param[in] ghosts The global indices of ghost entries
   /// @param[in] block_size The block size of the IndexMap
+  IndexMap(MPI_Comm mpi_comm, std::int32_t local_size,
+           const std::vector<std::int64_t>& ghosts, int block_size);
+
+  /// Create Index map with local_size owned blocks on this process, and
+  /// blocks have size block_size.
+  ///
+  /// Collective
+  /// @param[in] mpi_comm The MPI communicator
+  /// @param[in] local_size Local size of the IndexMap, i.e. the number
+  ///   of owned entries
+  /// @param[in] ghosts The global indices of ghost entries
+  /// @param[in] block_size The block size of the IndexMap
   IndexMap(
       MPI_Comm mpi_comm, std::int32_t local_size,
       const Eigen::Ref<const Eigen::Array<std::int64_t, Eigen::Dynamic, 1>>&

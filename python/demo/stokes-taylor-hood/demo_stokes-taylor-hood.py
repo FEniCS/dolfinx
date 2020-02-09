@@ -185,7 +185,7 @@ L = inner(f, v) * dx
 # Compute solution
 w = Function(W)
 solve(a == L, w, bcs, petsc_options={"ksp_type": "preonly",
-                                     "pc_type": "lu", "pc_factor_mat_solver_type": "mumps"})
+                                     "pc_type": "lu", "pc_factor_mat_solver_type": "superlu_dist"})
 
 # Split the mixed solution and collapse
 u = w.sub(0).collapse()
@@ -208,12 +208,12 @@ with XDMFFile(MPI.comm_world, "velocity.xdmf") as ufile_xdmf:
 with XDMFFile(MPI.comm_world, "pressure.xdmf") as pfile_xdmf:
     pfile_xdmf.write(p)
 
-# Plot solution
-plt.figure()
-plot(u, title="velocity")
-
+# # Plot solution
 # plt.figure()
-plot(p, title="pressure" + str(MPI.rank(mesh.mpi_comm())))
+# plot(u, title="velocity")
 
-# Display plots
-plt.show()
+# # plt.figure()
+# plot(p, title="pressure" + str(MPI.rank(mesh.mpi_comm())))
+
+# # Display plots
+# plt.show()
