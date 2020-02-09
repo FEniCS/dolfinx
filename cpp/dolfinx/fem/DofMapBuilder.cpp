@@ -308,7 +308,18 @@ compute_reordering_map(const DofMapStructure& dofmap,
   return {old_to_new, owned_size};
 }
 //-----------------------------------------------------------------------------
-// Get global indices for unowned dofs
+
+/// Get global indices for unowned dofs
+/// @param [in] topology The mesh topology
+/// @param [in] num_owned The number of nodes owned by this process
+/// @param [in] process_offset The node offset for this process, i.e.
+///   the global index of owned node i is i + process_offset
+/// @param [in] global_indices_old The old global index of the old local
+///   node i
+/// @param [in] old_to_new The old local index to new local index map
+/// @param [in] dof_entity The ith entry gives (topological dim, local
+///   index) of the mesh entity to which node i (old local index) is
+///   associated
 std::vector<std::int64_t> get_global_indices(
     const mesh::Topology& topology, const std::int32_t num_owned,
     const std::int64_t process_offset,
@@ -399,25 +410,17 @@ std::vector<std::int64_t> get_global_indices(
                               disp.data(), MPI_INT64_T, comm);
 
       // Build (global old, global new) map
-      // std::cout << "NNNNNNNNNNN" << std::endl;
-      // std::map<std::int64_t, std::int64_t> global_old_new;
       for (std::size_t i = 0; i < dofs_received.size(); i += 2)
-      {
-        // std::cout << "Global-Global map" << std::endl;
         global_old_new.insert({dofs_received[i], dofs_received[i + 1]});
-      }
     }
   }
 
-  // std::vector<std::pair<std::int64_t, std::int32_t>> global_to_local;
   std::vector<std::int64_t> local_to_global_new(old_to_new.size() - num_owned);
   for (std::size_t i = 0; i < local_new_to_global_old.size(); ++i)
   {
     auto it = global_old_new.find(local_new_to_global_old[i]);
     assert(it != global_old_new.end());
     local_to_global_new[i] = it->second;
-    // std::cout << "Local, global new: " << i << ", " << local_to_global_new[i]
-    //           << std::endl;
   }
 
   return local_to_global_new;
@@ -511,11 +514,8 @@ DofMapBuilder::build(const mesh::Mesh& mesh,
     }
   }
 
-  // Build re-ordering map for data locality. Owned dofs are re-ordred
-  // via an ordering algorithm and placed at start, [0, ...,
-  // num_owned_nodes -1]. Unowned dofs are placed at end of the
-  // re-ordered list. [num_owned_nodes, ..., num_nodes -1].
-  // std::cout << "Build re-ordering map" << std::endl;
+  // Build re-ordering map for data locality and get number of owned
+  // nodes
   const auto [old_to_new, num_owned]
       = compute_reordering_map(node_graph0, mesh.topology());
 

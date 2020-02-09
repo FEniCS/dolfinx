@@ -91,8 +91,6 @@ IndexMap::IndexMap(
   {
     const int p = owner(ghosts[i]);
     ghost_owner_global[i] = p;
-    if (ghost_owner_global[i] == _myrank)
-      std::cout << "IndexMap rank: " << MPI::rank(mpi_comm) << std::endl;
     assert(ghost_owner_global[i] != _myrank);
     num_edges_out_per_proc[p] += 1;
   }
