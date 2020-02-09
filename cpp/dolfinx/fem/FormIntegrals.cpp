@@ -7,9 +7,8 @@
 #include "FormIntegrals.h"
 #include <cstdlib>
 #include <dolfinx/common/types.h>
-#include <dolfinx/mesh/MeshEntity.h>
+// #include <dolfinx/mesh/MeshEntity.h>
 #include <dolfinx/mesh/MeshFunction.h>
-#include <dolfinx/mesh/MeshIterator.h>
 
 using namespace dolfinx;
 using namespace dolfinx::fem;
@@ -95,7 +94,7 @@ void FormIntegrals::set_domains(FormIntegrals::Type type,
     return;
 
   std::shared_ptr<const mesh::Mesh> mesh = marker.mesh();
-  int tdim = mesh->topology().dim();
+  const int tdim = mesh->topology().dim();
   int dim = tdim;
   if (type == Type::exterior_facet or type == Type::interior_facet)
     dim = tdim - 1;
@@ -122,6 +121,8 @@ void FormIntegrals::set_domains(FormIntegrals::Type type,
   // Get reference to mesh function data array
   const Eigen::Array<std::size_t, Eigen::Dynamic, 1>& mf_values
       = marker.values();
+
+  // Get number of mesh entities of dimension d owned by this process
   const int num_entities = mesh->topology().index_map(dim)->size_local();
 
   if (type == Type::exterior_facet)
@@ -134,9 +135,10 @@ void FormIntegrals::set_domains(FormIntegrals::Type type,
       throw std::runtime_error(
           "Facet-cell connectivity has not been computed.");
     }
+
     for (Eigen::Index i = 0; i < num_entities; ++i)
     {
-      if ((int)topology.size_global({tdim - 1, tdim}, i) == 1)
+      if (topology.size_global({tdim - 1, tdim}, i) == 1)
       {
         auto it = id_to_integral.find(mf_values[i]);
         if (it != id_to_integral.end())
@@ -146,11 +148,11 @@ void FormIntegrals::set_domains(FormIntegrals::Type type,
   }
   else if (type == Type::interior_facet)
   {
-    const int rank = MPI::rank(mesh->mpi_comm());
-    const Eigen::Array<int, Eigen::Dynamic, 1>& cell_owners
-        = mesh->topology().index_map(tdim)->ghost_owners();
-    const std::int32_t cell_ghost_offset
-        = mesh->topology().index_map(tdim)->size_local();
+    // const int rank = MPI::rank(mesh->mpi_comm());
+    // const Eigen::Array<int, Eigen::Dynamic, 1>& cell_owners
+    //     = mesh->topology().index_map(tdim)->ghost_owners();
+    // const std::int32_t cell_ghost_offset
+    //     = mesh->topology().index_map(tdim)->size_local();
     std::shared_ptr<const graph::AdjacencyList<std::int32_t>> connectivity
         = mesh->topology().connectivity(tdim - 1, tdim);
     if (!connectivity)
@@ -158,26 +160,14 @@ void FormIntegrals::set_domains(FormIntegrals::Type type,
       throw std::runtime_error(
           "Facet-cell connectivity has not been computed.");
     }
+
     for (Eigen::Index i = 0; i < num_entities; ++i)
     {
-      if ((int)connectivity->num_edges(i) == 2)
+      if (connectivity->num_edges(i) == 2)
       {
-        // Get connected cells and check if they are ghost or not
-        auto c = connectivity->edges(i);
-        const int owner0 = c[0] >= cell_ghost_offset
-                               ? cell_owners[c[0] - cell_ghost_offset]
-                               : rank;
-        const int owner1 = c[1] >= cell_ghost_offset
-                               ? cell_owners[c[1] - cell_ghost_offset]
-                               : rank;
-        if ((owner0 == rank and owner1 == rank)
-            or (owner0 == rank and owner1 > rank)
-            or (owner1 == rank and owner0 > rank))
-        {
-          auto it = id_to_integral.find(mf_values[i]);
-          if (it != id_to_integral.end())
-            integrals[it->second].active_entities.push_back(i);
-        }
+        auto it = id_to_integral.find(mf_values[i]);
+        if (it != id_to_integral.end())
+          integrals[it->second].active_entities.push_back(i);
       }
     }
   }
@@ -195,7 +185,8 @@ void FormIntegrals::set_domains(FormIntegrals::Type type,
 //-----------------------------------------------------------------------------
 void FormIntegrals::set_default_domains(const mesh::Mesh& mesh)
 {
-  const int tdim = mesh.topology().dim();
+  const mesh::Topology& topology = mesh.topology();
+  const int tdim = topology.dim();
 
   std::vector<struct FormIntegrals::Integral>& cell_integrals
       = _integrals[static_cast<int>(FormIntegrals::Type::cell)];
@@ -204,7 +195,7 @@ void FormIntegrals::set_default_domains(const mesh::Mesh& mesh)
   // ghost cells)
   if (cell_integrals.size() > 0 and cell_integrals[0].id == -1)
   {
-    const int num_regular_cells = mesh.topology().index_map(tdim)->size_local();
+    const int num_regular_cells = topology.index_map(tdim)->size_local();
     cell_integrals[0].active_entities.resize(num_regular_cells);
     std::iota(cell_integrals[0].active_entities.begin(),
               cell_integrals[0].active_entities.end(), 0);
@@ -216,7 +207,6 @@ void FormIntegrals::set_default_domains(const mesh::Mesh& mesh)
   {
     // If there is a default integral, define it only on surface facets
     exf_integrals[0].active_entities.clear();
-    const mesh::Topology& topology = mesh.topology();
     std::shared_ptr<const graph::AdjacencyList<std::int32_t>> connectivity
         = topology.connectivity(tdim - 1, tdim);
     if (!connectivity)
@@ -224,11 +214,14 @@ void FormIntegrals::set_default_domains(const mesh::Mesh& mesh)
       throw std::runtime_error(
           "Facet-cell connectivity has not been computed.");
     }
-    for (const mesh::MeshEntity& facet :
-         mesh::MeshRange(mesh, tdim - 1, mesh::MeshRangeType::REGULAR))
+
+    // Get number of facets owned by this process
+    const int num_facets = topology.index_map(tdim - 1)->size_local();
+
+    for (int f = 0; f < num_facets; ++f)
     {
-      if (topology.size_global({tdim - 1, tdim}, facet.index()) == 1)
-        exf_integrals[0].active_entities.push_back(facet.index());
+      if (topology.size_global({tdim - 1, tdim}, f) == 1)
+        exf_integrals[0].active_entities.push_back(f);
     }
   }
 
@@ -239,57 +232,22 @@ void FormIntegrals::set_default_domains(const mesh::Mesh& mesh)
     // If there is a default integral, define it only on interior facets
     inf_integrals[0].active_entities.clear();
     inf_integrals[0].active_entities.reserve(mesh.num_entities(tdim - 1));
-    const int rank = MPI::rank(mesh.mpi_comm());
-    if (MPI::size(mesh.mpi_comm()) > 1)
+    std::shared_ptr<const graph::AdjacencyList<std::int32_t>> connectivity
+        = topology.connectivity(tdim - 1, tdim);
+    if (!connectivity)
     {
-      // Get owner (MPI ranks) of ghost cells
-      const Eigen::Array<int, Eigen::Dynamic, 1>& cell_owners
-          = mesh.topology().index_map(tdim)->ghost_owners();
-      const std::int32_t ghost_offset
-          = mesh.topology().index_map(tdim)->size_local();
-
-      std::shared_ptr<const graph::AdjacencyList<std::int32_t>> connectivity
-          = mesh.topology().connectivity(tdim - 1, tdim);
-      if (!connectivity)
-      {
-        throw std::runtime_error(
-            "Facet-cell connectivity has not been computed.");
-      }
-
-      for (const mesh::MeshEntity& facet :
-           mesh::MeshRange(mesh, tdim - 1, mesh::MeshRangeType::ALL))
-      {
-        if (connectivity->num_edges(facet.index()) == 2)
-        {
-          auto c = facet.entities(tdim);
-          const int owner0
-              = c[0] >= ghost_offset ? cell_owners[c[0] - ghost_offset] : rank;
-          const int owner1
-              = c[1] >= ghost_offset ? cell_owners[c[1] - ghost_offset] : rank;
-          if ((owner0 == rank and owner1 == rank)
-              or (owner0 == rank and owner1 > rank)
-              or (owner1 == rank and owner0 > rank))
-            inf_integrals[0].active_entities.push_back(facet.index());
-        }
-      }
+      throw std::runtime_error(
+          "Facet-cell connectivity has not been computed.");
     }
-    else
-    {
-      const mesh::Topology& topology = mesh.topology();
-      std::shared_ptr<const graph::AdjacencyList<std::int32_t>> connectivity
-          = topology.connectivity(tdim - 1, tdim);
-      if (!connectivity)
-      {
-        throw std::runtime_error(
-            "Facet-cell connectivity has not been computed.");
-      }
 
-      for (const mesh::MeshEntity& facet :
-           mesh::MeshRange(mesh, tdim - 1, mesh::MeshRangeType::REGULAR))
-      {
-        if (topology.size_global({tdim - 1, tdim}, facet.index()) != 1)
-          inf_integrals[0].active_entities.push_back(facet.index());
-      }
+    // Get number of facets owned by this process
+    const int num_facets = topology.index_map(tdim - 1)->size_local();
+
+    // Loop over owned facets
+    for (int f = 0; f < num_facets; ++f)
+    {
+      if (topology.size_global({tdim - 1, tdim}, f) != 1)
+        inf_integrals[0].active_entities.push_back(f);
     }
   }
 }
