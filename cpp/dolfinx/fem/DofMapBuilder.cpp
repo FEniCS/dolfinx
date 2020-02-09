@@ -680,7 +680,12 @@ compute_reordering_map_new(const DofMapStructure& dofmap,
   {
     auto map = topology.index_map(d);
     if (map)
+    {
+      // std::cout << "Getting offset for dim: " << d << ", " <<
+      // map->size_local()
+      //           << std::endl;
       offset[d] = map->size_local();
+    }
   }
 
   // Count locally owned dofs
@@ -826,7 +831,7 @@ std::vector<std::int64_t> get_global_indices(
     if (shared_entity[d][entity])
     {
       global[d].push_back(global_indices_old[i]);
-      global[d].push_back(i + process_offset);
+      global[d].push_back(old_to_new[i] + process_offset);
     }
   }
 
@@ -975,25 +980,47 @@ DofMapBuilder::build(const mesh::Mesh& mesh,
   }
 
   // NEW (no communication)
-  // Build re-ordering map for data locality. Owned dofs are re-ordred
-  // via an ordering algorithm and placed at start, [0, ...,
-  // num_owned_nodes -1]. Unowned dofs are placed at end of the
-  // re-ordered list. [num_owned_nodes, ..., num_nodes -1].
-  const auto [old_to_new_tmp, num_owned]
-      = compute_reordering_map_new(node_graph0, mesh.topology());
+  // // Build re-ordering map for data locality. Owned dofs are re-ordred
+  // // via an ordering algorithm and placed at start, [0, ...,
+  // // num_owned_nodes -1]. Unowned dofs are placed at end of the
+  // // re-ordered list. [num_owned_nodes, ..., num_nodes -1].
+  // // std::cout << "Build re-ordering map" << std::endl;
+  // const auto [old_to_new, num_owned]
+  //     = compute_reordering_map_new(node_graph0, mesh.topology());
 
-  // NEW
-  // Compute process offset for owned nodes
-  const std::int64_t process_offset_new
-      = dolfinx::MPI::global_offset(mesh.mpi_comm(), num_owned, true);
-  std::cout << "Offset: " << process_offset_new << std::endl;
+  // // NEW
+  // // Compute process offset for owned nodes
+  // const std::int64_t process_offset
+  //     = dolfinx::MPI::global_offset(mesh.mpi_comm(), num_owned, true);
+  // // std::cout << "Offset: " << process_offset << std::endl;
 
-  // NEW (TODO)
-  // Get global indices for unowned dofs
-  const std::vector<std::int64_t> local_to_global_unowned_new
-      = get_global_indices(mesh.topology(), num_owned, process_offset_new,
-                           node_graph0.global_indices, old_to_new_tmp,
-                           node_graph0.dof_entity);
+  // // NEW (TODO)
+  // // Get global indices for unowned dofs
+  // // std::cout << "Get ghost indices" << std::endl;
+  // const std::vector<std::int64_t> local_to_global_unowned =
+  // get_global_indices(
+  //     mesh.topology(), num_owned, process_offset, node_graph0.global_indices,
+  //     old_to_new, node_graph0.dof_entity);
+
+  // // const int rank = MPI::rank(MPI_COMM_WORLD);
+  // // // std::cout << "Owned: " << rank << ", " << num_owned << std::endl;
+  // // // std::cout << "Offset: " << rank << ", " << num_owned << std::endl;
+  // // if (rank == 2)
+  // // {
+  // //   std::cout << "Owned: " << rank << ", " << num_owned << std::endl;
+  // //   std::cout << "Offset: " << rank << ", " << process_offset <<
+  // std::endl;
+  // //   std::cout << "Num ghosts: " << rank << ", "
+  // //             << local_to_global_unowned.size() << std::endl;
+  // //   for (std::size_t i = 0; i < local_to_global_unowned.size(); ++i)
+  // //   {
+  // //     std::cout << "  Ghosts: " << rank << ", " <<
+  // local_to_global_unowned[i]
+  // //               << std::endl;
+  // //   }
+  // // }
+
+  // OLD
 
   // Mark shared and non-shared nodes. Boundary nodes are assigned a
   // random positive integer, interior nodes are marked as -1, interior
@@ -1009,7 +1036,7 @@ DofMapBuilder::build(const mesh::Mesh& mesh,
   // (b) owned and shared nodes (and owned and un-owned):
   //    -1: unowned, 0: owned and shared, 1: owned and not shared; and
   // (c) map from shared node to sharing processes.
-  const auto [num_owned_nodes, node_ownership0, shared_node_to_processes0]
+  const auto [num_owned, node_ownership0, shared_node_to_processes0]
       = compute_ownership(node_graph0, shared_nodes, mesh, global_dimension);
 
   // Build re-ordering map for data locality. Owned dofs are re-ordred
@@ -1022,7 +1049,7 @@ DofMapBuilder::build(const mesh::Mesh& mesh,
   // Compute process offset for owned nodes. Global indices for owned
   // dofs are (index_local + process_offset)
   const std::int64_t process_offset
-      = dolfinx::MPI::global_offset(mesh.mpi_comm(), num_owned_nodes, true);
+      = dolfinx::MPI::global_offset(mesh.mpi_comm(), num_owned, true);
 
   // Get global indices for unowned unowned dofs
   const Eigen::Array<std::int64_t, Eigen::Dynamic, 1> local_to_global_unowned
@@ -1030,13 +1057,17 @@ DofMapBuilder::build(const mesh::Mesh& mesh,
                                shared_node_to_processes0, node_graph0,
                                node_ownership0, mesh.mpi_comm());
 
+  // std::cout << "Create index map" << std::endl;
+
   // Create IndexMap for dofs range on this process
   auto index_map = std::make_unique<common::IndexMap>(
-      mesh.mpi_comm(), num_owned_nodes, local_to_global_unowned, block_size);
+      mesh.mpi_comm(), num_owned, local_to_global_unowned, block_size);
   assert(index_map);
   assert(
       dolfinx::MPI::sum(mesh.mpi_comm(), (std::int64_t)index_map->size_local())
       == global_dimension);
+
+  // std::cout << "Build dof map" << std::endl;
 
   // FIXME: There is an assumption here on the dof order for an element.
   //        It should come from the ElementDofLayout.
