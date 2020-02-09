@@ -50,6 +50,31 @@ const std::vector<std::int64_t>& Topology::global_indices(int d) const
   return _global_indices[d];
 }
 //-----------------------------------------------------------------------------
+// std::int32_t Topology::create_entities(int dim) const
+// {
+//   // Skip if already computed (vertices (dim=0) should always exist)
+//   if (connectivity(dim, 0))
+//     return -1;
+
+//   // Create local entities
+//   const auto [cell_entity, entity_vertex, num_new_entities]
+//       = TopologyComputation::compute_entities(_mpi_comm.comm(), *this,
+//                                               _cell_type, dim);
+
+//   Topology* topology = const_cast<Topology*>(this);
+
+//   if (cell_entity)
+//     set_connectivity(cell_entity, this->dim(), dim);
+//   if (entity_vertex)
+//     set_connectivity(entity_vertex, dim, 0);
+
+//   // Number globally
+//   DistributedMeshTools::number_entities(*mesh, dim);
+
+//   return num_new_entities;
+
+// }
+//-----------------------------------------------------------------------------
 void Topology::set_shared_entities(
     int dim, const std::map<std::int32_t, std::set<std::int32_t>>& entities)
 {
@@ -73,8 +98,8 @@ std::vector<bool> Topology::on_boundary(int dim) const
                              + std::to_string(dim));
   }
 
-  std::shared_ptr<const graph::AdjacencyList<std::int32_t>> connectivity_facet_cell
-      = connectivity(tdim - 1, tdim);
+  std::shared_ptr<const graph::AdjacencyList<std::int32_t>>
+      connectivity_facet_cell = connectivity(tdim - 1, tdim);
   if (!connectivity_facet_cell)
     throw std::runtime_error("Facet-cell connectivity missing");
 
@@ -96,8 +121,8 @@ std::vector<bool> Topology::on_boundary(int dim) const
   }
 
   // Get connectivity from facet to entities of interest (vertices or edges)
-  std::shared_ptr<const graph::AdjacencyList<std::int32_t>> connectivity_facet_entity
-      = connectivity(tdim - 1, dim);
+  std::shared_ptr<const graph::AdjacencyList<std::int32_t>>
+      connectivity_facet_entity = connectivity(tdim - 1, dim);
   if (!connectivity_facet_entity)
     throw std::runtime_error("Facet-entity connectivity missing");
 
@@ -119,8 +144,8 @@ std::vector<bool> Topology::on_boundary(int dim) const
   return marker;
 }
 //-----------------------------------------------------------------------------
-std::shared_ptr<graph::AdjacencyList<std::int32_t>> Topology::connectivity(int d0,
-                                                                     int d1)
+std::shared_ptr<graph::AdjacencyList<std::int32_t>>
+Topology::connectivity(int d0, int d1)
 {
   assert(d0 < _connectivity.rows());
   assert(d1 < _connectivity.cols());
@@ -135,8 +160,8 @@ Topology::connectivity(int d0, int d1) const
   return _connectivity(d0, d1);
 }
 //-----------------------------------------------------------------------------
-void Topology::set_connectivity(std::shared_ptr<graph::AdjacencyList<std::int32_t>> c,
-                                int d0, int d1)
+void Topology::set_connectivity(
+    std::shared_ptr<graph::AdjacencyList<std::int32_t>> c, int d0, int d1)
 {
   assert(d0 < _connectivity.rows());
   assert(d1 < _connectivity.cols());
