@@ -212,7 +212,7 @@ public:
   ///   be n * size_local().
   /// @param[in] n Number of data items per index
   /// @return Ghost data on this process received from the owning
-  ///   ßprocess. Size will be n * num_ghosts().
+  ///   process. Size will be n * num_ghosts().
   std::vector<std::int64_t>
   scatter_fwd(const std::vector<std::int64_t>& local_data, int n) const;
 
