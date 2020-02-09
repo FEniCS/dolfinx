@@ -12,7 +12,7 @@
 #include <dolfinx/common/IndexMap.h>
 #include <dolfinx/graph/CSRGraph.h>
 #include <dolfinx/mesh/cell_types.h>
-
+#include <dolfinx/mesh/Mesh.h>
 #include <map>
 #include <memory>
 #include <set>
@@ -30,16 +30,6 @@ class IndexMap;
 
 namespace mesh
 {
-// Developer note: MeshFunction and MeshValueCollection cannot appear in
-// the implementations that appear in this file of the templated
-// functions as this leads to a circular dependency. Therefore the
-// functions are templated over these types.
-
-class Mesh;
-template <typename T>
-class MeshFunction;
-template <typename T>
-class MeshValueCollection;
 
 /// Enum for different partitioning ghost modes
 enum class GhostMode : int
@@ -72,13 +62,13 @@ public:
   /// @param[in] comm MPI Communicator
   /// @param[in] cell_type Cell type
   /// @param[in] points Geometric points on each process, numbered from
-  ///                   process 0 upwards.
+  ///   process 0 upwards.
   /// @param[in] cells Topological cells with global vertex indexing.
-  ///                  Each cell appears once only.
+  ///   Each cell appears once only.
   /// @param[in] global_cell_indices Global index for each cell
   /// @param[in] ghost_mode Ghost mode
   /// @param[in] graph_partitioner External Graph Partitioner (SCOTCH,
-  ///                              PARMETIS, etc)
+  ///   ParMETIS, etc)
   /// @return A distributed mesh
   static mesh::Mesh build_distributed_mesh(
       const MPI_Comm& comm, mesh::CellType cell_type,
@@ -96,13 +86,12 @@ public:
   /// @param[in] comm MPI Communicator
   /// @param[in] type Cell type
   /// @param[in] points Geometric points on each process, numbered from
-  ///                    process 0 upwards.
+  ///   process 0 upwards.
   /// @param[in] cell_vertices Topological cells with global vertex
-  ///                          indexing. Each cell appears once only.
+  ///   indexing. Each cell appears once only.
   /// @param[in] global_cell_indices Global index for each cell
   /// @param[in] ghost_mode Ghost mode
-  /// @param[in] cell_partition Cell partition data (PartitionData
-  ///                           object)
+  /// @param[in] cell_partition Cell partition data
   /// @return A distributed mesh
   static mesh::Mesh build_from_partition(
       const MPI_Comm& comm, mesh::CellType type,
@@ -119,7 +108,7 @@ public:
   /// @param[in] nparts Number of partitions
   /// @param[in] cell_type Cell type
   /// @param[in] cell_vertices Topological cells with global vertex
-  ///                          indexing. Each cell appears once only.
+  ///   indexing. Each cell appears once only.
   /// @param[in] graph_partitioner The graph partitioner
   /// @return Cell partition data
   static PartitionData partition_cells(
@@ -132,14 +121,12 @@ public:
   /// Redistribute points to the processes that need them
   /// @param[in] comm MPI Communicator
   /// @param[in] points Existing vertex coordinates array on each
-  ///                   process before distribution
+  ///   process before distribution
   /// @param[in] global_point_indices Global indices for vertices
-  ///                                 required on this process
+  ///   required on this process
   /// @return vertex_coordinates (array of coordinates on this process
-  ///         after distribution) and shared_points (map from
-  ///         global index to set of sharing processes for each shared
-  ///         point)
-
+  ///   after distribution) and shared_points (map from global index to
+  ///   set of sharing processes for each shared point)
   static std::tuple<
     std::shared_ptr<common::IndexMap>, std::vector<std::int64_t>,
       Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>>
@@ -150,23 +137,15 @@ public:
           points,
       const std::vector<std::int64_t>& global_point_indices);
 
-  /// Utility to create global vertex indices, needed for higher order
-  /// meshes, where there are geometric points which are not at the
-  /// vertex nodes
-  static std::tuple<std::int64_t, std::vector<std::int64_t>,
-                    std::shared_ptr<common::IndexMap>>
-  build_global_vertex_indices(
-      MPI_Comm comm, const std::array<std::int32_t, 4>& num_vertices,
-      const std::vector<std::int64_t>& global_point_indices,
-      const std::map<std::int32_t, std::set<std::int32_t>>& shared_points);
-
   /// Utility to compute halo cells for a given custom cell partition
   /// @param[in] comm MPI Communicator
-  /// @param[in] parttition Array of destination process for each local cell
+  /// @param[in] partition Array of destination process for each local
+  ///   cell
   /// @param[in] cell_type Cell type
-  /// @param[in] cell_vertices Topological cells with global vertex indexing.
-  /// @return ghost_procs Map of cell_index to vector of sharing processes
-  ///                     for those cells that have multiple owners
+  /// @param[in] cell_vertices Topological cells with global vertex
+  ///   indexing
+  /// @return ghost_procs Map of cell_index to vector of sharing
+  ///   processes for those cells that have multiple owners
   static std::map<std::int64_t, std::vector<int>> compute_halo_cells(
       MPI_Comm comm, std::vector<int> parttition,
       const mesh::CellType cell_type,

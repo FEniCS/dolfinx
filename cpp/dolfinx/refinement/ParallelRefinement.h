@@ -9,7 +9,6 @@
 #include <cstdint>
 #include <dolfinx/common/MPI.h>
 #include <map>
-#include <unordered_map>
 #include <vector>
 
 namespace dolfinx
@@ -57,7 +56,7 @@ public:
 
   /// Mark all edges incident on entities indicated by refinement marker
   /// @param[in] refinement_marker Value 1 means "refine", any other
-  ///                              value means "do not refine"
+  ///   value means "do not refine"
   void mark(const mesh::MeshFunction<int>& refinement_marker);
 
   /// Mark all incident edges of an entity
