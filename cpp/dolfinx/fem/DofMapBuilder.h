@@ -7,6 +7,7 @@
 #pragma once
 
 #include <dolfinx/fem/DofMap.h>
+#include <dolfinx/mesh/cell_types.h>
 #include <memory>
 #include <petscsys.h>
 #include <tuple>
@@ -22,7 +23,6 @@ class IndexMap;
 
 namespace mesh
 {
-class Mesh;
 class Topology;
 } // namespace mesh
 
@@ -39,7 +39,8 @@ class DofMapBuilder
 public:
   /// Build dofmap
   static DofMap
-  build(const mesh::Mesh& mesh,
+  build(MPI_Comm comm, const mesh::Topology& topology,
+        const mesh::CellType cell_type,
         std::shared_ptr<const ElementDofLayout> element_dof_layout);
 
   /// Build sub-dofmap view
@@ -50,7 +51,9 @@ public:
   /// Build dofmap
   static std::tuple<std::unique_ptr<common::IndexMap>,
                     Eigen::Array<PetscInt, Eigen::Dynamic, 1>>
-  build(const mesh::Mesh& mesh, const ElementDofLayout& element_dof_layout,
+  build(MPI_Comm comm, const mesh::Topology& topology,
+        const mesh::CellType cell_type,
+        const ElementDofLayout& element_dof_layout,
         const std::int32_t block_size);
 };
 } // namespace fem

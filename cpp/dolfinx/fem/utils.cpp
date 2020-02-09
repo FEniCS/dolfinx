@@ -470,9 +470,20 @@ fem::create_element_dof_layout(const ufc_dofmap& dofmap,
 fem::DofMap fem::create_dofmap(const ufc_dofmap& ufc_dofmap,
                                const mesh::Mesh& mesh)
 {
-  return DofMapBuilder::build(
-      mesh, std::make_shared<ElementDofLayout>(
-                create_element_dof_layout(ufc_dofmap, mesh.cell_type())));
+  auto element_dof_layout = std::make_shared<ElementDofLayout>(
+      create_element_dof_layout(ufc_dofmap, mesh.cell_type()));
+  assert(element_dof_layout);
+
+  // Create required mesh entities
+  const int D = mesh.topology().dim();
+  for (int d = 0; d <= D; ++d)
+  {
+    if (element_dof_layout->num_entity_dofs(d) > 0)
+      mesh.create_entities(d);
+  }
+
+  return DofMapBuilder::build(mesh.mpi_comm(), mesh.topology(),
+                              mesh.cell_type(), element_dof_layout);
 }
 //-----------------------------------------------------------------------------
 std::vector<std::tuple<int, std::string, std::shared_ptr<function::Function>>>

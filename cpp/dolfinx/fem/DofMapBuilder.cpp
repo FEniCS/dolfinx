@@ -17,7 +17,6 @@
 #include <dolfinx/graph/BoostGraphOrdering.h>
 #include <dolfinx/graph/GraphBuilder.h>
 #include <dolfinx/graph/SCOTCH.h>
-#include <dolfinx/mesh/Mesh.h>
 #include <dolfinx/mesh/Topology.h>
 #include <memory>
 #include <numeric>
@@ -43,7 +42,7 @@ namespace
 ///   {dimension, mesh entity index} for each local dof i}
 std::tuple<graph::AdjacencyList<std::int32_t>, std::vector<std::int64_t>,
            std::vector<std::pair<std::int8_t, std::int32_t>>>
-build_basic_dofmap(const mesh::Mesh& mesh, const mesh::Topology& topology,
+build_basic_dofmap(const mesh::Topology& topology,
                    const mesh::CellType cell_type,
                    const ElementDofLayout& element_dof_layout)
 {
@@ -111,7 +110,8 @@ build_basic_dofmap(const mesh::Mesh& mesh, const mesh::Topology& topology,
 
   // Compute cell dof permutations
   const Eigen::Array<int, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
-      permutations = fem::compute_dof_permutations(mesh, element_dof_layout);
+      permutations
+      = fem::compute_dof_permutations(topology, cell_type, element_dof_layout);
 
   // Storage for local-to-global map
   std::vector<std::int64_t> local_to_global(local_size);
@@ -429,7 +429,8 @@ std::vector<std::int64_t> get_global_indices(
 
 //-----------------------------------------------------------------------------
 fem::DofMap
-DofMapBuilder::build(const mesh::Mesh& mesh,
+DofMapBuilder::build(MPI_Comm comm, const mesh::Topology& topology,
+                     const mesh::CellType cell_type,
                      std::shared_ptr<const ElementDofLayout> element_dof_layout)
 {
   assert(element_dof_layout);
@@ -438,13 +439,13 @@ DofMapBuilder::build(const mesh::Mesh& mesh,
   Eigen::Array<PetscInt, Eigen::Dynamic, 1> dofmap;
   if (bs == 1)
   {
-    std::tie(index_map, dofmap)
-        = DofMapBuilder::build(mesh, *element_dof_layout, 1);
+    std::tie(index_map, dofmap) = DofMapBuilder::build(
+        comm, topology, cell_type, *element_dof_layout, 1);
   }
   else
   {
-    std::tie(index_map, dofmap)
-        = DofMapBuilder::build(mesh, *element_dof_layout->sub_dofmap({0}), bs);
+    std::tie(index_map, dofmap) = DofMapBuilder::build(
+        comm, topology, cell_type, *element_dof_layout->sub_dofmap({0}), bs);
   }
 
   return fem::DofMap(element_dof_layout, index_map, dofmap);
@@ -488,7 +489,8 @@ fem::DofMap DofMapBuilder::build_submap(const DofMap& dofmap_parent,
 //-----------------------------------------------------------------------------
 std::tuple<std::unique_ptr<common::IndexMap>,
            Eigen::Array<PetscInt, Eigen::Dynamic, 1>>
-DofMapBuilder::build(const mesh::Mesh& mesh,
+DofMapBuilder::build(MPI_Comm comm, const mesh::Topology& topology,
+                     const mesh::CellType cell_type,
                      const ElementDofLayout& element_dof_layout,
                      const std::int32_t block_size)
 {
@@ -497,21 +499,14 @@ DofMapBuilder::build(const mesh::Mesh& mesh,
   if (element_dof_layout.block_size() != 1)
     throw std::runtime_error("Block size of 1 expected when building dofmap.");
 
-  const int D = mesh.topology().dim();
-
-  // Create required mesh entities
-  for (int d = 0; d <= D; ++d)
-  {
-    if (element_dof_layout.num_entity_dofs(d) > 0)
-      mesh.create_entities(d);
-  }
+  const int D = topology.dim();
 
   // Build a simple dofmap based on mesh entity numbering, returning (i)
   // a local dofmap, (ii) local-to-global map for dof indices, and (iii)
   // pair {dimension, mesh entity index} giving the mesh entity that dof
   // i is associated with.
-  const auto [node_graph0, local_to_global0, dof_entity0] = build_basic_dofmap(
-      mesh, mesh.topology(), mesh.cell_type(), element_dof_layout);
+  const auto [node_graph0, local_to_global0, dof_entity0]
+      = build_basic_dofmap(topology, cell_type, element_dof_layout);
 
   // Compute global dofmap dimension
   std::int64_t global_dimension = 0;
@@ -519,8 +514,8 @@ DofMapBuilder::build(const mesh::Mesh& mesh,
   {
     if (element_dof_layout.num_entity_dofs(d) > 0)
     {
-      assert(mesh.topology().index_map(d));
-      const std::int64_t n = mesh.topology().index_map(d)->size_global();
+      assert(topology.index_map(d));
+      const std::int64_t n = topology.index_map(d)->size_global();
       global_dimension += n * element_dof_layout.num_entity_dofs(d);
     }
   }
@@ -528,24 +523,23 @@ DofMapBuilder::build(const mesh::Mesh& mesh,
   // Build re-ordering map for data locality and get number of owned
   // nodes
   const auto [old_to_new, num_owned]
-      = compute_reordering_map(node_graph0, dof_entity0, mesh.topology());
+      = compute_reordering_map(node_graph0, dof_entity0, topology);
 
   // Compute process offset for owned nodes
   const std::int64_t process_offset
-      = dolfinx::MPI::global_offset(mesh.mpi_comm(), num_owned, true);
+      = dolfinx::MPI::global_offset(comm, num_owned, true);
 
   // Get global indices for unowned dofs
   const std::vector<std::int64_t> local_to_global_unowned
-      = get_global_indices(mesh.topology(), num_owned, process_offset,
+      = get_global_indices(topology, num_owned, process_offset,
                            local_to_global0, old_to_new, dof_entity0);
 
   // Create IndexMap for dofs range on this process
   auto index_map = std::make_unique<common::IndexMap>(
-      mesh.mpi_comm(), num_owned, local_to_global_unowned, block_size);
+      comm, num_owned, local_to_global_unowned, block_size);
   assert(index_map);
-  assert(
-      dolfinx::MPI::sum(mesh.mpi_comm(), (std::int64_t)index_map->size_local())
-      == global_dimension);
+  assert(dolfinx::MPI::sum(comm, (std::int64_t)index_map->size_local())
+         == global_dimension);
 
   // FIXME: There is an assumption here on the dof order for an element.
   //        It should come from the ElementDofLayout.

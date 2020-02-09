@@ -5,6 +5,7 @@
 // SPDX-License-Identifier:    LGPL-3.0-or-later
 
 #include <Eigen/Dense>
+#include <dolfinx/mesh/cell_types.h>
 #include <vector>
 
 namespace dolfinx
@@ -12,7 +13,7 @@ namespace dolfinx
 
 namespace mesh
 {
-class Mesh;
+class Topology;
 } // namespace mesh
 
 namespace fem
@@ -26,7 +27,8 @@ class ElementDofLayout;
 /// @param[in] dof_layout The layout of dofs on a each cell
 /// @return The permutations
 Eigen::Array<int, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
-compute_dof_permutations(const mesh::Mesh& mesh,
+compute_dof_permutations(const mesh::Topology& topology,
+                         const mesh::CellType cell_type,
                          const fem::ElementDofLayout& dof_layout);
 
 } // namespace fem

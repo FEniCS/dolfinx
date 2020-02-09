@@ -165,7 +165,8 @@ DofMap::collapse(const mesh::Mesh& mesh) const
     // Parent does not have block structure but sub-map does, so build
     // new submap to get block structure for collapsed dofmap.
     dofmap_new = std::make_unique<DofMap>(
-        DofMapBuilder::build(mesh, collapsed_dof_layout));
+        DofMapBuilder::build(mesh.mpi_comm(), mesh.topology(), mesh.cell_type(),
+                             collapsed_dof_layout));
   }
   else
   {
