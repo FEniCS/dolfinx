@@ -213,6 +213,8 @@ void fem(py::module& m)
       m, "ElementDofLayout", "Object describing the layout of dofs on a cell")
       .def_property_readonly("num_dofs",
                              &dolfinx::fem::ElementDofLayout::num_dofs)
+      .def_property_readonly("cell_type",
+                             &dolfinx::fem::ElementDofLayout::cell_type)
       .def("num_entity_dofs", &dolfinx::fem::ElementDofLayout::num_entity_dofs)
       .def("num_entity_closure_dofs",
            &dolfinx::fem::ElementDofLayout::num_entity_closure_dofs)
