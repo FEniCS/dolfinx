@@ -121,7 +121,7 @@ get_shared_entities(MPI_Comm neighbour_comm,
 //-----------------------------------------------------------------------------
 // Communicate with sharing processes to find out which entities are ghost
 // and return a mapping vector to move them to the end of the local range.
-std::vector<int> get_ghost_mapping(
+std::tuple<std::vector<int>, std::vector<std::int64_t>> get_ghost_mapping(
     MPI_Comm comm,
     const std::map<std::int32_t, std::set<std::int32_t>>& shared_vertices,
     const std::vector<std::int64_t>& global_vertex_indices,
@@ -221,11 +221,12 @@ std::vector<int> get_ghost_mapping(
   }
   const std::int32_t num_local = c;
 
+  std::vector<std::int64_t> global_indexing(entity_count, -1);
+
   // Create global indices
   {
     const std::int64_t local_offset
         = dolfinx::MPI::global_offset(comm, num_local, true);
-    std::vector<std::int64_t> global_indexing(entity_count, -1);
     for (int i = 0; i < entity_count; ++i)
     {
       if (mapping[i] != -1)
@@ -262,13 +263,6 @@ std::vector<int> get_ghost_mapping(
           global_indexing[recv_index[np][j]] = gi;
       }
     }
-
-    // std::stringstream s;
-    // s << mpi_rank << "] gi = [";
-    // for (auto q : global_indexing)
-    //   s << q << " ";
-    // s << "]\n";
-    // std::cout << s.str();
   }
 
   // Now index the ghosts locally
@@ -282,7 +276,7 @@ std::vector<int> get_ghost_mapping(
 
   // FIXME - Remap shared entities to new indices
   // FIXME - also return shared_entities, and global numbering (remapped?)
-  return mapping;
+  return {mapping, global_indexing};
 }
 //-----------------------------------------------------------------------------
 std::tuple<std::shared_ptr<graph::AdjacencyList<std::int32_t>>,
@@ -364,9 +358,19 @@ compute_entities_by_key_matching(
 
   // Communicate with other processes to find out which entities are ghosted
   // and shared. Remap the numbering so that ghosts are at the end.
-  std::vector<int> mapping
+  auto [mapping, global_indices]
       = get_ghost_mapping(comm, shared_vertices, global_vertex_indices,
                           entity_list, entity_index, entity_count);
+
+  // DEBUG I/O
+  std::stringstream s;
+  int mpi_rank = dolfinx::MPI::rank(comm);
+  s << "Global indexing\n";
+  s << mpi_rank << "] gi = [";
+  for (auto q : global_indices)
+    s << q << " ";
+  s << "]\n";
+  std::cout << s.str();
 
   // Do the actual remap
   for (std::int32_t& q : entity_index)
