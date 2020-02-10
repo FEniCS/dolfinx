@@ -468,12 +468,15 @@ std::int32_t Mesh::create_entities(int dim) const
 
   // Number globally (this code is largely duplicated in
   // TopologyComputation::compute_entities and will soon be removed)
-  DistributedMeshTools::number_entities(this->mpi_comm(), *_topology,
-                                        _cell_type, dim);
+  //  DistributedMeshTools::number_entities(this->mpi_comm(), *_topology,
+  //                                        _cell_type, dim);
 
-  // FIXME: remove this
   if (index_map)
+  {
+    _topology->set_index_map(dim, index_map);
+    // FIXME: remove global_indices
     _topology->set_global_indices(dim, index_map->global_indices(false));
+  }
 
   if (shared_entities.size() > 0)
     _topology->set_shared_entities(dim, shared_entities);

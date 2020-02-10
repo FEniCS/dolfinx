@@ -240,6 +240,7 @@ get_ghost_mapping(
       }
       else
         global_indexing[i] = local_offset + mapping[i];
+      // FIXME - this entry in global_indexing will be unused. clean up.
     }
     assert(c == entity_count);
 
@@ -275,6 +276,7 @@ get_ghost_mapping(
     }
   }
 
+  // FIXME: clean this up
   // Remap global indexing to new order and feed into IndexMap
   Eigen::Array<std::int64_t, Eigen::Dynamic, 1> ghost_indices(entity_count
                                                               - num_local);
@@ -283,7 +285,6 @@ get_ghost_mapping(
     if (mapping[i] >= num_local)
       ghost_indices[mapping[i] - num_local] = global_indexing[i];
   }
-
   std::shared_ptr<common::IndexMap> index_map
       = std::make_shared<common::IndexMap>(comm, num_local, ghost_indices, 1);
 
@@ -292,8 +293,6 @@ get_ghost_mapping(
   for (auto q : shared_entities)
     remapped_shared_entities[mapping[q.first]] = q.second;
 
-  // FIXME - Remap shared entities to new indices
-  // FIXME - Also return shared_entities
   return {std::move(mapping), index_map, std::move(remapped_shared_entities)};
 }
 //-----------------------------------------------------------------------------
