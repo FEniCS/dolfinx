@@ -319,30 +319,9 @@ Mesh::Mesh(
         vertex_cols(i, j)
             = node_index_to_vertex[coordinate_nodes(i, vertex_indices[j])];
 
-    std::stringstream s;
-    s << MPI::rank(comm) << " ";
-    s << "V=";
-    for (int q : vertices)
-      s << q << " ";
-    s << "\n\n";
-    std::cout << s.str();
-
     vertex_index_map = point_map_to_vertex_map(point_index_map, vertices);
 
-    s.str("");
-
-    s << "Made vertex_index_map for higher order with "
-      << vertex_index_map->size_local() << " local and "
-      << vertex_index_map->num_ghosts() << " ghost indices\n";
     shared_vertices = compute_shared_from_indexmap(*vertex_index_map);
-    for (auto q : shared_vertices)
-    {
-      s << q.first << ":{";
-      for (int r : q.second)
-        s << r << " ";
-      s << "},";
-    }
-    std::cout << s.str() << "\n";
   }
 
   // Initialise vertex topology
@@ -472,14 +451,13 @@ std::int32_t Mesh::create_entities(int dim) const
       = TopologyComputation::compute_entities(_mpi_comm.comm(), *_topology,
                                               _cell_type, dim);
 
-  // Mesh* mesh = const_cast<Mesh*>(this);
-
   if (cell_entity)
     _topology->set_connectivity(cell_entity, _topology->dim(), dim);
   if (entity_vertex)
     _topology->set_connectivity(entity_vertex, dim, 0);
 
-  // Number globally
+  // Number globally (this code is largely duplicated in
+  // TopologyComputation::compute_entities and will soon be removed)
   DistributedMeshTools::number_entities(this->mpi_comm(), *_topology,
                                         _cell_type, dim);
 
