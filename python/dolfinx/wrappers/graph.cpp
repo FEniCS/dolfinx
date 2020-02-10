@@ -26,18 +26,19 @@ void graph(py::module& m)
   py::class_<dolfinx::graph::AdjacencyList<std::int32_t>,
              std::shared_ptr<dolfinx::graph::AdjacencyList<std::int32_t>>>(
       m, "AdjacencyList", "Adjacency list")
-      .def(
-          "links",
-          [](const dolfinx::graph::AdjacencyList<std::int32_t>& self, int i) {
-            return self.links(i);
-          },
-          "Links (edges) of a node",
-          py::return_value_policy::reference_internal)
+      .def("links",
+           [](const dolfinx::graph::AdjacencyList<std::int32_t>& self, int i) {
+             return self.links(i);
+           },
+           "Links (edges) of a node",
+           py::return_value_policy::reference_internal)
       .def("array", &dolfinx::graph::AdjacencyList<std::int32_t>::array,
            "All edges", py::return_value_policy::reference_internal)
       .def("offsets", &dolfinx::graph::AdjacencyList<std::int32_t>::offsets,
            "Index to each node in the links array",
            py::return_value_policy::reference_internal)
+      .def("num_links", &dolfinx::graph::AdjacencyList<std::int32_t>::num_links,
+           "Number of links (connections) for given node")
       .def_property_readonly(
           "num_nodes", &dolfinx::graph::AdjacencyList<std::int32_t>::num_nodes);
 
