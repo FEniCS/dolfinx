@@ -114,15 +114,20 @@ commands:
       dockerfile:
         type: string
         default: "Dockerfile"
+      extra-args:
+        type: string
+        default: ""
     steps:
       - run: >
           cd docker &&
-          docker build --build-arg MAKEFLAGS='-j3'
+          sudo DOCKER_CLI_EXPERIMENTAL=enabled docker buildx build --cache-to=type=inline,mode=all
+          --progress plain
+          --build-arg MAKEFLAGS='-j3'
           --build-arg PETSC_SLEPC_OPTFLAGS='-O3'
           --target << parameters.docker-target >>
-          --file << parameters.dockerfile >>
-          -t quay.io/fenicsproject/dolfinx:<< parameters.docker-target >> . &&
-          docker push quay.io/fenicsproject/dolfinx:<< parameters.docker-target >>
+          --file << parameters.dockerfile >> << parameters.extra-args >>
+          --tag quay.io/fenicsproject/dolfinx:<< parameters.docker-target >> . &&
+          sudo docker push quay.io/fenicsproject/dolfinx:<< parameters.docker-target >>
 
 jobs:
   build-real:
@@ -207,44 +212,59 @@ jobs:
           command: cd /tmp/cpp/doc/html && scp -r * docs@fenicsproject.org:/var/www/vhosts/fenicsproject.org/docs/dolfinx/dev/cpp/
 
   build-and-push-dev-env-docker-images:
-    docker:
-      - image: docker:18.09-git
+    machine:
+      image: ubuntu-1604:201903-01
     steps:
-      - setup_remote_docker:
-          version: 18.09.3
       - checkout
       - run:
+          name: Update Docker
+          command: |
+            sudo apt-get -y remove docker docker-engine docker.io containerd runc
+            sudo apt-get -y update
+            sudo apt-get -y install apt-transport-https ca-certificates curl gnupg-agent software-properties-common
+            curl -fsSL https://download.docker.com/linux/ubuntu/gpg | sudo apt-key add -
+            sudo add-apt-repository -y "deb [arch=amd64] https://download.docker.com/linux/ubuntu $(lsb_release -cs) stable"
+            sudo apt-get -y install docker-ce docker-ce-cli containerd.io
+            sudo docker run hello-world
+      - run:
           name: Login to quay.io
-          command: echo ${QUAYIO_TOKEN} | docker login -u ${QUAYIO_USERNAME} --password-stdin quay.io
+          command: echo ${QUAYIO_TOKEN} | sudo docker login -u ${QUAYIO_USERNAME} --password-stdin quay.io
       - build-and-push-target:
           docker-target: "base"
-          dockerfile: "Dockerfile.dev-env"
       - build-and-push-target:
           docker-target: "dev-env-real"
-          dockerfile: "Dockerfile.dev-env"
       - build-and-push-target:
           docker-target: "dev-env-complex"
-          dockerfile: "Dockerfile.dev-env"
 
   build-and-push-complete-build-docker-images:
-    docker:
-      - image: docker:18.09-git
+    machine:
+      image: ubuntu-1604:201903-01
     steps:
-      - setup_remote_docker:
-          version: 18.09.3
       - checkout
       - run:
+          name: Update Docker
+          command: |
+            sudo apt-get -y remove docker docker-engine docker.io containerd runc
+            sudo apt-get -y update
+            sudo apt-get -y install apt-transport-https ca-certificates curl gnupg-agent software-properties-common
+            curl -fsSL https://download.docker.com/linux/ubuntu/gpg | sudo apt-key add -
+            sudo add-apt-repository -y "deb [arch=amd64] https://download.docker.com/linux/ubuntu $(lsb_release -cs) stable"
+            sudo apt-get -y install docker-ce docker-ce-cli containerd.io
+            sudo docker run hello-world
+      - run:
           name: Login to quay.io
-          command: echo ${QUAYIO_TOKEN} | docker login -u ${QUAYIO_USERNAME} --password-stdin quay.io
+          command: echo ${QUAYIO_TOKEN} | sudo docker login -u ${QUAYIO_USERNAME} --password-stdin quay.io
       - run:
           name: Pull dev-env images
           command: |
-            docker pull quay.io/fenicsproject/dolfinx:dev-env-real
-            docker pull quay.io/fenicsproject/dolfinx:dev-env-complex
+            sudo docker pull quay.io/fenicsproject/dolfinx:dev-env-real
+            sudo docker pull quay.io/fenicsproject/dolfinx:dev-env-complex
       - build-and-push-target:
           docker-target: "real-onbuild"
+          extra-args: "--cache-from quay.io/fenicsproject/dolfinx:dev-env-real"
       - build-and-push-target:
           docker-target: "complex-onbuild"
+          extra-args: "--cache-from quay.io/fenicsproject/dolfinx:dev-env-complex"
       - build-and-push-target:
           docker-target: "real"
       - build-and-push-target:
