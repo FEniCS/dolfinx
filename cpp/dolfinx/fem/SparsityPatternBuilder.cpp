@@ -95,7 +95,7 @@ void SparsityPatternBuilder::exterior_facets(
 
     // FIXME: sort out ghosting
 
-    assert(connectivity->num_edges(f) == 1);
+    assert(connectivity->num_links(f) == 1);
     auto cells = connectivity->edges(f);
     const int cell = cells[0];
 

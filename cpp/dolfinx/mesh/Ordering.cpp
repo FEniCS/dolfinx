@@ -228,7 +228,7 @@ bool ordered_cell_simplex(
       = topology.connectivity(tdim, 0);
   assert(connect_tdim_0);
 
-  const int num_vertices = connect_tdim_0->num_edges(c);
+  const int num_vertices = connect_tdim_0->num_links(c);
   auto vertices = connect_tdim_0->edges(c);
 
   // Check that vertices are in ascending order
@@ -256,7 +256,7 @@ bool ordered_cell_simplex(
     std::shared_ptr<const graph::AdjacencyList<std::int32_t>> connect_tdim_d
         = topology.connectivity(tdim, d);
     assert(connect_tdim_d);
-    const int num_entities = connect_tdim_d->num_edges(c);
+    const int num_entities = connect_tdim_d->num_links(c);
     auto entities = connect_tdim_d->edges(c);
 
     // Iterate over entities
@@ -264,12 +264,12 @@ bool ordered_cell_simplex(
     {
       // Get vertices for first entity
       const int e0 = entities[e - 1];
-      const int n0 = connect_d_0->num_edges(e0);
+      const int n0 = connect_d_0->num_links(e0);
       auto v0 = connect_d_0->edges(e0);
 
       // Get vertices for second entity
       const int e1 = entities[e];
-      const int n1 = connect_d_0->num_edges(e1);
+      const int n1 = connect_d_0->num_links(e1);
       auto v1 = connect_d_0->edges(e1);
 
       // Check ordering of entities

@@ -548,7 +548,7 @@ DofMapBuilder::build(MPI_Comm comm, const mesh::Topology& topology,
                                                    * block_size);
   for (std::int32_t cell = 0; cell < node_graph0.num_nodes(); ++cell)
   {
-    const std::int32_t local_dim0 = node_graph0.num_edges(cell);
+    const std::int32_t local_dim0 = node_graph0.num_links(cell);
     auto old_nodes = node_graph0.edges(cell);
     for (std::int32_t j = 0; j < local_dim0; ++j)
     {

@@ -51,7 +51,7 @@ public:
   }
 
   /// Construct adjacency list for a problem with a fixed number of
-  /// edges for each node
+  /// links (edges) for each node
   /// @param [in] matrix Two-dimensional array of adjacency data where
   ///   matrix(i, j) is the jth neighbor of the ith node
   AdjacencyList(
@@ -59,14 +59,14 @@ public:
                                           Eigen::RowMajor>>& matrix)
       : _array(matrix.rows() * matrix.cols()), _offsets(matrix.rows() + 1)
   {
-    const std::int32_t num_edges = matrix.cols();
+    const std::int32_t num_links = matrix.cols();
     for (Eigen::Index e = 0; e < _offsets.rows(); e++)
-      _offsets[e] = e * num_edges;
+      _offsets[e] = e * num_links;
 
     // NOTE: Do not directly copy data from matrix because it may be a
     // view into a larger array
     for (Eigen::Index i = 0; i < matrix.rows(); ++i)
-      _array.segment(_offsets(i), num_edges) = matrix.row(i);
+      _array.segment(_offsets(i), num_links) = matrix.row(i);
   }
 
   /// Set all connections for all entities (T is a '2D' container, e.g.
@@ -115,8 +115,8 @@ public:
 
   /// Number of connections for given node
   /// @param [in] Node index
-  /// @return The number of outgoing edges from the node
-  int num_edges(int node) const
+  /// @return The number of outgoing links (edges) from the node
+  int num_links(int node) const
   {
     assert((node + 1) < _offsets.rows());
     return _offsets[node + 1] - _offsets[node];

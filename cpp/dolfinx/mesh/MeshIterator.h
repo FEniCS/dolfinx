@@ -252,7 +252,7 @@ public:
                                          : _entity.mesh()
                                                .topology()
                                                .connectivity(_entity._dim, _dim)
-                                               ->num_edges(_entity.index());
+                                               ->num_links(_entity.index());
     return MeshEntityIterator(_entity, _dim, n);
   }
 

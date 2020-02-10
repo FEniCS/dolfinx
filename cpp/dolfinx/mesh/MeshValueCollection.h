@@ -179,9 +179,9 @@ MeshValueCollection<T>::MeshValueCollection(
          ++entity_index)
     {
       // Find the cell
-      assert(connectivity.num_edges(entity_index) > 0);
+      assert(connectivity.num_links(entity_index) > 0);
       const MeshEntity entity(*_mesh, _dim, entity_index);
-      for (int i = 0; i < connectivity.num_edges(entity_index); ++i)
+      for (int i = 0; i < connectivity.num_links(entity_index); ++i)
       {
         // Create cell
         const mesh::MeshEntity cell(*_mesh, D,
@@ -233,9 +233,9 @@ MeshValueCollection<T>::operator=(const MeshFunction<T>& mesh_function)
          ++entity_index)
     {
       // Find the cell
-      assert(connectivity.num_edges(entity_index) > 0);
+      assert(connectivity.num_links(entity_index) > 0);
       const MeshEntity entity(*_mesh, _dim, entity_index);
-      for (int i = 0; i < connectivity.num_edges(entity_index); ++i)
+      for (int i = 0; i < connectivity.num_links(entity_index); ++i)
       {
         // Create cell
         const mesh::MeshEntity cell(*_mesh, D,
@@ -342,7 +342,7 @@ bool MeshValueCollection<T>::set_value(std::size_t entity_index, const T& value)
   const graph::AdjacencyList<std::int32_t>& connectivity = *_mesh->topology().connectivity(_dim, D);
 
   // Find the cell
-  assert(connectivity.num_edges(entity_index) > 0);
+  assert(connectivity.num_links(entity_index) > 0);
   const MeshEntity entity(*_mesh, _dim, entity_index);
   const mesh::MeshEntity cell(
       *_mesh, D, connectivity.edges(entity_index)[0]); // choose first
