@@ -423,8 +423,10 @@ void DistributedMeshTools::number_entities(MPI_Comm comm,
   // Set shared entities
   _topology.set_shared_entities(d, shared_entities);
 
+  global_entity_indices.size();
+
   // Set global entity numbers in mesh
-  _topology.set_global_indices(d, global_entity_indices);
+  //  _topology.set_global_indices(d, global_entity_indices);
 }
 //-----------------------------------------------------------------------------
 void DistributedMeshTools::init_facet_cell_connections(MPI_Comm comm,

@@ -20,7 +20,6 @@ namespace graph
 {
 template <typename T>
 class AdjacencyList;
-
 }
 
 namespace mesh
@@ -43,7 +42,7 @@ public:
   ///   already exists, then {nullptr, nullptr, -1} is returned.
   static std::tuple<std::shared_ptr<graph::AdjacencyList<std::int32_t>>,
                     std::shared_ptr<graph::AdjacencyList<std::int32_t>>,
-                    std::int32_t>
+                    std::int32_t, std::vector<std::int64_t>>
   compute_entities(MPI_Comm comm, const Topology& topology,
                    mesh::CellType cell_type, int dim);
 

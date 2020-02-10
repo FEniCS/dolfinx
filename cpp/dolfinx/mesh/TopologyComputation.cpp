@@ -280,7 +280,8 @@ std::tuple<std::vector<int>, std::vector<std::int64_t>> get_ghost_mapping(
 }
 //-----------------------------------------------------------------------------
 std::tuple<std::shared_ptr<graph::AdjacencyList<std::int32_t>>,
-           std::shared_ptr<graph::AdjacencyList<std::int32_t>>, std::int32_t>
+           std::shared_ptr<graph::AdjacencyList<std::int32_t>>, std::int32_t,
+           std::vector<std::int64_t>>
 compute_entities_by_key_matching(
     MPI_Comm comm, const graph::AdjacencyList<std::int32_t>& cells,
     const std::map<std::int32_t, std::set<std::int32_t>>& shared_vertices,
@@ -362,16 +363,6 @@ compute_entities_by_key_matching(
       = get_ghost_mapping(comm, shared_vertices, global_vertex_indices,
                           entity_list, entity_index, entity_count);
 
-  // DEBUG I/O
-  std::stringstream s;
-  int mpi_rank = dolfinx::MPI::rank(comm);
-  s << "Global indexing\n";
-  s << mpi_rank << "] gi = [";
-  for (auto q : global_indices)
-    s << q << " ";
-  s << "]\n";
-  std::cout << s.str();
-
   // Do the actual remap
   for (std::int32_t& q : entity_index)
     q = mapping[q];
@@ -393,7 +384,7 @@ compute_entities_by_key_matching(
   auto ev
       = std::make_shared<graph::AdjacencyList<std::int32_t>>(connectivity_ev);
 
-  return {ce, ev, entity_count};
+  return {ce, ev, entity_count, std::move(global_indices)};
 }
 //-----------------------------------------------------------------------------
 // Compute connectivity from transpose
@@ -504,7 +495,8 @@ compute_from_map(const graph::AdjacencyList<std::int32_t>& c_d0_0,
 
 //-----------------------------------------------------------------------------
 std::tuple<std::shared_ptr<graph::AdjacencyList<std::int32_t>>,
-           std::shared_ptr<graph::AdjacencyList<std::int32_t>>, std::int32_t>
+           std::shared_ptr<graph::AdjacencyList<std::int32_t>>, std::int32_t,
+           std::vector<std::int64_t>>
 TopologyComputation::compute_entities(MPI_Comm comm, const Topology& topology,
                                       mesh::CellType cell_type, int dim)
 {
@@ -512,7 +504,7 @@ TopologyComputation::compute_entities(MPI_Comm comm, const Topology& topology,
 
   // Vertices must always exist
   if (dim == 0)
-    return {nullptr, nullptr, -1};
+    return {nullptr, nullptr, -1, std::vector<std::int64_t>()};
 
   if (topology.connectivity(dim, 0))
   {
@@ -524,7 +516,7 @@ TopologyComputation::compute_entities(MPI_Comm comm, const Topology& topology,
           "dimension "
           + std::to_string(dim) + " exist but connectivity is missing.");
     }
-    return {nullptr, nullptr, -1};
+    return {nullptr, nullptr, -1, std::vector<std::int64_t>()};
   }
 
   const int tdim = topology.dim();
@@ -532,7 +524,8 @@ TopologyComputation::compute_entities(MPI_Comm comm, const Topology& topology,
   if (!cells)
     throw std::runtime_error("Cell connectivity missing.");
   std::tuple<std::shared_ptr<graph::AdjacencyList<std::int32_t>>,
-             std::shared_ptr<graph::AdjacencyList<std::int32_t>>, std::int32_t>
+             std::shared_ptr<graph::AdjacencyList<std::int32_t>>, std::int32_t,
+             std::vector<std::int64_t>>
       data = compute_entities_by_key_matching(
           comm, *cells, topology.shared_entities(0), topology.global_indices(0),
           cell_type, dim);

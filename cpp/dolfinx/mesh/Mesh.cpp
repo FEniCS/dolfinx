@@ -447,14 +447,27 @@ std::int32_t Mesh::create_entities(int dim) const
     return -1;
 
   // Create local entities
-  const auto [cell_entity, entity_vertex, num_new_entities]
+  const auto [cell_entity, entity_vertex, num_new_entities, global_indices]
       = TopologyComputation::compute_entities(_mpi_comm.comm(), *_topology,
                                               _cell_type, dim);
+
+  // DEBUG I/O
+  std::stringstream s;
+  int mpi_rank = dolfinx::MPI::rank(_mpi_comm.comm());
+  s << "Global indexing\n";
+  s << mpi_rank << "] gi = [";
+  for (auto q : global_indices)
+    s << q << " ";
+  s << "]\n";
+  std::cout << s.str();
 
   if (cell_entity)
     _topology->set_connectivity(cell_entity, _topology->dim(), dim);
   if (entity_vertex)
     _topology->set_connectivity(entity_vertex, dim, 0);
+
+  if (!global_indices.empty())
+    _topology->set_global_indices(dim, global_indices);
 
   // Number globally (this code is largely duplicated in
   // TopologyComputation::compute_entities and will soon be removed)
