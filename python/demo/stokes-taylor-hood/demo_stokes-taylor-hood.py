@@ -107,6 +107,9 @@ def noslip_boudary(x): return np.logical_or(np.logical_or(np.isclose(x[0], 0.0),
 def lid(x): return np.isclose(x[1], 1.0)
 
 
+# Lid velocity
+def lid_velocity_expression(x): return np.stack((np.ones(x.shape[1]), np.zeros(x.shape[1])))
+
 # We define two :py:class:`FunctionSpace
 # <dolfinx.function.FunctionSpace>` instances with different finite
 # elements. ``P2`` corresponds to piecewise quadratics for the velocity
@@ -132,7 +135,7 @@ bc0 = DirichletBC(noslip, locate_dofs_topological(V, 1, facets))
 
 # Driving velocity condition u = (1, 0) on top boundary (y = 1)
 lid_velocity = Function(V)
-lid_velocity.interpolate(lambda x: np.stack((np.ones(x.shape[1]), np.zeros(x.shape[1]))))
+lid_velocity.interpolate(lid_velocity_expression)
 
 facets = compute_marked_boundary_entities(mesh, 1, lid)
 bc1 = DirichletBC(lid_velocity, locate_dofs_topological(V, 1, facets))
@@ -413,7 +416,7 @@ bc0 = DirichletBC(noslip, dofs, W.sub(0))
 
 # Driving velocity condition u = (1, 0) on top boundary (y = 1)
 lid_velocity = Function(W0)
-lid_velocity.interpolate(lambda x: np.stack((np.ones(x.shape[1]), np.zeros(x.shape[1]))))
+lid_velocity.interpolate(lid_velocity_expression)
 facets = compute_marked_boundary_entities(mesh, 1, lid)
 dofs = locate_dofs_topological((W.sub(0), V), 1, facets)
 bc1 = DirichletBC(lid_velocity, dofs, W.sub(0))
