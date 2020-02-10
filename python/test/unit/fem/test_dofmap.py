@@ -436,7 +436,7 @@ def test_dofs_dim(space):
     for dim in range(0, topology.dim):
         edofs = dofmap.dofs(topology, dim)
         if topology.connectivity(dim, 0) is not None:
-            num_mesh_entities = topology.connectivity(dim, 0).size()
+            num_mesh_entities = topology.connectivity(dim, 0).num_nodes
             dofs_per_entity = dofmap.dof_layout.num_entity_dofs(dim)
             assert len(edofs) == dofs_per_entity * num_mesh_entities
 

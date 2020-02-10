@@ -320,7 +320,7 @@ FunctionSpace::tabulate_dof_coordinates() const
   const Eigen::Array<std::int32_t, Eigen::Dynamic, 1>& cell_g
       = connectivity_g.array();
   // FIXME: Add proper interface for num coordinate dofs
-  const int num_dofs_g = connectivity_g.num_edges(0);
+  const int num_dofs_g = connectivity_g.num_links(0);
   const Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>&
       x_g
       = _mesh->geometry().points();
@@ -382,7 +382,7 @@ void FunctionSpace::set_x(
   const Eigen::Array<std::int32_t, Eigen::Dynamic, 1>& cell_g
       = connectivity_g.array();
   // FIXME: Add proper interface for num coordinate dofs
-  const int num_dofs_g = connectivity_g.num_edges(0);
+  const int num_dofs_g = connectivity_g.num_links(0);
   const Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>&
       x_g
       = _mesh->geometry().points();
