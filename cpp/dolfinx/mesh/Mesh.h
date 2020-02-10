@@ -117,15 +117,17 @@ public:
   /// @param mesh Another Mesh object
   Mesh& operator=(Mesh&& mesh) = default;
 
+  /// @todo Remove and work via Topology
   /// Get number of entities of given topological dimension
   /// @param[in] d Topological dimension.
   /// @return Number of entities of topological dimension d
   std::int32_t num_entities(int d) const;
 
+  /// @todo Remove and work via Topology
   /// Get global number of entities of given topological dimension
   /// @param[in] dim Topological dimension.
   /// @return Global number of entities of topological dimension d
-  std::int64_t num_entities_global(std::size_t dim) const;
+  std::int64_t num_entities_global(int dim) const;
 
   /// Get mesh topology
   /// @return The topology object associated with the mesh.
@@ -143,25 +145,25 @@ public:
   /// @return The geometry object associated with the mesh
   const Geometry& geometry() const;
 
+  /// @todo Remove and work via Topology
   /// Create entities of given topological dimension.
   /// @param[in] dim Topological dimension
-  /// @return Number of created entities
-  std::size_t create_entities(int dim) const;
+  /// @return Number of newly created entities, returns -1 if entities
+  ///   already existed
+  std::int32_t create_entities(int dim) const;
 
+  /// @todo Remove and work via Topology
   /// Create connectivity between given pair of dimensions, d0 -> d1
   /// @param[in] d0 Topological dimension
   /// @param[in] d1 Topological dimension
-  void create_connectivity(std::size_t d0, std::size_t d1) const;
+  void create_connectivity(int d0, int d1) const;
 
+  /// @todo Remove and work via Topology
   /// Compute all entities and connectivity
   void create_connectivity_all() const;
 
   /// Compute entity permutations and reflections
   void create_entity_permutations() const;
-
-  /// Clean out all auxiliary topology data. This clears all topological
-  /// data, except the connectivity between cells and vertices.
-  void clean();
 
   /// Compute minimum cell size in mesh, measured greatest distance
   /// between any two vertices of a cell.
@@ -208,9 +210,11 @@ public:
   ///          the method is now intended for internal library use.
   mesh::GhostMode get_ghost_mode() const;
 
+  /// @todo This should be part of Geometry
   /// Get coordinate dofs for all local cells
   CoordinateDofs& coordinate_dofs();
 
+  /// @todo This should be part of Geometry
   /// Get coordinate dofs for all local cells (const version)
   const CoordinateDofs& coordinate_dofs() const;
 
@@ -218,6 +222,7 @@ public:
   /// Polynomial degree of the mesh geometry
   std::int32_t degree() const;
 
+  /// @todo This should be part of Topology?
   /// Cell type for this Mesh
   mesh::CellType cell_type() const;
 

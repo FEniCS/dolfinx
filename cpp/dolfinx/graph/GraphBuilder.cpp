@@ -435,8 +435,9 @@ graph::GraphBuilder::compute_dual_graph(
                                                       cell_type);
 
   // Compute nonlocal part
-  auto [num_ghost_nodes, num_nonlocal_edges] = compute_nonlocal_dual_graph(
-      mpi_comm, cell_vertices, cell_type, facet_cell_map, local_graph);
+  const auto [num_ghost_nodes, num_nonlocal_edges]
+      = compute_nonlocal_dual_graph(mpi_comm, cell_vertices, cell_type,
+                                    facet_cell_map, local_graph);
 
   // Shrink to fit
   local_graph.shrink_to_fit();
@@ -480,10 +481,6 @@ dolfinx::graph::GraphBuilder::compute_local_dual_graph(
     throw std::runtime_error(
         "Cannot compute local part of dual graph. Entities with "
         + std::to_string(num_entity_vertices) + " vertices not supported");
-    return std::tuple<
-        std::vector<std::vector<std::size_t>>,
-        std::vector<std::pair<std::vector<std::size_t>, std::int32_t>>,
-        std::int32_t>();
   }
 }
 //-----------------------------------------------------------------------------

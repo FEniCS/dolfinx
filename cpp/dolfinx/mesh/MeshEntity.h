@@ -6,9 +6,9 @@
 
 #pragma once
 
-#include "Connectivity.h"
 #include "Mesh.h"
 #include "Topology.h"
+#include <dolfinx/graph/AdjacencyList.h>
 
 namespace dolfinx
 {
@@ -82,7 +82,14 @@ public:
   /// topological dimension
   /// @param[in] dim The topological dimension
   /// @return The index for incident mesh entities of given dimension
-  const std::int32_t* entities(int dim) const
+  auto entities(int dim) const
+  {
+    assert(_mesh->topology().connectivity(_dim, dim));
+    return _mesh->topology().connectivity(_dim, dim)->edges(_local_index);
+  }
+
+  /// Return array of indices for incident mesh entities of given
+  const std::int32_t* entities_ptr(int dim) const
   {
     if (dim == _dim)
       return &_local_index;
@@ -90,19 +97,10 @@ public:
     {
       assert(_mesh->topology().connectivity(_dim, dim));
       const std::int32_t* initialized_mesh_entities
-          = _mesh->topology().connectivity(_dim, dim)->connections(
-              _local_index);
+          = _mesh->topology().connectivity(_dim, dim)->edges_ptr(_local_index);
       assert(initialized_mesh_entities);
       return initialized_mesh_entities;
     }
-  }
-
-  /// Return the number of mesh entities of given topological dimension
-  /// @param[in] dim The topological dimension
-  /// @return The number of entities
-  const int num_entities(int dim) const
-  {
-    return _mesh->topology().connectivity(_dim, dim)->size(_local_index);
   }
 
   /// Compute local index of given incident entity (error if not found)
@@ -129,7 +127,7 @@ protected:
 
   // Local index of entity within topological dimension
   std::int32_t _local_index;
-};
+}; // namespace mesh
 
 } // namespace mesh
 } // namespace dolfinx
