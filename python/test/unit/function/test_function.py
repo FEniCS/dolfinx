@@ -1,6 +1,6 @@
 # Copyright (C) 2011-2014 Garth N. Wells
 #
-# This file is part of DOLFIN (https://www.fenicsproject.org)
+# This file is part of DOLFINX (https://www.fenicsproject.org)
 #
 # SPDX-License-Identifier:    LGPL-3.0-or-later
 """Unit tests for the Function class"""
@@ -11,12 +11,12 @@ import math
 import cffi
 import numpy as np
 import pytest
-from dolfin_utils.test.skips import skip_if_complex, skip_in_parallel
+from dolfinx_utils.test.skips import skip_if_complex, skip_in_parallel
 from petsc4py import PETSc
 
 import ufl
-from dolfin import (MPI, Function, FunctionSpace, TensorFunctionSpace,
-                    UnitCubeMesh, VectorFunctionSpace, cpp, geometry)
+from dolfinx import (MPI, Function, FunctionSpace, TensorFunctionSpace,
+                     UnitCubeMesh, VectorFunctionSpace, cpp, geometry)
 
 
 @pytest.fixture

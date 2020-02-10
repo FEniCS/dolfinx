@@ -2,7 +2,7 @@
 
 # Copyright (C) 2017 Garth N. Wells
 #
-# This file is part of DOLFIN (https://www.fenicsproject.org)
+# This file is part of DOLFINX (https://www.fenicsproject.org)
 #
 # SPDX-License-Identifier:    LGPL-3.0-or-later
 
@@ -11,18 +11,18 @@ import sys
 
 import mpi4py
 import pytest
-from dolfin_utils.test.fixtures import tempdir  # noqa: F401
+from dolfinx_utils.test.fixtures import tempdir  # noqa: F401
 from mpi4py import MPI
 
-import dolfin
-from dolfin import wrappers
-from dolfin.jit import dolfin_pc, mpi_jit_decorator
+import dolfinx
+from dolfinx import wrappers
+from dolfinx.jit import dolfinx_pc, mpi_jit_decorator
 
 
 def test_mpi_comm_wrapper():
     """Test MPICommWrapper <-> mpi4py.MPI.Comm conversion"""
     w1 = MPI.COMM_WORLD
-    m = dolfin.UnitSquareMesh(w1, 4, 4)
+    m = dolfinx.UnitSquareMesh(w1, 4, 4)
     w2 = m.mpi_comm()
     assert isinstance(w1, MPI.Comm)
     assert isinstance(w2, MPI.Comm)
@@ -38,7 +38,9 @@ def test_mpi_comm_wrapper_cppimport(tempdir):  # noqa: F811
         cpp_code_header = f"""
         <%
         setup_pybind11(cfg)
-        cfg['include_dirs'] += {dolfin_pc["include_dirs"] + [mpi4py.get_include()] + [str(wrappers.get_include_path())]}
+        cfg['include_dirs'] += {dolfinx_pc["include_dirs"]
+                                + [mpi4py.get_include()]
+                                + [str(wrappers.get_include_path())]}
         %>
         """
 
@@ -46,11 +48,11 @@ def test_mpi_comm_wrapper_cppimport(tempdir):  # noqa: F811
         #include <pybind11/pybind11.h>
         #include <caster_mpi.h>
 
-        dolfin_wrappers::MPICommWrapper
-        test_comm_passing(const dolfin_wrappers::MPICommWrapper comm)
+        dolfinx_wrappers::MPICommWrapper
+        test_comm_passing(const dolfinx_wrappers::MPICommWrapper comm)
         {
           MPI_Comm c = comm.get();
-          return dolfin_wrappers::MPICommWrapper(c);
+          return dolfinx_wrappers::MPICommWrapper(c);
         }
 
         PYBIND11_MODULE(test_mpi_comm_wrapper, m)

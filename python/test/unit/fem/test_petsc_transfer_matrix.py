@@ -2,16 +2,16 @@
 
 # Copyright (C) 2016 Chris Richardson
 #
-# This file is part of DOLFIN (https://www.fenicsproject.org)
+# This file is part of DOLFINX (https://www.fenicsproject.org)
 #
 # SPDX-License-Identifier:    LGPL-3.0-or-later
 
 import numpy as np
 import pytest
 
-from dolfin import (MPI, Function, FunctionSpace, UnitCubeMesh, UnitSquareMesh,
-                    VectorFunctionSpace)
-from dolfin.cpp.fem import PETScDMCollection
+from dolfinx import (MPI, Function, FunctionSpace, UnitCubeMesh, UnitSquareMesh,
+                     VectorFunctionSpace)
+from dolfinx.cpp.fem import PETScDMCollection
 from ufl import FiniteElement, MixedElement, VectorElement
 
 

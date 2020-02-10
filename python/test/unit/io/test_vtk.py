@@ -1,6 +1,6 @@
 # Copyright (C) 2011 Garth N. Wells
 #
-# This file is part of DOLFIN (https://www.fenicsproject.org)
+# This file is part of DOLFINX (https://www.fenicsproject.org)
 #
 # SPDX-License-Identifier:    LGPL-3.0-or-later
 
@@ -8,13 +8,13 @@ import os
 
 import pytest
 
-from dolfin import (MPI, Function, FunctionSpace, MeshFunction,
-                    TensorFunctionSpace, UnitCubeMesh, UnitIntervalMesh,
-                    UnitSquareMesh, VectorFunctionSpace)
-from dolfin.cpp.mesh import CellType
-from dolfin.io import VTKFile
-from dolfin_utils.test.fixtures import tempdir
-from dolfin_utils.test.skips import skip_in_parallel
+from dolfinx import (MPI, Function, FunctionSpace, MeshFunction,
+                     TensorFunctionSpace, UnitCubeMesh, UnitIntervalMesh,
+                     UnitSquareMesh, VectorFunctionSpace)
+from dolfinx.cpp.mesh import CellType
+from dolfinx.io import VTKFile
+from dolfinx_utils.test.fixtures import tempdir
+from dolfinx_utils.test.skips import skip_in_parallel
 
 assert (tempdir)
 
@@ -163,7 +163,7 @@ def test_save_3d_scalar(tempfile, file_options):
         VTKFile(tempfile + "u.pvd", file_option).write(u)
 
 
-@pytest.mark.xfail(reason="FFC fails for tensor spaces in 1D")
+@pytest.mark.xfail(reason="FFCX fails for tensor spaces in 1D")
 @skip_in_parallel
 def test_save_1d_vector(tempfile, file_options):
     mesh = UnitIntervalMesh(MPI.comm_world, 32)
@@ -200,7 +200,7 @@ def test_save_3d_vector(tempfile, file_options):
         VTKFile(tempfile + "u.pvd", file_option).write(u)
 
 
-@pytest.mark.xfail(reason="FFC fails for tensor spaces in 1D")
+@pytest.mark.xfail(reason="FFCX fails for tensor spaces in 1D")
 @skip_in_parallel
 def test_save_1d_tensor(tempfile, file_options):
     mesh = UnitIntervalMesh(MPI.comm_world, 32)
