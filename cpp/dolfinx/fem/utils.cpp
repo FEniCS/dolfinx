@@ -138,13 +138,20 @@ la::PETScMatrix dolfinx::fem::create_matrix(const Form& a)
   // Create and build sparsity pattern
   la::SparsityPattern pattern(mesh.mpi_comm(), index_maps);
   if (a.integrals().num_integrals(fem::FormIntegrals::Type::cell) > 0)
-    SparsityPatternBuilder::cells(pattern, mesh, {{dofmaps[0], dofmaps[1]}});
+    SparsityPatternBuilder::cells(pattern, mesh.topology(),
+                                  {{dofmaps[0], dofmaps[1]}});
   if (a.integrals().num_integrals(fem::FormIntegrals::Type::interior_facet) > 0)
-    SparsityPatternBuilder::interior_facets(pattern, mesh,
+  {
+    mesh.create_entities(mesh.topology().dim() - 1);
+    SparsityPatternBuilder::interior_facets(pattern, mesh.topology(),
                                             {{dofmaps[0], dofmaps[1]}});
+  }
   if (a.integrals().num_integrals(fem::FormIntegrals::Type::exterior_facet) > 0)
-    SparsityPatternBuilder::exterior_facets(pattern, mesh,
+  {
+    mesh.create_entities(mesh.topology().dim() - 1);
+    SparsityPatternBuilder::exterior_facets(pattern, mesh.topology(),
                                             {{dofmaps[0], dofmaps[1]}});
+  }
   pattern.assemble();
   t0.stop();
 
@@ -207,11 +214,17 @@ la::PETScMatrix fem::create_matrix_block(
         auto& sp = *patterns[row].back();
         const FormIntegrals& integrals = a(row, col)->integrals();
         if (integrals.num_integrals(FormIntegrals::Type::cell) > 0)
-          SparsityPatternBuilder::cells(sp, mesh, dofmaps);
+          SparsityPatternBuilder::cells(sp, mesh.topology(), dofmaps);
         if (integrals.num_integrals(FormIntegrals::Type::interior_facet) > 0)
-          SparsityPatternBuilder::interior_facets(sp, mesh, dofmaps);
+        {
+          mesh.create_entities(mesh.topology().dim() - 1);
+          SparsityPatternBuilder::interior_facets(sp, mesh.topology(), dofmaps);
+        }
         if (integrals.num_integrals(FormIntegrals::Type::exterior_facet) > 0)
-          SparsityPatternBuilder::exterior_facets(sp, mesh, dofmaps);
+        {
+          mesh.create_entities(mesh.topology().dim() - 1);
+          SparsityPatternBuilder::exterior_facets(sp, mesh.topology(), dofmaps);
+        }
         sp.assemble();
       }
       else
@@ -470,9 +483,20 @@ fem::create_element_dof_layout(const ufc_dofmap& dofmap,
 fem::DofMap fem::create_dofmap(const ufc_dofmap& ufc_dofmap,
                                const mesh::Mesh& mesh)
 {
-  return DofMapBuilder::build(
-      mesh, std::make_shared<ElementDofLayout>(
-                create_element_dof_layout(ufc_dofmap, mesh.cell_type())));
+  auto element_dof_layout = std::make_shared<ElementDofLayout>(
+      create_element_dof_layout(ufc_dofmap, mesh.cell_type()));
+  assert(element_dof_layout);
+
+  // Create required mesh entities
+  const int D = mesh.topology().dim();
+  for (int d = 0; d <= D; ++d)
+  {
+    if (element_dof_layout->num_entity_dofs(d) > 0)
+      mesh.create_entities(d);
+  }
+
+  return DofMapBuilder::build(mesh.mpi_comm(), mesh.topology(),
+                              mesh.cell_type(), element_dof_layout);
 }
 //-----------------------------------------------------------------------------
 std::vector<std::tuple<int, std::string, std::shared_ptr<function::Function>>>

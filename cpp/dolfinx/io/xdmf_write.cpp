@@ -212,7 +212,7 @@ std::vector<std::int64_t> compute_topology_data(const mesh::Mesh& mesh,
   // Get mesh communicator
   MPI_Comm comm = mesh.mpi_comm();
 
-  int num_nodes = mesh.coordinate_dofs().entity_points().size(0);
+  int num_nodes = mesh.coordinate_dofs().entity_points().num_links(0);
   std::vector<std::uint8_t> perm;
   if (cell_dim == mesh.topology().dim())
     perm = io::cells::dolfin_to_vtk(mesh.cell_type(), num_nodes);
@@ -237,7 +237,7 @@ std::vector<std::int64_t> compute_topology_data(const mesh::Mesh& mesh,
           mesh::cell_entity_type(mesh.cell_type(), cell_dim), 0);
       for (auto& c : mesh::MeshRange(mesh, cell_dim))
       {
-        const std::int32_t* entities = c.entities(0);
+        auto entities = c.entities(0);
         for (int i = 0; i < num_vertices; ++i)
           topology_data.push_back(global_vertices[entities[perm[i]]]);
       }
@@ -448,7 +448,7 @@ xdmf_write::compute_nonlocal_entities(const mesh::Mesh& mesh, int cell_dim)
   std::set<std::uint32_t> non_local_entities;
 
   const int tdim = mesh.topology().dim();
-  bool ghosted = (topology.size(tdim) > topology.ghost_offset(tdim));
+  bool ghosted = (topology.index_map(tdim)->num_ghosts() > 0);
   if (!ghosted)
   {
     // No ghost cells - exclude shared entities which are on lower rank
@@ -464,9 +464,11 @@ xdmf_write::compute_nonlocal_entities(const mesh::Mesh& mesh, int cell_dim)
   {
     // Iterate through ghost cells, adding non-ghost entities which are
     // in lower rank process cells
-    const std::vector<std::int32_t>& cell_owners = topology.entity_owner(tdim);
-    const std::int32_t ghost_offset_c = topology.ghost_offset(tdim);
-    const std::int32_t ghost_offset_e = topology.ghost_offset(cell_dim);
+    const Eigen::Array<int, Eigen::Dynamic, 1>& cell_owners
+        = mesh.topology().index_map(tdim)->ghost_owners();
+    const std::int32_t ghost_offset_c = topology.index_map(tdim)->size_local();
+    const std::int32_t ghost_offset_e
+        = topology.index_map(cell_dim)->size_local();
     for (auto& c : mesh::MeshRange(mesh, tdim, mesh::MeshRangeType::GHOST))
     {
       assert(c.index() >= ghost_offset_c);
@@ -528,7 +530,7 @@ void xdmf_write::add_topology_data(MPI_Comm comm, pugi::xml_node& xml_node,
                                    const mesh::Mesh& mesh, int cell_dim)
 {
   // Get number of cells (global) and vertices per cell from mesh
-  const std::int64_t num_cells = mesh.topology().size_global(cell_dim);
+  const std::int64_t num_cells = mesh.num_entities_global(cell_dim);
   int num_nodes_per_cell = mesh::num_cell_vertices(
       mesh::cell_entity_type(mesh.cell_type(), cell_dim));
 
@@ -556,20 +558,20 @@ void xdmf_write::add_topology_data(MPI_Comm comm, pugi::xml_node& xml_node,
     }
 
     const auto& global_points = mesh.geometry().global_indices();
-    const mesh::Connectivity& cell_points
+    const graph::AdjacencyList<std::int32_t>& cell_points
         = mesh.coordinate_dofs().entity_points();
 
     // Adjust num_nodes_per_cell to appropriate size
-    num_nodes_per_cell = cell_points.size(0);
+    num_nodes_per_cell = cell_points.num_links(0);
     topology_data.reserve(num_nodes_per_cell * mesh.num_entities(tdim));
 
-    int num_nodes = mesh.coordinate_dofs().entity_points().size(0);
+    int num_nodes = mesh.coordinate_dofs().entity_points().num_links(0);
     const std::vector<std::uint8_t> perm
         = io::cells::dolfin_to_vtk(mesh.cell_type(), num_nodes);
 
     for (std::int32_t c = 0; c < mesh.num_entities(tdim); ++c)
     {
-      const std::int32_t* points = cell_points.connections(c);
+      auto points = cell_points.links(c);
       for (std::int32_t i = 0; i < num_nodes_per_cell; ++i)
         topology_data.push_back(global_points[points[perm[i]]]);
     }
@@ -731,7 +733,7 @@ void xdmf_write::add_function(MPI_Comm mpi_comm, pugi::xml_node& xml_node,
   const std::size_t tdim = mesh.topology().dim();
   std::vector<std::int32_t> cell_dofs;
   std::vector<std::size_t> x_cell_dofs;
-  const std::size_t n_cells = mesh.topology().ghost_offset(tdim);
+  const std::size_t n_cells = mesh.topology().index_map(tdim)->size_local();
   x_cell_dofs.reserve(n_cells);
 
   Eigen::Array<std::int64_t, Eigen::Dynamic, 1> local_to_global_map

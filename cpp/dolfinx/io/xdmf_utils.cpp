@@ -25,7 +25,7 @@
 #include <dolfinx/function/FunctionSpace.h>
 // #include <dolfinx/la/PETScVector.h>
 // #include <dolfinx/la/utils.h>
-// #include <dolfinx/mesh/Connectivity.h>
+// #include <dolfinx/graph/AdjacencyList.h>
 #include <dolfinx/mesh/DistributedMeshTools.h>
 // #include <dolfinx/mesh/Mesh.h>
 #include <dolfinx/mesh/Geometry.h>
@@ -267,7 +267,8 @@ xdmf_utils::get_cell_data_values(const function::Function& u)
 
   // Allocate memory for function values at cell centres
   const int tdim = mesh->topology().dim();
-  const std::int32_t num_local_cells = mesh->topology().ghost_offset(tdim);
+  const std::int32_t num_local_cells
+      = mesh->topology().index_map(tdim)->size_local();
   const std::int32_t local_size = num_local_cells * value_size;
 
   // Build lists of dofs and create map

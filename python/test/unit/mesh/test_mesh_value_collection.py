@@ -128,7 +128,7 @@ def test_mesh_function_assign_2D_facets():
     f = MeshFunction("int", mesh, tdim - 1, 25)
     connectivity = mesh.topology.connectivity(tdim, tdim - 1)
     for c in range(mesh.num_cells()):
-        facets = connectivity.connections(c)
+        facets = connectivity.links(c)
         for i in range(num_cell_facets):
             assert 25 == f.values[facets[i]]
 
@@ -144,7 +144,7 @@ def test_mesh_function_assign_2D_facets():
 
     connectivity = mesh.topology.connectivity(tdim, tdim - 1)
     for c in range(mesh.num_cells()):
-        facets = connectivity.connections(c)
+        facets = connectivity.links(c)
         for i in range(num_cell_facets):
             assert f2.values[facets[i]] == g.get_value(c, i)
 
@@ -164,7 +164,7 @@ def test_mesh_function_assign_2D_vertices():
     tdim = mesh.topology.dim
     connectivity = mesh.topology.connectivity(tdim, 0)
     for c in range(mesh.num_cells()):
-        vertices = connectivity.connections(c)
+        vertices = connectivity.links(c)
         for i in range(num_cell_vertices):
             assert 25 == g.get_value(c, i)
             assert f2.values[vertices[i]] == g.get_value(c, i)

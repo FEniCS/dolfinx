@@ -55,59 +55,59 @@ bool increasing(const int n, const std::int32_t* v0, const std::int32_t* v1,
   return w0 < w1;
 }
 //-----------------------------------------------------------------------------
-void sort_1_0(mesh::Connectivity& connect_1_0, const mesh::MeshEntity& cell,
+void sort_1_0(graph::AdjacencyList<std::int32_t>& connect_1_0,
+              const mesh::MeshEntity& cell,
               const std::vector<std::int64_t>& global_vertex_indices,
               const int num_edges)
 {
   // Sort vertices on each edge
-  const std::int32_t* cell_edges = cell.entities(1);
+  const std::int32_t* cell_edges = cell.entities_ptr(1);
   assert(cell_edges);
   for (int i = 0; i < num_edges; ++i)
   {
-    std::int32_t* edge_vertices = connect_1_0.connections(cell_edges[i]);
-    assert(edge_vertices);
-    std::sort(edge_vertices, edge_vertices + 2, [&](auto& a, auto& b) {
-      return global_vertex_indices[a] < global_vertex_indices[b];
-    });
+    auto edge_vertices = connect_1_0.links(cell_edges[i]);
+    std::sort(edge_vertices.data(), edge_vertices.data() + 2,
+              [&](auto& a, auto& b) {
+                return global_vertex_indices[a] < global_vertex_indices[b];
+              });
   }
 }
 //-----------------------------------------------------------------------------
-void sort_2_0(mesh::Connectivity& connect_2_0, const mesh::MeshEntity& cell,
+void sort_2_0(graph::AdjacencyList<std::int32_t>& connect_2_0,
+              const mesh::MeshEntity& cell,
               const std::vector<std::int64_t>& global_vertex_indices,
               const int num_faces)
 {
   // Sort vertices on each facet
-  const std::int32_t* cell_faces = cell.entities(2);
+  const std::int32_t* cell_faces = cell.entities_ptr(2);
   assert(cell_faces);
   for (int i = 0; i < num_faces; ++i)
   {
-    std::int32_t* face_vertices = connect_2_0.connections(cell_faces[i]);
-    assert(face_vertices);
-    std::sort(face_vertices, face_vertices + 3, [&](auto& a, auto& b) {
-      return global_vertex_indices[a] < global_vertex_indices[b];
-    });
+    auto face_vertices = connect_2_0.links(cell_faces[i]);
+    std::sort(face_vertices.data(), face_vertices.data() + 3,
+              [&](auto& a, auto& b) {
+                return global_vertex_indices[a] < global_vertex_indices[b];
+              });
   }
 }
 //-----------------------------------------------------------------------------
-void sort_2_1(mesh::Connectivity& connect_2_1,
-              const mesh::Connectivity& connect_2_0,
-              const mesh::Connectivity& connect_1_0,
+void sort_2_1(graph::AdjacencyList<std::int32_t>& connect_2_1,
+              const graph::AdjacencyList<std::int32_t>& connect_2_0,
+              const graph::AdjacencyList<std::int32_t>& connect_1_0,
               const mesh::MeshEntity& cell,
               const std::vector<std::int64_t>& global_vertex_indices,
               const int num_faces)
 {
   // Loop over faces on cell
-  const std::int32_t* cell_faces = cell.entities(2);
+  const std::int32_t* cell_faces = cell.entities_ptr(2);
   assert(cell_faces);
   for (int i = 0; i < num_faces; ++i)
   {
     // For each face number get the global vertex numbers
-    const std::int32_t* face_vertices = connect_2_0.connections(cell_faces[i]);
-    assert(face_vertices);
+    auto face_vertices = connect_2_0.links(cell_faces[i]);
 
     // For each facet number get the global edge number
-    std::int32_t* cell_edges = connect_2_1.connections(cell_faces[i]);
-    assert(cell_edges);
+    auto cell_edges = connect_2_1.links(cell_faces[i]);
 
     // Loop over vertices on face
     std::size_t m = 0;
@@ -117,12 +117,11 @@ void sort_2_1(mesh::Connectivity& connect_2_1,
       for (int k = m; k < 3; ++k)
       {
         // For each edge number get the global vertex numbers
-        const std::int32_t* edge_vertices
-            = connect_1_0.connections(cell_edges[k]);
-        assert(edge_vertices);
+        auto edge_vertices = connect_1_0.links(cell_edges[k]);
 
         // Check if the jth vertex of facet i is non-incident on edge k
-        if (!std::count(edge_vertices, edge_vertices + 2, face_vertices[j]))
+        if (!std::count(edge_vertices.data(), edge_vertices.data() + 2,
+                        face_vertices[j]))
         {
           // Swap face numbers
           std::swap(cell_edges[m], cell_edges[k]);
@@ -134,26 +133,26 @@ void sort_2_1(mesh::Connectivity& connect_2_1,
   }
 }
 //-----------------------------------------------------------------------------
-void sort_3_0(mesh::Connectivity& connect_3_0, const mesh::MeshEntity& cell,
+void sort_3_0(graph::AdjacencyList<std::int32_t>& connect_3_0,
+              const mesh::MeshEntity& cell,
               const std::vector<std::int64_t>& global_vertex_indices)
 {
-  std::int32_t* cell_vertices = connect_3_0.connections(cell.index());
-  assert(cell_vertices);
-  std::sort(cell_vertices, cell_vertices + 4, [&](auto& a, auto& b) {
-    return global_vertex_indices[a] < global_vertex_indices[b];
-  });
+  auto cell_vertices = connect_3_0.links(cell.index());
+  std::sort(cell_vertices.data(), cell_vertices.data() + 4,
+            [&](auto& a, auto& b) {
+              return global_vertex_indices[a] < global_vertex_indices[b];
+            });
 }
 //-----------------------------------------------------------------------------
-void sort_3_1(mesh::Connectivity& connect_3_1,
-              const mesh::Connectivity& connect_1_0,
+void sort_3_1(graph::AdjacencyList<std::int32_t>& connect_3_1,
+              const graph::AdjacencyList<std::int32_t>& connect_1_0,
               const mesh::MeshEntity& cell,
               const std::vector<std::int64_t>& global_vertex_indices)
 {
   // Get cell vertices and edge numbers
-  const std::int32_t* cell_vertices = cell.entities(0);
+  const std::int32_t* cell_vertices = cell.entities_ptr(0);
   assert(cell_vertices);
-  std::int32_t* cell_edges = connect_3_1.connections(cell.index());
-  assert(cell_edges);
+  auto cell_edges = connect_3_1.links(cell.index());
 
   // Loop two vertices on cell as a lexicographical tuple
   // (i, j): (0,1) (0,2) (0,3) (1,2) (1,3) (2,3)
@@ -166,14 +165,14 @@ void sort_3_1(mesh::Connectivity& connect_3_1,
       for (int k = m; k < 6; ++k)
       {
         // Get local vertices on edge
-        const std::int32_t* edge_vertices
-            = connect_1_0.connections(cell_edges[k]);
-        assert(edge_vertices);
+        auto edge_vertices = connect_1_0.links(cell_edges[k]);
 
         // Check if the ith and jth vertex of the cell are
         // non-incident on edge k
-        if (!std::count(edge_vertices, edge_vertices + 2, cell_vertices[i])
-            and !std::count(edge_vertices, edge_vertices + 2, cell_vertices[j]))
+        if (!std::count(edge_vertices.data(), edge_vertices.data() + 2,
+                        cell_vertices[i])
+            and !std::count(edge_vertices.data(), edge_vertices.data() + 2,
+                            cell_vertices[j]))
         {
           // Swap edge numbers
           std::swap(cell_edges[m], cell_edges[k]);
@@ -185,16 +184,15 @@ void sort_3_1(mesh::Connectivity& connect_3_1,
   }
 }
 //-----------------------------------------------------------------------------
-void sort_3_2(mesh::Connectivity& connect_3_2,
-              const mesh::Connectivity& connect_2_0,
+void sort_3_2(graph::AdjacencyList<std::int32_t>& connect_3_2,
+              const graph::AdjacencyList<std::int32_t>& connect_2_0,
               const mesh::MeshEntity& cell,
               const std::vector<std::int64_t>& global_vertex_indices)
 {
   // Get cell vertices and facet numbers
-  const std::int32_t* cell_vertices = cell.entities(0);
+  const std::int32_t* cell_vertices = cell.entities_ptr(0);
   assert(cell_vertices);
-  std::int32_t* cell_faces = connect_3_2.connections(cell.index());
-  assert(cell_faces);
+  auto cell_faces = connect_3_2.links(cell.index());
 
   // Loop vertices on cell
   for (int i = 0; i < 4; ++i)
@@ -202,12 +200,11 @@ void sort_3_2(mesh::Connectivity& connect_3_2,
     // Loop facets on cell
     for (int j = i; j < 4; ++j)
     {
-      const std::int32_t* face_vertices
-          = connect_2_0.connections(cell_faces[j]);
-      assert(face_vertices);
+      auto face_vertices = connect_2_0.links(cell_faces[j]);
 
       // Check if the ith vertex of the cell is non-incident on facet j
-      if (!std::count(face_vertices, face_vertices + 3, cell_vertices[i]))
+      if (!std::count(face_vertices.data(), face_vertices.data() + 3,
+                      cell_vertices[i]))
       {
         // Swap facet numbers
         std::swap(cell_faces[i], cell_faces[j]);
@@ -227,18 +224,19 @@ bool ordered_cell_simplex(
   const int c = cell.index();
 
   // Get vertices
-  std::shared_ptr<const mesh::Connectivity> connect_tdim_0
+  std::shared_ptr<const graph::AdjacencyList<std::int32_t>> connect_tdim_0
       = topology.connectivity(tdim, 0);
   assert(connect_tdim_0);
 
-  const int num_vertices = connect_tdim_0->size(c);
-  const std::int32_t* vertices = connect_tdim_0->connections(c);
-  assert(vertices);
+  const int num_vertices = connect_tdim_0->num_links(c);
+  auto vertices = connect_tdim_0->links(c);
 
   // Check that vertices are in ascending order
-  if (!std::is_sorted(vertices, vertices + num_vertices, [&](auto& a, auto& b) {
-        return global_vertex_indices[a] < global_vertex_indices[b];
-      }))
+  if (!std::is_sorted(vertices.data(), vertices.data() + num_vertices,
+                      [&](auto& a, auto& b) {
+                        return global_vertex_indices[a]
+                               < global_vertex_indices[b];
+                      }))
   {
     return false;
   }
@@ -249,34 +247,34 @@ bool ordered_cell_simplex(
   for (int d = 1; d + 1 < tdim; ++d)
   {
     // Check if entities exist, otherwise skip
-    std::shared_ptr<const mesh::Connectivity> connect_d_0
+    std::shared_ptr<const graph::AdjacencyList<std::int32_t>> connect_d_0
         = topology.connectivity(d, 0);
     if (!connect_d_0)
       continue;
 
     // Get entities
-    std::shared_ptr<const mesh::Connectivity> connect_tdim_d
+    std::shared_ptr<const graph::AdjacencyList<std::int32_t>> connect_tdim_d
         = topology.connectivity(tdim, d);
     assert(connect_tdim_d);
-    const int num_entities = connect_tdim_d->size(c);
-    const std::int32_t* entities = connect_tdim_d->connections(c);
+    const int num_entities = connect_tdim_d->num_links(c);
+    auto entities = connect_tdim_d->links(c);
 
     // Iterate over entities
     for (int e = 1; e < num_entities; ++e)
     {
       // Get vertices for first entity
       const int e0 = entities[e - 1];
-      const int n0 = connect_d_0->size(e0);
-      const std::int32_t* v0 = connect_d_0->connections(e0);
+      const int n0 = connect_d_0->num_links(e0);
+      auto v0 = connect_d_0->links(e0);
 
       // Get vertices for second entity
       const int e1 = entities[e];
-      const int n1 = connect_d_0->size(e1);
-      const std::int32_t* v1 = connect_d_0->connections(e1);
+      const int n1 = connect_d_0->num_links(e1);
+      auto v1 = connect_d_0->links(e1);
 
       // Check ordering of entities
       assert(n0 == n1);
-      if (!increasing(n0, v0, v1, num_vertices, vertices,
+      if (!increasing(n0, v0.data(), v1.data(), num_vertices, vertices.data(),
                       global_vertex_indices))
       {
         return false;
@@ -310,7 +308,8 @@ void mesh::Ordering::order_simplex(mesh::Mesh& mesh)
   if (tdim == 0)
     return;
 
-  mesh::Connectivity& connect_g = mesh.coordinate_dofs().entity_points();
+  graph::AdjacencyList<std::int32_t>& connect_g
+      = mesh.coordinate_dofs().entity_points();
 
   // Get global vertex numbering
   const std::vector<std::int64_t>& global_vertex_indices
@@ -320,8 +319,8 @@ void mesh::Ordering::order_simplex(mesh::Mesh& mesh)
   const int num_faces
       = (tdim > 1) ? mesh::cell_num_entities(mesh.cell_type(), 2) : -1;
 
-  std::shared_ptr<mesh::Connectivity> connect_1_0, connect_2_0, connect_2_1,
-      connect_3_0, connect_3_1, connect_3_2;
+  std::shared_ptr<graph::AdjacencyList<std::int32_t>> connect_1_0, connect_2_0,
+      connect_2_1, connect_3_0, connect_3_1, connect_3_2;
   connect_1_0 = topology.connectivity(1, 0);
   if (tdim > 1)
   {

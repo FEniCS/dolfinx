@@ -264,8 +264,8 @@ def test_custom_mesh_loop_rank1():
     V = dolfinx.FunctionSpace(mesh, ("Lagrange", 1))
 
     # Unpack mesh and dofmap data
-    c = mesh.topology.connectivity(2, 0).connections()
-    pos = mesh.topology.connectivity(2, 0).pos()
+    c = mesh.topology.connectivity(2, 0).array()
+    pos = mesh.topology.connectivity(2, 0).offsets()
     geom = mesh.geometry.points
     dofs = V.dofmap.dof_array
 
@@ -325,8 +325,8 @@ def test_custom_mesh_loop_ctypes_rank2():
     V = dolfinx.FunctionSpace(mesh, ("Lagrange", 1))
 
     # Extract mesh and dofmap data
-    c = mesh.topology.connectivity(2, 0).connections()
-    pos = mesh.topology.connectivity(2, 0).pos()
+    c = mesh.topology.connectivity(2, 0).array()
+    pos = mesh.topology.connectivity(2, 0).offsets()
     geom = mesh.geometry.points
     dofs = V.dofmap.dof_array
 
@@ -378,8 +378,8 @@ def test_custom_mesh_loop_cffi_rank2(set_vals):
     A0.assemble()
 
     # Unpack mesh and dofmap data
-    c = mesh.topology.connectivity(2, 0).connections()
-    pos = mesh.topology.connectivity(2, 0).pos()
+    c = mesh.topology.connectivity(2, 0).array()
+    pos = mesh.topology.connectivity(2, 0).offsets()
     geom = mesh.geometry.points
     dofs = V.dofmap.dof_array
 

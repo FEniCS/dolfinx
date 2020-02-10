@@ -54,7 +54,7 @@ get_remote_bcs1(const common::IndexMap& map,
   MPI_Neighbor_allgather(&num_dofs, 1, MPI_INT, num_dofs_recv.data(), 1,
                          MPI_INT, comm);
 
-  // NOTE: we consider only dofs that we know are shared
+  // NOTE: we could consider only dofs that we know are shared
   // Build array of global indices of dofs
   const std::vector<std::int64_t> dofs_global
       = map.local_to_global(dofs_local, false);
