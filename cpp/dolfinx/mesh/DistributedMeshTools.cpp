@@ -133,7 +133,7 @@ void DistributedMeshTools::init_facet_cell_connections(MPI_Comm comm,
     assert(topology.connectivity(D - 1, D));
     auto connectivity = topology.connectivity(D - 1, D);
     for (int f = 0; f < num_facets; ++f)
-      num_global_neighbors[f] = connectivity->num_edges(f);
+      num_global_neighbors[f] = connectivity->num_links(f);
 
     // All shared facets must have two cells, if no ghost cells
     for (const auto& f_it : shared_facets)
@@ -167,14 +167,14 @@ void DistributedMeshTools::init_facet_cell_connections(MPI_Comm comm,
         global_to_local_facet.insert({global_facets[f], f});
 
       // Copy local values
-      const int n_cells = connectivity->num_edges(f);
+      const int n_cells = connectivity->num_links(f);
       num_global_neighbors[f] = n_cells;
 
       if ((f >= ghost_offset_f) and n_cells == 1)
       {
         // Singly attached ghost facet - check with owner of attached
         // cell
-        auto c = connectivity->edges(f);
+        auto c = connectivity->links(f);
         assert(c[0] >= ghost_offset_c);
         const int owner = cell_owners[c[0] - ghost_offset_c];
         send_facet[owner].push_back(global_facets[f]);
@@ -192,7 +192,7 @@ void DistributedMeshTools::init_facet_cell_connections(MPI_Comm comm,
       {
         auto map_it = global_to_local_facet.find(*r);
         assert(map_it != global_to_local_facet.end());
-        const int n_cells = connectivity->num_edges(map_it->second);
+        const int n_cells = connectivity->num_links(map_it->second);
         send_response[p].push_back(n_cells);
       }
     }

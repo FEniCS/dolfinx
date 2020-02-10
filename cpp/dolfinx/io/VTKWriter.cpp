@@ -190,7 +190,7 @@ void write_ascii_mesh(const mesh::Mesh& mesh, int cell_dim,
         = connectivity_g.array();
     const Eigen::Array<std::int32_t, Eigen::Dynamic, 1>& pos_g
         = connectivity_g.offsets();
-    num_nodes = connectivity_g.num_edges(0);
+    num_nodes = connectivity_g.num_links(0);
 
     const std::vector<std::uint8_t> perm
         = io::cells::dolfin_to_vtk(mesh.cell_type(), num_nodes);

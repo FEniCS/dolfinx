@@ -81,7 +81,7 @@ public:
   auto entities(int dim) const
   {
     assert(_mesh->topology().connectivity(_dim, dim));
-    return _mesh->topology().connectivity(_dim, dim)->edges(_local_index);
+    return _mesh->topology().connectivity(_dim, dim)->links(_local_index);
   }
 
   /// Return array of indices for incident mesh entities of given
@@ -93,7 +93,7 @@ public:
     {
       assert(_mesh->topology().connectivity(_dim, dim));
       const std::int32_t* initialized_mesh_entities
-          = _mesh->topology().connectivity(_dim, dim)->edges_ptr(_local_index);
+          = _mesh->topology().connectivity(_dim, dim)->links_ptr(_local_index);
       assert(initialized_mesh_entities);
       return initialized_mesh_entities;
     }

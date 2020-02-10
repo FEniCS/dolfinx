@@ -334,7 +334,7 @@ compute_entities_by_key_matching(
   for (int c = 0; c < num_cells; ++c)
   {
     // Get vertices from cell
-    auto vertices = cells.edges(c);
+    auto vertices = cells.links(c);
 
     // Iterate over entities of cell
     for (int i = 0; i < num_entities_per_cell; ++i)
@@ -429,7 +429,7 @@ compute_from_transpose(const graph::AdjacencyList<std::int32_t>& c_d1_d0,
 
   for (int e1 = 0; e1 < num_entities_d1; ++e1)
   {
-    auto e = c_d1_d0.edges(e1);
+    auto e = c_d1_d0.links(e1);
     for (int i = 0; i < e.rows(); ++i)
       num_connections[e[i]]++;
   }
@@ -444,7 +444,7 @@ compute_from_transpose(const graph::AdjacencyList<std::int32_t>& c_d1_d0,
 
   for (int e1 = 0; e1 < num_entities_d1; ++e1)
   {
-    auto e = c_d1_d0.edges(e1);
+    auto e = c_d1_d0.links(e1);
     for (int e0 = 0; e0 < e.rows(); ++e0)
       connections[offsets[e[e0]] + counter[e[e0]]++] = e1;
   }
@@ -472,7 +472,7 @@ compute_from_map(const graph::AdjacencyList<std::int32_t>& c_d0_0,
   std::vector<std::int32_t> key(num_verts_d1);
   for (int e = 0; e < c_d1_0.num_nodes(); ++e)
   {
-    const std::int32_t* v = c_d1_0.edges_ptr(e);
+    const std::int32_t* v = c_d1_0.links_ptr(e);
     std::partial_sort_copy(v, v + num_verts_d1, key.begin(), key.end());
     entity_to_index.insert({key, e});
   }
@@ -490,7 +490,7 @@ compute_from_map(const graph::AdjacencyList<std::int32_t>& c_d0_0,
   for (int e = 0; e < c_d0_0.num_nodes(); ++e)
   {
     entities.clear();
-    auto e0 = c_d0_0.edges(e);
+    auto e0 = c_d0_0.links(e);
     for (Eigen::Index i = 0; i < e_vertices_ref.rows(); ++i)
       for (Eigen::Index j = 0; j < e_vertices_ref.cols(); ++j)
         keys(i, j) = e0[e_vertices_ref(i, j)];

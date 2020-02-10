@@ -135,7 +135,7 @@ public:
   int size_global(std::array<int, 2> d, std::int32_t entity) const
   {
     if (_num_global_connections(d[0], d[1]).size() == 0)
-      return _connectivity(d[0], d[1])->num_edges(entity);
+      return _connectivity(d[0], d[1])->num_links(entity);
     else
       return _num_global_connections(d[0], d[1])[entity];
   }
