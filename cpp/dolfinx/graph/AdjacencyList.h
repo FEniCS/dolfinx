@@ -146,14 +146,8 @@ public:
     return &_array[_offsets[node]];
   }
 
-  /// Return contiguous array of links for all nodes
-  Eigen::Array<T, Eigen::Dynamic, 1>& array() { return _array; }
-
   /// Return contiguous array of links for all nodes (const version)
   const Eigen::Array<T, Eigen::Dynamic, 1>& array() const { return _array; }
-
-  /// Offset for each node in array()
-  Eigen::Array<std::int32_t, Eigen::Dynamic, 1>& offsets() { return _offsets; }
 
   /// Offset for each node in array() (const version)
   const Eigen::Array<std::int32_t, Eigen::Dynamic, 1>& offsets() const
@@ -194,10 +188,6 @@ private:
 
   // Position of first connection for each entity (using local index)
   Eigen::Array<std::int32_t, Eigen::Dynamic, 1> _offsets;
-
-  // // Global number of connections for each entity (possibly not
-  // // computed)
-  // Eigen::Array<std::int32_t, Eigen::Dynamic, 1> _num_global_connections;
 };
 } // namespace graph
 } // namespace dolfinx

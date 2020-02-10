@@ -234,7 +234,7 @@ void mesh(py::module& m)
                &dolfinx::graph::AdjacencyList<std::int32_t>::offsets),
            "Index to each entity in the connectivity array")
       .def("size", &dolfinx::graph::AdjacencyList<std::int32_t>::num_nodes)
-      .def("size", &dolfinx::graph::AdjacencyList<std::int32_t>::num_edges);
+      .def("size", &dolfinx::graph::AdjacencyList<std::int32_t>::num_links);
 
   // dolfinx::mesh::MeshEntity class
   py::class_<dolfinx::mesh::MeshEntity,
