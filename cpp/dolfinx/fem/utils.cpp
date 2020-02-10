@@ -137,8 +137,11 @@ la::SparsityPattern dolfinx::fem::create_sparsity_pattern(const Form& a)
   // Create and build sparsity pattern
   la::SparsityPattern pattern(mesh.mpi_comm(), index_maps);
   if (a.integrals().num_integrals(fem::FormIntegrals::Type::cell) > 0)
+  {
     SparsityPatternBuilder::cells(pattern, mesh.topology(),
                                   {{dofmaps[0], dofmaps[1]}});
+  }
+
   if (a.integrals().num_integrals(fem::FormIntegrals::Type::interior_facet) > 0)
   {
 
@@ -146,6 +149,7 @@ la::SparsityPattern dolfinx::fem::create_sparsity_pattern(const Form& a)
     SparsityPatternBuilder::interior_facets(pattern, mesh.topology(),
                                             {{dofmaps[0], dofmaps[1]}});
   }
+
   if (a.integrals().num_integrals(fem::FormIntegrals::Type::exterior_facet) > 0)
   {
     mesh.create_entities(mesh.topology().dim() - 1);
@@ -156,14 +160,15 @@ la::SparsityPattern dolfinx::fem::create_sparsity_pattern(const Form& a)
 
   return pattern;
 }
-
+//-----------------------------------------------------------------------------
 la::PETScMatrix dolfinx::fem::create_matrix(const Form& a)
 {
   bool keep_diagonal = false;
+
   // Build sparsitypattern
   la::SparsityPattern pattern = fem::create_sparsity_pattern(a);
 
-  // pattern.info_statistics();
+  // Finalise communication
   pattern.assemble();
 
   // Initialize matrix
@@ -172,8 +177,8 @@ la::PETScMatrix dolfinx::fem::create_matrix(const Form& a)
   t1.stop();
 
   // FIXME: Check if there is a PETSc function for this
-  // Insert zeros on the diagonal as diagonal entries may be
-  // optimised away, e.g. when calling PETScMatrix::apply.
+  // Insert zeros on the diagonal as diagonal entries may be optimised
+  // away, e.g. when calling PETScMatrix::apply.
   if (keep_diagonal)
   {
     // Loop over rows and insert 0.0 on the diagonal
