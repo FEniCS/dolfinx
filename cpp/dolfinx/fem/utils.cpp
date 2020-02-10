@@ -139,11 +139,15 @@ la::SparsityPattern dolfinx::fem::create_sparsity_pattern(const Form& a)
   if (a.integrals().num_integrals(fem::FormIntegrals::Type::cell) > 0)
     SparsityPatternBuilder::cells(pattern, mesh, {{dofmaps[0], dofmaps[1]}});
   if (a.integrals().num_integrals(fem::FormIntegrals::Type::interior_facet) > 0)
+  {
     SparsityPatternBuilder::interior_facets(pattern, mesh,
                                             {{dofmaps[0], dofmaps[1]}});
+  }
   if (a.integrals().num_integrals(fem::FormIntegrals::Type::exterior_facet) > 0)
+  {
     SparsityPatternBuilder::exterior_facets(pattern, mesh,
                                             {{dofmaps[0], dofmaps[1]}});
+  }
 
   t0.stop();
 

@@ -61,9 +61,13 @@ block_function_spaces(
                                         Eigen::Dynamic, Eigen::RowMajor>>& a);
 
 /// Create matrix. Matrix is not zeroed.
+/// @param[in] a A dolfin form (bilinear).
+/// @return PETSc matrix.
 la::PETScMatrix create_matrix(const Form& a);
 
 /// Create sparsity pattern for a given form. Does not assemble the pattern.
+/// @param[in] a A dolfin form (bilinear)
+/// @return The corresponding sparsity pattern.
 la::SparsityPattern create_sparsity_pattern(const Form& a);
 
 /// Initialise monolithic matrix for an array for bilinear forms. Matrix
