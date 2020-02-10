@@ -238,7 +238,7 @@ FunctionSpace::sub(const std::vector<int>& component) const
 
   // Extract sub dofmap
   auto dofmap = std::make_shared<fem::DofMap>(
-      _dofmap->extract_sub_dofmap(component, *_mesh));
+      _dofmap->extract_sub_dofmap(component, _mesh->topology()));
 
   // Create new sub space
   auto sub_space = std::make_shared<FunctionSpace>(_mesh, element, dofmap);
@@ -265,7 +265,8 @@ FunctionSpace::collapse() const
   // Create collapsed DofMap
   std::shared_ptr<fem::DofMap> collapsed_dofmap;
   std::vector<std::int32_t> collapsed_dofs;
-  std::tie(collapsed_dofmap, collapsed_dofs) = _dofmap->collapse(*_mesh);
+  std::tie(collapsed_dofmap, collapsed_dofs)
+      = _dofmap->collapse(_mesh->mpi_comm(), _mesh->topology());
 
   // Create new FunctionSpace and return
   auto collapsed_sub_space
