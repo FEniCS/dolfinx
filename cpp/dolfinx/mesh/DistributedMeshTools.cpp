@@ -417,22 +417,14 @@ void DistributedMeshTools::number_entities(MPI_Comm comm,
   const auto [global_entity_indices, shared_entities, index_map]
       = compute_entity_numbering(comm, topology, cell_type, d);
 
-  // DEBUG I/O
-  std::stringstream s;
-  int mpi_rank = dolfinx::MPI::rank(comm);
-  s << "Global indexing\n";
-  s << mpi_rank << "] GI = [";
-  for (auto q : global_entity_indices)
-    s << q << " ";
-  s << "]\n";
-  std::cout << s.str();
-
   // Set IndexMap
   _topology.set_index_map(d, index_map);
 
   // Set shared entities
-  _topology.set_shared_entities(d, shared_entities);
+  //   _topology.set_shared_entities(d, shared_entities);
 
+  // Dummy calls for testing
+  shared_entities.size();
   global_entity_indices.size();
 
   // Set global entity numbers in mesh

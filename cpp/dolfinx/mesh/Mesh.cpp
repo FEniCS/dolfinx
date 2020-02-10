@@ -447,7 +447,7 @@ std::int32_t Mesh::create_entities(int dim) const
     return -1;
 
   // Create local entities
-  const auto [cell_entity, entity_vertex, num_new_entities, global_indices]
+  const auto [cell_entity, entity_vertex, global_indices, shared_entities]
       = TopologyComputation::compute_entities(_mpi_comm.comm(), *_topology,
                                               _cell_type, dim);
 
@@ -474,7 +474,10 @@ std::int32_t Mesh::create_entities(int dim) const
   if (global_indices.size() > 0)
     _topology->set_global_indices(dim, global_indices);
 
-  return num_new_entities;
+  if (shared_entities.size() > 0)
+    _topology->set_shared_entities(dim, shared_entities);
+
+  return global_indices.size();
 }
 //-----------------------------------------------------------------------------
 void Mesh::create_connectivity(int d0, int d1) const
