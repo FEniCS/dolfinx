@@ -27,6 +27,14 @@ namespace dolfinx_wrappers
 
 void la(py::module& m)
 {
+  // dolfinx::la::PETScVector
+  py::class_<dolfinx::la::PETScVector,
+             std::shared_ptr<dolfinx::la::PETScVector>>(m, "PETScVector")
+      .def(py::init([](const dolfinx::common::IndexMap& map) {
+        return dolfinx::la::PETScVector(map);
+      }))
+      .def("vec", &dolfinx::la::PETScVector::vec);
+
   // dolfinx::la::SparsityPattern
   py::class_<dolfinx::la::SparsityPattern,
              std::shared_ptr<dolfinx::la::SparsityPattern>>(m,
