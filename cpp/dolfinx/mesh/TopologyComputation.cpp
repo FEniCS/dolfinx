@@ -225,7 +225,8 @@ get_ghost_mapping(
 
   const std::int32_t num_local = c;
   std::vector<std::int64_t> global_indexing(entity_count, -1);
-
+  Eigen::Array<std::int64_t, Eigen::Dynamic, 1> ghost_indices(entity_count
+                                                              - num_local);
   // Create global indices
   {
     const std::int64_t local_offset
@@ -240,7 +241,6 @@ get_ghost_mapping(
       }
       else
         global_indexing[i] = local_offset + mapping[i];
-      // FIXME - this entry in global_indexing will be unused. clean up.
     }
     assert(c == entity_count);
 
@@ -271,20 +271,15 @@ get_ghost_mapping(
         const std::int64_t gi
             = recv_global_index_data[j + recv_global_index_offsets[np]];
         if (gi != -1 and recv_index[np][j] != -1)
-          global_indexing[recv_index[np][j]] = gi;
+        {
+          std::int32_t idx = recv_index[np][j];
+          assert(mapping[idx] >= num_local);
+          ghost_indices[mapping[idx] - num_local] = gi;
+        }
       }
     }
   }
 
-  // FIXME: clean this up
-  // Remap global indexing to new order and feed into IndexMap
-  Eigen::Array<std::int64_t, Eigen::Dynamic, 1> ghost_indices(entity_count
-                                                              - num_local);
-  for (std::size_t i = 0; i < mapping.size(); ++i)
-  {
-    if (mapping[i] >= num_local)
-      ghost_indices[mapping[i] - num_local] = global_indexing[i];
-  }
   std::shared_ptr<common::IndexMap> index_map
       = std::make_shared<common::IndexMap>(comm, num_local, ghost_indices, 1);
 
