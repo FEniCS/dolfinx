@@ -429,20 +429,23 @@ hexahedron_rotations_and_reflection(const int volume_dofs, const int blocksize)
 }
 //-----------------------------------------------------------------------------
 Eigen::Array<std::int8_t, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
-compute_ordering_triangle(const mesh::Mesh& mesh)
+compute_ordering_triangle(const mesh::Topology& topology,
+                          const mesh::CellType cell_type)
 {
-  const int num_cells = mesh.num_entities(mesh.topology().dim());
-  const int num_permutations = get_num_permutations(mesh.cell_type());
+  const int D = topology.dim();
+  auto cells = topology.connectivity(D, 0);
+  assert(cells);
+  const int num_cells = cells->num_nodes();
+  const int num_permutations = get_num_permutations(cell_type);
   Eigen::Array<std::int8_t, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
       cell_orders(num_cells, num_permutations);
 
-  const std::vector<std::int64_t>& global_indices
-      = mesh.topology().global_indices(0);
+  const std::vector<std::int64_t>& global_indices = topology.global_indices(0);
+
   // Set orders for each cell
   for (int cell_n = 0; cell_n < num_cells; ++cell_n)
   {
-    const mesh::MeshEntity cell(mesh, 2, cell_n);
-    const int* vertices = cell.entities(0);
+    auto vertices = cells->edges(cell_n);
     const std::int64_t v0 = global_indices[vertices[0]];
     const std::int64_t v1 = global_indices[vertices[1]];
     const std::int64_t v2 = global_indices[vertices[2]];
@@ -463,20 +466,22 @@ compute_ordering_triangle(const mesh::Mesh& mesh)
 }
 //-----------------------------------------------------------------------------
 Eigen::Array<std::int8_t, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
-compute_ordering_interval(const mesh::Mesh& mesh)
+compute_ordering_interval(const mesh::Topology& topology,
+                          const mesh::CellType cell_type)
 {
-  const int num_cells = mesh.num_entities(mesh.topology().dim());
-  const int num_permutations = get_num_permutations(mesh.cell_type());
+  const int D = topology.dim();
+  auto cells = topology.connectivity(D, 0);
+  assert(cells);
+  const int num_cells = cells->num_nodes();
+  const int num_permutations = get_num_permutations(cell_type);
   Eigen::Array<std::int8_t, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
       cell_orders(num_cells, num_permutations);
 
   // Set orders for each cell
-  const std::vector<std::int64_t>& global_indices
-      = mesh.topology().global_indices(0);
+  const std::vector<std::int64_t>& global_indices = topology.global_indices(0);
   for (int cell_n = 0; cell_n < num_cells; ++cell_n)
   {
-    const mesh::MeshEntity cell(mesh, 1, cell_n);
-    const int* vertices = cell.entities(0);
+    auto vertices = cells->edges(cell_n);
     const std::int64_t v0 = global_indices[vertices[0]];
     const std::int64_t v1 = global_indices[vertices[1]];
 
@@ -488,20 +493,22 @@ compute_ordering_interval(const mesh::Mesh& mesh)
 }
 //-----------------------------------------------------------------------------
 Eigen::Array<std::int8_t, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
-compute_ordering_quadrilateral(const mesh::Mesh& mesh)
+compute_ordering_quadrilateral(const mesh::Topology& topology,
+                               const mesh::CellType cell_type)
 {
-  const int num_cells = mesh.num_entities(mesh.topology().dim());
-  const int num_permutations = get_num_permutations(mesh.cell_type());
+  const int D = topology.dim();
+  auto cells = topology.connectivity(D, 0);
+  assert(cells);
+  const int num_cells = cells->num_nodes();
+  const int num_permutations = get_num_permutations(cell_type);
   Eigen::Array<std::int8_t, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
       cell_orders(num_cells, num_permutations);
 
   // Set orders for each cell
-  const std::vector<std::int64_t>& global_indices
-      = mesh.topology().global_indices(0);
+  const std::vector<std::int64_t>& global_indices = topology.global_indices(0);
   for (int cell_n = 0; cell_n < num_cells; ++cell_n)
   {
-    const mesh::MeshEntity cell(mesh, 2, cell_n);
-    const int* vertices = cell.entities(0);
+    auto vertices = cells->edges(cell_n);
     const std::int64_t v0 = global_indices[vertices[0]];
     const std::int64_t v1 = global_indices[vertices[1]];
     const std::int64_t v2 = global_indices[vertices[2]];
@@ -524,20 +531,22 @@ compute_ordering_quadrilateral(const mesh::Mesh& mesh)
 }
 //-----------------------------------------------------------------------------
 Eigen::Array<std::int8_t, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
-compute_ordering_tetrahedron(const mesh::Mesh& mesh)
+compute_ordering_tetrahedron(const mesh::Topology& topology,
+                             const mesh::CellType cell_type)
 {
-  const int num_cells = mesh.num_entities(mesh.topology().dim());
-  const int num_permutations = get_num_permutations(mesh.cell_type());
+  const int D = topology.dim();
+  auto cells = topology.connectivity(D, 0);
+  assert(cells);
+  const int num_cells = cells->num_nodes();
+  const int num_permutations = get_num_permutations(cell_type);
   Eigen::Array<std::int8_t, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
       cell_orders(num_cells, num_permutations);
 
   // Set orders for each cell
-  const std::vector<std::int64_t>& global_indices
-      = mesh.topology().global_indices(0);
+  const std::vector<std::int64_t>& global_indices = topology.global_indices(0);
   for (int cell_n = 0; cell_n < num_cells; ++cell_n)
   {
-    const mesh::MeshEntity cell(mesh, 3, cell_n);
-    const int* vertices = cell.entities(0);
+    auto vertices = cells->edges(cell_n);
     const std::int64_t v0 = global_indices[vertices[0]];
     const std::int64_t v1 = global_indices[vertices[1]];
     const std::int64_t v2 = global_indices[vertices[2]];
@@ -582,20 +591,22 @@ compute_ordering_tetrahedron(const mesh::Mesh& mesh)
 }
 //-----------------------------------------------------------------------------
 Eigen::Array<std::int8_t, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
-compute_ordering_hexahedron(const mesh::Mesh& mesh)
+compute_ordering_hexahedron(const mesh::Topology& topology,
+                            const mesh::CellType cell_type)
 {
-  const int num_cells = mesh.num_entities(mesh.topology().dim());
-  const int num_permutations = get_num_permutations(mesh.cell_type());
+  const int D = topology.dim();
+  auto cells = topology.connectivity(D, 0);
+  assert(cells);
+  const int num_cells = cells->num_nodes();
+  const int num_permutations = get_num_permutations(cell_type);
   Eigen::Array<std::int8_t, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
       cell_orders(num_cells, num_permutations);
 
   // Set orders for each cell
-  const std::vector<std::int64_t>& global_indices
-      = mesh.topology().global_indices(0);
+  const std::vector<std::int64_t>& global_indices = topology.global_indices(0);
   for (int cell_n = 0; cell_n < num_cells; ++cell_n)
   {
-    const mesh::MeshEntity cell(mesh, 3, cell_n);
-    const int* vertices = cell.entities(0);
+    auto vertices = cells->edges(cell_n);
     const std::int64_t v0 = global_indices[vertices[0]];
     const std::int64_t v1 = global_indices[vertices[1]];
     const std::int64_t v2 = global_indices[vertices[2]];
@@ -659,10 +670,10 @@ compute_ordering_hexahedron(const mesh::Mesh& mesh)
 }
 //-----------------------------------------------------------------------------
 Eigen::Array<int, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
-generate_permutations_triangle(const mesh::Mesh& mesh,
+generate_permutations_triangle(const mesh::CellType cell_type,
                                const fem::ElementDofLayout& dof_layout)
 {
-  const int num_permutations = get_num_permutations(mesh.cell_type());
+  const int num_permutations = get_num_permutations(cell_type);
   const int dof_count = dof_layout.num_dofs();
 
   const int edge_dofs = dof_layout.num_entity_dofs(1);
@@ -705,10 +716,10 @@ generate_permutations_triangle(const mesh::Mesh& mesh,
 }
 //-----------------------------------------------------------------------------
 Eigen::Array<int, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
-generate_permutations_interval(const mesh::Mesh& mesh,
+generate_permutations_interval(const mesh::CellType cell_type,
                                const fem::ElementDofLayout& dof_layout)
 {
-  const int num_permutations = get_num_permutations(mesh.cell_type());
+  const int num_permutations = get_num_permutations(cell_type);
   const int dof_count = dof_layout.num_dofs();
 
   const int edge_dofs = dof_layout.num_entity_dofs(1);
@@ -735,10 +746,10 @@ generate_permutations_interval(const mesh::Mesh& mesh,
 }
 //-----------------------------------------------------------------------------
 Eigen::Array<int, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
-generate_permutations_quadrilateral(const mesh::Mesh& mesh,
+generate_permutations_quadrilateral(const mesh::CellType cell_type,
                                     const fem::ElementDofLayout& dof_layout)
 {
-  const int num_permutations = get_num_permutations(mesh.cell_type());
+  const int num_permutations = get_num_permutations(cell_type);
   const int dof_count = dof_layout.num_dofs();
 
   const int edge_dofs = dof_layout.num_entity_dofs(1);
@@ -781,10 +792,10 @@ generate_permutations_quadrilateral(const mesh::Mesh& mesh,
 }
 //-----------------------------------------------------------------------------
 Eigen::Array<int, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
-generate_permutations_tetrahedron(const mesh::Mesh& mesh,
+generate_permutations_tetrahedron(const mesh::CellType cell_type,
                                   const fem::ElementDofLayout& dof_layout)
 {
-  const int num_permutations = get_num_permutations(mesh.cell_type());
+  const int num_permutations = get_num_permutations(cell_type);
   const int dof_count = dof_layout.num_dofs();
 
   const int edge_dofs = dof_layout.num_entity_dofs(1);
@@ -843,10 +854,10 @@ generate_permutations_tetrahedron(const mesh::Mesh& mesh,
 }
 //-----------------------------------------------------------------------------
 Eigen::Array<int, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
-generate_permutations_hexahedron(const mesh::Mesh& mesh,
+generate_permutations_hexahedron(const mesh::CellType cell_type,
                                  const fem::ElementDofLayout& dof_layout)
 {
-  const int num_permutations = get_num_permutations(mesh.cell_type());
+  const int num_permutations = get_num_permutations(cell_type);
   const int dof_count = dof_layout.num_dofs();
 
   const int edge_dofs = dof_layout.num_entity_dofs(1);
@@ -905,14 +916,14 @@ generate_permutations_hexahedron(const mesh::Mesh& mesh,
 }
 //-----------------------------------------------------------------------------
 Eigen::Array<int, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
-generate_permutations(const mesh::Mesh& mesh,
+generate_permutations(const mesh::CellType cell_type,
                       const fem::ElementDofLayout& dof_layout)
 {
   // FIXME: What should be done here if the dof layout shape does not match the
   // shape of the element (eg AAF on the periodical table of finite elements)
   if (dof_layout.num_sub_dofmaps() == 0)
   {
-    switch (mesh.cell_type())
+    switch (cell_type)
     {
     case (mesh::CellType::point):
       // For a point, _permutations will have 0 rows, and _cell_ordering will
@@ -920,15 +931,15 @@ generate_permutations(const mesh::Mesh& mesh,
       // empty
       break;
     case (mesh::CellType::interval):
-      return generate_permutations_interval(mesh, dof_layout);
+      return generate_permutations_interval(cell_type, dof_layout);
     case (mesh::CellType::triangle):
-      return generate_permutations_triangle(mesh, dof_layout);
+      return generate_permutations_triangle(cell_type, dof_layout);
     case (mesh::CellType::tetrahedron):
-      return generate_permutations_tetrahedron(mesh, dof_layout);
+      return generate_permutations_tetrahedron(cell_type, dof_layout);
     case (mesh::CellType::quadrilateral):
-      return generate_permutations_quadrilateral(mesh, dof_layout);
+      return generate_permutations_quadrilateral(cell_type, dof_layout);
     case (mesh::CellType::hexahedron):
-      return generate_permutations_hexahedron(mesh, dof_layout);
+      return generate_permutations_hexahedron(cell_type, dof_layout);
 
     default:
       // The switch should exit before this is reached
@@ -937,14 +948,15 @@ generate_permutations(const mesh::Mesh& mesh,
   }
 
   // If there are subdofmaps
-  const int num_permutations = get_num_permutations(mesh.cell_type());
+  const int num_permutations = get_num_permutations(cell_type);
   Eigen::Array<int, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor> output(
       num_permutations, dof_layout.num_dofs());
   for (int i = 0; i < dof_layout.num_sub_dofmaps(); ++i)
   {
     const std::vector<int> sub_view = dof_layout.sub_view({i});
     const Eigen::Array<int, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
-        sub_perm = generate_permutations(mesh, *dof_layout.sub_dofmap({i}));
+        sub_perm
+        = generate_permutations(cell_type, *dof_layout.sub_dofmap({i}));
     assert(unsigned(sub_view.size()) == sub_perm.cols());
     for (int p = 0; p < num_permutations; ++p)
       for (std::size_t j = 0; j < sub_view.size(); ++j)
@@ -957,7 +969,8 @@ generate_permutations(const mesh::Mesh& mesh,
 
 //-----------------------------------------------------------------------------
 Eigen::Array<int, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
-fem::compute_dof_permutations(const mesh::Mesh& mesh,
+fem::compute_dof_permutations(const mesh::Topology& topology,
+                              const mesh::CellType cell_type,
                               const fem::ElementDofLayout& dof_layout)
 {
   // Build ordering in each cell. It stores the number of times each row
@@ -965,25 +978,31 @@ fem::compute_dof_permutations(const mesh::Mesh& mesh,
   // (number of cells) × (number of permutations)
   Eigen::Array<std::int8_t, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
       cell_ordering;
-  switch (mesh.cell_type())
+  switch (cell_type)
   {
   case (mesh::CellType::point):
-    cell_ordering.resize(mesh.num_entities(mesh.topology().dim()), 0);
+  {
+    auto map = topology.index_map(0);
+    assert(map);
+    const int num_vertices = map->size_local() + map->num_ghosts();
+    // FIXME: This looks wrong
+    cell_ordering.resize(num_vertices, 0);
     break;
+  }
   case (mesh::CellType::interval):
-    cell_ordering = compute_ordering_interval(mesh);
+    cell_ordering = compute_ordering_interval(topology, cell_type);
     break;
   case (mesh::CellType::triangle):
-    cell_ordering = compute_ordering_triangle(mesh);
+    cell_ordering = compute_ordering_triangle(topology, cell_type);
     break;
   case (mesh::CellType::tetrahedron):
-    cell_ordering = compute_ordering_tetrahedron(mesh);
+    cell_ordering = compute_ordering_tetrahedron(topology, cell_type);
     break;
   case (mesh::CellType::quadrilateral):
-    cell_ordering = compute_ordering_quadrilateral(mesh);
+    cell_ordering = compute_ordering_quadrilateral(topology, cell_type);
     break;
   case (mesh::CellType::hexahedron):
-    cell_ordering = compute_ordering_hexahedron(mesh);
+    cell_ordering = compute_ordering_hexahedron(topology, cell_type);
     break;
   default:
     // The switch should exit before this is reached
@@ -995,7 +1014,7 @@ fem::compute_dof_permutations(const mesh::Mesh& mesh,
   // permutations) × (number of dofs on reference) where (number of
   // permutations) = (num_edges + 2*num_faces + 4*num_volumes)
   const Eigen::Array<int, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
-      permutations = generate_permutations(mesh, dof_layout);
+      permutations = generate_permutations(cell_type, dof_layout);
 
   // Compute permutations on each cell
   Eigen::Array<int, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor> p(

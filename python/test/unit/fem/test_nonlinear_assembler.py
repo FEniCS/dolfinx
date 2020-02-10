@@ -516,9 +516,10 @@ def test_assembly_solve_taylor_hood(mesh):
     p.interpolate(initial_guess_p)
 
     x0 = dolfinx.fem.create_vector_block(F)
-    dolfinx.cpp.la.scatter_local_vectors(
-        x0, [u.vector.array_r, p.vector.array_r],
-        [u.function_space.dofmap.index_map, p.function_space.dofmap.index_map])
+    with u.vector.localForm() as _u, p.vector.localForm() as _p:
+        dolfinx.cpp.la.scatter_local_vectors(
+            x0, [_u.array_r, _p.array_r],
+            [u.function_space.dofmap.index_map, p.function_space.dofmap.index_map])
     x0.ghostUpdate(addv=PETSc.InsertMode.INSERT, mode=PETSc.ScatterMode.FORWARD)
 
     snes.solve(None, x0)

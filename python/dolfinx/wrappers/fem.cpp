@@ -195,7 +195,9 @@ void fem(py::module& m)
       [](const dolfinx::mesh::Mesh& mesh,
          std::shared_ptr<const dolfinx::fem::ElementDofLayout>
              element_dof_layout) {
-        return dolfinx::fem::DofMapBuilder::build(mesh, element_dof_layout);
+        return dolfinx::fem::DofMapBuilder::build(
+            mesh.mpi_comm(), mesh.topology(), mesh.cell_type(),
+            element_dof_layout);
       },
       "Build and dofmap on a mesh.");
 
@@ -217,6 +219,8 @@ void fem(py::module& m)
       m, "ElementDofLayout", "Object describing the layout of dofs on a cell")
       .def_property_readonly("num_dofs",
                              &dolfinx::fem::ElementDofLayout::num_dofs)
+      .def_property_readonly("cell_type",
+                             &dolfinx::fem::ElementDofLayout::cell_type)
       .def("num_entity_dofs", &dolfinx::fem::ElementDofLayout::num_entity_dofs)
       .def("num_entity_closure_dofs",
            &dolfinx::fem::ElementDofLayout::num_entity_closure_dofs)
