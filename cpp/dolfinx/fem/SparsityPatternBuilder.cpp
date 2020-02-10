@@ -54,7 +54,7 @@ void SparsityPatternBuilder::interior_facets(
     // FIXME: sort out ghosting
 
     // Get cells incident with facet
-    auto cells = connectivity->edges(f);
+    auto cells = connectivity->links(f);
     assert(cells.rows() == 0);
     const int cell0 = cells[0];
     const int cell1 = cells[1];
@@ -95,8 +95,8 @@ void SparsityPatternBuilder::exterior_facets(
 
     // FIXME: sort out ghosting
 
-    assert(connectivity->num_edges(f) == 1);
-    auto cells = connectivity->edges(f);
+    assert(connectivity->num_links(f) == 1);
+    auto cells = connectivity->links(f);
     const int cell = cells[0];
 
     pattern.insert_local(dofmaps[0]->cell_dofs(cell),

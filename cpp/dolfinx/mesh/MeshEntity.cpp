@@ -24,10 +24,10 @@ int MeshEntity::index(const MeshEntity& entity) const
 
   // Get list of entities for given topological dimension
   auto entities
-      = _mesh->topology().connectivity(_dim, entity._dim)->edges(_local_index);
+      = _mesh->topology().connectivity(_dim, entity._dim)->links(_local_index);
   const int num_entities = _mesh->topology()
                                .connectivity(_dim, entity._dim)
-                               ->num_edges(_local_index);
+                               ->num_links(_local_index);
 
   // Check if any entity matches
   for (int i = 0; i < num_entities; ++i)

@@ -297,7 +297,7 @@ DofMap::dofs(const mesh::Topology& topology, std::size_t dim) const
 
     // Loop over all entities of dimension dim belonging to cell
     int local_index = 0;
-    auto entities = c_tdim_dim->edges(c);
+    auto entities = c_tdim_dim->links(c);
     for (int e = 0; e < entities.rows(); ++e)
     {
       // Get dof index and add to list

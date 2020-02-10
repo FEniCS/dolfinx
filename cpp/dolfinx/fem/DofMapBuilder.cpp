@@ -130,7 +130,7 @@ build_basic_dofmap(const mesh::Topology& topology,
         const std::vector<std::int64_t>& global_indices
             = topology.global_indices(d);
         assert(global_indices.size() > 0);
-        auto entities = connectivity[d]->edges(c);
+        auto entities = connectivity[d]->links(c);
         for (int i = 0; i < entities.rows(); ++i)
         {
           entity_indices_local[d][i] = entities[i];
@@ -247,7 +247,7 @@ std::pair<std::vector<std::int32_t>, std::int32_t> compute_reordering_map(
   {
     // Loop over nodes collecting valid local nodes
     local_old.clear();
-    auto nodes = dofmap.edges(cell);
+    auto nodes = dofmap.links(cell);
     for (std::int32_t i = 0; i < nodes.rows(); ++i)
     {
       // Add to graph if node is owned
@@ -548,8 +548,8 @@ DofMapBuilder::build(MPI_Comm comm, const mesh::Topology& topology,
                                                    * block_size);
   for (std::int32_t cell = 0; cell < node_graph0.num_nodes(); ++cell)
   {
-    const std::int32_t local_dim0 = node_graph0.num_edges(cell);
-    auto old_nodes = node_graph0.edges(cell);
+    const std::int32_t local_dim0 = node_graph0.num_links(cell);
+    auto old_nodes = node_graph0.links(cell);
     for (std::int32_t j = 0; j < local_dim0; ++j)
     {
       const std::int32_t old_node = old_nodes[j];
