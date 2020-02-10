@@ -221,7 +221,7 @@ void mesh(py::module& m)
       .def(
           "connections",
           [](dolfinx::graph::AdjacencyList<std::int32_t>& self, int i) {
-            return self.edges(i);
+            return self.links(i);
           },
           "Connections for a single mesh entity",
           py::return_value_policy::reference_internal)

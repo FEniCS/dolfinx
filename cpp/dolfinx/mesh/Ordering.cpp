@@ -65,7 +65,7 @@ void sort_1_0(graph::AdjacencyList<std::int32_t>& connect_1_0,
   assert(cell_edges);
   for (int i = 0; i < num_edges; ++i)
   {
-    auto edge_vertices = connect_1_0.edges(cell_edges[i]);
+    auto edge_vertices = connect_1_0.links(cell_edges[i]);
     std::sort(edge_vertices.data(), edge_vertices.data() + 2,
               [&](auto& a, auto& b) {
                 return global_vertex_indices[a] < global_vertex_indices[b];
@@ -83,7 +83,7 @@ void sort_2_0(graph::AdjacencyList<std::int32_t>& connect_2_0,
   assert(cell_faces);
   for (int i = 0; i < num_faces; ++i)
   {
-    auto face_vertices = connect_2_0.edges(cell_faces[i]);
+    auto face_vertices = connect_2_0.links(cell_faces[i]);
     std::sort(face_vertices.data(), face_vertices.data() + 3,
               [&](auto& a, auto& b) {
                 return global_vertex_indices[a] < global_vertex_indices[b];
@@ -104,10 +104,10 @@ void sort_2_1(graph::AdjacencyList<std::int32_t>& connect_2_1,
   for (int i = 0; i < num_faces; ++i)
   {
     // For each face number get the global vertex numbers
-    auto face_vertices = connect_2_0.edges(cell_faces[i]);
+    auto face_vertices = connect_2_0.links(cell_faces[i]);
 
     // For each facet number get the global edge number
-    auto cell_edges = connect_2_1.edges(cell_faces[i]);
+    auto cell_edges = connect_2_1.links(cell_faces[i]);
 
     // Loop over vertices on face
     std::size_t m = 0;
@@ -117,7 +117,7 @@ void sort_2_1(graph::AdjacencyList<std::int32_t>& connect_2_1,
       for (int k = m; k < 3; ++k)
       {
         // For each edge number get the global vertex numbers
-        auto edge_vertices = connect_1_0.edges(cell_edges[k]);
+        auto edge_vertices = connect_1_0.links(cell_edges[k]);
 
         // Check if the jth vertex of facet i is non-incident on edge k
         if (!std::count(edge_vertices.data(), edge_vertices.data() + 2,
@@ -137,7 +137,7 @@ void sort_3_0(graph::AdjacencyList<std::int32_t>& connect_3_0,
               const mesh::MeshEntity& cell,
               const std::vector<std::int64_t>& global_vertex_indices)
 {
-  auto cell_vertices = connect_3_0.edges(cell.index());
+  auto cell_vertices = connect_3_0.links(cell.index());
   std::sort(cell_vertices.data(), cell_vertices.data() + 4,
             [&](auto& a, auto& b) {
               return global_vertex_indices[a] < global_vertex_indices[b];
@@ -152,7 +152,7 @@ void sort_3_1(graph::AdjacencyList<std::int32_t>& connect_3_1,
   // Get cell vertices and edge numbers
   const std::int32_t* cell_vertices = cell.entities_ptr(0);
   assert(cell_vertices);
-  auto cell_edges = connect_3_1.edges(cell.index());
+  auto cell_edges = connect_3_1.links(cell.index());
 
   // Loop two vertices on cell as a lexicographical tuple
   // (i, j): (0,1) (0,2) (0,3) (1,2) (1,3) (2,3)
@@ -165,7 +165,7 @@ void sort_3_1(graph::AdjacencyList<std::int32_t>& connect_3_1,
       for (int k = m; k < 6; ++k)
       {
         // Get local vertices on edge
-        auto edge_vertices = connect_1_0.edges(cell_edges[k]);
+        auto edge_vertices = connect_1_0.links(cell_edges[k]);
 
         // Check if the ith and jth vertex of the cell are
         // non-incident on edge k
@@ -192,7 +192,7 @@ void sort_3_2(graph::AdjacencyList<std::int32_t>& connect_3_2,
   // Get cell vertices and facet numbers
   const std::int32_t* cell_vertices = cell.entities_ptr(0);
   assert(cell_vertices);
-  auto cell_faces = connect_3_2.edges(cell.index());
+  auto cell_faces = connect_3_2.links(cell.index());
 
   // Loop vertices on cell
   for (int i = 0; i < 4; ++i)
@@ -200,7 +200,7 @@ void sort_3_2(graph::AdjacencyList<std::int32_t>& connect_3_2,
     // Loop facets on cell
     for (int j = i; j < 4; ++j)
     {
-      auto face_vertices = connect_2_0.edges(cell_faces[j]);
+      auto face_vertices = connect_2_0.links(cell_faces[j]);
 
       // Check if the ith vertex of the cell is non-incident on facet j
       if (!std::count(face_vertices.data(), face_vertices.data() + 3,
@@ -229,7 +229,7 @@ bool ordered_cell_simplex(
   assert(connect_tdim_0);
 
   const int num_vertices = connect_tdim_0->num_links(c);
-  auto vertices = connect_tdim_0->edges(c);
+  auto vertices = connect_tdim_0->links(c);
 
   // Check that vertices are in ascending order
   if (!std::is_sorted(vertices.data(), vertices.data() + num_vertices,
@@ -257,7 +257,7 @@ bool ordered_cell_simplex(
         = topology.connectivity(tdim, d);
     assert(connect_tdim_d);
     const int num_entities = connect_tdim_d->num_links(c);
-    auto entities = connect_tdim_d->edges(c);
+    auto entities = connect_tdim_d->links(c);
 
     // Iterate over entities
     for (int e = 1; e < num_entities; ++e)
@@ -265,12 +265,12 @@ bool ordered_cell_simplex(
       // Get vertices for first entity
       const int e0 = entities[e - 1];
       const int n0 = connect_d_0->num_links(e0);
-      auto v0 = connect_d_0->edges(e0);
+      auto v0 = connect_d_0->links(e0);
 
       // Get vertices for second entity
       const int e1 = entities[e];
       const int n1 = connect_d_0->num_links(e1);
-      auto v1 = connect_d_0->edges(e1);
+      auto v1 = connect_d_0->links(e1);
 
       // Check ordering of entities
       assert(n0 == n1);

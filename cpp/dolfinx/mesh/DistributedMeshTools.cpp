@@ -93,7 +93,7 @@ compute_entity_numbering(MPI_Comm comm, const Topology& topology,
 
     for (int e = 0; e < size; ++e)
     {
-      auto v = c_d_0->edges(e);
+      auto v = c_d_0->links(e);
 
       // Entity can only be shared if all vertices are shared but this
       // is not a sufficient condition
@@ -503,7 +503,7 @@ void DistributedMeshTools::init_facet_cell_connections(MPI_Comm comm,
       {
         // Singly attached ghost facet - check with owner of attached
         // cell
-        auto c = connectivity->edges(f);
+        auto c = connectivity->links(f);
         assert(c[0] >= ghost_offset_c);
         const int owner = cell_owners[c[0] - ghost_offset_c];
         send_facet[owner].push_back(global_facets[f]);

@@ -571,7 +571,7 @@ void xdmf_write::add_topology_data(MPI_Comm comm, pugi::xml_node& xml_node,
 
     for (std::int32_t c = 0; c < mesh.num_entities(tdim); ++c)
     {
-      auto points = cell_points.edges(c);
+      auto points = cell_points.links(c);
       for (std::int32_t i = 0; i < num_nodes_per_cell; ++i)
         topology_data.push_back(global_points[points[perm[i]]]);
     }

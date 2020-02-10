@@ -122,34 +122,34 @@ public:
     return _offsets[node + 1] - _offsets[node];
   }
 
-  /// Edges for given node
+  /// Links (edges) for given node
   /// @param [in] node Node index
-  /// @return Array of outgoing edges for the node. The length will be
-  ///   AdjacencyList:num_edges(node).
-  auto edges(int node)
+  /// @return Array of outgoing links for the node. The length will be
+  ///   AdjacencyList:num_links(node).
+  auto links(int node)
   {
     return _array.segment(_offsets[node], _offsets[node + 1] - _offsets[node]);
   }
 
-  /// Edges for given node (const version)
+  /// Links (edges) for given node (const version)
   /// @param [in] node Node index
-  /// @return Array of outgoing edges for the node. The length will be
-  ///   AdjacencyList:num_edges(node).
-  auto edges(int node) const
+  /// @return Array of outgoing links for the node. The length will be
+  ///   AdjacencyList:num_links(node).
+  auto links(int node) const
   {
     return _array.segment(_offsets[node], _offsets[node + 1] - _offsets[node]);
   }
 
   /// TODO: attempt to remove
-  const std::int32_t* edges_ptr(int node) const
+  const std::int32_t* links_ptr(int node) const
   {
     return &_array[_offsets[node]];
   }
 
-  /// Return contiguous array of edges for all nodes
+  /// Return contiguous array of links for all nodes
   Eigen::Array<T, Eigen::Dynamic, 1>& array() { return _array; }
 
-  /// Return contiguous array of edges for all nodes (const version)
+  /// Return contiguous array of links for all nodes (const version)
   const Eigen::Array<T, Eigen::Dynamic, 1>& array() const { return _array; }
 
   /// Offset for each node in array()
@@ -199,5 +199,5 @@ private:
   // // computed)
   // Eigen::Array<std::int32_t, Eigen::Dynamic, 1> _num_global_connections;
 };
-} // namespace mesh
+} // namespace graph
 } // namespace dolfinx

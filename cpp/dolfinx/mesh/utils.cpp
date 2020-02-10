@@ -34,7 +34,7 @@ T volume_interval(const mesh::Mesh& mesh,
   for (Eigen::Index i = 0; i < entities.rows(); ++i)
   {
     // Get the coordinates of the two vertices
-    auto vertices = connectivity.edges(entities[i]);
+    auto vertices = connectivity.links(entities[i]);
     const Eigen::Vector3d x0 = geometry.x(vertices[0]);
     const Eigen::Vector3d x1 = geometry.x(vertices[1]);
     v[i] = (x1 - x0).norm();
@@ -60,7 +60,7 @@ T volume_triangle(const mesh::Mesh& mesh,
   {
     for (Eigen::Index i = 0; i < entities.rows(); ++i)
     {
-      auto vertices = connectivity.edges(entities[i]);
+      auto vertices = connectivity.links(entities[i]);
       const Eigen::Vector3d x0 = geometry.x(vertices[0]);
       const Eigen::Vector3d x1 = geometry.x(vertices[1]);
       const Eigen::Vector3d x2 = geometry.x(vertices[2]);
@@ -77,7 +77,7 @@ T volume_triangle(const mesh::Mesh& mesh,
   {
     for (Eigen::Index i = 0; i < entities.rows(); ++i)
     {
-      auto vertices = connectivity.edges(entities[i]);
+      auto vertices = connectivity.links(entities[i]);
       const Eigen::Vector3d x0 = geometry.x(vertices[0]);
       const Eigen::Vector3d x1 = geometry.x(vertices[1]);
       const Eigen::Vector3d x2 = geometry.x(vertices[2]);
@@ -114,7 +114,7 @@ T volume_tetrahedron(const mesh::Mesh& mesh,
   for (Eigen::Index i = 0; i < entities.rows(); ++i)
   {
     // Get the coordinates of the four vertices
-    auto vertices = connectivity.edges(entities[i]);
+    auto vertices = connectivity.links(entities[i]);
     const Eigen::Vector3d x0 = geometry.x(vertices[0]);
     const Eigen::Vector3d x1 = geometry.x(vertices[1]);
     const Eigen::Vector3d x2 = geometry.x(vertices[2]);
@@ -156,7 +156,7 @@ T volume_quadrilateral(const mesh::Mesh& mesh,
   for (Eigen::Index i = 0; i < entities.rows(); ++i)
   {
     // Get the coordinates of the four vertices
-    auto vertices = connectivity.edges(entities[i]);
+    auto vertices = connectivity.links(entities[i]);
     const Eigen::Vector3d p0 = geometry.x(vertices[0]);
     const Eigen::Vector3d p1 = geometry.x(vertices[1]);
     const Eigen::Vector3d p2 = geometry.x(vertices[2]);
@@ -236,7 +236,7 @@ T circumradius_triangle(const mesh::Mesh& mesh,
   T cr(entities.rows());
   for (Eigen::Index e = 0; e < entities.rows(); ++e)
   {
-    auto vertices = connectivity.edges(entities[e]);
+    auto vertices = connectivity.links(entities[e]);
     const Eigen::Vector3d p0 = geometry.x(vertices[0]);
     const Eigen::Vector3d p1 = geometry.x(vertices[1]);
     const Eigen::Vector3d p2 = geometry.x(vertices[2]);
@@ -269,7 +269,7 @@ T circumradius_tetrahedron(const mesh::Mesh& mesh,
   T cr(entities.rows());
   for (Eigen::Index e = 0; e < entities.rows(); ++e)
   {
-    auto vertices = connectivity.edges(entities[e]);
+    auto vertices = connectivity.links(entities[e]);
     const Eigen::Vector3d p0 = geometry.x(vertices[0]);
     const Eigen::Vector3d p1 = geometry.x(vertices[1]);
     const Eigen::Vector3d p2 = geometry.x(vertices[2]);
@@ -358,7 +358,7 @@ Eigen::ArrayXd mesh::h(const Mesh& mesh,
   for (Eigen::Index e = 0; e < entities.rows(); ++e)
   {
     // Get the coordinates  of the vertices
-    auto vertices = connectivity.edges(entities[e]);
+    auto vertices = connectivity.links(entities[e]);
     for (int i = 0; i < num_vertices; ++i)
       points[i] = geometry.x(vertices[i]);
 
@@ -412,7 +412,7 @@ Eigen::ArrayXd mesh::inradius(const mesh::Mesh& mesh,
       continue;
     }
 
-    auto facets = connectivity.edges(entities[c]);
+    auto facets = connectivity.links(entities[c]);
     for (int i = 0; i <= d; i++)
       facet_list[i] = facets[i];
     const double A = volume_entities_tmpl<Eigen::Array<double, 4, 1>>(
@@ -666,7 +666,7 @@ Eigen::Array<double, Eigen::Dynamic, 3, Eigen::RowMajor> mesh::midpoints(
         = mesh::cell_num_entities(cell_entity_type(mesh.cell_type(), dim), 0);
     for (Eigen::Index e = 0; e < entities.rows(); ++e)
     {
-      auto vertices = connectivity->edges(entities[e]);
+      auto vertices = connectivity->links(entities[e]);
       x.row(e) = 0.0;
       for (int i = 0; i < num_vertices; ++i)
         x.row(e) += points.row(vertices[i]);
