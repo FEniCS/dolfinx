@@ -11,6 +11,7 @@
 #include <algorithm>
 #include <boost/unordered_map.hpp>
 #include <cstdint>
+#include <dolfinx/common/IndexMap.h>
 #include <dolfinx/common/MPI.h>
 #include <dolfinx/common/Timer.h>
 #include <dolfinx/common/log.h>
@@ -121,7 +122,7 @@ get_shared_entities(MPI_Comm neighbour_comm,
 //-----------------------------------------------------------------------------
 // Communicate with sharing processes to find out which entities are ghost
 // and return a mapping vector to move them to the end of the local range.
-std::tuple<std::vector<int>, std::vector<std::int64_t>,
+std::tuple<std::vector<int>, std::shared_ptr<common::IndexMap>,
            std::map<std::int32_t, std::set<std::int32_t>>>
 get_ghost_mapping(
     MPI_Comm comm,
@@ -274,10 +275,17 @@ get_ghost_mapping(
     }
   }
 
-  // Remap global indexing to new order
-  std::vector<std::int64_t> remapped_global_indexing(global_indexing.size());
+  // Remap global indexing to new order and feed into IndexMap
+  Eigen::Array<std::int64_t, Eigen::Dynamic, 1> ghost_indices(entity_count
+                                                              - num_local);
   for (std::size_t i = 0; i < mapping.size(); ++i)
-    remapped_global_indexing[mapping[i]] = global_indexing[i];
+  {
+    if (mapping[i] >= num_local)
+      ghost_indices[mapping[i] - num_local] = global_indexing[i];
+  }
+
+  std::shared_ptr<common::IndexMap> index_map
+      = std::make_shared<common::IndexMap>(comm, num_local, ghost_indices, 1);
 
   // Remap shared entities to new order
   std::map<std::int32_t, std::set<int>> remapped_shared_entities;
@@ -286,13 +294,13 @@ get_ghost_mapping(
 
   // FIXME - Remap shared entities to new indices
   // FIXME - Also return shared_entities
-  return {std::move(mapping), std::move(remapped_global_indexing),
-          std::move(remapped_shared_entities)};
+  return {std::move(mapping), index_map, std::move(remapped_shared_entities)};
 }
 //-----------------------------------------------------------------------------
 std::tuple<std::shared_ptr<graph::AdjacencyList<std::int32_t>>,
            std::shared_ptr<graph::AdjacencyList<std::int32_t>>,
-           std::vector<std::int64_t>, std::map<std::int32_t, std::set<int>>>
+           std::shared_ptr<common::IndexMap>,
+           std::map<std::int32_t, std::set<int>>>
 compute_entities_by_key_matching(
     MPI_Comm comm, const graph::AdjacencyList<std::int32_t>& cells,
     const std::map<std::int32_t, std::set<std::int32_t>>& shared_vertices,
@@ -370,7 +378,7 @@ compute_entities_by_key_matching(
 
   // Communicate with other processes to find out which entities are ghosted
   // and shared. Remap the numbering so that ghosts are at the end.
-  auto [mapping, global_indices, shared_entities]
+  auto [mapping, index_map, shared_entities]
       = get_ghost_mapping(comm, shared_vertices, global_vertex_indices,
                           entity_list, entity_index, entity_count);
 
@@ -407,8 +415,7 @@ compute_entities_by_key_matching(
   auto ev
       = std::make_shared<graph::AdjacencyList<std::int32_t>>(connectivity_ev);
 
-  assert((std::int32_t)global_indices.size() == entity_count);
-  return {ce, ev, std::move(global_indices), std::move(shared_entities)};
+  return {ce, ev, index_map, std::move(shared_entities)};
 }
 //-----------------------------------------------------------------------------
 // Compute connectivity from transpose
@@ -520,7 +527,8 @@ compute_from_map(const graph::AdjacencyList<std::int32_t>& c_d0_0,
 //-----------------------------------------------------------------------------
 std::tuple<std::shared_ptr<graph::AdjacencyList<std::int32_t>>,
            std::shared_ptr<graph::AdjacencyList<std::int32_t>>,
-           std::vector<std::int64_t>, std::map<std::int32_t, std::set<int>>>
+           std::shared_ptr<common::IndexMap>,
+           std::map<std::int32_t, std::set<int>>>
 TopologyComputation::compute_entities(MPI_Comm comm, const Topology& topology,
                                       mesh::CellType cell_type, int dim)
 {
@@ -528,8 +536,7 @@ TopologyComputation::compute_entities(MPI_Comm comm, const Topology& topology,
 
   // Vertices must always exist
   if (dim == 0)
-    return {nullptr, nullptr, std::vector<std::int64_t>(),
-            std::map<std::int32_t, std::set<int>>()};
+    return {nullptr, nullptr, nullptr, std::map<std::int32_t, std::set<int>>()};
 
   if (topology.connectivity(dim, 0))
   {
@@ -541,8 +548,7 @@ TopologyComputation::compute_entities(MPI_Comm comm, const Topology& topology,
           "dimension "
           + std::to_string(dim) + " exist but connectivity is missing.");
     }
-    return {nullptr, nullptr, std::vector<std::int64_t>(),
-            std::map<std::int32_t, std::set<int>>()};
+    return {nullptr, nullptr, nullptr, std::map<std::int32_t, std::set<int>>()};
   }
 
   const int tdim = topology.dim();
@@ -551,7 +557,8 @@ TopologyComputation::compute_entities(MPI_Comm comm, const Topology& topology,
     throw std::runtime_error("Cell connectivity missing.");
   std::tuple<std::shared_ptr<graph::AdjacencyList<std::int32_t>>,
              std::shared_ptr<graph::AdjacencyList<std::int32_t>>,
-             std::vector<std::int64_t>, std::map<std::int32_t, std::set<int>>>
+             std::shared_ptr<common::IndexMap>,
+             std::map<std::int32_t, std::set<int>>>
       data = compute_entities_by_key_matching(
           comm, *cells, topology.shared_entities(0), topology.global_indices(0),
           cell_type, dim);

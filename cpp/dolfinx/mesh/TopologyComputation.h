@@ -16,6 +16,11 @@
 namespace dolfinx
 {
 
+namespace common
+{
+class IndexMap;
+}
+
 namespace graph
 {
 template <typename T>
@@ -42,7 +47,7 @@ public:
   ///   already exists, then {nullptr, nullptr, -1} is returned.
   static std::tuple<std::shared_ptr<graph::AdjacencyList<std::int32_t>>,
                     std::shared_ptr<graph::AdjacencyList<std::int32_t>>,
-                    std::vector<std::int64_t>,
+                    std::shared_ptr<common::IndexMap>,
                     std::map<std::int32_t, std::set<int>>>
   compute_entities(MPI_Comm comm, const Topology& topology,
                    mesh::CellType cell_type, int dim);
