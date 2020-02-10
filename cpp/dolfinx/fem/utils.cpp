@@ -152,7 +152,6 @@ la::SparsityPattern dolfinx::fem::create_sparsity_pattern(const Form& a)
     SparsityPatternBuilder::exterior_facets(pattern, mesh.topology(),
                                             {{dofmaps[0], dofmaps[1]}});
   }
-  pattern.assemble();
   t0.stop();
 
   return pattern;
