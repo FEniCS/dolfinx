@@ -221,6 +221,8 @@ std::tuple<std::vector<int>, std::vector<std::int64_t>> get_ghost_mapping(
   }
   const std::int32_t num_local = c;
 
+  std::cout << "num_local = " << num_local << "\n";
+
   std::vector<std::int64_t> global_indexing(entity_count, -1);
 
   // Create global indices
@@ -274,9 +276,14 @@ std::tuple<std::vector<int>, std::vector<std::int64_t>> get_ghost_mapping(
     }
   assert(c == entity_count);
 
+  // Remap global indexing to new order
+  std::vector<std::int64_t> remapped_global_indexing(global_indexing.size());
+  for (std::size_t i = 0; i < mapping.size(); ++i)
+    remapped_global_indexing[mapping[i]] = global_indexing[i];
+
   // FIXME - Remap shared entities to new indices
-  // FIXME - also return shared_entities, and global numbering (remapped?)
-  return {mapping, global_indexing};
+  // FIXME - Also return shared_entities
+  return {mapping, remapped_global_indexing};
 }
 //-----------------------------------------------------------------------------
 std::tuple<std::shared_ptr<graph::AdjacencyList<std::int32_t>>,

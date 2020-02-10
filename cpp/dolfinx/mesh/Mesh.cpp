@@ -452,14 +452,14 @@ std::int32_t Mesh::create_entities(int dim) const
                                               _cell_type, dim);
 
   // DEBUG I/O
-  std::stringstream s;
-  int mpi_rank = dolfinx::MPI::rank(_mpi_comm.comm());
-  s << "Global indexing\n";
-  s << mpi_rank << "] gi = [";
-  for (auto q : global_indices)
-    s << q << " ";
-  s << "]\n";
-  std::cout << s.str();
+  // std::stringstream s;
+  // int mpi_rank = dolfinx::MPI::rank(_mpi_comm.comm());
+  // s << "Global indexing\n";
+  // s << mpi_rank << "] gi = [";
+  // for (auto q : global_indices)
+  //   s << q << " ";
+  // s << "]\n";
+  // std::cout << s.str();
 
   if (cell_entity)
     _topology->set_connectivity(cell_entity, _topology->dim(), dim);
