@@ -6,7 +6,6 @@
 
 #include "Mesh.h"
 #include "CoordinateDofs.h"
-#include "DistributedMeshTools.h"
 #include "Geometry.h"
 #include "MeshEntity.h"
 #include "MeshIterator.h"
@@ -455,11 +454,6 @@ std::int32_t Mesh::create_entities(int dim) const
     _topology->set_connectivity(cell_entity, _topology->dim(), dim);
   if (entity_vertex)
     _topology->set_connectivity(entity_vertex, dim, 0);
-
-  // Number globally (this code is largely duplicated in
-  // TopologyComputation::compute_entities and will soon be removed)
-  //  DistributedMeshTools::number_entities(this->mpi_comm(), *_topology,
-  //                                        _cell_type, dim);
 
   if (index_map)
   {
