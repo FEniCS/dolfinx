@@ -66,7 +66,7 @@ block_function_spaces(
 /// @return A matrix. The matrix is not zeroed.
 la::PETScMatrix create_matrix(const Form& a);
 
-/// Create a sparsity pattern for a given form. The pattern is no
+/// Create a sparsity pattern for a given form. The pattern is not
 /// finalised, i.e. the caller is responsible for calling
 /// SparsityPattern::assemble.
 /// @param[in] a A bilinear form
