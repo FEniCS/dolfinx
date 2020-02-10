@@ -21,7 +21,7 @@ ElementDofLayout::ElementDofLayout(
     const std::vector<std::shared_ptr<const ElementDofLayout>> sub_dofmaps,
     const mesh::CellType cell_type, const std::array<int, 4> entity_block_size,
     const std::array<ufc_dof_arrangement, 4> entity_dof_arrangement)
-    : _block_size(block_size), _parent_map(parent_map), _num_dofs(0),
+    : _block_size(block_size), _cell_type(cell_type), _parent_map(parent_map), _num_dofs(0),
       _entity_dofs(entity_dofs_), _sub_dofmaps(sub_dofmaps),
       _entity_block_size(entity_block_size),
       _entity_dof_arrangement(entity_dof_arrangement)
@@ -77,6 +77,8 @@ ElementDofLayout::ElementDofLayout(const ElementDofLayout& element_dof_layout,
 {
   _parent_map.clear();
 }
+//-----------------------------------------------------------------------------
+mesh::CellType ElementDofLayout::cell_type() const { return _cell_type; }
 //-----------------------------------------------------------------------------
 int ElementDofLayout::num_dofs() const { return _num_dofs; }
 //-----------------------------------------------------------------------------
