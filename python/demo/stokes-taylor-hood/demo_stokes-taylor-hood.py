@@ -78,11 +78,12 @@ import dolfinx
 import ufl
 from dolfinx import MPI, DirichletBC, Function, FunctionSpace, RectangleMesh
 from dolfinx.cpp.mesh import CellType
+from dolfinx.fem import locate_dofs_geometrical, locate_dofs_topological
 from dolfinx.io import XDMFFile
 from dolfinx.la import VectorSpaceBasis
+from dolfinx.mesh import compute_marked_boundary_entities
 from dolfinx.plotting import plot
 from ufl import div, dx, grad, inner
-from dolfinx.fem import locate_dofs_geometrical
 
 # We create a Mesh and attach a coordinate map to the mesh::
 
@@ -95,11 +96,23 @@ mesh = RectangleMesh(
 cmap = dolfinx.fem.create_coordinate_map(mesh.ufl_domain())
 mesh.geometry.coord_mapping = cmap
 
+
+# Function to mark x = 0, x = 1 and y = 0
+def noslip_boudary(x): return np.logical_or(np.logical_or(np.isclose(x[0], 0.0),
+                                                          np.isclose(x[0], 1.0)),
+                                            np.isclose(x[1], 0.0))
+
+
+# Function to the lid (y = 1)
+def lid(x): return np.isclose(x[1], 1.0)
+
+
 # We define two :py:class:`FunctionSpace
 # <dolfinx.function.FunctionSpace>` instances with different finite
 # elements. ``P2`` corresponds to piecewise quadratics for the velocity
 # field and ``P1`` to continuous piecewise linears for the pressure
 # field::
+
 
 P2 = ufl.VectorElement("Lagrange", mesh.ufl_cell(), 2)
 P1 = ufl.FiniteElement("Lagrange", mesh.ufl_cell(), 1)
@@ -112,16 +125,17 @@ V, Q = FunctionSpace(mesh, P2), FunctionSpace(mesh, P1)
 noslip = Function(V)
 with noslip.vector.localForm() as bc_local:
     bc_local.set(0.0)
-bc0 = DirichletBC(noslip,
-                  locate_dofs_geometrical(V, lambda x: np.logical_or(np.logical_or(np.isclose(x[0], 0.0),
-                                                                                   np.isclose(x[0], 1.0)),
-                                                                     np.isclose(x[1], 0.0))))
+
+facets = compute_marked_boundary_entities(mesh, 1, noslip_boudary)
+bc0 = DirichletBC(noslip, locate_dofs_topological(V, 1, facets))
 
 
 # Driving velocity condition u = (1, 0) on top boundary (y = 1)
 lid_velocity = Function(V)
 lid_velocity.interpolate(lambda x: np.stack((np.ones(x.shape[1]), np.zeros(x.shape[1]))))
-bc1 = DirichletBC(lid_velocity, locate_dofs_geometrical(V, lambda x: np.isclose(x[1], 1.0)))
+
+facets = compute_marked_boundary_entities(mesh, 1, lid)
+bc1 = DirichletBC(lid_velocity, locate_dofs_topological(V, 1, facets))
 
 # Collect Dirichlet boundary conditions
 bcs = [bc0, bc1]
@@ -227,9 +241,9 @@ ksp_p.setType("preonly")
 ksp_p.getPC().setType("jacobi")
 
 # Monitor the convergence of the KSP
-opts = PETSc.Options()
-opts["ksp_monitor"] = None
-opts["ksp_view"] = None
+# opts = PETSc.Options()
+# opts["ksp_monitor"] = None
+# opts["ksp_view"] = None
 ksp.setFromOptions()
 
 # To compute the solution, we create finite element :py:class:`Function
@@ -391,16 +405,19 @@ W = FunctionSpace(mesh, TH)
 W0 = W.sub(0).collapse()
 
 noslip = Function(W0)
-bc0 = DirichletBC(W.sub(0), noslip,
-                  lambda x: np.logical_or(np.logical_or(np.isclose(x[0], 0.0),
-                                                        np.isclose(x[0], 1.0)),
-                                          np.isclose(x[1], 0.0)))
+facets = compute_marked_boundary_entities(mesh, 1, noslip_boudary)
+
+dofs = locate_dofs_topological((W.sub(0), V), 1, facets)
+bc0 = DirichletBC(noslip, dofs, W.sub(0))
 
 
 # Driving velocity condition u = (1, 0) on top boundary (y = 1)
 lid_velocity = Function(W0)
 lid_velocity.interpolate(lambda x: np.stack((np.ones(x.shape[1]), np.zeros(x.shape[1]))))
-bc1 = DirichletBC(W.sub(0), lid_velocity, lambda x: np.isclose(x[1], 1.0))
+facets = compute_marked_boundary_entities(mesh, 1, lid)
+dofs = locate_dofs_topological((W.sub(0), V), 1, facets)
+bc1 = DirichletBC(lid_velocity, dofs, W.sub(0))
+
 
 # Collect Dirichlet boundary conditions
 bcs = [bc0, bc1]
@@ -425,14 +442,14 @@ dolfinx.fem.assemble.set_bc(b, bcs)
 U = Function(W)
 
 # Set near null space for pressure
-null_vec = U.vector.copy()
-null_vec.set(0.0)
-with null_vec.localForm() as _null_vec:
-    W.sub(1).dofmap.set(_null_vec.array, 1.0)
-null_vec.normalize()
-nsp = PETSc.NullSpace().create(vectors=[null_vec])
-assert nsp.test(A)
-A.setNullSpace(nsp)
+# null_vec = U.vector.copy()
+# null_vec.set(0.0)
+# with null_vec.localForm() as _null_vec:
+#     W.sub(1).dofmap.set(_null_vec.array, 1.0)
+# null_vec.normalize()
+# nsp = PETSc.NullSpace().create(vectors=[null_vec])
+# assert nsp.test(A)
+# A.setNullSpace(nsp)
 
 
 ksp = PETSc.KSP().create(mesh.mpi_comm())
