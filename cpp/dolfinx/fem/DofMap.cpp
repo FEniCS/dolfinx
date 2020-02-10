@@ -12,8 +12,7 @@
 #include <dolfinx/common/IndexMap.h>
 #include <dolfinx/common/MPI.h>
 #include <dolfinx/common/types.h>
-#include <dolfinx/mesh/MeshEntity.h>
-#include <dolfinx/mesh/MeshIterator.h>
+#include <dolfinx/mesh/Topology.h>
 
 using namespace dolfinx;
 using namespace dolfinx::fem;
@@ -173,8 +172,8 @@ DofMap::collapse(MPI_Comm comm, const mesh::Topology& topology) const
   {
     // Collapse dof map, without build and re-ordering from scratch
     // dofmap_new = std::shared_ptr<DofMap>(new DofMap(*this, mesh));
-    dofmap_new
-        = std::make_unique<DofMap>(build_collapsed_dofmap(comm, *this, topology));
+    dofmap_new = std::make_unique<DofMap>(
+        build_collapsed_dofmap(comm, *this, topology));
   }
   assert(dofmap_new);
 
