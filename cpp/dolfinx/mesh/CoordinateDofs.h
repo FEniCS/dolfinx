@@ -12,9 +12,14 @@
 
 namespace dolfinx
 {
+namespace graph
+{
+template <typename T>
+class AdjacencyList;
+}
+
 namespace mesh
 {
-class Connectivity;
 
 /// CoordinateDofs contains the connectivity from MeshEntities to the
 /// geometric points which make up the mesh.
@@ -27,7 +32,7 @@ public:
   CoordinateDofs(
       const Eigen::Ref<const Eigen::Array<std::int32_t, Eigen::Dynamic,
                                           Eigen::Dynamic, Eigen::RowMajor>>&
-      point_dofs);
+          point_dofs);
 
   /// Copy constructor
   CoordinateDofs(const CoordinateDofs& topology) = default;
@@ -46,15 +51,15 @@ public:
 
   /// Get the entity points associated with cells (const version)
   /// @return Connections from cells to points
-  Connectivity& entity_points();
+  graph::AdjacencyList<std::int32_t>& entity_points();
 
   /// Get the entity points associated with cells (const version)
   /// @return Connections from cells to points
-  const Connectivity& entity_points() const;
+  const graph::AdjacencyList<std::int32_t>& entity_points() const;
 
 private:
-  // Connectivity from cells to points
-  std::shared_ptr<Connectivity> _coord_dofs;
+  // AdjacencyList<std::int32_t> from cells to points
+  std::shared_ptr<graph::AdjacencyList<std::int32_t>> _coord_dofs;
 };
 } // namespace mesh
 } // namespace dolfinx
