@@ -466,13 +466,13 @@ std::int32_t Mesh::create_entities(int dim) const
   if (entity_vertex)
     _topology->set_connectivity(entity_vertex, dim, 0);
 
-  if (!global_indices.empty())
-    _topology->set_global_indices(dim, global_indices);
-
   // Number globally (this code is largely duplicated in
   // TopologyComputation::compute_entities and will soon be removed)
   DistributedMeshTools::number_entities(this->mpi_comm(), *_topology,
                                         _cell_type, dim);
+
+  if (global_indices.size() > 0)
+    _topology->set_global_indices(dim, global_indices);
 
   return num_new_entities;
 }
