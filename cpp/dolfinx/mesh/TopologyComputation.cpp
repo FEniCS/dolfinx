@@ -381,18 +381,6 @@ compute_entities_by_key_matching(
       = get_ghost_mapping(comm, shared_vertices, global_vertex_indices,
                           entity_list, entity_index, entity_count);
 
-  std::stringstream s;
-  s << "shared entities = {";
-  for (auto q : shared_entities)
-  {
-    s << q.first << ":(";
-    for (int r : q.second)
-      s << r << " ";
-    s << "), ";
-  }
-  s << "}\n";
-  std::cout << s.str();
-
   // Do the actual remap
   for (std::int32_t& q : entity_index)
     q = mapping[q];
