@@ -7,10 +7,10 @@
 import numpy as np
 import pytest
 from petsc4py import PETSc
-from dolfin import (MPI, Function, FunctionSpace, UnitCubeMesh, UnitIntervalMesh,
-                    UnitSquareMesh, FacetNormal, CellDiameter)
-from dolfin.cpp.mesh import CellType
-from dolfin.fem import (assemble_matrix, assemble_scalar, assemble_vector)
+from dolfinx import (MPI, Function, FunctionSpace, UnitCubeMesh, UnitIntervalMesh,
+                     UnitSquareMesh, FacetNormal, CellDiameter)
+from dolfinx.cpp.mesh import CellType
+from dolfinx.fem import (assemble_matrix, assemble_scalar, assemble_vector)
 from ufl import (SpatialCoordinate, div, dx, grad, inner, ds, dS, avg, jump,
                  TestFunction, TrialFunction)
 
