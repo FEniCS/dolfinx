@@ -41,4 +41,4 @@ bool has_parmetis();
 /// Return true if DOLFINX is compiled with KaHIP
 bool has_kahip();
 
-} // namespace dolfin
+} // namespace dolfinx

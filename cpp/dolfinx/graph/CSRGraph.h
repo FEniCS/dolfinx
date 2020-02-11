@@ -190,4 +190,4 @@ private:
   dolfinx::MPI::Comm _mpi_comm;
 };
 } // namespace graph
-} // namespace dolfin
+} // namespace dolfinx

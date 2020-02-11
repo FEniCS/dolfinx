@@ -2,21 +2,21 @@
 
 # Copyright (C) 2011 Marie E. Rognes
 #
-# This file is part of DOLFIN (https://www.fenicsproject.org)
+# This file is part of DOLFINX (https://www.fenicsproject.org)
 #
 # SPDX-License-Identifier:    LGPL-3.0-or-later
 
 import numpy
 import pytest
 
-from dolfin import MPI, FunctionSpace, RectangleMesh
-from dolfin.cpp.mesh import CellType
+from dolfinx import MPI, FunctionSpace, RectangleMesh
+from dolfinx.cpp.mesh import CellType
 from ufl import TestFunction, TrialFunction, dx, grad, inner, lhs, rhs, system
 
 
 @pytest.mark.skip
 def test_lhs_rhs_simple():
-    """Test taking lhs/rhs of DOLFIN specific forms (constants
+    """Test taking lhs/rhs of DOLFINX specific forms (constants
     without cell). """
 
     mesh = RectangleMesh(MPI.comm_world, [numpy.array([0.0, 0.0, 0.0]),

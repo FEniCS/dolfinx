@@ -43,7 +43,7 @@ void Timer::resume()
 double Timer::stop()
 {
   _timer.stop();
-  auto [wall, user, system] = this->elapsed();
+  const auto [wall, user, system] = this->elapsed();
   if (!_task.empty())
     TimeLogManager::logger().register_timing(_task, wall, user, system);
   return wall;

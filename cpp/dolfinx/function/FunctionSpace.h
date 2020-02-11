@@ -1,4 +1,4 @@
-// Copyright (C) 2008-2011 Anders Logg
+// Copyright (C) 2008-2019 Anders Logg and Garth N. Wells
 //
 // This file is part of DOLFINX (https://www.fenicsproject.org)
 //
@@ -136,7 +136,7 @@ public:
   /// Collapse a subspace and return a new function space and a map from
   /// new to old dofs
   /// @return The new function space and a map rom new to old dofs
-  std::pair<std::shared_ptr<FunctionSpace>, std::vector<PetscInt>>
+  std::pair<std::shared_ptr<FunctionSpace>, std::vector<std::int32_t>>
   collapse() const;
 
   /// Check if function space has given cell
@@ -160,10 +160,7 @@ public:
   ///         W.sub(1).sub(0) == [1, 0]
   std::vector<int> component() const;
 
-  /// Tabulate the coordinates of all dofs on this process. This
-  /// function is typically used by preconditioners that require the
-  /// spatial coordinates of dofs, for example for re-partitioning or
-  /// nullspace computations.
+  /// Tabulate the physical coordinates of all dofs on this process.
   /// @return The dof coordinates [([x0, y0, z0], [x1, y1, z1], ...)
   Eigen::Array<double, Eigen::Dynamic, 3, Eigen::RowMajor>
   tabulate_dof_coordinates() const;
@@ -211,10 +208,10 @@ private:
   std::shared_ptr<const fem::DofMap> _dofmap;
 
   // General interpolation from any Function on any mesh
-  void interpolate_from_any(
-      Eigen::Ref<Eigen::Array<PetscScalar, Eigen::Dynamic, 1>>
-          expansion_coefficients,
-      const Function& v) const;
+  void
+  interpolate_from_any(Eigen::Ref<Eigen::Array<PetscScalar, Eigen::Dynamic, 1>>
+                           expansion_coefficients,
+                       const Function& v) const;
 
   // The component w.r.t. to root space
   std::vector<int> _component;
@@ -229,4 +226,4 @@ private:
   mutable std::map<std::vector<int>, std::weak_ptr<FunctionSpace>> _subspaces;
 };
 } // namespace function
-} // namespace dolfin
+} // namespace dolfinx

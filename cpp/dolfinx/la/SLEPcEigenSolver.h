@@ -82,5 +82,5 @@ private:
   EPS _eps;
 };
 } // namespace la
-} // namespace dolfin
+} // namespace dolfinx
 #endif

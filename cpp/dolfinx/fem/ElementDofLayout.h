@@ -60,6 +60,10 @@ public:
   /// Move assignment
   ElementDofLayout& operator=(ElementDofLayout&& dofmap) = default;
 
+  /// Cell type (shape)
+  /// @return The cell type
+  mesh::CellType cell_type() const;
+
   /// Return the dimension of the local finite element function space on
   /// a cell (number of dofs on element)
   /// @return Dimension of the local finite element function space.
@@ -127,6 +131,9 @@ private:
   // Block size
   int _block_size;
 
+  // Cell type
+  mesh::CellType _cell_type;
+
   // Mapping of dofs to this ElementDofLayout's immediate parent
   std::vector<int> _parent_map;
 
@@ -153,4 +160,4 @@ private:
   std::array<int, 4> _entity_block_size;
 };
 } // namespace fem
-} // namespace dolfin
+} // namespace dolfinx

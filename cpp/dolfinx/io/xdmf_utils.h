@@ -70,4 +70,4 @@ std::string vtk_cell_type_str(mesh::CellType cell_type, int order);
 
 } // namespace xdmf_utils
 } // namespace io
-} // namespace dolfin
+} // namespace dolfinx

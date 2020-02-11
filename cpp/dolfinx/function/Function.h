@@ -166,4 +166,4 @@ private:
   la::PETScVector _vector;
 };
 } // namespace function
-} // namespace dolfin
+} // namespace dolfinx

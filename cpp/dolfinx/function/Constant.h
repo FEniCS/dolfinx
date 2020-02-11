@@ -42,4 +42,4 @@ public:
   std::vector<PetscScalar> value;
 };
 } // namespace function
-} // namespace dolfin
+} // namespace dolfinx

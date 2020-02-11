@@ -47,4 +47,4 @@ void list_timings(MPI_Comm mpi_comm, std::set<TimingType> type);
 ///          time) for the task
 std::tuple<std::size_t, double, double, double> timing(std::string task);
 
-} // namespace dolfin
+} // namespace dolfinx

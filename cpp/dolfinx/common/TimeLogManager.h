@@ -23,4 +23,4 @@ public:
   static TimeLogger& logger();
 };
 } // namespace common
-} // namespace dolfin
+} // namespace dolfinx

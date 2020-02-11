@@ -34,11 +34,11 @@ class Mesh;
 namespace fem
 {
 
-/// This class builds and stores of collection of PETSc DM objects
-/// from a hierarchy of function::FunctionSpaces objects. The DM objects are
+/// This class builds and stores of collection of PETSc DM objects from
+/// a hierarchy of function::FunctionSpaces objects. The DM objects are
 /// used to construct multigrid solvers via PETSc.
 ///
-/// Warning: This classs is highly experimental and will change
+/// @warning This class is highly experimental and will change
 
 class PETScDMCollection
 {
@@ -95,4 +95,4 @@ private:
   std::vector<DM> _dms;
 };
 } // namespace fem
-} // namespace dolfin
+} // namespace dolfinx

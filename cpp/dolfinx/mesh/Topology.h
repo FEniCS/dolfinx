@@ -6,6 +6,7 @@
 
 #pragma once
 
+#include <Eigen/Dense>
 #include <array>
 #include <cstdint>
 #include <map>
@@ -13,12 +14,23 @@
 #include <set>
 #include <vector>
 
+#include <dolfinx/graph/AdjacencyList.h>
+
 namespace dolfinx
 {
+namespace common
+{
+class IndexMap;
+}
+
+namespace graph
+{
+template <typename T>
+class AdjacencyList;
+}
+
 namespace mesh
 {
-
-class Connectivity;
 
 /// Topology stores the topology of a mesh, consisting of mesh entities
 /// and connectivity (incidence relations for the mesh entities). Note
@@ -34,8 +46,7 @@ class Topology
 {
 public:
   /// Create empty mesh topology
-  Topology(std::size_t dim, std::int32_t num_vertices,
-           std::int64_t num_vertices_global);
+  Topology(int dim);
 
   /// Copy constructor
   Topology(const Topology& topology) = default;
@@ -52,53 +63,35 @@ public:
   /// Return topological dimension
   int dim() const;
 
-  /// Return number of entities for given dimension (local to process)
-  std::int32_t size(int dim) const;
-
-  /// Return global number of entities for given dimension
-  std::int64_t size_global(int dim) const;
-
-  /// Return number of regular (non-ghost) entities or equivalently, the
-  /// offset of where ghost entities begin
-  std::int32_t ghost_offset(int dim) const;
-
-  /// Clear data for given pair of topological dimensions
-  void clear(int d0, int d1);
-
-  /// Set number of global entities (global_size) for given topological
-  /// dimension dim
-  void set_num_entities_global(int dim, std::int64_t global_size);
-
+  /// @todo Remove this function. Use IndexMap instead
   /// Set the global indices for entities of dimension dim
   void set_global_indices(int dim,
                           const std::vector<std::int64_t>& global_indices);
 
-  /// Initialise the offset index of ghost entities for this dimension
-  void init_ghost(std::size_t dim, std::size_t index);
+  /// Set the IndexMap for dimension dim
+  /// @warning This is experimental and likely to change
+  void set_index_map(int dim,
+                     std::shared_ptr<const common::IndexMap> index_map);
 
+  /// Get the IndexMap for dimension dim
+  /// (Currently partially working)
+  std::shared_ptr<const common::IndexMap> index_map(int dim) const;
+
+  /// @todo Remove this function. Use IndexMap instead
   /// Get local-to-global index map for entities of topological
   /// dimension d
-  const std::vector<std::int64_t>& global_indices(std::size_t d) const;
+  const std::vector<std::int64_t>& global_indices(int d) const;
 
   /// Set the map from shared entities (local index) to processes that
   /// share the entity
   void set_shared_entities(
       int dim, const std::map<std::int32_t, std::set<std::int32_t>>& entities);
 
+  /// @todo Remove this function
   /// Return map from shared entities (local index) to process that
   /// share the entity (const version)
   const std::map<std::int32_t, std::set<std::int32_t>>&
   shared_entities(int dim) const;
-
-  /// Set map from local ghost cell index to owning process. Since
-  /// ghost cells are at the end of the range, this is just a vector
-  /// over those cells
-  void set_entity_owner(int dim, const std::vector<std::int32_t>& owners);
-
-  /// Return mapping from local ghost cell index to owning process
-  /// (const version). Since ghost cells are at the end of the range,
-  /// this is just a vector over those cells
-  const std::vector<std::int32_t>& entity_owner(int dim) const;
 
   /// Marker for entities of dimension dim on the boundary. An entity of
   /// co-dimension < 0 is on the boundary if it is connected to a boundary
@@ -110,15 +103,16 @@ public:
   std::vector<bool> on_boundary(int dim) const;
 
   /// Return connectivity for given pair of topological dimensions
-  std::shared_ptr<Connectivity> connectivity(std::size_t d0, std::size_t d1);
+  std::shared_ptr<graph::AdjacencyList<std::int32_t>> connectivity(int d0,
+                                                                   int d1);
 
   /// Return connectivity for given pair of topological dimensions
-  std::shared_ptr<const Connectivity> connectivity(std::size_t d0,
-                                                   std::size_t d1) const;
+  std::shared_ptr<const graph::AdjacencyList<std::int32_t>>
+  connectivity(int d0, int d1) const;
 
   /// Set connectivity for given pair of topological dimensions
-  void set_connectivity(std::shared_ptr<Connectivity> c, std::size_t d0,
-                        std::size_t d1);
+  void set_connectivity(std::shared_ptr<graph::AdjacencyList<std::int32_t>> c,
+                        int d0, int d1);
 
   /// Return hash based on the hash of cell-vertex connectivity
   size_t hash() const;
@@ -126,18 +120,27 @@ public:
   /// Return informal string representation (pretty-print)
   std::string str(bool verbose) const;
 
+  /// @todo Move this outside of this class
+  /// Set global number of connections for each local entities
+  void set_global_size(std::array<int, 2> d,
+                       const Eigen::Array<std::int32_t, Eigen::Dynamic, 1>&
+                           num_global_connections)
+  {
+    // assert(num_global_connections.size() == _offsets.size() - 1);
+    _num_global_connections(d[0], d[1]) = num_global_connections;
+  }
+
+  /// @todo Can this be removed?
+  /// Return global number of connections for given entity
+  int size_global(std::array<int, 2> d, std::int32_t entity) const
+  {
+    if (_num_global_connections(d[0], d[1]).size() == 0)
+      return _connectivity(d[0], d[1])->num_links(entity);
+    else
+      return _num_global_connections(d[0], d[1])[entity];
+  }
+
 private:
-  // Number of mesh vertices
-  std::int32_t _num_vertices;
-
-  // Local index of first ghost entity, for each topological dimension.
-  // Since ghost entities come after non-ghost entities, this is
-  // also the number of local non-ghost entities for each dimension.
-  std::vector<std::size_t> _ghost_offset_index;
-
-  // Global number of mesh entities for each topological dimension
-  std::vector<std::int64_t> _global_num_entities;
-
   // Global indices for mesh entities
   std::vector<std::vector<std::int64_t>> _global_indices;
 
@@ -146,14 +149,19 @@ private:
   // (local index) to a list of the processes sharing the vertex
   std::vector<std::map<std::int32_t, std::set<std::int32_t>>> _shared_entities;
 
-  // TODO: Could IndexMap be used here
-  // For cells which are "ghosted", locate the owning process, using a
-  // vector rather than a map, since ghost cells are always at the end
-  // of the range.
-  std::array<std::vector<std::int32_t>, 4> _entity_owner;
+  // IndexMap to store ghosting for each entity dimension
+  std::array<std::shared_ptr<const common::IndexMap>, 4> _index_map;
 
-  // Connectivity for pairs of topological dimensions
-  std::vector<std::vector<std::shared_ptr<Connectivity>>> _connectivity;
-}; // namespace mesh
+  // AdjacencyList for pairs of topological dimensions
+  Eigen::Array<std::shared_ptr<graph::AdjacencyList<std::int32_t>>,
+               Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
+      _connectivity;
+
+  // TODO: revise
+  // Global number of connections for each entity (possibly not
+  // computed)
+  Eigen::Array<Eigen::Array<std::int32_t, Eigen::Dynamic, 1>, 4, 4>
+      _num_global_connections;
+};
 } // namespace mesh
-} // namespace dolfin
+} // namespace dolfinx

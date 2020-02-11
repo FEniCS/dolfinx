@@ -62,4 +62,4 @@ public:
   compute_reordering(const Graph& graph, std::string scotch_strategy = "");
 };
 } // namespace graph
-} // namespace dolfin
+} // namespace dolfinx

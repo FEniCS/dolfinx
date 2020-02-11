@@ -41,7 +41,7 @@ void test_distributed_mesh()
 
   // Read in mesh in mesh data from XDMF file
   io::XDMFFile infile(MPI_COMM_WORLD, "mesh.xdmf");
-  auto [cell_type, points, cells, global_cell_indices]
+  const auto [cell_type, points, cells, global_cell_indices]
       = infile.read_mesh_data(subset_comm);
 
   // Partition mesh into nparts using local mesh data and subset of

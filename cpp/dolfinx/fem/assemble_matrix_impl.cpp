@@ -113,14 +113,14 @@ void fem::impl::assemble_cells(
   const int gdim = mesh.geometry().dim();
 
   // Prepare cell geometry
-  const mesh::Connectivity& connectivity_g
+  const graph::AdjacencyList<std::int32_t>& connectivity_g
       = mesh.coordinate_dofs().entity_points();
   const Eigen::Array<std::int32_t, Eigen::Dynamic, 1>& pos_g
-      = connectivity_g.entity_positions();
+      = connectivity_g.offsets();
   const Eigen::Array<std::int32_t, Eigen::Dynamic, 1>& cell_g
-      = connectivity_g.connections();
+      = connectivity_g.array();
   // FIXME: Add proper interface for num coordinate dofs
-  const int num_dofs_g = connectivity_g.size(0);
+  const int num_dofs_g = connectivity_g.num_links(0);
   const Eigen::Array<double, Eigen::Dynamic, 3, Eigen::RowMajor>& x_g
       = mesh.geometry().points();
 
@@ -151,7 +151,7 @@ void fem::impl::assemble_cells(
     {
       for (Eigen::Index i = 0; i < Ae.rows(); ++i)
       {
-        const PetscInt dof = dofmap0[cell_index * num_dofs_per_cell0 + i];
+        const std::int32_t dof = dofmap0[cell_index * num_dofs_per_cell0 + i];
         if (bc0[dof])
           Ae.row(i).setZero();
       }
@@ -160,7 +160,7 @@ void fem::impl::assemble_cells(
     {
       for (Eigen::Index j = 0; j < Ae.cols(); ++j)
       {
-        const PetscInt dof = dofmap1[cell_index * num_dofs_per_cell1 + j];
+        const std::int32_t dof = dofmap1[cell_index * num_dofs_per_cell1 + j];
         if (bc1[dof])
           Ae.col(j).setZero();
       }
@@ -195,14 +195,14 @@ void fem::impl::assemble_exterior_facets(
   mesh.create_connectivity(tdim - 1, tdim);
 
   // Prepare cell geometry
-  const mesh::Connectivity& connectivity_g
+  const graph::AdjacencyList<std::int32_t>& connectivity_g
       = mesh.coordinate_dofs().entity_points();
   const Eigen::Array<std::int32_t, Eigen::Dynamic, 1>& pos_g
-      = connectivity_g.entity_positions();
+      = connectivity_g.offsets();
   const Eigen::Array<std::int32_t, Eigen::Dynamic, 1>& cell_g
-      = connectivity_g.connections();
+      = connectivity_g.array();
   // FIXME: Add proper interface for num coordinate dofs
-  const int num_dofs_g = connectivity_g.size(0);
+  const int num_dofs_g = connectivity_g.num_links(0);
   const Eigen::Array<double, Eigen::Dynamic, 3, Eigen::RowMajor>& x_g
       = mesh.geometry().points();
 
@@ -288,14 +288,14 @@ void fem::impl::assemble_interior_facets(
   mesh.create_connectivity(tdim - 1, tdim);
 
   // Prepare cell geometry
-  const mesh::Connectivity& connectivity_g
+  const graph::AdjacencyList<std::int32_t>& connectivity_g
       = mesh.coordinate_dofs().entity_points();
   const Eigen::Array<std::int32_t, Eigen::Dynamic, 1>& pos_g
-      = connectivity_g.entity_positions();
+      = connectivity_g.offsets();
   const Eigen::Array<std::int32_t, Eigen::Dynamic, 1>& cell_g
-      = connectivity_g.connections();
+      = connectivity_g.array();
   // FIXME: Add proper interface for num coordinate dofs
-  const int num_dofs_g = connectivity_g.size(0);
+  const int num_dofs_g = connectivity_g.num_links(0);
   const Eigen::Array<double, Eigen::Dynamic, 3, Eigen::RowMajor>& x_g
       = mesh.geometry().points();
 

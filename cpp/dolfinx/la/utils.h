@@ -47,7 +47,8 @@ Vec create_petsc_vector(const common::IndexMap& map);
 /// returned object.
 Vec create_petsc_vector(
     MPI_Comm comm, std::array<std::int64_t, 2> range,
-    const Eigen::Array<PetscInt, Eigen::Dynamic, 1>& ghost_indices,
+    const Eigen::Ref<const Eigen::Array<std::int64_t, Eigen::Dynamic, 1>>&
+        ghost_indices,
     int block_size);
 
 /// Create a PETSc Mat. Caller is responsible for destroying the
@@ -149,4 +150,4 @@ void scatter_local_vectors(
     const std::vector<const common::IndexMap*>& maps);
 
 } // namespace la
-} // namespace dolfin
+} // namespace dolfinx

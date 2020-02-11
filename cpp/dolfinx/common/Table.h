@@ -95,4 +95,4 @@ private:
   bool _right_justify;
 };
 
-} // namespace dolfin
+} // namespace dolfinx

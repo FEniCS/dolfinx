@@ -2,7 +2,7 @@
 
 # Copyright (C) 2015 Garth N. Wells
 #
-# This file is part of DOLFIN (https://www.fenicsproject.org)
+# This file is part of DOLFINX (https://www.fenicsproject.org)
 #
 # SPDX-License-Identifier:    LGPL-3.0-or-later
 
@@ -11,9 +11,9 @@ from math import sqrt
 import pytest
 from petsc4py import PETSc
 
-from dolfin import MPI, FunctionSpace, UnitCubeMesh, UnitSquareMesh
-from dolfin.cpp.fem import DiscreteOperators
-from dolfin_utils.test.skips import skip_in_parallel
+from dolfinx import MPI, FunctionSpace, UnitCubeMesh, UnitSquareMesh
+from dolfinx.cpp.fem import DiscreteOperators
+from dolfinx_utils.test.skips import skip_in_parallel
 
 
 @skip_in_parallel

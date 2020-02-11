@@ -61,7 +61,7 @@ test_*_tempdir
 
 .cache
 
-# FFC generated demo files
+# FFCX generated demo files
 cpp/demo/**/**/*.h
 cpp/demo/documented/cahn-hilliard/CahnHilliard2D.cpp
 cpp/demo/documented/cahn-hilliard/CahnHilliard3D.cpp
@@ -102,6 +102,7 @@ install_manifest.txt
 # Local build files
 /cpp/build
 /cpp/build.*/
+/cpp/dolfinx/common/version.h
 
 # OS X files
 .DS_Store

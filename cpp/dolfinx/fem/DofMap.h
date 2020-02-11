@@ -26,7 +26,7 @@ class IndexMap;
 
 namespace mesh
 {
-class Mesh;
+class Topology;
 } // namespace mesh
 
 namespace fem
@@ -35,15 +35,15 @@ namespace fem
 /// Degree-of-freedom map
 
 /// This class handles the mapping of degrees of freedom. It builds a
-/// dof map based on an ElementDofLayout on a specific mesh. It will
-/// reorder the dofs when running in parallel. Sub-dofmaps, both views
-/// and copies, are supported.
+/// dof map based on an ElementDofLayout on a specific mesh topology. It
+/// will reorder the dofs when running in parallel. Sub-dofmaps, both
+/// views and copies, are supported.
 
 class DofMap
 {
 public:
   /// Create a DofMap from the layout of dofs on a reference element, an
-  /// IndexMap defining the distribtion of dofs across processes and a vector of
+  /// IndexMap defining the distribution of dofs across processes and a vector of
   /// indices.
   DofMap(std::shared_ptr<const ElementDofLayout> element_dof_layout,
          std::shared_ptr<const common::IndexMap> index_map,
@@ -80,16 +80,17 @@ public:
 
   /// Extract subdofmap component
   /// @param[in] component The component indices
-  /// @param[in] mesh The mesh the the dofmap is defined on
+  /// @param[in] topology The mesh topology the the dofmap is defined on
   /// @return The dofmap for the component
   DofMap extract_sub_dofmap(const std::vector<int>& component,
-                            const mesh::Mesh& mesh) const;
+                            const mesh::Topology& topology) const;
 
   /// Create a "collapsed" dofmap (collapses a sub-dofmap)
-  /// @param[in] mesh The mesh that the dofmap is defined on
+  /// @param[in] comm MPI Communicator
+  /// @param[in] topology The meshtopology that the dofmap is defined on
   /// @return The collapsed dofmap
-  std::pair<std::unique_ptr<DofMap>, std::vector<PetscInt>>
-  collapse(const mesh::Mesh& mesh) const;
+  std::pair<std::unique_ptr<DofMap>, std::vector<std::int32_t>>
+  collapse(MPI_Comm comm, const mesh::Topology& topology) const;
 
   /// Set dof entries in vector to a specified value. Parallel layout
   /// of vector must be consistent with dof map range. This
@@ -112,8 +113,8 @@ public:
   // FIXME: can this be removed?
   /// Return list of dof indices on this process that belong to mesh
   /// entities of dimension dim
-  Eigen::Array<PetscInt, Eigen::Dynamic, 1> dofs(const mesh::Mesh& mesh,
-                                                 std::size_t dim) const;
+  Eigen::Array<std::int32_t, Eigen::Dynamic, 1>
+  dofs(const mesh::Topology& topology, std::size_t dim) const;
 
   /// Layout of dofs on an element
   std::shared_ptr<const ElementDofLayout> element_dof_layout;
@@ -127,4 +128,4 @@ private:
   Eigen::Array<PetscInt, Eigen::Dynamic, 1> _dofmap;
 };
 } // namespace fem
-} // namespace dolfin
+} // namespace dolfinx

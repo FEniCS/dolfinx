@@ -295,4 +295,4 @@ void HDF5File::write_data(
 }
 //---------------------------------------------------------------------------
 } // namespace io
-} // namespace dolfin
+} // namespace dolfinx

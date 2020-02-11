@@ -59,4 +59,4 @@ private:
   std::map<std::string, std::tuple<int, double, double, double>> _timings;
 };
 } // namespace common
-} // namespace dolfin
+} // namespace dolfinx

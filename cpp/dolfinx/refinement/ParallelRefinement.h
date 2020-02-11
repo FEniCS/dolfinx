@@ -7,10 +7,9 @@
 #pragma once
 
 #include <cstdint>
-#include <map>
-#include <unordered_map>
-#include <vector>
 #include <dolfinx/common/MPI.h>
+#include <map>
+#include <vector>
 
 namespace dolfinx
 {
@@ -39,7 +38,7 @@ public:
   ParallelRefinement(const mesh::Mesh& mesh);
 
   /// Destructor
-  ~ParallelRefinement();
+  ~ParallelRefinement() = default;
 
   /// Original mesh associated with this refinement
   const mesh::Mesh& mesh() const;
@@ -57,7 +56,7 @@ public:
 
   /// Mark all edges incident on entities indicated by refinement marker
   /// @param[in] refinement_marker Value 1 means "refine", any other
-  ///                              value means "do not refine"
+  ///   value means "do not refine"
   void mark(const mesh::MeshFunction<int>& refinement_marker);
 
   /// Mark all incident edges of an entity
@@ -98,8 +97,6 @@ private:
   // mesh::Mesh reference
   const mesh::Mesh& _mesh;
 
-  MPI_Comm _neighbour_comm;
-
   // Mapping from old local edge index to new global vertex, needed to
   // create new topology
   std::map<std::size_t, std::size_t> _local_edge_to_new_vertex;
@@ -121,4 +118,4 @@ private:
   std::map<std::int64_t, std::int32_t> _global_to_local_edge_map;
 };
 } // namespace refinement
-} // namespace dolfin
+} // namespace dolfinx

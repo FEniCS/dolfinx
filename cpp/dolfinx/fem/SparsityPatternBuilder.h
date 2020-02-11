@@ -18,7 +18,7 @@ class SparsityPattern;
 
 namespace mesh
 {
-class Mesh;
+class Topology;
 }
 
 namespace fem
@@ -32,18 +32,19 @@ class SparsityPatternBuilder
 {
 public:
   /// Iterate over cells and insert entries into sparsity pattern
-  static void cells(la::SparsityPattern& pattern, const mesh::Mesh& mesh,
+  static void cells(la::SparsityPattern& pattern,
+                    const mesh::Topology& topology,
                     const std::array<const fem::DofMap*, 2> dofmaps);
 
   /// Iterate over interior facets and insert entries into sparsity pattern
   static void interior_facets(la::SparsityPattern& pattern,
-                              const mesh::Mesh& mesh,
+                              const mesh::Topology& topology,
                               const std::array<const fem::DofMap*, 2> dofmaps);
 
   /// Iterate over exterior facets and insert entries into sparsity pattern
   static void exterior_facets(la::SparsityPattern& pattern,
-                              const mesh::Mesh& mesh,
+                              const mesh::Topology& topology,
                               const std::array<const fem::DofMap*, 2> dofmaps);
 };
 } // namespace fem
-} // namespace dolfin
+} // namespace dolfinx

@@ -26,9 +26,9 @@
 #include <dolfinx/fem/DofMap.h>
 #include <dolfinx/function/Function.h>
 #include <dolfinx/function/FunctionSpace.h>
+#include <dolfinx/graph/AdjacencyList.h>
 #include <dolfinx/la/PETScVector.h>
 #include <dolfinx/la/utils.h>
-#include <dolfinx/mesh/Connectivity.h>
 #include <dolfinx/mesh/Mesh.h>
 #include <dolfinx/mesh/MeshEntity.h>
 #include <dolfinx/mesh/MeshIterator.h>
@@ -887,7 +887,7 @@ void XDMFFile::write_mesh_value_collection(
     // Check topology
     pugi::xml_node topology_node = grid_node.child("Topology");
     assert(topology_node);
-    const std::int64_t ncells = mesh->topology().size_global(tdim);
+    const std::int64_t ncells = mesh->num_entities_global(tdim);
     pugi::xml_attribute num_cells_attr
         = topology_node.attribute("NumberOfElements");
     assert(num_cells_attr);
@@ -1061,10 +1061,12 @@ XDMFFile::read_mesh_value_collection(std::shared_ptr<const mesh::Mesh> mesh,
 
   // Get description of MVC cell type and dimension from topology node
   auto cell_type_str = xdmf_utils::get_cell_type(topology_node);
-  assert(cell_type_str.second == 1);
+
+  const int degree = cell_type_str.second;
   const mesh::CellType cell_type = mesh::to_type(cell_type_str.first);
   const int dim = mesh::cell_dim(cell_type);
   const int num_verts_per_entity = mesh::num_cell_vertices(cell_type);
+  const int num_nodes_per_entity = mesh::num_cell_nodes(cell_type, degree);
 
   // Read MVC topology
   pugi::xml_node topology_data_node = topology_node.child("DataItem");
@@ -1139,11 +1141,20 @@ XDMFFile::read_mesh_value_collection(std::shared_ptr<const mesh::Mesh> mesh,
   send_entities = std::vector<std::vector<std::int32_t>>(num_processes);
   recv_entities = std::vector<std::vector<std::int32_t>>(num_processes);
 
+  std::vector<int> nodes_to_verts
+      = mesh::cell_vertex_indices(cell_type, num_nodes_per_entity);
+  std::vector<std::int32_t> entity_nodes(num_nodes_per_entity);
+
   std::int32_t i = 0;
   for (auto it = topology_data.begin(); it != topology_data.end();
-       it += num_verts_per_entity)
+       it += num_nodes_per_entity)
   {
-    std::partial_sort_copy(it, it + num_verts_per_entity, v.begin(), v.end());
+    // Apply node to vertices mapping, this throws away
+    // nodes read from the file
+    for (int j = 0; j < num_verts_per_entity; ++j)
+      v[j] = *(it + nodes_to_verts[j]);
+    std::sort(v.begin(), v.end());
+
     std::size_t dest
         = MPI::index_owner(_mpi_comm.comm(), v[0], global_vertex_range);
     send_entities[dest].insert(send_entities[dest].end(), v.begin(), v.end());
@@ -1582,7 +1593,7 @@ XDMFFile::read_checkpoint(std::shared_ptr<const function::FunctionSpace> V,
       {{cell_range[0], cell_range[1] + 1}});
 
   // Read cell dofmaps
-  std::vector<PetscInt> cell_dofs = xdmf_read::get_dataset<PetscInt>(
+  std::vector<std::int64_t> cell_dofs = xdmf_read::get_dataset<std::int64_t>(
       _mpi_comm.comm(), cell_dofs_dataitem, parent_path,
       {{x_cell_dofs.front(), x_cell_dofs.back()}});
 

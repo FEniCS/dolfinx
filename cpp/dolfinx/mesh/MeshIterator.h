@@ -6,10 +6,11 @@
 
 #pragma once
 
-#include "Connectivity.h"
+#include <dolfinx/graph/AdjacencyList.h>
 #include "Mesh.h"
 #include "MeshEntity.h"
 #include "Topology.h"
+#include "dolfinx/common/IndexMap.h"
 #include <iterator>
 
 namespace dolfinx
@@ -97,11 +98,11 @@ public:
 
     // Get connectivity
     assert(e.mesh().topology().connectivity(e.dim(), _entity.dim()));
-    const Connectivity& c
+    const graph::AdjacencyList<std::int32_t>& c
         = *e.mesh().topology().connectivity(e.dim(), _entity.dim());
 
     // Pointer to array of connections
-    _connections = c.connections(e.index()) + pos;
+    _connections = c.links_ptr(e.index()) + pos;
   }
 
   /// Copy constructor
@@ -186,7 +187,8 @@ public:
   const MeshIterator begin() const
   {
     if (_type == MeshRangeType::GHOST)
-      return MeshIterator(_mesh, _dim, _mesh.topology().ghost_offset(_dim));
+      return MeshIterator(_mesh, _dim,
+                          _mesh.topology().index_map(_dim)->size_local());
 
     return MeshIterator(_mesh, _dim, 0);
   }
@@ -195,7 +197,8 @@ public:
   MeshIterator begin()
   {
     if (_type == MeshRangeType::GHOST)
-      return MeshIterator(_mesh, _dim, _mesh.topology().ghost_offset(_dim));
+      return MeshIterator(_mesh, _dim,
+                          _mesh.topology().index_map(_dim)->size_local());
 
     return MeshIterator(_mesh, _dim, 0);
   }
@@ -203,10 +206,12 @@ public:
   /// MeshIterator of MeshEntity pointing to end of range (const)
   const MeshIterator end() const
   {
+    auto map = _mesh.topology().index_map(_dim);
+    assert(map);
     if (_type == MeshRangeType::REGULAR)
-      return MeshIterator(_mesh, _dim, _mesh.topology().ghost_offset(_dim));
-
-    return MeshIterator(_mesh, _dim, _mesh.topology().size(_dim));
+      return MeshIterator(_mesh, _dim, map->size_local());
+    else
+      return MeshIterator(_mesh, _dim, map->size_local() + map->num_ghosts());
   }
 
 private:
@@ -247,7 +252,7 @@ public:
                                          : _entity.mesh()
                                                .topology()
                                                .connectivity(_entity._dim, _dim)
-                                               ->size(_entity.index());
+                                               ->num_links(_entity.index());
     return MeshEntityIterator(_entity, _dim, n);
   }
 
@@ -259,4 +264,4 @@ private:
   const int _dim;
 };
 } // namespace mesh
-} // namespace dolfin
+} // namespace dolfinx

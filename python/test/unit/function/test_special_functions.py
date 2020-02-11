@@ -1,17 +1,17 @@
 # Copyright (C) 2011 Kristian B. Oelgaard
 #
-# This file is part of DOLFIN (https://www.fenicsproject.org)
+# This file is part of DOLFINX (https://www.fenicsproject.org)
 #
 # SPDX-License-Identifier:    LGPL-3.0-or-later
 """Unit tests for the function library"""
 
 import pytest
 
-import dolfin
+import dolfinx
 import ufl
-from dolfin import (MPI, UnitCubeMesh, UnitIntervalMesh,
-                    UnitSquareMesh)
-from dolfin_utils.test.skips import skip_in_parallel
+from dolfinx import (MPI, UnitCubeMesh, UnitIntervalMesh,
+                     UnitSquareMesh)
+from dolfinx_utils.test.skips import skip_in_parallel
 
 
 @pytest.mark.skip
@@ -22,7 +22,7 @@ def testFacetArea():
                                        6, 3)]
     for mesh, surface, ref_int in references:
         c0 = ufl.FacetArea(mesh)
-        c1 = dolfin.FacetArea(mesh)
+        c1 = dolfinx.FacetArea(mesh)
         assert (c0)
         assert (c1)
 

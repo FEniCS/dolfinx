@@ -52,16 +52,26 @@ class Form;
 /// from a rectangular array of bilinear forms. Raises an exception if
 /// there is an inconsistency. e.g. if each form in row i does not have
 /// the same test space then an exception is raised.
+///
 /// @param[in] a A rectangular block on bilinear forms
 /// @return Function spaces for each row blocks (0) and for each column
-/// blocks (1).
+///     blocks (1).
 std::array<std::vector<std::shared_ptr<const function::FunctionSpace>>, 2>
 block_function_spaces(
     const Eigen::Ref<const Eigen::Array<const fem::Form*, Eigen::Dynamic,
                                         Eigen::Dynamic, Eigen::RowMajor>>& a);
 
-/// Create matrix. Matrix is not zeroed.
+/// Create a matrix.
+/// @param[in] a  A bilinear form
+/// @return A matrix. The matrix is not zeroed.
 la::PETScMatrix create_matrix(const Form& a);
+
+/// Create a sparsity pattern for a given form. The pattern is not
+/// finalised, i.e. the caller is responsible for calling
+/// SparsityPattern::assemble.
+/// @param[in] a A bilinear form
+/// @return The corresponding sparsity pattern
+la::SparsityPattern create_sparsity_pattern(const Form& a);
 
 /// Initialise monolithic matrix for an array for bilinear forms. Matrix
 /// is not zeroed.
@@ -93,23 +103,22 @@ ElementDofLayout create_element_dof_layout(const ufc_dofmap& dofmap,
                                            = {});
 
 /// Create dof map on mesh from a ufc_dofmap
-///
 /// @param[in] dofmap The ufc_dofmap.
 /// @param[in] mesh The mesh.
 DofMap create_dofmap(const ufc_dofmap& dofmap, const mesh::Mesh& mesh);
 
-/// Create a form from a form_create function returning a pointer to a ufc_form,
-/// taking care of memory allocation.
+/// Create a form from a form_create function returning a pointer to a
+/// ufc_form, taking care of memory allocation.
 ///
-/// @param[in] fptr pointer to a function returning a pointer to ufc_form.
-/// @param[in] spaces function spaces.
+/// @param[in] fptr pointer to a function returning a pointer to
+///     ufc_form
+/// @param[in] spaces function spaces
 /// @return Form
 std::shared_ptr<Form> create_form(
     ufc_form* (*fptr)(void),
     const std::vector<std::shared_ptr<const function::FunctionSpace>>& spaces);
 
 /// Create form (shared data)
-///
 /// @param[in] ufc_form The UFC form.
 /// @param[in] spaces Vector of function spaces.
 Form create_form(
@@ -137,9 +146,9 @@ create_functionspace(ufc_function_space* (*fptr)(void),
                      std::shared_ptr<mesh::Mesh> mesh);
 
 // NOTE: This is subject to change
-/// Pack form coeffcients ready for assembly
+/// Pack form coefficients ready for assembly
 Eigen::Array<PetscScalar, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
 pack_coefficients(const fem::Form& form);
 
 } // namespace fem
-} // namespace dolfin
+} // namespace dolfinx

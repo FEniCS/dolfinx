@@ -1,6 +1,6 @@
 # Copyright (C) 2018 Samuel Groth
 #
-# This file is part of DOLFIN (https://www.fenicsproject.org)
+# This file is part of DOLFINX (https://www.fenicsproject.org)
 #
 # SPDX-License-Identifier:    LGPL-3.0-or-later
 
@@ -14,10 +14,10 @@ solution and source term."""
 
 import numpy as np
 
-from dolfin import (MPI, FacetNormal, Function, FunctionSpace, UnitSquareMesh,
-                    has_petsc_complex, solve)
-from dolfin.fem.assemble import assemble_scalar
-from dolfin.io import XDMFFile
+from dolfinx import (MPI, FacetNormal, Function, FunctionSpace, UnitSquareMesh,
+                     has_petsc_complex, solve)
+from dolfinx.fem.assemble import assemble_scalar
+from dolfinx.io import XDMFFile
 from ufl import TestFunction, TrialFunction, dx, grad, inner
 
 # wavenumber
