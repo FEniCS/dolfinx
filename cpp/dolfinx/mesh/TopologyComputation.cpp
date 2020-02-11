@@ -122,9 +122,17 @@ get_shared_entities(MPI_Comm neighbour_comm,
 //-----------------------------------------------------------------------------
 // Communicate with sharing processes to find out which entities are ghost
 // and return a mapping vector to move them to the end of the local range.
+// @param [in] comm MPI Communicator
+// @param [in] shared_vertices Map from local vertex index to list of processes
+// @param [in] global_vertex_indices Global indices of vertices
+// @param [in] entity_list List of entities as 2D array, each entity represented
+//             by its local vertex indices
+// @param [in] entity_index Initial numbering for each row in entity_list
+// @param [in] entity_count Number of unique entities
+// @returns Tuple of (local_indices, index map, shared entities)
 std::tuple<std::vector<int>, std::shared_ptr<common::IndexMap>,
            std::map<std::int32_t, std::set<std::int32_t>>>
-get_ghost_mapping(
+get_local_indexing(
     MPI_Comm comm,
     const std::map<std::int32_t, std::set<std::int32_t>>& shared_vertices,
     const std::vector<std::int64_t>& global_vertex_indices,
@@ -290,7 +298,7 @@ get_ghost_mapping(
   // Remap shared entities from initial numbering to local indexing
   std::map<std::int32_t, std::set<std::int32_t>> remapped_shared_entities;
   for (auto q : shared_entities)
-    remapped_shared_entities[local_index[q.first]] = q.second;
+    remapped_shared_entities.insert({local_index[q.first], q.second});
 
   return {std::move(local_index), index_map,
           std::move(remapped_shared_entities)};
@@ -378,8 +386,8 @@ compute_entities_by_key_matching(
   // Communicate with other processes to find out which entities are ghosted
   // and shared. Remap the numbering so that ghosts are at the end.
   auto [local_index, index_map, shared_entities]
-      = get_ghost_mapping(comm, shared_vertices, global_vertex_indices,
-                          entity_list, entity_index, entity_count);
+      = get_local_indexing(comm, shared_vertices, global_vertex_indices,
+                           entity_list, entity_index, entity_count);
 
   // Map from initial numbering to local indices
   for (std::int32_t& q : entity_index)
