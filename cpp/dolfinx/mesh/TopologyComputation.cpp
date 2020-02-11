@@ -135,7 +135,7 @@ get_shared_entities(MPI_Comm neighbour_comm,
 //-----------------------------------------------------------------------------
 
 /// Communicate with sharing processes to find out which entities are
-/// ghost and return a mapping vector to move them to the end of the
+/// ghosts and return a mapping vector to move them to the end of the
 /// local range.
 /// @param [in] comm MPI Communicator
 /// @param [in] shared_vertices Map from local vertex index to list of
@@ -582,6 +582,7 @@ TopologyComputation::compute_entities(MPI_Comm comm, const Topology& topology,
   auto cells = topology.connectivity(tdim, 0);
   if (!cells)
     throw std::runtime_error("Cell connectivity missing.");
+
   std::tuple<std::shared_ptr<graph::AdjacencyList<std::int32_t>>,
              std::shared_ptr<graph::AdjacencyList<std::int32_t>>,
              std::shared_ptr<common::IndexMap>,
