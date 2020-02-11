@@ -17,7 +17,7 @@ import ufl
 from dolfinx import cpp, function
 
 
-def locate_dofs_geometrical(V: typing.Union[function.FunctionSpace],
+def locate_dofs_geometrical(V: typing.Iterable[typing.Union[cpp.function.FunctionSpace, function.FunctionSpace]],
                             marker: types.FunctionType):
     """Locate degrees-of-freedom geometrically using a marker function.
 
@@ -41,10 +41,20 @@ def locate_dofs_geometrical(V: typing.Union[function.FunctionSpace],
 
     """
 
-    try:
-        return cpp.fem.locate_dofs_geometrical(V._cpp_object, marker)
-    except AttributeError:
-        return cpp.fem.locate_dofs_geometrical(V, marker)
+    if isinstance(V, collections.abc.Sequence):
+        _V = []
+        for space in V:
+            try:
+                _V.append(space._cpp_object)
+            except AttributeError:
+                _V.append(space)
+    else:
+        try:
+            _V = [V._cpp_object]
+        except AttributeError:
+            _V = [V]
+
+    return cpp.fem.locate_dofs_geometrical(_V, marker)
 
 
 def locate_dofs_topological(V: typing.Iterable[typing.Union[cpp.function.FunctionSpace, function.FunctionSpace]],
