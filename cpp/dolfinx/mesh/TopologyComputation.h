@@ -48,7 +48,7 @@ public:
   static std::tuple<std::shared_ptr<graph::AdjacencyList<std::int32_t>>,
                     std::shared_ptr<graph::AdjacencyList<std::int32_t>>,
                     std::shared_ptr<common::IndexMap>,
-                    std::map<std::int32_t, std::set<int>>>
+                    std::map<std::int32_t, std::set<std::int32_t>>>
   compute_entities(MPI_Comm comm, const Topology& topology,
                    mesh::CellType cell_type, int dim);
 

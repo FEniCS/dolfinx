@@ -209,7 +209,7 @@ get_ghost_mapping(
   int mpi_rank = dolfinx::MPI::rank(comm);
 
   // Determine ownership
-  std::vector<std::int32_t> mapping(entity_count, -1);
+  std::vector<std::int32_t> local_index(entity_count, -1);
   std::int32_t c = 0;
   // Index non-ghost entities
   for (int i = 0; i < entity_count; ++i)
@@ -218,31 +218,28 @@ get_ghost_mapping(
     if (it == shared_entities.end() or *(it->second.begin()) > mpi_rank)
     {
       // Owned index
-      mapping[i] = c;
+      local_index[i] = c;
       ++c;
     }
   }
-
   const std::int32_t num_local = c;
-  std::vector<std::int64_t> global_indexing(entity_count, -1);
+  for (int i = 0; i < entity_count; ++i)
+  {
+    // Unmapped global index (ghost)
+    if (local_index[i] == -1)
+    {
+      local_index[i] = c;
+      ++c;
+    }
+  }
+  assert(c == entity_count);
+
   Eigen::Array<std::int64_t, Eigen::Dynamic, 1> ghost_indices(entity_count
                                                               - num_local);
-  // Create global indices
+  // Communicate global indices to other processes
   {
     const std::int64_t local_offset
         = dolfinx::MPI::global_offset(comm, num_local, true);
-    for (int i = 0; i < entity_count; ++i)
-    {
-      // Unmapped global index (numbered on remote)
-      if (mapping[i] == -1)
-      {
-        mapping[i] = c;
-        ++c;
-      }
-      else
-        global_indexing[i] = local_offset + mapping[i];
-    }
-    assert(c == entity_count);
 
     std::vector<std::int64_t> send_global_index_data;
     std::vector<int> send_global_index_offsets = {0};
@@ -253,7 +250,14 @@ get_ghost_mapping(
     for (int np = 0; np < neighbour_size; ++np)
     {
       for (std::int32_t index : send_index[np])
-        send_global_index_data.push_back(global_indexing[index]);
+      {
+        std::int64_t gi = (local_index[index] < num_local)
+                              ? (local_offset + local_index[index])
+                              : -1;
+
+        send_global_index_data.push_back(gi);
+      }
+
       send_global_index_offsets.push_back(send_global_index_data.size());
     }
 
@@ -272,9 +276,9 @@ get_ghost_mapping(
             = recv_global_index_data[j + recv_global_index_offsets[np]];
         if (gi != -1 and recv_index[np][j] != -1)
         {
-          std::int32_t idx = recv_index[np][j];
-          assert(mapping[idx] >= num_local);
-          ghost_indices[mapping[idx] - num_local] = gi;
+          const std::int32_t idx = recv_index[np][j];
+          assert(local_index[idx] >= num_local);
+          ghost_indices[local_index[idx] - num_local] = gi;
         }
       }
     }
@@ -283,18 +287,19 @@ get_ghost_mapping(
   std::shared_ptr<common::IndexMap> index_map
       = std::make_shared<common::IndexMap>(comm, num_local, ghost_indices, 1);
 
-  // Remap shared entities to new order
-  std::map<std::int32_t, std::set<int>> remapped_shared_entities;
+  // Remap shared entities from initial numbering to local indexing
+  std::map<std::int32_t, std::set<std::int32_t>> remapped_shared_entities;
   for (auto q : shared_entities)
-    remapped_shared_entities[mapping[q.first]] = q.second;
+    remapped_shared_entities[local_index[q.first]] = q.second;
 
-  return {std::move(mapping), index_map, std::move(remapped_shared_entities)};
+  return {std::move(local_index), index_map,
+          std::move(remapped_shared_entities)};
 }
 //-----------------------------------------------------------------------------
 std::tuple<std::shared_ptr<graph::AdjacencyList<std::int32_t>>,
            std::shared_ptr<graph::AdjacencyList<std::int32_t>>,
            std::shared_ptr<common::IndexMap>,
-           std::map<std::int32_t, std::set<int>>>
+           std::map<std::int32_t, std::set<std::int32_t>>>
 compute_entities_by_key_matching(
     MPI_Comm comm, const graph::AdjacencyList<std::int32_t>& cells,
     const std::map<std::int32_t, std::set<std::int32_t>>& shared_vertices,
@@ -372,13 +377,13 @@ compute_entities_by_key_matching(
 
   // Communicate with other processes to find out which entities are ghosted
   // and shared. Remap the numbering so that ghosts are at the end.
-  auto [mapping, index_map, shared_entities]
+  auto [local_index, index_map, shared_entities]
       = get_ghost_mapping(comm, shared_vertices, global_vertex_indices,
                           entity_list, entity_index, entity_count);
 
-  // Do the actual remap
+  // Map from initial numbering to local indices
   for (std::int32_t& q : entity_index)
-    q = mapping[q];
+    q = local_index[q];
 
   Eigen::Array<std::int32_t, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
       connectivity_ce(num_cells, num_entities_per_cell);
@@ -510,7 +515,7 @@ compute_from_map(const graph::AdjacencyList<std::int32_t>& c_d0_0,
 std::tuple<std::shared_ptr<graph::AdjacencyList<std::int32_t>>,
            std::shared_ptr<graph::AdjacencyList<std::int32_t>>,
            std::shared_ptr<common::IndexMap>,
-           std::map<std::int32_t, std::set<int>>>
+           std::map<std::int32_t, std::set<std::int32_t>>>
 TopologyComputation::compute_entities(MPI_Comm comm, const Topology& topology,
                                       mesh::CellType cell_type, int dim)
 {
@@ -518,7 +523,8 @@ TopologyComputation::compute_entities(MPI_Comm comm, const Topology& topology,
 
   // Vertices must always exist
   if (dim == 0)
-    return {nullptr, nullptr, nullptr, std::map<std::int32_t, std::set<int>>()};
+    return {nullptr, nullptr, nullptr,
+            std::map<std::int32_t, std::set<std::int32_t>>()};
 
   if (topology.connectivity(dim, 0))
   {
@@ -530,7 +536,8 @@ TopologyComputation::compute_entities(MPI_Comm comm, const Topology& topology,
           "dimension "
           + std::to_string(dim) + " exist but connectivity is missing.");
     }
-    return {nullptr, nullptr, nullptr, std::map<std::int32_t, std::set<int>>()};
+    return {nullptr, nullptr, nullptr,
+            std::map<std::int32_t, std::set<std::int32_t>>()};
   }
 
   const int tdim = topology.dim();
@@ -540,7 +547,7 @@ TopologyComputation::compute_entities(MPI_Comm comm, const Topology& topology,
   std::tuple<std::shared_ptr<graph::AdjacencyList<std::int32_t>>,
              std::shared_ptr<graph::AdjacencyList<std::int32_t>>,
              std::shared_ptr<common::IndexMap>,
-             std::map<std::int32_t, std::set<int>>>
+             std::map<std::int32_t, std::set<std::int32_t>>>
       data = compute_entities_by_key_matching(
           comm, *cells, topology.shared_entities(0), topology.global_indices(0),
           cell_type, dim);
