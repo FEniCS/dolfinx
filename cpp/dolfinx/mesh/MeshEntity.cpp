@@ -42,9 +42,9 @@ int MeshEntity::index(const MeshEntity& entity) const
 //-----------------------------------------------------------------------------
 int MeshEntity::get_vertex_local_index(const std::int32_t v_index) const
 {
-  auto vertices = _mesh->topology().connectivity(_dim, 0)->edges(_local_index);
+  auto vertices = _mesh->topology().connectivity(_dim, 0)->links(_local_index);
   const int num_entities
-      = _mesh->topology().connectivity(_dim, 0)->num_edges(_local_index);
+      = _mesh->topology().connectivity(_dim, 0)->num_links(_local_index);
   for (int v = 0; v < num_entities; ++v)
     if (vertices[v] == v_index)
       return v;
