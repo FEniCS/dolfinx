@@ -19,7 +19,8 @@ from ufl import (SpatialCoordinate, div, dx, grad, inner, ds, dS, avg, jump,
                  TestFunction, TrialFunction)
 from dolfinx_utils.test.skips import skip_in_parallel
 
-
+# TODO: Remove this skip in parallel once ghosting if fixed
+# (see https://github.com/FEniCS/dolfinx/pull/746)
 @skip_in_parallel
 # @pytest.mark.parametrize("degree", [2, 3])
 @pytest.mark.parametrize("degree", [1, 2])
@@ -48,6 +49,7 @@ def test_manufactured_poisson_dg(degree, filename, datadir):
     # Coefficient
     k = Function(V)
     k.vector.set(2.0)
+    k.vector.ghostUpdate(addv=PETSc.InsertMode.INSERT, mode=PETSc.ScatterMode.FORWARD)
 
     # Source term
     f = - div(k * grad(u_exact))
