@@ -23,7 +23,8 @@ class ElementDofLayout;
 /// Return the dof permutations for all cells. Each row contains the
 /// numbers from 0 to (number of dofs on reference - 1) permuted so that
 /// edges are oriented towards the higher global vertex index
-/// @param[in] mesh The mesh
+/// @param[in] topology The mesh topology
+/// @param[in] cell_type Cell Type
 /// @param[in] dof_layout The layout of dofs on a each cell
 /// @return The permutations
 Eigen::Array<int, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
