@@ -351,6 +351,13 @@ _locate_dofs_topological(const function::FunctionSpace& V, const int entity_dim,
   return _dofs;
 }
 //-----------------------------------------------------------------------------
+Eigen::Array<std::int32_t, Eigen::Dynamic, 2> _locate_dofs_geometrical(
+    const std::vector<std::reference_wrapper<function::FunctionSpace>>& V,
+    marking_function marker)
+{
+    throw std::runtime_error("JD: Not yet implemented!");
+}
+//-----------------------------------------------------------------------------
 Eigen::Array<std::int32_t, Eigen::Dynamic, 1>
 _locate_dofs_geometrical(const function::FunctionSpace& V,
                              marking_function marker)
@@ -399,10 +406,8 @@ fem::locate_dofs_geometrical(
     const std::vector<std::reference_wrapper<function::FunctionSpace>>& V,
     marking_function marker)
 {
-  std::cout << "New func" << std::endl;
   if (V.size() == 2)
-    // return _locate_dofs_geometrical(V, marker);
-    throw std::runtime_error("Not yet implemented!");
+    return _locate_dofs_geometrical(V, marker);
   else if (V.size() == 1)
     return _locate_dofs_geometrical(V[0].get(), marker);
   else
