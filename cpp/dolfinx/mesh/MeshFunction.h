@@ -6,7 +6,7 @@
 
 #pragma once
 
-#include "Connectivity.h"
+#include <dolfinx/graph/AdjacencyList.h>
 #include "Geometry.h"
 #include "Mesh.h"
 #include "MeshEntity.h"
@@ -141,7 +141,8 @@ MeshFunction<T>::MeshFunction(std::shared_ptr<const Mesh> mesh,
   _mesh->create_entities(_dim);
 
   // Initialise values with default
-  _values.resize(_mesh->topology().size(_dim));
+  auto map = _mesh->topology().index_map(_dim);
+  _values.resize(map->size_local() + map->num_ghosts());
   _values = default_value;
 
   // Get mesh connectivity D --> d
@@ -152,7 +153,7 @@ MeshFunction<T>::MeshFunction(std::shared_ptr<const Mesh> mesh,
   // Generate connectivity if it does not exist
   _mesh->create_connectivity(D, d);
   assert(_mesh->topology().connectivity(D, d));
-  const Connectivity& connectivity = *_mesh->topology().connectivity(D, d);
+  const graph::AdjacencyList<std::int32_t>& connectivity = *_mesh->topology().connectivity(D, d);
 
   // Iterate over all values
   std::unordered_set<std::size_t> entities_values_set;
@@ -171,7 +172,7 @@ MeshFunction<T>::MeshFunction(std::shared_ptr<const Mesh> mesh,
     {
       // Get global (local to to process) entity index
       assert(cell_index < _mesh->num_entities(D));
-      entity_index = connectivity.connections(cell_index)[local_entity];
+      entity_index = connectivity.links(cell_index)[local_entity];
     }
     else
     {
@@ -229,7 +230,8 @@ void MeshFunction<T>::mark(
 
   // Iterate over all mesh entities of the dimension of this
   // MeshFunction
-  for (const auto& entity : mesh::MeshRange(*_mesh.get(), _dim, mesh::MeshRangeType::ALL))
+  for (const auto& entity :
+       mesh::MeshRange(*_mesh.get(), _dim, mesh::MeshRangeType::ALL))
   {
 
     // By default, assume maker is 'true' at all vertices of this entity

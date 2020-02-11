@@ -31,12 +31,13 @@
 Vec dolfinx::la::create_petsc_vector(const dolfinx::common::IndexMap& map)
 {
   return dolfinx::la::create_petsc_vector(map.mpi_comm(), map.local_range(),
-                                         map.ghosts(), map.block_size);
+                                          map.ghosts(), map.block_size);
 }
 //-----------------------------------------------------------------------------
 Vec dolfinx::la::create_petsc_vector(
     MPI_Comm comm, std::array<std::int64_t, 2> range,
-    const Eigen::Array<PetscInt, Eigen::Dynamic, 1>& ghost_indices,
+    const Eigen::Ref<const Eigen::Array<std::int64_t, Eigen::Dynamic, 1>>&
+        ghost_indices,
     int block_size)
 {
   PetscErrorCode ierr;
@@ -46,9 +47,12 @@ Vec dolfinx::la::create_petsc_vector(
   const std::size_t local_size = range[1] - range[0];
 
   Vec x;
+  std::vector<PetscInt> _ghost_indices(ghost_indices.rows());
+  for (std::size_t i = 0; i < _ghost_indices.size(); ++i)
+    _ghost_indices[i] = ghost_indices(i);
   ierr = VecCreateGhostBlock(comm, block_size, block_size * local_size,
-                             PETSC_DECIDE, ghost_indices.size(),
-                             ghost_indices.data(), &x);
+                             PETSC_DECIDE, _ghost_indices.size(),
+                             _ghost_indices.data(), &x);
   CHECK_ERROR("VecCreateGhostBlock");
   assert(x);
 
@@ -100,7 +104,6 @@ Mat dolfinx::la::create_petsc_matrix(
 
   // Find common block size across rows/columns
   const int bs = (bs0 == bs1 ? bs0 : 1);
-  const int bs_map = bs;
 
   // Set matrix size
   ierr = MatSetSizes(A, m, n, M, N);
@@ -134,45 +137,25 @@ Mat dolfinx::la::create_petsc_matrix(
   if (ierr != 0)
     petsc_error(ierr, __FILE__, "MatXIJSetPreallocation");
 
-  // Build and set local-to-global maps
-  assert(bs0 % bs_map == 0);
-  assert(bs1 % bs_map == 0);
-  std::vector<PetscInt> map0((m + index_maps[0]->num_ghosts())
-                             * (bs0 / bs_map));
-  std::vector<PetscInt> map1((n + index_maps[1]->num_ghosts())
-                             * (bs1 / bs_map));
-
-  const int row_block_size
-      = index_maps[0]->size_local() + index_maps[0]->num_ghosts();
-  for (int i = 0; i < row_block_size; ++i)
-  {
-    std::size_t factor = bs0 / bs_map;
-    auto index = index_maps[0]->local_to_global(i);
-    for (std::size_t j = 0; j < factor; ++j)
-      map0[i * factor + j] = factor * index + j;
-  }
-
-  const int col_block_size
-      = index_maps[1]->size_local() + index_maps[1]->num_ghosts();
-  for (int i = 0; i < col_block_size; ++i)
-  {
-    std::size_t factor = bs1 / bs_map;
-    auto index = index_maps[1]->local_to_global(i);
-    for (std::size_t j = 0; j < factor; ++j)
-      map1[i * factor + j] = factor * index + j;
-  }
-
   // FIXME: In many cases the rows and columns could shared a common
   // local-to-global map
 
   // Create PETSc local-to-global map/index set
+  const bool blocked = (bs0 == bs1 ? true : false);
+  const std::vector<std::int64_t> _map0
+      = index_maps[0]->global_indices(blocked);
+  const std::vector<std::int64_t> _map1
+      = index_maps[1]->global_indices(blocked);
+  const std::vector<PetscInt> map0(_map0.begin(), _map0.end());
+  const std::vector<PetscInt> map1(_map1.begin(), _map1.end());
+
   ISLocalToGlobalMapping petsc_local_to_global0, petsc_local_to_global1;
-  ierr = ISLocalToGlobalMappingCreate(MPI_COMM_SELF, bs_map, map0.size(),
+  ierr = ISLocalToGlobalMappingCreate(MPI_COMM_SELF, bs, map0.size(),
                                       map0.data(), PETSC_COPY_VALUES,
                                       &petsc_local_to_global0);
   if (ierr != 0)
     petsc_error(ierr, __FILE__, "ISLocalToGlobalMappingCreate");
-  ierr = ISLocalToGlobalMappingCreate(MPI_COMM_SELF, bs_map, map1.size(),
+  ierr = ISLocalToGlobalMappingCreate(MPI_COMM_SELF, bs, map1.size(),
                                       map1.data(), PETSC_COPY_VALUES,
                                       &petsc_local_to_global1);
   if (ierr != 0)
@@ -261,7 +244,7 @@ std::vector<IS> dolfinx::la::create_petsc_index_sets(
 }
 //-----------------------------------------------------------------------------
 void dolfinx::la::petsc_error(int error_code, std::string filename,
-                             std::string petsc_function)
+                              std::string petsc_function)
 {
   // Fetch PETSc error description
   const char* desc;
@@ -381,8 +364,8 @@ dolfinx::la::VecReadWrapper::~VecReadWrapper()
   }
 }
 //-----------------------------------------------------------------------------
-dolfinx::la::VecReadWrapper& dolfinx::la::VecReadWrapper::
-operator=(VecReadWrapper&& w)
+dolfinx::la::VecReadWrapper&
+dolfinx::la::VecReadWrapper::operator=(VecReadWrapper&& w)
 {
   _y = std::exchange(w._y, nullptr);
   _y_local = std::exchange(w._y_local, nullptr);
@@ -405,7 +388,8 @@ void dolfinx::la::VecReadWrapper::restore()
       Eigen::Map<Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1>>(nullptr, 0);
 }
 //-----------------------------------------------------------------------------
-// Mat dolfinx::la::get_local_submatrix(const Mat A, const IS row, const IS col);
+// Mat dolfinx::la::get_local_submatrix(const Mat A, const IS row, const IS
+// col);
 
 // void restore_local_submatrix(const Mat A, const IS row, const IS col, Mat*
 // Asub);
@@ -413,7 +397,7 @@ void dolfinx::la::VecReadWrapper::restore()
 //-----------------------------------------------------------------------------
 std::vector<Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1>>
 dolfinx::la::get_local_vectors(const Vec x,
-                              const std::vector<const common::IndexMap*>& maps)
+                               const std::vector<const common::IndexMap*>& maps)
 {
   // Get ghost offset
   int offset_owned = 0;

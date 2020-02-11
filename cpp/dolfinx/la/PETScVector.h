@@ -35,9 +35,10 @@ public:
   PETScVector(const common::IndexMap& map);
 
   /// Create vector
-  PETScVector(MPI_Comm comm, std::array<std::int64_t, 2> range,
-              const Eigen::Array<PetscInt, Eigen::Dynamic, 1>& ghost_indices,
-              int block_size);
+  PETScVector(
+      MPI_Comm comm, std::array<std::int64_t, 2> range,
+      const Eigen::Array<std::int64_t, Eigen::Dynamic, 1>& ghost_indices,
+      int block_size);
 
   // Delete copy constructor to avoid accidental copying of 'heavy' data
   PETScVector(const PETScVector& x) = delete;

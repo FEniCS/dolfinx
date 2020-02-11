@@ -79,10 +79,10 @@ public:
       const Eigen::Ref<const Eigen::Array<PetscInt, Eigen::Dynamic, 1>>& cols);
 
   /// Return local range for dimension dim
-  std::array<std::size_t, 2> local_range(std::size_t dim) const;
+  std::array<std::int64_t, 2> local_range(int dim) const;
 
   /// Return index map for dimension dim
-  std::shared_ptr<const common::IndexMap> index_map(std::size_t dim) const;
+  std::shared_ptr<const common::IndexMap> index_map(int dim) const;
 
   /// Return number of local nonzeros
   std::size_t num_nonzeros() const;
@@ -119,24 +119,26 @@ public:
   /// no off-diagonal contribution.
   std::vector<std::vector<std::size_t>> off_diagonal_pattern(Type type) const;
 
+  // Print some useful information
+  void info_statistics() const;
+
+
 private:
   // Other insertion methods will call this method providing the
   // appropriate mapping of the indices in the entries.
   //
   // The primary dim entries must be local
   // The primary_codim entries must be global
+  template <typename X, typename Y>
   void insert_entries(
-      const Eigen::Ref<const Eigen::Array<std::int32_t, Eigen::Dynamic, 1>>&
+      const Eigen::Ref<const Eigen::Array<PetscInt, Eigen::Dynamic, 1>>&
           rows,
-      const Eigen::Ref<const Eigen::Array<std::int32_t, Eigen::Dynamic, 1>>&
+      const Eigen::Ref<const Eigen::Array<PetscInt, Eigen::Dynamic, 1>>&
           cols,
-      const std::function<PetscInt(const PetscInt, const common::IndexMap&)>&
+      const std::function<std::int32_t(const X, const common::IndexMap&)>&
           row_map,
-      const std::function<PetscInt(const PetscInt, const common::IndexMap&)>&
+      const std::function<std::int64_t(const Y, const common::IndexMap&)>&
           col_map);
-
-  // Print some useful information
-  void info_statistics() const;
 
   // MPI communicator
   dolfinx::MPI::Comm _mpi_comm;

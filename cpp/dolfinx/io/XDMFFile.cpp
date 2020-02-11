@@ -26,9 +26,9 @@
 #include <dolfinx/fem/DofMap.h>
 #include <dolfinx/function/Function.h>
 #include <dolfinx/function/FunctionSpace.h>
+#include <dolfinx/graph/AdjacencyList.h>
 #include <dolfinx/la/PETScVector.h>
 #include <dolfinx/la/utils.h>
-#include <dolfinx/mesh/Connectivity.h>
 #include <dolfinx/mesh/Mesh.h>
 #include <dolfinx/mesh/MeshEntity.h>
 #include <dolfinx/mesh/MeshIterator.h>
@@ -887,7 +887,7 @@ void XDMFFile::write_mesh_value_collection(
     // Check topology
     pugi::xml_node topology_node = grid_node.child("Topology");
     assert(topology_node);
-    const std::int64_t ncells = mesh->topology().size_global(tdim);
+    const std::int64_t ncells = mesh->num_entities_global(tdim);
     pugi::xml_attribute num_cells_attr
         = topology_node.attribute("NumberOfElements");
     assert(num_cells_attr);
@@ -1470,7 +1470,7 @@ XDMFFile::read_mesh_data(MPI_Comm comm) const
 mesh::Mesh XDMFFile::read_mesh(const mesh::GhostMode ghost_mode) const
 {
   // Read local mesh data
-  auto[cell_type, points, cells, global_cell_indices]
+  auto [cell_type, points, cells, global_cell_indices]
       = read_mesh_data(_mpi_comm.comm());
 
   //  Permute cells to DOLFINX ordering
@@ -1593,7 +1593,7 @@ XDMFFile::read_checkpoint(std::shared_ptr<const function::FunctionSpace> V,
       {{cell_range[0], cell_range[1] + 1}});
 
   // Read cell dofmaps
-  std::vector<PetscInt> cell_dofs = xdmf_read::get_dataset<PetscInt>(
+  std::vector<std::int64_t> cell_dofs = xdmf_read::get_dataset<std::int64_t>(
       _mpi_comm.comm(), cell_dofs_dataitem, parent_path,
       {{x_cell_dofs.front(), x_cell_dofs.back()}});
 
