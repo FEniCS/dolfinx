@@ -73,8 +73,8 @@ def test_rank0():
                 b[dofmap[i * 6 + j]] = b_local[j]
 
     # Prepare mesh and dofmap data
-    c = mesh.topology.connectivity(2, 0).connections()
-    pos = mesh.topology.connectivity(2, 0).pos()
+    c = mesh.topology.connectivity(2, 0).array()
+    pos = mesh.topology.connectivity(2, 0).offsets()
     geom = mesh.geometry.points
     coeff_dofmap = P2.dofmap.dof_array
     dofmap = vP1.dofmap.dof_array

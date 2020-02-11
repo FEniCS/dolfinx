@@ -445,7 +445,7 @@ compute_ordering_triangle(const mesh::Topology& topology,
   // Set orders for each cell
   for (int cell_n = 0; cell_n < num_cells; ++cell_n)
   {
-    auto vertices = cells->edges(cell_n);
+    auto vertices = cells->links(cell_n);
     const std::int64_t v0 = global_indices[vertices[0]];
     const std::int64_t v1 = global_indices[vertices[1]];
     const std::int64_t v2 = global_indices[vertices[2]];
@@ -481,7 +481,7 @@ compute_ordering_interval(const mesh::Topology& topology,
   const std::vector<std::int64_t>& global_indices = topology.global_indices(0);
   for (int cell_n = 0; cell_n < num_cells; ++cell_n)
   {
-    auto vertices = cells->edges(cell_n);
+    auto vertices = cells->links(cell_n);
     const std::int64_t v0 = global_indices[vertices[0]];
     const std::int64_t v1 = global_indices[vertices[1]];
 
@@ -508,7 +508,7 @@ compute_ordering_quadrilateral(const mesh::Topology& topology,
   const std::vector<std::int64_t>& global_indices = topology.global_indices(0);
   for (int cell_n = 0; cell_n < num_cells; ++cell_n)
   {
-    auto vertices = cells->edges(cell_n);
+    auto vertices = cells->links(cell_n);
     const std::int64_t v0 = global_indices[vertices[0]];
     const std::int64_t v1 = global_indices[vertices[1]];
     const std::int64_t v2 = global_indices[vertices[2]];
@@ -546,7 +546,7 @@ compute_ordering_tetrahedron(const mesh::Topology& topology,
   const std::vector<std::int64_t>& global_indices = topology.global_indices(0);
   for (int cell_n = 0; cell_n < num_cells; ++cell_n)
   {
-    auto vertices = cells->edges(cell_n);
+    auto vertices = cells->links(cell_n);
     const std::int64_t v0 = global_indices[vertices[0]];
     const std::int64_t v1 = global_indices[vertices[1]];
     const std::int64_t v2 = global_indices[vertices[2]];
@@ -606,7 +606,7 @@ compute_ordering_hexahedron(const mesh::Topology& topology,
   const std::vector<std::int64_t>& global_indices = topology.global_indices(0);
   for (int cell_n = 0; cell_n < num_cells; ++cell_n)
   {
-    auto vertices = cells->edges(cell_n);
+    auto vertices = cells->links(cell_n);
     const std::int64_t v0 = global_indices[vertices[0]];
     const std::int64_t v1 = global_indices[vertices[1]];
     const std::int64_t v2 = global_indices[vertices[2]];

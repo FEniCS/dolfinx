@@ -111,13 +111,12 @@ fem::block_function_spaces(
   return V;
 }
 //-----------------------------------------------------------------------------
-la::PETScMatrix dolfinx::fem::create_matrix(const Form& a)
+la::SparsityPattern dolfinx::fem::create_sparsity_pattern(const Form& a)
 {
-  bool keep_diagonal = false;
   if (a.rank() != 2)
   {
     throw std::runtime_error(
-        "Cannot initialise matrx. Form is not a bilinear form");
+        "Cannot create sparsity pattern. Form is not a bilinear form");
   }
 
   // Get dof maps
@@ -138,22 +137,39 @@ la::PETScMatrix dolfinx::fem::create_matrix(const Form& a)
   // Create and build sparsity pattern
   la::SparsityPattern pattern(mesh.mpi_comm(), index_maps);
   if (a.integrals().num_integrals(fem::FormIntegrals::Type::cell) > 0)
+  {
     SparsityPatternBuilder::cells(pattern, mesh.topology(),
                                   {{dofmaps[0], dofmaps[1]}});
+  }
+
   if (a.integrals().num_integrals(fem::FormIntegrals::Type::interior_facet) > 0)
   {
+
     mesh.create_entities(mesh.topology().dim() - 1);
     SparsityPatternBuilder::interior_facets(pattern, mesh.topology(),
                                             {{dofmaps[0], dofmaps[1]}});
   }
+
   if (a.integrals().num_integrals(fem::FormIntegrals::Type::exterior_facet) > 0)
   {
     mesh.create_entities(mesh.topology().dim() - 1);
     SparsityPatternBuilder::exterior_facets(pattern, mesh.topology(),
                                             {{dofmaps[0], dofmaps[1]}});
   }
-  pattern.assemble();
   t0.stop();
+
+  return pattern;
+}
+//-----------------------------------------------------------------------------
+la::PETScMatrix dolfinx::fem::create_matrix(const Form& a)
+{
+  bool keep_diagonal = false;
+
+  // Build sparsitypattern
+  la::SparsityPattern pattern = fem::create_sparsity_pattern(a);
+
+  // Finalise communication
+  pattern.assemble();
 
   // Initialize matrix
   common::Timer t1("Init tensor");
@@ -161,8 +177,8 @@ la::PETScMatrix dolfinx::fem::create_matrix(const Form& a)
   t1.stop();
 
   // FIXME: Check if there is a PETSc function for this
-  // Insert zeros on the diagonal as diagonal entries may be
-  // optimised away, e.g. when calling PETScMatrix::apply.
+  // Insert zeros on the diagonal as diagonal entries may be optimised
+  // away, e.g. when calling PETScMatrix::apply.
   if (keep_diagonal)
   {
     // Loop over rows and insert 0.0 on the diagonal

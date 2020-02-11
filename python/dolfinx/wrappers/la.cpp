@@ -55,6 +55,7 @@ void la(py::module& m)
            &dolfinx::la::SparsityPattern::num_nonzeros_off_diagonal)
       .def("num_local_nonzeros",
            &dolfinx::la::SparsityPattern::num_local_nonzeros)
+      .def("info_statistics", &dolfinx::la::SparsityPattern::info_statistics)
       .def("insert_local", &dolfinx::la::SparsityPattern::insert_local)
       .def("insert_global", &dolfinx::la::SparsityPattern::insert_global);
 

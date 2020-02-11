@@ -51,7 +51,7 @@ public:
   }
 
   /// Construct adjacency list for a problem with a fixed number of
-  /// edges for each node
+  /// links (edges) for each node
   /// @param [in] matrix Two-dimensional array of adjacency data where
   ///   matrix(i, j) is the jth neighbor of the ith node
   AdjacencyList(
@@ -59,14 +59,14 @@ public:
                                           Eigen::RowMajor>>& matrix)
       : _array(matrix.rows() * matrix.cols()), _offsets(matrix.rows() + 1)
   {
-    const std::int32_t num_edges = matrix.cols();
+    const std::int32_t num_links = matrix.cols();
     for (Eigen::Index e = 0; e < _offsets.rows(); e++)
-      _offsets[e] = e * num_edges;
+      _offsets[e] = e * num_links;
 
     // NOTE: Do not directly copy data from matrix because it may be a
     // view into a larger array
     for (Eigen::Index i = 0; i < matrix.rows(); ++i)
-      _array.segment(_offsets(i), num_edges) = matrix.row(i);
+      _array.segment(_offsets(i), num_links) = matrix.row(i);
   }
 
   /// Set all connections for all entities (T is a '2D' container, e.g.
@@ -115,45 +115,39 @@ public:
 
   /// Number of connections for given node
   /// @param [in] Node index
-  /// @return The number of outgoing edges from the node
-  int num_edges(int node) const
+  /// @return The number of outgoing links (edges) from the node
+  int num_links(int node) const
   {
     assert((node + 1) < _offsets.rows());
     return _offsets[node + 1] - _offsets[node];
   }
 
-  /// Edges for given node
+  /// Links (edges) for given node
   /// @param [in] node Node index
-  /// @return Array of outgoing edges for the node. The length will be
-  ///   AdjacencyList:num_edges(node).
-  auto edges(int node)
+  /// @return Array of outgoing links for the node. The length will be
+  ///   AdjacencyList:num_links(node).
+  auto links(int node)
   {
     return _array.segment(_offsets[node], _offsets[node + 1] - _offsets[node]);
   }
 
-  /// Edges for given node (const version)
+  /// Links (edges) for given node (const version)
   /// @param [in] node Node index
-  /// @return Array of outgoing edges for the node. The length will be
-  ///   AdjacencyList:num_edges(node).
-  auto edges(int node) const
+  /// @return Array of outgoing links for the node. The length will be
+  ///   AdjacencyList:num_links(node).
+  auto links(int node) const
   {
     return _array.segment(_offsets[node], _offsets[node + 1] - _offsets[node]);
   }
 
   /// TODO: attempt to remove
-  const std::int32_t* edges_ptr(int node) const
+  const std::int32_t* links_ptr(int node) const
   {
     return &_array[_offsets[node]];
   }
 
-  /// Return contiguous array of edges for all nodes
-  Eigen::Array<T, Eigen::Dynamic, 1>& array() { return _array; }
-
-  /// Return contiguous array of edges for all nodes (const version)
+  /// Return contiguous array of links for all nodes (const version)
   const Eigen::Array<T, Eigen::Dynamic, 1>& array() const { return _array; }
-
-  /// Offset for each node in array()
-  Eigen::Array<std::int32_t, Eigen::Dynamic, 1>& offsets() { return _offsets; }
 
   /// Offset for each node in array() (const version)
   const Eigen::Array<std::int32_t, Eigen::Dynamic, 1>& offsets() const
@@ -194,10 +188,6 @@ private:
 
   // Position of first connection for each entity (using local index)
   Eigen::Array<std::int32_t, Eigen::Dynamic, 1> _offsets;
-
-  // // Global number of connections for each entity (possibly not
-  // // computed)
-  // Eigen::Array<std::int32_t, Eigen::Dynamic, 1> _num_global_connections;
 };
 } // namespace graph
 } // namespace dolfinx

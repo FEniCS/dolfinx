@@ -102,7 +102,7 @@ public:
         = *e.mesh().topology().connectivity(e.dim(), _entity.dim());
 
     // Pointer to array of connections
-    _connections = c.edges_ptr(e.index()) + pos;
+    _connections = c.links_ptr(e.index()) + pos;
   }
 
   /// Copy constructor
@@ -252,7 +252,7 @@ public:
                                          : _entity.mesh()
                                                .topology()
                                                .connectivity(_entity._dim, _dim)
-                                               ->num_edges(_entity.index());
+                                               ->num_links(_entity.index());
     return MeshEntityIterator(_entity, _dim, n);
   }
 

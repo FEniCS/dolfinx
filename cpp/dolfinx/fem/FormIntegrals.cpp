@@ -162,7 +162,7 @@ void FormIntegrals::set_domains(FormIntegrals::Type type,
 
     for (Eigen::Index i = 0; i < num_entities; ++i)
     {
-      if (connectivity->num_edges(i) == 2)
+      if (connectivity->num_links(i) == 2)
       {
         auto it = id_to_integral.find(mf_values[i]);
         if (it != id_to_integral.end())
