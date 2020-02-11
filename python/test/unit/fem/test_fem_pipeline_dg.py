@@ -17,8 +17,10 @@ from dolfinx.fem import assemble_matrix, assemble_scalar, assemble_vector
 from dolfinx.io import XDMFFile
 from ufl import (SpatialCoordinate, div, dx, grad, inner, ds, dS, avg, jump,
                  TestFunction, TrialFunction)
+from dolfinx_utils.test.skips import skip_in_parallel
 
 
+@skip_in_parallel
 # @pytest.mark.parametrize("degree", [2, 3])
 @pytest.mark.parametrize("degree", [1, 2])
 @pytest.mark.parametrize("filename", ["UnitSquareMesh_triangle.xdmf",
