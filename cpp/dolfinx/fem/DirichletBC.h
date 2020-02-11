@@ -45,7 +45,7 @@ using marking_function = std::function<Eigen::Array<bool, Eigen::Dynamic, 1>(
 /// @param[in] V The function (sub)space(s) on which degrees-of-freedom
 ///     (DOFs) will be located. The spaces must share the same mesh and
 ///     element type.
-/// @param[in] entity_dim Topological dimension of mesh entities on
+/// @param[in] dim Topological dimension of mesh entities on
 ///     which degrees-of-freedom will be located
 /// @param[in] entities Indices of mesh entities. All DOFs associated
 ///     with the closure of these indices will be returned
