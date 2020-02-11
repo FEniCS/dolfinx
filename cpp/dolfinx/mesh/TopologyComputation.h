@@ -16,11 +16,15 @@
 namespace dolfinx
 {
 
+namespace common
+{
+class IndexMap;
+}
+
 namespace graph
 {
 template <typename T>
 class AdjacencyList;
-
 }
 
 namespace mesh
@@ -37,15 +41,16 @@ public:
   /// entity-to-vertex connectivity (dim, 0), and cell-to-entity
   /// connectivity (tdim, dim)
   /// @param [in] comm MPI Communicator
-  /// @param [in] topology The mesh topology
+  /// @param [in] topology Mesh topology
   /// @param [in] cell_type Cell type
   /// @param [in] dim The dimension of the entities to create
   /// @return Tuple of (cell-entity connectivity, entity-vertex
-  ///   connectivity, number of created entities). If the entities
-  ///   already exists, then {nullptr, nullptr, -1} is returned.
+  ///   connectivity, index map, shared entities). If the entities
+  ///   already exist, then {nullptr, nullptr, nullptr, std::map} is returned.
   static std::tuple<std::shared_ptr<graph::AdjacencyList<std::int32_t>>,
                     std::shared_ptr<graph::AdjacencyList<std::int32_t>>,
-                    std::int32_t>
+                    std::shared_ptr<common::IndexMap>,
+                    std::map<std::int32_t, std::set<std::int32_t>>>
   compute_entities(MPI_Comm comm, const Topology& topology,
                    mesh::CellType cell_type, int dim);
 
