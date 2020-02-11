@@ -147,8 +147,9 @@ public:
                                      const int facet_index) const;
 
   /// Resize the arrays of permutations and reflections
-  /// @param[in] rows The number of cells in the mesh
-  /// @param[in] cols The number of entities per mesh cell
+  /// @param[in] cell_count The number of cells in the mesh
+  /// @param[in] edges_per_cell The number of edges per mesh cell
+  /// @param[in] faces_per_cell The number of faces per mesh cell
   void resize_entity_permutations(std::size_t cell_count, int edges_per_cell,
                                   int faces_per_cell);
 
