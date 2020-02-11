@@ -86,6 +86,7 @@ public:
                             const mesh::Topology& topology) const;
 
   /// Create a "collapsed" dofmap (collapses a sub-dofmap)
+  /// @param[in] comm MPI Communicator
   /// @param[in] topology The meshtopology that the dofmap is defined on
   /// @return The collapsed dofmap
   std::pair<std::unique_ptr<DofMap>, std::vector<std::int32_t>>
