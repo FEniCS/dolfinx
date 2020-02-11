@@ -119,7 +119,7 @@ public:
   /// no off-diagonal contribution.
   std::vector<std::vector<std::size_t>> off_diagonal_pattern(Type type) const;
 
-  // Print some useful information
+  /// Print some useful information
   void info_statistics() const;
 
 
