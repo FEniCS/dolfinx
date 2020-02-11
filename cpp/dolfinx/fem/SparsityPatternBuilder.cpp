@@ -55,7 +55,7 @@ void SparsityPatternBuilder::interior_facets(
 
     // Get cells incident with facet
     auto cells = connectivity->links(f);
-    assert(cells.rows() == 0);
+    assert(cells.rows() == 2);
     const int cell0 = cells[0];
     const int cell1 = cells[1];
 
