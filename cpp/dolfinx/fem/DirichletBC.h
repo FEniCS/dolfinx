@@ -76,9 +76,13 @@ locate_dofs_topological(
 ///     will be located
 /// @param[in] marker Function marking tabulated degrees of freedom
 /// @return Array of local indices of located degrees of freedom
-Eigen::Array<std::int32_t, Eigen::Dynamic, 1>
-locate_dofs_geometrical(const function::FunctionSpace& V,
-                        marking_function marker);
+// Eigen::Array<std::int32_t, Eigen::Dynamic, 1>
+// locate_dofs_geometrical(const function::FunctionSpace& V,
+//                         marking_function marker);
+Eigen::Array<std::int32_t, Eigen::Dynamic, Eigen::Dynamic>
+locate_dofs_geometrical(
+    const std::vector<std::reference_wrapper<function::FunctionSpace>>& V,
+    marking_function marker);
 
 /// Interface for setting (strong) Dirichlet boundary conditions.
 ///

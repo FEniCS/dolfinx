@@ -446,6 +446,7 @@ void fem(py::module& m)
   m.def("locate_dofs_topological", &dolfinx::fem::locate_dofs_topological,
         py::arg("V"), py::arg("dim"), py::arg("entities"),
         py::arg("remote") = true);
-  m.def("locate_dofs_geometrical", &dolfinx::fem::locate_dofs_geometrical);
+  m.def("locate_dofs_geometrical", &dolfinx::fem::locate_dofs_geometrical,
+        py::arg("V"), py::arg("marker"));
 } // namespace dolfinx_wrappers
 } // namespace dolfinx_wrappers
