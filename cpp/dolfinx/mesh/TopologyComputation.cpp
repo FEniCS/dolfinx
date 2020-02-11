@@ -448,8 +448,6 @@ compute_entities_by_key_matching(
 /// @param [in] c_d1_d0 The connectivity from entities of dimension d1
 ///   to entities of dimension d0
 /// @param [in] num_entities_d0 The number of entities of dimension d0
-/// @param [in] num_entities_d1 The number of entities of dimension d1
-///   (TOOD: is this required, or can it come from c_d1_d0?)
 /// @return The connectivity from entities of dimension d0 to entities
 ///   of dimension d1
 graph::AdjacencyList<std::int32_t>
@@ -656,8 +654,7 @@ TopologyComputation::compute_connectivity(const Topology& topology,
     {
       auto c_d0_d1 = std::make_shared<graph::AdjacencyList<std::int32_t>>(
           compute_from_transpose(*topology.connectivity(d1, d0),
-                                 c_d0_0->num_nodes(), c_d1_0->num_nodes(), d0,
-                                 d1));
+                                 c_d0_0->num_nodes(), d0, d1));
       return {c_d0_d1, nullptr};
     }
   }
