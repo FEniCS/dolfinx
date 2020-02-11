@@ -6,7 +6,6 @@
 
 #include "Mesh.h"
 #include "CoordinateDofs.h"
-#include "DistributedMeshTools.h"
 #include "Geometry.h"
 #include "MeshEntity.h"
 #include "MeshIterator.h"
@@ -447,7 +446,7 @@ std::int32_t Mesh::create_entities(int dim) const
     return -1;
 
   // Create local entities
-  const auto [cell_entity, entity_vertex, num_new_entities]
+  const auto [cell_entity, entity_vertex, index_map, shared_entities]
       = TopologyComputation::compute_entities(_mpi_comm.comm(), *_topology,
                                               _cell_type, dim);
 
@@ -456,12 +455,17 @@ std::int32_t Mesh::create_entities(int dim) const
   if (entity_vertex)
     _topology->set_connectivity(entity_vertex, dim, 0);
 
-  // Number globally (this code is largely duplicated in
-  // TopologyComputation::compute_entities and will soon be removed)
-  DistributedMeshTools::number_entities(this->mpi_comm(), *_topology,
-                                        _cell_type, dim);
+  if (index_map)
+  {
+    _topology->set_index_map(dim, index_map);
+    // FIXME: remove global_indices
+    _topology->set_global_indices(dim, index_map->global_indices(false));
+  }
 
-  return num_new_entities;
+  if (shared_entities.size() > 0)
+    _topology->set_shared_entities(dim, shared_entities);
+
+  return index_map->size_local();
 }
 //-----------------------------------------------------------------------------
 void Mesh::create_connectivity(int d0, int d1) const
