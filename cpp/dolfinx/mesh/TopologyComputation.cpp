@@ -31,8 +31,8 @@ namespace
 {
 //-----------------------------------------------------------------------------
 
-/// Takes an Eigen::Array and obtains the sort permutation to reorder
-/// the rows in ascending order. Each row must be sorted beforehand.
+/// Takes an Eigen::Array and obtain the sort permutation to reorder the
+/// rows in ascending order. Each row must be sorted beforehand.
 /// @param [i] array The input array
 /// @return The permutation vector that would order the rows in
 ///   ascending order
@@ -146,7 +146,7 @@ get_shared_entities(MPI_Comm neighbour_comm,
 /// @param [in] entity_index Initial numbering for each row in
 /// entity_list
 /// @param [in] entity_count Number of unique entities
-/// @returns Tuple of (local_indices, index map, shared entities)
+/// @returns Tuple of (local_indices, index map, shared entities TODO: explain the last one)
 std::tuple<std::vector<int>, std::shared_ptr<common::IndexMap>,
            std::map<std::int32_t, std::set<std::int32_t>>>
 get_local_indexing(
@@ -484,9 +484,13 @@ compute_from_transpose(const graph::AdjacencyList<std::int32_t>& c_d1_d0,
 }
 //-----------------------------------------------------------------------------
 
-// TODO: document
-/// Direct lookup of entity from vertices in a map
-///
+/// Compute the d0 -> d1 connectivity, where d0 > d1
+/// @param [in] c_d0_0 The d0 -> 0 (entity (d0) to vertex) connectivity
+/// @param [in] c_d0_0 The d1 -> 0 (entity (d1) to vertex) connectivity
+/// @param [in] cell_type_d0 The cell type for entities of dimension d0
+/// @param [in] d0 Topological dimension
+/// @param [in] d1 Topological dimension
+/// @return The d0 -> d1 connectivity
 graph::AdjacencyList<std::int32_t>
 compute_from_map(const graph::AdjacencyList<std::int32_t>& c_d0_0,
                  const graph::AdjacencyList<std::int32_t>& c_d1_0,
@@ -593,17 +597,6 @@ std::array<std::shared_ptr<graph::AdjacencyList<std::int32_t>>, 2>
 TopologyComputation::compute_connectivity(const Topology& topology,
                                           CellType cell_type, int d0, int d1)
 {
-  // This is where all the logic takes place to find a strategy for
-  // the connectivity computation. For any given pair (d0, d1), the
-  // connectivity is computed by suitably combining the following
-  // basic building blocks:
-  //
-  //   1. compute_entities():     d  - 0  from dim - 0
-  //   2. compute_transpose():    d0 - d1 from d1 - d0
-  //   4. compute_from_map():     d0 - d1 from d1 - 0 and d0 - 0
-  // Each of these functions assume a set of preconditions that we
-  // need to satisfy.
-
   LOG(INFO) << "Requesting connectivity " << d0 << " - " << d1;
 
   // Return if connectivity has already been computed
@@ -634,9 +627,9 @@ TopologyComputation::compute_connectivity(const Topology& topology,
   // Decide how to compute the connectivity
   if (d0 == d1)
   {
-    auto c_d0_d0 = std::make_shared<graph::AdjacencyList<std::int32_t>>(
-        c_d0_0->num_nodes());
-    return {c_d0_d0, nullptr};
+    return {std::make_shared<graph::AdjacencyList<std::int32_t>>(
+                c_d0_0->num_nodes()),
+            c_d0_d0, nullptr};
   }
   else if (d0 < d1)
   {
