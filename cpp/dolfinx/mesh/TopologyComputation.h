@@ -36,7 +36,9 @@ public:
   /// Compute mesh entities of given topological dimension by computing
   /// entity-to-vertex connectivity (dim, 0), and cell-to-entity
   /// connectivity (tdim, dim)
-  /// @param [in] mesh The mesh
+  /// @param [in] comm MPI Communicator
+  /// @param [in] topology The mesh topology
+  /// @param [in] cell_type Cell type
   /// @param [in] dim The dimension of the entities to create
   /// @return Tuple of (cell-entity connectivity, entity-vertex
   ///   connectivity, number of created entities). If the entities
