@@ -62,7 +62,7 @@ public:
   ///                        entities. Size of this array must agree with
   ///                        number of columns in `cells`.
   MeshValueCollection(
-      std::shared_ptr<const Mesh> mesh, std::size_t dim,
+      std::shared_ptr<const Mesh> mesh, int dim,
       const Eigen::Ref<const Eigen::Array<T, Eigen::Dynamic, Eigen::Dynamic,
                                           Eigen::RowMajor>>& cells,
       const Eigen::Ref<const Eigen::Array<T, 1, Eigen::Dynamic,
@@ -226,7 +226,7 @@ MeshValueCollection<T>::MeshValueCollection(
       {
         int i = 0;
         for (auto& vtx : mesh::EntityRange(m, 0))
-          v[i] = global_indices[vttx.index()];
+          v[i] = global_indices[vtx.index()];
         std::sort(v.begin(), v.end());
       }
       entity_map[v] = m.index();
