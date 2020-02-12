@@ -41,9 +41,8 @@ public:
       const mesh::CellType cell_type,
       const std::array<int, 4> entity_block_size);
 
-  /// Copy-like constructor with option to reset (clear) parent map
-  ElementDofLayout(const ElementDofLayout& element_dof_layout,
-                   bool reset_parent);
+  /// Copy-like constructor
+  // ElementDofLayout(const ElementDofLayout& element_dof_layout);
 
   /// Copy constructor
   ElementDofLayout(const ElementDofLayout& dofmap) = default;

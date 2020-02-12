@@ -68,12 +68,11 @@ ElementDofLayout::ElementDofLayout(
   }
 }
 //-----------------------------------------------------------------------------
-ElementDofLayout::ElementDofLayout(const ElementDofLayout& element_dof_layout,
-                                   bool reset_parent)
-    : ElementDofLayout(element_dof_layout)
-{
-  _parent_map.clear();
-}
+// ElementDofLayout::ElementDofLayout(const ElementDofLayout& element_dof_layout)
+//     : ElementDofLayout(element_dof_layout)
+// {
+//   _parent_map.clear();
+// }
 //-----------------------------------------------------------------------------
 mesh::CellType ElementDofLayout::cell_type() const { return _cell_type; }
 //-----------------------------------------------------------------------------

@@ -196,8 +196,7 @@ compute_point_distribution(
     Eigen::Array<std::int64_t, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
         cell_nodes,
     Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
-        points,
-    mesh::CellType type)
+        points)
 {
   // Get set of global point indices, which exist on this process
   std::vector<std::int64_t> global_index_set
@@ -263,7 +262,7 @@ Mesh::Mesh(
   // cell topology using new local indices
   const auto [point_index_map, node_indices_global, coordinate_nodes,
               points_received]
-      = compute_point_distribution(comm, cells, points, type);
+      = compute_point_distribution(comm, cells, points);
 
   _coordinate_dofs = std::make_unique<CoordinateDofs>(coordinate_nodes);
 

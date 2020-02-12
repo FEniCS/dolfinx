@@ -472,7 +472,7 @@ void SparsityPattern::assemble()
   _non_local.clear();
 }
 //-----------------------------------------------------------------------------
-std::string SparsityPattern::str(bool verbose) const
+std::string SparsityPattern::str() const
 {
   // Print each row
   std::stringstream s;

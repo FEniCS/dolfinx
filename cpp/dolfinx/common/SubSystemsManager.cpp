@@ -200,7 +200,7 @@ bool SubSystemsManager::mpi_finalized()
 //-----------------------------------------------------------------------------
 PetscErrorCode SubSystemsManager::PetscDolfinErrorHandler(
     MPI_Comm comm, int line, const char* fun, const char* file,
-    PetscErrorCode n, PetscErrorType p, const char* mess, void* ctx)
+    PetscErrorCode n, PetscErrorType, const char* mess, void*)
 {
   // Store message for printing later (by PETScObject::petsc_error)
   // only if it's not empty message (passed by PETSc when repeating
