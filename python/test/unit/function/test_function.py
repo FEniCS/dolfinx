@@ -15,8 +15,9 @@ from dolfinx_utils.test.skips import skip_if_complex, skip_in_parallel
 from petsc4py import PETSc
 
 import ufl
-from dolfinx import (MPI, Function, FunctionSpace, TensorFunctionSpace,
-                     UnitCubeMesh, VectorFunctionSpace, cpp, geometry)
+from dolfinx import (MPI, UnitCubeMesh, UnitSquareMesh,
+                     Function, FunctionSpace, TensorFunctionSpace,
+                     VectorFunctionSpace, cpp, geometry, fem)
 
 
 @pytest.fixture
@@ -185,6 +186,47 @@ def test_eval_multiple(W):
     tree = geometry.BoundingBoxTree(mesh, W.mesh.geometry.dim)
     cells = geometry.compute_first_entity_collision(tree, mesh, x)
     u.eval(x[0], cells[0])
+
+
+@pytest.mark.parametrize("degree", [2, 3, 4])
+@pytest.mark.parametrize("n_el", [4, 7])
+@pytest.mark.parametrize("n_p", [6, 11])
+def test_eval_parallel(degree, n_el, n_p):
+    mesh = UnitSquareMesh(MPI.comm_world, n_el, n_el)
+    cmap = fem.create_coordinate_map(mesh.ufl_domain())
+    mesh.geometry.coord_mapping = cmap
+
+    P = ufl.FiniteElement("Lagrange", mesh.ufl_cell(), degree)
+    V = FunctionSpace(mesh, P)
+
+    def func(x):
+        return x[0] * x[1]
+
+    u = Function(V)
+    u.interpolate(func)
+
+    x_line = np.linspace(0, 1, n_p)
+    y_line = np.linspace(0, 0.9, n_p)
+
+    tree = geometry.BoundingBoxTree(mesh, mesh.geometry.dim)
+
+    points = np.vstack((x_line, y_line, np.zeros(n_p)))
+
+    cells = geometry.compute_first_entity_collision(tree, mesh, points.T)
+    u_eval = u.eval(points.T, cells)
+    u_eval = u_eval.T[0]
+    exact = func(points)
+    local_cells = np.argwhere(cells != -1).T[0]
+
+    on_proc = np.zeros(cells.shape[0])
+    on_proc[local_cells] = 1
+
+    # Workaround since the cell exists on multiple processors, not respecting
+    # ghosting.
+    u_g = MPI.comm_world.allgather(u_eval)
+    num_proc = MPI.comm_world.allgather(on_proc)
+    u_global = sum(u_g) / sum(num_proc)
+    assert np.allclose(u_global, exact)
 
 
 def test_scalar_conditions(R):
