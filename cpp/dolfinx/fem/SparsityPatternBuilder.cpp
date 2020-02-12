@@ -45,21 +45,25 @@ void SparsityPatternBuilder::interior_facets(
 
   // Array to store macro-dofs, if required (for interior facets)
   std::array<Eigen::Array<PetscInt, Eigen::Dynamic, 1>, 2> macro_dofs;
-  for (int f = 0; f < connectivity->num_nodes(); ++f)
+
+  // Loop ove owned facets
+  auto map = topology.index_map(D - 1);
+  assert(map);
+  assert(map->block_size == 1);
+  const std::int32_t num_facets = map->size_local();
+  for (int f = 0; f < num_facets; ++f)
   {
-    // Continue if facet is exterior facet
-    if (topology.size_global({D - 1, D}, f) == 1)
-      continue;
-
-    // FIXME: sort out ghosting
-
     // Get cells incident with facet
     auto cells = connectivity->links(f);
+
+    // Proceed to next facet if only ony connection
+    if (cells.rows() == 1)
+      continue;
+
+    // Tabulate dofs for each dimension on macro element
     assert(cells.rows() == 2);
     const int cell0 = cells[0];
     const int cell1 = cells[1];
-
-    // Tabulate dofs for each dimension on macro element
     for (std::size_t i = 0; i < 2; i++)
     {
       auto cell_dofs0 = dofmaps[i]->cell_dofs(cell0);
