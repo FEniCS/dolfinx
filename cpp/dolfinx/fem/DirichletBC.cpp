@@ -353,9 +353,30 @@ _locate_dofs_topological(const function::FunctionSpace& V, const int entity_dim,
 //-----------------------------------------------------------------------------
 Eigen::Array<std::int32_t, Eigen::Dynamic, 2> _locate_dofs_geometrical(
     const std::vector<std::reference_wrapper<function::FunctionSpace>>& V,
+    const int dim, const Eigen::Ref<const Eigen::ArrayXi>& entities,
     marking_function marker)
 {
-    throw std::runtime_error("JD: Not yet implemented!");
+  const function::FunctionSpace& V0 = V.at(0).get();
+  const function::FunctionSpace& V1 = V.at(1).get();
+
+  // FIXME: Calling V.tabulate_dof_coordinates() is very expensive,
+  // especially when we usually want the boundary dofs only. Add
+  // interface that computes dofs coordinates only for specified cell.
+
+  // Compute dof coordinates
+  // FIXME Currently depends on the order. Won't tabulate coords for a
+  // subspace
+  const Eigen::Array<double, 3, Eigen::Dynamic, Eigen::RowMajor> dof_coordinates1
+      = V1.tabulate_dof_coordinates().transpose();
+
+  // Compute marker for each dof coordinate
+  const Eigen::Array<bool, Eigen::Dynamic, 1> marked_dofs1
+      = marker(dof_coordinates1);
+    
+  // FIXME: What does remote do?
+  _locate_dofs_topological(V, dim, entities, false);
+
+  throw std::runtime_error("JD: Not yet implemented!");
 }
 //-----------------------------------------------------------------------------
 Eigen::Array<std::int32_t, Eigen::Dynamic, 1>
@@ -404,10 +425,11 @@ fem::locate_dofs_topological(
 Eigen::Array<std::int32_t, Eigen::Dynamic, Eigen::Dynamic>
 fem::locate_dofs_geometrical(
     const std::vector<std::reference_wrapper<function::FunctionSpace>>& V,
+    const int dim, const Eigen::Ref<const Eigen::ArrayXi>& entities,
     marking_function marker)
 {
   if (V.size() == 2)
-    return _locate_dofs_geometrical(V, marker);
+    return _locate_dofs_geometrical(V, dim, entities, marker);
   else if (V.size() == 1)
     return _locate_dofs_geometrical(V[0].get(), marker);
   else

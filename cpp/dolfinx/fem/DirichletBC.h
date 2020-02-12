@@ -82,6 +82,7 @@ locate_dofs_topological(
 Eigen::Array<std::int32_t, Eigen::Dynamic, Eigen::Dynamic>
 locate_dofs_geometrical(
     const std::vector<std::reference_wrapper<function::FunctionSpace>>& V,
+    const int dim, const Eigen::Ref<const Eigen::ArrayXi>& entities,
     marking_function marker);
 
 /// Interface for setting (strong) Dirichlet boundary conditions.
