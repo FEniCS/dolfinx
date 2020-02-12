@@ -226,7 +226,10 @@ MeshValueCollection<T>::MeshValueCollection(
       {
         int i = 0;
         for (auto& vtx : mesh::EntityRange(m, 0))
+        {
           v[i] = global_indices[vtx.index()];
+          i++;
+        }
         std::sort(v.begin(), v.end());
       }
       entity_map[v] = m.index();
