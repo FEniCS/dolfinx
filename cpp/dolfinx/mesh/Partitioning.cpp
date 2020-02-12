@@ -48,8 +48,8 @@ namespace
 // process).
 std::tuple<
     Eigen::Array<std::int64_t, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>,
-    std::vector<std::int64_t>, std::vector<int>,
-    std::map<std::int32_t, std::set<std::int32_t>>, std::int32_t>
+    std::vector<std::int64_t>, std::map<std::int32_t, std::set<std::int32_t>>,
+    std::int32_t>
 distribute_cells(
     const MPI_Comm mpi_comm,
     const Eigen::Ref<const Eigen::Array<std::int64_t, Eigen::Dynamic,
@@ -68,8 +68,8 @@ distribute_cells(
 
   common::Timer timer("Distribute cells");
 
-  const std::size_t mpi_size = dolfinx::MPI::size(mpi_comm);
-  const std::size_t mpi_rank = dolfinx::MPI::rank(mpi_comm);
+  const std::int32_t mpi_size = dolfinx::MPI::size(mpi_comm);
+  const std::int32_t mpi_rank = dolfinx::MPI::rank(mpi_comm);
 
   // Global offset, used to build global cell index, if not given
   std::int64_t global_offset
@@ -133,29 +133,38 @@ distribute_cells(
 
   // Count number of received cells (first entry in vector) and find out
   // how many ghost cells there are...
-  std::size_t local_count = 0;
-  std::size_t ghost_count = 0;
-  for (std::size_t p = 0; p < mpi_size; ++p)
+  std::int32_t local_count = 0;
+  std::int32_t ghost_count = 0;
+  for (std::int32_t p = 0; p < mpi_size; ++p)
   {
     std::vector<std::size_t>& received_data = received_cell_vertices[p];
     local_count += received_data[0];
     ghost_count += received_data[1];
   }
 
-  const std::size_t all_count = ghost_count + local_count;
+  const std::int64_t all_count = ghost_count + local_count;
 
+  // Calculate local range of global indices
+  std::vector<std::int32_t> local_sizes;
+  MPI::all_gather(mpi_comm, local_count, local_sizes);
+  std::vector<std::int64_t> ranges(mpi_size + 1, 0);
+  std::partial_sum(local_sizes.begin(), local_sizes.end(), ranges.begin() + 1);
+  std::vector<std::int64_t> new_global_cell_indices(all_count, -1);
+  std::iota(new_global_cell_indices.begin(),
+            new_global_cell_indices.begin() + local_count, ranges[mpi_rank]);
+  std::vector<std::int64_t> stored_tag(all_count, -1);
+
+  // Storage for received cell-vertex data
   Eigen::Array<std::int64_t, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
       new_cell_vertices(all_count, num_cell_vertices);
-  std::vector<std::int64_t> new_global_cell_indices(all_count);
-  std::vector<int> new_cell_partition(all_count);
 
   // Unpack received data
   // Create a map from cells which are shared, to the remote processes
   // which share them - corral ghost cells to end of range
-  std::size_t c = 0;
-  std::size_t gc = local_count;
+  std::int32_t c = 0;
+  std::int32_t gc = local_count;
   std::map<std::int32_t, std::set<std::int32_t>> shared_cells;
-  for (std::size_t p = 0; p < mpi_size; ++p)
+  for (std::int32_t p = 0; p < mpi_size; ++p)
   {
     std::vector<std::size_t>& received_data = received_cell_vertices[p];
     for (auto it = received_data.begin() + 2; it != received_data.end();
@@ -166,11 +175,10 @@ distribute_cells(
 
       // Determine owner, and indexing.
       // Note that *tmp_it may be equal to mpi_rank
-      const std::size_t owner = (num_ghosts == 0) ? mpi_rank : *tmp_it;
-      const std::size_t idx = (owner == mpi_rank) ? c : gc;
+      const std::int32_t owner = (num_ghosts == 0) ? mpi_rank : *tmp_it;
+      const std::int64_t idx = (owner == mpi_rank) ? c : gc;
+      assert(idx < all_count);
 
-      assert(idx < new_cell_partition.size());
-      new_cell_partition[idx] = owner;
       if (num_ghosts != 0)
       {
         std::set<std::int32_t> proc_set(tmp_it, tmp_it + num_ghosts);
@@ -181,7 +189,10 @@ distribute_cells(
         tmp_it += num_ghosts;
       }
 
-      new_global_cell_indices[idx] = *tmp_it++;
+      // Save user numbering
+      stored_tag[idx] = *tmp_it++;
+
+      // Copy cell vertices
       for (std::int32_t j = 0; j < num_cell_vertices; ++j)
         new_cell_vertices(idx, j) = *tmp_it++;
 
@@ -195,9 +206,77 @@ distribute_cells(
   assert(c == local_count);
   assert(gc == all_count);
 
-  return std::tuple(
-      std::move(new_cell_vertices), std::move(new_global_cell_indices),
-      std::move(new_cell_partition), std::move(shared_cells), local_count);
+  // Need to get remote indexing of ghost cells
+
+  // Create a neighbourhood comm, since we know the processes already
+  std::set<std::int32_t> neighbour_set;
+  for (auto q : shared_cells)
+    neighbour_set.insert(q.second.begin(), q.second.end());
+  std::vector<std::int32_t> neighbours(neighbour_set.begin(),
+                                       neighbour_set.end());
+  std::map<int, int> proc_to_neighbour;
+  for (std::size_t i = 0; i < neighbours.size(); ++i)
+    proc_to_neighbour.insert({neighbours[i], i});
+  MPI_Comm neighbour_comm;
+  MPI_Dist_graph_create_adjacent(mpi_comm, neighbours.size(), neighbours.data(),
+                                 MPI_UNWEIGHTED, neighbours.size(),
+                                 neighbours.data(), MPI_UNWEIGHTED,
+                                 MPI_INFO_NULL, false, &neighbour_comm);
+
+  std::vector<std::vector<std::int64_t>> send_index(neighbours.size());
+  for (auto q : shared_cells)
+  {
+    const std::int32_t local_idx = q.first;
+    // Find owned and shared cells
+    if (local_idx < local_count)
+    {
+      for (int p : q.second)
+      {
+        const int np = proc_to_neighbour[p];
+        // Share this cell with neighbours
+        send_index[np].push_back(new_global_cell_indices[local_idx]);
+        send_index[np].push_back(stored_tag[local_idx]);
+      }
+    }
+    else
+      break;
+  }
+
+  std::vector<std::int64_t> send_data;
+  std::vector<int> send_offsets = {0};
+  for (std::size_t i = 0; i < neighbours.size(); ++i)
+  {
+    send_data.insert(send_data.end(), send_index[i].begin(),
+                     send_index[i].end());
+    send_offsets.push_back(send_data.size());
+  }
+  std::vector<int> recv_offsets;
+  std::vector<std::int64_t> recv_data;
+  MPI::neighbor_all_to_all(neighbour_comm, send_offsets, send_data,
+                           recv_offsets, recv_data);
+  MPI_Comm_free(&neighbour_comm);
+
+  std::map<std::int64_t, std::int32_t> tag_to_position;
+  for (std::size_t i = 0; i < stored_tag.size(); ++i)
+    tag_to_position.insert({stored_tag[i], i});
+
+  std::stringstream s;
+  for (std::size_t i = 0; i < neighbours.size(); ++i)
+  {
+    for (int j = recv_offsets[i]; j < recv_offsets[i + 1]; j += 2)
+    {
+      const std::int64_t tag = recv_data[j + 1];
+      const auto pos = tag_to_position.find(tag);
+      assert(pos != tag_to_position.end());
+      const std::int32_t index = pos->second;
+      assert(index >= local_count);
+      new_global_cell_indices[index] = recv_data[j];
+    }
+  }
+
+  return std::tuple(std::move(new_cell_vertices),
+                    std::move(new_global_cell_indices), std::move(shared_cells),
+                    local_count);
 }
 //-----------------------------------------------------------------------------
 // Distribute additional cells implied by connectivity via vertex. The
@@ -700,11 +779,10 @@ mesh::Mesh Partitioning::build_from_partition(
   Eigen::Array<std::int64_t, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
       new_cell_vertices;
   std::vector<std::int64_t> new_global_cell_indices;
-  std::vector<int> new_cell_partition;
   std::map<std::int32_t, std::set<std::int32_t>> shared_cells;
   std::int32_t num_regular_cells;
-  std::tie(new_cell_vertices, new_global_cell_indices, new_cell_partition,
-           shared_cells, num_regular_cells)
+  std::tie(new_cell_vertices, new_global_cell_indices, shared_cells,
+           num_regular_cells)
       = distribute_cells(comm, cell_vertices, global_cell_indices,
                          cell_partition);
 
@@ -712,14 +790,13 @@ mesh::Mesh Partitioning::build_from_partition(
   {
     // Send/receive additional cells defined by connectivity to the shared
     // vertices.
+    std::vector<int> dummy;
     distribute_cell_layer(comm, num_regular_cells, shared_cells,
-                          new_cell_vertices, new_global_cell_indices,
-                          new_cell_partition);
+                          new_cell_vertices, new_global_cell_indices, dummy);
   }
   else if (ghost_mode == mesh::GhostMode::none)
   {
     // Resize to remove all ghost cells
-    new_cell_partition.resize(num_regular_cells);
     new_global_cell_indices.resize(num_regular_cells);
     new_cell_vertices.conservativeResize(num_regular_cells, Eigen::NoChange);
     shared_cells.clear();
@@ -735,11 +812,6 @@ mesh::Mesh Partitioning::build_from_partition(
 
   if (ghost_mode != mesh::GhostMode::none)
   {
-    // Copy cell ownership (only needed for ghost cells)
-    std::vector<std::int32_t> cell_owner(new_cell_partition.begin()
-                                             + num_regular_cells,
-                                         new_cell_partition.end());
-
     // Assign map of shared cells (only needed for ghost cells)
     mesh.topology().set_shared_entities(tdim, shared_cells);
   }
