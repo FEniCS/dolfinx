@@ -14,7 +14,7 @@
 #include <dolfinx/function/FunctionSpace.h>
 #include <dolfinx/la/PETScVector.h>
 #include <dolfinx/la/utils.h>
-#include <dolfinx/mesh/Connectivity.h>
+#include <dolfinx/graph/AdjacencyList.h>
 #include <dolfinx/mesh/CoordinateDofs.h>
 #include <dolfinx/mesh/Mesh.h>
 #include <dolfinx/mesh/MeshEntity.h>
@@ -99,7 +99,8 @@ std::string ascii_cell_data(const mesh::Mesh& mesh,
   ss << std::scientific;
   ss << std::setprecision(16);
   std::vector<std::size_t>::const_iterator cell_offset = offset.begin();
-  for (int i = 0; i < mesh.topology().ghost_offset(mesh.topology().dim()); ++i)
+  for (int i = 0;
+       i < mesh.topology().index_map(mesh.topology().dim())->size_local(); ++i)
   {
     if (rank == 1 && data_dim == 2)
     {
@@ -137,8 +138,7 @@ std::string ascii_cell_data(const mesh::Mesh& mesh,
 void write_ascii_mesh(const mesh::Mesh& mesh, int cell_dim,
                       std::string filename)
 {
-  // FIXME: 'mesh.topology().ghost_offset' is plain confusing
-  const int num_cells = mesh.topology().ghost_offset(cell_dim);
+  const int num_cells = mesh.topology().index_map(cell_dim)->size_local();
   const int element_degree = mesh.degree();
 
   // Get VTK cell type
@@ -184,13 +184,13 @@ void write_ascii_mesh(const mesh::Mesh& mesh, int cell_dim,
   {
     // Special case where the cells are visualized (Supports higher order
     // elements)
-    const mesh::Connectivity& connectivity_g
+    const graph::AdjacencyList<std::int32_t>& connectivity_g
         = mesh.coordinate_dofs().entity_points();
     const Eigen::Array<std::int32_t, Eigen::Dynamic, 1>& cell_connections
-        = connectivity_g.connections();
+        = connectivity_g.array();
     const Eigen::Array<std::int32_t, Eigen::Dynamic, 1>& pos_g
-        = connectivity_g.entity_positions();
-    num_nodes = connectivity_g.size(0);
+        = connectivity_g.offsets();
+    num_nodes = connectivity_g.num_links(0);
 
     const std::vector<std::uint8_t> perm
         = io::cells::dolfin_to_vtk(mesh.cell_type(), num_nodes);
@@ -219,9 +219,9 @@ void write_ascii_mesh(const mesh::Mesh& mesh, int cell_dim,
         = io::cells::dolfin_to_vtk(e_type, num_vertices);
     auto vertex_connectivity = mesh.topology().connectivity(cell_dim, 0);
     const Eigen::Array<std::int32_t, Eigen::Dynamic, 1>& vertex_connections
-        = vertex_connectivity->connections();
+        = vertex_connectivity->array();
     const Eigen::Array<std::int32_t, Eigen::Dynamic, 1>& pos_vertex
-        = vertex_connectivity->entity_positions();
+        = vertex_connectivity->offsets();
     for (int j = 0; j < mesh.num_entities(cell_dim); ++j)
     {
       for (int i = 0; i < num_vertices; ++i)
@@ -273,7 +273,7 @@ void VTKWriter::write_cell_data(const function::Function& u,
   const mesh::Mesh& mesh = *u.function_space()->mesh();
   const fem::DofMap& dofmap = *u.function_space()->dofmap();
   const std::size_t tdim = mesh.topology().dim();
-  const std::size_t num_cells = mesh.topology().ghost_offset(tdim);
+  const std::size_t num_cells = mesh.topology().index_map(tdim)->size_local();
 
   std::string encode_string = "ascii";
 
@@ -336,7 +336,7 @@ void VTKWriter::write_cell_data(const function::Function& u,
   const std::size_t size = num_cells * data_dim;
 
   // Build lists of dofs and create map
-  std::vector<PetscInt> dof_set;
+  std::vector<std::int32_t> dof_set;
   std::vector<std::size_t> offset(size + 1);
   std::vector<std::size_t>::iterator cell_offset = offset.begin();
   assert(dofmap.element_dof_layout);

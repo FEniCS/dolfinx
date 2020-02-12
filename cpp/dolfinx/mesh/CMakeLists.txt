@@ -1,5 +1,4 @@
 set(HEADERS_mesh
-  ${CMAKE_CURRENT_SOURCE_DIR}/Connectivity.h
   ${CMAKE_CURRENT_SOURCE_DIR}/CoordinateDofs.h
   ${CMAKE_CURRENT_SOURCE_DIR}/DistributedMeshTools.h
   ${CMAKE_CURRENT_SOURCE_DIR}/dolfin_mesh.h
@@ -20,7 +19,6 @@ set(HEADERS_mesh
   PARENT_SCOPE)
 
 target_sources(dolfinx PRIVATE
-  ${CMAKE_CURRENT_SOURCE_DIR}/Connectivity.cpp
   ${CMAKE_CURRENT_SOURCE_DIR}/CoordinateDofs.cpp
   ${CMAKE_CURRENT_SOURCE_DIR}/DistributedMeshTools.cpp
   ${CMAKE_CURRENT_SOURCE_DIR}/Mesh.cpp
