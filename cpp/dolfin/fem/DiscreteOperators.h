@@ -40,9 +40,9 @@ class DiscreteOperators
 {
 public:
   /// Build the discrete gradient operator A that takes a
-  /// \f$w \in H^1\f$ (P1, nodal Lagrange) to \f$v \in H(curl)\f$
-  /// (lowest order Nedelec), i.e. v = Aw. V0 is the H(curl) space,
-  /// and V1 is the P1 Lagrange space.
+  /// \f$w \in H^1\f$ (P1, nodal Lagrange) to \f$v \in H(curl)\f$ (lowest order
+  /// Nedelec), i.e. v = Aw. V0 is the H(curl) space, and V1 is the P1
+  /// Lagrange space.
   ///
   /// @param[in] V0 H(curl) space
   /// @param[in] V1 P1 Lagrange space
