@@ -152,6 +152,7 @@ distribute_cells(
   std::vector<std::int64_t> new_global_cell_indices(all_count, -1);
   std::iota(new_global_cell_indices.begin(),
             new_global_cell_indices.begin() + local_count, ranges[mpi_rank]);
+  std::vector<std::int64_t> stored_tag(all_count, -1);
 
   // Storage for received cell-vertex data
   Eigen::Array<std::int64_t, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
@@ -188,8 +189,8 @@ distribute_cells(
         tmp_it += num_ghosts;
       }
 
-      // Skip over user numbering for now
-      tmp_it++;
+      // Save user numbering
+      stored_tag[idx] = *tmp_it++;
 
       // Copy cell vertices
       for (std::int32_t j = 0; j < num_cell_vertices; ++j)
@@ -234,6 +235,7 @@ distribute_cells(
         const int np = proc_to_neighbour[p];
         // Share this cell with neighbours
         send_index[np].push_back(new_global_cell_indices[local_idx]);
+        send_index[np].push_back(stored_tag[local_idx]);
       }
     }
     else
@@ -253,25 +255,23 @@ distribute_cells(
   MPI::neighbor_all_to_all(neighbour_comm, send_offsets, send_data,
                            recv_offsets, recv_data);
 
-  std::stringstream s;
+  std::map<std::int64_t, std::int32_t> tag_to_position;
+  for (std::size_t i = 0; i < stored_tag.size(); ++i)
+    tag_to_position.insert({stored_tag[i], i});
 
-  s << mpi_rank << " : Recv globals: [";
-  gc = local_count;
+  std::stringstream s;
   for (std::size_t i = 0; i < neighbours.size(); ++i)
   {
-    // Owning process
-    int p = neighbours[i];
-    for (int j = recv_offsets[i]; j < recv_offsets[i + 1]; ++j)
+    for (int j = recv_offsets[i]; j < recv_offsets[i + 1]; j += 2)
     {
-      s << p << ":" << recv_data[j] << " ";
-      new_global_cell_indices[gc] = recv_data[j];
-      ++gc;
+      const std::int64_t tag = recv_data[j + 1];
+      const auto pos = tag_to_position.find(tag);
+      assert(pos != tag_to_position.end());
+      const std::int32_t index = pos->second;
+      assert(index >= local_count);
+      new_global_cell_indices[index] = recv_data[j];
     }
   }
-  s << "]\n";
-  assert(gc == all_count);
-
-  std::cout << s.str();
 
   return std::tuple(std::move(new_cell_vertices),
                     std::move(new_global_cell_indices), std::move(shared_cells),

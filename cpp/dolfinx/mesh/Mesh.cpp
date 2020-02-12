@@ -339,12 +339,12 @@ Mesh::Mesh(
     std::copy(global_cell_indices.begin() + num_cells_local,
               global_cell_indices.end(), cell_ghosts.data());
 
-  std::stringstream s;
-  s << dolfinx::MPI::rank(comm) << ") cells=[";
-  for (auto q : global_cell_indices)
-    s << q << " ";
-  s << "] (" << num_ghost_cells << ")\n";
-  std::cout << s.str();
+  // std::stringstream s;
+  // s << dolfinx::MPI::rank(comm) << ") cells=[";
+  // for (auto q : global_cell_indices)
+  //   s << q << " ";
+  // s << "] (" << num_ghost_cells << ")\n";
+  // std::cout << s.str();
 
   auto cell_index_map = std::make_shared<common::IndexMap>(
       _mpi_comm.comm(), num_cells_local, cell_ghosts, 1);
