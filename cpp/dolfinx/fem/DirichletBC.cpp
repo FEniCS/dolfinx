@@ -374,7 +374,15 @@ Eigen::Array<std::int32_t, Eigen::Dynamic, 2> _locate_dofs_geometrical(
       = marker(dof_coordinates1);
     
   // FIXME: What does remote do?
-  _locate_dofs_topological(V, dim, entities, false);
+  Eigen::Array<std::int32_t, Eigen::Dynamic, 2> entity_dofs = 
+      _locate_dofs_topological(V, dim, entities, false);
+
+  // std::cout << entity_dofs(0, 1) << std::endl;
+  std::vector<std::array<std::int32_t, 2>> dofs;
+  for (Eigen::Index i = 0; i < entity_dofs.rows(); ++i)
+  {
+    std::cout << entity_dofs(i, 0) << std::endl;
+  }
 
   throw std::runtime_error("JD: Not yet implemented!");
 }
