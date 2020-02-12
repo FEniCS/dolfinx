@@ -114,7 +114,7 @@ public:
   std::int32_t num_nodes() const { return _offsets.rows() - 1; }
 
   /// Number of connections for given node
-  /// @param [in] Node index
+  /// @param [in] node Node index
   /// @return The number of outgoing links (edges) from the node
   int num_links(int node) const
   {

@@ -89,7 +89,7 @@ build_basic_dofmap(const mesh::Topology& topology,
 
   // Allocate dofmap memory
   const int num_cells = topology.connectivity(D, 0)->num_nodes();
-  std::vector<PetscInt> dofs(num_cells * local_dim);
+  std::vector<std::int32_t> dofs(num_cells * local_dim);
   std::vector<std::int32_t> cell_ptr(num_cells + 1, local_dim);
   cell_ptr[0] = 0;
   std::partial_sum(cell_ptr.begin() + 1, cell_ptr.end(), cell_ptr.begin() + 1);
@@ -436,7 +436,7 @@ DofMapBuilder::build(MPI_Comm comm, const mesh::Topology& topology,
   assert(element_dof_layout);
   const int bs = element_dof_layout->block_size();
   std::shared_ptr<common::IndexMap> index_map;
-  Eigen::Array<PetscInt, Eigen::Dynamic, 1> dofmap;
+  Eigen::Array<std::int32_t, Eigen::Dynamic, 1> dofmap;
   if (bs == 1)
   {
     std::tie(index_map, dofmap) = DofMapBuilder::build(
@@ -475,7 +475,8 @@ fem::DofMap DofMapBuilder::build_submap(const DofMap& dofmap_parent,
 
   // Build dofmap by extracting from parent
   const std::int32_t dofs_per_cell = element_map_view.size();
-  Eigen::Array<PetscInt, Eigen::Dynamic, 1> dofmap(dofs_per_cell * num_cells);
+  Eigen::Array<std::int32_t, Eigen::Dynamic, 1> dofmap(dofs_per_cell
+                                                       * num_cells);
 
   for (int c = 0; c < num_cells; ++c)
   {
@@ -488,7 +489,7 @@ fem::DofMap DofMapBuilder::build_submap(const DofMap& dofmap_parent,
 }
 //-----------------------------------------------------------------------------
 std::tuple<std::unique_ptr<common::IndexMap>,
-           Eigen::Array<PetscInt, Eigen::Dynamic, 1>>
+           Eigen::Array<std::int32_t, Eigen::Dynamic, 1>>
 DofMapBuilder::build(MPI_Comm comm, const mesh::Topology& topology,
                      const mesh::CellType cell_type,
                      const ElementDofLayout& element_dof_layout,
@@ -544,8 +545,8 @@ DofMapBuilder::build(MPI_Comm comm, const mesh::Topology& topology,
   // FIXME: There is an assumption here on the dof order for an element.
   //        It should come from the ElementDofLayout.
   // Build re-ordered dofmap, accounting for block size
-  Eigen::Array<PetscInt, Eigen::Dynamic, 1> dofmap(node_graph0.array().rows()
-                                                   * block_size);
+  Eigen::Array<std::int32_t, Eigen::Dynamic, 1> dofmap(
+      node_graph0.array().rows() * block_size);
   for (std::int32_t cell = 0; cell < node_graph0.num_nodes(); ++cell)
   {
     const std::int32_t local_dim0 = node_graph0.num_links(cell);

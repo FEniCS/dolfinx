@@ -147,7 +147,7 @@ public:
   /// @return ghost_procs Map of cell_index to vector of sharing
   ///   processes for those cells that have multiple owners
   static std::map<std::int64_t, std::vector<int>> compute_halo_cells(
-      MPI_Comm comm, std::vector<int> parttition,
+      MPI_Comm comm, std::vector<int> partition,
       const mesh::CellType cell_type,
       const Eigen::Ref<const Eigen::Array<std::int64_t, Eigen::Dynamic,
                                           Eigen::Dynamic, Eigen::RowMajor>>&
