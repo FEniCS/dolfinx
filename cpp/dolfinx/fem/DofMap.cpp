@@ -19,6 +19,16 @@ using namespace dolfinx::fem;
 
 namespace
 {
+template <typename T>
+Eigen::Array<std::int32_t, Eigen::Dynamic, 1>
+remap_dofs(const std::vector<std::int32_t>& old_to_new,
+           const Eigen::Array<T, Eigen::Dynamic, 1>& dofs_old)
+{
+  Eigen::Array<std::int32_t, Eigen::Dynamic, 1> dofmap(dofs_old.rows());
+  for (Eigen::Index i = 0; i < dofmap.size(); ++i)
+    dofmap[i] = old_to_new[dofs_old[i]];
+  return dofmap;
+}
 
 // Build a collapsed DofMap from a dofmap view
 fem::DofMap build_collapsed_dofmap(MPI_Comm comm, const DofMap& dofmap_view,
@@ -121,27 +131,27 @@ fem::DofMap build_collapsed_dofmap(MPI_Comm comm, const DofMap& dofmap_view,
   // Build new dofmap
   const Eigen::Array<PetscInt, Eigen::Dynamic, 1>& dof_array_view
       = dofmap_view.dof_array();
-  Eigen::Array<PetscInt, Eigen::Dynamic, 1> _dofmap(dof_array_view.size());
-  for (Eigen::Index i = 0; i < _dofmap.size(); ++i)
-    _dofmap[i] = old_to_new[dof_array_view[i]];
+  Eigen::Array<std::int32_t, Eigen::Dynamic, 1> dofmap
+      = remap_dofs(old_to_new, dof_array_view);
 
   // Dimension sanity checks
   assert(element_dof_layout);
-  assert(_dofmap.size()
+  assert(dofmap.rows()
          == (cells->num_nodes() * element_dof_layout->num_dofs()));
 
-  return fem::DofMap(element_dof_layout, index_map, _dofmap);
+  return fem::DofMap(element_dof_layout, index_map, dofmap);
 }
 } // namespace
 
 //-----------------------------------------------------------------------------
 DofMap::DofMap(std::shared_ptr<const ElementDofLayout> element_dof_layout,
                std::shared_ptr<const common::IndexMap> index_map,
-               const Eigen::Array<PetscInt, Eigen::Dynamic, 1>& dofmap)
+               const Eigen::Array<std::int32_t, Eigen::Dynamic, 1>& dofmap)
     : element_dof_layout(element_dof_layout), index_map(index_map),
-      _dofmap(dofmap)
+      _dofmap(dofmap.rows())
 {
-  // Do nothing
+  // Copy the dofmap data as the types for dofmap and _dofmap may differ
+  std::copy(dofmap.data(), dofmap.data() + dofmap.rows(), _dofmap.data());
 }
 //-----------------------------------------------------------------------------
 DofMap DofMap::extract_sub_dofmap(const std::vector<int>& component,
@@ -208,11 +218,6 @@ void DofMap::set(Eigen::Ref<Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1>> x,
 {
   for (Eigen::Index i = 0; i < _dofmap.rows(); ++i)
     x[_dofmap[i]] = value;
-}
-//-----------------------------------------------------------------------------
-const Eigen::Array<PetscInt, Eigen::Dynamic, 1>& DofMap::dof_array() const
-{
-  return _dofmap;
 }
 //-----------------------------------------------------------------------------
 std::string DofMap::str(bool verbose) const
