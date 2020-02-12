@@ -335,7 +335,15 @@ Mesh::Mesh(
 
   // Initialise cell topology
   Eigen::Array<std::int64_t, Eigen::Dynamic, 1> cell_ghosts(num_ghost_cells);
-  std::cout << "cell_ghosts = " << cell_ghosts << " \n";
+  std::copy(global_cell_indices.begin() + num_cells_local,
+            global_cell_indices.end(), cell_ghosts.data());
+
+  std::stringstream s;
+  s << dolfinx::MPI::rank(comm) << ") cells=[";
+  for (auto q : global_cell_indices)
+    s << q << " ";
+  s << "] (" << num_ghost_cells << ")\n";
+  std::cout << s.str();
 
   auto cell_index_map = std::make_shared<common::IndexMap>(
       _mpi_comm.comm(), num_cells_local, cell_ghosts, 1);
