@@ -273,7 +273,7 @@ void mesh(py::module& m)
       .def(                                                                    \
           py::init<std::shared_ptr<const dolfinx::mesh::Mesh>, std::size_t>()) \
       .def(py::init<                                                           \
-           std::shared_ptr<const dolfinx::mesh::Mesh>, std::size_t,            \
+           std::shared_ptr<const dolfinx::mesh::Mesh>, int,                    \
            const Eigen::Ref<const Eigen::Array<                                \
                SCALAR, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>>&,     \
            const Eigen::Ref<const Eigen::Array<SCALAR, 1, Eigen::Dynamic,      \
