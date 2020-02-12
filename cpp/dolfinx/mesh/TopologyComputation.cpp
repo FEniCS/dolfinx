@@ -638,7 +638,7 @@ TopologyComputation::compute_connectivity(const Topology& topology,
   {
     return {std::make_shared<graph::AdjacencyList<std::int32_t>>(
                 c_d0_0->num_nodes()),
-            c_d0_d0, nullptr};
+            nullptr};
   }
   else if (d0 < d1)
   {
