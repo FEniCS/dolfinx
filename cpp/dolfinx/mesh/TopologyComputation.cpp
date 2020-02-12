@@ -59,12 +59,17 @@ sort_by_perm(const Eigen::Array<T, Eigen::Dynamic, Eigen::Dynamic,
 }
 //-----------------------------------------------------------------------------
 
-/// TODO
+/// Get the shared entities, a map from local index to the set of sharing
+/// processes.
+///
 /// @param [in] neighbour_comm The MPI neighborhood communicator
-/// @param [in] send_entities TODO
-/// @param [in] send_index TODO
-/// @param [in] num_vertices TODO
-/// @return TODO
+/// @param [in] send_entities Lists of entities (as vertex indices) to send to
+/// other processes
+/// @param [in] send_index Local index of sent entities (one for each in
+/// send_entities)
+/// @param [in] num_vertices Number of vertices per entity
+/// @return Tuple of (shared_entities and recv_index) where recv_index is the
+/// matching received index to send_index, if the entities exist, -1 otherwise.
 std::tuple<std::map<std::int32_t, std::set<std::int32_t>>,
            std::vector<std::vector<std::int32_t>>>
 get_shared_entities(MPI_Comm neighbour_comm,
@@ -135,8 +140,9 @@ get_shared_entities(MPI_Comm neighbour_comm,
 //-----------------------------------------------------------------------------
 
 /// Communicate with sharing processes to find out which entities are
-/// ghosts and return a mapping vector to move them to the end of the
-/// local range.
+/// ghosts and return a mapping vector to move these local indices to
+/// the end of the local range. Also returns the index map, and shared
+/// entities, i.e. the set of all processes which share each shared entity.
 /// @param [in] comm MPI Communicator
 /// @param [in] shared_vertices Map from local vertex index to list of
 ///   processes
@@ -146,7 +152,7 @@ get_shared_entities(MPI_Comm neighbour_comm,
 /// @param [in] entity_index Initial numbering for each row in
 /// entity_list
 /// @param [in] entity_count Number of unique entities
-/// @returns Tuple of (local_indices, index map, shared entities TODO: explain the last one)
+/// @returns Tuple of (local_indices, index map, shared entities)
 std::tuple<std::vector<int>, std::shared_ptr<common::IndexMap>,
            std::map<std::int32_t, std::set<std::int32_t>>>
 get_local_indexing(
@@ -272,6 +278,8 @@ get_local_indexing(
     std::vector<int> recv_global_index_offsets;
 
     // Send global indices for same entities that we sent before
+    // This uses the same pattern as before, so we can match up
+    // the received data to the indices in recv_index
     for (int np = 0; np < neighbour_size; ++np)
     {
       for (std::int32_t index : send_index[np])
@@ -331,7 +339,7 @@ get_local_indexing(
 /// @param [in] dim Topological dimension of the entities to be computed
 /// @return Returns the (cell-entity connectivity, entity-cell
 ///   connectivity, index map for the entity distribution across
-///   processes, ?????)
+///   processes, shared entities)
 std::tuple<std::shared_ptr<graph::AdjacencyList<std::int32_t>>,
            std::shared_ptr<graph::AdjacencyList<std::int32_t>>,
            std::shared_ptr<common::IndexMap>,
