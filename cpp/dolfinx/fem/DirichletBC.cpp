@@ -381,7 +381,13 @@ Eigen::Array<std::int32_t, Eigen::Dynamic, 2> _locate_dofs_geometrical(
   std::vector<std::array<std::int32_t, 2>> dofs;
   for (Eigen::Index i = 0; i < entity_dofs.rows(); ++i)
   {
-    std::cout << entity_dofs(i, 0) << std::endl;
+    if (marked_dofs1[entity_dofs(i, 1)])
+    {
+      // std::cout << "Marked" << std::endl;
+      dofs.push_back(
+          {(std::int32_t)entity_dofs(i, 0), (std::int32_t)entity_dofs(i, 1)});
+    }
+    // std::cout << entity_dofs(i, 0) << std::endl;
   }
 
   throw std::runtime_error("JD: Not yet implemented!");
