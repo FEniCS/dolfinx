@@ -188,7 +188,7 @@ def test_eval_multiple(W):
     u.eval(x[0], cells[0])
 
 
-def test_eval_parallel(7, 11):
+def test_eval_parallel():
     mesh = UnitSquareMesh(MPI.comm_world, 7, 7)
     cmap = fem.create_coordinate_map(mesh.ufl_domain())
     mesh.geometry.coord_mapping = cmap
