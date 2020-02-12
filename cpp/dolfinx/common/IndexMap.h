@@ -46,6 +46,18 @@ public:
   ///   of owned entries
   /// @param[in] ghosts The global indices of ghost entries
   /// @param[in] block_size The block size of the IndexMap
+  IndexMap(MPI_Comm mpi_comm, std::int32_t local_size,
+           const std::vector<std::int64_t>& ghosts, int block_size);
+
+  /// Create Index map with local_size owned blocks on this process, and
+  /// blocks have size block_size.
+  ///
+  /// Collective
+  /// @param[in] mpi_comm The MPI communicator
+  /// @param[in] local_size Local size of the IndexMap, i.e. the number
+  ///   of owned entries
+  /// @param[in] ghosts The global indices of ghost entries
+  /// @param[in] block_size The block size of the IndexMap
   IndexMap(
       MPI_Comm mpi_comm, std::int32_t local_size,
       const Eigen::Ref<const Eigen::Array<std::int64_t, Eigen::Dynamic, 1>>&
@@ -135,6 +147,15 @@ public:
     }
   }
 
+  /// @todo Reconsider name
+  /// Local (owned) indices shared with neighbour processes, i.e. are
+  /// ghosts on other processes
+  /// @return List of indices that are ghosted on other processes
+  const std::vector<std::int32_t>& forward_indices() const
+  {
+    return _forward_indices;
+  }
+
   /// Owner rank (on global communicator) of each ghost entry
   Eigen::Array<std::int32_t, Eigen::Dynamic, 1> ghost_owners() const;
 
@@ -163,11 +184,10 @@ public:
   /// the index as a ghost. The size of the input array local_data must
   /// be the same as n * size_local().
   /// @param[in] local_data Local data associated with each owned local
-  ///                       index to be sent to process where the data
-  ///                       is ghosted. Size must be n * size_local().
+  ///   index to be sent to process where the data is ghosted. Size must
+  ///   be n * size_local().
   /// @param[in,out] remote_data Ghost data on this process received
-  ///                            from the owning process. Size will be n
-  ///                            * num_ghosts().
+  ///   from the owning process. Size will be n * num_ghosts().
   /// @param[in] n Number of data items per index
   void scatter_fwd(const std::vector<std::int64_t>& local_data,
                    std::vector<std::int64_t>& remote_data, int n) const;
@@ -176,11 +196,10 @@ public:
   /// the index as a ghost. The size of the input array local_data must
   /// be the same as n * size_local().
   /// @param[in] local_data Local data associated with each owned local
-  ///                       index to be sent to process where the data
-  ///                       is ghosted. Size must be n * size_local().
+  ///   index to be sent to process where the data is ghosted. Size must
+  ///   be n * size_local().
   /// @param[in,out] remote_data Ghost data on this process received
-  ///                            from the owning process. Size will be n
-  ///                            * num_ghosts().
+  ///   from the owning process. Size will be n * num_ghosts().
   /// @param[in] n Number of data items per index
   void scatter_fwd(const std::vector<std::int32_t>& local_data,
                    std::vector<std::int32_t>& remote_data, int n) const;
@@ -189,33 +208,31 @@ public:
   /// the index as a ghost. The size of the input array local_data must
   /// be the same as n * size_local().
   /// @param[in] local_data Local data associated with each owned local
-  ///                       index to be sent to process where the data
-  ///                       is ghosted. Size must be n * size_local().
+  ///   index to be sent to process where the data is ghosted. Size must
+  ///   be n * size_local().
   /// @param[in] n Number of data items per index
   /// @return Ghost data on this process received from the owning
-  ///         process. Size will be n * num_ghosts().
+  ///   process. Size will be n * num_ghosts().
   std::vector<std::int64_t>
   scatter_fwd(const std::vector<std::int64_t>& local_data, int n) const;
 
   /// Send n values for each index that is owned to processes that have
   /// the index as a ghost.
   /// @param[in] local_data Local data associated with each owned local
-  ///                       index to be sent to process where the data
-  ///                       is ghosted. Size must be n * size_local().
+  ///   index to be sent to process where the data is ghosted. Size must
+  ///   be n * size_local().
   /// @param[in] n Number of data items per index
   /// @return Ghost data on this process received from the owning
-  ///         process. Size will be n * num_ghosts().
+  ///   process. Size will be n * num_ghosts().
   std::vector<std::int32_t>
   scatter_fwd(const std::vector<std::int32_t>& local_data, int n) const;
 
   /// Send n values for each ghost index to owning to the process.
   /// @param[in,out] local_data Local data associated with each owned
-  ///                           local index to be sent to process where
-  ///                           the data is ghosted. Size must be n *
-  ///                           size_local().
+  ///   local index to be sent to process where the data is ghosted.
+  ///   Size must be n * size_local().
   /// @param[in] remote_data Ghost data on this process received from
-  ///                        the owning process. Size will be n *
-  ///                        num_ghosts().
+  ///   the owning process. Size will be n * num_ghosts().
   /// @param[in] n Number of data items per index
   /// @param[in] op Sum or set received values in local_data
   void scatter_rev(std::vector<std::int64_t>& local_data,
@@ -224,12 +241,10 @@ public:
 
   /// Send n values for each ghost index to owning to the process.
   /// @param[in,out] local_data Local data associated with each owned
-  ///                           local index to be sent to process where
-  ///                           the data is ghosted. Size must be n *
-  ///                           size_local().
+  ///   local index to be sent to process where the data is ghosted.
+  ///   Size must be n * size_local().
   /// @param[in] remote_data Ghost data on this process received from
-  ///                        the owning process. Size will be n *
-  ///                        num_ghosts().
+  ///   the owning process. Size will be n * num_ghosts().
   /// @param[in] n Number of data items per index
   /// @param[in] op Sum or set received values in local_data
   void scatter_rev(std::vector<std::int32_t>& local_data,

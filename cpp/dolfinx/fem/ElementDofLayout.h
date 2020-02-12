@@ -39,7 +39,7 @@ public:
       const std::vector<std::vector<std::set<int>>>& entity_dofs,
       const std::vector<int>& parent_map,
       const std::vector<std::shared_ptr<const ElementDofLayout>> sub_dofmaps,
-      const mesh::CellType cell_type);
+      const mesh::CellType cell_type, const int* base_permutations);
 
   /// Copy-like constructor with option to reset (clear) parent map
   ElementDofLayout(const ElementDofLayout& element_dof_layout,
@@ -124,7 +124,11 @@ public:
   ///         another map).
   bool is_view() const;
 
-  int* base_permutations() const { return _base_permutations; }
+  Eigen::Array<int, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
+  base_permutations() const
+  {
+    return _base_permutations;
+  }
 
 private:
   // Block size
@@ -156,7 +160,9 @@ private:
   // List of sub dofmaps
   std::vector<std::shared_ptr<const ElementDofLayout>> _sub_dofmaps;
 
-  int* _base_permutations;
+  // The base permutations of the DoFs
+  Eigen::Array<int, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
+      _base_permutations;
 };
 } // namespace fem
 } // namespace dolfinx
