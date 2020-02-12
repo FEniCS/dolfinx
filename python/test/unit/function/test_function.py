@@ -188,10 +188,8 @@ def test_eval_multiple(W):
     u.eval(x[0], cells[0])
 
 
-@pytest.mark.parametrize("num_elements", [4, 7])
-@pytest.mark.parametrize("num_points", [6, 11])
-def test_eval_parallel(num_elements, num_points):
-    mesh = UnitSquareMesh(MPI.comm_world, num_elements, num_elements)
+def test_eval_parallel(7, 11):
+    mesh = UnitSquareMesh(MPI.comm_world, 7, 7)
     cmap = fem.create_coordinate_map(mesh.ufl_domain())
     mesh.geometry.coord_mapping = cmap
 
@@ -204,12 +202,12 @@ def test_eval_parallel(num_elements, num_points):
     u = Function(V)
     u.interpolate(func)
 
-    x_line = np.linspace(0, 1, num_points)
-    y_line = np.linspace(0, 0.9, num_points)
+    x_line = np.linspace(0, 1, 11)
+    y_line = np.linspace(0, 0.9, 11)
 
     tree = geometry.BoundingBoxTree(mesh, mesh.geometry.dim)
 
-    points = np.vstack((x_line, y_line, np.zeros(num_points)))
+    points = np.vstack((x_line, y_line, np.zeros(11)))
 
     cells = geometry.compute_first_entity_collision(tree, mesh, points.T)
     u_eval = u.eval(points.T, cells)
