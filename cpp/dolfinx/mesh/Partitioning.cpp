@@ -254,6 +254,7 @@ distribute_cells(
   std::vector<std::int64_t> recv_data;
   MPI::neighbor_all_to_all(neighbour_comm, send_offsets, send_data,
                            recv_offsets, recv_data);
+  MPI_Comm_free(&neighbour_comm);
 
   std::map<std::int64_t, std::int32_t> tag_to_position;
   for (std::size_t i = 0; i < stored_tag.size(); ++i)
