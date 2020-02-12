@@ -182,7 +182,7 @@ def xtest_assembly_dS_domains(mode):
 
 
 @parametrize_ghost_mode
-def xtest_additivity(mode):
+def test_additivity(mode):
     mesh = dolfinx.UnitSquareMesh(dolfinx.MPI.comm_world, 12, 12, ghost_mode=mode)
     V = dolfinx.FunctionSpace(mesh, ("CG", 1))
 
