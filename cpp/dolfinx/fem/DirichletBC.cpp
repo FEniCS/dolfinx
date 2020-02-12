@@ -378,19 +378,27 @@ Eigen::Array<std::int32_t, Eigen::Dynamic, 2> _locate_dofs_geometrical(
       _locate_dofs_topological(V, dim, entities, false);
 
   // std::cout << entity_dofs(0, 1) << std::endl;
-  std::vector<std::array<std::int32_t, 2>> dofs;
+  std::vector<std::array<std::int32_t, 2>> bc_dofs;
   for (Eigen::Index i = 0; i < entity_dofs.rows(); ++i)
   {
     if (marked_dofs1[entity_dofs(i, 1)])
     {
       // std::cout << "Marked" << std::endl;
-      dofs.push_back(
+      bc_dofs.push_back(
           {(std::int32_t)entity_dofs(i, 0), (std::int32_t)entity_dofs(i, 1)});
     }
     // std::cout << entity_dofs(i, 0) << std::endl;
   }
 
-  throw std::runtime_error("JD: Not yet implemented!");
+  Eigen::Array<std::int32_t, Eigen::Dynamic, 2> dofs(bc_dofs.size(), 2);
+  for (std::size_t i = 0; i < bc_dofs.size(); ++i)
+  {
+    dofs(i, 0) = bc_dofs[i][0];
+    dofs(i, 1) = bc_dofs[i][1];
+  }
+
+  // throw std::runtime_error("JD: Not yet implemented!");
+  return dofs;
 }
 //-----------------------------------------------------------------------------
 Eigen::Array<std::int32_t, Eigen::Dynamic, 1>
