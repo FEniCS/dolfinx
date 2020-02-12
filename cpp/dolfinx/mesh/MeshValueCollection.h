@@ -233,7 +233,7 @@ MeshValueCollection<T>::MeshValueCollection(
     }
     _mesh->create_connectivity(_dim, mesh_tdim);
 
-    const graph::AdjacencyList<std::int32_t>& connectivity
+    const std::shared_ptr<const graph::AdjacencyList<std::int32_t>> connectivity
         = _mesh->topology().connectivity(_dim, mesh_tdim);
 
     // Get cell type for entity on which the MVC lives
@@ -267,14 +267,14 @@ MeshValueCollection<T>::MeshValueCollection(
       }
 
       const std::size_t entity_index = map_it->second;
-      assert(connectivity.links(entity_index) > 0);
+      assert(connectivity->num_links(entity_index) > 0);
 
       const MeshEntity entity(*_mesh, _dim, entity_index);
-      for (int i = 0; i < connectivity.num_links(entity_index); ++i)
+      for (int i = 0; i < connectivity->num_links(entity_index); ++i)
       {
         // Create cell
         const mesh::MeshEntity cell(*_mesh, mesh_tdim,
-                              connectivity.links(entity_index)[i]);
+                              connectivity->links(entity_index)[i]);
 
         // Find the local entity index
         const std::size_t local_entity = cell.index(entity);
