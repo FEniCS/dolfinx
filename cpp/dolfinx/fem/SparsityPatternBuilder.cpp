@@ -25,7 +25,7 @@ void SparsityPatternBuilder::cells(
   auto cells = topology.connectivity(D, 0);
   assert(cells);
   for (int c = 0; c < cells->num_nodes(); ++c)
-    pattern.insert_local(dofmaps[0]->cell_dofs(c), dofmaps[1]->cell_dofs(c));
+    pattern.insert(dofmaps[0]->cell_dofs(c), dofmaps[1]->cell_dofs(c));
 }
 //-----------------------------------------------------------------------------
 void SparsityPatternBuilder::interior_facets(
@@ -75,7 +75,7 @@ void SparsityPatternBuilder::interior_facets(
                 macro_dofs[i].data() + cell_dofs0.size());
     }
 
-    pattern.insert_local(macro_dofs[0], macro_dofs[1]);
+    pattern.insert(macro_dofs[0], macro_dofs[1]);
   }
 }
 //-----------------------------------------------------------------------------
@@ -104,8 +104,8 @@ void SparsityPatternBuilder::exterior_facets(
 
     auto cells = connectivity->links(f);
     assert(cells.rows() == 1);
-    pattern.insert_local(dofmaps[0]->cell_dofs(cells[0]),
-                         dofmaps[1]->cell_dofs(cells[0]));
+    pattern.insert(dofmaps[0]->cell_dofs(cells[0]),
+                   dofmaps[1]->cell_dofs(cells[0]));
   }
 }
 //-----------------------------------------------------------------------------
