@@ -335,8 +335,9 @@ Mesh::Mesh(
 
   // Initialise cell topology
   Eigen::Array<std::int64_t, Eigen::Dynamic, 1> cell_ghosts(num_ghost_cells);
-  std::copy(global_cell_indices.begin() + num_cells_local,
-            global_cell_indices.end(), cell_ghosts.data());
+  if (global_cell_indices.size() > 0)
+    std::copy(global_cell_indices.begin() + num_cells_local,
+              global_cell_indices.end(), cell_ghosts.data());
 
   std::stringstream s;
   s << dolfinx::MPI::rank(comm) << ") cells=[";
