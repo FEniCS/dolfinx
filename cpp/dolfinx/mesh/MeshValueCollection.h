@@ -172,7 +172,7 @@ MeshValueCollection<T>::MeshValueCollection(std::shared_ptr<const Mesh> mesh,
 //---------------------------------------------------------------------------
 template <typename T>
 MeshValueCollection<T>::MeshValueCollection(
-    std::shared_ptr<const Mesh> mesh, std::size_t dim,
+    std::shared_ptr<const Mesh> mesh, int dim,
     const Eigen::Ref<const Eigen::Array<T, Eigen::Dynamic, Eigen::Dynamic,
                                         Eigen::RowMajor>>& cells,
     const Eigen::Ref<const Eigen::Array<T, 1, Eigen::Dynamic, Eigen::RowMajor>>&
@@ -191,10 +191,10 @@ MeshValueCollection<T>::MeshValueCollection(
   // of all dimesions are not initialized.
   _mesh->create_entities(dim);
 
-  const int D = _mesh->topology().dim();
+  const int mesh_tdim = _mesh->topology().dim();
 
-  // Handle cells and vertex as a special case
-  if ((D == _dim) || (_dim == 0))
+  // Handle cells and vetices as a special case
+  if ((mesh_tdim == _dim) || (_dim == 0))
   {
     for (Eigen::Index cell_index = 0; cell_index < values_data.cols();
          ++cell_index)
@@ -208,11 +208,11 @@ MeshValueCollection<T>::MeshValueCollection(
     // Number of vertices per cell is equal to the size of first
     // array of connectivity.
     const int num_vertices_per_entity
-          = _mesh->topology().connectivity(_dim, 0)->size(0);
-    std::vector<std::int32_t> v(num_vertices_per_entity);
+          = _mesh->topology().connectivity(_dim, 0)->num_links(0);
+    std::vector<std::int64_t> v(num_vertices_per_entity);
 
     // Map from {entity vertex indices} to entity index
-    std::map<std::vector<int>, size_t> entity_map;
+    std::map<std::vector<std::int64_t>, std::size_t> entity_map;
 
     const std::vector<std::int64_t>& global_indices
         = _mesh->topology().global_indices(0);
@@ -224,17 +224,17 @@ MeshValueCollection<T>::MeshValueCollection(
         v[0] = global_indices[m.index()];
       else
       {
-        v.clear();
+        int i = 0;
         for (auto& vtx : mesh::EntityRange(m, 0))
-          v.push_back(global_indices[vtx.index()]);
+          v[i] = global_indices[vttx.index()];
         std::sort(v.begin(), v.end());
       }
       entity_map[v] = m.index();
     }
-    _mesh->create_connectivity(_dim, D);
+    _mesh->create_connectivity(_dim, mesh_tdim);
 
-    assert(_mesh->topology().connectivity(_dim, D));
-    const Connectivity& connectivity = *_mesh->topology().connectivity(_dim, D);
+    const graph::AdjacencyList<std::int32_t>& connectivity
+        = _mesh->topology().connectivity(_dim, mesh_tdim);
 
     // Get cell type for entity on which the MVC lives
     const mesh::CellType entity_cell_type
@@ -267,22 +267,20 @@ MeshValueCollection<T>::MeshValueCollection(
       }
 
       const std::size_t entity_index = map_it->second;
-      assert(connectivity.size(entity_index) > 0);
+      assert(connectivity.links(entity_index) > 0);
 
       const MeshEntity entity(*_mesh, _dim, entity_index);
-      for (std::size_t i = 0; i < connectivity.size(entity_index); ++i)
+      for (int i = 0; i < connectivity.num_links(entity_index); ++i)
       {
         // Create cell
-        const mesh::MeshEntity cell(*_mesh, D,
-                              connectivity.connections(entity_index)[i]);
+        const mesh::MeshEntity cell(*_mesh, mesh_tdim,
+                              connectivity.links(entity_index)[i]);
 
         // Find the local entity index
         const std::size_t local_entity = cell.index(entity);
 
         // Insert into map
-        const std::pair<std::size_t, std::size_t> key(cell.index(),
-                                                      local_entity);
-        _values.insert({key, values_data(j)});
+        _values.insert({{cell.index(), local_entity}, values_data(j)});
       }
     }
   }
