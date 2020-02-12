@@ -68,11 +68,12 @@ ElementDofLayout::ElementDofLayout(
   }
 }
 //-----------------------------------------------------------------------------
-// ElementDofLayout::ElementDofLayout(const ElementDofLayout& element_dof_layout)
-//     : ElementDofLayout(element_dof_layout)
-// {
-//   _parent_map.clear();
-// }
+ElementDofLayout ElementDofLayout::copy() const
+{
+  ElementDofLayout layout(*this);
+  layout._parent_map.clear();
+  return layout;
+}
 //-----------------------------------------------------------------------------
 mesh::CellType ElementDofLayout::cell_type() const { return _cell_type; }
 //-----------------------------------------------------------------------------

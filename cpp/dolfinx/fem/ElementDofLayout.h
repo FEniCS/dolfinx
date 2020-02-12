@@ -41,8 +41,8 @@ public:
       const mesh::CellType cell_type,
       const std::array<int, 4> entity_block_size);
 
-  /// Copy-like constructor
-  // ElementDofLayout(const ElementDofLayout& element_dof_layout);
+  /// Copy the DOF layout, discarding any parent information
+  ElementDofLayout copy() const;
 
   /// Copy constructor
   ElementDofLayout(const ElementDofLayout& dofmap) = default;
