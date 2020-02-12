@@ -124,6 +124,7 @@ public:
   ///         another map).
   bool is_view() const;
 
+  /// Returns the base permutations of the DoFs, as computed by FFCx
   Eigen::Array<int, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
   base_permutations() const
   {
