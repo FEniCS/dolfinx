@@ -62,7 +62,8 @@ sort_by_perm(const Eigen::Array<T, Eigen::Dynamic, Eigen::Dynamic,
 /// Get the shared entities, a map from local index to the set of
 /// sharing processes.
 ///
-/// @param [in] neighbour_comm The MPI neighborhood communicator
+/// @param [in] neighbour_comm The MPI neighborhood communicator for all
+///   processes sharing vertices
 /// @param [in] send_entities Lists of entities (as vertex indices) to
 ///   send to other processes
 /// @param [in] send_index Local index of sent entities (one for each in
