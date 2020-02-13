@@ -136,9 +136,9 @@ def test_manufactured_vector1(family, degree, filename, datadir):
         mesh = xdmf.read_mesh(GhostMode.none)
 
     # FIXME: these test are currently failing on unordered meshes
-    # if "tetra" in filename:
-    #    if family[0] == "N1curl" or family[0] == "N2curl" and degree == 2:
-    #        Ordering.order_simplex(mesh)
+    if "tetra" in filename:
+        if family[0] == "N1curl":
+            Ordering.order_simplex(mesh)
 
     V = FunctionSpace(mesh, (family[0], degree + family[1]))
     u, v = ufl.TrialFunction(V), ufl.TestFunction(V)
@@ -205,9 +205,9 @@ def test_manufactured_vector2(family, degree, filename, datadir):
         mesh = xdmf.read_mesh(GhostMode.none)
 
     # FIXME: these test are currently failing on unordered meshes
-    # if "tetra" in filename:
-    #    if family == "N1curl":
-    #        Ordering.order_simplex(mesh)
+    if "tetra" in filename:
+        if family == "N1curl":
+            Ordering.order_simplex(mesh)
 
     V = FunctionSpace(mesh, (family, degree + 1))
     u, v = ufl.TrialFunction(V), ufl.TestFunction(V)
