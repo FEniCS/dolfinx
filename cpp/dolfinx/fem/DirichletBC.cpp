@@ -373,7 +373,7 @@ Eigen::Array<std::int32_t, Eigen::Dynamic, 2> _locate_dofs_geometrical(
   const Eigen::Array<bool, Eigen::Dynamic, 1> marked_dofs1
       = marker(dof_coordinates1);
     
-  // FIXME: What does remote do?
+  // FIXME: Should remote be passed in too?
   Eigen::Array<std::int32_t, Eigen::Dynamic, 2> entity_dofs = 
       _locate_dofs_topological(V, dim, entities, false);
 
