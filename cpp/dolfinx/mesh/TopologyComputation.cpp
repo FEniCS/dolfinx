@@ -59,17 +59,18 @@ sort_by_perm(const Eigen::Array<T, Eigen::Dynamic, Eigen::Dynamic,
 }
 //-----------------------------------------------------------------------------
 
-/// Get the shared entities, a map from local index to the set of sharing
-/// processes.
+/// Get the shared entities, a map from local index to the set of
+/// sharing processes.
 ///
 /// @param [in] neighbour_comm The MPI neighborhood communicator
-/// @param [in] send_entities Lists of entities (as vertex indices) to send to
-/// other processes
+/// @param [in] send_entities Lists of entities (as vertex indices) to
+///   send to other processes
 /// @param [in] send_index Local index of sent entities (one for each in
-/// send_entities)
+///   send_entities)
 /// @param [in] num_vertices Number of vertices per entity
-/// @return Tuple of (shared_entities and recv_index) where recv_index is the
-/// matching received index to send_index, if the entities exist, -1 otherwise.
+/// @return Tuple of (shared_entities and recv_index) where recv_index
+///   is the matching received index to send_index, if the entities
+///   exist, -1 otherwise.
 std::tuple<std::map<std::int32_t, std::set<std::int32_t>>,
            std::vector<std::vector<std::int32_t>>>
 get_shared_entities(MPI_Comm neighbour_comm,
@@ -142,7 +143,8 @@ get_shared_entities(MPI_Comm neighbour_comm,
 /// Communicate with sharing processes to find out which entities are
 /// ghosts and return a mapping vector to move these local indices to
 /// the end of the local range. Also returns the index map, and shared
-/// entities, i.e. the set of all processes which share each shared entity.
+/// entities, i.e. the set of all processes which share each shared
+/// entity.
 /// @param [in] comm MPI Communicator
 /// @param [in] shared_vertices Map from local vertex index to list of
 ///   processes
@@ -150,7 +152,7 @@ get_shared_entities(MPI_Comm neighbour_comm,
 /// @param [in] entity_list List of entities as 2D array, each entity
 ///   represented by its local vertex indices
 /// @param [in] entity_index Initial numbering for each row in
-/// entity_list
+///   entity_list
 /// @param [in] entity_count Number of unique entities
 /// @returns Tuple of (local_indices, index map, shared entities)
 std::tuple<std::vector<int>, std::shared_ptr<common::IndexMap>,
