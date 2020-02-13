@@ -1,4 +1,4 @@
-// Copyright (C) 2006-2017 Anders Logg and Garth N. Wells
+// Copyright (C) 2006-2020 Anders Logg, Garth N. Wells and Chris Richardson
 //
 // This file is part of DOLFINX (https://www.fenicsproject.org)
 //
@@ -31,11 +31,12 @@ namespace
 {
 //-----------------------------------------------------------------------------
 
-/// Takes an Eigen::Array and obtain the sort permutation to reorder the
-/// rows in ascending order. Each row must be sorted beforehand.
-/// @param [i] array The input array
+/// Takes an array and computes the sort permutation that would reorder
+/// the rows in ascending order
+/// @param[in] array The input array
 /// @return The permutation vector that would order the rows in
 ///   ascending order
+/// @pre Each row of @p array must be sorted
 template <typename T>
 std::vector<int>
 sort_by_perm(const Eigen::Array<T, Eigen::Dynamic, Eigen::Dynamic,
@@ -62,13 +63,13 @@ sort_by_perm(const Eigen::Array<T, Eigen::Dynamic, Eigen::Dynamic,
 /// Get the shared entities, a map from local index to the set of
 /// sharing processes.
 ///
-/// @param [in] neighbour_comm The MPI neighborhood communicator for all
+/// @param[in] neighbour_comm The MPI neighborhood communicator for all
 ///   processes sharing vertices
-/// @param [in] send_entities Lists of entities (as vertex indices) to
+/// @param[in] send_entities Lists of entities (as vertex indices) to
 ///   send to other processes
-/// @param [in] send_index Local index of sent entities (one for each in
+/// @param[in] send_index Local index of sent entities (one for each in
 ///   send_entities)
-/// @param [in] num_vertices Number of vertices per entity
+/// @param[in] num_vertices Number of vertices per entity
 /// @return Tuple of (shared_entities and recv_index) where recv_index
 ///   is the matching received index to send_index, if the entities
 ///   exist, -1 otherwise.
@@ -146,15 +147,15 @@ get_shared_entities(MPI_Comm neighbour_comm,
 /// the end of the local range. Also returns the index map, and shared
 /// entities, i.e. the set of all processes which share each shared
 /// entity.
-/// @param [in] comm MPI Communicator
-/// @param [in] shared_vertices Map from local vertex index to list of
+/// @param[in] comm MPI Communicator
+/// @param[in] shared_vertices Map from local vertex index to list of
 ///   processes
-/// @param [in] global_vertex_indices Global indices of vertices
-/// @param [in] entity_list List of entities as 2D array, each entity
+/// @param[in] global_vertex_indices Global indices of vertices
+/// @param[in] entity_list List of entities as 2D array, each entity
 ///   represented by its local vertex indices
-/// @param [in] entity_index Initial numbering for each row in
+/// @param[in] entity_index Initial numbering for each row in
 ///   entity_list
-/// @param [in] entity_count Number of unique entities
+/// @param[in] entity_count Number of unique entities
 /// @returns Tuple of (local_indices, index map, shared entities)
 std::tuple<std::vector<int>, std::shared_ptr<common::IndexMap>,
            std::map<std::int32_t, std::set<std::int32_t>>>
@@ -334,12 +335,12 @@ get_local_indexing(
 //-----------------------------------------------------------------------------
 
 /// Compute entities of dimension d
-/// @param [in] comm MPI communicator (TODO: full or neighbour hood?)
-/// @param [in] cells Adjacency list for cell-vertex connectivity
-/// @param [in] shared_vertices TODO
-/// @param [in] global_vertex_indices TODO: user global?
-/// @param [in] cell_type Cell type
-/// @param [in] dim Topological dimension of the entities to be computed
+/// @param[in] comm MPI communicator (TODO: full or neighbour hood?)
+/// @param[in] cells Adjacency list for cell-vertex connectivity
+/// @param[in] shared_vertices TODO
+/// @param[in] global_vertex_indices TODO: user global?
+/// @param[in] cell_type Cell type
+/// @param[in] dim Topological dimension of the entities to be computed
 /// @return Returns the (cell-entity connectivity, entity-cell
 ///   connectivity, index map for the entity distribution across
 ///   processes, shared entities)
@@ -456,9 +457,9 @@ compute_entities_by_key_matching(
 
 /// Compute connectivity from entities of dimension d0 to entities of
 /// dimension d1 using the transpose connectivity (d1 -> d0)
-/// @param [in] c_d1_d0 The connectivity from entities of dimension d1
-///   to entities of dimension d0
-/// @param [in] num_entities_d0 The number of entities of dimension d0
+/// @param[in] c_d1_d0 The connectivity from entities of dimension d1 to
+///   entities of dimension d0
+/// @param[in] num_entities_d0 The number of entities of dimension d0
 /// @return The connectivity from entities of dimension d0 to entities
 ///   of dimension d1
 graph::AdjacencyList<std::int32_t>
@@ -496,11 +497,11 @@ compute_from_transpose(const graph::AdjacencyList<std::int32_t>& c_d1_d0,
 //-----------------------------------------------------------------------------
 
 /// Compute the d0 -> d1 connectivity, where d0 > d1
-/// @param [in] c_d0_0 The d0 -> 0 (entity (d0) to vertex) connectivity
-/// @param [in] c_d0_0 The d1 -> 0 (entity (d1) to vertex) connectivity
-/// @param [in] cell_type_d0 The cell type for entities of dimension d0
-/// @param [in] d0 Topological dimension
-/// @param [in] d1 Topological dimension
+/// @param[in] c_d0_0 The d0 -> 0 (entity (d0) to vertex) connectivity
+/// @param[in] c_d0_0 The d1 -> 0 (entity (d1) to vertex) connectivity
+/// @param[in] cell_type_d0 The cell type for entities of dimension d0
+/// @param[in] d0 Topological dimension
+/// @param[in] d1 Topological dimension
 /// @return The d0 -> d1 connectivity
 graph::AdjacencyList<std::int32_t>
 compute_from_map(const graph::AdjacencyList<std::int32_t>& c_d0_0,
