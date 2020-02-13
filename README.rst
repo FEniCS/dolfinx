@@ -5,11 +5,11 @@ DOLFINX
 .. image:: https://circleci.com/gh/FEniCS/dolfinx.svg?style=shield
     :target: https://circleci.com/gh/FEniCS/dolfinx
 
-DOLFINX is an experimental version of DOLFIN. It is being actively
-developed, but is **not ready for production use**. New experimental
-features may come and go as development proceeds.
+DOLFINX is a new version of DOLFIN. It is being actively developed, but
+is **not ready for production use**. New experimental features may come
+and go as development proceeds.
 
-DOLFIN is the computational backend of FEniCS and implements the FEniCS
+DOLFINX is the computational backend of FEniCS and implements the FEniCS
 Problem Solving Environment in Python and C++.
 
 
