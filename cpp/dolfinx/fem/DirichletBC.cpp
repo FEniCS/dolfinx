@@ -355,12 +355,18 @@ Eigen::Array<std::int32_t, Eigen::Dynamic, 2> _locate_dofs_geometrical(
     const std::vector<std::reference_wrapper<function::FunctionSpace>>& V,
     marking_function marker)
 {
-  // FIXME Add remote in parameter list?
+  // FIXME: Calling V.tabulate_dof_coordinates() is very expensive,
+  // especially when we usually want the boundary dofs only. Add
+  // interface that computes dofs coordinates only for specified cell.
+  // FIXME: Add remote in parameter list?
+  // FIXME: Won't work if function spaces are passed in in the incorrect
+  // order. Is this OK?
+
+  // Get function spaces
   const function::FunctionSpace& V0 = V.at(0).get();
   const function::FunctionSpace& V1 = V.at(1).get();
 
   // Compute dof coordinates
-  // FIXME Depends on order functions spaces are passed.
   const Eigen::Array<double, 3, Eigen::Dynamic, Eigen::RowMajor> dof_coordinates
       = V1.tabulate_dof_coordinates().transpose();
 
@@ -404,6 +410,7 @@ Eigen::Array<std::int32_t, Eigen::Dynamic, 2> _locate_dofs_geometrical(
     auto cell_dofs0 = dofmap0.cell_dofs(cell.index());
     auto cell_dofs1 = dofmap1.cell_dofs(cell.index());
     
+    // Loop over cell dofs and add to bc_dofs if marked.
     for (Eigen::Index i = 0; i < cell_dofs1.rows(); ++i)
     {
       if (marked_dofs[cell_dofs1[i]])
