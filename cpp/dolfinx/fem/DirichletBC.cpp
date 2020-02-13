@@ -356,48 +356,78 @@ Eigen::Array<std::int32_t, Eigen::Dynamic, 2> _locate_dofs_geometrical(
     const int dim, const Eigen::Ref<const Eigen::ArrayXi>& entities,
     marking_function marker)
 {
+  // FIXME Add remote in parameter list?
   const function::FunctionSpace& V0 = V.at(0).get();
   const function::FunctionSpace& V1 = V.at(1).get();
 
-  // FIXME: Calling V.tabulate_dof_coordinates() is very expensive,
-  // especially when we usually want the boundary dofs only. Add
-  // interface that computes dofs coordinates only for specified cell.
-
   // Compute dof coordinates
-  // FIXME Currently depends on the order. Won't tabulate coords for a
-  // subspace
-  const Eigen::Array<double, 3, Eigen::Dynamic, Eigen::RowMajor> dof_coordinates1
+  // FIXME Depends on order functions spaces are passed.
+  const Eigen::Array<double, 3, Eigen::Dynamic, Eigen::RowMajor> dof_coordinates
       = V1.tabulate_dof_coordinates().transpose();
 
   // Compute marker for each dof coordinate
-  const Eigen::Array<bool, Eigen::Dynamic, 1> marked_dofs1
-      = marker(dof_coordinates1);
-    
-  // FIXME: Should remote be passed in too?
-  Eigen::Array<std::int32_t, Eigen::Dynamic, 2> entity_dofs = 
-      _locate_dofs_topological(V, dim, entities, false);
+  const Eigen::Array<bool, Eigen::Dynamic, 1> marked_dofs
+      = marker(dof_coordinates);
 
-  // std::cout << entity_dofs(0, 1) << std::endl;
-  std::vector<std::array<std::int32_t, 2>> bc_dofs;
-  for (Eigen::Index i = 0; i < entity_dofs.rows(); ++i)
+  // Get mesh
+  assert(V0.mesh());
+  assert(V1.mesh());
+  if (V0.mesh() != V1.mesh())
+    throw std::runtime_error("Meshes are not the same.");
+  const mesh::Mesh& mesh = *V1.mesh();
+  const std::size_t tdim = mesh.topology().dim();
+
+  assert(V0.element());
+  assert(V1.element());
+  if (!V0.has_element(*V1.element()))
   {
-    if (marked_dofs1[entity_dofs(i, 1)])
-    {
-      // std::cout << "Marked" << std::endl;
-      bc_dofs.push_back(
-          {(std::int32_t)entity_dofs(i, 0), (std::int32_t)entity_dofs(i, 1)});
-    }
-    // std::cout << entity_dofs(i, 0) << std::endl;
+    throw std::runtime_error("Function spaces must have the same elements or "
+                             "one be a subelement of another.");
   }
 
+  // Get dofmaps
+  assert(V0.dofmap());
+  assert(V1.dofmap());
+  const DofMap& dofmap0 = *V0.dofmap();
+  const DofMap& dofmap1 = *V1.dofmap();
+
+  // Initialise entity-cell connectivity
+  // TODO Check if this is needed.
+  mesh.create_entities(tdim);
+  mesh.create_connectivity(dim, tdim);
+
+  // Iterate over cells
+  std::vector<std::array<std::int32_t, 2>> bc_dofs;
+  for (Eigen::Index c = 0; c < mesh.num_entities(tdim); ++c)
+  {
+    const mesh::MeshEntity cell(mesh, tdim, c);
+
+    // Get cell dofmap
+    auto cell_dofs0 = dofmap0.cell_dofs(cell.index());
+    auto cell_dofs1 = dofmap1.cell_dofs(cell.index());
+    
+    for (Eigen::Index i = 0; i < cell_dofs1.rows(); ++i)
+    {
+      if (marked_dofs[cell_dofs1[i]])
+      {
+        bc_dofs.push_back(
+          {(std::int32_t)cell_dofs0[i], (std::int32_t)cell_dofs1[i]});
+      }
+    }
+  }
+
+  // TODO: is removing duplicates at this point worth the effort?
+  // Remove duplicates
+  std::sort(bc_dofs.begin(), bc_dofs.end());
+  bc_dofs.erase(std::unique(bc_dofs.begin(), bc_dofs.end()), bc_dofs.end());
+
+  // Copy to Eigen array
   Eigen::Array<std::int32_t, Eigen::Dynamic, 2> dofs(bc_dofs.size(), 2);
   for (std::size_t i = 0; i < bc_dofs.size(); ++i)
   {
     dofs(i, 0) = bc_dofs[i][0];
     dofs(i, 1) = bc_dofs[i][1];
   }
-
-  // throw std::runtime_error("JD: Not yet implemented!");
   return dofs;
 }
 //-----------------------------------------------------------------------------
