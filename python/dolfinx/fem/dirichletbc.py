@@ -18,8 +18,6 @@ from dolfinx import cpp, function
 
 
 def locate_dofs_geometrical(V: typing.Iterable[typing.Union[cpp.function.FunctionSpace, function.FunctionSpace]],
-                            entity_dim: int,
-                            entities: typing.List[int],
                             marker: types.FunctionType):
     """Locate degrees-of-freedom geometrically using a marker function.
 
@@ -56,7 +54,7 @@ def locate_dofs_geometrical(V: typing.Iterable[typing.Union[cpp.function.Functio
         except AttributeError:
             _V = [V]
 
-    return cpp.fem.locate_dofs_geometrical(_V, entity_dim, entities, marker)
+    return cpp.fem.locate_dofs_geometrical(_V, marker)
 
 
 def locate_dofs_topological(V: typing.Iterable[typing.Union[cpp.function.FunctionSpace, function.FunctionSpace]],

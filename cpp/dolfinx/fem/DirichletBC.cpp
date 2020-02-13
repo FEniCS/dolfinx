@@ -353,7 +353,6 @@ _locate_dofs_topological(const function::FunctionSpace& V, const int entity_dim,
 //-----------------------------------------------------------------------------
 Eigen::Array<std::int32_t, Eigen::Dynamic, 2> _locate_dofs_geometrical(
     const std::vector<std::reference_wrapper<function::FunctionSpace>>& V,
-    const int dim, const Eigen::Ref<const Eigen::ArrayXi>& entities,
     marking_function marker)
 {
   // FIXME Add remote in parameter list?
@@ -394,7 +393,6 @@ Eigen::Array<std::int32_t, Eigen::Dynamic, 2> _locate_dofs_geometrical(
   // Initialise entity-cell connectivity
   // TODO Check if this is needed.
   mesh.create_entities(tdim);
-  mesh.create_connectivity(dim, tdim);
 
   // Iterate over cells
   std::vector<std::array<std::int32_t, 2>> bc_dofs;
@@ -477,11 +475,10 @@ fem::locate_dofs_topological(
 Eigen::Array<std::int32_t, Eigen::Dynamic, Eigen::Dynamic>
 fem::locate_dofs_geometrical(
     const std::vector<std::reference_wrapper<function::FunctionSpace>>& V,
-    const int dim, const Eigen::Ref<const Eigen::ArrayXi>& entities,
     marking_function marker)
 {
   if (V.size() == 2)
-    return _locate_dofs_geometrical(V, dim, entities, marker);
+    return _locate_dofs_geometrical(V, marker);
   else if (V.size() == 1)
     return _locate_dofs_geometrical(V[0].get(), marker);
   else
