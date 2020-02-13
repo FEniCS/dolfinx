@@ -41,9 +41,8 @@ public:
       const std::vector<std::shared_ptr<const ElementDofLayout>> sub_dofmaps,
       const mesh::CellType cell_type, const int* base_permutations);
 
-  /// Copy-like constructor with option to reset (clear) parent map
-  ElementDofLayout(const ElementDofLayout& element_dof_layout,
-                   bool reset_parent);
+  /// Copy the DOF layout, discarding any parent information
+  ElementDofLayout copy() const;
 
   /// Copy constructor
   ElementDofLayout(const ElementDofLayout& dofmap) = default;

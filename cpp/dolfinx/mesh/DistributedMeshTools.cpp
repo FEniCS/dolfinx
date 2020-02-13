@@ -175,9 +175,11 @@ void DistributedMeshTools::init_facet_cell_connections(MPI_Comm comm,
         // Singly attached ghost facet - check with owner of attached
         // cell
         auto c = connectivity->links(f);
-        assert(c[0] >= ghost_offset_c);
-        const int owner = cell_owners[c[0] - ghost_offset_c];
-        send_facet[owner].push_back(global_facets[f]);
+        if (c[0] >= ghost_offset_c)
+        {
+          const int owner = cell_owners[c[0] - ghost_offset_c];
+          send_facet[owner].push_back(global_facets[f]);
+        }
       }
     }
 

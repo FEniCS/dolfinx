@@ -231,10 +231,9 @@ void fem(py::module& m)
   // dolfinx::fem::DofMap
   py::class_<dolfinx::fem::DofMap, std::shared_ptr<dolfinx::fem::DofMap>>(
       m, "DofMap", "DofMap object")
-
       .def(py::init<std::shared_ptr<const dolfinx::fem::ElementDofLayout>,
                     std::shared_ptr<const dolfinx::common::IndexMap>,
-                    const Eigen::Array<PetscInt, Eigen::Dynamic, 1>&>(),
+                    const Eigen::Array<std::int32_t, Eigen::Dynamic, 1>&>(),
            py::arg("element_dof_layout"), py::arg("index_map"),
            py::arg("dofmap"))
       .def_readonly("index_map", &dolfinx::fem::DofMap::index_map)
@@ -354,19 +353,19 @@ void fem(py::module& m)
   m.def("bcs_rows", &dolfinx::fem::bcs_rows);
   m.def("bcs_cols", &dolfinx::fem::bcs_cols);
 
-  // dolfinx::fem::DiscreteOperators
-  py::class_<dolfinx::fem::DiscreteOperators>(m, "DiscreteOperators")
-      .def_static(
-          "build_gradient",
-          [](const dolfinx::function::FunctionSpace& V0,
-             const dolfinx::function::FunctionSpace& V1) {
-            dolfinx::la::PETScMatrix A
-                = dolfinx::fem::DiscreteOperators::build_gradient(V0, V1);
-            Mat _A = A.mat();
-            PetscObjectReference((PetscObject)_A);
-            return _A;
-          },
-          py::return_value_policy::take_ownership);
+//   // dolfinx::fem::DiscreteOperators
+//   py::class_<dolfinx::fem::DiscreteOperators>(m, "DiscreteOperators")
+//       .def_static(
+//           "build_gradient",
+//           [](const dolfinx::function::FunctionSpace& V0,
+//              const dolfinx::function::FunctionSpace& V1) {
+//             dolfinx::la::PETScMatrix A
+//                 = dolfinx::fem::DiscreteOperators::build_gradient(V0, V1);
+//             Mat _A = A.mat();
+//             PetscObjectReference((PetscObject)_A);
+//             return _A;
+//           },
+//           py::return_value_policy::take_ownership);
 
   // dolfinx::fem::FormIntegrals
   py::class_<dolfinx::fem::FormIntegrals,

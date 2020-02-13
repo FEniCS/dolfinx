@@ -812,13 +812,13 @@ PetscErrorCode PETScDMCollection::create_interpolation(DM dmc, DM dmf, Mat* mat,
   return 0;
 }
 //-----------------------------------------------------------------------------
-PetscErrorCode PETScDMCollection::coarsen(DM dmf, MPI_Comm comm, DM* dmc)
+PetscErrorCode PETScDMCollection::coarsen(DM dmf, MPI_Comm, DM* dmc)
 {
   // Get the coarse DM from the fine DM
   return DMGetCoarseDM(dmf, dmc);
 }
 //-----------------------------------------------------------------------------
-PetscErrorCode PETScDMCollection::refine(DM dmc, MPI_Comm comm, DM* dmf)
+PetscErrorCode PETScDMCollection::refine(DM dmc, MPI_Comm, DM* dmf)
 {
   // Get the fine DM from the coarse DM
   return DMGetFineDM(dmc, dmf);

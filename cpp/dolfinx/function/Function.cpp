@@ -240,7 +240,7 @@ void Function::eval(
 
     // Skip negative cell indices
     if (cell_index < 0)
-      break;
+      continue;
 
     // Get cell geometry (coordinate dofs)
     for (int i = 0; i < num_dofs_g; ++i)
