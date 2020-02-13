@@ -68,13 +68,8 @@ public:
   /// Move assignment
   SparsityPattern& operator=(SparsityPattern&& pattern) = default;
 
-  /// Insert non-zero entries using global indices
-  void insert_global(
-      const Eigen::Ref<const Eigen::Array<PetscInt, Eigen::Dynamic, 1>>& rows,
-      const Eigen::Ref<const Eigen::Array<PetscInt, Eigen::Dynamic, 1>>& cols);
-
   /// Insert non-zero entries using local (process-wise) indices
-  void insert_local(
+  void insert(
       const Eigen::Ref<const Eigen::Array<PetscInt, Eigen::Dynamic, 1>>& rows,
       const Eigen::Ref<const Eigen::Array<PetscInt, Eigen::Dynamic, 1>>& cols);
 
@@ -108,7 +103,7 @@ public:
   MPI_Comm mpi_comm() const { return _mpi_comm.comm(); }
 
   /// Return informal string representation (pretty-print)
-  std::string str(bool verbose) const;
+  std::string str() const;
 
   /// Return underlying sparsity pattern (diagonal). Options are
   /// 'sorted' and 'unsorted'.
@@ -122,24 +117,7 @@ public:
   /// Print some useful information
   void info_statistics() const;
 
-
 private:
-  // Other insertion methods will call this method providing the
-  // appropriate mapping of the indices in the entries.
-  //
-  // The primary dim entries must be local
-  // The primary_codim entries must be global
-  template <typename X, typename Y>
-  void insert_entries(
-      const Eigen::Ref<const Eigen::Array<PetscInt, Eigen::Dynamic, 1>>&
-          rows,
-      const Eigen::Ref<const Eigen::Array<PetscInt, Eigen::Dynamic, 1>>&
-          cols,
-      const std::function<std::int32_t(const X, const common::IndexMap&)>&
-          row_map,
-      const std::function<std::int64_t(const Y, const common::IndexMap&)>&
-          col_map);
-
   // MPI communicator
   dolfinx::MPI::Comm _mpi_comm;
 

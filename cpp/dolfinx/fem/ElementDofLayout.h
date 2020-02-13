@@ -42,9 +42,8 @@ public:
       const std::array<int, 4> entity_block_size,
       const std::vector<bool> dofs_need_permuting);
 
-  /// Copy-like constructor with option to reset (clear) parent map
-  ElementDofLayout(const ElementDofLayout& element_dof_layout,
-                   bool reset_parent);
+  /// Copy the DOF layout, discarding any parent information
+  ElementDofLayout copy() const;
 
   /// Copy constructor
   ElementDofLayout(const ElementDofLayout& dofmap) = default;

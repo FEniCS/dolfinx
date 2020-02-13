@@ -628,7 +628,7 @@ def test_assembly_solve_taylor_hood(mesh):
     assert x0.norm() == pytest.approx(x2.norm(), 1e-8)
 
 
-def xtest_basic_interior_facet_assembly():
+def test_basic_interior_facet_assembly():
     ghost_mode = dolfinx.cpp.mesh.GhostMode.none
     if (dolfinx.MPI.size(dolfinx.MPI.comm_world) > 1):
         ghost_mode = dolfinx.cpp.mesh.GhostMode.shared_facet

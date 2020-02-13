@@ -197,8 +197,7 @@ compute_point_distribution(
     Eigen::Array<std::int64_t, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
         cell_nodes,
     Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
-        points,
-    mesh::CellType type)
+        points)
 {
   // Get set of global point indices, which exist on this process
   std::vector<std::int64_t> global_index_set
@@ -264,7 +263,7 @@ Mesh::Mesh(
   // cell topology using new local indices
   const auto [point_index_map, node_indices_global, coordinate_nodes,
               points_received]
-      = compute_point_distribution(comm, cells, points, type);
+      = compute_point_distribution(comm, cells, points);
 
   _coordinate_dofs = std::make_unique<CoordinateDofs>(coordinate_nodes);
 
@@ -336,7 +335,10 @@ Mesh::Mesh(
 
   // Initialise cell topology
   Eigen::Array<std::int64_t, Eigen::Dynamic, 1> cell_ghosts(num_ghost_cells);
-  assert(num_ghost_cells == 0); // Ghost cells not enabled at the moment
+  if ((int)global_cell_indices.size() == (num_cells_local + num_ghost_cells))
+    std::copy(global_cell_indices.begin() + num_cells_local,
+              global_cell_indices.end(), cell_ghosts.data());
+
   auto cell_index_map = std::make_shared<common::IndexMap>(
       _mpi_comm.comm(), num_cells_local, cell_ghosts, 1);
   _topology->set_index_map(tdim, cell_index_map);
