@@ -8,11 +8,11 @@
 
 #include "PartitionData.h"
 #include <cstdint>
-#include <dolfinx/common/IndexMap.h>
 #include <dolfinx/common/types.h>
+#include <dolfinx/common/IndexMap.h>
 #include <dolfinx/graph/CSRGraph.h>
-#include <dolfinx/mesh/Mesh.h>
 #include <dolfinx/mesh/cell_types.h>
+#include <dolfinx/mesh/Mesh.h>
 #include <map>
 #include <memory>
 #include <set>
