@@ -103,7 +103,7 @@ public:
   MPI_Comm mpi_comm() const { return _mpi_comm.comm(); }
 
   /// Return informal string representation (pretty-print)
-  std::string str(bool verbose) const;
+  std::string str() const;
 
   /// Return underlying sparsity pattern (diagonal). Options are
   /// 'sorted' and 'unsorted'.

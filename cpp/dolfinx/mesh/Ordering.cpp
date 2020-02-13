@@ -94,9 +94,7 @@ void sort_2_0(graph::AdjacencyList<std::int32_t>& connect_2_0,
 void sort_2_1(graph::AdjacencyList<std::int32_t>& connect_2_1,
               const graph::AdjacencyList<std::int32_t>& connect_2_0,
               const graph::AdjacencyList<std::int32_t>& connect_1_0,
-              const mesh::MeshEntity& cell,
-              const std::vector<std::int64_t>& global_vertex_indices,
-              const int num_faces)
+              const mesh::MeshEntity& cell, const int num_faces)
 {
   // Loop over faces on cell
   const std::int32_t* cell_faces = cell.entities_ptr(2);
@@ -146,8 +144,7 @@ void sort_3_0(graph::AdjacencyList<std::int32_t>& connect_3_0,
 //-----------------------------------------------------------------------------
 void sort_3_1(graph::AdjacencyList<std::int32_t>& connect_3_1,
               const graph::AdjacencyList<std::int32_t>& connect_1_0,
-              const mesh::MeshEntity& cell,
-              const std::vector<std::int64_t>& global_vertex_indices)
+              const mesh::MeshEntity& cell)
 {
   // Get cell vertices and edge numbers
   const std::int32_t* cell_vertices = cell.entities_ptr(0);
@@ -186,8 +183,7 @@ void sort_3_1(graph::AdjacencyList<std::int32_t>& connect_3_1,
 //-----------------------------------------------------------------------------
 void sort_3_2(graph::AdjacencyList<std::int32_t>& connect_3_2,
               const graph::AdjacencyList<std::int32_t>& connect_2_0,
-              const mesh::MeshEntity& cell,
-              const std::vector<std::int64_t>& global_vertex_indices)
+              const mesh::MeshEntity& cell)
 {
   // Get cell vertices and facet numbers
   const std::int32_t* cell_vertices = cell.entities_ptr(0);
@@ -358,10 +354,7 @@ void mesh::Ordering::order_simplex(mesh::Mesh& mesh)
     // Sort local edges on local faces after non-incident vertex,
     // connectivity 2-1
     if (connect_2_1)
-    {
-      sort_2_1(*connect_2_1, *connect_2_0, *connect_1_0, cell,
-               global_vertex_indices, num_faces);
-    }
+      sort_2_1(*connect_2_1, *connect_2_0, *connect_1_0, cell, num_faces);
 
     // Sort local vertices on cell in ascending order, connectivity 3-0
     if (connect_3_0)
@@ -370,12 +363,12 @@ void mesh::Ordering::order_simplex(mesh::Mesh& mesh)
     // Sort local edges on cell after non-incident vertex tuple,
     // connectivity 3-1
     if (connect_3_1)
-      sort_3_1(*connect_3_1, *connect_1_0, cell, global_vertex_indices);
+      sort_3_1(*connect_3_1, *connect_1_0, cell);
 
     // Sort local facets on cell after non-incident vertex, connectivity
     // 3-2
     if (connect_3_2)
-      sort_3_2(*connect_3_2, *connect_2_0, cell, global_vertex_indices);
+      sort_3_2(*connect_3_2, *connect_2_0, cell);
   }
 }
 //-----------------------------------------------------------------------------
