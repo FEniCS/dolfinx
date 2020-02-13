@@ -409,14 +409,14 @@ Eigen::Array<std::int32_t, Eigen::Dynamic, 2> _locate_dofs_geometrical(
     // Get cell dofmap
     auto cell_dofs0 = dofmap0.cell_dofs(cell.index());
     auto cell_dofs1 = dofmap1.cell_dofs(cell.index());
-    
+
     // Loop over cell dofs and add to bc_dofs if marked.
     for (Eigen::Index i = 0; i < cell_dofs1.rows(); ++i)
     {
       if (marked_dofs[cell_dofs1[i]])
       {
         bc_dofs.push_back(
-          {(std::int32_t)cell_dofs0[i], (std::int32_t)cell_dofs1[i]});
+            {(std::int32_t)cell_dofs0[i], (std::int32_t)cell_dofs1[i]});
       }
     }
   }
@@ -438,7 +438,7 @@ Eigen::Array<std::int32_t, Eigen::Dynamic, 2> _locate_dofs_geometrical(
 //-----------------------------------------------------------------------------
 Eigen::Array<std::int32_t, Eigen::Dynamic, 1>
 _locate_dofs_geometrical(const function::FunctionSpace& V,
-                             marking_function marker)
+                         marking_function marker)
 {
   // FIXME: Calling V.tabulate_dof_coordinates() is very expensive,
   // especially when we usually want the boundary dofs only. Add
