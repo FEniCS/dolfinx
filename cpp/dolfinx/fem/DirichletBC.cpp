@@ -358,7 +358,7 @@ Eigen::Array<std::int32_t, Eigen::Dynamic, 2> _locate_dofs_geometrical(
   // FIXME: Calling V.tabulate_dof_coordinates() is very expensive,
   // especially when we usually want the boundary dofs only. Add
   // interface that computes dofs coordinates only for specified cell.
-  // FIXME: Add remote in parameter list?
+  // FIXME: Add remote in parameter list like locate_dofs_topological?
   // FIXME: Won't work if function spaces are passed in in the incorrect
   // order. Is this OK?
 
