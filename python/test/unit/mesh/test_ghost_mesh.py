@@ -1,12 +1,12 @@
 # Copyright (C) 2016 Garth N. Wells
 #
-# This file is part of DOLFIN (https://www.fenicsproject.org)
+# This file is part of DOLFINX (https://www.fenicsproject.org)
 #
 # SPDX-License-Identifier:    LGPL-3.0-or-later
 
 import pytest
 
-from dolfin import MPI, UnitCubeMesh, UnitIntervalMesh, UnitSquareMesh, cpp
+from dolfinx import MPI, UnitCubeMesh, UnitIntervalMesh, UnitSquareMesh, cpp
 
 # See https://bitbucket.org/fenics-project/dolfin/issues/579
 
@@ -88,17 +88,17 @@ def test_ghost_connectivities(mode):
     cell_mp = cpp.mesh.midpoints(meshR, tdim, range(meshR.num_entities(tdim)))
     reference = dict.fromkeys([tuple(row) for row in facet_mp], [])
     for i in range(meshR.num_entities(tdim - 1)):
-        for cidx in meshR.topology.connectivity(1, 2).connections(i):
+        for cidx in meshR.topology.connectivity(1, 2).links(i):
             reference[tuple(facet_mp[i])].append(cell_mp[cidx].tolist())
 
     # Loop through ghosted mesh and check connectivities
     tdim = meshG.topology.dim
-    num_facets = meshG.num_entities(tdim - 1) - meshG.topology.ghost_offset(tdim - 1)
+    num_facets = meshG.num_entities(tdim - 1) - meshG.topology.index_map(tdim - 1).size_local
     allowable_cell_indices = range(meshG.num_cells())
     facet_mp = cpp.mesh.midpoints(meshG, tdim - 1, range(meshG.num_entities(tdim - 1)))
     cell_mp = cpp.mesh.midpoints(meshG, tdim, range(meshG.num_entities(tdim)))
     for i in range(num_facets):
         assert tuple(facet_mp[i]) in reference
-        for cidx in meshG.topology.connectivity(1, 2).connections(i):
+        for cidx in meshG.topology.connectivity(1, 2).links(i):
             assert cidx in allowable_cell_indices
             assert cell_mp[cidx].tolist() in reference[tuple(facet_mp[i])]

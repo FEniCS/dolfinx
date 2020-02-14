@@ -1,16 +1,16 @@
 # Copyright (C) 2019 Matthew Scroggs
 #
-# This file is part of DOLFIN (https://www.fenicsproject.org)
+# This file is part of DOLFINX (https://www.fenicsproject.org)
 #
 # SPDX-License-Identifier:    LGPL-3.0-or-later
 """Test that the vectors in vector spaces are correctly oriented"""
 
 import numpy as np
 import pytest
-from dolfin_utils.test.skips import skip_in_parallel
+from dolfinx_utils.test.skips import skip_in_parallel
 
-from dolfin import MPI, Function, FunctionSpace, cpp, fem
-from dolfin.cpp.mesh import CellType
+from dolfinx import MPI, Function, FunctionSpace, cpp, fem
+from dolfinx.cpp.mesh import CellType
 
 
 @skip_in_parallel

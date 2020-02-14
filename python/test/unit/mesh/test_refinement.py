@@ -1,11 +1,11 @@
 # Copyright (C) 2018 Chris N Richardson
 #
-# This file is part of DOLFIN (https://www.fenicsproject.org)
+# This file is part of DOLFINX (https://www.fenicsproject.org)
 #
 # SPDX-License-Identifier:    LGPL-3.0-or-later
 
-from dolfin import UnitSquareMesh, UnitCubeMesh, MPI, FunctionSpace
-from dolfin.cpp.refinement import refine
+from dolfinx import UnitSquareMesh, UnitCubeMesh, MPI, FunctionSpace
+from dolfinx.cpp.refinement import refine
 
 
 def test_RefineUnitSquareMesh():

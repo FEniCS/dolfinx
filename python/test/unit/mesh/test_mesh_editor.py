@@ -1,14 +1,14 @@
 # Copyright (C) 2006-2011 Anders Logg
 #
-# This file is part of DOLFIN (https://www.fenicsproject.org)
+# This file is part of DOLFINX (https://www.fenicsproject.org)
 #
 # SPDX-License-Identifier:    LGPL-3.0-or-later
 
 import numpy
 
-from dolfin import MPI, Mesh, cpp
-from dolfin.cpp.mesh import CellType
-from dolfin_utils.test.skips import skip_in_parallel
+from dolfinx import MPI, Mesh, cpp
+from dolfinx.cpp.mesh import CellType
+from dolfinx_utils.test.skips import skip_in_parallel
 
 
 @skip_in_parallel

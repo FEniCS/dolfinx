@@ -304,7 +304,7 @@ void io(py::module& m)
            })
       .def("read_information_string",[](dolfin::io::XDMFFile& self) {
              return self.read_information_string();
-
+           })
       .def("read_mesh_data",
            [](dolfin::io::XDMFFile& self, const MPICommWrapper comm) {
              return self.read_mesh_data(comm.get());

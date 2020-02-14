@@ -1,6 +1,6 @@
 # Copyright (C) 2017 Nathan Sime
 #
-# This file is part of DOLFIN (https://www.fenicsproject.org)
+# This file is part of DOLFINX (https://www.fenicsproject.org)
 #
 # SPDX-License-Identifier:    LGPL-3.0-or-later
 """Unit tests for SparsityPattern"""
@@ -8,9 +8,9 @@
 import numpy as np
 import pytest
 
-from dolfin import MPI, FunctionSpace, UnitSquareMesh, cpp
-from dolfin.cpp.mesh import CellType
-# from dolfin_utils.test.fixtures import fixture
+from dolfinx import MPI, FunctionSpace, UnitSquareMesh, cpp
+from dolfinx.cpp.mesh import CellType
+# from dolfinx_utils.test.fixtures import fixture
 
 
 def count_on_and_off_diagonal_nnz(primary_codim_entries, local_range):

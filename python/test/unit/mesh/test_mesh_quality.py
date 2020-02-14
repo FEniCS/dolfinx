@@ -1,12 +1,12 @@
 # Copyright (C) 2013 Garth N. Wells
 #
-# This file is part of DOLFIN (https://www.fenicsproject.org)
+# This file is part of DOLFINX (https://www.fenicsproject.org)
 #
 # SPDX-License-Identifier:    LGPL-3.0-or-later
 
 from math import pi
 
-from dolfin import MPI, MeshQuality, UnitCubeMesh
+from dolfinx import MPI, MeshQuality, UnitCubeMesh
 
 
 def test_dihedral_angles_min_max():
