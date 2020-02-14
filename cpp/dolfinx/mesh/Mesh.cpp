@@ -520,6 +520,7 @@ void Mesh::create_entity_permutations() const
   for (int d = 0; d < tdim; ++d)
     create_entities(d);
 
+  // If the cell is a triangle or tetrahedron
   if (_cell_type == mesh::CellType::triangle
       || _cell_type == mesh::CellType::tetrahedron)
     for (int cell_n = 0; cell_n < num_cells; ++cell_n)
@@ -579,6 +580,8 @@ void Mesh::create_entity_permutations() const
         }
       }
     }
+
+  // If the cell is a quad, hex or interval
   else
   {
     for (int cell_n = 0; cell_n < num_cells; ++cell_n)
