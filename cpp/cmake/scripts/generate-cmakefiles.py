@@ -36,10 +36,10 @@ target_link_libraries(${{PROJECT_NAME}} dolfinx)
 # rst which includes LaTeX)
 include(CheckCXXCompilerFlag)
 CHECK_CXX_COMPILER_FLAG("-Wno-comment" HAVE_NO_MULTLINE)
-target_compile_options(${{PROJECT_NAME}} PRIVATE $<$<BOOL:${{HAVE_NO_MULTLINE}}>:-Wno-comment>)
+set_source_files_properties(main.cpp PROPERTIES COMPILE_FLAGS "$<$<BOOL:${{HAVE_NO_MULTLINE}}>:-Wno-comment -Wall -Wextra -pedantic -Werror>")
 
 # Test targets
-set(TEST_PARAMETERS -np 3 "./${{PROJECT_NAME}}")
+set(TEST_PARAMETERS -np 3 ${{MPIEXEC_PARAMS}} "./${{PROJECT_NAME}}")
 add_test(NAME ${{PROJECT_NAME}}_mpi COMMAND "mpirun" ${{TEST_PARAMETERS}})
 add_test(NAME ${{PROJECT_NAME}}_serial COMMAND ${{PROJECT_NAME}})
 """

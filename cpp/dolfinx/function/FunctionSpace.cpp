@@ -238,7 +238,7 @@ FunctionSpace::sub(const std::vector<int>& component) const
 
   // Extract sub dofmap
   auto dofmap = std::make_shared<fem::DofMap>(
-      _dofmap->extract_sub_dofmap(component, *_mesh));
+      _dofmap->extract_sub_dofmap(component, _mesh->topology()));
 
   // Create new sub space
   auto sub_space = std::make_shared<FunctionSpace>(_mesh, element, dofmap);
@@ -256,7 +256,7 @@ FunctionSpace::sub(const std::vector<int>& component) const
   return sub_space;
 }
 //-----------------------------------------------------------------------------
-std::pair<std::shared_ptr<FunctionSpace>, std::vector<PetscInt>>
+std::pair<std::shared_ptr<FunctionSpace>, std::vector<std::int32_t>>
 FunctionSpace::collapse() const
 {
   if (_component.empty())
@@ -264,15 +264,15 @@ FunctionSpace::collapse() const
 
   // Create collapsed DofMap
   std::shared_ptr<fem::DofMap> collapsed_dofmap;
-  std::vector<PetscInt> collapsed_dofs;
-  std::tie(collapsed_dofmap, collapsed_dofs) = _dofmap->collapse(*_mesh);
+  std::vector<std::int32_t> collapsed_dofs;
+  std::tie(collapsed_dofmap, collapsed_dofs)
+      = _dofmap->collapse(_mesh->mpi_comm(), _mesh->topology());
 
   // Create new FunctionSpace and return
   auto collapsed_sub_space
       = std::make_shared<FunctionSpace>(_mesh, _element, collapsed_dofmap);
 
-  return std::pair(std::move(collapsed_sub_space),
-                   std::move(collapsed_dofs));
+  return std::pair(std::move(collapsed_sub_space), std::move(collapsed_dofs));
 }
 //-----------------------------------------------------------------------------
 std::vector<int> FunctionSpace::component() const { return _component; }
@@ -304,11 +304,6 @@ FunctionSpace::tabulate_dof_coordinates() const
   const Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>& X
       = _element->dof_reference_coordinates();
 
-  // Array to hold coordinates to return
-  Eigen::Array<double, Eigen::Dynamic, 3, Eigen::RowMajor> x
-      = Eigen::Array<double, Eigen::Dynamic, 3, Eigen::RowMajor>::Zero(
-          local_size, 3);
-
   // Get coordinate mapping
   if (!_mesh->geometry().coord_mapping)
   {
@@ -317,19 +312,23 @@ FunctionSpace::tabulate_dof_coordinates() const
   }
   const fem::CoordinateElement& cmap = *_mesh->geometry().coord_mapping;
 
-  // Cell coordinates (re-allocated inside function for thread safety)
   // Prepare cell geometry
-  const mesh::Connectivity& connectivity_g
+  const graph::AdjacencyList<std::int32_t>& connectivity_g
       = _mesh->coordinate_dofs().entity_points();
   const Eigen::Array<std::int32_t, Eigen::Dynamic, 1>& pos_g
-      = connectivity_g.entity_positions();
+      = connectivity_g.offsets();
   const Eigen::Array<std::int32_t, Eigen::Dynamic, 1>& cell_g
-      = connectivity_g.connections();
+      = connectivity_g.array();
   // FIXME: Add proper interface for num coordinate dofs
-  const int num_dofs_g = connectivity_g.size(0);
+  const int num_dofs_g = connectivity_g.num_links(0);
   const Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>&
       x_g
       = _mesh->geometry().points();
+
+  // Array to hold coordinates to return
+  Eigen::Array<double, Eigen::Dynamic, 3, Eigen::RowMajor> x
+      = Eigen::Array<double, Eigen::Dynamic, 3, Eigen::RowMajor>::Zero(
+          local_size, 3);
 
   // Loop over cells and tabulate dofs
   Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
@@ -355,7 +354,7 @@ FunctionSpace::tabulate_dof_coordinates() const
     // Copy dof coordinates into vector
     for (Eigen::Index i = 0; i < dofs.size(); ++i)
     {
-      const PetscInt dof = dofs[i];
+      const std::int32_t dof = dofs[i];
       x.row(dof).head(gdim) = coordinates.row(i);
     }
   }
@@ -376,14 +375,14 @@ void FunctionSpace::set_x(
   std::vector<PetscScalar> x_values;
 
   // Prepare cell geometry
-  const mesh::Connectivity& connectivity_g
+  const graph::AdjacencyList<std::int32_t>& connectivity_g
       = _mesh->coordinate_dofs().entity_points();
   const Eigen::Array<std::int32_t, Eigen::Dynamic, 1>& pos_g
-      = connectivity_g.entity_positions();
+      = connectivity_g.offsets();
   const Eigen::Array<std::int32_t, Eigen::Dynamic, 1>& cell_g
-      = connectivity_g.connections();
+      = connectivity_g.array();
   // FIXME: Add proper interface for num coordinate dofs
-  const int num_dofs_g = connectivity_g.size(0);
+  const int num_dofs_g = connectivity_g.num_links(0);
   const Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>&
       x_g
       = _mesh->geometry().points();

@@ -111,13 +111,12 @@ fem::block_function_spaces(
   return V;
 }
 //-----------------------------------------------------------------------------
-la::PETScMatrix dolfinx::fem::create_matrix(const Form& a)
+la::SparsityPattern dolfinx::fem::create_sparsity_pattern(const Form& a)
 {
-  bool keep_diagonal = false;
   if (a.rank() != 2)
   {
     throw std::runtime_error(
-        "Cannot initialise matrx. Form is not a bilinear form");
+        "Cannot create sparsity pattern. Form is not a bilinear form");
   }
 
   // Get dof maps
@@ -138,15 +137,39 @@ la::PETScMatrix dolfinx::fem::create_matrix(const Form& a)
   // Create and build sparsity pattern
   la::SparsityPattern pattern(mesh.mpi_comm(), index_maps);
   if (a.integrals().num_integrals(fem::FormIntegrals::Type::cell) > 0)
-    SparsityPatternBuilder::cells(pattern, mesh, {{dofmaps[0], dofmaps[1]}});
+  {
+    SparsityPatternBuilder::cells(pattern, mesh.topology(),
+                                  {{dofmaps[0], dofmaps[1]}});
+  }
+
   if (a.integrals().num_integrals(fem::FormIntegrals::Type::interior_facet) > 0)
-    SparsityPatternBuilder::interior_facets(pattern, mesh,
+  {
+
+    mesh.create_entities(mesh.topology().dim() - 1);
+    SparsityPatternBuilder::interior_facets(pattern, mesh.topology(),
                                             {{dofmaps[0], dofmaps[1]}});
+  }
+
   if (a.integrals().num_integrals(fem::FormIntegrals::Type::exterior_facet) > 0)
-    SparsityPatternBuilder::exterior_facets(pattern, mesh,
+  {
+    mesh.create_entities(mesh.topology().dim() - 1);
+    SparsityPatternBuilder::exterior_facets(pattern, mesh.topology(),
                                             {{dofmaps[0], dofmaps[1]}});
-  pattern.assemble();
+  }
   t0.stop();
+
+  return pattern;
+}
+//-----------------------------------------------------------------------------
+la::PETScMatrix dolfinx::fem::create_matrix(const Form& a)
+{
+  bool keep_diagonal = false;
+
+  // Build sparsitypattern
+  la::SparsityPattern pattern = fem::create_sparsity_pattern(a);
+
+  // Finalise communication
+  pattern.assemble();
 
   // Initialize matrix
   common::Timer t1("Init tensor");
@@ -154,8 +177,8 @@ la::PETScMatrix dolfinx::fem::create_matrix(const Form& a)
   t1.stop();
 
   // FIXME: Check if there is a PETSc function for this
-  // Insert zeros on the diagonal as diagonal entries may be
-  // optimised away, e.g. when calling PETScMatrix::apply.
+  // Insert zeros on the diagonal as diagonal entries may be optimised
+  // away, e.g. when calling PETScMatrix::apply.
   if (keep_diagonal)
   {
     // Loop over rows and insert 0.0 on the diagonal
@@ -163,7 +186,6 @@ la::PETScMatrix dolfinx::fem::create_matrix(const Form& a)
     std::array<PetscInt, 2> row_range;
     MatGetOwnershipRange(A.mat(), &row_range[0], &row_range[1]);
     const std::int64_t range = std::min(row_range[1], (PetscInt)A.size()[1]);
-
     for (std::int64_t i = row_range[0]; i < range; i++)
     {
       const PetscInt _i = i;
@@ -208,11 +230,17 @@ la::PETScMatrix fem::create_matrix_block(
         auto& sp = *patterns[row].back();
         const FormIntegrals& integrals = a(row, col)->integrals();
         if (integrals.num_integrals(FormIntegrals::Type::cell) > 0)
-          SparsityPatternBuilder::cells(sp, mesh, dofmaps);
+          SparsityPatternBuilder::cells(sp, mesh.topology(), dofmaps);
         if (integrals.num_integrals(FormIntegrals::Type::interior_facet) > 0)
-          SparsityPatternBuilder::interior_facets(sp, mesh, dofmaps);
+        {
+          mesh.create_entities(mesh.topology().dim() - 1);
+          SparsityPatternBuilder::interior_facets(sp, mesh.topology(), dofmaps);
+        }
         if (integrals.num_integrals(FormIntegrals::Type::exterior_facet) > 0)
-          SparsityPatternBuilder::exterior_facets(sp, mesh, dofmaps);
+        {
+          mesh.create_entities(mesh.topology().dim() - 1);
+          SparsityPatternBuilder::exterior_facets(sp, mesh.topology(), dofmaps);
+        }
         sp.assemble();
       }
       else
@@ -246,17 +274,11 @@ la::PETScMatrix fem::create_matrix_block(
     for (std::size_t i = 0; i < V[d].size(); ++i)
     {
       auto map = V[d][i]->dofmap()->index_map;
-      int size = map->size_local() + map->num_ghosts();
-      const int bs = map->block_size;
-      for (int k = 0; k < size; ++k)
+      const std::vector<std::int64_t> global = map->global_indices(false);
+      for (auto global_index : global)
       {
-        std::int64_t index_k = map->local_to_global(k);
-        for (int block = 0; block < bs; ++block)
-        {
-          std::int64_t index
-              = get_global_index(index_maps[d], i, index_k * bs + block);
-          _maps[d].push_back(index);
-        }
+        std::int64_t index = get_global_index(index_maps[d], i, global_index);
+        _maps[d].push_back(index);
       }
     }
   }
@@ -330,7 +352,7 @@ fem::create_vector_block(const std::vector<const common::IndexMap*>& maps)
     const int bs = maps[i]->block_size;
     local_size += maps[i]->size_local() * bs;
 
-    const Eigen::Array<PetscInt, Eigen::Dynamic, 1>& field_ghosts
+    const Eigen::Array<std::int64_t, Eigen::Dynamic, 1>& field_ghosts
         = maps[i]->ghosts();
     for (Eigen::Index j = 0; j < field_ghosts.size(); ++j)
     {
@@ -378,7 +400,7 @@ fem::create_vector_nest(const std::vector<const common::IndexMap*>& maps)
 //-----------------------------------------------------------------------------
 std::int64_t
 dolfinx::fem::get_global_index(const std::vector<const common::IndexMap*>& maps,
-                              const int field, const int index)
+                               const int field, const int index)
 {
   // FIXME: handle/check block size > 1
 
@@ -477,9 +499,20 @@ fem::create_element_dof_layout(const ufc_dofmap& dofmap,
 fem::DofMap fem::create_dofmap(const ufc_dofmap& ufc_dofmap,
                                const mesh::Mesh& mesh)
 {
-  return DofMapBuilder::build(
-      mesh, std::make_shared<ElementDofLayout>(
-                create_element_dof_layout(ufc_dofmap, mesh.cell_type())));
+  auto element_dof_layout = std::make_shared<ElementDofLayout>(
+      create_element_dof_layout(ufc_dofmap, mesh.cell_type()));
+  assert(element_dof_layout);
+
+  // Create required mesh entities
+  const int D = mesh.topology().dim();
+  for (int d = 0; d <= D; ++d)
+  {
+    if (element_dof_layout->num_entity_dofs(d) > 0)
+      mesh.create_entities(d);
+  }
+
+  return DofMapBuilder::build(mesh.mpi_comm(), mesh.topology(),
+                              mesh.cell_type(), element_dof_layout);
 }
 //-----------------------------------------------------------------------------
 std::vector<std::tuple<int, std::string, std::shared_ptr<function::Function>>>
@@ -517,7 +550,8 @@ std::shared_ptr<fem::Form> fem::create_form(
     const std::vector<std::shared_ptr<const function::FunctionSpace>>& spaces)
 {
   ufc_form* form = fptr();
-  auto L = std::make_shared<fem::Form>(dolfinx::fem::create_form(*form, spaces));
+  auto L
+      = std::make_shared<fem::Form>(dolfinx::fem::create_form(*form, spaces));
   std::free(form);
 
   return L;

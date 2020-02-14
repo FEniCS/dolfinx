@@ -68,21 +68,16 @@ public:
   /// Move assignment
   SparsityPattern& operator=(SparsityPattern&& pattern) = default;
 
-  /// Insert non-zero entries using global indices
-  void insert_global(
-      const Eigen::Ref<const Eigen::Array<PetscInt, Eigen::Dynamic, 1>>& rows,
-      const Eigen::Ref<const Eigen::Array<PetscInt, Eigen::Dynamic, 1>>& cols);
-
   /// Insert non-zero entries using local (process-wise) indices
-  void insert_local(
+  void insert(
       const Eigen::Ref<const Eigen::Array<PetscInt, Eigen::Dynamic, 1>>& rows,
       const Eigen::Ref<const Eigen::Array<PetscInt, Eigen::Dynamic, 1>>& cols);
 
   /// Return local range for dimension dim
-  std::array<std::size_t, 2> local_range(std::size_t dim) const;
+  std::array<std::int64_t, 2> local_range(int dim) const;
 
   /// Return index map for dimension dim
-  std::shared_ptr<const common::IndexMap> index_map(std::size_t dim) const;
+  std::shared_ptr<const common::IndexMap> index_map(int dim) const;
 
   /// Return number of local nonzeros
   std::size_t num_nonzeros() const;
@@ -108,7 +103,7 @@ public:
   MPI_Comm mpi_comm() const { return _mpi_comm.comm(); }
 
   /// Return informal string representation (pretty-print)
-  std::string str(bool verbose) const;
+  std::string str() const;
 
   /// Return underlying sparsity pattern (diagonal). Options are
   /// 'sorted' and 'unsorted'.
@@ -119,25 +114,10 @@ public:
   /// no off-diagonal contribution.
   std::vector<std::vector<std::size_t>> off_diagonal_pattern(Type type) const;
 
-private:
-  // Other insertion methods will call this method providing the
-  // appropriate mapping of the indices in the entries.
-  //
-  // The primary dim entries must be local
-  // The primary_codim entries must be global
-  void insert_entries(
-      const Eigen::Ref<const Eigen::Array<std::int32_t, Eigen::Dynamic, 1>>&
-          rows,
-      const Eigen::Ref<const Eigen::Array<std::int32_t, Eigen::Dynamic, 1>>&
-          cols,
-      const std::function<PetscInt(const PetscInt, const common::IndexMap&)>&
-          row_map,
-      const std::function<PetscInt(const PetscInt, const common::IndexMap&)>&
-          col_map);
-
-  // Print some useful information
+  /// Print some useful information
   void info_statistics() const;
 
+private:
   // MPI communicator
   dolfinx::MPI::Comm _mpi_comm;
 

@@ -189,10 +189,8 @@ void HDF5Interface::delete_attribute(const hid_t hdf5_file_handle,
     throw std::runtime_error("Call to H5Oclose unsuccessful");
 }
 //-----------------------------------------------------------------------------
-herr_t HDF5Interface::attribute_iteration_function(hid_t loc_id,
-                                                   const char* name,
-                                                   const H5A_info_t* info,
-                                                   void* str)
+herr_t HDF5Interface::attribute_iteration_function(hid_t, const char* name,
+                                                   const H5A_info_t*, void* str)
 {
   std::vector<std::string>* s = (std::vector<std::string>*)str;
   std::string attr_name(name);

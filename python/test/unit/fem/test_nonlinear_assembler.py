@@ -55,9 +55,16 @@ def test_matrix_assembly_block():
 
     def bc_value(x):
         return numpy.cos(x[0]) * numpy.cos(x[1])
+
+    facetdim = mesh.topology.dim - 1
+    mf = dolfinx.MeshFunction("size_t", mesh, facetdim, 0)
+    mf.mark(boundary, 1)
+    bndry_facets = numpy.where(mf.values == 1)[0]
+
     u_bc = dolfinx.function.Function(V1)
     u_bc.interpolate(bc_value)
-    bc = dolfinx.fem.dirichletbc.DirichletBC(V1, u_bc, boundary)
+    bdofs = dolfinx.fem.locate_dofs_topological(V1, facetdim, bndry_facets)
+    bc = dolfinx.fem.dirichletbc.DirichletBC(u_bc, bdofs)
 
     # Define variational problem
     du, dp = ufl.TrialFunction(V0), ufl.TrialFunction(V1)
@@ -127,7 +134,9 @@ def test_matrix_assembly_block():
         - inner(f, v0) * ufl.dx - inner(g, v1) * dx
     J = derivative(F, U, dU)
 
-    bc = dolfinx.fem.dirichletbc.DirichletBC(W.sub(1), u_bc, boundary)
+    bdofsW_V1 = dolfinx.fem.locate_dofs_topological((W.sub(1), V1), facetdim, bndry_facets)
+
+    bc = dolfinx.fem.dirichletbc.DirichletBC(u_bc, bdofsW_V1, W.sub(1))
     A2 = dolfinx.fem.assemble_matrix(J, [bc])
     A2.assemble()
     b2 = dolfinx.fem.assemble_vector(F)
@@ -256,12 +265,21 @@ def test_assembly_solve_block():
     def boundary(x):
         return numpy.logical_or(x[0] < 1.0e-6, x[0] > 1.0 - 1.0e-6)
 
+    facetdim = mesh.topology.dim - 1
+    mf = dolfinx.MeshFunction("size_t", mesh, facetdim, 0)
+    mf.mark(boundary, 1)
+    bndry_facets = numpy.where(mf.values == 1)[0]
+
     u_bc0 = dolfinx.function.Function(V0)
     u_bc0.interpolate(bc_val_0)
     u_bc1 = dolfinx.function.Function(V1)
     u_bc1.interpolate(bc_val_1)
-    bcs = [dolfinx.fem.dirichletbc.DirichletBC(V0, u_bc0, boundary),
-           dolfinx.fem.dirichletbc.DirichletBC(V1, u_bc1, boundary)]
+
+    bdofs0 = dolfinx.fem.locate_dofs_topological(V0, facetdim, bndry_facets)
+    bdofs1 = dolfinx.fem.locate_dofs_topological(V1, facetdim, bndry_facets)
+
+    bcs = [dolfinx.fem.dirichletbc.DirichletBC(u_bc0, bdofs0),
+           dolfinx.fem.dirichletbc.DirichletBC(u_bc1, bdofs1)]
 
     # Block and Nest variational problem
     u, p = dolfinx.function.Function(V0), dolfinx.function.Function(V1)
@@ -380,8 +398,11 @@ def test_assembly_solve_block():
     u1_bc = dolfinx.function.Function(V1)
     u1_bc.interpolate(bc_val_1)
 
-    bcs = [dolfinx.fem.dirichletbc.DirichletBC(W.sub(0), u0_bc, boundary),
-           dolfinx.fem.dirichletbc.DirichletBC(W.sub(1), u1_bc, boundary)]
+    bdofsW0_V0 = dolfinx.fem.locate_dofs_topological((W.sub(0), V0), facetdim, bndry_facets)
+    bdofsW1_V1 = dolfinx.fem.locate_dofs_topological((W.sub(1), V1), facetdim, bndry_facets)
+
+    bcs = [dolfinx.fem.dirichletbc.DirichletBC(u0_bc, bdofsW0_V0, W.sub(0)),
+           dolfinx.fem.dirichletbc.DirichletBC(u1_bc, bdofsW1_V1, W.sub(1))]
 
     Jmat2 = dolfinx.fem.create_matrix(J)
     Fvec2 = dolfinx.fem.create_vector(F)
@@ -450,8 +471,18 @@ def test_assembly_solve_taylor_hood(mesh):
     u_bc_1 = dolfinx.Function(P2)
     u_bc_1.interpolate(lambda x: numpy.row_stack(tuple(numpy.sin(x[j]) for j in range(gdim))))
 
-    bcs = [dolfinx.DirichletBC(P2, u_bc_0, boundary0),
-           dolfinx.DirichletBC(P2, u_bc_1, boundary1)]
+    facetdim = mesh.topology.dim - 1
+    mf = dolfinx.MeshFunction("size_t", mesh, facetdim, 0)
+    mf.mark(boundary0, 1)
+    mf.mark(boundary1, 2)
+    bndry_facets0 = numpy.where(mf.values == 1)[0]
+    bndry_facets1 = numpy.where(mf.values == 2)[0]
+
+    bdofs0 = dolfinx.fem.locate_dofs_topological(P2, facetdim, bndry_facets0)
+    bdofs1 = dolfinx.fem.locate_dofs_topological(P2, facetdim, bndry_facets1)
+
+    bcs = [dolfinx.DirichletBC(u_bc_0, bdofs0),
+           dolfinx.DirichletBC(u_bc_1, bdofs1)]
 
     u, p = dolfinx.Function(P2), dolfinx.Function(P1)
     du, dp = ufl.TrialFunction(P2), ufl.TrialFunction(P1)
@@ -485,9 +516,10 @@ def test_assembly_solve_taylor_hood(mesh):
     p.interpolate(initial_guess_p)
 
     x0 = dolfinx.fem.create_vector_block(F)
-    dolfinx.cpp.la.scatter_local_vectors(
-        x0, [u.vector.array_r, p.vector.array_r],
-        [u.function_space.dofmap.index_map, p.function_space.dofmap.index_map])
+    with u.vector.localForm() as _u, p.vector.localForm() as _p:
+        dolfinx.cpp.la.scatter_local_vectors(
+            x0, [_u.array_r, _p.array_r],
+            [u.function_space.dofmap.index_map, p.function_space.dofmap.index_map])
     x0.ghostUpdate(addv=PETSc.InsertMode.INSERT, mode=PETSc.ScatterMode.FORWARD)
 
     snes.solve(None, x0)
@@ -542,9 +574,9 @@ def test_assembly_solve_taylor_hood(mesh):
 
     # -- Monolithic
 
-    P2 = ufl.VectorElement("Lagrange", mesh.ufl_cell(), 2)
-    P1 = ufl.FiniteElement("Lagrange", mesh.ufl_cell(), 1)
-    TH = P2 * P1
+    P2_el = ufl.VectorElement("Lagrange", mesh.ufl_cell(), 2)
+    P1_el = ufl.FiniteElement("Lagrange", mesh.ufl_cell(), 1)
+    TH = P2_el * P1_el
     W = dolfinx.FunctionSpace(mesh, TH)
     U = dolfinx.Function(W)
     dU = ufl.TrialFunction(W)
@@ -557,8 +589,11 @@ def test_assembly_solve_taylor_hood(mesh):
     J = derivative(F, U, dU)
     P = inner(ufl.grad(du), ufl.grad(v)) * dx + inner(dp, q) * dx
 
-    bcs = [dolfinx.DirichletBC(W.sub(0), u_bc_0, boundary0),
-           dolfinx.DirichletBC(W.sub(0), u_bc_1, boundary1)]
+    bdofsW0_P2_0 = dolfinx.fem.locate_dofs_topological((W.sub(0), P2), facetdim, bndry_facets0)
+    bdofsW0_P2_1 = dolfinx.fem.locate_dofs_topological((W.sub(0), P2), facetdim, bndry_facets1)
+
+    bcs = [dolfinx.DirichletBC(u_bc_0, bdofsW0_P2_0, W.sub(0)),
+           dolfinx.DirichletBC(u_bc_1, bdofsW0_P2_1, W.sub(0))]
 
     Jmat2 = dolfinx.fem.create_matrix(J)
     Pmat2 = dolfinx.fem.create_matrix(P)

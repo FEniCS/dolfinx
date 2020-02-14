@@ -17,7 +17,8 @@ import dolfinx
 from dolfinx import (MPI, BoxMesh, DirichletBC, Function, VectorFunctionSpace,
                      cpp)
 from dolfinx.cpp.mesh import CellType
-from dolfinx.fem import apply_lifting, assemble_matrix, assemble_vector, set_bc
+from dolfinx.fem import (apply_lifting, assemble_matrix, assemble_vector, set_bc,
+                         locate_dofs_geometrical)
 from dolfinx.io import XDMFFile
 from dolfinx.la import VectorSpaceBasis
 from ufl import (Identity, SpatialCoordinate, TestFunction, TrialFunction,
@@ -117,7 +118,7 @@ with u0.vector.localForm() as bc_local:
     bc_local.set(0.0)
 
 # Set up boundary condition on inner surface
-bc = DirichletBC(V, u0, boundary)
+bc = DirichletBC(u0, locate_dofs_geometrical(V, boundary))
 
 # Assemble system, applying boundary conditions and preserving symmetry)
 A = assemble_matrix(a, [bc])

@@ -31,7 +31,7 @@ public:
   /// This can be used to compute F, J and J_pc together.
   /// Note: the vector x is not const as this function is commonly used
   /// to update ghost entries before assembly.
-  virtual void form(Vec x)
+  virtual void form(Vec)
   {
     // Do nothing if not supplied by the user
   }
@@ -45,7 +45,7 @@ public:
   /// Compute J_pc used to precondition J. Not implementing this
   /// or leaving P empty results in system matrix A being used
   /// to construct preconditioner.
-  virtual Mat P(const Vec x) { return nullptr; }
+  virtual Mat P(const Vec) { return nullptr; }
 };
 } // namespace nls
 } // namespace dolfinx

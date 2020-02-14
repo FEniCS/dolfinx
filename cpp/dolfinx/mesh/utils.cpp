@@ -27,13 +27,14 @@ T volume_interval(const mesh::Mesh& mesh,
   const mesh::Geometry& geometry = mesh.geometry();
   const mesh::Topology& topology = mesh.topology();
   assert(topology.connectivity(1, 0));
-  const mesh::Connectivity& connectivity = *topology.connectivity(1, 0);
+  const graph::AdjacencyList<std::int32_t>& connectivity
+      = *topology.connectivity(1, 0);
 
   T v(entities.rows());
   for (Eigen::Index i = 0; i < entities.rows(); ++i)
   {
     // Get the coordinates of the two vertices
-    const std::int32_t* vertices = connectivity.connections(entities[i]);
+    auto vertices = connectivity.links(entities[i]);
     const Eigen::Vector3d x0 = geometry.x(vertices[0]);
     const Eigen::Vector3d x1 = geometry.x(vertices[1]);
     v[i] = (x1 - x0).norm();
@@ -49,7 +50,8 @@ T volume_triangle(const mesh::Mesh& mesh,
   const mesh::Geometry& geometry = mesh.geometry();
   const mesh::Topology& topology = mesh.topology();
   assert(topology.connectivity(2, 0));
-  const mesh::Connectivity& connectivity = *topology.connectivity(2, 0);
+  const graph::AdjacencyList<std::int32_t>& connectivity
+      = *topology.connectivity(2, 0);
 
   const int gdim = geometry.dim();
   assert(gdim == 2 or gdim == 3);
@@ -58,7 +60,7 @@ T volume_triangle(const mesh::Mesh& mesh,
   {
     for (Eigen::Index i = 0; i < entities.rows(); ++i)
     {
-      const std::int32_t* vertices = connectivity.connections(entities[i]);
+      auto vertices = connectivity.links(entities[i]);
       const Eigen::Vector3d x0 = geometry.x(vertices[0]);
       const Eigen::Vector3d x1 = geometry.x(vertices[1]);
       const Eigen::Vector3d x2 = geometry.x(vertices[2]);
@@ -75,7 +77,7 @@ T volume_triangle(const mesh::Mesh& mesh,
   {
     for (Eigen::Index i = 0; i < entities.rows(); ++i)
     {
-      const std::int32_t* vertices = connectivity.connections(entities[i]);
+      auto vertices = connectivity.links(entities[i]);
       const Eigen::Vector3d x0 = geometry.x(vertices[0]);
       const Eigen::Vector3d x1 = geometry.x(vertices[1]);
       const Eigen::Vector3d x2 = geometry.x(vertices[2]);
@@ -105,13 +107,14 @@ T volume_tetrahedron(const mesh::Mesh& mesh,
   const mesh::Geometry& geometry = mesh.geometry();
   const mesh::Topology& topology = mesh.topology();
   assert(topology.connectivity(3, 0));
-  const mesh::Connectivity& connectivity = *topology.connectivity(3, 0);
+  const graph::AdjacencyList<std::int32_t>& connectivity
+      = *topology.connectivity(3, 0);
 
   Eigen::ArrayXd v(entities.rows());
   for (Eigen::Index i = 0; i < entities.rows(); ++i)
   {
     // Get the coordinates of the four vertices
-    const std::int32_t* vertices = connectivity.connections(entities[i]);
+    auto vertices = connectivity.links(entities[i]);
     const Eigen::Vector3d x0 = geometry.x(vertices[0]);
     const Eigen::Vector3d x1 = geometry.x(vertices[1]);
     const Eigen::Vector3d x2 = geometry.x(vertices[2]);
@@ -145,14 +148,15 @@ T volume_quadrilateral(const mesh::Mesh& mesh,
   const mesh::Geometry& geometry = mesh.geometry();
   const mesh::Topology& topology = mesh.topology();
   assert(topology.connectivity(2, 0));
-  const mesh::Connectivity& connectivity = *topology.connectivity(2, 0);
+  const graph::AdjacencyList<std::int32_t>& connectivity
+      = *topology.connectivity(2, 0);
 
   const int gdim = geometry.dim();
   T v(entities.rows());
   for (Eigen::Index i = 0; i < entities.rows(); ++i)
   {
     // Get the coordinates of the four vertices
-    const std::int32_t* vertices = connectivity.connections(entities[i]);
+    auto vertices = connectivity.links(entities[i]);
     const Eigen::Vector3d p0 = geometry.x(vertices[0]);
     const Eigen::Vector3d p1 = geometry.x(vertices[1]);
     const Eigen::Vector3d p2 = geometry.x(vertices[2]);
@@ -224,14 +228,15 @@ T circumradius_triangle(const mesh::Mesh& mesh,
   const mesh::Geometry& geometry = mesh.geometry();
   const mesh::Topology& topology = mesh.topology();
   assert(topology.connectivity(2, 0));
-  const mesh::Connectivity& connectivity = *topology.connectivity(2, 0);
+  const graph::AdjacencyList<std::int32_t>& connectivity
+      = *topology.connectivity(2, 0);
 
   T volumes = volume_entities_tmpl<T>(mesh, entities, 2);
 
   T cr(entities.rows());
   for (Eigen::Index e = 0; e < entities.rows(); ++e)
   {
-    const std::int32_t* vertices = connectivity.connections(entities[e]);
+    auto vertices = connectivity.links(entities[e]);
     const Eigen::Vector3d p0 = geometry.x(vertices[0]);
     const Eigen::Vector3d p1 = geometry.x(vertices[1]);
     const Eigen::Vector3d p2 = geometry.x(vertices[2]);
@@ -256,14 +261,15 @@ T circumradius_tetrahedron(const mesh::Mesh& mesh,
   const mesh::Geometry& geometry = mesh.geometry();
   const mesh::Topology& topology = mesh.topology();
   assert(topology.connectivity(3, 0));
-  const mesh::Connectivity& connectivity = *topology.connectivity(3, 0);
+  const graph::AdjacencyList<std::int32_t>& connectivity
+      = *topology.connectivity(3, 0);
 
   T volumes = volume_entities_tmpl<T>(mesh, entities, 3);
 
   T cr(entities.rows());
   for (Eigen::Index e = 0; e < entities.rows(); ++e)
   {
-    const std::int32_t* vertices = connectivity.connections(entities[e]);
+    auto vertices = connectivity.links(entities[e]);
     const Eigen::Vector3d p0 = geometry.x(vertices[0]);
     const Eigen::Vector3d p1 = geometry.x(vertices[1]);
     const Eigen::Vector3d p2 = geometry.x(vertices[2]);
@@ -343,7 +349,8 @@ Eigen::ArrayXd mesh::h(const Mesh& mesh,
   const mesh::Geometry& geometry = mesh.geometry();
   const mesh::Topology& topology = mesh.topology();
   assert(topology.connectivity(dim, 0));
-  const mesh::Connectivity& connectivity = *topology.connectivity(dim, 0);
+  const graph::AdjacencyList<std::int32_t>& connectivity
+      = *topology.connectivity(dim, 0);
 
   Eigen::ArrayXd h_cells = Eigen::ArrayXd::Zero(entities.rows());
   assert(num_vertices <= 8);
@@ -351,7 +358,7 @@ Eigen::ArrayXd mesh::h(const Mesh& mesh,
   for (Eigen::Index e = 0; e < entities.rows(); ++e)
   {
     // Get the coordinates  of the vertices
-    const std::int32_t* vertices = connectivity.connections(entities[e]);
+    auto vertices = connectivity.links(entities[e]);
     for (int i = 0; i < num_vertices; ++i)
       points[i] = geometry.x(vertices[i]);
 
@@ -390,7 +397,8 @@ Eigen::ArrayXd mesh::inradius(const mesh::Mesh& mesh,
   const int d = mesh::cell_dim(type);
   const mesh::Topology& topology = mesh.topology();
   assert(topology.connectivity(d, d - 1));
-  const mesh::Connectivity& connectivity = *topology.connectivity(d, d - 1);
+  const graph::AdjacencyList<std::int32_t>& connectivity
+      = *topology.connectivity(d, d - 1);
 
   const Eigen::ArrayXd volumes = mesh::volume_entities(mesh, entities, d);
 
@@ -404,7 +412,7 @@ Eigen::ArrayXd mesh::inradius(const mesh::Mesh& mesh,
       continue;
     }
 
-    const std::int32_t* facets = connectivity.connections(entities[c]);
+    auto facets = connectivity.links(entities[c]);
     for (int i = 0; i <= d; i++)
       facet_list[i] = facets[i];
     const double A = volume_entities_tmpl<Eigen::Array<double, 4, 1>>(
@@ -453,7 +461,7 @@ mesh::cell_normals(const mesh::Mesh& mesh, int dim)
     {
       // Get the two vertices as points
       const mesh::MeshEntity e(mesh, 1, i);
-      const std::int32_t* vertices = e.entities(0);
+      auto vertices = e.entities(0);
       Eigen::Vector3d p0 = geometry.x(vertices[0]);
       Eigen::Vector3d p1 = geometry.x(vertices[1]);
 
@@ -471,7 +479,7 @@ mesh::cell_normals(const mesh::Mesh& mesh, int dim)
     {
       // Get the three vertices as points
       const mesh::MeshEntity e(mesh, 2, i);
-      const std::int32_t* vertices = e.entities(0);
+      auto vertices = e.entities(0);
       const Eigen::Vector3d p0 = geometry.x(vertices[0]);
       const Eigen::Vector3d p1 = geometry.x(vertices[1]);
       const Eigen::Vector3d p2 = geometry.x(vertices[2]);
@@ -490,7 +498,7 @@ mesh::cell_normals(const mesh::Mesh& mesh, int dim)
     {
       // Get three vertices as points
       const mesh::MeshEntity e(mesh, 2, i);
-      const std::int32_t* vertices = e.entities(0);
+      auto vertices = e.entities(0);
       const Eigen::Vector3d p0 = geometry.x(vertices[0]);
       const Eigen::Vector3d p1 = geometry.x(vertices[1]);
       const Eigen::Vector3d p2 = geometry.x(vertices[2]);
@@ -518,7 +526,7 @@ Eigen::Vector3d mesh::normal(const mesh::MeshEntity& cell, int facet_local)
   {
   case (mesh::CellType::interval):
   {
-    const std::int32_t* vertices = cell.entities(0);
+    auto vertices = cell.entities(0);
     Eigen::Vector3d n = geometry.x(vertices[0]) - geometry.x(vertices[1]);
     n.normalize();
     if (facet_local == 1)
@@ -652,13 +660,13 @@ Eigen::Array<double, Eigen::Dynamic, 3, Eigen::RowMajor> mesh::midpoints(
   {
     const mesh::Topology& topology = mesh.topology();
     assert(topology.connectivity(dim, 0));
-    std::shared_ptr<const mesh::Connectivity> connectivity
+    std::shared_ptr<const graph::AdjacencyList<std::int32_t>> connectivity
         = topology.connectivity(dim, 0);
     const int num_vertices
         = mesh::cell_num_entities(cell_entity_type(mesh.cell_type(), dim), 0);
     for (Eigen::Index e = 0; e < entities.rows(); ++e)
     {
-      const std::int32_t* vertices = connectivity->connections(entities[e]);
+      auto vertices = connectivity->links(entities[e]);
       x.row(e) = 0.0;
       for (int i = 0; i < num_vertices; ++i)
         x.row(e) += points.row(vertices[i]);
@@ -667,5 +675,91 @@ Eigen::Array<double, Eigen::Dynamic, 3, Eigen::RowMajor> mesh::midpoints(
   }
 
   return x;
+}
+//-----------------------------------------------------------------------------
+Eigen::Array<std::int32_t, Eigen::Dynamic, 1>
+mesh::compute_marked_boundary_entities(
+    const mesh::Mesh& mesh, const int dim,
+    const std::function<Eigen::Array<bool, Eigen::Dynamic, 1>(
+        const Eigen::Ref<const Eigen::Array<double, 3, Eigen::Dynamic,
+                                            Eigen::RowMajor>>&)>& marker)
+{
+  const int tdim = mesh.topology().dim();
+
+  // Create entities
+  mesh.create_entities(dim);
+
+  // Compute connectivities for boundary detection
+  // (Topology::on_boundary())
+  if (dim < tdim)
+  {
+    mesh.create_entities(dim);
+    mesh.create_connectivity(tdim - 1, tdim);
+  }
+
+  // Find all vertices on boundary. Set all to -1 (interior) to start
+  // with. If a vertex is on the boundary, give it an index from [0,
+  // count)
+  const std::vector<bool> on_boundary0 = mesh.topology().on_boundary(0);
+  std::vector<std::int32_t> boundary_vertex(mesh.num_entities(0), -1);
+  assert(on_boundary0.size() == boundary_vertex.size());
+  int count = 0;
+  for (std::size_t i = 0; i < on_boundary0.size(); ++i)
+  {
+    if (on_boundary0[i])
+      boundary_vertex[i] = count++;
+  }
+
+  // FIXME: Does this make sense for non-affine elements?
+  // Get all points
+  const Eigen::Array<double, Eigen::Dynamic, 3, Eigen::RowMajor>& x_all
+      = mesh.geometry().points();
+
+  // Pack coordinates of all boundary vertices
+  Eigen::Array<double, 3, Eigen::Dynamic, Eigen::RowMajor> x_boundary(3, count);
+  for (std::int32_t i = 0; i < mesh.num_entities(0); ++i)
+  {
+    if (boundary_vertex[i] != -1)
+      x_boundary.col(boundary_vertex[i]) = x_all.row(i);
+  }
+
+  // Run marker function on boundary vertices
+  const Eigen::Array<bool, Eigen::Dynamic, 1> boundary_marked
+      = marker(x_boundary);
+  if (boundary_marked.rows() != x_boundary.cols())
+    throw std::runtime_error("Length of array of boundary markers is wrong.");
+
+  // Iterate over entities and build vector of marked entities
+  std::vector<std::int32_t> entities;
+  const std::vector<bool> boundary_entity = mesh.topology().on_boundary(dim);
+  for (auto& e : mesh::MeshRange(mesh, dim))
+  {
+    // Consider boundary entities only
+    if (boundary_entity[e.index()])
+    {
+      // Assume all vertices on this facet are marked
+      bool all_vertices_marked = true;
+
+      // Iterate over facet vertices
+      for (const auto& v : mesh::EntityRange(e, 0))
+      {
+        const std::int32_t idx = v.index();
+        assert(boundary_vertex[idx] < boundary_marked.rows());
+        assert(boundary_vertex[idx] != -1);
+        if (!boundary_marked[boundary_vertex[idx]])
+        {
+          all_vertices_marked = false;
+          break;
+        }
+      }
+
+      // Mark facet with all vertices marked
+      if (all_vertices_marked)
+        entities.push_back(e.index());
+    }
+  }
+
+  return Eigen::Map<Eigen::Array<std::int32_t, Eigen::Dynamic, 1>>(
+      entities.data(), entities.size());
 }
 //-----------------------------------------------------------------------------

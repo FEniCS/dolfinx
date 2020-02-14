@@ -36,7 +36,7 @@ void enforce_rules(ParallelRefinement& p_ref, const mesh::Mesh& mesh,
     update_count = 0;
     p_ref.update_logical_edgefunction();
 
-    for (const auto& f : mesh::MeshRange(mesh, 2))
+    for (const auto& f : mesh::MeshRange(mesh, 2, mesh::MeshRangeType::ALL))
     {
       const std::int32_t long_e = long_edge[f.index()];
       if (p_ref.is_marked(long_e))
@@ -199,7 +199,7 @@ std::vector<std::int32_t>
 get_tetrahedra(const std::vector<bool>& marked_edges,
                const std::vector<std::int32_t>& longest_edge)
 {
-  // Connectivity matrix for ten possible points (4 vertices + 6 edge midpoints)
+  // AdjacencyList matrix for ten possible points (4 vertices + 6 edge midpoints)
   // ordered {v0, v1, v2, v3, e0, e1, e2, e3, e4, e5}
   // Only need upper triangle, but sometimes it is easier just to insert
   // both entries (j,i) and (i,j).
@@ -317,18 +317,18 @@ face_long_edge(const mesh::Mesh& mesh)
   // Store all edge lengths in Mesh to save recalculating for each Face
   const mesh::Geometry& geometry = mesh.geometry();
   std::vector<double> edge_length(mesh.num_entities(1));
-  for (const auto& e : mesh::MeshRange(mesh, 1))
+  for (const auto& e : mesh::MeshRange(mesh, 1, mesh::MeshRangeType::ALL))
   {
-    const std::int32_t* v = e.entities(0);
+    auto v = e.entities(0);
     edge_length[e.index()] = (geometry.x(v[0]) - geometry.x(v[1])).norm();
   }
 
   // Get longest edge of each face
   const std::vector<std::int64_t>& global_indices
       = mesh.topology().global_indices(0);
-  for (const auto& f : mesh::MeshRange(mesh, 2))
+  for (const auto& f : mesh::MeshRange(mesh, 2, mesh::MeshRangeType::ALL))
   {
-    const std::int32_t* face_edges = f.entities(1);
+    auto face_edges = f.entities(1);
 
     std::int32_t imax = 0;
     double max_len = 0.0;
@@ -379,7 +379,7 @@ mesh::Mesh PlazaRefinementND::refine(const mesh::Mesh& mesh, bool redistribute)
   }
 
   common::Timer t0("PLAZA: refine");
-  auto [long_edge, edge_ratio_ok] = face_long_edge(mesh);
+  const auto [long_edge, edge_ratio_ok] = face_long_edge(mesh);
 
   ParallelRefinement p_ref(mesh);
   p_ref.mark_all();
@@ -400,7 +400,7 @@ PlazaRefinementND::refine(const mesh::Mesh& mesh,
   }
 
   common::Timer t0("PLAZA: refine");
-  auto [long_edge, edge_ratio_ok] = face_long_edge(mesh);
+  const auto [long_edge, edge_ratio_ok] = face_long_edge(mesh);
 
   ParallelRefinement p_ref(mesh);
   p_ref.mark(refinement_marker);

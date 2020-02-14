@@ -15,7 +15,7 @@ import ufl
 from dolfinx import MPI, DirichletBC, Function, FunctionSpace, fem
 from dolfinx.cpp.mesh import GhostMode
 from dolfinx.fem import (apply_lifting, assemble_matrix, assemble_scalar,
-                         assemble_vector, set_bc)
+                         assemble_vector, locate_dofs_geometrical, set_bc)
 from dolfinx.io import XDMFFile
 from ufl import (SpatialCoordinate, TestFunction, TrialFunction, div, dx, grad,
                  inner)
@@ -62,7 +62,8 @@ def test_manufactured_poisson(degree, filename, datadir):
 
     u_bc = Function(V)
     u_bc.interpolate(lambda x: x[1]**degree)
-    bc = DirichletBC(V, u_bc, lambda x: np.full(x.shape[1], True))
+    bdofs = locate_dofs_geometrical(V, lambda x: np.full(x.shape[1], True))
+    bc = DirichletBC(u_bc, bdofs)
 
     t0 = time.time()
     b = assemble_vector(L)

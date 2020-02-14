@@ -432,11 +432,11 @@ def test_dofs_dim(space):
     """Test function DofMap::dofs(mesh, dim)"""
     V = eval(space)
     dofmap = V.dofmap
-    mesh = V.mesh
-    for dim in range(0, mesh.topology.dim):
-        edofs = dofmap.dofs(mesh, dim)
-        if mesh.topology.connectivity(dim, 0) is not None:
-            num_mesh_entities = mesh.num_entities(dim)
+    topology = V.mesh.topology
+    for dim in range(0, topology.dim):
+        edofs = dofmap.dofs(topology, dim)
+        if topology.connectivity(dim, 0) is not None:
+            num_mesh_entities = topology.connectivity(dim, 0).num_nodes
             dofs_per_entity = dofmap.dof_layout.num_entity_dofs(dim)
             assert len(edofs) == dofs_per_entity * num_mesh_entities
 

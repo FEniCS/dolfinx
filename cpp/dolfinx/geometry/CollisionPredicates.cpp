@@ -56,7 +56,7 @@ bool CollisionPredicates::collides(const mesh::MeshEntity& entity,
 
   // Get data
   const mesh::Geometry& g = entity.mesh().geometry();
-  const int32_t* v = entity.entities(0);
+  auto v = entity.entities(0);
   const int tdim = entity.mesh().topology().dim();
   const int gdim = entity.mesh().geometry().dim();
 
@@ -104,8 +104,8 @@ bool CollisionPredicates::collides(const mesh::MeshEntity& entity_0,
   // Get data
   const mesh::Geometry& g0 = entity_0.mesh().geometry();
   const mesh::Geometry& g1 = entity_1.mesh().geometry();
-  const std::int32_t* v0 = entity_0.entities(0);
-  const std::int32_t* v1 = entity_1.entities(0);
+  auto v0 = entity_0.entities(0);
+  auto v1 = entity_1.entities(0);
   const std::size_t d0 = entity_0.dim();
   const std::size_t d1 = entity_1.dim();
   const int gdim = g0.dim();
