@@ -294,7 +294,8 @@ void _lift_bc_exterior_facets(
     Ae.setZero(dmap0.size(), dmap1.size());
     fn(Ae.data(), coeff_array.data(), constant_values.data(),
        coordinate_dofs.data(), &local_facet, &perm,
-       cell_edge_reflections.data(), cell_face_reflections.data(), cell_face_rotations.data());
+       cell_edge_reflections.data(), cell_face_reflections.data(),
+       cell_face_rotations.data());
 
     // Size data structure for assembly
     be.setZero(dmap0.size());
@@ -388,9 +389,10 @@ void fem::impl::assemble_cells(
     const mesh::Mesh& mesh, const std::vector<std::int32_t>& active_cells,
     const Eigen::Ref<const Eigen::Array<PetscInt, Eigen::Dynamic, 1>>& dofmap,
     int num_dofs_per_cell,
-    const std::function<void(
-        PetscScalar*, const PetscScalar*, const PetscScalar*, const double*,
-        const int*, const std::uint8_t*, const bool*, const bool*, const std::uint8_t*)>& kernel,
+    const std::function<void(PetscScalar*, const PetscScalar*,
+                             const PetscScalar*, const double*, const int*,
+                             const std::uint8_t*, const bool*, const bool*,
+                             const std::uint8_t*)>& kernel,
     const Eigen::Array<PetscScalar, Eigen::Dynamic, Eigen::Dynamic,
                        Eigen::RowMajor>& coeffs,
     const std::vector<PetscScalar>& constant_values)
@@ -436,7 +438,8 @@ void fem::impl::assemble_cells(
     be.setZero();
     kernel(be.data(), coeff_cell.data(), constant_values.data(),
            coordinate_dofs.data(), nullptr, nullptr,
-           cell_edge_reflections.data(), cell_face_reflections.data(), cell_face_rotations.data());
+           cell_edge_reflections.data(), cell_face_reflections.data(),
+           cell_face_rotations.data());
 
     // Scatter cell vector to 'global' vector array
     for (Eigen::Index i = 0; i < num_dofs_per_cell; ++i)
@@ -448,9 +451,10 @@ void fem::impl::assemble_exterior_facets(
     Eigen::Ref<Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1>> b,
     const mesh::Mesh& mesh, const std::vector<std::int32_t>& active_facets,
     const fem::DofMap& dofmap,
-    const std::function<void(
-        PetscScalar*, const PetscScalar*, const PetscScalar*, const double*,
-        const int*, const std::uint8_t*, const bool*, const bool*, const std::uint8_t*)>& fn,
+    const std::function<void(PetscScalar*, const PetscScalar*,
+                             const PetscScalar*, const double*, const int*,
+                             const std::uint8_t*, const bool*, const bool*,
+                             const std::uint8_t*)>& fn,
     const Eigen::Array<PetscScalar, Eigen::Dynamic, Eigen::Dynamic,
                        Eigen::RowMajor>& coeffs,
     const std::vector<PetscScalar>& constant_values)
@@ -512,7 +516,8 @@ void fem::impl::assemble_exterior_facets(
 
     fn(be.data(), coeff_cell.data(), constant_values.data(),
        coordinate_dofs.data(), &local_facet, &perm,
-       cell_edge_reflections.data(), cell_face_reflections.data(), cell_face_rotations.data());
+       cell_edge_reflections.data(), cell_face_reflections.data(),
+       cell_face_rotations.data());
 
     // Add element vector to global vector
     for (Eigen::Index i = 0; i < dmap.size(); ++i)
@@ -524,9 +529,10 @@ void fem::impl::assemble_interior_facets(
     Eigen::Ref<Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1>> b,
     const mesh::Mesh& mesh, const std::vector<std::int32_t>& active_facets,
     const fem::DofMap& dofmap,
-    const std::function<void(
-        PetscScalar*, const PetscScalar*, const PetscScalar*, const double*,
-        const int*, const std::uint8_t*, const bool*, const bool*, const std::uint8_t*)>& fn,
+    const std::function<void(PetscScalar*, const PetscScalar*,
+                             const PetscScalar*, const double*, const int*,
+                             const std::uint8_t*, const bool*, const bool*,
+                             const std::uint8_t*)>& fn,
     const Eigen::Array<PetscScalar, Eigen::Dynamic, Eigen::Dynamic,
                        Eigen::RowMajor>& coeffs,
     const std::vector<int>& offsets,

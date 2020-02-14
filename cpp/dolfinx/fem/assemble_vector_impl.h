@@ -49,9 +49,10 @@ void assemble_cells(
     const mesh::Mesh& mesh, const std::vector<std::int32_t>& active_cells,
     const Eigen::Ref<const Eigen::Array<PetscInt, Eigen::Dynamic, 1>>& dofmap,
     int num_dofs_per_cell,
-    const std::function<void(
-        PetscScalar*, const PetscScalar*, const PetscScalar*, const double*,
-        const int*, const std::uint8_t*, const bool*, const bool*, const std::uint8_t*)>& kernel,
+    const std::function<void(PetscScalar*, const PetscScalar*,
+                             const PetscScalar*, const double*, const int*,
+                             const std::uint8_t*, const bool*, const bool*,
+                             const std::uint8_t*)>& kernel,
     const Eigen::Array<PetscScalar, Eigen::Dynamic, Eigen::Dynamic,
                        Eigen::RowMajor>& coeffs,
     const std::vector<PetscScalar>& constant_values);
@@ -61,9 +62,10 @@ void assemble_exterior_facets(
     Eigen::Ref<Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1>> b,
     const mesh::Mesh& mesh, const std::vector<std::int32_t>& active_facets,
     const fem::DofMap& dofmap,
-    const std::function<void(
-        PetscScalar*, const PetscScalar*, const PetscScalar*, const double*,
-        const int*, const std::uint8_t*, const bool*, const bool*, const std::uint8_t*)>& fn,
+    const std::function<void(PetscScalar*, const PetscScalar*,
+                             const PetscScalar*, const double*, const int*,
+                             const std::uint8_t*, const bool*, const bool*,
+                             const std::uint8_t*)>& fn,
     const Eigen::Array<PetscScalar, Eigen::Dynamic, Eigen::Dynamic,
                        Eigen::RowMajor>& coeffs,
     const std::vector<PetscScalar>& constant_values);
@@ -73,9 +75,10 @@ void assemble_interior_facets(
     Eigen::Ref<Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1>> b,
     const mesh::Mesh& mesh, const std::vector<std::int32_t>& active_facets,
     const fem::DofMap& dofmap,
-    const std::function<void(
-        PetscScalar*, const PetscScalar*, const PetscScalar*, const double*,
-        const int*, const std::uint8_t*, const bool*, const bool*, const std::uint8_t*)>& fn,
+    const std::function<void(PetscScalar*, const PetscScalar*,
+                             const PetscScalar*, const double*, const int*,
+                             const std::uint8_t*, const bool*, const bool*,
+                             const std::uint8_t*)>& fn,
     const Eigen::Array<PetscScalar, Eigen::Dynamic, Eigen::Dynamic,
                        Eigen::RowMajor>& coeffs,
     const std::vector<int>& offsets,

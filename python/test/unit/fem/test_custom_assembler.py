@@ -173,7 +173,7 @@ def assemble_vector(b, mesh, x, dofmap):
 
 
 @numba.njit
-def assemble_vector_ufc(b, kernel, mesh, x, dofmap, edge_ref, face_ref):
+def assemble_vector_ufc(b, kernel, mesh, x, dofmap, edge_ref, face_ref, face_rot):
     """Assemble provided FFCX/UFC kernel over a mesh into the array b"""
     connections, pos = mesh
     orientation = np.array([0], dtype=np.int32)
@@ -194,7 +194,8 @@ def assemble_vector_ufc(b, kernel, mesh, x, dofmap, edge_ref, face_ref):
                ffi.from_buffer(constants),
                ffi.from_buffer(geometry), ffi.from_buffer(orientation),
                ffi.from_buffer(perm),
-               ffi.from_buffer(edge_ref), ffi.from_buffer(face_ref))
+               ffi.from_buffer(edge_ref), ffi.from_buffer(face_ref),
+               ffi.from_buffer(face_rot))
         for j in range(3):
             b[dofmap[i * 3 + j]] += b_local[j]
 
@@ -305,6 +306,7 @@ def test_custom_mesh_loop_rank1():
 
     e_ = np.array([], dtype=np.bool_)
     f_ = np.array([], dtype=np.bool_)
+    f2_ = np.array([], dtype=np.uint8)
 
     # Assemble using generated tabulate_tensor kernel and Numba assembler
     b3 = dolfinx.Function(V)
@@ -314,7 +316,7 @@ def test_custom_mesh_loop_rank1():
         with b3.vector.localForm() as b:
             b.set(0.0)
             start = time.time()
-            assemble_vector_ufc(np.asarray(b), kernel, (c, pos), geom, dofs, e_, f_)
+            assemble_vector_ufc(np.asarray(b), kernel, (c, pos), geom, dofs, e_, f_, f2_)
             end = time.time()
             print("Time (numba/cffi, pass {}): {}".format(i, end - start))
 
