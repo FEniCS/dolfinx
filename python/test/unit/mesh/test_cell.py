@@ -1,16 +1,16 @@
 # Copyright (C) 2013 Anders Logg
 #
-# This file is part of DOLFIN (https://www.fenicsproject.org)
+# This file is part of DOLFINX (https://www.fenicsproject.org)
 #
 # SPDX-License-Identifier:    LGPL-3.0-or-later
 
 import numpy
 import pytest
+from dolfinx_utils.test.skips import skip_in_parallel
 
-from dolfin import (MPI, Mesh, MeshEntity, UnitCubeMesh, UnitIntervalMesh,
-                    UnitSquareMesh, cpp)
-from dolfin.cpp.mesh import CellType
-from dolfin_utils.test.skips import skip_in_parallel
+from dolfinx import (MPI, Mesh, MeshEntity, UnitCubeMesh, UnitIntervalMesh,
+                     UnitSquareMesh, cpp)
+from dolfinx.cpp.mesh import CellType
 
 
 @skip_in_parallel
@@ -58,8 +58,8 @@ def test_volume_quadrilateralR2():
 
 @pytest.mark.parametrize(
     'coordinates',
-    [[[0.0, 0.0, 0.0], [1.0, 0.0, 0.0], [0.0, 1.0, 0.0], [1.0, 1.0, 0.0]],
-     [[0.0, 0.0, 0.0], [0.0, 1.0, 0.0], [0.0, 0.0, 1.0], [0.0, 1.0, 1.0]]])
+    [[[0.0, 0.0, 0.0], [0.0, 1.0, 0.0], [1.0, 0.0, 0.0], [1.0, 1.0, 0.0]],
+     [[0.0, 0.0, 0.0], [0.0, 0.0, 1.0], [0.0, 1.0, 0.0], [0.0, 1.0, 1.0]]])
 def test_volume_quadrilateralR3(coordinates):
     mesh = Mesh(MPI.comm_world, CellType.quadrilateral,
                 numpy.array(coordinates, dtype=numpy.float64),

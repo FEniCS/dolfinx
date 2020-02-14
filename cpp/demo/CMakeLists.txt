@@ -1,10 +1,11 @@
 cmake_minimum_required(VERSION 3.9)
-project(dolfin-demos)
+project(dolfinx-demos)
 
 # Find DOLFIN config file (not used here, but check that the demo will
 # be able to find it
-find_package(DOLFIN REQUIRED)
-# include(${DOLFIN_USE_FILE})
+if (NOT TARGET dolfinx)
+  find_package(DOLFINX REQUIRED)
+endif()
 
 # Demos that run in real and complex modes
 add_subdirectory(poisson)

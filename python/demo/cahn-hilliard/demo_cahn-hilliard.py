@@ -5,9 +5,8 @@
 # :download:`demo_cahn-hilliard.py`, which contains both the variational
 # forms and the solver.
 #
-# This example demonstrates the solution of a particular nonlinear
-# time-dependent fourth-order equation, known as the Cahn-Hilliard
-# equation. In particular it demonstrates the use of
+# This example demonstrates the solution of the Cahn-Hilliard equation,
+# a nonlinear time-dependent fourth-order PDE.
 #
 # * The built-in Newton solver
 # * Advanced use of the base class ``NonlinearProblem``
@@ -107,23 +106,20 @@
 #
 # This demo is implemented in the :download:`demo_cahn-hilliard.py`
 # file.
-#
-# First, the modules :py:mod:`random` :py:mod:`matplotlib`
-# :py:mod:`dolfin` module are imported::
+
 
 import os
 
 import numpy as np
 from petsc4py import PETSc
 
-from dolfin import (MPI, Function, FunctionSpace, NewtonSolver,
-                    NonlinearProblem, TestFunctions, TrialFunction,
-                    UnitSquareMesh, log)
-from dolfin.cpp.mesh import CellType
-from dolfin.fem.assemble import assemble_matrix, assemble_vector
-from dolfin.io import XDMFFile
-from ufl import (FiniteElement, derivative, diff, dx, grad, inner, split,
-                 variable)
+from dolfinx import (MPI, Function, FunctionSpace, NewtonSolver,
+                     NonlinearProblem, UnitSquareMesh, log)
+from dolfinx.cpp.mesh import CellType
+from dolfinx.fem.assemble import assemble_matrix, assemble_vector
+from dolfinx.io import XDMFFile
+from ufl import (FiniteElement, TestFunctions, TrialFunction, derivative, diff,
+                 dx, grad, inner, split, variable)
 
 # Save all logging to file
 log.set_output_file("log.txt")
@@ -133,7 +129,7 @@ log.set_output_file("log.txt")
 #
 # A class which will represent the Cahn-Hilliard in an abstract from for
 # use in the Newton solver is now defined. It is a subclass of
-# :py:class:`NonlinearProblem <dolfin.cpp.NonlinearProblem>`. ::
+# :py:class:`NonlinearProblem <dolfinx.cpp.NonlinearProblem>`. ::
 
 # Class for interfacing with the Newton solver
 
@@ -172,7 +168,7 @@ class CahnHilliardEquation(NonlinearProblem):
 # and linear (``L``) forms. These will used to compute the Jacobian matrix
 # and the residual vector, respectively, for use in a Newton solver.  The
 # function ``F`` and ``J`` are virtual member functions of
-# :py:class:`NonlinearProblem <dolfin.cpp.NonlinearProblem>`. The function
+# :py:class:`NonlinearProblem <dolfinx.cpp.NonlinearProblem>`. The function
 # ``F`` computes the residual vector ``b``, and the function ``J``
 # computes the Jacobian matrix ``A``.
 #
@@ -186,7 +182,7 @@ theta = 0.5      # time stepping family, e.g. theta=1 -> backward Euler, theta=0
 
 # A unit square mesh with 97 (= 96 + 1) vertices in each direction is
 # created, and on this mesh a
-# :py:class:`FunctionSpace<dolfin.functions.functionspace.FunctionSpace>`
+# :py:class:`FunctionSpace<dolfinx.function.FunctionSpace>`
 # ``ME`` is built using a pair of linear Lagrangian elements. ::
 
 # Create mesh and build function space
@@ -203,12 +199,12 @@ q, v = TestFunctions(ME)
 # .. index:: split functions
 #
 # For the test functions,
-# :py:func:`TestFunctions<dolfin.functions.function.TestFunctions>` (note
+# :py:func:`TestFunctions<dolfinx.functions.function.TestFunctions>` (note
 # the 's' at the end) is used to define the scalar test functions ``q``
 # and ``v``. The
-# :py:class:`TrialFunction<dolfin.functions.function.TrialFunction>`
+# :py:class:`TrialFunction<dolfinx.functions.function.TrialFunction>`
 # ``du`` has dimension two. Some mixed objects of the
-# :py:class:`Function<dolfin.functions.function.Function>` class on ``ME``
+# :py:class:`Function<dolfinx.functions.function.Function>` class on ``ME``
 # are defined to represent :math:`u = (c_{n+1}, \mu_{n+1})` and :math:`u0
 # = (c_{n}, \mu_{n})`, and these are then split into sub-functions::
 
@@ -232,9 +228,11 @@ c0, mu0 = split(u0)
 # then interpolated into a finite element space::
 
 
-def u_init(values, x):
-    values[:, 0] = 0.63 + 0.02 * (0.5 - np.random.rand(x.shape[0]))
-    values[:, 1] = 0.0
+def u_init(x):
+    """Initialise values for c and mu."""
+    values = np.zeros((2, x.shape[1]))
+    values[0] = 0.63 + 0.02 * (0.5 - np.random.rand(x.shape[1]))
+    return values
 
 
 # Create intial conditions and interpolate
@@ -285,14 +283,14 @@ a = derivative(L, u, du)
 # .. index::
 #    single: Newton solver; (in Cahn-Hilliard demo)
 #
-# The DOLFIN Newton solver requires a
-# :py:class:`NonlinearProblem<dolfin.cpp.NonlinearProblem>` object to
+# The DOLFINX Newton solver requires a
+# :py:class:`NonlinearProblem<dolfinx.cpp.NonlinearProblem>` object to
 # solve a system of nonlinear equations. Here, we are using the class
 # ``CahnHilliardEquation``, which was declared at the beginning of the
 # file, and which is a sub-class of
-# :py:class:`NonlinearProblem<dolfin.cpp.NonlinearProblem>`. We need to
+# :py:class:`NonlinearProblem<dolfinx.cpp.NonlinearProblem>`. We need to
 # instantiate objects of both ``CahnHilliardEquation`` and
-# :py:class:`NewtonSolver <dolfin.cpp.NewtonSolver>`::
+# :py:class:`NewtonSolver <dolfinx.cpp.NewtonSolver>`::
 
 # Create nonlinear problem and Newton solver
 problem = CahnHilliardEquation(a, L)
@@ -332,13 +330,9 @@ while (t < T):
     u.vector.copy(result=u0.vector)
     file.write(u.sub(0), t)
 
-# The string ``"compressed"`` indicates that the output data should be
-# compressed to reduce the file size. Within the time stepping loop, the
-# solution vector associated with ``u`` is copied to ``u0`` at the
-# beginning of each time step, and the nonlinear problem is solved by
-# calling
-# :py:func:`solver.solve(problem,u.vector)<dolfin.cpp.NewtonSolver.solve>`,
-# with the new solution vector returned in
-# :py:func:`u.vector<dolfin.cpp.Function.vector>`. The ``c`` component
-# of the solution (the first component of ``u``) is then written to file
-# at every time step.
+# Within the time stepping loop, the nonlinear problem is solved by
+# calling :py:func:`solver.solve(problem,u.vector)<dolfinx.cpp.NewtonSolver.solve>`,
+# with the new solution vector returned in :py:func:`u.vector<dolfinx.cpp.Function.vector>`.
+# The solution vector associated with ``u`` is copied to ``u0`` at the
+# end of each time step, and the ``c`` component of the solution
+# (the first component of ``u``) is then written to file.

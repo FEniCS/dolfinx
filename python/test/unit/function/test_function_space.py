@@ -1,57 +1,57 @@
 # Copyright (C) 2011 Johan Hake
 #
-# This file is part of DOLFIN (https://www.fenicsproject.org)
+# This file is part of DOLFINX (https://www.fenicsproject.org)
 #
 # SPDX-License-Identifier:    LGPL-3.0-or-later
 """Unit tests for the FunctionSpace class"""
 
 import pytest
 
-from dolfin import (MPI, Function, FunctionSpace, TestFunction, TrialFunction,
-                    UnitCubeMesh, VectorFunctionSpace)
-from dolfin_utils.test.fixtures import fixture
-from ufl import FiniteElement, VectorElement, grad, triangle
+from dolfinx import (MPI, Function, FunctionSpace, UnitCubeMesh,
+                     VectorFunctionSpace)
+from ufl import (FiniteElement, TestFunction, TrialFunction, VectorElement,
+                 grad, triangle)
 from ufl.log import UFLException
 
 
-@fixture
+@pytest.fixture
 def mesh():
     return UnitCubeMesh(MPI.comm_world, 8, 8, 8)
 
 
-@fixture
+@pytest.fixture
 def V(mesh):
     return FunctionSpace(mesh, ('CG', 1))
 
 
-@fixture
+@pytest.fixture
 def W(mesh):
     return VectorFunctionSpace(mesh, ('CG', 1))
 
 
-@fixture
+@pytest.fixture
 def Q(mesh):
     W = VectorElement('CG', mesh.ufl_cell(), 1)
     V = FiniteElement('CG', mesh.ufl_cell(), 1)
     return FunctionSpace(mesh, W * V)
 
 
-@fixture
+@pytest.fixture
 def f(V):
     return Function(V)
 
 
-@fixture
+@pytest.fixture
 def V2(f):
     return f.function_space
 
 
-@fixture
+@pytest.fixture
 def g(W):
     return Function(W)
 
 
-@fixture
+@pytest.fixture
 def W2(g):
     return g.function_space
 
@@ -123,6 +123,12 @@ def test_not_equal(W, V, W2, V2):
     assert W2 != V2
 
 
+def test_clone(W):
+    V = W.clone()
+    assert V == W
+    assert V.id != W.id
+
+
 def test_collapse(W, V):
     Vs = W.sub(2)
     with pytest.raises(RuntimeError):
@@ -182,8 +188,8 @@ def test_argument_equality(mesh, V, V2, W, W2):
         assert s1 == s3
         assert s2 == s3
 
-        # Test that the dolfin implementation of Argument.__eq__
-        # is triggered when comparing ufl expressions
+        # Test that the dolfinx implementation of Argument.__eq__ is
+        # triggered when comparing ufl expressions
         assert grad(v) == grad(v2)
         assert grad(v) != grad(v3)
 

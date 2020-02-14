@@ -1,26 +1,28 @@
 # Copyright (C) 2014 Garth N. Wells
 #
-# This file is part of DOLFIN (https://www.fenicsproject.org)
+# This file is part of DOLFINX (https://www.fenicsproject.org)
 #
 # SPDX-License-Identifier:    LGPL-3.0-or-later
 
 # This demo solves the equations of static linear elasticity for a
 # pulley subjected to centripetal accelerations. The solver uses
-# smoothed aggregation algerbaric multigrid.
+# smoothed aggregation algebraic multigrid.
 
 from contextlib import ExitStack
 
 import numpy as np
 from petsc4py import PETSc
 
-import dolfin
-from dolfin import (MPI, BoxMesh, DirichletBC, Function,
-                    TestFunction, TrialFunction, VectorFunctionSpace, cpp)
-from dolfin.fem import apply_lifting, assemble_matrix, assemble_vector, set_bc
-from dolfin.io import XDMFFile
-from dolfin.la import VectorSpaceBasis
-from dolfin.cpp.mesh import CellType
-from ufl import Identity, as_vector, dx, grad, inner, sym, tr
+import dolfinx
+from dolfinx import (MPI, BoxMesh, DirichletBC, Function, VectorFunctionSpace,
+                     cpp)
+from dolfinx.cpp.mesh import CellType
+from dolfinx.fem import (apply_lifting, assemble_matrix, assemble_vector, set_bc,
+                         locate_dofs_geometrical)
+from dolfinx.io import XDMFFile
+from dolfinx.la import VectorSpaceBasis
+from ufl import (Identity, SpatialCoordinate, TestFunction, TrialFunction,
+                 as_vector, dx, grad, inner, sym, tr)
 
 
 def build_nullspace(V):
@@ -65,8 +67,8 @@ def build_nullspace(V):
 mesh = BoxMesh(
     MPI.comm_world, [np.array([0.0, 0.0, 0.0]),
                      np.array([2.0, 1.0, 1.0])], [12, 12, 12],
-    CellType.tetrahedron, dolfin.cpp.mesh.GhostMode.none)
-cmap = dolfin.fem.create_coordinate_map(mesh.ufl_domain())
+    CellType.tetrahedron, dolfinx.cpp.mesh.GhostMode.none)
+cmap = dolfinx.fem.create_coordinate_map(mesh.ufl_domain())
 mesh.geometry.coord_mapping = cmap
 
 # Function to mark inner surface of pulley
@@ -75,9 +77,9 @@ mesh.geometry.coord_mapping = cmap
 #    return (x[0]*x[0] + x[1]*x[1]) < r*r and on_boundary
 
 
-def boundary(x, only_boundary):
-    return np.logical_or(x[:, 0] < 10.0 * np.finfo(float).eps,
-                         x[:, 0] > 1.0 - 10.0 * np.finfo(float).eps)
+def boundary(x):
+    return np.logical_or(x[0] < 10.0 * np.finfo(float).eps,
+                         x[0] > 1.0 - 10.0 * np.finfo(float).eps)
 
 
 # Rotation rate and mass density
@@ -85,9 +87,8 @@ omega = 300.0
 rho = 10.0
 
 # Loading due to centripetal acceleration (rho*omega^2*x_i)
-# f = Expression(("rho*omega*omega*x[0]", "rho*omega*omega*x[1]", "0.0"),
-
-f = as_vector((0.0, 1.0E+10, 0.0))
+x = SpatialCoordinate(mesh)
+f = as_vector((rho * omega**2 * x[0], rho * omega**2 * x[1], 0.0))
 
 # Elasticity parameters
 E = 1.0e9
@@ -117,7 +118,7 @@ with u0.vector.localForm() as bc_local:
     bc_local.set(0.0)
 
 # Set up boundary condition on inner surface
-bc = DirichletBC(V, u0, boundary)
+bc = DirichletBC(u0, locate_dofs_geometrical(V, boundary))
 
 # Assemble system, applying boundary conditions and preserving symmetry)
 A = assemble_matrix(a, [bc])
@@ -183,6 +184,6 @@ if MPI.rank(mesh.mpi_comm()) == 0:
 
 # Plot solution
 # import matplotlib.pyplot as plt
-# import dolfin.plotting
-# dolfin.plotting.plot(u)
+# import dolfinx.plotting
+# dolfinx.plotting.plot(u)
 # plt.show()

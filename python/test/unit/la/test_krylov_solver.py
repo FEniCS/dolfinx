@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 # Copyright (C) 2014 Garth N. Wells
 #
-# This file is part of DOLFIN (https://www.fenicsproject.org)
+# This file is part of DOLFINX (https://www.fenicsproject.org)
 #
 # SPDX-License-Identifier:    LGPL-3.0-or-later
 """Unit tests for the KrylovSolver interface"""
@@ -10,14 +10,16 @@ from contextlib import ExitStack
 
 import numpy as np
 import pytest
+from petsc4py import PETSc
 
 import ufl
-from dolfin import (MPI, DirichletBC, Function, FunctionSpace, TestFunction,
-                    TrialFunction, UnitSquareMesh, VectorFunctionSpace)
-from dolfin.fem import apply_lifting, assemble_matrix, assemble_vector, set_bc
-from dolfin.la import VectorSpaceBasis
-from petsc4py import PETSc
-from ufl import Identity, dot, dx, grad, inner, sym, tr
+from dolfinx import (MPI, DirichletBC, Function, FunctionSpace, UnitSquareMesh,
+                     VectorFunctionSpace, MeshFunction)
+from dolfinx.fem import (apply_lifting, assemble_matrix, assemble_vector, set_bc,
+                         locate_dofs_topological)
+from dolfinx.la import VectorSpaceBasis
+from ufl import (Identity, TestFunction, TrialFunction, dot, dx, grad, inner,
+                 sym, tr)
 
 
 def test_krylov_solver_lu():
@@ -94,10 +96,16 @@ def test_krylov_samg_solver_elasticity():
         with bc0.vector.localForm() as bc_local:
             bc_local.set(0.0)
 
-        def boundary(x, only_boundary):
-            return [only_boundary] * x.shape(0)
+        def boundary(x):
+            return np.full(x.shape[1], True)
 
-        bc = DirichletBC(V.sub(0), bc0, boundary)
+        facetdim = mesh.topology.dim - 1
+        mf = MeshFunction("size_t", mesh, facetdim, 0)
+        mf.mark(boundary, 1)
+        bndry_facets = np.where(mf.values == 1)[0]
+
+        bdofs = locate_dofs_topological(V.sub(0), V, facetdim, bndry_facets)
+        bc = DirichletBC(bc0, bdofs, V.sub(0))
         u = TrialFunction(V)
         v = TestFunction(V)
 

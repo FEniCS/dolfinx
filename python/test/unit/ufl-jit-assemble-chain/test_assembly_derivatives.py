@@ -2,7 +2,7 @@
 
 # Copyright (C) 2011 Martin S. Alnaes
 #
-# This file is part of DOLFIN (https://www.fenicsproject.org)
+# This file is part of DOLFINX (https://www.fenicsproject.org)
 #
 # SPDX-License-Identifier:    LGPL-3.0-or-later
 
@@ -10,8 +10,8 @@ import math
 import numpy
 import pytest
 
-from dolfin import MPI, FacetNormal, RectangleMesh, UnitIntervalMesh
-from dolfin.function.specialfunctions import SpatialCoordinate
+from dolfinx import MPI, FacetNormal, RectangleMesh, UnitIntervalMesh
+from dolfinx.specialfunctions import SpatialCoordinate
 from ufl import (acos, as_matrix, as_vector, asin, atan, cos, cross, det, dev,
                  diff, div, dot, ds, dx, elem_div, elem_mult, elem_op,
                  elem_pow, erf, exp, grad, inner, ln, outer, sin, skew, sym,
@@ -43,7 +43,7 @@ def test_diff_then_integrate():
         for expr in exprs:
             F_list.append((expr, acc))
 
-    # FIXME: 0*dx and 1*dx fails in the ufl-ffc-jit framework somewhere
+    # FIXME: 0*dx and 1*dx fails in the ufl-ffcx-jit framework somewhere
     # reg([Constant(0.0, cell=cell)])
     # reg([Constant(1.0, cell=cell)])
     monomial_list = [x**q for q in range(2, 6)]
@@ -129,14 +129,14 @@ def test_diff_then_integrate():
             print(x)
             print(f)
 
-        # Apply integration with DOLFIN
+        # Apply integration with DOLFINX
         # (also passes through form compilation and jit)
         M = f * dx
         f_integral = assemble_scalar(M)  # noqa
         f_integral = MPI.sum(mesh.mpi_comm(), f_integral)
 
         # Compute integral of f manually from anti-derivative F
-        # (passes through PyDOLFIN interface and uses UFL evaluation)
+        # (passes through pybind11 interface and uses UFL evaluation)
         F_diff = F((x1,)) - F((x0,))
 
         # Compare results. Using custom relative delta instead
@@ -168,7 +168,7 @@ def test_div_grad_then_integrate_over_cells_and_boundary():
         for expr in exprs:
             F_list.append((expr, acc))
 
-    # FIXME: 0*dx and 1*dx fails in the ufl-ffc-jit framework somewhere
+    # FIXME: 0*dx and 1*dx fails in the ufl-ffcx-jit framework somewhere
     # reg([Constant(0.0, cell=cell)])
     # reg([Constant(1.0, cell=cell)])
     monomial_list = [x**q for q in range(2, 6)]

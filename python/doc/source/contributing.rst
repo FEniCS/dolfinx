@@ -53,8 +53,7 @@ Make a pull request
 2. If there is no C++ version, edit ``test/regression/test.py`` to
    indicate that there is no C++ version of the demo.
 3. Make a pull request at
-   https://bitbucket.org/fenics-project/dolfin/pull-requests/ for your
+   https://github.com/FEniCS/dolfinx/ for your
    demo to be considered for addition to DOLFIN. Add the
    ``demo_foo-bar.py.rst`` file to the repository, but do not add the
    ``demo_foo-bar.py`` file.
-

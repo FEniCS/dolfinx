@@ -1,43 +1,45 @@
-cmake_minimum_required(VERSION 3.5.0)
+cmake_minimum_required(VERSION 3.10)
 
-PROJECT(dolfin_pybind11)
+PROJECT(dolfinx_pybind11)
+
+find_package(DOLFINX REQUIRED)
+
+# Set C++ standard before finding pybind11
+set(CMAKE_CXX_STANDARD 17)
+set(CMAKE_CXX_STANDARD_REQUIRED ON)
+set(CMAKE_CXX_EXTENSIONS OFF)
 
 find_package(pybind11 REQUIRED CONFIG HINTS ${PYBIND11_DIR} ${PYBIND11_ROOT}
   $ENV{PYBIND11_DIR} $ENV{PYBIND11_ROOT})
 
-find_package(DOLFIN REQUIRED)
-include(${DOLFIN_USE_FILE})
-
-# Strict compiler flags
-#include(CheckCXXCompilerFlag)
-#CHECK_CXX_COMPILER_FLAG("-Wall -Werror -pedantic" HAVE_PEDANTIC)
-#if (HAVE_PEDANTIC)
-#   set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall -Werror -pedantic")
-#endif()
-
 # Create the binding library
 pybind11_add_module(cpp SHARED
-  src/dolfin.cpp
-  src/common.cpp
-  src/fem.cpp
-  src/function.cpp
-  src/generation.cpp
-  src/geometry.cpp
-  src/graph.cpp
-  src/io.cpp
-  src/la.cpp
-  src/log.cpp
-  src/mesh.cpp
-  src/nls.cpp
-  src/refinement.cpp
-  src/MPICommWrapper.cpp)
+  dolfinx/wrappers/dolfin.cpp
+  dolfinx/wrappers/common.cpp
+  dolfinx/wrappers/fem.cpp
+  dolfinx/wrappers/function.cpp
+  dolfinx/wrappers/generation.cpp
+  dolfinx/wrappers/geometry.cpp
+  dolfinx/wrappers/graph.cpp
+  dolfinx/wrappers/io.cpp
+  dolfinx/wrappers/la.cpp
+  dolfinx/wrappers/log.cpp
+  dolfinx/wrappers/mesh.cpp
+  dolfinx/wrappers/nls.cpp
+  dolfinx/wrappers/refinement.cpp)
 
-# Add DOLFIN libraries and other config
-target_link_libraries(cpp PRIVATE pybind11::module dolfin)
+# Add srict compiler flags
+include(CheckCXXCompilerFlag)
+CHECK_CXX_COMPILER_FLAG("-Wall -Werror -pedantic" HAVE_PEDANTIC)
+if (HAVE_PEDANTIC)
+  target_compile_options(cpp PRIVATE -Wall;-Werror;-pedantic)
+endif()
+
+# Add DOLFINX libraries and other config
+target_link_libraries(cpp PRIVATE pybind11::module dolfinx)
 
 # Add to CMake search path
-set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH}
-  ${CMAKE_CURRENT_SOURCE_DIR}/cmake)
+set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} ${CMAKE_CURRENT_SOURCE_DIR}/cmake)
 
 # Check for petsc4py
 find_package(PETSc4py REQUIRED)

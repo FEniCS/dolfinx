@@ -1,6 +1,6 @@
 # Copyright (C) 2012 Garth N. Wells
 #
-# This file is part of DOLFIN (https://www.fenicsproject.org)
+# This file is part of DOLFINX (https://www.fenicsproject.org)
 #
 # SPDX-License-Identifier:    LGPL-3.0-or-later
 
@@ -9,12 +9,13 @@ import os
 import numpy
 from petsc4py import PETSc
 
-from dolfin import (MPI, Function, FunctionSpace, MeshEntity, MeshFunction,
-                    MeshValueCollection, UnitCubeMesh, UnitSquareMesh, cpp)
-from dolfin.io import HDF5File
-from dolfin_utils.test.fixtures import tempdir
-from dolfin_utils.test.skips import xfail_if_complex
+from dolfinx import (MPI, Function, FunctionSpace, MeshEntity, MeshFunction,
+                     MeshValueCollection, UnitCubeMesh, UnitSquareMesh, cpp)
+from dolfinx.io import HDF5File
+from dolfinx_utils.test.fixtures import tempdir
+from dolfinx_utils.test.skips import xfail_if_complex
 
+import pytest
 assert (tempdir)
 
 
@@ -159,8 +160,8 @@ def test_save_and_read_function(tempdir):
     F0 = Function(Q)
     F1 = Function(Q)
 
-    def E(values, x):
-        values[:, 0] = x[:, 0]
+    def E(x):
+        return x[0]
 
     F0.interpolate(E)
 
@@ -178,11 +179,13 @@ def test_save_and_read_function(tempdir):
     hdf5_file.close()
 
 
-def test_save_and_read_mesh_2D(tempdir):
+@pytest.mark.parametrize("mesh0", [UnitSquareMesh(MPI.comm_world, 20, 20),
+                                   cpp.generation.UnitDiscMesh.create(MPI.comm_world, 3,
+                                                                      cpp.mesh.GhostMode.none)])
+def test_save_and_read_mesh_2D(mesh0, tempdir):
     filename = os.path.join(tempdir, "mesh2d.h5")
 
     # Write to file
-    mesh0 = UnitSquareMesh(MPI.comm_world, 20, 20)
     mesh_file = HDF5File(mesh0.mpi_comm(), filename, "w")
     mesh_file.write(mesh0, "/my_mesh")
     mesh_file.close()
@@ -193,6 +196,15 @@ def test_save_and_read_mesh_2D(tempdir):
     mesh_file.close()
 
     assert mesh0.num_entities_global(0) == mesh1.num_entities_global(0)
+    dim = mesh0.topology.dim
+    assert mesh0.num_entities_global(dim) == mesh1.num_entities_global(dim)
+
+    # Read from file, and use partition from file
+    mesh_file = HDF5File(mesh0.mpi_comm(), filename, "r")
+    mesh2 = mesh_file.read_mesh("/my_mesh", True, cpp.mesh.GhostMode.none)
+    mesh_file.close()
+
+    assert mesh0.num_cells() == mesh2.num_cells()
     dim = mesh0.topology.dim
     assert mesh0.num_entities_global(dim) == mesh1.num_entities_global(dim)
 
@@ -212,6 +224,15 @@ def test_save_and_read_mesh_3D(tempdir):
     mesh_file.close()
 
     assert mesh0.num_entities_global(0) == mesh1.num_entities_global(0)
+    dim = mesh0.topology.dim
+    assert mesh0.num_entities_global(dim) == mesh1.num_entities_global(dim)
+
+    # Read from file, and use partition from file
+    mesh_file = HDF5File(mesh0.mpi_comm(), filename, "r")
+    mesh2 = mesh_file.read_mesh("/my_mesh", True, cpp.mesh.GhostMode.none)
+    mesh_file.close()
+
+    assert mesh0.num_cells() == mesh2.num_cells()
     dim = mesh0.topology.dim
     assert mesh0.num_entities_global(dim) == mesh1.num_entities_global(dim)
 

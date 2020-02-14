@@ -15,7 +15,7 @@ C++ core
 
 .. rubric:: Required
 
-- C++ compiler (supporting the C++14 standard)
+- C++ compiler (supporting the C++17 standard)
 - Boost (http://www.boost.org), with the following compiled Boost components
 
   - filesystem
@@ -47,7 +47,7 @@ Below are additional requirements for the Python interface.
 .. rubric:: Required
 
 - Python 3
-- FFC-X (https://github.com/FEniCS/ffcx), UFL and FIAT (http://bitbucket.org/fenics-project/).
+- FFC-X, UFL and FIAT (http://github.com/FEniCS/).
 - pybind11 (https://github.com/pybind/pybind11)
 - NumPy (http://www.numpy.org)
 
