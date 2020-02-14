@@ -258,11 +258,13 @@ void Function::eval(
         = mesh.topology().get_edge_reflections(cell_index);
     Eigen::Array<bool, 1, Eigen::Dynamic> cell_face_reflections
         = mesh.topology().get_face_reflections(cell_index);
+    Eigen::Array<std::uint8_t, 1, Eigen::Dynamic> cell_face_rotations
+        = mesh.topology().get_face_rotations(cell_index);
 
     // Push basis forward to physical element
     element.transform_reference_basis(basis_values, basis_reference_values, X,
                                       J, detJ, K, cell_edge_reflections.data(),
-                                      cell_face_reflections.data());
+                                      cell_face_reflections.data(), cell_face_rotations.data());
 
     // Get degrees of freedom for current cell
     auto dofs = dofmap.cell_dofs(cell_index);

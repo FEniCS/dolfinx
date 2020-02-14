@@ -160,7 +160,7 @@ void Form::set_tabulate_tensor(
     FormIntegrals::Type type, int i,
     std::function<void(PetscScalar*, const PetscScalar*, const PetscScalar*,
                        const double*, const int*, const std::uint8_t*,
-                       const bool*, const bool*)>
+                       const bool*, const bool*, const std::uint8_t*)>
         fn)
 {
   _integrals.set_tabulate_tensor(type, i, fn);

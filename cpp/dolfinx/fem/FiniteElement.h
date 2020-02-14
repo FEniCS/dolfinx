@@ -85,7 +85,7 @@ public:
       const Eigen::Tensor<double, 3, Eigen::RowMajor>& J,
       const Eigen::Ref<const Eigen::Array<double, Eigen::Dynamic, 1>>& detJ,
       const Eigen::Tensor<double, 3, Eigen::RowMajor>& K,
-      const bool* edge_reflections, const bool* face_reflections) const;
+      const bool* edge_reflections, const bool* face_reflections, const std::uint8_t* face_rotations) const;
 
   /// Push basis function (derivatives) forward to physical element
   void transform_reference_basis_derivatives(
@@ -96,7 +96,7 @@ public:
       const Eigen::Tensor<double, 3, Eigen::RowMajor>& J,
       const Eigen::Ref<const Eigen::Array<double, Eigen::Dynamic, 1>>& detJ,
       const Eigen::Tensor<double, 3, Eigen::RowMajor>& K,
-      const bool* edge_reflections, const bool* face_reflections) const;
+      const bool* edge_reflections, const bool* face_reflections, const std::uint8_t* face_rotations) const;
 
   /// Check if reference coordinates for dofs are defined
   /// @return True if the dof coordinates are available
@@ -161,7 +161,7 @@ private:
 
   std::function<int(double*, int, int, const double*, const double*,
                     const double*, const double*, const double*, const bool*,
-                    const bool*)>
+                    const bool*, const std::uint8_t*)>
       _transform_reference_basis_derivatives;
 
   std::function<int(ufc_scalar_t*, const ufc_scalar_t*, const double*,

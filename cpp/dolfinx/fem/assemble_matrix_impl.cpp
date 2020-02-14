@@ -104,7 +104,7 @@ void fem::impl::assemble_cells(
     const std::vector<bool>& bc1,
     const std::function<void(
         PetscScalar*, const PetscScalar*, const PetscScalar*, const double*,
-        const int*, const std::uint8_t*, const bool*, const bool*)>& kernel,
+        const int*, const std::uint8_t*, const bool*, const bool*, const std::uint8_t*)>& kernel,
     const Eigen::Array<PetscScalar, Eigen::Dynamic, Eigen::Dynamic,
                        Eigen::RowMajor>& coeffs,
     const std::vector<PetscScalar>& constant_values)
@@ -146,13 +146,16 @@ void fem::impl::assemble_cells(
         = mesh.topology().get_edge_reflections(cell_index);
     Eigen::Array<bool, 1, Eigen::Dynamic> cell_face_reflections
         = mesh.topology().get_face_reflections(cell_index);
+    Eigen::Array<std::uint8_t, 1, Eigen::Dynamic> cell_face_rotations
+        = mesh.topology().get_face_rotations(cell_index);
 
     // Tabulate tensor
     auto coeff_cell = coeffs.row(cell_index);
     Ae.setZero(num_dofs_per_cell0, num_dofs_per_cell1);
     kernel(Ae.data(), coeff_cell.data(), constant_values.data(),
            coordinate_dofs.data(), nullptr, nullptr,
-           cell_edge_reflections.data(), cell_face_reflections.data());
+           cell_edge_reflections.data(), cell_face_reflections.data(),
+            cell_face_rotations.data());
 
     // Zero rows/columns for essential bcs
     if (!bc0.empty())
@@ -192,7 +195,7 @@ void fem::impl::assemble_exterior_facets(
     const std::vector<bool>& bc1,
     const std::function<void(
         PetscScalar*, const PetscScalar*, const PetscScalar*, const double*,
-        const int*, const std::uint8_t*, const bool*, const bool*)>& fn,
+        const int*, const std::uint8_t*, const bool*, const bool*, const std::uint8_t*)>& fn,
     const Eigen::Array<PetscScalar, Eigen::Dynamic, Eigen::Dynamic,
                        Eigen::RowMajor>& coeffs,
     const std::vector<PetscScalar> constant_values)
@@ -252,13 +255,15 @@ void fem::impl::assemble_exterior_facets(
         = mesh.topology().get_edge_reflections(cell_index);
     Eigen::Array<bool, 1, Eigen::Dynamic> cell_face_reflections
         = mesh.topology().get_face_reflections(cell_index);
+    Eigen::Array<std::uint8_t, 1, Eigen::Dynamic> cell_face_rotations
+        = mesh.topology().get_face_rotations(cell_index);
 
     // Tabulate tensor
     auto coeff_cell = coeffs.row(cell_index);
     Ae.setZero(dmap0.size(), dmap1.size());
     fn(Ae.data(), coeff_cell.data(), constant_values.data(),
        coordinate_dofs.data(), &local_facet, &perm,
-       cell_edge_reflections.data(), cell_face_reflections.data());
+       cell_edge_reflections.data(), cell_face_reflections.data(), cell_face_rotations.data());
 
     // Zero rows/columns for essential bcs
     if (!bc0.empty())
@@ -294,7 +299,7 @@ void fem::impl::assemble_interior_facets(
     const std::vector<bool>& bc1,
     const std::function<void(
         PetscScalar*, const PetscScalar*, const PetscScalar*, const double*,
-        const int*, const std::uint8_t*, const bool*, const bool*)>& fn,
+        const int*, const std::uint8_t*, const bool*, const bool*, const std::uint8_t*)>& fn,
     const Eigen::Array<PetscScalar, Eigen::Dynamic, Eigen::Dynamic,
                        Eigen::RowMajor>& coeffs,
     const std::vector<int>& offsets,
@@ -408,12 +413,14 @@ void fem::impl::assemble_interior_facets(
         = mesh.topology().get_edge_reflections(cell_index0);
     Eigen::Array<bool, 1, Eigen::Dynamic> cell_face_reflections
         = mesh.topology().get_face_reflections(cell_index0);
+    Eigen::Array<std::uint8_t, 1, Eigen::Dynamic> cell_face_rotations
+        = mesh.topology().get_face_rotations(cell_index0);
 
     // Tabulate tensor
     Ae.setZero(dmapjoint0.size(), dmapjoint1.size());
     fn(Ae.data(), coeff_array.data(), constant_values.data(),
        coordinate_dofs.data(), local_facet, perm, cell_edge_reflections.data(),
-       cell_face_reflections.data());
+       cell_face_reflections.data(), cell_face_rotations.data());
 
     // Zero rows/columns for essential bcs
     if (!bc0.empty())

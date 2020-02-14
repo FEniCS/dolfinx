@@ -19,7 +19,7 @@ using namespace dolfinx::mesh;
 Topology::Topology(int dim)
     : _global_indices(dim + 1), _shared_entities(dim + 1),
       _connectivity(dim + 1, dim + 1), _edge_reflections(0, 0),
-      _face_reflections(0, 0), _face_permutations(0, 0)
+      _face_reflections(0, 0), _face_rotations(0, 0), _face_permutations(0, 0)
 {
   // Do nothing
 }
@@ -219,6 +219,12 @@ Topology::get_face_reflections(const int cell_n) const
   return _face_reflections.row(cell_n);
 }
 //-----------------------------------------------------------------------------
+Eigen::Array<std::uint8_t, 1, Eigen::Dynamic>
+Topology::get_face_rotations(const int cell_n) const
+{
+  return _face_rotations.row(cell_n);
+}
+//-----------------------------------------------------------------------------
 std::uint8_t Topology::get_facet_permutation(const int cell_n, const int dim,
                                              const int facet_index) const
 {
@@ -239,6 +245,8 @@ void Topology::resize_entity_permutations(std::size_t cell_count,
   _edge_reflections.fill(false);
   _face_reflections.resize(cell_count, faces_per_cell);
   _face_reflections.fill(false);
+  _face_rotations.resize(cell_count, faces_per_cell);
+  _face_rotations.fill(false);
 }
 //-----------------------------------------------------------------------------
 std::size_t Topology::entity_reflection_size() const
@@ -254,6 +262,7 @@ void Topology::set_entity_permutation(std::size_t cell_n, int entity_dim,
   {
     _face_permutations(cell_n, entity_index) = 2 * rots + refs;
     _face_reflections(cell_n, entity_index) = refs;
+    _face_rotations(cell_n, entity_index) = rots;
   }
   else if (entity_dim == 1)
     _edge_reflections(cell_n, entity_index) = refs;
