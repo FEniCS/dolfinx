@@ -506,7 +506,7 @@ void Mesh::create_connectivity(int d0, int d1) const
 //-----------------------------------------------------------------------------
 void Mesh::create_entity_permutations() const
 {
-
+  // FIXME: This should probably be moved to topology.
   if (_topology->entity_reflection_size() > 0)
     return;
 
