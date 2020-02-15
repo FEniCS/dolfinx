@@ -74,7 +74,7 @@ public:
   std::shared_ptr<const common::IndexMap> index_map(int dim) const;
 
   /// Return number of local nonzeros
-  std::size_t num_nonzeros() const;
+  std::int64_t num_nonzeros() const;
 
   /// Fill array with number of nonzeros per row for diagonal block in
   /// local_range for dimension 0

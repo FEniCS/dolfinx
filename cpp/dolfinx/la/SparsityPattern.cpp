@@ -51,8 +51,6 @@ SparsityPattern::SparsityPattern(
   //        - Support null blocks (maybe insist on null block having
   //          common::IndexMaps?)
 
-  const bool distributed = MPI::size(comm) > 1;
-
   std::vector<common::Set<std::int64_t>> diagonal;
   std::vector<common::Set<std::int64_t>> off_diagonal;
 
@@ -95,22 +93,10 @@ SparsityPattern::SparsityPattern(
     // FIXME: Issue somewhere here when block size > 1
     assert(bs0 * row_size
            == (std::int32_t)patterns[row][0]->_diagonal_new->num_nodes());
-    // if (!patterns[row][0]->_diagonal.empty())
-    // {
-    //   if (row_size != patterns[row][0]->_diagonal.size())
-    //   {
-    //     throw std::runtime_error("Mismtach between SparsityPattern size "
-    //                              "(diagonal) and row range map.");
-    //   }
-    // }
-
     diagonal.resize(diagonal.size() + bs0 * row_size);
-    if (distributed)
-    {
-      assert(bs0 * row_size
-             == (std::int32_t)patterns[row][0]->_off_diagonal_new->num_nodes());
-      off_diagonal.resize(off_diagonal.size() + bs0 * row_size);
-    }
+    assert(bs0 * row_size
+           == (std::int32_t)patterns[row][0]->_off_diagonal_new->num_nodes());
+    off_diagonal.resize(off_diagonal.size() + bs0 * row_size);
 
     // Iterate over block columns of current block row
     std::int64_t col_global_offset = col_process_offset;
@@ -152,22 +138,13 @@ SparsityPattern::SparsityPattern(
         }
 
         // Off-diagonal block
-        if (distributed)
+        auto edges1 = p->_off_diagonal_new->links(k);
+        for (Eigen::Index i = 0; i < edges1.rows(); ++i)
         {
-          auto edges1 = p->_off_diagonal_new->links(k);
-          for (Eigen::Index i = 0; i < edges1.rows(); ++i)
-          {
-            const std::int64_t c = edges1[i];
-            // Get new index
-            const std::int64_t offset = fem::get_global_offset(cmaps, col, c);
-            off_diagonal[k + row_local_offset].insert(c + offset);
-          }
-          // std::transform(edges1.begin(), edges1.end(), edges1.begin(),
-          //                std::bind2nd(std::plus<double>(),
-          //                col_global_offset));
-          // assert(k + row_local_offset < this->_off_diagonal.size());
-          // this->_off_diagonal[k + row_local_offset].insert(edges1.begin(),
-          //                                                  edges1.end());
+          const std::int64_t c = edges1[i];
+          // Get new index
+          const std::int64_t offset = fem::get_global_offset(cmaps, col, c);
+          off_diagonal[k + row_local_offset].insert(c + offset);
         }
       }
 
@@ -223,11 +200,7 @@ void SparsityPattern::insert(
       for (Eigen::Index j = 0; j < cols.rows(); ++j)
       {
         if (cols[j] < local_size1)
-        {
-          // const std::int64_t J = col_map(cols[j], index_map1);
-          // _diagonal_old[rows[i]].insert(J);
           _diagonal_old[rows[i]].insert(cols[j]);
-        }
         else
         {
           const std::int64_t J = col_map(cols[j], index_map1);
@@ -258,22 +231,12 @@ SparsityPattern::index_map(int dim) const
   return _index_maps[dim];
 }
 //-----------------------------------------------------------------------------
-std::size_t SparsityPattern::num_nonzeros() const
+std::int64_t SparsityPattern::num_nonzeros() const
 {
   if (!_diagonal_new)
     throw std::runtime_error("Sparsity pattern has not be assembled.");
-
-  std::size_t nz = 0;
-  for (int i = 0; i < _diagonal_new->num_nodes(); ++i)
-    nz += _diagonal_new->num_links(i);
-
-  if (_off_diagonal_new)
-  {
-    for (int i = 0; i < _off_diagonal_new->num_nodes(); ++i)
-      nz += _off_diagonal_new->num_links(i);
-  }
-
-  return nz;
+  assert(_off_diagonal_new);
+  return _diagonal_new->array().rows() + _off_diagonal_new->array().rows();
 }
 //-----------------------------------------------------------------------------
 Eigen::Array<std::int32_t, Eigen::Dynamic, 1>
@@ -296,7 +259,6 @@ SparsityPattern::num_nonzeros_off_diagonal() const
   if (!_diagonal_new)
     throw std::runtime_error("Sparsity pattern has not been finalised.");
 
-  // if (!_off_diagonal_new)
   Eigen::Array<std::int32_t, Eigen::Dynamic, 1> num_nonzeros
       = Eigen::Array<std::int32_t, Eigen::Dynamic, 1>::Zero(
           _diagonal_new->num_nodes());
