@@ -99,10 +99,12 @@ public:
   /// Return informal string representation (pretty-print)
   std::string str() const;
 
-  /// Return underlying sparsity pattern (diagonal)
-  const graph::AdjacencyList<std::int64_t>& diagonal_pattern() const;
+  /// Sparsity pattern for the owned (diagonal) block. Uses local
+  /// indices for the columns.
+  const graph::AdjacencyList<std::int32_t>& diagonal_pattern() const;
 
-  /// Return underlying sparsity pattern (off-diagonal)
+  /// Sparsity pattern for the un-owned (off-diagonal) columns. Uses global
+  /// indices for the columns.
   const graph::AdjacencyList<std::int64_t>& off_diagonal_pattern() const;
 
   /// Print some useful information
@@ -118,10 +120,10 @@ private:
   // NOTE: Do not change the set type without performing careful
   //       performance profiling
   // Sparsity patterns for diagonal and off-diagonal blocks
-  std::vector<common::Set<std::int64_t>> _diagonal_old;
+  std::vector<common::Set<std::int32_t>> _diagonal_old;
   std::vector<common::Set<std::int64_t>> _off_diagonal_old;
 
-  std::shared_ptr<graph::AdjacencyList<std::int64_t>> _diagonal_new;
+  std::shared_ptr<graph::AdjacencyList<std::int32_t>> _diagonal_new;
   std::shared_ptr<graph::AdjacencyList<std::int64_t>> _off_diagonal_new;
 };
 } // namespace la

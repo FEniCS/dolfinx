@@ -127,6 +127,8 @@ SparsityPattern::SparsityPattern(
                                  "(assemble needs to be called)");
       }
 
+      auto index_map1 = p->index_map(1);
+      assert(index_map1);
       for (int k = 0; k < p->_diagonal_new->num_nodes(); ++k)
       {
         // Diagonal block
@@ -141,24 +143,28 @@ SparsityPattern::SparsityPattern(
         // for (std::size_t c : edges0)
         for (Eigen::Index i = 0; i < edges0.rows(); ++i)
         {
-          auto c = edges0[i];
+          // Get local index and convert to global
+          std::int32_t c = edges0[i];
+          // const std::int64_t J = col_map(c, *index_map1);
+
           // Get new index
-          std::int64_t c_new = fem::get_global_index(cmaps, col, c);
-          diagonal[k + row_local_offset].insert(c_new);
+          const std::int64_t offset = fem::get_global_offset(cmaps, col, c);
+          // const std::int64_t offset = fem::get_global_offset(cmaps, col, c);
+
+
+          diagonal[k + row_local_offset].insert(c + offset);
         }
 
         // Off-diagonal block
         if (distributed)
         {
           auto edges1 = p->_off_diagonal_new->links(k);
-          // for (std::size_t c : edges1)
-          // {
           for (Eigen::Index i = 0; i < edges1.rows(); ++i)
           {
-            auto c = edges1[i];
+            const std::int64_t c = edges1[i];
             // Get new index
-            std::int64_t c_new = fem::get_global_index(cmaps, col, c);
-            off_diagonal[k + row_local_offset].insert(c_new);
+            const std::int64_t offset = fem::get_global_offset(cmaps, col, c);
+            off_diagonal[k + row_local_offset].insert(c + offset);
           }
           // std::transform(edges1.begin(), edges1.end(), edges1.begin(),
           //                std::bind2nd(std::plus<double>(),
@@ -190,7 +196,7 @@ SparsityPattern::SparsityPattern(
       p00->mpi_comm(), col_local_size, ghosts, 1);
 
   _diagonal_new
-      = std::make_shared<graph::AdjacencyList<std::int64_t>>(diagonal);
+      = std::make_shared<graph::AdjacencyList<std::int32_t>>(diagonal);
   if (!off_diagonal.empty())
   {
     _off_diagonal_new
@@ -206,13 +212,12 @@ void SparsityPattern::insert(
 
   const common::IndexMap& index_map0 = *_index_maps[0];
   const int bs0 = index_map0.block_size;
-  // const std::int32_t local_size0 = bs0 * index_map0.size_local();
   const std::int32_t local_size0
       = bs0 * (index_map0.size_local() + index_map0.num_ghosts());
 
   const common::IndexMap& index_map1 = *_index_maps[1];
   const int bs1 = index_map1.block_size;
-  const auto local_range1 = index_map1.local_range();
+  const std::int32_t local_size1 = bs1 * index_map1.size_local();
 
   for (Eigen::Index i = 0; i < rows.rows(); ++i)
   {
@@ -221,15 +226,15 @@ void SparsityPattern::insert(
       // Store local entry in diagonal or off-diagonal block
       for (Eigen::Index j = 0; j < cols.rows(); ++j)
       {
-        const auto J = col_map(cols[j], index_map1);
-        if ((bs1 * local_range1[0]) <= J and J < (bs1 * local_range1[1]))
+        if (cols[j] < local_size1)
         {
-          assert(rows[i] < (PetscInt)_diagonal_old.size());
-          _diagonal_old[rows[i]].insert(J);
+          // const std::int64_t J = col_map(cols[j], index_map1);
+          // _diagonal_old[rows[i]].insert(J);
+          _diagonal_old[rows[i]].insert(cols[j]);
         }
         else
         {
-          assert(rows[i] < (PetscInt)_off_diagonal_old.size());
+          const std::int64_t J = col_map(cols[j], index_map1);
           _off_diagonal_old[rows[i]].insert(J);
         }
       }
@@ -358,7 +363,10 @@ void SparsityPattern::assemble()
       for (std::size_t c = 0; c < cols.size(); ++c)
       {
         ghost_data.push_back(row);
-        ghost_data.push_back(cols[c]);
+
+        // Convert to global column index
+        const std::int64_t J = col_map(cols[c], *_index_maps[1]);
+        ghost_data.push_back(J);
       }
       auto cols_off = _off_diagonal_old[row_local];
       for (std::size_t c = 0; c < cols_off.size(); ++c)
@@ -406,7 +414,11 @@ void SparsityPattern::assemble()
       const std::int32_t row_local = row - bs0 * local_range0[0];
       const std::int64_t col = ghost_data_received[i + 1];
       if (col >= bs1 * local_range1[0] and col < bs1 * local_range1[1])
-        _diagonal_old[row_local].insert(col);
+      {
+        // Convert to local column index
+        const std::int32_t J = col - bs1 * local_range1[0];
+        _diagonal_old[row_local].insert(J);
+      }
       else
       {
         // assert(rows[i] < (PetscInt)_off_diagonal_old.size());
@@ -417,7 +429,7 @@ void SparsityPattern::assemble()
 
   _diagonal_old.resize(bs0 * local_size0);
   _diagonal_new
-      = std::make_shared<graph::AdjacencyList<std::int64_t>>(_diagonal_old);
+      = std::make_shared<graph::AdjacencyList<std::int32_t>>(_diagonal_old);
 
   _off_diagonal_old.resize(bs0 * local_size0);
   _off_diagonal_new
@@ -445,7 +457,7 @@ std::string SparsityPattern::str() const
   return s.str();
 }
 //-----------------------------------------------------------------------------
-const graph::AdjacencyList<std::int64_t>&
+const graph::AdjacencyList<std::int32_t>&
 SparsityPattern::diagonal_pattern() const
 {
   if (!_diagonal_new)
