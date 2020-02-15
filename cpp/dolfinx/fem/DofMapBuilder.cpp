@@ -428,11 +428,11 @@ std::vector<std::int64_t> get_global_indices(
   }
 
   std::vector<std::int64_t> local_to_global_new(old_to_new.size() - num_owned);
-  for (std::size_t i = 0; i < local_new_to_global_old.size(); ++i)
+  for (std::size_t j = 0; j < local_new_to_global_old.size(); ++j)
   {
-    auto it = global_old_new.find(local_new_to_global_old[i]);
+    auto it = global_old_new.find(local_new_to_global_old[j]);
     assert(it != global_old_new.end());
-    local_to_global_new[i] = it->second;
+    local_to_global_new[j] = it->second;
   }
 
   return local_to_global_new;
