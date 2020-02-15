@@ -35,7 +35,8 @@ SparsityPattern::SparsityPattern(
     : _mpi_comm(comm), _index_maps(index_maps)
 {
   const std::int32_t local_size0
-      = index_maps[0]->block_size * index_maps[0]->size_local();
+      = index_maps[0]->block_size
+        * (index_maps[0]->size_local() + index_maps[0]->num_ghosts());
   _diagonal_old.resize(local_size0);
   _off_diagonal_old.resize(local_size0);
 }
@@ -203,7 +204,9 @@ void SparsityPattern::insert(
 
   const common::IndexMap& index_map0 = *_index_maps[0];
   const int bs0 = index_map0.block_size;
-  const std::int32_t local_size0 = bs0 * index_map0.size_local();
+  // const std::int32_t local_size0 = bs0 * index_map0.size_local();
+  const std::int32_t local_size0
+      = bs0 * (index_map0.size_local() + index_map0.num_ghosts());
 
   const common::IndexMap& index_map1 = *_index_maps[1];
   const int bs1 = index_map1.block_size;
@@ -229,7 +232,9 @@ void SparsityPattern::insert(
         }
       }
     }
-    else
+
+    // else
+    if (rows[i] >= bs0 * index_map0.size_local())
     {
       // Store non-local entry (communicated later during assemble())
       for (Eigen::Index j = 0; j < cols.rows(); ++j)
@@ -326,46 +331,41 @@ void SparsityPattern::assemble()
   if (_diagonal_new)
     throw std::runtime_error("Sparsity pattern has already been finalised.");
 
+  // -----------------------
+
+  assert(_index_maps[0]);
   const int bs0 = _index_maps[0]->block_size;
-  const int bs1 = _index_maps[1]->block_size;
+  const std::int32_t local_size0 = _index_maps[0]->size_local();
+  const std::int32_t num_ghosts0 = _index_maps[0]->num_ghosts();
   const std::array<std::int64_t, 2> local_range0
       = _index_maps[0]->local_range();
+
+  assert(_index_maps[1]);
+  const int bs1 = _index_maps[1]->block_size;
   const std::array<std::int64_t, 2> local_range1
       = _index_maps[1]->local_range();
-  const std::int32_t local_size0 = bs0 * _index_maps[0]->size_local();
-  const std::int64_t offset0 = bs0 * local_range0[0];
 
-  // Figure out correct process for each non-local entry
-  assert(_non_local.size() % 2 == 0);
-
-  // Get local-to-global for unowned (ghost) blocks
-  const Eigen::Array<std::int64_t, Eigen::Dynamic, 1>& local_to_global
+  const Eigen::Array<std::int64_t, Eigen::Dynamic, 1>& ghosts
       = _index_maps[0]->ghosts();
 
-  // Pack off-process row data to send
-  std::vector<std::int64_t> non_local_send;
-  for (std::size_t i = 0; i < _non_local.size(); i += 2)
+  // For each ghost row, pack and send (global row, global col) pairs to
+  // neighborhood
+  std::vector<std::int64_t> ghost_data;
+  for (int i = 0; i < num_ghosts0; ++i)
   {
-    // Get local indices of off-process dofs
-    const std::int64_t i_index = _non_local[i];
-
-    if (i_index < local_size0)
-      throw std::runtime_error("Should not reach this point.");
-    else
+    const std::int64_t row_node = ghosts[i];
+    const std::int32_t row_node_local = local_size0 + i;
+    for (int j = 0; j < bs0; ++j)
     {
-      // Compute global I index from i_index
-      const int i_local = i_index - local_size0;
-      const std::div_t div = std::div(i_local, bs0);
-      const int i_node = div.quot;
-      const int i_component = div.rem;
-
-      const std::int64_t I_node = local_to_global[i_node];
-      const std::int64_t I = bs0 * I_node + i_component;
-
-      // Add to send buffer
-      const std::int64_t J = _non_local[i + 1];
-      non_local_send.push_back(I);
-      non_local_send.push_back(J);
+      const std::int64_t row = bs0 * row_node + j;
+      const std::int32_t row_local = bs0 * row_node_local + j;
+      assert((std::size_t)row_local < _diagonal_old.size());
+      auto cols = _diagonal_old[row_local];
+      for (std::size_t c = 0; c < cols.size(); ++c)
+      {
+        ghost_data.push_back(row);
+        ghost_data.push_back(cols[c]);
+      }
     }
   }
 
@@ -375,8 +375,8 @@ void SparsityPattern::assemble()
   MPI_Dist_graph_neighbors_count(comm, &num_neighbours, &outdegree, &weighted);
   assert(num_neighbours == outdegree);
 
-  // Figure out how many rows to receive from each neighbour
-  const int num_my_rows = non_local_send.size();
+  // Figure out how much data to receive from each neighbour
+  const int num_my_rows = ghost_data.size();
   std::vector<int> num_rows_recv(num_neighbours);
   MPI_Neighbor_allgather(&num_my_rows, 1, MPI_INT, num_rows_recv.data(), 1,
                          MPI_INT, comm);
@@ -393,43 +393,143 @@ void SparsityPattern::assemble()
 
   // Send all unowned rows to neighbours, and receive rows from
   // neighbours
-  std::vector<std::int64_t> non_local_received(disp.back());
-  MPI_Neighbor_allgatherv(non_local_send.data(), non_local_send.size(),
-                          MPI_INT64_T, non_local_received.data(),
-                          num_rows_recv.data(), disp.data(), MPI_INT64_T, comm);
+  std::vector<std::int64_t> ghost_data_received(disp.back());
+  MPI_Neighbor_allgatherv(ghost_data.data(), ghost_data.size(), MPI_INT64_T,
+                          ghost_data_received.data(), num_rows_recv.data(),
+                          disp.data(), MPI_INT64_T, comm);
 
-  // Insert non-local entries received from other processes
-  assert(non_local_received.size() % 2 == 0);
-  for (std::size_t i = 0; i < non_local_received.size(); i += 2)
+  // std::cout << "3: AAAAAAAA" << std::endl;
+
+  for (std::size_t i = 0; i < ghost_data_received.size(); i += 2)
   {
-    // Get global row and column
-    const std::int64_t I = non_local_received[i];
-    const std::int64_t J = non_local_received[i + 1];
-
-    // Check if I own row I
-    if (I >= bs0 * local_range0[0] and I < bs0 * local_range0[1])
+    const std::int64_t row = ghost_data_received[i];
+    if (row >= bs0 * local_range0[0] and row < bs0 * local_range0[1])
     {
-      const std::int32_t i_index = I - offset0;
-      if (J >= bs1 * local_range1[0] and J < bs1 * local_range1[1])
-      {
-        assert(i_index < (std::int32_t)_diagonal_old.size());
-        _diagonal_old[i_index].insert(J);
-      }
+      const std::int32_t row_local = row - bs0 * local_range0[0];
+      const std::int64_t col = ghost_data_received[i + 1];
+      if (col >= bs1 * local_range1[0] and col < bs1 * local_range1[1])
+        _diagonal_old[row_local].insert(col);
       else
       {
-        assert(i_index < (std::int32_t)_off_diagonal_old.size());
-        _off_diagonal_old[i_index].insert(J);
+        // assert(rows[i] < (PetscInt)_off_diagonal_old.size());
+        _off_diagonal_old[row_local].insert(col);
       }
     }
   }
 
+  // std::cout << "4: AAAAAAAA" << std::endl;
+
+  // -----------------------
+
+  // const int bs0 = _index_maps[0]->block_size;
+  // const int bs1 = _index_maps[1]->block_size;
+  // const std::array<std::int64_t, 2> local_range0
+  //     = _index_maps[0]->local_range();
+  // const std::array<std::int64_t, 2> local_range1
+  //     = _index_maps[1]->local_range();
+  // const std::int32_t local_size0 = bs0 * _index_maps[0]->size_local();
+  // const std::int64_t offset0 = bs0 * local_range0[0];
+
+  // // Figure out correct process for each non-local entry
+  // assert(_non_local.size() % 2 == 0);
+
+  // // Get local-to-global for unowned (ghost) blocks
+  // const Eigen::Array<std::int64_t, Eigen::Dynamic, 1>& local_to_global
+  //     = _index_maps[0]->ghosts();
+
+  // // Pack off-process row data to send
+  // std::vector<std::int64_t> non_local_send;
+  // for (std::size_t i = 0; i < _non_local.size(); i += 2)
+  // {
+  //   // Get local indices of off-process dofs
+  //   const std::int64_t i_index = _non_local[i];
+
+  //   if (i_index < local_size0)
+  //     throw std::runtime_error("Should not reach this point.");
+  //   else
+  //   {
+  //     // Compute global I index from i_index
+  //     const int i_local = i_index - local_size0;
+  //     const std::div_t div = std::div(i_local, bs0);
+  //     const int i_node = div.quot;
+  //     const int i_component = div.rem;
+
+  //     const std::int64_t I_node = local_to_global[i_node];
+  //     const std::int64_t I = bs0 * I_node + i_component;
+
+  //     // Add to send buffer
+  //     const std::int64_t J = _non_local[i + 1];
+  //     non_local_send.push_back(I);
+  //     non_local_send.push_back(J);
+  //   }
+  // }
+
+  // // Get number of processes in neighbourhood
+  // MPI_Comm comm = _index_maps[0]->mpi_comm_neighborhood();
+  // int num_neighbours(-1), outdegree(-2), weighted(-1);
+  // MPI_Dist_graph_neighbors_count(comm, &num_neighbours, &outdegree,
+  // &weighted); assert(num_neighbours == outdegree);
+
+  // // Figure out how many rows to receive from each neighbour
+  // const int num_my_rows = non_local_send.size();
+  // std::vector<int> num_rows_recv(num_neighbours);
+  // MPI_Neighbor_allgather(&num_my_rows, 1, MPI_INT, num_rows_recv.data(), 1,
+  //                        MPI_INT, comm);
+
+  // // Compute displacements for data to receive
+  // std::vector<int> disp(num_neighbours + 1, 0);
+  // std::partial_sum(num_rows_recv.begin(), num_rows_recv.end(),
+  //                  disp.begin() + 1);
+
+  // // NOTE: Send unowned rows to all neighbours could be a bit 'lazy' and
+  // // MPI_Neighbor_alltoallv could be used to send just to the owner, but
+  // // maybe the number of rows exchanged in the neighbourhood are
+  // // relatively small that MPI_Neighbor_allgatherv is simpler.
+
+  // // Send all unowned rows to neighbours, and receive rows from
+  // // neighbours
+  // std::vector<std::int64_t> non_local_received(disp.back());
+  // MPI_Neighbor_allgatherv(non_local_send.data(), non_local_send.size(),
+  //                         MPI_INT64_T, non_local_received.data(),
+  //                         num_rows_recv.data(), disp.data(), MPI_INT64_T,
+  //                         comm);
+
+  // // Insert non-local entries received from other processes
+  // assert(non_local_received.size() % 2 == 0);
+  // for (std::size_t i = 0; i < non_local_received.size(); i += 2)
+  // {
+  //   // Get global row and column
+  //   const std::int64_t I = non_local_received[i];
+  //   const std::int64_t J = non_local_received[i + 1];
+
+  //   // Check if I own row I
+  //   if (I >= bs0 * local_range0[0] and I < bs0 * local_range0[1])
+  //   {
+  //     const std::int32_t i_index = I - offset0;
+  //     if (J >= bs1 * local_range1[0] and J < bs1 * local_range1[1])
+  //     {
+  //       assert(i_index < (std::int32_t)_diagonal_old.size());
+  //       _diagonal_old[i_index].insert(J);
+  //     }
+  //     else
+  //     {
+  //       assert(i_index < (std::int32_t)_off_diagonal_old.size());
+  //       _off_diagonal_old[i_index].insert(J);
+  //     }
+  //   }
+  // }
+
+  _diagonal_old.resize(bs0 * local_size0);
   _diagonal_new
       = std::make_shared<graph::AdjacencyList<std::size_t>>(_diagonal_old);
   if (!_off_diagonal_old.empty())
   {
+    _off_diagonal_old.resize(bs0 * local_size0);
     _off_diagonal_new = std::make_shared<graph::AdjacencyList<std::size_t>>(
         _off_diagonal_old);
   }
+
+  // std::cout << "DONE" << std::endl;
 
   // Clear non-local entries
   _non_local.clear();
