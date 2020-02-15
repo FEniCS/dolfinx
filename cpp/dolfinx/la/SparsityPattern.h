@@ -40,13 +40,21 @@ class SparsityPattern
 
 public:
   /// Create an empty sparsity pattern with specified dimensions
+  /// @param[in] comm The MPI communicator for the sparsity pattern
+  /// @param[in] index_maps The index maps for the rows (0) and columns.
+  ///   The index map must contain all indices that will be inserted
+  ///   into the sparsity pattern.
   SparsityPattern(
       MPI_Comm comm,
       const std::array<std::shared_ptr<const common::IndexMap>, 2>& index_maps);
 
   /// Create a new sparsity pattern by adding sub-patterns, e.g.
-  /// pattern =[ pattern00 ][ pattern 01]
-  ///          [ pattern10 ][ pattern 11]
+  /// pattern = [[pattern00, pattern01],
+  ///            [pattern10, pattern11]]
+  ///
+  /// @param[in] comm The MPI communicator for the sparsity pattern
+  /// @param[in] patterns The index maps for the rows (0) and columns.
+  /// @pre The @p patterns must have been assembled
   SparsityPattern(
       MPI_Comm comm,
       const std::vector<std::vector<const SparsityPattern*>>& patterns);
@@ -62,15 +70,21 @@ public:
   /// Move assignment
   SparsityPattern& operator=(SparsityPattern&& pattern) = default;
 
-  /// Insert non-zero entries using local (process-wise) indices
+  /// Insert block of non-zero entries using local (process-wise) indices
+  /// @param[in] rows The rows indices for the non-zero block
+  /// @param[in] cols The column indices for the non-zero block
   void insert(
       const Eigen::Ref<const Eigen::Array<PetscInt, Eigen::Dynamic, 1>>& rows,
       const Eigen::Ref<const Eigen::Array<PetscInt, Eigen::Dynamic, 1>>& cols);
 
   /// Return local range for dimension dim
+  /// @param[in] dim Row (0) or column (1) index
+  /// @return The local ownership range
   std::array<std::int64_t, 2> local_range(int dim) const;
 
-  /// Return index map for dimension dim
+  /// Index map for dimension dim
+  /// @param[in] dim Row (0) or column (1) index
+  /// @return The index map
   std::shared_ptr<const common::IndexMap> index_map(int dim) const;
 
   /// Return number of local nonzeros

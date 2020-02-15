@@ -35,7 +35,8 @@ SparsityPattern::SparsityPattern(
     : _mpi_comm(comm), _index_maps(index_maps)
 {
   const std::int32_t local_size0
-      = index_maps[0]->block_size * index_maps[0]->size_local();
+      = index_maps[0]->block_size
+        * (index_maps[0]->size_local() + index_maps[0]->num_ghosts());
   _diagonal_old.resize(local_size0);
   _off_diagonal_old.resize(local_size0);
 }
@@ -203,12 +204,14 @@ void SparsityPattern::insert(
 
   const common::IndexMap& index_map0 = *_index_maps[0];
   const int bs0 = index_map0.block_size;
-  const std::int32_t local_size0 = bs0 * index_map0.size_local();
+  const std::int32_t local_size0
+      = bs0 * (index_map0.size_local() + index_map0.num_ghosts());
 
   const common::IndexMap& index_map1 = *_index_maps[1];
   const int bs1 = index_map1.block_size;
   const auto local_range1 = index_map1.local_range();
 
+  assert(_diagonal_old.size() >= (std::size_t)local_size0);
   for (Eigen::Index i = 0; i < rows.rows(); ++i)
   {
     if (rows[i] < local_size0)
@@ -218,10 +221,7 @@ void SparsityPattern::insert(
       {
         const auto J = col_map(cols[j], index_map1);
         if ((bs1 * local_range1[0]) <= J and J < (bs1 * local_range1[1]))
-        {
-          assert(rows[i] < (PetscInt)_diagonal_old.size());
           _diagonal_old[rows[i]].insert(J);
-        }
         else
         {
           assert(rows[i] < (PetscInt)_off_diagonal_old.size());
@@ -231,30 +231,29 @@ void SparsityPattern::insert(
     }
     else
     {
-      // Store non-local entry (communicated later during assemble())
-      for (Eigen::Index j = 0; j < cols.rows(); ++j)
-      {
-        _non_local.push_back(rows[i]);
-        const auto J = col_map(cols[j], index_map1);
-        _non_local.push_back(J);
-      }
+      throw std::runtime_error("Shouldn't be here.");
+      // // Store non-local entry (communicated later during assemble())
+      // for (Eigen::Index j = 0; j < cols.rows(); ++j)
+      // {
+      //   _non_local.push_back(rows[i]);
+      //   const auto J = col_map(cols[j], index_map1);
+      //   _non_local.push_back(J);
+      // }
     }
   }
 }
 //-----------------------------------------------------------------------------
 std::array<std::int64_t, 2> SparsityPattern::local_range(int dim) const
 {
-  assert(dim < 2);
-  const int bs = _index_maps[dim]->block_size;
-  auto lrange = _index_maps[dim]->local_range();
+  const int bs = _index_maps.at(dim)->block_size;
+  auto lrange = _index_maps.at(dim)->local_range();
   return {{bs * lrange[0], bs * lrange[1]}};
 }
 //-----------------------------------------------------------------------------
 std::shared_ptr<const common::IndexMap>
 SparsityPattern::index_map(int dim) const
 {
-  assert(dim < 2);
-  return _index_maps[dim];
+  return _index_maps.at(dim);
 }
 //-----------------------------------------------------------------------------
 std::size_t SparsityPattern::num_nonzeros() const
@@ -313,12 +312,7 @@ SparsityPattern::num_nonzeros_off_diagonal() const
 Eigen::Array<std::int32_t, Eigen::Dynamic, 1>
 SparsityPattern::num_local_nonzeros() const
 {
-  Eigen::Array<std::int32_t, Eigen::Dynamic, 1> num_nonzeros
-      = num_nonzeros_diagonal();
-  if (!_off_diagonal_old.empty())
-    num_nonzeros += num_nonzeros_off_diagonal();
-
-  return num_nonzeros;
+  return num_nonzeros_diagonal() + num_nonzeros_off_diagonal();
 }
 //-----------------------------------------------------------------------------
 void SparsityPattern::assemble()
