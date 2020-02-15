@@ -120,8 +120,8 @@ private:
   // NOTE: Do not change the set type without performing careful
   //       performance profiling
   // Sparsity patterns for diagonal and off-diagonal blocks
-  std::vector<common::Set<std::int32_t>> _diagonal_old;
-  std::vector<common::Set<std::int64_t>> _off_diagonal_old;
+  std::vector<common::Set<std::int32_t>> _diagonal_cache;
+  std::vector<common::Set<std::int64_t>> _off_diagonal_cache;
 
   std::shared_ptr<graph::AdjacencyList<std::int32_t>> _diagonal_new;
   std::shared_ptr<graph::AdjacencyList<std::int64_t>> _off_diagonal_new;

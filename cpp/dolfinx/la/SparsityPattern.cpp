@@ -37,8 +37,8 @@ SparsityPattern::SparsityPattern(
   const std::int32_t local_size0
       = index_maps[0]->block_size
         * (index_maps[0]->size_local() + index_maps[0]->num_ghosts());
-  _diagonal_old.resize(local_size0);
-  _off_diagonal_old.resize(local_size0);
+  _diagonal_cache.resize(local_size0);
+  _off_diagonal_cache.resize(local_size0);
 }
 //-----------------------------------------------------------------------------
 SparsityPattern::SparsityPattern(
@@ -196,15 +196,14 @@ void SparsityPattern::insert(
   {
     if (rows[i] < local_size0)
     {
-      // Store local entry in diagonal or off-diagonal block
       for (Eigen::Index j = 0; j < cols.rows(); ++j)
       {
         if (cols[j] < local_size1)
-          _diagonal_old[rows[i]].insert(cols[j]);
+          _diagonal_cache[rows[i]].insert(cols[j]);
         else
         {
           const std::int64_t J = col_map(cols[j], index_map1);
-          _off_diagonal_old[rows[i]].insert(J);
+          _off_diagonal_cache[rows[i]].insert(J);
         }
       }
     }
@@ -218,17 +217,15 @@ void SparsityPattern::insert(
 //-----------------------------------------------------------------------------
 std::array<std::int64_t, 2> SparsityPattern::local_range(int dim) const
 {
-  assert(dim < 2);
-  const int bs = _index_maps[dim]->block_size;
-  auto lrange = _index_maps[dim]->local_range();
+  const int bs = _index_maps.at(dim)->block_size;
+  const std::array<std::int64_t, 2> lrange = _index_maps[dim]->local_range();
   return {{bs * lrange[0], bs * lrange[1]}};
 }
 //-----------------------------------------------------------------------------
 std::shared_ptr<const common::IndexMap>
 SparsityPattern::index_map(int dim) const
 {
-  assert(dim < 2);
-  return _index_maps[dim];
+  return _index_maps.at(dim);
 }
 //-----------------------------------------------------------------------------
 std::int64_t SparsityPattern::num_nonzeros() const
@@ -256,19 +253,13 @@ SparsityPattern::num_nonzeros_diagonal() const
 Eigen::Array<std::int32_t, Eigen::Dynamic, 1>
 SparsityPattern::num_nonzeros_off_diagonal() const
 {
-  if (!_diagonal_new)
+  if (!_off_diagonal_new)
     throw std::runtime_error("Sparsity pattern has not been finalised.");
 
-  Eigen::Array<std::int32_t, Eigen::Dynamic, 1> num_nonzeros
-      = Eigen::Array<std::int32_t, Eigen::Dynamic, 1>::Zero(
-          _diagonal_new->num_nodes());
-
-  if (_off_diagonal_new)
-  {
-    assert(_off_diagonal_new->num_nodes() == num_nonzeros.rows());
-    for (int i = 0; i < _off_diagonal_new->num_nodes(); ++i)
-      num_nonzeros[i] = _off_diagonal_new->num_links(i);
-  }
+  Eigen::Array<std::int32_t, Eigen::Dynamic, 1> num_nonzeros(
+      _off_diagonal_new->num_nodes());
+  for (int i = 0; i < _off_diagonal_new->num_nodes(); ++i)
+    num_nonzeros[i] = _off_diagonal_new->num_links(i);
 
   return num_nonzeros;
 }
@@ -276,12 +267,7 @@ SparsityPattern::num_nonzeros_off_diagonal() const
 Eigen::Array<std::int32_t, Eigen::Dynamic, 1>
 SparsityPattern::num_local_nonzeros() const
 {
-  Eigen::Array<std::int32_t, Eigen::Dynamic, 1> num_nonzeros
-      = num_nonzeros_diagonal();
-  if (!_off_diagonal_old.empty())
-    num_nonzeros += num_nonzeros_off_diagonal();
-
-  return num_nonzeros;
+  return num_nonzeros_diagonal() + num_nonzeros_off_diagonal();
 }
 //-----------------------------------------------------------------------------
 void SparsityPattern::assemble()
@@ -306,7 +292,7 @@ void SparsityPattern::assemble()
       = _index_maps[0]->ghosts();
 
   // For each ghost row, pack and send (global row, global col) pairs to
-  // neighborhood
+  // send to neighborhood
   std::vector<std::int64_t> ghost_data;
   for (int i = 0; i < num_ghosts0; ++i)
   {
@@ -316,8 +302,8 @@ void SparsityPattern::assemble()
     {
       const std::int64_t row = bs0 * row_node + j;
       const std::int32_t row_local = bs0 * row_node_local + j;
-      assert((std::size_t)row_local < _diagonal_old.size());
-      auto cols = _diagonal_old[row_local];
+      assert((std::size_t)row_local < _diagonal_cache.size());
+      auto cols = _diagonal_cache[row_local];
       for (std::size_t c = 0; c < cols.size(); ++c)
       {
         ghost_data.push_back(row);
@@ -326,7 +312,7 @@ void SparsityPattern::assemble()
         const std::int64_t J = col_map(cols[c], *_index_maps[1]);
         ghost_data.push_back(J);
       }
-      auto cols_off = _off_diagonal_old[row_local];
+      auto cols_off = _off_diagonal_cache[row_local];
       for (std::size_t c = 0; c < cols_off.size(); ++c)
       {
         ghost_data.push_back(row);
@@ -364,6 +350,7 @@ void SparsityPattern::assemble()
                           ghost_data_received.data(), num_rows_recv.data(),
                           disp.data(), MPI_INT64_T, comm);
 
+  // Add data received from the neighbourhood
   for (std::size_t i = 0; i < ghost_data_received.size(); i += 2)
   {
     const std::int64_t row = ghost_data_received[i];
@@ -375,23 +362,25 @@ void SparsityPattern::assemble()
       {
         // Convert to local column index
         const std::int32_t J = col - bs1 * local_range1[0];
-        _diagonal_old[row_local].insert(J);
+        _diagonal_cache[row_local].insert(J);
       }
       else
       {
-        // assert(rows[i] < (PetscInt)_off_diagonal_old.size());
-        _off_diagonal_old[row_local].insert(col);
+        assert(row_local < (std::int32_t)_off_diagonal_cache.size());
+        _off_diagonal_cache[row_local].insert(col);
       }
     }
   }
 
-  _diagonal_old.resize(bs0 * local_size0);
+  _diagonal_cache.resize(bs0 * local_size0);
   _diagonal_new
-      = std::make_shared<graph::AdjacencyList<std::int32_t>>(_diagonal_old);
+      = std::make_shared<graph::AdjacencyList<std::int32_t>>(_diagonal_cache);
+  std::vector<common::Set<std::int32_t>>().swap(_diagonal_cache);
 
-  _off_diagonal_old.resize(bs0 * local_size0);
-  _off_diagonal_new
-      = std::make_shared<graph::AdjacencyList<std::int64_t>>(_off_diagonal_old);
+  _off_diagonal_cache.resize(bs0 * local_size0);
+  _off_diagonal_new = std::make_shared<graph::AdjacencyList<std::int64_t>>(
+      _off_diagonal_cache);
+  std::vector<common::Set<std::int64_t>>().swap(_off_diagonal_cache);
 }
 //-----------------------------------------------------------------------------
 std::string SparsityPattern::str() const
