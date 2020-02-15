@@ -18,6 +18,12 @@
 namespace dolfinx
 {
 
+namespace graph
+{
+template <typename T>
+class AdjacencyList;
+}
+
 namespace common
 {
 class IndexMap;
@@ -38,13 +44,6 @@ class SparsityPattern
   typedef dolfinx::common::Set<std::size_t> set_type;
 
 public:
-  /// Whether SparsityPattern is sorted
-  enum class Type
-  {
-    sorted,
-    unsorted
-  };
-
   /// Create an empty sparsity pattern with specified dimensions
   SparsityPattern(
       MPI_Comm comm,
@@ -107,12 +106,12 @@ public:
 
   /// Return underlying sparsity pattern (diagonal). Options are
   /// 'sorted' and 'unsorted'.
-  std::vector<std::vector<std::size_t>> diagonal_pattern(Type type) const;
+  // std::vector<std::vector<std::size_t>> diagonal_pattern() const;
 
   /// Return underlying sparsity pattern (off-diagonal). Options are
   /// 'sorted' and 'unsorted'. Empty vector is returned if there is
   /// no off-diagonal contribution.
-  std::vector<std::vector<std::size_t>> off_diagonal_pattern(Type type) const;
+  // std::vector<std::vector<std::size_t>> off_diagonal_pattern() const;
 
   /// Print some useful information
   void info_statistics() const;
@@ -131,6 +130,9 @@ private:
   // the local row index and j is the global column index. Cleared after
   // communication via apply().
   std::vector<std::size_t> _non_local;
+
+  std::shared_ptr<graph::AdjacencyList<std::size_t>> _diagonal_new,
+      _off_diagonal_new;
 };
 } // namespace la
 } // namespace dolfinx

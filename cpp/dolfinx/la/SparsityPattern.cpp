@@ -10,6 +10,7 @@
 #include <dolfinx/common/MPI.h>
 #include <dolfinx/common/log.h>
 #include <dolfinx/fem/utils.h>
+#include <dolfinx/graph/AdjacencyList.h>
 
 using namespace dolfinx;
 using namespace dolfinx::la;
@@ -255,9 +256,11 @@ std::size_t SparsityPattern::num_nonzeros() const
 Eigen::Array<std::int32_t, Eigen::Dynamic, 1>
 SparsityPattern::num_nonzeros_diagonal() const
 {
-  Eigen::Array<std::int32_t, Eigen::Dynamic, 1> num_nonzeros(_diagonal.size());
-  for (auto slice = _diagonal.begin(); slice != _diagonal.end(); ++slice)
-    num_nonzeros[slice - _diagonal.begin()] = slice->size();
+  assert(_diagonal_new);
+  Eigen::Array<std::int32_t, Eigen::Dynamic, 1> num_nonzeros(
+      _diagonal_new->num_nodes());
+  for (int i = 0; i < _diagonal_new->num_nodes(); ++i)
+    num_nonzeros[i] = _diagonal_new->num_links(i);
 
   return num_nonzeros;
 }
@@ -265,22 +268,13 @@ SparsityPattern::num_nonzeros_diagonal() const
 Eigen::Array<std::int32_t, Eigen::Dynamic, 1>
 SparsityPattern::num_nonzeros_off_diagonal() const
 {
+  if (!_off_diagonal_new)
+    return Eigen::Array<std::int32_t, Eigen::Dynamic, 1>();
+
   Eigen::Array<std::int32_t, Eigen::Dynamic, 1> num_nonzeros(
-      _off_diagonal.size());
-
-  // Return if there is no off-diagonal
-  if (_off_diagonal.empty())
-  {
-    num_nonzeros.setZero();
-    return num_nonzeros;
-  }
-
-  // Compute number of nonzeros per generalised row
-  for (auto slice = _off_diagonal.begin(); slice != _off_diagonal.end();
-       ++slice)
-  {
-    num_nonzeros[slice - _off_diagonal.begin()] = slice->size();
-  }
+      _off_diagonal_new->num_nodes());
+  for (int i = 0; i < _off_diagonal_new->num_nodes(); ++i)
+    num_nonzeros[i] = _off_diagonal_new->num_links(i);
 
   return num_nonzeros;
 }
@@ -399,6 +393,14 @@ void SparsityPattern::assemble()
     }
   }
 
+  _diagonal_new
+      = std::make_shared<graph::AdjacencyList<std::size_t>>(_diagonal);
+  if (!_off_diagonal.empty())
+  {
+    _off_diagonal_new
+        = std::make_shared<graph::AdjacencyList<std::size_t>>(_off_diagonal);
+  }
+
   // Clear non-local entries
   _non_local.clear();
 }
@@ -410,7 +412,6 @@ std::string SparsityPattern::str() const
   for (std::size_t i = 0; i < _diagonal.size(); i++)
   {
     s << "Row " << i << ":";
-
     for (const auto& entry : _diagonal[i])
       s << " " << entry;
 
@@ -419,44 +420,32 @@ std::string SparsityPattern::str() const
       for (const auto& entry : _off_diagonal[i])
         s << " " << entry;
     }
-
     s << std::endl;
   }
 
   return s.str();
 }
 //-----------------------------------------------------------------------------
-std::vector<std::vector<std::size_t>>
-SparsityPattern::diagonal_pattern(Type type) const
-{
-  std::vector<std::vector<std::size_t>> v(_diagonal.size());
-  for (std::size_t i = 0; i < _diagonal.size(); ++i)
-    v[i].insert(v[i].begin(), _diagonal[i].begin(), _diagonal[i].end());
+// std::vector<std::vector<std::size_t>> SparsityPattern::diagonal_pattern()
+// const
+// {
+//   std::vector<std::vector<std::size_t>> v(_diagonal.size());
+//   for (std::size_t i = 0; i < _diagonal.size(); ++i)
+//     v[i].insert(v[i].begin(), _diagonal[i].begin(), _diagonal[i].end());
 
-  if (type == Type::sorted)
-  {
-    for (std::size_t i = 0; i < v.size(); ++i)
-      std::sort(v[i].begin(), v[i].end());
-  }
+//   return v;
+// }
+// //-----------------------------------------------------------------------------
+// std::vector<std::vector<std::size_t>>
+// SparsityPattern::off_diagonal_pattern() const
+// {
+//   std::vector<std::vector<std::size_t>> v(_off_diagonal.size());
+//   for (std::size_t i = 0; i < _off_diagonal.size(); ++i)
+//     v[i].insert(v[i].begin(), _off_diagonal[i].begin(),
+//     _off_diagonal[i].end());
 
-  return v;
-}
-//-----------------------------------------------------------------------------
-std::vector<std::vector<std::size_t>>
-SparsityPattern::off_diagonal_pattern(Type type) const
-{
-  std::vector<std::vector<std::size_t>> v(_off_diagonal.size());
-  for (std::size_t i = 0; i < _off_diagonal.size(); ++i)
-    v[i].insert(v[i].begin(), _off_diagonal[i].begin(), _off_diagonal[i].end());
-
-  if (type == Type::sorted)
-  {
-    for (std::size_t i = 0; i < v.size(); ++i)
-      std::sort(v[i].begin(), v[i].end());
-  }
-
-  return v;
-}
+//   return v;
+// }
 //-----------------------------------------------------------------------------
 void SparsityPattern::info_statistics() const
 {
