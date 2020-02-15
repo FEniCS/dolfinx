@@ -247,6 +247,7 @@ la::PETScMatrix fem::create_matrix_block(
       {
         patterns[row].push_back(
             std::make_unique<la::SparsityPattern>(mesh.mpi_comm(), index_maps));
+      patterns[row].back()->assemble();
       }
     }
   }

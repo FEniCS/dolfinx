@@ -38,11 +38,6 @@ namespace la
 class SparsityPattern
 {
 
-  // NOTE: Do not change this typedef without performing careful
-  //       performance profiling
-  /// Set type used for the rows of the sparsity pattern
-  typedef dolfinx::common::Set<std::size_t> set_type;
-
 public:
   /// Create an empty sparsity pattern with specified dimensions
   SparsityPattern(
@@ -104,19 +99,21 @@ public:
   /// Return informal string representation (pretty-print)
   std::string str() const;
 
-  /// Return underlying sparsity pattern (diagonal). Options are
-  /// 'sorted' and 'unsorted'.
-  // std::vector<std::vector<std::size_t>> diagonal_pattern() const;
+  /// Return underlying sparsity pattern (diagonal)
+  const graph::AdjacencyList<std::size_t>& diagonal_pattern() const;
 
-  /// Return underlying sparsity pattern (off-diagonal). Options are
-  /// 'sorted' and 'unsorted'. Empty vector is returned if there is
-  /// no off-diagonal contribution.
+  // /// Return underlying sparsity pattern (off-diagonal)
   // std::vector<std::vector<std::size_t>> off_diagonal_pattern() const;
 
   /// Print some useful information
   void info_statistics() const;
 
 private:
+  // NOTE: Do not change this typedef without performing careful
+  //       performance profiling
+  // Set type used for the rows of the sparsity pattern
+  typedef dolfinx::common::Set<std::size_t> set_type;
+
   // MPI communicator
   dolfinx::MPI::Comm _mpi_comm;
 

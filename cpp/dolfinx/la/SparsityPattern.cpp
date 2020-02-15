@@ -177,12 +177,22 @@ SparsityPattern::SparsityPattern(
       p00->mpi_comm(), row_local_size, ghosts, 1);
   _index_maps[1] = std::make_shared<common::IndexMap>(
       p00->mpi_comm(), col_local_size, ghosts, 1);
+
+  _diagonal_new
+      = std::make_shared<graph::AdjacencyList<std::size_t>>(_diagonal);
+  if (!_off_diagonal.empty())
+  {
+    _off_diagonal_new
+        = std::make_shared<graph::AdjacencyList<std::size_t>>(_off_diagonal);
+  }
 }
 //-----------------------------------------------------------------------------
 void SparsityPattern::insert(
     const Eigen::Ref<const Eigen::Array<PetscInt, Eigen::Dynamic, 1>>& rows,
     const Eigen::Ref<const Eigen::Array<PetscInt, Eigen::Dynamic, 1>>& cols)
 {
+  assert(!_diagonal_new);
+
   const common::IndexMap& index_map0 = *_index_maps[0];
   const common::IndexMap& index_map1 = *_index_maps[1];
 
@@ -256,7 +266,9 @@ std::size_t SparsityPattern::num_nonzeros() const
 Eigen::Array<std::int32_t, Eigen::Dynamic, 1>
 SparsityPattern::num_nonzeros_diagonal() const
 {
-  assert(_diagonal_new);
+  if (!_diagonal_new)
+    throw std::runtime_error("Sparsity pattern has not been finalised.");
+
   Eigen::Array<std::int32_t, Eigen::Dynamic, 1> num_nonzeros(
       _diagonal_new->num_nodes());
   for (int i = 0; i < _diagonal_new->num_nodes(); ++i)
@@ -296,6 +308,9 @@ SparsityPattern::num_local_nonzeros() const
 //-----------------------------------------------------------------------------
 void SparsityPattern::assemble()
 {
+  if (_diagonal_new)
+    throw std::runtime_error("Sparsity pattern has already been finalised.");
+
   const int bs0 = _index_maps[0]->block_size;
   const int bs1 = _index_maps[1]->block_size;
   const std::array<std::int64_t, 2> local_range0
@@ -426,15 +441,13 @@ std::string SparsityPattern::str() const
   return s.str();
 }
 //-----------------------------------------------------------------------------
-// std::vector<std::vector<std::size_t>> SparsityPattern::diagonal_pattern()
-// const
-// {
-//   std::vector<std::vector<std::size_t>> v(_diagonal.size());
-//   for (std::size_t i = 0; i < _diagonal.size(); ++i)
-//     v[i].insert(v[i].begin(), _diagonal[i].begin(), _diagonal[i].end());
-
-//   return v;
-// }
+const graph::AdjacencyList<std::size_t>&
+SparsityPattern::diagonal_pattern() const
+{
+  if (!_diagonal_new)
+    throw std::runtime_error("Sparsity pattern has not been finalised.");
+  return *_diagonal_new;
+}
 // //-----------------------------------------------------------------------------
 // std::vector<std::vector<std::size_t>>
 // SparsityPattern::off_diagonal_pattern() const
