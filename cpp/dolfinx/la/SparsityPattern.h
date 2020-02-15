@@ -62,16 +62,19 @@ public:
   /// Move assignment
   SparsityPattern& operator=(SparsityPattern&& pattern) = default;
 
-  /// Insert non-zero entries using local (process-wise) indices
-  void insert(
-      const Eigen::Ref<const Eigen::Array<PetscInt, Eigen::Dynamic, 1>>& rows,
-      const Eigen::Ref<const Eigen::Array<PetscInt, Eigen::Dynamic, 1>>& cols);
-
   /// Return local range for dimension dim
   std::array<std::int64_t, 2> local_range(int dim) const;
 
   /// Return index map for dimension dim
   std::shared_ptr<const common::IndexMap> index_map(int dim) const;
+
+  /// Insert non-zero entries using local (process-wise) indices
+  void insert(
+      const Eigen::Ref<const Eigen::Array<PetscInt, Eigen::Dynamic, 1>>& rows,
+      const Eigen::Ref<const Eigen::Array<PetscInt, Eigen::Dynamic, 1>>& cols);
+
+  /// Finalize sparsity pattern and communicate off-process entries
+  void assemble();
 
   /// Return number of local nonzeros
   std::int64_t num_nonzeros() const;
@@ -90,15 +93,6 @@ public:
   /// dimension 0
   Eigen::Array<std::int32_t, Eigen::Dynamic, 1> num_local_nonzeros() const;
 
-  /// Finalize sparsity pattern and communicate off-process entries
-  void assemble();
-
-  /// Return MPI communicator
-  MPI_Comm mpi_comm() const { return _mpi_comm.comm(); }
-
-  /// Return informal string representation (pretty-print)
-  std::string str() const;
-
   /// Sparsity pattern for the owned (diagonal) block. Uses local
   /// indices for the columns.
   const graph::AdjacencyList<std::int32_t>& diagonal_pattern() const;
@@ -107,8 +101,11 @@ public:
   /// indices for the columns.
   const graph::AdjacencyList<std::int64_t>& off_diagonal_pattern() const;
 
-  /// Print some useful information
-  void info_statistics() const;
+  /// Return MPI communicator
+  MPI_Comm mpi_comm() const;
+
+  /// Return informal string representation (pretty-print)
+  std::string str() const;
 
 private:
   // MPI communicator

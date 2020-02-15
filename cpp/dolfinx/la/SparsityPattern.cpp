@@ -177,6 +177,19 @@ SparsityPattern::SparsityPattern(
   }
 }
 //-----------------------------------------------------------------------------
+std::array<std::int64_t, 2> SparsityPattern::local_range(int dim) const
+{
+  const int bs = _index_maps.at(dim)->block_size;
+  const std::array<std::int64_t, 2> lrange = _index_maps[dim]->local_range();
+  return {{bs * lrange[0], bs * lrange[1]}};
+}
+//-----------------------------------------------------------------------------
+std::shared_ptr<const common::IndexMap>
+SparsityPattern::index_map(int dim) const
+{
+  return _index_maps.at(dim);
+}
+//-----------------------------------------------------------------------------
 void SparsityPattern::insert(
     const Eigen::Ref<const Eigen::Array<PetscInt, Eigen::Dynamic, 1>>& rows,
     const Eigen::Ref<const Eigen::Array<PetscInt, Eigen::Dynamic, 1>>& cols)
@@ -213,61 +226,6 @@ void SparsityPattern::insert(
           "Cannot insert rows that do not exist in the IndexMap.");
     }
   }
-}
-//-----------------------------------------------------------------------------
-std::array<std::int64_t, 2> SparsityPattern::local_range(int dim) const
-{
-  const int bs = _index_maps.at(dim)->block_size;
-  const std::array<std::int64_t, 2> lrange = _index_maps[dim]->local_range();
-  return {{bs * lrange[0], bs * lrange[1]}};
-}
-//-----------------------------------------------------------------------------
-std::shared_ptr<const common::IndexMap>
-SparsityPattern::index_map(int dim) const
-{
-  return _index_maps.at(dim);
-}
-//-----------------------------------------------------------------------------
-std::int64_t SparsityPattern::num_nonzeros() const
-{
-  if (!_diagonal_new)
-    throw std::runtime_error("Sparsity pattern has not be assembled.");
-  assert(_off_diagonal_new);
-  return _diagonal_new->array().rows() + _off_diagonal_new->array().rows();
-}
-//-----------------------------------------------------------------------------
-Eigen::Array<std::int32_t, Eigen::Dynamic, 1>
-SparsityPattern::num_nonzeros_diagonal() const
-{
-  if (!_diagonal_new)
-    throw std::runtime_error("Sparsity pattern has not been finalised.");
-
-  Eigen::Array<std::int32_t, Eigen::Dynamic, 1> num_nonzeros(
-      _diagonal_new->num_nodes());
-  for (int i = 0; i < _diagonal_new->num_nodes(); ++i)
-    num_nonzeros[i] = _diagonal_new->num_links(i);
-
-  return num_nonzeros;
-}
-//-----------------------------------------------------------------------------
-Eigen::Array<std::int32_t, Eigen::Dynamic, 1>
-SparsityPattern::num_nonzeros_off_diagonal() const
-{
-  if (!_off_diagonal_new)
-    throw std::runtime_error("Sparsity pattern has not been finalised.");
-
-  Eigen::Array<std::int32_t, Eigen::Dynamic, 1> num_nonzeros(
-      _off_diagonal_new->num_nodes());
-  for (int i = 0; i < _off_diagonal_new->num_nodes(); ++i)
-    num_nonzeros[i] = _off_diagonal_new->num_links(i);
-
-  return num_nonzeros;
-}
-//-----------------------------------------------------------------------------
-Eigen::Array<std::int32_t, Eigen::Dynamic, 1>
-SparsityPattern::num_local_nonzeros() const
-{
-  return num_nonzeros_diagonal() + num_nonzeros_off_diagonal();
 }
 //-----------------------------------------------------------------------------
 void SparsityPattern::assemble()
@@ -383,24 +341,46 @@ void SparsityPattern::assemble()
   std::vector<common::Set<std::int64_t>>().swap(_off_diagonal_cache);
 }
 //-----------------------------------------------------------------------------
-std::string SparsityPattern::str() const
+std::int64_t SparsityPattern::num_nonzeros() const
 {
   if (!_diagonal_new)
-    throw std::runtime_error("Sparsity pattern has not been assembled.");
+    throw std::runtime_error("Sparsity pattern has not be assembled.");
   assert(_off_diagonal_new);
+  return _diagonal_new->array().rows() + _off_diagonal_new->array().rows();
+}
+//-----------------------------------------------------------------------------
+Eigen::Array<std::int32_t, Eigen::Dynamic, 1>
+SparsityPattern::num_nonzeros_diagonal() const
+{
+  if (!_diagonal_new)
+    throw std::runtime_error("Sparsity pattern has not been finalised.");
 
-  // Print each row
-  std::stringstream s;
-  assert(_off_diagonal_new->num_nodes() == _diagonal_new->num_nodes());
-  for (int i = 0; i < _diagonal_new->num_nodes(); i++)
-  {
-    s << "Row " << i << ":";
-    s << " " << _diagonal_new->links(i);
-    s << " " << _off_diagonal_new->links(i);
-    s << std::endl;
-  }
+  Eigen::Array<std::int32_t, Eigen::Dynamic, 1> num_nonzeros(
+      _diagonal_new->num_nodes());
+  for (int i = 0; i < _diagonal_new->num_nodes(); ++i)
+    num_nonzeros[i] = _diagonal_new->num_links(i);
 
-  return s.str();
+  return num_nonzeros;
+}
+//-----------------------------------------------------------------------------
+Eigen::Array<std::int32_t, Eigen::Dynamic, 1>
+SparsityPattern::num_nonzeros_off_diagonal() const
+{
+  if (!_off_diagonal_new)
+    throw std::runtime_error("Sparsity pattern has not been finalised.");
+
+  Eigen::Array<std::int32_t, Eigen::Dynamic, 1> num_nonzeros(
+      _off_diagonal_new->num_nodes());
+  for (int i = 0; i < _off_diagonal_new->num_nodes(); ++i)
+    num_nonzeros[i] = _off_diagonal_new->num_links(i);
+
+  return num_nonzeros;
+}
+//-----------------------------------------------------------------------------
+Eigen::Array<std::int32_t, Eigen::Dynamic, 1>
+SparsityPattern::num_local_nonzeros() const
+{
+  return num_nonzeros_diagonal() + num_nonzeros_off_diagonal();
 }
 //-----------------------------------------------------------------------------
 const graph::AdjacencyList<std::int32_t>&
@@ -419,52 +399,25 @@ SparsityPattern::off_diagonal_pattern() const
   return *_off_diagonal_new;
 }
 //-----------------------------------------------------------------------------
-void SparsityPattern::info_statistics() const
+MPI_Comm SparsityPattern::mpi_comm() const { return _mpi_comm.comm(); }
+//-----------------------------------------------------------------------------
+std::string SparsityPattern::str() const
 {
-  // // Count nonzeros in diagonal block
-  // std::size_t num_nonzeros_diagonal = 0;
-  // for (std::size_t i = 0; i < _diagonal.size(); ++i)
-  //   num_nonzeros_diagonal += _diagonal[i].size();
+  if (!_diagonal_new)
+    throw std::runtime_error("Sparsity pattern has not been assembled.");
+  assert(_off_diagonal_new);
 
-  // // Count nonzeros in off-diagonal block
-  // std::size_t num_nonzeros_off_diagonal = 0;
-  // for (std::size_t i = 0; i < _off_diagonal.size(); ++i)
-  //   num_nonzeros_off_diagonal += _off_diagonal[i].size();
+  // Print each row
+  std::stringstream s;
+  assert(_off_diagonal_new->num_nodes() == _diagonal_new->num_nodes());
+  for (int i = 0; i < _diagonal_new->num_nodes(); i++)
+  {
+    s << "Row " << i << ":";
+    s << " " << _diagonal_new->links(i);
+    s << " " << _off_diagonal_new->links(i);
+    s << std::endl;
+  }
 
-  // // Count nonzeros in non-local block
-  // const std::size_t num_nonzeros_non_local = _non_local.size() / 2;
-
-  // // Count total number of nonzeros
-  // const std::size_t num_nonzeros_total = num_nonzeros_diagonal
-  //                                        + num_nonzeros_off_diagonal
-  //                                        + num_nonzeros_non_local;
-
-  // std::size_t bs0 = _index_maps[0]->block_size;
-  // std::size_t size0 = bs0 * _index_maps[0]->size_global();
-
-  // std::size_t bs1 = _index_maps[1]->block_size;
-  // std::size_t size1 = bs1 * _index_maps[1]->size_global();
-
-  // // Return number of entries
-  // std::cout << "Matrix of size " << size0 << " x " << size1 << " has "
-  //           << num_nonzeros_total << " ("
-  //           << 100.0 * num_nonzeros_total / (size0 * size1) << "%)"
-  //           << " nonzero entries." << std::endl;
-  // if (num_nonzeros_total != num_nonzeros_diagonal)
-  // {
-  //   std::cout << "Diagonal: " << num_nonzeros_diagonal << " ("
-  //             << (100.0 * static_cast<double>(num_nonzeros_diagonal)
-  //                 / static_cast<double>(num_nonzeros_total))
-  //             << "%), ";
-  //   std::cout << "off-diagonal: " << num_nonzeros_off_diagonal << " ("
-  //             << (100.0 * static_cast<double>(num_nonzeros_off_diagonal)
-  //                 / static_cast<double>(num_nonzeros_total))
-  //             << "%), ";
-  //   std::cout << "non-local: " << num_nonzeros_non_local << " ("
-  //             << (100.0 * static_cast<double>(num_nonzeros_non_local)
-  //                 / static_cast<double>(num_nonzeros_total))
-  //             << "%)";
-  //   std::cout << std::endl;
-  // }
+  return s.str();
 }
 //-----------------------------------------------------------------------------
