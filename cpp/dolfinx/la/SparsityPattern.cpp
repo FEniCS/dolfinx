@@ -194,16 +194,13 @@ void SparsityPattern::insert(
   assert(!_diagonal_new);
 
   const common::IndexMap& index_map0 = *_index_maps[0];
-  const common::IndexMap& index_map1 = *_index_maps[1];
-
   const int bs0 = index_map0.block_size;
   const std::int32_t local_size0 = bs0 * index_map0.size_local();
 
+  const common::IndexMap& index_map1 = *_index_maps[1];
   const int bs1 = index_map1.block_size;
   const auto local_range1 = index_map1.local_range();
 
-  // Parallel mode, use either diagonal, off_diagonal, non_local or
-  // full_rows
   for (Eigen::Index i = 0; i < rows.rows(); ++i)
   {
     if (rows[i] < local_size0)
@@ -254,11 +251,18 @@ SparsityPattern::index_map(int dim) const
 //-----------------------------------------------------------------------------
 std::size_t SparsityPattern::num_nonzeros() const
 {
+  if (!_diagonal_new)
+    throw std::runtime_error("Sparsity pattern has not be assembled.");
+
   std::size_t nz = 0;
-  for (const auto& slice : _diagonal)
-    nz += slice.size();
-  for (const auto& slice : _off_diagonal)
-    nz += slice.size();
+  for (int i = 0; i < _diagonal_new->num_nodes(); ++i)
+    nz += _diagonal_new->num_links(i);
+
+  if (_off_diagonal_new)
+  {
+    for (int i = 0; i < _off_diagonal_new->num_nodes(); ++i)
+      nz += _off_diagonal_new->num_links(i);
+  }
 
   return nz;
 }
@@ -297,11 +301,7 @@ SparsityPattern::num_local_nonzeros() const
   Eigen::Array<std::int32_t, Eigen::Dynamic, 1> num_nonzeros
       = num_nonzeros_diagonal();
   if (!_off_diagonal.empty())
-  {
-    Eigen::Array<std::int32_t, Eigen::Dynamic, 1> num_nonzeros_off_diag
-        = num_nonzeros_off_diagonal();
-    num_nonzeros += num_nonzeros_off_diag;
-  }
+    num_nonzeros += num_nonzeros_off_diagonal();
 
   return num_nonzeros;
 }
