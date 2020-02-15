@@ -100,31 +100,29 @@ public:
   std::string str() const;
 
   /// Return underlying sparsity pattern (diagonal)
-  const graph::AdjacencyList<std::size_t>& diagonal_pattern() const;
+  const graph::AdjacencyList<std::int64_t>& diagonal_pattern() const;
 
-  // /// Return underlying sparsity pattern (off-diagonal)
-  // std::vector<std::vector<std::size_t>> off_diagonal_pattern() const;
+  /// Return underlying sparsity pattern (off-diagonal)
+  const graph::AdjacencyList<std::int64_t>& off_diagonal_pattern() const;
 
   /// Print some useful information
   void info_statistics() const;
 
 private:
-  // NOTE: Do not change this typedef without performing careful
-  //       performance profiling
-  // Set type used for the rows of the sparsity pattern
-  typedef dolfinx::common::Set<std::size_t> set_type;
-
   // MPI communicator
   dolfinx::MPI::Comm _mpi_comm;
 
   // common::IndexMaps for each dimension
   std::array<std::shared_ptr<const common::IndexMap>, 2> _index_maps;
 
+  // NOTE: Do not change the set type without performing careful
+  //       performance profiling
   // Sparsity patterns for diagonal and off-diagonal blocks
-  std::vector<set_type> _diagonal_old, _off_diagonal_old;
+  std::vector<common::Set<std::int64_t>> _diagonal_old;
+  std::vector<common::Set<std::int64_t>> _off_diagonal_old;
 
-  std::shared_ptr<graph::AdjacencyList<std::size_t>> _diagonal_new,
-      _off_diagonal_new;
+  std::shared_ptr<graph::AdjacencyList<std::int64_t>> _diagonal_new;
+  std::shared_ptr<graph::AdjacencyList<std::int64_t>> _off_diagonal_new;
 };
 } // namespace la
 } // namespace dolfinx

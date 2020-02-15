@@ -53,7 +53,8 @@ SparsityPattern::SparsityPattern(
 
   const bool distributed = MPI::size(comm) > 1;
 
-  std::vector<set_type> diagonal, off_diagonal;
+  std::vector<common::Set<std::int64_t>> diagonal;
+  std::vector<common::Set<std::int64_t>> off_diagonal;
 
   // Get row ranges using column 0
   std::int64_t row_global_offset(0), row_local_size(0);
@@ -188,11 +189,12 @@ SparsityPattern::SparsityPattern(
   _index_maps[1] = std::make_shared<common::IndexMap>(
       p00->mpi_comm(), col_local_size, ghosts, 1);
 
-  _diagonal_new = std::make_shared<graph::AdjacencyList<std::size_t>>(diagonal);
+  _diagonal_new
+      = std::make_shared<graph::AdjacencyList<std::int64_t>>(diagonal);
   if (!off_diagonal.empty())
   {
     _off_diagonal_new
-        = std::make_shared<graph::AdjacencyList<std::size_t>>(off_diagonal);
+        = std::make_shared<graph::AdjacencyList<std::int64_t>>(off_diagonal);
   }
 }
 //-----------------------------------------------------------------------------
@@ -323,6 +325,7 @@ void SparsityPattern::assemble()
 {
   if (_diagonal_new)
     throw std::runtime_error("Sparsity pattern has already been finalised.");
+  assert(!_off_diagonal_new);
 
   assert(_index_maps[0]);
   const int bs0 = _index_maps[0]->block_size;
@@ -395,16 +398,8 @@ void SparsityPattern::assemble()
                           ghost_data_received.data(), num_rows_recv.data(),
                           disp.data(), MPI_INT64_T, comm);
 
-  // std::cout << "3: AAAAAAAA" << std::endl;
-
   for (std::size_t i = 0; i < ghost_data_received.size(); i += 2)
   {
-    // if (MPI::rank(MPI_COMM_WORLD) == 0)
-    // {
-    //   std::cout << "A: Remote: " << ghost_data_received[i] << ", "
-    //             << ghost_data_received[i + 1] << std::endl;
-    // }
-
     const std::int64_t row = ghost_data_received[i];
     if (row >= bs0 * local_range0[0] and row < bs0 * local_range0[1])
     {
@@ -422,13 +417,11 @@ void SparsityPattern::assemble()
 
   _diagonal_old.resize(bs0 * local_size0);
   _diagonal_new
-      = std::make_shared<graph::AdjacencyList<std::size_t>>(_diagonal_old);
-  if (!_off_diagonal_old.empty())
-  {
-    _off_diagonal_old.resize(bs0 * local_size0);
-    _off_diagonal_new = std::make_shared<graph::AdjacencyList<std::size_t>>(
-        _off_diagonal_old);
-  }
+      = std::make_shared<graph::AdjacencyList<std::int64_t>>(_diagonal_old);
+
+  _off_diagonal_old.resize(bs0 * local_size0);
+  _off_diagonal_new
+      = std::make_shared<graph::AdjacencyList<std::int64_t>>(_off_diagonal_old);
 }
 //-----------------------------------------------------------------------------
 std::string SparsityPattern::str() const
@@ -452,24 +445,21 @@ std::string SparsityPattern::str() const
   return s.str();
 }
 //-----------------------------------------------------------------------------
-const graph::AdjacencyList<std::size_t>&
+const graph::AdjacencyList<std::int64_t>&
 SparsityPattern::diagonal_pattern() const
 {
   if (!_diagonal_new)
     throw std::runtime_error("Sparsity pattern has not been finalised.");
   return *_diagonal_new;
 }
-// //-----------------------------------------------------------------------------
-// std::vector<std::vector<std::size_t>>
-// SparsityPattern::off_diagonal_pattern() const
-// {
-//   std::vector<std::vector<std::size_t>> v(_off_diagonal.size());
-//   for (std::size_t i = 0; i < _off_diagonal.size(); ++i)
-//     v[i].insert(v[i].begin(), _off_diagonal[i].begin(),
-//     _off_diagonal[i].end());
-
-//   return v;
-// }
+//-----------------------------------------------------------------------------
+const graph::AdjacencyList<std::int64_t>&
+SparsityPattern::off_diagonal_pattern() const
+{
+  if (!_off_diagonal_new)
+    throw std::runtime_error("Sparsity pattern has not been finalised.");
+  return *_off_diagonal_new;
+}
 //-----------------------------------------------------------------------------
 void SparsityPattern::info_statistics() const
 {
