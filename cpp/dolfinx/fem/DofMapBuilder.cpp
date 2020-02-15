@@ -423,16 +423,16 @@ std::vector<std::int64_t> get_global_indices(
                 MPI_STATUS_IGNORE);
     std::vector<std::int64_t>& dofs_received
         = all_dofs_received[requests_dim[index]];
-    for (std::size_t i = 0; i < dofs_received.size(); i += 2)
-      global_old_new.insert({dofs_received[i], dofs_received[i + 1]});
+    for (std::size_t j = 0; j < dofs_received.size(); j += 2)
+      global_old_new.insert({dofs_received[j], dofs_received[j + 1]});
   }
 
   std::vector<std::int64_t> local_to_global_new(old_to_new.size() - num_owned);
-  for (std::size_t j = 0; j < local_new_to_global_old.size(); ++j)
+  for (std::size_t i = 0; i < local_new_to_global_old.size(); ++i)
   {
-    auto it = global_old_new.find(local_new_to_global_old[j]);
+    auto it = global_old_new.find(local_new_to_global_old[i]);
     assert(it != global_old_new.end());
-    local_to_global_new[j] = it->second;
+    local_to_global_new[i] = it->second;
   }
 
   return local_to_global_new;
