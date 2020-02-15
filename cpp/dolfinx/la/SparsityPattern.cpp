@@ -385,21 +385,20 @@ void SparsityPattern::assemble()
 //-----------------------------------------------------------------------------
 std::string SparsityPattern::str() const
 {
+  if (!_diagonal_new)
+    throw std::runtime_error("Sparsity pattern has not been assembled.");
+  assert(_off_diagonal_new);
+
   // Print each row
   std::stringstream s;
-  // for (std::size_t i = 0; i < _diagonal.size(); i++)
-  // {
-  //   s << "Row " << i << ":";
-  //   for (const auto& entry : _diagonal[i])
-  //     s << " " << entry;
-
-  //   if (!_off_diagonal.empty())
-  //   {
-  //     for (const auto& entry : _off_diagonal[i])
-  //       s << " " << entry;
-  //   }
-  //   s << std::endl;
-  // }
+  assert(_off_diagonal_new->num_nodes() == _diagonal_new->num_nodes());
+  for (int i = 0; i < _diagonal_new->num_nodes(); i++)
+  {
+    s << "Row " << i << ":";
+    s << " " << _diagonal_new->links(i);
+    s << " " << _off_diagonal_new->links(i);
+    s << std::endl;
+  }
 
   return s.str();
 }
