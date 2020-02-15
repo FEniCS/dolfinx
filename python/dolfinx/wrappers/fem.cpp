@@ -24,6 +24,7 @@
 #include <dolfinx/function/FunctionSpace.h>
 #include <dolfinx/la/PETScMatrix.h>
 #include <dolfinx/la/PETScVector.h>
+#include <dolfinx/la/SparsityPattern.h>
 #include <dolfinx/mesh/Mesh.h>
 #include <dolfinx/mesh/MeshFunction.h>
 #include <memory>
@@ -143,6 +144,9 @@ void fem(py::module& m)
       },
       py::return_value_policy::take_ownership,
       "Create nested vector for multiple (stacked) linear forms.");
+
+  m.def("create_sparsity_pattern", &dolfinx::fem::create_sparsity_pattern,
+        "Create a sparsity pattern for bilinear form.");
   m.def(
       "create_matrix",
       [](const dolfinx::fem::Form& a) {
@@ -191,7 +195,9 @@ void fem(py::module& m)
       [](const dolfinx::mesh::Mesh& mesh,
          std::shared_ptr<const dolfinx::fem::ElementDofLayout>
              element_dof_layout) {
-        return dolfinx::fem::DofMapBuilder::build(mesh, element_dof_layout);
+        return dolfinx::fem::DofMapBuilder::build(
+            mesh.mpi_comm(), mesh.topology(), mesh.cell_type(),
+            element_dof_layout);
       },
       "Build and dofmap on a mesh.");
 
@@ -213,6 +219,8 @@ void fem(py::module& m)
       m, "ElementDofLayout", "Object describing the layout of dofs on a cell")
       .def_property_readonly("num_dofs",
                              &dolfinx::fem::ElementDofLayout::num_dofs)
+      .def_property_readonly("cell_type",
+                             &dolfinx::fem::ElementDofLayout::cell_type)
       .def("num_entity_dofs", &dolfinx::fem::ElementDofLayout::num_entity_dofs)
       .def("num_entity_closure_dofs",
            &dolfinx::fem::ElementDofLayout::num_entity_closure_dofs)
@@ -223,6 +231,11 @@ void fem(py::module& m)
   // dolfinx::fem::DofMap
   py::class_<dolfinx::fem::DofMap, std::shared_ptr<dolfinx::fem::DofMap>>(
       m, "DofMap", "DofMap object")
+      .def(py::init<std::shared_ptr<const dolfinx::fem::ElementDofLayout>,
+                    std::shared_ptr<const dolfinx::common::IndexMap>,
+                    const Eigen::Array<std::int32_t, Eigen::Dynamic, 1>&>(),
+           py::arg("element_dof_layout"), py::arg("index_map"),
+           py::arg("dofmap"))
       .def_readonly("index_map", &dolfinx::fem::DofMap::index_map)
       .def_readonly("dof_layout", &dolfinx::fem::DofMap::element_dof_layout)
       .def("cell_dofs", &dolfinx::fem::DofMap::cell_dofs)
@@ -340,19 +353,19 @@ void fem(py::module& m)
   m.def("bcs_rows", &dolfinx::fem::bcs_rows);
   m.def("bcs_cols", &dolfinx::fem::bcs_cols);
 
-  // dolfinx::fem::DiscreteOperators
-  py::class_<dolfinx::fem::DiscreteOperators>(m, "DiscreteOperators")
-      .def_static(
-          "build_gradient",
-          [](const dolfinx::function::FunctionSpace& V0,
-             const dolfinx::function::FunctionSpace& V1) {
-            dolfinx::la::PETScMatrix A
-                = dolfinx::fem::DiscreteOperators::build_gradient(V0, V1);
-            Mat _A = A.mat();
-            PetscObjectReference((PetscObject)_A);
-            return _A;
-          },
-          py::return_value_policy::take_ownership);
+//   // dolfinx::fem::DiscreteOperators
+//   py::class_<dolfinx::fem::DiscreteOperators>(m, "DiscreteOperators")
+//       .def_static(
+//           "build_gradient",
+//           [](const dolfinx::function::FunctionSpace& V0,
+//              const dolfinx::function::FunctionSpace& V1) {
+//             dolfinx::la::PETScMatrix A
+//                 = dolfinx::fem::DiscreteOperators::build_gradient(V0, V1);
+//             Mat _A = A.mat();
+//             PetscObjectReference((PetscObject)_A);
+//             return _A;
+//           },
+//           py::return_value_policy::take_ownership);
 
   // dolfinx::fem::FormIntegrals
   py::class_<dolfinx::fem::FormIntegrals,

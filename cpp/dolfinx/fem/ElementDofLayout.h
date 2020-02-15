@@ -41,9 +41,8 @@ public:
       const mesh::CellType cell_type,
       const std::array<int, 4> entity_block_size);
 
-  /// Copy-like constructor with option to reset (clear) parent map
-  ElementDofLayout(const ElementDofLayout& element_dof_layout,
-                   bool reset_parent);
+  /// Copy the DOF layout, discarding any parent information
+  ElementDofLayout copy() const;
 
   /// Copy constructor
   ElementDofLayout(const ElementDofLayout& dofmap) = default;
@@ -59,6 +58,10 @@ public:
 
   /// Move assignment
   ElementDofLayout& operator=(ElementDofLayout&& dofmap) = default;
+
+  /// Cell type (shape)
+  /// @return The cell type
+  mesh::CellType cell_type() const;
 
   /// Return the dimension of the local finite element function space on
   /// a cell (number of dofs on element)
@@ -126,6 +129,9 @@ public:
 private:
   // Block size
   int _block_size;
+
+  // Cell type
+  mesh::CellType _cell_type;
 
   // Mapping of dofs to this ElementDofLayout's immediate parent
   std::vector<int> _parent_map;

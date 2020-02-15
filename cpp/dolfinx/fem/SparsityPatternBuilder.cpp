@@ -9,64 +9,65 @@
 #include <dolfinx/common/MPI.h>
 #include <dolfinx/fem/DofMap.h>
 #include <dolfinx/la/SparsityPattern.h>
-#include <dolfinx/mesh/Mesh.h>
-#include <dolfinx/mesh/MeshEntity.h>
-#include <dolfinx/mesh/MeshIterator.h>
+#include <dolfinx/mesh/Topology.h>
 
 using namespace dolfinx;
 using namespace dolfinx::fem;
 
 //-----------------------------------------------------------------------------
 void SparsityPatternBuilder::cells(
-    la::SparsityPattern& pattern, const mesh::Mesh& mesh,
+    la::SparsityPattern& pattern, const mesh::Topology& topology,
     const std::array<const fem::DofMap*, 2> dofmaps)
 {
   assert(dofmaps[0]);
   assert(dofmaps[1]);
-  const int D = mesh.topology().dim();
-  for (auto& cell : mesh::MeshRange(mesh, D))
-  {
-    pattern.insert_local(dofmaps[0]->cell_dofs(cell.index()),
-                         dofmaps[1]->cell_dofs(cell.index()));
-  }
+  const int D = topology.dim();
+  auto cells = topology.connectivity(D, 0);
+  assert(cells);
+  for (int c = 0; c < cells->num_nodes(); ++c)
+    pattern.insert(dofmaps[0]->cell_dofs(c), dofmaps[1]->cell_dofs(c));
 }
 //-----------------------------------------------------------------------------
 void SparsityPatternBuilder::interior_facets(
-    la::SparsityPattern& pattern, const mesh::Mesh& mesh,
+    la::SparsityPattern& pattern, const mesh::Topology& topology,
     const std::array<const fem::DofMap*, 2> dofmaps)
 {
   assert(dofmaps[0]);
   assert(dofmaps[1]);
 
-  const std::size_t D = mesh.topology().dim();
-  mesh.create_entities(D - 1);
-  mesh.create_connectivity(D - 1, D);
+  const int D = topology.dim();
+  if (!topology.connectivity(D - 1, 0))
+    throw std::runtime_error("Topology facets have not been created.");
 
-  // Array to store macro-dofs, if required (for interior facets)
-  std::array<Eigen::Array<PetscInt, Eigen::Dynamic, 1>, 2> macro_dofs;
-  std::shared_ptr<const mesh::Connectivity> connectivity
-      = mesh.topology().connectivity(D - 1, D);
+  auto connectivity = topology.connectivity(D - 1, D);
   if (!connectivity)
     throw std::runtime_error("Facet-cell connectivity has not been computed.");
 
-  for (auto& facet : mesh::MeshRange(mesh, D - 1))
+  // Array to store macro-dofs, if required (for interior facets)
+  std::array<Eigen::Array<PetscInt, Eigen::Dynamic, 1>, 2> macro_dofs;
+
+  // Loop over owned facets
+  auto map = topology.index_map(D - 1);
+  assert(map);
+  assert(map->block_size == 1);
+  const std::int32_t num_facets = map->size_local();
+  for (int f = 0; f < num_facets; ++f)
   {
-    // Continue if facet is exterior facet
-    if (connectivity->size_global(facet.index()) == 1)
+    // Get cells incident with facet
+    auto cells = connectivity->links(f);
+
+    // Proceed to next facet if only ony connection
+    if (cells.rows() == 1)
       continue;
 
-    // FIXME: sort out ghosting
-
-    // Get cells incident with facet
-    assert(connectivity->size(facet.index()) == 2);
-    const mesh::MeshEntity cell0(mesh, D, facet.entities(D)[0]);
-    const mesh::MeshEntity cell1(mesh, D, facet.entities(D)[1]);
-
     // Tabulate dofs for each dimension on macro element
+    assert(cells.rows() == 2);
+    const int cell0 = cells[0];
+    const int cell1 = cells[1];
     for (std::size_t i = 0; i < 2; i++)
     {
-      auto cell_dofs0 = dofmaps[i]->cell_dofs(cell0.index());
-      auto cell_dofs1 = dofmaps[i]->cell_dofs(cell1.index());
+      auto cell_dofs0 = dofmaps[i]->cell_dofs(cell0);
+      auto cell_dofs1 = dofmaps[i]->cell_dofs(cell1);
       macro_dofs[i].resize(cell_dofs0.size() + cell_dofs1.size());
       std::copy(cell_dofs0.data(), cell_dofs0.data() + cell_dofs0.size(),
                 macro_dofs[i].data());
@@ -74,34 +75,37 @@ void SparsityPatternBuilder::interior_facets(
                 macro_dofs[i].data() + cell_dofs0.size());
     }
 
-    pattern.insert_local(macro_dofs[0], macro_dofs[1]);
+    pattern.insert(macro_dofs[0], macro_dofs[1]);
   }
 }
 //-----------------------------------------------------------------------------
 void SparsityPatternBuilder::exterior_facets(
-    la::SparsityPattern& pattern, const mesh::Mesh& mesh,
+    la::SparsityPattern& pattern, const mesh::Topology& topology,
     const std::array<const fem::DofMap*, 2> dofmaps)
 {
-  const std::size_t D = mesh.topology().dim();
-  mesh.create_entities(D - 1);
-  mesh.create_connectivity(D - 1, D);
+  const int D = topology.dim();
+  if (!topology.connectivity(D - 1, 0))
+    throw std::runtime_error("Topology facets have not been created.");
 
-  std::shared_ptr<const mesh::Connectivity> connectivity
-      = mesh.topology().connectivity(D - 1, D);
+  auto connectivity = topology.connectivity(D - 1, D);
   if (!connectivity)
     throw std::runtime_error("Facet-cell connectivity has not been computed.");
-  for (auto& facet : mesh::MeshRange(mesh, D - 1))
+
+  // Loop over owned facets
+  auto map = topology.index_map(D - 1);
+  assert(map);
+  assert(map->block_size == 1);
+  const std::int32_t num_facets = map->size_local();
+  for (int f = 0; f < num_facets; ++f)
   {
-    // Skip interior facets
-    if (connectivity->size_global(facet.index()) > 1)
+    // Proceed to next facet if we have an interior facet
+    if (connectivity->num_links(f) == 2)
       continue;
 
-    // FIXME: sort out ghosting
-
-    assert(connectivity->size(facet.index()) == 1);
-    mesh::MeshEntity cell(mesh, D, facet.entities(D)[0]);
-    pattern.insert_local(dofmaps[0]->cell_dofs(cell.index()),
-                         dofmaps[1]->cell_dofs(cell.index()));
+    auto cells = connectivity->links(f);
+    assert(cells.rows() == 1);
+    pattern.insert(dofmaps[0]->cell_dofs(cells[0]),
+                   dofmaps[1]->cell_dofs(cells[0]));
   }
 }
 //-----------------------------------------------------------------------------
