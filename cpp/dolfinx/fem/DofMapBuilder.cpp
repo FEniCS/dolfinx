@@ -368,6 +368,7 @@ std::vector<std::int64_t> get_global_indices(
 
   std::vector<MPI_Request> requests(D + 1);
   std::vector<std::vector<std::int64_t>> all_dofs_received(D + 1);
+  std::vector<int> requests_dim;
   for (int d = 0; d <= D; ++d)
   {
     auto map = topology.index_map(d);
@@ -397,7 +398,9 @@ std::vector<std::int64_t> get_global_indices(
       dofs_received.resize(disp.back());
       MPI_Ineighbor_allgatherv(global[d].data(), global[d].size(), MPI_INT64_T,
                                dofs_received.data(), num_indices_recv.data(),
-                               disp.data(), MPI_INT64_T, comm, &requests[d]);
+                               disp.data(), MPI_INT64_T, comm,
+                               &requests[requests_dim.size()]);
+      requests_dim.push_back(d);
     }
   }
 
@@ -413,15 +416,15 @@ std::vector<std::int64_t> get_global_indices(
 
   // Build (global old, global new) map
   std::map<std::int64_t, std::int64_t> global_old_new;
-  for (int d = 0; d <= D; ++d)
+  for (std::size_t i = 0; i < requests_dim.size(); ++i)
   {
     int index;
-    MPI_Waitany(D + 1, requests.data(), &index, MPI_STATUS_IGNORE);
-    std::vector<std::int64_t>& dofs_received = all_dofs_received[index];
+    MPI_Waitany(requests_dim.size(), requests.data(), &index,
+                MPI_STATUS_IGNORE);
+    std::vector<std::int64_t>& dofs_received
+        = all_dofs_received[requests_dim[index]];
     for (std::size_t i = 0; i < dofs_received.size(); i += 2)
-    {
       global_old_new.insert({dofs_received[i], dofs_received[i + 1]});
-    }
   }
 
   std::vector<std::int64_t> local_to_global_new(old_to_new.size() - num_owned);
