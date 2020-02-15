@@ -120,10 +120,10 @@ SparsityPattern::SparsityPattern(
       assert(p);
 
       // Check that
-      if (!p->_non_local.empty())
+      if (!p->_diagonal_new)
       {
         throw std::runtime_error("Sub-sparsity pattern has not been finalised "
-                                 "(apply needs to be called)");
+                                 "(assemble needs to be called)");
       }
 
       for (int k = 0; k < p->_diagonal_new->num_nodes(); ++k)
@@ -231,33 +231,12 @@ void SparsityPattern::insert(
           _off_diagonal_old[rows[i]].insert(J);
         }
       }
-
-      // else
-      if (rows[i] >= bs0 * index_map0.size_local())
-      {
-        // Store non-local entry (communicated later during assemble())
-        for (Eigen::Index j = 0; j < cols.rows(); ++j)
-        {
-          _non_local.push_back(rows[i]);
-          const auto J = col_map(cols[j], index_map1);
-          _non_local.push_back(J);
-        }
-      }
     }
     else
-      throw std::runtime_error("Shouldn't be here");
-
-    // // else
-    // if (rows[i] >= bs0 * index_map0.size_local())
-    // {
-    //   // Store non-local entry (communicated later during assemble())
-    //   for (Eigen::Index j = 0; j < cols.rows(); ++j)
-    //   {
-    //     _non_local.push_back(rows[i]);
-    //     const auto J = col_map(cols[j], index_map1);
-    //     _non_local.push_back(J);
-    //   }
-    // }
+    {
+      throw std::runtime_error(
+          "Cannot insert rows that do not exist in the IndexMap.");
+    }
   }
 }
 //-----------------------------------------------------------------------------
@@ -441,7 +420,6 @@ void SparsityPattern::assemble()
     }
   }
 
-
   _diagonal_old.resize(bs0 * local_size0);
   _diagonal_new
       = std::make_shared<graph::AdjacencyList<std::size_t>>(_diagonal_old);
@@ -451,10 +429,6 @@ void SparsityPattern::assemble()
     _off_diagonal_new = std::make_shared<graph::AdjacencyList<std::size_t>>(
         _off_diagonal_old);
   }
-
-
-  // Clear non-local entries
-  _non_local.clear();
 }
 //-----------------------------------------------------------------------------
 std::string SparsityPattern::str() const

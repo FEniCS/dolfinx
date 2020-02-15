@@ -123,11 +123,6 @@ private:
   // Sparsity patterns for diagonal and off-diagonal blocks
   std::vector<set_type> _diagonal_old, _off_diagonal_old;
 
-  // Cache for non-local entries stored as [i0, j0, i1, j1, ...]. i is
-  // the local row index and j is the global column index. Cleared after
-  // communication via apply().
-  std::vector<std::size_t> _non_local;
-
   std::shared_ptr<graph::AdjacencyList<std::size_t>> _diagonal_new,
       _off_diagonal_new;
 };
