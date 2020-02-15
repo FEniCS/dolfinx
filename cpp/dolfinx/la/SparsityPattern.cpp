@@ -134,25 +134,21 @@ SparsityPattern::SparsityPattern(
         // Diagonal block
         auto edges0 = p->_diagonal_new->links(k);
 
-        // std::transform(edges0.begin(), edges0.end(), edges0.begin(),
-        //                std::bind2nd(std::plus<double>(), col_global_offset));
-        // assert(k + row_local_offset < this->_diagonal.size());
-        // this->_diagonal[k + row_local_offset].insert(edges0.begin(),
-        //                                              edges0.end());
-
         // for (std::size_t c : edges0)
         for (Eigen::Index i = 0; i < edges0.rows(); ++i)
         {
-          // Get local index and convert to global
+          // Get local index and convert to global (for this block)
           std::int32_t c = edges0[i];
-          // const std::int64_t J = col_map(c, *index_map1);
+          const std::int64_t J = col_map(c, *index_map1);
+          assert(J >= 0);
+          // const int rank = MPI::rank(MPI_COMM_WORLD);
+          // assert(index_map1->owner(J / index_map1->block_size) == rank);
 
           // Get new index
-          const std::int64_t offset = fem::get_global_offset(cmaps, col, c);
-          // const std::int64_t offset = fem::get_global_offset(cmaps, col, c);
-
-
-          diagonal[k + row_local_offset].insert(c + offset);
+          const std::int64_t offset = fem::get_global_offset(cmaps, col, J);
+          const std::int64_t c_new = J + offset - col_process_offset;
+          assert(c_new >= 0);
+          diagonal[k + row_local_offset].insert(c_new);
         }
 
         // Off-diagonal block
