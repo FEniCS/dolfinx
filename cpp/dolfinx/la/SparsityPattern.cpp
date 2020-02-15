@@ -36,8 +36,8 @@ SparsityPattern::SparsityPattern(
 {
   const std::int32_t local_size0
       = index_maps[0]->block_size * index_maps[0]->size_local();
-  _diagonal.resize(local_size0);
-  _off_diagonal.resize(local_size0);
+  _diagonal_old.resize(local_size0);
+  _off_diagonal_old.resize(local_size0);
 }
 //-----------------------------------------------------------------------------
 SparsityPattern::SparsityPattern(
@@ -51,6 +51,8 @@ SparsityPattern::SparsityPattern(
   //          common::IndexMaps?)
 
   const bool distributed = MPI::size(comm) > 1;
+
+  std::vector<set_type> diagonal, off_diagonal;
 
   // Get row ranges using column 0
   std::int64_t row_global_offset(0), row_local_size(0);
@@ -89,7 +91,8 @@ SparsityPattern::SparsityPattern(
     const int bs0 = patterns[row][0]->_index_maps[0]->block_size;
 
     // FIXME: Issue somewhere here when block size > 1
-    assert(bs0 * row_size == (std::int32_t)patterns[row][0]->_diagonal.size());
+    assert(bs0 * row_size
+           == (std::int32_t)patterns[row][0]->_diagonal_new->num_nodes());
     // if (!patterns[row][0]->_diagonal.empty())
     // {
     //   if (row_size != patterns[row][0]->_diagonal.size())
@@ -99,12 +102,12 @@ SparsityPattern::SparsityPattern(
     //   }
     // }
 
-    this->_diagonal.resize(this->_diagonal.size() + bs0 * row_size);
+    diagonal.resize(diagonal.size() + bs0 * row_size);
     if (distributed)
     {
       assert(bs0 * row_size
-             == (std::int32_t)patterns[row][0]->_off_diagonal.size());
-      this->_off_diagonal.resize(this->_off_diagonal.size() + bs0 * row_size);
+             == (std::int32_t)patterns[row][0]->_off_diagonal_new->num_nodes());
+      off_diagonal.resize(off_diagonal.size() + bs0 * row_size);
     }
 
     // Iterate over block columns of current block row
@@ -122,32 +125,38 @@ SparsityPattern::SparsityPattern(
                                  "(apply needs to be called)");
       }
 
-      for (std::size_t k = 0; k < p->_diagonal.size(); ++k)
+      for (int k = 0; k < p->_diagonal_new->num_nodes(); ++k)
       {
         // Diagonal block
-        std::vector<std::size_t> edges0 = p->_diagonal[k].set();
+        auto edges0 = p->_diagonal_new->links(k);
+
         // std::transform(edges0.begin(), edges0.end(), edges0.begin(),
         //                std::bind2nd(std::plus<double>(), col_global_offset));
         // assert(k + row_local_offset < this->_diagonal.size());
         // this->_diagonal[k + row_local_offset].insert(edges0.begin(),
         //                                              edges0.end());
 
-        for (std::size_t c : edges0)
+        // for (std::size_t c : edges0)
+        for (Eigen::Index i = 0; i < edges0.rows(); ++i)
         {
+          auto c = edges0[i];
           // Get new index
           std::int64_t c_new = fem::get_global_index(cmaps, col, c);
-          this->_diagonal[k + row_local_offset].insert(c_new);
+          diagonal[k + row_local_offset].insert(c_new);
         }
 
         // Off-diagonal block
         if (distributed)
         {
-          std::vector<std::size_t> edges1 = p->_off_diagonal[k].set();
-          for (std::size_t c : edges1)
+          auto edges1 = p->_off_diagonal_new->links(k);
+          // for (std::size_t c : edges1)
+          // {
+          for (Eigen::Index i = 0; i < edges1.rows(); ++i)
           {
+            auto c = edges1[i];
             // Get new index
             std::int64_t c_new = fem::get_global_index(cmaps, col, c);
-            this->_off_diagonal[k + row_local_offset].insert(c_new);
+            off_diagonal[k + row_local_offset].insert(c_new);
           }
           // std::transform(edges1.begin(), edges1.end(), edges1.begin(),
           //                std::bind2nd(std::plus<double>(),
@@ -178,12 +187,11 @@ SparsityPattern::SparsityPattern(
   _index_maps[1] = std::make_shared<common::IndexMap>(
       p00->mpi_comm(), col_local_size, ghosts, 1);
 
-  _diagonal_new
-      = std::make_shared<graph::AdjacencyList<std::size_t>>(_diagonal);
-  if (!_off_diagonal.empty())
+  _diagonal_new = std::make_shared<graph::AdjacencyList<std::size_t>>(diagonal);
+  if (!off_diagonal.empty())
   {
     _off_diagonal_new
-        = std::make_shared<graph::AdjacencyList<std::size_t>>(_off_diagonal);
+        = std::make_shared<graph::AdjacencyList<std::size_t>>(off_diagonal);
   }
 }
 //-----------------------------------------------------------------------------
@@ -211,13 +219,13 @@ void SparsityPattern::insert(
         const auto J = col_map(cols[j], index_map1);
         if ((bs1 * local_range1[0]) <= J and J < (bs1 * local_range1[1]))
         {
-          assert(rows[i] < (PetscInt)_diagonal.size());
-          _diagonal[rows[i]].insert(J);
+          assert(rows[i] < (PetscInt)_diagonal_old.size());
+          _diagonal_old[rows[i]].insert(J);
         }
         else
         {
-          assert(rows[i] < (PetscInt)_off_diagonal.size());
-          _off_diagonal[rows[i]].insert(J);
+          assert(rows[i] < (PetscInt)_off_diagonal_old.size());
+          _off_diagonal_old[rows[i]].insert(J);
         }
       }
     }
@@ -284,13 +292,20 @@ SparsityPattern::num_nonzeros_diagonal() const
 Eigen::Array<std::int32_t, Eigen::Dynamic, 1>
 SparsityPattern::num_nonzeros_off_diagonal() const
 {
-  if (!_off_diagonal_new)
-    return Eigen::Array<std::int32_t, Eigen::Dynamic, 1>();
+  if (!_diagonal_new)
+    throw std::runtime_error("Sparsity pattern has not been finalised.");
 
-  Eigen::Array<std::int32_t, Eigen::Dynamic, 1> num_nonzeros(
-      _off_diagonal_new->num_nodes());
-  for (int i = 0; i < _off_diagonal_new->num_nodes(); ++i)
-    num_nonzeros[i] = _off_diagonal_new->num_links(i);
+  // if (!_off_diagonal_new)
+  Eigen::Array<std::int32_t, Eigen::Dynamic, 1> num_nonzeros
+      = Eigen::Array<std::int32_t, Eigen::Dynamic, 1>::Zero(
+          _diagonal_new->num_nodes());
+
+  if (_off_diagonal_new)
+  {
+    assert(_off_diagonal_new->num_nodes() == num_nonzeros.rows());
+    for (int i = 0; i < _off_diagonal_new->num_nodes(); ++i)
+      num_nonzeros[i] = _off_diagonal_new->num_links(i);
+  }
 
   return num_nonzeros;
 }
@@ -300,7 +315,7 @@ SparsityPattern::num_local_nonzeros() const
 {
   Eigen::Array<std::int32_t, Eigen::Dynamic, 1> num_nonzeros
       = num_nonzeros_diagonal();
-  if (!_off_diagonal.empty())
+  if (!_off_diagonal_old.empty())
     num_nonzeros += num_nonzeros_off_diagonal();
 
   return num_nonzeros;
@@ -397,23 +412,23 @@ void SparsityPattern::assemble()
       const std::int32_t i_index = I - offset0;
       if (J >= bs1 * local_range1[0] and J < bs1 * local_range1[1])
       {
-        assert(i_index < (std::int32_t)_diagonal.size());
-        _diagonal[i_index].insert(J);
+        assert(i_index < (std::int32_t)_diagonal_old.size());
+        _diagonal_old[i_index].insert(J);
       }
       else
       {
-        assert(i_index < (std::int32_t)_off_diagonal.size());
-        _off_diagonal[i_index].insert(J);
+        assert(i_index < (std::int32_t)_off_diagonal_old.size());
+        _off_diagonal_old[i_index].insert(J);
       }
     }
   }
 
   _diagonal_new
-      = std::make_shared<graph::AdjacencyList<std::size_t>>(_diagonal);
-  if (!_off_diagonal.empty())
+      = std::make_shared<graph::AdjacencyList<std::size_t>>(_diagonal_old);
+  if (!_off_diagonal_old.empty())
   {
-    _off_diagonal_new
-        = std::make_shared<graph::AdjacencyList<std::size_t>>(_off_diagonal);
+    _off_diagonal_new = std::make_shared<graph::AdjacencyList<std::size_t>>(
+        _off_diagonal_old);
   }
 
   // Clear non-local entries
@@ -424,19 +439,19 @@ std::string SparsityPattern::str() const
 {
   // Print each row
   std::stringstream s;
-  for (std::size_t i = 0; i < _diagonal.size(); i++)
-  {
-    s << "Row " << i << ":";
-    for (const auto& entry : _diagonal[i])
-      s << " " << entry;
+  // for (std::size_t i = 0; i < _diagonal.size(); i++)
+  // {
+  //   s << "Row " << i << ":";
+  //   for (const auto& entry : _diagonal[i])
+  //     s << " " << entry;
 
-    if (!_off_diagonal.empty())
-    {
-      for (const auto& entry : _off_diagonal[i])
-        s << " " << entry;
-    }
-    s << std::endl;
-  }
+  //   if (!_off_diagonal.empty())
+  //   {
+  //     for (const auto& entry : _off_diagonal[i])
+  //       s << " " << entry;
+  //   }
+  //   s << std::endl;
+  // }
 
   return s.str();
 }
@@ -462,50 +477,50 @@ SparsityPattern::diagonal_pattern() const
 //-----------------------------------------------------------------------------
 void SparsityPattern::info_statistics() const
 {
-  // Count nonzeros in diagonal block
-  std::size_t num_nonzeros_diagonal = 0;
-  for (std::size_t i = 0; i < _diagonal.size(); ++i)
-    num_nonzeros_diagonal += _diagonal[i].size();
+  // // Count nonzeros in diagonal block
+  // std::size_t num_nonzeros_diagonal = 0;
+  // for (std::size_t i = 0; i < _diagonal.size(); ++i)
+  //   num_nonzeros_diagonal += _diagonal[i].size();
 
-  // Count nonzeros in off-diagonal block
-  std::size_t num_nonzeros_off_diagonal = 0;
-  for (std::size_t i = 0; i < _off_diagonal.size(); ++i)
-    num_nonzeros_off_diagonal += _off_diagonal[i].size();
+  // // Count nonzeros in off-diagonal block
+  // std::size_t num_nonzeros_off_diagonal = 0;
+  // for (std::size_t i = 0; i < _off_diagonal.size(); ++i)
+  //   num_nonzeros_off_diagonal += _off_diagonal[i].size();
 
-  // Count nonzeros in non-local block
-  const std::size_t num_nonzeros_non_local = _non_local.size() / 2;
+  // // Count nonzeros in non-local block
+  // const std::size_t num_nonzeros_non_local = _non_local.size() / 2;
 
-  // Count total number of nonzeros
-  const std::size_t num_nonzeros_total = num_nonzeros_diagonal
-                                         + num_nonzeros_off_diagonal
-                                         + num_nonzeros_non_local;
+  // // Count total number of nonzeros
+  // const std::size_t num_nonzeros_total = num_nonzeros_diagonal
+  //                                        + num_nonzeros_off_diagonal
+  //                                        + num_nonzeros_non_local;
 
-  std::size_t bs0 = _index_maps[0]->block_size;
-  std::size_t size0 = bs0 * _index_maps[0]->size_global();
+  // std::size_t bs0 = _index_maps[0]->block_size;
+  // std::size_t size0 = bs0 * _index_maps[0]->size_global();
 
-  std::size_t bs1 = _index_maps[1]->block_size;
-  std::size_t size1 = bs1 * _index_maps[1]->size_global();
+  // std::size_t bs1 = _index_maps[1]->block_size;
+  // std::size_t size1 = bs1 * _index_maps[1]->size_global();
 
-  // Return number of entries
-  std::cout << "Matrix of size " << size0 << " x " << size1 << " has "
-            << num_nonzeros_total << " ("
-            << 100.0 * num_nonzeros_total / (size0 * size1) << "%)"
-            << " nonzero entries." << std::endl;
-  if (num_nonzeros_total != num_nonzeros_diagonal)
-  {
-    std::cout << "Diagonal: " << num_nonzeros_diagonal << " ("
-              << (100.0 * static_cast<double>(num_nonzeros_diagonal)
-                  / static_cast<double>(num_nonzeros_total))
-              << "%), ";
-    std::cout << "off-diagonal: " << num_nonzeros_off_diagonal << " ("
-              << (100.0 * static_cast<double>(num_nonzeros_off_diagonal)
-                  / static_cast<double>(num_nonzeros_total))
-              << "%), ";
-    std::cout << "non-local: " << num_nonzeros_non_local << " ("
-              << (100.0 * static_cast<double>(num_nonzeros_non_local)
-                  / static_cast<double>(num_nonzeros_total))
-              << "%)";
-    std::cout << std::endl;
-  }
+  // // Return number of entries
+  // std::cout << "Matrix of size " << size0 << " x " << size1 << " has "
+  //           << num_nonzeros_total << " ("
+  //           << 100.0 * num_nonzeros_total / (size0 * size1) << "%)"
+  //           << " nonzero entries." << std::endl;
+  // if (num_nonzeros_total != num_nonzeros_diagonal)
+  // {
+  //   std::cout << "Diagonal: " << num_nonzeros_diagonal << " ("
+  //             << (100.0 * static_cast<double>(num_nonzeros_diagonal)
+  //                 / static_cast<double>(num_nonzeros_total))
+  //             << "%), ";
+  //   std::cout << "off-diagonal: " << num_nonzeros_off_diagonal << " ("
+  //             << (100.0 * static_cast<double>(num_nonzeros_off_diagonal)
+  //                 / static_cast<double>(num_nonzeros_total))
+  //             << "%), ";
+  //   std::cout << "non-local: " << num_nonzeros_non_local << " ("
+  //             << (100.0 * static_cast<double>(num_nonzeros_non_local)
+  //                 / static_cast<double>(num_nonzeros_total))
+  //             << "%)";
+  //   std::cout << std::endl;
+  // }
 }
 //-----------------------------------------------------------------------------
