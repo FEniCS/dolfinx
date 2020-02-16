@@ -72,19 +72,18 @@ locate_dofs_topological(
 /// Finds degrees of freedom whose geometric coordinate is true for the
 /// provided marking function.
 ///
+/// @attention This function is slower than the topological version
+///
 /// @param[in] V The function (sub)space on which degrees of freedom
 ///     will be located
 /// @param[in] marker Function marking tabulated degrees of freedom
 /// @return Array of local indices of located degrees of freedom
-// Eigen::Array<std::int32_t, Eigen::Dynamic, 1>
-// locate_dofs_geometrical(const function::FunctionSpace& V,
-//                         marking_function marker);
 Eigen::Array<std::int32_t, Eigen::Dynamic, Eigen::Dynamic>
 locate_dofs_geometrical(
     const std::vector<std::reference_wrapper<function::FunctionSpace>>& V,
     marking_function marker);
 
-/// Interface for setting (strong) Dirichlet boundary conditions.
+/// Interface for setting (strong) Dirichlet boundary conditions
 ///
 ///     u = g on G,
 ///
@@ -161,28 +160,27 @@ public:
   const Eigen::Ref<const Eigen::Array<std::int32_t, Eigen::Dynamic, 2>>
   dofs_owned() const;
 
-  // FIXME: clarify w.r.t ghosts
   /// Set bc entries in x to scale*x_bc
+  /// @todo Clarify w.r.t ghosts
   void set(Eigen::Ref<Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1>> x,
            double scale = 1.0) const;
 
-  // FIXME: clarify w.r.t ghosts
   /// Set bc entries in x to scale*(x0 - x_bc).
+  /// @todo Clarify w.r.t ghosts
   void
   set(Eigen::Ref<Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1>> x,
       const Eigen::Ref<const Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1>>& x0,
       double scale = 1.0) const;
 
-  // FIXME: clarify  w.r.t ghosts
-
   /// Set boundary condition value for entres with an applied boundary
   /// condition. Other entries are not modified.
+  /// @todo Clarify w.r.t ghosts
   void dof_values(
       Eigen::Ref<Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1>> values) const;
 
-  // FIXME: clarify w.r.t ghosts
-  /// Set markers[i] = true if dof i has a boundary condition applied
-  /// Value of markers[i] is not changed otherwise
+  /// Set markers[i] = true if dof i has a boundary condition applied.
+  /// Value of markers[i] is not changed otherwise.
+  /// @todo Clarify w.r.t ghosts
   void mark_dofs(std::vector<bool>& markers) const;
 
 private:

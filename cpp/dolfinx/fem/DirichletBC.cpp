@@ -86,6 +86,7 @@ get_remote_bcs1(const common::IndexMap& map,
   return dofs;
 }
 //-----------------------------------------------------------------------------
+
 /// Find DOFs on this processes that are constrained by a Dirichlet
 /// condition detected by another process
 ///
@@ -94,7 +95,6 @@ get_remote_bcs1(const common::IndexMap& map,
 /// @param[in] dofs_local The IndexMap with the dof layout
 /// @return List of local dofs with boundary conditions applied but
 ///   detected by other processes. It may contain duplicate entries.
-// TODO: add some docs
 std::vector<std::array<std::int32_t, 2>>
 get_remote_bcs2(const common::IndexMap& map0, const common::IndexMap& map1,
                 const std::vector<std::array<std::int32_t, 2>>& dofs_local)
@@ -276,6 +276,8 @@ Eigen::Array<std::int32_t, Eigen::Dynamic, 2> _locate_dofs_topological(
   return dofs;
 }
 //-----------------------------------------------------------------------------
+
+/// TODO: Add doc
 Eigen::Array<std::int32_t, Eigen::Dynamic, 1>
 _locate_dofs_topological(const function::FunctionSpace& V, const int entity_dim,
                          const Eigen::Ref<const Eigen::ArrayXi>& entities,
@@ -358,21 +360,10 @@ Eigen::Array<std::int32_t, Eigen::Dynamic, 2> _locate_dofs_geometrical(
   // FIXME: Calling V.tabulate_dof_coordinates() is very expensive,
   // especially when we usually want the boundary dofs only. Add
   // interface that computes dofs coordinates only for specified cell.
-  // FIXME: Add remote in parameter list like locate_dofs_topological?
-  // FIXME: Won't work if function spaces are passed in in the incorrect
-  // order. Is this OK?
 
   // Get function spaces
   const function::FunctionSpace& V0 = V.at(0).get();
   const function::FunctionSpace& V1 = V.at(1).get();
-
-  // Compute dof coordinates
-  const Eigen::Array<double, 3, Eigen::Dynamic, Eigen::RowMajor> dof_coordinates
-      = V1.tabulate_dof_coordinates().transpose();
-
-  // Compute marker for each dof coordinate
-  const Eigen::Array<bool, Eigen::Dynamic, 1> marked_dofs
-      = marker(dof_coordinates);
 
   // Get mesh
   assert(V0.mesh());
@@ -390,25 +381,28 @@ Eigen::Array<std::int32_t, Eigen::Dynamic, 2> _locate_dofs_geometrical(
                              "one be a subelement of another.");
   }
 
+  // Compute dof coordinates
+  const Eigen::Array<double, 3, Eigen::Dynamic, Eigen::RowMajor> dof_coordinates
+      = V1.tabulate_dof_coordinates().transpose();
+
+  // Evaluate marker for each dof coordinate
+  const Eigen::Array<bool, Eigen::Dynamic, 1> marked_dofs
+      = marker(dof_coordinates);
+
   // Get dofmaps
   assert(V0.dofmap());
   assert(V1.dofmap());
   const DofMap& dofmap0 = *V0.dofmap();
   const DofMap& dofmap1 = *V1.dofmap();
 
-  // Initialise entity-cell connectivity
-  // TODO Check if this is needed.
-  mesh.create_entities(tdim);
-
   // Iterate over cells
+  const mesh::Topology& topology = mesh.topology();
   std::vector<std::array<std::int32_t, 2>> bc_dofs;
-  for (Eigen::Index c = 0; c < mesh.num_entities(tdim); ++c)
+  for (int c = 0; c < topology.connectivity(tdim, 0)->num_nodes(); ++c)
   {
-    const mesh::MeshEntity cell(mesh, tdim, c);
-
     // Get cell dofmap
-    auto cell_dofs0 = dofmap0.cell_dofs(cell.index());
-    auto cell_dofs1 = dofmap1.cell_dofs(cell.index());
+    auto cell_dofs0 = dofmap0.cell_dofs(c);
+    auto cell_dofs1 = dofmap1.cell_dofs(c);
 
     // Loop over cell dofs and add to bc_dofs if marked.
     for (Eigen::Index i = 0; i < cell_dofs1.rows(); ++i)
@@ -421,7 +415,6 @@ Eigen::Array<std::int32_t, Eigen::Dynamic, 2> _locate_dofs_geometrical(
     }
   }
 
-  // TODO: is removing duplicates at this point worth the effort?
   // Remove duplicates
   std::sort(bc_dofs.begin(), bc_dofs.end());
   bc_dofs.erase(std::unique(bc_dofs.begin(), bc_dofs.end()), bc_dofs.end());
@@ -433,6 +426,7 @@ Eigen::Array<std::int32_t, Eigen::Dynamic, 2> _locate_dofs_geometrical(
     dofs(i, 0) = bc_dofs[i][0];
     dofs(i, 1) = bc_dofs[i][1];
   }
+
   return dofs;
 }
 //-----------------------------------------------------------------------------
@@ -464,6 +458,7 @@ _locate_dofs_geometrical(const function::FunctionSpace& V,
                                                                    dofs.size());
 }
 } // namespace
+
 //-----------------------------------------------------------------------------
 Eigen::Array<std::int32_t, Eigen::Dynamic, Eigen::Dynamic>
 fem::locate_dofs_topological(
@@ -492,6 +487,7 @@ fem::locate_dofs_geometrical(
     throw std::runtime_error("Expected only 1 or 2 function spaces.");
 }
 //-----------------------------------------------------------------------------
+
 //-----------------------------------------------------------------------------
 DirichletBC::DirichletBC(
     std::shared_ptr<const function::Function> g,
