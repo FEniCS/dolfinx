@@ -229,7 +229,6 @@ void fem::impl::assemble_exterior_facets(
     const int orient = 0;
 
     // Get cell vertex coordinates
-    const int cell_index = cell.index();
     for (int i = 0; i < num_dofs_g; ++i)
       for (int j = 0; j < gdim; ++j)
         coordinate_dofs(i, j) = x_g(cell_g[pos_g[cells[0]] + i], j);
