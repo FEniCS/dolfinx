@@ -5,11 +5,10 @@
 // SPDX-License-Identifier:    LGPL-3.0-or-later
 
 #include "SCOTCH.h"
+#include "AdjacencyList.h"
 #include "CSRGraph.h"
-#include "GraphBuilder.h"
 #include <algorithm>
 #include <dolfinx/common/MPI.h>
-#include <dolfinx/common/Set.h>
 #include <dolfinx/common/Timer.h>
 #include <dolfinx/common/log.h>
 #include <map>
@@ -27,7 +26,8 @@ using namespace dolfinx;
 
 //-----------------------------------------------------------------------------
 std::pair<std::vector<int>, std::vector<int>>
-dolfinx::graph::SCOTCH::compute_gps(const Graph& graph, std::size_t num_passes)
+dolfinx::graph::SCOTCH::compute_gps(const AdjacencyList<std::int32_t>& graph,
+                                    std::size_t num_passes)
 {
   // Create strategy string for Gibbs-Poole-Stockmeyer ordering
   std::string strategy = "g{pass= " + std::to_string(num_passes) + "}";
@@ -36,37 +36,21 @@ dolfinx::graph::SCOTCH::compute_gps(const Graph& graph, std::size_t num_passes)
 }
 //-----------------------------------------------------------------------------
 std::pair<std::vector<int>, std::vector<int>>
-dolfinx::graph::SCOTCH::compute_reordering(const Graph& graph,
-                                          std::string scotch_strategy)
+dolfinx::graph::SCOTCH::compute_reordering(
+    const AdjacencyList<std::int32_t>& graph, std::string scotch_strategy)
 {
   common::Timer timer("Compute SCOTCH graph re-ordering");
 
-  // Number of local graph vertices (cells)
-  const SCOTCH_Num vertnbr = graph.size();
+  // Number of local graph vertices
+  const SCOTCH_Num vertnbr = graph.num_nodes();
 
-  // Data structures for graph input to SCOTCH (add 1 for case that
-  // graph size is zero)
-  std::vector<SCOTCH_Num> verttab;
-  verttab.reserve(vertnbr + 1);
-  std::vector<SCOTCH_Num> edgetab;
-  edgetab.reserve(20 * vertnbr);
-
-  // Build local graph input for SCOTCH
-  // (number of local + ghost graph vertices (cells),
-  // number of local edges + edges connecting to ghost vertices)
-  SCOTCH_Num edgenbr = 0;
-  verttab.push_back(0);
-  Graph::const_iterator vertex;
-  for (vertex = graph.begin(); vertex != graph.end(); ++vertex)
-  {
-    edgenbr += vertex->size();
-    verttab.push_back(verttab.back() + vertex->size());
-    edgetab.insert(edgetab.end(), vertex->begin(), vertex->end());
-  }
-
-  // Shrink vectors to hopefully recover an unused memory
-  verttab.shrink_to_fit();
-  edgetab.shrink_to_fit();
+  // Copy graph into array with SCOTCH_Num types
+  const Eigen::Array<std::int32_t, Eigen::Dynamic, 1>& data = graph.array();
+  const Eigen::Array<std::int32_t, Eigen::Dynamic, 1>& offsets
+      = graph.offsets();
+  std::vector<SCOTCH_Num> verttab(offsets.data(),
+                                  offsets.data() + offsets.rows());
+  std::vector<SCOTCH_Num> edgetab(data.data(), data.data() + data.rows());
 
   // Create SCOTCH graph
   SCOTCH_Graph scotch_graph;
@@ -79,6 +63,7 @@ dolfinx::graph::SCOTCH::compute_reordering(const Graph& graph,
     throw std::runtime_error("Error initializing SCOTCH graph");
 
   // Build SCOTCH graph
+  SCOTCH_Num edgenbr = verttab.back();
   common::Timer timer1("SCOTCH: call SCOTCH_graphBuild");
   if (SCOTCH_graphBuild(&scotch_graph, baseval, vertnbr, &verttab[0],
                         &verttab[1], nullptr, nullptr, edgenbr, &edgetab[0],
@@ -139,10 +124,10 @@ dolfinx::graph::SCOTCH::compute_reordering(const Graph& graph,
 //-----------------------------------------------------------------------------
 std::pair<std::vector<int>, std::map<std::int64_t, std::vector<int>>>
 dolfinx::graph::SCOTCH::partition(const MPI_Comm mpi_comm,
-                                 const SCOTCH_Num nparts,
-                                 const CSRGraph<SCOTCH_Num>& local_graph,
-                                 const std::vector<std::size_t>& node_weights,
-                                 std::int32_t num_ghost_nodes)
+                                  const SCOTCH_Num nparts,
+                                  const CSRGraph<SCOTCH_Num>& local_graph,
+                                  const std::vector<std::size_t>& node_weights,
+                                  std::int32_t num_ghost_nodes)
 {
   LOG(INFO) << "Compute graph partition using PT-SCOTCH";
   common::Timer timer("Compute graph partition (SCOTCH)");
