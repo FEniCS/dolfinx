@@ -242,6 +242,7 @@ std::pair<std::vector<std::int32_t>, std::int32_t> compute_reordering_map(
   // Build local graph, based on dof map with contiguous numbering
   // (unowned dofs excluded)
   std::vector<std::vector<std::int32_t>> graph_data(owned_size);
+  // graph::Graph graph_data(owned_size);
   std::vector<int> local_old;
   for (std::int32_t cell = 0; cell < dofmap.num_nodes(); ++cell)
   {
@@ -273,14 +274,15 @@ std::pair<std::vector<std::int32_t>, std::int32_t> compute_reordering_map(
     node.erase(std::unique(node.begin(), node.end()), node.end());
   }
   const graph::AdjacencyList<std::int32_t> graph(graph_data);
-  std::vector<std::vector<std::int32_t>>().swap(graph_data);
+  // std::vector<std::vector<std::int32_t>>().swap(graph_data);
 
   // Reorder owned nodes
   const std::string ordering_library = "Boost";
   std::vector<int> node_remap;
   if (ordering_library == "Boost")
   {
-    node_remap = graph::BoostGraphOrdering::compute_cuthill_mckee(graph, true);
+    node_remap
+        = graph::BoostGraphOrdering::compute_cuthill_mckee(graph_data, true);
   }
   else if (ordering_library == "SCOTCH")
     std::tie(node_remap, std::ignore) = graph::SCOTCH::compute_gps(graph);
