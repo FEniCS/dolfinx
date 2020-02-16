@@ -68,10 +68,16 @@ public:
   /// Return index map for dimension dim
   std::shared_ptr<const common::IndexMap> index_map(int dim) const;
 
-  /// Insert non-zero entries using local (process-wise) indices
+  /// Insert non-zero locations using local (process-wise) indices
   void insert(
       const Eigen::Ref<const Eigen::Array<PetscInt, Eigen::Dynamic, 1>>& rows,
       const Eigen::Ref<const Eigen::Array<PetscInt, Eigen::Dynamic, 1>>& cols);
+
+  /// Insert non-zero locations on the diagonal
+  /// @param[in] rows The rows in local (process-wise) indices. The
+  ///   indices must exist in the row IndexMap.
+  void insert_diagonal(
+      const Eigen::Ref<const Eigen::Array<PetscInt, Eigen::Dynamic, 1>>& rows);
 
   /// Finalize sparsity pattern and communicate off-process entries
   void assemble();
@@ -120,8 +126,8 @@ private:
   std::vector<common::Set<std::int32_t>> _diagonal_cache;
   std::vector<common::Set<std::int64_t>> _off_diagonal_cache;
 
-  std::shared_ptr<graph::AdjacencyList<std::int32_t>> _diagonal_new;
-  std::shared_ptr<graph::AdjacencyList<std::int64_t>> _off_diagonal_new;
+  std::shared_ptr<graph::AdjacencyList<std::int32_t>> _diagonal;
+  std::shared_ptr<graph::AdjacencyList<std::int64_t>> _off_diagonal;
 };
 } // namespace la
 } // namespace dolfinx

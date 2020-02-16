@@ -92,10 +92,10 @@ SparsityPattern::SparsityPattern(
 
     // FIXME: Issue somewhere here when block size > 1
     assert(bs0 * row_size
-           == (std::int32_t)patterns[row][0]->_diagonal_new->num_nodes());
+           == (std::int32_t)patterns[row][0]->_diagonal->num_nodes());
     diagonal.resize(diagonal.size() + bs0 * row_size);
     assert(bs0 * row_size
-           == (std::int32_t)patterns[row][0]->_off_diagonal_new->num_nodes());
+           == (std::int32_t)patterns[row][0]->_off_diagonal->num_nodes());
     off_diagonal.resize(off_diagonal.size() + bs0 * row_size);
 
     // Iterate over block columns of current block row
@@ -107,7 +107,7 @@ SparsityPattern::SparsityPattern(
       assert(p);
 
       // Check that
-      if (!p->_diagonal_new)
+      if (!p->_diagonal)
       {
         throw std::runtime_error("Sub-sparsity pattern has not been finalised "
                                  "(assemble needs to be called)");
@@ -115,10 +115,10 @@ SparsityPattern::SparsityPattern(
 
       auto index_map1 = p->index_map(1);
       assert(index_map1);
-      for (int k = 0; k < p->_diagonal_new->num_nodes(); ++k)
+      for (int k = 0; k < p->_diagonal->num_nodes(); ++k)
       {
         // Diagonal block
-        auto edges0 = p->_diagonal_new->links(k);
+        auto edges0 = p->_diagonal->links(k);
 
         // for (std::size_t c : edges0)
         for (Eigen::Index i = 0; i < edges0.rows(); ++i)
@@ -138,7 +138,7 @@ SparsityPattern::SparsityPattern(
         }
 
         // Off-diagonal block
-        auto edges1 = p->_off_diagonal_new->links(k);
+        auto edges1 = p->_off_diagonal->links(k);
         for (Eigen::Index i = 0; i < edges1.rows(); ++i)
         {
           const std::int64_t c = edges1[i];
@@ -168,11 +168,10 @@ SparsityPattern::SparsityPattern(
   _index_maps[1] = std::make_shared<common::IndexMap>(
       p00->mpi_comm(), col_local_size, ghosts, 1);
 
-  _diagonal_new
-      = std::make_shared<graph::AdjacencyList<std::int32_t>>(diagonal);
+  _diagonal = std::make_shared<graph::AdjacencyList<std::int32_t>>(diagonal);
   if (!off_diagonal.empty())
   {
-    _off_diagonal_new
+    _off_diagonal
         = std::make_shared<graph::AdjacencyList<std::int64_t>>(off_diagonal);
   }
 }
@@ -194,7 +193,11 @@ void SparsityPattern::insert(
     const Eigen::Ref<const Eigen::Array<PetscInt, Eigen::Dynamic, 1>>& rows,
     const Eigen::Ref<const Eigen::Array<PetscInt, Eigen::Dynamic, 1>>& cols)
 {
-  assert(!_diagonal_new);
+  if (_diagonal)
+  {
+    throw std::runtime_error(
+        "Cannot insert into sparsity pattern. It has already been assembled");
+  }
 
   const common::IndexMap& index_map0 = *_index_maps[0];
   const int bs0 = index_map0.block_size;
@@ -228,11 +231,37 @@ void SparsityPattern::insert(
   }
 }
 //-----------------------------------------------------------------------------
+void SparsityPattern::insert_diagonal(
+    const Eigen::Ref<const Eigen::Array<PetscInt, Eigen::Dynamic, 1>>& rows)
+{
+  if (_diagonal)
+  {
+    throw std::runtime_error(
+        "Cannot insert into sparsity pattern. It has already been assembled");
+  }
+
+  const common::IndexMap& index_map0 = *_index_maps[0];
+  const int bs0 = index_map0.block_size;
+  const std::int32_t local_size0
+      = bs0 * (index_map0.size_local() + index_map0.num_ghosts());
+
+  for (Eigen::Index i = 0; i < rows.rows(); ++i)
+  {
+    if (rows[i] < local_size0)
+      _diagonal_cache[rows[i]].insert(rows[i]);
+    else
+    {
+      throw std::runtime_error(
+          "Cannot insert rows that do not exist in the IndexMap.");
+    }
+  }
+}
+//-----------------------------------------------------------------------------
 void SparsityPattern::assemble()
 {
-  if (_diagonal_new)
+  if (_diagonal)
     throw std::runtime_error("Sparsity pattern has already been finalised.");
-  assert(!_off_diagonal_new);
+  assert(!_off_diagonal);
 
   assert(_index_maps[0]);
   const int bs0 = _index_maps[0]->block_size;
@@ -331,34 +360,34 @@ void SparsityPattern::assemble()
   }
 
   _diagonal_cache.resize(bs0 * local_size0);
-  _diagonal_new
+  _diagonal
       = std::make_shared<graph::AdjacencyList<std::int32_t>>(_diagonal_cache);
   std::vector<common::Set<std::int32_t>>().swap(_diagonal_cache);
 
   _off_diagonal_cache.resize(bs0 * local_size0);
-  _off_diagonal_new = std::make_shared<graph::AdjacencyList<std::int64_t>>(
+  _off_diagonal = std::make_shared<graph::AdjacencyList<std::int64_t>>(
       _off_diagonal_cache);
   std::vector<common::Set<std::int64_t>>().swap(_off_diagonal_cache);
 }
 //-----------------------------------------------------------------------------
 std::int64_t SparsityPattern::num_nonzeros() const
 {
-  if (!_diagonal_new)
+  if (!_diagonal)
     throw std::runtime_error("Sparsity pattern has not be assembled.");
-  assert(_off_diagonal_new);
-  return _diagonal_new->array().rows() + _off_diagonal_new->array().rows();
+  assert(_off_diagonal);
+  return _diagonal->array().rows() + _off_diagonal->array().rows();
 }
 //-----------------------------------------------------------------------------
 Eigen::Array<std::int32_t, Eigen::Dynamic, 1>
 SparsityPattern::num_nonzeros_diagonal() const
 {
-  if (!_diagonal_new)
+  if (!_diagonal)
     throw std::runtime_error("Sparsity pattern has not been finalised.");
 
   Eigen::Array<std::int32_t, Eigen::Dynamic, 1> num_nonzeros(
-      _diagonal_new->num_nodes());
-  for (int i = 0; i < _diagonal_new->num_nodes(); ++i)
-    num_nonzeros[i] = _diagonal_new->num_links(i);
+      _diagonal->num_nodes());
+  for (int i = 0; i < _diagonal->num_nodes(); ++i)
+    num_nonzeros[i] = _diagonal->num_links(i);
 
   return num_nonzeros;
 }
@@ -366,13 +395,13 @@ SparsityPattern::num_nonzeros_diagonal() const
 Eigen::Array<std::int32_t, Eigen::Dynamic, 1>
 SparsityPattern::num_nonzeros_off_diagonal() const
 {
-  if (!_off_diagonal_new)
+  if (!_off_diagonal)
     throw std::runtime_error("Sparsity pattern has not been finalised.");
 
   Eigen::Array<std::int32_t, Eigen::Dynamic, 1> num_nonzeros(
-      _off_diagonal_new->num_nodes());
-  for (int i = 0; i < _off_diagonal_new->num_nodes(); ++i)
-    num_nonzeros[i] = _off_diagonal_new->num_links(i);
+      _off_diagonal->num_nodes());
+  for (int i = 0; i < _off_diagonal->num_nodes(); ++i)
+    num_nonzeros[i] = _off_diagonal->num_links(i);
 
   return num_nonzeros;
 }
@@ -386,35 +415,35 @@ SparsityPattern::num_local_nonzeros() const
 const graph::AdjacencyList<std::int32_t>&
 SparsityPattern::diagonal_pattern() const
 {
-  if (!_diagonal_new)
+  if (!_diagonal)
     throw std::runtime_error("Sparsity pattern has not been finalised.");
-  return *_diagonal_new;
+  return *_diagonal;
 }
 //-----------------------------------------------------------------------------
 const graph::AdjacencyList<std::int64_t>&
 SparsityPattern::off_diagonal_pattern() const
 {
-  if (!_off_diagonal_new)
+  if (!_off_diagonal)
     throw std::runtime_error("Sparsity pattern has not been finalised.");
-  return *_off_diagonal_new;
+  return *_off_diagonal;
 }
 //-----------------------------------------------------------------------------
 MPI_Comm SparsityPattern::mpi_comm() const { return _mpi_comm.comm(); }
 //-----------------------------------------------------------------------------
 std::string SparsityPattern::str() const
 {
-  if (!_diagonal_new)
+  if (!_diagonal)
     throw std::runtime_error("Sparsity pattern has not been assembled.");
-  assert(_off_diagonal_new);
+  assert(_off_diagonal);
 
   // Print each row
   std::stringstream s;
-  assert(_off_diagonal_new->num_nodes() == _diagonal_new->num_nodes());
-  for (int i = 0; i < _diagonal_new->num_nodes(); i++)
+  assert(_off_diagonal->num_nodes() == _diagonal->num_nodes());
+  for (int i = 0; i < _diagonal->num_nodes(); i++)
   {
     s << "Row " << i << ":";
-    s << " " << _diagonal_new->links(i);
-    s << " " << _off_diagonal_new->links(i);
+    s << " " << _diagonal->links(i);
+    s << " " << _off_diagonal->links(i);
     s << std::endl;
   }
 
