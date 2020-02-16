@@ -334,6 +334,8 @@ std::vector<std::int64_t> get_global_indices(
     const std::vector<std::int32_t>& old_to_new,
     const std::vector<std::pair<std::int8_t, std::int32_t>>& dof_entity)
 {
+  assert(dof_entity.size() == global_indices_old.size());
+
   const int D = topology.dim();
 
   // Get ownership offset for each dimension
@@ -375,9 +377,9 @@ std::vector<std::int64_t> get_global_indices(
     }
   }
 
+  std::vector<int> requests_dim;
   std::vector<MPI_Request> requests(D + 1);
   std::vector<std::vector<std::int64_t>> all_dofs_received(D + 1);
-  std::vector<int> requests_dim;
   for (int d = 0; d <= D; ++d)
   {
     auto map = topology.index_map(d);
@@ -402,7 +404,8 @@ std::vector<std::int64_t> get_global_indices(
       std::partial_sum(num_indices_recv.begin(), num_indices_recv.end(),
                        disp.begin() + 1);
 
-      // Send/receive global index of dofs with bcs to all neighbours
+      // TODO: use MPI_Ineighbor_alltoallv
+      // Send global index of dofs with bcs to all neighbours
       std::vector<std::int64_t>& dofs_received = all_dofs_received[d];
       dofs_received.resize(disp.back());
       MPI_Ineighbor_allgatherv(global[d].data(), global[d].size(), MPI_INT64_T,
@@ -413,7 +416,8 @@ std::vector<std::int64_t> get_global_indices(
     }
   }
 
-  // Build  [local_new - num_owned] -> global old array
+  // Build  [local_new - num_owned] -> global old array  broken down by
+  // dimension
   std::vector<std::vector<std::int64_t>> local_new_to_global_old(D + 1);
   for (std::size_t i = 0; i < global_indices_old.size(); ++i)
   {
@@ -426,22 +430,22 @@ std::vector<std::int64_t> get_global_indices(
     }
   }
 
-  std::vector<std::int64_t> local_to_global_new(old_to_new.size() - num_owned);
-  // Build (global old, global new) map
   std::map<std::int64_t, std::int64_t> global_old_new;
+  std::vector<std::int64_t> local_to_global_new(old_to_new.size() - num_owned);
   for (std::size_t i = 0; i < requests_dim.size(); ++i)
   {
     int idx, d;
     MPI_Waitany(requests_dim.size(), requests.data(), &idx, MPI_STATUS_IGNORE);
     d = requests_dim[idx];
 
+    // Build (global old, global new) map
     std::vector<std::int64_t>& dofs_received = all_dofs_received[d];
     for (std::size_t j = 0; j < dofs_received.size(); j += 2)
       global_old_new.insert({dofs_received[j], dofs_received[j + 1]});
 
+    // Build the dimension d part of local_to_global_new
     std::vector<std::int64_t>& local_new_to_global_old_d
         = local_new_to_global_old[d];
-
     for (std::size_t i = 0; i < local_new_to_global_old_d.size(); i += 2)
     {
       auto it = global_old_new.find(local_new_to_global_old_d[i]);
