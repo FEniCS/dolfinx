@@ -444,7 +444,7 @@ def test_assembly_solve_block():
 
 @pytest.mark.parametrize("mesh", [
     dolfinx.generation.UnitSquareMesh(dolfinx.MPI.comm_world, 12, 11),
-    dolfinx.generation.UnitCubeMesh(dolfinx.MPI.comm_world, 3, 7, 8)
+    dolfinx.generation.UnitCubeMesh(dolfinx.MPI.comm_world, 3, 7, 3)
 ])
 def test_assembly_solve_taylor_hood(mesh):
     """Assemble Stokes problem with Taylor-Hood elements and solve."""
