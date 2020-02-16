@@ -27,7 +27,7 @@
 #
 
 ARG TINI_VERSION=v0.18.0
-ARG GMSH_VERSION=4.5.1
+ARG GMSH_VERSION=4.5.2
 ARG PYBIND11_VERSION=2.4.3
 ARG PETSC_VERSION=3.12.4
 ARG SLEPC_VERSION=3.12.2
@@ -40,7 +40,7 @@ ARG MAKEFLAGS
 ARG PETSC_SLEPC_OPTFLAGS="-02 -g"
 ARG PETSC_SLEPC_DEBUGGING="yes"
 
-FROM ubuntu:19.10 as base
+FROM ubuntu:20.04 as base
 LABEL maintainer="fenics-project <fenics-support@googlegroups.org>"
 LABEL description="Base image for real and complex FEniCS test environments"
 
@@ -64,55 +64,46 @@ RUN export DEBIAN_FRONTEND=noninteractive && \
     apt-get -qq update && \
     apt-get -yq --with-new-pkgs -o Dpkg::Options::="--force-confold" upgrade && \
     apt-get -y install \
-        cmake \
-        g++ \
-        gfortran \
-        libboost-dev \
-        libboost-filesystem-dev \
-        libboost-iostreams-dev \
-        libboost-math-dev \
-        libboost-program-options-dev \
-        libboost-system-dev \
-        libboost-thread-dev \
-        libboost-timer-dev \
-        libeigen3-dev \
-        libhdf5-mpich-dev \
-        liblapack-dev \
-        libmpich-dev \
-        libopenblas-dev \
-        mpich \
-        ninja-build \
-        pkg-config \
-        python3-dev \
-        python3-matplotlib \
-        python3-numpy \
-        python3-pip \
-        python3-scipy \
-        python3-setuptools && \
+    cmake \
+    g++ \
+    gfortran \
+    libboost-dev \
+    libboost-filesystem-dev \
+    libboost-iostreams-dev \
+    libboost-math-dev \
+    libboost-program-options-dev \
+    libboost-system-dev \
+    libboost-thread-dev \
+    libboost-timer-dev \
+    libeigen3-dev \
+    libhdf5-mpich-dev \
+    liblapack-dev \
+    libmpich-dev \
+    libopenblas-dev \
+    mpich \
+    ninja-build \
+    pkg-config \
+    python3-dev \
+    python3-matplotlib \
+    python3-numpy \
+    python3-pip \
+    python3-scipy \
+    python3-setuptools && \
     apt-get -y install \
-        doxygen \
-        git \
-        graphviz \
-        sudo \
-        valgrind \
-        wget && \
+    doxygen \
+    git \
+    graphviz \
+    sudo \
+    valgrind \
+    wget && \
     apt-get -y install \
-        libglu1 \
-        libxcursor-dev \
-        libxinerama1 && \
+    libglu1 \
+    libxcursor-dev \
+    libxinerama1 && \
     apt-get -y install \
-        python3-lxml && \
+    python3-lxml && \
     apt-get clean && \
     rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
-
-# Download Install Gmsh SDK
-RUN cd /usr/local && \
-    wget -nc --quiet http://gmsh.info/bin/Linux/gmsh-${GMSH_VERSION}-Linux64-sdk.tgz && \
-    tar -xf gmsh-${GMSH_VERSION}-Linux64-sdk.tgz
-ENV PATH=/usr/local/gmsh-${GMSH_VERSION}-Linux64-sdk/bin:$PATH
-
-# Add gmsh python API
-ENV PYTHONPATH=/usr/local/gmsh-${GMSH_VERSION}-Linux64-sdk/lib
 
 # Install Python packages (via pip)
 # - First set of packages are required to build and run FEniCS.
@@ -144,6 +135,17 @@ RUN cd /usr/local && \
 
 ENV KAHIP_ROOT=/usr/local/KaHIP
 
+# Download Install Gmsh SDK
+RUN cd /usr/local && \
+    wget -nc --quiet http://gmsh.info/bin/Linux/gmsh-${GMSH_VERSION}-Linux64-sdk.tgz && \
+    tar -xf gmsh-${GMSH_VERSION}-Linux64-sdk.tgz && \
+    rm gmsh-${GMSH_VERSION}-Linux64-sdk.tgz
+
+ENV PATH=/usr/local/gmsh-${GMSH_VERSION}-Linux64-sdk/bin:$PATH
+
+# Add gmsh python API
+ENV PYTHONPATH=/usr/local/gmsh-${GMSH_VERSION}-Linux64-sdk/lib:$PYTHONPATH
+
 WORKDIR /root
 
 ########################################
@@ -165,27 +167,27 @@ WORKDIR /tmp
 
 # Install PETSc and SLEPc with real types.
 RUN apt-get -qq update && \
-    apt-get -y install bison flex python && \
+    apt-get -y install bison flex && \
     wget -nc --quiet http://ftp.mcs.anl.gov/pub/petsc/release-snapshots/petsc-lite-${PETSC_VERSION}.tar.gz -O petsc-${PETSC_VERSION}.tar.gz && \
     mkdir -p petsc-src && tar -xf petsc-${PETSC_VERSION}.tar.gz -C petsc-src --strip-components 1 && \
     cd petsc-src && \
-    ./configure \
-        --COPTFLAGS=${PETSC_SLEPC_OPTFLAGS} \
-        --CXXOPTFLAGS=${PETSC_SLEPC_OPTFLAGS} \
-        --FOPTFLAGS=${PETSC_SLEPC_OPTFLAGS} \
-        --with-debugging=${PETSC_SLEPC_DEBUGGING} \
-        --with-fortran-bindings=no \
-        --download-blacs \
-        --download-hypre \
-        --download-metis \
-        --download-mumps \
-        --download-ptscotch \
-        --download-scalapack \
-        --download-spai \
-        --download-suitesparse \
-        --download-superlu \
-        --with-scalar-type=real \
-        --prefix=/usr/local/petsc && \
+    python3 ./configure \
+    --COPTFLAGS=${PETSC_SLEPC_OPTFLAGS} \
+    --CXXOPTFLAGS=${PETSC_SLEPC_OPTFLAGS} \
+    --FOPTFLAGS=${PETSC_SLEPC_OPTFLAGS} \
+    --with-debugging=${PETSC_SLEPC_DEBUGGING} \
+    --with-fortran-bindings=no \
+    --download-blacs \
+    --download-hypre \
+    --download-metis \
+    --download-mumps \
+    --download-ptscotch \
+    --download-scalapack \
+    --download-spai \
+    --download-suitesparse \
+    --download-superlu \
+    --with-scalar-type=real \
+    --prefix=/usr/local/petsc && \
     make ${MAKEFLAGS} && \
     make install && \
     export PETSC_DIR=/usr/local/petsc && \
@@ -193,7 +195,7 @@ RUN apt-get -qq update && \
     wget -nc --quiet http://slepc.upv.es/download/distrib/slepc-${SLEPC_VERSION}.tar.gz -O slepc-${SLEPC_VERSION}.tar.gz && \
     mkdir -p slepc-src && tar -xf slepc-${SLEPC_VERSION}.tar.gz -C slepc-src --strip-components 1 && \
     cd slepc-src && \
-    ./configure --prefix=/usr/local/slepc && \
+    python3 ./configure --prefix=/usr/local/slepc && \
     make ${MAKEFLAGS} && \
     make install && \
     apt-get -y purge bison flex python && \
@@ -228,25 +230,25 @@ WORKDIR /tmp
 
 # Install PETSc and SLEPc with complex scalar types
 RUN apt-get -qq update && \
-    apt-get -y install bison flex python && \
+    apt-get -y install bison flex && \
     wget -nc --quiet http://ftp.mcs.anl.gov/pub/petsc/release-snapshots/petsc-lite-${PETSC_VERSION}.tar.gz -O petsc-${PETSC_VERSION}.tar.gz && \
     mkdir -p petsc-src && tar -xf petsc-${PETSC_VERSION}.tar.gz -C petsc-src --strip-components 1 && \
     cd petsc-src && \
-    ./configure \
-        --COPTFLAGS=${PETSC_SLEPC_OPTFLAGS} \
-        --CXXOPTFLAGS=${PETSC_SLEPC_OPTFLAGS} \
-        --FOPTFLAGS=${PETSC_SLEPC_OPTFLAGS} \
-        --with-debugging=${PETSC_SLEPC_DEBUGGING} \
-        --with-fortran-bindings=no \
-        --download-blacs \
-        --download-metis \
-        --download-mumps \
-        --download-ptscotch \
-        --download-scalapack \
-        --download-suitesparse \
-        --download-superlu \
-        --with-scalar-type=complex \
-        --prefix=/usr/local/petsc && \
+    python3 ./configure \
+    --COPTFLAGS=${PETSC_SLEPC_OPTFLAGS} \
+    --CXXOPTFLAGS=${PETSC_SLEPC_OPTFLAGS} \
+    --FOPTFLAGS=${PETSC_SLEPC_OPTFLAGS} \
+    --with-debugging=${PETSC_SLEPC_DEBUGGING} \
+    --with-fortran-bindings=no \
+    --download-blacs \
+    --download-metis \
+    --download-mumps \
+    --download-ptscotch \
+    --download-scalapack \
+    --download-suitesparse \
+    --download-superlu \
+    --with-scalar-type=complex \
+    --prefix=/usr/local/petsc && \
     make ${MAKEFLAGS} && \
     make install && \
     export PETSC_DIR=/usr/local/petsc && \
@@ -254,7 +256,7 @@ RUN apt-get -qq update && \
     wget -nc --quiet http://slepc.upv.es/download/distrib/slepc-${SLEPC_VERSION}.tar.gz -O slepc-${SLEPC_VERSION}.tar.gz && \
     mkdir -p slepc-src && tar -xf slepc-${SLEPC_VERSION}.tar.gz -C slepc-src --strip-components 1 && \
     cd slepc-src && \
-    ./configure --prefix=/usr/local/slepc && \
+    python3  ./configure --prefix=/usr/local/slepc && \
     make ${MAKEFLAGS} && \
     make install && \
     apt-get -y purge bison flex python && \
@@ -283,20 +285,20 @@ ONBUILD WORKDIR /tmp
 # Install ipython (optional), FIAT, UFL and FFCX (development
 # versions, master branch)
 ONBUILD RUN pip3 install --no-cache-dir ipython && \
-            pip3 install --no-cache-dir git+https://github.com/FEniCS/fiat.git && \
-            pip3 install --no-cache-dir git+https://github.com/FEniCS/ufl.git && \
-            pip3 install --no-cache-dir git+https://github.com/FEniCS/ffcx.git
+    pip3 install --no-cache-dir git+https://github.com/FEniCS/fiat.git && \
+    pip3 install --no-cache-dir git+https://github.com/FEniCS/ufl.git && \
+    pip3 install --no-cache-dir git+https://github.com/FEniCS/ffcx.git
 
 # Install dolfinx
 ONBUILD RUN git clone https://github.com/fenics/dolfinx.git && \
-            cd dolfinx && \
-            mkdir build && \
-            cd build && \
-            cmake -G Ninja ../cpp && \
-            ninja ${MAKEFLAGS} install && \
-            cd ../python && \
-            pip3 install . && \
-            rm -rf /tmp/*
+    cd dolfinx && \
+    mkdir build && \
+    cd build && \
+    cmake -G Ninja ../cpp && \
+    ninja ${MAKEFLAGS} install && \
+    cd ../python && \
+    pip3 install . && \
+    rm -rf /tmp/*
 
 ONBUILD WORKDIR /root
 
@@ -317,20 +319,20 @@ ONBUILD WORKDIR /tmp
 # Install ipython (optional), FIAT, UFL and FFCX (development versions,
 # master branch)
 ONBUILD RUN pip3 install --no-cache-dir ipython && \
-            pip3 install --no-cache-dir git+https://github.com/FEniCS/fiat.git && \
-            pip3 install --no-cache-dir git+https://github.com/FEniCS/ufl.git && \
-            pip3 install --no-cache-dir git+https://github.com/FEniCS/ffcx.git
+    pip3 install --no-cache-dir git+https://github.com/FEniCS/fiat.git && \
+    pip3 install --no-cache-dir git+https://github.com/FEniCS/ufl.git && \
+    pip3 install --no-cache-dir git+https://github.com/FEniCS/ffcx.git
 
 # Install dolfinx
 ONBUILD RUN git clone https://github.com/fenics/dolfinx.git && \
-            cd dolfinx && \
-            mkdir build && \
-            cd build && \
-            cmake -G Ninja ../cpp && \
-            ninja ${MAKEFLAGS} install && \
-            cd ../python && \
-            pip3 install . && \
-            rm -rf /tmp/*
+    cd dolfinx && \
+    mkdir build && \
+    cd build && \
+    cmake -G Ninja ../cpp && \
+    ninja ${MAKEFLAGS} install && \
+    cd ../python && \
+    pip3 install . && \
+    rm -rf /tmp/*
 
 ONBUILD WORKDIR /root
 
