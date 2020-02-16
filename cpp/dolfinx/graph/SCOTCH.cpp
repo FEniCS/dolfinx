@@ -28,7 +28,8 @@ using namespace dolfinx;
 
 //-----------------------------------------------------------------------------
 std::pair<std::vector<int>, std::vector<int>>
-dolfinx::graph::SCOTCH::compute_gps(const Graph& graph, std::size_t num_passes)
+dolfinx::graph::SCOTCH::compute_gps(const AdjacencyList<std::int32_t>& graph,
+                                    std::size_t num_passes)
 {
   // Create strategy string for Gibbs-Poole-Stockmeyer ordering
   std::string strategy = "g{pass= " + std::to_string(num_passes) + "}";
@@ -37,40 +38,21 @@ dolfinx::graph::SCOTCH::compute_gps(const Graph& graph, std::size_t num_passes)
 }
 //-----------------------------------------------------------------------------
 std::pair<std::vector<int>, std::vector<int>>
-dolfinx::graph::SCOTCH::compute_reordering(const Graph& _graph,
-                                           std::string scotch_strategy)
+dolfinx::graph::SCOTCH::compute_reordering(
+    const AdjacencyList<std::int32_t>& graph, std::string scotch_strategy)
 {
-  const AdjacencyList<std::int32_t> graph(_graph);
-
   common::Timer timer("Compute SCOTCH graph re-ordering");
 
   // Number of local graph vertices
   const SCOTCH_Num vertnbr = graph.num_nodes();
 
-  // Data structures for graph input to SCOTCH (add 1 for case that
-  // graph size is zero)
-  // std::vector<SCOTCH_Num> verttab;
-  // std::vector<SCOTCH_Num> edgetab;
-
-  // Copy into the array with SCOTCH_Num types
-  auto data = graph.array();
-  auto offsets = graph.offsets();
+  // Copy graph into array with SCOTCH_Num types
+  const Eigen::Array<std::int32_t, Eigen::Dynamic, 1>& data = graph.array();
+  const Eigen::Array<std::int32_t, Eigen::Dynamic, 1>& offsets
+      = graph.offsets();
   std::vector<SCOTCH_Num> verttab(offsets.data(),
                                   offsets.data() + offsets.rows());
   std::vector<SCOTCH_Num> edgetab(data.data(), data.data() + data.rows());
-
-  // Build local graph input for SCOTCH
-  // (number of local + ghost graph vertices (cells),
-  // number of local edges + edges connecting to ghost vertices)
-  // SCOTCH_Num edgenbr = 0;
-  // verttab.push_back(0);
-  // Graph::const_iterator vertex;
-  // for (vertex = graph.begin(); vertex != graph.end(); ++vertex)
-  // {
-  //   edgenbr += vertex->size();
-  //   verttab.push_back(verttab.back() + vertex->size());
-  //   edgetab.insert(edgetab.end(), vertex->begin(), vertex->end());
-  // }
 
   // Create SCOTCH graph
   SCOTCH_Graph scotch_graph;

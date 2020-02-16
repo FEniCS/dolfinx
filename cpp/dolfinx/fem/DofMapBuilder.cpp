@@ -241,7 +241,7 @@ std::pair<std::vector<std::int32_t>, std::int32_t> compute_reordering_map(
 
   // Build local graph, based on dof map with contiguous numbering
   // (unowned dofs excluded)
-  dolfinx::graph::Graph graph(owned_size);
+  std::vector<std::vector<std::int32_t>> graph_data(owned_size);
   std::vector<int> local_old;
   for (std::int32_t cell = 0; cell < dofmap.num_nodes(); ++cell)
   {
@@ -255,7 +255,7 @@ std::pair<std::vector<std::int32_t>, std::int32_t> compute_reordering_map(
       const int n = original_to_contiguous[nodes[i]];
       if (n != -1)
       {
-        assert(n < (int)graph.size());
+        assert(n < (int)graph_data.size());
         local_old.push_back(n);
       }
     }
@@ -263,21 +263,32 @@ std::pair<std::vector<std::int32_t>, std::int32_t> compute_reordering_map(
     for (std::size_t i = 0; i < local_old.size(); ++i)
       for (std::size_t j = 0; j < local_old.size(); ++j)
         if (i != j)
-          graph[local_old[i]].insert(local_old[j]);
+          graph_data[local_old[i]].push_back(local_old[j]);
   }
 
+  // Eliminate duplicates and create AdjacencyList
+  for (auto& node : graph_data)
+  {
+    std::sort(node.begin(), node.end());
+    node.erase(std::unique(node.begin(), node.end()), node.end());
+  }
+  const graph::AdjacencyList<std::int32_t> graph(graph_data);
+  std::vector<std::vector<std::int32_t>>().swap(graph_data);
+
   // Reorder owned nodes
-  const std::string ordering_library = "SCOTCH";
+  const std::string ordering_library = "Boost";
   std::vector<int> node_remap;
   if (ordering_library == "Boost")
+  {
     node_remap = graph::BoostGraphOrdering::compute_cuthill_mckee(graph, true);
+  }
   else if (ordering_library == "SCOTCH")
     std::tie(node_remap, std::ignore) = graph::SCOTCH::compute_gps(graph);
   else if (ordering_library == "random")
   {
     // NOTE: Randomised dof ordering should only be used for
     // testing/benchmarking
-    node_remap.resize(graph.size());
+    node_remap.resize(graph.num_nodes());
     std::iota(node_remap.begin(), node_remap.end(), 0);
     std::random_device rd;
     std::default_random_engine g(rd());
