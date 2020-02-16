@@ -405,34 +405,40 @@ std::vector<std::int64_t> get_global_indices(
   }
 
   // Build  [local_new - num_owned] -> global old array
-  std::vector<std::int64_t> local_new_to_global_old(old_to_new.size()
-                                                    - num_owned);
+  std::vector<std::vector<std::int64_t>> local_new_to_global_old(D + 1);
   for (std::size_t i = 0; i < global_indices_old.size(); ++i)
   {
+    const int d = dof_entity[i].first;
     std::int32_t local_new = old_to_new[i] - num_owned;
     if (local_new >= 0)
-      local_new_to_global_old[local_new] = global_indices_old[i];
+    {
+      local_new_to_global_old[d].push_back(global_indices_old[i]);
+      local_new_to_global_old[d].push_back(local_new);
+    }
   }
 
+  std::vector<std::int64_t> local_to_global_new(old_to_new.size() - num_owned);
   // Build (global old, global new) map
   std::map<std::int64_t, std::int64_t> global_old_new;
   for (std::size_t i = 0; i < requests_dim.size(); ++i)
   {
-    int index;
-    MPI_Waitany(requests_dim.size(), requests.data(), &index,
-                MPI_STATUS_IGNORE);
-    std::vector<std::int64_t>& dofs_received
-        = all_dofs_received[requests_dim[index]];
+    int idx, d;
+    MPI_Waitany(requests_dim.size(), requests.data(), &idx, MPI_STATUS_IGNORE);
+    d = requests_dim[idx];
+
+    std::vector<std::int64_t>& dofs_received = all_dofs_received[d];
     for (std::size_t j = 0; j < dofs_received.size(); j += 2)
       global_old_new.insert({dofs_received[j], dofs_received[j + 1]});
-  }
 
-  std::vector<std::int64_t> local_to_global_new(old_to_new.size() - num_owned);
-  for (std::size_t i = 0; i < local_new_to_global_old.size(); ++i)
-  {
-    auto it = global_old_new.find(local_new_to_global_old[i]);
-    assert(it != global_old_new.end());
-    local_to_global_new[i] = it->second;
+    std::vector<std::int64_t>& local_new_to_global_old_d
+        = local_new_to_global_old[d];
+
+    for (std::size_t i = 0; i < local_new_to_global_old_d.size(); i += 2)
+    {
+      auto it = global_old_new.find(local_new_to_global_old_d[i]);
+      assert(it != global_old_new.end());
+      local_to_global_new[local_new_to_global_old_d[i + 1]] = it->second;
+    }
   }
 
   return local_to_global_new;
