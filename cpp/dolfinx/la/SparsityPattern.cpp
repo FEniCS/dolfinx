@@ -51,7 +51,7 @@ SparsityPattern::SparsityPattern(
   //        - Support null blocks (maybe insist on null block having
   //          common::IndexMaps?)
 
-  std::vector<std::vector<std::int64_t>> diagonal;
+  std::vector<std::vector<std::int32_t>> diagonal;
   std::vector<std::vector<std::int64_t>> off_diagonal;
 
   // Get row ranges using column 0
