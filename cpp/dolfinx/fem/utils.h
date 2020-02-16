@@ -92,9 +92,10 @@ create_vector_block(const std::vector<const common::IndexMap*>& maps);
 la::PETScVector
 create_vector_nest(const std::vector<const common::IndexMap*>& maps);
 
-/// Get new global index in 'spliced' indices
-std::int64_t get_global_index(const std::vector<const common::IndexMap*>& maps,
-                              const int field, const int n);
+/// @todo Update name an check efficiency
+/// Get new global offset in 'spliced' indices
+std::int64_t get_global_offset(const std::vector<const common::IndexMap*>& maps,
+                               const int field, const std::int64_t index);
 
 /// Create an ElementDofLayout from a ufc_dofmap
 ElementDofLayout create_element_dof_layout(const ufc_dofmap& dofmap,

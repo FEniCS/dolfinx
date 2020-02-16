@@ -6,7 +6,6 @@
 
 #pragma once
 
-#include "Graph.h"
 #include <cstdint>
 #include <dolfinx/common/MPI.h>
 #include <map>
@@ -28,6 +27,8 @@ namespace dolfinx
 namespace graph
 {
 
+template <typename T>
+class AdjacencyList;
 template <typename T>
 class CSRGraph;
 
@@ -51,7 +52,8 @@ public:
   /// @return (mapping from old to new nodes, mapping from new to old
   ///          nodes (inverse map))
   static std::pair<std::vector<int>, std::vector<int>>
-  compute_gps(const Graph& graph, std::size_t num_passes = 5);
+  compute_gps(const AdjacencyList<std::int32_t>& graph,
+              std::size_t num_passes = 5);
 
   /// Compute graph re-ordering
   /// @param[in] graph Input graph
@@ -59,7 +61,8 @@ public:
   /// @return (mapping from old to new nodes, mapping from new to old
   ///          nodes (inverse map))
   static std::pair<std::vector<int>, std::vector<int>>
-  compute_reordering(const Graph& graph, std::string scotch_strategy = "");
+  compute_reordering(const AdjacencyList<std::int32_t>& graph,
+                     std::string scotch_strategy = "");
 };
 } // namespace graph
 } // namespace dolfinx
