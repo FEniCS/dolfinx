@@ -150,8 +150,7 @@ double nls::NewtonSolver::residual() const { return _residual; }
 //-----------------------------------------------------------------------------
 double nls::NewtonSolver::residual0() const { return _residual0; }
 //-----------------------------------------------------------------------------
-bool nls::NewtonSolver::converged(const Vec r,
-                                  const NonlinearProblem& nonlinear_problem,
+bool nls::NewtonSolver::converged(const Vec r, const NonlinearProblem&,
                                   std::size_t newton_iteration)
 {
   la::PETScVector _r(r, true);
@@ -180,9 +179,8 @@ bool nls::NewtonSolver::converged(const Vec r,
     return false;
 }
 //-----------------------------------------------------------------------------
-void nls::NewtonSolver::update_solution(
-    Vec x, const Vec dx, double relaxation,
-    const NonlinearProblem& nonlinear_problem, std::size_t iteration)
+void nls::NewtonSolver::update_solution(Vec x, const Vec dx, double relaxation,
+                                        const NonlinearProblem&, std::size_t)
 {
   VecAXPY(x, -relaxation, dx);
 }
