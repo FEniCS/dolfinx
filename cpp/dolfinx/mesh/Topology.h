@@ -132,11 +132,11 @@ public:
   const std::vector<bool>& interior_facets() const;
 
   /// Set markers for owned facets that are interior
-  /// @param[in] The marker vector
+  /// @param[in] interior_facets The marker vector
   void set_interior_facets(const std::vector<bool>& interior_facets);
 
   /// Set markers for owned facets that are interior
-  /// @param[in] The marker vector
+  /// @param[in] interior_facets The marker vector
   void set_interior_facets(std::vector<bool>&& interior_facets);
 
   /// Return hash based on the hash of cell-vertex connectivity
