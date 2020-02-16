@@ -650,7 +650,6 @@ def test_basic_interior_facet_assembly():
     assert isinstance(A, PETSc.Mat)
 
     L = ufl.conj(ufl.avg(v)) * ufl.dS
-
     b = dolfinx.fem.assemble_vector(L)
     b.assemble()
     assert isinstance(b, PETSc.Vec)

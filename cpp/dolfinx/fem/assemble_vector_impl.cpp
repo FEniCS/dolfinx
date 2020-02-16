@@ -527,7 +527,7 @@ void fem::impl::assemble_interior_facets(
 
     // Create attached cells
     const mesh::MeshEntity cell0(mesh, tdim, cells[0]);
-    const mesh::MeshEntity cell1(mesh, tdim, cells[2]);
+    const mesh::MeshEntity cell1(mesh, tdim, cells[1]);
     const mesh::MeshEntity facet(mesh, tdim - 1, f);
     const int local_facet[2] = {cell0.index(facet), cell1.index(facet)};
 
