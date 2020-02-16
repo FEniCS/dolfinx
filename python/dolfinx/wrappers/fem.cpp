@@ -196,7 +196,7 @@ void fem(py::module& m)
          std::shared_ptr<const dolfinx::fem::ElementDofLayout>
              element_dof_layout) {
         return dolfinx::fem::DofMapBuilder::build(
-            mesh.mpi_comm(), mesh.topology(), mesh.cell_type(),
+            mesh.mpi_comm(), mesh.topology(), mesh.topology().cell_type(),
             element_dof_layout);
       },
       "Build and dofmap on a mesh.");

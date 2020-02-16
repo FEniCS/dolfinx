@@ -502,7 +502,7 @@ fem::DofMap fem::create_dofmap(const ufc_dofmap& ufc_dofmap,
                                const mesh::Mesh& mesh)
 {
   auto element_dof_layout = std::make_shared<ElementDofLayout>(
-      create_element_dof_layout(ufc_dofmap, mesh.cell_type()));
+      create_element_dof_layout(ufc_dofmap, mesh.topology().cell_type()));
   assert(element_dof_layout);
 
   // Create required mesh entities
@@ -514,7 +514,7 @@ fem::DofMap fem::create_dofmap(const ufc_dofmap& ufc_dofmap,
   }
 
   return DofMapBuilder::build(mesh.mpi_comm(), mesh.topology(),
-                              mesh.cell_type(), element_dof_layout);
+                              mesh.topology().cell_type(), element_dof_layout);
 }
 //-----------------------------------------------------------------------------
 std::vector<std::tuple<int, std::string, std::shared_ptr<function::Function>>>

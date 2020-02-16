@@ -567,7 +567,7 @@ std::tuple<std::shared_ptr<graph::AdjacencyList<std::int32_t>>,
            std::shared_ptr<common::IndexMap>,
            std::map<std::int32_t, std::set<std::int32_t>>>
 TopologyComputation::compute_entities(MPI_Comm comm, const Topology& topology,
-                                      mesh::CellType cell_type, int dim)
+                                      int dim)
 {
   LOG(INFO) << "Computing mesh entities of dimension " << dim;
 
@@ -601,14 +601,14 @@ TopologyComputation::compute_entities(MPI_Comm comm, const Topology& topology,
              std::map<std::int32_t, std::set<std::int32_t>>>
       data = compute_entities_by_key_matching(
           comm, *cells, topology.shared_entities(0), topology.global_indices(0),
-          cell_type, dim);
+          topology.cell_type(), dim);
 
   return data;
 }
 //-----------------------------------------------------------------------------
 std::array<std::shared_ptr<graph::AdjacencyList<std::int32_t>>, 2>
-TopologyComputation::compute_connectivity(const Topology& topology,
-                                          CellType cell_type, int d0, int d1)
+TopologyComputation::compute_connectivity(const Topology& topology, int d0,
+                                          int d1)
 {
   LOG(INFO) << "Requesting connectivity " << d0 << " - " << d1;
 
@@ -651,7 +651,8 @@ TopologyComputation::compute_connectivity(const Topology& topology,
     {
       auto c_d1_d0 = std::make_shared<graph::AdjacencyList<std::int32_t>>(
           compute_from_map(*c_d1_0, *c_d0_0,
-                           mesh::cell_entity_type(cell_type, d1), d1, d0));
+                           mesh::cell_entity_type(topology.cell_type(), d1), d1,
+                           d0));
       auto c_d0_d1 = std::make_shared<graph::AdjacencyList<std::int32_t>>(
           compute_from_transpose(*c_d1_d0, c_d0_0->num_nodes(), d0, d1));
       return {c_d0_d1, c_d1_d0};
@@ -670,7 +671,8 @@ TopologyComputation::compute_connectivity(const Topology& topology,
     // those of a higher dimension entity
     auto c_d0_d1
         = std::make_shared<graph::AdjacencyList<std::int32_t>>(compute_from_map(
-            *c_d0_0, *c_d1_0, mesh::cell_entity_type(cell_type, d0), d0, d1));
+            *c_d0_0, *c_d1_0, mesh::cell_entity_type(topology.cell_type(), d0),
+            d0, d1));
     return {c_d0_d1, nullptr};
   }
   else

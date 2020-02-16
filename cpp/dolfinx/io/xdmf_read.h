@@ -169,7 +169,8 @@ void remap_meshfunction_data(mesh::MeshFunction<T>& meshfunction,
   const int cell_dim = meshfunction.dim();
   const auto mesh = meshfunction.mesh();
 
-  mesh::CellType cell_type = mesh::cell_entity_type((*mesh).cell_type(), cell_dim);
+  mesh::CellType cell_type
+      = mesh::cell_entity_type(mesh->topology().cell_type(), cell_dim);
   const int vertices_per_entity = mesh::num_cell_vertices(cell_type);
 
   const MPI_Comm comm = mesh->mpi_comm();

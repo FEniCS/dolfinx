@@ -52,8 +52,7 @@ public:
                     std::shared_ptr<graph::AdjacencyList<std::int32_t>>,
                     std::shared_ptr<common::IndexMap>,
                     std::map<std::int32_t, std::set<std::int32_t>>>
-  compute_entities(MPI_Comm comm, const Topology& topology,
-                   mesh::CellType cell_type, int dim);
+  compute_entities(MPI_Comm comm, const Topology& topology, int dim);
 
   /// Compute connectivity (d0 -> d1) for given pair of topological
   /// dimensions
@@ -67,8 +66,7 @@ public:
   ///   required as part of computing (d0, d1), the (d1, d0) is returned
   ///   as the second entry. The second entry is otherwise nullptr.
   static std::array<std::shared_ptr<graph::AdjacencyList<std::int32_t>>, 2>
-  compute_connectivity(const Topology& topology, CellType cell_type, int d0,
-                       int d1);
+  compute_connectivity(const Topology& topology, int d0, int d1);
 };
 } // namespace mesh
 } // namespace dolfinx

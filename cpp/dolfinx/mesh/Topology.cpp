@@ -15,9 +15,10 @@ using namespace dolfinx;
 using namespace dolfinx::mesh;
 
 //-----------------------------------------------------------------------------
-Topology::Topology(int dim)
-    : _global_indices(dim + 1), _shared_entities(dim + 1),
-      _connectivity(dim + 1, dim + 1)
+Topology::Topology(mesh::CellType type)
+    : _cell_type(type), _global_indices(mesh::cell_dim(type) + 1),
+      _shared_entities(mesh::cell_dim(type) + 1),
+      _connectivity(mesh::cell_dim(type) + 1, mesh::cell_dim(type) + 1)
 {
   // Do nothing
 }
@@ -204,4 +205,6 @@ std::string Topology::str(bool verbose) const
 
   return s.str();
 }
+//-----------------------------------------------------------------------------
+mesh::CellType Topology::cell_type() const { return _cell_type; }
 //-----------------------------------------------------------------------------
