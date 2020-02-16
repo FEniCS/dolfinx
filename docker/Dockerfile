@@ -29,8 +29,8 @@
 ARG TINI_VERSION=v0.18.0
 ARG GMSH_VERSION=4.5.1
 ARG PYBIND11_VERSION=2.4.3
-ARG PETSC_VERSION=3.12.3
-ARG SLEPC_VERSION=3.12.1
+ARG PETSC_VERSION=3.12.4
+ARG SLEPC_VERSION=3.12.2
 ARG PETSC4PY_VERSION=3.12.0
 ARG SLEPC4PY_VERSION=3.12.0
 # Should be updated upon a new KaHIP release
@@ -40,7 +40,7 @@ ARG MAKEFLAGS
 ARG PETSC_SLEPC_OPTFLAGS="-02 -g"
 ARG PETSC_SLEPC_DEBUGGING="yes"
 
-FROM ubuntu:18.04 as base
+FROM ubuntu:19.10 as base
 LABEL maintainer="fenics-project <fenics-support@googlegroups.org>"
 LABEL description="Base image for real and complex FEniCS test environments"
 

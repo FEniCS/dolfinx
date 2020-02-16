@@ -6,7 +6,6 @@
 
 #include "Mesh.h"
 #include "CoordinateDofs.h"
-#include "DistributedMeshTools.h"
 #include "Geometry.h"
 #include "MeshEntity.h"
 #include "MeshIterator.h"
@@ -197,8 +196,7 @@ compute_point_distribution(
     Eigen::Array<std::int64_t, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
         cell_nodes,
     Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
-        points,
-    mesh::CellType type)
+        points)
 {
   // Get set of global point indices, which exist on this process
   std::vector<std::int64_t> global_index_set
@@ -264,7 +262,7 @@ Mesh::Mesh(
   // cell topology using new local indices
   const auto [point_index_map, node_indices_global, coordinate_nodes,
               points_received]
-      = compute_point_distribution(comm, cells, points, type);
+      = compute_point_distribution(comm, cells, points);
 
   _coordinate_dofs = std::make_unique<CoordinateDofs>(coordinate_nodes);
 
@@ -336,7 +334,10 @@ Mesh::Mesh(
 
   // Initialise cell topology
   Eigen::Array<std::int64_t, Eigen::Dynamic, 1> cell_ghosts(num_ghost_cells);
-  assert(num_ghost_cells == 0); // Ghost cells not enabled at the moment
+  if ((int)global_cell_indices.size() == (num_cells_local + num_ghost_cells))
+    std::copy(global_cell_indices.begin() + num_cells_local,
+              global_cell_indices.end(), cell_ghosts.data());
+
   auto cell_index_map = std::make_shared<common::IndexMap>(
       _mpi_comm.comm(), num_cells_local, cell_ghosts, 1);
   _topology->set_index_map(tdim, cell_index_map);
@@ -447,7 +448,7 @@ std::int32_t Mesh::create_entities(int dim) const
     return -1;
 
   // Create local entities
-  const auto [cell_entity, entity_vertex, num_new_entities]
+  const auto [cell_entity, entity_vertex, index_map, shared_entities]
       = TopologyComputation::compute_entities(_mpi_comm.comm(), *_topology,
                                               _cell_type, dim);
 
@@ -456,12 +457,17 @@ std::int32_t Mesh::create_entities(int dim) const
   if (entity_vertex)
     _topology->set_connectivity(entity_vertex, dim, 0);
 
-  // Number globally (this code is largely duplicated in
-  // TopologyComputation::compute_entities and will soon be removed)
-  DistributedMeshTools::number_entities(this->mpi_comm(), *_topology,
-                                        _cell_type, dim);
+  if (index_map)
+  {
+    _topology->set_index_map(dim, index_map);
+    // FIXME: remove global_indices
+    _topology->set_global_indices(dim, index_map->global_indices(false));
+  }
 
-  return num_new_entities;
+  if (shared_entities.size() > 0)
+    _topology->set_shared_entities(dim, shared_entities);
+
+  return index_map->size_local();
 }
 //-----------------------------------------------------------------------------
 void Mesh::create_connectivity(int d0, int d1) const

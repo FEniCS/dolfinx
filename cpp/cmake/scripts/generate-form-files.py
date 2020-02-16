@@ -48,7 +48,7 @@ for subdir in subdirs:
         for f in set(formfiles) - skip:
             args = []
             if complex_mode:
-                args += ["-f", "scalar_type", "double complex"]
+                args += ["--scalar_type", "double complex"]
             args.append(f)
             try:
                 ffcx.main(args)

@@ -67,7 +67,7 @@ public:
   int tdim() const;
 
   /// Print out for debugging
-  std::string str(bool verbose = false) const;
+  std::string str() const;
 
   /// Get bounding box child nodes
   /// @param[in] node The bounding box node index

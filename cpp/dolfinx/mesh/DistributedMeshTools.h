@@ -32,10 +32,6 @@ class Topology;
 class DistributedMeshTools
 {
 public:
-  /// Create global entity indices for entities of dimension d
-  static void number_entities(MPI_Comm comm, const Topology& topology,
-                              const mesh::CellType cell_type, int d);
-
   /// Compute number of cells connected to each facet (globally). Facets
   /// on internal boundaries will be connected to two cells (with the
   /// cells residing on neighboring processes). The facets and the
