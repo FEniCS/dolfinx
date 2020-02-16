@@ -162,6 +162,8 @@ private:
                Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
       _connectivity;
 
+  // Marker for owned facets, which evaluates to True for facets that
+  // are interior to the domain
   std::vector<bool> _interior_facets;
 };
 } // namespace mesh
