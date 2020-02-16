@@ -7,10 +7,8 @@
 #include "SCOTCH.h"
 #include "AdjacencyList.h"
 #include "CSRGraph.h"
-#include "GraphBuilder.h"
 #include <algorithm>
 #include <dolfinx/common/MPI.h>
-#include <dolfinx/common/Set.h>
 #include <dolfinx/common/Timer.h>
 #include <dolfinx/common/log.h>
 #include <map>

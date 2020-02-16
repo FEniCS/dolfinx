@@ -242,28 +242,28 @@ std::pair<std::vector<std::int32_t>, std::int32_t> compute_reordering_map(
   // Build local graph, based on dof map with contiguous numbering
   // (unowned dofs excluded)
   std::vector<std::vector<std::int32_t>> graph_data(owned_size);
-  std::vector<int> local_old;
   for (std::int32_t cell = 0; cell < dofmap.num_nodes(); ++cell)
   {
-    // Loop over nodes collecting valid local nodes
-    local_old.clear();
     auto nodes = dofmap.links(cell);
     for (std::int32_t i = 0; i < nodes.rows(); ++i)
     {
-      // Add to graph if node is owned
-      assert(nodes[i] < (int)original_to_contiguous.size());
-      const int n = original_to_contiguous[nodes[i]];
-      if (n != -1)
+      const std::int32_t node_i = original_to_contiguous[nodes[i]];
+
+      // Skip unowned node
+      if (node_i == -1)
+        continue;
+
+      for (std::int32_t j = 0; j < nodes.rows(); ++j)
       {
-        assert(n < (int)graph_data.size());
-        local_old.push_back(n);
+        // Skip diagonal
+        if (i == j)
+          continue;
+
+        const std::int32_t node_j = original_to_contiguous[nodes[j]];
+        if (node_j != -1)
+          graph_data[node_i].push_back(node_j);
       }
     }
-
-    for (std::size_t i = 0; i < local_old.size(); ++i)
-      for (std::size_t j = 0; j < local_old.size(); ++j)
-        if (i != j)
-          graph_data[local_old[i]].push_back(local_old[j]);
   }
 
   // Eliminate duplicates and create AdjacencyList
@@ -276,7 +276,7 @@ std::pair<std::vector<std::int32_t>, std::int32_t> compute_reordering_map(
   std::vector<std::vector<std::int32_t>>().swap(graph_data);
 
   // Reorder owned nodes
-  const std::string ordering_library = "Boost";
+  const std::string ordering_library = "SCOTCH";
   std::vector<int> node_remap;
   if (ordering_library == "Boost")
     node_remap = graph::BoostGraphOrdering::compute_cuthill_mckee(graph, true);
