@@ -312,14 +312,22 @@ void fem::impl::assemble_interior_facets(
 
   // Iterate over all facets
   PetscErrorCode ierr;
+  auto c = mesh.topology().connectivity(tdim - 1, tdim);
+  assert(c);
   for (const auto& facet_index : active_facets)
   {
     const mesh::MeshEntity facet(mesh, tdim - 1, facet_index);
-    // assert(facet.num_global_entities(tdim) == 2);
-
-    // TODO: check ghosting sanity?
+    assert(mesh.topology().interior_facets()[facet_index]);
 
     // Create attached cells
+    auto cells = c->links(facet_index);
+    if (c->num_links(facet_index) == 1)
+    {
+      std::cout << "Problem: " << MPI::rank(MPI_COMM_WORLD) << ", "
+                << facet_index << std::endl;
+    }
+
+    assert(cells.rows() == 2);
     const mesh::MeshEntity cell0(mesh, tdim, facet.entities(tdim)[0]);
     const mesh::MeshEntity cell1(mesh, tdim, facet.entities(tdim)[1]);
 

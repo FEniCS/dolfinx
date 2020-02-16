@@ -140,7 +140,7 @@ void FormIntegrals::set_domains(FormIntegrals::Type type,
     {
       // Check that facet is an exterior facet (and not just on a
       // process boundary)
-      if (topology.size_global({tdim - 1, tdim}, i) == 1)
+      if (!topology.interior_facets()[i])
       {
         auto it = id_to_integral.find(mf_values[i]);
         if (it != id_to_integral.end())
@@ -216,7 +216,7 @@ void FormIntegrals::set_default_domains(const mesh::Mesh& mesh)
     const int num_facets = topology.index_map(tdim - 1)->size_local();
     for (int f = 0; f < num_facets; ++f)
     {
-      if (topology.size_global({tdim - 1, tdim}, f) == 1)
+      if (!topology.interior_facets()[f])
         exf_integrals[0].active_entities.push_back(f);
     }
   }
@@ -242,7 +242,7 @@ void FormIntegrals::set_default_domains(const mesh::Mesh& mesh)
     // Loop over owned facets
     for (int f = 0; f < num_facets; ++f)
     {
-      if (topology.size_global({tdim - 1, tdim}, f) == 2)
+      if (topology.interior_facets()[f])
         inf_integrals[0].active_entities.push_back(f);
     }
   }

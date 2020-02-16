@@ -15,6 +15,56 @@ using namespace dolfinx;
 using namespace dolfinx::mesh;
 
 //-----------------------------------------------------------------------------
+std::vector<bool> mesh::compute_interior_facets(const Topology& topology)
+{
+  const int tdim = topology.dim();
+  auto c = topology.connectivity(tdim - 1, tdim);
+  if (!c)
+    throw std::runtime_error("Facet-cell connectivity has not been computed");
+
+  // Get number of connected cells for each owned facet
+  auto map = topology.index_map(tdim - 1);
+  assert(map);
+  std::vector<int> num_cells0(map->size_local(), 0);
+  for (int f = 0; f < map->size_local(); ++f)
+  {
+    num_cells0[f] = c->num_links(f);
+    assert(num_cells0[f] == 1 or num_cells0[f] == 2);
+  }
+
+  // Get number of connected cells for each ghost facet
+  std::vector<int> num_cells1(map->num_ghosts(), 0);
+  for (int f = 0; f < map->num_ghosts(); ++f)
+  {
+    num_cells1[f] = c->num_links(map->size_local() + f);
+
+    // TEST: For facet-based ghosting, an un-owned facet should be
+    // connected to only one facet
+    // if (num_cells1[f] > 1)
+    //   std::cout << "Problem with ghosting" << std::endl;
+    // else
+    //   std::cout << "Facet as expectec" << std::endl;
+
+    assert(num_cells1[f] == 1 or num_cells1[f] == 2);
+  }
+
+  // Get data for owner from ghosts
+  std::vector<std::int32_t> owned;
+  map->scatter_rev(owned, num_cells1, 1, common::IndexMap::Mode::add);
+
+  std::vector<bool> interior_facet(num_cells0.size(), false);
+  for (int f = 0; f < map->size_local(); ++f)
+  {
+    const int num_cells = num_cells0[f] + owned[f];
+    if (num_cells > 1)
+      interior_facet[f] = true;
+  }
+
+  return interior_facet;
+}
+//-----------------------------------------------------------------------------
+
+//-----------------------------------------------------------------------------
 Topology::Topology(int dim)
     : _global_indices(dim + 1), _shared_entities(dim + 1),
       _connectivity(dim + 1, dim + 1)
@@ -89,7 +139,7 @@ std::vector<bool> Topology::on_boundary(int dim) const
   {
     for (int i = 0; i < num_facets; ++i)
     {
-      if (this->size_global({tdim - 1, tdim}, i) == 1)
+      if (!_interior_facets[i])
         marker[i] = true;
     }
     return marker;
@@ -109,7 +159,7 @@ std::vector<bool> Topology::on_boundary(int dim) const
   // Iterate over all facets, selecting only those with one cell attached
   for (int i = 0; i < num_facets; ++i)
   {
-    if (this->size_global({tdim - 1, tdim}, i) == 1)
+    if (!_interior_facets[i])
     {
       for (int j = fe_offsets[i]; j < fe_offsets[i + 1]; ++j)
         marker[fe_indices[j]] = true;
@@ -141,6 +191,22 @@ void Topology::set_connectivity(
   assert(d0 < _connectivity.rows());
   assert(d1 < _connectivity.cols());
   _connectivity(d0, d1) = c;
+}
+//-----------------------------------------------------------------------------
+const std::vector<bool>& Topology::interior_facets() const
+{
+  assert(!_interior_facets.empty());
+  return _interior_facets;
+}
+//-----------------------------------------------------------------------------
+void Topology::set_interior_facets(const std::vector<bool>& interior_facets)
+{
+  _interior_facets = interior_facets;
+}
+//-----------------------------------------------------------------------------
+void Topology::set_interior_facets(std::vector<bool>&& interior_facets)
+{
+  _interior_facets = std::move(interior_facets);
 }
 //-----------------------------------------------------------------------------
 size_t Topology::hash() const

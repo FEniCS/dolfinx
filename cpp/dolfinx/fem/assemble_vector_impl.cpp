@@ -219,25 +219,28 @@ void _lift_bc_exterior_facets(
                            array.data() + array.size());
   }
 
-  // Iterate over all cells
+  // Iterate over owned facets
   const mesh::Topology& topology = mesh.topology();
   std::shared_ptr<const graph::AdjacencyList<std::int32_t>> connectivity
       = topology.connectivity(tdim - 1, tdim);
   assert(connectivity);
-  for (const mesh::MeshEntity& facet : mesh::MeshRange(mesh, tdim - 1))
+  auto map = topology.index_map(tdim - 1 );
+  assert(map);
+  for (int f = 0; f < map->size_local(); ++f)
   {
     // Move to next facet if this one is an interior facet
-    if (topology.size_global({tdim - 1, tdim}, facet.index()) != 1)
+    if (topology.interior_facets()[f])
       continue;
 
     // FIXME: sort out ghosts
 
     // Create attached cell
-    const std::int32_t cell_index = facet.entities(tdim)[0];
+    const std::int32_t cell_index = connectivity->links(f)[0];
 
     // Get local index of facet with respect to the cell
     mesh::MeshEntity cell(mesh, tdim, cell_index);
-    const int local_facet = cell.index(facet);
+    mesh::MeshEntity _facet(mesh, tdim-1, f);
+    const int local_facet = cell.index(_facet);
     const int orient = 0;
 
     // Get dof maps for cell

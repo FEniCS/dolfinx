@@ -501,6 +501,16 @@ void Mesh::create_connectivity(int d0, int d1) const
     mesh->topology().set_connectivity(c_d0_d1, d0, d1);
   if (c_d1_d0)
     mesh->topology().set_connectivity(c_d1_d0, d1, d0);
+
+  // Special facet handing
+  if (d0 == (_topology->dim() - 1) and d1 == _topology->dim())
+  {
+    std::cout << "Get Interor facets" << std::endl;
+    std::vector<bool> f = compute_interior_facets(*_topology);
+    std::cout << "A !!!! Done Interor facets" << std::endl;
+    _topology->set_interior_facets(f);
+    std::cout << "B !!!! Done Interor facets" << std::endl;
+  }
 }
 //-----------------------------------------------------------------------------
 void Mesh::create_connectivity_all() const

@@ -360,8 +360,8 @@ mesh::Mesh ParallelRefinement::partition(bool redistribute) const
   const int tdim  = mesh.topology().dim();
   mesh.create_entities(tdim - 1);
   mesh.create_connectivity(tdim - 1, tdim);
-  mesh::DistributedMeshTools::init_facet_cell_connections(mesh.mpi_comm(),
-                                                          mesh.topology());
+  // mesh::DistributedMeshTools::init_facet_cell_connections(mesh.mpi_comm(),
+  //                                                         mesh.topology());
 
   return mesh;
 }
