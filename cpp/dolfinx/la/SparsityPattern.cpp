@@ -1,4 +1,4 @@
-// Copyright (C) 2007-2018 Garth N. Wells
+// Copyright (C) 2007-2020 Garth N. Wells
 //
 // This file is part of DOLFINX (https://www.fenicsproject.org)
 //
@@ -11,8 +11,6 @@
 #include <dolfinx/common/log.h>
 #include <dolfinx/fem/utils.h>
 #include <dolfinx/graph/AdjacencyList.h>
-
-#include <dolfinx/common/Set.h>
 
 using namespace dolfinx;
 using namespace dolfinx::la;
@@ -53,8 +51,8 @@ SparsityPattern::SparsityPattern(
   //        - Support null blocks (maybe insist on null block having
   //          common::IndexMaps?)
 
-  std::vector<common::Set<std::int64_t>> diagonal;
-  std::vector<common::Set<std::int64_t>> off_diagonal;
+  std::vector<std::vector<std::int64_t>> diagonal;
+  std::vector<std::vector<std::int64_t>> off_diagonal;
 
   // Get row ranges using column 0
   std::int64_t row_global_offset(0), row_local_size(0);
@@ -136,7 +134,7 @@ SparsityPattern::SparsityPattern(
           const std::int64_t offset = fem::get_global_offset(cmaps, col, J);
           const std::int64_t c_new = J + offset - col_process_offset;
           assert(c_new >= 0);
-          diagonal[k + row_local_offset].insert(c_new);
+          diagonal[k + row_local_offset].push_back(c_new);
         }
 
         // Off-diagonal block
@@ -146,7 +144,7 @@ SparsityPattern::SparsityPattern(
           const std::int64_t c = edges1[i];
           // Get new index
           const std::int64_t offset = fem::get_global_offset(cmaps, col, c);
-          off_diagonal[k + row_local_offset].insert(c + offset);
+          off_diagonal[k + row_local_offset].push_back(c + offset);
         }
       }
 
@@ -170,12 +168,22 @@ SparsityPattern::SparsityPattern(
   _index_maps[1] = std::make_shared<common::IndexMap>(
       p00->mpi_comm(), col_local_size, ghosts, 1);
 
-  _diagonal = std::make_shared<graph::AdjacencyList<std::int32_t>>(diagonal);
-  if (!off_diagonal.empty())
+  // TODO: Is the erase step required here, or will there be no
+  // duplicates?
+  for (auto& row : diagonal)
   {
-    _off_diagonal
-        = std::make_shared<graph::AdjacencyList<std::int64_t>>(off_diagonal);
+    std::sort(row.begin(), row.end());
+    row.erase(std::unique(row.begin(), row.end()), row.end());
   }
+  _diagonal = std::make_shared<graph::AdjacencyList<std::int32_t>>(diagonal);
+
+  for (auto& row : off_diagonal)
+  {
+    std::sort(row.begin(), row.end());
+    row.erase(std::unique(row.begin(), row.end()), row.end());
+  }
+  _off_diagonal
+      = std::make_shared<graph::AdjacencyList<std::int64_t>>(off_diagonal);
 }
 //-----------------------------------------------------------------------------
 std::array<std::int64_t, 2> SparsityPattern::local_range(int dim) const

@@ -37,7 +37,7 @@ dolfinx::graph::SCOTCH::compute_gps(const Graph& graph, std::size_t num_passes)
 //-----------------------------------------------------------------------------
 std::pair<std::vector<int>, std::vector<int>>
 dolfinx::graph::SCOTCH::compute_reordering(const Graph& graph,
-                                          std::string scotch_strategy)
+                                           std::string scotch_strategy)
 {
   common::Timer timer("Compute SCOTCH graph re-ordering");
 
@@ -139,10 +139,10 @@ dolfinx::graph::SCOTCH::compute_reordering(const Graph& graph,
 //-----------------------------------------------------------------------------
 std::pair<std::vector<int>, std::map<std::int64_t, std::vector<int>>>
 dolfinx::graph::SCOTCH::partition(const MPI_Comm mpi_comm,
-                                 const SCOTCH_Num nparts,
-                                 const CSRGraph<SCOTCH_Num>& local_graph,
-                                 const std::vector<std::size_t>& node_weights,
-                                 std::int32_t num_ghost_nodes)
+                                  const SCOTCH_Num nparts,
+                                  const CSRGraph<SCOTCH_Num>& local_graph,
+                                  const std::vector<std::size_t>& node_weights,
+                                  std::int32_t num_ghost_nodes)
 {
   LOG(INFO) << "Compute graph partition using PT-SCOTCH";
   common::Timer timer("Compute graph partition (SCOTCH)");
