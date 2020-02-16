@@ -244,9 +244,6 @@ ksp_p.setType("preonly")
 ksp_p.getPC().setType("jacobi")
 
 # Monitor the convergence of the KSP
-# opts = PETSc.Options()
-# opts["ksp_monitor"] = None
-# opts["ksp_view"] = None
 ksp.setFromOptions()
 
 # To compute the solution, we create finite element :py:class:`Function
@@ -386,9 +383,6 @@ p.vector.array[:] = x.array_r[offset:]
 
 # We can calculate the :math:`L^2` norms of u and p as follows::
 
-# print("(**C) A Norm: {}".format(A.norm()))
-# print("(**C) b Norm: {}".format(x.norm()))
-
 norm_u_2 = u.vector.norm()
 norm_p_2 = p.vector.norm()
 if MPI.rank(MPI.comm_world) == 0:
@@ -421,9 +415,15 @@ facets = compute_marked_boundary_entities(mesh, 1, lid)
 dofs = locate_dofs_topological((W.sub(0), V), 1, facets)
 bc1 = DirichletBC(lid_velocity, dofs, W.sub(0))
 
+# Pin the pressure at (0, 0)
+zero = Function(Q)
+with zero.vector.localForm() as zero_local:
+    zero_local.set(0.0)
+dofs = locate_dofs_geometrical((W.sub(1), Q), lambda x: np.isclose(x.T, [0, 0, 0]).all(axis=1))
+bc2 = DirichletBC(zero, dofs, W.sub(1))
 
 # Collect Dirichlet boundary conditions
-bcs = [bc0, bc1]
+bcs = [bc0, bc1, bc2]
 
 # Define variational problem
 (u, p) = ufl.TrialFunctions(W)
@@ -442,38 +442,30 @@ b.ghostUpdate(addv=PETSc.InsertMode.ADD, mode=PETSc.ScatterMode.REVERSE)
 # Set Dirichlet boundary condition values in the RHS
 dolfinx.fem.assemble.set_bc(b, bcs)
 
-U = Function(W)
-
-# Set near null space for pressure
-# null_vec = U.vector.copy()
-# null_vec.set(0.0)
-# with null_vec.localForm() as _null_vec:
-#     W.sub(1).dofmap.set(_null_vec.array, 1.0)
-# null_vec.normalize()
-# nsp = PETSc.NullSpace().create(vectors=[null_vec])
-# assert nsp.test(A)
-# A.setNullSpace(nsp)
-
-
+# Create and configure solver
 ksp = PETSc.KSP().create(mesh.mpi_comm())
 ksp.setOperators(A)
 ksp.setType("preonly")
 ksp.getPC().setType("lu")
 ksp.getPC().setFactorSolverType("superlu_dist")
 
-# U = Function(W)
+U = Function(W)
 ksp.solve(b, U.vector)
 
 u = U.sub(0).collapse()
 p = U.sub(1).collapse()
-
-# print("(**D) A Norm: {}".format(A.norm()))
-# print("(**D) b Norm: {}".format(U.vector.norm()))
 
 norm_u_3 = u.vector.norm()
 norm_p_3 = p.vector.norm()
 if MPI.rank(MPI.comm_world) == 0:
     print("(D) Norm of velocity coefficient vector: {}".format(norm_u_3))
     print("(D) Norm of pressure coefficient vector: {}".format(norm_p_3))
-# assert np.isclose(norm_u_3, norm_u_0)
-# assert np.isclose(norm_p_3, norm_p_0)
+assert np.isclose(norm_u_3, norm_u_0)
+
+with XDMFFile(MPI.comm_world, "new_velocity.xdmf") as ufile_xdmf:
+    u.vector.ghostUpdate(addv=PETSc.InsertMode.INSERT, mode=PETSc.ScatterMode.FORWARD)
+    ufile_xdmf.write(u)
+
+with XDMFFile(MPI.comm_world, "new_pressure.xdmf") as pfile_xdmf:
+    p.vector.ghostUpdate(addv=PETSc.InsertMode.INSERT, mode=PETSc.ScatterMode.FORWARD)
+    pfile_xdmf.write(p)
