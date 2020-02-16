@@ -180,6 +180,10 @@ public:
   /// @return The neighbourhood communicator
   MPI_Comm mpi_comm_neighborhood() const;
 
+  /// to do
+  void compute_shared_indices();
+
+
   /// Send n values for each index that is owned to processes that have
   /// the index as a ghost. The size of the input array local_data must
   /// be the same as n * size_local().
