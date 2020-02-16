@@ -42,7 +42,6 @@ public:
   /// connectivity (tdim, dim)
   /// @param[in] comm MPI Communicator
   /// @param[in] topology Mesh topology
-  /// @param[in] cell_type Cell type
   /// @param[in] dim The dimension of the entities to create
   /// @return Tuple of (cell-entity connectivity, entity-vertex
   ///   connectivity, index map, shared entities). If the entities
@@ -57,7 +56,6 @@ public:
   /// Compute connectivity (d0 -> d1) for given pair of topological
   /// dimensions
   /// @param[in] topology The topology
-  /// @param[in] cell_type The cell type
   /// @param[in] d0 The dimension of the nodes in the adjacency list
   /// @param[in] d1 The dimension of the edges in the adjacency list
   /// @returns The connectivities [(d0, d1), (d1, d0)] if they are
