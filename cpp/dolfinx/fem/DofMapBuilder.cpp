@@ -430,7 +430,6 @@ std::vector<std::int64_t> get_global_indices(
     }
   }
 
-  std::map<std::int64_t, std::int64_t> global_old_new;
   std::vector<std::int64_t> local_to_global_new(old_to_new.size() - num_owned);
   for (std::size_t i = 0; i < requests_dim.size(); ++i)
   {
@@ -438,12 +437,13 @@ std::vector<std::int64_t> get_global_indices(
     MPI_Waitany(requests_dim.size(), requests.data(), &idx, MPI_STATUS_IGNORE);
     d = requests_dim[idx];
 
-    // Build (global old, global new) map
+    // Build (global old, global new) map for dofs of dimension d
+    std::map<std::int64_t, std::int64_t> global_old_new;
     std::vector<std::int64_t>& dofs_received = all_dofs_received[d];
     for (std::size_t j = 0; j < dofs_received.size(); j += 2)
       global_old_new.insert({dofs_received[j], dofs_received[j + 1]});
 
-    // Build the dimension d part of local_to_global_new
+    // Build the dimension d part of local_to_global_new vector
     std::vector<std::int64_t>& local_new_to_global_old_d
         = local_new_to_global_old[d];
     for (std::size_t i = 0; i < local_new_to_global_old_d.size(); i += 2)
