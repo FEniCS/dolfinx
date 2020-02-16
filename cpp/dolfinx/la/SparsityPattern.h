@@ -8,7 +8,6 @@
 
 #include <Eigen/Dense>
 #include <dolfinx/common/MPI.h>
-#include <dolfinx/common/Set.h>
 #include <memory>
 #include <petscsys.h>
 #include <string>
@@ -120,11 +119,9 @@ private:
   // common::IndexMaps for each dimension
   std::array<std::shared_ptr<const common::IndexMap>, 2> _index_maps;
 
-  // NOTE: Do not change the set type without performing careful
-  //       performance profiling
-  // Sparsity patterns for diagonal and off-diagonal blocks
-  std::vector<common::Set<std::int32_t>> _diagonal_cache;
-  std::vector<common::Set<std::int64_t>> _off_diagonal_cache;
+  // Caches for diagonal and off-diagonal blocks
+  std::vector<std::vector<std::int32_t>> _diagonal_cache;
+  std::vector<std::vector<std::int64_t>> _off_diagonal_cache;
 
   std::shared_ptr<graph::AdjacencyList<std::int32_t>> _diagonal;
   std::shared_ptr<graph::AdjacencyList<std::int64_t>> _off_diagonal;

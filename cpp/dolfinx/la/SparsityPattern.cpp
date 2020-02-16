@@ -12,6 +12,8 @@
 #include <dolfinx/fem/utils.h>
 #include <dolfinx/graph/AdjacencyList.h>
 
+#include <dolfinx/common/Set.h>
+
 using namespace dolfinx;
 using namespace dolfinx::la;
 
@@ -215,11 +217,11 @@ void SparsityPattern::insert(
       for (Eigen::Index j = 0; j < cols.rows(); ++j)
       {
         if (cols[j] < local_size1)
-          _diagonal_cache[rows[i]].insert(cols[j]);
+          _diagonal_cache[rows[i]].push_back(cols[j]);
         else
         {
           const std::int64_t J = col_map(cols[j], index_map1);
-          _off_diagonal_cache[rows[i]].insert(J);
+          _off_diagonal_cache[rows[i]].push_back(J);
         }
       }
     }
@@ -248,7 +250,7 @@ void SparsityPattern::insert_diagonal(
   for (Eigen::Index i = 0; i < rows.rows(); ++i)
   {
     if (rows[i] < local_size0)
-      _diagonal_cache[rows[i]].insert(rows[i]);
+      _diagonal_cache[rows[i]].push_back(rows[i]);
     else
     {
       throw std::runtime_error(
@@ -349,25 +351,35 @@ void SparsityPattern::assemble()
       {
         // Convert to local column index
         const std::int32_t J = col - bs1 * local_range1[0];
-        _diagonal_cache[row_local].insert(J);
+        _diagonal_cache[row_local].push_back(J);
       }
       else
       {
         assert(row_local < (std::int32_t)_off_diagonal_cache.size());
-        _off_diagonal_cache[row_local].insert(col);
+        _off_diagonal_cache[row_local].push_back(col);
       }
     }
   }
 
   _diagonal_cache.resize(bs0 * local_size0);
+  for (auto& row : _diagonal_cache)
+  {
+    std::sort(row.begin(), row.end());
+    row.erase(std::unique(row.begin(), row.end()), row.end());
+  }
   _diagonal
       = std::make_shared<graph::AdjacencyList<std::int32_t>>(_diagonal_cache);
-  std::vector<common::Set<std::int32_t>>().swap(_diagonal_cache);
+  std::vector<std::vector<std::int32_t>>().swap(_diagonal_cache);
 
   _off_diagonal_cache.resize(bs0 * local_size0);
+  for (auto& row : _off_diagonal_cache)
+  {
+    std::sort(row.begin(), row.end());
+    row.erase(std::unique(row.begin(), row.end()), row.end());
+  }
   _off_diagonal = std::make_shared<graph::AdjacencyList<std::int64_t>>(
       _off_diagonal_cache);
-  std::vector<common::Set<std::int64_t>>().swap(_off_diagonal_cache);
+  std::vector<std::vector<std::int64_t>>().swap(_off_diagonal_cache);
 }
 //-----------------------------------------------------------------------------
 std::int64_t SparsityPattern::num_nonzeros() const
