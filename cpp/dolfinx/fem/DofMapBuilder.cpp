@@ -230,7 +230,7 @@ std::pair<std::vector<std::int32_t>, std::int32_t> compute_reordering_map(
   }
 
   // Create map from old index to new contiguous numbering for locally
-  // owned dofs. Set to -1 for unowned dofs.
+  // owned dofs. Set to -1 for unowned dofs
   std::vector<int> original_to_contiguous(dof_entity.size(), -1);
   std::int32_t owned_size = 0;
   for (std::size_t i = 0; i < original_to_contiguous.size(); ++i)
@@ -241,30 +241,39 @@ std::pair<std::vector<std::int32_t>, std::int32_t> compute_reordering_map(
 
   // Build local graph, based on dof map with contiguous numbering
   // (unowned dofs excluded)
-  dolfinx::graph::Graph graph(owned_size);
-  std::vector<int> local_old;
+  std::vector<std::vector<std::int32_t>> graph_data(owned_size);
   for (std::int32_t cell = 0; cell < dofmap.num_nodes(); ++cell)
   {
-    // Loop over nodes collecting valid local nodes
-    local_old.clear();
     auto nodes = dofmap.links(cell);
     for (std::int32_t i = 0; i < nodes.rows(); ++i)
     {
-      // Add to graph if node is owned
-      assert(nodes[i] < (int)original_to_contiguous.size());
-      const int n = original_to_contiguous[nodes[i]];
-      if (n != -1)
+      const std::int32_t node_i = original_to_contiguous[nodes[i]];
+
+      // Skip unowned node
+      if (node_i == -1)
+        continue;
+
+      for (std::int32_t j = 0; j < nodes.rows(); ++j)
       {
-        assert(n < (int)graph.size());
-        local_old.push_back(n);
+        // Skip diagonal
+        if (i == j)
+          continue;
+
+        const std::int32_t node_j = original_to_contiguous[nodes[j]];
+        if (node_j != -1)
+          graph_data[node_i].push_back(node_j);
       }
     }
-
-    for (std::size_t i = 0; i < local_old.size(); ++i)
-      for (std::size_t j = 0; j < local_old.size(); ++j)
-        if (i != j)
-          graph[local_old[i]].insert(local_old[j]);
   }
+
+  // Eliminate duplicates and create AdjacencyList
+  for (auto& node : graph_data)
+  {
+    std::sort(node.begin(), node.end());
+    node.erase(std::unique(node.begin(), node.end()), node.end());
+  }
+  const graph::AdjacencyList<std::int32_t> graph(graph_data);
+  std::vector<std::vector<std::int32_t>>().swap(graph_data);
 
   // Reorder owned nodes
   const std::string ordering_library = "SCOTCH";
@@ -277,7 +286,7 @@ std::pair<std::vector<std::int32_t>, std::int32_t> compute_reordering_map(
   {
     // NOTE: Randomised dof ordering should only be used for
     // testing/benchmarking
-    node_remap.resize(graph.size());
+    node_remap.resize(graph.num_nodes());
     std::iota(node_remap.begin(), node_remap.end(), 0);
     std::random_device rd;
     std::default_random_engine g(rd());
