@@ -510,7 +510,7 @@ fem::DofMap fem::create_dofmap(MPI_Comm comm, const ufc_dofmap& ufc_dofmap,
 
   // Create required mesh entities
   const int D = topology.dim();
-  for (int d = 0; d <= D; ++d)
+  for (int d = 0; d < D; ++d)
   {
     if (element_dof_layout->num_entity_dofs(d) > 0)
     {
@@ -521,7 +521,6 @@ fem::DofMap fem::create_dofmap(MPI_Comm comm, const ufc_dofmap& ufc_dofmap,
         topology.set_connectivity(cell_entity, topology.dim(), d);
       if (entity_vertex)
         topology.set_connectivity(entity_vertex, d, 0);
-
       if (index_map)
       {
         topology.set_index_map(d, index_map);

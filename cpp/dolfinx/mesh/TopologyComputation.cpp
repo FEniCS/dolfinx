@@ -584,7 +584,8 @@ TopologyComputation::compute_entities(MPI_Comm comm, const Topology& topology,
       throw std::runtime_error(
           "Cannot compute topological entities. Entities of topological "
           "dimension "
-          + std::to_string(dim) + " exist but connectivity is missing.");
+          + std::to_string(dim)
+          + " exist but cell-dim connectivity is missing.");
     }
     return {nullptr, nullptr, nullptr,
             std::map<std::int32_t, std::set<std::int32_t>>()};
