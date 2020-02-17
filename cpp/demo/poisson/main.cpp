@@ -162,10 +162,8 @@ int main(int argc, char* argv[])
   // Define boundary condition
   auto u0 = std::make_shared<function::Function>(V);
 
-  std::vector<std::reference_wrapper<function::FunctionSpace>> Vs;
-  Vs.push_back(*V);
   const Eigen::Array<std::int32_t, Eigen::Dynamic, 1> bdofs
-      = fem::locate_dofs_geometrical(Vs, [](auto& x) {
+      = fem::locate_dofs_geometrical({*V}, [](auto& x) {
           return (x.row(0) < DBL_EPSILON or x.row(0) > 1.0 - DBL_EPSILON);
         });
 
