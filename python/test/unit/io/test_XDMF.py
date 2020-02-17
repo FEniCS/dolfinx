@@ -642,8 +642,15 @@ def test_append_and_load_mesh_functions(tempdir, encoding, data_type):
         cf.name = "cells"
 
         vf.values[:] = mesh.topology.global_indices(0)[:]
-        ff.values[:] = mesh.topology.global_indices(dim - 1)[:]
-        cf.values[:] = mesh.topology.global_indices(dim)[:]
+
+        map = mesh.topology.index_map(dim - 1)
+        global_indices = map.global_indices(True)
+        ff.values[:] = map.global_indices(True)
+
+        map = mesh.topology.index_map(dim)
+        global_indices = map.global_indices(True)
+        cf.values[:] = map.global_indices(True)
+
         filename = os.path.join(tempdir, "appended_mf_{0:d}_{1:s}.xdmf".format(dim, str(mesh.topology.cell_type)))
         with XDMFFile(mesh.mpi_comm(), filename, encoding=encoding) as xdmf:
             xdmf.write(mesh)
