@@ -104,9 +104,11 @@ ElementDofLayout create_element_dof_layout(const ufc_dofmap& dofmap,
                                            = {});
 
 /// Create dof map on mesh from a ufc_dofmap
-/// @param[in] dofmap The ufc_dofmap.
-/// @param[in] mesh The mesh.
-DofMap create_dofmap(const ufc_dofmap& dofmap, const mesh::Mesh& mesh);
+/// @param[in] comm MPI communicator
+/// @param[in] dofmap The ufc_dofmap
+/// @param[in] topology The mesh topology
+DofMap create_dofmap(MPI_Comm comm, const ufc_dofmap& dofmap,
+                     mesh::Topology& topology);
 
 /// Create a form from a form_create function returning a pointer to a
 /// ufc_form, taking care of memory allocation.

@@ -147,11 +147,11 @@ int main(int argc, char* argv[])
 
   const Eigen::Array<std::int32_t, Eigen::Dynamic, 1> bdofs_left
       = fem::locate_dofs_geometrical(
-          *V, [](auto x) { return x.row(0) < DBL_EPSILON; });
+          {*V}, [](auto x) { return x.row(0) < DBL_EPSILON; });
 
   const Eigen::Array<std::int32_t, Eigen::Dynamic, 1> bdofs_right
       = fem::locate_dofs_geometrical(
-          *V, [](auto& x) { return (x.row(0) - 1.0).abs() < DBL_EPSILON; });
+          {*V}, [](auto& x) { return (x.row(0) - 1.0).abs() < DBL_EPSILON; });
 
   std::vector<std::shared_ptr<const fem::DirichletBC>> bcs
       = {std::make_shared<fem::DirichletBC>(u_clamp, bdofs_left),

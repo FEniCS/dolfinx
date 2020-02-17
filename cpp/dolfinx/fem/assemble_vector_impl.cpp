@@ -219,25 +219,26 @@ void _lift_bc_exterior_facets(
                            array.data() + array.size());
   }
 
-  // Iterate over all cells
+  // Iterate over owned facets
   const mesh::Topology& topology = mesh.topology();
   std::shared_ptr<const graph::AdjacencyList<std::int32_t>> connectivity
       = topology.connectivity(tdim - 1, tdim);
   assert(connectivity);
-  for (const mesh::MeshEntity& facet : mesh::MeshRange(mesh, tdim - 1))
+  auto map = topology.index_map(tdim - 1);
+  assert(map);
+  for (int f = 0; f < map->size_local(); ++f)
   {
     // Move to next facet if this one is an interior facet
-    if (topology.size_global({tdim - 1, tdim}, facet.index()) != 1)
+    if (topology.interior_facets()[f])
       continue;
 
-    // FIXME: sort out ghosts
-
     // Create attached cell
-    const std::int32_t cell_index = facet.entities(tdim)[0];
+    const std::int32_t cell_index = connectivity->links(f)[0];
 
     // Get local index of facet with respect to the cell
     mesh::MeshEntity cell(mesh, tdim, cell_index);
-    const int local_facet = cell.index(facet);
+    mesh::MeshEntity _facet(mesh, tdim - 1, f);
+    const int local_facet = cell.index(_facet);
     const int orient = 0;
 
     // Get dof maps for cell
@@ -440,20 +441,23 @@ void fem::impl::assemble_exterior_facets(
   const Eigen::Array<double, Eigen::Dynamic, 3, Eigen::RowMajor>& x_g
       = mesh.geometry().points();
 
-  // Creat data structures used in assembly
+  // Create data structures used in assembly
   Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
       coordinate_dofs(num_dofs_g, gdim);
   Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1> be;
-  for (const auto& facet_index : active_facets)
-  {
-    const mesh::MeshEntity facet(mesh, tdim - 1, facet_index);
 
+  auto f_to_c = mesh.topology().connectivity(tdim - 1, tdim);
+  assert(f_to_c);
+  for (const auto& f : active_facets)
+  {
     // Get index of first attached cell
-    const std::int32_t cell_index = facet.entities(tdim)[0];
+    assert(f_to_c->num_links(f) > 0);
+    const std::int32_t cell_index = f_to_c->links(f)[0];
 
     // FIXME: See if creation of MeshEntity can be removed
     // Get local index of facet with respect to the cell
     const mesh::MeshEntity cell(mesh, tdim, cell_index);
+    const mesh::MeshEntity facet(mesh, tdim - 1, f);
     const int local_facet = cell.index(facet);
     const int orient = 0;
 
@@ -513,20 +517,18 @@ void fem::impl::assemble_interior_facets(
   Eigen::Array<PetscScalar, Eigen::Dynamic, 1> coeff_array(2 * offsets.back());
   assert(offsets.back() == coeffs.cols());
 
-  for (const auto& facet_index : active_facets)
+  auto f_to_c = mesh.topology().connectivity(tdim - 1, tdim);
+  assert(f_to_c);
+  for (const auto& f : active_facets)
   {
-    const mesh::MeshEntity facet(mesh, tdim - 1, facet_index);
-
-    // assert(facet.num_global_entities(tdim) == 2);
-    // TODO: check ghosting sanity?
-
     // Get attached cell indices
-    const std::int32_t cell_index0 = facet.entities(tdim)[0];
-    const std::int32_t cell_index1 = facet.entities(tdim)[1];
+    auto cells = f_to_c->links(f);
+    assert(cells.rows() == 2);
 
     // Create attached cells
-    const mesh::MeshEntity cell0(mesh, tdim, facet.entities(tdim)[0]);
-    const mesh::MeshEntity cell1(mesh, tdim, facet.entities(tdim)[1]);
+    const mesh::MeshEntity cell0(mesh, tdim, cells[0]);
+    const mesh::MeshEntity cell1(mesh, tdim, cells[1]);
+    const mesh::MeshEntity facet(mesh, tdim - 1, f);
     const int local_facet[2] = {cell0.index(facet), cell1.index(facet)};
 
     // Orientation
@@ -537,15 +539,15 @@ void fem::impl::assemble_interior_facets(
     {
       for (int j = 0; j < gdim; ++j)
       {
-        coordinate_dofs(i, j) = x_g(cell_g[pos_g[cell_index0] + i], j);
+        coordinate_dofs(i, j) = x_g(cell_g[pos_g[cells[0]] + i], j);
         coordinate_dofs(i + num_dofs_g, j)
-            = x_g(cell_g[pos_g[cell_index1] + i], j);
+            = x_g(cell_g[pos_g[cells[1]] + i], j);
       }
     }
 
     // Get dofmaps for cell
-    auto dmap0 = dofmap.cell_dofs(cell_index0);
-    auto dmap1 = dofmap.cell_dofs(cell_index1);
+    auto dmap0 = dofmap.cell_dofs(cells[0]);
+    auto dmap1 = dofmap.cell_dofs(cells[1]);
 
     // Get cell geometry
     Eigen::Map<const Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic,
@@ -559,8 +561,8 @@ void fem::impl::assemble_interior_facets(
 
     // Layout for the restricted coefficients is flattened
     // w[coefficient][restriction][dof]
-    auto coeff_cell0 = coeffs.row(cell_index0);
-    auto coeff_cell1 = coeffs.row(cell_index1);
+    auto coeff_cell0 = coeffs.row(cells[0]);
+    auto coeff_cell1 = coeffs.row(cells[1]);
 
     // Loop over coefficients
     for (std::size_t i = 0; i < offsets.size() - 1; ++i)

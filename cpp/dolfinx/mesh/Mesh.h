@@ -219,14 +219,7 @@ public:
   /// Polynomial degree of the mesh geometry
   std::int32_t degree() const;
 
-  /// @todo This should be part of Topology?
-  /// Cell type for this Mesh
-  mesh::CellType cell_type() const;
-
 private:
-  // Cell type
-  mesh::CellType _cell_type;
-
   // Mesh topology
   std::unique_ptr<Topology> _topology;
 

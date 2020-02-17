@@ -383,11 +383,11 @@ def test_mesh_topology_against_fiat(mesh_factory, ghost_mode=cpp.mesh.GhostMode.
     func, args = mesh_factory
     xfail_ghosted_quads_hexes(func, ghost_mode)
     mesh = func(*args)
-    if not is_simplex(mesh.cell_type):
+    if not is_simplex(mesh.topology.cell_type):
         return
 
     # Create FIAT cell
-    cell_name = cpp.mesh.to_string(mesh.cell_type)
+    cell_name = cpp.mesh.to_string(mesh.topology.cell_type)
     fiat_cell = FIAT.ufc_cell(cell_name)
 
     # Initialize all mesh entities and connectivities
@@ -443,15 +443,20 @@ def test_small_mesh():
 
 
 def test_topology_surface(cube):
+    tdim = cube.topology.dim
+    cube.create_connectivity(tdim - 1, tdim)
+
     surface_vertex_markers = cube.topology.on_boundary(0)
     assert surface_vertex_markers
-    n = 3
+
     cube.create_entities(1)
     cube.create_connectivity(2, 1)
     surface_edge_markers = cube.topology.on_boundary(1)
     assert surface_edge_markers
+
     surface_facet_markers = cube.topology.on_boundary(2)
     sf_count = np.count_nonzero(np.array(surface_facet_markers))
+    n = 3
     assert MPI.sum(cube.mpi_comm(), sf_count) == n * n * 12
 
 
@@ -466,7 +471,7 @@ def test_distribute_mesh(subset_comm, tempdir, mesh_factory, graph_partitioner):
     func, args = mesh_factory
     mesh = func(*args)
 
-    if not is_simplex(mesh.cell_type):
+    if not is_simplex(mesh.topology.cell_type):
         return
 
     encoding = XDMFFile.Encoding.HDF5
@@ -490,7 +495,7 @@ def test_distribute_mesh(subset_comm, tempdir, mesh_factory, graph_partitioner):
                                               cells, indices, ghost_mode,
                                               partition_data)
 
-    assert(mesh.cell_type == dist_mesh.cell_type)
+    assert(mesh.topology.cell_type == dist_mesh.topology.cell_type)
     assert mesh.num_entities_global(0) == dist_mesh.num_entities_global(0)
     dim = dist_mesh.topology.dim
     assert mesh.num_entities_global(dim) == dist_mesh.num_entities_global(dim)
@@ -501,7 +506,7 @@ def test_custom_partition(tempdir, mesh_factory):
     func, args = mesh_factory
     mesh = func(*args)
 
-    if not is_simplex(mesh.cell_type):
+    if not is_simplex(mesh.topology.cell_type):
         return
 
     comm = mesh.mpi_comm()
@@ -525,7 +530,7 @@ def test_custom_partition(tempdir, mesh_factory):
                                               cells, global_indices,
                                               ghost_mode, cell_partition)
 
-    assert(mesh.cell_type == dist_mesh.cell_type)
+    assert(mesh.topology.cell_type == dist_mesh.topology.cell_type)
     assert mesh.num_entities_global(0) == dist_mesh.num_entities_global(0)
     dim = dist_mesh.topology.dim
     assert mesh.num_entities_global(dim) == dist_mesh.num_entities_global(dim)

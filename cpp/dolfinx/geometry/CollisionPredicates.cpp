@@ -43,7 +43,7 @@ Eigen::Vector3d cross_product(const Eigen::Vector3d& a,
 bool CollisionPredicates::collides(const mesh::MeshEntity& entity,
                                    const Eigen::Vector3d& point)
 {
-  mesh::CellType cell_type = entity.mesh().cell_type();
+  mesh::CellType cell_type = entity.mesh().topology().cell_type();
 
   // Intersection is only implemented for simplex meshes
   if (!mesh::is_simplex(cell_type)
@@ -93,8 +93,8 @@ bool CollisionPredicates::collides(const mesh::MeshEntity& entity_0,
                                    const mesh::MeshEntity& entity_1)
 {
   // Intersection is only implemented for simplex meshes
-  if (!mesh::is_simplex(entity_0.mesh().cell_type())
-      or !mesh::is_simplex(entity_1.mesh().cell_type()))
+  if (!mesh::is_simplex(entity_0.mesh().topology().cell_type())
+      or !mesh::is_simplex(entity_1.mesh().topology().cell_type()))
   {
     throw std::runtime_error(
         "Cannot intersect cell and point. "
