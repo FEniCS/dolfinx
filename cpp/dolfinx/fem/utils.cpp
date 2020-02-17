@@ -247,6 +247,7 @@ la::PETScMatrix fem::create_matrix_block(
       {
         patterns[row].push_back(
             std::make_unique<la::SparsityPattern>(mesh.mpi_comm(), index_maps));
+        patterns[row].back()->assemble();
       }
     }
   }
@@ -275,10 +276,11 @@ la::PETScMatrix fem::create_matrix_block(
     {
       auto map = V[d][i]->dofmap()->index_map;
       const std::vector<std::int64_t> global = map->global_indices(false);
-      for (auto global_index : global)
+      for (std::int64_t global_index : global)
       {
-        std::int64_t index = get_global_index(index_maps[d], i, global_index);
-        _maps[d].push_back(index);
+        const std::int64_t offset
+            = get_global_offset(index_maps[d], i, global_index);
+        _maps[d].push_back(global_index + offset);
       }
     }
   }
@@ -358,9 +360,9 @@ fem::create_vector_block(const std::vector<const common::IndexMap*>& maps)
     {
       for (int k = 0; k < bs; ++k)
       {
-        std::int64_t global_index
-            = get_global_index(maps, i, bs * field_ghosts[j] + k);
-        ghosts.push_back(global_index);
+        const std::int64_t offset
+            = get_global_offset(maps, i, bs * field_ghosts[j] + k);
+        ghosts.push_back(bs * field_ghosts[j] + k + offset);
       }
     }
   }
@@ -398,15 +400,15 @@ fem::create_vector_nest(const std::vector<const common::IndexMap*>& maps)
   return la::PETScVector(y, false);
 }
 //-----------------------------------------------------------------------------
-std::int64_t
-dolfinx::fem::get_global_index(const std::vector<const common::IndexMap*>& maps,
-                               const int field, const int index)
+std::int64_t dolfinx::fem::get_global_offset(
+    const std::vector<const common::IndexMap*>& maps, const int field,
+    const std::int64_t index)
 {
   // FIXME: handle/check block size > 1
 
   // Get process that owns global index
   const int bs = maps[field]->block_size;
-  int owner = maps[field]->owner(index / bs);
+  const int owner = maps[field]->owner(index / bs);
 
   // Offset from lower rank processes
   std::size_t offset = 0;
@@ -426,7 +428,7 @@ dolfinx::fem::get_global_index(const std::vector<const common::IndexMap*>& maps,
               * maps[i]->block_size;
   }
 
-  return index + offset;
+  return offset;
 }
 //-----------------------------------------------------------------------------
 fem::ElementDofLayout

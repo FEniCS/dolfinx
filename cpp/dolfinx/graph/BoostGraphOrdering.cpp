@@ -7,7 +7,7 @@
 #define BOOST_NO_HASH
 
 #include "BoostGraphOrdering.h"
-#include "Graph.h"
+#include "AdjacencyList.h"
 #include <boost/graph/adjacency_list.hpp>
 #include <boost/graph/compressed_sparse_row_graph.hpp>
 #include <boost/graph/cuthill_mckee_ordering.hpp>
@@ -21,75 +21,22 @@ namespace
 {
 //-----------------------------------------------------------------------------
 template <typename T, typename X>
-T build_undirected_graph(const X& graph)
-{
-  common::Timer timer("Build Boost undirected graph");
-
-  // Graph size
-  const std::size_t n = graph.size();
-
-  // Build Boost graph
-  T boost_graph(n);
-  typename X::const_iterator vertex;
-  dolfinx::graph::graph_set_type::const_iterator edge;
-  for (vertex = graph.begin(); vertex != graph.end(); ++vertex)
-  {
-    const std::size_t vertex_index = vertex - graph.begin();
-    for (edge = vertex->begin(); edge != vertex->end(); ++edge)
-    {
-      if (vertex_index < *edge)
-        boost::add_edge(vertex_index, *edge, boost_graph);
-    }
-  }
-
-  return boost_graph;
-}
-//-----------------------------------------------------------------------------
-template <typename T, typename X>
-T build_directed_graph(const X& graph)
-{
-  common::Timer timer("Build Boost directed graph");
-
-  // Graph size
-  const std::size_t n = graph.size();
-
-  // Build Boost graph
-  T boost_graph(n);
-  typename X::const_iterator vertex;
-  dolfinx::graph::graph_set_type::const_iterator edge;
-  for (vertex = graph.begin(); vertex != graph.end(); ++vertex)
-  {
-    const std::size_t vertex_index = vertex - graph.begin();
-    for (edge = vertex->begin(); edge != vertex->end(); ++edge)
-    {
-      if (vertex_index != *edge)
-        boost::add_edge(vertex_index, *edge, boost_graph);
-    }
-  }
-
-  return boost_graph;
-}
-//-----------------------------------------------------------------------------
-template <typename T, typename X>
-T build_csr_directed_graph(const X& graph)
+T build_csr_directed_graph(const graph::AdjacencyList<X>& graph)
 {
   common::Timer timer("Build Boost CSR graph");
 
-  // Count number of edges
-  dolfinx::graph::Graph::const_iterator vertex;
-  std::size_t num_edges = 0;
-  for (vertex = graph.begin(); vertex != graph.end(); ++vertex)
-    num_edges += vertex->size();
-
   // Build list of graph edges
   std::vector<std::pair<std::size_t, std::size_t>> edges;
-  edges.reserve(num_edges);
-  for (vertex = graph.begin(); vertex != graph.end(); ++vertex)
-    for (auto edge = vertex->cbegin(); edge != vertex->cend(); ++edge)
-      edges.push_back(std::pair(vertex - graph.begin(), *edge));
+  edges.reserve(graph.array().rows());
+  for (int v = 0; v < graph.num_nodes(); ++v)
+  {
+    auto links = graph.links(v);
+    for (int e = 0; e < links.rows(); ++e)
+      edges.push_back({v, links[e]});
+  }
 
   // Number of vertices
-  const std::size_t n = graph.size();
+  const std::size_t n = graph.num_nodes();
 
   // Build and return Boost graph
   return T(boost::edges_are_unsorted_multi_pass, edges.begin(), edges.end(), n);
@@ -99,15 +46,14 @@ T build_csr_directed_graph(const X& graph)
 } // namespace
 
 //-----------------------------------------------------------------------------
-std::vector<int>
-dolfinx::graph::BoostGraphOrdering::compute_cuthill_mckee(const Graph& graph,
-                                                         bool reverse)
+std::vector<int> dolfinx::graph::BoostGraphOrdering::compute_cuthill_mckee(
+    const graph::AdjacencyList<std::int32_t>& graph, bool reverse)
 {
   common::Timer timer(
       "Boost Cuthill-McKee graph ordering (from dolfinx::Graph)");
 
   // Number of vertices
-  const std::size_t n = graph.size();
+  const std::size_t n = graph.num_nodes();
 
   // Typedef for Boost compressed sparse row graph
   typedef boost::compressed_sparse_row_graph<boost::directedS> BoostGraph;
