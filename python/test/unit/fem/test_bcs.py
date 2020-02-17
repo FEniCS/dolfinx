@@ -18,11 +18,18 @@ def test_locate_dofs_geometrical():
     dofs = dolfinx.fem.locate_dofs_geometrical(
         (W.sub(0), V), lambda x: np.isclose(x.T, [0, 0, 0]).all(axis=1))
 
+    # Collect dofs from all processes (does not matter that the numbering
+    # is local to each process for this test)
+    all_dofs = np.vstack(dolfinx.MPI.comm_world.allgather(dofs))
+
     # Check only one dof pair is returned
-    assert len(dofs) == 1
-    coords_W = W.tabulate_dof_coordinates()
-    # Check correct dof returned in W
-    assert np.isclose(coords_W[dofs[0][0]], [0, 0, 0]).all()
-    # Check correct dof returned in V
-    coords_V = V.tabulate_dof_coordinates()
-    assert np.isclose(coords_V[dofs[0][1]], [0, 0, 0]).all()
+    assert len(all_dofs) == 1
+
+    # On process with the dof
+    if len(dofs) == 1:
+        coords_W = W.tabulate_dof_coordinates()
+        # Check correct dof returned in W
+        assert np.isclose(coords_W[dofs[0][0]], [0, 0, 0]).all()
+        # Check correct dof returned in V
+        coords_V = V.tabulate_dof_coordinates()
+        assert np.isclose(coords_V[dofs[0][1]], [0, 0, 0]).all()
