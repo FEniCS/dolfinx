@@ -31,10 +31,10 @@ def test_locate_dofs_geometrical():
     # Check only one dof pair is returned
     assert len(all_dofs) == 1
 
-    # On process with the dof
+    # On process with the dof pair
     if len(dofs) == 1:
-        coords_W = W.tabulate_dof_coordinates()
         # Check correct dof returned in W
+        coords_W = W.tabulate_dof_coordinates()
         assert np.isclose(coords_W[dofs[0][0]], [0, 0, 0]).all()
         # Check correct dof returned in V
         coords_V = V.tabulate_dof_coordinates()
