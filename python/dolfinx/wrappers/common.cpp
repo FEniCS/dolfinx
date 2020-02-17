@@ -65,6 +65,7 @@ void common(py::module& m)
       .def_property_readonly("ghosts", &dolfinx::common::IndexMap::ghosts,
                              py::return_value_policy::reference_internal,
                              "Return list of ghost indices")
+      .def("global_indices", &dolfinx::common::IndexMap::global_indices)
       .def("compute_forward_processes",
            &dolfinx::common::IndexMap::compute_forward_processes,
            "Return mapping from local indices to remote processes where "
@@ -112,7 +113,7 @@ void common(py::module& m)
                     for (std::size_t i = 0; i < args.size(); ++i)
                       argv[i] = const_cast<char*>(args[i].data());
                     dolfinx::common::SubSystemsManager::init_petsc(args.size(),
-                                                                  argv.data());
+                                                                   argv.data());
                   })
       .def_static("init_logging",
                   [](std::vector<std::string> args) {
@@ -144,11 +145,12 @@ void mpi(py::module& m)
       m, "MPICommWrapper",
       "DOLFIN is compiled without support for mpi4py. This object can be "
       "passed into DOLFIN as an MPI communicator, but is not an mpi4py comm.")
-      .def("underlying_comm",
-           [](MPICommWrapper self) { return (std::uintptr_t)self.get(); },
-           "Return the underlying MPI_Comm cast to std::uintptr_t. "
-           "The return value may or may not make sense depending on the MPI "
-           "implementation.");
+      .def(
+          "underlying_comm",
+          [](MPICommWrapper self) { return (std::uintptr_t)self.get(); },
+          "Return the underlying MPI_Comm cast to std::uintptr_t. "
+          "The return value may or may not make sense depending on the MPI "
+          "implementation.");
 #endif
 
   // dolfinx::MPI
