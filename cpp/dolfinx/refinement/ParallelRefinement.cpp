@@ -357,11 +357,9 @@ mesh::Mesh ParallelRefinement::partition(bool redistribute) const
                   points.leftCols(_mesh.geometry().dim()), cells,
                   global_cell_indices, _mesh.get_ghost_mode());
 
-  const int tdim  = mesh.topology().dim();
+  const int tdim = mesh.topology().dim();
   mesh.create_entities(tdim - 1);
   mesh.create_connectivity(tdim - 1, tdim);
-  // mesh::DistributedMeshTools::init_facet_cell_connections(mesh.mpi_comm(),
-  //                                                         mesh.topology());
 
   return mesh;
 }

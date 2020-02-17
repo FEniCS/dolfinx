@@ -818,8 +818,6 @@ mesh::Mesh Partitioning::build_from_partition(
   // Initialize required entities and connectivity
   mesh.create_entities(tdim - 1);
   mesh.create_connectivity(tdim - 1, tdim);
-  // DistributedMeshTools::init_facet_cell_connections(mesh.mpi_comm(),
-  //                                                   mesh.topology());
 
   return mesh;
 }
