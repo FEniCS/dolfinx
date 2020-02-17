@@ -151,9 +151,7 @@ build_basic_dofmap(const mesh::Topology& topology,
     // Handle cell index separately because cell.entities(D) doesn't work.
     if (needs_entities[D])
     {
-      const std::vector<std::int64_t>& global_indices
-          = topology.global_indices(D);
-      entity_indices_global[D][0] = global_indices[c];
+      entity_indices_global[D][0] = global_indices[D][c];
       entity_indices_local[D][0] = c;
     }
 

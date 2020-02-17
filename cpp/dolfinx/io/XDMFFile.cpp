@@ -947,7 +947,7 @@ void XDMFFile::write_mesh_value_collection(
   value_data.reserve(num_cells);
 
   const std::vector<std::int64_t>& global_indices
-      = mesh->topology().global_indices(0);
+      = mesh->topology().global_indices_old(0);
   mesh->create_connectivity(tdim, cell_dim);
   for (auto& p : values)
   {
@@ -1095,7 +1095,7 @@ XDMFFile::read_mesh_value_collection(std::shared_ptr<const mesh::Mesh> mesh,
   std::vector<std::vector<std::int32_t>> recv_entities(num_processes);
 
   const std::vector<std::int64_t>& global_indices
-      = mesh->topology().global_indices(0);
+      = mesh->topology().global_indices_old(0);
   std::vector<std::int32_t> v(num_verts_per_entity);
   for (auto& m : mesh::MeshRange(*mesh, dim, mesh::MeshRangeType::ALL))
   {

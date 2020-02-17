@@ -309,7 +309,7 @@ void mesh::Ordering::order_simplex(mesh::Mesh& mesh)
 
   // Get global vertex numbering
   const std::vector<std::int64_t>& global_vertex_indices
-      = mesh.topology().global_indices(0);
+      = mesh.topology().global_indices_old(0);
 
   const int num_edges = mesh::cell_num_entities(mesh.topology().cell_type(), 1);
   const int num_faces
@@ -386,7 +386,7 @@ bool mesh::Ordering::is_ordered_simplex(const mesh::Mesh& mesh)
 
   // Get global vertex numbering
   const std::vector<std::int64_t>& global_vertex_indices
-      = mesh.topology().global_indices(0);
+      = mesh.topology().global_indices_old(0);
 
   // Check if all cells are ordered
   for (const mesh::MeshEntity& cell : mesh::MeshRange(mesh, tdim))

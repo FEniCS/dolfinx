@@ -84,7 +84,7 @@ public:
   /// @todo Remove this function. Use IndexMap instead
   /// Get local-to-global index map for entities of topological
   /// dimension d
-  const std::vector<std::int64_t>& global_indices(int d) const;
+  const std::vector<std::int64_t>& global_indices_old(int d) const;
 
   /// Set the map from shared entities (local index) to processes that
   /// share the entity

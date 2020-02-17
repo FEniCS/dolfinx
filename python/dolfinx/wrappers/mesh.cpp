@@ -140,7 +140,7 @@ void mesh(py::module& m)
       .def(
           "global_indices",
           [](const dolfinx::mesh::Topology& self, int dim) {
-            auto& indices = self.global_indices(dim);
+            auto& indices = self.global_indices_old(dim);
             return py::array_t<std::int64_t>(indices.size(), indices.data(),
                                              py::none());
           },
