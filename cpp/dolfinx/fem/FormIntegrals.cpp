@@ -230,7 +230,7 @@ void FormIntegrals::set_default_domains(const mesh::Mesh& mesh)
     // Loop over owned facets
     for (int f = 0; f < num_facets; ++f)
     {
-      if (topology.interior_facets()[f])
+      if (interior_facets[f])
         inf_integrals[0].active_entities.push_back(f);
     }
   }
