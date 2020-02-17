@@ -75,7 +75,7 @@ def MeshValueCollection(value_type, mesh, dim=None):
 
 
 def ufl_cell(self):
-    return ufl.Cell(self.cell_name(), geometric_dimension=self.geometry.dim)
+    return ufl.Cell(self.topology.cell_name(), geometric_dimension=self.geometry.dim)
 
 
 def ufl_coordinate_element(self):
