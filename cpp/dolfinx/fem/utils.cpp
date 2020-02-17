@@ -651,14 +651,6 @@ fem::Form fem::create_form(
       = fem::get_cmap_from_ufc_cmap(*cmap);
   std::free(cmap);
 
-  // auto foo
-  //     = fem::Form(spaces, integrals,
-  //                 FormCoefficients(fem::get_coeffs_from_ufc_form(ufc_form)),
-  //                 fem::get_constants_from_ufc_form(ufc_form), coord_mapping);
-
-  // std::cout << "Testing G" << std::endl;
-  // return foo;
-
   return fem::Form(spaces, integrals,
                    FormCoefficients(fem::get_coeffs_from_ufc_form(ufc_form)),
                    fem::get_constants_from_ufc_form(ufc_form), coord_mapping);
@@ -674,10 +666,8 @@ fem::get_cmap_from_ufc_cmap(const ufc_coordinate_mapping& ufc_cmap)
          {tetrahedron, mesh::CellType::tetrahedron},
          {quadrilateral, mesh::CellType::quadrilateral},
          {hexahedron, mesh::CellType::hexahedron}};
-  const auto it = ufc_to_cell.find(ufc_cmap.cell_shape);
-  assert(it != ufc_to_cell.end());
 
-  mesh::CellType cell_type = it->second;
+  const mesh::CellType cell_type = ufc_to_cell.at(ufc_cmap.cell_shape);
   assert(ufc_cmap.topological_dimension == mesh::cell_dim(cell_type));
 
   return std::make_shared<fem::CoordinateElement>(
