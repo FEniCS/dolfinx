@@ -322,12 +322,6 @@ void fem::impl::assemble_interior_facets(
 
     // Create attached cells
     auto cells = c->links(facet_index);
-    if (c->num_links(facet_index) == 1)
-    {
-      std::cout << "Problem: " << MPI::rank(MPI_COMM_WORLD) << ", "
-                << facet_index << std::endl;
-    }
-
     assert(cells.rows() == 2);
     const mesh::MeshEntity cell0(mesh, tdim, facet.entities(tdim)[0]);
     const mesh::MeshEntity cell1(mesh, tdim, facet.entities(tdim)[1]);
