@@ -1733,6 +1733,7 @@ XDMFFile::read_mesh_function(std::shared_ptr<const mesh::Mesh> mesh,
   const std::int64_t num_entities_global
       = xdmf_utils::get_num_cells(topology_node);
 
+  mesh->create_entities(dim);
   assert(mesh->num_entities_global(dim) == num_entities_global);
 
   boost::filesystem::path xdmf_filename(_filename);
