@@ -74,10 +74,14 @@ locate_dofs_topological(
 ///
 /// @attention This function is slower than the topological version
 ///
-/// @param[in] V The function (sub)space on which degrees of freedom
-///     will be located
+/// @param[in] V The function (sub)space(s) on which degrees of freedom
+///     will be located. The spaces must share the same mesh and
+///     element type.
 /// @param[in] marker Function marking tabulated degrees of freedom
-/// @return Array of local indices of located degrees of freedom
+/// @return Array of local DOF indices in the spaces V[0] (and V[1] is
+///     two spaces are passed in). If two spaces are passed in, the (i,
+///     0) entry is the DOF index in the space V[0] and (i, 1) is the
+///     correspinding DOF entry in the space V[1].
 Eigen::Array<std::int32_t, Eigen::Dynamic, Eigen::Dynamic>
 locate_dofs_geometrical(
     const std::vector<std::reference_wrapper<function::FunctionSpace>>& V,

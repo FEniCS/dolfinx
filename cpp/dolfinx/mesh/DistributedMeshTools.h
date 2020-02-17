@@ -32,12 +32,6 @@ class Topology;
 class DistributedMeshTools
 {
 public:
-  /// Compute number of cells connected to each facet (globally). Facets
-  /// on internal boundaries will be connected to two cells (with the
-  /// cells residing on neighboring processes). The facets and the
-  /// facet-cell connectivity must exist before calling this function.
-  static void init_facet_cell_connections(MPI_Comm comm, Topology& topology);
-
   /// Reorder the values according to explicit global indices,
   /// distributing evenly across processes
   /// @param[in] mpi_comm MPI Communicator

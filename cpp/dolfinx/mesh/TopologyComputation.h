@@ -42,7 +42,6 @@ public:
   /// connectivity (tdim, dim)
   /// @param[in] comm MPI Communicator
   /// @param[in] topology Mesh topology
-  /// @param[in] cell_type Cell type
   /// @param[in] dim The dimension of the entities to create
   /// @return Tuple of (cell-entity connectivity, entity-vertex
   ///   connectivity, index map, shared entities). If the entities
@@ -52,13 +51,11 @@ public:
                     std::shared_ptr<graph::AdjacencyList<std::int32_t>>,
                     std::shared_ptr<common::IndexMap>,
                     std::map<std::int32_t, std::set<std::int32_t>>>
-  compute_entities(MPI_Comm comm, const Topology& topology,
-                   mesh::CellType cell_type, int dim);
+  compute_entities(MPI_Comm comm, const Topology& topology, int dim);
 
   /// Compute connectivity (d0 -> d1) for given pair of topological
   /// dimensions
   /// @param[in] topology The topology
-  /// @param[in] cell_type The cell type
   /// @param[in] d0 The dimension of the nodes in the adjacency list
   /// @param[in] d1 The dimension of the edges in the adjacency list
   /// @returns The connectivities [(d0, d1), (d1, d0)] if they are
@@ -67,8 +64,7 @@ public:
   ///   required as part of computing (d0, d1), the (d1, d0) is returned
   ///   as the second entry. The second entry is otherwise nullptr.
   static std::array<std::shared_ptr<graph::AdjacencyList<std::int32_t>>, 2>
-  compute_connectivity(const Topology& topology, CellType cell_type, int d0,
-                       int d1);
+  compute_connectivity(const Topology& topology, int d0, int d1);
 };
 } // namespace mesh
 } // namespace dolfinx

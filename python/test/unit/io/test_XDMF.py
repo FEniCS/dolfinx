@@ -145,7 +145,7 @@ def test_read_mesh_data(tempdir, tdim, n):
 
     mesh2 = Mesh(MPI.comm_world, cell_type, points, cells, indices, ghost_mode)
 
-    assert(mesh.cell_type == mesh2.cell_type)
+    assert(mesh.topology.cell_type == mesh2.topology.cell_type)
     assert mesh.num_entities_global(0) == mesh2.num_entities_global(0)
     dim = mesh.topology.dim
     assert mesh.num_entities_global(dim) == mesh2.num_entities_global(dim)
@@ -642,7 +642,7 @@ def test_append_and_load_mesh_functions(tempdir, encoding, data_type):
         vf.values[:] = mesh.topology.global_indices(0)[:]
         ff.values[:] = mesh.topology.global_indices(dim - 1)[:]
         cf.values[:] = mesh.topology.global_indices(dim)[:]
-        filename = os.path.join(tempdir, "appended_mf_{0:d}_{1:s}.xdmf".format(dim, str(mesh.cell_type)))
+        filename = os.path.join(tempdir, "appended_mf_{0:d}_{1:s}.xdmf".format(dim, str(mesh.topology.cell_type)))
         with XDMFFile(mesh.mpi_comm(), filename, encoding=encoding) as xdmf:
             xdmf.write(mesh)
             xdmf.write(vf)

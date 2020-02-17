@@ -260,7 +260,7 @@ class FunctionSpace(ufl.FunctionSpace):
         cpp_element = cpp.fem.FiniteElement(ufc_element)
 
         ufc_dofmap = fem.dofmap.make_ufc_dofmap(ffi.cast("uintptr_t", ufc_dofmap_ptr))
-        cpp_dofmap = cpp.fem.create_dofmap(ufc_dofmap, mesh)
+        cpp_dofmap = cpp.fem.create_dofmap(mesh.mpi_comm(), ufc_dofmap, mesh.topology)
 
         # Initialize the cpp.FunctionSpace
         self._cpp_object = cpp.function.FunctionSpace(mesh, cpp_element, cpp_dofmap)
