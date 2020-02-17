@@ -396,9 +396,9 @@ Eigen::ArrayXd mesh::inradius(const mesh::Mesh& mesh,
   // Get cell dimension
   const int d = mesh::cell_dim(type);
   const mesh::Topology& topology = mesh.topology();
-  assert(topology.connectivity(d, d - 1));
-  const graph::AdjacencyList<std::int32_t>& connectivity
-      = *topology.connectivity(d, d - 1);
+  mesh.create_entities(d - 1);
+  auto connectivity = topology.connectivity(d, d - 1);
+  assert(connectivity);
 
   const Eigen::ArrayXd volumes = mesh::volume_entities(mesh, entities, d);
 
@@ -412,7 +412,7 @@ Eigen::ArrayXd mesh::inradius(const mesh::Mesh& mesh,
       continue;
     }
 
-    auto facets = connectivity.links(entities[c]);
+    auto facets = connectivity->links(entities[c]);
     for (int i = 0; i <= d; i++)
       facet_list[i] = facets[i];
     const double A = volume_entities_tmpl<Eigen::Array<double, 4, 1>>(
@@ -702,7 +702,6 @@ mesh::compute_marked_boundary_entities(
   // count)
   const std::vector<bool> on_boundary0 = mesh.topology().on_boundary(0);
   std::vector<std::int32_t> boundary_vertex(mesh.num_entities(0), -1);
-  assert(on_boundary0.size() == boundary_vertex.size());
   int count = 0;
   for (std::size_t i = 0; i < on_boundary0.size(); ++i)
   {

@@ -146,6 +146,7 @@ la::SparsityPattern dolfinx::fem::create_sparsity_pattern(const Form& a)
   {
 
     mesh.create_entities(mesh.topology().dim() - 1);
+    mesh.create_connectivity(mesh.topology().dim() - 1, mesh.topology().dim());
     SparsityPatternBuilder::interior_facets(pattern, mesh.topology(),
                                             {{dofmaps[0], dofmaps[1]}});
   }
@@ -153,6 +154,7 @@ la::SparsityPattern dolfinx::fem::create_sparsity_pattern(const Form& a)
   if (a.integrals().num_integrals(fem::FormIntegrals::Type::exterior_facet) > 0)
   {
     mesh.create_entities(mesh.topology().dim() - 1);
+    mesh.create_connectivity(mesh.topology().dim() - 1, mesh.topology().dim());
     SparsityPatternBuilder::exterior_facets(pattern, mesh.topology(),
                                             {{dofmaps[0], dofmaps[1]}});
   }
@@ -571,7 +573,6 @@ fem::Form fem::create_form(
     assert(spaces[i]->element());
     std::unique_ptr<ufc_finite_element, decltype(free)*> ufc_element(
         ufc_form.create_finite_element(i), free);
-
     assert(ufc_element);
     if (std::string(ufc_element->signature)
         != spaces[i]->element()->signature())
@@ -583,6 +584,7 @@ fem::Form fem::create_form(
 
   // Get list of integral IDs, and load tabulate tensor into memory for each
   FormIntegrals integrals;
+
   std::vector<int> cell_integral_ids(ufc_form.num_cell_integrals);
   ufc_form.get_cell_integral_ids(cell_integral_ids.data());
   for (int id : cell_integral_ids)
@@ -592,6 +594,19 @@ fem::Form fem::create_form(
     integrals.set_tabulate_tensor(FormIntegrals::Type::cell, id,
                                   cell_integral->tabulate_tensor);
     std::free(cell_integral);
+  }
+
+  // FIXME: Can this be handled better?
+  // FIXME: Handle forms with no space
+  if (ufc_form.num_exterior_facet_integrals > 0
+      or ufc_form.num_interior_facet_integrals > 0)
+  {
+    if (!spaces.empty())
+    {
+      auto mesh = spaces[0]->mesh();
+      const int tdim = mesh->topology().dim();
+      spaces[0]->mesh()->create_entities(tdim - 1);
+    }
   }
 
   std::vector<int> exterior_facet_integral_ids(
@@ -617,6 +632,7 @@ fem::Form fem::create_form(
     assert(interior_facet_integral);
     integrals.set_tabulate_tensor(FormIntegrals::Type::interior_facet, id,
                                   interior_facet_integral->tabulate_tensor);
+
     std::free(interior_facet_integral);
   }
 
@@ -650,10 +666,8 @@ fem::get_cmap_from_ufc_cmap(const ufc_coordinate_mapping& ufc_cmap)
          {tetrahedron, mesh::CellType::tetrahedron},
          {quadrilateral, mesh::CellType::quadrilateral},
          {hexahedron, mesh::CellType::hexahedron}};
-  const auto it = ufc_to_cell.find(ufc_cmap.cell_shape);
-  assert(it != ufc_to_cell.end());
 
-  mesh::CellType cell_type = it->second;
+  const mesh::CellType cell_type = ufc_to_cell.at(ufc_cmap.cell_shape);
   assert(ufc_cmap.topological_dimension == mesh::cell_dim(cell_type));
 
   return std::make_shared<fem::CoordinateElement>(
