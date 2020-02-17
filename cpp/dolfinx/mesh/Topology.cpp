@@ -32,6 +32,18 @@ std::vector<bool> mesh::compute_interior_facets(const Topology& topology)
     assert(num_cells0[f] == 1 or num_cells0[f] == 2);
   }
 
+  int count0 = 0;
+  int count1 = 0;
+  for (std::size_t i = 0; i < num_cells0.size(); ++i)
+  {
+    if (num_cells0[i] == 2)
+      ++count0;
+    if (num_cells0[i] == 1)
+      ++count1;
+  }
+  if (MPI::rank(MPI_COMM_WORLD) == 1)
+    std::cout << "Num local: " << count0 << ", " << count1 << std::endl;
+
   // Get number of connected cells for each ghost facet
   std::vector<int> num_cells1(map->num_ghosts(), 0);
   for (int f = 0; f < map->num_ghosts(); ++f)
@@ -55,11 +67,25 @@ std::vector<bool> mesh::compute_interior_facets(const Topology& topology)
   std::vector<bool> interior_facet(num_cells0.size(), false);
   for (int f = 0; f < map->size_local(); ++f)
   {
+    if (MPI::rank(MPI_COMM_WORLD) == 1)
+      std::cout << "owned: " << owned[f] << std::endl;
+
     const int num_cells = num_cells0[f] + owned[f];
     if (num_cells > 1)
       interior_facet[f] = true;
   }
 
+  int count = 0;
+  for (std::size_t i = 0; i < interior_facet.size(); ++i)
+  {
+    if (interior_facet[i])
+      ++count;
+  }
+  if (MPI::rank(MPI_COMM_WORLD) == 0)
+  {
+    std::cout << "Num facets: " << num_cells0.size() << std::endl;
+    std::cout << "Num iterior facets: " << count << std::endl;
+  }
   return interior_facet;
 }
 //-----------------------------------------------------------------------------
@@ -129,16 +155,21 @@ std::vector<bool> Topology::on_boundary(int dim) const
     throw std::runtime_error("Facet-cell connectivity missing");
 
   assert(_index_map[dim]);
-  std::vector<bool> marker(
-      _index_map[dim]->size_local() + _index_map[dim]->num_ghosts(), false);
-  const int num_facets
-      = _index_map[tdim - 1]->size_local() + _index_map[tdim - 1]->num_ghosts();
+  // std::vector<bool> marker(
+  //     _index_map[dim]->size_local() + _index_map[dim]->num_ghosts(), false);
+  // const int num_facets
+  //     = _index_map[tdim - 1]->size_local() + _index_map[tdim -
+  //     1]->num_ghosts();
+  std::vector<bool> marker(_index_map[dim]->size_local(), false);
+  const int num_facets = _index_map[tdim - 1]->size_local();
 
   // Special case for facets
+  assert(_interior_facets);
   if (dim == tdim - 1)
   {
     for (int i = 0; i < num_facets; ++i)
     {
+      assert(i < (int)_interior_facets->size());
       if (!(*_interior_facets)[i])
         marker[i] = true;
     }
@@ -159,6 +190,7 @@ std::vector<bool> Topology::on_boundary(int dim) const
   // Iterate over all facets, selecting only those with one cell attached
   for (int i = 0; i < num_facets; ++i)
   {
+    assert(i < (int)_interior_facets->size());
     if (!(*_interior_facets)[i])
     {
       for (int j = fe_offsets[i]; j < fe_offsets[i + 1]; ++j)
