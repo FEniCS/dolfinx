@@ -214,30 +214,31 @@ void fem::impl::assemble_exterior_facets(
 
   // Iterate over all facets
   PetscErrorCode ierr;
-  for (const auto& facet_index : active_facets)
+  auto f_to_c = mesh.topology().connectivity(tdim - 1, tdim);
+  assert(f_to_c);
+  for (const auto& f : active_facets)
   {
-    const mesh::MeshEntity facet(mesh, tdim - 1, facet_index);
-    // assert(facet.num_global_entities(tdim) == 1);
-
     // Create attached cell
-    const mesh::MeshEntity cell(mesh, tdim, facet.entities(tdim)[0]);
+    auto cells = f_to_c->links(f);
+    assert(cells.rows() == 1);
+    const mesh::MeshEntity cell(mesh, tdim, cells[0]);
 
     // Get local index of facet with respect to the cell
+    const mesh::MeshEntity facet(mesh, tdim - 1, f);
     const int local_facet = cell.index(facet);
     const int orient = 0;
 
     // Get cell vertex coordinates
-    const int cell_index = cell.index();
     for (int i = 0; i < num_dofs_g; ++i)
       for (int j = 0; j < gdim; ++j)
-        coordinate_dofs(i, j) = x_g(cell_g[pos_g[cell_index] + i], j);
+        coordinate_dofs(i, j) = x_g(cell_g[pos_g[cells[0]] + i], j);
 
     // Get dof maps for cell
-    auto dmap0 = dofmap0.cell_dofs(cell_index);
-    auto dmap1 = dofmap1.cell_dofs(cell_index);
+    auto dmap0 = dofmap0.cell_dofs(cells[0]);
+    auto dmap1 = dofmap1.cell_dofs(cells[0]);
 
     // Tabulate tensor
-    auto coeff_cell = coeffs.row(cell_index);
+    auto coeff_cell = coeffs.row(cells[0]);
     Ae.setZero(dmap0.size(), dmap1.size());
     fn(Ae.data(), coeff_cell.data(), constant_values.data(),
        coordinate_dofs.data(), &local_facet, &orient);
@@ -312,14 +313,16 @@ void fem::impl::assemble_interior_facets(
 
   // Iterate over all facets
   PetscErrorCode ierr;
+  auto c = mesh.topology().connectivity(tdim - 1, tdim);
+  assert(c);
   for (const auto& facet_index : active_facets)
   {
     const mesh::MeshEntity facet(mesh, tdim - 1, facet_index);
-    // assert(facet.num_global_entities(tdim) == 2);
-
-    // TODO: check ghosting sanity?
+    assert(mesh.topology().interior_facets()[facet_index]);
 
     // Create attached cells
+    auto cells = c->links(facet_index);
+    assert(cells.rows() == 2);
     const mesh::MeshEntity cell0(mesh, tdim, facet.entities(tdim)[0]);
     const mesh::MeshEntity cell1(mesh, tdim, facet.entities(tdim)[1]);
 
