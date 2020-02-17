@@ -37,9 +37,12 @@ std::vector<bool> mesh::compute_interior_facets(const Topology& topology)
     // TEST: For facet-based ghosting, an un-owned facet should be
     // connected to only one facet
     // if (num_cells1[f] > 1)
-    //   std::cout << "Problem with ghosting" << std::endl;
+    // {
+    //   throw std::runtime_error("!!!!!!!!!!");
+    //   std::cout << "!!! Problem with ghosting" << std::endl;
+    // }
     // else
-    //   std::cout << "Facet as expectec" << std::endl;
+    //   std::cout << "Facet as expected" << std::endl;
     assert(num_cells1[f] == 1 or num_cells1[f] == 2);
   }
 
@@ -53,7 +56,7 @@ std::vector<bool> mesh::compute_interior_facets(const Topology& topology)
   for (std::size_t f = 0; f < num_cells0.size(); ++f)
   {
     assert(c->num_links(f) == 1 or c->num_links(f) == 2);
-    num_cells0[f] = (c->num_links(f) + owned[f]) > 0 ? 1 : 0;
+    num_cells0[f] = (c->num_links(f) + owned[f]) > 1 ? 1 : 0;
   }
 
   // Send owned data to ghosts, and receive ghost data from owner
@@ -128,12 +131,18 @@ std::vector<bool> Topology::on_boundary(int dim) const
                              + std::to_string(dim));
   }
 
+  if (!_interior_facets)
+  {
+    throw std::runtime_error(
+        "Facets have not been marked for interior/exterior.");
+  }
+
   std::shared_ptr<const graph::AdjacencyList<std::int32_t>>
       connectivity_facet_cell = connectivity(tdim - 1, tdim);
   if (!connectivity_facet_cell)
     throw std::runtime_error("Facet-cell connectivity missing");
 
-  // TODO: figure out if we can make this for owned entities only
+  // TODO: figure out if we can/should make this for owned entities only
   assert(_index_map[dim]);
   std::vector<bool> marker(
       _index_map[dim]->size_local() + _index_map[dim]->num_ghosts(), false);
@@ -141,7 +150,6 @@ std::vector<bool> Topology::on_boundary(int dim) const
       = _index_map[tdim - 1]->size_local() + _index_map[tdim - 1]->num_ghosts();
 
   // Special case for facets
-  assert(_interior_facets);
   if (dim == tdim - 1)
   {
     for (int i = 0; i < num_facets; ++i)
@@ -164,7 +172,8 @@ std::vector<bool> Topology::on_boundary(int dim) const
   const Eigen::Array<std::int32_t, Eigen::Dynamic, 1>& fe_indices
       = connectivity_facet_entity->array();
 
-  // Iterate over all facets, selecting only those with one cell attached
+  // Iterate over all facets, selecting only those with one cell
+  // attached
   for (int i = 0; i < num_facets; ++i)
   {
     assert(i < (int)_interior_facets->size());
@@ -206,7 +215,6 @@ const std::vector<bool>& Topology::interior_facets() const
 {
   if (!_interior_facets)
     throw std::runtime_error("Facets marker has not been computed.");
-
   return *_interior_facets;
 }
 //-----------------------------------------------------------------------------

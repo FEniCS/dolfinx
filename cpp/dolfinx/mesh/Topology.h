@@ -37,7 +37,7 @@ class Topology;
 /// Compute marker for owned facets that are interior, i.e. are
 /// connected to two cells, one of which might be on a remote process
 /// @param[in] topology The topology
-/// @return Vector with length equal to the number of facets owned by
+/// @return Vector with length equal to the number of facets on this
 ///   this process. True if the ith facet (local index) is interior to
 ///   the domain.
 std::vector<bool> compute_interior_facets(const Topology& topology);
