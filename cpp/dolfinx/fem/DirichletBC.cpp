@@ -215,7 +215,8 @@ Eigen::Array<std::int32_t, Eigen::Dynamic, 2> _locate_dofs_topological(
 
   // Build vector local dofs for each cell facet
   std::vector<Eigen::Array<int, Eigen::Dynamic, 1>> entity_dofs;
-  for (int i = 0; i < mesh::cell_num_entities(mesh.cell_type(), dim); ++i)
+  for (int i = 0; i < mesh::cell_num_entities(mesh.topology().cell_type(), dim);
+       ++i)
   {
     entity_dofs.push_back(
         dofmap0.element_dof_layout->entity_closure_dofs(dim, i));
@@ -297,7 +298,7 @@ _locate_dofs_topological(const function::FunctionSpace& V, const int entity_dim,
   // Prepare an element - local dof layout for dofs on entities of the
   // entity_dim
   const int num_cell_entities
-      = mesh::cell_num_entities(mesh.cell_type(), entity_dim);
+      = mesh::cell_num_entities(mesh.topology().cell_type(), entity_dim);
   std::vector<Eigen::Array<int, Eigen::Dynamic, 1>> entity_dofs;
   for (int i = 0; i < num_cell_entities; ++i)
   {
