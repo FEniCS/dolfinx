@@ -702,8 +702,6 @@ mesh::compute_marked_boundary_entities(
   // count)
   const std::vector<bool> on_boundary0 = mesh.topology().on_boundary(0);
   std::vector<std::int32_t> boundary_vertex(mesh.num_entities(0), -1);
-  std::cout << "XXXX  Sizes: " << on_boundary0.size() << ", "
-            << boundary_vertex.size() << std::endl;
   int count = 0;
   for (std::size_t i = 0; i < on_boundary0.size(); ++i)
   {

@@ -225,10 +225,7 @@ void FormIntegrals::set_default_domains(const mesh::Mesh& mesh)
     mesh.create_connectivity(tdim - 1, tdim);
     assert(topology.index_map(tdim - 1));
     const int num_facets = topology.index_map(tdim - 1)->size_local();
-
-    std::cout << "Test C" << std::endl;
     const std::vector<bool>& interior_facets = topology.interior_facets();
-    std::cout << "Test D" << std::endl;
 
     // Loop over owned facets
     for (int f = 0; f < num_facets; ++f)
