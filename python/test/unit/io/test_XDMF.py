@@ -457,7 +457,8 @@ def test_save_2D_facet_function(tempdir, encoding, data_type, cell_type):
     mf = MeshFunction(dtype_str, mesh, tdim - 1, 0)
     mf.name = "facets"
 
-    global_indices = mesh.topology.global_indices(tdim - 1)
+    map = mesh.topology.index_map(tdim - 1)
+    global_indices = map.global_indices(True)
     mf.values[:] = global_indices[:]
     filename = os.path.join(tempdir, "mf_facet_2D_%s.xdmf" % dtype_str)
 
@@ -481,7 +482,8 @@ def test_save_3D_facet_function(tempdir, encoding, data_type, cell_type):
     mf = MeshFunction(dtype_str, mesh, tdim - 1, 0)
     mf.name = "facets"
 
-    global_indices = mesh.topology.global_indices(tdim - 1)
+    map = mesh.topology.index_map(tdim - 1)
+    global_indices = map.global_indices(True)
     mf.values[:] = global_indices[:]
     filename = os.path.join(tempdir, "mf_facet_3D_%s.xdmf" % dtype_str)
     with XDMFFile(mesh.mpi_comm(), filename, encoding=encoding) as xdmf:

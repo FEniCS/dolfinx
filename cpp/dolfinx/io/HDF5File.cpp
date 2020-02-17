@@ -254,7 +254,8 @@ void HDF5File::write(const mesh::Mesh& mesh, int cell_dim,
   const bool mpi_io = MPI::size(_mpi_comm.comm()) > 1 ? true : false;
   assert(_hdf5_file_id > 0);
 
-  mesh::CellType cell_type = mesh::cell_entity_type(mesh.topology().cell_type(), cell_dim);
+  mesh::CellType cell_type
+      = mesh::cell_entity_type(mesh.topology().cell_type(), cell_dim);
   const graph::AdjacencyList<std::int32_t>& cell_points
       = mesh.coordinate_dofs().entity_points();
 
@@ -911,9 +912,11 @@ void HDF5File::write(const function::Function& u, const std::string name)
   write_data(name + "/x_cell_dofs", x_cell_dofs, global_size, mpi_io);
 
   // Save cell ordering - copy to local vector and cut off ghosts
-  std::vector<std::size_t> cells(mesh.topology().global_indices(tdim).begin(),
-                                 mesh.topology().global_indices(tdim).begin()
-                                     + n_cells);
+  auto map = mesh.topology().index_map(tdim);
+  assert(map);
+  const std::vector<std::int64_t> global_indices = map->global_indices(false);
+  std::vector<std::size_t> cells(global_indices.begin(),
+                                 global_indices.begin() + n_cells);
 
   global_size[0] = mesh.num_entities_global(tdim);
   write_data(name + "/cells", cells, global_size, mpi_io);

@@ -812,9 +812,11 @@ void xdmf_write::add_function(MPI_Comm mpi_comm, pugi::xml_node& xml_node,
                             {num_x_cell_dofs_global, 1}, "UInt");
 
   // Save cell ordering - copy to local vector and cut off ghosts
-  std::vector<std::size_t> cells(mesh.topology().global_indices(tdim).begin(),
-                                 mesh.topology().global_indices(tdim).begin()
-                                     + n_cells);
+  auto map = mesh.topology().index_map(tdim);
+  assert(map);
+  const std::vector<std::int64_t> global_indices = map->global_indices(false);
+  std::vector<std::size_t> cells(global_indices.begin(),
+                                 global_indices.begin() + n_cells);
 
   const std::int64_t num_cells_global = mesh.num_entities_global(tdim);
 
