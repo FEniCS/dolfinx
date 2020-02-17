@@ -444,7 +444,7 @@ def test_small_mesh():
 
 def test_topology_surface(cube):
     tdim = cube.topology.dim
-    cube.create_connectivity(tdim -1, tdim)
+    cube.create_connectivity(tdim - 1, tdim)
 
     surface_vertex_markers = cube.topology.on_boundary(0)
     assert surface_vertex_markers
