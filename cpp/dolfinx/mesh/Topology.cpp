@@ -32,60 +32,90 @@ std::vector<bool> mesh::compute_interior_facets(const Topology& topology)
     assert(num_cells0[f] == 1 or num_cells0[f] == 2);
   }
 
-  int count0 = 0;
-  int count1 = 0;
-  for (std::size_t i = 0; i < num_cells0.size(); ++i)
-  {
-    if (num_cells0[i] == 2)
-      ++count0;
-    if (num_cells0[i] == 1)
-      ++count1;
-  }
-  if (MPI::rank(MPI_COMM_WORLD) == 1)
-    std::cout << "Num local: " << count0 << ", " << count1 << std::endl;
+  // int count0 = 0;
+  // int count1 = 0;
+  // for (std::size_t i = 0; i < num_cells0.size(); ++i)
+  // {
+  //   if (num_cells0[i] == 2)
+  //     ++count0;
+  //   if (num_cells0[i] == 1)
+  //     ++count1;
+  // }
+  // if (MPI::rank(MPI_COMM_WORLD) == 1)
+  //   std::cout << "Num local: " << count0 << ", " << count1 << std::endl;
 
   // Get number of connected cells for each ghost facet
   std::vector<int> num_cells1(map->num_ghosts(), 0);
   for (int f = 0; f < map->num_ghosts(); ++f)
   {
     num_cells1[f] = c->num_links(map->size_local() + f);
-
     // TEST: For facet-based ghosting, an un-owned facet should be
     // connected to only one facet
     // if (num_cells1[f] > 1)
     //   std::cout << "Problem with ghosting" << std::endl;
     // else
     //   std::cout << "Facet as expectec" << std::endl;
-
     assert(num_cells1[f] == 1 or num_cells1[f] == 2);
   }
 
-  // Get data for owner from ghosts
+  // Get data from ghosts
   std::vector<std::int32_t> owned;
   map->scatter_rev(owned, num_cells1, 1, common::IndexMap::Mode::add);
 
-  std::vector<bool> interior_facet(num_cells0.size(), false);
-  for (int f = 0; f < map->size_local(); ++f)
+  for (std::size_t f = 0; f < num_cells0.size(); ++f)
   {
-    if (MPI::rank(MPI_COMM_WORLD) == 1)
-      std::cout << "owned: " << owned[f] << std::endl;
-
+    // if (MPI::rank(MPI_COMM_WORLD) == 1)
+    //   std::cout << "owned: " << owned[f] << std::endl;
     const int num_cells = num_cells0[f] + owned[f];
     if (num_cells > 1)
-      interior_facet[f] = true;
+      num_cells0[f] = 1;
+    else
+      num_cells0[f] = 0;
   }
 
-  int count = 0;
-  for (std::size_t i = 0; i < interior_facet.size(); ++i)
-  {
-    if (interior_facet[i])
-      ++count;
-  }
-  if (MPI::rank(MPI_COMM_WORLD) == 0)
-  {
-    std::cout << "Num facets: " << num_cells0.size() << std::endl;
-    std::cout << "Num iterior facets: " << count << std::endl;
-  }
+  // Send data to ghosts
+  std::vector<std::int32_t> ghost_markers = map->scatter_fwd(num_cells0, 1);
+
+  num_cells0.insert(num_cells0.end(), ghost_markers.begin(),
+                    ghost_markers.end());
+  std::vector<bool> interior_facet(num_cells0.begin(), num_cells0.end());
+  // interior_facet.insert(interior_facet.back(), ghost_markers.begin(),
+  //                       ghost_markers.end());
+
+  // for (std::size_t f = 0; f < map->num_cells0.size()(); ++f)
+  // {
+  //   // if (MPI::rank(MPI_COMM_WORLD) == 1)
+  //   //   std::cout << "owned: " << owned[f] << std::endl;
+  //   const int num_cells = num_cells0[f] + owned[f];
+  //   if (num_cells > 1)
+  //     interior_facet[f] = true;
+  // }
+
+  // for (int f = 0; f < map->size_local(); ++f)
+  // {
+  //   // if (MPI::rank(MPI_COMM_WORLD) == 1)
+  //   //   std::cout << "owned: " << owned[f] << std::endl;
+  //   const int num_cells = num_cells0[f] + owned[f];
+  //   if (num_cells > 1)
+  //     interior_facet[f] = true;
+  // }
+
+  // int count = 0;
+  // for (std::size_t i = 0; i < interior_facet.size(); ++i)
+  // {
+  //   if (interior_facet[i])
+  //     ++count;
+  // }
+
+  // std::vector<int>
+  // if (MPI::rank(MPI_COMM_WORLD) == 0)
+  // {
+  //   std::cout << "Num facets: " << num_cells0.size() << std::endl;
+  //   std::cout << "Num iterior facets: " << count << std::endl;
+  // }
+
+  // Send data to ghosts
+
   return interior_facet;
 }
 //-----------------------------------------------------------------------------
@@ -155,13 +185,12 @@ std::vector<bool> Topology::on_boundary(int dim) const
     throw std::runtime_error("Facet-cell connectivity missing");
 
   assert(_index_map[dim]);
-  // std::vector<bool> marker(
-  //     _index_map[dim]->size_local() + _index_map[dim]->num_ghosts(), false);
-  // const int num_facets
-  //     = _index_map[tdim - 1]->size_local() + _index_map[tdim -
-  //     1]->num_ghosts();
-  std::vector<bool> marker(_index_map[dim]->size_local(), false);
-  const int num_facets = _index_map[tdim - 1]->size_local();
+  std::vector<bool> marker(
+      _index_map[dim]->size_local() + _index_map[dim]->num_ghosts(), false);
+  const int num_facets
+      = _index_map[tdim - 1]->size_local() + _index_map[tdim - 1]->num_ghosts();
+  // std::vector<bool> marker(_index_map[dim]->size_local(), false);
+  // const int num_facets = _index_map[tdim - 1]->size_local();
 
   // Special case for facets
   assert(_interior_facets);
