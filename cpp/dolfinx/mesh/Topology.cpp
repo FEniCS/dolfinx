@@ -1,4 +1,4 @@
-// Copyright (C) 2006-2019 Anders Logg and Garth N. Wells
+// Copyright (C) 2006-2020 Anders Logg and Garth N. Wells
 //
 // This file is part of DOLFINX (https://www.fenicsproject.org)
 //
@@ -17,32 +17,17 @@ using namespace dolfinx::mesh;
 //-----------------------------------------------------------------------------
 std::vector<bool> mesh::compute_interior_facets(const Topology& topology)
 {
+  // NOTE: Getting markers for owned and unowned facets requires and
+  // reverse and forward scatter. It we can work only with owned facets
+  // we would need only a reverse scatter.
+
   const int tdim = topology.dim();
   auto c = topology.connectivity(tdim - 1, tdim);
   if (!c)
     throw std::runtime_error("Facet-cell connectivity has not been computed");
 
-  // Get number of connected cells for each owned facet
   auto map = topology.index_map(tdim - 1);
   assert(map);
-  std::vector<int> num_cells0(map->size_local(), 0);
-  for (int f = 0; f < map->size_local(); ++f)
-  {
-    num_cells0[f] = c->num_links(f);
-    assert(num_cells0[f] == 1 or num_cells0[f] == 2);
-  }
-
-  // int count0 = 0;
-  // int count1 = 0;
-  // for (std::size_t i = 0; i < num_cells0.size(); ++i)
-  // {
-  //   if (num_cells0[i] == 2)
-  //     ++count0;
-  //   if (num_cells0[i] == 1)
-  //     ++count1;
-  // }
-  // if (MPI::rank(MPI_COMM_WORLD) == 1)
-  //   std::cout << "Num local: " << count0 << ", " << count1 << std::endl;
 
   // Get number of connected cells for each ghost facet
   std::vector<int> num_cells1(map->num_ghosts(), 0);
@@ -58,63 +43,27 @@ std::vector<bool> mesh::compute_interior_facets(const Topology& topology)
     assert(num_cells1[f] == 1 or num_cells1[f] == 2);
   }
 
-  // Get data from ghosts
+  // Send my ghost data to owner, and receive data for my data from
+  // remote ghosts
   std::vector<std::int32_t> owned;
   map->scatter_rev(owned, num_cells1, 1, common::IndexMap::Mode::add);
 
+  // Mark owned facets that are connected to two cells
+  std::vector<int> num_cells0(map->size_local(), 0);
   for (std::size_t f = 0; f < num_cells0.size(); ++f)
   {
-    // if (MPI::rank(MPI_COMM_WORLD) == 1)
-    //   std::cout << "owned: " << owned[f] << std::endl;
-    const int num_cells = num_cells0[f] + owned[f];
-    if (num_cells > 1)
-      num_cells0[f] = 1;
-    else
-      num_cells0[f] = 0;
+    assert(c->num_links(f) == 1 or c->num_links(f) == 2);
+    num_cells0[f] = (c->num_links(f) + owned[f]) > 0 ? 1 : 0;
   }
 
-  // Send data to ghosts
-  std::vector<std::int32_t> ghost_markers = map->scatter_fwd(num_cells0, 1);
+  // Send owned data to ghosts, and receive ghost data from owner
+  const std::vector<std::int32_t> ghost_markers
+      = map->scatter_fwd(num_cells0, 1);
 
+  // Copy data, castint 1 -> true and 0 -> false
   num_cells0.insert(num_cells0.end(), ghost_markers.begin(),
                     ghost_markers.end());
   std::vector<bool> interior_facet(num_cells0.begin(), num_cells0.end());
-  // interior_facet.insert(interior_facet.back(), ghost_markers.begin(),
-  //                       ghost_markers.end());
-
-  // for (std::size_t f = 0; f < map->num_cells0.size()(); ++f)
-  // {
-  //   // if (MPI::rank(MPI_COMM_WORLD) == 1)
-  //   //   std::cout << "owned: " << owned[f] << std::endl;
-  //   const int num_cells = num_cells0[f] + owned[f];
-  //   if (num_cells > 1)
-  //     interior_facet[f] = true;
-  // }
-
-  // for (int f = 0; f < map->size_local(); ++f)
-  // {
-  //   // if (MPI::rank(MPI_COMM_WORLD) == 1)
-  //   //   std::cout << "owned: " << owned[f] << std::endl;
-  //   const int num_cells = num_cells0[f] + owned[f];
-  //   if (num_cells > 1)
-  //     interior_facet[f] = true;
-  // }
-
-  // int count = 0;
-  // for (std::size_t i = 0; i < interior_facet.size(); ++i)
-  // {
-  //   if (interior_facet[i])
-  //     ++count;
-  // }
-
-  // std::vector<int>
-  // if (MPI::rank(MPI_COMM_WORLD) == 0)
-  // {
-  //   std::cout << "Num facets: " << num_cells0.size() << std::endl;
-  //   std::cout << "Num iterior facets: " << count << std::endl;
-  // }
-
-  // Send data to ghosts
 
   return interior_facet;
 }
@@ -184,13 +133,12 @@ std::vector<bool> Topology::on_boundary(int dim) const
   if (!connectivity_facet_cell)
     throw std::runtime_error("Facet-cell connectivity missing");
 
+  // TODO: figure out if we can make this for owned entities only
   assert(_index_map[dim]);
   std::vector<bool> marker(
       _index_map[dim]->size_local() + _index_map[dim]->num_ghosts(), false);
   const int num_facets
       = _index_map[tdim - 1]->size_local() + _index_map[tdim - 1]->num_ghosts();
-  // std::vector<bool> marker(_index_map[dim]->size_local(), false);
-  // const int num_facets = _index_map[tdim - 1]->size_local();
 
   // Special case for facets
   assert(_interior_facets);
