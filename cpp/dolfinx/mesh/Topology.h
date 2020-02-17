@@ -145,6 +145,7 @@ private:
 
   // Global indices for mesh entities
   std::vector<std::vector<std::int64_t>> _global_indices;
+  mutable std::map<int, std::vector<std::int64_t>> _global_indices_tmp;
 
   // TODO: Could IndexMap be used here in place of std::map?
   // For entities of a given dimension d, maps each shared entity

@@ -105,8 +105,21 @@ std::shared_ptr<const common::IndexMap> Topology::index_map(int dim) const
 //-----------------------------------------------------------------------------
 const std::vector<std::int64_t>& Topology::global_indices(int d) const
 {
-  assert(d < (int)_global_indices.size());
-  return _global_indices[d];
+  auto it = _global_indices_tmp.find(d);
+  if (it != _global_indices_tmp.end())
+    return it->second;
+  else
+  {
+    auto map = this->index_map(d);
+    assert(map);
+    _global_indices_tmp[d] = map->global_indices(false);
+    return _global_indices_tmp.at(d);
+    // map->global_indices(false);
+    // _global_indices_tmp =
+  }
+
+  // assert(d < (int)_global_indices.size());
+  // return _global_indices[d];
 }
 //-----------------------------------------------------------------------------
 void Topology::set_shared_entities(
