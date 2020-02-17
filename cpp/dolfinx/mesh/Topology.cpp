@@ -105,7 +105,9 @@ std::shared_ptr<const common::IndexMap> Topology::index_map(int dim) const
 //-----------------------------------------------------------------------------
 const std::vector<std::int64_t>& Topology::global_indices(int d) const
 {
-  if (d == 0 or d == this->dim())
+  // if (d == 0 or d == this->dim())
+  //   return _global_indices[d];
+  if (d == 0)
     return _global_indices[d];
 
   auto it = _global_indices_tmp.find(d);
