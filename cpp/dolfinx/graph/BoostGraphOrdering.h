@@ -6,7 +6,6 @@
 
 #pragma once
 
-#include "Graph.h"
 #include <set>
 #include <utility>
 #include <vector>
@@ -17,6 +16,9 @@ namespace dolfinx
 namespace graph
 {
 
+template <typename T>
+class AdjacencyList;
+
 /// This class computes graph re-orderings. It uses Boost Graph.
 
 class BoostGraphOrdering
@@ -25,8 +27,9 @@ class BoostGraphOrdering
 public:
   /// Compute re-ordering (map[old] -> new) using Cuthill-McKee
   /// algorithm
-  static std::vector<int> compute_cuthill_mckee(const Graph& graph,
-                                                bool reverse = false);
+  static std::vector<int>
+  compute_cuthill_mckee(const AdjacencyList<std::int32_t>& graph,
+                        bool reverse = false);
 
   /// Compute re-ordering (map[old] -> new) using Cuthill-McKee
   /// algorithm

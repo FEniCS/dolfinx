@@ -124,50 +124,33 @@ def test_assembly_ds_domains(mesh):
     with w.vector.localForm() as w_local:
         w_local.set(0.5)
 
-    #
     # Assemble matrix
-    #
-
     a = w * ufl.inner(u, v) * (ds(111) + ds(222) + ds(333) + ds(444))
-
     A = dolfinx.fem.assemble_matrix(a)
     A.assemble()
     norm1 = A.norm()
-
     a2 = w * ufl.inner(u, v) * ds
-
     A2 = dolfinx.fem.assemble_matrix(a2)
     A2.assemble()
     norm2 = A2.norm()
-
     assert norm1 == pytest.approx(norm2, 1.0e-12)
 
-    #
     # Assemble vector
-    #
-
     L = ufl.inner(w, v) * (ds(111) + ds(222) + ds(333) + ds(444))
     b = dolfinx.fem.assemble_vector(L)
     b.ghostUpdate(addv=PETSc.InsertMode.ADD, mode=PETSc.ScatterMode.REVERSE)
-
     L2 = ufl.inner(w, v) * ds
     b2 = dolfinx.fem.assemble_vector(L2)
     b2.ghostUpdate(addv=PETSc.InsertMode.ADD, mode=PETSc.ScatterMode.REVERSE)
-
     assert b.norm() == pytest.approx(b2.norm(), 1.0e-12)
 
-    #
     # Assemble scalar
-    #
-
     L = w * (ds(111) + ds(222) + ds(333) + ds(444))
     s = dolfinx.fem.assemble_scalar(L)
     s = dolfinx.MPI.sum(mesh.mpi_comm(), s)
-
     L2 = w * ds
     s2 = dolfinx.fem.assemble_scalar(L2)
     s2 = dolfinx.MPI.sum(mesh.mpi_comm(), s2)
-
     assert (s == pytest.approx(s2, 1.0e-12) and 2.0 == pytest.approx(s, 1.0e-12))
 
 
@@ -182,7 +165,7 @@ def xtest_assembly_dS_domains(mode):
 
 
 @parametrize_ghost_mode
-def test_additivity(mode):
+def xtest_additivity(mode):
     mesh = dolfinx.UnitSquareMesh(dolfinx.MPI.comm_world, 12, 12, ghost_mode=mode)
     V = dolfinx.FunctionSpace(mesh, ("CG", 1))
 
