@@ -73,7 +73,6 @@
 import matplotlib.pyplot as plt
 import numpy as np
 from petsc4py import PETSc
-
 import dolfinx
 import ufl
 from dolfinx import MPI, DirichletBC, Function, FunctionSpace, RectangleMesh
@@ -98,17 +97,20 @@ mesh.geometry.coord_mapping = cmap
 
 
 # Function to mark x = 0, x = 1 and y = 0
-def noslip_boudary(x): return np.logical_or(np.logical_or(np.isclose(x[0], 0.0),
-                                                          np.isclose(x[0], 1.0)),
-                                            np.isclose(x[1], 0.0))
+def noslip_boudary(x):
+    return np.logical_or(np.logical_or(np.isclose(x[0], 0.0),
+                                       np.isclose(x[0], 1.0)),
+                         np.isclose(x[1], 0.0))
 
 
-# Function to the lid (y = 1)
-def lid(x): return np.isclose(x[1], 1.0)
+# Function to mark the lid (y = 1)
+def lid(x):
+    return np.isclose(x[1], 1.0)
 
 
 # Lid velocity
-def lid_velocity_expression(x): return np.stack((np.ones(x.shape[1]), np.zeros(x.shape[1])))
+def lid_velocity_expression(x):
+    return np.stack((np.ones(x.shape[1]), np.zeros(x.shape[1])))
 
 # We define two :py:class:`FunctionSpace
 # <dolfinx.function.FunctionSpace>` instances with different finite
@@ -166,7 +168,7 @@ a_p = [[a[0][0], None],
 # Nested matrix solver
 # ^^^^^^^^^^^^^^^^^^^^
 #
-# We now assembly the bilinear form into a nested matrix `A`, and call
+# We now assemble the bilinear form into a nested matrix `A`, and call
 # the `assemble()` method to communicate shared entries in parallel.
 # Rows and columns in `A` that correspond to degrees-of-freedom with
 # Dirichlet boundary conditions are zeroed and a value of 1 is set on
@@ -207,7 +209,7 @@ dolfinx.fem.assemble.set_bc_nest(b, bcs0)
 # Create nullspace vector
 null_vec = dolfinx.fem.create_vector_nest(L)
 
-# Set velocity part tp zero and the pressure part to a non-zero constant
+# Set velocity part to zero and the pressure part to a non-zero constant
 null_vecs = null_vec.getNestSubVecs()
 null_vecs[0].set(0.0), null_vecs[1].set(1.0)
 
@@ -255,7 +257,7 @@ u, p = Function(V), Function(Q)
 x = PETSc.Vec().createNest([u.vector, p.vector])
 ksp.solve(b, x)
 
-# Norms of the solution vectors be comouted::
+# Norms of the solution vectors are computed::
 
 norm_u_0 = u.vector.norm()
 norm_p_0 = p.vector.norm()
@@ -357,9 +359,6 @@ assert np.isclose(norm_p_1, norm_p_0)
 # ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 #
 # Solve same problem, but now with monolithic matrices and a direct solver
-#
-# .. todo:: The pressure should be pinned via a `DirichletBC` at one
-#           point for the direct solver
 
 # Create LU solver
 ksp = PETSc.KSP().create(mesh.mpi_comm())
@@ -394,19 +393,20 @@ assert np.isclose(norm_p_2, norm_p_0)
 
 # Non-blocked direct solver
 # ^^^^^^^^^^^^^^^^^^^^^^^^^
-# .. todo:: The pressure should be pinned via a `DirichletBC` at one
-#           point for the direct solver
+#
+# Again, solve the same problem but this time with a non-blocked direct
+# solver approach
 
+# Create the function space
 TH = P2 * P1
 W = FunctionSpace(mesh, TH)
 W0 = W.sub(0).collapse()
 
+# No slip boundary condition
 noslip = Function(W0)
 facets = compute_marked_boundary_entities(mesh, 1, noslip_boudary)
-
 dofs = locate_dofs_topological((W.sub(0), V), 1, facets)
 bc0 = DirichletBC(noslip, dofs, W.sub(0))
-
 
 # Driving velocity condition u = (1, 0) on top boundary (y = 1)
 lid_velocity = Function(W0)
@@ -415,11 +415,13 @@ facets = compute_marked_boundary_entities(mesh, 1, lid)
 dofs = locate_dofs_topological((W.sub(0), V), 1, facets)
 bc1 = DirichletBC(lid_velocity, dofs, W.sub(0))
 
-# Pin the pressure at (0, 0)
+# Since for this problem the pressure is only determined up to a constant,
+# we pin the pressure at the point (0, 0)
 zero = Function(Q)
 with zero.vector.localForm() as zero_local:
     zero_local.set(0.0)
-dofs = locate_dofs_geometrical((W.sub(1), Q), lambda x: np.isclose(x.T, [0, 0, 0]).all(axis=1))
+dofs = locate_dofs_geometrical((W.sub(1), Q),
+                               lambda x: np.isclose(x.T, [0, 0, 0]).all(axis=1))
 bc2 = DirichletBC(zero, dofs, W.sub(1))
 
 # Collect Dirichlet boundary conditions
@@ -432,6 +434,7 @@ f = Function(W0)
 a = (inner(grad(u), grad(v)) + inner(p, div(v)) + inner(div(u), q)) * dx
 L = inner(f, v) * dx
 
+# Assemble LHS matrix and RHS vector
 A = dolfinx.fem.assemble_matrix(a, bcs)
 A.assemble()
 b = dolfinx.fem.assemble.assemble_vector(L)
@@ -449,12 +452,15 @@ ksp.setType("preonly")
 ksp.getPC().setType("lu")
 ksp.getPC().setFactorSolverType("superlu_dist")
 
+# Compute the solution
 U = Function(W)
 ksp.solve(b, U.vector)
 
+# Split the mixed solution and collapse
 u = U.sub(0).collapse()
 p = U.sub(1).collapse()
 
+# Compute norms
 norm_u_3 = u.vector.norm()
 norm_p_3 = p.vector.norm()
 if MPI.rank(MPI.comm_world) == 0:
@@ -462,6 +468,7 @@ if MPI.rank(MPI.comm_world) == 0:
     print("(D) Norm of pressure coefficient vector: {}".format(norm_p_3))
 assert np.isclose(norm_u_3, norm_u_0)
 
+# Write the solution to file
 with XDMFFile(MPI.comm_world, "new_velocity.xdmf") as ufile_xdmf:
     u.vector.ghostUpdate(addv=PETSc.InsertMode.INSERT, mode=PETSc.ScatterMode.FORWARD)
     ufile_xdmf.write(u)
