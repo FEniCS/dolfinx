@@ -596,13 +596,17 @@ fem::Form fem::create_form(
     std::free(cell_integral);
   }
 
+  // FIXME: Can this be handled better?
+  // FIXME: Handle forms with no space
   if (ufc_form.num_exterior_facet_integrals > 0
       or ufc_form.num_interior_facet_integrals > 0)
   {
-    assert(!spaces.empty());
-    auto mesh = spaces[0]->mesh();
-    const int tdim = mesh->topology().dim();
-    spaces[0]->mesh()->create_entities(tdim - 1);
+    if (!spaces.empty())
+    {
+      auto mesh = spaces[0]->mesh();
+      const int tdim = mesh->topology().dim();
+      spaces[0]->mesh()->create_entities(tdim - 1);
+    }
   }
 
   std::vector<int> exterior_facet_integral_ids(
@@ -647,7 +651,6 @@ fem::Form fem::create_form(
       = fem::get_cmap_from_ufc_cmap(*cmap);
   std::free(cmap);
 
-
   // auto foo
   //     = fem::Form(spaces, integrals,
   //                 FormCoefficients(fem::get_coeffs_from_ufc_form(ufc_form)),
@@ -658,8 +661,7 @@ fem::Form fem::create_form(
 
   return fem::Form(spaces, integrals,
                    FormCoefficients(fem::get_coeffs_from_ufc_form(ufc_form)),
-                   fem::get_constants_from_ufc_form(ufc_form),
-                   coord_mapping);
+                   fem::get_constants_from_ufc_form(ufc_form), coord_mapping);
 }
 //-----------------------------------------------------------------------------
 std::shared_ptr<const fem::CoordinateElement>
