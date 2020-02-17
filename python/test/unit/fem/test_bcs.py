@@ -1,3 +1,9 @@
+# Copyright (C) 2020 Joseph P. Dean
+#
+# This file is part of DOLFINX (https://www.fenicsproject.org)
+#
+# SPDX-License-Identifier:    LGPL-3.0-or-later
+
 import dolfinx
 import ufl
 import numpy as np
