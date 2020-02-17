@@ -377,7 +377,7 @@ MPI_Comm IndexMap::mpi_comm() const { return _mpi_comm; }
 //----------------------------------------------------------------------------
 MPI_Comm IndexMap::mpi_comm_neighborhood() const { return _neighbour_comm; }
 //----------------------------------------------------------------------------
-void IndexMap::compute_shared_indices()
+std::map<int, std::set<int>> IndexMap::compute_shared_indices()
 {
   std::map<int, std::set<int>> shared_indices;
 
@@ -433,16 +433,22 @@ void IndexMap::compute_shared_indices()
                            fwd_sharing_data, recv_sharing_offsets,
                            recv_sharing_data);
 
-  std::int64_t* ptr = recv_sharing_data.data();
+  // Unpack
   for (int i = 0; i < _ghosts.size(); ++i)
   {
     int idx = size_local() + i;
-    int n = *ptr;
-    ++ptr;
-    std::set<int> procs(ptr, ptr + n);
-    ptr += n;
+    const int np = _ghost_owners[i];
+    int p = neighbours[np];
+    int& rp = recv_sharing_offsets[np];
+    int ns = recv_sharing_data[rp];
+    ++rp;
+    std::set<int> procs(recv_sharing_data.begin() + rp,
+                        recv_sharing_data.begin() + rp + ns);
+    rp += ns;
+    procs.insert(p);
     shared_indices.insert({idx, procs});
   }
+  return shared_indices;
 }
 //-----------------------------------------------------------------------------
 
