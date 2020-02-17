@@ -26,6 +26,16 @@ class IndexMap;
 namespace mesh
 {
 
+class Topology;
+
+/// Compute marker for owned facets that are interior, i.e. are
+/// connected to two cells, one of which might be on a remote process
+/// @param[in] topology The topology
+/// @return Vector with length equal to the number of facets on this
+///   this process. True if the ith facet (local index) is interior to
+///   the domain.
+std::vector<bool> compute_interior_facets(const Topology& topology);
+
 /// Topology stores the topology of a mesh, consisting of mesh entities
 /// and connectivity (incidence relations for the mesh entities). Note
 /// that the mesh entities don't need to be stored, only the number of
@@ -88,12 +98,12 @@ public:
   shared_entities(int dim) const;
 
   /// Marker for entities of dimension dim on the boundary. An entity of
-  /// co-dimension < 0 is on the boundary if it is connected to a boundary
-  /// facet. It is not defined for codimension 0.
+  /// co-dimension < 0 is on the boundary if it is connected to a
+  /// boundary facet. It is not defined for codimension 0.
   /// @param[in] dim Toplogical dimension of the entities to check. It
-  /// must be less than the topological dimension.
+  ///   must be less than the topological dimension.
   /// @return Vector of length equal to number of local entities, with
-  ///          'true' for entities on the boundary and otherwise 'false'.
+  ///   'true' for entities on the boundary and otherwise 'false'.
   std::vector<bool> on_boundary(int dim) const;
 
   /// Return connectivity for given pair of topological dimensions
@@ -108,35 +118,26 @@ public:
   void set_connectivity(std::shared_ptr<graph::AdjacencyList<std::int32_t>> c,
                         int d0, int d1);
 
+  /// Gets markers for owned facets that are interior, i.e. are
+  /// connected to two cells, one of which might be on a remote process
+  /// @return Vector with length equal to the number of facets owned by
+  ///   this process. True if the ith facet (local index) is interior to
+  ///   the domain.
+  const std::vector<bool>& interior_facets() const;
+
+  /// Set markers for owned facets that are interior
+  /// @param[in] interior_facets The marker vector
+  void set_interior_facets(const std::vector<bool>& interior_facets);
+
   /// Return hash based on the hash of cell-vertex connectivity
   size_t hash() const;
-
-  /// Return informal string representation (pretty-print)
-  std::string str(bool verbose) const;
-
-  /// @todo Move this outside of this class
-  /// Set global number of connections for each local entities
-  void set_global_size(std::array<int, 2> d,
-                       const Eigen::Array<std::int32_t, Eigen::Dynamic, 1>&
-                           num_global_connections)
-  {
-    // assert(num_global_connections.size() == _offsets.size() - 1);
-    _num_global_connections(d[0], d[1]) = num_global_connections;
-  }
-
-  /// @todo Can this be removed?
-  /// Return global number of connections for given entity
-  int size_global(std::array<int, 2> d, std::int32_t entity) const
-  {
-    if (_num_global_connections(d[0], d[1]).size() == 0)
-      return _connectivity(d[0], d[1])->num_links(entity);
-    else
-      return _num_global_connections(d[0], d[1])[entity];
-  }
 
   /// Cell type
   /// @return Cell type that th topology is for
   mesh::CellType cell_type() const;
+
+  /// Return informal string representation (pretty-print)
+  std::string str(bool verbose) const;
 
 private:
   // Cell type
@@ -158,11 +159,9 @@ private:
                Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
       _connectivity;
 
-  // TODO: revise
-  // Global number of connections for each entity (possibly not
-  // computed)
-  Eigen::Array<Eigen::Array<std::int32_t, Eigen::Dynamic, 1>, 4, 4>
-      _num_global_connections;
+  // Marker for owned facets, which evaluates to True for facets that
+  // are interior to the domain
+  std::shared_ptr<const std::vector<bool>> _interior_facets;
 };
 } // namespace mesh
 } // namespace dolfinx

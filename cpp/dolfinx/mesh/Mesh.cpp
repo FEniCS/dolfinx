@@ -392,8 +392,9 @@ std::int32_t Mesh::num_entities(int d) const
   auto map = _topology->index_map(d);
   if (!map)
   {
-    throw std::runtime_error(
-        "Cannot get number of mesh entities. Have not been created.");
+    throw std::runtime_error("Cannot get number of mesh entities. Have not "
+                             "been created for dimension "
+                             + std::to_string(d) + ".");
   }
   assert(map->block_size == 1);
   return map->size_local() + map->num_ghosts();
@@ -499,6 +500,13 @@ void Mesh::create_connectivity(int d0, int d1) const
     mesh->topology().set_connectivity(c_d0_d1, d0, d1);
   if (c_d1_d0)
     mesh->topology().set_connectivity(c_d1_d0, d1, d0);
+
+  // Special facet handing
+  if (d0 == (_topology->dim() - 1) and d1 == _topology->dim())
+  {
+    std::vector<bool> f = compute_interior_facets(*_topology);
+    _topology->set_interior_facets(f);
+  }
 }
 //-----------------------------------------------------------------------------
 void Mesh::create_connectivity_all() const
