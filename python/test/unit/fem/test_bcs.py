@@ -3,7 +3,10 @@ import ufl
 import numpy as np
 
 
-def test_locate_dofs_geometric():
+def test_locate_dofs_geometrical():
+    """Test that locate_dofs_geometrical when passed two function
+    spaces returns the correct degrees of freedom in each space.
+    """
     mesh = dolfinx.generation.UnitSquareMesh(dolfinx.MPI.comm_world, 4, 8)
     p0, p1 = 1, 2
     P0 = ufl.FiniteElement("Lagrange", mesh.ufl_cell(), p0)
