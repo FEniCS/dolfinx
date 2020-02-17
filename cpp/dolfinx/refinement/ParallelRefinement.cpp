@@ -292,8 +292,8 @@ void ParallelRefinement::create_new_vertices()
 
   // std::vector<std::int64_t>
   // global_indices(_mesh.topology().global_indices(0));
-  const std::vector<std::int64_t> global_indices
-      = mesh.topology().index_map(0)->global_indices(false);
+  std::vector<std::int64_t> global_indices
+      = _mesh.topology().index_map(0)->global_indices(false);
   for (std::size_t i = 0; i < num_new_vertices; i++)
     global_indices.push_back(i + global_offset);
 
