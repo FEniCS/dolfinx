@@ -70,7 +70,6 @@
 #
 # We first import the modules and function that the program uses::
 
-import matplotlib.pyplot as plt
 import numpy as np
 from petsc4py import PETSc
 import dolfinx
@@ -79,9 +78,7 @@ from dolfinx import MPI, DirichletBC, Function, FunctionSpace, RectangleMesh
 from dolfinx.cpp.mesh import CellType
 from dolfinx.fem import locate_dofs_geometrical, locate_dofs_topological
 from dolfinx.io import XDMFFile
-from dolfinx.la import VectorSpaceBasis
 from dolfinx.mesh import compute_marked_boundary_entities
-from dolfinx.plotting import plot
 from ufl import div, dx, grad, inner
 
 # We create a Mesh and attach a coordinate map to the mesh::
