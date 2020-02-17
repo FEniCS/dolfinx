@@ -6,27 +6,21 @@
 
 #pragma once
 
+#include "cell_types.h"
 #include <Eigen/Dense>
 #include <array>
 #include <cstdint>
+#include <dolfinx/graph/AdjacencyList.h>
 #include <map>
 #include <memory>
 #include <set>
 #include <vector>
-
-#include <dolfinx/graph/AdjacencyList.h>
 
 namespace dolfinx
 {
 namespace common
 {
 class IndexMap;
-}
-
-namespace graph
-{
-template <typename T>
-class AdjacencyList;
 }
 
 namespace mesh
@@ -56,7 +50,7 @@ class Topology
 {
 public:
   /// Create empty mesh topology
-  Topology(int dim);
+  Topology(mesh::CellType type);
 
   /// Copy constructor
   Topology(const Topology& topology) = default;
@@ -138,10 +132,17 @@ public:
   /// Return hash based on the hash of cell-vertex connectivity
   size_t hash() const;
 
+  /// Cell type
+  /// @return Cell type that th topology is for
+  mesh::CellType cell_type() const;
+
   /// Return informal string representation (pretty-print)
   std::string str(bool verbose) const;
 
 private:
+  // Cell type
+  mesh::CellType _cell_type;
+
   // Global indices for mesh entities
   std::vector<std::vector<std::int64_t>> _global_indices;
 

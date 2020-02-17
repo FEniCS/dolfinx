@@ -203,7 +203,7 @@ std::vector<std::int64_t> compute_topology_data(const mesh::Mesh& mesh,
 {
   // Create vector to store topology data
   const mesh::CellType entity_cell_type
-      = mesh::cell_entity_type(mesh.cell_type(), cell_dim);
+      = mesh::cell_entity_type(mesh.topology().cell_type(), cell_dim);
   const int num_vertices_per_cell = mesh::num_cell_vertices(entity_cell_type);
 
   std::vector<std::int64_t> topology_data;
@@ -215,7 +215,7 @@ std::vector<std::int64_t> compute_topology_data(const mesh::Mesh& mesh,
   int num_nodes = mesh.coordinate_dofs().entity_points().num_links(0);
   std::vector<std::uint8_t> perm;
   if (cell_dim == mesh.topology().dim())
-    perm = io::cells::dolfin_to_vtk(mesh.cell_type(), num_nodes);
+    perm = io::cells::dolfin_to_vtk(mesh.topology().cell_type(), num_nodes);
   else
     // Lower the permutation level to the appropriate cell type
     // FIXME: Only works for first order geometries
@@ -234,7 +234,7 @@ std::vector<std::int64_t> compute_topology_data(const mesh::Mesh& mesh,
     else
     {
       const int num_vertices = mesh::cell_num_entities(
-          mesh::cell_entity_type(mesh.cell_type(), cell_dim), 0);
+          mesh::cell_entity_type(mesh.topology().cell_type(), cell_dim), 0);
       for (auto& c : mesh::MeshRange(mesh, cell_dim))
       {
         auto entities = c.entities(0);
@@ -262,7 +262,7 @@ std::vector<std::int64_t> compute_topology_data(const mesh::Mesh& mesh,
     {
       // Local-to-global map for point indices
       const int num_vertices = mesh::cell_num_entities(
-          mesh::cell_entity_type(mesh.cell_type(), cell_dim), 0);
+          mesh::cell_entity_type(mesh.topology().cell_type(), cell_dim), 0);
       for (auto& e : mesh::MeshRange(mesh, cell_dim))
       {
         // If not excluded, add to topology
@@ -532,12 +532,12 @@ void xdmf_write::add_topology_data(MPI_Comm comm, pugi::xml_node& xml_node,
   // Get number of cells (global) and vertices per cell from mesh
   const std::int64_t num_cells = mesh.num_entities_global(cell_dim);
   int num_nodes_per_cell = mesh::num_cell_vertices(
-      mesh::cell_entity_type(mesh.cell_type(), cell_dim));
+      mesh::cell_entity_type(mesh.topology().cell_type(), cell_dim));
 
   // Get VTK string for cell type and degree (linear or quadratic)
   const std::size_t degree = mesh.degree();
   const std::string vtk_cell_str = xdmf_utils::vtk_cell_type_str(
-      mesh::cell_entity_type(mesh.cell_type(), cell_dim), degree);
+      mesh::cell_entity_type(mesh.topology().cell_type(), cell_dim), degree);
 
   pugi::xml_node topology_node = xml_node.append_child("Topology");
   assert(topology_node);
@@ -567,7 +567,7 @@ void xdmf_write::add_topology_data(MPI_Comm comm, pugi::xml_node& xml_node,
 
     int num_nodes = mesh.coordinate_dofs().entity_points().num_links(0);
     const std::vector<std::uint8_t> perm
-        = io::cells::dolfin_to_vtk(mesh.cell_type(), num_nodes);
+        = io::cells::dolfin_to_vtk(mesh.topology().cell_type(), num_nodes);
 
     for (std::int32_t c = 0; c < mesh.num_entities(tdim); ++c)
     {

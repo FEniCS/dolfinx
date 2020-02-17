@@ -22,6 +22,7 @@
 #include <dolfinx/mesh/Mesh.h>
 #include <dolfinx/mesh/MeshEntity.h>
 #include <dolfinx/mesh/MeshIterator.h>
+#include <dolfinx/mesh/TopologyComputation.h>
 #include <memory>
 #include <string>
 #include <ufc.h>
@@ -500,23 +501,40 @@ fem::create_element_dof_layout(const ufc_dofmap& dofmap,
                                cell_type, entity_block_size);
 }
 //-----------------------------------------------------------------------------
-fem::DofMap fem::create_dofmap(const ufc_dofmap& ufc_dofmap,
-                               const mesh::Mesh& mesh)
+fem::DofMap fem::create_dofmap(MPI_Comm comm, const ufc_dofmap& ufc_dofmap,
+                               mesh::Topology& topology)
 {
   auto element_dof_layout = std::make_shared<ElementDofLayout>(
-      create_element_dof_layout(ufc_dofmap, mesh.cell_type()));
+      create_element_dof_layout(ufc_dofmap, topology.cell_type()));
   assert(element_dof_layout);
 
   // Create required mesh entities
-  const int D = mesh.topology().dim();
-  for (int d = 0; d <= D; ++d)
+  const int D = topology.dim();
+  for (int d = 0; d < D; ++d)
   {
     if (element_dof_layout->num_entity_dofs(d) > 0)
-      mesh.create_entities(d);
+    {
+      // Create local entities
+      const auto [cell_entity, entity_vertex, index_map, shared_entities]
+          = mesh::TopologyComputation::compute_entities(comm, topology, d);
+      if (cell_entity)
+        topology.set_connectivity(cell_entity, topology.dim(), d);
+      if (entity_vertex)
+        topology.set_connectivity(entity_vertex, d, 0);
+      if (index_map)
+      {
+        topology.set_index_map(d, index_map);
+        // FIXME: remove global_indices
+        topology.set_global_indices(d, index_map->global_indices(false));
+      }
+
+      if (shared_entities.size() > 0)
+        topology.set_shared_entities(d, shared_entities);
+    }
   }
 
-  return DofMapBuilder::build(mesh.mpi_comm(), mesh.topology(),
-                              mesh.cell_type(), element_dof_layout);
+  return DofMapBuilder::build(comm, topology, topology.cell_type(),
+                              element_dof_layout);
 }
 //-----------------------------------------------------------------------------
 std::vector<std::tuple<int, std::string, std::shared_ptr<function::Function>>>
@@ -686,7 +704,8 @@ fem::create_functionspace(ufc_function_space* (*fptr)(void),
   std::shared_ptr<function::FunctionSpace> V
       = std::make_shared<function::FunctionSpace>(
           mesh, std::make_shared<fem::FiniteElement>(*ufc_element),
-          std::make_shared<fem::DofMap>(fem::create_dofmap(*ufc_map, *mesh)));
+          std::make_shared<fem::DofMap>(fem::create_dofmap(
+              mesh->mpi_comm(), *ufc_map, mesh->topology())));
   std::free(ufc_element);
   std::free(ufc_map);
   std::free(space);

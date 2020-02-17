@@ -315,7 +315,7 @@ mesh::Mesh ParallelRefinement::build_local() const
                                 Eigen::RowMajor>>
       topology(_new_cell_topology.data(), num_cells, num_cell_vertices);
 
-  mesh::Mesh mesh(_mesh.mpi_comm(), _mesh.cell_type(),
+  mesh::Mesh mesh(_mesh.mpi_comm(), _mesh.topology().cell_type(),
                   geometry.leftCols(_mesh.geometry().dim()), topology, {},
                   _mesh.get_ghost_mode());
 
@@ -325,7 +325,7 @@ mesh::Mesh ParallelRefinement::build_local() const
 mesh::Mesh ParallelRefinement::partition(bool redistribute) const
 {
   const int num_vertices_per_cell
-      = mesh::cell_num_entities(_mesh.cell_type(), 0);
+      = mesh::cell_num_entities(_mesh.topology().cell_type(), 0);
 
   // Copy data to mesh::LocalMeshData structures
   const std::int32_t num_local_cells
@@ -348,12 +348,12 @@ mesh::Mesh ParallelRefinement::partition(bool redistribute) const
   if (redistribute)
   {
     return mesh::Partitioning::build_distributed_mesh(
-        _mesh.mpi_comm(), _mesh.cell_type(),
+        _mesh.mpi_comm(), _mesh.topology().cell_type(),
         points.leftCols(_mesh.geometry().dim()), cells, global_cell_indices,
         _mesh.get_ghost_mode());
   }
 
-  mesh::Mesh mesh(_mesh.mpi_comm(), _mesh.cell_type(),
+  mesh::Mesh mesh(_mesh.mpi_comm(), _mesh.topology().cell_type(),
                   points.leftCols(_mesh.geometry().dim()), cells,
                   global_cell_indices, _mesh.get_ghost_mode());
 
