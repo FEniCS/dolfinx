@@ -644,11 +644,9 @@ def test_append_and_load_mesh_functions(tempdir, encoding, data_type):
         vf.values[:] = mesh.topology.global_indices(0)[:]
 
         map = mesh.topology.index_map(dim - 1)
-        global_indices = map.global_indices(True)
         ff.values[:] = map.global_indices(True)
 
         map = mesh.topology.index_map(dim)
-        global_indices = map.global_indices(True)
         cf.values[:] = map.global_indices(True)
 
         filename = os.path.join(tempdir, "appended_mf_{0:d}_{1:s}.xdmf".format(dim, str(mesh.topology.cell_type)))
