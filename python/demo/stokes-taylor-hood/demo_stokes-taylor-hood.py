@@ -94,7 +94,7 @@ mesh.geometry.coord_mapping = cmap
 
 
 # Function to mark x = 0, x = 1 and y = 0
-def noslip_boudary(x):
+def noslip_boundary(x):
     return np.logical_or(np.logical_or(np.isclose(x[0], 0.0),
                                        np.isclose(x[0], 1.0)),
                          np.isclose(x[1], 0.0))
@@ -128,7 +128,7 @@ noslip = Function(V)
 with noslip.vector.localForm() as bc_local:
     bc_local.set(0.0)
 
-facets = compute_marked_boundary_entities(mesh, 1, noslip_boudary)
+facets = compute_marked_boundary_entities(mesh, 1, noslip_boundary)
 bc0 = DirichletBC(noslip, locate_dofs_topological(V, 1, facets))
 
 
@@ -401,7 +401,7 @@ W0 = W.sub(0).collapse()
 
 # No slip boundary condition
 noslip = Function(W0)
-facets = compute_marked_boundary_entities(mesh, 1, noslip_boudary)
+facets = compute_marked_boundary_entities(mesh, 1, noslip_boundary)
 dofs = locate_dofs_topological((W.sub(0), V), 1, facets)
 bc0 = DirichletBC(noslip, dofs, W.sub(0))
 
