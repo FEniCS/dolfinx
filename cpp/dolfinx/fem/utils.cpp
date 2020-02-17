@@ -573,7 +573,6 @@ fem::Form fem::create_form(
     assert(spaces[i]->element());
     std::unique_ptr<ufc_finite_element, decltype(free)*> ufc_element(
         ufc_form.create_finite_element(i), free);
-
     assert(ufc_element);
     if (std::string(ufc_element->signature)
         != spaces[i]->element()->signature())
@@ -585,6 +584,7 @@ fem::Form fem::create_form(
 
   // Get list of integral IDs, and load tabulate tensor into memory for each
   FormIntegrals integrals;
+
   std::vector<int> cell_integral_ids(ufc_form.num_cell_integrals);
   ufc_form.get_cell_integral_ids(cell_integral_ids.data());
   for (int id : cell_integral_ids)
@@ -594,6 +594,15 @@ fem::Form fem::create_form(
     integrals.set_tabulate_tensor(FormIntegrals::Type::cell, id,
                                   cell_integral->tabulate_tensor);
     std::free(cell_integral);
+  }
+
+  if (ufc_form.num_exterior_facet_integrals > 0
+      or ufc_form.num_interior_facet_integrals > 0)
+  {
+    assert(!spaces.empty());
+    auto mesh = spaces[0]->mesh();
+    const int tdim = mesh->topology().dim();
+    spaces[0]->mesh()->create_entities(tdim - 1);
   }
 
   std::vector<int> exterior_facet_integral_ids(
@@ -619,6 +628,7 @@ fem::Form fem::create_form(
     assert(interior_facet_integral);
     integrals.set_tabulate_tensor(FormIntegrals::Type::interior_facet, id,
                                   interior_facet_integral->tabulate_tensor);
+
     std::free(interior_facet_integral);
   }
 
@@ -637,9 +647,19 @@ fem::Form fem::create_form(
       = fem::get_cmap_from_ufc_cmap(*cmap);
   std::free(cmap);
 
+
+  // auto foo
+  //     = fem::Form(spaces, integrals,
+  //                 FormCoefficients(fem::get_coeffs_from_ufc_form(ufc_form)),
+  //                 fem::get_constants_from_ufc_form(ufc_form), coord_mapping);
+
+  // std::cout << "Testing G" << std::endl;
+  // return foo;
+
   return fem::Form(spaces, integrals,
                    FormCoefficients(fem::get_coeffs_from_ufc_form(ufc_form)),
-                   fem::get_constants_from_ufc_form(ufc_form), coord_mapping);
+                   fem::get_constants_from_ufc_form(ufc_form),
+                   coord_mapping);
 }
 //-----------------------------------------------------------------------------
 std::shared_ptr<const fem::CoordinateElement>

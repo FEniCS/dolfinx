@@ -394,8 +394,9 @@ std::int32_t Mesh::num_entities(int d) const
   auto map = _topology->index_map(d);
   if (!map)
   {
-    throw std::runtime_error(
-        "Cannot get number of mesh entities. Have not been created.");
+    throw std::runtime_error("Cannot get number of mesh entities. Have not "
+                             "been created for dimension "
+                             + std::to_string(d) + ".");
   }
   assert(map->block_size == 1);
   return map->size_local() + map->num_ghosts();
