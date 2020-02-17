@@ -12,18 +12,13 @@ import pytest
 from petsc4py import PETSc
 
 import ufl
-from dolfinx import MPI, DirichletBC, Function, FunctionSpace, fem, MeshFunction
+from dolfinx import MPI, DirichletBC, Function, FunctionSpace, fem
 from dolfinx.cpp.mesh import GhostMode
 from dolfinx.fem import (apply_lifting, assemble_matrix, assemble_scalar,
                          assemble_vector, locate_dofs_topological, set_bc)
 from dolfinx.io import XDMFFile
 from ufl import (SpatialCoordinate, TestFunction, TrialFunction, div, dx, grad,
                  inner)
-
-
-def boundary(x):
-    return np.logical_or(np.logical_or(x[0] < 1.0e-6, x[0] > 1.0 - 1.0e-6),
-                         np.logical_or(x[1] < 1.0e-6, x[1] > 1.0 - 1.0e-6))
 
 
 @pytest.mark.parametrize("filename", [
@@ -71,10 +66,9 @@ def test_manufactured_poisson(degree, filename, datadir):
     # Create Dirichlet boundary condition
     mesh.create_connectivity_all()
     facetdim = mesh.topology.dim - 1
-    mf = MeshFunction("size_t", mesh, facetdim, 0)
-    mf.mark(boundary, 1)
-    bndry_facets = np.where(mf.values == 1)[0]
-    bdofs = locate_dofs_topological(V, mesh.topology.dim - 1, bndry_facets)
+    bndry_facets = np.where(np.array(
+        mesh.topology.on_boundary(facetdim)) == 1)[0]
+    bdofs = locate_dofs_topological(V, facetdim, bndry_facets)
     assert(len(bdofs) < V.dim())
     bc = DirichletBC(u_bc, bdofs)
 
