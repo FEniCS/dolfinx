@@ -17,9 +17,9 @@ using namespace dolfinx::mesh;
 //-----------------------------------------------------------------------------
 std::vector<bool> mesh::compute_interior_facets(const Topology& topology)
 {
-  // NOTE: Getting markers for owned and unowned facets requires and
-  // reverse and forward scatter. It we can work only with owned facets
-  // we would need only a reverse scatter.
+  // NOTE: Getting markers for owned and unowned facets requires reverse
+  // and forward scatters. It we can work only with owned facets we
+  // would need only a reverse scatter.
 
   const int tdim = topology.dim();
   auto c = topology.connectivity(tdim - 1, tdim);
