@@ -135,10 +135,6 @@ public:
   /// @param[in] interior_facets The marker vector
   void set_interior_facets(const std::vector<bool>& interior_facets);
 
-  /// Set markers for owned facets that are interior
-  /// @param[in] interior_facets The marker vector
-  void set_interior_facets(std::vector<bool>&& interior_facets);
-
   /// Return hash based on the hash of cell-vertex connectivity
   size_t hash() const;
 
@@ -164,7 +160,7 @@ private:
 
   // Marker for owned facets, which evaluates to True for facets that
   // are interior to the domain
-  std::vector<bool> _interior_facets;
+  std::shared_ptr<const std::vector<bool>> _interior_facets;
 };
 } // namespace mesh
 } // namespace dolfinx

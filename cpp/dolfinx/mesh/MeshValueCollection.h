@@ -147,7 +147,9 @@ MeshValueCollection<T>::MeshValueCollection(std::shared_ptr<const Mesh> mesh,
                                             std::size_t dim)
     : _mesh(mesh), _dim(dim)
 {
-  // Do nothing
+  assert(mesh);
+  const int D = mesh->topology().dim();
+  mesh->create_connectivity(dim, D);
 }
 //---------------------------------------------------------------------------
 template <typename T>
@@ -157,6 +159,7 @@ MeshValueCollection<T>::MeshValueCollection(
 {
   assert(_mesh);
   const int D = _mesh->topology().dim();
+  _mesh->create_connectivity(_dim, D);
 
   // Prefetch values of mesh function
   const Eigen::Array<T, Eigen::Dynamic, 1>& mf_values = mesh_function.values();
@@ -174,7 +177,8 @@ MeshValueCollection<T>::MeshValueCollection(
   else
   {
     _mesh->create_connectivity(_dim, D);
-    const graph::AdjacencyList<std::int32_t>& connectivity = _mesh->topology().connectivity(_dim, D);
+    const graph::AdjacencyList<std::int32_t>& connectivity
+        = _mesh->topology().connectivity(_dim, D);
     for (Eigen::Index entity_index = 0; entity_index < mf_values.size();
          ++entity_index)
     {
@@ -228,7 +232,8 @@ MeshValueCollection<T>::operator=(const MeshFunction<T>& mesh_function)
   {
     _mesh->create_connectivity(_dim, D);
     assert(_mesh->topology().connectivity(_dim, D));
-    const graph::AdjacencyList<std::int32_t>& connectivity = *_mesh->topology().connectivity(_dim, D);
+    const graph::AdjacencyList<std::int32_t>& connectivity
+        = *_mesh->topology().connectivity(_dim, D);
     for (Eigen::Index entity_index = 0; entity_index < mf_values.size();
          ++entity_index)
     {
@@ -337,15 +342,15 @@ bool MeshValueCollection<T>::set_value(std::size_t entity_index, const T& value)
   }
 
   // Get mesh connectivity d --> D
-  _mesh->create_connectivity(_dim, D);
-  assert(_mesh->topology().connectivity(_dim, D));
-  const graph::AdjacencyList<std::int32_t>& connectivity = *_mesh->topology().connectivity(_dim, D);
+  auto c_d_D = _mesh->topology().connectivity(_dim, D);
+  if (!c_d_D)
+    throw std::runtime_error("Missing connectivity.");
 
   // Find the cell
-  assert(connectivity.num_links(entity_index) > 0);
+  assert(c_d_D->num_links(entity_index) > 0);
   const MeshEntity entity(*_mesh, _dim, entity_index);
-  const mesh::MeshEntity cell(
-      *_mesh, D, connectivity.links(entity_index)[0]); // choose first
+  const mesh::MeshEntity cell(*_mesh, D,
+                              c_d_D->links(entity_index)[0]); // choose first
 
   // Find the local entity index
   const std::size_t local_entity = cell.index(entity);

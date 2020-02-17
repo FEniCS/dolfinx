@@ -139,7 +139,7 @@ std::vector<bool> Topology::on_boundary(int dim) const
   {
     for (int i = 0; i < num_facets; ++i)
     {
-      if (!_interior_facets[i])
+      if (!(*_interior_facets)[i])
         marker[i] = true;
     }
     return marker;
@@ -159,7 +159,7 @@ std::vector<bool> Topology::on_boundary(int dim) const
   // Iterate over all facets, selecting only those with one cell attached
   for (int i = 0; i < num_facets; ++i)
   {
-    if (!_interior_facets[i])
+    if (!(*_interior_facets)[i])
     {
       for (int j = fe_offsets[i]; j < fe_offsets[i + 1]; ++j)
         marker[fe_indices[j]] = true;
@@ -195,18 +195,15 @@ void Topology::set_connectivity(
 //-----------------------------------------------------------------------------
 const std::vector<bool>& Topology::interior_facets() const
 {
-  assert(!_interior_facets.empty());
-  return _interior_facets;
+  if (!_interior_facets)
+    throw std::runtime_error("Facets marker has not been computed.");
+
+  return *_interior_facets;
 }
 //-----------------------------------------------------------------------------
 void Topology::set_interior_facets(const std::vector<bool>& interior_facets)
 {
-  _interior_facets = interior_facets;
-}
-//-----------------------------------------------------------------------------
-void Topology::set_interior_facets(std::vector<bool>&& interior_facets)
-{
-  _interior_facets = std::move(interior_facets);
+  _interior_facets = std::make_shared<const std::vector<bool>>(interior_facets);
 }
 //-----------------------------------------------------------------------------
 size_t Topology::hash() const
