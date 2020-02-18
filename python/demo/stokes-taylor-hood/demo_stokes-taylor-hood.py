@@ -238,7 +238,7 @@ ksp.getPC().setFieldSplitIS(
 # Set the preconditioners for each block
 ksp_u, ksp_p = ksp.getPC().getFieldSplitSubKSP()
 ksp_u.setType("preonly")
-ksp_u.getPC().setType("hypre")
+ksp_u.getPC().setType("gamg")
 ksp_p.setType("preonly")
 ksp_p.getPC().setType("jacobi")
 
@@ -318,7 +318,7 @@ ksp.getPC().setFieldSplitIS(
 # Configure velocity and pressure sub KSPs
 ksp_u, ksp_p = ksp.getPC().getFieldSplitSubKSP()
 ksp_u.setType("preonly")
-ksp_u.getPC().setType("hypre")
+ksp_u.getPC().setType("gamg")
 ksp_p.setType("preonly")
 ksp_p.getPC().setType("jacobi")
 
