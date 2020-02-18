@@ -80,7 +80,7 @@ get_remote_bcs1(const common::IndexMap& map,
 
   // Build vector of local dof indicies that have been marked by another
   // process
-  std::vector<std::int32_t> dofs = map.global_to_local(dofs_global, false);
+  std::vector<std::int32_t> dofs = map.global_to_local(dofs_received, false);
   dofs.erase(std::remove(dofs.begin(), dofs.end(), -1), dofs.end());
 
   return dofs;
