@@ -75,7 +75,6 @@ std::vector<bool> mesh::compute_interior_facets(const Topology& topology)
 //-----------------------------------------------------------------------------
 Topology::Topology(mesh::CellType type)
     : _cell_type(type), _global_indices(mesh::cell_dim(type) + 1),
-      _shared_entities(mesh::cell_dim(type) + 1),
       _connectivity(mesh::cell_dim(type) + 1, mesh::cell_dim(type) + 1)
 {
   // Do nothing
@@ -107,20 +106,6 @@ const std::vector<std::int64_t>& Topology::global_indices(int d) const
 {
   assert(d < (int)_global_indices.size());
   return _global_indices[d];
-}
-//-----------------------------------------------------------------------------
-void Topology::set_shared_entities(
-    int dim, const std::map<std::int32_t, std::set<std::int32_t>>& entities)
-{
-  assert(dim <= this->dim());
-  _shared_entities[dim] = entities;
-}
-//-----------------------------------------------------------------------------
-const std::map<std::int32_t, std::set<std::int32_t>>&
-Topology::shared_entities(int dim) const
-{
-  assert(dim <= this->dim());
-  return _shared_entities[dim];
 }
 //-----------------------------------------------------------------------------
 std::vector<bool> Topology::on_boundary(int dim) const

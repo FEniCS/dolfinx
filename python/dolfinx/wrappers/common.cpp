@@ -65,10 +65,6 @@ void common(py::module& m)
       .def_property_readonly("ghosts", &dolfinx::common::IndexMap::ghosts,
                              py::return_value_policy::reference_internal,
                              "Return list of ghost indices")
-      .def("compute_forward_processes",
-           &dolfinx::common::IndexMap::compute_forward_processes,
-           "Return mapping from local indices to remote processes where "
-           "each index is ghosted")
       .def("indices", &dolfinx::common::IndexMap::indices,
            "Return array of global indices for all indices on this process");
 
@@ -112,7 +108,7 @@ void common(py::module& m)
                     for (std::size_t i = 0; i < args.size(); ++i)
                       argv[i] = const_cast<char*>(args[i].data());
                     dolfinx::common::SubSystemsManager::init_petsc(args.size(),
-                                                                  argv.data());
+                                                                   argv.data());
                   })
       .def_static("init_logging",
                   [](std::vector<std::string> args) {

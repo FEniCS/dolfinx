@@ -350,21 +350,8 @@ mesh_factories = [
     # FIXME: Add mechanism for testing meshes coming from IO
 ]
 
-mesh_factories_broken_shared_entities = [
-    (UnitIntervalMesh, (
-        MPI.comm_world,
-        8,
-    )),
-    (UnitSquareMesh, (MPI.comm_world, 4, 4)),
-    # FIXME: Problem in test_shared_entities
-    (UnitCubeMesh, (MPI.comm_world, 2, 2, 2)),
-    (UnitSquareMesh, (MPI.comm_world, 4, 4, CellType.quadrilateral)),
-    (UnitCubeMesh, (MPI.comm_world, 2, 2, 2, CellType.hexahedron)),
-]
 
 # FIXME: Fix this xfail
-
-
 def xfail_ghosted_quads_hexes(mesh_factory, ghost_mode):
     """Xfail when mesh_factory on quads/hexes uses
     shared_vertex mode. Needs implementing.
