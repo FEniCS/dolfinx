@@ -147,6 +147,11 @@ void mesh(py::module& m)
           py::return_value_policy::reference_internal)
       .def("shared_entities", &dolfinx::mesh::Topology::shared_entities)
       .def("index_map", &dolfinx::mesh::Topology::index_map)
+      .def_property_readonly("cell_type", &dolfinx::mesh::Topology::cell_type)
+      .def("cell_name",
+           [](const dolfinx::mesh::Topology& self) {
+             return dolfinx::mesh::to_string(self.cell_type());
+           })
       .def("str", &dolfinx::mesh::Topology::str);
 
   // dolfinx::mesh::Mesh
@@ -175,7 +180,7 @@ void mesh(py::module& m)
               return py::array(
                  {size,
                   (std::int32_t)dolfinx::mesh::num_cell_vertices(
-                      self.cell_type())},
+                      self.topology().cell_type())},
                  self.topology().connectivity(tdim, 0)->array().data(),
                  py::none());
            },
@@ -206,12 +211,8 @@ void mesh(py::module& m)
       .def_property_readonly(
           "topology", py::overload_cast<>(&dolfinx::mesh::Mesh::topology),
           "Mesh topology", py::return_value_policy::reference_internal)
-      .def_property_readonly("cell_type", &dolfinx::mesh::Mesh::cell_type)
       .def("ufl_id", &dolfinx::mesh::Mesh::id)
-      .def_property_readonly("id", &dolfinx::mesh::Mesh::id)
-      .def("cell_name", [](const dolfinx::mesh::Mesh& self) {
-        return dolfinx::mesh::to_string(self.cell_type());
-      });
+      .def_property_readonly("id", &dolfinx::mesh::Mesh::id);
 
   // dolfinx::mesh::MeshEntity class
   py::class_<dolfinx::mesh::MeshEntity,

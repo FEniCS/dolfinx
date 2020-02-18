@@ -286,7 +286,7 @@ bool ordered_cell_simplex(
 //-----------------------------------------------------------------------------
 void mesh::Ordering::order_simplex(mesh::Mesh& mesh)
 {
-  if (!mesh::is_simplex(mesh.cell_type()))
+  if (!mesh::is_simplex(mesh.topology().cell_type()))
     throw std::runtime_error("Mesh ordering is for simplex cell types only.");
 
   if (mesh.degree() > 1)
@@ -311,9 +311,10 @@ void mesh::Ordering::order_simplex(mesh::Mesh& mesh)
   const std::vector<std::int64_t>& global_vertex_indices
       = mesh.topology().global_indices(0);
 
-  const int num_edges = mesh::cell_num_entities(mesh.cell_type(), 1);
+  const int num_edges = mesh::cell_num_entities(mesh.topology().cell_type(), 1);
   const int num_faces
-      = (tdim > 1) ? mesh::cell_num_entities(mesh.cell_type(), 2) : -1;
+      = (tdim > 1) ? mesh::cell_num_entities(mesh.topology().cell_type(), 2)
+                   : -1;
 
   std::shared_ptr<graph::AdjacencyList<std::int32_t>> connect_1_0, connect_2_0,
       connect_2_1, connect_3_0, connect_3_1, connect_3_2;
@@ -374,7 +375,7 @@ void mesh::Ordering::order_simplex(mesh::Mesh& mesh)
 //-----------------------------------------------------------------------------
 bool mesh::Ordering::is_ordered_simplex(const mesh::Mesh& mesh)
 {
-  if (!mesh::is_simplex(mesh.cell_type()))
+  if (!mesh::is_simplex(mesh.topology().cell_type()))
   {
     throw std::runtime_error(
         "Mesh ordering check is for simplex cell types only.");

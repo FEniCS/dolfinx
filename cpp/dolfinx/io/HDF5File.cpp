@@ -254,7 +254,8 @@ void HDF5File::write(const mesh::Mesh& mesh, int cell_dim,
   const bool mpi_io = MPI::size(_mpi_comm.comm()) > 1 ? true : false;
   assert(_hdf5_file_id > 0);
 
-  mesh::CellType cell_type = mesh::cell_entity_type(mesh.cell_type(), cell_dim);
+  mesh::CellType cell_type
+      = mesh::cell_entity_type(mesh.topology().cell_type(), cell_dim);
   const graph::AdjacencyList<std::int32_t>& cell_points
       = mesh.coordinate_dofs().entity_points();
 
@@ -311,7 +312,7 @@ void HDF5File::write(const mesh::Mesh& mesh, int cell_dim,
 
       int num_nodes = mesh.coordinate_dofs().entity_points().num_links(0);
       const std::vector<std::uint8_t> perm
-          = io::cells::dolfin_to_vtk(mesh.cell_type(), num_nodes);
+          = io::cells::dolfin_to_vtk(mesh.topology().cell_type(), num_nodes);
 
       for (std::int32_t c = 0; c < mesh.num_entities(tdim); ++c)
       {
@@ -331,7 +332,7 @@ void HDF5File::write(const mesh::Mesh& mesh, int cell_dim,
       // Permutation to VTK ordering
       int num_nodes = mesh.coordinate_dofs().entity_points().num_links(0);
       const std::vector<std::uint8_t> perm
-          = io::cells::dolfin_to_vtk(mesh.cell_type(), num_nodes);
+          = io::cells::dolfin_to_vtk(mesh.topology().cell_type(), num_nodes);
 
       if (cell_dim == tdim or !mpi_io)
       {
@@ -345,7 +346,7 @@ void HDF5File::write(const mesh::Mesh& mesh, int cell_dim,
         else
         {
           const int num_vertices = mesh::cell_num_entities(
-              mesh::cell_entity_type(mesh.cell_type(), cell_dim), 0);
+              mesh::cell_entity_type(mesh.topology().cell_type(), cell_dim), 0);
           for (auto& c : mesh::MeshRange(mesh, cell_dim))
           {
             for (int i = 0; i < num_vertices; ++i)
@@ -415,7 +416,7 @@ void HDF5File::write(const mesh::Mesh& mesh, int cell_dim,
         else
         {
           const int num_vertices = mesh::cell_num_entities(
-              mesh::cell_entity_type(mesh.cell_type(), cell_dim), 0);
+              mesh::cell_entity_type(mesh.topology().cell_type(), cell_dim), 0);
           for (auto& ent : mesh::MeshRange(mesh, cell_dim))
           {
             // If not excluded, add to topology
@@ -1145,7 +1146,7 @@ void HDF5File::write_mesh_value_collection(
       = mesh_values.values();
 
   const mesh::CellType entity_type
-      = mesh::cell_entity_type(mesh->cell_type(), dim);
+      = mesh::cell_entity_type(mesh->topology().cell_type(), dim);
   const std::size_t num_vertices_per_entity
       = (dim == 0) ? 1 : mesh::num_cell_vertices(entity_type);
 
@@ -1205,7 +1206,7 @@ HDF5File::read_mesh_value_collection(std::shared_ptr<const mesh::Mesh> mesh,
       _hdf5_file_id, name, "dimension");
   assert(mesh);
   const mesh::CellType entity_type
-      = mesh::cell_entity_type(mesh->cell_type(), dim);
+      = mesh::cell_entity_type(mesh->topology().cell_type(), dim);
   const std::size_t num_verts_per_entity
       = mesh::cell_num_entities(entity_type, 0);
 

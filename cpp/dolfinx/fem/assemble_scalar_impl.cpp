@@ -253,17 +253,18 @@ PetscScalar fem::impl::assemble_interior_facets(
 
   // Iterate over all facets
   PetscScalar value(0);
-  for (const auto& facet_index : active_facets)
+  auto f_to_c = mesh.topology().connectivity(tdim - 1, tdim);
+  assert(f_to_c);
+  for (const auto& f : active_facets)
   {
-    const mesh::MeshEntity facet(mesh, tdim - 1, facet_index);
-
-    // TODO: check ghosting sanity?
-
     // Create attached cell
-    const mesh::MeshEntity cell0(mesh, tdim, facet.entities(tdim)[0]);
-    const mesh::MeshEntity cell1(mesh, tdim, facet.entities(tdim)[1]);
+    auto cells = f_to_c->links(f);
+    assert(cells.rows() == 2);
+    const mesh::MeshEntity cell0(mesh, tdim, cells[0]);
+    const mesh::MeshEntity cell1(mesh, tdim, cells[1]);
 
     // Get local index of facet with respect to the cell
+    const mesh::MeshEntity facet(mesh, tdim - 1, f);
     const int local_facet[2] = {cell0.index(facet), cell1.index(facet)};
 
     // Get cell vertex coordinates
@@ -286,9 +287,9 @@ PetscScalar fem::impl::assemble_interior_facets(
     {
       for (int j = 0; j < gdim; ++j)
       {
-        coordinate_dofs(i, j) = x_g(cell_g[pos_g[cell_index0] + i], j);
+        coordinate_dofs(i, j) = x_g(cell_g[pos_g[cells[0]] + i], j);
         coordinate_dofs(i + num_dofs_g, j)
-            = x_g(cell_g[pos_g[cell_index1] + i], j);
+            = x_g(cell_g[pos_g[cells[1]] + i], j);
       }
     }
 
@@ -304,8 +305,8 @@ PetscScalar fem::impl::assemble_interior_facets(
 
     // Layout for the restricted coefficients is flattened
     // w[coefficient][restriction][dof]
-    auto coeff_cell0 = coeffs.row(cell_index0);
-    auto coeff_cell1 = coeffs.row(cell_index1);
+    auto coeff_cell0 = coeffs.row(cells[0]);
+    auto coeff_cell1 = coeffs.row(cells[1]);
 
     // Loop over coefficients
     for (std::size_t i = 0; i < offsets.size() - 1; ++i)

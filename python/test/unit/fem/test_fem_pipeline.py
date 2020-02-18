@@ -14,7 +14,7 @@ import ufl
 from dolfinx import MPI, DirichletBC, Function, FunctionSpace, fem, geometry
 from dolfinx.cpp.mesh import GhostMode, Ordering
 from dolfinx.fem import (apply_lifting, assemble_matrix, assemble_scalar,
-                         assemble_vector, locate_dofs_geometrical, set_bc)
+                         assemble_vector, locate_dofs_topological, set_bc)
 from dolfinx.io import XDMFFile
 from dolfinx_utils.test.skips import skip_if_complex, skip_in_parallel
 from petsc4py import PETSc
@@ -64,7 +64,14 @@ def test_manufactured_poisson(degree, filename, datadir):
 
     u_bc = Function(V)
     u_bc.interpolate(lambda x: x[1]**degree)
-    bdofs = locate_dofs_geometrical(V, lambda x: np.full(x.shape[1], True))
+
+    # Create Dirichlet boundary condition
+    mesh.create_connectivity_all()
+    facetdim = mesh.topology.dim - 1
+    bndry_facets = np.where(np.array(
+        mesh.topology.on_boundary(facetdim)) == 1)[0]
+    bdofs = locate_dofs_topological(V, facetdim, bndry_facets)
+    assert(len(bdofs) < V.dim())
     bc = DirichletBC(u_bc, bdofs)
 
     t0 = time.time()
@@ -91,12 +98,12 @@ def test_manufactured_poisson(degree, filename, datadir):
     solver.setType(PETSc.KSP.Type.PREONLY)
     solver.getPC().setType(PETSc.PC.Type.LU)
     solver.setOperators(A)
-
     # Solve
     t0 = time.time()
     uh = Function(V)
     solver.solve(b, uh.vector)
     uh.vector.ghostUpdate(addv=PETSc.InsertMode.INSERT, mode=PETSc.ScatterMode.FORWARD)
+
     t1 = time.time()
     print("Linear solver time:", t1 - t0)
 
@@ -110,6 +117,7 @@ def test_manufactured_poisson(degree, filename, datadir):
     error = assemble_scalar(M)
     error = MPI.sum(mesh.mpi_comm(), error)
     t1 = time.time()
+
     print("Error assembly time:", t1 - t0)
     assert np.absolute(error) < 1.0e-14
 
