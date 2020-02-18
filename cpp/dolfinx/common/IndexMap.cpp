@@ -446,6 +446,7 @@ std::map<int, std::set<int>> IndexMap::compute_shared_indices() const
                         recv_sharing_data.begin() + rp + ns);
     rp += ns;
     procs.insert(p);
+    procs.erase(_myrank);
     shared_indices.insert({idx, procs});
   }
   return shared_indices;
