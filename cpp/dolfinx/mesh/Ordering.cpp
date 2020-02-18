@@ -308,12 +308,15 @@ void mesh::Ordering::order_simplex(mesh::Mesh& mesh)
       = mesh.coordinate_dofs().entity_points();
 
   // Get global vertex numbering
-  const std::vector<std::int64_t>& global_vertex_indices
-      = mesh.topology().global_indices(0);
+  auto map = mesh.topology().index_map(0);
+  assert(map);
+  const std::vector<std::int64_t> global_vertex_indices
+      = map->global_indices(false);
 
   const int num_edges = mesh::cell_num_entities(mesh.topology().cell_type(), 1);
   const int num_faces
-      = (tdim > 1) ? mesh::cell_num_entities(mesh.topology().cell_type(), 2) : -1;
+      = (tdim > 1) ? mesh::cell_num_entities(mesh.topology().cell_type(), 2)
+                   : -1;
 
   std::shared_ptr<graph::AdjacencyList<std::int32_t>> connect_1_0, connect_2_0,
       connect_2_1, connect_3_0, connect_3_1, connect_3_2;
@@ -385,8 +388,10 @@ bool mesh::Ordering::is_ordered_simplex(const mesh::Mesh& mesh)
     return true;
 
   // Get global vertex numbering
-  const std::vector<std::int64_t>& global_vertex_indices
-      = mesh.topology().global_indices(0);
+  auto map = mesh.topology().index_map(0);
+  assert(map);
+  const std::vector<std::int64_t> global_vertex_indices
+      = map->global_indices(false);
 
   // Check if all cells are ordered
   for (const mesh::MeshEntity& cell : mesh::MeshRange(mesh, tdim))

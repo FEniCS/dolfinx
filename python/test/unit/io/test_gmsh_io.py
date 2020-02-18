@@ -1,15 +1,18 @@
-import numpy as np
 import os
-import pytest
 
+import numpy as np
+import pytest
 from mpi4py import MPI as MPI4PY
+
 from dolfinx import MPI, cpp
-from dolfinx.io import VTKFile, HDF5File
+from dolfinx.io import HDF5File, VTKFile
 from dolfinx_utils.test.fixtures import tempdir
+from dolfinx_utils.test.skips import skip_in_parallel
 
 assert(tempdir)
 
 
+@skip_in_parallel
 @pytest.mark.parametrize("order, element", [(1, "tetra"), (2, "tetra10")])
 def test_HDF5_io(tempdir, order, element):
     pytest.importorskip("pygmsh")

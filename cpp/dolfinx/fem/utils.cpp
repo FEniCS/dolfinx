@@ -522,11 +522,7 @@ fem::DofMap fem::create_dofmap(MPI_Comm comm, const ufc_dofmap& ufc_dofmap,
       if (entity_vertex)
         topology.set_connectivity(entity_vertex, d, 0);
       if (index_map)
-      {
         topology.set_index_map(d, index_map);
-        // FIXME: remove global_indices
-        topology.set_global_indices(d, index_map->global_indices(false));
-      }
     }
   }
 

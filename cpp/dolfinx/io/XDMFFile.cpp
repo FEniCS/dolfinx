@@ -926,8 +926,8 @@ void XDMFFile::write_mesh_value_collection(
   const std::size_t degree = 1;
   const std::string vtk_cell_str = xdmf_utils::vtk_cell_type_str(
       mesh::cell_entity_type(mesh->topology().cell_type(), cell_dim), degree);
-  const std::int32_t num_vertices_per_cell
-      = mesh::num_cell_vertices(cell_entity_type(mesh->topology().cell_type(), cell_dim));
+  const std::int32_t num_vertices_per_cell = mesh::num_cell_vertices(
+      cell_entity_type(mesh->topology().cell_type(), cell_dim));
 
   const std::map<std::pair<std::size_t, std::size_t>, T>& values = mvc.values();
   const std::int64_t num_cells = values.size();
@@ -946,8 +946,9 @@ void XDMFFile::write_mesh_value_collection(
   topology_data.reserve(num_cells * num_vertices_per_cell);
   value_data.reserve(num_cells);
 
-  const std::vector<std::int64_t>& global_indices
-      = mesh->topology().global_indices(0);
+  auto map = mesh->topology().index_map(0);
+  assert(map);
+  const std::vector<std::int64_t> global_indices = map->global_indices(false);
   mesh->create_connectivity(tdim, cell_dim);
   for (auto& p : values)
   {
@@ -1094,8 +1095,10 @@ XDMFFile::read_mesh_value_collection(std::shared_ptr<const mesh::Mesh> mesh,
   std::vector<std::vector<std::int32_t>> send_entities(num_processes);
   std::vector<std::vector<std::int32_t>> recv_entities(num_processes);
 
-  const std::vector<std::int64_t>& global_indices
-      = mesh->topology().global_indices(0);
+  auto map = mesh->topology().index_map(0);
+  assert(map);
+  const std::vector<std::int64_t> global_indices = map->global_indices(false);
+
   std::vector<std::int32_t> v(num_verts_per_entity);
   for (auto& m : mesh::MeshRange(*mesh, dim, mesh::MeshRangeType::ALL))
   {

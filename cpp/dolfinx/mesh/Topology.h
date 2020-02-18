@@ -67,8 +67,8 @@ public:
 
   /// @todo Remove this function. Use IndexMap instead
   /// Set the global indices for entities of dimension dim
-  void set_global_indices(int dim,
-                          const std::vector<std::int64_t>& global_indices);
+  void
+  set_global_user_vertices(const std::vector<std::int64_t>& vertex_indices);
 
   /// Set the IndexMap for dimension dim
   /// @warning This is experimental and likely to change
@@ -79,10 +79,10 @@ public:
   /// (Currently partially working)
   std::shared_ptr<const common::IndexMap> index_map(int dim) const;
 
-  /// @todo Remove this function. Use IndexMap instead
+  /// @todo Remove/revise this function. Use IndexMap instead.
   /// Get local-to-global index map for entities of topological
   /// dimension d
-  const std::vector<std::int64_t>& global_indices(int d) const;
+  const std::vector<std::int64_t>& get_global_user_vertices() const;
 
   /// Marker for entities of dimension dim on the boundary. An entity of
   /// co-dimension < 0 is on the boundary if it is connected to a
@@ -130,8 +130,8 @@ private:
   // Cell type
   mesh::CellType _cell_type;
 
-  // Global indices for mesh entities
-  std::vector<std::vector<std::int64_t>> _global_indices;
+  // Global indices for vertices
+  std::vector<std::int64_t> _global_user_vertices;
 
   // IndexMap to store ghosting for each entity dimension
   std::array<std::shared_ptr<const common::IndexMap>, 4> _index_map;
