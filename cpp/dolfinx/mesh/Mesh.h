@@ -80,7 +80,11 @@ public:
   /// @param[in] points Array of geometric points, arranged in global
   ///                   index order
   /// @param[in] cells Array of cells (containing the global point
-  ///                  indices for each cell)
+  ///                  indices for each cell). The ordering of each cell depends on the cell type.
+  ///                  For simplices the FEniCS ordering is following the UFC-convention, see:
+  ///                  https://fossies.org/linux/ufc/doc/manual/ufc-user-manual.pdf
+  ///                  For non-simplices (Quadrilaterals and Hexahedrons) a TensorProduct
+  ///                  ordering, as specified in FIAT.
   /// @param[in] global_cell_indices Array of global cell indices. If
   ///                                not empty, this must be same size
   ///                                as the number of rows in cells. If
