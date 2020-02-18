@@ -290,40 +290,6 @@ IndexMap::global_to_local(const std::vector<std::int64_t>& indices,
   return local;
 }
 //-----------------------------------------------------------------------------
-std::map<std::int32_t, std::set<int>>
-IndexMap::compute_forward_processes() const
-{
-  assert(_neighbour_comm);
-
-  // Get neighbour processes
-  int indegree(-1), outdegree(-2), weighted(-1);
-  MPI_Dist_graph_neighbors_count(_neighbour_comm, &indegree, &outdegree,
-                                 &weighted);
-  assert(indegree == outdegree);
-  std::vector<int> neighbours(indegree), neighbours1(indegree),
-      weights(indegree), weights1(indegree);
-
-  MPI_Dist_graph_neighbors(_neighbour_comm, indegree, neighbours.data(),
-                           weights.data(), outdegree, neighbours1.data(),
-                           weights1.data());
-
-  assert(neighbours.size() == _forward_sizes.size());
-
-  std::map<std::int32_t, std::set<int>> sh_map;
-  int k = 0;
-  // Iterate through each neighbour (i)
-  for (std::size_t i = 0; i < _forward_sizes.size(); ++i)
-  {
-    for (int j = 0; j < _forward_sizes[i]; ++j)
-    {
-      // Add map entry from this index to the process it is shared with
-      sh_map[_forward_indices[k]].insert(neighbours[i]);
-      ++k;
-    }
-  }
-  return sh_map;
-}
-//-----------------------------------------------------------------------------
 int IndexMap::owner(std::int64_t global_index) const
 {
   auto it

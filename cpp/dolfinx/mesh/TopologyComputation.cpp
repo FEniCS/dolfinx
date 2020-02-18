@@ -148,8 +148,7 @@ get_shared_entities(MPI_Comm neighbour_comm,
 /// entities, i.e. the set of all processes which share each shared
 /// entity.
 /// @param[in] comm MPI Communicator
-/// @param[in] shared_vertices Map from local vertex index to list of
-///   processes
+/// @param[in] IndexMap for vertices
 /// @param[in] global_vertex_indices Global indices of vertices
 /// @param[in] entity_list List of entities as 2D array, each entity
 ///   represented by its local vertex indices
@@ -197,8 +196,8 @@ get_local_indexing(
   std::vector<std::vector<std::int64_t>> send_entities(neighbour_size);
   std::vector<std::vector<std::int32_t>> send_index(neighbour_size);
 
-  // Get all "possibly shared" entities, based on vertex sharing Send to
-  // other processes, and see if we get the same back
+  // Get all "possibly shared" entities, based on vertex sharing. Send to
+  // other processes, and see if we get the same back.
 
   // Set of sharing procs for each entity, counting vertex hits
   std::map<int, int> procs;
