@@ -10,6 +10,7 @@
 #include <dolfinx/common/MPI.h>
 #include <map>
 #include <vector>
+#include <set>
 
 namespace dolfinx
 {
@@ -113,6 +114,9 @@ private:
   // Temporary storage for edges that have been recently marked (global
   // index)
   std::vector<std::vector<std::int64_t>> _marked_for_update;
+
+  // Shared edges between processes
+  std::map<std::int32_t, std::set<std::int32_t>> _shared_edges;
 
   // Mapping from global to local index (only for shared edges)
   std::map<std::int64_t, std::int32_t> _global_to_local_edge_map;

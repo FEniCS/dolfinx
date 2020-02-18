@@ -254,7 +254,8 @@ void HDF5File::write(const mesh::Mesh& mesh, int cell_dim,
   const bool mpi_io = MPI::size(_mpi_comm.comm()) > 1 ? true : false;
   assert(_hdf5_file_id > 0);
 
-  mesh::CellType cell_type = mesh::cell_entity_type(mesh.topology().cell_type(), cell_dim);
+  mesh::CellType cell_type
+      = mesh::cell_entity_type(mesh.topology().cell_type(), cell_dim);
   const graph::AdjacencyList<std::int32_t>& cell_points
       = mesh.coordinate_dofs().entity_points();
 
@@ -362,8 +363,8 @@ void HDF5File::write(const mesh::Mesh& mesh, int cell_dim,
         // dimension
 
         const int mpi_rank = MPI::rank(_mpi_comm.comm());
-        const std::map<std::int32_t, std::set<std::int32_t>>& shared_entities
-            = mesh.topology().shared_entities(cell_dim);
+        const std::map<std::int32_t, std::set<std::int32_t>> shared_entities
+            = mesh.topology().index_map(cell_dim)->compute_shared_indices();
 
         std::set<int> non_local_entities;
         if (mesh.topology().index_map(tdim)->num_ghosts() == 0)
@@ -745,8 +746,8 @@ void HDF5File::write_mesh_function(const mesh::MeshFunction<T>& meshfunction,
     // Drop duplicate data
     const int tdim = mesh.topology().dim();
     const int mpi_rank = MPI::rank(_mpi_comm.comm());
-    const std::map<std::int32_t, std::set<std::int32_t>>& shared_entities
-        = mesh.topology().shared_entities(cell_dim);
+    const std::map<std::int32_t, std::set<std::int32_t>> shared_entities
+        = mesh.topology().index_map(cell_dim)->compute_shared_indices();
 
     std::set<int> non_local_entities;
     if (mesh.topology().index_map(tdim)->num_ghosts() == 0)
