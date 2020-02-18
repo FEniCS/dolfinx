@@ -377,7 +377,7 @@ MPI_Comm IndexMap::mpi_comm() const { return _mpi_comm; }
 //----------------------------------------------------------------------------
 MPI_Comm IndexMap::mpi_comm_neighborhood() const { return _neighbour_comm; }
 //----------------------------------------------------------------------------
-std::map<int, std::set<int>> IndexMap::compute_shared_indices()
+std::map<int, std::set<int>> IndexMap::compute_shared_indices() const
 {
   std::map<int, std::set<int>> shared_indices;
 

@@ -182,7 +182,7 @@ public:
 
   /// Shared indices
   /// @return shared indices
-  std::map<int, std::set<int>> compute_shared_indices();
+  std::map<int, std::set<int>> compute_shared_indices() const;
 
   /// Send n values for each index that is owned to processes that have
   /// the index as a ghost. The size of the input array local_data must
