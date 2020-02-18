@@ -81,7 +81,7 @@ public:
   /// (Currently partially working)
   std::shared_ptr<const common::IndexMap> index_map(int dim) const;
 
-  /// @todo Remove this function. Use IndexMap instead
+  /// @todo Remove/revise this function. Use IndexMap instead.
   /// Get local-to-global index map for entities of topological
   /// dimension d
   const std::vector<std::int64_t>& get_global_user_vertices() const;
