@@ -159,11 +159,6 @@ public:
   /// Owner rank (on global communicator) of each ghost entry
   Eigen::Array<std::int32_t, Eigen::Dynamic, 1> ghost_owners() const;
 
-  /// Create a map from each local index which can be forward scattered,
-  /// to the set of processes which they will be scattered to.
-  /// @return Map from local index to a set of processes
-  std::map<std::int32_t, std::set<int>> compute_forward_processes() const;
-
   /// Get process that owns index (global block index)
   int owner(std::int64_t global_index) const;
 
@@ -179,6 +174,11 @@ public:
   /// Return MPI neighbourhood communicator
   /// @return The neighbourhood communicator
   MPI_Comm mpi_comm_neighborhood() const;
+
+  /// Compute map from each local index to the complete set of sharing processes
+  /// for that index
+  /// @return shared indices
+  std::map<std::int32_t, std::set<std::int32_t>> compute_shared_indices() const;
 
   /// Send n values for each index that is owned to processes that have
   /// the index as a ghost. The size of the input array local_data must
