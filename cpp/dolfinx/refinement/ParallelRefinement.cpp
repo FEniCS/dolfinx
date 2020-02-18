@@ -29,16 +29,8 @@ ParallelRefinement::ParallelRefinement(const mesh::Mesh& mesh)
   if (!_mesh.topology().connectivity(1, 0))
     throw std::runtime_error("Edges must be initialised");
 
-  // Create a global-to-local map for shared edges
+  // Create shared edges, for both owned and ghost indices
   _shared_edges = _mesh.topology().index_map(1)->compute_shared_indices();
-  const std::vector<std::int64_t>& global_edge_indices
-      = _mesh.topology().global_indices(1);
-
-  for (const auto& edge : _shared_edges)
-  {
-    _global_to_local_edge_map.insert(
-        {global_edge_indices[edge.first], edge.first});
-  }
 }
 //-----------------------------------------------------------------------------
 const mesh::Mesh& ParallelRefinement::mesh() const { return _mesh; }
@@ -63,9 +55,8 @@ void ParallelRefinement::mark(std::int32_t edge_index)
   auto map_it = _shared_edges.find(edge_index);
   if (map_it != _shared_edges.end())
   {
-    const std::vector<std::int64_t>& global_edge_indices
-        = _mesh.topology().global_indices(1);
-    std::int64_t global_index = global_edge_indices[edge_index];
+    const std::int64_t global_index
+        = _mesh.topology().index_map(1)->local_to_global(edge_index);
     for (int p : map_it->second)
       _marked_for_update[p].push_back(global_index);
   }
@@ -150,12 +141,10 @@ void ParallelRefinement::update_logical_edgefunction()
 
   // Flatten received values and set edges mesh::MeshFunction true at
   // each index received
-  for (std::int64_t global_index : data_to_recv)
-  {
-    const auto map_it = _global_to_local_edge_map.find(global_index);
-    assert(map_it != _global_to_local_edge_map.end());
-    _marked_edges[map_it->second] = true;
-  }
+  std::vector<std::int32_t> local_indices
+      = _mesh.topology().index_map(1)->global_to_local(data_to_recv);
+  for (std::int32_t local_index : local_indices)
+    _marked_edges[local_index] = true;
 }
 //-----------------------------------------------------------------------------
 void ParallelRefinement::create_new_vertices()
@@ -164,8 +153,8 @@ void ParallelRefinement::create_new_vertices()
 
   const std::int32_t mpi_rank = MPI::rank(_mesh.mpi_comm());
 
-  const std::vector<std::int64_t>& global_edge_indices
-      = _mesh.topology().global_indices(1);
+  const std::shared_ptr<const common::IndexMap> edge_index_map
+      = _mesh.topology().index_map(1);
 
   // Copy over existing mesh vertices
   _new_vertex_coordinates = std::vector<double>(
@@ -247,7 +236,7 @@ void ParallelRefinement::create_new_vertices()
 
         // send mapping from global edge index to new global vertex index
         values_to_send[it->second].push_back(
-            global_edge_indices[local_edge.first]);
+            edge_index_map->local_to_global(local_edge.first));
         values_to_send[it->second].push_back(local_edge.second);
       }
     }
@@ -267,12 +256,14 @@ void ParallelRefinement::create_new_vertices()
                            recv_offsets, received_values);
 
   // Add received remote global vertex indices to map
-  for (auto q = received_values.begin(); q != received_values.end(); q += 2)
-  {
-    const auto local_it = _global_to_local_edge_map.find(*q);
-    assert(local_it != _global_to_local_edge_map.end());
-    _local_edge_to_new_vertex[local_it->second] = *(q + 1);
-  }
+  std::vector<std::int64_t> recv_global_edge;
+  assert(received_values.size() % 2 == 0);
+  for (std::size_t i = 0; i < received_values.size() / 2; ++i)
+    recv_global_edge.push_back(received_values[i * 2]);
+  std::vector<std::int32_t> recv_local_edge
+      = _mesh.topology().index_map(1)->global_to_local(recv_global_edge);
+  for (std::size_t i = 0; i < received_values.size() / 2; ++i)
+    _local_edge_to_new_vertex[recv_local_edge[i]] = received_values[i * 2 + 1];
 
   // Attach global indices to each vertex, old and new, and sort
   // them across processes into this order
