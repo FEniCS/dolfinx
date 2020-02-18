@@ -521,7 +521,7 @@ def test_save_2D_vertex_function(tempdir, encoding, data_type, cell_type):
     mf = MeshFunction(dtype_str, mesh, 0, 0)
     mf.name = "vertices"
 
-    global_indices = mesh.topology.get_global_user_vertices()
+    global_indices = mesh.topology.index_map(0).global_indices(False)
     mf.values[:] = global_indices[:]
     filename = os.path.join(tempdir, "mf_vertex_2D_%s.xdmf" % dtype_str)
     with XDMFFile(mesh.mpi_comm(), filename, encoding=encoding) as file:
