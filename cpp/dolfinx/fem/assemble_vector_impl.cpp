@@ -583,16 +583,16 @@ void fem::impl::assemble_interior_facets(
 
     // Orientation
     const std::uint8_t perm[2]
-        = {mesh.topology().get_facet_permutation(cell_index0, facet.dim(),
+        = {mesh.topology().get_facet_permutation(cell0.index(), facet.dim(),
                                                  local_facet[0]),
-           mesh.topology().get_facet_permutation(cell_index1, facet.dim(),
+           mesh.topology().get_facet_permutation(cell1.index(), facet.dim(),
                                                  local_facet[1])};
     Eigen::Array<bool, 1, Eigen::Dynamic> cell_edge_reflections
-        = mesh.topology().get_edge_reflections(cell_index0);
+        = mesh.topology().get_edge_reflections(cell0.index());
     Eigen::Array<bool, 1, Eigen::Dynamic> cell_face_reflections
-        = mesh.topology().get_face_reflections(cell_index0);
+        = mesh.topology().get_face_reflections(cell0.index());
     Eigen::Array<std::uint8_t, 1, Eigen::Dynamic> cell_face_rotations
-        = mesh.topology().get_face_rotations(cell_index0);
+        = mesh.topology().get_face_rotations(cell0.index());
 
     // Get cell vertex coordinates
     for (int i = 0; i < num_dofs_g; ++i)

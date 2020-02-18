@@ -248,18 +248,18 @@ void fem::impl::assemble_exterior_facets(
 
     // Get the permutation of the facet
     const std::uint8_t perm = mesh.topology().get_facet_permutation(
-        cell_index, facet.dim(), local_facet);
+        cell.index(), facet.dim(), local_facet);
 
     // Get dof maps for cell
-    auto dmap0 = dofmap0.cell_dofs(cells[0]);
-    auto dmap1 = dofmap1.cell_dofs(cells[0]);
+    auto dmap0 = dofmap0.cell_dofs(cell.index());
+    auto dmap1 = dofmap1.cell_dofs(cell.index());
 
     Eigen::Array<bool, 1, Eigen::Dynamic> cell_edge_reflections
-        = mesh.topology().get_edge_reflections(cell_index);
+        = mesh.topology().get_edge_reflections(cell.index());
     Eigen::Array<bool, 1, Eigen::Dynamic> cell_face_reflections
-        = mesh.topology().get_face_reflections(cell_index);
+        = mesh.topology().get_face_reflections(cell.index());
     Eigen::Array<std::uint8_t, 1, Eigen::Dynamic> cell_face_rotations
-        = mesh.topology().get_face_rotations(cell_index);
+        = mesh.topology().get_face_rotations(cell.index());
 
     // Tabulate tensor
     auto coeff_cell = coeffs.row(cells[0]);
