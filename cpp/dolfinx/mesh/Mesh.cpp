@@ -519,9 +519,9 @@ void Mesh::create_entity_permutations() const
   const int tdim = _topology->dim();
   const int num_cells = _topology->connectivity(tdim, 0)->num_nodes();
 
-  _topology->resize_entity_permutations(num_cells,
-                                        cell_num_entities(_topology->cell_type(), 1),
-                                        cell_num_entities(_topology->cell_type(), 2));
+  _topology->resize_entity_permutations(
+      num_cells, cell_num_entities(_topology->cell_type(), 1),
+      cell_num_entities(_topology->cell_type(), 2));
 
   for (int d = 0; d < tdim; ++d)
     create_entities(d);
