@@ -11,9 +11,7 @@
 #include <array>
 #include <cstdint>
 #include <dolfinx/graph/AdjacencyList.h>
-#include <map>
 #include <memory>
-#include <set>
 #include <vector>
 
 namespace dolfinx
