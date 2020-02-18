@@ -520,20 +520,20 @@ void Mesh::create_entity_permutations() const
   const int num_cells = _topology->connectivity(tdim, 0)->num_nodes();
 
   _topology->resize_entity_permutations(num_cells,
-                                        cell_num_entities(_cell_type, 1),
-                                        cell_num_entities(_cell_type, 2));
+                                        cell_num_entities(_topology->cell_type(), 1),
+                                        cell_num_entities(_topology->cell_type(), 2));
 
   for (int d = 0; d < tdim; ++d)
     create_entities(d);
 
-  if (_cell_type == mesh::CellType::triangle
-      || _cell_type == mesh::CellType::tetrahedron)
+  if (_topology->cell_type() == mesh::CellType::triangle
+      || _topology->cell_type() == mesh::CellType::tetrahedron)
     for (int cell_n = 0; cell_n < num_cells; ++cell_n)
     {
       const mesh::MeshEntity cell(*this, tdim, cell_n);
       for (int d = 1; d < tdim; ++d)
       {
-        for (int i = 0; i < cell_num_entities(_cell_type, d); ++i)
+        for (int i = 0; i < cell_num_entities(_topology->cell_type(), d); ++i)
         {
           // Get the facet
           const int sub_e_n = cell.entities(d)[i];
@@ -592,7 +592,7 @@ void Mesh::create_entity_permutations() const
       const mesh::MeshEntity cell(*this, tdim, cell_n);
       for (int d = 1; d < tdim; ++d)
       {
-        for (int i = 0; i < cell_num_entities(_cell_type, d); ++i)
+        for (int i = 0; i < cell_num_entities(_topology->cell_type(), d); ++i)
         {
           // Get the facet
           const int sub_e_n = cell.entities(d)[i];
