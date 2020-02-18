@@ -75,7 +75,6 @@ std::vector<bool> mesh::compute_interior_facets(const Topology& topology)
 //-----------------------------------------------------------------------------
 Topology::Topology(mesh::CellType type)
     : _cell_type(type), _global_indices(mesh::cell_dim(type) + 1),
-      _shared_entities(mesh::cell_dim(type) + 1),
       _connectivity(mesh::cell_dim(type) + 1, mesh::cell_dim(type) + 1)
 {
   // Do nothing

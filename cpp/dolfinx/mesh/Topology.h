@@ -135,11 +135,6 @@ private:
   // Global indices for mesh entities
   std::vector<std::vector<std::int64_t>> _global_indices;
 
-  // TODO: Could IndexMap be used here in place of std::map?
-  // For entities of a given dimension d, maps each shared entity
-  // (local index) to a list of the processes sharing the vertex
-  std::vector<std::map<std::int32_t, std::set<std::int32_t>>> _shared_entities;
-
   // IndexMap to store ghosting for each entity dimension
   std::array<std::shared_ptr<const common::IndexMap>, 4> _index_map;
 
