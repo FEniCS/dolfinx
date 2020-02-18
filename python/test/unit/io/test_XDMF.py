@@ -521,7 +521,7 @@ def test_save_2D_vertex_function(tempdir, encoding, data_type, cell_type):
     mf = MeshFunction(dtype_str, mesh, 0, 0)
     mf.name = "vertices"
 
-    global_indices = mesh.topology.global_indices(0)
+    global_indices = mesh.topology.get_global_user_vertices()
     mf.values[:] = global_indices[:]
     filename = os.path.join(tempdir, "mf_vertex_2D_%s.xdmf" % dtype_str)
     with XDMFFile(mesh.mpi_comm(), filename, encoding=encoding) as file:
@@ -696,7 +696,7 @@ def test_append_and_load_mesh_value_collections(tempdir, encoding, data_type, ce
     with XDMFFile(mesh.mpi_comm(), filename) as xdmf:
         for mvc in mvcs:
             # global_indices = mesh.topology.global_indices(mvc.dim)
-            map.topology.index_map(mvc.dim)
+            map = mesh.topology.index_map(mvc.dim)
             global_indices = map.global_indices(True)
 
             for ent in range(mesh.num_entities(mvc.dim)):
