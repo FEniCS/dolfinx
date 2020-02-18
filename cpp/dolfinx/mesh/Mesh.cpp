@@ -324,7 +324,6 @@ Mesh::Mesh(
   // Initialise vertex topology
   _topology = std::make_unique<Topology>(type);
   _topology->set_global_indices(0, vertex_indices_global);
-  _topology->set_shared_entities(0, shared_vertices);
   _topology->set_index_map(0, vertex_index_map);
   const std::int32_t num_vertices
       = vertex_index_map->size_local() + vertex_index_map->num_ghosts();
@@ -447,7 +446,7 @@ std::int32_t Mesh::create_entities(int dim) const
     return -1;
 
   // Create local entities
-  const auto [cell_entity, entity_vertex, index_map, shared_entities]
+  const auto [cell_entity, entity_vertex, index_map]
       = TopologyComputation::compute_entities(_mpi_comm.comm(), *_topology,
                                               dim);
 
@@ -462,9 +461,6 @@ std::int32_t Mesh::create_entities(int dim) const
     // FIXME: remove global_indices
     _topology->set_global_indices(dim, index_map->global_indices(false));
   }
-
-  if (shared_entities.size() > 0)
-    _topology->set_shared_entities(dim, shared_entities);
 
   return index_map->size_local();
 }

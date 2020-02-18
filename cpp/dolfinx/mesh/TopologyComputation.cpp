@@ -157,8 +157,7 @@ get_shared_entities(MPI_Comm neighbour_comm,
 ///   entity_list
 /// @param[in] entity_count Number of unique entities
 /// @returns Tuple of (local_indices, index map, shared entities)
-std::tuple<std::vector<int>, std::shared_ptr<common::IndexMap>,
-           std::map<std::int32_t, std::set<std::int32_t>>>
+std::tuple<std::vector<int>, std::shared_ptr<common::IndexMap>>
 get_local_indexing(
     MPI_Comm comm,
     const std::shared_ptr<const common::IndexMap> vertex_indexmap,
@@ -327,13 +326,7 @@ get_local_indexing(
   std::shared_ptr<common::IndexMap> index_map
       = std::make_shared<common::IndexMap>(comm, num_local, ghost_indices, 1);
 
-  // Remap shared entities from initial numbering to local indexing
-  std::map<std::int32_t, std::set<std::int32_t>> remapped_shared_entities;
-  for (auto q : shared_entities)
-    remapped_shared_entities.insert({local_index[q.first], q.second});
-
-  return {std::move(local_index), index_map,
-          std::move(remapped_shared_entities)};
+  return {std::move(local_index), index_map};
 }
 //-----------------------------------------------------------------------------
 
@@ -349,8 +342,7 @@ get_local_indexing(
 ///   processes, shared entities)
 std::tuple<std::shared_ptr<graph::AdjacencyList<std::int32_t>>,
            std::shared_ptr<graph::AdjacencyList<std::int32_t>>,
-           std::shared_ptr<common::IndexMap>,
-           std::map<std::int32_t, std::set<std::int32_t>>>
+           std::shared_ptr<common::IndexMap>>
 compute_entities_by_key_matching(
     MPI_Comm comm, const graph::AdjacencyList<std::int32_t>& cells,
     const std::shared_ptr<const common::IndexMap> vertex_index_map,
@@ -429,7 +421,7 @@ compute_entities_by_key_matching(
   // Communicate with other processes to find out which entities are
   // ghosted and shared. Remap the numbering so that ghosts are at the
   // end.
-  auto [local_index, index_map, shared_entities]
+  auto [local_index, index_map]
       = get_local_indexing(comm, vertex_index_map, global_vertex_indices,
                            entity_list, entity_index, entity_count);
 
@@ -454,7 +446,7 @@ compute_entities_by_key_matching(
   auto ev
       = std::make_shared<graph::AdjacencyList<std::int32_t>>(connectivity_ev);
 
-  return {ce, ev, index_map, std::move(shared_entities)};
+  return {ce, ev, index_map};
 }
 //-----------------------------------------------------------------------------
 
@@ -567,8 +559,7 @@ compute_from_map(const graph::AdjacencyList<std::int32_t>& c_d0_0,
 //-----------------------------------------------------------------------------
 std::tuple<std::shared_ptr<graph::AdjacencyList<std::int32_t>>,
            std::shared_ptr<graph::AdjacencyList<std::int32_t>>,
-           std::shared_ptr<common::IndexMap>,
-           std::map<std::int32_t, std::set<std::int32_t>>>
+           std::shared_ptr<common::IndexMap>>
 TopologyComputation::compute_entities(MPI_Comm comm, const Topology& topology,
                                       int dim)
 {
@@ -576,8 +567,7 @@ TopologyComputation::compute_entities(MPI_Comm comm, const Topology& topology,
 
   // Vertices must always exist
   if (dim == 0)
-    return {nullptr, nullptr, nullptr,
-            std::map<std::int32_t, std::set<std::int32_t>>()};
+    return {nullptr, nullptr, nullptr};
 
   if (topology.connectivity(dim, 0))
   {
@@ -590,8 +580,7 @@ TopologyComputation::compute_entities(MPI_Comm comm, const Topology& topology,
           + std::to_string(dim)
           + " exist but cell-dim connectivity is missing.");
     }
-    return {nullptr, nullptr, nullptr,
-            std::map<std::int32_t, std::set<std::int32_t>>()};
+    return {nullptr, nullptr, nullptr};
   }
 
   const int tdim = topology.dim();
@@ -601,8 +590,7 @@ TopologyComputation::compute_entities(MPI_Comm comm, const Topology& topology,
 
   std::tuple<std::shared_ptr<graph::AdjacencyList<std::int32_t>>,
              std::shared_ptr<graph::AdjacencyList<std::int32_t>>,
-             std::shared_ptr<common::IndexMap>,
-             std::map<std::int32_t, std::set<std::int32_t>>>
+             std::shared_ptr<common::IndexMap>>
       data
       = compute_entities_by_key_matching(comm, *cells, topology.index_map(0),
                                          topology.global_indices(0),
