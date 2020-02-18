@@ -86,17 +86,6 @@ public:
   /// dimension d
   const std::vector<std::int64_t>& get_global_user_vertices() const;
 
-  /// Set the map from shared entities (local index) to processes that
-  /// share the entity
-  void set_shared_entities(
-      int dim, const std::map<std::int32_t, std::set<std::int32_t>>& entities);
-
-  /// @todo Remove this function
-  /// Return map from shared entities (local index) to process that
-  /// share the entity (const version)
-  const std::map<std::int32_t, std::set<std::int32_t>>&
-  shared_entities(int dim) const;
-
   /// Marker for entities of dimension dim on the boundary. An entity of
   /// co-dimension < 0 is on the boundary if it is connected to a
   /// boundary facet. It is not defined for codimension 0.

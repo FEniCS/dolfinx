@@ -290,40 +290,6 @@ IndexMap::global_to_local(const std::vector<std::int64_t>& indices,
   return local;
 }
 //-----------------------------------------------------------------------------
-std::map<std::int32_t, std::set<int>>
-IndexMap::compute_forward_processes() const
-{
-  assert(_neighbour_comm);
-
-  // Get neighbour processes
-  int indegree(-1), outdegree(-2), weighted(-1);
-  MPI_Dist_graph_neighbors_count(_neighbour_comm, &indegree, &outdegree,
-                                 &weighted);
-  assert(indegree == outdegree);
-  std::vector<int> neighbours(indegree), neighbours1(indegree),
-      weights(indegree), weights1(indegree);
-
-  MPI_Dist_graph_neighbors(_neighbour_comm, indegree, neighbours.data(),
-                           weights.data(), outdegree, neighbours1.data(),
-                           weights1.data());
-
-  assert(neighbours.size() == _forward_sizes.size());
-
-  std::map<std::int32_t, std::set<int>> sh_map;
-  int k = 0;
-  // Iterate through each neighbour (i)
-  for (std::size_t i = 0; i < _forward_sizes.size(); ++i)
-  {
-    for (int j = 0; j < _forward_sizes[i]; ++j)
-    {
-      // Add map entry from this index to the process it is shared with
-      sh_map[_forward_indices[k]].insert(neighbours[i]);
-      ++k;
-    }
-  }
-  return sh_map;
-}
-//-----------------------------------------------------------------------------
 int IndexMap::owner(std::int64_t global_index) const
 {
   auto it
@@ -377,6 +343,82 @@ MPI_Comm IndexMap::mpi_comm() const { return _mpi_comm; }
 //----------------------------------------------------------------------------
 MPI_Comm IndexMap::mpi_comm_neighborhood() const { return _neighbour_comm; }
 //----------------------------------------------------------------------------
+std::map<int, std::set<int>> IndexMap::compute_shared_indices() const
+{
+  std::map<int, std::set<int>> shared_indices;
+
+  // Get neighbour processes
+  int indegree(-1), outdegree(-2), weighted(-1);
+  MPI_Dist_graph_neighbors_count(_neighbour_comm, &indegree, &outdegree,
+                                 &weighted);
+  assert(indegree == outdegree);
+  std::vector<int> neighbours(indegree), neighbours1(indegree),
+      weights(indegree), weights1(indegree);
+
+  MPI_Dist_graph_neighbors(_neighbour_comm, indegree, neighbours.data(),
+                           weights.data(), outdegree, neighbours1.data(),
+                           weights1.data());
+
+  assert(neighbours.size() == _forward_sizes.size());
+
+  // Get sharing of all owned indices
+  int c = 0;
+  for (std::size_t i = 0; i < _forward_sizes.size(); ++i)
+  {
+    int p = neighbours[i];
+    for (int j = 0; j < _forward_sizes[i]; ++j)
+    {
+      int idx = _forward_indices[c];
+      shared_indices[idx].insert(p);
+      ++c;
+    }
+  }
+
+  // Send forward
+  std::vector<std::int64_t> fwd_sharing_data;
+  std::vector<int> fwd_sharing_offsets = {0};
+  c = 0;
+  for (std::size_t i = 0; i < _forward_sizes.size(); ++i)
+  {
+    for (int j = 0; j < _forward_sizes[i]; ++j)
+    {
+      int idx = _forward_indices[c];
+      fwd_sharing_data.push_back(shared_indices[idx].size());
+
+      fwd_sharing_data.insert(fwd_sharing_data.end(),
+                              shared_indices[idx].begin(),
+                              shared_indices[idx].end());
+      ++c;
+    }
+    fwd_sharing_offsets.push_back(fwd_sharing_data.size());
+  }
+
+  std::vector<int> recv_sharing_offsets;
+  std::vector<std::int64_t> recv_sharing_data;
+  MPI::neighbor_all_to_all(_neighbour_comm, fwd_sharing_offsets,
+                           fwd_sharing_data, recv_sharing_offsets,
+                           recv_sharing_data);
+
+  // Unpack
+  for (int i = 0; i < _ghosts.size(); ++i)
+  {
+    int idx = size_local() + i;
+    const int np = _ghost_owners[i];
+    int p = neighbours[np];
+    int& rp = recv_sharing_offsets[np];
+    int ns = recv_sharing_data[rp];
+    ++rp;
+    std::set<int> procs(recv_sharing_data.begin() + rp,
+                        recv_sharing_data.begin() + rp + ns);
+    rp += ns;
+    procs.insert(p);
+    procs.erase(_myrank);
+    shared_indices.insert({idx, procs});
+  }
+  return shared_indices;
+}
+//-----------------------------------------------------------------------------
+
 void IndexMap::scatter_fwd(const std::vector<std::int64_t>& local_data,
                            std::vector<std::int64_t>& remote_data, int n) const
 {

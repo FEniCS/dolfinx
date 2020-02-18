@@ -106,20 +106,6 @@ const std::vector<std::int64_t>& Topology::get_global_user_vertices() const
   return _global_user_vertices;
 }
 //-----------------------------------------------------------------------------
-void Topology::set_shared_entities(
-    int dim, const std::map<std::int32_t, std::set<std::int32_t>>& entities)
-{
-  assert(dim <= this->dim());
-  _shared_entities[dim] = entities;
-}
-//-----------------------------------------------------------------------------
-const std::map<std::int32_t, std::set<std::int32_t>>&
-Topology::shared_entities(int dim) const
-{
-  assert(dim <= this->dim());
-  return _shared_entities[dim];
-}
-//-----------------------------------------------------------------------------
 std::vector<bool> Topology::on_boundary(int dim) const
 {
   const int tdim = this->dim();

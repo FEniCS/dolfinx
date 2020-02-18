@@ -66,10 +66,6 @@ void common(py::module& m)
                              py::return_value_policy::reference_internal,
                              "Return list of ghost indices")
       .def("global_indices", &dolfinx::common::IndexMap::global_indices)
-      .def("compute_forward_processes",
-           &dolfinx::common::IndexMap::compute_forward_processes,
-           "Return mapping from local indices to remote processes where "
-           "each index is ghosted")
       .def("indices", &dolfinx::common::IndexMap::indices,
            "Return array of global indices for all indices on this process");
 

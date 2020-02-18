@@ -363,8 +363,8 @@ void HDF5File::write(const mesh::Mesh& mesh, int cell_dim,
         // dimension
 
         const int mpi_rank = MPI::rank(_mpi_comm.comm());
-        const std::map<std::int32_t, std::set<std::int32_t>>& shared_entities
-            = mesh.topology().shared_entities(cell_dim);
+        const std::map<std::int32_t, std::set<std::int32_t>> shared_entities
+            = mesh.topology().index_map(cell_dim)->compute_shared_indices();
 
         std::set<int> non_local_entities;
         if (mesh.topology().index_map(tdim)->num_ghosts() == 0)
@@ -750,8 +750,8 @@ void HDF5File::write_mesh_function(const mesh::MeshFunction<T>& meshfunction,
     // Drop duplicate data
     const int tdim = mesh.topology().dim();
     const int mpi_rank = MPI::rank(_mpi_comm.comm());
-    const std::map<std::int32_t, std::set<std::int32_t>>& shared_entities
-        = mesh.topology().shared_entities(cell_dim);
+    const std::map<std::int32_t, std::set<std::int32_t>> shared_entities
+        = mesh.topology().index_map(cell_dim)->compute_shared_indices();
 
     std::set<int> non_local_entities;
     if (mesh.topology().index_map(tdim)->num_ghosts() == 0)

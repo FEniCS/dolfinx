@@ -30,15 +30,13 @@ ParallelRefinement::ParallelRefinement(const mesh::Mesh& mesh)
     throw std::runtime_error("Edges must be initialised");
 
   // Create a global-to-local map for shared edges
-  const std::map<std::int32_t, std::set<std::int32_t>>& shared_edges
-      = _mesh.topology().shared_entities(1);
-
+  _shared_edges = _mesh.topology().index_map(1)->compute_shared_indices();
   auto map = mesh.topology().index_map(1);
   assert(map);
   const std::vector<std::int64_t> global_edge_indices
       = map->global_indices(false);
 
-  for (const auto& edge : shared_edges)
+  for (const auto& edge : _shared_edges)
   {
     _global_to_local_edge_map.insert(
         {global_edge_indices[edge.first], edge.first});
@@ -64,10 +62,8 @@ void ParallelRefinement::mark(std::int32_t edge_index)
   _marked_edges[edge_index] = true;
 
   // If it is a shared edge, add all sharing procs to update set
-  const std::map<std::int32_t, std::set<std::int32_t>>& shared_edges
-      = _mesh.topology().shared_entities(1);
-  auto map_it = shared_edges.find(edge_index);
-  if (map_it != shared_edges.end())
+  auto map_it = _shared_edges.find(edge_index);
+  if (map_it != _shared_edges.end())
   {
     auto map = _mesh.topology().index_map(1);
     assert(map);
@@ -173,8 +169,6 @@ void ParallelRefinement::create_new_vertices()
 
   const std::int32_t mpi_rank = MPI::rank(_mesh.mpi_comm());
 
-  const std::map<std::int32_t, std::set<std::int32_t>>& shared_edges
-      = _mesh.topology().shared_entities(1);
   auto map = _mesh.topology().index_map(1);
   assert(map);
   const std::vector<std::int64_t> global_edge_indices
@@ -202,8 +196,8 @@ void ParallelRefinement::create_new_vertices()
       bool owner = true;
 
       // If shared, check that this is true
-      auto shared_edge_i = shared_edges.find(local_i);
-      if (shared_edge_i != shared_edges.end())
+      auto shared_edge_i = _shared_edges.find(local_i);
+      if (shared_edge_i != _shared_edges.end())
       {
         // check if any other sharing process has a lower rank
         for (auto proc_edge : shared_edge_i->second)
@@ -250,8 +244,8 @@ void ParallelRefinement::create_new_vertices()
 
     const std::size_t local_i = local_edge.first;
     // shared, but locally owned : remote owned are not in list.
-    auto shared_edge_i = shared_edges.find(local_i);
-    if (shared_edge_i != shared_edges.end())
+    auto shared_edge_i = _shared_edges.find(local_i);
+    if (shared_edge_i != _shared_edges.end())
     {
       for (auto remote_process : shared_edge_i->second)
       {
