@@ -925,9 +925,9 @@ void XDMFFile::write_mesh_value_collection(
   const std::size_t cell_dim = mvc.dim();
   const std::size_t degree = 1;
   const std::string vtk_cell_str = xdmf_utils::vtk_cell_type_str(
-      mesh::cell_entity_type(mesh->cell_type(), cell_dim), degree);
-  const std::int32_t num_vertices_per_cell
-      = mesh::num_cell_vertices(cell_entity_type(mesh->cell_type(), cell_dim));
+      mesh::cell_entity_type(mesh->topology().cell_type(), cell_dim), degree);
+  const std::int32_t num_vertices_per_cell = mesh::num_cell_vertices(
+      cell_entity_type(mesh->topology().cell_type(), cell_dim));
 
   const std::map<std::pair<std::size_t, std::size_t>, T>& values = mvc.values();
   const std::int64_t num_cells = values.size();
@@ -1733,6 +1733,7 @@ XDMFFile::read_mesh_function(std::shared_ptr<const mesh::Mesh> mesh,
   const std::int64_t num_entities_global
       = xdmf_utils::get_num_cells(topology_node);
 
+  mesh->create_entities(dim);
   assert(mesh->num_entities_global(dim) == num_entities_global);
 
   boost::filesystem::path xdmf_filename(_filename);
@@ -1837,7 +1838,7 @@ void XDMFFile::write_mesh_function(const mesh::MeshFunction<T>& meshfunction)
     assert(topology_node);
     std::pair<std::string, int> cell_type_str
         = xdmf_utils::get_cell_type(topology_node);
-    if (mesh::to_string(mesh->cell_type()) != cell_type_str.first)
+    if (mesh::to_string(mesh->topology().cell_type()) != cell_type_str.first)
     {
       throw std::runtime_error(
           "Incompatible Mesh type. Try writing the Mesh to XDMF first");

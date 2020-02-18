@@ -230,7 +230,7 @@ std::pair<std::vector<std::int32_t>, std::int32_t> compute_reordering_map(
   }
 
   // Create map from old index to new contiguous numbering for locally
-  // owned dofs. Set to -1 for unowned dofs.
+  // owned dofs. Set to -1 for unowned dofs
   std::vector<int> original_to_contiguous(dof_entity.size(), -1);
   std::int32_t owned_size = 0;
   for (std::size_t i = 0; i < original_to_contiguous.size(); ++i)
@@ -241,30 +241,39 @@ std::pair<std::vector<std::int32_t>, std::int32_t> compute_reordering_map(
 
   // Build local graph, based on dof map with contiguous numbering
   // (unowned dofs excluded)
-  dolfinx::graph::Graph graph(owned_size);
-  std::vector<int> local_old;
+  std::vector<std::vector<std::int32_t>> graph_data(owned_size);
   for (std::int32_t cell = 0; cell < dofmap.num_nodes(); ++cell)
   {
-    // Loop over nodes collecting valid local nodes
-    local_old.clear();
     auto nodes = dofmap.links(cell);
     for (std::int32_t i = 0; i < nodes.rows(); ++i)
     {
-      // Add to graph if node is owned
-      assert(nodes[i] < (int)original_to_contiguous.size());
-      const int n = original_to_contiguous[nodes[i]];
-      if (n != -1)
+      const std::int32_t node_i = original_to_contiguous[nodes[i]];
+
+      // Skip unowned node
+      if (node_i == -1)
+        continue;
+
+      for (std::int32_t j = 0; j < nodes.rows(); ++j)
       {
-        assert(n < (int)graph.size());
-        local_old.push_back(n);
+        // Skip diagonal
+        if (i == j)
+          continue;
+
+        const std::int32_t node_j = original_to_contiguous[nodes[j]];
+        if (node_j != -1)
+          graph_data[node_i].push_back(node_j);
       }
     }
-
-    for (std::size_t i = 0; i < local_old.size(); ++i)
-      for (std::size_t j = 0; j < local_old.size(); ++j)
-        if (i != j)
-          graph[local_old[i]].insert(local_old[j]);
   }
+
+  // Eliminate duplicates and create AdjacencyList
+  for (auto& node : graph_data)
+  {
+    std::sort(node.begin(), node.end());
+    node.erase(std::unique(node.begin(), node.end()), node.end());
+  }
+  const graph::AdjacencyList<std::int32_t> graph(graph_data);
+  std::vector<std::vector<std::int32_t>>().swap(graph_data);
 
   // Reorder owned nodes
   const std::string ordering_library = "SCOTCH";
@@ -277,7 +286,7 @@ std::pair<std::vector<std::int32_t>, std::int32_t> compute_reordering_map(
   {
     // NOTE: Randomised dof ordering should only be used for
     // testing/benchmarking
-    node_remap.resize(graph.size());
+    node_remap.resize(graph.num_nodes());
     std::iota(node_remap.begin(), node_remap.end(), 0);
     std::random_device rd;
     std::default_random_engine g(rd());
@@ -325,6 +334,8 @@ std::vector<std::int64_t> get_global_indices(
     const std::vector<std::int32_t>& old_to_new,
     const std::vector<std::pair<std::int8_t, std::int32_t>>& dof_entity)
 {
+  assert(dof_entity.size() == global_indices_old.size());
+
   const int D = topology.dim();
 
   // Get ownership offset for each dimension
@@ -343,16 +354,6 @@ std::vector<std::int64_t> get_global_indices(
       for (auto entity : forward_indices)
         shared_entity[d][entity] = true;
     }
-  }
-
-  // Build  [local_new - num_owned] -> global old array
-  std::vector<std::int64_t> local_new_to_global_old(old_to_new.size()
-                                                    - num_owned);
-  for (std::size_t i = 0; i < global_indices_old.size(); ++i)
-  {
-    std::int32_t local_new = old_to_new[i] - num_owned;
-    if (local_new >= 0)
-      local_new_to_global_old[local_new] = global_indices_old[i];
   }
 
   // Build list of (global old, global new) index pairs for dofs that
@@ -376,7 +377,9 @@ std::vector<std::int64_t> get_global_indices(
     }
   }
 
-  std::map<std::int64_t, std::int64_t> global_old_new;
+  std::vector<int> requests_dim;
+  std::vector<MPI_Request> requests(D + 1);
+  std::vector<std::vector<std::int64_t>> all_dofs_received(D + 1);
   for (int d = 0; d <= D; ++d)
   {
     auto map = topology.index_map(d);
@@ -401,24 +404,54 @@ std::vector<std::int64_t> get_global_indices(
       std::partial_sum(num_indices_recv.begin(), num_indices_recv.end(),
                        disp.begin() + 1);
 
-      // Send/receive global index of dofs with bcs to all neighbours
-      std::vector<std::int64_t> dofs_received(disp.back());
-      MPI_Neighbor_allgatherv(global[d].data(), global[d].size(), MPI_INT64_T,
-                              dofs_received.data(), num_indices_recv.data(),
-                              disp.data(), MPI_INT64_T, comm);
+      // TODO: use MPI_Ineighbor_alltoallv
+      // Send global index of dofs with bcs to all neighbours
+      std::vector<std::int64_t>& dofs_received = all_dofs_received[d];
+      dofs_received.resize(disp.back());
+      MPI_Ineighbor_allgatherv(global[d].data(), global[d].size(), MPI_INT64_T,
+                               dofs_received.data(), num_indices_recv.data(),
+                               disp.data(), MPI_INT64_T, comm,
+                               &requests[requests_dim.size()]);
+      requests_dim.push_back(d);
+    }
+  }
 
-      // Build (global old, global new) map
-      for (std::size_t i = 0; i < dofs_received.size(); i += 2)
-        global_old_new.insert({dofs_received[i], dofs_received[i + 1]});
+  // Build  [local_new - num_owned] -> global old array  broken down by
+  // dimension
+  std::vector<std::vector<std::int64_t>> local_new_to_global_old(D + 1);
+  for (std::size_t i = 0; i < global_indices_old.size(); ++i)
+  {
+    const int d = dof_entity[i].first;
+    std::int32_t local_new = old_to_new[i] - num_owned;
+    if (local_new >= 0)
+    {
+      local_new_to_global_old[d].push_back(global_indices_old[i]);
+      local_new_to_global_old[d].push_back(local_new);
     }
   }
 
   std::vector<std::int64_t> local_to_global_new(old_to_new.size() - num_owned);
-  for (std::size_t i = 0; i < local_new_to_global_old.size(); ++i)
+  for (std::size_t i = 0; i < requests_dim.size(); ++i)
   {
-    auto it = global_old_new.find(local_new_to_global_old[i]);
-    assert(it != global_old_new.end());
-    local_to_global_new[i] = it->second;
+    int idx, d;
+    MPI_Waitany(requests_dim.size(), requests.data(), &idx, MPI_STATUS_IGNORE);
+    d = requests_dim[idx];
+
+    // Build (global old, global new) map for dofs of dimension d
+    std::map<std::int64_t, std::int64_t> global_old_new;
+    std::vector<std::int64_t>& dofs_received = all_dofs_received[d];
+    for (std::size_t j = 0; j < dofs_received.size(); j += 2)
+      global_old_new.insert({dofs_received[j], dofs_received[j + 1]});
+
+    // Build the dimension d part of local_to_global_new vector
+    std::vector<std::int64_t>& local_new_to_global_old_d
+        = local_new_to_global_old[d];
+    for (std::size_t i = 0; i < local_new_to_global_old_d.size(); i += 2)
+    {
+      auto it = global_old_new.find(local_new_to_global_old_d[i]);
+      assert(it != global_old_new.end());
+      local_to_global_new[local_new_to_global_old_d[i + 1]] = it->second;
+    }
   }
 
   return local_to_global_new;
