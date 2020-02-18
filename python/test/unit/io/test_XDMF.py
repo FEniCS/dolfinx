@@ -641,7 +641,9 @@ def test_append_and_load_mesh_functions(tempdir, encoding, data_type):
         cf = MeshFunction(dtype_str, mesh, mesh.topology.dim, 0)
         cf.name = "cells"
 
-        vf.values[:] = mesh.topology.global_indices(0)[:]
+        # vf.values[:] = mesh.topology.global_indices(0)[:]
+        map = mesh.topology.index_map(0)
+        vf.values[:] = map.global_indices(True)
 
         map = mesh.topology.index_map(dim - 1)
         ff.values[:] = map.global_indices(True)
@@ -693,7 +695,10 @@ def test_append_and_load_mesh_value_collections(tempdir, encoding, data_type, ce
 
     with XDMFFile(mesh.mpi_comm(), filename) as xdmf:
         for mvc in mvcs:
-            global_indices = mesh.topology.global_indices(mvc.dim)
+            # global_indices = mesh.topology.global_indices(mvc.dim)
+            map.topology.index_map(mvc.dim)
+            global_indices = map.global_indices(True)
+
             for ent in range(mesh.num_entities(mvc.dim)):
                 assert (mvc.set_value(ent, global_indices[ent]))
             xdmf.write(mvc)

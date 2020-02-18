@@ -74,8 +74,7 @@ std::vector<bool> mesh::compute_interior_facets(const Topology& topology)
 
 //-----------------------------------------------------------------------------
 Topology::Topology(mesh::CellType type)
-    : _cell_type(type), _global_indices(mesh::cell_dim(type) + 1),
-      _shared_entities(mesh::cell_dim(type) + 1),
+    : _cell_type(type), _shared_entities(mesh::cell_dim(type) + 1),
       _connectivity(mesh::cell_dim(type) + 1, mesh::cell_dim(type) + 1)
 {
   // Do nothing
@@ -83,11 +82,10 @@ Topology::Topology(mesh::CellType type)
 //-----------------------------------------------------------------------------
 int Topology::dim() const { return _connectivity.rows() - 1; }
 //-----------------------------------------------------------------------------
-void Topology::set_global_indices(
-    int dim, const std::vector<std::int64_t>& global_indices)
+void Topology::set_global_user_vertices(
+    const std::vector<std::int64_t>& vertex_indices)
 {
-  assert(dim < (int)_global_indices.size());
-  _global_indices[dim] = global_indices;
+  _global_user_vertices = vertex_indices;
 }
 //-----------------------------------------------------------------------------
 void Topology::set_index_map(int dim,
@@ -103,28 +101,9 @@ std::shared_ptr<const common::IndexMap> Topology::index_map(int dim) const
   return _index_map[dim];
 }
 //-----------------------------------------------------------------------------
-const std::vector<std::int64_t>& Topology::global_indices_old(int d) const
+const std::vector<std::int64_t>& Topology::get_global_user_vertices() const
 {
-  // if (d == 0 or d == this->dim())
-  //   return _global_indices[d];
-  if (d == 0)
-    return _global_indices[d];
-
-  auto it = _global_indices_tmp.find(d);
-  if (it != _global_indices_tmp.end())
-    return it->second;
-  else
-  {
-    auto map = this->index_map(d);
-    assert(map);
-    _global_indices_tmp[d] = map->global_indices(false);
-    return _global_indices_tmp.at(d);
-    // map->global_indices(false);
-    // _global_indices_tmp =
-  }
-
-  // assert(d < (int)_global_indices.size());
-  // return _global_indices[d];
+  return _global_user_vertices;
 }
 //-----------------------------------------------------------------------------
 void Topology::set_shared_entities(

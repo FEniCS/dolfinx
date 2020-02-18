@@ -104,7 +104,7 @@ void remap_meshfunction_data(mesh::MeshFunction<T>& meshfunction,
   std::vector<std::vector<std::int64_t>> send_requests(num_processes);
   const std::size_t rank = dolfinx::MPI::rank(comm);
   const std::vector<std::int64_t>& global_indices
-      = mesh->topology().global_indices_old(0);
+      = mesh->topology().get_global_user_vertices();
   for (auto& cell : mesh::MeshRange(*mesh, cell_dim, mesh::MeshRangeType::ALL))
   {
     std::vector<std::int64_t> cell_topology;
@@ -222,7 +222,7 @@ std::vector<std::int64_t> compute_topology_data(const mesh::Mesh& mesh,
     perm = io::cells::dolfin_to_vtk(entity_cell_type, num_vertices_per_cell);
 
   const int tdim = mesh.topology().dim();
-  const auto& global_vertices = mesh.topology().global_indices_old(0);
+  const auto& global_vertices = mesh.topology().get_global_user_vertices();
   if (dolfinx::MPI::size(comm) == 1 or cell_dim == tdim)
   {
     // Simple case when nothing is shared between processes
@@ -248,7 +248,7 @@ std::vector<std::int64_t> compute_topology_data(const mesh::Mesh& mesh,
     std::set<std::uint32_t> non_local_entities
         = xdmf_write::compute_nonlocal_entities(mesh, cell_dim);
 
-    const auto& global_vertices = mesh.topology().global_indices_old(0);
+    const auto& global_vertices = mesh.topology().get_global_user_vertices();
     if (cell_dim == 0)
     {
       // Special case for mesh of points

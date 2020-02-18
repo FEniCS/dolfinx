@@ -69,8 +69,8 @@ public:
 
   /// @todo Remove this function. Use IndexMap instead
   /// Set the global indices for entities of dimension dim
-  void set_global_indices(int dim,
-                          const std::vector<std::int64_t>& global_indices);
+  void
+  set_global_user_vertices(const std::vector<std::int64_t>& vertex_indices);
 
   /// Set the IndexMap for dimension dim
   /// @warning This is experimental and likely to change
@@ -84,7 +84,7 @@ public:
   /// @todo Remove this function. Use IndexMap instead
   /// Get local-to-global index map for entities of topological
   /// dimension d
-  const std::vector<std::int64_t>& global_indices_old(int d) const;
+  const std::vector<std::int64_t>& get_global_user_vertices() const;
 
   /// Set the map from shared entities (local index) to processes that
   /// share the entity
@@ -143,9 +143,8 @@ private:
   // Cell type
   mesh::CellType _cell_type;
 
-  // Global indices for mesh entities
-  std::vector<std::vector<std::int64_t>> _global_indices;
-  mutable std::map<int, std::vector<std::int64_t>> _global_indices_tmp;
+  // Global indices for vertices
+  std::vector<std::int64_t> _global_user_vertices;
 
   // TODO: Could IndexMap be used here in place of std::map?
   // For entities of a given dimension d, maps each shared entity

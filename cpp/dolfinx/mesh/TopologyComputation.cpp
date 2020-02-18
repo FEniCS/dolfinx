@@ -602,7 +602,7 @@ TopologyComputation::compute_entities(MPI_Comm comm, const Topology& topology,
              std::map<std::int32_t, std::set<std::int32_t>>>
       data = compute_entities_by_key_matching(
           comm, *cells, topology.shared_entities(0),
-          topology.global_indices_old(0), topology.cell_type(), dim);
+          topology.get_global_user_vertices(), topology.cell_type(), dim);
 
   return data;
 }
