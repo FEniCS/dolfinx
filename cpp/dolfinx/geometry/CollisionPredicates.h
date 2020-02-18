@@ -103,6 +103,13 @@ public:
                                          const Eigen::Vector3d& p2,
                                          const Eigen::Vector3d& point);
 
+  /// Check whether quad p0-p1-p2-p3 collides with point (2D version)
+  static bool collides_quad_point_2d(const Eigen::Vector3d& p0,
+                                     const Eigen::Vector3d& p1,
+                                     const Eigen::Vector3d& p2,
+                                     const Eigen::Vector3d& p3,
+                                     const Eigen::Vector3d& point);
+
   /// Check whether triangle p0-p1-p2 collides with point (3D version)
   static bool collides_triangle_point_3d(const Eigen::Vector3d& p0,
                                          const Eigen::Vector3d& p1,

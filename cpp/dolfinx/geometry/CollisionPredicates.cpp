@@ -43,12 +43,15 @@ Eigen::Vector3d cross_product(const Eigen::Vector3d& a,
 bool CollisionPredicates::collides(const mesh::MeshEntity& entity,
                                    const Eigen::Vector3d& point)
 {
+  mesh::CellType cell_type = entity.mesh().topology().cell_type();
+
   // Intersection is only implemented for simplex meshes
-  if (!mesh::is_simplex(entity.mesh().cell_type()))
+  if (!mesh::is_simplex(cell_type)
+      and !(cell_type == mesh::CellType::quadrilateral))
   {
     throw std::runtime_error(
         "Cannot intersect cell and point. "
-        "Intersection is only implemented for simplex meshes");
+        "Intersection is only implemented for simplex meshes and quads");
   }
 
   // Get data
@@ -58,7 +61,10 @@ bool CollisionPredicates::collides(const mesh::MeshEntity& entity,
   const int gdim = entity.mesh().geometry().dim();
 
   // Pick correct specialized implementation
-  if (tdim == 1 and gdim == 1)
+  if (cell_type == mesh::CellType::quadrilateral)
+    return collides_quad_point_2d(g.x(v[0]), g.x(v[1]), g.x(v[2]), g.x(v[3]),
+                                  point);
+  else if (tdim == 1 and gdim == 1)
     return collides_segment_point_1d(g.x(v[0])[0], g.x(v[1])[0], point[0]);
   else if (tdim == 1 and gdim == 2)
     return collides_segment_point_2d(g.x(v[0]), g.x(v[1]), point);
@@ -87,8 +93,8 @@ bool CollisionPredicates::collides(const mesh::MeshEntity& entity_0,
                                    const mesh::MeshEntity& entity_1)
 {
   // Intersection is only implemented for simplex meshes
-  if (!mesh::is_simplex(entity_0.mesh().cell_type())
-      or !mesh::is_simplex(entity_1.mesh().cell_type()))
+  if (!mesh::is_simplex(entity_0.mesh().topology().cell_type())
+      or !mesh::is_simplex(entity_1.mesh().topology().cell_type()))
   {
     throw std::runtime_error(
         "Cannot intersect cell and point. "
@@ -464,6 +470,32 @@ bool CollisionPredicates::collides_triangle_point_2d(
             or (orient2d(p2, p0, point) == 0.0
                 and collides_segment_point_1d(p2[0], p0[0], point[0])
                 and collides_segment_point_1d(p2[1], p0[1], point[1])));
+  }
+}
+//-----------------------------------------------------------------------------
+bool CollisionPredicates::collides_quad_point_2d(const Eigen::Vector3d& p0,
+                                                 const Eigen::Vector3d& p1,
+                                                 const Eigen::Vector3d& p2,
+                                                 const Eigen::Vector3d& p3,
+                                                 const Eigen::Vector3d& point)
+{
+  const double ref0 = orient2d(p0, p1, p2);
+  const double ref1 = orient2d(p3, p2, p1);
+
+  if (ref0 * ref1 <= 0.0)
+    throw std::runtime_error("Badly formed quadrilateral");
+
+  if (ref0 > 0.0)
+  {
+    return (orient2d(p1, p3, point) >= 0.0 and orient2d(p3, p2, point) >= 0.0
+            and orient2d(p2, p0, point) >= 0.0
+            and orient2d(p0, p1, point) >= 0.0);
+  }
+  else
+  {
+    return (orient2d(p1, p3, point) <= 0.0 and orient2d(p3, p2, point) <= 0.0
+            and orient2d(p2, p0, point) <= 0.0
+            and orient2d(p0, p1, point) <= 0.0);
   }
 }
 //-----------------------------------------------------------------------------

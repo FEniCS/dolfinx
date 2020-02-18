@@ -17,16 +17,16 @@ import ufl
 from dolfinx import cpp, function
 
 
-def locate_dofs_geometrical(V: typing.Union[function.FunctionSpace],
+def locate_dofs_geometrical(V: typing.Iterable[typing.Union[cpp.function.FunctionSpace, function.FunctionSpace]],
                             marker: types.FunctionType):
     """Locate degrees-of-freedom geometrically using a marker function.
 
     Parameters
     ----------
     V
-        Function space in which to search for degree-of-freedom indices.
+        Function space(s) in which to search for degree-of-freedom indices.
 
-    maker
+    marker
         A function that takes an array of points ``x`` with shape
         ``(gdim, num_points)`` and returns an array of booleans of length
         ``num_points``, evaluating to ``True`` for entities whose
@@ -39,12 +39,28 @@ def locate_dofs_geometrical(V: typing.Union[function.FunctionSpace],
         for degrees-of-freedom whose coordinate evaluates to True for the
         marker function.
 
+        If ``V`` is a list of two function spaces, then a 2-D array of
+        shape (number of dofs, 2) is returned.
+
+        Returned degree-of-freedom indices are unique and ordered by the
+        first column.
+
     """
 
-    try:
-        return cpp.fem.locate_dofs_geometrical(V._cpp_object, marker)
-    except AttributeError:
-        return cpp.fem.locate_dofs_geometrical(V, marker)
+    if isinstance(V, collections.abc.Sequence):
+        _V = []
+        for space in V:
+            try:
+                _V.append(space._cpp_object)
+            except AttributeError:
+                _V.append(space)
+    else:
+        try:
+            _V = [V._cpp_object]
+        except AttributeError:
+            _V = [V]
+
+    return cpp.fem.locate_dofs_geometrical(_V, marker)
 
 
 def locate_dofs_topological(V: typing.Iterable[typing.Union[cpp.function.FunctionSpace, function.FunctionSpace]],

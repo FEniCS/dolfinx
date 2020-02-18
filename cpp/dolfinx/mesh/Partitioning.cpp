@@ -17,7 +17,6 @@
 #include <cstdint>
 #include <dolfinx/common/IndexMap.h>
 #include <dolfinx/common/MPI.h>
-#include <dolfinx/common/Set.h>
 #include <dolfinx/common/Timer.h>
 #include <dolfinx/common/log.h>
 #include <dolfinx/graph/CSRGraph.h>
@@ -815,12 +814,6 @@ mesh::Mesh Partitioning::build_from_partition(
     // Assign map of shared cells (only needed for ghost cells)
     mesh.topology().set_shared_entities(tdim, shared_cells);
   }
-
-  // Initialize required entities and connectivity
-  mesh.create_entities(tdim - 1);
-  mesh.create_connectivity(tdim - 1, tdim);
-  DistributedMeshTools::init_facet_cell_connections(mesh.mpi_comm(),
-                                                    mesh.topology());
 
   return mesh;
 }

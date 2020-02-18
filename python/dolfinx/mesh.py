@@ -54,30 +54,28 @@ _meshvaluecollection_types = {
 }
 
 
-class MeshFunction:
-    def __new__(cls, value_type, mesh, dim, value):
-        if value_type not in _meshfunction_types.keys():
-            raise KeyError("MeshFunction type not recognised")
-        fn = _meshfunction_types[value_type]
-        return fn(mesh, dim, value)
+def MeshFunction(value_type, mesh, dim, value):
+    if value_type not in _meshfunction_types.keys():
+        raise KeyError("MeshFunction type not recognised")
+    fn = _meshfunction_types[value_type]
+    return fn(mesh, dim, value)
 
 
-class MeshValueCollection:
-    def __new__(cls, value_type, mesh, dim=None):
-        if value_type not in _meshvaluecollection_types.keys():
-            raise KeyError("MeshValueCollection type not recognised")
-        mvc = _meshvaluecollection_types[value_type]
-        if dim is not None:
-            return mvc(mesh, dim)
-        else:
-            return mvc(mesh)
+def MeshValueCollection(value_type, mesh, dim=None):
+    if value_type not in _meshvaluecollection_types.keys():
+        raise KeyError("MeshValueCollection type not recognised")
+    mvc = _meshvaluecollection_types[value_type]
+    if dim is not None:
+        return mvc(mesh, dim)
+    else:
+        return mvc(mesh)
 
 
 # Functions to extend cpp.mesh.Mesh with
 
 
 def ufl_cell(self):
-    return ufl.Cell(self.cell_name(), geometric_dimension=self.geometry.dim)
+    return ufl.Cell(self.topology.cell_name(), geometric_dimension=self.geometry.dim)
 
 
 def ufl_coordinate_element(self):
