@@ -142,14 +142,6 @@ void mesh(py::module& m)
            [](const dolfinx::mesh::Topology& self) {
              return dolfinx::mesh::to_string(self.cell_type());
            })
-      .def(
-          "get_global_user_vertices",
-          [](const dolfinx::mesh::Topology& self) {
-            auto& indices = self.get_global_user_vertices();
-            return py::array_t<std::int64_t>(indices.size(), indices.data(),
-                                             py::none());
-          },
-          py::return_value_policy::reference_internal)
       .def("str", &dolfinx::mesh::Topology::str);
 
   // dolfinx::mesh::Mesh

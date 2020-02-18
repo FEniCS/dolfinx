@@ -327,7 +327,12 @@ void HDF5File::write(const mesh::Mesh& mesh, int cell_dim,
     {
       topological_data.reserve(mesh.num_entities(cell_dim) * (num_cell_points));
 
-      const auto& global_vertices = mesh.topology().get_global_user_vertices();
+      // const auto& global_vertices =
+      // mesh.topology().get_global_user_vertices();
+      auto map = mesh.topology().index_map(0);
+      assert(map);
+      const std::vector<std::int64_t> global_vertices
+          = map->global_indices(false);
 
       // Permutation to VTK ordering
       int num_nodes = mesh.coordinate_dofs().entity_points().num_links(0);
@@ -454,7 +459,8 @@ void HDF5File::write(const mesh::Mesh& mesh, int cell_dim,
 
       auto map = mesh.topology().index_map(cell_dim);
       assert(map);
-      const std::vector<std::int64_t> cell_index_ref = map->global_indices(false);
+      const std::vector<std::int64_t> cell_index_ref
+          = map->global_indices(false);
 
       const std::vector<std::int64_t> cells(
           cell_index_ref.begin(),
@@ -628,8 +634,13 @@ HDF5File::read_mesh_function(std::shared_ptr<const mesh::Mesh> mesh,
   // directly to the right place
   std::vector<std::vector<std::size_t>> send_requests(num_processes);
   const std::size_t process_number = MPI::rank(_mpi_comm.comm());
-  const std::vector<std::int64_t>& global_indices
-      = mesh->topology().get_global_user_vertices();
+
+  // const std::vector<std::int64_t>& global_indices
+  //     = mesh->topology().get_global_user_vertices();
+  auto map = mesh->topology().index_map(0);
+  assert(map);
+  const std::vector<std::int64_t> global_indices = map->global_indices(false);
+
   for (auto& cell : mesh::MeshRange(*mesh, dim, mesh::MeshRangeType::ALL))
   {
     std::vector<std::size_t> cell_topology;
@@ -1163,8 +1174,13 @@ void HDF5File::write_mesh_value_collection(
 
   const std::size_t tdim = mesh->topology().dim();
   mesh->create_connectivity(tdim, dim);
-  const std::vector<std::int64_t>& global_indices
-      = mesh->topology().get_global_user_vertices();
+
+  // const std::vector<std::int64_t>& global_indices
+  //     = mesh->topology().get_global_user_vertices();
+  auto map = mesh->topology().index_map(0);
+  assert(map);
+  const std::vector<std::int64_t> global_indices = map->global_indices(false);
+
   for (auto& p : values)
   {
     // mesh::MeshEntity cell = mesh::Cell(*mesh, p.first.first);
@@ -1266,8 +1282,13 @@ HDF5File::read_mesh_value_collection(std::shared_ptr<const mesh::Mesh> mesh,
 
   std::vector<std::vector<std::size_t>> send_entities(num_processes);
   std::vector<std::vector<std::size_t>> recv_entities(num_processes);
-  const std::vector<std::int64_t>& global_indices
-      = mesh->topology().get_global_user_vertices();
+
+  // const std::vector<std::int64_t>& global_indices
+  //     = mesh->topology().get_global_user_vertices();
+  auto map = mesh->topology().index_map(0);
+  assert(map);
+  const std::vector<std::int64_t> global_indices = map->global_indices(false);
+
   for (auto& m : mesh::MeshRange(*mesh, dim))
   {
     if (dim == 0)
