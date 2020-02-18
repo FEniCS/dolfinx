@@ -85,91 +85,6 @@ point_map_to_vertex_map(std::shared_ptr<const common::IndexMap> point_index_map,
   return vertex_index_map;
 }
 //-----------------------------------------------------------------------------
-std::map<std::int32_t, std::set<int>>
-compute_shared_from_indexmap(const common::IndexMap& index_map)
-{
-
-  // Get neighbour processes
-  int indegree(-1), outdegree(-2), weighted(-1);
-  MPI_Dist_graph_neighbors_count(index_map.mpi_comm_neighborhood(), &indegree,
-                                 &outdegree, &weighted);
-  assert(indegree == outdegree);
-  std::vector<int> neighbours(indegree), neighbours1(indegree),
-      weights(indegree), weights1(indegree);
-
-  MPI_Dist_graph_neighbors(index_map.mpi_comm_neighborhood(), indegree,
-                           neighbours.data(), weights.data(), outdegree,
-                           neighbours1.data(), weights1.data());
-  std::map<int, int> proc_to_neighbour;
-  for (std::size_t i = 0; i < neighbours.size(); ++i)
-    proc_to_neighbour[neighbours[i]] = i;
-
-  // Simple map for locally owned, forward shared entities
-  std::map<std::int32_t, std::set<int>> shared_entities
-      = index_map.compute_forward_processes();
-
-  // Ghosts are also shared, but we need to communicate to find owners
-  std::vector<std::int32_t> num_sharing(index_map.size_local(), 0);
-  std::vector<int> send_sizes(neighbours.size());
-  for (auto q : shared_entities)
-  {
-    num_sharing[q.first] = q.second.size();
-    for (int r : q.second)
-      send_sizes[proc_to_neighbour[r]] += q.second.size();
-  }
-  std::vector<int> send_offsets(neighbours.size() + 1, 0);
-  std::partial_sum(send_sizes.begin(), send_sizes.end(),
-                   send_offsets.begin() + 1);
-  std::vector<int> send_data(send_offsets.back());
-
-  std::vector<int> temp_offsets(send_offsets);
-  for (auto q : shared_entities)
-  {
-    for (int r : q.second)
-    {
-      const int np = proc_to_neighbour[r];
-      std::copy(q.second.begin(), q.second.end(),
-                send_data.begin() + temp_offsets[np]);
-      temp_offsets[np] += q.second.size();
-    }
-  }
-
-  std::vector<std::int32_t> ghost_shared_sizes
-      = index_map.scatter_fwd(num_sharing, 1);
-
-  // Count up how many to receive from each neighbour...
-  std::vector<int> recv_sizes(neighbours.size());
-  for (int i = 0; i < index_map.num_ghosts(); ++i)
-  {
-    int np = proc_to_neighbour[index_map.ghost_owners()[i]];
-    recv_sizes[np] += ghost_shared_sizes[i];
-  }
-  std::vector<int> recv_offsets(neighbours.size() + 1, 0);
-  std::partial_sum(recv_sizes.begin(), recv_sizes.end(),
-                   recv_offsets.begin() + 1);
-  std::vector<int> recv_data(recv_offsets.back());
-
-  MPI_Neighbor_alltoallv(send_data.data(), send_sizes.data(),
-                         send_offsets.data(), MPI_INT, recv_data.data(),
-                         recv_sizes.data(), recv_offsets.data(), MPI_INT,
-                         index_map.mpi_comm_neighborhood());
-
-  int rank = dolfinx::MPI::rank(index_map.mpi_comm());
-  for (int i = 0; i < index_map.num_ghosts(); ++i)
-  {
-    const int p = index_map.ghost_owners()[i];
-    const int np = proc_to_neighbour[p];
-    std::set<int> sharing_set(recv_data.begin() + recv_offsets[np],
-                              recv_data.begin() + recv_offsets[np]
-                                  + ghost_shared_sizes[i]);
-    sharing_set.insert(p);
-    sharing_set.erase(rank);
-    recv_offsets[np] += ghost_shared_sizes[i];
-    shared_entities[i + index_map.size_local()] = sharing_set;
-  }
-  return shared_entities;
-}
-//-----------------------------------------------------------------------------
 std::vector<std::int64_t> compute_global_index_set(
     const Eigen::Ref<const Eigen::Array<std::int64_t, Eigen::Dynamic,
                                         Eigen::Dynamic, Eigen::RowMajor>>&
@@ -269,13 +184,8 @@ Mesh::Mesh(
   _geometry = std::make_unique<Geometry>(num_points_global, points_received,
                                          node_indices_global);
 
-  // Compute shared points from IndexMap
-  std::map<std::int32_t, std::set<int>> shared_points
-      = compute_shared_from_indexmap(*point_index_map);
-
   // Get global vertex information
   std::vector<std::int64_t> vertex_indices_global;
-  std::map<std::int32_t, std::set<std::int32_t>> shared_vertices;
   std::shared_ptr<common::IndexMap> vertex_index_map;
 
   // Make cell to vertex connectivity
@@ -286,7 +196,6 @@ Mesh::Mesh(
   if (_degree == 1)
   {
     vertex_indices_global = std::move(node_indices_global);
-    shared_vertices = std::move(shared_points);
     vertex_index_map = point_index_map;
 
     const std::vector<int> vertex_indices
@@ -317,8 +226,6 @@ Mesh::Mesh(
             = node_index_to_vertex[coordinate_nodes(i, vertex_indices[j])];
 
     vertex_index_map = point_map_to_vertex_map(point_index_map, vertices);
-
-    shared_vertices = compute_shared_from_indexmap(*vertex_index_map);
   }
 
   // Initialise vertex topology
@@ -341,7 +248,6 @@ Mesh::Mesh(
   _topology->set_index_map(tdim, cell_index_map);
 
   auto cv = std::make_shared<graph::AdjacencyList<std::int32_t>>(vertex_cols);
-
   _topology->set_connectivity(cv, tdim, 0);
 
   // Global cell indices - construct if none given
