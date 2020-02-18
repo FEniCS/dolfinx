@@ -442,8 +442,8 @@ xdmf_write::compute_nonlocal_entities(const mesh::Mesh& mesh, int cell_dim)
 {
   const int mpi_rank = dolfinx::MPI::rank(mesh.mpi_comm());
   const mesh::Topology& topology = mesh.topology();
-  const std::map<std::int32_t, std::set<std::int32_t>>& shared_entities
-      = topology.shared_entities(cell_dim);
+  const std::map<std::int32_t, std::set<std::int32_t>> shared_entities
+      = topology.index_map(cell_dim)->compute_shared_indices();
 
   std::set<std::uint32_t> non_local_entities;
 

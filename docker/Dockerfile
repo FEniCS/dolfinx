@@ -239,7 +239,6 @@ RUN apt-get -qq update && \
     --with-debugging=${PETSC_SLEPC_DEBUGGING} \
     --with-fortran-bindings=no \
     --download-blacs \
-    --download-hypre \
     --download-metis \
     --download-mumps \
     --download-ptscotch \
