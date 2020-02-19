@@ -120,7 +120,8 @@ void ParallelRefinement::update_logical_edgefunction()
       = _mesh.topology().index_map(1)->mpi_comm_neighborhood();
   // Get neighbour processes
   std::vector<int> neighbours = MPI::neighbors(neighbour_comm);
-  std::vector<std::int32_t> send_offsets(1, 0), recv_offsets;
+  std::vector<std::int32_t> send_offsets = {0};
+  std::vector<std::int32_t> recv_offsets;
   std::vector<std::int64_t> data_to_send, data_to_recv;
   for (std::size_t i = 0; i < neighbours.size(); ++i)
   {
@@ -132,7 +133,6 @@ void ParallelRefinement::update_logical_edgefunction()
 
   // Send all shared edges marked for update and receive from other
   // processes
-
   MPI::neighbor_all_to_all(neighbour_comm, send_offsets, data_to_send,
                            recv_offsets, data_to_recv);
 
