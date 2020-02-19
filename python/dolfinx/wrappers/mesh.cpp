@@ -347,6 +347,14 @@ void mesh(py::module& m)
       "partition_cells",
       [](const MPICommWrapper comm, int nparts,
          dolfinx::mesh::CellType cell_type,
+        const dolfinx::graph::AdjacencyList<std::int64_t>& cells) {
+        return dolfinx::mesh::Partitioning::partition_cells(
+            comm.get(), nparts, cell_type, cells);
+      });
+  m.def(
+      "partition_cells",
+      [](const MPICommWrapper comm, int nparts,
+         dolfinx::mesh::CellType cell_type,
          const Eigen::Ref<const Eigen::Array<std::int64_t, Eigen::Dynamic,
                                              Eigen::Dynamic, Eigen::RowMajor>>&
              cells,

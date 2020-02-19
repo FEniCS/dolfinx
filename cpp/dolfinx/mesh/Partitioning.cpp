@@ -486,7 +486,7 @@ void distribute_cell_layer(
 
 //-----------------------------------------------------------------------------
 std::vector<int>
-Partitioning::partition_cells(const MPI_Comm& comm, int nparts,
+Partitioning::partition_cells(MPI_Comm comm, int nparts,
                               const mesh::CellType cell_type,
                               const graph::AdjacencyList<std::int64_t>& cells)
 {

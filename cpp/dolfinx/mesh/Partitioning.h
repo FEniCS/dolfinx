@@ -72,8 +72,7 @@ public:
   ///   once across all procsss
   /// @return Destination process for each cell on this process
   static std::vector<int>
-  partition_cells( constMPI_Comm& comm, int nparts,
-                  const mesh::CellType cell_type,
+  partition_cells(MPI_Comm comm, int nparts, const mesh::CellType cell_type,
                   const graph::AdjacencyList<std::int64_t>& cells);
 
   /// Partition mesh cells across processes using a graph partitioner
