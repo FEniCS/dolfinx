@@ -516,6 +516,35 @@ Partitioning::partition_cells(const MPI_Comm& comm, int nparts,
   return partition;
 }
 //-----------------------------------------------------------------------------
+graph::AdjacencyList<std::int64_t>
+Partitioning::distribute(const MPI_Comm& comm,
+                         const graph::AdjacencyList<std::int64_t>& list,
+                         const std::vector<int>& owner)
+{
+  const int rank = dolfinx::MPI::rank(comm);
+  const int size = dolfinx::MPI::size(comm);
+  std::vector<int> num_per_dest_send(size, 0);
+  for (dest : owner)
+    num_per_dest_send[dest] += 1;
+
+  // Send receive number of items
+  std::vector<int> num_per_dest_recv(size, 0);
+  MPI_Alltoall(num_per_dest_send.data(), 1, MPI_INT, num_per_dest_recv.data(),
+               1, MPI_INT, comm);
+
+  std::vector<int> disp(size + 1, 0);
+  std::inclusive_scan(num_per_dest.begin(), num_per_dest.end(),
+                      disp.begin() + 1);
+
+  const int num_links = list.array().rows();
+  for (int i = 0; i < list.num_nodes)
+  // Pack data to send
+  std::vector<std::int64_t> data(size + 1, 0);
+
+
+  // std::vector<std::int64_t> data()
+}
+//-----------------------------------------------------------------------------
 std::tuple<
     std::shared_ptr<common::IndexMap>, std::vector<std::int64_t>,
     Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>>

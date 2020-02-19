@@ -76,6 +76,17 @@ public:
                   const mesh::CellType cell_type,
                   const graph::AdjacencyList<std::int64_t>& cells);
 
+  /// Partition mesh cells across processes using a graph partitioner
+  /// @param[in] comm MPI Communicator
+  /// @param[in] list An adjacency list
+  /// @param[in] The rank of the destination for the ith links in the adjacency
+  ///   list
+  /// @return Adjacency list for this process
+  static graph::AdjacencyList<std::int64_t>
+  distribute(const MPI_Comm& comm,
+             const graph::AdjacencyList<std::int64_t>& list,
+             const std::vector<int>& owner);
+
   /// Build distributed mesh from a set of points and cells on each
   /// local process
   /// @param[in] comm MPI Communicator
