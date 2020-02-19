@@ -33,7 +33,7 @@ def test_extract_topology():
     assert np.array_equal(cells_filtered0.array(), cells_filtered1.array())
 
 
-def xtest_partition():
+def test_partition():
     """Test partitioning of cells"""
     # FIXME: make creating the ElementDofLayout simpler and clear
 
