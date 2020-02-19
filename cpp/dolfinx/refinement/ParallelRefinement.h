@@ -9,8 +9,8 @@
 #include <cstdint>
 #include <dolfinx/common/MPI.h>
 #include <map>
-#include <vector>
 #include <set>
+#include <vector>
 
 namespace dolfinx
 {

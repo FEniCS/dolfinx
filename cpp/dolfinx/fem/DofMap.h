@@ -129,7 +129,6 @@ public:
 private:
   // Cell-local-to-dof map (dofs for cell dofmap[i])
   Eigen::Array<PetscInt, Eigen::Dynamic, 1> _dofmap;
-
 };
 } // namespace fem
 } // namespace dolfinx
