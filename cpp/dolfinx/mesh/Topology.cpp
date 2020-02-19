@@ -271,19 +271,19 @@ std::string Topology::str(bool verbose) const
   return s.str();
 }
 //-----------------------------------------------------------------------------
-Eigen::Array<bool, 1, Eigen::Dynamic>
+Eigen::Ref<const Eigen::Array<bool, 1, Eigen::Dynamic>>
 Topology::get_edge_reflections(const int cell_n) const
 {
   return _edge_reflections.row(cell_n);
 }
 //-----------------------------------------------------------------------------
-Eigen::Array<bool, 1, Eigen::Dynamic>
+Eigen::Ref<const Eigen::Array<bool, 1, Eigen::Dynamic>>
 Topology::get_face_reflections(const int cell_n) const
 {
   return _face_reflections.row(cell_n);
 }
 //-----------------------------------------------------------------------------
-Eigen::Array<std::uint8_t, 1, Eigen::Dynamic>
+Eigen::Ref<const Eigen::Array<std::uint8_t, 1, Eigen::Dynamic>>
 Topology::get_face_rotations(const int cell_n) const
 {
   return _face_rotations.row(cell_n);
