@@ -14,43 +14,17 @@
 using namespace dolfinx;
 using namespace dolfinx::fem;
 
-namespace
-{
-//-----------------------------------------------------------------------------
-int get_num_permutations(mesh::CellType cell_type)
-{
-  // In general, this will return num_edges + 2*num_faces + 4*num_volumes
-  switch (cell_type)
-  {
-  case (mesh::CellType::point):
-    return 0;
-  case (mesh::CellType::interval):
-    return 1;
-  case (mesh::CellType::triangle):
-    return 5;
-  case (mesh::CellType::tetrahedron):
-    return 18;
-  case (mesh::CellType::quadrilateral):
-    return 6;
-  case (mesh::CellType::hexahedron):
-    return 28;
-  default:
-    LOG(WARNING) << "Dof permutations are not defined for this cell type. High "
-                    "order elements may be incorrect.";
-    return 0;
-  }
-}
-//-----------------------------------------------------------------------------
-} // namespace
-
 //-----------------------------------------------------------------------------
 ElementDofLayout::ElementDofLayout(
     int block_size, const std::vector<std::vector<std::set<int>>>& entity_dofs_,
     const std::vector<int>& parent_map,
-    const std::vector<std::shared_ptr<const ElementDofLayout>> sub_dofmaps,
-    const mesh::CellType cell_type, const int* base_permutations)
+    const std::vector<std::shared_ptr<const ElementDofLayout>>& sub_dofmaps,
+    const mesh::CellType cell_type,
+    const Eigen::Array<int, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>&
+        base_permutations)
     : _block_size(block_size), _cell_type(cell_type), _parent_map(parent_map),
-      _num_dofs(0), _entity_dofs(entity_dofs_), _sub_dofmaps(sub_dofmaps)
+      _num_dofs(0), _entity_dofs(entity_dofs_), _sub_dofmaps(sub_dofmaps),
+      _base_permutations(base_permutations)
 {
   // TODO: Handle global support dofs
 
@@ -95,11 +69,6 @@ ElementDofLayout::ElementDofLayout(
       _num_dofs += entity_dofs_[dim][entity_index].size();
     }
   }
-  int num_base_permutations = get_num_permutations(_cell_type);
-  _base_permutations.resize(num_base_permutations, _num_dofs);
-  for (int i = 0; i < num_base_permutations; ++i)
-    for (int j = 0; j < _num_dofs; ++j)
-      _base_permutations(i, j) = base_permutations[i * _num_dofs + j];
 }
 //-----------------------------------------------------------------------------
 ElementDofLayout ElementDofLayout::copy() const
