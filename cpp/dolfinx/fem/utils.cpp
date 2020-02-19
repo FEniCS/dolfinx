@@ -522,13 +522,10 @@ fem::create_element_dof_layout(const ufc_dofmap& dofmap,
   const int block_size = analyse_block_structure(sub_dofmaps);
 
   const int num_base_permutations = get_num_permutations(cell_type);
-
-  Eigen::Array<int, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
-      base_permutations(num_base_permutations, dof_count);
-  for (int i = 0; i < num_base_permutations; ++i)
-    for (int j = 0; j < dof_count; ++j)
-      base_permutations(i, j) = dofmap.base_permutations[i * dof_count + j];
-
+  const Eigen::Map<
+      const Eigen::Array<int, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>>
+      base_permutations(dofmap.base_permutations, num_base_permutations,
+                        dof_count);
   return fem::ElementDofLayout(block_size, entity_dofs, parent_map, sub_dofmaps,
                                cell_type, base_permutations);
 }

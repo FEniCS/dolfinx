@@ -18,9 +18,9 @@ using namespace dolfinx::fem;
 ElementDofLayout::ElementDofLayout(
     int block_size, const std::vector<std::vector<std::set<int>>>& entity_dofs_,
     const std::vector<int>& parent_map,
-    const std::vector<std::shared_ptr<const ElementDofLayout>> sub_dofmaps,
+    const std::vector<std::shared_ptr<const ElementDofLayout>>& sub_dofmaps,
     const mesh::CellType cell_type,
-    const Eigen::Array<int, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
+    const Eigen::Array<int, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>&
         base_permutations)
     : _block_size(block_size), _cell_type(cell_type), _parent_map(parent_map),
       _num_dofs(0), _entity_dofs(entity_dofs_), _sub_dofmaps(sub_dofmaps),
