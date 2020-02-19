@@ -214,7 +214,7 @@ void remap_meshfunction_data(mesh::MeshFunction<T>& meshfunction,
   std::vector<std::vector<std::int64_t>> send_requests(num_processes);
   const std::size_t rank = MPI::rank(comm);
   const std::vector<std::int64_t>& global_indices
-      = mesh->topology().global_indices(0);
+      = mesh->topology().get_global_user_vertices();
   for (auto& cell : mesh::MeshRange(*mesh, cell_dim, mesh::MeshRangeType::ALL))
   {
     std::vector<std::int64_t> cell_topology;

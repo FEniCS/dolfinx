@@ -79,6 +79,18 @@ build_basic_dofmap(const mesh::Topology& topology,
   for (int d = 0; d <= D; ++d)
     connectivity.push_back(topology.connectivity(D, d));
 
+  // Build global dof arrays
+  std::vector<std::vector<std::int64_t>> global_indices(D + 1);
+  for (int d = 0; d <= D; ++d)
+  {
+    if (needs_entities[d])
+    {
+      auto map = topology.index_map(d);
+      assert(map);
+      global_indices[d] = map->global_indices(false);
+    }
+  }
+
   // Number of dofs on this process
   std::int32_t local_size(0), d(0);
   for (std::int32_t n : num_mesh_entities_local)
@@ -119,7 +131,7 @@ build_basic_dofmap(const mesh::Topology& topology,
   // Dof (dim, entity index) marker
   std::vector<std::pair<std::int8_t, std::int32_t>> dof_entity(local_size);
 
-  // Build dofmaps from ElementDofmap
+  // Loops over cells and build dofmaps from ElementDofmap
   for (int c = 0; c < connectivity[0]->num_nodes(); ++c)
   {
     // Get local (process) and global cell entity indices
@@ -127,14 +139,11 @@ build_basic_dofmap(const mesh::Topology& topology,
     {
       if (needs_entities[d])
       {
-        const std::vector<std::int64_t>& global_indices
-            = topology.global_indices(d);
-        assert(global_indices.size() > 0);
         auto entities = connectivity[d]->links(c);
         for (int i = 0; i < entities.rows(); ++i)
         {
           entity_indices_local[d][i] = entities[i];
-          entity_indices_global[d][i] = global_indices[entities[i]];
+          entity_indices_global[d][i] = global_indices[d][entities[i]];
         }
       }
     }
@@ -142,9 +151,7 @@ build_basic_dofmap(const mesh::Topology& topology,
     // Handle cell index separately because cell.entities(D) doesn't work.
     if (needs_entities[D])
     {
-      const std::vector<std::int64_t>& global_indices
-          = topology.global_indices(D);
-      entity_indices_global[D][0] = global_indices[c];
+      entity_indices_global[D][0] = global_indices[D][c];
       entity_indices_local[D][0] = c;
     }
 

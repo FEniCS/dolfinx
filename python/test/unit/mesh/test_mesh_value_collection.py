@@ -101,7 +101,8 @@ def test_mesh_function_assign_2D_cells():
         assert f2.values[c] == g.get_value(c, 0)
 
     h = MeshValueCollection("int", mesh, 2)
-    global_indices = mesh.topology.global_indices(2)
+    global_indices = mesh.topology.index_map(2).global_indices(True)
+
     ncells_global = mesh.num_entities_global(2)
     for c in range(mesh.num_cells()):
         if global_indices[c] in [5, 8, 10]:
