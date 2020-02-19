@@ -66,3 +66,5 @@ def test_partition():
     dest = cpp.mesh.partition_cells(cpp.MPI.comm_world, size,
                                     layout.cell_type, cells_filtered1)
     assert len(dest) == cells_filtered1.num_nodes
+
+    # Distribute

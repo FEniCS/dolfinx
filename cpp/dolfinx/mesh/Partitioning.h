@@ -72,17 +72,18 @@ public:
   ///   once across all procsss
   /// @return Destination process for each cell on this process
   static std::vector<int>
-  partition_cells(const MPI_Comm& comm, int nparts,
+  partition_cells( constMPI_Comm& comm, int nparts,
                   const mesh::CellType cell_type,
                   const graph::AdjacencyList<std::int64_t>& cells);
 
   /// Partition mesh cells across processes using a graph partitioner
   /// @param[in] comm MPI Communicator
   /// @param[in] list An adjacency list
-  /// @param[in] The rank of the destination for the ith links in the adjacency
-  ///   list
-  /// @return Adjacency list for this process
-  static graph::AdjacencyList<std::int64_t>
+  /// @param[in] The rank of the destination for the ith links in the
+  ///   adjacency list
+  /// @return Adjacency list for this process and a vector of source
+  ///   processes for each node in the list
+  static std::pair<graph::AdjacencyList<std::int64_t>, std::vector<int>>
   distribute(const MPI_Comm& comm,
              const graph::AdjacencyList<std::int64_t>& list,
              const std::vector<int>& owner);
