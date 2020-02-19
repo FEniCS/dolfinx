@@ -521,28 +521,47 @@ Partitioning::distribute(const MPI_Comm& comm,
                          const graph::AdjacencyList<std::int64_t>& list,
                          const std::vector<int>& owner)
 {
-  const int rank = dolfinx::MPI::rank(comm);
+  // const int rank = dolfinx::MPI::rank(comm);
   const int size = dolfinx::MPI::size(comm);
   std::vector<int> num_per_dest_send(size, 0);
-  for (dest : owner)
-    num_per_dest_send[dest] += 1;
+  assert(list.num_nodes() == (int)owner.size());
+  for (int i = 0; i < list.num_nodes(); ++i)
+    num_per_dest_send[owner[i]] += list.num_links(i) + 1;
 
   // Send receive number of items
   std::vector<int> num_per_dest_recv(size, 0);
   MPI_Alltoall(num_per_dest_send.data(), 1, MPI_INT, num_per_dest_recv.data(),
                1, MPI_INT, comm);
 
-  std::vector<int> disp(size + 1, 0);
-  std::inclusive_scan(num_per_dest.begin(), num_per_dest.end(),
-                      disp.begin() + 1);
+  // Send displacements
+  std::vector<int> disp_send(size + 1, 0);
+  std::inclusive_scan(num_per_dest_send.begin(), num_per_dest_send.end(),
+                      disp_send.begin() + 1);
 
-  const int num_links = list.array().rows();
-  for (int i = 0; i < list.num_nodes)
-  // Pack data to send
-  std::vector<std::int64_t> data(size + 1, 0);
+  // Receive displacements
+  std::vector<int> disp_recv(size + 1, 0);
+  std::inclusive_scan(num_per_dest_recv.begin(), num_per_dest_recv.end(),
+                      disp_recv.begin() + 1);
 
+  std::vector<int> offset(size, 0);
+  std::vector<std::int64_t> data_send(list.array().rows() + list.num_nodes());
+  for (int i = 0; i < list.num_nodes(); ++i)
+  {
+    const int dest = owner[i];
+    auto links = list.links(i);
+    data_send[disp_send[dest] + offset[dest]] = links.rows();
+    for (int j = 0; j < links.rows(); ++j)
+      data_send[disp_send[dest] + offset[dest] + 1 + j] = links(j);
+    offset[dest] += links.rows() + 1;
+  }
 
-  // std::vector<std::int64_t> data()
+  // Send/receive
+  std::vector<std::int64_t> data_recv(10);
+  MPI_Alltoallv(data_send.data(), num_per_dest_send.data(), disp_send.data(),
+                MPI_INT64_T, data_recv.data(), num_per_dest_recv.data(),
+                disp_recv.data(), MPI_INT64_T, comm);
+
+  return graph::AdjacencyList<std::int64_t>(0);
 }
 //-----------------------------------------------------------------------------
 std::tuple<
