@@ -254,12 +254,14 @@ void Function::eval(
     // Compute basis on reference element
     element.evaluate_reference_basis(basis_reference_values, X);
 
-    Eigen::Array<bool, 1, Eigen::Dynamic> cell_edge_reflections
+    Eigen::Ref<const Eigen::Array<bool, 1, Eigen::Dynamic>>
+        cell_edge_reflections
         = mesh.topology().get_edge_reflections(cell_index);
-    Eigen::Array<bool, 1, Eigen::Dynamic> cell_face_reflections
+    Eigen::Ref<const Eigen::Array<bool, 1, Eigen::Dynamic>>
+        cell_face_reflections
         = mesh.topology().get_face_reflections(cell_index);
-    Eigen::Array<std::uint8_t, 1, Eigen::Dynamic> cell_face_rotations
-        = mesh.topology().get_face_rotations(cell_index);
+    Eigen::Ref<const Eigen::Array<std::uint8_t, 1, Eigen::Dynamic>>
+        cell_face_rotations = mesh.topology().get_face_rotations(cell_index);
 
     // Push basis forward to physical element
     element.transform_reference_basis(basis_values, basis_reference_values, X,

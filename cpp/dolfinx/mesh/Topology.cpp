@@ -272,24 +272,25 @@ std::string Topology::str(bool verbose) const
 }
 //-----------------------------------------------------------------------------
 Eigen::Ref<const Eigen::Array<bool, 1, Eigen::Dynamic>>
-Topology::get_edge_reflections(const int cell_n) const
+Topology::get_edge_reflections(const std::int32_t cell_n) const
 {
   return _edge_reflections.row(cell_n);
 }
 //-----------------------------------------------------------------------------
 Eigen::Ref<const Eigen::Array<bool, 1, Eigen::Dynamic>>
-Topology::get_face_reflections(const int cell_n) const
+Topology::get_face_reflections(const std::int32_t cell_n) const
 {
   return _face_reflections.row(cell_n);
 }
 //-----------------------------------------------------------------------------
 Eigen::Ref<const Eigen::Array<std::uint8_t, 1, Eigen::Dynamic>>
-Topology::get_face_rotations(const int cell_n) const
+Topology::get_face_rotations(const std::int32_t cell_n) const
 {
   return _face_rotations.row(cell_n);
 }
 //-----------------------------------------------------------------------------
-std::uint8_t Topology::get_facet_permutation(const int cell_n, const int dim,
+std::uint8_t Topology::get_facet_permutation(const std::int32_t cell_n,
+                                             const int dim,
                                              const int facet_index) const
 {
   if (dim == 1)
