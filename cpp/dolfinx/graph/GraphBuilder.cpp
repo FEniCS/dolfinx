@@ -145,7 +145,7 @@ compute_local_dual_graph_keyed(
   }
 
   return std::tuple(std::move(local_graph), std::move(facet_cell_map),
-                         num_local_edges);
+                    num_local_edges);
 }
 //-----------------------------------------------------------------------------
 // Build nonlocal part of dual graph for mesh and return number of
@@ -207,7 +207,7 @@ std::pair<std::int32_t, std::int32_t> compute_nonlocal_dual_graph(
 
     // Use first vertex of facet to partition into blocks
     const int dest_proc = dolfinx::MPI::index_owner(mpi_comm, (it.first)[0],
-                                                   num_global_vertices);
+                                                    num_global_vertices);
 
     // Pack map into vectors to send
     send_buffer[dest_proc].insert(send_buffer[dest_proc].end(),
@@ -301,8 +301,8 @@ std::pair<std::int32_t, std::int32_t> compute_nonlocal_dual_graph(
 //-----------------------------------------------------------------------------
 dolfinx::graph::Graph
 dolfinx::graph::GraphBuilder::local_graph(const mesh::Mesh& mesh,
-                                         const fem::DofMap& dofmap0,
-                                         const fem::DofMap& dofmap1)
+                                          const fem::DofMap& dofmap0,
+                                          const fem::DofMap& dofmap1)
 {
   common::Timer timer("Build local sparsity graph from dofmaps");
 
@@ -390,7 +390,7 @@ dolfinx::graph::Graph dolfinx::graph::GraphBuilder::local_graph(
 //-----------------------------------------------------------------------------
 dolfinx::graph::Graph
 dolfinx::graph::GraphBuilder::local_graph(const mesh::Mesh& mesh,
-                                         std::size_t dim0, std::size_t dim1)
+                                          std::size_t dim0, std::size_t dim1)
 {
   mesh.create_entities(dim0);
   mesh.create_entities(dim1);
@@ -418,8 +418,7 @@ dolfinx::graph::GraphBuilder::local_graph(const mesh::Mesh& mesh,
   return graph;
 }
 //-----------------------------------------------------------------------------
-std::pair<std::vector<std::vector<std::size_t>>,
-          std::tuple<std::int32_t, std::int32_t, std::int32_t>>
+std::pair<std::vector<std::vector<std::size_t>>, std::array<std::int32_t, 3>>
 graph::GraphBuilder::compute_dual_graph(
     const MPI_Comm mpi_comm,
     const Eigen::Ref<const Eigen::Array<std::int64_t, Eigen::Dynamic,
@@ -442,9 +441,8 @@ graph::GraphBuilder::compute_dual_graph(
   // Shrink to fit
   local_graph.shrink_to_fit();
 
-  return std::pair(
-      std::move(local_graph),
-      std::tuple(num_ghost_nodes, num_local_edges, num_nonlocal_edges));
+  return {std::move(local_graph),
+          {num_ghost_nodes, num_local_edges, num_nonlocal_edges}};
 }
 //-----------------------------------------------------------------------------
 std::tuple<std::vector<std::vector<std::size_t>>,

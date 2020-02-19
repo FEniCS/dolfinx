@@ -11,6 +11,8 @@
 #include <numeric>
 #include <set>
 
+#include <iostream>
+
 using namespace dolfinx;
 using namespace dolfinx::fem;
 
@@ -39,11 +41,15 @@ ElementDofLayout::ElementDofLayout(
   {
     const int dim = entity.first[0];
     const int index = entity.first[1];
+    assert(dim < (int)entity_dofs_.size());
+    assert(index < (int)entity_dofs_[dim].size());
     int subdim = 0;
     for (auto sub_entity : entity.second)
     {
+      assert(subdim < (int)entity_dofs_.size());
       for (auto sub_index : sub_entity)
       {
+        assert(sub_index < (int)entity_dofs_[subdim].size());
         _entity_closure_dofs[dim][index].insert(
             entity_dofs_[subdim][sub_index].begin(),
             entity_dofs_[subdim][sub_index].end());

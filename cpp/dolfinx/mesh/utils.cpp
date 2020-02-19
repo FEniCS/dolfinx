@@ -13,6 +13,7 @@
 #include <algorithm>
 #include <cfloat>
 #include <cstdlib>
+#include <dolfinx/fem/ElementDofLayout.h>
 #include <stdexcept>
 
 using namespace dolfinx;
@@ -185,6 +186,7 @@ T volume_quadrilateral(const mesh::Mesh& mesh,
   return v;
 }
 //-----------------------------------------------------------------------------
+
 /// Compute (generalized) volume of mesh entities of given dimension.
 /// This templated versions allows for fixed size (statically allocated)
 /// return arrays, which can be important for performance when computing
@@ -332,6 +334,33 @@ T circumradius_tmpl(const mesh::Mesh& mesh,
 
 } // namespace
 
+//-----------------------------------------------------------------------------
+graph::AdjacencyList<std::int64_t>
+mesh::extract_topology(const fem::ElementDofLayout& layout,
+                       const graph::AdjacencyList<std::int64_t>& cells)
+{
+  // Use ElementDofLayout to get vertex dof indices (local to a cell)
+  const int num_vertices_per_cell = num_cell_vertices(layout.cell_type());
+  std::vector<int> local_vertices(num_vertices_per_cell);
+  for (int i = 0; i < num_vertices_per_cell; ++i)
+  {
+    const Eigen::Array<int, Eigen::Dynamic, 1> local_index
+        = layout.entity_dofs(0, i);
+    assert(local_index.rows() == 1);
+    local_vertices[i] = local_index[0];
+  }
+
+  Eigen::Array<std::int64_t, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
+      topology(cells.num_nodes(), num_vertices_per_cell);
+  for (int i = 0; i < cells.num_nodes(); ++i)
+  {
+    auto p = cells.links(i);
+    for (int j = 0; j < num_vertices_per_cell; ++j)
+      topology(i, j) = p(local_vertices[j]);
+  }
+
+  return graph::AdjacencyList<std::int64_t>(topology);
+}
 //-----------------------------------------------------------------------------
 Eigen::ArrayXd
 mesh::volume_entities(const mesh::Mesh& mesh,

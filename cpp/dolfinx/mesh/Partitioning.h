@@ -8,11 +8,11 @@
 
 #include "PartitionData.h"
 #include <cstdint>
-#include <dolfinx/common/types.h>
 #include <dolfinx/common/IndexMap.h>
+#include <dolfinx/common/types.h>
 #include <dolfinx/graph/CSRGraph.h>
-#include <dolfinx/mesh/cell_types.h>
 #include <dolfinx/mesh/Mesh.h>
+#include <dolfinx/mesh/cell_types.h>
 #include <map>
 #include <memory>
 #include <set>
@@ -26,6 +26,12 @@ namespace dolfinx
 namespace common
 {
 class IndexMap;
+}
+
+namespace graph
+{
+template <typename T>
+class AdjacencyList;
 }
 
 namespace mesh
@@ -57,6 +63,19 @@ enum class Partitioner
 class Partitioning
 {
 public:
+  /// Partition mesh cells across processes using a graph partitioner
+  /// @param[in] comm MPI Communicator
+  /// @param[in] nparts Number of partitions
+  /// @param[in] cell_type Cell type
+  /// @param[in] cells Cells on this process. The ith entry list the
+  ///   global indices for the cell vertices. Each cell can appears only
+  ///   once across all procsss
+  /// @return Destination process for each cell on this process
+  static std::vector<int>
+  partition_cells(const MPI_Comm& comm, int nparts,
+                  const mesh::CellType cell_type,
+                  const graph::AdjacencyList<std::int64_t>& cells);
+
   /// Build distributed mesh from a set of points and cells on each
   /// local process
   /// @param[in] comm MPI Communicator

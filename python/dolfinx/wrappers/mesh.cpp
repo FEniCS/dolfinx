@@ -9,6 +9,7 @@
 #include <cfloat>
 #include <dolfinx/common/types.h>
 #include <dolfinx/fem/CoordinateElement.h>
+#include <dolfinx/fem/ElementDofLayout.h>
 #include <dolfinx/mesh/CoordinateDofs.h>
 #include <dolfinx/mesh/Geometry.h>
 #include <dolfinx/mesh/Mesh.h>
@@ -53,6 +54,8 @@ void mesh(py::module& m)
 
   m.def("cell_num_entities", &dolfinx::mesh::cell_num_entities);
   m.def("cell_num_vertices", &dolfinx::mesh::num_cell_vertices);
+
+  m.def("extract_topology", &dolfinx::mesh::extract_topology);
 
   m.def("volume_entities", &dolfinx::mesh::volume_entities,
         "Generalised volume of entities of given dimension.");
@@ -326,6 +329,14 @@ void mesh(py::module& m)
       .def("num_ghosts", &dolfinx::mesh::PartitionData::num_ghosts);
 
   // dolfinx::mesh::Partitioning::partition_cells
+  m.def(
+      "partition_cells",
+      [](const MPICommWrapper comm, int nparts,
+         dolfinx::mesh::CellType cell_type,
+        const dolfinx::graph::AdjacencyList<std::int64_t>& cells) {
+        return dolfinx::mesh::Partitioning::partition_cells(
+            comm.get(), nparts, cell_type, cells);
+      });
   m.def(
       "partition_cells",
       [](const MPICommWrapper comm, int nparts,
