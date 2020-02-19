@@ -128,7 +128,7 @@ public:
   ///   after distribution) and shared_points (map from global index to
   ///   set of sharing processes for each shared point)
   static std::tuple<
-    std::shared_ptr<common::IndexMap>, std::vector<std::int64_t>,
+      std::shared_ptr<common::IndexMap>, std::vector<std::int64_t>,
       Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>>
   distribute_points(
       const MPI_Comm comm,
@@ -147,8 +147,7 @@ public:
   /// @return ghost_procs Map of cell_index to vector of sharing
   ///   processes for those cells that have multiple owners
   static std::map<std::int64_t, std::vector<int>> compute_halo_cells(
-      MPI_Comm comm, std::vector<int> partition,
-      const mesh::CellType cell_type,
+      MPI_Comm comm, std::vector<int> partition, const mesh::CellType cell_type,
       const Eigen::Ref<const Eigen::Array<std::int64_t, Eigen::Dynamic,
                                           Eigen::Dynamic, Eigen::RowMajor>>&
           cell_vertices);

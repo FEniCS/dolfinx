@@ -435,8 +435,9 @@ graph::GraphBuilder::compute_dual_graph(
                                                       cell_type);
 
   // Compute nonlocal part
-  const auto [num_ghost_nodes, num_nonlocal_edges] = compute_nonlocal_dual_graph(
-      mpi_comm, cell_vertices, cell_type, facet_cell_map, local_graph);
+  const auto [num_ghost_nodes, num_nonlocal_edges]
+      = compute_nonlocal_dual_graph(mpi_comm, cell_vertices, cell_type,
+                                    facet_cell_map, local_graph);
 
   // Shrink to fit
   local_graph.shrink_to_fit();

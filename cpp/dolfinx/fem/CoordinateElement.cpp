@@ -17,7 +17,7 @@ CoordinateElement::CoordinateElement(
     std::function<void(double*, int, const double*, const double*)>
         compute_physical_coordinates,
     std::function<void(double*, double*, double*, double*, int, const double*,
-                       const double*, int)>
+                       const double*)>
         compute_reference_geometry)
     : _tdim(topological_dimension), _gdim(geometric_dimension),
       _cell(cell_type), _signature(signature),
@@ -82,6 +82,6 @@ void CoordinateElement::compute_reference_geometry(
 
   assert(_compute_reference_geometry);
   _compute_reference_geometry(X.data(), J.data(), detJ.data(), K.data(),
-                              num_points, x.data(), cell_geometry.data(), 1);
+                              num_points, x.data(), cell_geometry.data());
 }
 //-----------------------------------------------------------------------------

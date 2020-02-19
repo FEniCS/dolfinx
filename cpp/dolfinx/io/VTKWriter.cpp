@@ -12,9 +12,9 @@
 #include <dolfinx/fem/FiniteElement.h>
 #include <dolfinx/function/Function.h>
 #include <dolfinx/function/FunctionSpace.h>
+#include <dolfinx/graph/AdjacencyList.h>
 #include <dolfinx/la/PETScVector.h>
 #include <dolfinx/la/utils.h>
-#include <dolfinx/graph/AdjacencyList.h>
 #include <dolfinx/mesh/CoordinateDofs.h>
 #include <dolfinx/mesh/Mesh.h>
 #include <dolfinx/mesh/MeshEntity.h>
@@ -37,7 +37,8 @@ std::int8_t get_vtk_cell_type(const mesh::Mesh& mesh, std::size_t cell_dim,
                               std::size_t cell_order)
 {
   // Get cell type
-  mesh::CellType cell_type = mesh::cell_entity_type(mesh.topology().cell_type(), cell_dim);
+  mesh::CellType cell_type
+      = mesh::cell_entity_type(mesh.topology().cell_type(), cell_dim);
 
   // Determine VTK cell type
   switch (cell_type)
@@ -210,7 +211,8 @@ void write_ascii_mesh(const mesh::Mesh& mesh, int cell_dim,
       throw std::runtime_error("MeshFunction of lower degree than the "
                                "topological dimension is not implemented");
     }
-    mesh::CellType e_type = mesh::cell_entity_type(mesh.topology().cell_type(), cell_dim);
+    mesh::CellType e_type
+        = mesh::cell_entity_type(mesh.topology().cell_type(), cell_dim);
     // FIXME : Need to implement permutations for higher order
     // geometries (aka line segments). CoordinateDofs needs to be
     // extended to have connections to facets.
