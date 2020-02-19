@@ -565,10 +565,10 @@ def test_gmsh_input_quad():
     msh = pygmsh.generate_mesh(geo, verbose=True, dim=2)
     # Quads order 3 have a gmsh specific ordering, and has to be permuted.
     msh_to_dolfin = np.array([0, 3, 11, 10, 1, 2, 6, 7, 4, 9, 12, 15, 5, 8, 13, 14])
-    cells = np.zeros(msh.cells[element].shape)
+    cells = np.zeros(msh.cells_dict[element].shape)
     for i in range(len(cells)):
         for j in range(len(msh_to_dolfin)):
-            cells[i, j] = msh.cells[element][i, msh_to_dolfin[j]]
+            cells[i, j] = msh.cells_dict[element][i, msh_to_dolfin[j]]
 
     mesh = Mesh(MPI.comm_world, CellType.quadrilateral, msh.points, cells,
                 [], GhostMode.none)
