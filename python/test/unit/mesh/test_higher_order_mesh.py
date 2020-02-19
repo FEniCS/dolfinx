@@ -365,7 +365,6 @@ def test_nth_order_triangle(order):
     assert ref == pytest.approx(intu, rel=3e-3)
 
 
-@skip_in_parallel
 def test_xdmf_input_tri(datadir):
     with XDMFFile(MPI.comm_world, os.path.join(datadir, "mesh.xdmf")) as xdmf:
         mesh = xdmf.read_mesh(GhostMode.none)
@@ -549,40 +548,31 @@ def test_fourth_order_quad(L, H, Z):
 
 
 @skip_in_parallel
-@pytest.mark.parametrize('order', [2, 3])
-def test_gmsh_input_quad(order):
+def test_gmsh_input_quad():
     pygmsh = pytest.importorskip("pygmsh")
 
-    # Parameterize test if gmsh gets wider support
     R = 1
-    res = 0.2 if order == 2 else 0.2
-    algorithm = 2 if order == 2 else 5
-    element = "quad{0:d}".format(int((order + 1)**2))
+    res = 0.2
+    algorithm =  5
+    element = "quad16"
 
     geo = pygmsh.opencascade.Geometry()
-    geo.add_raw_code("Mesh.ElementOrder={0:d};".format(order))
+    geo.add_raw_code("Mesh.ElementOrder=3;")
     geo.add_ball([0, 0, 0], R, char_length=res)
     geo.add_raw_code("Recombine Surface {1};")
     geo.add_raw_code("Mesh.Algorithm = {0:d};".format(algorithm))
 
     msh = pygmsh.generate_mesh(geo, verbose=True, dim=2)
-
-    if order > 2:
-        # Quads order > 3 have a gmsh specific ordering, and has to be permuted.
-        msh_to_dolfin = np.array([0, 3, 11, 10, 1, 2, 6, 7, 4, 9, 12, 15, 5, 8, 13, 14])
-        cells = np.zeros(msh.cells[element].shape)
-        for i in range(len(cells)):
-            for j in range(len(msh_to_dolfin)):
-                cells[i, j] = msh.cells[element][i, msh_to_dolfin[j]]
-    else:
-        # XDMF does not support higher order quads
-        cells = permute_cell_ordering(msh.cells[element], permutation_vtk_to_dolfin(
-            CellType.quadrilateral, msh.cells[element].shape[1]))
+    # Quads order 3 have a gmsh specific ordering, and has to be permuted.
+    msh_to_dolfin = np.array([0, 3, 11, 10, 1, 2, 6, 7, 4, 9, 12, 15, 5, 8, 13, 14])
+    cells = np.zeros(msh.cells[element].shape)
+    for i in range(len(cells)):
+        for j in range(len(msh_to_dolfin)):
+            cells[i, j] = msh.cells[element][i, msh_to_dolfin[j]]
 
     mesh = Mesh(MPI.comm_world, CellType.quadrilateral, msh.points, cells,
                 [], GhostMode.none)
     surface = assemble_scalar(1 * dx(mesh))
-
     assert MPI.sum(mesh.mpi_comm(), surface) == pytest.approx(4 * np.pi * R * R, rel=1e-5)
 
     # Bug related to VTK output writing
@@ -599,3 +589,28 @@ def test_gmsh_input_quad(order):
     # VTKFile("u{0:d}.pvd".format(order)).write(u)
     # print(min(u.vector.array),max(u.vector.array))
     # print(assemble_scalar(u*dx(mesh)))
+
+
+def test_quad_xdmf(datadir):
+    # Reference to mesh generation code
+    # R = 1
+    # res = 0.2
+    # algorithm =  2
+    # element = "quad9"
+    # import pygmsh
+    # geo = pygmsh.opencascade.Geometry()
+    # geo.add_raw_code("Mesh.ElementOrder=2;")
+    # geo.add_ball([0, 0, 0], R, char_length=res)
+    # geo.add_raw_code("Recombine Surface {1};")
+    # geo.add_raw_code("Mesh.Algorithm = {0:d};".format(algorithm))
+    # import meshio
+    # msh = pygmsh.generate_mesh(geo, verbose=True, dim=2)
+    # msh.prune()
+    # mesh = meshio.Mesh(points=msh.points, cells={"quad9": msh.cells["quad9"]})
+    # meshio.write("UnitSphereShell_quad2.xdmf", mesh, file_format="xdmf-xml")
+
+    with XDMFFile(MPI.comm_world, os.path.join(datadir, "UnitSphereShell_quad2.xdmf")) as xdmf:
+        mesh = xdmf.read_mesh(GhostMode.none)
+    surface = assemble_scalar(1 * dx(mesh))
+
+    assert MPI.sum(mesh.mpi_comm(), surface) == pytest.approx(4 * np.pi, rel=1e-5)
