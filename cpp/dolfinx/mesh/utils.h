@@ -7,13 +7,24 @@
 #pragma once
 
 #include <Eigen/Dense>
+#include <dolfinx/graph/AdjacencyList.h>
 
 namespace dolfinx
 {
+namespace fem
+{
+class ElementDofLayout;
+}
+
 namespace mesh
 {
 class Mesh;
 class MeshEntity;
+
+// Extract topology
+graph::AdjacencyList<std::int64_t>
+extract_topology(const fem::ElementDofLayout& layout,
+                 const graph::AdjacencyList<std::int64_t>& cells);
 
 /// Compute (generalized) volume of mesh entities of given dimension
 Eigen::ArrayXd volume_entities(const Mesh& mesh,

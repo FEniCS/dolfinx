@@ -23,6 +23,15 @@ void graph(py::module& m)
   py::class_<dolfinx::common::Set<int>>(m, "DOLFINIntSet");
 
   // dolfinx::graph::AdjacencyList class
+  py::class_<dolfinx::graph::AdjacencyList<std::int64_t>,
+             std::shared_ptr<dolfinx::graph::AdjacencyList<std::int64_t>>>(
+      m, "AdjacencyList64", "Adjacency list")
+      .def(py::init<const Eigen::Ref<
+               const Eigen::Array<std::int64_t, Eigen::Dynamic, Eigen::Dynamic,
+                                  Eigen::RowMajor>>&>())
+      .def("array", &dolfinx::graph::AdjacencyList<std::int64_t>::array);
+
+  // dolfinx::graph::AdjacencyList class
   py::class_<dolfinx::graph::AdjacencyList<std::int32_t>,
              std::shared_ptr<dolfinx::graph::AdjacencyList<std::int32_t>>>(
       m, "AdjacencyList", "Adjacency list")
