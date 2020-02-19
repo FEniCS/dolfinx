@@ -469,6 +469,8 @@ fem::create_element_dof_layout(const ufc_dofmap& dofmap,
   std::copy(dofmap.num_entity_dofs, dofmap.num_entity_dofs + 4,
             num_entity_dofs.data());
 
+  int dof_count = 0;
+
   // Fill entity dof indices
   const int tdim = mesh::cell_dim(cell_type);
   std::vector<std::vector<std::set<int>>> entity_dofs(tdim + 1);
@@ -482,6 +484,7 @@ fem::create_element_dof_layout(const ufc_dofmap& dofmap,
       work_array.resize(num_entity_dofs[dim]);
       dofmap.tabulate_entity_dofs(work_array.data(), dim, i);
       entity_dofs[dim][i] = std::set<int>(work_array.begin(), work_array.end());
+      dof_count += num_entity_dofs[dim];
     }
   }
 
@@ -519,13 +522,12 @@ fem::create_element_dof_layout(const ufc_dofmap& dofmap,
   const int block_size = analyse_block_structure(sub_dofmaps);
 
   const int num_base_permutations = get_num_permutations(cell_type);
-  const int num_dofs = dofmap.num_element_support_dofs;
 
   Eigen::Array<int, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
-      base_permutations(num_base_permutations, num_dofs);
+      base_permutations(num_base_permutations, dof_count);
   for (int i = 0; i < num_base_permutations; ++i)
-    for (int j = 0; j < num_dofs; ++j)
-      base_permutations(i, j) = dofmap.base_permutations[i * num_dofs + j];
+    for (int j = 0; j < dof_count; ++j)
+      base_permutations(i, j) = dofmap.base_permutations[i * dof_count + j];
 
   return fem::ElementDofLayout(block_size, entity_dofs, parent_map, sub_dofmaps,
                                cell_type, base_permutations);
