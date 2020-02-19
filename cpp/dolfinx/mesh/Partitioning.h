@@ -70,7 +70,6 @@ public:
   /// @param[in] cells Cells on this process. The ith entry list the
   ///   global indices for the cell vertices. Each cell can appears only
   ///   once across all procsss
-  /// @param[in] partitioner The graph partitioner
   /// @return Destination process for each cell on this process
   static std::vector<int>
   partition_cells(const MPI_Comm& comm, int nparts,
