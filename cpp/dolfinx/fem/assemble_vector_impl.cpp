@@ -587,10 +587,11 @@ void fem::impl::assemble_interior_facets(
     const mesh::MeshEntity cell0(mesh, tdim, cells[0]);
     const mesh::MeshEntity cell1(mesh, tdim, cells[1]);
     const mesh::MeshEntity facet(mesh, tdim - 1, f);
-    const int local_facet[2] = {cell0.index(facet), cell1.index(facet)};
+    const std::array<int, 2> local_facet
+        = {cell0.index(facet), cell1.index(facet)};
 
     // Orientation
-    const std::uint8_t perm[2]
+    const std::array<std::uint8_t, 2> perm
         = {mesh.topology().get_facet_permutation(cell0.index(), facet.dim(),
                                                  local_facet[0]),
            mesh.topology().get_facet_permutation(cell1.index(), facet.dim(),
@@ -648,8 +649,9 @@ void fem::impl::assemble_interior_facets(
     // Tabulate element vector
     be.setZero(dmap0.size() + dmap1.size());
     fn(be.data(), coeff_array.data(), constant_values.data(),
-       coordinate_dofs.data(), local_facet, perm, cell_edge_reflections.data(),
-       cell_face_reflections.data(), cell_face_rotations.data());
+       coordinate_dofs.data(), local_facet.data(), perm.data(),
+       cell_edge_reflections.data(), cell_face_reflections.data(),
+       cell_face_rotations.data());
 
     // Add element vector to global vector
     for (Eigen::Index i = 0; i < dmap0.size(); ++i)

@@ -269,13 +269,14 @@ PetscScalar fem::impl::assemble_interior_facets(
 
     // Get local index of facet with respect to the cell
     const mesh::MeshEntity facet(mesh, tdim - 1, f);
-    const int local_facet[2] = {cell0.index(facet), cell1.index(facet)};
+    const std::array<int, 2> local_facet
+        = {cell0.index(facet), cell1.index(facet)};
 
     // Get cell vertex coordinates
     const int cell_index0 = cell0.index();
     const int cell_index1 = cell1.index();
 
-    const std::uint8_t perm[2]
+    const std::array<std::uint8_t, 2> perm
         = {mesh.topology().get_facet_permutation(cell_index0, facet.dim(),
                                                  local_facet[0]),
            mesh.topology().get_facet_permutation(cell_index1, facet.dim(),
@@ -325,8 +326,9 @@ PetscScalar fem::impl::assemble_interior_facets(
           = coeff_cell1.segment(offsets[i], num_entries);
     }
     fn(&value, coeff_array.data(), constant_values.data(),
-       coordinate_dofs.data(), local_facet, perm, cell_edge_reflections.data(),
-       cell_face_reflections.data(), cell_face_rotations.data());
+       coordinate_dofs.data(), local_facet.data(), perm.data(),
+       cell_edge_reflections.data(), cell_face_reflections.data(),
+       cell_face_rotations.data());
   }
 
   return value;
