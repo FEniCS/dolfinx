@@ -204,8 +204,8 @@ MeshValueCollection<T>::MeshValueCollection(
 }
 //---------------------------------------------------------------------------
 template <typename T>
-MeshValueCollection<T>&
-MeshValueCollection<T>::operator=(const MeshFunction<T>& mesh_function)
+MeshValueCollection<T>& MeshValueCollection<T>::
+operator=(const MeshFunction<T>& mesh_function)
 {
   _mesh = mesh_function.mesh();
   _dim = mesh_function.dim();

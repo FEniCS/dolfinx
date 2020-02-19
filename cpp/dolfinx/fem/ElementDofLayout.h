@@ -12,6 +12,7 @@
 #include <dolfinx/mesh/cell_types.h>
 #include <memory>
 #include <set>
+#include <ufc.h>
 #include <vector>
 
 namespace dolfinx
@@ -38,8 +39,7 @@ public:
       const std::vector<std::vector<std::set<int>>>& entity_dofs,
       const std::vector<int>& parent_map,
       const std::vector<std::shared_ptr<const ElementDofLayout>> sub_dofmaps,
-      const mesh::CellType cell_type,
-      const std::array<int, 4> entity_block_size);
+      const mesh::CellType cell_type, const int* base_permutations);
 
   /// Copy the DOF layout, discarding any parent information
   ElementDofLayout copy() const;
@@ -116,15 +116,19 @@ public:
   /// Block size
   int block_size() const;
 
-  /// Block size of entity
-  int entity_block_size(const int dim) const;
-
   /// True iff dof map is a view into another map
   ///
   /// @returns bool
   ///         True if the dof map is a sub-dof map (a view into
   ///         another map).
   bool is_view() const;
+
+  /// Returns the base permutations of the DoFs, as computed by FFCx
+  Eigen::Array<int, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
+  base_permutations() const
+  {
+    return _base_permutations;
+  }
 
 private:
   // Block size
@@ -156,7 +160,9 @@ private:
   // List of sub dofmaps
   std::vector<std::shared_ptr<const ElementDofLayout>> _sub_dofmaps;
 
-  std::array<int, 4> _entity_block_size;
+  // The base permutations of the DoFs
+  Eigen::Array<int, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
+      _base_permutations;
 };
 } // namespace fem
 } // namespace dolfinx

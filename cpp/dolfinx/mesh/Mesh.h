@@ -162,6 +162,9 @@ public:
   /// Compute all entities and connectivity
   void create_connectivity_all() const;
 
+  /// Compute entity permutations and reflections
+  void create_entity_permutations() const;
+
   /// Compute minimum cell size in mesh, measured greatest distance
   /// between any two vertices of a cell.
   /// @return The minimum cell size. The size is computed using
