@@ -67,15 +67,15 @@ ElementDofLayout::ElementDofLayout(
   {
     const int dim = entity.first[0];
     const int index = entity.first[1];
-    assert(dim < (int)_entity_closure_dofs.size());
-    assert(index < (int)_entity_closure_dofs[dim].size());
+    assert(dim < (int)entity_dofs_.size());
+    assert(index < (int)entity_dofs_[dim].size());
     int subdim = 0;
     for (auto sub_entity : entity.second)
     {
-      assert(subdim < (int)entity_dofs.size());
+      assert(subdim < (int)entity_dofs_.size());
       for (auto sub_index : sub_entity)
       {
-        assert(sub_index < (int)entity_dofs[subdim].size());
+        assert(sub_index < (int)entity_dofs_[subdim].size());
         _entity_closure_dofs[dim][index].insert(
             entity_dofs_[subdim][sub_index].begin(),
             entity_dofs_[subdim][sub_index].end());
