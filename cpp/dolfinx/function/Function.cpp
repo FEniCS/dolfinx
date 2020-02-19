@@ -228,6 +228,8 @@ void Function::eval(
   assert(_function_space->dofmap());
   const fem::DofMap& dofmap = *_function_space->dofmap();
 
+  mesh.create_entity_permutations();
+
   // Loop over points
   u.setZero();
   la::VecReadWrapper v(_vector.vec());
@@ -252,9 +254,20 @@ void Function::eval(
     // Compute basis on reference element
     element.evaluate_reference_basis(basis_reference_values, X);
 
+    Eigen::Ref<const Eigen::Array<bool, 1, Eigen::Dynamic>>
+        cell_edge_reflections
+        = mesh.topology().get_edge_reflections(cell_index);
+    Eigen::Ref<const Eigen::Array<bool, 1, Eigen::Dynamic>>
+        cell_face_reflections
+        = mesh.topology().get_face_reflections(cell_index);
+    Eigen::Ref<const Eigen::Array<std::uint8_t, 1, Eigen::Dynamic>>
+        cell_face_rotations = mesh.topology().get_face_rotations(cell_index);
+
     // Push basis forward to physical element
     element.transform_reference_basis(basis_values, basis_reference_values, X,
-                                      J, detJ, K);
+                                      J, detJ, K, cell_edge_reflections.data(),
+                                      cell_face_reflections.data(),
+                                      cell_face_rotations.data());
 
     // Get degrees of freedom for current cell
     auto dofs = dofmap.cell_dofs(cell_index);
@@ -342,7 +355,8 @@ Function::compute_point_values() const
   Eigen::Array<PetscScalar, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
       point_values(mesh.geometry().num_points(), value_size_loc);
 
-  const graph::AdjacencyList<std::int32_t>& cell_dofs = mesh.coordinate_dofs().entity_points();
+  const graph::AdjacencyList<std::int32_t>& cell_dofs
+      = mesh.coordinate_dofs().entity_points();
 
   // Prepare cell geometry
   const graph::AdjacencyList<std::int32_t>& connectivity_g

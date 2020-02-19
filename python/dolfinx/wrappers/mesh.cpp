@@ -80,26 +80,27 @@ void mesh(py::module& m)
   py::class_<dolfinx::mesh::CoordinateDofs,
              std::shared_ptr<dolfinx::mesh::CoordinateDofs>>(
       m, "CoordinateDofs", "CoordinateDofs object")
-      .def("entity_points",
-           [](const dolfinx::mesh::CoordinateDofs& self) {
-             const dolfinx::graph::AdjacencyList<std::int32_t>& connectivity
-                 = self.entity_points();
-             Eigen::Ref<const Eigen::Array<std::int32_t, Eigen::Dynamic, 1>>
-                 connections = connectivity.array();
-             const int num_entities = connectivity.offsets().size() - 1;
+      .def(
+          "entity_points",
+          [](const dolfinx::mesh::CoordinateDofs& self) {
+            const dolfinx::graph::AdjacencyList<std::int32_t>& connectivity
+                = self.entity_points();
+            Eigen::Ref<const Eigen::Array<std::int32_t, Eigen::Dynamic, 1>>
+                connections = connectivity.array();
+            const int num_entities = connectivity.offsets().size() - 1;
 
-             // FIXME: mesh::CoordinateDofs should know its dimension
-             // (entity_size) to handle empty case on a process.
-             int entity_size = 0;
-             if (num_entities > 0)
-             {
-               assert(connections.size() % num_entities == 0);
-               entity_size = connections.size() / num_entities;
-             }
-             return py::array({num_entities, entity_size}, connections.data(),
-                              py::none());
-           },
-           py::return_value_policy::reference_internal);
+            // FIXME: mesh::CoordinateDofs should know its dimension
+            // (entity_size) to handle empty case on a process.
+            int entity_size = 0;
+            if (num_entities > 0)
+            {
+              assert(connections.size() % num_entities == 0);
+              entity_size = connections.size() / num_entities;
+            }
+            return py::array({num_entities, entity_size}, connections.data(),
+                             py::none());
+          },
+          py::return_value_policy::reference_internal);
 
   // dolfinx::mesh::Geometry class
   py::class_<dolfinx::mesh::Geometry, std::shared_ptr<dolfinx::mesh::Geometry>>(

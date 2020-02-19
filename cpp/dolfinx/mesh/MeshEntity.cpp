@@ -40,6 +40,17 @@ int MeshEntity::index(const MeshEntity& entity) const
   return -1;
 }
 //-----------------------------------------------------------------------------
+int MeshEntity::get_vertex_local_index(const std::int32_t v_index) const
+{
+  auto vertices = _mesh->topology().connectivity(_dim, 0)->links(_local_index);
+  const int num_entities
+      = _mesh->topology().connectivity(_dim, 0)->num_links(_local_index);
+  for (int v = 0; v < num_entities; ++v)
+    if (vertices[v] == v_index)
+      return v;
+  throw std::runtime_error("Vertex was not found");
+}
+//-----------------------------------------------------------------------------
 std::string MeshEntity::str(bool verbose) const
 {
   if (verbose)
