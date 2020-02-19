@@ -27,3 +27,33 @@ def test_extract_topology():
     layout = cpp.fem.ElementDofLayout(1, entity_dofs, [], [], cpp.mesh.CellType.triangle, [1, 1, 1, 1])
     cells_filtered1 = cpp.mesh.extract_topology(layout, cells1)
     assert np.array_equal(cells_filtered0.array(), cells_filtered1.array())
+
+
+def test_partition():
+    """Test partitioning of cells"""
+    entity_dofs = [[set([0]), set([1]), set([2])], [set(), set(), set()], [set()]]
+    layout = cpp.fem.ElementDofLayout(1, entity_dofs, [], [], cpp.mesh.CellType.triangle, [1, 1, 1, 1])
+    rank = cpp.MPI.rank(cpp.MPI.comm_world)
+    if rank == 0:
+        cells0 = [[0, 1, 4], [0, 4, 3], [1, 2, 5], [1, 5, 4]]
+        cells0 = cpp.graph.AdjacencyList64(cells0)
+        cells_filtered0 = cpp.mesh.extract_topology(layout, cells0)
+    else:
+        cells_filtered0 = cpp.graph.AdjacencyList64(0)
+    size = cpp.MPI.size(cpp.MPI.comm_world)
+    dest = cpp.mesh.partition_cells(cpp.MPI.comm_world, size,
+                                    layout.cell_type, cells_filtered0)
+
+    entity_dofs = [[set([0]), set([1]), set([2])], [set(), set(), set()], [set()]]
+    layout = cpp.fem.ElementDofLayout(1, entity_dofs, [], [], cpp.mesh.CellType.triangle, [1, 1, 1, 1])
+    rank = cpp.MPI.rank(cpp.MPI.comm_world)
+    if rank == 0:
+        cells1 = [[6, 12, 2, 1, 11, 0], [12, 14, 7, 9, 10, 8], [7, 2, 12, 1, 10, 3], [6, 2, 13, 4, 5, 11]]
+        cells1 = cpp.graph.AdjacencyList64(cells1)
+        cells_filtered1 = cpp.mesh.extract_topology(layout, cells1)
+    else:
+        cells_filtered1 = cpp.graph.AdjacencyList64(0)
+    size = cpp.MPI.size(cpp.MPI.comm_world)
+    dest = cpp.mesh.partition_cells(cpp.MPI.comm_world, size,
+                                    layout.cell_type, cells_filtered1)
+    assert len(dest) == cells_filtered1.num_nodes
