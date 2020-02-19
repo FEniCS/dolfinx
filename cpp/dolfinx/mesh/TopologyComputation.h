@@ -49,8 +49,7 @@ public:
   ///   returned.
   static std::tuple<std::shared_ptr<graph::AdjacencyList<std::int32_t>>,
                     std::shared_ptr<graph::AdjacencyList<std::int32_t>>,
-                    std::shared_ptr<common::IndexMap>,
-                    std::map<std::int32_t, std::set<std::int32_t>>>
+                    std::shared_ptr<common::IndexMap>>
   compute_entities(MPI_Comm comm, const Topology& topology, int dim);
 
   /// Compute connectivity (d0 -> d1) for given pair of topological

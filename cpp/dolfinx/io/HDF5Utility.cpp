@@ -239,8 +239,10 @@ void HDF5Utility::cell_owners_in_range(
       = MPI::local_range(mpi_comm, n_global_cells);
   global_owner.resize(range[1] - range[0]);
 
-  const std::vector<std::int64_t>& global_indices
-      = mesh.topology().global_indices(tdim);
+  auto map = mesh.topology().index_map(tdim);
+  assert(map);
+  const std::vector<std::int64_t> global_indices = map->global_indices(false);
+
   std::vector<std::vector<std::size_t>> send_owned_global(num_processes);
   for (auto& mesh_cell : mesh::MeshRange(mesh, tdim))
   {

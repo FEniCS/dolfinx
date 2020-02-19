@@ -74,22 +74,20 @@ std::vector<bool> mesh::compute_interior_facets(const Topology& topology)
 
 //-----------------------------------------------------------------------------
 Topology::Topology(mesh::CellType type)
-    : _cell_type(type), _global_indices(mesh::cell_dim(type) + 1),
-      _shared_entities(mesh::cell_dim(type) + 1),
-      _connectivity(mesh::cell_dim(type) + 1, mesh::cell_dim(type) + 1),
-      _edge_reflections(0, 0), _face_reflections(0, 0), _face_rotations(0, 0),
-      _face_permutations(0, 0)
+    : _cell_type(type),
+      _connectivity(mesh::cell_dim(type) + 1, mesh::cell_dim(type) + 1)
+          _edge_reflections(0, 0),
+      _face_reflections(0, 0), _face_rotations(0, 0), _face_permutations(0, 0)
 {
   // Do nothing
 }
 //-----------------------------------------------------------------------------
 int Topology::dim() const { return _connectivity.rows() - 1; }
 //-----------------------------------------------------------------------------
-void Topology::set_global_indices(
-    int dim, const std::vector<std::int64_t>& global_indices)
+void Topology::set_global_user_vertices(
+    const std::vector<std::int64_t>& vertex_indices)
 {
-  assert(dim < (int)_global_indices.size());
-  _global_indices[dim] = global_indices;
+  _global_user_vertices = vertex_indices;
 }
 //-----------------------------------------------------------------------------
 void Topology::set_index_map(int dim,
@@ -105,24 +103,9 @@ std::shared_ptr<const common::IndexMap> Topology::index_map(int dim) const
   return _index_map[dim];
 }
 //-----------------------------------------------------------------------------
-const std::vector<std::int64_t>& Topology::global_indices(int d) const
+const std::vector<std::int64_t>& Topology::get_global_user_vertices() const
 {
-  assert(d < (int)_global_indices.size());
-  return _global_indices[d];
-}
-//-----------------------------------------------------------------------------
-void Topology::set_shared_entities(
-    int dim, const std::map<std::int32_t, std::set<std::int32_t>>& entities)
-{
-  assert(dim <= this->dim());
-  _shared_entities[dim] = entities;
-}
-//-----------------------------------------------------------------------------
-const std::map<std::int32_t, std::set<std::int32_t>>&
-Topology::shared_entities(int dim) const
-{
-  assert(dim <= this->dim());
-  return _shared_entities[dim];
+  return _global_user_vertices;
 }
 //-----------------------------------------------------------------------------
 std::vector<bool> Topology::on_boundary(int dim) const

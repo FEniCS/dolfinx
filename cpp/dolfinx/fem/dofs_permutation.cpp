@@ -198,7 +198,9 @@ compute_ordering_triangle(const mesh::Topology& topology,
   Eigen::Array<std::int8_t, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
       cell_orders(num_cells, num_permutations);
 
-  const std::vector<std::int64_t>& global_indices = topology.global_indices(0);
+  auto map = topology.index_map(0);
+  assert(map);
+  const std::vector<std::int64_t> global_indices = map->global_indices();
 
   // Set orders for each cell
   for (int cell_n = 0; cell_n < num_cells; ++cell_n)
@@ -236,7 +238,9 @@ compute_ordering_interval(const mesh::Topology& topology,
       cell_orders(num_cells, num_permutations);
 
   // Set orders for each cell
-  const std::vector<std::int64_t>& global_indices = topology.global_indices(0);
+  auto map = topology.index_map(0);
+  assert(map);
+  const std::vector<std::int64_t> global_indices = map->global_indices();
   for (int cell_n = 0; cell_n < num_cells; ++cell_n)
   {
     auto vertices = cells->links(cell_n);
@@ -263,7 +267,9 @@ compute_ordering_quadrilateral(const mesh::Topology& topology,
       cell_orders(num_cells, num_permutations);
 
   // Set orders for each cell
-  const std::vector<std::int64_t>& global_indices = topology.global_indices(0);
+  auto map = topology.index_map(0);
+  assert(map);
+  const std::vector<std::int64_t> global_indices = map->global_indices();
   for (int cell_n = 0; cell_n < num_cells; ++cell_n)
   {
     auto vertices = cells->links(cell_n);
@@ -301,7 +307,9 @@ compute_ordering_tetrahedron(const mesh::Topology& topology,
       cell_orders(num_cells, num_permutations);
 
   // Set orders for each cell
-  const std::vector<std::int64_t>& global_indices = topology.global_indices(0);
+  auto map = topology.index_map(0);
+  assert(map);
+  const std::vector<std::int64_t> global_indices = map->global_indices();
   for (int cell_n = 0; cell_n < num_cells; ++cell_n)
   {
     auto vertices = cells->links(cell_n);
@@ -361,7 +369,9 @@ compute_ordering_hexahedron(const mesh::Topology& topology,
       cell_orders(num_cells, num_permutations);
 
   // Set orders for each cell
-  const std::vector<std::int64_t>& global_indices = topology.global_indices(0);
+  auto map = topology.index_map(0);
+  assert(map);
+  const std::vector<std::int64_t> global_indices = map->global_indices();
   for (int cell_n = 0; cell_n < num_cells; ++cell_n)
   {
     auto vertices = cells->links(cell_n);

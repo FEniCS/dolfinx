@@ -74,8 +74,10 @@ mesh::Mesh compute_refinement(const mesh::Mesh& mesh, ParallelRefinement& p_ref,
   std::vector<std::size_t> marked_edge_list;
   std::vector<std::int32_t> simplex_set;
 
-  const std::vector<std::int64_t>& global_indices
-      = mesh.topology().global_indices(0);
+  // const std::vector<std::int64_t>& global_indices
+  //     = mesh.topology().global_indices(0);
+  const std::vector<std::int64_t> global_indices
+      = mesh.topology().index_map(0)->global_indices(true);
   for (const auto& cell : mesh::MeshRange(mesh, tdim))
   {
     // Create vector of indices in the order [vertices][edges], 3+3 in
@@ -324,8 +326,8 @@ face_long_edge(const mesh::Mesh& mesh)
   }
 
   // Get longest edge of each face
-  const std::vector<std::int64_t>& global_indices
-      = mesh.topology().global_indices(0);
+  const std::vector<std::int64_t> global_indices
+      = mesh.topology().index_map(0)->global_indices(true);
   for (const auto& f : mesh::MeshRange(mesh, 2, mesh::MeshRangeType::ALL))
   {
     auto face_edges = f.entities(1);
