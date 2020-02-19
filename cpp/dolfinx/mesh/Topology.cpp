@@ -75,9 +75,9 @@ std::vector<bool> mesh::compute_interior_facets(const Topology& topology)
 //-----------------------------------------------------------------------------
 Topology::Topology(mesh::CellType type)
     : _cell_type(type),
-      _connectivity(mesh::cell_dim(type) + 1, mesh::cell_dim(type) + 1)
-          _edge_reflections(0, 0),
-      _face_reflections(0, 0), _face_rotations(0, 0), _face_permutations(0, 0)
+      _connectivity(mesh::cell_dim(type) + 1, mesh::cell_dim(type) + 1),
+      _edge_reflections(0, 0), _face_reflections(0, 0), _face_rotations(0, 0),
+      _face_permutations(0, 0)
 {
   // Do nothing
 }
