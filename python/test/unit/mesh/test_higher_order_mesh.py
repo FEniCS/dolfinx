@@ -553,7 +553,7 @@ def test_gmsh_input_quad():
 
     R = 1
     res = 0.2
-    algorithm =  5
+    algorithm = 5
     element = "quad16"
 
     geo = pygmsh.opencascade.Geometry()

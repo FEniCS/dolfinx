@@ -25,6 +25,7 @@ from ufl import (SpatialCoordinate, TestFunction, TrialFunction, div, dx, grad,
     "UnitCubeMesh_hexahedron.xdmf",
     "UnitCubeMesh_tetra.xdmf",
     "UnitSquareMesh_quad.xdmf",
+    "UnitSquareMesh_quad_order2.xdmf",
     "UnitSquareMesh_triangle.xdmf"
 ])
 @pytest.mark.parametrize("degree", [2, 3, 4])
