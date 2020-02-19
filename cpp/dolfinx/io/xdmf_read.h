@@ -169,7 +169,8 @@ void remap_meshfunction_data(mesh::MeshFunction<T>& meshfunction,
   const int cell_dim = meshfunction.dim();
   const auto mesh = meshfunction.mesh();
 
-  mesh::CellType cell_type = mesh::cell_entity_type((*mesh).cell_type(), cell_dim);
+  mesh::CellType cell_type
+      = mesh::cell_entity_type(mesh->topology().cell_type(), cell_dim);
   const int vertices_per_entity = mesh::num_cell_vertices(cell_type);
 
   const MPI_Comm comm = mesh->mpi_comm();
@@ -213,7 +214,7 @@ void remap_meshfunction_data(mesh::MeshFunction<T>& meshfunction,
   std::vector<std::vector<std::int64_t>> send_requests(num_processes);
   const std::size_t rank = MPI::rank(comm);
   const std::vector<std::int64_t>& global_indices
-      = mesh->topology().global_indices(0);
+      = mesh->topology().get_global_user_vertices();
   for (auto& cell : mesh::MeshRange(*mesh, cell_dim, mesh::MeshRangeType::ALL))
   {
     std::vector<std::int64_t> cell_topology;

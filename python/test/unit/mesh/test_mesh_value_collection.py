@@ -34,7 +34,7 @@ def test_assign_2D_facets():
     mesh = UnitSquareMesh(MPI.comm_world, 3, 3)
     mesh.create_connectivity(2, 1)
     tdim = mesh.topology.dim
-    num_cell_facets = cpp.mesh.cell_num_entities(mesh.cell_type, tdim - 1)
+    num_cell_facets = cpp.mesh.cell_num_entities(mesh.topology.cell_type, tdim - 1)
     ncells = mesh.num_cells()
 
     f = MeshValueCollection("int", mesh, 1)
@@ -60,7 +60,7 @@ def test_assign_2D_vertices():
     mesh = UnitSquareMesh(MPI.comm_world, 3, 3)
     mesh.create_connectivity(2, 0)
     ncells = mesh.num_cells()
-    num_cell_vertices = cpp.mesh.cell_num_vertices(mesh.cell_type)
+    num_cell_vertices = cpp.mesh.cell_num_vertices(mesh.topology.cell_type)
 
     f = MeshValueCollection("int", mesh, 0)
     all_new = True
@@ -101,7 +101,8 @@ def test_mesh_function_assign_2D_cells():
         assert f2.values[c] == g.get_value(c, 0)
 
     h = MeshValueCollection("int", mesh, 2)
-    global_indices = mesh.topology.global_indices(2)
+    global_indices = mesh.topology.index_map(2).global_indices(True)
+
     ncells_global = mesh.num_entities_global(2)
     for c in range(mesh.num_cells()):
         if global_indices[c] in [5, 8, 10]:
@@ -121,7 +122,7 @@ def test_mesh_function_assign_2D_facets():
     mesh = UnitSquareMesh(MPI.comm_world, 3, 3)
     mesh.create_entities(1)
     tdim = mesh.topology.dim
-    num_cell_facets = cpp.mesh.cell_num_entities(mesh.cell_type, tdim - 1)
+    num_cell_facets = cpp.mesh.cell_num_entities(mesh.topology.cell_type, tdim - 1)
 
     f = MeshFunction("int", mesh, tdim - 1, 25)
     connectivity = mesh.topology.connectivity(tdim, tdim - 1)
@@ -158,7 +159,7 @@ def test_mesh_function_assign_2D_vertices():
 
     f2 = MeshFunction("int", mesh, g, 0)
 
-    num_cell_vertices = cpp.mesh.cell_num_vertices(mesh.cell_type)
+    num_cell_vertices = cpp.mesh.cell_num_vertices(mesh.topology.cell_type)
     tdim = mesh.topology.dim
     connectivity = mesh.topology.connectivity(tdim, 0)
     for c in range(mesh.num_cells()):

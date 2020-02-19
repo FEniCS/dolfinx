@@ -43,11 +43,11 @@ class DofMap
 {
 public:
   /// Create a DofMap from the layout of dofs on a reference element, an
-  /// IndexMap defining the distribution of dofs across processes and a vector of
-  /// indices.
+  /// IndexMap defining the distribution of dofs across processes and a vector
+  /// of indices.
   DofMap(std::shared_ptr<const ElementDofLayout> element_dof_layout,
          std::shared_ptr<const common::IndexMap> index_map,
-         const Eigen::Array<PetscInt, Eigen::Dynamic, 1>& dofmap);
+         const Eigen::Array<std::int32_t, Eigen::Dynamic, 1>& dofmap);
 
 public:
   // Copy constructor
@@ -108,7 +108,10 @@ public:
   std::string str(bool verbose) const;
 
   /// Get dofmap array
-  const Eigen::Array<PetscInt, Eigen::Dynamic, 1>& dof_array() const;
+  const Eigen::Array<PetscInt, Eigen::Dynamic, 1>& dof_array() const
+  {
+    return _dofmap;
+  }
 
   // FIXME: can this be removed?
   /// Return list of dof indices on this process that belong to mesh
@@ -126,6 +129,7 @@ public:
 private:
   // Cell-local-to-dof map (dofs for cell dofmap[i])
   Eigen::Array<PetscInt, Eigen::Dynamic, 1> _dofmap;
+
 };
 } // namespace fem
 } // namespace dolfinx

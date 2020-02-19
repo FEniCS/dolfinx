@@ -85,91 +85,6 @@ point_map_to_vertex_map(std::shared_ptr<const common::IndexMap> point_index_map,
   return vertex_index_map;
 }
 //-----------------------------------------------------------------------------
-std::map<std::int32_t, std::set<int>>
-compute_shared_from_indexmap(const common::IndexMap& index_map)
-{
-
-  // Get neighbour processes
-  int indegree(-1), outdegree(-2), weighted(-1);
-  MPI_Dist_graph_neighbors_count(index_map.mpi_comm_neighborhood(), &indegree,
-                                 &outdegree, &weighted);
-  assert(indegree == outdegree);
-  std::vector<int> neighbours(indegree), neighbours1(indegree),
-      weights(indegree), weights1(indegree);
-
-  MPI_Dist_graph_neighbors(index_map.mpi_comm_neighborhood(), indegree,
-                           neighbours.data(), weights.data(), outdegree,
-                           neighbours1.data(), weights1.data());
-  std::map<int, int> proc_to_neighbour;
-  for (std::size_t i = 0; i < neighbours.size(); ++i)
-    proc_to_neighbour[neighbours[i]] = i;
-
-  // Simple map for locally owned, forward shared entities
-  std::map<std::int32_t, std::set<int>> shared_entities
-      = index_map.compute_forward_processes();
-
-  // Ghosts are also shared, but we need to communicate to find owners
-  std::vector<std::int32_t> num_sharing(index_map.size_local(), 0);
-  std::vector<int> send_sizes(neighbours.size());
-  for (auto q : shared_entities)
-  {
-    num_sharing[q.first] = q.second.size();
-    for (int r : q.second)
-      send_sizes[proc_to_neighbour[r]] += q.second.size();
-  }
-  std::vector<int> send_offsets(neighbours.size() + 1, 0);
-  std::partial_sum(send_sizes.begin(), send_sizes.end(),
-                   send_offsets.begin() + 1);
-  std::vector<int> send_data(send_offsets.back());
-
-  std::vector<int> temp_offsets(send_offsets);
-  for (auto q : shared_entities)
-  {
-    for (int r : q.second)
-    {
-      const int np = proc_to_neighbour[r];
-      std::copy(q.second.begin(), q.second.end(),
-                send_data.begin() + temp_offsets[np]);
-      temp_offsets[np] += q.second.size();
-    }
-  }
-
-  std::vector<std::int32_t> ghost_shared_sizes
-      = index_map.scatter_fwd(num_sharing, 1);
-
-  // Count up how many to receive from each neighbour...
-  std::vector<int> recv_sizes(neighbours.size());
-  for (int i = 0; i < index_map.num_ghosts(); ++i)
-  {
-    int np = proc_to_neighbour[index_map.ghost_owners()[i]];
-    recv_sizes[np] += ghost_shared_sizes[i];
-  }
-  std::vector<int> recv_offsets(neighbours.size() + 1, 0);
-  std::partial_sum(recv_sizes.begin(), recv_sizes.end(),
-                   recv_offsets.begin() + 1);
-  std::vector<int> recv_data(recv_offsets.back());
-
-  MPI_Neighbor_alltoallv(send_data.data(), send_sizes.data(),
-                         send_offsets.data(), MPI_INT, recv_data.data(),
-                         recv_sizes.data(), recv_offsets.data(), MPI_INT,
-                         index_map.mpi_comm_neighborhood());
-
-  int rank = dolfinx::MPI::rank(index_map.mpi_comm());
-  for (int i = 0; i < index_map.num_ghosts(); ++i)
-  {
-    const int p = index_map.ghost_owners()[i];
-    const int np = proc_to_neighbour[p];
-    std::set<int> sharing_set(recv_data.begin() + recv_offsets[np],
-                              recv_data.begin() + recv_offsets[np]
-                                  + ghost_shared_sizes[i]);
-    sharing_set.insert(p);
-    sharing_set.erase(rank);
-    recv_offsets[np] += ghost_shared_sizes[i];
-    shared_entities[i + index_map.size_local()] = sharing_set;
-  }
-  return shared_entities;
-}
-//-----------------------------------------------------------------------------
 std::vector<std::int64_t> compute_global_index_set(
     const Eigen::Ref<const Eigen::Array<std::int64_t, Eigen::Dynamic,
                                         Eigen::Dynamic, Eigen::RowMajor>>&
@@ -196,8 +111,7 @@ compute_point_distribution(
     Eigen::Array<std::int64_t, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
         cell_nodes,
     Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
-        points,
-    mesh::CellType type)
+        points)
 {
   // Get set of global point indices, which exist on this process
   std::vector<std::int64_t> global_index_set
@@ -235,10 +149,10 @@ Mesh::Mesh(
         std::int64_t, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>>& cells,
     const std::vector<std::int64_t>& global_cell_indices,
     const GhostMode ghost_mode, std::int32_t num_ghost_cells)
-    : _cell_type(type), _degree(1), _mpi_comm(comm), _ghost_mode(ghost_mode),
+    : _degree(1), _mpi_comm(comm), _ghost_mode(ghost_mode),
       _unique_id(common::UniqueIdGenerator::id())
 {
-  const int tdim = mesh::cell_dim(_cell_type);
+  const int tdim = mesh::cell_dim(type);
 
   // Check size of global cell indices. If empty, construct later.
   if (global_cell_indices.size() > 0
@@ -263,32 +177,25 @@ Mesh::Mesh(
   // cell topology using new local indices
   const auto [point_index_map, node_indices_global, coordinate_nodes,
               points_received]
-      = compute_point_distribution(comm, cells, points, type);
+      = compute_point_distribution(comm, cells, points);
 
   _coordinate_dofs = std::make_unique<CoordinateDofs>(coordinate_nodes);
 
   _geometry = std::make_unique<Geometry>(num_points_global, points_received,
                                          node_indices_global);
 
-  // Compute shared points from IndexMap
-  std::map<std::int32_t, std::set<int>> shared_points
-      = compute_shared_from_indexmap(*point_index_map);
-
   // Get global vertex information
   std::vector<std::int64_t> vertex_indices_global;
-  std::map<std::int32_t, std::set<std::int32_t>> shared_vertices;
   std::shared_ptr<common::IndexMap> vertex_index_map;
 
   // Make cell to vertex connectivity
-  const std::int32_t num_vertices_per_cell
-      = mesh::num_cell_vertices(_cell_type);
+  const std::int32_t num_vertices_per_cell = mesh::num_cell_vertices(type);
   Eigen::Array<std::int32_t, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
       vertex_cols(cells.rows(), num_vertices_per_cell);
 
   if (_degree == 1)
   {
     vertex_indices_global = std::move(node_indices_global);
-    shared_vertices = std::move(shared_points);
     vertex_index_map = point_index_map;
 
     const std::vector<int> vertex_indices
@@ -319,14 +226,11 @@ Mesh::Mesh(
             = node_index_to_vertex[coordinate_nodes(i, vertex_indices[j])];
 
     vertex_index_map = point_map_to_vertex_map(point_index_map, vertices);
-
-    shared_vertices = compute_shared_from_indexmap(*vertex_index_map);
   }
 
   // Initialise vertex topology
-  _topology = std::make_unique<Topology>(tdim);
-  _topology->set_global_indices(0, vertex_indices_global);
-  _topology->set_shared_entities(0, shared_vertices);
+  _topology = std::make_unique<Topology>(type);
+  _topology->set_global_user_vertices(vertex_indices_global);
   _topology->set_index_map(0, vertex_index_map);
   const std::int32_t num_vertices
       = vertex_index_map->size_local() + vertex_index_map->num_ghosts();
@@ -335,13 +239,17 @@ Mesh::Mesh(
 
   // Initialise cell topology
   Eigen::Array<std::int64_t, Eigen::Dynamic, 1> cell_ghosts(num_ghost_cells);
-  assert(num_ghost_cells == 0); // Ghost cells not enabled at the moment
+  if ((int)global_cell_indices.size() == (num_cells_local + num_ghost_cells))
+  {
+    std::copy(global_cell_indices.begin() + num_cells_local,
+              global_cell_indices.end(), cell_ghosts.data());
+  }
+
   auto cell_index_map = std::make_shared<common::IndexMap>(
       _mpi_comm.comm(), num_cells_local, cell_ghosts, 1);
   _topology->set_index_map(tdim, cell_index_map);
 
   auto cv = std::make_shared<graph::AdjacencyList<std::int32_t>>(vertex_cols);
-
   _topology->set_connectivity(cv, tdim, 0);
 
   // Global cell indices - construct if none given
@@ -352,14 +260,14 @@ Mesh::Mesh(
         = MPI::global_offset(comm, num_cells, true);
     std::vector<std::int64_t> global_indices(num_cells, 0);
     std::iota(global_indices.begin(), global_indices.end(), global_cell_offset);
-    _topology->set_global_indices(tdim, global_indices);
+    // _topology->set_global_indices(tdim, global_indices);
   }
-  else
-    _topology->set_global_indices(tdim, global_cell_indices);
+  // else
+  //   _topology->set_global_indices(tdim, global_cell_indices);
 }
 //-----------------------------------------------------------------------------
 Mesh::Mesh(const Mesh& mesh)
-    : _cell_type(mesh._cell_type), _topology(new Topology(*mesh._topology)),
+    : _topology(new Topology(*mesh._topology)),
       _geometry(new Geometry(*mesh._geometry)),
       _coordinate_dofs(new CoordinateDofs(*mesh._coordinate_dofs)),
       _degree(mesh._degree), _mpi_comm(mesh.mpi_comm()),
@@ -370,8 +278,7 @@ Mesh::Mesh(const Mesh& mesh)
 }
 //-----------------------------------------------------------------------------
 Mesh::Mesh(Mesh&& mesh)
-    : _cell_type(std::move(mesh._cell_type)),
-      _topology(std::move(mesh._topology)),
+    : _topology(std::move(mesh._topology)),
       _geometry(std::move(mesh._geometry)),
       _coordinate_dofs(std::move(mesh._coordinate_dofs)),
       _degree(std::move(mesh._degree)), _mpi_comm(std::move(mesh._mpi_comm)),
@@ -392,8 +299,9 @@ std::int32_t Mesh::num_entities(int d) const
   auto map = _topology->index_map(d);
   if (!map)
   {
-    throw std::runtime_error(
-        "Cannot get number of mesh entities. Have not been created.");
+    throw std::runtime_error("Cannot get number of mesh entities. Have not "
+                             "been created for dimension "
+                             + std::to_string(d) + ".");
   }
   assert(map->block_size == 1);
   return map->size_local() + map->num_ghosts();
@@ -446,9 +354,9 @@ std::int32_t Mesh::create_entities(int dim) const
     return -1;
 
   // Create local entities
-  const auto [cell_entity, entity_vertex, index_map, shared_entities]
+  const auto [cell_entity, entity_vertex, index_map]
       = TopologyComputation::compute_entities(_mpi_comm.comm(), *_topology,
-                                              _cell_type, dim);
+                                              dim);
 
   if (cell_entity)
     _topology->set_connectivity(cell_entity, _topology->dim(), dim);
@@ -456,14 +364,7 @@ std::int32_t Mesh::create_entities(int dim) const
     _topology->set_connectivity(entity_vertex, dim, 0);
 
   if (index_map)
-  {
     _topology->set_index_map(dim, index_map);
-    // FIXME: remove global_indices
-    _topology->set_global_indices(dim, index_map->global_indices(false));
-  }
-
-  if (shared_entities.size() > 0)
-    _topology->set_shared_entities(dim, shared_entities);
 
   return index_map->size_local();
 }
@@ -482,8 +383,8 @@ void Mesh::create_connectivity(int d0, int d1) const
 
   // Compute connectivity
   assert(_topology);
-  const auto [c_d0_d1, c_d1_d0] = TopologyComputation::compute_connectivity(
-      *_topology, _cell_type, d0, d1);
+  const auto [c_d0_d1, c_d1_d0]
+      = TopologyComputation::compute_connectivity(*_topology, d0, d1);
 
   // NOTE: that to compute the (d0, d1) connections is it sometimes
   // necessary to compute the (d1, d0) connections. We store the (d1,
@@ -499,6 +400,13 @@ void Mesh::create_connectivity(int d0, int d1) const
     mesh->topology().set_connectivity(c_d0_d1, d0, d1);
   if (c_d1_d0)
     mesh->topology().set_connectivity(c_d1_d0, d1, d0);
+
+  // Special facet handing
+  if (d0 == (_topology->dim() - 1) and d1 == _topology->dim())
+  {
+    std::vector<bool> f = compute_interior_facets(*_topology);
+    _topology->set_interior_facets(f);
+  }
 }
 //-----------------------------------------------------------------------------
 void Mesh::create_connectivity_all() const
@@ -553,7 +461,7 @@ std::string Mesh::str(bool verbose) const
   {
     const int tdim = _topology->dim();
     s << "<Mesh of topological dimension " << tdim << " ("
-      << mesh::to_string(_cell_type) << ") with " << num_entities(0)
+      << mesh::to_string(_topology->cell_type()) << ") with " << num_entities(0)
       << " vertices and " << num_entities(tdim) << " cells >";
   }
 
@@ -577,6 +485,4 @@ const CoordinateDofs& Mesh::coordinate_dofs() const
 }
 //-----------------------------------------------------------------------------
 std::int32_t Mesh::degree() const { return _degree; }
-//-----------------------------------------------------------------------------
-mesh::CellType Mesh::cell_type() const { return _cell_type; }
 //-----------------------------------------------------------------------------

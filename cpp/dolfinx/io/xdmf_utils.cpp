@@ -328,58 +328,26 @@ xdmf_utils::get_cell_data_values(const function::Function& u)
 //-----------------------------------------------------------------------------
 std::string xdmf_utils::vtk_cell_type_str(mesh::CellType cell_type, int order)
 {
-  // FIXME: Move to CellType?
-  switch (cell_type)
-  {
-  case mesh::CellType::point:
-    switch (order)
-    {
-    case 1:
-      return "PolyVertex";
-    }
-  case mesh::CellType::interval:
-    switch (order)
-    {
-    case 1:
-      return "PolyLine";
-    case 2:
-      return "Edge_3";
-    }
-  case mesh::CellType::triangle:
-    switch (order)
-    {
-    case 1:
-      return "Triangle";
-    case 2:
-      return "Triangle_6";
-    }
-  case mesh::CellType::quadrilateral:
-    switch (order)
-    {
-    case 1:
-      return "Quadrilateral";
-    case 2:
-      return "Quadrilateral_8";
-    }
-  case mesh::CellType::tetrahedron:
-    switch (order)
-    {
-    case 1:
-      return "Tetrahedron";
-    case 2:
-      return "Tetrahedron_10";
-    }
-  case mesh::CellType::hexahedron:
-    switch (order)
-    {
-    case 1:
-      return "Hexahedron";
-    case 2:
-      return "Hexahedron_20";
-    }
-  default:
-    throw std::runtime_error("Invalid combination of cell type and order");
-    return "error";
-  }
+  static const std::map<mesh::CellType, std::map<int, std::string>> vtk_map = {
+      {mesh::CellType::point, {{1, "PolyVertex"}}},
+      {mesh::CellType::interval, {{1, "PolyLine"}, {2, "Edge_3"}}},
+      {mesh::CellType::triangle, {{1, "Triangle"}, {2, "Triangle_6"}}},
+      {mesh::CellType::quadrilateral,
+       {{1, "Quadrilateral"}, {2, "Quadrilateral_8"}}},
+      {mesh::CellType::tetrahedron,
+       {{1, "Tetrahedron"}, {2, "Tetrahedron_10"}}},
+      {mesh::CellType::hexahedron, {{1, "Hexahedron"}, {2, "Hexahedron_20"}}}};
+
+  // Get cell family
+  auto cell = vtk_map.find(cell_type);
+  if (cell == vtk_map.end())
+    throw std::runtime_error("Could not find cell type.");
+
+  // Get cell string
+  auto cell_str = cell->second.find(order);
+  if (cell_str == cell->second.end())
+    throw std::runtime_error("Could not find VTK string for cell order.");
+
+  return cell_str->second;
 }
 //-----------------------------------------------------------------------------

@@ -74,8 +74,10 @@ mesh::Mesh compute_refinement(const mesh::Mesh& mesh, ParallelRefinement& p_ref,
   std::vector<std::size_t> marked_edge_list;
   std::vector<std::int32_t> simplex_set;
 
-  const std::vector<std::int64_t>& global_indices
-      = mesh.topology().global_indices(0);
+  // const std::vector<std::int64_t>& global_indices
+  //     = mesh.topology().global_indices(0);
+  const std::vector<std::int64_t> global_indices
+      = mesh.topology().index_map(0)->global_indices(true);
   for (const auto& cell : mesh::MeshRange(mesh, tdim))
   {
     // Create vector of indices in the order [vertices][edges], 3+3 in
@@ -199,10 +201,10 @@ std::vector<std::int32_t>
 get_tetrahedra(const std::vector<bool>& marked_edges,
                const std::vector<std::int32_t>& longest_edge)
 {
-  // AdjacencyList matrix for ten possible points (4 vertices + 6 edge midpoints)
-  // ordered {v0, v1, v2, v3, e0, e1, e2, e3, e4, e5}
-  // Only need upper triangle, but sometimes it is easier just to insert
-  // both entries (j,i) and (i,j).
+  // AdjacencyList matrix for ten possible points (4 vertices + 6 edge
+  // midpoints) ordered {v0, v1, v2, v3, e0, e1, e2, e3, e4, e5} Only need upper
+  // triangle, but sometimes it is easier just to insert both entries (j,i) and
+  // (i,j).
   bool conn[10][10] = {};
 
   // Edge connectivity to vertices (and by extension facets)
@@ -324,8 +326,8 @@ face_long_edge(const mesh::Mesh& mesh)
   }
 
   // Get longest edge of each face
-  const std::vector<std::int64_t>& global_indices
-      = mesh.topology().global_indices(0);
+  const std::vector<std::int64_t> global_indices
+      = mesh.topology().index_map(0)->global_indices(true);
   for (const auto& f : mesh::MeshRange(mesh, 2, mesh::MeshRangeType::ALL))
   {
     auto face_edges = f.entities(1);
@@ -372,8 +374,8 @@ face_long_edge(const mesh::Mesh& mesh)
 //-----------------------------------------------------------------------------
 mesh::Mesh PlazaRefinementND::refine(const mesh::Mesh& mesh, bool redistribute)
 {
-  if (mesh.cell_type() != mesh::CellType::triangle
-      and mesh.cell_type() != mesh::CellType::tetrahedron)
+  if (mesh.topology().cell_type() != mesh::CellType::triangle
+      and mesh.topology().cell_type() != mesh::CellType::tetrahedron)
   {
     throw std::runtime_error("Cell type not supported");
   }
@@ -393,8 +395,8 @@ PlazaRefinementND::refine(const mesh::Mesh& mesh,
                           const mesh::MeshFunction<int>& refinement_marker,
                           bool redistribute)
 {
-  if (mesh.cell_type() != mesh::CellType::triangle
-      and mesh.cell_type() != mesh::CellType::tetrahedron)
+  if (mesh.topology().cell_type() != mesh::CellType::triangle
+      and mesh.topology().cell_type() != mesh::CellType::tetrahedron)
   {
     throw std::runtime_error("Cell type not supported");
   }

@@ -4,6 +4,7 @@
 //
 // SPDX-License-Identifier:    LGPL-3.0-or-later
 
+#include "caster_mpi.h"
 #include "caster_petsc.h"
 #include <Eigen/Dense>
 #include <dolfinx/common/IndexMap.h>
@@ -181,8 +182,13 @@ void fem(py::module& m)
       "Create nested sparse matrix for bilinear forms.");
   m.def("create_element_dof_layout", &dolfinx::fem::create_element_dof_layout,
         "Create ElementDofLayout object from a ufc dofmap.");
-  m.def("create_dofmap", &dolfinx::fem::create_dofmap,
-        "Create DOLFIN DofMap object from a ufc dofmap.");
+  m.def(
+      "create_dofmap",
+      [](const MPICommWrapper comm, const ufc_dofmap& dofmap,
+         dolfinx::mesh::Topology& topology) {
+        return dolfinx::fem::create_dofmap(comm.get(), dofmap, topology);
+      },
+      "Create DOLFIN DofMap object from a ufc dofmap.");
   m.def("create_form",
         py::overload_cast<const ufc_form&,
                           const std::vector<std::shared_ptr<
@@ -196,7 +202,7 @@ void fem(py::module& m)
          std::shared_ptr<const dolfinx::fem::ElementDofLayout>
              element_dof_layout) {
         return dolfinx::fem::DofMapBuilder::build(
-            mesh.mpi_comm(), mesh.topology(), mesh.cell_type(),
+            mesh.mpi_comm(), mesh.topology(), mesh.topology().cell_type(),
             element_dof_layout);
       },
       "Build and dofmap on a mesh.");
@@ -231,10 +237,9 @@ void fem(py::module& m)
   // dolfinx::fem::DofMap
   py::class_<dolfinx::fem::DofMap, std::shared_ptr<dolfinx::fem::DofMap>>(
       m, "DofMap", "DofMap object")
-
       .def(py::init<std::shared_ptr<const dolfinx::fem::ElementDofLayout>,
                     std::shared_ptr<const dolfinx::common::IndexMap>,
-                    const Eigen::Array<PetscInt, Eigen::Dynamic, 1>&>(),
+                    const Eigen::Array<std::int32_t, Eigen::Dynamic, 1>&>(),
            py::arg("element_dof_layout"), py::arg("index_map"),
            py::arg("dofmap"))
       .def_readonly("index_map", &dolfinx::fem::DofMap::index_map)
@@ -354,19 +359,19 @@ void fem(py::module& m)
   m.def("bcs_rows", &dolfinx::fem::bcs_rows);
   m.def("bcs_cols", &dolfinx::fem::bcs_cols);
 
-  // dolfinx::fem::DiscreteOperators
-  py::class_<dolfinx::fem::DiscreteOperators>(m, "DiscreteOperators")
-      .def_static(
-          "build_gradient",
-          [](const dolfinx::function::FunctionSpace& V0,
-             const dolfinx::function::FunctionSpace& V1) {
-            dolfinx::la::PETScMatrix A
-                = dolfinx::fem::DiscreteOperators::build_gradient(V0, V1);
-            Mat _A = A.mat();
-            PetscObjectReference((PetscObject)_A);
-            return _A;
-          },
-          py::return_value_policy::take_ownership);
+  //   // dolfinx::fem::DiscreteOperators
+  //   py::class_<dolfinx::fem::DiscreteOperators>(m, "DiscreteOperators")
+  //       .def_static(
+  //           "build_gradient",
+  //           [](const dolfinx::function::FunctionSpace& V0,
+  //              const dolfinx::function::FunctionSpace& V1) {
+  //             dolfinx::la::PETScMatrix A
+  //                 = dolfinx::fem::DiscreteOperators::build_gradient(V0, V1);
+  //             Mat _A = A.mat();
+  //             PetscObjectReference((PetscObject)_A);
+  //             return _A;
+  //           },
+  //           py::return_value_policy::take_ownership);
 
   // dolfinx::fem::FormIntegrals
   py::class_<dolfinx::fem::FormIntegrals,

@@ -6,15 +6,13 @@
 
 #pragma once
 
+#include "cell_types.h"
 #include <Eigen/Dense>
 #include <array>
 #include <cstdint>
-#include <map>
-#include <memory>
-#include <set>
-#include <vector>
-
 #include <dolfinx/graph/AdjacencyList.h>
+#include <memory>
+#include <vector>
 
 namespace dolfinx
 {
@@ -23,14 +21,18 @@ namespace common
 class IndexMap;
 }
 
-namespace graph
-{
-template <typename T>
-class AdjacencyList;
-}
-
 namespace mesh
 {
+
+class Topology;
+
+/// Compute marker for owned facets that are interior, i.e. are
+/// connected to two cells, one of which might be on a remote process
+/// @param[in] topology The topology
+/// @return Vector with length equal to the number of facets on this
+///   this process. True if the ith facet (local index) is interior to
+///   the domain.
+std::vector<bool> compute_interior_facets(const Topology& topology);
 
 /// Topology stores the topology of a mesh, consisting of mesh entities
 /// and connectivity (incidence relations for the mesh entities). Note
@@ -46,7 +48,7 @@ class Topology
 {
 public:
   /// Create empty mesh topology
-  Topology(int dim);
+  Topology(mesh::CellType type);
 
   /// Copy constructor
   Topology(const Topology& topology) = default;
@@ -65,8 +67,8 @@ public:
 
   /// @todo Remove this function. Use IndexMap instead
   /// Set the global indices for entities of dimension dim
-  void set_global_indices(int dim,
-                          const std::vector<std::int64_t>& global_indices);
+  void
+  set_global_user_vertices(const std::vector<std::int64_t>& vertex_indices);
 
   /// Set the IndexMap for dimension dim
   /// @warning This is experimental and likely to change
@@ -77,29 +79,18 @@ public:
   /// (Currently partially working)
   std::shared_ptr<const common::IndexMap> index_map(int dim) const;
 
-  /// @todo Remove this function. Use IndexMap instead
+  /// @todo Remove/revise this function. Use IndexMap instead.
   /// Get local-to-global index map for entities of topological
   /// dimension d
-  const std::vector<std::int64_t>& global_indices(int d) const;
-
-  /// Set the map from shared entities (local index) to processes that
-  /// share the entity
-  void set_shared_entities(
-      int dim, const std::map<std::int32_t, std::set<std::int32_t>>& entities);
-
-  /// @todo Remove this function
-  /// Return map from shared entities (local index) to process that
-  /// share the entity (const version)
-  const std::map<std::int32_t, std::set<std::int32_t>>&
-  shared_entities(int dim) const;
+  const std::vector<std::int64_t>& get_global_user_vertices() const;
 
   /// Marker for entities of dimension dim on the boundary. An entity of
-  /// co-dimension < 0 is on the boundary if it is connected to a boundary
-  /// facet. It is not defined for codimension 0.
+  /// co-dimension < 0 is on the boundary if it is connected to a
+  /// boundary facet. It is not defined for codimension 0.
   /// @param[in] dim Toplogical dimension of the entities to check. It
-  /// must be less than the topological dimension.
+  ///   must be less than the topological dimension.
   /// @return Vector of length equal to number of local entities, with
-  ///          'true' for entities on the boundary and otherwise 'false'.
+  ///   'true' for entities on the boundary and otherwise 'false'.
   std::vector<bool> on_boundary(int dim) const;
 
   /// Return connectivity for given pair of topological dimensions
@@ -114,40 +105,33 @@ public:
   void set_connectivity(std::shared_ptr<graph::AdjacencyList<std::int32_t>> c,
                         int d0, int d1);
 
+  /// Gets markers for owned facets that are interior, i.e. are
+  /// connected to two cells, one of which might be on a remote process
+  /// @return Vector with length equal to the number of facets owned by
+  ///   this process. True if the ith facet (local index) is interior to
+  ///   the domain.
+  const std::vector<bool>& interior_facets() const;
+
+  /// Set markers for owned facets that are interior
+  /// @param[in] interior_facets The marker vector
+  void set_interior_facets(const std::vector<bool>& interior_facets);
+
   /// Return hash based on the hash of cell-vertex connectivity
   size_t hash() const;
+
+  /// Cell type
+  /// @return Cell type that th topology is for
+  mesh::CellType cell_type() const;
 
   /// Return informal string representation (pretty-print)
   std::string str(bool verbose) const;
 
-  /// @todo Move this outside of this class
-  /// Set global number of connections for each local entities
-  void set_global_size(std::array<int, 2> d,
-                       const Eigen::Array<std::int32_t, Eigen::Dynamic, 1>&
-                           num_global_connections)
-  {
-    // assert(num_global_connections.size() == _offsets.size() - 1);
-    _num_global_connections(d[0], d[1]) = num_global_connections;
-  }
-
-  /// @todo Can this be removed?
-  /// Return global number of connections for given entity
-  int size_global(std::array<int, 2> d, std::int32_t entity) const
-  {
-    if (_num_global_connections(d[0], d[1]).size() == 0)
-      return _connectivity(d[0], d[1])->num_links(entity);
-    else
-      return _num_global_connections(d[0], d[1])[entity];
-  }
-
 private:
-  // Global indices for mesh entities
-  std::vector<std::vector<std::int64_t>> _global_indices;
+  // Cell type
+  mesh::CellType _cell_type;
 
-  // TODO: Could IndexMap be used here in place of std::map?
-  // For entities of a given dimension d, maps each shared entity
-  // (local index) to a list of the processes sharing the vertex
-  std::vector<std::map<std::int32_t, std::set<std::int32_t>>> _shared_entities;
+  // Global indices for vertices
+  std::vector<std::int64_t> _global_user_vertices;
 
   // IndexMap to store ghosting for each entity dimension
   std::array<std::shared_ptr<const common::IndexMap>, 4> _index_map;
@@ -157,11 +141,9 @@ private:
                Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
       _connectivity;
 
-  // TODO: revise
-  // Global number of connections for each entity (possibly not
-  // computed)
-  Eigen::Array<Eigen::Array<std::int32_t, Eigen::Dynamic, 1>, 4, 4>
-      _num_global_connections;
+  // Marker for owned facets, which evaluates to True for facets that
+  // are interior to the domain
+  std::shared_ptr<const std::vector<bool>> _interior_facets;
 };
 } // namespace mesh
 } // namespace dolfinx

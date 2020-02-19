@@ -1,4 +1,4 @@
-// Copyright (C) 2007-2018 Garth N. Wells
+// Copyright (C) 2007-2020 Garth N. Wells
 //
 // This file is part of DOLFINX (https://www.fenicsproject.org)
 //
@@ -8,7 +8,6 @@
 
 #include <Eigen/Dense>
 #include <dolfinx/common/MPI.h>
-#include <dolfinx/common/Set.h>
 #include <memory>
 #include <petscsys.h>
 #include <string>
@@ -17,6 +16,12 @@
 
 namespace dolfinx
 {
+
+namespace graph
+{
+template <typename T>
+class AdjacencyList;
+}
 
 namespace common
 {
@@ -32,19 +37,7 @@ namespace la
 class SparsityPattern
 {
 
-  // NOTE: Do not change this typedef without performing careful
-  //       performance profiling
-  /// Set type used for the rows of the sparsity pattern
-  typedef dolfinx::common::Set<std::size_t> set_type;
-
 public:
-  /// Whether SparsityPattern is sorted
-  enum class Type
-  {
-    sorted,
-    unsorted
-  };
-
   /// Create an empty sparsity pattern with specified dimensions
   SparsityPattern(
       MPI_Comm comm,
@@ -68,24 +61,28 @@ public:
   /// Move assignment
   SparsityPattern& operator=(SparsityPattern&& pattern) = default;
 
-  /// Insert non-zero entries using global indices
-  void insert_global(
-      const Eigen::Ref<const Eigen::Array<PetscInt, Eigen::Dynamic, 1>>& rows,
-      const Eigen::Ref<const Eigen::Array<PetscInt, Eigen::Dynamic, 1>>& cols);
-
-  /// Insert non-zero entries using local (process-wise) indices
-  void insert_local(
-      const Eigen::Ref<const Eigen::Array<PetscInt, Eigen::Dynamic, 1>>& rows,
-      const Eigen::Ref<const Eigen::Array<PetscInt, Eigen::Dynamic, 1>>& cols);
-
   /// Return local range for dimension dim
   std::array<std::int64_t, 2> local_range(int dim) const;
 
   /// Return index map for dimension dim
   std::shared_ptr<const common::IndexMap> index_map(int dim) const;
 
+  /// Insert non-zero locations using local (process-wise) indices
+  void insert(
+      const Eigen::Ref<const Eigen::Array<PetscInt, Eigen::Dynamic, 1>>& rows,
+      const Eigen::Ref<const Eigen::Array<PetscInt, Eigen::Dynamic, 1>>& cols);
+
+  /// Insert non-zero locations on the diagonal
+  /// @param[in] rows The rows in local (process-wise) indices. The
+  ///   indices must exist in the row IndexMap.
+  void insert_diagonal(
+      const Eigen::Ref<const Eigen::Array<PetscInt, Eigen::Dynamic, 1>>& rows);
+
+  /// Finalize sparsity pattern and communicate off-process entries
+  void assemble();
+
   /// Return number of local nonzeros
-  std::size_t num_nonzeros() const;
+  std::int64_t num_nonzeros() const;
 
   /// Fill array with number of nonzeros per row for diagonal block in
   /// local_range for dimension 0
@@ -101,58 +98,33 @@ public:
   /// dimension 0
   Eigen::Array<std::int32_t, Eigen::Dynamic, 1> num_local_nonzeros() const;
 
-  /// Finalize sparsity pattern and communicate off-process entries
-  void assemble();
+  /// Sparsity pattern for the owned (diagonal) block. Uses local
+  /// indices for the columns.
+  const graph::AdjacencyList<std::int32_t>& diagonal_pattern() const;
+
+  /// Sparsity pattern for the un-owned (off-diagonal) columns. Uses global
+  /// indices for the columns.
+  const graph::AdjacencyList<std::int64_t>& off_diagonal_pattern() const;
 
   /// Return MPI communicator
-  MPI_Comm mpi_comm() const { return _mpi_comm.comm(); }
+  MPI_Comm mpi_comm() const;
 
   /// Return informal string representation (pretty-print)
-  std::string str(bool verbose) const;
-
-  /// Return underlying sparsity pattern (diagonal). Options are
-  /// 'sorted' and 'unsorted'.
-  std::vector<std::vector<std::size_t>> diagonal_pattern(Type type) const;
-
-  /// Return underlying sparsity pattern (off-diagonal). Options are
-  /// 'sorted' and 'unsorted'. Empty vector is returned if there is
-  /// no off-diagonal contribution.
-  std::vector<std::vector<std::size_t>> off_diagonal_pattern(Type type) const;
-
-  /// Print some useful information
-  void info_statistics() const;
-
+  std::string str() const;
 
 private:
-  // Other insertion methods will call this method providing the
-  // appropriate mapping of the indices in the entries.
-  //
-  // The primary dim entries must be local
-  // The primary_codim entries must be global
-  template <typename X, typename Y>
-  void insert_entries(
-      const Eigen::Ref<const Eigen::Array<PetscInt, Eigen::Dynamic, 1>>&
-          rows,
-      const Eigen::Ref<const Eigen::Array<PetscInt, Eigen::Dynamic, 1>>&
-          cols,
-      const std::function<std::int32_t(const X, const common::IndexMap&)>&
-          row_map,
-      const std::function<std::int64_t(const Y, const common::IndexMap&)>&
-          col_map);
-
   // MPI communicator
   dolfinx::MPI::Comm _mpi_comm;
 
   // common::IndexMaps for each dimension
   std::array<std::shared_ptr<const common::IndexMap>, 2> _index_maps;
 
-  // Sparsity patterns for diagonal and off-diagonal blocks
-  std::vector<set_type> _diagonal, _off_diagonal;
+  // Caches for diagonal and off-diagonal blocks
+  std::vector<std::vector<std::int32_t>> _diagonal_cache;
+  std::vector<std::vector<std::int64_t>> _off_diagonal_cache;
 
-  // Cache for non-local entries stored as [i0, j0, i1, j1, ...]. i is
-  // the local row index and j is the global column index. Cleared after
-  // communication via apply().
-  std::vector<std::size_t> _non_local;
+  std::shared_ptr<graph::AdjacencyList<std::int32_t>> _diagonal;
+  std::shared_ptr<graph::AdjacencyList<std::int64_t>> _off_diagonal;
 };
 } // namespace la
 } // namespace dolfinx

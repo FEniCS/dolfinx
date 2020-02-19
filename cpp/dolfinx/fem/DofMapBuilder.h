@@ -9,7 +9,6 @@
 #include <dolfinx/fem/DofMap.h>
 #include <dolfinx/mesh/cell_types.h>
 #include <memory>
-#include <petscsys.h>
 #include <tuple>
 #include <vector>
 
@@ -50,7 +49,7 @@ public:
 
   /// Build dofmap
   static std::tuple<std::unique_ptr<common::IndexMap>,
-                    Eigen::Array<PetscInt, Eigen::Dynamic, 1>>
+                    Eigen::Array<std::int32_t, Eigen::Dynamic, 1>>
   build(MPI_Comm comm, const mesh::Topology& topology,
         const mesh::CellType cell_type,
         const ElementDofLayout& element_dof_layout,

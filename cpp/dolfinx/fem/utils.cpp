@@ -22,6 +22,7 @@
 #include <dolfinx/mesh/Mesh.h>
 #include <dolfinx/mesh/MeshEntity.h>
 #include <dolfinx/mesh/MeshIterator.h>
+#include <dolfinx/mesh/TopologyComputation.h>
 #include <memory>
 #include <string>
 #include <ufc.h>
@@ -146,6 +147,7 @@ la::SparsityPattern dolfinx::fem::create_sparsity_pattern(const Form& a)
   {
 
     mesh.create_entities(mesh.topology().dim() - 1);
+    mesh.create_connectivity(mesh.topology().dim() - 1, mesh.topology().dim());
     SparsityPatternBuilder::interior_facets(pattern, mesh.topology(),
                                             {{dofmaps[0], dofmaps[1]}});
   }
@@ -153,6 +155,7 @@ la::SparsityPattern dolfinx::fem::create_sparsity_pattern(const Form& a)
   if (a.integrals().num_integrals(fem::FormIntegrals::Type::exterior_facet) > 0)
   {
     mesh.create_entities(mesh.topology().dim() - 1);
+    mesh.create_connectivity(mesh.topology().dim() - 1, mesh.topology().dim());
     SparsityPatternBuilder::exterior_facets(pattern, mesh.topology(),
                                             {{dofmaps[0], dofmaps[1]}});
   }
@@ -247,6 +250,7 @@ la::PETScMatrix fem::create_matrix_block(
       {
         patterns[row].push_back(
             std::make_unique<la::SparsityPattern>(mesh.mpi_comm(), index_maps));
+        patterns[row].back()->assemble();
       }
     }
   }
@@ -275,10 +279,11 @@ la::PETScMatrix fem::create_matrix_block(
     {
       auto map = V[d][i]->dofmap()->index_map;
       const std::vector<std::int64_t> global = map->global_indices(false);
-      for (auto global_index : global)
+      for (std::int64_t global_index : global)
       {
-        std::int64_t index = get_global_index(index_maps[d], i, global_index);
-        _maps[d].push_back(index);
+        const std::int64_t offset
+            = get_global_offset(index_maps[d], i, global_index);
+        _maps[d].push_back(global_index + offset);
       }
     }
   }
@@ -358,9 +363,9 @@ fem::create_vector_block(const std::vector<const common::IndexMap*>& maps)
     {
       for (int k = 0; k < bs; ++k)
       {
-        std::int64_t global_index
-            = get_global_index(maps, i, bs * field_ghosts[j] + k);
-        ghosts.push_back(global_index);
+        const std::int64_t offset
+            = get_global_offset(maps, i, bs * field_ghosts[j] + k);
+        ghosts.push_back(bs * field_ghosts[j] + k + offset);
       }
     }
   }
@@ -398,15 +403,15 @@ fem::create_vector_nest(const std::vector<const common::IndexMap*>& maps)
   return la::PETScVector(y, false);
 }
 //-----------------------------------------------------------------------------
-std::int64_t
-dolfinx::fem::get_global_index(const std::vector<const common::IndexMap*>& maps,
-                               const int field, const int index)
+std::int64_t dolfinx::fem::get_global_offset(
+    const std::vector<const common::IndexMap*>& maps, const int field,
+    const std::int64_t index)
 {
   // FIXME: handle/check block size > 1
 
   // Get process that owns global index
   const int bs = maps[field]->block_size;
-  int owner = maps[field]->owner(index / bs);
+  const int owner = maps[field]->owner(index / bs);
 
   // Offset from lower rank processes
   std::size_t offset = 0;
@@ -426,7 +431,7 @@ dolfinx::fem::get_global_index(const std::vector<const common::IndexMap*>& maps,
               * maps[i]->block_size;
   }
 
-  return index + offset;
+  return offset;
 }
 //-----------------------------------------------------------------------------
 fem::ElementDofLayout
@@ -496,23 +501,33 @@ fem::create_element_dof_layout(const ufc_dofmap& dofmap,
                                cell_type, entity_block_size);
 }
 //-----------------------------------------------------------------------------
-fem::DofMap fem::create_dofmap(const ufc_dofmap& ufc_dofmap,
-                               const mesh::Mesh& mesh)
+fem::DofMap fem::create_dofmap(MPI_Comm comm, const ufc_dofmap& ufc_dofmap,
+                               mesh::Topology& topology)
 {
   auto element_dof_layout = std::make_shared<ElementDofLayout>(
-      create_element_dof_layout(ufc_dofmap, mesh.cell_type()));
+      create_element_dof_layout(ufc_dofmap, topology.cell_type()));
   assert(element_dof_layout);
 
   // Create required mesh entities
-  const int D = mesh.topology().dim();
-  for (int d = 0; d <= D; ++d)
+  const int D = topology.dim();
+  for (int d = 0; d < D; ++d)
   {
     if (element_dof_layout->num_entity_dofs(d) > 0)
-      mesh.create_entities(d);
+    {
+      // Create local entities
+      const auto [cell_entity, entity_vertex, index_map]
+          = mesh::TopologyComputation::compute_entities(comm, topology, d);
+      if (cell_entity)
+        topology.set_connectivity(cell_entity, topology.dim(), d);
+      if (entity_vertex)
+        topology.set_connectivity(entity_vertex, d, 0);
+      if (index_map)
+        topology.set_index_map(d, index_map);
+    }
   }
 
-  return DofMapBuilder::build(mesh.mpi_comm(), mesh.topology(),
-                              mesh.cell_type(), element_dof_layout);
+  return DofMapBuilder::build(comm, topology, topology.cell_type(),
+                              element_dof_layout);
 }
 //-----------------------------------------------------------------------------
 std::vector<std::tuple<int, std::string, std::shared_ptr<function::Function>>>
@@ -569,7 +584,6 @@ fem::Form fem::create_form(
     assert(spaces[i]->element());
     std::unique_ptr<ufc_finite_element, decltype(free)*> ufc_element(
         ufc_form.create_finite_element(i), free);
-
     assert(ufc_element);
     if (std::string(ufc_element->signature)
         != spaces[i]->element()->signature())
@@ -581,6 +595,7 @@ fem::Form fem::create_form(
 
   // Get list of integral IDs, and load tabulate tensor into memory for each
   FormIntegrals integrals;
+
   std::vector<int> cell_integral_ids(ufc_form.num_cell_integrals);
   ufc_form.get_cell_integral_ids(cell_integral_ids.data());
   for (int id : cell_integral_ids)
@@ -590,6 +605,19 @@ fem::Form fem::create_form(
     integrals.set_tabulate_tensor(FormIntegrals::Type::cell, id,
                                   cell_integral->tabulate_tensor);
     std::free(cell_integral);
+  }
+
+  // FIXME: Can this be handled better?
+  // FIXME: Handle forms with no space
+  if (ufc_form.num_exterior_facet_integrals > 0
+      or ufc_form.num_interior_facet_integrals > 0)
+  {
+    if (!spaces.empty())
+    {
+      auto mesh = spaces[0]->mesh();
+      const int tdim = mesh->topology().dim();
+      spaces[0]->mesh()->create_entities(tdim - 1);
+    }
   }
 
   std::vector<int> exterior_facet_integral_ids(
@@ -615,6 +643,7 @@ fem::Form fem::create_form(
     assert(interior_facet_integral);
     integrals.set_tabulate_tensor(FormIntegrals::Type::interior_facet, id,
                                   interior_facet_integral->tabulate_tensor);
+
     std::free(interior_facet_integral);
   }
 
@@ -648,10 +677,8 @@ fem::get_cmap_from_ufc_cmap(const ufc_coordinate_mapping& ufc_cmap)
          {tetrahedron, mesh::CellType::tetrahedron},
          {quadrilateral, mesh::CellType::quadrilateral},
          {hexahedron, mesh::CellType::hexahedron}};
-  const auto it = ufc_to_cell.find(ufc_cmap.cell_shape);
-  assert(it != ufc_to_cell.end());
 
-  mesh::CellType cell_type = it->second;
+  const mesh::CellType cell_type = ufc_to_cell.at(ufc_cmap.cell_shape);
   assert(ufc_cmap.topological_dimension == mesh::cell_dim(cell_type));
 
   return std::make_shared<fem::CoordinateElement>(
@@ -670,7 +697,8 @@ fem::create_functionspace(ufc_function_space* (*fptr)(void),
   std::shared_ptr<function::FunctionSpace> V
       = std::make_shared<function::FunctionSpace>(
           mesh, std::make_shared<fem::FiniteElement>(*ufc_element),
-          std::make_shared<fem::DofMap>(fem::create_dofmap(*ufc_map, *mesh)));
+          std::make_shared<fem::DofMap>(fem::create_dofmap(
+              mesh->mpi_comm(), *ufc_map, mesh->topology())));
   std::free(ufc_element);
   std::free(ufc_map);
   std::free(space);

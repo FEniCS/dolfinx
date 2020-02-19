@@ -92,9 +92,10 @@ create_vector_block(const std::vector<const common::IndexMap*>& maps);
 la::PETScVector
 create_vector_nest(const std::vector<const common::IndexMap*>& maps);
 
-/// Get new global index in 'spliced' indices
-std::int64_t get_global_index(const std::vector<const common::IndexMap*>& maps,
-                              const int field, const int n);
+/// @todo Update name an check efficiency
+/// Get new global offset in 'spliced' indices
+std::int64_t get_global_offset(const std::vector<const common::IndexMap*>& maps,
+                               const int field, const std::int64_t index);
 
 /// Create an ElementDofLayout from a ufc_dofmap
 ElementDofLayout create_element_dof_layout(const ufc_dofmap& dofmap,
@@ -103,9 +104,11 @@ ElementDofLayout create_element_dof_layout(const ufc_dofmap& dofmap,
                                            = {});
 
 /// Create dof map on mesh from a ufc_dofmap
-/// @param[in] dofmap The ufc_dofmap.
-/// @param[in] mesh The mesh.
-DofMap create_dofmap(const ufc_dofmap& dofmap, const mesh::Mesh& mesh);
+/// @param[in] comm MPI communicator
+/// @param[in] dofmap The ufc_dofmap
+/// @param[in] topology The mesh topology
+DofMap create_dofmap(MPI_Comm comm, const ufc_dofmap& dofmap,
+                     mesh::Topology& topology);
 
 /// Create a form from a form_create function returning a pointer to a
 /// ufc_form, taking care of memory allocation.
