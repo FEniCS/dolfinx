@@ -136,13 +136,6 @@ void mesh(py::module& m)
                                        py::const_))
       .def("hash", &dolfinx::mesh::Topology::hash)
       .def("on_boundary", &dolfinx::mesh::Topology::on_boundary)
-      .def("global_indices",
-           [](const dolfinx::mesh::Topology& self, int dim) {
-             auto& indices = self.global_indices(dim);
-             return py::array_t<std::int64_t>(indices.size(), indices.data(),
-                                              py::none());
-           },
-           py::return_value_policy::reference_internal)
       .def("index_map", &dolfinx::mesh::Topology::index_map)
       .def_property_readonly("cell_type", &dolfinx::mesh::Topology::cell_type)
       .def("cell_name",

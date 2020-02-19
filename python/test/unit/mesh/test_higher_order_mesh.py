@@ -570,14 +570,14 @@ def test_gmsh_input_quad(order):
     if order > 2:
         # Quads order > 3 have a gmsh specific ordering, and has to be permuted.
         msh_to_dolfin = np.array([0, 3, 11, 10, 1, 2, 6, 7, 4, 9, 12, 15, 5, 8, 13, 14])
-        cells = np.zeros(msh.cells[element].shape)
+        cells = np.zeros(msh.cells_dict[element].shape)
         for i in range(len(cells)):
             for j in range(len(msh_to_dolfin)):
-                cells[i, j] = msh.cells[element][i, msh_to_dolfin[j]]
+                cells[i, j] = msh.cells_dict[element][i, msh_to_dolfin[j]]
     else:
         # XDMF does not support higher order quads
-        cells = permute_cell_ordering(msh.cells[element], permutation_vtk_to_dolfin(
-            CellType.quadrilateral, msh.cells[element].shape[1]))
+        cells = permute_cell_ordering(msh.cells_dict[element], permutation_vtk_to_dolfin(
+            CellType.quadrilateral, msh.cells_dict[element].shape[1]))
 
     mesh = Mesh(MPI.comm_world, CellType.quadrilateral, msh.points, cells,
                 [], GhostMode.none)

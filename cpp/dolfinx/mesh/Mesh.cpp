@@ -230,7 +230,7 @@ Mesh::Mesh(
 
   // Initialise vertex topology
   _topology = std::make_unique<Topology>(type);
-  _topology->set_global_indices(0, vertex_indices_global);
+  _topology->set_global_user_vertices(vertex_indices_global);
   _topology->set_index_map(0, vertex_index_map);
   const std::int32_t num_vertices
       = vertex_index_map->size_local() + vertex_index_map->num_ghosts();
@@ -240,8 +240,10 @@ Mesh::Mesh(
   // Initialise cell topology
   Eigen::Array<std::int64_t, Eigen::Dynamic, 1> cell_ghosts(num_ghost_cells);
   if ((int)global_cell_indices.size() == (num_cells_local + num_ghost_cells))
+  {
     std::copy(global_cell_indices.begin() + num_cells_local,
               global_cell_indices.end(), cell_ghosts.data());
+  }
 
   auto cell_index_map = std::make_shared<common::IndexMap>(
       _mpi_comm.comm(), num_cells_local, cell_ghosts, 1);
@@ -258,10 +260,10 @@ Mesh::Mesh(
         = MPI::global_offset(comm, num_cells, true);
     std::vector<std::int64_t> global_indices(num_cells, 0);
     std::iota(global_indices.begin(), global_indices.end(), global_cell_offset);
-    _topology->set_global_indices(tdim, global_indices);
+    // _topology->set_global_indices(tdim, global_indices);
   }
-  else
-    _topology->set_global_indices(tdim, global_cell_indices);
+  // else
+  //   _topology->set_global_indices(tdim, global_cell_indices);
 }
 //-----------------------------------------------------------------------------
 Mesh::Mesh(const Mesh& mesh)
@@ -362,11 +364,7 @@ std::int32_t Mesh::create_entities(int dim) const
     _topology->set_connectivity(entity_vertex, dim, 0);
 
   if (index_map)
-  {
     _topology->set_index_map(dim, index_map);
-    // FIXME: remove global_indices
-    _topology->set_global_indices(dim, index_map->global_indices(false));
-  }
 
   return index_map->size_local();
 }
