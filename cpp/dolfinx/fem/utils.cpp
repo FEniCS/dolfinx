@@ -9,6 +9,7 @@
 #include <array>
 #include <dolfinx/common/IndexMap.h>
 #include <dolfinx/common/Timer.h>
+#include <dolfinx/common/log.h>
 #include <dolfinx/common/types.h>
 #include <dolfinx/fem/DofMap.h>
 #include <dolfinx/fem/DofMapBuilder.h>
@@ -31,6 +32,30 @@ using namespace dolfinx;
 
 namespace
 {
+//-----------------------------------------------------------------------------
+int get_num_permutations(const mesh::CellType cell_type)
+{
+  // In general, this will return num_edges + 2*num_faces + 4*num_volumes
+  switch (cell_type)
+  {
+  case (mesh::CellType::point):
+    return 0;
+  case (mesh::CellType::interval):
+    return 1;
+  case (mesh::CellType::triangle):
+    return 5;
+  case (mesh::CellType::tetrahedron):
+    return 18;
+  case (mesh::CellType::quadrilateral):
+    return 6;
+  case (mesh::CellType::hexahedron):
+    return 28;
+  default:
+    LOG(WARNING) << "Dof permutations are not defined for this cell type. High "
+                    "order elements may be incorrect.";
+    return 0;
+  }
+}
 // Try to figure out block size. FIXME - replace elsewhere
 int analyse_block_structure(
     const std::vector<std::shared_ptr<const fem::ElementDofLayout>>&
@@ -493,8 +518,17 @@ fem::create_element_dof_layout(const ufc_dofmap& dofmap,
   // but keep for now to mimic existing code
   const int block_size = analyse_block_structure(sub_dofmaps);
 
+  const int num_base_permutations = get_num_permutations(cell_type);
+  const int num_dofs = dofmap.num_element_support_dofs;
+
+  Eigen::Array<int, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
+      base_permutations(num_base_permutations, num_dofs);
+  for (int i = 0; i < num_base_permutations; ++i)
+    for (int j = 0; j < num_dofs; ++j)
+      base_permutations(i, j) = dofmap.base_permutations[i * num_dofs + j];
+
   return fem::ElementDofLayout(block_size, entity_dofs, parent_map, sub_dofmaps,
-                               cell_type, dofmap.base_permutations);
+                               cell_type, base_permutations);
 }
 //-----------------------------------------------------------------------------
 fem::DofMap fem::create_dofmap(MPI_Comm comm, const ufc_dofmap& ufc_dofmap,
