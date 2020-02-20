@@ -649,6 +649,27 @@ void Partitioning::create_distributed_adjacency_list(
                 number_to_recv.data(), disp_recv.data(),
                 MPI::mpi_type<std::int64_t>(), comm);
 
+  // Assign ownership to lowest rank
+  // FIXME: revised this to balance load
+  const std::array<std::int64_t, 2> range
+      = dolfinx::MPI::local_range(comm, max_global_index + 1);
+  std::vector<int> index_owner(range[1] - range[0], -1);
+  std::vector<int> count(size, 0);
+  for (int i = 0; i < size; ++i)
+  {
+    for (int j = disp_recv[i]; j < disp_recv[i + 1]; ++j)
+    {
+      // Get back to zero reference index
+      const std::int64_t index = vertices_recv[j] - range[0];
+      if (index_owner[index] < 0)
+      {
+        index_owner[index] = i;
+        ++count[i];
+      }
+    }
+  }
+
+
   // // Send global indices to 'owner'
   // const int num_to_sent
   //     = std::count(exterior_vertex.begin(), exterior_vertex.end(), true);
