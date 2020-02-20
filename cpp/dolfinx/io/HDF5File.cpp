@@ -254,7 +254,8 @@ void HDF5File::write(const mesh::Mesh& mesh, int cell_dim,
   const bool mpi_io = MPI::size(_mpi_comm.comm()) > 1 ? true : false;
   assert(_hdf5_file_id > 0);
 
-  mesh::CellType cell_type = mesh::cell_entity_type(mesh.topology().cell_type(), cell_dim);
+  mesh::CellType cell_type
+      = mesh::cell_entity_type(mesh.topology().cell_type(), cell_dim);
   const graph::AdjacencyList<std::int32_t>& cell_points
       = mesh.coordinate_dofs().entity_points();
 
@@ -325,8 +326,10 @@ void HDF5File::write(const mesh::Mesh& mesh, int cell_dim,
     else
     {
       topological_data.reserve(mesh.num_entities(cell_dim) * (num_cell_points));
-
-      const auto& global_vertices = mesh.topology().global_indices(0);
+      auto map = mesh.topology().index_map(0);
+      assert(map);
+      const std::vector<std::int64_t> global_vertices
+          = map->global_indices(false);
 
       // Permutation to VTK ordering
       int num_nodes = mesh.coordinate_dofs().entity_points().num_links(0);
@@ -362,8 +365,8 @@ void HDF5File::write(const mesh::Mesh& mesh, int cell_dim,
         // dimension
 
         const int mpi_rank = MPI::rank(_mpi_comm.comm());
-        const std::map<std::int32_t, std::set<std::int32_t>>& shared_entities
-            = mesh.topology().shared_entities(cell_dim);
+        const std::map<std::int32_t, std::set<std::int32_t>> shared_entities
+            = mesh.topology().index_map(cell_dim)->compute_shared_indices();
 
         std::set<int> non_local_entities;
         if (mesh.topology().index_map(tdim)->num_ghosts() == 0)
@@ -450,7 +453,12 @@ void HDF5File::write(const mesh::Mesh& mesh, int cell_dim,
     {
       const std::string cell_index_dataset = name + "/cell_indices";
       global_size.pop_back();
-      const auto& cell_index_ref = mesh.topology().global_indices(cell_dim);
+
+      auto map = mesh.topology().index_map(cell_dim);
+      assert(map);
+      const std::vector<std::int64_t> cell_index_ref
+          = map->global_indices(false);
+
       const std::vector<std::int64_t> cells(
           cell_index_ref.begin(),
           cell_index_ref.begin()
@@ -623,8 +631,11 @@ HDF5File::read_mesh_function(std::shared_ptr<const mesh::Mesh> mesh,
   // directly to the right place
   std::vector<std::vector<std::size_t>> send_requests(num_processes);
   const std::size_t process_number = MPI::rank(_mpi_comm.comm());
-  const std::vector<std::int64_t>& global_indices
-      = mesh->topology().global_indices(0);
+
+  auto map = mesh->topology().index_map(0);
+  assert(map);
+  const std::vector<std::int64_t> global_indices = map->global_indices(false);
+
   for (auto& cell : mesh::MeshRange(*mesh, dim, mesh::MeshRangeType::ALL))
   {
     std::vector<std::size_t> cell_topology;
@@ -745,8 +756,8 @@ void HDF5File::write_mesh_function(const mesh::MeshFunction<T>& meshfunction,
     // Drop duplicate data
     const int tdim = mesh.topology().dim();
     const int mpi_rank = MPI::rank(_mpi_comm.comm());
-    const std::map<std::int32_t, std::set<std::int32_t>>& shared_entities
-        = mesh.topology().shared_entities(cell_dim);
+    const std::map<std::int32_t, std::set<std::int32_t>> shared_entities
+        = mesh.topology().index_map(cell_dim)->compute_shared_indices();
 
     std::set<int> non_local_entities;
     if (mesh.topology().index_map(tdim)->num_ghosts() == 0)
@@ -911,9 +922,11 @@ void HDF5File::write(const function::Function& u, const std::string name)
   write_data(name + "/x_cell_dofs", x_cell_dofs, global_size, mpi_io);
 
   // Save cell ordering - copy to local vector and cut off ghosts
-  std::vector<std::size_t> cells(mesh.topology().global_indices(tdim).begin(),
-                                 mesh.topology().global_indices(tdim).begin()
-                                     + n_cells);
+  auto map = mesh.topology().index_map(tdim);
+  assert(map);
+  const std::vector<std::int64_t> global_indices = map->global_indices(false);
+  std::vector<std::size_t> cells(global_indices.begin(),
+                                 global_indices.begin() + n_cells);
 
   global_size[0] = mesh.num_entities_global(tdim);
   write_data(name + "/cells", cells, global_size, mpi_io);
@@ -1156,8 +1169,11 @@ void HDF5File::write_mesh_value_collection(
 
   const std::size_t tdim = mesh->topology().dim();
   mesh->create_connectivity(tdim, dim);
-  const std::vector<std::int64_t>& global_indices
-      = mesh->topology().global_indices(0);
+
+  auto map = mesh->topology().index_map(0);
+  assert(map);
+  const std::vector<std::int64_t> global_indices = map->global_indices(false);
+
   for (auto& p : values)
   {
     // mesh::MeshEntity cell = mesh::Cell(*mesh, p.first.first);
@@ -1259,8 +1275,11 @@ HDF5File::read_mesh_value_collection(std::shared_ptr<const mesh::Mesh> mesh,
 
   std::vector<std::vector<std::size_t>> send_entities(num_processes);
   std::vector<std::vector<std::size_t>> recv_entities(num_processes);
-  const std::vector<std::int64_t>& global_indices
-      = mesh->topology().global_indices(0);
+
+  auto map = mesh->topology().index_map(0);
+  assert(map);
+  const std::vector<std::int64_t> global_indices = map->global_indices(false);
+
   for (auto& m : mesh::MeshRange(*mesh, dim))
   {
     if (dim == 0)

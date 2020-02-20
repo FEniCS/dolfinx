@@ -86,109 +86,99 @@ void fem(py::module& m)
       m, "ufc_coordinate_mapping", "UFC coordinate_mapping object");
 
   // Functions to convert pointers (from JIT usually) to UFC objects
-  m.def(
-      "make_ufc_finite_element",
-      [](std::uintptr_t e) {
-        ufc_finite_element* p = reinterpret_cast<ufc_finite_element*>(e);
-        return std::shared_ptr<const ufc_finite_element>(p);
-      },
-      "Create a ufc_finite_element object from a pointer.");
+  m.def("make_ufc_finite_element",
+        [](std::uintptr_t e) {
+          ufc_finite_element* p = reinterpret_cast<ufc_finite_element*>(e);
+          return std::shared_ptr<const ufc_finite_element>(p);
+        },
+        "Create a ufc_finite_element object from a pointer.");
 
-  m.def(
-      "make_ufc_dofmap",
-      [](std::uintptr_t e) {
-        ufc_dofmap* p = reinterpret_cast<ufc_dofmap*>(e);
-        return std::shared_ptr<const ufc_dofmap>(p);
-      },
-      "Create a ufc_dofmap object from a pointer.");
+  m.def("make_ufc_dofmap",
+        [](std::uintptr_t e) {
+          ufc_dofmap* p = reinterpret_cast<ufc_dofmap*>(e);
+          return std::shared_ptr<const ufc_dofmap>(p);
+        },
+        "Create a ufc_dofmap object from a pointer.");
 
-  m.def(
-      "make_ufc_form",
-      [](std::uintptr_t e) {
-        ufc_form* p = reinterpret_cast<ufc_form*>(e);
-        return std::shared_ptr<const ufc_form>(p);
-      },
-      "Create a ufc_form object from a pointer.");
+  m.def("make_ufc_form",
+        [](std::uintptr_t e) {
+          ufc_form* p = reinterpret_cast<ufc_form*>(e);
+          return std::shared_ptr<const ufc_form>(p);
+        },
+        "Create a ufc_form object from a pointer.");
 
-  m.def(
-      "make_coordinate_mapping",
-      [](std::uintptr_t e) {
-        ufc_coordinate_mapping* p
-            = reinterpret_cast<ufc_coordinate_mapping*>(e);
-        return dolfinx::fem::get_cmap_from_ufc_cmap(*p);
-      },
-      "Create a CoordinateElement object from a pointer to a "
-      "ufc_coordinate_map.");
+  m.def("make_coordinate_mapping",
+        [](std::uintptr_t e) {
+          ufc_coordinate_mapping* p
+              = reinterpret_cast<ufc_coordinate_mapping*>(e);
+          return dolfinx::fem::get_cmap_from_ufc_cmap(*p);
+        },
+        "Create a CoordinateElement object from a pointer to a "
+        "ufc_coordinate_map.");
 
   // utils
   m.def("block_function_spaces",
         [](const std::vector<std::vector<const dolfinx::fem::Form*>>& a) {
           return dolfinx::fem::block_function_spaces(forms_vector_to_array(a));
         });
-  m.def(
-      "create_vector_block",
-      [](const std::vector<const dolfinx::common::IndexMap*>& maps) {
-        dolfinx::la::PETScVector x = dolfinx::fem::create_vector_block(maps);
-        Vec _x = x.vec();
-        PetscObjectReference((PetscObject)_x);
-        return _x;
-      },
-      py::return_value_policy::take_ownership,
-      "Create a monolithic vector for multiple (stacked) linear forms.");
-  m.def(
-      "create_vector_nest",
-      [](const std::vector<const dolfinx::common::IndexMap*>& maps) {
-        auto x = dolfinx::fem::create_vector_nest(maps);
-        Vec _x = x.vec();
-        PetscObjectReference((PetscObject)_x);
-        return _x;
-      },
-      py::return_value_policy::take_ownership,
-      "Create nested vector for multiple (stacked) linear forms.");
+  m.def("create_vector_block",
+        [](const std::vector<const dolfinx::common::IndexMap*>& maps) {
+          dolfinx::la::PETScVector x = dolfinx::fem::create_vector_block(maps);
+          Vec _x = x.vec();
+          PetscObjectReference((PetscObject)_x);
+          return _x;
+        },
+        py::return_value_policy::take_ownership,
+        "Create a monolithic vector for multiple (stacked) linear forms.");
+  m.def("create_vector_nest",
+        [](const std::vector<const dolfinx::common::IndexMap*>& maps) {
+          auto x = dolfinx::fem::create_vector_nest(maps);
+          Vec _x = x.vec();
+          PetscObjectReference((PetscObject)_x);
+          return _x;
+        },
+        py::return_value_policy::take_ownership,
+        "Create nested vector for multiple (stacked) linear forms.");
 
   m.def("create_sparsity_pattern", &dolfinx::fem::create_sparsity_pattern,
         "Create a sparsity pattern for bilinear form.");
-  m.def(
-      "create_matrix",
-      [](const dolfinx::fem::Form& a) {
-        auto A = dolfinx::fem::create_matrix(a);
-        Mat _A = A.mat();
-        PetscObjectReference((PetscObject)_A);
-        return _A;
-      },
-      py::return_value_policy::take_ownership,
-      "Create a PETSc Mat for bilinear form.");
-  m.def(
-      "create_matrix_block",
-      [](const std::vector<std::vector<const dolfinx::fem::Form*>>& a) {
-        dolfinx::la::PETScMatrix A
-            = dolfinx::fem::create_matrix_block(forms_vector_to_array(a));
-        Mat _A = A.mat();
-        PetscObjectReference((PetscObject)_A);
-        return _A;
-      },
-      py::return_value_policy::take_ownership,
-      "Create monolithic sparse matrix for stacked bilinear forms.");
-  m.def(
-      "create_matrix_nest",
-      [](const std::vector<std::vector<const dolfinx::fem::Form*>>& a) {
-        dolfinx::la::PETScMatrix A
-            = dolfinx::fem::create_matrix_nest(forms_vector_to_array(a));
-        Mat _A = A.mat();
-        PetscObjectReference((PetscObject)_A);
-        return _A;
-      },
-      py::return_value_policy::take_ownership,
-      "Create nested sparse matrix for bilinear forms.");
+  m.def("create_matrix",
+        [](const dolfinx::fem::Form& a) {
+          auto A = dolfinx::fem::create_matrix(a);
+          Mat _A = A.mat();
+          PetscObjectReference((PetscObject)_A);
+          return _A;
+        },
+        py::return_value_policy::take_ownership,
+        "Create a PETSc Mat for bilinear form.");
+  m.def("create_matrix_block",
+        [](const std::vector<std::vector<const dolfinx::fem::Form*>>& a) {
+          dolfinx::la::PETScMatrix A
+              = dolfinx::fem::create_matrix_block(forms_vector_to_array(a));
+          Mat _A = A.mat();
+          PetscObjectReference((PetscObject)_A);
+          return _A;
+        },
+        py::return_value_policy::take_ownership,
+        "Create monolithic sparse matrix for stacked bilinear forms.");
+  m.def("create_matrix_nest",
+        [](const std::vector<std::vector<const dolfinx::fem::Form*>>& a) {
+          dolfinx::la::PETScMatrix A
+              = dolfinx::fem::create_matrix_nest(forms_vector_to_array(a));
+          Mat _A = A.mat();
+          PetscObjectReference((PetscObject)_A);
+          return _A;
+        },
+        py::return_value_policy::take_ownership,
+        "Create nested sparse matrix for bilinear forms.");
   m.def("create_element_dof_layout", &dolfinx::fem::create_element_dof_layout,
         "Create ElementDofLayout object from a ufc dofmap.");
-  m.def(
-      "create_dofmap",
-      [](const MPICommWrapper comm, const ufc_dofmap& dofmap,
-         dolfinx::mesh::Topology& topology) {
-        return dolfinx::fem::create_dofmap(comm.get(), dofmap, topology);
-      },
-      "Create DOLFIN DofMap object from a ufc dofmap.");
+  m.def("create_dofmap",
+        [](const MPICommWrapper comm, const ufc_dofmap& dofmap,
+           dolfinx::mesh::Topology& topology) {
+          return dolfinx::fem::create_dofmap(comm.get(), dofmap, topology);
+        },
+        "Create DOLFIN DofMap object from a ufc dofmap.");
   m.def("create_form",
         py::overload_cast<const ufc_form&,
                           const std::vector<std::shared_ptr<
@@ -196,16 +186,15 @@ void fem(py::module& m)
             &dolfinx::fem::create_form),
         "Create DOLFIN form from a ufc form.");
 
-  m.def(
-      "build_dofmap",
-      [](const dolfinx::mesh::Mesh& mesh,
-         std::shared_ptr<const dolfinx::fem::ElementDofLayout>
-             element_dof_layout) {
-        return dolfinx::fem::DofMapBuilder::build(
-            mesh.mpi_comm(), mesh.topology(), mesh.topology().cell_type(),
-            element_dof_layout);
-      },
-      "Build and dofmap on a mesh.");
+  m.def("build_dofmap",
+        [](const dolfinx::mesh::Mesh& mesh,
+           std::shared_ptr<const dolfinx::fem::ElementDofLayout>
+               element_dof_layout) {
+          return dolfinx::fem::DofMapBuilder::build(
+              mesh.mpi_comm(), mesh.topology(), mesh.topology().cell_type(),
+              element_dof_layout);
+        },
+        "Build and dofmap on a mesh.");
 
   // dolfinx::fem::FiniteElement
   py::class_<dolfinx::fem::FiniteElement,
@@ -223,6 +212,13 @@ void fem(py::module& m)
   py::class_<dolfinx::fem::ElementDofLayout,
              std::shared_ptr<dolfinx::fem::ElementDofLayout>>(
       m, "ElementDofLayout", "Object describing the layout of dofs on a cell")
+      .def(py::init<int, const std::vector<std::vector<std::set<int>>>&,
+                    const std::vector<int>&,
+                    const std::vector<
+                        std::shared_ptr<const dolfinx::fem::ElementDofLayout>>,
+                    const dolfinx::mesh::CellType,
+                    const Eigen::Array<int, Eigen::Dynamic, Eigen::Dynamic,
+                                       Eigen::RowMajor>&>())
       .def_property_readonly("num_dofs",
                              &dolfinx::fem::ElementDofLayout::num_dofs)
       .def_property_readonly("cell_type",
@@ -336,25 +332,24 @@ void fem(py::module& m)
           const std::vector<std::shared_ptr<const dolfinx::fem::DirichletBC>>&,
           const Vec, double>(&dolfinx::fem::set_bc),
       "Insert boundary condition values into vector");
-  m.def(
-      "set_bc",
-      [](Eigen::Ref<Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1>> b,
-         const std::vector<std::shared_ptr<const dolfinx::fem::DirichletBC>>&
-             bcs,
-         const py::array_t<PetscScalar>& x0, double scale) {
-        if (x0.ndim() == 0)
-          dolfinx::fem::set_bc(b, bcs, scale);
-        else if (x0.ndim() == 1)
-        {
-          Eigen::Map<const Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1>> _x0(
-              x0.data(), x0.shape(0));
-          dolfinx::fem::set_bc(b, bcs, _x0, scale);
-        }
-        else
-          throw std::runtime_error("Wrong array dimension.");
-      },
-      py::arg("b"), py::arg("bcs"), py::arg("x0") = py::none(),
-      py::arg("scale") = 1.0);
+  m.def("set_bc",
+        [](Eigen::Ref<Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1>> b,
+           const std::vector<std::shared_ptr<const dolfinx::fem::DirichletBC>>&
+               bcs,
+           const py::array_t<PetscScalar>& x0, double scale) {
+          if (x0.ndim() == 0)
+            dolfinx::fem::set_bc(b, bcs, scale);
+          else if (x0.ndim() == 1)
+          {
+            Eigen::Map<const Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1>> _x0(
+                x0.data(), x0.shape(0));
+            dolfinx::fem::set_bc(b, bcs, _x0, scale);
+          }
+          else
+            throw std::runtime_error("Wrong array dimension.");
+        },
+        py::arg("b"), py::arg("bcs"), py::arg("x0") = py::none(),
+        py::arg("scale") = 1.0);
   // Tools
   m.def("bcs_rows", &dolfinx::fem::bcs_rows);
   m.def("bcs_cols", &dolfinx::fem::bcs_cols);
@@ -391,12 +386,11 @@ void fem(py::module& m)
       m, "Form", "Variational form object")
       .def(py::init<std::vector<
                std::shared_ptr<const dolfinx::function::FunctionSpace>>>())
-      .def(
-          "num_coefficients",
-          [](const dolfinx::fem::Form& self) {
-            return self.coefficients().size();
-          },
-          "Return number of coefficients in form")
+      .def("num_coefficients",
+           [](const dolfinx::fem::Form& self) {
+             return self.coefficients().size();
+           },
+           "Return number of coefficients in form")
       .def("original_coefficient_position",
            &dolfinx::fem::Form::original_coefficient_position)
       .def("set_coefficient",
@@ -420,7 +414,8 @@ void fem(py::module& m)
               int i, std::intptr_t addr) {
              auto tabulate_tensor_ptr = (void (*)(
                  PetscScalar*, const PetscScalar*, const PetscScalar*,
-                 const double*, const int*, const int*))addr;
+                 const double*, const int*, const std::uint8_t*, const bool*,
+                 const bool*, const std::uint8_t*))addr;
              self.set_tabulate_tensor(type, i, tabulate_tensor_ptr);
            })
       .def_property_readonly("rank", &dolfinx::fem::Form::rank)

@@ -457,7 +457,8 @@ def test_save_2D_facet_function(tempdir, encoding, data_type, cell_type):
     mf = MeshFunction(dtype_str, mesh, tdim - 1, 0)
     mf.name = "facets"
 
-    global_indices = mesh.topology.global_indices(tdim - 1)
+    map = mesh.topology.index_map(tdim - 1)
+    global_indices = map.global_indices(True)
     mf.values[:] = global_indices[:]
     filename = os.path.join(tempdir, "mf_facet_2D_%s.xdmf" % dtype_str)
 
@@ -481,7 +482,8 @@ def test_save_3D_facet_function(tempdir, encoding, data_type, cell_type):
     mf = MeshFunction(dtype_str, mesh, tdim - 1, 0)
     mf.name = "facets"
 
-    global_indices = mesh.topology.global_indices(tdim - 1)
+    map = mesh.topology.index_map(tdim - 1)
+    global_indices = map.global_indices(True)
     mf.values[:] = global_indices[:]
     filename = os.path.join(tempdir, "mf_facet_3D_%s.xdmf" % dtype_str)
     with XDMFFile(mesh.mpi_comm(), filename, encoding=encoding) as xdmf:
@@ -519,7 +521,7 @@ def test_save_2D_vertex_function(tempdir, encoding, data_type, cell_type):
     mf = MeshFunction(dtype_str, mesh, 0, 0)
     mf.name = "vertices"
 
-    global_indices = mesh.topology.global_indices(0)
+    global_indices = mesh.topology.index_map(0).global_indices(False)
     mf.values[:] = global_indices[:]
     filename = os.path.join(tempdir, "mf_vertex_2D_%s.xdmf" % dtype_str)
     with XDMFFile(mesh.mpi_comm(), filename, encoding=encoding) as file:
@@ -639,9 +641,16 @@ def test_append_and_load_mesh_functions(tempdir, encoding, data_type):
         cf = MeshFunction(dtype_str, mesh, mesh.topology.dim, 0)
         cf.name = "cells"
 
-        vf.values[:] = mesh.topology.global_indices(0)[:]
-        ff.values[:] = mesh.topology.global_indices(dim - 1)[:]
-        cf.values[:] = mesh.topology.global_indices(dim)[:]
+        # vf.values[:] = mesh.topology.global_indices(0)[:]
+        map = mesh.topology.index_map(0)
+        vf.values[:] = map.global_indices(True)
+
+        map = mesh.topology.index_map(dim - 1)
+        ff.values[:] = map.global_indices(True)
+
+        map = mesh.topology.index_map(dim)
+        cf.values[:] = map.global_indices(True)
+
         filename = os.path.join(tempdir, "appended_mf_{0:d}_{1:s}.xdmf".format(dim, str(mesh.topology.cell_type)))
         with XDMFFile(mesh.mpi_comm(), filename, encoding=encoding) as xdmf:
             xdmf.write(mesh)
@@ -686,7 +695,10 @@ def test_append_and_load_mesh_value_collections(tempdir, encoding, data_type, ce
 
     with XDMFFile(mesh.mpi_comm(), filename) as xdmf:
         for mvc in mvcs:
-            global_indices = mesh.topology.global_indices(mvc.dim)
+            # global_indices = mesh.topology.global_indices(mvc.dim)
+            map = mesh.topology.index_map(mvc.dim)
+            global_indices = map.global_indices(True)
+
             for ent in range(mesh.num_entities(mvc.dim)):
                 assert (mvc.set_value(ent, global_indices[ent]))
             xdmf.write(mvc)

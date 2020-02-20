@@ -16,6 +16,7 @@
 #include <dolfinx/common/IndexMap.h>
 #include <dolfinx/common/MPI.h>
 #include <dolfinx/common/Timer.h>
+#include <dolfinx/common/log.h>
 #include <dolfinx/common/utils.h>
 #include <dolfinx/graph/AdjacencyList.h>
 #include <dolfinx/io/cells.h>
@@ -83,91 +84,6 @@ point_map_to_vertex_map(std::shared_ptr<const common::IndexMap> point_index_map,
           vertex_ghost.data(), vertex_ghost.size()),
       1);
   return vertex_index_map;
-}
-//-----------------------------------------------------------------------------
-std::map<std::int32_t, std::set<int>>
-compute_shared_from_indexmap(const common::IndexMap& index_map)
-{
-
-  // Get neighbour processes
-  int indegree(-1), outdegree(-2), weighted(-1);
-  MPI_Dist_graph_neighbors_count(index_map.mpi_comm_neighborhood(), &indegree,
-                                 &outdegree, &weighted);
-  assert(indegree == outdegree);
-  std::vector<int> neighbours(indegree), neighbours1(indegree),
-      weights(indegree), weights1(indegree);
-
-  MPI_Dist_graph_neighbors(index_map.mpi_comm_neighborhood(), indegree,
-                           neighbours.data(), weights.data(), outdegree,
-                           neighbours1.data(), weights1.data());
-  std::map<int, int> proc_to_neighbour;
-  for (std::size_t i = 0; i < neighbours.size(); ++i)
-    proc_to_neighbour[neighbours[i]] = i;
-
-  // Simple map for locally owned, forward shared entities
-  std::map<std::int32_t, std::set<int>> shared_entities
-      = index_map.compute_forward_processes();
-
-  // Ghosts are also shared, but we need to communicate to find owners
-  std::vector<std::int32_t> num_sharing(index_map.size_local(), 0);
-  std::vector<int> send_sizes(neighbours.size());
-  for (auto q : shared_entities)
-  {
-    num_sharing[q.first] = q.second.size();
-    for (int r : q.second)
-      send_sizes[proc_to_neighbour[r]] += q.second.size();
-  }
-  std::vector<int> send_offsets(neighbours.size() + 1, 0);
-  std::partial_sum(send_sizes.begin(), send_sizes.end(),
-                   send_offsets.begin() + 1);
-  std::vector<int> send_data(send_offsets.back());
-
-  std::vector<int> temp_offsets(send_offsets);
-  for (auto q : shared_entities)
-  {
-    for (int r : q.second)
-    {
-      const int np = proc_to_neighbour[r];
-      std::copy(q.second.begin(), q.second.end(),
-                send_data.begin() + temp_offsets[np]);
-      temp_offsets[np] += q.second.size();
-    }
-  }
-
-  std::vector<std::int32_t> ghost_shared_sizes
-      = index_map.scatter_fwd(num_sharing, 1);
-
-  // Count up how many to receive from each neighbour...
-  std::vector<int> recv_sizes(neighbours.size());
-  for (int i = 0; i < index_map.num_ghosts(); ++i)
-  {
-    int np = proc_to_neighbour[index_map.ghost_owners()[i]];
-    recv_sizes[np] += ghost_shared_sizes[i];
-  }
-  std::vector<int> recv_offsets(neighbours.size() + 1, 0);
-  std::partial_sum(recv_sizes.begin(), recv_sizes.end(),
-                   recv_offsets.begin() + 1);
-  std::vector<int> recv_data(recv_offsets.back());
-
-  MPI_Neighbor_alltoallv(send_data.data(), send_sizes.data(),
-                         send_offsets.data(), MPI_INT, recv_data.data(),
-                         recv_sizes.data(), recv_offsets.data(), MPI_INT,
-                         index_map.mpi_comm_neighborhood());
-
-  int rank = dolfinx::MPI::rank(index_map.mpi_comm());
-  for (int i = 0; i < index_map.num_ghosts(); ++i)
-  {
-    const int p = index_map.ghost_owners()[i];
-    const int np = proc_to_neighbour[p];
-    std::set<int> sharing_set(recv_data.begin() + recv_offsets[np],
-                              recv_data.begin() + recv_offsets[np]
-                                  + ghost_shared_sizes[i]);
-    sharing_set.insert(p);
-    sharing_set.erase(rank);
-    recv_offsets[np] += ghost_shared_sizes[i];
-    shared_entities[i + index_map.size_local()] = sharing_set;
-  }
-  return shared_entities;
 }
 //-----------------------------------------------------------------------------
 std::vector<std::int64_t> compute_global_index_set(
@@ -269,13 +185,8 @@ Mesh::Mesh(
   _geometry = std::make_unique<Geometry>(num_points_global, points_received,
                                          node_indices_global);
 
-  // Compute shared points from IndexMap
-  std::map<std::int32_t, std::set<int>> shared_points
-      = compute_shared_from_indexmap(*point_index_map);
-
   // Get global vertex information
   std::vector<std::int64_t> vertex_indices_global;
-  std::map<std::int32_t, std::set<std::int32_t>> shared_vertices;
   std::shared_ptr<common::IndexMap> vertex_index_map;
 
   // Make cell to vertex connectivity
@@ -286,7 +197,6 @@ Mesh::Mesh(
   if (_degree == 1)
   {
     vertex_indices_global = std::move(node_indices_global);
-    shared_vertices = std::move(shared_points);
     vertex_index_map = point_index_map;
 
     const std::vector<int> vertex_indices
@@ -317,14 +227,11 @@ Mesh::Mesh(
             = node_index_to_vertex[coordinate_nodes(i, vertex_indices[j])];
 
     vertex_index_map = point_map_to_vertex_map(point_index_map, vertices);
-
-    shared_vertices = compute_shared_from_indexmap(*vertex_index_map);
   }
 
   // Initialise vertex topology
   _topology = std::make_unique<Topology>(type);
-  _topology->set_global_indices(0, vertex_indices_global);
-  _topology->set_shared_entities(0, shared_vertices);
+  _topology->set_global_user_vertices(vertex_indices_global);
   _topology->set_index_map(0, vertex_index_map);
   const std::int32_t num_vertices
       = vertex_index_map->size_local() + vertex_index_map->num_ghosts();
@@ -334,15 +241,16 @@ Mesh::Mesh(
   // Initialise cell topology
   Eigen::Array<std::int64_t, Eigen::Dynamic, 1> cell_ghosts(num_ghost_cells);
   if ((int)global_cell_indices.size() == (num_cells_local + num_ghost_cells))
+  {
     std::copy(global_cell_indices.begin() + num_cells_local,
               global_cell_indices.end(), cell_ghosts.data());
+  }
 
   auto cell_index_map = std::make_shared<common::IndexMap>(
       _mpi_comm.comm(), num_cells_local, cell_ghosts, 1);
   _topology->set_index_map(tdim, cell_index_map);
 
   auto cv = std::make_shared<graph::AdjacencyList<std::int32_t>>(vertex_cols);
-
   _topology->set_connectivity(cv, tdim, 0);
 
   // Global cell indices - construct if none given
@@ -353,10 +261,10 @@ Mesh::Mesh(
         = MPI::global_offset(comm, num_cells, true);
     std::vector<std::int64_t> global_indices(num_cells, 0);
     std::iota(global_indices.begin(), global_indices.end(), global_cell_offset);
-    _topology->set_global_indices(tdim, global_indices);
+    // _topology->set_global_indices(tdim, global_indices);
   }
-  else
-    _topology->set_global_indices(tdim, global_cell_indices);
+  // else
+  //   _topology->set_global_indices(tdim, global_cell_indices);
 }
 //-----------------------------------------------------------------------------
 Mesh::Mesh(const Mesh& mesh)
@@ -447,7 +355,7 @@ std::int32_t Mesh::create_entities(int dim) const
     return -1;
 
   // Create local entities
-  const auto [cell_entity, entity_vertex, index_map, shared_entities]
+  const auto [cell_entity, entity_vertex, index_map]
       = TopologyComputation::compute_entities(_mpi_comm.comm(), *_topology,
                                               dim);
 
@@ -457,14 +365,7 @@ std::int32_t Mesh::create_entities(int dim) const
     _topology->set_connectivity(entity_vertex, dim, 0);
 
   if (index_map)
-  {
     _topology->set_index_map(dim, index_map);
-    // FIXME: remove global_indices
-    _topology->set_global_indices(dim, index_map->global_indices(false));
-  }
-
-  if (shared_entities.size() > 0)
-    _topology->set_shared_entities(dim, shared_entities);
 
   return index_map->size_local();
 }
@@ -508,6 +409,173 @@ void Mesh::create_connectivity(int d0, int d1) const
     _topology->set_interior_facets(f);
   }
 }
+//-----------------------------------------------------------------------------
+void Mesh::create_entity_permutations() const
+{
+  // FIXME: This should probably be moved to topology.
+  if (_topology->entity_reflection_size() > 0)
+    return;
+
+  const int tdim = _topology->dim();
+  const int num_cells = _topology->connectivity(tdim, 0)->num_nodes();
+
+  _topology->resize_entity_permutations(
+      num_cells, cell_num_entities(_topology->cell_type(), 1),
+      cell_num_entities(_topology->cell_type(), 2));
+
+  for (int d = 0; d < tdim; ++d)
+    create_entities(d);
+
+  // If the cell is a triangle or tetrahedron
+  if (_topology->cell_type() == mesh::CellType::triangle
+      || _topology->cell_type() == mesh::CellType::tetrahedron)
+    for (int cell_n = 0; cell_n < num_cells; ++cell_n)
+    {
+      const mesh::MeshEntity cell(*this, tdim, cell_n);
+      for (int d = 1; d < tdim; ++d)
+      {
+        for (int i = 0; i < cell_num_entities(_topology->cell_type(), d); ++i)
+        {
+          // Get the facet
+          const int sub_e_n = cell.entities(d)[i];
+          MeshEntity facet(*this, d, sub_e_n);
+
+          // Number of rotations and reflections to apply to the facet
+          std::uint8_t rots = 0;
+          std::uint8_t refs = 0;
+
+          // If the entity is an interval, it should be oriented pointing from
+          // the lowest numbered vertex to the highest numbered vertex
+          if (d == 1)
+          {
+            auto vertices = facet.entities(0);
+            const int e_vertices[2]
+                = {cell.get_vertex_local_index(vertices[0]),
+                   cell.get_vertex_local_index(vertices[1])};
+            // The number of reflections
+            refs = e_vertices[1] < e_vertices[0];
+          }
+          else if (d == 2)
+          {
+            // Orient that triangle so the the lowest numbered vertex is the
+            // origin, and the next vertex anticlockwise from the lowest has a
+            // lower number than the next vertex clockwise. Find the index of
+            // the lowest numbered vertex
+            rots = 0;
+            auto vertices = facet.entities(0);
+            const int e_vertices[3]
+                = {cell.get_vertex_local_index(vertices[0]),
+                   cell.get_vertex_local_index(vertices[1]),
+                   cell.get_vertex_local_index(vertices[2])};
+            for (int v = 1; v < 3; ++v)
+              if (e_vertices[v] < e_vertices[rots])
+                rots = v;
+            // pre is the number of the next vertex clockwise from the lowest
+            // numbered vertex
+            const int pre
+                = rots == 0 ? e_vertices[3 - 1] : e_vertices[rots - 1];
+            // post is the number of the next vertex anticlockwise from the
+            // lowest numbered vertex
+            const int post
+                = rots == 3 - 1 ? e_vertices[0] : e_vertices[rots + 1];
+            // The number of reflections
+            refs = post > pre;
+          }
+
+          _topology->set_entity_permutation(cell_n, d, i, rots, refs);
+        }
+      }
+    }
+
+  // If the cell is a quad, hex or interval
+  else
+  {
+    for (int cell_n = 0; cell_n < num_cells; ++cell_n)
+    {
+      const mesh::MeshEntity cell(*this, tdim, cell_n);
+      for (int d = 1; d < tdim; ++d)
+      {
+        for (int i = 0; i < cell_num_entities(_topology->cell_type(), d); ++i)
+        {
+          // Get the facet
+          const int sub_e_n = cell.entities(d)[i];
+          MeshEntity facet(*this, d, sub_e_n);
+
+          // Number of rotations and reflections to apply to the facet
+          std::uint8_t rots = 0;
+          std::uint8_t refs = 0;
+
+          // If the entity is an interval, it should be oriented pointing from
+          // the lowest numbered vertex to the highest numbered vertex
+          if (d == 1)
+          {
+            auto vertices = facet.entities(0);
+            const int e_vertices[2]
+                = {cell.get_vertex_local_index(vertices[0]),
+                   cell.get_vertex_local_index(vertices[1])};
+            // The number of reflections
+            refs = e_vertices[1] < e_vertices[0];
+          }
+          // Triangles and quadrilaterals
+          else if (d == 2)
+          {
+            // quadrilateral
+            // Orient that quad so the the lowest numbered vertex is the origin,
+            // and the next vertex anticlockwise from the lowest has a lower
+            // number than the next vertex clockwise. Find the index of the
+            // lowest numbered vertex
+            int num_min = -1;
+            auto vertices = facet.entities(0);
+            const int e_vertices[4]
+                = {cell.get_vertex_local_index(vertices[0]),
+                   cell.get_vertex_local_index(vertices[1]),
+                   cell.get_vertex_local_index(vertices[2]),
+                   cell.get_vertex_local_index(vertices[3])};
+
+            for (int v = 0; v < 4; ++v)
+              if (num_min == -1 || e_vertices[v] < e_vertices[num_min])
+                num_min = v;
+
+            // rots is the number of rotations to get the lowest numbered vertex
+            // to the origin
+            rots = num_min;
+
+            // pre is the (local) number of the next vertex clockwise from the
+            // lowest numbered vertex
+            int pre = 2;
+
+            // post is the (local) number of the next vertex anticlockwise from
+            // the lowest numbered vertex
+            int post = 1;
+
+            // The tensor product ordering of quads must be taken into account
+            if (num_min == 1)
+            {
+              pre = 0;
+              post = 3;
+            }
+            else if (num_min == 2)
+            {
+              pre = 3;
+              post = 0;
+              rots = 3;
+            }
+            else if (num_min == 3)
+            {
+              pre = 1;
+              post = 2;
+              rots = 2;
+            }
+            // The number of reflections
+            refs = (e_vertices[post] > e_vertices[pre]);
+          }
+          _topology->set_entity_permutation(cell_n, d, i, rots, refs);
+        }
+      }
+    }
+  }
+}
+
 //-----------------------------------------------------------------------------
 void Mesh::create_connectivity_all() const
 {

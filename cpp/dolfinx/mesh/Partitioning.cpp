@@ -19,6 +19,7 @@
 #include <dolfinx/common/MPI.h>
 #include <dolfinx/common/Timer.h>
 #include <dolfinx/common/log.h>
+#include <dolfinx/graph/AdjacencyList.h>
 #include <dolfinx/graph/CSRGraph.h>
 #include <dolfinx/graph/GraphBuilder.h>
 #include <dolfinx/graph/KaHIP.h>
@@ -145,7 +146,7 @@ distribute_cells(
 
   // Calculate local range of global indices
   std::vector<std::int32_t> local_sizes;
-  MPI::all_gather(mpi_comm, local_count, local_sizes);
+  dolfinx::MPI::all_gather(mpi_comm, local_count, local_sizes);
   std::vector<std::int64_t> ranges(mpi_size + 1, 0);
   std::partial_sum(local_sizes.begin(), local_sizes.end(), ranges.begin() + 1);
   std::vector<std::int64_t> new_global_cell_indices(all_count, -1);
@@ -251,8 +252,8 @@ distribute_cells(
   }
   std::vector<int> recv_offsets;
   std::vector<std::int64_t> recv_data;
-  MPI::neighbor_all_to_all(neighbour_comm, send_offsets, send_data,
-                           recv_offsets, recv_data);
+  dolfinx::MPI::neighbor_all_to_all(neighbour_comm, send_offsets, send_data,
+                                    recv_offsets, recv_data);
   MPI_Comm_free(&neighbour_comm);
 
   std::map<std::int64_t, std::int32_t> tag_to_position;
@@ -482,8 +483,39 @@ void distribute_cell_layer(
 }
 
 } // namespace
+
 //-----------------------------------------------------------------------------
-// Distribute points
+std::vector<int>
+Partitioning::partition_cells(const MPI_Comm& comm, int nparts,
+                              const mesh::CellType cell_type,
+                              const graph::AdjacencyList<std::int64_t>& cells)
+{
+  LOG(INFO) << "Compute partition of cells across processes";
+
+  // FIXME: Update GraphBuilder to use AdjacencyList
+  // Wrap AdjacencyList
+  const Eigen::Map<const Eigen::Array<std::int64_t, Eigen::Dynamic,
+                                      Eigen::Dynamic, Eigen::RowMajor>>
+      _cells(cells.array().data(), cells.num_nodes(),
+             mesh::num_cell_vertices(cell_type));
+
+  // Compute dual graph (for the cells on this process)
+  const auto [local_graph, graph_info]
+      = graph::GraphBuilder::compute_dual_graph(comm, _cells, cell_type);
+  const auto [num_ghost_nodes, num_local_edges, num_nonlocal_edges]
+      = graph_info;
+
+  // Build graph
+  graph::CSRGraph<SCOTCH_Num> csr_graph(comm, local_graph);
+  std::vector<std::size_t> weights;
+
+  // Call partitioner
+  const auto [partition, ignore] = graph::SCOTCH::partition(
+      comm, (SCOTCH_Num)nparts, csr_graph, weights, num_ghost_nodes);
+
+  return partition;
+}
+//-----------------------------------------------------------------------------
 std::tuple<
     std::shared_ptr<common::IndexMap>, std::vector<std::int64_t>,
     Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>>
@@ -769,9 +801,6 @@ mesh::Mesh Partitioning::build_from_partition(
   if (all_ghosts == 0 and ghost_mode != mesh::GhostMode::none)
     throw std::runtime_error("Ghost cell information not available");
 
-  // Topological dimension
-  const int tdim = mesh::cell_dim(cell_type);
-
   // Send cells to owning process according to cell_partition, and
   // receive cells that belong to this process. Also compute auxiliary
   // data related to sharing.
@@ -808,12 +837,6 @@ mesh::Mesh Partitioning::build_from_partition(
 
   mesh::Mesh mesh(comm, cell_type, points, new_cell_vertices,
                   new_global_cell_indices, ghost_mode, num_ghosts);
-
-  if (ghost_mode != mesh::GhostMode::none)
-  {
-    // Assign map of shared cells (only needed for ghost cells)
-    mesh.topology().set_shared_entities(tdim, shared_cells);
-  }
 
   return mesh;
 }
