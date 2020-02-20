@@ -62,7 +62,16 @@ def test_partition():
         cells_filtered1 = cpp.mesh.extract_topology(layout, cells1)
     else:
         cells_filtered1 = cpp.graph.AdjacencyList64(0)
+        # print("******", cells_filtered1.num_nodes)
+
+
     size = cpp.MPI.size(cpp.MPI.comm_world)
     dest = cpp.mesh.partition_cells(cpp.MPI.comm_world, size,
                                     layout.cell_type, cells_filtered1)
     assert len(dest) == cells_filtered1.num_nodes
+
+    print("------------------")
+    cells, src = cpp.mesh.distribute(cpp.MPI.comm_world, cells_filtered1,
+                                     dest)
+
+    print(cells.array(), src)
