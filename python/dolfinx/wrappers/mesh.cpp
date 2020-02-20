@@ -58,6 +58,8 @@ void mesh(py::module& m)
 
   m.def("extract_topology", &dolfinx::mesh::extract_topology);
 
+  m.def("compute_interior_facets", &dolfinx::mesh::compute_interior_facets);
+
   m.def("volume_entities", &dolfinx::mesh::volume_entities,
         "Generalised volume of entities of given dimension.");
 
@@ -147,11 +149,12 @@ void mesh(py::module& m)
       .def(py::init<dolfinx::mesh::CellType>())
       .def("set_connectivity", &dolfinx::mesh::Topology::set_connectivity)
       .def("set_index_map", &dolfinx::mesh::Topology::set_index_map)
+      .def("set_interior_facets", &dolfinx::mesh::Topology::set_interior_facets)
       .def_property_readonly("dim", &dolfinx::mesh::Topology::dim,
                              "Topological dimension")
       .def("connectivity",
            py::overload_cast<int, int>(&dolfinx::mesh::Topology::connectivity,
-                                       py::const_))∏∏
+                                       py::const_))
       .def("hash", &dolfinx::mesh::Topology::hash)
       .def("on_boundary", &dolfinx::mesh::Topology::on_boundary)
       .def("index_map", &dolfinx::mesh::Topology::index_map)
