@@ -77,7 +77,8 @@ def test_partition():
 
     # Build local cell connectivity
     cells_local, global_to_local_vertices, n = cpp.mesh.create_local_adjacency_list(cells)
-    # print(global_to_local_vertices)
+    if rank == 0:
+        print(global_to_local_vertices)
     # print(n)
 
     # Create topology and set cell-vertex topology

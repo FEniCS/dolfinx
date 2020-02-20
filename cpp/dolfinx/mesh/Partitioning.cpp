@@ -650,25 +650,56 @@ void Partitioning::create_distributed_adjacency_list(
                 MPI::mpi_type<std::int64_t>(), comm);
 
   // Assign ownership to lowest rank
-  // FIXME: revised this to balance load
+  // FIXME: revise this to balance load
   const std::array<std::int64_t, 2> range
       = dolfinx::MPI::local_range(comm, max_global_index + 1);
-  std::vector<int> index_owner(range[1] - range[0], -1);
-  std::vector<int> count(size, 0);
+  std::vector<int> marker(range[1] - range[0], -1);
+  std::vector<int> owner_send(disp_recv.back(), -1);
   for (int i = 0; i < size; ++i)
   {
     for (int j = disp_recv[i]; j < disp_recv[i + 1]; ++j)
     {
       // Get back to zero reference index
       const std::int64_t index = vertices_recv[j] - range[0];
-      if (index_owner[index] < 0)
+      if (marker[index] < 0)
       {
-        index_owner[index] = i;
-        ++count[i];
+        owner_send[j] = i;
+        marker[index] = i;
       }
+      else
+        owner_send[j] = marker[index];
     }
   }
 
+  // if (dolfinx::MPI::rank(comm) == 1)
+  // {
+  //   for (std::size_t i = 0; i < owner_send.size(); ++i)
+  //     std::cout << "pre: " << i << ", " << owner_send[i] << std::endl;
+
+  //   // std::cout << "Size check (A): " << owner_send.size() << ", " <<
+  //   disp_recv
+  // }
+
+  // Send/receive owner rank (transpose of send/receive global indices)
+  std::vector<int> owner_recv(disp_send.back());
+  MPI_Alltoallv(owner_send.data(), number_to_recv.data(), disp_recv.data(),
+                MPI::mpi_type<int>(), owner_recv.data(), number_to_send.data(),
+                disp_send.data(), MPI::mpi_type<int>(), comm);
+
+  // if (dolfinx::MPI::rank(comm) == 0)
+  // {
+  //   for (int i = 0; i < size; ++i)
+  //   {
+  //     std::cout << "rank: " << i << ", "
+  //     for (int j = disp_send[i]; j < disp_send[i + 1]; ++j)
+  //     {
+  //       std::cout << "   global, owner: " << vertices_send[j] << ", "
+  //                 << owner_recv[j] << std::endl;
+  //     }
+  //   }
+  // }
+
+  // Count how many vertices this process owns
 
   // // Send global indices to 'owner'
   // const int num_to_sent
