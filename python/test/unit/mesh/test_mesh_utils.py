@@ -94,5 +94,5 @@ def test_partition():
     cell_facet, facet_vertex, index_map = cpp.mesh.compute_entities(cpp.MPI.comm_world, topology, topology.dim - 1)
     topology.set_connectivity(cell_facet, topology.dim, topology.dim - 1)
     if facet_vertex is not None:
-        topology.set_connectivity(facet_vertex, topology.dim -1, 0)
+        topology.set_connectivity(facet_vertex, topology.dim - 1, 0)
     topology.set_index_map(topology.dim - 1, index_map)
