@@ -216,8 +216,10 @@ MeshValueCollection<T>::MeshValueCollection(
     // Map from {entity vertex indices} to entity index
     std::map<std::vector<std::int64_t>, std::size_t> entity_map;
 
-    const std::vector<std::int64_t>& global_indices
-        = _mesh->topology().global_indices(0);
+    auto map = _mesh->topology().index_map(0);
+    assert(map);
+
+    const std::vector<std::int64_t> global_indices = map->global_indices(false);
 
     // Loop over all the entities of dimension _dim
     for (auto& m : mesh::MeshRange(*mesh, _dim))
@@ -243,7 +245,7 @@ MeshValueCollection<T>::MeshValueCollection(
 
     // Get cell type for entity on which the MVC lives
     const mesh::CellType entity_cell_type
-        = mesh::cell_entity_type(_mesh->cell_type(), _dim);
+        = mesh::cell_entity_type(_mesh->topology().cell_type(), _dim);
 
     // Number of nodes per entity is deduced from the size
     // of provided entity topology
