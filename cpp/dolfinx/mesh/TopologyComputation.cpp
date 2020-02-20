@@ -1,4 +1,4 @@
-// Copyright (C) 2006-2017 Anders Logg and Garth N. Wells
+// Copyright (C) 2006-2020 Anders Logg, Garth N. Wells and Chris Richardson
 //
 // This file is part of DOLFINX (https://www.fenicsproject.org)
 //
@@ -29,22 +29,28 @@ using namespace dolfinx::mesh;
 
 namespace
 {
-// Takes an Eigen::Array and obtains the sort permutation to reorder the
-// rows in ascending order. Each row must be sorted beforehand.
+//-----------------------------------------------------------------------------
+
+/// Takes an array and computes the sort permutation that would reorder
+/// the rows in ascending order
+/// @param[in] array The input array
+/// @return The permutation vector that would order the rows in
+///   ascending order
+/// @pre Each row of @p array must be sorted
 template <typename T>
-std::vector<int> sort_by_perm(
-    const Eigen::Ref<const Eigen::Array<T, Eigen::Dynamic, Eigen::Dynamic,
-                                        Eigen::RowMajor>>& arr_data)
+std::vector<int>
+sort_by_perm(const Eigen::Array<T, Eigen::Dynamic, Eigen::Dynamic,
+                                Eigen::RowMajor>& array)
 {
   // Sort an Eigen::Array by creating a permutation vector
-  std::vector<int> index(arr_data.rows());
+  std::vector<int> index(array.rows());
   std::iota(index.begin(), index.end(), 0);
-  const int cols = arr_data.cols();
+  const int cols = array.cols();
 
   // Lambda with capture for sort comparison
-  const auto cmp = [&arr_data, &cols](int a, int b) {
-    const T* row_a = arr_data.row(a).data();
-    const T* row_b = arr_data.row(b).data();
+  const auto cmp = [&array, &cols](int a, int b) {
+    const T* row_a = array.row(a).data();
+    const T* row_b = array.row(b).data();
     return std::lexicographical_compare(row_a, row_a + cols, row_b,
                                         row_b + cols);
   };
@@ -53,6 +59,20 @@ std::vector<int> sort_by_perm(
   return index;
 }
 //-----------------------------------------------------------------------------
+
+/// Get the shared entities, a map from local index to the set of
+/// sharing processes.
+///
+/// @param[in] neighbour_comm The MPI neighborhood communicator for all
+///   processes sharing vertices
+/// @param[in] send_entities Lists of entities (as vertex indices) to
+///   send to other processes
+/// @param[in] send_index Local index of sent entities (one for each in
+///   send_entities)
+/// @param[in] num_vertices Number of vertices per entity
+/// @return Tuple of (shared_entities and recv_index) where recv_index
+///   is the matching received index to send_index, if the entities
+///   exist, -1 otherwise.
 std::tuple<std::map<std::int32_t, std::set<std::int32_t>>,
            std::vector<std::vector<std::int32_t>>>
 get_shared_entities(MPI_Comm neighbour_comm,
@@ -67,7 +87,7 @@ get_shared_entities(MPI_Comm neighbour_comm,
   std::map<std::int32_t, std::set<std::int32_t>> shared_entities;
   std::vector<std::vector<std::int32_t>> recv_index(neighbour_size);
 
-  // prepare data for neighbour all to all
+  // Prepare data for neighbour all to all
   std::vector<std::int64_t> send_entities_data;
   std::vector<std::int64_t> recv_entities_data;
   std::vector<int> send_offsets = {0};
@@ -107,8 +127,8 @@ get_shared_entities(MPI_Comm neighbour_comm,
       {
         if ((recv_array.row(j) == send_array.row(i)).all())
         {
-          // This entity was sent, and the same was received back, confirming
-          // sharing.
+          // This entity was sent, and the same was received back,
+          // confirming sharing
           const int p = neighbours[np];
           shared_entities[send_index[np][i]].insert(p);
           recv_index[np][j] = send_index[np][i];
@@ -117,24 +137,29 @@ get_shared_entities(MPI_Comm neighbour_comm,
       }
     }
   }
+
   return {shared_entities, recv_index};
 }
 //-----------------------------------------------------------------------------
-// Communicate with sharing processes to find out which entities are ghost
-// and return a mapping vector to move them to the end of the local range.
-// @param [in] comm MPI Communicator
-// @param [in] shared_vertices Map from local vertex index to list of processes
-// @param [in] global_vertex_indices Global indices of vertices
-// @param [in] entity_list List of entities as 2D array, each entity represented
-//             by its local vertex indices
-// @param [in] entity_index Initial numbering for each row in entity_list
-// @param [in] entity_count Number of unique entities
-// @returns Tuple of (local_indices, index map, shared entities)
-std::tuple<std::vector<int>, std::shared_ptr<common::IndexMap>,
-           std::map<std::int32_t, std::set<std::int32_t>>>
+
+/// Communicate with sharing processes to find out which entities are
+/// ghosts and return a mapping vector to move these local indices to
+/// the end of the local range. Also returns the index map, and shared
+/// entities, i.e. the set of all processes which share each shared
+/// entity.
+/// @param[in] comm MPI Communicator
+/// @param[in] IndexMap for vertices
+/// @param[in] global_vertex_indices Global indices of vertices
+/// @param[in] entity_list List of entities as 2D array, each entity
+///   represented by its local vertex indices
+/// @param[in] entity_index Initial numbering for each row in
+///   entity_list
+/// @param[in] entity_count Number of unique entities
+/// @returns Tuple of (local_indices, index map, shared entities)
+std::tuple<std::vector<int>, std::shared_ptr<common::IndexMap>>
 get_local_indexing(
     MPI_Comm comm,
-    const std::map<std::int32_t, std::set<std::int32_t>>& shared_vertices,
+    const std::shared_ptr<const common::IndexMap> vertex_indexmap,
     const std::vector<std::int64_t>& global_vertex_indices,
     const Eigen::Ref<const Eigen::Array<std::int32_t, Eigen::Dynamic,
                                         Eigen::Dynamic, Eigen::RowMajor>>&
@@ -142,6 +167,9 @@ get_local_indexing(
     const std::vector<std::int32_t>& entity_index, int entity_count)
 {
   const int num_vertices = entity_list.cols();
+
+  std::map<std::int32_t, std::set<std::int32_t>> shared_vertices
+      = vertex_indexmap->compute_shared_indices();
 
   // Get a single row in entity list for each entity
   std::vector<std::int32_t> unique_row(entity_count);
@@ -168,8 +196,8 @@ get_local_indexing(
   std::vector<std::vector<std::int64_t>> send_entities(neighbour_size);
   std::vector<std::vector<std::int32_t>> send_index(neighbour_size);
 
-  // Get all "possibly shared" entities, based on vertex sharing
-  // Send to other processes, and see if we get the same back
+  // Get all "possibly shared" entities, based on vertex sharing. Send to
+  // other processes, and see if we get the same back.
 
   // Set of sharing procs for each entity, counting vertex hits
   std::map<int, int> procs;
@@ -208,9 +236,9 @@ get_local_indexing(
     }
   }
 
-  // Get shared entities of this dimension, and also match up
-  // an index for the received entities (from other processes)
-  // with the indices of the sent entities (to other processes)
+  // Get shared entities of this dimension, and also match up an index
+  // for the received entities (from other processes) with the indices
+  // of the sent entities (to other processes)
   const auto [shared_entities, recv_index] = get_shared_entities(
       neighbour_comm, send_entities, send_index, num_vertices);
 
@@ -255,6 +283,8 @@ get_local_indexing(
     std::vector<int> recv_global_index_offsets;
 
     // Send global indices for same entities that we sent before
+    // This uses the same pattern as before, so we can match up
+    // the received data to the indices in recv_index
     for (int np = 0; np < neighbour_size; ++np)
     {
       for (std::int32_t index : send_index[np])
@@ -295,22 +325,26 @@ get_local_indexing(
   std::shared_ptr<common::IndexMap> index_map
       = std::make_shared<common::IndexMap>(comm, num_local, ghost_indices, 1);
 
-  // Remap shared entities from initial numbering to local indexing
-  std::map<std::int32_t, std::set<std::int32_t>> remapped_shared_entities;
-  for (auto q : shared_entities)
-    remapped_shared_entities.insert({local_index[q.first], q.second});
-
-  return {std::move(local_index), index_map,
-          std::move(remapped_shared_entities)};
+  return {std::move(local_index), index_map};
 }
 //-----------------------------------------------------------------------------
+
+/// Compute entities of dimension d
+/// @param[in] comm MPI communicator (TODO: full or neighbour hood?)
+/// @param[in] cells Adjacency list for cell-vertex connectivity
+/// @param[in] shared_vertices TODO
+/// @param[in] global_vertex_indices TODO: user global?
+/// @param[in] cell_type Cell type
+/// @param[in] dim Topological dimension of the entities to be computed
+/// @return Returns the (cell-entity connectivity, entity-cell
+///   connectivity, index map for the entity distribution across
+///   processes, shared entities)
 std::tuple<std::shared_ptr<graph::AdjacencyList<std::int32_t>>,
            std::shared_ptr<graph::AdjacencyList<std::int32_t>>,
-           std::shared_ptr<common::IndexMap>,
-           std::map<std::int32_t, std::set<std::int32_t>>>
+           std::shared_ptr<common::IndexMap>>
 compute_entities_by_key_matching(
     MPI_Comm comm, const graph::AdjacencyList<std::int32_t>& cells,
-    const std::map<std::int32_t, std::set<std::int32_t>>& shared_vertices,
+    const std::shared_ptr<const common::IndexMap> vertex_index_map,
     const std::vector<std::int64_t>& global_vertex_indices,
     mesh::CellType cell_type, int dim)
 {
@@ -383,10 +417,11 @@ compute_entities_by_key_matching(
   }
   ++entity_count;
 
-  // Communicate with other processes to find out which entities are ghosted
-  // and shared. Remap the numbering so that ghosts are at the end.
-  auto [local_index, index_map, shared_entities]
-      = get_local_indexing(comm, shared_vertices, global_vertex_indices,
+  // Communicate with other processes to find out which entities are
+  // ghosted and shared. Remap the numbering so that ghosts are at the
+  // end.
+  auto [local_index, index_map]
+      = get_local_indexing(comm, vertex_index_map, global_vertex_indices,
                            entity_list, entity_index, entity_count);
 
   // Map from initial numbering to local indices
@@ -410,32 +445,27 @@ compute_entities_by_key_matching(
   auto ev
       = std::make_shared<graph::AdjacencyList<std::int32_t>>(connectivity_ev);
 
-  return {ce, ev, index_map, std::move(shared_entities)};
+  return {ce, ev, index_map};
 }
 //-----------------------------------------------------------------------------
-// Compute connectivity from transpose
+
+/// Compute connectivity from entities of dimension d0 to entities of
+/// dimension d1 using the transpose connectivity (d1 -> d0)
+/// @param[in] c_d1_d0 The connectivity from entities of dimension d1 to
+///   entities of dimension d0
+/// @param[in] num_entities_d0 The number of entities of dimension d0
+/// @return The connectivity from entities of dimension d0 to entities
+///   of dimension d1
 graph::AdjacencyList<std::int32_t>
 compute_from_transpose(const graph::AdjacencyList<std::int32_t>& c_d1_d0,
-                       const int num_entities_d0, const int num_entities_d1,
-                       int d0, int d1)
+                       const int num_entities_d0, int d0, int d1)
 {
-  // The transpose is computed in three steps:
-  //
-  //   1. Iterate over entities of dimension d1 and count the number
-  //      of connections for each entity of dimension d0
-  //
-  //   2. Allocate memory / prepare data structures
-  //
-  //   3. Iterate again over entities of dimension d1 and add connections
-  //      for each entity of dimension d0
-
   LOG(INFO) << "Computing mesh connectivity " << d0 << " - " << d1
             << "from transpose.";
 
   // Compute number of connections for each e0
   std::vector<std::int32_t> num_connections(num_entities_d0, 0);
-
-  for (int e1 = 0; e1 < num_entities_d1; ++e1)
+  for (int e1 = 0; e1 < c_d1_d0.num_nodes(); ++e1)
   {
     auto e = c_d1_d0.links(e1);
     for (int i = 0; i < e.rows(); ++i)
@@ -449,8 +479,7 @@ compute_from_transpose(const graph::AdjacencyList<std::int32_t>& c_d1_d0,
 
   std::vector<std::int32_t> counter(num_connections.size(), 0);
   std::vector<std::int32_t> connections(offsets.back());
-
-  for (int e1 = 0; e1 < num_entities_d1; ++e1)
+  for (int e1 = 0; e1 < c_d1_d0.num_nodes(); ++e1)
   {
     auto e = c_d1_d0.links(e1);
     for (int e0 = 0; e0 < e.rows(); ++e0)
@@ -460,7 +489,14 @@ compute_from_transpose(const graph::AdjacencyList<std::int32_t>& c_d1_d0,
   return graph::AdjacencyList<std::int32_t>(connections, offsets);
 }
 //-----------------------------------------------------------------------------
-// Direct lookup of entity from vertices in a map
+
+/// Compute the d0 -> d1 connectivity, where d0 > d1
+/// @param[in] c_d0_0 The d0 -> 0 (entity (d0) to vertex) connectivity
+/// @param[in] c_d0_0 The d1 -> 0 (entity (d1) to vertex) connectivity
+/// @param[in] cell_type_d0 The cell type for entities of dimension d0
+/// @param[in] d0 Topological dimension
+/// @param[in] d1 Topological dimension
+/// @return The d0 -> d1 connectivity
 graph::AdjacencyList<std::int32_t>
 compute_from_map(const graph::AdjacencyList<std::int32_t>& c_d0_0,
                  const graph::AdjacencyList<std::int32_t>& c_d1_0,
@@ -522,17 +558,15 @@ compute_from_map(const graph::AdjacencyList<std::int32_t>& c_d0_0,
 //-----------------------------------------------------------------------------
 std::tuple<std::shared_ptr<graph::AdjacencyList<std::int32_t>>,
            std::shared_ptr<graph::AdjacencyList<std::int32_t>>,
-           std::shared_ptr<common::IndexMap>,
-           std::map<std::int32_t, std::set<std::int32_t>>>
+           std::shared_ptr<common::IndexMap>>
 TopologyComputation::compute_entities(MPI_Comm comm, const Topology& topology,
-                                      mesh::CellType cell_type, int dim)
+                                      int dim)
 {
   LOG(INFO) << "Computing mesh entities of dimension " << dim;
 
   // Vertices must always exist
   if (dim == 0)
-    return {nullptr, nullptr, nullptr,
-            std::map<std::int32_t, std::set<std::int32_t>>()};
+    return {nullptr, nullptr, nullptr};
 
   if (topology.connectivity(dim, 0))
   {
@@ -542,42 +576,35 @@ TopologyComputation::compute_entities(MPI_Comm comm, const Topology& topology,
       throw std::runtime_error(
           "Cannot compute topological entities. Entities of topological "
           "dimension "
-          + std::to_string(dim) + " exist but connectivity is missing.");
+          + std::to_string(dim)
+          + " exist but cell-dim connectivity is missing.");
     }
-    return {nullptr, nullptr, nullptr,
-            std::map<std::int32_t, std::set<std::int32_t>>()};
+    return {nullptr, nullptr, nullptr};
   }
 
   const int tdim = topology.dim();
   auto cells = topology.connectivity(tdim, 0);
   if (!cells)
     throw std::runtime_error("Cell connectivity missing.");
+
+  auto map = topology.index_map(0);
+  assert(map);
+  const std::vector<std::int64_t> global_vertices = map->global_indices(false);
   std::tuple<std::shared_ptr<graph::AdjacencyList<std::int32_t>>,
              std::shared_ptr<graph::AdjacencyList<std::int32_t>>,
-             std::shared_ptr<common::IndexMap>,
-             std::map<std::int32_t, std::set<std::int32_t>>>
-      data = compute_entities_by_key_matching(
-          comm, *cells, topology.shared_entities(0), topology.global_indices(0),
-          cell_type, dim);
+             std::shared_ptr<common::IndexMap>>
+      data
+      = compute_entities_by_key_matching(comm, *cells, topology.index_map(0),
+                                         global_vertices, topology.cell_type(),
+                                         dim);
 
   return data;
 }
 //-----------------------------------------------------------------------------
 std::array<std::shared_ptr<graph::AdjacencyList<std::int32_t>>, 2>
-TopologyComputation::compute_connectivity(const Topology& topology,
-                                          CellType cell_type, int d0, int d1)
+TopologyComputation::compute_connectivity(const Topology& topology, int d0,
+                                          int d1)
 {
-  // This is where all the logic takes place to find a strategy for
-  // the connectivity computation. For any given pair (d0, d1), the
-  // connectivity is computed by suitably combining the following
-  // basic building blocks:
-  //
-  //   1. compute_entities():     d  - 0  from dim - 0
-  //   2. compute_transpose():    d0 - d1 from d1 - d0
-  //   4. compute_from_map():     d0 - d1 from d1 - 0 and d0 - 0
-  // Each of these functions assume a set of preconditions that we
-  // need to satisfy.
-
   LOG(INFO) << "Requesting connectivity " << d0 << " - " << d1;
 
   // Return if connectivity has already been computed
@@ -608,9 +635,9 @@ TopologyComputation::compute_connectivity(const Topology& topology,
   // Decide how to compute the connectivity
   if (d0 == d1)
   {
-    auto c_d0_d0 = std::make_shared<graph::AdjacencyList<std::int32_t>>(
-        c_d0_0->num_nodes());
-    return {c_d0_d0, nullptr};
+    return {std::make_shared<graph::AdjacencyList<std::int32_t>>(
+                c_d0_0->num_nodes()),
+            nullptr};
   }
   else if (d0 < d1)
   {
@@ -619,18 +646,17 @@ TopologyComputation::compute_connectivity(const Topology& topology,
     {
       auto c_d1_d0 = std::make_shared<graph::AdjacencyList<std::int32_t>>(
           compute_from_map(*c_d1_0, *c_d0_0,
-                           mesh::cell_entity_type(cell_type, d1), d1, d0));
+                           mesh::cell_entity_type(topology.cell_type(), d1), d1,
+                           d0));
       auto c_d0_d1 = std::make_shared<graph::AdjacencyList<std::int32_t>>(
-          compute_from_transpose(*c_d1_d0, c_d0_0->num_nodes(),
-                                 c_d1_0->num_nodes(), d0, d1));
+          compute_from_transpose(*c_d1_d0, c_d0_0->num_nodes(), d0, d1));
       return {c_d0_d1, c_d1_d0};
     }
     else
     {
       auto c_d0_d1 = std::make_shared<graph::AdjacencyList<std::int32_t>>(
           compute_from_transpose(*topology.connectivity(d1, d0),
-                                 c_d0_0->num_nodes(), c_d1_0->num_nodes(), d0,
-                                 d1));
+                                 c_d0_0->num_nodes(), d0, d1));
       return {c_d0_d1, nullptr};
     }
   }
@@ -640,7 +666,8 @@ TopologyComputation::compute_connectivity(const Topology& topology,
     // those of a higher dimension entity
     auto c_d0_d1
         = std::make_shared<graph::AdjacencyList<std::int32_t>>(compute_from_map(
-            *c_d0_0, *c_d1_0, mesh::cell_entity_type(cell_type, d0), d0, d1));
+            *c_d0_0, *c_d1_0, mesh::cell_entity_type(topology.cell_type(), d0),
+            d0, d1));
     return {c_d0_d1, nullptr};
   }
   else

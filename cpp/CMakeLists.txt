@@ -105,9 +105,9 @@ if (HAVE_PIPE)
 endif()
 
 # Add some strict compiler checks
-CHECK_CXX_COMPILER_FLAG("-Wall -Werror -pedantic" HAVE_PEDANTIC)
+CHECK_CXX_COMPILER_FLAG("-Wall -Werror -Wextra -pedantic" HAVE_PEDANTIC)
 if (HAVE_PEDANTIC)
-  list(APPEND DOLFINX_CXX_DEVELOPER_FLAGS -Wall;-Werror;-pedantic)
+  list(APPEND DOLFINX_CXX_DEVELOPER_FLAGS -Wall;-Werror;-Wextra;-pedantic)
 endif()
 
 # Debug flags

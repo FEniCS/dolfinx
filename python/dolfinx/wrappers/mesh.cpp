@@ -9,6 +9,7 @@
 #include <cfloat>
 #include <dolfinx/common/types.h>
 #include <dolfinx/fem/CoordinateElement.h>
+#include <dolfinx/fem/ElementDofLayout.h>
 #include <dolfinx/mesh/CoordinateDofs.h>
 #include <dolfinx/mesh/Geometry.h>
 #include <dolfinx/mesh/Mesh.h>
@@ -53,6 +54,8 @@ void mesh(py::module& m)
 
   m.def("cell_num_entities", &dolfinx::mesh::cell_num_entities);
   m.def("cell_num_vertices", &dolfinx::mesh::num_cell_vertices);
+
+  m.def("extract_topology", &dolfinx::mesh::extract_topology);
 
   m.def("volume_entities", &dolfinx::mesh::volume_entities,
         "Generalised volume of entities of given dimension.");
@@ -137,16 +140,12 @@ void mesh(py::module& m)
                                        py::const_))
       .def("hash", &dolfinx::mesh::Topology::hash)
       .def("on_boundary", &dolfinx::mesh::Topology::on_boundary)
-      .def(
-          "global_indices",
-          [](const dolfinx::mesh::Topology& self, int dim) {
-            auto& indices = self.global_indices(dim);
-            return py::array_t<std::int64_t>(indices.size(), indices.data(),
-                                             py::none());
-          },
-          py::return_value_policy::reference_internal)
-      .def("shared_entities", &dolfinx::mesh::Topology::shared_entities)
       .def("index_map", &dolfinx::mesh::Topology::index_map)
+      .def_property_readonly("cell_type", &dolfinx::mesh::Topology::cell_type)
+      .def("cell_name",
+           [](const dolfinx::mesh::Topology& self) {
+             return dolfinx::mesh::to_string(self.cell_type());
+           })
       .def("str", &dolfinx::mesh::Topology::str);
 
   // dolfinx::mesh::Mesh
@@ -168,14 +167,13 @@ void mesh(py::module& m)
           }))
       .def("cells",
            [](const dolfinx::mesh::Mesh& self) {
-              const int tdim = self.topology().dim();
-              auto map = self.topology().index_map(tdim);
-              assert(map);
-              const std::int32_t size =map->size_local() + map->num_ghosts();
-              return py::array(
-                 {size,
-                  (std::int32_t)dolfinx::mesh::num_cell_vertices(
-                      self.cell_type())},
+             const int tdim = self.topology().dim();
+             auto map = self.topology().index_map(tdim);
+             assert(map);
+             const std::int32_t size = map->size_local() + map->num_ghosts();
+             return py::array(
+                 {size, (std::int32_t)dolfinx::mesh::num_cell_vertices(
+                            self.topology().cell_type())},
                  self.topology().connectivity(tdim, 0)->array().data(),
                  py::none());
            },
@@ -206,12 +204,8 @@ void mesh(py::module& m)
       .def_property_readonly(
           "topology", py::overload_cast<>(&dolfinx::mesh::Mesh::topology),
           "Mesh topology", py::return_value_policy::reference_internal)
-      .def_property_readonly("cell_type", &dolfinx::mesh::Mesh::cell_type)
       .def("ufl_id", &dolfinx::mesh::Mesh::id)
-      .def_property_readonly("id", &dolfinx::mesh::Mesh::id)
-      .def("cell_name", [](const dolfinx::mesh::Mesh& self) {
-        return dolfinx::mesh::to_string(self.cell_type());
-      });
+      .def_property_readonly("id", &dolfinx::mesh::Mesh::id);
 
   // dolfinx::mesh::MeshEntity class
   py::class_<dolfinx::mesh::MeshEntity,
@@ -341,6 +335,14 @@ void mesh(py::module& m)
       .def("num_ghosts", &dolfinx::mesh::PartitionData::num_ghosts);
 
   // dolfinx::mesh::Partitioning::partition_cells
+  m.def(
+      "partition_cells",
+      [](const MPICommWrapper comm, int nparts,
+         dolfinx::mesh::CellType cell_type,
+        const dolfinx::graph::AdjacencyList<std::int64_t>& cells) {
+        return dolfinx::mesh::Partitioning::partition_cells(
+            comm.get(), nparts, cell_type, cells);
+      });
   m.def(
       "partition_cells",
       [](const MPICommWrapper comm, int nparts,

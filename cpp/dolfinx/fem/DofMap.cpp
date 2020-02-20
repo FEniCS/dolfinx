@@ -35,7 +35,7 @@ fem::DofMap build_collapsed_dofmap(MPI_Comm comm, const DofMap& dofmap_view,
                                    const mesh::Topology& topology)
 {
   auto element_dof_layout = std::make_shared<ElementDofLayout>(
-      *dofmap_view.element_dof_layout, true);
+      dofmap_view.element_dof_layout->copy());
   assert(element_dof_layout);
 
   if (dofmap_view.index_map->block_size == 1
@@ -104,9 +104,8 @@ fem::DofMap build_collapsed_dofmap(MPI_Comm comm, const DofMap& dofmap_view,
 
   // Send new global indices for owned dofs to non-owning process, and
   // receive new global indices from owner
-  std::vector<std::int64_t> global_index_remote(
-      dofmap_view.index_map->num_ghosts(), -1);
-  dofmap_view.index_map->scatter_fwd(global_index, global_index_remote, 1);
+  std::vector<std::int64_t> global_index_remote
+      = dofmap_view.index_map->scatter_fwd(global_index, 1);
 
   // Compute ghosts for collapsed dofmap
   Eigen::Array<std::int64_t, Eigen::Dynamic, 1> ghosts(num_unowned);
@@ -171,7 +170,7 @@ DofMap::collapse(MPI_Comm comm, const mesh::Topology& topology) const
   {
     // Create new element dof layout and reset parent
     auto collapsed_dof_layout
-        = std::make_shared<ElementDofLayout>(*element_dof_layout, true);
+        = std::make_shared<ElementDofLayout>(element_dof_layout->copy());
 
     // Parent does not have block structure but sub-map does, so build
     // new submap to get block structure for collapsed dofmap.

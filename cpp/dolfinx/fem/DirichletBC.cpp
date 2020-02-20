@@ -80,12 +80,13 @@ get_remote_bcs1(const common::IndexMap& map,
 
   // Build vector of local dof indicies that have been marked by another
   // process
-  std::vector<std::int32_t> dofs = map.global_to_local(dofs_global, false);
+  std::vector<std::int32_t> dofs = map.global_to_local(dofs_received, false);
   dofs.erase(std::remove(dofs.begin(), dofs.end(), -1), dofs.end());
 
   return dofs;
 }
 //-----------------------------------------------------------------------------
+
 /// Find DOFs on this processes that are constrained by a Dirichlet
 /// condition detected by another process
 ///
@@ -94,7 +95,6 @@ get_remote_bcs1(const common::IndexMap& map,
 /// @param[in] dofs_local The IndexMap with the dof layout
 /// @return List of local dofs with boundary conditions applied but
 ///   detected by other processes. It may contain duplicate entries.
-// TODO: add some docs
 std::vector<std::array<std::int32_t, 2>>
 get_remote_bcs2(const common::IndexMap& map0, const common::IndexMap& map1,
                 const std::vector<std::array<std::int32_t, 2>>& dofs_local)
@@ -215,7 +215,8 @@ Eigen::Array<std::int32_t, Eigen::Dynamic, 2> _locate_dofs_topological(
 
   // Build vector local dofs for each cell facet
   std::vector<Eigen::Array<int, Eigen::Dynamic, 1>> entity_dofs;
-  for (int i = 0; i < mesh::cell_num_entities(mesh.cell_type(), dim); ++i)
+  for (int i = 0; i < mesh::cell_num_entities(mesh.topology().cell_type(), dim);
+       ++i)
   {
     entity_dofs.push_back(
         dofmap0.element_dof_layout->entity_closure_dofs(dim, i));
@@ -276,6 +277,8 @@ Eigen::Array<std::int32_t, Eigen::Dynamic, 2> _locate_dofs_topological(
   return dofs;
 }
 //-----------------------------------------------------------------------------
+
+/// TODO: Add doc
 Eigen::Array<std::int32_t, Eigen::Dynamic, 1>
 _locate_dofs_topological(const function::FunctionSpace& V, const int entity_dim,
                          const Eigen::Ref<const Eigen::ArrayXi>& entities,
@@ -295,7 +298,7 @@ _locate_dofs_topological(const function::FunctionSpace& V, const int entity_dim,
   // Prepare an element - local dof layout for dofs on entities of the
   // entity_dim
   const int num_cell_entities
-      = mesh::cell_num_entities(mesh.cell_type(), entity_dim);
+      = mesh::cell_num_entities(mesh.topology().cell_type(), entity_dim);
   std::vector<Eigen::Array<int, Eigen::Dynamic, 1>> entity_dofs;
   for (int i = 0; i < num_cell_entities; ++i)
   {
@@ -350,25 +353,87 @@ _locate_dofs_topological(const function::FunctionSpace& V, const int entity_dim,
 
   return _dofs;
 }
-} // namespace
 //-----------------------------------------------------------------------------
-Eigen::Array<std::int32_t, Eigen::Dynamic, Eigen::Dynamic>
-fem::locate_dofs_topological(
+Eigen::Array<std::int32_t, Eigen::Dynamic, 2> _locate_dofs_geometrical(
     const std::vector<std::reference_wrapper<function::FunctionSpace>>& V,
-    const int dim, const Eigen::Ref<const Eigen::ArrayXi>& entities,
-    bool remote)
+    marking_function marker)
 {
-  if (V.size() == 2)
-    return _locate_dofs_topological(V, dim, entities, remote);
-  else if (V.size() == 1)
-    return _locate_dofs_topological(V[0].get(), dim, entities, remote);
-  else
-    throw std::runtime_error("Expected only 1 or 2 function spaces.");
+  // FIXME: Calling V.tabulate_dof_coordinates() is very expensive,
+  // especially when we usually want the boundary dofs only. Add
+  // interface that computes dofs coordinates only for specified cell.
+
+  // Get function spaces
+  const function::FunctionSpace& V0 = V.at(0).get();
+  const function::FunctionSpace& V1 = V.at(1).get();
+
+  // Get mesh
+  assert(V0.mesh());
+  assert(V1.mesh());
+  if (V0.mesh() != V1.mesh())
+    throw std::runtime_error("Meshes are not the same.");
+  const mesh::Mesh& mesh = *V1.mesh();
+  const std::size_t tdim = mesh.topology().dim();
+
+  assert(V0.element());
+  assert(V1.element());
+  if (!V0.has_element(*V1.element()))
+  {
+    throw std::runtime_error("Function spaces must have the same elements or "
+                             "one be a subelement of another.");
+  }
+
+  // Compute dof coordinates
+  const Eigen::Array<double, 3, Eigen::Dynamic, Eigen::RowMajor> dof_coordinates
+      = V1.tabulate_dof_coordinates().transpose();
+
+  // Evaluate marker for each dof coordinate
+  const Eigen::Array<bool, Eigen::Dynamic, 1> marked_dofs
+      = marker(dof_coordinates);
+
+  // Get dofmaps
+  assert(V0.dofmap());
+  assert(V1.dofmap());
+  const DofMap& dofmap0 = *V0.dofmap();
+  const DofMap& dofmap1 = *V1.dofmap();
+
+  // Iterate over cells
+  const mesh::Topology& topology = mesh.topology();
+  std::vector<std::array<std::int32_t, 2>> bc_dofs;
+  for (int c = 0; c < topology.connectivity(tdim, 0)->num_nodes(); ++c)
+  {
+    // Get cell dofmap
+    auto cell_dofs0 = dofmap0.cell_dofs(c);
+    auto cell_dofs1 = dofmap1.cell_dofs(c);
+
+    // Loop over cell dofs and add to bc_dofs if marked.
+    for (Eigen::Index i = 0; i < cell_dofs1.rows(); ++i)
+    {
+      if (marked_dofs[cell_dofs1[i]])
+      {
+        bc_dofs.push_back(
+            {(std::int32_t)cell_dofs0[i], (std::int32_t)cell_dofs1[i]});
+      }
+    }
+  }
+
+  // Remove duplicates
+  std::sort(bc_dofs.begin(), bc_dofs.end());
+  bc_dofs.erase(std::unique(bc_dofs.begin(), bc_dofs.end()), bc_dofs.end());
+
+  // Copy to Eigen array
+  Eigen::Array<std::int32_t, Eigen::Dynamic, 2> dofs(bc_dofs.size(), 2);
+  for (std::size_t i = 0; i < bc_dofs.size(); ++i)
+  {
+    dofs(i, 0) = bc_dofs[i][0];
+    dofs(i, 1) = bc_dofs[i][1];
+  }
+
+  return dofs;
 }
 //-----------------------------------------------------------------------------
 Eigen::Array<std::int32_t, Eigen::Dynamic, 1>
-fem::locate_dofs_geometrical(const function::FunctionSpace& V,
-                             marking_function marker)
+_locate_dofs_geometrical(const function::FunctionSpace& V,
+                         marking_function marker)
 {
   // FIXME: Calling V.tabulate_dof_coordinates() is very expensive,
   // especially when we usually want the boundary dofs only. Add
@@ -393,7 +458,37 @@ fem::locate_dofs_geometrical(const function::FunctionSpace& V,
   return Eigen::Map<Eigen::Array<std::int32_t, Eigen::Dynamic, 1>>(dofs.data(),
                                                                    dofs.size());
 }
+} // namespace
+
 //-----------------------------------------------------------------------------
+Eigen::Array<std::int32_t, Eigen::Dynamic, Eigen::Dynamic>
+fem::locate_dofs_topological(
+    const std::vector<std::reference_wrapper<function::FunctionSpace>>& V,
+    const int dim, const Eigen::Ref<const Eigen::ArrayXi>& entities,
+    bool remote)
+{
+  if (V.size() == 2)
+    return _locate_dofs_topological(V, dim, entities, remote);
+  else if (V.size() == 1)
+    return _locate_dofs_topological(V[0].get(), dim, entities, remote);
+  else
+    throw std::runtime_error("Expected only 1 or 2 function spaces.");
+}
+//-----------------------------------------------------------------------------
+Eigen::Array<std::int32_t, Eigen::Dynamic, Eigen::Dynamic>
+fem::locate_dofs_geometrical(
+    const std::vector<std::reference_wrapper<function::FunctionSpace>>& V,
+    marking_function marker)
+{
+  if (V.size() == 2)
+    return _locate_dofs_geometrical(V, marker);
+  else if (V.size() == 1)
+    return _locate_dofs_geometrical(V[0].get(), marker);
+  else
+    throw std::runtime_error("Expected only 1 or 2 function spaces.");
+}
+//-----------------------------------------------------------------------------
+
 //-----------------------------------------------------------------------------
 DirichletBC::DirichletBC(
     std::shared_ptr<const function::Function> g,

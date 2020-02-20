@@ -541,7 +541,7 @@ bool geometry::point_in_bbox(
 double geometry::squared_distance(const mesh::MeshEntity& entity,
                                   const Eigen::Vector3d& p)
 {
-  const mesh::CellType type = entity.mesh().cell_type();
+  const mesh::CellType type = entity.mesh().topology().cell_type();
   const mesh::Geometry& geometry = entity.mesh().geometry();
   switch (type)
   {

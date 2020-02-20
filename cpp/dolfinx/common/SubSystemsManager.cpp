@@ -6,6 +6,8 @@
 
 #define MPICH_IGNORE_CXX_SEEK 1
 
+#include "SubSystemsManager.h"
+#include <boost/algorithm/string/trim.hpp>
 #include <dolfinx/common/log.h>
 #include <iostream>
 #include <mpi.h>
@@ -15,16 +17,12 @@
 #include <slepc.h>
 #endif
 
-#include <boost/algorithm/string/trim.hpp>
-
-#include "SubSystemsManager.h"
-
 using namespace dolfinx::common;
 
-// Return singleton instance. Do NOT make the singleton a global
-// static object; the method here ensures that the singleton is
-// initialised before use. (google "static initialization order
-// fiasco" for full explanation)
+// Return singleton instance. Do NOT make the singleton a global static
+// object; the method here ensures that the singleton is initialised
+// before use. (google "static initialization order fiasco" for full
+// explanation)
 
 SubSystemsManager& SubSystemsManager::singleton()
 {
@@ -92,8 +90,8 @@ void SubSystemsManager::init_petsc(int argc, char* argv[])
   if (singleton().petsc_initialized)
     return;
 
-  // Initialized MPI (do it here rather than letting PETSc do it to
-  // make sure we MPI is initialized with any thread support
+  // Initialized MPI (do it here rather than letting PETSc do it to make
+  // sure we MPI is initialized with any thread support
   init_mpi();
 
   // Get status of MPI before PETSc initialisation
@@ -143,8 +141,8 @@ void SubSystemsManager::finalize_mpi()
   // Finalise MPI if required
   if (mpi_initialized && singleton().control_mpi)
   {
-    // Check in MPI has already been finalised (possibly incorrectly by a
-    // 3rd party library). If it hasn't, finalise as normal.
+    // Check in MPI has already been finalised (possibly incorrectly by
+    // a 3rd party library). If it hasn't, finalise as normal.
     int mpi_finalized;
     MPI_Finalized(&mpi_finalized);
     if (!mpi_finalized)
@@ -199,12 +197,11 @@ bool SubSystemsManager::mpi_finalized()
 }
 //-----------------------------------------------------------------------------
 PetscErrorCode SubSystemsManager::PetscDolfinErrorHandler(
-    MPI_Comm comm, int line, const char* fun, const char* file,
-    PetscErrorCode n, PetscErrorType p, const char* mess, void* ctx)
+    MPI_Comm, int line, const char* fun, const char* file, PetscErrorCode n,
+    PetscErrorType, const char* mess, void*)
 {
-  // Store message for printing later (by PETScObject::petsc_error)
-  // only if it's not empty message (passed by PETSc when repeating
-  // error)
+  // Store message for printing later (by PETScObject::petsc_error) only
+  // if it's not empty message (passed by PETSc when repeating error)
   std::string _mess = mess;
   boost::algorithm::trim(_mess);
   if (_mess != "")
