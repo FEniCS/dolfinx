@@ -429,16 +429,24 @@ void Mesh::create_entity_permutations() const
   // If the cell is a triangle or tetrahedron
   if (_topology->cell_type() == mesh::CellType::triangle
       || _topology->cell_type() == mesh::CellType::tetrahedron)
+  {
+    // Store local vertex indices here
+    std::array<std::size_t, 3> e_vertices;
+
     for (int cell_n = 0; cell_n < num_cells; ++cell_n)
     {
       const mesh::MeshEntity cell(*this, tdim, cell_n);
+
+      // Fetch all vertices for the cell here, for performance reasons
+      const auto cell_vertices = this->topology().connectivity(tdim, 0)->links(cell_n);
+
       for (int d = 1; d < tdim; ++d)
       {
         for (int i = 0; i < cell_num_entities(_topology->cell_type(), d); ++i)
         {
           // Get the facet
           const int sub_e_n = cell.entities(d)[i];
-          MeshEntity facet(*this, d, sub_e_n);
+          const MeshEntity facet(*this, d, sub_e_n);
 
           // Number of rotations and reflections to apply to the facet
           std::uint8_t rots = 0;
@@ -448,12 +456,20 @@ void Mesh::create_entity_permutations() const
           // the lowest numbered vertex to the highest numbered vertex
           if (d == 1)
           {
-            auto vertices = facet.entities(0);
-            const int e_vertices[2]
-                = {cell.get_vertex_local_index(vertices[0]),
-                   cell.get_vertex_local_index(vertices[1])};
+            const auto vertices = facet.entities(0);
+
+            // Find iterators pointing to cell vertex given a vertex on facet
+            const auto it0 = std::find(
+                cell_vertices.data(),
+                cell_vertices.data() + cell_vertices.size(), vertices[0]);
+            const auto it1 = std::find(
+                cell_vertices.data(),
+                cell_vertices.data() + cell_vertices.size(), vertices[1]);
+
             // The number of reflections
-            refs = e_vertices[1] < e_vertices[0];
+            // Comparing iterators directly instead of values they point to
+            // is sufficient here
+            refs = it1 < it0;
           }
           else if (d == 2)
           {
@@ -462,11 +478,18 @@ void Mesh::create_entity_permutations() const
             // lower number than the next vertex clockwise. Find the index of
             // the lowest numbered vertex
             rots = 0;
-            auto vertices = facet.entities(0);
-            const int e_vertices[3]
-                = {cell.get_vertex_local_index(vertices[0]),
-                   cell.get_vertex_local_index(vertices[1]),
-                   cell.get_vertex_local_index(vertices[2])};
+            const auto vertices = facet.entities(0);
+
+            // Find iterators pointing to cell vertex given a vertex on facet
+            for (int j = 0; j < 3; ++j)
+            {
+              const auto it = std::find(
+                  cell_vertices.data(),
+                  cell_vertices.data() + cell_vertices.size(), vertices[j]);
+              // Get the actual local vertex indices
+              e_vertices[j] = it - cell_vertices.data();
+            }
+
             for (int v = 1; v < 3; ++v)
               if (e_vertices[v] < e_vertices[rots])
                 rots = v;
@@ -486,13 +509,19 @@ void Mesh::create_entity_permutations() const
         }
       }
     }
-
+  }
   // If the cell is a quad, hex or interval
   else
   {
+    // Store local vertex indices here
+    std::array<std::size_t, 4> e_vertices;
+
     for (int cell_n = 0; cell_n < num_cells; ++cell_n)
     {
       const mesh::MeshEntity cell(*this, tdim, cell_n);
+      // Fetch all vertices for the cell here, for performance reasons
+      const auto cell_vertices = this->topology().connectivity(tdim, 0)->links(cell_n);
+
       for (int d = 1; d < tdim; ++d)
       {
         for (int i = 0; i < cell_num_entities(_topology->cell_type(), d); ++i)
@@ -509,12 +538,18 @@ void Mesh::create_entity_permutations() const
           // the lowest numbered vertex to the highest numbered vertex
           if (d == 1)
           {
-            auto vertices = facet.entities(0);
-            const int e_vertices[2]
-                = {cell.get_vertex_local_index(vertices[0]),
-                   cell.get_vertex_local_index(vertices[1])};
+            const auto vertices = facet.entities(0);
+
+            // Find iterators pointing to cell vertex given a vertex on facet
+            const auto it0 = std::find(
+                cell_vertices.data(),
+                cell_vertices.data() + cell_vertices.size(), vertices[0]);
+            const auto it1 = std::find(
+                cell_vertices.data(),
+                cell_vertices.data() + cell_vertices.size(), vertices[1]);
+
             // The number of reflections
-            refs = e_vertices[1] < e_vertices[0];
+            refs = it1 < it0;
           }
           // Triangles and quadrilaterals
           else if (d == 2)
@@ -525,12 +560,17 @@ void Mesh::create_entity_permutations() const
             // number than the next vertex clockwise. Find the index of the
             // lowest numbered vertex
             int num_min = -1;
-            auto vertices = facet.entities(0);
-            const int e_vertices[4]
-                = {cell.get_vertex_local_index(vertices[0]),
-                   cell.get_vertex_local_index(vertices[1]),
-                   cell.get_vertex_local_index(vertices[2]),
-                   cell.get_vertex_local_index(vertices[3])};
+            const auto vertices = facet.entities(0);
+
+            // Find iterators pointing to cell vertex given a vertex on facet
+            for (int j = 0; j < 4; ++j)
+            {
+              const auto it = std::find(
+                  cell_vertices.data(),
+                  cell_vertices.data() + cell_vertices.size(), vertices[j]);
+              // Get the actual local vertex indices
+              e_vertices[j] = it - cell_vertices.data();
+            }
 
             for (int v = 0; v < 4; ++v)
               if (num_min == -1 || e_vertices[v] < e_vertices[num_min])
