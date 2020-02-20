@@ -64,7 +64,7 @@ enum class Partitioner
 class Partitioning
 {
 public:
-  /// Computer destination rank for mesh cells using a graph partitioner
+  /// Compute destination rank for mesh cells using a graph partitioner
   /// @param[in] comm MPI Communicator
   /// @param[in] nparts Number of partitions
   /// @param[in] cell_type Cell type
