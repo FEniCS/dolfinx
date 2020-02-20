@@ -70,4 +70,5 @@ def test_partition():
 
     cells, src = cpp.mesh.distribute(cpp.MPI.comm_world, cells_filtered1,
                                      dest)
+
     assert cpp.MPI.sum(cpp.MPI.comm_world, cells.num_nodes) == 4
