@@ -1,4 +1,5 @@
-// Copyright (C) 2008-2013 Niclas Jansson, Ola Skavhaug, Anders Logg,
+// Copyright (C) 2008-2020 Niclas Jansson, Ola Skavhaug, Anders Logg, Garth N.
+// Wells
 //
 // This file is part of DOLFINX (https://www.fenicsproject.org)
 //
@@ -63,7 +64,7 @@ enum class Partitioner
 class Partitioning
 {
 public:
-  /// Partition mesh cells across processes using a graph partitioner
+  /// Compute destination rank for mesh cells using a graph partitioner
   /// @param[in] comm MPI Communicator
   /// @param[in] nparts Number of partitions
   /// @param[in] cell_type Cell type
@@ -72,9 +73,20 @@ public:
   ///   once across all procsss
   /// @return Destination process for each cell on this process
   static std::vector<int>
-  partition_cells(const MPI_Comm& comm, int nparts,
-                  const mesh::CellType cell_type,
+  partition_cells(MPI_Comm comm, int nparts, const mesh::CellType cell_type,
                   const graph::AdjacencyList<std::int64_t>& cells);
+
+  /// Re-distribute adjacency list across processes
+  /// @param[in] comm MPI Communicator
+  /// @param[in] list An adjacency list
+  /// @param[in] owner Destination rank for the ith entry in the
+  ///   adjacency list
+  /// @return Adjacency list for this process and a vector of source
+  ///   processes for entry in the adjacency list
+  static std::pair<graph::AdjacencyList<std::int64_t>, std::vector<int>>
+  distribute(const MPI_Comm& comm,
+             const graph::AdjacencyList<std::int64_t>& list,
+             const std::vector<int>& owner);
 
   /// Build distributed mesh from a set of points and cells on each
   /// local process

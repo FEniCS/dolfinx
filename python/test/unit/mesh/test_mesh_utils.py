@@ -62,7 +62,13 @@ def test_partition():
         cells_filtered1 = cpp.mesh.extract_topology(layout, cells1)
     else:
         cells_filtered1 = cpp.graph.AdjacencyList64(0)
+
     size = cpp.MPI.size(cpp.MPI.comm_world)
     dest = cpp.mesh.partition_cells(cpp.MPI.comm_world, size,
                                     layout.cell_type, cells_filtered1)
     assert len(dest) == cells_filtered1.num_nodes
+
+    cells, src = cpp.mesh.distribute(cpp.MPI.comm_world, cells_filtered1,
+                                     dest)
+
+    assert cpp.MPI.sum(cpp.MPI.comm_world, cells.num_nodes) == 4
