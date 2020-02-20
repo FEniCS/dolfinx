@@ -6,7 +6,6 @@
 
 #pragma once
 
-#include <dolfinx/graph/AdjacencyList.h>
 #include "Geometry.h"
 #include "Mesh.h"
 #include "MeshEntity.h"
@@ -14,6 +13,7 @@
 #include "Topology.h"
 #include <dolfinx/common/MPI.h>
 #include <dolfinx/common/UniqueIdGenerator.h>
+#include <dolfinx/graph/AdjacencyList.h>
 #include <map>
 #include <memory>
 #include <unordered_set>
@@ -153,7 +153,8 @@ MeshFunction<T>::MeshFunction(std::shared_ptr<const Mesh> mesh,
   // Generate connectivity if it does not exist
   _mesh->create_connectivity(D, d);
   assert(_mesh->topology().connectivity(D, d));
-  const graph::AdjacencyList<std::int32_t>& connectivity = *_mesh->topology().connectivity(D, d);
+  const graph::AdjacencyList<std::int32_t>& connectivity
+      = *_mesh->topology().connectivity(D, d);
 
   // Iterate over all values
   std::unordered_set<std::size_t> entities_values_set;

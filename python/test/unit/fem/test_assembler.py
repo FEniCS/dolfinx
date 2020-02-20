@@ -444,7 +444,7 @@ def test_assembly_solve_block():
 
 @pytest.mark.parametrize("mesh", [
     dolfinx.generation.UnitSquareMesh(dolfinx.MPI.comm_world, 12, 11),
-    dolfinx.generation.UnitCubeMesh(dolfinx.MPI.comm_world, 3, 7, 8)
+    dolfinx.generation.UnitCubeMesh(dolfinx.MPI.comm_world, 3, 7, 3)
 ])
 def test_assembly_solve_taylor_hood(mesh):
     """Assemble Stokes problem with Taylor-Hood elements and solve."""
@@ -628,6 +628,7 @@ def test_assembly_solve_taylor_hood(mesh):
     assert x0.norm() == pytest.approx(x2.norm(), 1e-8)
 
 
+@skip_in_parallel
 def test_basic_interior_facet_assembly():
     ghost_mode = dolfinx.cpp.mesh.GhostMode.none
     if (dolfinx.MPI.size(dolfinx.MPI.comm_world) > 1):
@@ -650,7 +651,6 @@ def test_basic_interior_facet_assembly():
     assert isinstance(A, PETSc.Mat)
 
     L = ufl.conj(ufl.avg(v)) * ufl.dS
-
     b = dolfinx.fem.assemble_vector(L)
     b.assemble()
     assert isinstance(b, PETSc.Vec)

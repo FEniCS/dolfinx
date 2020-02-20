@@ -94,9 +94,7 @@ void sort_2_0(graph::AdjacencyList<std::int32_t>& connect_2_0,
 void sort_2_1(graph::AdjacencyList<std::int32_t>& connect_2_1,
               const graph::AdjacencyList<std::int32_t>& connect_2_0,
               const graph::AdjacencyList<std::int32_t>& connect_1_0,
-              const mesh::MeshEntity& cell,
-              const std::vector<std::int64_t>& global_vertex_indices,
-              const int num_faces)
+              const mesh::MeshEntity& cell, const int num_faces)
 {
   // Loop over faces on cell
   const std::int32_t* cell_faces = cell.entities_ptr(2);
@@ -146,8 +144,7 @@ void sort_3_0(graph::AdjacencyList<std::int32_t>& connect_3_0,
 //-----------------------------------------------------------------------------
 void sort_3_1(graph::AdjacencyList<std::int32_t>& connect_3_1,
               const graph::AdjacencyList<std::int32_t>& connect_1_0,
-              const mesh::MeshEntity& cell,
-              const std::vector<std::int64_t>& global_vertex_indices)
+              const mesh::MeshEntity& cell)
 {
   // Get cell vertices and edge numbers
   const std::int32_t* cell_vertices = cell.entities_ptr(0);
@@ -186,8 +183,7 @@ void sort_3_1(graph::AdjacencyList<std::int32_t>& connect_3_1,
 //-----------------------------------------------------------------------------
 void sort_3_2(graph::AdjacencyList<std::int32_t>& connect_3_2,
               const graph::AdjacencyList<std::int32_t>& connect_2_0,
-              const mesh::MeshEntity& cell,
-              const std::vector<std::int64_t>& global_vertex_indices)
+              const mesh::MeshEntity& cell)
 {
   // Get cell vertices and facet numbers
   const std::int32_t* cell_vertices = cell.entities_ptr(0);
@@ -290,7 +286,7 @@ bool ordered_cell_simplex(
 //-----------------------------------------------------------------------------
 void mesh::Ordering::order_simplex(mesh::Mesh& mesh)
 {
-  if (!mesh::is_simplex(mesh.cell_type()))
+  if (!mesh::is_simplex(mesh.topology().cell_type()))
     throw std::runtime_error("Mesh ordering is for simplex cell types only.");
 
   if (mesh.degree() > 1)
@@ -312,12 +308,15 @@ void mesh::Ordering::order_simplex(mesh::Mesh& mesh)
       = mesh.coordinate_dofs().entity_points();
 
   // Get global vertex numbering
-  const std::vector<std::int64_t>& global_vertex_indices
-      = mesh.topology().global_indices(0);
+  auto map = mesh.topology().index_map(0);
+  assert(map);
+  const std::vector<std::int64_t> global_vertex_indices
+      = map->global_indices(false);
 
-  const int num_edges = mesh::cell_num_entities(mesh.cell_type(), 1);
+  const int num_edges = mesh::cell_num_entities(mesh.topology().cell_type(), 1);
   const int num_faces
-      = (tdim > 1) ? mesh::cell_num_entities(mesh.cell_type(), 2) : -1;
+      = (tdim > 1) ? mesh::cell_num_entities(mesh.topology().cell_type(), 2)
+                   : -1;
 
   std::shared_ptr<graph::AdjacencyList<std::int32_t>> connect_1_0, connect_2_0,
       connect_2_1, connect_3_0, connect_3_1, connect_3_2;
@@ -358,10 +357,7 @@ void mesh::Ordering::order_simplex(mesh::Mesh& mesh)
     // Sort local edges on local faces after non-incident vertex,
     // connectivity 2-1
     if (connect_2_1)
-    {
-      sort_2_1(*connect_2_1, *connect_2_0, *connect_1_0, cell,
-               global_vertex_indices, num_faces);
-    }
+      sort_2_1(*connect_2_1, *connect_2_0, *connect_1_0, cell, num_faces);
 
     // Sort local vertices on cell in ascending order, connectivity 3-0
     if (connect_3_0)
@@ -370,18 +366,18 @@ void mesh::Ordering::order_simplex(mesh::Mesh& mesh)
     // Sort local edges on cell after non-incident vertex tuple,
     // connectivity 3-1
     if (connect_3_1)
-      sort_3_1(*connect_3_1, *connect_1_0, cell, global_vertex_indices);
+      sort_3_1(*connect_3_1, *connect_1_0, cell);
 
     // Sort local facets on cell after non-incident vertex, connectivity
     // 3-2
     if (connect_3_2)
-      sort_3_2(*connect_3_2, *connect_2_0, cell, global_vertex_indices);
+      sort_3_2(*connect_3_2, *connect_2_0, cell);
   }
 }
 //-----------------------------------------------------------------------------
 bool mesh::Ordering::is_ordered_simplex(const mesh::Mesh& mesh)
 {
-  if (!mesh::is_simplex(mesh.cell_type()))
+  if (!mesh::is_simplex(mesh.topology().cell_type()))
   {
     throw std::runtime_error(
         "Mesh ordering check is for simplex cell types only.");
@@ -392,8 +388,10 @@ bool mesh::Ordering::is_ordered_simplex(const mesh::Mesh& mesh)
     return true;
 
   // Get global vertex numbering
-  const std::vector<std::int64_t>& global_vertex_indices
-      = mesh.topology().global_indices(0);
+  auto map = mesh.topology().index_map(0);
+  assert(map);
+  const std::vector<std::int64_t> global_vertex_indices
+      = map->global_indices(false);
 
   // Check if all cells are ordered
   for (const mesh::MeshEntity& cell : mesh::MeshRange(mesh, tdim))

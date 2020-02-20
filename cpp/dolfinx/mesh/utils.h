@@ -1,4 +1,4 @@
-// Copyright (C) 2019 Garth N. Wells
+// Copyright (C) 2019-2020 Garth N. Wells
 //
 // This file is part of DOLFINX (https://www.fenicsproject.org)
 //
@@ -7,13 +7,32 @@
 #pragma once
 
 #include <Eigen/Dense>
+#include <dolfinx/graph/AdjacencyList.h>
 
 namespace dolfinx
 {
+namespace fem
+{
+class ElementDofLayout;
+}
+
 namespace mesh
 {
 class Mesh;
 class MeshEntity;
+
+/// Extract topology from cell data
+/// @param[in] layout The layout of geometry 'degrees-of-freedom' on the
+///     reference cell
+/// @param[in] cells List of 'nodes' for each cell using global indices.
+///     The layout must be consistent with \p layout.
+/// @return Cell topology, with the global index for the vertices, order
+///     v0, v1, v1, etc. The global indices will, in general, have
+///     'gaps' due to mid-side and other higher-order nodes being
+///     removed.
+graph::AdjacencyList<std::int64_t>
+extract_topology(const fem::ElementDofLayout& layout,
+                 const graph::AdjacencyList<std::int64_t>& cells);
 
 /// Compute (generalized) volume of mesh entities of given dimension
 Eigen::ArrayXd volume_entities(const Mesh& mesh,

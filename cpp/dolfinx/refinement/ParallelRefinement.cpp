@@ -30,12 +30,13 @@ ParallelRefinement::ParallelRefinement(const mesh::Mesh& mesh)
     throw std::runtime_error("Edges must be initialised");
 
   // Create a global-to-local map for shared edges
-  const std::map<std::int32_t, std::set<std::int32_t>>& shared_edges
-      = _mesh.topology().shared_entities(1);
-  const std::vector<std::int64_t>& global_edge_indices
-      = _mesh.topology().global_indices(1);
+  _shared_edges = _mesh.topology().index_map(1)->compute_shared_indices();
+  auto map = mesh.topology().index_map(1);
+  assert(map);
+  const std::vector<std::int64_t> global_edge_indices
+      = map->global_indices(false);
 
-  for (const auto& edge : shared_edges)
+  for (const auto& edge : _shared_edges)
   {
     _global_to_local_edge_map.insert(
         {global_edge_indices[edge.first], edge.first});
@@ -61,13 +62,14 @@ void ParallelRefinement::mark(std::int32_t edge_index)
   _marked_edges[edge_index] = true;
 
   // If it is a shared edge, add all sharing procs to update set
-  const std::map<std::int32_t, std::set<std::int32_t>>& shared_edges
-      = _mesh.topology().shared_entities(1);
-  auto map_it = shared_edges.find(edge_index);
-  if (map_it != shared_edges.end())
+  auto map_it = _shared_edges.find(edge_index);
+  if (map_it != _shared_edges.end())
   {
-    const std::vector<std::int64_t>& global_edge_indices
-        = _mesh.topology().global_indices(1);
+    auto map = _mesh.topology().index_map(1);
+    assert(map);
+    const std::vector<std::int64_t> global_edge_indices
+        = map->global_indices(false);
+
     std::int64_t global_index = global_edge_indices[edge_index];
     for (int p : map_it->second)
       _marked_for_update[p].push_back(global_index);
@@ -167,10 +169,10 @@ void ParallelRefinement::create_new_vertices()
 
   const std::int32_t mpi_rank = MPI::rank(_mesh.mpi_comm());
 
-  const std::map<std::int32_t, std::set<std::int32_t>>& shared_edges
-      = _mesh.topology().shared_entities(1);
-  const std::vector<std::int64_t>& global_edge_indices
-      = _mesh.topology().global_indices(1);
+  auto map = _mesh.topology().index_map(1);
+  assert(map);
+  const std::vector<std::int64_t> global_edge_indices
+      = map->global_indices(false);
 
   // Copy over existing mesh vertices
   _new_vertex_coordinates = std::vector<double>(
@@ -194,8 +196,8 @@ void ParallelRefinement::create_new_vertices()
       bool owner = true;
 
       // If shared, check that this is true
-      auto shared_edge_i = shared_edges.find(local_i);
-      if (shared_edge_i != shared_edges.end())
+      auto shared_edge_i = _shared_edges.find(local_i);
+      if (shared_edge_i != _shared_edges.end())
       {
         // check if any other sharing process has a lower rank
         for (auto proc_edge : shared_edge_i->second)
@@ -242,8 +244,8 @@ void ParallelRefinement::create_new_vertices()
 
     const std::size_t local_i = local_edge.first;
     // shared, but locally owned : remote owned are not in list.
-    auto shared_edge_i = shared_edges.find(local_i);
-    if (shared_edge_i != shared_edges.end())
+    auto shared_edge_i = _shared_edges.find(local_i);
+    if (shared_edge_i != _shared_edges.end())
     {
       for (auto remote_process : shared_edge_i->second)
       {
@@ -282,7 +284,10 @@ void ParallelRefinement::create_new_vertices()
   // Attach global indices to each vertex, old and new, and sort
   // them across processes into this order
 
-  std::vector<std::int64_t> global_indices(_mesh.topology().global_indices(0));
+  // std::vector<std::int64_t>
+  // global_indices(_mesh.topology().global_indices(0));
+  std::vector<std::int64_t> global_indices
+      = _mesh.topology().index_map(0)->global_indices(false);
   for (std::size_t i = 0; i < num_new_vertices; i++)
     global_indices.push_back(i + global_offset);
 
@@ -315,7 +320,7 @@ mesh::Mesh ParallelRefinement::build_local() const
                                 Eigen::RowMajor>>
       topology(_new_cell_topology.data(), num_cells, num_cell_vertices);
 
-  mesh::Mesh mesh(_mesh.mpi_comm(), _mesh.cell_type(),
+  mesh::Mesh mesh(_mesh.mpi_comm(), _mesh.topology().cell_type(),
                   geometry.leftCols(_mesh.geometry().dim()), topology, {},
                   _mesh.get_ghost_mode());
 
@@ -325,7 +330,7 @@ mesh::Mesh ParallelRefinement::build_local() const
 mesh::Mesh ParallelRefinement::partition(bool redistribute) const
 {
   const int num_vertices_per_cell
-      = mesh::cell_num_entities(_mesh.cell_type(), 0);
+      = mesh::cell_num_entities(_mesh.topology().cell_type(), 0);
 
   // Copy data to mesh::LocalMeshData structures
   const std::int32_t num_local_cells
@@ -348,20 +353,14 @@ mesh::Mesh ParallelRefinement::partition(bool redistribute) const
   if (redistribute)
   {
     return mesh::Partitioning::build_distributed_mesh(
-        _mesh.mpi_comm(), _mesh.cell_type(),
+        _mesh.mpi_comm(), _mesh.topology().cell_type(),
         points.leftCols(_mesh.geometry().dim()), cells, global_cell_indices,
         _mesh.get_ghost_mode());
   }
 
-  mesh::Mesh mesh(_mesh.mpi_comm(), _mesh.cell_type(),
+  mesh::Mesh mesh(_mesh.mpi_comm(), _mesh.topology().cell_type(),
                   points.leftCols(_mesh.geometry().dim()), cells,
                   global_cell_indices, _mesh.get_ghost_mode());
-
-  const int tdim  = mesh.topology().dim();
-  mesh.create_entities(tdim - 1);
-  mesh.create_connectivity(tdim - 1, tdim);
-  mesh::DistributedMeshTools::init_facet_cell_connections(mesh.mpi_comm(),
-                                                          mesh.topology());
 
   return mesh;
 }
