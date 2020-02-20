@@ -105,3 +105,6 @@ def test_partition():
     topology.set_interior_facets(boundary)
     boundary = topology.on_boundary(topology.dim - 1)
     print(boundary)
+
+    cpp.mesh.create_distributed_adjacency_list(cpp.MPI.comm_world, topology,
+                                               global_to_local_vertices)

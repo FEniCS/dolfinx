@@ -549,6 +549,113 @@ Partitioning::create_local_adjacency_list(
           global_to_local, local};
 }
 //-----------------------------------------------------------------------------
+void Partitioning::create_distributed_adjacency_list(
+    MPI_Comm comm, const mesh::Topology& topology_local,
+    const std::map<std::int64_t, std::int32_t>& global_to_local)
+{
+  // Create distributed cell-vertex connectivity
+  //   1. New AdjacencyList
+  //   2. IndexMap for vertices
+
+  // Get list of boundary vertices
+  const int dim = topology_local.dim();
+  auto facet_cell = topology_local.connectivity(dim - 1, dim);
+  if (!facet_cell)
+  {
+    throw std::runtime_error(
+        "Need facet-cell connectivity to build distributed adjacency list.");
+  }
+
+  auto facet_vertex = topology_local.connectivity(dim - 1, 0);
+  if (!facet_vertex)
+  {
+    throw std::runtime_error(
+        "Need facet-vertex connectivity to build distributed adjacency list.");
+  }
+
+  auto map_vertex = topology_local.index_map(0);
+  if (!map_vertex)
+    throw std::runtime_error("Need vertex IndexMap from topology.");
+  assert(map_vertex->num_ghosts() == 0);
+  std::vector<bool> exterior_vertex(map_vertex->size_local(), false);
+
+  for (int f = 0; f < facet_cell->num_nodes(); ++f)
+  {
+    if (facet_cell->num_links(f) == 1)
+    {
+      auto vertices = facet_vertex->links(f);
+      for (int j = 0; j < vertices.rows(); ++j)
+        exterior_vertex[vertices[j]] = true;
+    }
+  }
+
+  // Get maximum global index
+  std::int64_t my_max_global_index = 0;
+  if (!global_to_local.empty())
+    my_max_global_index = global_to_local.rbegin()->first;
+  const std::int64_t max_global_index
+      = dolfinx::MPI::all_reduce(comm, my_max_global_index, MPI_MAX);
+
+  // std::cout << "Max my index: " << my_max_global_index << std::endl;
+  // std::cout << "Max index:    " << max_global_index << std::endl;
+
+  const int size = dolfinx::MPI::size(comm);
+  std::vector<int> number_to_send(size, 0);
+  std::vector<std::int64_t> global_vertices_send;
+  for (auto vertex : global_to_local)
+  {
+    if (exterior_vertex[vertex.second])
+    {
+      // std::cout << "Test: " << vertex.first << ", " << max_global_index + 1
+      //           << std::endl;
+      const int owner
+          = dolfinx::MPI::index_owner(comm, vertex.first, max_global_index + 1);
+      number_to_send[owner] += 1;
+    }
+  }
+
+  // Compute send offsets
+  std::vector<int> disp_send(size + 1, 0);
+  std::partial_sum(number_to_send.begin(), number_to_send.end(),
+                   disp_send.begin() + 1);
+
+  // Pack send data
+  std::vector<int> disp_tmp = disp_send;
+  std::vector<std::int64_t> vertices_send(disp_tmp.back());
+  for (auto vertex : global_to_local)
+  {
+    if (exterior_vertex[vertex.second])
+    {
+      const int owner
+          = dolfinx::MPI::index_owner(comm, vertex.first, max_global_index + 1);
+      vertices_send[disp_tmp[owner]++] = vertex.first;
+    }
+  }
+
+  // Send/receive number of vertex indices to communicate to each process
+  std::vector<int> number_to_recv(size);
+  MPI_Alltoall(number_to_send.data(), 1, MPI_INT, number_to_recv.data(), 1,
+               MPI_INT, comm);
+
+  // Compute receive displacements
+  std::vector<int> disp_recv(size + 1, 0);
+  std::partial_sum(number_to_recv.begin(), number_to_recv.end(),
+                   disp_recv.begin() + 1);
+
+  // Send/receive global indices
+  std::vector<std::int64_t> vertices_recv(disp_recv.back());
+  MPI_Alltoallv(vertices_send.data(), number_to_send.data(), disp_send.data(),
+                MPI::mpi_type<std::int64_t>(), vertices_recv.data(),
+                number_to_recv.data(), disp_recv.data(),
+                MPI::mpi_type<std::int64_t>(), comm);
+
+  // // Send global indices to 'owner'
+  // const int num_to_sent
+  //     = std::count(exterior_vertex.begin(), exterior_vertex.end(), true);
+  // // std::vector<std::int64_t> ranges(mpi_size);
+  // // MPI::all_gather(comm, (std::int64_t)points.rows(), ranges);
+}
+//-----------------------------------------------------------------------------
 std::pair<graph::AdjacencyList<std::int64_t>, std::vector<int>>
 Partitioning::distribute(const MPI_Comm& comm,
                          const graph::AdjacencyList<std::int64_t>& list,

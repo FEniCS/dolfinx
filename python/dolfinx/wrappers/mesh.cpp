@@ -349,7 +349,13 @@ void mesh(py::module& m)
 
   m.def("create_local_adjacency_list",
         &dolfinx::mesh::Partitioning::create_local_adjacency_list);
-
+  m.def("create_distributed_adjacency_list",
+        [](const MPICommWrapper comm,
+           const dolfinx::mesh::Topology& topology_local,
+           const std::map<std::int64_t, std::int32_t>& global_to_local) {
+          return dolfinx::mesh::Partitioning::create_distributed_adjacency_list(
+              comm.get(), topology_local, global_to_local);
+        });
   m.def(
       "distribute", [](const MPICommWrapper comm,
                        const dolfinx::graph::AdjacencyList<std::int64_t>& list,
