@@ -202,9 +202,9 @@ def test_mvc_construction_array_tet_tri():
     geom.add_physical(box[1], label="BOX")
 
     pygmsh_mesh = pygmsh.generate_mesh(geom)
-    points, cells, cell_data = (
+    points, cells_dict, cell_data = (
         pygmsh_mesh.points,
-        pygmsh_mesh.cells,
+        pygmsh_mesh.cells_dict,
         pygmsh_mesh.cell_data,
     )
 
@@ -227,18 +227,18 @@ def test_mvc_construction_array_tet_tri():
     assert mvc_vertex.get_value(0, 0) == 1
 
     mvc_line = MeshValueCollection(
-        "size_t", mesh, 1, cells["line"], cell_data["line"]["gmsh:physical"]
+        "size_t", mesh, 1, cells_dict["line"], cell_data["line"]["gmsh:physical"]
     )
     assert mvc_line.get_value(0, 4) == 4
 
     mvc_triangle = MeshValueCollection(
-        "size_t", mesh, 2, cells["triangle"],
+        "size_t", mesh, 2, cells_dict["triangle"],
         cell_data["triangle"]["gmsh:physical"]
     )
     assert mvc_triangle.get_value(0, 3) == 5
 
     mvc_tetra = MeshValueCollection(
-        "size_t", mesh, 3, cells["tetra"], cell_data["tetra"]["gmsh:physical"]
+        "size_t", mesh, 3, cells_dict["tetra"], cell_data["tetra"]["gmsh:physical"]
     )
     assert mvc_tetra.get_value(0, 0) == 6
 
@@ -275,9 +275,9 @@ def test_mvc_construction_array_hex_quad():
     geom.add_physical(box[1], label="BOX")
 
     pygmsh_mesh = pygmsh.generate_mesh(geom)
-    points, cells, cell_data = (
+    points, cells_dict, cell_data = (
         pygmsh_mesh.points,
-        pygmsh_mesh.cells,
+        pygmsh_mesh.cells_dict,
         pygmsh_mesh.cell_data,
     )
 
@@ -304,18 +304,18 @@ def test_mvc_construction_array_hex_quad():
     assert mvc_vertex.get_value(0, 0) == 1
 
     mvc_line = MeshValueCollection(
-        "size_t", mesh, 1, cells["line"], cell_data["line"]["gmsh:physical"]
+        "size_t", mesh, 1, cells_dict["line"], cell_data["line"]["gmsh:physical"]
     )
     mvc_line.values()
     assert mvc_line.get_value(0, 8) == 3
 
     mvc_quad = MeshValueCollection(
-        "size_t", mesh, 2, cells["quad"], cell_data["quad"]["gmsh:physical"]
+        "size_t", mesh, 2, cells_dict["quad"], cell_data["quad"]["gmsh:physical"]
     )
     assert mvc_quad.get_value(0, 4) == 5
 
     mvc_hexa = MeshValueCollection(
-        "size_t", mesh, 3, cells["hexahedron"],
+        "size_t", mesh, 3, cells_dict["hexahedron"],
         cell_data["hexahedron"]["gmsh:physical"]
     )
     assert mvc_hexa.get_value(0, 0) == 6
