@@ -132,8 +132,12 @@ void mesh(py::module& m)
       .def_readwrite("coord_mapping", &dolfinx::mesh::Geometry::coord_mapping);
 
   // dolfinx::mesh::TopologyComputation
-  m.def("compute_entities",
-        &dolfinx::mesh::TopologyComputation::compute_entities);
+  m.def("compute_entities", [](const MPICommWrapper comm,
+                               const dolfinx::mesh::Topology& topology,
+                               int dim) {
+    return dolfinx::mesh::TopologyComputation::compute_entities(comm.get(),
+                                                                topology, dim);
+  });
   m.def("compute_connectivity",
         &dolfinx::mesh::TopologyComputation::compute_connectivity);
 
@@ -147,7 +151,7 @@ void mesh(py::module& m)
                              "Topological dimension")
       .def("connectivity",
            py::overload_cast<int, int>(&dolfinx::mesh::Topology::connectivity,
-                                       py::const_))
+                                       py::const_))∏∏
       .def("hash", &dolfinx::mesh::Topology::hash)
       .def("on_boundary", &dolfinx::mesh::Topology::on_boundary)
       .def("index_map", &dolfinx::mesh::Topology::index_map)

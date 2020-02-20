@@ -84,3 +84,11 @@ def test_partition():
     topology = cpp.mesh.Topology(layout.cell_type)
     index_map = cpp.common.IndexMap(cpp.MPI.comm_world, cells_local.num_nodes, [], 1)
     topology.set_connectivity(cells_local, topology.dim, 0)
+    topology.set_index_map(topology.dim, index_map)
+
+    # Attach vertex IndexMap
+    index_map = cpp.common.IndexMap(cpp.MPI.comm_world, n, [], 1)
+    topology.set_index_map(0, index_map)
+
+    # Create facets
+    cell_facet, facet_vertex, index_map = cpp.mesh.compute_entities(cpp.MPI.comm_world, topology, topology.dim - 1)
