@@ -90,11 +90,9 @@ public:
 
   /// NEW: Compute a distributed AdjacencyList list from a AdjacencyList that
   /// map have non-contiguous data
-  /// @param[in] list Adjacency list with links that might not have
-  ///   contiguous numdering
-  /// @return Adjacency list with contiguous ordering [0, 1, ..., n), a
-  ///   a map from the global ordering in the cells to the local
-  ///   ordering, and the value n
+  /// @param[in] comm
+  /// @param[in] topology_local
+  /// @param[in] global_to_local
   static void create_distributed_adjacency_list(
       MPI_Comm comm, const mesh::Topology& topology_local,
       const std::map<std::int64_t, std::int32_t>& global_to_local);
