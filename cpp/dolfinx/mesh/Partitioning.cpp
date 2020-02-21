@@ -764,12 +764,15 @@ void Partitioning::create_distributed_adjacency_list(
     {
       assert(i < vertices_new_send.size());
       assert(it->second < (int)local_to_local_new.size());
-      vertices_new_send[i] = local_to_local_new[it->second] + offset_global;
+
+      if (local_to_local_new[it->second] >= 0)
+        vertices_new_send[i] = local_to_local_new[it->second] + offset_global;
+
       // if (rank == 1)
       //   std::cout << "Test: " << rank << ", " << it->first << ", "
       //             << vertices_new_send[i] << std::endl;
     }
-    if (rank == 0)
+    if (rank == 1)
       std::cout << "Test: " << rank << ", " << it->first << ", "
                 << vertices_new_send[i] << std::endl;
   }
@@ -781,17 +784,42 @@ void Partitioning::create_distributed_adjacency_list(
                 disp_recv.data(), MPI::mpi_type<std::int64_t>(), comm);
 
   std::vector<std::int64_t> vowner_send(disp_recv.back(), -1);
+
   for (int i = 0; i < size; ++i)
   {
     for (int j = disp_recv[i]; j < disp_recv[i + 1]; ++j)
     {
       if (rank == 1)
-        std::cout << "Recv (A): " << i << ", " << vertices_new_recv[j]
+        std::cout << "Recv (A1): " << i << ", " << vertices_new_recv[j]
                   << std::endl;
       if (vertices_new_recv[j] >= 0)
         vowner_send[j] = vertices_new_recv[j];
+      // if (rank == 0)
+      //   std::cout << "Send (A2): " << i << ", " << vowner_send[j] << std::endl;
     }
   }
+
+
+  // const std::array<std::int64_t, 2> range
+  //     = dolfinx::MPI::local_range(comm, max_global_index + 1);
+  // std::vector<int> marker(range[1] - range[0], -1);
+  // std::vector<int> owner_send(disp_recv.back(), -1);
+  // for (int i = 0; i < size; ++i)
+  // {
+  //   for (int j = disp_recv[i]; j < disp_recv[i + 1]; ++j)
+  //   {
+  //     // Get back to zero reference index
+  //     const std::int64_t index = vertices_recv[j] - range[0];
+  //     if (marker[index] < 0)
+  //     {
+  //       owner_send[j] = i;
+  //       marker[index] = i;
+  //     }
+  //     else
+  //       owner_send[j] = marker[index];
+  //   }
+  // }
+
 
   // if (rank == 0)
   // {
@@ -807,15 +835,24 @@ void Partitioning::create_distributed_adjacency_list(
                 number_to_send.data(), disp_send.data(),
                 MPI::mpi_type<std::int64_t>(), comm);
 
-  for (int i = 0; i < size; ++i)
+  if (rank == 1)
   {
-    for (int j = disp_send[i]; j < disp_send[i + 1]; ++j)
+    std::cout << "------------" << std::endl;
+    for (int i = 0; i < vertices_final_recv.size(); ++i)
     {
-      if (rank == 1)
-        std::cout << "Recv (B): " << i << ", " << vertices_final_recv[j]
-                  << std::endl;
+      std::cout << "Old/new: " << vertices_send[i] << ", "
+                << vertices_final_recv[i] << std::endl;
     }
   }
+  // for (int i = 0; i < size; ++i)
+  // {
+  //   for (int j = disp_send[i]; j < disp_send[i + 1]; ++j)
+  //   {
+  //     if (rank == 1)
+  //       std::cout << "Recv (B): " << i << ", " << vertices_final_recv[j]
+  //                 << std::endl;
+  //   }
+  // }
 
   // if (rank == 1)
   // {
