@@ -272,7 +272,7 @@ void fem::impl::assemble_exterior_facets(
     auto e_ref_cell = cell_edge_reflections.row(cells[0]);
     auto f_ref_cell = cell_face_reflections.row(cells[0]);
     auto f_rot_cell = cell_face_rotations.row(cells[0]);
-    std::uint8_t perm = perms(cells[0], local_facet);
+    const std::uint8_t perm = perms(cells[0], local_facet);
     Ae.setZero(dmap0.size(), dmap1.size());
     fn(Ae.data(), coeff_cell.data(), constant_values.data(),
        coordinate_dofs.data(), &local_facet, &perm, e_ref_cell.data(),
