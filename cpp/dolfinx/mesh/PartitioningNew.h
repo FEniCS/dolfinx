@@ -9,8 +9,11 @@
 #include "cell_types.h"
 #include <Eigen/Dense>
 #include <cstdint>
+#include <dolfinx/common/IndexMap.h>
 #include <dolfinx/common/MPI.h>
+#include <dolfinx/graph/AdjacencyList.h>
 #include <map>
+#include <utility>
 
 namespace dolfinx
 {
@@ -69,7 +72,10 @@ public:
   /// @param[in] comm
   /// @param[in] topology_local
   /// @param[in] global_to_local_vertices
-  static void create_distributed_adjacency_list(
+  // static std::pair<graph::AdjacencyList<std::int32_t>, common::IndexMap>
+  // static graph::AdjacencyList<std::int32_t>
+  static std::pair<graph::AdjacencyList<std::int32_t>, common::IndexMap>
+  create_distributed_adjacency_list(
       MPI_Comm comm, const mesh::Topology& topology_local,
       const std::map<std::int64_t, std::int32_t>& global_to_local_vertices);
 

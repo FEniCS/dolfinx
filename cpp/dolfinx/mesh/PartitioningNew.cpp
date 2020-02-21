@@ -81,7 +81,9 @@ PartitioningNew::create_local_adjacency_list(
           global_to_local, local};
 }
 //-----------------------------------------------------------------------------
-void PartitioningNew::create_distributed_adjacency_list(
+// std::pair<graph::AdjacencyList<std::int32_t>, common::IndexMap>
+std::pair<graph::AdjacencyList<std::int32_t>, common::IndexMap>
+PartitioningNew::create_distributed_adjacency_list(
     MPI_Comm comm, const mesh::Topology& topology_local,
     const std::map<std::int64_t, std::int32_t>& global_to_local_vertices)
 {
@@ -273,7 +275,8 @@ void PartitioningNew::create_distributed_adjacency_list(
       global_to_local_owned0.insert(vertex);
   }
 
-  std::map<std::int64_t, std::int32_t> global_to_local_owned1;
+  std::map<std::int64_t, std::int32_t> global_to_local_owned1,
+      global_to_local_unowned;
   for (int i = 0; i < sharing_processes->num_nodes(); ++i)
   {
     auto it = global_to_local_vertices.find(vertices_send[i]);
@@ -282,6 +285,8 @@ void PartitioningNew::create_distributed_adjacency_list(
       global_to_local_owned0.insert(*it);
     else if (sharing_processes->links(i).minCoeff() == rank)
       global_to_local_owned1.insert(*it);
+    else
+      global_to_local_unowned.insert(*it);
   }
 
   // Re-number owned vertices
@@ -334,9 +339,9 @@ void PartitioningNew::create_distributed_adjacency_list(
   {
     num_receive[p]
         = 2 * std::count(procs.data(), procs.data() + procs.rows(), p);
-    if (rank == 1)
-      std::cout << "Num to receive: " << rank << ", " << p << ", "
-                << num_receive[p] << std::endl;
+    // if (rank == 1)
+    //   std::cout << "Num to receive: " << rank << ", " << p << ", "
+    //             << num_receive[p] << std::endl;
   }
 
   const int num_neighbours = neighbours.size();
@@ -349,12 +354,19 @@ void PartitioningNew::create_distributed_adjacency_list(
     for (int i = 0; i < sharing_processes->num_nodes(); ++i)
     {
       auto it = global_to_local_vertices.find(vertices_send[i]);
+
       assert(it != global_to_local_vertices.end());
       const std::int64_t global_old = it->first;
       const std::int32_t local_old = it->second;
       std::int64_t global_new = local_to_local_new[local_old];
+
       if (global_new >= 0)
         global_new += offset_global;
+
+      // if (rank == 1)
+      //   std::cout << "Global: " << p << ", " << it->first << ", " <<
+      //   global_new
+      //             << std::endl;
 
       auto procs = sharing_processes->links(i);
       for (int k = 0; k < procs.rows(); ++k)
@@ -367,19 +379,19 @@ void PartitioningNew::create_distributed_adjacency_list(
       }
     }
 
-    // // std::cout << "Calling isend" << std::endl;
-    // MPI_Isend(dsend[p].data(), dsend[p].size(), MPI_INT, p, 0, comm,
-    //           &requests[p]);
+    // std::cout << "Calling isend" << std::endl;
+    MPI_Isend(dsend[p].data(), dsend[p].size(), MPI_INT, p, 0, comm,
+              &requests[p]);
   }
 
-  std::cout << "-------------" << std::endl;
-  if (rank == 0)
-  {
-    int k = 1;
-    for (std::size_t j = 0; j < dsend.size(); j += 2)
-      std::cout << "Send data: " << dsend[k][j] << ", " << dsend[k][j + 1]
-                << std::endl;
-  }
+  // std::cout << "-------------" << std::endl;
+  // if (rank == 0)
+  // {
+  //   int k = 1;
+  //   for (std::size_t j = 0; j < dsend.size(); j += 2)
+  //     std::cout << "Send data (old, new): " << dsend[k][j] << ", "
+  //               << dsend[k][j + 1] << std::endl;
+  // }
 
   std::vector<std::vector<int>> drecv(neighbours.size());
   for (std::size_t p = 0; p < neighbours.size(); ++p)
@@ -393,17 +405,59 @@ void PartitioningNew::create_distributed_adjacency_list(
               &requests[num_neighbours + p]);
   }
 
-  // std::vector<MPI_Status> status(2 * num_neighbours);
-  // MPI_Waitall(requests.size(), requests.data(), status.data());
+  std::vector<MPI_Status> status(2 * num_neighbours);
+  MPI_Waitall(requests.size(), requests.data(), status.data());
 
-  // std::cout << "-------------" << std::endl;
-  // if (rank == 1)
-  // {
-  //   int k = 0;
-  //   for (std::size_t i = 0; i < drecv.size(); i += 2)
-  //     std::cout << "Recvd data: " << drecv[k][i] << ", " << drecv[k][i + 1]
-  //               << std::endl;
-  // }
+  std::map<std::int64_t, std::int64_t> global_old_new;
+  for (std::size_t i = 0; i < drecv.size(); ++i)
+  {
+    for (std::size_t j = 0; j < drecv[i].size(); j += 2)
+      if (drecv[i][j + 1] >= 0)
+        global_old_new.insert({drecv[i][j], drecv[i][j + 1]});
+  }
+  if (rank == 0)
+  {
+    for (auto p : global_old_new)
+      std::cout << "Pairs: " << p.first << ", " << p.second << std::endl;
+  }
+
+  // Add ghosts
+
+  //  global_to_local_unowned.insert(*it);
+  std::vector<std::int64_t> ghosts;
+  for (auto it = global_to_local_unowned.begin();
+       it != global_to_local_unowned.end(); ++it)
+  {
+    auto pair = global_old_new.find(it->first);
+    if (pair != global_old_new.end())
+    {
+      assert(it->second < (int)local_to_local_new.size());
+      local_to_local_new[it->second] = p++;
+      ghosts.push_back(pair->second);
+    }
+  }
+
+  if (rank == 1)
+  {
+    std::cout << "Ghosts: " << std::endl;
+    for (auto g : ghosts)
+      std::cout << "  " << g << std::endl;
+  }
+
+  auto cv = topology_local.connectivity(dim, 0);
+  if (!cv)
+    throw std::runtime_error("Missing cell-vertex connectivity.");
+  const Eigen::Array<std::int32_t, Eigen::Dynamic, 1>& data_old = cv->array();
+  std::vector<std::int32_t> data_new(data_old.rows());
+  for (Eigen::Index i = 0; i < data_new.size(); ++i)
+    data_new[i] = local_to_local_new[data_old[i]];
+
+  const Eigen::Array<std::int32_t, Eigen::Dynamic, 1>& offsets = cv->offsets();
+  std::vector<std::int32_t> _offsets(offsets.data(),
+                                     offsets.data() + offsets.rows());
+
+  return {graph::AdjacencyList<std::int32_t>(data_new, _offsets),
+          common::IndexMap(comm, num_owned_vertices, ghosts, 1)};
 }
 //-----------------------------------------------------------------------------
 std::pair<graph::AdjacencyList<std::int64_t>, std::vector<int>>

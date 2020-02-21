@@ -110,5 +110,5 @@ def test_partition():
     boundary = topology.on_boundary(topology.dim - 1)
     # print(boundary)
 
-    cpp.mesh.create_distributed_adjacency_list(cpp.MPI.comm_world, topology,
-                                               global_to_local_vertices)
+    cells, vertex_map = cpp.mesh.create_distributed_adjacency_list(cpp.MPI.comm_world, topology,
+                                                                   global_to_local_vertices)
