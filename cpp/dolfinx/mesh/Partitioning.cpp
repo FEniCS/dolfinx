@@ -563,9 +563,12 @@ Partitioning::distribute(const MPI_Comm& comm,
     num_per_dest_send[owner[i]] += list.num_links(i) + 1;
 
   // Compute send array displacements
+  // Note: std::inclusive_scan would be better, but requires gcc >= 9.2.1
   std::vector<int> disp_send(size + 1, 0);
-  std::inclusive_scan(num_per_dest_send.begin(), num_per_dest_send.end(),
-                      disp_send.begin() + 1);
+  std::partial_sum(num_per_dest_send.begin(), num_per_dest_send.end(),
+                   disp_send.begin() + 1);
+  // std::inclusive_scan(num_per_dest_send.begin(), num_per_dest_send.end(),
+  //                     disp_send.begin() + 1);
 
   // Send/receive number of items to communicate
   std::vector<int> num_per_dest_recv(size, 0);
@@ -573,9 +576,12 @@ Partitioning::distribute(const MPI_Comm& comm,
                1, MPI_INT, comm);
 
   // Compite receive array displacements
+  // Note: std::inclusive_scan would be better, but requires gcc >= 9.2.1
   std::vector<int> disp_recv(size + 1, 0);
-  std::inclusive_scan(num_per_dest_recv.begin(), num_per_dest_recv.end(),
-                      disp_recv.begin() + 1);
+  std::partial_sum(num_per_dest_recv.begin(), num_per_dest_recv.end(),
+                   disp_recv.begin() + 1);
+  // std::inclusive_scan(num_per_dest_recv.begin(), num_per_dest_recv.end(),
+  //                     disp_recv.begin() + 1);
 
   // Prepare send buffer
   std::vector<int> offset = disp_send;
