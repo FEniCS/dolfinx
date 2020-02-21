@@ -216,7 +216,7 @@ PetscScalar fem::impl::assemble_exterior_facets(
     auto e_ref_cell = cell_edge_reflections.row(cell_index);
     auto f_ref_cell = cell_face_reflections.row(cell_index);
     auto f_rot_cell = cell_face_rotations.row(cell_index);
-    std::uint8_t perm = perms(cell.index(), local_facet);
+    std::uint8_t perm = perms(cell_index, local_facet);
     fn(&value, coeff_cell.data(), constant_values.data(),
        coordinate_dofs.data(), &local_facet, &perm, e_ref_cell.data(),
        f_ref_cell.data(), f_rot_cell.data());

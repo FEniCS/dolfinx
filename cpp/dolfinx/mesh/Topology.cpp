@@ -303,6 +303,10 @@ void Topology::resize_entity_permutations(std::size_t cell_count,
     _facet_permutations.resize(cell_count, faces_per_cell);
   else if (dim() == 2)
     _facet_permutations.resize(cell_count, edges_per_cell);
+  else if (dim() == 1)
+    _facet_permutations.resize(cell_count, 2);
+  else if (dim() == 0)
+    _facet_permutations.resize(cell_count, 1);
   _facet_permutations.fill(0);
 
   _edge_reflections.resize(cell_count, edges_per_cell);
