@@ -262,9 +262,12 @@ void Function::eval(
     // Compute basis on reference element
     element.evaluate_reference_basis(basis_reference_values, X);
 
-    auto e_ref_cell = cell_edge_reflections.row(cell_index);
-    auto f_ref_cell = cell_face_reflections.row(cell_index);
-    auto f_rot_cell = cell_face_rotations.row(cell_index);
+    const Eigen::Ref<const Eigen::Array<bool, 1, Eigen::Dynamic>> e_ref_cell
+        = cell_edge_reflections.row(cell_index);
+    const Eigen::Ref<const Eigen::Array<bool, 1, Eigen::Dynamic>> f_ref_cell
+        = cell_face_reflections.row(cell_index);
+    const Eigen::Ref<const Eigen::Array<std::uint8_t, 1, Eigen::Dynamic>>
+        f_rot_cell = cell_face_rotations.row(cell_index);
 
     // Push basis forward to physical element
     element.transform_reference_basis(basis_values, basis_reference_values, X,
