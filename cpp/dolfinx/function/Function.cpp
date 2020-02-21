@@ -230,12 +230,12 @@ void Function::eval(
 
   mesh.create_entity_permutations();
 
-  const Eigen::Ref<const Eigen::Array<bool, Eigen::Dynamic, Eigen::Dynamic>>
+  const Eigen::Ref<const Eigen::Array<bool, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>>
       cell_edge_reflections = mesh.topology().get_edge_reflections();
-  const Eigen::Ref<const Eigen::Array<bool, Eigen::Dynamic, Eigen::Dynamic>>
+  const Eigen::Ref<const Eigen::Array<bool, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>>
       cell_face_reflections = mesh.topology().get_face_reflections();
   const Eigen::Ref<
-      const Eigen::Array<std::uint8_t, Eigen::Dynamic, Eigen::Dynamic>>
+      const Eigen::Array<std::uint8_t, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>>
       cell_face_rotations = mesh.topology().get_face_rotations();
 
   // Loop over points
