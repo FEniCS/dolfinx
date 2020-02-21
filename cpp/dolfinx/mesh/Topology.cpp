@@ -271,25 +271,29 @@ std::string Topology::str(bool verbose) const
   return s.str();
 }
 //-----------------------------------------------------------------------------
-Eigen::Ref<const Eigen::Array<bool, Eigen::Dynamic, Eigen::Dynamic>>
+Eigen::Ref<
+    const Eigen::Array<bool, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>>
 Topology::get_edge_reflections() const
 {
   return _edge_reflections;
 }
 //-----------------------------------------------------------------------------
-Eigen::Ref<const Eigen::Array<bool, Eigen::Dynamic, Eigen::Dynamic>>
+Eigen::Ref<
+    const Eigen::Array<bool, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>>
 Topology::get_face_reflections() const
 {
   return _face_reflections;
 }
 //-----------------------------------------------------------------------------
-Eigen::Ref<const Eigen::Array<std::uint8_t, Eigen::Dynamic, Eigen::Dynamic>>
+Eigen::Ref<const Eigen::Array<std::uint8_t, Eigen::Dynamic, Eigen::Dynamic,
+                              Eigen::RowMajor>>
 Topology::get_face_rotations() const
 {
   return _face_rotations;
 }
 //-----------------------------------------------------------------------------
-Eigen::Ref<const Eigen::Array<std::uint8_t, Eigen::Dynamic, Eigen::Dynamic>>
+Eigen::Ref<const Eigen::Array<std::uint8_t, Eigen::Dynamic, Eigen::Dynamic,
+                              Eigen::RowMajor>>
 Topology::get_facet_permutations() const
 {
   return _facet_permutations;
