@@ -222,6 +222,9 @@ void mpi(py::module& m)
       .def_static("sum",
                   [](const MPICommWrapper comm, std::complex<double> value) {
                     return dolfinx::MPI::sum(comm.get(), value);
-                  });
+                  })
+      .def_static("sum", [](const MPICommWrapper comm, std::int64_t value) {
+        return dolfinx::MPI::sum(comm.get(), value);
+      });
 }
 } // namespace dolfinx_wrappers

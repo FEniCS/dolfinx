@@ -110,5 +110,40 @@ def test_partition():
     boundary = topology.on_boundary(topology.dim - 1)
     # print(boundary)
 
+    # Build distributed cell-vertex AdjacencyList and IndexMap for
+    # vertices
     cells, vertex_map = cpp.mesh.create_distributed_adjacency_list(cpp.MPI.comm_world, topology,
                                                                    global_to_local_vertices)
+    print("Try", vertex_map.size_local)
+    if rank == 1:
+        print("test:", vertex_map.size_local, vertex_map.num_ghosts)
+
+    # Build distributed topology
+    num_cells = cpp.MPI.sum(cpp.MPI.comm_world, cells.num_nodes)
+    print("num_cells", num_cells)
+    topology = cpp.mesh.Topology(layout.cell_type)
+    index_map = cpp.common.IndexMap(cpp.MPI.comm_self, num_cells, [], 1)
+    topology.set_index_map(topology.dim, index_map)
+    topology.set_connectivity(cells_local, topology.dim, 0)
+    topology.set_index_map(0, vertex_map)
+
+    c0 = cpp.graph.AdjacencyList(vertex_map.size_local + vertex_map.num_ghosts)
+    topology.set_connectivity(c0, 0, 0)
+
+    map0 = topology.index_map(0)
+    # if rank == 0:
+    #     print("local", map0.size_local)
+    #     print("global", map0.size_global)
+    #     print("ghosts", map0.ghosts)
+    #     print("ghosts", map0.ghost_owners())
+
+    # test = topology.index_map(0)
+    # print(test.size_local)
+    # c = topology.connectivity(0, 0)
+    # print(c.num_nodes)
+    # print(c.array())
+    # print(c.offsets())
+
+    # Build dofmap
+    # dof_index_map, dofmap = cpp.fem.build_dofmap(cpp.MPI.comm_world,
+    #                                              topology, layout, 1)

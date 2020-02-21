@@ -62,7 +62,7 @@ build_basic_dofmap(const mesh::Topology& topology,
     {
       if (!topology.connectivity(d, 0))
       {
-        std::runtime_error(
+        throw std::runtime_error(
             "Cannot create basic dofmap. Missing entities of dimension "
             + std::to_string(d) + " .");
       }

@@ -99,8 +99,13 @@ from ufl import ds, dx, grad, inner
 # Create mesh and define function space
 mesh = RectangleMesh(
     MPI.comm_world,
-    [np.array([0, 0, 0]), np.array([1, 1, 0])], [32, 32],
+    [np.array([0, 0, 0]), np.array([1, 1, 0])], [2, 1],
     CellType.triangle, dolfinx.cpp.mesh.GhostMode.none)
+m = mesh.topology.index_map(0)
+
+print(m.ghost_owners)
+exit(0)
+
 V = FunctionSpace(mesh, ("Lagrange", 1))
 
 cmap = dolfinx.fem.create_coordinate_map(mesh.ufl_domain())

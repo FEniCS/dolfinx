@@ -257,16 +257,16 @@ PartitioningNew::create_distributed_adjacency_list(
   }
 
   const int rank = dolfinx::MPI::rank(comm);
-  if (rank == 0)
-  {
-    std::cout << "--------------" << std::endl;
-    for (int i = 0; i < sharing_processes->num_nodes(); ++i)
-    {
-      // std::cout << "Vertex: " << i << ", " << vertices_send[i] << std::endl;
-      auto p = sharing_processes->links(i);
-      // std::cout << "  ProcsData: " << p << std::endl;
-    }
-  }
+  // if (rank == 0)
+  // {
+  //   std::cout << "--------------" << std::endl;
+  //   for (int i = 0; i < sharing_processes->num_nodes(); ++i)
+  //   {
+  //     // std::cout << "Vertex: " << i << ", " << vertices_send[i] << std::endl;
+  //     auto p = sharing_processes->links(i);
+  //     // std::cout << "  ProcsData: " << p << std::endl;
+  //   }
+  // }
 
   std::map<std::int64_t, std::int32_t> global_to_local_owned0;
   for (auto& vertex : global_to_local_vertices)
@@ -415,11 +415,12 @@ PartitioningNew::create_distributed_adjacency_list(
       if (drecv[i][j + 1] >= 0)
         global_old_new.insert({drecv[i][j], drecv[i][j + 1]});
   }
-  if (rank == 0)
-  {
-    for (auto p : global_old_new)
-      std::cout << "Pairs: " << p.first << ", " << p.second << std::endl;
-  }
+
+  // if (rank == 0)
+  // {
+  //   for (auto p : global_old_new)
+  //     std::cout << "Pairs: " << p.first << ", " << p.second << std::endl;
+  // }
 
   // Add ghosts
 
@@ -437,12 +438,12 @@ PartitioningNew::create_distributed_adjacency_list(
     }
   }
 
-  if (rank == 1)
-  {
-    std::cout << "Ghosts: " << std::endl;
-    for (auto g : ghosts)
-      std::cout << "  " << g << std::endl;
-  }
+  // if (rank == 1)
+  // {
+  //   std::cout << "Ghosts: " << std::endl;
+  //   for (auto g : ghosts)
+  //     std::cout << "  " << g << std::endl;
+  // }
 
   auto cv = topology_local.connectivity(dim, 0);
   if (!cv)
@@ -455,6 +456,9 @@ PartitioningNew::create_distributed_adjacency_list(
   const Eigen::Array<std::int32_t, Eigen::Dynamic, 1>& offsets = cv->offsets();
   std::vector<std::int32_t> _offsets(offsets.data(),
                                      offsets.data() + offsets.rows());
+
+  std::cout << "Num owned: " << num_owned_vertices << std::endl;
+  std::cout << "Num ghosts: " << ghosts.size() << std::endl;
 
   return {graph::AdjacencyList<std::int32_t>(data_new, _offsets),
           common::IndexMap(comm, num_owned_vertices, ghosts, 1)};
