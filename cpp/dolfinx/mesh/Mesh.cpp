@@ -412,6 +412,8 @@ void Mesh::create_connectivity(int d0, int d1) const
 //-----------------------------------------------------------------------------
 void Mesh::create_entity_permutations() const
 {
+  assert(_topology);
+
   // FIXME: This should probably be moved to topology.
   if (_topology->entity_reflection_size() > 0)
     return;
@@ -438,7 +440,8 @@ void Mesh::create_entity_permutations() const
       const mesh::MeshEntity cell(*this, tdim, cell_n);
 
       // Fetch all vertices for the cell here, for performance reasons
-      const auto cell_vertices = this->topology().connectivity(tdim, 0)->links(cell_n);
+      auto cell_vertices = _topology->connectivity(tdim, 0)->links(cell_n);
+      assert(cell_vertices);
 
       for (int d = 1; d < tdim; ++d)
       {
@@ -446,18 +449,17 @@ void Mesh::create_entity_permutations() const
         {
           // Get the facet
           const int sub_e_n = cell.entities(d)[i];
-          const MeshEntity facet(*this, d, sub_e_n);
 
           // Number of rotations and reflections to apply to the facet
           std::uint8_t rots = 0;
           std::uint8_t refs = 0;
 
+          auto vertices = _topology->connectivity(d, 0)->links(sub_e_n);
+
           // If the entity is an interval, it should be oriented pointing from
           // the lowest numbered vertex to the highest numbered vertex
           if (d == 1)
           {
-            const auto vertices = facet.entities(0);
-
             // Find iterators pointing to cell vertex given a vertex on facet
             const auto it0 = std::find(
                 cell_vertices.data(),
@@ -478,7 +480,6 @@ void Mesh::create_entity_permutations() const
             // lower number than the next vertex clockwise. Find the index of
             // the lowest numbered vertex
             rots = 0;
-            const auto vertices = facet.entities(0);
 
             // Find iterators pointing to cell vertex given a vertex on facet
             for (int j = 0; j < 3; ++j)
@@ -520,7 +521,7 @@ void Mesh::create_entity_permutations() const
     {
       const mesh::MeshEntity cell(*this, tdim, cell_n);
       // Fetch all vertices for the cell here, for performance reasons
-      const auto cell_vertices = this->topology().connectivity(tdim, 0)->links(cell_n);
+      auto cell_vertices = this->topology().connectivity(tdim, 0)->links(cell_n);
 
       for (int d = 1; d < tdim; ++d)
       {
@@ -528,18 +529,17 @@ void Mesh::create_entity_permutations() const
         {
           // Get the facet
           const int sub_e_n = cell.entities(d)[i];
-          MeshEntity facet(*this, d, sub_e_n);
 
           // Number of rotations and reflections to apply to the facet
           std::uint8_t rots = 0;
           std::uint8_t refs = 0;
 
+          auto vertices = _topology->connectivity(d, 0)->links(sub_e_n);
+
           // If the entity is an interval, it should be oriented pointing from
           // the lowest numbered vertex to the highest numbered vertex
           if (d == 1)
           {
-            const auto vertices = facet.entities(0);
-
             // Find iterators pointing to cell vertex given a vertex on facet
             const auto it0 = std::find(
                 cell_vertices.data(),
@@ -560,7 +560,6 @@ void Mesh::create_entity_permutations() const
             // number than the next vertex clockwise. Find the index of the
             // lowest numbered vertex
             int num_min = -1;
-            const auto vertices = facet.entities(0);
 
             // Find iterators pointing to cell vertex given a vertex on facet
             for (int j = 0; j < 4; ++j)
