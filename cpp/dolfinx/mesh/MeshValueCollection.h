@@ -242,7 +242,7 @@ MeshValueCollection<T>::MeshValueCollection(
         }
         std::sort(v.begin(), v.end());
       }
-      entity_map[v] = i;
+      entity_map.emplace_hint(entity_map.end(), v, i);
     }
     _mesh->create_connectivity(_dim, mesh_tdim);
 
