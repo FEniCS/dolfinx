@@ -432,7 +432,6 @@ void Mesh::create_entity_permutations() const
   if (_topology->cell_type() == mesh::CellType::triangle
       || _topology->cell_type() == mesh::CellType::tetrahedron)
   {
-
     for (int cell_n = 0; cell_n < num_cells; ++cell_n)
     {
       const mesh::MeshEntity cell(*this, tdim, cell_n);
