@@ -285,7 +285,7 @@ MeshValueCollection<T>::MeshValueCollection(
       auto entity_cells = _mesh->topology()
                               .connectivity(_dim, mesh_tdim)
                               ->links(entity_index);
-      assert(entity_cells->num_links(entity_index) > 0);
+      assert(entity_cells.size() > 0);
 
       for (int i = 0; i < entity_cells.size(); ++i)
       {
