@@ -412,13 +412,14 @@ void Mesh::create_connectivity(int d0, int d1) const
 //-----------------------------------------------------------------------------
 void Mesh::create_entity_permutations() const
 {
-  assert(_topology);
-
   // FIXME: This should probably be moved to topology.
+
+  assert(_topology);
   if (_topology->entity_reflection_size() > 0)
     return;
 
   const int tdim = _topology->dim();
+  assert(_topology->connectivity(tdim, 0));
   const int num_cells = _topology->connectivity(tdim, 0)->num_nodes();
 
   _topology->resize_entity_permutations(
@@ -426,17 +427,18 @@ void Mesh::create_entity_permutations() const
       cell_num_entities(_topology->cell_type(), 2));
 
   for (int d = 0; d < tdim; ++d)
-    create_entities(d);
+    this->create_entities(d);
 
   // If the cell is a triangle or tetrahedron
-  if (_topology->cell_type() == mesh::CellType::triangle
-      || _topology->cell_type() == mesh::CellType::tetrahedron)
+  if (_topology->cell_type() == CellType::triangle
+      or _topology->cell_type() == CellType::tetrahedron)
   {
     for (int cell_n = 0; cell_n < num_cells; ++cell_n)
     {
       auto cell_vertices = _topology->connectivity(tdim, 0)->links(cell_n);
       for (int d = 1; d < tdim; ++d)
       {
+        assert(_topology->connectivity(d, 0));
         assert(_topology->connectivity(tdim, d));
         auto cell_entities = _topology->connectivity(tdim, d)->links(cell_n);
         for (int i = 0; i < cell_num_entities(_topology->cell_type(), d); ++i)
@@ -448,7 +450,6 @@ void Mesh::create_entity_permutations() const
           std::uint8_t rots = 0;
           std::uint8_t refs = 0;
 
-          assert(_topology->connectivity(d, 0));
           auto vertices = _topology->connectivity(d, 0)->links(sub_e_n);
 
           // If the entity is an interval, it should be oriented pointing from
@@ -513,9 +514,11 @@ void Mesh::create_entity_permutations() const
   {
     for (int cell_n = 0; cell_n < num_cells; ++cell_n)
     {
-      auto cell_vertices = this->topology().connectivity(tdim, 0)->links(cell_n);
+      auto cell_vertices
+          = this->topology().connectivity(tdim, 0)->links(cell_n);
       for (int d = 1; d < tdim; ++d)
       {
+        assert(_topology->connectivity(d, 0));
         assert(_topology->connectivity(tdim, d));
         auto cell_entities = _topology->connectivity(tdim, d)->links(cell_n);
         for (int i = 0; i < cell_num_entities(_topology->cell_type(), d); ++i)
@@ -567,8 +570,10 @@ void Mesh::create_entity_permutations() const
             }
 
             for (int v = 0; v < 4; ++v)
+            {
               if (num_min == -1 || e_vertices[v] < e_vertices[num_min])
                 num_min = v;
+            }
 
             // rots is the number of rotations to get the lowest numbered vertex
             // to the origin
@@ -603,6 +608,7 @@ void Mesh::create_entity_permutations() const
             // The number of reflections
             refs = (e_vertices[post] > e_vertices[pre]);
           }
+
           _topology->set_entity_permutation(cell_n, d, i, rots, refs);
         }
       }
