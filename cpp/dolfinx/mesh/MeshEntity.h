@@ -73,11 +73,6 @@ public:
   /// @return The index
   std::int32_t index() const { return _local_index; }
 
-  /// Returns the local index of the vertex with the given global index
-  /// @param[in] v_index The global index of the vertex
-  /// @return The local index
-  int get_vertex_local_index(const std::int32_t v_index) const;
-
   /// Return array of indices for incident mesh entities of given
   /// topological dimension
   /// @param[in] dim The topological dimension
