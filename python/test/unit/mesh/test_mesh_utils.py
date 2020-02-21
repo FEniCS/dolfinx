@@ -79,20 +79,21 @@ def test_partition():
     cells_local, global_to_local_vertices, n = cpp.mesh.create_local_adjacency_list(cells)
     if rank == 0:
         print(global_to_local_vertices)
-    # print(n)
+    print("Rank: ", rank, global_to_local_vertices)
 
     # Create topology and set cell-vertex topology
     topology = cpp.mesh.Topology(layout.cell_type)
-    index_map = cpp.common.IndexMap(cpp.MPI.comm_world, cells_local.num_nodes, [], 1)
+    index_map = cpp.common.IndexMap(cpp.MPI.comm_self, cells_local.num_nodes, [], 1)
     topology.set_connectivity(cells_local, topology.dim, 0)
     topology.set_index_map(topology.dim, index_map)
 
     # Attach vertex IndexMap to local topology
-    index_map = cpp.common.IndexMap(cpp.MPI.comm_world, n, [], 1)
+    index_map = cpp.common.IndexMap(cpp.MPI.comm_self, n, [], 1)
     topology.set_index_map(0, index_map)
 
     # Create facets for local topology
-    cell_facet, facet_vertex, index_map = cpp.mesh.compute_entities(cpp.MPI.comm_world, topology, topology.dim - 1)
+    cell_facet, facet_vertex, index_map = cpp.mesh.compute_entities(cpp.MPI.comm_self,
+                                                                    topology, topology.dim - 1)
     topology.set_connectivity(cell_facet, topology.dim, topology.dim - 1)
     if facet_vertex is not None:
         topology.set_connectivity(facet_vertex, topology.dim - 1, 0)
@@ -105,7 +106,7 @@ def test_partition():
     boundary = cpp.mesh.compute_interior_facets(topology)
     topology.set_interior_facets(boundary)
     boundary = topology.on_boundary(topology.dim - 1)
-    print(boundary)
+    # print(boundary)
 
     cpp.mesh.create_distributed_adjacency_list(cpp.MPI.comm_world, topology,
                                                global_to_local_vertices)

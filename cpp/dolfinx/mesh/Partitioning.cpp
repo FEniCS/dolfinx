@@ -533,8 +533,9 @@ Partitioning::create_local_adjacency_list(
     auto it = global_to_local.find(global);
     if (it == global_to_local.end())
     {
-      array_local[i] = local++;
+      array_local[i] = local;
       global_to_local.insert({global, local});
+      ++local;
     }
     else
       array_local[i] = it->second;
@@ -551,7 +552,7 @@ Partitioning::create_local_adjacency_list(
 //-----------------------------------------------------------------------------
 void Partitioning::create_distributed_adjacency_list(
     MPI_Comm comm, const mesh::Topology& topology_local,
-    const std::map<std::int64_t, std::int32_t>& global_to_local)
+    const std::map<std::int64_t, std::int32_t>& global_to_local_vertices)
 {
   // Create distributed cell-vertex connectivity
   //   1. New AdjacencyList
@@ -578,7 +579,6 @@ void Partitioning::create_distributed_adjacency_list(
     throw std::runtime_error("Need vertex IndexMap from topology.");
   assert(map_vertex->num_ghosts() == 0);
   std::vector<bool> exterior_vertex(map_vertex->size_local(), false);
-
   for (int f = 0; f < facet_cell->num_nodes(); ++f)
   {
     if (facet_cell->num_links(f) == 1)
@@ -591,8 +591,8 @@ void Partitioning::create_distributed_adjacency_list(
 
   // Get maximum global index
   std::int64_t my_max_global_index = 0;
-  if (!global_to_local.empty())
-    my_max_global_index = global_to_local.rbegin()->first;
+  if (!global_to_local_vertices.empty())
+    my_max_global_index = global_to_local_vertices.rbegin()->first;
   const std::int64_t max_global_index
       = dolfinx::MPI::all_reduce(comm, my_max_global_index, MPI_MAX);
 
@@ -601,28 +601,25 @@ void Partitioning::create_distributed_adjacency_list(
 
   const int size = dolfinx::MPI::size(comm);
   std::vector<int> number_to_send(size, 0);
-  std::vector<std::int64_t> global_vertices_send;
-  for (auto vertex : global_to_local)
+  for (auto vertex : global_to_local_vertices)
   {
     if (exterior_vertex[vertex.second])
     {
-      // std::cout << "Test: " << vertex.first << ", " << max_global_index + 1
-      //           << std::endl;
       const int owner
           = dolfinx::MPI::index_owner(comm, vertex.first, max_global_index + 1);
       number_to_send[owner] += 1;
     }
   }
 
-  // Compute send offsets
+  // Compute global vertex send offsets
   std::vector<int> disp_send(size + 1, 0);
   std::partial_sum(number_to_send.begin(), number_to_send.end(),
                    disp_send.begin() + 1);
 
-  // Pack send data
+  // Pack global vertex send data
   std::vector<int> disp_tmp = disp_send;
   std::vector<std::int64_t> vertices_send(disp_tmp.back());
-  for (auto vertex : global_to_local)
+  for (auto vertex : global_to_local_vertices)
   {
     if (exterior_vertex[vertex.second])
     {
@@ -681,31 +678,131 @@ void Partitioning::create_distributed_adjacency_list(
   // }
 
   // Send/receive owner rank (transpose of send/receive global indices)
-  std::vector<int> owner_recv(disp_send.back());
+  // for each entry in vertices_send
+  std::vector<int> owner_recv(disp_send.back(), -1);
   MPI_Alltoallv(owner_send.data(), number_to_recv.data(), disp_recv.data(),
                 MPI::mpi_type<int>(), owner_recv.data(), number_to_send.data(),
                 disp_send.data(), MPI::mpi_type<int>(), comm);
+  assert(std::count(owner_recv.begin(), owner_recv.end(), -1) == 0);
 
-  // if (dolfinx::MPI::rank(comm) == 0)
+  std::map<std::int64_t, std::int32_t> global_to_local_owned0;
+  for (auto vertex : global_to_local_vertices)
+  {
+    if (!exterior_vertex[vertex.second])
+      global_to_local_owned0.insert(vertex);
+  }
+
+  const int rank = dolfinx::MPI::rank(comm);
+  std::map<std::int64_t, std::int32_t> global_to_local_owned1;
+  std::map<std::int64_t, std::int32_t> global_to_local_ghost;
+  assert(owner_recv.size() == vertices_send.size());
+  for (std::size_t i = 0; i < owner_recv.size(); ++i)
+  {
+    auto it = global_to_local_vertices.find(vertices_send[i]);
+    assert(it != global_to_local_vertices.end());
+    if (owner_recv[i] == rank)
+      global_to_local_owned1.insert({vertices_send[i], it->second});
+    else
+      global_to_local_ghost.insert({vertices_send[i], it->second});
+  }
+
+  // if (rank == 1)
   // {
-  //   for (int i = 0; i < size; ++i)
-  //   {
-  //     std::cout << "rank: " << i << ", "
-  //     for (int j = disp_send[i]; j < disp_send[i + 1]; ++j)
-  //     {
-  //       std::cout << "   global, owner: " << vertices_send[j] << ", "
-  //                 << owner_recv[j] << std::endl;
-  //     }
-  //   }
+  //   std::cout << "Test: " << map_vertex->size_local() << ", "
+  //             << facet_vertex->array().maxCoeff() << std::endl;
+  //   for (auto v : global_to_local_vertices)
+  //     std::cout << "   Local: " << v.second << std::endl;
   // }
+  // return;
 
-  // Count how many vertices this process owns
+  // Number owned vertices locally
+  std::vector<std::int32_t> local_to_local_new(map_vertex->size_local(), -1);
+  std::int32_t p = 0;
+  for (auto it = global_to_local_owned0.begin();
+       it != global_to_local_owned0.end(); ++it)
+  {
+    assert(it->second < (int)local_to_local_new.size());
+    local_to_local_new[it->second] = p++;
+    // local_to_local_new[p++] = it->second;
+  }
+  for (auto it = global_to_local_owned1.begin();
+       it != global_to_local_owned1.end(); ++it)
+  {
+    assert(it->second < (int)local_to_local_new.size());
+    local_to_local_new[it->second] = p++;
+    // local_to_local_new[p++] = it->second;
+  }
 
-  // // Send global indices to 'owner'
-  // const int num_to_sent
-  //     = std::count(exterior_vertex.begin(), exterior_vertex.end(), true);
-  // // std::vector<std::int64_t> ranges(mpi_size);
-  // // MPI::all_gather(comm, (std::int64_t)points.rows(), ranges);
+  // Compute process offset
+  const std::int64_t num_owned_vertices
+      = global_to_local_owned0.size() + global_to_local_owned1.size();
+  const std::int64_t offset_global
+      = dolfinx::MPI::global_offset(comm, num_owned_vertices, true);
+  std::cout << "My offset: " << rank << ", " << offset_global << std::endl;
+
+  // Send/receive new global indices for ghosts
+  // - global_to_local_owned1 has global -> local old
+  // - local_to_local_new has local old -> local new
+
+  // - Send old global/new index to owner (owner_recv is owner for each
+  //   vertex in vertices_send)
+  // - Owner sends back new global index
+
+  // Send/receive new global indices
+  std::vector<std::int64_t> vertices_new_send(vertices_send.size(), -1);
+  for (std::size_t i = 0; i < vertices_send.size(); ++i)
+  {
+    auto it = global_to_local_owned1.find(vertices_send[i]);
+    if (it != global_to_local_owned1.end())
+    {
+      assert(i < vertices_new_send.size());
+      assert(it->second < (int)local_to_local_new.size());
+      vertices_new_send[i] = local_to_local_new[it->second] + offset_global;
+      if (rank == 2)
+        std::cout << "Test: " << rank << ", " << local_to_local_new[it->second]
+                  << ", " << offset_global << ", " << vertices_new_send[i]
+                  << std::endl;
+    }
+  }
+
+  std::vector<std::int64_t> vertices_new_recv(disp_recv.back());
+  MPI_Alltoallv(vertices_new_send.data(), number_to_send.data(),
+                disp_send.data(), MPI::mpi_type<std::int64_t>(),
+                vertices_new_recv.data(), number_to_recv.data(),
+                disp_recv.data(), MPI::mpi_type<std::int64_t>(), comm);
+
+  std::vector<std::int64_t> vowner_send(disp_recv.back(), -1);
+  for (int i = 0; i < size; ++i)
+  {
+    for (int j = disp_recv[i]; j < disp_recv[i + 1]; ++j)
+    {
+      if (vertices_new_recv[j] >= 0)
+        vowner_send[j] = vertices_new_recv[j];
+    }
+  }
+
+  if (rank == 1)
+  {
+    for (auto e : vowner_send)
+      std::cout << "e: " << e << std::endl;
+    // for (auto e : global_to_local_ghost)
+    //   std::cout << "g: " << e.first << std::endl;
+  }
+
+  // std::vector<std::int64_t> vertices_final_recv(disp_send.back());
+  // MPI_Alltoallv(vowner_send.data(), number_to_recv.data(),
+  //               disp_recv.data(), MPI::mpi_type<std::int64_t>(),
+  //               vertices_final_recv.data(), number_to_send.data(),
+  //               disp_send.data(), MPI::mpi_type<std::int64_t>(), comm);
+
+  // if (rank == 1)
+  // {
+  //   for (auto e : vertices_final_recv)
+  //     std::cout << "e: " << e << std::endl;
+  //   for (auto e : global_to_local_ghost)
+  //     std::cout << "g: " << e.first << std::endl;
+  // }
+  // assert(std::count(vowner_send.begin(), vowner_send.end(), -1) == 0);
 }
 //-----------------------------------------------------------------------------
 std::pair<graph::AdjacencyList<std::int64_t>, std::vector<int>>

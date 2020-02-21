@@ -92,10 +92,10 @@ public:
   /// map have non-contiguous data
   /// @param[in] comm
   /// @param[in] topology_local
-  /// @param[in] global_to_local
+  /// @param[in] global_to_local_vertices
   static void create_distributed_adjacency_list(
       MPI_Comm comm, const mesh::Topology& topology_local,
-      const std::map<std::int64_t, std::int32_t>& global_to_local);
+      const std::map<std::int64_t, std::int32_t>& global_to_local_vertices);
 
   /// NEW: Re-distribute adjacency list across processes
   /// @param[in] comm MPI Communicator
