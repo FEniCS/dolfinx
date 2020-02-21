@@ -1,4 +1,5 @@
-// Copyright (C) 2011-2013 Anders Logg and Garth N. Wells
+// Copyright (C) 2011-2020 Anders Logg, Garth N. Wells, Michal Habera and
+// Abhinav Gupta
 //
 // This file is part of DOLFINX (https://www.fenicsproject.org)
 //
@@ -49,8 +50,27 @@ public:
   ///                collection.
   MeshValueCollection(std::shared_ptr<const Mesh> mesh, std::size_t dim);
 
+  /// Create a mesh value collection of entities of given dimension
+  /// on a given mesh from topological data speifying entities
+  /// to be marked and data specifying the value of the marker.
+  ///
+  /// @param[in] mesh The mesh associated with the collection.
+  /// @param[in] dim The mesh entity dimension for the mesh value collection.
+  /// @param[in] cells An array describing topology of marked mesh entities.
+  ///                  Use parallel-global vertex indices.
+  /// @param[in] values_data An array of values attached to marked mesh
+  ///                        entities. Size of this array must agree with
+  ///                        number of columns in `cells`.
+  MeshValueCollection(
+      std::shared_ptr<const Mesh> mesh, int dim,
+      const Eigen::Ref<const Eigen::Array<T, Eigen::Dynamic, Eigen::Dynamic,
+                                          Eigen::RowMajor>>& cells,
+      const Eigen::Ref<const Eigen::Array<T, 1, Eigen::Dynamic,
+                                          Eigen::RowMajor>>& values_data);
+
   /// Destructor
-  ~MeshValueCollection() = default;
+  ~MeshValueCollection()
+  = default;
 
   /// Assignment operator
   /// @param[in] mesh_value_collection A MeshValueCollection object used
@@ -150,6 +170,145 @@ MeshValueCollection<T>::MeshValueCollection(std::shared_ptr<const Mesh> mesh,
   assert(mesh);
   const int D = mesh->topology().dim();
   mesh->create_connectivity(dim, D);
+}
+//---------------------------------------------------------------------------
+template <typename T>
+MeshValueCollection<T>::MeshValueCollection(
+    std::shared_ptr<const Mesh> mesh, int dim,
+    const Eigen::Ref<const Eigen::Array<T, Eigen::Dynamic, Eigen::Dynamic,
+                                        Eigen::RowMajor>>& cells,
+    const Eigen::Ref<const Eigen::Array<T, 1, Eigen::Dynamic, Eigen::RowMajor>>&
+        values_data)
+    : _mesh(mesh), _dim(dim)
+{
+
+  if (cells.rows() != values_data.cols())
+  {
+    throw std::runtime_error(
+        "Not matching number of mesh entities and data attached to it.");
+  }
+
+  // Ensure the mesh dimension is initialised.
+  // If the mesh is created from arrays, entities
+  // of all dimesions are not initialized.
+  _mesh->create_entities(dim);
+
+  const int mesh_tdim = _mesh->topology().dim();
+
+  // Handle cells and vertices as a special case
+  if ((mesh_tdim == _dim) || (_dim == 0))
+  {
+    for (Eigen::Index cell_index = 0; cell_index < values_data.cols();
+         ++cell_index)
+    {
+      const std::pair<std::size_t, std::size_t> key(cell_index, 0);
+      _values.insert({key, values_data(cell_index)});
+    }
+  }
+  else
+  {
+    // Number of vertices per cell is equal to the size of first
+    // array of connectivity.
+    const int num_vertices_per_entity
+          = _mesh->topology().connectivity(_dim, 0)->num_links(0);
+    std::vector<std::int64_t> v(num_vertices_per_entity);
+
+    // Map from {entity vertex indices} to entity index
+    std::map<std::vector<std::int64_t>, std::size_t> entity_map;
+
+    auto vertices_map = _mesh->topology().index_map(0);
+    assert(vertices_map);
+
+    const std::vector<std::int64_t> global_indices
+        = vertices_map->global_indices(false);
+
+    auto entities_map = _mesh->topology().index_map(_dim);
+    assert(entities_map);
+
+    const std::int32_t num_entities
+        = entities_map->size_local() + entities_map->num_ghosts();
+
+    // Loop over all the entities of dimension _dim
+    for (std::int32_t i = 0; i < num_entities; ++i)
+    { 
+      if (_dim == 0)
+        v[0] = global_indices[i];
+      else
+      {
+        auto entity_vertices = _mesh->topology().connectivity(_dim, 0)->links(i);
+        for (int j = 0; j < num_vertices_per_entity; ++j)
+        {
+          v[j] = global_indices[entity_vertices[j]];
+        }
+        std::sort(v.begin(), v.end());
+      }
+      entity_map.emplace_hint(entity_map.end(), v, i);
+    }
+    _mesh->create_connectivity(_dim, mesh_tdim);
+
+    const std::shared_ptr<const graph::AdjacencyList<std::int32_t>>
+        entity_cell_connectivity
+        = _mesh->topology().connectivity(_dim, mesh_tdim);
+
+    // Get cell type for entity on which the MVC lives
+    const mesh::CellType entity_cell_type
+        = mesh::cell_entity_type(_mesh->topology().cell_type(), _dim);
+
+    // Number of nodes per entity is deduced from the size
+    // of provided entity topology
+    const int num_nodes_per_entity = cells.cols();
+
+    // Fetch nodes-to-vertices mapping for the case of higher order
+    // meshes
+    const std::vector<int> nodes_to_verts
+        = mesh::cell_vertex_indices(entity_cell_type, num_nodes_per_entity);
+
+    for (Eigen::Index j = 0; j < values_data.cols(); ++j)
+    {
+      // Apply node to vertices mapping, this throws away
+      // nodes read from the file
+      for (int i = 0; i < num_vertices_per_entity; ++i)
+        v[i] = cells(j, nodes_to_verts[i]);
+
+      std::sort(v.begin(), v.end());
+
+      // Find mesh entity given its vertex indices
+      auto map_it = entity_map.find(v);
+      if (map_it == entity_map.end())
+        throw std::runtime_error("Entity not found in the mesh.");
+
+      const std::size_t entity_index = map_it->second;
+
+      // For this entity need to find all linked cells
+      // and local index wrt. these cells
+      assert(_mesh->topology().connectivity(_dim, mesh_tdim));
+      auto entity_cells = _mesh->topology()
+                              .connectivity(_dim, mesh_tdim)
+                              ->links(entity_index);
+      assert(entity_cells.size() > 0);
+
+      for (int i = 0; i < entity_cells.size(); ++i)
+      {
+        const int cell_index = entity_cells[i];
+
+        assert(_mesh->topology().connectivity(mesh_tdim, _dim));
+        auto cell_entities = _mesh->topology()
+                                 .connectivity(mesh_tdim, _dim)
+                                 ->links(cell_index);
+
+        const auto it = std::find(cell_entities.data(),
+                                  cell_entities.data() + cell_entities.size(),
+                                  entity_index);
+        const int local_entity = it - cell_entities.data();
+
+        // Insert into map
+        _values.emplace_hint(
+            _values.end(),
+            std::pair<std::size_t, std::size_t>(cell_index, local_entity),
+            values_data(j));
+      }
+    }
+  }
 }
 //---------------------------------------------------------------------------
 template <typename T>

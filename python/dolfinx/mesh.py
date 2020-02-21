@@ -61,10 +61,14 @@ def MeshFunction(value_type, mesh, dim, value):
     return fn(mesh, dim, value)
 
 
-def MeshValueCollection(value_type, mesh, dim=None):
+def MeshValueCollection(value_type, mesh, dim=None, topology_data=None, value_data=None):
     if value_type not in _meshvaluecollection_types.keys():
         raise KeyError("MeshValueCollection type not recognised")
     mvc = _meshvaluecollection_types[value_type]
+
+    if topology_data is not None:
+        return mvc(mesh, dim, topology_data, value_data)
+
     if dim is not None:
         return mvc(mesh, dim)
     else:
