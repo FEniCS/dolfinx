@@ -132,6 +132,14 @@ void fem::impl::assemble_cells(
   Eigen::Matrix<PetscScalar, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
       Ae;
 
+  const Eigen::Ref<const Eigen::Array<bool, Eigen::Dynamic, Eigen::Dynamic>>
+      cell_edge_reflections = mesh.topology().get_edge_reflections();
+  const Eigen::Ref<const Eigen::Array<bool, Eigen::Dynamic, Eigen::Dynamic>>
+      cell_face_reflections = mesh.topology().get_face_reflections();
+  const Eigen::Ref<
+      const Eigen::Array<std::uint8_t, Eigen::Dynamic, Eigen::Dynamic>>
+      cell_face_rotations = mesh.topology().get_face_rotations();
+
   // Iterate over active cells
   PetscErrorCode ierr;
   for (std::int32_t cell_index : active_cells)
@@ -143,22 +151,15 @@ void fem::impl::assemble_cells(
 
     const mesh::MeshEntity cell(mesh, gdim, cell_index);
 
-    const Eigen::Ref<const Eigen::Array<bool, 1, Eigen::Dynamic>>
-        cell_edge_reflections
-        = mesh.topology().get_edge_reflections(cell_index);
-    const Eigen::Ref<const Eigen::Array<bool, 1, Eigen::Dynamic>>
-        cell_face_reflections
-        = mesh.topology().get_face_reflections(cell_index);
-    const Eigen::Ref<const Eigen::Array<std::uint8_t, 1, Eigen::Dynamic>>
-        cell_face_rotations = mesh.topology().get_face_rotations(cell_index);
-
     // Tabulate tensor
     auto coeff_cell = coeffs.row(cell_index);
+    auto e_ref_cell = cell_edge_reflections.row(cell_index);
+    auto f_ref_cell = cell_face_reflections.row(cell_index);
+    auto f_rot_cell = cell_face_rotations.row(cell_index);
     Ae.setZero(num_dofs_per_cell0, num_dofs_per_cell1);
     kernel(Ae.data(), coeff_cell.data(), constant_values.data(),
-           coordinate_dofs.data(), nullptr, nullptr,
-           cell_edge_reflections.data(), cell_face_reflections.data(),
-           cell_face_rotations.data());
+           coordinate_dofs.data(), nullptr, nullptr, e_ref_cell.data(),
+           f_ref_cell.data(), f_rot_cell.data());
 
     // Zero rows/columns for essential bcs
     if (!bc0.empty())
@@ -228,6 +229,18 @@ void fem::impl::assemble_exterior_facets(
   Eigen::Matrix<PetscScalar, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
       Ae;
 
+  const Eigen::Ref<
+      const Eigen::Array<std::uint8_t, Eigen::Dynamic, Eigen::Dynamic>>
+      perms = mesh.topology().get_facet_permutations();
+
+  const Eigen::Ref<const Eigen::Array<bool, Eigen::Dynamic, Eigen::Dynamic>>
+      cell_edge_reflections = mesh.topology().get_edge_reflections();
+  const Eigen::Ref<const Eigen::Array<bool, Eigen::Dynamic, Eigen::Dynamic>>
+      cell_face_reflections = mesh.topology().get_face_reflections();
+  const Eigen::Ref<
+      const Eigen::Array<std::uint8_t, Eigen::Dynamic, Eigen::Dynamic>>
+      cell_face_rotations = mesh.topology().get_face_rotations();
+
   // Iterate over all facets
   PetscErrorCode ierr;
   auto f_to_c = mesh.topology().connectivity(tdim - 1, tdim);
@@ -249,29 +262,21 @@ void fem::impl::assemble_exterior_facets(
         coordinate_dofs(i, j) = x_g(cell_g[pos_g[cells[0]] + i], j);
 
     // Get the permutation of the facet
-    const std::uint8_t perm = mesh.topology().get_facet_permutation(
-        cell.index(), facet.dim(), local_facet);
 
     // Get dof maps for cell
-    auto dmap0 = dofmap0.cell_dofs(cell.index());
-    auto dmap1 = dofmap1.cell_dofs(cell.index());
-
-    const Eigen::Ref<const Eigen::Array<bool, 1, Eigen::Dynamic>>
-        cell_edge_reflections
-        = mesh.topology().get_edge_reflections(cell.index());
-    const Eigen::Ref<const Eigen::Array<bool, 1, Eigen::Dynamic>>
-        cell_face_reflections
-        = mesh.topology().get_face_reflections(cell.index());
-    const Eigen::Ref<const Eigen::Array<std::uint8_t, 1, Eigen::Dynamic>>
-        cell_face_rotations = mesh.topology().get_face_rotations(cell.index());
+    auto dmap0 = dofmap0.cell_dofs(cells[0]);
+    auto dmap1 = dofmap1.cell_dofs(cells[0]);
 
     // Tabulate tensor
     auto coeff_cell = coeffs.row(cells[0]);
+    auto e_ref_cell = cell_edge_reflections.row(cells[0]);
+    auto f_ref_cell = cell_face_reflections.row(cells[0]);
+    auto f_rot_cell = cell_face_rotations.row(cells[0]);
+    std::uint8_t perm = perms(cells[0], local_facet);
     Ae.setZero(dmap0.size(), dmap1.size());
     fn(Ae.data(), coeff_cell.data(), constant_values.data(),
-       coordinate_dofs.data(), &local_facet, &perm,
-       cell_edge_reflections.data(), cell_face_reflections.data(),
-       cell_face_rotations.data());
+       coordinate_dofs.data(), &local_facet, &perm, e_ref_cell.data(),
+       f_ref_cell.data(), f_rot_cell.data());
 
     // Zero rows/columns for essential bcs
     if (!bc0.empty())
@@ -343,6 +348,18 @@ void fem::impl::assemble_interior_facets(
   // Temporaries for joint dofmaps
   Eigen::Array<PetscInt, Eigen::Dynamic, 1> dmapjoint0, dmapjoint1;
 
+  const Eigen::Ref<
+      const Eigen::Array<std::uint8_t, Eigen::Dynamic, Eigen::Dynamic>>
+      perms = mesh.topology().get_facet_permutations();
+
+  const Eigen::Ref<const Eigen::Array<bool, Eigen::Dynamic, Eigen::Dynamic>>
+      cell_edge_reflections = mesh.topology().get_edge_reflections();
+  const Eigen::Ref<const Eigen::Array<bool, Eigen::Dynamic, Eigen::Dynamic>>
+      cell_face_reflections = mesh.topology().get_face_reflections();
+  const Eigen::Ref<
+      const Eigen::Array<std::uint8_t, Eigen::Dynamic, Eigen::Dynamic>>
+      cell_face_rotations = mesh.topology().get_face_rotations();
+
   // Iterate over all facets
   PetscErrorCode ierr;
   auto c = mesh.topology().connectivity(tdim - 1, tdim);
@@ -366,11 +383,8 @@ void fem::impl::assemble_interior_facets(
     const int cell_index0 = cell0.index();
     const int cell_index1 = cell1.index();
 
-    const std::array<std::uint8_t, 2> perm
-        = {mesh.topology().get_facet_permutation(cell_index0, facet.dim(),
-                                                 local_facet[0]),
-           mesh.topology().get_facet_permutation(cell_index1, facet.dim(),
-                                                 local_facet[1])};
+    const std::array<std::uint8_t, 2> perm = {
+        perms(cell_index0, local_facet[0]), perms(cell_index1, local_facet[1])};
 
     for (int i = 0; i < num_dofs_g; ++i)
     {
@@ -421,21 +435,14 @@ void fem::impl::assemble_interior_facets(
           = coeff_cell1.segment(offsets[i], num_entries);
     }
 
-    const Eigen::Ref<const Eigen::Array<bool, 1, Eigen::Dynamic>>
-        cell_edge_reflections
-        = mesh.topology().get_edge_reflections(cell_index0);
-    const Eigen::Ref<const Eigen::Array<bool, 1, Eigen::Dynamic>>
-        cell_face_reflections
-        = mesh.topology().get_face_reflections(cell_index0);
-    const Eigen::Ref<const Eigen::Array<std::uint8_t, 1, Eigen::Dynamic>>
-        cell_face_rotations = mesh.topology().get_face_rotations(cell_index0);
-
     // Tabulate tensor
+    auto e_ref_cell = cell_edge_reflections.row(cell_index0);
+    auto f_ref_cell = cell_face_reflections.row(cell_index0);
+    auto f_rot_cell = cell_face_rotations.row(cell_index0);
     Ae.setZero(dmapjoint0.size(), dmapjoint1.size());
     fn(Ae.data(), coeff_array.data(), constant_values.data(),
        coordinate_dofs.data(), local_facet.data(), perm.data(),
-       cell_edge_reflections.data(), cell_face_reflections.data(),
-       cell_face_rotations.data());
+       e_ref_cell.data(), f_ref_cell.data(), f_rot_cell.data());
 
     // Zero rows/columns for essential bcs
     if (!bc0.empty())

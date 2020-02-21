@@ -116,6 +116,14 @@ PetscScalar fem::impl::assemble_cells(
   Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
       coordinate_dofs(num_dofs_g, gdim);
 
+  const Eigen::Ref<const Eigen::Array<bool, Eigen::Dynamic, Eigen::Dynamic>>
+      cell_edge_reflections = mesh.topology().get_edge_reflections();
+  const Eigen::Ref<const Eigen::Array<bool, Eigen::Dynamic, Eigen::Dynamic>>
+      cell_face_reflections = mesh.topology().get_face_reflections();
+  const Eigen::Ref<
+      const Eigen::Array<std::uint8_t, Eigen::Dynamic, Eigen::Dynamic>>
+      cell_face_rotations = mesh.topology().get_face_rotations();
+
   // Iterate over all cells
   PetscScalar value(0);
   for (auto& cell_index : active_cells)
@@ -127,19 +135,13 @@ PetscScalar fem::impl::assemble_cells(
       for (int j = 0; j < gdim; ++j)
         coordinate_dofs(i, j) = x_g(cell_g[pos_g[cell_index] + i], j);
 
-    const Eigen::Ref<const Eigen::Array<bool, 1, Eigen::Dynamic>>
-        cell_edge_reflections
-        = mesh.topology().get_edge_reflections(cell_index);
-    const Eigen::Ref<const Eigen::Array<bool, 1, Eigen::Dynamic>>
-        cell_face_reflections
-        = mesh.topology().get_face_reflections(cell_index);
-    const Eigen::Ref<const Eigen::Array<std::uint8_t, 1, Eigen::Dynamic>>
-        cell_face_rotations = mesh.topology().get_face_rotations(cell_index);
-
     auto coeff_cell = coeffs.row(cell_index);
+    auto e_ref_cell = cell_edge_reflections.row(cell_index);
+    auto f_ref_cell = cell_face_reflections.row(cell_index);
+    auto f_rot_cell = cell_face_rotations.row(cell_index);
     fn(&value, coeff_cell.data(), constant_values.data(),
-       coordinate_dofs.data(), nullptr, nullptr, cell_edge_reflections.data(),
-       cell_face_reflections.data(), cell_face_rotations.data());
+       coordinate_dofs.data(), nullptr, nullptr, e_ref_cell.data(),
+       f_ref_cell.data(), f_rot_cell.data());
   }
 
   return value;
@@ -177,6 +179,18 @@ PetscScalar fem::impl::assemble_exterior_facets(
   Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
       coordinate_dofs(num_dofs_g, gdim);
 
+  const Eigen::Ref<
+      const Eigen::Array<std::uint8_t, Eigen::Dynamic, Eigen::Dynamic>>
+      perms = mesh.topology().get_facet_permutations();
+
+  const Eigen::Ref<const Eigen::Array<bool, Eigen::Dynamic, Eigen::Dynamic>>
+      cell_edge_reflections = mesh.topology().get_edge_reflections();
+  const Eigen::Ref<const Eigen::Array<bool, Eigen::Dynamic, Eigen::Dynamic>>
+      cell_face_reflections = mesh.topology().get_face_reflections();
+  const Eigen::Ref<
+      const Eigen::Array<std::uint8_t, Eigen::Dynamic, Eigen::Dynamic>>
+      cell_face_rotations = mesh.topology().get_face_rotations();
+
   // Iterate over all facets
   PetscScalar value(0);
   for (const auto& facet_index : active_facets)
@@ -194,27 +208,18 @@ PetscScalar fem::impl::assemble_exterior_facets(
     // Get cell vertex coordinates
     const int cell_index = cell.index();
 
-    const std::uint8_t perm = mesh.topology().get_facet_permutation(
-        cell_index, facet.dim(), local_facet);
-
     for (int i = 0; i < num_dofs_g; ++i)
       for (int j = 0; j < gdim; ++j)
         coordinate_dofs(i, j) = x_g(cell_g[pos_g[cell_index] + i], j);
 
-    const Eigen::Ref<const Eigen::Array<bool, 1, Eigen::Dynamic>>
-        cell_edge_reflections
-        = mesh.topology().get_edge_reflections(cell_index);
-    const Eigen::Ref<const Eigen::Array<bool, 1, Eigen::Dynamic>>
-        cell_face_reflections
-        = mesh.topology().get_face_reflections(cell_index);
-    const Eigen::Ref<const Eigen::Array<std::uint8_t, 1, Eigen::Dynamic>>
-        cell_face_rotations = mesh.topology().get_face_rotations(cell_index);
-
     auto coeff_cell = coeffs.row(cell_index);
+    auto e_ref_cell = cell_edge_reflections.row(cell_index);
+    auto f_ref_cell = cell_face_reflections.row(cell_index);
+    auto f_rot_cell = cell_face_rotations.row(cell_index);
+    std::uint8_t perm = perms(cell.index(), local_facet);
     fn(&value, coeff_cell.data(), constant_values.data(),
-       coordinate_dofs.data(), &local_facet, &perm,
-       cell_edge_reflections.data(), cell_face_reflections.data(),
-       cell_face_rotations.data());
+       coordinate_dofs.data(), &local_facet, &perm, e_ref_cell.data(),
+       f_ref_cell.data(), f_rot_cell.data());
   }
 
   return value;
@@ -255,6 +260,18 @@ PetscScalar fem::impl::assemble_interior_facets(
   Eigen::Array<PetscScalar, Eigen::Dynamic, 1> coeff_array(2 * offsets.back());
   assert(offsets.back() == coeffs.cols());
 
+  const Eigen::Ref<
+      const Eigen::Array<std::uint8_t, Eigen::Dynamic, Eigen::Dynamic>>
+      perms = mesh.topology().get_facet_permutations();
+
+  const Eigen::Ref<const Eigen::Array<bool, Eigen::Dynamic, Eigen::Dynamic>>
+      cell_edge_reflections = mesh.topology().get_edge_reflections();
+  const Eigen::Ref<const Eigen::Array<bool, Eigen::Dynamic, Eigen::Dynamic>>
+      cell_face_reflections = mesh.topology().get_face_reflections();
+  const Eigen::Ref<
+      const Eigen::Array<std::uint8_t, Eigen::Dynamic, Eigen::Dynamic>>
+      cell_face_rotations = mesh.topology().get_face_rotations();
+
   // Iterate over all facets
   PetscScalar value(0);
   auto f_to_c = mesh.topology().connectivity(tdim - 1, tdim);
@@ -276,19 +293,8 @@ PetscScalar fem::impl::assemble_interior_facets(
     const int cell_index0 = cell0.index();
     const int cell_index1 = cell1.index();
 
-    const std::array<std::uint8_t, 2> perm
-        = {mesh.topology().get_facet_permutation(cell_index0, facet.dim(),
-                                                 local_facet[0]),
-           mesh.topology().get_facet_permutation(cell_index1, facet.dim(),
-                                                 local_facet[1])};
-    const Eigen::Ref<const Eigen::Array<bool, 1, Eigen::Dynamic>>
-        cell_edge_reflections
-        = mesh.topology().get_edge_reflections(cell_index0);
-    const Eigen::Ref<const Eigen::Array<bool, 1, Eigen::Dynamic>>
-        cell_face_reflections
-        = mesh.topology().get_face_reflections(cell_index0);
-    const Eigen::Ref<const Eigen::Array<std::uint8_t, 1, Eigen::Dynamic>>
-        cell_face_rotations = mesh.topology().get_face_rotations(cell_index0);
+    const std::array<std::uint8_t, 2> perm = {
+        perms(cell_index0, local_facet[0]), perms(cell_index1, local_facet[1])};
 
     for (int i = 0; i < num_dofs_g; ++i)
     {
@@ -314,6 +320,9 @@ PetscScalar fem::impl::assemble_interior_facets(
     // w[coefficient][restriction][dof]
     auto coeff_cell0 = coeffs.row(cells[0]);
     auto coeff_cell1 = coeffs.row(cells[1]);
+    auto e_ref_cell = cell_edge_reflections.row(cells[0]);
+    auto f_ref_cell = cell_face_reflections.row(cells[0]);
+    auto f_rot_cell = cell_face_rotations.row(cells[0]);
 
     // Loop over coefficients
     for (std::size_t i = 0; i < offsets.size() - 1; ++i)
@@ -327,8 +336,7 @@ PetscScalar fem::impl::assemble_interior_facets(
     }
     fn(&value, coeff_array.data(), constant_values.data(),
        coordinate_dofs.data(), local_facet.data(), perm.data(),
-       cell_edge_reflections.data(), cell_face_reflections.data(),
-       cell_face_rotations.data());
+       e_ref_cell.data(), f_ref_cell.data(), f_rot_cell.data());
   }
 
   return value;

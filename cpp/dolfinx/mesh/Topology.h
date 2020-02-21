@@ -133,34 +133,31 @@ public:
   /// reflected to match the low->high ordering of the cell.
   /// @param[in] cell_n The index of the cell.
   /// @return An Eigen::Array of bools
-  Eigen::Ref<const Eigen::Array<bool, 1, Eigen::Dynamic>>
-  get_edge_reflections(const std::int32_t cell_n) const;
+  Eigen::Ref<const Eigen::Array<bool, Eigen::Dynamic, Eigen::Dynamic>>
+  get_edge_reflections() const;
 
   // TODO: Use std::vector<int32_t> to store 1/0 marker for each edge/face
   /// Get an array of bools that say whether each face needs to be
   /// reflected to match the low->high ordering of the cell.
-  /// @param[in] cell_n The index of the cell.
   /// @return An Eigen::Array of bools
-  Eigen::Ref<const Eigen::Array<bool, 1, Eigen::Dynamic>>
-  get_face_reflections(const std::int32_t cell_n) const;
+  Eigen::Ref<const Eigen::Array<bool, Eigen::Dynamic, Eigen::Dynamic>>
+  get_face_reflections() const;
 
   /// Get an array of numbers that say how many times each face needs to be
   /// rotated to match the low->high ordering of the cell.
   /// @param[in] cell_n The index of the cell.
   /// @return An Eigen::Array of uint8_ts
-  Eigen::Ref<const Eigen::Array<std::uint8_t, 1, Eigen::Dynamic>>
-  get_face_rotations(const std::int32_t cell_n) const;
+  Eigen::Ref<const Eigen::Array<std::uint8_t, Eigen::Dynamic, Eigen::Dynamic>>
+  get_face_rotations() const;
 
   /// Get the permutation number to apply to a facet.
   /// The permutations are numbered so that:
   ///   n%2 gives the number of reflections to apply
   ///   n//2 gives the number of rotations to apply
-  /// @param[in] cell_n The index of the cell
   /// @param[in] dim The dimension of the facet
-  /// @param[in] facet_index The local index of the facet
   /// @return The permutation number
-  std::uint8_t get_facet_permutation(const std::int32_t cell_n, const int dim,
-                                     const int facet_index) const;
+  Eigen::Ref<const Eigen::Array<std::uint8_t, Eigen::Dynamic, Eigen::Dynamic>>
+  get_facet_permutations() const;
 
   /// Resize the arrays of permutations and reflections
   /// @param[in] cell_count The number of cells in the mesh
@@ -231,9 +228,9 @@ private:
   Eigen::Array<std::uint8_t, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
       _face_rotations;
 
-  // The entity permutations
+  // The facet permutations
   Eigen::Array<std::uint8_t, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
-      _face_permutations;
+      _facet_permutations;
 
   // TODO: revise
   // Global number of connections for each entity (possibly not
