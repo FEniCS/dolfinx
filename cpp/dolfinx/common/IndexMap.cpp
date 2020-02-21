@@ -100,7 +100,7 @@ IndexMap::IndexMap(
   // source process
   std::vector<std::int32_t> num_edges_in_per_proc(mpi_size);
   MPI_Alltoall(num_edges_out_per_proc.data(), 1, MPI_INT32_T,
-               num_edges_in_per_proc.data(), 1, MPI_INT32_T, _mpi_comm);
+               num_edges_in_per_proc.data(), 1, MPI_INT32_T, _mpi_comm.comm());
 
   // Store number of out- and in-edges, and ranks of neighbourhood
   // processes
@@ -118,7 +118,7 @@ IndexMap::IndexMap(
   // Create neighbourhood communicator. No communication is needed to
   // build the graph with complete adjacency information
   MPI_Dist_graph_create_adjacent(
-      _mpi_comm, neighbours.size(), neighbours.data(), MPI_UNWEIGHTED,
+      _mpi_comm.comm(), neighbours.size(), neighbours.data(), MPI_UNWEIGHTED,
       neighbours.size(), neighbours.data(), MPI_UNWEIGHTED, MPI_INFO_NULL,
       false, &_neighbour_comm);
 
@@ -340,7 +340,7 @@ IndexMap::indices(bool unroll_block) const
   return indx;
 }
 //----------------------------------------------------------------------------
-MPI_Comm IndexMap::mpi_comm() const { return _mpi_comm; }
+MPI_Comm IndexMap::mpi_comm() const { return _mpi_comm.comm(); }
 //----------------------------------------------------------------------------
 MPI_Comm IndexMap::mpi_comm_neighborhood() const { return _neighbour_comm; }
 //----------------------------------------------------------------------------

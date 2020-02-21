@@ -253,7 +253,7 @@ public:
 
 private:
   // MPI Communicator
-  MPI_Comm _mpi_comm;
+  dolfinx::MPI::Comm _mpi_comm;
 
   // MPI Communicator for neighbourhood only
   MPI_Comm _neighbour_comm;
