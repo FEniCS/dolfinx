@@ -47,6 +47,14 @@ void common(py::module& m)
   // dolfinx::common::IndexMap
   py::class_<dolfinx::common::IndexMap,
              std::shared_ptr<dolfinx::common::IndexMap>>(m, "IndexMap")
+      .def(py::init(
+          [](const MPICommWrapper comm, std::int32_t local_size,
+             const Eigen::Ref<
+                 const Eigen::Array<std::int64_t, Eigen::Dynamic, 1>>& ghosts,
+             int block_size) {
+            return std::make_shared<dolfinx::common::IndexMap>(
+                comm.get(), local_size, ghosts, block_size);
+          }))
       .def_property_readonly("size_local",
                              &dolfinx::common::IndexMap::size_local)
       .def_property_readonly("size_global",

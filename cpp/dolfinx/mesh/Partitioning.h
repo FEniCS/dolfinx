@@ -64,7 +64,7 @@ enum class Partitioner
 class Partitioning
 {
 public:
-  /// Compute destination rank for mesh cells using a graph partitioner
+  /// NEW: Compute destination rank for mesh cells using a graph partitioner
   /// @param[in] comm MPI Communicator
   /// @param[in] nparts Number of partitions
   /// @param[in] cell_type Cell type
@@ -76,7 +76,18 @@ public:
   partition_cells(MPI_Comm comm, int nparts, const mesh::CellType cell_type,
                   const graph::AdjacencyList<std::int64_t>& cells);
 
-  /// Re-distribute adjacency list across processes
+  /// Compute a local AdjacencyList list from a AdjacencyList that map
+  /// have non-contiguous data
+  /// @param[in] list Adjacency list with links that might not have
+  ///   contiguous numdering
+  /// @return Adjacency list with contiguous ordering [0, 1, ..., n), a
+  ///   a map from the global ordering in the cells to the local
+  ///   ordering, and the value n
+  static std::tuple<graph::AdjacencyList<std::int32_t>,
+                    std::map<std::int64_t, std::int32_t>, std::int32_t>
+  create_local_adjacency_list(const graph::AdjacencyList<std::int64_t>& list);
+
+  /// NEW: Re-distribute adjacency list across processes
   /// @param[in] comm MPI Communicator
   /// @param[in] list An adjacency list
   /// @param[in] owner Destination rank for the ith entry in the

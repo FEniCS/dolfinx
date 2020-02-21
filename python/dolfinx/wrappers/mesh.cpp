@@ -22,6 +22,7 @@
 #include <dolfinx/mesh/PartitionData.h>
 #include <dolfinx/mesh/Partitioning.h>
 #include <dolfinx/mesh/Topology.h>
+#include <dolfinx/mesh/TopologyComputation.h>
 #include <dolfinx/mesh/cell_types.h>
 #include <dolfinx/mesh/utils.h>
 #include <memory>
@@ -57,6 +58,8 @@ void mesh(py::module& m)
 
   m.def("extract_topology", &dolfinx::mesh::extract_topology);
 
+  m.def("compute_interior_facets", &dolfinx::mesh::compute_interior_facets);
+
   m.def("volume_entities", &dolfinx::mesh::volume_entities,
         "Generalised volume of entities of given dimension.");
 
@@ -83,26 +86,27 @@ void mesh(py::module& m)
   py::class_<dolfinx::mesh::CoordinateDofs,
              std::shared_ptr<dolfinx::mesh::CoordinateDofs>>(
       m, "CoordinateDofs", "CoordinateDofs object")
-      .def("entity_points",
-           [](const dolfinx::mesh::CoordinateDofs& self) {
-             const dolfinx::graph::AdjacencyList<std::int32_t>& connectivity
-                 = self.entity_points();
-             Eigen::Ref<const Eigen::Array<std::int32_t, Eigen::Dynamic, 1>>
-                 connections = connectivity.array();
-             const int num_entities = connectivity.offsets().size() - 1;
+      .def(
+          "entity_points",
+          [](const dolfinx::mesh::CoordinateDofs& self) {
+            const dolfinx::graph::AdjacencyList<std::int32_t>& connectivity
+                = self.entity_points();
+            Eigen::Ref<const Eigen::Array<std::int32_t, Eigen::Dynamic, 1>>
+                connections = connectivity.array();
+            const int num_entities = connectivity.offsets().size() - 1;
 
-             // FIXME: mesh::CoordinateDofs should know its dimension
-             // (entity_size) to handle empty case on a process.
-             int entity_size = 0;
-             if (num_entities > 0)
-             {
-               assert(connections.size() % num_entities == 0);
-               entity_size = connections.size() / num_entities;
-             }
-             return py::array({num_entities, entity_size}, connections.data(),
-                              py::none());
-           },
-           py::return_value_policy::reference_internal);
+            // FIXME: mesh::CoordinateDofs should know its dimension
+            // (entity_size) to handle empty case on a process.
+            int entity_size = 0;
+            if (num_entities > 0)
+            {
+              assert(connections.size() % num_entities == 0);
+              entity_size = connections.size() / num_entities;
+            }
+            return py::array({num_entities, entity_size}, connections.data(),
+                             py::none());
+          },
+          py::return_value_policy::reference_internal);
 
   // dolfinx::mesh::Geometry class
   py::class_<dolfinx::mesh::Geometry, std::shared_ptr<dolfinx::mesh::Geometry>>(
@@ -129,9 +133,23 @@ void mesh(py::module& m)
           "Return coordinates of all points")
       .def_readwrite("coord_mapping", &dolfinx::mesh::Geometry::coord_mapping);
 
+  // dolfinx::mesh::TopologyComputation
+  m.def("compute_entities", [](const MPICommWrapper comm,
+                               const dolfinx::mesh::Topology& topology,
+                               int dim) {
+    return dolfinx::mesh::TopologyComputation::compute_entities(comm.get(),
+                                                                topology, dim);
+  });
+  m.def("compute_connectivity",
+        &dolfinx::mesh::TopologyComputation::compute_connectivity);
+
   // dolfinx::mesh::Topology class
   py::class_<dolfinx::mesh::Topology, std::shared_ptr<dolfinx::mesh::Topology>>(
-      m, "Topology", "DOLFIN Topology object")
+      m, "Topology", "Topology object")
+      .def(py::init<dolfinx::mesh::CellType>())
+      .def("set_connectivity", &dolfinx::mesh::Topology::set_connectivity)
+      .def("set_index_map", &dolfinx::mesh::Topology::set_index_map)
+      .def("set_interior_facets", &dolfinx::mesh::Topology::set_interior_facets)
       .def_property_readonly("dim", &dolfinx::mesh::Topology::dim,
                              "Topological dimension")
       .def("connectivity",
@@ -335,6 +353,9 @@ void mesh(py::module& m)
 
   // dolfinx::mesh::Partitioning::partition_cells
 
+  m.def("create_local_adjacency_list",
+        &dolfinx::mesh::Partitioning::create_local_adjacency_list);
+
   m.def(
       "distribute", [](const MPICommWrapper comm,
                        const dolfinx::graph::AdjacencyList<std::int64_t>& list,
@@ -349,14 +370,13 @@ void mesh(py::module& m)
           return dolfinx::mesh::Partitioning::partition_cells(
               comm.get(), nparts, cell_type, cells);
         });
-  m.def(
-      "partition_cells",
-      [](const MPICommWrapper comm, int nparts,
-         dolfinx::mesh::CellType cell_type,
-        const dolfinx::graph::AdjacencyList<std::int64_t>& cells) {
-        return dolfinx::mesh::Partitioning::partition_cells(
-            comm.get(), nparts, cell_type, cells);
-      });
+  m.def("partition_cells",
+        [](const MPICommWrapper comm, int nparts,
+           dolfinx::mesh::CellType cell_type,
+           const dolfinx::graph::AdjacencyList<std::int64_t>& cells) {
+          return dolfinx::mesh::Partitioning::partition_cells(
+              comm.get(), nparts, cell_type, cells);
+        });
   m.def(
       "partition_cells",
       [](const MPICommWrapper comm, int nparts,
@@ -416,5 +436,5 @@ void mesh(py::module& m)
 
   m.def("compute_marked_boundary_entities",
         &dolfinx::mesh::compute_marked_boundary_entities);
-}
+} // namespace dolfinx_wrappers
 } // namespace dolfinx_wrappers
