@@ -58,7 +58,8 @@ def test_partition():
     layout = cpp.fem.ElementDofLayout(1, entity_dofs, [], [], cell_type, perms)
     rank = cpp.MPI.rank(cpp.MPI.comm_world)
     if rank == 0:
-        cells1 = [[6, 12, 2, 1, 11, 0], [12, 14, 7, 9, 10, 8], [7, 2, 12, 1, 10, 3], [6, 2, 13, 4, 5, 11]]
+        # cells1 = [[6, 12, 2, 1, 11, 0], [12, 14, 7, 9, 10, 8], [7, 2, 12, 1, 10, 3], [6, 2, 13, 4, 5, 11]]
+        cells1 = [[0, 1, 4], [0, 4, 3], [1, 2, 5], [1, 5, 4]]
         cells1 = cpp.graph.AdjacencyList64(cells1)
         cells_filtered1 = cpp.mesh.extract_topology(layout, cells1)
     else:
@@ -73,6 +74,7 @@ def test_partition():
     # Distribute cells
     cells, src = cpp.mesh.distribute(cpp.MPI.comm_world, cells_filtered1,
                                      dest)
+    # print(dest)
     assert cpp.MPI.sum(cpp.MPI.comm_world, cells.num_nodes) == 4
 
     # Build local cell connectivity

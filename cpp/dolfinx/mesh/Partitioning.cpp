@@ -695,6 +695,7 @@ void Partitioning::create_distributed_adjacency_list(
   const int rank = dolfinx::MPI::rank(comm);
   std::map<std::int64_t, std::int32_t> global_to_local_owned1;
   std::map<std::int64_t, std::int32_t> global_to_local_ghost;
+  std::map<std::int64_t, std::int32_t> tmp_map;
   assert(owner_recv.size() == vertices_send.size());
   for (std::size_t i = 0; i < owner_recv.size(); ++i)
   {
@@ -704,6 +705,8 @@ void Partitioning::create_distributed_adjacency_list(
       global_to_local_owned1.insert({vertices_send[i], it->second});
     else
       global_to_local_ghost.insert({vertices_send[i], it->second});
+
+    tmp_map.insert({vertices_send[i], it->second});
   }
 
   // if (rank == 1)
@@ -721,6 +724,8 @@ void Partitioning::create_distributed_adjacency_list(
   for (auto it = global_to_local_owned0.begin();
        it != global_to_local_owned0.end(); ++it)
   {
+    // if (rank == 0)
+    //   std::cout << "Gl: " << it->first << ", " << p << std::endl;
     assert(it->second < (int)local_to_local_new.size());
     local_to_local_new[it->second] = p++;
     // local_to_local_new[p++] = it->second;
@@ -728,6 +733,8 @@ void Partitioning::create_distributed_adjacency_list(
   for (auto it = global_to_local_owned1.begin();
        it != global_to_local_owned1.end(); ++it)
   {
+    // if (rank == 0)
+    //   std::cout << "Gl: " << it->first << ", " << p << std::endl;
     assert(it->second < (int)local_to_local_new.size());
     local_to_local_new[it->second] = p++;
     // local_to_local_new[p++] = it->second;
@@ -752,17 +759,19 @@ void Partitioning::create_distributed_adjacency_list(
   std::vector<std::int64_t> vertices_new_send(vertices_send.size(), -1);
   for (std::size_t i = 0; i < vertices_send.size(); ++i)
   {
-    auto it = global_to_local_owned1.find(vertices_send[i]);
-    if (it != global_to_local_owned1.end())
+    auto it = tmp_map.find(vertices_send[i]);
+    if (it != tmp_map.end())
     {
       assert(i < vertices_new_send.size());
       assert(it->second < (int)local_to_local_new.size());
       vertices_new_send[i] = local_to_local_new[it->second] + offset_global;
-      if (rank == 2)
-        std::cout << "Test: " << rank << ", " << local_to_local_new[it->second]
-                  << ", " << offset_global << ", " << vertices_new_send[i]
-                  << std::endl;
+      // if (rank == 1)
+      //   std::cout << "Test: " << rank << ", " << it->first << ", "
+      //             << vertices_new_send[i] << std::endl;
     }
+    if (rank == 0)
+      std::cout << "Test: " << rank << ", " << it->first << ", "
+                << vertices_new_send[i] << std::endl;
   }
 
   std::vector<std::int64_t> vertices_new_recv(disp_recv.back());
@@ -776,24 +785,37 @@ void Partitioning::create_distributed_adjacency_list(
   {
     for (int j = disp_recv[i]; j < disp_recv[i + 1]; ++j)
     {
+      if (rank == 1)
+        std::cout << "Recv (A): " << i << ", " << vertices_new_recv[j]
+                  << std::endl;
       if (vertices_new_recv[j] >= 0)
         vowner_send[j] = vertices_new_recv[j];
     }
   }
 
-  if (rank == 1)
-  {
-    for (auto e : vowner_send)
-      std::cout << "e: " << e << std::endl;
-    // for (auto e : global_to_local_ghost)
-    //   std::cout << "g: " << e.first << std::endl;
-  }
+  // if (rank == 0)
+  // {
+  //   for (auto e : vowner_send)
+  //     std::cout << "e: " << e << std::endl;
+  //   // for (auto e : global_to_local_ghost)
+  //   //   std::cout << "g: " << e.first << std::endl;
+  // }
 
-  // std::vector<std::int64_t> vertices_final_recv(disp_send.back());
-  // MPI_Alltoallv(vowner_send.data(), number_to_recv.data(),
-  //               disp_recv.data(), MPI::mpi_type<std::int64_t>(),
-  //               vertices_final_recv.data(), number_to_send.data(),
-  //               disp_send.data(), MPI::mpi_type<std::int64_t>(), comm);
+  std::vector<std::int64_t> vertices_final_recv(disp_send.back());
+  MPI_Alltoallv(vowner_send.data(), number_to_recv.data(), disp_recv.data(),
+                MPI::mpi_type<std::int64_t>(), vertices_final_recv.data(),
+                number_to_send.data(), disp_send.data(),
+                MPI::mpi_type<std::int64_t>(), comm);
+
+  for (int i = 0; i < size; ++i)
+  {
+    for (int j = disp_send[i]; j < disp_send[i + 1]; ++j)
+    {
+      if (rank == 1)
+        std::cout << "Recv (B): " << i << ", " << vertices_final_recv[j]
+                  << std::endl;
+    }
+  }
 
   // if (rank == 1)
   // {
