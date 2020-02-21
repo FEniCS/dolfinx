@@ -302,7 +302,10 @@ MeshValueCollection<T>::MeshValueCollection(
         const int local_entity = it - cell_entities.data();
 
         // Insert into map
-        _values.insert({{cell_index, local_entity}, values_data(j)});
+        _values.emplace_hint(
+            _values.end(),
+            std::pair<std::size_t, std::size_t>(cell_index, local_entity),
+            values_data(j));
       }
     }
   }
