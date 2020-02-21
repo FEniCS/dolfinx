@@ -432,8 +432,6 @@ void Mesh::create_entity_permutations() const
   if (_topology->cell_type() == mesh::CellType::triangle
       || _topology->cell_type() == mesh::CellType::tetrahedron)
   {
-    // Store local vertex indices here
-    std::array<std::size_t, 3> e_vertices;
 
     for (int cell_n = 0; cell_n < num_cells; ++cell_n)
     {
@@ -441,7 +439,6 @@ void Mesh::create_entity_permutations() const
 
       // Fetch all vertices for the cell here, for performance reasons
       auto cell_vertices = _topology->connectivity(tdim, 0)->links(cell_n);
-      assert(cell_vertices);
 
       for (int d = 1; d < tdim; ++d)
       {
@@ -481,6 +478,8 @@ void Mesh::create_entity_permutations() const
             // the lowest numbered vertex
             rots = 0;
 
+            // Store local vertex indices here
+            std::array<std::size_t, 3> e_vertices;
             // Find iterators pointing to cell vertex given a vertex on facet
             for (int j = 0; j < 3; ++j)
             {
@@ -514,9 +513,6 @@ void Mesh::create_entity_permutations() const
   // If the cell is a quad, hex or interval
   else
   {
-    // Store local vertex indices here
-    std::array<std::size_t, 4> e_vertices;
-
     for (int cell_n = 0; cell_n < num_cells; ++cell_n)
     {
       const mesh::MeshEntity cell(*this, tdim, cell_n);
@@ -561,6 +557,8 @@ void Mesh::create_entity_permutations() const
             // lowest numbered vertex
             int num_min = -1;
 
+            // Store local vertex indices here
+            std::array<std::size_t, 4> e_vertices;
             // Find iterators pointing to cell vertex given a vertex on facet
             for (int j = 0; j < 4; ++j)
             {
