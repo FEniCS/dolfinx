@@ -341,8 +341,7 @@ void PartitioningNew::create_distributed_adjacency_list(
 
   const int num_neighbours = neighbours.size();
 
-  std::vector<MPI_Request> requests_send(num_neighbours);
-  std::vector<MPI_Request> requests_recv(num_neighbours);
+  std::vector<MPI_Request> requests(2 * num_neighbours);
   std::vector<std::vector<int>> dsend(neighbours.size());
   for (std::size_t p = 0; p < neighbours.size(); ++p)
   {
@@ -368,9 +367,18 @@ void PartitioningNew::create_distributed_adjacency_list(
       }
     }
 
-    std::cout << "Calling isend" << std::endl;
-    MPI_Isend(dsend[p].data(), dsend[p].size(), MPI_INT, p, 0, comm,
-              &requests_send[p]);
+    // // std::cout << "Calling isend" << std::endl;
+    // MPI_Isend(dsend[p].data(), dsend[p].size(), MPI_INT, p, 0, comm,
+    //           &requests[p]);
+  }
+
+  std::cout << "-------------" << std::endl;
+  if (rank == 0)
+  {
+    int k = 1;
+    for (std::size_t j = 0; j < dsend.size(); j += 2)
+      std::cout << "Send data: " << dsend[k][j] << ", " << dsend[k][j + 1]
+                << std::endl;
   }
 
   std::vector<std::vector<int>> drecv(neighbours.size());
@@ -380,23 +388,22 @@ void PartitioningNew::create_distributed_adjacency_list(
     assert(it != num_receive.end());
 
     drecv[p].resize(it->second);
-    std::cout << "Calling isend" << std::endl;
+    // std::cout << "Calling isend" << std::endl;
     MPI_Irecv(drecv[p].data(), drecv[p].size(), MPI_INT, p, 0, comm,
-              &requests_recv[p]);
+              &requests[num_neighbours + p]);
   }
 
-  std::vector<MPI_Status> status(num_neighbours);
-  MPI_Waitall(requests_send.size(), requests_send.data(), status.data());
+  // std::vector<MPI_Status> status(2 * num_neighbours);
+  // MPI_Waitall(requests.size(), requests.data(), status.data());
 
-  // MPI_Isend(const void *buf, int count, MPI_Datatype datatype, int dest,
-  // int tag,
-  //             MPI_Comm comm, MPI_Request * request)
-
-  // MPI_Sendrecv(const void *sendbuf, int sendcount, MPI_Datatype sendtype,
-  //               int dest, int sendtag,
-  //               void *recvbuf, int recvcount, MPI_Datatype recvtype,
-  //               int source, int recvtag,
-  //               MPI_Comm comm, MPI_Status *status)
+  // std::cout << "-------------" << std::endl;
+  // if (rank == 1)
+  // {
+  //   int k = 0;
+  //   for (std::size_t i = 0; i < drecv.size(); i += 2)
+  //     std::cout << "Recvd data: " << drecv[k][i] << ", " << drecv[k][i + 1]
+  //               << std::endl;
+  // }
 }
 //-----------------------------------------------------------------------------
 std::pair<graph::AdjacencyList<std::int64_t>, std::vector<int>>
