@@ -131,41 +131,37 @@ public:
   // TODO: Use std::vector<int32_t> to store 1/0 marker for each edge/face
   /// Get an array of bools that say whether each edge needs to be
   /// reflected to match the low->high ordering of the cell.
-  /// Each row of the returned array represents a cell, and each column an
+  /// Each column of the returned array represents a cell, and each row an
   /// edge of that cell.
   /// @return An Eigen::Array of bools
-  Eigen::Ref<
-      const Eigen::Array<bool, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>>
+  Eigen::Ref<const Eigen::Array<bool, Eigen::Dynamic, Eigen::Dynamic>>
   get_edge_reflections() const;
 
   // TODO: Use std::vector<int32_t> to store 1/0 marker for each edge/face
   /// Get an array of bools that say whether each face needs to be
   /// reflected to match the low->high ordering of the cell.
-  /// Each row of the returned array represents a cell, and each column a
+  /// Each column of the returned array represents a cell, and each row a
   /// face of that cell.
   /// @return An Eigen::Array of bools
-  Eigen::Ref<
-      const Eigen::Array<bool, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>>
+  Eigen::Ref<const Eigen::Array<bool, Eigen::Dynamic, Eigen::Dynamic>>
   get_face_reflections() const;
 
   /// Get an array of numbers that say how many times each face needs to be
   /// rotated to match the low->high ordering of the cell.
-  /// Each row of the returned array represents a cell, and each column a
+  /// Each column of the returned array represents a cell, and each row a
   /// face of that cell.
   /// @return An Eigen::Array of uint8_ts
-  Eigen::Ref<const Eigen::Array<std::uint8_t, Eigen::Dynamic, Eigen::Dynamic,
-                                Eigen::RowMajor>>
+  Eigen::Ref<const Eigen::Array<std::uint8_t, Eigen::Dynamic, Eigen::Dynamic>>
   get_face_rotations() const;
 
   /// Get the permutation number to apply to a facet.
   /// The permutations are numbered so that:
   ///   n%2 gives the number of reflections to apply
   ///   n//2 gives the number of rotations to apply
-  /// Each row of the returned array represents a cell, and each column a
+  /// Each column of the returned array represents a cell, and each row a
   /// facet of that cell.
   /// @return The permutation number
-  Eigen::Ref<const Eigen::Array<std::uint8_t, Eigen::Dynamic, Eigen::Dynamic,
-                                Eigen::RowMajor>>
+  Eigen::Ref<const Eigen::Array<std::uint8_t, Eigen::Dynamic, Eigen::Dynamic>>
   get_facet_permutations() const;
 
   /// Resize the arrays of permutations and reflections
@@ -225,20 +221,17 @@ private:
 
   // TODO: Use std::vector<int32_t> to store 1/0 marker for each edge/face
   // The entity reflections of edges
-  Eigen::Array<bool, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
-      _edge_reflections;
+  Eigen::Array<bool, Eigen::Dynamic, Eigen::Dynamic> _edge_reflections;
 
   // TODO: Use std::vector<int32_t> to store 1/0 marker for each edge/face
   // The entity reflections of faces
-  Eigen::Array<bool, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
-      _face_reflections;
+  Eigen::Array<bool, Eigen::Dynamic, Eigen::Dynamic> _face_reflections;
 
   // The entity reflections of faces
-  Eigen::Array<std::uint8_t, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
-      _face_rotations;
+  Eigen::Array<std::uint8_t, Eigen::Dynamic, Eigen::Dynamic> _face_rotations;
 
   // The facet permutations
-  Eigen::Array<std::uint8_t, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
+  Eigen::Array<std::uint8_t, Eigen::Dynamic, Eigen::Dynamic>
       _facet_permutations;
 
   // TODO: revise
