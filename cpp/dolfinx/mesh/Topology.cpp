@@ -332,5 +332,6 @@ void Topology::set_entity_permutation(std::size_t cell_n, int entity_dim,
   else if (entity_dim == 1)
     _edge_reflections(cell_n, entity_index) = refs;
 }
+//-----------------------------------------------------------------------------
 mesh::CellType Topology::cell_type() const { return _cell_type; }
 //-----------------------------------------------------------------------------

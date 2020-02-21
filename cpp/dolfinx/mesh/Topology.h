@@ -70,6 +70,7 @@ public:
   void
   set_global_user_vertices(const std::vector<std::int64_t>& vertex_indices);
 
+  /// @todo Merge withset_connectivity
   /// Set the IndexMap for dimension dim
   /// @warning This is experimental and likely to change
   void set_index_map(int dim,
@@ -101,6 +102,7 @@ public:
   std::shared_ptr<const graph::AdjacencyList<std::int32_t>>
   connectivity(int d0, int d1) const;
 
+  /// @todo Merge with set_index_map
   /// Set connectivity for given pair of topological dimensions
   void set_connectivity(std::shared_ptr<graph::AdjacencyList<std::int32_t>> c,
                         int d0, int d1);
