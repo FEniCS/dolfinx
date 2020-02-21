@@ -32,11 +32,8 @@ public:
   class Comm
   {
   public:
-    /// Null communicator
-    Comm();
-
     /// Duplicate communicator and wrap duplicate
-    explicit Comm(MPI_Comm comm);
+    Comm(MPI_Comm comm);
 
     /// Copy constructor
     Comm(const Comm& comm);
@@ -52,9 +49,6 @@ public:
 
     /// Destructor (frees wrapped communicator)
     ~Comm();
-
-    /// Set communicator
-    void set(MPI_Comm comm);
 
     /// Return the underlying MPI_Comm object
     MPI_Comm comm() const;

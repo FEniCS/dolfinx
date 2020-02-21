@@ -10,8 +10,6 @@
 #include <numeric>
 
 //-----------------------------------------------------------------------------
-dolfinx::MPI::Comm::Comm() { _comm = MPI_COMM_NULL; }
-//-----------------------------------------------------------------------------
 dolfinx::MPI::Comm::Comm(MPI_Comm comm)
 {
   // Duplicate communicator
@@ -53,19 +51,6 @@ dolfinx::MPI::Comm::~Comm()
   }
 }
 //-----------------------------------------------------------------------------
-void dolfinx::MPI::Comm::set(MPI_Comm comm)
-{
-  if (_comm != MPI_COMM_NULL)
-    throw std::runtime_error("Cannot set non-null MPI communicator");
-
-  int err = MPI_Comm_dup(comm, &_comm);
-  if (err != MPI_SUCCESS)
-  {
-    throw std::runtime_error(
-        "Duplication of MPI communicator failed (MPI_Comm_dup)");
-  }
-}
-//-----------------------------------------------------------------------------
 MPI_Comm dolfinx::MPI::Comm::comm() const { return _comm; }
 //-----------------------------------------------------------------------------
 std::uint32_t dolfinx::MPI::rank(const MPI_Comm comm)
@@ -85,7 +70,7 @@ std::uint32_t dolfinx::MPI::size(const MPI_Comm comm)
 void dolfinx::MPI::barrier(const MPI_Comm comm) { MPI_Barrier(comm); }
 //-----------------------------------------------------------------------------
 std::size_t dolfinx::MPI::global_offset(const MPI_Comm comm, std::size_t range,
-                                        bool exclusive)
+                                       bool exclusive)
 {
   // Compute inclusive or exclusive partial reduction
   std::size_t offset = 0;
@@ -96,7 +81,7 @@ std::size_t dolfinx::MPI::global_offset(const MPI_Comm comm, std::size_t range,
 }
 //-----------------------------------------------------------------------------
 std::array<std::int64_t, 2> dolfinx::MPI::local_range(const MPI_Comm comm,
-                                                      std::int64_t N)
+                                                     std::int64_t N)
 {
   return local_range(comm, rank(comm), N);
 }
@@ -126,7 +111,7 @@ dolfinx::MPI::compute_local_range(int process, std::int64_t N, int size)
 }
 //-----------------------------------------------------------------------------
 std::uint32_t dolfinx::MPI::index_owner(const MPI_Comm comm, std::size_t index,
-                                        std::size_t N)
+                                       std::size_t N)
 {
   assert(index < N);
 

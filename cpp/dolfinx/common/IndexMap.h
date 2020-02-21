@@ -71,7 +71,7 @@ public:
   IndexMap(IndexMap&& map) = default;
 
   /// Destructor
-  ~IndexMap() = default;
+  ~IndexMap();
 
   /// Range of indices (global) owned by this process
   std::array<std::int64_t, 2> local_range() const;
@@ -253,12 +253,10 @@ public:
 
 private:
   // MPI Communicator
-  // MPI_Comm _mpi_comm;
-  dolfinx::MPI::Comm _mpi_comm;
+  MPI_Comm _mpi_comm;
 
   // MPI Communicator for neighbourhood only
-  // MPI_Comm _neighbour_comm;
-  dolfinx::MPI::Comm _neighbour_comm;
+  MPI_Comm _neighbour_comm;
 
   // Cache rank on mpi_comm (otherwise calls to MPI_Comm_rank can be
   // excessive)

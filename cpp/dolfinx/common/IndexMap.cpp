@@ -100,7 +100,7 @@ IndexMap::IndexMap(
   // source process
   std::vector<std::int32_t> num_edges_in_per_proc(mpi_size);
   MPI_Alltoall(num_edges_out_per_proc.data(), 1, MPI_INT32_T,
-               num_edges_in_per_proc.data(), 1, MPI_INT32_T, _mpi_comm.comm());
+               num_edges_in_per_proc.data(), 1, MPI_INT32_T, _mpi_comm);
 
   // Store number of out- and in-edges, and ranks of neighbourhood
   // processes
@@ -117,15 +117,10 @@ IndexMap::IndexMap(
 
   // Create neighbourhood communicator. No communication is needed to
   // build the graph with complete adjacency information
-  MPI_Comm neighbour_comm;
   MPI_Dist_graph_create_adjacent(
-      _mpi_comm.comm(), neighbours.size(), neighbours.data(), MPI_UNWEIGHTED,
+      _mpi_comm, neighbours.size(), neighbours.data(), MPI_UNWEIGHTED,
       neighbours.size(), neighbours.data(), MPI_UNWEIGHTED, MPI_INFO_NULL,
-      false, &neighbour_comm);
-
-  _neighbour_comm.set(neighbour_comm);
-  assert(neighbour_comm);
-  MPI_Comm_free(&neighbour_comm);
+      false, &_neighbour_comm);
 
   // Size of neighbourhood
   const int num_neighbours = neighbours.size();
@@ -134,9 +129,8 @@ IndexMap::IndexMap(
 #if DEBUG
   {
     std::vector<int> sources(num_neighbours), dests(num_neighbours);
-    MPI_Dist_graph_neighbors(_neighbour_comm.comm(), num_neighbours,
-                             sources.data(), NULL, num_neighbours, dests.data(),
-                             NULL);
+    MPI_Dist_graph_neighbors(_neighbour_comm, num_neighbours, sources.data(),
+                             NULL, num_neighbours, dests.data(), NULL);
     assert(sources == dests);
     assert(sources == neighbours);
   }
@@ -177,10 +171,17 @@ IndexMap::IndexMap(
   MPI_Neighbor_alltoallv(
       out_indices.data(), out_edges_num.data(), disp_out.data(), MPI_INT,
       indices_in.data(), // out
-      in_edges_num.data(), disp_in.data(), MPI_INT, _neighbour_comm.comm());
+      in_edges_num.data(), disp_in.data(), MPI_INT, _neighbour_comm);
 
   _forward_indices = std::move(indices_in);
   _forward_sizes = std::move(in_edges_num);
+}
+//-----------------------------------------------------------------------------
+IndexMap::~IndexMap()
+{
+  // assert(_neighbour_comm);
+  if (_neighbour_comm != MPI_COMM_NULL)
+    MPI_Comm_free(&_neighbour_comm);
 }
 //-----------------------------------------------------------------------------
 std::array<std::int64_t, 2> IndexMap::local_range() const
@@ -299,16 +300,16 @@ int IndexMap::owner(std::int64_t global_index) const
 //-----------------------------------------------------------------------------
 Eigen::Array<std::int32_t, Eigen::Dynamic, 1> IndexMap::ghost_owners() const
 {
-  assert(_neighbour_comm.comm());
+  assert(_neighbour_comm);
 
   int indegree(-1), outdegree(-2), weighted(-1);
-  MPI_Dist_graph_neighbors_count(_neighbour_comm.comm(), &indegree, &outdegree,
+  MPI_Dist_graph_neighbors_count(_neighbour_comm, &indegree, &outdegree,
                                  &weighted);
   assert(indegree == outdegree);
   std::vector<int> neighbours(indegree), neighbours1(indegree),
       weights(indegree), weights1(indegree);
 
-  MPI_Dist_graph_neighbors(_neighbour_comm.comm(), indegree, neighbours.data(),
+  MPI_Dist_graph_neighbors(_neighbour_comm, indegree, neighbours.data(),
                            weights.data(), outdegree, neighbours1.data(),
                            weights1.data());
 
@@ -339,12 +340,9 @@ IndexMap::indices(bool unroll_block) const
   return indx;
 }
 //----------------------------------------------------------------------------
-MPI_Comm IndexMap::mpi_comm() const { return _mpi_comm.comm(); }
+MPI_Comm IndexMap::mpi_comm() const { return _mpi_comm; }
 //----------------------------------------------------------------------------
-MPI_Comm IndexMap::mpi_comm_neighborhood() const
-{
-  return _neighbour_comm.comm();
-}
+MPI_Comm IndexMap::mpi_comm_neighborhood() const { return _neighbour_comm; }
 //----------------------------------------------------------------------------
 std::map<int, std::set<int>> IndexMap::compute_shared_indices() const
 {
@@ -352,13 +350,13 @@ std::map<int, std::set<int>> IndexMap::compute_shared_indices() const
 
   // Get neighbour processes
   int indegree(-1), outdegree(-2), weighted(-1);
-  MPI_Dist_graph_neighbors_count(_neighbour_comm.comm(), &indegree, &outdegree,
+  MPI_Dist_graph_neighbors_count(_neighbour_comm, &indegree, &outdegree,
                                  &weighted);
   assert(indegree == outdegree);
   std::vector<int> neighbours(indegree), neighbours1(indegree),
       weights(indegree), weights1(indegree);
 
-  MPI_Dist_graph_neighbors(_neighbour_comm.comm(), indegree, neighbours.data(),
+  MPI_Dist_graph_neighbors(_neighbour_comm, indegree, neighbours.data(),
                            weights.data(), outdegree, neighbours1.data(),
                            weights1.data());
 
@@ -398,7 +396,7 @@ std::map<int, std::set<int>> IndexMap::compute_shared_indices() const
 
   std::vector<int> recv_sharing_offsets;
   std::vector<std::int64_t> recv_sharing_data;
-  MPI::neighbor_all_to_all(_neighbour_comm.comm(), fwd_sharing_offsets,
+  MPI::neighbor_all_to_all(_neighbour_comm, fwd_sharing_offsets,
                            fwd_sharing_data, recv_sharing_offsets,
                            recv_sharing_data);
 
@@ -471,7 +469,7 @@ void IndexMap::scatter_fwd_impl(const std::vector<T>& local_data,
 #ifdef DEBUG
   // Check size of neighbourhood
   int indegree(-1), outdegree(-2), weighted(-1);
-  MPI_Dist_graph_neighbors_count(_neighbour_comm.comm(), &indegree, &outdegree,
+  MPI_Dist_graph_neighbors_count(_neighbour_comm, &indegree, &outdegree,
                                  &weighted);
   assert(indegree == outdegree);
   assert(indegree == (int)_forward_sizes.size());
@@ -511,7 +509,7 @@ void IndexMap::scatter_fwd_impl(const std::vector<T>& local_data,
   MPI_Neighbor_alltoallv(
       data_to_send.data(), sizes_send.data(), displs_send.data(),
       MPI::mpi_type<T>(), data_to_recv.data(), sizes_recv.data(),
-      displs_recv.data(), MPI::mpi_type<T>(), _neighbour_comm.comm());
+      displs_recv.data(), MPI::mpi_type<T>(), _neighbour_comm);
 
   // Copy into ghost area ("remote_data")
   std::vector<std::int32_t> displs(displs_recv);
@@ -535,7 +533,7 @@ void IndexMap::scatter_rev_impl(std::vector<T>& local_data,
 #ifdef DEBUG
   // Check size of neighbourhood
   int indegree(-1), outdegree(-2), weighted(-1);
-  MPI_Dist_graph_neighbors_count(_neighbour_comm.comm(), &indegree, &outdegree,
+  MPI_Dist_graph_neighbors_count(_neighbour_comm, &indegree, &outdegree,
                                  &weighted);
   assert(indegree == outdegree);
   assert(indegree == (int)_forward_sizes.size());
@@ -574,7 +572,7 @@ void IndexMap::scatter_rev_impl(std::vector<T>& local_data,
   MPI_Neighbor_alltoallv(
       send_data.data(), send_sizes.data(), displs_send.data(),
       MPI::mpi_type<T>(), recv_data.data(), recv_sizes.data(),
-      displs_recv.data(), MPI::mpi_type<T>(), _neighbour_comm.comm());
+      displs_recv.data(), MPI::mpi_type<T>(), _neighbour_comm);
 
   // Copy or accumulate into "local_data"
   if (op == Mode::insert)

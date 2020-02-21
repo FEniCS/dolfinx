@@ -262,8 +262,8 @@ PartitioningNew::create_distributed_adjacency_list(
   //   std::cout << "--------------" << std::endl;
   //   for (int i = 0; i < sharing_processes->num_nodes(); ++i)
   //   {
-  //     // std::cout << "Vertex: " << i << ", " << vertices_send[i] << std::endl;
-  //     auto p = sharing_processes->links(i);
+  //     // std::cout << "Vertex: " << i << ", " << vertices_send[i] <<
+  //     std::endl; auto p = sharing_processes->links(i);
   //     // std::cout << "  ProcsData: " << p << std::endl;
   //   }
   // }
@@ -460,6 +460,9 @@ PartitioningNew::create_distributed_adjacency_list(
   std::cout << "Num owned: " << num_owned_vertices << std::endl;
   std::cout << "Num ghosts: " << ghosts.size() << std::endl;
 
+  std::cout << "Pre to return" << std::endl;
+  common::IndexMap tmp(comm, num_owned_vertices, ghosts, 1);
+  std::cout << "About to return" << std::endl;
   return {graph::AdjacencyList<std::int32_t>(data_new, _offsets),
           common::IndexMap(comm, num_owned_vertices, ghosts, 1)};
 }

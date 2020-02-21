@@ -17,16 +17,16 @@
 
 namespace dolfinx
 {
-namespace common
-{
-class IndexMap;
-}
+// namespace common
+// {
+// class IndexMap;
+// }
 
-namespace graph
-{
-template <typename T>
-class AdjacencyList;
-}
+// namespace graph
+// {
+// template <typename T>
+// class AdjacencyList;
+// }
 
 namespace mesh
 {

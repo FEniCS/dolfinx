@@ -112,8 +112,12 @@ def test_partition():
 
     # Build distributed cell-vertex AdjacencyList and IndexMap for
     # vertices
+
+    print("111111")
+    # return
     cells, vertex_map = cpp.mesh.create_distributed_adjacency_list(cpp.MPI.comm_world, topology,
                                                                    global_to_local_vertices)
+    print("2222")
     print("Try", vertex_map.size_local)
     if rank == 1:
         print("test:", vertex_map.size_local, vertex_map.num_ghosts)
