@@ -137,11 +137,11 @@ PetscScalar fem::impl::assemble_cells(
 
     auto coeff_cell = coeffs.row(cell_index);
     const Eigen::Ref<const Eigen::Array<bool, Eigen::Dynamic, 1>> e_ref_cell
-        = cell_edge_reflections.row(cell_index);
+        = cell_edge_reflections.col(cell_index);
     const Eigen::Ref<const Eigen::Array<bool, Eigen::Dynamic, 1>> f_ref_cell
-        = cell_face_reflections.row(cell_index);
+        = cell_face_reflections.col(cell_index);
     const Eigen::Ref<const Eigen::Array<uint8_t, Eigen::Dynamic, 1>> f_rot_cell
-        = cell_face_rotations.row(cell_index);
+        = cell_face_rotations.col(cell_index);
     fn(&value, coeff_cell.data(), constant_values.data(),
        coordinate_dofs.data(), nullptr, nullptr, e_ref_cell.data(),
        f_ref_cell.data(), f_rot_cell.data());
@@ -217,11 +217,11 @@ PetscScalar fem::impl::assemble_exterior_facets(
 
     auto coeff_cell = coeffs.row(cell_index);
     const Eigen::Ref<const Eigen::Array<bool, Eigen::Dynamic, 1>> e_ref_cell
-        = cell_edge_reflections.row(cell_index);
+        = cell_edge_reflections.col(cell_index);
     const Eigen::Ref<const Eigen::Array<bool, Eigen::Dynamic, 1>> f_ref_cell
-        = cell_face_reflections.row(cell_index);
+        = cell_face_reflections.col(cell_index);
     const Eigen::Ref<const Eigen::Array<uint8_t, Eigen::Dynamic, 1>> f_rot_cell
-        = cell_face_rotations.row(cell_index);
+        = cell_face_rotations.col(cell_index);
     const std::uint8_t perm = perms(local_facet, cell_index);
     fn(&value, coeff_cell.data(), constant_values.data(),
        coordinate_dofs.data(), &local_facet, &perm, e_ref_cell.data(),
@@ -327,11 +327,11 @@ PetscScalar fem::impl::assemble_interior_facets(
     auto coeff_cell0 = coeffs.row(cells[0]);
     auto coeff_cell1 = coeffs.row(cells[1]);
     const Eigen::Ref<const Eigen::Array<bool, Eigen::Dynamic, 1>> e_ref_cell
-        = cell_edge_reflections.row(cell_index0);
+        = cell_edge_reflections.col(cell_index0);
     const Eigen::Ref<const Eigen::Array<bool, Eigen::Dynamic, 1>> f_ref_cell
-        = cell_face_reflections.row(cell_index0);
+        = cell_face_reflections.col(cell_index0);
     const Eigen::Ref<const Eigen::Array<uint8_t, Eigen::Dynamic, 1>> f_rot_cell
-        = cell_face_rotations.row(cell_index0);
+        = cell_face_rotations.col(cell_index0);
 
     // Loop over coefficients
     for (std::size_t i = 0; i < offsets.size() - 1; ++i)
