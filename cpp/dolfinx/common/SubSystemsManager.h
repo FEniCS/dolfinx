@@ -6,7 +6,7 @@
 
 #pragma once
 
-#include <petsc.h>
+#include <petscsys.h>
 #include <string>
 
 namespace dolfinx

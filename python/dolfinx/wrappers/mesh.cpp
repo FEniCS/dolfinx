@@ -21,6 +21,7 @@
 #include <dolfinx/mesh/Ordering.h>
 #include <dolfinx/mesh/PartitionData.h>
 #include <dolfinx/mesh/Partitioning.h>
+#include <dolfinx/mesh/PartitioningNew.h>
 #include <dolfinx/mesh/Topology.h>
 #include <dolfinx/mesh/TopologyComputation.h>
 #include <dolfinx/mesh/cell_types.h>
@@ -348,35 +349,30 @@ void mesh(py::module& m)
   // dolfinx::mesh::Partitioning::partition_cells
 
   m.def("create_local_adjacency_list",
-        &dolfinx::mesh::Partitioning::create_local_adjacency_list);
+        &dolfinx::mesh::PartitioningNew::create_local_adjacency_list);
   m.def("create_distributed_adjacency_list",
         [](const MPICommWrapper comm,
            const dolfinx::mesh::Topology& topology_local,
            const std::map<std::int64_t, std::int32_t>& global_to_local) {
-          return dolfinx::mesh::Partitioning::create_distributed_adjacency_list(
+          return dolfinx::mesh::PartitioningNew::create_distributed_adjacency_list(
               comm.get(), topology_local, global_to_local);
         });
   m.def(
       "distribute", [](const MPICommWrapper comm,
                        const dolfinx::graph::AdjacencyList<std::int64_t>& list,
                        const std::vector<int>& owner) {
-        return dolfinx::mesh::Partitioning::distribute(comm.get(), list, owner);
+        return dolfinx::mesh::PartitioningNew::distribute(comm.get(), list, owner);
       });
 
   m.def("partition_cells",
         [](const MPICommWrapper comm, int nparts,
            dolfinx::mesh::CellType cell_type,
            const dolfinx::graph::AdjacencyList<std::int64_t>& cells) {
-          return dolfinx::mesh::Partitioning::partition_cells(
+          return dolfinx::mesh::PartitioningNew::partition_cells(
               comm.get(), nparts, cell_type, cells);
         });
-  m.def("partition_cells",
-        [](const MPICommWrapper comm, int nparts,
-           dolfinx::mesh::CellType cell_type,
-           const dolfinx::graph::AdjacencyList<std::int64_t>& cells) {
-          return dolfinx::mesh::Partitioning::partition_cells(
-              comm.get(), nparts, cell_type, cells);
-        });
+
+
   m.def(
       "partition_cells",
       [](const MPICommWrapper comm, int nparts,
