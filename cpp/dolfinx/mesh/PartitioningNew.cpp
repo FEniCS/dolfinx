@@ -450,19 +450,19 @@ PartitioningNew::create_distributed_adjacency_list(
     throw std::runtime_error("Missing cell-vertex connectivity.");
   const Eigen::Array<std::int32_t, Eigen::Dynamic, 1>& data_old = cv->array();
   std::vector<std::int32_t> data_new(data_old.rows());
-  for (Eigen::Index i = 0; i < data_new.size(); ++i)
+  for (std::size_t i = 0; i < data_new.size(); ++i)
     data_new[i] = local_to_local_new[data_old[i]];
 
   const Eigen::Array<std::int32_t, Eigen::Dynamic, 1>& offsets = cv->offsets();
   std::vector<std::int32_t> _offsets(offsets.data(),
                                      offsets.data() + offsets.rows());
 
-  std::cout << "Num owned: " << num_owned_vertices << std::endl;
-  std::cout << "Num ghosts: " << ghosts.size() << std::endl;
+  // std::cout << "Num owned: " << num_owned_vertices << std::endl;
+  // std::cout << "Num ghosts: " << ghosts.size() << std::endl;
 
-  std::cout << "Pre to return" << std::endl;
-  common::IndexMap tmp(comm, num_owned_vertices, ghosts, 1);
-  std::cout << "About to return" << std::endl;
+  // std::cout << "Pre to return" << std::endl;
+  // common::IndexMap tmp(comm, num_owned_vertices, ghosts, 1);
+  // std::cout << "About to return" << std::endl;
   return {graph::AdjacencyList<std::int32_t>(data_new, _offsets),
           common::IndexMap(comm, num_owned_vertices, ghosts, 1)};
 }

@@ -134,7 +134,7 @@ def test_partition():
     c0 = cpp.graph.AdjacencyList(vertex_map.size_local + vertex_map.num_ghosts)
     topology.set_connectivity(c0, 0, 0)
 
-    map0 = topology.index_map(0)
+    # map0 = topology.index_map(0)
     # if rank == 0:
     #     print("local", map0.size_local)
     #     print("global", map0.size_global)
