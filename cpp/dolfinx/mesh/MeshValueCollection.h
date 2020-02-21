@@ -278,7 +278,6 @@ MeshValueCollection<T>::MeshValueCollection(
         throw std::runtime_error("Entity not found in the mesh.");
 
       const std::size_t entity_index = map_it->second;
-      assert(entity_cells->num_links(entity_index) > 0);
 
       // For this entity need to find all linked cells
       // and local index wrt. these cells
@@ -286,6 +285,7 @@ MeshValueCollection<T>::MeshValueCollection(
       auto entity_cells = _mesh->topology()
                               .connectivity(_dim, mesh_tdim)
                               ->links(entity_index);
+      assert(entity_cells->num_links(entity_index) > 0);
 
       for (int i = 0; i < entity_cells.size(); ++i)
       {
