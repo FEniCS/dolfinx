@@ -195,7 +195,7 @@ MeshValueCollection<T>::MeshValueCollection(
 
   const int mesh_tdim = _mesh->topology().dim();
 
-  // Handle cells and vetices as a special case
+  // Handle cells and vertices as a special case
   if ((mesh_tdim == _dim) || (_dim == 0))
   {
     for (Eigen::Index cell_index = 0; cell_index < values_data.cols();
@@ -216,31 +216,38 @@ MeshValueCollection<T>::MeshValueCollection(
     // Map from {entity vertex indices} to entity index
     std::map<std::vector<std::int64_t>, std::size_t> entity_map;
 
-    auto map = _mesh->topology().index_map(0);
-    assert(map);
+    auto vertices_map = _mesh->topology().index_map(0);
+    assert(vertices_map);
 
-    const std::vector<std::int64_t> global_indices = map->global_indices(false);
+    const std::vector<std::int64_t> global_indices
+        = vertices_map->global_indices(false);
+
+    auto entities_map = _mesh->topology().index_map(_dim);
+    assert(entities_map);
+
+    const std::int32_t num_entities
+        = entities_map->size_local() + entities_map->num_ghosts();
 
     // Loop over all the entities of dimension _dim
-    for (auto& m : mesh::MeshRange(*mesh, _dim))
+    for (std::int32_t i = 0; i < num_entities; ++i)
     { 
       if (_dim == 0)
-        v[0] = global_indices[m.index()];
+        v[0] = global_indices[i];
       else
       {
-        int i = 0;
-        for (auto& vtx : mesh::EntityRange(m, 0))
+        auto entity_vertices = _mesh->topology().connectivity(_dim, 0)->links(i);
+        for (int j = 0; j < num_vertices_per_entity; ++j)
         {
-          v[i] = global_indices[vtx.index()];
-          i++;
+          v[j] = global_indices[entity_vertices[j]];
         }
         std::sort(v.begin(), v.end());
       }
-      entity_map[v] = m.index();
+      entity_map[v] = i;
     }
     _mesh->create_connectivity(_dim, mesh_tdim);
 
-    const std::shared_ptr<const graph::AdjacencyList<std::int32_t>> connectivity
+    const std::shared_ptr<const graph::AdjacencyList<std::int32_t>>
+        entity_cell_connectivity
         = _mesh->topology().connectivity(_dim, mesh_tdim);
 
     // Get cell type for entity on which the MVC lives
@@ -268,26 +275,34 @@ MeshValueCollection<T>::MeshValueCollection(
       // Find mesh entity given its vertex indices
       auto map_it = entity_map.find(v);
       if (map_it == entity_map.end())
-      {
-        throw std::runtime_error(
-            "Entity not found in the mesh. Check local mesh ordering.");
-      }
+        throw std::runtime_error("Entity not found in the mesh.");
 
       const std::size_t entity_index = map_it->second;
-      assert(connectivity->num_links(entity_index) > 0);
+      assert(entity_cells->num_links(entity_index) > 0);
 
-      const MeshEntity entity(*_mesh, _dim, entity_index);
-      for (int i = 0; i < connectivity->num_links(entity_index); ++i)
+      // For this entity need to find all linked cells
+      // and local index wrt. these cells
+      assert(_mesh->topology().connectivity(_dim, mesh_tdim));
+      auto entity_cells = _mesh->topology()
+                              .connectivity(_dim, mesh_tdim)
+                              ->links(entity_index);
+
+      for (int i = 0; i < entity_cells.size(); ++i)
       {
-        // Create cell
-        const mesh::MeshEntity cell(*_mesh, mesh_tdim,
-                              connectivity->links(entity_index)[i]);
+        const int cell_index = entity_cells[i];
 
-        // Find the local entity index
-        const std::size_t local_entity = cell.index(entity);
+        assert(_mesh->topology().connectivity(mesh_tdim, _dim));
+        auto cell_entities = _mesh->topology()
+                                 .connectivity(mesh_tdim, _dim)
+                                 ->links(cell_index);
+
+        auto it = std::find(cell_entities.data(),
+                            cell_entities.data() + cell_entities.size(),
+                            entity_index);
+        const int local_entity = it - cell_entities.data();
 
         // Insert into map
-        _values.insert({{cell.index(), local_entity}, values_data(j)});
+        _values.insert({{cell_index, local_entity}, values_data(j)});
       }
     }
   }
