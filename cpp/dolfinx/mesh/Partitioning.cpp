@@ -516,6 +516,39 @@ Partitioning::partition_cells(MPI_Comm comm, int nparts,
   return partition;
 }
 //-----------------------------------------------------------------------------
+std::tuple<graph::AdjacencyList<std::int32_t>,
+           std::map<std::int64_t, std::int32_t>, std::int32_t>
+Partitioning::create_local_adjacency_list(
+    const graph::AdjacencyList<std::int64_t>& cells)
+{
+  const Eigen::Array<std::int64_t, Eigen::Dynamic, 1>& array = cells.array();
+  std::vector<std::int32_t> array_local(array.rows());
+
+  // Re-map global to local
+  int local = 0;
+  std::map<std::int64_t, std::int32_t> global_to_local;
+  for (int i = 0; i < array.rows(); ++i)
+  {
+    const std::int64_t global = array(i);
+    auto it = global_to_local.find(global);
+    if (it == global_to_local.end())
+    {
+      array_local[i] = local++;
+      global_to_local.insert({global, local});
+    }
+    else
+      array_local[i] = it->second;
+  }
+
+  // FIXME: Update AdjacencyList to avoid this
+  const Eigen::Array<std::int32_t, Eigen::Dynamic, 1>& offsets
+      = cells.offsets();
+  std::vector<std::int32_t> _offsets(offsets.data(),
+                                     offsets.data() + offsets.rows());
+  return {graph::AdjacencyList<std::int32_t>(array_local, _offsets),
+          global_to_local, local};
+}
+//-----------------------------------------------------------------------------
 std::pair<graph::AdjacencyList<std::int64_t>, std::vector<int>>
 Partitioning::distribute(const MPI_Comm& comm,
                          const graph::AdjacencyList<std::int64_t>& list,
