@@ -153,9 +153,12 @@ void fem::impl::assemble_cells(
 
     // Tabulate tensor
     auto coeff_cell = coeffs.row(cell_index);
-    auto e_ref_cell = cell_edge_reflections.row(cell_index);
-    auto f_ref_cell = cell_face_reflections.row(cell_index);
-    auto f_rot_cell = cell_face_rotations.row(cell_index);
+    const Eigen::Ref<const Eigen::Array<bool, 1, Eigen::Dynamic>> e_ref_cell
+        = cell_edge_reflections.row(cell_index);
+    const Eigen::Ref<const Eigen::Array<bool, 1, Eigen::Dynamic>> f_ref_cell
+        = cell_face_reflections.row(cell_index);
+    const Eigen::Ref<const Eigen::Array<uint8_t, 1, Eigen::Dynamic>> f_rot_cell
+        = cell_face_rotations.row(cell_index);
     Ae.setZero(num_dofs_per_cell0, num_dofs_per_cell1);
     kernel(Ae.data(), coeff_cell.data(), constant_values.data(),
            coordinate_dofs.data(), nullptr, nullptr, e_ref_cell.data(),
@@ -269,9 +272,12 @@ void fem::impl::assemble_exterior_facets(
 
     // Tabulate tensor
     auto coeff_cell = coeffs.row(cells[0]);
-    auto e_ref_cell = cell_edge_reflections.row(cells[0]);
-    auto f_ref_cell = cell_face_reflections.row(cells[0]);
-    auto f_rot_cell = cell_face_rotations.row(cells[0]);
+    const Eigen::Ref<const Eigen::Array<bool, 1, Eigen::Dynamic>> e_ref_cell
+        = cell_edge_reflections.row(cells[0]);
+    const Eigen::Ref<const Eigen::Array<bool, 1, Eigen::Dynamic>> f_ref_cell
+        = cell_face_reflections.row(cells[0]);
+    const Eigen::Ref<const Eigen::Array<uint8_t, 1, Eigen::Dynamic>> f_rot_cell
+        = cell_face_rotations.row(cells[0]);
     const std::uint8_t perm = perms(cells[0], local_facet);
     Ae.setZero(dmap0.size(), dmap1.size());
     fn(Ae.data(), coeff_cell.data(), constant_values.data(),
@@ -436,9 +442,12 @@ void fem::impl::assemble_interior_facets(
     }
 
     // Tabulate tensor
-    auto e_ref_cell = cell_edge_reflections.row(cell_index0);
-    auto f_ref_cell = cell_face_reflections.row(cell_index0);
-    auto f_rot_cell = cell_face_rotations.row(cell_index0);
+    const Eigen::Ref<const Eigen::Array<bool, 1, Eigen::Dynamic>> e_ref_cell
+        = cell_edge_reflections.row(cell_index0);
+    const Eigen::Ref<const Eigen::Array<bool, 1, Eigen::Dynamic>> f_ref_cell
+        = cell_face_reflections.row(cell_index0);
+    const Eigen::Ref<const Eigen::Array<uint8_t, 1, Eigen::Dynamic>> f_rot_cell
+        = cell_face_rotations.row(cell_index0);
     Ae.setZero(dmapjoint0.size(), dmapjoint1.size());
     fn(Ae.data(), coeff_array.data(), constant_values.data(),
        coordinate_dofs.data(), local_facet.data(), perm.data(),
