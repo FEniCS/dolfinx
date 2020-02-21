@@ -296,9 +296,9 @@ MeshValueCollection<T>::MeshValueCollection(
                                  .connectivity(mesh_tdim, _dim)
                                  ->links(cell_index);
 
-        auto it = std::find(cell_entities.data(),
-                            cell_entities.data() + cell_entities.size(),
-                            entity_index);
+        const auto it = std::find(cell_entities.data(),
+                                  cell_entities.data() + cell_entities.size(),
+                                  entity_index);
         const int local_entity = it - cell_entities.data();
 
         // Insert into map
