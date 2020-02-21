@@ -434,22 +434,21 @@ void Mesh::create_entity_permutations() const
   {
     for (int cell_n = 0; cell_n < num_cells; ++cell_n)
     {
-      const mesh::MeshEntity cell(*this, tdim, cell_n);
-
-      // Fetch all vertices for the cell here, for performance reasons
       auto cell_vertices = _topology->connectivity(tdim, 0)->links(cell_n);
-
       for (int d = 1; d < tdim; ++d)
       {
+        assert(_topology->connectivity(tdim, d));
+        auto cell_entities = _topology->connectivity(tdim, d)->links(cell_n);
         for (int i = 0; i < cell_num_entities(_topology->cell_type(), d); ++i)
         {
           // Get the facet
-          const int sub_e_n = cell.entities(d)[i];
+          const int sub_e_n = cell_entities[i];
 
           // Number of rotations and reflections to apply to the facet
           std::uint8_t rots = 0;
           std::uint8_t refs = 0;
 
+          assert(_topology->connectivity(d, 0));
           auto vertices = _topology->connectivity(d, 0)->links(sub_e_n);
 
           // If the entity is an interval, it should be oriented pointing from
@@ -514,16 +513,15 @@ void Mesh::create_entity_permutations() const
   {
     for (int cell_n = 0; cell_n < num_cells; ++cell_n)
     {
-      const mesh::MeshEntity cell(*this, tdim, cell_n);
-      // Fetch all vertices for the cell here, for performance reasons
       auto cell_vertices = this->topology().connectivity(tdim, 0)->links(cell_n);
-
       for (int d = 1; d < tdim; ++d)
       {
+        assert(_topology->connectivity(tdim, d));
+        auto cell_entities = _topology->connectivity(tdim, d)->links(cell_n);
         for (int i = 0; i < cell_num_entities(_topology->cell_type(), d); ++i)
         {
           // Get the facet
-          const int sub_e_n = cell.entities(d)[i];
+          const int sub_e_n = cell_entities[i];
 
           // Number of rotations and reflections to apply to the facet
           std::uint8_t rots = 0;
