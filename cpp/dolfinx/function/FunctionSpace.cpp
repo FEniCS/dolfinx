@@ -16,8 +16,6 @@
 #include <dolfinx/mesh/CoordinateDofs.h>
 #include <dolfinx/mesh/Geometry.h>
 #include <dolfinx/mesh/Mesh.h>
-#include <dolfinx/mesh/MeshEntity.h>
-#include <dolfinx/mesh/MeshIterator.h>
 #include <vector>
 
 using namespace dolfinx;
@@ -89,22 +87,18 @@ void FunctionSpace::interpolate_from_any(
   assert(v.function_space()->dofmap());
   const fem::DofMap& dofmap_v = *v.function_space()->dofmap();
 
+  auto map = _mesh->topology().index_map(tdim);
+  assert(map);
+
   // Iterate over mesh and interpolate on each cell
   la::VecReadWrapper v_vector_wrap(v.vector().vec());
   Eigen::Map<const Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1>> v_array
       = v_vector_wrap.x;
-  for (auto& cell : mesh::MeshRange(*_mesh, tdim))
+  const int num_cells = map->size_local() + map->num_ghosts();
+  for (int c = 0; c < num_cells; ++c)
   {
-    // FIXME: Move this out
-    if (!v.function_space()->has_cell(cell))
-    {
-      throw std::runtime_error("Restricting finite elements function in "
-                               "different elements not supported.");
-    }
-
-    const int cell_index = cell.index();
-    auto dofs_v = dofmap_v.cell_dofs(cell_index);
-    auto cell_dofs = dofmap.cell_dofs(cell_index);
+    auto dofs_v = dofmap_v.cell_dofs(c);
+    auto cell_dofs = dofmap.cell_dofs(c);
     assert(dofs_v.size() == cell_dofs.size());
     for (Eigen::Index i = 0; i < dofs_v.size(); ++i)
       expansion_coefficients[cell_dofs[i]] = v_array[dofs_v[i]];
@@ -335,18 +329,18 @@ FunctionSpace::tabulate_dof_coordinates() const
       coordinates(_element->space_dimension(), gdim);
   Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
       coordinate_dofs(num_dofs_g, gdim);
-  for (auto& cell : mesh::MeshRange(*_mesh, tdim))
+
+  auto map = _mesh->topology().index_map(tdim);
+  assert(map);
+  const int num_cells = map->size_local() + map->num_ghosts();
+  for (int c = 0; c < num_cells; ++c)
   {
     // Update cell
-    const int cell_index = cell.index();
     for (int i = 0; i < num_dofs_g; ++i)
-    {
-      coordinate_dofs.row(i)
-          = x_g.row(cell_g[pos_g[cell_index] + i]).head(gdim);
-    }
+      coordinate_dofs.row(i) = x_g.row(cell_g[pos_g[c] + i]).head(gdim);
 
     // Get local-to-global map
-    auto dofs = _dofmap->cell_dofs(cell.index());
+    auto dofs = _dofmap->cell_dofs(c);
 
     // Tabulate dof coordinates on cell
     cmap.push_forward(coordinates, X, coordinate_dofs);
@@ -403,16 +397,19 @@ void FunctionSpace::set_x(
       coordinates(_element->space_dimension(), _mesh->geometry().dim());
   Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
       coordinate_dofs(num_dofs_g, gdim);
-  for (auto& cell : mesh::MeshRange(*_mesh, tdim))
+
+  auto map = _mesh->topology().index_map(tdim);
+  assert(map);
+  const int num_cells = map->size_local() + map->num_ghosts();
+  for (int c = 0; c < num_cells; ++c)
   {
     // Update UFC cell
-    const int cell_index = cell.index();
     for (int i = 0; i < num_dofs_g; ++i)
       for (int j = 0; j < gdim; ++j)
-        coordinate_dofs(i, j) = x_g(cell_g[pos_g[cell_index] + i], j);
+        coordinate_dofs(i, j) = x_g(cell_g[pos_g[c] + i], j);
 
     // Get cell local-to-global map
-    auto dofs = _dofmap->cell_dofs(cell.index());
+    auto dofs = _dofmap->cell_dofs(c);
 
     // Tabulate dof coordinates
     cmap.push_forward(coordinates, X, coordinate_dofs);
@@ -497,10 +494,14 @@ void FunctionSpace::interpolate(
   assert(_dofmap->element_dof_layout);
   std::vector<PetscScalar> cell_coefficients(
       _dofmap->element_dof_layout->num_dofs());
-  for (auto& cell : mesh::MeshRange(*_mesh, tdim))
+
+  auto map = _mesh->topology().index_map(tdim);
+  assert(map);
+  const int num_cells = map->size_local() + map->num_ghosts();
+  for (int c = 0; c < num_cells; ++c)
   {
     // Get dofmap for cell
-    auto cell_dofs = _dofmap->cell_dofs(cell.index());
+    auto cell_dofs = _dofmap->cell_dofs(c);
     for (Eigen::Index i = 0; i < cell_dofs.rows(); ++i)
     {
       for (Eigen::Index j = 0; j < value_size; ++j)
