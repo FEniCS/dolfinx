@@ -143,7 +143,6 @@ def test_partition():
         print("ghosts", map0.ghosts)
     print("ghosts owners", map0.ghost_owners())
 
-
     # test = topology.index_map(0)
     # print(test.size_local)
     v = topology.connectivity(0, 0)
