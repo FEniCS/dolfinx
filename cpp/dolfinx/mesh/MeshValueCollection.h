@@ -69,8 +69,7 @@ public:
                                           Eigen::RowMajor>>& values_data);
 
   /// Destructor
-  ~MeshValueCollection()
-  = default;
+  ~MeshValueCollection() = default;
 
   /// Assignment operator
   /// @param[in] mesh_value_collection A MeshValueCollection object used
@@ -209,8 +208,11 @@ MeshValueCollection<T>::MeshValueCollection(
   {
     // Number of vertices per cell is equal to the size of first
     // array of connectivity.
-    const int num_vertices_per_entity
-          = _mesh->topology().connectivity(_dim, 0)->num_links(0);
+    auto e_to_v = _mesh->topology().connectivity(_dim, 0);
+    assert(e_to_v);
+
+    // FIXME: this is bad - get number of vertices from cell type
+    const int num_vertices_per_entity = e_to_v->num_links(0);
     std::vector<std::int64_t> v(num_vertices_per_entity);
 
     // Map from {entity vertex indices} to entity index
@@ -230,12 +232,12 @@ MeshValueCollection<T>::MeshValueCollection(
 
     // Loop over all the entities of dimension _dim
     for (std::int32_t i = 0; i < num_entities; ++i)
-    { 
+    {
       if (_dim == 0)
         v[0] = global_indices[i];
       else
       {
-        auto entity_vertices = _mesh->topology().connectivity(_dim, 0)->links(i);
+        auto entity_vertices = e_to_v->links(i);
         for (int j = 0; j < num_vertices_per_entity; ++j)
         {
           v[j] = global_indices[entity_vertices[j]];
@@ -246,9 +248,9 @@ MeshValueCollection<T>::MeshValueCollection(
     }
     _mesh->create_connectivity(_dim, mesh_tdim);
 
-    const std::shared_ptr<const graph::AdjacencyList<std::int32_t>>
-        entity_cell_connectivity
+    auto entity_cell_connectivity
         = _mesh->topology().connectivity(_dim, mesh_tdim);
+    assert(entity_cell_connectivity);
 
     // Get cell type for entity on which the MVC lives
     const mesh::CellType entity_cell_type
@@ -363,8 +365,8 @@ MeshValueCollection<T>::MeshValueCollection(
 }
 //---------------------------------------------------------------------------
 template <typename T>
-MeshValueCollection<T>& MeshValueCollection<T>::
-operator=(const MeshFunction<T>& mesh_function)
+MeshValueCollection<T>&
+MeshValueCollection<T>::operator=(const MeshFunction<T>& mesh_function)
 {
   _mesh = mesh_function.mesh();
   _dim = mesh_function.dim();
