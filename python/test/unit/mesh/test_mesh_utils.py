@@ -100,9 +100,6 @@ def test_topology_partition():
                                      dest)
     assert cpp.MPI.sum(cpp.MPI.comm_world, cells.num_nodes) == 4
 
-    # print("cells:", cells.num_nodes)
-    # print(dest)
-
     # Build local cell-vertex connectivity (with local vertex indices
     # [0, 1, 2, ..., n)), map from global indices in 'cells' to the
     # local vertex indices, and

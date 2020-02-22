@@ -8,12 +8,14 @@
 
 #include "cell_types.h"
 #include <Eigen/Dense>
+#include <array>
 #include <cstdint>
 #include <dolfinx/common/IndexMap.h>
 #include <dolfinx/common/MPI.h>
 #include <dolfinx/graph/AdjacencyList.h>
 #include <map>
 #include <utility>
+#include <vector>
 
 namespace dolfinx
 {
@@ -43,6 +45,10 @@ class Topology;
 class PartitioningNew
 {
 public:
+  /// Compute interior/boundary points
+  std::array<std::vector<std::int32_t>, 2>
+  vertex_indices(const mesh::Topology& topology_local);
+
   /// NEW: Compute destination rank for mesh cells using a graph
   /// partitioner
   /// @param[in] comm MPI Communicator

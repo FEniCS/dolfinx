@@ -18,6 +18,53 @@ using namespace dolfinx;
 using namespace dolfinx::mesh;
 
 //-----------------------------------------------------------------------------
+std::array<std::vector<std::int32_t>, 2>
+PartitioningNew::vertex_indices(const mesh::Topology& topology_local)
+{
+  // Get list of boundary vertices
+  const int dim = topology_local.dim();
+  auto facet_cell = topology_local.connectivity(dim - 1, dim);
+  if (!facet_cell)
+  {
+    throw std::runtime_error(
+        "Need facet-cell connectivity to build distributed adjacency list.");
+  }
+
+  auto facet_vertex = topology_local.connectivity(dim - 1, 0);
+  if (!facet_vertex)
+  {
+    throw std::runtime_error(
+        "Need facet-vertex connectivity to build distributed adjacency list.");
+  }
+
+  auto map_vertex = topology_local.index_map(0);
+  if (!map_vertex)
+    throw std::runtime_error("Need vertex IndexMap from topology.");
+  assert(map_vertex->num_ghosts() == 0);
+
+  std::vector<bool> exterior_vertex(map_vertex->size_local(), false);
+  for (int f = 0; f < facet_cell->num_nodes(); ++f)
+  {
+    if (facet_cell->num_links(f) == 1)
+    {
+      auto vertices = facet_vertex->links(f);
+      for (int j = 0; j < vertices.rows(); ++j)
+        exterior_vertex[vertices[j]] = true;
+    }
+  }
+
+  std::vector<std::int32_t> interior, exterior;
+  for (int i = 0; i < map_vertex->size_local(); ++i)
+  {
+    if (exterior_vertex[i])
+      exterior.push_back(i);
+    else
+      interior.push_back(i);
+  }
+
+  return {std::move(interior), std::move(exterior)};
+}
+//-----------------------------------------------------------------------------
 std::vector<int> PartitioningNew::partition_cells(
     MPI_Comm comm, int nparts, const mesh::CellType cell_type,
     const graph::AdjacencyList<std::int64_t>& cells)
@@ -84,16 +131,10 @@ PartitioningNew::create_local_adjacency_list(
 //-----------------------------------------------------------------------------
 std::tuple<graph::AdjacencyList<std::int32_t>, common::IndexMap,
            std::vector<std::int64_t>>
-// graph::AdjacencyList<std::int32_t>
-// common::IndexMap
 PartitioningNew::create_distributed_adjacency_list(
     MPI_Comm comm, const mesh::Topology& topology_local,
     const std::map<std::int64_t, std::int32_t>& global_to_local_vertices)
 {
-  // Create distributed cell-vertex connectivity
-  //   1. New AdjacencyList
-  //   2. IndexMap for vertices
-
   // Get list of boundary vertices
   const int dim = topology_local.dim();
   auto facet_cell = topology_local.connectivity(dim - 1, dim);
@@ -110,8 +151,6 @@ PartitioningNew::create_distributed_adjacency_list(
         "Need facet-vertex connectivity to build distributed adjacency list.");
   }
 
-  // std::cout << "Stage 1" << std::endl;
-
   auto map_vertex = topology_local.index_map(0);
   if (!map_vertex)
     throw std::runtime_error("Need vertex IndexMap from topology.");
@@ -126,8 +165,6 @@ PartitioningNew::create_distributed_adjacency_list(
         exterior_vertex[vertices[j]] = true;
     }
   }
-
-  // std::cout << "Stage 2" << std::endl;
 
   // Get maximum global index across all processes
   std::int64_t my_max_global_index = 0;
@@ -150,8 +187,6 @@ PartitioningNew::create_distributed_adjacency_list(
       number_to_send[owner] += 1;
     }
   }
-
-  // std::cout << "Stage 3" << std::endl;
 
   // Compute global vertex send displacements
   std::vector<int> disp_send(size + 1, 0);
@@ -201,7 +236,6 @@ PartitioningNew::create_distributed_adjacency_list(
   // Build list of sharing processes for each vertex
   const std::array<std::int64_t, 2> range
       = dolfinx::MPI::local_range(comm, max_global_index + 1);
-  // std::vector<std::set<int>> owners(disp_recv.back());
   std::vector<std::set<int>> owners(range[1] - range[0]);
   for (int i = 0; i < size; ++i)
   {
@@ -371,9 +405,6 @@ PartitioningNew::create_distributed_adjacency_list(
   {
     num_receive[p]
         = 2 * std::count(procs.data(), procs.data() + procs.rows(), p);
-    // if (rank == 1)
-    //   std::cout << "Num to receive: " << rank << ", " << p << ", "
-    //             << num_receive[p] << std::endl;
   }
 
   const int num_neighbours = neighbours.size();
@@ -395,11 +426,6 @@ PartitioningNew::create_distributed_adjacency_list(
       if (global_new >= 0)
         global_new += offset_global;
 
-      // if (rank == 1)
-      //   std::cout << "Global: " << p << ", " << it->first << ", " <<
-      //   global_new
-      //             << std::endl;
-
       auto procs = sharing_processes->links(i);
       for (int k = 0; k < procs.rows(); ++k)
       {
@@ -416,15 +442,6 @@ PartitioningNew::create_distributed_adjacency_list(
               &requests[p]);
   }
 
-  // std::cout << "-------------" << std::endl;
-  // if (rank == 0)
-  // {
-  //   int k = 1;
-  //   for (std::size_t j = 0; j < dsend.size(); j += 2)
-  //     std::cout << "Send data (old, new): " << dsend[k][j] << ", "
-  //               << dsend[k][j + 1] << std::endl;
-  // }
-
   std::vector<std::vector<int>> drecv(neighbours.size());
   for (std::size_t p = 0; p < neighbours.size(); ++p)
   {
@@ -432,7 +449,6 @@ PartitioningNew::create_distributed_adjacency_list(
     assert(it != num_receive.end());
 
     drecv[p].resize(it->second);
-    // std::cout << "Calling isend" << std::endl;
     MPI_Irecv(drecv[p].data(), drecv[p].size(), MPI_INT, p, 0, comm,
               &requests[num_neighbours + p]);
   }
@@ -448,15 +464,8 @@ PartitioningNew::create_distributed_adjacency_list(
         global_old_new.insert({drecv[i][j], drecv[i][j + 1]});
   }
 
-  // if (rank == 0)
-  // {
-  //   for (auto p : global_old_new)
-  //     std::cout << "Pairs: " << p.first << ", " << p.second << std::endl;
-  // }
-
   // Add ghosts
 
-  //  global_to_local_unowned.insert(*it);
   std::vector<std::int64_t> ghosts;
   for (auto it = global_to_local_unowned.begin();
        it != global_to_local_unowned.end(); ++it)
@@ -470,13 +479,6 @@ PartitioningNew::create_distributed_adjacency_list(
       ghosts.push_back(pair->second);
     }
   }
-
-  // if (rank == 1)
-  // {
-  //   std::cout << "Ghosts: " << std::endl;
-  //   for (auto g : ghosts)
-  //     std::cout << "  " << g << std::endl;
-  // }
 
   auto cv = topology_local.connectivity(dim, 0);
   if (!cv)
