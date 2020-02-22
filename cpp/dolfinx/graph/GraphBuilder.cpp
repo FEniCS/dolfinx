@@ -371,13 +371,12 @@ dolfinx::graph::Graph dolfinx::graph::GraphBuilder::local_graph(
     // Build list of entities, moving between levels
     for (std::size_t level = 1; level < coloring_type.size(); ++level)
     {
-      for (auto entity_index = entity_list0.cbegin();
-           entity_index != entity_list0.cend(); ++entity_index)
+      for (auto entity_index : entity_list0)
       {
         auto connectivity = mesh.topology().connectivity(
             coloring_type[level - 1], coloring_type[level]);
         assert(connectivity);
-        auto links = connectivity->links(e);
+        auto links = connectivity->links(entity_index);
         for (int neighbor = 0; neighbor < links.rows(); ++neighbor)
           entity_list1.insert(links[neighbor]);
       }
