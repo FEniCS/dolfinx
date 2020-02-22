@@ -117,6 +117,8 @@ def test_partition():
     # return
     cells, vertex_map = cpp.mesh.create_distributed_adjacency_list(cpp.MPI.comm_world, topology,
                                                                    global_to_local_vertices)
+    # cells = cpp.mesh.create_distributed_adjacency_list(cpp.MPI.comm_world, topology,
+    #                                                    global_to_local_vertices)
     print("2222")
     print("Try", vertex_map.size_local)
     if rank == 1:
@@ -139,7 +141,8 @@ def test_partition():
         print("local", map0.size_local)
         print("global", map0.size_global)
         print("ghosts", map0.ghosts)
-        print("ghosts owners", map0.ghost_owners)
+    print("ghosts owners", map0.ghost_owners())
+
 
     # test = topology.index_map(0)
     # print(test.size_local)

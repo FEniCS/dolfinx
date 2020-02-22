@@ -82,8 +82,9 @@ PartitioningNew::create_local_adjacency_list(
           global_to_local, local};
 }
 //-----------------------------------------------------------------------------
-// std::pair<graph::AdjacencyList<std::int32_t>, common::IndexMap>
 std::pair<graph::AdjacencyList<std::int32_t>, common::IndexMap>
+// graph::AdjacencyList<std::int32_t>
+// common::IndexMap
 PartitioningNew::create_distributed_adjacency_list(
     MPI_Comm comm, const mesh::Topology& topology_local,
     const std::map<std::int64_t, std::int32_t>& global_to_local_vertices)
@@ -462,10 +463,13 @@ PartitioningNew::create_distributed_adjacency_list(
   // std::cout << "Num ghosts: " << ghosts.size() << std::endl;
 
   // std::cout << "Pre to return" << std::endl;
-  // common::IndexMap tmp(comm, num_owned_vertices, ghosts, 1);
+  graph::AdjacencyList<std::int32_t> tmp0(data_new, _offsets);
+  common::IndexMap tmp1(comm, num_owned_vertices, ghosts, 1);
+
   std::cout << "About to return" << std::endl;
-  return {graph::AdjacencyList<std::int32_t>(data_new, _offsets),
-          common::IndexMap(comm, num_owned_vertices, ghosts, 1)};
+  return {std::move(tmp0), std::move(tmp1)};
+  // return {std::move(graph::AdjacencyList<std::int32_t>(data_new, _offsets)),
+  //         std::move(common::IndexMap(comm, num_owned_vertices, ghosts, 1))};
 }
 //-----------------------------------------------------------------------------
 std::pair<graph::AdjacencyList<std::int64_t>, std::vector<int>>
@@ -484,7 +488,7 @@ PartitioningNew::distribute(const MPI_Comm& comm,
   // Compute send array displacements
   std::vector<int> disp_send(size + 1, 0);
   std::partial_sum(num_per_dest_send.begin(), num_per_dest_send.end(),
-                      disp_send.begin() + 1);
+                   disp_send.begin() + 1);
 
   // Send/receive number of items to communicate
   std::vector<int> num_per_dest_recv(size, 0);
@@ -494,7 +498,7 @@ PartitioningNew::distribute(const MPI_Comm& comm,
   // Compite receive array displacements
   std::vector<int> disp_recv(size + 1, 0);
   std::partial_sum(num_per_dest_recv.begin(), num_per_dest_recv.end(),
-                      disp_recv.begin() + 1);
+                   disp_recv.begin() + 1);
 
   // Prepare send buffer
   std::vector<int> offset = disp_send;

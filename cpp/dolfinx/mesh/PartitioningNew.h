@@ -75,6 +75,8 @@ public:
   // static std::pair<graph::AdjacencyList<std::int32_t>, common::IndexMap>
   // static graph::AdjacencyList<std::int32_t>
   static std::pair<graph::AdjacencyList<std::int32_t>, common::IndexMap>
+  // static graph::AdjacencyList<std::int32_t>
+  // static common::IndexMap
   create_distributed_adjacency_list(
       MPI_Comm comm, const mesh::Topology& topology_local,
       const std::map<std::int64_t, std::int32_t>& global_to_local_vertices);
