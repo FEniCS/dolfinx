@@ -98,9 +98,6 @@ public:
     }
   }
 
-  /// Compute local index of given incident entity (error if not found)
-  /// @param[in] entity The mesh entity.
-  /// @return The local index of given entity.
   // int index(const MeshEntity& entity) const;
 
   /// Return informal string representation (pretty-print)
