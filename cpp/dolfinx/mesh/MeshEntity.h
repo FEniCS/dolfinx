@@ -8,7 +8,6 @@
 
 #include "Mesh.h"
 #include "Topology.h"
-#include <dolfinx/graph/AdjacencyList.h>
 
 namespace dolfinx
 {
@@ -97,14 +96,6 @@ public:
       return initialized_mesh_entities;
     }
   }
-
-  /// To remove
-  // int index(const MeshEntity& entity) const;
-
-  /// Return informal string representation (pretty-print)
-  /// @param[in] verbose Flag to turn on additional output
-  /// @return An informal representation of the function space
-  std::string str(bool verbose) const;
 
 protected:
   friend class MeshRange;

@@ -22,7 +22,6 @@ target_sources(dolfinx PRIVATE
   ${CMAKE_CURRENT_SOURCE_DIR}/CoordinateDofs.cpp
   ${CMAKE_CURRENT_SOURCE_DIR}/DistributedMeshTools.cpp
   ${CMAKE_CURRENT_SOURCE_DIR}/Mesh.cpp
-  ${CMAKE_CURRENT_SOURCE_DIR}/MeshEntity.cpp
   ${CMAKE_CURRENT_SOURCE_DIR}/Geometry.cpp
   ${CMAKE_CURRENT_SOURCE_DIR}/Ordering.cpp
   ${CMAKE_CURRENT_SOURCE_DIR}/Partitioning.cpp

@@ -236,9 +236,7 @@ void mesh(py::module& m)
            py::overload_cast<>(&dolfinx::mesh::MeshEntity::index, py::const_),
            "Entity index")
       .def("entities", &dolfinx::mesh::MeshEntity::entities,
-           py::return_value_policy::reference_internal)
-      .def("__str__",
-           [](dolfinx::mesh::MeshEntity& self) { return self.str(false); });
+           py::return_value_policy::reference_internal);
 
   py::class_<dolfinx::mesh::EntityRange,
              std::shared_ptr<dolfinx::mesh::EntityRange>>(
