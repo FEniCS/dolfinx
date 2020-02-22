@@ -492,8 +492,8 @@ PartitioningNew::create_distributed_adjacency_list(
   std::vector<std::int32_t> _offsets(offsets.data(),
                                      offsets.data() + offsets.rows());
 
-  return {std::move(graph::AdjacencyList<std::int32_t>(data_new, _offsets)),
-          std::move(common::IndexMap(comm, num_owned_vertices, ghosts, 1)),
+  return {graph::AdjacencyList<std::int32_t>(data_new, _offsets),
+          common::IndexMap(comm, num_owned_vertices, ghosts, 1),
           std::move(local_to_original)};
 }
 //-----------------------------------------------------------------------------
