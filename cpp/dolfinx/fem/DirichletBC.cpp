@@ -37,8 +37,14 @@ std::vector<std::int32_t>
 get_remote_bcs1(const common::IndexMap& map,
                 const std::vector<std::int32_t>& dofs_local)
 {
+  const std::vector<std::int32_t>& neighbours = map.neighbours();
+  MPI_Comm comm;
+  MPI_Dist_graph_create_adjacent(map.mpi_comm(), neighbours.size(),
+                                 neighbours.data(), MPI_UNWEIGHTED,
+                                 neighbours.size(), neighbours.data(),
+                                 MPI_UNWEIGHTED, MPI_INFO_NULL, false, &comm);
+
   // Get number of processes in neighbourhood
-  MPI_Comm comm = map.mpi_comm_neighborhood();
   int num_neighbours(-1), outdegree(-2), weighted(-1);
   MPI_Dist_graph_neighbors_count(comm, &num_neighbours, &outdegree, &weighted);
   assert(num_neighbours == outdegree);
@@ -82,6 +88,8 @@ get_remote_bcs1(const common::IndexMap& map,
   std::vector<std::int32_t> dofs = map.global_to_local(dofs_received, false);
   dofs.erase(std::remove(dofs.begin(), dofs.end(), -1), dofs.end());
 
+  MPI_Comm_free(&comm);
+
   return dofs;
 }
 //-----------------------------------------------------------------------------
@@ -99,7 +107,13 @@ get_remote_bcs2(const common::IndexMap& map0, const common::IndexMap& map1,
                 const std::vector<std::array<std::int32_t, 2>>& dofs_local)
 {
   // Get number of processes in neighbourhood
-  MPI_Comm comm0 = map0.mpi_comm_neighborhood();
+  const std::vector<std::int32_t>& neighbours = map0.neighbours();
+  MPI_Comm comm0;
+  MPI_Dist_graph_create_adjacent(map0.mpi_comm(), neighbours.size(),
+                                 neighbours.data(), MPI_UNWEIGHTED,
+                                 neighbours.size(), neighbours.data(),
+                                 MPI_UNWEIGHTED, MPI_INFO_NULL, false, &comm0);
+
   int num_neighbours(-1), outdegree(-2), weighted(-1);
   MPI_Dist_graph_neighbors_count(comm0, &num_neighbours, &outdegree, &weighted);
   assert(num_neighbours == outdegree);
@@ -169,6 +183,8 @@ get_remote_bcs2(const common::IndexMap& map0, const common::IndexMap& map1,
   dofs.reserve(dofs0.size());
   for (std::size_t i = 0; i < dofs0.size(); ++i)
     dofs.push_back({dofs0[i], dofs1[i]});
+
+  MPI_Comm_free(&comm0);
 
   return dofs;
 }
@@ -518,7 +534,7 @@ DirichletBC::DirichletBC(
   _dofs.col(0) = V_dofs;
   _dofs.col(1) = V_dofs;
 
-  const int owned_size = _function_space->dofmap()->index_map->block_size
+  const int owned_size = _function_space->dofmap()->index_map->block_size()
                          * _function_space->dofmap()->index_map->size_local();
   auto it = std::lower_bound(_dofs.col(0).data(),
                              _dofs.col(0).data() + _dofs.rows(), owned_size);
@@ -532,7 +548,7 @@ DirichletBC::DirichletBC(
     std::shared_ptr<const function::FunctionSpace> V)
     : _function_space(V), _g(g), _dofs(V_g_dofs)
 {
-  const int owned_size = _function_space->dofmap()->index_map->block_size
+  const int owned_size = _function_space->dofmap()->index_map->block_size()
                          * _function_space->dofmap()->index_map->size_local();
   auto it = std::lower_bound(_dofs.col(0).data(),
                              _dofs.col(0).data() + _dofs.rows(), owned_size);

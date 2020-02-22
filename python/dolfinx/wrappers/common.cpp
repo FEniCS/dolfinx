@@ -61,15 +61,15 @@ void common(py::module& m)
                              &dolfinx::common::IndexMap::size_global)
       .def_property_readonly("num_ghosts",
                              &dolfinx::common::IndexMap::num_ghosts)
-      .def_readonly("block_size", &dolfinx::common::IndexMap::block_size,
-                    "Return block size")
+      .def_property_readonly("block_size",
+                             &dolfinx::common::IndexMap::block_size,
+                             "Return block size")
       .def_property_readonly("local_range",
                              &dolfinx::common::IndexMap::local_range,
                              "Range of indices owned by this map")
-      .def_property_readonly("ghost_owners",
-                             &dolfinx::common::IndexMap::ghost_owners,
-                             py::return_value_policy::reference_internal,
-                             "Return owning process for each ghost index")
+      .def("ghost_owners", &dolfinx::common::IndexMap::ghost_owners,
+           py::return_value_policy::reference_internal,
+           "Return owning process for each ghost index")
       .def_property_readonly("ghosts", &dolfinx::common::IndexMap::ghosts,
                              py::return_value_policy::reference_internal,
                              "Return list of ghost indices")
@@ -222,6 +222,9 @@ void mpi(py::module& m)
       .def_static("sum",
                   [](const MPICommWrapper comm, std::complex<double> value) {
                     return dolfinx::MPI::sum(comm.get(), value);
-                  });
+                  })
+      .def_static("sum", [](const MPICommWrapper comm, std::int64_t value) {
+        return dolfinx::MPI::sum(comm.get(), value);
+      });
 }
 } // namespace dolfinx_wrappers

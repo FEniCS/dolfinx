@@ -31,7 +31,7 @@
 Vec dolfinx::la::create_petsc_vector(const dolfinx::common::IndexMap& map)
 {
   return dolfinx::la::create_petsc_vector(map.mpi_comm(), map.local_range(),
-                                          map.ghosts(), map.block_size);
+                                          map.ghosts(), map.block_size());
 }
 //-----------------------------------------------------------------------------
 Vec dolfinx::la::create_petsc_vector(
@@ -93,8 +93,8 @@ Mat dolfinx::la::create_petsc_matrix(
   // Get IndexMaps from sparsity patterm, and block size
   std::array<std::shared_ptr<const common::IndexMap>, 2> index_maps
       = {{sparsity_pattern.index_map(0), sparsity_pattern.index_map(1)}};
-  const int bs0 = index_maps[0]->block_size;
-  const int bs1 = index_maps[1]->block_size;
+  const int bs0 = index_maps[0]->block_size();
+  const int bs1 = index_maps[1]->block_size();
 
   // Get global and local dimensions
   const std::size_t M = bs0 * index_maps[0]->size_global();
@@ -228,7 +228,7 @@ std::vector<IS> dolfinx::la::create_petsc_index_sets(
   {
     assert(maps[i]);
     const int size = maps[i]->size_local() + maps[i]->num_ghosts();
-    const int bs = maps[i]->block_size;
+    const int bs = maps[i]->block_size();
     std::vector<PetscInt> index(bs * size);
     std::iota(index.begin(), index.end(), offset);
 
@@ -404,7 +404,7 @@ dolfinx::la::get_local_vectors(const Vec x,
   for (const common::IndexMap* map : maps)
   {
     assert(map);
-    offset_owned += map->size_local() * map->block_size;
+    offset_owned += map->size_local() * map->block_size();
   }
 
   // Unwrap PETSc vector
@@ -416,7 +416,7 @@ dolfinx::la::get_local_vectors(const Vec x,
   int offset_ghost = offset_owned; // Ghost DoFs start after owned
   for (const common::IndexMap* map : maps)
   {
-    const int bs = map->block_size;
+    const int bs = map->block_size();
     const int size_owned = map->size_local() * bs;
     const int size_ghost = map->num_ghosts() * bs;
     x_b.emplace_back(
@@ -441,7 +441,7 @@ dolfinx::la::get_local_vectors(const Vec x,
 //   for (const common::IndexMap* map : maps)
 //   {
 //     assert(map);
-//     offset_owned += map->size_local() * map->block_size;
+//     offset_owned += map->size_local() * map->block_size();
 //   }
 
 //   // Unwrap PETSc vector
@@ -455,7 +455,7 @@ dolfinx::la::get_local_vectors(const Vec x,
 //   {
 //     VecCreate
 
-//     const int bs = map->block_size;
+//     const int bs = map->block_size();
 //     const int size_owned = map->size_local() * bs;
 //     const int size_ghost = map->num_ghosts() * bs;
 //     x_b.emplace_back(
@@ -488,7 +488,7 @@ void dolfinx::la::scatter_local_vectors(
   for (const common::IndexMap* map : maps)
   {
     assert(map);
-    offset_owned += map->size_local() * map->block_size;
+    offset_owned += map->size_local() * map->block_size();
   }
 
   // Copy Eigen vectors into PETSc Vec
@@ -497,7 +497,7 @@ void dolfinx::la::scatter_local_vectors(
   la::VecWrapper x_wrapper(x);
   for (std::size_t i = 0; i < maps.size(); ++i)
   {
-    const int bs = maps[i]->block_size;
+    const int bs = maps[i]->block_size();
     const int size_owned = maps[i]->size_local() * bs;
     const int size_ghost = maps[i]->num_ghosts() * bs;
     x_wrapper.x.segment(offset, size_owned) = x_b[i].head(size_owned);

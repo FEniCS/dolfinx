@@ -7,12 +7,12 @@
 #include "utils.h"
 #include "Geometry.h"
 #include "MeshEntity.h"
-#include "MeshIterator.h"
 #include "cell_types.h"
 #include <Eigen/Dense>
 #include <algorithm>
 #include <cfloat>
 #include <cstdlib>
+#include <dolfinx/common/IndexMap.h>
 #include <dolfinx/fem/ElementDofLayout.h>
 #include <stdexcept>
 
@@ -761,21 +761,28 @@ mesh::compute_marked_boundary_entities(
   if (boundary_marked.rows() != x_boundary.cols())
     throw std::runtime_error("Length of array of boundary markers is wrong.");
 
+  auto e_to_v = mesh.topology().connectivity(dim, 0);
+  assert(e_to_v);
+
   // Iterate over entities and build vector of marked entities
   std::vector<std::int32_t> entities;
   const std::vector<bool> boundary_entity = mesh.topology().on_boundary(dim);
-  for (auto& e : mesh::MeshRange(mesh, dim))
+  auto map = mesh.topology().index_map(dim);
+  assert(map);
+  const int num_entities = map->size_local() + map->num_ghosts();
+  for (int e = 0; e < num_entities; ++e)
   {
     // Consider boundary entities only
-    if (boundary_entity[e.index()])
+    if (boundary_entity[e])
     {
       // Assume all vertices on this facet are marked
       bool all_vertices_marked = true;
 
       // Iterate over facet vertices
-      for (const auto& v : mesh::EntityRange(e, 0))
+      auto vertices = e_to_v->links(e);
+      for (int i = 0; i < vertices.rows(); ++i)
       {
-        const std::int32_t idx = v.index();
+        const std::int32_t idx = vertices[i];
         assert(boundary_vertex[idx] < boundary_marked.rows());
         assert(boundary_vertex[idx] != -1);
         if (!boundary_marked[boundary_vertex[idx]])
@@ -787,7 +794,7 @@ mesh::compute_marked_boundary_entities(
 
       // Mark facet with all vertices marked
       if (all_vertices_marked)
-        entities.push_back(e.index());
+        entities.push_back(e);
     }
   }
 

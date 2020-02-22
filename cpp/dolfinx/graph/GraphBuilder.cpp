@@ -323,7 +323,7 @@ dolfinx::graph::GraphBuilder::local_graph(const mesh::Mesh& mesh,
   const int tdim = mesh.topology().dim();
   auto map = mesh.topology().index_map(tdim);
   assert(map);
-  assert(map->block_size == 1);
+  assert(map->block_size() == 1);
   const int num_cells = map->size_local() + map->num_ghosts();
   for (int c = 0; c < num_cells; ++c)
   {
@@ -360,7 +360,7 @@ dolfinx::graph::Graph dolfinx::graph::GraphBuilder::local_graph(
   // Build graph
   auto map = mesh.topology().index_map(coloring_type[0]);
   assert(map);
-  assert(map->block_size == 1);
+  assert(map->block_size() == 1);
   const int num_entities = map->size_local() + map->num_ghosts();
   for (int e = 0; e < num_entities; ++e)
   {
@@ -412,7 +412,7 @@ dolfinx::graph::GraphBuilder::local_graph(const mesh::Mesh& mesh,
   // Build graph
   auto map = mesh.topology().index_map(dim0);
   assert(map);
-  assert(map->block_size == 1);
+  assert(map->block_size() == 1);
   const int num_entities = map->size_local() + map->num_ghosts();
   for (int colored_entity = 0; colored_entity < num_entities; ++colored_entity)
   {
