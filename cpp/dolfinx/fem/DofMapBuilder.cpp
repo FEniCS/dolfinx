@@ -536,8 +536,8 @@ fem::DofMap DofMapBuilder::build_submap(const DofMap& dofmap_parent,
   return DofMap(element_dof_layout, dofmap_parent.index_map, dofmap);
 }
 //-----------------------------------------------------------------------------
-std::tuple<std::unique_ptr<common::IndexMap>,
-           Eigen::Array<std::int32_t, Eigen::Dynamic, 1>>
+std::pair<std::unique_ptr<common::IndexMap>,
+          Eigen::Array<std::int32_t, Eigen::Dynamic, 1>>
 DofMapBuilder::build(MPI_Comm comm, const mesh::Topology& topology,
                      const mesh::CellType cell_type,
                      const ElementDofLayout& element_dof_layout,
@@ -611,6 +611,6 @@ DofMapBuilder::build(MPI_Comm comm, const mesh::Topology& topology,
     }
   }
 
-  return std::make_tuple(std::move(index_map), std::move(dofmap));
+  return {std::move(index_map), std::move(dofmap)};
 }
 //-----------------------------------------------------------------------------

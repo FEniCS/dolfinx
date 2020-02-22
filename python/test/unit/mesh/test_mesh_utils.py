@@ -134,19 +134,25 @@ def test_partition():
     c0 = cpp.graph.AdjacencyList(vertex_map.size_local + vertex_map.num_ghosts)
     topology.set_connectivity(c0, 0, 0)
 
-    # map0 = topology.index_map(0)
-    # if rank == 0:
-    #     print("local", map0.size_local)
-    #     print("global", map0.size_global)
-    #     print("ghosts", map0.ghosts)
-    #     print("ghosts", map0.ghost_owners())
+    map0 = topology.index_map(0)
+    if rank == 0:
+        print("local", map0.size_local)
+        print("global", map0.size_global)
+        print("ghosts", map0.ghosts)
+        print("ghosts owners", map0.ghost_owners)
 
     # test = topology.index_map(0)
     # print(test.size_local)
-    # c = topology.connectivity(0, 0)
-    # print(c.num_nodes)
-    # print(c.array())
-    # print(c.offsets())
+    v = topology.connectivity(0, 0)
+    print(v.num_nodes)
+    print(v.array())
+    print(v.offsets())
+
+    print(cells)
+    c = topology.connectivity(2, 0)
+    print(c.num_nodes)
+    print(c.array())
+    print(c.offsets())
 
     # Build dofmap
     dof_index_map, dofmap = cpp.fem.build_dofmap(cpp.MPI.comm_world,

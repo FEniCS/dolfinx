@@ -6,6 +6,7 @@
 
 #include "PartitioningNew.h"
 #include "Topology.h"
+#include <algorithm>
 #include <dolfinx/common/IndexMap.h>
 #include <dolfinx/common/log.h>
 #include <dolfinx/graph/AdjacencyList.h>
@@ -482,7 +483,7 @@ PartitioningNew::distribute(const MPI_Comm& comm,
 
   // Compute send array displacements
   std::vector<int> disp_send(size + 1, 0);
-  std::inclusive_scan(num_per_dest_send.begin(), num_per_dest_send.end(),
+  std::partial_sum(num_per_dest_send.begin(), num_per_dest_send.end(),
                       disp_send.begin() + 1);
 
   // Send/receive number of items to communicate
@@ -492,7 +493,7 @@ PartitioningNew::distribute(const MPI_Comm& comm,
 
   // Compite receive array displacements
   std::vector<int> disp_recv(size + 1, 0);
-  std::inclusive_scan(num_per_dest_recv.begin(), num_per_dest_recv.end(),
+  std::partial_sum(num_per_dest_recv.begin(), num_per_dest_recv.end(),
                       disp_recv.begin() + 1);
 
   // Prepare send buffer
