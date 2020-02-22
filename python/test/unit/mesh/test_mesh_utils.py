@@ -7,7 +7,6 @@
 import numpy as np
 
 from dolfinx import cpp
-from dolfinx_utils.test.skips import skip_in_parallel
 
 
 def test_extract_topology():
