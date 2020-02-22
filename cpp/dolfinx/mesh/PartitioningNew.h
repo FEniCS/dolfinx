@@ -62,9 +62,9 @@ public:
   ///   contiguous numdering
   /// @return Adjacency list with contiguous ordering [0, 1, ..., n), a
   ///   a map from the global ordering in the cells to the local
-  ///   ordering, and the value n
-  static std::tuple<graph::AdjacencyList<std::int32_t>,
-                    std::map<std::int64_t, std::int32_t>, std::int32_t>
+  ///   ordering.
+  static std::pair<graph::AdjacencyList<std::int32_t>,
+                   std::map<std::int64_t, std::int32_t>>
   create_local_adjacency_list(const graph::AdjacencyList<std::int64_t>& list);
 
   /// NEW: Compute a distributed AdjacencyList list from a AdjacencyList that

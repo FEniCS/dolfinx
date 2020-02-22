@@ -29,7 +29,6 @@ class ElementDofLayout;
 /// @return The permutations
 Eigen::Array<int, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
 compute_dof_permutations(const mesh::Topology& topology,
-                         const mesh::CellType cell_type,
                          const fem::ElementDofLayout& dof_layout);
 
 } // namespace fem
