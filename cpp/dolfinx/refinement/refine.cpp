@@ -8,14 +8,14 @@
 #include "PlazaRefinementND.h"
 #include <dolfinx/common/log.h>
 #include <dolfinx/mesh/Mesh.h>
-#include <dolfinx/mesh/MeshEntity.h>
 #include <dolfinx/mesh/MeshFunction.h>
 
 using namespace dolfinx;
 using namespace refinement;
 
 //-----------------------------------------------------------------------------
-mesh::Mesh dolfinx::refinement::refine(const mesh::Mesh& mesh, bool redistribute)
+mesh::Mesh dolfinx::refinement::refine(const mesh::Mesh& mesh,
+                                       bool redistribute)
 {
   if (mesh.topology().cell_type() != mesh::CellType::triangle
       and mesh.topology().cell_type() != mesh::CellType::tetrahedron)
@@ -38,8 +38,8 @@ mesh::Mesh dolfinx::refinement::refine(const mesh::Mesh& mesh, bool redistribute
 //-----------------------------------------------------------------------------
 mesh::Mesh
 dolfinx::refinement::refine(const mesh::Mesh& mesh,
-                           const mesh::MeshFunction<int>& cell_markers,
-                           bool redistribute)
+                            const mesh::MeshFunction<int>& cell_markers,
+                            bool redistribute)
 {
   if (mesh.topology().cell_type() != mesh::CellType::triangle
       and mesh.topology().cell_type() != mesh::CellType::tetrahedron)

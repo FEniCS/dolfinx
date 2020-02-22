@@ -6,9 +6,9 @@
 
 #include "dofs_permutation.h"
 #include "ElementDofLayout.h"
+#include <dolfinx/common/IndexMap.h>
 #include <dolfinx/common/log.h>
-#include <dolfinx/mesh/MeshEntity.h>
-#include <dolfinx/mesh/MeshIterator.h>
+#include <dolfinx/mesh/Topology.h>
 
 using namespace dolfinx;
 
