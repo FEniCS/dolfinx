@@ -58,8 +58,8 @@ def test_partition():
     layout = cpp.fem.ElementDofLayout(1, entity_dofs, [], [], cell_type, perms)
     rank = cpp.MPI.rank(cpp.MPI.comm_world)
     if rank == 0:
-        # cells1 = [[6, 12, 2, 1, 11, 0], [12, 14, 7, 9, 10, 8], [7, 2, 12, 1, 10, 3], [6, 2, 13, 4, 5, 11]]
-        cells1 = [[0, 1, 4], [0, 4, 3], [1, 2, 5], [1, 5, 4]]
+        cells1 = [[6, 12, 2, 1, 11, 0], [12, 14, 7, 9, 10, 8], [7, 2, 12, 1, 10, 3], [6, 2, 13, 4, 5, 11]]
+        # cells1 = [[0, 1, 4], [0, 4, 3], [1, 2, 5], [1, 5, 4]]
         cells1 = cpp.graph.AdjacencyList64(cells1)
         cells_filtered1 = cpp.mesh.extract_topology(layout, cells1)
     else:
@@ -74,6 +74,8 @@ def test_partition():
     # Distribute cells
     cells, src = cpp.mesh.distribute(cpp.MPI.comm_world, cells_filtered1,
                                      dest)
+    print("cells:", cells.num_nodes)
+
     # print(dest)
     assert cpp.MPI.sum(cpp.MPI.comm_world, cells.num_nodes) == 4
 
@@ -96,6 +98,7 @@ def test_partition():
     # Create facets for local topology
     cell_facet, facet_vertex, index_map = cpp.mesh.compute_entities(cpp.MPI.comm_self,
                                                                     topology, topology.dim - 1)
+
     topology.set_connectivity(cell_facet, topology.dim, topology.dim - 1)
     if facet_vertex is not None:
         topology.set_connectivity(facet_vertex, topology.dim - 1, 0)
@@ -113,13 +116,16 @@ def test_partition():
     # Build distributed cell-vertex AdjacencyList and IndexMap for
     # vertices
 
-    print("111111")
+    print(topology.connectivity(2, 0).array())
+    print(global_to_local_vertices)
     # return
-    cells, vertex_map = cpp.mesh.create_distributed_adjacency_list(cpp.MPI.comm_world, topology,
-                                                                   global_to_local_vertices)
-    # cells = cpp.mesh.create_distributed_adjacency_list(cpp.MPI.comm_world, topology,
-    #                                                    global_to_local_vertices)
-    print("2222")
+    cells, vertex_map, l2g = cpp.mesh.create_distributed_adjacency_list(cpp.MPI.comm_world, topology,
+                                                                        global_to_local_vertices)
+
+    print("l2G", l2g)
+    print("cells: ", cells.array())
+    print("offset: ", cells.offsets())
+    return
     print("Try", vertex_map.size_local)
     if rank == 1:
         print("test:", vertex_map.size_local, vertex_map.num_ghosts)

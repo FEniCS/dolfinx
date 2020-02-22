@@ -82,7 +82,8 @@ PartitioningNew::create_local_adjacency_list(
           global_to_local, local};
 }
 //-----------------------------------------------------------------------------
-std::pair<graph::AdjacencyList<std::int32_t>, common::IndexMap>
+std::tuple<graph::AdjacencyList<std::int32_t>, common::IndexMap,
+           std::vector<std::int64_t>>
 // graph::AdjacencyList<std::int32_t>
 // common::IndexMap
 PartitioningNew::create_distributed_adjacency_list(
@@ -109,6 +110,8 @@ PartitioningNew::create_distributed_adjacency_list(
         "Need facet-vertex connectivity to build distributed adjacency list.");
   }
 
+  // std::cout << "Stage 1" << std::endl;
+
   auto map_vertex = topology_local.index_map(0);
   if (!map_vertex)
     throw std::runtime_error("Need vertex IndexMap from topology.");
@@ -123,6 +126,8 @@ PartitioningNew::create_distributed_adjacency_list(
         exterior_vertex[vertices[j]] = true;
     }
   }
+
+  // std::cout << "Stage 2" << std::endl;
 
   // Get maximum global index across all processes
   std::int64_t my_max_global_index = 0;
@@ -146,10 +151,14 @@ PartitioningNew::create_distributed_adjacency_list(
     }
   }
 
+  // std::cout << "Stage 3" << std::endl;
+
   // Compute global vertex send displacements
   std::vector<int> disp_send(size + 1, 0);
   std::partial_sum(number_to_send.begin(), number_to_send.end(),
                    disp_send.begin() + 1);
+
+  // std::cout << "Stage 4" << std::endl;
 
   // Pack global vertex send data
   std::vector<std::int64_t> vertices_send(disp_send.back());
@@ -164,15 +173,21 @@ PartitioningNew::create_distributed_adjacency_list(
     }
   }
 
+  // std::cout << "Stage 5" << std::endl;
+
   // Send/receive number of vertex indices to communicate to each process
   std::vector<int> number_to_recv(size);
   MPI_Alltoall(number_to_send.data(), 1, MPI_INT, number_to_recv.data(), 1,
                MPI_INT, comm);
 
+  // std::cout << "Stage 6" << std::endl;
+
   // Compute receive displacements
   std::vector<int> disp_recv(size + 1, 0);
   std::partial_sum(number_to_recv.begin(), number_to_recv.end(),
                    disp_recv.begin() + 1);
+
+  // std::cout << "Stage 7" << std::endl;
 
   // Send/receive global indices
   std::vector<std::int64_t> vertices_recv(disp_recv.back());
@@ -181,19 +196,27 @@ PartitioningNew::create_distributed_adjacency_list(
                 number_to_recv.data(), disp_recv.data(),
                 MPI::mpi_type<std::int64_t>(), comm);
 
+  // std::cout << "Stage 8" << std::endl;
+
   // Build list of sharing processes for each vertex
   const std::array<std::int64_t, 2> range
       = dolfinx::MPI::local_range(comm, max_global_index + 1);
-  std::vector<std::set<int>> owners(disp_recv.back());
+  // std::vector<std::set<int>> owners(disp_recv.back());
+  std::vector<std::set<int>> owners(range[1] - range[0]);
   for (int i = 0; i < size; ++i)
   {
+    assert((i + 1) < (int)disp_recv.size());
     for (int j = disp_recv[i]; j < disp_recv[i + 1]; ++j)
     {
       // Get back to zero reference index
+      assert(j < (int)vertices_recv.size());
       const std::int64_t index = vertices_recv[j] - range[0];
+      assert(index < (int)owners.size());
       owners[index].insert(i);
     }
   }
+
+  // std::cout << "Stage 9" << std::endl;
 
   // For each vertex, build list of sharing processes
   std::map<std::int64_t, std::set<int>> global_vertex_to_procs;
@@ -202,6 +225,8 @@ PartitioningNew::create_distributed_adjacency_list(
     for (int j = disp_recv[i]; j < disp_recv[i + 1]; ++j)
       global_vertex_to_procs[vertices_recv[j]].insert(i);
   }
+
+  // std::cout << "Stage 10" << std::endl;
 
   // Get list of sharing process for each vertex
   std::unique_ptr<const graph::AdjacencyList<int>> sharing_processes;
@@ -258,6 +283,8 @@ PartitioningNew::create_distributed_adjacency_list(
         processes, process_offsets);
   }
 
+  // std::cout << "Stage 11" << std::endl;
+
   const int rank = dolfinx::MPI::rank(comm);
   // if (rank == 0)
   // {
@@ -292,18 +319,21 @@ PartitioningNew::create_distributed_adjacency_list(
   }
 
   // Re-number owned vertices
+  std::vector<std::int64_t> local_to_original;
   std::vector<std::int32_t> local_to_local_new(map_vertex->size_local(), -1);
   std::int32_t p = 0;
   for (auto it = global_to_local_owned0.begin();
        it != global_to_local_owned0.end(); ++it)
   {
     assert(it->second < (int)local_to_local_new.size());
+    local_to_original.push_back(it->first);
     local_to_local_new[it->second] = p++;
   }
   for (auto it = global_to_local_owned1.begin();
        it != global_to_local_owned1.end(); ++it)
   {
     assert(it->second < (int)local_to_local_new.size());
+    local_to_original.push_back(it->first);
     local_to_local_new[it->second] = p++;
   }
 
@@ -435,6 +465,7 @@ PartitioningNew::create_distributed_adjacency_list(
     if (pair != global_old_new.end())
     {
       assert(it->second < (int)local_to_local_new.size());
+      local_to_original.push_back(it->first);
       local_to_local_new[it->second] = p++;
       ghosts.push_back(pair->second);
     }
@@ -459,17 +490,9 @@ PartitioningNew::create_distributed_adjacency_list(
   std::vector<std::int32_t> _offsets(offsets.data(),
                                      offsets.data() + offsets.rows());
 
-  // std::cout << "Num owned: " << num_owned_vertices << std::endl;
-  // std::cout << "Num ghosts: " << ghosts.size() << std::endl;
-
-  // std::cout << "Pre to return" << std::endl;
-  graph::AdjacencyList<std::int32_t> tmp0(data_new, _offsets);
-  common::IndexMap tmp1(comm, num_owned_vertices, ghosts, 1);
-
-  std::cout << "About to return" << std::endl;
-  return {std::move(tmp0), std::move(tmp1)};
-  // return {std::move(graph::AdjacencyList<std::int32_t>(data_new, _offsets)),
-  //         std::move(common::IndexMap(comm, num_owned_vertices, ghosts, 1))};
+  return {std::move(graph::AdjacencyList<std::int32_t>(data_new, _offsets)),
+          std::move(common::IndexMap(comm, num_owned_vertices, ghosts, 1)),
+          std::move(local_to_original)};
 }
 //-----------------------------------------------------------------------------
 std::pair<graph::AdjacencyList<std::int64_t>, std::vector<int>>

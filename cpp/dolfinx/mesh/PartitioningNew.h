@@ -74,7 +74,8 @@ public:
   /// @param[in] global_to_local_vertices
   // static std::pair<graph::AdjacencyList<std::int32_t>, common::IndexMap>
   // static graph::AdjacencyList<std::int32_t>
-  static std::pair<graph::AdjacencyList<std::int32_t>, common::IndexMap>
+  static std::tuple<graph::AdjacencyList<std::int32_t>, common::IndexMap,
+                    std::vector<std::int64_t>>
   // static graph::AdjacencyList<std::int32_t>
   // static common::IndexMap
   create_distributed_adjacency_list(
