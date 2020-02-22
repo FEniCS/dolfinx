@@ -14,8 +14,6 @@
 #include <dolfinx/function/Function.h>
 #include <dolfinx/function/FunctionSpace.h>
 #include <dolfinx/mesh/Mesh.h>
-#include <dolfinx/mesh/MeshEntity.h>
-#include <dolfinx/mesh/MeshIterator.h>
 #include <dolfinx/mesh/cell_types.h>
 #include <map>
 #include <numeric>
@@ -237,22 +235,31 @@ Eigen::Array<std::int32_t, Eigen::Dynamic, 2> _locate_dofs_topological(
     entity_dofs.push_back(
         dofmap0.element_dof_layout->entity_closure_dofs(dim, i));
   }
+  auto e_to_c = mesh.topology().connectivity(dim, tdim);
+  assert(e_to_c);
+  auto c_to_e = mesh.topology().connectivity(tdim, dim);
+  assert(c_to_e);
 
   // Iterate over marked facets
   std::vector<std::array<std::int32_t, 2>> bc_dofs;
   for (Eigen::Index e = 0; e < entities.rows(); ++e)
   {
-    // Create facet and attached cell
-    const mesh::MeshEntity entity(mesh, dim, entities[e]);
-    const std::size_t cell_index = entity.entities(tdim)[0];
-    const mesh::MeshEntity cell(mesh, tdim, cell_index);
+    // Get first attached cell
+    assert(e_to_c->num_links(entities[e]) > 0);
+    const int cell = e_to_c->links(entities[e])[0];
+
+    // Get local index of facet with respect to the cell
+    auto entities_d = c_to_e->links(cell);
+    auto it = std::find(entities_d.data(),
+                        entities_d.data() + entities_d.rows(), entities[e]);
+    assert(it != (entities_d.data() + entities_d.rows()));
+    const int entity_local_index = std::distance(entities_d.data(), it);
 
     // Get cell dofmap
-    auto cell_dofs0 = dofmap0.cell_dofs(cell.index());
-    auto cell_dofs1 = dofmap1.cell_dofs(cell.index());
+    auto cell_dofs0 = dofmap0.cell_dofs(cell);
+    auto cell_dofs1 = dofmap1.cell_dofs(cell);
 
     // Loop over facet dofs
-    const int entity_local_index = cell.index(entity);
     for (int i = 0; i < num_entity_dofs; ++i)
     {
       const int index = entity_dofs[entity_local_index][i];
@@ -322,21 +329,31 @@ _locate_dofs_topological(const function::FunctionSpace& V, const int entity_dim,
         dofmap.element_dof_layout->entity_closure_dofs(entity_dim, i));
   }
 
+  auto e_to_c = mesh.topology().connectivity(entity_dim, tdim);
+  assert(e_to_c);
+  auto c_to_e = mesh.topology().connectivity(tdim, entity_dim);
+  assert(c_to_e);
+
   const int num_entity_closure_dofs
       = dofmap.element_dof_layout->num_entity_closure_dofs(entity_dim);
   std::vector<std::int32_t> dofs;
   for (Eigen::Index i = 0; i < entities.rows(); ++i)
   {
-    // Create entity and attached cell
-    const mesh::MeshEntity entity(mesh, entity_dim, entities[i]);
-    const int cell_index = entity.entities(tdim)[0];
-    const mesh::MeshEntity cell(mesh, tdim, cell_index);
+    // Get first attached cell
+    assert(e_to_c->num_links(entities[i]) > 0);
+    const int cell = e_to_c->links(entities[i])[0];
+
+    // Get local index of facet with respect to the cell
+    auto entities_d = c_to_e->links(cell);
+    auto it = std::find(entities_d.data(),
+                        entities_d.data() + entities_d.rows(), entities[i]);
+    assert(it != (entities_d.data() + entities_d.rows()));
+    const int entity_local_index = std::distance(entities_d.data(), it);
 
     // Get cell dofmap
-    auto cell_dofs = dofmap.cell_dofs(cell_index);
+    auto cell_dofs = dofmap.cell_dofs(cell);
 
     // Loop over entity dofs
-    const int entity_local_index = cell.index(entity);
     for (int j = 0; j < num_entity_closure_dofs; j++)
     {
       const int index = entity_dofs[entity_local_index][j];
