@@ -550,7 +550,7 @@ def test_fourth_order_quad(L, H, Z):
 
 @skip_in_parallel
 @pytest.mark.parametrize('order', [2, 3])
-def test_gmsh_input_quad(order):
+def xtest_gmsh_input_quad(order):
     pygmsh = pytest.importorskip("pygmsh")
 
     # Parameterize test if gmsh gets wider support
