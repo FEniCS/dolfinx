@@ -38,10 +38,10 @@ public:
   /// Move constructor
   MeshValueCollection(MeshValueCollection<T>&& mvc) = default;
 
-  /// Create a mesh value collection from a MeshFunction
-  /// @param[in] mesh_function The mesh function for creating a
-  ///                          MeshValueCollection
-  explicit MeshValueCollection(const MeshFunction<T>& mesh_function);
+  // /// Create a mesh value collection from a MeshFunction
+  // /// @param[in] mesh_function The mesh function for creating a
+  // ///                          MeshValueCollection
+  // explicit MeshValueCollection(const MeshFunction<T>& mesh_function);
 
   /// Create a mesh value collection of entities of given dimension on a
   /// given mesh
@@ -192,10 +192,10 @@ MeshValueCollection<T>::MeshValueCollection(
   // of all dimesions are not initialized.
   _mesh->create_entities(dim);
 
-  const int mesh_tdim = _mesh->topology().dim();
+  const int tdim = _mesh->topology().dim();
 
   // Handle cells and vertices as a special case
-  if ((mesh_tdim == _dim) || (_dim == 0))
+  if (tdim == _dim or _dim == 0)
   {
     for (Eigen::Index cell_index = 0; cell_index < values_data.cols();
          ++cell_index)
@@ -208,7 +208,7 @@ MeshValueCollection<T>::MeshValueCollection(
   {
     // Number of vertices per cell is equal to the size of first
     // array of connectivity.
-    auto e_to_v = _mesh->topology().connectivity(_dim, 0);
+    auto e_to_v = _mesh->topology().connectivity(dim, 0);
     assert(e_to_v);
 
     // FIXME: this is bad - get number of vertices from cell type
@@ -224,7 +224,7 @@ MeshValueCollection<T>::MeshValueCollection(
     const std::vector<std::int64_t> global_indices
         = vertices_map->global_indices(false);
 
-    auto entities_map = _mesh->topology().index_map(_dim);
+    auto entities_map = _mesh->topology().index_map(dim);
     assert(entities_map);
 
     const std::int32_t num_entities
@@ -246,15 +246,17 @@ MeshValueCollection<T>::MeshValueCollection(
       }
       entity_map.emplace_hint(entity_map.end(), v, i);
     }
-    _mesh->create_connectivity(_dim, mesh_tdim);
+    _mesh->create_connectivity(dim, tdim);
 
-    auto entity_cell_connectivity
-        = _mesh->topology().connectivity(_dim, mesh_tdim);
+    auto entity_cell_connectivity = _mesh->topology().connectivity(dim, tdim);
     assert(entity_cell_connectivity);
+
+    auto c_to_e = _mesh->topology().connectivity(tdim, dim);
+    assert(c_to_e);
 
     // Get cell type for entity on which the MVC lives
     const mesh::CellType entity_cell_type
-        = mesh::cell_entity_type(_mesh->topology().cell_type(), _dim);
+        = mesh::cell_entity_type(_mesh->topology().cell_type(), dim);
 
     // Number of nodes per entity is deduced from the size
     // of provided entity topology
@@ -283,21 +285,13 @@ MeshValueCollection<T>::MeshValueCollection(
 
       // For this entity need to find all linked cells
       // and local index wrt. these cells
-      assert(_mesh->topology().connectivity(_dim, mesh_tdim));
-      auto entity_cells = _mesh->topology()
-                              .connectivity(_dim, mesh_tdim)
-                              ->links(entity_index);
+      auto entity_cells = entity_cell_connectivity->links(entity_index);
       assert(entity_cells.size() > 0);
 
       for (int i = 0; i < entity_cells.size(); ++i)
       {
         const int cell_index = entity_cells[i];
-
-        assert(_mesh->topology().connectivity(mesh_tdim, _dim));
-        auto cell_entities = _mesh->topology()
-                                 .connectivity(mesh_tdim, _dim)
-                                 ->links(cell_index);
-
+        auto cell_entities = c_to_e->links(cell_index);
         const auto it = std::find(cell_entities.data(),
                                   cell_entities.data() + cell_entities.size(),
                                   entity_index);
@@ -313,56 +307,57 @@ MeshValueCollection<T>::MeshValueCollection(
   }
 }
 //---------------------------------------------------------------------------
-template <typename T>
-MeshValueCollection<T>::MeshValueCollection(
-    const MeshFunction<T>& mesh_function)
-    : _mesh(mesh_function.mesh()), _dim(mesh_function.dim())
-{
-  assert(_mesh);
-  const int D = _mesh->topology().dim();
-  _mesh->create_connectivity(_dim, D);
+// template <typename T>
+// MeshValueCollection<T>::MeshValueCollection(
+//     const MeshFunction<T>& mesh_function)
+//     : _mesh(mesh_function.mesh()), _dim(mesh_function.dim())
+// {
+//   assert(_mesh);
+//   const int D = _mesh->topology().dim();
+//   _mesh->create_connectivity(_dim, D);
 
-  // Prefetch values of mesh function
-  const Eigen::Array<T, Eigen::Dynamic, 1>& mf_values = mesh_function.values();
+//   // Prefetch values of mesh function
+//   const Eigen::Array<T, Eigen::Dynamic, 1>& mf_values =
+//   mesh_function.values();
 
-  // Handle cells as a special case
-  if (D == _dim)
-  {
-    for (Eigen::Index cell_index = 0; cell_index < mf_values.size();
-         ++cell_index)
-    {
-      const std::pair<std::size_t, std::size_t> key(cell_index, 0);
-      _values.insert({key, mf_values[cell_index]});
-    }
-  }
-  else
-  {
-    _mesh->create_connectivity(_dim, D);
-    const graph::AdjacencyList<std::int32_t>& connectivity
-        = _mesh->topology().connectivity(_dim, D);
-    for (Eigen::Index entity_index = 0; entity_index < mf_values.size();
-         ++entity_index)
-    {
-      // Find the cell
-      assert(connectivity.num_links(entity_index) > 0);
-      const MeshEntity entity(*_mesh, _dim, entity_index);
-      for (int i = 0; i < connectivity.num_links(entity_index); ++i)
-      {
-        // Create cell
-        const mesh::MeshEntity cell(*_mesh, D,
-                                    connectivity.links(entity_index)[i]);
+//   // Handle cells as a special case
+//   if (D == _dim)
+//   {
+//     for (Eigen::Index cell_index = 0; cell_index < mf_values.size();
+//          ++cell_index)
+//     {
+//       const std::pair<std::size_t, std::size_t> key(cell_index, 0);
+//       _values.insert({key, mf_values[cell_index]});
+//     }
+//   }
+//   else
+//   {
+//     _mesh->create_connectivity(_dim, D);
+//     auto connectivity = _mesh->topology().connectivity(_dim, D);
+//     assert(connectivity);
+//     for (Eigen::Index entity_index = 0; entity_index < mf_values.size();
+//          ++entity_index)
+//     {
+//       // Find the cell
+//       assert(connectivity->num_links(entity_index) > 0);
+//       const MeshEntity entity(*_mesh, _dim, entity_index);
+//       for (int i = 0; i < connectivity->num_links(entity_index); ++i)
+//       {
+//         // Create cell
+//         const mesh::MeshEntity cell(*_mesh, D,
+//                                     connectivity->links(entity_index)[i]);
 
-        // Find the local entity index
-        const std::size_t local_entity = cell.index(entity);
+//         // Find the local entity index
+//         const std::size_t local_entity = cell.index(entity);
 
-        // Insert into map
-        const std::pair<std::size_t, std::size_t> key(cell.index(),
-                                                      local_entity);
-        _values.insert({key, mf_values[entity_index]});
-      }
-    }
-  }
-}
+//         // Insert into map
+//         const std::pair<std::size_t, std::size_t> key(cell.index(),
+//                                                       local_entity);
+//         _values.insert({key, mf_values[entity_index]});
+//       }
+//     }
+//   }
+// }
 //---------------------------------------------------------------------------
 template <typename T>
 MeshValueCollection<T>&
@@ -482,9 +477,9 @@ bool MeshValueCollection<T>::set_value(std::size_t entity_index, const T& value)
 
   assert(_dim >= 0);
 
-  // Special case when d = D
-  const std::size_t D = _mesh->topology().dim();
-  if (_dim == (int)D)
+  // Special case when d = tdim
+  const int tdim = _mesh->topology().dim();
+  if (_dim == tdim)
   {
     // Set local entity index to zero when we mark a cell
     const std::pair<std::size_t, std::size_t> pos(entity_index, 0);
@@ -502,26 +497,27 @@ bool MeshValueCollection<T>::set_value(std::size_t entity_index, const T& value)
     return it.second;
   }
 
-  // Get mesh connectivity d --> D
-  auto c_d_D = _mesh->topology().connectivity(_dim, D);
-  if (!c_d_D)
+  // Get mesh connectivity d -> tdim and  tdim -> d
+  auto e_to_c = _mesh->topology().connectivity(_dim, tdim);
+  if (!e_to_c)
+    throw std::runtime_error("Missing connectivity.");
+  auto c_to_e = _mesh->topology().connectivity(tdim, _dim);
+  if (!c_to_e)
     throw std::runtime_error("Missing connectivity.");
 
-  // Find the cell
-  assert(c_d_D->num_links(entity_index) > 0);
-  const MeshEntity entity(*_mesh, _dim, entity_index);
-  const mesh::MeshEntity cell(*_mesh, D,
-                              c_d_D->links(entity_index)[0]); // choose first
+  // Find the cell (pick first)
+  assert(e_to_c->num_links(entity_index) > 0);
+  const int cell = e_to_c->links(entity_index)[0];
 
   // Find the local entity index
-  const std::size_t local_entity = cell.index(entity);
+  auto entities = c_to_e->links(cell);
+  auto p = std::find(entities.data(), entities.data() + entities.rows(), entity_index);
+  assert(p != (entities.data() + entities.rows()));
+  const int local_entity = std::distance(entities.data(), p);
 
   // Add value
-  const std::pair<std::size_t, std::size_t> pos(cell.index(), local_entity);
-  std::pair<typename std::map<std::pair<std::size_t, std::size_t>, T>::iterator,
-            bool>
-      it;
-  it = _values.insert({pos, value});
+  const std::pair<std::size_t, std::size_t> pos(cell, local_entity);
+  auto it = _values.insert({pos, value});
 
   // If an item with same key already exists the value has not been
   // set and we need to update it
