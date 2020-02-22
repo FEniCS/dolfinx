@@ -9,7 +9,6 @@
 #include <dolfinx/common/Timer.h>
 #include <dolfinx/mesh/Geometry.h>
 #include <dolfinx/mesh/Mesh.h>
-#include <dolfinx/mesh/MeshEntity.h>
 #include <dolfinx/mesh/MeshIterator.h>
 #include <limits>
 #include <map>
@@ -352,9 +351,9 @@ face_long_edge(const mesh::Mesh& mesh)
         // If edges are the same length, compare global index of
         // opposite vertex.  Only important so that tetrahedral faces
         // have a matching refinement pattern across processes.
-        const mesh::MeshEntity vmax(mesh, 0, f.entities(0)[imax]);
-        const mesh::MeshEntity vi(mesh, 0, f.entities(0)[i]);
-        if (global_indices[vi.index()] > global_indices[vmax.index()])
+        const int vmax = f.entities(0)[imax];
+        const int vi = f.entities(0)[i];
+        if (global_indices[vi] > global_indices[vmax])
           imax = i;
       }
     }

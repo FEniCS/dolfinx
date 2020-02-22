@@ -15,11 +15,13 @@
 #include <dolfinx/fem/FiniteElement.h>
 #include <dolfinx/geometry/BoundingBoxTree.h>
 #include <dolfinx/geometry/utils.h>
+#include <dolfinx/graph/AdjacencyList.h>
 #include <dolfinx/la/PETScVector.h>
 #include <dolfinx/la/utils.h>
 #include <dolfinx/mesh/CoordinateDofs.h>
 #include <dolfinx/mesh/Geometry.h>
 #include <dolfinx/mesh/Mesh.h>
+#include <dolfinx/mesh/Topology.h>
 #include <unsupported/Eigen/CXX11/Tensor>
 #include <utility>
 #include <vector>
