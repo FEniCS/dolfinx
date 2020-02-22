@@ -99,7 +99,7 @@ public:
   }
 
   /// To remove
-  int index(const MeshEntity& entity) const;
+  // int index(const MeshEntity& entity) const;
 
   /// Return informal string representation (pretty-print)
   /// @param[in] verbose Flag to turn on additional output
