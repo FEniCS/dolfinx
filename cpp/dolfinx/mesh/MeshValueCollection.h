@@ -8,7 +8,6 @@
 #pragma once
 
 #include "Mesh.h"
-#include "MeshEntity.h"
 #include "MeshFunction.h"
 #include <map>
 #include <memory>

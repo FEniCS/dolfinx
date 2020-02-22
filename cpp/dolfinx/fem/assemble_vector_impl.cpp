@@ -17,8 +17,6 @@
 #include <dolfinx/mesh/CoordinateDofs.h>
 #include <dolfinx/mesh/Geometry.h>
 #include <dolfinx/mesh/Mesh.h>
-#include <dolfinx/mesh/MeshEntity.h>
-#include <dolfinx/mesh/MeshIterator.h>
 #include <petscsys.h>
 
 using namespace dolfinx;
@@ -98,10 +96,13 @@ void _lift_bc_cells(
 
   // Iterate over all cells
   const int tdim = mesh.topology().dim();
-  for (const mesh::MeshEntity& cell : mesh::MeshRange(mesh, tdim))
+  auto map = mesh.topology().index_map(tdim);
+  assert(map);
+  const int num_cells = map->size_local() + map->num_ghosts();
+  for (int c = 0; c < num_cells; ++c)
   {
     // Get dof maps for cell
-    auto dmap1 = dofmap1.cell_dofs(cell.index());
+    auto dmap1 = dofmap1.cell_dofs(c);
 
     // Check if bc is applied to cell
     bool has_bc = false;
@@ -117,26 +118,22 @@ void _lift_bc_cells(
     if (!has_bc)
       continue;
 
-    const int cell_index = cell.index();
-
     // Get cell vertex coordinates
     for (int i = 0; i < num_dofs_g; ++i)
       for (int j = 0; j < gdim; ++j)
-        coordinate_dofs(i, j) = x_g(cell_g[pos_g[cell_index] + i], j);
+        coordinate_dofs(i, j) = x_g(cell_g[pos_g[c] + i], j);
 
     // Size data structure for assembly
-    auto dmap0 = dofmap0.cell_dofs(cell_index);
+    auto dmap0 = dofmap0.cell_dofs(c);
 
     const Eigen::Ref<const Eigen::Array<bool, 1, Eigen::Dynamic>>
-        cell_edge_reflections
-        = mesh.topology().get_edge_reflections(cell_index);
+        cell_edge_reflections = mesh.topology().get_edge_reflections(c);
     const Eigen::Ref<const Eigen::Array<bool, 1, Eigen::Dynamic>>
-        cell_face_reflections
-        = mesh.topology().get_face_reflections(cell_index);
+        cell_face_reflections = mesh.topology().get_face_reflections(c);
     const Eigen::Ref<const Eigen::Array<std::uint8_t, 1, Eigen::Dynamic>>
-        cell_face_rotations = mesh.topology().get_face_rotations(cell_index);
+        cell_face_rotations = mesh.topology().get_face_rotations(c);
 
-    auto coeff_array = coeffs.row(cell_index);
+    auto coeff_array = coeffs.row(c);
     Ae.setZero(dmap0.size(), dmap1.size());
     fn(Ae.data(), coeff_array.data(), constant_values.data(),
        coordinate_dofs.data(), nullptr, nullptr, cell_edge_reflections.data(),

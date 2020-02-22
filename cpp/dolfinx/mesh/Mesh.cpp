@@ -7,8 +7,6 @@
 #include "Mesh.h"
 #include "CoordinateDofs.h"
 #include "Geometry.h"
-#include "MeshEntity.h"
-#include "MeshIterator.h"
 #include "Partitioning.h"
 #include "Topology.h"
 #include "TopologyComputation.h"

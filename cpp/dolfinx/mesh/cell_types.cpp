@@ -6,12 +6,12 @@
 
 #include "cell_types.h"
 #include "Geometry.h"
-#include "MeshEntity.h"
 #include <Eigen/Dense>
 #include <algorithm>
 #include <cfloat>
 #include <cstdlib>
 #include <dolfinx/common/log.h>
+#include <numeric>
 #include <stdexcept>
 
 using namespace dolfinx;
@@ -592,13 +592,13 @@ int mesh::num_cell_nodes(mesh::CellType type, int degree)
   case mesh::CellType::interval:
     return degree + 1;
   case mesh::CellType::triangle:
-    return (int) (degree + 2) * (degree + 1) / 2;
+    return (int)(degree + 2) * (degree + 1) / 2;
   case mesh::CellType::tetrahedron:
-    return (int) (degree + 3) * (degree + 2) * (degree + 1) / 6;
+    return (int)(degree + 3) * (degree + 2) * (degree + 1) / 6;
   case mesh::CellType::quadrilateral:
-    return (int) (degree + 1) * (degree + 1);
+    return (int)(degree + 1) * (degree + 1);
   case mesh::CellType::hexahedron:
-    return (int) (degree + 1) * (degree + 1) * (degree + 1);
+    return (int)(degree + 1) * (degree + 1) * (degree + 1);
   default:
     throw std::runtime_error("Unknown cell type.");
   }
