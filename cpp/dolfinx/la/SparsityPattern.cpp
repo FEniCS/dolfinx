@@ -19,7 +19,7 @@ namespace
 {
 const auto col_map = [](const std::int32_t j_index,
                         const common::IndexMap& index_map1) -> std::int64_t {
-  const int bs = index_map1.block_size;
+  const int bs = index_map1.block_size();
   const std::div_t div = std::div(j_index, bs);
   const int component = div.rem;
   const int index = div.quot;
@@ -35,7 +35,7 @@ SparsityPattern::SparsityPattern(
     : _mpi_comm(comm), _index_maps(index_maps)
 {
   const std::int32_t local_size0
-      = index_maps[0]->block_size
+      = index_maps[0]->block_size()
         * (index_maps[0]->size_local() + index_maps[0]->num_ghosts());
   _diagonal_cache.resize(local_size0);
   _off_diagonal_cache.resize(local_size0);
@@ -61,7 +61,7 @@ SparsityPattern::SparsityPattern(
     assert(patterns[row][0]);
     assert(patterns[row][0]->_index_maps[0]);
     auto local_range = patterns[row][0]->_index_maps[0]->local_range();
-    const int bs0 = patterns[row][0]->_index_maps[0]->block_size;
+    const int bs0 = patterns[row][0]->_index_maps[0]->block_size();
     row_global_offset += bs0 * local_range[0];
     row_local_size += bs0 * (local_range[1] - local_range[0]);
   }
@@ -75,7 +75,7 @@ SparsityPattern::SparsityPattern(
     assert(patterns[0][col]->_index_maps[1]);
     cmaps.push_back(patterns[0][col]->_index_maps[1].get());
     auto local_range = patterns[0][col]->_index_maps[1]->local_range();
-    const int bs1 = patterns[0][col]->_index_maps[1]->block_size;
+    const int bs1 = patterns[0][col]->_index_maps[1]->block_size();
     col_process_offset += bs1 * local_range[0];
     col_local_size += bs1 * (local_range[1] - local_range[0]);
   }
@@ -88,7 +88,7 @@ SparsityPattern::SparsityPattern(
     assert(patterns[row][0]);
     assert(patterns[row][0]->_index_maps[0]);
     std::int32_t row_size = patterns[row][0]->_index_maps[0]->size_local();
-    const int bs0 = patterns[row][0]->_index_maps[0]->block_size;
+    const int bs0 = patterns[row][0]->_index_maps[0]->block_size();
 
     // FIXME: Issue somewhere here when block size > 1
     assert(bs0 * row_size
@@ -128,7 +128,7 @@ SparsityPattern::SparsityPattern(
           const std::int64_t J = col_map(c, *index_map1);
           assert(J >= 0);
           // const int rank = MPI::rank(MPI_COMM_WORLD);
-          // assert(index_map1->owner(J / index_map1->block_size) == rank);
+          // assert(index_map1->owner(J / index_map1->block_size()) == rank);
 
           // Get new index
           const std::int64_t offset = fem::get_global_offset(cmaps, col, J);
@@ -150,7 +150,7 @@ SparsityPattern::SparsityPattern(
 
       // Increment global column offset
       col_global_offset
-          += p->_index_maps[1]->size_local() * p->_index_maps[1]->block_size;
+          += p->_index_maps[1]->size_local() * p->_index_maps[1]->block_size();
     }
 
     // Increment local row offset
@@ -188,7 +188,7 @@ SparsityPattern::SparsityPattern(
 //-----------------------------------------------------------------------------
 std::array<std::int64_t, 2> SparsityPattern::local_range(int dim) const
 {
-  const int bs = _index_maps.at(dim)->block_size;
+  const int bs = _index_maps.at(dim)->block_size();
   const std::array<std::int64_t, 2> lrange = _index_maps[dim]->local_range();
   return {{bs * lrange[0], bs * lrange[1]}};
 }
@@ -210,12 +210,12 @@ void SparsityPattern::insert(
   }
 
   const common::IndexMap& index_map0 = *_index_maps[0];
-  const int bs0 = index_map0.block_size;
+  const int bs0 = index_map0.block_size();
   const std::int32_t local_size0
       = bs0 * (index_map0.size_local() + index_map0.num_ghosts());
 
   const common::IndexMap& index_map1 = *_index_maps[1];
-  const int bs1 = index_map1.block_size;
+  const int bs1 = index_map1.block_size();
   const std::int32_t local_size1 = bs1 * index_map1.size_local();
 
   for (Eigen::Index i = 0; i < rows.rows(); ++i)
@@ -251,7 +251,7 @@ void SparsityPattern::insert_diagonal(
   }
 
   const common::IndexMap& index_map0 = *_index_maps[0];
-  const int bs0 = index_map0.block_size;
+  const int bs0 = index_map0.block_size();
   const std::int32_t local_size0
       = bs0 * (index_map0.size_local() + index_map0.num_ghosts());
 
@@ -274,14 +274,14 @@ void SparsityPattern::assemble()
   assert(!_off_diagonal);
 
   assert(_index_maps[0]);
-  const int bs0 = _index_maps[0]->block_size;
+  const int bs0 = _index_maps[0]->block_size();
   const std::int32_t local_size0 = _index_maps[0]->size_local();
   const std::int32_t num_ghosts0 = _index_maps[0]->num_ghosts();
   const std::array<std::int64_t, 2> local_range0
       = _index_maps[0]->local_range();
 
   assert(_index_maps[1]);
-  const int bs1 = _index_maps[1]->block_size;
+  const int bs1 = _index_maps[1]->block_size();
   const std::array<std::int64_t, 2> local_range1
       = _index_maps[1]->local_range();
 
@@ -319,7 +319,13 @@ void SparsityPattern::assemble()
   }
 
   // Get number of processes in neighbourhood
-  MPI_Comm comm = _index_maps[0]->mpi_comm_neighborhood();
+  const std::vector<std::int32_t>& neighbours = _index_maps[0]->neighbours();
+  MPI_Comm comm;
+  MPI_Dist_graph_create_adjacent(_mpi_comm.comm(), neighbours.size(),
+                                 neighbours.data(), MPI_UNWEIGHTED,
+                                 neighbours.size(), neighbours.data(),
+                                 MPI_UNWEIGHTED, MPI_INFO_NULL, false, &comm);
+
   int num_neighbours(-1), outdegree(-2), weighted(-1);
   MPI_Dist_graph_neighbors_count(comm, &num_neighbours, &outdegree, &weighted);
   assert(num_neighbours == outdegree);
@@ -388,6 +394,8 @@ void SparsityPattern::assemble()
   _off_diagonal = std::make_shared<graph::AdjacencyList<std::int64_t>>(
       _off_diagonal_cache);
   std::vector<std::vector<std::int64_t>>().swap(_off_diagonal_cache);
+
+  MPI_Comm_free(&comm);
 }
 //-----------------------------------------------------------------------------
 std::int64_t SparsityPattern::num_nonzeros() const

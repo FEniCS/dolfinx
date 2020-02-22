@@ -130,8 +130,15 @@ ParallelRefinement::marked_edge_list(const mesh::MeshEntity& cell) const
 void ParallelRefinement::update_logical_edgefunction()
 {
   const std::size_t mpi_size = MPI::size(_mesh.mpi_comm());
-  MPI_Comm neighbour_comm
-      = _mesh.topology().index_map(1)->mpi_comm_neighborhood();
+
+  const std::vector<std::int32_t>& neighbours_mpi
+      = _mesh.topology().index_map(1)->neighbours();
+  MPI_Comm neighbour_comm;
+  MPI_Dist_graph_create_adjacent(
+      _mesh.mpi_comm(), neighbours_mpi.size(), neighbours_mpi.data(),
+      MPI_UNWEIGHTED, neighbours_mpi.size(), neighbours_mpi.data(),
+      MPI_UNWEIGHTED, MPI_INFO_NULL, false, &neighbour_comm);
+
   // Get neighbour processes
   std::vector<int> neighbours = MPI::neighbors(neighbour_comm);
   std::vector<std::int32_t> send_offsets(1, 0), recv_offsets;
@@ -228,8 +235,16 @@ void ParallelRefinement::create_new_vertices()
   // sent off-process.  Add offset to map, and collect up any shared
   // new vertices that need to send the new index off-process
 
-  MPI_Comm neighbour_comm
-      = _mesh.topology().index_map(1)->mpi_comm_neighborhood();
+  // MPI_Comm neighbour_comm
+  //     = _mesh.topology().index_map(1)->mpi_comm_neighborhood();
+  const std::vector<std::int32_t>& neighbours_mpi
+      = _mesh.topology().index_map(1)->neighbours();
+  MPI_Comm neighbour_comm;
+  MPI_Dist_graph_create_adjacent(
+      _mesh.mpi_comm(), neighbours_mpi.size(), neighbours_mpi.data(),
+      MPI_UNWEIGHTED, neighbours_mpi.size(), neighbours_mpi.data(),
+      MPI_UNWEIGHTED, MPI_INFO_NULL, false, &neighbour_comm);
+
   std::vector<int> neighbours = MPI::neighbors(neighbour_comm);
   std::vector<std::vector<std::int64_t>> values_to_send(neighbours.size());
   std::map<int, int> proc_to_neighbour;
@@ -301,6 +316,8 @@ void ParallelRefinement::create_new_vertices()
 
   _new_vertex_coordinates
       = std::vector<double>(tmp.data(), tmp.data() + tmp.size());
+
+  MPI_Comm_free(&neighbour_comm);
 }
 //-----------------------------------------------------------------------------
 mesh::Mesh ParallelRefinement::build_local() const

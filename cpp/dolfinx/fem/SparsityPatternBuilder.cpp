@@ -49,7 +49,7 @@ void SparsityPatternBuilder::interior_facets(
   // Loop over owned facets
   auto map = topology.index_map(D - 1);
   assert(map);
-  assert(map->block_size == 1);
+  assert(map->block_size() == 1);
   const std::int32_t num_facets = map->size_local();
   for (int f = 0; f < num_facets; ++f)
   {
@@ -93,7 +93,7 @@ void SparsityPatternBuilder::exterior_facets(
   // Loop over owned facets
   auto map = topology.index_map(D - 1);
   assert(map);
-  assert(map->block_size == 1);
+  assert(map->block_size() == 1);
   const std::int32_t num_facets = map->size_local();
   for (int f = 0; f < num_facets; ++f)
   {

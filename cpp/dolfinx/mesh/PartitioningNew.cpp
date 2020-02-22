@@ -462,7 +462,7 @@ PartitioningNew::create_distributed_adjacency_list(
 
   // std::cout << "Pre to return" << std::endl;
   // common::IndexMap tmp(comm, num_owned_vertices, ghosts, 1);
-  // std::cout << "About to return" << std::endl;
+  std::cout << "About to return" << std::endl;
   return {graph::AdjacencyList<std::int32_t>(data_new, _offsets),
           common::IndexMap(comm, num_owned_vertices, ghosts, 1)};
 }

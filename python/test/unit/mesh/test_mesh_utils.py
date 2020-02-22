@@ -149,5 +149,5 @@ def test_partition():
     # print(c.offsets())
 
     # Build dofmap
-    # dof_index_map, dofmap = cpp.fem.build_dofmap(cpp.MPI.comm_world,
-    #                                              topology, layout, 1)
+    dof_index_map, dofmap = cpp.fem.build_dofmap(cpp.MPI.comm_world,
+                                                 topology, layout, 1)
