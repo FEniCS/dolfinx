@@ -16,29 +16,29 @@ using namespace dolfinx;
 using namespace dolfinx::mesh;
 
 //-----------------------------------------------------------------------------
-int MeshEntity::index(const MeshEntity& entity) const
-{
-  // Must be in the same mesh to be incident
-  if (_mesh != entity._mesh)
-    throw std::runtime_error("Mesh entity is defined on a different mesh");
+// int MeshEntity::index(const MeshEntity& entity) const
+// {
+//   // Must be in the same mesh to be incident
+//   if (_mesh != entity._mesh)
+//     throw std::runtime_error("Mesh entity is defined on a different mesh");
 
-  // Get list of entities for given topological dimension
-  auto entities
-      = _mesh->topology().connectivity(_dim, entity._dim)->links(_local_index);
-  const int num_entities = _mesh->topology()
-                               .connectivity(_dim, entity._dim)
-                               ->num_links(_local_index);
+//   // Get list of entities for given topological dimension
+//   auto entities
+//       = _mesh->topology().connectivity(_dim, entity._dim)->links(_local_index);
+//   const int num_entities = _mesh->topology()
+//                                .connectivity(_dim, entity._dim)
+//                                ->num_links(_local_index);
 
-  // Check if any entity matches
-  for (int i = 0; i < num_entities; ++i)
-    if (entities[i] == entity._local_index)
-      return i;
+//   // Check if any entity matches
+//   for (int i = 0; i < num_entities; ++i)
+//     if (entities[i] == entity._local_index)
+//       return i;
 
-  // Entity was not found
-  throw std::runtime_error("Mesh entity was not found");
+//   // Entity was not found
+//   throw std::runtime_error("Mesh entity was not found");
 
-  return -1;
-}
+//   return -1;
+// }
 //-----------------------------------------------------------------------------
 std::string MeshEntity::str(bool verbose) const
 {

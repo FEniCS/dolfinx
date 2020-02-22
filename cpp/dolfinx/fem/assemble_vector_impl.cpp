@@ -580,6 +580,8 @@ void fem::impl::assemble_interior_facets(
 
   auto f_to_c = mesh.topology().connectivity(tdim - 1, tdim);
   assert(f_to_c);
+  auto c_to_f = mesh.topology().connectivity(tdim, tdim - 1);
+  assert(c_to_f);
   for (const auto& f : active_facets)
   {
     // Get attached cell indices
@@ -587,26 +589,27 @@ void fem::impl::assemble_interior_facets(
     assert(cells.rows() == 2);
 
     // Create attached cells
-    const mesh::MeshEntity cell0(mesh, tdim, cells[0]);
-    const mesh::MeshEntity cell1(mesh, tdim, cells[1]);
-    const mesh::MeshEntity facet(mesh, tdim - 1, f);
-    const std::array<int, 2> local_facet
-        = {cell0.index(facet), cell1.index(facet)};
+    std::array<int, 2> local_facet;
+    for (int i = 0; i < 2; ++i)
+    {
+      auto facets = c_to_f->links(cells[i]);
+      auto it = std::find(facets.data(), facets.data() + facets.rows(), f);
+      assert(it != (facets.data() + facets.rows()));
+      local_facet[i] = std::distance(facets.data(), it);
+    }
 
     // Orientation
     const std::array<std::uint8_t, 2> perm
-        = {mesh.topology().get_facet_permutation(cell0.index(), facet.dim(),
+        = {mesh.topology().get_facet_permutation(cells[0], tdim - 1,
                                                  local_facet[0]),
-           mesh.topology().get_facet_permutation(cell1.index(), facet.dim(),
+           mesh.topology().get_facet_permutation(cells[1], tdim - 1,
                                                  local_facet[1])};
     const Eigen::Ref<const Eigen::Array<bool, 1, Eigen::Dynamic>>
-        cell_edge_reflections
-        = mesh.topology().get_edge_reflections(cell0.index());
+        cell_edge_reflections = mesh.topology().get_edge_reflections(cells[0]);
     const Eigen::Ref<const Eigen::Array<bool, 1, Eigen::Dynamic>>
-        cell_face_reflections
-        = mesh.topology().get_face_reflections(cell0.index());
+        cell_face_reflections = mesh.topology().get_face_reflections(cells[0]);
     const Eigen::Ref<const Eigen::Array<std::uint8_t, 1, Eigen::Dynamic>>
-        cell_face_rotations = mesh.topology().get_face_rotations(cell0.index());
+        cell_face_rotations = mesh.topology().get_face_rotations(cells[0]);
 
     // Get cell vertex coordinates
     for (int i = 0; i < num_dofs_g; ++i)
