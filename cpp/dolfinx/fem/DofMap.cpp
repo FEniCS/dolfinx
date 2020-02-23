@@ -38,7 +38,7 @@ fem::DofMap build_collapsed_dofmap(MPI_Comm comm, const DofMap& dofmap_view,
       dofmap_view.element_dof_layout->copy());
   assert(element_dof_layout);
 
-  if (dofmap_view.index_map->block_size == 1
+  if (dofmap_view.index_map->block_size() == 1
       and element_dof_layout->block_size() > 1)
   {
     throw std::runtime_error(
@@ -46,7 +46,7 @@ fem::DofMap build_collapsed_dofmap(MPI_Comm comm, const DofMap& dofmap_view,
         "than 1 from parent with block size of 1. Create new dofmap first.");
   }
 
-  if (dofmap_view.index_map->block_size > 1
+  if (dofmap_view.index_map->block_size() > 1
       and element_dof_layout->block_size() > 1)
   {
     throw std::runtime_error(
@@ -73,7 +73,7 @@ fem::DofMap build_collapsed_dofmap(MPI_Comm comm, const DofMap& dofmap_view,
                   dofs_view.end());
 
   // Get block sizes
-  const int bs_view = dofmap_view.index_map->block_size;
+  const int bs_view = dofmap_view.index_map->block_size();
   const int bs = element_dof_layout->block_size();
 
   // Compute sizes
@@ -165,7 +165,7 @@ DofMap::collapse(MPI_Comm comm, const mesh::Topology& topology) const
   assert(element_dof_layout);
   assert(index_map);
   std::unique_ptr<DofMap> dofmap_new;
-  if (this->index_map->block_size == 1
+  if (this->index_map->block_size() == 1
       and this->element_dof_layout->block_size() > 1)
   {
     // Create new element dof layout and reset parent
@@ -190,7 +190,7 @@ DofMap::collapse(MPI_Comm comm, const mesh::Topology& topology) const
   auto index_map_new = dofmap_new->index_map;
   std::int32_t size
       = (index_map_new->size_local() + index_map_new->num_ghosts())
-        * index_map_new->block_size;
+        * index_map_new->block_size();
   std::vector<std::int32_t> collapsed_map(size);
 
   const int tdim = topology.dim();
@@ -230,7 +230,7 @@ std::string DofMap::str(bool verbose) const
   {
     assert(index_map);
     s << "<DofMap of global dimension "
-      << index_map->size_global() * index_map->block_size << ">" << std::endl;
+      << index_map->size_global() * index_map->block_size() << ">" << std::endl;
   }
 
   if (verbose)

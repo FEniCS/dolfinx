@@ -21,8 +21,7 @@
 #include <dolfinx/la/PETScVector.h>
 #include <dolfinx/la/SparsityPattern.h>
 #include <dolfinx/mesh/Mesh.h>
-#include <dolfinx/mesh/MeshEntity.h>
-#include <dolfinx/mesh/MeshIterator.h>
+#include <dolfinx/mesh/Topology.h>
 #include <dolfinx/mesh/TopologyComputation.h>
 #include <memory>
 #include <string>
@@ -379,7 +378,7 @@ fem::create_vector_block(const std::vector<const common::IndexMap*>& maps)
   std::vector<std::int64_t> ghosts;
   for (std::size_t i = 0; i < maps.size(); ++i)
   {
-    const int bs = maps[i]->block_size;
+    const int bs = maps[i]->block_size();
     local_size += maps[i]->size_local() * bs;
 
     const Eigen::Array<std::int64_t, Eigen::Dynamic, 1>& field_ghosts
@@ -435,7 +434,7 @@ std::int64_t dolfinx::fem::get_global_offset(
   // FIXME: handle/check block size > 1
 
   // Get process that owns global index
-  const int bs = maps[field]->block_size;
+  const int bs = maps[field]->block_size();
   const int owner = maps[field]->owner(index / bs);
 
   // Offset from lower rank processes
@@ -445,7 +444,7 @@ std::int64_t dolfinx::fem::get_global_offset(
     for (std::size_t j = 0; j < maps.size(); ++j)
     {
       if ((int)j != field)
-        offset += maps[j]->_all_ranges[owner] * maps[j]->block_size;
+        offset += maps[j]->_all_ranges[owner] * maps[j]->block_size();
     }
   }
 
@@ -453,7 +452,7 @@ std::int64_t dolfinx::fem::get_global_offset(
   for (int i = 0; i < field; ++i)
   {
     offset += (maps[i]->_all_ranges[owner + 1] - maps[i]->_all_ranges[owner])
-              * maps[i]->block_size;
+              * maps[i]->block_size();
   }
 
   return offset;
@@ -717,10 +716,11 @@ fem::get_cmap_from_ufc_cmap(const ufc_coordinate_mapping& ufc_cmap)
 }
 //-----------------------------------------------------------------------------
 std::shared_ptr<function::FunctionSpace>
-fem::create_functionspace(ufc_function_space* (*fptr)(void),
+fem::create_functionspace(ufc_function_space* (*fptr)(const char*),
+                          const std::string function_name,
                           std::shared_ptr<mesh::Mesh> mesh)
 {
-  ufc_function_space* space = fptr();
+  ufc_function_space* space = fptr(function_name.c_str());
   ufc_dofmap* ufc_map = space->create_dofmap();
   ufc_finite_element* ufc_element = space->create_element();
   std::shared_ptr<function::FunctionSpace> V

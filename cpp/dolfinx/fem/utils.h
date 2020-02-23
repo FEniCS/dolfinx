@@ -141,11 +141,13 @@ std::shared_ptr<const fem::CoordinateElement>
 get_cmap_from_ufc_cmap(const ufc_coordinate_mapping& ufc_cmap);
 
 /// Create FunctionSpace from UFC
-/// @param fptr Function Pointer to a ufc_function_space_create function
-/// @param mesh Mesh
+/// @param[in] fptr Function Pointer to a ufc_function_space_create function
+/// @param[in] function_name Name of a function as defined in UFL file
+/// @param[in] mesh Mesh
 /// @return The created FunctionSpace
 std::shared_ptr<function::FunctionSpace>
-create_functionspace(ufc_function_space* (*fptr)(void),
+create_functionspace(ufc_function_space* (*fptr)(const char*),
+                     const std::string function_name,
                      std::shared_ptr<mesh::Mesh> mesh);
 
 // NOTE: This is subject to change

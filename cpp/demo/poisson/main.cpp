@@ -121,7 +121,7 @@ int main(int argc, char* argv[])
       MPI_COMM_WORLD, pt, {{32, 32}}, mesh::CellType::triangle,
       mesh::GhostMode::none));
 
-  auto V = fem::create_functionspace(poisson_functionspace_create, mesh);
+  auto V = fem::create_functionspace(create_functionspace_form_poisson_a, "u", mesh);
 
   // Next, we define the variational formulation by initializing the
   // bilinear and linear forms (:math:`a`, :math:`L`) using the previously
@@ -133,10 +133,10 @@ int main(int argc, char* argv[])
 
   // Define variational forms
   std::shared_ptr<fem::Form> a
-      = fem::create_form(poisson_bilinearform_create, {V, V});
+      = fem::create_form(create_form_poisson_a, {V, V});
 
   std::shared_ptr<fem::Form> L
-      = fem::create_form(poisson_linearform_create, {V});
+      = fem::create_form(create_form_poisson_L, {V});
 
   auto f = std::make_shared<function::Function>(V);
   auto g = std::make_shared<function::Function>(V);

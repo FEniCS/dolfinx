@@ -38,6 +38,7 @@ void graph(py::module& m)
   py::class_<dolfinx::graph::AdjacencyList<std::int32_t>,
              std::shared_ptr<dolfinx::graph::AdjacencyList<std::int32_t>>>(
       m, "AdjacencyList", "Adjacency list")
+      .def(py::init<std::int32_t>())
       .def(
           "links",
           [](const dolfinx::graph::AdjacencyList<std::int32_t>& self, int i) {

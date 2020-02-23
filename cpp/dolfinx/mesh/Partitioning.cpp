@@ -4,13 +4,15 @@
 //
 // SPDX-License-Identifier:    LGPL-3.0-or-later
 
-#include "Partitioning.h"
+#include <mpi.h>
+
 #include "DistributedMeshTools.h"
 #include "Mesh.h"
 #include "MeshEntity.h"
 #include "MeshFunction.h"
 #include "MeshValueCollection.h"
 #include "PartitionData.h"
+#include "Partitioning.h"
 #include "Topology.h"
 #include <algorithm>
 #include <cmath>
@@ -484,37 +486,6 @@ void distribute_cell_layer(
 
 } // namespace
 
-//-----------------------------------------------------------------------------
-std::vector<int>
-Partitioning::partition_cells(const MPI_Comm& comm, int nparts,
-                              const mesh::CellType cell_type,
-                              const graph::AdjacencyList<std::int64_t>& cells)
-{
-  LOG(INFO) << "Compute partition of cells across processes";
-
-  // FIXME: Update GraphBuilder to use AdjacencyList
-  // Wrap AdjacencyList
-  const Eigen::Map<const Eigen::Array<std::int64_t, Eigen::Dynamic,
-                                      Eigen::Dynamic, Eigen::RowMajor>>
-      _cells(cells.array().data(), cells.num_nodes(),
-             mesh::num_cell_vertices(cell_type));
-
-  // Compute dual graph (for the cells on this process)
-  const auto [local_graph, graph_info]
-      = graph::GraphBuilder::compute_dual_graph(comm, _cells, cell_type);
-  const auto [num_ghost_nodes, num_local_edges, num_nonlocal_edges]
-      = graph_info;
-
-  // Build graph
-  graph::CSRGraph<SCOTCH_Num> csr_graph(comm, local_graph);
-  std::vector<std::size_t> weights;
-
-  // Call partitioner
-  const auto [partition, ignore] = graph::SCOTCH::partition(
-      comm, (SCOTCH_Num)nparts, csr_graph, weights, num_ghost_nodes);
-
-  return partition;
-}
 //-----------------------------------------------------------------------------
 std::tuple<
     std::shared_ptr<common::IndexMap>, std::vector<std::int64_t>,

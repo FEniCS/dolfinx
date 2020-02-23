@@ -62,7 +62,7 @@ build_basic_dofmap(const mesh::Topology& topology,
     {
       if (!topology.connectivity(d, 0))
       {
-        std::runtime_error(
+        throw std::runtime_error(
             "Cannot create basic dofmap. Missing entities of dimension "
             + std::to_string(d) + " .");
       }
@@ -393,7 +393,13 @@ std::vector<std::int64_t> get_global_indices(
     if (map)
     {
       // Get number of processes in neighbourhood
-      MPI_Comm comm = map->mpi_comm_neighborhood();
+      const std::vector<std::int32_t>& neighbours = map->neighbours();
+      MPI_Comm comm;
+      MPI_Dist_graph_create_adjacent(
+          map->mpi_comm(), neighbours.size(), neighbours.data(), MPI_UNWEIGHTED,
+          neighbours.size(), neighbours.data(), MPI_UNWEIGHTED, MPI_INFO_NULL,
+          false, &comm);
+
       int num_neighbours(-1), outdegree(-2), weighted(-1);
       MPI_Dist_graph_neighbors_count(comm, &num_neighbours, &outdegree,
                                      &weighted);
@@ -420,6 +426,8 @@ std::vector<std::int64_t> get_global_indices(
                                disp.data(), MPI_INT64_T, comm,
                                &requests[requests_dim.size()]);
       requests_dim.push_back(d);
+
+      MPI_Comm_free(&comm);
     }
   }
 
@@ -510,7 +518,7 @@ fem::DofMap DofMapBuilder::build_submap(const DofMap& dofmap_parent,
   auto map = topology.index_map(D);
   if (!map)
     throw std::runtime_error("Cannot use cell index map.");
-  assert(map->block_size == 1);
+  assert(map->block_size() == 1);
   const int num_cells = map->size_local() + map->num_ghosts();
 
   // Build dofmap by extracting from parent
@@ -528,8 +536,8 @@ fem::DofMap DofMapBuilder::build_submap(const DofMap& dofmap_parent,
   return DofMap(element_dof_layout, dofmap_parent.index_map, dofmap);
 }
 //-----------------------------------------------------------------------------
-std::tuple<std::unique_ptr<common::IndexMap>,
-           Eigen::Array<std::int32_t, Eigen::Dynamic, 1>>
+std::pair<std::unique_ptr<common::IndexMap>,
+          Eigen::Array<std::int32_t, Eigen::Dynamic, 1>>
 DofMapBuilder::build(MPI_Comm comm, const mesh::Topology& topology,
                      const mesh::CellType cell_type,
                      const ElementDofLayout& element_dof_layout,
@@ -603,6 +611,6 @@ DofMapBuilder::build(MPI_Comm comm, const mesh::Topology& topology,
     }
   }
 
-  return std::make_tuple(std::move(index_map), std::move(dofmap));
+  return {std::move(index_map), std::move(dofmap)};
 }
 //-----------------------------------------------------------------------------

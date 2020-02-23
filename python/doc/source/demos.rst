@@ -35,3 +35,4 @@ All documented demos
    demos/poisson/demo_poisson.py.rst
    demos/cahn-hilliard/demo_cahn-hilliard.py.rst
    demos/stokes-taylor-hood/demo_stokes-taylor-hood.py.rst
+   demos/mvc-from-array/demo_mvc_from_array.py.rst
