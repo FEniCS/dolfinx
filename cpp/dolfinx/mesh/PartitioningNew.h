@@ -46,8 +46,16 @@ class PartitioningNew
 {
 public:
   /// Compute interior/boundary points
-  std::array<std::vector<std::int32_t>, 2>
-  vertex_indices(const mesh::Topology& topology_local);
+  // std::array<std::vector<std::int32_t>, 2>
+  static std::vector<bool>
+  compute_vertex_exterior_markers(const mesh::Topology& topology_local);
+
+  /// @return Local (old) -> local (new)
+  static std::pair<std::vector<std::int32_t>, std::vector<std::int64_t>>
+  reorder_global_indices(
+      MPI_Comm comm,
+      const std::map<std::int64_t, std::int32_t>& global_to_local_vertices,
+      const std::vector<bool>& shared_indices);
 
   /// NEW: Compute destination rank for mesh cells using a graph
   /// partitioner
