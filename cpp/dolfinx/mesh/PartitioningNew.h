@@ -24,6 +24,8 @@ namespace mesh
 
 class Topology;
 
+/// New tools for partitioning meshes/graphs
+
 class PartitioningNew
 {
 public:
@@ -34,7 +36,8 @@ public:
   static std::vector<bool>
   compute_vertex_exterior_markers(const mesh::Topology& topology_local);
 
-  /// @todo Return list of neighbour processes
+  /// @todo Return the list of neighbour processes which is computed
+  /// internally
   ///
   /// Compute new, contiguous global indices from a collection of
   /// global, possibly globally non-contiguous, indices and assign
