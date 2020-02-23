@@ -6,6 +6,7 @@
 
 #include "PartitioningNew.h"
 #include "Topology.h"
+#include <Eigen/Dense>
 #include <algorithm>
 #include <dolfinx/common/IndexMap.h>
 #include <dolfinx/common/log.h>
@@ -18,82 +19,10 @@ using namespace dolfinx;
 using namespace dolfinx::mesh;
 
 //-----------------------------------------------------------------------------
-std::vector<int> PartitioningNew::partition_cells(
-    MPI_Comm comm, int nparts, const mesh::CellType cell_type,
-    const graph::AdjacencyList<std::int64_t>& cells)
+// std::array<std::vector<std::int32_t>, 2>
+std::vector<bool> PartitioningNew::compute_vertex_exterior_markers(
+    const mesh::Topology& topology_local)
 {
-  LOG(INFO) << "Compute partition of cells across processes";
-
-  // FIXME: Update GraphBuilder to use AdjacencyList
-  // Wrap AdjacencyList
-  const Eigen::Map<const Eigen::Array<std::int64_t, Eigen::Dynamic,
-                                      Eigen::Dynamic, Eigen::RowMajor>>
-      _cells(cells.array().data(), cells.num_nodes(),
-             mesh::num_cell_vertices(cell_type));
-
-  // Compute dual graph (for the cells on this process)
-  const auto [local_graph, graph_info]
-      = graph::GraphBuilder::compute_dual_graph(comm, _cells, cell_type);
-  const auto [num_ghost_nodes, num_local_edges, num_nonlocal_edges]
-      = graph_info;
-
-  // Build graph
-  graph::CSRGraph<SCOTCH_Num> csr_graph(comm, local_graph);
-  std::vector<std::size_t> weights;
-
-  // Call partitioner
-  const auto [partition, ignore] = graph::SCOTCH::partition(
-      comm, (SCOTCH_Num)nparts, csr_graph, weights, num_ghost_nodes);
-
-  return partition;
-}
-//-----------------------------------------------------------------------------
-std::tuple<graph::AdjacencyList<std::int32_t>,
-           std::map<std::int64_t, std::int32_t>, std::int32_t>
-PartitioningNew::create_local_adjacency_list(
-    const graph::AdjacencyList<std::int64_t>& cells)
-{
-  const Eigen::Array<std::int64_t, Eigen::Dynamic, 1>& array = cells.array();
-  std::vector<std::int32_t> array_local(array.rows());
-
-  // Re-map global to local
-  int local = 0;
-  std::map<std::int64_t, std::int32_t> global_to_local;
-  for (int i = 0; i < array.rows(); ++i)
-  {
-    const std::int64_t global = array(i);
-    auto it = global_to_local.find(global);
-    if (it == global_to_local.end())
-    {
-      array_local[i] = local;
-      global_to_local.insert({global, local});
-      ++local;
-    }
-    else
-      array_local[i] = it->second;
-  }
-
-  // FIXME: Update AdjacencyList to avoid this
-  const Eigen::Array<std::int32_t, Eigen::Dynamic, 1>& offsets
-      = cells.offsets();
-  std::vector<std::int32_t> _offsets(offsets.data(),
-                                     offsets.data() + offsets.rows());
-  return {graph::AdjacencyList<std::int32_t>(array_local, _offsets),
-          global_to_local, local};
-}
-//-----------------------------------------------------------------------------
-std::tuple<graph::AdjacencyList<std::int32_t>, common::IndexMap,
-           std::vector<std::int64_t>>
-// graph::AdjacencyList<std::int32_t>
-// common::IndexMap
-PartitioningNew::create_distributed_adjacency_list(
-    MPI_Comm comm, const mesh::Topology& topology_local,
-    const std::map<std::int64_t, std::int32_t>& global_to_local_vertices)
-{
-  // Create distributed cell-vertex connectivity
-  //   1. New AdjacencyList
-  //   2. IndexMap for vertices
-
   // Get list of boundary vertices
   const int dim = topology_local.dim();
   auto facet_cell = topology_local.connectivity(dim - 1, dim);
@@ -110,12 +39,11 @@ PartitioningNew::create_distributed_adjacency_list(
         "Need facet-vertex connectivity to build distributed adjacency list.");
   }
 
-  // std::cout << "Stage 1" << std::endl;
-
   auto map_vertex = topology_local.index_map(0);
   if (!map_vertex)
     throw std::runtime_error("Need vertex IndexMap from topology.");
   assert(map_vertex->num_ghosts() == 0);
+
   std::vector<bool> exterior_vertex(map_vertex->size_local(), false);
   for (int f = 0; f < facet_cell->num_nodes(); ++f)
   {
@@ -127,98 +55,97 @@ PartitioningNew::create_distributed_adjacency_list(
     }
   }
 
-  // std::cout << "Stage 2" << std::endl;
+  return exterior_vertex;
+}
+//-----------------------------------------------------------------------------
+std::pair<std::vector<std::int32_t>, std::vector<std::int64_t>>
+PartitioningNew::reorder_global_indices(
+    MPI_Comm comm, const std::vector<std::int64_t>& global_indices,
+    const std::vector<bool>& shared_indices)
+{
+  assert(global_indices.size() == shared_indices.size());
+
+  // Create global ->local map
+  std::map<std::int64_t, std::int32_t> global_to_local;
+  for (std::size_t i = 0; i < global_indices.size(); ++i)
+    global_to_local.insert({global_indices[i], i});
 
   // Get maximum global index across all processes
   std::int64_t my_max_global_index = 0;
-  if (!global_to_local_vertices.empty())
-    my_max_global_index = global_to_local_vertices.rbegin()->first;
+  if (!global_to_local.empty())
+    my_max_global_index = global_to_local.rbegin()->first;
   const std::int64_t max_global_index
       = dolfinx::MPI::all_reduce(comm, my_max_global_index, MPI_MAX);
 
-  // Compute number of possibly shared vertices to send to each process
+  // Compute number of possibly shared vertices to send to each process,
+  // considering only vertices that are possibly shared
   const int size = dolfinx::MPI::size(comm);
-  std::vector<int> number_to_send(size, 0);
-  for (auto vertex : global_to_local_vertices)
+  std::vector<int> number_send(size, 0);
+  for (auto& vertex : global_to_local)
   {
-    // Only consider vertices that are the boundary of the local
-    // topology
-    if (exterior_vertex[vertex.second])
+    if (shared_indices[vertex.second])
     {
+      // TODO: optimise this call
       const int owner
           = dolfinx::MPI::index_owner(comm, vertex.first, max_global_index + 1);
-      number_to_send[owner] += 1;
+      number_send[owner] += 1;
     }
   }
 
-  // std::cout << "Stage 3" << std::endl;
-
-  // Compute global vertex send displacements
+  // Compute send displacements
   std::vector<int> disp_send(size + 1, 0);
-  std::partial_sum(number_to_send.begin(), number_to_send.end(),
+  std::partial_sum(number_send.begin(), number_send.end(),
                    disp_send.begin() + 1);
 
-  // std::cout << "Stage 4" << std::endl;
-
-  // Pack global vertex send data
-  std::vector<std::int64_t> vertices_send(disp_send.back());
+  // Pack global index send data
+  std::vector<std::int64_t> indices_send(disp_send.back());
   std::vector<int> disp_tmp = disp_send;
-  for (auto vertex : global_to_local_vertices)
+  for (auto vertex : global_to_local)
   {
-    if (exterior_vertex[vertex.second])
+    if (shared_indices[vertex.second])
     {
       const int owner
           = dolfinx::MPI::index_owner(comm, vertex.first, max_global_index + 1);
-      vertices_send[disp_tmp[owner]++] = vertex.first;
+      indices_send[disp_tmp[owner]++] = vertex.first;
     }
   }
 
-  // std::cout << "Stage 5" << std::endl;
-
-  // Send/receive number of vertex indices to communicate to each process
-  std::vector<int> number_to_recv(size);
-  MPI_Alltoall(number_to_send.data(), 1, MPI_INT, number_to_recv.data(), 1,
-               MPI_INT, comm);
-
-  // std::cout << "Stage 6" << std::endl;
+  // Send/receive number of indices to communicate to each process
+  std::vector<int> number_recv(size);
+  MPI_Alltoall(number_send.data(), 1, MPI_INT, number_recv.data(), 1, MPI_INT,
+               comm);
 
   // Compute receive displacements
   std::vector<int> disp_recv(size + 1, 0);
-  std::partial_sum(number_to_recv.begin(), number_to_recv.end(),
+  std::partial_sum(number_recv.begin(), number_recv.end(),
                    disp_recv.begin() + 1);
-
-  // std::cout << "Stage 7" << std::endl;
 
   // Send/receive global indices
   std::vector<std::int64_t> vertices_recv(disp_recv.back());
-  MPI_Alltoallv(vertices_send.data(), number_to_send.data(), disp_send.data(),
+  MPI_Alltoallv(indices_send.data(), number_send.data(), disp_send.data(),
                 MPI::mpi_type<std::int64_t>(), vertices_recv.data(),
-                number_to_recv.data(), disp_recv.data(),
+                number_recv.data(), disp_recv.data(),
                 MPI::mpi_type<std::int64_t>(), comm);
-
-  // std::cout << "Stage 8" << std::endl;
 
   // Build list of sharing processes for each vertex
   const std::array<std::int64_t, 2> range
       = dolfinx::MPI::local_range(comm, max_global_index + 1);
-  // std::vector<std::set<int>> owners(disp_recv.back());
   std::vector<std::set<int>> owners(range[1] - range[0]);
   for (int i = 0; i < size; ++i)
   {
     assert((i + 1) < (int)disp_recv.size());
     for (int j = disp_recv[i]; j < disp_recv[i + 1]; ++j)
     {
-      // Get back to zero reference index
+      // Get back to 'zero' reference index
       assert(j < (int)vertices_recv.size());
       const std::int64_t index = vertices_recv[j] - range[0];
+
       assert(index < (int)owners.size());
       owners[index].insert(i);
     }
   }
 
-  // std::cout << "Stage 9" << std::endl;
-
-  // For each vertex, build list of sharing processes
+  // For each index, build list of sharing processes
   std::map<std::int64_t, std::set<int>> global_vertex_to_procs;
   for (int i = 0; i < size; ++i)
   {
@@ -226,9 +153,7 @@ PartitioningNew::create_distributed_adjacency_list(
       global_vertex_to_procs[vertices_recv[j]].insert(i);
   }
 
-  // std::cout << "Stage 10" << std::endl;
-
-  // Get list of sharing process for each vertex
+  // For vertices on this process, get list of sharing process
   std::unique_ptr<const graph::AdjacencyList<int>> sharing_processes;
   {
     // Pack process that share each vertex
@@ -283,33 +208,23 @@ PartitioningNew::create_distributed_adjacency_list(
         processes, process_offsets);
   }
 
-  // std::cout << "Stage 11" << std::endl;
-
-  const int rank = dolfinx::MPI::rank(comm);
-  // if (rank == 0)
-  // {
-  //   std::cout << "--------------" << std::endl;
-  //   for (int i = 0; i < sharing_processes->num_nodes(); ++i)
-  //   {
-  //     // std::cout << "Vertex: " << i << ", " << vertices_send[i] <<
-  //     std::endl; auto p = sharing_processes->links(i);
-  //     // std::cout << "  ProcsData: " << p << std::endl;
-  //   }
-  // }
-
+  // Build global-to-local map for non-shared indices
   std::map<std::int64_t, std::int32_t> global_to_local_owned0;
-  for (auto& vertex : global_to_local_vertices)
+  for (auto& vertex : global_to_local)
   {
-    if (!exterior_vertex[vertex.second])
+    if (!shared_indices[vertex.second])
       global_to_local_owned0.insert(vertex);
   }
 
+  // Build global-to-local map for (i) 'exterior' but non-shared indices
+  // and (ii) shared indices
+  const int rank = dolfinx::MPI::rank(comm);
   std::map<std::int64_t, std::int32_t> global_to_local_owned1,
       global_to_local_unowned;
   for (int i = 0; i < sharing_processes->num_nodes(); ++i)
   {
-    auto it = global_to_local_vertices.find(vertices_send[i]);
-    assert(it != global_to_local_vertices.end());
+    auto it = global_to_local.find(indices_send[i]);
+    assert(it != global_to_local.end());
     if (sharing_processes->num_links(i) == 1)
       global_to_local_owned0.insert(*it);
     else if (sharing_processes->links(i).minCoeff() == rank)
@@ -318,9 +233,9 @@ PartitioningNew::create_distributed_adjacency_list(
       global_to_local_unowned.insert(*it);
   }
 
-  // Re-number owned vertices
+  // Re-number owned indices
   std::vector<std::int64_t> local_to_original;
-  std::vector<std::int32_t> local_to_local_new(map_vertex->size_local(), -1);
+  std::vector<std::int32_t> local_to_local_new(shared_indices.size(), -1);
   std::int32_t p = 0;
   for (auto it = global_to_local_owned0.begin();
        it != global_to_local_owned0.end(); ++it)
@@ -342,63 +257,54 @@ PartitioningNew::create_distributed_adjacency_list(
       = global_to_local_owned0.size() + global_to_local_owned1.size();
   const std::int64_t offset_global
       = dolfinx::MPI::global_offset(comm, num_owned_vertices, true);
-  // std::cout << "My offset: " << rank << ", " << offset_global << std::endl;
 
-  // Send global new global numbers
+  // Send global new global indices
   for (int i = 0; i < sharing_processes->num_nodes(); ++i)
   {
-    // Get global-local
-    auto it = global_to_local_vertices.find(vertices_send[i]);
-    // const std::int64_t
+    // Get old global -> local
+    auto it = global_to_local.find(indices_send[i]);
+    assert(it != global_to_local.end());
 
-    assert(it != global_to_local_vertices.end());
     if (sharing_processes->num_links(i) == 1)
       global_to_local_owned0.insert(*it);
     else if (sharing_processes->links(i).minCoeff() == rank)
       global_to_local_owned1.insert(*it);
   }
 
+  // Get array of unique neighbouring process ranks
   const Eigen::Array<int, Eigen::Dynamic, 1>& procs
       = sharing_processes->array();
-
   std::vector<int> neighbours(procs.data(), procs.data() + procs.rows());
   std::sort(neighbours.begin(), neighbours.end());
   neighbours.erase(std::unique(neighbours.begin(), neighbours.end()),
                    neighbours.end());
 
+  // Number of (global old, global new) pairs to send to each neighbour
   std::map<int, int> num_receive;
-  for (auto p : neighbours)
+  for (int p : neighbours)
   {
     num_receive[p]
         = 2 * std::count(procs.data(), procs.data() + procs.rows(), p);
-    // if (rank == 1)
-    //   std::cout << "Num to receive: " << rank << ", " << p << ", "
-    //             << num_receive[p] << std::endl;
   }
 
+  // Send (global old, global new) pairs to neighbours
   const int num_neighbours = neighbours.size();
-
   std::vector<MPI_Request> requests(2 * num_neighbours);
   std::vector<std::vector<int>> dsend(neighbours.size());
-  for (std::size_t p = 0; p < neighbours.size(); ++p)
+  for (int p = 0; p < num_neighbours; ++p)
   {
     // std::vector<int> dsend;
     for (int i = 0; i < sharing_processes->num_nodes(); ++i)
     {
-      auto it = global_to_local_vertices.find(vertices_send[i]);
+      auto it = global_to_local.find(indices_send[i]);
+      assert(it != global_to_local.end());
 
-      assert(it != global_to_local_vertices.end());
       const std::int64_t global_old = it->first;
       const std::int32_t local_old = it->second;
       std::int64_t global_new = local_to_local_new[local_old];
 
       if (global_new >= 0)
         global_new += offset_global;
-
-      // if (rank == 1)
-      //   std::cout << "Global: " << p << ", " << it->first << ", " <<
-      //   global_new
-      //             << std::endl;
 
       auto procs = sharing_processes->links(i);
       for (int k = 0; k < procs.rows(); ++k)
@@ -416,30 +322,22 @@ PartitioningNew::create_distributed_adjacency_list(
               &requests[p]);
   }
 
-  // std::cout << "-------------" << std::endl;
-  // if (rank == 0)
-  // {
-  //   int k = 1;
-  //   for (std::size_t j = 0; j < dsend.size(); j += 2)
-  //     std::cout << "Send data (old, new): " << dsend[k][j] << ", "
-  //               << dsend[k][j + 1] << std::endl;
-  // }
-
-  std::vector<std::vector<int>> drecv(neighbours.size());
-  for (std::size_t p = 0; p < neighbours.size(); ++p)
+  // Receive (global old, global new) pairs to neighbours
+  std::vector<std::vector<int>> drecv(num_neighbours);
+  for (int p = 0; p < num_neighbours; ++p)
   {
     auto it = num_receive.find(neighbours[p]);
     assert(it != num_receive.end());
-
     drecv[p].resize(it->second);
-    // std::cout << "Calling isend" << std::endl;
     MPI_Irecv(drecv[p].data(), drecv[p].size(), MPI_INT, p, 0, comm,
               &requests[num_neighbours + p]);
   }
 
+  // Wait for communication to finish
   std::vector<MPI_Status> status(2 * num_neighbours);
   MPI_Waitall(requests.size(), requests.data(), status.data());
 
+  // Unpack received (global old, global new) pairs
   std::map<std::int64_t, std::int64_t> global_old_new;
   for (std::size_t i = 0; i < drecv.size(); ++i)
   {
@@ -448,15 +346,8 @@ PartitioningNew::create_distributed_adjacency_list(
         global_old_new.insert({drecv[i][j], drecv[i][j + 1]});
   }
 
-  // if (rank == 0)
-  // {
-  //   for (auto p : global_old_new)
-  //     std::cout << "Pairs: " << p.first << ", " << p.second << std::endl;
-  // }
-
-  // Add ghosts
-
-  //  global_to_local_unowned.insert(*it);
+  // Build array of ghost indices (indices owned and numbered by another
+  // process)
   std::vector<std::int64_t> ghosts;
   for (auto it = global_to_local_unowned.begin();
        it != global_to_local_unowned.end(); ++it)
@@ -471,16 +362,95 @@ PartitioningNew::create_distributed_adjacency_list(
     }
   }
 
-  // if (rank == 1)
-  // {
-  //   std::cout << "Ghosts: " << std::endl;
-  //   for (auto g : ghosts)
-  //     std::cout << "  " << g << std::endl;
-  // }
+  return {local_to_local_new, ghosts};
+}
+//-----------------------------------------------------------------------------
+std::vector<int> PartitioningNew::partition_cells(
+    MPI_Comm comm, int nparts, const mesh::CellType cell_type,
+    const graph::AdjacencyList<std::int64_t>& cells)
+{
+  LOG(INFO) << "Compute partition of cells across processes";
 
+  // FIXME: Update GraphBuilder to use AdjacencyList
+  // Wrap AdjacencyList
+  const Eigen::Map<const Eigen::Array<std::int64_t, Eigen::Dynamic,
+                                      Eigen::Dynamic, Eigen::RowMajor>>
+      _cells(cells.array().data(), cells.num_nodes(),
+             mesh::num_cell_vertices(cell_type));
+
+  // Compute dual graph (for the cells on this process)
+  const auto [local_graph, graph_info]
+      = graph::GraphBuilder::compute_dual_graph(comm, _cells, cell_type);
+  const auto [num_ghost_nodes, num_local_edges, num_nonlocal_edges]
+      = graph_info;
+
+  // Build graph
+  graph::CSRGraph<SCOTCH_Num> csr_graph(comm, local_graph);
+  std::vector<std::size_t> weights;
+
+  // Call partitioner
+  const auto [partition, ignore] = graph::SCOTCH::partition(
+      comm, (SCOTCH_Num)nparts, csr_graph, weights, num_ghost_nodes);
+
+  return partition;
+}
+//-----------------------------------------------------------------------------
+std::pair<graph::AdjacencyList<std::int32_t>, std::vector<std::int64_t>>
+PartitioningNew::create_local_adjacency_list(
+    const graph::AdjacencyList<std::int64_t>& cells)
+{
+  const Eigen::Array<std::int64_t, Eigen::Dynamic, 1>& array = cells.array();
+  std::vector<std::int32_t> array_local(array.rows());
+
+  // Re-map global to local
+  int local = 0;
+  std::map<std::int64_t, std::int32_t> global_to_local;
+  for (int i = 0; i < array.rows(); ++i)
+  {
+    const std::int64_t global = array(i);
+    auto it = global_to_local.find(global);
+    if (it == global_to_local.end())
+    {
+      array_local[i] = local;
+      global_to_local.insert({global, local});
+      ++local;
+    }
+    else
+      array_local[i] = it->second;
+  }
+
+  std::vector<std::int64_t> local_to_global(global_to_local.size());
+  for (const auto& e : global_to_local)
+    local_to_global[e.second] = e.first;
+
+  // FIXME: Update AdjacencyList to avoid this
+  const Eigen::Array<std::int32_t, Eigen::Dynamic, 1>& offsets
+      = cells.offsets();
+  std::vector<std::int32_t> _offsets(offsets.data(),
+                                     offsets.data() + offsets.rows());
+  return {graph::AdjacencyList<std::int32_t>(array_local, _offsets),
+          std::move(local_to_global)};
+}
+//-----------------------------------------------------------------------------
+std::tuple<graph::AdjacencyList<std::int32_t>, common::IndexMap>
+PartitioningNew::create_distributed_adjacency_list(
+    MPI_Comm comm, const mesh::Topology& topology_local,
+    const std::vector<std::int64_t>& local_to_global_vertices)
+{
+  // Get marker for each vertex indicating if it interior or on the
+  // boundary of the local topology
+  const std::vector<bool>& exterior_vertex
+      = compute_vertex_exterior_markers(topology_local);
+
+  // Compute new local and global indices
+  const auto [local_to_local_new, ghosts]
+      = reorder_global_indices(comm, local_to_global_vertices, exterior_vertex);
+
+  const int dim = topology_local.dim();
   auto cv = topology_local.connectivity(dim, 0);
   if (!cv)
     throw std::runtime_error("Missing cell-vertex connectivity.");
+
   const Eigen::Array<std::int32_t, Eigen::Dynamic, 1>& data_old = cv->array();
   std::vector<std::int32_t> data_new(data_old.rows());
   for (std::size_t i = 0; i < data_new.size(); ++i)
@@ -490,9 +460,9 @@ PartitioningNew::create_distributed_adjacency_list(
   std::vector<std::int32_t> _offsets(offsets.data(),
                                      offsets.data() + offsets.rows());
 
-  return {std::move(graph::AdjacencyList<std::int32_t>(data_new, _offsets)),
-          std::move(common::IndexMap(comm, num_owned_vertices, ghosts, 1)),
-          std::move(local_to_original)};
+  const int num_owned_vertices = local_to_local_new.size() - ghosts.size();
+  return {graph::AdjacencyList<std::int32_t>(data_new, _offsets),
+          common::IndexMap(comm, num_owned_vertices, ghosts, 1)};
 }
 //-----------------------------------------------------------------------------
 std::pair<graph::AdjacencyList<std::int64_t>, std::vector<int>>

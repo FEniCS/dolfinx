@@ -39,7 +39,6 @@ public:
   /// Build dofmap
   static DofMap
   build(MPI_Comm comm, const mesh::Topology& topology,
-        const mesh::CellType cell_type,
         std::shared_ptr<const ElementDofLayout> element_dof_layout);
 
   /// Build sub-dofmap view
@@ -51,7 +50,6 @@ public:
   static std::pair<std::unique_ptr<common::IndexMap>,
                    Eigen::Array<std::int32_t, Eigen::Dynamic, 1>>
   build(MPI_Comm comm, const mesh::Topology& topology,
-        const mesh::CellType cell_type,
         const ElementDofLayout& element_dof_layout,
         const std::int32_t block_size);
 };
