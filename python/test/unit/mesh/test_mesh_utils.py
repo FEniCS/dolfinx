@@ -88,7 +88,7 @@ def test_topology_partition():
         cells_filtered1 = cpp.mesh.extract_topology(layout, cells1)
         cells_in = cpp.graph.AdjacencyList64(cells_in)
     else:
-        cells_in = None
+        cells1 = cpp.graph.AdjacencyList64(0)
         cells_filtered1 = cpp.graph.AdjacencyList64(0)
 
     # Compute the destination process for cells on this process
@@ -99,7 +99,6 @@ def test_topology_partition():
     # Distribute cells to destination process
     cells, src, original_index = cpp.mesh.distribute(cpp.MPI.comm_world, cells_filtered1,
                                                      dest)
-    print("Orig index:", original_index)
     assert cpp.MPI.sum(cpp.MPI.comm_world, cells.num_nodes) == 4
 
     # Build local cell-vertex connectivity (with local vertex indices
@@ -160,3 +159,16 @@ def test_topology_partition():
     # Build 'geometry' dofmap on the topology
     dof_index_map, dofmap = cpp.fem.build_dofmap(cpp.MPI.comm_world,
                                                  topology, layout, 1)
+
+    # 1. cells_in, dest rank
+    # 2. original_index on owner, src rank
+    # src_proc = set(src)
+    # print(src_proc)
+
+    cell_nodes, global_index_nodes = cpp.mesh.exchange(cpp.MPI.comm_world,
+                                                       cells1, dest, set(src))
+
+    if rank == 1:
+        print("Num:", cell_nodes.num_nodes)
+        for i in range(cell_nodes.num_nodes):
+            print("  ", global_index_nodes, cell_nodes.links(i))

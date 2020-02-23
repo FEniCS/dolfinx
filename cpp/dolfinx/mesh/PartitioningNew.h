@@ -13,6 +13,7 @@
 #include <dolfinx/common/MPI.h>
 #include <dolfinx/graph/AdjacencyList.h>
 #include <map>
+#include <set>
 #include <utility>
 #include <vector>
 
@@ -99,16 +100,23 @@ public:
   /// Re-distribute adjacency list across processes
   /// @param[in] comm MPI Communicator
   /// @param[in] list An adjacency list
-  /// @param[in] owner Destination rank for the ith entry in the
+  /// @param[in] destinations Destination rank for the ith entry in the
   ///   adjacency list
   /// @return Adjacency list for this process, array of source ranks for
   ///   each cell in the adjacency list, and input global index for each
   ///   node.
   static std::tuple<graph::AdjacencyList<std::int64_t>, std::vector<int>,
                     std::vector<std::int64_t>>
-  distribute(const MPI_Comm& comm,
-             const graph::AdjacencyList<std::int64_t>& list,
-             const std::vector<int>& owner);
+  distribute(MPI_Comm comm, const graph::AdjacencyList<std::int64_t>& list,
+             const std::vector<int>& destinations);
+
+  /// TODO
+  ///
+  /// Send nodes to destinations, and receive from sources
+  static std::pair<graph::AdjacencyList<std::int64_t>,
+                   std::vector<std::int64_t>>
+  exchange(MPI_Comm comm, const graph::AdjacencyList<std::int64_t>& list,
+           const std::vector<int>& destinations, const std::set<int>& sources);
 };
 } // namespace mesh
 } // namespace dolfinx

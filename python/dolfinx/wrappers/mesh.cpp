@@ -370,6 +370,14 @@ void mesh(py::module& m)
                                                             owner);
         });
 
+  m.def("exchange", [](const MPICommWrapper comm,
+                       const dolfinx::graph::AdjacencyList<std::int64_t>& list,
+                       const std::vector<int>& destinations,
+                       const std::set<int>& sources) {
+    return dolfinx::mesh::PartitioningNew::exchange(comm.get(), list,
+                                                    destinations, sources);
+  });
+
   m.def("partition_cells",
         [](const MPICommWrapper comm, int nparts,
            dolfinx::mesh::CellType cell_type,
