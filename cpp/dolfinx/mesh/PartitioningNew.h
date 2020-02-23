@@ -45,16 +45,26 @@ class Topology;
 class PartitioningNew
 {
 public:
-  /// Compute interior/boundary points
-  // std::array<std::vector<std::int32_t>, 2>
+  /// Compute mark interior/boundary vertices
+  /// @param[in] topology_local Local topology
+  /// @return Array where the ith entry is true if the ith vertex is on
+  /// the boundary
   static std::vector<bool>
   compute_vertex_exterior_markers(const mesh::Topology& topology_local);
 
-  /// @return Local (old) -> local (new)
+  /// Compute new, contiguous global indices from a collection of
+  /// global, possibly non-contiguous global indices and assign process
+  /// ownership to the new global indices.
+  /// @param[in] comm The communicator across which the indices are
+  ///   distributed
+  /// @param[in] global_to_local Map from inout global induces to local
+  ///   indices
+  /// @return {Local (old) -> local (new) indices, global indices for
+  ///   ghosts of this process}
   static std::pair<std::vector<std::int32_t>, std::vector<std::int64_t>>
   reorder_global_indices(
       MPI_Comm comm,
-      const std::map<std::int64_t, std::int32_t>& global_to_local_vertices,
+      const std::map<std::int64_t, std::int32_t>& global_to_local,
       const std::vector<bool>& shared_indices);
 
   /// NEW: Compute destination rank for mesh cells using a graph
@@ -88,8 +98,7 @@ public:
   /// @param[in] global_to_local_vertices
   // static std::pair<graph::AdjacencyList<std::int32_t>, common::IndexMap>
   // static graph::AdjacencyList<std::int32_t>
-  static std::tuple<graph::AdjacencyList<std::int32_t>, common::IndexMap,
-                    std::vector<std::int64_t>>
+  static std::tuple<graph::AdjacencyList<std::int32_t>, common::IndexMap>
   // static graph::AdjacencyList<std::int32_t>
   // static common::IndexMap
   create_distributed_adjacency_list(

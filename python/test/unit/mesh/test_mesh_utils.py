@@ -137,8 +137,8 @@ def test_topology_partition():
 
     # Build distributed cell-vertex AdjacencyList, IndexMap for
     # vertices, and map from local index to old global index
-    cells, vertex_map, l2g = cpp.mesh.create_distributed_adjacency_list(cpp.MPI.comm_world, topology,
-                                                                        global_to_local_vertices)
+    cells, vertex_map = cpp.mesh.create_distributed_adjacency_list(cpp.MPI.comm_world, topology,
+                                                                   global_to_local_vertices)
 
     # Create distributed topology
     topology = cpp.mesh.Topology(layout.cell_type)
