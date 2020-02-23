@@ -31,9 +31,9 @@ public:
   /// Construct trivial adjacency list where each of the n nodes is connected to
   /// itself
   /// @param [in] n Number of nodes
-  AdjacencyList(const std::int32_t n) : _array(n + 1), _offsets(n + 1)
+  AdjacencyList(const std::int32_t n) : _array(n), _offsets(n + 1)
   {
-    std::iota(_array.data(), _array.data() + n + 1, 0);
+    std::iota(_array.data(), _array.data() + n, 0);
     std::iota(_offsets.data(), _offsets.data() + n + 1, 0);
   }
 

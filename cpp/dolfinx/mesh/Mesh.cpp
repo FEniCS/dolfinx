@@ -7,8 +7,6 @@
 #include "Mesh.h"
 #include "CoordinateDofs.h"
 #include "Geometry.h"
-#include "MeshEntity.h"
-#include "MeshIterator.h"
 #include "Partitioning.h"
 #include "Topology.h"
 #include "TopologyComputation.h"
@@ -16,6 +14,7 @@
 #include <dolfinx/common/IndexMap.h>
 #include <dolfinx/common/MPI.h>
 #include <dolfinx/common/Timer.h>
+#include <dolfinx/common/log.h>
 #include <dolfinx/common/utils.h>
 #include <dolfinx/graph/AdjacencyList.h>
 #include <dolfinx/io/cells.h>
@@ -230,7 +229,7 @@ Mesh::Mesh(
 
   // Initialise vertex topology
   _topology = std::make_unique<Topology>(type);
-  _topology->set_global_indices(0, vertex_indices_global);
+  _topology->set_global_user_vertices(vertex_indices_global);
   _topology->set_index_map(0, vertex_index_map);
   const std::int32_t num_vertices
       = vertex_index_map->size_local() + vertex_index_map->num_ghosts();
@@ -240,8 +239,10 @@ Mesh::Mesh(
   // Initialise cell topology
   Eigen::Array<std::int64_t, Eigen::Dynamic, 1> cell_ghosts(num_ghost_cells);
   if ((int)global_cell_indices.size() == (num_cells_local + num_ghost_cells))
+  {
     std::copy(global_cell_indices.begin() + num_cells_local,
               global_cell_indices.end(), cell_ghosts.data());
+  }
 
   auto cell_index_map = std::make_shared<common::IndexMap>(
       _mpi_comm.comm(), num_cells_local, cell_ghosts, 1);
@@ -258,10 +259,10 @@ Mesh::Mesh(
         = MPI::global_offset(comm, num_cells, true);
     std::vector<std::int64_t> global_indices(num_cells, 0);
     std::iota(global_indices.begin(), global_indices.end(), global_cell_offset);
-    _topology->set_global_indices(tdim, global_indices);
+    // _topology->set_global_indices(tdim, global_indices);
   }
-  else
-    _topology->set_global_indices(tdim, global_cell_indices);
+  // else
+  //   _topology->set_global_indices(tdim, global_cell_indices);
 }
 //-----------------------------------------------------------------------------
 Mesh::Mesh(const Mesh& mesh)
@@ -301,7 +302,7 @@ std::int32_t Mesh::num_entities(int d) const
                              "been created for dimension "
                              + std::to_string(d) + ".");
   }
-  assert(map->block_size == 1);
+  assert(map->block_size() == 1);
   return map->size_local() + map->num_ghosts();
 }
 //-----------------------------------------------------------------------------
@@ -309,7 +310,7 @@ std::int64_t Mesh::num_entities_global(int dim) const
 {
   assert(_topology);
   assert(_topology->index_map(dim));
-  assert(_topology->index_map(dim)->block_size == 1);
+  assert(_topology->index_map(dim)->block_size() == 1);
   return _topology->index_map(dim)->size_global();
 }
 //-----------------------------------------------------------------------------
@@ -362,11 +363,7 @@ std::int32_t Mesh::create_entities(int dim) const
     _topology->set_connectivity(entity_vertex, dim, 0);
 
   if (index_map)
-  {
     _topology->set_index_map(dim, index_map);
-    // FIXME: remove global_indices
-    _topology->set_global_indices(dim, index_map->global_indices(false));
-  }
 
   return index_map->size_local();
 }
@@ -410,6 +407,213 @@ void Mesh::create_connectivity(int d0, int d1) const
     _topology->set_interior_facets(f);
   }
 }
+//-----------------------------------------------------------------------------
+void Mesh::create_entity_permutations() const
+{
+  // FIXME: This should probably be moved to topology.
+
+  assert(_topology);
+  if (_topology->entity_reflection_size() > 0)
+    return;
+
+  const int tdim = _topology->dim();
+  assert(_topology->connectivity(tdim, 0));
+  const int num_cells = _topology->connectivity(tdim, 0)->num_nodes();
+
+  _topology->resize_entity_permutations(
+      num_cells, cell_num_entities(_topology->cell_type(), 1),
+      cell_num_entities(_topology->cell_type(), 2));
+
+  for (int d = 0; d < tdim; ++d)
+    this->create_entities(d);
+
+  // If the cell is a triangle or tetrahedron
+  if (_topology->cell_type() == CellType::triangle
+      or _topology->cell_type() == CellType::tetrahedron)
+  {
+    for (int cell_n = 0; cell_n < num_cells; ++cell_n)
+    {
+      auto cell_vertices = _topology->connectivity(tdim, 0)->links(cell_n);
+      for (int d = 1; d < tdim; ++d)
+      {
+        assert(_topology->connectivity(d, 0));
+        assert(_topology->connectivity(tdim, d));
+        auto cell_entities = _topology->connectivity(tdim, d)->links(cell_n);
+        for (int i = 0; i < cell_num_entities(_topology->cell_type(), d); ++i)
+        {
+          // Get the facet
+          const int sub_e_n = cell_entities[i];
+
+          // Number of rotations and reflections to apply to the facet
+          std::uint8_t rots = 0;
+          std::uint8_t refs = 0;
+
+          auto vertices = _topology->connectivity(d, 0)->links(sub_e_n);
+
+          // If the entity is an interval, it should be oriented pointing from
+          // the lowest numbered vertex to the highest numbered vertex
+          if (d == 1)
+          {
+            // Find iterators pointing to cell vertex given a vertex on facet
+            const auto it0 = std::find(
+                cell_vertices.data(),
+                cell_vertices.data() + cell_vertices.size(), vertices[0]);
+            const auto it1 = std::find(
+                cell_vertices.data(),
+                cell_vertices.data() + cell_vertices.size(), vertices[1]);
+
+            // The number of reflections
+            // Comparing iterators directly instead of values they point to
+            // is sufficient here
+            refs = it1 < it0;
+          }
+          else if (d == 2)
+          {
+            // Orient that triangle so the the lowest numbered vertex is the
+            // origin, and the next vertex anticlockwise from the lowest has a
+            // lower number than the next vertex clockwise. Find the index of
+            // the lowest numbered vertex
+            rots = 0;
+
+            // Store local vertex indices here
+            std::array<std::size_t, 3> e_vertices;
+            // Find iterators pointing to cell vertex given a vertex on facet
+            for (int j = 0; j < 3; ++j)
+            {
+              const auto it = std::find(
+                  cell_vertices.data(),
+                  cell_vertices.data() + cell_vertices.size(), vertices[j]);
+              // Get the actual local vertex indices
+              e_vertices[j] = it - cell_vertices.data();
+            }
+
+            for (int v = 1; v < 3; ++v)
+              if (e_vertices[v] < e_vertices[rots])
+                rots = v;
+            // pre is the number of the next vertex clockwise from the lowest
+            // numbered vertex
+            const int pre
+                = rots == 0 ? e_vertices[3 - 1] : e_vertices[rots - 1];
+            // post is the number of the next vertex anticlockwise from the
+            // lowest numbered vertex
+            const int post
+                = rots == 3 - 1 ? e_vertices[0] : e_vertices[rots + 1];
+            // The number of reflections
+            refs = post > pre;
+          }
+
+          _topology->set_entity_permutation(cell_n, d, i, rots, refs);
+        }
+      }
+    }
+  }
+  // If the cell is a quad, hex or interval
+  else
+  {
+    for (int cell_n = 0; cell_n < num_cells; ++cell_n)
+    {
+      auto cell_vertices
+          = this->topology().connectivity(tdim, 0)->links(cell_n);
+      for (int d = 1; d < tdim; ++d)
+      {
+        assert(_topology->connectivity(d, 0));
+        assert(_topology->connectivity(tdim, d));
+        auto cell_entities = _topology->connectivity(tdim, d)->links(cell_n);
+        for (int i = 0; i < cell_num_entities(_topology->cell_type(), d); ++i)
+        {
+          // Get the facet
+          const int sub_e_n = cell_entities[i];
+
+          // Number of rotations and reflections to apply to the facet
+          std::uint8_t rots = 0;
+          std::uint8_t refs = 0;
+
+          auto vertices = _topology->connectivity(d, 0)->links(sub_e_n);
+
+          // If the entity is an interval, it should be oriented pointing from
+          // the lowest numbered vertex to the highest numbered vertex
+          if (d == 1)
+          {
+            // Find iterators pointing to cell vertex given a vertex on facet
+            const auto it0 = std::find(
+                cell_vertices.data(),
+                cell_vertices.data() + cell_vertices.size(), vertices[0]);
+            const auto it1 = std::find(
+                cell_vertices.data(),
+                cell_vertices.data() + cell_vertices.size(), vertices[1]);
+
+            // The number of reflections
+            refs = it1 < it0;
+          }
+          // Triangles and quadrilaterals
+          else if (d == 2)
+          {
+            // quadrilateral
+            // Orient that quad so the the lowest numbered vertex is the origin,
+            // and the next vertex anticlockwise from the lowest has a lower
+            // number than the next vertex clockwise. Find the index of the
+            // lowest numbered vertex
+            int num_min = -1;
+
+            // Store local vertex indices here
+            std::array<std::size_t, 4> e_vertices;
+            // Find iterators pointing to cell vertex given a vertex on facet
+            for (int j = 0; j < 4; ++j)
+            {
+              const auto it = std::find(
+                  cell_vertices.data(),
+                  cell_vertices.data() + cell_vertices.size(), vertices[j]);
+              // Get the actual local vertex indices
+              e_vertices[j] = it - cell_vertices.data();
+            }
+
+            for (int v = 0; v < 4; ++v)
+            {
+              if (num_min == -1 || e_vertices[v] < e_vertices[num_min])
+                num_min = v;
+            }
+
+            // rots is the number of rotations to get the lowest numbered vertex
+            // to the origin
+            rots = num_min;
+
+            // pre is the (local) number of the next vertex clockwise from the
+            // lowest numbered vertex
+            int pre = 2;
+
+            // post is the (local) number of the next vertex anticlockwise from
+            // the lowest numbered vertex
+            int post = 1;
+
+            // The tensor product ordering of quads must be taken into account
+            if (num_min == 1)
+            {
+              pre = 0;
+              post = 3;
+            }
+            else if (num_min == 2)
+            {
+              pre = 3;
+              post = 0;
+              rots = 3;
+            }
+            else if (num_min == 3)
+            {
+              pre = 1;
+              post = 2;
+              rots = 2;
+            }
+            // The number of reflections
+            refs = (e_vertices[post] > e_vertices[pre]);
+          }
+
+          _topology->set_entity_permutation(cell_n, d, i, rots, refs);
+        }
+      }
+    }
+  }
+}
+
 //-----------------------------------------------------------------------------
 void Mesh::create_connectivity_all() const
 {

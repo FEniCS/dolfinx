@@ -90,9 +90,9 @@ void fem::assemble_matrix(
   // Build dof markers
   std::vector<bool> dof_marker0, dof_marker1;
   std::int32_t dim0
-      = map0->block_size * (map0->size_local() + map0->num_ghosts());
+      = map0->block_size() * (map0->size_local() + map0->num_ghosts());
   std::int32_t dim1
-      = map1->block_size * (map1->size_local() + map1->num_ghosts());
+      = map1->block_size() * (map1->size_local() + map1->num_ghosts());
   for (std::size_t k = 0; k < bcs.size(); ++k)
   {
     assert(bcs[k]);

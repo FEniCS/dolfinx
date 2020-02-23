@@ -9,7 +9,6 @@
 #include <dolfinx/common/Timer.h>
 #include <dolfinx/mesh/Geometry.h>
 #include <dolfinx/mesh/Mesh.h>
-#include <dolfinx/mesh/MeshEntity.h>
 #include <dolfinx/mesh/MeshIterator.h>
 #include <limits>
 #include <map>
@@ -74,8 +73,10 @@ mesh::Mesh compute_refinement(const mesh::Mesh& mesh, ParallelRefinement& p_ref,
   std::vector<std::size_t> marked_edge_list;
   std::vector<std::int32_t> simplex_set;
 
-  const std::vector<std::int64_t>& global_indices
-      = mesh.topology().global_indices(0);
+  // const std::vector<std::int64_t>& global_indices
+  //     = mesh.topology().global_indices(0);
+  const std::vector<std::int64_t> global_indices
+      = mesh.topology().index_map(0)->global_indices(true);
   for (const auto& cell : mesh::MeshRange(mesh, tdim))
   {
     // Create vector of indices in the order [vertices][edges], 3+3 in
@@ -199,10 +200,10 @@ std::vector<std::int32_t>
 get_tetrahedra(const std::vector<bool>& marked_edges,
                const std::vector<std::int32_t>& longest_edge)
 {
-  // AdjacencyList matrix for ten possible points (4 vertices + 6 edge midpoints)
-  // ordered {v0, v1, v2, v3, e0, e1, e2, e3, e4, e5}
-  // Only need upper triangle, but sometimes it is easier just to insert
-  // both entries (j,i) and (i,j).
+  // AdjacencyList matrix for ten possible points (4 vertices + 6 edge
+  // midpoints) ordered {v0, v1, v2, v3, e0, e1, e2, e3, e4, e5} Only need upper
+  // triangle, but sometimes it is easier just to insert both entries (j,i) and
+  // (i,j).
   bool conn[10][10] = {};
 
   // Edge connectivity to vertices (and by extension facets)
@@ -324,8 +325,8 @@ face_long_edge(const mesh::Mesh& mesh)
   }
 
   // Get longest edge of each face
-  const std::vector<std::int64_t>& global_indices
-      = mesh.topology().global_indices(0);
+  const std::vector<std::int64_t> global_indices
+      = mesh.topology().index_map(0)->global_indices(true);
   for (const auto& f : mesh::MeshRange(mesh, 2, mesh::MeshRangeType::ALL))
   {
     auto face_edges = f.entities(1);
@@ -350,9 +351,9 @@ face_long_edge(const mesh::Mesh& mesh)
         // If edges are the same length, compare global index of
         // opposite vertex.  Only important so that tetrahedral faces
         // have a matching refinement pattern across processes.
-        const mesh::MeshEntity vmax(mesh, 0, f.entities(0)[imax]);
-        const mesh::MeshEntity vi(mesh, 0, f.entities(0)[i]);
-        if (global_indices[vi.index()] > global_indices[vmax.index()])
+        const int vmax = f.entities(0)[imax];
+        const int vi = f.entities(0)[i];
+        if (global_indices[vi] > global_indices[vmax])
           imax = i;
       }
     }

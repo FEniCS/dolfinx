@@ -206,6 +206,14 @@ void fem(py::module& m)
             element_dof_layout);
       },
       "Build and dofmap on a mesh.");
+  m.def(
+      "build_dofmap",
+      [](const MPICommWrapper comm, const dolfinx::mesh::Topology& topology,
+         const dolfinx::fem::ElementDofLayout& element_dof_layout, int bs) {
+        return dolfinx::fem::DofMapBuilder::build(
+            comm.get(), topology, topology.cell_type(), element_dof_layout, bs);
+      },
+      "Build and dofmap on a mesh.");
 
   // dolfinx::fem::FiniteElement
   py::class_<dolfinx::fem::FiniteElement,
@@ -223,6 +231,13 @@ void fem(py::module& m)
   py::class_<dolfinx::fem::ElementDofLayout,
              std::shared_ptr<dolfinx::fem::ElementDofLayout>>(
       m, "ElementDofLayout", "Object describing the layout of dofs on a cell")
+      .def(py::init<int, const std::vector<std::vector<std::set<int>>>&,
+                    const std::vector<int>&,
+                    const std::vector<
+                        std::shared_ptr<const dolfinx::fem::ElementDofLayout>>,
+                    const dolfinx::mesh::CellType,
+                    const Eigen::Array<int, Eigen::Dynamic, Eigen::Dynamic,
+                                       Eigen::RowMajor>&>())
       .def_property_readonly("num_dofs",
                              &dolfinx::fem::ElementDofLayout::num_dofs)
       .def_property_readonly("cell_type",
@@ -420,7 +435,8 @@ void fem(py::module& m)
               int i, std::intptr_t addr) {
              auto tabulate_tensor_ptr = (void (*)(
                  PetscScalar*, const PetscScalar*, const PetscScalar*,
-                 const double*, const int*, const int*))addr;
+                 const double*, const int*, const std::uint8_t*, const bool*,
+                 const bool*, const std::uint8_t*))addr;
              self.set_tabulate_tensor(type, i, tabulate_tensor_ptr);
            })
       .def_property_readonly("rank", &dolfinx::fem::Form::rank)

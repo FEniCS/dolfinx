@@ -47,24 +47,33 @@ void common(py::module& m)
   // dolfinx::common::IndexMap
   py::class_<dolfinx::common::IndexMap,
              std::shared_ptr<dolfinx::common::IndexMap>>(m, "IndexMap")
+      .def(py::init(
+          [](const MPICommWrapper comm, std::int32_t local_size,
+             const Eigen::Ref<
+                 const Eigen::Array<std::int64_t, Eigen::Dynamic, 1>>& ghosts,
+             int block_size) {
+            return std::make_shared<dolfinx::common::IndexMap>(
+                comm.get(), local_size, ghosts, block_size);
+          }))
       .def_property_readonly("size_local",
                              &dolfinx::common::IndexMap::size_local)
       .def_property_readonly("size_global",
                              &dolfinx::common::IndexMap::size_global)
       .def_property_readonly("num_ghosts",
                              &dolfinx::common::IndexMap::num_ghosts)
-      .def_readonly("block_size", &dolfinx::common::IndexMap::block_size,
-                    "Return block size")
+      .def_property_readonly("block_size",
+                             &dolfinx::common::IndexMap::block_size,
+                             "Return block size")
       .def_property_readonly("local_range",
                              &dolfinx::common::IndexMap::local_range,
                              "Range of indices owned by this map")
-      .def_property_readonly("ghost_owners",
-                             &dolfinx::common::IndexMap::ghost_owners,
-                             py::return_value_policy::reference_internal,
-                             "Return owning process for each ghost index")
+      .def("ghost_owners", &dolfinx::common::IndexMap::ghost_owners,
+           py::return_value_policy::reference_internal,
+           "Return owning process for each ghost index")
       .def_property_readonly("ghosts", &dolfinx::common::IndexMap::ghosts,
                              py::return_value_policy::reference_internal,
                              "Return list of ghost indices")
+      .def("global_indices", &dolfinx::common::IndexMap::global_indices)
       .def("indices", &dolfinx::common::IndexMap::indices,
            "Return array of global indices for all indices on this process");
 
@@ -140,11 +149,12 @@ void mpi(py::module& m)
       m, "MPICommWrapper",
       "DOLFIN is compiled without support for mpi4py. This object can be "
       "passed into DOLFIN as an MPI communicator, but is not an mpi4py comm.")
-      .def("underlying_comm",
-           [](MPICommWrapper self) { return (std::uintptr_t)self.get(); },
-           "Return the underlying MPI_Comm cast to std::uintptr_t. "
-           "The return value may or may not make sense depending on the MPI "
-           "implementation.");
+      .def(
+          "underlying_comm",
+          [](MPICommWrapper self) { return (std::uintptr_t)self.get(); },
+          "Return the underlying MPI_Comm cast to std::uintptr_t. "
+          "The return value may or may not make sense depending on the MPI "
+          "implementation.");
 #endif
 
   // dolfinx::MPI
@@ -212,6 +222,9 @@ void mpi(py::module& m)
       .def_static("sum",
                   [](const MPICommWrapper comm, std::complex<double> value) {
                     return dolfinx::MPI::sum(comm.get(), value);
-                  });
+                  })
+      .def_static("sum", [](const MPICommWrapper comm, std::int64_t value) {
+        return dolfinx::MPI::sum(comm.get(), value);
+      });
 }
 } // namespace dolfinx_wrappers

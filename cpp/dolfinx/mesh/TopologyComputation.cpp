@@ -587,13 +587,16 @@ TopologyComputation::compute_entities(MPI_Comm comm, const Topology& topology,
   if (!cells)
     throw std::runtime_error("Cell connectivity missing.");
 
+  auto map = topology.index_map(0);
+  assert(map);
+  const std::vector<std::int64_t> global_vertices = map->global_indices(false);
   std::tuple<std::shared_ptr<graph::AdjacencyList<std::int32_t>>,
              std::shared_ptr<graph::AdjacencyList<std::int32_t>>,
              std::shared_ptr<common::IndexMap>>
       data
       = compute_entities_by_key_matching(comm, *cells, topology.index_map(0),
-                                         topology.global_indices(0),
-                                         topology.cell_type(), dim);
+                                         global_vertices, topology.cell_type(),
+                                         dim);
 
   return data;
 }

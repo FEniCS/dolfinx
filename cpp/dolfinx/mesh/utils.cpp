@@ -7,12 +7,13 @@
 #include "utils.h"
 #include "Geometry.h"
 #include "MeshEntity.h"
-#include "MeshIterator.h"
 #include "cell_types.h"
 #include <Eigen/Dense>
 #include <algorithm>
 #include <cfloat>
 #include <cstdlib>
+#include <dolfinx/common/IndexMap.h>
+#include <dolfinx/fem/ElementDofLayout.h>
 #include <stdexcept>
 
 using namespace dolfinx;
@@ -185,6 +186,7 @@ T volume_quadrilateral(const mesh::Mesh& mesh,
   return v;
 }
 //-----------------------------------------------------------------------------
+
 /// Compute (generalized) volume of mesh entities of given dimension.
 /// This templated versions allows for fixed size (statically allocated)
 /// return arrays, which can be important for performance when computing
@@ -194,7 +196,8 @@ T volume_entities_tmpl(const mesh::Mesh& mesh,
                        const Eigen::Ref<const Eigen::ArrayXi>& entities,
                        int dim)
 {
-  const mesh::CellType type = cell_entity_type(mesh.topology().cell_type(), dim);
+  const mesh::CellType type
+      = cell_entity_type(mesh.topology().cell_type(), dim);
   switch (type)
   {
   case mesh::CellType::point:
@@ -301,7 +304,8 @@ template <typename T>
 T circumradius_tmpl(const mesh::Mesh& mesh,
                     const Eigen::Ref<const Eigen::ArrayXi>& entities, int dim)
 {
-  const mesh::CellType type = cell_entity_type(mesh.topology().cell_type(), dim);
+  const mesh::CellType type
+      = cell_entity_type(mesh.topology().cell_type(), dim);
   switch (type)
   {
   case mesh::CellType::point:
@@ -331,6 +335,33 @@ T circumradius_tmpl(const mesh::Mesh& mesh,
 } // namespace
 
 //-----------------------------------------------------------------------------
+graph::AdjacencyList<std::int64_t>
+mesh::extract_topology(const fem::ElementDofLayout& layout,
+                       const graph::AdjacencyList<std::int64_t>& cells)
+{
+  // Use ElementDofLayout to get vertex dof indices (local to a cell)
+  const int num_vertices_per_cell = num_cell_vertices(layout.cell_type());
+  std::vector<int> local_vertices(num_vertices_per_cell);
+  for (int i = 0; i < num_vertices_per_cell; ++i)
+  {
+    const Eigen::Array<int, Eigen::Dynamic, 1> local_index
+        = layout.entity_dofs(0, i);
+    assert(local_index.rows() == 1);
+    local_vertices[i] = local_index[0];
+  }
+
+  Eigen::Array<std::int64_t, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
+      topology(cells.num_nodes(), num_vertices_per_cell);
+  for (int i = 0; i < cells.num_nodes(); ++i)
+  {
+    auto p = cells.links(i);
+    for (int j = 0; j < num_vertices_per_cell; ++j)
+      topology(i, j) = p(local_vertices[j]);
+  }
+
+  return graph::AdjacencyList<std::int64_t>(topology);
+}
+//-----------------------------------------------------------------------------
 Eigen::ArrayXd
 mesh::volume_entities(const mesh::Mesh& mesh,
                       const Eigen::Ref<const Eigen::ArrayXi>& entities, int dim)
@@ -343,7 +374,8 @@ Eigen::ArrayXd mesh::h(const Mesh& mesh,
                        int dim)
 {
   // Get number of cell vertices
-  const mesh::CellType type = cell_entity_type(mesh.topology().cell_type(), dim);
+  const mesh::CellType type
+      = cell_entity_type(mesh.topology().cell_type(), dim);
   const int num_vertices = num_cell_vertices(type);
 
   const mesh::Geometry& geometry = mesh.geometry();
@@ -445,7 +477,8 @@ Eigen::Array<double, Eigen::Dynamic, 3, Eigen::RowMajor>
 mesh::cell_normals(const mesh::Mesh& mesh, int dim)
 {
   const int gdim = mesh.geometry().dim();
-  const mesh::CellType type = mesh::cell_entity_type(mesh.topology().cell_type(), dim);
+  const mesh::CellType type
+      = mesh::cell_entity_type(mesh.topology().cell_type(), dim);
   const mesh::Geometry& geometry = mesh.geometry();
 
   switch (type)
@@ -662,8 +695,8 @@ Eigen::Array<double, Eigen::Dynamic, 3, Eigen::RowMajor> mesh::midpoints(
     assert(topology.connectivity(dim, 0));
     std::shared_ptr<const graph::AdjacencyList<std::int32_t>> connectivity
         = topology.connectivity(dim, 0);
-    const int num_vertices
-        = mesh::cell_num_entities(cell_entity_type(mesh.topology().cell_type(), dim), 0);
+    const int num_vertices = mesh::cell_num_entities(
+        cell_entity_type(mesh.topology().cell_type(), dim), 0);
     for (Eigen::Index e = 0; e < entities.rows(); ++e)
     {
       auto vertices = connectivity->links(entities[e]);
@@ -728,21 +761,28 @@ mesh::compute_marked_boundary_entities(
   if (boundary_marked.rows() != x_boundary.cols())
     throw std::runtime_error("Length of array of boundary markers is wrong.");
 
+  auto e_to_v = mesh.topology().connectivity(dim, 0);
+  assert(e_to_v);
+
   // Iterate over entities and build vector of marked entities
   std::vector<std::int32_t> entities;
   const std::vector<bool> boundary_entity = mesh.topology().on_boundary(dim);
-  for (auto& e : mesh::MeshRange(mesh, dim))
+  auto map = mesh.topology().index_map(dim);
+  assert(map);
+  const int num_entities = map->size_local() + map->num_ghosts();
+  for (int e = 0; e < num_entities; ++e)
   {
     // Consider boundary entities only
-    if (boundary_entity[e.index()])
+    if (boundary_entity[e])
     {
       // Assume all vertices on this facet are marked
       bool all_vertices_marked = true;
 
       // Iterate over facet vertices
-      for (const auto& v : mesh::EntityRange(e, 0))
+      auto vertices = e_to_v->links(e);
+      for (int i = 0; i < vertices.rows(); ++i)
       {
-        const std::int32_t idx = v.index();
+        const std::int32_t idx = vertices[i];
         assert(boundary_vertex[idx] < boundary_marked.rows());
         assert(boundary_vertex[idx] != -1);
         if (!boundary_marked[boundary_vertex[idx]])
@@ -754,7 +794,7 @@ mesh::compute_marked_boundary_entities(
 
       // Mark facet with all vertices marked
       if (all_vertices_marked)
-        entities.push_back(e.index());
+        entities.push_back(e);
     }
   }
 

@@ -11,18 +11,22 @@
 #include <numeric>
 #include <set>
 
+#include <iostream>
+
 using namespace dolfinx;
 using namespace dolfinx::fem;
 
 //-----------------------------------------------------------------------------
 ElementDofLayout::ElementDofLayout(
-    int block_size, const std::vector<std::vector<std::set<int>>>& entity_dofs,
+    int block_size, const std::vector<std::vector<std::set<int>>>& entity_dofs_,
     const std::vector<int>& parent_map,
-    const std::vector<std::shared_ptr<const ElementDofLayout>> sub_dofmaps,
-    const mesh::CellType cell_type, const std::array<int, 4> entity_block_size)
+    const std::vector<std::shared_ptr<const ElementDofLayout>>& sub_dofmaps,
+    const mesh::CellType cell_type,
+    const Eigen::Array<int, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>&
+        base_permutations)
     : _block_size(block_size), _cell_type(cell_type), _parent_map(parent_map),
-      _num_dofs(0), _entity_dofs(entity_dofs), _sub_dofmaps(sub_dofmaps),
-      _entity_block_size(entity_block_size)
+      _num_dofs(0), _entity_dofs(entity_dofs_), _sub_dofmaps(sub_dofmaps),
+      _base_permutations(base_permutations)
 {
   // TODO: Handle global support dofs
 
@@ -32,19 +36,23 @@ ElementDofLayout::ElementDofLayout(
       = mesh::cell_entity_closure(cell_type);
 
   // dof = _entity_dofs[dim][entity_index][i]
-  _entity_closure_dofs = entity_dofs;
+  _entity_closure_dofs = entity_dofs_;
   for (auto entity : entity_closure)
   {
     const int dim = entity.first[0];
     const int index = entity.first[1];
+    assert(dim < (int)entity_dofs_.size());
+    assert(index < (int)entity_dofs_[dim].size());
     int subdim = 0;
     for (auto sub_entity : entity.second)
     {
+      assert(subdim < (int)entity_dofs_.size());
       for (auto sub_index : sub_entity)
       {
+        assert(sub_index < (int)entity_dofs_[subdim].size());
         _entity_closure_dofs[dim][index].insert(
-            entity_dofs[subdim][sub_index].begin(),
-            entity_dofs[subdim][sub_index].end());
+            entity_dofs_[subdim][sub_index].begin(),
+            entity_dofs_[subdim][sub_index].end());
       }
       ++subdim;
     }
@@ -53,17 +61,18 @@ ElementDofLayout::ElementDofLayout(
   // dof = _entity_dofs[dim][entity_index][i]
   _num_entity_dofs.fill(0);
   _num_entity_closure_dofs.fill(0);
-  assert(entity_dofs.size() == _entity_closure_dofs.size());
-  for (std::size_t dim = 0; dim < entity_dofs.size(); ++dim)
+  assert(entity_dofs_.size() == _entity_closure_dofs.size());
+  for (std::size_t dim = 0; dim < entity_dofs_.size(); ++dim)
   {
-    assert(!entity_dofs[dim].empty());
+    assert(!entity_dofs_[dim].empty());
     assert(!_entity_closure_dofs[dim].empty());
-    _num_entity_dofs[dim] = entity_dofs[dim][0].size();
+    _num_entity_dofs[dim] = entity_dofs_[dim][0].size();
     _num_entity_closure_dofs[dim] = _entity_closure_dofs[dim][0].size();
-    for (std::size_t entity_index = 0; entity_index < entity_dofs[dim].size();
+
+    for (std::size_t entity_index = 0; entity_index < entity_dofs_[dim].size();
          ++entity_index)
     {
-      _num_dofs += entity_dofs[dim][entity_index].size();
+      _num_dofs += entity_dofs_[dim][entity_index].size();
     }
   }
 }
@@ -165,11 +174,6 @@ ElementDofLayout::sub_view(const std::vector<int>& component) const
 }
 //-----------------------------------------------------------------------------
 int ElementDofLayout::block_size() const { return _block_size; }
-//-----------------------------------------------------------------------------
-int ElementDofLayout::entity_block_size(const int dim) const
-{
-  return _entity_block_size[dim] * _block_size;
-}
 //-----------------------------------------------------------------------------
 bool ElementDofLayout::is_view() const { return !_parent_map.empty(); }
 //-----------------------------------------------------------------------------
