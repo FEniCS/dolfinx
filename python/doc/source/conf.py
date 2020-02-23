@@ -30,6 +30,7 @@ extensions = ['sphinx.ext.autodoc',
               'sphinx.ext.autosummary',
               'sphinx.ext.mathjax',
               'sphinx.ext.napoleon',
+              'sphinx.ext.todo',
               'sphinx.ext.viewcode']
 
 # Add any paths that contain templates here, relative to this directory.
@@ -74,7 +75,7 @@ exclude_patterns = []
 pygments_style = 'sphinx'
 
 # If true, `todo` and `todoList` produce output, else they produce nothing.
-todo_include_todos = False
+todo_include_todos = True
 
 
 # -- Options for HTML output ----------------------------------------------
@@ -152,7 +153,7 @@ latex_documents = [
 # One entry per manual page. List of tuples
 # (source start file, name, description, authors, manual section).
 man_pages = [
-    (master_doc, 'dolfin', 'DOLFIN Documentation',
+    (master_doc, 'dolfinx', 'DOLFIN Documentation',
      [author], 1)
 ]
 

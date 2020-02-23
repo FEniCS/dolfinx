@@ -1,14 +1,14 @@
 # # Copyright (C) 2013 Mikael Mortensen
 # #
-# # This file is part of DOLFIN (https://www.fenicsproject.org)
+# # This file is part of DOLFINX (https://www.fenicsproject.org)
 # #
 # # SPDX-License-Identifier:    LGPL-3.0-or-later
 
 # import numpy as np
 
-# from dolfin import MPI, UnitSquareMesh
-# from dolfin.cpp.mesh import PeriodicBoundaryComputation
-# from dolfin_utils.test.skips import skip_in_parallel
+# from dolfinx import MPI, UnitSquareMesh
+# from dolfinx.cpp.mesh import PeriodicBoundaryComputation
+# from dolfinx_utils.test.skips import skip_in_parallel
 
 
 # def periodic_boundary(x):

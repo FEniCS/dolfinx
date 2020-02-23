@@ -1,17 +1,20 @@
-import numpy as np
 import os
-import pytest
 
+import numpy as np
+import pytest
 from mpi4py import MPI as MPI4PY
-from dolfin import MPI, cpp
-from dolfin.io import VTKFile, HDF5File
-from dolfin_utils.test.fixtures import tempdir
+
+from dolfinx import MPI, cpp
+from dolfinx.io import HDF5File, VTKFile
+from dolfinx_utils.test.fixtures import tempdir
+from dolfinx_utils.test.skips import skip_in_parallel
 
 assert(tempdir)
 
 
+@skip_in_parallel
 @pytest.mark.parametrize("order, element", [(1, "tetra"), (2, "tetra10")])
-def test_HDF5_io(tempdir, order, element):
+def xtest_HDF5_io(tempdir, order, element):
     pytest.importorskip("pygmsh")
     h5py = pytest.importorskip("h5py")
 
@@ -32,9 +35,9 @@ def test_HDF5_io(tempdir, order, element):
     filename = os.path.join(tempdir, "mesh_order{0:d}.h5".format(order))
     f = h5py.File(filename, "w", driver='mpio', comm=MPI4PY.COMM_WORLD)
     grp = f.create_group("my_mesh")
-    grp.create_dataset("cell_indices", data=range(msh.cells[element].shape[0]))
+    grp.create_dataset("cell_indices", data=range(msh.cells_dict[element].shape[0]))
     grp.create_dataset("coordinates", data=msh.points)
-    top = grp.create_dataset("topology", data=msh.cells[element])
+    top = grp.create_dataset("topology", data=msh.cells_dict[element])
     top.attrs["celltype"] = np.bytes_('tetrahedron')
     f.close()
 

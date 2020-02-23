@@ -1,6 +1,6 @@
 # Copyright (C) 2019 Michal Habera
 #
-# This file is part of DOLFIN (https://www.fenicsproject.org)
+# This file is part of DOLFINX (https://www.fenicsproject.org)
 #
 # SPDX-License-Identifier:    LGPL-3.0-or-later
 
@@ -8,7 +8,7 @@ import numpy
 import numpy.random
 import pytest
 
-from dolfin import MPI, MeshFunction, UnitCubeMesh
+from dolfinx import MPI, MeshFunction, UnitCubeMesh
 
 
 dtypes = (

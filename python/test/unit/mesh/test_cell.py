@@ -1,16 +1,16 @@
 # Copyright (C) 2013 Anders Logg
 #
-# This file is part of DOLFIN (https://www.fenicsproject.org)
+# This file is part of DOLFINX (https://www.fenicsproject.org)
 #
 # SPDX-License-Identifier:    LGPL-3.0-or-later
 
 import numpy
 import pytest
-from dolfin_utils.test.skips import skip_in_parallel
+from dolfinx_utils.test.skips import skip_in_parallel
 
-from dolfin import (MPI, Mesh, MeshEntity, UnitCubeMesh, UnitIntervalMesh,
-                    UnitSquareMesh, cpp)
-from dolfin.cpp.mesh import CellType
+from dolfinx import (MPI, Mesh, MeshEntity, UnitCubeMesh, UnitIntervalMesh,
+                     UnitSquareMesh, cpp)
+from dolfinx.cpp.mesh import CellType
 
 
 @skip_in_parallel
@@ -61,7 +61,7 @@ def test_volume_quadrilateralR2():
     [[[0.0, 0.0, 0.0], [0.0, 1.0, 0.0], [1.0, 0.0, 0.0], [1.0, 1.0, 0.0]],
      [[0.0, 0.0, 0.0], [0.0, 0.0, 1.0], [0.0, 1.0, 0.0], [0.0, 1.0, 1.0]]])
 def test_volume_quadrilateralR3(coordinates):
-    mesh = Mesh(MPI.comm_world, CellType.quadrilateral,
+    mesh = Mesh(MPI.comm_self, CellType.quadrilateral,
                 numpy.array(coordinates, dtype=numpy.float64),
                 numpy.array([[0, 1, 2, 3]], dtype=numpy.int32), [],
                 cpp.mesh.GhostMode.none)
@@ -77,7 +77,7 @@ def test_volume_quadrilateral_coplanarity_check_1(scaling):
         # Unit square cell scaled down by 'scaling' and the first vertex
         # is distorted so that the vertices are clearly non coplanar
         mesh = Mesh(
-            MPI.comm_world, CellType.quadrilateral,
+            MPI.comm_self, CellType.quadrilateral,
             numpy.array(
                 [[scaling, 0.5 * scaling, 0.6 * scaling], [0.0, scaling, 0.0],
                  [0.0, 0.0, scaling], [0.0, scaling, scaling]],
@@ -98,7 +98,7 @@ def test_volume_quadrilateral_coplanarity_check_2(scaling):
     with pytest.raises(RuntimeError) as error:
         # Unit square cell scaled down by 'scaling' and the first vertex
         # is distorted so that the vertices are clearly non coplanar
-        mesh = Mesh(MPI.comm_world, CellType.quadrilateral,
+        mesh = Mesh(MPI.comm_self, CellType.quadrilateral,
                     numpy.array(
                         [[1.0, 0.5, 0.6], [0.0, scaling, 0.0],
                          [0.0, 0.0, scaling], [0.0, 1.0, 1.0]],

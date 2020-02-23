@@ -1,6 +1,6 @@
 # Copyright (C) 2019 Michal Habera and Andreas Zilian
 #
-# This file is part of DOLFIN (https://www.fenicsproject.org)
+# This file is part of DOLFINX (https://www.fenicsproject.org)
 #
 # SPDX-License-Identifier:    LGPL-3.0-or-later
 
@@ -17,25 +17,25 @@ import numba.cffi_support
 import numpy
 from petsc4py import PETSc
 
-import dolfin
-import dolfin.cpp
-import dolfin.io
-import dolfin.la
+import dolfinx
+import dolfinx.cpp
+import dolfinx.io
+import dolfinx.la
 import ufl
 
 filedir = os.path.dirname(__file__)
-infile = dolfin.io.XDMFFile(dolfin.MPI.comm_world,
-                            os.path.join(filedir, "cooks_tri_mesh.xdmf"),
-                            encoding=dolfin.cpp.io.XDMFFile.Encoding.ASCII)
-mesh = infile.read_mesh(dolfin.cpp.mesh.GhostMode.none)
+infile = dolfinx.io.XDMFFile(dolfinx.MPI.comm_world,
+                             os.path.join(filedir, "cooks_tri_mesh.xdmf"),
+                             encoding=dolfinx.cpp.io.XDMFFile.Encoding.ASCII)
+mesh = infile.read_mesh(dolfinx.cpp.mesh.GhostMode.none)
 infile.close()
 
 # Stress (Se) and displacement (Ue) elements
 Se = ufl.TensorElement("DG", mesh.ufl_cell(), 1, symmetry=True)
 Ue = ufl.VectorElement("CG", mesh.ufl_cell(), 2)
 
-S = dolfin.FunctionSpace(mesh, Se)
-U = dolfin.FunctionSpace(mesh, Ue)
+S = dolfinx.FunctionSpace(mesh, Se)
+U = dolfinx.FunctionSpace(mesh, Ue)
 
 # Get local dofmap sizes for later local tensor tabulations
 Ssize = S.dolfin_element().space_dimension()
@@ -45,12 +45,18 @@ sigma, tau = ufl.TrialFunction(S), ufl.TestFunction(S)
 u, v = ufl.TrialFunction(U), ufl.TestFunction(U)
 
 # Homogeneous boundary condition in displacement
-u_bc = dolfin.Function(U)
+u_bc = dolfinx.Function(U)
 with u_bc.vector.localForm() as loc:
     loc.set(0.0)
 
+facetdim = mesh.topology.dim - 1
+mf = dolfinx.MeshFunction("size_t", mesh, facetdim, 0)
+mf.mark(lambda x: numpy.isclose(x[0], 0.0), 1)
+bndry_facets = numpy.where(mf.values == 1)[0]
+
 # Displacement BC is applied to the right side
-bc = dolfin.fem.DirichletBC(U, u_bc, lambda x: numpy.isclose(x[0], 0.0))
+bdofs = dolfinx.fem.locate_dofs_topological(U, facetdim, bndry_facets)
+bc = dolfinx.fem.DirichletBC(u_bc, bdofs)
 
 
 def free_end(x):
@@ -59,7 +65,7 @@ def free_end(x):
 
 
 # Mark free end facets as 1
-mf = dolfin.mesh.MeshFunction("size_t", mesh, 1, 0)
+mf = dolfinx.mesh.MeshFunction("size_t", mesh, 1, 0)
 mf.mark(free_end, 1)
 
 ds = ufl.Measure("ds", subdomain_data=mf)
@@ -83,13 +89,13 @@ f = ufl.as_vector([0.0, 1.0 / 16])
 b1 = - ufl.inner(f, v) * ds(1)
 
 # JIT compile individual blocks tabulation kernels
-ufc_form00 = dolfin.jit.ffc_jit(a00)
+ufc_form00 = dolfinx.jit.ffcx_jit(a00)
 kernel00 = ufc_form00.create_cell_integral(-1).tabulate_tensor
 
-ufc_form01 = dolfin.jit.ffc_jit(a01)
+ufc_form01 = dolfinx.jit.ffcx_jit(a01)
 kernel01 = ufc_form01.create_cell_integral(-1).tabulate_tensor
 
-ufc_form10 = dolfin.jit.ffc_jit(a10)
+ufc_form10 = dolfinx.jit.ffcx_jit(a10)
 kernel10 = ufc_form10.create_cell_integral(-1).tabulate_tensor
 
 ffi = cffi.FFI()
@@ -103,57 +109,65 @@ c_signature = numba.types.void(
     numba.types.CPointer(numba.typeof(PETSc.ScalarType())),
     numba.types.CPointer(numba.types.double),
     numba.types.CPointer(numba.types.int32),
-    numba.types.CPointer(numba.types.int32))
+    numba.types.CPointer(numba.types.uint8),
+    numba.types.CPointer(numba.types.boolean),
+    numba.types.CPointer(numba.types.boolean),
+    numba.types.CPointer(numba.types.uint8))
 
 
 @numba.cfunc(c_signature, nopython=True)
-def tabulate_condensed_tensor_A(A_, w_, c_, coords_, entity_local_index, cell_orientation):
+def tabulate_condensed_tensor_A(A_, w_, c_, coords_, entity_local_index, permutation=ffi.NULL,
+                                edge_reflections=ffi.NULL, face_reflections=ffi.NULL,
+                                face_rotations=ffi.NULL):
     # Prepare target condensed local elem tensor
     A = numba.carray(A_, (Usize, Usize), dtype=PETSc.ScalarType)
 
     # Tabulate all sub blocks locally
     A00 = numpy.zeros((Ssize, Ssize), dtype=PETSc.ScalarType)
-    kernel00(ffi.from_buffer(A00), w_, c_, coords_, entity_local_index, cell_orientation)
+    kernel00(ffi.from_buffer(A00), w_, c_, coords_, entity_local_index, permutation,
+             edge_reflections, face_reflections, face_rotations)
 
     A01 = numpy.zeros((Ssize, Usize), dtype=PETSc.ScalarType)
-    kernel01(ffi.from_buffer(A01), w_, c_, coords_, entity_local_index, cell_orientation)
+    kernel01(ffi.from_buffer(A01), w_, c_, coords_, entity_local_index, permutation,
+             edge_reflections, face_reflections, face_rotations)
 
     A10 = numpy.zeros((Usize, Ssize), dtype=PETSc.ScalarType)
-    kernel10(ffi.from_buffer(A10), w_, c_, coords_, entity_local_index, cell_orientation)
+    kernel10(ffi.from_buffer(A10), w_, c_, coords_, entity_local_index, permutation,
+             edge_reflections, face_reflections, face_rotations)
 
     # A = - A10 * A00^{-1} * A01
     A[:, :] = - A10 @ numpy.linalg.solve(A00, A01)
 
 
 # Prepare an empty Form and set the condensed tabulation kernel
-a_cond = dolfin.cpp.fem.Form([U._cpp_object, U._cpp_object])
-a_cond.set_tabulate_tensor(dolfin.fem.FormIntegrals.Type.cell, -1, tabulate_condensed_tensor_A.address)
+a_cond = dolfinx.cpp.fem.Form([U._cpp_object, U._cpp_object])
+a_cond.set_tabulate_tensor(dolfinx.fem.FormIntegrals.Type.cell, -1, tabulate_condensed_tensor_A.address)
 
-A_cond = dolfin.fem.assemble_matrix(a_cond, [bc])
+A_cond = dolfinx.fem.assemble_matrix(a_cond, [bc])
 A_cond.assemble()
 
-b = dolfin.fem.assemble_vector(b1)
-dolfin.fem.apply_lifting(b, [a_cond], [[bc]])
+b = dolfinx.fem.assemble_vector(b1)
+dolfinx.fem.apply_lifting(b, [a_cond], [[bc]])
 b.ghostUpdate(addv=PETSc.InsertMode.ADD, mode=PETSc.ScatterMode.REVERSE)
-dolfin.fem.set_bc(b, [bc])
+dolfinx.fem.set_bc(b, [bc])
 
-uc = dolfin.Function(U)
-dolfin.la.solve(A_cond, uc.vector, b)
+uc = dolfinx.Function(U)
+dolfinx.la.solve(A_cond, uc.vector, b)
 
-with dolfin.io.XDMFFile(dolfin.MPI.comm_world, "uc.xdmf") as outfile:
+with dolfinx.io.XDMFFile(dolfinx.MPI.comm_world, "uc.xdmf") as outfile:
     outfile.write_checkpoint(uc, "uc")
 
 # Pure displacement based formulation
 a = - ufl.inner(sigma_u(u), ufl.grad(v)) * ufl.dx
-A = dolfin.fem.assemble_matrix(a, [bc])
+A = dolfinx.fem.assemble_matrix(a, [bc])
 A.assemble()
 
 # Create bounding box for function evaluation
-bb_tree = dolfin.cpp.geometry.BoundingBoxTree(mesh, 2)
+bb_tree = dolfinx.cpp.geometry.BoundingBoxTree(mesh, 2)
 
 # Check against standard table value
 p = [48.0, 52.0, 0.0]
-cell = dolfin.cpp.geometry.compute_first_collision(bb_tree, p)
+cell = dolfinx.cpp.geometry.compute_first_collision(bb_tree, p)
 if cell >= 0:
     value = uc.eval(p, numpy.asarray(cell))
     assert numpy.isclose(value[1], 23.95, rtol=1.e-2)

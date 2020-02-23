@@ -1,14 +1,14 @@
 # Copyright (C) 2011 Johan Hake
 #
-# This file is part of DOLFIN (https://www.fenicsproject.org)
+# This file is part of DOLFINX (https://www.fenicsproject.org)
 #
 # SPDX-License-Identifier:    LGPL-3.0-or-later
 """Unit tests for the FunctionSpace class"""
 
 import pytest
 
-from dolfin import (MPI, Function, FunctionSpace, UnitCubeMesh,
-                    VectorFunctionSpace)
+from dolfinx import (MPI, Function, FunctionSpace, UnitCubeMesh,
+                     VectorFunctionSpace)
 from ufl import (FiniteElement, TestFunction, TrialFunction, VectorElement,
                  grad, triangle)
 from ufl.log import UFLException
@@ -188,7 +188,7 @@ def test_argument_equality(mesh, V, V2, W, W2):
         assert s1 == s3
         assert s2 == s3
 
-        # Test that the dolfin implementation of Argument.__eq__ is
+        # Test that the dolfinx implementation of Argument.__eq__ is
         # triggered when comparing ufl expressions
         assert grad(v) == grad(v2)
         assert grad(v) != grad(v3)

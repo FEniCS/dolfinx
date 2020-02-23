@@ -1,6 +1,6 @@
 # Copyright (C) 2009-2019 Garth N. Wells, Matthew W. Scroggs and Jorgen S. Dokken
 #
-# This file is part of DOLFIN (https://www.fenicsproject.org)
+# This file is part of DOLFINX (https://www.fenicsproject.org)
 #
 # SPDX-License-Identifier:    LGPL-3.0-or-later
 """Unit tests for the fem interface"""
@@ -9,12 +9,12 @@ import sys
 
 import numpy as np
 import pytest
-from dolfin_utils.test.skips import skip_in_parallel
+from dolfinx_utils.test.skips import skip_in_parallel
 
-from dolfin import (MPI, FunctionSpace, Mesh, MeshEntity, UnitCubeMesh,
-                    UnitIntervalMesh, UnitSquareMesh, VectorFunctionSpace,
-                    fem)
-from dolfin.cpp.mesh import CellType, GhostMode
+from dolfinx import (MPI, FunctionSpace, Mesh, MeshEntity, UnitCubeMesh,
+                     UnitIntervalMesh, UnitSquareMesh, VectorFunctionSpace,
+                     fem)
+from dolfinx.cpp.mesh import CellType, GhostMode
 from ufl import FiniteElement, MixedElement, VectorElement
 
 xfail = pytest.mark.xfail(strict=True)
@@ -183,7 +183,7 @@ def test_global_dof_builder(mesh_factory):
 
 
 def test_entity_dofs(mesh):
-    """Test that num entity dofs is correctly wrapped to dolfin::DofMap"""
+    """Test that num entity dofs is correctly wrapped to dolfinx::DofMap"""
     V = FunctionSpace(mesh, ("CG", 1))
     assert V.dofmap.dof_layout.num_entity_dofs(0) == 1
     assert V.dofmap.dof_layout.num_entity_dofs(1) == 0
@@ -216,9 +216,9 @@ def test_entity_dofs(mesh):
 
     V = VectorFunctionSpace(mesh, ("CG", 1))
 
-    # Note this numbering is dependent on FFC and can change This test
+    # Note this numbering is dependent on FFCX and can change This test
     # is here just to check that we get correct numbers mapped from ufc
-    # generated code to dolfin
+    # generated code to dolfinx
     for i, cdofs in enumerate([[0, 3], [1, 4], [2, 5]]):
         dofs = V.dofmap.dof_layout.entity_dofs(0, i)
         assert all(d == cd for d, cd in zip(dofs, cdofs))
@@ -370,8 +370,8 @@ def test_local_dimension(mesh_factory):
         #    dofmap().index_map.size('foo')
 
 
-# Failures in FFC on quads/hexes
-xfail_ffc = pytest.mark.xfail(raises=Exception)
+# Failures in FFCX on quads/hexes
+xfail_ffcx = pytest.mark.xfail(raises=Exception)
 
 
 @skip_in_parallel
@@ -409,9 +409,9 @@ xfail_ffc = pytest.mark.xfail(raises=Exception)
     pytest.param(
         "FunctionSpace(UnitCubeMesh(MPI.comm_world, 2, 2, 2, CellType.hexahedron),         ('N1curl', 1))",
         marks=pytest.mark.xfail),
-    pytest.param(
-        "FunctionSpace(UnitSquareMesh(MPI.comm_world, 6, 6, CellType.triangle),            ('N1curl', 2))",
-        marks=pytest.mark.xfail),
+    # pytest.param(
+    #     "FunctionSpace(UnitSquareMesh(MPI.comm_world, 6, 6, CellType.triangle),            ('N1curl', 2))",
+    #     marks=pytest.mark.xfail),
     "FunctionSpace(UnitCubeMesh(MPI.comm_world, 2, 2, 2, CellType.tetrahedron),            ('N1curl', 2))",
     pytest.param(
         "FunctionSpace(UnitSquareMesh(MPI.comm_world, 6, 6, CellType.quadrilateral),       ('N1curl', 2))",
@@ -432,11 +432,11 @@ def test_dofs_dim(space):
     """Test function DofMap::dofs(mesh, dim)"""
     V = eval(space)
     dofmap = V.dofmap
-    mesh = V.mesh
-    for dim in range(0, mesh.topology.dim):
-        edofs = dofmap.dofs(mesh, dim)
-        if mesh.topology.connectivity(dim, 0) is not None:
-            num_mesh_entities = mesh.num_entities(dim)
+    topology = V.mesh.topology
+    for dim in range(0, topology.dim):
+        edofs = dofmap.dofs(topology, dim)
+        if topology.connectivity(dim, 0) is not None:
+            num_mesh_entities = topology.connectivity(dim, 0).num_nodes
             dofs_per_entity = dofmap.dof_layout.num_entity_dofs(dim)
             assert len(edofs) == dofs_per_entity * num_mesh_entities
 

@@ -1,0 +1,36 @@
+set(HEADERS_mesh
+  ${CMAKE_CURRENT_SOURCE_DIR}/CoordinateDofs.h
+  ${CMAKE_CURRENT_SOURCE_DIR}/DistributedMeshTools.h
+  ${CMAKE_CURRENT_SOURCE_DIR}/dolfin_mesh.h
+  ${CMAKE_CURRENT_SOURCE_DIR}/Mesh.h
+  ${CMAKE_CURRENT_SOURCE_DIR}/MeshEntity.h
+  ${CMAKE_CURRENT_SOURCE_DIR}/MeshFunction.h
+  ${CMAKE_CURRENT_SOURCE_DIR}/Geometry.h
+  ${CMAKE_CURRENT_SOURCE_DIR}/MeshIterator.h
+  ${CMAKE_CURRENT_SOURCE_DIR}/Ordering.h
+  ${CMAKE_CURRENT_SOURCE_DIR}/Partitioning.h
+  ${CMAKE_CURRENT_SOURCE_DIR}/PartitioningNew.h
+  ${CMAKE_CURRENT_SOURCE_DIR}/MeshQuality.h
+  ${CMAKE_CURRENT_SOURCE_DIR}/Topology.h
+  ${CMAKE_CURRENT_SOURCE_DIR}/MeshValueCollection.h
+  ${CMAKE_CURRENT_SOURCE_DIR}/PartitionData.h
+  ${CMAKE_CURRENT_SOURCE_DIR}/TopologyComputation.h
+  ${CMAKE_CURRENT_SOURCE_DIR}/cell_types.h
+  ${CMAKE_CURRENT_SOURCE_DIR}/utils.h
+  PARENT_SCOPE)
+
+target_sources(dolfinx PRIVATE
+  ${CMAKE_CURRENT_SOURCE_DIR}/CoordinateDofs.cpp
+  ${CMAKE_CURRENT_SOURCE_DIR}/DistributedMeshTools.cpp
+  ${CMAKE_CURRENT_SOURCE_DIR}/Mesh.cpp
+  ${CMAKE_CURRENT_SOURCE_DIR}/Geometry.cpp
+  ${CMAKE_CURRENT_SOURCE_DIR}/Ordering.cpp
+  ${CMAKE_CURRENT_SOURCE_DIR}/Partitioning.cpp
+  ${CMAKE_CURRENT_SOURCE_DIR}/PartitioningNew.cpp
+  ${CMAKE_CURRENT_SOURCE_DIR}/MeshQuality.cpp
+  ${CMAKE_CURRENT_SOURCE_DIR}/Topology.cpp
+  ${CMAKE_CURRENT_SOURCE_DIR}/PartitionData.cpp
+  ${CMAKE_CURRENT_SOURCE_DIR}/TopologyComputation.cpp
+  ${CMAKE_CURRENT_SOURCE_DIR}/cell_types.cpp
+  ${CMAKE_CURRENT_SOURCE_DIR}/utils.cpp
+)

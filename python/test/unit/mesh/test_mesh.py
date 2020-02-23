@@ -1,6 +1,6 @@
 # Copyright (C) 2006 Anders Logg
 #
-# This file is part of DOLFIN (https://www.fenicsproject.org)
+# This file is part of DOLFINX (https://www.fenicsproject.org)
 #
 # SPDX-License-Identifier:    LGPL-3.0-or-later
 
@@ -11,16 +11,16 @@ import sys
 import numpy as np
 import pytest
 
-import dolfin
+import dolfinx
 import FIAT
-from dolfin import (MPI, BoxMesh, Mesh, MeshEntity, MeshFunction,
-                    RectangleMesh, UnitCubeMesh, UnitIntervalMesh,
-                    UnitSquareMesh, cpp, has_kahip)
-from dolfin.cpp.mesh import CellType, Partitioner, is_simplex
-from dolfin.fem import assemble_scalar
-from dolfin.io import XDMFFile
-from dolfin_utils.test.fixtures import tempdir
-from dolfin_utils.test.skips import skip_in_parallel
+from dolfinx import (MPI, BoxMesh, Mesh, MeshEntity, MeshFunction,
+                     RectangleMesh, UnitCubeMesh, UnitIntervalMesh,
+                     UnitSquareMesh, cpp, has_kahip)
+from dolfinx.cpp.mesh import CellType, Partitioner, is_simplex
+from dolfinx.fem import assemble_scalar
+from dolfinx.io import XDMFFile
+from dolfinx_utils.test.fixtures import tempdir
+from dolfinx_utils.test.skips import skip_in_parallel
 from ufl import dx
 
 assert (tempdir)
@@ -169,21 +169,21 @@ def test_mesh_construction_pygmsh():
             "line": np.zeros([0, 2], dtype=np.int64)
         }
 
-    mesh = Mesh(MPI.comm_world, dolfin.cpp.mesh.CellType.tetrahedron, points,
+    mesh = Mesh(MPI.comm_world, dolfinx.cpp.mesh.CellType.tetrahedron, points,
                 cells['tetra'], [], cpp.mesh.GhostMode.none)
     assert mesh.degree() == 1
     assert mesh.geometry.dim == 3
     assert mesh.topology.dim == 3
 
     mesh = Mesh(MPI.comm_world,
-                dolfin.cpp.mesh.CellType.triangle, points,
+                dolfinx.cpp.mesh.CellType.triangle, points,
                 cells['triangle'], [], cpp.mesh.GhostMode.none)
     assert mesh.degree() == 1
     assert mesh.geometry.dim == 3
     assert mesh.topology.dim == 2
 
     mesh = Mesh(MPI.comm_world,
-                dolfin.cpp.mesh.CellType.interval, points,
+                dolfinx.cpp.mesh.CellType.interval, points,
                 cells['line'], [], cpp.mesh.GhostMode.none)
     assert mesh.degree() == 1
     assert mesh.geometry.dim == 3
@@ -205,13 +205,13 @@ def test_mesh_construction_pygmsh():
             "line3": np.zeros([0, 3], dtype=np.int64)
         }
 
-    mesh = Mesh(MPI.comm_world, dolfin.cpp.mesh.CellType.tetrahedron, points,
+    mesh = Mesh(MPI.comm_world, dolfinx.cpp.mesh.CellType.tetrahedron, points,
                 cells['tetra10'], [], cpp.mesh.GhostMode.none)
     assert mesh.degree() == 2
     assert mesh.geometry.dim == 3
     assert mesh.topology.dim == 3
 
-    mesh = Mesh(MPI.comm_world, dolfin.cpp.mesh.CellType.triangle, points,
+    mesh = Mesh(MPI.comm_world, dolfinx.cpp.mesh.CellType.triangle, points,
                 cells['triangle6'], [], cpp.mesh.GhostMode.none)
     assert mesh.degree() == 2
     assert mesh.geometry.dim == 3
@@ -224,7 +224,7 @@ def test_UnitSquareMeshDistributed():
     assert mesh.num_entities_global(0) == 48
     assert mesh.num_entities_global(2) == 70
     assert mesh.geometry.dim == 2
-    assert MPI.sum(mesh.mpi_comm(), mesh.topology.ghost_offset(0)) == 48
+    assert MPI.sum(mesh.mpi_comm(), mesh.topology.index_map(0).size_local) == 48
 
 
 def test_UnitSquareMeshLocal():
@@ -241,7 +241,7 @@ def test_UnitCubeMeshDistributed():
     assert mesh.num_entities_global(0) == 480
     assert mesh.num_entities_global(3) == 1890
     assert mesh.geometry.dim == 3
-    assert MPI.sum(mesh.mpi_comm(), mesh.topology.ghost_offset(0)) == 480
+    assert MPI.sum(mesh.mpi_comm(), mesh.topology.index_map(0).size_local) == 480
 
 
 def test_UnitCubeMeshLocal():
@@ -257,7 +257,7 @@ def test_UnitQuadMesh():
     assert mesh.num_entities_global(0) == 48
     assert mesh.num_entities_global(2) == 35
     assert mesh.geometry.dim == 2
-    assert MPI.sum(mesh.mpi_comm(), mesh.topology.ghost_offset(0)) == 48
+    assert MPI.sum(mesh.mpi_comm(), mesh.topology.index_map(0).size_local) == 48
 
 
 def test_UnitHexMesh():
@@ -265,7 +265,7 @@ def test_UnitHexMesh():
     assert mesh.num_entities_global(0) == 480
     assert mesh.num_entities_global(3) == 315
     assert mesh.geometry.dim == 3
-    assert MPI.sum(mesh.mpi_comm(), mesh.topology.ghost_offset(0)) == 480
+    assert MPI.sum(mesh.mpi_comm(), mesh.topology.index_map(0).size_local) == 480
 
 
 def test_hash():
@@ -350,21 +350,8 @@ mesh_factories = [
     # FIXME: Add mechanism for testing meshes coming from IO
 ]
 
-mesh_factories_broken_shared_entities = [
-    (UnitIntervalMesh, (
-        MPI.comm_world,
-        8,
-    )),
-    (UnitSquareMesh, (MPI.comm_world, 4, 4)),
-    # FIXME: Problem in test_shared_entities
-    (UnitCubeMesh, (MPI.comm_world, 2, 2, 2)),
-    (UnitSquareMesh, (MPI.comm_world, 4, 4, CellType.quadrilateral)),
-    (UnitCubeMesh, (MPI.comm_world, 2, 2, 2, CellType.hexahedron)),
-]
 
 # FIXME: Fix this xfail
-
-
 def xfail_ghosted_quads_hexes(mesh_factory, ghost_mode):
     """Xfail when mesh_factory on quads/hexes uses
     shared_vertex mode. Needs implementing.
@@ -383,11 +370,11 @@ def test_mesh_topology_against_fiat(mesh_factory, ghost_mode=cpp.mesh.GhostMode.
     func, args = mesh_factory
     xfail_ghosted_quads_hexes(func, ghost_mode)
     mesh = func(*args)
-    if not is_simplex(mesh.cell_type):
+    if not is_simplex(mesh.topology.cell_type):
         return
 
     # Create FIAT cell
-    cell_name = cpp.mesh.to_string(mesh.cell_type)
+    cell_name = cpp.mesh.to_string(mesh.topology.cell_type)
     fiat_cell = FIAT.ufc_cell(cell_name)
 
     # Initialize all mesh entities and connectivities
@@ -443,15 +430,20 @@ def test_small_mesh():
 
 
 def test_topology_surface(cube):
+    tdim = cube.topology.dim
+    cube.create_connectivity(tdim - 1, tdim)
+
     surface_vertex_markers = cube.topology.on_boundary(0)
     assert surface_vertex_markers
-    n = 3
+
     cube.create_entities(1)
     cube.create_connectivity(2, 1)
     surface_edge_markers = cube.topology.on_boundary(1)
     assert surface_edge_markers
+
     surface_facet_markers = cube.topology.on_boundary(2)
     sf_count = np.count_nonzero(np.array(surface_facet_markers))
+    n = 3
     assert MPI.sum(cube.mpi_comm(), sf_count) == n * n * 12
 
 
@@ -466,7 +458,7 @@ def test_distribute_mesh(subset_comm, tempdir, mesh_factory, graph_partitioner):
     func, args = mesh_factory
     mesh = func(*args)
 
-    if not is_simplex(mesh.cell_type):
+    if not is_simplex(mesh.topology.cell_type):
         return
 
     encoding = XDMFFile.Encoding.HDF5
@@ -490,7 +482,7 @@ def test_distribute_mesh(subset_comm, tempdir, mesh_factory, graph_partitioner):
                                               cells, indices, ghost_mode,
                                               partition_data)
 
-    assert(mesh.cell_type == dist_mesh.cell_type)
+    assert(mesh.topology.cell_type == dist_mesh.topology.cell_type)
     assert mesh.num_entities_global(0) == dist_mesh.num_entities_global(0)
     dim = dist_mesh.topology.dim
     assert mesh.num_entities_global(dim) == dist_mesh.num_entities_global(dim)
@@ -501,7 +493,7 @@ def test_custom_partition(tempdir, mesh_factory):
     func, args = mesh_factory
     mesh = func(*args)
 
-    if not is_simplex(mesh.cell_type):
+    if not is_simplex(mesh.topology.cell_type):
         return
 
     comm = mesh.mpi_comm()
@@ -525,7 +517,7 @@ def test_custom_partition(tempdir, mesh_factory):
                                               cells, global_indices,
                                               ghost_mode, cell_partition)
 
-    assert(mesh.cell_type == dist_mesh.cell_type)
+    assert(mesh.topology.cell_type == dist_mesh.topology.cell_type)
     assert mesh.num_entities_global(0) == dist_mesh.num_entities_global(0)
     dim = dist_mesh.topology.dim
     assert mesh.num_entities_global(dim) == dist_mesh.num_entities_global(dim)
