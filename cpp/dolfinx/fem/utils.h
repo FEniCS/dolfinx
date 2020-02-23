@@ -143,8 +143,8 @@ get_cmap_from_ufc_cmap(const ufc_coordinate_mapping& ufc_cmap);
 /// Create FunctionSpace from UFC
 /// @param[in] fptr Function Pointer to a ufc_function_space_create function
 /// @param[in] function_name Name of a function whose function space to create.
-///                          Function name means here the name of Python variable
-///                          of ufl.Coefficient, ufl.TrialFunction or ufl.TestFunction
+///                          Function name is the name of Python variable for
+///                          ufl.Coefficient, ufl.TrialFunction or ufl.TestFunction
 ///                          as defined in the UFL file.
 /// @param[in] mesh Mesh
 /// @return The created FunctionSpace
