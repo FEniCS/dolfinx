@@ -45,29 +45,37 @@ class Topology;
 class PartitioningNew
 {
 public:
-  /// Compute mark interior/boundary vertices
+  /// Compute markers for interior/boundary vertices
   /// @param[in] topology_local Local topology
   /// @return Array where the ith entry is true if the ith vertex is on
   /// the boundary
   static std::vector<bool>
   compute_vertex_exterior_markers(const mesh::Topology& topology_local);
 
-  /// Compute new, contiguous global indices from a collection of
-  /// global, possibly non-contiguous global indices and assign process
-  /// ownership to the new global indices.
+  /// @todo Return list of neighbour processes Compute new, contiguous
+  /// global indices from a collection of global, possibly
+  /// non-contiguous global indices and assign process ownership to the
+  /// new global indices.
   /// @param[in] comm The communicator across which the indices are
   ///   distributed
   /// @param[in] global_to_local Map from inout global induces to local
   ///   indices
+  /// @param[in] shared_indices Vector that is true for indices on the
+  ///   exterior locally
   /// @return {Local (old) -> local (new) indices, global indices for
-  ///   ghosts of this process}
+  ///   ghosts of this process}. The new indices are [0, ..., N), with
+  ///   [0, ..., n0) being owned. The new global index for an owned
+  ///   indices is n_global = n + offset, where offset is computed from
+  ///   a process scan. Indices [n0, ..., N) are owned by a remote
+  ///   process and the ghosts return vector maps [n0, ..., N) to global
+  ///   indices.
   static std::pair<std::vector<std::int32_t>, std::vector<std::int64_t>>
   reorder_global_indices(
       MPI_Comm comm,
       const std::map<std::int64_t, std::int32_t>& global_to_local,
       const std::vector<bool>& shared_indices);
 
-  /// NEW: Compute destination rank for mesh cells using a graph
+  /// Compute destination rank for mesh cells using a graph
   /// partitioner
   /// @param[in] comm MPI Communicator
   /// @param[in] nparts Number of partitions
@@ -80,7 +88,7 @@ public:
   partition_cells(MPI_Comm comm, int nparts, const mesh::CellType cell_type,
                   const graph::AdjacencyList<std::int64_t>& cells);
 
-  /// NEW: Compute a local AdjacencyList list from a AdjacencyList that
+  /// Compute a local AdjacencyList list from a AdjacencyList that
   /// map have non-contiguous data
   /// @param[in] list Adjacency list with links that might not have
   ///   contiguous numdering
@@ -91,7 +99,7 @@ public:
                    std::map<std::int64_t, std::int32_t>>
   create_local_adjacency_list(const graph::AdjacencyList<std::int64_t>& list);
 
-  /// NEW: Compute a distributed AdjacencyList list from a AdjacencyList that
+  /// Compute a distributed AdjacencyList list from a AdjacencyList that
   /// map have non-contiguous data
   /// @param[in] comm
   /// @param[in] topology_local
@@ -105,7 +113,7 @@ public:
       MPI_Comm comm, const mesh::Topology& topology_local,
       const std::map<std::int64_t, std::int32_t>& global_to_local_vertices);
 
-  /// NEW: Re-distribute adjacency list across processes
+  /// Re-distribute adjacency list across processes
   /// @param[in] comm MPI Communicator
   /// @param[in] list An adjacency list
   /// @param[in] owner Destination rank for the ith entry in the
