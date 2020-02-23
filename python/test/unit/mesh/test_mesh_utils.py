@@ -82,15 +82,16 @@ def test_topology_partition():
     entity_dofs = [[set([0]), set([1]), set([2])], [set(), set(), set()], [set()]]
     layout = cpp.fem.ElementDofLayout(1, entity_dofs, [], [], cell_type, perms)
     if rank == 0:
-        cells1 = [[6, 12, 2, 1, 11, 0], [12, 14, 7, 9, 10, 8], [7, 2, 12, 1, 10, 3], [6, 2, 13, 4, 5, 11]]
+        cells_in = [[6, 12, 2, 1, 11, 0], [12, 14, 7, 9, 10, 8], [7, 2, 12, 1, 10, 3], [6, 2, 13, 4, 5, 11]]
         # cells1 = [[0, 1, 4], [0, 4, 3], [1, 2, 5], [1, 5, 4]]
-        cells1 = cpp.graph.AdjacencyList64(cells1)
+        cells1 = cpp.graph.AdjacencyList64(cells_in)
         cells_filtered1 = cpp.mesh.extract_topology(layout, cells1)
+        cells_in = cpp.graph.AdjacencyList64(cells_in)
     else:
+        cells_in = None
         cells_filtered1 = cpp.graph.AdjacencyList64(0)
 
-    # Partition cells, compute the destination process for cells on this
-    # process
+    # Compute the destination process for cells on this process
     dest = cpp.mesh.partition_cells(cpp.MPI.comm_world, size,
                                     layout.cell_type, cells_filtered1)
     assert len(dest) == cells_filtered1.num_nodes
@@ -98,6 +99,9 @@ def test_topology_partition():
     # Distribute cells to destination process
     cells, src = cpp.mesh.distribute(cpp.MPI.comm_world, cells_filtered1,
                                      dest)
+    # cells, src, original_index = cpp.mesh.distribute(cpp.MPI.comm_world, cells_filtered1,
+    #                                                  dest)
+    # print("Orig index:", original_index)
     assert cpp.MPI.sum(cpp.MPI.comm_world, cells.num_nodes) == 4
 
     # Build local cell-vertex connectivity (with local vertex indices
@@ -154,6 +158,7 @@ def test_topology_partition():
     topology.set_index_map(topology.dim, index_map)
     topology.set_connectivity(cells, topology.dim, 0)
 
+    # NOTE: This could be a local (MPI_COMM_SELF) dofmap
     # Build 'geometry' dofmap on the topology
     dof_index_map, dofmap = cpp.fem.build_dofmap(cpp.MPI.comm_world,
                                                  topology, layout, 1)

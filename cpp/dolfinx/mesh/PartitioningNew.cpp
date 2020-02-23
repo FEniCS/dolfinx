@@ -519,16 +519,12 @@ PartitioningNew::distribute(const MPI_Comm& comm,
   std::vector<int> src;
   for (std::size_t p = 0; p < disp_recv.size() - 1; ++p)
   {
-    for (int i = disp_recv[p]; i < disp_recv[p + 1]; ++i)
+    for (int i = disp_recv[p]; i < disp_recv[p + 1];)
     {
       src.push_back(p);
-      const std::int64_t num_links = data_recv[i];
-      const int pos = i;
-      for (int j = 1; j <= num_links; ++j)
-      {
-        array.push_back(data_recv[pos + j]);
-        i += 1;
-      }
+      const std::int64_t num_links = data_recv[i++];
+      for (int j = 0; j < num_links; ++j)
+        array.push_back(data_recv[i++]);
       list_offset.push_back(list_offset.back() + num_links);
     }
   }

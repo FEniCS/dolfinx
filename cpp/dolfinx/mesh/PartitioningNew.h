@@ -101,8 +101,11 @@ public:
   /// @param[in] list An adjacency list
   /// @param[in] owner Destination rank for the ith entry in the
   ///   adjacency list
-  /// @return Adjacency list for this process and a vector of source
-  ///   processes for entry in the adjacency list
+  /// @return Adjacency list for this process, array of source ranks for
+  ///   each cell in the adjacency list, and input global index for each
+  ///   node.
+  // static std::tuple<graph::AdjacencyList<std::int64_t>, std::vector<int>,
+  //                   std::vector<std::int64_t>>
   static std::pair<graph::AdjacencyList<std::int64_t>, std::vector<int>>
   distribute(const MPI_Comm& comm,
              const graph::AdjacencyList<std::int64_t>& list,
