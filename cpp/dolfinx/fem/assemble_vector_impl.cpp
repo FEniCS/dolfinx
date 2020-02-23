@@ -17,8 +17,7 @@
 #include <dolfinx/mesh/CoordinateDofs.h>
 #include <dolfinx/mesh/Geometry.h>
 #include <dolfinx/mesh/Mesh.h>
-#include <dolfinx/mesh/MeshEntity.h>
-#include <dolfinx/mesh/MeshIterator.h>
+#include <dolfinx/mesh/Topology.h>
 #include <petscsys.h>
 
 using namespace dolfinx;
@@ -42,6 +41,8 @@ void _lift_bc_cells(
   assert(a.mesh());
   const mesh::Mesh& mesh = *a.mesh();
 
+  mesh.create_entity_permutations();
+
   // Get dofmap for columns and rows of a
   assert(a.function_space(0));
   assert(a.function_space(0)->dofmap());
@@ -55,7 +56,8 @@ void _lift_bc_cells(
       coeffs = pack_coefficients(a);
 
   const std::function<void(PetscScalar*, const PetscScalar*, const PetscScalar*,
-                           const double*, const int*, const int*)>& fn
+                           const double*, const int*, const std::uint8_t*,
+                           const bool*, const bool*, const std::uint8_t*)>& fn
       = a.integrals().get_tabulate_tensor(FormIntegrals::Type::cell, 0);
 
   // Prepare cell geometry
@@ -95,11 +97,13 @@ void _lift_bc_cells(
 
   // Iterate over all cells
   const int tdim = mesh.topology().dim();
-  const int orient = 0;
-  for (const mesh::MeshEntity& cell : mesh::MeshRange(mesh, tdim))
+  auto map = mesh.topology().index_map(tdim);
+  assert(map);
+  const int num_cells = map->size_local() + map->num_ghosts();
+  for (int c = 0; c < num_cells; ++c)
   {
     // Get dof maps for cell
-    auto dmap1 = dofmap1.cell_dofs(cell.index());
+    auto dmap1 = dofmap1.cell_dofs(c);
 
     // Check if bc is applied to cell
     bool has_bc = false;
@@ -115,20 +119,26 @@ void _lift_bc_cells(
     if (!has_bc)
       continue;
 
-    const int cell_index = cell.index();
-
     // Get cell vertex coordinates
     for (int i = 0; i < num_dofs_g; ++i)
       for (int j = 0; j < gdim; ++j)
-        coordinate_dofs(i, j) = x_g(cell_g[pos_g[cell_index] + i], j);
+        coordinate_dofs(i, j) = x_g(cell_g[pos_g[c] + i], j);
 
     // Size data structure for assembly
-    auto dmap0 = dofmap0.cell_dofs(cell_index);
+    auto dmap0 = dofmap0.cell_dofs(c);
 
-    auto coeff_array = coeffs.row(cell_index);
+    const Eigen::Ref<const Eigen::Array<bool, 1, Eigen::Dynamic>>
+        cell_edge_reflections = mesh.topology().get_edge_reflections(c);
+    const Eigen::Ref<const Eigen::Array<bool, 1, Eigen::Dynamic>>
+        cell_face_reflections = mesh.topology().get_face_reflections(c);
+    const Eigen::Ref<const Eigen::Array<std::uint8_t, 1, Eigen::Dynamic>>
+        cell_face_rotations = mesh.topology().get_face_rotations(c);
+
+    auto coeff_array = coeffs.row(c);
     Ae.setZero(dmap0.size(), dmap1.size());
     fn(Ae.data(), coeff_array.data(), constant_values.data(),
-       coordinate_dofs.data(), nullptr, &orient);
+       coordinate_dofs.data(), nullptr, nullptr, cell_edge_reflections.data(),
+       cell_face_reflections.data(), cell_face_rotations.data());
 
     // Size data structure for assembly
     be.setZero(dmap0.size());
@@ -164,10 +174,13 @@ void _lift_bc_exterior_facets(
   assert(a.mesh());
   const mesh::Mesh& mesh = *a.mesh();
 
+  mesh.create_entity_permutations();
+
   const int gdim = mesh.geometry().dim();
   const int tdim = mesh.topology().dim();
   mesh.create_entities(tdim - 1);
   mesh.create_connectivity(tdim - 1, tdim);
+  mesh.create_entity_permutations();
 
   // Get dofmap for columns and rows of a
   assert(a.function_space(0));
@@ -182,7 +195,8 @@ void _lift_bc_exterior_facets(
       coeffs = pack_coefficients(a);
 
   const std::function<void(PetscScalar*, const PetscScalar*, const PetscScalar*,
-                           const double*, const int*, const int*)>& fn
+                           const double*, const int*, const std::uint8_t*,
+                           const bool*, const bool*, const std::uint8_t*)>& fn
       = a.integrals().get_tabulate_tensor(FormIntegrals::Type::exterior_facet,
                                           0);
 
@@ -221,9 +235,10 @@ void _lift_bc_exterior_facets(
 
   // Iterate over owned facets
   const mesh::Topology& topology = mesh.topology();
-  std::shared_ptr<const graph::AdjacencyList<std::int32_t>> connectivity
-      = topology.connectivity(tdim - 1, tdim);
+  auto connectivity = topology.connectivity(tdim - 1, tdim);
   assert(connectivity);
+  auto c_to_f = topology.connectivity(tdim, tdim - 1);
+  assert(c_to_f);
   auto map = topology.index_map(tdim - 1);
   assert(map);
   for (int f = 0; f < map->size_local(); ++f)
@@ -233,16 +248,20 @@ void _lift_bc_exterior_facets(
       continue;
 
     // Create attached cell
-    const std::int32_t cell_index = connectivity->links(f)[0];
+    assert(connectivity->num_links(f) == 1);
+    const std::int32_t cell = connectivity->links(f)[0];
 
     // Get local index of facet with respect to the cell
-    mesh::MeshEntity cell(mesh, tdim, cell_index);
-    mesh::MeshEntity _facet(mesh, tdim - 1, f);
-    const int local_facet = cell.index(_facet);
-    const int orient = 0;
+    auto facets = c_to_f->links(cell);
+    auto it = std::find(facets.data(), facets.data() + facets.rows(), f);
+    assert(it != (facets.data() + facets.rows()));
+    const int local_facet = std::distance(facets.data(), it);
+
+    const std::uint8_t perm
+        = mesh.topology().get_facet_permutation(cell, tdim - 1, local_facet);
 
     // Get dof maps for cell
-    auto dmap1 = dofmap1.cell_dofs(cell_index);
+    auto dmap1 = dofmap1.cell_dofs(cell);
 
     // Check if bc is applied to cell
     bool has_bc = false;
@@ -261,18 +280,27 @@ void _lift_bc_exterior_facets(
     // Get cell vertex coordinates
     for (int i = 0; i < num_dofs_g; ++i)
       for (int j = 0; j < gdim; ++j)
-        coordinate_dofs(i, j) = x_g(cell_g[pos_g[cell_index] + i], j);
+        coordinate_dofs(i, j) = x_g(cell_g[pos_g[cell] + i], j);
 
     // Size data structure for assembly
-    auto dmap0 = dofmap0.cell_dofs(cell_index);
+    auto dmap0 = dofmap0.cell_dofs(cell);
 
     // TODO: Move gathering of coefficients outside of main assembly
     // loop
 
-    auto coeff_array = coeffs.row(cell_index);
+    const Eigen::Ref<const Eigen::Array<bool, 1, Eigen::Dynamic>>
+        cell_edge_reflections = mesh.topology().get_edge_reflections(cell);
+    const Eigen::Ref<const Eigen::Array<bool, 1, Eigen::Dynamic>>
+        cell_face_reflections = mesh.topology().get_face_reflections(cell);
+    const Eigen::Ref<const Eigen::Array<std::uint8_t, 1, Eigen::Dynamic>>
+        cell_face_rotations = mesh.topology().get_face_rotations(cell);
+
+    auto coeff_array = coeffs.row(cell);
     Ae.setZero(dmap0.size(), dmap1.size());
     fn(Ae.data(), coeff_array.data(), constant_values.data(),
-       coordinate_dofs.data(), &local_facet, &orient);
+       coordinate_dofs.data(), &local_facet, &perm,
+       cell_edge_reflections.data(), cell_face_reflections.data(),
+       cell_face_rotations.data());
 
     // Size data structure for assembly
     be.setZero(dmap0.size());
@@ -368,12 +396,15 @@ void fem::impl::assemble_cells(
     int num_dofs_per_cell,
     const std::function<void(PetscScalar*, const PetscScalar*,
                              const PetscScalar*, const double*, const int*,
-                             const int*)>& kernel,
+                             const std::uint8_t*, const bool*, const bool*,
+                             const std::uint8_t*)>& kernel,
     const Eigen::Array<PetscScalar, Eigen::Dynamic, Eigen::Dynamic,
                        Eigen::RowMajor>& coeffs,
     const std::vector<PetscScalar>& constant_values)
 {
   const int gdim = mesh.geometry().dim();
+
+  mesh.create_entity_permutations();
 
   // Prepare cell geometry
   const graph::AdjacencyList<std::int32_t>& connectivity_g
@@ -393,7 +424,6 @@ void fem::impl::assemble_cells(
   Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1> be(num_dofs_per_cell);
 
   // Iterate over active cells
-  const int orientation = 0;
   for (std::int32_t cell_index : active_cells)
   {
     // Get cell coordinates/geometry
@@ -401,11 +431,22 @@ void fem::impl::assemble_cells(
       for (int j = 0; j < gdim; ++j)
         coordinate_dofs(i, j) = x_g(cell_g[pos_g[cell_index] + i], j);
 
+    const Eigen::Ref<const Eigen::Array<bool, 1, Eigen::Dynamic>>
+        cell_edge_reflections
+        = mesh.topology().get_edge_reflections(cell_index);
+    const Eigen::Ref<const Eigen::Array<bool, 1, Eigen::Dynamic>>
+        cell_face_reflections
+        = mesh.topology().get_face_reflections(cell_index);
+    const Eigen::Ref<const Eigen::Array<std::uint8_t, 1, Eigen::Dynamic>>
+        cell_face_rotations = mesh.topology().get_face_rotations(cell_index);
+
     // Tabulate vector for cell
     auto coeff_cell = coeffs.row(cell_index);
     be.setZero();
     kernel(be.data(), coeff_cell.data(), constant_values.data(),
-           coordinate_dofs.data(), nullptr, &orientation);
+           coordinate_dofs.data(), nullptr, nullptr,
+           cell_edge_reflections.data(), cell_face_reflections.data(),
+           cell_face_rotations.data());
 
     // Scatter cell vector to 'global' vector array
     for (Eigen::Index i = 0; i < num_dofs_per_cell; ++i)
@@ -419,7 +460,8 @@ void fem::impl::assemble_exterior_facets(
     const fem::DofMap& dofmap,
     const std::function<void(PetscScalar*, const PetscScalar*,
                              const PetscScalar*, const double*, const int*,
-                             const int*)>& fn,
+                             const std::uint8_t*, const bool*, const bool*,
+                             const std::uint8_t*)>& fn,
     const Eigen::Array<PetscScalar, Eigen::Dynamic, Eigen::Dynamic,
                        Eigen::RowMajor>& coeffs,
     const std::vector<PetscScalar>& constant_values)
@@ -428,6 +470,7 @@ void fem::impl::assemble_exterior_facets(
   const int tdim = mesh.topology().dim();
   mesh.create_entities(tdim - 1);
   mesh.create_connectivity(tdim - 1, tdim);
+  mesh.create_entity_permutations();
 
   // Prepare cell geometry
   const graph::AdjacencyList<std::int32_t>& connectivity_g
@@ -448,32 +491,46 @@ void fem::impl::assemble_exterior_facets(
 
   auto f_to_c = mesh.topology().connectivity(tdim - 1, tdim);
   assert(f_to_c);
+  auto c_to_f = mesh.topology().connectivity(tdim, tdim - 1);
+  assert(c_to_f);
   for (const auto& f : active_facets)
   {
     // Get index of first attached cell
     assert(f_to_c->num_links(f) > 0);
-    const std::int32_t cell_index = f_to_c->links(f)[0];
+    const std::int32_t cell = f_to_c->links(f)[0];
 
-    // FIXME: See if creation of MeshEntity can be removed
     // Get local index of facet with respect to the cell
-    const mesh::MeshEntity cell(mesh, tdim, cell_index);
-    const mesh::MeshEntity facet(mesh, tdim - 1, f);
-    const int local_facet = cell.index(facet);
-    const int orient = 0;
+    auto facets = c_to_f->links(cell);
+    auto it = std::find(facets.data(), facets.data() + facets.rows(), f);
+    assert(it != (facets.data() + facets.rows()));
+    const int local_facet = std::distance(facets.data(), it);
+
+    const std::uint8_t perm
+        = mesh.topology().get_facet_permutation(cell, tdim - 1, local_facet);
 
     // Get cell vertex coordinates
     for (int i = 0; i < num_dofs_g; ++i)
       for (int j = 0; j < gdim; ++j)
-        coordinate_dofs(i, j) = x_g(cell_g[pos_g[cell_index] + i], j);
+        coordinate_dofs(i, j) = x_g(cell_g[pos_g[cell] + i], j);
 
     // Get dof map for cell
-    auto dmap = dofmap.cell_dofs(cell_index);
+    auto dmap = dofmap.cell_dofs(cell);
 
     // Tabulate element vector
-    auto coeff_cell = coeffs.row(cell_index);
+    auto coeff_cell = coeffs.row(cell);
     be.setZero(dmap.size());
+
+    const Eigen::Ref<const Eigen::Array<bool, 1, Eigen::Dynamic>>
+        cell_edge_reflections = mesh.topology().get_edge_reflections(cell);
+    const Eigen::Ref<const Eigen::Array<bool, 1, Eigen::Dynamic>>
+        cell_face_reflections = mesh.topology().get_face_reflections(cell);
+    const Eigen::Ref<const Eigen::Array<std::uint8_t, 1, Eigen::Dynamic>>
+        cell_face_rotations = mesh.topology().get_face_rotations(cell);
+
     fn(be.data(), coeff_cell.data(), constant_values.data(),
-       coordinate_dofs.data(), &local_facet, &orient);
+       coordinate_dofs.data(), &local_facet, &perm,
+       cell_edge_reflections.data(), cell_face_reflections.data(),
+       cell_face_rotations.data());
 
     // Add element vector to global vector
     for (Eigen::Index i = 0; i < dmap.size(); ++i)
@@ -487,7 +544,8 @@ void fem::impl::assemble_interior_facets(
     const fem::DofMap& dofmap,
     const std::function<void(PetscScalar*, const PetscScalar*,
                              const PetscScalar*, const double*, const int*,
-                             const int*)>& fn,
+                             const std::uint8_t*, const bool*, const bool*,
+                             const std::uint8_t*)>& fn,
     const Eigen::Array<PetscScalar, Eigen::Dynamic, Eigen::Dynamic,
                        Eigen::RowMajor>& coeffs,
     const std::vector<int>& offsets,
@@ -497,6 +555,7 @@ void fem::impl::assemble_interior_facets(
   const int tdim = mesh.topology().dim();
   mesh.create_entities(tdim - 1);
   mesh.create_connectivity(tdim - 1, tdim);
+  mesh.create_entity_permutations();
 
   // Prepare cell geometry
   const graph::AdjacencyList<std::int32_t>& connectivity_g
@@ -519,6 +578,8 @@ void fem::impl::assemble_interior_facets(
 
   auto f_to_c = mesh.topology().connectivity(tdim - 1, tdim);
   assert(f_to_c);
+  auto c_to_f = mesh.topology().connectivity(tdim, tdim - 1);
+  assert(c_to_f);
   for (const auto& f : active_facets)
   {
     // Get attached cell indices
@@ -526,13 +587,27 @@ void fem::impl::assemble_interior_facets(
     assert(cells.rows() == 2);
 
     // Create attached cells
-    const mesh::MeshEntity cell0(mesh, tdim, cells[0]);
-    const mesh::MeshEntity cell1(mesh, tdim, cells[1]);
-    const mesh::MeshEntity facet(mesh, tdim - 1, f);
-    const int local_facet[2] = {cell0.index(facet), cell1.index(facet)};
+    std::array<int, 2> local_facet;
+    for (int i = 0; i < 2; ++i)
+    {
+      auto facets = c_to_f->links(cells[i]);
+      auto it = std::find(facets.data(), facets.data() + facets.rows(), f);
+      assert(it != (facets.data() + facets.rows()));
+      local_facet[i] = std::distance(facets.data(), it);
+    }
 
     // Orientation
-    const int orient[2] = {0, 0};
+    const std::array<std::uint8_t, 2> perm
+        = {mesh.topology().get_facet_permutation(cells[0], tdim - 1,
+                                                 local_facet[0]),
+           mesh.topology().get_facet_permutation(cells[1], tdim - 1,
+                                                 local_facet[1])};
+    const Eigen::Ref<const Eigen::Array<bool, 1, Eigen::Dynamic>>
+        cell_edge_reflections = mesh.topology().get_edge_reflections(cells[0]);
+    const Eigen::Ref<const Eigen::Array<bool, 1, Eigen::Dynamic>>
+        cell_face_reflections = mesh.topology().get_face_reflections(cells[0]);
+    const Eigen::Ref<const Eigen::Array<std::uint8_t, 1, Eigen::Dynamic>>
+        cell_face_rotations = mesh.topology().get_face_rotations(cells[0]);
 
     // Get cell vertex coordinates
     for (int i = 0; i < num_dofs_g; ++i)
@@ -578,7 +653,9 @@ void fem::impl::assemble_interior_facets(
     // Tabulate element vector
     be.setZero(dmap0.size() + dmap1.size());
     fn(be.data(), coeff_array.data(), constant_values.data(),
-       coordinate_dofs.data(), local_facet, orient);
+       coordinate_dofs.data(), local_facet.data(), perm.data(),
+       cell_edge_reflections.data(), cell_face_reflections.data(),
+       cell_face_rotations.data());
 
     // Add element vector to global vector
     for (Eigen::Index i = 0; i < dmap0.size(); ++i)
@@ -620,7 +697,7 @@ void fem::impl::apply_lifting(
       auto map1 = V1->dofmap()->index_map;
       assert(map1);
       const int crange
-          = map1->block_size * (map1->size_local() + map1->num_ghosts());
+          = map1->block_size() * (map1->size_local() + map1->num_ghosts());
       bc_markers1.assign(crange, false);
       bc_values1 = Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1>::Zero(crange);
       for (const std::shared_ptr<const DirichletBC>& bc : bcs1[j])

@@ -8,7 +8,6 @@
 
 #include "Mesh.h"
 #include "Topology.h"
-#include <dolfinx/graph/AdjacencyList.h>
 
 namespace dolfinx
 {
@@ -70,7 +69,6 @@ public:
   int dim() const { return _dim; }
 
   /// Return index of mesh entity
-  ///
   /// @return The index
   std::int32_t index() const { return _local_index; }
 
@@ -98,16 +96,6 @@ public:
       return initialized_mesh_entities;
     }
   }
-
-  /// Compute local index of given incident entity (error if not found)
-  /// @param[in] entity The mesh entity.
-  /// @return The local index of given entity.
-  int index(const MeshEntity& entity) const;
-
-  /// Return informal string representation (pretty-print)
-  /// @param[in] verbose Flag to turn on additional output
-  /// @return An informal representation of the function space
-  std::string str(bool verbose) const;
 
 protected:
   friend class MeshRange;

@@ -90,16 +90,16 @@ int main(int argc, char* argv[])
       mesh::GhostMode::none));
 
   auto V
-      = fem::create_functionspace(hyperelasticity_functionspace_create, mesh);
+      = fem::create_functionspace(create_functionspace_form_hyperelasticity_F, "u", mesh);
 
   // Define solution function
   auto u = std::make_shared<function::Function>(V);
 
   std::shared_ptr<fem::Form> a
-      = fem::create_form(hyperelasticity_bilinearform_create, {V, V});
+      = fem::create_form(create_form_hyperelasticity_J, {V, V});
 
   std::shared_ptr<fem::Form> L
-      = fem::create_form(hyperelasticity_linearform_create, {V});
+      = fem::create_form(create_form_hyperelasticity_F, {V});
 
   // Attach 'coordinate mapping' to mesh
   auto cmap = a->coordinate_mapping();

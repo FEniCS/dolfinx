@@ -4,13 +4,15 @@
 //
 // SPDX-License-Identifier:    LGPL-3.0-or-later
 
-#include "Partitioning.h"
+#include <mpi.h>
+
 #include "DistributedMeshTools.h"
 #include "Mesh.h"
 #include "MeshEntity.h"
 #include "MeshFunction.h"
 #include "MeshValueCollection.h"
 #include "PartitionData.h"
+#include "Partitioning.h"
 #include "Topology.h"
 #include <algorithm>
 #include <cmath>
@@ -19,6 +21,7 @@
 #include <dolfinx/common/MPI.h>
 #include <dolfinx/common/Timer.h>
 #include <dolfinx/common/log.h>
+#include <dolfinx/graph/AdjacencyList.h>
 #include <dolfinx/graph/CSRGraph.h>
 #include <dolfinx/graph/GraphBuilder.h>
 #include <dolfinx/graph/KaHIP.h>
@@ -145,7 +148,7 @@ distribute_cells(
 
   // Calculate local range of global indices
   std::vector<std::int32_t> local_sizes;
-  MPI::all_gather(mpi_comm, local_count, local_sizes);
+  dolfinx::MPI::all_gather(mpi_comm, local_count, local_sizes);
   std::vector<std::int64_t> ranges(mpi_size + 1, 0);
   std::partial_sum(local_sizes.begin(), local_sizes.end(), ranges.begin() + 1);
   std::vector<std::int64_t> new_global_cell_indices(all_count, -1);
@@ -251,8 +254,8 @@ distribute_cells(
   }
   std::vector<int> recv_offsets;
   std::vector<std::int64_t> recv_data;
-  MPI::neighbor_all_to_all(neighbour_comm, send_offsets, send_data,
-                           recv_offsets, recv_data);
+  dolfinx::MPI::neighbor_all_to_all(neighbour_comm, send_offsets, send_data,
+                                    recv_offsets, recv_data);
   MPI_Comm_free(&neighbour_comm);
 
   std::map<std::int64_t, std::int32_t> tag_to_position;
@@ -482,8 +485,8 @@ void distribute_cell_layer(
 }
 
 } // namespace
+
 //-----------------------------------------------------------------------------
-// Distribute points
 std::tuple<
     std::shared_ptr<common::IndexMap>, std::vector<std::int64_t>,
     Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>>

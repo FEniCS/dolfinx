@@ -48,8 +48,8 @@ public:
                              const mesh::Topology& topology);
 
   /// Build dofmap
-  static std::tuple<std::unique_ptr<common::IndexMap>,
-                    Eigen::Array<std::int32_t, Eigen::Dynamic, 1>>
+  static std::pair<std::unique_ptr<common::IndexMap>,
+                   Eigen::Array<std::int32_t, Eigen::Dynamic, 1>>
   build(MPI_Comm comm, const mesh::Topology& topology,
         const mesh::CellType cell_type,
         const ElementDofLayout& element_dof_layout,

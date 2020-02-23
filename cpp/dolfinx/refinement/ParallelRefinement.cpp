@@ -31,8 +31,10 @@ ParallelRefinement::ParallelRefinement(const mesh::Mesh& mesh)
 
   // Create a global-to-local map for shared edges
   _shared_edges = _mesh.topology().index_map(1)->compute_shared_indices();
-  const std::vector<std::int64_t>& global_edge_indices
-      = _mesh.topology().global_indices(1);
+  auto map = mesh.topology().index_map(1);
+  assert(map);
+  const std::vector<std::int64_t> global_edge_indices
+      = map->global_indices(false);
 
   for (const auto& edge : _shared_edges)
   {
@@ -63,8 +65,11 @@ void ParallelRefinement::mark(std::int32_t edge_index)
   auto map_it = _shared_edges.find(edge_index);
   if (map_it != _shared_edges.end())
   {
-    const std::vector<std::int64_t>& global_edge_indices
-        = _mesh.topology().global_indices(1);
+    auto map = _mesh.topology().index_map(1);
+    assert(map);
+    const std::vector<std::int64_t> global_edge_indices
+        = map->global_indices(false);
+
     std::int64_t global_index = global_edge_indices[edge_index];
     for (int p : map_it->second)
       _marked_for_update[p].push_back(global_index);
@@ -125,8 +130,15 @@ ParallelRefinement::marked_edge_list(const mesh::MeshEntity& cell) const
 void ParallelRefinement::update_logical_edgefunction()
 {
   const std::size_t mpi_size = MPI::size(_mesh.mpi_comm());
-  MPI_Comm neighbour_comm
-      = _mesh.topology().index_map(1)->mpi_comm_neighborhood();
+
+  const std::vector<std::int32_t>& neighbours_mpi
+      = _mesh.topology().index_map(1)->neighbours();
+  MPI_Comm neighbour_comm;
+  MPI_Dist_graph_create_adjacent(
+      _mesh.mpi_comm(), neighbours_mpi.size(), neighbours_mpi.data(),
+      MPI_UNWEIGHTED, neighbours_mpi.size(), neighbours_mpi.data(),
+      MPI_UNWEIGHTED, MPI_INFO_NULL, false, &neighbour_comm);
+
   // Get neighbour processes
   std::vector<int> neighbours = MPI::neighbors(neighbour_comm);
   std::vector<std::int32_t> send_offsets(1, 0), recv_offsets;
@@ -164,8 +176,10 @@ void ParallelRefinement::create_new_vertices()
 
   const std::int32_t mpi_rank = MPI::rank(_mesh.mpi_comm());
 
-  const std::vector<std::int64_t>& global_edge_indices
-      = _mesh.topology().global_indices(1);
+  auto map = _mesh.topology().index_map(1);
+  assert(map);
+  const std::vector<std::int64_t> global_edge_indices
+      = map->global_indices(false);
 
   // Copy over existing mesh vertices
   _new_vertex_coordinates = std::vector<double>(
@@ -221,8 +235,16 @@ void ParallelRefinement::create_new_vertices()
   // sent off-process.  Add offset to map, and collect up any shared
   // new vertices that need to send the new index off-process
 
-  MPI_Comm neighbour_comm
-      = _mesh.topology().index_map(1)->mpi_comm_neighborhood();
+  // MPI_Comm neighbour_comm
+  //     = _mesh.topology().index_map(1)->mpi_comm_neighborhood();
+  const std::vector<std::int32_t>& neighbours_mpi
+      = _mesh.topology().index_map(1)->neighbours();
+  MPI_Comm neighbour_comm;
+  MPI_Dist_graph_create_adjacent(
+      _mesh.mpi_comm(), neighbours_mpi.size(), neighbours_mpi.data(),
+      MPI_UNWEIGHTED, neighbours_mpi.size(), neighbours_mpi.data(),
+      MPI_UNWEIGHTED, MPI_INFO_NULL, false, &neighbour_comm);
+
   std::vector<int> neighbours = MPI::neighbors(neighbour_comm);
   std::vector<std::vector<std::int64_t>> values_to_send(neighbours.size());
   std::map<int, int> proc_to_neighbour;
@@ -277,7 +299,10 @@ void ParallelRefinement::create_new_vertices()
   // Attach global indices to each vertex, old and new, and sort
   // them across processes into this order
 
-  std::vector<std::int64_t> global_indices(_mesh.topology().global_indices(0));
+  // std::vector<std::int64_t>
+  // global_indices(_mesh.topology().global_indices(0));
+  std::vector<std::int64_t> global_indices
+      = _mesh.topology().index_map(0)->global_indices(false);
   for (std::size_t i = 0; i < num_new_vertices; i++)
     global_indices.push_back(i + global_offset);
 
@@ -291,6 +316,8 @@ void ParallelRefinement::create_new_vertices()
 
   _new_vertex_coordinates
       = std::vector<double>(tmp.data(), tmp.data() + tmp.size());
+
+  MPI_Comm_free(&neighbour_comm);
 }
 //-----------------------------------------------------------------------------
 mesh::Mesh ParallelRefinement::build_local() const

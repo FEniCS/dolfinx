@@ -42,7 +42,7 @@ public:
       std::function<void(double*, int, const double*, const double*)>
           compute_physical_coordinates,
       std::function<void(double*, double*, double*, double*, int, const double*,
-                         const double*, int)>
+                         const double*)>
           compute_reference_geometry);
 
   /// Destructor
@@ -101,7 +101,7 @@ private:
       _compute_physical_coordinates;
 
   std::function<void(double*, double*, double*, double*, int, const double*,
-                     const double*, int)>
+                     const double*)>
       _compute_reference_geometry;
 };
 } // namespace fem
