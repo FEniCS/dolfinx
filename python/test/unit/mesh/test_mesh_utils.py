@@ -97,11 +97,9 @@ def test_topology_partition():
     assert len(dest) == cells_filtered1.num_nodes
 
     # Distribute cells to destination process
-    cells, src = cpp.mesh.distribute(cpp.MPI.comm_world, cells_filtered1,
-                                     dest)
-    # cells, src, original_index = cpp.mesh.distribute(cpp.MPI.comm_world, cells_filtered1,
-    #                                                  dest)
-    # print("Orig index:", original_index)
+    cells, src, original_index = cpp.mesh.distribute(cpp.MPI.comm_world, cells_filtered1,
+                                                     dest)
+    print("Orig index:", original_index)
     assert cpp.MPI.sum(cpp.MPI.comm_world, cells.num_nodes) == 4
 
     # Build local cell-vertex connectivity (with local vertex indices
