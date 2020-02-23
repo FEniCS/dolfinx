@@ -103,10 +103,10 @@ def test_topology_partition():
     # Build local cell-vertex connectivity (with local vertex indices
     # [0, 1, 2, ..., n)), map from global indices in 'cells' to the
     # local vertex indices, and
-    cells_local, global_to_local_vertices = cpp.mesh.create_local_adjacency_list(cells)
-    assert len(global_to_local_vertices) == len(np.unique(cells.array()))
-    assert len(global_to_local_vertices) == len(np.unique(cells_local.array()))
-    assert np.unique(cells_local.array())[-1] == len(global_to_local_vertices) - 1
+    cells_local, local_to_global_vertices = cpp.mesh.create_local_adjacency_list(cells)
+    assert len(local_to_global_vertices) == len(np.unique(cells.array()))
+    assert len(local_to_global_vertices) == len(np.unique(cells_local.array()))
+    assert np.unique(cells_local.array())[-1] == len(local_to_global_vertices) - 1
 
     # Create local topology, and set cell-vertex topology
     topology = cpp.mesh.Topology(layout.cell_type)
@@ -115,7 +115,7 @@ def test_topology_partition():
     topology.set_index_map(topology.dim, index_map)
 
     # Attach vertex IndexMap to local topology
-    n = len(global_to_local_vertices)
+    n = len(local_to_global_vertices)
     index_map = cpp.common.IndexMap(cpp.MPI.comm_self, n, [], 1)
     topology.set_index_map(0, index_map)
 
@@ -138,7 +138,7 @@ def test_topology_partition():
     # Build distributed cell-vertex AdjacencyList, IndexMap for
     # vertices, and map from local index to old global index
     cells, vertex_map = cpp.mesh.create_distributed_adjacency_list(cpp.MPI.comm_world, topology,
-                                                                   global_to_local_vertices)
+                                                                   local_to_global_vertices)
 
     # Create distributed topology
     topology = cpp.mesh.Topology(layout.cell_type)

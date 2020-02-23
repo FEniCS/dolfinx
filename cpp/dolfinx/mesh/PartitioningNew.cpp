@@ -6,6 +6,7 @@
 
 #include "PartitioningNew.h"
 #include "Topology.h"
+#include <Eigen/Dense>
 #include <algorithm>
 #include <dolfinx/common/IndexMap.h>
 #include <dolfinx/common/log.h>
@@ -59,11 +60,15 @@ std::vector<bool> PartitioningNew::compute_vertex_exterior_markers(
 //-----------------------------------------------------------------------------
 std::pair<std::vector<std::int32_t>, std::vector<std::int64_t>>
 PartitioningNew::reorder_global_indices(
-    MPI_Comm comm,
-    const std::map<std::int64_t, std::int32_t>& global_to_local,
+    MPI_Comm comm, const std::vector<std::int64_t>& global_indices,
     const std::vector<bool>& shared_indices)
 {
-  assert(global_to_local.size() == shared_indices.size());
+  assert(global_indices.size() == shared_indices.size());
+
+  // Create global ->local map
+  std::map<std::int64_t, std::int32_t> global_to_local;
+  for (std::size_t i = 0; i < global_indices.size(); ++i)
+    global_to_local.insert({global_indices[i], i});
 
   // Get maximum global index across all processes
   std::int64_t my_max_global_index = 0;
@@ -390,8 +395,7 @@ std::vector<int> PartitioningNew::partition_cells(
   return partition;
 }
 //-----------------------------------------------------------------------------
-std::pair<graph::AdjacencyList<std::int32_t>,
-          std::map<std::int64_t, std::int32_t>>
+std::pair<graph::AdjacencyList<std::int32_t>, std::vector<std::int64_t>>
 PartitioningNew::create_local_adjacency_list(
     const graph::AdjacencyList<std::int64_t>& cells)
 {
@@ -415,19 +419,23 @@ PartitioningNew::create_local_adjacency_list(
       array_local[i] = it->second;
   }
 
+  std::vector<std::int64_t> local_to_global(global_to_local.size());
+  for (const auto& e : global_to_local)
+    local_to_global[e.second] = e.first;
+
   // FIXME: Update AdjacencyList to avoid this
   const Eigen::Array<std::int32_t, Eigen::Dynamic, 1>& offsets
       = cells.offsets();
   std::vector<std::int32_t> _offsets(offsets.data(),
                                      offsets.data() + offsets.rows());
   return {graph::AdjacencyList<std::int32_t>(array_local, _offsets),
-          global_to_local};
+          std::move(local_to_global)};
 }
 //-----------------------------------------------------------------------------
 std::tuple<graph::AdjacencyList<std::int32_t>, common::IndexMap>
 PartitioningNew::create_distributed_adjacency_list(
     MPI_Comm comm, const mesh::Topology& topology_local,
-    const std::map<std::int64_t, std::int32_t>& global_to_local_vertices)
+    const std::vector<std::int64_t>& local_to_global_vertices)
 {
   // Get marker for each vertex indicating if it interior or on the
   // boundary of the local topology
@@ -436,7 +444,7 @@ PartitioningNew::create_distributed_adjacency_list(
 
   // Compute new local and global indices
   const auto [local_to_local_new, ghosts]
-      = reorder_global_indices(comm, global_to_local_vertices, exterior_vertex);
+      = reorder_global_indices(comm, local_to_global_vertices, exterior_vertex);
 
   const int dim = topology_local.dim();
   auto cv = topology_local.connectivity(dim, 0);
