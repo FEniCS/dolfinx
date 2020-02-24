@@ -87,8 +87,11 @@ public:
                    std::vector<std::int64_t>>
   create_local_adjacency_list(const graph::AdjacencyList<std::int64_t>& list);
 
-  /// Compute a distributed AdjacencyList list from an AdjacencyList
-  /// that map have non-contiguous data
+  /// @todo Avoid passing Topology
+  ///
+  /// Build a distributed AdjacencyList list with re-numbered links from
+  /// an AdjacencyList that may have non-contiguous data. The
+  /// distribution of the AdjacencyList nodes is unchanged.
   /// @param[in] comm
   /// @param[in] topology_local
   /// @param[in] local_to_global_vertices
@@ -97,14 +100,15 @@ public:
       MPI_Comm comm, const mesh::Topology& topology_local,
       const std::vector<std::int64_t>& local_to_global_vertices);
 
-  /// Re-distribute adjacency list across processes
+  /// Re-distribute adjacency list nodes processes. Does not change any
+  /// numbering.
   /// @param[in] comm MPI Communicator
   /// @param[in] list An adjacency list
-  /// @param[in] destinations Destination rank for the ith entry in the
+  /// @param[in] destinations Destination rank for the ith node in the
   ///   adjacency list
   /// @return Adjacency list for this process, array of source ranks for
-  ///   each cell in the adjacency list, and input global index for each
-  ///   node.
+  ///   each node in the adjacency list, and the original global index
+  ///   for each node.
   static std::tuple<graph::AdjacencyList<std::int64_t>, std::vector<int>,
                     std::vector<std::int64_t>>
   distribute(MPI_Comm comm, const graph::AdjacencyList<std::int64_t>& list,
@@ -113,16 +117,23 @@ public:
   /// Send nodes to destinations, and receive from sources
   /// @param[in] comm MPI communicator
   /// @param[in] list An adjacency list. Each node  is associated with a
-  ///   global index index_local + global offset
+  ///   global index (index_local + global offset)
   /// @param[in] destinations The destination rank for each node in the
   ///   adjacency list
   /// @param[in] sources Ranks that will send data to this process
   /// @return Re-distributed adjacency list and the original global
-  /// index of each node
+  ///   index of each node
+  /// @todo Is  the original global index of each node required?
   static std::pair<graph::AdjacencyList<std::int64_t>,
                    std::vector<std::int64_t>>
   exchange(MPI_Comm comm, const graph::AdjacencyList<std::int64_t>& list,
            const std::vector<int>& destinations, const std::set<int>& sources);
+
+  // TODO
+  static Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
+  fetch_data(MPI_Comm comm, const std::vector<std::int64_t>& indices,
+             const Eigen::Ref<const Eigen::Array<
+                 double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>>& x);
 };
 } // namespace mesh
 } // namespace dolfinx

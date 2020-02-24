@@ -83,15 +83,17 @@ def test_topology_partition():
     layout = cpp.fem.ElementDofLayout(1, entity_dofs, [], [], cell_type, perms)
     if rank == 0:
         # cells_in = [[6, 12, 2, 1, 11, 0], [12, 14, 7, 9, 10, 8], [7, 2, 12, 1, 10, 3], [6, 2, 13, 4, 5, 11]]
-        # cells_in = [[6, 12, 2, 1, 11, 0], [12, 14, 7, 9, 10, 8], [7, 2, 12, 1, 10, 3], [6, 2, 13, 4, 5, 11]]
+
         cells_in = [[0, 1, 4], [0, 4, 3], [1, 2, 5], [1, 5, 4]]
         x = [[0.0, 0.0], [1.0, 0.0], [2.0, 0.0], [0.0, 1.0], [1.0, 1.0], [2.0, 1.0]]
+        x = np.array(x)
+
         cells1 = cpp.graph.AdjacencyList64(cells_in)
         cells_filtered1 = cpp.mesh.extract_topology(layout, cells1)
         cells_in = cpp.graph.AdjacencyList64(cells_in)
     else:
         cells1 = cpp.graph.AdjacencyList64(0)
-        x = []
+        x = np.zeros([0, 2])
         cells_filtered1 = cpp.graph.AdjacencyList64(0)
 
     # Compute the destination process for cells on this process
@@ -102,8 +104,8 @@ def test_topology_partition():
 
     # Distribute cells to destination process
     # return
-    cells, src, original_index = cpp.mesh.distribute(cpp.MPI.comm_world, cells_filtered1,
-                                                     dest)
+    cells, src, original_cell_index = cpp.mesh.distribute(cpp.MPI.comm_world, cells_filtered1,
+                                                          dest)
     # print(cells.array())
     # print(src)
     # if rank == 3:
@@ -150,9 +152,6 @@ def test_topology_partition():
 
     # Build distributed cell-vertex AdjacencyList, IndexMap for
     # vertices, and map from local index to old global index
-    # print("foo:", len(local_to_global_vertices))
-    # return
-    # return
     cells, vertex_map = cpp.mesh.create_distributed_adjacency_list(cpp.MPI.comm_world, topology,
                                                                    local_to_global_vertices)
 
@@ -191,10 +190,16 @@ def test_topology_partition():
     # need for global_index_nodes
     cell_nodes, global_index_nodes = cpp.mesh.exchange(cpp.MPI.comm_world,
                                                        cells1, dest, set(src))
+    assert cell_nodes.num_nodes == cells.num_nodes
+    assert global_index_nodes == original_cell_index
 
-    if rank == 2:
-        print("Num:", cell_nodes.num_nodes)
-        for i in range(cell_nodes.num_nodes):
-            print("  ", global_index_nodes, cell_nodes.links(i))
+    # Check that number of dofs is equal to number of 'nodes' in the input
+    assert dofmap.shape == cell_nodes.array().shape
 
-    # Next, fetch geometry
+    # Build list of unique node indices
+    indices = np.unique(cell_nodes.array())
+    print(indices)
+
+    coords = cpp.mesh.fetch_data(cpp.MPI.comm_world, indices, x)
+    print("******")
+    print(coords)
