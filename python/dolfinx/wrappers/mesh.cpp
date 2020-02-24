@@ -357,7 +357,7 @@ void mesh(py::module& m)
       .def("size", &dolfinx::mesh::PartitionData::num_ghosts)
       .def("num_ghosts", &dolfinx::mesh::PartitionData::num_ghosts);
 
-  // dolfinx::mesh::Partitioning::partition_cells
+  // New Partition interface
 
   m.def("create_local_adjacency_list",
         &dolfinx::mesh::PartitioningNew::create_local_adjacency_list);
@@ -377,6 +377,14 @@ void mesh(py::module& m)
                                                             owner);
         });
 
+  m.def("exchange", [](const MPICommWrapper comm,
+                       const dolfinx::graph::AdjacencyList<std::int64_t>& list,
+                       const std::vector<int>& destinations,
+                       const std::set<int>& sources) {
+    return dolfinx::mesh::PartitioningNew::exchange(comm.get(), list,
+                                                    destinations, sources);
+  });
+
   m.def("partition_cells",
         [](const MPICommWrapper comm, int nparts,
            dolfinx::mesh::CellType cell_type,
@@ -385,6 +393,15 @@ void mesh(py::module& m)
               comm.get(), nparts, cell_type, cells);
         });
 
+  m.def("fetch_data",
+        [](const MPICommWrapper comm, const std::vector<std::int64_t>& indices,
+           const Eigen::Ref<const Eigen::Array<
+               double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>>& x) {
+          return dolfinx::mesh::PartitioningNew::fetch_data(comm.get(), indices,
+                                                            x);
+        });
+
+  // Old Partition
   m.def(
       "partition_cells",
       [](const MPICommWrapper comm, int nparts,

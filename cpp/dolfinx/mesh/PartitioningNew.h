@@ -13,6 +13,7 @@
 #include <dolfinx/common/MPI.h>
 #include <dolfinx/graph/AdjacencyList.h>
 #include <map>
+#include <set>
 #include <utility>
 #include <vector>
 
@@ -25,6 +26,8 @@ namespace mesh
 class Topology;
 
 /// New tools for partitioning meshes/graphs
+///
+/// TODO: Add a function that sends data (Eigen arrays) to the 'owner'
 
 class PartitioningNew
 {
@@ -86,8 +89,11 @@ public:
                    std::vector<std::int64_t>>
   create_local_adjacency_list(const graph::AdjacencyList<std::int64_t>& list);
 
-  /// Compute a distributed AdjacencyList list from an AdjacencyList
-  /// that map have non-contiguous data
+  /// @todo Avoid passing Topology
+  ///
+  /// Build a distributed AdjacencyList list with re-numbered links from
+  /// an AdjacencyList that may have non-contiguous data. The
+  /// distribution of the AdjacencyList nodes is unchanged.
   /// @param[in] comm
   /// @param[in] topology_local
   /// @param[in] local_to_global_vertices
@@ -96,17 +102,48 @@ public:
       MPI_Comm comm, const mesh::Topology& topology_local,
       const std::vector<std::int64_t>& local_to_global_vertices);
 
-  /// Re-distribute adjacency list across processes
+  /// Re-distribute adjacency list nodes processes. Does not change any
+  /// numbering.
   /// @param[in] comm MPI Communicator
   /// @param[in] list An adjacency list
-  /// @param[in] owner Destination rank for the ith entry in the
+  /// @param[in] destinations Destination rank for the ith node in the
   ///   adjacency list
-  /// @return Adjacency list for this process and a vector of source
-  ///   processes for entry in the adjacency list
-  static std::pair<graph::AdjacencyList<std::int64_t>, std::vector<int>>
-  distribute(const MPI_Comm& comm,
-             const graph::AdjacencyList<std::int64_t>& list,
-             const std::vector<int>& owner);
+  /// @return Adjacency list for this process, array of source ranks for
+  ///   each node in the adjacency list, and the original global index
+  ///   for each node.
+  static std::tuple<graph::AdjacencyList<std::int64_t>, std::vector<int>,
+                    std::vector<std::int64_t>>
+  distribute(MPI_Comm comm, const graph::AdjacencyList<std::int64_t>& list,
+             const std::vector<int>& destinations);
+
+  /// Send nodes to destinations, and receive from sources
+  /// @param[in] comm MPI communicator
+  /// @param[in] list An adjacency list. Each node  is associated with a
+  ///   global index (index_local + global offset)
+  /// @param[in] destinations The destination rank for each node in the
+  ///   adjacency list
+  /// @param[in] sources Ranks that will send data to this process
+  /// @return Re-distributed adjacency list and the original global
+  ///   index of each node
+  /// @todo Is  the original global index of each node required?
+  static std::pair<graph::AdjacencyList<std::int64_t>,
+                   std::vector<std::int64_t>>
+  exchange(MPI_Comm comm, const graph::AdjacencyList<std::int64_t>& list,
+           const std::vector<int>& destinations, const std::set<int>& sources);
+
+  /// Distribute data to process ranks where it it required.
+  ///
+  /// @param[in] comm The MPI communicator
+  /// @param[in] indices Global indices of the data required by this
+  ///   process
+  /// @param[in] x Data on this process. The global index for the [0,
+  ///   ..., n) rows on this process is assumed to be the local index
+  ///   plus the offset for this process.
+  /// @return The data for each in @p indices
+  static Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
+  fetch_data(MPI_Comm comm, const std::vector<std::int64_t>& indices,
+             const Eigen::Ref<const Eigen::Array<
+                 double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>>& x);
 };
 } // namespace mesh
 } // namespace dolfinx
