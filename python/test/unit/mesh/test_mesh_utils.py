@@ -194,12 +194,12 @@ def test_topology_partition():
     assert global_index_nodes == original_cell_index
 
     # Check that number of dofs is equal to number of 'nodes' in the input
-    assert dofmap.shape == cell_nodes.array().shape
+    assert dofmap.array().shape == cell_nodes.array().shape
 
     # Cells input vertices/dofs
     if rank == 0:
         for c in range(cell_nodes.num_nodes):
-            print(cell_nodes.links(c), dofmap[3 * c:3 * c + 3])
+            print(cell_nodes.links(c), dofmap.links(c))
 
     # Build list of unique node indices
     indices = np.unique(cell_nodes.array())
