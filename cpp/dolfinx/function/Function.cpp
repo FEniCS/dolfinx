@@ -5,7 +5,6 @@
 // SPDX-License-Identifier:    LGPL-3.0-or-later
 
 #include "Function.h"
-#include <algorithm>
 #include <cfloat>
 #include <dolfinx/common/IndexMap.h>
 #include <dolfinx/common/Timer.h>
@@ -16,13 +15,13 @@
 #include <dolfinx/fem/FiniteElement.h>
 #include <dolfinx/geometry/BoundingBoxTree.h>
 #include <dolfinx/geometry/utils.h>
+#include <dolfinx/graph/AdjacencyList.h>
 #include <dolfinx/la/PETScVector.h>
 #include <dolfinx/la/utils.h>
 #include <dolfinx/mesh/CoordinateDofs.h>
 #include <dolfinx/mesh/Geometry.h>
 #include <dolfinx/mesh/Mesh.h>
-#include <dolfinx/mesh/MeshEntity.h>
-#include <dolfinx/mesh/MeshIterator.h>
+#include <dolfinx/mesh/Topology.h>
 #include <unsupported/Eigen/CXX11/Tensor>
 #include <utility>
 #include <vector>
@@ -83,7 +82,7 @@ Function::Function(std::shared_ptr<const FunctionSpace> V, Vec x)
   // Assertion uses '<=' to deal with sub-functions
   assert(V->dofmap());
   assert(V->dofmap()->index_map->size_global()
-             * V->dofmap()->index_map->block_size
+             * V->dofmap()->index_map->block_size()
          <= _vector.size());
 }
 //-----------------------------------------------------------------------------
@@ -136,7 +135,7 @@ la::PETScVector& Function::vector()
   assert(_function_space->dofmap()->index_map);
   if (_vector.size()
       != _function_space->dofmap()->index_map->size_global()
-             * _function_space->dofmap()->index_map->block_size)
+             * _function_space->dofmap()->index_map->block_size())
   {
     throw std::runtime_error(
         "Cannot access a non-const vector from a subfunction");
@@ -375,22 +374,24 @@ Function::compute_point_values() const
   Eigen::Array<double, Eigen::Dynamic, 3, Eigen::RowMajor> x(num_dofs_g, 3);
   Eigen::Array<PetscScalar, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
       values(num_dofs_g, value_size_loc);
-  for (auto& cell : mesh::MeshRange(mesh, tdim, mesh::MeshRangeType::ALL))
+  auto map = mesh.topology().index_map(tdim);
+  assert(map);
+  const int num_cells = map->size_local() + map->num_ghosts();
+  for (int c = 0; c < num_cells; ++c)
   {
     // Get coordinates for all points in cell
-    const int cell_index = cell.index();
     for (int i = 0; i < num_dofs_g; ++i)
-      x.row(i) = x_g.row(cell_g[pos_g[cell_index] + i]);
+      x.row(i) = x_g.row(cell_g[pos_g[c] + i]);
 
     values.resize(x.rows(), value_size_loc);
 
     // Call evaluate function
     Eigen::Array<int, Eigen::Dynamic, 1> cells(x.rows());
-    cells = cell.index();
+    cells = c;
     eval(x, cells, values);
 
     // Copy values to array of point values
-    auto dofs = cell_dofs.links(cell.index());
+    auto dofs = cell_dofs.links(c);
     for (int i = 0; i < x.rows(); ++i)
       point_values.row(dofs[i]) = values.row(i);
   }

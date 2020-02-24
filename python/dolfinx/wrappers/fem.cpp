@@ -202,8 +202,20 @@ void fem(py::module& m)
          std::shared_ptr<const dolfinx::fem::ElementDofLayout>
              element_dof_layout) {
         return dolfinx::fem::DofMapBuilder::build(
-            mesh.mpi_comm(), mesh.topology(), mesh.topology().cell_type(),
-            element_dof_layout);
+            mesh.mpi_comm(), mesh.topology(), element_dof_layout);
+      },
+      "Build and dofmap on a mesh.");
+  m.def(
+      "build_dofmap",
+      [](const MPICommWrapper comm, const dolfinx::mesh::Topology& topology,
+         const dolfinx::fem::ElementDofLayout& element_dof_layout, int bs) {
+        // See https://github.com/pybind/pybind11/issues/1138 on why we need to
+        // convert from a std::unique_ptr to a std::shard_ptr
+        auto [map, dofmap] = dolfinx::fem::DofMapBuilder::build(
+            comm.get(), topology, element_dof_layout, bs);
+        return std::pair(
+            std::shared_ptr<const dolfinx::common::IndexMap>(std::move(map)),
+            std::move(dofmap));
       },
       "Build and dofmap on a mesh.");
 
@@ -223,6 +235,13 @@ void fem(py::module& m)
   py::class_<dolfinx::fem::ElementDofLayout,
              std::shared_ptr<dolfinx::fem::ElementDofLayout>>(
       m, "ElementDofLayout", "Object describing the layout of dofs on a cell")
+      .def(py::init<int, const std::vector<std::vector<std::set<int>>>&,
+                    const std::vector<int>&,
+                    const std::vector<
+                        std::shared_ptr<const dolfinx::fem::ElementDofLayout>>,
+                    const dolfinx::mesh::CellType,
+                    const Eigen::Array<int, Eigen::Dynamic, Eigen::Dynamic,
+                                       Eigen::RowMajor>&>())
       .def_property_readonly("num_dofs",
                              &dolfinx::fem::ElementDofLayout::num_dofs)
       .def_property_readonly("cell_type",

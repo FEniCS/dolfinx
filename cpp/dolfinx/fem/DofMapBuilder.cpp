@@ -35,7 +35,6 @@ namespace
 /// @todo Remove mesh argument
 /// @param [in] mesh The mesh to build the dofmap on
 /// @param [in] topology The mesh topology
-/// @param [in] cell_type The mesh cell type
 /// @param [in] element_dof_layout The layout of dofs on a cell
 /// @return Returns {dofmap (local to the process), local-to-global map
 ///   to get the global index of local dof i, dof indices, vector of
@@ -43,7 +42,6 @@ namespace
 std::tuple<graph::AdjacencyList<std::int32_t>, std::vector<std::int64_t>,
            std::vector<std::pair<std::int8_t, std::int32_t>>>
 build_basic_dofmap(const mesh::Topology& topology,
-                   const mesh::CellType cell_type,
                    const ElementDofLayout& element_dof_layout)
 {
   // Start timer for dofmap initialization
@@ -62,7 +60,7 @@ build_basic_dofmap(const mesh::Topology& topology,
     {
       if (!topology.connectivity(d, 0))
       {
-        std::runtime_error(
+        throw std::runtime_error(
             "Cannot create basic dofmap. Missing entities of dimension "
             + std::to_string(d) + " .");
       }
@@ -111,7 +109,7 @@ build_basic_dofmap(const mesh::Topology& topology,
   std::vector<std::vector<int64_t>> entity_indices_global(D + 1);
   for (int d = 0; d <= D; ++d)
   {
-    const int num_entities = mesh::cell_num_entities(cell_type, d);
+    const int num_entities = mesh::cell_num_entities(topology.cell_type(), d);
     entity_indices_local[d].resize(num_entities);
     entity_indices_global[d].resize(num_entities);
   }
@@ -123,7 +121,7 @@ build_basic_dofmap(const mesh::Topology& topology,
   // Compute cell dof permutations
   const Eigen::Array<int, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
       permutations
-      = fem::compute_dof_permutations(topology, cell_type, element_dof_layout);
+      = fem::compute_dof_permutations(topology, element_dof_layout);
 
   // Storage for local-to-global map
   std::vector<std::int64_t> local_to_global(local_size);
@@ -389,11 +387,18 @@ std::vector<std::int64_t> get_global_indices(
   std::vector<std::vector<std::int64_t>> all_dofs_received(D + 1);
   for (int d = 0; d <= D; ++d)
   {
+    // FIXME: This should check which dimennsion are needed by the dofma
     auto map = topology.index_map(d);
     if (map)
     {
       // Get number of processes in neighbourhood
-      MPI_Comm comm = map->mpi_comm_neighborhood();
+      const std::vector<std::int32_t>& neighbours = map->neighbours();
+      MPI_Comm comm;
+      MPI_Dist_graph_create_adjacent(
+          map->mpi_comm(), neighbours.size(), neighbours.data(), MPI_UNWEIGHTED,
+          neighbours.size(), neighbours.data(), MPI_UNWEIGHTED, MPI_INFO_NULL,
+          false, &comm);
+
       int num_neighbours(-1), outdegree(-2), weighted(-1);
       MPI_Dist_graph_neighbors_count(comm, &num_neighbours, &outdegree,
                                      &weighted);
@@ -420,6 +425,8 @@ std::vector<std::int64_t> get_global_indices(
                                disp.data(), MPI_INT64_T, comm,
                                &requests[requests_dim.size()]);
       requests_dim.push_back(d);
+
+      MPI_Comm_free(&comm);
     }
   }
 
@@ -470,7 +477,6 @@ std::vector<std::int64_t> get_global_indices(
 //-----------------------------------------------------------------------------
 fem::DofMap
 DofMapBuilder::build(MPI_Comm comm, const mesh::Topology& topology,
-                     const mesh::CellType cell_type,
                      std::shared_ptr<const ElementDofLayout> element_dof_layout)
 {
   assert(element_dof_layout);
@@ -479,13 +485,13 @@ DofMapBuilder::build(MPI_Comm comm, const mesh::Topology& topology,
   Eigen::Array<std::int32_t, Eigen::Dynamic, 1> dofmap;
   if (bs == 1)
   {
-    std::tie(index_map, dofmap) = DofMapBuilder::build(
-        comm, topology, cell_type, *element_dof_layout, 1);
+    std::tie(index_map, dofmap)
+        = DofMapBuilder::build(comm, topology, *element_dof_layout, 1);
   }
   else
   {
     std::tie(index_map, dofmap) = DofMapBuilder::build(
-        comm, topology, cell_type, *element_dof_layout->sub_dofmap({0}), bs);
+        comm, topology, *element_dof_layout->sub_dofmap({0}), bs);
   }
 
   return fem::DofMap(element_dof_layout, index_map, dofmap);
@@ -510,7 +516,7 @@ fem::DofMap DofMapBuilder::build_submap(const DofMap& dofmap_parent,
   auto map = topology.index_map(D);
   if (!map)
     throw std::runtime_error("Cannot use cell index map.");
-  assert(map->block_size == 1);
+  assert(map->block_size() == 1);
   const int num_cells = map->size_local() + map->num_ghosts();
 
   // Build dofmap by extracting from parent
@@ -528,10 +534,9 @@ fem::DofMap DofMapBuilder::build_submap(const DofMap& dofmap_parent,
   return DofMap(element_dof_layout, dofmap_parent.index_map, dofmap);
 }
 //-----------------------------------------------------------------------------
-std::tuple<std::unique_ptr<common::IndexMap>,
-           Eigen::Array<std::int32_t, Eigen::Dynamic, 1>>
+std::pair<std::unique_ptr<common::IndexMap>,
+          Eigen::Array<std::int32_t, Eigen::Dynamic, 1>>
 DofMapBuilder::build(MPI_Comm comm, const mesh::Topology& topology,
-                     const mesh::CellType cell_type,
                      const ElementDofLayout& element_dof_layout,
                      const std::int32_t block_size)
 {
@@ -547,7 +552,7 @@ DofMapBuilder::build(MPI_Comm comm, const mesh::Topology& topology,
   // pair {dimension, mesh entity index} giving the mesh entity that dof
   // i is associated with.
   const auto [node_graph0, local_to_global0, dof_entity0]
-      = build_basic_dofmap(topology, cell_type, element_dof_layout);
+      = build_basic_dofmap(topology, element_dof_layout);
 
   // Compute global dofmap dimension
   std::int64_t global_dimension = 0;
@@ -603,6 +608,6 @@ DofMapBuilder::build(MPI_Comm comm, const mesh::Topology& topology,
     }
   }
 
-  return std::make_tuple(std::move(index_map), std::move(dofmap));
+  return {std::move(index_map), std::move(dofmap)};
 }
 //-----------------------------------------------------------------------------

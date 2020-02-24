@@ -38,8 +38,10 @@ public:
       int block_size,
       const std::vector<std::vector<std::set<int>>>& entity_dofs,
       const std::vector<int>& parent_map,
-      const std::vector<std::shared_ptr<const ElementDofLayout>> sub_dofmaps,
-      const mesh::CellType cell_type, const int* base_permutations);
+      const std::vector<std::shared_ptr<const ElementDofLayout>>& sub_dofmaps,
+      const mesh::CellType cell_type,
+      const Eigen::Array<int, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>&
+          base_permutations);
 
   /// Copy the DOF layout, discarding any parent information
   ElementDofLayout copy() const;

@@ -7,9 +7,9 @@
 #pragma once
 
 #include "Graph.h"
+#include <array>
 #include <cstdint>
 #include <dolfinx/common/MPI.h>
-#include <dolfinx/common/types.h>
 #include <dolfinx/mesh/cell_types.h>
 #include <tuple>
 #include <utility>
@@ -57,7 +57,7 @@ public:
   /// minimal mesh data, and return (graph, ghost_vertices, [num local edges,
   /// num non-local edges])
   static std::pair<std::vector<std::vector<std::size_t>>,
-                   std::tuple<std::int32_t, std::int32_t, std::int32_t>>
+                   std::array<std::int32_t, 3>>
   compute_dual_graph(
       const MPI_Comm mpi_comm,
       const Eigen::Ref<const Eigen::Array<std::int64_t, Eigen::Dynamic,

@@ -1,4 +1,5 @@
-// Copyright (C) 2008-2013 Niclas Jansson, Ola Skavhaug, Anders Logg,
+// Copyright (C) 2008-2020 Niclas Jansson, Ola Skavhaug, Anders Logg, Garth N.
+// Wells
 //
 // This file is part of DOLFINX (https://www.fenicsproject.org)
 //
@@ -8,11 +9,11 @@
 
 #include "PartitionData.h"
 #include <cstdint>
-#include <dolfinx/common/types.h>
 #include <dolfinx/common/IndexMap.h>
+#include <dolfinx/common/types.h>
 #include <dolfinx/graph/CSRGraph.h>
-#include <dolfinx/mesh/cell_types.h>
 #include <dolfinx/mesh/Mesh.h>
+#include <dolfinx/mesh/cell_types.h>
 #include <map>
 #include <memory>
 #include <set>
@@ -26,6 +27,12 @@ namespace dolfinx
 namespace common
 {
 class IndexMap;
+}
+
+namespace graph
+{
+template <typename T>
+class AdjacencyList;
 }
 
 namespace mesh
@@ -57,7 +64,7 @@ enum class Partitioner
 class Partitioning
 {
 public:
-  /// Build distributed mesh from a set of points and cells on each
+   /// Build distributed mesh from a set of points and cells on each
   /// local process
   /// @param[in] comm MPI Communicator
   /// @param[in] cell_type Cell type
