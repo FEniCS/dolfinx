@@ -4,13 +4,15 @@
 //
 // SPDX-License-Identifier:    LGPL-3.0-or-later
 
-#include "Partitioning.h"
+#include <mpi.h>
+
 #include "DistributedMeshTools.h"
 #include "Mesh.h"
 #include "MeshEntity.h"
 #include "MeshFunction.h"
 #include "MeshValueCollection.h"
 #include "PartitionData.h"
+#include "Partitioning.h"
 #include "Topology.h"
 #include <algorithm>
 #include <cmath>
@@ -484,147 +486,6 @@ void distribute_cell_layer(
 
 } // namespace
 
-//-----------------------------------------------------------------------------
-std::vector<int>
-Partitioning::partition_cells(MPI_Comm comm, int nparts,
-                              const mesh::CellType cell_type,
-                              const graph::AdjacencyList<std::int64_t>& cells)
-{
-  LOG(INFO) << "Compute partition of cells across processes";
-
-  // FIXME: Update GraphBuilder to use AdjacencyList
-  // Wrap AdjacencyList
-  const Eigen::Map<const Eigen::Array<std::int64_t, Eigen::Dynamic,
-                                      Eigen::Dynamic, Eigen::RowMajor>>
-      _cells(cells.array().data(), cells.num_nodes(),
-             mesh::num_cell_vertices(cell_type));
-
-  // Compute dual graph (for the cells on this process)
-  const auto [local_graph, graph_info]
-      = graph::GraphBuilder::compute_dual_graph(comm, _cells, cell_type);
-  const auto [num_ghost_nodes, num_local_edges, num_nonlocal_edges]
-      = graph_info;
-
-  // Build graph
-  graph::CSRGraph<SCOTCH_Num> csr_graph(comm, local_graph);
-  std::vector<std::size_t> weights;
-
-  // Call partitioner
-  const auto [partition, ignore] = graph::SCOTCH::partition(
-      comm, (SCOTCH_Num)nparts, csr_graph, weights, num_ghost_nodes);
-
-  return partition;
-}
-//-----------------------------------------------------------------------------
-std::tuple<graph::AdjacencyList<std::int32_t>,
-           std::map<std::int64_t, std::int32_t>, std::int32_t>
-Partitioning::create_local_adjacency_list(
-    const graph::AdjacencyList<std::int64_t>& cells)
-{
-  const Eigen::Array<std::int64_t, Eigen::Dynamic, 1>& array = cells.array();
-  std::vector<std::int32_t> array_local(array.rows());
-
-  // Re-map global to local
-  int local = 0;
-  std::map<std::int64_t, std::int32_t> global_to_local;
-  for (int i = 0; i < array.rows(); ++i)
-  {
-    const std::int64_t global = array(i);
-    auto it = global_to_local.find(global);
-    if (it == global_to_local.end())
-    {
-      array_local[i] = local++;
-      global_to_local.insert({global, local});
-    }
-    else
-      array_local[i] = it->second;
-  }
-
-  // FIXME: Update AdjacencyList to avoid this
-  const Eigen::Array<std::int32_t, Eigen::Dynamic, 1>& offsets
-      = cells.offsets();
-  std::vector<std::int32_t> _offsets(offsets.data(),
-                                     offsets.data() + offsets.rows());
-  return {graph::AdjacencyList<std::int32_t>(array_local, _offsets),
-          global_to_local, local};
-}
-//-----------------------------------------------------------------------------
-std::pair<graph::AdjacencyList<std::int64_t>, std::vector<int>>
-Partitioning::distribute(const MPI_Comm& comm,
-                         const graph::AdjacencyList<std::int64_t>& list,
-                         const std::vector<int>& owner)
-{
-  const int size = dolfinx::MPI::size(comm);
-
-  // Compute number of links to send to each process
-  std::vector<int> num_per_dest_send(size, 0);
-  assert(list.num_nodes() == (int)owner.size());
-  for (int i = 0; i < list.num_nodes(); ++i)
-    num_per_dest_send[owner[i]] += list.num_links(i) + 1;
-
-  // Compute send array displacements
-  // Note: std::inclusive_scan would be better, but requires gcc >= 9.2.1
-  std::vector<int> disp_send(size + 1, 0);
-  std::partial_sum(num_per_dest_send.begin(), num_per_dest_send.end(),
-                   disp_send.begin() + 1);
-  // std::inclusive_scan(num_per_dest_send.begin(), num_per_dest_send.end(),
-  //                     disp_send.begin() + 1);
-
-  // Send/receive number of items to communicate
-  std::vector<int> num_per_dest_recv(size, 0);
-  MPI_Alltoall(num_per_dest_send.data(), 1, MPI_INT, num_per_dest_recv.data(),
-               1, MPI_INT, comm);
-
-  // Compite receive array displacements
-  // Note: std::inclusive_scan would be better, but requires gcc >= 9.2.1
-  std::vector<int> disp_recv(size + 1, 0);
-  std::partial_sum(num_per_dest_recv.begin(), num_per_dest_recv.end(),
-                   disp_recv.begin() + 1);
-  // std::inclusive_scan(num_per_dest_recv.begin(), num_per_dest_recv.end(),
-  //                     disp_recv.begin() + 1);
-
-  // Prepare send buffer
-  std::vector<int> offset = disp_send;
-  std::vector<std::int64_t> data_send(list.array().rows() + list.num_nodes());
-  for (int i = 0; i < list.num_nodes(); ++i)
-  {
-    const int dest = owner[i];
-    auto links = list.links(i);
-    data_send[offset[dest]] = links.rows();
-    ++offset[dest];
-    for (int j = 0; j < links.rows(); ++j)
-      data_send[offset[dest] + j] = links(j);
-    offset[dest] += links.rows();
-  }
-
-  // Send/receive data
-  std::vector<std::int64_t> data_recv(disp_recv.back());
-  MPI_Alltoallv(data_send.data(), num_per_dest_send.data(), disp_send.data(),
-                MPI_INT64_T, data_recv.data(), num_per_dest_recv.data(),
-                disp_recv.data(), MPI_INT64_T, comm);
-
-  // Unpack receive buffer
-  std::vector<std::int64_t> array;
-  std::vector<std::int32_t> list_offset(1, 0);
-  std::vector<int> src;
-  for (std::size_t p = 0; p < disp_recv.size() - 1; ++p)
-  {
-    for (int i = disp_recv[p]; i < disp_recv[p + 1]; ++i)
-    {
-      src.push_back(p);
-      const std::int64_t num_links = data_recv[i];
-      const int pos = i;
-      for (int j = 1; j <= num_links; ++j)
-      {
-        array.push_back(data_recv[pos + j]);
-        i += 1;
-      }
-      list_offset.push_back(list_offset.back() + num_links);
-    }
-  }
-
-  return {graph::AdjacencyList<std::int64_t>(array, list_offset), src};
-}
 //-----------------------------------------------------------------------------
 std::tuple<
     std::shared_ptr<common::IndexMap>, std::vector<std::int64_t>,

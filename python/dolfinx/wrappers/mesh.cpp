@@ -21,6 +21,7 @@
 #include <dolfinx/mesh/Ordering.h>
 #include <dolfinx/mesh/PartitionData.h>
 #include <dolfinx/mesh/Partitioning.h>
+#include <dolfinx/mesh/PartitioningNew.h>
 #include <dolfinx/mesh/Topology.h>
 #include <dolfinx/mesh/TopologyComputation.h>
 #include <dolfinx/mesh/cell_types.h>
@@ -243,9 +244,7 @@ void mesh(py::module& m)
            py::overload_cast<>(&dolfinx::mesh::MeshEntity::index, py::const_),
            "Entity index")
       .def("entities", &dolfinx::mesh::MeshEntity::entities,
-           py::return_value_policy::reference_internal)
-      .def("__str__",
-           [](dolfinx::mesh::MeshEntity& self) { return self.str(false); });
+           py::return_value_policy::reference_internal);
 
   py::class_<dolfinx::mesh::EntityRange,
              std::shared_ptr<dolfinx::mesh::EntityRange>>(
@@ -361,29 +360,31 @@ void mesh(py::module& m)
   // dolfinx::mesh::Partitioning::partition_cells
 
   m.def("create_local_adjacency_list",
-        &dolfinx::mesh::Partitioning::create_local_adjacency_list);
-
-  m.def(
-      "distribute", [](const MPICommWrapper comm,
-                       const dolfinx::graph::AdjacencyList<std::int64_t>& list,
-                       const std::vector<int>& owner) {
-        return dolfinx::mesh::Partitioning::distribute(comm.get(), list, owner);
-      });
+        &dolfinx::mesh::PartitioningNew::create_local_adjacency_list);
+  m.def("create_distributed_adjacency_list", [](const MPICommWrapper comm,
+                                                const dolfinx::mesh::Topology&
+                                                    topology_local,
+                                                const std::vector<std::int64_t>&
+                                                    global_indices) {
+    return dolfinx::mesh::PartitioningNew::create_distributed_adjacency_list(
+        comm.get(), topology_local, global_indices);
+  });
+  m.def("distribute",
+        [](const MPICommWrapper comm,
+           const dolfinx::graph::AdjacencyList<std::int64_t>& list,
+           const std::vector<int>& owner) {
+          return dolfinx::mesh::PartitioningNew::distribute(comm.get(), list,
+                                                            owner);
+        });
 
   m.def("partition_cells",
         [](const MPICommWrapper comm, int nparts,
            dolfinx::mesh::CellType cell_type,
            const dolfinx::graph::AdjacencyList<std::int64_t>& cells) {
-          return dolfinx::mesh::Partitioning::partition_cells(
+          return dolfinx::mesh::PartitioningNew::partition_cells(
               comm.get(), nparts, cell_type, cells);
         });
-  m.def("partition_cells",
-        [](const MPICommWrapper comm, int nparts,
-           dolfinx::mesh::CellType cell_type,
-           const dolfinx::graph::AdjacencyList<std::int64_t>& cells) {
-          return dolfinx::mesh::Partitioning::partition_cells(
-              comm.get(), nparts, cell_type, cells);
-        });
+
   m.def(
       "partition_cells",
       [](const MPICommWrapper comm, int nparts,

@@ -7,8 +7,6 @@
 #include "Mesh.h"
 #include "CoordinateDofs.h"
 #include "Geometry.h"
-#include "MeshEntity.h"
-#include "MeshIterator.h"
 #include "Partitioning.h"
 #include "Topology.h"
 #include "TopologyComputation.h"
@@ -304,7 +302,7 @@ std::int32_t Mesh::num_entities(int d) const
                              "been created for dimension "
                              + std::to_string(d) + ".");
   }
-  assert(map->block_size == 1);
+  assert(map->block_size() == 1);
   return map->size_local() + map->num_ghosts();
 }
 //-----------------------------------------------------------------------------
@@ -312,7 +310,7 @@ std::int64_t Mesh::num_entities_global(int dim) const
 {
   assert(_topology);
   assert(_topology->index_map(dim));
-  assert(_topology->index_map(dim)->block_size == 1);
+  assert(_topology->index_map(dim)->block_size() == 1);
   return _topology->index_map(dim)->size_global();
 }
 //-----------------------------------------------------------------------------

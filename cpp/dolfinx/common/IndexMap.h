@@ -71,13 +71,13 @@ public:
   IndexMap(IndexMap&& map) = default;
 
   /// Destructor
-  ~IndexMap();
+  ~IndexMap() = default;
 
   /// Range of indices (global) owned by this process
   std::array<std::int64_t, 2> local_range() const;
 
   /// Block size
-  const int block_size;
+  int block_size() const;
 
   /// Number of ghost indices on this process
   std::int32_t num_ghosts() const;
@@ -171,9 +171,8 @@ public:
   /// @return The communicator on which the IndexMap is defined
   MPI_Comm mpi_comm() const;
 
-  /// Return MPI neighbourhood communicator
-  /// @return The neighbourhood communicator
-  MPI_Comm mpi_comm_neighborhood() const;
+  /// Neighbors for neigborhood communicator
+  const std::vector<std::int32_t>& neighbours() const;
 
   /// Compute map from each local index to the complete set of sharing processes
   /// for that index
@@ -252,11 +251,16 @@ public:
                    IndexMap::Mode op) const;
 
 private:
+  int _block_size;
+
   // MPI Communicator
-  MPI_Comm _mpi_comm;
+  dolfinx::MPI::Comm _mpi_comm;
 
   // MPI Communicator for neighbourhood only
-  MPI_Comm _neighbour_comm;
+  // mutable MPI_Comm _neighbour_comm;
+
+  // Store neighbours so neighbourhood communicator can be re-built
+  std::vector<std::int32_t> _neighbours;
 
   // Cache rank on mpi_comm (otherwise calls to MPI_Comm_rank can be
   // excessive)
@@ -268,7 +272,7 @@ public:
   std::vector<std::int64_t> _all_ranges;
 
 private:
-  // Local-to-global map for ghost indices
+  // Local-to-gl05obal map for ghost indices
   Eigen::Array<std::int64_t, Eigen::Dynamic, 1> _ghosts;
 
   // Owning neighbour for each ghost index
