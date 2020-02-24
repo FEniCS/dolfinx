@@ -198,8 +198,8 @@ def test_topology_partition():
 
     # Build list of unique node indices
     indices = np.unique(cell_nodes.array())
-    print(indices)
 
+    # Fetch node coordinates
     coords = cpp.mesh.fetch_data(cpp.MPI.comm_world, indices, x)
-    print("******")
-    print(coords)
+    for index, value in zip(indices, coords):
+        print("Index, x:", index, value)
