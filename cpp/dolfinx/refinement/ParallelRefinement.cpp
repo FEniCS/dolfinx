@@ -81,7 +81,7 @@ void ParallelRefinement::mark_all()
   _marked_edges.assign(_mesh.num_entities(1), true);
 }
 //-----------------------------------------------------------------------------
-const std::map<std::size_t, std::size_t>&
+const std::map<std::int32_t, std::int64_t>&
 ParallelRefinement::edge_to_new_vertex() const
 {
   return _local_edge_to_new_vertex;
@@ -278,9 +278,6 @@ void ParallelRefinement::create_new_vertices()
 
   // Attach global indices to each vertex, old and new, and sort
   // them across processes into this order
-
-  // std::vector<std::int64_t>
-  // global_indices(_mesh.topology().global_indices(0));
   std::vector<std::int64_t> global_indices
       = _mesh.topology().index_map(0)->global_indices(false);
   for (std::size_t i = 0; i < num_new_vertices; i++)

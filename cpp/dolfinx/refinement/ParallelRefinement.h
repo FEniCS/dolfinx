@@ -38,6 +38,12 @@ public:
   /// Constructor
   ParallelRefinement(const mesh::Mesh& mesh);
 
+  /// Disable copy constructor
+  ParallelRefinement(const ParallelRefinement& p) = delete;
+
+  /// Disable copy assignment
+  ParallelRefinement& operator=(const ParallelRefinement& p) = delete;
+
   /// Destructor
   ~ParallelRefinement();
 
@@ -79,7 +85,7 @@ public:
 
   /// Mapping of old edge (to be removed) to new global vertex number.
   /// Useful for forming new topology
-  const std::map<std::size_t, std::size_t>& edge_to_new_vertex() const;
+  const std::map<std::int32_t, std::int64_t>& edge_to_new_vertex() const;
 
   /// Add new cells with vertex indices
   /// @param[in] idx
@@ -100,7 +106,7 @@ private:
 
   // Mapping from old local edge index to new global vertex, needed to
   // create new topology
-  std::map<std::size_t, std::size_t> _local_edge_to_new_vertex;
+  std::map<std::int32_t, std::int64_t> _local_edge_to_new_vertex;
 
   // New storage for all coordinates when creating new vertices
   std::vector<double> _new_vertex_coordinates;
