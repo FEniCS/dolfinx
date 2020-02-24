@@ -196,10 +196,15 @@ def test_topology_partition():
     # Check that number of dofs is equal to number of 'nodes' in the input
     assert dofmap.shape == cell_nodes.array().shape
 
+    # Cells input vertices/dofs
+    if rank == 0:
+        for c in range(cell_nodes.num_nodes):
+            print(cell_nodes.links(c), dofmap[3 * c:3 * c + 3])
+
     # Build list of unique node indices
     indices = np.unique(cell_nodes.array())
 
-    # Fetch node coordinates
-    coords = cpp.mesh.fetch_data(cpp.MPI.comm_world, indices, x)
-    for index, value in zip(indices, coords):
-        print("Index, x:", index, value)
+    # # Fetch node coordinates
+    # coords = cpp.mesh.fetch_data(cpp.MPI.comm_world, indices, x)
+    # for index, value in zip(indices, coords):
+    #     print("Index, x:", index, value)
