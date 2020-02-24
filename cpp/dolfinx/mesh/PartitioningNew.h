@@ -26,6 +26,8 @@ namespace mesh
 class Topology;
 
 /// New tools for partitioning meshes/graphs
+///
+/// TODO: Add a function that sends data (Eigen arrays) to the 'owner'
 
 class PartitioningNew
 {
@@ -129,7 +131,15 @@ public:
   exchange(MPI_Comm comm, const graph::AdjacencyList<std::int64_t>& list,
            const std::vector<int>& destinations, const std::set<int>& sources);
 
-  // TODO
+  /// Distribute data to process ranks where it it required.
+  ///
+  /// @param[in] comm The MPI communicator
+  /// @param[in] indices Global indices of the data required by this
+  ///   process
+  /// @param[in] x Data on this process. The global index for the [0,
+  ///   ..., n) rows on this process is assumed to be the local index
+  ///   plus the offset for this process.
+  /// @return The data for each in @p indices
   static Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
   fetch_data(MPI_Comm comm, const std::vector<std::int64_t>& indices,
              const Eigen::Ref<const Eigen::Array<
