@@ -394,6 +394,12 @@ void mesh(py::module& m)
                                                             x);
         });
 
+  m.def("compute_local_to_global_links",
+        &dolfinx::mesh::PartitioningNew::compute_local_to_global_links);
+
+  m.def("compute_local_to_local",
+        &dolfinx::mesh::PartitioningNew::compute_local_to_local);
+
   // Old Partition
   m.def(
       "partition_cells",

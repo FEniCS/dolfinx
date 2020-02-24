@@ -204,7 +204,22 @@ def test_topology_partition():
     # Build list of unique node indices
     indices = np.unique(cell_nodes.array())
 
+    l2g = cpp.mesh.compute_local_to_global_links(cell_nodes, dofmap)
+    # if rank == 0:
+    #     print("CCCC:", len(l2g), len(indices))
+    # return
+    l2l = cpp.mesh.compute_local_to_local(l2g, indices)
+    print("CCCC:", l2l)
+
+    # Build list of unique node indices
+    # indices = np.unique(cell_nodes.array())
+
     # Fetch node coordinates
     coords = cpp.mesh.fetch_data(cpp.MPI.comm_world, indices, x)
     for index, value in zip(indices, coords):
         print("Index, x:", index, value)
+
+    # Build dof array
+    x_g = np.zeros([len(l2l), 2])
+    for i, d in enumerate(l2l):
+        x_g[i] = coords[d]

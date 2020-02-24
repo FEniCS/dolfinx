@@ -144,6 +144,31 @@ public:
   fetch_data(MPI_Comm comm, const std::vector<std::int64_t>& indices,
              const Eigen::Ref<const Eigen::Array<
                  double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>>& x);
+
+  /// TODO
+  ///
+  /// @param[in] x Coordinate data
+  /// @param[in] global_indices Global index for each row of x
+  // static Eigen::<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
+  // extract_point_data(
+  //     const Eigen::<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>&
+  //     x, const std::vector<std::int64_t>& global_indices, const
+  //     std::vector<std::int32_t>& local_indices, )
+
+  /// TODO
+  static std::vector<std::int64_t> compute_local_to_global_links(
+      const graph::AdjacencyList<std::int64_t>& global,
+      const graph::AdjacencyList<std::int32_t>& local);
+
+  /// TODO
+  static std::vector<std::int32_t>
+  compute_local_to_local(const std::vector<std::int64_t>& local0_to_global,
+                         const std::vector<std::int64_t>& local1_to_global);
+
+  /// TODO
+  // static std::map<std::int64_t, std::int32_t>
+  // compute_local_to_global(const graph::AdjacencyList<std::int64_t>& global,
+  //                         const graph::AdjacencyList<std::int32_t>& local)
 };
 } // namespace mesh
 } // namespace dolfinx

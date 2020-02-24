@@ -767,3 +767,93 @@ PartitioningNew::fetch_data(
   return my_x;
 }
 //-----------------------------------------------------------------------------
+std::vector<std::int64_t> PartitioningNew::compute_local_to_global_links(
+    const graph::AdjacencyList<std::int64_t>& global,
+    const graph::AdjacencyList<std::int32_t>& local)
+{
+  // Build local-to-global for adjacency lists
+  if (global.num_nodes() != local.num_nodes())
+  {
+    throw std::runtime_error("Mismatch in number of nodes between local and "
+                             "global adjacency lists.");
+  }
+
+  const Eigen::Array<std::int64_t, Eigen::Dynamic, 1>& _global = global.array();
+  const Eigen::Array<std::int32_t, Eigen::Dynamic, 1>& _local = local.array();
+  if (_global.rows() != _local.rows())
+  {
+    throw std::runtime_error("Data size mismatch between local and "
+                             "global adjacency lists.");
+  }
+
+  const std::int32_t max_local = _local.maxCoeff();
+  std::vector<bool> marker(max_local, false);
+  std::vector<std::int64_t> local_to_global_list(max_local + 1, -1);
+  for (Eigen::Index i = 0; i < _local.rows(); ++i)
+  {
+    if (local_to_global_list[_local[i]] == -1)
+      local_to_global_list[_local[i]] = _global[i];
+  }
+
+  return local_to_global_list;
+}
+//-----------------------------------------------------------------------------
+std::vector<std::int32_t> PartitioningNew::compute_local_to_local(
+    const std::vector<std::int64_t>& local0_to_global,
+    const std::vector<std::int64_t>& local1_to_global)
+{
+  assert(local0_to_global.size() == local1_to_global.size());
+
+  // Compute inverse map for local1_to_global
+  std::map<std::int64_t, std::int32_t> global_to_local1;
+  for (std::size_t i = 0; i < local1_to_global.size(); ++i)
+    global_to_local1.insert({local1_to_global[i], i});
+
+  // Compute inverse map for local0_to_local1
+  std::vector<std::int32_t> local0_to_local1(local0_to_global.size());
+  for (std::size_t i = 0; i < local0_to_local1.size(); ++i)
+  {
+    auto it = global_to_local1.find(local0_to_global[i]);
+    assert(it != global_to_local1.end());
+    local0_to_local1[i] = it->second;
+  }
+
+  return local0_to_local1;
+}
+//-----------------------------------------------------------------------------
+
+// std::map<std::int64_t, std::int32_t>
+// PartitioningNew::compute_local_to_global(
+//     const graph::AdjacencyList<std::int64_t>& global,
+//     const graph::AdjacencyList<std::int32_t>& local)
+// {
+//   if (global.num_nodes() != local.num_nodes())
+//   {
+//     throw std::runtime_error("Mismatch in number of nodes between local and "
+//                              "global adjacency lists.");
+//   }
+
+//   const Eigen::Array<std::int64_t, Eigen::Dynamic, 1>& _global =
+//   global.array(); const Eigen::Array<std::int32_t, Eigen::Dynamic, 1>& _local
+//   = local.array(); if (_global.rows() != _local.rows())
+//   {
+//     throw std::runtime_error("Data size mismatch between local and "
+//                              "global adjacency lists.");
+//   }
+
+//   const std::int32_t max_local = _local.maxCoeff();
+//   std::vector<bool> marker(max_local, false);
+//   std::map<std::int64_t, std::int32_t> global_to_local;
+//   for (Eigen::Index i = 0; i < _local.rows(); ++i)
+//   {
+//     if (!marker[_local(i)])
+//     {
+//       auto it = global_to_local.insert({_global(i), _local(i)});
+//       assert(it.second);
+//       marker[_local(i)] = true;
+//     }
+//   }
+
+//   return global_to_local;
+// }
+//-----------------------------------------------------------------------------
