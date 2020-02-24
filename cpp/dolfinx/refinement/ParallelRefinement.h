@@ -39,7 +39,7 @@ public:
   ParallelRefinement(const mesh::Mesh& mesh);
 
   /// Destructor
-  ~ParallelRefinement() = default;
+  ~ParallelRefinement();
 
   /// Original mesh associated with this refinement
   const mesh::Mesh& mesh() const;
@@ -117,6 +117,9 @@ private:
 
   // Shared edges between processes
   std::map<std::int32_t, std::set<std::int32_t>> _shared_edges;
+
+  // Neighbourhood communicator
+  MPI_Comm _neighbour_comm;
 
 };
 } // namespace refinement
