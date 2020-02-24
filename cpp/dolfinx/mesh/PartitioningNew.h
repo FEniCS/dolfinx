@@ -110,9 +110,15 @@ public:
   distribute(MPI_Comm comm, const graph::AdjacencyList<std::int64_t>& list,
              const std::vector<int>& destinations);
 
-  /// TODO
-  ///
   /// Send nodes to destinations, and receive from sources
+  /// @param[in] comm MPI communicator
+  /// @param[in] list An adjacency list. Each node  is associated with a
+  ///   global index index_local + global offset
+  /// @param[in] destinations The destination rank for each node in the
+  ///   adjacency list
+  /// @param[in] sources Ranks that will send data to this process
+  /// @return Re-distributed adjacency list and the original global
+  /// index of each node
   static std::pair<graph::AdjacencyList<std::int64_t>,
                    std::vector<std::int64_t>>
   exchange(MPI_Comm comm, const graph::AdjacencyList<std::int64_t>& list,

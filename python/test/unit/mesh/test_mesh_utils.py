@@ -85,11 +85,13 @@ def test_topology_partition():
         # cells_in = [[6, 12, 2, 1, 11, 0], [12, 14, 7, 9, 10, 8], [7, 2, 12, 1, 10, 3], [6, 2, 13, 4, 5, 11]]
         # cells_in = [[6, 12, 2, 1, 11, 0], [12, 14, 7, 9, 10, 8], [7, 2, 12, 1, 10, 3], [6, 2, 13, 4, 5, 11]]
         cells_in = [[0, 1, 4], [0, 4, 3], [1, 2, 5], [1, 5, 4]]
+        x = [[0.0, 0.0], [1.0, 0.0], [2.0, 0.0], [0.0, 1.0], [1.0, 1.0], [2.0, 1.0]]
         cells1 = cpp.graph.AdjacencyList64(cells_in)
         cells_filtered1 = cpp.mesh.extract_topology(layout, cells1)
         cells_in = cpp.graph.AdjacencyList64(cells_in)
     else:
         cells1 = cpp.graph.AdjacencyList64(0)
+        x = []
         cells_filtered1 = cpp.graph.AdjacencyList64(0)
 
     # Compute the destination process for cells on this process
@@ -190,9 +192,9 @@ def test_topology_partition():
     cell_nodes, global_index_nodes = cpp.mesh.exchange(cpp.MPI.comm_world,
                                                        cells1, dest, set(src))
 
-    # if rank == 2:
-    #     print("Num:", cell_nodes.num_nodes)
-    #     for i in range(cell_nodes.num_nodes):
-    #         print("  ", global_index_nodes, cell_nodes.links(i))
+    if rank == 2:
+        print("Num:", cell_nodes.num_nodes)
+        for i in range(cell_nodes.num_nodes):
+            print("  ", global_index_nodes, cell_nodes.links(i))
 
     # Next, fetch geometry
