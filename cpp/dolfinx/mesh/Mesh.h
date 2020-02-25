@@ -24,7 +24,6 @@ class Function;
 
 namespace mesh
 {
-class CoordinateDofs;
 class Geometry;
 enum class GhostMode : int;
 class MeshEntity;
@@ -64,7 +63,7 @@ public:
   ///
   /// @param[in] comm MPI Communicator
   /// @param[in] topology Mesh topology
-  /// @param[in] topology Mesh geometry
+  /// @param[in] geometry Mesh geometry
   Mesh(MPI_Comm comm, const Topology& topology, const Geometry& geometry);
 
   // FIXME: What about global vertex indices?
@@ -217,14 +216,6 @@ public:
   ///          the method is now intended for internal library use.
   mesh::GhostMode get_ghost_mode() const;
 
-  /// @todo This should be part of Geometry
-  /// Get coordinate dofs for all local cells
-  CoordinateDofs& coordinate_dofs();
-
-  /// @todo This should be part of Geometry
-  /// Get coordinate dofs for all local cells (const version)
-  const CoordinateDofs& coordinate_dofs() const;
-
   /// FIXME: This should be with Geometry
   /// Polynomial degree of the mesh geometry
   std::int32_t degree() const;
@@ -235,10 +226,6 @@ private:
 
   // Mesh geometry
   std::unique_ptr<Geometry> _geometry;
-
-  // FIXME: This should be in geometry!
-  // Coordinate dofs
-  std::unique_ptr<CoordinateDofs> _coordinate_dofs;
 
   // FIXME: This shouldn't be here
   // Mesh geometric degree (in Lagrange basis) describing coordinate

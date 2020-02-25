@@ -212,7 +212,7 @@ std::vector<std::int64_t> compute_topology_data(const mesh::Mesh& mesh,
   // Get mesh communicator
   MPI_Comm comm = mesh.mpi_comm();
 
-  int num_nodes = mesh.coordinate_dofs().entity_points().num_links(0);
+  int num_nodes = mesh.geometry().coordinate_dofs().entity_points().num_links(0);
   std::vector<std::uint8_t> perm;
   if (cell_dim == mesh.topology().dim())
     perm = io::cells::dolfin_to_vtk(mesh.topology().cell_type(), num_nodes);
@@ -559,13 +559,13 @@ void xdmf_write::add_topology_data(MPI_Comm comm, pugi::xml_node& xml_node,
 
     const auto& global_points = mesh.geometry().global_indices();
     const graph::AdjacencyList<std::int32_t>& cell_points
-        = mesh.coordinate_dofs().entity_points();
+        = mesh.geometry().coordinate_dofs().entity_points();
 
     // Adjust num_nodes_per_cell to appropriate size
     num_nodes_per_cell = cell_points.num_links(0);
     topology_data.reserve(num_nodes_per_cell * mesh.num_entities(tdim));
 
-    int num_nodes = mesh.coordinate_dofs().entity_points().num_links(0);
+    int num_nodes = mesh.geometry().coordinate_dofs().entity_points().num_links(0);
     const std::vector<std::uint8_t> perm
         = io::cells::dolfin_to_vtk(mesh.topology().cell_type(), num_nodes);
 

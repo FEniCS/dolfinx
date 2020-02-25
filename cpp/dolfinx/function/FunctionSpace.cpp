@@ -310,7 +310,7 @@ FunctionSpace::tabulate_dof_coordinates() const
 
   // Prepare cell geometry
   const graph::AdjacencyList<std::int32_t>& connectivity_g
-      = _mesh->coordinate_dofs().entity_points();
+      = _mesh->geometry().coordinate_dofs().entity_points();
   const Eigen::Array<std::int32_t, Eigen::Dynamic, 1>& pos_g
       = connectivity_g.offsets();
   const Eigen::Array<std::int32_t, Eigen::Dynamic, 1>& cell_g
@@ -372,7 +372,7 @@ void FunctionSpace::set_x(
 
   // Prepare cell geometry
   const graph::AdjacencyList<std::int32_t>& connectivity_g
-      = _mesh->coordinate_dofs().entity_points();
+      = _mesh->geometry().coordinate_dofs().entity_points();
   const Eigen::Array<std::int32_t, Eigen::Dynamic, 1>& pos_g
       = connectivity_g.offsets();
   const Eigen::Array<std::int32_t, Eigen::Dynamic, 1>& cell_g

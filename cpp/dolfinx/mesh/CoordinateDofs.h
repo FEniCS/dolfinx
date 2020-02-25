@@ -27,6 +27,9 @@ namespace mesh
 class CoordinateDofs
 {
 public:
+  /// Temp
+  CoordinateDofs(const graph::AdjacencyList<std::int32_t>& dofs);
+
   /// Constructor
   /// @param point_dofs Array containing point dofs for each entity
   CoordinateDofs(

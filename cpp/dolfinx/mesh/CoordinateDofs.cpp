@@ -11,6 +11,13 @@ using namespace dolfinx;
 
 //-----------------------------------------------------------------------------
 mesh::CoordinateDofs::CoordinateDofs(
+    const graph::AdjacencyList<std::int32_t>& dofs)
+    : _coord_dofs(new graph::AdjacencyList<std::int32_t>(dofs))
+{
+  // Do nothing
+}
+//-----------------------------------------------------------------------------
+mesh::CoordinateDofs::CoordinateDofs(
     const Eigen::Ref<const Eigen::Array<std::int32_t, Eigen::Dynamic,
                                         Eigen::Dynamic, Eigen::RowMajor>>&
         point_dofs)

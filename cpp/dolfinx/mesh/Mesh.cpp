@@ -31,7 +31,7 @@ Eigen::ArrayXd cell_h(const mesh::Mesh& mesh)
   const int dim = mesh.topology().dim();
   const int num_cells = mesh.num_entities(dim);
   if (num_cells == 0)
-    throw std::runtime_error("Cannnot compute h min/max. No cells.");
+    throw std::runtime_error("Cannot compute h min/max. No cells.");
 
   Eigen::ArrayXi cells(num_cells);
   std::iota(cells.data(), cells.data() + cells.size(), 0);
@@ -141,7 +141,7 @@ compute_point_distribution(
 
 //-----------------------------------------------------------------------------
 Mesh::Mesh(MPI_Comm comm, const Topology& topology, const Geometry& geometry)
-    : _mpi_comm(comm)
+    : _mpi_comm(comm), _degree(1)
 {
   _topology = std::make_unique<Topology>(topology);
   _geometry = std::make_unique<Geometry>(geometry);
@@ -185,10 +185,8 @@ Mesh::Mesh(
               points_received]
       = compute_point_distribution(comm, cells, points);
 
-  _coordinate_dofs = std::make_unique<CoordinateDofs>(coordinate_nodes);
-
   _geometry = std::make_unique<Geometry>(num_points_global, points_received,
-                                         node_indices_global);
+                                         node_indices_global, coordinate_nodes);
 
   // Get global vertex information
   std::vector<std::int64_t> vertex_indices_global;
@@ -275,7 +273,6 @@ Mesh::Mesh(
 Mesh::Mesh(const Mesh& mesh)
     : _topology(new Topology(*mesh._topology)),
       _geometry(new Geometry(*mesh._geometry)),
-      _coordinate_dofs(new CoordinateDofs(*mesh._coordinate_dofs)),
       _degree(mesh._degree), _mpi_comm(mesh.mpi_comm()),
       _ghost_mode(mesh._ghost_mode), _unique_id(common::UniqueIdGenerator::id())
 
@@ -286,7 +283,6 @@ Mesh::Mesh(const Mesh& mesh)
 Mesh::Mesh(Mesh&& mesh)
     : _topology(std::move(mesh._topology)),
       _geometry(std::move(mesh._geometry)),
-      _coordinate_dofs(std::move(mesh._coordinate_dofs)),
       _degree(std::move(mesh._degree)), _mpi_comm(std::move(mesh._mpi_comm)),
       _ghost_mode(std::move(mesh._ghost_mode)),
       _unique_id(std::move(mesh._unique_id))
@@ -684,18 +680,6 @@ std::string Mesh::str(bool verbose) const
 MPI_Comm Mesh::mpi_comm() const { return _mpi_comm.comm(); }
 //-----------------------------------------------------------------------------
 mesh::GhostMode Mesh::get_ghost_mode() const { return _ghost_mode; }
-//-----------------------------------------------------------------------------
-CoordinateDofs& Mesh::coordinate_dofs()
-{
-  assert(_coordinate_dofs);
-  return *_coordinate_dofs;
-}
-//-----------------------------------------------------------------------------
-const CoordinateDofs& Mesh::coordinate_dofs() const
-{
-  assert(_coordinate_dofs);
-  return *_coordinate_dofs;
-}
 //-----------------------------------------------------------------------------
 std::int32_t Mesh::degree() const { return _degree; }
 //-----------------------------------------------------------------------------

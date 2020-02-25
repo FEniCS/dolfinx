@@ -6,6 +6,7 @@
 
 #pragma once
 
+#include "CoordinateDofs.h"
 #include <Eigen/Dense>
 #include <dolfinx/graph/AdjacencyList.h>
 #include <memory>
@@ -21,6 +22,7 @@ class CoordinateElement;
 
 namespace mesh
 {
+class CoordinateDofs;
 
 /// Geometry stores the geometry imposed on a mesh.
 ///
@@ -39,7 +41,10 @@ public:
   Geometry(std::int64_t num_points_global,
            const Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic,
                               Eigen::RowMajor>& coordinates,
-           const std::vector<std::int64_t>& global_indices);
+           const std::vector<std::int64_t>& global_indices,
+           const Eigen::Ref<const Eigen::Array<
+               std::int32_t, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>>&
+               point_dofs);
 
   /// Copy constructor
   Geometry(const Geometry&) = default;
@@ -95,6 +100,12 @@ public:
   /// Put CoordinateElement for now. Experimental.
   std::shared_ptr<const fem::CoordinateElement> coord_mapping;
 
+  /// Get coordinate dofs for all local cells
+  CoordinateDofs& coordinate_dofs();
+
+  /// Get coordinate dofs for all local cells (const version)
+  const CoordinateDofs& coordinate_dofs() const;
+
 private:
   // Coordinates for all points stored as a contiguous array
   Eigen::Array<double, Eigen::Dynamic, 3, Eigen::RowMajor> _coordinates;
@@ -107,6 +118,9 @@ private:
 
   // Global number of points (taking account of shared points)
   std::uint64_t _num_points_global;
+
+  // Coordinate dofs
+  CoordinateDofs _coordinate_dofs;
 
   // NEW
   graph::AdjacencyList<std::int32_t> _dofmap;

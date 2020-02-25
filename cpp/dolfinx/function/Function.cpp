@@ -177,7 +177,7 @@ void Function::eval(
 
   // Get geometry data
   const graph::AdjacencyList<std::int32_t>& connectivity_g
-      = mesh.coordinate_dofs().entity_points();
+      = mesh.geometry().coordinate_dofs().entity_points();
   const Eigen::Array<std::int32_t, Eigen::Dynamic, 1>& pos_g
       = connectivity_g.offsets();
   const Eigen::Array<std::int32_t, Eigen::Dynamic, 1>& cell_g
@@ -355,11 +355,11 @@ Function::compute_point_values() const
       point_values(mesh.geometry().num_points(), value_size_loc);
 
   const graph::AdjacencyList<std::int32_t>& cell_dofs
-      = mesh.coordinate_dofs().entity_points();
+      = mesh.geometry().coordinate_dofs().entity_points();
 
   // Prepare cell geometry
   const graph::AdjacencyList<std::int32_t>& connectivity_g
-      = mesh.coordinate_dofs().entity_points();
+      = mesh.geometry().coordinate_dofs().entity_points();
   const Eigen::Array<std::int32_t, Eigen::Dynamic, 1>& pos_g
       = connectivity_g.offsets();
   const Eigen::Array<std::int32_t, Eigen::Dynamic, 1>& cell_g

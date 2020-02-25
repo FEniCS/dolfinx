@@ -4,9 +4,13 @@
 #
 # SPDX-License-Identifier:    LGPL-3.0-or-later
 
+import os
+
 import numpy as np
 
+import dolfinx
 from dolfinx import cpp
+from dolfinx.io import XDMFFile
 
 
 def test_extract_topology():
@@ -223,3 +227,13 @@ def test_topology_partition():
     x_g = np.zeros([len(l2l), 2])
     for i, d in enumerate(l2l):
         x_g[i] = coords[d]
+
+    # Create Geometry
+    geometry = cpp.mesh.Geometry(dofmap, x_g)
+
+    mesh = cpp.mesh.Mesh(cpp.MPI.comm_world, topology, geometry)
+
+    # filename = os.path.join("mesh.xdmf")
+    # encoding = XDMFFile.Encoding.ASCII
+    # with XDMFFile(mesh.mpi_comm(), filename, encoding=encoding) as file:
+    #     file.write(mesh)

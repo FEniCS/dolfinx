@@ -6,6 +6,7 @@
 
 #include "Ordering.h"
 #include "CoordinateDofs.h"
+#include "Geometry.h"
 #include "Mesh.h"
 #include "MeshEntity.h"
 #include "MeshIterator.h"
@@ -305,7 +306,7 @@ void mesh::Ordering::order_simplex(mesh::Mesh& mesh)
     return;
 
   graph::AdjacencyList<std::int32_t>& connect_g
-      = mesh.coordinate_dofs().entity_points();
+      = mesh.geometry().coordinate_dofs().entity_points();
 
   // Get global vertex numbering
   auto map = mesh.topology().index_map(0);

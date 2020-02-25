@@ -15,7 +15,7 @@ using namespace dolfinx::mesh;
 Geometry::Geometry(const graph::AdjacencyList<std::int32_t>& dofmap,
                    const Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic,
                                       Eigen::RowMajor>& x)
-    : _dofmap(dofmap)
+    : _dofmap(dofmap),  _coordinate_dofs(dofmap)
 {
   // Make all geometry 3D
   if (_dim == 3)
@@ -28,12 +28,17 @@ Geometry::Geometry(const graph::AdjacencyList<std::int32_t>& dofmap,
   }
 }
 //-----------------------------------------------------------------------------
-Geometry::Geometry(std::int64_t num_points_global,
-                   const Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic,
-                                      Eigen::RowMajor>& coordinates,
-                   const std::vector<std::int64_t>& global_indices)
+Geometry::Geometry(
+    std::int64_t num_points_global,
+    const Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>&
+        coordinates,
+    const std::vector<std::int64_t>& global_indices,
+    const Eigen::Ref<const Eigen::Array<std::int32_t, Eigen::Dynamic,
+                                        Eigen::Dynamic, Eigen::RowMajor>>&
+        coordinate_dofs)
     : _dim(coordinates.cols()), _global_indices(global_indices),
-      _num_points_global(num_points_global), _dofmap(0)
+      _num_points_global(num_points_global), _dofmap(0),
+      _coordinate_dofs(coordinate_dofs)
 {
   // Make all geometry 3D
   if (_dim == 3)
@@ -91,6 +96,13 @@ std::size_t Geometry::hash() const
                          _coordinates.data() + _coordinates.size());
   const std::size_t local_hash = dhash(_x);
   return local_hash;
+}
+//-----------------------------------------------------------------------------
+CoordinateDofs& Geometry::coordinate_dofs() { return _coordinate_dofs; }
+//-----------------------------------------------------------------------------
+const CoordinateDofs& Geometry::coordinate_dofs() const
+{
+  return _coordinate_dofs;
 }
 //-----------------------------------------------------------------------------
 std::string Geometry::str(bool verbose) const
