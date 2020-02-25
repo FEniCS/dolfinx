@@ -60,6 +60,13 @@ class Topology;
 class Mesh
 {
 public:
+  /// A triangulation
+  ///
+  /// @param[in] comm MPI Communicator
+  /// @param[in] topology Mesh topology
+  /// @param[in] topology Mesh geometry
+  Mesh(MPI_Comm comm, const Topology& topology, const Geometry& geometry);
+
   // FIXME: What about global vertex indices?
   // FIXME: Be explicit in passing geometry degree/type
   /// Construct a Mesh from topological and geometric data.

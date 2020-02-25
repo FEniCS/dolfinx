@@ -12,12 +12,28 @@ using namespace dolfinx;
 using namespace dolfinx::mesh;
 
 //-----------------------------------------------------------------------------
+Geometry::Geometry(const graph::AdjacencyList<std::int32_t>& dofmap,
+                   const Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic,
+                                      Eigen::RowMajor>& x)
+    : _dofmap(dofmap)
+{
+  // Make all geometry 3D
+  if (_dim == 3)
+    _coordinates = x;
+  else
+  {
+    _coordinates.resize(x.rows(), 3);
+    _coordinates.setZero();
+    _coordinates.block(0, 0, x.rows(), x.cols()) = x;
+  }
+}
+//-----------------------------------------------------------------------------
 Geometry::Geometry(std::int64_t num_points_global,
                    const Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic,
                                       Eigen::RowMajor>& coordinates,
                    const std::vector<std::int64_t>& global_indices)
     : _dim(coordinates.cols()), _global_indices(global_indices),
-      _num_points_global(num_points_global)
+      _num_points_global(num_points_global), _dofmap(0)
 {
   // Make all geometry 3D
   if (_dim == 3)
@@ -33,11 +49,19 @@ Geometry::Geometry(std::int64_t num_points_global,
 //-----------------------------------------------------------------------------
 int Geometry::dim() const { return _dim; }
 //-----------------------------------------------------------------------------
+const graph::AdjacencyList<std::int32_t>& Geometry::dofmap() { return _dofmap; }
+//-----------------------------------------------------------------------------
+const Eigen::Array<double, Eigen::Dynamic, 3, Eigen::RowMajor>&
+Geometry::x() const
+{
+  return _coordinates;
+}
+//-----------------------------------------------------------------------------
 std::size_t Geometry::num_points() const { return _coordinates.rows(); }
 //-----------------------------------------------------------------------------
 std::size_t Geometry::num_points_global() const { return _num_points_global; }
 //-----------------------------------------------------------------------------
-Eigen::Ref<const Eigen::Vector3d> Geometry::x(std::size_t n) const
+Eigen::Ref<const Eigen::Vector3d> Geometry::x(int n) const
 {
   return _coordinates.row(n).matrix().transpose();
 }

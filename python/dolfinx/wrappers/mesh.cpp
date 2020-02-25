@@ -112,12 +112,16 @@ void mesh(py::module& m)
   // dolfinx::mesh::Geometry class
   py::class_<dolfinx::mesh::Geometry, std::shared_ptr<dolfinx::mesh::Geometry>>(
       m, "Geometry", "Geometry object")
+      .def(py::init<const dolfinx::graph::AdjacencyList<std::int32_t>&,
+                    const Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic,
+                                       Eigen::RowMajor>&>())
       .def_property_readonly("dim", &dolfinx::mesh::Geometry::dim,
                              "Geometric dimension")
       .def("num_points", &dolfinx::mesh::Geometry::num_points)
       .def("num_points_global", &dolfinx::mesh::Geometry::num_points_global)
       .def("global_indices", &dolfinx::mesh::Geometry::global_indices)
-      .def("x", &dolfinx::mesh::Geometry::x,
+      .def("x", py::overload_cast<>(&dolfinx::mesh::Geometry::x, py::const_))
+      .def("x", py::overload_cast<int>(&dolfinx::mesh::Geometry::x, py::const_),
            py::return_value_policy::reference_internal,
            "Return coordinates of a point")
       .def_property(

@@ -140,6 +140,13 @@ compute_point_distribution(
 } // namespace
 
 //-----------------------------------------------------------------------------
+Mesh::Mesh(MPI_Comm comm, const Topology& topology, const Geometry& geometry)
+    : _mpi_comm(comm)
+{
+  _topology = std::make_unique<Topology>(topology);
+  _geometry = std::make_unique<Geometry>(geometry);
+}
+//-----------------------------------------------------------------------------
 Mesh::Mesh(
     MPI_Comm comm, mesh::CellType type,
     const Eigen::Ref<const Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic,

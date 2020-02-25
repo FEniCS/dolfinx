@@ -7,6 +7,7 @@
 #pragma once
 
 #include <Eigen/Dense>
+#include <dolfinx/graph/AdjacencyList.h>
 #include <memory>
 #include <string>
 #include <vector>
@@ -29,6 +30,11 @@ namespace mesh
 class Geometry
 {
 public:
+  /// Constructor (new)
+  Geometry(const graph::AdjacencyList<std::int32_t>& dofmap,
+           const Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic,
+                              Eigen::RowMajor>& x);
+
   /// Constructor
   Geometry(std::int64_t num_points_global,
            const Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic,
@@ -45,13 +51,19 @@ public:
   ~Geometry() = default;
 
   /// Copy Assignment
-  Geometry& operator=(const Geometry&) = default;
+  Geometry& operator=(const Geometry&) = delete;
 
   /// Move Assignment
   Geometry& operator=(Geometry&&) = default;
 
   /// Return Euclidean dimension of coordinate system
   int dim() const;
+
+  /// DOF map
+  const graph::AdjacencyList<std::int32_t>& dofmap();
+
+  /// Geometry degrees-of-freedom
+  const Eigen::Array<double, Eigen::Dynamic, 3, Eigen::RowMajor>& x() const;
 
   /// Return the number of local points in the geometry
   std::size_t num_points() const;
@@ -60,7 +72,7 @@ public:
   std::size_t num_points_global() const;
 
   /// Return coordinate array for point with local index n
-  Eigen::Ref<const Eigen::Vector3d> x(std::size_t n) const;
+  Eigen::Ref<const Eigen::Vector3d> x(int n) const;
 
   /// Return array of coordinates for all points
   Eigen::Array<double, Eigen::Dynamic, 3, Eigen::RowMajor>& points();
@@ -95,6 +107,10 @@ private:
 
   // Global number of points (taking account of shared points)
   std::uint64_t _num_points_global;
+
+  // NEW
+  graph::AdjacencyList<std::int32_t> _dofmap;
+  // Eigen::Array<double, Eigen::Dynamic, 3, Eigen::RowMajor> _x;
 };
 } // namespace mesh
 } // namespace dolfinx
