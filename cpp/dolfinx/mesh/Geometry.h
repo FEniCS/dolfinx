@@ -15,6 +15,11 @@
 
 namespace dolfinx
 {
+namespace common
+{
+class IndexMap;
+}
+
 namespace fem
 {
 class CoordinateElement;
@@ -33,9 +38,11 @@ class Geometry
 {
 public:
   /// Constructor (new)
-  Geometry(const graph::AdjacencyList<std::int32_t>& dofmap,
+  Geometry(std::shared_ptr<const common::IndexMap> index_map,
+           const graph::AdjacencyList<std::int32_t>& dofmap,
            const Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic,
-                              Eigen::RowMajor>& x);
+                              Eigen::RowMajor>& x,
+           const std::vector<std::int64_t>& global_indices);
 
   /// Constructor
   Geometry(std::int64_t num_points_global,
@@ -123,6 +130,7 @@ private:
   CoordinateDofs _coordinate_dofs;
 
   // NEW
+  std::shared_ptr<const common::IndexMap> _index_map;
   graph::AdjacencyList<std::int32_t> _dofmap;
   // Eigen::Array<double, Eigen::Dynamic, 3, Eigen::RowMajor> _x;
 };

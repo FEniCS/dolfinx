@@ -192,10 +192,10 @@ def test_topology_partition():
     # NOTE: Maybe we can ensure that the 'global cells' are in the same
     # order as the owned cells (maybe they are already) to avoid the
     # need for global_index_nodes
-    cell_nodes, global_index_nodes = cpp.mesh.exchange(cpp.MPI.comm_world,
+    cell_nodes, global_index_cell = cpp.mesh.exchange(cpp.MPI.comm_world,
                                                        cells1, dest, set(src))
     assert cell_nodes.num_nodes == cells.num_nodes
-    assert global_index_nodes == original_cell_index
+    assert global_index_cell == original_cell_index
 
     # Check that number of dofs is equal to number of 'nodes' in the input
     assert dofmap.array().shape == cell_nodes.array().shape
@@ -213,27 +213,35 @@ def test_topology_partition():
     #     print("CCCC:", len(l2g), len(indices))
     # return
     l2l = cpp.mesh.compute_local_to_local(l2g, indices)
-    print("CCCC:", l2l)
+    # print("CCCC:", l2l)
 
     # Build list of unique node indices
     # indices = np.unique(cell_nodes.array())
 
     # Fetch node coordinates
     coords = cpp.mesh.fetch_data(cpp.MPI.comm_world, indices, x)
-    for index, value in zip(indices, coords):
-        print("Index, x:", index, value)
+    # for index, value in zip(indices, coords):
+    #     print("Index, x:", index, value)
 
     # Build dof array
     x_g = np.zeros([len(l2l), 2])
-    for i, d in enumerate(l2l):
-        x_g[i] = coords[d]
+    # for i, d in enumerate(l2l):
+    #     x_g[i] = coords[d]
+
+    # Vertex local-to-global index map for vertices
+    print(vertex_map)
+
+    # 'Node' local-to-global map
+    if rank == 0:
+        print("L2g:", l2g)
 
     # Create Geometry
-    geometry = cpp.mesh.Geometry(dofmap, x_g)
+    geometry = cpp.mesh.Geometry(dof_index_map, dofmap, x_g, l2g)
+
 
     mesh = cpp.mesh.Mesh(cpp.MPI.comm_world, topology, geometry)
 
-    # filename = os.path.join("mesh.xdmf")
+    # filename = os.path.join("mesh1.xdmf")
     # encoding = XDMFFile.Encoding.ASCII
     # with XDMFFile(mesh.mpi_comm(), filename, encoding=encoding) as file:
     #     file.write(mesh)

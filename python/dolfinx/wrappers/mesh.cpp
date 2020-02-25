@@ -112,9 +112,11 @@ void mesh(py::module& m)
   // dolfinx::mesh::Geometry class
   py::class_<dolfinx::mesh::Geometry, std::shared_ptr<dolfinx::mesh::Geometry>>(
       m, "Geometry", "Geometry object")
-      .def(py::init<const dolfinx::graph::AdjacencyList<std::int32_t>&,
+      .def(py::init<std::shared_ptr<const dolfinx::common::IndexMap>,
+                    const dolfinx::graph::AdjacencyList<std::int32_t>&,
                     const Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic,
-                                       Eigen::RowMajor>&>())
+                                       Eigen::RowMajor>&,
+                    const std::vector<std::int64_t>&>())
       .def_property_readonly("dim", &dolfinx::mesh::Geometry::dim,
                              "Geometric dimension")
       .def("coordinate_dofs",
@@ -160,6 +162,7 @@ void mesh(py::module& m)
       .def("set_interior_facets", &dolfinx::mesh::Topology::set_interior_facets)
       .def_property_readonly("dim", &dolfinx::mesh::Topology::dim,
                              "Topological dimension")
+      .def("set_global_user_vertices", &dolfinx::mesh::Topology::set_global_user_vertices)
       .def("connectivity",
            py::overload_cast<int, int>(&dolfinx::mesh::Topology::connectivity,
                                        py::const_))

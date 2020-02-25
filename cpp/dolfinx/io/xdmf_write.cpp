@@ -201,18 +201,22 @@ void remap_meshfunction_data(mesh::MeshFunction<T>& meshfunction,
 std::vector<std::int64_t> compute_topology_data(const mesh::Mesh& mesh,
                                                 int cell_dim)
 {
+  std::cout << "Comp Topology data" << std::endl;
   // Create vector to store topology data
   const mesh::CellType entity_cell_type
       = mesh::cell_entity_type(mesh.topology().cell_type(), cell_dim);
   const int num_vertices_per_cell = mesh::num_cell_vertices(entity_cell_type);
 
+  std::cout << "Comp Topology data (1)" << std::endl;
   std::vector<std::int64_t> topology_data;
   topology_data.reserve(mesh.num_entities(cell_dim) * (num_vertices_per_cell));
 
   // Get mesh communicator
   MPI_Comm comm = mesh.mpi_comm();
 
-  int num_nodes = mesh.geometry().coordinate_dofs().entity_points().num_links(0);
+  std::cout << "Comp Topology data (2)" << std::endl;
+  int num_nodes
+      = mesh.geometry().coordinate_dofs().entity_points().num_links(0);
   std::vector<std::uint8_t> perm;
   if (cell_dim == mesh.topology().dim())
     perm = io::cells::dolfin_to_vtk(mesh.topology().cell_type(), num_nodes);
@@ -221,10 +225,14 @@ std::vector<std::int64_t> compute_topology_data(const mesh::Mesh& mesh,
     // FIXME: Only works for first order geometries
     perm = io::cells::dolfin_to_vtk(entity_cell_type, num_vertices_per_cell);
 
+  std::cout << "Comp Topology data (3)" << std::endl;
+
   const int tdim = mesh.topology().dim();
   const auto& global_vertices = mesh.topology().get_global_user_vertices();
   if (dolfinx::MPI::size(comm) == 1 or cell_dim == tdim)
   {
+    std::cout << "Comp Topology data (4)" << std::endl;
+
     // Simple case when nothing is shared between processes
     if (cell_dim == 0)
     {
@@ -239,12 +247,17 @@ std::vector<std::int64_t> compute_topology_data(const mesh::Mesh& mesh,
       {
         auto entities = c.entities(0);
         for (int i = 0; i < num_vertices; ++i)
+        {
+          assert(entities[perm[i]] < (int)global_vertices.size());
           topology_data.push_back(global_vertices[entities[perm[i]]]);
+        }
       }
     }
   }
   else
   {
+    std::cout << "Comp Topology data (5)" << std::endl;
+
     std::set<std::uint32_t> non_local_entities
         = xdmf_write::compute_nonlocal_entities(mesh, cell_dim);
 
@@ -529,22 +542,26 @@ void xdmf_write::add_topology_data(MPI_Comm comm, pugi::xml_node& xml_node,
                                    hid_t h5_id, const std::string path_prefix,
                                    const mesh::Mesh& mesh, int cell_dim)
 {
+  std::cout << "Start on topology" << std::endl;
   // Get number of cells (global) and vertices per cell from mesh
   const std::int64_t num_cells = mesh.num_entities_global(cell_dim);
   int num_nodes_per_cell = mesh::num_cell_vertices(
       mesh::cell_entity_type(mesh.topology().cell_type(), cell_dim));
 
   // Get VTK string for cell type and degree (linear or quadratic)
+  std::cout << "Start on topology (2)" << std::endl;
   const std::size_t degree = mesh.degree();
   const std::string vtk_cell_str = xdmf_utils::vtk_cell_type_str(
       mesh::cell_entity_type(mesh.topology().cell_type(), cell_dim), degree);
 
+  std::cout << "Start on topology (3)" << std::endl;
   pugi::xml_node topology_node = xml_node.append_child("Topology");
   assert(topology_node);
   topology_node.append_attribute("NumberOfElements")
       = std::to_string(num_cells).c_str();
   topology_node.append_attribute("TopologyType") = vtk_cell_str.c_str();
 
+  std::cout << "Start on topology (4)" << std::endl;
   // Compute packed topology data
   std::vector<std::int64_t> topology_data;
 
@@ -565,7 +582,8 @@ void xdmf_write::add_topology_data(MPI_Comm comm, pugi::xml_node& xml_node,
     num_nodes_per_cell = cell_points.num_links(0);
     topology_data.reserve(num_nodes_per_cell * mesh.num_entities(tdim));
 
-    int num_nodes = mesh.geometry().coordinate_dofs().entity_points().num_links(0);
+    int num_nodes
+        = mesh.geometry().coordinate_dofs().entity_points().num_links(0);
     const std::vector<std::uint8_t> perm
         = io::cells::dolfin_to_vtk(mesh.topology().cell_type(), num_nodes);
 
@@ -577,8 +595,13 @@ void xdmf_write::add_topology_data(MPI_Comm comm, pugi::xml_node& xml_node,
     }
   }
   else
+  {
+    std::cout << "Start on topology (5b)" << std::endl;
     topology_data = compute_topology_data(mesh, cell_dim);
+    std::cout << "Start on topology (5b=2)" << std::endl;
+  }
 
+  std::cout << "Start on topology (5)" << std::endl;
   topology_node.append_attribute("NodesPerElement") = num_nodes_per_cell;
 
   // Add topology DataItem node
@@ -593,14 +616,13 @@ void xdmf_write::add_topology_data(MPI_Comm comm, pugi::xml_node& xml_node,
 //-----------------------------------------------------------------------------
 void xdmf_write::add_geometry_data(MPI_Comm comm, pugi::xml_node& xml_node,
                                    hid_t h5_id, const std::string path_prefix,
-                                   const mesh::Mesh& mesh)
+                                   const mesh::Geometry& geometry)
 {
-  const mesh::Geometry& mesh_geometry = mesh.geometry();
-  int gdim = mesh_geometry.dim();
+  int gdim = geometry.dim();
 
   // Compute number of points (global) in mesh (equal to number of vertices
   // for affine meshes)
-  const std::int64_t num_points = mesh.geometry().num_points_global();
+  const std::int64_t num_points = geometry.num_points_global();
 
   // Add geometry node and attributes
   pugi::xml_node geometry_node = xml_node.append_child("Geometry");
@@ -612,8 +634,7 @@ void xdmf_write::add_geometry_data(MPI_Comm comm, pugi::xml_node& xml_node,
   // Pack geometry data
   Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor> _x
       = mesh::DistributedMeshTools::reorder_by_global_indices(
-          mesh.mpi_comm(), mesh.geometry().points(),
-          mesh.geometry().global_indices());
+          comm, geometry.points(), geometry.global_indices());
 
   // Increase 1D to 2D because XDMF has no "X" geometry, use "XY"
   int width = (gdim == 1) ? 2 : gdim;
@@ -653,10 +674,13 @@ void xdmf_write::add_mesh(MPI_Comm comm, pugi::xml_node& xml_node, hid_t h5_id,
 
   // Add topology node and attributes (including writing data)
   const int tdim = mesh.topology().dim();
+  std::cout << "Add topology" << std::endl;
   add_topology_data(comm, grid_node, h5_id, path_prefix, mesh, tdim);
 
   // Add geometry node and attributes (including writing data)
-  add_geometry_data(comm, grid_node, h5_id, path_prefix, mesh);
+  std::cout << "Add geomtry" << std::endl;
+  add_geometry_data(comm, grid_node, h5_id, path_prefix, mesh.geometry());
+  std::cout << "Done" << std::endl;
 }
 //----------------------------------------------------------------------------
 void xdmf_write::add_function(MPI_Comm mpi_comm, pugi::xml_node& xml_node,

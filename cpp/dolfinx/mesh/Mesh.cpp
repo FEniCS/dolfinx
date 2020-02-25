@@ -141,7 +141,7 @@ compute_point_distribution(
 
 //-----------------------------------------------------------------------------
 Mesh::Mesh(MPI_Comm comm, const Topology& topology, const Geometry& geometry)
-    : _mpi_comm(comm), _degree(1)
+    : _degree(1), _mpi_comm(comm)
 {
   _topology = std::make_unique<Topology>(topology);
   _geometry = std::make_unique<Geometry>(geometry);
@@ -272,9 +272,9 @@ Mesh::Mesh(
 //-----------------------------------------------------------------------------
 Mesh::Mesh(const Mesh& mesh)
     : _topology(new Topology(*mesh._topology)),
-      _geometry(new Geometry(*mesh._geometry)),
-      _degree(mesh._degree), _mpi_comm(mesh.mpi_comm()),
-      _ghost_mode(mesh._ghost_mode), _unique_id(common::UniqueIdGenerator::id())
+      _geometry(new Geometry(*mesh._geometry)), _degree(mesh._degree),
+      _mpi_comm(mesh.mpi_comm()), _ghost_mode(mesh._ghost_mode),
+      _unique_id(common::UniqueIdGenerator::id())
 
 {
   // Do nothing
@@ -282,8 +282,8 @@ Mesh::Mesh(const Mesh& mesh)
 //-----------------------------------------------------------------------------
 Mesh::Mesh(Mesh&& mesh)
     : _topology(std::move(mesh._topology)),
-      _geometry(std::move(mesh._geometry)),
-      _degree(std::move(mesh._degree)), _mpi_comm(std::move(mesh._mpi_comm)),
+      _geometry(std::move(mesh._geometry)), _degree(std::move(mesh._degree)),
+      _mpi_comm(std::move(mesh._mpi_comm)),
       _ghost_mode(std::move(mesh._ghost_mode)),
       _unique_id(std::move(mesh._unique_id))
 {

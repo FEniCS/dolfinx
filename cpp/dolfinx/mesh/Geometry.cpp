@@ -6,17 +6,24 @@
 
 #include "Geometry.h"
 #include <boost/functional/hash.hpp>
+#include <dolfinx/common/IndexMap.h>
 #include <sstream>
 
 using namespace dolfinx;
 using namespace dolfinx::mesh;
 
 //-----------------------------------------------------------------------------
-Geometry::Geometry(const graph::AdjacencyList<std::int32_t>& dofmap,
+Geometry::Geometry(std::shared_ptr<const common::IndexMap> index_map,
+                   const graph::AdjacencyList<std::int32_t>& dofmap,
                    const Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic,
-                                      Eigen::RowMajor>& x)
-    : _dofmap(dofmap),  _coordinate_dofs(dofmap)
+                                      Eigen::RowMajor>& x,
+                   const std::vector<std::int64_t>& global_indices)
+    : _dim(x.cols()), _global_indices(global_indices), _coordinate_dofs(dofmap),
+      _index_map(index_map), _dofmap(dofmap)
 {
+  if (x.rows() != (int)global_indices.size())
+    throw std::runtime_error("Size mis-match");
+
   // Make all geometry 3D
   if (_dim == 3)
     _coordinates = x;
@@ -37,8 +44,8 @@ Geometry::Geometry(
                                         Eigen::Dynamic, Eigen::RowMajor>>&
         coordinate_dofs)
     : _dim(coordinates.cols()), _global_indices(global_indices),
-      _num_points_global(num_points_global), _dofmap(0),
-      _coordinate_dofs(coordinate_dofs)
+      _num_points_global(num_points_global), _coordinate_dofs(coordinate_dofs),
+      _dofmap(0)
 {
   // Make all geometry 3D
   if (_dim == 3)
@@ -64,7 +71,13 @@ Geometry::x() const
 //-----------------------------------------------------------------------------
 std::size_t Geometry::num_points() const { return _coordinates.rows(); }
 //-----------------------------------------------------------------------------
-std::size_t Geometry::num_points_global() const { return _num_points_global; }
+std::size_t Geometry::num_points_global() const
+{
+  if (_index_map)
+    return _index_map->size_global();
+  else
+    return _num_points_global;
+}
 //-----------------------------------------------------------------------------
 Eigen::Ref<const Eigen::Vector3d> Geometry::x(int n) const
 {

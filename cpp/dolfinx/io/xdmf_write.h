@@ -30,6 +30,7 @@ class Function;
 }
 namespace mesh
 {
+class Geometry;
 class Mesh;
 }
 
@@ -58,7 +59,8 @@ void add_topology_data(MPI_Comm comm, pugi::xml_node& xml_node, hid_t h5_id,
 
 /// Add geometry node and data to xml_node
 void add_geometry_data(MPI_Comm comm, pugi::xml_node& xml_node, hid_t h5_id,
-                       const std::string path_prefix, const mesh::Mesh& mesh);
+                       const std::string path_prefix,
+                       const mesh::Geometry& geometry);
 
 /// Add mesh to XDMF xml_node (usually a Domain or Time Grid) and write
 /// data

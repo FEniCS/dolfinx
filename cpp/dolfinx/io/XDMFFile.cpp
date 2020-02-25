@@ -251,6 +251,8 @@ void XDMFFile::close()
 //-----------------------------------------------------------------------------
 void XDMFFile::write(const mesh::Mesh& mesh)
 {
+  std::cout << "Call write mesh" << std::endl;
+
   // Check that encoding
   if (_encoding == Encoding::ASCII and MPI::size(_mpi_comm.comm()) != 1)
   {
@@ -288,7 +290,9 @@ void XDMFFile::write(const mesh::Mesh& mesh)
   assert(domain_node);
 
   // Add the mesh Grid to the domain
+  std::cout << "Add mesh to domain" << std::endl;
   xdmf_write::add_mesh(_mpi_comm.comm(), domain_node, h5_id, mesh, "/Mesh");
+  std::cout << "Post Add mesh to domain" << std::endl;
 
   // Save XML file (on process 0 only)
   if (MPI::rank(_mpi_comm.comm()) == 0)
@@ -1864,7 +1868,7 @@ void XDMFFile::write_mesh_function(const mesh::MeshFunction<T>& meshfunction)
     if (grid_empty)
     {
       xdmf_write::add_geometry_data(_mpi_comm.comm(), grid_node, h5_id, mf_name,
-                                    *mesh);
+                                    mesh->geometry());
     }
     else
     {
