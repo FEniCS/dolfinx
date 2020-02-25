@@ -61,7 +61,10 @@ Geometry::Geometry(
 //-----------------------------------------------------------------------------
 int Geometry::dim() const { return _dim; }
 //-----------------------------------------------------------------------------
-const graph::AdjacencyList<std::int32_t>& Geometry::dofmap() { return _dofmap; }
+const graph::AdjacencyList<std::int32_t>& Geometry::dofmap() const
+{
+  return _dofmap;
+}
 //-----------------------------------------------------------------------------
 const Eigen::Array<double, Eigen::Dynamic, 3, Eigen::RowMajor>&
 Geometry::x() const

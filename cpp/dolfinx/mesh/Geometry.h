@@ -72,7 +72,7 @@ public:
   int dim() const;
 
   /// DOF map
-  const graph::AdjacencyList<std::int32_t>& dofmap();
+  const graph::AdjacencyList<std::int32_t>& dofmap() const;
 
   /// Geometry degrees-of-freedom
   const Eigen::Array<double, Eigen::Dynamic, 3, Eigen::RowMajor>& x() const;
