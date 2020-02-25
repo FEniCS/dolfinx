@@ -234,7 +234,7 @@ Mesh::Mesh(
 
   // Initialise vertex topology
   _topology = std::make_unique<Topology>(type);
-  _topology->set_global_user_vertices(vertex_indices_global);
+  _topology->set_global_vertices_user(vertex_indices_global);
   _topology->set_index_map(0, vertex_index_map);
   const std::int32_t num_vertices
       = vertex_index_map->size_local() + vertex_index_map->num_ghosts();

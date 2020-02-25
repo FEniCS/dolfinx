@@ -84,10 +84,15 @@ Topology::Topology(mesh::CellType type)
 //-----------------------------------------------------------------------------
 int Topology::dim() const { return _connectivity.rows() - 1; }
 //-----------------------------------------------------------------------------
-void Topology::set_global_user_vertices(
-    const std::vector<std::int64_t>& vertex_indices)
+const std::vector<std::int64_t>& Topology::get_global_vertices_user() const
 {
-  _global_user_vertices = vertex_indices;
+  return _global_user_vertices;
+}
+//-----------------------------------------------------------------------------
+void Topology::set_global_vertices_user(
+    const std::vector<std::int64_t>& indices)
+{
+  _global_user_vertices = indices;
 }
 //-----------------------------------------------------------------------------
 void Topology::set_index_map(int dim,
@@ -101,11 +106,6 @@ std::shared_ptr<const common::IndexMap> Topology::index_map(int dim) const
 {
   assert(dim < (int)_index_map.size());
   return _index_map[dim];
-}
-//-----------------------------------------------------------------------------
-const std::vector<std::int64_t>& Topology::get_global_user_vertices() const
-{
-  return _global_user_vertices;
 }
 //-----------------------------------------------------------------------------
 std::vector<bool> Topology::on_boundary(int dim) const
@@ -173,16 +173,16 @@ std::vector<bool> Topology::on_boundary(int dim) const
   return marker;
 }
 //-----------------------------------------------------------------------------
-std::shared_ptr<graph::AdjacencyList<std::int32_t>>
-Topology::connectivity(int d0, int d1)
+std::shared_ptr<const graph::AdjacencyList<std::int32_t>>
+Topology::connectivity(int d0, int d1) const
 {
   assert(d0 < _connectivity.rows());
   assert(d1 < _connectivity.cols());
   return _connectivity(d0, d1);
 }
 //-----------------------------------------------------------------------------
-std::shared_ptr<const graph::AdjacencyList<std::int32_t>>
-Topology::connectivity(int d0, int d1) const
+std::shared_ptr<graph::AdjacencyList<std::int32_t>>
+Topology::connectivity(int d0, int d1)
 {
   assert(d0 < _connectivity.rows());
   assert(d1 < _connectivity.cols());

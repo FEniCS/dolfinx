@@ -188,7 +188,6 @@ void remap_meshfunction_data(mesh::MeshFunction<T>& meshfunction,
   auto map0 = mesh->topology().index_map(0);
   assert(map0);
   const std::size_t max_vertex = map0->size_global();
-  // mesh->num_entities_global(0);
 
   for (std::size_t i = 0; i < num_entities; ++i)
   {
@@ -226,7 +225,7 @@ void remap_meshfunction_data(mesh::MeshFunction<T>& meshfunction,
   std::vector<std::vector<std::int64_t>> send_requests(num_processes);
   const std::size_t rank = MPI::rank(comm);
   const std::vector<std::int64_t>& global_indices
-      = mesh->topology().get_global_user_vertices();
+      = mesh->topology().get_global_vertices_user();
 
   const int num_cells = map->size_local() + map->num_ghosts();
   for (int c = 0; c < num_cells; ++c)
