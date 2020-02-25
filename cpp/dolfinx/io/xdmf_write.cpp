@@ -51,150 +51,6 @@ std::string rank_to_string(std::size_t value_rank)
   return "";
 }
 //-----------------------------------------------------------------------------
-// Remap meshfunction data, scattering data to appropriate processes
-template <typename T>
-void remap_meshfunction_data(mesh::MeshFunction<T>& meshfunction,
-                             const std::vector<std::int64_t>& topology_data,
-                             const std::vector<T>& value_data)
-{
-  // Send the read data to each process on the basis of the first
-  // vertex of the entity, since we do not know the global_index
-  const int cell_dim = meshfunction.dim();
-  const auto mesh = meshfunction.mesh();
-  // FIXME : get vertices_per_entity properly
-  const int vertices_per_entity = meshfunction.dim() + 1;
-  const MPI_Comm comm = mesh->mpi_comm();
-  const std::size_t num_processes = dolfinx::MPI::size(comm);
-
-  // Wrap topology data in boost array
-  assert(topology_data.size() % vertices_per_entity == 0);
-  const std::size_t num_entities = topology_data.size() / vertices_per_entity;
-
-  // Send (sorted) entity topology and data to a post-office process
-  // determined by the lowest global vertex index of the entity
-  std::vector<std::vector<std::int64_t>> send_topology(num_processes);
-  std::vector<std::vector<T>> send_values(num_processes);
-  const std::size_t max_vertex = mesh->num_entities_global(0);
-  for (std::size_t i = 0; i < num_entities; ++i)
-  {
-    std::vector<std::int64_t> cell_topology(
-        topology_data.begin() + i * vertices_per_entity,
-        topology_data.begin() + (i + 1) * vertices_per_entity);
-    std::sort(cell_topology.begin(), cell_topology.end());
-
-    // Use first vertex to decide where to send this data
-    const std::size_t destination_process
-        = dolfinx::MPI::index_owner(comm, cell_topology.front(), max_vertex);
-
-    send_topology[destination_process].insert(
-        send_topology[destination_process].end(), cell_topology.begin(),
-        cell_topology.end());
-    send_values[destination_process].push_back(value_data[i]);
-  }
-
-  std::vector<std::vector<std::int64_t>> receive_topology(num_processes);
-  std::vector<std::vector<T>> receive_values(num_processes);
-  dolfinx::MPI::all_to_all(comm, send_topology, receive_topology);
-  dolfinx::MPI::all_to_all(comm, send_values, receive_values);
-
-  // Generate requests for data from remote processes, based on the
-  // first vertex of the mesh::MeshEntities which belong on this process
-  // Send our process number, and our local index, so it can come back
-  // directly to the right place
-  std::vector<std::vector<std::int64_t>> send_requests(num_processes);
-  const std::size_t rank = dolfinx::MPI::rank(comm);
-  const std::vector<std::int64_t>& global_indices
-      = mesh->topology().get_global_user_vertices();
-  for (auto& cell : mesh::MeshRange(*mesh, cell_dim, mesh::MeshRangeType::ALL))
-  {
-    std::vector<std::int64_t> cell_topology;
-    if (cell_dim == 0)
-      cell_topology.push_back(global_indices[cell.index()]);
-    else
-    {
-      for (auto& v : mesh::EntityRange(cell, 0))
-        cell_topology.push_back(global_indices[v.index()]);
-    }
-
-    std::sort(cell_topology.begin(), cell_topology.end());
-
-    // Use first vertex to decide where to send this request
-    std::size_t send_to_process
-        = dolfinx::MPI::index_owner(comm, cell_topology.front(), max_vertex);
-    // Map to this process and local index by appending to send data
-    cell_topology.push_back(cell.index());
-    cell_topology.push_back(rank);
-    send_requests[send_to_process].insert(send_requests[send_to_process].end(),
-                                          cell_topology.begin(),
-                                          cell_topology.end());
-  }
-
-  std::vector<std::vector<std::int64_t>> receive_requests(num_processes);
-  dolfinx::MPI::all_to_all(comm, send_requests, receive_requests);
-
-  // At this point, the data with its associated vertices is in
-  // receive_values and receive_topology and the final destinations
-  // are stored in receive_requests as
-  // [vertices][index][process][vertices][index][process]...  Some
-  // data will have more than one destination
-
-  // Create a mapping from the topology vector to the desired data
-  std::map<std::vector<std::int64_t>, T> cell_to_data;
-
-  for (std::size_t i = 0; i < receive_values.size(); ++i)
-  {
-    assert(receive_values[i].size() * vertices_per_entity
-           == receive_topology[i].size());
-    auto p = receive_topology[i].begin();
-    for (std::size_t j = 0; j < receive_values[i].size(); ++j)
-    {
-      const std::vector<std::int64_t> cell(p, p + vertices_per_entity);
-      cell_to_data.insert({cell, receive_values[i][j]});
-      p += vertices_per_entity;
-    }
-  }
-
-  // Clear vectors for reuse - now to send values and indices to final
-  // destination
-  send_topology = std::vector<std::vector<std::int64_t>>(num_processes);
-  send_values = std::vector<std::vector<T>>(num_processes);
-
-  // Go through requests, which are stacked as [vertex, vertex, ...]
-  // [index] [proc] etc.  Use the vertices as the key for the map
-  // (above) to retrieve the data to send to proc
-  for (std::size_t i = 0; i < receive_requests.size(); ++i)
-  {
-    for (auto p = receive_requests[i].begin(); p != receive_requests[i].end();
-         p += (vertices_per_entity + 2))
-    {
-      const std::vector<std::int64_t> cell(p, p + vertices_per_entity);
-      const std::size_t remote_index = *(p + vertices_per_entity);
-      const std::size_t send_to_proc = *(p + vertices_per_entity + 1);
-
-      const auto find_cell = cell_to_data.find(cell);
-      assert(find_cell != cell_to_data.end());
-      send_values[send_to_proc].push_back(find_cell->second);
-      send_topology[send_to_proc].push_back(remote_index);
-    }
-  }
-
-  dolfinx::MPI::all_to_all(comm, send_topology, receive_topology);
-  dolfinx::MPI::all_to_all(comm, send_values, receive_values);
-
-  // Get reference to mesh function data array
-  Eigen::Ref<Eigen::Array<T, Eigen::Dynamic, 1>> mf_values
-      = meshfunction.values();
-
-  // At this point, receive_topology should only list the local indices
-  // and received values should have the appropriate values for each
-  for (std::size_t i = 0; i < receive_values.size(); ++i)
-  {
-    assert(receive_values[i].size() == receive_topology[i].size());
-    for (std::size_t j = 0; j < receive_values[i].size(); ++j)
-      mf_values[receive_topology[i][j]] = receive_values[i][j];
-  }
-}
-//----------------------------------------------------------------------------
 
 //-----------------------------------------------------------------------------
 // Return topology data on this process as a flat vector
@@ -203,11 +59,8 @@ std::vector<std::int64_t> compute_topology_data(const mesh::Mesh& mesh,
 {
   // Create vector to store topology data
   const mesh::Topology& topology = mesh.topology();
-  const mesh::Geometry& geometry = mesh.geometry();
+  // const mesh::Geometry& geometry = mesh.geometry();
   const int tdim = mesh.topology().dim();
-
-  if (tdim != cell_dim)
-    throw std::runtime_error("Cannot do IO for lower-dimensional entities yet");
 
   const mesh::CellType entity_cell_type
       = mesh::cell_entity_type(topology.cell_type(), cell_dim);
@@ -226,20 +79,81 @@ std::vector<std::int64_t> compute_topology_data(const mesh::Mesh& mesh,
     // FIXME: Only works for first order geometries
     perm = io::cells::dolfin_to_vtk(entity_cell_type, num_vertices_per_cell);
 
+  auto e_to_v = topology.connectivity(cell_dim, 0);
+  assert(e_to_v);
   auto map = topology.index_map(cell_dim);
   assert(map);
   assert(map->block_size() == 1);
 
-  const graph::AdjacencyList<std::int32_t>& x_dofmap = geometry.dofmap();
-
-  // TODO: Get this from geometry/geometry dofmap?
-  const auto& global_vertices = geometry.global_indices();
+  // TODO: Get ths from
+  const auto& global_vertices = topology.get_global_user_vertices();
   for (int e = 0; e < map->size_local(); ++e)
   {
-    auto links = x_dofmap.links(e);
+    auto links = e_to_v->links(e);
     for (int i = 0; i < links.rows(); ++i)
       topology_data.push_back(global_vertices[links[perm[i]]]);
+    // topology_data.push_back(global_vertices[links(i)]);
   }
+
+  // if (dolfinx::MPI::size(comm) == 1 or cell_dim == tdim)
+  // {
+  //   // Simple case when nothing is shared between processes
+  //   if (cell_dim == 0)
+  //   {
+  //     for (auto& v : mesh::MeshRange(mesh, 0))
+  //       topology_data.push_back(global_vertices[v.index()]);
+  //   }
+  //   else
+  //   {
+  //     const int num_vertices = mesh::cell_num_entities(
+  //         mesh::cell_entity_type(mesh.topology().cell_type(), cell_dim), 0);
+  //     for (auto& c : mesh::MeshRange(mesh, cell_dim))
+  //     {
+  //       auto entities = c.entities(0);
+  //       for (int i = 0; i < num_vertices; ++i)
+  //       {
+  //         assert(entities[perm[i]] < (int)global_vertices.size());
+  //         topology_data.push_back(global_vertices[entities[perm[i]]]);
+  //       }
+  //     }
+  //   }
+  // }
+  // else
+  // {
+  //   std::cout << "Comp Topology data (5)" << std::endl;
+
+  //   std::set<std::uint32_t> non_local_entities
+  //       = xdmf_write::compute_nonlocal_entities(mesh, cell_dim);
+
+  //   const auto& global_vertices = mesh.topology().get_global_user_vertices();
+  //   if (cell_dim == 0)
+  //   {
+  //     // Special case for mesh of points
+  //     for (auto& v : mesh::MeshRange(mesh, 0))
+  //     {
+  //       if (non_local_entities.find(v.index()) == non_local_entities.end())
+  //         topology_data.push_back(global_vertices[v.index()]);
+  //     }
+  //   }
+  //   else
+  //   {
+  //     // Local-to-global map for point indices
+  //     const int num_vertices = mesh::cell_num_entities(
+  //         mesh::cell_entity_type(mesh.topology().cell_type(), cell_dim), 0);
+  //     for (auto& e : mesh::MeshRange(mesh, cell_dim))
+  //     {
+  //       // If not excluded, add to topology
+  //       if (non_local_entities.find(e.index()) == non_local_entities.end())
+  //       {
+  //         for (int i = 0; i < num_vertices; ++i)
+  //         {
+  //           const std::int32_t local_idx = e.entities(0)[perm[i]];
+  //           topology_data.push_back(global_vertices[local_idx]);
+  //         }
+  //       }
+  //     }
+  //   }
+  // }
 
   return topology_data;
 }
