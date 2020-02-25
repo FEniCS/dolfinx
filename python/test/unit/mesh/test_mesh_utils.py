@@ -4,14 +4,12 @@
 #
 # SPDX-License-Identifier:    LGPL-3.0-or-later
 
-# import os
+import os
 
 import numpy as np
 
-# import dolfinx
 from dolfinx import cpp
-
-# from dolfinx.io import XDMFFile
+from dolfinx.io import XDMFFile
 
 
 def test_extract_topology():
@@ -130,7 +128,11 @@ def test_topology_partition():
 
     # Create local topology, and set cell-vertex topology
     topology = cpp.mesh.Topology(layout.cell_type)
+
+    print("Size of cell index map:",  cells_local.num_nodes)
+    # return
     index_map = cpp.common.IndexMap(cpp.MPI.comm_self, cells_local.num_nodes, [], 1)
+
     topology.set_connectivity(cells_local, topology.dim, 0)
     topology.set_index_map(topology.dim, index_map)
 
@@ -176,10 +178,12 @@ def test_topology_partition():
     topology.set_connectivity(c0, 0, 0)
 
     # Set cell IndexMap and cell-vertex connectivity
-    num_cells = cpp.MPI.sum(cpp.MPI.comm_world, cells.num_nodes)
-    index_map = cpp.common.IndexMap(cpp.MPI.comm_self, num_cells, [], 1)
+    # num_cells = cpp.MPI.sum(cpp.MPI.comm_world, cells.num_nodes)
+    index_map = cpp.common.IndexMap(cpp.MPI.comm_world, cells.num_nodes, [], 1)
     topology.set_index_map(topology.dim, index_map)
+    # print("****", num_cells)
     topology.set_connectivity(cells, topology.dim, 0)
+    # return
 
     # NOTE: This could be a local (MPI_COMM_SELF) dofmap
     # Build 'geometry' dofmap on the topology
@@ -242,7 +246,7 @@ def test_topology_partition():
     mesh = cpp.mesh.Mesh(cpp.MPI.comm_world, topology, geometry)
     print(mesh.topology.dim)
 
-    # filename = os.path.join("mesh1.xdmf")
-    # encoding = XDMFFile.Encoding.ASCII
-    # with XDMFFile(mesh.mpi_comm(), filename, encoding=encoding) as file:
-    #     file.write(mesh)
+    filename = os.path.join("mesh1.xdmf")
+    encoding = XDMFFile.Encoding.HDF5
+    with XDMFFile(mesh.mpi_comm(), filename, encoding=encoding) as file:
+        file.write(mesh)

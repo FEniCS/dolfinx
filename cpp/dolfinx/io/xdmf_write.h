@@ -99,6 +99,7 @@ void add_data_item(MPI_Comm comm, pugi::xml_node& xml_node, hid_t h5_id,
   }
   else
   {
+    std::cout << "Inside HDF section" << std::endl;
     data_item_node.append_attribute("Format") = "HDF";
 
     // Get name of HDF5 file
@@ -110,11 +111,18 @@ void add_data_item(MPI_Comm comm, pugi::xml_node& xml_node, hid_t h5_id,
     data_item_node.append_child(pugi::node_pcdata).set_value(xdmf_path.c_str());
 
     // Compute total number of items and check for consistency with shape
+    std::cout << "Inside HDF section (1)" << std::endl;
+    // for (std::size_t i = 0; i < shape.size(); ++i)
+    //   std::cout << "   s: " << shape[i] << std::endl;
+
     assert(!shape.empty());
     std::int64_t num_items_total = 1;
     for (auto n : shape)
       num_items_total *= n;
 
+    std::cout << "Inside HDF section (2i):  " << num_items_total << std::endl;
+    std::cout << "Inside HDF section (2ii): " << x.size() << std::endl;
+    // << dolfinx::MPI::sum(comm, x.size()) << std::endl;
     assert(num_items_total == (std::int64_t)dolfinx::MPI::sum(comm, x.size()));
 
     // Compute data offset and range of values

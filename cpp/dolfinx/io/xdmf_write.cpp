@@ -82,21 +82,37 @@ std::vector<std::int64_t> compute_topology_data(const mesh::Mesh& mesh,
     // FIXME: Only works for first order geometries
     perm = io::cells::dolfin_to_vtk(entity_cell_type, num_vertices_per_cell);
 
+  std::cout << "get topo data" << std::endl;
   auto e_to_v = topology.connectivity(cell_dim, 0);
   assert(e_to_v);
   auto map = topology.index_map(cell_dim);
   assert(map);
   assert(map->block_size() == 1);
 
+  std::cout << "get topo data (1)" << std::endl;
   const graph::AdjacencyList<std::int32_t>& x_dofmap = geometry.dofmap();
-  const auto& global_vertices_test = geometry.global_indices();
+  const std::vector<std::int64_t>& global_vertices_test
+      = geometry.global_indices();
+  std::cout << "get topo data (2): " << cell_dim << std::endl;
+
+  std::cout << "Num cells, num nodes: " << map->size_local() << ", "
+            << x_dofmap.num_nodes() << std::endl;
   for (int e = 0; e < map->size_local(); ++e)
   {
+    assert(e < x_dofmap.num_nodes());
     auto linksx = x_dofmap.links(e);
     for (int i = 0; i < linksx.rows(); ++i)
+    {
+      assert(i < (int)perm.size());
+      assert(perm[i] < linksx.rows());
+      assert(linksx[perm[i]] < (int)global_vertices_test.size());
       topology_data.push_back(global_vertices_test[linksx[perm[i]]]);
+    }
   }
 
+  // if (dolfinx::MPI::rank(MPI_COMM_WORLD) == 2)
+  //   std::cout << "End topo data (2): " << map->size_local() << ", "
+  //             << topology_data.size() << std::endl;
   return topology_data;
 } // namespace
 //-----------------------------------------------------------------------------
@@ -352,7 +368,9 @@ void xdmf_write::add_topology_data(MPI_Comm comm, pugi::xml_node& xml_node,
   }
   else
   {
+    std::cout << "Comp t" << std::endl;
     topology_data = compute_topology_data(mesh, cell_dim);
+    std::cout << "Comp t post" << std::endl;
   }
 
   topology_node.append_attribute("NodesPerElement") = num_nodes_per_cell;
@@ -363,8 +381,10 @@ void xdmf_write::add_topology_data(MPI_Comm comm, pugi::xml_node& xml_node,
   const std::vector<std::int64_t> shape = {num_cells, num_nodes_per_cell};
   const std::string number_type = "UInt";
 
+  std::cout << "Write data item: " << num_cells << std::endl;
   xdmf_write::add_data_item(comm, topology_node, h5_id, h5_path, topology_data,
                             shape, number_type);
+  std::cout << "Post data item" << std::endl;
 }
 //-----------------------------------------------------------------------------
 void xdmf_write::add_geometry_data(MPI_Comm comm, pugi::xml_node& xml_node,
@@ -426,10 +446,12 @@ void xdmf_write::add_mesh(MPI_Comm comm, pugi::xml_node& xml_node, hid_t h5_id,
   grid_node.append_attribute("GridType") = "Uniform";
 
   // Add topology node and attributes (including writing data)
+  std::cout << "Handle topo" << std::endl;
   const int tdim = mesh.topology().dim();
   add_topology_data(comm, grid_node, h5_id, path_prefix, mesh, tdim);
 
   // Add geometry node and attributes (including writing data)
+  std::cout << "Handle geo" << std::endl;
   add_geometry_data(comm, grid_node, h5_id, path_prefix, mesh.geometry());
 }
 //----------------------------------------------------------------------------
