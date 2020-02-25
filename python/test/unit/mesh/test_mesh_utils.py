@@ -129,7 +129,7 @@ def test_topology_partition():
     # Create local topology, and set cell-vertex topology
     topology = cpp.mesh.Topology(layout.cell_type)
 
-    print("Size of cell index map:",  cells_local.num_nodes)
+    print("Size of cell index map:", cells_local.num_nodes)
     # return
     index_map = cpp.common.IndexMap(cpp.MPI.comm_self, cells_local.num_nodes, [], 1)
 
