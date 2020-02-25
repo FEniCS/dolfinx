@@ -190,8 +190,6 @@ la::SparsityPattern dolfinx::fem::create_sparsity_pattern(const Form& a)
 //-----------------------------------------------------------------------------
 la::PETScMatrix dolfinx::fem::create_matrix(const Form& a)
 {
-  bool keep_diagonal = false;
-
   // Build sparsitypattern
   la::SparsityPattern pattern = fem::create_sparsity_pattern(a);
 
@@ -202,25 +200,6 @@ la::PETScMatrix dolfinx::fem::create_matrix(const Form& a)
   common::Timer t1("Init tensor");
   la::PETScMatrix A(a.mesh()->mpi_comm(), pattern);
   t1.stop();
-
-  // FIXME: Check if there is a PETSc function for this
-  // Insert zeros on the diagonal as diagonal entries may be optimised
-  // away, e.g. when calling PETScMatrix::apply.
-  if (keep_diagonal)
-  {
-    // Loop over rows and insert 0.0 on the diagonal
-    const PetscScalar block = 0.0;
-    std::array<PetscInt, 2> row_range;
-    MatGetOwnershipRange(A.mat(), &row_range[0], &row_range[1]);
-    const std::int64_t range = std::min(row_range[1], (PetscInt)A.size()[1]);
-    for (std::int64_t i = row_range[0]; i < range; i++)
-    {
-      const PetscInt _i = i;
-      A.set(&block, 1, &_i, 1, &_i);
-    }
-
-    A.apply(la::PETScMatrix::AssemblyType::FLUSH);
-  }
 
   return A;
 }
