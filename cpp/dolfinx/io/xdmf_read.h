@@ -184,9 +184,15 @@ void remap_meshfunction_data(mesh::MeshFunction<T>& meshfunction,
   // determined by the lowest global vertex index of the entity
   std::vector<std::vector<std::int64_t>> send_topology(num_processes);
   std::vector<std::vector<T>> send_values(num_processes);
-  const std::size_t max_vertex = mesh->num_entities_global(0);
+
+  auto map0 = mesh->topology().index_map(0);
+  assert(map0);
+  const std::size_t max_vertex = map0->size_global();
+  // mesh->num_entities_global(0);
+
   for (std::size_t i = 0; i < num_entities; ++i)
   {
+    // FIXME: This dynamic allocation inside a loop is bad
     std::vector<std::int64_t> cell_topology(
         topology_data.begin() + i * vertices_per_entity,
         topology_data.begin() + (i + 1) * vertices_per_entity);
@@ -219,16 +225,21 @@ void remap_meshfunction_data(mesh::MeshFunction<T>& meshfunction,
   // directly to the right place
   std::vector<std::vector<std::int64_t>> send_requests(num_processes);
   const std::size_t rank = MPI::rank(comm);
-  const std::vector<std::int64_t>& global_indices
-      = mesh->topology().get_global_user_vertices();
+  // const std::vector<std::int64_t>& global_indices
+  //     = mesh->topology().get_global_user_vertices();
 
   const int num_cells = map->size_local() + map->num_ghosts();
   for (int c = 0; c < num_cells; ++c)
   {
     std::vector<std::int64_t> cell_topology;
     auto vertices = c_to_v->links(c);
+    // for (int v = 0; v < vertices.rows(); ++v)
+    //   cell_topology.push_back(global_indices[vertices(v)]);
     for (int v = 0; v < vertices.rows(); ++v)
-      cell_topology.push_back(global_indices[vertices(v)]);
+    {
+      std::int64_t global_index = map0->local_to_global(vertices(v));
+      cell_topology.push_back(global_index);
+    }
 
     std::sort(cell_topology.begin(), cell_topology.end());
 

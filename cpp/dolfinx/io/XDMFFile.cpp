@@ -1438,8 +1438,9 @@ XDMFFile::read_mesh_data(MPI_Comm comm) const
     // Topology data
     const std::vector<std::int64_t> tdims
         = xdmf_utils::get_dataset_shape(topology_data_node);
-    const auto topology_data = xdmf_read::get_dataset<std::int64_t>(
-        comm, topology_data_node, parent_path);
+    const std::vector<std::int64_t> topology_data
+        = xdmf_read::get_dataset<std::int64_t>(comm, topology_data_node,
+                                               parent_path);
     const std::size_t num_local_cells = topology_data.size() / npoint_per_cell;
     Eigen::Map<const Eigen::Array<std::int64_t, Eigen::Dynamic, Eigen::Dynamic,
                                   Eigen::RowMajor>>
