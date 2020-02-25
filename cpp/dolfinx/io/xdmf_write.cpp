@@ -203,7 +203,7 @@ std::vector<std::int64_t> compute_topology_data(const mesh::Mesh& mesh,
 {
   // Create vector to store topology data
   const mesh::Topology& topology = mesh.topology();
-  const mesh::Geometry& geometry = mesh.geometry();
+  // const mesh::Geometry& geometry = mesh.geometry();
   const int tdim = mesh.topology().dim();
 
   const mesh::CellType entity_cell_type
@@ -212,9 +212,6 @@ std::vector<std::int64_t> compute_topology_data(const mesh::Mesh& mesh,
 
   std::vector<std::int64_t> topology_data;
   topology_data.reserve(mesh.num_entities(cell_dim) * (num_vertices_per_cell));
-
-  // Get mesh communicator
-  MPI_Comm comm = mesh.mpi_comm();
 
   int num_nodes
       = mesh.geometry().coordinate_dofs().entity_points().num_links(0);
@@ -228,16 +225,18 @@ std::vector<std::int64_t> compute_topology_data(const mesh::Mesh& mesh,
 
   auto e_to_v = topology.connectivity(cell_dim, 0);
   assert(e_to_v);
-  auto map = topology.connectivity(cell_dim);
+  auto map = topology.index_map(cell_dim);
   assert(map);
   assert(map->block_size() == 1);
 
+  // TODO: Get ths from
   const auto& global_vertices = topology.get_global_user_vertices();
   for (int e = 0; e < map->size_local(); ++e)
   {
-    auto links = e_to_v.links(e);
-    for (int i = 0; i < link.rows(); ++i)
-        topology_data.push_back(global_vertices[links(i)]);
+    auto links = e_to_v->links(e);
+    for (int i = 0; i < links.rows(); ++i)
+      topology_data.push_back(global_vertices[links[perm[i]]]);
+    // topology_data.push_back(global_vertices[links(i)]);
   }
 
   // if (dolfinx::MPI::size(comm) == 1 or cell_dim == tdim)
