@@ -80,7 +80,7 @@ public:
   /// (Currently partially working)
   std::shared_ptr<const common::IndexMap> index_map(int dim) const;
 
-  /// @todo Remove/revise this function. Use IndexMap instead.
+  /// @todo Remove this function. Use IndexMap instead.
   /// Get local-to-global index map for entities of topological
   /// dimension d
   const std::vector<std::int64_t>& get_global_user_vertices() const;
@@ -128,7 +128,7 @@ public:
   /// Return informal string representation (pretty-print)
   std::string str(bool verbose) const;
 
-  // TODO: Use std::vector<int32_t> to store 1/0 marker for each edge/face
+  /// @todo Use std::vector<int32_t> to store 1/0 marker for each edge/face
   /// Get an array of bools that say whether each edge needs to be
   /// reflected to match the low->high ordering of the cell.
   /// @param[in] cell_n The index of the cell.
@@ -136,7 +136,7 @@ public:
   Eigen::Ref<const Eigen::Array<bool, 1, Eigen::Dynamic>>
   get_edge_reflections(const std::int32_t cell_n) const;
 
-  // TODO: Use std::vector<int32_t> to store 1/0 marker for each edge/face
+  /// @todo Use std::vector<int32_t> to store 1/0 marker for each edge/face
   /// Get an array of bools that say whether each face needs to be
   /// reflected to match the low->high ordering of the cell.
   /// @param[in] cell_n The index of the cell.
@@ -182,26 +182,6 @@ public:
                               std::size_t entity_index, std::uint8_t rots,
                               std::uint8_t refs);
 
-  /// @todo Move this outside of this class
-  /// Set global number of connections for each local entities
-  void set_global_size(std::array<int, 2> d,
-                       const Eigen::Array<std::int32_t, Eigen::Dynamic, 1>&
-                           num_global_connections)
-  {
-    // assert(num_global_connections.size() == _offsets.size() - 1);
-    _num_global_connections(d[0], d[1]) = num_global_connections;
-  }
-
-  /// @todo Can this be removed?
-  /// Return global number of connections for given entity
-  int size_global(std::array<int, 2> d, std::int32_t entity) const
-  {
-    if (_num_global_connections(d[0], d[1]).size() == 0)
-      return _connectivity(d[0], d[1])->num_links(entity);
-    else
-      return _num_global_connections(d[0], d[1])[entity];
-  }
-
 private:
   // Cell type
   mesh::CellType _cell_type;
@@ -235,11 +215,6 @@ private:
   Eigen::Array<std::uint8_t, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
       _face_permutations;
 
-  // TODO: revise
-  // Global number of connections for each entity (possibly not
-  // computed)
-  Eigen::Array<Eigen::Array<std::int32_t, Eigen::Dynamic, 1>, 4, 4>
-      _num_global_connections;
   // Marker for owned facets, which evaluates to True for facets that
   // are interior to the domain
   std::shared_ptr<const std::vector<bool>> _interior_facets;
