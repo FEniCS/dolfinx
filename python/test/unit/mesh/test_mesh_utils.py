@@ -4,13 +4,14 @@
 #
 # SPDX-License-Identifier:    LGPL-3.0-or-later
 
-import os
+# import os
 
 import numpy as np
 
-import dolfinx
+# import dolfinx
 from dolfinx import cpp
-from dolfinx.io import XDMFFile
+
+# from dolfinx.io import XDMFFile
 
 
 def test_extract_topology():
@@ -193,7 +194,7 @@ def test_topology_partition():
     # order as the owned cells (maybe they are already) to avoid the
     # need for global_index_nodes
     cell_nodes, global_index_cell = cpp.mesh.exchange(cpp.MPI.comm_world,
-                                                       cells1, dest, set(src))
+                                                      cells1, dest, set(src))
     assert cell_nodes.num_nodes == cells.num_nodes
     assert global_index_cell == original_cell_index
 
@@ -225,8 +226,8 @@ def test_topology_partition():
 
     # Build dof array
     x_g = np.zeros([len(l2l), 2])
-    # for i, d in enumerate(l2l):
-    #     x_g[i] = coords[d]
+    for i, d in enumerate(l2l):
+        x_g[i] = coords[d]
 
     # Vertex local-to-global index map for vertices
     print(vertex_map)
@@ -238,8 +239,8 @@ def test_topology_partition():
     # Create Geometry
     geometry = cpp.mesh.Geometry(dof_index_map, dofmap, x_g, l2g)
 
-
     mesh = cpp.mesh.Mesh(cpp.MPI.comm_world, topology, geometry)
+    print(mesh.topology.dim)
 
     # filename = os.path.join("mesh1.xdmf")
     # encoding = XDMFFile.Encoding.ASCII
