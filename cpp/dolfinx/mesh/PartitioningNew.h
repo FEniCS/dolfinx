@@ -49,13 +49,13 @@ public:
   ///
   /// @param[in] comm The communicator across which the indices are
   ///   distributed
-  /// @param[in] global_indices Global induces on this process
+  /// @param[in] global_indices Global indices on this process
   /// @param[in] shared_indices Vector that is true for indices on the
   ///   exterior locally
   /// @return {Local (old, from local_to_global) -> local (new) indices,
   ///   global indices for ghosts of this process}. The new indices are
   ///   [0, ..., N), with [0, ..., n0) being owned. The new global index
-  ///   for an owned indices is n_global = n + offset, where offset is
+  ///   for an owned index is n_global = n + offset, where offset is
   ///   computed from a process scan. Indices [n0, ..., N) are owned by
   ///   a remote process and the ghosts return vector maps [n0, ..., N)
   ///   to global indices.
@@ -70,7 +70,7 @@ public:
   /// @param[in] cell_type Cell type
   /// @param[in] cells Cells on this process. The ith entry in list
   ///   contains the global indices for the cell vertices. Each cell can
-  ///   appear only once across all procsss. The cell vertex indices are
+  ///   appear only once across all processes. The cell vertex indices are
   ///   not necessarily contiguous globally, i.e. the maximum index
   ///   across all processes can be greater than the number of vertices.
   /// @return Destination process for each cell on this process
@@ -79,7 +79,7 @@ public:
                   const graph::AdjacencyList<std::int64_t>& cells);
 
   /// Compute a local AdjacencyList list with contiguous indices from an
-  /// AdjacencyList that map have non-contiguous data
+  /// AdjacencyList that may have non-contiguous data
   /// @param[in] list Adjacency list with links that might not have
   ///   contiguous numdering
   /// @return Adjacency list with contiguous ordering [0, 1, ..., n),
@@ -118,7 +118,7 @@ public:
 
   /// Send nodes to destinations, and receive from sources
   /// @param[in] comm MPI communicator
-  /// @param[in] list An adjacency list. Each node  is associated with a
+  /// @param[in] list An adjacency list. Each node is associated with a
   ///   global index (index_local + global offset)
   /// @param[in] destinations The destination rank for each node in the
   ///   adjacency list
