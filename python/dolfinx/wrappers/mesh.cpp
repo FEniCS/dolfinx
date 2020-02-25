@@ -162,7 +162,8 @@ void mesh(py::module& m)
       .def("set_interior_facets", &dolfinx::mesh::Topology::set_interior_facets)
       .def_property_readonly("dim", &dolfinx::mesh::Topology::dim,
                              "Topological dimension")
-      .def("set_global_user_vertices", &dolfinx::mesh::Topology::set_global_user_vertices)
+      .def("set_global_vertices_user",
+           &dolfinx::mesh::Topology::set_global_vertices_user)
       .def("connectivity",
            py::overload_cast<int, int>(&dolfinx::mesh::Topology::connectivity,
                                        py::const_))
