@@ -45,7 +45,7 @@ Geometry::Geometry(
         coordinate_dofs)
     : _dim(coordinates.cols()), _global_indices(global_indices),
       _num_points_global(num_points_global), _coordinate_dofs(coordinate_dofs),
-      _dofmap(0)
+      _dofmap(coordinate_dofs)
 {
   // Make all geometry 3D
   if (_dim == 3)

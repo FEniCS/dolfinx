@@ -290,9 +290,7 @@ void XDMFFile::write(const mesh::Mesh& mesh)
   assert(domain_node);
 
   // Add the mesh Grid to the domain
-  std::cout << "Add mesh to domain" << std::endl;
   xdmf_write::add_mesh(_mpi_comm.comm(), domain_node, h5_id, mesh, "/Mesh");
-  std::cout << "Post Add mesh to domain" << std::endl;
 
   // Save XML file (on process 0 only)
   if (MPI::rank(_mpi_comm.comm()) == 0)

@@ -59,8 +59,11 @@ std::vector<std::int64_t> compute_topology_data(const mesh::Mesh& mesh,
 {
   // Create vector to store topology data
   const mesh::Topology& topology = mesh.topology();
-  // const mesh::Geometry& geometry = mesh.geometry();
+  const mesh::Geometry& geometry = mesh.geometry();
   const int tdim = mesh.topology().dim();
+
+  if (cell_dim != tdim)
+    throw std::runtime_error("Lower-dimension topology IO not supported yet.");
 
   const mesh::CellType entity_cell_type
       = mesh::cell_entity_type(topology.cell_type(), cell_dim);
@@ -85,78 +88,17 @@ std::vector<std::int64_t> compute_topology_data(const mesh::Mesh& mesh,
   assert(map);
   assert(map->block_size() == 1);
 
-  // TODO: Get ths from
-  const auto& global_vertices = topology.get_global_user_vertices();
+  const graph::AdjacencyList<std::int32_t>& x_dofmap = geometry.dofmap();
+  const auto& global_vertices_test = geometry.global_indices();
   for (int e = 0; e < map->size_local(); ++e)
   {
-    auto links = e_to_v->links(e);
-    for (int i = 0; i < links.rows(); ++i)
-      topology_data.push_back(global_vertices[links[perm[i]]]);
-    // topology_data.push_back(global_vertices[links(i)]);
+    auto linksx = x_dofmap.links(e);
+    for (int i = 0; i < linksx.rows(); ++i)
+      topology_data.push_back(global_vertices_test[linksx[perm[i]]]);
   }
 
-  // if (dolfinx::MPI::size(comm) == 1 or cell_dim == tdim)
-  // {
-  //   // Simple case when nothing is shared between processes
-  //   if (cell_dim == 0)
-  //   {
-  //     for (auto& v : mesh::MeshRange(mesh, 0))
-  //       topology_data.push_back(global_vertices[v.index()]);
-  //   }
-  //   else
-  //   {
-  //     const int num_vertices = mesh::cell_num_entities(
-  //         mesh::cell_entity_type(mesh.topology().cell_type(), cell_dim), 0);
-  //     for (auto& c : mesh::MeshRange(mesh, cell_dim))
-  //     {
-  //       auto entities = c.entities(0);
-  //       for (int i = 0; i < num_vertices; ++i)
-  //       {
-  //         assert(entities[perm[i]] < (int)global_vertices.size());
-  //         topology_data.push_back(global_vertices[entities[perm[i]]]);
-  //       }
-  //     }
-  //   }
-  // }
-  // else
-  // {
-  //   std::cout << "Comp Topology data (5)" << std::endl;
-
-  //   std::set<std::uint32_t> non_local_entities
-  //       = xdmf_write::compute_nonlocal_entities(mesh, cell_dim);
-
-  //   const auto& global_vertices = mesh.topology().get_global_user_vertices();
-  //   if (cell_dim == 0)
-  //   {
-  //     // Special case for mesh of points
-  //     for (auto& v : mesh::MeshRange(mesh, 0))
-  //     {
-  //       if (non_local_entities.find(v.index()) == non_local_entities.end())
-  //         topology_data.push_back(global_vertices[v.index()]);
-  //     }
-  //   }
-  //   else
-  //   {
-  //     // Local-to-global map for point indices
-  //     const int num_vertices = mesh::cell_num_entities(
-  //         mesh::cell_entity_type(mesh.topology().cell_type(), cell_dim), 0);
-  //     for (auto& e : mesh::MeshRange(mesh, cell_dim))
-  //     {
-  //       // If not excluded, add to topology
-  //       if (non_local_entities.find(e.index()) == non_local_entities.end())
-  //       {
-  //         for (int i = 0; i < num_vertices; ++i)
-  //         {
-  //           const std::int32_t local_idx = e.entities(0)[perm[i]];
-  //           topology_data.push_back(global_vertices[local_idx]);
-  //         }
-  //       }
-  //     }
-  //   }
-  // }
-
   return topology_data;
-}
+} // namespace
 //-----------------------------------------------------------------------------
 // Return data associated with a data set node
 template <typename T>
@@ -406,26 +348,22 @@ void xdmf_write::add_topology_data(MPI_Comm comm, pugi::xml_node& xml_node,
                                    hid_t h5_id, const std::string path_prefix,
                                    const mesh::Mesh& mesh, int cell_dim)
 {
-  std::cout << "Start on topology" << std::endl;
   // Get number of cells (global) and vertices per cell from mesh
   const std::int64_t num_cells = mesh.num_entities_global(cell_dim);
   int num_nodes_per_cell = mesh::num_cell_vertices(
       mesh::cell_entity_type(mesh.topology().cell_type(), cell_dim));
 
   // Get VTK string for cell type and degree (linear or quadratic)
-  std::cout << "Start on topology (2)" << std::endl;
   const std::size_t degree = mesh.degree();
   const std::string vtk_cell_str = xdmf_utils::vtk_cell_type_str(
       mesh::cell_entity_type(mesh.topology().cell_type(), cell_dim), degree);
 
-  std::cout << "Start on topology (3)" << std::endl;
   pugi::xml_node topology_node = xml_node.append_child("Topology");
   assert(topology_node);
   topology_node.append_attribute("NumberOfElements")
       = std::to_string(num_cells).c_str();
   topology_node.append_attribute("TopologyType") = vtk_cell_str.c_str();
 
-  std::cout << "Start on topology (4)" << std::endl;
   // Compute packed topology data
   std::vector<std::int64_t> topology_data;
 
@@ -460,12 +398,9 @@ void xdmf_write::add_topology_data(MPI_Comm comm, pugi::xml_node& xml_node,
   }
   else
   {
-    std::cout << "Start on topology (5b)" << std::endl;
     topology_data = compute_topology_data(mesh, cell_dim);
-    std::cout << "Start on topology (5b=2)" << std::endl;
   }
 
-  std::cout << "Start on topology (5)" << std::endl;
   topology_node.append_attribute("NodesPerElement") = num_nodes_per_cell;
 
   // Add topology DataItem node
@@ -538,13 +473,10 @@ void xdmf_write::add_mesh(MPI_Comm comm, pugi::xml_node& xml_node, hid_t h5_id,
 
   // Add topology node and attributes (including writing data)
   const int tdim = mesh.topology().dim();
-  std::cout << "Add topology" << std::endl;
   add_topology_data(comm, grid_node, h5_id, path_prefix, mesh, tdim);
 
   // Add geometry node and attributes (including writing data)
-  std::cout << "Add geomtry" << std::endl;
   add_geometry_data(comm, grid_node, h5_id, path_prefix, mesh.geometry());
-  std::cout << "Done" << std::endl;
 }
 //----------------------------------------------------------------------------
 void xdmf_write::add_function(MPI_Comm mpi_comm, pugi::xml_node& xml_node,
