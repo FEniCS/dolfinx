@@ -150,7 +150,7 @@ public:
   /// starting from zero, compute a local-to-global map for the links.
   /// Both adjacency lists must have the same shape.
   /// @param[in] global Adjacency list with global link indices
-  /// @param[in] global Adjacency list with local, contiguous link
+  /// @param[in] local Adjacency list with local, contiguous link
   ///   indices
   /// @return Map from local index to global index, which if applied to
   /// the local adjacency list indices would yield the global adjacency
