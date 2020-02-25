@@ -145,7 +145,16 @@ public:
              const Eigen::Ref<const Eigen::Array<
                  double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>>& x);
 
-  /// TODO
+  /// Given an adjacency list with global, possibly non-contiguous, link
+  /// indices and a local adjacency list with contiguous link indices
+  /// starting from zero, compute a local-to-global map for the links.
+  /// Both adjacency lists must have the same shape.
+  /// @param[in] global Adjacency list with global link indices
+  /// @param[in] global Adjacency list with local, contiguous link
+  ///   indices
+  /// @return Map from local index to global index, which if applied to
+  /// the local adjacency list indices would yield the global adjacency
+  /// list
   static std::vector<std::int64_t> compute_local_to_global_links(
       const graph::AdjacencyList<std::int64_t>& global,
       const graph::AdjacencyList<std::int32_t>& local);
