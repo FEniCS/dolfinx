@@ -146,29 +146,21 @@ public:
                  double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>>& x);
 
   /// TODO
-  ///
-  /// @param[in] x Coordinate data
-  /// @param[in] global_indices Global index for each row of x
-  // static Eigen::<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
-  // extract_point_data(
-  //     const Eigen::<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>&
-  //     x, const std::vector<std::int64_t>& global_indices, const
-  //     std::vector<std::int32_t>& local_indices, )
-
-  /// TODO
   static std::vector<std::int64_t> compute_local_to_global_links(
       const graph::AdjacencyList<std::int64_t>& global,
       const graph::AdjacencyList<std::int32_t>& local);
 
-  /// TODO
+  /// Compute a local0-to-local1 map from two local-to-global maps with
+  /// common global indices
+  /// @param[in] local0_to_global Map from local0 indices to global
+  ///   indices
+  /// @param[in] local1_to_global Map from local1 indices to global
+  ///   indices
+  /// @return Map from local0 indices to local1 indices
   static std::vector<std::int32_t>
   compute_local_to_local(const std::vector<std::int64_t>& local0_to_global,
                          const std::vector<std::int64_t>& local1_to_global);
 
-  /// TODO
-  // static std::map<std::int64_t, std::int32_t>
-  // compute_local_to_global(const graph::AdjacencyList<std::int64_t>& global,
-  //                         const graph::AdjacencyList<std::int32_t>& local)
 };
 } // namespace mesh
 } // namespace dolfinx
