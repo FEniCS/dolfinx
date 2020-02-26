@@ -176,7 +176,7 @@ def assemble_vector(b, mesh, x, dofmap):
 def assemble_vector_ufc(b, kernel, mesh, x, dofmap, edge_ref, face_ref, face_rot):
     """Assemble provided FFCX/UFC kernel over a mesh into the array b"""
     connections, pos = mesh
-    orientation = np.array([0], dtype=np.int32)
+    entity_local_index = np.array([0], dtype=np.int32)
     perm = np.array([0], dtype=np.uint8)
     geometry = np.zeros((3, 2))
     coeffs = np.zeros(1, dtype=PETSc.ScalarType)
@@ -192,7 +192,7 @@ def assemble_vector_ufc(b, kernel, mesh, x, dofmap, edge_ref, face_ref, face_rot
         b_local.fill(0.0)
         kernel(ffi.from_buffer(b_local), ffi.from_buffer(coeffs),
                ffi.from_buffer(constants),
-               ffi.from_buffer(geometry), ffi.from_buffer(orientation),
+               ffi.from_buffer(geometry), ffi.from_buffer(entity_local_index),
                ffi.from_buffer(perm),
                ffi.from_buffer(edge_ref), ffi.from_buffer(face_ref),
                ffi.from_buffer(face_rot))
