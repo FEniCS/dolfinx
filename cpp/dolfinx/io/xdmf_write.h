@@ -158,11 +158,9 @@ std::vector<T> compute_value_data(const mesh::MeshFunction<T>& meshfunction)
   std::vector<T> value_data;
   value_data.reserve(meshfunction.values().size());
 
-  // Get mesh communicator
-  const auto mesh = meshfunction.mesh();
-  MPI_Comm comm = mesh->mpi_comm();
-
-  const int tdim = mesh->topology().dim();
+  // Get mesh
+  std::shared_ptr<const mesh::Mesh> mesh = meshfunction.mesh();
+  assert(mesh);
   const int cell_dim = meshfunction.dim();
 
   // Get reference to mesh function data array
