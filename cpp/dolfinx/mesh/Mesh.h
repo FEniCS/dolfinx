@@ -64,11 +64,7 @@ public:
   /// @param[in] comm MPI Communicator
   /// @param[in] topology Mesh topology
   /// @param[in] geometry Mesh geometry
-  /// @param[in] degree To be removed
   Mesh(MPI_Comm comm, const Topology& topology, const Geometry& geometry);
-
-  // FIXME: What about global vertex indices?
-  // FIXME: Be explicit in passing geometry degree/type
 
   /// Construct a Mesh from topological and geometric data.
   ///

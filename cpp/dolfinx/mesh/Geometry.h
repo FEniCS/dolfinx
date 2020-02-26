@@ -92,13 +92,6 @@ public:
   /// Return coordinate array for point with local index n
   Eigen::Ref<const Eigen::Vector3d> x(int n) const;
 
-  /// Return array of coordinates for all points
-  Eigen::Array<double, Eigen::Dynamic, 3, Eigen::RowMajor>& points();
-
-  /// Return array of coordinates for all points (const version)
-  const Eigen::Array<double, Eigen::Dynamic, 3, Eigen::RowMajor>&
-  points() const;
-
   /// Global indices for points (const)
   const std::vector<std::int64_t>& global_indices() const;
 
@@ -112,12 +105,6 @@ public:
 
   /// Put CoordinateElement for now. Experimental.
   std::shared_ptr<const fem::CoordinateElement> coord_mapping;
-
-  /// Get coordinate dofs for all local cells
-  // CoordinateDofs& coordinate_dofs();
-
-  /// Get coordinate dofs for all local cells (const version)
-  // const CoordinateDofs& coordinate_dofs() const;
 
   ///  @todo Remove this
   ///

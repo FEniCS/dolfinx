@@ -90,17 +90,6 @@ Eigen::Ref<const Eigen::Vector3d> Geometry::x(int n) const
   return _coordinates.row(n).matrix().transpose();
 }
 //-----------------------------------------------------------------------------
-Eigen::Array<double, Eigen::Dynamic, 3, Eigen::RowMajor>& Geometry::points()
-{
-  return _coordinates;
-}
-//-----------------------------------------------------------------------------
-const Eigen::Array<double, Eigen::Dynamic, 3, Eigen::RowMajor>&
-Geometry::points() const
-{
-  return _coordinates;
-}
-//-----------------------------------------------------------------------------
 const std::vector<std::int64_t>& Geometry::global_indices() const
 {
   return _global_indices;
@@ -116,13 +105,6 @@ std::size_t Geometry::hash() const
   const std::size_t local_hash = dhash(_x);
   return local_hash;
 }
-//-----------------------------------------------------------------------------
-// CoordinateDofs& Geometry::coordinate_dofs() { return _coordinate_dofs; }
-// //-----------------------------------------------------------------------------
-// const CoordinateDofs& Geometry::coordinate_dofs() const
-// {
-//   return _coordinate_dofs;
-// }
 //-----------------------------------------------------------------------------
 std::string Geometry::str(bool verbose) const
 {
