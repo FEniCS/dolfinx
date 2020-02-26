@@ -517,7 +517,7 @@ def test_readonly_view_local_to_global_unwoned(mesh):
 
 #     X = V.element.dof_reference_coordinates()
 #     coord_dofs = mesh.geometry.dofmap()
-#     x_g = mesh.geometry.x()
+#     x_g = mesh.geometry.x
 
 #     cmap = fem.create_coordinate_map(mesh.ufl_domain())
 #     x_coord_new = np.zeros([len(points), mesh.geometry.dim])
@@ -566,7 +566,7 @@ def test_readonly_view_local_to_global_unwoned(mesh):
 #     V = FunctionSpace(mesh, ("Lagrange", order))
 #     X = V.element.dof_reference_coordinates()
 #     coord_dofs = mesh.geometry.dofmap()
-#     x_g = mesh.geometry.x()
+#     x_g = mesh.geometry.x
 
 #     cmap = fem.create_coordinate_map(mesh.ufl_domain())
 #     x_coord_new = np.zeros([len(points), mesh.geometry.dim])

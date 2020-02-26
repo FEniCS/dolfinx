@@ -125,10 +125,21 @@ void mesh(py::module& m)
       .def("num_points", &dolfinx::mesh::Geometry::num_points)
       .def("num_points_global", &dolfinx::mesh::Geometry::num_points_global)
       .def("global_indices", &dolfinx::mesh::Geometry::global_indices)
-      .def("x", py::overload_cast<>(&dolfinx::mesh::Geometry::x, py::const_))
-      .def("x", py::overload_cast<int>(&dolfinx::mesh::Geometry::x, py::const_),
-           py::return_value_policy::reference_internal,
-           "Return coordinates of a point")
+      .def_property(
+          "x",
+          // Get
+          py::overload_cast<>(&dolfinx::mesh::Geometry::x),
+          // Set
+          [](dolfinx::mesh::Geometry& self,
+             const Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic,
+                                Eigen::RowMajor>& values) {
+            self.x() = values;
+          },
+          py::return_value_policy::reference_internal,
+          "Return coordinates of all points")
+    //   .def("x", py::overload_cast<int>(&dolfinx::mesh::Geometry::x, py::const_),
+    //        py::return_value_policy::reference_internal,
+    //        "Return coordinates of a point")
       .def_readwrite("coord_mapping", &dolfinx::mesh::Geometry::coord_mapping);
 
   // dolfinx::mesh::TopologyComputation

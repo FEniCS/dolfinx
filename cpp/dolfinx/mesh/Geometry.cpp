@@ -69,6 +69,11 @@ const graph::AdjacencyList<std::int32_t>& Geometry::dofmap() const
   return _dofmap;
 }
 //-----------------------------------------------------------------------------
+Eigen::Array<double, Eigen::Dynamic, 3, Eigen::RowMajor>& Geometry::x()
+{
+  return _coordinates;
+}
+//-----------------------------------------------------------------------------
 const Eigen::Array<double, Eigen::Dynamic, 3, Eigen::RowMajor>&
 Geometry::x() const
 {

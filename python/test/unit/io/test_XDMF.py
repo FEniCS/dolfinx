@@ -551,7 +551,7 @@ def xtest_save_3D_vertex_function(tempdir, encoding, data_type, cell_type):
 @pytest.mark.parametrize("encoding", encodings)
 def test_save_points_2D(tempdir, encoding, cell_type):
     mesh = UnitSquareMesh(MPI.comm_world, 16, 16, cell_type)
-    points = mesh.geometry.x()
+    points = mesh.geometry.x
     vals = np.linalg.norm(points, axis=1)
     with XDMFFile(
             mesh.mpi_comm(),
@@ -569,7 +569,7 @@ def test_save_points_2D(tempdir, encoding, cell_type):
 @pytest.mark.parametrize("encoding", encodings)
 def test_save_points_3D(tempdir, encoding, cell_type):
     mesh = UnitCubeMesh(MPI.comm_world, 4, 4, 4, cell_type)
-    points = mesh.geometry.x()
+    points = mesh.geometry.x
     vals = np.linalg.norm(points, axis=1)
     with XDMFFile(
             mesh.mpi_comm(),

@@ -81,6 +81,9 @@ public:
   const graph::AdjacencyList<std::int32_t>& dofmap() const;
 
   /// Geometry degrees-of-freedom
+  Eigen::Array<double, Eigen::Dynamic, 3, Eigen::RowMajor>& x();
+
+  /// Geometry degrees-of-freedom
   const Eigen::Array<double, Eigen::Dynamic, 3, Eigen::RowMajor>& x() const;
 
   /// Return the number of local points in the geometry

@@ -182,16 +182,16 @@ def test_facet_normals(cell_type):
         # is positive
         for i in range(num_facets):
             if cell_type == CellType.interval:
-                co = mesh.geometry.x()[i]
+                co = mesh.geometry.x[i]
                 v.interpolate(lambda x: x[0] - co[0])
             if cell_type == CellType.triangle:
-                co = mesh.geometry.x()[i]
+                co = mesh.geometry.x[i]
                 # Vector function that is zero at `co` and points away from `co`
                 # so that there is no normal component on two edges and the integral
                 # over the other edge is 1
                 v.interpolate(lambda x: ((x[0] - co[0]) / 2, (x[1] - co[1]) / 2))
             elif cell_type == CellType.tetrahedron:
-                co = mesh.geometry.x()[i]
+                co = mesh.geometry.x[i]
                 # Vector function that is zero at `co` and points away from `co`
                 # so that there is no normal component on three faces and the integral
                 # over the other edge is 1
@@ -266,7 +266,7 @@ def test_plus_minus_simple_vector(cell_type, pm):
     for i, j in combinations(zip(results, spaces, orders), 2):
         dof_order = []
         for cell in range(2):
-            for point in range(len(mesh.geometry.x())):
+            for point in range(len(mesh.geometry.x)):
                 point_n = j[2][point]
                 cell_points = list(j[1].mesh.cells()[cell])
                 if point_n in cell_points:
@@ -324,7 +324,7 @@ def test_plus_minus_vector(cell_type, pm1, pm2):
     for i, j in combinations(zip(results, spaces, orders), 2):
         dof_order = []
         for cell in range(2):
-            for point in range(len(mesh.geometry.x())):
+            for point in range(len(mesh.geometry.x)):
                 point_n = j[2][point]
                 cell_points = list(j[1].mesh.cells()[cell])
                 if point_n in cell_points:
@@ -377,7 +377,7 @@ def test_plus_minus_matrix(cell_type, pm1, pm2):
     for i, j in combinations(zip(results, spaces, orders), 2):
         dof_order = []
         for cell in range(2):
-            for point in range(len(mesh.geometry.x())):
+            for point in range(len(mesh.geometry.x)):
                 point_n = j[2][point]
                 cell_points = list(j[1].mesh.cells()[cell])
                 if point_n in cell_points:
