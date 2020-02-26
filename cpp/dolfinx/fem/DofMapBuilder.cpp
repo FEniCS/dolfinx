@@ -374,7 +374,7 @@ std::vector<std::int64_t> get_global_indices(
     // Index of mesh entity that dof is associated with
     assert(offset[d] != -1);
     const int entity = dof_entity[i].second;
-    assert(entity < shared_entity[d].size());
+    assert(entity < (int)shared_entity[d].size());
 
     if (shared_entity[d][entity])
     {
