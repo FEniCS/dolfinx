@@ -216,7 +216,7 @@ def xtest_mvc_construction_array_tet_tri():
         [],
         cpp.mesh.GhostMode.none,
     )
-    assert mesh.degree() == 1
+    assert mesh.geometry.degree() == 1
     assert mesh.geometry.dim == 3
     assert mesh.topology.dim == 3
 
@@ -295,7 +295,7 @@ def xtest_mvc_construction_array_hex_quad():
         cpp.mesh.GhostMode.none,
     )
 
-    assert mesh.degree() == 1
+    assert mesh.geometry.degree() == 1
     assert mesh.geometry.dim == 3
     assert mesh.topology.dim == 3
 

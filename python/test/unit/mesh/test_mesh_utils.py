@@ -21,33 +21,35 @@ def test_extract_topology():
     perms[:] = [0, 1, 2]
     entity_dofs = [[set([0]), set([1]), set([2])], [set(), set(),
                                                     set()], [set()]]
-    layout1 = cpp.fem.ElementDofLayout(1, entity_dofs, [], [],
-                                       cpp.mesh.CellType.triangle, perms)
+    layout = cpp.fem.ElementDofLayout(1, entity_dofs, [], [],
+                                      cpp.mesh.CellType.triangle, perms)
 
     # Create cell 'topology' for 'P1' triangulation, i.e. no mid-side
     # nodes, and convert to an AdjacencyList
-    cells0 = [[0, 1, 4], [0, 4, 3], [1, 2, 5], [1, 5, 4]]
-    cells0 = cpp.graph.AdjacencyList64(cells0)
+    cells = [[0, 1, 4], [0, 4, 3], [1, 2, 5], [1, 5, 4]]
+    cells = cpp.graph.AdjacencyList64(cells0)
 
     # Extract a 'proper, vertex-only topology. Vertex indices are
     # unchanged. Should be same as input as input is vertex-only
     # triangulation.
-    cells_filtered0 = cpp.mesh.extract_topology(layout1, cells0)
-    assert np.array_equal(cells0.array(), cells_filtered0.array())
+    cells_filtered = cpp.mesh.extract_topology(layout, cells)
+    assert np.array_equal(cells0.array(), cells_filtered.array())
 
     # Create element dof layout for P2 element
+    perms = np.zeros([5, 6], dtype=np.int8)
+    perms[:] = [0, 1, 2, 3, 4, 5]
     entity_dofs = [[set([0]), set([1]), set([2])], [set([3]), set([4]), set([5])], [set()]]
-    layout2 = cpp.fem.ElementDofLayout(1, entity_dofs, [], [],
-                                       cpp.mesh.CellType.triangle, perms)
+    layout = cpp.fem.ElementDofLayout(1, entity_dofs, [], [],
+                                      cpp.mesh.CellType.triangle, perms)
 
     # Create cell 'topology' for 'P2' triangulation, i.e. with mid-side
     # nodes, and convert to an AdjacencyList
-    cells1 = [[0, 1, 4, 15, 14, 6], [0, 4, 3, 8, 9, 14], [1, 2, 5, 11, 12, 10], [1, 5, 4, 13, 15, 12]]
-    cells1 = cpp.graph.AdjacencyList64(cells1)
+    cells = [[0, 1, 4, 15, 14, 6], [0, 4, 3, 8, 9, 14], [1, 2, 5, 11, 12, 10], [1, 5, 4, 13, 15, 12]]
+    cells = cpp.graph.AdjacencyList64(cells)
 
     # Extract a 'proper, vertex-only topology. Vertex indices are
     # unchanged, and edges entries dropped
-    cells_filtered1 = cpp.mesh.extract_topology(layout2, cells1)
+    cells_filtered = cpp.mesh.extract_topology(layout, cells)
     assert np.array_equal(cells_filtered0.array(), cells_filtered1.array())
 
 

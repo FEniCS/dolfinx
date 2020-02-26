@@ -116,9 +116,10 @@ void mesh(py::module& m)
                     const dolfinx::graph::AdjacencyList<std::int32_t>&,
                     const Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic,
                                        Eigen::RowMajor>&,
-                    const std::vector<std::int64_t>&>())
+                    const std::vector<std::int64_t>&, int>())
       .def_property_readonly("dim", &dolfinx::mesh::Geometry::dim,
                              "Geometric dimension")
+      .def("degree", &dolfinx::mesh::Geometry::degree)
       .def("coordinate_dofs",
            py::overload_cast<>(&dolfinx::mesh::Geometry::coordinate_dofs,
                                py::const_))
@@ -189,9 +190,9 @@ void mesh(py::module& m)
       m, "Mesh", py::dynamic_attr(), "Mesh object")
       .def(py::init(
           [](const MPICommWrapper comm, const dolfinx::mesh::Topology& topology,
-          dolfinx::mesh::Geometry& geometry, int degree) {
+          dolfinx::mesh::Geometry& geometry) {
             return std::make_unique<dolfinx::mesh::Mesh>(
-                comm.get(), topology, geometry, degree);
+                comm.get(), topology, geometry);
           }))
       .def(py::init(
           [](const MPICommWrapper comm, dolfinx::mesh::CellType type,
@@ -223,7 +224,6 @@ void mesh(py::module& m)
       .def_property_readonly(
           "geometry", py::overload_cast<>(&dolfinx::mesh::Mesh::geometry),
           "Mesh geometry")
-      .def("degree", &dolfinx::mesh::Mesh::degree)
       .def("hash", &dolfinx::mesh::Mesh::hash)
       .def("hmax", &dolfinx::mesh::Mesh::hmax)
       .def("hmin", &dolfinx::mesh::Mesh::hmin)

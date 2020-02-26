@@ -140,9 +140,8 @@ compute_point_distribution(
 } // namespace
 
 //-----------------------------------------------------------------------------
-Mesh::Mesh(MPI_Comm comm, const Topology& topology, const Geometry& geometry,
-           int degree)
-    : _degree(degree), _mpi_comm(comm)
+Mesh::Mesh(MPI_Comm comm, const Topology& topology, const Geometry& geometry)
+    : _mpi_comm(comm)
 {
   _topology = std::make_unique<Topology>(topology);
   _geometry = std::make_unique<Geometry>(geometry);
@@ -156,7 +155,7 @@ Mesh::Mesh(
         std::int64_t, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>>& cells,
     const std::vector<std::int64_t>& global_cell_indices,
     const GhostMode ghost_mode, std::int32_t num_ghost_cells)
-    : _degree(1), _mpi_comm(comm), _ghost_mode(ghost_mode),
+    : _mpi_comm(comm), _ghost_mode(ghost_mode),
       _unique_id(common::UniqueIdGenerator::id())
 {
   const int tdim = mesh::cell_dim(type);
@@ -168,9 +167,9 @@ Mesh::Mesh(
     throw std::runtime_error(
         "Cannot create mesh. Wrong number of global cell indices");
   }
+
   // Find degree of mesh
-  // FIXME: degree should probably be in MeshGeometry
-  _degree = mesh::cell_degree(type, cells.cols());
+  const int degree = mesh::cell_degree(type, cells.cols());
 
   // Get number of nodes (global)
   const std::uint64_t num_points_global = MPI::sum(comm, points.rows());
@@ -187,7 +186,8 @@ Mesh::Mesh(
       = compute_point_distribution(comm, cells, points);
 
   _geometry = std::make_unique<Geometry>(num_points_global, points_received,
-                                         node_indices_global, coordinate_nodes);
+                                         node_indices_global, coordinate_nodes,
+                                         degree);
 
   // Get global vertex information
   std::vector<std::int64_t> vertex_indices_global;
@@ -198,7 +198,7 @@ Mesh::Mesh(
   Eigen::Array<std::int32_t, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
       vertex_cols(cells.rows(), num_vertices_per_cell);
 
-  if (_degree == 1)
+  if (degree == 1)
   {
     vertex_indices_global = std::move(node_indices_global);
     vertex_index_map = point_index_map;
@@ -273,9 +273,8 @@ Mesh::Mesh(
 //-----------------------------------------------------------------------------
 Mesh::Mesh(const Mesh& mesh)
     : _topology(new Topology(*mesh._topology)),
-      _geometry(new Geometry(*mesh._geometry)), _degree(mesh._degree),
-      _mpi_comm(mesh.mpi_comm()), _ghost_mode(mesh._ghost_mode),
-      _unique_id(common::UniqueIdGenerator::id())
+      _geometry(new Geometry(*mesh._geometry)), _mpi_comm(mesh.mpi_comm()),
+      _ghost_mode(mesh._ghost_mode), _unique_id(common::UniqueIdGenerator::id())
 
 {
   // Do nothing
@@ -283,7 +282,7 @@ Mesh::Mesh(const Mesh& mesh)
 //-----------------------------------------------------------------------------
 Mesh::Mesh(Mesh&& mesh)
     : _topology(std::move(mesh._topology)),
-      _geometry(std::move(mesh._geometry)), _degree(std::move(mesh._degree)),
+      _geometry(std::move(mesh._geometry)),
       _mpi_comm(std::move(mesh._mpi_comm)),
       _ghost_mode(std::move(mesh._ghost_mode)),
       _unique_id(std::move(mesh._unique_id))
@@ -681,6 +680,4 @@ std::string Mesh::str(bool verbose) const
 MPI_Comm Mesh::mpi_comm() const { return _mpi_comm.comm(); }
 //-----------------------------------------------------------------------------
 mesh::GhostMode Mesh::get_ghost_mode() const { return _ghost_mode; }
-//-----------------------------------------------------------------------------
-std::int32_t Mesh::degree() const { return _degree; }
 //-----------------------------------------------------------------------------

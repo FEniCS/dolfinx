@@ -294,7 +294,7 @@ void HDF5File::write(const mesh::Mesh& mesh, int cell_dim,
     // Get/build topology data
     std::vector<std::int64_t> topological_data;
 
-    const std::size_t degree = mesh.degree();
+    const std::size_t degree = mesh.geometry().degree();
 
     if (degree > 1)
     {

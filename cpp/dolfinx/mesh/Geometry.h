@@ -42,7 +42,7 @@ public:
            const graph::AdjacencyList<std::int32_t>& dofmap,
            const Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic,
                               Eigen::RowMajor>& x,
-           const std::vector<std::int64_t>& global_indices);
+           const std::vector<std::int64_t>& global_indices, int degree);
 
   /// Constructor
   Geometry(std::int64_t num_points_global,
@@ -51,7 +51,8 @@ public:
            const std::vector<std::int64_t>& global_indices,
            const Eigen::Ref<const Eigen::Array<
                std::int32_t, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>>&
-               point_dofs);
+               point_dofs,
+           int degree);
 
   /// Copy constructor
   Geometry(const Geometry&) = default;
@@ -113,6 +114,11 @@ public:
   /// Get coordinate dofs for all local cells (const version)
   const CoordinateDofs& coordinate_dofs() const;
 
+  ///  @todo Remobve this
+  ///
+  /// Polynomial degree of the mesh geometry
+  int degree() const;
+
 private:
   // Coordinates for all points stored as a contiguous array
   Eigen::Array<double, Eigen::Dynamic, 3, Eigen::RowMajor> _coordinates;
@@ -133,6 +139,10 @@ private:
   std::shared_ptr<const common::IndexMap> _index_map;
   graph::AdjacencyList<std::int32_t> _dofmap;
   // Eigen::Array<double, Eigen::Dynamic, 3, Eigen::RowMajor> _x;
+
+  // FIXME: Remove this Mesh geometric degree (in Lagrange basis)
+  // describing coordinate dofs
+  std::int32_t _degree;
 };
 } // namespace mesh
 } // namespace dolfinx

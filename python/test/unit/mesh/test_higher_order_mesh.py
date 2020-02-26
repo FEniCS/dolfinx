@@ -90,7 +90,7 @@ def test_second_order_tri():
 
             def e2(x):
                 return x[2] + x[0] * x[1]
-            degree = mesh.degree()
+            degree = mesh.geometry.degree()
             # Interpolate function
             V = FunctionSpace(mesh, ("CG", degree))
             u = Function(V)
@@ -135,7 +135,7 @@ def test_third_order_tri():
 
             def e2(x):
                 return x[2] + x[0] * x[1]
-            degree = mesh.degree()
+            degree = mesh.geometry.degree()
             # Interpolate function
             V = FunctionSpace(mesh, ("CG", degree))
             u = Function(V)
@@ -187,7 +187,7 @@ def test_fourth_order_tri():
 
             def e2(x):
                 return x[2] + x[0] * x[1]
-            degree = mesh.degree()
+            degree = mesh.geometry.degree()
             # Interpolate function
             V = FunctionSpace(mesh, ("CG", degree))
             u = Function(V)

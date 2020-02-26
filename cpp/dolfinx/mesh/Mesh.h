@@ -65,8 +65,7 @@ public:
   /// @param[in] topology Mesh topology
   /// @param[in] geometry Mesh geometry
   /// @param[in] degree To be removed
-  Mesh(MPI_Comm comm, const Topology& topology, const Geometry& geometry,
-       int degree);
+  Mesh(MPI_Comm comm, const Topology& topology, const Geometry& geometry);
 
   // FIXME: What about global vertex indices?
   // FIXME: Be explicit in passing geometry degree/type
@@ -218,21 +217,12 @@ public:
   ///          the method is now intended for internal library use.
   mesh::GhostMode get_ghost_mode() const;
 
-  /// FIXME: This should be with Geometry
-  /// Polynomial degree of the mesh geometry
-  std::int32_t degree() const;
-
 private:
   // Mesh topology
   std::unique_ptr<Topology> _topology;
 
   // Mesh geometry
   std::unique_ptr<Geometry> _geometry;
-
-  // FIXME: This shouldn't be here
-  // Mesh geometric degree (in Lagrange basis) describing coordinate
-  // dofs
-  std::int32_t _degree;
 
   // MPI communicator
   dolfinx::MPI::Comm _mpi_comm;

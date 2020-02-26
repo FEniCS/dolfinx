@@ -514,7 +514,7 @@ def test_higher_order_coordinate_map(points, celltype):
     cells = np.array([range(len(points))])
     mesh = Mesh(MPI.comm_world, celltype, points,
                 cells, [], GhostMode.none)
-    V = FunctionSpace(mesh, ("Lagrange", mesh.degree()))
+    V = FunctionSpace(mesh, ("Lagrange", mesh.geometry.degree()))
 
     X = V.element.dof_reference_coordinates()
     coord_dofs = mesh.geometry.coordinate_dofs().entity_points()

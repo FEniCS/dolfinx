@@ -171,21 +171,21 @@ def test_mesh_construction_pygmsh():
 
     mesh = Mesh(MPI.comm_world, dolfinx.cpp.mesh.CellType.tetrahedron, points,
                 cells['tetra'], [], cpp.mesh.GhostMode.none)
-    assert mesh.degree() == 1
+    assert mesh.geometry.degree() == 1
     assert mesh.geometry.dim == 3
     assert mesh.topology.dim == 3
 
     mesh = Mesh(MPI.comm_world,
                 dolfinx.cpp.mesh.CellType.triangle, points,
                 cells['triangle'], [], cpp.mesh.GhostMode.none)
-    assert mesh.degree() == 1
+    assert mesh.geometry.degree() == 1
     assert mesh.geometry.dim == 3
     assert mesh.topology.dim == 2
 
     mesh = Mesh(MPI.comm_world,
                 dolfinx.cpp.mesh.CellType.interval, points,
                 cells['line'], [], cpp.mesh.GhostMode.none)
-    assert mesh.degree() == 1
+    assert mesh.geometry.degree() == 1
     assert mesh.geometry.dim == 3
     assert mesh.topology.dim == 1
 
@@ -207,13 +207,13 @@ def test_mesh_construction_pygmsh():
 
     mesh = Mesh(MPI.comm_world, dolfinx.cpp.mesh.CellType.tetrahedron, points,
                 cells['tetra10'], [], cpp.mesh.GhostMode.none)
-    assert mesh.degree() == 2
+    assert mesh.geometry.degree() == 2
     assert mesh.geometry.dim == 3
     assert mesh.topology.dim == 3
 
     mesh = Mesh(MPI.comm_world, dolfinx.cpp.mesh.CellType.triangle, points,
                 cells['triangle6'], [], cpp.mesh.GhostMode.none)
-    assert mesh.degree() == 2
+    assert mesh.geometry.degree() == 2
     assert mesh.geometry.dim == 3
     assert mesh.topology.dim == 2
 
