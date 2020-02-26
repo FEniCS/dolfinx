@@ -64,7 +64,7 @@ enum class Partitioner
 class Partitioning
 {
 public:
-   /// Build distributed mesh from a set of points and cells on each
+  /// Build distributed mesh from a set of points and cells on each
   /// local process
   /// @param[in] comm MPI Communicator
   /// @param[in] cell_type Cell type

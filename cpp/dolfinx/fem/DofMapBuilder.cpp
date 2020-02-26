@@ -384,22 +384,23 @@ std::vector<std::int64_t> get_global_indices(
 
   std::vector<int> requests_dim;
   std::vector<MPI_Request> requests(D + 1);
+  std::vector<MPI_Comm> comm(D + 1, MPI_COMM_NULL);
   std::vector<std::vector<std::int64_t>> all_dofs_received(D + 1);
   for (int d = 0; d <= D; ++d)
   {
+    // FIXME: This should check which dimennsion are needed by the dofma
     auto map = topology.index_map(d);
     if (map)
     {
       // Get number of processes in neighbourhood
       const std::vector<std::int32_t>& neighbours = map->neighbours();
-      MPI_Comm comm;
       MPI_Dist_graph_create_adjacent(
           map->mpi_comm(), neighbours.size(), neighbours.data(), MPI_UNWEIGHTED,
           neighbours.size(), neighbours.data(), MPI_UNWEIGHTED, MPI_INFO_NULL,
-          false, &comm);
+          false, &comm[d]);
 
       int num_neighbours(-1), outdegree(-2), weighted(-1);
-      MPI_Dist_graph_neighbors_count(comm, &num_neighbours, &outdegree,
+      MPI_Dist_graph_neighbors_count(comm[d], &num_neighbours, &outdegree,
                                      &weighted);
       assert(num_neighbours == outdegree);
 
@@ -407,7 +408,7 @@ std::vector<std::int64_t> get_global_indices(
       const int num_indices = global[d].size();
       std::vector<int> num_indices_recv(num_neighbours);
       MPI_Neighbor_allgather(&num_indices, 1, MPI_INT, num_indices_recv.data(),
-                             1, MPI_INT, comm);
+                             1, MPI_INT, comm[d]);
 
       // Compute displacements for data to receive. Last entry has total
       // number of received items.
@@ -421,11 +422,9 @@ std::vector<std::int64_t> get_global_indices(
       dofs_received.resize(disp.back());
       MPI_Ineighbor_allgatherv(global[d].data(), global[d].size(), MPI_INT64_T,
                                dofs_received.data(), num_indices_recv.data(),
-                               disp.data(), MPI_INT64_T, comm,
+                               disp.data(), MPI_INT64_T, comm[d],
                                &requests[requests_dim.size()]);
       requests_dim.push_back(d);
-
-      MPI_Comm_free(&comm);
     }
   }
 
@@ -465,6 +464,13 @@ std::vector<std::int64_t> get_global_indices(
       assert(it != global_old_new.end());
       local_to_global_new[local_new_to_global_old_d[i + 1]] = it->second;
     }
+  }
+
+  // Free the communicator
+  for (std::size_t d = 0; d < comm.size(); ++d)
+  {
+    if (comm[d] != MPI_COMM_NULL)
+      MPI_Comm_free(&comm[d]);
   }
 
   return local_to_global_new;

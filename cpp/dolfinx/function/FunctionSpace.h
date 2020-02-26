@@ -199,10 +199,10 @@ private:
   std::shared_ptr<const fem::DofMap> _dofmap;
 
   // General interpolation from any Function on any mesh
-  void interpolate_from_any(
-      Eigen::Ref<Eigen::Array<PetscScalar, Eigen::Dynamic, 1>>
-          expansion_coefficients,
-      const Function& v) const;
+  void
+  interpolate_from_any(Eigen::Ref<Eigen::Array<PetscScalar, Eigen::Dynamic, 1>>
+                           expansion_coefficients,
+                       const Function& v) const;
 
   // The component w.r.t. to root space
   std::vector<int> _component;

@@ -30,6 +30,13 @@ void graph(py::module& m)
       .def(py::init<const Eigen::Ref<
                const Eigen::Array<std::int64_t, Eigen::Dynamic, Eigen::Dynamic,
                                   Eigen::RowMajor>>&>())
+      .def(
+          "links",
+          [](const dolfinx::graph::AdjacencyList<std::int64_t>& self, int i) {
+            return self.links(i);
+          },
+          "Links (edges) of a node",
+          py::return_value_policy::reference_internal)
       .def("array", &dolfinx::graph::AdjacencyList<std::int64_t>::array)
       .def_property_readonly(
           "num_nodes", &dolfinx::graph::AdjacencyList<std::int64_t>::num_nodes);
@@ -39,6 +46,9 @@ void graph(py::module& m)
              std::shared_ptr<dolfinx::graph::AdjacencyList<std::int32_t>>>(
       m, "AdjacencyList", "Adjacency list")
       .def(py::init<std::int32_t>())
+      // .def(py::init<const Eigen::Ref<const Eigen::Array<std::int32_t,
+      // Eigen::Dynamic, Eigen::Dynamic,
+      //                                     Eigen::RowMajor>>&>())
       .def(
           "links",
           [](const dolfinx::graph::AdjacencyList<std::int32_t>& self, int i) {
