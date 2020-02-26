@@ -73,12 +73,12 @@ def test_triangle_dof_ordering(space_type):
     coord_dofs = mesh.geometry.dofmap()
     x_g = mesh.geometry.x
     cmap = fem.create_coordinate_map(mesh.ufl_domain())
-    for cell_n, cell in enumerate(coord_dofs):
+    for cell_n in range(coord_dofs.num_nodes):
         dofs = dofmap.cell_dofs(cell_n)
 
         x_coord_new = np.zeros([3, 2])
         for v in range(3):
-            x_coord_new[v] = x_g[coord_dofs[cell_n, v], :2]
+            x_coord_new[v] = x_g[coord_dofs.links(cell_n)[v], :2]
         x = X.copy()
         cmap.push_forward(x, X, x_coord_new)
 
@@ -149,12 +149,12 @@ def test_tetrahedron_dof_ordering(space_type):
     coord_dofs = mesh.geometry.dofmap()
     x_g = mesh.geometry.x
     cmap = fem.create_coordinate_map(mesh.ufl_domain())
-    for cell_n, cell in enumerate(coord_dofs):
+    for cell_n in range(coord_dofs.num_nodes):
         dofs = dofmap.cell_dofs(cell_n)
 
         x_coord_new = np.zeros([4, 3])
         for v in range(4):
-            x_coord_new[v] = x_g[coord_dofs[cell_n, v]]
+            x_coord_new[v] = x_g[coord_dofs.links(cell_n)[v]]
         x = X.copy()
         cmap.push_forward(x, X, x_coord_new)
 
@@ -224,12 +224,12 @@ def test_quadrilateral_dof_ordering(space_type):
     coord_dofs = mesh.geometry.dofmap()
     x_g = mesh.geometry.x
     cmap = fem.create_coordinate_map(mesh.ufl_domain())
-    for cell_n, cell in enumerate(coord_dofs):
+    for cell_n in range(coord_dofs.num_nodes):
         dofs = dofmap.cell_dofs(cell_n)
 
         x_coord_new = np.zeros([4, 2])
         for v in range(4):
-            x_coord_new[v] = x_g[coord_dofs[cell_n, v], :2]
+            x_coord_new[v] = x_g[coord_dofs.links(cell_n)[v], :2]
         x = X.copy()
         cmap.push_forward(x, X, x_coord_new)
 
@@ -293,12 +293,12 @@ def test_hexahedron_dof_ordering(space_type):
     coord_dofs = mesh.geometry.dofmap()
     x_g = mesh.geometry.x
     cmap = fem.create_coordinate_map(mesh.ufl_domain())
-    for cell_n, cell in enumerate(coord_dofs):
+    for cell_n in range(coord_dofs.num_nodes):
         dofs = dofmap.cell_dofs(cell_n)
 
         x_coord_new = np.zeros([8, 3])
         for v in range(8):
-            x_coord_new[v] = x_g[coord_dofs[cell_n, v]]
+            x_coord_new[v] = x_g[coord_dofs.links(cell_n)[v]]
         x = X.copy()
         cmap.push_forward(x, X, x_coord_new)
 

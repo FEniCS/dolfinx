@@ -62,7 +62,8 @@ void graph(py::module& m)
            "Index to each node in the links array",
            py::return_value_policy::reference_internal)
       .def_property_readonly(
-          "num_nodes", &dolfinx::graph::AdjacencyList<std::int32_t>::num_nodes);
+          "num_nodes", &dolfinx::graph::AdjacencyList<std::int32_t>::num_nodes)
+      .def("__len__", &dolfinx::graph::AdjacencyList<std::int32_t>::num_nodes);
 
   // dolfinx::Graph
   py::class_<dolfinx::graph::Graph>(m, "Graph");
