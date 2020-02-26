@@ -151,6 +151,13 @@ void mesh(py::module& m)
       .def("set_connectivity", &dolfinx::mesh::Topology::set_connectivity)
       .def("set_index_map", &dolfinx::mesh::Topology::set_index_map)
       .def("set_interior_facets", &dolfinx::mesh::Topology::set_interior_facets)
+      .def("get_facet_permutations",
+           &dolfinx::mesh::Topology::get_facet_permutations)
+      .def("get_edge_reflections",
+           &dolfinx::mesh::Topology::get_edge_reflections)
+      .def("get_face_reflections",
+           &dolfinx::mesh::Topology::get_face_reflections)
+      .def("get_face_rotations", &dolfinx::mesh::Topology::get_face_rotations)
       .def_property_readonly("dim", &dolfinx::mesh::Topology::dim,
                              "Topological dimension")
       .def("connectivity",

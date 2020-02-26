@@ -127,3 +127,4 @@ dist/
 *.egg-info
 .pytest_cache
 .*.swp
+*_tempdir_*

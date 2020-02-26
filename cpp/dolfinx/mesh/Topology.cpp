@@ -77,7 +77,7 @@ Topology::Topology(mesh::CellType type)
     : _cell_type(type),
       _connectivity(mesh::cell_dim(type) + 1, mesh::cell_dim(type) + 1),
       _edge_reflections(0, 0), _face_reflections(0, 0), _face_rotations(0, 0),
-      _face_permutations(0, 0)
+      _facet_permutations(0, 0)
 {
   // Do nothing
 }
@@ -271,46 +271,49 @@ std::string Topology::str(bool verbose) const
   return s.str();
 }
 //-----------------------------------------------------------------------------
-Eigen::Ref<const Eigen::Array<bool, 1, Eigen::Dynamic>>
-Topology::get_edge_reflections(const std::int32_t cell_n) const
+Eigen::Ref<const Eigen::Array<bool, Eigen::Dynamic, Eigen::Dynamic>>
+Topology::get_edge_reflections() const
 {
-  return _edge_reflections.row(cell_n);
+  return _edge_reflections;
 }
 //-----------------------------------------------------------------------------
-Eigen::Ref<const Eigen::Array<bool, 1, Eigen::Dynamic>>
-Topology::get_face_reflections(const std::int32_t cell_n) const
+Eigen::Ref<const Eigen::Array<bool, Eigen::Dynamic, Eigen::Dynamic>>
+Topology::get_face_reflections() const
 {
-  return _face_reflections.row(cell_n);
+  return _face_reflections;
 }
 //-----------------------------------------------------------------------------
-Eigen::Ref<const Eigen::Array<std::uint8_t, 1, Eigen::Dynamic>>
-Topology::get_face_rotations(const std::int32_t cell_n) const
+Eigen::Ref<const Eigen::Array<std::uint8_t, Eigen::Dynamic, Eigen::Dynamic>>
+Topology::get_face_rotations() const
 {
-  return _face_rotations.row(cell_n);
+  return _face_rotations;
 }
 //-----------------------------------------------------------------------------
-std::uint8_t Topology::get_facet_permutation(const std::int32_t cell_n,
-                                             const int dim,
-                                             const int facet_index) const
+Eigen::Ref<const Eigen::Array<std::uint8_t, Eigen::Dynamic, Eigen::Dynamic>>
+Topology::get_facet_permutations() const
 {
-  if (dim == 1)
-    return _edge_reflections(cell_n, facet_index);
-  if (dim == 2)
-    return _face_permutations(cell_n, facet_index);
-  return 0;
+  return _facet_permutations;
 }
 //-----------------------------------------------------------------------------
 void Topology::resize_entity_permutations(std::size_t cell_count,
                                           int edges_per_cell,
                                           int faces_per_cell)
 {
-  _face_permutations.resize(cell_count, faces_per_cell);
-  _face_permutations.fill(0);
-  _edge_reflections.resize(cell_count, edges_per_cell);
+  if (dim() == 3)
+    _facet_permutations.resize(faces_per_cell, cell_count);
+  else if (dim() == 2)
+    _facet_permutations.resize(edges_per_cell, cell_count);
+  else if (dim() == 1)
+    _facet_permutations.resize(2, cell_count);
+  else if (dim() == 0)
+    _facet_permutations.resize(1, cell_count);
+  _facet_permutations.fill(0);
+
+  _edge_reflections.resize(edges_per_cell, cell_count);
   _edge_reflections.fill(false);
-  _face_reflections.resize(cell_count, faces_per_cell);
+  _face_reflections.resize(faces_per_cell, cell_count);
   _face_reflections.fill(false);
-  _face_rotations.resize(cell_count, faces_per_cell);
+  _face_rotations.resize(faces_per_cell, cell_count);
   _face_rotations.fill(false);
 }
 //-----------------------------------------------------------------------------
@@ -325,12 +328,17 @@ void Topology::set_entity_permutation(std::size_t cell_n, int entity_dim,
 {
   if (entity_dim == 2)
   {
-    _face_permutations(cell_n, entity_index) = 2 * rots + refs;
-    _face_reflections(cell_n, entity_index) = refs;
-    _face_rotations(cell_n, entity_index) = rots;
+    if (dim() == 3)
+      _facet_permutations(entity_index, cell_n) = 2 * rots + refs;
+    _face_reflections(entity_index, cell_n) = refs;
+    _face_rotations(entity_index, cell_n) = rots;
   }
   else if (entity_dim == 1)
-    _edge_reflections(cell_n, entity_index) = refs;
+  {
+    if (dim() == 2)
+      _facet_permutations(entity_index, cell_n) = refs;
+    _edge_reflections(entity_index, cell_n) = refs;
+  }
 }
 //-----------------------------------------------------------------------------
 mesh::CellType Topology::cell_type() const { return _cell_type; }
