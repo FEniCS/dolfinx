@@ -8,7 +8,6 @@
 #include "DofMap.h"
 #include "Form.h"
 #include "utils.h"
-#include <dolfinx/function/Constant.h>
 #include <dolfinx/function/Function.h>
 #include <dolfinx/function/FunctionSpace.h>
 #include <dolfinx/graph/AdjacencyList.h>
@@ -43,17 +42,7 @@ void fem::impl::assemble_matrix(Mat A, const Form& a,
   // Prepare constants
   if (!a.all_constants_set())
     throw std::runtime_error("Unset constant in Form");
-
-  const std::vector<
-      std::pair<std::string, std::shared_ptr<const function::Constant>>>
-      constants = a.constants();
-  std::vector<PetscScalar> constant_values;
-  for (auto& constant : constants)
-  {
-    const std::vector<PetscScalar>& array = constant.second->value;
-    constant_values.insert(constant_values.end(), array.data(),
-                           array.data() + array.size());
-  }
+  const std::vector<PetscScalar> constant_values = pack_constants(a);
 
   // Prepare coefficients
   const Eigen::Array<PetscScalar, Eigen::Dynamic, Eigen::Dynamic,
