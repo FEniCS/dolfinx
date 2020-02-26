@@ -642,6 +642,8 @@ PartitioningNew::fetch_data(
   // Get number of points globally
   const std::int64_t num_points = dolfinx::MPI::sum(comm, x.rows());
 
+  std::cout << "!!! Num points: " << num_points << std::endl;
+
   // Get ownership range for this rank, and compute offset
   const std::array<std::int64_t, 2> range
       = dolfinx::MPI::local_range(comm, num_points);
@@ -651,6 +653,8 @@ PartitioningNew::fetch_data(
   const int gdim = x.cols();
   assert(gdim != 0);
   const int size = dolfinx::MPI::size(comm);
+
+  std::cout << "!!! gdim: " << gdim << std::endl;
 
   // Determine number of points to send to owner
   std::vector<int> number_send(size, 0);

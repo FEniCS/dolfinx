@@ -112,8 +112,8 @@ void add_data_item(MPI_Comm comm, pugi::xml_node& xml_node, hid_t h5_id,
 
     // Compute total number of items and check for consistency with shape
     std::cout << "Inside HDF section (1)" << std::endl;
-    // for (std::size_t i = 0; i < shape.size(); ++i)
-    //   std::cout << "   s: " << shape[i] << std::endl;
+    for (std::size_t i = 0; i < shape.size(); ++i)
+      std::cout << "   s: " << shape[i] << std::endl;
 
     assert(!shape.empty());
     std::int64_t num_items_total = 1;

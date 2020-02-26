@@ -140,8 +140,9 @@ compute_point_distribution(
 } // namespace
 
 //-----------------------------------------------------------------------------
-Mesh::Mesh(MPI_Comm comm, const Topology& topology, const Geometry& geometry)
-    : _degree(1), _mpi_comm(comm)
+Mesh::Mesh(MPI_Comm comm, const Topology& topology, const Geometry& geometry,
+           int degree)
+    : _degree(degree), _mpi_comm(comm)
 {
   _topology = std::make_unique<Topology>(topology);
   _geometry = std::make_unique<Geometry>(geometry);

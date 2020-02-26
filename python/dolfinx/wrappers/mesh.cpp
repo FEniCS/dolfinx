@@ -189,9 +189,9 @@ void mesh(py::module& m)
       m, "Mesh", py::dynamic_attr(), "Mesh object")
       .def(py::init(
           [](const MPICommWrapper comm, const dolfinx::mesh::Topology& topology,
-          dolfinx::mesh::Geometry& geometry ) {
+          dolfinx::mesh::Geometry& geometry, int degree) {
             return std::make_unique<dolfinx::mesh::Mesh>(
-                comm.get(), topology, geometry);
+                comm.get(), topology, geometry, degree);
           }))
       .def(py::init(
           [](const MPICommWrapper comm, dolfinx::mesh::CellType type,

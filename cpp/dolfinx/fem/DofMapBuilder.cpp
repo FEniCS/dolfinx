@@ -44,6 +44,8 @@ std::tuple<graph::AdjacencyList<std::int32_t>, std::vector<std::int64_t>,
 build_basic_dofmap(const mesh::Topology& topology,
                    const ElementDofLayout& element_dof_layout)
 {
+  std::cout << "Build basic" << std::endl;
+
   // Start timer for dofmap initialization
   common::Timer t0("Init dofmap from element dofmap");
 
@@ -71,6 +73,8 @@ build_basic_dofmap(const mesh::Topology& topology,
     }
   }
 
+  std::cout << "Build basic 1" << std::endl;
+
   // Collect cell -> entity connectivities
   std::vector<std::shared_ptr<const graph::AdjacencyList<std::int32_t>>>
       connectivity;
@@ -88,6 +92,8 @@ build_basic_dofmap(const mesh::Topology& topology,
       global_indices[d] = map->global_indices(false);
     }
   }
+
+  std::cout << "Build basic 2" << std::endl;
 
   // Number of dofs on this process
   std::int32_t local_size(0), d(0);
@@ -114,6 +120,8 @@ build_basic_dofmap(const mesh::Topology& topology,
     entity_indices_global[d].resize(num_entities);
   }
 
+  std::cout << "Build basic 3" << std::endl;
+
   // Entity dofs on cell (dof = entity_dofs[dim][entity][index])
   const std::vector<std::vector<std::set<int>>>& entity_dofs
       = element_dof_layout.entity_dofs_all();
@@ -130,6 +138,7 @@ build_basic_dofmap(const mesh::Topology& topology,
   std::vector<std::pair<std::int8_t, std::int32_t>> dof_entity(local_size);
 
   // Loops over cells and build dofmaps from ElementDofmap
+  std::cout << "Build basic 4" << std::endl;
   for (int c = 0; c < connectivity[0]->num_nodes(); ++c)
   {
     // Get local (process) and global cell entity indices
@@ -146,6 +155,8 @@ build_basic_dofmap(const mesh::Topology& topology,
       }
     }
 
+    std::cout << "   Build basic 5" << std::endl;
+
     // Handle cell index separately because cell.entities(D) doesn't work.
     if (needs_entities[D])
     {
@@ -159,6 +170,7 @@ build_basic_dofmap(const mesh::Topology& topology,
     for (auto e_dofs_d = entity_dofs.begin(); e_dofs_d != entity_dofs.end();
          ++e_dofs_d)
     {
+      std::cout << "   Build basic 6" << std::endl;
       const std::int8_t d = std::distance(entity_dofs.begin(), e_dofs_d);
 
       // Iterate over each entity of current dimension d
@@ -178,20 +190,26 @@ build_basic_dofmap(const mesh::Topology& topology,
         for (auto dof_local = e_dofs->begin(); dof_local != e_dofs->end();
              ++dof_local)
         {
+          std::cout << "   Build basic 7a" << std::endl;
+
           const std::int32_t count = std::distance(e_dofs->begin(), dof_local);
           const std::int32_t dof
               = offset_local + num_entity_dofs * e_index_local + count;
+          std::cout << "   Build basic 7i " <<  *dof_local << std::endl;
           dofs[cell_ptr[c] + permutations(c, *dof_local)] = dof;
           // dofmap.dof(c, permutations(c, *dof_local)) = dof;
+          std::cout << "   Build basic 7ii" << std::endl;
           local_to_global[dof]
               = offset_global + num_entity_dofs * e_index_global + count;
           dof_entity[dof] = {d, e_index_local};
+          std::cout << "   Build basic 7b" << std::endl;
         }
       }
       offset_local += entity_dofs[d][0].size() * num_mesh_entities_local[d];
       offset_global += entity_dofs[d][0].size() * num_mesh_entities_global[d];
     }
   }
+  std::cout << "Build basic end" << std::endl;
 
   return {graph::AdjacencyList<std::int32_t>(dofs, cell_ptr), local_to_global,
           dof_entity};

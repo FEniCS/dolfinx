@@ -28,6 +28,10 @@ ElementDofLayout::ElementDofLayout(
       _num_dofs(0), _entity_dofs(entity_dofs_), _sub_dofmaps(sub_dofmaps),
       _base_permutations(base_permutations)
 {
+  // TODO: Add size check on base_permutations. Size should be:
+  // number of rows = num_edges + 2*num_faces + 4*num_volumes
+  // number of columns = number of dofs
+
   // TODO: Handle global support dofs
 
   // Compute closure entities
