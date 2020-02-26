@@ -11,10 +11,9 @@ import numpy as np
 import pytest
 from dolfinx_utils.test.skips import skip_in_parallel
 
-from dolfinx import (MPI, FunctionSpace, Mesh, MeshEntity, UnitCubeMesh,
-                     UnitIntervalMesh, UnitSquareMesh, VectorFunctionSpace,
-                     fem)
-from dolfinx.cpp.mesh import CellType, GhostMode
+from dolfinx import (MPI, FunctionSpace, MeshEntity, UnitCubeMesh,
+                     UnitIntervalMesh, UnitSquareMesh, VectorFunctionSpace)
+from dolfinx.cpp.mesh import CellType
 from ufl import FiniteElement, MixedElement, VectorElement
 
 xfail = pytest.mark.xfail(strict=True)
@@ -467,118 +466,118 @@ def test_readonly_view_local_to_global_unwoned(mesh):
     assert sys.getrefcount(index_map) == rc
 
 
-@skip_in_parallel
-@pytest.mark.parametrize("points, celltype", [(np.array([[0, 0], [0, 2], [1, 0], [1, 2]]),
-                                               CellType.quadrilateral),
-                                              (np.array([[0, 0], [0, 2], [0, 1], [1, 0],
-                                                         [1, 2], [1, 1], [0.5, 0], [0.5, 2],
-                                                         [0.5, 1]]),
-                                               CellType.quadrilateral),
-                                              (np.array([[0, 0], [0, 2], [0, 2 / 3], [0, 4 / 3],
-                                                         [1, 0], [1, 2], [1, 2 / 3], [1, 4 / 3],
-                                                         [1 / 3, 0], [1 / 3, 2], [1 / 3, 2 / 3], [1 / 3, 4 / 3],
-                                                         [2 / 3, 0], [2 / 3, 2], [2 / 3, 2 / 3], [2 / 3, 4 / 3]]),
-                                               CellType.quadrilateral),
-                                              (np.array([[0, 0], [0, 2], [0, 1 / 2], [0, 1], [0, 3 / 2],
-                                                         [1, 0], [1, 2], [1, 1 / 2], [1, 1], [1, 3 / 2],
-                                                         [1 / 4, 0], [1 / 4, 2], [1 / 4, 1 / 2], [1 / 4, 1],
-                                                         [1 / 4, 3 / 2],
-                                                         [2 / 4, 0], [2 / 4, 2], [2 / 4, 1 / 2], [2 / 4, 1],
-                                                         [2 / 4, 3 / 2],
-                                                         [3 / 4, 0], [3 / 4, 2], [3 / 4, 1 / 2], [3 / 4, 1],
-                                                         [3 / 4, 3 / 2]]),
-                                               CellType.quadrilateral),
-                                              (np.array([[0, 0], [1, 0], [0, 2], [0.5, 1], [0, 1], [0.5, 0]]),
-                                               CellType.triangle),
-                                              (np.array([[0, 0], [1, 0], [0, 2], [2 / 3, 2 / 3], [1 / 3, 4 / 3],
-                                                         [0, 2 / 3], [0, 4 / 3], [1 / 3, 0], [2 / 3, 0],
-                                                         [1 / 3, 2 / 3]]),
-                                               CellType.triangle),
-                                              (np.array([[0, 0, 0], [0, 0, 3], [0, 2, 0], [0, 2, 3],
-                                                         [1, 0, 0], [1, 0, 3], [1, 2, 0], [1, 2, 3]]),
-                                               CellType.hexahedron),
-                                              (np.array([[0, 0, 0], [0, 0, 3], [0, 0, 1.5],
-                                                         [0, 2, 0], [0, 2, 3], [0, 2, 1.5],
-                                                         [0, 1, 0], [0, 1, 3], [0, 1, 1.5],
-                                                         [1, 0, 0], [1, 0, 3], [1, 0, 1.5],
-                                                         [1, 2, 0], [1, 2, 3], [1, 2, 1.5],
-                                                         [1, 1, 0], [1, 1, 3], [1, 1, 1.5],
-                                                         [0.5, 0, 0], [0.5, 0, 3], [0.5, 0, 1.5],
-                                                         [0.5, 2, 0], [0.5, 2, 3], [0.5, 2, 1.5],
-                                                         [0.5, 1, 0], [0.5, 1, 3], [0.5, 1, 1.5]]),
-                                               CellType.hexahedron)])
-def test_higher_order_coordinate_map(points, celltype):
-    """
-    Computes physical coordinates of a cell, based on the coordinate map.
-    """
-    cells = np.array([range(len(points))])
-    mesh = Mesh(MPI.comm_world, celltype, points,
-                cells, [], GhostMode.none)
-    V = FunctionSpace(mesh, ("Lagrange", mesh.geometry.degree()))
+# @skip_in_parallel
+# @pytest.mark.parametrize("points, celltype", [(np.array([[0, 0], [0, 2], [1, 0], [1, 2]]),
+#                                                CellType.quadrilateral),
+#                                               (np.array([[0, 0], [0, 2], [0, 1], [1, 0],
+#                                                          [1, 2], [1, 1], [0.5, 0], [0.5, 2],
+#                                                          [0.5, 1]]),
+#                                                CellType.quadrilateral),
+#                                               (np.array([[0, 0], [0, 2], [0, 2 / 3], [0, 4 / 3],
+#                                                          [1, 0], [1, 2], [1, 2 / 3], [1, 4 / 3],
+#                                                          [1 / 3, 0], [1 / 3, 2], [1 / 3, 2 / 3], [1 / 3, 4 / 3],
+#                                                          [2 / 3, 0], [2 / 3, 2], [2 / 3, 2 / 3], [2 / 3, 4 / 3]]),
+#                                                CellType.quadrilateral),
+#                                               (np.array([[0, 0], [0, 2], [0, 1 / 2], [0, 1], [0, 3 / 2],
+#                                                          [1, 0], [1, 2], [1, 1 / 2], [1, 1], [1, 3 / 2],
+#                                                          [1 / 4, 0], [1 / 4, 2], [1 / 4, 1 / 2], [1 / 4, 1],
+#                                                          [1 / 4, 3 / 2],
+#                                                          [2 / 4, 0], [2 / 4, 2], [2 / 4, 1 / 2], [2 / 4, 1],
+#                                                          [2 / 4, 3 / 2],
+#                                                          [3 / 4, 0], [3 / 4, 2], [3 / 4, 1 / 2], [3 / 4, 1],
+#                                                          [3 / 4, 3 / 2]]),
+#                                                CellType.quadrilateral),
+#                                               (np.array([[0, 0], [1, 0], [0, 2], [0.5, 1], [0, 1], [0.5, 0]]),
+#                                                CellType.triangle),
+#                                               (np.array([[0, 0], [1, 0], [0, 2], [2 / 3, 2 / 3], [1 / 3, 4 / 3],
+#                                                          [0, 2 / 3], [0, 4 / 3], [1 / 3, 0], [2 / 3, 0],
+#                                                          [1 / 3, 2 / 3]]),
+#                                                CellType.triangle),
+#                                               (np.array([[0, 0, 0], [0, 0, 3], [0, 2, 0], [0, 2, 3],
+#                                                          [1, 0, 0], [1, 0, 3], [1, 2, 0], [1, 2, 3]]),
+#                                                CellType.hexahedron),
+#                                               (np.array([[0, 0, 0], [0, 0, 3], [0, 0, 1.5],
+#                                                          [0, 2, 0], [0, 2, 3], [0, 2, 1.5],
+#                                                          [0, 1, 0], [0, 1, 3], [0, 1, 1.5],
+#                                                          [1, 0, 0], [1, 0, 3], [1, 0, 1.5],
+#                                                          [1, 2, 0], [1, 2, 3], [1, 2, 1.5],
+#                                                          [1, 1, 0], [1, 1, 3], [1, 1, 1.5],
+#                                                          [0.5, 0, 0], [0.5, 0, 3], [0.5, 0, 1.5],
+#                                                          [0.5, 2, 0], [0.5, 2, 3], [0.5, 2, 1.5],
+#                                                          [0.5, 1, 0], [0.5, 1, 3], [0.5, 1, 1.5]]),
+#                                                CellType.hexahedron)])
+# def test_higher_order_coordinate_map(points, celltype):
+#     """
+#     Computes physical coordinates of a cell, based on the coordinate map.
+#     """
+#     cells = np.array([range(len(points))])
+#     mesh = Mesh(MPI.comm_world, celltype, points,
+#                 cells, [], GhostMode.none)
+#     V = FunctionSpace(mesh, ("Lagrange", mesh.geometry.degree()))
 
-    X = V.element.dof_reference_coordinates()
-    coord_dofs = mesh.geometry.dofmap()
-    x_g = mesh.geometry.x()
+#     X = V.element.dof_reference_coordinates()
+#     coord_dofs = mesh.geometry.dofmap()
+#     x_g = mesh.geometry.x()
 
-    cmap = fem.create_coordinate_map(mesh.ufl_domain())
-    x_coord_new = np.zeros([len(points), mesh.geometry.dim])
+#     cmap = fem.create_coordinate_map(mesh.ufl_domain())
+#     x_coord_new = np.zeros([len(points), mesh.geometry.dim])
 
-    # i = 0
-    # for node in range(len(points)):
-    #     x_coord_new[i] = x_g[coord_dofs[0, node], :mesh.geometry.dim]
-    #     i += 1
+#     i = 0
+#     for node in range(len(points)):
+#         x_coord_new[i] = x_g[coord_dofs[0, node], :mesh.geometry.dim]
+#         i += 1
 
-    # x = np.zeros(X.shape)
-    # cmap.push_forward(x, X, x_coord_new)
+#     x = np.zeros(X.shape)
+#     cmap.push_forward(x, X, x_coord_new)
 
-    # assert(np.allclose(x[:, 0], X[:, 0]))
-    # assert(np.allclose(x[:, 1], 2 * X[:, 1]))
+#     assert(np.allclose(x[:, 0], X[:, 0]))
+#     assert(np.allclose(x[:, 1], 2 * X[:, 1]))
 
-    # if mesh.geometry.dim == 3:
-    #     assert(np.allclose(x[:, 2], 3 * X[:, 2]))
+#     if mesh.geometry.dim == 3:
+#         assert(np.allclose(x[:, 2], 3 * X[:, 2]))
 
 
-@skip_in_parallel
-@pytest.mark.parametrize("order", [1, 2, 3])
-def test_higher_order_tetra_coordinate_map(order):
-    """
-    Computes physical coordinates of a cell, based on the coordinate map.
-    """
-    celltype = CellType.tetrahedron
-    points = np.array([[0, 0, 0], [1, 0, 0], [0, 2, 0], [0, 0, 3],
-                       [0, 4 / 3, 1], [0, 2 / 3, 2],
-                       [2 / 3, 0, 1], [1 / 3, 0, 2],
-                       [2 / 3, 2 / 3, 0], [1 / 3, 4 / 3, 0],
-                       [0, 0, 1], [0, 0, 2],
-                       [0, 2 / 3, 0], [0, 4 / 3, 0],
-                       [1 / 3, 0, 0], [2 / 3, 0, 0],
-                       [1 / 3, 2 / 3, 1], [0, 2 / 3, 1],
-                       [1 / 3, 0, 1], [1 / 3, 2 / 3, 0]])
+# @skip_in_parallel
+# @pytest.mark.parametrize("order", [1, 2, 3])
+# def test_higher_order_tetra_coordinate_map(order):
+#     """
+#     Computes physical coordinates of a cell, based on the coordinate map.
+#     """
+#     celltype = CellType.tetrahedron
+#     points = np.array([[0, 0, 0], [1, 0, 0], [0, 2, 0], [0, 0, 3],
+#                        [0, 4 / 3, 1], [0, 2 / 3, 2],
+#                        [2 / 3, 0, 1], [1 / 3, 0, 2],
+#                        [2 / 3, 2 / 3, 0], [1 / 3, 4 / 3, 0],
+#                        [0, 0, 1], [0, 0, 2],
+#                        [0, 2 / 3, 0], [0, 4 / 3, 0],
+#                        [1 / 3, 0, 0], [2 / 3, 0, 0],
+#                        [1 / 3, 2 / 3, 1], [0, 2 / 3, 1],
+#                        [1 / 3, 0, 1], [1 / 3, 2 / 3, 0]])
 
-    if order == 1:
-        points = np.array([points[0, :], points[1, :], points[2, :], points[3, :]])
-    elif order == 2:
-        points = np.array([points[0, :], points[1, :], points[2, :], points[3, :],
-                           [0, 1, 3 / 2], [1 / 2, 0, 3 / 2], [1 / 2, 1, 0], [0, 0, 3 / 2],
-                           [0, 1, 0], [1 / 2, 0, 0]])
-    cells = np.array([range(len(points))])
-    mesh = Mesh(MPI.comm_world, celltype, points,
-                cells, [], GhostMode.none)
-    V = FunctionSpace(mesh, ("Lagrange", order))
-    X = V.element.dof_reference_coordinates()
-    coord_dofs = mesh.geometry.dofmap()
-    x_g = mesh.geometry.x()
+#     if order == 1:
+#         points = np.array([points[0, :], points[1, :], points[2, :], points[3, :]])
+#     elif order == 2:
+#         points = np.array([points[0, :], points[1, :], points[2, :], points[3, :],
+#                            [0, 1, 3 / 2], [1 / 2, 0, 3 / 2], [1 / 2, 1, 0], [0, 0, 3 / 2],
+#                            [0, 1, 0], [1 / 2, 0, 0]])
+#     cells = np.array([range(len(points))])
+#     mesh = Mesh(MPI.comm_world, celltype, points,
+#                 cells, [], GhostMode.none)
+#     V = FunctionSpace(mesh, ("Lagrange", order))
+#     X = V.element.dof_reference_coordinates()
+#     coord_dofs = mesh.geometry.dofmap()
+#     x_g = mesh.geometry.x()
 
-    cmap = fem.create_coordinate_map(mesh.ufl_domain())
-    x_coord_new = np.zeros([len(points), mesh.geometry.dim])
+#     cmap = fem.create_coordinate_map(mesh.ufl_domain())
+#     x_coord_new = np.zeros([len(points), mesh.geometry.dim])
 
-    # i = 0
-    # for node in range(len(points)):
-    #     x_coord_new[i] = x_g[coord_dofs[0, node], :mesh.geometry.dim]
-    #     i += 1
+#     i = 0
+#     for node in range(len(points)):
+#         x_coord_new[i] = x_g[coord_dofs[0, node], :mesh.geometry.dim]
+#         i += 1
 
-    # x = np.zeros(X.shape)
-    # cmap.push_forward(x, X, x_coord_new)
-    # assert(np.allclose(x[:, 0], X[:, 0]))
-    # assert(np.allclose(x[:, 1], 2 * X[:, 1]))
-    # assert(np.allclose(x[:, 2], 3 * X[:, 2]))
+#     x = np.zeros(X.shape)
+#     cmap.push_forward(x, X, x_coord_new)
+#     assert(np.allclose(x[:, 0], X[:, 0]))
+#     assert(np.allclose(x[:, 1], 2 * X[:, 1]))
+#     assert(np.allclose(x[:, 2], 3 * X[:, 2]))
