@@ -407,7 +407,7 @@ void xdmf_write::add_geometry_data(MPI_Comm comm, pugi::xml_node& xml_node,
   // Pack geometry data
   Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor> _x
       = mesh::DistributedMeshTools::reorder_by_global_indices(
-          comm, geometry.points(), geometry.global_indices());
+          comm, geometry.x(), geometry.global_indices());
 
   // Increase 1D to 2D because XDMF has no "X" geometry, use "XY"
   int width = (gdim == 1) ? 2 : gdim;

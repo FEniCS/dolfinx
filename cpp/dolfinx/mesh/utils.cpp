@@ -678,7 +678,7 @@ Eigen::Array<double, Eigen::Dynamic, 3, Eigen::RowMajor> mesh::midpoints(
 {
   const mesh::Geometry& geometry = mesh.geometry();
   const Eigen::Array<double, Eigen::Dynamic, 3, Eigen::RowMajor>& points
-      = geometry.points();
+      = geometry.x();
 
   Eigen::Array<double, Eigen::Dynamic, 3, Eigen::RowMajor> x(entities.rows(),
                                                              3);
@@ -745,7 +745,7 @@ mesh::compute_marked_boundary_entities(
   // FIXME: Does this make sense for non-affine elements?
   // Get all points
   const Eigen::Array<double, Eigen::Dynamic, 3, Eigen::RowMajor>& x_all
-      = mesh.geometry().points();
+      = mesh.geometry().x();
 
   // Pack coordinates of all boundary vertices
   Eigen::Array<double, 3, Eigen::Dynamic, Eigen::RowMajor> x_boundary(3, count);

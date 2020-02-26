@@ -319,7 +319,7 @@ FunctionSpace::tabulate_dof_coordinates() const
   const int num_dofs_g = connectivity_g.num_links(0);
   const Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>&
       x_g
-      = _mesh->geometry().points();
+      = _mesh->geometry().x();
 
   // Array to hold coordinates to return
   Eigen::Array<double, Eigen::Dynamic, 3, Eigen::RowMajor> x
@@ -381,7 +381,7 @@ void FunctionSpace::set_x(
   const int num_dofs_g = connectivity_g.num_links(0);
   const Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>&
       x_g
-      = _mesh->geometry().points();
+      = _mesh->geometry().x();
 
   // Dof coordinate on reference element
   const Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>& X

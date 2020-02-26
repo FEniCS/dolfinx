@@ -71,7 +71,7 @@ def test_triangle_dof_ordering(space_type):
     # for each global dof number
     X = V.element.dof_reference_coordinates()
     coord_dofs = mesh.geometry.dofmap()
-    x_g = mesh.geometry.points
+    x_g = mesh.geometry.x()
     cmap = fem.create_coordinate_map(mesh.ufl_domain())
     for cell_n, cell in enumerate(coord_dofs):
         dofs = dofmap.cell_dofs(cell_n)
@@ -147,7 +147,7 @@ def test_tetrahedron_dof_ordering(space_type):
     # for each global dof number
     X = V.element.dof_reference_coordinates()
     coord_dofs = mesh.geometry.dofmap()
-    x_g = mesh.geometry.points
+    x_g = mesh.geometry.x()
     cmap = fem.create_coordinate_map(mesh.ufl_domain())
     for cell_n, cell in enumerate(coord_dofs):
         dofs = dofmap.cell_dofs(cell_n)
@@ -222,7 +222,7 @@ def test_quadrilateral_dof_ordering(space_type):
     # for each global dof number
     X = V.element.dof_reference_coordinates()
     coord_dofs = mesh.geometry.dofmap()
-    x_g = mesh.geometry.points
+    x_g = mesh.geometry.x()
     cmap = fem.create_coordinate_map(mesh.ufl_domain())
     for cell_n, cell in enumerate(coord_dofs):
         dofs = dofmap.cell_dofs(cell_n)
@@ -291,7 +291,7 @@ def test_hexahedron_dof_ordering(space_type):
     # for each global dof number
     X = V.element.dof_reference_coordinates()
     coord_dofs = mesh.geometry.dofmap()
-    x_g = mesh.geometry.points
+    x_g = mesh.geometry.x()
     cmap = fem.create_coordinate_map(mesh.ufl_domain())
     for cell_n, cell in enumerate(coord_dofs):
         dofs = dofmap.cell_dofs(cell_n)

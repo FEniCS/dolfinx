@@ -275,7 +275,7 @@ void HDF5File::write(const mesh::Mesh& mesh, int cell_dim,
     Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
         _vertex_coords;
     _vertex_coords = mesh::DistributedMeshTools::reorder_by_global_indices(
-        mesh.mpi_comm(), mesh.geometry().points(),
+        mesh.mpi_comm(), mesh.geometry().x(),
         mesh.geometry().global_indices());
 
     Eigen::Map<Eigen::Array<double, Eigen::Dynamic, 3, Eigen::RowMajor>> varray(

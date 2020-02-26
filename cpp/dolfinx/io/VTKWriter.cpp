@@ -160,7 +160,7 @@ void write_ascii_mesh(const mesh::Mesh& mesh, int cell_dim,
        << "ascii"
        << "\">";
   const Eigen::Array<double, Eigen::Dynamic, 3, Eigen::RowMajor> points
-      = mesh.geometry().points();
+      = mesh.geometry().x();
   for (int i = 0; i < points.rows(); ++i)
     file << points(i, 0) << " " << points(i, 1) << " " << points(i, 2) << "  ";
   file << "</DataArray>" << std::endl << "</Points>" << std::endl;

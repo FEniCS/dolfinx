@@ -280,7 +280,7 @@ def test_hash():
 def test_GetCoordinates():
     """Get coordinates of vertices"""
     mesh = UnitSquareMesh(MPI.comm_world, 5, 5)
-    assert len(mesh.geometry.points) == 36
+    assert len(mesh.geometry.x()) == 36
 
 
 def test_GetCells():

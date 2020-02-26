@@ -129,18 +129,6 @@ void mesh(py::module& m)
       .def("x", py::overload_cast<int>(&dolfinx::mesh::Geometry::x, py::const_),
            py::return_value_policy::reference_internal,
            "Return coordinates of a point")
-      .def_property(
-          "points",
-          // Get
-          py::overload_cast<>(&dolfinx::mesh::Geometry::points),
-          // Set
-          [](dolfinx::mesh::Geometry& self,
-             const Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic,
-                                Eigen::RowMajor>& values) {
-            self.points() = values;
-          },
-          py::return_value_policy::reference_internal,
-          "Return coordinates of all points")
       .def_readwrite("coord_mapping", &dolfinx::mesh::Geometry::coord_mapping);
 
   // dolfinx::mesh::TopologyComputation
