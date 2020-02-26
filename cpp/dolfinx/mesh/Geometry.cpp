@@ -62,6 +62,8 @@ Geometry::Geometry(
 //-----------------------------------------------------------------------------
 int Geometry::dim() const { return _dim; }
 //-----------------------------------------------------------------------------
+graph::AdjacencyList<std::int32_t>& Geometry::dofmap() { return _dofmap; }
+//-----------------------------------------------------------------------------
 const graph::AdjacencyList<std::int32_t>& Geometry::dofmap() const
 {
   return _dofmap;
@@ -115,12 +117,12 @@ std::size_t Geometry::hash() const
   return local_hash;
 }
 //-----------------------------------------------------------------------------
-CoordinateDofs& Geometry::coordinate_dofs() { return _coordinate_dofs; }
-//-----------------------------------------------------------------------------
-const CoordinateDofs& Geometry::coordinate_dofs() const
-{
-  return _coordinate_dofs;
-}
+// CoordinateDofs& Geometry::coordinate_dofs() { return _coordinate_dofs; }
+// //-----------------------------------------------------------------------------
+// const CoordinateDofs& Geometry::coordinate_dofs() const
+// {
+//   return _coordinate_dofs;
+// }
 //-----------------------------------------------------------------------------
 std::string Geometry::str(bool verbose) const
 {

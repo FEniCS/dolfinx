@@ -525,9 +525,9 @@ def test_custom_partition(tempdir, mesh_factory):
 
 def test_coords():
     mesh = UnitCubeMesh(MPI.comm_world, 4, 4, 5)
-    d = mesh.geometry.coordinate_dofs().entity_points()
+    d = mesh.geometry.dofmap()
     d += 2
-    assert np.array_equal(d, mesh.geometry.coordinate_dofs().entity_points())
+    assert np.array_equal(d, mesh.geometry.dofmap())
 
 
 def test_UnitHexMesh_assemble():

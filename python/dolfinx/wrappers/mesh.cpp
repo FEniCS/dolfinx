@@ -120,9 +120,8 @@ void mesh(py::module& m)
       .def_property_readonly("dim", &dolfinx::mesh::Geometry::dim,
                              "Geometric dimension")
       .def("degree", &dolfinx::mesh::Geometry::degree)
-      .def("coordinate_dofs",
-           py::overload_cast<>(&dolfinx::mesh::Geometry::coordinate_dofs,
-                               py::const_))
+      .def("dofmap",
+           py::overload_cast<>(&dolfinx::mesh::Geometry::dofmap, py::const_))
       .def("num_points", &dolfinx::mesh::Geometry::num_points)
       .def("num_points_global", &dolfinx::mesh::Geometry::num_points_global)
       .def("global_indices", &dolfinx::mesh::Geometry::global_indices)

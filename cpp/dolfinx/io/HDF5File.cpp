@@ -257,7 +257,7 @@ void HDF5File::write(const mesh::Mesh& mesh, int cell_dim,
   mesh::CellType cell_type
       = mesh::cell_entity_type(mesh.topology().cell_type(), cell_dim);
   const graph::AdjacencyList<std::int32_t>& cell_points
-      = mesh.geometry().coordinate_dofs().entity_points();
+      = mesh.geometry().dofmap();
 
   // Allowing for higher order meshes to be written to file
   std::size_t num_cell_points;
@@ -310,7 +310,7 @@ void HDF5File::write(const mesh::Mesh& mesh, int cell_dim,
       int num_nodes_per_cell = cell_points.num_links(0);
       topological_data.reserve(num_nodes_per_cell * mesh.num_entities(tdim));
 
-      int num_nodes = mesh.geometry().coordinate_dofs().entity_points().num_links(0);
+      int num_nodes = mesh.geometry().dofmap().num_links(0);
       const std::vector<std::uint8_t> perm
           = io::cells::dolfin_to_vtk(mesh.topology().cell_type(), num_nodes);
 
@@ -332,7 +332,7 @@ void HDF5File::write(const mesh::Mesh& mesh, int cell_dim,
           = map->global_indices(false);
 
       // Permutation to VTK ordering
-      int num_nodes = mesh.geometry().coordinate_dofs().entity_points().num_links(0);
+      int num_nodes = mesh.geometry().dofmap().num_links(0);
       const std::vector<std::uint8_t> perm
           = io::cells::dolfin_to_vtk(mesh.topology().cell_type(), num_nodes);
 

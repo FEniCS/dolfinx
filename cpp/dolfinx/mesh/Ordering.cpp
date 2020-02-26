@@ -306,7 +306,7 @@ void mesh::Ordering::order_simplex(mesh::Mesh& mesh)
     return;
 
   graph::AdjacencyList<std::int32_t>& connect_g
-      = mesh.geometry().coordinate_dofs().entity_points();
+      = mesh.geometry().dofmap();
 
   // Get global vertex numbering
   auto map = mesh.topology().index_map(0);

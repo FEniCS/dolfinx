@@ -186,7 +186,7 @@ void write_ascii_mesh(const mesh::Mesh& mesh, int cell_dim,
     // Special case where the cells are visualized (Supports higher order
     // elements)
     const graph::AdjacencyList<std::int32_t>& connectivity_g
-        = mesh.geometry().coordinate_dofs().entity_points();
+        = mesh.geometry().dofmap();
     const Eigen::Array<std::int32_t, Eigen::Dynamic, 1>& cell_connections
         = connectivity_g.array();
     const Eigen::Array<std::int32_t, Eigen::Dynamic, 1>& pos_g

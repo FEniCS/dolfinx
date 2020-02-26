@@ -72,6 +72,11 @@ public:
   /// Return Euclidean dimension of coordinate system
   int dim() const;
 
+  /// @todo Remove this. Just here for mesh::Ordering
+  ///
+  /// DOF map
+  graph::AdjacencyList<std::int32_t>& dofmap();
+
   /// DOF map
   const graph::AdjacencyList<std::int32_t>& dofmap() const;
 
@@ -109,12 +114,12 @@ public:
   std::shared_ptr<const fem::CoordinateElement> coord_mapping;
 
   /// Get coordinate dofs for all local cells
-  CoordinateDofs& coordinate_dofs();
+  // CoordinateDofs& coordinate_dofs();
 
   /// Get coordinate dofs for all local cells (const version)
-  const CoordinateDofs& coordinate_dofs() const;
+  // const CoordinateDofs& coordinate_dofs() const;
 
-  ///  @todo Remobve this
+  ///  @todo Remove this
   ///
   /// Polynomial degree of the mesh geometry
   int degree() const;
