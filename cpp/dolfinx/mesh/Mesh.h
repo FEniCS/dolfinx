@@ -69,6 +69,7 @@ public:
 
   // FIXME: What about global vertex indices?
   // FIXME: Be explicit in passing geometry degree/type
+
   /// Construct a Mesh from topological and geometric data.
   ///
   /// In parallel, geometric points must be arranged in global index
@@ -85,18 +86,16 @@ public:
   /// @param[in] comm MPI Communicator
   /// @param[in] type Cell type
   /// @param[in] points Array of geometric points, arranged in global
-  ///                   index order
+  ///   index order
   /// @param[in] cells Array of cells (containing the global point
-  ///                  indices for each cell)
+  ///   indices for each cell)
   /// @param[in] global_cell_indices Array of global cell indices. If
-  ///                                not empty, this must be same size
-  ///                                as the number of rows in cells. If
-  ///                                empty, global cell indices will be
-  ///                                constructed, beginning from 0 on
-  ///                                process 0.
+  ///   not empty, this must be same size as the number of rows in
+  ///   cells. If empty, global cell indices will be constructed,
+  ///   beginning from 0 on process 0.
   /// @param[in] ghost_mode The ghost mode
   /// @param[in] num_ghost_cells Number of ghost cells on this process
-  ///                            (must be at end of list of cells)
+  ///   (must be at end of list of cells)
   Mesh(MPI_Comm comm, mesh::CellType type,
        const Eigen::Ref<const Eigen::Array<
            double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>>& points,
@@ -110,7 +109,7 @@ public:
   /// @param[in] mesh Mesh to be copied
   Mesh(const Mesh& mesh);
 
-  /// Move constructor.
+  /// Move constructor
   /// @param mesh Mesh to be moved.
   Mesh(Mesh&& mesh);
 
@@ -125,12 +124,14 @@ public:
   Mesh& operator=(Mesh&& mesh) = default;
 
   /// @todo Remove and work via Topology
+  ///
   /// Get number of entities of given topological dimension
   /// @param[in] d Topological dimension.
   /// @return Number of entities of topological dimension d
   std::int32_t num_entities(int d) const;
 
   /// @todo Remove and work via Topology
+  ///
   /// Get global number of entities of given topological dimension
   /// @param[in] dim Topological dimension.
   /// @return Global number of entities of topological dimension d
@@ -153,6 +154,7 @@ public:
   const Geometry& geometry() const;
 
   /// @todo Remove and work via Topology
+  ///
   /// Create entities of given topological dimension.
   /// @param[in] dim Topological dimension
   /// @return Number of newly created entities, returns -1 if entities
@@ -160,15 +162,19 @@ public:
   std::int32_t create_entities(int dim) const;
 
   /// @todo Remove and work via Topology
+  ///
   /// Create connectivity between given pair of dimensions, d0 -> d1
   /// @param[in] d0 Topological dimension
   /// @param[in] d1 Topological dimension
   void create_connectivity(int d0, int d1) const;
 
   /// @todo Remove and work via Topology
+  ///
   /// Compute all entities and connectivity
   void create_connectivity_all() const;
 
+  /// @todo Remove and work via Topology
+  ///
   /// Compute entity permutations and reflections
   void create_entity_permutations() const;
 
@@ -192,6 +198,8 @@ public:
   /// @return The maximum of cells' inscribed sphere radii
   double rmax() const;
 
+  /// @todo Remove and work via Topology
+  ///
   /// Compute hash of mesh, currently based on the has of the mesh
   /// geometry and mesh topology
   /// @return A tree-hashed value of the coordinates over all MPI
@@ -211,6 +219,8 @@ public:
   /// @return The communicator on which the mesh is distributed
   MPI_Comm mpi_comm() const;
 
+  /// @todo Remove this option. Topology should take care of it
+  ///
   /// Ghost mode used for partitioning. Possible values are same as
   /// `parameters["ghost_mode"]`.
   /// @warning The interface may change in future without deprecation;
@@ -227,6 +237,7 @@ private:
   // MPI communicator
   dolfinx::MPI::Comm _mpi_comm;
 
+  // TODO: remove
   // Ghost mode used for partitioning
   GhostMode _ghost_mode;
 

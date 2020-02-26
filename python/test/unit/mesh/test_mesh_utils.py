@@ -27,13 +27,13 @@ def test_extract_topology():
     # Create cell 'topology' for 'P1' triangulation, i.e. no mid-side
     # nodes, and convert to an AdjacencyList
     cells = [[0, 1, 4], [0, 4, 3], [1, 2, 5], [1, 5, 4]]
-    cells = cpp.graph.AdjacencyList64(cells0)
+    cells = cpp.graph.AdjacencyList64(cells)
 
     # Extract a 'proper, vertex-only topology. Vertex indices are
     # unchanged. Should be same as input as input is vertex-only
     # triangulation.
     cells_filtered = cpp.mesh.extract_topology(layout, cells)
-    assert np.array_equal(cells0.array(), cells_filtered.array())
+    assert np.array_equal(cells.array(), cells_filtered.array())
 
     # Create element dof layout for P2 element
     perms = np.zeros([5, 6], dtype=np.int8)
@@ -49,8 +49,8 @@ def test_extract_topology():
 
     # Extract a 'proper, vertex-only topology. Vertex indices are
     # unchanged, and edges entries dropped
-    cells_filtered = cpp.mesh.extract_topology(layout, cells)
-    assert np.array_equal(cells_filtered0.array(), cells_filtered1.array())
+    cells_filtered1 = cpp.mesh.extract_topology(layout, cells)
+    assert np.array_equal(cells_filtered.array(), cells_filtered1.array())
 
 
 def create_mesh_gmsh(degree):
@@ -338,9 +338,9 @@ def test_topology_partition():
         print("L2g:", l2g)
 
     # Create Geometry
-    geometry = cpp.mesh.Geometry(dof_index_map, dofmap, x_g, l2g)
+    geometry = cpp.mesh.Geometry(dof_index_map, dofmap, x_g, l2g, degree)
 
-    mesh = cpp.mesh.Mesh(cpp.MPI.comm_world, topology, geometry, 2)
+    mesh = cpp.mesh.Mesh(cpp.MPI.comm_world, topology, geometry)
     print(mesh.topology.dim)
 
     filename = os.path.join("mesh1.xdmf")
