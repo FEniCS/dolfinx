@@ -80,7 +80,12 @@ Geometry::x() const
   return _coordinates;
 }
 //-----------------------------------------------------------------------------
-std::size_t Geometry::num_points() const { return _coordinates.rows(); }
+Eigen::Ref<const Eigen::Vector3d> Geometry::x(int n) const
+{
+  return _coordinates.row(n).matrix().transpose();
+}
+//-----------------------------------------------------------------------------
+std::int32_t Geometry::num_points() const { return _coordinates.rows(); }
 //-----------------------------------------------------------------------------
 std::size_t Geometry::num_points_global() const
 {
@@ -88,11 +93,6 @@ std::size_t Geometry::num_points_global() const
     return _index_map->size_global();
   else
     return _num_points_global;
-}
-//-----------------------------------------------------------------------------
-Eigen::Ref<const Eigen::Vector3d> Geometry::x(int n) const
-{
-  return _coordinates.row(n).matrix().transpose();
 }
 //-----------------------------------------------------------------------------
 const std::vector<std::int64_t>& Geometry::global_indices() const

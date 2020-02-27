@@ -125,6 +125,8 @@ void mesh(py::module& m)
       .def("num_points", &dolfinx::mesh::Geometry::num_points)
       .def("num_points_global", &dolfinx::mesh::Geometry::num_points_global)
       .def("global_indices", &dolfinx::mesh::Geometry::global_indices)
+      .def("point",
+           py::overload_cast<int>(&dolfinx::mesh::Geometry::x, py::const_))
       .def_property(
           "x",
           // Get
@@ -137,9 +139,10 @@ void mesh(py::module& m)
           },
           py::return_value_policy::reference_internal,
           "Return coordinates of all points")
-    //   .def("x", py::overload_cast<int>(&dolfinx::mesh::Geometry::x, py::const_),
-    //        py::return_value_policy::reference_internal,
-    //        "Return coordinates of a point")
+      //   .def("x", py::overload_cast<int>(&dolfinx::mesh::Geometry::x,
+      //   py::const_),
+      //        py::return_value_policy::reference_internal,
+      //        "Return coordinates of a point")
       .def_readwrite("coord_mapping", &dolfinx::mesh::Geometry::coord_mapping);
 
   // dolfinx::mesh::TopologyComputation
