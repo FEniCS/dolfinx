@@ -67,22 +67,29 @@ def create_mesh_gmsh(shape, degree):
         geom = pygmsh.opencascade.Geometry()
         geom.add_ball([0.0, 0.0, 0.0], 1.0, char_length=0.2)
 
+    # rectangle = geom.add_rectangle(0.0, 1.0, 0.0, 1.0, 0.0, 20.1)
+    # geom.add_raw_code("Recombine Surface {%s};" % rectangle.surface.id)
+
     if shape == cpp.mesh.CellType.triangle and degree == 1:
         mesh = pygmsh.generate_mesh(geom, dim=2, mesh_file_type="vtk")
         mesh.cells = [cells for cells in mesh.cells if cells.type == "triangle"]
     elif shape == cpp.mesh.CellType.triangle and degree == 2:
         mesh = pygmsh.generate_mesh(geom, dim=2, mesh_file_type="vtk", extra_gmsh_arguments=["-order", "2"])
         mesh.cells = [cells for cells in mesh.cells if cells.type == "triangle6"]
+    elif shape == cpp.mesh.CellType.quadrilateral and degree == 1:
+        mesh = pygmsh.generate_mesh(geom, dim=2, mesh_file_type="vtk")
+        mesh.cells = [cells for cells in mesh.cells if cells.type == "quad"]
+    elif shape == cpp.mesh.CellType.quadrilateral and degree == 2:
+        mesh = pygmsh.generate_mesh(geom, dim=2, mesh_file_type="vtk", extra_gmsh_arguments=["-order", "2"])
+        mesh.cells = [cells for cells in mesh.cells if cells.type == "quad9"]
     elif shape == cpp.mesh.CellType.tetrahedron and degree == 1:
-        print("2 ******")
         mesh = pygmsh.generate_mesh(geom, dim=3, mesh_file_type="vtk")
         mesh.cells = [cells for cells in mesh.cells if cells.type == "tetra"]
     elif shape == cpp.mesh.CellType.tetrahedron and degree == 2:
-        print("2 ******")
         mesh = pygmsh.generate_mesh(geom, dim=3, mesh_file_type="vtk", extra_gmsh_arguments=["-order", "2"])
         mesh.cells = [cells for cells in mesh.cells if cells.type == "tetra10"]
 
-    print("*3 *****", mesh.cells)
+    # print("*3 *****", mesh.cells)
     # import meshio
     # meshio.write("test.vtu", mesh)
 
@@ -110,6 +117,16 @@ def get_layout(shape, degree):
         perms = np.zeros([5, 6], dtype=np.int8)
         perms[:] = [0, 1, 2, 3, 4, 5]
         entity_dofs = [[set([0]), set([1]), set([2])], [set([3]), set([4]), set([5])], [set()]]
+        return cpp.fem.ElementDofLayout(1, entity_dofs, [], [], shape, perms)
+    elif shape == cpp.mesh.CellType.quadrilateral and degree == 1:
+        perms = np.zeros([6, 4], dtype=np.int8)
+        perms[:] = [0, 1, 2, 3]
+        entity_dofs = [[set([0]), set([1]), set([2]), set([3])], [set([]), set([]), set([]), set([])], [set()]]
+        return cpp.fem.ElementDofLayout(1, entity_dofs, [], [], shape, perms)
+    elif shape == cpp.mesh.CellType.quadrilateral and degree == 2:
+        perms = np.zeros([6, 9], dtype=np.int8)
+        perms[:] = [0, 1, 2, 3, 4, 5, 6, 7, 8]
+        entity_dofs = [[set([0]), set([1]), set([2]), set([3])], [set([4]), set([5]), set([6]), set([7])], [set([1])]]
         return cpp.fem.ElementDofLayout(1, entity_dofs, [], [], shape, perms)
     elif shape == cpp.mesh.CellType.tetrahedron and degree == 1:
         perms = np.zeros([18, 6], dtype=np.int8)
@@ -142,12 +159,14 @@ def test_topology_partition():
     degree = 2
     # cell_type = cpp.mesh.CellType.triangle
     cell_type = cpp.mesh.CellType.tetrahedron
+    # cell_type = cpp.mesh.CellType.quadrilateral
     layout = get_layout(cell_type, degree)
     dim = cpp.mesh.cell_dim(cell_type)
 
     if rank == 0:
         # Create mesh data
         cells, x = create_mesh_gmsh(cell_type, degree)
+        print(cells)
         x = np.array(x[:, :dim])
 
         # Permute to DOLFIN ordering and create adjacency list
@@ -167,7 +186,6 @@ def test_topology_partition():
         x = np.zeros([0, dim])
         cells_v = cpp.graph.AdjacencyList64(0)
 
-    # return
 
     # Compute the destination rank for cells on this process via graph
     # partitioning
