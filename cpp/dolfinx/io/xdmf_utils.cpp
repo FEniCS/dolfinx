@@ -217,7 +217,7 @@ xdmf_utils::get_point_data_values(const function::Function& u)
 
   // FIXME: Unpick the below code for the new layout of data from
   //        GenericFunction::compute_vertex_values
-  const std::size_t num_local_points = mesh->geometry().num_points();
+  const std::size_t num_local_points = mesh->geometry().x().rows();
   std::vector<PetscScalar> _data_values(width * num_local_points, 0.0);
 
   const std::size_t value_rank = u.value_rank();

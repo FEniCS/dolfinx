@@ -85,8 +85,6 @@ Eigen::Ref<const Eigen::Vector3d> Geometry::x(int n) const
   return _coordinates.row(n).matrix().transpose();
 }
 //-----------------------------------------------------------------------------
-std::int32_t Geometry::num_points() const { return _coordinates.rows(); }
-//-----------------------------------------------------------------------------
 std::size_t Geometry::num_points_global() const
 {
   if (_index_map)

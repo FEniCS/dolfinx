@@ -356,7 +356,7 @@ Function::compute_point_values() const
 
   // Resize Array for holding point values
   Eigen::Array<PetscScalar, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
-      point_values(mesh.geometry().num_points(), value_size_loc);
+      point_values(mesh.geometry().x().rows(), value_size_loc);
 
   const graph::AdjacencyList<std::int32_t>& cell_dofs
       = mesh.geometry().dofmap();

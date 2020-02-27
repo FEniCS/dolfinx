@@ -87,9 +87,6 @@ public:
   /// Return coordinate array for point with local index n
   Eigen::Ref<const Eigen::Vector3d> x(int n) const;
 
-  /// Return the number of local points in the geometry
-  std::int32_t num_points() const;
-
   /// Return the number of global points in the geometry
   std::size_t num_points_global() const;
 
@@ -104,7 +101,9 @@ public:
   /// Return informal string representation (pretty-print)
   std::string str(bool verbose) const;
 
-  /// Put CoordinateElement for now. Experimental.
+  /// @warning Experimental
+  ///
+  /// Put CoordinateElement for now
   std::shared_ptr<const fem::CoordinateElement> coord_mapping;
 
   ///  @todo Remove this
