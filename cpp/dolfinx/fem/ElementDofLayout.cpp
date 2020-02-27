@@ -16,34 +16,6 @@
 using namespace dolfinx;
 using namespace dolfinx::fem;
 
-namespace
-{
-//-----------------------------------------------------------------------------
-int get_num_permutations(const mesh::CellType cell_type)
-{
-  // In general, this will return num_edges + 2*num_faces + 4*num_volumes
-  switch (cell_type)
-  {
-  case (mesh::CellType::point):
-    return 0;
-  case (mesh::CellType::interval):
-    return 1;
-  case (mesh::CellType::triangle):
-    return 5;
-  case (mesh::CellType::tetrahedron):
-    return 18;
-  case (mesh::CellType::quadrilateral):
-    return 6;
-  case (mesh::CellType::hexahedron):
-    return 28;
-  default:
-    LOG(WARNING) << "Dof permutations are not defined for this cell type. High "
-                    "order elements may be incorrect.";
-    return 0;
-  }
-}
-} // namespace
-
 //-----------------------------------------------------------------------------
 ElementDofLayout::ElementDofLayout(
     int block_size, const std::vector<std::vector<std::set<int>>>& entity_dofs_,
@@ -105,7 +77,13 @@ ElementDofLayout::ElementDofLayout(
   }
 
   // Assert that base_permutations is the correct shape
-  assert (_base_permutations.rows() == get_num_permutations(cell_type));
+#ifdef DEBUG
+  int perm_count = 0;
+  std::array<int, 4> perms_per_dim = {0, 1, 2, 4};
+  for (std::size_t dim = 0; dim < entity_dofs_.size(); ++dim)
+    perm_count += perms_per_dim[dim] * entity_dofs_[dim].size();
+#endif
+  assert(_base_permutations.rows() == perm_count);
   assert (_base_permutations.cols() == _num_dofs);
 }
 //-----------------------------------------------------------------------------

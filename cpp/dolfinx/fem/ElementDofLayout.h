@@ -34,6 +34,26 @@ class ElementDofLayout
 {
 public:
   /// Constructor
+  /// @param[in] entity_dofs The dofs on each entity, in the format:
+  ///            entity_dofs[entity_dim][entity_number] = [dof0, dof1, ...]
+  /// @param[in] parent_map TODO
+  /// @param[in] sub_dofmaps TODO
+  /// @param[in] cell_type The cell type of the mesh.
+  /// @param[in] base_permutations The base permutations for the dofs on the
+  ///            cell. These will be used to permute the dofs on the cell. Each
+  ///            row of this array is one base permutation, and the number of
+  ///            columns should be the number of (local) dofs on each cell.
+  ///              Points (dim 0 entities) have no permutations.
+  ///              Lines (dim 1 entities) have one permutation each to represent
+  ///                the line being reversed.
+  ///              Faces (dim 2 entities) have two permutations each to
+  ///                represent the face being rotated (one vertex anticlockwise)
+  ///                and reflected.
+  ///              Volumes (dim 3 entities) have four permutations each to
+  ///                represent the volume being rotated (by one vertex) in three
+  ///                directions and reflected. It would be possible to represent
+  ///                a volume with 3 base permutations (2 rotations and 1
+  ///                reflection), but the implementation with 3 is simpler.
   ElementDofLayout(
       int block_size,
       const std::vector<std::vector<std::set<int>>>& entity_dofs,
