@@ -125,8 +125,8 @@ commands:
           --build-arg PETSC_SLEPC_OPTFLAGS='-O3'
           --target << parameters.docker-target >>
           --file << parameters.dockerfile >> << parameters.extra-args >>
-          --tag quay.io/fenicsproject/dolfinx:<< parameters.docker-target >> . &&
-          sudo docker push quay.io/fenicsproject/dolfinx:<< parameters.docker-target >>
+          --tag docker.pkg.github.com/fenics/dolfinx/<< parameters.docker-target >>:latest . &&
+          sudo docker push docker.pkg.github.com/fenics/dolfinx/<< parameters.docker-target >>:latest
 
 jobs:
   build-real:
@@ -226,8 +226,8 @@ jobs:
             sudo apt-get -y install docker-ce docker-ce-cli containerd.io
             sudo docker run hello-world
       - run:
-          name: Login to quay.io
-          command: echo ${QUAYIO_TOKEN} | sudo docker login -u ${QUAYIO_USERNAME} --password-stdin quay.io
+          name: Login to GitHub packages
+          command: echo ${GH_TOKEN} | sudo docker login -u ${GH_USERNAME} --password-stdin docker.pkg.github.com
       - build-and-push-target:
           docker-target: "base"
       - build-and-push-target:
@@ -275,7 +275,7 @@ workflows:
                 - master
     jobs:
       - build-and-push-complete-build-docker-images:
-          context: quay.io
+          context: github-packages
 
   build-and-push-docker-images:
     when: << pipeline.parameters.build-and-push-docker-images >>
@@ -285,4 +285,4 @@ workflows:
             branches:
               only:
                 - master
-          context: quay.io
+          context: github-packages
