@@ -53,6 +53,7 @@ void mesh(py::module& m)
   m.def("to_type", &dolfinx::mesh::to_type);
   m.def("is_simplex", &dolfinx::mesh::is_simplex);
 
+  m.def("cell_dim", &dolfinx::mesh::cell_dim);
   m.def("cell_num_entities", &dolfinx::mesh::cell_num_entities);
   m.def("cell_num_vertices", &dolfinx::mesh::num_cell_vertices);
 
@@ -111,10 +112,6 @@ void mesh(py::module& m)
           },
           py::return_value_policy::reference_internal,
           "Return coordinates of all points")
-      //   .def("x", py::overload_cast<int>(&dolfinx::mesh::Geometry::x,
-      //   py::const_),
-      //        py::return_value_policy::reference_internal,
-      //        "Return coordinates of a point")
       .def_readwrite("coord_mapping", &dolfinx::mesh::Geometry::coord_mapping);
 
   // dolfinx::mesh::TopologyComputation

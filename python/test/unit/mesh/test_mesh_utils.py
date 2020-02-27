@@ -7,6 +7,7 @@
 import os
 
 import numpy as np
+import pytest
 
 from dolfinx import cpp
 from dolfinx.io import XDMFFile
@@ -53,23 +54,35 @@ def test_extract_topology():
     assert np.array_equal(cells_filtered.array(), cells_filtered1.array())
 
 
-def create_mesh_gmsh(degree):
+def create_mesh_gmsh(shape, degree):
     import pygmsh
     geom = pygmsh.built_in.Geometry()
 
-    print("!!!!", degree)
-    # geom.add_rectangle(0.0, 2.0, 0.0, 1.0, 0.0, 2.1)
-    geom = pygmsh.opencascade.Geometry()
-    geom.add_disk([0.0, 0.0, 0.0], 1.0, char_length=0.2)
+    if shape == cpp.mesh.CellType.triangle:
+        # geom.add_rectangle(0.0, 2.0, 0.0, 1.0, 0.0, 2.1)
+        geom = pygmsh.opencascade.Geometry()
+        geom.add_disk([0.0, 0.0, 0.0], 1.0, char_length=0.2)
+    elif shape == cpp.mesh.CellType.tetrahedron:
+        print("1 ******")
+        geom = pygmsh.opencascade.Geometry()
+        geom.add_ball([0.0, 0.0, 0.0], 1.0, char_length=0.2)
 
-    if degree == 1:
+    if shape == cpp.mesh.CellType.triangle and degree == 1:
         mesh = pygmsh.generate_mesh(geom, dim=2, mesh_file_type="vtk")
         mesh.cells = [cells for cells in mesh.cells if cells.type == "triangle"]
-    else:
-        # mesh = pygmsh.generate_mesh(geom, dim=2, mesh_file_type="vtk", extra_gmsh_arguments=["-order", "2"])
-        mesh = pygmsh.generate_mesh(geom, dim=2, extra_gmsh_arguments=["-order", "2"])
+    elif shape == cpp.mesh.CellType.triangle and degree == 2:
+        mesh = pygmsh.generate_mesh(geom, dim=2, mesh_file_type="vtk", extra_gmsh_arguments=["-order", "2"])
         mesh.cells = [cells for cells in mesh.cells if cells.type == "triangle6"]
+    elif shape == cpp.mesh.CellType.tetrahedron and degree == 1:
+        print("2 ******")
+        mesh = pygmsh.generate_mesh(geom, dim=3, mesh_file_type="vtk")
+        mesh.cells = [cells for cells in mesh.cells if cells.type == "tetra"]
+    elif shape == cpp.mesh.CellType.tetrahedron and degree == 2:
+        print("2 ******")
+        mesh = pygmsh.generate_mesh(geom, dim=3, mesh_file_type="vtk", extra_gmsh_arguments=["-order", "2"])
+        mesh.cells = [cells for cells in mesh.cells if cells.type == "tetra10"]
 
+    print("*3 *****", mesh.cells)
     # import meshio
     # meshio.write("test.vtu", mesh)
 
@@ -87,42 +100,57 @@ def create_mesh_gmsh(degree):
 
 #     cells0 = [[0, 1, 4], [0, 4, 3], [1, 2, 5], [1, 5, 4]]
 
+def get_layout(shape, degree):
+    if shape == cpp.mesh.CellType.triangle and degree == 1:
+        perms = np.zeros([5, 3], dtype=np.int8)
+        perms[:] = [0, 1, 2]
+        entity_dofs = [[set([0]), set([1]), set([2])], [set(), set(), set()], [set()]]
+        return cpp.fem.ElementDofLayout(1, entity_dofs, [], [], shape, perms)
+    elif shape == cpp.mesh.CellType.triangle and degree == 2:
+        perms = np.zeros([5, 6], dtype=np.int8)
+        perms[:] = [0, 1, 2, 3, 4, 5]
+        entity_dofs = [[set([0]), set([1]), set([2])], [set([3]), set([4]), set([5])], [set()]]
+        return cpp.fem.ElementDofLayout(1, entity_dofs, [], [], shape, perms)
+    elif shape == cpp.mesh.CellType.tetrahedron and degree == 1:
+        perms = np.zeros([18, 6], dtype=np.int8)
+        perms[:] = [0, 1, 2, 3, 4, 5]
+        entity_dofs = [[set([0]), set([1]), set([2]), set([3])], [set([]), set([]), set([]), set([]), set([]), set([])],
+                       [set([]), set([]), set([]), set([])], [set()]]
+        return cpp.fem.ElementDofLayout(1, entity_dofs, [], [], shape, perms)
+    elif shape == cpp.mesh.CellType.tetrahedron and degree == 2:
+        perms = np.zeros([18, 6], dtype=np.int8)
+        perms[:] = [0, 1, 2, 3, 4, 5]
+        entity_dofs = [[set([0]), set([1]), set([2]), set([3])], [set([4]), set([5]), set([6]), set([7]), set([8]), set([9])],
+                       [set([]), set([]), set([]), set([])], [set()]]
+        return cpp.fem.ElementDofLayout(1, entity_dofs, [], [], shape, perms)
+    else:
+        raise RuntimeError("Unknown dof layout")
+
 
 def test_topology_partition():
     """Test partitioning of cells"""
     # FIXME: make creating the ElementDofLayout simpler and clear
 
+    pytest.importorskip("pygmsh")
+
     rank = cpp.MPI.rank(cpp.MPI.comm_world)
     size = cpp.MPI.size(cpp.MPI.comm_world)
-    cell_type = cpp.mesh.CellType.triangle
-
-    # Create element dof layout for 'P1' simplex triangulation in 2D
-    perms1 = np.zeros([5, 3], dtype=np.int8)
-    perms1[:] = [0, 1, 2]
-    entity_dofs1 = [[set([0]), set([1]), set([2])], [set(), set(), set()], [set()]]
-    layout1 = cpp.fem.ElementDofLayout(1, entity_dofs1, [], [], cell_type, perms1)
-
-    # Create element dof layout for 'P2' simplex triangulation in 2D
-    perms2 = np.zeros([5, 6], dtype=np.int8)
-    perms2[:] = [0, 1, 2, 3, 4, 5]
-    entity_dofs2 = [[set([0]), set([1]), set([2])], [set([3]), set([4]), set([5])], [set()]]
-    layout2 = cpp.fem.ElementDofLayout(1, entity_dofs2, [], [], cell_type, perms2)
 
     # Create mesh input data
     degree = 2
-    if degree == 1:
-        layout = layout1
-    else:
-        layout = layout2
+    # cell_type = cpp.mesh.CellType.triangle
+    cell_type = cpp.mesh.CellType.tetrahedron
+    layout = get_layout(cell_type, degree)
+    dim = cpp.mesh.cell_dim(cell_type)
 
     if rank == 0:
         # Create mesh data
-        cells, x = create_mesh_gmsh(degree)
-        x = np.array(x[:, :2])
+        cells, x = create_mesh_gmsh(cell_type, degree)
+        x = np.array(x[:, :dim])
 
         # Permute to DOLFIN ordering and create adjacency list
         cells = cpp.io.permute_cell_ordering(cells,
-                                             cpp.io.permutation_vtk_to_dolfin(cpp.mesh.CellType.triangle,
+                                             cpp.io.permutation_vtk_to_dolfin(cell_type,
                                                                               cells.shape[1]))
         cells1 = cpp.graph.AdjacencyList64(cells)
 
@@ -134,18 +162,18 @@ def test_topology_partition():
     else:
         # Empty data on ranks other than 0
         cells1 = cpp.graph.AdjacencyList64(0)
-        x = np.zeros([0, 2])
+        x = np.zeros([0, dim])
         cells_v = cpp.graph.AdjacencyList64(0)
+
+    # return
 
     # Compute the destination rank for cells on this process via graph
     # partitioning
-    dest = cpp.mesh.partition_cells(cpp.MPI.comm_world, size,
-                                    layout.cell_type, cells_v)
+    dest = cpp.mesh.partition_cells(cpp.MPI.comm_world, size, layout.cell_type, cells_v)
     assert len(dest) == cells_v.num_nodes
 
     # Distribute cells to destination rank
-    cells, src, original_cell_index = cpp.mesh.distribute(cpp.MPI.comm_world, cells_v,
-                                                          dest)
+    cells, src, original_cell_index = cpp.mesh.distribute(cpp.MPI.comm_world, cells_v, dest)
 
     # Build local cell-vertex connectivity, with local vertex indices
     # [0, 1, 2, ..., n), and get map from global vertex indices in
@@ -187,8 +215,6 @@ def test_topology_partition():
     cells, vertex_map = cpp.mesh.create_distributed_adjacency_list(cpp.MPI.comm_world, topology_local,
                                                                    local_to_global_vertices)
 
-    # return
-
     # --- Create distributed topology
     topology = cpp.mesh.Topology(layout.cell_type)
 
@@ -205,12 +231,24 @@ def test_topology_partition():
     # Create facets for topology, and attach to topology object
     cell_facet, facet_vertex, index_map = cpp.mesh.compute_entities(cpp.MPI.comm_world,
                                                                     topology, topology.dim - 1)
-    topology.set_connectivity(cell_facet, topology.dim, topology.dim - 1)
-    topology.set_index_map(topology.dim - 1, index_map)
+    if cell_facet is not None:
+        topology.set_connectivity(cell_facet, topology.dim, topology.dim - 1)
+    if index_map is not None:
+        topology.set_index_map(topology.dim - 1, index_map)
     if facet_vertex is not None:
         topology.set_connectivity(facet_vertex, topology.dim - 1, 0)
     facet_cell, _ = cpp.mesh.compute_connectivity(topology, topology.dim - 1, topology.dim)
-    topology.set_connectivity(facet_cell, topology.dim - 1, topology.dim)
+    if facet_cell is not None:
+        topology.set_connectivity(facet_cell, topology.dim - 1, topology.dim)
+
+    cell_edge, edge_vertex, index_map = cpp.mesh.compute_entities(cpp.MPI.comm_world,
+                                                                    topology, 1)
+    if cell_edge is not None:
+        topology.set_connectivity(cell_edge, topology.dim, 1)
+    if index_map is not None:
+        topology.set_index_map(1, index_map)
+    if edge_vertex is not None:
+        topology.set_connectivity(edge_vertex, 1, 0)
 
     # NOTE: Could be a local (MPI_COMM_SELF) dofmap?
     # Build 'geometry' dofmap on the topology
@@ -246,6 +284,8 @@ def test_topology_partition():
     # Create Geometry
     geometry = cpp.mesh.Geometry(dof_index_map, dofmap, x_g, l2g, degree)
 
+    print(coords.shape, geometry.num_points_global())
+
     # Create mesh
     mesh = cpp.mesh.Mesh(cpp.MPI.comm_world, topology, geometry)
 
@@ -253,3 +293,4 @@ def test_topology_partition():
     encoding = XDMFFile.Encoding.HDF5
     with XDMFFile(mesh.mpi_comm(), filename, encoding=encoding) as file:
         file.write(mesh)
+    print("End")
