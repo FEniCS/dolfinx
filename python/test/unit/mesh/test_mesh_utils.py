@@ -66,7 +66,7 @@ def create_mesh_gmsh(shape, degree):
         geom = pygmsh.opencascade.Geometry()
         geom.add_ball([0.0, 0.0, 0.0], 1.0, char_length=0.2)
     elif shape == cpp.mesh.CellType.quadrilateral:
-        rect = geom.add_rectangle(0.0, 1.0, 0.0, 1.0, 0.0, 10.1)
+        rect = geom.add_rectangle(0.0, 2.0, 0.0, 1.0, 0.0, 0.1)
         geom.set_recombined_surfaces([rect.surface])
 
     # rectangle = geom.add_rectangle(0.0, 1.0, 0.0, 1.0, 0.0, 20.1)
