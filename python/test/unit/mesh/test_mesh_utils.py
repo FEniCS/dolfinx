@@ -63,9 +63,11 @@ def create_mesh_gmsh(shape, degree):
         geom = pygmsh.opencascade.Geometry()
         geom.add_disk([0.0, 0.0, 0.0], 1.0, char_length=0.2)
     elif shape == cpp.mesh.CellType.tetrahedron:
-        print("1 ******")
         geom = pygmsh.opencascade.Geometry()
         geom.add_ball([0.0, 0.0, 0.0], 1.0, char_length=0.2)
+    elif shape == cpp.mesh.CellType.quadrilateral:
+        rect = geom.add_rectangle(0.0, 1.0, 0.0, 1.0, 0.0, 10.1)
+        geom.set_recombined_surfaces([rect.surface])
 
     # rectangle = geom.add_rectangle(0.0, 1.0, 0.0, 1.0, 0.0, 20.1)
     # geom.add_raw_code("Recombine Surface {%s};" % rectangle.surface.id)
@@ -90,8 +92,8 @@ def create_mesh_gmsh(shape, degree):
         mesh.cells = [cells for cells in mesh.cells if cells.type == "tetra10"]
 
     # print("*3 *****", mesh.cells)
-    # import meshio
-    # meshio.write("test.vtu", mesh)
+    import meshio
+    meshio.write("test.vtu", mesh, file_format="vtu", binary=False)
 
     points = mesh.points
     cells = mesh.cells[0].data
@@ -121,18 +123,24 @@ def get_layout(shape, degree):
     elif shape == cpp.mesh.CellType.quadrilateral and degree == 1:
         perms = np.zeros([6, 4], dtype=np.int8)
         perms[:] = [0, 1, 2, 3]
-        entity_dofs = [[set([0]), set([1]), set([2]), set([3])], [set([]), set([]), set([]), set([])], [set()]]
+        entity_dofs = [[set([0]), set([1]), set([2]), set([3])],
+                       [set([]), set([]), set([]), set([])],
+                       [set()]]
         return cpp.fem.ElementDofLayout(1, entity_dofs, [], [], shape, perms)
     elif shape == cpp.mesh.CellType.quadrilateral and degree == 2:
         perms = np.zeros([6, 9], dtype=np.int8)
         perms[:] = [0, 1, 2, 3, 4, 5, 6, 7, 8]
-        entity_dofs = [[set([0]), set([1]), set([2]), set([3])], [set([4]), set([5]), set([6]), set([7])], [set([1])]]
+        entity_dofs = [[set([0]), set([1]), set([3]), set([4])],
+                       [set([2]), set([5]), set([6]), set([7])],
+                       [set([8])]]
         return cpp.fem.ElementDofLayout(1, entity_dofs, [], [], shape, perms)
     elif shape == cpp.mesh.CellType.tetrahedron and degree == 1:
         perms = np.zeros([18, 6], dtype=np.int8)
         perms[:] = [0, 1, 2, 3, 4, 5]
-        entity_dofs = [[set([0]), set([1]), set([2]), set([3])], [set([]), set([]), set([]), set([]), set([]), set([])],
-                       [set([]), set([]), set([]), set([])], [set()]]
+        entity_dofs = [[set([0]), set([1]), set([2]), set([3])],
+                       [set([]), set([]), set([]), set([]), set([]), set([])],
+                       [set([]), set([]), set([]), set([])],
+                       [set()]]
         return cpp.fem.ElementDofLayout(1, entity_dofs, [], [], shape, perms)
     elif shape == cpp.mesh.CellType.tetrahedron and degree == 2:
         perms = np.zeros([18, 10], dtype=np.int8)
@@ -158,8 +166,8 @@ def test_topology_partition():
     # Create mesh input data
     degree = 2
     # cell_type = cpp.mesh.CellType.triangle
-    cell_type = cpp.mesh.CellType.tetrahedron
-    # cell_type = cpp.mesh.CellType.quadrilateral
+    # cell_type = cpp.mesh.CellType.tetrahedron
+    cell_type = cpp.mesh.CellType.quadrilateral
     layout = get_layout(cell_type, degree)
     dim = cpp.mesh.cell_dim(cell_type)
 
@@ -170,9 +178,14 @@ def test_topology_partition():
         x = np.array(x[:, :dim])
 
         # Permute to DOLFIN ordering and create adjacency list
+        print("Pre")
+        print(layout.entity_dofs(0, 3))
+        print(cells)
         cells = cpp.io.permute_cell_ordering(cells,
                                              cpp.io.permutation_vtk_to_dolfin(cell_type,
                                                                               cells.shape[1]))
+        print("Post")
+        print(cells)
         cells1 = cpp.graph.AdjacencyList64(cells)
 
         # Extract topology data, e.g. just the vertices. For P1 geometry
@@ -185,6 +198,11 @@ def test_topology_partition():
         cells1 = cpp.graph.AdjacencyList64(0)
         x = np.zeros([0, dim])
         cells_v = cpp.graph.AdjacencyList64(0)
+
+    # print(x)
+    print("Cell v")
+    print(cells_v)
+    # return
 
     # Compute the destination rank for cells on this process via graph
     # partitioning

@@ -333,7 +333,7 @@ std::string xdmf_utils::vtk_cell_type_str(mesh::CellType cell_type, int order)
       {mesh::CellType::interval, {{1, "PolyLine"}, {2, "Edge_3"}}},
       {mesh::CellType::triangle, {{1, "Triangle"}, {2, "Triangle_6"}}},
       {mesh::CellType::quadrilateral,
-       {{1, "Quadrilateral"}, {2, "Quadrilateral_8"}}},
+       {{1, "Quadrilateral"}, {2, "Quadrilateral_9"}}},
       {mesh::CellType::tetrahedron,
        {{1, "Tetrahedron"}, {2, "Tetrahedron_10"}}},
       {mesh::CellType::hexahedron, {{1, "Hexahedron"}, {2, "Hexahedron_20"}}}};
