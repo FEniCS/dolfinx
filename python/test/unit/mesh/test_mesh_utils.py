@@ -120,8 +120,10 @@ def get_layout(shape, degree):
     elif shape == cpp.mesh.CellType.tetrahedron and degree == 2:
         perms = np.zeros([18, 10], dtype=np.int8)
         perms[:] = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9]
-        entity_dofs = [[set([0]), set([1]), set([2]), set([3])], [set([4]), set([5]), set([6]), set([7]), set([8]), set([9])],
-                       [set([]), set([]), set([]), set([])], [set()]]
+        entity_dofs = [[set([0]), set([1]), set([2]), set([3])],
+                       [set([4]), set([5]), set([6]), set([7]), set([8]), set([9])],
+                       [set([]), set([]), set([]), set([])],
+                       [set()]]
         return cpp.fem.ElementDofLayout(1, entity_dofs, [], [], shape, perms)
     else:
         raise RuntimeError("Unknown dof layout")
@@ -242,7 +244,7 @@ def test_topology_partition():
         topology.set_connectivity(facet_cell, topology.dim - 1, topology.dim)
 
     cell_edge, edge_vertex, index_map = cpp.mesh.compute_entities(cpp.MPI.comm_world,
-                                                                    topology, 1)
+                                                                  topology, 1)
     if cell_edge is not None:
         topology.set_connectivity(cell_edge, topology.dim, 1)
     if index_map is not None:
