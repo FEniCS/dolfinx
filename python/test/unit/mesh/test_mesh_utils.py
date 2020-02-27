@@ -56,7 +56,7 @@ def test_extract_topology():
 def create_mesh_gmsh(degree):
     import pygmsh
     geom = pygmsh.built_in.Geometry()
-    geom.add_rectangle(0.0, 1.0, 0.0, 1.0, 0.0, 0.1)
+    geom.add_rectangle(0.0, 2.0, 0.0, 1.0, 0.0, 0.1)
 
     if degree == 1:
         mesh = pygmsh.generate_mesh(geom, mesh_file_type="vtk")
@@ -216,13 +216,6 @@ def test_topology_partition():
     # need for global_index_nodes
     cell_nodes, global_index_cell = cpp.mesh.exchange(cpp.MPI.comm_world,
                                                       cells1, dest, set(src))
-
-    # print("cell_nodes")
-    # print(cell_nodes)
-    # for n in range(cell_nodes.num_nodes):
-    #     print("  ", cell_nodes.links(n))
-    # print("End cell_nodes")
-
     assert cell_nodes.num_nodes == cells.num_nodes
     assert global_index_cell == original_cell_index
 
@@ -239,10 +232,7 @@ def test_topology_partition():
     coords = cpp.mesh.fetch_data(cpp.MPI.comm_world, indices, x)
 
     # Build dof array
-    x_g = np.zeros([len(l2l), 2])
-    for i, d in enumerate(l2l):
-        x_g[i] = coords[d]
-    print("-------")
+    x_g = coords[l2l]
 
     # Create Geometry
     geometry = cpp.mesh.Geometry(dof_index_map, dofmap, x_g, l2g, degree)
