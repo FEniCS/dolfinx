@@ -103,6 +103,7 @@ def test_topology_partition():
     entity_dofs = [[set([0]), set([1]), set([2])], [set([3]), set([4]), set([5])], [set()]]
     layout = cpp.fem.ElementDofLayout(1, entity_dofs, [], [], cell_type, perms)
 
+    # Create mesh input data
     degree = 2
     if rank == 0:
         # Create mesh data
@@ -113,33 +114,31 @@ def test_topology_partition():
         cells = cpp.io.permute_cell_ordering(cells,
                                              cpp.io.permutation_vtk_to_dolfin(cpp.mesh.CellType.triangle,
                                                                               cells.shape[1]))
-
         cells1 = cpp.graph.AdjacencyList64(cells)
-        print(cells1)
 
-        cells_filtered1 = cpp.mesh.extract_topology(layout, cells1)
-
-        # Display nodes
-        # print(type(cells_filtered1))
-        # print("filtered")
-        # for n in range(cells_filtered1.num_nodes):
-        #     print("  ", cells_filtered1.links(n))
+        # Extract topology data, e.g. just the vertices. For P1 geometry
+        # this should just be the identity operator. For other elements
+        # the filtered lists may have 'gaps', i.e. the indices might not
+        # be contiguous.
+        cells_v = cpp.mesh.extract_topology(layout, cells1)
     else:
+        # Empty data on ranks other than 0
         cells1 = cpp.graph.AdjacencyList64(0)
         x = np.zeros([0, 2])
-        cells_filtered1 = cpp.graph.AdjacencyList64(0)
+        cells_v = cpp.graph.AdjacencyList64(0)
 
     return
 
-    # Compute the destination process for cells on this process
+    # Compute the destination process for cells on this process via
+    # graph partitioning
     dest = cpp.mesh.partition_cells(cpp.MPI.comm_world, size,
-                                    layout.cell_type, cells_filtered1)
+                                    layout.cell_type, cells_v)
     # print(dest)
-    assert len(dest) == cells_filtered1.num_nodes
+    assert len(dest) == cells_v.num_nodes
 
     # Distribute cells to destination process
     # return
-    cells, src, original_cell_index = cpp.mesh.distribute(cpp.MPI.comm_world, cells_filtered1,
+    cells, src, original_cell_index = cpp.mesh.distribute(cpp.MPI.comm_world, cells_v,
                                                           dest)
     # print(cells.array())
     # print(src)
