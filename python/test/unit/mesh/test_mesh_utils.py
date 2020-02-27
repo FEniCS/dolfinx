@@ -186,7 +186,6 @@ def test_topology_partition():
         x = np.zeros([0, dim])
         cells_v = cpp.graph.AdjacencyList64(0)
 
-
     # Compute the destination rank for cells on this process via graph
     # partitioning
     dest = cpp.mesh.partition_cells(cpp.MPI.comm_world, size, layout.cell_type, cells_v)
