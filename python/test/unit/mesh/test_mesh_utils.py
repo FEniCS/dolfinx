@@ -56,17 +56,22 @@ def test_extract_topology():
 def create_mesh_gmsh(degree):
     import pygmsh
     geom = pygmsh.built_in.Geometry()
-    geom.add_rectangle(0.0, 2.0, 0.0, 1.0, 0.0, 0.1)
+
+    print("!!!!", degree)
+    # geom.add_rectangle(0.0, 2.0, 0.0, 1.0, 0.0, 2.1)
+    geom = pygmsh.opencascade.Geometry()
+    geom.add_disk([0.0, 0.0, 0.0], 1.0, char_length=0.2)
 
     if degree == 1:
-        mesh = pygmsh.generate_mesh(geom, mesh_file_type="vtk")
+        mesh = pygmsh.generate_mesh(geom, dim=2, mesh_file_type="vtk")
         mesh.cells = [cells for cells in mesh.cells if cells.type == "triangle"]
     else:
-        mesh = pygmsh.generate_mesh(geom, mesh_file_type="vtk", extra_gmsh_arguments=["-order", "2"])
+        # mesh = pygmsh.generate_mesh(geom, dim=2, mesh_file_type="vtk", extra_gmsh_arguments=["-order", "2"])
+        mesh = pygmsh.generate_mesh(geom, dim=2, extra_gmsh_arguments=["-order", "2"])
         mesh.cells = [cells for cells in mesh.cells if cells.type == "triangle6"]
 
-    import meshio
-    meshio.write("test.vtu", mesh)
+    # import meshio
+    # meshio.write("test.vtu", mesh)
 
     points = mesh.points
     cells = mesh.cells[0].data
@@ -92,19 +97,24 @@ def test_topology_partition():
     cell_type = cpp.mesh.CellType.triangle
 
     # Create element dof layout for 'P1' simplex triangulation in 2D
-    perms = np.zeros([5, 3], dtype=np.int8)
-    perms[:] = [0, 1, 2]
-    entity_dofs = [[set([0]), set([1]), set([2])], [set(), set(), set()], [set()]]
-    layout = cpp.fem.ElementDofLayout(1, entity_dofs, [], [], cell_type, perms)
+    perms1 = np.zeros([5, 3], dtype=np.int8)
+    perms1[:] = [0, 1, 2]
+    entity_dofs1 = [[set([0]), set([1]), set([2])], [set(), set(), set()], [set()]]
+    layout1 = cpp.fem.ElementDofLayout(1, entity_dofs1, [], [], cell_type, perms1)
 
     # Create element dof layout for 'P2' simplex triangulation in 2D
-    perms = np.zeros([5, 6], dtype=np.int8)
-    perms[:] = [0, 1, 2, 3, 4, 5]
-    entity_dofs = [[set([0]), set([1]), set([2])], [set([3]), set([4]), set([5])], [set()]]
-    layout = cpp.fem.ElementDofLayout(1, entity_dofs, [], [], cell_type, perms)
+    perms2 = np.zeros([5, 6], dtype=np.int8)
+    perms2[:] = [0, 1, 2, 3, 4, 5]
+    entity_dofs2 = [[set([0]), set([1]), set([2])], [set([3]), set([4]), set([5])], [set()]]
+    layout2 = cpp.fem.ElementDofLayout(1, entity_dofs2, [], [], cell_type, perms2)
 
     # Create mesh input data
     degree = 2
+    if degree == 1:
+        layout = layout1
+    else:
+        layout = layout2
+
     if rank == 0:
         # Create mesh data
         cells, x = create_mesh_gmsh(degree)
@@ -177,6 +187,8 @@ def test_topology_partition():
     cells, vertex_map = cpp.mesh.create_distributed_adjacency_list(cpp.MPI.comm_world, topology_local,
                                                                    local_to_global_vertices)
 
+    # return
+
     # --- Create distributed topology
     topology = cpp.mesh.Topology(layout.cell_type)
 
@@ -204,9 +216,6 @@ def test_topology_partition():
     # Build 'geometry' dofmap on the topology
     dof_index_map, dofmap = cpp.fem.build_dofmap(cpp.MPI.comm_world,
                                                  topology, layout, 1)
-
-    print("Dofmap")
-    print(dofmap)
 
     # Send/receive the 'cell nodes' (includes high-order geometry
     # nodes), and the global input cell index.

@@ -65,12 +65,15 @@ PartitioningNew::reorder_global_indices(
 {
   // TODO: Can this function be broken into multiple logical steps?
 
+  std::cout << "Reorder 1" << std::endl;
   assert(global_indices.size() == shared_indices.size());
 
   // Create global ->local map
   std::map<std::int64_t, std::int32_t> global_to_local;
   for (std::size_t i = 0; i < global_indices.size(); ++i)
     global_to_local.insert({global_indices[i], i});
+
+  std::cout << "Reorder 2" << std::endl;
 
   // Get maximum global index across all processes
   std::int64_t my_max_global_index = 0;
@@ -93,6 +96,8 @@ PartitioningNew::reorder_global_indices(
       number_send[owner] += 1;
     }
   }
+
+  std::cout << "Reorder 2" << std::endl;
 
   // Compute send displacements
   std::vector<int> disp_send(size + 1, 0);
@@ -457,14 +462,20 @@ PartitioningNew::create_distributed_adjacency_list(
     MPI_Comm comm, const mesh::Topology& topology_local,
     const std::vector<std::int64_t>& local_to_global_vertices)
 {
+  std::cout << "Step 1" << std::endl;
+
   // Get marker for each vertex indicating if it interior or on the
   // boundary of the local topology
   const std::vector<bool>& exterior_vertex
       = compute_vertex_exterior_markers(topology_local);
 
+  std::cout << "Step 2" << std::endl;
+
   // Compute new local and global indices
   const auto [local_to_local_new, ghosts]
       = reorder_global_indices(comm, local_to_global_vertices, exterior_vertex);
+
+  std::cout << "Step 3" << std::endl;
 
   const int dim = topology_local.dim();
   auto cv = topology_local.connectivity(dim, 0);
