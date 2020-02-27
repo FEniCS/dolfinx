@@ -34,6 +34,7 @@ class ElementDofLayout
 {
 public:
   /// Constructor
+  /// @param[in] block_size The number of dofs co-located at each point.
   /// @param[in] entity_dofs The dofs on each entity, in the format:
   ///            entity_dofs[entity_dim][entity_number] = [dof0, dof1, ...]
   /// @param[in] parent_map TODO
