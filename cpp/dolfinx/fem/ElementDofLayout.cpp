@@ -82,9 +82,9 @@ ElementDofLayout::ElementDofLayout(
   std::array<int, 4> perms_per_dim = {0, 1, 2, 4};
   for (std::size_t dim = 0; dim < entity_dofs_.size(); ++dim)
     perm_count += perms_per_dim[dim] * entity_dofs_[dim].size();
-#endif
   assert(_base_permutations.rows() == perm_count);
-  assert (_base_permutations.cols() == _num_dofs);
+#endif
+  assert(_base_permutations.cols() == _num_dofs);
 }
 //-----------------------------------------------------------------------------
 ElementDofLayout ElementDofLayout::copy() const
