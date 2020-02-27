@@ -127,106 +127,68 @@ def test_topology_partition():
         x = np.zeros([0, 2])
         cells_v = cpp.graph.AdjacencyList64(0)
 
-    return
-
-    # Compute the destination process for cells on this process via
-    # graph partitioning
+    # Compute the destination rank for cells on this process via graph
+    # partitioning
     dest = cpp.mesh.partition_cells(cpp.MPI.comm_world, size,
                                     layout.cell_type, cells_v)
-    # print(dest)
     assert len(dest) == cells_v.num_nodes
 
-    # Distribute cells to destination process
-    # return
+    # Distribute cells to destination rank
     cells, src, original_cell_index = cpp.mesh.distribute(cpp.MPI.comm_world, cells_v,
                                                           dest)
-    # print(cells.array())
-    # print(src)
-    # if rank == 3:
-    #     print("Num:", cells.num_nodes)
-    #     for i in range(cells.num_nodes):
-    #         print("  ", cells.links(i))
-    #     print(original_index)
-    # assert cpp.MPI.sum(cpp.MPI.comm_world, cells.num_nodes) == 4
 
-    # Build local cell-vertex connectivity (with local vertex indices
-    # [0, 1, 2, ..., n)), map from global indices in 'cells' to the
-    # local vertex indices, and
+    # Build local cell-vertex connectivity, with local vertex indices
+    # [0, 1, 2, ..., n), and get map from global vertex indices in
+    # 'cells' to the local vertex indices
     cells_local, local_to_global_vertices = cpp.mesh.create_local_adjacency_list(cells)
-
-    print("Cells local")
-    print(local_to_global_vertices)
-    for n in range(cells_local.num_nodes):
-        print("  ", cells_local.links(n))
-
     assert len(local_to_global_vertices) == len(np.unique(cells.array()))
     assert len(local_to_global_vertices) == len(np.unique(cells_local.array()))
     assert np.unique(cells_local.array())[-1] == len(local_to_global_vertices) - 1
 
-    # Create local topology, and set cell-vertex topology
-    topology = cpp.mesh.Topology(layout.cell_type)
-
-    print("Size of cell index map:", cells_local.num_nodes)
-    # return
+    # Create local topology, create IndexMap for cells, and set cell-vertex topology
+    topology_local = cpp.mesh.Topology(layout.cell_type)
     index_map = cpp.common.IndexMap(cpp.MPI.comm_self, cells_local.num_nodes, [], 1)
-
-    topology.set_connectivity(cells_local, topology.dim, 0)
-    topology.set_index_map(topology.dim, index_map)
+    topology_local.set_index_map(topology_local.dim, index_map)
+    topology_local.set_connectivity(cells_local, topology_local.dim, 0)
 
     # Attach vertex IndexMap to local topology
     n = len(local_to_global_vertices)
     index_map = cpp.common.IndexMap(cpp.MPI.comm_self, n, [], 1)
-    topology.set_index_map(0, index_map)
+    topology_local.set_index_map(0, index_map)
 
     # Create facets for local topology, and attach to topology object
     cell_facet, facet_vertex, index_map = cpp.mesh.compute_entities(cpp.MPI.comm_self,
-                                                                    topology, topology.dim - 1)
-    topology.set_connectivity(cell_facet, topology.dim, topology.dim - 1)
-    topology.set_index_map(topology.dim - 1, index_map)
+                                                                    topology_local, topology_local.dim - 1)
+    topology_local.set_connectivity(cell_facet, topology_local.dim, topology_local.dim - 1)
+    topology_local.set_index_map(topology_local.dim - 1, index_map)
     if facet_vertex is not None:
-        topology.set_connectivity(facet_vertex, topology.dim - 1, 0)
-    facet_cell, _ = cpp.mesh.compute_connectivity(topology, topology.dim - 1, topology.dim)
-    topology.set_connectivity(facet_cell, topology.dim - 1, topology.dim)
+        topology_local.set_connectivity(facet_vertex, topology_local.dim - 1, 0)
+    facet_cell, _ = cpp.mesh.compute_connectivity(topology_local, topology_local.dim - 1, topology_local.dim)
+    topology_local.set_connectivity(facet_cell, topology_local.dim - 1, topology_local.dim)
 
-    # return
     # Get facets that are on the boundary of the local topology, i.e are
     # connect to one cell only
-    boundary = cpp.mesh.compute_interior_facets(topology)
-    topology.set_interior_facets(boundary)
-    boundary = topology.on_boundary(topology.dim - 1)
+    boundary = cpp.mesh.compute_interior_facets(topology_local)
+    topology_local.set_interior_facets(boundary)
+    boundary = topology_local.on_boundary(topology_local.dim - 1)
 
     # Build distributed cell-vertex AdjacencyList, IndexMap for
     # vertices, and map from local index to old global index
-    cells, vertex_map = cpp.mesh.create_distributed_adjacency_list(cpp.MPI.comm_world, topology,
+    cells, vertex_map = cpp.mesh.create_distributed_adjacency_list(cpp.MPI.comm_world, topology_local,
                                                                    local_to_global_vertices)
 
-    print("Cells dist")
-    print(vertex_map)
-    for n in range(cells.num_nodes):
-        print("  ", cells.links(n))
-
-    # if rank == 1:
-    #     print("Num:", cells.num_nodes)
-    #     for i in range(cells.num_nodes):
-    #         print("  ", cells.links(i))
-    #     print(original_index)
-    #     print(local_to_global_vertices)
-    # print(cells.num_nodes)
-    # Create distributed topology
+    # --- Create distributed topology
     topology = cpp.mesh.Topology(layout.cell_type)
 
-    # Set vertex IndexMap and vertex-vertex connectivity
+    # Set vertex IndexMap, and vertex-vertex connectivity
     topology.set_index_map(0, vertex_map)
     c0 = cpp.graph.AdjacencyList(vertex_map.size_local + vertex_map.num_ghosts)
     topology.set_connectivity(c0, 0, 0)
 
     # Set cell IndexMap and cell-vertex connectivity
-    # num_cells = cpp.MPI.sum(cpp.MPI.comm_world, cells.num_nodes)
     index_map = cpp.common.IndexMap(cpp.MPI.comm_world, cells.num_nodes, [], 1)
     topology.set_index_map(topology.dim, index_map)
-    # print("****", num_cells)
     topology.set_connectivity(cells, topology.dim, 0)
-    # return
 
     # Create facets for topology, and attach to topology object
     cell_facet, facet_vertex, index_map = cpp.mesh.compute_entities(cpp.MPI.comm_world,
@@ -238,19 +200,13 @@ def test_topology_partition():
     facet_cell, _ = cpp.mesh.compute_connectivity(topology, topology.dim - 1, topology.dim)
     topology.set_connectivity(facet_cell, topology.dim - 1, topology.dim)
 
-    # NOTE: This could be a local (MPI_COMM_SELF) dofmap
+    # NOTE: Could be a local (MPI_COMM_SELF) dofmap?
     # Build 'geometry' dofmap on the topology
-    # return
     dof_index_map, dofmap = cpp.fem.build_dofmap(cpp.MPI.comm_world,
                                                  topology, layout, 1)
 
     print("Dofmap")
     print(dofmap)
-    for n in range(dofmap.num_nodes):
-        print("  ", dofmap.links(n))
-    print("End Dofmap")
-
-    # return
 
     # Send/receive the 'cell nodes' (includes high-order geometry
     # nodes), and the global input cell index.
@@ -261,11 +217,11 @@ def test_topology_partition():
     cell_nodes, global_index_cell = cpp.mesh.exchange(cpp.MPI.comm_world,
                                                       cells1, dest, set(src))
 
-    print("cell_nodes")
-    print(cell_nodes)
-    for n in range(cell_nodes.num_nodes):
-        print("  ", cell_nodes.links(n))
-    print("End cell_nodes")
+    # print("cell_nodes")
+    # print(cell_nodes)
+    # for n in range(cell_nodes.num_nodes):
+    #     print("  ", cell_nodes.links(n))
+    # print("End cell_nodes")
 
     assert cell_nodes.num_nodes == cells.num_nodes
     assert global_index_cell == original_cell_index
@@ -273,53 +229,26 @@ def test_topology_partition():
     # Check that number of dofs is equal to number of 'nodes' in the input
     assert dofmap.array().shape == cell_nodes.array().shape
 
-    # Cells input vertices/dofs
-    # if rank == 0:
-    #     for c in range(cell_nodes.num_nodes):
-    #         print(cell_nodes.links(c), dofmap.links(c))
-
-    # Build list of unique node indices
+    # Build list of unique node indices for adjacency list
     indices = np.unique(cell_nodes.array())
 
     l2g = cpp.mesh.compute_local_to_global_links(cell_nodes, dofmap)
-    if rank == 0:
-        print("CCCC:", len(l2g), len(indices))
-        print("CCCC:", l2g)
-    # return
     l2l = cpp.mesh.compute_local_to_local(l2g, indices)
-    print("L2L:", l2l)
-
-    # Build list of unique node indices
-    # indices = np.unique(cell_nodes.array())
 
     # Fetch node coordinates
-    print("Fetch")
     coords = cpp.mesh.fetch_data(cpp.MPI.comm_world, indices, x)
-    print("coords:", coords)
-    # for index, value in zip(indices, coords):
-    #     print("Index, x:", index, value)
 
     # Build dof array
-    print("*** coords", l2l)
     x_g = np.zeros([len(l2l), 2])
     for i, d in enumerate(l2l):
         x_g[i] = coords[d]
     print("-------")
 
-    print("coords:", x_g)
-
-    # Vertex local-to-global index map for vertices
-    print(vertex_map)
-
-    # 'Node' local-to-global map
-    if rank == 0:
-        print("L2g:", l2g)
-
     # Create Geometry
     geometry = cpp.mesh.Geometry(dof_index_map, dofmap, x_g, l2g, degree)
 
+    # Create mesh
     mesh = cpp.mesh.Mesh(cpp.MPI.comm_world, topology, geometry)
-    print(mesh.topology.dim)
 
     filename = os.path.join("mesh1.xdmf")
     encoding = XDMFFile.Encoding.HDF5
