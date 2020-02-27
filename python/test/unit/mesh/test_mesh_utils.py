@@ -73,84 +73,63 @@ def create_mesh_gmsh(degree):
     return cells, points
 
 
+# cells_in = [[6, 12, 2, 1, 11, 0], [12, 14, 7, 9, 10, 8], [7, 2, 12, 1, 10, 3], [6, 2, 13, 4, 5, 11]]
+
+# Manual test
+# cells_in = [[0, 1, 4], [0, 4, 3], [1, 2, 5], [1, 5, 4]]
+# x = [[0.0, 0.0], [1.0, 0.0], [2.0, 0.0], [0.0, 1.0], [1.0, 1.0], [2.0, 1.0]]
+# x = np.array(x)
+
+#     cells0 = [[0, 1, 4], [0, 4, 3], [1, 2, 5], [1, 5, 4]]
+
+
 def test_topology_partition():
     """Test partitioning of cells"""
     # FIXME: make creating the ElementDofLayout simpler and clear
 
     rank = cpp.MPI.rank(cpp.MPI.comm_world)
     size = cpp.MPI.size(cpp.MPI.comm_world)
-
     cell_type = cpp.mesh.CellType.triangle
 
     # Create element dof layout for 'P1' simplex triangulation in 2D
-    # perms = np.zeros([5, 3], dtype=np.int8)
-    # perms[:] = [0, 1, 2]
+    perms = np.zeros([5, 3], dtype=np.int8)
+    perms[:] = [0, 1, 2]
+    entity_dofs = [[set([0]), set([1]), set([2])], [set(), set(), set()], [set()]]
+    layout = cpp.fem.ElementDofLayout(1, entity_dofs, [], [], cell_type, perms)
 
     # Create element dof layout for 'P2' simplex triangulation in 2D
     perms = np.zeros([5, 6], dtype=np.int8)
     perms[:] = [0, 1, 2, 3, 4, 5]
-
-    # entity_dofs = [[set([0]), set([1]), set([2])], [set(), set(), set()], [set()]]
-    # layout = cpp.fem.ElementDofLayout(1, entity_dofs, [], [], cell_type, perms)
-    # # Create topology on rank 0, create empty AdjacencyList on other
-    # # ranks
-    # if rank == 0:
-    #     cells0 = [[0, 1, 4], [0, 4, 3], [1, 2, 5], [1, 5, 4]]
-    #     cells0 = cpp.graph.AdjacencyList64(cells0)
-    #     cells_filtered0 = cpp.mesh.extract_topology(layout, cells0)
-    # else:
-    #     cells_filtered0 = cpp.graph.AdjacencyList64(0)
-
-    # # Partition cells, compute the destination process for cells on this
-    # # process
-    # dest = cpp.mesh.partition_cells(cpp.MPI.comm_world, size,
-    #                                 layout.cell_type, cells_filtered0)
-    # assert len(dest) == cells_filtered0.num_nodes
+    entity_dofs = [[set([0]), set([1]), set([2])], [set([3]), set([4]), set([5])], [set()]]
+    layout = cpp.fem.ElementDofLayout(1, entity_dofs, [], [], cell_type, perms)
 
     degree = 2
-
-    # Create element dof layout for 'P2' simplex triangulation in 2D
-    if degree == 1:
-        entity_dofs = [[set([0]), set([1]), set([2])], [set(), set(), set()], [set()]]
-    else:
-        entity_dofs = [[set([0]), set([1]), set([2])], [set([3]), set([4]), set([5])], [set()]]
-
-    layout = cpp.fem.ElementDofLayout(1, entity_dofs, [], [], cell_type, perms)
     if rank == 0:
-        # cells_in = [[6, 12, 2, 1, 11, 0], [12, 14, 7, 9, 10, 8], [7, 2, 12, 1, 10, 3], [6, 2, 13, 4, 5, 11]]
-
-        # Manual test
-        # cells_in = [[0, 1, 4], [0, 4, 3], [1, 2, 5], [1, 5, 4]]
-        # x = [[0.0, 0.0], [1.0, 0.0], [2.0, 0.0], [0.0, 1.0], [1.0, 1.0], [2.0, 1.0]]
-        # x = np.array(x)
-
-        # Use pygmsh
-        cells_in, x = create_mesh_gmsh(degree)
-        # print(cells_in)
-        # return
+        # Create mesh data
+        cells, x = create_mesh_gmsh(degree)
         x = np.array(x[:, :2])
 
-        # Permute to DOLFIN ordering
-        cells_in = cpp.io.permute_cell_ordering(cells_in,
-                                                cpp.io.permutation_vtk_to_dolfin(cpp.mesh.CellType.triangle,
-                                                                                 cells_in.shape[1]))
+        # Permute to DOLFIN ordering and create adjacency list
+        cells = cpp.io.permute_cell_ordering(cells,
+                                             cpp.io.permutation_vtk_to_dolfin(cpp.mesh.CellType.triangle,
+                                                                              cells.shape[1]))
 
-        print(cells_in)
-        print(x)
+        cells1 = cpp.graph.AdjacencyList64(cells)
+        print(cells1)
 
-        cells1 = cpp.graph.AdjacencyList64(cells_in)
         cells_filtered1 = cpp.mesh.extract_topology(layout, cells1)
-        # cells_in = cpp.graph.AdjacencyList64(cells_in)
 
         # Display nodes
-        print(type(cells_filtered1))
-        print("filtered")
-        for n in range(cells_filtered1.num_nodes):
-            print("  ", cells_filtered1.links(n))
+        # print(type(cells_filtered1))
+        # print("filtered")
+        # for n in range(cells_filtered1.num_nodes):
+        #     print("  ", cells_filtered1.links(n))
     else:
         cells1 = cpp.graph.AdjacencyList64(0)
         x = np.zeros([0, 2])
         cells_filtered1 = cpp.graph.AdjacencyList64(0)
+
+    return
 
     # Compute the destination process for cells on this process
     dest = cpp.mesh.partition_cells(cpp.MPI.comm_world, size,

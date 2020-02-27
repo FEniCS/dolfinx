@@ -260,7 +260,7 @@ std::string Topology::str(bool verbose) const
       {
         if (!_connectivity(d0, d1))
           continue;
-        s << common::indent(_connectivity(d0, d1)->str(true));
+        s << common::indent(_connectivity(d0, d1)->str());
         s << std::endl;
       }
     }

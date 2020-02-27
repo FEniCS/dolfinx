@@ -87,6 +87,8 @@ public:
   /// Return coordinate array for point with local index n
   Eigen::Ref<const Eigen::Vector3d> x(int n) const;
 
+  /// @todo Remove this once all Geometry objects have an IndexMap
+  ///
   /// Return the number of global points in the geometry
   std::size_t num_points_global() const;
 
