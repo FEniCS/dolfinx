@@ -6,7 +6,6 @@
 
 #pragma once
 
-#include "CoordinateDofs.h"
 #include <Eigen/Dense>
 #include <dolfinx/graph/AdjacencyList.h>
 #include <memory>
@@ -27,7 +26,6 @@ class CoordinateElement;
 
 namespace mesh
 {
-class CoordinateDofs;
 
 /// Geometry stores the geometry imposed on a mesh.
 ///
@@ -126,9 +124,6 @@ private:
 
   // Global number of points (taking account of shared points)
   std::uint64_t _num_points_global;
-
-  // Coordinate dofs
-  CoordinateDofs _coordinate_dofs;
 
   // NEW
   std::shared_ptr<const common::IndexMap> _index_map;

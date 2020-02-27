@@ -5,7 +5,6 @@
 // SPDX-License-Identifier:    LGPL-3.0-or-later
 
 #include "Mesh.h"
-#include "CoordinateDofs.h"
 #include "Geometry.h"
 #include "Partitioning.h"
 #include "Topology.h"

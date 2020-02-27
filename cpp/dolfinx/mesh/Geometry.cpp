@@ -18,8 +18,8 @@ Geometry::Geometry(std::shared_ptr<const common::IndexMap> index_map,
                    const Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic,
                                       Eigen::RowMajor>& x,
                    const std::vector<std::int64_t>& global_indices, int degree)
-    : _dim(x.cols()), _global_indices(global_indices), _coordinate_dofs(dofmap),
-      _index_map(index_map), _dofmap(dofmap), _degree(degree)
+    : _dim(x.cols()), _global_indices(global_indices), _index_map(index_map),
+      _dofmap(dofmap), _degree(degree)
 {
   if (x.rows() != (int)global_indices.size())
     throw std::runtime_error("Size mis-match");
@@ -45,8 +45,8 @@ Geometry::Geometry(
         coordinate_dofs,
     int degree)
     : _dim(coordinates.cols()), _global_indices(global_indices),
-      _num_points_global(num_points_global), _coordinate_dofs(coordinate_dofs),
-      _dofmap(coordinate_dofs), _degree(degree)
+      _num_points_global(num_points_global), _dofmap(coordinate_dofs),
+      _degree(degree)
 {
   // Make all geometry 3D
   if (_dim == 3)
