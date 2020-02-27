@@ -30,6 +30,21 @@ ElementDofLayout::ElementDofLayout(
 {
   // TODO: Handle global support dofs
 
+  // Check that base_permutations has the correct shape
+  int perm_count = 0;
+  std::array<int, 4> perms_per_dim = {0, 1, 2, 4};
+  for (std::size_t dim = 0; dim < entity_dofs_.size(); ++dim)
+    perm_count += perms_per_dim[dim] * entity_dofs_[dim].size();
+  if (base_permutations.rows() != perm_count
+      or _base_permutations.cols() != _num_dofs)
+  {
+    throw std::runtime_error("Permutation array has wrong shape. Expected "
+                             + std::to_string(perm_count) + " x "
+                             + std::to_string(_num_dofs) + " but got "
+                             + std::to_string(_base_permutations.rows()) + " x "
+                             + std::to_string(_base_permutations.cols()) + ".");
+  }
+
   // Compute closure entities
   // [dim, entity] -> closure{sub_dim, (sub_entities)}
   std::map<std::array<int, 2>, std::vector<std::set<int>>> entity_closure
@@ -75,16 +90,6 @@ ElementDofLayout::ElementDofLayout(
       _num_dofs += entity_dofs_[dim][entity_index].size();
     }
   }
-
-  // Assert that base_permutations is the correct shape
-#ifdef DEBUG
-  int perm_count = 0;
-  std::array<int, 4> perms_per_dim = {0, 1, 2, 4};
-  for (std::size_t dim = 0; dim < entity_dofs_.size(); ++dim)
-    perm_count += perms_per_dim[dim] * entity_dofs_[dim].size();
-  assert(_base_permutations.rows() == perm_count);
-#endif
-  assert(_base_permutations.cols() == _num_dofs);
 }
 //-----------------------------------------------------------------------------
 ElementDofLayout ElementDofLayout::copy() const
