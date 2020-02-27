@@ -118,8 +118,8 @@ def get_layout(shape, degree):
                        [set([]), set([]), set([]), set([])], [set()]]
         return cpp.fem.ElementDofLayout(1, entity_dofs, [], [], shape, perms)
     elif shape == cpp.mesh.CellType.tetrahedron and degree == 2:
-        perms = np.zeros([18, 6], dtype=np.int8)
-        perms[:] = [0, 1, 2, 3, 4, 5]
+        perms = np.zeros([18, 10], dtype=np.int8)
+        perms[:] = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9]
         entity_dofs = [[set([0]), set([1]), set([2]), set([3])], [set([4]), set([5]), set([6]), set([7]), set([8]), set([9])],
                        [set([]), set([]), set([]), set([])], [set()]]
         return cpp.fem.ElementDofLayout(1, entity_dofs, [], [], shape, perms)
