@@ -173,7 +173,8 @@ def get_layout(shape, degree):
         perms[:] = [0, 1, 2, 3, 4, 5, 6, 7]
         entity_dofs = [
             [set([0]), set([1]), set([2]), set([3]), set([4]), set([5]), set([6]), set([7])],
-            [set([]), set([]), set([]), set([]), set([]), set([]), set([]), set([]), set([]), set([]), set([]), set([])],
+            [set([]), set([]), set([]), set([]), set([]), set([]), set([]), set([]), set([]), set([]),
+                set([]), set([])],
             [set([]), set([]), set([]), set([]), set([]), set([])],
             [set([])]
         ]
