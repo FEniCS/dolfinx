@@ -33,6 +33,8 @@ def test_extract_topology():
     assert np.array_equal(cells0.array(), cells_filtered0.array())
 
     # Create element dof layout for P2 element
+    perms = np.zeros([5, 6], dtype=np.int8)
+    perms[:] = [0, 1, 2, 3, 4, 5]
     entity_dofs = [[set([0]), set([1]), set([2])], [set([3]), set([4]), set([5])], [set()]]
     layout = cpp.fem.ElementDofLayout(1, entity_dofs, [], [],
                                       cpp.mesh.CellType.triangle, perms)
