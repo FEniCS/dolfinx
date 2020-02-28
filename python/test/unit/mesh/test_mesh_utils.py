@@ -68,6 +68,19 @@ def create_mesh_gmsh(shape, degree):
     elif shape == cpp.mesh.CellType.quadrilateral:
         rect = geom.add_rectangle(0.0, 2.0, 0.0, 1.0, 0.0, 0.1)
         geom.set_recombined_surfaces([rect.surface])
+    elif shape == cpp.mesh.CellType.hexahedron:
+        lbw = [2, 3, 5]
+        points = [geom.add_point([x, 0.0, 0.0], 1.0) for x in [0.0, lbw[0]]]
+        line = geom.add_line(*points)
+
+        _, rectangle, _ = geom.extrude(
+            line, translation_axis=[0.0, lbw[1], 0.0], num_layers=lbw[1], recombine=True)
+        geom.extrude(
+            rectangle,
+            translation_axis=[0.0, 0.0, lbw[2]],
+            num_layers=lbw[2],
+            recombine=True,
+        )
 
     # rectangle = geom.add_rectangle(0.0, 1.0, 0.0, 1.0, 0.0, 20.1)
     # geom.add_raw_code("Recombine Surface {%s};" % rectangle.surface.id)
@@ -90,6 +103,11 @@ def create_mesh_gmsh(shape, degree):
     elif shape == cpp.mesh.CellType.tetrahedron and degree == 2:
         mesh = pygmsh.generate_mesh(geom, dim=3, mesh_file_type="vtk", extra_gmsh_arguments=["-order", "2"])
         mesh.cells = [cells for cells in mesh.cells if cells.type == "tetra10"]
+    elif shape == cpp.mesh.CellType.hexahedron and degree == 1:
+        mesh = pygmsh.generate_mesh(geom, dim=3, mesh_file_type="vtk")
+        mesh.cells = [cells for cells in mesh.cells if cells.type == "hexahedron"]
+        # print(mesh.cells)
+        # mesh.cells = [cells for cells in mesh.cells if cells.type == "tetra"]
 
     # print("*3 *****", mesh.cells)
     import meshio
@@ -150,6 +168,16 @@ def get_layout(shape, degree):
                        [set([]), set([]), set([]), set([])],
                        [set()]]
         return cpp.fem.ElementDofLayout(1, entity_dofs, [], [], shape, perms)
+    elif shape == cpp.mesh.CellType.hexahedron and degree == 1:
+        perms = np.zeros([28, 8], dtype=np.int8)
+        perms[:] = [0, 1, 2, 3, 4, 5, 6, 7]
+        entity_dofs = [
+            [set([0]), set([1]), set([2]), set([3]), set([4]), set([5]), set([6]), set([7])],
+            [set([]), set([]), set([]), set([]), set([]), set([]), set([]), set([]), set([]), set([]), set([]), set([])],
+            [set([]), set([]), set([]), set([]), set([]), set([])],
+            [set([])]
+        ]
+        return cpp.fem.ElementDofLayout(1, entity_dofs, [], [], shape, perms)
     else:
         raise RuntimeError("Unknown dof layout")
 
@@ -164,10 +192,12 @@ def test_topology_partition():
     size = cpp.MPI.size(cpp.MPI.comm_world)
 
     # Create mesh input data
-    degree = 2
+    degree = 1
     # cell_type = cpp.mesh.CellType.triangle
     # cell_type = cpp.mesh.CellType.tetrahedron
-    cell_type = cpp.mesh.CellType.quadrilateral
+    # cell_type = cpp.mesh.CellType.quadrilateral
+    cell_type = cpp.mesh.CellType.hexahedron
+
     layout = get_layout(cell_type, degree)
     dim = cpp.mesh.cell_dim(cell_type)
 
@@ -175,7 +205,7 @@ def test_topology_partition():
         # Create mesh data
         cells, x = create_mesh_gmsh(cell_type, degree)
         print(cells)
-        x = np.array(x[:, :dim])
+        x = np.array(x[:, : dim])
 
         # Permute to DOLFIN ordering and create adjacency list
         print("Pre")
