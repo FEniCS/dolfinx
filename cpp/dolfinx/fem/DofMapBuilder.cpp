@@ -343,18 +343,15 @@ std::vector<std::int64_t> get_global_indices(
 
   const int D = topology.dim();
 
-  // Get ownership offset for each dimension
   // Build list flag for owned mesh entities that are shared, i.e. are a
   // ghost on a neighbour
-  std::vector<std::int32_t> offset(D + 1, -1);
   std::vector<std::vector<bool>> shared_entity(D + 1);
   for (std::size_t d = 0; d < shared_entity.size(); ++d)
   {
     auto map = topology.index_map(d);
     if (map)
     {
-      offset[d] = map->size_local();
-      shared_entity[d] = std::vector<bool>(offset[d], false);
+      shared_entity[d] = std::vector<bool>(map->size_local(), false);
       const std::vector<std::int32_t>& forward_indices = map->forward_indices();
       for (auto entity : forward_indices)
         shared_entity[d][entity] = true;
@@ -372,11 +369,8 @@ std::vector<std::int64_t> get_global_indices(
     const int d = dof_entity[i].first;
 
     // Index of mesh entity that dof is associated with
-    assert(offset[d] != -1);
     const int entity = dof_entity[i].second;
-    assert(entity < (int)shared_entity[d].size());
-
-    if (shared_entity[d][entity])
+    if (entity < (int)shared_entity[d].size() and shared_entity[d][entity])
     {
       global[d].push_back(global_indices_old[i]);
       global[d].push_back(old_to_new[i] + process_offset);
