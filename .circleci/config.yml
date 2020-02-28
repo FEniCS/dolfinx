@@ -126,13 +126,13 @@ commands:
           --build-arg PETSC_SLEPC_OPTFLAGS='-O3'
           --target << parameters.docker-target >>
           --file << parameters.dockerfile >> << parameters.extra-args >>
-          --tag docker.pkg.github.com/fenics/dolfinx/<< parameters.docker-target >>:latest . &&
-          sudo docker push docker.pkg.github.com/fenics/dolfinx/<< parameters.docker-target >>:latest
+          --tag dolfinx/<< parameters.docker-target >>:latest . &&
+          sudo docker push dolfinx/<< parameters.docker-target >>:latest
 
 jobs:
   build-real:
     docker:
-      - image: quay.io/fenicsproject/dolfinx:dev-env-real
+      - image: dolfinx/dev-env-real:latest
     environment:
       MPLBACKEND: "agg"
       DEBIAN_FRONTEND: "noninteractive"
@@ -167,7 +167,7 @@ jobs:
 
   build-complex:
     docker:
-      - image: quay.io/fenicsproject/dolfinx:dev-env-complex
+      - image: dolfinx/dev-env-complex:latest
     environment:
       MPLBACKEND: "agg"
       DEBIAN_FRONTEND: "noninteractive"
@@ -227,7 +227,7 @@ jobs:
             sudo apt-get -y install docker-ce docker-ce-cli containerd.io
             sudo docker run hello-world
       - run:
-          name: Login to GitHub packages
+          name: Login to Dockerhub
           command: echo ${GH_TOKEN} | sudo docker login -u ${GH_USERNAME} --password-stdin docker.pkg.github.com
       - build-and-push-target:
           docker-target: "base"
@@ -276,7 +276,7 @@ workflows:
                 - master
     jobs:
       - build-and-push-complete-build-docker-images:
-          context: github-packages
+          context: dockerhub
 
   build-and-push-docker-images:
     when: << pipeline.parameters.build-and-push-docker-images >>
@@ -286,4 +286,4 @@ workflows:
             branches:
               only:
                 - master
-          context: github-packages
+          context: dockerhub
