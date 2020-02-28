@@ -125,8 +125,8 @@ commands:
           --build-arg PETSC_SLEPC_OPTFLAGS='-O3'
           --target << parameters.docker-target >>
           --file << parameters.dockerfile >> << parameters.extra-args >>
-          --tag docker.pkg.github.com/fenics/dolfinx/<< parameters.docker-target >>:latest . &&
-          sudo docker push docker.pkg.github.com/fenics/dolfinx/<< parameters.docker-target >>:latest
+          --tag dolfinx/<< parameters.docker-target >>:latest . &&
+          sudo docker push dolfinx/<< parameters.docker-target >>:latest
 
 jobs:
   build-real:
@@ -275,7 +275,7 @@ workflows:
                 - master
     jobs:
       - build-and-push-complete-build-docker-images:
-          context: github-packages
+          context: dockerhub
 
   build-and-push-docker-images:
     when: << pipeline.parameters.build-and-push-docker-images >>
@@ -285,4 +285,4 @@ workflows:
             branches:
               only:
                 - master
-          context: github-packages
+          context: dockerhub
