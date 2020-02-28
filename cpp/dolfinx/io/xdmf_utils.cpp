@@ -336,7 +336,7 @@ std::string xdmf_utils::vtk_cell_type_str(mesh::CellType cell_type, int order)
        {{1, "Quadrilateral"}, {2, "Quadrilateral_9"}}},
       {mesh::CellType::tetrahedron,
        {{1, "Tetrahedron"}, {2, "Tetrahedron_10"}}},
-      {mesh::CellType::hexahedron, {{1, "Hexahedron"}, {2, "Hexahedron_20"}}}};
+      {mesh::CellType::hexahedron, {{1, "Hexahedron"}, {2, "Hexahedron_27"}}}};
 
   // Get cell family
   auto cell = vtk_map.find(cell_type);

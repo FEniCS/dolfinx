@@ -348,7 +348,6 @@ mesh::extract_topology(const fem::ElementDofLayout& layout,
         = layout.entity_dofs(0, i);
     assert(local_index.rows() == 1);
     local_vertices[i] = local_index[0];
-    std::cout << "local indedx: " << local_index[0] << std::endl;
   }
 
   Eigen::Array<std::int64_t, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
@@ -357,11 +356,7 @@ mesh::extract_topology(const fem::ElementDofLayout& layout,
   {
     auto p = cells.links(i);
     for (int j = 0; j < num_vertices_per_cell; ++j)
-    {
       topology(i, j) = p(local_vertices[j]);
-      std::cout << "local indedx: " << local_vertices[j] << ", "
-                << topology(i, j) << std::endl;
-    }
   }
 
   return graph::AdjacencyList<std::int64_t>(topology);

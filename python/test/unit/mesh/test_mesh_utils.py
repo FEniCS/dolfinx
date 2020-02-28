@@ -106,7 +106,10 @@ def create_mesh_gmsh(shape, degree):
     elif shape == cpp.mesh.CellType.hexahedron and degree == 1:
         mesh = pygmsh.generate_mesh(geom, dim=3, mesh_file_type="vtk")
         mesh.cells = [cells for cells in mesh.cells if cells.type == "hexahedron"]
+    elif shape == cpp.mesh.CellType.hexahedron and degree == 2:
+        mesh = pygmsh.generate_mesh(geom, dim=3, mesh_file_type="vtk", extra_gmsh_arguments=["-order", "2"])
         # print(mesh.cells)
+        mesh.cells = [cells for cells in mesh.cells if cells.type == "hexahedron27"]
         # mesh.cells = [cells for cells in mesh.cells if cells.type == "tetra"]
 
     # print("*3 *****", mesh.cells)
@@ -179,6 +182,18 @@ def get_layout(shape, degree):
             [set([])]
         ]
         return cpp.fem.ElementDofLayout(1, entity_dofs, [], [], shape, perms)
+    elif shape == cpp.mesh.CellType.hexahedron and degree == 2:
+        perms = np.zeros([28, 27], dtype=np.int8)
+        perms[:] = range(27)
+        print("!!!!!!", perms[0])
+        entity_dofs = [
+            [set([0]), set([1]), set([3]), set([4]), set([9]), set([10]), set([12]), set([13])],
+            [set([2]), set([5]), set([11]), set([14]), set([6]), set([7]), set([15]), set([16]), set([18]), set([19]),
+                set([21]), set([22])],
+            [set([8]), set([17]), set([20]), set([23]), set([24]), set([25])],
+            [set([26])]
+        ]
+        return cpp.fem.ElementDofLayout(1, entity_dofs, [], [], shape, perms)
     else:
         raise RuntimeError("Unknown dof layout")
 
@@ -193,7 +208,7 @@ def test_topology_partition():
     size = cpp.MPI.size(cpp.MPI.comm_world)
 
     # Create mesh input data
-    degree = 1
+    degree = 2
     # cell_type = cpp.mesh.CellType.triangle
     # cell_type = cpp.mesh.CellType.tetrahedron
     # cell_type = cpp.mesh.CellType.quadrilateral
@@ -232,7 +247,7 @@ def test_topology_partition():
 
     # print(x)
     print("Cell v")
-    print(cells_v)
+    # print(cells_v)
     # return
 
     # Compute the destination rank for cells on this process via graph
