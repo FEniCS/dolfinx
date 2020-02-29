@@ -987,7 +987,7 @@ void XDMFFile::write_mesh_value_collection(
   const std::int64_t num_values = MPI::sum(mesh->mpi_comm(), value_data.size());
   xdmf_write::add_data_item(_mpi_comm.comm(), topology_node, h5_id,
                             mvc_dataset_name + "/topology", topology_data,
-                            {num_values, num_vertices_per_cell}, "UInt");
+                            {num_values, num_vertices_per_cell}, "Int");
 
   // Add geometry node (share with main mesh::Mesh)
   pugi::xml_node geometry_node = mvc_grid_node.append_child("Geometry");

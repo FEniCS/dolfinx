@@ -490,15 +490,15 @@ void pvtu_write_mesh(pugi::xml_node xml_node)
   pugi::xml_node cell_data_node = xml_node.append_child("PCellData");
 
   data_node = cell_data_node.append_child("PDataArray");
-  data_node.append_attribute("type") = "UInt32";
+  data_node.append_attribute("type") = "Int32";
   data_node.append_attribute("Name") = "connectivity";
 
   data_node = cell_data_node.append_child("PDataArray");
-  data_node.append_attribute("type") = "UInt32";
+  data_node.append_attribute("type") = "Int32";
   data_node.append_attribute("Name") = "offsets";
 
   data_node = cell_data_node.append_child("PDataArray");
-  data_node.append_attribute("type") = "UInt8";
+  data_node.append_attribute("type") = "Int8";
   data_node.append_attribute("Name") = "types";
 }
 //----------------------------------------------------------------------------

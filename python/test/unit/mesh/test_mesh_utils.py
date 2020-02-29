@@ -72,7 +72,6 @@ def create_mesh_gmsh(shape, degree):
         lbw = [2, 3, 5]
         points = [geom.add_point([x, 0.0, 0.0], 1.0) for x in [0.0, lbw[0]]]
         line = geom.add_line(*points)
-
         _, rectangle, _ = geom.extrude(
             line, translation_axis=[0.0, lbw[1], 0.0], num_layers=lbw[1], recombine=True)
         geom.extrude(
@@ -81,9 +80,6 @@ def create_mesh_gmsh(shape, degree):
             num_layers=lbw[2],
             recombine=True,
         )
-
-    # rectangle = geom.add_rectangle(0.0, 1.0, 0.0, 1.0, 0.0, 20.1)
-    # geom.add_raw_code("Recombine Surface {%s};" % rectangle.surface.id)
 
     if shape == cpp.mesh.CellType.triangle and degree == 1:
         mesh = pygmsh.generate_mesh(geom, dim=2, mesh_file_type="vtk")
@@ -112,9 +108,19 @@ def create_mesh_gmsh(shape, degree):
         mesh.cells = [cells for cells in mesh.cells if cells.type == "hexahedron27"]
         # mesh.cells = [cells for cells in mesh.cells if cells.type == "tetra"]
 
+    # import meshio
+    # meshio.read("CG2.vtu", mesh, file_format="vtu", binary=False)
+
+    # c = [[0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13,
+    #       14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26]]
+
+    # print(c)
+    # print(x)
+
     # print("*3 *****", mesh.cells)
-    import meshio
-    meshio.write("test.vtu", mesh, file_format="vtu", binary=False)
+    # import meshio
+    # new = meshio.read("CG2_hex.vtu", file_format="vtu")
+    # print(new)
 
     points = mesh.points
     cells = mesh.cells[0].data
@@ -185,7 +191,6 @@ def get_layout(shape, degree):
     elif shape == cpp.mesh.CellType.hexahedron and degree == 2:
         perms = np.zeros([28, 27], dtype=np.int8)
         perms[:] = range(27)
-        print("!!!!!!", perms[0])
         entity_dofs = [
             [set([0]), set([1]), set([3]), set([4]), set([9]), set([10]), set([12]), set([13])],
             [set([2]), set([5]), set([11]), set([14]), set([6]), set([7]), set([15]), set([16]), set([18]), set([19]),
@@ -220,43 +225,33 @@ def test_topology_partition():
     if rank == 0:
         # Create mesh data
         cells, x = create_mesh_gmsh(cell_type, degree)
-        print(cells)
+        # print(cells)
         x = np.array(x[:, : dim])
 
         # Permute to DOLFIN ordering and create adjacency list
-        print("Pre")
-        print(layout.entity_dofs(0, 3))
-        print(cells)
         cells = cpp.io.permute_cell_ordering(cells,
                                              cpp.io.permutation_vtk_to_dolfin(cell_type,
                                                                               cells.shape[1]))
-        print("Post")
-        print(cells)
-        cells1 = cpp.graph.AdjacencyList64(cells)
+        cells_global = cpp.graph.AdjacencyList64(cells)
 
         # Extract topology data, e.g. just the vertices. For P1 geometry
         # this should just be the identity operator. For other elements
         # the filtered lists may have 'gaps', i.e. the indices might not
         # be contiguous.
-        cells_v = cpp.mesh.extract_topology(layout, cells1)
+        cells_global_v = cpp.mesh.extract_topology(layout, cells_global)
     else:
         # Empty data on ranks other than 0
-        cells1 = cpp.graph.AdjacencyList64(0)
+        cells_global = cpp.graph.AdjacencyList64(0)
         x = np.zeros([0, dim])
-        cells_v = cpp.graph.AdjacencyList64(0)
-
-    # print(x)
-    print("Cell v")
-    # print(cells_v)
-    # return
+        cells_global_v = cpp.graph.AdjacencyList64(0)
 
     # Compute the destination rank for cells on this process via graph
     # partitioning
-    dest = cpp.mesh.partition_cells(cpp.MPI.comm_world, size, layout.cell_type, cells_v)
-    assert len(dest) == cells_v.num_nodes
+    dest = cpp.mesh.partition_cells(cpp.MPI.comm_world, size, layout.cell_type, cells_global_v)
+    assert len(dest) == cells_global_v.num_nodes
 
     # Distribute cells to destination rank
-    cells, src, original_cell_index = cpp.mesh.distribute(cpp.MPI.comm_world, cells_v, dest)
+    cells, src, original_cell_index = cpp.mesh.distribute(cpp.MPI.comm_world, cells_global_v, dest)
 
     # Build local cell-vertex connectivity, with local vertex indices
     # [0, 1, 2, ..., n), and get map from global vertex indices in
@@ -333,6 +328,8 @@ def test_topology_partition():
     if edge_vertex is not None:
         topology.set_connectivity(edge_vertex, 1, 0)
 
+    # --- Geometry
+
     # NOTE: Could be a local (MPI_COMM_SELF) dofmap?
     # Build 'geometry' dofmap on the topology
     dof_index_map, dofmap = cpp.fem.build_dofmap(cpp.MPI.comm_world,
@@ -345,7 +342,11 @@ def test_topology_partition():
     # order as the owned cells (maybe they are already) to avoid the
     # need for global_index_nodes
     cell_nodes, global_index_cell = cpp.mesh.exchange(cpp.MPI.comm_world,
-                                                      cells1, dest, set(src))
+                                                      cells_global, dest, set(src))
+    # print("cell nodes -----")
+    # for r in range(cell_nodes.num_nodes):
+    #     print(np.sort(cell_nodes.links(r)))
+    # print("-----")
     assert cell_nodes.num_nodes == cells.num_nodes
     assert global_index_cell == original_cell_index
 
@@ -356,6 +357,9 @@ def test_topology_partition():
     indices = np.unique(cell_nodes.array())
 
     l2g = cpp.mesh.compute_local_to_global_links(cell_nodes, dofmap)
+
+    # -----------------------------
+
     l2l = cpp.mesh.compute_local_to_local(l2g, indices)
 
     # Fetch node coordinates
@@ -376,4 +380,6 @@ def test_topology_partition():
     encoding = XDMFFile.Encoding.HDF5
     with XDMFFile(mesh.mpi_comm(), filename, encoding=encoding) as file:
         file.write(mesh)
-    print("End")
+    print("End", x_g.shape)
+    # print(np.lexsort(x_g))
+    # print(x_g)

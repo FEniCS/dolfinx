@@ -166,7 +166,7 @@ void write_ascii_mesh(const mesh::Mesh& mesh, int cell_dim,
 
   // Write cell connectivity
   file << "<Cells>" << std::endl;
-  file << "<DataArray  type=\"UInt32\"  Name=\"connectivity\"  format=\""
+  file << "<DataArray  type=\"Int32\"  Name=\"connectivity\"  format=\""
        << "ascii"
        << "\">";
 
@@ -235,7 +235,7 @@ void write_ascii_mesh(const mesh::Mesh& mesh, int cell_dim,
   }
 
   // Write offset into connectivity array for the end of each cell
-  file << "<DataArray  type=\"UInt32\"  Name=\"offsets\"  format=\""
+  file << "<DataArray  type=\"Int32\"  Name=\"offsets\"  format=\""
        << "ascii"
        << "\">";
   for (int offsets = 1; offsets <= num_cells; offsets++)
@@ -243,7 +243,7 @@ void write_ascii_mesh(const mesh::Mesh& mesh, int cell_dim,
   file << "</DataArray>" << std::endl;
 
   // Write cell type
-  file << "<DataArray  type=\"UInt8\"  Name=\"types\"  format=\""
+  file << "<DataArray  type=\"Int8\"  Name=\"types\"  format=\""
        << "ascii"
        << "\">";
   for (int types = 0; types < num_cells; types++)

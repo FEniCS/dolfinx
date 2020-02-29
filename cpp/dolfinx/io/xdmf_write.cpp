@@ -71,8 +71,7 @@ std::vector<std::int64_t> compute_topology_data(const mesh::Mesh& mesh,
   std::vector<std::int64_t> topology_data;
   topology_data.reserve(mesh.num_entities(cell_dim) * (num_vertices_per_cell));
 
-  int num_nodes
-      = mesh.geometry().dofmap().num_links(0);
+  int num_nodes = mesh.geometry().dofmap().num_links(0);
   std::vector<std::uint8_t> perm;
   if (cell_dim == tdim)
     perm = io::cells::dolfin_to_vtk(topology.cell_type(), num_nodes);
@@ -353,8 +352,7 @@ void xdmf_write::add_topology_data(MPI_Comm comm, pugi::xml_node& xml_node,
     num_nodes_per_cell = cell_points.num_links(0);
     topology_data.reserve(num_nodes_per_cell * mesh.num_entities(tdim));
 
-    int num_nodes
-        = mesh.geometry().dofmap().num_links(0);
+    int num_nodes = mesh.geometry().dofmap().num_links(0);
     const std::vector<std::uint8_t> perm
         = io::cells::dolfin_to_vtk(mesh.topology().cell_type(), num_nodes);
 
@@ -378,7 +376,7 @@ void xdmf_write::add_topology_data(MPI_Comm comm, pugi::xml_node& xml_node,
   const std::string group_name = path_prefix + "/" + "mesh";
   const std::string h5_path = group_name + "/topology";
   const std::vector<std::int64_t> shape = {num_cells, num_nodes_per_cell};
-  const std::string number_type = "UInt";
+  const std::string number_type = "Int";
 
   std::cout << "Write data item: " << num_cells << std::endl;
   xdmf_write::add_data_item(comm, topology_node, h5_id, h5_path, topology_data,
@@ -560,7 +558,7 @@ void xdmf_write::add_function(MPI_Comm mpi_comm, pugi::xml_node& xml_node,
   // Write dofmap = indices to the values DataItem
   xdmf_write::add_data_item(mpi_comm, fe_attribute_node, h5_id,
                             h5_path + "/cell_dofs", cell_dofs,
-                            {num_cell_dofs_global, 1}, "UInt");
+                            {num_cell_dofs_global, 1}, "Int");
 
   // FIXME: Avoid unnecessary copying of data
   // Get all local data
@@ -604,7 +602,7 @@ void xdmf_write::add_function(MPI_Comm mpi_comm, pugi::xml_node& xml_node,
   // Write number of dofs per cell
   xdmf_write::add_data_item(mpi_comm, fe_attribute_node, h5_id,
                             h5_path + "/x_cell_dofs", x_cell_dofs,
-                            {num_x_cell_dofs_global, 1}, "UInt");
+                            {num_x_cell_dofs_global, 1}, "Int");
 
   // Save cell ordering - copy to local vector and cut off ghosts
   auto map = mesh.topology().index_map(tdim);
@@ -617,6 +615,6 @@ void xdmf_write::add_function(MPI_Comm mpi_comm, pugi::xml_node& xml_node,
 
   xdmf_write::add_data_item(mpi_comm, fe_attribute_node, h5_id,
                             h5_path + "/cells", cells, {num_cells_global, 1},
-                            "UInt");
+                            "Int");
 }
 //-----------------------------------------------------------------------------

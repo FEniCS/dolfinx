@@ -139,12 +139,14 @@ std::vector<std::uint8_t> io::cells::dolfin_to_vtk(mesh::CellType type,
     case 8:
       return {0, 4, 6, 2, 1, 5, 7, 3};
     case 27:
-      // TODO: change permutation when paraview issue 19433 is resolved
-      // (https://gitlab.kitware.com/paraview/paraview/issues/19433)
-      return {0,  9, 12, 3,  1, 10, 13, 4,  18, 15, 21, 6,  19, 16,
-              22, 7, 2,  11, 5, 14, 8,  17, 20, 23, 24, 25, 26};
+      // // TODO: change permutation when paraview issue 19433 is resolved
+      // // (https://gitlab.kitware.com/paraview/paraview/issues/19433)
+      // return {0,  9, 12, 3,  1, 10, 13, 4,  18, 15, 21, 6,  19, 16,
+      //         22, 7, 2,  11, 5, 14, 8,  17, 20, 23, 24, 25, 26};
+      return {0,  9, 12, 3,  1,  10, 13, 4,  18, 15, 21, 6,  19, 16,
+              22, 7, 2,  11, 14, 5,  8,  17, 20, 23, 24, 25, 26};
     default:
-      throw std::runtime_error("Higher order hexahedron not supported.");
+      throw std::runtime_error("Hexahedra higher than degree 2 not supported.");
     }
   default:
     throw std::runtime_error("Unknown cell type.");
@@ -174,7 +176,7 @@ std::vector<std::uint8_t> io::cells::vtk_to_tp(mesh::CellType type,
     return perm;
   }
   default:
-    throw std::runtime_error("Simplicies can be expressed as TensorProduct");
+    throw std::runtime_error("Simplicies cannot be expressed as TensorProduct");
   }
 }
 //-----------------------------------------------------------------------------
@@ -270,17 +272,18 @@ std::vector<std::uint8_t> io::cells::vtk_to_dolfin(mesh::CellType type,
 //-----------------------------------------------------------------------------
 Eigen::Array<std::int64_t, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
 io::cells::permute_ordering(
-    const Eigen::Ref<const Eigen::Array<
-        std::int64_t, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>>& cells,
+    const Eigen::Ref<const Eigen::Array<std::int64_t, Eigen::Dynamic,
+                                        Eigen::Dynamic, Eigen::RowMajor>>&
+        cells_in,
     const std::vector<std::uint8_t>& permutation)
 {
   Eigen::Array<std::int64_t, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
-      cells_dolfin(cells.rows(), cells.cols());
-  for (Eigen::Index c = 0; c < cells_dolfin.rows(); ++c)
+      cells_out(cells_in.rows(), cells_in.cols());
+  for (Eigen::Index c = 0; c < cells_out.rows(); ++c)
   {
-    for (Eigen::Index v = 0; v < cells_dolfin.cols(); ++v)
-      cells_dolfin(c, v) = cells(c, permutation[v]);
+    for (Eigen::Index v = 0; v < cells_out.cols(); ++v)
+      cells_out(c, v) = cells_in(c, permutation[v]);
   }
-  return cells_dolfin;
+  return cells_out;
 }
 //-----------------------------------------------------------------------------
