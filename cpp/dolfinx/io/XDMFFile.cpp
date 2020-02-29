@@ -251,16 +251,12 @@ void XDMFFile::close()
 //-----------------------------------------------------------------------------
 void XDMFFile::write(const mesh::Mesh& mesh)
 {
-  std::cout << "Call write mesh (1)" << std::endl;
-
   // Check that encoding
   if (_encoding == Encoding::ASCII and MPI::size(_mpi_comm.comm()) != 1)
   {
     throw std::runtime_error(
         "Cannot write ASCII XDMF in parallel (use HDF5 encoding).");
   }
-
-  std::cout << "Call write mesh (2)" << std::endl;
 
   // Open a HDF5 file if using HDF5 encoding (truncate)
   hid_t h5_id = -1;
@@ -287,18 +283,12 @@ void XDMFFile::write(const mesh::Mesh& mesh)
   xdmf_node.append_attribute("Version") = "3.0";
   xdmf_node.append_attribute("xmlns:xi") = "http://www.w3.org/2001/XInclude";
 
-  std::cout << "Call write mesh (3)" << std::endl;
-
   // Add domain node and add name attribute
   pugi::xml_node domain_node = xdmf_node.append_child("Domain");
   assert(domain_node);
 
-  std::cout << "Call write mesh (4)" << std::endl;
-
   // Add the mesh Grid to the domain
   xdmf_write::add_mesh(_mpi_comm.comm(), domain_node, h5_id, mesh, "/Mesh");
-
-  std::cout << "Call write mesh (5)" << std::endl;
 
   // Save XML file (on process 0 only)
   if (MPI::rank(_mpi_comm.comm()) == 0)
