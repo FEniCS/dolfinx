@@ -58,7 +58,6 @@ std::vector<std::int64_t> compute_topology_data(const mesh::Mesh& mesh,
 {
   // Create vector to store topology data
   const mesh::Topology& topology = mesh.topology();
-  const mesh::Geometry& geometry = mesh.geometry();
   const int tdim = mesh.topology().dim();
 
   const mesh::CellType entity_cell_type
