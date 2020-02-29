@@ -5,7 +5,7 @@
 # the variational problem in UFL terms in a separate form file
 # :download:`Poisson.ufl`.  We begin by defining the finite element::
 
-element = FiniteElement("Lagrange", hexahedron, 1)
+element = FiniteElement("Lagrange", triangle, 1)
 
 # The first argument to :py:class:`FiniteElement` is the finite element
 # family, the second argument specifies the domain, while the third
@@ -18,7 +18,7 @@ element = FiniteElement("Lagrange", hexahedron, 1)
 # (:math:`u` and :math:`v`) and the coefficient functions (:math:`f` and
 # :math:`g`)::
 
-coord_element = VectorElement("Lagrange", hexahedron, 2)
+coord_element = VectorElement("Lagrange", triangle, 1)
 mesh = Mesh(coord_element)
 
 V = FunctionSpace(mesh, element)
