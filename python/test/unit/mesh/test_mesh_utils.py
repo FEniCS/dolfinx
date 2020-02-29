@@ -221,8 +221,6 @@ def test_topology_partition(tempdir, shape, order):
                                                                           cells.shape[1]))
     cells_global = cpp.graph.AdjacencyList64(cells)
 
-    # ------------
-
     # Extract topology data, e.g. just the vertices. For P1 geometry
     # this should just be the identity operator. For other elements
     # the filtered lists may have 'gaps', i.e. the indices might not
@@ -240,39 +238,42 @@ def test_topology_partition(tempdir, shape, order):
                                                           cells_global_v, dest)
 
     # Build local cell-vertex connectivity, with local vertex indices
-    # [0, 1, 2, ..., n), and get map from global vertex indices in
-    # 'cells' to the local vertex indices
+    # [0, 1, 2, ..., n), from cell-vertex connectivity using global
+    # indices and get map from global vertex indices in 'cells' to the
+    # local vertex indices
     cells_local, local_to_global_vertices = cpp.mesh.create_local_adjacency_list(cells)
     assert len(local_to_global_vertices) == len(np.unique(cells.array()))
     assert len(local_to_global_vertices) == len(np.unique(cells_local.array()))
     assert np.unique(cells_local.array())[-1] == len(local_to_global_vertices) - 1
 
-    # Create local topology, create IndexMap for cells, and set cell-vertex topology
+    # Create (i) local topology object and (ii) IndexMap for cells, and
+    # set cell-vertex topology
     topology_local = cpp.mesh.Topology(layout.cell_type)
-    index_map = cpp.common.IndexMap(cpp.MPI.comm_self, cells_local.num_nodes, [], 1)
-    topology_local.set_index_map(topology_local.dim, index_map)
-    topology_local.set_connectivity(cells_local, topology_local.dim, 0)
+    tdim = topology_local.dim
+    map = cpp.common.IndexMap(cpp.MPI.comm_self, cells_local.num_nodes, [], 1)
+    topology_local.set_index_map(tdim, map)
+    topology_local.set_connectivity(cells_local, tdim, 0)
 
-    # Attach vertex IndexMap to local topology
+    # Attach an IndexMap for vertices to local topology
     n = len(local_to_global_vertices)
     index_map = cpp.common.IndexMap(cpp.MPI.comm_self, n, [], 1)
     topology_local.set_index_map(0, index_map)
 
-    # Create facets for local topology, and attach to topology object
-    cell_facet, facet_vertex, index_map = cpp.mesh.compute_entities(cpp.MPI.comm_self,
-                                                                    topology_local, topology_local.dim - 1)
-    topology_local.set_connectivity(cell_facet, topology_local.dim, topology_local.dim - 1)
-    topology_local.set_index_map(topology_local.dim - 1, index_map)
-    if facet_vertex is not None:
-        topology_local.set_connectivity(facet_vertex, topology_local.dim - 1, 0)
-    facet_cell, _ = cpp.mesh.compute_connectivity(topology_local, topology_local.dim - 1, topology_local.dim)
-    topology_local.set_connectivity(facet_cell, topology_local.dim - 1, topology_local.dim)
+    # Create facets for local topology, and attach to the topology object
+    cf, fv, map = cpp.mesh.compute_entities(cpp.MPI.comm_self,
+                                            topology_local, tdim - 1)
+    topology_local.set_connectivity(cf, tdim, tdim - 1)
+    topology_local.set_index_map(tdim - 1, index_map)
+    if fv is not None:
+        topology_local.set_connectivity(fv, tdim - 1, 0)
+    fc, _ = cpp.mesh.compute_connectivity(topology_local, tdim - 1, tdim)
+    topology_local.set_connectivity(fc, tdim - 1, tdim)
 
     # Get facets that are on the boundary of the local topology, i.e are
     # connect to one cell only
     boundary = cpp.mesh.compute_interior_facets(topology_local)
     topology_local.set_interior_facets(boundary)
-    boundary = topology_local.on_boundary(topology_local.dim - 1)
+    boundary = topology_local.on_boundary(tdim - 1)
 
     # Build distributed cell-vertex AdjacencyList, IndexMap for
     # vertices, and map from local index to old global index
@@ -289,30 +290,30 @@ def test_topology_partition(tempdir, shape, order):
 
     # Set cell IndexMap and cell-vertex connectivity
     index_map = cpp.common.IndexMap(cpp.MPI.comm_world, cells.num_nodes, [], 1)
-    topology.set_index_map(topology.dim, index_map)
-    topology.set_connectivity(cells, topology.dim, 0)
+    topology.set_index_map(tdim, index_map)
+    topology.set_connectivity(cells, tdim, 0)
 
     # Create facets for topology, and attach to topology object
-    cell_facet, facet_vertex, index_map = cpp.mesh.compute_entities(cpp.MPI.comm_world,
-                                                                    topology, topology.dim - 1)
-    if cell_facet is not None:
-        topology.set_connectivity(cell_facet, topology.dim, topology.dim - 1)
+    cf, fv, index_map = cpp.mesh.compute_entities(cpp.MPI.comm_world,
+                                                  topology, tdim - 1)
+    if cf is not None:
+        topology.set_connectivity(cf, tdim, tdim - 1)
     if index_map is not None:
-        topology.set_index_map(topology.dim - 1, index_map)
-    if facet_vertex is not None:
-        topology.set_connectivity(facet_vertex, topology.dim - 1, 0)
-    facet_cell, _ = cpp.mesh.compute_connectivity(topology, topology.dim - 1, topology.dim)
-    if facet_cell is not None:
-        topology.set_connectivity(facet_cell, topology.dim - 1, topology.dim)
+        topology.set_index_map(tdim - 1, index_map)
+    if fv is not None:
+        topology.set_connectivity(fv, tdim - 1, 0)
+    fc, _ = cpp.mesh.compute_connectivity(topology, tdim - 1, tdim)
+    if fc is not None:
+        topology.set_connectivity(fc, tdim - 1, tdim)
 
-    cell_edge, edge_vertex, index_map = cpp.mesh.compute_entities(cpp.MPI.comm_world,
-                                                                  topology, 1)
-    if cell_edge is not None:
-        topology.set_connectivity(cell_edge, topology.dim, 1)
+    ce, ev, index_map = cpp.mesh.compute_entities(cpp.MPI.comm_world,
+                                                  topology, 1)
+    if ce is not None:
+        topology.set_connectivity(ce, tdim, 1)
     if index_map is not None:
         topology.set_index_map(1, index_map)
-    if edge_vertex is not None:
-        topology.set_connectivity(edge_vertex, 1, 0)
+    if ev is not None:
+        topology.set_connectivity(ev, 1, 0)
 
     # --- Geometry
 
@@ -327,25 +328,36 @@ def test_topology_partition(tempdir, shape, order):
     # NOTE: Maybe we can ensure that the 'global cells' are in the same
     # order as the owned cells (maybe they are already) to avoid the
     # need for global_index_nodes
+    #
+    # NOTE: This could be optimised as we have earlier computed which
+    # processes own the cells this process needs.
     cell_nodes, global_index_cell = cpp.mesh.exchange(cpp.MPI.comm_world,
                                                       cells_global, dest, set(src))
     assert cell_nodes.num_nodes == cells.num_nodes
     assert global_index_cell == original_cell_index
 
-    # Check that number of dofs is equal to number of 'nodes' in the input
+    # Check that number of dofs is equal to number of geometry 'nodes'
+    # from the mesh data input
     assert dofmap.array().shape == cell_nodes.array().shape
 
-    # Build list of unique node indices for adjacency list
+    # Build list of unique (global) node indices from adjacency list
+    # (geometry nodes)
     indices = np.unique(cell_nodes.array())
 
-    l2g = cpp.mesh.compute_local_to_global_links(cell_nodes, dofmap)
-
-    l2l = cpp.mesh.compute_local_to_local(l2g, indices)
-
-    # Fetch node coordinates
+    # Fetch node coordinates by global index from other ranks. Order of
+    # coords matches order of the indices in 'indices'
     coords = cpp.mesh.fetch_data(cpp.MPI.comm_world, indices, x)
 
-    # Build dof array
+    # Compute local-to-global map from local indices in dofmap to the
+    # corresponding global indices in cell_nodes
+    l2g = cpp.mesh.compute_local_to_global_links(cell_nodes, dofmap)
+
+    # Compute local (dof) to local (position in coords) map from (i)
+    # local-to-global for dofs and (ii) local-to-global for entries in
+    # coords
+    l2l = cpp.mesh.compute_local_to_local(l2g, indices)
+
+    # Build coordinate dof array
     x_g = coords[l2l]
 
     # Create Geometry
@@ -354,6 +366,7 @@ def test_topology_partition(tempdir, shape, order):
     # Create mesh
     mesh = cpp.mesh.Mesh(cpp.MPI.comm_world, topology, geometry)
 
+    # Write mesh to file
     filename = os.path.join(tempdir, "mesh_{}_{}.xdmf".format(cpp.mesh.to_string(shape), order))
     print(filename)
     encoding = XDMFFile.Encoding.HDF5
