@@ -16,7 +16,7 @@ from dolfinx.io import XDMFFile
 assert (tempdir)
 
 
-def test_extract_topology():
+def xtest_extract_topology():
     """Test creation of topology adjacency lists, with extraction
     of cell vertices for 'higher-order' topologies"""
 

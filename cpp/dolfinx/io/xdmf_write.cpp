@@ -58,6 +58,7 @@ std::vector<std::int64_t> compute_topology_data(const mesh::Mesh& mesh,
 {
   // Create vector to store topology data
   const mesh::Topology& topology = mesh.topology();
+  const mesh::Geometry& geometry = mesh.geometry();
   const int tdim = mesh.topology().dim();
 
   const mesh::CellType entity_cell_type
@@ -82,17 +83,37 @@ std::vector<std::int64_t> compute_topology_data(const mesh::Mesh& mesh,
   assert(map);
   assert(map->block_size() == 1);
 
-  const std::vector<std::int64_t>& global_vertices_test
-      = topology.get_global_vertices_user();
-  for (int e = 0; e < map->size_local(); ++e)
+  // This is a major hack - XDMF IO needs to be re-implemented
+  if (cell_dim != tdim)
   {
-    auto linksx = e_to_v->links(e);
-    for (int i = 0; i < linksx.rows(); ++i)
+    const std::vector<std::int64_t>& global_vertices_test
+        = topology.get_global_vertices_user();
+    for (int e = 0; e < map->size_local(); ++e)
     {
-      assert(i < (int)perm.size());
-      assert(perm[i] < linksx.rows());
-      assert(linksx[perm[i]] < (int)global_vertices_test.size());
-      topology_data.push_back(global_vertices_test[linksx[perm[i]]]);
+      auto linksx = e_to_v->links(e);
+      for (int i = 0; i < linksx.rows(); ++i)
+      {
+        assert(i < (int)perm.size());
+        assert(perm[i] < linksx.rows());
+        assert(linksx[perm[i]] < (int)global_vertices_test.size());
+        topology_data.push_back(global_vertices_test[linksx[perm[i]]]);
+      }
+    }
+  }
+  else
+  {
+    const std::vector<std::int64_t>& global_vertices_test
+        = geometry.global_indices();
+    for (int e = 0; e < map->size_local(); ++e)
+    {
+      auto linksx = e_to_v->links(e);
+      for (int i = 0; i < linksx.rows(); ++i)
+      {
+        assert(i < (int)perm.size());
+        assert(perm[i] < linksx.rows());
+        assert(linksx[perm[i]] < (int)global_vertices_test.size());
+        topology_data.push_back(global_vertices_test[linksx[perm[i]]]);
+      }
     }
   }
 
