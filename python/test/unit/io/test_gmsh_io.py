@@ -14,7 +14,7 @@ assert(tempdir)
 
 @skip_in_parallel
 @pytest.mark.parametrize("order, element", [(1, "tetra"), (2, "tetra10")])
-def xtest_HDF5_io(tempdir, order, element):
+def test_HDF5_io(tempdir, order, element):
     pytest.importorskip("pygmsh")
     h5py = pytest.importorskip("h5py")
 
