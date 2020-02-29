@@ -8,9 +8,12 @@ import os
 
 import numpy as np
 import pytest
+from dolfinx_utils.test.fixtures import tempdir
 
 from dolfinx import cpp
 from dolfinx.io import XDMFFile
+
+assert (tempdir)
 
 
 def test_extract_topology():
@@ -54,12 +57,10 @@ def test_extract_topology():
     assert np.array_equal(cells_filtered.array(), cells_filtered1.array())
 
 
-def create_mesh_gmsh(shape, degree):
+def create_mesh_gmsh(shape, order):
     import pygmsh
     geom = pygmsh.built_in.Geometry()
-
     if shape == cpp.mesh.CellType.triangle:
-        # geom.add_rectangle(0.0, 2.0, 0.0, 1.0, 0.0, 2.1)
         geom = pygmsh.opencascade.Geometry()
         geom.add_disk([0.0, 0.0, 0.0], 1.0, char_length=0.2)
     elif shape == cpp.mesh.CellType.tetrahedron:
@@ -72,123 +73,76 @@ def create_mesh_gmsh(shape, degree):
         lbw = [2, 3, 5]
         points = [geom.add_point([x, 0.0, 0.0], 1.0) for x in [0.0, lbw[0]]]
         line = geom.add_line(*points)
-        _, rectangle, _ = geom.extrude(
-            line, translation_axis=[0.0, lbw[1], 0.0], num_layers=lbw[1], recombine=True)
-        geom.extrude(
-            rectangle,
-            translation_axis=[0.0, 0.0, lbw[2]],
-            num_layers=lbw[2],
-            recombine=True,
-        )
+        _, rectangle, _ = geom.extrude(line, translation_axis=[0.0, lbw[1], 0.0], num_layers=lbw[1], recombine=True)
+        geom.extrude(rectangle, translation_axis=[0.0, 0.0, lbw[2]], num_layers=lbw[2], recombine=True)
 
-    if shape == cpp.mesh.CellType.triangle and degree == 1:
-        mesh = pygmsh.generate_mesh(geom, dim=2, mesh_file_type="vtk")
-        mesh.cells = [cells for cells in mesh.cells if cells.type == "triangle"]
-    elif shape == cpp.mesh.CellType.triangle and degree == 2:
-        mesh = pygmsh.generate_mesh(geom, dim=2, mesh_file_type="vtk", extra_gmsh_arguments=["-order", "2"])
-        mesh.cells = [cells for cells in mesh.cells if cells.type == "triangle6"]
-    elif shape == cpp.mesh.CellType.quadrilateral and degree == 1:
-        mesh = pygmsh.generate_mesh(geom, dim=2, mesh_file_type="vtk")
-        mesh.cells = [cells for cells in mesh.cells if cells.type == "quad"]
-    elif shape == cpp.mesh.CellType.quadrilateral and degree == 2:
-        mesh = pygmsh.generate_mesh(geom, dim=2, mesh_file_type="vtk", extra_gmsh_arguments=["-order", "2"])
-        mesh.cells = [cells for cells in mesh.cells if cells.type == "quad9"]
-    elif shape == cpp.mesh.CellType.tetrahedron and degree == 1:
-        mesh = pygmsh.generate_mesh(geom, dim=3, mesh_file_type="vtk")
-        mesh.cells = [cells for cells in mesh.cells if cells.type == "tetra"]
-    elif shape == cpp.mesh.CellType.tetrahedron and degree == 2:
-        mesh = pygmsh.generate_mesh(geom, dim=3, mesh_file_type="vtk", extra_gmsh_arguments=["-order", "2"])
-        mesh.cells = [cells for cells in mesh.cells if cells.type == "tetra10"]
-    elif shape == cpp.mesh.CellType.hexahedron and degree == 1:
-        mesh = pygmsh.generate_mesh(geom, dim=3, mesh_file_type="vtk")
-        mesh.cells = [cells for cells in mesh.cells if cells.type == "hexahedron"]
-    elif shape == cpp.mesh.CellType.hexahedron and degree == 2:
-        mesh = pygmsh.generate_mesh(geom, dim=3, mesh_file_type="vtk", extra_gmsh_arguments=["-order", "2"])
-        # print(mesh.cells)
-        mesh.cells = [cells for cells in mesh.cells if cells.type == "hexahedron27"]
-        # mesh.cells = [cells for cells in mesh.cells if cells.type == "tetra"]
+    names = {
+        (cpp.mesh.CellType.triangle, 1): "triangle",
+        (cpp.mesh.CellType.triangle, 2): "triangle6",
+        (cpp.mesh.CellType.quadrilateral, 1): "quad",
+        (cpp.mesh.CellType.quadrilateral, 2): "quad9",
+        (cpp.mesh.CellType.tetrahedron, 1): "tetra",
+        (cpp.mesh.CellType.tetrahedron, 2): "tetra10",
+        (cpp.mesh.CellType.hexahedron, 1): "hexahedron",
+        (cpp.mesh.CellType.hexahedron, 2): "hexahedron27"
+    }
 
-    # import meshio
-    # meshio.read("CG2.vtu", mesh, file_format="vtu", binary=False)
+    # Generate
+    dim = cpp.mesh.cell_dim(shape)
+    mesh = pygmsh.generate_mesh(geom, dim=dim, mesh_file_type="vtk",
+                                extra_gmsh_arguments=["-order", "{}".format(order)])
+    name = names[(shape, order)]
+    cells = np.array([cells for cells in mesh.cells if cells.type == name])
 
-    # c = [[0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13,
-    #       14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26]]
-
-    # print(c)
-    # print(x)
-
-    # print("*3 *****", mesh.cells)
-    # import meshio
-    # new = meshio.read("CG2_hex.vtu", file_format="vtu")
-    # print(new)
-
-    points = mesh.points
-    cells = mesh.cells[0].data
-    return cells, points
+    return cells[0][1], mesh.points
 
 
-# cells_in = [[6, 12, 2, 1, 11, 0], [12, 14, 7, 9, 10, 8], [7, 2, 12, 1, 10, 3], [6, 2, 13, 4, 5, 11]]
-
-# Manual test
-# cells_in = [[0, 1, 4], [0, 4, 3], [1, 2, 5], [1, 5, 4]]
-# x = [[0.0, 0.0], [1.0, 0.0], [2.0, 0.0], [0.0, 1.0], [1.0, 1.0], [2.0, 1.0]]
-# x = np.array(x)
-
-#     cells0 = [[0, 1, 4], [0, 4, 3], [1, 2, 5], [1, 5, 4]]
-
-def get_layout(shape, degree):
-    if shape == cpp.mesh.CellType.triangle and degree == 1:
+def get_dof_layout(shape, order):
+    if shape == cpp.mesh.CellType.triangle and order == 1:
         perms = np.zeros([5, 3], dtype=np.int8)
-        perms[:] = [0, 1, 2]
-        entity_dofs = [[set([0]), set([1]), set([2])], [set(), set(), set()], [set()]]
+        perms[:] = range(3)
+        entity_dofs = [[set([0]), set([1]), set([2])], 3 * [set()], [set()]]
         return cpp.fem.ElementDofLayout(1, entity_dofs, [], [], shape, perms)
-    elif shape == cpp.mesh.CellType.triangle and degree == 2:
+    elif shape == cpp.mesh.CellType.triangle and order == 2:
         perms = np.zeros([5, 6], dtype=np.int8)
-        perms[:] = [0, 1, 2, 3, 4, 5]
+        perms[:] = range(6)
         entity_dofs = [[set([0]), set([1]), set([2])], [set([3]), set([4]), set([5])], [set()]]
         return cpp.fem.ElementDofLayout(1, entity_dofs, [], [], shape, perms)
-    elif shape == cpp.mesh.CellType.quadrilateral and degree == 1:
+    elif shape == cpp.mesh.CellType.quadrilateral and order == 1:
         perms = np.zeros([6, 4], dtype=np.int8)
-        perms[:] = [0, 1, 2, 3]
+        perms[:] = range(4)
         entity_dofs = [[set([0]), set([1]), set([2]), set([3])],
-                       [set([]), set([]), set([]), set([])],
-                       [set()]]
+                       4 * [set()], [set()]]
         return cpp.fem.ElementDofLayout(1, entity_dofs, [], [], shape, perms)
-    elif shape == cpp.mesh.CellType.quadrilateral and degree == 2:
+    elif shape == cpp.mesh.CellType.quadrilateral and order == 2:
         perms = np.zeros([6, 9], dtype=np.int8)
-        perms[:] = [0, 1, 2, 3, 4, 5, 6, 7, 8]
+        perms[:] = range(9)
         entity_dofs = [[set([0]), set([1]), set([3]), set([4])],
                        [set([2]), set([5]), set([6]), set([7])],
                        [set([8])]]
         return cpp.fem.ElementDofLayout(1, entity_dofs, [], [], shape, perms)
-    elif shape == cpp.mesh.CellType.tetrahedron and degree == 1:
-        perms = np.zeros([18, 6], dtype=np.int8)
-        perms[:] = [0, 1, 2, 3, 4, 5]
+    elif shape == cpp.mesh.CellType.tetrahedron and order == 1:
+        perms = np.zeros([18, 4], dtype=np.int8)
+        perms[:] = range(4)
         entity_dofs = [[set([0]), set([1]), set([2]), set([3])],
-                       [set([]), set([]), set([]), set([]), set([]), set([])],
-                       [set([]), set([]), set([]), set([])],
-                       [set()]]
+                       6 * [set()], 4 * [set()], [set()]]
         return cpp.fem.ElementDofLayout(1, entity_dofs, [], [], shape, perms)
-    elif shape == cpp.mesh.CellType.tetrahedron and degree == 2:
+    elif shape == cpp.mesh.CellType.tetrahedron and order == 2:
         perms = np.zeros([18, 10], dtype=np.int8)
-        perms[:] = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9]
+        perms[:] = range(10)
         entity_dofs = [[set([0]), set([1]), set([2]), set([3])],
                        [set([4]), set([5]), set([6]), set([7]), set([8]), set([9])],
-                       [set([]), set([]), set([]), set([])],
-                       [set()]]
+                       4 * [set()], [set()]]
         return cpp.fem.ElementDofLayout(1, entity_dofs, [], [], shape, perms)
-    elif shape == cpp.mesh.CellType.hexahedron and degree == 1:
+    elif shape == cpp.mesh.CellType.hexahedron and order == 1:
         perms = np.zeros([28, 8], dtype=np.int8)
-        perms[:] = [0, 1, 2, 3, 4, 5, 6, 7]
+        perms[:] = range(8)
         entity_dofs = [
             [set([0]), set([1]), set([2]), set([3]), set([4]), set([5]), set([6]), set([7])],
-            [set([]), set([]), set([]), set([]), set([]), set([]), set([]), set([]), set([]), set([]),
-                set([]), set([])],
-            [set([]), set([]), set([]), set([]), set([]), set([])],
-            [set([])]
+            12 * [set()], 6 * [set()], [set([])]
         ]
         return cpp.fem.ElementDofLayout(1, entity_dofs, [], [], shape, perms)
-    elif shape == cpp.mesh.CellType.hexahedron and degree == 2:
+    elif shape == cpp.mesh.CellType.hexahedron and order == 2:
         perms = np.zeros([28, 27], dtype=np.int8)
         perms[:] = range(27)
         entity_dofs = [
@@ -203,7 +157,14 @@ def get_layout(shape, degree):
         raise RuntimeError("Unknown dof layout")
 
 
-def test_topology_partition():
+@pytest.mark.parametrize("order", [1, 2])
+@pytest.mark.parametrize("shape", [
+    cpp.mesh.CellType.triangle,
+    cpp.mesh.CellType.quadrilateral,
+    cpp.mesh.CellType.tetrahedron,
+    cpp.mesh.CellType.hexahedron
+])
+def test_topology_partition(tempdir, shape, order):
     """Test partitioning of cells"""
     # FIXME: make creating the ElementDofLayout simpler and clear
 
@@ -212,25 +173,17 @@ def test_topology_partition():
     rank = cpp.MPI.rank(cpp.MPI.comm_world)
     size = cpp.MPI.size(cpp.MPI.comm_world)
 
-    # Create mesh input data
-    degree = 2
-    # cell_type = cpp.mesh.CellType.triangle
-    # cell_type = cpp.mesh.CellType.tetrahedron
-    # cell_type = cpp.mesh.CellType.quadrilateral
-    cell_type = cpp.mesh.CellType.hexahedron
-
-    layout = get_layout(cell_type, degree)
-    dim = cpp.mesh.cell_dim(cell_type)
+    layout = get_dof_layout(shape, order)
+    dim = cpp.mesh.cell_dim(shape)
 
     if rank == 0:
         # Create mesh data
-        cells, x = create_mesh_gmsh(cell_type, degree)
-        # print(cells)
+        cells, x = create_mesh_gmsh(shape, order)
         x = np.array(x[:, : dim])
 
         # Permute to DOLFIN ordering and create adjacency list
         cells = cpp.io.permute_cell_ordering(cells,
-                                             cpp.io.permutation_vtk_to_dolfin(cell_type,
+                                             cpp.io.permutation_vtk_to_dolfin(shape,
                                                                               cells.shape[1]))
         cells_global = cpp.graph.AdjacencyList64(cells)
 
@@ -343,10 +296,6 @@ def test_topology_partition():
     # need for global_index_nodes
     cell_nodes, global_index_cell = cpp.mesh.exchange(cpp.MPI.comm_world,
                                                       cells_global, dest, set(src))
-    # print("cell nodes -----")
-    # for r in range(cell_nodes.num_nodes):
-    #     print(np.sort(cell_nodes.links(r)))
-    # print("-----")
     assert cell_nodes.num_nodes == cells.num_nodes
     assert global_index_cell == original_cell_index
 
@@ -358,8 +307,6 @@ def test_topology_partition():
 
     l2g = cpp.mesh.compute_local_to_global_links(cell_nodes, dofmap)
 
-    # -----------------------------
-
     l2l = cpp.mesh.compute_local_to_local(l2g, indices)
 
     # Fetch node coordinates
@@ -369,17 +316,12 @@ def test_topology_partition():
     x_g = coords[l2l]
 
     # Create Geometry
-    geometry = cpp.mesh.Geometry(dof_index_map, dofmap, x_g, l2g, degree)
-
-    print(coords.shape, geometry.num_points_global())
+    geometry = cpp.mesh.Geometry(dof_index_map, dofmap, x_g, l2g, order)
 
     # Create mesh
     mesh = cpp.mesh.Mesh(cpp.MPI.comm_world, topology, geometry)
 
-    filename = os.path.join("mesh1.xdmf")
+    filename = os.path.join(tempdir, "mesh_{}_{}.xdmf".format(cpp.mesh.to_string(shape), order))
     encoding = XDMFFile.Encoding.HDF5
     with XDMFFile(mesh.mpi_comm(), filename, encoding=encoding) as file:
         file.write(mesh)
-    print("End", x_g.shape)
-    # print(np.lexsort(x_g))
-    # print(x_g)
