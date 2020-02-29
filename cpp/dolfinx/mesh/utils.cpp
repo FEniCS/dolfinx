@@ -350,6 +350,7 @@ mesh::extract_topology(const fem::ElementDofLayout& layout,
     local_vertices[i] = local_index[0];
   }
 
+  // Extract vertices
   Eigen::Array<std::int64_t, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
       topology(cells.num_nodes(), num_vertices_per_cell);
   for (int i = 0; i < cells.num_nodes(); ++i)

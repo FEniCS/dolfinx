@@ -64,18 +64,19 @@ public:
                          const std::vector<std::int64_t>& global_indices,
                          const std::vector<bool>& shared_indices);
 
-  /// Compute destination rank for mesh cells using a graph partitioner
+  /// Compute destination rank for mesh cells in this rank using a graph
+  /// partitioner
   /// @param[in] comm MPI Communicator
-  /// @param[in] nparts Number of partitions
+  /// @param[in] n Number of partitions
   /// @param[in] cell_type Cell type
   /// @param[in] cells Cells on this process. The ith entry in list
   ///   contains the global indices for the cell vertices. Each cell can
-  ///   appear only once across all processes. The cell vertex indices are
-  ///   not necessarily contiguous globally, i.e. the maximum index
+  ///   appear only once across all processes. The cell vertex indices
+  ///   are not necessarily contiguous globally, i.e. the maximum index
   ///   across all processes can be greater than the number of vertices.
   /// @return Destination process for each cell on this process
   static std::vector<int>
-  partition_cells(MPI_Comm comm, int nparts, const mesh::CellType cell_type,
+  partition_cells(MPI_Comm comm, int n, const mesh::CellType cell_type,
                   const graph::AdjacencyList<std::int64_t>& cells);
 
   /// Compute a local AdjacencyList list with contiguous indices from an
@@ -102,10 +103,11 @@ public:
       MPI_Comm comm, const mesh::Topology& topology_local,
       const std::vector<std::int64_t>& local_to_global_vertices);
 
-  /// Re-distribute adjacency list nodes processes. Does not change any
-  /// numbering.
+  /// Distribute adjacency list nodes to other processes. Does not
+  /// change any numbering. The global index of each node is assumed to
+  /// be the local index plus the offset for this rank.
   /// @param[in] comm MPI Communicator
-  /// @param[in] list An adjacency list
+  /// @param[in] list An adjacency list to distribute
   /// @param[in] destinations Destination rank for the ith node in the
   ///   adjacency list
   /// @return Adjacency list for this process, array of source ranks for
@@ -169,7 +171,6 @@ public:
   static std::vector<std::int32_t>
   compute_local_to_local(const std::vector<std::int64_t>& local0_to_global,
                          const std::vector<std::int64_t>& local1_to_global);
-
 };
 } // namespace mesh
 } // namespace dolfinx

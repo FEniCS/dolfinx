@@ -391,7 +391,7 @@ PartitioningNew::reorder_global_indices(
 }
 //-----------------------------------------------------------------------------
 std::vector<int> PartitioningNew::partition_cells(
-    MPI_Comm comm, int nparts, const mesh::CellType cell_type,
+    MPI_Comm comm, int n, const mesh::CellType cell_type,
     const graph::AdjacencyList<std::int64_t>& cells)
 {
   LOG(INFO) << "Compute partition of cells across processes";
@@ -403,19 +403,21 @@ std::vector<int> PartitioningNew::partition_cells(
       _cells(cells.array().data(), cells.num_nodes(),
              mesh::num_cell_vertices(cell_type));
 
-  // Compute dual graph (for the cells on this process)
+  // Compute distributed dual graph (for the cells on this process)
   const auto [local_graph, graph_info]
       = graph::GraphBuilder::compute_dual_graph(comm, _cells, cell_type);
+
+  // Extract data from graph_info
   const auto [num_ghost_nodes, num_local_edges, num_nonlocal_edges]
       = graph_info;
 
-  // Build graph
+  // Build CSR graph
   graph::CSRGraph<SCOTCH_Num> csr_graph(comm, local_graph);
   std::vector<std::size_t> weights;
 
   // Call partitioner
   const auto [partition, ignore] = graph::SCOTCH::partition(
-      comm, (SCOTCH_Num)nparts, csr_graph, weights, num_ghost_nodes);
+      comm, (SCOTCH_Num)n, csr_graph, weights, num_ghost_nodes);
 
   return partition;
 }
@@ -433,11 +435,10 @@ PartitioningNew::create_local_adjacency_list(
   for (int i = 0; i < array.rows(); ++i)
   {
     const std::int64_t global = array(i);
-    auto it = global_to_local.find(global);
-    if (it == global_to_local.end())
+    const auto [it, inserted] = global_to_local.insert({global, local});
+    if (inserted)
     {
       array_local[i] = local;
-      global_to_local.insert({global, local});
       ++local;
     }
     else
