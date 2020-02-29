@@ -12,7 +12,7 @@
 using namespace dolfinx;
 
 //-----------------------------------------------------------------------------
-std::vector<std::uint8_t> io::cells::vtk_to_dolfin(mesh::CellType type,
+std::vector<std::uint8_t> io::cells::dolfin_to_vtk(mesh::CellType type,
                                                    int num_nodes)
 {
   switch (type)
@@ -148,25 +148,12 @@ std::vector<std::uint8_t> io::cells::vtk_to_dolfin(mesh::CellType type,
       return {0,  9, 12, 3,  1,  10, 13, 4,  18, 15, 21, 6,  19, 16,
               22, 7, 2,  11, 14, 5,  8,  17, 20, 23, 24, 25, 26};
     default:
-      throw std::runtime_error("Hexahedra higher than degree 2 not supported.");
+      throw std::runtime_error("Higher order hexahedron not supported.");
     }
   default:
     throw std::runtime_error("Unknown cell type.");
   }
   }
-}
-//-----------------------------------------------------------------------------
-std::vector<std::uint8_t> io::cells::dolfin_to_vtk(mesh::CellType type,
-                                                   int num_nodes)
-{
-  // Transpose of vtk_to_dolfin
-  const std::vector<std::uint8_t> perm_r
-      = io::cells::vtk_to_dolfin(type, num_nodes);
-  assert(num_nodes == (int)perm_r.size());
-  std::vector<std::uint8_t> perm(perm_r.size());
-  for (std::size_t i = 0; i < perm.size(); ++i)
-    perm[perm_r[i]] = i;
-  return perm;
 }
 //-----------------------------------------------------------------------------
 // std::vector<std::uint8_t> io::cells::lex_to_tp(mesh::CellType type,
@@ -217,20 +204,30 @@ std::vector<std::uint8_t> io::cells::dolfin_to_vtk(mesh::CellType type,
 //   }
 // }
 //-----------------------------------------------------------------------------
+std::vector<std::uint8_t> io::cells::vtk_to_dolfin(mesh::CellType type,
+                                                   int num_nodes)
+{
+  const std::vector<std::uint8_t> reversed
+      = io::cells::dolfin_to_vtk(type, num_nodes);
+  std::vector<std::uint8_t> perm(num_nodes);
+  for (int i = 0; i < num_nodes; ++i)
+    perm[reversed[i]] = i;
+  return perm;
+}
+//-----------------------------------------------------------------------------
 Eigen::Array<std::int64_t, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
 io::cells::permute_ordering(
-    const Eigen::Ref<const Eigen::Array<std::int64_t, Eigen::Dynamic,
-                                        Eigen::Dynamic, Eigen::RowMajor>>&
-        cells,
+    const Eigen::Ref<const Eigen::Array<
+        std::int64_t, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>>& cells,
     const std::vector<std::uint8_t>& permutation)
 {
   Eigen::Array<std::int64_t, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
-      cells_new(cells.rows(), cells.cols());
-  for (Eigen::Index c = 0; c < cells_new.rows(); ++c)
+      cells_dolfin(cells.rows(), cells.cols());
+  for (Eigen::Index c = 0; c < cells_dolfin.rows(); ++c)
   {
-    for (Eigen::Index v = 0; v < cells_new.cols(); ++v)
-      cells_new(c, permutation[v]) = cells(c, v);
+    for (Eigen::Index v = 0; v < cells_dolfin.cols(); ++v)
+      cells_dolfin(c, v) = cells(c, permutation[v]);
   }
-  return cells_new;
+  return cells_dolfin;
 }
 //-----------------------------------------------------------------------------
