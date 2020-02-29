@@ -61,9 +61,6 @@ std::vector<std::int64_t> compute_topology_data(const mesh::Mesh& mesh,
   const mesh::Geometry& geometry = mesh.geometry();
   const int tdim = mesh.topology().dim();
 
-  if (cell_dim != tdim)
-    throw std::runtime_error("Lower-dimension topology IO not supported yet.");
-
   const mesh::CellType entity_cell_type
       = mesh::cell_entity_type(topology.cell_type(), cell_dim);
   const int num_vertices_per_cell = mesh::num_cell_vertices(entity_cell_type);
@@ -86,13 +83,11 @@ std::vector<std::int64_t> compute_topology_data(const mesh::Mesh& mesh,
   assert(map);
   assert(map->block_size() == 1);
 
-  const graph::AdjacencyList<std::int32_t>& x_dofmap = geometry.dofmap();
   const std::vector<std::int64_t>& global_vertices_test
-      = geometry.global_indices();
+      = topology.get_global_vertices_user();
   for (int e = 0; e < map->size_local(); ++e)
   {
-    assert(e < x_dofmap.num_nodes());
-    auto linksx = x_dofmap.links(e);
+    auto linksx = e_to_v->links(e);
     for (int i = 0; i < linksx.rows(); ++i)
     {
       assert(i < (int)perm.size());
@@ -102,9 +97,6 @@ std::vector<std::int64_t> compute_topology_data(const mesh::Mesh& mesh,
     }
   }
 
-  // if (dolfinx::MPI::rank(MPI_COMM_WORLD) == 2)
-  //   std::cout << "End topo data (2): " << map->size_local() << ", "
-  //             << topology_data.size() << std::endl;
   return topology_data;
 } // namespace
 //-----------------------------------------------------------------------------

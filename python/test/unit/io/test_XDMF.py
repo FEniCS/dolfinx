@@ -450,7 +450,7 @@ def test_save_3D_cell_function(tempdir, encoding, data_type, cell_type):
 @pytest.mark.parametrize("cell_type", celltypes_2D)
 @pytest.mark.parametrize("encoding", encodings)
 @pytest.mark.parametrize("data_type", data_types)
-def xtest_save_2D_facet_function(tempdir, encoding, data_type, cell_type):
+def test_save_2D_facet_function(tempdir, encoding, data_type, cell_type):
     dtype_str, dtype = data_type
     mesh = UnitSquareMesh(MPI.comm_world, 32, 32, cell_type)
     tdim = mesh.topology.dim

@@ -102,8 +102,8 @@ std::size_t Geometry::hash() const
   // Compute local hash
   boost::hash<std::vector<double>> dhash;
 
-  std::vector<double> _x(_x.data(), _x.data() + _x.size());
-  const std::size_t local_hash = dhash(_x);
+  std::vector<double> data(_x.data(), _x.data() + _x.size());
+  const std::size_t local_hash = dhash(data);
   return local_hash;
 }
 //-----------------------------------------------------------------------------
