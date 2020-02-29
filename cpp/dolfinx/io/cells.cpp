@@ -12,7 +12,7 @@
 using namespace dolfinx;
 
 //-----------------------------------------------------------------------------
-std::vector<std::uint8_t> io::cells::dolfin_to_vtk(mesh::CellType type,
+std::vector<std::uint8_t> io::cells::vtk_to_dolfin(mesh::CellType type,
                                                    int num_nodes)
 {
   switch (type)
@@ -204,11 +204,11 @@ std::vector<std::uint8_t> io::cells::dolfin_to_vtk(mesh::CellType type,
 //   }
 // }
 //-----------------------------------------------------------------------------
-std::vector<std::uint8_t> io::cells::vtk_to_dolfin(mesh::CellType type,
+std::vector<std::uint8_t> io::cells::dolfin_to_vtk(mesh::CellType type,
                                                    int num_nodes)
 {
   const std::vector<std::uint8_t> reversed
-      = io::cells::dolfin_to_vtk(type, num_nodes);
+      = io::cells::vtk_to_dolfin(type, num_nodes);
   std::vector<std::uint8_t> perm(num_nodes);
   for (int i = 0; i < num_nodes; ++i)
     perm[reversed[i]] = i;
@@ -222,12 +222,12 @@ io::cells::permute_ordering(
     const std::vector<std::uint8_t>& permutation)
 {
   Eigen::Array<std::int64_t, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
-      cells_dolfin(cells.rows(), cells.cols());
-  for (Eigen::Index c = 0; c < cells_dolfin.rows(); ++c)
+      cells_new(cells.rows(), cells.cols());
+  for (Eigen::Index c = 0; c < cells_new.rows(); ++c)
   {
-    for (Eigen::Index v = 0; v < cells_dolfin.cols(); ++v)
-      cells_dolfin(c, v) = cells(c, permutation[v]);
+    for (Eigen::Index v = 0; v < cells_new.cols(); ++v)
+      cells_new(c, permutation[v]) = cells(c, v);
   }
-  return cells_dolfin;
+  return cells_new;
 }
 //-----------------------------------------------------------------------------

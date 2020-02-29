@@ -311,7 +311,7 @@ void HDF5File::write(const mesh::Mesh& mesh, int cell_dim,
 
       int num_nodes = mesh.geometry().dofmap().num_links(0);
       const std::vector<std::uint8_t> perm
-          = io::cells::dolfin_to_vtk(mesh.topology().cell_type(), num_nodes);
+          = io::cells::vtk_to_dolfin(mesh.topology().cell_type(), num_nodes);
 
       for (std::int32_t c = 0; c < mesh.num_entities(tdim); ++c)
       {
@@ -333,7 +333,7 @@ void HDF5File::write(const mesh::Mesh& mesh, int cell_dim,
       // Permutation to VTK ordering
       int num_nodes = mesh.geometry().dofmap().num_links(0);
       const std::vector<std::uint8_t> perm
-          = io::cells::dolfin_to_vtk(mesh.topology().cell_type(), num_nodes);
+          = io::cells::vtk_to_dolfin(mesh.topology().cell_type(), num_nodes);
 
       if (cell_dim == tdim or !mpi_io)
       {

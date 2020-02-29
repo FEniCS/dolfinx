@@ -193,7 +193,7 @@ void write_ascii_mesh(const mesh::Mesh& mesh, int cell_dim,
     num_nodes = connectivity_g.num_links(0);
 
     const std::vector<std::uint8_t> perm
-        = io::cells::dolfin_to_vtk(mesh.topology().cell_type(), num_nodes);
+        = io::cells::vtk_to_dolfin(mesh.topology().cell_type(), num_nodes);
     for (int j = 0; j < mesh.num_entities(mesh.topology().dim()); ++j)
     {
       for (int i = 0; i < num_nodes; ++i)
@@ -217,7 +217,7 @@ void write_ascii_mesh(const mesh::Mesh& mesh, int cell_dim,
     // extended to have connections to facets.
     const int num_vertices = mesh::num_cell_vertices(e_type);
     const std::vector<std::uint8_t> perm
-        = io::cells::dolfin_to_vtk(e_type, num_vertices);
+        = io::cells::vtk_to_dolfin(e_type, num_vertices);
     auto vertex_connectivity = mesh.topology().connectivity(cell_dim, 0);
     const Eigen::Array<std::int32_t, Eigen::Dynamic, 1>& vertex_connections
         = vertex_connectivity->array();

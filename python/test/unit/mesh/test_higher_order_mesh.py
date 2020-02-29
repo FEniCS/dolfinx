@@ -76,8 +76,8 @@ def sympy_scipy(points, nodes, L, H):
 def test_permute_vtk_to_dolfin(vtk, dolfin, cell_type):
     p = permutation_vtk_to_dolfin(cell_type, len(vtk))
     cell_p = permute_cell_ordering([vtk], p)
-    print(cell_p)
-    print(dolfin)
+    # print(cell_p)
+    # print(dolfin)
     assert (cell_p == dolfin).all()
 
     p = permutation_dolfin_to_vtk(cell_type, len(vtk))

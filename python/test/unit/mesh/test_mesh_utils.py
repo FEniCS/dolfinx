@@ -67,7 +67,7 @@ def create_mesh_gmsh(shape, order):
     geom = pygmsh.built_in.Geometry()
     if shape == cpp.mesh.CellType.triangle:
         geom = pygmsh.opencascade.Geometry()
-        geom.add_disk([0.0, 0.0, 0.0], 1.0, char_length=0.2)
+        geom.add_disk([0.0, 0.0, 0.0], 1.0, char_length=1.2)
     elif shape == cpp.mesh.CellType.tetrahedron:
         geom = pygmsh.opencascade.Geometry()
         geom.add_ball([0.0, 0.0, 0.0], 1.0, char_length=0.2)
@@ -163,7 +163,10 @@ def get_dof_layout(shape, order):
         raise RuntimeError("Unknown dof layout")
 
 
-@pytest.mark.parametrize("order", [1, 2])
+@pytest.mark.parametrize("order", [
+    1,
+    2
+])
 @pytest.mark.parametrize("shape", [
     cpp.mesh.CellType.triangle,
     cpp.mesh.CellType.quadrilateral,
@@ -175,46 +178,48 @@ def test_topology_partition(tempdir, shape, order):
 
     pytest.importorskip("pygmsh")
 
-    rank = cpp.MPI.rank(cpp.MPI.comm_world)
     size = cpp.MPI.size(cpp.MPI.comm_world)
     layout = get_dof_layout(shape, order)
     dim = cpp.mesh.cell_dim(shape)
 
-    if rank == 0:
-        # Create mesh data
-        cells, x = create_mesh_gmsh(shape, order)
-        x = np.array(x[:, : dim])
+    # rank = cpp.MPI.rank(cpp.MPI.comm_world)
+    # if rank == 0:
+    #     # Create mesh data
+    #     cells, x = create_mesh_gmsh(shape, order)
+    #     x = np.array(x[:, : dim])
 
-        # Permute to DOLFIN ordering and create adjacency list
-        cells = cpp.io.permute_cell_ordering(cells,
-                                             cpp.io.permutation_vtk_to_dolfin(shape,
-                                                                              cells.shape[1]))
-        cells_global = cpp.graph.AdjacencyList64(cells)
+    #     # Permute to DOLFIN ordering and create adjacency list
+    #     cells = cpp.io.permute_cell_ordering(cells,
+    #                                           cpp.io.permutation_vtk_to_dolfin(shape,
+    #                                                                            cells.shape[1]))
+    #     cells_global = cpp.graph.AdjacencyList64(cells)
 
-        # Extract topology data, e.g. just the vertices. For P1 geometry
-        # this should just be the identity operator. For other elements
-        # the filtered lists may have 'gaps', i.e. the indices might not
-        # be contiguous.
-        cells_global_v = cpp.mesh.extract_topology(layout, cells_global)
-    else:
-        # Empty data on ranks other than 0
-        cells_global = cpp.graph.AdjacencyList64(0)
-        x = np.zeros([0, dim])
-        cells_global_v = cpp.graph.AdjacencyList64(0)
+    #     # Extract topology data, e.g. just the vertices. For P1 geometry
+    #     # this should just be the identity operator. For other elements
+    #     # the filtered lists may have 'gaps', i.e. the indices might not
+    #     # be contiguous.
+    #     cells_global_v = cpp.mesh.extract_topology(layout, cells_global)
+    # else:
+    #     # Empty data on ranks other than 0
+    #     cells_global = cpp.graph.AdjacencyList64(0)
+    #     x = np.zeros([0, dim])
+    #     cells_global_v = cpp.graph.AdjacencyList64(0)
 
-    # # Create mesh data
-    # cells, x = create_mesh_gmsh(shape, order)
-    # x = np.array(x[:, : dim])
+    # Create mesh data
+    cells, x = create_mesh_gmsh(shape, order)
 
-    # range = cpp.MPI.local_range(cpp.MPI.comm_world, len(cells))
-    # cells = cells[range[0]:range[1]]
+    # Divide data amongst ranks (for testing). Possible to start will
+    # all data on a single rank.
+    range_c = cpp.MPI.local_range(cpp.MPI.comm_world, len(cells))
+    range_v = cpp.MPI.local_range(cpp.MPI.comm_world, len(x))
+    cells = cells[range_c[0]:range_c[1]]
+    x = np.array(x[range_v[0]:range_v[1], : dim])
 
-    # # Permute to DOLFIN ordering and create adjacency list
-    # cells = cpp.io.permute_cell_ordering(cells,
-    #                                      cpp.io.permutation_vtk_to_dolfin(shape,
-    #                                                                       cells.shape[1]))
-
-    # cells_global = cpp.graph.AdjacencyList64(cells)
+    # Permute to DOLFIN ordering and create adjacency list
+    cells = cpp.io.permute_cell_ordering(cells,
+                                         cpp.io.permutation_vtk_to_dolfin(shape,
+                                                                          cells.shape[1]))
+    cells_global = cpp.graph.AdjacencyList64(cells)
 
     # ------------
 

@@ -74,11 +74,11 @@ std::vector<std::int64_t> compute_topology_data(const mesh::Mesh& mesh,
   int num_nodes = mesh.geometry().dofmap().num_links(0);
   std::vector<std::uint8_t> perm;
   if (cell_dim == tdim)
-    perm = io::cells::dolfin_to_vtk(topology.cell_type(), num_nodes);
+    perm = io::cells::vtk_to_dolfin(topology.cell_type(), num_nodes);
   else
     // Lower the permutation level to the appropriate cell type
     // FIXME: Only works for first order geometries
-    perm = io::cells::dolfin_to_vtk(entity_cell_type, num_vertices_per_cell);
+    perm = io::cells::vtk_to_dolfin(entity_cell_type, num_vertices_per_cell);
 
   std::cout << "get topo data" << std::endl;
   auto e_to_v = topology.connectivity(cell_dim, 0);
@@ -354,7 +354,7 @@ void xdmf_write::add_topology_data(MPI_Comm comm, pugi::xml_node& xml_node,
 
     int num_nodes = mesh.geometry().dofmap().num_links(0);
     const std::vector<std::uint8_t> perm
-        = io::cells::dolfin_to_vtk(mesh.topology().cell_type(), num_nodes);
+        = io::cells::vtk_to_dolfin(mesh.topology().cell_type(), num_nodes);
 
     for (std::int32_t c = 0; c < mesh.num_entities(tdim); ++c)
     {
@@ -364,11 +364,7 @@ void xdmf_write::add_topology_data(MPI_Comm comm, pugi::xml_node& xml_node,
     }
   }
   else
-  {
-    std::cout << "Comp t" << std::endl;
     topology_data = compute_topology_data(mesh, cell_dim);
-    std::cout << "Comp t post" << std::endl;
-  }
 
   topology_node.append_attribute("NodesPerElement") = num_nodes_per_cell;
 
