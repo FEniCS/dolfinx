@@ -212,7 +212,8 @@ std::vector<std::uint8_t> io::cells::dolfin_to_vtk(mesh::CellType type,
 //     }
 //   }
 //   default:
-//     throw std::runtime_error("Simplicies can be expressed as TensorProduct.");
+//     throw std::runtime_error("Simplicies can be expressed as
+//     TensorProduct.");
 //   }
 // }
 //-----------------------------------------------------------------------------
@@ -227,7 +228,7 @@ io::cells::permute_ordering(
   for (Eigen::Index c = 0; c < cells_new.rows(); ++c)
   {
     for (Eigen::Index v = 0; v < cells_new.cols(); ++v)
-      cells_new(c, v) = cells(c, permutation[v]);
+      cells_new(c, permutation[v]) = cells(c, v);
   }
   return cells_new;
 }

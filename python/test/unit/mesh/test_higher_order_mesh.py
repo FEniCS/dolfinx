@@ -69,13 +69,15 @@ def sympy_scipy(points, nodes, L, H):
 
 @skip_in_parallel
 @pytest.mark.parametrize("vtk,dolfin,cell_type", [
-    ([0, 1, 2, 3, 4, 5], [0, 1, 2, 5, 3, 4], CellType.triangle),
-    ([0, 1, 2, 3], [0, 2, 3, 1], CellType.quadrilateral),
-    ([0, 1, 2, 3, 4, 5, 6, 7], [0, 4, 6, 2, 1, 5, 7, 3], CellType.hexahedron)
+    ([0, 1, 2, 3, 4, 5], [0, 1, 2, 4, 5, 3], CellType.triangle),
+    ([0, 1, 2, 3], [0, 3, 1, 2], CellType.quadrilateral),
+    ([0, 1, 2, 3, 4, 5, 6, 7], [0, 4, 3, 7, 1, 5, 2, 6], CellType.hexahedron)
 ])
 def test_permute_vtk_to_dolfin(vtk, dolfin, cell_type):
     p = permutation_vtk_to_dolfin(cell_type, len(vtk))
     cell_p = permute_cell_ordering([vtk], p)
+    print(cell_p)
+    print(dolfin)
     assert (cell_p == dolfin).all()
 
     p = permutation_dolfin_to_vtk(cell_type, len(vtk))
