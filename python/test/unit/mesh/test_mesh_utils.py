@@ -202,6 +202,28 @@ def test_topology_partition(tempdir, shape, order):
         x = np.zeros([0, dim])
         cells_global_v = cpp.graph.AdjacencyList64(0)
 
+    # # Create mesh data
+    # cells, x = create_mesh_gmsh(shape, order)
+    # x = np.array(x[:, : dim])
+
+    # range = cpp.MPI.local_range(cpp.MPI.comm_world, len(cells))
+    # cells = cells[range[0]:range[1]]
+
+    # # Permute to DOLFIN ordering and create adjacency list
+    # cells = cpp.io.permute_cell_ordering(cells,
+    #                                      cpp.io.permutation_vtk_to_dolfin(shape,
+    #                                                                       cells.shape[1]))
+
+    # cells_global = cpp.graph.AdjacencyList64(cells)
+
+    # ------------
+
+    # Extract topology data, e.g. just the vertices. For P1 geometry
+    # this should just be the identity operator. For other elements
+    # the filtered lists may have 'gaps', i.e. the indices might not
+    # be contiguous.
+    cells_global_v = cpp.mesh.extract_topology(layout, cells_global)
+
     # Compute the destination rank for cells on this process via graph
     # partitioning
     dest = cpp.mesh.partition_cells(cpp.MPI.comm_world, size, layout.cell_type,
@@ -328,6 +350,7 @@ def test_topology_partition(tempdir, shape, order):
     mesh = cpp.mesh.Mesh(cpp.MPI.comm_world, topology, geometry)
 
     filename = os.path.join(tempdir, "mesh_{}_{}.xdmf".format(cpp.mesh.to_string(shape), order))
+    print(filename)
     encoding = XDMFFile.Encoding.HDF5
     with XDMFFile(mesh.mpi_comm(), filename, encoding=encoding) as file:
         file.write(mesh)
