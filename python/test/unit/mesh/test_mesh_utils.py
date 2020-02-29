@@ -58,6 +58,11 @@ def test_extract_topology():
 
 
 def create_mesh_gmsh(shape, order):
+    """Compute cell topology and geometric points for a range of cells types
+    and geometric orders
+
+    """
+
     import pygmsh
     geom = pygmsh.built_in.Geometry()
     if shape == cpp.mesh.CellType.triangle:
@@ -87,7 +92,7 @@ def create_mesh_gmsh(shape, order):
         (cpp.mesh.CellType.hexahedron, 2): "hexahedron27"
     }
 
-    # Generate
+    # Generate mesh
     dim = cpp.mesh.cell_dim(shape)
     mesh = pygmsh.generate_mesh(geom, dim=dim, mesh_file_type="vtk",
                                 extra_gmsh_arguments=["-order", "{}".format(order)])
@@ -98,6 +103,7 @@ def create_mesh_gmsh(shape, order):
 
 
 def get_dof_layout(shape, order):
+    """Create ElementDofLayouts for a range of Lagrange element types"""
     if shape == cpp.mesh.CellType.triangle and order == 1:
         perms = np.zeros([5, 3], dtype=np.int8)
         perms[:] = range(3)
@@ -147,8 +153,8 @@ def get_dof_layout(shape, order):
         perms[:] = range(27)
         entity_dofs = [
             [set([0]), set([1]), set([3]), set([4]), set([9]), set([10]), set([12]), set([13])],
-            [set([2]), set([5]), set([11]), set([14]), set([6]), set([7]), set([15]), set([16]), set([18]), set([19]),
-                set([21]), set([22])],
+            [set([2]), set([5]), set([11]), set([14]), set([6]), set([7]), set([15]), set([16]),
+                set([18]), set([19]), set([21]), set([22])],
             [set([8]), set([17]), set([20]), set([23]), set([24]), set([25])],
             [set([26])]
         ]
@@ -165,14 +171,12 @@ def get_dof_layout(shape, order):
     cpp.mesh.CellType.hexahedron
 ])
 def test_topology_partition(tempdir, shape, order):
-    """Test partitioning of cells"""
-    # FIXME: make creating the ElementDofLayout simpler and clear
+    """Test partitioning and creation of meshes"""
 
     pytest.importorskip("pygmsh")
 
     rank = cpp.MPI.rank(cpp.MPI.comm_world)
     size = cpp.MPI.size(cpp.MPI.comm_world)
-
     layout = get_dof_layout(shape, order)
     dim = cpp.mesh.cell_dim(shape)
 
@@ -200,11 +204,13 @@ def test_topology_partition(tempdir, shape, order):
 
     # Compute the destination rank for cells on this process via graph
     # partitioning
-    dest = cpp.mesh.partition_cells(cpp.MPI.comm_world, size, layout.cell_type, cells_global_v)
+    dest = cpp.mesh.partition_cells(cpp.MPI.comm_world, size, layout.cell_type,
+                                    cells_global_v)
     assert len(dest) == cells_global_v.num_nodes
 
     # Distribute cells to destination rank
-    cells, src, original_cell_index = cpp.mesh.distribute(cpp.MPI.comm_world, cells_global_v, dest)
+    cells, src, original_cell_index = cpp.mesh.distribute(cpp.MPI.comm_world,
+                                                          cells_global_v, dest)
 
     # Build local cell-vertex connectivity, with local vertex indices
     # [0, 1, 2, ..., n), and get map from global vertex indices in
