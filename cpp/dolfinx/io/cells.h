@@ -27,18 +27,19 @@ namespace cells
 /// Map from DOLFINX to VTK ordering
 /// @param[in] type The cell shape
 /// @param[in] num_nodes The number of cell 'nodes'
-/// @return Map from local DOLFINX node index to the VTK node index,
-///     i.e. for node index i in the DOLFIN ordering, map[i] is the node
-///     index in VTK ordering
+/// @return Map from local DOLFINX node index to the corresponding VTK
+///     node index, i.e. for node index i in the DOLFIN ordering, map[i]
+///     is the node index in VTK ordering
 std::vector<std::uint8_t> vtk_to_dolfin(mesh::CellType type, int num_nodes);
 
-/// Map from VTK to DOLFINX ordering
+/// Map from VTK to DOLFINX ordering. Transpose of the DOLFINX to VTK
+/// map.
 /// @param[in] type The cell shape
 /// @param[in] num_nodes The number of cell 'nodes'
 /// @return The map
-/// @return Map from local VTK node index to the DOLFINX node index,
-///     i.e. for node index i in the VTK ordering, map[i] is the node
-///     index in DOLFINX ordering
+/// @return Map from local VTK node index to the corresponding DOLFINX
+///     node index, i.e. for node index i in the VTK ordering, map[i] is
+///     the node index in DOLFINX ordering
 std::vector<std::uint8_t> dolfin_to_vtk(mesh::CellType type, int num_nodes);
 
 /// @todo Check that direction of the map is correct
