@@ -228,7 +228,7 @@ jobs:
             sudo docker run hello-world
       - run:
           name: Login to Dockerhub
-          command: echo ${GH_TOKEN} | sudo docker login -u ${GH_USERNAME} --password-stdin docker.pkg.github.com
+          command: echo ${DH_TOKEN} | sudo docker login -u ${DH_USERNAME} --password-stdin
       - build-and-push-target:
           docker-target: "base"
       - build-and-push-target:
