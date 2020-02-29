@@ -234,11 +234,6 @@ void remap_meshfunction_data(mesh::MeshFunction<T>& meshfunction,
     auto vertices = c_to_v->links(c);
     for (int v = 0; v < vertices.rows(); ++v)
       cell_topology.push_back(global_indices[vertices(v)]);
-    // for (int v = 0; v < vertices.rows(); ++v)
-    // {
-    //   std::int64_t global_index = map0->local_to_global(vertices(v));
-    //   cell_topology.push_back(global_index);
-    // }
 
     std::sort(cell_topology.begin(), cell_topology.end());
 

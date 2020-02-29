@@ -1,4 +1,4 @@
-// Copyright (C) 2006-2018 Anders Logg and Garth N. Wells
+// Copyright (C) 2006-2020 Anders Logg and Garth N. Wells
 //
 // This file is part of DOLFINX (https://www.fenicsproject.org)
 //
@@ -45,7 +45,7 @@ public:
   /// Constructor
   Geometry(std::int64_t num_points_global,
            const Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic,
-                              Eigen::RowMajor>& coordinates,
+                              Eigen::RowMajor>& x,
            const std::vector<std::int64_t>& global_indices,
            const Eigen::Ref<const Eigen::Array<
                std::int32_t, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>>&
@@ -70,7 +70,7 @@ public:
   /// Return Euclidean dimension of coordinate system
   int dim() const;
 
-  /// @todo Remove this. Just here for mesh::Ordering
+  /// @todo Remove this non-const version. Just here for mesh::Ordering
   ///
   /// DOF map
   graph::AdjacencyList<std::int32_t>& dofmap();
@@ -92,20 +92,20 @@ public:
   /// Return the number of global points in the geometry
   std::size_t num_points_global() const;
 
-  /// Global indices for points (const)
+  /// Global input indices for points (const)
   const std::vector<std::int64_t>& global_indices() const;
 
   /// Hash of coordinate values
   /// @return A tree-hashed value of the coordinates over all MPI
-  ///         processes
+  ///   processes
   std::size_t hash() const;
 
   /// Return informal string representation (pretty-print)
   std::string str(bool verbose) const;
 
-  /// @warning Experimental
+  /// @warning Experimental. Needs revision
   ///
-  /// Put CoordinateElement for now
+  /// Put CoordinateElement here for now
   std::shared_ptr<const fem::CoordinateElement> coord_mapping;
 
   ///  @todo Remove this
@@ -115,7 +115,7 @@ public:
 
 private:
   // Coordinates for all points stored as a contiguous array
-  Eigen::Array<double, Eigen::Dynamic, 3, Eigen::RowMajor> _coordinates;
+  Eigen::Array<double, Eigen::Dynamic, 3, Eigen::RowMajor> _x;
 
   // Geometric dimension
   int _dim;
@@ -123,15 +123,19 @@ private:
   // Global indices for points
   std::vector<std::int64_t> _global_indices;
 
+  // TODO: remove
   // Global number of points (taking account of shared points)
   std::uint64_t _num_points_global;
 
-  // NEW
+  // IndexMap for geometry 'dofmap'
   std::shared_ptr<const common::IndexMap> _index_map;
-  graph::AdjacencyList<std::int32_t> _dofmap;
-  // Eigen::Array<double, Eigen::Dynamic, 3, Eigen::RowMajor> _x;
 
-  // FIXME: Remove this Mesh geometric degree (in Lagrange basis)
+  // Map per cell for extracting coordinate data
+  graph::AdjacencyList<std::int32_t> _dofmap;
+
+  // FIXME: Remove this
+  //
+  // Mesh geometric degree (in Lagrange basis)
   // describing coordinate dofs
   std::int32_t _degree;
 };

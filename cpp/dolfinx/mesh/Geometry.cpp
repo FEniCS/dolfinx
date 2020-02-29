@@ -1,4 +1,4 @@
-// Copyright (C) 2006 Anders Logg
+// Copyright (C) 2006-2020 Anders Logg and Garth N. Wells
 //
 // This file is part of DOLFINX (https://www.fenicsproject.org)
 //
@@ -26,37 +26,36 @@ Geometry::Geometry(std::shared_ptr<const common::IndexMap> index_map,
 
   // Make all geometry 3D
   if (_dim == 3)
-    _coordinates = x;
+    _x = x;
   else
   {
-    _coordinates.resize(x.rows(), 3);
-    _coordinates.setZero();
-    _coordinates.block(0, 0, x.rows(), x.cols()) = x;
+    _x.resize(x.rows(), 3);
+    _x.setZero();
+    _x.block(0, 0, x.rows(), x.cols()) = x;
   }
 }
 //-----------------------------------------------------------------------------
 Geometry::Geometry(
     std::int64_t num_points_global,
     const Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>&
-        coordinates,
+        x,
     const std::vector<std::int64_t>& global_indices,
     const Eigen::Ref<const Eigen::Array<std::int32_t, Eigen::Dynamic,
                                         Eigen::Dynamic, Eigen::RowMajor>>&
         coordinate_dofs,
     int degree)
-    : _dim(coordinates.cols()), _global_indices(global_indices),
+    : _dim(x.cols()), _global_indices(global_indices),
       _num_points_global(num_points_global), _dofmap(coordinate_dofs),
       _degree(degree)
 {
   // Make all geometry 3D
   if (_dim == 3)
-    _coordinates = coordinates;
+    _x = x;
   else
   {
-    _coordinates.resize(coordinates.rows(), 3);
-    _coordinates.setZero();
-    _coordinates.block(0, 0, coordinates.rows(), coordinates.cols())
-        = coordinates;
+    _x.resize(x.rows(), 3);
+    _x.setZero();
+    _x.block(0, 0, x.rows(), x.cols()) = x;
   }
 }
 //-----------------------------------------------------------------------------
@@ -71,18 +70,18 @@ const graph::AdjacencyList<std::int32_t>& Geometry::dofmap() const
 //-----------------------------------------------------------------------------
 Eigen::Array<double, Eigen::Dynamic, 3, Eigen::RowMajor>& Geometry::x()
 {
-  return _coordinates;
+  return _x;
 }
 //-----------------------------------------------------------------------------
 const Eigen::Array<double, Eigen::Dynamic, 3, Eigen::RowMajor>&
 Geometry::x() const
 {
-  return _coordinates;
+  return _x;
 }
 //-----------------------------------------------------------------------------
 Eigen::Ref<const Eigen::Vector3d> Geometry::x(int n) const
 {
-  return _coordinates.row(n).matrix().transpose();
+  return _x.row(n).matrix().transpose();
 }
 //-----------------------------------------------------------------------------
 std::size_t Geometry::num_points_global() const
@@ -103,8 +102,7 @@ std::size_t Geometry::hash() const
   // Compute local hash
   boost::hash<std::vector<double>> dhash;
 
-  std::vector<double> _x(_coordinates.data(),
-                         _coordinates.data() + _coordinates.size());
+  std::vector<double> _x(_x.data(), _x.data() + _x.size());
   const std::size_t local_hash = dhash(_x);
   return local_hash;
 }
@@ -115,19 +113,19 @@ std::string Geometry::str(bool verbose) const
   if (verbose)
   {
     s << str(false) << std::endl << std::endl;
-    for (Eigen::Index i = 0; i < _coordinates.rows(); i++)
+    for (Eigen::Index i = 0; i < _x.rows(); i++)
     {
       s << "  " << i << ":";
-      for (Eigen::Index d = 0; d < _coordinates.cols(); d++)
-        s << " " << _coordinates(i, d);
+      for (Eigen::Index d = 0; d < _x.cols(); d++)
+        s << " " << _x(i, d);
       s << std::endl;
     }
     s << std::endl;
   }
   else
   {
-    s << "<Geometry of dimension " << _coordinates.cols() << " and size "
-      << _coordinates.rows() << ">";
+    s << "<Geometry of dimension " << _x.cols() << " and size " << _x.rows()
+      << ">";
   }
 
   return s.str();

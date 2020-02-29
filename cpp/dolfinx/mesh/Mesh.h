@@ -59,8 +59,7 @@ class Topology;
 class Mesh
 {
 public:
-  /// A triangulation
-  ///
+  /// Create a mesh
   /// @param[in] comm MPI Communicator
   /// @param[in] topology Mesh topology
   /// @param[in] geometry Mesh geometry

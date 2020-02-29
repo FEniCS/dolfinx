@@ -485,8 +485,6 @@ DofMapBuilder::build(MPI_Comm comm, const mesh::Topology& topology,
 {
   assert(element_dof_layout);
   const int bs = element_dof_layout->block_size();
-  // std::shared_ptr<common::IndexMap> index_map;
-  // graph::AdjacencyList<std::int32_t> dofmap;
   if (bs == 1)
   {
     auto [index_map, dofmap]
