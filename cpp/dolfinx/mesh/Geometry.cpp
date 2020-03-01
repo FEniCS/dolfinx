@@ -151,9 +151,13 @@ mesh::Geometry mesh::create_geometry(
   // TODO: make sure required entities are initialised, or extend
   // fem::DofMapBuilder::build to take connectivities
 
+  boost::timer::auto_cpu_timer t0("%t sec CPU, %w sec real (build dofmap)\n");
+
   //  Build 'geometry' dofmap on the topology
   auto [dof_index_map, dofmap]
       = fem::DofMapBuilder::build(comm, topology, layout, 1);
+  t0.stop();
+  t0.report();
 
   // Send/receive the 'cell nodes' (includes high-order geometry
   // nodes), and the global input cell index.
@@ -164,9 +168,12 @@ mesh::Geometry mesh::create_geometry(
   //
   //  NOTE: This could be optimised as we have earlier computed which
   //  processes own the cells this process needs.
+  boost::timer::auto_cpu_timer t1("%t sec CPU, %w sec real (exchange)\n");
   std::set<int> _src(src.begin(), src.end());
   auto [cell_nodes, global_index_cell]
       = PartitioningNew::exchange(comm, cells, dest, _src);
+  t1.stop();
+  t1.report();
 
   // Build list of unique (global) node indices from adjacency list
   // (geometry nodes)
@@ -178,8 +185,11 @@ mesh::Geometry mesh::create_geometry(
 
   //  Fetch node coordinates by global index from other ranks. Order of
   //  coords matches order of the indices in 'indices'
+  boost::timer::auto_cpu_timer t2("%t sec CPU, %w sec real (fetch)\n");
   Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor> coords
       = PartitioningNew::fetch_data(comm, indices, x);
+  t2.stop();
+  t2.report();
 
   // Compute local-to-global map from local indices in dofmap to the
   // corresponding global indices in cell_nodes

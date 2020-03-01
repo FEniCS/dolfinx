@@ -23,6 +23,7 @@
 #include <tuple>
 #include <utility>
 #include <vector>
+#include <unordered_map>
 
 using namespace dolfinx;
 using namespace dolfinx::mesh;
@@ -73,7 +74,7 @@ sort_by_perm(const Eigen::Array<T, Eigen::Dynamic, Eigen::Dynamic,
 /// @return Tuple of (shared_entities and recv_index) where recv_index
 ///   is the matching received index to send_index, if the entities
 ///   exist, -1 otherwise.
-std::tuple<std::map<std::int32_t, std::set<std::int32_t>>,
+std::tuple<std::unordered_map<std::int32_t, std::set<std::int32_t>>,
            std::vector<std::vector<std::int32_t>>>
 get_shared_entities(MPI_Comm neighbour_comm,
                     const std::vector<std::vector<std::int64_t>>& send_entities,
@@ -84,7 +85,7 @@ get_shared_entities(MPI_Comm neighbour_comm,
   const int neighbour_size = neighbours.size();
 
   // Items to return
-  std::map<std::int32_t, std::set<std::int32_t>> shared_entities;
+  std::unordered_map<std::int32_t, std::set<std::int32_t>> shared_entities;
   std::vector<std::vector<std::int32_t>> recv_index(neighbour_size);
 
   // Prepare data for neighbour all to all
@@ -189,7 +190,7 @@ get_local_indexing(
                                  MPI_INFO_NULL, false, &neighbour_comm);
 
   const int neighbour_size = neighbours.size();
-  std::map<int, int> proc_to_neighbour;
+  std::unordered_map<int, int> proc_to_neighbour;
   for (int i = 0; i < neighbour_size; ++i)
     proc_to_neighbour.insert({neighbours[i], i});
 
@@ -200,7 +201,7 @@ get_local_indexing(
   // other processes, and see if we get the same back.
 
   // Set of sharing procs for each entity, counting vertex hits
-  std::map<int, int> procs;
+  std::unordered_map<int, int> procs;
   for (int i : unique_row)
   {
     procs.clear();

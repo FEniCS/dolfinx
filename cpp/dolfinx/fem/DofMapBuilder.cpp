@@ -21,6 +21,7 @@
 #include <memory>
 #include <numeric>
 #include <random>
+#include <unordered_map>
 #include <utility>
 
 using namespace dolfinx;
@@ -449,7 +450,7 @@ std::vector<std::int64_t> get_global_indices(
     d = requests_dim[idx];
 
     // Build (global old, global new) map for dofs of dimension d
-    std::map<std::int64_t, std::int64_t> global_old_new;
+    std::unordered_map<std::int64_t, std::int64_t> global_old_new;
     std::vector<std::int64_t>& dofs_received = all_dofs_received[d];
     for (std::size_t j = 0; j < dofs_received.size(); j += 2)
       global_old_new.insert({dofs_received[j], dofs_received[j + 1]});

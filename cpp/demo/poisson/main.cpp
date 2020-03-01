@@ -125,6 +125,8 @@ int main(int argc, char* argv[])
         mesh::GhostMode::none));
   }
 
+  return 1;
+
   auto mesh = std::make_shared<mesh::Mesh>(generation::RectangleMesh::create(
       MPI_COMM_WORLD, pt, {{32, 32}}, mesh::CellType::triangle,
       mesh::GhostMode::none));

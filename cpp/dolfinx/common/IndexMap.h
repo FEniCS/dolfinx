@@ -174,6 +174,8 @@ public:
   /// Neighbors for neigborhood communicator
   const std::vector<std::int32_t>& neighbours() const;
 
+  /// @todo Aim to remove this function
+  ///
   /// Compute map from each local index to the complete set of sharing processes
   /// for that index
   /// @return shared indices

@@ -454,7 +454,6 @@ mesh::create_topology(MPI_Comm comm,
 
   boost::timer::auto_cpu_timer t7("%t sec CPU, %w sec real (final)\n");
   // Set vertex IndexMap, and vertex-vertex connectivity
-
   auto _vertex_map = std::make_shared<common::IndexMap>(std::move(vertex_map));
   topology.set_index_map(0, _vertex_map);
   auto c0 = std::make_shared<graph::AdjacencyList<std::int32_t>>(
