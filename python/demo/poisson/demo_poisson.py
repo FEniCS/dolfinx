@@ -101,24 +101,8 @@ from dolfinx import cpp
 # Create mesh and define function space
 mesh = RectangleMesh(
     MPI.comm_world,
-    [np.array([0, 0, 0]), np.array([1, 1, 0])], [1, 1],
+    [np.array([0, 0, 0]), np.array([1, 1, 0])], [32, 32],
     CellType.triangle, dolfinx.cpp.mesh.GhostMode.none)
-
-file = cpp.io.VTKFile("u.pvd")
-file.write(mesh)
-with XDMFFile(MPI.comm_world, "poisson.xdmf", encoding=XDMFFile.Encoding.ASCII) as file:
-    file.write(mesh)
-
-print("topo")
-print(mesh.topology.connectivity(2, 0))
-print("geo")
-print(mesh.geometry.dofmap())
-print("x")
-print(mesh.geometry.x)
-print("l2g")
-print(mesh.geometry.global_indices())
-
-exit(1)
 
 V = FunctionSpace(mesh, ("Lagrange", 1))
 

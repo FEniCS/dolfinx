@@ -229,6 +229,10 @@ public:
   ///          the method is now intended for internal library use.
   mesh::GhostMode get_ghost_mode() const;
 
+  /// Temporary flag for mesh costruction to keep some old IO code working. Will
+  /// be removed.
+  bool new_mesh_storage() const { return _new_storage; }
+
 private:
   // Mesh topology
   std::unique_ptr<Topology> _topology;
@@ -245,6 +249,8 @@ private:
 
   // Unique identifier
   std::size_t _unique_id;
+
+  bool _new_storage = false;
 };
 
 /// Create a mesh

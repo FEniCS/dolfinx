@@ -175,7 +175,7 @@ Mesh mesh::create(
 
 //-----------------------------------------------------------------------------
 Mesh::Mesh(MPI_Comm comm, const Topology& topology, const Geometry& geometry)
-    : _mpi_comm(comm)
+    : _mpi_comm(comm), _new_storage(true)
 {
   _topology = std::make_unique<Topology>(topology);
   _geometry = std::make_unique<Geometry>(geometry);

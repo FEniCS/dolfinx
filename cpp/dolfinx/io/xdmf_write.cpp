@@ -102,23 +102,16 @@ std::vector<std::int64_t> compute_topology_data(const mesh::Mesh& mesh,
   }
   else
   {
-    // std::cout << "Preping data: " << std::endl;
-    auto x_dofmap = geometry.dofmap();
     const std::vector<std::int64_t>& global_vertices_test
         = geometry.global_indices();
     for (int e = 0; e < map->size_local(); ++e)
     {
-      // std::cout << "  e: " << e << std::endl;
-      // auto linksx = e_to_v->links(e);
-      auto linksx = x_dofmap.links(e);
-      // std::cout << "  links: " << linksx.transpose() << std::endl;
+      auto linksx = e_to_v->links(e);
       for (int i = 0; i < linksx.rows(); ++i)
       {
         assert(i < (int)perm.size());
         assert(perm[i] < linksx.rows());
         assert(linksx[perm[i]] < (int)global_vertices_test.size());
-        // std::cout << "   Adding: " << global_vertices_test[linksx[perm[i]]]
-        //           << std::endl;
         topology_data.push_back(global_vertices_test[linksx[perm[i]]]);
       }
     }
@@ -348,7 +341,7 @@ void xdmf_write::add_topology_data(MPI_Comm comm, pugi::xml_node& xml_node,
   // Compute packed topology data
   std::vector<std::int64_t> topology_data;
 
-  if (degree > 1)
+  if (degree > 1 or mesh.new_mesh_storage())
   {
     const int tdim = mesh.topology().dim();
     if (cell_dim != tdim)
@@ -357,23 +350,21 @@ void xdmf_write::add_topology_data(MPI_Comm comm, pugi::xml_node& xml_node,
                                "Can only create mesh of cells");
     }
 
-    const auto& global_points = mesh.geometry().global_indices();
-    const graph::AdjacencyList<std::int32_t>& cell_points
-        = mesh.geometry().dofmap();
+    const auto& global_indices = mesh.geometry().global_indices();
+    const graph::AdjacencyList<std::int32_t>& cells = mesh.geometry().dofmap();
 
     // Adjust num_nodes_per_cell to appropriate size
-    num_nodes_per_cell = cell_points.num_links(0);
-    topology_data.reserve(num_nodes_per_cell * mesh.num_entities(tdim));
+    assert(cells.num_nodes() > 0);
+    num_nodes_per_cell = cells.num_links(0);
+    topology_data.reserve(num_nodes_per_cell * cells.num_nodes());
 
-    int num_nodes = mesh.geometry().dofmap().num_links(0);
-    const std::vector<std::uint8_t> perm
-        = io::cells::vtk_to_dolfin(mesh.topology().cell_type(), num_nodes);
-
-    for (std::int32_t c = 0; c < mesh.num_entities(tdim); ++c)
+    const std::vector<std::uint8_t> perm = io::cells::vtk_to_dolfin(
+        mesh.topology().cell_type(), num_nodes_per_cell);
+    for (int c = 0; c < cells.num_nodes(); ++c)
     {
-      auto points = cell_points.links(c);
-      for (std::int32_t i = 0; i < num_nodes_per_cell; ++i)
-        topology_data.push_back(global_points[points[perm[i]]]);
+      auto nodes = cells.links(c);
+      for (int i = 0; i < nodes.rows(); ++i)
+        topology_data.push_back(global_indices[nodes[perm[i]]]);
     }
   }
   else
