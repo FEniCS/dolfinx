@@ -117,16 +117,6 @@ int main(int argc, char* argv[])
   // Create mesh and function space
   std::array<Eigen::Vector3d, 2> pt{Eigen::Vector3d(0.0, 0.0, 0.0),
                                     Eigen::Vector3d(1.0, 1.0, 0.0)};
-
-  {
-    boost::timer::auto_cpu_timer t;
-    auto mesh = std::make_shared<mesh::Mesh>(generation::RectangleMesh::create(
-        MPI_COMM_WORLD, pt, {{512, 512}}, mesh::CellType::triangle,
-        mesh::GhostMode::none));
-  }
-
-  return 1;
-
   auto mesh = std::make_shared<mesh::Mesh>(generation::RectangleMesh::create(
       MPI_COMM_WORLD, pt, {{32, 32}}, mesh::CellType::triangle,
       mesh::GhostMode::none));
