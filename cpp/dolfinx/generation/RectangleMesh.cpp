@@ -22,19 +22,17 @@ mesh::Mesh build_tri(MPI_Comm comm, const std::array<Eigen::Vector3d, 2>& p,
                      std::array<std::size_t, 2> n,
                      const mesh::GhostMode ghost_mode, std::string diagonal)
 {
-  std::cout << "Testing:  " << p[0].transpose() << ", " << p[1].transpose()
-            << std::endl;
-  std::cout << "n:        " << n[0] << ", " << n[1] << std::endl;
-  std::cout << "diagonal: " << n[0] << ", " << diagonal << std::endl;
-
   // Receive mesh if not rank 0
   if (dolfinx::MPI::rank(comm) != 0)
   {
     Eigen::Array<double, 0, 2, Eigen::RowMajor> geom(0, 2);
     Eigen::Array<std::int64_t, 0, 3, Eigen::RowMajor> topo(0, 3);
 
+    // New mesh builder
     // return mesh::create(comm, graph::AdjacencyList<std::int64_t>(topo),
     //                     mesh::CellType::triangle, geom);
+
+    // Old mesh builder
     return mesh::Partitioning::build_distributed_mesh(
         comm, mesh::CellType::triangle, geom, topo, {}, ghost_mode);
   }
@@ -199,14 +197,11 @@ mesh::Mesh build_tri(MPI_Comm comm, const std::array<Eigen::Vector3d, 2>& p,
     }
   }
 
-  // std::cout << "Topo: " << std::endl;
-  // std::cout << topo << std::endl;
-  // std::cout << "Geo: " << std::endl;
-  // std::cout << geom << std::endl;
-
+  // New Mesh builder
   // return mesh::create(comm, graph::AdjacencyList<std::int64_t>(topo),
   //                     mesh::CellType::triangle, geom);
 
+  // Old Mesh builder
   return mesh::Partitioning::build_distributed_mesh(
       comm, mesh::CellType::triangle, geom, topo, {}, ghost_mode);
 }

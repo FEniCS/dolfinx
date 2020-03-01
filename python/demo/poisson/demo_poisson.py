@@ -81,15 +81,13 @@ import dolfinx
 import dolfinx.plotting
 import ufl
 from dolfinx import (MPI, DirichletBC, Function, FunctionSpace, RectangleMesh,
-                     solve)
+                     cpp, solve)
 from dolfinx.cpp.mesh import CellType
+from dolfinx.fem import locate_dofs_topological
 from dolfinx.io import XDMFFile
 from dolfinx.mesh import compute_marked_boundary_entities
-from dolfinx.fem import locate_dofs_topological
 from dolfinx.specialfunctions import SpatialCoordinate
 from ufl import ds, dx, grad, inner
-from dolfinx import cpp
-
 
 # We begin by defining a mesh of the domain and a finite element
 # function space :math:`V` relative to this mesh. As the unit square is

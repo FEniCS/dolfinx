@@ -343,6 +343,8 @@ void xdmf_write::add_topology_data(MPI_Comm comm, pugi::xml_node& xml_node,
 
   if (degree > 1 or mesh.new_mesh_storage())
   {
+    // Output for new-style Mesh and high-order cells
+
     const int tdim = mesh.topology().dim();
     if (cell_dim != tdim)
     {

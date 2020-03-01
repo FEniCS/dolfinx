@@ -190,7 +190,7 @@ Mesh::Mesh(
     const std::vector<std::int64_t>& global_cell_indices,
     const GhostMode ghost_mode, std::int32_t num_ghost_cells)
     : _mpi_comm(comm), _ghost_mode(ghost_mode),
-      _unique_id(common::UniqueIdGenerator::id())
+      _unique_id(common::UniqueIdGenerator::id()), _new_storage(false)
 {
   const int tdim = mesh::cell_dim(type);
 
@@ -308,7 +308,9 @@ Mesh::Mesh(
 Mesh::Mesh(const Mesh& mesh)
     : _topology(new Topology(*mesh._topology)),
       _geometry(new Geometry(*mesh._geometry)), _mpi_comm(mesh.mpi_comm()),
-      _ghost_mode(mesh._ghost_mode), _unique_id(common::UniqueIdGenerator::id())
+      _ghost_mode(mesh._ghost_mode),
+      _unique_id(common::UniqueIdGenerator::id()),
+      _new_storage(mesh._new_storage)
 
 {
   // Do nothing
@@ -319,7 +321,8 @@ Mesh::Mesh(Mesh&& mesh)
       _geometry(std::move(mesh._geometry)),
       _mpi_comm(std::move(mesh._mpi_comm)),
       _ghost_mode(std::move(mesh._ghost_mode)),
-      _unique_id(std::move(mesh._unique_id))
+      _unique_id(std::move(mesh._unique_id)),
+      _new_storage(std::move(mesh._new_storage))
 {
   // Do nothing
 }
