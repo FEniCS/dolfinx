@@ -102,16 +102,23 @@ std::vector<std::int64_t> compute_topology_data(const mesh::Mesh& mesh,
   }
   else
   {
+    // std::cout << "Preping data: " << std::endl;
+    auto x_dofmap = geometry.dofmap();
     const std::vector<std::int64_t>& global_vertices_test
         = geometry.global_indices();
     for (int e = 0; e < map->size_local(); ++e)
     {
-      auto linksx = e_to_v->links(e);
+      // std::cout << "  e: " << e << std::endl;
+      // auto linksx = e_to_v->links(e);
+      auto linksx = x_dofmap.links(e);
+      // std::cout << "  links: " << linksx.transpose() << std::endl;
       for (int i = 0; i < linksx.rows(); ++i)
       {
         assert(i < (int)perm.size());
         assert(perm[i] < linksx.rows());
         assert(linksx[perm[i]] < (int)global_vertices_test.size());
+        // std::cout << "   Adding: " << global_vertices_test[linksx[perm[i]]]
+        //           << std::endl;
         topology_data.push_back(global_vertices_test[linksx[perm[i]]]);
       }
     }

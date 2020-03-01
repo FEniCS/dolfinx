@@ -88,6 +88,8 @@ from dolfinx.mesh import compute_marked_boundary_entities
 from dolfinx.fem import locate_dofs_topological
 from dolfinx.specialfunctions import SpatialCoordinate
 from ufl import ds, dx, grad, inner
+from dolfinx import cpp
+
 
 # We begin by defining a mesh of the domain and a finite element
 # function space :math:`V` relative to this mesh. As the unit square is
@@ -99,12 +101,24 @@ from ufl import ds, dx, grad, inner
 # Create mesh and define function space
 mesh = RectangleMesh(
     MPI.comm_world,
-    [np.array([0, 0, 0]), np.array([1, 1, 0])], [32, 32],
+    [np.array([0, 0, 0]), np.array([1, 1, 0])], [1, 1],
     CellType.triangle, dolfinx.cpp.mesh.GhostMode.none)
-m = mesh.topology.index_map(0)
 
-print(m.ghost_owners)
-exit(0)
+file = cpp.io.VTKFile("u.pvd")
+file.write(mesh)
+with XDMFFile(MPI.comm_world, "poisson.xdmf", encoding=XDMFFile.Encoding.ASCII) as file:
+    file.write(mesh)
+
+print("topo")
+print(mesh.topology.connectivity(2, 0))
+print("geo")
+print(mesh.geometry.dofmap())
+print("x")
+print(mesh.geometry.x)
+print("l2g")
+print(mesh.geometry.global_indices())
+
+exit(1)
 
 V = FunctionSpace(mesh, ("Lagrange", 1))
 
