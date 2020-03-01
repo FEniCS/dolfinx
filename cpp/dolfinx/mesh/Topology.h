@@ -10,7 +10,7 @@
 #include <Eigen/Dense>
 #include <array>
 #include <cstdint>
-#include <dolfinx/graph/AdjacencyList.h>
+#include <dolfinx/common/MPI.h>
 #include <memory>
 #include <vector>
 
@@ -19,6 +19,12 @@ namespace dolfinx
 namespace common
 {
 class IndexMap;
+}
+
+namespace graph
+{
+template <typename T>
+class AdjacencyList;
 }
 
 namespace mesh
@@ -61,6 +67,9 @@ public:
 
   /// Assignment
   Topology& operator=(const Topology& topology) = default;
+
+  /// Assignment
+  Topology& operator=(Topology&& topology) = default;
 
   /// Return topological dimension
   int dim() const;
@@ -236,5 +245,10 @@ private:
   // are interior to the domain
   std::shared_ptr<const std::vector<bool>> _interior_facets;
 };
+
+/// Create distributed topology
+Topology create_topology(MPI_Comm comm,
+                         const graph::AdjacencyList<std::int64_t>& cells,
+                         CellType shape);
 } // namespace mesh
 } // namespace dolfinx

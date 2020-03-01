@@ -117,11 +117,20 @@ int main(int argc, char* argv[])
   // Create mesh and function space
   std::array<Eigen::Vector3d, 2> pt{Eigen::Vector3d(0.0, 0.0, 0.0),
                                     Eigen::Vector3d(1.0, 1.0, 0.0)};
+
+  {
+    boost::timer::auto_cpu_timer t;
+    auto mesh = std::make_shared<mesh::Mesh>(generation::RectangleMesh::create(
+        MPI_COMM_WORLD, pt, {{512, 512}}, mesh::CellType::triangle,
+        mesh::GhostMode::none));
+  }
+
   auto mesh = std::make_shared<mesh::Mesh>(generation::RectangleMesh::create(
       MPI_COMM_WORLD, pt, {{32, 32}}, mesh::CellType::triangle,
       mesh::GhostMode::none));
 
-  auto V = fem::create_functionspace(create_functionspace_form_poisson_a, "u", mesh);
+  auto V = fem::create_functionspace(create_functionspace_form_poisson_a, "u",
+                                     mesh);
 
   // Next, we define the variational formulation by initializing the
   // bilinear and linear forms (:math:`a`, :math:`L`) using the previously
@@ -135,8 +144,7 @@ int main(int argc, char* argv[])
   std::shared_ptr<fem::Form> a
       = fem::create_form(create_form_poisson_a, {V, V});
 
-  std::shared_ptr<fem::Form> L
-      = fem::create_form(create_form_poisson_L, {V});
+  std::shared_ptr<fem::Form> L = fem::create_form(create_form_poisson_L, {V});
 
   auto f = std::make_shared<function::Function>(V);
   auto g = std::make_shared<function::Function>(V);

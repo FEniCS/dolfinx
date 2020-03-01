@@ -5,8 +5,12 @@
 // SPDX-License-Identifier:    LGPL-3.0-or-later
 
 #include "Topology.h"
+#include "PartitioningNew.h"
+#include "TopologyComputation.h"
+#include "utils.h"
 #include <dolfinx/common/IndexMap.h>
 #include <dolfinx/common/utils.h>
+#include <dolfinx/fem/ElementDofLayout.h>
 #include <dolfinx/graph/AdjacencyList.h>
 #include <numeric>
 #include <sstream>
@@ -342,4 +346,110 @@ void Topology::set_entity_permutation(std::size_t cell_n, int entity_dim,
 }
 //-----------------------------------------------------------------------------
 mesh::CellType Topology::cell_type() const { return _cell_type; }
+
+//-----------------------------------------------------------------------------
+mesh::Topology
+mesh::create_topology(MPI_Comm comm,
+                      const graph::AdjacencyList<std::int64_t>& cells,
+                      CellType shape)
+{
+  const int size = dolfinx::MPI::size(comm);
+
+  // Assume P1 triangles for now
+  Eigen::Array<int, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor> perm(5, 3);
+  for (int i = 0; i < perm.rows(); ++i)
+    for (int j = 0; j < perm.cols(); ++j)
+      perm(i, j) = j;
+
+  // entity_dofs = [[set([0]), set([1]), set([2])], 3 * [set()], [set()]]
+  std::vector<std::vector<std::set<int>>> entity_dofs(3);
+  entity_dofs[0] = {{0}, {1}, {2}};
+  entity_dofs[1] = {{}, {}, {}};
+  entity_dofs[2] = {{}};
+  fem::ElementDofLayout layout(1, entity_dofs, {}, {}, shape, perm);
+
+  // TODO: This step can be skipped for 'P1' elements
+
+  // Extract topology data, e.g.just the vertices. For P1 geometry this
+  // should just be the identity operator.For other elements the
+  // filtered lists may have 'gaps', i.e.the indices might not be
+  // contiguous.
+  const graph::AdjacencyList<std::int64_t> cells_v
+      = mesh::extract_topology(layout, cells);
+
+  // Compute the destination rank for cells on this process via graph
+  // partitioning
+  const std::vector<int> dest = PartitioningNew::partition_cells(
+      comm, size, layout.cell_type(), cells_v);
+
+  // Distribute cells to destination rank
+  const auto [my_cells, src, original_cell_index]
+      = PartitioningNew::distribute(comm, cells_v, dest);
+
+  // Build local cell-vertex connectivity, with local vertex indices
+  // [0, 1, 2, ..., n), from cell-vertex connectivity using global
+  // indices and get map from global vertex indices in 'cells' to the
+  // local vertex indices
+  auto [cells_local, local_to_global_vertices]
+      = PartitioningNew::create_local_adjacency_list(my_cells);
+
+  // Create (i) local topology object and (ii) IndexMap for cells, and
+  // set cell-vertex topology
+  Topology topology_local(layout.cell_type());
+  const int tdim = topology_local.dim();
+  auto map = std::make_shared<common::IndexMap>(comm, cells_local.num_nodes(),
+                                                std::vector<std::int64_t>(), 1);
+  topology_local.set_index_map(tdim, map);
+  auto _cells_local
+      = std::make_shared<graph::AdjacencyList<std::int32_t>>(cells_local);
+  topology_local.set_connectivity(_cells_local, tdim, 0);
+
+  const int n = local_to_global_vertices.size();
+  map = std::make_shared<common::IndexMap>(comm, n, std::vector<std::int64_t>(),
+                                           1);
+  topology_local.set_index_map(0, map);
+
+  // Create facets for local topology, and attach to the topology
+  // object. This will be used to find possibly shared cells
+  auto [cf, fv, map0]
+      = TopologyComputation::compute_entities(comm, topology_local, tdim - 1);
+  topology_local.set_connectivity(cf, tdim, tdim - 1);
+  topology_local.set_index_map(tdim - 1, map0);
+  if (fv)
+    topology_local.set_connectivity(fv, tdim - 1, 0);
+  auto [fc, ignore] = TopologyComputation::compute_connectivity(topology_local,
+                                                                tdim - 1, tdim);
+  topology_local.set_connectivity(fc, tdim - 1, tdim);
+
+  // FIXME: This looks weird. Revise.
+  // Get facets that are on the boundary of the local topology, i.e
+  // are connect to one cell only
+  std::vector<bool> boundary = compute_interior_facets(topology_local);
+  topology_local.set_interior_facets(boundary);
+  boundary = topology_local.on_boundary(tdim - 1);
+
+  // Build distributed cell-vertex AdjacencyList, IndexMap for
+  // vertices, and map from local index to old global index
+  auto [cells_d, vertex_map]
+      = PartitioningNew::create_distributed_adjacency_list(
+          comm, topology_local, local_to_global_vertices);
+
+  Topology topology(layout.cell_type());
+
+  // Set vertex IndexMap, and vertex-vertex connectivity
+  auto _vertex_map = std::make_shared<common::IndexMap>(std::move(vertex_map));
+  topology.set_index_map(0, _vertex_map);
+  auto c0 = std::make_shared<graph::AdjacencyList<std::int32_t>>(
+      _vertex_map->size_local() + _vertex_map->num_ghosts());
+  topology.set_connectivity(c0, 0, 0);
+
+  // Set cell IndexMap and cell-vertex connectivity
+  auto index_map_c = std::make_shared<common::IndexMap>(
+      comm, cells_d.num_nodes(), std::vector<std::int64_t>(), 1);
+  topology.set_index_map(tdim, index_map_c);
+  auto _cells_d = std::make_shared<graph::AdjacencyList<std::int32_t>>(cells_d);
+  topology.set_connectivity(_cells_d, tdim, 0);
+
+  return topology;
+}
 //-----------------------------------------------------------------------------

@@ -42,7 +42,7 @@ public:
                               Eigen::RowMajor>& x,
            const std::vector<std::int64_t>& global_indices, int degree);
 
-  /// Constructor
+  /// Constructor (old - to be removed)
   Geometry(std::int64_t num_points_global,
            const Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic,
                               Eigen::RowMajor>& x,
@@ -141,5 +141,12 @@ private:
   // describing coordinate dofs
   std::int32_t _degree;
 };
+
+/// Build Geometry
+void create_geometry(
+    const Topology& topology,
+    const Eigen::Ref<const Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic,
+                                        Eigen::RowMajor>>& x);
+
 } // namespace mesh
 } // namespace dolfinx

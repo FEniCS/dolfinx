@@ -132,3 +132,33 @@ std::string Geometry::str(bool verbose) const
 //-----------------------------------------------------------------------------
 int Geometry::degree() const { return _degree; }
 //-----------------------------------------------------------------------------
+
+//-----------------------------------------------------------------------------
+void mesh::create_geometry(
+    const Topology& topology,
+    const Eigen::Ref<const Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic,
+                                        Eigen::RowMajor>>& x)
+{
+  // TODO: make sure required entities are initialised, or extend
+  // fem::DofMapBuilder::build to take connectivities
+
+  //  Build 'geometry' dofmap on the topology
+  auto [dof_index_map, dofmap]
+      = fem::DofMapBuilder::build(comm, topology, layout, 1);
+
+  // Send/receive the 'cell nodes' (includes high-order geometry
+  // nodes), and the global input cell index.
+  //
+  //  NOTE: Maybe we can ensure that the 'global cells' are in the same
+  //  order as the owned cells (maybe they are already) to avoid the
+  //  need for global_index_nodes
+  //
+  //  NOTE: This could be optimised as we have earlier computed which
+  //  processes own the cells this process needs.
+  std::set<int> _src(src.begin(), src.end());
+  auto [cell_nodes, global_index_cell]
+      = PartitioningNew::exchange(comm, cells_in, dest, _src);
+
+
+}
+//-----------------------------------------------------------------------------

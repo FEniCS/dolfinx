@@ -8,6 +8,7 @@
 
 #include "Mesh.h"
 #include "Topology.h"
+#include <dolfinx/graph/AdjacencyList.h>
 
 namespace dolfinx
 {
