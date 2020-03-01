@@ -21,6 +21,11 @@ namespace common
 class IndexMap;
 }
 
+namespace fem
+{
+class ElementDofLayout;
+}
+
 namespace graph
 {
 template <typename T>
@@ -247,8 +252,8 @@ private:
 };
 
 /// Create distributed topology
-Topology create_topology(MPI_Comm comm,
-                         const graph::AdjacencyList<std::int64_t>& cells,
-                         CellType shape);
+std::tuple<Topology, std::vector<int>, std::vector<int>>
+create_topology(MPI_Comm comm, const graph::AdjacencyList<std::int64_t>& cells,
+                const fem::ElementDofLayout& layout);
 } // namespace mesh
 } // namespace dolfinx

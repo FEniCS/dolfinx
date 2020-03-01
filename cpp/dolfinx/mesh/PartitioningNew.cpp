@@ -14,6 +14,7 @@
 #include <dolfinx/graph/CSRGraph.h>
 #include <dolfinx/graph/GraphBuilder.h>
 #include <dolfinx/graph/SCOTCH.h>
+#include <unordered_map>
 
 using namespace dolfinx;
 using namespace dolfinx::mesh;
@@ -67,17 +68,18 @@ PartitioningNew::reorder_global_indices(
 
   assert(global_indices.size() == shared_indices.size());
 
-  // Create global ->local map
-  std::map<std::int64_t, std::int32_t> global_to_local;
-  for (std::size_t i = 0; i < global_indices.size(); ++i)
-    global_to_local.insert({global_indices[i], i});
-
   // Get maximum global index across all processes
   std::int64_t my_max_global_index = 0;
-  if (!global_to_local.empty())
-    my_max_global_index = global_to_local.rbegin()->first;
+  auto it_max = std::max_element(global_indices.begin(), global_indices.end());
+  if (it_max != global_indices.end())
+    my_max_global_index = *it_max;
   const std::int64_t max_global_index
       = dolfinx::MPI::all_reduce(comm, my_max_global_index, MPI_MAX);
+
+  // Create global ->local map
+  std::unordered_map<std::int64_t, std::int32_t> global_to_local;
+  for (std::size_t i = 0; i < global_indices.size(); ++i)
+    global_to_local.insert({global_indices[i], i});
 
   // Compute number of possibly shared vertices to send to each process,
   // considering only vertices that are possibly shared
@@ -148,7 +150,7 @@ PartitioningNew::reorder_global_indices(
   }
 
   // For each index, build list of sharing processes
-  std::map<std::int64_t, std::set<int>> global_vertex_to_procs;
+  std::unordered_map<std::int64_t, std::set<int>> global_vertex_to_procs;
   for (int i = 0; i < size; ++i)
   {
     for (int j = disp_recv[i]; j < disp_recv[i + 1]; ++j)
@@ -207,7 +209,7 @@ PartitioningNew::reorder_global_indices(
   }
 
   // Build global-to-local map for non-shared indices (0)
-  std::map<std::int64_t, std::int32_t> global_to_local_owned0;
+  std::unordered_map<std::int64_t, std::int32_t> global_to_local_owned0;
   for (auto& vertex : global_to_local)
   {
     if (!shared_indices[vertex.second])
@@ -219,7 +221,7 @@ PartitioningNew::reorder_global_indices(
   // 2. Add shared and owned indices to global_to_local_owned1
   // 3. Add non owned indices to global_to_local_unowned
   const int rank = dolfinx::MPI::rank(comm);
-  std::map<std::int64_t, std::int32_t> global_to_local_owned1,
+  std::unordered_map<std::int64_t, std::int32_t> global_to_local_owned1,
       global_to_local_unowned;
   for (int i = 0; i < sharing_processes->num_nodes(); ++i)
   {
@@ -268,10 +270,6 @@ PartitioningNew::reorder_global_indices(
     {
       global_to_local_owned1.insert(*it);
     }
-    // if (sharing_processes->num_links(i) == 1)
-    //   global_to_local_owned0.insert(*it);
-    // else if (sharing_processes->links(i).minCoeff() == rank)
-    //   global_to_local_owned1.insert(*it);
   }
 
   // Get array of unique neighbouring process ranks, and remove self
@@ -422,11 +420,11 @@ PartitioningNew::create_local_adjacency_list(
     const graph::AdjacencyList<std::int64_t>& cells)
 {
   const Eigen::Array<std::int64_t, Eigen::Dynamic, 1>& array = cells.array();
-  std::vector<std::int32_t> array_local(array.rows());
+  Eigen::Array<std::int32_t, Eigen::Dynamic, 1> array_local(array.rows());
 
   // Re-map global to local
   int local = 0;
-  std::map<std::int64_t, std::int32_t> global_to_local;
+  std::unordered_map<std::int64_t, std::int32_t> global_to_local;
   for (int i = 0; i < array.rows(); ++i)
   {
     const std::int64_t global = array(i);
@@ -447,9 +445,9 @@ PartitioningNew::create_local_adjacency_list(
   // FIXME: Update AdjacencyList to avoid this
   const Eigen::Array<std::int32_t, Eigen::Dynamic, 1>& offsets
       = cells.offsets();
-  std::vector<std::int32_t> _offsets(offsets.data(),
-                                     offsets.data() + offsets.rows());
-  return {graph::AdjacencyList<std::int32_t>(array_local, _offsets),
+  // std::vector<std::int32_t> _offsets(offsets.data(),
+  //                                    offsets.data() + offsets.rows());
+  return {graph::AdjacencyList<std::int32_t>(array_local, offsets),
           std::move(local_to_global)};
 }
 //-----------------------------------------------------------------------------
@@ -473,16 +471,12 @@ PartitioningNew::create_distributed_adjacency_list(
     throw std::runtime_error("Missing cell-vertex connectivity.");
 
   const Eigen::Array<std::int32_t, Eigen::Dynamic, 1>& data_old = cv->array();
-  std::vector<std::int32_t> data_new(data_old.rows());
+  Eigen::Array<std::int32_t, Eigen::Dynamic, 1> data_new(data_old.rows());
   for (std::size_t i = 0; i < data_new.size(); ++i)
     data_new[i] = local_to_local_new[data_old[i]];
 
-  const Eigen::Array<std::int32_t, Eigen::Dynamic, 1>& offsets = cv->offsets();
-  std::vector<std::int32_t> _offsets(offsets.data(),
-                                     offsets.data() + offsets.rows());
-
   const int num_owned_vertices = local_to_local_new.size() - ghosts.size();
-  return {graph::AdjacencyList<std::int32_t>(data_new, _offsets),
+  return {graph::AdjacencyList<std::int32_t>(data_new, cv->offsets()),
           common::IndexMap(comm, num_owned_vertices, ghosts, 1)};
 }
 //-----------------------------------------------------------------------------

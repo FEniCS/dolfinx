@@ -50,6 +50,28 @@ public:
     std::copy(offsets.begin(), offsets.end(), _offsets.data());
   }
 
+  /// Construct adjacency list from array of data
+  /// @param [in] data Adjacency array
+  /// @param [in] offsets The index to the adjacency list in the data
+  ///   array for node i
+  AdjacencyList(const Eigen::Array<T, Eigen::Dynamic, 1>& data,
+                const Eigen::Array<std::int32_t, Eigen::Dynamic, 1>& offsets)
+      : _array(data), _offsets(offsets)
+  {
+    // Do nothing
+  }
+
+  /// Construct adjacency list from array of data
+  /// @param [in] data Adjacency array
+  /// @param [in] offsets The index to the adjacency list in the data
+  ///   array for node i
+  AdjacencyList(Eigen::Array<T, Eigen::Dynamic, 1>&& data,
+                Eigen::Array<std::int32_t, Eigen::Dynamic, 1>&& offsets)
+      : _array(std::move(data)), _offsets(std::move(offsets))
+  {
+    // Do nothing
+  }
+
   /// Construct adjacency list for a problem with a fixed number of
   /// links (edges) for each node
   /// @param [in] matrix Two-dimensional array of adjacency data where

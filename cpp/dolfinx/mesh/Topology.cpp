@@ -15,6 +15,8 @@
 #include <numeric>
 #include <sstream>
 
+#include <boost/timer/timer.hpp>
+
 using namespace dolfinx;
 using namespace dolfinx::mesh;
 
@@ -348,25 +350,14 @@ void Topology::set_entity_permutation(std::size_t cell_n, int entity_dim,
 mesh::CellType Topology::cell_type() const { return _cell_type; }
 
 //-----------------------------------------------------------------------------
-mesh::Topology
+std::tuple<Topology, std::vector<int>, std::vector<int>>
 mesh::create_topology(MPI_Comm comm,
                       const graph::AdjacencyList<std::int64_t>& cells,
-                      CellType shape)
+                      const fem::ElementDofLayout& layout)
 {
+  boost::timer::auto_cpu_timer t("%t sec CPU, %w sec real (Topology)\n");
+
   const int size = dolfinx::MPI::size(comm);
-
-  // Assume P1 triangles for now
-  Eigen::Array<int, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor> perm(5, 3);
-  for (int i = 0; i < perm.rows(); ++i)
-    for (int j = 0; j < perm.cols(); ++j)
-      perm(i, j) = j;
-
-  // entity_dofs = [[set([0]), set([1]), set([2])], 3 * [set()], [set()]]
-  std::vector<std::vector<std::set<int>>> entity_dofs(3);
-  entity_dofs[0] = {{0}, {1}, {2}};
-  entity_dofs[1] = {{}, {}, {}};
-  entity_dofs[2] = {{}};
-  fem::ElementDofLayout layout(1, entity_dofs, {}, {}, shape, perm);
 
   // TODO: This step can be skipped for 'P1' elements
 
@@ -374,27 +365,41 @@ mesh::create_topology(MPI_Comm comm,
   // should just be the identity operator.For other elements the
   // filtered lists may have 'gaps', i.e.the indices might not be
   // contiguous.
+  boost::timer::auto_cpu_timer t0("%t sec CPU, %w sec real (extract)\n");
   const graph::AdjacencyList<std::int64_t> cells_v
       = mesh::extract_topology(layout, cells);
+  t0.stop();
+  t0.report();
 
   // Compute the destination rank for cells on this process via graph
   // partitioning
+  boost::timer::auto_cpu_timer t1("%t sec CPU, %w sec real (part)\n");
   const std::vector<int> dest = PartitioningNew::partition_cells(
       comm, size, layout.cell_type(), cells_v);
+  t1.stop();
+  t1.report();
 
   // Distribute cells to destination rank
+  boost::timer::auto_cpu_timer t2("%t sec CPU, %w sec real (dist)\n");
   const auto [my_cells, src, original_cell_index]
       = PartitioningNew::distribute(comm, cells_v, dest);
+  t2.stop();
+  t2.report();
 
   // Build local cell-vertex connectivity, with local vertex indices
   // [0, 1, 2, ..., n), from cell-vertex connectivity using global
   // indices and get map from global vertex indices in 'cells' to the
   // local vertex indices
+  boost::timer::auto_cpu_timer t3("%t sec CPU, %w sec real (local adj)\n");
   auto [cells_local, local_to_global_vertices]
       = PartitioningNew::create_local_adjacency_list(my_cells);
 
+  t3.stop();
+  t3.report();
+
   // Create (i) local topology object and (ii) IndexMap for cells, and
   // set cell-vertex topology
+  boost::timer::auto_cpu_timer t4("%t sec CPU, %w sec real (local top)\n");
   Topology topology_local(layout.cell_type());
   const int tdim = topology_local.dim();
   auto map = std::make_shared<common::IndexMap>(comm, cells_local.num_nodes(),
@@ -409,8 +414,12 @@ mesh::create_topology(MPI_Comm comm,
                                            1);
   topology_local.set_index_map(0, map);
 
+  t4.stop();
+  t4.report();
+
   // Create facets for local topology, and attach to the topology
   // object. This will be used to find possibly shared cells
+  boost::timer::auto_cpu_timer t5("%t sec CPU, %w sec real (local top comp)\n");
   auto [cf, fv, map0]
       = TopologyComputation::compute_entities(comm, topology_local, tdim - 1);
   topology_local.set_connectivity(cf, tdim, tdim - 1);
@@ -428,15 +437,24 @@ mesh::create_topology(MPI_Comm comm,
   topology_local.set_interior_facets(boundary);
   boundary = topology_local.on_boundary(tdim - 1);
 
+  t5.stop();
+  t5.report();
+
   // Build distributed cell-vertex AdjacencyList, IndexMap for
   // vertices, and map from local index to old global index
+  boost::timer::auto_cpu_timer t6("%t sec CPU, %w sec real (dist list)\n");
   auto [cells_d, vertex_map]
       = PartitioningNew::create_distributed_adjacency_list(
           comm, topology_local, local_to_global_vertices);
 
+  t6.stop();
+  t6.report();
+
   Topology topology(layout.cell_type());
 
+  boost::timer::auto_cpu_timer t7("%t sec CPU, %w sec real (final)\n");
   // Set vertex IndexMap, and vertex-vertex connectivity
+
   auto _vertex_map = std::make_shared<common::IndexMap>(std::move(vertex_map));
   topology.set_index_map(0, _vertex_map);
   auto c0 = std::make_shared<graph::AdjacencyList<std::int32_t>>(
@@ -450,6 +468,9 @@ mesh::create_topology(MPI_Comm comm,
   auto _cells_d = std::make_shared<graph::AdjacencyList<std::int32_t>>(cells_d);
   topology.set_connectivity(_cells_d, tdim, 0);
 
-  return topology;
+  t7.stop();
+  t7.report();
+
+  return {topology, src, dest};
 }
 //-----------------------------------------------------------------------------

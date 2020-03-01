@@ -7,6 +7,7 @@
 #pragma once
 
 #include <Eigen/Dense>
+#include <dolfinx/common/MPI.h>
 #include <dolfinx/graph/AdjacencyList.h>
 #include <memory>
 #include <string>
@@ -22,10 +23,12 @@ class IndexMap;
 namespace fem
 {
 class CoordinateElement;
-}
+class ElementDofLayout;
+} // namespace fem
 
 namespace mesh
 {
+class Topology;
 
 /// Geometry stores the geometry imposed on a mesh.
 ///
@@ -143,8 +146,11 @@ private:
 };
 
 /// Build Geometry
-void create_geometry(
-    const Topology& topology,
+mesh::Geometry create_geometry(
+    MPI_Comm comm, const Topology& topology,
+    const fem::ElementDofLayout& layout,
+    const graph::AdjacencyList<std::int64_t>& cells,
+    const std::vector<int>& dest, const std::vector<int>& src,
     const Eigen::Ref<const Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic,
                                         Eigen::RowMajor>>& x);
 
