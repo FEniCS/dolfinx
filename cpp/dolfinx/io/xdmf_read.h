@@ -199,7 +199,7 @@ void remap_meshfunction_data(mesh::MeshFunction<T>& meshfunction,
 
     // Use first vertex to decide where to send this data
     const std::size_t destination_process
-        = MPI::index_owner(comm, cell_topology.front(), max_vertex);
+        = MPI::index_owner(num_processes, cell_topology.front(), max_vertex);
 
     send_topology[destination_process].insert(
         send_topology[destination_process].end(), cell_topology.begin(),
@@ -239,7 +239,7 @@ void remap_meshfunction_data(mesh::MeshFunction<T>& meshfunction,
 
     // Use first vertex to decide where to send this request
     std::size_t send_to_process
-        = MPI::index_owner(comm, cell_topology.front(), max_vertex);
+        = MPI::index_owner(num_processes, cell_topology.front(), max_vertex);
     // Map to this process and local index by appending to send data
     cell_topology.push_back(c);
     cell_topology.push_back(rank);

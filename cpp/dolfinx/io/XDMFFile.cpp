@@ -1113,7 +1113,7 @@ XDMFFile::read_mesh_value_collection(std::shared_ptr<const mesh::Mesh> mesh,
     }
 
     std::size_t dest
-        = MPI::index_owner(_mpi_comm.comm(), v[0], global_vertex_range);
+        = MPI::index_owner(num_processes, v[0], global_vertex_range);
     send_entities[dest].push_back(m.index());
     send_entities[dest].insert(send_entities[dest].end(), v.begin(), v.end());
   }
@@ -1159,7 +1159,7 @@ XDMFFile::read_mesh_value_collection(std::shared_ptr<const mesh::Mesh> mesh,
     std::sort(v.begin(), v.end());
 
     std::size_t dest
-        = MPI::index_owner(_mpi_comm.comm(), v[0], global_vertex_range);
+        = MPI::index_owner(num_processes, v[0], global_vertex_range);
     send_entities[dest].insert(send_entities[dest].end(), v.begin(), v.end());
     send_data[dest].push_back(values_data[i]);
     ++i;

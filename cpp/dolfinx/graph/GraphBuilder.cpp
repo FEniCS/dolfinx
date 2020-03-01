@@ -205,8 +205,8 @@ std::pair<std::int32_t, std::int32_t> compute_nonlocal_dual_graph(
     //        skewed towards low values - may not be important
 
     // Use first vertex of facet to partition into blocks
-    const int dest_proc = dolfinx::MPI::index_owner(mpi_comm, (it.first)[0],
-                                                    num_global_vertices);
+    const int dest_proc = dolfinx::MPI::index_owner(
+        num_processes, (it.first)[0], num_global_vertices);
 
     // Pack map into vectors to send
     send_buffer[dest_proc].insert(send_buffer[dest_proc].end(),

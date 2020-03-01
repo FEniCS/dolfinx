@@ -110,27 +110,7 @@ dolfinx::MPI::compute_local_range(int process, std::int64_t N, int size)
     return {{process * n + r, process * n + r + n}};
 }
 //-----------------------------------------------------------------------------
-std::uint32_t dolfinx::MPI::index_owner(const MPI_Comm comm, std::size_t index,
-                                        std::size_t N)
-{
-  assert(index < N);
-
-  // Get number of processes
-  const std::uint32_t _size = size(comm);
-
-  // Compute number of items per process and remainder
-  const std::size_t n = N / _size;
-  const std::size_t r = N % _size;
-
-  // First r processes own n + 1 indices
-  if (index < r * (n + 1))
-    return index / (n + 1);
-
-  // Remaining processes own n indices
-  return r + (index - r * (n + 1)) / n;
-}
-//-----------------------------------------------------------------------------
-std::uint32_t dolfinx::MPI::index_owner_new(int size, std::size_t index,
+std::uint32_t dolfinx::MPI::index_owner(int size, std::size_t index,
                                             std::size_t N)
 {
   assert(index < N);

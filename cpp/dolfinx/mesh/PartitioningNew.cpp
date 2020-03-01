@@ -89,8 +89,8 @@ PartitioningNew::reorder_global_indices(
   {
     if (shared_indices[vertex.second])
     {
-      const int owner = dolfinx::MPI::index_owner_new(size, vertex.first,
-                                                      max_global_index + 1);
+      const int owner
+          = dolfinx::MPI::index_owner(size, vertex.first, max_global_index + 1);
       number_send[owner] += 1;
     }
   }
@@ -107,8 +107,8 @@ PartitioningNew::reorder_global_indices(
   {
     if (shared_indices[vertex.second])
     {
-      const int owner = dolfinx::MPI::index_owner_new(size, vertex.first,
-                                                      max_global_index + 1);
+      const int owner
+          = dolfinx::MPI::index_owner(size, vertex.first, max_global_index + 1);
       indices_send[disp_tmp[owner]++] = vertex.first;
     }
   }
@@ -652,8 +652,7 @@ PartitioningNew::fetch_data(
   {
     // TODO: optimise this call
     const std::int64_t index_global = i + offset_x;
-    const int owner
-        = dolfinx::MPI::index_owner_new(size, index_global, num_points);
+    const int owner = dolfinx::MPI::index_owner(size, index_global, num_points);
     number_send[owner] += 1;
   }
 
@@ -669,8 +668,7 @@ PartitioningNew::fetch_data(
   for (int i = 0; i < x.rows(); ++i)
   {
     const std::int64_t index_global = i + offset_x;
-    const int owner
-        = dolfinx::MPI::index_owner_new(size, index_global, num_points);
+    const int owner = dolfinx::MPI::index_owner(size, index_global, num_points);
     x_send.row(disp_tmp[owner]++) = x.row(i);
   }
 
@@ -702,7 +700,7 @@ PartitioningNew::fetch_data(
   for (std::int64_t index : indices)
   {
     // TODO: optimise this call
-    const int owner = dolfinx::MPI::index_owner_new(size, index, num_points);
+    const int owner = dolfinx::MPI::index_owner(size, index, num_points);
     number_index_send[owner] += 1;
   }
 
@@ -717,7 +715,7 @@ PartitioningNew::fetch_data(
   for (std::int64_t index : indices)
   {
     // TODO: optimise this call
-    const int owner = dolfinx::MPI::index_owner_new(size, index, num_points);
+    const int owner = dolfinx::MPI::index_owner(size, index, num_points);
     indices_send[disp_tmp[owner]++] = index;
   }
 

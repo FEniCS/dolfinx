@@ -81,7 +81,7 @@ import dolfinx
 import dolfinx.plotting
 import ufl
 from dolfinx import (MPI, DirichletBC, Function, FunctionSpace, RectangleMesh,
-                     cpp, solve)
+                     solve)
 from dolfinx.cpp.mesh import CellType
 from dolfinx.fem import locate_dofs_topological
 from dolfinx.io import XDMFFile

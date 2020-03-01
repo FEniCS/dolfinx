@@ -274,8 +274,7 @@ void HDF5File::write(const mesh::Mesh& mesh, int cell_dim,
     Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
         _vertex_coords;
     _vertex_coords = mesh::DistributedMeshTools::reorder_by_global_indices(
-        mesh.mpi_comm(), mesh.geometry().x(),
-        mesh.geometry().global_indices());
+        mesh.mpi_comm(), mesh.geometry().x(), mesh.geometry().global_indices());
 
     Eigen::Map<Eigen::Array<double, Eigen::Dynamic, 3, Eigen::RowMajor>> varray(
         _vertex_coords.data(), _vertex_coords.size() / 3, 3);
@@ -610,7 +609,7 @@ HDF5File::read_mesh_function(std::shared_ptr<const mesh::Mesh> mesh,
     // Use first vertex to decide where to send this data
     assert(topology_array.row(i).cols() > 0);
     const std::size_t send_to_process
-        = MPI::index_owner(_mpi_comm.comm(), topology_array(i, 0), max_vertex);
+        = MPI::index_owner(num_processes, topology_array(i, 0), max_vertex);
 
     send_topology[send_to_process].insert(
         send_topology[send_to_process].end(), topology_array.row(i).data(),
@@ -644,7 +643,7 @@ HDF5File::read_mesh_function(std::shared_ptr<const mesh::Mesh> mesh,
 
     // Use first vertex to decide where to send this request
     std::size_t send_to_process
-        = MPI::index_owner(_mpi_comm.comm(), cell_topology.front(), max_vertex);
+        = MPI::index_owner(num_processes, cell_topology.front(), max_vertex);
     // Map to this process and local index by appending to send data
     cell_topology.push_back(cell.index());
     cell_topology.push_back(process_number);
@@ -1292,7 +1291,7 @@ HDF5File::read_mesh_value_collection(std::shared_ptr<const mesh::Mesh> mesh,
     }
 
     std::size_t dest
-        = MPI::index_owner(_mpi_comm.comm(), v[0], global_vertex_range);
+        = MPI::index_owner(num_processes, v[0], global_vertex_range);
     send_entities[dest].push_back(m.index());
     send_entities[dest].insert(send_entities[dest].end(), v.begin(), v.end());
   }
@@ -1329,7 +1328,7 @@ HDF5File::read_mesh_value_collection(std::shared_ptr<const mesh::Mesh> mesh,
   {
     std::partial_sort_copy(it, it + num_verts_per_entity, v.begin(), v.end());
     std::size_t dest
-        = MPI::index_owner(_mpi_comm.comm(), v[0], global_vertex_range);
+        = MPI::index_owner(num_processes, v[0], global_vertex_range);
     send_entities[dest].insert(send_entities[dest].end(), v.begin(), v.end());
     send_data[dest].push_back(values_data[i]);
     ++i;
