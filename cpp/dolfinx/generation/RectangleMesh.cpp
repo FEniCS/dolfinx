@@ -19,10 +19,11 @@ namespace
 {
 //-----------------------------------------------------------------------------
 mesh::Mesh build_tri(MPI_Comm comm, const std::array<Eigen::Vector3d, 2>& p,
-                     std::array<std::size_t, 2> n,
-                     const mesh::GhostMode ghost_mode, std::string diagonal)
+                     std::array<std::size_t, 2> n, const mesh::GhostMode,
+                     std::string diagonal)
 {
-  std::cout << "Testing:  " << p[0].transpose() << ", " << p[1].transpose() << std::endl;
+  std::cout << "Testing:  " << p[0].transpose() << ", " << p[1].transpose()
+            << std::endl;
   std::cout << "n:        " << n[0] << ", " << n[1] << std::endl;
   std::cout << "diagonal: " << n[0] << ", " << diagonal << std::endl;
 
