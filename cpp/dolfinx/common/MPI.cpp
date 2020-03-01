@@ -111,7 +111,7 @@ dolfinx::MPI::compute_local_range(int process, std::int64_t N, int size)
 }
 //-----------------------------------------------------------------------------
 std::uint32_t dolfinx::MPI::index_owner(int size, std::size_t index,
-                                            std::size_t N)
+                                        std::size_t N)
 {
   assert(index < N);
 
