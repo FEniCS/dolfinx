@@ -9,6 +9,7 @@
 #include <cfloat>
 #include <cmath>
 #include <dolfinx/common/MPI.h>
+#include <dolfinx/graph/AdjacencyList.h>
 #include <dolfinx/mesh/Partitioning.h>
 
 using namespace dolfinx;
@@ -19,15 +20,18 @@ namespace
 //-----------------------------------------------------------------------------
 mesh::Mesh build_tri(MPI_Comm comm, const std::array<Eigen::Vector3d, 2>& p,
                      std::array<std::size_t, 2> n,
-                     const mesh::GhostMode ghost_mode, std::string diagonal)
+                     const mesh::GhostMode, std::string diagonal)
 {
   // Receive mesh if not rank 0
   if (dolfinx::MPI::rank(comm) != 0)
   {
     Eigen::Array<double, 0, 2, Eigen::RowMajor> geom(0, 2);
     Eigen::Array<std::int64_t, 0, 3, Eigen::RowMajor> topo(0, 3);
-    return mesh::Partitioning::build_distributed_mesh(
-        comm, mesh::CellType::triangle, geom, topo, {}, ghost_mode);
+    return mesh::create(comm, graph::AdjacencyList<std::int64_t>(topo), mesh::CellType::triangle, geom);
+
+
+    // return mesh::Partitioning::build_distributed_mesh(
+    //     comm, mesh::CellType::triangle, geom, topo, {}, ghost_mode);
   }
 
   // Check options
@@ -190,8 +194,11 @@ mesh::Mesh build_tri(MPI_Comm comm, const std::array<Eigen::Vector3d, 2>& p,
     }
   }
 
-  return mesh::Partitioning::build_distributed_mesh(
-      comm, mesh::CellType::triangle, geom, topo, {}, ghost_mode);
+  return mesh::create(comm, graph::AdjacencyList<std::int64_t>(topo), mesh::CellType::triangle, geom);
+  // return mesh::create(comm, topo, mesh::CellType::triangle, geom);
+
+  // return mesh::Partitioning::build_distributed_mesh(
+  //     comm, mesh::CellType::triangle, geom, topo, {}, ghost_mode);
 }
 //-----------------------------------------------------------------------------
 mesh::Mesh build_quad(MPI_Comm comm, const std::array<Eigen::Vector3d, 2>& p,

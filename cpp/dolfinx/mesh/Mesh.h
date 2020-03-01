@@ -7,6 +7,7 @@
 #pragma once
 
 #include "cell_types.h"
+#include <Eigen/Dense>
 #include <dolfinx/common/MPI.h>
 #include <dolfinx/common/UniqueIdGenerator.h>
 #include <dolfinx/common/types.h>
@@ -20,6 +21,12 @@ namespace dolfinx
 namespace function
 {
 class Function;
+}
+
+namespace graph
+{
+template <typename T>
+class AdjacencyList;
 }
 
 namespace mesh
@@ -239,5 +246,12 @@ private:
   // Unique identifier
   std::size_t _unique_id;
 };
+
+/// Create a mesh
+Mesh create(MPI_Comm comm, const graph::AdjacencyList<std::int64_t>& cells,
+            CellType shape,
+            const Eigen::Ref<const Eigen::Array<
+                double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>>& x);
+
 } // namespace mesh
 } // namespace dolfinx
