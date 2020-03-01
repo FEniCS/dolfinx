@@ -114,11 +114,19 @@ public:
   int degree() const;
 
 private:
+  // Geometric dimension
+  int _dim;
+
+  // Map per cell for extracting coordinate data
+  graph::AdjacencyList<std::int32_t> _dofmap;
+
+  // IndexMap for geometry 'dofmap'
+  std::shared_ptr<const common::IndexMap> _index_map;
+
   // Coordinates for all points stored as a contiguous array
   Eigen::Array<double, Eigen::Dynamic, 3, Eigen::RowMajor> _x;
 
-  // Geometric dimension
-  int _dim;
+  // fem::CoordinateElement _cmap;
 
   // Global indices for points
   std::vector<std::int64_t> _global_indices;
@@ -126,12 +134,6 @@ private:
   // TODO: remove
   // Global number of points (taking account of shared points)
   std::uint64_t _num_points_global;
-
-  // IndexMap for geometry 'dofmap'
-  std::shared_ptr<const common::IndexMap> _index_map;
-
-  // Map per cell for extracting coordinate data
-  graph::AdjacencyList<std::int32_t> _dofmap;
 
   // FIXME: Remove this
   //

@@ -115,7 +115,7 @@ void fem(py::module& m)
       [](std::uintptr_t e) {
         ufc_coordinate_mapping* p
             = reinterpret_cast<ufc_coordinate_mapping*>(e);
-        return dolfinx::fem::get_cmap_from_ufc_cmap(*p);
+        return dolfinx::fem::create_coordinate_map(*p);
       },
       "Create a CoordinateElement object from a pointer to a "
       "ufc_coordinate_map.");
