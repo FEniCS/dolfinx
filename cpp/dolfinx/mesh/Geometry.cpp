@@ -11,8 +11,6 @@
 #include <dolfinx/fem/DofMapBuilder.h>
 #include <sstream>
 
-#include <boost/timer/timer.hpp>
-
 using namespace dolfinx;
 using namespace dolfinx::mesh;
 
@@ -146,18 +144,12 @@ mesh::Geometry mesh::create_geometry(
     const Eigen::Ref<const Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic,
                                         Eigen::RowMajor>>& x)
 {
-  boost::timer::auto_cpu_timer t("%t sec CPU, %w sec real (Geometry)\n");
-
   // TODO: make sure required entities are initialised, or extend
   // fem::DofMapBuilder::build to take connectivities
-
-  boost::timer::auto_cpu_timer t0("%t sec CPU, %w sec real (build dofmap)\n");
 
   //  Build 'geometry' dofmap on the topology
   auto [dof_index_map, dofmap]
       = fem::DofMapBuilder::build(comm, topology, layout, 1);
-  t0.stop();
-  t0.report();
 
   // Send/receive the 'cell nodes' (includes high-order geometry
   // nodes), and the global input cell index.
@@ -168,48 +160,33 @@ mesh::Geometry mesh::create_geometry(
   //
   //  NOTE: This could be optimised as we have earlier computed which
   //  processes own the cells this process needs.
-  boost::timer::auto_cpu_timer t1("%t sec CPU, %w sec real (exchange)\n");
   std::set<int> _src(src.begin(), src.end());
   auto [cell_nodes, global_index_cell]
       = PartitioningNew::exchange(comm, cells, dest, _src);
-  t1.stop();
-  t1.report();
 
   // Build list of unique (global) node indices from adjacency list
   // (geometry nodes)
-  boost::timer::auto_cpu_timer t2("%t sec CPU, %w sec real (unique)\n");
   std::vector<std::int64_t> indices(cell_nodes.array().data(),
                                     cell_nodes.array().data()
                                         + cell_nodes.array().rows());
   std::sort(indices.begin(), indices.end());
   indices.erase(std::unique(indices.begin(), indices.end()), indices.end());
-  t2.stop();
-  t2.report();
 
   //  Fetch node coordinates by global index from other ranks. Order of
   //  coords matches order of the indices in 'indices'
-  boost::timer::auto_cpu_timer t3("%t sec CPU, %w sec real (fetch)\n");
   Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor> coords
       = PartitioningNew::fetch_data(comm, indices, x);
-  t3.stop();
-  t3.report();
 
   // Compute local-to-global map from local indices in dofmap to the
   // corresponding global indices in cell_nodes
-  boost::timer::auto_cpu_timer t4("%t sec CPU, %w sec real (l2g)\n");
   std::vector<std::int64_t> l2g
       = PartitioningNew::compute_local_to_global_links(cell_nodes, dofmap);
-  t4.stop();
-  t4.report();
 
   // Compute local (dof) to local (position in coords) map from (i)
   // local-to-global for dofs and (ii) local-to-global for entries in
   // coords
-  boost::timer::auto_cpu_timer t5("%t sec CPU, %w sec real (l2l)\n");
   std::vector<std::int32_t> l2l
       = PartitioningNew::compute_local_to_local(l2g, indices);
-  t5.stop();
-  t5.report();
 
   // Build coordinate dof array
   Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor> xg(

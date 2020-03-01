@@ -149,8 +149,6 @@ Mesh mesh::create(
     const Eigen::Ref<const Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic,
                                         Eigen::RowMajor>>& x)
 {
-  boost::timer::auto_cpu_timer t("%t sec CPU, %w sec real (Mesh)\n");
-
   // Assume P1 triangles for now
   Eigen::Array<int, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor> perm(5, 3);
   for (int i = 0; i < perm.rows(); ++i)
