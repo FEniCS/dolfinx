@@ -70,7 +70,7 @@ std::uint32_t dolfinx::MPI::size(const MPI_Comm comm)
 void dolfinx::MPI::barrier(const MPI_Comm comm) { MPI_Barrier(comm); }
 //-----------------------------------------------------------------------------
 std::size_t dolfinx::MPI::global_offset(const MPI_Comm comm, std::size_t range,
-                                       bool exclusive)
+                                        bool exclusive)
 {
   // Compute inclusive or exclusive partial reduction
   std::size_t offset = 0;
@@ -81,7 +81,7 @@ std::size_t dolfinx::MPI::global_offset(const MPI_Comm comm, std::size_t range,
 }
 //-----------------------------------------------------------------------------
 std::array<std::int64_t, 2> dolfinx::MPI::local_range(const MPI_Comm comm,
-                                                     std::int64_t N)
+                                                      std::int64_t N)
 {
   return local_range(comm, rank(comm), N);
 }
@@ -111,7 +111,7 @@ dolfinx::MPI::compute_local_range(int process, std::int64_t N, int size)
 }
 //-----------------------------------------------------------------------------
 std::uint32_t dolfinx::MPI::index_owner(const MPI_Comm comm, std::size_t index,
-                                       std::size_t N)
+                                        std::size_t N)
 {
   assert(index < N);
 
@@ -121,6 +121,23 @@ std::uint32_t dolfinx::MPI::index_owner(const MPI_Comm comm, std::size_t index,
   // Compute number of items per process and remainder
   const std::size_t n = N / _size;
   const std::size_t r = N % _size;
+
+  // First r processes own n + 1 indices
+  if (index < r * (n + 1))
+    return index / (n + 1);
+
+  // Remaining processes own n indices
+  return r + (index - r * (n + 1)) / n;
+}
+//-----------------------------------------------------------------------------
+std::uint32_t dolfinx::MPI::index_owner_new(int size, std::size_t index,
+                                            std::size_t N)
+{
+  assert(index < N);
+
+  // Compute number of items per process and remainder
+  const std::size_t n = N / size;
+  const std::size_t r = N % size;
 
   // First r processes own n + 1 indices
   if (index < r * (n + 1))

@@ -89,9 +89,8 @@ PartitioningNew::reorder_global_indices(
   {
     if (shared_indices[vertex.second])
     {
-      // TODO: optimise this call
-      const int owner
-          = dolfinx::MPI::index_owner(comm, vertex.first, max_global_index + 1);
+      const int owner = dolfinx::MPI::index_owner_new(size, vertex.first,
+                                                      max_global_index + 1);
       number_send[owner] += 1;
     }
   }
@@ -108,8 +107,8 @@ PartitioningNew::reorder_global_indices(
   {
     if (shared_indices[vertex.second])
     {
-      const int owner
-          = dolfinx::MPI::index_owner(comm, vertex.first, max_global_index + 1);
+      const int owner = dolfinx::MPI::index_owner_new(size, vertex.first,
+                                                      max_global_index + 1);
       indices_send[disp_tmp[owner]++] = vertex.first;
     }
   }
@@ -472,7 +471,7 @@ PartitioningNew::create_distributed_adjacency_list(
 
   const Eigen::Array<std::int32_t, Eigen::Dynamic, 1>& data_old = cv->array();
   Eigen::Array<std::int32_t, Eigen::Dynamic, 1> data_new(data_old.rows());
-  for (std::size_t i = 0; i < data_new.size(); ++i)
+  for (int i = 0; i < data_new.rows(); ++i)
     data_new[i] = local_to_local_new[data_old[i]];
 
   const int num_owned_vertices = local_to_local_new.size() - ghosts.size();
@@ -653,7 +652,8 @@ PartitioningNew::fetch_data(
   {
     // TODO: optimise this call
     const std::int64_t index_global = i + offset_x;
-    const int owner = dolfinx::MPI::index_owner(comm, index_global, num_points);
+    const int owner
+        = dolfinx::MPI::index_owner_new(size, index_global, num_points);
     number_send[owner] += 1;
   }
 
@@ -669,7 +669,8 @@ PartitioningNew::fetch_data(
   for (int i = 0; i < x.rows(); ++i)
   {
     const std::int64_t index_global = i + offset_x;
-    const int owner = dolfinx::MPI::index_owner(comm, index_global, num_points);
+    const int owner
+        = dolfinx::MPI::index_owner_new(size, index_global, num_points);
     x_send.row(disp_tmp[owner]++) = x.row(i);
   }
 
@@ -701,7 +702,7 @@ PartitioningNew::fetch_data(
   for (std::int64_t index : indices)
   {
     // TODO: optimise this call
-    const int owner = dolfinx::MPI::index_owner(comm, index, num_points);
+    const int owner = dolfinx::MPI::index_owner_new(size, index, num_points);
     number_index_send[owner] += 1;
   }
 
@@ -716,7 +717,7 @@ PartitioningNew::fetch_data(
   for (std::int64_t index : indices)
   {
     // TODO: optimise this call
-    const int owner = dolfinx::MPI::index_owner(comm, index, num_points);
+    const int owner = dolfinx::MPI::index_owner_new(size, index, num_points);
     indices_send[disp_tmp[owner]++] = index;
   }
 
@@ -800,7 +801,7 @@ std::vector<std::int32_t> PartitioningNew::compute_local_to_local(
   assert(local0_to_global.size() == local1_to_global.size());
 
   // Compute inverse map for local1_to_global
-  std::map<std::int64_t, std::int32_t> global_to_local1;
+  std::unordered_map<std::int64_t, std::int32_t> global_to_local1;
   for (std::size_t i = 0; i < local1_to_global.size(); ++i)
     global_to_local1.insert({local1_to_global[i], i});
 
@@ -815,40 +816,4 @@ std::vector<std::int32_t> PartitioningNew::compute_local_to_local(
 
   return local0_to_local1;
 }
-//-----------------------------------------------------------------------------
-
-// std::map<std::int64_t, std::int32_t>
-// PartitioningNew::compute_local_to_global(
-//     const graph::AdjacencyList<std::int64_t>& global,
-//     const graph::AdjacencyList<std::int32_t>& local)
-// {
-//   if (global.num_nodes() != local.num_nodes())
-//   {
-//     throw std::runtime_error("Mismatch in number of nodes between local and "
-//                              "global adjacency lists.");
-//   }
-
-//   const Eigen::Array<std::int64_t, Eigen::Dynamic, 1>& _global =
-//   global.array(); const Eigen::Array<std::int32_t, Eigen::Dynamic, 1>& _local
-//   = local.array(); if (_global.rows() != _local.rows())
-//   {
-//     throw std::runtime_error("Data size mismatch between local and "
-//                              "global adjacency lists.");
-//   }
-
-//   const std::int32_t max_local = _local.maxCoeff();
-//   std::vector<bool> marker(max_local, false);
-//   std::map<std::int64_t, std::int32_t> global_to_local;
-//   for (Eigen::Index i = 0; i < _local.rows(); ++i)
-//   {
-//     if (!marker[_local(i)])
-//     {
-//       auto it = global_to_local.insert({_global(i), _local(i)});
-//       assert(it.second);
-//       marker[_local(i)] = true;
-//     }
-//   }
-
-//   return global_to_local;
-// }
 //-----------------------------------------------------------------------------

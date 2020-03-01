@@ -213,6 +213,9 @@ public:
   static std::uint32_t index_owner(MPI_Comm comm, std::size_t index,
                                    std::size_t N);
 
+  /// Return which process owns index (inverse of local_range)
+  static std::uint32_t index_owner_new(int size, std::size_t index,
+                                   std::size_t N);
   template <typename T>
   struct dependent_false : std::false_type
   {
