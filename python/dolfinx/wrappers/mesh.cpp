@@ -58,7 +58,6 @@ void mesh(py::module& m)
   m.def("cell_num_vertices", &dolfinx::mesh::num_cell_vertices);
   m.def("get_entity_vertices", &dolfinx::mesh::get_entity_vertices);
 
-
   m.def("extract_topology", &dolfinx::mesh::extract_topology);
 
   m.def("compute_interior_facets", &dolfinx::mesh::compute_interior_facets);
@@ -160,12 +159,12 @@ void mesh(py::module& m)
   // dolfinx::mesh::Mesh
   py::class_<dolfinx::mesh::Mesh, std::shared_ptr<dolfinx::mesh::Mesh>>(
       m, "Mesh", py::dynamic_attr(), "Mesh object")
-      .def(py::init(
-          [](const MPICommWrapper comm, const dolfinx::mesh::Topology& topology,
-          dolfinx::mesh::Geometry& geometry) {
-            return std::make_unique<dolfinx::mesh::Mesh>(
-                comm.get(), topology, geometry);
-          }))
+      .def(py::init([](const MPICommWrapper comm,
+                       const dolfinx::mesh::Topology& topology,
+                       dolfinx::mesh::Geometry& geometry) {
+        return std::make_unique<dolfinx::mesh::Mesh>(comm.get(), topology,
+                                                     geometry);
+      }))
       .def(py::init(
           [](const MPICommWrapper comm, dolfinx::mesh::CellType type,
              const Eigen::Ref<const Eigen::Array<
@@ -358,18 +357,19 @@ void mesh(py::module& m)
   m.def("distribute",
         [](const MPICommWrapper comm,
            const dolfinx::graph::AdjacencyList<std::int64_t>& list,
-           const std::vector<int>& owner) {
+           const dolfinx::graph::AdjacencyList<std::int32_t>& destinations) {
           return dolfinx::mesh::PartitioningNew::distribute(comm.get(), list,
-                                                            owner);
+                                                            destinations);
         });
 
-  m.def("exchange", [](const MPICommWrapper comm,
-                       const dolfinx::graph::AdjacencyList<std::int64_t>& list,
-                       const std::vector<int>& destinations,
-                       const std::set<int>& sources) {
-    return dolfinx::mesh::PartitioningNew::exchange(comm.get(), list,
-                                                    destinations, sources);
-  });
+  m.def("exchange",
+        [](const MPICommWrapper comm,
+           const dolfinx::graph::AdjacencyList<std::int64_t>& list,
+           const dolfinx::graph::AdjacencyList<std::int32_t>& destinations,
+           const std::set<int>& sources) {
+          return dolfinx::mesh::PartitioningNew::exchange(
+              comm.get(), list, destinations, sources);
+        });
 
   m.def("partition_cells",
         [](const MPICommWrapper comm, int nparts,

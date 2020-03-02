@@ -348,7 +348,7 @@ void Topology::set_entity_permutation(std::size_t cell_n, int entity_dim,
 mesh::CellType Topology::cell_type() const { return _cell_type; }
 
 //-----------------------------------------------------------------------------
-std::tuple<Topology, std::vector<int>, std::vector<int>>
+std::tuple<Topology, std::vector<int>, graph::AdjacencyList<std::int32_t>>
 mesh::create_topology(MPI_Comm comm,
                       const graph::AdjacencyList<std::int64_t>& cells,
                       const fem::ElementDofLayout& layout)
@@ -366,8 +366,9 @@ mesh::create_topology(MPI_Comm comm,
 
   // Compute the destination rank for cells on this process via graph
   // partitioning
-  const std::vector<int> dest = PartitioningNew::partition_cells(
-      comm, size, layout.cell_type(), cells_v);
+  const graph::AdjacencyList<std::int32_t> dest
+      = PartitioningNew::partition_cells(comm, size, layout.cell_type(),
+                                         cells_v);
 
   // Distribute cells to destination rank
   const auto [my_cells, src, original_cell_index]
