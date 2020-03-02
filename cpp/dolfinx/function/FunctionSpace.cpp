@@ -14,7 +14,6 @@
 #include <dolfinx/fem/DofMap.h>
 #include <dolfinx/fem/FiniteElement.h>
 #include <dolfinx/graph/AdjacencyList.h>
-#include <dolfinx/mesh/CoordinateDofs.h>
 #include <dolfinx/mesh/Geometry.h>
 #include <dolfinx/mesh/Mesh.h>
 #include <dolfinx/mesh/Topology.h>
@@ -310,7 +309,7 @@ FunctionSpace::tabulate_dof_coordinates() const
 
   // Prepare cell geometry
   const graph::AdjacencyList<std::int32_t>& connectivity_g
-      = _mesh->coordinate_dofs().entity_points();
+      = _mesh->geometry().dofmap();
   const Eigen::Array<std::int32_t, Eigen::Dynamic, 1>& pos_g
       = connectivity_g.offsets();
   const Eigen::Array<std::int32_t, Eigen::Dynamic, 1>& cell_g
@@ -319,7 +318,7 @@ FunctionSpace::tabulate_dof_coordinates() const
   const int num_dofs_g = connectivity_g.num_links(0);
   const Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>&
       x_g
-      = _mesh->geometry().points();
+      = _mesh->geometry().x();
 
   // Array to hold coordinates to return
   Eigen::Array<double, Eigen::Dynamic, 3, Eigen::RowMajor> x
@@ -372,7 +371,7 @@ void FunctionSpace::set_x(
 
   // Prepare cell geometry
   const graph::AdjacencyList<std::int32_t>& connectivity_g
-      = _mesh->coordinate_dofs().entity_points();
+      = _mesh->geometry().dofmap();
   const Eigen::Array<std::int32_t, Eigen::Dynamic, 1>& pos_g
       = connectivity_g.offsets();
   const Eigen::Array<std::int32_t, Eigen::Dynamic, 1>& cell_g
@@ -381,7 +380,7 @@ void FunctionSpace::set_x(
   const int num_dofs_g = connectivity_g.num_links(0);
   const Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>&
       x_g
-      = _mesh->geometry().points();
+      = _mesh->geometry().x();
 
   // Dof coordinate on reference element
   const Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>& X

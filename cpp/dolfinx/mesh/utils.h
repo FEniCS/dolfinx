@@ -21,15 +21,14 @@ namespace mesh
 class Mesh;
 class MeshEntity;
 
-/// Extract topology from cell data
+/// Extract topology from cell data, i.e. extract cell vertices
 /// @param[in] layout The layout of geometry 'degrees-of-freedom' on the
 ///     reference cell
 /// @param[in] cells List of 'nodes' for each cell using global indices.
 ///     The layout must be consistent with \p layout.
-/// @return Cell topology, with the global index for the vertices, order
-///     v0, v1, v1, etc. The global indices will, in general, have
+/// @return Cell topology. The global indices will, in general, have
 ///     'gaps' due to mid-side and other higher-order nodes being
-///     removed.
+///     removed from the input @p cell.
 graph::AdjacencyList<std::int64_t>
 extract_topology(const fem::ElementDofLayout& layout,
                  const graph::AdjacencyList<std::int64_t>& cells);

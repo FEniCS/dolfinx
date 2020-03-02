@@ -21,6 +21,7 @@
 #include <memory>
 #include <numeric>
 #include <random>
+#include <unordered_map>
 #include <utility>
 
 using namespace dolfinx;
@@ -182,7 +183,6 @@ build_basic_dofmap(const mesh::Topology& topology,
           const std::int32_t dof
               = offset_local + num_entity_dofs * e_index_local + count;
           dofs[cell_ptr[c] + permutations(c, *dof_local)] = dof;
-          // dofmap.dof(c, permutations(c, *dof_local)) = dof;
           local_to_global[dof]
               = offset_global + num_entity_dofs * e_index_global + count;
           dof_entity[dof] = {d, e_index_local};
@@ -445,7 +445,7 @@ std::vector<std::int64_t> get_global_indices(
     d = requests_dim[idx];
 
     // Build (global old, global new) map for dofs of dimension d
-    std::map<std::int64_t, std::int64_t> global_old_new;
+    std::unordered_map<std::int64_t, std::int64_t> global_old_new;
     std::vector<std::int64_t>& dofs_received = all_dofs_received[d];
     for (std::size_t j = 0; j < dofs_received.size(); j += 2)
       global_old_new.insert({dofs_received[j], dofs_received[j + 1]});
@@ -481,20 +481,18 @@ DofMapBuilder::build(MPI_Comm comm, const mesh::Topology& topology,
 {
   assert(element_dof_layout);
   const int bs = element_dof_layout->block_size();
-  std::shared_ptr<common::IndexMap> index_map;
-  Eigen::Array<std::int32_t, Eigen::Dynamic, 1> dofmap;
   if (bs == 1)
   {
-    std::tie(index_map, dofmap)
+    auto [index_map, dofmap]
         = DofMapBuilder::build(comm, topology, *element_dof_layout, 1);
+    return fem::DofMap(element_dof_layout, index_map, dofmap);
   }
   else
   {
-    std::tie(index_map, dofmap) = DofMapBuilder::build(
+    auto [index_map, dofmap] = DofMapBuilder::build(
         comm, topology, *element_dof_layout->sub_dofmap({0}), bs);
+    return fem::DofMap(element_dof_layout, index_map, dofmap);
   }
-
-  return fem::DofMap(element_dof_layout, index_map, dofmap);
 }
 //-----------------------------------------------------------------------------
 fem::DofMap DofMapBuilder::build_submap(const DofMap& dofmap_parent,
@@ -531,11 +529,15 @@ fem::DofMap DofMapBuilder::build_submap(const DofMap& dofmap_parent,
       dofmap[c * dofs_per_cell + i] = cell_dmap_parent[element_map_view[i]];
   }
 
-  return DofMap(element_dof_layout, dofmap_parent.index_map, dofmap);
+  Eigen::Map<Eigen::Array<std::int32_t, Eigen::Dynamic, Eigen::Dynamic,
+                          Eigen::RowMajor>>
+      _dofmap(dofmap.data(), num_cells, dofs_per_cell);
+
+  return DofMap(element_dof_layout, dofmap_parent.index_map,
+                graph::AdjacencyList<std::int32_t>(_dofmap));
 }
 //-----------------------------------------------------------------------------
-std::pair<std::unique_ptr<common::IndexMap>,
-          Eigen::Array<std::int32_t, Eigen::Dynamic, 1>>
+std::pair<std::shared_ptr<common::IndexMap>, graph::AdjacencyList<std::int32_t>>
 DofMapBuilder::build(MPI_Comm comm, const mesh::Topology& topology,
                      const ElementDofLayout& element_dof_layout,
                      const std::int32_t block_size)
@@ -608,6 +610,12 @@ DofMapBuilder::build(MPI_Comm comm, const mesh::Topology& topology,
     }
   }
 
-  return {std::move(index_map), std::move(dofmap)};
+  assert(dofmap.rows() % node_graph0.num_nodes() == 0);
+  Eigen::Map<Eigen::Array<std::int32_t, Eigen::Dynamic, Eigen::Dynamic,
+                          Eigen::RowMajor>>
+      _dofmap(dofmap.data(), node_graph0.num_nodes(),
+              dofmap.rows() / node_graph0.num_nodes());
+
+  return {std::move(index_map), graph::AdjacencyList<std::int32_t>(_dofmap)};
 }
 //-----------------------------------------------------------------------------

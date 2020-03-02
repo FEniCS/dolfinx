@@ -75,7 +75,7 @@ def test_rank0():
     # Prepare mesh and dofmap data
     c = mesh.topology.connectivity(2, 0).array()
     pos = mesh.topology.connectivity(2, 0).offsets()
-    geom = mesh.geometry.points
+    geom = mesh.geometry.x
     coeff_dofmap = P2.dofmap.dof_array
     dofmap = vP1.dofmap.dof_array
 

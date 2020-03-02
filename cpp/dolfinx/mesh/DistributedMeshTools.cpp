@@ -54,7 +54,7 @@ reorder_values_by_global_indices(
   {
     const std::size_t global_i = global_indices[i];
     const std::size_t process_i
-        = dolfinx::MPI::index_owner(mpi_comm, global_i, global_vector_size);
+        = dolfinx::MPI::index_owner(mpi_size, global_i, global_vector_size);
     indices_to_send[process_i].push_back(global_i);
     values_to_send[process_i].insert(values_to_send[process_i].end(),
                                      values.row(i).data(),

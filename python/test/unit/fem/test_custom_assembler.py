@@ -269,7 +269,7 @@ def test_custom_mesh_loop_rank1():
     # Unpack mesh and dofmap data
     c = mesh.topology.connectivity(2, 0).array()
     pos = mesh.topology.connectivity(2, 0).offsets()
-    geom = mesh.geometry.points
+    geom = mesh.geometry.x
     dofs = V.dofmap.dof_array
 
     # Assemble with pure Numba function (two passes, first will include JIT overhead)
@@ -334,7 +334,7 @@ def test_custom_mesh_loop_ctypes_rank2():
     # Extract mesh and dofmap data
     c = mesh.topology.connectivity(2, 0).array()
     pos = mesh.topology.connectivity(2, 0).offsets()
-    geom = mesh.geometry.points
+    geom = mesh.geometry.x
     dofs = V.dofmap.dof_array
 
     # Generated case with general assembler
@@ -387,7 +387,7 @@ def test_custom_mesh_loop_cffi_rank2(set_vals):
     # Unpack mesh and dofmap data
     c = mesh.topology.connectivity(2, 0).array()
     pos = mesh.topology.connectivity(2, 0).offsets()
-    geom = mesh.geometry.points
+    geom = mesh.geometry.x
     dofs = V.dofmap.dof_array
 
     A1 = A0.copy()

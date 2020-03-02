@@ -7,6 +7,7 @@
 #pragma once
 
 #include <dolfinx/fem/DofMap.h>
+#include <dolfinx/graph/AdjacencyList.h>
 #include <dolfinx/mesh/cell_types.h>
 #include <memory>
 #include <tuple>
@@ -47,8 +48,8 @@ public:
                              const mesh::Topology& topology);
 
   /// Build dofmap
-  static std::pair<std::unique_ptr<common::IndexMap>,
-                   Eigen::Array<std::int32_t, Eigen::Dynamic, 1>>
+  static std::pair<std::shared_ptr<common::IndexMap>,
+                   graph::AdjacencyList<std::int32_t>>
   build(MPI_Comm comm, const mesh::Topology& topology,
         const ElementDofLayout& element_dof_layout,
         const std::int32_t block_size);

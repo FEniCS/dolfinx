@@ -223,7 +223,7 @@ void MeshFunction<T>::mark(
 
   // Get all vertices of the mesh
   const Eigen::Array<double, 3, Eigen::Dynamic, Eigen::RowMajor>& x
-      = _mesh->geometry().points().transpose();
+      = _mesh->geometry().x().transpose();
 
   // Evaluate the marker function at each vertex
   Eigen::Array<bool, Eigen::Dynamic, 1> marked = mark(x);

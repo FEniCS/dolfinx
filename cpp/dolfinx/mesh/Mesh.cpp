@@ -5,9 +5,9 @@
 // SPDX-License-Identifier:    LGPL-3.0-or-later
 
 #include "Mesh.h"
-#include "CoordinateDofs.h"
 #include "Geometry.h"
 #include "Partitioning.h"
+#include "PartitioningNew.h"
 #include "Topology.h"
 #include "TopologyComputation.h"
 #include "utils.h"
@@ -16,9 +16,12 @@
 #include <dolfinx/common/Timer.h>
 #include <dolfinx/common/log.h>
 #include <dolfinx/common/utils.h>
+#include <dolfinx/fem/DofMapBuilder.h>
+#include <dolfinx/fem/ElementDofLayout.h>
 #include <dolfinx/graph/AdjacencyList.h>
 #include <dolfinx/io/cells.h>
 #include <dolfinx/mesh/cell_types.h>
+#include <memory>
 
 using namespace dolfinx;
 using namespace dolfinx::mesh;
@@ -31,7 +34,7 @@ Eigen::ArrayXd cell_h(const mesh::Mesh& mesh)
   const int dim = mesh.topology().dim();
   const int num_cells = mesh.num_entities(dim);
   if (num_cells == 0)
-    throw std::runtime_error("Cannnot compute h min/max. No cells.");
+    throw std::runtime_error("Cannot compute h min/max. No cells.");
 
   Eigen::ArrayXi cells(num_cells);
   std::iota(cells.data(), cells.data() + cells.size(), 0);
@@ -140,6 +143,42 @@ compute_point_distribution(
 } // namespace
 
 //-----------------------------------------------------------------------------
+Mesh mesh::create(
+    MPI_Comm comm, const graph::AdjacencyList<std::int64_t>& cells,
+    CellType shape,
+    const Eigen::Ref<const Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic,
+                                        Eigen::RowMajor>>& x)
+{
+  // Assume P1 triangles for now
+  Eigen::Array<int, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor> perm(5, 3);
+  for (int i = 0; i < perm.rows(); ++i)
+    for (int j = 0; j < perm.cols(); ++j)
+      perm(i, j) = j;
+
+  // entity_dofs = [[set([0]), set([1]), set([2])], 3 * [set()], [set()]]
+  std::vector<std::vector<std::set<int>>> entity_dofs(3);
+  entity_dofs[0] = {{0}, {1}, {2}};
+  entity_dofs[1] = {{}, {}, {}};
+  entity_dofs[2] = {{}};
+  fem::ElementDofLayout layout(1, entity_dofs, {}, {}, shape, perm);
+
+  const auto [topology, src, dest] = mesh::create_topology(comm, cells, layout);
+
+  const Geometry geometry
+      = mesh::create_geometry(comm, topology, layout, cells, dest, src, x);
+
+  return Mesh(comm, topology, geometry);
+}
+//-----------------------------------------------------------------------------
+
+//-----------------------------------------------------------------------------
+Mesh::Mesh(MPI_Comm comm, const Topology& topology, const Geometry& geometry)
+    : _mpi_comm(comm), _new_storage(true)
+{
+  _topology = std::make_unique<Topology>(topology);
+  _geometry = std::make_unique<Geometry>(geometry);
+}
+//-----------------------------------------------------------------------------
 Mesh::Mesh(
     MPI_Comm comm, mesh::CellType type,
     const Eigen::Ref<const Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic,
@@ -148,8 +187,8 @@ Mesh::Mesh(
         std::int64_t, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>>& cells,
     const std::vector<std::int64_t>& global_cell_indices,
     const GhostMode ghost_mode, std::int32_t num_ghost_cells)
-    : _degree(1), _mpi_comm(comm), _ghost_mode(ghost_mode),
-      _unique_id(common::UniqueIdGenerator::id())
+    : _mpi_comm(comm), _ghost_mode(ghost_mode),
+      _unique_id(common::UniqueIdGenerator::id()), _new_storage(false)
 {
   const int tdim = mesh::cell_dim(type);
 
@@ -160,9 +199,9 @@ Mesh::Mesh(
     throw std::runtime_error(
         "Cannot create mesh. Wrong number of global cell indices");
   }
+
   // Find degree of mesh
-  // FIXME: degree should probably be in MeshGeometry
-  _degree = mesh::cell_degree(type, cells.cols());
+  const int degree = mesh::cell_degree(type, cells.cols());
 
   // Get number of nodes (global)
   const std::uint64_t num_points_global = MPI::sum(comm, points.rows());
@@ -178,10 +217,9 @@ Mesh::Mesh(
               points_received]
       = compute_point_distribution(comm, cells, points);
 
-  _coordinate_dofs = std::make_unique<CoordinateDofs>(coordinate_nodes);
-
   _geometry = std::make_unique<Geometry>(num_points_global, points_received,
-                                         node_indices_global);
+                                         node_indices_global, coordinate_nodes,
+                                         degree);
 
   // Get global vertex information
   std::vector<std::int64_t> vertex_indices_global;
@@ -192,7 +230,7 @@ Mesh::Mesh(
   Eigen::Array<std::int32_t, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
       vertex_cols(cells.rows(), num_vertices_per_cell);
 
-  if (_degree == 1)
+  if (degree == 1)
   {
     vertex_indices_global = std::move(node_indices_global);
     vertex_index_map = point_index_map;
@@ -229,7 +267,7 @@ Mesh::Mesh(
 
   // Initialise vertex topology
   _topology = std::make_unique<Topology>(type);
-  _topology->set_global_user_vertices(vertex_indices_global);
+  _topology->set_global_vertices_user(vertex_indices_global);
   _topology->set_index_map(0, vertex_index_map);
   const std::int32_t num_vertices
       = vertex_index_map->size_local() + vertex_index_map->num_ghosts();
@@ -267,10 +305,10 @@ Mesh::Mesh(
 //-----------------------------------------------------------------------------
 Mesh::Mesh(const Mesh& mesh)
     : _topology(new Topology(*mesh._topology)),
-      _geometry(new Geometry(*mesh._geometry)),
-      _coordinate_dofs(new CoordinateDofs(*mesh._coordinate_dofs)),
-      _degree(mesh._degree), _mpi_comm(mesh.mpi_comm()),
-      _ghost_mode(mesh._ghost_mode), _unique_id(common::UniqueIdGenerator::id())
+      _geometry(new Geometry(*mesh._geometry)), _mpi_comm(mesh.mpi_comm()),
+      _ghost_mode(mesh._ghost_mode),
+      _unique_id(common::UniqueIdGenerator::id()),
+      _new_storage(mesh._new_storage)
 
 {
   // Do nothing
@@ -279,10 +317,10 @@ Mesh::Mesh(const Mesh& mesh)
 Mesh::Mesh(Mesh&& mesh)
     : _topology(std::move(mesh._topology)),
       _geometry(std::move(mesh._geometry)),
-      _coordinate_dofs(std::move(mesh._coordinate_dofs)),
-      _degree(std::move(mesh._degree)), _mpi_comm(std::move(mesh._mpi_comm)),
+      _mpi_comm(std::move(mesh._mpi_comm)),
       _ghost_mode(std::move(mesh._ghost_mode)),
-      _unique_id(std::move(mesh._unique_id))
+      _unique_id(std::move(mesh._unique_id)),
+      _new_storage(std::move(mesh._new_storage))
 {
   // Do nothing
 }
@@ -677,18 +715,4 @@ std::string Mesh::str(bool verbose) const
 MPI_Comm Mesh::mpi_comm() const { return _mpi_comm.comm(); }
 //-----------------------------------------------------------------------------
 mesh::GhostMode Mesh::get_ghost_mode() const { return _ghost_mode; }
-//-----------------------------------------------------------------------------
-CoordinateDofs& Mesh::coordinate_dofs()
-{
-  assert(_coordinate_dofs);
-  return *_coordinate_dofs;
-}
-//-----------------------------------------------------------------------------
-const CoordinateDofs& Mesh::coordinate_dofs() const
-{
-  assert(_coordinate_dofs);
-  return *_coordinate_dofs;
-}
-//-----------------------------------------------------------------------------
-std::int32_t Mesh::degree() const { return _degree; }
 //-----------------------------------------------------------------------------

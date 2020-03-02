@@ -12,7 +12,7 @@
 using namespace dolfinx;
 
 //-----------------------------------------------------------------------------
-std::vector<std::uint8_t> io::cells::dolfin_to_vtk(mesh::CellType type,
+std::vector<std::uint8_t> io::cells::vtk_to_dolfin(mesh::CellType type,
                                                    int num_nodes)
 {
   switch (type)
@@ -139,10 +139,14 @@ std::vector<std::uint8_t> io::cells::dolfin_to_vtk(mesh::CellType type,
     case 8:
       return {0, 4, 6, 2, 1, 5, 7, 3};
     case 27:
-      // TODO: change permutation when paraview issue 19433 is resolved
-      // (https://gitlab.kitware.com/paraview/paraview/issues/19433)
-      return {0,  9, 12, 3,  1, 10, 13, 4,  18, 15, 21, 6,  19, 16,
-              22, 7, 2,  11, 5, 14, 8,  17, 20, 23, 24, 25, 26};
+      // // TODO: change permutation when paraview issue 19433 is resolved
+      // // (https://gitlab.kitware.com/paraview/paraview/issues/19433)
+      // return {0,  9, 12, 3,  1, 10, 13, 4,  18, 15, 21, 6,  19, 16,
+      //         22, 7, 2,  11, 5, 14, 8,  17, 20, 23, 24, 25, 26};
+
+      // This is the documented VTK ordering
+      return {0,  9, 12, 3,  1,  10, 13, 4,  18, 15, 21, 6,  19, 16,
+              22, 7, 2,  11, 14, 5,  8,  17, 20, 23, 24, 25, 26};
     default:
       throw std::runtime_error("Higher order hexahedron not supported.");
     }
@@ -152,120 +156,15 @@ std::vector<std::uint8_t> io::cells::dolfin_to_vtk(mesh::CellType type,
   }
 }
 //-----------------------------------------------------------------------------
-std::vector<std::uint8_t> io::cells::vtk_to_tp(mesh::CellType type,
-                                               int num_nodes)
-{
-  const std::vector<std::uint8_t> reversed
-      = io::cells::dolfin_to_vtk(type, num_nodes);
-  switch (type)
-  {
-  case mesh::CellType::quadrilateral:
-  {
-    std::vector<std::uint8_t> perm(num_nodes);
-    for (int i = 0; i < num_nodes; ++i)
-      perm[reversed[i]] = i;
-    return perm;
-  }
-  case mesh::CellType::hexahedron:
-  {
-    std::vector<std::uint8_t> perm(num_nodes);
-    for (int i = 0; i < num_nodes; ++i)
-      perm[reversed[i]] = i;
-    return perm;
-  }
-  default:
-    throw std::runtime_error("Simplicies can be expressed as TensorProduct");
-  }
-}
-//-----------------------------------------------------------------------------
-std::vector<std::uint8_t> io::cells::lex_to_tp(mesh::CellType type,
-                                               int num_nodes)
-{
-  switch (type)
-  {
-  case mesh::CellType::quadrilateral:
-  {
-    assert((std::sqrt(num_nodes) - std::floor(std::sqrt(num_nodes))) == 0);
-    // Number of nodes in each direction
-    const int n = sqrt(num_nodes);
-
-    std::vector<std::uint8_t> permutation(num_nodes);
-    std::vector<std::uint8_t> rows(n);
-    std::iota(std::next(rows.begin()), std::prev(rows.end()), 2);
-    rows.front() = 0;
-    rows.back() = 1;
-
-    int j = 0;
-    for (auto row : rows)
-    {
-      permutation[j] = row;
-      permutation[j + n - 1] = n + row;
-      j++;
-      for (int index = 0; index < n - 2; ++index)
-      {
-        permutation[j] = (2 + index) * n + row;
-        j++;
-      }
-      j++;
-    }
-    return permutation;
-  }
-  case mesh::CellType::hexahedron:
-  {
-    switch (num_nodes)
-    {
-    case 8:
-      return {0, 4, 2, 6, 1, 5, 3, 7};
-    default:
-      throw std::runtime_error("Higher order hexahedron not supported.");
-    }
-  }
-  default:
-    throw std::runtime_error("Simplicies can be expressed as TensorProduct.");
-  }
-}
-//-----------------------------------------------------------------------------
-std::vector<std::uint8_t> io::cells::vtk_to_dolfin(mesh::CellType type,
+std::vector<std::uint8_t> io::cells::dolfin_to_vtk(mesh::CellType type,
                                                    int num_nodes)
 {
-  switch (type)
-  {
-  case mesh::CellType::point:
-    return {0};
-  case mesh::CellType::interval:
-  {
-    const std::vector<std::uint8_t> reversed
-        = io::cells::dolfin_to_vtk(type, num_nodes);
-    std::vector<std::uint8_t> perm(num_nodes);
-    for (int i = 0; i < num_nodes; ++i)
-      perm[reversed[i]] = i;
-    return perm;
-  }
-  case mesh::CellType::triangle:
-  {
-    const std::vector<std::uint8_t> reversed
-        = io::cells::dolfin_to_vtk(type, num_nodes);
-    std::vector<std::uint8_t> perm(num_nodes);
-    for (int i = 0; i < num_nodes; ++i)
-      perm[reversed[i]] = i;
-    return perm;
-  }
-  case mesh::CellType::tetrahedron:
-  {
-    const std::vector<std::uint8_t> reversed
-        = io::cells::dolfin_to_vtk(type, num_nodes);
-    std::vector<std::uint8_t> perm(num_nodes);
-    for (int i = 0; i < num_nodes; ++i)
-      perm[reversed[i]] = i;
-    return perm;
-  }
-  case mesh::CellType::quadrilateral:
-    return io::cells::vtk_to_tp(type, num_nodes);
-  case mesh::CellType::hexahedron:
-    return io::cells::vtk_to_tp(type, num_nodes);
-  default:
-    throw std::runtime_error("Unknown cell type.");
-  }
+  const std::vector<std::uint8_t> reversed
+      = io::cells::vtk_to_dolfin(type, num_nodes);
+  std::vector<std::uint8_t> perm(num_nodes);
+  for (int i = 0; i < num_nodes; ++i)
+    perm[reversed[i]] = i;
+  return perm;
 }
 //-----------------------------------------------------------------------------
 Eigen::Array<std::int64_t, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
@@ -275,12 +174,12 @@ io::cells::permute_ordering(
     const std::vector<std::uint8_t>& permutation)
 {
   Eigen::Array<std::int64_t, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
-      cells_dolfin(cells.rows(), cells.cols());
-  for (Eigen::Index c = 0; c < cells_dolfin.rows(); ++c)
+      cells_new(cells.rows(), cells.cols());
+  for (Eigen::Index c = 0; c < cells_new.rows(); ++c)
   {
-    for (Eigen::Index v = 0; v < cells_dolfin.cols(); ++v)
-      cells_dolfin(c, v) = cells(c, permutation[v]);
+    for (Eigen::Index v = 0; v < cells_new.cols(); ++v)
+      cells_new(c, permutation[v]) = cells(c, v);
   }
-  return cells_dolfin;
+  return cells_new;
 }
 //-----------------------------------------------------------------------------
