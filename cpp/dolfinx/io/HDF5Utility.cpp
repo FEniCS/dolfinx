@@ -160,6 +160,7 @@ HDF5Utility::cell_owners(const mesh::Mesh& mesh,
 {
   // MPI communicator
   const MPI_Comm mpi_comm = mesh.mpi_comm();
+  const int size = dolfinx::MPI::size(mpi_comm);
 
   const std::size_t num_processes = MPI::size(mpi_comm);
   const std::size_t num_global_cells
@@ -179,7 +180,7 @@ HDF5Utility::cell_owners(const mesh::Mesh& mesh,
     std::vector<std::vector<std::int64_t>> send_input_cells(num_processes);
     for (auto c = cells.begin(); c != cells.end(); ++c)
     {
-      const std::size_t dest = MPI::index_owner(mpi_comm, *c, num_global_cells);
+      const std::size_t dest = MPI::index_owner(size, *c, num_global_cells);
       send_input_cells[dest].push_back(*c);
     }
     MPI::all_to_all(mpi_comm, send_input_cells, receive_input_cells);
@@ -211,8 +212,7 @@ HDF5Utility::cell_owners(const mesh::Mesh& mesh,
   std::vector<std::size_t> pos(num_processes, 0);
   for (std::size_t i = 0; i < cells.size(); ++i)
   {
-    const std::size_t src
-        = MPI::index_owner(mpi_comm, cells[i], num_global_cells);
+    const std::size_t src = MPI::index_owner(size, cells[i], num_global_cells);
     const std::vector<std::int64_t>& rcell = receive_cells[src];
     assert(pos[src] < rcell.size() / 2);
     output_cell_locations[i].first = rcell[2 * pos[src]];
@@ -249,7 +249,7 @@ void HDF5Utility::cell_owners_in_range(
     const std::size_t global_i = global_indices[mesh_cell.index()];
     const std::size_t local_i = mesh_cell.index();
     const std::size_t po_proc
-        = MPI::index_owner(mpi_comm, global_i, n_global_cells);
+        = MPI::index_owner(num_processes, global_i, n_global_cells);
     send_owned_global[po_proc].push_back(global_i);
     send_owned_global[po_proc].push_back(local_i);
   }

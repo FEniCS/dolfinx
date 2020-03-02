@@ -64,18 +64,19 @@ public:
                          const std::vector<std::int64_t>& global_indices,
                          const std::vector<bool>& shared_indices);
 
-  /// Compute destination rank for mesh cells using a graph partitioner
+  /// Compute destination rank for mesh cells in this rank using a graph
+  /// partitioner
   /// @param[in] comm MPI Communicator
-  /// @param[in] nparts Number of partitions
+  /// @param[in] n Number of partitions
   /// @param[in] cell_type Cell type
   /// @param[in] cells Cells on this process. The ith entry in list
   ///   contains the global indices for the cell vertices. Each cell can
-  ///   appear only once across all processes. The cell vertex indices are
-  ///   not necessarily contiguous globally, i.e. the maximum index
+  ///   appear only once across all processes. The cell vertex indices
+  ///   are not necessarily contiguous globally, i.e. the maximum index
   ///   across all processes can be greater than the number of vertices.
-  /// @return Destination process for each cell on this process
-  static std::vector<int>
-  partition_cells(MPI_Comm comm, int nparts, const mesh::CellType cell_type,
+  /// @return Destination processes for each cell on this process
+  static graph::AdjacencyList<std::int32_t>
+  partition_cells(MPI_Comm comm, int n, const mesh::CellType cell_type,
                   const graph::AdjacencyList<std::int64_t>& cells);
 
   /// Compute a local AdjacencyList list with contiguous indices from an
@@ -102,11 +103,12 @@ public:
       MPI_Comm comm, const mesh::Topology& topology_local,
       const std::vector<std::int64_t>& local_to_global_vertices);
 
-  /// Re-distribute adjacency list nodes processes. Does not change any
-  /// numbering.
+  /// Distribute adjacency list nodes to other processes. Does not
+  /// change any numbering. The global index of each node is assumed to
+  /// be the local index plus the offset for this rank.
   /// @param[in] comm MPI Communicator
-  /// @param[in] list An adjacency list
-  /// @param[in] destinations Destination rank for the ith node in the
+  /// @param[in] list An adjacency list to distribute
+  /// @param[in] destinations Destination ranks for the ith node in the
   ///   adjacency list
   /// @return Adjacency list for this process, array of source ranks for
   ///   each node in the adjacency list, and the original global index
@@ -114,14 +116,13 @@ public:
   static std::tuple<graph::AdjacencyList<std::int64_t>, std::vector<int>,
                     std::vector<std::int64_t>>
   distribute(MPI_Comm comm, const graph::AdjacencyList<std::int64_t>& list,
-             const std::vector<int>& destinations);
+             const graph::AdjacencyList<std::int32_t>& destinations);
 
   /// Send nodes to destinations, and receive from sources
   /// @param[in] comm MPI communicator
   /// @param[in] list An adjacency list. Each node is associated with a
   ///   global index (index_local + global offset)
-  /// @param[in] destinations The destination rank for each node in the
-  ///   adjacency list
+  /// @param[in] destinations The destination ranks for each node in list
   /// @param[in] sources Ranks that will send data to this process
   /// @return Re-distributed adjacency list and the original global
   ///   index of each node
@@ -129,7 +130,8 @@ public:
   static std::pair<graph::AdjacencyList<std::int64_t>,
                    std::vector<std::int64_t>>
   exchange(MPI_Comm comm, const graph::AdjacencyList<std::int64_t>& list,
-           const std::vector<int>& destinations, const std::set<int>& sources);
+           const graph::AdjacencyList<std::int32_t>& destinations,
+           const std::set<int>& sources);
 
   /// Distribute data to process ranks where it it required.
   ///
@@ -144,6 +146,31 @@ public:
   fetch_data(MPI_Comm comm, const std::vector<std::int64_t>& indices,
              const Eigen::Ref<const Eigen::Array<
                  double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>>& x);
+
+  /// Given an adjacency list with global, possibly non-contiguous, link
+  /// indices and a local adjacency list with contiguous link indices
+  /// starting from zero, compute a local-to-global map for the links.
+  /// Both adjacency lists must have the same shape.
+  /// @param[in] global Adjacency list with global link indices
+  /// @param[in] local Adjacency list with local, contiguous link
+  ///   indices
+  /// @return Map from local index to global index, which if applied to
+  /// the local adjacency list indices would yield the global adjacency
+  /// list
+  static std::vector<std::int64_t> compute_local_to_global_links(
+      const graph::AdjacencyList<std::int64_t>& global,
+      const graph::AdjacencyList<std::int32_t>& local);
+
+  /// Compute a local0-to-local1 map from two local-to-global maps with
+  /// common global indices
+  /// @param[in] local0_to_global Map from local0 indices to global
+  ///   indices
+  /// @param[in] local1_to_global Map from local1 indices to global
+  ///   indices
+  /// @return Map from local0 indices to local1 indices
+  static std::vector<std::int32_t>
+  compute_local_to_local(const std::vector<std::int64_t>& local0_to_global,
+                         const std::vector<std::int64_t>& local1_to_global);
 };
 } // namespace mesh
 } // namespace dolfinx

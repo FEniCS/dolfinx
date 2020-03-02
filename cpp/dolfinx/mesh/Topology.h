@@ -10,7 +10,7 @@
 #include <Eigen/Dense>
 #include <array>
 #include <cstdint>
-#include <dolfinx/graph/AdjacencyList.h>
+#include <dolfinx/common/MPI.h>
 #include <memory>
 #include <vector>
 
@@ -19,6 +19,17 @@ namespace dolfinx
 namespace common
 {
 class IndexMap;
+}
+
+namespace fem
+{
+class ElementDofLayout;
+}
+
+namespace graph
+{
+template <typename T>
+class AdjacencyList;
 }
 
 namespace mesh
@@ -62,13 +73,27 @@ public:
   /// Assignment
   Topology& operator=(const Topology& topology) = default;
 
+  /// Assignment
+  Topology& operator=(Topology&& topology) = default;
+
   /// Return topological dimension
   int dim() const;
 
-  /// @todo Remove this function. Use IndexMap instead
-  /// Set the global indices for entities of dimension dim
-  void
-  set_global_user_vertices(const std::vector<std::int64_t>& vertex_indices);
+  /// @todo Remove this function, or use constructor
+  ///
+  /// Set the input, e.g. from file, global indices for vertices
+  /// @param[in] indices Map from local (process) vertex index to input
+  ///   (user) global index
+  void set_global_vertices_user(const std::vector<std::int64_t>& indices);
+
+  /// @todo Remove this function if possible
+  ///
+  /// Get the map from local vertex indices to the global user (input)
+  /// indices
+  /// @return The map from local vertex indices to the global input
+  /// indices. Note these global will generally differ from the global
+  /// indices given by the IndexMap for vertices.
+  const std::vector<std::int64_t>& get_global_vertices_user() const;
 
   /// @todo Merge withset_connectivity
   /// Set the IndexMap for dimension dim
@@ -76,14 +101,11 @@ public:
   void set_index_map(int dim,
                      std::shared_ptr<const common::IndexMap> index_map);
 
-  /// Get the IndexMap for dimension dim
-  /// (Currently partially working)
+  /// Get the IndexMap that described the parallel distrubtion of the
+  /// mesh entities
+  /// @param[in] dim Topological dimension
+  /// @return Index map for the entities of dimension @p dim
   std::shared_ptr<const common::IndexMap> index_map(int dim) const;
-
-  /// @todo Remove this function. Use IndexMap instead.
-  /// Get local-to-global index map for entities of topological
-  /// dimension d
-  const std::vector<std::int64_t>& get_global_user_vertices() const;
 
   /// Marker for entities of dimension dim on the boundary. An entity of
   /// co-dimension < 0 is on the boundary if it is connected to a
@@ -94,13 +116,23 @@ public:
   ///   'true' for entities on the boundary and otherwise 'false'.
   std::vector<bool> on_boundary(int dim) const;
 
-  /// Return connectivity for given pair of topological dimensions
-  std::shared_ptr<graph::AdjacencyList<std::int32_t>> connectivity(int d0,
-                                                                   int d1);
-
-  /// Return connectivity for given pair of topological dimensions
+  /// Return connectivity from entities of dimension d0 to entities of
+  /// dimension d1
+  /// @param[in] d0
+  /// @param[in] d1
+  /// @return The adjacency list that for each entity of dimension d0
+  ///   gives the list of incident entities of dimension d1
   std::shared_ptr<const graph::AdjacencyList<std::int32_t>>
   connectivity(int d0, int d1) const;
+
+  /// Return connectivity from entities of dimension d0 to entities of
+  /// dimension d1
+  /// @param[in] d0
+  /// @param[in] d1
+  /// @return The adjacency list that for each entity of dimension d0
+  ///   gives the list of incident entities of dimension d1
+  std::shared_ptr<graph::AdjacencyList<std::int32_t>> connectivity(int d0,
+                                                                   int d1);
 
   /// @todo Merge with set_index_map
   /// Set connectivity for given pair of topological dimensions
@@ -218,5 +250,26 @@ private:
   // are interior to the domain
   std::shared_ptr<const std::vector<bool>> _interior_facets;
 };
+
+/// @todo Avoid passing ElementDofLayout. All we need is way to extract
+/// the vertices from cells, and the CellType
+///
+/// Create distributed topology
+/// @param[in] comm MPI communicator across which the topology is
+///   distributed
+/// @param[in] cells The cell topology (list of cell 'nodes') in DOLFIN
+///   ordering and using global indices for the nodes. It contains cells
+///   that extist only on this this rank and which which have not yet
+///   been distributed via a graph partitioner. The input is typically
+///   direct from a mesh generator or from file. Cells will be
+///   distributed to other ranks.
+/// @param[in] layout Describe the association between 'nodes' in @p
+///   cells and geometry degrees-of-freedom on the element. It is used
+///   to extract the vertex entries in @p cells.
+/// @return A distributed Topology, the source rank for each cell in the
+///   new topology, and the destination ranks for each cell in @p cells.
+std::tuple<Topology, std::vector<int>, graph::AdjacencyList<std::int32_t>>
+create_topology(MPI_Comm comm, const graph::AdjacencyList<std::int64_t>& cells,
+                const fem::ElementDofLayout& layout);
 } // namespace mesh
 } // namespace dolfinx

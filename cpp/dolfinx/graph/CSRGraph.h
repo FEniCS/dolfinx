@@ -14,6 +14,8 @@ namespace dolfinx
 namespace graph
 {
 
+// @todo Remove this class in favour of AdjacencyList
+
 /// Compressed Sparse Row graph
 
 /// This class provides a Compressed Sparse Row Graph defined by a

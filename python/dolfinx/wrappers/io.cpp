@@ -34,6 +34,7 @@ void io(py::module& m)
 
   // dolfinx::io::cell permutation functions
   m.def("permutation_vtk_to_dolfin", &dolfinx::io::cells::vtk_to_dolfin);
+  m.def("permutation_dolfin_to_vtk", &dolfinx::io::cells::dolfin_to_vtk);
   m.def("permute_cell_ordering", &dolfinx::io::cells::permute_ordering);
 
   // dolfinx::io::HDF5File
@@ -41,8 +42,8 @@ void io(py::module& m)
       m, "HDF5File", py::dynamic_attr())
       .def(py::init([](const MPICommWrapper comm, const std::string filename,
                        const std::string file_mode) {
-             return std::make_unique<dolfinx::io::HDF5File>(comm.get(), filename,
-                                                           file_mode);
+             return std::make_unique<dolfinx::io::HDF5File>(
+                 comm.get(), filename, file_mode);
            }),
            py::arg("comm"), py::arg("filename"), py::arg("file_mode"))
       .def("close", &dolfinx::io::HDF5File::close)
@@ -55,16 +56,17 @@ void io(py::module& m)
              return self.read_mesh(data_path, use_partition_from_file,
                                    ghost_mode);
            })
-      .def("read_vector",
-           [](dolfinx::io::HDF5File& self, const MPICommWrapper comm,
-              const std::string data_path, bool use_partition_from_file) {
-             auto x = self.read_vector(comm.get(), data_path,
-                                       use_partition_from_file);
-             Vec _x = x.vec();
-             PetscObjectReference((PetscObject)_x);
-             return _x;
-           },
-           py::return_value_policy::take_ownership)
+      .def(
+          "read_vector",
+          [](dolfinx::io::HDF5File& self, const MPICommWrapper comm,
+             const std::string data_path, bool use_partition_from_file) {
+            auto x = self.read_vector(comm.get(), data_path,
+                                      use_partition_from_file);
+            Vec _x = x.vec();
+            PetscObjectReference((PetscObject)_x);
+            return _x;
+          },
+          py::return_value_policy::take_ownership)
       .def("read_mf_int", &dolfinx::io::HDF5File::read_mf_int, py::arg("mesh"),
            py::arg("name"))
       .def("read_mf_size_t", &dolfinx::io::HDF5File::read_mf_size_t,
@@ -85,7 +87,7 @@ void io(py::module& m)
            py::arg("V"), py::arg("name"))
       // write
       .def("write", (void (dolfinx::io::HDF5File::*)(const dolfinx::mesh::Mesh&,
-                                                    std::string))
+                                                     std::string))
                         & dolfinx::io::HDF5File::write)
       .def("write",
            (void (dolfinx::io::HDF5File::*)(
@@ -118,20 +120,21 @@ void io(py::module& m)
                const dolfinx::mesh::MeshFunction<double>&, std::string))
                & dolfinx::io::HDF5File::write,
            py::arg("meshfunction"), py::arg("name"))
-      .def("write",
-           [](dolfinx::io::HDF5File& self, Vec x, std::string s) {
-             dolfinx::la::PETScVector _x(x, true);
-             self.write(_x, s);
-           },
-           py::arg("vector"), py::arg("name"))
+      .def(
+          "write",
+          [](dolfinx::io::HDF5File& self, Vec x, std::string s) {
+            dolfinx::la::PETScVector _x(x, true);
+            self.write(_x, s);
+          },
+          py::arg("vector"), py::arg("name"))
       .def("write",
            (void (dolfinx::io::HDF5File::*)(const dolfinx::function::Function&,
-                                           std::string))
+                                            std::string))
                & dolfinx::io::HDF5File::write,
            py::arg("u"), py::arg("name"))
       .def("write",
            (void (dolfinx::io::HDF5File::*)(const dolfinx::function::Function&,
-                                           std::string, double))
+                                            std::string, double))
                & dolfinx::io::HDF5File::write,
            py::arg("u"), py::arg("name"), py::arg("t"))
       .def("set_mpi_atomicity", &dolfinx::io::HDF5File::set_mpi_atomicity)
@@ -147,8 +150,8 @@ void io(py::module& m)
   xdmf_file
       .def(py::init([](const MPICommWrapper comm, std::string filename,
                        dolfinx::io::XDMFFile::Encoding encoding) {
-             return std::make_unique<dolfinx::io::XDMFFile>(comm.get(), filename,
-                                                           encoding);
+             return std::make_unique<dolfinx::io::XDMFFile>(comm.get(),
+                                                            filename, encoding);
            }),
            py::arg("comm"), py::arg("filename"), py::arg("encoding"))
       .def("close", &dolfinx::io::XDMFFile::close)
@@ -220,13 +223,14 @@ void io(py::module& m)
                &dolfinx::io::XDMFFile::write),
            py::arg("points"), py::arg("values"))
       // Checkpoints
-      .def("write_checkpoint",
-           [](dolfinx::io::XDMFFile& instance,
-              const dolfinx::function::Function& u, std::string function_name,
-              double time_step) {
-             instance.write_checkpoint(u, function_name, time_step);
-           },
-           py::arg("u"), py::arg("function_name"), py::arg("time_step") = 0.0);
+      .def(
+          "write_checkpoint",
+          [](dolfinx::io::XDMFFile& instance,
+             const dolfinx::function::Function& u, std::string function_name,
+             double time_step) {
+            instance.write_checkpoint(u, function_name, time_step);
+          },
+          py::arg("u"), py::arg("function_name"), py::arg("time_step") = 0.0);
 
   // dolfinx::io::VTKFile
   py::class_<dolfinx::io::VTKFile, std::shared_ptr<dolfinx::io::VTKFile>>
@@ -265,10 +269,11 @@ void io(py::module& m)
            py::overload_cast<const dolfinx::mesh::MeshFunction<double>&>(
                &dolfinx::io::VTKFile::write),
            py::arg("mf"))
-      .def("write",
-           py::overload_cast<const dolfinx::mesh::MeshFunction<double>&, double>(
-               &dolfinx::io::VTKFile::write),
-           py::arg("mf"), py::arg("t"))
+      .def(
+          "write",
+          py::overload_cast<const dolfinx::mesh::MeshFunction<double>&, double>(
+              &dolfinx::io::VTKFile::write),
+          py::arg("mf"), py::arg("t"))
       .def("write",
            py::overload_cast<const dolfinx::mesh::MeshFunction<int>&>(
                &dolfinx::io::VTKFile::write),
@@ -298,8 +303,8 @@ void io(py::module& m)
       .def("read_mf_double", &dolfinx::io::XDMFFile::read_mf_double,
            py::arg("mesh"), py::arg("name") = "")
       // MeshValueCollection
-      .def("read_mvc_int", &dolfinx::io::XDMFFile::read_mvc_int, py::arg("mesh"),
-           py::arg("name") = "")
+      .def("read_mvc_int", &dolfinx::io::XDMFFile::read_mvc_int,
+           py::arg("mesh"), py::arg("name") = "")
       .def("read_mvc_size_t", &dolfinx::io::XDMFFile::read_mvc_size_t,
            py::arg("mesh"), py::arg("name") = "")
       .def("read_mvc_double", &dolfinx::io::XDMFFile::read_mvc_double,

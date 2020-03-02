@@ -171,8 +171,8 @@ void ParallelRefinement::create_new_vertices()
 
   // Copy over existing mesh vertices
   _new_vertex_coordinates = std::vector<double>(
-      _mesh.geometry().points().data(),
-      _mesh.geometry().points().data() + _mesh.geometry().points().size());
+      _mesh.geometry().x().data(),
+      _mesh.geometry().x().data() + _mesh.geometry().x().size());
 
   // Compute all edge mid-points
   Eigen::Array<int, Eigen::Dynamic, 1> edges(_mesh.num_entities(1));

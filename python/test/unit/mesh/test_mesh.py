@@ -30,7 +30,7 @@ assert (tempdir)
 def mesh1d():
     """Create 1D mesh with degenerate cell"""
     mesh1d = UnitIntervalMesh(MPI.comm_world, 4)
-    mesh1d.geometry.points[4] = mesh1d.geometry.points[3]
+    mesh1d.geometry.x[4] = mesh1d.geometry.x[3]
     return mesh1d
 
 
@@ -41,7 +41,7 @@ def mesh2d():
         MPI.comm_world, [np.array([0.0, 0.0, 0.0]),
                          np.array([1., 1., 0.0])], [1, 1],
         CellType.triangle, cpp.mesh.GhostMode.none, 'left')
-    mesh2d.geometry.points[3, :2] += 0.5 * (math.sqrt(3.0) - 1.0)
+    mesh2d.geometry.x[3, :2] += 0.5 * (math.sqrt(3.0) - 1.0)
     return mesh2d
 
 
@@ -49,13 +49,13 @@ def mesh2d():
 def mesh3d():
     """Create 3D mesh with regular tetrahedron and degenerate cells"""
     mesh3d = UnitCubeMesh(MPI.comm_world, 1, 1, 1)
-    i1 = np.where((mesh3d.geometry.points
+    i1 = np.where((mesh3d.geometry.x
                    == (0, 1, 0)).all(axis=1))[0][0]
-    i2 = np.where((mesh3d.geometry.points
+    i2 = np.where((mesh3d.geometry.x
                    == (1, 1, 1)).all(axis=1))[0][0]
 
-    mesh3d.geometry.points[i1][0] = 1.0
-    mesh3d.geometry.points[i2][1] = 0.0
+    mesh3d.geometry.x[i1][0] = 1.0
+    mesh3d.geometry.x[i2][1] = 0.0
     return mesh3d
 
 
@@ -171,21 +171,21 @@ def test_mesh_construction_pygmsh():
 
     mesh = Mesh(MPI.comm_world, dolfinx.cpp.mesh.CellType.tetrahedron, points,
                 cells['tetra'], [], cpp.mesh.GhostMode.none)
-    assert mesh.degree() == 1
+    assert mesh.geometry.degree() == 1
     assert mesh.geometry.dim == 3
     assert mesh.topology.dim == 3
 
     mesh = Mesh(MPI.comm_world,
                 dolfinx.cpp.mesh.CellType.triangle, points,
                 cells['triangle'], [], cpp.mesh.GhostMode.none)
-    assert mesh.degree() == 1
+    assert mesh.geometry.degree() == 1
     assert mesh.geometry.dim == 3
     assert mesh.topology.dim == 2
 
     mesh = Mesh(MPI.comm_world,
                 dolfinx.cpp.mesh.CellType.interval, points,
                 cells['line'], [], cpp.mesh.GhostMode.none)
-    assert mesh.degree() == 1
+    assert mesh.geometry.degree() == 1
     assert mesh.geometry.dim == 3
     assert mesh.topology.dim == 1
 
@@ -207,13 +207,13 @@ def test_mesh_construction_pygmsh():
 
     mesh = Mesh(MPI.comm_world, dolfinx.cpp.mesh.CellType.tetrahedron, points,
                 cells['tetra10'], [], cpp.mesh.GhostMode.none)
-    assert mesh.degree() == 2
+    assert mesh.geometry.degree() == 2
     assert mesh.geometry.dim == 3
     assert mesh.topology.dim == 3
 
     mesh = Mesh(MPI.comm_world, dolfinx.cpp.mesh.CellType.triangle, points,
                 cells['triangle6'], [], cpp.mesh.GhostMode.none)
-    assert mesh.degree() == 2
+    assert mesh.geometry.degree() == 2
     assert mesh.geometry.dim == 3
     assert mesh.topology.dim == 2
 
@@ -280,7 +280,7 @@ def test_hash():
 def test_GetCoordinates():
     """Get coordinates of vertices"""
     mesh = UnitSquareMesh(MPI.comm_world, 5, 5)
-    assert len(mesh.geometry.points) == 36
+    assert len(mesh.geometry.x) == 36
 
 
 def test_GetCells():
@@ -523,11 +523,11 @@ def test_custom_partition(tempdir, mesh_factory):
     assert mesh.num_entities_global(dim) == dist_mesh.num_entities_global(dim)
 
 
-def test_coords():
+def xtest_coords():
     mesh = UnitCubeMesh(MPI.comm_world, 4, 4, 5)
-    d = mesh.coordinate_dofs().entity_points()
+    d = mesh.geometry.dofmap()
     d += 2
-    assert np.array_equal(d, mesh.coordinate_dofs().entity_points())
+    assert np.array_equal(d, mesh.geometry.dofmap())
 
 
 def test_UnitHexMesh_assemble():

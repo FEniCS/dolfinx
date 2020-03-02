@@ -24,6 +24,12 @@ namespace common
 class IndexMap;
 }
 
+namespace graph
+{
+template <typename T>
+class AdjacencyList;
+}
+
 namespace mesh
 {
 class Topology;
@@ -47,7 +53,7 @@ public:
   /// of indices.
   DofMap(std::shared_ptr<const ElementDofLayout> element_dof_layout,
          std::shared_ptr<const common::IndexMap> index_map,
-         const Eigen::Array<std::int32_t, Eigen::Dynamic, 1>& dofmap);
+         const graph::AdjacencyList<std::int32_t>& dofmap);
 
 public:
   // Copy constructor

@@ -50,6 +50,28 @@ public:
     std::copy(offsets.begin(), offsets.end(), _offsets.data());
   }
 
+  /// Construct adjacency list from array of data
+  /// @param [in] data Adjacency array
+  /// @param [in] offsets The index to the adjacency list in the data
+  ///   array for node i
+  AdjacencyList(const Eigen::Array<T, Eigen::Dynamic, 1>& data,
+                const Eigen::Array<std::int32_t, Eigen::Dynamic, 1>& offsets)
+      : _array(data), _offsets(offsets)
+  {
+    // Do nothing
+  }
+
+  /// Construct adjacency list from array of data
+  /// @param [in] data Adjacency array
+  /// @param [in] offsets The index to the adjacency list in the data
+  ///   array for node i
+  AdjacencyList(Eigen::Array<T, Eigen::Dynamic, 1>&& data,
+                Eigen::Array<std::int32_t, Eigen::Dynamic, 1>&& offsets)
+      : _array(std::move(data)), _offsets(std::move(offsets))
+  {
+    // Do nothing
+  }
+
   /// Construct adjacency list for a problem with a fixed number of
   /// links (edges) for each node
   /// @param [in] matrix Two-dimensional array of adjacency data where
@@ -104,10 +126,17 @@ public:
   ~AdjacencyList() = default;
 
   /// Assignment
-  AdjacencyList& operator=(const AdjacencyList& connectivity) = default;
+  AdjacencyList& operator=(const AdjacencyList& list) = default;
 
   /// Move assignment
-  AdjacencyList& operator=(AdjacencyList&& connectivity) = default;
+  AdjacencyList& operator=(AdjacencyList&& list) = default;
+
+  /// Equality operator
+  bool operator==(const AdjacencyList& list) const
+  {
+    return (this->_array == list._array).all()
+           and (this->_offsets == list._offsets).all();
+  }
 
   /// Number of nodes
   /// @return The number of nodes
@@ -162,22 +191,13 @@ public:
   }
 
   /// Return informal string representation (pretty-print)
-  std::string str(bool verbose) const
+  std::string str() const
   {
     std::stringstream s;
-    if (verbose)
-    {
-      s << str(false) << std::endl << std::endl;
-      for (Eigen::Index e = 0; e < _offsets.size() - 1; e++)
-      {
-        s << "  " << e << ":";
-        for (std::int32_t i = _offsets[e]; i < _offsets[e + 1]; i++)
-          s << " " << _array[i];
-        s << std::endl;
-      }
-    }
-    else
-      s << "<Adjacency graph with " << this->num_nodes() << "  nodes>";
+    s << "<AdjacencyList> with " + std::to_string(this->num_nodes()) + " nodes"
+      << std::endl;
+    for (Eigen::Index e = 0; e < _offsets.size() - 1; e++)
+      s << "  " << e << ": " << this->links(e).transpose() << std::endl;
 
     return s.str();
   }
@@ -188,6 +208,6 @@ private:
 
   // Position of first connection for each entity (using local index)
   Eigen::Array<std::int32_t, Eigen::Dynamic, 1> _offsets;
-};
+}; // namespace graph
 } // namespace graph
 } // namespace dolfinx

@@ -171,7 +171,7 @@ def test_mesh_function_assign_2D_vertices():
             assert f2.values[vertices[i]] == g.get_value(c, i)
 
 
-def xtest_mvc_construction_array_tet_tri():
+def test_mvc_construction_array_tet_tri():
     import pygmsh
 
     geom = pygmsh.opencascade.Geometry()
@@ -216,7 +216,7 @@ def xtest_mvc_construction_array_tet_tri():
         [],
         cpp.mesh.GhostMode.none,
     )
-    assert mesh.degree() == 1
+    assert mesh.geometry.degree() == 1
     assert mesh.geometry.dim == 3
     assert mesh.topology.dim == 3
 
@@ -245,7 +245,7 @@ def xtest_mvc_construction_array_tet_tri():
     assert mvc_tetra.get_value(0, 0) == 6
 
 
-def xtest_mvc_construction_array_hex_quad():
+def test_mvc_construction_array_hex_quad():
     import pygmsh
 
     geom = pygmsh.opencascade.Geometry()
@@ -295,7 +295,7 @@ def xtest_mvc_construction_array_hex_quad():
         cpp.mesh.GhostMode.none,
     )
 
-    assert mesh.degree() == 1
+    assert mesh.geometry.degree() == 1
     assert mesh.geometry.dim == 3
     assert mesh.topology.dim == 3
 

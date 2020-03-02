@@ -12,7 +12,6 @@
 #include <dolfinx/function/FunctionSpace.h>
 #include <dolfinx/graph/AdjacencyList.h>
 #include <dolfinx/la/utils.h>
-#include <dolfinx/mesh/CoordinateDofs.h>
 #include <dolfinx/mesh/Geometry.h>
 #include <dolfinx/mesh/Mesh.h>
 #include <dolfinx/mesh/Topology.h>
@@ -105,7 +104,7 @@ void fem::impl::assemble_cells(
 
   // Prepare cell geometry
   const graph::AdjacencyList<std::int32_t>& connectivity_g
-      = mesh.coordinate_dofs().entity_points();
+      = mesh.geometry().dofmap();
   const Eigen::Array<std::int32_t, Eigen::Dynamic, 1>& pos_g
       = connectivity_g.offsets();
   const Eigen::Array<std::int32_t, Eigen::Dynamic, 1>& cell_g
@@ -113,7 +112,7 @@ void fem::impl::assemble_cells(
   // FIXME: Add proper interface for num coordinate dofs
   const int num_dofs_g = connectivity_g.num_links(0);
   const Eigen::Array<double, Eigen::Dynamic, 3, Eigen::RowMajor>& x_g
-      = mesh.geometry().points();
+      = mesh.geometry().x();
 
   // Data structures used in assembly
   Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
@@ -203,7 +202,7 @@ void fem::impl::assemble_exterior_facets(
 
   // Prepare cell geometry
   const graph::AdjacencyList<std::int32_t>& connectivity_g
-      = mesh.coordinate_dofs().entity_points();
+      = mesh.geometry().dofmap();
   const Eigen::Array<std::int32_t, Eigen::Dynamic, 1>& pos_g
       = connectivity_g.offsets();
   const Eigen::Array<std::int32_t, Eigen::Dynamic, 1>& cell_g
@@ -211,7 +210,7 @@ void fem::impl::assemble_exterior_facets(
   // FIXME: Add proper interface for num coordinate dofs
   const int num_dofs_g = connectivity_g.num_links(0);
   const Eigen::Array<double, Eigen::Dynamic, 3, Eigen::RowMajor>& x_g
-      = mesh.geometry().points();
+      = mesh.geometry().x();
 
   // Data structures used in assembly
   Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
@@ -320,7 +319,7 @@ void fem::impl::assemble_interior_facets(
 
   // Prepare cell geometry
   const graph::AdjacencyList<std::int32_t>& connectivity_g
-      = mesh.coordinate_dofs().entity_points();
+      = mesh.geometry().dofmap();
   const Eigen::Array<std::int32_t, Eigen::Dynamic, 1>& pos_g
       = connectivity_g.offsets();
   const Eigen::Array<std::int32_t, Eigen::Dynamic, 1>& cell_g
@@ -328,7 +327,7 @@ void fem::impl::assemble_interior_facets(
   // FIXME: Add proper interface for num coordinate dofs
   const int num_dofs_g = connectivity_g.num_links(0);
   const Eigen::Array<double, Eigen::Dynamic, 3, Eigen::RowMajor>& x_g
-      = mesh.geometry().points();
+      = mesh.geometry().x();
 
   // Data structures used in assembly
   Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>

@@ -217,7 +217,7 @@ xdmf_utils::get_point_data_values(const function::Function& u)
 
   // FIXME: Unpick the below code for the new layout of data from
   //        GenericFunction::compute_vertex_values
-  const std::size_t num_local_points = mesh->geometry().num_points();
+  const std::size_t num_local_points = mesh->geometry().x().rows();
   std::vector<PetscScalar> _data_values(width * num_local_points, 0.0);
 
   const std::size_t value_rank = u.value_rank();
@@ -333,10 +333,10 @@ std::string xdmf_utils::vtk_cell_type_str(mesh::CellType cell_type, int order)
       {mesh::CellType::interval, {{1, "PolyLine"}, {2, "Edge_3"}}},
       {mesh::CellType::triangle, {{1, "Triangle"}, {2, "Triangle_6"}}},
       {mesh::CellType::quadrilateral,
-       {{1, "Quadrilateral"}, {2, "Quadrilateral_8"}}},
+       {{1, "Quadrilateral"}, {2, "Quadrilateral_9"}}},
       {mesh::CellType::tetrahedron,
        {{1, "Tetrahedron"}, {2, "Tetrahedron_10"}}},
-      {mesh::CellType::hexahedron, {{1, "Hexahedron"}, {2, "Hexahedron_20"}}}};
+      {mesh::CellType::hexahedron, {{1, "Hexahedron"}, {2, "Hexahedron_27"}}}};
 
   // Get cell family
   auto cell = vtk_map.find(cell_type);

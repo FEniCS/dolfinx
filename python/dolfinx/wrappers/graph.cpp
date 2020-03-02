@@ -9,6 +9,7 @@
 #include <dolfinx/graph/GraphBuilder.h>
 #include <dolfinx/mesh/Mesh.h>
 #include <pybind11/eigen.h>
+#include <pybind11/operators.h>
 #include <pybind11/pybind11.h>
 #include <pybind11/stl.h>
 #include <vector>
@@ -19,8 +20,6 @@ namespace dolfinx_wrappers
 {
 void graph(py::module& m)
 {
-  // dolfinx::Set
-  py::class_<dolfinx::common::Set<int>>(m, "DOLFINIntSet");
 
   // dolfinx::graph::AdjacencyList class
   py::class_<dolfinx::graph::AdjacencyList<std::int64_t>,
@@ -39,7 +38,11 @@ void graph(py::module& m)
           py::return_value_policy::reference_internal)
       .def("array", &dolfinx::graph::AdjacencyList<std::int64_t>::array)
       .def_property_readonly(
-          "num_nodes", &dolfinx::graph::AdjacencyList<std::int64_t>::num_nodes);
+          "num_nodes", &dolfinx::graph::AdjacencyList<std::int64_t>::num_nodes)
+      .def("__eq__", &dolfinx::graph::AdjacencyList<std::int64_t>::operator==,
+           py::is_operator())
+      .def("__repr__", &dolfinx::graph::AdjacencyList<std::int64_t>::str)
+      .def("__len__", &dolfinx::graph::AdjacencyList<std::int64_t>::num_nodes);
 
   // dolfinx::graph::AdjacencyList class
   py::class_<dolfinx::graph::AdjacencyList<std::int32_t>,
@@ -62,7 +65,11 @@ void graph(py::module& m)
            "Index to each node in the links array",
            py::return_value_policy::reference_internal)
       .def_property_readonly(
-          "num_nodes", &dolfinx::graph::AdjacencyList<std::int32_t>::num_nodes);
+          "num_nodes", &dolfinx::graph::AdjacencyList<std::int32_t>::num_nodes)
+      .def("__eq__", &dolfinx::graph::AdjacencyList<std::int32_t>::operator==,
+           py::is_operator())
+      .def("__repr__", &dolfinx::graph::AdjacencyList<std::int32_t>::str)
+      .def("__len__", &dolfinx::graph::AdjacencyList<std::int32_t>::num_nodes);
 
   // dolfinx::Graph
   py::class_<dolfinx::graph::Graph>(m, "Graph");

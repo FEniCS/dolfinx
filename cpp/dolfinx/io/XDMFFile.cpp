@@ -977,7 +977,7 @@ void XDMFFile::write_mesh_value_collection(
   const std::int64_t num_values = MPI::sum(mesh->mpi_comm(), value_data.size());
   xdmf_write::add_data_item(_mpi_comm.comm(), topology_node, h5_id,
                             mvc_dataset_name + "/topology", topology_data,
-                            {num_values, num_vertices_per_cell}, "UInt");
+                            {num_values, num_vertices_per_cell}, "Int");
 
   // Add geometry node (share with main mesh::Mesh)
   pugi::xml_node geometry_node = mvc_grid_node.append_child("Geometry");
@@ -1113,7 +1113,7 @@ XDMFFile::read_mesh_value_collection(std::shared_ptr<const mesh::Mesh> mesh,
     }
 
     std::size_t dest
-        = MPI::index_owner(_mpi_comm.comm(), v[0], global_vertex_range);
+        = MPI::index_owner(num_processes, v[0], global_vertex_range);
     send_entities[dest].push_back(m.index());
     send_entities[dest].insert(send_entities[dest].end(), v.begin(), v.end());
   }
@@ -1159,7 +1159,7 @@ XDMFFile::read_mesh_value_collection(std::shared_ptr<const mesh::Mesh> mesh,
     std::sort(v.begin(), v.end());
 
     std::size_t dest
-        = MPI::index_owner(_mpi_comm.comm(), v[0], global_vertex_range);
+        = MPI::index_owner(num_processes, v[0], global_vertex_range);
     send_entities[dest].insert(send_entities[dest].end(), v.begin(), v.end());
     send_data[dest].push_back(values_data[i]);
     ++i;
@@ -1436,8 +1436,9 @@ XDMFFile::read_mesh_data(MPI_Comm comm) const
     // Topology data
     const std::vector<std::int64_t> tdims
         = xdmf_utils::get_dataset_shape(topology_data_node);
-    const auto topology_data = xdmf_read::get_dataset<std::int64_t>(
-        comm, topology_data_node, parent_path);
+    const std::vector<std::int64_t> topology_data
+        = xdmf_read::get_dataset<std::int64_t>(comm, topology_data_node,
+                                               parent_path);
     const std::size_t num_local_cells = topology_data.size() / npoint_per_cell;
     Eigen::Map<const Eigen::Array<std::int64_t, Eigen::Dynamic, Eigen::Dynamic,
                                   Eigen::RowMajor>>
@@ -1864,7 +1865,7 @@ void XDMFFile::write_mesh_function(const mesh::MeshFunction<T>& meshfunction)
     if (grid_empty)
     {
       xdmf_write::add_geometry_data(_mpi_comm.comm(), grid_node, h5_id, mf_name,
-                                    *mesh);
+                                    mesh->geometry());
     }
     else
     {

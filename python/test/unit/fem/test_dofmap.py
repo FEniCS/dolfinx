@@ -12,8 +12,7 @@ import pytest
 from dolfinx_utils.test.skips import skip_in_parallel
 
 from dolfinx import (MPI, FunctionSpace, Mesh, MeshEntity, UnitCubeMesh,
-                     UnitIntervalMesh, UnitSquareMesh, VectorFunctionSpace,
-                     fem)
+                     UnitIntervalMesh, UnitSquareMesh, VectorFunctionSpace, fem)
 from dolfinx.cpp.mesh import CellType, GhostMode
 from ufl import FiniteElement, MixedElement, VectorElement
 
@@ -514,18 +513,18 @@ def test_higher_order_coordinate_map(points, celltype):
     cells = np.array([range(len(points))])
     mesh = Mesh(MPI.comm_world, celltype, points,
                 cells, [], GhostMode.none)
-    V = FunctionSpace(mesh, ("Lagrange", mesh.degree()))
+    V = FunctionSpace(mesh, ("Lagrange", mesh.geometry.degree()))
 
     X = V.element.dof_reference_coordinates()
-    coord_dofs = mesh.coordinate_dofs().entity_points()
-    x_g = mesh.geometry.points
+    coord_dofs = mesh.geometry.dofmap()
+    x_g = mesh.geometry.x
 
     cmap = fem.create_coordinate_map(mesh.ufl_domain())
     x_coord_new = np.zeros([len(points), mesh.geometry.dim])
 
     i = 0
     for node in range(len(points)):
-        x_coord_new[i] = x_g[coord_dofs[0, node], :mesh.geometry.dim]
+        x_coord_new[i] = x_g[coord_dofs.links(0)[node], :mesh.geometry.dim]
         i += 1
 
     x = np.zeros(X.shape)
@@ -566,15 +565,15 @@ def test_higher_order_tetra_coordinate_map(order):
                 cells, [], GhostMode.none)
     V = FunctionSpace(mesh, ("Lagrange", order))
     X = V.element.dof_reference_coordinates()
-    coord_dofs = mesh.coordinate_dofs().entity_points()
-    x_g = mesh.geometry.points
+    coord_dofs = mesh.geometry.dofmap()
+    x_g = mesh.geometry.x
 
     cmap = fem.create_coordinate_map(mesh.ufl_domain())
     x_coord_new = np.zeros([len(points), mesh.geometry.dim])
 
     i = 0
     for node in range(len(points)):
-        x_coord_new[i] = x_g[coord_dofs[0, node], :mesh.geometry.dim]
+        x_coord_new[i] = x_g[coord_dofs.links(0)[node], :mesh.geometry.dim]
         i += 1
 
     x = np.zeros(X.shape)
