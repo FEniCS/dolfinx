@@ -46,15 +46,25 @@ graph::AdjacencyList<std::int32_t> dolfinx::graph::KaHIP::partition(
   // Call KaHIP to partition graph
   common::Timer timer1("KaHIP: call ParHIPPartitionKWay");
   const std::int32_t num_local_cells = adj_graph.num_nodes();
+
+  std::vector<unsigned long long> node_distribution;
+  const unsigned long long num_local_cells = adj_graph.num_nodes();
+  MPI::all_gather(mpi_comm, num_local_cells, node_distribution);
+  node_distribution.insert(node_distribution.begin(), 0);
+  for (std::size_t i = 1; i != node_distribution.size(); ++i)
+    node_distribution[i] += node_distribution[i - 1];
+
   std::vector<unsigned long long> part(num_local_cells);
+  std::vector<unsigned long long> adj_graph_offsets(
+      adj_graph.offsets.data(),
+      adj_graph.offsets.data() + adj_graph.offsets.size());
   int edgecut = 0;
 
-  ParHIPPartitionKWay(
-      const_cast<unsigned long long*>(node_distribution.data()),
-      const_cast<unsigned long long*>(adj_graph.offsets().data()),
-      const_cast<unsigned long long*>(adj_graph.array().data()), vwgt, adjcwgt,
-      &nparts, &imbalance, suppress_output, seed, mode, &edgecut, part.data(),
-      &mpi_comm);
+  ParHIPPartitionKWay(const_cast<unsigned long long*>(node_distribution.data()),
+                      const_cast<unsigned long long*>(adj_graph_offsets.data()),
+                      const_cast<unsigned long long*>(adj_graph.array().data()),
+                      vwgt, adjcwgt, &nparts, &imbalance, suppress_output, seed,
+                      mode, &edgecut, part.data(), &mpi_comm);
   timer1.stop();
 
   common::Timer timer2("Compute graph halo data (KaHIP)");
