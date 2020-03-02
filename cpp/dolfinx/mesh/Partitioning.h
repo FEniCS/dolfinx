@@ -11,7 +11,6 @@
 #include <cstdint>
 #include <dolfinx/common/IndexMap.h>
 #include <dolfinx/common/types.h>
-#include <dolfinx/graph/CSRGraph.h>
 #include <dolfinx/mesh/Mesh.h>
 #include <dolfinx/mesh/cell_types.h>
 #include <map>

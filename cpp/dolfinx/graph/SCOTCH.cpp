@@ -6,7 +6,6 @@
 
 #include "SCOTCH.h"
 #include "AdjacencyList.h"
-#include "CSRGraph.h"
 #include <algorithm>
 #include <dolfinx/common/MPI.h>
 #include <dolfinx/common/Timer.h>

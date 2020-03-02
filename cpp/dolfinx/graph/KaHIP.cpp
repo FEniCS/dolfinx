@@ -5,7 +5,6 @@
 // SPDX-License-Identifier:    LGPL-3.0-or-later
 
 #include "KaHIP.h"
-#include "CSRGraph.h"
 #include "Graph.h"
 #include "GraphBuilder.h"
 #include <dolfinx/common/MPI.h>
@@ -19,9 +18,9 @@ using namespace dolfinx;
 
 #ifdef HAS_KAHIP
 
-std::pair<std::vector<int>, std::map<std::int64_t, std::vector<int>>>
-dolfinx::graph::KaHIP::partition(MPI_Comm mpi_comm, int nparts,
-                                const CSRGraph<unsigned long long>& csr_graph)
+AdjacencyList<std::int32_t> dolfinx::graph::KaHIP::partition(
+    MPI_Comm mpi_comm, int nparts,
+    const AdjacencyList<unsigned long long>& adj_graph)
 {
   std::map<std::int64_t, std::vector<int>> ghost_procs;
   common::Timer timer("Compute graph partition (KaHIP)");
@@ -46,14 +45,14 @@ dolfinx::graph::KaHIP::partition(MPI_Comm mpi_comm, int nparts,
 
   // Call KaHIP to partition graph
   common::Timer timer1("KaHIP: call ParHIPPartitionKWay");
-  const std::int32_t num_local_cells = csr_graph.size();
+  const std::int32_t num_local_cells = adj_graph.num_nodes();
   std::vector<unsigned long long> part(num_local_cells);
   int edgecut = 0;
 
   ParHIPPartitionKWay(
-      const_cast<unsigned long long*>(csr_graph.node_distribution().data()),
-      const_cast<unsigned long long*>(csr_graph.nodes().data()),
-      const_cast<unsigned long long*>(csr_graph.edges().data()), vwgt, adjcwgt,
+      const_cast<unsigned long long*>(node_distribution.data()),
+      const_cast<unsigned long long*>(adj_graph.offsets().data()),
+      const_cast<unsigned long long*>(adj_graph.array().data()), vwgt, adjcwgt,
       &nparts, &imbalance, suppress_output, seed, mode, &edgecut, part.data(),
       &mpi_comm);
   timer1.stop();
@@ -61,9 +60,8 @@ dolfinx::graph::KaHIP::partition(MPI_Comm mpi_comm, int nparts,
   common::Timer timer2("Compute graph halo data (KaHIP)");
 
   // Work out halo cells for current division of dual graph
-  const auto& node_distribution = csr_graph.node_distribution();
-  const auto& xadj = csr_graph.nodes();
-  const auto& adjncy = csr_graph.edges();
+  const std::int32_t* xadj = adj_graph.offsets().data();
+  const unsigned long long* adjncy = adj_graph.array().data();
   const unsigned long long elm_begin = node_distribution[process_number];
   const unsigned long long elm_end = node_distribution[process_number + 1];
   const std::int32_t ncells = elm_end - elm_begin;
@@ -72,10 +70,9 @@ dolfinx::graph::KaHIP::partition(MPI_Comm mpi_comm, int nparts,
   // local indexing "i"
   for (int i = 0; i < ncells; i++)
   {
-    // unsigned long long j = xadj[i]; j != xadj[i + 1]; ++j)
-    for (auto other_cell : csr_graph[i])
+    for (int j = 0; j < adj_graph.num_links(i); ++j)
     {
-      // const unsigned long long other_cell = adjncy[j];
+      const unsigned long long other_cell = adj_graph.links(i)[j];
       if (other_cell < elm_begin || other_cell >= elm_end)
       {
         const int remote = std::upper_bound(node_distribution.begin(),

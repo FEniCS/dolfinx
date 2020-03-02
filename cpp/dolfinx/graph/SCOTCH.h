@@ -28,9 +28,6 @@ namespace dolfinx
 namespace graph
 {
 
-template <typename T>
-class CSRGraph;
-
 /// This class provides an interface to SCOTCH-PT (parallel version)
 
 class SCOTCH
