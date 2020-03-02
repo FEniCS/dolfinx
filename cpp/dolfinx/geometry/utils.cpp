@@ -547,6 +547,7 @@ double geometry::squared_distance(const mesh::MeshEntity& entity,
       = entity.mesh().geometry().dofmap();
 
   // Find attached cell
+  entity.mesh().create_connectivity(dim, tdim);
   auto e_to_c = entity.mesh().topology().connectivity(dim, tdim);
   assert(e_to_c);
   assert(e_to_c->num_links(entity.index()) > 0);
