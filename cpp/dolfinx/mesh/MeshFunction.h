@@ -220,16 +220,28 @@ void MeshFunction<T>::mark(
     T value)
 {
   assert(_mesh);
+  const int tdim = _mesh->topology().dim();
 
-  // Get all vertices of the mesh
+  // FIXME: This should be at vertices only
+  // Get all nodes of the mesh and  evaluate the marker function at each
+  // node
   const Eigen::Array<double, 3, Eigen::Dynamic, Eigen::RowMajor>& x
       = _mesh->geometry().x().transpose();
-
-  // Evaluate the marker function at each vertex
   Eigen::Array<bool, Eigen::Dynamic, 1> marked = mark(x);
 
+  // Get connectivities
   auto e_to_v = _mesh->topology().connectivity(_dim, 0);
   assert(e_to_v);
+  auto c_to_e = _mesh->topology().connectivity(tdim, _dim);
+  assert(c_to_e);
+  auto e_to_c = _mesh->topology().connectivity(_dim, tdim);
+  assert(e_to_c);
+  auto c_to_v = _mesh->topology().connectivity(_dim, tdim);
+  assert(c_to_v);
+
+  // Get geometry dofmap
+  const graph::AdjacencyList<std::int32_t>& x_dofmap
+      = _mesh->geometry().dofmap();
 
   // Iterate over all mesh entities of the dimension of this
   // MeshFunction
@@ -241,11 +253,32 @@ void MeshFunction<T>::mark(
     // By default, assume maker is 'true' at all vertices of this entity
     bool all_marked = true;
 
+    // Get the first cell attached to the entity
+    assert(e_to_c->num_links(e) > 0);
+    const std::int32_t c = e_to_c->links(e)[0];
+    auto cell_vertices = c_to_v->links(c);
+
+    // Get geometry dofs for this cell
+    auto x_dofs = x_dofmap.links(c);
+
     // Iterate over all vertices of this mesh entity
     auto vertices = e_to_v->links(e);
     for (int i = 0; i < vertices.rows(); ++i)
     {
-      const std::int32_t idx = vertices[i];
+      // Get local vertex index with respect to the cell
+      const std::int32_t v = vertices[i];
+      auto it = std::find(cell_vertices.data(),
+                          cell_vertices.data() + cell_vertices.rows(), v);
+      assert(it != (cell_vertices.data() + cell_vertices.rows()));
+      const int local_index = std::distance(cell_vertices.data(), it);
+
+      // FIXME: We are making an assumption here on the
+      // ElementDofLayout. We should use an ElementDofLayout to map
+      // between local vertex index an x dof index.
+
+      // Get x dof
+      const std::int32_t idx = x_dofs[local_index];
+
       all_marked = (marked[idx] && all_marked);
     }
 
