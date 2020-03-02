@@ -289,7 +289,7 @@ dolfinx::graph::SCOTCH::partition(const MPI_Comm mpi_comm, const int nparts,
       for (SCOTCH_Num j = vertloctab[i]; j < vertloctab[i + 1]; ++j)
       {
         // Any edge which connects to a different partition will be a ghost
-        const std::size_t proc_other = _cell_partition[edge_ghost_tab[j]];
+        const std::int32_t proc_other = _cell_partition[edge_ghost_tab[j]];
         if (proc_this != proc_other)
           local_node_to_dests[i].insert(proc_other);
       }
