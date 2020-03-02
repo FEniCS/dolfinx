@@ -126,7 +126,7 @@ graph::AdjacencyList<std::int32_t>
 dolfinx::graph::SCOTCH::partition(const MPI_Comm mpi_comm, const int nparts,
                                   const AdjacencyList<SCOTCH_Num>& local_graph,
                                   const std::vector<std::size_t>& node_weights,
-                                  std::int32_t num_ghost_nodes)
+                                  std::int32_t num_ghost_nodes, bool ghosting)
 {
   LOG(INFO) << "Compute graph partition using PT-SCOTCH";
   common::Timer timer("Compute graph partition (SCOTCH)");
@@ -232,9 +232,6 @@ dolfinx::graph::SCOTCH::partition(const MPI_Comm mpi_comm, const int nparts,
   if (SCOTCH_dgraphPart(&dgrafdat, nparts, &strat, _cell_partition.data()))
     throw std::runtime_error("Error during SCOTCH partitioning");
   timer2.stop();
-
-  // FIXME - make an input parameter
-  bool ghosting = false;
 
   // Create a map of local nodes to their additional destination processes,
   // due to ghosting. If no ghosting, this will remain empty.

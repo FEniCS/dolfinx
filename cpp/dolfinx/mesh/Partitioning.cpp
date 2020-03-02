@@ -687,7 +687,7 @@ PartitionData Partitioning::partition_cells(
     const Eigen::Ref<const Eigen::Array<std::int64_t, Eigen::Dynamic,
                                         Eigen::Dynamic, Eigen::RowMajor>>&
         cell_vertices,
-    const mesh::Partitioner graph_partitioner)
+    const mesh::Partitioner graph_partitioner, mesh::GhostMode ghost_mode)
 {
   LOG(INFO) << "Compute partition of cells across processes";
 
@@ -719,8 +719,10 @@ PartitionData Partitioning::partition_cells(
       graph::AdjacencyList<SCOTCH_Num> adj_graph(local_graph);
       std::vector<std::size_t> weights;
       const std::int32_t num_ghost_nodes = std::get<0>(graph_info);
-      return PartitionData(graph::SCOTCH::partition(
-          mpi_comm, (SCOTCH_Num)nparts, adj_graph, weights, num_ghost_nodes));
+      bool ghosted = (ghost_mode != mesh::GhostMode::none);
+      return PartitionData(
+          graph::SCOTCH::partition(mpi_comm, (SCOTCH_Num)nparts, adj_graph,
+                                   weights, num_ghost_nodes, ghosted));
     }
     else if (graph_partitioner == mesh::Partitioner::parmetis)
     {
@@ -826,8 +828,8 @@ mesh::Mesh Partitioning::build_distributed_mesh(
   const int nparts = dolfinx::MPI::size(comm);
 
   // Compute the cell partition
-  PartitionData cell_partition
-      = partition_cells(comm, nparts, cell_type, cells, graph_partitioner);
+  PartitionData cell_partition = partition_cells(comm, nparts, cell_type, cells,
+                                                 graph_partitioner, ghost_mode);
 
   // Build mesh from local mesh data and provided cell partition
   mesh::Mesh mesh = Partitioning::build_from_partition(

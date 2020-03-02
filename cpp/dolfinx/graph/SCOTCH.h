@@ -39,7 +39,7 @@ public:
   partition(const MPI_Comm mpi_comm, const int nparts,
             const AdjacencyList<SCOTCH_Num>& local_graph,
             const std::vector<std::size_t>& node_weights,
-            std::int32_t num_ghost_nodes);
+            std::int32_t num_ghost_nodes, bool ghosting);
 
   /// Compute reordering (map[old] -> new) using Gibbs-Poole-Stockmeyer
   /// (GPS) re-ordering

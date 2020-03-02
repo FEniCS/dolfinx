@@ -407,7 +407,7 @@ graph::AdjacencyList<std::int32_t> PartitioningNew::partition_cells(
 
   // Call partitioner
   graph::AdjacencyList<std::int32_t> partition = graph::SCOTCH::partition(
-      comm, (SCOTCH_Num)n, adj_graph, weights, num_ghost_nodes);
+      comm, (SCOTCH_Num)n, adj_graph, weights, num_ghost_nodes, false);
 
   return partition;
 }
