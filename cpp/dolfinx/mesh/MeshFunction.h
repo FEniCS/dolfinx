@@ -220,16 +220,44 @@ void MeshFunction<T>::mark(
     T value)
 {
   assert(_mesh);
+  const int tdim = _mesh->topology().dim();
 
-  // Get all vertices of the mesh
+  // FIXME: This should be at vertices only
+  // Get all nodes of the mesh and  evaluate the marker function at each
+  // node
   const Eigen::Array<double, 3, Eigen::Dynamic, Eigen::RowMajor>& x
       = _mesh->geometry().x().transpose();
-
-  // Evaluate the marker function at each vertex
   Eigen::Array<bool, Eigen::Dynamic, 1> marked = mark(x);
 
+  // Get connectivities
   auto e_to_v = _mesh->topology().connectivity(_dim, 0);
   assert(e_to_v);
+  auto c_to_v = _mesh->topology().connectivity(tdim, 0);
+  assert(c_to_v);
+
+  // Get geometry dofmap
+  const graph::AdjacencyList<std::int32_t>& x_dofmap
+      = _mesh->geometry().dofmap();
+
+  // Build map from vertex -> geometry dof
+  auto map_v = _mesh->topology().index_map(0);
+  assert(map_v);
+  std::vector<std::int32_t> vertex_to_x(map_v->size_local()
+                                        + map_v->num_ghosts());
+  auto map_c = _mesh->topology().index_map(tdim);
+  assert(map_c);
+  for (int c = 0; c < map_c->size_local() + map_c->num_ghosts(); ++c)
+  {
+    auto vertices = c_to_v->links(c);
+    auto dofs = x_dofmap.links(c);
+    for (int i = 0; i < vertices.rows(); ++i)
+    {
+      // FIXME: We are making an assumption here on the
+      // ElementDofLayout. We should use an ElementDofLayout to map
+      // between local vertex index an x dof index.
+      vertex_to_x[vertices[i]] = dofs(i);
+    }
+  }
 
   // Iterate over all mesh entities of the dimension of this
   // MeshFunction
@@ -245,8 +273,8 @@ void MeshFunction<T>::mark(
     auto vertices = e_to_v->links(e);
     for (int i = 0; i < vertices.rows(); ++i)
     {
-      const std::int32_t idx = vertices[i];
-      all_marked = (marked[idx] && all_marked);
+      const std::int32_t idx = vertex_to_x[vertices[i]];
+      all_marked = (marked[idx] and all_marked);
     }
 
     // If all vertices belonging to this mesh entity are marked, then
