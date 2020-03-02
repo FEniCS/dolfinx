@@ -154,8 +154,6 @@ bool CollisionPredicates::collides(const mesh::MeshEntity& entity_0,
   // Get data
   const mesh::Geometry& g0 = entity_0.mesh().geometry();
   const mesh::Geometry& g1 = entity_1.mesh().geometry();
-  // auto v0 = entity_0.entities(0);
-  // auto v1 = entity_1.entities(0);
   const std::size_t d0 = entity_0.dim();
   const std::size_t d1 = entity_1.dim();
   const int gdim = g0.dim();

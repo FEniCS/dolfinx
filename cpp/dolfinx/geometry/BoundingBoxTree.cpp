@@ -50,7 +50,6 @@ compute_bbox_of_entity(const mesh::MeshEntity& entity)
   assert(it != (cell_vertices.data() + cell_vertices.rows()));
   const int local_vertex = std::distance(cell_vertices.data(), it);
 
-  // const Eigen::Vector3d x0 = geometry.x(vertices[0]);
   const Eigen::Vector3d x0 = geometry.x(dofs(local_vertex));
   Eigen::Array<double, 2, 3, Eigen::RowMajor> b;
   b.row(0) = x0;
@@ -66,7 +65,6 @@ compute_bbox_of_entity(const mesh::MeshEntity& entity)
     const int local_vertex = std::distance(cell_vertices.data(), it);
 
     const Eigen::Vector3d x = geometry.x(dofs(local_vertex));
-    // const Eigen::Vector3d x = geometry.x(vertices[i]);
     b.row(0) = b.row(0).min(x.transpose().array());
     b.row(1) = b.row(1).max(x.transpose().array());
   }
