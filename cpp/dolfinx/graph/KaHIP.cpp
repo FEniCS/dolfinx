@@ -129,7 +129,7 @@ graph::AdjacencyList<std::int32_t> dolfinx::graph::KaHIP::partition(
   for (std::int32_t i = 0; i < ncells; i++)
   {
     const std::size_t proc_this = part[i];
-    for (unsigned long long j = xadj[i]; j < xadj[i + 1]; ++j)
+    for (std::int32_t j = xadj[i]; j < xadj[i + 1]; ++j)
     {
       const unsigned long long other_cell = adjncy[j];
       std::size_t proc_other;
@@ -167,8 +167,14 @@ graph::AdjacencyList<std::int32_t> dolfinx::graph::KaHIP::partition(
 
   timer2.stop();
 
-  return std::make_pair(std::vector<int>(part.begin(), part.end()),
-                        std::move(ghost_procs));
+  // Ignore ghosts for now - FIXME
+  std::vector<std::int32_t> part_vec(part.begin(), part.end());
+  std::vector<std::int32_t> offset(part.size() + 1);
+  std::iota(offset.begin(), offset.end(), 0);
+
+  graph::AdjacencyList<std::int32_t> partition_adj(part_vec, offset);
+
+  return partition_adj;
 }
 
 #endif
