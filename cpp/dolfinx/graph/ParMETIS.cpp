@@ -101,9 +101,9 @@ using namespace dolfinx;
 // } // namespace
 
 //-----------------------------------------------------------------------------
-std::pair<std::vector<int>, std::map<std::int64_t, std::vector<int>>>
+AdjacencyList<std::int32_t>
 dolfinx::graph::ParMETIS::partition(MPI_Comm mpi_comm, idx_t nparts,
-                                   const CSRGraph<idx_t>& csr_graph)
+                                    const CSRGraph<idx_t>& csr_graph)
 {
   std::map<std::int64_t, std::vector<int>> ghost_procs;
 
@@ -248,8 +248,11 @@ dolfinx::graph::ParMETIS::partition(MPI_Comm mpi_comm, idx_t nparts,
 
   timer2.stop();
 
-  return std::pair(std::vector<int>(part.begin(), part.end()),
-                        std::move(ghost_procs));
+  std::vector<int> dests(part.begin(), part.end());
+  std::vector<std::int32_t> offsets(dests.size() + 1);
+  std::iota(offsets.begin(), offsets.end(), 0);
+  graph::AdjacencyList<std::int32_t> adj(destinations, offsets);
+  return adj;
 }
 //-----------------------------------------------------------------------------
 template <typename T>
@@ -302,7 +305,7 @@ std::vector<int> dolfinx::graph::ParMETIS::adaptive_repartition(
 //-----------------------------------------------------------------------------
 template <typename T>
 std::vector<int> dolfinx::graph::ParMETIS::refine(MPI_Comm mpi_comm,
-                                                 const CSRGraph<T>& csr_graph)
+                                                  const CSRGraph<T>& csr_graph)
 {
   common::Timer timer("Compute graph partition (ParMETIS Refine)");
 

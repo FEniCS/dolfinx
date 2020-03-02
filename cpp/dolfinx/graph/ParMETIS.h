@@ -11,6 +11,7 @@
 #include <cstdint>
 #include <dolfinx/common/MPI.h>
 #include <dolfinx/common/types.h>
+#include <dolfinx/graph/AdjacencyList.h>
 #include <map>
 #include <string>
 #include <utility>
@@ -37,7 +38,7 @@ class ParMETIS
 #ifdef HAS_PARMETIS
 public:
   // Standard ParMETIS partition
-  static std::pair<std::vector<int>, std::map<std::int64_t, std::vector<int>>>
+  static AdjacencyList<std::int32_t>
   partition(MPI_Comm mpi_comm, idx_t nparts, const CSRGraph<idx_t>& csr_graph);
 
 private:
