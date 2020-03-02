@@ -93,7 +93,7 @@ public:
   /// @todo Remove this once all Geometry objects have an IndexMap
   ///
   /// Return the number of global points in the geometry
-  std::size_t num_points_global() const;
+  std::int64_t num_points_global() const;
 
   /// Global input indices for points (const)
   const std::vector<std::int64_t>& global_indices() const;

@@ -441,11 +441,8 @@ PartitioningNew::create_local_adjacency_list(
   for (const auto& e : global_to_local)
     local_to_global[e.second] = e.first;
 
-  // FIXME: Update AdjacencyList to avoid this
   const Eigen::Array<std::int32_t, Eigen::Dynamic, 1>& offsets
       = cells.offsets();
-  // std::vector<std::int32_t> _offsets(offsets.data(),
-  //                                    offsets.data() + offsets.rows());
   return {graph::AdjacencyList<std::int32_t>(array_local, offsets),
           std::move(local_to_global)};
 }

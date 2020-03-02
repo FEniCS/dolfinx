@@ -85,7 +85,7 @@ Eigen::Ref<const Eigen::Vector3d> Geometry::x(int n) const
   return _x.row(n).matrix().transpose();
 }
 //-----------------------------------------------------------------------------
-std::size_t Geometry::num_points_global() const
+std::int64_t Geometry::num_points_global() const
 {
   if (_index_map)
     return _index_map->size_global();

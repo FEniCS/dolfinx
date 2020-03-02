@@ -251,7 +251,23 @@ private:
   std::shared_ptr<const std::vector<bool>> _interior_facets;
 };
 
+/// @todo Avoid passing ElementDofLayout. All we need is way to extract
+/// the vertices from cells, and the CellType
+///
 /// Create distributed topology
+/// @param[in] comm MPI communicator across which the topology is
+///   distributed
+/// @param[in] cells The cell topology (list of cell 'nodes') in DOLFIN
+///   ordering and using global indices for the nodes. It contains cells
+///   that extist only on this this rank and which which have not yet
+///   been distributed via a graph partitioner. The input is typically
+///   direct from a mesh generator or from file. Cells will be
+///   distributed to other ranks.
+/// @param[in] layout Describe the association between 'nodes' in @p
+///   cells and geometry degrees-of-freedom on the element. It is used
+///   to extract the vertex entries in @p cells.
+/// @return A distributed Topology, the source rank for each cell in the
+///   new topology, and the destination rank for each cell in @p cells.
 std::tuple<Topology, std::vector<int>, std::vector<int>>
 create_topology(MPI_Comm comm, const graph::AdjacencyList<std::int64_t>& cells,
                 const fem::ElementDofLayout& layout);
