@@ -610,7 +610,7 @@ PartitioningNew::exchange(
     const auto& dests = destinations.links(i);
     for (int j = 0; j < destinations.num_links(i); ++j)
     {
-      const int dest = dests[i];
+      const int dest = dests[j];
       auto links = list.links(i);
       data_send[offset[dest]++] = i + offset_global;
       data_send[offset[dest]++] = links.rows();
