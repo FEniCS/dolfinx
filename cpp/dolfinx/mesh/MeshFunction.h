@@ -232,11 +232,16 @@ void MeshFunction<T>::mark(
   // Get connectivities
   auto e_to_v = _mesh->topology().connectivity(_dim, 0);
   assert(e_to_v);
+
+  _mesh->create_connectivity(tdim, _dim);
   auto c_to_e = _mesh->topology().connectivity(tdim, _dim);
   assert(c_to_e);
+
+  _mesh->create_connectivity(_dim, tdim);
   auto e_to_c = _mesh->topology().connectivity(_dim, tdim);
   assert(e_to_c);
-  auto c_to_v = _mesh->topology().connectivity(_dim, tdim);
+
+  auto c_to_v = _mesh->topology().connectivity(tdim, 0);
   assert(c_to_v);
 
   // Get geometry dofmap
