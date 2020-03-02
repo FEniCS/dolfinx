@@ -57,7 +57,6 @@ def test_rank0():
         for i, cell in enumerate(pos[:-1]):
             num_vertices = pos[i + 1] - pos[i]
             c = x_dofmap[cell:cell + num_vertices]
-            c = x_dofmap[cell:cell + num_vertices]
             for j in range(3):
                 for k in range(2):
                     geometry[j, k] = x[c[j], k]
