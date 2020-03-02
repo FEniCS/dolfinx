@@ -411,6 +411,12 @@ graph::AdjacencyList<std::int32_t> PartitioningNew::partition_cells(
   graph::AdjacencyList<std::int32_t> partition = graph::SCOTCH::partition(
       comm, (SCOTCH_Num)n, csr_graph, weights, num_ghost_nodes);
 
+  // FIXME: for now, all cells are unghosted and go to only one destination
+  //
+  std::vector<int> offsets(part.size() + 1);
+  std::iota(offsets.begin(), offsets.end(), 0);
+  graph::AdjacencyList partition(part, offsets);
+
   return partition;
 }
 //-----------------------------------------------------------------------------
