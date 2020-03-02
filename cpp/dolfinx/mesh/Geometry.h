@@ -146,6 +146,7 @@ private:
 };
 
 /// Build Geometry
+/// FIXME: document
 mesh::Geometry create_geometry(
     MPI_Comm comm, const Topology& topology,
     const fem::ElementDofLayout& layout,

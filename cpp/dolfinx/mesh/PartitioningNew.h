@@ -74,7 +74,7 @@ public:
   ///   appear only once across all processes. The cell vertex indices
   ///   are not necessarily contiguous globally, i.e. the maximum index
   ///   across all processes can be greater than the number of vertices.
-  /// @return Destination process for each cell on this process
+  /// @return Destination processes for each cell on this process
   static graph::AdjacencyList<std::int32_t>
   partition_cells(MPI_Comm comm, int n, const mesh::CellType cell_type,
                   const graph::AdjacencyList<std::int64_t>& cells);
@@ -122,8 +122,7 @@ public:
   /// @param[in] comm MPI communicator
   /// @param[in] list An adjacency list. Each node is associated with a
   ///   global index (index_local + global offset)
-  /// @param[in] destinations The destination rank for each node in the
-  ///   adjacency list
+  /// @param[in] destinations The destination ranks for each node in list
   /// @param[in] sources Ranks that will send data to this process
   /// @return Re-distributed adjacency list and the original global
   ///   index of each node
