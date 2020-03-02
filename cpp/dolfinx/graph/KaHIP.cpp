@@ -45,7 +45,6 @@ graph::AdjacencyList<std::int32_t> dolfinx::graph::KaHIP::partition(
 
   // Call KaHIP to partition graph
   common::Timer timer1("KaHIP: call ParHIPPartitionKWay");
-  const std::int32_t num_local_cells = adj_graph.num_nodes();
 
   std::vector<unsigned long long> node_distribution;
   const unsigned long long num_local_cells = adj_graph.num_nodes();
@@ -56,8 +55,8 @@ graph::AdjacencyList<std::int32_t> dolfinx::graph::KaHIP::partition(
 
   std::vector<unsigned long long> part(num_local_cells);
   std::vector<unsigned long long> adj_graph_offsets(
-      adj_graph.offsets.data(),
-      adj_graph.offsets.data() + adj_graph.offsets.size());
+      adj_graph.offsets().data(),
+      adj_graph.offsets().data() + adj_graph.offsets().size());
   int edgecut = 0;
 
   ParHIPPartitionKWay(const_cast<unsigned long long*>(node_distribution.data()),
