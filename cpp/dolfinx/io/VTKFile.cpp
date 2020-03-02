@@ -164,7 +164,7 @@ std::string init(const mesh::Mesh& mesh, const std::string filename,
       = mesh.topology().index_map(cell_dim)->size_local();
 
   // Number of points in mesh (can be more than the number of vertices)
-  const int num_nodes = mesh.geometry().points().rows();
+  const int num_nodes = mesh.geometry().x().rows();
 
   // Write headers
   vtk_header_open(num_nodes, num_cells, vtu_filename);
@@ -400,7 +400,7 @@ void write_point_data(const function::Function& u, const mesh::Mesh& mesh,
   ss << std::scientific;
   ss << std::setprecision(16);
   const Eigen::Array<double, Eigen::Dynamic, 3, Eigen::RowMajor>& points
-      = mesh.geometry().points();
+      = mesh.geometry().x();
   for (int i = 0; i < points.rows(); ++i)
   {
     if (rank == 1 and dim == 2)
@@ -490,15 +490,15 @@ void pvtu_write_mesh(pugi::xml_node xml_node)
   pugi::xml_node cell_data_node = xml_node.append_child("PCellData");
 
   data_node = cell_data_node.append_child("PDataArray");
-  data_node.append_attribute("type") = "UInt32";
+  data_node.append_attribute("type") = "Int32";
   data_node.append_attribute("Name") = "connectivity";
 
   data_node = cell_data_node.append_child("PDataArray");
-  data_node.append_attribute("type") = "UInt32";
+  data_node.append_attribute("type") = "Int32";
   data_node.append_attribute("Name") = "offsets";
 
   data_node = cell_data_node.append_child("PDataArray");
-  data_node.append_attribute("type") = "UInt8";
+  data_node.append_attribute("type") = "Int8";
   data_node.append_attribute("Name") = "types";
 }
 //----------------------------------------------------------------------------

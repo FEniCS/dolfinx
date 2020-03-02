@@ -22,7 +22,6 @@
 #include <dolfinx/io/cells.h>
 #include <dolfinx/la/PETScVector.h>
 #include <dolfinx/la/utils.h>
-#include <dolfinx/mesh/CoordinateDofs.h>
 #include <dolfinx/mesh/DistributedMeshTools.h>
 #include <dolfinx/mesh/Mesh.h>
 #include <dolfinx/mesh/MeshEntity.h>
@@ -257,7 +256,7 @@ void HDF5File::write(const mesh::Mesh& mesh, int cell_dim,
   mesh::CellType cell_type
       = mesh::cell_entity_type(mesh.topology().cell_type(), cell_dim);
   const graph::AdjacencyList<std::int32_t>& cell_points
-      = mesh.coordinate_dofs().entity_points();
+      = mesh.geometry().dofmap();
 
   // Allowing for higher order meshes to be written to file
   std::size_t num_cell_points;
@@ -275,8 +274,7 @@ void HDF5File::write(const mesh::Mesh& mesh, int cell_dim,
     Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
         _vertex_coords;
     _vertex_coords = mesh::DistributedMeshTools::reorder_by_global_indices(
-        mesh.mpi_comm(), mesh.geometry().points(),
-        mesh.geometry().global_indices());
+        mesh.mpi_comm(), mesh.geometry().x(), mesh.geometry().global_indices());
 
     Eigen::Map<Eigen::Array<double, Eigen::Dynamic, 3, Eigen::RowMajor>> varray(
         _vertex_coords.data(), _vertex_coords.size() / 3, 3);
@@ -294,7 +292,7 @@ void HDF5File::write(const mesh::Mesh& mesh, int cell_dim,
     // Get/build topology data
     std::vector<std::int64_t> topological_data;
 
-    const std::size_t degree = mesh.degree();
+    const std::size_t degree = mesh.geometry().degree();
 
     if (degree > 1)
     {
@@ -310,9 +308,9 @@ void HDF5File::write(const mesh::Mesh& mesh, int cell_dim,
       int num_nodes_per_cell = cell_points.num_links(0);
       topological_data.reserve(num_nodes_per_cell * mesh.num_entities(tdim));
 
-      int num_nodes = mesh.coordinate_dofs().entity_points().num_links(0);
+      int num_nodes = mesh.geometry().dofmap().num_links(0);
       const std::vector<std::uint8_t> perm
-          = io::cells::dolfin_to_vtk(mesh.topology().cell_type(), num_nodes);
+          = io::cells::vtk_to_dolfin(mesh.topology().cell_type(), num_nodes);
 
       for (std::int32_t c = 0; c < mesh.num_entities(tdim); ++c)
       {
@@ -332,9 +330,9 @@ void HDF5File::write(const mesh::Mesh& mesh, int cell_dim,
           = map->global_indices(false);
 
       // Permutation to VTK ordering
-      int num_nodes = mesh.coordinate_dofs().entity_points().num_links(0);
+      int num_nodes = mesh.geometry().dofmap().num_links(0);
       const std::vector<std::uint8_t> perm
-          = io::cells::dolfin_to_vtk(mesh.topology().cell_type(), num_nodes);
+          = io::cells::vtk_to_dolfin(mesh.topology().cell_type(), num_nodes);
 
       if (cell_dim == tdim or !mpi_io)
       {
@@ -611,7 +609,7 @@ HDF5File::read_mesh_function(std::shared_ptr<const mesh::Mesh> mesh,
     // Use first vertex to decide where to send this data
     assert(topology_array.row(i).cols() > 0);
     const std::size_t send_to_process
-        = MPI::index_owner(_mpi_comm.comm(), topology_array(i, 0), max_vertex);
+        = MPI::index_owner(num_processes, topology_array(i, 0), max_vertex);
 
     send_topology[send_to_process].insert(
         send_topology[send_to_process].end(), topology_array.row(i).data(),
@@ -645,7 +643,7 @@ HDF5File::read_mesh_function(std::shared_ptr<const mesh::Mesh> mesh,
 
     // Use first vertex to decide where to send this request
     std::size_t send_to_process
-        = MPI::index_owner(_mpi_comm.comm(), cell_topology.front(), max_vertex);
+        = MPI::index_owner(num_processes, cell_topology.front(), max_vertex);
     // Map to this process and local index by appending to send data
     cell_topology.push_back(cell.index());
     cell_topology.push_back(process_number);
@@ -1293,7 +1291,7 @@ HDF5File::read_mesh_value_collection(std::shared_ptr<const mesh::Mesh> mesh,
     }
 
     std::size_t dest
-        = MPI::index_owner(_mpi_comm.comm(), v[0], global_vertex_range);
+        = MPI::index_owner(num_processes, v[0], global_vertex_range);
     send_entities[dest].push_back(m.index());
     send_entities[dest].insert(send_entities[dest].end(), v.begin(), v.end());
   }
@@ -1330,7 +1328,7 @@ HDF5File::read_mesh_value_collection(std::shared_ptr<const mesh::Mesh> mesh,
   {
     std::partial_sort_copy(it, it + num_verts_per_entity, v.begin(), v.end());
     std::size_t dest
-        = MPI::index_owner(_mpi_comm.comm(), v[0], global_vertex_range);
+        = MPI::index_owner(num_processes, v[0], global_vertex_range);
     send_entities[dest].insert(send_entities[dest].end(), v.begin(), v.end());
     send_data[dest].push_back(values_data[i]);
     ++i;

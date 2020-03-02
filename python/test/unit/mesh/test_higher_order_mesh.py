@@ -15,7 +15,8 @@ from dolfinx_utils.test.skips import skip_in_parallel
 from sympy.vector import CoordSys3D, matrix_to_vector
 
 from dolfinx import MPI, Function, FunctionSpace, Mesh, fem
-from dolfinx.cpp.io import permutation_vtk_to_dolfin, permute_cell_ordering
+from dolfinx.cpp.io import (permutation_dolfin_to_vtk,
+                            permutation_vtk_to_dolfin, permute_cell_ordering)
 from dolfinx.cpp.mesh import CellType, GhostMode
 from dolfinx.fem import assemble_scalar
 from dolfinx.io import XDMFFile
@@ -67,6 +68,24 @@ def sympy_scipy(points, nodes, L, H):
 
 
 @skip_in_parallel
+@pytest.mark.parametrize("vtk,dolfin,cell_type", [
+    ([0, 1, 2, 3, 4, 5], [0, 1, 2, 4, 5, 3], CellType.triangle),
+    ([0, 1, 2, 3], [0, 3, 1, 2], CellType.quadrilateral),
+    ([0, 1, 2, 3, 4, 5, 6, 7], [0, 4, 3, 7, 1, 5, 2, 6], CellType.hexahedron)
+])
+def test_permute_vtk_to_dolfin(vtk, dolfin, cell_type):
+    p = permutation_vtk_to_dolfin(cell_type, len(vtk))
+    cell_p = permute_cell_ordering([vtk], p)
+    # print(cell_p)
+    # print(dolfin)
+    assert (cell_p == dolfin).all()
+
+    p = permutation_dolfin_to_vtk(cell_type, len(vtk))
+    cell_p = permute_cell_ordering([dolfin], p)
+    assert (cell_p == vtk).all()
+
+
+@skip_in_parallel
 def test_second_order_tri():
     # Test second order mesh by computing volume of two cells
     #  *-----*-----*   3----6-----2
@@ -90,7 +109,7 @@ def test_second_order_tri():
 
             def e2(x):
                 return x[2] + x[0] * x[1]
-            degree = mesh.degree()
+            degree = mesh.geometry.degree()
             # Interpolate function
             V = FunctionSpace(mesh, ("CG", degree))
             u = Function(V)
@@ -135,7 +154,7 @@ def test_third_order_tri():
 
             def e2(x):
                 return x[2] + x[0] * x[1]
-            degree = mesh.degree()
+            degree = mesh.geometry.degree()
             # Interpolate function
             V = FunctionSpace(mesh, ("CG", degree))
             u = Function(V)
@@ -187,7 +206,7 @@ def test_fourth_order_tri():
 
             def e2(x):
                 return x[2] + x[0] * x[1]
-            degree = mesh.degree()
+            degree = mesh.geometry.degree()
             # Interpolate function
             V = FunctionSpace(mesh, ("CG", degree))
             u = Function(V)

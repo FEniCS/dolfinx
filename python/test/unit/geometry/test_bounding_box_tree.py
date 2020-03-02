@@ -74,7 +74,7 @@ def test_compute_collisions_tree_1d(point, cells):
     mesh_A = UnitIntervalMesh(MPI.comm_world, 16)
     mesh_B = UnitIntervalMesh(MPI.comm_world, 16)
 
-    bgeom = mesh_B.geometry.points
+    bgeom = mesh_B.geometry.x
     bgeom += point
 
     tree_A = BoundingBoxTree(mesh_A, mesh_A.topology.dim)
@@ -93,7 +93,7 @@ def test_compute_collisions_tree_1d(point, cells):
 def test_compute_collisions_tree_2d(point, cells):
     mesh_A = UnitSquareMesh(MPI.comm_world, 4, 4)
     mesh_B = UnitSquareMesh(MPI.comm_world, 4, 4)
-    bgeom = mesh_B.geometry.points
+    bgeom = mesh_B.geometry.x
     bgeom += point
     tree_A = BoundingBoxTree(mesh_A, mesh_A.topology.dim)
     tree_B = BoundingBoxTree(mesh_B, mesh_B.topology.dim)
@@ -121,7 +121,7 @@ def test_compute_collisions_tree_3d():
         mesh_A = UnitCubeMesh(MPI.comm_world, 2, 2, 2)
         mesh_B = UnitCubeMesh(MPI.comm_world, 2, 2, 2)
 
-        bgeom = mesh_B.geometry.points
+        bgeom = mesh_B.geometry.x
         bgeom += point
 
         tree_A = BoundingBoxTree(mesh_A, mesh_A.topology.dim)
@@ -177,7 +177,7 @@ def test_compute_entity_collisions_tree_1d(point, cells):
     mesh_A = UnitIntervalMesh(MPI.comm_world, 16)
     mesh_B = UnitIntervalMesh(MPI.comm_world, 16)
 
-    bgeom = mesh_B.geometry.points
+    bgeom = mesh_B.geometry.x
     bgeom += point
 
     tree_A = BoundingBoxTree(mesh_A, mesh_A.topology.dim)
@@ -200,7 +200,7 @@ def test_compute_entity_collisions_tree_2d():
         mesh_A = UnitSquareMesh(MPI.comm_world, 4, 4)
         mesh_B = UnitSquareMesh(MPI.comm_world, 4, 4)
 
-        bgeom = mesh_B.geometry.points
+        bgeom = mesh_B.geometry.x
         bgeom += point
 
         tree_A = BoundingBoxTree(mesh_A, mesh_A.topology.dim)
@@ -225,7 +225,7 @@ def test_compute_entity_collisions_tree_3d():
         mesh_A = UnitCubeMesh(MPI.comm_world, 2, 2, 2)
         mesh_B = UnitCubeMesh(MPI.comm_world, 2, 2, 2)
 
-        bgeom = mesh_B.geometry.points
+        bgeom = mesh_B.geometry.x
         bgeom += point
 
         tree_A = BoundingBoxTree(mesh_A, mesh_A.topology.dim)

@@ -184,9 +184,14 @@ void remap_meshfunction_data(mesh::MeshFunction<T>& meshfunction,
   // determined by the lowest global vertex index of the entity
   std::vector<std::vector<std::int64_t>> send_topology(num_processes);
   std::vector<std::vector<T>> send_values(num_processes);
-  const std::size_t max_vertex = mesh->num_entities_global(0);
+
+  auto map0 = mesh->topology().index_map(0);
+  assert(map0);
+  const std::size_t max_vertex = map0->size_global();
+
   for (std::size_t i = 0; i < num_entities; ++i)
   {
+    // FIXME: This dynamic allocation inside a loop is bad
     std::vector<std::int64_t> cell_topology(
         topology_data.begin() + i * vertices_per_entity,
         topology_data.begin() + (i + 1) * vertices_per_entity);
@@ -194,7 +199,7 @@ void remap_meshfunction_data(mesh::MeshFunction<T>& meshfunction,
 
     // Use first vertex to decide where to send this data
     const std::size_t destination_process
-        = MPI::index_owner(comm, cell_topology.front(), max_vertex);
+        = MPI::index_owner(num_processes, cell_topology.front(), max_vertex);
 
     send_topology[destination_process].insert(
         send_topology[destination_process].end(), cell_topology.begin(),
@@ -207,6 +212,12 @@ void remap_meshfunction_data(mesh::MeshFunction<T>& meshfunction,
   MPI::all_to_all(comm, send_topology, receive_topology);
   MPI::all_to_all(comm, send_values, receive_values);
 
+  auto map = mesh->topology().index_map(cell_dim);
+  assert(map);
+  assert(map->block_size() == 1);
+  auto c_to_v = mesh->topology().connectivity(cell_dim, 0);
+  assert(c_to_v);
+
   // Generate requests for data from remote processes, based on the
   // first vertex of the mesh::MeshEntities which belong on this process
   // Send our process number, and our local index, so it can come back
@@ -214,25 +225,23 @@ void remap_meshfunction_data(mesh::MeshFunction<T>& meshfunction,
   std::vector<std::vector<std::int64_t>> send_requests(num_processes);
   const std::size_t rank = MPI::rank(comm);
   const std::vector<std::int64_t>& global_indices
-      = mesh->topology().get_global_user_vertices();
-  for (auto& cell : mesh::MeshRange(*mesh, cell_dim, mesh::MeshRangeType::ALL))
+      = mesh->topology().get_global_vertices_user();
+
+  const int num_cells = map->size_local() + map->num_ghosts();
+  for (int c = 0; c < num_cells; ++c)
   {
     std::vector<std::int64_t> cell_topology;
-    if (cell_dim == 0)
-      cell_topology.push_back(global_indices[cell.index()]);
-    else
-    {
-      for (auto& v : mesh::EntityRange(cell, 0))
-        cell_topology.push_back(global_indices[v.index()]);
-    }
+    auto vertices = c_to_v->links(c);
+    for (int v = 0; v < vertices.rows(); ++v)
+      cell_topology.push_back(global_indices[vertices(v)]);
 
     std::sort(cell_topology.begin(), cell_topology.end());
 
     // Use first vertex to decide where to send this request
     std::size_t send_to_process
-        = MPI::index_owner(comm, cell_topology.front(), max_vertex);
+        = MPI::index_owner(num_processes, cell_topology.front(), max_vertex);
     // Map to this process and local index by appending to send data
-    cell_topology.push_back(cell.index());
+    cell_topology.push_back(c);
     cell_topology.push_back(rank);
     send_requests[send_to_process].insert(send_requests[send_to_process].end(),
                                           cell_topology.begin(),

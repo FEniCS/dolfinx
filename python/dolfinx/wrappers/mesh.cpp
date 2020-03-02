@@ -10,7 +10,6 @@
 #include <dolfinx/common/types.h>
 #include <dolfinx/fem/CoordinateElement.h>
 #include <dolfinx/fem/ElementDofLayout.h>
-#include <dolfinx/mesh/CoordinateDofs.h>
 #include <dolfinx/mesh/Geometry.h>
 #include <dolfinx/mesh/Mesh.h>
 #include <dolfinx/mesh/MeshEntity.h>
@@ -54,8 +53,11 @@ void mesh(py::module& m)
   m.def("to_type", &dolfinx::mesh::to_type);
   m.def("is_simplex", &dolfinx::mesh::is_simplex);
 
+  m.def("cell_dim", &dolfinx::mesh::cell_dim);
   m.def("cell_num_entities", &dolfinx::mesh::cell_num_entities);
   m.def("cell_num_vertices", &dolfinx::mesh::num_cell_vertices);
+  m.def("get_entity_vertices", &dolfinx::mesh::get_entity_vertices);
+
 
   m.def("extract_topology", &dolfinx::mesh::extract_topology);
 
@@ -83,52 +85,32 @@ void mesh(py::module& m)
       .value("kahip", dolfinx::mesh::Partitioner::kahip)
       .value("parmetis", dolfinx::mesh::Partitioner::parmetis);
 
-  // dolfinx::mesh::CoordinateDofs class
-  py::class_<dolfinx::mesh::CoordinateDofs,
-             std::shared_ptr<dolfinx::mesh::CoordinateDofs>>(
-      m, "CoordinateDofs", "CoordinateDofs object")
-      .def(
-          "entity_points",
-          [](const dolfinx::mesh::CoordinateDofs& self) {
-            const dolfinx::graph::AdjacencyList<std::int32_t>& connectivity
-                = self.entity_points();
-            Eigen::Ref<const Eigen::Array<std::int32_t, Eigen::Dynamic, 1>>
-                connections = connectivity.array();
-            const int num_entities = connectivity.offsets().size() - 1;
-
-            // FIXME: mesh::CoordinateDofs should know its dimension
-            // (entity_size) to handle empty case on a process.
-            int entity_size = 0;
-            if (num_entities > 0)
-            {
-              assert(connections.size() % num_entities == 0);
-              entity_size = connections.size() / num_entities;
-            }
-            return py::array({num_entities, entity_size}, connections.data(),
-                             py::none());
-          },
-          py::return_value_policy::reference_internal);
-
   // dolfinx::mesh::Geometry class
   py::class_<dolfinx::mesh::Geometry, std::shared_ptr<dolfinx::mesh::Geometry>>(
       m, "Geometry", "Geometry object")
+      .def(py::init<std::shared_ptr<const dolfinx::common::IndexMap>,
+                    const dolfinx::graph::AdjacencyList<std::int32_t>&,
+                    const Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic,
+                                       Eigen::RowMajor>&,
+                    const std::vector<std::int64_t>&, int>())
       .def_property_readonly("dim", &dolfinx::mesh::Geometry::dim,
                              "Geometric dimension")
-      .def("num_points", &dolfinx::mesh::Geometry::num_points)
+      .def("degree", &dolfinx::mesh::Geometry::degree)
+      .def("dofmap",
+           py::overload_cast<>(&dolfinx::mesh::Geometry::dofmap, py::const_))
       .def("num_points_global", &dolfinx::mesh::Geometry::num_points_global)
       .def("global_indices", &dolfinx::mesh::Geometry::global_indices)
-      .def("x", &dolfinx::mesh::Geometry::x,
-           py::return_value_policy::reference_internal,
-           "Return coordinates of a point")
+      .def("point",
+           py::overload_cast<int>(&dolfinx::mesh::Geometry::x, py::const_))
       .def_property(
-          "points",
+          "x",
           // Get
-          py::overload_cast<>(&dolfinx::mesh::Geometry::points),
+          py::overload_cast<>(&dolfinx::mesh::Geometry::x),
           // Set
           [](dolfinx::mesh::Geometry& self,
              const Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic,
                                 Eigen::RowMajor>& values) {
-            self.points() = values;
+            self.x() = values;
           },
           py::return_value_policy::reference_internal,
           "Return coordinates of all points")
@@ -160,6 +142,8 @@ void mesh(py::module& m)
       .def("get_face_rotations", &dolfinx::mesh::Topology::get_face_rotations)
       .def_property_readonly("dim", &dolfinx::mesh::Topology::dim,
                              "Topological dimension")
+      .def("set_global_vertices_user",
+           &dolfinx::mesh::Topology::set_global_vertices_user)
       .def("connectivity",
            py::overload_cast<int, int>(&dolfinx::mesh::Topology::connectivity,
                                        py::const_))
@@ -176,6 +160,12 @@ void mesh(py::module& m)
   // dolfinx::mesh::Mesh
   py::class_<dolfinx::mesh::Mesh, std::shared_ptr<dolfinx::mesh::Mesh>>(
       m, "Mesh", py::dynamic_attr(), "Mesh object")
+      .def(py::init(
+          [](const MPICommWrapper comm, const dolfinx::mesh::Topology& topology,
+          dolfinx::mesh::Geometry& geometry) {
+            return std::make_unique<dolfinx::mesh::Mesh>(
+                comm.get(), topology, geometry);
+          }))
       .def(py::init(
           [](const MPICommWrapper comm, dolfinx::mesh::CellType type,
              const Eigen::Ref<const Eigen::Array<
@@ -206,10 +196,6 @@ void mesh(py::module& m)
       .def_property_readonly(
           "geometry", py::overload_cast<>(&dolfinx::mesh::Mesh::geometry),
           "Mesh geometry")
-      .def("coordinate_dofs",
-           py::overload_cast<>(&dolfinx::mesh::Mesh::coordinate_dofs,
-                               py::const_))
-      .def("degree", &dolfinx::mesh::Mesh::degree)
       .def("hash", &dolfinx::mesh::Mesh::hash)
       .def("hmax", &dolfinx::mesh::Mesh::hmax)
       .def("hmin", &dolfinx::mesh::Mesh::hmin)
@@ -400,6 +386,12 @@ void mesh(py::module& m)
           return dolfinx::mesh::PartitioningNew::fetch_data(comm.get(), indices,
                                                             x);
         });
+
+  m.def("compute_local_to_global_links",
+        &dolfinx::mesh::PartitioningNew::compute_local_to_global_links);
+
+  m.def("compute_local_to_local",
+        &dolfinx::mesh::PartitioningNew::compute_local_to_local);
 
   // Old Partition
   m.def(

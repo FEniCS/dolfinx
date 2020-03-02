@@ -30,20 +30,15 @@ class Function;
 }
 namespace mesh
 {
+class Geometry;
 class Mesh;
-}
+} // namespace mesh
 
 namespace io
 {
 /// Low-level methods for generating XDMF files
 namespace xdmf_write
 {
-
-// FIXME: do not expose this
-/// Calculate set of entities of dimension cell_dim which are duplicated
-/// on other processes and should not be output on this process
-std::set<std::uint32_t> compute_nonlocal_entities(const mesh::Mesh& mesh,
-                                                  int cell_dim);
 
 /// Add set of points to XDMF xml_node and write data
 void add_points(MPI_Comm comm, pugi::xml_node& xdmf_node, hid_t h5_id,
@@ -58,7 +53,8 @@ void add_topology_data(MPI_Comm comm, pugi::xml_node& xml_node, hid_t h5_id,
 
 /// Add geometry node and data to xml_node
 void add_geometry_data(MPI_Comm comm, pugi::xml_node& xml_node, hid_t h5_id,
-                       const std::string path_prefix, const mesh::Mesh& mesh);
+                       const std::string path_prefix,
+                       const mesh::Geometry& geometry);
 
 /// Add mesh to XDMF xml_node (usually a Domain or Time Grid) and write
 /// data
@@ -154,35 +150,17 @@ std::vector<T> compute_value_data(const mesh::MeshFunction<T>& meshfunction)
   std::vector<T> value_data;
   value_data.reserve(meshfunction.values().size());
 
-  // Get mesh communicator
-  const auto mesh = meshfunction.mesh();
-  MPI_Comm comm = mesh->mpi_comm();
-
-  const int tdim = mesh->topology().dim();
+  // Get mesh
+  std::shared_ptr<const mesh::Mesh> mesh = meshfunction.mesh();
+  assert(mesh);
   const int cell_dim = meshfunction.dim();
 
-  if (dolfinx::MPI::size(comm) == 1 or cell_dim == tdim)
-  {
-    // FIXME: fail with ghosts?
-    value_data.resize(meshfunction.values().size());
-    std::copy(meshfunction.values().data(),
-              meshfunction.values().data() + meshfunction.values().size(),
-              value_data.begin());
-  }
-  else
-  {
-    std::set<std::uint32_t> non_local_entities
-        = xdmf_write::compute_nonlocal_entities(*mesh, cell_dim);
-
-    // Get reference to mesh function data array
-    const Eigen::Array<T, Eigen::Dynamic, 1>& mf_values = meshfunction.values();
-
-    for (auto& e : mesh::MeshRange(*mesh, cell_dim))
-    {
-      if (non_local_entities.find(e.index()) == non_local_entities.end())
-        value_data.push_back(mf_values[e.index()]);
-    }
-  }
+  // Get reference to mesh function data array
+  const Eigen::Array<T, Eigen::Dynamic, 1>& mf_values = meshfunction.values();
+  auto map = mesh->topology().index_map(cell_dim);
+  assert(map);
+  for (int e = 0; e < map->size_local(); ++e)
+    value_data.push_back(mf_values[e]);
 
   return value_data;
 }

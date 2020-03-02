@@ -45,7 +45,7 @@ public:
   /// @param[in] dim The dimension of the entities to create
   /// @return Tuple of (cell-entity connectivity, entity-vertex
   ///   connectivity, index map). If the entities already exist, then
-  ///   {nullptr, nullptr, nullptr, std::map} is returned.
+  ///   {nullptr, nullptr, nullptr} is returned.
   static std::tuple<std::shared_ptr<graph::AdjacencyList<std::int32_t>>,
                     std::shared_ptr<graph::AdjacencyList<std::int32_t>>,
                     std::shared_ptr<common::IndexMap>>

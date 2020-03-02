@@ -115,7 +115,7 @@ void fem(py::module& m)
       [](std::uintptr_t e) {
         ufc_coordinate_mapping* p
             = reinterpret_cast<ufc_coordinate_mapping*>(e);
-        return dolfinx::fem::get_cmap_from_ufc_cmap(*p);
+        return dolfinx::fem::create_coordinate_map(*p);
       },
       "Create a CoordinateElement object from a pointer to a "
       "ufc_coordinate_map.");
@@ -258,7 +258,7 @@ void fem(py::module& m)
       m, "DofMap", "DofMap object")
       .def(py::init<std::shared_ptr<const dolfinx::fem::ElementDofLayout>,
                     std::shared_ptr<const dolfinx::common::IndexMap>,
-                    const Eigen::Array<std::int32_t, Eigen::Dynamic, 1>&>(),
+                    dolfinx::graph::AdjacencyList<std::int32_t>&>(),
            py::arg("element_dof_layout"), py::arg("index_map"),
            py::arg("dofmap"))
       .def_readonly("index_map", &dolfinx::fem::DofMap::index_map)

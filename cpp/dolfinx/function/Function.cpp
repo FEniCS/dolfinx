@@ -18,7 +18,6 @@
 #include <dolfinx/graph/AdjacencyList.h>
 #include <dolfinx/la/PETScVector.h>
 #include <dolfinx/la/utils.h>
-#include <dolfinx/mesh/CoordinateDofs.h>
 #include <dolfinx/mesh/Geometry.h>
 #include <dolfinx/mesh/Mesh.h>
 #include <dolfinx/mesh/Topology.h>
@@ -177,7 +176,7 @@ void Function::eval(
 
   // Get geometry data
   const graph::AdjacencyList<std::int32_t>& connectivity_g
-      = mesh.coordinate_dofs().entity_points();
+      = mesh.geometry().dofmap();
   const Eigen::Array<std::int32_t, Eigen::Dynamic, 1>& pos_g
       = connectivity_g.offsets();
   const Eigen::Array<std::int32_t, Eigen::Dynamic, 1>& cell_g
@@ -186,7 +185,7 @@ void Function::eval(
   // FIXME: Add proper interface for num coordinate dofs
   const int num_dofs_g = connectivity_g.num_links(0);
   const Eigen::Array<double, Eigen::Dynamic, 3, Eigen::RowMajor>& x_g
-      = mesh.geometry().points();
+      = mesh.geometry().x();
   Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
       coordinate_dofs(num_dofs_g, gdim);
 
@@ -357,14 +356,14 @@ Function::compute_point_values() const
 
   // Resize Array for holding point values
   Eigen::Array<PetscScalar, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
-      point_values(mesh.geometry().num_points(), value_size_loc);
+      point_values(mesh.geometry().x().rows(), value_size_loc);
 
   const graph::AdjacencyList<std::int32_t>& cell_dofs
-      = mesh.coordinate_dofs().entity_points();
+      = mesh.geometry().dofmap();
 
   // Prepare cell geometry
   const graph::AdjacencyList<std::int32_t>& connectivity_g
-      = mesh.coordinate_dofs().entity_points();
+      = mesh.geometry().dofmap();
   const Eigen::Array<std::int32_t, Eigen::Dynamic, 1>& pos_g
       = connectivity_g.offsets();
   const Eigen::Array<std::int32_t, Eigen::Dynamic, 1>& cell_g
@@ -372,7 +371,7 @@ Function::compute_point_values() const
   // FIXME: Add proper interface for num coordinate dofs
   const int num_dofs_g = connectivity_g.num_links(0);
   const Eigen::Array<double, Eigen::Dynamic, 3, Eigen::RowMajor>& x_g
-      = mesh.geometry().points();
+      = mesh.geometry().x();
 
   // Interpolate point values on each cell (using last computed value if
   // not continuous, e.g. discontinuous Galerkin methods)
