@@ -8,6 +8,7 @@
 
 #include <cstdint>
 #include <dolfinx/common/MPI.h>
+#include <dolfinx/graph/AdjacencyList.h>
 #include <map>
 #include <string>
 #include <utility>
@@ -28,8 +29,6 @@ namespace graph
 {
 
 template <typename T>
-class AdjacencyList;
-template <typename T>
 class CSRGraph;
 
 /// This class provides an interface to SCOTCH-PT (parallel version)
@@ -39,7 +38,7 @@ class SCOTCH
 public:
   /// Compute cell partitions from distributed dual graph. Returns
   /// (partition, ghost_proc)
-  static std::pair<std::vector<int>, std::map<std::int64_t, std::vector<int>>>
+  static AdjacencyList<std::int32_t>
   partition(const MPI_Comm mpi_comm, const int nparts,
             const CSRGraph<SCOTCH_Num>& local_graph,
             const std::vector<std::size_t>& node_weights,

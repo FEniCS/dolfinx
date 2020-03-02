@@ -11,6 +11,7 @@
 #include <dolfinx/common/MPI.h>
 #include <dolfinx/common/Timer.h>
 #include <dolfinx/common/log.h>
+#include <dolfinx/graph/AdjacencyList.h>
 #include <map>
 #include <numeric>
 #include <set>
@@ -122,7 +123,7 @@ dolfinx::graph::SCOTCH::compute_reordering(
   return std::pair(std::move(permutation), std::move(inverse_permutation));
 }
 //-----------------------------------------------------------------------------
-std::pair<std::vector<int>, std::map<std::int64_t, std::vector<int>>>
+graph::AdjacencyList<std::int32_t>
 dolfinx::graph::SCOTCH::partition(const MPI_Comm mpi_comm, const int nparts,
                                   const CSRGraph<SCOTCH_Num>& local_graph,
                                   const std::vector<std::size_t>& node_weights,
@@ -306,11 +307,14 @@ dolfinx::graph::SCOTCH::partition(const MPI_Comm mpi_comm, const int nparts,
   SCOTCH_dgraphExit(&dgrafdat);
   SCOTCH_stratExit(&strat);
 
-  // Only copy the local nodes partition information. Ghost process
-  // data is already in the ghost_procs map
+  // Only copy the local nodes partition information for now.
 
-  return std::pair(std::vector<int>(_cell_partition.begin(),
-                                    _cell_partition.begin() + vertlocnbr),
-                   std::move(ghost_procs));
+  std::vector<std::int32_t> destinations(_cell_partition.begin(),
+                                         _cell_partition.begin() + vertlocnbr);
+  std::vector<std::int32_t> offsets(destinations.size() + 1);
+  std::iota(offsets.begin(), offsets.end(), 0);
+  graph::AdjacencyList<std::int32_t> adj(destinations, offsets);
+
+  return adj;
 }
 //-----------------------------------------------------------------------------

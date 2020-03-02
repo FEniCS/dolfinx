@@ -38,6 +38,17 @@ PartitionData::PartitionData(
   // Do nothing
 }
 //-----------------------------------------------------------------------------
+PartitionData::PartitionData(const graph::AdjacencyList<std::int32_t>& adj)
+{
+  auto offsets = adj.offsets();
+  _offset.resize(offsets.size());
+  std::copy(offsets.data(), offsets.data() + offsets.size(), _offset.begin());
+
+  auto dests = adj.array();
+  _dest_processes.resize(dests.size());
+  std::copy(dests.data(), dests.data() + dests.size(), _dest_processes.begin());
+}
+//-----------------------------------------------------------------------------
 std::int32_t PartitionData::num_procs(std::int32_t i) const
 {
   return _offset[i + 1] - _offset[i];
