@@ -156,54 +156,6 @@ std::vector<std::uint8_t> io::cells::vtk_to_dolfin(mesh::CellType type,
   }
 }
 //-----------------------------------------------------------------------------
-// std::vector<std::uint8_t> io::cells::lex_to_tp(mesh::CellType type,
-//                                                int num_nodes)
-// {
-//   switch (type)
-//   {
-//   case mesh::CellType::quadrilateral:
-//   {
-//     assert((std::sqrt(num_nodes) - std::floor(std::sqrt(num_nodes))) == 0);
-//     // Number of nodes in each direction
-//     const int n = sqrt(num_nodes);
-
-//     std::vector<std::uint8_t> permutation(num_nodes);
-//     std::vector<std::uint8_t> rows(n);
-//     std::iota(std::next(rows.begin()), std::prev(rows.end()), 2);
-//     rows.front() = 0;
-//     rows.back() = 1;
-
-//     int j = 0;
-//     for (auto row : rows)
-//     {
-//       permutation[j] = row;
-//       permutation[j + n - 1] = n + row;
-//       j++;
-//       for (int index = 0; index < n - 2; ++index)
-//       {
-//         permutation[j] = (2 + index) * n + row;
-//         j++;
-//       }
-//       j++;
-//     }
-//     return permutation;
-//   }
-//   case mesh::CellType::hexahedron:
-//   {
-//     switch (num_nodes)
-//     {
-//     case 8:
-//       return {0, 4, 2, 6, 1, 5, 3, 7};
-//     default:
-//       throw std::runtime_error("Higher order hexahedron not supported.");
-//     }
-//   }
-//   default:
-//     throw std::runtime_error("Simplicies can be expressed as
-//     TensorProduct.");
-//   }
-// }
-//-----------------------------------------------------------------------------
 std::vector<std::uint8_t> io::cells::dolfin_to_vtk(mesh::CellType type,
                                                    int num_nodes)
 {

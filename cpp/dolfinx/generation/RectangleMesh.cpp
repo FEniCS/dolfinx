@@ -28,7 +28,7 @@ mesh::Mesh build_tri(MPI_Comm comm, const std::array<Eigen::Vector3d, 2>& p,
     Eigen::Array<double, 0, 2, Eigen::RowMajor> geom(0, 2);
     Eigen::Array<std::int64_t, 0, 3, Eigen::RowMajor> topo(0, 3);
 
-    // New mesh builder
+    // TODO: New mesh builder
     // return mesh::create(comm, graph::AdjacencyList<std::int64_t>(topo),
     //                     mesh::CellType::triangle, geom);
 
@@ -197,7 +197,7 @@ mesh::Mesh build_tri(MPI_Comm comm, const std::array<Eigen::Vector3d, 2>& p,
     }
   }
 
-  // New Mesh builder
+  // TODO: New Mesh builder
   // return mesh::create(comm, graph::AdjacencyList<std::int64_t>(topo),
   //                     mesh::CellType::triangle, geom);
 
