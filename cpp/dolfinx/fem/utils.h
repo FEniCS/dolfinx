@@ -161,7 +161,7 @@ pack_coefficients(const fem::Form& form);
 
 // NOTE: This is subject to change
 /// Pack form constants ready for assembly
-std::vector<PetscScalar>
+Eigen::Array<PetscScalar, Eigen::Dynamic, 1>
 pack_constants(const fem::Form& form);
 
 } // namespace fem

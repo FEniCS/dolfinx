@@ -41,7 +41,8 @@ void fem::impl::assemble_matrix(Mat A, const Form& a,
   // Prepare constants
   if (!a.all_constants_set())
     throw std::runtime_error("Unset constant in Form");
-  const std::vector<PetscScalar> constant_values = pack_constants(a);
+  const Eigen::Array<PetscScalar, Eigen::Dynamic, 1> constant_values
+      = pack_constants(a);
 
   // Prepare coefficients
   const Eigen::Array<PetscScalar, Eigen::Dynamic, Eigen::Dynamic,
@@ -96,7 +97,7 @@ void fem::impl::assemble_cells(
                              const std::uint8_t*)>& kernel,
     const Eigen::Array<PetscScalar, Eigen::Dynamic, Eigen::Dynamic,
                        Eigen::RowMajor>& coeffs,
-    const std::vector<PetscScalar>& constant_values)
+    const Eigen::Array<PetscScalar, Eigen::Dynamic, 1>& constant_values)
 {
   assert(A);
   const int gdim = mesh.geometry().dim();
@@ -192,7 +193,7 @@ void fem::impl::assemble_exterior_facets(
                              const std::uint8_t*)>& fn,
     const Eigen::Array<PetscScalar, Eigen::Dynamic, Eigen::Dynamic,
                        Eigen::RowMajor>& coeffs,
-    const std::vector<PetscScalar> constant_values)
+    const Eigen::Array<PetscScalar, Eigen::Dynamic, 1> constant_values)
 {
   const int gdim = mesh.geometry().dim();
   const int tdim = mesh.topology().dim();
@@ -309,7 +310,7 @@ void fem::impl::assemble_interior_facets(
     const Eigen::Array<PetscScalar, Eigen::Dynamic, Eigen::Dynamic,
                        Eigen::RowMajor>& coeffs,
     const std::vector<int>& offsets,
-    const std::vector<PetscScalar>& constant_values)
+    const Eigen::Array<PetscScalar, Eigen::Dynamic, 1>& constant_values)
 {
   const int gdim = mesh.geometry().dim();
   const int tdim = mesh.topology().dim();

@@ -760,17 +760,21 @@ fem::pack_coefficients(const fem::Form& form)
   return c;
 }
 //-----------------------------------------------------------------------------
-std::vector<PetscScalar> fem::pack_constants(const fem::Form& form)
+Eigen::Array<PetscScalar, Eigen::Dynamic, 1>
+fem::pack_constants(const fem::Form& form)
 {
   const std::vector<
       std::pair<std::string, std::shared_ptr<const function::Constant>>>
       constants = form.constants();
-  std::vector<PetscScalar> constant_values;
+  Eigen::Array<PetscScalar, Eigen::Dynamic, 1> constant_values;
   for (auto& constant : constants)
   {
     const std::vector<PetscScalar>& array = constant.second->value;
-    constant_values.insert(constant_values.end(), array.data(),
-                           array.data() + array.size());
+    for (std::size_t k = 0; k < array.size(); ++k)
+    {
+      constant_values.conservativeResize(constant_values.size() + 1);
+      constant_values.tail(1) = array[k];
+    }
   }
   return constant_values;
 }

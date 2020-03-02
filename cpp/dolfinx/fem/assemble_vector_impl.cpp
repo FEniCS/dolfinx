@@ -82,7 +82,8 @@ void _lift_bc_cells(
   // Prepare constants
   if (!a.all_constants_set())
     throw std::runtime_error("Unset constant in Form");
-  const std::vector<PetscScalar> constant_values = pack_constants(a);
+  const Eigen::Array<PetscScalar, Eigen::Dynamic, 1> constant_values
+      = pack_constants(a);
 
   const Eigen::Ref<const Eigen::Array<bool, Eigen::Dynamic, Eigen::Dynamic>>
       cell_edge_reflections = mesh.topology().get_edge_reflections();
@@ -219,7 +220,8 @@ void _lift_bc_exterior_facets(
   // Prepare constants
   if (!a.all_constants_set())
     throw std::runtime_error("Unset constant in Form");
-  const std::vector<PetscScalar> constant_values = pack_constants(a);
+  const Eigen::Array<PetscScalar, Eigen::Dynamic, 1> constant_values
+      = pack_constants(a);
 
   // Iterate over owned facets
   const mesh::Topology& topology = mesh.topology();
@@ -339,7 +341,8 @@ void fem::impl::assemble_vector(
   // Prepare constants
   if (!L.all_constants_set())
     throw std::runtime_error("Unset constant in Form");
-  const std::vector<PetscScalar> constant_values = pack_constants(L);
+  const Eigen::Array<PetscScalar, Eigen::Dynamic, 1> constant_values
+      = pack_constants(L);
 
   // Prepare coefficients
   const Eigen::Array<PetscScalar, Eigen::Dynamic, Eigen::Dynamic,
@@ -390,7 +393,7 @@ void fem::impl::assemble_cells(
                              const std::uint8_t*)>& kernel,
     const Eigen::Array<PetscScalar, Eigen::Dynamic, Eigen::Dynamic,
                        Eigen::RowMajor>& coeffs,
-    const std::vector<PetscScalar>& constant_values)
+    const Eigen::Array<PetscScalar, Eigen::Dynamic, 1>& constant_values)
 {
   const int gdim = mesh.geometry().dim();
 
@@ -458,7 +461,7 @@ void fem::impl::assemble_exterior_facets(
                              const std::uint8_t*)>& fn,
     const Eigen::Array<PetscScalar, Eigen::Dynamic, Eigen::Dynamic,
                        Eigen::RowMajor>& coeffs,
-    const std::vector<PetscScalar>& constant_values)
+    const Eigen::Array<PetscScalar, Eigen::Dynamic, 1>& constant_values)
 {
   const int gdim = mesh.geometry().dim();
   const int tdim = mesh.topology().dim();
@@ -552,7 +555,7 @@ void fem::impl::assemble_interior_facets(
     const Eigen::Array<PetscScalar, Eigen::Dynamic, Eigen::Dynamic,
                        Eigen::RowMajor>& coeffs,
     const std::vector<int>& offsets,
-    const std::vector<PetscScalar>& constant_values)
+    const Eigen::Array<PetscScalar, Eigen::Dynamic, 1>& constant_values)
 {
   const int gdim = mesh.geometry().dim();
   const int tdim = mesh.topology().dim();
