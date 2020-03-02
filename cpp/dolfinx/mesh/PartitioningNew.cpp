@@ -404,18 +404,12 @@ graph::AdjacencyList<std::int32_t> PartitioningNew::partition_cells(
       = graph_info;
 
   // Build CSR graph
-  graph::CSRGraph<SCOTCH_Num> csr_graph(comm, local_graph);
+  graph::AdjacencyList<SCOTCH_Num> adj_graph(local_graph);
   std::vector<std::size_t> weights;
 
   // Call partitioner
   graph::AdjacencyList<std::int32_t> partition = graph::SCOTCH::partition(
-      comm, (SCOTCH_Num)n, csr_graph, weights, num_ghost_nodes);
-
-  // FIXME: for now, all cells are unghosted and go to only one destination
-  //
-  std::vector<int> offsets(part.size() + 1);
-  std::iota(offsets.begin(), offsets.end(), 0);
-  graph::AdjacencyList partition(part, offsets);
+      comm, (SCOTCH_Num)n, adj_graph, weights, num_ghost_nodes);
 
   return partition;
 }

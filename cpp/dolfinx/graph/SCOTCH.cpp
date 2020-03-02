@@ -148,15 +148,15 @@ dolfinx::graph::SCOTCH::partition(const MPI_Comm mpi_comm, const int nparts,
   const std::size_t vertgstnbr = vertlocnbr + num_ghost_nodes;
 
   // Get graph data
-
   const SCOTCH_Num* edgeloctab = local_graph.array().data();
+  const std::int32_t edgeloctab_size = local_graph.array().size();
   const SCOTCH_Num* vertloctab = local_graph.offsets().data();
 
   // Global data ---------------------------------
 
   // Number of local vertices (cells) on each process
   std::vector<SCOTCH_Num> proccnttab(num_processes);
-  MPI::all_gather(_mpi_comm.comm(), vertlocnbr, proccnttab);
+  MPI::all_gather(mpi_comm, vertlocnbr, proccnttab);
 
 #ifdef DEBUG
   // FIXME: explain this test
@@ -188,11 +188,11 @@ dolfinx::graph::SCOTCH::partition(const MPI_Comm mpi_comm, const int nparts,
   // Build SCOTCH distributed graph. SCOTCH is not const-correct, so we throw
   // away constness and trust SCOTCH.
   common::Timer timer1("SCOTCH: call SCOTCH_dgraphBuild");
-  if (SCOTCH_dgraphBuild(
-          &dgrafdat, baseval, vertlocnbr, vertlocnbr,
-          const_cast<SCOTCH_Num*>(vertloctab.data()), nullptr, vload.data(),
-          nullptr, edgeloctab.size(), edgeloctab.size(),
-          const_cast<SCOTCH_Num*>(edgeloctab.data()), nullptr, nullptr))
+  if (SCOTCH_dgraphBuild(&dgrafdat, baseval, vertlocnbr, vertlocnbr,
+                         const_cast<SCOTCH_Num*>(vertloctab), nullptr,
+                         vload.data(), nullptr, edgeloctab_size,
+                         edgeloctab_size, const_cast<SCOTCH_Num*>(edgeloctab),
+                         nullptr, nullptr))
   {
     throw std::runtime_error("Error building SCOTCH graph");
   }
@@ -235,7 +235,7 @@ dolfinx::graph::SCOTCH::partition(const MPI_Comm mpi_comm, const int nparts,
   timer2.stop();
 
   // FIXME - make an input parameter
-  bool ghosting = true;
+  bool ghosting = false;
 
   // Create a map of local nodes to their additional destination processes,
   // due to ghosting. If no ghosting, this will remain empty.

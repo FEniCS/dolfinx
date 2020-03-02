@@ -717,11 +717,11 @@ PartitionData Partitioning::partition_cells(
     // Compute cell partition using partitioner from parameter system
     if (graph_partitioner == mesh::Partitioner::scotch)
     {
-      graph::CSRGraph<SCOTCH_Num> csr_graph(mpi_comm, local_graph);
+      graph::AdjacencyList<SCOTCH_Num> adj_graph(local_graph);
       std::vector<std::size_t> weights;
       const std::int32_t num_ghost_nodes = std::get<0>(graph_info);
       return PartitionData(graph::SCOTCH::partition(
-          mpi_comm, (SCOTCH_Num)nparts, csr_graph, weights, num_ghost_nodes));
+          mpi_comm, (SCOTCH_Num)nparts, adj_graph, weights, num_ghost_nodes));
     }
     else if (graph_partitioner == mesh::Partitioner::parmetis)
     {
