@@ -25,11 +25,33 @@ Eigen::Array<double, 2, 3, Eigen::RowMajor>
 compute_bbox_of_entity(const mesh::MeshEntity& entity)
 {
   // Get mesh entity data
+  const int tdim = entity.mesh().topology().dim();
+  const int dim = entity.dim();
   const mesh::Geometry& geometry = entity.mesh().geometry();
+  const graph::AdjacencyList<std::int32_t>& x_dofmap = geometry.dofmap();
+
+  entity.mesh().create_connectivity(dim, tdim);
+
+  // Find attached cell
+  auto e_to_c = entity.mesh().topology().connectivity(dim, tdim);
+  assert(e_to_c);
+  assert(e_to_c->num_links(entity.index()) > 0);
+  const std::int32_t c = e_to_c->links(entity.index())[0];
+
+  auto dofs = x_dofmap.links(c);
+  auto c_to_v = entity.mesh().topology().connectivity(tdim, 0);
+  assert(c_to_v);
+  auto cell_vertices = c_to_v->links(c);
+
   auto vertices = entity.entities(0);
   assert(vertices.rows() >= 2);
+  auto it = std::find(cell_vertices.data(),
+                      cell_vertices.data() + cell_vertices.rows(), vertices[0]);
+  assert(it != (cell_vertices.data() + cell_vertices.rows()));
+  const int local_vertex = std::distance(cell_vertices.data(), it);
 
-  const Eigen::Vector3d x0 = geometry.x(vertices[0]);
+  // const Eigen::Vector3d x0 = geometry.x(vertices[0]);
+  const Eigen::Vector3d x0 = geometry.x(dofs(local_vertex));
   Eigen::Array<double, 2, 3, Eigen::RowMajor> b;
   b.row(0) = x0;
   b.row(1) = x0;
@@ -37,7 +59,14 @@ compute_bbox_of_entity(const mesh::MeshEntity& entity)
   // Compute min and max over remaining vertices
   for (int i = 1; i < vertices.rows(); ++i)
   {
-    const Eigen::Vector3d x = geometry.x(vertices[i]);
+    auto it
+        = std::find(cell_vertices.data(),
+                    cell_vertices.data() + cell_vertices.rows(), vertices[i]);
+    assert(it != (cell_vertices.data() + cell_vertices.rows()));
+    const int local_vertex = std::distance(cell_vertices.data(), it);
+
+    const Eigen::Vector3d x = geometry.x(dofs(local_vertex));
+    // const Eigen::Vector3d x = geometry.x(vertices[i]);
     b.row(0) = b.row(0).min(x.transpose().array());
     b.row(1) = b.row(1).max(x.transpose().array());
   }
