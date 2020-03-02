@@ -18,9 +18,9 @@ using namespace dolfinx;
 
 #ifdef HAS_KAHIP
 
-AdjacencyList<std::int32_t> dolfinx::graph::KaHIP::partition(
+graph::AdjacencyList<std::int32_t> dolfinx::graph::KaHIP::partition(
     MPI_Comm mpi_comm, int nparts,
-    const AdjacencyList<unsigned long long>& adj_graph)
+    const graph::AdjacencyList<unsigned long long>& adj_graph)
 {
   std::map<std::int64_t, std::vector<int>> ghost_procs;
   common::Timer timer("Compute graph partition (KaHIP)");
