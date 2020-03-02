@@ -18,9 +18,9 @@ using namespace dolfinx;
 
 #ifdef HAS_PARMETIS
 //-----------------------------------------------------------------------------
-AdjacencyList<std::int32_t>
-dolfinx::graph::ParMETIS::partition(MPI_Comm mpi_comm, idx_t nparts,
-                                    const AdjacencyList<idx_t>& adj_graph)
+graph::AdjacencyList<std::int32_t> dolfinx::graph::ParMETIS::partition(
+    MPI_Comm mpi_comm, idx_t nparts,
+    const graph::AdjacencyList<idx_t>& adj_graph)
 {
   std::map<std::int64_t, std::vector<int>> ghost_procs;
 
@@ -68,7 +68,7 @@ dolfinx::graph::ParMETIS::partition(MPI_Comm mpi_comm, idx_t nparts,
   timer1.stop();
 
   bool ghosting = false;
-
+  // FIXME: fix ghosting
   if (ghosting)
   {
     common::Timer timer2("Compute graph halo data (ParMETIS)");
@@ -88,8 +88,10 @@ dolfinx::graph::ParMETIS::partition(MPI_Comm mpi_comm, idx_t nparts,
     // local indexing "i"
     for (int i = 0; i < ncells; i++)
     {
-      for (auto other_cell : adj_graph[i])
+      for (int j = 0; j < adj_graph.num_links(i); ++j)
       {
+        idx_t other_cell = adj_graph.links(i)[j];
+
         if (other_cell < elm_begin || other_cell >= elm_end)
         {
           const int remote
@@ -180,13 +182,13 @@ dolfinx::graph::ParMETIS::partition(MPI_Comm mpi_comm, idx_t nparts,
   std::vector<int> dests(part.begin(), part.end());
   std::vector<std::int32_t> offsets(dests.size() + 1);
   std::iota(offsets.begin(), offsets.end(), 0);
-  graph::AdjacencyList<std::int32_t> adj(destinations, offsets);
+  graph::AdjacencyList<std::int32_t> adj(dests, offsets);
   return adj;
 }
 //-----------------------------------------------------------------------------
 template <typename T>
 std::vector<int> dolfinx::graph::ParMETIS::adaptive_repartition(
-    MPI_Comm mpi_comm, const AdjacencyList<T>& adj_graph, double weight)
+    MPI_Comm mpi_comm, const graph::AdjacencyList<T>& adj_graph, double weight)
 {
   common::Timer timer(
       "Compute graph partition (ParMETIS Adaptive Repartition)");
@@ -235,7 +237,7 @@ std::vector<int> dolfinx::graph::ParMETIS::adaptive_repartition(
 template <typename T>
 std::vector<int>
 dolfinx::graph::ParMETIS::refine(MPI_Comm mpi_comm,
-                                 const AdjacencyList<T>& adj_graph)
+                                 const graph::AdjacencyList<T>& adj_graph)
 {
   common::Timer timer("Compute graph partition (ParMETIS Refine)");
 
