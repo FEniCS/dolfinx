@@ -382,7 +382,7 @@ PartitioningNew::reorder_global_indices(
   return {local_to_local_new, ghosts};
 }
 //-----------------------------------------------------------------------------
-std::vector<int> PartitioningNew::partition_cells(
+graph::AdjacencyList<std::int32_t> PartitioningNew::partition_cells(
     MPI_Comm comm, int n, const mesh::CellType cell_type,
     const graph::AdjacencyList<std::int64_t>& cells)
 {
@@ -408,8 +408,14 @@ std::vector<int> PartitioningNew::partition_cells(
   std::vector<std::size_t> weights;
 
   // Call partitioner
-  const auto [partition, ignore] = graph::SCOTCH::partition(
+  const auto [part, ignore] = graph::SCOTCH::partition(
       comm, (SCOTCH_Num)n, csr_graph, weights, num_ghost_nodes);
+
+  // FIXME: for now, all cells are unghosted and go to only one destination
+  //
+  std::vector<int> offsets(part.size() + 1);
+  std::iota(offsets.begin(), offsets.end(), 0);
+  graph::AdjacencyList partition(part, offsets);
 
   return partition;
 }
@@ -478,21 +484,24 @@ PartitioningNew::create_distributed_adjacency_list(
 //-----------------------------------------------------------------------------
 std::tuple<graph::AdjacencyList<std::int64_t>, std::vector<int>,
            std::vector<std::int64_t>>
-PartitioningNew::distribute(MPI_Comm comm,
-                            const graph::AdjacencyList<std::int64_t>& list,
-                            const std::vector<int>& destinations)
+PartitioningNew::distribute(
+    MPI_Comm comm, const graph::AdjacencyList<std::int64_t>& list,
+    const graph::AdjacencyList<std::int32_t>& destinations)
 {
-  assert(list.num_nodes() == (int)destinations.size());
+  assert(list.num_nodes() == (int)destinations.num_nodes());
   const std::int64_t offset_global
-      = dolfinx::MPI::global_offset(comm, destinations.size(), true);
+      = dolfinx::MPI::global_offset(comm, list.num_nodes(), true);
 
   const int size = dolfinx::MPI::size(comm);
 
   // Compute number of links to send to each process
   std::vector<int> num_per_dest_send(size, 0);
-  assert(list.num_nodes() == (int)destinations.size());
-  for (int i = 0; i < list.num_nodes(); ++i)
-    num_per_dest_send[destinations[i]] += list.num_links(i) + 2;
+  for (int i = 0; i < destinations.num_nodes(); ++i)
+  {
+    const auto& dests = destinations.links(i);
+    for (int j = 0; j < destinations.num_links(i); ++j)
+      num_per_dest_send[dests[j]] += list.num_links(i) + 2;
+  }
 
   // Compute send array displacements
   std::vector<int> disp_send(size + 1, 0);
@@ -504,7 +513,7 @@ PartitioningNew::distribute(MPI_Comm comm,
   MPI_Alltoall(num_per_dest_send.data(), 1, MPI_INT, num_per_dest_recv.data(),
                1, MPI_INT, comm);
 
-  // Compite receive array displacements
+  // Compute receive array displacements
   std::vector<int> disp_recv(size + 1, 0);
   std::partial_sum(num_per_dest_recv.begin(), num_per_dest_recv.end(),
                    disp_recv.begin() + 1);
@@ -514,12 +523,16 @@ PartitioningNew::distribute(MPI_Comm comm,
   std::vector<std::int64_t> data_send(disp_send.back());
   for (int i = 0; i < list.num_nodes(); ++i)
   {
-    const int dest = destinations[i];
-    auto links = list.links(i);
-    data_send[offset[dest]++] = i + offset_global;
-    data_send[offset[dest]++] = links.rows();
-    for (int j = 0; j < links.rows(); ++j)
-      data_send[offset[dest]++] = links(j);
+    const auto& dests = destinations.links(i);
+    for (std::int32_t j = 0; j < destinations.num_links(i); ++j)
+    {
+      std::int32_t dest = dests[j];
+      auto links = list.links(i);
+      data_send[offset[dest]++] = i + offset_global;
+      data_send[offset[dest]++] = links.rows();
+      for (int k = 0; k < links.rows(); ++k)
+        data_send[offset[dest]++] = links(k);
+    }
   }
 
   // Send/receive data
@@ -550,26 +563,29 @@ PartitioningNew::distribute(MPI_Comm comm,
 }
 //-----------------------------------------------------------------------------
 std::pair<graph::AdjacencyList<std::int64_t>, std::vector<std::int64_t>>
-PartitioningNew::exchange(MPI_Comm comm,
-                          const graph::AdjacencyList<std::int64_t>& list,
-                          const std::vector<int>& destinations,
-                          const std::set<int>&)
+PartitioningNew::exchange(
+    MPI_Comm comm, const graph::AdjacencyList<std::int64_t>& list,
+    const graph::AdjacencyList<std::int32_t>& destinations,
+    const std::set<int>&)
 {
   // TODO: This can be significantly optimised (avoiding all-to-all) by
   // sending in more information on source/dest ranks
 
-  assert(list.num_nodes() == (int)destinations.size());
+  assert(list.num_nodes() == (int)destinations.num_nodes());
 
   const std::int64_t offset_global
-      = dolfinx::MPI::global_offset(comm, destinations.size(), true);
+      = dolfinx::MPI::global_offset(comm, list.num_nodes(), true);
 
   const int size = dolfinx::MPI::size(comm);
 
   // Compute number of links to send to each process
   std::vector<int> num_per_dest_send(size, 0);
-  assert(list.num_nodes() == (int)destinations.size());
-  for (int i = 0; i < list.num_nodes(); ++i)
-    num_per_dest_send[destinations[i]] += list.num_links(i) + 2;
+  for (int i = 0; i < destinations.num_nodes(); ++i)
+  {
+    const auto& dests = destinations.links(i);
+    for (int j = 0; j < destinations.num_links(i); ++j)
+      num_per_dest_send[dests[j]] += list.num_links(i) + 2;
+  }
 
   // Compute send array displacements
   std::vector<int> disp_send(size + 1, 0);
@@ -591,12 +607,16 @@ PartitioningNew::exchange(MPI_Comm comm,
   std::vector<std::int64_t> data_send(disp_send.back());
   for (int i = 0; i < list.num_nodes(); ++i)
   {
-    const int dest = destinations[i];
-    auto links = list.links(i);
-    data_send[offset[dest]++] = i + offset_global;
-    data_send[offset[dest]++] = links.rows();
-    for (int j = 0; j < links.rows(); ++j)
-      data_send[offset[dest]++] = links(j);
+    const auto& dests = destinations.links(i);
+    for (int j = 0; j < destinations.num_links(i); ++j)
+    {
+      const int dest = dests[i];
+      auto links = list.links(i);
+      data_send[offset[dest]++] = i + offset_global;
+      data_send[offset[dest]++] = links.rows();
+      for (int k = 0; k < links.rows(); ++k)
+        data_send[offset[dest]++] = links(k);
+    }
   }
 
   // Send/receive data

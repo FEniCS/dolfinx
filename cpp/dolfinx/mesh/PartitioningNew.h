@@ -75,7 +75,7 @@ public:
   ///   are not necessarily contiguous globally, i.e. the maximum index
   ///   across all processes can be greater than the number of vertices.
   /// @return Destination process for each cell on this process
-  static std::vector<int>
+  static graph::AdjacencyList<std::int32_t>
   partition_cells(MPI_Comm comm, int n, const mesh::CellType cell_type,
                   const graph::AdjacencyList<std::int64_t>& cells);
 
@@ -108,7 +108,7 @@ public:
   /// be the local index plus the offset for this rank.
   /// @param[in] comm MPI Communicator
   /// @param[in] list An adjacency list to distribute
-  /// @param[in] destinations Destination rank for the ith node in the
+  /// @param[in] destinations Destination ranks for the ith node in the
   ///   adjacency list
   /// @return Adjacency list for this process, array of source ranks for
   ///   each node in the adjacency list, and the original global index
@@ -116,7 +116,7 @@ public:
   static std::tuple<graph::AdjacencyList<std::int64_t>, std::vector<int>,
                     std::vector<std::int64_t>>
   distribute(MPI_Comm comm, const graph::AdjacencyList<std::int64_t>& list,
-             const std::vector<int>& destinations);
+             const graph::AdjacencyList<std::int32_t>& destinations);
 
   /// Send nodes to destinations, and receive from sources
   /// @param[in] comm MPI communicator
@@ -131,7 +131,8 @@ public:
   static std::pair<graph::AdjacencyList<std::int64_t>,
                    std::vector<std::int64_t>>
   exchange(MPI_Comm comm, const graph::AdjacencyList<std::int64_t>& list,
-           const std::vector<int>& destinations, const std::set<int>& sources);
+           const graph::AdjacencyList<std::int32_t>& destinations,
+           const std::set<int>& sources);
 
   /// Distribute data to process ranks where it it required.
   ///

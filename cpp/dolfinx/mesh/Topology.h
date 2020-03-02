@@ -268,7 +268,7 @@ private:
 ///   to extract the vertex entries in @p cells.
 /// @return A distributed Topology, the source rank for each cell in the
 ///   new topology, and the destination rank for each cell in @p cells.
-std::tuple<Topology, std::vector<int>, std::vector<int>>
+std::tuple<Topology, std::vector<int>, graph::AdjacencyList<std::int32_t>>
 create_topology(MPI_Comm comm, const graph::AdjacencyList<std::int64_t>& cells,
                 const fem::ElementDofLayout& layout);
 } // namespace mesh
