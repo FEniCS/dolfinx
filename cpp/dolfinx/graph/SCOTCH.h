@@ -40,7 +40,7 @@ public:
   /// (partition, ghost_proc)
   static AdjacencyList<std::int32_t>
   partition(const MPI_Comm mpi_comm, const int nparts,
-            const CSRGraph<SCOTCH_Num>& local_graph,
+            const AdjacencyList<SCOTCH_Num>& local_graph,
             const std::vector<std::size_t>& node_weights,
             std::int32_t num_ghost_nodes);
 

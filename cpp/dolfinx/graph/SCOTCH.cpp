@@ -125,7 +125,7 @@ dolfinx::graph::SCOTCH::compute_reordering(
 //-----------------------------------------------------------------------------
 graph::AdjacencyList<std::int32_t>
 dolfinx::graph::SCOTCH::partition(const MPI_Comm mpi_comm, const int nparts,
-                                  const CSRGraph<SCOTCH_Num>& local_graph,
+                                  const AdjacencyList<SCOTCH_Num>& local_graph,
                                   const std::vector<std::size_t>& node_weights,
                                   std::int32_t num_ghost_nodes)
 {
@@ -144,21 +144,19 @@ dolfinx::graph::SCOTCH::partition(const MPI_Comm mpi_comm, const int nparts,
   // Local data ---------------------------------
 
   // Number of local graph vertices (cells)
-  const SCOTCH_Num vertlocnbr = local_graph.size();
+  const SCOTCH_Num vertlocnbr = local_graph.num_nodes();
   const std::size_t vertgstnbr = vertlocnbr + num_ghost_nodes;
 
   // Get graph data
-  const std::vector<SCOTCH_Num>& edgeloctab = local_graph.edges();
-  const std::vector<SCOTCH_Num>& vertloctab = local_graph.nodes();
+
+  const SCOTCH_Num* edgeloctab = local_graph.array().data();
+  const SCOTCH_Num* vertloctab = local_graph.offsets().data();
 
   // Global data ---------------------------------
 
   // Number of local vertices (cells) on each process
   std::vector<SCOTCH_Num> proccnttab(num_processes);
-  const std::vector<SCOTCH_Num>& graph_distribution
-      = local_graph.node_distribution();
-  for (std::size_t i = 0; i < num_processes; ++i)
-    proccnttab[i] = graph_distribution[i + 1] - graph_distribution[i];
+  MPI::all_gather(_mpi_comm.comm(), vertlocnbr, proccnttab);
 
 #ifdef DEBUG
   // FIXME: explain this test
@@ -236,6 +234,7 @@ dolfinx::graph::SCOTCH::partition(const MPI_Comm mpi_comm, const int nparts,
     throw std::runtime_error("Error during SCOTCH partitioning");
   timer2.stop();
 
+  // FIXME - make an input parameter
   bool ghosting = true;
 
   // Create a map of local nodes to their additional destination processes,
