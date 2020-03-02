@@ -13,8 +13,9 @@ using namespace dolfinx;
 
 namespace
 {
-Eigen::Array<bool, Eigen::Dynamic, 1>
-marking_function(const Eigen::Ref<const Eigen::Array<double, 3, Eigen::Dynamic, Eigen::RowMajor>>& x)
+Eigen::Array<bool, Eigen::Dynamic, 1> marking_function(
+    const Eigen::Ref<
+        const Eigen::Array<double, 3, Eigen::Dynamic, Eigen::RowMajor>>& x)
 {
   Eigen::Array<bool, 1, Eigen::Dynamic> inside(x.cols());
   inside.fill(true);
@@ -39,9 +40,11 @@ void test_mesh_function()
   {
     mesh::MeshFunction<std::size_t> mesh_function(mesh, d, 0.0);
     mesh_function.mark(marking_function, 1.0);
-    for (const auto& e : mesh::MeshRange(*mesh, d, mesh::MeshRangeType::ALL))
+    auto map = mesh->topology().index_map(d);
+    assert(map);
+    for (int e = 0; e < map->size_local() + map->num_ghosts(); ++e)
     {
-      CHECK(mesh_function.values()[e.index()] == 1.0);
+      CHECK(mesh_function.values()[e] == 1.0);
     }
   }
 }
