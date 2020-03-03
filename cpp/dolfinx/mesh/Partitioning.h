@@ -116,6 +116,7 @@ public:
   /// @param[in] cell_vertices Topological cells with global vertex
   ///   indexing. Each cell appears once only.
   /// @param[in] graph_partitioner The graph partitioner
+  /// @param[in] ghost_mode Ghost mode
   /// @return Cell partition data
   static PartitionData partition_cells(
       const MPI_Comm& comm, int nparts, const mesh::CellType cell_type,
