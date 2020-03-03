@@ -283,8 +283,7 @@ void add_mesh(MPI_Comm comm, pugi::xml_node& xml_node, hid_t h5_id,
   grid_node.append_attribute("Name") = "mesh";
   grid_node.append_attribute("GridType") = "Uniform";
 
-  // // Add topology node and attributes (including writing data)
-  std::cout << "Add t item" << std::endl;
+  // Add topology node and attributes (including writing data)
 
   const int tdim = mesh.topology().dim();
   add_topology_data(comm, grid_node, h5_id, path_prefix, mesh.topology(),
@@ -316,8 +315,6 @@ void XDMFFileNew::close()
 //-----------------------------------------------------------------------------
 void XDMFFileNew::write(const mesh::Mesh& mesh)
 {
-  std::cout << "Write 1" << std::endl;
-
   // Check that encoding
   if (_encoding == Encoding::ASCII and MPI::size(_mpi_comm.comm()) != 1)
   {
@@ -338,8 +335,6 @@ void XDMFFileNew::write(const mesh::Mesh& mesh)
     // Get file handle
     h5_id = h5_file->h5_id();
   }
-
-  std::cout << "Write 2" << std::endl;
 
   // Reset pugi doc
   _xml_doc->reset();
