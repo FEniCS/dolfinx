@@ -236,7 +236,7 @@ mesh::Mesh build_quad(MPI_Comm comm, const std::array<Eigen::Vector3d, 2>& p,
     {
       // Old mesh builder
       return mesh::Partitioning::build_distributed_mesh(
-          comm, mesh::CellType::triangle, geom, topo, {}, ghost_mode);
+          comm, mesh::CellType::quadrilateral, geom, topo, {}, ghost_mode);
     }
   }
 
@@ -284,7 +284,7 @@ mesh::Mesh build_quad(MPI_Comm comm, const std::array<Eigen::Vector3d, 2>& p,
   if (new_style)
   {
     return mesh::create(comm, graph::AdjacencyList<std::int64_t>(topo),
-                        mesh::CellType::triangle, geom);
+                        mesh::CellType::quadrilateral, geom);
   }
   else
   {
