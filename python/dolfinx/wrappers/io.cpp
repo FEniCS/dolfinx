@@ -11,6 +11,7 @@
 #include <dolfinx/io/HDF5File.h>
 #include <dolfinx/io/VTKFile.h>
 #include <dolfinx/io/XDMFFile.h>
+#include <dolfinx/io/XDMFFileNew.h>
 #include <dolfinx/io/cells.h>
 #include <dolfinx/la/PETScVector.h>
 #include <dolfinx/mesh/Mesh.h>
@@ -231,6 +232,29 @@ void io(py::module& m)
             instance.write_checkpoint(u, function_name, time_step);
           },
           py::arg("u"), py::arg("function_name"), py::arg("time_step") = 0.0);
+
+  // dolfinx::io::XDMFFileNew
+  py::class_<dolfinx::io::XDMFFileNew,
+             std::shared_ptr<dolfinx::io::XDMFFileNew>>
+      xdmf_file_new(m, "XDMFFileNew");
+
+  xdmf_file_new
+      .def(py::init([](const MPICommWrapper comm, std::string filename,
+                       dolfinx::io::XDMFFileNew::Encoding encoding) {
+             return std::make_unique<dolfinx::io::XDMFFileNew>(
+                 comm.get(), filename, encoding);
+           }),
+           py::arg("comm"), py::arg("filename"), py::arg("encoding"))
+      .def("close", &dolfinx::io::XDMFFileNew::close)
+      .def("write",
+           py::overload_cast<const dolfinx::mesh::Mesh&>(
+               &dolfinx::io::XDMFFileNew::write),
+           py::arg("mesh"));
+
+  // dolfinx::io::XDMFFileNew::Encoding enums
+  py::enum_<dolfinx::io::XDMFFileNew::Encoding>(xdmf_file_new, "Encoding")
+      .value("HDF5", dolfinx::io::XDMFFileNew::Encoding::HDF5)
+      .value("ASCII", dolfinx::io::XDMFFileNew::Encoding::ASCII);
 
   // dolfinx::io::VTKFile
   py::class_<dolfinx::io::VTKFile, std::shared_ptr<dolfinx::io::VTKFile>>
