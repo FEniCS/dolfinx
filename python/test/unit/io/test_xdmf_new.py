@@ -25,7 +25,6 @@ def worker_id(request):
         return 'master'
 
 
-# @skip_in_parallel
 def test_save_and_load_mesh(tempdir):
     # filename = os.path.join(tempdir, "mesh.xdmf")
     filename = os.path.join("mesh.xdmf")
@@ -36,14 +35,10 @@ def test_save_and_load_mesh(tempdir):
     with XDMFFileNew(mesh.mpi_comm(), filename, encoding=encoding) as file:
         file.write(mesh)
 
-    filename = os.path.join("mesh-old.xdmf")
-    mesh = UnitSquareMesh(MPI.comm_world, 2, 2, cell_type, new_style=False)
-    encoding = XDMFFile.Encoding.HDF5
-    with XDMFFile(mesh.mpi_comm(), filename, encoding=encoding) as file:
-        file.write(mesh)
-
     with XDMFFileNew(MPI.comm_world, filename) as file:
         mesh2 = file.read_mesh()
-    assert mesh.topology.index_map(0).size_global == mesh2.topology.index_map(0).size_global
+    assert mesh.topology.index_map(0).size_global == mesh2.topology.index_map(
+        0).size_global
     dim = mesh.topology.dim
-    assert mesh.topology.index_map(dim).size_global == mesh2.topology.index_map(dim).size_global
+    assert mesh.topology.index_map(
+        dim).size_global == mesh2.topology.index_map(dim).size_global
