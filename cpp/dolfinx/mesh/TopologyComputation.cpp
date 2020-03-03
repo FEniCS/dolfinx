@@ -115,7 +115,9 @@ get_local_indexing(
   // Get all "possibly shared" entities, based on vertex sharing. Send to
   // other processes, and see if we get the same back.
 
-  std::map<std::vector<std::int64_t>, std::int32_t> send_data_to_send_index;
+  // Map for sent entities to each neighbour
+  std::vector<std::map<std::vector<std::int64_t>, std::int32_t>>
+      send_data_to_send_index(neighbour_size);
 
   // Set of sharing procs for each entity, counting vertex hits
   std::unordered_map<int, int> procs;
@@ -147,14 +149,13 @@ get_local_indexing(
         vlocal.assign(entity_list.row(i).data(),
                       entity_list.row(i).data() + num_vertices);
         vglobal = vertex_indexmap->local_to_global(vlocal, false);
+        std::sort(vglobal.begin(), vglobal.end());
 
-        send_data_to_send_index.insert({vglobal, entity_index[i]});
+        send_data_to_send_index[np].insert({vglobal, entity_index[i]});
 
         // Entity entity_index[i] may be shared with process p
-        for (int j = 0; j < num_vertices; ++j)
-          send_entities[np].push_back(vglobal[j]);
-        std::sort(send_entities[np].end() - num_vertices,
-                  send_entities[np].end());
+        send_entities[np].insert(send_entities[np].end(), vglobal.begin(),
+                                 vglobal.end());
 
         send_index[np].push_back(entity_index[i]);
       }
@@ -195,8 +196,8 @@ get_local_indexing(
       recv_vec.assign(recv_entities_data.data() + j,
                       recv_entities_data.data() + j + num_vertices);
 
-      auto it = send_data_to_send_index.find(recv_vec);
-      if (it != send_data_to_send_index.end())
+      auto it = send_data_to_send_index[np].find(recv_vec);
+      if (it != send_data_to_send_index[np].end())
       {
         shared_entities[it->second].insert(p);
         recv_index.push_back(it->second);
