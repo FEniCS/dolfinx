@@ -359,3 +359,8 @@ void XDMFFileNew::write(const mesh::Mesh& mesh)
     _xml_doc->save_file(_filename.c_str(), "  ");
 }
 //-----------------------------------------------------------------------------
+mesh::Mesh XDMFFileNew::read_mesh() const
+{
+
+}
+//-----------------------------------------------------------------------------

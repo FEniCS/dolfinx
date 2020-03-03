@@ -80,6 +80,11 @@ public:
   /// @param[in] mesh The Mesh to save
   void write(const mesh::Mesh& mesh);
 
+  /// Read in the first Mesh in XDMF file
+  /// @return A Mesh distributed on the same communicator as the
+  ///   XDMFFile
+  mesh::Mesh read_mesh() const;
+
 private:
   // MPI communicator
   dolfinx::MPI::Comm _mpi_comm;

@@ -8,7 +8,6 @@ import os
 
 import pytest
 from dolfinx_utils.test.fixtures import tempdir
-from dolfinx_utils.test.skips import skip_in_parallel
 
 from dolfinx import UnitSquareMesh, MPI
 from dolfinx.cpp.mesh import CellType
