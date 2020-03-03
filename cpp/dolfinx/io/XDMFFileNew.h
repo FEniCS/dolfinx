@@ -83,7 +83,7 @@ public:
   /// Read in the first Mesh in XDMF file
   /// @return A Mesh distributed on the same communicator as the
   ///   XDMFFile
-  mesh::Mesh read_mesh() const;
+  void read_mesh() const;
 
 private:
   // MPI communicator

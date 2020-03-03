@@ -359,8 +359,10 @@ void XDMFFileNew::write(const mesh::Mesh& mesh)
     _xml_doc->save_file(_filename.c_str(), "  ");
 }
 //-----------------------------------------------------------------------------
-mesh::Mesh XDMFFileNew::read_mesh() const
+void XDMFFileNew::read_mesh() const
 {
-
+  // Read local mesh data
+  // auto [cell_type, points, cells, global_cell_indices]
+  //     = read_mesh_data(_mpi_comm.comm());
 }
 //-----------------------------------------------------------------------------
