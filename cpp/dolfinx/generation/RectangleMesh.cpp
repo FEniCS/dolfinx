@@ -204,6 +204,7 @@ mesh::Mesh build_tri(MPI_Comm comm, const std::array<Eigen::Vector3d, 2>& p,
 
   if (new_style)
   {
+    throw std::runtime_error("Should not be heere");
     return mesh::create(comm, graph::AdjacencyList<std::int64_t>(topo),
                         mesh::CellType::triangle, geom);
   }
@@ -218,15 +219,26 @@ mesh::Mesh build_tri(MPI_Comm comm, const std::array<Eigen::Vector3d, 2>& p,
 } // namespace
 //-----------------------------------------------------------------------------
 mesh::Mesh build_quad(MPI_Comm comm, const std::array<Eigen::Vector3d, 2>& p,
-                      std::array<std::size_t, 2> n, const mesh::GhostMode)
+                      std::array<std::size_t, 2> n,
+                      const mesh::GhostMode ghost_mode, bool new_style)
 {
   // Receive mesh if not rank 0
   if (dolfinx::MPI::rank(comm) != 0)
   {
     Eigen::Array<double, 0, 2, Eigen::RowMajor> geom(0, 2);
     Eigen::Array<std::int64_t, Eigen::Dynamic, 4, Eigen::RowMajor> topo(0, 4);
-    return mesh::create(comm, graph::AdjacencyList<std::int64_t>(topo),
-                        mesh::CellType::triangle, geom);
+    if (new_style)
+    {
+
+      return mesh::create(comm, graph::AdjacencyList<std::int64_t>(topo),
+                          mesh::CellType::quadrilateral, geom);
+    }
+    else
+    {
+      // Old mesh builder
+      return mesh::Partitioning::build_distributed_mesh(
+          comm, mesh::CellType::triangle, geom, topo, {}, ghost_mode);
+    }
   }
 
   const std::size_t nx = n[0];
@@ -270,8 +282,17 @@ mesh::Mesh build_quad(MPI_Comm comm, const std::array<Eigen::Vector3d, 2>& p,
       ++cell;
     }
 
-  return mesh::create(comm, graph::AdjacencyList<std::int64_t>(topo),
-                      mesh::CellType::triangle, geom);
+  if (new_style)
+  {
+    return mesh::create(comm, graph::AdjacencyList<std::int64_t>(topo),
+                        mesh::CellType::triangle, geom);
+  }
+  else
+  {
+    // Old mesh builder
+    return mesh::Partitioning::build_distributed_mesh(
+        comm, mesh::CellType::quadrilateral, geom, topo, {}, ghost_mode);
+  }
 }
 //-----------------------------------------------------------------------------
 mesh::Mesh RectangleMesh::create(MPI_Comm comm,
@@ -284,7 +305,7 @@ mesh::Mesh RectangleMesh::create(MPI_Comm comm,
   if (cell_type == mesh::CellType::triangle)
     return build_tri(comm, p, n, ghost_mode, new_style, diagonal);
   else if (cell_type == mesh::CellType::quadrilateral)
-    return build_quad(comm, p, n, ghost_mode);
+    return build_quad(comm, p, n, ghost_mode, new_style);
   else
     throw std::runtime_error("Generate rectangle mesh. Wrong cell type");
 }
