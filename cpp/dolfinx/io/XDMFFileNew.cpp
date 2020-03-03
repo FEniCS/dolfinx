@@ -13,6 +13,7 @@
 #include "XDMFFileNew.h"
 // #include "cells.h"
 #include "pugixml.hpp"
+#include "xdmf_utils.h"
 // #include <algorithm>
 // #include <boost/algorithm/string.hpp>
 // #include <boost/container/vector.hpp>
@@ -29,7 +30,8 @@
 // #include <dolfinx/graph/AdjacencyList.h>
 // #include <dolfinx/la/PETScVector.h>
 // #include <dolfinx/la/utils.h>
-// #include <dolfinx/mesh/Mesh.h>
+#include <dolfinx/mesh/Mesh.h>
+#include <dolfinx/mesh/Topology.h>
 // #include <dolfinx/mesh/MeshEntity.h>
 // #include <dolfinx/mesh/MeshIterator.h>
 // #include <dolfinx/mesh/MeshValueCollection.h>
@@ -64,8 +66,76 @@ std::string get_hdf5_filename(std::string filename)
 //-----------------------------------------------------------------------------
 
 /// TODO: Document
-void add_mesh(MPI_Comm, pugi::xml_node& xml_node, hid_t,
-              const mesh::Mesh&, const std::string)
+void add_topology_data(MPI_Comm comm, pugi::xml_node& xml_node, hid_t h5_id,
+                       const std::string path_prefix, const mesh::Mesh& mesh,
+                       int cell_dim)
+{
+  // Get number of cells (global) and vertices per cell from mesh
+  auto map_c = mesh.topology().index_map(cell_dim);
+  assert(map_c);
+  const std::int64_t num_cells = map_c->size_global();
+  int num_nodes_per_cell = mesh::num_cell_vertices(
+      mesh::cell_entity_type(mesh.topology().cell_type(), cell_dim));
+
+  // FIXME: sort out degree/cell type
+  // Get VTK string for cell type
+  const std::string vtk_cell_str = xdmf_utils::vtk_cell_type_str(
+      mesh::cell_entity_type(mesh.topology().cell_type(), cell_dim), 1);
+
+  pugi::xml_node topology_node = xml_node.append_child("Topology");
+  assert(topology_node);
+  topology_node.append_attribute("NumberOfElements")
+      = std::to_string(num_cells).c_str();
+  topology_node.append_attribute("TopologyType") = vtk_cell_str.c_str();
+
+  // Pack topology data
+  std::vector<std::int64_t> topology_data;
+
+  const int tdim = mesh.topology().dim();
+  if (cell_dim != tdim)
+  {
+    throw std::runtime_error("Cannot create topology data for mesh. "
+                             "Can only create mesh of cells");
+  }
+
+  //   const auto& global_indices = mesh.geometry().global_indices();
+  //   const graph::AdjacencyList<std::int32_t>& cells =
+  //   mesh.geometry().dofmap();
+
+  //   // Adjust num_nodes_per_cell to appropriate size
+  //   assert(cells.num_nodes() > 0);
+  //   num_nodes_per_cell = cells.num_links(0);
+  //   topology_data.reserve(num_nodes_per_cell * cells.num_nodes());
+
+  //   const std::vector<std::uint8_t> perm = io::cells::vtk_to_dolfin(
+  //       mesh.topology().cell_type(), num_nodes_per_cell);
+  //   for (int c = 0; c < cells.num_nodes(); ++c)
+  //   {
+  //     auto nodes = cells.links(c);
+  //     for (int i = 0; i < nodes.rows(); ++i)
+  //       topology_data.push_back(global_indices[nodes[perm[i]]]);
+  //   }
+  // }
+  // else
+  //   topology_data = compute_topology_data(mesh, cell_dim);
+
+  // topology_node.append_attribute("NodesPerElement") = num_nodes_per_cell;
+
+  // // Add topology DataItem node
+  // const std::string group_name = path_prefix + "/" + "mesh";
+  // const std::string h5_path = group_name + "/topology";
+  // const std::vector<std::int64_t> shape = {num_cells, num_nodes_per_cell};
+  // const std::string number_type = "Int";
+
+  // xdmf_write::add_data_item(comm, topology_node, h5_id, h5_path,
+  // topology_data,
+  //                           shape, number_type);
+}
+//-----------------------------------------------------------------------------
+
+/// TODO: Document
+void add_mesh(MPI_Comm comm, pugi::xml_node& xml_node, hid_t h5_id,
+              const mesh::Mesh& mesh, const std::string path_prefix)
 {
   LOG(INFO) << "Adding mesh to node \"" << xml_node.path('/') << "\"";
 
@@ -76,8 +146,8 @@ void add_mesh(MPI_Comm, pugi::xml_node& xml_node, hid_t,
   grid_node.append_attribute("GridType") = "Uniform";
 
   // // Add topology node and attributes (including writing data)
-  // const int tdim = mesh.topology().dim();
-  // add_topology_data(comm, grid_node, h5_id, path_prefix, mesh, tdim);
+  const int tdim = mesh.topology().dim();
+  add_topology_data(comm, grid_node, h5_id, path_prefix, mesh, tdim);
 
   // // Add geometry node and attributes (including writing data)
   // add_geometry_data(comm, grid_node, h5_id, path_prefix, mesh.geometry());

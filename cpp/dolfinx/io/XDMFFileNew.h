@@ -6,22 +6,9 @@
 
 #pragma once
 
-// #include <cstdint>
 #include <dolfinx/common/MPI.h>
-// #include <hdf5.h>
 #include <memory>
-// #include <petscsys.h>
 #include <string>
-// #include <utility>
-// #include <vector>
-
-// namespace boost
-// {
-// namespace filesystem
-// {
-// class path;
-// }
-// } // namespace boost
 
 namespace pugi
 {
@@ -31,21 +18,10 @@ class xml_document;
 
 namespace dolfinx
 {
-// namespace function
-// {
-// class Function;
-// class FunctionSpace;
-// } // namespace function
 
 namespace mesh
 {
-// enum class GhostMode : int;
 class Mesh;
-// template <typename T>
-// class MeshFunction;
-// template <typename T>
-// class MeshValueCollection;
-// class Partitioning;
 } // namespace mesh
 
 namespace io
@@ -79,7 +55,7 @@ public:
 
   /// Constructor
   XDMFFileNew(MPI_Comm comm, const std::string filename,
-           Encoding encoding = default_encoding);
+              Encoding encoding = default_encoding);
 
   /// Destructor
   ~XDMFFileNew();
@@ -104,9 +80,7 @@ public:
   /// @param[in] mesh The Mesh to save
   void write(const mesh::Mesh& mesh);
 
-
 private:
-
   // MPI communicator
   dolfinx::MPI::Comm _mpi_comm;
 

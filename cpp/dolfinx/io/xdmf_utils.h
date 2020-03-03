@@ -34,11 +34,6 @@ namespace function
 class Function;
 } // namespace function
 
-// namespace mesh
-// {
-// class CellType;
-// } // namespace mesh
-
 namespace io
 {
 namespace xdmf_utils
