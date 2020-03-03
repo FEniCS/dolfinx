@@ -8,6 +8,7 @@
 
 #include "Graph.h"
 #include <cstdint>
+#include <dolfinx/graph/AdjacencyList.h>
 #include <dolfinx/common/MPI.h>
 #include <map>
 
@@ -17,18 +18,15 @@ namespace dolfinx
 namespace graph
 {
 
-template <typename T>
-class CSRGraph;
-
 /// This class provides an interface to KaHIP parallel partitioner
 class KaHIP
 {
 #ifdef HAS_KAHIP
 public:
   // Standard KaHIP partition
-  static std::pair<std::vector<int>, std::map<std::int64_t, std::vector<int>>>
+  static AdjacencyList<std::int32_t>
   partition(MPI_Comm mpi_comm, int nparts,
-            const CSRGraph<unsigned long long>& csr_graph);
+            const AdjacencyList<unsigned long long>& adj_graph);
 
 #endif
 };

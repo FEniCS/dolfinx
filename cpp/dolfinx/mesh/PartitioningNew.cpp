@@ -11,7 +11,6 @@
 #include <dolfinx/common/IndexMap.h>
 #include <dolfinx/common/log.h>
 #include <dolfinx/graph/AdjacencyList.h>
-#include <dolfinx/graph/CSRGraph.h>
 #include <dolfinx/graph/GraphBuilder.h>
 #include <dolfinx/graph/SCOTCH.h>
 #include <unordered_map>
@@ -403,19 +402,12 @@ graph::AdjacencyList<std::int32_t> PartitioningNew::partition_cells(
   const auto [num_ghost_nodes, num_local_edges, num_nonlocal_edges]
       = graph_info;
 
-  // Build CSR graph
-  graph::CSRGraph<SCOTCH_Num> csr_graph(comm, local_graph);
+  graph::AdjacencyList<SCOTCH_Num> adj_graph(local_graph);
   std::vector<std::size_t> weights;
 
   // Call partitioner
-  const auto [part, ignore] = graph::SCOTCH::partition(
-      comm, (SCOTCH_Num)n, csr_graph, weights, num_ghost_nodes);
-
-  // FIXME: for now, all cells are unghosted and go to only one destination
-  //
-  std::vector<int> offsets(part.size() + 1);
-  std::iota(offsets.begin(), offsets.end(), 0);
-  graph::AdjacencyList partition(part, offsets);
+  graph::AdjacencyList<std::int32_t> partition = graph::SCOTCH::partition(
+      comm, (SCOTCH_Num)n, adj_graph, weights, num_ghost_nodes, false);
 
   return partition;
 }

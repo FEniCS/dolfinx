@@ -11,7 +11,6 @@
 #include <cstdint>
 #include <dolfinx/common/IndexMap.h>
 #include <dolfinx/common/types.h>
-#include <dolfinx/graph/CSRGraph.h>
 #include <dolfinx/mesh/Mesh.h>
 #include <dolfinx/mesh/cell_types.h>
 #include <map>
@@ -117,13 +116,15 @@ public:
   /// @param[in] cell_vertices Topological cells with global vertex
   ///   indexing. Each cell appears once only.
   /// @param[in] graph_partitioner The graph partitioner
+  /// @param[in] ghost_mode Ghost mode
   /// @return Cell partition data
   static PartitionData partition_cells(
       const MPI_Comm& comm, int nparts, const mesh::CellType cell_type,
       const Eigen::Ref<const Eigen::Array<std::int64_t, Eigen::Dynamic,
                                           Eigen::Dynamic, Eigen::RowMajor>>&
           cell_vertices,
-      const mesh::Partitioner graph_partitioner);
+      const mesh::Partitioner graph_partitioner,
+      mesh::GhostMode ghost_mode);
 
   /// Redistribute points to the processes that need them
   /// @param[in] comm MPI Communicator

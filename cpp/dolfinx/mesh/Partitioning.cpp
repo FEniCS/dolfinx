@@ -22,7 +22,6 @@
 #include <dolfinx/common/Timer.h>
 #include <dolfinx/common/log.h>
 #include <dolfinx/graph/AdjacencyList.h>
-#include <dolfinx/graph/CSRGraph.h>
 #include <dolfinx/graph/GraphBuilder.h>
 #include <dolfinx/graph/KaHIP.h>
 #include <dolfinx/graph/ParMETIS.h>
@@ -688,7 +687,7 @@ PartitionData Partitioning::partition_cells(
     const Eigen::Ref<const Eigen::Array<std::int64_t, Eigen::Dynamic,
                                         Eigen::Dynamic, Eigen::RowMajor>>&
         cell_vertices,
-    const mesh::Partitioner graph_partitioner)
+    const mesh::Partitioner graph_partitioner, mesh::GhostMode ghost_mode)
 {
   LOG(INFO) << "Compute partition of cells across processes";
 
@@ -717,18 +716,20 @@ PartitionData Partitioning::partition_cells(
     // Compute cell partition using partitioner from parameter system
     if (graph_partitioner == mesh::Partitioner::scotch)
     {
-      graph::CSRGraph<SCOTCH_Num> csr_graph(mpi_comm, local_graph);
+      graph::AdjacencyList<SCOTCH_Num> adj_graph(local_graph);
       std::vector<std::size_t> weights;
       const std::int32_t num_ghost_nodes = std::get<0>(graph_info);
-      return PartitionData(graph::SCOTCH::partition(
-          mpi_comm, (SCOTCH_Num)nparts, csr_graph, weights, num_ghost_nodes));
+      bool ghosted = (ghost_mode != mesh::GhostMode::none);
+      return PartitionData(
+          graph::SCOTCH::partition(mpi_comm, (SCOTCH_Num)nparts, adj_graph,
+                                   weights, num_ghost_nodes, ghosted));
     }
     else if (graph_partitioner == mesh::Partitioner::parmetis)
     {
 #ifdef HAS_PARMETIS
-      graph::CSRGraph<idx_t> csr_graph(mpi_comm, local_graph);
+      graph::AdjacencyList<idx_t> adj_graph(local_graph);
       return PartitionData(
-          graph::ParMETIS::partition(mpi_comm, (idx_t)nparts, csr_graph));
+          graph::ParMETIS::partition(mpi_comm, (idx_t)nparts, adj_graph));
 #else
       throw std::runtime_error("ParMETIS not available");
 #endif
@@ -736,9 +737,9 @@ PartitionData Partitioning::partition_cells(
     else if (graph_partitioner == mesh::Partitioner::kahip)
     {
 #ifdef HAS_KAHIP
-      graph::CSRGraph<unsigned long long> csr_graph(mpi_comm, local_graph);
+      graph::AdjacencyList<unsigned long long> adj_graph(local_graph);
       return PartitionData(
-          graph::KaHIP::partition(mpi_comm, nparts, csr_graph));
+          graph::KaHIP::partition(mpi_comm, nparts, adj_graph));
 #else
       throw std::runtime_error("KaHIP not available");
 #endif
@@ -827,8 +828,8 @@ mesh::Mesh Partitioning::build_distributed_mesh(
   const int nparts = dolfinx::MPI::size(comm);
 
   // Compute the cell partition
-  PartitionData cell_partition
-      = partition_cells(comm, nparts, cell_type, cells, graph_partitioner);
+  PartitionData cell_partition = partition_cells(comm, nparts, cell_type, cells,
+                                                 graph_partitioner, ghost_mode);
 
   // Build mesh from local mesh data and provided cell partition
   mesh::Mesh mesh = Partitioning::build_from_partition(
@@ -849,14 +850,21 @@ std::map<std::int64_t, std::vector<int>> Partitioning::compute_halo_cells(
   std::tie(local_graph, std::ignore) = graph::GraphBuilder::compute_dual_graph(
       mpi_comm, cell_vertices, cell_type);
 
-  graph::CSRGraph<std::int64_t> csr_graph(mpi_comm, local_graph);
+  graph::AdjacencyList<std::int64_t> adj_graph(local_graph);
 
   std::map<std::int64_t, std::vector<int>> ghost_procs;
 
+  // Calculate the distribution across processes
+  std::vector<std::int64_t> elmdist;
+  const std::int64_t num_local_cells = adj_graph.num_nodes();
+  MPI::all_gather(mpi_comm, num_local_cells, elmdist);
+  elmdist.insert(elmdist.begin(), 0);
+  for (std::size_t i = 1; i != elmdist.size(); ++i)
+    elmdist[i] += elmdist[i - 1];
+
   // Work out halo cells for current division of dual graph
-  const std::vector<std::int64_t>& elmdist = csr_graph.node_distribution();
-  const std::vector<std::int64_t>& xadj = csr_graph.nodes();
-  const std::vector<std::int64_t>& adjncy = csr_graph.edges();
+  const std::int32_t* xadj = adj_graph.offsets().data();
+  const std::int64_t* adjncy = adj_graph.array().data();
   const std::int32_t num_processes = dolfinx::MPI::size(mpi_comm);
   const std::int32_t process_number = dolfinx::MPI::rank(mpi_comm);
   const std::int32_t elm_begin = elmdist[process_number];
@@ -867,8 +875,10 @@ std::map<std::int64_t, std::vector<int>> Partitioning::compute_halo_cells(
 
   for (int i = 0; i < ncells; i++)
   {
-    for (auto other_cell : csr_graph[i])
+    for (int j = 0; j < adj_graph.num_links(i); ++j)
     {
+      std::int64_t other_cell = adj_graph.links(i)[j];
+
       if (other_cell < elm_begin || other_cell >= elm_end)
       {
         const int remote
