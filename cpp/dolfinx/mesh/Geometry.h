@@ -81,6 +81,9 @@ public:
   /// DOF map
   const graph::AdjacencyList<std::int32_t>& dofmap() const;
 
+  /// Index map
+  std::shared_ptr<const common::IndexMap> index_map() const;
+
   /// Geometry degrees-of-freedom
   Eigen::Array<double, Eigen::Dynamic, 3, Eigen::RowMajor>& x();
 

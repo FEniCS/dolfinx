@@ -12,6 +12,7 @@
 // #include "HDF5Utility.h"
 #include "XDMFFileNew.h"
 // #include "cells.h"
+#include "cells.h"
 #include "pugixml.hpp"
 #include "xdmf_utils.h"
 // #include <algorithm>
@@ -70,6 +71,13 @@ void add_topology_data(MPI_Comm comm, pugi::xml_node& xml_node, hid_t h5_id,
                        const std::string path_prefix, const mesh::Mesh& mesh,
                        int cell_dim)
 {
+  const int tdim = mesh.topology().dim();
+  if (cell_dim != tdim)
+  {
+    throw std::runtime_error("Cannot create topology data for mesh. "
+                             "Can only create mesh of cells");
+  }
+
   // Get number of cells (global) and vertices per cell from mesh
   auto map_c = mesh.topology().index_map(cell_dim);
   assert(map_c);
@@ -91,35 +99,30 @@ void add_topology_data(MPI_Comm comm, pugi::xml_node& xml_node, hid_t h5_id,
   // Pack topology data
   std::vector<std::int64_t> topology_data;
 
-  const int tdim = mesh.topology().dim();
-  if (cell_dim != tdim)
-  {
-    throw std::runtime_error("Cannot create topology data for mesh. "
-                             "Can only create mesh of cells");
-  }
-
   //   const auto& global_indices = mesh.geometry().global_indices();
-  //   const graph::AdjacencyList<std::int32_t>& cells =
-  //   mesh.geometry().dofmap();
+  const graph::AdjacencyList<std::int32_t>& cells_g = mesh.geometry().dofmap();
+  auto map_g = mesh.geometry().index_map();
+  assert(map_g);
+  const std::int64_t offset_g = map_g->local_range()[0];
 
   //   // Adjust num_nodes_per_cell to appropriate size
   //   assert(cells.num_nodes() > 0);
   //   num_nodes_per_cell = cells.num_links(0);
   //   topology_data.reserve(num_nodes_per_cell * cells.num_nodes());
 
-  //   const std::vector<std::uint8_t> perm = io::cells::vtk_to_dolfin(
-  //       mesh.topology().cell_type(), num_nodes_per_cell);
-  //   for (int c = 0; c < cells.num_nodes(); ++c)
-  //   {
-  //     auto nodes = cells.links(c);
-  //     for (int i = 0; i < nodes.rows(); ++i)
-  //       topology_data.push_back(global_indices[nodes[perm[i]]]);
-  //   }
-  // }
-  // else
-  //   topology_data = compute_topology_data(mesh, cell_dim);
+  const std::vector<std::uint8_t> perm = io::cells::vtk_to_dolfin(
+      mesh.topology().cell_type(), num_nodes_per_cell);
+  for (int c = 0; c < map_g->size_local(); ++c)
+  {
+    auto nodes = cells_g.links(c);
+    for (int i = 0; i < nodes.rows(); ++i)
+    {
+      const std::int64_t global_index = nodes[perm[i]] + offset_g;
+      topology_data.push_back(global_index);
+    }
+  }
 
-  // topology_node.append_attribute("NodesPerElement") = num_nodes_per_cell;
+  topology_node.append_attribute("NodesPerElement") = num_nodes_per_cell;
 
   // // Add topology DataItem node
   // const std::string group_name = path_prefix + "/" + "mesh";
