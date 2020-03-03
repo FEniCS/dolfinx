@@ -20,7 +20,8 @@ namespace
 //-----------------------------------------------------------------------------
 mesh::Mesh build_tri(MPI_Comm comm, const std::array<Eigen::Vector3d, 2>& p,
                      std::array<std::size_t, 2> n,
-                     const mesh::GhostMode ghost_mode, std::string diagonal)
+                     const mesh::GhostMode ghost_mode, bool new_style,
+                     std::string diagonal)
 {
   // Receive mesh if not rank 0
   if (dolfinx::MPI::rank(comm) != 0)
@@ -28,13 +29,17 @@ mesh::Mesh build_tri(MPI_Comm comm, const std::array<Eigen::Vector3d, 2>& p,
     Eigen::Array<double, 0, 2, Eigen::RowMajor> geom(0, 2);
     Eigen::Array<std::int64_t, 0, 3, Eigen::RowMajor> topo(0, 3);
 
-    // TODO: New mesh builder
-    // return mesh::create(comm, graph::AdjacencyList<std::int64_t>(topo),
-    //                     mesh::CellType::triangle, geom);
-
-    // Old mesh builder
-    return mesh::Partitioning::build_distributed_mesh(
-        comm, mesh::CellType::triangle, geom, topo, {}, ghost_mode);
+    if (new_style)
+    {
+      return mesh::create(comm, graph::AdjacencyList<std::int64_t>(topo),
+                          mesh::CellType::triangle, geom);
+    }
+    else
+    {
+      // Old mesh builder
+      return mesh::Partitioning::build_distributed_mesh(
+          comm, mesh::CellType::triangle, geom, topo, {}, ghost_mode);
+    }
   }
 
   // Check options
@@ -197,26 +202,31 @@ mesh::Mesh build_tri(MPI_Comm comm, const std::array<Eigen::Vector3d, 2>& p,
     }
   }
 
-  // TODO: New Mesh builder
-  // return mesh::create(comm, graph::AdjacencyList<std::int64_t>(topo),
-  //                     mesh::CellType::triangle, geom);
-
-  // Old Mesh builder
-  return mesh::Partitioning::build_distributed_mesh(
-      comm, mesh::CellType::triangle, geom, topo, {}, ghost_mode);
+  if (new_style)
+  {
+    return mesh::create(comm, graph::AdjacencyList<std::int64_t>(topo),
+                        mesh::CellType::triangle, geom);
+  }
+  else
+  {
+    // Old mesh builder
+    return mesh::Partitioning::build_distributed_mesh(
+        comm, mesh::CellType::triangle, geom, topo, {}, ghost_mode);
+  }
 }
+
+} // namespace
 //-----------------------------------------------------------------------------
 mesh::Mesh build_quad(MPI_Comm comm, const std::array<Eigen::Vector3d, 2>& p,
-                      std::array<std::size_t, 2> n,
-                      const mesh::GhostMode ghost_mode)
+                      std::array<std::size_t, 2> n, const mesh::GhostMode)
 {
   // Receive mesh if not rank 0
   if (dolfinx::MPI::rank(comm) != 0)
   {
     Eigen::Array<double, 0, 2, Eigen::RowMajor> geom(0, 2);
     Eigen::Array<std::int64_t, Eigen::Dynamic, 4, Eigen::RowMajor> topo(0, 4);
-    return mesh::Partitioning::build_distributed_mesh(
-        comm, mesh::CellType::quadrilateral, geom, topo, {}, ghost_mode);
+    return mesh::create(comm, graph::AdjacencyList<std::int64_t>(topo),
+                        mesh::CellType::triangle, geom);
   }
 
   const std::size_t nx = n[0];
@@ -260,26 +270,22 @@ mesh::Mesh build_quad(MPI_Comm comm, const std::array<Eigen::Vector3d, 2>& p,
       ++cell;
     }
 
-  return mesh::Partitioning::build_distributed_mesh(
-      comm, mesh::CellType::quadrilateral, geom, topo, {}, ghost_mode);
+  return mesh::create(comm, graph::AdjacencyList<std::int64_t>(topo),
+                      mesh::CellType::triangle, geom);
 }
 //-----------------------------------------------------------------------------
-} // namespace
-
-//-----------------------------------------------------------------------------
-mesh::Mesh
-RectangleMesh::create(MPI_Comm comm, const std::array<Eigen::Vector3d, 2>& p,
-                      std::array<std::size_t, 2> n, mesh::CellType cell_type,
-                      const mesh::GhostMode ghost_mode, std::string diagonal)
+mesh::Mesh RectangleMesh::create(MPI_Comm comm,
+                                 const std::array<Eigen::Vector3d, 2>& p,
+                                 std::array<std::size_t, 2> n,
+                                 mesh::CellType cell_type,
+                                 const mesh::GhostMode ghost_mode,
+                                 bool new_style, std::string diagonal)
 {
   if (cell_type == mesh::CellType::triangle)
-    return build_tri(comm, p, n, ghost_mode, diagonal);
+    return build_tri(comm, p, n, ghost_mode, new_style, diagonal);
   else if (cell_type == mesh::CellType::quadrilateral)
     return build_quad(comm, p, n, ghost_mode);
   else
     throw std::runtime_error("Generate rectangle mesh. Wrong cell type");
-
-  // Will never reach this point
-  return build_quad(comm, p, n, ghost_mode);
 }
 //-----------------------------------------------------------------------------
