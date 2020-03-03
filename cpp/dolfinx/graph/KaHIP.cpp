@@ -129,10 +129,10 @@ graph::AdjacencyList<std::int32_t> dolfinx::graph::KaHIP::partition(
       cell_ownership[*p] = *(p + 1);
     }
 
-    Eigen::Map<const Eigen::Array<std::int32_t, Eigen::Dynamic, 1>> xadj(
-        adj_graph.offsets().data(), adj_graph.offsets().size());
-    Eigen::Map<const Eigen::Array<long long unsigned, Eigen::Dynamic, 1>>
-        adjncy(adj_graph.array().data(), adj_graph.array().size());
+    const Eigen::Array<std::int32_t, Eigen::Dynamic, 1>& xadj
+        = adj_graph.offsets();
+    const Eigen::Array<unsigned long long, Eigen::Dynamic, 1> adjncy
+        = adj_graph.array();
 
     // Generate mapping for where new boundary cells need to be sent
     for (std::int32_t i = 0; i < ncells; i++)
