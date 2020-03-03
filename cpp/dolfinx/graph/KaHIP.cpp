@@ -135,11 +135,11 @@ graph::AdjacencyList<std::int32_t> dolfinx::graph::KaHIP::partition(
     // Generate mapping for where new boundary cells need to be sent
     for (std::int32_t i = 0; i < ncells; i++)
     {
-      const std::size_t proc_this = part[i];
+      const std::int32_t proc_this = part[i];
       for (std::int32_t j = xadj[i]; j < xadj[i + 1]; ++j)
       {
         const unsigned long long other_cell = adjncy[j];
-        std::size_t proc_other;
+        std::int32_t proc_other;
 
         if (other_cell < elm_begin || other_cell >= elm_end)
         { // remote cell - should be in map
