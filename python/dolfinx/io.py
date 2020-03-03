@@ -298,3 +298,57 @@ class XDMFFile:
 
         o_cpp = getattr(u, "_cpp_object", u)
         self._cpp_object.write_checkpoint(o_cpp, name, time_step)
+
+
+class XDMFFileNew:
+    """Interface to XDMF files
+    This format is preferred on lower order geometries and for
+    DG and RT function spaces.
+    XDMF also allows for checkpointing of solutions and has parallel support.
+
+    """
+
+    # Import encoding (find better way?)
+    Encoding = cpp.io.XDMFFileNew.Encoding
+
+    def __init__(self, mpi_comm, filename: str, encoding=Encoding.HDF5):
+        """Open XDMF file
+
+        Parameters
+        ----------
+        mpi_comm
+            The MPI communicator
+        filename
+            Name of the file
+        encoding
+            Encoding used for 'heavy' data when writing/appending
+
+        """
+        self._cpp_object = cpp.io.XDMFFileNew(mpi_comm, filename, encoding)
+
+    def __enter__(self):
+        return self
+
+    def __exit__(self, exception_type, exception_value, traceback):
+        return self._cpp_object.close()
+
+    def close(self) -> None:
+        """Close file"""
+        self._cpp_object.close()
+
+    def write(self, o, t=None) -> None:
+        """Write object to file
+
+        Parameters
+        ----------
+        o
+            The object to write to file
+        t
+            The time stamp
+
+        """
+        o_cpp = getattr(o, "_cpp_object", o)
+        if t is None:
+            self._cpp_object.write(o_cpp)
+        else:
+            self._cpp_object.write(o_cpp, t)

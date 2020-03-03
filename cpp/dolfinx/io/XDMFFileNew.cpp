@@ -63,9 +63,9 @@ std::string get_hdf5_filename(std::string filename)
 }
 //-----------------------------------------------------------------------------
 
-/// TODO
-void add_mesh(MPI_Comm comm, pugi::xml_node& xml_node, hid_t h5_id,
-              const mesh::Mesh& mesh, const std::string path_prefix)
+/// TODO: Document
+void add_mesh(MPI_Comm, pugi::xml_node& xml_node, hid_t,
+              const mesh::Mesh&, const std::string)
 {
   LOG(INFO) << "Adding mesh to node \"" << xml_node.path('/') << "\"";
 
@@ -142,7 +142,7 @@ void XDMFFileNew::write(const mesh::Mesh& mesh)
   assert(domain_node);
 
   // Add the mesh Grid to the domain
-  // xdmf_write::add_mesh(_mpi_comm.comm(), domain_node, h5_id, mesh, "/Mesh");
+  add_mesh(_mpi_comm.comm(), domain_node, h5_id, mesh, "/Mesh");
 
   // Save XML file (on process 0 only)
   if (MPI::rank(_mpi_comm.comm()) == 0)
