@@ -215,9 +215,6 @@ ElementDofLayout fem::geometry_layout(mesh::CellType cell, int num_nodes)
     for (int j = 0; j < perm.cols(); ++j)
       perm(i, j) = j;
 
-  // static const std::map nodes = {{{mesh::CellType, 1} }  }
-  const int num_vertices = mesh::cell_num_entities(cell, 0);
-
   // entity_dofs = [[set([0]), set([1]), set([2])], 3 * [set()], [set()]]
   int dof = 0;
   std::vector<std::vector<std::set<int>>> entity_dofs(dim + 1);
@@ -227,7 +224,7 @@ ElementDofLayout fem::geometry_layout(mesh::CellType cell, int num_nodes)
     if (dof < num_nodes)
     {
       for (int e = 0; e < num_entities; ++e)
-        entity_dofs[d].push_back({{dof++}});
+        entity_dofs[d].push_back({dof++});
     }
     else
     {

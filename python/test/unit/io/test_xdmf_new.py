@@ -10,7 +10,7 @@ import pytest
 
 from dolfinx import MPI, UnitCubeMesh, UnitSquareMesh, cpp
 from dolfinx.cpp.mesh import CellType
-from dolfinx.io import XDMFFile, XDMFFileNew
+from dolfinx.io import XDMFFileNew
 from dolfinx_utils.test.fixtures import tempdir
 
 assert (tempdir)
@@ -37,7 +37,7 @@ def worker_id(request):
 
 @pytest.mark.parametrize("cell_type", celltypes_2D)
 @pytest.mark.parametrize("encoding", encodings)
-def test_save_and_load_mesh(tempdir, encoding, cell_type):
+def test_save_and_load_mesh2D(tempdir, encoding, cell_type):
     filename = os.path.join(tempdir, "mesh.xdmf")
     mesh = UnitSquareMesh(MPI.comm_world, 12, 12, cell_type, new_style=True)
     with XDMFFileNew(mesh.mpi_comm(), filename, encoding=encoding) as file:
@@ -54,7 +54,7 @@ def test_save_and_load_mesh(tempdir, encoding, cell_type):
 
 @pytest.mark.parametrize("cell_type", celltypes_3D)
 @pytest.mark.parametrize("encoding", encodings)
-def test_save_and_load_mesh(tempdir, encoding, cell_type):
+def test_save_and_load_mesh3D(tempdir, encoding, cell_type):
     filename = os.path.join(tempdir, "mesh.xdmf")
     mesh = UnitCubeMesh(MPI.comm_world, 12, 12, 8, cell_type, new_style=True)
     with XDMFFileNew(mesh.mpi_comm(), filename, encoding=encoding) as file:
