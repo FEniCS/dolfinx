@@ -100,7 +100,7 @@ from ufl import ds, dx, grad, inner
 mesh = RectangleMesh(
     MPI.comm_world,
     [np.array([0, 0, 0]), np.array([1, 1, 0])], [32, 32],
-    CellType.triangle, dolfinx.cpp.mesh.GhostMode.none)
+    CellType.triangle, dolfinx.cpp.mesh.GhostMode.none, new_style=True)
 
 V = FunctionSpace(mesh, ("Lagrange", 1))
 
