@@ -77,9 +77,6 @@ graph::AdjacencyList<std::int32_t> dolfinx::graph::KaHIP::partition(
     common::Timer timer2("Compute graph halo data (KaHIP)");
 
     // Work out halo cells for current division of dual graph
-    const std::int32_t* xadj = adj_graph.offsets().data();
-    const unsigned long long* adjncy = adj_graph.array().data();
-
     std::map<unsigned long long, std::set<std::int32_t>> halo_cell_to_remotes;
     // local indexing "i"
     for (int i = 0; i < ncells; i++)
@@ -131,6 +128,11 @@ graph::AdjacencyList<std::int32_t> dolfinx::graph::KaHIP::partition(
     {
       cell_ownership[*p] = *(p + 1);
     }
+
+    Eigen::Map<const Eigen::Array<std::int32_t, Eigen::Dynamic, 1>> xadj(
+        adj_graph.offsets().data(), adj_graph.offsets().size());
+    Eigen::Map<const Eigen::Array<long long unsigned, Eigen::Dynamic, 1>>
+        adjncy(adj_graph.array().data(), adj_graph.array().size());
 
     // Generate mapping for where new boundary cells need to be sent
     for (std::int32_t i = 0; i < ncells; i++)
