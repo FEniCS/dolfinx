@@ -70,89 +70,6 @@ std::string get_hdf5_filename(std::string filename)
 //-----------------------------------------------------------------------------
 
 /// TODO: Document
-template <typename T>
-void add_data_item(MPI_Comm comm, pugi::xml_node& xml_node, hid_t h5_id,
-                   const std::string h5_path, const T& x,
-                   const std::vector<std::int64_t> shape,
-                   const std::string number_type)
-{
-  // Add DataItem node
-  assert(xml_node);
-  pugi::xml_node data_item_node = xml_node.append_child("DataItem");
-  assert(data_item_node);
-
-  // Add dimensions attribute
-  std::string dims;
-  for (auto d : shape)
-    dims += std::to_string(d) + " ";
-  dims.pop_back();
-  data_item_node.append_attribute("Dimensions") = dims.c_str();
-
-  // Set type for topology data (needed by XDMF to prevent default to
-  // float)
-  if (!number_type.empty())
-    data_item_node.append_attribute("NumberType") = number_type.c_str();
-
-  // Add format attribute
-  if (h5_id < 0)
-  {
-    data_item_node.append_attribute("Format") = "XML";
-    assert(shape.size() == 2);
-    data_item_node.append_child(pugi::node_pcdata)
-        .set_value(common::container_to_string(x, " ", 16, shape[1]).c_str());
-  }
-  else
-  {
-    data_item_node.append_attribute("Format") = "HDF";
-
-    // Get name of HDF5 file
-    const std::string hdf5_filename = HDF5Interface::get_filename(h5_id);
-    const boost::filesystem::path p(hdf5_filename);
-
-    // Add HDF5 filename and HDF5 internal path to XML file
-    const std::string xdmf_path = p.filename().string() + ":" + h5_path;
-    data_item_node.append_child(pugi::node_pcdata).set_value(xdmf_path.c_str());
-
-    // Compute total number of items and check for consistency with shape
-    assert(!shape.empty());
-    std::int64_t num_items_total = 1;
-    for (auto n : shape)
-      num_items_total *= n;
-
-    std::cout << "Testing: " << num_items_total << ", "
-              << dolfinx::MPI::sum(comm, x.size()) << std::endl;
-    assert(num_items_total == (std::int64_t)dolfinx::MPI::sum(comm, x.size()));
-
-    // Compute data offset and range of values
-    std::int64_t local_shape0 = x.size();
-    for (std::size_t i = 1; i < shape.size(); ++i)
-    {
-      assert(local_shape0 % shape[i] == 0);
-      local_shape0 /= shape[i];
-    }
-
-    // FIXME: Pass in offset
-    const std::int64_t offset
-        = dolfinx::MPI::global_offset(comm, local_shape0, true);
-
-    const std::array<std::int64_t, 2> local_range
-        = {{offset, offset + local_shape0}};
-
-    const bool use_mpi_io = (dolfinx::MPI::size(comm) > 1);
-    HDF5Interface::write_dataset(h5_id, h5_path, x.data(), local_range, shape,
-                                 use_mpi_io, false);
-
-    // Add partitioning attribute to dataset
-    // std::vector<std::size_t> partitions;
-    // std::vector<std::size_t> offset_tmp(1, offset);
-    // dolfinx::MPI::gather(comm, offset_tmp, partitions);
-    // dolfinx::MPI::broadcast(comm, partitions);
-    // HDF5Interface::add_attribute(h5_id, h5_path, "partition", partitions);
-  }
-} // namespace
-//----------------------------------------------------------------------------
-
-/// TODO: Document
 void add_topology_data(MPI_Comm comm, pugi::xml_node& xml_node, hid_t h5_id,
                        const std::string path_prefix,
                        const mesh::Topology& topology,
@@ -224,8 +141,8 @@ void add_topology_data(MPI_Comm comm, pugi::xml_node& xml_node, hid_t h5_id,
   const std::vector<std::int64_t> shape = {num_cells, num_nodes_per_cell};
   const std::string number_type = "Int";
 
-  add_data_item(comm, topology_node, h5_id, h5_path, topology_data, shape,
-                number_type);
+  xdmf_utils::add_data_item(comm, topology_node, h5_id, h5_path, topology_data,
+                            shape, number_type);
 }
 //-----------------------------------------------------------------------------
 
@@ -273,7 +190,7 @@ void add_geometry_data(MPI_Comm comm, pugi::xml_node& xml_node, hid_t h5_id,
   const std::string h5_path = group_name + "/geometry";
   const std::vector<std::int64_t> shape = {num_points, width};
 
-  add_data_item(comm, geometry_node, h5_id, h5_path, x, shape, "");
+  xdmf_utils::add_data_item(comm, geometry_node, h5_id, h5_path, x, shape, "");
 }
 //-----------------------------------------------------------------------------
 

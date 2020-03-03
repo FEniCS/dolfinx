@@ -229,11 +229,7 @@ ElementDofLayout fem::geometry_layout(mesh::CellType cell, int num_nodes)
     else
     {
       for (int e = 0; e < num_entities; ++e)
-      {
-        // std::cout << "Note: " << d << ",  " << e << std::endl;
-
         entity_dofs[d].push_back({});
-      }
     }
   }
 
