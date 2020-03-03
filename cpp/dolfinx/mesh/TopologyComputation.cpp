@@ -115,6 +115,8 @@ get_local_indexing(
   // Get all "possibly shared" entities, based on vertex sharing. Send to
   // other processes, and see if we get the same back.
 
+  std::map<std::vector<std::int64_t>, std::int32_t> send_data_to_send_index;
+
   // Set of sharing procs for each entity, counting vertex hits
   std::unordered_map<int, int> procs;
   std::vector<std::int32_t> vlocal(num_vertices);
@@ -146,6 +148,8 @@ get_local_indexing(
                       entity_list.row(i).data() + num_vertices);
         vglobal = vertex_indexmap->local_to_global(vlocal, false);
 
+        send_data_to_send_index.insert({vglobal, entity_index[i]});
+
         // Entity entity_index[i] may be shared with process p
         for (int j = 0; j < num_vertices; ++j)
           send_entities[np].push_back(vglobal[j]);
@@ -161,7 +165,6 @@ get_local_indexing(
   // for the received entities (from other processes) with the indices
   // of the sent entities (to other processes)
   std::unordered_map<std::int32_t, std::set<std::int32_t>> shared_entities;
-  std::vector<std::vector<std::int32_t>> recv_index(neighbour_size);
 
   // Prepare data for neighbour all to all
   std::vector<std::int64_t> send_entities_data;
@@ -180,37 +183,26 @@ get_local_indexing(
                                     recv_entities_data);
 
   // Compare received with sent for each process
+  // Any which are not found will have -1 in recv_index
+  std::vector<std::vector<std::int32_t>> recv_index(neighbour_size);
+  std::vector<std::int64_t> recv_vec(num_vertices);
   for (int np = 0; np < neighbour_size; ++np)
   {
-    Eigen::Map<const Eigen::Array<std::int64_t, Eigen::Dynamic, Eigen::Dynamic,
-                                  Eigen::RowMajor>>
-        send_array(send_entities_data.data() + send_offsets[np],
-                   (send_offsets[np + 1] - send_offsets[np]) / num_vertices,
-                   num_vertices);
+    const int p = neighbours[np];
 
-    Eigen::Map<const Eigen::Array<std::int64_t, Eigen::Dynamic, Eigen::Dynamic,
-                                  Eigen::RowMajor>>
-        recv_array(recv_entities_data.data() + recv_offsets[np],
-                   (recv_offsets[np + 1] - recv_offsets[np]) / num_vertices,
-                   num_vertices);
-
-    recv_index[np].resize(recv_array.rows(), -1);
-
-    // Compare with sent values
-    for (int i = 0; i < send_array.rows(); ++i)
+    for (int j = recv_offsets[np]; j < recv_offsets[np + 1]; j += num_vertices)
     {
-      for (int j = 0; j < recv_array.rows(); ++j)
+      recv_vec.assign(recv_entities_data.data() + j,
+                      recv_entities_data.data() + j + num_vertices);
+
+      auto it = send_data_to_send_index.find(recv_vec);
+      if (it != send_data_to_send_index.end())
       {
-        if ((recv_array.row(j) == send_array.row(i)).all())
-        {
-          // This entity was sent, and the same was received back,
-          // confirming sharing
-          const int p = neighbours[np];
-          shared_entities[send_index[np][i]].insert(p);
-          recv_index[np][j] = send_index[np][i];
-          break;
-        }
+        shared_entities[it->second].insert(p);
+        recv_index[np].push_back(it->second);
       }
+      else
+        recv_index[np].push_back(-1);
     }
   }
 
@@ -243,6 +235,8 @@ get_local_indexing(
     }
   }
   assert(c == entity_count);
+
+  //------------------------------------------------------------------
 
   Eigen::Array<std::int64_t, Eigen::Dynamic, 1> ghost_indices(entity_count
                                                               - num_local);
