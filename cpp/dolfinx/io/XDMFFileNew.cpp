@@ -4,48 +4,18 @@
 //
 // SPDX-License-Identifier:    LGPL-3.0-or-later
 
-// #include "xdmf_read.h"
-// #include "xdmf_utils.h"
-// #include "xdmf_write.h"
-
-#include "HDF5File.h"
-// #include "HDF5Utility.h"
 #include "XDMFFileNew.h"
-// #include "cells.h"
+#include "HDF5File.h"
 #include "cells.h"
 #include "pugixml.hpp"
 #include "xdmf_mesh.h"
 #include "xdmf_utils.h"
-// #include <algorithm>
-// #include <boost/algorithm/string.hpp>
-// #include <boost/container/vector.hpp>
 #include <boost/filesystem.hpp>
-// #include <boost/format.hpp>
-// #include <boost/lexical_cast.hpp>
-// #include <dolfinx/common/MPI.h>
-// #include <dolfinx/common/defines.h>
-// #include <dolfinx/common/log.h>
 #include <dolfinx/common/utils.h>
-// #include <dolfinx/fem/DofMap.h>
-// #include <dolfinx/function/Function.h>
-// #include <dolfinx/function/FunctionSpace.h>
-// #include <dolfinx/graph/AdjacencyList.h>
-// #include <dolfinx/la/PETScVector.h>
-// #include <dolfinx/la/utils.h>
 #include <dolfinx/fem/ElementDofLayout.h>
 #include <dolfinx/mesh/Mesh.h>
 #include <dolfinx/mesh/Topology.h>
 #include <dolfinx/mesh/TopologyComputation.h>
-// #include <dolfinx/mesh/MeshEntity.h>
-// #include <dolfinx/mesh/MeshIterator.h>
-// #include <dolfinx/mesh/MeshValueCollection.h>
-// #include <dolfinx/mesh/Partitioning.h>
-// #include <iomanip>
-// #include <memory>
-// #include <petscvec.h>
-// #include <set>
-// #include <string>
-// #include <vector>
 
 using namespace dolfinx;
 using namespace dolfinx::io;
@@ -141,8 +111,10 @@ void add_topology_data(MPI_Comm comm, pugi::xml_node& xml_node, hid_t h5_id,
   const std::vector<std::int64_t> shape = {num_cells, num_nodes_per_cell};
   const std::string number_type = "Int";
 
-  xdmf_utils::add_data_item(comm, topology_node, h5_id, h5_path, topology_data,
-                            shape, number_type);
+  const std::int64_t offset
+      = dolfinx::MPI::global_offset(comm, topology_data.size(), true);
+  xdmf_utils::add_data_item(topology_node, h5_id, h5_path, topology_data,
+                            offset, shape, number_type);
 }
 //-----------------------------------------------------------------------------
 
@@ -190,7 +162,9 @@ void add_geometry_data(MPI_Comm comm, pugi::xml_node& xml_node, hid_t h5_id,
   const std::string h5_path = group_name + "/geometry";
   const std::vector<std::int64_t> shape = {num_points, width};
 
-  xdmf_utils::add_data_item(comm, geometry_node, h5_id, h5_path, x, shape, "");
+  const std::int64_t offset = dolfinx::MPI::global_offset(comm, x.size(), true);
+  xdmf_utils::add_data_item(geometry_node, h5_id, h5_path, x, offset, shape,
+                            "");
 }
 //-----------------------------------------------------------------------------
 

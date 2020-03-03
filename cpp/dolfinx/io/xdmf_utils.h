@@ -6,14 +6,6 @@
 
 #pragma once
 
-// #include "HDF5Interface.h"
-// #include <dolfinx/common/MPI.h>
-// #include <dolfinx/function/Function.h>
-// #include <dolfinx/la/PETScVector.h>
-// #include <dolfinx/mesh/Mesh.h>
-// #include <dolfinx/mesh/MeshFunction.h>
-// #include <dolfinx/mesh/MeshValueCollection.h>
-// #include <memory>
 #include "HDF5File.h"
 #include "pugixml.hpp"
 #include <array>
@@ -69,8 +61,9 @@ std::string vtk_cell_type_str(mesh::CellType cell_type, int order);
 
 /// TODO: Document
 template <typename T>
-void add_data_item(MPI_Comm comm, pugi::xml_node& xml_node, hid_t h5_id,
+void add_data_item(pugi::xml_node& xml_node, hid_t h5_id,
                    const std::string h5_path, const T& x,
+                   const std::int64_t offset,
                    const std::vector<std::int64_t> shape,
                    const std::string number_type)
 {
@@ -117,9 +110,10 @@ void add_data_item(MPI_Comm comm, pugi::xml_node& xml_node, hid_t h5_id,
     for (auto n : shape)
       num_items_total *= n;
 
-    std::cout << "Testing: " << num_items_total << ", "
-              << dolfinx::MPI::sum(comm, x.size()) << std::endl;
-    assert(num_items_total == (std::int64_t)dolfinx::MPI::sum(comm, x.size()));
+    // std::cout << "Testing: " << num_items_total << ", "
+    //           << dolfinx::MPI::sum(comm, x.size()) << std::endl;
+    // assert(num_items_total == (std::int64_t)dolfinx::MPI::sum(comm,
+    // x.size()));
 
     // Compute data offset and range of values
     std::int64_t local_shape0 = x.size();
@@ -129,14 +123,15 @@ void add_data_item(MPI_Comm comm, pugi::xml_node& xml_node, hid_t h5_id,
       local_shape0 /= shape[i];
     }
 
-    // FIXME: Pass in offset
-    const std::int64_t offset
-        = dolfinx::MPI::global_offset(comm, local_shape0, true);
+    // // FIXME: Pass in offset
+    // const std::int64_t offset
+    //     = dolfinx::MPI::global_offset(comm, local_shape0, true);
 
     const std::array<std::int64_t, 2> local_range
         = {{offset, offset + local_shape0}};
 
-    const bool use_mpi_io = (dolfinx::MPI::size(comm) > 1);
+    // const bool use_mpi_io = (dolfinx::MPI::size(comm) > 1);
+    const bool use_mpi_io = true;
     HDF5Interface::write_dataset(h5_id, h5_path, x.data(), local_range, shape,
                                  use_mpi_io, false);
 
