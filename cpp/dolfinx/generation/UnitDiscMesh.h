@@ -25,7 +25,8 @@ public:
   /// @param[in] n Number of layers
   /// @param[in] ghost_mode Mesh ghosting mode
   static mesh::Mesh create(MPI_Comm comm, int n,
-                           const mesh::GhostMode ghost_mode);
+                           const mesh::GhostMode ghost_mode,
+                           bool new_style = false);
 };
 } // namespace generation
 } // namespace dolfinx

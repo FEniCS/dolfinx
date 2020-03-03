@@ -7,6 +7,7 @@
 #include "UnitDiscMesh.h"
 #include <cmath>
 #include <dolfinx/common/types.h>
+#include <dolfinx/graph/AdjacencyList.h>
 #include <dolfinx/io/cells.h>
 #include <dolfinx/mesh/Partitioning.h>
 
@@ -15,17 +16,26 @@ using namespace dolfinx::generation;
 
 //-----------------------------------------------------------------------------
 mesh::Mesh UnitDiscMesh::create(MPI_Comm comm, int n,
-                                const mesh::GhostMode ghost_mode)
+                                const mesh::GhostMode ghost_mode,
+                                bool new_style)
 {
   assert(n > 0);
-
   // Receive mesh if not rank 0
   if (dolfinx::MPI::rank(comm) != 0)
   {
     Eigen::Array<double, 0, 2, Eigen::RowMajor> geom(0, 2);
-    Eigen::Array<std::int64_t, 0, 6, Eigen::RowMajor> topo(0, 6);
-    return mesh::Partitioning::build_distributed_mesh(
-        comm, mesh::CellType::triangle, geom, topo, {}, ghost_mode);
+    Eigen::Array<std::int64_t, 0, 3, Eigen::RowMajor> topo(0, 3);
+    if (new_style)
+    {
+      return mesh::create(comm, graph::AdjacencyList<std::int64_t>(topo),
+                          mesh::CellType::triangle, geom);
+    }
+    else
+    {
+      // Old mesh builder
+      return mesh::Partitioning::build_distributed_mesh(
+          comm, mesh::CellType::triangle, geom, topo, {}, ghost_mode);
+    }
   }
 
   Eigen::Array<double, Eigen::Dynamic, 2, Eigen::RowMajor> points(
@@ -99,8 +109,23 @@ mesh::Mesh UnitDiscMesh::create(MPI_Comm comm, int n,
           cells,
           io::cells::vtk_to_dolfin(mesh::CellType::triangle, cells.cols()));
 
-  return mesh::Partitioning::build_distributed_mesh(
-      comm, mesh::CellType::triangle, points, cells_reordered, {}, ghost_mode);
+  if (new_style)
+  {
+    return mesh::create(comm,
+                        graph::AdjacencyList<std::int64_t>(cells_reordered),
+                        mesh::CellType::triangle, points);
+  }
+  else
+  {
+    // Old mesh builder
+    return mesh::Partitioning::build_distributed_mesh(
+        comm, mesh::CellType::triangle, points, cells_reordered, {},
+        ghost_mode);
+  }
+
+  // return mesh::Partitioning::build_distributed_mesh(
+  //     comm, mesh::CellType::triangle, points, cells_reordered, {},
+  //     ghost_mode);
 }
 
 //-----------------------------------------------------------------------------

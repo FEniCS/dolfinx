@@ -35,6 +35,7 @@
 #include <dolfinx/fem/ElementDofLayout.h>
 #include <dolfinx/mesh/Mesh.h>
 #include <dolfinx/mesh/Topology.h>
+#include <dolfinx/mesh/TopologyComputation.h>
 // #include <dolfinx/mesh/MeshEntity.h>
 // #include <dolfinx/mesh/MeshIterator.h>
 // #include <dolfinx/mesh/MeshValueCollection.h>
@@ -118,6 +119,8 @@ void add_data_item(MPI_Comm comm, pugi::xml_node& xml_node, hid_t h5_id,
     for (auto n : shape)
       num_items_total *= n;
 
+    std::cout << "Testing: " << num_items_total << ", "
+              << dolfinx::MPI::sum(comm, x.size()) << std::endl;
     assert(num_items_total == (std::int64_t)dolfinx::MPI::sum(comm, x.size()));
 
     // Compute data offset and range of values
@@ -166,8 +169,6 @@ void add_topology_data(MPI_Comm comm, pugi::xml_node& xml_node, hid_t h5_id,
   auto map_c = topology.index_map(cell_dim);
   assert(map_c);
   const std::int64_t num_cells = map_c->size_global();
-  int num_nodes_per_cell = mesh::num_cell_vertices(
-      mesh::cell_entity_type(topology.cell_type(), cell_dim));
 
   // FIXME: sort out degree/cell type
   // Get VTK string for cell type
@@ -190,9 +191,12 @@ void add_topology_data(MPI_Comm comm, pugi::xml_node& xml_node, hid_t h5_id,
 
   const Eigen::Array<std::int64_t, Eigen::Dynamic, 1>& ghosts = map_g->ghosts();
 
-  //   // Adjust num_nodes_per_cell to appropriate size
-  //   assert(cells.num_nodes() > 0);
-  //   num_nodes_per_cell = cells.num_links(0);
+  // FIXME: Get num_nodes_per_cell differently in case this rank has no
+  // data
+
+  // Adjust num_nodes_per_cell to appropriate size
+  assert(cells_g.num_nodes() > 0);
+  const int num_nodes_per_cell = cells_g.num_links(0);
   //   topology_data.reserve(num_nodes_per_cell * cells.num_nodes());
 
   const std::vector<std::uint8_t> perm
@@ -367,27 +371,34 @@ mesh::Mesh XDMFFileNew::read_mesh() const
   auto [cell_type, x, cells]
       = xdmf_mesh::read_mesh_data(_mpi_comm.comm(), _filename);
 
-  // Assume P1 triangles for now
-  Eigen::Array<int, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor> perm(5, 3);
-  for (int i = 0; i < perm.rows(); ++i)
-    for (int j = 0; j < perm.cols(); ++j)
-      perm(i, j) = j;
-  // entity_dofs = [[set([0]), set([1]), set([2])], 3 * [set()], [set()]]
-  std::vector<std::vector<std::set<int>>> entity_dofs(3);
-  entity_dofs[0] = {{0}, {1}, {2}};
-  entity_dofs[1] = {{}, {}, {}};
-  entity_dofs[2] = {{}};
-  fem::ElementDofLayout layout(1, entity_dofs, {}, {}, cell_type, perm);
-  if (cell_type != mesh::CellType::triangle or cells.cols() != 3)
-    throw std::runtime_error("Only P1 triangles supported at the moment");
+  // TODO: create outside
+  // Create a layout
+  const fem::ElementDofLayout layout
+      = fem::geometry_layout(cell_type, cells.cols());
 
+  // Create Topology
   graph::AdjacencyList<std::int64_t> _cells(cells);
-  const auto [topology, src, dest]
+  auto [topology, src, dest]
       = mesh::create_topology(_mpi_comm.comm(), _cells, layout);
 
+  // FIXME: Figure out how to check which entities are required
+  // Initialise facet for P2
+  // Create local entities
+  auto [cell_entity, entity_vertex, index_map]
+      = mesh::TopologyComputation::compute_entities(_mpi_comm.comm(), topology,
+                                                    1);
+  if (cell_entity)
+    topology.set_connectivity(cell_entity, topology.dim(), 1);
+  if (entity_vertex)
+    topology.set_connectivity(entity_vertex, 1, 0);
+  if (index_map)
+    topology.set_index_map(1, index_map);
+
+  // Create Geometry
   const mesh::Geometry geometry = mesh::create_geometry(
       _mpi_comm.comm(), topology, layout, _cells, dest, src, x);
 
+  // Return Mesh
   return mesh::Mesh(_mpi_comm.comm(), topology, geometry);
 }
 //-----------------------------------------------------------------------------

@@ -199,3 +199,47 @@ int ElementDofLayout::block_size() const { return _block_size; }
 //-----------------------------------------------------------------------------
 bool ElementDofLayout::is_view() const { return !_parent_map.empty(); }
 //-----------------------------------------------------------------------------
+
+//-----------------------------------------------------------------------------
+ElementDofLayout fem::geometry_layout(mesh::CellType cell, int num_nodes)
+{
+  const int dim = mesh::cell_dim(cell);
+  int num_perms = 0;
+  const std::array<int, 4> p_per_dim = {0, 1, 2, 4};
+  for (int d = 1; d <= dim; ++d)
+    num_perms += p_per_dim[d] * mesh::cell_num_entities(cell, d);
+
+  Eigen::Array<int, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor> perm(
+      num_perms, num_nodes);
+  for (int i = 0; i < perm.rows(); ++i)
+    for (int j = 0; j < perm.cols(); ++j)
+      perm(i, j) = j;
+
+  // static const std::map nodes = {{{mesh::CellType, 1} }  }
+  const int num_vertices = mesh::cell_num_entities(cell, 0);
+
+  // entity_dofs = [[set([0]), set([1]), set([2])], 3 * [set()], [set()]]
+  int dof = 0;
+  std::vector<std::vector<std::set<int>>> entity_dofs(dim + 1);
+  for (int d = 0; d <= dim; ++d)
+  {
+    const int num_entities = mesh::cell_num_entities(cell, d);
+    if (dof < num_nodes)
+    {
+      for (int e = 0; e < num_entities; ++e)
+        entity_dofs[d].push_back({{dof++}});
+    }
+    else
+    {
+      for (int e = 0; e < num_entities; ++e)
+      {
+        // std::cout << "Note: " << d << ",  " << e << std::endl;
+
+        entity_dofs[d].push_back({});
+      }
+    }
+  }
+
+  return fem::ElementDofLayout(1, entity_dofs, {}, {}, cell, perm);
+}
+//-----------------------------------------------------------------------------

@@ -13,18 +13,6 @@
 #include <tuple>
 #include <vector>
 
-// #include <dolfinx/mesh/MeshIterator.h>
-
-// #include "HDF5File.h"
-// #include "pugixml.hpp"
-// #include "xdmf_utils.h"
-// #include <boost/algorithm/string.hpp>
-// #include <boost/filesystem.hpp>
-// #include <boost/lexical_cast.hpp>
-// #include <dolfinx/mesh/MeshEntity.h>
-// #include <dolfinx/mesh/MeshFunction.h>
-// #include <dolfinx/mesh/MeshIterator.h>
-
 namespace dolfinx
 {
 
