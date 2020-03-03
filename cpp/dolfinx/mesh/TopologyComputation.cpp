@@ -184,7 +184,7 @@ get_local_indexing(
 
   // Compare received with sent for each process
   // Any which are not found will have -1 in recv_index
-  std::vector<std::vector<std::int32_t>> recv_index(neighbour_size);
+  std::vector<std::int32_t> recv_index;
   std::vector<std::int64_t> recv_vec(num_vertices);
   for (int np = 0; np < neighbour_size; ++np)
   {
@@ -199,10 +199,10 @@ get_local_indexing(
       if (it != send_data_to_send_index.end())
       {
         shared_entities[it->second].insert(p);
-        recv_index[np].push_back(it->second);
+        recv_index.push_back(it->second);
       }
       else
-        recv_index[np].push_back(-1);
+        recv_index.push_back(-1);
     }
   }
 
@@ -271,21 +271,17 @@ get_local_indexing(
         neighbour_comm, send_global_index_offsets, send_global_index_data,
         recv_global_index_offsets, recv_global_index_data);
 
+    assert(recv_global_index_data.size() == recv_index.size());
+
     // Map back received indices
-    for (int np = 0; np < neighbour_size; ++np)
+    for (std::size_t j = 0; j < recv_global_index_data.size(); ++j)
     {
-      for (int j = 0; j < (recv_global_index_offsets[np + 1]
-                           - recv_global_index_offsets[np]);
-           ++j)
+      const std::int64_t gi = recv_global_index_data[j];
+      const std::int32_t idx = recv_index[j];
+      if (gi != -1 and idx != -1)
       {
-        const std::int64_t gi
-            = recv_global_index_data[j + recv_global_index_offsets[np]];
-        if (gi != -1 and recv_index[np][j] != -1)
-        {
-          const std::int32_t idx = recv_index[np][j];
-          assert(local_index[idx] >= num_local);
-          ghost_indices[local_index[idx] - num_local] = gi;
-        }
+        assert(local_index[idx] >= num_local);
+        ghost_indices[local_index[idx] - num_local] = gi;
       }
     }
   }
