@@ -766,16 +766,15 @@ fem::pack_constants(const fem::Form& form)
   const std::vector<
       std::pair<std::string, std::shared_ptr<const function::Constant>>>
       constants = form.constants();
-  Eigen::Array<PetscScalar, Eigen::Dynamic, 1> constant_values;
+  std::vector<PetscScalar> constant_values;
   for (auto& constant : constants)
   {
     const std::vector<PetscScalar>& array = constant.second->value;
-    for (std::size_t k = 0; k < array.size(); ++k)
-    {
-      constant_values.conservativeResize(constant_values.size() + 1);
-      constant_values.tail(1) = array[k];
-    }
+    constant_values.insert(constant_values.end(), array.data(),
+                           array.data() + array.size());
   }
-  return constant_values;
+  Eigen::Map<const Eigen::Array<PetscScalar, Eigen::Dynamic, 1>> constant_array(
+      constant_values.data(), constant_values.size(), 1);
+  return constant_array;
 }
 //-----------------------------------------------------------------------------
