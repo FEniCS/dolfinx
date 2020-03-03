@@ -20,7 +20,7 @@ using namespace dolfinx;
 //-----------------------------------------------------------------------------
 graph::AdjacencyList<std::int32_t> dolfinx::graph::ParMETIS::partition(
     MPI_Comm mpi_comm, idx_t nparts,
-    const graph::AdjacencyList<idx_t>& adj_graph)
+    const graph::AdjacencyList<idx_t>& adj_graph, bool ghosting)
 {
   std::map<std::int64_t, std::vector<int>> ghost_procs;
 
@@ -67,36 +67,35 @@ graph::AdjacencyList<std::int32_t> dolfinx::graph::ParMETIS::partition(
   assert(err == METIS_OK);
   timer1.stop();
 
-  bool ghosting = false;
-  // FIXME: fix ghosting
+  const unsigned long long elm_begin = node_distribution[process_number];
+  const unsigned long long elm_end = node_distribution[process_number + 1];
+  const std::int32_t ncells = elm_end - elm_begin;
+
+  // Create a map of local nodes to their additional destination processes,
+  // due to ghosting. If no ghosting, this will remain empty.
+  std::map<std::int32_t, std::set<std::int32_t>> local_node_to_dests;
+
   if (ghosting)
   {
     common::Timer timer2("Compute graph halo data (ParMETIS)");
 
     // Work out halo cells for current division of dual graph
-    const auto& elmdist = node_distribution;
-    const auto& xadj = adj_graph.offsets();
-    const auto& adjncy = adj_graph.array();
-    const std::int32_t num_processes = dolfinx::MPI::size(mpi_comm);
-    const std::int32_t process_number = dolfinx::MPI::rank(mpi_comm);
-    const idx_t elm_begin = elmdist[process_number];
-    const idx_t elm_end = elmdist[process_number + 1];
-    const std::int32_t ncells = elm_end - elm_begin;
-    assert(ncells == num_local_cells);
+    const std::int32_t* xadj = adj_graph.offsets().data();
+    const unsigned long long* adjncy = adj_graph.array().data();
 
-    std::map<idx_t, std::set<std::int32_t>> halo_cell_to_remotes;
+    std::map<unsigned long long, std::set<std::int32_t>> halo_cell_to_remotes;
     // local indexing "i"
     for (int i = 0; i < ncells; i++)
     {
       for (int j = 0; j < adj_graph.num_links(i); ++j)
       {
-        idx_t other_cell = adj_graph.links(i)[j];
-
+        const unsigned long long other_cell = adj_graph.links(i)[j];
         if (other_cell < elm_begin || other_cell >= elm_end)
         {
           const int remote
-              = std::upper_bound(elmdist.begin(), elmdist.end(), other_cell)
-                - elmdist.begin() - 1;
+              = std::upper_bound(node_distribution.begin(),
+                                 node_distribution.end(), other_cell)
+                - node_distribution.begin() - 1;
 
           assert(remote < num_processes);
           if (halo_cell_to_remotes.find(i) == halo_cell_to_remotes.end())
@@ -140,9 +139,9 @@ graph::AdjacencyList<std::int32_t> dolfinx::graph::ParMETIS::partition(
     for (std::int32_t i = 0; i < ncells; i++)
     {
       const std::size_t proc_this = part[i];
-      for (idx_t j = xadj[i]; j < xadj[i + 1]; ++j)
+      for (std::int32_t j = xadj[i]; j < xadj[i + 1]; ++j)
       {
-        const idx_t other_cell = adjncy[j];
+        const unsigned long long other_cell = adjncy[j];
         std::size_t proc_other;
 
         if (other_cell < elm_begin || other_cell >= elm_end)
@@ -155,35 +154,27 @@ graph::AdjacencyList<std::int32_t> dolfinx::graph::ParMETIS::partition(
           proc_other = part[other_cell - elm_begin];
 
         if (proc_this != proc_other)
-        {
-          auto map_it = ghost_procs.find(i);
-          if (map_it == ghost_procs.end())
-          {
-            std::vector<std::int32_t> sharing_processes;
-            sharing_processes.push_back(proc_this);
-            sharing_processes.push_back(proc_other);
-            ghost_procs.insert({i, sharing_processes});
-          }
-          else
-          {
-            // Add to vector if not already there
-            auto it = std::find(map_it->second.begin(), map_it->second.end(),
-                                proc_other);
-            if (it == map_it->second.end())
-              map_it->second.push_back(proc_other);
-          }
-        }
+          local_node_to_dests[i].insert(proc_other);
       }
     }
-
     timer2.stop();
   }
 
-  std::vector<int> dests(part.begin(), part.end());
-  std::vector<std::int32_t> offsets(dests.size() + 1);
-  std::iota(offsets.begin(), offsets.end(), 0);
-  graph::AdjacencyList<std::int32_t> adj(dests, offsets);
-  return adj;
+  // Convert to offset format for AdjacencyList
+  std::vector<std::int32_t> dests;
+  std::vector<std::int32_t> offsets = {0};
+  for (std::int32_t i = 0; i < ncells; ++i)
+  {
+    dests.push_back(part[i]);
+    const auto it = local_node_to_dests.find(i);
+    if (it != local_node_to_dests.end())
+      dests.insert(dests.end(), it->second.begin(), it->second.end());
+    offsets.push_back(dests.size());
+  }
+
+  graph::AdjacencyList<std::int32_t> partition_adj(dests, offsets);
+
+  return partition_adj;
 }
 //-----------------------------------------------------------------------------
 template <typename T>

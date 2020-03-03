@@ -729,8 +729,8 @@ PartitionData Partitioning::partition_cells(
     {
 #ifdef HAS_PARMETIS
       graph::AdjacencyList<idx_t> adj_graph(local_graph);
-      return PartitionData(
-          graph::ParMETIS::partition(mpi_comm, (idx_t)nparts, adj_graph));
+      return PartitionData(graph::ParMETIS::partition(mpi_comm, (idx_t)nparts,
+                                                      adj_graph, ghosted));
 #else
       throw std::runtime_error("ParMETIS not available");
 #endif
