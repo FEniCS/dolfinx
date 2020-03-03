@@ -277,7 +277,6 @@ dolfinx::graph::SCOTCH::partition(const MPI_Comm mpi_comm, const int nparts,
 
     // Create a map of local nodes to their additional destination processes,
     // due to ghosting. If no ghosting, this can be skipped.
-    std::map<std::int32_t, std::set<std::int32_t>> local_node_to_dests;
     for (SCOTCH_Num i = 0; i < vertlocnbr; ++i)
     {
       const std::int32_t proc_this = _cell_partition[i];
