@@ -249,7 +249,8 @@ void io(py::module& m)
       .def("write",
            py::overload_cast<const dolfinx::mesh::Mesh&>(
                &dolfinx::io::XDMFFileNew::write),
-           py::arg("mesh"));
+           py::arg("mesh"))
+      .def("read_mesh", &dolfinx::io::XDMFFileNew::read_mesh);
 
   // dolfinx::io::XDMFFileNew::Encoding enums
   py::enum_<dolfinx::io::XDMFFileNew::Encoding>(xdmf_file_new, "Encoding")

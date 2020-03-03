@@ -42,8 +42,8 @@ def test_save_and_load_mesh(tempdir):
     with XDMFFile(mesh.mpi_comm(), filename, encoding=encoding) as file:
         file.write(mesh)
 
-    # with XDMFFile(MPI.comm_world, filename) as file:
-    #     mesh2 = file.read_mesh(cpp.mesh.GhostMode.none)
-    # assert mesh.num_entities_global(0) == mesh2.num_entities_global(0)
-    # dim = mesh.topology.dim
-    # assert mesh.num_entities_global(dim) == mesh2.num_entities_global(dim)
+    with XDMFFileNew(MPI.comm_world, filename) as file:
+        mesh2 = file.read_mesh()
+    assert mesh.topology.index_map(0).size_global == mesh2.topology.index_map(0).size_global
+    dim = mesh.topology.dim
+    assert mesh.topology.index_map(dim).size_global == mesh2.topology.index_map(dim).size_global

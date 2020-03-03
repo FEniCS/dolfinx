@@ -14,6 +14,7 @@
 // #include "cells.h"
 #include "cells.h"
 #include "pugixml.hpp"
+#include "xdmf_mesh.h"
 #include "xdmf_utils.h"
 // #include <algorithm>
 // #include <boost/algorithm/string.hpp>
@@ -31,6 +32,7 @@
 // #include <dolfinx/graph/AdjacencyList.h>
 // #include <dolfinx/la/PETScVector.h>
 // #include <dolfinx/la/utils.h>
+#include <dolfinx/fem/ElementDofLayout.h>
 #include <dolfinx/mesh/Mesh.h>
 #include <dolfinx/mesh/Topology.h>
 // #include <dolfinx/mesh/MeshEntity.h>
@@ -302,7 +304,7 @@ XDMFFileNew::XDMFFileNew(MPI_Comm comm, const std::string filename,
     : _mpi_comm(comm), _filename(filename), _xml_doc(new pugi::xml_document),
       _encoding(encoding)
 {
-  // Do nothing
+  // Open files here?
 }
 //-----------------------------------------------------------------------------
 XDMFFileNew::~XDMFFileNew() { close(); }
@@ -359,10 +361,33 @@ void XDMFFileNew::write(const mesh::Mesh& mesh)
     _xml_doc->save_file(_filename.c_str(), "  ");
 }
 //-----------------------------------------------------------------------------
-void XDMFFileNew::read_mesh() const
+mesh::Mesh XDMFFileNew::read_mesh() const
 {
-  // Read local mesh data
-  // auto [cell_type, points, cells, global_cell_indices]
-  //     = read_mesh_data(_mpi_comm.comm());
+  // Read mesh data
+  auto [cell_type, x, cells]
+      = xdmf_mesh::read_mesh_data(_mpi_comm.comm(), _filename);
+
+  // Assume P1 triangles for now
+  Eigen::Array<int, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor> perm(5, 3);
+  for (int i = 0; i < perm.rows(); ++i)
+    for (int j = 0; j < perm.cols(); ++j)
+      perm(i, j) = j;
+  // entity_dofs = [[set([0]), set([1]), set([2])], 3 * [set()], [set()]]
+  std::vector<std::vector<std::set<int>>> entity_dofs(3);
+  entity_dofs[0] = {{0}, {1}, {2}};
+  entity_dofs[1] = {{}, {}, {}};
+  entity_dofs[2] = {{}};
+  fem::ElementDofLayout layout(1, entity_dofs, {}, {}, cell_type, perm);
+  if (cell_type != mesh::CellType::triangle or cells.cols() != 3)
+    throw std::runtime_error("Only P1 triangles supported at the moment");
+
+  graph::AdjacencyList<std::int64_t> _cells(cells);
+  const auto [topology, src, dest]
+      = mesh::create_topology(_mpi_comm.comm(), _cells, layout);
+
+  const mesh::Geometry geometry = mesh::create_geometry(
+      _mpi_comm.comm(), topology, layout, _cells, dest, src, x);
+
+  return mesh::Mesh(_mpi_comm.comm(), topology, geometry);
 }
 //-----------------------------------------------------------------------------

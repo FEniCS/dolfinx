@@ -352,3 +352,8 @@ class XDMFFileNew:
             self._cpp_object.write(o_cpp)
         else:
             self._cpp_object.write(o_cpp, t)
+
+    def read_mesh(self):
+        mesh = self._cpp_object.read_mesh()
+        mesh.geometry.coord_mapping = fem.create_coordinate_map(mesh)
+        return mesh
