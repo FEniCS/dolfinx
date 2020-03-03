@@ -204,7 +204,6 @@ mesh::Mesh build_tri(MPI_Comm comm, const std::array<Eigen::Vector3d, 2>& p,
 
   if (new_style)
   {
-    throw std::runtime_error("Should not be heere");
     return mesh::create(comm, graph::AdjacencyList<std::int64_t>(topo),
                         mesh::CellType::triangle, geom);
   }
