@@ -67,8 +67,11 @@ graph::AdjacencyList<std::int32_t> dolfinx::graph::ParMETIS::partition(
   assert(err == METIS_OK);
   timer1.stop();
 
-  const unsigned long long elm_begin = node_distribution[process_number];
-  const unsigned long long elm_end = node_distribution[process_number + 1];
+  const int rank = dolfinx::MPI::rank(mpi_comm);
+  const int size = dolfinx::MPI::size(mpi_comm);
+
+  const unsigned long long elm_begin = node_distribution[rank];
+  const unsigned long long elm_end = node_distribution[rank + 1];
   const std::int32_t ncells = elm_end - elm_begin;
 
   // Create a map of local nodes to their additional destination processes,
@@ -95,7 +98,7 @@ graph::AdjacencyList<std::int32_t> dolfinx::graph::ParMETIS::partition(
                                  node_distribution.end(), other_cell)
                 - node_distribution.begin() - 1;
 
-          assert(remote < num_processes);
+          assert(remote < size);
           if (halo_cell_to_remotes.find(i) == halo_cell_to_remotes.end())
             halo_cell_to_remotes[i] = std::set<std::int32_t>();
           halo_cell_to_remotes[i].insert(remote);
@@ -104,13 +107,13 @@ graph::AdjacencyList<std::int32_t> dolfinx::graph::ParMETIS::partition(
     }
 
     // Do halo exchange of cell partition data
-    std::vector<std::vector<std::int64_t>> send_cell_partition(num_processes);
+    std::vector<std::vector<std::int64_t>> send_cell_partition(rank);
     std::vector<std::int64_t> recv_cell_partition;
     for (const auto& hcell : halo_cell_to_remotes)
     {
       for (auto proc : hcell.second)
       {
-        assert(proc < num_processes);
+        assert(proc < size);
 
         // global cell number
         send_cell_partition[proc].push_back(hcell.first + elm_begin);
@@ -146,7 +149,7 @@ graph::AdjacencyList<std::int32_t> dolfinx::graph::ParMETIS::partition(
         const idx_t other_cell = adjncy[j];
         std::int32_t proc_other;
 
-        if (other_cell < elm_begin || other_cell >= elm_end)
+        if (other_cell < (int)elm_begin or other_cell >= (int)elm_end)
         { // remote cell - should be in map
           const auto find_other_proc = cell_ownership.find(other_cell);
           assert(find_other_proc != cell_ownership.end());
