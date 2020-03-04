@@ -36,6 +36,7 @@ public:
   /// @param[in] n Number of cells in each direction.
   /// @param[in] cell_type Tetrahedron or hexahedron
   /// @param[in] ghost_mode Ghost mode
+  /// @param[in] new_style Use true for new mesh construction
   /// @param[in] partitioner Partitioner (scotch, parmetis or kahip)
   /// @return Mesh
   static mesh::Mesh
