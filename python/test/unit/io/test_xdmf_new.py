@@ -8,12 +8,12 @@ import os
 
 import numpy as np
 import pytest
+from dolfinx_utils.test.fixtures import tempdir
 
 from dolfinx import (MPI, Function, FunctionSpace, MeshFunction, UnitCubeMesh,
-                     UnitIntervalMesh, UnitSquareMesh, cpp)
+                     UnitIntervalMesh, UnitSquareMesh, cpp, has_petsc_complex)
 from dolfinx.cpp.mesh import CellType
 from dolfinx.io import XDMFFileNew
-from dolfinx_utils.test.fixtures import tempdir
 
 assert (tempdir)
 
@@ -99,6 +99,17 @@ def test_read_write_p2_mesh(tempdir, encoding):
     dim = mesh.topology.dim
     assert mesh.topology.index_map(
         dim).size_global == mesh2.topology.index_map(dim).size_global
+
+
+@pytest.mark.parametrize("encoding", encodings)
+def test_save_1d_scalar(tempdir, encoding):
+    filename2 = os.path.join(tempdir, "u1_.xdmf")
+    mesh = UnitIntervalMesh(MPI.comm_world, 32, new_style=True)
+    # V = FunctionSpace(mesh, ("Lagrange", 2))
+    # u = Function(V)
+    # u.vector.set(1.0 + (1j if has_petsc_complex else 0))
+    # with XDMFFile(mesh.mpi_comm(), filename2, encoding=encoding) as file:
+    #     file.write(u)
 
 
 @pytest.mark.parametrize("cell_type", celltypes_2D)
