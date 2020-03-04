@@ -66,12 +66,12 @@ sort_by_perm(const Eigen::Array<T, Eigen::Dynamic, Eigen::Dynamic,
 /// entities, i.e. the set of all processes which share each shared
 /// entity.
 /// @param[in] comm MPI Communicator
-/// @param[in] IndexMap for vertices
+/// @param[in] vertex_indexmap IndexMap for vertices
 /// @param[in] entity_list List of entities as 2D array, each entity
 ///   represented by its local vertex indices
 /// @param[in] entity_index Initial numbering for each row in
 ///   entity_list
-/// @param[in] entity_count Number of unique entities
+/// @param[in] ghost_offset Index of first entity in ghost cell (at end)
 /// @returns Tuple of (local_indices, index map, shared entities)
 std::tuple<std::vector<int>, std::shared_ptr<common::IndexMap>>
 get_local_indexing(
@@ -80,17 +80,31 @@ get_local_indexing(
     const Eigen::Ref<const Eigen::Array<std::int32_t, Eigen::Dynamic,
                                         Eigen::Dynamic, Eigen::RowMajor>>&
         entity_list,
-    const std::vector<std::int32_t>& entity_index, int entity_count)
+    const std::vector<std::int32_t>& entity_index, std::int32_t ghost_offset)
 {
   const int num_vertices = entity_list.cols();
 
   std::map<std::int32_t, std::set<std::int32_t>> shared_vertices
       = vertex_indexmap->compute_shared_indices();
 
-  // Get a single row in entity list for each entity
-  std::vector<std::int32_t> unique_row(entity_count);
+  // Get first occurence in entity list of each entity
+  // and mark any entities which first pop up in the ghost range
+  std::vector<std::int32_t> unique_row(entity_list.rows(), -1);
+  std::vector<bool> ghost_row(entity_list.rows(), false);
+  std::int32_t entity_count = 0;
   for (int i = 0; i < entity_list.rows(); ++i)
-    unique_row[entity_index[i]] = i;
+  {
+    const std::int32_t idx = entity_index[i];
+    if (unique_row[idx] == -1)
+    {
+      unique_row[idx] = i;
+      ++entity_count;
+      if (i > ghost_offset)
+        ghost_row[idx] = true;
+    }
+  }
+  unique_row.resize(entity_count);
+  ghost_row.resize(entity_count);
 
   // Create an expanded neighbour_comm from shared_vertices
   std::set<std::int32_t> neighbour_set;
@@ -116,6 +130,7 @@ get_local_indexing(
   // other processes, and see if we get the same back.
 
   // Map for sent entities to each neighbour
+  // FIXME: Can this just be one map?
   std::vector<std::map<std::vector<std::int64_t>, std::int32_t>>
       send_data_to_send_index(neighbour_size);
 
@@ -308,6 +323,7 @@ std::tuple<std::shared_ptr<graph::AdjacencyList<std::int32_t>>,
 compute_entities_by_key_matching(
     MPI_Comm comm, const graph::AdjacencyList<std::int32_t>& cells,
     const std::shared_ptr<const common::IndexMap> vertex_index_map,
+    const std::shared_ptr<const common::IndexMap> cell_index_map,
     mesh::CellType cell_type, int dim)
 {
   if (dim == 0)
@@ -383,8 +399,11 @@ compute_entities_by_key_matching(
   // ghosted and shared. Remap the numbering so that ghosts are at the
   // end.
 
+  std::int32_t ghost_offset
+      = cell_index_map->size_local() * num_entities_per_cell;
+
   auto [local_index, index_map] = get_local_indexing(
-      comm, vertex_index_map, entity_list, entity_index, entity_count);
+      comm, vertex_index_map, entity_list, entity_index, ghost_offset);
 
   // Map from initial numbering to local indices
   for (std::int32_t& q : entity_index)
@@ -525,6 +544,7 @@ TopologyComputation::compute_entities(MPI_Comm comm, const Topology& topology,
                                       int dim)
 {
   LOG(INFO) << "Computing mesh entities of dimension " << dim;
+  const int tdim = topology.dim();
 
   // Vertices must always exist
   if (dim == 0)
@@ -533,7 +553,7 @@ TopologyComputation::compute_entities(MPI_Comm comm, const Topology& topology,
   if (topology.connectivity(dim, 0))
   {
     // Make sure we really have the connectivity
-    if (!topology.connectivity(topology.dim(), dim))
+    if (!topology.connectivity(tdim, dim))
     {
       throw std::runtime_error(
           "Cannot compute topological entities. Entities of topological "
@@ -544,18 +564,19 @@ TopologyComputation::compute_entities(MPI_Comm comm, const Topology& topology,
     return {nullptr, nullptr, nullptr};
   }
 
-  const int tdim = topology.dim();
   auto cells = topology.connectivity(tdim, 0);
   if (!cells)
     throw std::runtime_error("Cell connectivity missing.");
 
-  auto map = topology.index_map(0);
-  assert(map);
+  auto vertex_map = topology.index_map(0);
+  assert(vertex_map);
+  auto cell_map = topology.index_map(tdim);
+  assert(cell_map);
   std::tuple<std::shared_ptr<graph::AdjacencyList<std::int32_t>>,
              std::shared_ptr<graph::AdjacencyList<std::int32_t>>,
              std::shared_ptr<common::IndexMap>>
-      data = compute_entities_by_key_matching(comm, *cells, map,
-                                              topology.cell_type(), dim);
+      data = compute_entities_by_key_matching(
+          comm, *cells, vertex_map, cell_map, topology.cell_type(), dim);
 
   return data;
 }
