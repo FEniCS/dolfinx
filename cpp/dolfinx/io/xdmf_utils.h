@@ -112,7 +112,7 @@ void add_data_item(pugi::xml_node& xml_node, hid_t h5_id,
 
     // std::cout << "Testing: " << num_items_total << ", "
     //           << dolfinx::MPI::sum(comm, x.size()) << std::endl;
-    // assert(num_items_total == (std::int64_t)dolfinx::MPI::sum(comm,
+    // assert(num_items_total == (std::int64_t)dolfinx::MPI::sum(MPI_COMM_WORLD,
     // x.size()));
 
     // Compute data offset and range of values
@@ -123,13 +123,8 @@ void add_data_item(pugi::xml_node& xml_node, hid_t h5_id,
       local_shape0 /= shape[i];
     }
 
-    // // FIXME: Pass in offset
-    // const std::int64_t offset
-    //     = dolfinx::MPI::global_offset(comm, local_shape0, true);
-
     const std::array<std::int64_t, 2> local_range
         = {{offset, offset + local_shape0}};
-
     HDF5Interface::write_dataset(h5_id, h5_path, x.data(), local_range, shape,
                                  use_mpi_io, false);
 

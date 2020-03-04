@@ -19,7 +19,7 @@ namespace
 //-----------------------------------------------------------------------------
 
 /// TODO: Document
-void add_topology_data(MPI_Comm comm, pugi::xml_node& xml_node, hid_t h5_id,
+void add_topology_data(MPI_Comm comm, pugi::xml_node& xml_node, hid_t& h5_id,
                        const std::string path_prefix,
                        const mesh::Topology& topology,
                        const mesh::Geometry& geometry, int cell_dim)
@@ -34,7 +34,7 @@ void add_topology_data(MPI_Comm comm, pugi::xml_node& xml_node, hid_t h5_id,
   // Get number of cells (global) and vertices per cell from mesh
   auto map_c = topology.index_map(cell_dim);
   assert(map_c);
-  const std::int64_t num_cells = map_c->size_global();
+  const std::int64_t num_cells_global = map_c->size_global();
 
   // FIXME: sort out degree/cell type
   // Get VTK string for cell type
@@ -44,7 +44,7 @@ void add_topology_data(MPI_Comm comm, pugi::xml_node& xml_node, hid_t h5_id,
   pugi::xml_node topology_node = xml_node.append_child("Topology");
   assert(topology_node);
   topology_node.append_attribute("NumberOfElements")
-      = std::to_string(num_cells).c_str();
+      = std::to_string(num_cells_global).c_str();
   topology_node.append_attribute("TopologyType") = vtk_cell_str.c_str();
 
   // Pack topology data
@@ -63,7 +63,9 @@ void add_topology_data(MPI_Comm comm, pugi::xml_node& xml_node, hid_t h5_id,
   // Adjust num_nodes_per_cell to appropriate size
   assert(cells_g.num_nodes() > 0);
   const int num_nodes_per_cell = cells_g.num_links(0);
-  std::cout << "num_nodes_per_cell: " << num_nodes_per_cell << " " << num_cells << std::endl;
+  // std::cout << "num_nodes_per_cell: " << num_nodes_per_cell << " " <<
+  // num_cells
+  //           << std::endl;
   //   topology_data.reserve(num_nodes_per_cell * cells.num_nodes());
 
   const std::vector<std::uint8_t> perm
@@ -88,22 +90,14 @@ void add_topology_data(MPI_Comm comm, pugi::xml_node& xml_node, hid_t h5_id,
   // Add topology DataItem node
   const std::string group_name = path_prefix + "/" + "mesh";
   const std::string h5_path = group_name + "/topology";
-  const std::vector<std::int64_t> shape = {num_cells, num_nodes_per_cell};
+  const std::vector<std::int64_t> shape
+      = {num_cells_global, num_nodes_per_cell};
   const std::string number_type = "Int";
 
   const std::int64_t offset
-      = dolfinx::MPI::global_offset(comm, topology_data.size(), true);
+      = dolfinx::MPI::global_offset(comm, map_c->size_local(), true);
 
   const bool use_mpi_io = (dolfinx::MPI::size(comm) > 1);
-  if (use_mpi_io)
-    std::cout << "use mpi" << std::endl;
-  else
-    std::cout << "Don't use mpi" << std::endl;
-  std::cout << "Offset: " << offset << std::endl;
-  std::cout << "Shape: " << shape[0] << ", " << shape[1] << " " << offset << std::endl;
-  for (auto t : topology_data)
-    std::cout << t << std::endl;
-
   xdmf_utils::add_data_item(topology_node, h5_id, h5_path, topology_data,
                             offset, shape, number_type, use_mpi_io);
 }
@@ -153,8 +147,8 @@ void add_geometry_data(MPI_Comm comm, pugi::xml_node& xml_node, hid_t h5_id,
   const std::string h5_path = group_name + "/geometry";
   const std::vector<std::int64_t> shape = {num_points, width};
 
-  const std::int64_t offset = dolfinx::MPI::global_offset(comm, x.size(), true);
-
+  const std::int64_t offset
+      = dolfinx::MPI::global_offset(comm, num_points_local, true);
   const bool use_mpi_io = (dolfinx::MPI::size(comm) > 1);
   xdmf_utils::add_data_item(geometry_node, h5_id, h5_path, x, offset, shape, "",
                             use_mpi_io);
@@ -162,7 +156,7 @@ void add_geometry_data(MPI_Comm comm, pugi::xml_node& xml_node, hid_t h5_id,
 //-----------------------------------------------------------------------------
 } // namespace
 //----------------------------------------------------------------------------
-void xdmf_mesh::add_mesh(MPI_Comm comm, pugi::xml_node& xml_node, hid_t h5_id,
+void xdmf_mesh::add_mesh(MPI_Comm comm, pugi::xml_node& xml_node, hid_t& h5_id,
                          const mesh::Mesh& mesh, const std::string path_prefix)
 {
   LOG(INFO) << "Adding mesh to node \"" << xml_node.path('/') << "\"";
@@ -176,14 +170,11 @@ void xdmf_mesh::add_mesh(MPI_Comm comm, pugi::xml_node& xml_node, hid_t h5_id,
   // Add topology node and attributes (including writing data)
 
   const int tdim = mesh.topology().dim();
-  std::cout << "Add topo" << std::endl;
   add_topology_data(comm, grid_node, h5_id, path_prefix, mesh.topology(),
                     mesh.geometry(), tdim);
 
   // Add geometry node and attributes (including writing data)
-  // std::cout << "Add geo" << std::endl;
-  // add_geometry_data(comm, grid_node, h5_id, path_prefix, mesh.geometry());
-  // std::cout << "Post add" << std::endl;
+  add_geometry_data(comm, grid_node, h5_id, path_prefix, mesh.geometry());
 }
 //----------------------------------------------------------------------------
 std::tuple<

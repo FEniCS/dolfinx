@@ -34,7 +34,7 @@ namespace xdmf_mesh
 {
 
 /// TODO
-void add_mesh(MPI_Comm comm, pugi::xml_node& xml_node, hid_t h5_id,
+void add_mesh(MPI_Comm comm, pugi::xml_node& xml_node, hid_t& h5_id,
               const mesh::Mesh& mesh, const std::string path_prefix);
 
 // /// TODO: Document
