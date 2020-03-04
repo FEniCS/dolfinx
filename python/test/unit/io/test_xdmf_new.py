@@ -130,8 +130,9 @@ def test_read_mesh_data(tempdir, tdim, n):
     assert mesh.geometry.index_map().size_global == MPI.sum(mesh.mpi_comm(), x.shape[0])
 
 
-encodings = (XDMFFileNew.Encoding.ASCII,)
+# encodings = (XDMFFileNew.Encoding.ASCII,)
 # celltypes_2D = [CellType.triangle, CellType.quadrilateral]
+# celltypes_2D = [CellType.quadrilateral]
 celltypes_2D = [CellType.triangle]
 data_types = (('int', int), )
 
@@ -143,10 +144,12 @@ def test_save_2D_cell_function(tempdir, encoding, data_type, cell_type):
     dtype_str, dtype = data_type
     filename = os.path.join(tempdir, "mf_2D_%s.xdmf" % dtype_str)
     filename_msh = os.path.join("mf_2D_%s.xdmf" % dtype_str)
-    mesh = UnitSquareMesh(MPI.comm_world, 23, 21, cell_type, new_style=True)
+    mesh = UnitSquareMesh(MPI.comm_world, 22, 11, cell_type, new_style=True)
+
     # print(mesh.topology.connectivity(2,0))
     # print(mesh.geometry.dofmap())
     # print(mesh.geometry.x)
+    # return
 
     mf = MeshFunction(dtype_str, mesh, mesh.topology.dim, 0)
     mf.name = "cells"
