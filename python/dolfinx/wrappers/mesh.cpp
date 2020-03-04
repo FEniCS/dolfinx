@@ -402,9 +402,10 @@ void mesh(py::module& m)
          const Eigen::Ref<const Eigen::Array<std::int64_t, Eigen::Dynamic,
                                              Eigen::Dynamic, Eigen::RowMajor>>&
              cells,
-         dolfinx::mesh::Partitioner partitioner) {
+         dolfinx::mesh::Partitioner partitioner,
+         dolfinx::mesh::GhostMode ghost_mode) {
         return dolfinx::mesh::Partitioning::partition_cells(
-            comm.get(), nparts, cell_type, cells, partitioner);
+            comm.get(), nparts, cell_type, cells, partitioner, ghost_mode);
       });
 
   m.def(
