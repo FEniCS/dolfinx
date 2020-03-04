@@ -65,7 +65,7 @@ void add_data_item(pugi::xml_node& xml_node, hid_t h5_id,
                    const std::string h5_path, const T& x,
                    const std::int64_t offset,
                    const std::vector<std::int64_t> shape,
-                   const std::string number_type)
+                   const std::string number_type, const bool use_mpi_io)
 {
   // Add DataItem node
   assert(xml_node);
@@ -130,8 +130,6 @@ void add_data_item(pugi::xml_node& xml_node, hid_t h5_id,
     const std::array<std::int64_t, 2> local_range
         = {{offset, offset + local_shape0}};
 
-    // const bool use_mpi_io = (dolfinx::MPI::size(comm) > 1);
-    const bool use_mpi_io = true;
     HDF5Interface::write_dataset(h5_id, h5_path, x.data(), local_range, shape,
                                  use_mpi_io, false);
 

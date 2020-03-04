@@ -198,6 +198,7 @@ void xdmf_function::write(const function::Function& u, double t, int counter,
         = rank_to_string(u.value_rank()).c_str();
     attribute_node.append_attribute("Center") = cell_centred ? "Cell" : "Node";
 
+    const bool use_mpi_io = (dolfinx::MPI::size(mesh->mpi_comm()) > 1);
 #ifdef PETSC_USE_COMPLEX
     // FIXME: Avoid copies by writing directly a compound data
     std::vector<double> component_data_values(data_values.size());
@@ -214,13 +215,13 @@ void xdmf_function::write(const function::Function& u, double t, int counter,
         mesh->mpi_comm(), component_data_values.size(), true);
     xdmf_utils::add_data_item(attribute_node, h5_id, dataset_name,
                               component_data_values, offset,
-                              {num_values, width}, "");
+                              {num_values, width}, "", use_mpi_io);
 #else
     // Add data item
     const std::int64_t offset = dolfinx::MPI::global_offset(
         mesh->mpi_comm(), data_values.size(), true);
     xdmf_utils::add_data_item(attribute_node, h5_id, dataset_name, data_values,
-                              offset, {num_values, width}, "");
+                              offset, {num_values, width}, "", use_mpi_io);
 #endif
   }
 }

@@ -114,8 +114,10 @@ void add_topology_data(MPI_Comm comm, pugi::xml_node& xml_node, hid_t h5_id,
 
   const std::int64_t offset
       = dolfinx::MPI::global_offset(comm, topology_data.size(), true);
+
+  const bool use_mpi_io = (dolfinx::MPI::size(comm) > 1);
   xdmf_utils::add_data_item(topology_node, h5_id, h5_path, topology_data,
-                            offset, shape, number_type);
+                            offset, shape, number_type, use_mpi_io);
 }
 //-----------------------------------------------------------------------------
 
@@ -164,8 +166,10 @@ void add_geometry_data(MPI_Comm comm, pugi::xml_node& xml_node, hid_t h5_id,
   const std::vector<std::int64_t> shape = {num_points, width};
 
   const std::int64_t offset = dolfinx::MPI::global_offset(comm, x.size(), true);
-  xdmf_utils::add_data_item(geometry_node, h5_id, h5_path, x, offset, shape,
-                            "");
+
+  const bool use_mpi_io = (dolfinx::MPI::size(comm) > 1);
+  xdmf_utils::add_data_item(geometry_node, h5_id, h5_path, x, offset, shape, "",
+                            use_mpi_io);
 }
 //-----------------------------------------------------------------------------
 
