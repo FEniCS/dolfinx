@@ -10,6 +10,7 @@
 #include <map>
 #include <utility>
 #include <vector>
+#include <dolfinx/graph/AdjacencyList.h>
 
 namespace dolfinx
 {
@@ -37,6 +38,9 @@ public:
   PartitionData(
       const std::pair<std::vector<int>,
                       std::map<std::int64_t, std::vector<int>>>& data);
+
+  /// Create from AdjacencyList
+  PartitionData(const graph::AdjacencyList<std::int32_t>& adj);
 
   /// Copy constructor
   PartitionData(const PartitionData&) = default;
