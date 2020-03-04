@@ -396,18 +396,24 @@ mesh::create_topology(MPI_Comm comm,
   map = std::make_shared<common::IndexMap>(comm, n, std::vector<std::int64_t>(),
                                            1);
   topology_local.set_index_map(0, map);
+  auto _vertices_local
+      = std::make_shared<graph::AdjacencyList<std::int32_t>>(n);
+  topology_local.set_connectivity(_vertices_local, 0, 0);
 
   // Create facets for local topology, and attach to the topology
   // object. This will be used to find possibly shared cells
   auto [cf, fv, map0]
       = TopologyComputation::compute_entities(comm, topology_local, tdim - 1);
-  topology_local.set_connectivity(cf, tdim, tdim - 1);
-  topology_local.set_index_map(tdim - 1, map0);
+  if (cf)
+    topology_local.set_connectivity(cf, tdim, tdim - 1);
+  if (map0)
+    topology_local.set_index_map(tdim - 1, map0);
   if (fv)
     topology_local.set_connectivity(fv, tdim - 1, 0);
   auto [fc, ignore] = TopologyComputation::compute_connectivity(topology_local,
                                                                 tdim - 1, tdim);
-  topology_local.set_connectivity(fc, tdim - 1, tdim);
+  if (fc)
+    topology_local.set_connectivity(fc, tdim - 1, tdim);
 
   // FIXME: This looks weird. Revise.
   // Get facets that are on the boundary of the local topology, i.e

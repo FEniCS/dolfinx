@@ -149,27 +149,22 @@ Mesh mesh::create(
     const Eigen::Ref<const Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic,
                                         Eigen::RowMajor>>& x)
 {
-  // // TODO: create outside
-  // // Create a layout
-  // const fem::ElementDofLayout layout
-  //     = fem::geometry_layout(shape, cells.num_links(0));
-
   auto [topology, src, dest] = mesh::create_topology(comm, cells, layout);
 
   // FIXME: Figure out how to check which entities are required
   // Initialise facet for P2
   // Create local entities
-  // if (topology.dim() > 1)
-  // {
-  // auto [cell_entity, entity_vertex, index_map]
-  //     = mesh::TopologyComputation::compute_entities(comm, topology, 1);
-  // if (cell_entity)
-  //   topology.set_connectivity(cell_entity, topology.dim(), 1);
-  // if (entity_vertex)
-  //   topology.set_connectivity(entity_vertex, 1, 0);
-  // if (index_map)
-  //   topology.set_index_map(1, index_map);
-  // }
+  if (topology.dim() > 1)
+  {
+    auto [cell_entity, entity_vertex, index_map]
+        = mesh::TopologyComputation::compute_entities(comm, topology, 1);
+    if (cell_entity)
+      topology.set_connectivity(cell_entity, topology.dim(), 1);
+    if (entity_vertex)
+      topology.set_connectivity(entity_vertex, 1, 0);
+    if (index_map)
+      topology.set_index_map(1, index_map);
+  }
 
   const Geometry geometry
       = mesh::create_geometry(comm, topology, layout, cells, dest, src, x);

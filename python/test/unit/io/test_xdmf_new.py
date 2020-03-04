@@ -105,11 +105,11 @@ def test_read_write_p2_mesh(tempdir, encoding):
 def test_save_1d_scalar(tempdir, encoding):
     filename2 = os.path.join(tempdir, "u1_.xdmf")
     mesh = UnitIntervalMesh(MPI.comm_world, 32, new_style=True)
-    # V = FunctionSpace(mesh, ("Lagrange", 2))
-    # u = Function(V)
-    # u.vector.set(1.0 + (1j if has_petsc_complex else 0))
-    # with XDMFFile(mesh.mpi_comm(), filename2, encoding=encoding) as file:
-    #     file.write(u)
+    V = FunctionSpace(mesh, ("Lagrange", 2))
+    u = Function(V)
+    u.vector.set(1.0 + (1j if has_petsc_complex else 0))
+    with XDMFFileNew(mesh.mpi_comm(), filename2, encoding=encoding) as file:
+        file.write(u)
 
 
 @pytest.mark.parametrize("cell_type", celltypes_2D)
