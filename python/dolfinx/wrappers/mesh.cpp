@@ -97,6 +97,7 @@ void mesh(py::module& m)
       .def("degree", &dolfinx::mesh::Geometry::degree)
       .def("dofmap",
            py::overload_cast<>(&dolfinx::mesh::Geometry::dofmap, py::const_))
+      .def("index_map", &dolfinx::mesh::Geometry::index_map)
       .def("num_points_global", &dolfinx::mesh::Geometry::num_points_global)
       .def("global_indices", &dolfinx::mesh::Geometry::global_indices)
       .def("point",

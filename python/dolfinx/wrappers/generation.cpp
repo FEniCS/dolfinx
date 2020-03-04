@@ -31,12 +31,15 @@ void generation(py::module& m)
   py::class_<dolfinx::generation::IntervalMesh,
              std::shared_ptr<dolfinx::generation::IntervalMesh>>(m,
                                                                  "IntervalMesh")
-      .def_static("create", [](const MPICommWrapper comm, std::size_t n,
-                               std::array<double, 2> p,
-                               dolfinx::mesh::GhostMode ghost_mode) {
-        return dolfinx::generation::IntervalMesh::create(comm.get(), n, p,
-                                                         ghost_mode);
-      });
+      .def_static(
+          "create",
+          [](const MPICommWrapper comm, std::size_t n, std::array<double, 2> p,
+             dolfinx::mesh::GhostMode ghost_mode, bool new_style) {
+            return dolfinx::generation::IntervalMesh::create(
+                comm.get(), n, p, ghost_mode, new_style);
+          },
+          py::arg("comm"), py::arg("n"), py::arg("p"), py::arg("ghost_mode"),
+          py::arg("new_style") = false);
 
   // dolfinx::RectangleMesh
   py::class_<dolfinx::generation::RectangleMesh,

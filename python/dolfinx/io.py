@@ -11,7 +11,6 @@ import numpy
 
 from dolfinx import cpp, fem, function
 
-
 __all__ = ["HDF5File", "XDMFFile"]
 
 
@@ -87,8 +86,8 @@ class HDF5File:
         return self._cpp_object.read_vector(mpi_comm, data_path,
                                             use_partition_from_file)
 
-    def read_mesh(self, data_path: str,
-                  use_partition_from_file: bool, ghost_mode):
+    def read_mesh(self, data_path: str, use_partition_from_file: bool,
+                  ghost_mode):
         mesh = self._cpp_object.read_mesh(data_path, use_partition_from_file,
                                           ghost_mode)
         mesh.geometry.coord_mapping = fem.create_coordinate_map(mesh)
@@ -241,8 +240,10 @@ class XDMFFile:
         mesh.geometry.coord_mapping = fem.create_coordinate_map(mesh)
         return mesh
 
-    def read_mesh_data(self, mpi_comm) -> typing.Tuple[cpp.mesh.CellType, numpy.ndarray,
-                                                       numpy.ndarray, typing.List[int]]:
+    def read_mesh_data(
+        self, mpi_comm
+    ) -> typing.Tuple[cpp.mesh.CellType, numpy.ndarray, numpy.ndarray,
+                      typing.List[int]]:
         """Read in mesh data
 
         Parameters
@@ -262,7 +263,9 @@ class XDMFFile:
         """
         return self._cpp_object.read_mesh_data(mpi_comm)
 
-    def read_checkpoint(self, V, name: str,
+    def read_checkpoint(self,
+                        V,
+                        name: str,
                         counter: int = -1) -> function.Function:
         """Read finite element Function from checkpointing format
 
@@ -357,3 +360,21 @@ class XDMFFileNew:
         mesh = self._cpp_object.read_mesh()
         mesh.geometry.coord_mapping = fem.create_coordinate_map(mesh)
         return mesh
+
+    def read_mesh_data(self) -> typing.Tuple[cpp.mesh.CellType, numpy.ndarray, numpy.ndarray]:
+        """Read in mesh data
+
+        Parameters
+        ----------
+        mpi_comm:
+            MPI communicator
+        Returns
+        -------
+        cell_type
+            Cell type
+        x
+            Geometric points on each process
+        cells
+            Topological cells with global vertex indexing
+        """
+        return self._cpp_object.read_mesh_data()

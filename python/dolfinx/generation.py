@@ -20,7 +20,8 @@ __all__ = [
 def IntervalMesh(comm,
                  nx: int,
                  points: list,
-                 ghost_mode=cpp.mesh.GhostMode.none):
+                 ghost_mode=cpp.mesh.GhostMode.none,
+                 new_style=False):
     """Create an interval mesh
 
     Parameters
@@ -37,10 +38,14 @@ def IntervalMesh(comm,
     ----
     Coordinate mapping is not attached
     """
-    return cpp.generation.IntervalMesh.create(comm, nx, points, ghost_mode)
+    return cpp.generation.IntervalMesh.create(comm, nx, points, ghost_mode,
+                                              new_style)
 
 
-def UnitIntervalMesh(comm, nx, ghost_mode=cpp.mesh.GhostMode.none):
+def UnitIntervalMesh(comm,
+                     nx,
+                     ghost_mode=cpp.mesh.GhostMode.none,
+                     new_style=False):
     """Create a mesh on the unit interval with coordinate mapping attached
 
     Parameters
@@ -51,7 +56,7 @@ def UnitIntervalMesh(comm, nx, ghost_mode=cpp.mesh.GhostMode.none):
         Number of cells
 
     """
-    mesh = IntervalMesh(comm, nx, [0.0, 1.0], ghost_mode)
+    mesh = IntervalMesh(comm, nx, [0.0, 1.0], ghost_mode, new_style)
     mesh.geometry.coord_mapping = fem.create_coordinate_map(mesh)
     return mesh
 

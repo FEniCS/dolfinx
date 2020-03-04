@@ -9,7 +9,7 @@ import os
 import pytest
 
 from dolfinx import (MPI, Function, FunctionSpace, UnitCubeMesh,
-                     UnitSquareMesh, cpp)
+                     UnitSquareMesh, cpp, UnitIntervalMesh)
 from dolfinx.cpp.mesh import CellType
 from dolfinx.io import XDMFFileNew
 from dolfinx_utils.test.fixtures import tempdir
@@ -21,7 +21,7 @@ if MPI.size(MPI.comm_world) > 1:
     encodings = (XDMFFileNew.Encoding.HDF5, )
 else:
     encodings = (XDMFFileNew.Encoding.HDF5, XDMFFileNew.Encoding.ASCII)
-    encodings = (XDMFFileNew.Encoding.HDF5,)
+    encodings = (XDMFFileNew.Encoding.HDF5, )
 
 celltypes_2D = [CellType.triangle, CellType.quadrilateral]
 celltypes_3D = [CellType.tetrahedron, CellType.hexahedron]
@@ -29,12 +29,11 @@ celltypes_3D = [CellType.tetrahedron, CellType.hexahedron]
 
 def mesh_factory(tdim, n):
     if tdim == 1:
-        pass
-        # return UnitIntervalMesh(MPI.comm_world, n)
+        return UnitIntervalMesh(MPI.comm_world, n, new_style=True)
     elif tdim == 2:
-        return UnitSquareMesh(MPI.comm_world, n, n)
+        return UnitSquareMesh(MPI.comm_world, n, n, new_style=True)
     elif tdim == 3:
-        return UnitCubeMesh(MPI.comm_world, n, n, n)
+        return UnitCubeMesh(MPI.comm_world, n, n, n, new_style=True)
 
 
 @pytest.fixture
@@ -46,8 +45,6 @@ def worker_id(request):
         return 'master'
 
 
-# celltypes_2D = [CellType.triangle]
-# encodings = (XDMFFileNew.Encoding.HDF5, )
 @pytest.mark.parametrize("cell_type", celltypes_2D)
 @pytest.mark.parametrize("encoding", encodings)
 def test_save_and_load_mesh2D(tempdir, encoding, cell_type):
@@ -115,22 +112,18 @@ def test_save_2d_scalar(tempdir, encoding, cell_type):
         file.write(u)
 
 
-# @pytest.mark.parametrize("tdim", [1, 2, 3])
-# @pytest.mark.parametrize("n", [6, 10])
-# def test_read_mesh_data(tempdir, tdim, n):
-#     filename = os.path.join(tempdir, "mesh.xdmf")
-#     mesh = mesh_factory(tdim, n)
-#     encoding = XDMFFileNew.Encoding.HDF5
-#     ghost_mode = cpp.mesh.GhostMode.none
-#     with XDMFFileNew(mesh.mpi_comm(), filename, encoding) as file:
-#         file.write(mesh)
+@pytest.mark.parametrize("tdim", [2, 3])
+@pytest.mark.parametrize("n", [6, 10])
+def test_read_mesh_data(tempdir, tdim, n):
+    filename = os.path.join(tempdir, "mesh.xdmf")
+    mesh = mesh_factory(tdim, n)
+    encoding = XDMFFileNew.Encoding.HDF5
+    with XDMFFileNew(mesh.mpi_comm(), filename, encoding) as file:
+        file.write(mesh)
 
-#     with XDMFFileNew(MPI.comm_world, filename) as file:
-#         cell_type, x, cells = file.read_mesh_data()
+    with XDMFFileNew(MPI.comm_world, filename) as file:
+        cell_type, x, cells = file.read_mesh_data()
 
-#     mesh2 = Mesh(MPI.comm_world, cell_type, points, cells, indices, ghost_mode)
-
-#     assert(mesh.topology.cell_type == mesh2.topology.cell_type)
-#     assert mesh.num_entities_global(0) == mesh2.num_entities_global(0)
-#     dim = mesh.topology.dim
-#     assert mesh.num_entities_global(dim) == mesh2.num_entities_global(dim)
+    assert cell_type == mesh.topology.cell_type
+    assert mesh.topology.index_map(tdim).size_global == MPI.sum(mesh.mpi_comm(), cells.shape[0])
+    assert mesh.geometry.index_map().size_global == MPI.sum(mesh.mpi_comm(), x.shape[0])
