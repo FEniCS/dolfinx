@@ -19,6 +19,10 @@ class xml_document;
 namespace dolfinx
 {
 
+namespace function
+{
+class Function;
+} // namespace function
 namespace mesh
 {
 class Mesh;
@@ -85,6 +89,26 @@ public:
   ///   XDMFFile
   mesh::Mesh read_mesh() const;
 
+  /// Save a function::Function with timestamp to XDMF file for
+  /// visualisation, using an associated HDF5 file, or storing the data
+  /// inline as XML.
+  ///
+  /// You can control the output with the following boolean parameters
+  /// on the XDMFFile class:
+  ///
+  /// * rewrite_function_mesh (default true): Controls whether the mesh
+  ///   will be rewritten every timestep. If the mesh does not change
+  ///   this can be turned off to create smaller files.
+  ///
+  /// * functions_share_mesh (default false): Controls whether all
+  ///   functions on a single time step share the same mesh. If true the
+  ///   files created will be smaller and also behave better in
+  ///   Paraview, at least in version 5.3.0
+  ///
+  /// @param[in] u The Function to save
+  /// @param[in] t The time
+  void write(const function::Function& u, double t);
+
 private:
   // MPI communicator
   dolfinx::MPI::Comm _mpi_comm;
@@ -100,6 +124,8 @@ private:
   std::unique_ptr<pugi::xml_document> _xml_doc;
 
   Encoding _encoding;
+
+  int _counter = 0;
 };
 
 } // namespace io

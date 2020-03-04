@@ -8,6 +8,7 @@
 #include "HDF5File.h"
 #include "cells.h"
 #include "pugixml.hpp"
+#include "xdmf_function.h"
 #include "xdmf_mesh.h"
 #include "xdmf_utils.h"
 #include <boost/filesystem.hpp>
@@ -200,6 +201,13 @@ XDMFFileNew::XDMFFileNew(MPI_Comm comm, const std::string filename,
       _encoding(encoding)
 {
   // Open files here?
+
+  // Check that encoding
+  if (_encoding == Encoding::ASCII and MPI::size(_mpi_comm.comm()) != 1)
+  {
+    throw std::runtime_error(
+        "Cannot write ASCII XDMF in parallel (use HDF5 encoding).");
+  }
 }
 //-----------------------------------------------------------------------------
 XDMFFileNew::~XDMFFileNew() { close(); }
@@ -212,13 +220,6 @@ void XDMFFileNew::close()
 //-----------------------------------------------------------------------------
 void XDMFFileNew::write(const mesh::Mesh& mesh)
 {
-  // Check that encoding
-  if (_encoding == Encoding::ASCII and MPI::size(_mpi_comm.comm()) != 1)
-  {
-    throw std::runtime_error(
-        "Cannot write ASCII XDMF in parallel (use HDF5 encoding).");
-  }
-
   // Open a HDF5 file if using HDF5 encoding (truncate)
   hid_t h5_id = -1;
   std::unique_ptr<HDF5File> h5_file;
@@ -291,5 +292,64 @@ mesh::Mesh XDMFFileNew::read_mesh() const
 
   // Return Mesh
   return mesh::Mesh(_mpi_comm.comm(), topology, geometry);
+}
+//-----------------------------------------------------------------------------
+void XDMFFileNew::write(const function::Function& u, double t)
+{
+  // Clear the pugi doc the first time
+  if (_counter == 0)
+  {
+    _xml_doc->reset();
+
+    // Create XDMF header
+    _xml_doc->append_child(pugi::node_doctype)
+        .set_value("Xdmf SYSTEM \"Xdmf.dtd\" []");
+    pugi::xml_node xdmf_node = _xml_doc->append_child("Xdmf");
+    assert(xdmf_node);
+    xdmf_node.append_attribute("Version") = "3.0";
+    xdmf_node.append_attribute("xmlns:xi") = "http://www.w3.org/2001/XInclude";
+    pugi::xml_node domain_node = xdmf_node.append_child("Domain");
+    assert(domain_node);
+  }
+
+  hid_t h5_id = -1;
+  // Open the HDF5 file for first time, if using HDF5 encoding
+  if (_encoding == Encoding::HDF5)
+  {
+    // Truncate the file the first time
+    if (_counter == 0)
+      _hdf5_file = std::make_unique<HDF5File>(
+          _mpi_comm.comm(), xdmf_utils::get_hdf5_filename(_filename), "w");
+    // else if (flush_output)
+    // {
+    //   // Append to existing HDF5 file
+    //   assert(!_hdf5_file);
+    //   _hdf5_file = std::make_unique<HDF5File>(
+    //       _mpi_comm.comm(), xdmf_utils::get_hdf5_filename(_filename), "a");
+    // }
+    else if (_counter != 0 and !_hdf5_file)
+    {
+      // The XDMFFile was previously closed, and now must be reopened
+      _hdf5_file = std::make_unique<HDF5File>(
+          _mpi_comm.comm(), xdmf_utils::get_hdf5_filename(_filename), "a");
+    }
+    assert(_hdf5_file);
+    h5_id = _hdf5_file->h5_id();
+  }
+
+  xdmf_function::write(u, t, _counter, *_xml_doc, h5_id);
+
+  // Save XML file (on process 0 only)
+  if (MPI::rank(_mpi_comm.comm()) == 0)
+    _xml_doc->save_file(_filename.c_str(), "  ");
+
+  // Close the HDF5 file if in "flush" mode
+  // if (_encoding == Encoding::HDF5 and flush_output)
+  // {
+  //   assert(_hdf5_file);
+  //   _hdf5_file.reset();
+  // }
+
+  ++_counter;
 }
 //-----------------------------------------------------------------------------
