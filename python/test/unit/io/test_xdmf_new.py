@@ -27,6 +27,16 @@ celltypes_2D = [CellType.triangle, CellType.quadrilateral]
 celltypes_3D = [CellType.tetrahedron, CellType.hexahedron]
 
 
+def mesh_factory(tdim, n):
+    if tdim == 1:
+        pass
+        # return UnitIntervalMesh(MPI.comm_world, n)
+    elif tdim == 2:
+        return UnitSquareMesh(MPI.comm_world, n, n)
+    elif tdim == 3:
+        return UnitCubeMesh(MPI.comm_world, n, n, n)
+
+
 @pytest.fixture
 def worker_id(request):
     """Return worker ID when using pytest-xdist to run tests in parallel"""
@@ -103,3 +113,24 @@ def test_save_2d_scalar(tempdir, encoding, cell_type):
     u.vector.set(1.0)
     with XDMFFileNew(mesh.mpi_comm(), filename, encoding=encoding) as file:
         file.write(u)
+
+
+# @pytest.mark.parametrize("tdim", [1, 2, 3])
+# @pytest.mark.parametrize("n", [6, 10])
+# def test_read_mesh_data(tempdir, tdim, n):
+#     filename = os.path.join(tempdir, "mesh.xdmf")
+#     mesh = mesh_factory(tdim, n)
+#     encoding = XDMFFileNew.Encoding.HDF5
+#     ghost_mode = cpp.mesh.GhostMode.none
+#     with XDMFFileNew(mesh.mpi_comm(), filename, encoding) as file:
+#         file.write(mesh)
+
+#     with XDMFFileNew(MPI.comm_world, filename) as file:
+#         cell_type, x, cells = file.read_mesh_data()
+
+#     mesh2 = Mesh(MPI.comm_world, cell_type, points, cells, indices, ghost_mode)
+
+#     assert(mesh.topology.cell_type == mesh2.topology.cell_type)
+#     assert mesh.num_entities_global(0) == mesh2.num_entities_global(0)
+#     dim = mesh.topology.dim
+#     assert mesh.num_entities_global(dim) == mesh2.num_entities_global(dim)

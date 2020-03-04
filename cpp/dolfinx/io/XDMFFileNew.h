@@ -7,6 +7,7 @@
 #pragma once
 
 #include <dolfinx/common/MPI.h>
+#include <dolfinx/mesh/cell_types.h>
 #include <memory>
 #include <string>
 
@@ -88,6 +89,16 @@ public:
   /// @return A Mesh distributed on the same communicator as the
   ///   XDMFFile
   mesh::Mesh read_mesh() const;
+
+  /// Read in the data from the first mesh in XDMF file
+  /// @return Points on each process, cells topology (global node
+  ///         indexing), and the cell type
+  std::tuple<
+      mesh::CellType,
+      Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>,
+      Eigen::Array<std::int64_t, Eigen::Dynamic, Eigen::Dynamic,
+                   Eigen::RowMajor>>
+  read_mesh_data() const;
 
   /// Save a function::Function with timestamp to XDMF file for
   /// visualisation, using an associated HDF5 file, or storing the data

@@ -142,6 +142,15 @@ mesh::Mesh XDMFFileNew::read_mesh() const
   return mesh::Mesh(_mpi_comm.comm(), topology, geometry);
 }
 //-----------------------------------------------------------------------------
+std::tuple<
+    mesh::CellType,
+    Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>,
+    Eigen::Array<std::int64_t, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>>
+XDMFFileNew::read_mesh_data() const
+{
+  return xdmf_mesh::read_mesh_data(_mpi_comm.comm(), _filename);
+}
+//-----------------------------------------------------------------------------
 void XDMFFileNew::write(const function::Function& u, double t)
 {
   // Clear the pugi doc the first time
