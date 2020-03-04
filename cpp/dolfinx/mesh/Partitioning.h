@@ -123,8 +123,7 @@ public:
       const Eigen::Ref<const Eigen::Array<std::int64_t, Eigen::Dynamic,
                                           Eigen::Dynamic, Eigen::RowMajor>>&
           cell_vertices,
-      const mesh::Partitioner graph_partitioner,
-      mesh::GhostMode ghost_mode);
+      const mesh::Partitioner graph_partitioner, mesh::GhostMode ghost_mode);
 
   /// Redistribute points to the processes that need them
   /// @param[in] comm MPI Communicator
