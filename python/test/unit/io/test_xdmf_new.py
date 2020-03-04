@@ -6,10 +6,11 @@
 
 import os
 
+import numpy as np
 import pytest
 
-from dolfinx import (MPI, Function, FunctionSpace, UnitCubeMesh,
-                     UnitSquareMesh, cpp, UnitIntervalMesh)
+from dolfinx import (MPI, Function, FunctionSpace, MeshFunction, UnitCubeMesh,
+                     UnitIntervalMesh, UnitSquareMesh, cpp)
 from dolfinx.cpp.mesh import CellType
 from dolfinx.io import XDMFFileNew
 from dolfinx_utils.test.fixtures import tempdir
@@ -127,3 +128,63 @@ def test_read_mesh_data(tempdir, tdim, n):
     assert cell_type == mesh.topology.cell_type
     assert mesh.topology.index_map(tdim).size_global == MPI.sum(mesh.mpi_comm(), cells.shape[0])
     assert mesh.geometry.index_map().size_global == MPI.sum(mesh.mpi_comm(), x.shape[0])
+
+
+encodings = (XDMFFileNew.Encoding.ASCII,)
+# celltypes_2D = [CellType.triangle, CellType.quadrilateral]
+celltypes_2D = [CellType.triangle]
+data_types = (('int', int), )
+
+
+@pytest.mark.parametrize("cell_type", celltypes_2D)
+@pytest.mark.parametrize("encoding", encodings)
+@pytest.mark.parametrize("data_type", data_types)
+def test_save_2D_cell_function(tempdir, encoding, data_type, cell_type):
+    dtype_str, dtype = data_type
+    filename = os.path.join(tempdir, "mf_2D_%s.xdmf" % dtype_str)
+    filename_msh = os.path.join("mf_2D_%s.xdmf" % dtype_str)
+    mesh = UnitSquareMesh(MPI.comm_world, 23, 21, cell_type, new_style=True)
+    # print(mesh.topology.connectivity(2,0))
+    # print(mesh.geometry.dofmap())
+    # print(mesh.geometry.x)
+
+    mf = MeshFunction(dtype_str, mesh, mesh.topology.dim, 0)
+    mf.name = "cells"
+
+    tdim = mesh.topology.dim
+    map = mesh.topology.index_map(tdim)
+    num_cells = map.size_local + map.num_ghosts
+    mf.values[:] = np.arange(num_cells, dtype=dtype) + map.local_range[0]
+    x = mesh.geometry.x
+    x_dofmap = mesh.geometry.dofmap()
+    for c in range(num_cells):
+        dofs = x_dofmap.links(c)
+        x_mid = (x[dofs[0], 0] + x[dofs[1], 0] + x[dofs[2], 0]) / 3.0
+        if (x_mid < 0.49):
+            mf.values[c] = -1
+        else:
+            mf.values[c] = 1
+
+    # NOTE: We need to write the mesh and mesh function to handle
+    # re-odering of indices
+    # Write mesh and mesh function
+    with XDMFFileNew(mesh.mpi_comm(), filename_msh, encoding=encoding) as file:
+        file.write(mesh)
+    with XDMFFileNew(mesh.mpi_comm(), filename, encoding=encoding) as file:
+        file.write(mf)
+
+    with XDMFFileNew(mesh.mpi_comm(), filename_msh) as xdmf:
+        mesh2 = xdmf.read_mesh()
+    with XDMFFileNew(mesh.mpi_comm(), filename) as xdmf:
+        read_function = getattr(xdmf, "read_mf_" + dtype_str)
+        mf_in = read_function(mesh2, "cells")
+
+    x = mesh2.geometry.x
+    x_dofmap = mesh2.geometry.dofmap()
+    for c in range(num_cells):
+        dofs = x_dofmap.links(c)
+        x_mid = (x[dofs[0], 0] + x[dofs[1], 0] + x[dofs[2], 0]) / 3.0
+        if (x_mid < 0.49):
+            assert mf_in.values[c] == -1
+        else:
+            assert mf_in.values[c] == 1

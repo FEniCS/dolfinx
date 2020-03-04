@@ -378,3 +378,7 @@ class XDMFFileNew:
             Topological cells with global vertex indexing
         """
         return self._cpp_object.read_mesh_data()
+
+    def read_mf_int(self, mesh, name: str = ""):
+        """Read MeshFunction of type int"""
+        return self._cpp_object.read_mf_int(mesh, name)

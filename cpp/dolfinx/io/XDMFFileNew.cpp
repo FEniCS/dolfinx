@@ -10,6 +10,7 @@
 #include "pugixml.hpp"
 #include "xdmf_function.h"
 #include "xdmf_mesh.h"
+#include "xdmf_mf.h"
 #include "xdmf_utils.h"
 #include <boost/filesystem.hpp>
 #include <dolfinx/common/utils.h>
@@ -149,6 +150,80 @@ std::tuple<
 XDMFFileNew::read_mesh_data() const
 {
   return xdmf_mesh::read_mesh_data(_mpi_comm.comm(), _filename);
+}
+//-----------------------------------------------------------------------------
+void XDMFFileNew::write(const mesh::MeshFunction<int>& meshfunction)
+{
+  // Check if _xml_doc already has data. If not, create an outer structure
+  // If it already has data, then we may append to it.
+
+  pugi::xml_node domain_node;
+  std::string hdf_filemode = "a";
+  if (_xml_doc->child("Xdmf").empty())
+  {
+    // Reset pugi
+    _xml_doc->reset();
+
+    // Add XDMF node and version attribute
+    _xml_doc->append_child(pugi::node_doctype)
+        .set_value("Xdmf SYSTEM \"Xdmf.dtd\" []");
+    pugi::xml_node xdmf_node = _xml_doc->append_child("Xdmf");
+    assert(xdmf_node);
+    xdmf_node.append_attribute("Version") = "3.0";
+    xdmf_node.append_attribute("xmlns:xi") = "http://www.w3.org/2001/XInclude";
+
+    // Add domain node and add name attribute
+    domain_node = xdmf_node.append_child("Domain");
+    hdf_filemode = "w";
+  }
+  else
+    domain_node = _xml_doc->child("Xdmf").child("Domain");
+
+  // Open a HDF5 file if using HDF5 encoding
+  hid_t h5_id = -1;
+  std::unique_ptr<HDF5File> h5_file;
+  if (_encoding == Encoding::HDF5)
+  {
+    // Open file
+    h5_file = std::make_unique<HDF5File>(
+        _mpi_comm.comm(), xdmf_utils::get_hdf5_filename(_filename),
+        hdf_filemode);
+    assert(h5_file);
+
+    // Get file handle
+    h5_id = h5_file->h5_id();
+  }
+
+  xdmf_mf::write_mesh_function(_mpi_comm.comm(), meshfunction, domain_node,
+                               h5_id, _counter);
+
+  // Save XML file (on process 0 only)
+  if (MPI::rank(_mpi_comm.comm()) == 0)
+    _xml_doc->save_file(_filename.c_str(), "  ");
+
+  // Increment the counter, so we can save multiple mesh::MeshFunctions in one
+  // file
+  ++_counter;
+}
+//-----------------------------------------------------------------------------
+mesh::MeshFunction<int>
+XDMFFileNew::read_mf_int(std::shared_ptr<const mesh::Mesh> mesh,
+                         std::string name) const
+{
+  // Load XML doc from file
+  pugi::xml_document xml_doc;
+  pugi::xml_parse_result result = xml_doc.load_file(_filename.c_str());
+  assert(result);
+
+  // Get XDMF node
+  pugi::xml_node xdmf_node = xml_doc.child("Xdmf");
+  assert(xdmf_node);
+
+  // Get domain node
+  pugi::xml_node domain_node = xdmf_node.child("Domain");
+  assert(domain_node);
+
+  return xdmf_mf::read_mesh_function<int>(mesh, name, _filename, domain_node);
 }
 //-----------------------------------------------------------------------------
 void XDMFFileNew::write(const function::Function& u, double t)

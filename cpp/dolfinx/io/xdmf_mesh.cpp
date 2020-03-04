@@ -14,15 +14,11 @@
 using namespace dolfinx;
 using namespace dolfinx::io;
 
-namespace
-{
 //-----------------------------------------------------------------------------
-
-/// TODO: Document
-void add_topology_data(MPI_Comm comm, pugi::xml_node& xml_node, hid_t& h5_id,
-                       const std::string path_prefix,
-                       const mesh::Topology& topology,
-                       const mesh::Geometry& geometry, int cell_dim)
+void xdmf_mesh::add_topology_data(MPI_Comm comm, pugi::xml_node& xml_node,
+                                  hid_t& h5_id, const std::string path_prefix,
+                                  const mesh::Topology& topology,
+                                  const mesh::Geometry& geometry, int cell_dim)
 {
   const int tdim = topology.dim();
   if (cell_dim != tdim)
@@ -102,11 +98,9 @@ void add_topology_data(MPI_Comm comm, pugi::xml_node& xml_node, hid_t& h5_id,
                             offset, shape, number_type, use_mpi_io);
 }
 //-----------------------------------------------------------------------------
-
-/// TODO: Document
-void add_geometry_data(MPI_Comm comm, pugi::xml_node& xml_node, hid_t h5_id,
-                       const std::string path_prefix,
-                       const mesh::Geometry& geometry)
+void xdmf_mesh::add_geometry_data(MPI_Comm comm, pugi::xml_node& xml_node,
+                                  hid_t h5_id, const std::string path_prefix,
+                                  const mesh::Geometry& geometry)
 {
   auto map = geometry.index_map();
   assert(map);
@@ -153,8 +147,6 @@ void add_geometry_data(MPI_Comm comm, pugi::xml_node& xml_node, hid_t h5_id,
   xdmf_utils::add_data_item(geometry_node, h5_id, h5_path, x, offset, shape, "",
                             use_mpi_io);
 }
-//-----------------------------------------------------------------------------
-} // namespace
 //----------------------------------------------------------------------------
 void xdmf_mesh::add_mesh(MPI_Comm comm, pugi::xml_node& xml_node, hid_t& h5_id,
                          const mesh::Mesh& mesh, const std::string path_prefix)

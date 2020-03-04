@@ -7,6 +7,7 @@
 #pragma once
 
 #include <dolfinx/common/MPI.h>
+#include <dolfinx/mesh/MeshFunction.h>
 #include <dolfinx/mesh/cell_types.h>
 #include <memory>
 #include <string>
@@ -26,6 +27,8 @@ class Function;
 } // namespace function
 namespace mesh
 {
+template <typename T>
+class MeshFunction;
 class Mesh;
 } // namespace mesh
 
@@ -99,6 +102,18 @@ public:
       Eigen::Array<std::int64_t, Eigen::Dynamic, Eigen::Dynamic,
                    Eigen::RowMajor>>
   read_mesh_data() const;
+
+  /// Save MeshFunction to file using an associated HDF5 file, or
+  /// storing the data inline as XML.
+  /// @param[in] meshfunction The mesh function to save
+  void write(const mesh::MeshFunction<int>& meshfunction);
+
+  /// Read first mesh::MeshFunction from file
+  /// @param[in] mesh The associated Mesh
+  /// @param[in] name Name of data attribute in XDMF file
+  /// @return A MeshFunction
+  mesh::MeshFunction<int> read_mf_int(std::shared_ptr<const mesh::Mesh> mesh,
+                                      std::string name = "") const;
 
   /// Save a function::Function with timestamp to XDMF file for
   /// visualisation, using an associated HDF5 file, or storing the data
