@@ -9,6 +9,7 @@
 #include <cfloat>
 #include <cmath>
 #include <dolfinx/common/MPI.h>
+#include <dolfinx/fem/ElementDofLayout.h>
 #include <dolfinx/graph/AdjacencyList.h>
 #include <dolfinx/mesh/Partitioning.h>
 
@@ -28,11 +29,12 @@ mesh::Mesh build_tri(MPI_Comm comm, const std::array<Eigen::Vector3d, 2>& p,
   {
     Eigen::Array<double, 0, 2, Eigen::RowMajor> geom(0, 2);
     Eigen::Array<std::int64_t, 0, 3, Eigen::RowMajor> topo(0, 3);
-
     if (new_style)
     {
+      const fem::ElementDofLayout layout
+          = fem::geometry_layout(mesh::CellType::triangle, topo.cols());
       return mesh::create(comm, graph::AdjacencyList<std::int64_t>(topo),
-                          mesh::CellType::triangle, geom);
+                          layout, geom);
     }
     else
     {
@@ -204,8 +206,10 @@ mesh::Mesh build_tri(MPI_Comm comm, const std::array<Eigen::Vector3d, 2>& p,
 
   if (new_style)
   {
-    return mesh::create(comm, graph::AdjacencyList<std::int64_t>(topo),
-                        mesh::CellType::triangle, geom);
+    const fem::ElementDofLayout layout
+        = fem::geometry_layout(mesh::CellType::triangle, topo.cols());
+    return mesh::create(comm, graph::AdjacencyList<std::int64_t>(topo), layout,
+                        geom);
   }
   else
   {
@@ -228,9 +232,10 @@ mesh::Mesh build_quad(MPI_Comm comm, const std::array<Eigen::Vector3d, 2>& p,
     Eigen::Array<std::int64_t, Eigen::Dynamic, 4, Eigen::RowMajor> topo(0, 4);
     if (new_style)
     {
-
+      const fem::ElementDofLayout layout
+          = fem::geometry_layout(mesh::CellType::quadrilateral, topo.cols());
       return mesh::create(comm, graph::AdjacencyList<std::int64_t>(topo),
-                          mesh::CellType::quadrilateral, geom);
+                          layout, geom);
     }
     else
     {
@@ -283,8 +288,10 @@ mesh::Mesh build_quad(MPI_Comm comm, const std::array<Eigen::Vector3d, 2>& p,
 
   if (new_style)
   {
-    return mesh::create(comm, graph::AdjacencyList<std::int64_t>(topo),
-                        mesh::CellType::quadrilateral, geom);
+    const fem::ElementDofLayout layout
+        = fem::geometry_layout(mesh::CellType::quadrilateral, topo.cols());
+    return mesh::create(comm, graph::AdjacencyList<std::int64_t>(topo), layout,
+                        geom);
   }
   else
   {

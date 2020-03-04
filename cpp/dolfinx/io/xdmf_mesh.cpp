@@ -63,6 +63,7 @@ void add_topology_data(MPI_Comm comm, pugi::xml_node& xml_node, hid_t h5_id,
   // Adjust num_nodes_per_cell to appropriate size
   assert(cells_g.num_nodes() > 0);
   const int num_nodes_per_cell = cells_g.num_links(0);
+  std::cout << "num_nodes_per_cell: " << num_nodes_per_cell << " " << num_cells << std::endl;
   //   topology_data.reserve(num_nodes_per_cell * cells.num_nodes());
 
   const std::vector<std::uint8_t> perm
@@ -94,6 +95,15 @@ void add_topology_data(MPI_Comm comm, pugi::xml_node& xml_node, hid_t h5_id,
       = dolfinx::MPI::global_offset(comm, topology_data.size(), true);
 
   const bool use_mpi_io = (dolfinx::MPI::size(comm) > 1);
+  if (use_mpi_io)
+    std::cout << "use mpi" << std::endl;
+  else
+    std::cout << "Don't use mpi" << std::endl;
+  std::cout << "Offset: " << offset << std::endl;
+  std::cout << "Shape: " << shape[0] << ", " << shape[1] << " " << offset << std::endl;
+  for (auto t : topology_data)
+    std::cout << t << std::endl;
+
   xdmf_utils::add_data_item(topology_node, h5_id, h5_path, topology_data,
                             offset, shape, number_type, use_mpi_io);
 }
@@ -166,11 +176,14 @@ void xdmf_mesh::add_mesh(MPI_Comm comm, pugi::xml_node& xml_node, hid_t h5_id,
   // Add topology node and attributes (including writing data)
 
   const int tdim = mesh.topology().dim();
+  std::cout << "Add topo" << std::endl;
   add_topology_data(comm, grid_node, h5_id, path_prefix, mesh.topology(),
                     mesh.geometry(), tdim);
 
   // Add geometry node and attributes (including writing data)
-  add_geometry_data(comm, grid_node, h5_id, path_prefix, mesh.geometry());
+  // std::cout << "Add geo" << std::endl;
+  // add_geometry_data(comm, grid_node, h5_id, path_prefix, mesh.geometry());
+  // std::cout << "Post add" << std::endl;
 }
 //----------------------------------------------------------------------------
 std::tuple<

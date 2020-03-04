@@ -145,14 +145,14 @@ compute_point_distribution(
 //-----------------------------------------------------------------------------
 Mesh mesh::create(
     MPI_Comm comm, const graph::AdjacencyList<std::int64_t>& cells,
-    CellType shape,
+    const fem::ElementDofLayout& layout,
     const Eigen::Ref<const Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic,
                                         Eigen::RowMajor>>& x)
 {
-  // TODO: create outside
-  // Create a layout
-  const fem::ElementDofLayout layout
-      = fem::geometry_layout(shape, cells.num_links(0));
+  // // TODO: create outside
+  // // Create a layout
+  // const fem::ElementDofLayout layout
+  //     = fem::geometry_layout(shape, cells.num_links(0));
 
   auto [topology, src, dest] = mesh::create_topology(comm, cells, layout);
 

@@ -10,6 +10,7 @@
 #include <cmath>
 #include <dolfinx/common/MPI.h>
 #include <dolfinx/common/Timer.h>
+#include <dolfinx/fem/ElementDofLayout.h>
 #include <dolfinx/graph/AdjacencyList.h>
 #include <dolfinx/io/cells.h>
 
@@ -139,8 +140,10 @@ mesh::Mesh build_tet(MPI_Comm comm, const std::array<Eigen::Vector3d, 2>& p,
 
   if (new_style)
   {
-    return mesh::create(comm, graph::AdjacencyList<std::int64_t>(topo),
-                        mesh::CellType::tetrahedron, geom);
+    const fem::ElementDofLayout layout
+        = fem::geometry_layout(mesh::CellType::tetrahedron, topo.cols());
+    return mesh::create(comm, graph::AdjacencyList<std::int64_t>(topo), layout,
+                        geom);
   }
   else
   {
@@ -191,8 +194,10 @@ mesh::Mesh build_hex(MPI_Comm comm, const std::array<Eigen::Vector3d, 2>& p,
 
   if (new_style)
   {
-    return mesh::create(comm, graph::AdjacencyList<std::int64_t>(topo),
-                        mesh::CellType::hexahedron, geom);
+    const fem::ElementDofLayout layout
+        = fem::geometry_layout(mesh::CellType::hexahedron, topo.cols());
+    return mesh::create(comm, graph::AdjacencyList<std::int64_t>(topo), layout,
+                        geom);
   }
   else
   {

@@ -7,6 +7,7 @@
 #include "UnitDiscMesh.h"
 #include <cmath>
 #include <dolfinx/common/types.h>
+#include <dolfinx/fem/ElementDofLayout.h>
 #include <dolfinx/graph/AdjacencyList.h>
 #include <dolfinx/io/cells.h>
 #include <dolfinx/mesh/Partitioning.h>
@@ -24,11 +25,13 @@ mesh::Mesh UnitDiscMesh::create(MPI_Comm comm, int n,
   if (dolfinx::MPI::rank(comm) != 0)
   {
     Eigen::Array<double, 0, 2, Eigen::RowMajor> geom(0, 2);
-    Eigen::Array<std::int64_t, 0, 3, Eigen::RowMajor> topo(0, 3);
+    Eigen::Array<std::int64_t, 0, 6, Eigen::RowMajor> topo(0, 6);
     if (new_style)
     {
+      const fem::ElementDofLayout layout
+          = fem::geometry_layout(mesh::CellType::triangle, topo.cols());
       return mesh::create(comm, graph::AdjacencyList<std::int64_t>(topo),
-                          mesh::CellType::triangle, geom);
+                          layout, geom);
     }
     else
     {
@@ -111,9 +114,11 @@ mesh::Mesh UnitDiscMesh::create(MPI_Comm comm, int n,
 
   if (new_style)
   {
+    const fem::ElementDofLayout layout = fem::geometry_layout(
+        mesh::CellType::triangle, cells_reordered.cols());
     return mesh::create(comm,
                         graph::AdjacencyList<std::int64_t>(cells_reordered),
-                        mesh::CellType::triangle, points);
+                        layout, points);
   }
   else
   {
