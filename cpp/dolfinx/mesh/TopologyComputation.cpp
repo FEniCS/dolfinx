@@ -90,7 +90,6 @@ get_local_indexing(
   // Get first occurence in entity list of each entity
   // and mark any entities which first pop up in the ghost range
   std::vector<std::int32_t> unique_row(entity_list.rows(), -1);
-  std::vector<bool> ghost_row(entity_list.rows(), false);
   std::int32_t entity_count = 0;
   for (int i = 0; i < entity_list.rows(); ++i)
   {
@@ -99,12 +98,35 @@ get_local_indexing(
     {
       unique_row[idx] = i;
       ++entity_count;
-      if (i > ghost_offset)
-        ghost_row[idx] = true;
     }
   }
   unique_row.resize(entity_count);
-  ghost_row.resize(entity_count);
+
+  // Set ghost status array values
+  // 1 = entities that are only in local cells (i.e. owned)
+  // 2 = entities that are only in ghost cells (i.e. not owned)
+  // 3 = entities that are on the boundary between ghost and local cells
+  std::vector<std::int8_t> ghost_status(entity_count, 0);
+  for (int i = 0; i < ghost_offset; ++i)
+  {
+    const std::int32_t idx = entity_index[i];
+    ghost_status[idx] = 1;
+  }
+  for (int i = ghost_offset; i < entity_list.rows(); ++i)
+  {
+    const std::int32_t idx = entity_index[i];
+    ghost_status[idx] |= 2;
+  }
+
+  std::vector<int> bb(4);
+  for (int i = 0; i < entity_count; ++i)
+    bb[ghost_status[i]]++;
+  std::stringstream s;
+  s << ghost_offset << ", " << entity_list.rows() << "\n";
+  s << "[";
+  for (auto q : bb)
+    s << q << " ";
+  s << "]\n";
 
   // Create an expanded neighbour_comm from shared_vertices
   std::set<std::int32_t> neighbour_set;
@@ -233,7 +255,15 @@ get_local_indexing(
   for (int i = 0; i < entity_count; ++i)
   {
     const auto it = shared_entities.find(i);
-    if (it == shared_entities.end() or *(it->second.begin()) > mpi_rank)
+    int gs = ghost_status[i];
+
+    // Definitely ghost
+    if (gs == 2)
+      continue;
+
+    // Definitely local
+    if (gs == 1 or it == shared_entities.end()
+        or *(it->second.begin()) > mpi_rank)
     {
       // Owned index
       local_index[i] = c;
@@ -241,6 +271,9 @@ get_local_indexing(
     }
   }
   const std::int32_t num_local = c;
+  s << "mpirank = " << mpi_rank << " num_local = " << num_local << "\n";
+  std::cout << s.str();
+
   for (int i = 0; i < entity_count; ++i)
   {
     // Unmapped global index (ghost)
@@ -306,7 +339,7 @@ get_local_indexing(
       = std::make_shared<common::IndexMap>(comm, num_local, ghost_indices, 1);
 
   return {std::move(local_index), index_map};
-}
+} // namespace
 //-----------------------------------------------------------------------------
 /// Compute entities of dimension d
 /// @param[in] comm MPI communicator (TODO: full or neighbour hood?)
