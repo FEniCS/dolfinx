@@ -213,23 +213,23 @@ xdmf_utils::get_point_data_values(const function::Function& u)
   assert(mesh);
   Eigen::Array<PetscScalar, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
       data_values = u.compute_point_values();
-  std::int64_t width = get_padded_width(u);
+  const int width = get_padded_width(u);
 
   // FIXME: Unpick the below code for the new layout of data from
   //        GenericFunction::compute_vertex_values
-  const std::size_t num_local_points = mesh->geometry().x().rows();
+  const std::int32_t num_local_points = mesh->geometry().x().rows();
   std::vector<PetscScalar> _data_values(width * num_local_points, 0.0);
 
-  const std::size_t value_rank = u.value_rank();
+  const int value_rank = u.value_rank();
   if (value_rank > 0)
   {
     // Transpose vector/tensor data arrays
-    const std::size_t value_size = u.value_size();
-    for (std::size_t i = 0; i < num_local_points; i++)
+    const int value_size = u.value_size();
+    for (std::int32_t i = 0; i < num_local_points; i++)
     {
-      for (std::size_t j = 0; j < value_size; j++)
+      for (int j = 0; j < value_size; j++)
       {
-        std::size_t tensor_2d_offset
+        int tensor_2d_offset
             = (j > 1 && value_rank == 2 && value_size == 4) ? 1 : 0;
         _data_values[i * width + j + tensor_2d_offset] = data_values(i, j);
       }
