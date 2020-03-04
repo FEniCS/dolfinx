@@ -133,7 +133,7 @@ def test_read_mesh_data(tempdir, tdim, n):
 # encodings = (XDMFFileNew.Encoding.ASCII,)
 # celltypes_2D = [CellType.triangle, CellType.quadrilateral]
 # celltypes_2D = [CellType.quadrilateral]
-celltypes_2D = [CellType.triangle]
+# celltypes_2D = [CellType.quadrilateral]
 data_types = (('int', int), )
 
 
@@ -142,8 +142,8 @@ data_types = (('int', int), )
 @pytest.mark.parametrize("data_type", data_types)
 def test_save_2D_cell_function(tempdir, encoding, data_type, cell_type):
     dtype_str, dtype = data_type
-    filename = os.path.join(tempdir, "mf_2D_%s.xdmf" % dtype_str)
-    filename_msh = os.path.join("mf_2D_%s.xdmf" % dtype_str)
+    filename = os.path.join(tempdir, "mf_2D_{}.xdmf".format( dtype_str))
+    filename_msh = os.path.join(tempdir, "mf_2D_{}-mesh.xdmf".format(dtype_str))
     mesh = UnitSquareMesh(MPI.comm_world, 22, 11, cell_type, new_style=True)
 
     # print(mesh.topology.connectivity(2,0))
@@ -182,6 +182,8 @@ def test_save_2D_cell_function(tempdir, encoding, data_type, cell_type):
         read_function = getattr(xdmf, "read_mf_" + dtype_str)
         mf_in = read_function(mesh2, "cells")
 
+    map = mesh2.topology.index_map(tdim)
+    num_cells = map.size_local + map.num_ghosts
     x = mesh2.geometry.x
     x_dofmap = mesh2.geometry.dofmap()
     for c in range(num_cells):
