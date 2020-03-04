@@ -142,7 +142,7 @@ data_types = (('int', int), )
 @pytest.mark.parametrize("data_type", data_types)
 def test_save_2D_cell_function(tempdir, encoding, data_type, cell_type):
     dtype_str, dtype = data_type
-    filename = os.path.join(tempdir, "mf_2D_{}.xdmf".format( dtype_str))
+    filename = os.path.join(tempdir, "mf_2D_{}.xdmf".format(dtype_str))
     filename_msh = os.path.join(tempdir, "mf_2D_{}-mesh.xdmf".format(dtype_str))
     mesh = UnitSquareMesh(MPI.comm_world, 22, 11, cell_type, new_style=True)
 
