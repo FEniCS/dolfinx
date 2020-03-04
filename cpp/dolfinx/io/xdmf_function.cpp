@@ -6,6 +6,7 @@
 
 #include "xdmf_function.h"
 #include "pugixml.hpp"
+#include "xdmf_mesh.h"
 #include "xdmf_utils.h"
 #include <boost/lexical_cast.hpp>
 #include <dolfinx/fem/DofMap.h>
@@ -86,7 +87,7 @@ void xdmf_function::write(const function::Function& u, double t, int counter,
   //   tg_name = "TimeSeries";
 
   // Look for existing time series grid node with Name == tg_name
-  // bool new_timegrid = false;
+  bool new_timegrid = false;
   std::string time_step_str = boost::lexical_cast<std::string>(t);
   pugi::xml_node timegrid_node, mesh_node;
   timegrid_node
@@ -111,7 +112,7 @@ void xdmf_function::write(const function::Function& u, double t, int counter,
     timegrid_node.append_attribute("Name") = tg_name.c_str();
     timegrid_node.append_attribute("GridType") = "Collection";
     timegrid_node.append_attribute("CollectionType") = "Temporal";
-    // new_timegrid = true;
+    new_timegrid = true;
   }
 
   // Only add mesh grid node at this time step if no other function has
@@ -120,11 +121,12 @@ void xdmf_function::write(const function::Function& u, double t, int counter,
   {
     // Add the mesh grid node to to the time series grid node
     // if (new_timegrid or rewrite_function_mesh)
-    // {
-    //   xdmf_write::add_mesh(_mpi_comm.comm(), timegrid_node, h5_id, mesh,
-    //                        "/Mesh/" + std::to_string(counter));
-    // }
-    // else
+    if (new_timegrid)
+    {
+      xdmf_mesh::add_mesh(mesh->mpi_comm(), timegrid_node, h5_id, *mesh,
+                          "/Mesh/" + std::to_string(counter));
+    }
+    else
     {
       // Make a grid node that references back to first mesh grid node of the
       // time series

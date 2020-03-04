@@ -6,6 +6,7 @@
 
 #pragma once
 
+#include "HDF5File.h"
 #include <Eigen/Dense>
 #include <dolfinx/common/MPI.h>
 #include <dolfinx/mesh/cell_types.h>
@@ -13,14 +14,34 @@
 #include <tuple>
 #include <vector>
 
+namespace pugi
+{
+class xml_node;
+} // namespace pugi
+
 namespace dolfinx
 {
+
+namespace mesh
+{
+class Mesh;
+} // namespace mesh
 
 namespace io
 {
 /// Low-level methods for reading XDMF files
 namespace xdmf_mesh
 {
+
+/// TODO
+void add_mesh(MPI_Comm comm, pugi::xml_node& xml_node, hid_t h5_id,
+              const mesh::Mesh& mesh, const std::string path_prefix);
+
+// /// TODO: Document
+// void add_topology_data(MPI_Comm comm, pugi::xml_node& xml_node, hid_t h5_id,
+//                        const std::string path_prefix,
+//                        const mesh::Topology& topology,
+//                        const mesh::Geometry& geometry, int cell_dim);
 
 /// TODO
 std::tuple<
