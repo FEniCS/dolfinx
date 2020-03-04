@@ -105,17 +105,26 @@ get_local_indexing(
   // Set ghost status array values
   // 1 = entities that are only in local cells (i.e. owned)
   // 2 = entities that are only in ghost cells (i.e. not owned)
-  // 3 = entities that are on the boundary between ghost and local cells
+  // 3 = entities with ownership that needs deciding (used also for unghosted
+  // case)
   std::vector<std::int8_t> ghost_status(entity_count, 0);
-  for (int i = 0; i < ghost_offset; ++i)
+
+  if (ghost_offset == entity_list.rows())
   {
-    const std::int32_t idx = entity_index[i];
-    ghost_status[idx] = 1;
+    std::fill(ghost_status.begin(), ghost_status.end(), 3);
   }
-  for (int i = ghost_offset; i < entity_list.rows(); ++i)
+  else
   {
-    const std::int32_t idx = entity_index[i];
-    ghost_status[idx] |= 2;
+    for (int i = 0; i < ghost_offset; ++i)
+    {
+      const std::int32_t idx = entity_index[i];
+      ghost_status[idx] = 1;
+    }
+    for (int i = ghost_offset; i < entity_list.rows(); ++i)
+    {
+      const std::int32_t idx = entity_index[i];
+      ghost_status[idx] |= 2;
+    }
   }
 
   std::vector<int> bb(4);
@@ -127,6 +136,8 @@ get_local_indexing(
   for (auto q : bb)
     s << q << " ";
   s << "]\n";
+
+  std::cout << s.str() << "\n";
 
   // Create an expanded neighbour_comm from shared_vertices
   std::set<std::int32_t> neighbour_set;
@@ -245,7 +256,6 @@ get_local_indexing(
   }
 
   //------------------------------------------------------------------
-
   int mpi_rank = dolfinx::MPI::rank(comm);
 
   // Determine ownership
@@ -255,17 +265,21 @@ get_local_indexing(
   for (int i = 0; i < entity_count; ++i)
   {
     const auto it = shared_entities.find(i);
-    int gs = ghost_status[i];
-
+    std::int8_t gs = ghost_status[i];
+    assert(gs > 0);
     // Definitely ghost
     if (gs == 2)
       continue;
 
-    // Definitely local
-    if (gs == 1 or it == shared_entities.end()
-        or *(it->second.begin()) > mpi_rank)
+    // Definitely local (unless mesh is unghosted!)
+    if (gs == 1 or it == shared_entities.end())
     {
-      // Owned index
+      local_index[i] = c;
+      ++c;
+    }
+    else if (*(it->second.begin()) > mpi_rank)
+    {
+      // Take ownership (lower rank wins)
       local_index[i] = c;
       ++c;
     }
@@ -334,6 +348,8 @@ get_local_indexing(
       }
     }
   }
+
+  std::cout << "ghost_indices = " << ghost_indices << "\n";
 
   std::shared_ptr<common::IndexMap> index_map
       = std::make_shared<common::IndexMap>(comm, num_local, ghost_indices, 1);
@@ -434,6 +450,10 @@ compute_entities_by_key_matching(
 
   std::int32_t ghost_offset
       = cell_index_map->size_local() * num_entities_per_cell;
+
+  std::cout << "ghost_offset = " << ghost_offset
+            << " rows = " << entity_list.rows() << "\n";
+  std::cout << "idxmap ghosts = " << cell_index_map->ghosts() << "\n";
 
   auto [local_index, index_map] = get_local_indexing(
       comm, vertex_index_map, entity_list, entity_index, ghost_offset);
