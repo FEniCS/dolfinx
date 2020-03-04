@@ -86,7 +86,7 @@ void xdmf_function::write(const function::Function& u, double t, int counter,
   //   tg_name = "TimeSeries";
 
   // Look for existing time series grid node with Name == tg_name
-  bool new_timegrid = false;
+  // bool new_timegrid = false;
   std::string time_step_str = boost::lexical_cast<std::string>(t);
   pugi::xml_node timegrid_node, mesh_node;
   timegrid_node
@@ -111,7 +111,7 @@ void xdmf_function::write(const function::Function& u, double t, int counter,
     timegrid_node.append_attribute("Name") = tg_name.c_str();
     timegrid_node.append_attribute("GridType") = "Collection";
     timegrid_node.append_attribute("CollectionType") = "Temporal";
-    new_timegrid = true;
+    // new_timegrid = true;
   }
 
   // Only add mesh grid node at this time step if no other function has
