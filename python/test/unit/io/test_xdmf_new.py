@@ -91,13 +91,15 @@ def test_read_write_p2_mesh(tempdir, encoding):
         dim).size_global == mesh2.topology.index_map(dim).size_global
 
 
-# @pytest.mark.parametrize("cell_type", celltypes_2D)
-# @pytest.mark.parametrize("encoding", encodings)
-# def test_save_2d_scalar(tempdir, encoding, cell_type, new_style=True):
-#     filename = os.path.join(tempdir, "u2.xdmf")
-#     mesh = UnitSquareMesh(MPI.comm_world, 16, 16, cell_type)
-#     V = FunctionSpace(mesh, ("Lagrange", 2))
-#     u = Function(V)
-#     u.vector.set(1.0 + (1j if has_petsc_complex else 0))
-#     with XDMFFile(mesh.mpi_comm(), filename, encoding=encoding) as file:
-#         file.write(u)
+encodings = (XDMFFileNew.Encoding.ASCII,)
+@pytest.mark.parametrize("cell_type", celltypes_2D)
+@pytest.mark.parametrize("encoding", encodings)
+def test_save_2d_scalar(tempdir, encoding, cell_type, new_style=True):
+    # filename = os.path.join(tempdir, "u2.xdmf")
+    # filename = os.path.join("u2.xdmf")
+    mesh = UnitSquareMesh(MPI.comm_world, 2, 2, cell_type)
+    V = FunctionSpace(mesh, ("Lagrange", 1))
+    u = Function(V)
+    u.vector.set(1.0)
+    # with XDMFFileNew(mesh.mpi_comm(), filename, encoding=encoding) as file:
+    #     file.write(u)
