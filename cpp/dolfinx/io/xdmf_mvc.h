@@ -256,28 +256,33 @@ mesh::MeshValueCollection<T> read(std::shared_ptr<const mesh::Mesh> mesh,
   assert(map);
   const std::vector<std::int64_t> global_indices = map->global_indices(false);
 
+  auto map_e = mesh->topology().index_map(dim);
+  assert(map_e);
   std::vector<std::int32_t> v(num_verts_per_entity);
-  for (auto& m : mesh::MeshRange(*mesh, dim, mesh::MeshRangeType::ALL))
+  // for (auto& m : mesh::MeshRange(*mesh, dim, mesh::MeshRangeType::ALL))
+  for (int e = 0; e < map_e->size_local() + map_e->num_ghosts(); ++e)
   {
     if (dim == 0)
-      v[0] = global_indices[m.index()];
+      v[0] = global_indices[e];
     else
     {
       v.clear();
-      for (auto& vtx : mesh::EntityRange(m, 0))
-        v.push_back(global_indices[vtx.index()]);
+      auto e_to_v = mesh->topology().connectivity(dim, 0);
+      auto vertices = e_to_v->links(e);
+      for (int i = 0; i < vertices.rows(); ++i)
+        v.push_back(global_indices[vertices[i]]);
       std::sort(v.begin(), v.end());
     }
 
     int dest = MPI::index_owner(num_processes, v[0], global_vertex_range);
-    send_entities[dest].push_back(m.index());
+    send_entities[dest].push_back(e);
     send_entities[dest].insert(send_entities[dest].end(), v.begin(), v.end());
   }
   MPI::all_to_all(mesh->mpi_comm(), send_entities, recv_entities);
 
   // Map from {entity vertex indices} to {process, local_index}
   std::map<std::vector<std::int32_t>, std::vector<std::int32_t>> entity_map;
-  for (std::int32_t i = 0; i != num_processes; ++i)
+  for (std::int32_t i = 0; i < num_processes; ++i)
   {
     for (auto it = recv_entities[i].begin(); it != recv_entities[i].end();
          it += (num_verts_per_entity + 1))

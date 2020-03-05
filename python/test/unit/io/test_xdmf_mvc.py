@@ -79,10 +79,16 @@ def test_save_mesh_value_collection(tempdir, encoding, data_type, cell_type):
 
         # filename = os.path.join(tempdir, "mvc_{}.xdmf".format(mvc_dim))
         filename = os.path.join("tmp-{}.xdmf".format(mvc_dim))
-
+        filename_msh = os.path.join("tmp-{}-msh.xdmf".format(mvc_dim))
+        with XDMFFileNew(mesh.mpi_comm(), filename_msh, encoding=encoding) as xdmf:
+            xdmf.write(mesh)
         with XDMFFileNew(mesh.mpi_comm(), filename, encoding=encoding) as xdmf:
             xdmf.write(meshfn)
             xdmf.write(mvc)
+
+        # with XDMFFileNew(mesh.mpi_comm(), filename_msh) as xdmf:
+        #     mesh2 = xdmf.read_mesh()
+        # mesh2.create_connectivity(mvc_dim, tdim)
 
         with XDMFFileNew(mesh.mpi_comm(), filename) as xdmf:
             read_function = getattr(xdmf, "read_mvc_" + dtype_str)
