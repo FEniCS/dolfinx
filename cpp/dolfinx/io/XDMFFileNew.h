@@ -25,11 +25,14 @@ namespace function
 {
 class Function;
 } // namespace function
+
 namespace mesh
 {
+class Mesh;
 template <typename T>
 class MeshFunction;
-class Mesh;
+template <typename T>
+class MeshValueCollection;
 } // namespace mesh
 
 namespace io
@@ -114,6 +117,19 @@ public:
   /// @return A MeshFunction
   mesh::MeshFunction<int> read_mf_int(std::shared_ptr<const mesh::Mesh> mesh,
                                       std::string name = "") const;
+
+  /// Read first MeshValueCollection from file
+  /// @param[in] mesh The associated Mesh
+  /// @param[in] name Name of data attribute in XDMF file
+  /// @return A MeshValueCollection
+  mesh::MeshValueCollection<int>
+  read_mvc_int(std::shared_ptr<const mesh::Mesh> mesh,
+               std::string name = "") const;
+
+  /// Write out mesh value collection (subset) using an associated HDF5
+  /// file, or storing the data inline as XML.
+  /// @param[in] mvc The mesh::MeshValueCollection to save
+  void write(const mesh::MeshValueCollection<int>& mvc);
 
   /// Save a function::Function with timestamp to XDMF file for
   /// visualisation, using an associated HDF5 file, or storing the data

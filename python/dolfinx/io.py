@@ -382,3 +382,7 @@ class XDMFFileNew:
     def read_mf_int(self, mesh, name: str = ""):
         """Read MeshFunction of type int"""
         return self._cpp_object.read_mf_int(mesh, name)
+
+    def read_mvc_int(self, mesh, name: str = ""):
+        """Read MeshFunction of type int"""
+        return self._cpp_object.read_mvc_int(mesh, name)
