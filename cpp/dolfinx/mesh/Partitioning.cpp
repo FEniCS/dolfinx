@@ -713,13 +713,14 @@ PartitionData Partitioning::partition_cells(
                                + std::to_string(nparts) + " parts.");
     }
 
+    bool ghosted = (ghost_mode != mesh::GhostMode::none);
+
     // Compute cell partition using partitioner from parameter system
     if (graph_partitioner == mesh::Partitioner::scotch)
     {
       graph::AdjacencyList<SCOTCH_Num> adj_graph(local_graph);
       std::vector<std::size_t> weights;
       const std::int32_t num_ghost_nodes = std::get<0>(graph_info);
-      bool ghosted = (ghost_mode != mesh::GhostMode::none);
       return PartitionData(
           graph::SCOTCH::partition(mpi_comm, (SCOTCH_Num)nparts, adj_graph,
                                    weights, num_ghost_nodes, ghosted));
@@ -728,8 +729,8 @@ PartitionData Partitioning::partition_cells(
     {
 #ifdef HAS_PARMETIS
       graph::AdjacencyList<idx_t> adj_graph(local_graph);
-      return PartitionData(
-          graph::ParMETIS::partition(mpi_comm, (idx_t)nparts, adj_graph));
+      return PartitionData(graph::ParMETIS::partition(mpi_comm, (idx_t)nparts,
+                                                      adj_graph, ghosted));
 #else
       throw std::runtime_error("ParMETIS not available");
 #endif
@@ -739,7 +740,7 @@ PartitionData Partitioning::partition_cells(
 #ifdef HAS_KAHIP
       graph::AdjacencyList<unsigned long long> adj_graph(local_graph);
       return PartitionData(
-          graph::KaHIP::partition(mpi_comm, nparts, adj_graph));
+          graph::KaHIP::partition(mpi_comm, nparts, adj_graph, ghosted));
 #else
       throw std::runtime_error("KaHIP not available");
 #endif

@@ -36,14 +36,15 @@ class ParMETIS
 public:
   // Standard ParMETIS partition
   static AdjacencyList<std::int32_t>
-  partition(MPI_Comm mpi_comm, idx_t nparts, const AdjacencyList<idx_t>& adj_graph);
+  partition(MPI_Comm mpi_comm, idx_t nparts,
+            const AdjacencyList<idx_t>& adj_graph, bool ghosting);
 
 private:
   // ParMETIS adaptive repartition, so has to be non-const here
   template <typename T>
-  static std::vector<int> adaptive_repartition(MPI_Comm mpi_comm,
-                                               const AdjacencyList<T>& adj_graph,
-                                               double weight = 1000);
+  static std::vector<int>
+  adaptive_repartition(MPI_Comm mpi_comm, const AdjacencyList<T>& adj_graph,
+                       double weight = 1000);
 
   // ParMETIS refine repartition
   template <typename T>

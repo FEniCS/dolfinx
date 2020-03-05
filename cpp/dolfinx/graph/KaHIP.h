@@ -8,8 +8,8 @@
 
 #include "Graph.h"
 #include <cstdint>
-#include <dolfinx/graph/AdjacencyList.h>
 #include <dolfinx/common/MPI.h>
+#include <dolfinx/graph/AdjacencyList.h>
 #include <map>
 
 namespace dolfinx
@@ -26,7 +26,7 @@ public:
   // Standard KaHIP partition
   static AdjacencyList<std::int32_t>
   partition(MPI_Comm mpi_comm, int nparts,
-            const AdjacencyList<unsigned long long>& adj_graph);
+            const AdjacencyList<unsigned long long>& adj_graph, bool ghosting);
 
 #endif
 };
