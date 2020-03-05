@@ -148,8 +148,10 @@ distribute_cells(
   // Calculate local range of global indices
   std::vector<std::int32_t> local_sizes;
   dolfinx::MPI::all_gather(mpi_comm, local_count, local_sizes);
-  std::vector<std::int64_t> ranges(mpi_size + 1, 0);
-  std::partial_sum(local_sizes.begin(), local_sizes.end(), ranges.begin() + 1);
+  std::vector<std::int64_t> ranges = {0};
+  for (int i = 0; i < mpi_size; ++i)
+    ranges.push_back(ranges.back() + local_sizes[i]);
+
   std::vector<std::int64_t> new_global_cell_indices(all_count, -1);
   std::iota(new_global_cell_indices.begin(),
             new_global_cell_indices.begin() + local_count, ranges[mpi_rank]);
