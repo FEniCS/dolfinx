@@ -148,7 +148,7 @@ void write(MPI_Comm comm, const mesh::MeshValueCollection<T>& mvc,
 
       // if cell is actually a vertex
       if (dim == 0)
-        topology_data.push_back(global_indices[c]);
+        topology_data.push_back(global_indices[e]);
       else
       {
         auto vertices = e_to_v->links(e);
