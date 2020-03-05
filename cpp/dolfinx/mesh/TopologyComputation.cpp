@@ -88,7 +88,6 @@ get_local_indexing(
       = vertex_indexmap->compute_shared_indices();
 
   // Get first occurence in entity list of each entity
-  // and mark any entities which first pop up in the ghost range
   std::vector<std::int32_t> unique_row(entity_list.rows(), -1);
   std::int32_t entity_count = 0;
   for (int i = 0; i < entity_list.rows(); ++i)
@@ -136,8 +135,7 @@ get_local_indexing(
   for (auto q : bb)
     s << q << " ";
   s << "]\n";
-
-  std::cout << s.str() << "\n";
+  std::cout << s.str();
 
   // Create an expanded neighbour_comm from shared_vertices
   std::set<std::int32_t> neighbour_set;
@@ -162,10 +160,9 @@ get_local_indexing(
   // Get all "possibly shared" entities, based on vertex sharing. Send to
   // other processes, and see if we get the same back.
 
-  // Map for sent entities to each neighbour
-  // FIXME: Can this just be one map?
-  std::vector<std::map<std::vector<std::int64_t>, std::int32_t>>
-      send_data_to_send_index(neighbour_size);
+  // Map for entities to entity index, using global vertex indices
+  std::map<std::vector<std::int64_t>, std::int32_t>
+      global_entity_to_entity_index;
 
   // Set of sharing procs for each entity, counting vertex hits
   std::unordered_map<int, int> procs;
@@ -199,13 +196,17 @@ get_local_indexing(
         vglobal = vertex_indexmap->local_to_global(vlocal, false);
         std::sort(vglobal.begin(), vglobal.end());
 
-        send_data_to_send_index[np].insert({vglobal, entity_index[i]});
+        global_entity_to_entity_index.insert({vglobal, entity_index[i]});
 
-        // Entity entity_index[i] may be shared with process p
-        send_entities[np].insert(send_entities[np].end(), vglobal.begin(),
-                                 vglobal.end());
+        // Do not send entities which are known to be ghosts
+        if (ghost_status[entity_index[i]] != 2)
+        {
+          // Entity entity_index[i] may be shared with process p
+          send_entities[np].insert(send_entities[np].end(), vglobal.begin(),
+                                   vglobal.end());
 
-        send_index[np].push_back(entity_index[i]);
+          send_index[np].push_back(entity_index[i]);
+        }
       }
     }
   }
@@ -244,8 +245,8 @@ get_local_indexing(
       recv_vec.assign(recv_entities_data.data() + j,
                       recv_entities_data.data() + j + num_vertices);
 
-      auto it = send_data_to_send_index[np].find(recv_vec);
-      if (it != send_data_to_send_index[np].end())
+      auto it = global_entity_to_entity_index.find(recv_vec);
+      if (it != global_entity_to_entity_index.end())
       {
         shared_entities[it->second].insert(p);
         recv_index.push_back(it->second);
@@ -271,13 +272,13 @@ get_local_indexing(
     if (gs == 2)
       continue;
 
-    // Definitely local (unless mesh is unghosted!)
-    if (gs == 1 or it == shared_entities.end())
+    // Definitely local
+    if (gs == 1)
     {
       local_index[i] = c;
       ++c;
     }
-    else if (*(it->second.begin()) > mpi_rank)
+    else if (it != shared_entities.end() and *(it->second.begin()) > mpi_rank)
     {
       // Take ownership (lower rank wins)
       local_index[i] = c;
@@ -285,8 +286,6 @@ get_local_indexing(
     }
   }
   const std::int32_t num_local = c;
-  s << "mpirank = " << mpi_rank << " num_local = " << num_local << "\n";
-  std::cout << s.str();
 
   for (int i = 0; i < entity_count; ++i)
   {
@@ -348,8 +347,6 @@ get_local_indexing(
       }
     }
   }
-
-  std::cout << "ghost_indices = " << ghost_indices << "\n";
 
   std::shared_ptr<common::IndexMap> index_map
       = std::make_shared<common::IndexMap>(comm, num_local, ghost_indices, 1);
