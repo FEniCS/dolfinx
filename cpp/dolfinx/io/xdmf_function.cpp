@@ -216,7 +216,7 @@ void xdmf_function::write(const function::Function& u, double t, int counter,
 
     // Add data item of component
     const std::int64_t offset = dolfinx::MPI::global_offset(
-        mesh->mpi_comm(), component_data_values / width, true);
+        mesh->mpi_comm(), component_data_values.size() / width, true);
     xdmf_utils::add_data_item(attribute_node, h5_id, dataset_name,
                               component_data_values, offset,
                               {num_values, width}, "", use_mpi_io);
