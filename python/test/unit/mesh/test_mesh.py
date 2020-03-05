@@ -476,7 +476,7 @@ def test_distribute_mesh(subset_comm, tempdir, mesh_factory, graph_partitioner):
         cell_type, points, cells, indices = file.read_mesh_data(subset_comm)
 
     partition_data = cpp.mesh.partition_cells(subset_comm, parts, cell_type,
-                                              cells, graph_partitioner)
+                                              cells, graph_partitioner, ghost_mode)
 
     dist_mesh = cpp.mesh.build_from_partition(MPI.comm_world, cell_type, points,
                                               cells, indices, ghost_mode,
