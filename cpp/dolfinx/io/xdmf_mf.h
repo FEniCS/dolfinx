@@ -114,47 +114,80 @@ remap_meshfunction_data(const mesh::Mesh& mesh, const int dim,
 
   auto map_g = mesh.geometry().index_map();
   assert(map_g);
-  // const std::int64_t offset_g = map_g->local_range()[0];
-  // const Eigen::Array<std::int64_t, Eigen::Dynamic, 1>& ghosts = map_g->ghosts();
 
   // FIXME: handle dim \ne tdim
   const graph::AdjacencyList<std::int32_t>& x_dofmap = mesh.geometry().dofmap();
   const int num_cells = map->size_local() + map->num_ghosts();
-  for (int c = 0; c < num_cells; ++c)
+  const int tdim = mesh.topology().dim();
+  if (dim == tdim)
   {
-    std::vector<std::int64_t> cell;
-    auto nodes = x_dofmap.links(c);
-    for (int v = 0; v < nodes.rows(); ++v)
+    for (int c = 0; c < num_cells; ++c)
     {
-      // std::int64_t global_index = nodes(v);
-      // if (global_index < map_g->size_local())
-      //   global_index += offset_g;
-      // else
-      //   global_index += ghosts(nodes(v) - offset_g);
-      // cell.push_back(global_index);
+      std::vector<std::int64_t> cell;
+      auto nodes = x_dofmap.links(c);
+      for (int v = 0; v < nodes.rows(); ++v)
+      {
+        std::int32_t local_index = nodes(v);
+        cell.push_back(global_indices[local_index]);
+      }
+      std::sort(cell.begin(), cell.end());
 
-      std::int32_t local_index = nodes(v);
-      cell.push_back(global_indices[local_index]);
+      // Use first vertex to decide where to send this request
+      int dest = MPI::index_owner(size, cell.front(), max_node);
+
+      // Map to this process and local index by appending to send data
+      cell.push_back(c);
+      cell.push_back(rank);
+      send_requests[dest].insert(send_requests[dest].end(), cell.begin(),
+                                 cell.end());
     }
-
-    std::sort(cell.begin(), cell.end());
-    // std::cout << "Cell (0): " << cell.size() << std::endl;
-    // for (auto d : cell)
-    //   std::cout << "  " << d << std::endl;
-
-    // Use first vertex to decide where to send this request
-    int dest = MPI::index_owner(size, cell.front(), max_node);
-
-    // Map to this process and local index by appending to send data
-    cell.push_back(c);
-    cell.push_back(rank);
-    send_requests[dest].insert(send_requests[dest].end(), cell.begin(),
-                               cell.end());
   }
+  else
+  {
+    auto e_to_c = mesh.topology().connectivity(dim, tdim);
+    assert(e_to_c);
+    auto e_to_v = mesh.topology().connectivity(dim, 0);
+    assert(e_to_v);
+    auto c_to_v = mesh.topology().connectivity(tdim, 0);
+    assert(c_to_v);
 
-  // std::cout << "Data to send: " << send_requests.size() << std::endl;
-  // for (auto d : send_requests[0])
-  //   std::cout << "  " << d << std::endl;
+    for (int e = 0; e < num_cells; ++e)
+    {
+      std::vector<std::int64_t> cell;
+
+      // Get first attached cell
+      std::int32_t c = e_to_c->links(e)[0];
+      auto cell_vertices = c_to_v->links(c);
+      auto nodes = x_dofmap.links(c);
+
+      auto vertices = e_to_v->links(e);
+      for (int v = 0; v < vertices.rows(); ++v)
+      {
+        const int v_index = v;
+        const int vertex = vertices[v_index];
+        auto it
+            = std::find(cell_vertices.data(),
+                        cell_vertices.data() + cell_vertices.rows(), vertex);
+        assert(it != (cell_vertices.data() + cell_vertices.rows()));
+        const int local_cell_vertex = std::distance(cell_vertices.data(), it);
+
+        const std::int32_t local_index = nodes[local_cell_vertex];
+        // std::cout << "   ind: " << global_indices[local_index] << std::endl;
+        cell.push_back(global_indices[local_index]);
+      }
+
+      std::sort(cell.begin(), cell.end());
+
+      // Use first vertex to decide where to send this request
+      int dest = MPI::index_owner(size, cell.front(), max_node);
+
+      // Map to this process and local index by appending to send data
+      cell.push_back(e);
+      cell.push_back(rank);
+      send_requests[dest].insert(send_requests[dest].end(), cell.begin(),
+                                 cell.end());
+    }
+  }
 
   std::vector<std::vector<std::int64_t>> receive_requests(size);
   MPI::all_to_all(comm, send_requests, receive_requests);
@@ -425,17 +458,6 @@ mesh::MeshFunction<T> read_mesh_function(std::shared_ptr<const mesh::Mesh> mesh,
       = xdmf_read::get_dataset<std::int64_t>(mesh->mpi_comm(),
                                              topology_data_node, parent_path);
   assert(topology_data.size() % num_vertices_per_cell == 0);
-  // std::cout << "Topology data:" << std::endl;
-  // int k = 0;
-  // for (std::size_t i = 0; i < topology_data.size() / num_vertices_per_cell;
-  // ++i)
-  // {
-  //   for (int j = 0; j < num_vertices_per_cell; ++j)
-  //   {
-  //     std::cout << "    " << topology_data[k++];
-  //   }
-  //   std::cout << std::endl;
-  // }
 
   // Get value dataset
   pugi::xml_node value_data_node = value_node.child("DataItem");

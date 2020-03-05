@@ -179,23 +179,38 @@ celltypes_2D = [CellType.triangle]
 @pytest.mark.parametrize("data_type", data_types)
 def test_save_2D_facet_function(tempdir, encoding, data_type, cell_type):
     dtype_str, dtype = data_type
-    mesh = UnitSquareMesh(MPI.comm_world, 8, 8, cell_type, new_style=True)
+    mesh = UnitSquareMesh(MPI.comm_world, 1, 1, cell_type, new_style=True)
     tdim = mesh.topology.dim
     mf = MeshFunction(dtype_str, mesh, tdim - 1, 0)
     mf.name = "facets"
 
+    # TODO: Add test that is robust with respect to number, i.e.
+    # computing something based on coordinate
     map = mesh.topology.index_map(tdim - 1)
     global_indices = map.global_indices(True)
     mf.values[:] = global_indices[:]
-    # filename = os.path.join(tempdir, "mf_facet_2D_%s.xdmf" % dtype_str)
-    filename = os.path.join("test.xdmf")
 
+    # filename = os.path.join(tempdir, "mf_facet_2D_%s.xdmf" % dtype_str)
+    # filename_msh = os.path.join(tempdir, "mf_facet_2D_%s-mesh.xdmf" % dtype_str)
+    filename = os.path.join("mf_facet_2D_%s.xdmf" % dtype_str)
+    filename_msh = os.path.join("mf_facet_2D_%s-mesh.xdmf" % dtype_str)
     mesh.create_connectivity(tdim - 1, tdim)
+
+    # NOTE: We need to write the mesh and mesh function to handle
+    # re-odering of indices
+    # Write mesh and mesh function
+    with XDMFFileNew(mesh.mpi_comm(), filename_msh, encoding=encoding) as file:
+        file.write(mesh)
     with XDMFFileNew(mesh.mpi_comm(), filename, encoding=encoding) as xdmf:
         xdmf.write(mf)
-    # with XDMFFileNew(mesh.mpi_comm(), filename) as xdmf:
-    #     read_function = getattr(xdmf, "read_mf_" + dtype_str)
-    #     mf_in = read_function(mesh, "facets")
 
+    with XDMFFileNew(mesh.mpi_comm(), filename_msh) as xdmf:
+        mesh2 = xdmf.read_mesh()
+    mesh2.create_connectivity(tdim - 1, tdim)
+    with XDMFFileNew(mesh.mpi_comm(), filename) as xdmf:
+        read_function = getattr(xdmf, "read_mf_" + dtype_str)
+        mf_in = read_function(mesh2, "facets")
+
+    print(mf_in.values)
     # diff = mf_in.values - mf.values
     # assert np.all(diff == 0)
