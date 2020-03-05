@@ -80,9 +80,10 @@ IndexMap::IndexMap(
   std::vector<std::int32_t> local_sizes(mpi_size);
   MPI_Allgather(&local_size, 1, MPI_INT32_T, local_sizes.data(), 1, MPI_INT32_T,
                 mpi_comm);
-  _all_ranges = std::vector<std::int64_t>(mpi_size + 1, 0);
-  std::partial_sum(local_sizes.begin(), local_sizes.end(),
-                   _all_ranges.begin() + 1);
+
+  _all_ranges = {0};
+  for (int i = 0; i < mpi_size; ++i)
+    _all_ranges.push_back(_all_ranges.back() + local_sizes[i]);
 
   // Compute number of outgoing edges (ghost -> owner) to each remote
   // processes
@@ -139,7 +140,7 @@ IndexMap::IndexMap(
 #endif
 
   // Create displacement vectors
-  std::vector<int> disp_out(num_neighbours + 1, 0),
+  std::vector<std::int32_t> disp_out(num_neighbours + 1, 0),
       disp_in(num_neighbours + 1, 0);
   std::partial_sum(out_edges_num.begin(), out_edges_num.end(),
                    disp_out.begin() + 1);
@@ -148,8 +149,8 @@ IndexMap::IndexMap(
 
   // Get rank on neighbourhood communicator for each ghost, and for each
   // ghost compute the local index on the owning process
-  std::vector<int> out_indices(disp_out.back());
-  std::vector<int> disp(disp_out);
+  std::vector<std::int32_t> out_indices(disp_out.back());
+  std::vector<std::int32_t> disp(disp_out);
   for (int j = 0; j < _ghosts.size(); ++j)
   {
     // Get rank of owner process rank on global communicator
@@ -169,7 +170,7 @@ IndexMap::IndexMap(
   }
 
   //  May have repeated shared indices with different processes
-  std::vector<int> indices_in(disp_in.back());
+  std::vector<std::int32_t> indices_in(disp_in.back());
   MPI_Neighbor_alltoallv(
       out_indices.data(), out_edges_num.data(), disp_out.data(), MPI_INT,
       indices_in.data(), // out
