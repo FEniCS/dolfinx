@@ -129,7 +129,6 @@ void write(MPI_Comm comm, const mesh::MeshValueCollection<T>& mvc,
     for (auto& p : values)
     {
       const std::int32_t entity_index = p.first.first;
-      const std::int32_t local_index = p.first.second;
       auto vertices = e_to_v->links(entity_index);
       for (int i = 0; i < vertices.rows(); ++i)
         topology_data.push_back(global_indices[vertices[i]]);

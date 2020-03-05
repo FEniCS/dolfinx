@@ -252,9 +252,6 @@ void XDMFFileNew::write(const mesh::MeshValueCollection<int>& mvc)
   std::shared_ptr<const mesh::Mesh> mesh = mvc.mesh();
   assert(mesh);
 
-  const int tdim = mesh->topology().dim();
-  const int gdim = mesh->geometry().dim();
-
   pugi::xml_node domain_node;
   std::string hdf_filemode = "a";
   if (_xml_doc->child("Xdmf").empty())
