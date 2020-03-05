@@ -15,6 +15,7 @@
 #include <dolfinx/fem/DofMapBuilder.h>
 #include <dolfinx/fem/Form.h>
 #include <dolfinx/fem/SparsityPatternBuilder.h>
+#include <dolfinx/function/Constant.h>
 #include <dolfinx/function/Function.h>
 #include <dolfinx/function/FunctionSpace.h>
 #include <dolfinx/la/PETScMatrix.h>
@@ -24,6 +25,7 @@
 #include <dolfinx/mesh/Topology.h>
 #include <dolfinx/mesh/TopologyComputation.h>
 #include <memory>
+#include <petscsys.h>
 #include <string>
 #include <ufc.h>
 
@@ -756,5 +758,23 @@ fem::pack_coefficients(const fem::Form& form)
   }
 
   return c;
+}
+//-----------------------------------------------------------------------------
+Eigen::Array<PetscScalar, Eigen::Dynamic, 1>
+fem::pack_constants(const fem::Form& form)
+{
+  const std::vector<
+      std::pair<std::string, std::shared_ptr<const function::Constant>>>
+      constants = form.constants();
+  std::vector<PetscScalar> constant_values;
+  for (auto& constant : constants)
+  {
+    const std::vector<PetscScalar>& array = constant.second->value;
+    constant_values.insert(constant_values.end(), array.data(),
+                           array.data() + array.size());
+  }
+  Eigen::Map<const Eigen::Array<PetscScalar, Eigen::Dynamic, 1>> constant_array(
+      constant_values.data(), constant_values.size(), 1);
+  return constant_array;
 }
 //-----------------------------------------------------------------------------
