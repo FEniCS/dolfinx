@@ -162,6 +162,8 @@ void xdmf_function::write(const function::Function& u, double t, int counter,
 
   auto map_c = mesh->topology().index_map(mesh->topology().dim());
   assert(map_c);
+
+  // FIXME: Should this be the geometry map?
   auto map_v = mesh->topology().index_map(0);
   assert(map_v);
 
@@ -221,7 +223,7 @@ void xdmf_function::write(const function::Function& u, double t, int counter,
 #else
     // Add data item
     const std::int64_t offset = dolfinx::MPI::global_offset(
-        mesh->mpi_comm(), data_values.size(), true);
+        mesh->mpi_comm(), data_values.size() / width, true);
     xdmf_utils::add_data_item(attribute_node, h5_id, dataset_name, data_values,
                               offset, {num_values, width}, "", use_mpi_io);
 #endif
