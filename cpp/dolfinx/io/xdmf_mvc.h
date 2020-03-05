@@ -274,6 +274,7 @@ mesh::MeshValueCollection<T> read(std::shared_ptr<const mesh::Mesh> mesh,
       std::sort(v.begin(), v.end());
     }
 
+    assert(!v.empty());
     int dest = MPI::index_owner(num_processes, v[0], global_vertex_range);
     send_entities[dest].push_back(e);
     send_entities[dest].insert(send_entities[dest].end(), v.begin(), v.end());
@@ -319,8 +320,8 @@ mesh::MeshValueCollection<T> read(std::shared_ptr<const mesh::Mesh> mesh,
       v[j] = *(it + nodes_to_verts[j]);
     std::sort(v.begin(), v.end());
 
-    std::size_t dest
-        = MPI::index_owner(num_processes, v[0], global_vertex_range);
+    assert(!v.empty());
+    int dest = MPI::index_owner(num_processes, v[0], global_vertex_range);
     send_entities[dest].insert(send_entities[dest].end(), v.begin(), v.end());
     send_data[dest].push_back(values_data[i]);
     ++i;
