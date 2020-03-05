@@ -351,3 +351,28 @@ std::string xdmf_utils::vtk_cell_type_str(mesh::CellType cell_type, int order)
   return cell_str->second;
 }
 //-----------------------------------------------------------------------------
+std::string xdmf_utils::vtk_cell_type_str_new(mesh::CellType cell_type, int num_nodes)
+{
+  static const std::map<mesh::CellType, std::map<int, std::string>> vtk_map = {
+      {mesh::CellType::point, {{1, "PolyVertex"}}},
+      {mesh::CellType::interval, {{2, "PolyLine"}, {3, "Edge_3"}}},
+      {mesh::CellType::triangle, {{3, "Triangle"}, {6, "Triangle_6"}}},
+      {mesh::CellType::quadrilateral,
+       {{4, "Quadrilateral"}, {9, "Quadrilateral_9"}}},
+      {mesh::CellType::tetrahedron,
+       {{4, "Tetrahedron"}, {10, "Tetrahedron_10"}}},
+      {mesh::CellType::hexahedron, {{8, "Hexahedron"}, {27, "Hexahedron_27"}}}};
+
+  // Get cell family
+  auto cell = vtk_map.find(cell_type);
+  if (cell == vtk_map.end())
+    throw std::runtime_error("Could not find cell type.");
+
+  // Get cell string
+  auto cell_str = cell->second.find(num_nodes);
+  if (cell_str == cell->second.end())
+    throw std::runtime_error("Could not find VTK string for cell order.");
+
+  return cell_str->second;
+}
+//-----------------------------------------------------------------------------

@@ -9,6 +9,7 @@
 #include <boost/functional/hash.hpp>
 #include <dolfinx/common/IndexMap.h>
 #include <dolfinx/fem/DofMapBuilder.h>
+#include <dolfinx/fem/ElementDofLayout.h>
 #include <sstream>
 
 using namespace dolfinx;
@@ -17,6 +18,7 @@ using namespace dolfinx::mesh;
 //-----------------------------------------------------------------------------
 Geometry::Geometry(std::shared_ptr<const common::IndexMap> index_map,
                    const graph::AdjacencyList<std::int32_t>& dofmap,
+                   const fem::ElementDofLayout& layout,
                    const Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic,
                                       Eigen::RowMajor>& x,
                    const std::vector<std::int64_t>& global_indices, int degree)
@@ -35,6 +37,8 @@ Geometry::Geometry(std::shared_ptr<const common::IndexMap> index_map,
     _x.setZero();
     _x.block(0, 0, x.rows(), x.cols()) = x;
   }
+
+  _layout = std::make_shared<fem::ElementDofLayout>(layout);
 }
 //-----------------------------------------------------------------------------
 Geometry::Geometry(
@@ -200,6 +204,12 @@ mesh::Geometry mesh::create_geometry(
     xg.row(i) = coords.row(l2l[i]);
 
   int order = 1;
-  return Geometry(dof_index_map, dofmap, xg, l2g, order);
+  return Geometry(dof_index_map, dofmap, layout, xg, l2g, order);
+}
+//-----------------------------------------------------------------------------
+const fem::ElementDofLayout& Geometry::dof_layout() const
+{
+  assert(_layout);
+  return *_layout;
 }
 //-----------------------------------------------------------------------------

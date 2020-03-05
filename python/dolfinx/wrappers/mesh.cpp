@@ -89,6 +89,7 @@ void mesh(py::module& m)
       m, "Geometry", "Geometry object")
       .def(py::init<std::shared_ptr<const dolfinx::common::IndexMap>,
                     const dolfinx::graph::AdjacencyList<std::int32_t>&,
+                    const dolfinx::fem::ElementDofLayout&,
                     const Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic,
                                        Eigen::RowMajor>&,
                     const std::vector<std::int64_t>&, int>())

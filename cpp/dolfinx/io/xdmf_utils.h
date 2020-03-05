@@ -59,6 +59,9 @@ std::vector<PetscScalar> get_cell_data_values(const function::Function& u);
 
 std::string vtk_cell_type_str(mesh::CellType cell_type, int order);
 
+/// Get the VTK string identifier
+std::string vtk_cell_type_str_new(mesh::CellType cell_type, int num_nodes);
+
 /// TODO: Document
 template <typename T>
 void add_data_item(pugi::xml_node& xml_node, hid_t h5_id,

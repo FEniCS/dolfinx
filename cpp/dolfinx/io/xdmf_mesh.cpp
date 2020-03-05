@@ -10,6 +10,7 @@
 #include "xdmf_read.h"
 #include "xdmf_utils.h"
 #include <boost/filesystem.hpp>
+#include <dolfinx/fem/ElementDofLayout.h>
 
 using namespace dolfinx;
 using namespace dolfinx::io;
@@ -18,29 +19,32 @@ using namespace dolfinx::io;
 void xdmf_mesh::add_topology_data(MPI_Comm comm, pugi::xml_node& xml_node,
                                   hid_t& h5_id, const std::string path_prefix,
                                   const mesh::Topology& topology,
-                                  const mesh::Geometry& geometry, int cell_dim)
+                                  const mesh::Geometry& geometry, int dim)
 {
   const int tdim = topology.dim();
-  if (cell_dim != tdim)
-  {
-    throw std::runtime_error("Cannot create topology data for mesh. "
-                             "Can only create mesh of cells");
-  }
 
   // Get number of cells (global) and vertices per cell from mesh
-  auto map_c = topology.index_map(cell_dim);
-  assert(map_c);
-  const std::int64_t num_cells_global = map_c->size_global();
+  auto map_e = topology.index_map(dim);
+  assert(map_e);
+  const std::int64_t num_entities_global = map_e->size_global();
+
+  // Get entity 'cell' type
+  const mesh::CellType entity_cell_type
+      = mesh::cell_entity_type(topology.cell_type(), dim);
+
+  // Get number of nodes per cell
+  const int num_nodes_per_cell
+      = geometry.dof_layout().num_entity_closure_dofs(dim);
 
   // FIXME: sort out degree/cell type
   // Get VTK string for cell type
-  const std::string vtk_cell_str = xdmf_utils::vtk_cell_type_str(
-      mesh::cell_entity_type(topology.cell_type(), cell_dim), 1);
+  const std::string vtk_cell_str
+      = xdmf_utils::vtk_cell_type_str_new(entity_cell_type, num_nodes_per_cell);
 
   pugi::xml_node topology_node = xml_node.append_child("Topology");
   assert(topology_node);
   topology_node.append_attribute("NumberOfElements")
-      = std::to_string(num_cells_global).c_str();
+      = std::to_string(num_entities_global).c_str();
   topology_node.append_attribute("TopologyType") = vtk_cell_str.c_str();
 
   // Pack topology data
@@ -53,31 +57,64 @@ void xdmf_mesh::add_topology_data(MPI_Comm comm, pugi::xml_node& xml_node,
 
   const Eigen::Array<std::int64_t, Eigen::Dynamic, 1>& ghosts = map_g->ghosts();
 
-  // FIXME: Get num_nodes_per_cell differently in case this rank has no
-  // data
-
-  // Adjust num_nodes_per_cell to appropriate size
-  assert(cells_g.num_nodes() > 0);
-  const int num_nodes_per_cell = cells_g.num_links(0);
-  // std::cout << "num_nodes_per_cell: " << num_nodes_per_cell << " " <<
-  // num_cells
-  //           << std::endl;
-  //   topology_data.reserve(num_nodes_per_cell * cells.num_nodes());
-
   const std::vector<std::uint8_t> perm
-      = io::cells::vtk_to_dolfin(topology.cell_type(), num_nodes_per_cell);
-  for (int c = 0; c < map_c->size_local(); ++c)
+      = io::cells::vtk_to_dolfin(entity_cell_type, num_nodes_per_cell);
+
+  if (dim == tdim)
   {
-    assert(c < cells_g.num_nodes());
-    auto nodes = cells_g.links(c);
-    for (int i = 0; i < nodes.rows(); ++i)
+    for (int c = 0; c < map_e->size_local(); ++c)
     {
-      std::int64_t global_index = nodes[perm[i]];
-      if (global_index < map_g->size_local())
-        global_index += offset_g;
-      else
-        global_index = ghosts[global_index - map_g->size_local()];
-      topology_data.push_back(global_index);
+      assert(c < cells_g.num_nodes());
+      auto nodes = cells_g.links(c);
+      for (int i = 0; i < nodes.rows(); ++i)
+      {
+        std::int64_t global_index = nodes[perm[i]];
+        if (global_index < map_g->size_local())
+          global_index += offset_g;
+        else
+          global_index = ghosts[global_index - map_g->size_local()];
+        topology_data.push_back(global_index);
+      }
+    }
+  }
+  else
+  {
+    // FIXME: This will not work for higher-order cells. Need to use
+    // ElementDofLayout to loop over all nodes
+    auto e_to_v = topology.connectivity(dim, 0);
+    assert(e_to_v);
+
+    auto e_to_c = topology.connectivity(dim, tdim);
+    assert(e_to_c);
+
+    auto c_to_v = topology.connectivity(tdim, 0);
+    assert(c_to_v);
+    for (int e = 0; e < map_e->size_local(); ++e)
+    {
+      // Get first attached cell
+      std::int32_t c = e_to_c->links(e)[0];
+      auto cell_vertices = c_to_v->links(c);
+      auto nodes = cells_g.links(c);
+
+      auto vertices = e_to_v->links(e);
+      for (int v = 0; v < vertices.rows(); ++v)
+      {
+        const int v_index = perm[v];
+        const int vertex = vertices[v_index];
+        auto it
+            = std::find(cell_vertices.data(),
+                        cell_vertices.data() + cell_vertices.rows(), vertex);
+        assert(it != (cell_vertices.data() + cell_vertices.rows()));
+        const int local_cell_vertex = std::distance(cell_vertices.data(), it);
+
+        std::int64_t global_index = nodes[local_cell_vertex];
+        if (global_index < map_g->size_local())
+          global_index += offset_g;
+        else
+          global_index = ghosts[global_index - map_g->size_local()];
+
+        topology_data.push_back(global_index);
+      }
     }
   }
 
@@ -87,11 +124,11 @@ void xdmf_mesh::add_topology_data(MPI_Comm comm, pugi::xml_node& xml_node,
   const std::string group_name = path_prefix + "/" + "mesh";
   const std::string h5_path = group_name + "/topology";
   const std::vector<std::int64_t> shape
-      = {num_cells_global, num_nodes_per_cell};
+      = {num_entities_global, num_nodes_per_cell};
   const std::string number_type = "Int";
 
   const std::int64_t offset
-      = dolfinx::MPI::global_offset(comm, map_c->size_local(), true);
+      = dolfinx::MPI::global_offset(comm, map_e->size_local(), true);
 
   const bool use_mpi_io = (dolfinx::MPI::size(comm) > 1);
   xdmf_utils::add_data_item(topology_node, h5_id, h5_path, topology_data,

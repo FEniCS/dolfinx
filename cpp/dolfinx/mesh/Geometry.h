@@ -41,6 +41,7 @@ public:
   /// Constructor (new)
   Geometry(std::shared_ptr<const common::IndexMap> index_map,
            const graph::AdjacencyList<std::int32_t>& dofmap,
+           const fem::ElementDofLayout& layout,
            const Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic,
                               Eigen::RowMajor>& x,
            const std::vector<std::int64_t>& global_indices, int degree);
@@ -111,6 +112,11 @@ public:
 
   /// @warning Experimental. Needs revision
   ///
+  /// Put ElementDofLayout here for now
+  const fem::ElementDofLayout& dof_layout() const;
+
+  /// @warning Experimental. Needs revision
+  ///
   /// Put CoordinateElement here for now
   std::shared_ptr<const fem::CoordinateElement> coord_mapping;
 
@@ -128,6 +134,9 @@ private:
 
   // IndexMap for geometry 'dofmap'
   std::shared_ptr<const common::IndexMap> _index_map;
+
+  // The doflayout on the cell
+  std::shared_ptr<const fem::ElementDofLayout> _layout;
 
   // Coordinates for all points stored as a contiguous array
   Eigen::Array<double, Eigen::Dynamic, 3, Eigen::RowMajor> _x;

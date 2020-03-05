@@ -168,3 +168,34 @@ def test_save_3D_cell_function(tempdir, encoding, data_type, cell_type):
             assert mf_in.values[c] == -1
         else:
             assert mf_in.values[c] == 1
+
+
+# encodings = (XDMFFileNew.Encoding.ASCII,)
+celltypes_2D = [CellType.triangle]
+
+
+@pytest.mark.parametrize("cell_type", celltypes_2D)
+@pytest.mark.parametrize("encoding", encodings)
+@pytest.mark.parametrize("data_type", data_types)
+def test_save_2D_facet_function(tempdir, encoding, data_type, cell_type):
+    dtype_str, dtype = data_type
+    mesh = UnitSquareMesh(MPI.comm_world, 1, 1, cell_type, new_style=True)
+    tdim = mesh.topology.dim
+    mf = MeshFunction(dtype_str, mesh, tdim - 1, 0)
+    mf.name = "facets"
+
+    map = mesh.topology.index_map(tdim - 1)
+    global_indices = map.global_indices(True)
+    mf.values[:] = global_indices[:]
+    # filename = os.path.join(tempdir, "mf_facet_2D_%s.xdmf" % dtype_str)
+    filename = os.path.join("test.xdmf")
+
+    mesh.create_connectivity(tdim - 1, tdim)
+    with XDMFFileNew(mesh.mpi_comm(), filename, encoding=encoding) as xdmf:
+        xdmf.write(mf)
+    # with XDMFFileNew(mesh.mpi_comm(), filename) as xdmf:
+    #     read_function = getattr(xdmf, "read_mf_" + dtype_str)
+    #     mf_in = read_function(mesh, "facets")
+
+    # diff = mf_in.values - mf.values
+    # assert np.all(diff == 0)
