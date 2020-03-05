@@ -179,7 +179,7 @@ celltypes_2D = [CellType.triangle]
 @pytest.mark.parametrize("data_type", data_types)
 def test_save_2D_facet_function(tempdir, encoding, data_type, cell_type):
     dtype_str, dtype = data_type
-    mesh = UnitSquareMesh(MPI.comm_world, 1, 1, cell_type, new_style=True)
+    mesh = UnitSquareMesh(MPI.comm_world, 4, 7, cell_type, new_style=True)
     tdim = mesh.topology.dim
     mf = MeshFunction(dtype_str, mesh, tdim - 1, 0)
     mf.name = "facets"
@@ -211,6 +211,6 @@ def test_save_2D_facet_function(tempdir, encoding, data_type, cell_type):
         read_function = getattr(xdmf, "read_mf_" + dtype_str)
         mf_in = read_function(mesh2, "facets")
 
-    print(mf_in.values)
+    # print(mf_in.values)
     # diff = mf_in.values - mf.values
     # assert np.all(diff == 0)
