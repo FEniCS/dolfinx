@@ -12,7 +12,7 @@ import pytest
 
 import ufl
 from dolfinx import MPI, DirichletBC, Function, FunctionSpace, fem, geometry
-from dolfinx.cpp.mesh import GhostMode, Ordering
+from dolfinx.cpp.mesh import GhostMode
 from dolfinx.fem import (apply_lifting, assemble_matrix, assemble_scalar,
                          assemble_vector, locate_dofs_topological, set_bc)
 from dolfinx.io import XDMFFile
@@ -143,11 +143,6 @@ def test_manufactured_vector1(family, degree, filename, datadir):
     with XDMFFile(MPI.comm_world, os.path.join(datadir, filename)) as xdmf:
         mesh = xdmf.read_mesh(GhostMode.none)
 
-    # FIXME: these test are currently failing on unordered meshes
-    if "tetra" in filename:
-        if family[0] == "N1curl":
-            Ordering.order_simplex(mesh)
-
     V = FunctionSpace(mesh, (family[0], degree + family[1]))
     u, v = ufl.TrialFunction(V), ufl.TestFunction(V)
     a = inner(u, v) * dx
@@ -201,21 +196,12 @@ def test_manufactured_vector1(family, degree, filename, datadir):
                              "RT",
                              "N1curl",
                          ])
-@pytest.mark.parametrize("degree", [1, 2, 3])
+@pytest.mark.parametrize("degree", [1, 2])
 def test_manufactured_vector2(family, degree, filename, datadir):
     """Projection into H(div/curl) spaces"""
 
-    # Skip slowest tests
-    if "tetra" in filename and degree > 2:
-        return
-
     with XDMFFile(MPI.comm_world, os.path.join(datadir, filename)) as xdmf:
         mesh = xdmf.read_mesh(GhostMode.none)
-
-    # FIXME: these test are currently failing on unordered meshes
-    if "tetra" in filename:
-        if family == "N1curl":
-            Ordering.order_simplex(mesh)
 
     V = FunctionSpace(mesh, (family, degree + 1))
     u, v = ufl.TrialFunction(V), ufl.TestFunction(V)
