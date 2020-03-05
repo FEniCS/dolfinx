@@ -159,5 +159,10 @@ create_functionspace(ufc_function_space* (*fptr)(const char*),
 Eigen::Array<PetscScalar, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
 pack_coefficients(const fem::Form& form);
 
+// NOTE: This is subject to change
+/// Pack form constants ready for assembly
+Eigen::Array<PetscScalar, Eigen::Dynamic, 1>
+pack_constants(const fem::Form& form);
+
 } // namespace fem
 } // namespace dolfinx

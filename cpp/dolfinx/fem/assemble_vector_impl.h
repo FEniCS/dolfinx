@@ -55,7 +55,7 @@ void assemble_cells(
                              const std::uint8_t*)>& kernel,
     const Eigen::Array<PetscScalar, Eigen::Dynamic, Eigen::Dynamic,
                        Eigen::RowMajor>& coeffs,
-    const std::vector<PetscScalar>& constant_values);
+    const Eigen::Array<PetscScalar, Eigen::Dynamic, 1>& constant_values);
 
 /// Execute kernel over cells and accumulate result in vector
 void assemble_exterior_facets(
@@ -68,7 +68,7 @@ void assemble_exterior_facets(
                              const std::uint8_t*)>& fn,
     const Eigen::Array<PetscScalar, Eigen::Dynamic, Eigen::Dynamic,
                        Eigen::RowMajor>& coeffs,
-    const std::vector<PetscScalar>& constant_values);
+    const Eigen::Array<PetscScalar, Eigen::Dynamic, 1>& constant_values);
 
 /// Assemble linear form interior facet integrals into an Eigen vector
 void assemble_interior_facets(
@@ -82,7 +82,7 @@ void assemble_interior_facets(
     const Eigen::Array<PetscScalar, Eigen::Dynamic, Eigen::Dynamic,
                        Eigen::RowMajor>& coeffs,
     const std::vector<int>& offsets,
-    const std::vector<PetscScalar>& constant_values);
+	const Eigen::Array<PetscScalar, Eigen::Dynamic, 1>& constant_values);
 
 /// Modify b such that:
 ///
