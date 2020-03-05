@@ -54,7 +54,7 @@ celltypes_2D = [CellType.triangle]
 @pytest.mark.parametrize("cell_type", celltypes_2D)
 @pytest.mark.parametrize("encoding", encodings)
 @pytest.mark.parametrize("data_type", data_types)
-def test_save_mesh_value_collection(tempdir, encoding, data_type, cell_type):
+def xtest_save_mesh_value_collection(tempdir, encoding, data_type, cell_type):
     dtype_str, dtype = data_type
     mesh = UnitSquareMesh(MPI.comm_world, 4, 4, cell_type, new_style=True)
     tdim = mesh.topology.dim
