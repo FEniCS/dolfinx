@@ -273,12 +273,12 @@ get_local_indexing(
       continue;
 
     // Definitely local
-    if (gs == 1)
+    if (gs == 1 or it == shared_entities.end())
     {
       local_index[i] = c;
       ++c;
     }
-    else if (it != shared_entities.end() and *(it->second.begin()) > mpi_rank)
+    else if (*(it->second.begin()) > mpi_rank)
     {
       // Take ownership (lower rank wins)
       local_index[i] = c;
