@@ -88,7 +88,8 @@ remap_meshfunction_data(const mesh::Mesh& mesh, const int dim,
     send_values[dest].push_back(value_data[i]);
   }
 
-  // std::cout << "Data to send (0): " << send_topology.size() << std::endl;
+  // std::cout << "T Data to send (0): " << num_entities << ", "
+  //           << send_topology.size() << std::endl;
   // for (auto d : send_topology[0])
   //   std::cout << "  " << d << std::endl;
 
@@ -115,7 +116,6 @@ remap_meshfunction_data(const mesh::Mesh& mesh, const int dim,
   auto map_g = mesh.geometry().index_map();
   assert(map_g);
 
-  // FIXME: handle dim \ne tdim
   const graph::AdjacencyList<std::int32_t>& x_dofmap = mesh.geometry().dofmap();
   const int num_cells = map->size_local() + map->num_ghosts();
   const int tdim = mesh.topology().dim();
@@ -172,7 +172,9 @@ remap_meshfunction_data(const mesh::Mesh& mesh, const int dim,
         const int local_cell_vertex = std::distance(cell_vertices.data(), it);
 
         const std::int32_t local_index = nodes[local_cell_vertex];
-        // std::cout << "   ind: " << global_indices[local_index] << std::endl;
+        // std::cout << "   ind: " << local_index << ", "
+        //           << global_indices[local_index] << std::endl;
+
         cell.push_back(global_indices[local_index]);
       }
 
@@ -443,6 +445,9 @@ mesh::MeshFunction<T> read_mesh_function(std::shared_ptr<const mesh::Mesh> mesh,
 
   const std::int64_t num_entities_global
       = xdmf_utils::get_num_cells(topology_node);
+
+  // std::cout << "Testing: " << mesh->topology().index_map(dim)->size_global()
+  //           << ", " << num_entities_global << std::endl;
 
   mesh->create_entities(dim);
   assert(mesh->topology().index_map(dim));

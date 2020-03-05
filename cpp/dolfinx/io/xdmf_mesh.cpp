@@ -301,6 +301,11 @@ xdmf_mesh::read_mesh_data(MPI_Comm comm, std::string filename)
                                 Eigen::RowMajor>>
       cells(topology_data.data(), num_local_cells, npoint_per_cell);
 
-  return {cell_type, std::move(points), std::move(cells)};
+  //  Permute cells from VTK to DOLFINX ordering
+  Eigen::Array<std::int64_t, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
+      cells1 = io::cells::permute_ordering(
+          cells, io::cells::vtk_to_dolfin(cell_type, cells.cols()));
+
+  return {cell_type, std::move(points), std::move(cells1)};
 }
 //----------------------------------------------------------------------------

@@ -171,7 +171,7 @@ def test_save_3D_cell_function(tempdir, encoding, data_type, cell_type):
 
 
 # encodings = (XDMFFileNew.Encoding.ASCII,)
-celltypes_2D = [CellType.triangle]
+# celltypes_2D = [CellType.quadrilateral]
 
 
 @pytest.mark.parametrize("cell_type", celltypes_2D)
@@ -179,7 +179,7 @@ celltypes_2D = [CellType.triangle]
 @pytest.mark.parametrize("data_type", data_types)
 def test_save_2D_facet_function(tempdir, encoding, data_type, cell_type):
     dtype_str, dtype = data_type
-    mesh = UnitSquareMesh(MPI.comm_world, 4, 7, cell_type, new_style=True)
+    mesh = UnitSquareMesh(MPI.comm_world, 7, 8, cell_type, new_style=True)
     tdim = mesh.topology.dim
     mf = MeshFunction(dtype_str, mesh, tdim - 1, 0)
     mf.name = "facets"
@@ -204,12 +204,21 @@ def test_save_2D_facet_function(tempdir, encoding, data_type, cell_type):
     with XDMFFileNew(mesh.mpi_comm(), filename, encoding=encoding) as xdmf:
         xdmf.write(mf)
 
-    with XDMFFileNew(mesh.mpi_comm(), filename_msh) as xdmf:
+    with XDMFFileNew(mesh.mpi_comm(), filename_msh, encoding=encoding) as xdmf:
         mesh2 = xdmf.read_mesh()
+
+    # print(mesh2.topology.connectivity(2,0))
+    # print(mesh2.geometry.dofmap())
+    # print(mesh2.geometry.x)
+    # return
+
     mesh2.create_connectivity(tdim - 1, tdim)
-    with XDMFFileNew(mesh.mpi_comm(), filename) as xdmf:
+    with XDMFFileNew(mesh.mpi_comm(), filename, encoding=encoding) as xdmf:
         read_function = getattr(xdmf, "read_mf_" + dtype_str)
         mf_in = read_function(mesh2, "facets")
+
+    with XDMFFileNew(mesh.mpi_comm(), "tmp.xdmf", encoding=encoding) as xdmf:
+        xdmf.write(mf)
 
     # print(mf_in.values)
     # diff = mf_in.values - mf.values
