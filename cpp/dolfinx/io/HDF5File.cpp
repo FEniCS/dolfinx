@@ -7,33 +7,11 @@
 #include "HDF5File.h"
 #include "HDF5Interface.h"
 #include "HDF5Utility.h"
-#include "cells.h"
 #include <Eigen/Dense>
 #include <boost/filesystem.hpp>
-#include <boost/unordered_map.hpp>
-#include <cstdio>
-#include <dolfinx/common/IndexMap.h>
-#include <dolfinx/common/MPI.h>
-#include <dolfinx/common/Timer.h>
-#include <dolfinx/common/log.h>
-#include <dolfinx/fem/DofMap.h>
-#include <dolfinx/function/Function.h>
-#include <dolfinx/function/FunctionSpace.h>
-#include <dolfinx/io/cells.h>
-#include <dolfinx/la/PETScVector.h>
-#include <dolfinx/la/utils.h>
-#include <dolfinx/mesh/DistributedMeshTools.h>
-#include <dolfinx/mesh/Mesh.h>
-#include <dolfinx/mesh/MeshEntity.h>
-#include <dolfinx/mesh/MeshFunction.h>
-#include <dolfinx/mesh/MeshIterator.h>
-#include <dolfinx/mesh/MeshValueCollection.h>
-#include <dolfinx/mesh/PartitionData.h>
-#include <dolfinx/mesh/Partitioning.h>
 #include <fstream>
 #include <iomanip>
 #include <iostream>
-#include <petscvec.h>
 #include <string>
 
 using namespace dolfinx;

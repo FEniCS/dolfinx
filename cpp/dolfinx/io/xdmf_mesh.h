@@ -24,7 +24,9 @@ namespace dolfinx
 
 namespace mesh
 {
+class Geometry;
 class Mesh;
+class Topology;
 } // namespace mesh
 
 namespace io

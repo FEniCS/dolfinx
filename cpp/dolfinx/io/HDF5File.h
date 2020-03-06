@@ -7,12 +7,8 @@
 #pragma once
 
 #include "HDF5Interface.h"
+#include <Eigen/Dense>
 #include <dolfinx/common/MPI.h>
-#include <dolfinx/function/Function.h>
-#include <dolfinx/la/PETScVector.h>
-#include <dolfinx/mesh/Mesh.h>
-#include <dolfinx/mesh/MeshFunction.h>
-#include <dolfinx/mesh/MeshValueCollection.h>
 #include <memory>
 #include <string>
 #include <utility>
@@ -20,16 +16,6 @@
 
 namespace dolfinx
 {
-namespace la
-{
-class PETScVector;
-}
-
-namespace function
-{
-// class Function;
-class FunctionSpace;
-} // namespace function
 
 namespace io
 {
@@ -85,7 +71,6 @@ public:
       bool use_mpi_io);
 
 private:
-
   // HDF5 file descriptor/handle
   hid_t _hdf5_file_id;
 
