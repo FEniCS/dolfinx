@@ -89,6 +89,7 @@ void mesh(py::module& m)
       m, "Geometry", "Geometry object")
       .def(py::init<std::shared_ptr<const dolfinx::common::IndexMap>,
                     const dolfinx::graph::AdjacencyList<std::int32_t>&,
+                    const dolfinx::fem::ElementDofLayout&,
                     const Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic,
                                        Eigen::RowMajor>&,
                     const std::vector<std::int64_t>&, int>())
@@ -97,6 +98,7 @@ void mesh(py::module& m)
       .def("degree", &dolfinx::mesh::Geometry::degree)
       .def("dofmap",
            py::overload_cast<>(&dolfinx::mesh::Geometry::dofmap, py::const_))
+      .def("index_map", &dolfinx::mesh::Geometry::index_map)
       .def("num_points_global", &dolfinx::mesh::Geometry::num_points_global)
       .def("global_indices", &dolfinx::mesh::Geometry::global_indices)
       .def("point",

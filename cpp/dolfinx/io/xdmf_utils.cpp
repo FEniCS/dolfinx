@@ -213,23 +213,23 @@ xdmf_utils::get_point_data_values(const function::Function& u)
   assert(mesh);
   Eigen::Array<PetscScalar, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
       data_values = u.compute_point_values();
-  std::int64_t width = get_padded_width(u);
+  const int width = get_padded_width(u);
 
   // FIXME: Unpick the below code for the new layout of data from
   //        GenericFunction::compute_vertex_values
-  const std::size_t num_local_points = mesh->geometry().x().rows();
+  const std::int32_t num_local_points = mesh->geometry().x().rows();
   std::vector<PetscScalar> _data_values(width * num_local_points, 0.0);
 
-  const std::size_t value_rank = u.value_rank();
+  const int value_rank = u.value_rank();
   if (value_rank > 0)
   {
     // Transpose vector/tensor data arrays
-    const std::size_t value_size = u.value_size();
-    for (std::size_t i = 0; i < num_local_points; i++)
+    const int value_size = u.value_size();
+    for (std::int32_t i = 0; i < num_local_points; i++)
     {
-      for (std::size_t j = 0; j < value_size; j++)
+      for (int j = 0; j < value_size; j++)
       {
-        std::size_t tensor_2d_offset
+        int tensor_2d_offset
             = (j > 1 && value_rank == 2 && value_size == 4) ? 1 : 0;
         _data_values[i * width + j + tensor_2d_offset] = data_values(i, j);
       }
@@ -345,6 +345,31 @@ std::string xdmf_utils::vtk_cell_type_str(mesh::CellType cell_type, int order)
 
   // Get cell string
   auto cell_str = cell->second.find(order);
+  if (cell_str == cell->second.end())
+    throw std::runtime_error("Could not find VTK string for cell order.");
+
+  return cell_str->second;
+}
+//-----------------------------------------------------------------------------
+std::string xdmf_utils::vtk_cell_type_str_new(mesh::CellType cell_type, int num_nodes)
+{
+  static const std::map<mesh::CellType, std::map<int, std::string>> vtk_map = {
+      {mesh::CellType::point, {{1, "PolyVertex"}}},
+      {mesh::CellType::interval, {{2, "PolyLine"}, {3, "Edge_3"}}},
+      {mesh::CellType::triangle, {{3, "Triangle"}, {6, "Triangle_6"}}},
+      {mesh::CellType::quadrilateral,
+       {{4, "Quadrilateral"}, {9, "Quadrilateral_9"}}},
+      {mesh::CellType::tetrahedron,
+       {{4, "Tetrahedron"}, {10, "Tetrahedron_10"}}},
+      {mesh::CellType::hexahedron, {{8, "Hexahedron"}, {27, "Hexahedron_27"}}}};
+
+  // Get cell family
+  auto cell = vtk_map.find(cell_type);
+  if (cell == vtk_map.end())
+    throw std::runtime_error("Could not find cell type.");
+
+  // Get cell string
+  auto cell_str = cell->second.find(num_nodes);
   if (cell_str == cell->second.end())
     throw std::runtime_error("Could not find VTK string for cell order.");
 

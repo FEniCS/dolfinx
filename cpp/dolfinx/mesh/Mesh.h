@@ -18,6 +18,11 @@
 namespace dolfinx
 {
 
+namespace fem
+{
+class ElementDofLayout;
+}
+
 namespace function
 {
 class Function;
@@ -255,7 +260,7 @@ private:
 
 /// Create a mesh
 Mesh create(MPI_Comm comm, const graph::AdjacencyList<std::int64_t>& cells,
-            CellType shape,
+            const fem::ElementDofLayout& layout,
             const Eigen::Ref<const Eigen::Array<
                 double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>>& x);
 

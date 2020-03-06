@@ -106,10 +106,9 @@ public:
   /// Read in the data from the first mesh in HDF file
   ///
   /// @param[in] data_path Path to topology and geometry datasets
-  /// @return Cell type,
-  ///         Geometric points on each process,
-  ///         Topological cells with global vertex indexing
-  ///         Global cell distribution
+  /// @return Cell type, geometric points on each process, cell topology
+  ///   (in global vertex indexing), cell partition rank from file (if
+  ///   provided)
   std::tuple<
       mesh::CellType,
       Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>,
