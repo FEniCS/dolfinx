@@ -290,7 +290,7 @@ def test_GetCells():
 
 
 @skip_in_parallel
-def test_cell_inradius(c0, c1, c5):
+def xtest_cell_inradius(c0, c1, c5):
     assert cpp.mesh.inradius(c0.mesh(), [c0.index()]) == pytest.approx((3.0 - math.sqrt(3.0)) / 6.0)
     assert cpp.mesh.inradius(c1.mesh(), [c1.index()]) == pytest.approx(0.0)
     assert cpp.mesh.inradius(c5.mesh(), [c5.index()]) == pytest.approx(math.sqrt(3.0) / 6.0)
@@ -313,7 +313,7 @@ def test_cell_h(c0, c1, c5):
 
 
 @skip_in_parallel
-def test_cell_radius_ratio(c0, c1, c5):
+def xtest_cell_radius_ratio(c0, c1, c5):
     assert cpp.mesh.radius_ratio(c0.mesh(), [c0.index()]) == pytest.approx(math.sqrt(3.0) - 1.0)
     assert np.isnan(cpp.mesh.radius_ratio(c1.mesh(), [c1.index()]))
     assert cpp.mesh.radius_ratio(c5.mesh(), [c5.index()]) == pytest.approx(1.0)

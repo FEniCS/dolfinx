@@ -49,14 +49,12 @@ void generation(py::module& m)
           "create",
           [](const MPICommWrapper comm, std::array<Eigen::Vector3d, 2> p,
              std::array<std::size_t, 2> n, dolfinx::mesh::CellType cell_type,
-             dolfinx::mesh::GhostMode ghost_mode, std::string diagonal,
-             bool new_style) {
-            return dolfinx::generation::RectangleMesh::create(
-                comm.get(), p, n, cell_type, ghost_mode, new_style, diagonal);
+             dolfinx::mesh::GhostMode ghost_mode, std::string diagonal) {
+    return dolfinx::generation::RectangleMesh::create(
+        comm.get(), p, n, cell_type, ghost_mode, diagonal);
           },
           py::arg("comm"), py::arg("p"), py::arg("n"), py::arg("cell_type"),
-          py::arg("ghost_mode"), py::arg("diagonal") = "right",
-          py::arg("new_style") = false);
+          py::arg("ghost_mode"), py::arg("diagonal") = "right");
 
   // dolfinx::UnitTriangleMesh
   py::class_<dolfinx::generation::UnitTriangleMesh>(m, "UnitTriangleMesh")
@@ -68,8 +66,8 @@ void generation(py::module& m)
           "create",
           [](const MPICommWrapper comm, std::size_t n,
              dolfinx::mesh::GhostMode ghost_mode, bool new_style) {
-            return dolfinx::generation::UnitDiscMesh::create(
-                comm.get(), n, ghost_mode, new_style);
+    return dolfinx::generation::UnitDiscMesh::create(comm.get(), n, ghost_mode,
+                                                     new_style);
           },
           py::arg("comm"), py::arg("n"), py::arg("ghost_mode"),
           py::arg("new_style") = false);
@@ -82,8 +80,8 @@ void generation(py::module& m)
           [](const MPICommWrapper comm, std::array<Eigen::Vector3d, 2> p,
              std::array<std::size_t, 3> n, dolfinx::mesh::CellType cell_type,
              const dolfinx::mesh::GhostMode ghost_mode, bool new_style) {
-            return dolfinx::generation::BoxMesh::create(
-                comm.get(), p, n, cell_type, ghost_mode, new_style);
+    return dolfinx::generation::BoxMesh::create(comm.get(), p, n, cell_type,
+                                                ghost_mode, new_style);
           },
           py::arg("comm"), py::arg("p"), py::arg("n"), py::arg("cell_type"),
           py::arg("ghost_mode"), py::arg("new_style") = false);

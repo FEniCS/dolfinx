@@ -37,8 +37,7 @@ public:
   static mesh::Mesh
   create(MPI_Comm comm, const std::array<Eigen::Vector3d, 2>& p,
          std::array<std::size_t, 2> n, mesh::CellType cell_type,
-         const mesh::GhostMode ghost_mode, bool new_style = false,
-         std::string diagonal = "right");
+         const mesh::GhostMode ghost_mode, std::string diagonal = "right");
 };
 } // namespace generation
 } // namespace dolfinx

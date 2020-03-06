@@ -62,7 +62,6 @@ T volume_triangle(const mesh::Mesh& mesh,
   {
     for (Eigen::Index i = 0; i < entities.rows(); ++i)
     {
-      // auto vertices = connectivity.links(entities[i]);
       auto dofs = x_dofs.links(entities[i]);
       const Eigen::Vector3d x0 = geometry.x(dofs[0]);
       const Eigen::Vector3d x1 = geometry.x(dofs[1]);
@@ -151,20 +150,21 @@ T volume_quadrilateral(const mesh::Mesh& mesh,
 {
   const mesh::Geometry& geometry = mesh.geometry();
   const mesh::Topology& topology = mesh.topology();
-  assert(topology.connectivity(2, 0));
-  const graph::AdjacencyList<std::int32_t>& connectivity
-      = *topology.connectivity(2, 0);
+  auto c_to_e = topology.connectivity(2, 0);
+  assert(c_to_e);
 
   const int gdim = geometry.dim();
   T v(entities.rows());
-  for (Eigen::Index i = 0; i < entities.rows(); ++i)
+  const graph::AdjacencyList<std::int32_t>& x_dofs = geometry.dofmap();
+
+  for (Eigen::Index e = 0; e < entities.rows(); ++e)
   {
     // Get the coordinates of the four vertices
-    auto vertices = connectivity.links(entities[i]);
-    const Eigen::Vector3d p0 = geometry.x(vertices[0]);
-    const Eigen::Vector3d p1 = geometry.x(vertices[1]);
-    const Eigen::Vector3d p2 = geometry.x(vertices[2]);
-    const Eigen::Vector3d p3 = geometry.x(vertices[3]);
+    auto dofs = x_dofs.links(entities[e]);
+    const Eigen::Vector3d p0 = geometry.x(dofs[0]);
+    const Eigen::Vector3d p1 = geometry.x(dofs[1]);
+    const Eigen::Vector3d p2 = geometry.x(dofs[2]);
+    const Eigen::Vector3d p3 = geometry.x(dofs[3]);
 
     const Eigen::Vector3d c = (p0 - p3).cross(p1 - p2);
     const double volume = 0.5 * c.norm();
@@ -184,7 +184,7 @@ T volume_quadrilateral(const mesh::Mesh& mesh,
         throw std::runtime_error("Not coplanar");
     }
 
-    v[i] = volume;
+    v[e] = volume;
   }
   return v;
 }
@@ -217,6 +217,7 @@ T volume_entities_tmpl(const mesh::Mesh& mesh,
   case mesh::CellType::tetrahedron:
     return volume_tetrahedron<T>(mesh, entities);
   case mesh::CellType::quadrilateral:
+    assert(mesh.topology().dim() == dim);
     return volume_quadrilateral<T>(mesh, entities);
   case mesh::CellType::hexahedron:
     throw std::runtime_error(
@@ -234,19 +235,19 @@ T circumradius_triangle(const mesh::Mesh& mesh,
   // Get mesh geometry
   const mesh::Geometry& geometry = mesh.geometry();
   const mesh::Topology& topology = mesh.topology();
-  assert(topology.connectivity(2, 0));
-  const graph::AdjacencyList<std::int32_t>& connectivity
-      = *topology.connectivity(2, 0);
+  auto c_to_e = topology.connectivity(2, 0);
+  assert(c_to_e);
+  const graph::AdjacencyList<std::int32_t>& x_dofs = geometry.dofmap();
 
   T volumes = volume_entities_tmpl<T>(mesh, entities, 2);
 
   T cr(entities.rows());
   for (Eigen::Index e = 0; e < entities.rows(); ++e)
   {
-    auto vertices = connectivity.links(entities[e]);
-    const Eigen::Vector3d p0 = geometry.x(vertices[0]);
-    const Eigen::Vector3d p1 = geometry.x(vertices[1]);
-    const Eigen::Vector3d p2 = geometry.x(vertices[2]);
+    auto dofs = x_dofs.links(entities[e]);
+    const Eigen::Vector3d p0 = geometry.x(dofs[0]);
+    const Eigen::Vector3d p1 = geometry.x(dofs[1]);
+    const Eigen::Vector3d p2 = geometry.x(dofs[2]);
 
     // Compute side lengths
     const double a = (p1 - p2).norm();
