@@ -9,6 +9,7 @@
 #include "HDF5File.h"
 #include "pugixml.hpp"
 #include "xdmf_utils.h"
+#include <Eigen/Dense>
 #include <boost/algorithm/string.hpp>
 #include <boost/filesystem.hpp>
 #include <boost/lexical_cast.hpp>
