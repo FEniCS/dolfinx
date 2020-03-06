@@ -107,7 +107,7 @@ graph::AdjacencyList<std::int32_t> dolfinx::graph::ParMETIS::partition(
     }
 
     // Do halo exchange of cell partition data
-    std::vector<std::vector<std::int64_t>> send_cell_partition(rank);
+    std::vector<std::vector<std::int64_t>> send_cell_partition(size);
     std::vector<std::int64_t> recv_cell_partition;
     for (const auto& hcell : halo_cell_to_remotes)
     {

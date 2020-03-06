@@ -148,6 +148,10 @@ void fem(py::module& m)
 
   m.def("create_sparsity_pattern", &dolfinx::fem::create_sparsity_pattern,
         "Create a sparsity pattern for bilinear form.");
+  m.def("pack_coefficients", &dolfinx::fem::pack_coefficients,
+        "Pack coefficients for a UFL form.");
+  m.def("pack_constants", &dolfinx::fem::pack_constants,
+        "Pack constants for a UFL form.");
   m.def(
       "create_matrix",
       [](const dolfinx::fem::Form& a) {
