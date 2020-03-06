@@ -30,7 +30,6 @@ public:
   /// @param[in] n Number of cells in each direction
   /// @param[in] cell_type The mesh cell type
   /// @param[in] ghost_mode Mesh ghosting mode
-  /// @param[in] new_style Use new mesh creation of true
   /// @param[in] diagonal Direction of diagonals: "left", "right",
   ///   "left/right", "crossed"
   /// @return Mesh
