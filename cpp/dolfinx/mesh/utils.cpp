@@ -50,21 +50,23 @@ T volume_triangle(const mesh::Mesh& mesh,
 {
   const mesh::Geometry& geometry = mesh.geometry();
   const mesh::Topology& topology = mesh.topology();
-  assert(topology.connectivity(2, 0));
-  const graph::AdjacencyList<std::int32_t>& connectivity
-      = *topology.connectivity(2, 0);
+  auto c_to_e = topology.connectivity(2, 0);
+  assert(c_to_e);
 
   const int gdim = geometry.dim();
   assert(gdim == 2 or gdim == 3);
+  const graph::AdjacencyList<std::int32_t>& x_dofs = geometry.dofmap();
+
   T v(entities.rows());
   if (gdim == 2)
   {
     for (Eigen::Index i = 0; i < entities.rows(); ++i)
     {
-      auto vertices = connectivity.links(entities[i]);
-      const Eigen::Vector3d x0 = geometry.x(vertices[0]);
-      const Eigen::Vector3d x1 = geometry.x(vertices[1]);
-      const Eigen::Vector3d x2 = geometry.x(vertices[2]);
+      // auto vertices = connectivity.links(entities[i]);
+      auto dofs = x_dofs.links(entities[i]);
+      const Eigen::Vector3d x0 = geometry.x(dofs[0]);
+      const Eigen::Vector3d x1 = geometry.x(dofs[1]);
+      const Eigen::Vector3d x2 = geometry.x(dofs[2]);
 
       // Compute area of triangle embedded in R^2
       double v2 = (x0[0] * x1[1] + x0[1] * x2[0] + x1[0] * x2[1])
@@ -78,10 +80,11 @@ T volume_triangle(const mesh::Mesh& mesh,
   {
     for (Eigen::Index i = 0; i < entities.rows(); ++i)
     {
-      auto vertices = connectivity.links(entities[i]);
-      const Eigen::Vector3d x0 = geometry.x(vertices[0]);
-      const Eigen::Vector3d x1 = geometry.x(vertices[1]);
-      const Eigen::Vector3d x2 = geometry.x(vertices[2]);
+      // auto vertices = connectivity.links(entities[i]);
+      auto dofs = x_dofs.links(entities[i]);
+      const Eigen::Vector3d x0 = geometry.x(dofs[0]);
+      const Eigen::Vector3d x1 = geometry.x(dofs[1]);
+      const Eigen::Vector3d x2 = geometry.x(dofs[2]);
 
       // Compute area of triangle embedded in R^3
       const double v0 = (x0[1] * x1[2] + x0[2] * x2[1] + x1[1] * x2[2])
@@ -209,6 +212,7 @@ T volume_entities_tmpl(const mesh::Mesh& mesh,
   case mesh::CellType::interval:
     return volume_interval<T>(mesh, entities);
   case mesh::CellType::triangle:
+    assert(mesh.topology().dim() == dim);
     return volume_triangle<T>(mesh, entities);
   case mesh::CellType::tetrahedron:
     return volume_tetrahedron<T>(mesh, entities);
