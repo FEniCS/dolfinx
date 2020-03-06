@@ -30,7 +30,7 @@ def mesh_factory(tdim, n):
     if tdim == 1:
         return UnitIntervalMesh(MPI.comm_world, n, new_style=True)
     elif tdim == 2:
-        return UnitSquareMesh(MPI.comm_world, n, n, new_style=True)
+        return UnitSquareMesh(MPI.comm_world, n, n)
     elif tdim == 3:
         return UnitCubeMesh(MPI.comm_world, n, n, n, new_style=True)
 
@@ -61,7 +61,7 @@ def worker_id(request):
 @pytest.mark.parametrize("encoding", encodings)
 def test_save_and_load_mesh2D(tempdir, encoding, cell_type):
     filename = os.path.join(tempdir, "mesh.xdmf")
-    mesh = UnitSquareMesh(MPI.comm_world, 12, 12, cell_type, new_style=True)
+    mesh = UnitSquareMesh(MPI.comm_world, 12, 12, cell_type)
     with XDMFFileNew(mesh.mpi_comm(), filename, encoding=encoding) as file:
         file.write(mesh)
 

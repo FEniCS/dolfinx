@@ -32,7 +32,7 @@ def mesh_factory(tdim, n):
     if tdim == 1:
         return UnitIntervalMesh(MPI.comm_world, n, new_style=True)
     elif tdim == 2:
-        return UnitSquareMesh(MPI.comm_world, n, n, new_style=True)
+        return UnitSquareMesh(MPI.comm_world, n, n)
     elif tdim == 3:
         return UnitCubeMesh(MPI.comm_world, n, n, n, new_style=True)
 
@@ -64,7 +64,7 @@ def test_save_1d_scalar(tempdir, encoding):
 @pytest.mark.parametrize("encoding", encodings)
 def test_save_2d_scalar(tempdir, encoding, cell_type):
     filename = os.path.join(tempdir, "u2.xdmf")
-    mesh = UnitSquareMesh(MPI.comm_world, 12, 12, cell_type, new_style=True)
+    mesh = UnitSquareMesh(MPI.comm_world, 12, 12, cell_type)
     V = FunctionSpace(mesh, ("Lagrange", 2))
     u = Function(V)
     u.vector.set(1.0)
@@ -88,7 +88,7 @@ def test_save_3d_scalar(tempdir, encoding, cell_type):
 @pytest.mark.parametrize("encoding", encodings)
 def test_save_2d_vector(tempdir, encoding, cell_type):
     filename = os.path.join(tempdir, "u_2dv.xdmf")
-    mesh = UnitSquareMesh(MPI.comm_world, 12, 13, cell_type, new_style=True)
+    mesh = UnitSquareMesh(MPI.comm_world, 12, 13, cell_type)
     V = VectorFunctionSpace(mesh, ("Lagrange", 2))
     u = Function(V)
     u.vector.set(1.0 + (1j if has_petsc_complex else 0))
@@ -111,7 +111,7 @@ def test_save_3d_vector(tempdir, encoding, cell_type):
 @pytest.mark.parametrize("encoding", encodings)
 def test_save_2d_tensor(tempdir, encoding, cell_type):
     filename = os.path.join(tempdir, "tensor.xdmf")
-    mesh = UnitSquareMesh(MPI.comm_world, 16, 16, cell_type, new_style=True)
+    mesh = UnitSquareMesh(MPI.comm_world, 16, 16, cell_type)
     u = Function(TensorFunctionSpace(mesh, ("Lagrange", 2)))
     u.vector.set(1.0 + (1j if has_petsc_complex else 0))
     with XDMFFileNew(mesh.mpi_comm(), filename, encoding=encoding) as file:
