@@ -255,47 +255,49 @@ get_local_indexing(
 
   // Determine ownership
   //------------------------------------------------------------------
-  int mpi_rank = dolfinx::MPI::rank(comm);
-
   std::vector<std::int32_t> local_index(entity_count, -1);
-  std::int32_t c = 0;
-  // Index non-ghost entities
-  for (int i = 0; i < entity_count; ++i)
+  std::int32_t num_local;
   {
-    const auto it = shared_entities.find(i);
-    std::int8_t gs = ghost_status[i];
-    assert(gs > 0);
-    // Definitely ghost
-    if (gs == 2)
-      continue;
+    int mpi_rank = dolfinx::MPI::rank(comm);
+    std::int32_t c = 0;
+    // Index non-ghost entities
+    for (int i = 0; i < entity_count; ++i)
+    {
+      const auto it = shared_entities.find(i);
+      std::int8_t gs = ghost_status[i];
+      assert(gs > 0);
+      // Definitely ghost
+      if (gs == 2)
+        continue;
 
-    // Definitely local
-    if (gs == 1 or it == shared_entities.end())
-    {
-      local_index[i] = c;
-      ++c;
+      // Definitely local
+      if (gs == 1 or it == shared_entities.end())
+      {
+        local_index[i] = c;
+        ++c;
+      }
+      else if (*(it->second.begin()) > mpi_rank)
+      {
+        // Take ownership (lower rank wins)
+        // FIXME: this could be made a deterministic function
+        // on each process, instead of simply "lowest wins"
+        local_index[i] = c;
+        ++c;
+      }
     }
-    else if (*(it->second.begin()) > mpi_rank)
-    {
-      // Take ownership (lower rank wins)
-      // FIXME: this could be made a deterministic function
-      // on each process, instead of simply "lowest wins"
-      local_index[i] = c;
-      ++c;
-    }
-  }
-  const std::int32_t num_local = c;
+    num_local = c;
 
-  for (int i = 0; i < entity_count; ++i)
-  {
-    // Unmapped global index (ghost)
-    if (local_index[i] == -1)
+    for (int i = 0; i < entity_count; ++i)
     {
-      local_index[i] = c;
-      ++c;
+      // Unmapped global index (ghost)
+      if (local_index[i] == -1)
+      {
+        local_index[i] = c;
+        ++c;
+      }
     }
+    assert(c == entity_count);
   }
-  assert(c == entity_count);
 
   // Communicate global indices to other processes
   //------------------------------------------------------------------
