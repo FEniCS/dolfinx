@@ -30,13 +30,15 @@ public:
   /// @param[in] n Number of cells in each direction
   /// @param[in] cell_type The mesh cell type
   /// @param[in] ghost_mode Mesh ghosting mode
+  /// @param[in] new_style Use new mesh creation of true
   /// @param[in] diagonal Direction of diagonals: "left", "right",
-  ///                     "left/right", "crossed"
+  ///   "left/right", "crossed"
   /// @return Mesh
   static mesh::Mesh
   create(MPI_Comm comm, const std::array<Eigen::Vector3d, 2>& p,
          std::array<std::size_t, 2> n, mesh::CellType cell_type,
-         const mesh::GhostMode ghost_mode, std::string diagonal = "right");
+         const mesh::GhostMode ghost_mode, bool new_style = false,
+         std::string diagonal = "right");
 };
 } // namespace generation
 } // namespace dolfinx

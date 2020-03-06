@@ -681,6 +681,8 @@ TopologyComputation::compute_connectivity(const Topology& topology, int d0,
     }
     else
     {
+      assert(c_d0_0);
+      assert(topology.connectivity(d1, d0));
       auto c_d0_d1 = std::make_shared<graph::AdjacencyList<std::int32_t>>(
           compute_from_transpose(*topology.connectivity(d1, d0),
                                  c_d0_0->num_nodes(), d0, d1));

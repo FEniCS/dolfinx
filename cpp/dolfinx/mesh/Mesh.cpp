@@ -145,24 +145,26 @@ compute_point_distribution(
 //-----------------------------------------------------------------------------
 Mesh mesh::create(
     MPI_Comm comm, const graph::AdjacencyList<std::int64_t>& cells,
-    CellType shape,
+    const fem::ElementDofLayout& layout,
     const Eigen::Ref<const Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic,
                                         Eigen::RowMajor>>& x)
 {
-  // Assume P1 triangles for now
-  Eigen::Array<int, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor> perm(5, 3);
-  for (int i = 0; i < perm.rows(); ++i)
-    for (int j = 0; j < perm.cols(); ++j)
-      perm(i, j) = j;
+  auto [topology, src, dest] = mesh::create_topology(comm, cells, layout);
 
-  // entity_dofs = [[set([0]), set([1]), set([2])], 3 * [set()], [set()]]
-  std::vector<std::vector<std::set<int>>> entity_dofs(3);
-  entity_dofs[0] = {{0}, {1}, {2}};
-  entity_dofs[1] = {{}, {}, {}};
-  entity_dofs[2] = {{}};
-  fem::ElementDofLayout layout(1, entity_dofs, {}, {}, shape, perm);
-
-  const auto [topology, src, dest] = mesh::create_topology(comm, cells, layout);
+  // FIXME: Figure out how to check which entities are required
+  // Initialise facet for P2
+  // Create local entities
+  if (topology.dim() > 1)
+  {
+    auto [cell_entity, entity_vertex, index_map]
+        = mesh::TopologyComputation::compute_entities(comm, topology, 1);
+    if (cell_entity)
+      topology.set_connectivity(cell_entity, topology.dim(), 1);
+    if (entity_vertex)
+      topology.set_connectivity(entity_vertex, 1, 0);
+    if (index_map)
+      topology.set_index_map(1, index_map);
+  }
 
   const Geometry geometry
       = mesh::create_geometry(comm, topology, layout, cells, dest, src, x);
