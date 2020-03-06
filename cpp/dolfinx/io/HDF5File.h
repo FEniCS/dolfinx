@@ -69,15 +69,15 @@ public:
   /// Chunking parameter - partition data into fixed size blocks for efficiency
   bool chunking = false;
 
-  // Write contiguous data to HDF5 data set. Data is flattened into
-  // a 1D array, e.g. [x0, y0, z0, x1, y1, z1] for a vector in 3D
+  /// Write contiguous data to HDF5 data set. Data is flattened into a
+  /// 1D array, e.g. [x0, y0, z0, x1, y1, z1] for a vector in 3D
   template <typename T>
   void write_data(const std::string dataset_name, const std::vector<T>& data,
                   const std::vector<std::int64_t>& global_size,
                   bool use_mpi_io);
 
-  // Write 2D dataset to HDF5. Eigen::Arrays on each process must have the same
-  // number of columns.
+  /// Write 2D dataset to HDF5. Eigen::Arrays on each process must have
+  /// the same number of columns.
   template <typename T>
   void write_data(
       const std::string dataset_name,
