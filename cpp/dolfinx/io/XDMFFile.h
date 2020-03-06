@@ -42,8 +42,6 @@ namespace mesh
 enum class GhostMode : int;
 class Mesh;
 template <typename T>
-class MeshFunction;
-template <typename T>
 class MeshValueCollection;
 class Partitioning;
 } // namespace mesh
@@ -52,8 +50,8 @@ namespace io
 {
 class HDF5File;
 
-/// Read and write mesh::Mesh, function::Function, mesh::MeshFunction
-/// and other objects in XDMF.
+/// Read and write mesh::Mesh, function::Function, and other objects in
+/// XDMF.
 
 /// This class supports the output of meshes and functions in XDMF
 /// (http://www.xdmf.org) format. It creates an XML file that describes
@@ -161,24 +159,6 @@ public:
   /// @param[in] t The time
   void write(const function::Function& u, double t);
 
-  /// Save mesh::MeshFunction to file using an associated HDF5 file, or
-  /// storing the data inline as XML.
-  ///
-  /// @param[in] meshfunction The meshfunction to save
-  void write(const mesh::MeshFunction<int>& meshfunction);
-
-  /// Save mesh::MeshFunction to file using an associated HDF5 file, or
-  /// storing the data inline as XML.
-  ///
-  /// @param[in] meshfunction The meshfunction to save
-  void write(const mesh::MeshFunction<std::size_t>& meshfunction);
-
-  /// Save mesh::MeshFunction to file using an associated HDF5 file, or
-  /// storing the data inline as XML.
-  ///
-  /// @param[in] meshfunction The meshfunction to save
-  void write(const mesh::MeshFunction<double>& meshfunction);
-
   /// Write out mesh value collection (subset) using an associated
   /// HDF5 file, or storing the data inline as XML.
   ///
@@ -256,30 +236,6 @@ public:
   read_checkpoint(std::shared_ptr<const function::FunctionSpace> V,
                   std::string func_name, std::int64_t counter = -1) const;
 
-  /// Read first mesh::MeshFunction from file
-  /// @param[in] mesh The associated Mesh
-  /// @param[in] name Name of data attribute in XDMF file
-  /// @return A MeshFunction
-  mesh::MeshFunction<int> read_mf_int(std::shared_ptr<const mesh::Mesh> mesh,
-                                      std::string name = "") const;
-
-  /// Read mesh::MeshFunction from file, optionally specifying dataset
-  /// name
-  /// @param[in] mesh (_MeshFunction<std::size_t>_)
-  ///        mesh::MeshFunction to restore
-  /// @param name (std::string) Name of data attribute in XDMF file
-  /// @return A MeshFunction
-  mesh::MeshFunction<std::size_t>
-  read_mf_size_t(std::shared_ptr<const mesh::Mesh> mesh,
-                 std::string name = "") const;
-
-  /// @param[in] mesh The associated Mesh
-  /// @param[in] name Name of data attribute in XDMF file
-  /// @return A MeshFunction
-  mesh::MeshFunction<double>
-  read_mf_double(std::shared_ptr<const mesh::Mesh> mesh,
-                 std::string name = "") const;
-
   /// Read mesh::MeshValueCollection from file, optionally specifying
   /// dataset name
   /// @param[in] mesh The associated Mesh
@@ -330,16 +286,6 @@ private:
   mesh::MeshValueCollection<T>
   read_mesh_value_collection(std::shared_ptr<const mesh::Mesh> mesh,
                              std::string name) const;
-
-  // Generic mesh::MeshFunction reader
-  template <typename T>
-  mesh::MeshFunction<T>
-  read_mesh_function(std::shared_ptr<const mesh::Mesh> mesh,
-                     std::string name = "") const;
-
-  // Generic mesh::MeshFunction writer
-  template <typename T>
-  void write_mesh_function(const mesh::MeshFunction<T>& meshfunction);
 
   // MPI communicator
   dolfinx::MPI::Comm _mpi_comm;

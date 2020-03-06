@@ -93,19 +93,6 @@ void io(py::module& m)
            py::overload_cast<const dolfinx::mesh::Mesh&>(
                &dolfinx::io::XDMFFile::write),
            py::arg("mesh"))
-      // MeshFunction
-      .def("write",
-           py::overload_cast<const dolfinx::mesh::MeshFunction<std::size_t>&>(
-               &dolfinx::io::XDMFFile::write),
-           py::arg("mf"))
-      .def("write",
-           py::overload_cast<const dolfinx::mesh::MeshFunction<int>&>(
-               &dolfinx::io::XDMFFile::write),
-           py::arg("mf"))
-      .def("write",
-           py::overload_cast<const dolfinx::mesh::MeshFunction<double>&>(
-               &dolfinx::io::XDMFFile::write),
-           py::arg("mf"))
       // MeshValueCollection
       .def("write",
            py::overload_cast<
@@ -164,10 +151,6 @@ void io(py::module& m)
            py::overload_cast<const dolfinx::function::Function&, double>(
                &dolfinx::io::XDMFFileNew::write),
            py::arg("u"), py::arg("t") = 0.0)
-      .def("write",
-           py::overload_cast<const dolfinx::mesh::MeshFunction<int>&>(
-               &dolfinx::io::XDMFFileNew::write),
-           py::arg("mf"))
       .def("read_mesh", &dolfinx::io::XDMFFileNew::read_mesh)
       .def("read_mesh_data", &dolfinx::io::XDMFFileNew::read_mesh_data)
       .def("read_mf_int", &dolfinx::io::XDMFFileNew::read_mf_int);
@@ -240,13 +223,6 @@ void io(py::module& m)
            [](dolfinx::io::XDMFFile& self, const MPICommWrapper comm) {
              return self.read_mesh_data(comm.get());
            })
-      // MeshFunction
-      .def("read_mf_int", &dolfinx::io::XDMFFile::read_mf_int, py::arg("mesh"),
-           py::arg("name") = "")
-      .def("read_mf_size_t", &dolfinx::io::XDMFFile::read_mf_size_t,
-           py::arg("mesh"), py::arg("name") = "")
-      .def("read_mf_double", &dolfinx::io::XDMFFile::read_mf_double,
-           py::arg("mesh"), py::arg("name") = "")
       // MeshValueCollection
       .def("read_mvc_int", &dolfinx::io::XDMFFile::read_mvc_int,
            py::arg("mesh"), py::arg("name") = "")
