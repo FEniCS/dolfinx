@@ -126,17 +126,6 @@ get_local_indexing(
     }
   }
 
-  std::vector<int> bb(4);
-  for (int i = 0; i < entity_count; ++i)
-    bb[ghost_status[i]]++;
-  std::stringstream s;
-  s << ghost_offset << ", " << entity_list.rows() << "\n";
-  s << "[";
-  for (auto q : bb)
-    s << q << " ";
-  s << "]\n";
-  std::cout << s.str();
-
   // Create an expanded neighbour_comm from shared_vertices
   std::set<std::int32_t> neighbour_set;
   for (auto q : shared_vertices)
@@ -447,10 +436,6 @@ compute_entities_by_key_matching(
 
   std::int32_t ghost_offset
       = cell_index_map->size_local() * num_entities_per_cell;
-
-  std::cout << "ghost_offset = " << ghost_offset
-            << " rows = " << entity_list.rows() << "\n";
-  std::cout << "idxmap ghosts = " << cell_index_map->ghosts() << "\n";
 
   auto [local_index, index_map] = get_local_indexing(
       comm, vertex_index_map, entity_list, entity_index, ghost_offset);
