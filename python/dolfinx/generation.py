@@ -20,8 +20,7 @@ __all__ = [
 def IntervalMesh(comm,
                  nx: int,
                  points: list,
-                 ghost_mode=cpp.mesh.GhostMode.none,
-                 new_style=False):
+                 ghost_mode=cpp.mesh.GhostMode.none):
     """Create an interval mesh
 
     Parameters
@@ -38,8 +37,7 @@ def IntervalMesh(comm,
     ----
     Coordinate mapping is not attached
     """
-    return cpp.generation.IntervalMesh.create(comm, nx, points, ghost_mode,
-                                              new_style)
+    return cpp.generation.IntervalMesh.create(comm, nx, points, ghost_mode)
 
 
 def UnitIntervalMesh(comm,

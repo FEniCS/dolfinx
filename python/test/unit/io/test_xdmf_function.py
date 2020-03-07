@@ -52,7 +52,7 @@ def worker_id(request):
 @pytest.mark.parametrize("encoding", encodings)
 def test_save_1d_scalar(tempdir, encoding):
     filename2 = os.path.join(tempdir, "u1_.xdmf")
-    mesh = UnitIntervalMesh(MPI.comm_world, 32, new_style=True)
+    mesh = UnitIntervalMesh(MPI.comm_world, 32)
     V = FunctionSpace(mesh, ("Lagrange", 2))
     u = Function(V)
     u.vector.set(1.0 + (1j if has_petsc_complex else 0))
