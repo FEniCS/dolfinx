@@ -34,12 +34,11 @@ void generation(py::module& m)
       .def_static(
           "create",
           [](const MPICommWrapper comm, std::size_t n, std::array<double, 2> p,
-             dolfinx::mesh::GhostMode ghost_mode, bool new_style) {
-            return dolfinx::generation::IntervalMesh::create(
-                comm.get(), n, p, ghost_mode, new_style);
+             dolfinx::mesh::GhostMode ghost_mode) {
+            return dolfinx::generation::IntervalMesh::create(comm.get(), n, p,
+                                                             ghost_mode);
           },
-          py::arg("comm"), py::arg("n"), py::arg("p"), py::arg("ghost_mode"),
-          py::arg("new_style") = false);
+          py::arg("comm"), py::arg("n"), py::arg("p"), py::arg("ghost_mode"));
 
   // dolfinx::RectangleMesh
   py::class_<dolfinx::generation::RectangleMesh,
@@ -50,8 +49,8 @@ void generation(py::module& m)
           [](const MPICommWrapper comm, std::array<Eigen::Vector3d, 2> p,
              std::array<std::size_t, 2> n, dolfinx::mesh::CellType cell_type,
              dolfinx::mesh::GhostMode ghost_mode, std::string diagonal) {
-    return dolfinx::generation::RectangleMesh::create(
-        comm.get(), p, n, cell_type, ghost_mode, diagonal);
+            return dolfinx::generation::RectangleMesh::create(
+                comm.get(), p, n, cell_type, ghost_mode, diagonal);
           },
           py::arg("comm"), py::arg("p"), py::arg("n"), py::arg("cell_type"),
           py::arg("ghost_mode"), py::arg("diagonal") = "right");
@@ -66,8 +65,8 @@ void generation(py::module& m)
           "create",
           [](const MPICommWrapper comm, std::size_t n,
              dolfinx::mesh::GhostMode ghost_mode, bool new_style) {
-    return dolfinx::generation::UnitDiscMesh::create(comm.get(), n, ghost_mode,
-                                                     new_style);
+            return dolfinx::generation::UnitDiscMesh::create(
+                comm.get(), n, ghost_mode, new_style);
           },
           py::arg("comm"), py::arg("n"), py::arg("ghost_mode"),
           py::arg("new_style") = false);
@@ -80,8 +79,8 @@ void generation(py::module& m)
           [](const MPICommWrapper comm, std::array<Eigen::Vector3d, 2> p,
              std::array<std::size_t, 3> n, dolfinx::mesh::CellType cell_type,
              const dolfinx::mesh::GhostMode ghost_mode, bool new_style) {
-    return dolfinx::generation::BoxMesh::create(comm.get(), p, n, cell_type,
-                                                ghost_mode, new_style);
+            return dolfinx::generation::BoxMesh::create(
+                comm.get(), p, n, cell_type, ghost_mode, new_style);
           },
           py::arg("comm"), py::arg("p"), py::arg("n"), py::arg("cell_type"),
           py::arg("ghost_mode"), py::arg("new_style") = false);

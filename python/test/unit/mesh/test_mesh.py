@@ -30,7 +30,12 @@ assert (tempdir)
 def mesh1d():
     """Create 1D mesh with degenerate cell"""
     mesh1d = UnitIntervalMesh(MPI.comm_world, 4)
-    mesh1d.geometry.x[4] = mesh1d.geometry.x[3]
+    i1 = np.where((mesh1d.geometry.x
+                   == (0.75, 0, 0)).all(axis=1))[0][0]
+    i2 = np.where((mesh1d.geometry.x
+                   == (1, 0, 0)).all(axis=1))[0][0]
+
+    mesh1d.geometry.x[i2] = mesh1d.geometry.x[i1]
     return mesh1d
 
 
@@ -42,7 +47,7 @@ def mesh2d():
                          np.array([1., 1., 0.0])], [1, 1],
         CellType.triangle, cpp.mesh.GhostMode.none, 'left')
     i1 = np.where((mesh2d.geometry.x
-                   == (0, 1, 0)).all(axis=1))[0][0]
+                   == (1, 1, 0)).all(axis=1))[0][0]
     mesh2d.geometry.x[i1, :2] += 0.5 * (math.sqrt(3.0) - 1.0)
     return mesh2d
 

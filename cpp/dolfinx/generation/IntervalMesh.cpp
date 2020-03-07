@@ -19,26 +19,17 @@ using namespace dolfinx::generation;
 namespace
 {
 mesh::Mesh build(MPI_Comm comm, std::size_t nx, std::array<double, 2> x,
-                 const mesh::GhostMode ghost_mode, bool new_style)
+                 const mesh::GhostMode)
 {
   // Receive mesh according to parallel policy
   if (dolfinx::MPI::rank(comm) != 0)
   {
     Eigen::Array<double, 0, 1> geom(0, 1);
     Eigen::Array<std::int64_t, 0, 2, Eigen::RowMajor> topo(0, 2);
-    if (new_style)
-    {
-      const fem::ElementDofLayout layout
-          = fem::geometry_layout(mesh::CellType::interval, topo.cols());
-      return mesh::create(comm, graph::AdjacencyList<std::int64_t>(topo),
-                          layout, geom);
-    }
-    else
-    {
-      // Old mesh builder
-      return mesh::Partitioning::build_distributed_mesh(
-          comm, mesh::CellType::interval, geom, topo, {}, ghost_mode);
-    }
+    const fem::ElementDofLayout layout
+        = fem::geometry_layout(mesh::CellType::interval, topo.cols());
+    return mesh::create(comm, graph::AdjacencyList<std::int64_t>(topo), layout,
+                        geom);
   }
 
   const double a = x[0];
@@ -70,28 +61,18 @@ mesh::Mesh build(MPI_Comm comm, std::size_t nx, std::array<double, 2> x,
   for (std::size_t ix = 0; ix < nx; ix++)
     topo.row(ix) << ix, ix + 1;
 
-  if (new_style)
-  {
-    const fem::ElementDofLayout layout
-        = fem::geometry_layout(mesh::CellType::interval, topo.cols());
-    return mesh::create(comm, graph::AdjacencyList<std::int64_t>(topo), layout,
-                        geom);
-  }
-  else
-  {
-    // Old mesh builder
-    return mesh::Partitioning::build_distributed_mesh(
-        comm, mesh::CellType::interval, geom, topo, {}, ghost_mode);
-  }
+  const fem::ElementDofLayout layout
+      = fem::geometry_layout(mesh::CellType::interval, topo.cols());
+  return mesh::create(comm, graph::AdjacencyList<std::int64_t>(topo), layout,
+                      geom);
 }
 } // namespace
 
 //-----------------------------------------------------------------------------
 mesh::Mesh IntervalMesh::create(MPI_Comm comm, std::size_t n,
                                 std::array<double, 2> x,
-                                const mesh::GhostMode ghost_mode,
-                                bool new_style)
+                                const mesh::GhostMode ghost_mode)
 {
-  return build(comm, n, x, ghost_mode, new_style);
+  return build(comm, n, x, ghost_mode);
 }
 //-----------------------------------------------------------------------------

@@ -26,18 +26,15 @@ T volume_interval(const mesh::Mesh& mesh,
                   const Eigen::Ref<const Eigen::ArrayXi>& entities)
 {
   const mesh::Geometry& geometry = mesh.geometry();
-  const mesh::Topology& topology = mesh.topology();
-  assert(topology.connectivity(1, 0));
-  const graph::AdjacencyList<std::int32_t>& connectivity
-      = *topology.connectivity(1, 0);
+  const graph::AdjacencyList<std::int32_t>& x_dofs = geometry.dofmap();
 
   T v(entities.rows());
   for (Eigen::Index i = 0; i < entities.rows(); ++i)
   {
     // Get the coordinates of the two vertices
-    auto vertices = connectivity.links(entities[i]);
-    const Eigen::Vector3d x0 = geometry.x(vertices[0]);
-    const Eigen::Vector3d x1 = geometry.x(vertices[1]);
+    auto dofs = x_dofs.links(entities[i]);
+    const Eigen::Vector3d x0 = geometry.x(dofs[0]);
+    const Eigen::Vector3d x1 = geometry.x(dofs[1]);
     v[i] = (x1 - x0).norm();
   }
 
@@ -49,10 +46,6 @@ T volume_triangle(const mesh::Mesh& mesh,
                   const Eigen::Ref<const Eigen::ArrayXi>& entities)
 {
   const mesh::Geometry& geometry = mesh.geometry();
-  const mesh::Topology& topology = mesh.topology();
-  auto c_to_e = topology.connectivity(2, 0);
-  assert(c_to_e);
-
   const int gdim = geometry.dim();
   assert(gdim == 2 or gdim == 3);
   const graph::AdjacencyList<std::int32_t>& x_dofs = geometry.dofmap();
@@ -379,16 +372,16 @@ Eigen::ArrayXd mesh::h(const Mesh& mesh,
                        const Eigen::Ref<const Eigen::ArrayXi>& entities,
                        int dim)
 {
+  if (dim != mesh.topology().dim())
+    throw std::runtime_error("Cell size when dim ne tdim  requires updating.");
+
   // Get number of cell vertices
   const mesh::CellType type
       = cell_entity_type(mesh.topology().cell_type(), dim);
   const int num_vertices = num_cell_vertices(type);
 
   const mesh::Geometry& geometry = mesh.geometry();
-  const mesh::Topology& topology = mesh.topology();
-  assert(topology.connectivity(dim, 0));
-  const graph::AdjacencyList<std::int32_t>& connectivity
-      = *topology.connectivity(dim, 0);
+  const graph::AdjacencyList<std::int32_t>& x_dofs = geometry.dofmap();
 
   Eigen::ArrayXd h_cells = Eigen::ArrayXd::Zero(entities.rows());
   assert(num_vertices <= 8);
@@ -396,9 +389,9 @@ Eigen::ArrayXd mesh::h(const Mesh& mesh,
   for (Eigen::Index e = 0; e < entities.rows(); ++e)
   {
     // Get the coordinates  of the vertices
-    auto vertices = connectivity.links(entities[e]);
+    auto dofs = x_dofs.links(entities[e]);
     for (int i = 0; i < num_vertices; ++i)
-      points[i] = geometry.x(vertices[i]);
+      points[i] = geometry.x(dofs[i]);
 
     // Get maximum edge length
     for (int i = 0; i < num_vertices; ++i)
