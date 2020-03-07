@@ -10,7 +10,6 @@
 #include <dolfinx/function/FunctionSpace.h>
 #include <dolfinx/io/HDF5File.h>
 #include <dolfinx/io/VTKFile.h>
-#include <dolfinx/io/XDMFFile.h>
 #include <dolfinx/io/XDMFFileNew.h>
 #include <dolfinx/io/cells.h>
 #include <dolfinx/la/PETScVector.h>
@@ -53,73 +52,6 @@ void io(py::module& m)
       .def("get_mpi_atomicity", &dolfinx::io::HDF5File::get_mpi_atomicity)
       .def_readwrite("chunking", &dolfinx::io::HDF5File::chunking)
       .def("has_dataset", &dolfinx::io::HDF5File::has_dataset);
-
-  // dolfinx::io::XDMFFile
-  py::class_<dolfinx::io::XDMFFile, std::shared_ptr<dolfinx::io::XDMFFile>>
-      xdmf_file(m, "XDMFFile");
-
-  xdmf_file
-      .def(py::init([](const MPICommWrapper comm, std::string filename,
-                       dolfinx::io::XDMFFile::Encoding encoding) {
-             return std::make_unique<dolfinx::io::XDMFFile>(comm.get(),
-                                                            filename, encoding);
-           }),
-           py::arg("comm"), py::arg("filename"), py::arg("encoding"))
-      .def("close", &dolfinx::io::XDMFFile::close)
-      .def_readwrite("functions_share_mesh",
-                     &dolfinx::io::XDMFFile::functions_share_mesh)
-      .def_readwrite("flush_output", &dolfinx::io::XDMFFile::flush_output)
-      .def_readwrite("rewrite_function_mesh",
-                     &dolfinx::io::XDMFFile::rewrite_function_mesh);
-
-  // dolfinx::io::XDMFFile::Encoding enums
-  py::enum_<dolfinx::io::XDMFFile::Encoding>(xdmf_file, "Encoding")
-      .value("HDF5", dolfinx::io::XDMFFile::Encoding::HDF5)
-      .value("ASCII", dolfinx::io::XDMFFile::Encoding::ASCII);
-
-  // dolfinx::io::XDMFFile::write
-  xdmf_file
-      // Mesh
-      .def("write",
-           py::overload_cast<const dolfinx::mesh::Mesh&>(
-               &dolfinx::io::XDMFFile::write),
-           py::arg("mesh"))
-      // MeshValueCollection
-      .def("write",
-           py::overload_cast<
-               const dolfinx::mesh::MeshValueCollection<std::size_t>&>(
-               &dolfinx::io::XDMFFile::write),
-           py::arg("mvc"))
-      .def("write",
-           py::overload_cast<const dolfinx::mesh::MeshValueCollection<int>&>(
-               &dolfinx::io::XDMFFile::write),
-           py::arg("mvc"))
-      .def("write",
-           py::overload_cast<const dolfinx::mesh::MeshValueCollection<double>&>(
-               &dolfinx::io::XDMFFile::write),
-           py::arg("mvc"))
-      // Points
-      .def(
-          "write",
-          py::overload_cast<const Eigen::Ref<
-              const Eigen::Array<double, Eigen::Dynamic, 3, Eigen::RowMajor>>&>(
-              &dolfinx::io::XDMFFile::write),
-          py::arg("points"))
-      .def("write",
-           py::overload_cast<const Eigen::Ref<const Eigen::Array<
-                                 double, Eigen::Dynamic, 3, Eigen::RowMajor>>&,
-                             const std::vector<double>&>(
-               &dolfinx::io::XDMFFile::write),
-           py::arg("points"), py::arg("values"))
-      // Checkpoints
-      .def(
-          "write_checkpoint",
-          [](dolfinx::io::XDMFFile& instance,
-             const dolfinx::function::Function& u, std::string function_name,
-             double time_step) {
-            instance.write_checkpoint(u, function_name, time_step);
-          },
-          py::arg("u"), py::arg("function_name"), py::arg("time_step") = 0.0);
 
   // dolfinx::io::XDMFFileNew
   py::class_<dolfinx::io::XDMFFileNew,
@@ -201,23 +133,5 @@ void io(py::module& m)
            py::overload_cast<const dolfinx::mesh::MeshFunction<int>&, double>(
                &dolfinx::io::VTKFile::write),
            py::arg("mf"), py::arg("t"));
-
-  // XDFMFile::read
-  xdmf_file
-      // Mesh
-      .def("read_mesh_data",
-           [](dolfinx::io::XDMFFile& self, const MPICommWrapper comm) {
-             return self.read_mesh_data(comm.get());
-           })
-      // MeshValueCollection
-      .def("read_mvc_int", &dolfinx::io::XDMFFile::read_mvc_int,
-           py::arg("mesh"), py::arg("name") = "")
-      .def("read_mvc_size_t", &dolfinx::io::XDMFFile::read_mvc_size_t,
-           py::arg("mesh"), py::arg("name") = "")
-      .def("read_mvc_double", &dolfinx::io::XDMFFile::read_mvc_double,
-           py::arg("mesh"), py::arg("name") = "")
-      // Checkpointing
-      .def("read_checkpoint", &dolfinx::io::XDMFFile::read_checkpoint,
-           py::arg("V"), py::arg("name"), py::arg("counter") = -1);
 }
 } // namespace dolfinx_wrappers

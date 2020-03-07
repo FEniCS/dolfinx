@@ -45,21 +45,21 @@ void add_points(MPI_Comm comm, pugi::xml_node& xdmf_node, hid_t h5_id,
                 const Eigen::Ref<const Eigen::Array<double, Eigen::Dynamic, 3,
                                                     Eigen::RowMajor>>& points);
 
-/// Add topology node to xml_node (includes writing data to XML or HDF5
-/// file)
-void add_topology_data(MPI_Comm comm, pugi::xml_node& xml_node, hid_t h5_id,
-                       const std::string path_prefix, const mesh::Mesh& mesh,
-                       int cell_dim);
+// /// Add topology node to xml_node (includes writing data to XML or HDF5
+// /// file)
+// void add_topology_data(MPI_Comm comm, pugi::xml_node& xml_node, hid_t h5_id,
+//                        const std::string path_prefix, const mesh::Mesh& mesh,
+//                        int cell_dim);
 
 /// Add geometry node and data to xml_node
 void add_geometry_data(MPI_Comm comm, pugi::xml_node& xml_node, hid_t h5_id,
                        const std::string path_prefix,
                        const mesh::Geometry& geometry);
 
-/// Add mesh to XDMF xml_node (usually a Domain or Time Grid) and write
-/// data
-void add_mesh(MPI_Comm comm, pugi::xml_node& xml_node, hid_t h5_id,
-              const mesh::Mesh& mesh, const std::string path_prefix);
+// /// Add mesh to XDMF xml_node (usually a Domain or Time Grid) and write
+// /// data
+// void add_mesh(MPI_Comm comm, pugi::xml_node& xml_node, hid_t h5_id,
+//               const mesh::Mesh& mesh, const std::string path_prefix);
 
 /// Add function to a XML node
 void add_function(MPI_Comm mpi_comm, pugi::xml_node& xml_node, hid_t h5_id,
