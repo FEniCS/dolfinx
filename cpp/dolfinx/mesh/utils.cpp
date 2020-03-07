@@ -137,10 +137,6 @@ T volume_quadrilateral(const mesh::Mesh& mesh,
                        const Eigen::Ref<const Eigen::ArrayXi>& entities)
 {
   const mesh::Geometry& geometry = mesh.geometry();
-  const mesh::Topology& topology = mesh.topology();
-  auto c_to_e = topology.connectivity(2, 0);
-  assert(c_to_e);
-
   const int gdim = geometry.dim();
   T v(entities.rows());
   const graph::AdjacencyList<std::int32_t>& x_dofs = geometry.dofmap();
