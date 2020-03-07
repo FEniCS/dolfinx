@@ -35,7 +35,6 @@ public:
   /// @param[in] n Number of cells in each direction.
   /// @param[in] cell_type Tetrahedron or hexahedron
   /// @param[in] ghost_mode Ghost mode
-  /// @param[in] partitioner Partitioner (scotch, parmetis or kahip)
   /// @return Mesh
   static mesh::Mesh create(MPI_Comm comm,
                            const std::array<Eigen::Vector3d, 2>& p,
