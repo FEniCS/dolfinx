@@ -87,9 +87,8 @@ create_geom(MPI_Comm comm, const std::array<Eigen::Vector3d, 2>& p,
 }
 //-----------------------------------------------------------------------------
 mesh::Mesh build_tet(MPI_Comm comm, const std::array<Eigen::Vector3d, 2>& p,
-                     std::array<std::size_t, 3> n,
-                     const mesh::GhostMode ghost_mode,
-                     mesh::Partitioner partitioner, bool new_style)
+                     std::array<std::size_t, 3> n, const mesh::GhostMode,
+                     mesh::Partitioner)
 {
   common::Timer timer("Build BoxMesh");
 
@@ -138,26 +137,15 @@ mesh::Mesh build_tet(MPI_Comm comm, const std::array<Eigen::Vector3d, 2>& p,
     ++cell;
   }
 
-  if (new_style)
-  {
-    const fem::ElementDofLayout layout
-        = fem::geometry_layout(mesh::CellType::tetrahedron, topo.cols());
-    return mesh::create(comm, graph::AdjacencyList<std::int64_t>(topo), layout,
-                        geom);
-  }
-  else
-  {
-
-    return mesh::Partitioning::build_distributed_mesh(
-        comm, mesh::CellType::tetrahedron, geom, topo, {}, ghost_mode,
-        partitioner);
-  }
+  const fem::ElementDofLayout layout
+      = fem::geometry_layout(mesh::CellType::tetrahedron, topo.cols());
+  return mesh::create(comm, graph::AdjacencyList<std::int64_t>(topo), layout,
+                      geom);
 }
 //-----------------------------------------------------------------------------
 mesh::Mesh build_hex(MPI_Comm comm, const std::array<Eigen::Vector3d, 2>& p,
-                     std::array<std::size_t, 3> n,
-                     const mesh::GhostMode ghost_mode,
-                     mesh::Partitioner partitioner, bool new_style)
+                     std::array<std::size_t, 3> n, const mesh::GhostMode,
+                     mesh::Partitioner)
 {
   Eigen::Array<double, Eigen::Dynamic, 3, Eigen::RowMajor> geom
       = create_geom(comm, p, n);
@@ -192,36 +180,25 @@ mesh::Mesh build_hex(MPI_Comm comm, const std::array<Eigen::Vector3d, 2>& p,
     ++cell;
   }
 
-  if (new_style)
-  {
-    const fem::ElementDofLayout layout
-        = fem::geometry_layout(mesh::CellType::hexahedron, topo.cols());
-    return mesh::create(comm, graph::AdjacencyList<std::int64_t>(topo), layout,
-                        geom);
-  }
-  else
-  {
-    return mesh::Partitioning::build_distributed_mesh(
-        comm, mesh::CellType::hexahedron, geom, topo, {}, ghost_mode,
-        partitioner);
-  }
+  const fem::ElementDofLayout layout
+      = fem::geometry_layout(mesh::CellType::hexahedron, topo.cols());
+  return mesh::create(comm, graph::AdjacencyList<std::int64_t>(topo), layout,
+                      geom);
 }
 //-----------------------------------------------------------------------------
 
 } // namespace
 
 //-----------------------------------------------------------------------------
-mesh::Mesh BoxMesh::create(MPI_Comm comm,
-                           const std::array<Eigen::Vector3d, 2>& p,
-                           std::array<std::size_t, 3> n,
-                           mesh::CellType cell_type,
-                           const mesh::GhostMode ghost_mode, bool new_style,
-                           mesh::Partitioner partitioner)
+mesh::Mesh
+BoxMesh::create(MPI_Comm comm, const std::array<Eigen::Vector3d, 2>& p,
+                std::array<std::size_t, 3> n, mesh::CellType cell_type,
+                const mesh::GhostMode ghost_mode, mesh::Partitioner partitioner)
 {
   if (cell_type == mesh::CellType::tetrahedron)
-    return build_tet(comm, p, n, ghost_mode, partitioner, new_style);
+    return build_tet(comm, p, n, ghost_mode, partitioner);
   else if (cell_type == mesh::CellType::hexahedron)
-    return build_hex(comm, p, n, ghost_mode, partitioner, new_style);
+    return build_hex(comm, p, n, ghost_mode, partitioner);
   else
     throw std::runtime_error("Generate rectangle mesh. Wrong cell type");
 }

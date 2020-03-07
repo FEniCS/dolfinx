@@ -34,7 +34,7 @@ def mesh_factory(tdim, n):
     elif tdim == 2:
         return UnitSquareMesh(MPI.comm_world, n, n)
     elif tdim == 3:
-        return UnitCubeMesh(MPI.comm_world, n, n, n, new_style=True)
+        return UnitCubeMesh(MPI.comm_world, n, n, n)
 
 
 @pytest.fixture
@@ -76,7 +76,7 @@ def test_save_2d_scalar(tempdir, encoding, cell_type):
 @pytest.mark.parametrize("encoding", encodings)
 def test_save_3d_scalar(tempdir, encoding, cell_type):
     filename = os.path.join(tempdir, "u3.xdmf")
-    mesh = UnitCubeMesh(MPI.comm_world, 4, 3, 4, cell_type, new_style=True)
+    mesh = UnitCubeMesh(MPI.comm_world, 4, 3, 4, cell_type)
     V = FunctionSpace(mesh, ("Lagrange", 2))
     u = Function(V)
     u.vector.set(1.0)
@@ -100,7 +100,7 @@ def test_save_2d_vector(tempdir, encoding, cell_type):
 @pytest.mark.parametrize("encoding", encodings)
 def test_save_3d_vector(tempdir, encoding, cell_type):
     filename = os.path.join(tempdir, "u_3Dv.xdmf")
-    mesh = UnitCubeMesh(MPI.comm_world, 2, 2, 2, cell_type, new_style=True)
+    mesh = UnitCubeMesh(MPI.comm_world, 2, 2, 2, cell_type)
     u = Function(VectorFunctionSpace(mesh, ("Lagrange", 1)))
     u.vector.set(1.0 + (1j if has_petsc_complex else 0))
     with XDMFFileNew(mesh.mpi_comm(), filename, encoding=encoding) as file:
@@ -122,7 +122,7 @@ def test_save_2d_tensor(tempdir, encoding, cell_type):
 @pytest.mark.parametrize("encoding", encodings)
 def test_save_3d_tensor(tempdir, encoding, cell_type):
     filename = os.path.join(tempdir, "u3t.xdmf")
-    mesh = UnitCubeMesh(MPI.comm_world, 4, 4, 4, cell_type, new_style=True)
+    mesh = UnitCubeMesh(MPI.comm_world, 4, 4, 4, cell_type)
     u = Function(TensorFunctionSpace(mesh, ("Lagrange", 2)))
     u.vector.set(1.0 + (1j if has_petsc_complex else 0))
     with XDMFFileNew(mesh.mpi_comm(), filename, encoding=encoding) as file:
@@ -133,7 +133,7 @@ def test_save_3d_tensor(tempdir, encoding, cell_type):
 @pytest.mark.parametrize("encoding", encodings)
 def test_save_3d_vector_series(tempdir, encoding, cell_type):
     filename = os.path.join(tempdir, "u_3D.xdmf")
-    mesh = UnitCubeMesh(MPI.comm_world, 2, 2, 2, cell_type, new_style=True)
+    mesh = UnitCubeMesh(MPI.comm_world, 2, 2, 2, cell_type)
     u = Function(VectorFunctionSpace(mesh, ("Lagrange", 2)))
     with XDMFFileNew(mesh.mpi_comm(), filename, encoding=encoding) as file:
         u.vector.set(1.0 + (1j if has_petsc_complex else 0))

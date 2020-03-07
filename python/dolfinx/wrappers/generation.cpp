@@ -64,12 +64,11 @@ void generation(py::module& m)
       .def_static(
           "create",
           [](const MPICommWrapper comm, std::size_t n,
-             dolfinx::mesh::GhostMode ghost_mode, bool new_style) {
-            return dolfinx::generation::UnitDiscMesh::create(
-                comm.get(), n, ghost_mode, new_style);
+             dolfinx::mesh::GhostMode ghost_mode) {
+            return dolfinx::generation::UnitDiscMesh::create(comm.get(), n,
+                                                             ghost_mode);
           },
-          py::arg("comm"), py::arg("n"), py::arg("ghost_mode"),
-          py::arg("new_style") = false);
+          py::arg("comm"), py::arg("n"), py::arg("ghost_mode"));
 
   // dolfinx::BoxMesh
   py::class_<dolfinx::generation::BoxMesh,
@@ -78,11 +77,11 @@ void generation(py::module& m)
           "create",
           [](const MPICommWrapper comm, std::array<Eigen::Vector3d, 2> p,
              std::array<std::size_t, 3> n, dolfinx::mesh::CellType cell_type,
-             const dolfinx::mesh::GhostMode ghost_mode, bool new_style) {
-            return dolfinx::generation::BoxMesh::create(
-                comm.get(), p, n, cell_type, ghost_mode, new_style);
+             const dolfinx::mesh::GhostMode ghost_mode) {
+            return dolfinx::generation::BoxMesh::create(comm.get(), p, n,
+                                                        cell_type, ghost_mode);
           },
           py::arg("comm"), py::arg("p"), py::arg("n"), py::arg("cell_type"),
-          py::arg("ghost_mode"), py::arg("new_style") = false);
+          py::arg("ghost_mode"));
 }
 } // namespace dolfinx_wrappers
