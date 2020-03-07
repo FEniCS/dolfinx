@@ -4,7 +4,7 @@
 //
 // SPDX-License-Identifier:    LGPL-3.0-or-later
 
-#include "XDMFFileNew.h"
+#include "XDMFFile.h"
 #include "HDF5File.h"
 #include "cells.h"
 #include "pugixml.hpp"
@@ -44,7 +44,7 @@ std::string get_hdf5_filename(std::string filename)
 } // namespace
 
 //-----------------------------------------------------------------------------
-XDMFFileNew::XDMFFileNew(MPI_Comm comm, const std::string filename,
+XDMFFile::XDMFFile(MPI_Comm comm, const std::string filename,
                          Encoding encoding)
     : _mpi_comm(comm), _filename(filename), _xml_doc(new pugi::xml_document),
       _encoding(encoding)
@@ -59,15 +59,15 @@ XDMFFileNew::XDMFFileNew(MPI_Comm comm, const std::string filename,
   }
 }
 //-----------------------------------------------------------------------------
-XDMFFileNew::~XDMFFileNew() { close(); }
+XDMFFile::~XDMFFile() { close(); }
 //-----------------------------------------------------------------------------
-void XDMFFileNew::close()
+void XDMFFile::close()
 {
   // Close the HDF5 file
   _hdf5_file.reset();
 }
 //-----------------------------------------------------------------------------
-void XDMFFileNew::write(const mesh::Mesh& mesh)
+void XDMFFile::write(const mesh::Mesh& mesh)
 {
   // Open a HDF5 file if using HDF5 encoding (truncate)
   hid_t h5_id = -1;
@@ -106,7 +106,7 @@ void XDMFFileNew::write(const mesh::Mesh& mesh)
     _xml_doc->save_file(_filename.c_str(), "  ");
 }
 //-----------------------------------------------------------------------------
-mesh::Mesh XDMFFileNew::read_mesh() const
+mesh::Mesh XDMFFile::read_mesh() const
 {
   // Read mesh data
   auto [cell_type, x, cells]
@@ -147,12 +147,12 @@ std::tuple<
     mesh::CellType,
     Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>,
     Eigen::Array<std::int64_t, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>>
-XDMFFileNew::read_mesh_data() const
+XDMFFile::read_mesh_data() const
 {
   return xdmf_mesh::read_mesh_data(_mpi_comm.comm(), _filename);
 }
 //-----------------------------------------------------------------------------
-void XDMFFileNew::write(const mesh::MeshFunction<int>& meshfunction)
+void XDMFFile::write(const mesh::MeshFunction<int>& meshfunction)
 {
   // Check if _xml_doc already has data. If not, create an outer structure
   // If it already has data, then we may append to it.
@@ -207,7 +207,7 @@ void XDMFFileNew::write(const mesh::MeshFunction<int>& meshfunction)
 }
 //-----------------------------------------------------------------------------
 mesh::MeshFunction<int>
-XDMFFileNew::read_mf_int(std::shared_ptr<const mesh::Mesh> mesh,
+XDMFFile::read_mf_int(std::shared_ptr<const mesh::Mesh> mesh,
                          std::string name) const
 {
   // Load XML doc from file
@@ -226,7 +226,7 @@ XDMFFileNew::read_mf_int(std::shared_ptr<const mesh::Mesh> mesh,
   return xdmf_mf::read_mesh_function<int>(mesh, name, _filename, domain_node);
 }
 //-----------------------------------------------------------------------------
-void XDMFFileNew::write(const function::Function& u, double t)
+void XDMFFile::write(const function::Function& u, double t)
 {
   // Clear the pugi doc the first time
   if (_counter == 0)

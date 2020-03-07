@@ -17,7 +17,7 @@ import numpy as np
 from dolfinx import (MPI, FacetNormal, Function, FunctionSpace, UnitSquareMesh,
                      has_petsc_complex, solve)
 from dolfinx.fem.assemble import assemble_scalar
-from dolfinx.io import XDMFFileNew
+from dolfinx.io import XDMFFile
 from ufl import TestFunction, TrialFunction, dx, grad, inner
 
 # wavenumber
@@ -55,8 +55,8 @@ u = Function(V)
 solve(a == L, u, [])
 
 # Save solution in XDMF format (to be viewed in Paraview, for example)
-with XDMFFileNew(MPI.comm_world, "plane_wave.xdmf",
-                 encoding=XDMFFileNew.Encoding.HDF5) as file:
+with XDMFFile(MPI.comm_world, "plane_wave.xdmf",
+                 encoding=XDMFFile.Encoding.HDF5) as file:
     file.write(u)
 
 """Calculate L2 and H1 errors of FEM solution and best approximation.

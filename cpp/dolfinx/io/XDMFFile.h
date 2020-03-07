@@ -49,7 +49,7 @@ class HDF5File;
 /// XDMF is not suitable for higher order geometries, as their currently
 /// only supports 1st and 2nd order geometries.
 
-class XDMFFileNew
+class XDMFFile
 {
 public:
   /// File encoding type
@@ -63,11 +63,11 @@ public:
   static const Encoding default_encoding = Encoding::HDF5;
 
   /// Constructor
-  XDMFFileNew(MPI_Comm comm, const std::string filename,
+  XDMFFile(MPI_Comm comm, const std::string filename,
               Encoding encoding = default_encoding);
 
   /// Destructor
-  ~XDMFFileNew();
+  ~XDMFFile();
 
   /// Close the file
   ///

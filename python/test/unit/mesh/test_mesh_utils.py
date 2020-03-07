@@ -11,7 +11,7 @@ import pytest
 from dolfinx_utils.test.fixtures import tempdir
 
 from dolfinx import cpp
-from dolfinx.io import XDMFFileNew
+from dolfinx.io import XDMFFile
 
 assert (tempdir)
 
@@ -369,6 +369,6 @@ def test_topology_partition(tempdir, shape, order):
     # Write mesh to file
     filename = os.path.join(tempdir, "mesh_{}_{}.xdmf".format(cpp.mesh.to_string(shape), order))
     # print(filename)
-    encoding = XDMFFileNew.Encoding.HDF5
-    with XDMFFileNew(mesh.mpi_comm(), filename, encoding=encoding) as file:
+    encoding = XDMFFile.Encoding.HDF5
+    with XDMFFile(mesh.mpi_comm(), filename, encoding=encoding) as file:
         file.write(mesh)

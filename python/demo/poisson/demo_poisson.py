@@ -84,7 +84,7 @@ from dolfinx import (MPI, DirichletBC, Function, FunctionSpace, RectangleMesh,
                      solve)
 from dolfinx.cpp.mesh import CellType
 from dolfinx.fem import locate_dofs_topological
-from dolfinx.io import XDMFFileNew
+from dolfinx.io import XDMFFile
 from dolfinx.mesh import compute_marked_boundary_entities
 from dolfinx.specialfunctions import SpatialCoordinate
 from ufl import ds, dx, grad, inner
@@ -199,7 +199,7 @@ solve(a == L, u, bc, petsc_options={"ksp_type": "preonly", "pc_type": "lu"})
 
 
 # Save solution in XDMF format
-with XDMFFileNew(MPI.comm_world, "poisson.xdmf") as file:
+with XDMFFile(MPI.comm_world, "poisson.xdmf") as file:
     file.write(u)
 
 # Plot solution

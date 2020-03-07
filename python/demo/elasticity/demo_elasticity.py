@@ -19,7 +19,7 @@ from dolfinx import (MPI, BoxMesh, DirichletBC, Function, VectorFunctionSpace,
 from dolfinx.cpp.mesh import CellType
 from dolfinx.fem import (apply_lifting, assemble_matrix, assemble_vector,
                          locate_dofs_geometrical, set_bc)
-from dolfinx.io import XDMFFileNew
+from dolfinx.io import XDMFFile
 from dolfinx.la import VectorSpaceBasis
 from ufl import (Identity, SpatialCoordinate, TestFunction, TrialFunction,
                  as_vector, dx, grad, inner, sym, tr)
@@ -165,7 +165,7 @@ solver.solve(b, u.vector)
 solver.view()
 
 # Save solution to XDMF format
-file = XDMFFileNew(MPI.comm_world, "elasticity.xdmf")
+file = XDMFFile(MPI.comm_world, "elasticity.xdmf")
 file.write(u)
 
 unorm = u.vector.norm()

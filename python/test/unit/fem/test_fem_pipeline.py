@@ -17,7 +17,7 @@ from dolfinx import MPI, DirichletBC, Function, FunctionSpace, fem, geometry
 from dolfinx.cpp.mesh import Ordering
 from dolfinx.fem import (apply_lifting, assemble_matrix, assemble_scalar,
                          assemble_vector, locate_dofs_topological, set_bc)
-from dolfinx.io import XDMFFileNew
+from dolfinx.io import XDMFFile
 from ufl import (SpatialCoordinate, TestFunction, TrialFunction, div, dx, grad,
                  inner)
 
@@ -35,7 +35,7 @@ def test_manufactured_poisson(degree, filename, datadir):
 
     """
 
-    with XDMFFileNew(MPI.comm_world, os.path.join(datadir, filename)) as xdmf:
+    with XDMFFile(MPI.comm_world, os.path.join(datadir, filename)) as xdmf:
         mesh = xdmf.read_mesh()
 
     V = FunctionSpace(mesh, ("Lagrange", degree))
@@ -140,7 +140,7 @@ def test_manufactured_poisson(degree, filename, datadir):
 def test_manufactured_vector1(family, degree, filename, datadir):
     """Projection into H(div/curl) spaces"""
 
-    with XDMFFileNew(MPI.comm_world, os.path.join(datadir, filename)) as xdmf:
+    with XDMFFile(MPI.comm_world, os.path.join(datadir, filename)) as xdmf:
         mesh = xdmf.read_mesh()
 
     # FIXME: these test are currently failing on unordered meshes
@@ -210,7 +210,7 @@ def test_manufactured_vector2(family, degree, filename, datadir):
     if "tetra" in filename and degree > 2:
         return
 
-    with XDMFFileNew(MPI.comm_world, os.path.join(datadir, filename)) as xdmf:
+    with XDMFFile(MPI.comm_world, os.path.join(datadir, filename)) as xdmf:
         mesh = xdmf.read_mesh()
 
     # FIXME: these test are currently failing on unordered meshes

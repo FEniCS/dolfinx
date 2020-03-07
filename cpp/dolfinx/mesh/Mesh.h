@@ -90,8 +90,8 @@ public:
   ///
   /// @param[in] comm MPI Communicator
   /// @param[in] type Cell type
-  /// @param[in] points Array of geometric points, arranged in global
-  ///   index order
+  /// @param[in] x Array of geometric points, arranged in global index
+  ///   order
   /// @param[in] cells Array of cells (containing the global point
   ///   indices for each cell)
   /// @param[in] global_cell_indices Array of global cell indices. If

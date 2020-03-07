@@ -144,7 +144,7 @@ class VTKFile:
             self._cpp_object.write(o_cpp, t)
 
 
-class XDMFFileNew:
+class XDMFFile:
     """Interface to XDMF files
     This format is preferred on lower order geometries and for
     DG and RT function spaces.
@@ -153,7 +153,7 @@ class XDMFFileNew:
     """
 
     # Import encoding (find better way?)
-    Encoding = cpp.io.XDMFFileNew.Encoding
+    Encoding = cpp.io.XDMFFile.Encoding
 
     def __init__(self, mpi_comm, filename: str, encoding=Encoding.HDF5):
         """Open XDMF file
@@ -168,7 +168,7 @@ class XDMFFileNew:
             Encoding used for 'heavy' data when writing/appending
 
         """
-        self._cpp_object = cpp.io.XDMFFileNew(mpi_comm, filename, encoding)
+        self._cpp_object = cpp.io.XDMFFile(mpi_comm, filename, encoding)
 
     def __enter__(self):
         return self
