@@ -126,8 +126,6 @@ private:
   // Coordinates for all points stored as a contiguous array
   Eigen::Array<double, Eigen::Dynamic, 3, Eigen::RowMajor> _x;
 
-  // fem::CoordinateElement _cmap;
-
   // Global indices for points
   std::vector<std::int64_t> _global_indices;
 };

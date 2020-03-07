@@ -24,6 +24,5 @@ target_sources(dolfinx PRIVATE
   ${CMAKE_CURRENT_SOURCE_DIR}/XDMFFileNew.cpp
   ${CMAKE_CURRENT_SOURCE_DIR}/xdmf_function.cpp
   ${CMAKE_CURRENT_SOURCE_DIR}/xdmf_mesh.cpp
-  ${CMAKE_CURRENT_SOURCE_DIR}/xdmf_read.cpp
   ${CMAKE_CURRENT_SOURCE_DIR}/xdmf_utils.cpp
 )

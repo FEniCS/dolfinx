@@ -88,17 +88,6 @@ Topology::Topology(mesh::CellType type)
 //-----------------------------------------------------------------------------
 int Topology::dim() const { return _connectivity.rows() - 1; }
 //-----------------------------------------------------------------------------
-const std::vector<std::int64_t>& Topology::get_global_vertices_user() const
-{
-  return _global_user_vertices;
-}
-//-----------------------------------------------------------------------------
-void Topology::set_global_vertices_user(
-    const std::vector<std::int64_t>& indices)
-{
-  _global_user_vertices = indices;
-}
-//-----------------------------------------------------------------------------
 void Topology::set_index_map(int dim,
                              std::shared_ptr<const common::IndexMap> index_map)
 {

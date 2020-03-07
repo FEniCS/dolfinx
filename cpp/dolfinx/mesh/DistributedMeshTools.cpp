@@ -102,16 +102,3 @@ DistributedMeshTools::reorder_by_global_indices(
                                                   global_indices);
 }
 //-----------------------------------------------------------------------------
-Eigen::Array<std::complex<double>, Eigen::Dynamic, Eigen::Dynamic,
-             Eigen::RowMajor>
-DistributedMeshTools::reorder_by_global_indices(
-    MPI_Comm mpi_comm,
-    const Eigen::Ref<const Eigen::Array<std::complex<double>, Eigen::Dynamic,
-                                        Eigen::Dynamic, Eigen::RowMajor>>&
-        values,
-    const std::vector<std::int64_t>& global_indices)
-{
-  return reorder_values_by_global_indices<std::complex<double>>(
-      mpi_comm, values, global_indices);
-}
-//-----------------------------------------------------------------------------

@@ -13,9 +13,10 @@
 #include <boost/algorithm/string.hpp>
 #include <boost/filesystem.hpp>
 #include <boost/lexical_cast.hpp>
-#include <dolfinx/mesh/MeshEntity.h>
-#include <dolfinx/mesh/MeshFunction.h>
-#include <dolfinx/mesh/MeshIterator.h>
+#include <dolfinx/common/IndexMap.h>
+#include <dolfinx/mesh/Geometry.h>
+#include <dolfinx/mesh/Mesh.h>
+#include <dolfinx/mesh/Topology.h>
 
 namespace dolfinx
 {
@@ -158,7 +159,6 @@ std::vector<T> get_dataset(MPI_Comm comm, const pugi::xml_node& dataset_node,
   return data_vector;
 }
 //----------------------------------------------------------------------------
-
 
 } // namespace xdmf_read
 } // namespace io
