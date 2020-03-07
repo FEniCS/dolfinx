@@ -453,13 +453,6 @@ def test_topology_surface(cube):
     assert MPI.sum(cube.mpi_comm(), sf_count) == n * n * 12
 
 
-def xtest_coords():
-    mesh = UnitCubeMesh(MPI.comm_world, 4, 4, 5)
-    d = mesh.geometry.dofmap()
-    d += 2
-    assert np.array_equal(d, mesh.geometry.dofmap())
-
-
 def test_UnitHexMesh_assemble():
     mesh = UnitCubeMesh(MPI.comm_world, 6, 7, 5, CellType.hexahedron)
     vol = assemble_scalar(1 * dx(mesh))

@@ -9,7 +9,7 @@ import numpy
 from dolfinx import MPI, MeshFunction, MeshValueCollection, UnitSquareMesh, cpp
 
 
-def xtest_assign_2D_cells():
+def test_assign_2D_cells():
     mesh = UnitSquareMesh(MPI.comm_world, 3, 3)
     ncells = mesh.num_cells()
     f = MeshValueCollection("int", mesh, 2)
@@ -32,7 +32,7 @@ def xtest_assign_2D_cells():
     assert old_value + 1 == g.get_value(0, 0)
 
 
-def xtest_assign_2D_facets():
+def test_assign_2D_facets():
     mesh = UnitSquareMesh(MPI.comm_world, 3, 3)
     mesh.create_connectivity(2, 1)
     tdim = mesh.topology.dim
@@ -58,7 +58,7 @@ def xtest_assign_2D_facets():
             assert value + i == g.get_value(c, i)
 
 
-def xtest_assign_2D_vertices():
+def test_assign_2D_vertices():
     mesh = UnitSquareMesh(MPI.comm_world, 3, 3)
     mesh.create_connectivity(2, 0)
     ncells = mesh.num_cells()
@@ -83,7 +83,7 @@ def xtest_assign_2D_vertices():
             assert value + i == g.get_value(c, i)
 
 
-def xtest_mesh_function_assign_2D_cells():
+def test_mesh_function_assign_2D_cells():
     mesh = UnitSquareMesh(MPI.comm_world, 3, 3)
     ncells = mesh.num_cells()
     f = MeshFunction("int", mesh, mesh.topology.dim, 0)
@@ -120,7 +120,7 @@ def xtest_mesh_function_assign_2D_cells():
     assert MPI.sum(mesh.mpi_comm(), values.sum() * 1.0) == 140.
 
 
-def xtest_mesh_function_assign_2D_facets():
+def test_mesh_function_assign_2D_facets():
     mesh = UnitSquareMesh(MPI.comm_world, 3, 3)
     mesh.create_entities(1)
     tdim = mesh.topology.dim
@@ -150,7 +150,7 @@ def xtest_mesh_function_assign_2D_facets():
             assert f2.values[facets[i]] == g.get_value(c, i)
 
 
-def xtest_mesh_function_assign_2D_vertices():
+def test_mesh_function_assign_2D_vertices():
     mesh = UnitSquareMesh(MPI.comm_world, 3, 3)
     mesh.create_entities(0)
     f = MeshFunction("int", mesh, 0, 25)

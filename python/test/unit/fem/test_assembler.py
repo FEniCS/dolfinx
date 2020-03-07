@@ -163,7 +163,7 @@ def test_assembly_bcs():
 
 
 @skip_in_parallel
-def xtest_assemble_manifold():
+def test_assemble_manifold():
     """Test assembly of poisson problem on a mesh with topological dimension 1
     but embedded in 2D (gdim=2).
     """
@@ -173,7 +173,7 @@ def xtest_assemble_manifold():
 
     mesh = dolfinx.Mesh(dolfinx.MPI.comm_world,
                         dolfinx.cpp.mesh.CellType.interval,
-                        points, cells, [])
+                        points, cells, [], dolfinx.cpp.mesh.GhostMode.none)
 
     mesh.geometry.coord_mapping = dolfinx.fem.create_coordinate_map(mesh)
 
