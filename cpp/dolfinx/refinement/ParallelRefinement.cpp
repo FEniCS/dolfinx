@@ -7,13 +7,13 @@
 #include "ParallelRefinement.h"
 #include <dolfinx/common/MPI.h>
 #include <dolfinx/common/types.h>
+#include <dolfinx/fem/ElementDofLayout.h>
 #include <dolfinx/mesh/DistributedMeshTools.h>
 #include <dolfinx/mesh/Geometry.h>
 #include <dolfinx/mesh/Mesh.h>
 #include <dolfinx/mesh/MeshEntity.h>
 #include <dolfinx/mesh/MeshFunction.h>
 #include <dolfinx/mesh/MeshIterator.h>
-#include <dolfinx/mesh/Partitioning.h>
 #include <dolfinx/mesh/utils.h>
 #include <map>
 #include <vector>
@@ -307,19 +307,24 @@ mesh::Mesh ParallelRefinement::build_local() const
 
   Eigen::Map<const Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic,
                                 Eigen::RowMajor>>
-      geometry(_new_vertex_coordinates.data(), num_vertices, 3);
+      x(_new_vertex_coordinates.data(), num_vertices, 3);
   Eigen::Map<const Eigen::Array<std::int64_t, Eigen::Dynamic, Eigen::Dynamic,
                                 Eigen::RowMajor>>
-      topology(_new_cell_topology.data(), num_cells, num_cell_vertices);
+      cells(_new_cell_topology.data(), num_cells, num_cell_vertices);
 
-  mesh::Mesh mesh(_mesh.mpi_comm(), _mesh.topology().cell_type(),
-                  geometry.leftCols(_mesh.geometry().dim()), topology, {},
-                  _mesh.get_ghost_mode());
+  const fem::ElementDofLayout layout
+      = fem::geometry_layout(_mesh.topology().cell_type(), cells.cols());
+  mesh::Mesh mesh = mesh::create(
+      _mesh.mpi_comm(), graph::AdjacencyList<std::int64_t>(cells), layout, x);
+
+  // mesh::Mesh mesh(_mesh.mpi_comm(), _mesh.topology().cell_type(),
+  //                 geometry.leftCols(_mesh.geometry().dim()), topology, {},
+  //                 _mesh.get_ghost_mode());
 
   return mesh;
 }
 //-----------------------------------------------------------------------------
-mesh::Mesh ParallelRefinement::partition(bool redistribute) const
+mesh::Mesh ParallelRefinement::partition(bool) const
 {
   const int num_vertices_per_cell
       = mesh::cell_num_entities(_mesh.topology().cell_type(), 0);
@@ -340,19 +345,24 @@ mesh::Mesh ParallelRefinement::partition(bool redistribute) const
   const std::size_t num_local_vertices = _new_vertex_coordinates.size() / 3;
   Eigen::Map<const Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic,
                                 Eigen::RowMajor>>
-      points(_new_vertex_coordinates.data(), num_local_vertices, 3);
+      x(_new_vertex_coordinates.data(), num_local_vertices, 3);
 
-  if (redistribute)
-  {
-    return mesh::Partitioning::build_distributed_mesh(
-        _mesh.mpi_comm(), _mesh.topology().cell_type(),
-        points.leftCols(_mesh.geometry().dim()), cells, global_cell_indices,
-        _mesh.get_ghost_mode());
-  }
+  // if (redistribute)
+  // {
+  //   return mesh::Partitioning::build_distributed_mesh(
+  //       _mesh.mpi_comm(), _mesh.topology().cell_type(),
+  //       points.leftCols(_mesh.geometry().dim()), cells, global_cell_indices,
+  //       _mesh.get_ghost_mode());
+  // }
 
-  mesh::Mesh mesh(_mesh.mpi_comm(), _mesh.topology().cell_type(),
-                  points.leftCols(_mesh.geometry().dim()), cells,
-                  global_cell_indices, _mesh.get_ghost_mode());
+  const fem::ElementDofLayout layout
+      = fem::geometry_layout(_mesh.topology().cell_type(), cells.cols());
+  mesh::Mesh mesh = mesh::create(
+      _mesh.mpi_comm(), graph::AdjacencyList<std::int64_t>(cells), layout, x);
+
+  // mesh::Mesh mesh(_mesh.mpi_comm(), _mesh.topology().cell_type(),
+  //                 points.leftCols(_mesh.geometry().dim()), cells,
+  //                 global_cell_indices, _mesh.get_ghost_mode());
 
   return mesh;
 }

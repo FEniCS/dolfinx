@@ -5,7 +5,7 @@
 # SPDX-License-Identifier:    LGPL-3.0-or-later
 
 import math
-import os
+# import os
 import sys
 
 import numpy as np
@@ -15,10 +15,10 @@ import dolfinx
 import FIAT
 from dolfinx import (MPI, BoxMesh, Mesh, MeshEntity, MeshFunction,
                      RectangleMesh, UnitCubeMesh, UnitIntervalMesh,
-                     UnitSquareMesh, cpp, has_kahip)
-from dolfinx.cpp.mesh import CellType, Partitioner, is_simplex
+                     UnitSquareMesh, cpp)
+from dolfinx.cpp.mesh import CellType, is_simplex
 from dolfinx.fem import assemble_scalar
-from dolfinx.io import XDMFFile
+# from dolfinx.io import XDMFFile
 from dolfinx_utils.test.fixtures import tempdir
 from dolfinx_utils.test.skips import skip_in_parallel
 from ufl import dx
@@ -451,82 +451,6 @@ def test_topology_surface(cube):
     sf_count = np.count_nonzero(np.array(surface_facet_markers))
     n = 3
     assert MPI.sum(cube.mpi_comm(), sf_count) == n * n * 12
-
-
-@pytest.mark.parametrize("mesh_factory", mesh_factories)
-@pytest.mark.parametrize("subset_comm", [MPI.comm_world, new_comm(MPI.comm_world)])
-@pytest.mark.parametrize(
-    "graph_partitioner",
-    [Partitioner.scotch,
-     pytest.param(Partitioner.kahip,
-                  marks=pytest.mark.skipif(not has_kahip, reason="KaHIP is not available"))])
-def test_distribute_mesh(subset_comm, tempdir, mesh_factory, graph_partitioner):
-    func, args = mesh_factory
-    mesh = func(*args)
-
-    if not is_simplex(mesh.topology.cell_type):
-        return
-
-    encoding = XDMFFile.Encoding.HDF5
-    ghost_mode = cpp.mesh.GhostMode.none
-    filename = os.path.join(tempdir, "mesh.xdmf")
-    comm = mesh.mpi_comm()
-    parts = comm.size
-
-    with XDMFFile(mesh.mpi_comm(), filename, encoding) as file:
-        file.write(mesh)
-
-    # Use the subset_comm to read and partition mesh, then distribute to all
-    # available processes
-    with XDMFFile(subset_comm, filename) as file:
-        cell_type, points, cells, indices = file.read_mesh_data(subset_comm)
-
-    partition_data = cpp.mesh.partition_cells(subset_comm, parts, cell_type,
-                                              cells, graph_partitioner, ghost_mode)
-
-    dist_mesh = cpp.mesh.build_from_partition(MPI.comm_world, cell_type, points,
-                                              cells, indices, ghost_mode,
-                                              partition_data)
-
-    assert(mesh.topology.cell_type == dist_mesh.topology.cell_type)
-    assert mesh.num_entities_global(0) == dist_mesh.num_entities_global(0)
-    dim = dist_mesh.topology.dim
-    assert mesh.num_entities_global(dim) == dist_mesh.num_entities_global(dim)
-
-
-@pytest.mark.parametrize("mesh_factory", mesh_factories)
-def test_custom_partition(tempdir, mesh_factory):
-    func, args = mesh_factory
-    mesh = func(*args)
-
-    if not is_simplex(mesh.topology.cell_type):
-        return
-
-    comm = mesh.mpi_comm()
-    filename = os.path.join(tempdir, "mesh.xdmf")
-    encoding = XDMFFile.Encoding.HDF5
-    ghost_mode = cpp.mesh.GhostMode.none
-
-    with XDMFFile(comm, filename, encoding) as file:
-        file.write(mesh)
-
-    with XDMFFile(comm, filename) as file:
-        cell_type, points, cells, global_indices = file.read_mesh_data(comm)
-
-    # Create a custom partition array
-    part = np.zeros(cells.shape[0], dtype=np.int32)
-    part[:] = comm.rank
-
-    ghost_procs = cpp.mesh.ghost_cell_mapping(comm, part, cell_type, cells)
-    cell_partition = cpp.mesh.PartitionData(part, ghost_procs)
-    dist_mesh = cpp.mesh.build_from_partition(comm, cell_type, points,
-                                              cells, global_indices,
-                                              ghost_mode, cell_partition)
-
-    assert(mesh.topology.cell_type == dist_mesh.topology.cell_type)
-    assert mesh.num_entities_global(0) == dist_mesh.num_entities_global(0)
-    dim = dist_mesh.topology.dim
-    assert mesh.num_entities_global(dim) == dist_mesh.num_entities_global(dim)
 
 
 def xtest_coords():

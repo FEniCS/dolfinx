@@ -12,9 +12,9 @@ import ufl
 
 from petsc4py import PETSc
 from dolfinx import MPI, Function, FunctionSpace, FacetNormal, CellDiameter
-from dolfinx.cpp.mesh import GhostMode
+# from dolfinx.cpp.mesh import GhostMode
 from dolfinx.fem import assemble_matrix, assemble_scalar, assemble_vector
-from dolfinx.io import XDMFFile
+from dolfinx.io import XDMFFileNew
 from ufl import (SpatialCoordinate, div, dx, grad, inner, ds, dS, avg, jump,
                  TestFunction, TrialFunction)
 from dolfinx_utils.test.skips import skip_in_parallel
@@ -33,11 +33,11 @@ def test_manufactured_poisson_dg(degree, filename, datadir):
     degree of the Lagrange function space.
 
     """
-    with XDMFFile(MPI.comm_world, os.path.join(datadir, filename)) as xdmf:
+    with XDMFFileNew(MPI.comm_world, os.path.join(datadir, filename)) as xdmf:
         if MPI.size(MPI.comm_world) == 1:  # Serial
-            mesh = xdmf.read_mesh(GhostMode.none)
+            mesh = xdmf.read_mesh()
         else:
-            mesh = xdmf.read_mesh(GhostMode.shared_facet)
+            mesh = xdmf.read_mesh()
 
     V = FunctionSpace(mesh, ("DG", degree))
     u, v = TrialFunction(V), TestFunction(V)

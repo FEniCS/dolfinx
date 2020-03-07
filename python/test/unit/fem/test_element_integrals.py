@@ -242,7 +242,7 @@ def test_plus_minus(cell_type, space_type):
 @skip_in_parallel
 @pytest.mark.parametrize('pm', ["+", "-"])
 @parametrize_cell_types
-def test_plus_minus_simple_vector(cell_type, pm):
+def xtest_plus_minus_simple_vector(cell_type, pm):
     """Test that ('+') and ('-') match up with the correct DOFs for DG functions"""
     results = []
     orders = []
@@ -298,7 +298,7 @@ def test_plus_minus_simple_vector(cell_type, pm):
 @pytest.mark.parametrize('pm1', ["+", "-"])
 @pytest.mark.parametrize('pm2', ["+", "-"])
 @parametrize_cell_types
-def test_plus_minus_vector(cell_type, pm1, pm2):
+def xtest_plus_minus_vector(cell_type, pm1, pm2):
     """Test that ('+') and ('-') match up with the correct DOFs for DG functions"""
     results = []
     orders = []
@@ -356,7 +356,7 @@ def test_plus_minus_vector(cell_type, pm1, pm2):
 @pytest.mark.parametrize('pm1', ["+", "-"])
 @pytest.mark.parametrize('pm2', ["+", "-"])
 @parametrize_cell_types
-def test_plus_minus_matrix(cell_type, pm1, pm2):
+def xtest_plus_minus_matrix(cell_type, pm1, pm2):
     """Test that ('+') and ('-') match up with the correct DOFs for DG functions"""
     results = []
     spaces = []

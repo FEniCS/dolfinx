@@ -9,8 +9,10 @@
 #include "Mesh.h"
 #include "MeshEntity.h"
 #include "MeshIterator.h"
+#include "Topology.h"
 #include "cell_types.h"
 #include <array>
+#include <dolfinx/fem/ElementDofLayout.h>
 #include <vector>
 
 using namespace dolfinx;
@@ -289,7 +291,7 @@ void mesh::Ordering::order_simplex(mesh::Mesh& mesh)
   if (!mesh::is_simplex(mesh.topology().cell_type()))
     throw std::runtime_error("Mesh ordering is for simplex cell types only.");
 
-  if (mesh.geometry().degree() > 1)
+  if (mesh.geometry().dof_layout().degree() > 1)
   {
     throw std::runtime_error(
         "Mesh re-ordering not yet working for high-order meshes");
@@ -304,8 +306,7 @@ void mesh::Ordering::order_simplex(mesh::Mesh& mesh)
   if (tdim == 0)
     return;
 
-  graph::AdjacencyList<std::int32_t>& connect_g
-      = mesh.geometry().dofmap();
+  graph::AdjacencyList<std::int32_t>& connect_g = mesh.geometry().dofmap();
 
   // Get global vertex numbering
   auto map = mesh.topology().index_map(0);

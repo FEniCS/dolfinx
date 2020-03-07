@@ -38,23 +38,13 @@ class Topology;
 class Geometry
 {
 public:
-  /// Constructor (new)
+  /// Constructor
   Geometry(std::shared_ptr<const common::IndexMap> index_map,
            const graph::AdjacencyList<std::int32_t>& dofmap,
            const fem::ElementDofLayout& layout,
            const Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic,
                               Eigen::RowMajor>& x,
-           const std::vector<std::int64_t>& global_indices, int degree);
-
-  /// Constructor (old - to be removed)
-  Geometry(std::int64_t num_points_global,
-           const Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic,
-                              Eigen::RowMajor>& x,
-           const std::vector<std::int64_t>& global_indices,
-           const Eigen::Ref<const Eigen::Array<
-               std::int32_t, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>>&
-               point_dofs,
-           int degree);
+           const std::vector<std::int64_t>& global_indices);
 
   /// Copy constructor
   Geometry(const Geometry&) = default;
@@ -120,11 +110,6 @@ public:
   /// Put CoordinateElement here for now
   std::shared_ptr<const fem::CoordinateElement> coord_mapping;
 
-  ///  @todo Remove this
-  ///
-  /// Polynomial degree of the mesh geometry
-  int degree() const;
-
 private:
   // Geometric dimension
   int _dim;
@@ -145,16 +130,6 @@ private:
 
   // Global indices for points
   std::vector<std::int64_t> _global_indices;
-
-  // TODO: remove
-  // Global number of points (taking account of shared points)
-  std::uint64_t _num_points_global;
-
-  // FIXME: Remove this
-  //
-  // Mesh geometric degree (in Lagrange basis)
-  // describing coordinate dofs
-  std::int32_t _degree;
 };
 
 /// Build Geometry

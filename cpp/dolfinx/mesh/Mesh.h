@@ -37,10 +37,16 @@ class AdjacencyList;
 namespace mesh
 {
 class Geometry;
-enum class GhostMode : int;
 class MeshEntity;
 class Topology;
 
+/// Enum for different partitioning ghost modes
+enum class GhostMode : int
+{
+  none,
+  shared_facet,
+  shared_vertex
+};
 /// A _Mesh_ consists of a set of connected and numbered mesh entities.
 ///
 /// Both the representation and the interface are
@@ -128,7 +134,7 @@ public:
 
   /// Assignment move operator
   /// @param mesh Another Mesh object
-  Mesh& operator=(Mesh&& mesh) = default;
+  Mesh& operator=(Mesh&& mesh);
 
   /// @todo Remove and work via Topology
   ///

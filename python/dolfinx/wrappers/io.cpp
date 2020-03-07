@@ -214,11 +214,6 @@ void io(py::module& m)
   // XDFMFile::read
   xdmf_file
       // Mesh
-      .def("read_mesh",
-           [](dolfinx::io::XDMFFile& self,
-              const dolfinx::mesh::GhostMode ghost_mode) {
-             return self.read_mesh(ghost_mode);
-           })
       .def("read_mesh_data",
            [](dolfinx::io::XDMFFile& self, const MPICommWrapper comm) {
              return self.read_mesh_data(comm.get());

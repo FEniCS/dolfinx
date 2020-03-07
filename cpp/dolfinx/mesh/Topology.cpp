@@ -355,6 +355,8 @@ mesh::create_topology(MPI_Comm comm,
 {
   const int size = dolfinx::MPI::size(comm);
 
+  std::cout << "Step 1" << std::endl;
+
   // TODO: This step can be skipped for 'P1' elements
 
   // Extract topology data, e.g.just the vertices. For P1 geometry this
@@ -363,6 +365,8 @@ mesh::create_topology(MPI_Comm comm,
   // contiguous.
   const graph::AdjacencyList<std::int64_t> cells_v
       = mesh::extract_topology(layout, cells);
+
+  std::cout << "Step 2" << std::endl;
 
   // Compute the destination rank for cells on this process via graph
   // partitioning
@@ -374,13 +378,14 @@ mesh::create_topology(MPI_Comm comm,
   const auto [my_cells, src, original_cell_index]
       = PartitioningNew::distribute(comm, cells_v, dest);
 
+  std::cout << "Step 3" << std::endl;
+
   // Build local cell-vertex connectivity, with local vertex indices
   // [0, 1, 2, ..., n), from cell-vertex connectivity using global
   // indices and get map from global vertex indices in 'cells' to the
   // local vertex indices
   auto [cells_local, local_to_global_vertices]
       = PartitioningNew::create_local_adjacency_list(my_cells);
-
   // Create (i) local topology object and (ii) IndexMap for cells, and
   // set cell-vertex topology
   Topology topology_local(layout.cell_type());
@@ -391,6 +396,9 @@ mesh::create_topology(MPI_Comm comm,
   auto _cells_local
       = std::make_shared<graph::AdjacencyList<std::int32_t>>(cells_local);
   topology_local.set_connectivity(_cells_local, tdim, 0);
+
+
+  std::cout << "Step 4" << std::endl;
 
   const int n = local_to_global_vertices.size();
   map = std::make_shared<common::IndexMap>(comm, n, std::vector<std::int64_t>(),
@@ -415,12 +423,16 @@ mesh::create_topology(MPI_Comm comm,
   if (fc)
     topology_local.set_connectivity(fc, tdim - 1, tdim);
 
+  std::cout << "Step 5" << std::endl;
+
   // FIXME: This looks weird. Revise.
   // Get facets that are on the boundary of the local topology, i.e
   // are connect to one cell only
   std::vector<bool> boundary = compute_interior_facets(topology_local);
   topology_local.set_interior_facets(boundary);
   boundary = topology_local.on_boundary(tdim - 1);
+
+  std::cout << "Step 6" << std::endl;
 
   // Build distributed cell-vertex AdjacencyList, IndexMap for
   // vertices, and map from local index to old global index
@@ -430,12 +442,16 @@ mesh::create_topology(MPI_Comm comm,
 
   Topology topology(layout.cell_type());
 
+  std::cout << "Step 7" << std::endl;
+
   // Set vertex IndexMap, and vertex-vertex connectivity
   auto _vertex_map = std::make_shared<common::IndexMap>(std::move(vertex_map));
   topology.set_index_map(0, _vertex_map);
   auto c0 = std::make_shared<graph::AdjacencyList<std::int32_t>>(
       _vertex_map->size_local() + _vertex_map->num_ghosts());
   topology.set_connectivity(c0, 0, 0);
+
+  std::cout << "Step 8" << std::endl;
 
   // Set cell IndexMap and cell-vertex connectivity
   auto index_map_c = std::make_shared<common::IndexMap>(

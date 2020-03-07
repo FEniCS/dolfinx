@@ -193,12 +193,6 @@ public:
                                                  Eigen::RowMajor>>& points,
              const std::vector<double>& values);
 
-  /// Read in the first mesh::Mesh in XDMF file
-  ///
-  /// @param[in] ghost_mode Ghost mode for mesh partition
-  /// @return A distributed Mesh
-  mesh::Mesh read_mesh(const mesh::GhostMode ghost_mode) const;
-
   /// Read in the data from the first mesh in XDMF file
   ///
   /// @param[in] comm The MPI Communicator

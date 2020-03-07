@@ -21,9 +21,9 @@ Geometry::Geometry(std::shared_ptr<const common::IndexMap> index_map,
                    const fem::ElementDofLayout& layout,
                    const Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic,
                                       Eigen::RowMajor>& x,
-                   const std::vector<std::int64_t>& global_indices, int degree)
+                   const std::vector<std::int64_t>& global_indices)
     : _dim(x.cols()), _dofmap(dofmap), _index_map(index_map),
-      _global_indices(global_indices), _degree(degree)
+      _global_indices(global_indices)
 {
   if (x.rows() != (int)global_indices.size())
     throw std::runtime_error("Size mis-match");
@@ -39,29 +39,6 @@ Geometry::Geometry(std::shared_ptr<const common::IndexMap> index_map,
   }
 
   _layout = std::make_shared<fem::ElementDofLayout>(layout);
-}
-//-----------------------------------------------------------------------------
-Geometry::Geometry(
-    std::int64_t num_points_global,
-    const Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>&
-        x,
-    const std::vector<std::int64_t>& global_indices,
-    const Eigen::Ref<const Eigen::Array<std::int32_t, Eigen::Dynamic,
-                                        Eigen::Dynamic, Eigen::RowMajor>>&
-        coordinate_dofs,
-    int degree)
-    : _dim(x.cols()), _dofmap(coordinate_dofs), _global_indices(global_indices),
-      _num_points_global(num_points_global), _degree(degree)
-{
-  // Make all geometry 3D
-  if (_dim == 3)
-    _x = x;
-  else
-  {
-    _x.resize(x.rows(), 3);
-    _x.setZero();
-    _x.block(0, 0, x.rows(), x.cols()) = x;
-  }
 }
 //-----------------------------------------------------------------------------
 int Geometry::dim() const { return _dim; }
@@ -96,10 +73,8 @@ Eigen::Ref<const Eigen::Vector3d> Geometry::x(int n) const
 //-----------------------------------------------------------------------------
 std::int64_t Geometry::num_points_global() const
 {
-  if (_index_map)
-    return _index_map->size_global();
-  else
-    return _num_points_global;
+  assert(_index_map);
+  return _index_map->size_global();
 }
 //-----------------------------------------------------------------------------
 const std::vector<std::int64_t>& Geometry::global_indices() const
@@ -140,8 +115,6 @@ std::string Geometry::str(bool verbose) const
 
   return s.str();
 }
-//-----------------------------------------------------------------------------
-int Geometry::degree() const { return _degree; }
 //-----------------------------------------------------------------------------
 
 //-----------------------------------------------------------------------------
@@ -203,8 +176,7 @@ mesh::Geometry mesh::create_geometry(
   for (int i = 0; i < coords.rows(); ++i)
     xg.row(i) = coords.row(l2l[i]);
 
-  int order = 1;
-  return Geometry(dof_index_map, dofmap, layout, xg, l2g, order);
+  return Geometry(dof_index_map, dofmap, layout, xg, l2g);
 }
 //-----------------------------------------------------------------------------
 const fem::ElementDofLayout& Geometry::dof_layout() const

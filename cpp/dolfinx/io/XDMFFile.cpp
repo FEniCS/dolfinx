@@ -33,7 +33,6 @@
 #include <dolfinx/mesh/MeshEntity.h>
 #include <dolfinx/mesh/MeshIterator.h>
 #include <dolfinx/mesh/MeshValueCollection.h>
-#include <dolfinx/mesh/Partitioning.h>
 #include <iomanip>
 #include <memory>
 #include <petscvec.h>
@@ -1433,21 +1432,6 @@ XDMFFile::read_mesh_data(MPI_Comm comm) const
     return std::tuple(cell_type, std::move(points), std::move(cells),
                       std::move(global_cell_indices));
   }
-}
-//----------------------------------------------------------------------------
-mesh::Mesh XDMFFile::read_mesh(const mesh::GhostMode ghost_mode) const
-{
-  // Read local mesh data
-  auto [cell_type, points, cells, global_cell_indices]
-      = read_mesh_data(_mpi_comm.comm());
-
-  //  Permute cells to DOLFINX ordering
-  cells = io::cells::permute_ordering(
-      cells, io::cells::vtk_to_dolfin(cell_type, cells.cols()));
-
-  return mesh::Partitioning::build_distributed_mesh(
-      _mpi_comm.comm(), cell_type, points, cells, global_cell_indices,
-      ghost_mode);
 }
 //----------------------------------------------------------------------------
 function::Function

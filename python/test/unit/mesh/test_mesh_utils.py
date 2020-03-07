@@ -361,14 +361,14 @@ def test_topology_partition(tempdir, shape, order):
     x_g = coords[l2l]
 
     # Create Geometry
-    geometry = cpp.mesh.Geometry(dof_index_map, dofmap, layout, x_g, l2g, order)
+    geometry = cpp.mesh.Geometry(dof_index_map, dofmap, layout, x_g, l2g)
 
     # Create mesh
     mesh = cpp.mesh.Mesh(cpp.MPI.comm_world, topology, geometry)
 
     # Write mesh to file
     filename = os.path.join(tempdir, "mesh_{}_{}.xdmf".format(cpp.mesh.to_string(shape), order))
-    print(filename)
+    # print(filename)
     encoding = XDMFFile.Encoding.HDF5
     with XDMFFile(mesh.mpi_comm(), filename, encoding=encoding) as file:
         file.write(mesh)

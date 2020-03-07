@@ -199,10 +199,46 @@ int ElementDofLayout::block_size() const { return _block_size; }
 //-----------------------------------------------------------------------------
 bool ElementDofLayout::is_view() const { return !_parent_map.empty(); }
 //-----------------------------------------------------------------------------
-
+int ElementDofLayout::degree() const
+{
+  switch (_cell_type)
+  {
+  case mesh::CellType::interval:
+    if (num_dofs() == 2)
+      return 1;
+    else if (num_dofs() == 3)
+      return 2;
+  case mesh::CellType::triangle:
+    if (num_dofs() == 3)
+      return 1;
+    else if (num_dofs() == 6)
+      return 2;
+  case mesh::CellType::quadrilateral:
+    if (num_dofs() == 4)
+      return 1;
+    else if (num_dofs() == 9)
+      return 2;
+  case mesh::CellType::tetrahedron:
+    if (num_dofs() == 4)
+      return 1;
+    else if (num_dofs() == 10)
+      return 2;
+  case mesh::CellType::hexahedron:
+    if (num_dofs() == 8)
+      return 1;
+    else if (num_dofs() == 27)
+      return 2;
+  default:
+    throw std::runtime_error("Cannot determine degree");
+  }
+}
 //-----------------------------------------------------------------------------
 ElementDofLayout fem::geometry_layout(mesh::CellType cell, int num_nodes)
 {
+  // TODO: Fix for degree > 2
+
+  std::cout << "Create " << std::endl;
+
   const int dim = mesh::cell_dim(cell);
   int num_perms = 0;
   const std::array<int, 4> p_per_dim = {0, 1, 2, 4};
@@ -233,6 +269,11 @@ ElementDofLayout fem::geometry_layout(mesh::CellType cell, int num_nodes)
     }
   }
 
-  return fem::ElementDofLayout(1, entity_dofs, {}, {}, cell, perm);
+  std::cout << "End " << std::endl;
+
+  fem::ElementDofLayout layout(1, entity_dofs, {}, {}, cell, perm);
+  std::cout << "End (1)" << std::endl;
+  return layout;
+  // return fem::ElementDofLayout(1, entity_dofs, {}, {}, cell, perm);
 }
 //-----------------------------------------------------------------------------

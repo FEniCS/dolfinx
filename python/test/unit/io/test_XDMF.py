@@ -66,47 +66,6 @@ def worker_id(request):
         return 'master'
 
 
-@pytest.mark.parametrize("encoding", encodings)
-def test_save_and_load_1d_mesh(tempdir, encoding):
-    filename = os.path.join(tempdir, "mesh.xdmf")
-    mesh = UnitIntervalMesh(MPI.comm_world, 32)
-    with XDMFFile(mesh.mpi_comm(), filename, encoding=encoding) as file:
-        file.write(mesh)
-    with XDMFFile(MPI.comm_world, filename) as file:
-        mesh2 = file.read_mesh(cpp.mesh.GhostMode.none)
-    assert mesh.num_entities_global(0) == mesh2.num_entities_global(0)
-    dim = mesh.topology.dim
-    assert mesh.num_entities_global(dim) == mesh2.num_entities_global(dim)
-
-
-@pytest.mark.parametrize("cell_type", celltypes_2D)
-@pytest.mark.parametrize("encoding", encodings)
-def test_save_and_load_2d_mesh(tempdir, encoding, cell_type):
-    filename = os.path.join(tempdir, "mesh_2D.xdmf")
-    mesh = UnitSquareMesh(MPI.comm_world, 32, 32, cell_type)
-    with XDMFFile(mesh.mpi_comm(), filename, encoding=encoding) as file:
-        file.write(mesh)
-    with XDMFFile(MPI.comm_world, filename) as file:
-        mesh2 = file.read_mesh(cpp.mesh.GhostMode.none)
-    assert mesh.num_entities_global(0) == mesh2.num_entities_global(0)
-    dim = mesh.topology.dim
-    assert mesh.num_entities_global(dim) == mesh2.num_entities_global(dim)
-
-
-@pytest.mark.parametrize("cell_type", celltypes_3D)
-@pytest.mark.parametrize("encoding", encodings)
-def test_save_and_load_3d_mesh(tempdir, encoding, cell_type):
-    filename = os.path.join(tempdir, "mesh_3D.xdmf")
-    mesh = UnitCubeMesh(MPI.comm_world, 4, 4, 4, cell_type)
-    with XDMFFile(mesh.mpi_comm(), filename, encoding=encoding) as file:
-        file.write(mesh)
-    with XDMFFile(MPI.comm_world, filename) as file:
-        mesh2 = file.read_mesh(cpp.mesh.GhostMode.none)
-    assert mesh.num_entities_global(0) == mesh2.num_entities_global(0)
-    dim = mesh.topology.dim
-    assert mesh.num_entities_global(dim) == mesh2.num_entities_global(dim)
-
-
 @pytest.mark.parametrize("tdim", topological_dim)
 @pytest.mark.parametrize("n", number_cells)
 def test_read_mesh_data(tempdir, tdim, n):

@@ -7,7 +7,6 @@ set(HEADERS_mesh
   ${CMAKE_CURRENT_SOURCE_DIR}/Geometry.h
   ${CMAKE_CURRENT_SOURCE_DIR}/MeshIterator.h
   ${CMAKE_CURRENT_SOURCE_DIR}/Ordering.h
-  ${CMAKE_CURRENT_SOURCE_DIR}/Partitioning.h
   ${CMAKE_CURRENT_SOURCE_DIR}/PartitioningNew.h
   ${CMAKE_CURRENT_SOURCE_DIR}/MeshQuality.h
   ${CMAKE_CURRENT_SOURCE_DIR}/Topology.h
@@ -23,7 +22,6 @@ target_sources(dolfinx PRIVATE
   ${CMAKE_CURRENT_SOURCE_DIR}/Mesh.cpp
   ${CMAKE_CURRENT_SOURCE_DIR}/Geometry.cpp
   ${CMAKE_CURRENT_SOURCE_DIR}/Ordering.cpp
-  ${CMAKE_CURRENT_SOURCE_DIR}/Partitioning.cpp
   ${CMAKE_CURRENT_SOURCE_DIR}/PartitioningNew.cpp
   ${CMAKE_CURRENT_SOURCE_DIR}/MeshQuality.cpp
   ${CMAKE_CURRENT_SOURCE_DIR}/Topology.cpp

@@ -108,19 +108,27 @@ void XDMFFileNew::write(const mesh::Mesh& mesh)
 //-----------------------------------------------------------------------------
 mesh::Mesh XDMFFileNew::read_mesh() const
 {
+  std::cout << "Cout read mesh" << std::endl;
+
   // Read mesh data
   auto [cell_type, x, cells]
       = xdmf_mesh::read_mesh_data(_mpi_comm.comm(), _filename);
+
+  std::cout << "Cout read mesh (0): " << cells.cols() << std::endl;
 
   // TODO: create outside
   // Create a layout
   const fem::ElementDofLayout layout
       = fem::geometry_layout(cell_type, cells.cols());
 
+  std::cout << "Cout read mesh (1)" << std::endl;
+
   // Create Topology
   graph::AdjacencyList<std::int64_t> _cells(cells);
   auto [topology, src, dest]
       = mesh::create_topology(_mpi_comm.comm(), _cells, layout);
+
+  std::cout << "Cout read mesh (2)" << std::endl;
 
   // FIXME: Figure out how to check which entities are required
   // Initialise facet for P2
@@ -128,6 +136,7 @@ mesh::Mesh XDMFFileNew::read_mesh() const
   auto [cell_entity, entity_vertex, index_map]
       = mesh::TopologyComputation::compute_entities(_mpi_comm.comm(), topology,
                                                     1);
+  std::cout << "Cout read mesh (3)" << std::endl;
   if (cell_entity)
     topology.set_connectivity(cell_entity, topology.dim(), 1);
   if (entity_vertex)
@@ -135,9 +144,13 @@ mesh::Mesh XDMFFileNew::read_mesh() const
   if (index_map)
     topology.set_index_map(1, index_map);
 
+  std::cout << "Cout read mesh (4)" << std::endl;
+
   // Create Geometry
   const mesh::Geometry geometry = mesh::create_geometry(
       _mpi_comm.comm(), topology, layout, _cells, dest, src, x);
+
+  std::cout << "Cout read mesh (5)" << std::endl;
 
   // Return Mesh
   return mesh::Mesh(_mpi_comm.comm(), topology, geometry);
