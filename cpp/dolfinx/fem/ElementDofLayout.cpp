@@ -208,29 +208,36 @@ int ElementDofLayout::degree() const
       return 1;
     else if (num_dofs() == 3)
       return 2;
+    break;
   case mesh::CellType::triangle:
     if (num_dofs() == 3)
       return 1;
     else if (num_dofs() == 6)
       return 2;
+    break;
   case mesh::CellType::quadrilateral:
     if (num_dofs() == 4)
       return 1;
     else if (num_dofs() == 9)
       return 2;
+    break;
   case mesh::CellType::tetrahedron:
     if (num_dofs() == 4)
       return 1;
     else if (num_dofs() == 10)
       return 2;
+    break;
   case mesh::CellType::hexahedron:
     if (num_dofs() == 8)
       return 1;
     else if (num_dofs() == 27)
       return 2;
+    break;
   default:
-    throw std::runtime_error("Cannot determine degree");
+    throw std::runtime_error("Unknown cell type");
   }
+
+  throw std::runtime_error("Cannot determine degree");
 }
 //-----------------------------------------------------------------------------
 ElementDofLayout fem::geometry_layout(mesh::CellType cell, int num_nodes)
