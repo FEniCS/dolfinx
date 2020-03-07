@@ -117,7 +117,7 @@ from dolfinx import (MPI, Function, FunctionSpace, NewtonSolver,
                      NonlinearProblem, UnitSquareMesh, log)
 from dolfinx.cpp.mesh import CellType
 from dolfinx.fem.assemble import assemble_matrix, assemble_vector
-from dolfinx.io import XDMFFile
+from dolfinx.io import XDMFFileNew
 from ufl import (FiniteElement, TestFunctions, TrialFunction, derivative, diff,
                  dx, grad, inner, split, variable)
 
@@ -309,7 +309,7 @@ solver.rtol = 1e-6
 # :math:`t_{n+1}` until a terminal time :math:`T` is reached::
 
 # Output file
-file = XDMFFile(MPI.comm_world, "output.xdmf")
+file = XDMFFileNew(MPI.comm_world, "output.xdmf")
 
 # Step in time
 t = 0.0

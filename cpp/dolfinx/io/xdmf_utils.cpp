@@ -242,18 +242,6 @@ xdmf_utils::get_point_data_values(const function::Function& u)
         data_values.data() + data_values.rows() * data_values.cols());
   }
 
-  // Reorder values by global point indices
-  Eigen::Map<Eigen::Array<PetscScalar, Eigen::Dynamic, Eigen::Dynamic,
-                          Eigen::RowMajor>>
-      in_vals(_data_values.data(), _data_values.size() / width, width);
-
-  Eigen::Array<PetscScalar, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
-      vals = mesh::DistributedMeshTools::reorder_by_global_indices(
-          mesh->mpi_comm(), in_vals, mesh->geometry().global_indices());
-
-  _data_values
-      = std::vector<PetscScalar>(vals.data(), vals.data() + vals.size());
-
   return _data_values;
 }
 //-----------------------------------------------------------------------------
@@ -351,7 +339,8 @@ std::string xdmf_utils::vtk_cell_type_str(mesh::CellType cell_type, int order)
   return cell_str->second;
 }
 //-----------------------------------------------------------------------------
-std::string xdmf_utils::vtk_cell_type_str_new(mesh::CellType cell_type, int num_nodes)
+std::string xdmf_utils::vtk_cell_type_str_new(mesh::CellType cell_type,
+                                              int num_nodes)
 {
   static const std::map<mesh::CellType, std::map<int, std::string>> vtk_map = {
       {mesh::CellType::point, {{1, "PolyVertex"}}},

@@ -77,7 +77,7 @@ import ufl
 from dolfinx import MPI, DirichletBC, Function, FunctionSpace, RectangleMesh
 from dolfinx.cpp.mesh import CellType
 from dolfinx.fem import locate_dofs_geometrical, locate_dofs_topological
-from dolfinx.io import XDMFFile
+from dolfinx.io import XDMFFileNew
 from dolfinx.mesh import compute_marked_boundary_entities
 from ufl import div, dx, grad, inner
 
@@ -266,11 +266,11 @@ if MPI.rank(MPI.comm_world) == 0:
 # visualization, e.g. with ParView. Before writing to file, ghost values
 # are updated.
 
-with XDMFFile(MPI.comm_world, "velocity.xdmf") as ufile_xdmf:
+with XDMFFileNew(MPI.comm_world, "velocity.xdmf") as ufile_xdmf:
     u.vector.ghostUpdate(addv=PETSc.InsertMode.INSERT, mode=PETSc.ScatterMode.FORWARD)
     ufile_xdmf.write(u)
 
-with XDMFFile(MPI.comm_world, "pressure.xdmf") as pfile_xdmf:
+with XDMFFileNew(MPI.comm_world, "pressure.xdmf") as pfile_xdmf:
     p.vector.ghostUpdate(addv=PETSc.InsertMode.INSERT, mode=PETSc.ScatterMode.FORWARD)
     pfile_xdmf.write(p)
 
@@ -466,10 +466,10 @@ if MPI.rank(MPI.comm_world) == 0:
 assert np.isclose(norm_u_3, norm_u_0)
 
 # Write the solution to file
-with XDMFFile(MPI.comm_world, "new_velocity.xdmf") as ufile_xdmf:
+with XDMFFileNew(MPI.comm_world, "new_velocity.xdmf") as ufile_xdmf:
     u.vector.ghostUpdate(addv=PETSc.InsertMode.INSERT, mode=PETSc.ScatterMode.FORWARD)
     ufile_xdmf.write(u)
 
-with XDMFFile(MPI.comm_world, "new_pressure.xdmf") as pfile_xdmf:
+with XDMFFileNew(MPI.comm_world, "new_pressure.xdmf") as pfile_xdmf:
     p.vector.ghostUpdate(addv=PETSc.InsertMode.INSERT, mode=PETSc.ScatterMode.FORWARD)
     pfile_xdmf.write(p)
