@@ -341,7 +341,7 @@ void xdmf_write::add_topology_data(MPI_Comm comm, pugi::xml_node& xml_node,
   // Compute packed topology data
   std::vector<std::int64_t> topology_data;
 
-  if (degree > 1 or mesh.new_mesh_storage())
+  if (degree > 1)
   {
     // Output for new-style Mesh and high-order cells
 

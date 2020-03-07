@@ -96,7 +96,7 @@ Mesh mesh::create(
 
 //-----------------------------------------------------------------------------
 Mesh::Mesh(MPI_Comm comm, const Topology& topology, const Geometry& geometry)
-    : _mpi_comm(comm), _new_storage(true)
+    : _mpi_comm(comm)
 {
   _topology = std::make_unique<Topology>(topology);
   _geometry = std::make_unique<Geometry>(geometry);
@@ -108,10 +108,9 @@ Mesh::Mesh(
                                         Eigen::RowMajor>>& points,
     const Eigen::Ref<const Eigen::Array<
         std::int64_t, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>>& cells,
-    const std::vector<std::int64_t>&, const GhostMode ghost_mode,
-    std::int32_t)
+    const std::vector<std::int64_t>&, const GhostMode ghost_mode, std::int32_t)
     : _mpi_comm(comm), _ghost_mode(ghost_mode),
-      _unique_id(common::UniqueIdGenerator::id()), _new_storage(false)
+      _unique_id(common::UniqueIdGenerator::id())
 {
   assert(cells.cols() > 0);
   const fem::ElementDofLayout layout = fem::geometry_layout(type, cells.cols());
@@ -122,10 +121,7 @@ Mesh::Mesh(
 Mesh::Mesh(const Mesh& mesh)
     : _topology(new Topology(*mesh._topology)),
       _geometry(new Geometry(*mesh._geometry)), _mpi_comm(mesh.mpi_comm()),
-      _ghost_mode(mesh._ghost_mode),
-      _unique_id(common::UniqueIdGenerator::id()),
-      _new_storage(mesh._new_storage)
-
+      _ghost_mode(mesh._ghost_mode), _unique_id(common::UniqueIdGenerator::id())
 {
   // Do nothing
 }
@@ -135,8 +131,7 @@ Mesh::Mesh(Mesh&& mesh)
       _geometry(std::move(mesh._geometry)),
       _mpi_comm(std::move(mesh._mpi_comm)),
       _ghost_mode(std::move(mesh._ghost_mode)),
-      _unique_id(std::move(mesh._unique_id)),
-      _new_storage(std::move(mesh._new_storage))
+      _unique_id(std::move(mesh._unique_id))
 {
   // Do nothing
 }
@@ -154,7 +149,6 @@ Mesh& Mesh::operator=(Mesh&& mesh)
   std::swap(this->_mpi_comm, mesh._mpi_comm);
   _ghost_mode = std::move(mesh._ghost_mode);
   _unique_id = std::move(mesh._unique_id);
-  _new_storage = std::move(mesh._new_storage);
 
   return *this;
 }

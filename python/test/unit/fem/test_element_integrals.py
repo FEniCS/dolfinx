@@ -250,7 +250,6 @@ def xtest_plus_minus_simple_vector(cell_type, pm):
     for count in range(3):
         for agree in [True, False]:
             mesh, order = two_unit_cells(cell_type, agree, return_order=True)
-
             if cell_type in [CellType.interval, CellType.triangle, CellType.tetrahedron]:
                 V = FunctionSpace(mesh, ("DG", 1))
             else:
