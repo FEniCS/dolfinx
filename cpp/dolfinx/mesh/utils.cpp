@@ -72,7 +72,6 @@ T volume_triangle(const mesh::Mesh& mesh,
   {
     for (Eigen::Index i = 0; i < entities.rows(); ++i)
     {
-      // auto vertices = connectivity.links(entities[i]);
       auto dofs = x_dofs.links(entities[i]);
       const Eigen::Vector3d x0 = geometry.x(dofs[0]);
       const Eigen::Vector3d x1 = geometry.x(dofs[1]);
@@ -101,20 +100,16 @@ T volume_tetrahedron(const mesh::Mesh& mesh,
                      const Eigen::Ref<const Eigen::ArrayXi>& entities)
 {
   const mesh::Geometry& geometry = mesh.geometry();
-  const mesh::Topology& topology = mesh.topology();
-  assert(topology.connectivity(3, 0));
-  const graph::AdjacencyList<std::int32_t>& connectivity
-      = *topology.connectivity(3, 0);
+  const graph::AdjacencyList<std::int32_t>& x_dofs = geometry.dofmap();
 
   Eigen::ArrayXd v(entities.rows());
   for (Eigen::Index i = 0; i < entities.rows(); ++i)
   {
-    // Get the coordinates of the four vertices
-    auto vertices = connectivity.links(entities[i]);
-    const Eigen::Vector3d x0 = geometry.x(vertices[0]);
-    const Eigen::Vector3d x1 = geometry.x(vertices[1]);
-    const Eigen::Vector3d x2 = geometry.x(vertices[2]);
-    const Eigen::Vector3d x3 = geometry.x(vertices[3]);
+    auto dofs = x_dofs.links(entities[i]);
+    const Eigen::Vector3d x0 = geometry.x(dofs[0]);
+    const Eigen::Vector3d x1 = geometry.x(dofs[1]);
+    const Eigen::Vector3d x2 = geometry.x(dofs[2]);
+    const Eigen::Vector3d x3 = geometry.x(dofs[3]);
 
     // Formula for volume from http://mathworld.wolfram.com
     const double v_tmp
@@ -227,13 +222,9 @@ T circumradius_triangle(const mesh::Mesh& mesh,
 {
   // Get mesh geometry
   const mesh::Geometry& geometry = mesh.geometry();
-  const mesh::Topology& topology = mesh.topology();
-  auto c_to_e = topology.connectivity(2, 0);
-  assert(c_to_e);
   const graph::AdjacencyList<std::int32_t>& x_dofs = geometry.dofmap();
 
   T volumes = volume_entities_tmpl<T>(mesh, entities, 2);
-
   T cr(entities.rows());
   for (Eigen::Index e = 0; e < entities.rows(); ++e)
   {
@@ -260,21 +251,17 @@ T circumradius_tetrahedron(const mesh::Mesh& mesh,
 {
   // Get mesh geometry
   const mesh::Geometry& geometry = mesh.geometry();
-  const mesh::Topology& topology = mesh.topology();
-  assert(topology.connectivity(3, 0));
-  const graph::AdjacencyList<std::int32_t>& connectivity
-      = *topology.connectivity(3, 0);
-
+  const graph::AdjacencyList<std::int32_t>& x_dofs = geometry.dofmap();
   T volumes = volume_entities_tmpl<T>(mesh, entities, 3);
 
   T cr(entities.rows());
   for (Eigen::Index e = 0; e < entities.rows(); ++e)
   {
-    auto vertices = connectivity.links(entities[e]);
-    const Eigen::Vector3d p0 = geometry.x(vertices[0]);
-    const Eigen::Vector3d p1 = geometry.x(vertices[1]);
-    const Eigen::Vector3d p2 = geometry.x(vertices[2]);
-    const Eigen::Vector3d p3 = geometry.x(vertices[3]);
+    auto dofs = x_dofs.links(entities[e]);
+    const Eigen::Vector3d p0 = geometry.x(dofs[0]);
+    const Eigen::Vector3d p1 = geometry.x(dofs[1]);
+    const Eigen::Vector3d p2 = geometry.x(dofs[2]);
+    const Eigen::Vector3d p3 = geometry.x(dofs[3]);
 
     // Compute side lengths
     const double a = (p1 - p2).norm();

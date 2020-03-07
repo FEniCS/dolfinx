@@ -118,8 +118,7 @@ def BoxMesh(comm,
             points: typing.List[numpy.array],
             n: list,
             cell_type=cpp.mesh.CellType.tetrahedron,
-            ghost_mode=cpp.mesh.GhostMode.none,
-            new_style=False):
+            ghost_mode=cpp.mesh.GhostMode.none):
     """Create box mesh
 
     Parameters
@@ -136,7 +135,7 @@ def BoxMesh(comm,
     Coordinate mapping is not attached
     """
     return cpp.generation.BoxMesh.create(comm, points, n, cell_type,
-                                         ghost_mode, new_style)
+                                         ghost_mode)
 
 
 def UnitCubeMesh(comm,
@@ -144,8 +143,7 @@ def UnitCubeMesh(comm,
                  ny,
                  nz,
                  cell_type=cpp.mesh.CellType.tetrahedron,
-                 ghost_mode=cpp.mesh.GhostMode.none,
-                 new_style=False):
+                 ghost_mode=cpp.mesh.GhostMode.none):
     """Create a mesh of a unit cube with coordinate mapping attached
 
     Parameters
@@ -163,6 +161,6 @@ def UnitCubeMesh(comm,
     mesh = BoxMesh(
         comm, [numpy.array([0.0, 0.0, 0.0]),
                numpy.array([1.0, 1.0, 1.0])], [nx, ny, nz], cell_type,
-        ghost_mode, new_style)
+        ghost_mode)
     mesh.geometry.coord_mapping = fem.create_coordinate_map(mesh)
     return mesh
