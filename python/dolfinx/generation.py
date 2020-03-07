@@ -20,7 +20,8 @@ __all__ = [
 def IntervalMesh(comm,
                  nx: int,
                  points: list,
-                 ghost_mode=cpp.mesh.GhostMode.none):
+                 ghost_mode=cpp.mesh.GhostMode.none,
+                 new_style=False):
     """Create an interval mesh
 
     Parameters
@@ -37,12 +38,14 @@ def IntervalMesh(comm,
     ----
     Coordinate mapping is not attached
     """
-    return cpp.generation.IntervalMesh.create(comm, nx, points, ghost_mode)
+    return cpp.generation.IntervalMesh.create(comm, nx, points, ghost_mode,
+                                              new_style)
 
 
 def UnitIntervalMesh(comm,
                      nx,
-                     ghost_mode=cpp.mesh.GhostMode.none):
+                     ghost_mode=cpp.mesh.GhostMode.none,
+                     new_style=False):
     """Create a mesh on the unit interval with coordinate mapping attached
 
     Parameters
@@ -53,7 +56,7 @@ def UnitIntervalMesh(comm,
         Number of cells
 
     """
-    mesh = IntervalMesh(comm, nx, [0.0, 1.0], ghost_mode)
+    mesh = IntervalMesh(comm, nx, [0.0, 1.0], ghost_mode, new_style)
     mesh.geometry.coord_mapping = fem.create_coordinate_map(mesh)
     return mesh
 
@@ -63,7 +66,8 @@ def RectangleMesh(comm,
                   n: list,
                   cell_type=cpp.mesh.CellType.triangle,
                   ghost_mode=cpp.mesh.GhostMode.none,
-                  diagonal: str = "right"):
+                  diagonal: str = "right",
+                  new_style=False):
     """Create rectangle mesh
 
     Parameters
@@ -83,7 +87,7 @@ def RectangleMesh(comm,
 
     """
     return cpp.generation.RectangleMesh.create(comm, points, n, cell_type,
-                                               ghost_mode, diagonal)
+                                               ghost_mode, diagonal, new_style)
 
 
 def UnitSquareMesh(comm,
@@ -91,7 +95,8 @@ def UnitSquareMesh(comm,
                    ny,
                    cell_type=cpp.mesh.CellType.triangle,
                    ghost_mode=cpp.mesh.GhostMode.none,
-                   diagonal="right"):
+                   diagonal="right",
+                   new_style=False):
     """Create a mesh of a unit square with coordinate mapping attached
 
     Parameters
@@ -109,7 +114,7 @@ def UnitSquareMesh(comm,
     mesh = RectangleMesh(
         comm, [numpy.array([0.0, 0.0, 0.0]),
                numpy.array([1.0, 1.0, 0.0])], [nx, ny], cell_type, ghost_mode,
-        diagonal)
+        diagonal, new_style)
     mesh.geometry.coord_mapping = fem.create_coordinate_map(mesh)
     return mesh
 

@@ -753,6 +753,7 @@ mesh::compute_marked_boundary_entities(
   {
     mesh.create_entities(dim);
     mesh.create_connectivity(tdim - 1, tdim);
+    mesh.create_connectivity(0, tdim);
   }
 
   // Find all vertices on boundary. Set all to -1 (interior) to start
@@ -769,15 +770,33 @@ mesh::compute_marked_boundary_entities(
 
   // FIXME: Does this make sense for non-affine elements?
   // Get all points
+  const graph::AdjacencyList<std::int32_t>& x_dofmap = mesh.geometry().dofmap();
   const Eigen::Array<double, Eigen::Dynamic, 3, Eigen::RowMajor>& x_all
       = mesh.geometry().x();
+  auto v_to_c = mesh.topology().connectivity(0, tdim);
+  assert(v_to_c);
+  auto c_to_v = mesh.topology().connectivity(tdim, 0);
+  assert(c_to_v);
 
   // Pack coordinates of all boundary vertices
   Eigen::Array<double, 3, Eigen::Dynamic, Eigen::RowMajor> x_boundary(3, count);
   for (std::int32_t i = 0; i < mesh.num_entities(0); ++i)
   {
     if (boundary_vertex[i] != -1)
-      x_boundary.col(boundary_vertex[i]) = x_all.row(i);
+    {
+      // Get first cell and find position
+      int c = v_to_c->links(i)[0];
+      auto vertices = c_to_v->links(c);
+      auto it
+          = std::find(vertices.data(), vertices.data() + vertices.rows(), i);
+      assert(it != (vertices.data() + vertices.rows()));
+      const int local_pos = std::distance(vertices.data(), it);
+
+      auto dofs = x_dofmap.links(c);
+      x_boundary.col(boundary_vertex[i]) = x_all.row(dofs[local_pos]);
+
+      // x_boundary.col(boundary_vertex[i]) = x_all.row(i);
+    }
   }
 
   // Run marker function on boundary vertices
