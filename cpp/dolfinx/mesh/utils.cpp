@@ -781,8 +781,6 @@ mesh::compute_marked_boundary_entities(
 
       auto dofs = x_dofmap.links(c);
       x_boundary.col(boundary_vertex[i]) = x_all.row(dofs[local_pos]);
-
-      // x_boundary.col(boundary_vertex[i]) = x_all.row(i);
     }
   }
 
