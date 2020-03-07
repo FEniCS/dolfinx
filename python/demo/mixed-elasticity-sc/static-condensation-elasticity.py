@@ -24,10 +24,10 @@ import dolfinx.la
 import ufl
 
 filedir = os.path.dirname(__file__)
-infile = dolfinx.io.XDMFFile(dolfinx.MPI.comm_world,
-                             os.path.join(filedir, "cooks_tri_mesh.xdmf"),
-                             encoding=dolfinx.cpp.io.XDMFFile.Encoding.ASCII)
-mesh = infile.read_mesh(dolfinx.cpp.mesh.GhostMode.none)
+infile = dolfinx.io.XDMFFileNew(dolfinx.MPI.comm_world,
+                                os.path.join(filedir, "cooks_tri_mesh.xdmf"),
+                                encoding=dolfinx.cpp.io.XDMFFileNew.Encoding.ASCII)
+mesh = infile.read_mesh()
 infile.close()
 
 # Stress (Se) and displacement (Ue) elements
