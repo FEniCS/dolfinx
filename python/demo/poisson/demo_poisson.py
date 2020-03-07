@@ -199,7 +199,7 @@ solve(a == L, u, bc, petsc_options={"ksp_type": "preonly", "pc_type": "lu"})
 
 
 # Save solution in XDMF format
-with XDMFFileNew(MPI.comm_world, "poisson.xdmf", encoding=XDMFFileNew.Encoding.ASCII) as file:
+with XDMFFileNew(MPI.comm_world, "poisson.xdmf") as file:
     file.write(u)
 
 # Plot solution
