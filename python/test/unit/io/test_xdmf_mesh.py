@@ -93,8 +93,7 @@ def test_save_and_load_mesh3D(tempdir, encoding, cell_type):
 def test_read_write_p2_mesh(tempdir, encoding):
     mesh = cpp.generation.UnitDiscMesh.create(MPI.comm_world,
                                               3,
-                                              cpp.mesh.GhostMode.none,
-                                              new_style=True)
+                                              cpp.mesh.GhostMode.none)
 
     filename = os.path.join(tempdir, "tri6_mesh.xdmf")
     with XDMFFileNew(mesh.mpi_comm(), filename, encoding=encoding) as xdmf:

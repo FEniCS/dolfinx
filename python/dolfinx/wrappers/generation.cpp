@@ -64,12 +64,11 @@ void generation(py::module& m)
       .def_static(
           "create",
           [](const MPICommWrapper comm, std::size_t n,
-             dolfinx::mesh::GhostMode ghost_mode, bool new_style) {
-            return dolfinx::generation::UnitDiscMesh::create(
-                comm.get(), n, ghost_mode, new_style);
+             dolfinx::mesh::GhostMode ghost_mode) {
+            return dolfinx::generation::UnitDiscMesh::create(comm.get(), n,
+                                                             ghost_mode);
           },
-          py::arg("comm"), py::arg("n"), py::arg("ghost_mode"),
-          py::arg("new_style") = false);
+          py::arg("comm"), py::arg("n"), py::arg("ghost_mode"));
 
   // dolfinx::BoxMesh
   py::class_<dolfinx::generation::BoxMesh,
