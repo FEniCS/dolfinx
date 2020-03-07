@@ -215,17 +215,20 @@ xdmf_utils::get_point_data_values(const function::Function& u)
       data_values = u.compute_point_values();
   const int width = get_padded_width(u);
 
+  assert(mesh->geometry().index_map());
+  const int num_local_points = mesh->geometry().index_map()->size_local();
+  assert(data_values.rows() >= num_local_points);
+  data_values.resize(num_local_points, data_values.cols());
+
   // FIXME: Unpick the below code for the new layout of data from
   //        GenericFunction::compute_vertex_values
-  const std::int32_t num_local_points = mesh->geometry().x().rows();
   std::vector<PetscScalar> _data_values(width * num_local_points, 0.0);
-
   const int value_rank = u.value_rank();
   if (value_rank > 0)
   {
     // Transpose vector/tensor data arrays
     const int value_size = u.value_size();
-    for (std::int32_t i = 0; i < num_local_points; i++)
+    for (int i = 0; i < num_local_points; i++)
     {
       for (int j = 0; j < value_size; j++)
       {
@@ -265,6 +268,7 @@ xdmf_utils::get_cell_data_values(const function::Function& u)
   const auto dofmap = u.function_space()->dofmap();
   assert(dofmap->element_dof_layout);
   const int ndofs = dofmap->element_dof_layout->num_dofs();
+  // for (auto& cell : mesh::MeshRange(*mesh, tdim))
   for (auto& cell : mesh::MeshRange(*mesh, tdim))
   {
     // Tabulate dofs
