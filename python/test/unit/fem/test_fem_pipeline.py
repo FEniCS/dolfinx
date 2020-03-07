@@ -134,10 +134,10 @@ def test_manufactured_poisson(degree, filename, datadir):
                              ("BDM", 0),
                              ("RT", 1),
                              ("N2curl", 0),
-                             ("N1curl", 1),
+                            #  ("N1curl", 1),
                          ])
 @pytest.mark.parametrize("degree", [1, 2])
-def xtest_manufactured_vector1(family, degree, filename, datadir):
+def test_manufactured_vector1(family, degree, filename, datadir):
     """Projection into H(div/curl) spaces"""
 
     with XDMFFileNew(MPI.comm_world, os.path.join(datadir, filename)) as xdmf:
@@ -151,10 +151,6 @@ def xtest_manufactured_vector1(family, degree, filename, datadir):
     V = FunctionSpace(mesh, (family[0], degree + family[1]))
     u, v = ufl.TrialFunction(V), ufl.TestFunction(V)
     a = inner(u, v) * dx
-
-    xp = np.array([0.33, 0.33, 0.0])
-    tree = geometry.BoundingBoxTree(mesh, mesh.geometry.dim)
-    cells = geometry.compute_first_entity_collision(tree, mesh, xp)
 
     # Source term
     x = SpatialCoordinate(mesh)
@@ -179,6 +175,10 @@ def xtest_manufactured_vector1(family, degree, filename, datadir):
     uh = Function(V)
     solver.solve(b, uh.vector)
     uh.vector.ghostUpdate(addv=PETSc.InsertMode.INSERT, mode=PETSc.ScatterMode.FORWARD)
+
+    xp = np.array([0.33, 0.33, 0.0])
+    tree = geometry.BoundingBoxTree(mesh, mesh.geometry.dim)
+    cells = geometry.compute_first_entity_collision(tree, mesh, xp)
 
     up = uh.eval(xp, cells[0])
     print("test0:", up)
@@ -203,7 +203,7 @@ def xtest_manufactured_vector1(family, degree, filename, datadir):
                              "N1curl",
                          ])
 @pytest.mark.parametrize("degree", [1, 2, 3])
-def xtest_manufactured_vector2(family, degree, filename, datadir):
+def test_manufactured_vector2(family, degree, filename, datadir):
     """Projection into H(div/curl) spaces"""
 
     # Skip slowest tests
@@ -221,10 +221,6 @@ def xtest_manufactured_vector2(family, degree, filename, datadir):
     V = FunctionSpace(mesh, (family, degree + 1))
     u, v = ufl.TrialFunction(V), ufl.TestFunction(V)
     a = inner(u, v) * dx
-
-    xp = np.array([0.33, 0.33, 0.0])
-    tree = geometry.BoundingBoxTree(mesh, mesh.geometry.dim)
-    cells = geometry.compute_first_entity_collision(tree, mesh, xp)
 
     # Source term
     x = SpatialCoordinate(mesh)
@@ -250,6 +246,9 @@ def xtest_manufactured_vector2(family, degree, filename, datadir):
     solver.solve(b, uh.vector)
     uh.vector.ghostUpdate(addv=PETSc.InsertMode.INSERT, mode=PETSc.ScatterMode.FORWARD)
 
+    xp = np.array([0.33, 0.33, 0.0])
+    tree = geometry.BoundingBoxTree(mesh, mesh.geometry.dim)
+    cells = geometry.compute_first_entity_collision(tree, mesh, xp)
     up = uh.eval(xp, cells[0])
     print("test0:", up)
     print("test1:", xp[0]**degree)
