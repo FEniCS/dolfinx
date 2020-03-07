@@ -28,11 +28,11 @@ celltypes_3D = [CellType.tetrahedron, CellType.hexahedron]
 
 def mesh_factory(tdim, n):
     if tdim == 1:
-        return UnitIntervalMesh(MPI.comm_world, n, new_style=True)
+        return UnitIntervalMesh(MPI.comm_world, n)
     elif tdim == 2:
-        return UnitSquareMesh(MPI.comm_world, n, n, new_style=True)
+        return UnitSquareMesh(MPI.comm_world, n, n)
     elif tdim == 3:
-        return UnitCubeMesh(MPI.comm_world, n, n, n, new_style=True)
+        return UnitCubeMesh(MPI.comm_world, n, n, n)
 
 
 @pytest.fixture
@@ -45,7 +45,7 @@ def worker_id(request):
 
 
 @pytest.mark.parametrize("tdim", [2, 3])
-@pytest.mark.parametrize("n", [6, 10])
+@pytest.mark.parametrize("n", [6])
 def test_read_mesh_data(tempdir, tdim, n):
     filename = os.path.join(tempdir, "mesh.xdmf")
     mesh = mesh_factory(tdim, n)

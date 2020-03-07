@@ -19,6 +19,9 @@ using namespace dolfinx::mesh;
 //-----------------------------------------------------------------------------
 std::array<double, 6> MeshQuality::dihedral_angles(const MeshEntity& cell)
 {
+  throw std::runtime_error("MeshQuality::dihedral_angles requires updating for "
+                           "proper geometry handling");
+
   if (cell.dim() != 3)
   {
     throw std::runtime_error(

@@ -36,13 +36,12 @@ public:
   /// @param[in] n Number of cells in each direction.
   /// @param[in] cell_type Tetrahedron or hexahedron
   /// @param[in] ghost_mode Ghost mode
-  /// @param[in] new_style Use true for new mesh construction
   /// @param[in] partitioner Partitioner (scotch, parmetis or kahip)
   /// @return Mesh
   static mesh::Mesh
   create(MPI_Comm comm, const std::array<Eigen::Vector3d, 2>& p,
          std::array<std::size_t, 3> n, mesh::CellType cell_type,
-         const mesh::GhostMode ghost_mode, bool new_style = false,
+         const mesh::GhostMode ghost_mode,
          mesh::Partitioner partitioner = mesh::Partitioner::scotch);
 };
 } // namespace generation

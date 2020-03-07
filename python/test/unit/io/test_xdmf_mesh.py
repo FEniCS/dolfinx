@@ -28,11 +28,11 @@ celltypes_3D = [CellType.tetrahedron, CellType.hexahedron]
 
 def mesh_factory(tdim, n):
     if tdim == 1:
-        return UnitIntervalMesh(MPI.comm_world, n, new_style=True)
+        return UnitIntervalMesh(MPI.comm_world, n)
     elif tdim == 2:
-        return UnitSquareMesh(MPI.comm_world, n, n, new_style=True)
+        return UnitSquareMesh(MPI.comm_world, n, n)
     elif tdim == 3:
-        return UnitCubeMesh(MPI.comm_world, n, n, n, new_style=True)
+        return UnitCubeMesh(MPI.comm_world, n, n, n)
 
 
 @pytest.fixture
@@ -47,7 +47,7 @@ def worker_id(request):
 # @pytest.mark.parametrize("encoding", encodings)
 # def test_save_and_load_1d_mesh(tempdir, encoding):
 #     filename = os.path.join(tempdir, "mesh.xdmf")
-#     mesh = UnitIntervalMesh(MPI.comm_world, 32, new_style=True)
+#     mesh = UnitIntervalMesh(MPI.comm_world, 32)
 #     with XDMFFileNew(mesh.mpi_comm(), filename, encoding=encoding) as file:
 #         file.write(mesh)
 #     with XDMFFileNew(MPI.comm_world, filename) as file:
@@ -61,7 +61,7 @@ def worker_id(request):
 @pytest.mark.parametrize("encoding", encodings)
 def test_save_and_load_mesh2D(tempdir, encoding, cell_type):
     filename = os.path.join(tempdir, "mesh.xdmf")
-    mesh = UnitSquareMesh(MPI.comm_world, 12, 12, cell_type, new_style=True)
+    mesh = UnitSquareMesh(MPI.comm_world, 12, 12, cell_type)
     with XDMFFileNew(mesh.mpi_comm(), filename, encoding=encoding) as file:
         file.write(mesh)
 
@@ -76,7 +76,7 @@ def test_save_and_load_mesh2D(tempdir, encoding, cell_type):
 @pytest.mark.parametrize("encoding", encodings)
 def test_save_and_load_mesh3D(tempdir, encoding, cell_type):
     filename = os.path.join(tempdir, "mesh.xdmf")
-    mesh = UnitCubeMesh(MPI.comm_world, 12, 12, 8, cell_type, new_style=True)
+    mesh = UnitCubeMesh(MPI.comm_world, 12, 12, 8, cell_type)
     with XDMFFileNew(mesh.mpi_comm(), filename, encoding=encoding) as file:
         file.write(mesh)
 
@@ -93,8 +93,7 @@ def test_save_and_load_mesh3D(tempdir, encoding, cell_type):
 def test_read_write_p2_mesh(tempdir, encoding):
     mesh = cpp.generation.UnitDiscMesh.create(MPI.comm_world,
                                               3,
-                                              cpp.mesh.GhostMode.none,
-                                              new_style=True)
+                                              cpp.mesh.GhostMode.none)
 
     filename = os.path.join(tempdir, "tri6_mesh.xdmf")
     with XDMFFileNew(mesh.mpi_comm(), filename, encoding=encoding) as xdmf:

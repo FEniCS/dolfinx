@@ -27,12 +27,10 @@ public:
   /// @param[in] n The number of cells.
   /// @param[in] x The end points
   /// @param[in] ghost_mode Ghosting mode
-  /// @param[in] new_style Use new mesh creation of true
   /// @return A mesh
   static mesh::Mesh create(MPI_Comm comm, std::size_t n,
                            std::array<double, 2> x,
-                           const mesh::GhostMode ghost_mode,
-                           bool new_style = false);
+                           const mesh::GhostMode ghost_mode);
 };
 } // namespace generation
 } // namespace dolfinx
