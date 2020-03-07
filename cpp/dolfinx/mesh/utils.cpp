@@ -101,20 +101,17 @@ T volume_tetrahedron(const mesh::Mesh& mesh,
                      const Eigen::Ref<const Eigen::ArrayXi>& entities)
 {
   const mesh::Geometry& geometry = mesh.geometry();
-  const mesh::Topology& topology = mesh.topology();
-  assert(topology.connectivity(3, 0));
-  const graph::AdjacencyList<std::int32_t>& connectivity
-      = *topology.connectivity(3, 0);
+  const graph::AdjacencyList<std::int32_t>& x_dofs = geometry.dofmap();
 
   Eigen::ArrayXd v(entities.rows());
   for (Eigen::Index i = 0; i < entities.rows(); ++i)
   {
     // Get the coordinates of the four vertices
-    auto vertices = connectivity.links(entities[i]);
-    const Eigen::Vector3d x0 = geometry.x(vertices[0]);
-    const Eigen::Vector3d x1 = geometry.x(vertices[1]);
-    const Eigen::Vector3d x2 = geometry.x(vertices[2]);
-    const Eigen::Vector3d x3 = geometry.x(vertices[3]);
+    auto dofs = x_dofs.links(entities[i]);
+    const Eigen::Vector3d x0 = geometry.x(dofs[0]);
+    const Eigen::Vector3d x1 = geometry.x(dofs[1]);
+    const Eigen::Vector3d x2 = geometry.x(dofs[2]);
+    const Eigen::Vector3d x3 = geometry.x(dofs[3]);
 
     // Formula for volume from http://mathworld.wolfram.com
     const double v_tmp
@@ -142,10 +139,6 @@ T volume_quadrilateral(const mesh::Mesh& mesh,
                        const Eigen::Ref<const Eigen::ArrayXi>& entities)
 {
   const mesh::Geometry& geometry = mesh.geometry();
-  const mesh::Topology& topology = mesh.topology();
-  auto c_to_e = topology.connectivity(2, 0);
-  assert(c_to_e);
-
   const int gdim = geometry.dim();
   T v(entities.rows());
   const graph::AdjacencyList<std::int32_t>& x_dofs = geometry.dofmap();
