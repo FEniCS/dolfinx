@@ -22,7 +22,7 @@ Geometry::Geometry(std::shared_ptr<const common::IndexMap> index_map,
                    const Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic,
                                       Eigen::RowMajor>& x,
                    const std::vector<std::int64_t>& global_indices)
-    : _dim(x.cols()), _dofmap(dofmap), _index_map(index_map),
+    : _dim(x.cols()), _dofmap(dofmap), _index_map(index_map), _layout(layout),
       _global_indices(global_indices)
 {
   if (x.rows() != (int)global_indices.size())
@@ -37,8 +37,6 @@ Geometry::Geometry(std::shared_ptr<const common::IndexMap> index_map,
     _x.setZero();
     _x.block(0, 0, x.rows(), x.cols()) = x;
   }
-
-  _layout = std::make_shared<fem::ElementDofLayout>(layout);
 }
 //-----------------------------------------------------------------------------
 int Geometry::dim() const { return _dim; }
@@ -71,15 +69,14 @@ Eigen::Ref<const Eigen::Vector3d> Geometry::x(int n) const
   return _x.row(n).matrix().transpose();
 }
 //-----------------------------------------------------------------------------
-std::int64_t Geometry::num_points_global() const
-{
-  assert(_index_map);
-  return _index_map->size_global();
-}
-//-----------------------------------------------------------------------------
 const std::vector<std::int64_t>& Geometry::global_indices() const
 {
   return _global_indices;
+}
+//-----------------------------------------------------------------------------
+const fem::ElementDofLayout& Geometry::dof_layout() const
+{
+  return _layout;
 }
 //-----------------------------------------------------------------------------
 std::size_t Geometry::hash() const
@@ -177,11 +174,5 @@ mesh::Geometry mesh::create_geometry(
     xg.row(i) = coords.row(l2l[i]);
 
   return Geometry(dof_index_map, dofmap, layout, xg, l2g);
-}
-//-----------------------------------------------------------------------------
-const fem::ElementDofLayout& Geometry::dof_layout() const
-{
-  assert(_layout);
-  return *_layout;
 }
 //-----------------------------------------------------------------------------

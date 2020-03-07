@@ -8,6 +8,7 @@
 
 #include <Eigen/Dense>
 #include <dolfinx/common/MPI.h>
+#include <dolfinx/fem/ElementDofLayout.h>
 #include <dolfinx/graph/AdjacencyList.h>
 #include <memory>
 #include <string>
@@ -84,26 +85,21 @@ public:
   /// Return coordinate array for point with local index n
   Eigen::Ref<const Eigen::Vector3d> x(int n) const;
 
-  /// @todo Remove this once all Geometry objects have an IndexMap
-  ///
-  /// Return the number of global points in the geometry
-  std::int64_t num_points_global() const;
-
   /// Global input indices for points (const)
   const std::vector<std::int64_t>& global_indices() const;
 
+  /// @warning Experimental. Needs revision
+  ///
+  /// Put ElementDofLayout here for now
+  const fem::ElementDofLayout& dof_layout() const;
   /// Hash of coordinate values
+
   /// @return A tree-hashed value of the coordinates over all MPI
   ///   processes
   std::size_t hash() const;
 
   /// Return informal string representation (pretty-print)
   std::string str(bool verbose) const;
-
-  /// @warning Experimental. Needs revision
-  ///
-  /// Put ElementDofLayout here for now
-  const fem::ElementDofLayout& dof_layout() const;
 
   /// @warning Experimental. Needs revision
   ///
@@ -120,8 +116,8 @@ private:
   // IndexMap for geometry 'dofmap'
   std::shared_ptr<const common::IndexMap> _index_map;
 
-  // The doflayout on the cell
-  std::shared_ptr<const fem::ElementDofLayout> _layout;
+  // The dof layout on the cell
+  fem::ElementDofLayout _layout;
 
   // Coordinates for all points stored as a contiguous array
   Eigen::Array<double, Eigen::Dynamic, 3, Eigen::RowMajor> _x;
