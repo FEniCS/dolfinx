@@ -135,8 +135,6 @@ void mesh(py::module& m)
       .def("get_face_rotations", &dolfinx::mesh::Topology::get_face_rotations)
       .def_property_readonly("dim", &dolfinx::mesh::Topology::dim,
                              "Topological dimension")
-      .def("set_global_vertices_user",
-           &dolfinx::mesh::Topology::set_global_vertices_user)
       .def("connectivity",
            py::overload_cast<int, int>(&dolfinx::mesh::Topology::connectivity,
                                        py::const_))
@@ -322,7 +320,6 @@ void mesh(py::module& m)
       .def_static("order_simplex", &dolfinx::mesh::Ordering::order_simplex)
       .def_static("is_ordered_simplex",
                   &dolfinx::mesh::Ordering::is_ordered_simplex);
-
 
   // New Partition interface
 
