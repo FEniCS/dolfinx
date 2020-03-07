@@ -278,7 +278,8 @@ PartitioningNew::reorder_global_indices(
   neighbours.erase(std::unique(neighbours.begin(), neighbours.end()),
                    neighbours.end());
   auto it = std::find(neighbours.begin(), neighbours.end(), rank);
-  neighbours.erase(it);
+  if (it != neighbours.end())
+    neighbours.erase(it);
 
   // Create neighbourhood communicator
   MPI_Comm comm_n;

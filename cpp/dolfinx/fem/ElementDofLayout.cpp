@@ -237,8 +237,6 @@ ElementDofLayout fem::geometry_layout(mesh::CellType cell, int num_nodes)
 {
   // TODO: Fix for degree > 2
 
-  std::cout << "Create " << std::endl;
-
   const int dim = mesh::cell_dim(cell);
   int num_perms = 0;
   const std::array<int, 4> p_per_dim = {0, 1, 2, 4};
@@ -269,11 +267,6 @@ ElementDofLayout fem::geometry_layout(mesh::CellType cell, int num_nodes)
     }
   }
 
-  std::cout << "End " << std::endl;
-
-  fem::ElementDofLayout layout(1, entity_dofs, {}, {}, cell, perm);
-  std::cout << "End (1)" << std::endl;
-  return layout;
-  // return fem::ElementDofLayout(1, entity_dofs, {}, {}, cell, perm);
+  return fem::ElementDofLayout(1, entity_dofs, {}, {}, cell, perm);
 }
 //-----------------------------------------------------------------------------
