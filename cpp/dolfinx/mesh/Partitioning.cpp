@@ -4,7 +4,7 @@
 //
 // SPDX-License-Identifier:    LGPL-3.0-or-later
 
-#include "PartitioningNew.h"
+#include "Partitioning.h"
 #include "Topology.h"
 #include <Eigen/Dense>
 #include <algorithm>
@@ -19,8 +19,7 @@ using namespace dolfinx;
 using namespace dolfinx::mesh;
 
 //-----------------------------------------------------------------------------
-// std::array<std::vector<std::int32_t>, 2>
-std::vector<bool> PartitioningNew::compute_vertex_exterior_markers(
+std::vector<bool> Partitioning::compute_vertex_exterior_markers(
     const mesh::Topology& topology_local)
 {
   // Get list of boundary vertices
@@ -59,7 +58,7 @@ std::vector<bool> PartitioningNew::compute_vertex_exterior_markers(
 }
 //-----------------------------------------------------------------------------
 std::pair<std::vector<std::int32_t>, std::vector<std::int64_t>>
-PartitioningNew::reorder_global_indices(
+Partitioning::reorder_global_indices(
     MPI_Comm comm, const std::vector<std::int64_t>& global_indices,
     const std::vector<bool>& shared_indices)
 {
@@ -382,9 +381,10 @@ PartitioningNew::reorder_global_indices(
   return {local_to_local_new, ghosts};
 }
 //-----------------------------------------------------------------------------
-graph::AdjacencyList<std::int32_t> PartitioningNew::partition_cells(
-    MPI_Comm comm, int n, const mesh::CellType cell_type,
-    const graph::AdjacencyList<std::int64_t>& cells)
+graph::AdjacencyList<std::int32_t>
+Partitioning::partition_cells(MPI_Comm comm, int n,
+                              const mesh::CellType cell_type,
+                              const graph::AdjacencyList<std::int64_t>& cells)
 {
   LOG(INFO) << "Compute partition of cells across processes";
 
@@ -414,7 +414,7 @@ graph::AdjacencyList<std::int32_t> PartitioningNew::partition_cells(
 }
 //-----------------------------------------------------------------------------
 std::pair<graph::AdjacencyList<std::int32_t>, std::vector<std::int64_t>>
-PartitioningNew::create_local_adjacency_list(
+Partitioning::create_local_adjacency_list(
     const graph::AdjacencyList<std::int64_t>& cells)
 {
   const Eigen::Array<std::int64_t, Eigen::Dynamic, 1>& array = cells.array();
@@ -447,7 +447,7 @@ PartitioningNew::create_local_adjacency_list(
 }
 //-----------------------------------------------------------------------------
 std::tuple<graph::AdjacencyList<std::int32_t>, common::IndexMap>
-PartitioningNew::create_distributed_adjacency_list(
+Partitioning::create_distributed_adjacency_list(
     MPI_Comm comm, const mesh::Topology& topology_local,
     const std::vector<std::int64_t>& local_to_global_vertices)
 {
@@ -477,9 +477,9 @@ PartitioningNew::create_distributed_adjacency_list(
 //-----------------------------------------------------------------------------
 std::tuple<graph::AdjacencyList<std::int64_t>, std::vector<int>,
            std::vector<std::int64_t>>
-PartitioningNew::distribute(
-    MPI_Comm comm, const graph::AdjacencyList<std::int64_t>& list,
-    const graph::AdjacencyList<std::int32_t>& destinations)
+Partitioning::distribute(MPI_Comm comm,
+                         const graph::AdjacencyList<std::int64_t>& list,
+                         const graph::AdjacencyList<std::int32_t>& destinations)
 {
   assert(list.num_nodes() == (int)destinations.num_nodes());
   const std::int64_t offset_global
@@ -556,10 +556,10 @@ PartitioningNew::distribute(
 }
 //-----------------------------------------------------------------------------
 std::pair<graph::AdjacencyList<std::int64_t>, std::vector<std::int64_t>>
-PartitioningNew::exchange(
-    MPI_Comm comm, const graph::AdjacencyList<std::int64_t>& list,
-    const graph::AdjacencyList<std::int32_t>& destinations,
-    const std::set<int>&)
+Partitioning::exchange(MPI_Comm comm,
+                       const graph::AdjacencyList<std::int64_t>& list,
+                       const graph::AdjacencyList<std::int32_t>& destinations,
+                       const std::set<int>&)
 {
   // TODO: This can be significantly optimised (avoiding all-to-all) by
   // sending in more information on source/dest ranks
@@ -638,7 +638,7 @@ PartitioningNew::exchange(
 }
 //-----------------------------------------------------------------------------
 Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
-PartitioningNew::fetch_data(
+Partitioning::fetch_data(
     MPI_Comm comm, const std::vector<std::int64_t>& indices,
     const Eigen::Ref<const Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic,
                                         Eigen::RowMajor>>& x)
@@ -771,7 +771,7 @@ PartitioningNew::fetch_data(
   return my_x;
 }
 //-----------------------------------------------------------------------------
-std::vector<std::int64_t> PartitioningNew::compute_local_to_global_links(
+std::vector<std::int64_t> Partitioning::compute_local_to_global_links(
     const graph::AdjacencyList<std::int64_t>& global,
     const graph::AdjacencyList<std::int32_t>& local)
 {
@@ -802,7 +802,7 @@ std::vector<std::int64_t> PartitioningNew::compute_local_to_global_links(
   return local_to_global_list;
 }
 //-----------------------------------------------------------------------------
-std::vector<std::int32_t> PartitioningNew::compute_local_to_local(
+std::vector<std::int32_t> Partitioning::compute_local_to_local(
     const std::vector<std::int64_t>& local0_to_global,
     const std::vector<std::int64_t>& local1_to_global)
 {

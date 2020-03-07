@@ -27,9 +27,13 @@ class Topology;
 
 /// New tools for partitioning meshes/graphs
 ///
+/// @todo Split into functions that (i) are aware of Mesh concepts (and
+/// leave in the mesh namespace) and (ii) are independent of Mesh
+/// concepts (and move into the graph namespace)
+///
 /// TODO: Add a function that sends data (Eigen arrays) to the 'owner'
 
-class PartitioningNew
+class Partitioning
 {
 public:
   /// Compute markers for interior/boundary vertices

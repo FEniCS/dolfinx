@@ -5,7 +5,7 @@
 // SPDX-License-Identifier:    LGPL-3.0-or-later
 
 #include "Geometry.h"
-#include "PartitioningNew.h"
+#include "Partitioning.h"
 #include <boost/functional/hash.hpp>
 #include <dolfinx/common/IndexMap.h>
 #include <dolfinx/fem/DofMapBuilder.h>
@@ -141,7 +141,7 @@ mesh::Geometry mesh::create_geometry(
   //  processes own the cells this process needs.
   std::set<int> _src(src.begin(), src.end());
   auto [cell_nodes, global_index_cell]
-      = PartitioningNew::exchange(comm, cells, dest, _src);
+      = Partitioning::exchange(comm, cells, dest, _src);
 
   // Build list of unique (global) node indices from adjacency list
   // (geometry nodes)
@@ -154,18 +154,18 @@ mesh::Geometry mesh::create_geometry(
   //  Fetch node coordinates by global index from other ranks. Order of
   //  coords matches order of the indices in 'indices'
   Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor> coords
-      = PartitioningNew::fetch_data(comm, indices, x);
+      = Partitioning::fetch_data(comm, indices, x);
 
   // Compute local-to-global map from local indices in dofmap to the
   // corresponding global indices in cell_nodes
   std::vector<std::int64_t> l2g
-      = PartitioningNew::compute_local_to_global_links(cell_nodes, dofmap);
+      = Partitioning::compute_local_to_global_links(cell_nodes, dofmap);
 
   // Compute local (dof) to local (position in coords) map from (i)
   // local-to-global for dofs and (ii) local-to-global for entries in
   // coords
   std::vector<std::int32_t> l2l
-      = PartitioningNew::compute_local_to_local(l2g, indices);
+      = Partitioning::compute_local_to_local(l2g, indices);
 
   // Build coordinate dof array
   Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor> xg(
