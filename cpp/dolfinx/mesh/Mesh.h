@@ -232,14 +232,6 @@ public:
   /// @return The communicator on which the mesh is distributed
   MPI_Comm mpi_comm() const;
 
-  /// @todo Remove this option. Topology should take care of it
-  ///
-  /// Ghost mode used for partitioning. Possible values are same as
-  /// `parameters["ghost_mode"]`.
-  /// @warning The interface may change in future without deprecation;
-  ///          the method is now intended for internal library use.
-  mesh::GhostMode get_ghost_mode() const;
-
 private:
   // Mesh topology
   std::unique_ptr<Topology> _topology;
@@ -249,10 +241,6 @@ private:
 
   // MPI communicator
   dolfinx::MPI::Comm _mpi_comm;
-
-  // TODO: remove
-  // Ghost mode used for partitioning
-  GhostMode _ghost_mode;
 
   // Unique identifier
   std::size_t _unique_id;

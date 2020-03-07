@@ -24,7 +24,6 @@ class IndexMap;
 namespace fem
 {
 class CoordinateElement;
-class ElementDofLayout;
 } // namespace fem
 
 namespace mesh

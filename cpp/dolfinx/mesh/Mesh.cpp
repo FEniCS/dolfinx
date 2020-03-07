@@ -108,9 +108,8 @@ Mesh::Mesh(
                                         Eigen::RowMajor>>& points,
     const Eigen::Ref<const Eigen::Array<
         std::int64_t, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>>& cells,
-    const std::vector<std::int64_t>&, const GhostMode ghost_mode, std::int32_t)
-    : _mpi_comm(comm), _ghost_mode(ghost_mode),
-      _unique_id(common::UniqueIdGenerator::id())
+    const std::vector<std::int64_t>&, const GhostMode, std::int32_t)
+    : _mpi_comm(comm), _unique_id(common::UniqueIdGenerator::id())
 {
   assert(cells.cols() > 0);
   const fem::ElementDofLayout layout = fem::geometry_layout(type, cells.cols());
@@ -121,7 +120,7 @@ Mesh::Mesh(
 Mesh::Mesh(const Mesh& mesh)
     : _topology(new Topology(*mesh._topology)),
       _geometry(new Geometry(*mesh._geometry)), _mpi_comm(mesh.mpi_comm()),
-      _ghost_mode(mesh._ghost_mode), _unique_id(common::UniqueIdGenerator::id())
+      _unique_id(common::UniqueIdGenerator::id())
 {
   // Do nothing
 }
@@ -130,7 +129,6 @@ Mesh::Mesh(Mesh&& mesh)
     : _topology(std::move(mesh._topology)),
       _geometry(std::move(mesh._geometry)),
       _mpi_comm(std::move(mesh._mpi_comm)),
-      _ghost_mode(std::move(mesh._ghost_mode)),
       _unique_id(std::move(mesh._unique_id))
 {
   // Do nothing
@@ -147,7 +145,6 @@ Mesh& Mesh::operator=(Mesh&& mesh)
   _geometry = std::move(mesh._geometry);
   this->_mpi_comm = MPI_COMM_NULL;
   std::swap(this->_mpi_comm, mesh._mpi_comm);
-  _ghost_mode = std::move(mesh._ghost_mode);
   _unique_id = std::move(mesh._unique_id);
 
   return *this;
@@ -536,6 +533,4 @@ std::string Mesh::str(bool verbose) const
 }
 //-----------------------------------------------------------------------------
 MPI_Comm Mesh::mpi_comm() const { return _mpi_comm.comm(); }
-//-----------------------------------------------------------------------------
-mesh::GhostMode Mesh::get_ghost_mode() const { return _ghost_mode; }
 //-----------------------------------------------------------------------------
