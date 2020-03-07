@@ -18,7 +18,6 @@
 #include <dolfinx/mesh/MeshQuality.h>
 #include <dolfinx/mesh/MeshValueCollection.h>
 #include <dolfinx/mesh/Ordering.h>
-#include <dolfinx/mesh/PartitionData.h>
 #include <dolfinx/mesh/PartitioningNew.h>
 #include <dolfinx/mesh/Topology.h>
 #include <dolfinx/mesh/TopologyComputation.h>
@@ -324,18 +323,6 @@ void mesh(py::module& m)
       .def_static("is_ordered_simplex",
                   &dolfinx::mesh::Ordering::is_ordered_simplex);
 
-  // dolfinx::mesh::PartitionData class
-  py::class_<dolfinx::mesh::PartitionData,
-             std::shared_ptr<dolfinx::mesh::PartitionData>>(
-      m, "PartitionData", "PartitionData object")
-      .def(py::init(
-          [](const std::vector<int>& cell_partition,
-             const std::map<std::int64_t, std::vector<int>>& ghost_procs) {
-            return dolfinx::mesh::PartitionData(cell_partition, ghost_procs);
-          }))
-      .def("num_procs", &dolfinx::mesh::PartitionData::num_procs)
-      .def("size", &dolfinx::mesh::PartitionData::num_ghosts)
-      .def("num_ghosts", &dolfinx::mesh::PartitionData::num_ghosts);
 
   // New Partition interface
 

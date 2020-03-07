@@ -154,9 +154,6 @@ dolfinx.fem.set_bc(b, [bc])
 uc = dolfinx.Function(U)
 dolfinx.la.solve(A_cond, uc.vector, b)
 
-with dolfinx.io.XDMFFile(dolfinx.MPI.comm_world, "uc.xdmf") as outfile:
-    outfile.write_checkpoint(uc, "uc")
-
 # Pure displacement based formulation
 a = - ufl.inner(sigma_u(u), ufl.grad(v)) * ufl.dx
 A = dolfinx.fem.assemble_matrix(a, [bc])

@@ -10,7 +10,6 @@
 #include <cmath>
 #include <dolfinx.h>
 #include <dolfinx/common/MPI.h>
-#include <dolfinx/mesh/PartitionData.h>
 
 using namespace dolfinx;
 

@@ -11,7 +11,6 @@ set(HEADERS_mesh
   ${CMAKE_CURRENT_SOURCE_DIR}/MeshQuality.h
   ${CMAKE_CURRENT_SOURCE_DIR}/Topology.h
   ${CMAKE_CURRENT_SOURCE_DIR}/MeshValueCollection.h
-  ${CMAKE_CURRENT_SOURCE_DIR}/PartitionData.h
   ${CMAKE_CURRENT_SOURCE_DIR}/TopologyComputation.h
   ${CMAKE_CURRENT_SOURCE_DIR}/cell_types.h
   ${CMAKE_CURRENT_SOURCE_DIR}/utils.h
@@ -25,7 +24,6 @@ target_sources(dolfinx PRIVATE
   ${CMAKE_CURRENT_SOURCE_DIR}/PartitioningNew.cpp
   ${CMAKE_CURRENT_SOURCE_DIR}/MeshQuality.cpp
   ${CMAKE_CURRENT_SOURCE_DIR}/Topology.cpp
-  ${CMAKE_CURRENT_SOURCE_DIR}/PartitionData.cpp
   ${CMAKE_CURRENT_SOURCE_DIR}/TopologyComputation.cpp
   ${CMAKE_CURRENT_SOURCE_DIR}/cell_types.cpp
   ${CMAKE_CURRENT_SOURCE_DIR}/utils.cpp
