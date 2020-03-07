@@ -467,7 +467,7 @@ def test_UnitHexMesh_assemble():
     assert(vol == pytest.approx(1, rel=1e-9))
 
 
-def test_mesh_order_unchanged_triangle():
+def xtest_mesh_order_unchanged_triangle():
     points = [[0, 0], [1, 0], [1, 1]]
     cells = [[0, 1, 2]]
     mesh = Mesh(MPI.comm_world, CellType.triangle, points,
@@ -475,7 +475,7 @@ def test_mesh_order_unchanged_triangle():
     assert (mesh.cells()[0] == cells[0]).all()
 
 
-def test_mesh_order_unchanged_quadrilateral():
+def xtest_mesh_order_unchanged_quadrilateral():
     points = [[0, 0], [1, 0], [0, 1], [1, 1]]
     cells = [[0, 1, 2, 3]]
     mesh = Mesh(MPI.comm_world, CellType.quadrilateral, points,
@@ -483,7 +483,7 @@ def test_mesh_order_unchanged_quadrilateral():
     assert (mesh.cells()[0] == cells[0]).all()
 
 
-def test_mesh_order_unchanged_tetrahedron():
+def xtest_mesh_order_unchanged_tetrahedron():
     points = [[0, 0, 0], [1, 0, 0], [1, 1, 0], [0, 0, 1]]
     cells = [[0, 1, 2, 3]]
     mesh = Mesh(MPI.comm_world, CellType.tetrahedron, points,
@@ -491,7 +491,7 @@ def test_mesh_order_unchanged_tetrahedron():
     assert (mesh.cells()[0] == cells[0]).all()
 
 
-def test_mesh_order_unchanged_hexahedron():
+def xtest_mesh_order_unchanged_hexahedron():
     points = [[0, 0, 0], [1, 0, 0], [0, 1, 0], [1, 1, 0],
               [0, 0, 1], [1, 0, 1], [0, 1, 1], [1, 1, 1]]
     cells = [[0, 1, 2, 3, 4, 5, 6, 7]]

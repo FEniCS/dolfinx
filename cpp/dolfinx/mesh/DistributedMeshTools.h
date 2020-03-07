@@ -6,17 +6,8 @@
 
 #pragma once
 
-#include "cell_types.h"
 #include <Eigen/Dense>
-#include <array>
 #include <dolfinx/common/MPI.h>
-#include <dolfinx/common/types.h>
-#include <map>
-#include <numeric>
-#include <set>
-#include <tuple>
-#include <unordered_map>
-#include <utility>
 #include <vector>
 
 namespace dolfinx
@@ -24,7 +15,6 @@ namespace dolfinx
 
 namespace mesh
 {
-class Topology;
 
 /// This class provides various functionality for working with
 /// distributed meshes.

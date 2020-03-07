@@ -5,16 +5,9 @@
 // SPDX-License-Identifier:    LGPL-3.0-or-later
 
 #include "DistributedMeshTools.h"
-#include "MeshFunction.h"
-#include "cell_types.h"
-#include "dolfinx/common/IndexMap.h"
 #include "dolfinx/common/MPI.h"
 #include "dolfinx/common/Timer.h"
-#include "dolfinx/graph/Graph.h"
-#include "dolfinx/graph/SCOTCH.h"
 #include <Eigen/Dense>
-#include <complex>
-#include <dolfinx/common/log.h>
 
 using namespace dolfinx;
 using namespace dolfinx::mesh;
