@@ -27,7 +27,6 @@ public:
   /// @param[in] n The number of cells.
   /// @param[in] x The end points
   /// @param[in] ghost_mode Ghosting mode
-  /// @param[in] new_style Use new mesh creation of true
   /// @return A mesh
   static mesh::Mesh create(MPI_Comm comm, std::size_t n,
                            std::array<double, 2> x,
