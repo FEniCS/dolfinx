@@ -380,7 +380,6 @@ Function::compute_point_values() const
     auto dofs = x_dofmap.links(c);
     for (int i = 0; i < num_dofs_g; ++i)
       x.row(i) = x_g.row(dofs[i]);
-    // x.row(i) = x_g.row(cell_g[pos_g[c] + i]);
 
     values.resize(x.rows(), value_size_loc);
 
