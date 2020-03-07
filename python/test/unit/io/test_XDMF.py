@@ -8,14 +8,13 @@ import os
 
 import numpy as np
 import pytest
+from dolfinx_utils.test.fixtures import tempdir
 from petsc4py import PETSc
 
-from dolfinx import (MPI, Function, FunctionSpace, Mesh, TensorFunctionSpace,
-                     UnitCubeMesh, UnitIntervalMesh, UnitSquareMesh,
-                     VectorFunctionSpace, cpp, has_petsc_complex)
+from dolfinx import (MPI, Function, FunctionSpace, Mesh, UnitCubeMesh,
+                     UnitIntervalMesh, UnitSquareMesh, cpp, has_petsc_complex)
 from dolfinx.cpp.mesh import CellType
 from dolfinx.io import XDMFFile
-from dolfinx_utils.test.fixtures import tempdir
 from ufl import FiniteElement, VectorElement
 
 assert (tempdir)
