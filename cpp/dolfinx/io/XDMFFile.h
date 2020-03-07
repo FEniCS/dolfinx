@@ -133,32 +133,6 @@ public:
   void write_checkpoint(const function::Function& u, std::string function_name,
                         double time_step = 0.0);
 
-  /// Save a function::Function to XDMF file for visualisation, using an
-  /// associated HDF5 file, or storing the data inline as XML.
-  ///
-  /// @param[in] u The Function to save
-  void write(const function::Function& u);
-
-  /// Save a function::Function with timestamp to XDMF file for
-  /// visualisation, using an associated HDF5 file, or storing the data
-  /// inline as XML.
-  ///
-  /// You can control the output with the following boolean parameters
-  /// on the XDMFFile class:
-  ///
-  /// * rewrite_function_mesh (default true): Controls whether the mesh
-  ///   will be rewritten every timestep. If the mesh does not change
-  ///   this can be turned off to create smaller files.
-  ///
-  /// * functions_share_mesh (default false): Controls whether all
-  ///   functions on a single time step share the same mesh. If true the
-  ///   files created will be smaller and also behave better in
-  ///   Paraview, at least in version 5.3.0
-  ///
-  /// @param[in] u The Function to save
-  /// @param[in] t The time
-  void write(const function::Function& u, double t);
-
   /// Write out mesh value collection (subset) using an associated
   /// HDF5 file, or storing the data inline as XML.
   ///

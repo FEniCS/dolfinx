@@ -79,15 +79,6 @@ void io(py::module& m)
 
   // dolfinx::io::XDMFFile::write
   xdmf_file
-      // Function
-      .def("write",
-           py::overload_cast<const dolfinx::function::Function&>(
-               &dolfinx::io::XDMFFile::write),
-           py::arg("u"))
-      .def("write",
-           py::overload_cast<const dolfinx::function::Function&, double>(
-               &dolfinx::io::XDMFFile::write),
-           py::arg("u"), py::arg("t"))
       // Mesh
       .def("write",
            py::overload_cast<const dolfinx::mesh::Mesh&>(
