@@ -6,8 +6,6 @@
 
 #include "Mesh.h"
 #include "Geometry.h"
-#include "Partitioning.h"
-#include "PartitioningNew.h"
 #include "Topology.h"
 #include "TopologyComputation.h"
 #include "utils.h"
