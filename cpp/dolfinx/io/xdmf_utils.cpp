@@ -5,39 +5,18 @@
 // SPDX-License-Identifier:    LGPL-3.0-or-later
 
 #include "xdmf_utils.h"
-
-// #include "HDF5File.h"
-// #include "HDF5Utility.h"
 #include "pugixml.hpp"
-// #include <algorithm>
 #include <boost/algorithm/string.hpp>
-// #include <boost/container/vector.hpp>
 #include <boost/filesystem.hpp>
-// #include <boost/format.hpp>
 #include <boost/lexical_cast.hpp>
-// #include <dolfinx/common/MPI.h>
-// #include <dolfinx/common/defines.h>
-// #include <dolfinx/common/log.h>
-// #include <dolfinx/common/utils.h>
+#include <dolfinx/common/IndexMap.h>
 #include <dolfinx/fem/DofMap.h>
 #include <dolfinx/function/Function.h>
 #include <dolfinx/function/FunctionSpace.h>
-// #include <dolfinx/la/PETScVector.h>
-// #include <dolfinx/la/utils.h>
-// #include <dolfinx/graph/AdjacencyList.h>
-// #include <dolfinx/mesh/Mesh.h>
 #include <dolfinx/mesh/Geometry.h>
-#include <dolfinx/mesh/MeshEntity.h>
-#include <dolfinx/mesh/MeshIterator.h>
+#include <dolfinx/mesh/Mesh.h>
+#include <dolfinx/mesh/Topology.h>
 #include <dolfinx/mesh/cell_types.h>
-// #include <dolfinx/mesh/MeshValueCollection.h>
-// #include <dolfinx/mesh/Partitioning.h>
-// #include <iomanip>
-// #include <memory>
-// #include <petscvec.h>
-// #include <set>
-// #include <string>
-// #include <vector>
 #include <map>
 
 using namespace dolfinx;
@@ -187,18 +166,14 @@ std::int64_t xdmf_utils::get_num_cells(const pugi::xml_node& topology_node)
 
   // Check that number of cells can be determined
   if (tdims.size() != 2 and num_cells_topolgy == -1)
-  {
     throw std::runtime_error("Cannot determine number of cells in XMDF mesh");
-  }
 
   // Check for consistency if number of cells appears in both the topology
   // and DataItem nodes
   if (num_cells_topolgy != -1 and tdims.size() == 2)
   {
     if (num_cells_topolgy != tdims[0])
-    {
       throw std::runtime_error("Cannot determine number of cells in XMDF mesh");
-    }
   }
 
   return std::max(num_cells_topolgy, tdims[0]);
@@ -266,11 +241,13 @@ xdmf_utils::get_cell_data_values(const function::Function& u)
   const auto dofmap = u.function_space()->dofmap();
   assert(dofmap->element_dof_layout);
   const int ndofs = dofmap->element_dof_layout->num_dofs();
-  // for (auto& cell : mesh::MeshRange(*mesh, tdim))
-  for (auto& cell : mesh::MeshRange(*mesh, tdim))
+
+  auto map_c = mesh->topology().index_map(0);
+  assert(map_c);
+  for (int cell = 0; map_c->size_local(); ++cell)
   {
     // Tabulate dofs
-    auto dofs = dofmap->cell_dofs(cell.index());
+    auto dofs = dofmap->cell_dofs(cell);
     assert(ndofs == value_size);
     for (int i = 0; i < ndofs; ++i)
       dof_set.push_back(dofs[i]);
@@ -316,33 +293,8 @@ xdmf_utils::get_cell_data_values(const function::Function& u)
   return data_values;
 }
 //-----------------------------------------------------------------------------
-std::string xdmf_utils::vtk_cell_type_str(mesh::CellType cell_type, int order)
-{
-  static const std::map<mesh::CellType, std::map<int, std::string>> vtk_map = {
-      {mesh::CellType::point, {{1, "PolyVertex"}}},
-      {mesh::CellType::interval, {{1, "PolyLine"}, {2, "Edge_3"}}},
-      {mesh::CellType::triangle, {{1, "Triangle"}, {2, "Triangle_6"}}},
-      {mesh::CellType::quadrilateral,
-       {{1, "Quadrilateral"}, {2, "Quadrilateral_9"}}},
-      {mesh::CellType::tetrahedron,
-       {{1, "Tetrahedron"}, {2, "Tetrahedron_10"}}},
-      {mesh::CellType::hexahedron, {{1, "Hexahedron"}, {2, "Hexahedron_27"}}}};
-
-  // Get cell family
-  auto cell = vtk_map.find(cell_type);
-  if (cell == vtk_map.end())
-    throw std::runtime_error("Could not find cell type.");
-
-  // Get cell string
-  auto cell_str = cell->second.find(order);
-  if (cell_str == cell->second.end())
-    throw std::runtime_error("Could not find VTK string for cell order.");
-
-  return cell_str->second;
-}
-//-----------------------------------------------------------------------------
-std::string xdmf_utils::vtk_cell_type_str_new(mesh::CellType cell_type,
-                                              int num_nodes)
+std::string xdmf_utils::vtk_cell_type_str(mesh::CellType cell_type,
+                                          int num_nodes)
 {
   static const std::map<mesh::CellType, std::map<int, std::string>> vtk_map = {
       {mesh::CellType::point, {{1, "PolyVertex"}}},

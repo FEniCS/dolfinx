@@ -105,7 +105,7 @@ Mesh::Mesh(MPI_Comm comm, const Topology& topology, const Geometry& geometry)
 Mesh::Mesh(
     MPI_Comm comm, mesh::CellType type,
     const Eigen::Ref<const Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic,
-                                        Eigen::RowMajor>>& points,
+                                        Eigen::RowMajor>>& x,
     const Eigen::Ref<const Eigen::Array<
         std::int64_t, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>>& cells,
     const std::vector<std::int64_t>&, const GhostMode, std::int32_t)
@@ -114,7 +114,7 @@ Mesh::Mesh(
   assert(cells.cols() > 0);
   const fem::ElementDofLayout layout = fem::geometry_layout(type, cells.cols());
   *this = mesh::create(comm, graph::AdjacencyList<std::int64_t>(cells), layout,
-                       points);
+                       x);
 }
 //-----------------------------------------------------------------------------
 Mesh::Mesh(const Mesh& mesh)

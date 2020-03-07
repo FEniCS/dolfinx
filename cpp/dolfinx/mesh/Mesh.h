@@ -83,18 +83,10 @@ public:
   /// @param[in] geometry Mesh geometry
   Mesh(MPI_Comm comm, const Topology& topology, const Geometry& geometry);
 
+  /// @todo Remove this constructor once the creation of
+  /// ElementDofLayout and coordinate maps is make straightforward
+  ///
   /// Construct a Mesh from topological and geometric data.
-  ///
-  /// In parallel, geometric points must be arranged in global index
-  /// order across processes, starting from 0 on process 0, and must not
-  /// be duplicated. The points will be redistributed to the processes
-  /// that need them.
-  ///
-  /// Cells should be listed only on the processes they appear on, i.e.
-  /// mesh partitioning should be performed on the topology data before
-  /// calling the Mesh constructor. Ghost cells, if present, must be at
-  /// the end of the list of cells, and the number of ghost cells must
-  /// be provided.
   ///
   /// @param[in] comm MPI Communicator
   /// @param[in] type Cell type
@@ -109,14 +101,15 @@ public:
   /// @param[in] ghost_mode The ghost mode
   /// @param[in] num_ghost_cells Number of ghost cells on this process
   ///   (must be at end of list of cells)
-  Mesh(MPI_Comm comm, mesh::CellType type,
-       const Eigen::Ref<const Eigen::Array<
-           double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>>& points,
-       const Eigen::Ref<const Eigen::Array<std::int64_t, Eigen::Dynamic,
-                                           Eigen::Dynamic, Eigen::RowMajor>>&
-           cells,
-       const std::vector<std::int64_t>& global_cell_indices,
-       const GhostMode ghost_mode, std::int32_t num_ghost_cells = 0);
+  [[deprecated]] Mesh(
+      MPI_Comm comm, mesh::CellType type,
+      const Eigen::Ref<const Eigen::Array<double, Eigen::Dynamic,
+                                          Eigen::Dynamic, Eigen::RowMajor>>& x,
+      const Eigen::Ref<const Eigen::Array<std::int64_t, Eigen::Dynamic,
+                                          Eigen::Dynamic, Eigen::RowMajor>>&
+          cells,
+      const std::vector<std::int64_t>& global_cell_indices,
+      const GhostMode ghost_mode, std::int32_t num_ghost_cells = 0);
 
   /// Copy constructor
   /// @param[in] mesh Mesh to be copied

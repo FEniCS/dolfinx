@@ -100,13 +100,12 @@ def test_volume_quadrilateral_coplanarity_check_2(scaling):
     with pytest.raises(RuntimeError) as error:
         # Unit square cell scaled down by 'scaling' and the first vertex
         # is distorted so that the vertices are clearly non coplanar
-        mesh = Mesh(MPI.comm_self, CellType.quadrilateral,
-                    numpy.array(
-                        [[1.0, 0.5, 0.6], [0.0, scaling, 0.0],
-                         [0.0, 0.0, scaling], [0.0, 1.0, 1.0]],
-                        dtype=numpy.float64),
-                    numpy.array([[0, 1, 2, 3]], dtype=numpy.int32), [],
-                    cpp.mesh.GhostMode.none)
+        mesh = cpp.mesh.create(MPI.comm_self, CellType.quadrilateral,
+                               numpy.array(
+                                   [[1.0, 0.5, 0.6], [0.0, scaling, 0.0],
+                                    [0.0, 0.0, scaling], [0.0, 1.0, 1.0]],
+                                   dtype=numpy.float64),
+                               numpy.array([[0, 1, 2, 3]], dtype=numpy.int32))
         mesh.create_connectivity_all()
         cpp.mesh.volume_entities(mesh, [0], mesh.topology.dim)
 
