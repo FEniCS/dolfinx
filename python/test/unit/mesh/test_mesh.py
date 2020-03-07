@@ -41,7 +41,9 @@ def mesh2d():
         MPI.comm_world, [np.array([0.0, 0.0, 0.0]),
                          np.array([1., 1., 0.0])], [1, 1],
         CellType.triangle, cpp.mesh.GhostMode.none, 'left')
-    mesh2d.geometry.x[3, :2] += 0.5 * (math.sqrt(3.0) - 1.0)
+    i1 = np.where((mesh2d.geometry.x
+                   == (1, 1, 0)).all(axis=1))[0][0]
+    mesh2d.geometry.x[i1, :2] += 0.5 * (math.sqrt(3.0) - 1.0)
     return mesh2d
 
 
