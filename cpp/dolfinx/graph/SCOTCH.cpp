@@ -152,7 +152,7 @@ dolfinx::graph::SCOTCH::partition(const MPI_Comm mpi_comm, const int nparts,
   const std::int32_t edgeloctab_size = local_graph.array().size();
   std::vector<SCOTCH_Num> vertloctab(local_graph.offsets().data(),
                                      local_graph.offsets().data()
-                                         + edgeloctab_size);
+                                         + local_graph.offsets().data().size);
 
   // Global data ---------------------------------
 
