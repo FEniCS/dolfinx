@@ -9,6 +9,7 @@
 #include <Eigen/Dense>
 #include <algorithm>
 #include <dolfinx/common/IndexMap.h>
+#include <dolfinx/common/Timer.h>
 #include <dolfinx/common/log.h>
 #include <dolfinx/graph/AdjacencyList.h>
 #include <dolfinx/graph/GraphBuilder.h>
@@ -62,6 +63,8 @@ Partitioning::reorder_global_indices(
     MPI_Comm comm, const std::vector<std::int64_t>& global_indices,
     const std::vector<bool>& shared_indices)
 {
+  common::Timer timer("Re-order global indices");
+
   // TODO: Can this function be broken into multiple logical steps?
 
   assert(global_indices.size() == shared_indices.size());
@@ -386,6 +389,8 @@ Partitioning::partition_cells(MPI_Comm comm, int n,
                               const mesh::CellType cell_type,
                               const graph::AdjacencyList<std::int64_t>& cells)
 {
+  common::Timer timer("Partition cells across processes");
+
   LOG(INFO) << "Compute partition of cells across processes";
 
   // FIXME: Update GraphBuilder to use AdjacencyList
@@ -451,6 +456,8 @@ Partitioning::create_distributed_adjacency_list(
     MPI_Comm comm, const mesh::Topology& topology_local,
     const std::vector<std::int64_t>& local_to_global_vertices)
 {
+  common::Timer timer("Create distributed AdjacencyList");
+
   // Get marker for each vertex indicating if it interior or on the
   // boundary of the local topology
   const std::vector<bool>& exterior_vertex
@@ -481,6 +488,8 @@ Partitioning::distribute(MPI_Comm comm,
                          const graph::AdjacencyList<std::int64_t>& list,
                          const graph::AdjacencyList<std::int32_t>& destinations)
 {
+  common::Timer timer("Distribute AdjacencyList");
+
   assert(list.num_nodes() == (int)destinations.num_nodes());
   const std::int64_t offset_global
       = dolfinx::MPI::global_offset(comm, list.num_nodes(), true);
@@ -643,6 +652,8 @@ Partitioning::fetch_data(
     const Eigen::Ref<const Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic,
                                         Eigen::RowMajor>>& x)
 {
+  common::Timer timer("Fetch float data from remote processes");
+
   // Get number of points globally
   const std::int64_t num_points = dolfinx::MPI::sum(comm, x.rows());
 
@@ -775,6 +786,9 @@ std::vector<std::int64_t> Partitioning::compute_local_to_global_links(
     const graph::AdjacencyList<std::int64_t>& global,
     const graph::AdjacencyList<std::int32_t>& local)
 {
+  common::Timer timer(
+      "Compute-local-to-global links for global/local adjacency list");
+
   // Build local-to-global for adjacency lists
   if (global.num_nodes() != local.num_nodes())
   {
@@ -806,6 +820,7 @@ std::vector<std::int32_t> Partitioning::compute_local_to_local(
     const std::vector<std::int64_t>& local0_to_global,
     const std::vector<std::int64_t>& local1_to_global)
 {
+  common::Timer timer("Compute local-to-local map");
   assert(local0_to_global.size() == local1_to_global.size());
 
   // Compute inverse map for local1_to_global
