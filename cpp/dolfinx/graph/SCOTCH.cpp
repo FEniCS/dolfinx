@@ -146,10 +146,13 @@ dolfinx::graph::SCOTCH::partition(const MPI_Comm mpi_comm, const int nparts,
   const SCOTCH_Num vertlocnbr = local_graph.num_nodes();
   const std::size_t vertgstnbr = vertlocnbr + num_ghost_nodes;
 
-  // Get graph data
+  // Get graph data. vertloctab needs to be copied to match the
+  // SCOTCH_Num type.
   const SCOTCH_Num* edgeloctab = local_graph.array().data();
   const std::int32_t edgeloctab_size = local_graph.array().size();
-  const SCOTCH_Num* vertloctab = local_graph.offsets().data();
+  std::vector<SCOTCH_Num> vertloctab(local_graph.offsets().data(),
+                                     local_graph.offsets().data()
+                                         + edgeloctab_size);
 
   // Global data ---------------------------------
 
@@ -188,10 +191,9 @@ dolfinx::graph::SCOTCH::partition(const MPI_Comm mpi_comm, const int nparts,
   // away constness and trust SCOTCH.
   common::Timer timer1("SCOTCH: call SCOTCH_dgraphBuild");
   if (SCOTCH_dgraphBuild(&dgrafdat, baseval, vertlocnbr, vertlocnbr,
-                         const_cast<SCOTCH_Num*>(vertloctab), nullptr,
-                         vload.data(), nullptr, edgeloctab_size,
-                         edgeloctab_size, const_cast<SCOTCH_Num*>(edgeloctab),
-                         nullptr, nullptr))
+                         vertloctab.data(), nullptr, vload.data(), nullptr,
+                         edgeloctab_size, edgeloctab_size,
+                         const_cast<SCOTCH_Num*>(edgeloctab), nullptr, nullptr))
   {
     throw std::runtime_error("Error building SCOTCH graph");
   }
