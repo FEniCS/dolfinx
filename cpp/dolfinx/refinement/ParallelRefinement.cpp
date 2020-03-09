@@ -416,7 +416,7 @@ mesh::Mesh ParallelRefinement::partition(bool redistribute) const
     // vertices, and map from local index to old global index
     auto [cells_d, vertex_map]
         = mesh::Partitioning::create_distributed_adjacency_list(
-            comm, topology_local, local_to_global_vertices);
+            comm, topology_local, *_cells_local, local_to_global_vertices);
 
     // Set vertex IndexMap, and vertex-vertex connectivity
     auto _vertex_map

@@ -454,6 +454,7 @@ Partitioning::create_local_adjacency_list(
 std::tuple<graph::AdjacencyList<std::int32_t>, common::IndexMap>
 Partitioning::create_distributed_adjacency_list(
     MPI_Comm comm, const mesh::Topology& topology_local,
+    const graph::AdjacencyList<std::int32_t>& list_local,
     const std::vector<std::int64_t>& local_to_global_vertices)
 {
   common::Timer timer("Create distributed AdjacencyList");
@@ -467,18 +468,19 @@ Partitioning::create_distributed_adjacency_list(
   const auto [local_to_local_new, ghosts]
       = reorder_global_indices(comm, local_to_global_vertices, exterior_vertex);
 
-  const int dim = topology_local.dim();
-  auto cv = topology_local.connectivity(dim, 0);
-  if (!cv)
-    throw std::runtime_error("Missing cell-vertex connectivity.");
+  // const int dim = topology_local.dim();
+  // auto cv = topology_local.connectivity(dim, 0);
+  // if (!cv)
+  //   throw std::runtime_error("Missing cell-vertex connectivity.");
 
-  const Eigen::Array<std::int32_t, Eigen::Dynamic, 1>& data_old = cv->array();
+  const Eigen::Array<std::int32_t, Eigen::Dynamic, 1>& data_old
+      = list_local.array();
   Eigen::Array<std::int32_t, Eigen::Dynamic, 1> data_new(data_old.rows());
   for (int i = 0; i < data_new.rows(); ++i)
     data_new[i] = local_to_local_new[data_old[i]];
 
   const int num_owned_vertices = local_to_local_new.size() - ghosts.size();
-  return {graph::AdjacencyList<std::int32_t>(data_new, cv->offsets()),
+  return {graph::AdjacencyList<std::int32_t>(data_new, list_local.offsets()),
           common::IndexMap(comm, num_owned_vertices, ghosts, 1)};
 }
 //-----------------------------------------------------------------------------

@@ -53,9 +53,10 @@ public:
   ///
   /// @param[in] comm The communicator across which the indices are
   ///   distributed
-  /// @param[in] global_indices Global indices on this process
-  /// @param[in] shared_indices Vector that is true for indices on the
-  ///   exterior locally
+  /// @param[in] global_indices Global indices on this process. Some
+  ///   global indices may also be on other processes
+  /// @param[in] shared_indices Vector that is true for indices that may
+  ///   also be in other process. Size is the same as @p global_indices.
   /// @return {Local (old, from local_to_global) -> local (new) indices,
   ///   global indices for ghosts of this process}. The new indices are
   ///   [0, ..., N), with [0, ..., n0) being owned. The new global index
@@ -102,9 +103,14 @@ public:
   /// @param[in] comm
   /// @param[in] topology_local
   /// @param[in] local_to_global_vertices
+  //   static std::tuple<graph::AdjacencyList<std::int32_t>, common::IndexMap>
+  //   create_distributed_adjacency_list(
+  //       MPI_Comm comm, const mesh::Topology& topology_local,
+  //       const std::vector<std::int64_t>& local_to_global_vertices);
   static std::tuple<graph::AdjacencyList<std::int32_t>, common::IndexMap>
   create_distributed_adjacency_list(
       MPI_Comm comm, const mesh::Topology& topology_local,
+      const graph::AdjacencyList<std::int32_t>& list_local,
       const std::vector<std::int64_t>& local_to_global_vertices);
 
   /// Distribute adjacency list nodes to other processes. Does not
