@@ -347,7 +347,7 @@ def test_topology_partition(tempdir, shape, order):
 
     # Fetch node coordinates by global index from other ranks. Order of
     # coords matches order of the indices in 'indices'
-    coords = cpp.mesh.fetch_data(cpp.MPI.comm_world, indices, x)
+    coords = cpp.mesh.distribute_data(cpp.MPI.comm_world, indices, x)
 
     # Compute local-to-global map from local indices in dofmap to the
     # corresponding global indices in cell_nodes

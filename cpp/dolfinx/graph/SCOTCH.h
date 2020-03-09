@@ -6,9 +6,9 @@
 
 #pragma once
 
+#include "AdjacencyList.h"
 #include <cstdint>
 #include <dolfinx/common/MPI.h>
-#include <dolfinx/graph/AdjacencyList.h>
 #include <map>
 #include <string>
 #include <utility>
@@ -38,7 +38,8 @@ public:
   /// @param nparts Number of partitions to divide the graph into
   /// @param local_graph Node connectivity graph
   /// @param node_weights Weight of each node (optional)
-  /// @param num_ghost_nodes Number of graph nodes which are owned on other processes
+  /// @param num_ghost_nodes Number of graph nodes which are owned on other
+  /// processes
   /// @param ghosting Flag to enable ghosting of the output node distribution
   /// @return List of node destinations
   static AdjacencyList<std::int32_t>

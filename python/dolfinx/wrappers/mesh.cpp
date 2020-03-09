@@ -362,12 +362,12 @@ void mesh(py::module& m)
               comm.get(), nparts, cell_type, cells);
         });
 
-  m.def("fetch_data",
+  m.def("distribute_data",
         [](const MPICommWrapper comm, const std::vector<std::int64_t>& indices,
            const Eigen::Ref<const Eigen::Array<
                double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>>& x) {
-          return dolfinx::mesh::Partitioning::fetch_data(comm.get(), indices,
-                                                         x);
+          return dolfinx::mesh::Partitioning::distribute_data(comm.get(),
+                                                              indices, x);
         });
 
   m.def("compute_local_to_global_links",

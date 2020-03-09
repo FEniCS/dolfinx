@@ -566,7 +566,6 @@ Partitioning::exchange(MPI_Comm comm,
   // sending in more information on source/dest ranks
 
   assert(list.num_nodes() == (int)destinations.num_nodes());
-
   const std::int64_t offset_global
       = dolfinx::MPI::global_offset(comm, list.num_nodes(), true);
 
@@ -639,7 +638,7 @@ Partitioning::exchange(MPI_Comm comm,
 }
 //-----------------------------------------------------------------------------
 Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
-Partitioning::fetch_data(
+Partitioning::distribute_data(
     MPI_Comm comm, const std::vector<std::int64_t>& indices,
     const Eigen::Ref<const Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic,
                                         Eigen::RowMajor>>& x)
