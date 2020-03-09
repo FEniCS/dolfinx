@@ -166,7 +166,7 @@ public:
   /// Each column of the returned array represents a cell, and each row an
   /// edge of that cell.
   /// @return An Eigen::Array of bools
-  Eigen::Ref<const Eigen::Array<bool, Eigen::Dynamic, Eigen::Dynamic>>
+  const Eigen::Array<bool, Eigen::Dynamic, Eigen::Dynamic>&
   get_edge_reflections() const;
 
   /// @todo Use std::vector<int32_t> to store 1/0 marker for each edge/face
@@ -175,7 +175,7 @@ public:
   /// Each column of the returned array represents a cell, and each row a
   /// face of that cell.
   /// @return An Eigen::Array of bools
-  Eigen::Ref<const Eigen::Array<bool, Eigen::Dynamic, Eigen::Dynamic>>
+  const Eigen::Array<bool, Eigen::Dynamic, Eigen::Dynamic>&
   get_face_reflections() const;
 
   /// Get an array of numbers that say how many times each face needs to be
@@ -183,7 +183,7 @@ public:
   /// Each column of the returned array represents a cell, and each row a
   /// face of that cell.
   /// @return An Eigen::Array of uint8_ts
-  Eigen::Ref<const Eigen::Array<std::uint8_t, Eigen::Dynamic, Eigen::Dynamic>>
+  const Eigen::Array<std::uint8_t, Eigen::Dynamic, Eigen::Dynamic>&
   get_face_rotations() const;
 
   /// Get the permutation number to apply to a facet.
@@ -193,18 +193,18 @@ public:
   /// Each column of the returned array represents a cell, and each row a
   /// facet of that cell.
   /// @return The permutation number
-  Eigen::Ref<const Eigen::Array<std::uint8_t, Eigen::Dynamic, Eigen::Dynamic>>
+  const Eigen::Array<std::uint8_t, Eigen::Dynamic, Eigen::Dynamic>&
   get_facet_permutations() const;
 
   /// Resize the arrays of permutations and reflections
   /// @param[in] cell_count The number of cells in the mesh
   /// @param[in] edges_per_cell The number of edges per mesh cell
   /// @param[in] faces_per_cell The number of faces per mesh cell
-  void resize_entity_permutations(std::size_t cell_count, int edges_per_cell,
+  void resize_entity_permutations(std::int32_t cell_count, int edges_per_cell,
                                   int faces_per_cell);
 
   /// Retuns the number of rows in the entity_permutations array
-  std::size_t entity_reflection_size() const;
+  std::int32_t entity_reflection_size() const;
 
   /// Set the entity permutations array
   /// @param[in] cell_n The cell index
@@ -212,8 +212,8 @@ public:
   /// @param[in] entity_index The entity number
   /// @param[in] rots The number of rotations to be applied
   /// @param[in] refs The number of reflections to be applied
-  void set_entity_permutation(std::size_t cell_n, int entity_dim,
-                              std::size_t entity_index, std::uint8_t rots,
+  void set_entity_permutation(std::int32_t cell, int entity_dim,
+                              int entity_index, std::uint8_t rots,
                               std::uint8_t refs);
 
 private:
