@@ -7,6 +7,7 @@
 #pragma once
 
 #include <Eigen/Dense>
+#include <Eigen/Sparse>
 #include <dolfinx/common/types.h>
 #include <memory>
 #include <petscmat.h>
@@ -99,6 +100,11 @@ void apply_lifting(
     double scale);
 
 // -- Matrices ---------------------------------------------------------------
+
+// Experimental
+Eigen::SparseMatrix<double, Eigen::RowMajor>
+assemble_matrix(const Form& a,
+                const std::vector<std::shared_ptr<const DirichletBC>>& bcs);
 
 /// Assemble bilinear form into a matrix. Matrix must already be
 /// initialised. Does not zero or finalise the matrix.
