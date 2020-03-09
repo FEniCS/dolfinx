@@ -191,7 +191,7 @@ public:
   std::int32_t entity_reflection_size() const;
 
   /// Set the entity permutations array
-  /// @param[in] cell_n The cell index
+  /// @param[in] cell The cell index
   /// @param[in] entity_dim The topological dimension of the entity
   /// @param[in] entity_index The entity number
   /// @param[in] rots The number of rotations to be applied
