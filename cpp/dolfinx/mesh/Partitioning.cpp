@@ -453,32 +453,24 @@ Partitioning::create_local_adjacency_list(
 //-----------------------------------------------------------------------------
 std::tuple<graph::AdjacencyList<std::int32_t>, common::IndexMap>
 Partitioning::create_distributed_adjacency_list(
-    MPI_Comm comm, const mesh::Topology& topology_local,
-    const std::vector<std::int64_t>& local_to_global_vertices)
+    MPI_Comm comm, const graph::AdjacencyList<std::int32_t>& list_local,
+    const std::vector<std::int64_t>& local_to_global_links,
+    const std::vector<bool>& shared_links)
 {
   common::Timer timer("Create distributed AdjacencyList");
 
-  // Get marker for each vertex indicating if it interior or on the
-  // boundary of the local topology
-  const std::vector<bool>& exterior_vertex
-      = compute_vertex_exterior_markers(topology_local);
-
   // Compute new local and global indices
   const auto [local_to_local_new, ghosts]
-      = reorder_global_indices(comm, local_to_global_vertices, exterior_vertex);
+      = reorder_global_indices(comm, local_to_global_links, shared_links);
 
-  const int dim = topology_local.dim();
-  auto cv = topology_local.connectivity(dim, 0);
-  if (!cv)
-    throw std::runtime_error("Missing cell-vertex connectivity.");
-
-  const Eigen::Array<std::int32_t, Eigen::Dynamic, 1>& data_old = cv->array();
+  const Eigen::Array<std::int32_t, Eigen::Dynamic, 1>& data_old
+      = list_local.array();
   Eigen::Array<std::int32_t, Eigen::Dynamic, 1> data_new(data_old.rows());
   for (int i = 0; i < data_new.rows(); ++i)
     data_new[i] = local_to_local_new[data_old[i]];
 
   const int num_owned_vertices = local_to_local_new.size() - ghosts.size();
-  return {graph::AdjacencyList<std::int32_t>(data_new, cv->offsets()),
+  return {graph::AdjacencyList<std::int32_t>(data_new, list_local.offsets()),
           common::IndexMap(comm, num_owned_vertices, ghosts, 1)};
 }
 //-----------------------------------------------------------------------------
@@ -574,7 +566,6 @@ Partitioning::exchange(MPI_Comm comm,
   // sending in more information on source/dest ranks
 
   assert(list.num_nodes() == (int)destinations.num_nodes());
-
   const std::int64_t offset_global
       = dolfinx::MPI::global_offset(comm, list.num_nodes(), true);
 
@@ -647,7 +638,7 @@ Partitioning::exchange(MPI_Comm comm,
 }
 //-----------------------------------------------------------------------------
 Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
-Partitioning::fetch_data(
+Partitioning::distribute_data(
     MPI_Comm comm, const std::vector<std::int64_t>& indices,
     const Eigen::Ref<const Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic,
                                         Eigen::RowMajor>>& x)

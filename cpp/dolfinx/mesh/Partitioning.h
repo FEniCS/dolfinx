@@ -36,10 +36,12 @@ class Topology;
 class Partitioning
 {
 public:
+  /// @todo Move elsewhere
+  ///
   /// Compute markers for interior/boundary vertices
   /// @param[in] topology_local Local topology
   /// @return Array where the ith entry is true if the ith vertex is on
-  /// the boundary
+  ///   the boundary
   static std::vector<bool>
   compute_vertex_exterior_markers(const mesh::Topology& topology_local);
 
@@ -53,9 +55,10 @@ public:
   ///
   /// @param[in] comm The communicator across which the indices are
   ///   distributed
-  /// @param[in] global_indices Global indices on this process
-  /// @param[in] shared_indices Vector that is true for indices on the
-  ///   exterior locally
+  /// @param[in] global_indices Global indices on this process. Some
+  ///   global indices may also be on other processes
+  /// @param[in] shared_indices Vector that is true for indices that may
+  ///   also be in other process. Size is the same as @p global_indices.
   /// @return {Local (old, from local_to_global) -> local (new) indices,
   ///   global indices for ghosts of this process}. The new indices are
   ///   [0, ..., N), with [0, ..., n0) being owned. The new global index
@@ -70,6 +73,7 @@ public:
 
   /// Compute destination rank for mesh cells in this rank using a graph
   /// partitioner
+  ///
   /// @param[in] comm MPI Communicator
   /// @param[in] n Number of partitions
   /// @param[in] cell_type Cell type
@@ -85,6 +89,7 @@ public:
 
   /// Compute a local AdjacencyList list with contiguous indices from an
   /// AdjacencyList that may have non-contiguous data
+  ///
   /// @param[in] list Adjacency list with links that might not have
   ///   contiguous numdering
   /// @return Adjacency list with contiguous ordering [0, 1, ..., n),
@@ -94,24 +99,31 @@ public:
                    std::vector<std::int64_t>>
   create_local_adjacency_list(const graph::AdjacencyList<std::int64_t>& list);
 
-  /// @todo Avoid passing Topology
-  ///
   /// Build a distributed AdjacencyList list with re-numbered links from
   /// an AdjacencyList that may have non-contiguous data. The
   /// distribution of the AdjacencyList nodes is unchanged.
-  /// @param[in] comm
-  /// @param[in] topology_local
-  /// @param[in] local_to_global_vertices
+  ///
+  /// @param[in] comm MPI communicator
+  /// @param[in] list_local Local adjacency list, with contiguous link
+  ///   indices
+  /// @param[in] local_to_global_links Local-to-global map for links in
+  ///   the local adjacency list
+  /// @param[in] shared_links Try for possible shared links
   static std::tuple<graph::AdjacencyList<std::int32_t>, common::IndexMap>
   create_distributed_adjacency_list(
-      MPI_Comm comm, const mesh::Topology& topology_local,
-      const std::vector<std::int64_t>& local_to_global_vertices);
+      MPI_Comm comm, const graph::AdjacencyList<std::int32_t>& list_local,
+      const std::vector<std::int64_t>& local_to_global_links,
+      const std::vector<bool>& shared_links);
 
-  /// Distribute adjacency list nodes to other processes. Does not
-  /// change any numbering. The global index of each node is assumed to
-  /// be the local index plus the offset for this rank.
+  /// Distribute adjacency list nodes to destination ranks. The global
+  /// index of each node is assumed to be the local index plus the
+  /// offset for this rank.
+  ///
+  /// \see Partitioning::exchange for the case where the source ranks
+  /// are known.
+  ///
   /// @param[in] comm MPI Communicator
-  /// @param[in] list An adjacency list to distribute
+  /// @param[in] list The adjacency list to distribute
   /// @param[in] destinations Destination ranks for the ith node in the
   ///   adjacency list
   /// @return Adjacency list for this process, array of source ranks for
@@ -122,39 +134,51 @@ public:
   distribute(MPI_Comm comm, const graph::AdjacencyList<std::int64_t>& list,
              const graph::AdjacencyList<std::int32_t>& destinations);
 
-  /// Send nodes to destinations, and receive from sources
+  /// @todo Is the original global index of each node required?
+  /// @todo Can this be merged with Partitioning::distribute?
+  ///
+  /// Distribute adjacency list nodes to destination ranks. The global
+  /// index of each node is assumed to be the local index plus the
+  /// offset for this rank.
+  ///
+  /// \see Partitioning::distribute for the case where the source ranks
+  /// are not known.
+  ///
   /// @param[in] comm MPI communicator
   /// @param[in] list An adjacency list. Each node is associated with a
-  ///   global index (index_local + global offset)
-  /// @param[in] destinations The destination ranks for each node in list
-  /// @param[in] sources Ranks that will send data to this process
+  ///   global index (index_local + process global offset)
+  /// @param[in] destinations The destination ranks for each node in @p
+  ///   list
+  /// @param[in] sources Ranks that will send nodes data to this process
   /// @return Re-distributed adjacency list and the original global
   ///   index of each node
-  /// @todo Is  the original global index of each node required?
   static std::pair<graph::AdjacencyList<std::int64_t>,
                    std::vector<std::int64_t>>
   exchange(MPI_Comm comm, const graph::AdjacencyList<std::int64_t>& list,
            const graph::AdjacencyList<std::int32_t>& destinations,
            const std::set<int>& sources);
 
-  /// Distribute data to process ranks where it it required.
+  /// Distribute data to process ranks where it it required
   ///
   /// @param[in] comm The MPI communicator
   /// @param[in] indices Global indices of the data required by this
   ///   process
-  /// @param[in] x Data on this process. The global index for the [0,
-  ///   ..., n) rows on this process is assumed to be the local index
-  ///   plus the offset for this process.
-  /// @return The data for each in @p indices
+  /// @param[in] x Data on this process which may be distributed (by
+  ///   row). The global index for the [0, ..., n) rows on this process
+  ///   is assumed to be the local index plus the offset for this
+  ///   process
+  /// @return The data for each index in @p indices
   static Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
-  fetch_data(MPI_Comm comm, const std::vector<std::int64_t>& indices,
-             const Eigen::Ref<const Eigen::Array<
-                 double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>>& x);
+  distribute_data(
+      MPI_Comm comm, const std::vector<std::int64_t>& indices,
+      const Eigen::Ref<const Eigen::Array<double, Eigen::Dynamic,
+                                          Eigen::Dynamic, Eigen::RowMajor>>& x);
 
   /// Given an adjacency list with global, possibly non-contiguous, link
   /// indices and a local adjacency list with contiguous link indices
   /// starting from zero, compute a local-to-global map for the links.
   /// Both adjacency lists must have the same shape.
+  ///
   /// @param[in] global Adjacency list with global link indices
   /// @param[in] local Adjacency list with local, contiguous link
   ///   indices
@@ -167,6 +191,7 @@ public:
 
   /// Compute a local0-to-local1 map from two local-to-global maps with
   /// common global indices
+  ///
   /// @param[in] local0_to_global Map from local0 indices to global
   ///   indices
   /// @param[in] local1_to_global Map from local1 indices to global
