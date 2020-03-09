@@ -109,14 +109,41 @@ void fem::assemble_matrix(
     }
   }
 
+  const std::function<int(PetscInt, const PetscInt*, PetscInt, const PetscInt*,
+                          const PetscScalar*)>
+      mat_set_values_local
+      = [&A](PetscInt nrow, const PetscInt* rows, PetscInt ncol,
+             const PetscInt* cols, const PetscScalar* y) {
+          PetscErrorCode ierr
+              = MatSetValuesLocal(A, nrow, rows, ncol, cols, y, ADD_VALUES);
+#ifdef DEBUG
+          if (ierr != 0)
+            la::petsc_error(ierr, __FILE__, "MatSetValuesLocal");
+#endif
+          return 0;
+        };
+
   // Assemble
-  impl::assemble_matrix(A, a, dof_marker0, dof_marker1);
+  impl::assemble_matrix(mat_set_values_local, a, dof_marker0, dof_marker1);
 }
 //-----------------------------------------------------------------------------
 void fem::assemble_matrix(Mat A, const Form& a, const std::vector<bool>& bc0,
                           const std::vector<bool>& bc1)
 {
-  impl::assemble_matrix(A, a, bc0, bc1);
+  const std::function<int(PetscInt, const PetscInt*, PetscInt, const PetscInt*,
+                          const PetscScalar*)>
+      mat_set_values_local
+      = [&A](PetscInt nrow, const PetscInt* rows, PetscInt ncol,
+             const PetscInt* cols, const PetscScalar* y) {
+          PetscErrorCode ierr
+              = MatSetValuesLocal(A, nrow, rows, ncol, cols, y, ADD_VALUES);
+#ifdef DEBUG
+          if (ierr != 0)
+            la::petsc_error(ierr, __FILE__, "MatSetValuesLocal");
+#endif
+        };
+
+  impl::assemble_matrix(mat_set_values_local, a, bc0, bc1);
 }
 //-----------------------------------------------------------------------------
 void fem::add_diagonal(
