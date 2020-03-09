@@ -53,14 +53,12 @@ def test_triangle_dof_ordering(space_type):
 
         # On process 0, input mesh data and distribute to other
         # processes
-        mesh = cpp.mesh.build_distributed_mesh(MPI.comm_world, CellType.triangle, points,
-                                               np.array(cells), [], cpp.mesh.GhostMode.none,
-                                               cpp.mesh.Partitioner.scotch)
+        mesh = cpp.mesh.Mesh(MPI.comm_world, CellType.triangle, points,
+                             np.array(cells), [], cpp.mesh.GhostMode.none)
     else:
         # On other processes, accept distributed data
-        mesh = cpp.mesh.build_distributed_mesh(MPI.comm_world, CellType.triangle, np.ndarray((0, 2)),
-                                               np.ndarray((0, 3)), [], cpp.mesh.GhostMode.none,
-                                               cpp.mesh.Partitioner.scotch)
+        mesh = cpp.mesh.Mesh(MPI.comm_world, CellType.triangle, np.ndarray((0, 2)),
+                             np.ndarray((0, 3)), [], cpp.mesh.GhostMode.none)
 
     V = FunctionSpace(mesh, space_type)
     dofmap = V.dofmap
@@ -128,14 +126,12 @@ def test_tetrahedron_dof_ordering(space_type):
                         cells.append(cell)
         # On process 0, input mesh data and distribute to other
         # processes
-        mesh = cpp.mesh.build_distributed_mesh(MPI.comm_world, CellType.tetrahedron, points,
-                                               np.array(cells), [], cpp.mesh.GhostMode.none,
-                                               cpp.mesh.Partitioner.scotch)
+        mesh = cpp.mesh.Mesh(MPI.comm_world, CellType.tetrahedron, points,
+                             np.array(cells), [], cpp.mesh.GhostMode.none)
     else:
         # On other processes, accept distributed data
-        mesh = cpp.mesh.build_distributed_mesh(MPI.comm_world, CellType.tetrahedron, np.ndarray((0, 3)),
-                                               np.ndarray((0, 4)), [], cpp.mesh.GhostMode.none,
-                                               cpp.mesh.Partitioner.scotch)
+        mesh = cpp.mesh.Mesh(MPI.comm_world, CellType.tetrahedron, np.ndarray((0, 3)),
+                             np.ndarray((0, 4)), [], cpp.mesh.GhostMode.none)
 
     V = FunctionSpace(mesh, space_type)
     dofmap = V.dofmap
@@ -204,14 +200,12 @@ def test_quadrilateral_dof_ordering(space_type):
 
         # On process 0, input mesh data and distribute to other
         # processes
-        mesh = cpp.mesh.build_distributed_mesh(MPI.comm_world, CellType.quadrilateral, points,
-                                               np.array(cells), [], cpp.mesh.GhostMode.none,
-                                               cpp.mesh.Partitioner.scotch)
+        mesh = cpp.mesh.Mesh(MPI.comm_world, CellType.quadrilateral, points,
+                             np.array(cells), [], cpp.mesh.GhostMode.none)
     else:
         # On other processes, accept distributed data
-        mesh = cpp.mesh.build_distributed_mesh(MPI.comm_world, CellType.quadrilateral, np.ndarray((0, 2)),
-                                               np.ndarray((0, 4)), [], cpp.mesh.GhostMode.none,
-                                               cpp.mesh.Partitioner.scotch)
+        mesh = cpp.mesh.Mesh(MPI.comm_world, CellType.quadrilateral, np.ndarray((0, 2)),
+                             np.ndarray((0, 4)), [], cpp.mesh.GhostMode.none)
 
     V = FunctionSpace(mesh, space_type)
     dofmap = V.dofmap
@@ -272,14 +266,12 @@ def test_hexahedron_dof_ordering(space_type):
 
         # On process 0, input mesh data and distribute to other
         # processes
-        mesh = cpp.mesh.build_distributed_mesh(MPI.comm_world, CellType.hexahedron, points,
-                                               np.array(cells), [], cpp.mesh.GhostMode.none,
-                                               cpp.mesh.Partitioner.scotch)
+        mesh = cpp.mesh.Mesh(MPI.comm_world, CellType.hexahedron, points,
+                             np.array(cells), [], cpp.mesh.GhostMode.none)
     else:
         # On other processes, accept distributed data
-        mesh = cpp.mesh.build_distributed_mesh(MPI.comm_world, CellType.hexahedron, np.ndarray((0, 3)),
-                                               np.ndarray((0, 8)), [], cpp.mesh.GhostMode.none,
-                                               cpp.mesh.Partitioner.scotch)
+        mesh = cpp.mesh.Mesh(MPI.comm_world, CellType.hexahedron, np.ndarray((0, 3)),
+                             np.ndarray((0, 8)), [], cpp.mesh.GhostMode.none)
 
     V = FunctionSpace(mesh, space_type)
     dofmap = V.dofmap

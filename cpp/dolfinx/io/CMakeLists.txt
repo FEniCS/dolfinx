@@ -7,12 +7,10 @@ set(HEADERS_io
   ${CMAKE_CURRENT_SOURCE_DIR}/VTKFile.h
   ${CMAKE_CURRENT_SOURCE_DIR}/VTKWriter.h
   ${CMAKE_CURRENT_SOURCE_DIR}/XDMFFile.h
-  ${CMAKE_CURRENT_SOURCE_DIR}/XDMFFileNew.h
   ${CMAKE_CURRENT_SOURCE_DIR}/xdmf_function.h
   ${CMAKE_CURRENT_SOURCE_DIR}/xdmf_mesh.h
   ${CMAKE_CURRENT_SOURCE_DIR}/xdmf_read.h
   ${CMAKE_CURRENT_SOURCE_DIR}/xdmf_utils.h
-  ${CMAKE_CURRENT_SOURCE_DIR}/xdmf_write.h
   PARENT_SCOPE)
 
 target_sources(dolfinx PRIVATE
@@ -24,10 +22,7 @@ target_sources(dolfinx PRIVATE
   ${CMAKE_CURRENT_SOURCE_DIR}/VTKFile.cpp
   ${CMAKE_CURRENT_SOURCE_DIR}/VTKWriter.cpp
   ${CMAKE_CURRENT_SOURCE_DIR}/XDMFFile.cpp
-  ${CMAKE_CURRENT_SOURCE_DIR}/XDMFFileNew.cpp
   ${CMAKE_CURRENT_SOURCE_DIR}/xdmf_function.cpp
   ${CMAKE_CURRENT_SOURCE_DIR}/xdmf_mesh.cpp
-  ${CMAKE_CURRENT_SOURCE_DIR}/xdmf_read.cpp
   ${CMAKE_CURRENT_SOURCE_DIR}/xdmf_utils.cpp
-  ${CMAKE_CURRENT_SOURCE_DIR}/xdmf_write.cpp
 )

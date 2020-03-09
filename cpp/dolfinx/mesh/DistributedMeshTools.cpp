@@ -5,16 +5,9 @@
 // SPDX-License-Identifier:    LGPL-3.0-or-later
 
 #include "DistributedMeshTools.h"
-#include "MeshFunction.h"
-#include "cell_types.h"
-#include "dolfinx/common/IndexMap.h"
 #include "dolfinx/common/MPI.h"
 #include "dolfinx/common/Timer.h"
-#include "dolfinx/graph/Graph.h"
-#include "dolfinx/graph/SCOTCH.h"
 #include <Eigen/Dense>
-#include <complex>
-#include <dolfinx/common/log.h>
 
 using namespace dolfinx;
 using namespace dolfinx::mesh;
@@ -107,18 +100,5 @@ DistributedMeshTools::reorder_by_global_indices(
 {
   return reorder_values_by_global_indices<double>(mpi_comm, values,
                                                   global_indices);
-}
-//-----------------------------------------------------------------------------
-Eigen::Array<std::complex<double>, Eigen::Dynamic, Eigen::Dynamic,
-             Eigen::RowMajor>
-DistributedMeshTools::reorder_by_global_indices(
-    MPI_Comm mpi_comm,
-    const Eigen::Ref<const Eigen::Array<std::complex<double>, Eigen::Dynamic,
-                                        Eigen::Dynamic, Eigen::RowMajor>>&
-        values,
-    const std::vector<std::int64_t>& global_indices)
-{
-  return reorder_values_by_global_indices<std::complex<double>>(
-      mpi_comm, values, global_indices);
 }
 //-----------------------------------------------------------------------------

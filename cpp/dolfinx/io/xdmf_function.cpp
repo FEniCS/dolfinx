@@ -164,6 +164,7 @@ void xdmf_function::write(const function::Function& u, double t, int counter,
   else
     data_values = xdmf_utils::get_point_data_values(u);
 
+
   auto map_c = mesh->topology().index_map(mesh->topology().dim());
   assert(map_c);
 
