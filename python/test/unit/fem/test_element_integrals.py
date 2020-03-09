@@ -249,11 +249,14 @@ def xtest_plus_minus_simple_vector(cell_type, pm):
     spaces = []
     for count in range(3):
         for agree in [True, False]:
+            # Two cell mesh with randomly numbered points
             mesh, order = two_unit_cells(cell_type, agree, return_order=True)
             if cell_type in [CellType.interval, CellType.triangle, CellType.tetrahedron]:
                 V = FunctionSpace(mesh, ("DG", 1))
             else:
                 V = FunctionSpace(mesh, ("DQ", 1))
+
+            # Assemble vectors v['+'] * dS and v['-'] * dS for a few different numberings
             v = TestFunction(V)
             a = inner(1, v(pm)) * dS
             result = fem.assemble_vector(a)
@@ -262,12 +265,18 @@ def xtest_plus_minus_simple_vector(cell_type, pm):
             results.append(result)
             orders.append(order)
 
+    # Check that the above vectors all have the same values, but permuted due to differently
+    # ordered dofs
+    # For each pair of results
     for i, j in combinations(zip(results, spaces, orders), 2):
-        dof_order = []
+        # For each cell
         for cell in range(2):
+            # For each point in the mesh
             for point in range(len(mesh.geometry.x)):
+                # Get the point's number in the second of the pair of results
                 point_n = j[2][point]
                 cell_points = list(j[1].mesh.cells()[cell])
+                # If the point is in the current cell, find out which dof is at the point
                 if point_n in cell_points:
                     point_n_in_cell = cell_points.index(point_n)
                     dofmap = j[1].dofmap.cell_dofs(cell)
@@ -275,8 +284,10 @@ def xtest_plus_minus_simple_vector(cell_type, pm):
                 else:
                     j_dof_n = None
 
+                # Get the point's number in the first of the pair of results
                 point_n = i[2][point]
                 cell_points = list(i[1].mesh.cells()[cell])
+                # If the point is in the current cell, find out which dof is at the point
                 if point_n in cell_points:
                     point_n_in_cell = cell_points.index(point_n)
                     dofmap = i[1].dofmap.cell_dofs(cell)
@@ -284,13 +295,11 @@ def xtest_plus_minus_simple_vector(cell_type, pm):
                 else:
                     i_dof_n = None
 
+                # Either the point is not in the cell, or the values at that dof are equal
                 if i_dof_n is None:
                     assert j_dof_n is None
                 else:
-                    dof_order.append((i_dof_n, j_dof_n))
-
-        for a, b in dof_order:
-            assert np.isclose(i[0][a], j[0][b])
+                    assert np.isclose(i[0][i_dof_n], j[0][j_dof_n])
 
 
 @skip_in_parallel
@@ -304,12 +313,15 @@ def xtest_plus_minus_vector(cell_type, pm1, pm2):
     spaces = []
     for count in range(3):
         for agree in [True, False]:
+            # Two cell mesh with randomly numbered points
             mesh, order = two_unit_cells(cell_type, agree, return_order=True)
 
             if cell_type in [CellType.interval, CellType.triangle, CellType.tetrahedron]:
                 V = FunctionSpace(mesh, ("DG", 1))
             else:
                 V = FunctionSpace(mesh, ("DQ", 1))
+
+            # Assemble vectors with combinations of + and - for a few different numberings
             f = Function(V)
             f.interpolate(lambda x: x[0] - 2 * x[1])
             v = TestFunction(V)
@@ -320,12 +332,18 @@ def xtest_plus_minus_vector(cell_type, pm1, pm2):
             results.append(result)
             orders.append(order)
 
+    # Check that the above vectors all have the same values, but permuted due to differently
+    # ordered dofs
+    # For each pair of results
     for i, j in combinations(zip(results, spaces, orders), 2):
-        dof_order = []
+        # For each cell
         for cell in range(2):
+            # For each point in the mesh
             for point in range(len(mesh.geometry.x)):
+                # Get the point's number in the second of the pair of results
                 point_n = j[2][point]
                 cell_points = list(j[1].mesh.cells()[cell])
+                # If the point is in the current cell, find out which dof is at the point
                 if point_n in cell_points:
                     point_n_in_cell = cell_points.index(point_n)
                     dofmap = j[1].dofmap.cell_dofs(cell)
@@ -333,8 +351,10 @@ def xtest_plus_minus_vector(cell_type, pm1, pm2):
                 else:
                     j_dof_n = None
 
+                # Get the point's number in the first of the pair of results
                 point_n = i[2][point]
                 cell_points = list(i[1].mesh.cells()[cell])
+                # If the point is in the current cell, find out which dof is at the point
                 if point_n in cell_points:
                     point_n_in_cell = cell_points.index(point_n)
                     dofmap = i[1].dofmap.cell_dofs(cell)
@@ -342,13 +362,11 @@ def xtest_plus_minus_vector(cell_type, pm1, pm2):
                 else:
                     i_dof_n = None
 
+                # Either the point is not in the cell, or the values at that dof are equal
                 if i_dof_n is None:
                     assert j_dof_n is None
                 else:
-                    dof_order.append((i_dof_n, j_dof_n))
-
-        for a, b in dof_order:
-            assert np.isclose(i[0][a], j[0][b])
+                    assert np.isclose(i[0][i_dof_n], j[0][j_dof_n])
 
 
 @skip_in_parallel
@@ -362,10 +380,13 @@ def xtest_plus_minus_matrix(cell_type, pm1, pm2):
     orders = []
     for count in range(3):
         for agree in [True, False]:
+            # Two cell mesh with randomly numbered points
             mesh, order = two_unit_cells(cell_type, agree, return_order=True)
 
             V = FunctionSpace(mesh, ("DG", 1))
             u, v = TrialFunction(V), TestFunction(V)
+
+            # Assemble matrices with combinations of + and - for a few different numberings
             a = inner(u(pm1), v(pm2)) * dS
             result = fem.assemble_matrix(a, [])
             result.assemble()
@@ -373,12 +394,19 @@ def xtest_plus_minus_matrix(cell_type, pm1, pm2):
             results.append(result)
             orders.append(order)
 
+    # Check that the above matrices all have the same values, but permuted due to differently
+    # ordered dofs
+    # For each pair of results
     for i, j in combinations(zip(results, spaces, orders), 2):
         dof_order = []
+        # For each cell
         for cell in range(2):
+            # For each point in the mesh
             for point in range(len(mesh.geometry.x)):
+                # Get the point's number in the second of the pair of results
                 point_n = j[2][point]
                 cell_points = list(j[1].mesh.cells()[cell])
+                # If the point is in the current cell, find out which dof is at the point
                 if point_n in cell_points:
                     point_n_in_cell = cell_points.index(point_n)
                     dofmap = j[1].dofmap.cell_dofs(cell)
@@ -386,8 +414,10 @@ def xtest_plus_minus_matrix(cell_type, pm1, pm2):
                 else:
                     j_dof_n = None
 
+                # Get the point's number in the first of the pair of results
                 point_n = i[2][point]
                 cell_points = list(i[1].mesh.cells()[cell])
+                # If the point is in the current cell, find out which dof is at the point
                 if point_n in cell_points:
                     point_n_in_cell = cell_points.index(point_n)
                     dofmap = i[1].dofmap.cell_dofs(cell)
@@ -395,11 +425,13 @@ def xtest_plus_minus_matrix(cell_type, pm1, pm2):
                 else:
                     i_dof_n = None
 
+                # Either the point is not in the cell, or store this dof pair
                 if i_dof_n is None:
                     assert j_dof_n is None
                 else:
                     dof_order.append((i_dof_n, j_dof_n))
 
+        # For all dof pairs, check that entries in the matrix agree
         for a, b in dof_order:
             for c, d in dof_order:
                 assert np.isclose(i[0][a, c], j[0][b, d])
