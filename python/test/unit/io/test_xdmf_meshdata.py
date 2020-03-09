@@ -10,17 +10,17 @@ import pytest
 
 from dolfinx import MPI, UnitCubeMesh, UnitIntervalMesh, UnitSquareMesh
 from dolfinx.cpp.mesh import CellType
-from dolfinx.io import XDMFFileNew
+from dolfinx.io import XDMFFile
 from dolfinx_utils.test.fixtures import tempdir
 
 assert (tempdir)
 
 # Supported XDMF file encoding
 if MPI.size(MPI.comm_world) > 1:
-    encodings = (XDMFFileNew.Encoding.HDF5, )
+    encodings = (XDMFFile.Encoding.HDF5, )
 else:
-    encodings = (XDMFFileNew.Encoding.HDF5, XDMFFileNew.Encoding.ASCII)
-    encodings = (XDMFFileNew.Encoding.HDF5, )
+    encodings = (XDMFFile.Encoding.HDF5, XDMFFile.Encoding.ASCII)
+    encodings = (XDMFFile.Encoding.HDF5, )
 
 celltypes_2D = [CellType.triangle, CellType.quadrilateral]
 celltypes_3D = [CellType.tetrahedron, CellType.hexahedron]
@@ -49,11 +49,11 @@ def worker_id(request):
 def test_read_mesh_data(tempdir, tdim, n):
     filename = os.path.join(tempdir, "mesh.xdmf")
     mesh = mesh_factory(tdim, n)
-    encoding = XDMFFileNew.Encoding.HDF5
-    with XDMFFileNew(mesh.mpi_comm(), filename, encoding) as file:
+    encoding = XDMFFile.Encoding.HDF5
+    with XDMFFile(mesh.mpi_comm(), filename, encoding) as file:
         file.write(mesh)
 
-    with XDMFFileNew(MPI.comm_world, filename) as file:
+    with XDMFFile(MPI.comm_world, filename) as file:
         cell_type, x, cells = file.read_mesh_data()
 
     assert cell_type == mesh.topology.cell_type

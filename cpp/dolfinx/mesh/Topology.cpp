@@ -5,7 +5,7 @@
 // SPDX-License-Identifier:    LGPL-3.0-or-later
 
 #include "Topology.h"
-#include "PartitioningNew.h"
+#include "Partitioning.h"
 #include "TopologyComputation.h"
 #include "utils.h"
 #include <dolfinx/common/IndexMap.h>
@@ -87,17 +87,6 @@ Topology::Topology(mesh::CellType type)
 }
 //-----------------------------------------------------------------------------
 int Topology::dim() const { return _connectivity.rows() - 1; }
-//-----------------------------------------------------------------------------
-const std::vector<std::int64_t>& Topology::get_global_vertices_user() const
-{
-  return _global_user_vertices;
-}
-//-----------------------------------------------------------------------------
-void Topology::set_global_vertices_user(
-    const std::vector<std::int64_t>& indices)
-{
-  _global_user_vertices = indices;
-}
 //-----------------------------------------------------------------------------
 void Topology::set_index_map(int dim,
                              std::shared_ptr<const common::IndexMap> index_map)
@@ -370,19 +359,19 @@ mesh::create_topology(MPI_Comm comm,
   // Compute the destination rank for cells on this process via graph
   // partitioning
   const graph::AdjacencyList<std::int32_t> dest
-      = PartitioningNew::partition_cells(comm, size, layout.cell_type(),
+      = Partitioning::partition_cells(comm, size, layout.cell_type(),
                                          cells_v);
 
   // Distribute cells to destination rank
   const auto [my_cells, src, original_cell_index]
-      = PartitioningNew::distribute(comm, cells_v, dest);
+      = Partitioning::distribute(comm, cells_v, dest);
 
   // Build local cell-vertex connectivity, with local vertex indices
   // [0, 1, 2, ..., n), from cell-vertex connectivity using global
   // indices and get map from global vertex indices in 'cells' to the
   // local vertex indices
   auto [cells_local, local_to_global_vertices]
-      = PartitioningNew::create_local_adjacency_list(my_cells);
+      = Partitioning::create_local_adjacency_list(my_cells);
 
   // Create (i) local topology object and (ii) IndexMap for cells, and
   // set cell-vertex topology
@@ -428,7 +417,7 @@ mesh::create_topology(MPI_Comm comm,
   // Build distributed cell-vertex AdjacencyList, IndexMap for
   // vertices, and map from local index to old global index
   auto [cells_d, vertex_map]
-      = PartitioningNew::create_distributed_adjacency_list(
+      = Partitioning::create_distributed_adjacency_list(
           comm, topology_local, local_to_global_vertices);
 
   Topology topology(layout.cell_type());

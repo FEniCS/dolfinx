@@ -57,10 +57,8 @@ std::vector<PetscScalar> get_point_data_values(const function::Function& u);
 /// Get cell data values as a flattened 2D array
 std::vector<PetscScalar> get_cell_data_values(const function::Function& u);
 
-std::string vtk_cell_type_str(mesh::CellType cell_type, int order);
-
 /// Get the VTK string identifier
-std::string vtk_cell_type_str_new(mesh::CellType cell_type, int num_nodes);
+std::string vtk_cell_type_str(mesh::CellType cell_type, int num_nodes);
 
 /// TODO: Document
 template <typename T>

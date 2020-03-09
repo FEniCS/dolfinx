@@ -39,7 +39,7 @@ void xdmf_mesh::add_topology_data(MPI_Comm comm, pugi::xml_node& xml_node,
   // FIXME: sort out degree/cell type
   // Get VTK string for cell type
   const std::string vtk_cell_str
-      = xdmf_utils::vtk_cell_type_str_new(entity_cell_type, num_nodes_per_cell);
+      = xdmf_utils::vtk_cell_type_str(entity_cell_type, num_nodes_per_cell);
 
   pugi::xml_node topology_node = xml_node.append_child("Topology");
   assert(topology_node);

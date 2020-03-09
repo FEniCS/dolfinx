@@ -11,7 +11,6 @@
 #include <dolfinx/generation/IntervalMesh.h>
 #include <dolfinx/generation/RectangleMesh.h>
 #include <dolfinx/generation/UnitDiscMesh.h>
-#include <dolfinx/generation/UnitTriangleMesh.h>
 #include <iostream>
 #include <memory>
 #include <pybind11/eigen.h>
@@ -54,10 +53,6 @@ void generation(py::module& m)
           },
           py::arg("comm"), py::arg("p"), py::arg("n"), py::arg("cell_type"),
           py::arg("ghost_mode"), py::arg("diagonal") = "right");
-
-  // dolfinx::UnitTriangleMesh
-  py::class_<dolfinx::generation::UnitTriangleMesh>(m, "UnitTriangleMesh")
-      .def_static("create", &dolfinx::generation::UnitTriangleMesh::create);
 
   // dolfinx::UnitDiscMesh
   py::class_<dolfinx::generation::UnitDiscMesh>(m, "UnitDiscMesh")

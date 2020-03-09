@@ -79,22 +79,6 @@ public:
   /// Return topological dimension
   int dim() const;
 
-  /// @todo Remove this function, or use constructor
-  ///
-  /// Set the input, e.g. from file, global indices for vertices
-  /// @param[in] indices Map from local (process) vertex index to input
-  ///   (user) global index
-  void set_global_vertices_user(const std::vector<std::int64_t>& indices);
-
-  /// @todo Remove this function if possible
-  ///
-  /// Get the map from local vertex indices to the global user (input)
-  /// indices
-  /// @return The map from local vertex indices to the global input
-  /// indices. Note these global will generally differ from the global
-  /// indices given by the IndexMap for vertices.
-  const std::vector<std::int64_t>& get_global_vertices_user() const;
-
   /// @todo Merge withset_connectivity
   /// Set the IndexMap for dimension dim
   /// @warning This is experimental and likely to change
@@ -219,9 +203,6 @@ public:
 private:
   // Cell type
   mesh::CellType _cell_type;
-
-  // Global indices for vertices
-  std::vector<std::int64_t> _global_user_vertices;
 
   // IndexMap to store ghosting for each entity dimension
   std::array<std::shared_ptr<const common::IndexMap>, 4> _index_map;

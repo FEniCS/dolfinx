@@ -6,7 +6,6 @@
 
 #include "IntervalMesh.h"
 #include "dolfinx/common/MPI.h"
-#include "dolfinx/mesh/Partitioning.h"
 #include <Eigen/Dense>
 #include <cfloat>
 #include <cmath>

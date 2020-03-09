@@ -37,10 +37,16 @@ class AdjacencyList;
 namespace mesh
 {
 class Geometry;
-enum class GhostMode : int;
 class MeshEntity;
 class Topology;
 
+/// Enum for different partitioning ghost modes
+enum class GhostMode : int
+{
+  none,
+  shared_facet,
+  shared_vertex
+};
 /// A _Mesh_ consists of a set of connected and numbered mesh entities.
 ///
 /// Both the representation and the interface are
@@ -77,23 +83,15 @@ public:
   /// @param[in] geometry Mesh geometry
   Mesh(MPI_Comm comm, const Topology& topology, const Geometry& geometry);
 
+  /// @todo Remove this constructor once the creation of
+  /// ElementDofLayout and coordinate maps is make straightforward
+  ///
   /// Construct a Mesh from topological and geometric data.
-  ///
-  /// In parallel, geometric points must be arranged in global index
-  /// order across processes, starting from 0 on process 0, and must not
-  /// be duplicated. The points will be redistributed to the processes
-  /// that need them.
-  ///
-  /// Cells should be listed only on the processes they appear on, i.e.
-  /// mesh partitioning should be performed on the topology data before
-  /// calling the Mesh constructor. Ghost cells, if present, must be at
-  /// the end of the list of cells, and the number of ghost cells must
-  /// be provided.
   ///
   /// @param[in] comm MPI Communicator
   /// @param[in] type Cell type
-  /// @param[in] points Array of geometric points, arranged in global
-  ///   index order
+  /// @param[in] x Array of geometric points, arranged in global index
+  ///   order
   /// @param[in] cells Array of cells (containing the global point
   ///   indices for each cell)
   /// @param[in] global_cell_indices Array of global cell indices. If
@@ -103,14 +101,15 @@ public:
   /// @param[in] ghost_mode The ghost mode
   /// @param[in] num_ghost_cells Number of ghost cells on this process
   ///   (must be at end of list of cells)
-  Mesh(MPI_Comm comm, mesh::CellType type,
-       const Eigen::Ref<const Eigen::Array<
-           double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>>& points,
-       const Eigen::Ref<const Eigen::Array<std::int64_t, Eigen::Dynamic,
-                                           Eigen::Dynamic, Eigen::RowMajor>>&
-           cells,
-       const std::vector<std::int64_t>& global_cell_indices,
-       const GhostMode ghost_mode, std::int32_t num_ghost_cells = 0);
+  [[deprecated]] Mesh(
+      MPI_Comm comm, mesh::CellType type,
+      const Eigen::Ref<const Eigen::Array<double, Eigen::Dynamic,
+                                          Eigen::Dynamic, Eigen::RowMajor>>& x,
+      const Eigen::Ref<const Eigen::Array<std::int64_t, Eigen::Dynamic,
+                                          Eigen::Dynamic, Eigen::RowMajor>>&
+          cells,
+      const std::vector<std::int64_t>& global_cell_indices,
+      const GhostMode ghost_mode, std::int32_t num_ghost_cells = 0);
 
   /// Copy constructor
   /// @param[in] mesh Mesh to be copied
@@ -128,7 +127,7 @@ public:
 
   /// Assignment move operator
   /// @param mesh Another Mesh object
-  Mesh& operator=(Mesh&& mesh) = default;
+  Mesh& operator=(Mesh&& mesh);
 
   /// @todo Remove and work via Topology
   ///
@@ -226,18 +225,6 @@ public:
   /// @return The communicator on which the mesh is distributed
   MPI_Comm mpi_comm() const;
 
-  /// @todo Remove this option. Topology should take care of it
-  ///
-  /// Ghost mode used for partitioning. Possible values are same as
-  /// `parameters["ghost_mode"]`.
-  /// @warning The interface may change in future without deprecation;
-  ///          the method is now intended for internal library use.
-  mesh::GhostMode get_ghost_mode() const;
-
-  /// Temporary flag for mesh costruction to keep some old IO code working. Will
-  /// be removed.
-  bool new_mesh_storage() const { return _new_storage; }
-
 private:
   // Mesh topology
   std::unique_ptr<Topology> _topology;
@@ -248,14 +235,8 @@ private:
   // MPI communicator
   dolfinx::MPI::Comm _mpi_comm;
 
-  // TODO: remove
-  // Ghost mode used for partitioning
-  GhostMode _ghost_mode;
-
   // Unique identifier
   std::size_t _unique_id;
-
-  bool _new_storage = false;
 };
 
 /// Create a mesh

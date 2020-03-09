@@ -104,14 +104,8 @@ void fem::impl::assemble_cells(
   mesh.create_entity_permutations();
 
   // Prepare cell geometry
-  const graph::AdjacencyList<std::int32_t>& connectivity_g
-      = mesh.geometry().dofmap();
-  const Eigen::Array<std::int32_t, Eigen::Dynamic, 1>& pos_g
-      = connectivity_g.offsets();
-  const Eigen::Array<std::int32_t, Eigen::Dynamic, 1>& cell_g
-      = connectivity_g.array();
-  // FIXME: Add proper interface for num coordinate dofs
-  const int num_dofs_g = connectivity_g.num_links(0);
+  const graph::AdjacencyList<std::int32_t>& x_dofmap = mesh.geometry().dofmap();
+  const int num_dofs_g = x_dofmap.num_links(0);
   const Eigen::Array<double, Eigen::Dynamic, 3, Eigen::RowMajor>& x_g
       = mesh.geometry().x();
 
@@ -136,9 +130,10 @@ void fem::impl::assemble_cells(
   for (std::int32_t cell_index : active_cells)
   {
     // Get cell coordinates/geometry
-    for (int i = 0; i < num_dofs_g; ++i)
+    auto x_dofs = x_dofmap.links(cell_index);
+    for (int i = 0; i < x_dofs.rows(); ++i)
       for (int j = 0; j < gdim; ++j)
-        coordinate_dofs(i, j) = x_g(cell_g[pos_g[cell_index] + i], j);
+        coordinate_dofs(i, j) = x_g(x_dofs[i], j);
 
     // Tabulate tensor
     auto coeff_cell = coeffs.row(cell_index);
