@@ -100,18 +100,17 @@ public:
   /// Build a distributed AdjacencyList list with re-numbered links from
   /// an AdjacencyList that may have non-contiguous data. The
   /// distribution of the AdjacencyList nodes is unchanged.
-  /// @param[in] comm
+  /// @param[in] comm MPI communicator
   /// @param[in] topology_local
-  /// @param[in] local_to_global_vertices
-  //   static std::tuple<graph::AdjacencyList<std::int32_t>, common::IndexMap>
-  //   create_distributed_adjacency_list(
-  //       MPI_Comm comm, const mesh::Topology& topology_local,
-  //       const std::vector<std::int64_t>& local_to_global_vertices);
+  /// @param[in] list_local Local adjacency list, with contiguous link
+  ///   indices
+  /// @param[in] local_to_global_links Local-to-global map for links in
+  ///   the local adjacency list
   static std::tuple<graph::AdjacencyList<std::int32_t>, common::IndexMap>
   create_distributed_adjacency_list(
       MPI_Comm comm, const mesh::Topology& topology_local,
       const graph::AdjacencyList<std::int32_t>& list_local,
-      const std::vector<std::int64_t>& local_to_global_vertices);
+      const std::vector<std::int64_t>& local_to_global_links);
 
   /// Distribute adjacency list nodes to other processes. Does not
   /// change any numbering. The global index of each node is assumed to

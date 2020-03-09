@@ -468,11 +468,6 @@ Partitioning::create_distributed_adjacency_list(
   const auto [local_to_local_new, ghosts]
       = reorder_global_indices(comm, local_to_global_vertices, exterior_vertex);
 
-  // const int dim = topology_local.dim();
-  // auto cv = topology_local.connectivity(dim, 0);
-  // if (!cv)
-  //   throw std::runtime_error("Missing cell-vertex connectivity.");
-
   const Eigen::Array<std::int32_t, Eigen::Dynamic, 1>& data_old
       = list_local.array();
   Eigen::Array<std::int32_t, Eigen::Dynamic, 1> data_new(data_old.rows());
