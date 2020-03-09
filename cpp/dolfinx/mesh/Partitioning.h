@@ -39,7 +39,7 @@ public:
   /// Compute markers for interior/boundary vertices
   /// @param[in] topology_local Local topology
   /// @return Array where the ith entry is true if the ith vertex is on
-  /// the boundary
+  ///   the boundary
   static std::vector<bool>
   compute_vertex_exterior_markers(const mesh::Topology& topology_local);
 
@@ -95,28 +95,27 @@ public:
                    std::vector<std::int64_t>>
   create_local_adjacency_list(const graph::AdjacencyList<std::int64_t>& list);
 
-  /// @todo Avoid passing Topology
-  ///
   /// Build a distributed AdjacencyList list with re-numbered links from
   /// an AdjacencyList that may have non-contiguous data. The
   /// distribution of the AdjacencyList nodes is unchanged.
   /// @param[in] comm MPI communicator
-  /// @param[in] topology_local
   /// @param[in] list_local Local adjacency list, with contiguous link
   ///   indices
   /// @param[in] local_to_global_links Local-to-global map for links in
   ///   the local adjacency list
+  /// @param[in] shared_links Try for possible shared links
   static std::tuple<graph::AdjacencyList<std::int32_t>, common::IndexMap>
   create_distributed_adjacency_list(
-      MPI_Comm comm, const mesh::Topology& topology_local,
-      const graph::AdjacencyList<std::int32_t>& list_local,
-      const std::vector<std::int64_t>& local_to_global_links);
+      MPI_Comm comm, const graph::AdjacencyList<std::int32_t>& list_local,
+      const std::vector<std::int64_t>& local_to_global_links,
+      const std::vector<bool>& shared_links);
 
   /// Distribute adjacency list nodes to other processes. Does not
-  /// change any numbering. The global index of each node is assumed to
-  /// be the local index plus the offset for this rank.
+  /// change any link numbering. The global index of each node is
+  /// assumed to be the local index plus the offset for this rank.
+  ///
   /// @param[in] comm MPI Communicator
-  /// @param[in] list An adjacency list to distribute
+  /// @param[in] list The adjacency list to distribute
   /// @param[in] destinations Destination ranks for the ith node in the
   ///   adjacency list
   /// @return Adjacency list for this process, array of source ranks for

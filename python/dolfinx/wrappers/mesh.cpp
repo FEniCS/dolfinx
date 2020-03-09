@@ -329,20 +329,20 @@ void mesh(py::module& m)
 
   m.def("create_local_adjacency_list",
         &dolfinx::mesh::Partitioning::create_local_adjacency_list);
-  m.def("create_distributed_adjacency_list", [](const MPICommWrapper comm,
-                                                const dolfinx::mesh::Topology&
-                                                    topology_local,
-                                                const std::vector<std::int64_t>&
-                                                    global_indices) {
-    return dolfinx::mesh::Partitioning::create_distributed_adjacency_list(
-        comm.get(), topology_local, global_indices);
-  });
+  m.def("create_distributed_adjacency_list",
+        [](const MPICommWrapper comm,
+           const dolfinx::graph::AdjacencyList<std::int32_t>& list_local,
+           const std::vector<std::int64_t>& global_links,
+           const std::vector<bool>& exterior_links) {
+          return dolfinx::mesh::Partitioning::create_distributed_adjacency_list(
+              comm.get(), list_local, global_links, exterior_links);
+        });
   m.def("distribute",
         [](const MPICommWrapper comm,
            const dolfinx::graph::AdjacencyList<std::int64_t>& list,
            const dolfinx::graph::AdjacencyList<std::int32_t>& destinations) {
           return dolfinx::mesh::Partitioning::distribute(comm.get(), list,
-                                                            destinations);
+                                                         destinations);
         });
 
   m.def("exchange",
@@ -350,8 +350,8 @@ void mesh(py::module& m)
            const dolfinx::graph::AdjacencyList<std::int64_t>& list,
            const dolfinx::graph::AdjacencyList<std::int32_t>& destinations,
            const std::set<int>& sources) {
-          return dolfinx::mesh::Partitioning::exchange(
-              comm.get(), list, destinations, sources);
+          return dolfinx::mesh::Partitioning::exchange(comm.get(), list,
+                                                       destinations, sources);
         });
 
   m.def("partition_cells",
@@ -367,7 +367,7 @@ void mesh(py::module& m)
            const Eigen::Ref<const Eigen::Array<
                double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>>& x) {
           return dolfinx::mesh::Partitioning::fetch_data(comm.get(), indices,
-                                                            x);
+                                                         x);
         });
 
   m.def("compute_local_to_global_links",
@@ -378,5 +378,10 @@ void mesh(py::module& m)
 
   m.def("compute_marked_boundary_entities",
         &dolfinx::mesh::compute_marked_boundary_entities);
+
+  // TODO Remove
+  m.def("compute_vertex_exterior_markers",
+        &dolfinx::mesh::Partitioning::compute_vertex_exterior_markers);
+
 } // namespace dolfinx_wrappers
 } // namespace dolfinx_wrappers

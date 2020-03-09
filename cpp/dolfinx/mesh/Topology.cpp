@@ -412,8 +412,10 @@ mesh::create_topology(MPI_Comm comm,
 
   // Build distributed cell-vertex AdjacencyList, IndexMap for
   // vertices, and map from local index to old global index
+  const std::vector<bool>& exterior_vertices
+      = Partitioning::compute_vertex_exterior_markers(topology_local);
   auto [cells_d, vertex_map] = Partitioning::create_distributed_adjacency_list(
-      comm, topology_local, *_cells_local, local_to_global_vertices);
+      comm, *_cells_local, local_to_global_vertices, exterior_vertices);
 
   Topology topology(layout.cell_type());
 

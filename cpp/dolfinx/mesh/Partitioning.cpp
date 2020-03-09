@@ -453,20 +453,15 @@ Partitioning::create_local_adjacency_list(
 //-----------------------------------------------------------------------------
 std::tuple<graph::AdjacencyList<std::int32_t>, common::IndexMap>
 Partitioning::create_distributed_adjacency_list(
-    MPI_Comm comm, const mesh::Topology& topology_local,
-    const graph::AdjacencyList<std::int32_t>& list_local,
-    const std::vector<std::int64_t>& local_to_global_vertices)
+    MPI_Comm comm, const graph::AdjacencyList<std::int32_t>& list_local,
+    const std::vector<std::int64_t>& local_to_global_links,
+    const std::vector<bool>& shared_links)
 {
   common::Timer timer("Create distributed AdjacencyList");
 
-  // Get marker for each vertex indicating if it interior or on the
-  // boundary of the local topology
-  const std::vector<bool>& exterior_vertex
-      = compute_vertex_exterior_markers(topology_local);
-
   // Compute new local and global indices
   const auto [local_to_local_new, ghosts]
-      = reorder_global_indices(comm, local_to_global_vertices, exterior_vertex);
+      = reorder_global_indices(comm, local_to_global_links, shared_links);
 
   const Eigen::Array<std::int32_t, Eigen::Dynamic, 1>& data_old
       = list_local.array();
