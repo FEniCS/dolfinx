@@ -343,6 +343,8 @@ void Topology::set_entity_permutation(std::size_t cell_n, int entity_dim,
       _facet_permutations(entity_index, cell_n) = refs;
     _edge_reflections(entity_index, cell_n) = refs;
   }
+  else
+    throw std::runtime_error("Wong entity dimension.");
 }
 //-----------------------------------------------------------------------------
 mesh::CellType Topology::cell_type() const { return _cell_type; }
