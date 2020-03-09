@@ -141,6 +141,7 @@ void fem::assemble_matrix(Mat A, const Form& a, const std::vector<bool>& bc0,
           if (ierr != 0)
             la::petsc_error(ierr, __FILE__, "MatSetValuesLocal");
 #endif
+          return 0;
         };
 
   impl::assemble_matrix(mat_set_values_local, a, bc0, bc1);
