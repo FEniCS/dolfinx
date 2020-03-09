@@ -269,29 +269,36 @@ def test_plus_minus_simple_vector(cell_type, pm):
     # Check that the above vectors all have the same values, but permuted due to differently
     # ordered dofs
     # For each pair of results
-    for i, j in combinations(zip(results, spaces, orders), 2):
+    for i, j in combinations(range(len(results)), 2):
+        # Get the data relating to two results
+        result0 = results[i]
+        space0 = spaces[i]
+        order0 = orders[i]
+        result1 = results[j]
+        space1 = spaces[j]
+        order1 = orders[j]
         # For each cell
         for cell in range(2):
             # For each point in the mesh
             for point in range(len(mesh.geometry.x)):
                 # Get the point's number in the second of the pair of results
-                point_n = j[2][point]
-                cell_points = list(j[1].mesh.cells()[cell])
+                point_n = order1[point]
+                cell_points = list(space1.mesh.cells()[cell])
                 # If the point is in the current cell, find out which dof is at the point
                 if point_n in cell_points:
                     point_n_in_cell = cell_points.index(point_n)
-                    dofmap = j[1].dofmap.cell_dofs(cell)
+                    dofmap = space1.dofmap.cell_dofs(cell)
                     j_dof_n = dofmap[point_n_in_cell]
                 else:
                     j_dof_n = None
 
                 # Get the point's number in the first of the pair of results
-                point_n = i[2][point]
-                cell_points = list(i[1].mesh.cells()[cell])
+                point_n = order0[point]
+                cell_points = list(space0.mesh.cells()[cell])
                 # If the point is in the current cell, find out which dof is at the point
                 if point_n in cell_points:
                     point_n_in_cell = cell_points.index(point_n)
-                    dofmap = i[1].dofmap.cell_dofs(cell)
+                    dofmap = space0.dofmap.cell_dofs(cell)
                     i_dof_n = dofmap[point_n_in_cell]
                 else:
                     i_dof_n = None
@@ -300,7 +307,7 @@ def test_plus_minus_simple_vector(cell_type, pm):
                 if i_dof_n is None:
                     assert j_dof_n is None
                 else:
-                    assert np.isclose(i[0][i_dof_n], j[0][j_dof_n])
+                    assert np.isclose(result0[i_dof_n], result1[j_dof_n])
 
 
 @skip_in_parallel
@@ -336,29 +343,36 @@ def test_plus_minus_vector(cell_type, pm1, pm2):
     # Check that the above vectors all have the same values, but permuted due to differently
     # ordered dofs
     # For each pair of results
-    for i, j in combinations(zip(results, spaces, orders), 2):
+    for i, j in combinations(range(len(results)), 2):
+        # Get the data relating to two results
+        result0 = results[i]
+        space0 = spaces[i]
+        order0 = orders[i]
+        result1 = results[j]
+        space1 = spaces[j]
+        order1 = orders[j]
         # For each cell
         for cell in range(2):
             # For each point in the mesh
             for point in range(len(mesh.geometry.x)):
                 # Get the point's number in the second of the pair of results
-                point_n = j[2][point]
-                cell_points = list(j[1].mesh.cells()[cell])
+                point_n = order1[point]
+                cell_points = list(space1.mesh.cells()[cell])
                 # If the point is in the current cell, find out which dof is at the point
                 if point_n in cell_points:
                     point_n_in_cell = cell_points.index(point_n)
-                    dofmap = j[1].dofmap.cell_dofs(cell)
+                    dofmap = space1.dofmap.cell_dofs(cell)
                     j_dof_n = dofmap[point_n_in_cell]
                 else:
                     j_dof_n = None
 
                 # Get the point's number in the first of the pair of results
-                point_n = i[2][point]
-                cell_points = list(i[1].mesh.cells()[cell])
+                point_n = order0[point]
+                cell_points = list(space0.mesh.cells()[cell])
                 # If the point is in the current cell, find out which dof is at the point
                 if point_n in cell_points:
                     point_n_in_cell = cell_points.index(point_n)
-                    dofmap = i[1].dofmap.cell_dofs(cell)
+                    dofmap = space0.dofmap.cell_dofs(cell)
                     i_dof_n = dofmap[point_n_in_cell]
                 else:
                     i_dof_n = None
@@ -367,7 +381,7 @@ def test_plus_minus_vector(cell_type, pm1, pm2):
                 if i_dof_n is None:
                     assert j_dof_n is None
                 else:
-                    assert np.isclose(i[0][i_dof_n], j[0][j_dof_n])
+                    assert np.isclose(result0[i_dof_n], result1[j_dof_n])
 
 
 @skip_in_parallel
@@ -398,30 +412,37 @@ def test_plus_minus_matrix(cell_type, pm1, pm2):
     # Check that the above matrices all have the same values, but permuted due to differently
     # ordered dofs
     # For each pair of results
-    for i, j in combinations(zip(results, spaces, orders), 2):
+    for i, j in combinations(range(len(results)), 2):
+        # Get the data relating to two results
+        result0 = results[i]
+        space0 = spaces[i]
+        order0 = orders[i]
+        result1 = results[j]
+        space1 = spaces[j]
+        order1 = orders[j]
         dof_order = []
         # For each cell
         for cell in range(2):
             # For each point in the mesh
             for point in range(len(mesh.geometry.x)):
                 # Get the point's number in the second of the pair of results
-                point_n = j[2][point]
-                cell_points = list(j[1].mesh.cells()[cell])
+                point_n = order1[point]
+                cell_points = list(space1.mesh.cells()[cell])
                 # If the point is in the current cell, find out which dof is at the point
                 if point_n in cell_points:
                     point_n_in_cell = cell_points.index(point_n)
-                    dofmap = j[1].dofmap.cell_dofs(cell)
+                    dofmap = space1.dofmap.cell_dofs(cell)
                     j_dof_n = dofmap[point_n_in_cell]
                 else:
                     j_dof_n = None
 
                 # Get the point's number in the first of the pair of results
-                point_n = i[2][point]
-                cell_points = list(i[1].mesh.cells()[cell])
+                point_n = order0[point]
+                cell_points = list(space0.mesh.cells()[cell])
                 # If the point is in the current cell, find out which dof is at the point
                 if point_n in cell_points:
                     point_n_in_cell = cell_points.index(point_n)
-                    dofmap = i[1].dofmap.cell_dofs(cell)
+                    dofmap = space0.dofmap.cell_dofs(cell)
                     i_dof_n = dofmap[point_n_in_cell]
                 else:
                     i_dof_n = None
@@ -435,4 +456,4 @@ def test_plus_minus_matrix(cell_type, pm1, pm2):
         # For all dof pairs, check that entries in the matrix agree
         for a, b in dof_order:
             for c, d in dof_order:
-                assert np.isclose(i[0][a, c], j[0][b, d])
+                assert np.isclose(result0[a, c], result1[b, d])
