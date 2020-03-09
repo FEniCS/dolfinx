@@ -383,7 +383,7 @@ std::vector<std::int64_t> get_global_indices(
   std::vector<std::vector<std::int64_t>> all_dofs_received(D + 1);
   for (int d = 0; d <= D; ++d)
   {
-    // FIXME: This should check which dimennsion are needed by the dofma
+    // FIXME: This should check which dimension are needed by the dofmap
     auto map = topology.index_map(d);
     if (map)
     {

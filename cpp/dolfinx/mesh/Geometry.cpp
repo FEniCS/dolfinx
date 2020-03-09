@@ -5,7 +5,7 @@
 // SPDX-License-Identifier:    LGPL-3.0-or-later
 
 #include "Geometry.h"
-#include "PartitioningNew.h"
+#include "Partitioning.h"
 #include <boost/functional/hash.hpp>
 #include <dolfinx/common/IndexMap.h>
 #include <dolfinx/fem/DofMapBuilder.h>
@@ -21,38 +21,13 @@ Geometry::Geometry(std::shared_ptr<const common::IndexMap> index_map,
                    const fem::ElementDofLayout& layout,
                    const Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic,
                                       Eigen::RowMajor>& x,
-                   const std::vector<std::int64_t>& global_indices, int degree)
-    : _dim(x.cols()), _dofmap(dofmap), _index_map(index_map),
-      _global_indices(global_indices), _degree(degree)
+                   const std::vector<std::int64_t>& global_indices)
+    : _dim(x.cols()), _dofmap(dofmap), _index_map(index_map), _layout(layout),
+      _global_indices(global_indices)
 {
   if (x.rows() != (int)global_indices.size())
     throw std::runtime_error("Size mis-match");
 
-  // Make all geometry 3D
-  if (_dim == 3)
-    _x = x;
-  else
-  {
-    _x.resize(x.rows(), 3);
-    _x.setZero();
-    _x.block(0, 0, x.rows(), x.cols()) = x;
-  }
-
-  _layout = std::make_shared<fem::ElementDofLayout>(layout);
-}
-//-----------------------------------------------------------------------------
-Geometry::Geometry(
-    std::int64_t num_points_global,
-    const Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>&
-        x,
-    const std::vector<std::int64_t>& global_indices,
-    const Eigen::Ref<const Eigen::Array<std::int32_t, Eigen::Dynamic,
-                                        Eigen::Dynamic, Eigen::RowMajor>>&
-        coordinate_dofs,
-    int degree)
-    : _dim(x.cols()), _dofmap(coordinate_dofs), _global_indices(global_indices),
-      _num_points_global(num_points_global), _degree(degree)
-{
   // Make all geometry 3D
   if (_dim == 3)
     _x = x;
@@ -94,17 +69,14 @@ Eigen::Ref<const Eigen::Vector3d> Geometry::x(int n) const
   return _x.row(n).matrix().transpose();
 }
 //-----------------------------------------------------------------------------
-std::int64_t Geometry::num_points_global() const
-{
-  if (_index_map)
-    return _index_map->size_global();
-  else
-    return _num_points_global;
-}
-//-----------------------------------------------------------------------------
 const std::vector<std::int64_t>& Geometry::global_indices() const
 {
   return _global_indices;
+}
+//-----------------------------------------------------------------------------
+const fem::ElementDofLayout& Geometry::dof_layout() const
+{
+  return _layout;
 }
 //-----------------------------------------------------------------------------
 std::size_t Geometry::hash() const
@@ -141,8 +113,6 @@ std::string Geometry::str(bool verbose) const
   return s.str();
 }
 //-----------------------------------------------------------------------------
-int Geometry::degree() const { return _degree; }
-//-----------------------------------------------------------------------------
 
 //-----------------------------------------------------------------------------
 mesh::Geometry mesh::create_geometry(
@@ -171,7 +141,7 @@ mesh::Geometry mesh::create_geometry(
   //  processes own the cells this process needs.
   std::set<int> _src(src.begin(), src.end());
   auto [cell_nodes, global_index_cell]
-      = PartitioningNew::exchange(comm, cells, dest, _src);
+      = Partitioning::exchange(comm, cells, dest, _src);
 
   // Build list of unique (global) node indices from adjacency list
   // (geometry nodes)
@@ -184,18 +154,18 @@ mesh::Geometry mesh::create_geometry(
   //  Fetch node coordinates by global index from other ranks. Order of
   //  coords matches order of the indices in 'indices'
   Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor> coords
-      = PartitioningNew::fetch_data(comm, indices, x);
+      = Partitioning::fetch_data(comm, indices, x);
 
   // Compute local-to-global map from local indices in dofmap to the
   // corresponding global indices in cell_nodes
   std::vector<std::int64_t> l2g
-      = PartitioningNew::compute_local_to_global_links(cell_nodes, dofmap);
+      = Partitioning::compute_local_to_global_links(cell_nodes, dofmap);
 
   // Compute local (dof) to local (position in coords) map from (i)
   // local-to-global for dofs and (ii) local-to-global for entries in
   // coords
   std::vector<std::int32_t> l2l
-      = PartitioningNew::compute_local_to_local(l2g, indices);
+      = Partitioning::compute_local_to_local(l2g, indices);
 
   // Build coordinate dof array
   Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor> xg(
@@ -203,13 +173,6 @@ mesh::Geometry mesh::create_geometry(
   for (int i = 0; i < coords.rows(); ++i)
     xg.row(i) = coords.row(l2l[i]);
 
-  int order = 1;
-  return Geometry(dof_index_map, dofmap, layout, xg, l2g, order);
-}
-//-----------------------------------------------------------------------------
-const fem::ElementDofLayout& Geometry::dof_layout() const
-{
-  assert(_layout);
-  return *_layout;
+  return Geometry(dof_index_map, dofmap, layout, xg, l2g);
 }
 //-----------------------------------------------------------------------------
