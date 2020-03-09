@@ -31,7 +31,7 @@ public:
   /// @param[in] cell_type The mesh cell type
   /// @param[in] ghost_mode Mesh ghosting mode
   /// @param[in] diagonal Direction of diagonals: "left", "right",
-  ///                     "left/right", "crossed"
+  ///   "left/right", "crossed"
   /// @return Mesh
   static mesh::Mesh
   create(MPI_Comm comm, const std::array<Eigen::Vector3d, 2>& p,
