@@ -186,12 +186,12 @@ xdmf_utils::get_point_data_values(const function::Function& u)
   assert(mesh);
   Eigen::Array<PetscScalar, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
       data_values = u.compute_point_values();
-  const int width = get_padded_width(u);
 
+  const int width = get_padded_width(u);
   assert(mesh->geometry().index_map());
   const int num_local_points = mesh->geometry().index_map()->size_local();
   assert(data_values.rows() >= num_local_points);
-  data_values.resize(num_local_points, data_values.cols());
+  data_values.conservativeResize(num_local_points, Eigen::NoChange);
 
   // FIXME: Unpick the below code for the new layout of data from
   //        GenericFunction::compute_vertex_values
