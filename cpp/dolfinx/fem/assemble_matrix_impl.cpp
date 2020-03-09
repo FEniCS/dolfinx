@@ -49,6 +49,14 @@ void fem::impl::assemble_matrix(Mat A, const Form& a,
                      Eigen::RowMajor>
       coeffs = pack_coefficients(a);
 
+  const std::function<int(int, const int*, int, const int*, const double*,
+                          InsertMode)>
+      mat_set_values_local
+      = [&A](PetscInt nrow, const PetscInt* rows, PetscInt ncol,
+             const PetscInt* cols, const PetscScalar* y, InsertMode mode) {
+          return MatSetValuesLocal(A, nrow, rows, ncol, cols, y, mode);
+        };
+
   const FormIntegrals& integrals = a.integrals();
   using type = fem::FormIntegrals::Type;
   for (int i = 0; i < integrals.num_integrals(type::cell); ++i)
@@ -56,9 +64,10 @@ void fem::impl::assemble_matrix(Mat A, const Form& a,
     auto& fn = integrals.get_tabulate_tensor(type::cell, i);
     const std::vector<std::int32_t>& active_cells
         = integrals.integral_domains(type::cell, i);
-    fem::impl::assemble_cells(
-        A, mesh, active_cells, dof_array0, num_dofs_per_cell0, dof_array1,
-        num_dofs_per_cell1, bc0, bc1, fn, coeffs, constant_values);
+    fem::impl::assemble_cells(mat_set_values_local, mesh, active_cells,
+                              dof_array0, num_dofs_per_cell0, dof_array1,
+                              num_dofs_per_cell1, bc0, bc1, fn, coeffs,
+                              constant_values);
   }
 
   for (int i = 0; i < integrals.num_integrals(type::exterior_facet); ++i)
@@ -84,8 +93,10 @@ void fem::impl::assemble_matrix(Mat A, const Form& a,
 }
 //-----------------------------------------------------------------------------
 void fem::impl::assemble_cells(
-    Mat A, const mesh::Mesh& mesh,
-    const std::vector<std::int32_t>& active_cells,
+    const std::function<int(PetscInt, const PetscInt*, PetscInt,
+                            const PetscInt*, const PetscScalar*, InsertMode)>&
+        mat_set_values_local,
+    const mesh::Mesh& mesh, const std::vector<std::int32_t>& active_cells,
     const Eigen::Ref<const Eigen::Array<PetscInt, Eigen::Dynamic, 1>>& dofmap0,
     int num_dofs_per_cell0,
     const Eigen::Ref<const Eigen::Array<PetscInt, Eigen::Dynamic, 1>>& dofmap1,
@@ -99,7 +110,6 @@ void fem::impl::assemble_cells(
                        Eigen::RowMajor>& coeffs,
     const Eigen::Array<PetscScalar, Eigen::Dynamic, 1>& constant_values)
 {
-  assert(A);
   const int gdim = mesh.geometry().dim();
   mesh.create_entity_permutations();
 
@@ -166,8 +176,8 @@ void fem::impl::assemble_cells(
       }
     }
 
-    ierr = MatSetValuesLocal(
-        A, num_dofs_per_cell0, dofmap0.data() + cell_index * num_dofs_per_cell0,
+    ierr = mat_set_values_local(
+        num_dofs_per_cell0, dofmap0.data() + cell_index * num_dofs_per_cell0,
         num_dofs_per_cell1, dofmap1.data() + cell_index * num_dofs_per_cell1,
         Ae.data(), ADD_VALUES);
 #ifdef DEBUG
