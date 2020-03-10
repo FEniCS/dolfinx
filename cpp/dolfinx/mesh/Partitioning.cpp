@@ -1,969 +1,833 @@
-// Copyright (C) 2008-2014 Niclas Jansson, Ola Skavhaug, Anders Logg,
+// Copyright (C) 2020 Garth N. Wells
 //
 // This file is part of DOLFINX (https://www.fenicsproject.org)
 //
 // SPDX-License-Identifier:    LGPL-3.0-or-later
 
-#include <mpi.h>
-
-#include "DistributedMeshTools.h"
-#include "Mesh.h"
-#include "MeshEntity.h"
-#include "MeshFunction.h"
-#include "MeshValueCollection.h"
-#include "PartitionData.h"
 #include "Partitioning.h"
 #include "Topology.h"
+#include <Eigen/Dense>
 #include <algorithm>
-#include <cmath>
-#include <cstdint>
 #include <dolfinx/common/IndexMap.h>
-#include <dolfinx/common/MPI.h>
 #include <dolfinx/common/Timer.h>
 #include <dolfinx/common/log.h>
 #include <dolfinx/graph/AdjacencyList.h>
 #include <dolfinx/graph/GraphBuilder.h>
-#include <dolfinx/graph/KaHIP.h>
-#include <dolfinx/graph/ParMETIS.h>
 #include <dolfinx/graph/SCOTCH.h>
-#include <iterator>
-#include <map>
-#include <memory>
-#include <numeric>
-#include <set>
+#include <unordered_map>
 
 using namespace dolfinx;
 using namespace dolfinx::mesh;
 
-namespace
-{
 //-----------------------------------------------------------------------------
-// This function takes the partition computed by the partitioner
-// (which tells us to which process each of the local cells stored on
-// this process belongs) and sends the cells
-// to the appropriate owning process. Ghost cells are also sent to all processes
-// that need them, along with the list of sharing processes.
-//
-// Returns (new_cell_vertices, new_global_cell_indices,
-// new_cell_partition, shared_cells, number of non-ghost cells on this
-// process).
-std::tuple<
-    Eigen::Array<std::int64_t, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>,
-    std::vector<std::int64_t>, std::map<std::int32_t, std::set<std::int32_t>>,
-    std::int32_t>
-distribute_cells(
-    const MPI_Comm mpi_comm,
-    const Eigen::Ref<const Eigen::Array<std::int64_t, Eigen::Dynamic,
-                                        Eigen::Dynamic, Eigen::RowMajor>>&
-        cell_vertices,
-    const std::vector<std::int64_t>& global_cell_indices,
-    const PartitionData& cell_partition)
+std::vector<bool> Partitioning::compute_vertex_exterior_markers(
+    const mesh::Topology& topology_local)
 {
-  // This function takes the partition computed by the partitioner
-  // stored in PartitionData cell_partition. Some cells go to multiple
-  // destinations. Each cell is transmitted to its final destination(s)
-  // including its global index, and the cell owner (for ghost cells this will
-  // be different from the destination)
-
-  LOG(INFO) << "Distribute cells during distributed mesh construction";
-
-  common::Timer timer("Distribute cells");
-
-  const std::int32_t mpi_size = dolfinx::MPI::size(mpi_comm);
-  const std::int32_t mpi_rank = dolfinx::MPI::rank(mpi_comm);
-
-  // Global offset, used to build global cell index, if not given
-  std::int64_t global_offset
-      = dolfinx::MPI::global_offset(mpi_comm, cell_vertices.rows(), true);
-  bool build_global_index = global_cell_indices.empty();
-
-  // Get dimensions
-  const std::int32_t num_local_cells = cell_vertices.rows();
-  const std::int32_t num_cell_vertices = cell_vertices.cols();
-  assert(cell_partition.size() == num_local_cells);
-
-  // Send all cells to their destinations including their global
-  // indices.  First element of vector is cell count of un-ghosted
-  // cells, second element is count of ghost cells.
-  std::vector<std::vector<std::size_t>> send_cell_vertices(
-      mpi_size, std::vector<std::size_t>(2, 0));
-
-  for (std::int32_t i = 0; i < cell_partition.size(); ++i)
+  // Get list of boundary vertices
+  const int dim = topology_local.dim();
+  auto facet_cell = topology_local.connectivity(dim - 1, dim);
+  if (!facet_cell)
   {
-    std::int32_t num_procs = cell_partition.num_procs(i);
-    const std::int32_t* sharing_procs = cell_partition.procs(i);
-    for (std::int32_t j = 0; j < num_procs; ++j)
+    throw std::runtime_error(
+        "Need facet-cell connectivity to build distributed adjacency list.");
+  }
+
+  auto facet_vertex = topology_local.connectivity(dim - 1, 0);
+  if (!facet_vertex)
+  {
+    throw std::runtime_error(
+        "Need facet-vertex connectivity to build distributed adjacency list.");
+  }
+
+  auto map_vertex = topology_local.index_map(0);
+  if (!map_vertex)
+    throw std::runtime_error("Need vertex IndexMap from topology.");
+  assert(map_vertex->num_ghosts() == 0);
+
+  std::vector<bool> exterior_vertex(map_vertex->size_local(), false);
+  for (int f = 0; f < facet_cell->num_nodes(); ++f)
+  {
+    if (facet_cell->num_links(f) == 1)
     {
-      // Create reference to destination vector
-      std::vector<std::size_t>& send_cell_dest
-          = send_cell_vertices[sharing_procs[j]];
-
-      // Count of ghost cells, followed by ghost processes
-      if (num_procs > 1)
-      {
-        send_cell_dest.push_back(num_procs);
-        send_cell_dest.insert(send_cell_dest.end(), sharing_procs,
-                              sharing_procs + num_procs);
-      }
-      else // unghosted
-        send_cell_dest.push_back(0);
-
-      // Global cell index
-      if (build_global_index)
-        send_cell_dest.push_back(global_offset + i);
-      else
-        send_cell_dest.push_back(global_cell_indices[i]);
-
-      // Global vertex indices
-      send_cell_dest.insert(send_cell_dest.end(), cell_vertices.row(i).data(),
-                            cell_vertices.row(i).data() + num_cell_vertices);
-
-      // First entry is the owner, so this counts as a 'local' cell
-      // subsequent entries are 'remote ghosts'
-      if (j == 0)
-        send_cell_dest[0]++;
-      else
-        send_cell_dest[1]++;
+      auto vertices = facet_vertex->links(f);
+      for (int j = 0; j < vertices.rows(); ++j)
+        exterior_vertex[vertices[j]] = true;
     }
   }
 
-  // Distribute cell-vertex connectivity and ownership information
-  std::vector<std::vector<std::size_t>> received_cell_vertices(mpi_size);
-  dolfinx::MPI::all_to_all(mpi_comm, send_cell_vertices,
-                           received_cell_vertices);
-
-  // Count number of received cells (first entry in vector) and find out
-  // how many ghost cells there are...
-  std::int32_t local_count = 0;
-  std::int32_t ghost_count = 0;
-  for (std::int32_t p = 0; p < mpi_size; ++p)
-  {
-    std::vector<std::size_t>& received_data = received_cell_vertices[p];
-    local_count += received_data[0];
-    ghost_count += received_data[1];
-  }
-
-  const std::int64_t all_count = ghost_count + local_count;
-
-  // Calculate local range of global indices
-  std::vector<std::int32_t> local_sizes;
-  dolfinx::MPI::all_gather(mpi_comm, local_count, local_sizes);
-  std::vector<std::int64_t> ranges = {0};
-  for (int i = 0; i < mpi_size; ++i)
-    ranges.push_back(ranges.back() + local_sizes[i]);
-
-  std::vector<std::int64_t> new_global_cell_indices(all_count, -1);
-  std::iota(new_global_cell_indices.begin(),
-            new_global_cell_indices.begin() + local_count, ranges[mpi_rank]);
-  std::vector<std::int64_t> stored_tag(all_count, -1);
-
-  // Storage for received cell-vertex data
-  Eigen::Array<std::int64_t, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
-      new_cell_vertices(all_count, num_cell_vertices);
-
-  // Unpack received data
-  // Create a map from cells which are shared, to the remote processes
-  // which share them - corral ghost cells to end of range
-  std::int32_t c = 0;
-  std::int32_t gc = local_count;
-  std::map<std::int32_t, std::set<std::int32_t>> shared_cells;
-  for (std::int32_t p = 0; p < mpi_size; ++p)
-  {
-    std::vector<std::size_t>& received_data = received_cell_vertices[p];
-    for (auto it = received_data.begin() + 2; it != received_data.end();
-         it += (*it + num_cell_vertices + 2))
-    {
-      auto tmp_it = it;
-      const std::int32_t num_ghosts = *tmp_it++;
-
-      // Determine owner, and indexing.
-      // Note that *tmp_it may be equal to mpi_rank
-      const std::int32_t owner = (num_ghosts == 0) ? mpi_rank : *tmp_it;
-      const std::int64_t idx = (owner == mpi_rank) ? c : gc;
-      assert(idx < all_count);
-
-      if (num_ghosts != 0)
-      {
-        std::set<std::int32_t> proc_set(tmp_it, tmp_it + num_ghosts);
-
-        // Remove self from set of sharing processes
-        proc_set.erase(mpi_rank);
-        shared_cells.insert({idx, proc_set});
-        tmp_it += num_ghosts;
-      }
-
-      // Save user numbering
-      stored_tag[idx] = *tmp_it++;
-
-      // Copy cell vertices
-      for (std::int32_t j = 0; j < num_cell_vertices; ++j)
-        new_cell_vertices(idx, j) = *tmp_it++;
-
-      if (owner == mpi_rank)
-        ++c;
-      else
-        ++gc;
-    }
-  }
-
-  assert(c == local_count);
-  assert(gc == all_count);
-
-  // Need to get remote indexing of ghost cells
-
-  // Create a neighbourhood comm, since we know the processes already
-  std::set<std::int32_t> neighbour_set;
-  for (auto q : shared_cells)
-    neighbour_set.insert(q.second.begin(), q.second.end());
-  std::vector<std::int32_t> neighbours(neighbour_set.begin(),
-                                       neighbour_set.end());
-  std::map<int, int> proc_to_neighbour;
-  for (std::size_t i = 0; i < neighbours.size(); ++i)
-    proc_to_neighbour.insert({neighbours[i], i});
-  MPI_Comm neighbour_comm;
-  MPI_Dist_graph_create_adjacent(mpi_comm, neighbours.size(), neighbours.data(),
-                                 MPI_UNWEIGHTED, neighbours.size(),
-                                 neighbours.data(), MPI_UNWEIGHTED,
-                                 MPI_INFO_NULL, false, &neighbour_comm);
-
-  std::vector<std::vector<std::int64_t>> send_index(neighbours.size());
-  for (auto q : shared_cells)
-  {
-    const std::int32_t local_idx = q.first;
-    // Find owned and shared cells
-    if (local_idx < local_count)
-    {
-      for (int p : q.second)
-      {
-        const int np = proc_to_neighbour[p];
-        // Share this cell with neighbours
-        send_index[np].push_back(new_global_cell_indices[local_idx]);
-        send_index[np].push_back(stored_tag[local_idx]);
-      }
-    }
-    else
-      break;
-  }
-
-  std::vector<std::int64_t> send_data;
-  std::vector<int> send_offsets = {0};
-  for (std::size_t i = 0; i < neighbours.size(); ++i)
-  {
-    send_data.insert(send_data.end(), send_index[i].begin(),
-                     send_index[i].end());
-    send_offsets.push_back(send_data.size());
-  }
-  std::vector<int> recv_offsets;
-  std::vector<std::int64_t> recv_data;
-  dolfinx::MPI::neighbor_all_to_all(neighbour_comm, send_offsets, send_data,
-                                    recv_offsets, recv_data);
-  MPI_Comm_free(&neighbour_comm);
-
-  std::map<std::int64_t, std::int32_t> tag_to_position;
-  for (std::size_t i = 0; i < stored_tag.size(); ++i)
-    tag_to_position.insert({stored_tag[i], i});
-
-  std::stringstream s;
-  for (std::size_t i = 0; i < neighbours.size(); ++i)
-  {
-    for (int j = recv_offsets[i]; j < recv_offsets[i + 1]; j += 2)
-    {
-      const std::int64_t tag = recv_data[j + 1];
-      const auto pos = tag_to_position.find(tag);
-      assert(pos != tag_to_position.end());
-      const std::int32_t index = pos->second;
-      assert(index >= local_count);
-      new_global_cell_indices[index] = recv_data[j];
-    }
-  }
-
-  return std::tuple(std::move(new_cell_vertices),
-                    std::move(new_global_cell_indices), std::move(shared_cells),
-                    local_count);
+  return exterior_vertex;
 }
 //-----------------------------------------------------------------------------
-// Distribute additional cells implied by connectivity via vertex. The
-// input cell_vertices, shared_cells, global_cell_indices and
-// cell_partition must already be distributed with a ghost layer by
-// shared_facet.
-// FIXME: shared_cells, cell_vertices, global_cell_indices and
-// cell_partition are all modified by this function.
-void distribute_cell_layer(
-    MPI_Comm mpi_comm, const int num_regular_cells,
-    std::map<std::int32_t, std::set<std::int32_t>>& shared_cells,
-    Eigen::Array<std::int64_t, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>&
-        cell_vertices,
-    std::vector<std::int64_t>& global_cell_indices,
-    std::vector<int>& cell_partition)
+std::pair<std::vector<std::int32_t>, std::vector<std::int64_t>>
+Partitioning::reorder_global_indices(
+    MPI_Comm comm, const std::vector<std::int64_t>& global_indices,
+    const std::vector<bool>& shared_indices)
 {
-  common::Timer timer("Distribute cell layer");
+  common::Timer timer("Re-order global indices");
 
-  const int mpi_size = dolfinx::MPI::size(mpi_comm);
-  const int mpi_rank = dolfinx::MPI::rank(mpi_comm);
+  // TODO: Can this function be broken into multiple logical steps?
 
-  // Map from shared vertex to the set of cells containing it
-  std::map<std::int64_t, std::vector<std::int64_t>> sh_vert_to_cell;
+  assert(global_indices.size() == shared_indices.size());
 
-  // Global to local mapping of cell indices
-  std::map<std::int64_t, int> cell_global_to_local;
+  // Get maximum global index across all processes
+  std::int64_t my_max_global_index = 0;
+  auto it_max = std::max_element(global_indices.begin(), global_indices.end());
+  if (it_max != global_indices.end())
+    my_max_global_index = *it_max;
+  const std::int64_t max_global_index
+      = dolfinx::MPI::all_reduce(comm, my_max_global_index, MPI_MAX);
 
-  // Iterate only over ghost cells
-  for (Eigen::Index i = num_regular_cells; i < cell_vertices.rows(); ++i)
+  // Create global ->local map
+  std::unordered_map<std::int64_t, std::int32_t> global_to_local;
+  for (std::size_t i = 0; i < global_indices.size(); ++i)
+    global_to_local.insert({global_indices[i], i});
+
+  // Compute number of possibly shared vertices to send to each process,
+  // considering only vertices that are possibly shared
+  const int size = dolfinx::MPI::size(comm);
+  std::vector<int> number_send(size, 0);
+  for (auto& vertex : global_to_local)
   {
-    // Add map entry for each vertex of ghost cells
-    for (Eigen::Index p = 0; p < cell_vertices.cols(); ++p)
+    if (shared_indices[vertex.second])
     {
-      sh_vert_to_cell.insert(
-          {cell_vertices(i, p), std::vector<std::int64_t>()});
-    }
-
-    cell_global_to_local.insert({global_cell_indices[i], i});
-  }
-
-  // Iterate only over regular (non-ghost) cells
-  for (int i = 0; i < num_regular_cells; ++i)
-  {
-    for (Eigen::Index j = 0; j != cell_vertices.cols(); ++j)
-    {
-      // If vertex already in map, append local cell index to set
-      auto vc_it = sh_vert_to_cell.find(cell_vertices(i, j));
-      if (vc_it != sh_vert_to_cell.end())
-      {
-        cell_global_to_local.insert({global_cell_indices[i], i});
-        vc_it->second.push_back(i);
-      }
+      const int owner
+          = dolfinx::MPI::index_owner(size, vertex.first, max_global_index + 1);
+      number_send[owner] += 1;
     }
   }
 
-  // sh_vert_to_cell now contains a mapping from the vertices of ghost
-  // cells to any regular cells which they are also incident with.
+  // Compute send displacements
+  std::vector<int> disp_send(size + 1, 0);
+  std::partial_sum(number_send.begin(), number_send.end(),
+                   disp_send.begin() + 1);
 
-  // Send lists of cells/owners to "index owner" of vertex, collating
-  // and sending back out...
-  std::vector<std::vector<std::int64_t>> send_vertcells(mpi_size);
-  std::vector<std::vector<std::int64_t>> recv_vertcells(mpi_size);
-  for (const auto& vc_it : sh_vert_to_cell)
+  // Pack global index send data
+  std::vector<std::int64_t> indices_send(disp_send.back());
+  std::vector<int> disp_tmp = disp_send;
+  for (auto vertex : global_to_local)
   {
-    // Generate unique destination "index owner" based on vertex index
-    const int dest = (vc_it.first) % mpi_size;
-
-    std::vector<std::int64_t>& sendv = send_vertcells[dest];
-
-    // Pack as [cell_global_index, this_vertex, [other_vertices]]
-    for (const auto& q : vc_it.second)
+    if (shared_indices[vertex.second])
     {
-      sendv.push_back(global_cell_indices[q]);
-      sendv.push_back(vc_it.first);
-      for (Eigen::Index v = 0; v < cell_vertices.cols(); ++v)
-      {
-        if (cell_vertices(q, v) != vc_it.first)
-          sendv.push_back(cell_vertices(q, v));
-      }
+      const int owner
+          = dolfinx::MPI::index_owner(size, vertex.first, max_global_index + 1);
+      indices_send[disp_tmp[owner]++] = vertex.first;
     }
   }
 
-  dolfinx::MPI::all_to_all(mpi_comm, send_vertcells, recv_vertcells);
-
-  const std::int32_t num_cell_vertices = cell_vertices.cols();
-
-  // Collect up cells on common vertices
-
-  // Reset map
-  sh_vert_to_cell.clear();
-  std::vector<std::int64_t> cell_set;
-  for (int i = 0; i < mpi_size; ++i)
-  {
-    const std::vector<std::int64_t>& recv_i = recv_vertcells[i];
-    for (auto q = recv_i.begin(); q != recv_i.end(); q += num_cell_vertices + 1)
-    {
-      const std::size_t vertex_index = *(q + 1);
-      // Packing: [owner, cell_index, this_vertex, [other_vertices]]
-      cell_set = {i};
-      cell_set.insert(cell_set.end(), q, q + num_cell_vertices + 1);
-
-      // Look for vertex in map, and add the attached cell
-      auto it = sh_vert_to_cell.insert({vertex_index, cell_set});
-      if (!it.second)
-        it.first->second.insert(it.first->second.end(), cell_set.begin(),
-                                cell_set.end());
-    }
-  }
-
-  // Clear sending arrays
-  send_vertcells = std::vector<std::vector<std::int64_t>>(mpi_size);
-
-  // Send back out to all processes which share the same vertex
-  for (const auto& p : sh_vert_to_cell)
-  {
-    for (auto q = p.second.begin(); q != p.second.end();
-         q += (num_cell_vertices + 2))
-    {
-      send_vertcells[*q].insert(send_vertcells[*q].end(), p.second.begin(),
-                                p.second.end());
-    }
-  }
-
-  dolfinx::MPI::all_to_all(mpi_comm, send_vertcells, recv_vertcells);
-
-  // Count up new cells, assign local index, set owner and initialise
-  // shared_cells
-
-  const std::int32_t num_cells = cell_vertices.rows();
-  std::int32_t count = num_cells;
-
-  for (const auto& p : recv_vertcells)
-  {
-    for (auto q = p.begin(); q != p.end(); q += num_cell_vertices + 2)
-    {
-      const std::int64_t owner = *q;
-      const std::int64_t cell_index = *(q + 1);
-
-      auto cell_insert = cell_global_to_local.insert({cell_index, count});
-      if (cell_insert.second)
-      {
-        shared_cells.insert({count, std::set<std::int32_t>()});
-        global_cell_indices.push_back(cell_index);
-        cell_partition.push_back(owner);
-        ++count;
-      }
-    }
-  }
-
-  // Add received cells and update sharing information for cells
-  cell_vertices.conservativeResize(count, num_cell_vertices);
-
-  // Set of processes and cells sharing the same vertex
-  std::set<std::int32_t> sharing_procs;
-  std::vector<std::size_t> sharing_cells;
-
-  std::size_t last_vertex = std::numeric_limits<std::size_t>::max();
-  for (const auto& p : recv_vertcells)
-  {
-    for (auto q = p.begin(); q != p.end(); q += num_cell_vertices + 2)
-    {
-      const int owner = *q;
-      const std::size_t cell_index = *(q + 1);
-      const std::size_t shared_vertex = *(q + 2);
-      const std::int32_t local_index
-          = cell_global_to_local.find(cell_index)->second;
-
-      // Add vertices to new cells
-      if (local_index >= num_cells)
-      {
-        for (std::int32_t j = 0; j != num_cell_vertices; ++j)
-          cell_vertices(local_index, j) = *(q + j + 2);
-      }
-
-      // If starting on a new shared vertex, dump old data into
-      // shared_cells
-      if (shared_vertex != last_vertex)
-      {
-        last_vertex = shared_vertex;
-        for (const auto& c : sharing_cells)
-        {
-          auto it = shared_cells.insert({c, sharing_procs});
-          if (!it.second)
-            it.first->second.insert(sharing_procs.begin(), sharing_procs.end());
-        }
-        sharing_procs.clear();
-        sharing_cells.clear();
-      }
-
-      // Don't include self in sharing processes
-      if (owner != mpi_rank)
-        sharing_procs.insert(owner);
-      sharing_cells.push_back(local_index);
-    }
-  }
-
-  // Dump data from final vertex into shared_cells
-  for (const auto& c : sharing_cells)
-  {
-    auto it = shared_cells.insert({c, sharing_procs});
-    if (!it.second)
-      it.first->second.insert(sharing_procs.begin(), sharing_procs.end());
-  }
-}
-
-} // namespace
-
-//-----------------------------------------------------------------------------
-std::tuple<
-    std::shared_ptr<common::IndexMap>, std::vector<std::int64_t>,
-    Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>>
-Partitioning::distribute_points(
-    MPI_Comm comm,
-    Eigen::Ref<const Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic,
-                                  Eigen::RowMajor>>
-        points,
-    const std::vector<std::int64_t>& global_point_indices)
-{
-  common::Timer timer("Distribute points");
-
-  int mpi_size = MPI::size(comm);
-  int mpi_rank = MPI::rank(comm);
-
-  // Compute where (process number) the points we need are located
-  std::vector<std::int64_t> ranges(mpi_size);
-  MPI::all_gather(comm, (std::int64_t)points.rows(), ranges);
-  for (std::size_t i = 1; i < ranges.size(); ++i)
-    ranges[i] += ranges[i - 1];
-  ranges.insert(ranges.begin(), 0);
-
-  std::vector<int> send_offsets(mpi_size);
-  std::vector<std::int64_t>::const_iterator it = global_point_indices.begin();
-  for (int i = 0; i < mpi_size; ++i)
-  {
-    // Find first index on each process
-    it = std::lower_bound(it, global_point_indices.end(), ranges[i]);
-    send_offsets[i] = it - global_point_indices.begin();
-  }
-  send_offsets.push_back(global_point_indices.size());
-
-  std::vector<int> send_sizes(mpi_size);
-  for (int i = 0; i < mpi_size; ++i)
-    send_sizes[i] = send_offsets[i + 1] - send_offsets[i];
-
-  // Get data size to transfer in Alltoallv
-  std::vector<int> recv_sizes(mpi_size);
-  MPI_Alltoall(send_sizes.data(), 1, MPI_INT, recv_sizes.data(), 1, MPI_INT,
+  // Send/receive number of indices to communicate to each process
+  std::vector<int> number_recv(size);
+  MPI_Alltoall(number_send.data(), 1, MPI_INT, number_recv.data(), 1, MPI_INT,
                comm);
 
-  std::vector<int> recv_offsets(mpi_size + 1, 0);
-  std::partial_sum(recv_sizes.begin(), recv_sizes.end(),
-                   recv_offsets.begin() + 1);
-  std::vector<std::int64_t> recv_global_index(recv_offsets.back());
+  // Compute receive displacements
+  std::vector<int> disp_recv(size + 1, 0);
+  std::partial_sum(number_recv.begin(), number_recv.end(),
+                   disp_recv.begin() + 1);
 
-  // Transfer global indices to the processes holding the points
-  MPI_Alltoallv(global_point_indices.data(), send_sizes.data(),
-                send_offsets.data(), MPI::mpi_type<std::int64_t>(),
-                recv_global_index.data(), recv_sizes.data(),
-                recv_offsets.data(), MPI::mpi_type<std::int64_t>(), comm);
-
-  // Determine ownership
-  // Lowest rank will be the index owner (FIXME: to be revised)
-  std::vector<int> index_owner(ranges[mpi_rank + 1] - ranges[mpi_rank], -1);
-  std::vector<int> count(mpi_size);
-  for (int i = 0; i < mpi_size; ++i)
-  {
-    for (int j = recv_offsets[i]; j < recv_offsets[i + 1]; ++j)
-    {
-      const std::int64_t gi = recv_global_index[j] - ranges[mpi_rank];
-      if (index_owner[gi] < 0)
-      {
-        index_owner[gi] = i;
-        ++count[i];
-      }
-    }
-  }
-
-  // Get global offsets - each process contains a portion of owned indices
-  // of each other process. FIXME: optimise this section
-  std::vector<int> count_remote(mpi_size);
-  MPI_Alltoall(count.data(), 1, MPI_INT, count_remote.data(), 1, MPI_INT, comm);
-  std::vector<int> count_sum(mpi_size + 1, 0);
-  std::partial_sum(count_remote.begin(), count_remote.end(),
-                   count_sum.begin() + 1);
-  const std::int64_t local_size = count_sum.back();
-  count_sum[0] = local_size;
-
-  // Send offsets back to holding processes
-  MPI_Alltoall(count_sum.data(), 1, MPI_INT, count_remote.data(), 1, MPI_INT,
-               comm);
-  if (mpi_rank == 0)
-  {
-    count_sum[0] = 0;
-    std::partial_sum(count_remote.begin(), count_remote.end(),
-                     count_sum.begin() + 1);
-    std::fill(count_remote.begin(), count_remote.end(), 0);
-  }
-  MPI_Bcast(count_sum.data(), mpi_size, MPI_INT, 0, comm);
-  std::int64_t local_offset = count_sum[mpi_rank];
-
-  for (int i = 0; i < mpi_size; ++i)
-    count_sum[i] += count_remote[i];
-
-  // Make new global indexing, taking ghosting into account
-  std::vector<std::int64_t> new_global_index0(index_owner.size(), -1);
-  // Label 'local' indices first
-  for (int i = 0; i < mpi_size; ++i)
-  {
-    for (int j = recv_offsets[i]; j < recv_offsets[i + 1]; ++j)
-    {
-      const std::int64_t gi = recv_global_index[j] - ranges[mpi_rank];
-      if (index_owner[gi] == i)
-      {
-        assert(new_global_index0[gi] == -1);
-        new_global_index0[gi] = count_sum[i];
-        ++count_sum[i];
-      }
-    }
-  }
-
-  // Second pass, fill in return data, including ghost indices
-  std::vector<std::int64_t> new_global_index(recv_global_index.size());
-  for (int i = 0; i < mpi_size; ++i)
-  {
-    for (int j = recv_offsets[i]; j < recv_offsets[i + 1]; ++j)
-    {
-      const std::int64_t gi = recv_global_index[j] - ranges[mpi_rank];
-      assert(new_global_index0[gi] != -1);
-      new_global_index[j] = new_global_index0[gi];
-    }
-  }
-
-  std::vector<std::int64_t> recv_new_global(send_offsets.back());
-  MPI_Alltoallv(new_global_index.data(), recv_sizes.data(), recv_offsets.data(),
-                MPI::mpi_type<std::int64_t>(), recv_new_global.data(),
-                send_sizes.data(), send_offsets.data(),
+  // Send/receive global indices
+  std::vector<std::int64_t> vertices_recv(disp_recv.back());
+  MPI_Alltoallv(indices_send.data(), number_send.data(), disp_send.data(),
+                MPI::mpi_type<std::int64_t>(), vertices_recv.data(),
+                number_recv.data(), disp_recv.data(),
                 MPI::mpi_type<std::int64_t>(), comm);
 
-  std::vector<std::int32_t> new_local;
-  std::vector<std::int64_t> ghosts;
-  for (std::int64_t r : recv_new_global)
+  // Build list of sharing processes for each vertex
+  const std::array<std::int64_t, 2> range
+      = dolfinx::MPI::local_range(comm, max_global_index + 1);
+  std::vector<std::set<int>> owners(range[1] - range[0]);
+  for (int i = 0; i < size; ++i)
   {
-    std::int64_t rlocal = r - local_offset;
-    if (rlocal < 0 or rlocal >= local_size)
+    assert((i + 1) < (int)disp_recv.size());
+    for (int j = disp_recv[i]; j < disp_recv[i + 1]; ++j)
     {
-      new_local.push_back(local_size + ghosts.size());
-      ghosts.push_back(r);
+      // Get back to 'zero' reference index
+      assert(j < (int)vertices_recv.size());
+      const std::int64_t index = vertices_recv[j] - range[0];
+
+      assert(index < (int)owners.size());
+      owners[index].insert(i);
     }
+  }
+
+  // For each index, build list of sharing processes
+  std::unordered_map<std::int64_t, std::set<int>> global_vertex_to_procs;
+  for (int i = 0; i < size; ++i)
+  {
+    for (int j = disp_recv[i]; j < disp_recv[i + 1]; ++j)
+      global_vertex_to_procs[vertices_recv[j]].insert(i);
+  }
+
+  // For vertices on this process, get list of sharing process
+  std::unique_ptr<const graph::AdjacencyList<int>> sharing_processes;
+  {
+    // Pack process that share each vertex
+    std::vector<int> data_send, disp_send(size + 1, 0), num_send(size);
+    for (int p = 0; p < size; ++p)
+    {
+      for (int j = disp_recv[p]; j < disp_recv[p + 1]; ++j)
+      {
+        const std::int64_t vertex = vertices_recv[j];
+        auto it = global_vertex_to_procs.find(vertex);
+        assert(it != global_vertex_to_procs.end());
+        data_send.push_back(it->second.size());
+        data_send.insert(data_send.end(), it->second.begin(), it->second.end());
+      }
+      disp_send[p + 1] = data_send.size();
+      num_send[p] = disp_send[p + 1] - disp_send[p];
+    }
+
+    // Send/receive number of process that 'share' each vertex
+    std::vector<int> num_recv(size);
+    MPI_Alltoall(num_send.data(), 1, MPI_INT, num_recv.data(), 1, MPI_INT,
+                 comm);
+
+    // Compute receive displacements
+    std::vector<int> disp_recv(size + 1, 0);
+    std::partial_sum(num_recv.begin(), num_recv.end(), disp_recv.begin() + 1);
+
+    // Send/receive sharing data
+    std::vector<int> data_recv(disp_recv.back(), -1);
+    MPI_Alltoallv(data_send.data(), num_send.data(), disp_send.data(),
+                  MPI::mpi_type<int>(), data_recv.data(), num_recv.data(),
+                  disp_recv.data(), MPI::mpi_type<int>(), comm);
+
+    // Unpack data
+    std::vector<int> processes, process_offsets(1, 0);
+    for (std::size_t p = 0; p < disp_recv.size() - 1; ++p)
+    {
+      for (int i = disp_recv[p]; i < disp_recv[p + 1];)
+      {
+        const int num_procs = data_recv[i++];
+        for (int j = 0; j < num_procs; ++j)
+          processes.push_back(data_recv[i++]);
+        process_offsets.push_back(process_offsets.back() + num_procs);
+      }
+    }
+
+    sharing_processes = std::make_unique<const graph::AdjacencyList<int>>(
+        processes, process_offsets);
+  }
+
+  // Build global-to-local map for non-shared indices (0)
+  std::unordered_map<std::int64_t, std::int32_t> global_to_local_owned0;
+  for (auto& vertex : global_to_local)
+  {
+    if (!shared_indices[vertex.second])
+      global_to_local_owned0.insert(vertex);
+  }
+
+  // Loop over indices that were communicated and:
+  // 1. Add 'exterior' but non-shared indices to global_to_local_owned0
+  // 2. Add shared and owned indices to global_to_local_owned1
+  // 3. Add non owned indices to global_to_local_unowned
+  const int rank = dolfinx::MPI::rank(comm);
+  std::unordered_map<std::int64_t, std::int32_t> global_to_local_owned1,
+      global_to_local_unowned;
+  for (int i = 0; i < sharing_processes->num_nodes(); ++i)
+  {
+    auto it = global_to_local.find(indices_send[i]);
+    assert(it != global_to_local.end());
+    if (sharing_processes->num_links(i) == 1)
+      global_to_local_owned0.insert(*it);
+    else if (sharing_processes->links(i).minCoeff() == rank)
+      global_to_local_owned1.insert(*it);
     else
-      new_local.push_back(rlocal);
+      global_to_local_unowned.insert(*it);
   }
 
-  Eigen::Map<Eigen::Array<std::int64_t, Eigen::Dynamic, 1>> garr(ghosts.data(),
-                                                                 ghosts.size());
-
-  auto v_idx_map
-      = std::make_shared<common::IndexMap>(comm, local_size, garr, 1);
-
-  // Create compound datatype of gdim*doubles (point coords)
-  MPI_Datatype compound_f64;
-  MPI_Type_contiguous(points.cols(), MPI_DOUBLE, &compound_f64);
-  MPI_Type_commit(&compound_f64);
-
-  // Fill in points to send back
-  Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
-      send_points(recv_global_index.size(), points.cols());
-  for (std::size_t i = 0; i < recv_global_index.size(); ++i)
+  // Re-number indices owned by this rank
+  std::vector<std::int64_t> local_to_original;
+  std::vector<std::int32_t> local_to_local_new(shared_indices.size(), -1);
+  std::int32_t p = 0;
+  for (const auto& index : global_to_local_owned0)
   {
-    assert(recv_global_index[i] >= ranges[mpi_rank]);
-    assert(recv_global_index[i] < ranges[mpi_rank + 1]);
-
-    int local_index = recv_global_index[i] - ranges[mpi_rank];
-    send_points.row(i) = points.row(local_index);
+    assert(index.second < (int)local_to_local_new.size());
+    local_to_original.push_back(index.first);
+    local_to_local_new[index.second] = p++;
   }
-
-  // Send points back, matching indices in global_index_set
-  Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
-      recv_points(global_point_indices.size(), points.cols());
-
-  MPI_Alltoallv(send_points.data(), recv_sizes.data(), recv_offsets.data(),
-                compound_f64, recv_points.data(), send_sizes.data(),
-                send_offsets.data(), compound_f64, comm);
-  timer.stop();
-
-  // Sort points and input global_indices into new order...
-
-  std::vector<std::int64_t> local_to_global(v_idx_map->size_local()
-                                            + v_idx_map->num_ghosts());
-  Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
-      points_local(recv_points.rows(), recv_points.cols());
-  for (std::size_t i = 0; i < new_local.size(); ++i)
+  for (const auto& index : global_to_local_owned1)
   {
-    int local_idx = new_local[i];
-    local_to_global[local_idx] = global_point_indices[i];
-    points_local.row(local_idx) = recv_points.row(i);
+    assert(index.second < (int)local_to_local_new.size());
+    local_to_original.push_back(index.first);
+    local_to_local_new[index.second] = p++;
   }
 
-  return std::tuple(v_idx_map, std::move(local_to_global),
-                    std::move(points_local));
+  // Compute process offset
+  const std::int64_t num_owned_vertices
+      = global_to_local_owned0.size() + global_to_local_owned1.size();
+  const std::int64_t offset_global
+      = dolfinx::MPI::global_offset(comm, num_owned_vertices, true);
+
+  // Send global new global indices that this process has numbered
+  for (int i = 0; i < sharing_processes->num_nodes(); ++i)
+  {
+    // Get old global -> local
+    auto it = global_to_local.find(indices_send[i]);
+    assert(it != global_to_local.end());
+
+    if (sharing_processes->num_links(i) == 1
+        and sharing_processes->links(i).minCoeff() == rank)
+    {
+      global_to_local_owned1.insert(*it);
+    }
+  }
+
+  // Get array of unique neighbouring process ranks, and remove self
+  const Eigen::Array<int, Eigen::Dynamic, 1>& procs
+      = sharing_processes->array();
+  std::vector<int> neighbours(procs.data(), procs.data() + procs.rows());
+  std::sort(neighbours.begin(), neighbours.end());
+  neighbours.erase(std::unique(neighbours.begin(), neighbours.end()),
+                   neighbours.end());
+  auto it = std::find(neighbours.begin(), neighbours.end(), rank);
+  if (it != neighbours.end())
+    neighbours.erase(it);
+
+  // Create neighbourhood communicator
+  MPI_Comm comm_n;
+  MPI_Dist_graph_create_adjacent(comm, neighbours.size(), neighbours.data(),
+                                 MPI_UNWEIGHTED, neighbours.size(),
+                                 neighbours.data(), MPI_UNWEIGHTED,
+                                 MPI_INFO_NULL, false, &comm_n);
+
+  // Compute number on (global old, global new) pairs to send to each
+  // neighbour
+  std::vector<int> number_send_neigh(neighbours.size(), 0);
+  for (std::size_t i = 0; i < neighbours.size(); ++i)
+  {
+    for (int j = 0; j < sharing_processes->num_nodes(); ++j)
+    {
+      auto p = sharing_processes->links(j);
+      auto it = std::find(p.data(), p.data() + p.rows(), neighbours[i]);
+      if (it != (p.data() + p.rows()))
+        number_send_neigh[i] += 2;
+    }
+  }
+
+  // Compute send displacements
+  std::vector<int> disp_send_neigh(neighbours.size() + 1, 0);
+  std::partial_sum(number_send_neigh.begin(), number_send_neigh.end(),
+                   disp_send_neigh.begin() + 1);
+
+  // Communicate number of values to send/receive
+  std::vector<int> num_indices_recv(neighbours.size());
+  MPI_Neighbor_alltoall(number_send_neigh.data(), 1, MPI_INT,
+                        num_indices_recv.data(), 1, MPI_INT, comm_n);
+
+  // Compute receive displacements
+  std::vector<int> disp_recv_neigh(neighbours.size() + 1, 0);
+  std::partial_sum(num_indices_recv.begin(), num_indices_recv.end(),
+                   disp_recv_neigh.begin() + 1);
+
+  // Pack data to send
+  std::vector<int> offset_neigh = disp_send_neigh;
+  std::vector<std::int64_t> data_send_neigh(disp_send_neigh.back(), -1);
+  for (std::size_t p = 0; p < neighbours.size(); ++p)
+  {
+    const int neighbour = neighbours[p];
+    for (int i = 0; i < sharing_processes->num_nodes(); ++i)
+    {
+      auto it = global_to_local.find(indices_send[i]);
+      assert(it != global_to_local.end());
+
+      const std::int64_t global_old = it->first;
+      const std::int32_t local_old = it->second;
+      std::int64_t global_new = local_to_local_new[local_old];
+      if (global_new >= 0)
+        global_new += offset_global;
+
+      auto procs = sharing_processes->links(i);
+      for (int k = 0; k < procs.rows(); ++k)
+      {
+        if (procs[k] == neighbour)
+        {
+          data_send_neigh[offset_neigh[p]++] = global_old;
+          data_send_neigh[offset_neigh[p]++] = global_new;
+        }
+      }
+    }
+  }
+
+  // Send/receive data
+  std::vector<std::int64_t> data_recv_neigh(disp_recv_neigh.back());
+  MPI_Neighbor_alltoallv(data_send_neigh.data(), number_send_neigh.data(),
+                         disp_send_neigh.data(), MPI_INT64_T,
+                         data_recv_neigh.data(), num_indices_recv.data(),
+                         disp_recv_neigh.data(), MPI_INT64_T, comm_n);
+
+  MPI_Comm_free(&comm_n);
+
+  // Unpack received (global old, global new) pairs
+  std::map<std::int64_t, std::int64_t> global_old_new;
+  for (std::size_t i = 0; i < data_recv_neigh.size(); i += 2)
+  {
+    if (data_recv_neigh[i + 1] >= 0)
+      global_old_new.insert({data_recv_neigh[i], data_recv_neigh[i + 1]});
+  }
+
+  // Build array of ghost indices (indices owned and numbered by another
+  // process)
+  std::vector<std::int64_t> ghosts;
+  for (auto it = global_to_local_unowned.begin();
+       it != global_to_local_unowned.end(); ++it)
+  {
+    auto pair = global_old_new.find(it->first);
+    if (pair != global_old_new.end())
+    {
+      assert(it->second < (int)local_to_local_new.size());
+      local_to_original.push_back(it->first);
+      local_to_local_new[it->second] = p++;
+      ghosts.push_back(pair->second);
+    }
+  }
+
+  return {local_to_local_new, ghosts};
 }
 //-----------------------------------------------------------------------------
-// Compute cell partitioning from local mesh data. Returns a vector
-// 'cell -> process' vector for cells, and a map 'local cell index ->
-// processes' to which ghost cells must be sent
-PartitionData Partitioning::partition_cells(
-    const MPI_Comm& mpi_comm, int nparts, const mesh::CellType cell_type,
-    const Eigen::Ref<const Eigen::Array<std::int64_t, Eigen::Dynamic,
-                                        Eigen::Dynamic, Eigen::RowMajor>>&
-        cell_vertices,
-    const mesh::Partitioner graph_partitioner, mesh::GhostMode ghost_mode)
+graph::AdjacencyList<std::int32_t>
+Partitioning::partition_cells(MPI_Comm comm, int n,
+                              const mesh::CellType cell_type,
+                              const graph::AdjacencyList<std::int64_t>& cells)
 {
+  common::Timer timer("Partition cells across processes");
+
   LOG(INFO) << "Compute partition of cells across processes";
 
-  // If this process is not in the (new) communicator, it will be
-  // MPI_COMM_NULL.
-  if (mpi_comm != MPI_COMM_NULL)
+  // FIXME: Update GraphBuilder to use AdjacencyList
+  // Wrap AdjacencyList
+  const Eigen::Map<const Eigen::Array<std::int64_t, Eigen::Dynamic,
+                                      Eigen::Dynamic, Eigen::RowMajor>>
+      _cells(cells.array().data(), cells.num_nodes(),
+             mesh::num_cell_vertices(cell_type));
+
+  // Compute distributed dual graph (for the cells on this process)
+  const auto [local_graph, graph_info]
+      = graph::GraphBuilder::compute_dual_graph(comm, _cells, cell_type);
+
+  // Extract data from graph_info
+  const auto [num_ghost_nodes, num_local_edges, num_nonlocal_edges]
+      = graph_info;
+
+  graph::AdjacencyList<SCOTCH_Num> adj_graph(local_graph);
+  std::vector<std::size_t> weights;
+
+  // Call partitioner
+  graph::AdjacencyList<std::int32_t> partition = graph::SCOTCH::partition(
+      comm, (SCOTCH_Num)n, adj_graph, weights, num_ghost_nodes, false);
+
+  return partition;
+}
+//-----------------------------------------------------------------------------
+std::pair<graph::AdjacencyList<std::int32_t>, std::vector<std::int64_t>>
+Partitioning::create_local_adjacency_list(
+    const graph::AdjacencyList<std::int64_t>& cells)
+{
+  const Eigen::Array<std::int64_t, Eigen::Dynamic, 1>& array = cells.array();
+  Eigen::Array<std::int32_t, Eigen::Dynamic, 1> array_local(array.rows());
+
+  // Re-map global to local
+  int local = 0;
+  std::unordered_map<std::int64_t, std::int32_t> global_to_local;
+  for (int i = 0; i < array.rows(); ++i)
   {
-    // Compute dual graph (for this partition)
-    auto [local_graph, graph_info] = graph::GraphBuilder::compute_dual_graph(
-        mpi_comm, cell_vertices, cell_type);
-
-    const std::size_t global_graph_size
-        = MPI::sum(mpi_comm, local_graph.size());
-    const std::size_t num_processes = MPI::size(mpi_comm);
-
-    // Require at least two cells per processor for mesh partitioning in
-    // parallel. Partitioning small graphs may lead to segfaults or MPI
-    // processes with 0 cells.
-    if (num_processes > 1 and global_graph_size / nparts < 2)
+    const std::int64_t global = array(i);
+    const auto [it, inserted] = global_to_local.insert({global, local});
+    if (inserted)
     {
-      throw std::runtime_error("Cannot partition a graph of size "
-                               + std::to_string(global_graph_size) + " into "
-                               + std::to_string(nparts) + " parts.");
-    }
-
-    bool ghosted = (ghost_mode != mesh::GhostMode::none);
-
-    // Compute cell partition using partitioner from parameter system
-    if (graph_partitioner == mesh::Partitioner::scotch)
-    {
-      graph::AdjacencyList<SCOTCH_Num> adj_graph(local_graph);
-      std::vector<std::size_t> weights;
-      const std::int32_t num_ghost_nodes = std::get<0>(graph_info);
-      return PartitionData(
-          graph::SCOTCH::partition(mpi_comm, (SCOTCH_Num)nparts, adj_graph,
-                                   weights, num_ghost_nodes, ghosted));
-    }
-    else if (graph_partitioner == mesh::Partitioner::parmetis)
-    {
-#ifdef HAS_PARMETIS
-      graph::AdjacencyList<idx_t> adj_graph(local_graph);
-      return PartitionData(graph::ParMETIS::partition(mpi_comm, (idx_t)nparts,
-                                                      adj_graph, ghosted));
-#else
-      throw std::runtime_error("ParMETIS not available");
-#endif
-    }
-    else if (graph_partitioner == mesh::Partitioner::kahip)
-    {
-#ifdef HAS_KAHIP
-      graph::AdjacencyList<unsigned long long> adj_graph(local_graph);
-      return PartitionData(
-          graph::KaHIP::partition(mpi_comm, nparts, adj_graph, ghosted));
-#else
-      throw std::runtime_error("KaHIP not available");
-#endif
+      array_local[i] = local;
+      ++local;
     }
     else
-      throw std::runtime_error("Unknown graph partitioner");
-
-    return PartitionData({}, {});
+      array_local[i] = it->second;
   }
-  return PartitionData({}, {});
+
+  std::vector<std::int64_t> local_to_global(global_to_local.size());
+  for (const auto& e : global_to_local)
+    local_to_global[e.second] = e.first;
+
+  const Eigen::Array<std::int32_t, Eigen::Dynamic, 1>& offsets
+      = cells.offsets();
+  return {graph::AdjacencyList<std::int32_t>(array_local, offsets),
+          std::move(local_to_global)};
 }
 //-----------------------------------------------------------------------------
-// Build a distributed mesh from local mesh data with a computed
-// partition
-mesh::Mesh Partitioning::build_from_partition(
-    const MPI_Comm& comm, mesh::CellType cell_type,
+std::tuple<graph::AdjacencyList<std::int32_t>, common::IndexMap>
+Partitioning::create_distributed_adjacency_list(
+    MPI_Comm comm, const graph::AdjacencyList<std::int32_t>& list_local,
+    const std::vector<std::int64_t>& local_to_global_links,
+    const std::vector<bool>& shared_links)
+{
+  common::Timer timer("Create distributed AdjacencyList");
+
+  // Compute new local and global indices
+  const auto [local_to_local_new, ghosts]
+      = reorder_global_indices(comm, local_to_global_links, shared_links);
+
+  const Eigen::Array<std::int32_t, Eigen::Dynamic, 1>& data_old
+      = list_local.array();
+  Eigen::Array<std::int32_t, Eigen::Dynamic, 1> data_new(data_old.rows());
+  for (int i = 0; i < data_new.rows(); ++i)
+    data_new[i] = local_to_local_new[data_old[i]];
+
+  const int num_owned_vertices = local_to_local_new.size() - ghosts.size();
+  return {graph::AdjacencyList<std::int32_t>(data_new, list_local.offsets()),
+          common::IndexMap(comm, num_owned_vertices, ghosts, 1)};
+}
+//-----------------------------------------------------------------------------
+std::tuple<graph::AdjacencyList<std::int64_t>, std::vector<int>,
+           std::vector<std::int64_t>>
+Partitioning::distribute(MPI_Comm comm,
+                         const graph::AdjacencyList<std::int64_t>& list,
+                         const graph::AdjacencyList<std::int32_t>& destinations)
+{
+  common::Timer timer("Distribute AdjacencyList");
+
+  assert(list.num_nodes() == (int)destinations.num_nodes());
+  const std::int64_t offset_global
+      = dolfinx::MPI::global_offset(comm, list.num_nodes(), true);
+
+  const int size = dolfinx::MPI::size(comm);
+
+  // Compute number of links to send to each process
+  std::vector<int> num_per_dest_send(size, 0);
+  for (int i = 0; i < destinations.num_nodes(); ++i)
+  {
+    const auto& dests = destinations.links(i);
+    for (int j = 0; j < destinations.num_links(i); ++j)
+      num_per_dest_send[dests[j]] += list.num_links(i) + 2;
+  }
+
+  // Compute send array displacements
+  std::vector<int> disp_send(size + 1, 0);
+  std::partial_sum(num_per_dest_send.begin(), num_per_dest_send.end(),
+                   disp_send.begin() + 1);
+
+  // Send/receive number of items to communicate
+  std::vector<int> num_per_dest_recv(size, 0);
+  MPI_Alltoall(num_per_dest_send.data(), 1, MPI_INT, num_per_dest_recv.data(),
+               1, MPI_INT, comm);
+
+  // Compute receive array displacements
+  std::vector<int> disp_recv(size + 1, 0);
+  std::partial_sum(num_per_dest_recv.begin(), num_per_dest_recv.end(),
+                   disp_recv.begin() + 1);
+
+  // Prepare send buffer
+  std::vector<int> offset = disp_send;
+  std::vector<std::int64_t> data_send(disp_send.back());
+  for (int i = 0; i < list.num_nodes(); ++i)
+  {
+    const auto& dests = destinations.links(i);
+    for (std::int32_t j = 0; j < destinations.num_links(i); ++j)
+    {
+      std::int32_t dest = dests[j];
+      auto links = list.links(i);
+      data_send[offset[dest]++] = i + offset_global;
+      data_send[offset[dest]++] = links.rows();
+      for (int k = 0; k < links.rows(); ++k)
+        data_send[offset[dest]++] = links(k);
+    }
+  }
+
+  // Send/receive data
+  std::vector<std::int64_t> data_recv(disp_recv.back());
+  MPI_Alltoallv(data_send.data(), num_per_dest_send.data(), disp_send.data(),
+                MPI_INT64_T, data_recv.data(), num_per_dest_recv.data(),
+                disp_recv.data(), MPI_INT64_T, comm);
+
+  // Unpack receive buffer
+  std::vector<std::int64_t> array, global_indices;
+  std::vector<std::int32_t> list_offset(1, 0);
+  std::vector<int> src;
+  for (std::size_t p = 0; p < disp_recv.size() - 1; ++p)
+  {
+    for (int i = disp_recv[p]; i < disp_recv[p + 1];)
+    {
+      src.push_back(p);
+      global_indices.push_back(data_recv[i++]);
+      const std::int64_t num_links = data_recv[i++];
+      for (int j = 0; j < num_links; ++j)
+        array.push_back(data_recv[i++]);
+      list_offset.push_back(list_offset.back() + num_links);
+    }
+  }
+
+  return {graph::AdjacencyList<std::int64_t>(array, list_offset),
+          std::move(src), std::move(global_indices)};
+}
+//-----------------------------------------------------------------------------
+std::pair<graph::AdjacencyList<std::int64_t>, std::vector<std::int64_t>>
+Partitioning::exchange(MPI_Comm comm,
+                       const graph::AdjacencyList<std::int64_t>& list,
+                       const graph::AdjacencyList<std::int32_t>& destinations,
+                       const std::set<int>&)
+{
+  // TODO: This can be significantly optimised (avoiding all-to-all) by
+  // sending in more information on source/dest ranks
+
+  assert(list.num_nodes() == (int)destinations.num_nodes());
+  const std::int64_t offset_global
+      = dolfinx::MPI::global_offset(comm, list.num_nodes(), true);
+
+  const int size = dolfinx::MPI::size(comm);
+
+  // Compute number of links to send to each process
+  std::vector<int> num_per_dest_send(size, 0);
+  for (int i = 0; i < destinations.num_nodes(); ++i)
+  {
+    const auto& dests = destinations.links(i);
+    for (int j = 0; j < destinations.num_links(i); ++j)
+      num_per_dest_send[dests[j]] += list.num_links(i) + 2;
+  }
+
+  // Compute send array displacements
+  std::vector<int> disp_send(size + 1, 0);
+  std::partial_sum(num_per_dest_send.begin(), num_per_dest_send.end(),
+                   disp_send.begin() + 1);
+
+  // Send/receive number of items to communicate
+  std::vector<int> num_per_dest_recv(size, 0);
+  MPI_Alltoall(num_per_dest_send.data(), 1, MPI_INT, num_per_dest_recv.data(),
+               1, MPI_INT, comm);
+
+  // Compite receive array displacements
+  std::vector<int> disp_recv(size + 1, 0);
+  std::partial_sum(num_per_dest_recv.begin(), num_per_dest_recv.end(),
+                   disp_recv.begin() + 1);
+
+  // Prepare send buffer
+  std::vector<int> offset = disp_send;
+  std::vector<std::int64_t> data_send(disp_send.back());
+  for (int i = 0; i < list.num_nodes(); ++i)
+  {
+    const auto& dests = destinations.links(i);
+    for (int j = 0; j < destinations.num_links(i); ++j)
+    {
+      const int dest = dests[j];
+      auto links = list.links(i);
+      data_send[offset[dest]++] = i + offset_global;
+      data_send[offset[dest]++] = links.rows();
+      for (int k = 0; k < links.rows(); ++k)
+        data_send[offset[dest]++] = links(k);
+    }
+  }
+
+  // Send/receive data
+  std::vector<std::int64_t> data_recv(disp_recv.back());
+  MPI_Alltoallv(data_send.data(), num_per_dest_send.data(), disp_send.data(),
+                MPI_INT64_T, data_recv.data(), num_per_dest_recv.data(),
+                disp_recv.data(), MPI_INT64_T, comm);
+
+  // Unpack receive buffer
+  std::vector<std::int64_t> array, global_indices;
+  std::vector<std::int32_t> list_offset(1, 0);
+  for (std::size_t p = 0; p < disp_recv.size() - 1; ++p)
+  {
+    for (int i = disp_recv[p]; i < disp_recv[p + 1];)
+    {
+      global_indices.push_back(data_recv[i++]);
+      const std::int64_t num_links = data_recv[i++];
+      for (int j = 0; j < num_links; ++j)
+        array.push_back(data_recv[i++]);
+      list_offset.push_back(list_offset.back() + num_links);
+    }
+  }
+
+  return {graph::AdjacencyList<std::int64_t>(array, list_offset),
+          std::move(global_indices)};
+}
+//-----------------------------------------------------------------------------
+Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
+Partitioning::distribute_data(
+    MPI_Comm comm, const std::vector<std::int64_t>& indices,
     const Eigen::Ref<const Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic,
-                                        Eigen::RowMajor>>& points,
-    const Eigen::Ref<const Eigen::Array<std::int64_t, Eigen::Dynamic,
-                                        Eigen::Dynamic, Eigen::RowMajor>>&
-        cell_vertices,
-    const std::vector<std::int64_t>& global_cell_indices,
-    const mesh::GhostMode ghost_mode, const PartitionData& cell_partition)
+                                        Eigen::RowMajor>>& x)
 {
-  LOG(INFO) << "Distribute mesh cells";
+  common::Timer timer("Fetch float data from remote processes");
 
-  common::Timer timer("Distribute mesh cells");
+  // Get number of points globally
+  const std::int64_t num_points = dolfinx::MPI::sum(comm, x.rows());
 
-  // Check that we have some ghost information.
-  int all_ghosts = dolfinx::MPI::sum(comm, cell_partition.num_ghosts());
-  if (all_ghosts == 0 and ghost_mode != mesh::GhostMode::none)
-    throw std::runtime_error("Ghost cell information not available");
+  // Get ownership range for this rank, and compute offset
+  const std::array<std::int64_t, 2> range
+      = dolfinx::MPI::local_range(comm, num_points);
+  const std::int64_t offset_x
+      = dolfinx::MPI::global_offset(comm, range[1] - range[0], true);
 
-  // Send cells to owning process according to cell_partition, and
-  // receive cells that belong to this process. Also compute auxiliary
-  // data related to sharing.
-  Eigen::Array<std::int64_t, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
-      new_cell_vertices;
-  std::vector<std::int64_t> new_global_cell_indices;
-  std::map<std::int32_t, std::set<std::int32_t>> shared_cells;
-  std::int32_t num_regular_cells;
-  std::tie(new_cell_vertices, new_global_cell_indices, shared_cells,
-           num_regular_cells)
-      = distribute_cells(comm, cell_vertices, global_cell_indices,
-                         cell_partition);
+  const int gdim = x.cols();
+  assert(gdim != 0);
+  const int size = dolfinx::MPI::size(comm);
 
-  if (ghost_mode == mesh::GhostMode::shared_vertex)
+  // Determine number of points to send to owner
+  std::vector<int> number_send(size, 0);
+  for (int i = 0; i < x.rows(); ++i)
   {
-    // Send/receive additional cells defined by connectivity to the shared
-    // vertices.
-    std::vector<int> dummy;
-    distribute_cell_layer(comm, num_regular_cells, shared_cells,
-                          new_cell_vertices, new_global_cell_indices, dummy);
-  }
-  else if (ghost_mode == mesh::GhostMode::none)
-  {
-    // Resize to remove all ghost cells
-    new_global_cell_indices.resize(num_regular_cells);
-    new_cell_vertices.conservativeResize(num_regular_cells, Eigen::NoChange);
-    shared_cells.clear();
+    // TODO: optimise this call
+    const std::int64_t index_global = i + offset_x;
+    const int owner = dolfinx::MPI::index_owner(size, index_global, num_points);
+    number_send[owner] += 1;
   }
 
-  timer.stop();
+  // Compute send displacements
+  std::vector<int> disp_send(size + 1, 0);
+  std::partial_sum(number_send.begin(), number_send.end(),
+                   disp_send.begin() + 1);
 
-  // Build mesh from points and distributed cells
-  const std::int32_t num_ghosts = new_cell_vertices.rows() - num_regular_cells;
+  // Pack x data
+  Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor> x_send(
+      disp_send.back(), gdim);
+  std::vector<int> disp_tmp = disp_send;
+  for (int i = 0; i < x.rows(); ++i)
+  {
+    const std::int64_t index_global = i + offset_x;
+    const int owner = dolfinx::MPI::index_owner(size, index_global, num_points);
+    x_send.row(disp_tmp[owner]++) = x.row(i);
+  }
 
-  mesh::Mesh mesh(comm, cell_type, points, new_cell_vertices,
-                  new_global_cell_indices, ghost_mode, num_ghosts);
+  // Send/receive number of points to communicate to each process
+  std::vector<int> number_recv(size);
+  MPI_Alltoall(number_send.data(), 1, MPI_INT, number_recv.data(), 1, MPI_INT,
+               comm);
 
-  return mesh;
+  // Compute receive displacements
+  std::vector<int> disp_recv(size + 1, 0);
+  std::partial_sum(number_recv.begin(), number_recv.end(),
+                   disp_recv.begin() + 1);
+
+  // Build compound data type. This will allow us to re-use send/receive
+  // displacements for indices and point data
+  MPI_Datatype compound_f64;
+  MPI_Type_contiguous(gdim, MPI_DOUBLE, &compound_f64);
+  MPI_Type_commit(&compound_f64);
+
+  // Send/receive points
+  Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor> x_recv(
+      disp_recv.back(), gdim);
+  MPI_Alltoallv(x_send.data(), number_send.data(), disp_send.data(),
+                compound_f64, x_recv.data(), number_recv.data(),
+                disp_recv.data(), compound_f64, comm);
+
+  // Build index data requests
+  std::vector<int> number_index_send(size, 0);
+  for (std::int64_t index : indices)
+  {
+    // TODO: optimise this call
+    const int owner = dolfinx::MPI::index_owner(size, index, num_points);
+    number_index_send[owner] += 1;
+  }
+
+  // Compute send displacements
+  std::vector<int> disp_index_send(size + 1, 0);
+  std::partial_sum(number_index_send.begin(), number_index_send.end(),
+                   disp_index_send.begin() + 1);
+
+  // Pack global index send data
+  std::vector<std::int64_t> indices_send(disp_index_send.back());
+  disp_tmp = disp_index_send;
+  for (std::int64_t index : indices)
+  {
+    // TODO: optimise this call
+    const int owner = dolfinx::MPI::index_owner(size, index, num_points);
+    indices_send[disp_tmp[owner]++] = index;
+  }
+
+  // Send/receive number of indices to communicate to each process
+  std::vector<int> number_index_recv(size);
+  MPI_Alltoall(number_index_send.data(), 1, MPI_INT, number_index_recv.data(),
+               1, MPI_INT, comm);
+
+  // Compute receive displacements
+  std::vector<int> disp_index_recv(size + 1, 0);
+  std::partial_sum(number_index_recv.begin(), number_index_recv.end(),
+                   disp_index_recv.begin() + 1);
+
+  // Send/receive global indices
+  std::vector<std::int64_t> indices_recv(disp_index_recv.back());
+  MPI_Alltoallv(indices_send.data(), number_index_send.data(),
+                disp_index_send.data(), MPI_INT64_T, indices_recv.data(),
+                number_index_recv.data(), disp_index_recv.data(), MPI_INT64_T,
+                comm);
+
+  // Pack point data to send back (transpose)
+  Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
+      x_return(indices_recv.size(), gdim);
+  for (int p = 0; p < size; ++p)
+  {
+    for (int i = disp_index_recv[p]; i < disp_index_recv[p + 1]; ++i)
+    {
+      const std::int64_t index = indices_recv[i];
+      const std::int32_t index_local = index - offset_x;
+      assert(index_local >= 0);
+      x_return.row(i) = x_recv.row(index_local);
+    }
+  }
+
+  // Send back point data
+  Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor> my_x(
+      disp_index_send.back(), gdim);
+  MPI_Alltoallv(x_return.data(), number_index_recv.data(),
+                disp_index_recv.data(), compound_f64, my_x.data(),
+                number_index_send.data(), disp_index_send.data(), compound_f64,
+                comm);
+
+  return my_x;
 }
 //-----------------------------------------------------------------------------
-mesh::Mesh Partitioning::build_distributed_mesh(
-    const MPI_Comm& comm, mesh::CellType cell_type,
-    const Eigen::Ref<const Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic,
-                                        Eigen::RowMajor>>& points,
-    const Eigen::Ref<const Eigen::Array<
-        std::int64_t, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>>& cells,
-    const std::vector<std::int64_t>& global_cell_indices,
-    const mesh::GhostMode ghost_mode, const mesh::Partitioner graph_partitioner)
+std::vector<std::int64_t> Partitioning::compute_local_to_global_links(
+    const graph::AdjacencyList<std::int64_t>& global,
+    const graph::AdjacencyList<std::int32_t>& local)
 {
+  common::Timer timer(
+      "Compute-local-to-global links for global/local adjacency list");
 
-  // By default all processes are used to partition the mesh
-  // nparts = MPI size
-  const int nparts = dolfinx::MPI::size(comm);
+  // Build local-to-global for adjacency lists
+  if (global.num_nodes() != local.num_nodes())
+  {
+    throw std::runtime_error("Mismatch in number of nodes between local and "
+                             "global adjacency lists.");
+  }
 
-  // Compute the cell partition
-  PartitionData cell_partition = partition_cells(comm, nparts, cell_type, cells,
-                                                 graph_partitioner, ghost_mode);
+  const Eigen::Array<std::int64_t, Eigen::Dynamic, 1>& _global = global.array();
+  const Eigen::Array<std::int32_t, Eigen::Dynamic, 1>& _local = local.array();
+  if (_global.rows() != _local.rows())
+  {
+    throw std::runtime_error("Data size mismatch between local and "
+                             "global adjacency lists.");
+  }
 
-  // Build mesh from local mesh data and provided cell partition
-  mesh::Mesh mesh = Partitioning::build_from_partition(
-      comm, cell_type, points, cells, global_cell_indices, ghost_mode,
-      cell_partition);
+  const std::int32_t max_local = _local.maxCoeff();
+  std::vector<bool> marker(max_local, false);
+  std::vector<std::int64_t> local_to_global_list(max_local + 1, -1);
+  for (Eigen::Index i = 0; i < _local.rows(); ++i)
+  {
+    if (local_to_global_list[_local[i]] == -1)
+      local_to_global_list[_local[i]] = _global[i];
+  }
 
-  return mesh;
+  return local_to_global_list;
 }
 //-----------------------------------------------------------------------------
-std::map<std::int64_t, std::vector<int>> Partitioning::compute_halo_cells(
-    MPI_Comm mpi_comm, std::vector<int> part, const mesh::CellType cell_type,
-    const Eigen::Ref<const Eigen::Array<std::int64_t, Eigen::Dynamic,
-                                        Eigen::Dynamic, Eigen::RowMajor>>&
-        cell_vertices)
+std::vector<std::int32_t> Partitioning::compute_local_to_local(
+    const std::vector<std::int64_t>& local0_to_global,
+    const std::vector<std::int64_t>& local1_to_global)
 {
-  // Compute dual graph (for this partition)
-  std::vector<std::vector<std::size_t>> local_graph;
-  std::tie(local_graph, std::ignore) = graph::GraphBuilder::compute_dual_graph(
-      mpi_comm, cell_vertices, cell_type);
+  common::Timer timer("Compute local-to-local map");
+  assert(local0_to_global.size() == local1_to_global.size());
 
-  graph::AdjacencyList<std::int64_t> adj_graph(local_graph);
+  // Compute inverse map for local1_to_global
+  std::unordered_map<std::int64_t, std::int32_t> global_to_local1;
+  for (std::size_t i = 0; i < local1_to_global.size(); ++i)
+    global_to_local1.insert({local1_to_global[i], i});
 
-  std::map<std::int64_t, std::vector<int>> ghost_procs;
-
-  // Calculate the distribution across processes
-  std::vector<std::int64_t> elmdist;
-  const std::int64_t num_local_cells = adj_graph.num_nodes();
-  MPI::all_gather(mpi_comm, num_local_cells, elmdist);
-  elmdist.insert(elmdist.begin(), 0);
-  for (std::size_t i = 1; i != elmdist.size(); ++i)
-    elmdist[i] += elmdist[i - 1];
-
-  // Work out halo cells for current division of dual graph
-  const std::int32_t* xadj = adj_graph.offsets().data();
-  const std::int64_t* adjncy = adj_graph.array().data();
-  const std::int32_t num_processes = dolfinx::MPI::size(mpi_comm);
-  const std::int32_t process_number = dolfinx::MPI::rank(mpi_comm);
-  const std::int32_t elm_begin = elmdist[process_number];
-  const std::int32_t elm_end = elmdist[process_number + 1];
-  const std::int32_t ncells = elm_end - elm_begin;
-
-  std::map<std::int32_t, std::set<std::int32_t>> halo_cell_to_remotes;
-
-  for (int i = 0; i < ncells; i++)
+  // Compute inverse map for local0_to_local1
+  std::vector<std::int32_t> local0_to_local1(local0_to_global.size());
+  for (std::size_t i = 0; i < local0_to_local1.size(); ++i)
   {
-    for (int j = 0; j < adj_graph.num_links(i); ++j)
-    {
-      std::int64_t other_cell = adj_graph.links(i)[j];
-
-      if (other_cell < elm_begin || other_cell >= elm_end)
-      {
-        const int remote
-            = std::upper_bound(elmdist.begin(), elmdist.end(), other_cell)
-              - elmdist.begin() - 1;
-        assert(remote < num_processes);
-        if (halo_cell_to_remotes.find(i) == halo_cell_to_remotes.end())
-          halo_cell_to_remotes[i] = std::set<std::int32_t>();
-        halo_cell_to_remotes[i].insert(remote);
-      }
-    }
+    auto it = global_to_local1.find(local0_to_global[i]);
+    assert(it != global_to_local1.end());
+    local0_to_local1[i] = it->second;
   }
 
-  // Do halo exchange of cell partition data
-  std::vector<std::vector<std::int64_t>> send_cell_partition(num_processes);
-  std::vector<std::int64_t> recv_cell_partition;
-
-  for (const auto& hcell : halo_cell_to_remotes)
-  {
-    for (auto proc : hcell.second)
-    {
-      assert(proc < num_processes);
-
-      // global cell number
-      send_cell_partition[proc].push_back(hcell.first + elm_begin);
-
-      // partitioning
-      send_cell_partition[proc].push_back(part[hcell.first]);
-    }
-  }
-
-  // Actual halo exchange
-  dolfinx::MPI::all_to_all(mpi_comm, send_cell_partition, recv_cell_partition);
-
-  // Construct a map from all currently foreign cells to their new
-  // partition number
-  std::map<std::int64_t, std::int32_t> cell_ownership;
-  for (auto p = recv_cell_partition.begin(); p != recv_cell_partition.end();
-       p += 2)
-  {
-    cell_ownership[*p] = *(p + 1);
-  }
-
-  // Generate mapping for where new boundary cells need to be sent
-  for (std::int32_t i = 0; i < ncells; i++)
-  {
-    const std::size_t proc_this = part[i];
-    for (std::int32_t j = xadj[i]; j < xadj[i + 1]; ++j)
-    {
-      const std::int32_t other_cell = adjncy[j];
-      std::size_t proc_other;
-
-      if (other_cell < elm_begin || other_cell >= elm_end)
-      { // remote cell - should be in map
-        const auto find_other_proc = cell_ownership.find(other_cell);
-        assert(find_other_proc != cell_ownership.end());
-        proc_other = find_other_proc->second;
-      }
-      else
-        proc_other = part[other_cell - elm_begin];
-
-      if (proc_this != proc_other)
-      {
-        auto map_it = ghost_procs.find(i);
-        if (map_it == ghost_procs.end())
-        {
-          std::vector<std::int32_t> sharing_processes;
-          sharing_processes.push_back(proc_this);
-          sharing_processes.push_back(proc_other);
-          ghost_procs.insert({i, sharing_processes});
-        }
-        else
-        {
-          // Add to vector if not already there
-          auto it = std::find(map_it->second.begin(), map_it->second.end(),
-                              proc_other);
-          if (it == map_it->second.end())
-            map_it->second.push_back(proc_other);
-        }
-      }
-    }
-  }
-
-  return ghost_procs;
+  return local0_to_local1;
 }
+//-----------------------------------------------------------------------------

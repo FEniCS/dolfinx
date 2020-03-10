@@ -6,15 +6,10 @@
 
 #pragma once
 
-#include "Graph.h"
 #include <cstddef>
 #include <cstdint>
 #include <dolfinx/common/MPI.h>
-#include <dolfinx/common/types.h>
 #include <dolfinx/graph/AdjacencyList.h>
-#include <map>
-#include <string>
-#include <utility>
 #include <vector>
 
 // FIXME: Avoid exposing ParMETIS publicly

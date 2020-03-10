@@ -7,6 +7,7 @@
 #include "ParallelRefinement.h"
 #include <dolfinx/common/MPI.h>
 #include <dolfinx/common/types.h>
+#include <dolfinx/fem/ElementDofLayout.h>
 #include <dolfinx/mesh/DistributedMeshTools.h>
 #include <dolfinx/mesh/Geometry.h>
 #include <dolfinx/mesh/Mesh.h>
@@ -14,6 +15,8 @@
 #include <dolfinx/mesh/MeshFunction.h>
 #include <dolfinx/mesh/MeshIterator.h>
 #include <dolfinx/mesh/Partitioning.h>
+#include <dolfinx/mesh/Topology.h>
+#include <dolfinx/mesh/TopologyComputation.h>
 #include <dolfinx/mesh/utils.h>
 #include <map>
 #include <vector>
@@ -307,14 +310,19 @@ mesh::Mesh ParallelRefinement::build_local() const
 
   Eigen::Map<const Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic,
                                 Eigen::RowMajor>>
-      geometry(_new_vertex_coordinates.data(), num_vertices, 3);
+      x(_new_vertex_coordinates.data(), num_vertices, 3);
   Eigen::Map<const Eigen::Array<std::int64_t, Eigen::Dynamic, Eigen::Dynamic,
                                 Eigen::RowMajor>>
-      topology(_new_cell_topology.data(), num_cells, num_cell_vertices);
+      cells(_new_cell_topology.data(), num_cells, num_cell_vertices);
 
-  mesh::Mesh mesh(_mesh.mpi_comm(), _mesh.topology().cell_type(),
-                  geometry.leftCols(_mesh.geometry().dim()), topology, {},
-                  _mesh.get_ghost_mode());
+  const fem::ElementDofLayout layout
+      = fem::geometry_layout(_mesh.topology().cell_type(), cells.cols());
+  mesh::Mesh mesh = mesh::create(
+      _mesh.mpi_comm(), graph::AdjacencyList<std::int64_t>(cells), layout, x);
+
+  // mesh::Mesh mesh(_mesh.mpi_comm(), _mesh.topology().cell_type(),
+  //                 geometry.leftCols(_mesh.geometry().dim()), topology, {},
+  //                 _mesh.get_ghost_mode());
 
   return mesh;
 }
@@ -340,21 +348,112 @@ mesh::Mesh ParallelRefinement::partition(bool redistribute) const
   const std::size_t num_local_vertices = _new_vertex_coordinates.size() / 3;
   Eigen::Map<const Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic,
                                 Eigen::RowMajor>>
-      points(_new_vertex_coordinates.data(), num_local_vertices, 3);
+      x(_new_vertex_coordinates.data(), num_local_vertices, 3);
 
+  // Build mesh
+
+  const fem::ElementDofLayout layout
+      = fem::geometry_layout(_mesh.topology().cell_type(), cells.cols());
   if (redistribute)
   {
-    return mesh::Partitioning::build_distributed_mesh(
-        _mesh.mpi_comm(), _mesh.topology().cell_type(),
-        points.leftCols(_mesh.geometry().dim()), cells, global_cell_indices,
-        _mesh.get_ghost_mode());
+    return mesh::create(_mesh.mpi_comm(),
+                        graph::AdjacencyList<std::int64_t>(cells), layout, x);
+    // return mesh::Partitioning::build_distributed_mesh(
+    //     _mesh.mpi_comm(), _mesh.topology().cell_type(),
+    //     points.leftCols(_mesh.geometry().dim()), cells, global_cell_indices,
+    //     _mesh.get_ghost_mode());
   }
 
-  mesh::Mesh mesh(_mesh.mpi_comm(), _mesh.topology().cell_type(),
-                  points.leftCols(_mesh.geometry().dim()), cells,
-                  global_cell_indices, _mesh.get_ghost_mode());
+  MPI_Comm comm = _mesh.mpi_comm();
+  mesh::Topology topology(layout.cell_type());
+  const graph::AdjacencyList<std::int64_t> my_cells(cells);
+  {
+    auto [cells_local, local_to_global_vertices]
+        = mesh::Partitioning::create_local_adjacency_list(my_cells);
 
-  return mesh;
+    // Create (i) local topology object and (ii) IndexMap for cells, and
+    // set cell-vertex topology
+    mesh::Topology topology_local(layout.cell_type());
+    const int tdim = topology_local.dim();
+    auto map = std::make_shared<common::IndexMap>(
+        comm, cells_local.num_nodes(), std::vector<std::int64_t>(), 1);
+    topology_local.set_index_map(tdim, map);
+    auto _cells_local
+        = std::make_shared<graph::AdjacencyList<std::int32_t>>(cells_local);
+    topology_local.set_connectivity(_cells_local, tdim, 0);
+
+    const int n = local_to_global_vertices.size();
+    map = std::make_shared<common::IndexMap>(comm, n,
+                                             std::vector<std::int64_t>(), 1);
+    topology_local.set_index_map(0, map);
+    auto _vertices_local
+        = std::make_shared<graph::AdjacencyList<std::int32_t>>(n);
+    topology_local.set_connectivity(_vertices_local, 0, 0);
+
+    // Create facets for local topology, and attach to the topology
+    // object. This will be used to find possibly shared cells
+    auto [cf, fv, map0] = mesh::TopologyComputation::compute_entities(
+        comm, topology_local, tdim - 1);
+    if (cf)
+      topology_local.set_connectivity(cf, tdim, tdim - 1);
+    if (map0)
+      topology_local.set_index_map(tdim - 1, map0);
+    if (fv)
+      topology_local.set_connectivity(fv, tdim - 1, 0);
+    auto [fc, ignore] = mesh::TopologyComputation::compute_connectivity(
+        topology_local, tdim - 1, tdim);
+    if (fc)
+      topology_local.set_connectivity(fc, tdim - 1, tdim);
+
+    // FIXME: This looks weird. Revise.
+    // Get facets that are on the boundary of the local topology, i.e
+    // are connect to one cell only
+    std::vector<bool> boundary = compute_interior_facets(topology_local);
+    topology_local.set_interior_facets(boundary);
+    boundary = topology_local.on_boundary(tdim - 1);
+
+    // Build distributed cell-vertex AdjacencyList, IndexMap for
+    // vertices, and map from local index to old global index
+    const std::vector<bool>& exterior_vertices
+        = mesh::Partitioning::compute_vertex_exterior_markers(topology_local);
+    auto [cells_d, vertex_map]
+        = mesh::Partitioning::create_distributed_adjacency_list(
+            comm, *_cells_local, local_to_global_vertices, exterior_vertices);
+
+    // Set vertex IndexMap, and vertex-vertex connectivity
+    auto _vertex_map
+        = std::make_shared<common::IndexMap>(std::move(vertex_map));
+    topology.set_index_map(0, _vertex_map);
+    auto c0 = std::make_shared<graph::AdjacencyList<std::int32_t>>(
+        _vertex_map->size_local() + _vertex_map->num_ghosts());
+    topology.set_connectivity(c0, 0, 0);
+
+    // Set cell IndexMap and cell-vertex connectivity
+    auto index_map_c = std::make_shared<common::IndexMap>(
+        comm, cells_d.num_nodes(), std::vector<std::int64_t>(), 1);
+    topology.set_index_map(tdim, index_map_c);
+    auto _cells_d
+        = std::make_shared<graph::AdjacencyList<std::int32_t>>(cells_d);
+    topology.set_connectivity(_cells_d, tdim, 0);
+  }
+
+  std::vector<int> src(my_cells.num_nodes(), dolfinx::MPI::rank(comm));
+  Eigen::Array<int, Eigen::Dynamic, 1> _dest(my_cells.num_nodes(), 1);
+  _dest = dolfinx::MPI::rank(comm);
+  const graph::AdjacencyList<std::int32_t> dest(_dest);
+  const mesh::Geometry geometry
+      = mesh::create_geometry(comm, topology, layout, my_cells, dest, src, x);
+
+  return mesh::Mesh(comm, topology, geometry);
+
+  // NEW
+  // return mesh::create(_mesh.mpi_comm(),
+  //                     graph::AdjacencyList<std::int64_t>(cells), layout, x);
+
+  // OLD
+  // return mesh::Mesh(_mesh.mpi_comm(), _mesh.topology().cell_type(),
+  //                   points.leftCols(_mesh.geometry().dim()), cells,
+  //                   global_cell_indices, _mesh.get_ghost_mode());
 }
 //-----------------------------------------------------------------------------
 void ParallelRefinement::new_cells(const std::vector<std::int64_t>& idx)

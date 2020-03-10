@@ -150,6 +150,11 @@ public:
     return _base_permutations;
   }
 
+  //@todo Attempt to remove. Should not be here.
+  ///
+  /// Return polynomial degree
+  int degree() const;
+
 private:
   // Block size
   int _block_size;

@@ -5,7 +5,7 @@
 // SPDX-License-Identifier:    LGPL-3.0-or-later
 
 #include "Topology.h"
-#include "PartitioningNew.h"
+#include "Partitioning.h"
 #include "TopologyComputation.h"
 #include "utils.h"
 #include <dolfinx/common/IndexMap.h>
@@ -87,17 +87,6 @@ Topology::Topology(mesh::CellType type)
 }
 //-----------------------------------------------------------------------------
 int Topology::dim() const { return _connectivity.rows() - 1; }
-//-----------------------------------------------------------------------------
-const std::vector<std::int64_t>& Topology::get_global_vertices_user() const
-{
-  return _global_user_vertices;
-}
-//-----------------------------------------------------------------------------
-void Topology::set_global_vertices_user(
-    const std::vector<std::int64_t>& indices)
-{
-  _global_user_vertices = indices;
-}
 //-----------------------------------------------------------------------------
 void Topology::set_index_map(int dim,
                              std::shared_ptr<const common::IndexMap> index_map)
@@ -275,31 +264,31 @@ std::string Topology::str(bool verbose) const
   return s.str();
 }
 //-----------------------------------------------------------------------------
-Eigen::Ref<const Eigen::Array<bool, Eigen::Dynamic, Eigen::Dynamic>>
+const Eigen::Array<bool, Eigen::Dynamic, Eigen::Dynamic>&
 Topology::get_edge_reflections() const
 {
   return _edge_reflections;
 }
 //-----------------------------------------------------------------------------
-Eigen::Ref<const Eigen::Array<bool, Eigen::Dynamic, Eigen::Dynamic>>
+const Eigen::Array<bool, Eigen::Dynamic, Eigen::Dynamic>&
 Topology::get_face_reflections() const
 {
   return _face_reflections;
 }
 //-----------------------------------------------------------------------------
-Eigen::Ref<const Eigen::Array<std::uint8_t, Eigen::Dynamic, Eigen::Dynamic>>
+const Eigen::Array<std::uint8_t, Eigen::Dynamic, Eigen::Dynamic>&
 Topology::get_face_rotations() const
 {
   return _face_rotations;
 }
 //-----------------------------------------------------------------------------
-Eigen::Ref<const Eigen::Array<std::uint8_t, Eigen::Dynamic, Eigen::Dynamic>>
+const Eigen::Array<std::uint8_t, Eigen::Dynamic, Eigen::Dynamic>&
 Topology::get_facet_permutations() const
 {
   return _facet_permutations;
 }
 //-----------------------------------------------------------------------------
-void Topology::resize_entity_permutations(std::size_t cell_count,
+void Topology::resize_entity_permutations(std::int32_t cell_count,
                                           int edges_per_cell,
                                           int faces_per_cell)
 {
@@ -321,28 +310,31 @@ void Topology::resize_entity_permutations(std::size_t cell_count,
   _face_rotations.fill(false);
 }
 //-----------------------------------------------------------------------------
-std::size_t Topology::entity_reflection_size() const
+std::int32_t Topology::entity_reflection_size() const
 {
   return _edge_reflections.rows();
 }
 //-----------------------------------------------------------------------------
-void Topology::set_entity_permutation(std::size_t cell_n, int entity_dim,
-                                      std::size_t entity_index,
-                                      std::uint8_t rots, std::uint8_t refs)
+void Topology::set_entity_permutation(std::int32_t cell, int entity_dim,
+                                      int entity_index, std::uint8_t rots,
+                                      std::uint8_t refs)
 {
   if (entity_dim == 2)
   {
     if (dim() == 3)
-      _facet_permutations(entity_index, cell_n) = 2 * rots + refs;
-    _face_reflections(entity_index, cell_n) = refs;
-    _face_rotations(entity_index, cell_n) = rots;
+      _facet_permutations(entity_index, cell) = 2 * rots + refs;
+
+    _face_reflections(entity_index, cell) = refs;
+    _face_rotations(entity_index, cell) = rots;
   }
   else if (entity_dim == 1)
   {
     if (dim() == 2)
-      _facet_permutations(entity_index, cell_n) = refs;
-    _edge_reflections(entity_index, cell_n) = refs;
+      _facet_permutations(entity_index, cell) = refs;
+    _edge_reflections(entity_index, cell) = refs;
   }
+  else
+    throw std::runtime_error("Wong entity dimension.");
 }
 //-----------------------------------------------------------------------------
 mesh::CellType Topology::cell_type() const { return _cell_type; }
@@ -367,19 +359,18 @@ mesh::create_topology(MPI_Comm comm,
   // Compute the destination rank for cells on this process via graph
   // partitioning
   const graph::AdjacencyList<std::int32_t> dest
-      = PartitioningNew::partition_cells(comm, size, layout.cell_type(),
-                                         cells_v);
+      = Partitioning::partition_cells(comm, size, layout.cell_type(), cells_v);
 
   // Distribute cells to destination rank
   const auto [my_cells, src, original_cell_index]
-      = PartitioningNew::distribute(comm, cells_v, dest);
+      = Partitioning::distribute(comm, cells_v, dest);
 
   // Build local cell-vertex connectivity, with local vertex indices
   // [0, 1, 2, ..., n), from cell-vertex connectivity using global
   // indices and get map from global vertex indices in 'cells' to the
   // local vertex indices
   auto [cells_local, local_to_global_vertices]
-      = PartitioningNew::create_local_adjacency_list(my_cells);
+      = Partitioning::create_local_adjacency_list(my_cells);
 
   // Create (i) local topology object and (ii) IndexMap for cells, and
   // set cell-vertex topology
@@ -424,9 +415,10 @@ mesh::create_topology(MPI_Comm comm,
 
   // Build distributed cell-vertex AdjacencyList, IndexMap for
   // vertices, and map from local index to old global index
-  auto [cells_d, vertex_map]
-      = PartitioningNew::create_distributed_adjacency_list(
-          comm, topology_local, local_to_global_vertices);
+  const std::vector<bool>& exterior_vertices
+      = Partitioning::compute_vertex_exterior_markers(topology_local);
+  auto [cells_d, vertex_map] = Partitioning::create_distributed_adjacency_list(
+      comm, *_cells_local, local_to_global_vertices, exterior_vertices);
 
   Topology topology(layout.cell_type());
 

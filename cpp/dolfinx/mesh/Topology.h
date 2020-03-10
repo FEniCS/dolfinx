@@ -79,22 +79,6 @@ public:
   /// Return topological dimension
   int dim() const;
 
-  /// @todo Remove this function, or use constructor
-  ///
-  /// Set the input, e.g. from file, global indices for vertices
-  /// @param[in] indices Map from local (process) vertex index to input
-  ///   (user) global index
-  void set_global_vertices_user(const std::vector<std::int64_t>& indices);
-
-  /// @todo Remove this function if possible
-  ///
-  /// Get the map from local vertex indices to the global user (input)
-  /// indices
-  /// @return The map from local vertex indices to the global input
-  /// indices. Note these global will generally differ from the global
-  /// indices given by the IndexMap for vertices.
-  const std::vector<std::int64_t>& get_global_vertices_user() const;
-
   /// @todo Merge withset_connectivity
   /// Set the IndexMap for dimension dim
   /// @warning This is experimental and likely to change
@@ -166,7 +150,7 @@ public:
   /// Each column of the returned array represents a cell, and each row an
   /// edge of that cell.
   /// @return An Eigen::Array of bools
-  Eigen::Ref<const Eigen::Array<bool, Eigen::Dynamic, Eigen::Dynamic>>
+  const Eigen::Array<bool, Eigen::Dynamic, Eigen::Dynamic>&
   get_edge_reflections() const;
 
   /// @todo Use std::vector<int32_t> to store 1/0 marker for each edge/face
@@ -175,7 +159,7 @@ public:
   /// Each column of the returned array represents a cell, and each row a
   /// face of that cell.
   /// @return An Eigen::Array of bools
-  Eigen::Ref<const Eigen::Array<bool, Eigen::Dynamic, Eigen::Dynamic>>
+  const Eigen::Array<bool, Eigen::Dynamic, Eigen::Dynamic>&
   get_face_reflections() const;
 
   /// Get an array of numbers that say how many times each face needs to be
@@ -183,7 +167,7 @@ public:
   /// Each column of the returned array represents a cell, and each row a
   /// face of that cell.
   /// @return An Eigen::Array of uint8_ts
-  Eigen::Ref<const Eigen::Array<std::uint8_t, Eigen::Dynamic, Eigen::Dynamic>>
+  const Eigen::Array<std::uint8_t, Eigen::Dynamic, Eigen::Dynamic>&
   get_face_rotations() const;
 
   /// Get the permutation number to apply to a facet.
@@ -193,35 +177,32 @@ public:
   /// Each column of the returned array represents a cell, and each row a
   /// facet of that cell.
   /// @return The permutation number
-  Eigen::Ref<const Eigen::Array<std::uint8_t, Eigen::Dynamic, Eigen::Dynamic>>
+  const Eigen::Array<std::uint8_t, Eigen::Dynamic, Eigen::Dynamic>&
   get_facet_permutations() const;
 
   /// Resize the arrays of permutations and reflections
   /// @param[in] cell_count The number of cells in the mesh
   /// @param[in] edges_per_cell The number of edges per mesh cell
   /// @param[in] faces_per_cell The number of faces per mesh cell
-  void resize_entity_permutations(std::size_t cell_count, int edges_per_cell,
+  void resize_entity_permutations(std::int32_t cell_count, int edges_per_cell,
                                   int faces_per_cell);
 
   /// Retuns the number of rows in the entity_permutations array
-  std::size_t entity_reflection_size() const;
+  std::int32_t entity_reflection_size() const;
 
   /// Set the entity permutations array
-  /// @param[in] cell_n The cell index
+  /// @param[in] cell The cell index
   /// @param[in] entity_dim The topological dimension of the entity
   /// @param[in] entity_index The entity number
   /// @param[in] rots The number of rotations to be applied
   /// @param[in] refs The number of reflections to be applied
-  void set_entity_permutation(std::size_t cell_n, int entity_dim,
-                              std::size_t entity_index, std::uint8_t rots,
+  void set_entity_permutation(std::int32_t cell, int entity_dim,
+                              int entity_index, std::uint8_t rots,
                               std::uint8_t refs);
 
 private:
   // Cell type
   mesh::CellType _cell_type;
-
-  // Global indices for vertices
-  std::vector<std::int64_t> _global_user_vertices;
 
   // IndexMap to store ghosting for each entity dimension
   std::array<std::shared_ptr<const common::IndexMap>, 4> _index_map;

@@ -277,8 +277,9 @@ def test_topology_partition(tempdir, shape, order):
 
     # Build distributed cell-vertex AdjacencyList, IndexMap for
     # vertices, and map from local index to old global index
-    cells, vertex_map = cpp.mesh.create_distributed_adjacency_list(cpp.MPI.comm_world, topology_local,
-                                                                   local_to_global_vertices)
+    exterior_vertices = cpp.mesh.compute_vertex_exterior_markers(topology_local)
+    cells, vertex_map = cpp.mesh.create_distributed_adjacency_list(cpp.MPI.comm_world, cells_local,
+                                                                   local_to_global_vertices, exterior_vertices)
 
     # --- Create distributed topology
     topology = cpp.mesh.Topology(layout.cell_type)
@@ -346,7 +347,7 @@ def test_topology_partition(tempdir, shape, order):
 
     # Fetch node coordinates by global index from other ranks. Order of
     # coords matches order of the indices in 'indices'
-    coords = cpp.mesh.fetch_data(cpp.MPI.comm_world, indices, x)
+    coords = cpp.mesh.distribute_data(cpp.MPI.comm_world, indices, x)
 
     # Compute local-to-global map from local indices in dofmap to the
     # corresponding global indices in cell_nodes
@@ -361,14 +362,14 @@ def test_topology_partition(tempdir, shape, order):
     x_g = coords[l2l]
 
     # Create Geometry
-    geometry = cpp.mesh.Geometry(dof_index_map, dofmap, layout, x_g, l2g, order)
+    geometry = cpp.mesh.Geometry(dof_index_map, dofmap, layout, x_g, l2g)
 
     # Create mesh
     mesh = cpp.mesh.Mesh(cpp.MPI.comm_world, topology, geometry)
 
     # Write mesh to file
     filename = os.path.join(tempdir, "mesh_{}_{}.xdmf".format(cpp.mesh.to_string(shape), order))
-    print(filename)
+    # print(filename)
     encoding = XDMFFile.Encoding.HDF5
     with XDMFFile(mesh.mpi_comm(), filename, encoding=encoding) as file:
         file.write(mesh)

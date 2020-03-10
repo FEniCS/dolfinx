@@ -228,13 +228,15 @@ void Function::eval(
 
   mesh.create_entity_permutations();
 
-  const Eigen::Ref<const Eigen::Array<bool, Eigen::Dynamic, Eigen::Dynamic>>
-      cell_edge_reflections = mesh.topology().get_edge_reflections();
-  const Eigen::Ref<const Eigen::Array<bool, Eigen::Dynamic, Eigen::Dynamic>>
-      cell_face_reflections = mesh.topology().get_face_reflections();
-  const Eigen::Ref<
-      const Eigen::Array<std::uint8_t, Eigen::Dynamic, Eigen::Dynamic>>
-      cell_face_rotations = mesh.topology().get_face_rotations();
+  const Eigen::Array<bool, Eigen::Dynamic, Eigen::Dynamic>&
+      cell_edge_reflections
+      = mesh.topology().get_edge_reflections();
+  const Eigen::Array<bool, Eigen::Dynamic, Eigen::Dynamic>&
+      cell_face_reflections
+      = mesh.topology().get_face_reflections();
+  const Eigen::Array<std::uint8_t, Eigen::Dynamic, Eigen::Dynamic>&
+      cell_face_rotations
+      = mesh.topology().get_face_rotations();
 
   // Loop over points
   u.setZero();
@@ -260,12 +262,12 @@ void Function::eval(
     // Compute basis on reference element
     element.evaluate_reference_basis(basis_reference_values, X);
 
-    const Eigen::Ref<const Eigen::Array<bool, Eigen::Dynamic, 1>> e_ref_cell
+    const Eigen::Array<bool, Eigen::Dynamic, 1>& e_ref_cell
         = cell_edge_reflections.col(cell_index);
-    const Eigen::Ref<const Eigen::Array<bool, Eigen::Dynamic, 1>> f_ref_cell
+    const Eigen::Array<bool, Eigen::Dynamic, 1>& f_ref_cell
         = cell_face_reflections.col(cell_index);
-    const Eigen::Ref<const Eigen::Array<std::uint8_t, Eigen::Dynamic, 1>>
-        f_rot_cell = cell_face_rotations.col(cell_index);
+    const Eigen::Array<std::uint8_t, Eigen::Dynamic, 1>& f_rot_cell
+        = cell_face_rotations.col(cell_index);
 
     // Push basis forward to physical element
     element.transform_reference_basis(basis_values, basis_reference_values, X,
@@ -358,18 +360,11 @@ Function::compute_point_values() const
   Eigen::Array<PetscScalar, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
       point_values(mesh.geometry().x().rows(), value_size_loc);
 
-  const graph::AdjacencyList<std::int32_t>& cell_dofs
-      = mesh.geometry().dofmap();
-
   // Prepare cell geometry
-  const graph::AdjacencyList<std::int32_t>& connectivity_g
-      = mesh.geometry().dofmap();
-  const Eigen::Array<std::int32_t, Eigen::Dynamic, 1>& pos_g
-      = connectivity_g.offsets();
-  const Eigen::Array<std::int32_t, Eigen::Dynamic, 1>& cell_g
-      = connectivity_g.array();
+  const graph::AdjacencyList<std::int32_t>& x_dofmap = mesh.geometry().dofmap();
+
   // FIXME: Add proper interface for num coordinate dofs
-  const int num_dofs_g = connectivity_g.num_links(0);
+  const int num_dofs_g = x_dofmap.num_links(0);
   const Eigen::Array<double, Eigen::Dynamic, 3, Eigen::RowMajor>& x_g
       = mesh.geometry().x();
 
@@ -384,8 +379,9 @@ Function::compute_point_values() const
   for (int c = 0; c < num_cells; ++c)
   {
     // Get coordinates for all points in cell
+    auto dofs = x_dofmap.links(c);
     for (int i = 0; i < num_dofs_g; ++i)
-      x.row(i) = x_g.row(cell_g[pos_g[c] + i]);
+      x.row(i) = x_g.row(dofs[i]);
 
     values.resize(x.rows(), value_size_loc);
 
@@ -395,7 +391,6 @@ Function::compute_point_values() const
     eval(x, cells, values);
 
     // Copy values to array of point values
-    auto dofs = cell_dofs.links(c);
     for (int i = 0; i < x.rows(); ++i)
       point_values.row(dofs[i]) = values.row(i);
   }

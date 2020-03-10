@@ -11,7 +11,6 @@
 #include <dolfinx/common/MPI.h>
 #include <dolfinx/fem/ElementDofLayout.h>
 #include <dolfinx/graph/AdjacencyList.h>
-#include <dolfinx/mesh/Partitioning.h>
 
 using namespace dolfinx;
 using namespace dolfinx::generation;
