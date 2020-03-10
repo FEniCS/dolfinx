@@ -136,7 +136,7 @@ def test_manufactured_poisson(degree, filename, datadir):
                              ("N2curl", 0),
                              ("N1curl", 1),
                          ])
-@pytest.mark.parametrize("degree", [1, 2])
+@pytest.mark.parametrize("degree", [1, 2, 3])
 def test_manufactured_vector1(family, degree, filename, datadir):
     """Projection into H(div/curl) spaces"""
 
@@ -196,7 +196,7 @@ def test_manufactured_vector1(family, degree, filename, datadir):
                              "RT",
                              "N1curl",
                          ])
-@pytest.mark.parametrize("degree", [1, 2])
+@pytest.mark.parametrize("degree", [1, 2, 3])
 def test_manufactured_vector2(family, degree, filename, datadir):
     """Projection into H(div/curl) spaces"""
 
