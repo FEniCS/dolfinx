@@ -112,6 +112,7 @@ fem::assemble_matrix(const Form& a,
 
   std::vector<Eigen::Triplet<double>> triplets;
 
+  // Lambda function creating Eigen::Triplet array
   const std::function<int(std::int32_t, const std::int32_t*, std::int32_t,
                           const std::int32_t*, const double*)>
       mat_set_values_local
@@ -134,7 +135,9 @@ fem::assemble_matrix(const Form& a,
   // Assemble
   impl::assemble_matrix(mat_set_values_local, a, dof_marker0, dof_marker1);
 
-  Eigen::SparseMatrix<double, Eigen::RowMajor> mat;
+  Eigen::SparseMatrix<double, Eigen::RowMajor> mat(
+      map0->block_size() * (map0->size_local() + map0->num_ghosts()),
+      map1->block_size() * (map1->size_local() + map1->num_ghosts()));
   mat.setFromTriplets(triplets.begin(), triplets.end());
   return mat;
 }
