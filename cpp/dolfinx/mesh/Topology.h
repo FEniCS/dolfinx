@@ -45,6 +45,15 @@ class Topology;
 ///   the domain.
 std::vector<bool> compute_interior_facets(const Topology& topology);
 
+/// TODO
+Eigen::Array<bool, Eigen::Dynamic, Eigen::Dynamic>
+compute_edge_reflections(const Topology& topology);
+
+/// TODO
+std::pair<Eigen::Array<bool, Eigen::Dynamic, Eigen::Dynamic>,
+          Eigen::Array<std::uint8_t, Eigen::Dynamic, Eigen::Dynamic>>
+compute_face_permutations(const Topology& topology);
+
 /// Topology stores the topology of a mesh, consisting of mesh entities
 /// and connectivity (incidence relations for the mesh entities). Note
 /// that the mesh entities don't need to be stored, only the number of
@@ -199,6 +208,15 @@ public:
   void set_entity_permutation(std::int32_t cell, int entity_dim,
                               int entity_index, std::uint8_t rots,
                               std::uint8_t refs);
+
+  /// TODO
+  void set_edge_reflections(
+      Eigen::Array<bool, Eigen::Dynamic, Eigen::Dynamic>& reflections);
+
+  /// TODO
+  void set_face_permutations(
+      Eigen::Array<bool, Eigen::Dynamic, Eigen::Dynamic>& reflections,
+      Eigen::Array<std::uint8_t, Eigen::Dynamic, Eigen::Dynamic>& rotations);
 
 private:
   // Cell type
