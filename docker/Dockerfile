@@ -5,7 +5,7 @@
 # <blechta@karlin.mff.cuni.cz>
 #
 # All layers are built nightly on CircleCI and pushed to
-# https://docker
+# https://hub.docker.com/orgs/dolfinx
 #
 # To run a nightly build:
 #
