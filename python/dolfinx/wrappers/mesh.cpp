@@ -147,8 +147,7 @@ void mesh(py::module& m)
       .def("cell_name",
            [](const dolfinx::mesh::Topology& self) {
              return dolfinx::mesh::to_string(self.cell_type());
-           })
-      .def("str", &dolfinx::mesh::Topology::str);
+           });
 
   // dolfinx::mesh::Mesh
   py::class_<dolfinx::mesh::Mesh, std::shared_ptr<dolfinx::mesh::Mesh>>(
