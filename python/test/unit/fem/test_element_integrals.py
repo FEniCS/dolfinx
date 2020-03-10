@@ -265,36 +265,27 @@ def test_plus_minus_simple_vector(cell_type, pm):
             results.append(result)
             orders.append(order)
 
-    # Check that the above vectors all have the same values, but permuted due to differently
-    # ordered dofs
-    # For each pair of results
-    for i, j in combinations(range(len(results)), 2):
+    # Check that the above vectors all have the same values as the first one,
+    # but permuted due to differently ordered dofs
+    dofmap0 = spaces[0].mesh.geometry.dofmap()
+    for result, space in zip(results[1:], spaces[1:]):
         # Get the data relating to two results
-        space0 = spaces[i]
-        space1 = spaces[j]
-
-        dofmap0 = space0.mesh.geometry.dofmap()
-        dofmap1 = space1.mesh.geometry.dofmap()
+        dofmap1 = space.mesh.geometry.dofmap()
 
         # For each cell
         for cell in range(2):
-            cell0_points = dofmap0.links(cell)
-            cell1_points = dofmap1.links(cell)
-
-            # For each point in cell in the the first mesh
-            for i0, point0 in enumerate(cell0_points):
-                # Find the point in the cell in the second mesh
-                for i1, point1 in enumerate(cell1_points):
-                    if np.allclose(space0.mesh.geometry.point(point0),
-                                   space1.mesh.geometry.point(point1)):
+            # For each point in cell 0 in the the first mesh
+            for dof0, point0 in zip(spaces[0].dofmap.cell_dofs(cell), dofmap0.links(cell)):
+                # Find the point in the cell 0 in the second mesh
+                for dof1, point1 in zip(space.dofmap.cell_dofs(cell), dofmap1.links(cell)):
+                    if np.allclose(spaces[0].mesh.geometry.point(point0),
+                                   space.mesh.geometry.point(point1)):
                         break
                 else:
                     # If no matching point found, fail
                     assert False
 
-                result0 = results[i][space0.dofmap.cell_dofs(cell)[i0]]
-                result1 = results[j][space1.dofmap.cell_dofs(cell)[i1]]
-                assert np.isclose(result0, result1)
+                assert np.isclose(results[0][dof0], result[dof1])
 
 
 @skip_in_parallel
@@ -327,36 +318,27 @@ def test_plus_minus_vector(cell_type, pm1, pm2):
             results.append(result)
             orders.append(order)
 
-    # Check that the above vectors all have the same values, but permuted due to differently
-    # ordered dofs
-    # For each pair of results
-    for i, j in combinations(range(len(results)), 2):
+    # Check that the above vectors all have the same values as the first one,
+    # but permuted due to differently ordered dofs
+    dofmap0 = spaces[0].mesh.geometry.dofmap()
+    for result, space in zip(results[1:], spaces[1:]):
         # Get the data relating to two results
-        space0 = spaces[i]
-        space1 = spaces[j]
-
-        dofmap0 = space0.mesh.geometry.dofmap()
-        dofmap1 = space1.mesh.geometry.dofmap()
+        dofmap1 = space.mesh.geometry.dofmap()
 
         # For each cell
         for cell in range(2):
-            cell0_points = dofmap0.links(cell)
-            cell1_points = dofmap1.links(cell)
-
-            # For each point in cell in the the first mesh
-            for i0, point0 in enumerate(cell0_points):
-                # Find the point in the cell in the second mesh
-                for i1, point1 in enumerate(cell1_points):
-                    if np.allclose(space0.mesh.geometry.point(point0),
-                                   space1.mesh.geometry.point(point1)):
+            # For each point in cell 0 in the the first mesh
+            for dof0, point0 in zip(spaces[0].dofmap.cell_dofs(cell), dofmap0.links(cell)):
+                # Find the point in the cell 0 in the second mesh
+                for dof1, point1 in zip(space.dofmap.cell_dofs(cell), dofmap1.links(cell)):
+                    if np.allclose(spaces[0].mesh.geometry.point(point0),
+                                   space.mesh.geometry.point(point1)):
                         break
                 else:
                     # If no matching point found, fail
                     assert False
 
-                result0 = results[i][space0.dofmap.cell_dofs(cell)[i0]]
-                result1 = results[j][space1.dofmap.cell_dofs(cell)[i1]]
-                assert np.isclose(result0, result1)
+                assert np.isclose(results[0][dof0], result[dof1])
 
 
 @skip_in_parallel
@@ -386,37 +368,29 @@ def test_plus_minus_matrix(cell_type, pm1, pm2):
 
     # Check that the above matrices all have the same values, but permuted due to differently
     # ordered dofs
-    # For each pair of results
-    for i, j in combinations(range(len(results)), 2):
+    dofmap0 = spaces[0].mesh.geometry.dofmap()
+    for result, space in zip(results[1:], spaces[1:]):
         # Get the data relating to two results
-        space0 = spaces[i]
-        space1 = spaces[j]
+        dofmap1 = space.mesh.geometry.dofmap()
 
         dof_order = []
 
-        dofmap0 = space0.mesh.geometry.dofmap()
-        dofmap1 = space1.mesh.geometry.dofmap()
-
         # For each cell
         for cell in range(2):
-            cell0_points = dofmap0.links(cell)
-            cell1_points = dofmap1.links(cell)
-
-            # For each point in cell in the the first mesh
-            for i0, point0 in enumerate(cell0_points):
-                # Find the point in the cell in the second mesh
-                for i1, point1 in enumerate(cell1_points):
-                    if np.allclose(space0.mesh.geometry.point(point0),
-                                   space1.mesh.geometry.point(point1)):
+            # For each point in cell 0 in the the first mesh
+            for dof0, point0 in zip(spaces[0].dofmap.cell_dofs(cell), dofmap0.links(cell)):
+                # Find the point in the cell 0 in the second mesh
+                for dof1, point1 in zip(space.dofmap.cell_dofs(cell), dofmap1.links(cell)):
+                    if np.allclose(spaces[0].mesh.geometry.point(point0),
+                                   space.mesh.geometry.point(point1)):
                         break
                 else:
                     # If no matching point found, fail
                     assert False
 
-                dof_order.append((space0.dofmap.cell_dofs(cell)[i0],
-                                  space1.dofmap.cell_dofs(cell)[i1]))
+                dof_order.append((dof0, dof1))
 
         # For all dof pairs, check that entries in the matrix agree
         for a, b in dof_order:
             for c, d in dof_order:
-                assert np.isclose(results[i][a, c], results[j][b, d])
+                assert np.isclose(results[0][a, c], result[b, d])
