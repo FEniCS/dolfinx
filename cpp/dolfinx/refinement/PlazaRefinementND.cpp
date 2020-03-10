@@ -9,6 +9,8 @@
 #include <dolfinx/common/Timer.h>
 #include <dolfinx/mesh/Geometry.h>
 #include <dolfinx/mesh/Mesh.h>
+#include <dolfinx/mesh/Topology.h>
+#include <dolfinx/common/IndexMap.h>
 #include <dolfinx/mesh/MeshIterator.h>
 #include <limits>
 #include <map>
@@ -29,20 +31,32 @@ void enforce_rules(ParallelRefinement& p_ref, const mesh::Mesh& mesh,
   // Enforce rule, that if any edge of a face is marked, longest edge
   // must also be marked
 
+  auto map_f = mesh.topology().index_map(2);
+  assert(map_f);
+  const std::int32_t num_faces = map_f->size_local() + map_f->num_ghosts();
+
+  auto f_to_e = mesh.topology().connectivity(2, 1);
+  assert(f_to_e);
+
   std::int32_t update_count = 1;
   while (update_count != 0)
   {
     update_count = 0;
     p_ref.update_logical_edgefunction();
-
-    for (const auto& f : mesh::MeshRange(mesh, 2, mesh::MeshRangeType::ALL))
+    // for (const auto& f : mesh::MeshRange(mesh, 2, mesh::MeshRangeType::ALL))
+    for (int f = 0; f < num_faces; ++f)
     {
-      const std::int32_t long_e = long_edge[f.index()];
+      const std::int32_t long_e = long_edge[f];
       if (p_ref.is_marked(long_e))
         continue;
+
       bool any_marked = false;
-      for (const auto& e : mesh::EntityRange(f, 1))
-        any_marked |= p_ref.is_marked(e.index());
+      // for (const auto& e : mesh::EntityRange(f, 1))
+      //   any_marked |= p_ref.is_marked(e.index());
+      auto edges = f_to_e->links(f);
+      for (int i = 0; i < edges.rows(); ++i)
+        any_marked |= p_ref.is_marked(edges[i]);
+
       if (any_marked)
       {
         p_ref.mark(long_e);
@@ -353,7 +367,8 @@ face_long_edge(const mesh::Mesh& mesh)
     const int local1 = std::distance(cell_vertices.data(), it1);
 
     auto x_dofs = x_dofmap.links(c);
-    edge_length[e] = (x.row(x_dofs[local0]) - x.row(x_dofs[local1])).matrix().norm();
+    edge_length[e]
+        = (x.row(x_dofs[local0]) - x.row(x_dofs[local1])).matrix().norm();
   }
 
   // Get longest edge of each face
