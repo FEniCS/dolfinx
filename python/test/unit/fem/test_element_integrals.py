@@ -19,8 +19,7 @@ from dolfinx.cpp.mesh import CellType
 
 parametrize_cell_types = pytest.mark.parametrize(
     "cell_type",
-    # [CellType.interval, CellType.triangle, CellType.tetrahedron, CellType.quadrilateral, CellType.hexahedron])
-    [CellType.interval, CellType.triangle, CellType.tetrahedron])
+    [CellType.interval, CellType.triangle, CellType.tetrahedron, CellType.quadrilateral, CellType.hexahedron])
 
 
 def unit_cell(cell_type, random_order=True):
@@ -274,20 +273,14 @@ def test_plus_minus_simple_vector(cell_type, pm):
         space0 = spaces[i]
         space1 = spaces[j]
 
-        # For each cell
-        for cell0 in range(2):
-            cell0_points = list(space0.mesh.cells()[cell0])
-            midp0 = sum(space0.mesh.geometry.point(i) for i in cell0_points) / len(cell0_points)
+        dofmap0 = space0.mesh.geometry.dofmap()
+        dofmap1 = space1.mesh.geometry.dofmap()
 
-            # Find the matching cell in the second mesh
-            for cell1 in range(2):
-                cell1_points = list(space1.mesh.cells()[cell1])
-                midp1 = sum(space1.mesh.geometry.point(i) for i in cell1_points) / len(cell1_points)
-                if np.allclose(midp0, midp1):
-                    break
-            else:
-                # If no matching cell found, fail
-                assert False
+        # For each cell
+        for cell in range(2):
+            cell0_points = dofmap0.links(cell)
+            cell1_points = dofmap1.links(cell)
+            midp0 = sum(space0.mesh.geometry.point(i) for i in cell0_points) / len(cell0_points)
 
             # For each point in cell in the the first mesh
             for i0, point0 in enumerate(cell0_points):
@@ -300,8 +293,8 @@ def test_plus_minus_simple_vector(cell_type, pm):
                     # If no matching point found, fail
                     assert False
 
-                result0 = results[i][space0.dofmap.cell_dofs(cell0)[i0]]
-                result1 = results[j][space1.dofmap.cell_dofs(cell1)[i1]]
+                result0 = results[i][space0.dofmap.cell_dofs(cell)[i0]]
+                result1 = results[j][space1.dofmap.cell_dofs(cell)[i1]]
                 assert np.isclose(result0, result1)
 
 
@@ -343,20 +336,14 @@ def test_plus_minus_vector(cell_type, pm1, pm2):
         space0 = spaces[i]
         space1 = spaces[j]
 
-        # For each cell
-        for cell0 in range(2):
-            cell0_points = list(space0.mesh.cells()[cell0])
-            midp0 = sum(space0.mesh.geometry.point(i) for i in cell0_points) / len(cell0_points)
+        dofmap0 = space0.mesh.geometry.dofmap()
+        dofmap1 = space1.mesh.geometry.dofmap()
 
-            # Find the matching cell in the second mesh
-            for cell1 in range(2):
-                cell1_points = list(space1.mesh.cells()[cell1])
-                midp1 = sum(space1.mesh.geometry.point(i) for i in cell1_points) / len(cell1_points)
-                if np.allclose(midp0, midp1):
-                    break
-            else:
-                # If no matching cell found, fail
-                assert False
+        # For each cell
+        for cell in range(2):
+            cell0_points = dofmap0.links(cell)
+            cell1_points = dofmap1.links(cell)
+            midp0 = sum(space0.mesh.geometry.point(i) for i in cell0_points) / len(cell0_points)
 
             # For each point in cell in the the first mesh
             for i0, point0 in enumerate(cell0_points):
@@ -369,8 +356,8 @@ def test_plus_minus_vector(cell_type, pm1, pm2):
                     # If no matching point found, fail
                     assert False
 
-                result0 = results[i][space0.dofmap.cell_dofs(cell0)[i0]]
-                result1 = results[j][space1.dofmap.cell_dofs(cell1)[i1]]
+                result0 = results[i][space0.dofmap.cell_dofs(cell)[i0]]
+                result1 = results[j][space1.dofmap.cell_dofs(cell)[i1]]
                 assert np.isclose(result0, result1)
 
 
@@ -408,20 +395,15 @@ def test_plus_minus_matrix(cell_type, pm1, pm2):
         space1 = spaces[j]
 
         dof_order = []
-        # For each cell
-        for cell0 in range(2):
-            cell0_points = list(space0.mesh.cells()[cell0])
-            midp0 = sum(space0.mesh.geometry.point(i) for i in cell0_points) / len(cell0_points)
 
-            # Find the matching cell in the second mesh
-            for cell1 in range(2):
-                cell1_points = list(space1.mesh.cells()[cell1])
-                midp1 = sum(space1.mesh.geometry.point(i) for i in cell1_points) / len(cell1_points)
-                if np.allclose(midp0, midp1):
-                    break
-            else:
-                # If no matching cell found, fail
-                assert False
+        dofmap0 = space0.mesh.geometry.dofmap()
+        dofmap1 = space1.mesh.geometry.dofmap()
+
+        # For each cell
+        for cell in range(2):
+            cell0_points = dofmap0.links(cell)
+            cell1_points = dofmap1.links(cell)
+            midp0 = sum(space0.mesh.geometry.point(i) for i in cell0_points) / len(cell0_points)
 
             # For each point in cell in the the first mesh
             for i0, point0 in enumerate(cell0_points):
@@ -434,10 +416,11 @@ def test_plus_minus_matrix(cell_type, pm1, pm2):
                     # If no matching point found, fail
                     assert False
 
-                dof_order.append((space0.dofmap.cell_dofs(cell0)[i0],
-                                  space1.dofmap.cell_dofs(cell1)[i1]))
+                dof_order.append((space0.dofmap.cell_dofs(cell)[i0],
+                                  space1.dofmap.cell_dofs(cell)[i1]))
 
         # For all dof pairs, check that entries in the matrix agree
         for a, b in dof_order:
             for c, d in dof_order:
                 assert np.isclose(results[i][a, c], results[j][b, d])
+
