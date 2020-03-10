@@ -5,7 +5,6 @@
 // SPDX-License-Identifier:    LGPL-3.0-or-later
 
 #include "KaHIP.h"
-#include "Graph.h"
 #include "GraphBuilder.h"
 #include <dolfinx/common/MPI.h>
 #include <dolfinx/common/Timer.h>
@@ -27,8 +26,8 @@ graph::AdjacencyList<std::int32_t> dolfinx::graph::KaHIP::partition(
   const std::int32_t num_processes = dolfinx::MPI::size(mpi_comm);
   const std::int32_t process_number = dolfinx::MPI::rank(mpi_comm);
 
-  // Graph does not have vertex or adjacency weights,
-  // so we use null pointers as arguments.
+  // Graph does not have vertex or adjacency weights, so we use null
+  // pointers as arguments.
   unsigned long long* vwgt{nullptr};
   unsigned long long* adjcwgt{nullptr};
 

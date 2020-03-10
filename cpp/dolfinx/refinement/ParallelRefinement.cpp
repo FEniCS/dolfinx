@@ -414,9 +414,11 @@ mesh::Mesh ParallelRefinement::partition(bool redistribute) const
 
     // Build distributed cell-vertex AdjacencyList, IndexMap for
     // vertices, and map from local index to old global index
+    const std::vector<bool>& exterior_vertices
+        = mesh::Partitioning::compute_vertex_exterior_markers(topology_local);
     auto [cells_d, vertex_map]
         = mesh::Partitioning::create_distributed_adjacency_list(
-            comm, topology_local, local_to_global_vertices);
+            comm, *_cells_local, local_to_global_vertices, exterior_vertices);
 
     // Set vertex IndexMap, and vertex-vertex connectivity
     auto _vertex_map

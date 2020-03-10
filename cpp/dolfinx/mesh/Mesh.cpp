@@ -268,20 +268,25 @@ void Mesh::create_connectivity(int d0, int d1) const
 //-----------------------------------------------------------------------------
 void Mesh::create_entity_permutations() const
 {
-  // FIXME: This should probably be moved to topology.
+  // FIXME: This should be moved to topology or a TopologyPermutation class
 
   assert(_topology);
   if (_topology->entity_reflection_size() > 0)
     return;
 
   const int tdim = _topology->dim();
-  assert(_topology->connectivity(tdim, 0));
-  const int num_cells = _topology->connectivity(tdim, 0)->num_nodes();
+
+  auto c_to_v = _topology->connectivity(tdim, 0);
+  assert(c_to_v);
+  const int num_cells = c_to_v->num_nodes();
 
   _topology->resize_entity_permutations(
       num_cells, cell_num_entities(_topology->cell_type(), 1),
       cell_num_entities(_topology->cell_type(), 2));
 
+  // FIXME: Is this always required? Could it be made cheaper by doing a
+  // local version? This call does quite a lot of parallel work
+  // Create all mesh entities
   for (int d = 0; d < tdim; ++d)
     this->create_entities(d);
 
@@ -289,14 +294,14 @@ void Mesh::create_entity_permutations() const
   if (_topology->cell_type() == CellType::triangle
       or _topology->cell_type() == CellType::tetrahedron)
   {
-    for (int cell_n = 0; cell_n < num_cells; ++cell_n)
+    for (int c = 0; c < num_cells; ++c)
     {
-      auto cell_vertices = _topology->connectivity(tdim, 0)->links(cell_n);
+      auto cell_vertices = c_to_v->links(c);
       for (int d = 1; d < tdim; ++d)
       {
         assert(_topology->connectivity(d, 0));
         assert(_topology->connectivity(tdim, d));
-        auto cell_entities = _topology->connectivity(tdim, d)->links(cell_n);
+        auto cell_entities = _topology->connectivity(tdim, d)->links(c);
         for (int i = 0; i < cell_num_entities(_topology->cell_type(), d); ++i)
         {
           // Get the facet
@@ -308,8 +313,9 @@ void Mesh::create_entity_permutations() const
 
           auto vertices = _topology->connectivity(d, 0)->links(sub_e_n);
 
-          // If the entity is an interval, it should be oriented pointing from
-          // the lowest numbered vertex to the highest numbered vertex
+          // If the entity is an interval, it should be oriented
+          // pointing from the lowest numbered vertex to the highest
+          // numbered vertex
           if (d == 1)
           {
             // Find iterators pointing to cell vertex given a vertex on facet
@@ -321,21 +327,23 @@ void Mesh::create_entity_permutations() const
                 cell_vertices.data() + cell_vertices.size(), vertices[1]);
 
             // The number of reflections
-            // Comparing iterators directly instead of values they point to
-            // is sufficient here
+            // Comparing iterators directly instead of values they point
+            // to is sufficient here
             refs = it1 < it0;
           }
           else if (d == 2)
           {
-            // Orient that triangle so the the lowest numbered vertex is the
-            // origin, and the next vertex anticlockwise from the lowest has a
-            // lower number than the next vertex clockwise. Find the index of
-            // the lowest numbered vertex
+            // Orient that triangle so the the lowest numbered vertex is
+            // the origin, and the next vertex anticlockwise from the
+            // lowest has a lower number than the next vertex clockwise.
+            // Find the index of the lowest numbered vertex
             rots = 0;
 
             // Store local vertex indices here
             std::array<std::size_t, 3> e_vertices;
-            // Find iterators pointing to cell vertex given a vertex on facet
+
+            // Find iterators pointing to cell vertex given a vertex on
+            // facet
             for (int j = 0; j < 3; ++j)
             {
               const auto it = std::find(
@@ -348,19 +356,23 @@ void Mesh::create_entity_permutations() const
             for (int v = 1; v < 3; ++v)
               if (e_vertices[v] < e_vertices[rots])
                 rots = v;
-            // pre is the number of the next vertex clockwise from the lowest
-            // numbered vertex
+
+            // pre is the number of the next vertex clockwise from the
+            // lowest numbered vertex
             const int pre
                 = rots == 0 ? e_vertices[3 - 1] : e_vertices[rots - 1];
-            // post is the number of the next vertex anticlockwise from the
-            // lowest numbered vertex
+
+            // post is the number of the next vertex anticlockwise from
+            // the lowest numbered vertex
+
             const int post
                 = rots == 3 - 1 ? e_vertices[0] : e_vertices[rots + 1];
+
             // The number of reflections
             refs = post > pre;
           }
 
-          _topology->set_entity_permutation(cell_n, d, i, rots, refs);
+          _topology->set_entity_permutation(c, d, i, rots, refs);
         }
       }
     }
@@ -368,15 +380,14 @@ void Mesh::create_entity_permutations() const
   // If the cell is a quad, hex or interval
   else
   {
-    for (int cell_n = 0; cell_n < num_cells; ++cell_n)
+    for (int c = 0; c < num_cells; ++c)
     {
-      auto cell_vertices
-          = this->topology().connectivity(tdim, 0)->links(cell_n);
+      auto cell_vertices = c_to_v->links(c);
       for (int d = 1; d < tdim; ++d)
       {
         assert(_topology->connectivity(d, 0));
         assert(_topology->connectivity(tdim, d));
-        auto cell_entities = _topology->connectivity(tdim, d)->links(cell_n);
+        auto cell_entities = _topology->connectivity(tdim, d)->links(c);
         for (int i = 0; i < cell_num_entities(_topology->cell_type(), d); ++i)
         {
           // Get the facet
@@ -427,7 +438,7 @@ void Mesh::create_entity_permutations() const
 
             for (int v = 0; v < 4; ++v)
             {
-              if (num_min == -1 || e_vertices[v] < e_vertices[num_min])
+              if (num_min == -1 or e_vertices[v] < e_vertices[num_min])
                 num_min = v;
             }
 
@@ -465,7 +476,7 @@ void Mesh::create_entity_permutations() const
             refs = (e_vertices[post] > e_vertices[pre]);
           }
 
-          _topology->set_entity_permutation(cell_n, d, i, rots, refs);
+          _topology->set_entity_permutation(c, d, i, rots, refs);
         }
       }
     }
