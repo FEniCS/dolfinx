@@ -278,7 +278,7 @@ void Mesh::create_entity_permutations() const
   for (int d = 0; d < tdim; ++d)
     this->create_entities(d);
 
-  _topology->create_permutations();
+  _topology->create_entity_permutations();
 }
 //-----------------------------------------------------------------------------
 void Mesh::create_connectivity_all() const
@@ -327,7 +327,6 @@ std::string Mesh::str(bool verbose) const
   {
     s << str(false) << std::endl << std::endl;
     s << common::indent(_geometry->str(true));
-    s << common::indent(_topology->str(true));
   }
   else
   {

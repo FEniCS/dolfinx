@@ -441,61 +441,6 @@ size_t Topology::hash() const
   return this->connectivity(dim(), 0)->hash();
 }
 //-----------------------------------------------------------------------------
-std::string Topology::str(bool verbose) const
-{
-  const int _dim = _connectivity.rows() - 1;
-  std::stringstream s;
-  if (verbose)
-  {
-    s << str(false) << std::endl << std::endl;
-    s << "  Number of entities:" << std::endl << std::endl;
-    for (int d = 0; d <= _dim; d++)
-    {
-      if (_index_map[d])
-      {
-        const int size
-            = _index_map[d]->size_local() + _index_map[d]->num_ghosts();
-        s << "    dim = " << d << ": " << size << std::endl;
-      }
-    }
-    s << std::endl;
-
-    s << "  Connectivity matrix:" << std::endl << std::endl;
-    s << "     ";
-    for (int d1 = 0; d1 <= _dim; d1++)
-      s << " " << d1;
-    s << std::endl;
-    for (int d0 = 0; d0 <= _dim; d0++)
-    {
-      s << "    " << d0;
-      for (int d1 = 0; d1 <= _dim; d1++)
-      {
-        if (_connectivity(d0, d1))
-          s << " x";
-        else
-          s << " -";
-      }
-      s << std::endl;
-    }
-    s << std::endl;
-
-    for (int d0 = 0; d0 <= _dim; d0++)
-    {
-      for (int d1 = 0; d1 <= _dim; d1++)
-      {
-        if (!_connectivity(d0, d1))
-          continue;
-        s << common::indent(_connectivity(d0, d1)->str());
-        s << std::endl;
-      }
-    }
-  }
-  else
-    s << "<Topology of dimension " << _dim << ">";
-
-  return s.str();
-}
-//-----------------------------------------------------------------------------
 const Eigen::Array<bool, Eigen::Dynamic, Eigen::Dynamic>&
 Topology::get_edge_reflections() const
 {
@@ -520,7 +465,7 @@ Topology::get_facet_permutations() const
   return _facet_permutations;
 }
 //-----------------------------------------------------------------------------
-void Topology::create_permutations()
+void Topology::create_entity_permutations()
 {
   if (_edge_reflections.rows() > 0)
   {
@@ -579,24 +524,6 @@ void Topology::create_permutations()
 }
 //-----------------------------------------------------------------------------
 mesh::CellType Topology::cell_type() const { return _cell_type; }
-//-----------------------------------------------------------------------------
-void Topology::set_edge_reflections(
-    Eigen::Array<bool, Eigen::Dynamic, Eigen::Dynamic>& reflections)
-{
-  _edge_reflections = reflections;
-  if (this->dim() == 2)
-    _facet_permutations = reflections.cast<std::uint8_t>();
-}
-//-----------------------------------------------------------------------------
-void Topology::set_face_permutations(
-    Eigen::Array<bool, Eigen::Dynamic, Eigen::Dynamic>& reflections,
-    Eigen::Array<std::uint8_t, Eigen::Dynamic, Eigen::Dynamic>& rotations)
-{
-  _face_reflections = reflections;
-  _face_rotations = rotations;
-  if (this->dim() == 3)
-    _facet_permutations = 2 * rotations + reflections.cast<std::uint8_t>();
-}
 //-----------------------------------------------------------------------------
 
 //-----------------------------------------------------------------------------

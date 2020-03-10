@@ -45,11 +45,17 @@ class Topology;
 ///   the domain.
 std::vector<bool> compute_interior_facets(const Topology& topology);
 
-/// TODO
+/// Compute the edge reflection array for consistent edge orientation
+/// @param[in] topology The object topology
+/// @return the Reflection array for each edge
 Eigen::Array<bool, Eigen::Dynamic, Eigen::Dynamic>
 compute_edge_reflections(const Topology& topology);
 
-/// TODO
+/// Compute the face reflection and rotation arrays for consistent face
+/// orientation
+/// @param[in] topology The object topology
+/// @return the Reflection array for each face and the rotation array
+///  for each face
 std::pair<Eigen::Array<bool, Eigen::Dynamic, Eigen::Dynamic>,
           Eigen::Array<std::uint8_t, Eigen::Dynamic, Eigen::Dynamic>>
 compute_face_permutations(const Topology& topology);
@@ -150,9 +156,6 @@ public:
   /// @return Cell type that th topology is for
   mesh::CellType cell_type() const;
 
-  /// Return informal string representation (pretty-print)
-  std::string str(bool verbose) const;
-
   /// @todo Use std::vector<int32_t> to store 1/0 marker for each edge/face
   /// Get an array of bools that say whether each edge needs to be
   /// reflected to match the low->high ordering of the cell.
@@ -189,17 +192,8 @@ public:
   const Eigen::Array<std::uint8_t, Eigen::Dynamic, Eigen::Dynamic>&
   get_facet_permutations() const;
 
-  /// TODO
-  void create_permutations();
-
-  /// TODO
-  void set_edge_reflections(
-      Eigen::Array<bool, Eigen::Dynamic, Eigen::Dynamic>& reflections);
-
-  /// TODO
-  void set_face_permutations(
-      Eigen::Array<bool, Eigen::Dynamic, Eigen::Dynamic>& reflections,
-      Eigen::Array<std::uint8_t, Eigen::Dynamic, Eigen::Dynamic>& rotations);
+  /// Compute entity permutations and reflections used in assembly
+  void create_entity_permutations();
 
 private:
   // Cell type
