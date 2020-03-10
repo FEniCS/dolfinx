@@ -673,8 +673,8 @@ Eigen::Array<double, Eigen::Dynamic, 3, Eigen::RowMajor> mesh::midpoints(
   assert(c_to_v);
   auto map_v = topology.index_map(0);
   assert(map_v);
-  std::vector<std::int32_t> vertex_to_x(map_v->size_local()
-                                        + map_v->num_ghosts());
+  const std::int32_t num_vertices = map_v->size_local() + map_v->num_ghosts();
+  std::vector<std::int32_t> vertex_to_x(num_vertices);
   auto map_c = topology.index_map(tdim);
   assert(map_c);
   for (int c = 0; c < map_c->size_local() + map_c->num_ghosts(); ++c)
@@ -709,7 +709,7 @@ Eigen::Array<double, Eigen::Dynamic, 3, Eigen::RowMajor> mesh::midpoints(
       x_mid.row(e) = 0.0;
       for (int i = 0; i < vertices.rows(); ++i)
         x_mid.row(e) += x.row(vertex_to_x[vertices[i]]);
-      x_mid.row(e) /= entities.rows();
+      x_mid.row(e) /= vertices.rows();
     }
   }
 

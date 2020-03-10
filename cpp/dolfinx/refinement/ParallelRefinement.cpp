@@ -170,10 +170,46 @@ void ParallelRefinement::create_new_vertices()
   const std::shared_ptr<const common::IndexMap> edge_index_map
       = _mesh.topology().index_map(1);
 
+  // Build map from vertex -> geometry dof
+  const graph::AdjacencyList<std::int32_t>& x_dofmap
+      = _mesh.geometry().dofmap();
+  const int tdim = _mesh.topology().dim();
+  auto c_to_v = _mesh.topology().connectivity(tdim, 0);
+  assert(c_to_v);
+  auto map_v = _mesh.topology().index_map(0);
+  assert(map_v);
+  const std::int32_t num_vertices = map_v->size_local() + map_v->num_ghosts();
+  std::vector<std::int32_t> vertex_to_x(num_vertices);
+  auto map_c = _mesh.topology().index_map(tdim);
+  assert(map_c);
+  for (int c = 0; c < map_c->size_local() + map_c->num_ghosts(); ++c)
+  {
+    auto vertices = c_to_v->links(c);
+    auto dofs = x_dofmap.links(c);
+    for (int i = 0; i < vertices.rows(); ++i)
+    {
+      // FIXME: We are making an assumption here on the
+      // ElementDofLayout. We should use an ElementDofLayout to map
+      // between local vertex index an x dof index.
+      vertex_to_x[vertices[i]] = dofs(i);
+    }
+  }
+
   // Copy over existing mesh vertices
-  _new_vertex_coordinates = std::vector<double>(
-      _mesh.geometry().x().data(),
-      _mesh.geometry().x().data() + _mesh.geometry().x().size());
+  const Eigen::Array<double, Eigen::Dynamic, 3, Eigen::RowMajor>& x_g
+      = _mesh.geometry().x();
+
+  _new_vertex_coordinates = std::vector<double>(3 * num_vertices);
+  for (int v = 0; v < num_vertices; ++v)
+  {
+    auto _x = x_g.row(vertex_to_x[v]);
+    for (int i = 0; i < 3; ++i)
+      _new_vertex_coordinates[3 * v + i] = _x[i];
+  }
+
+  // _new_vertex_coordinates = std::vector<double>(
+  //     _mesh.geometry().x().data(),
+  //     _mesh.geometry().x().data() + _mesh.geometry().x().size());
 
   // Compute all edge mid-points
   Eigen::Array<int, Eigen::Dynamic, 1> edges(_mesh.num_entities(1));
