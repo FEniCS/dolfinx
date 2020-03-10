@@ -189,27 +189,6 @@ public:
   const Eigen::Array<std::uint8_t, Eigen::Dynamic, Eigen::Dynamic>&
   get_facet_permutations() const;
 
-  /// Resize the arrays of permutations and reflections
-  /// @param[in] cell_count The number of cells in the mesh
-  /// @param[in] edges_per_cell The number of edges per mesh cell
-  /// @param[in] faces_per_cell The number of faces per mesh cell
-  void resize_entity_permutations(std::int32_t cell_count, int edges_per_cell,
-                                  int faces_per_cell);
-
-  /// Retuns the number of rows in the entity_permutations array
-  std::int32_t entity_reflection_size() const;
-
-  /// Set the entity permutations array
-  /// @param[in] cell The cell index
-  /// @param[in] entity_dim The topological dimension of the entity
-  /// @param[in] entity_index The entity number
-  /// @param[in] rots The number of rotations to be applied
-  /// @param[in] refs The number of reflections to be applied
-  void set_entity_permutation(std::int32_t cell, int entity_dim,
-                              int entity_index, std::uint8_t rots,
-                              std::uint8_t refs);
-
-
   /// TODO
   void create_permutations();
 

@@ -520,40 +520,13 @@ Topology::get_facet_permutations() const
   return _facet_permutations;
 }
 //-----------------------------------------------------------------------------
-void Topology::resize_entity_permutations(std::int32_t cell_count,
-                                          int edges_per_cell,
-                                          int faces_per_cell)
-{
-  if (dim() == 3)
-    _facet_permutations.resize(faces_per_cell, cell_count);
-  else if (dim() == 2)
-    _facet_permutations.resize(edges_per_cell, cell_count);
-  else if (dim() == 1)
-    _facet_permutations.resize(2, cell_count);
-  else if (dim() == 0)
-    _facet_permutations.resize(1, cell_count);
-  _facet_permutations.fill(0);
-
-  _edge_reflections.resize(edges_per_cell, cell_count);
-  _edge_reflections.fill(false);
-  _face_reflections.resize(faces_per_cell, cell_count);
-  _face_reflections.fill(false);
-  _face_rotations.resize(faces_per_cell, cell_count);
-  _face_rotations.fill(false);
-}
-//-----------------------------------------------------------------------------
-std::int32_t Topology::entity_reflection_size() const
-{
-  return _edge_reflections.rows();
-}
-//-----------------------------------------------------------------------------
 void Topology::create_permutations()
 {
-  if (_edge_reflections.size() != 0)
+  if (_edge_reflections.rows() > 0)
   {
-    assert(_face_reflections.size() != 0);
-    assert(_face_rotations.size() != 0);
-    assert(_facet_permutations.size() != 0);
+    // assert(_face_reflections.size() != 0);
+    // assert(_face_rotations.size() != 0);
+    // assert(_facet_permutations.size() != 0);
     return;
   }
 
@@ -563,14 +536,18 @@ void Topology::create_permutations()
   const std::int32_t num_cells = _connectivity(tdim, 0)->num_nodes();
   const int faces_per_cell = cell_num_entities(cell_type, 2);
 
+  // FIXME: Avoid create 'identity' reflections/rotations
+
   if (tdim <= 1)
   {
     const int edges_per_cell = cell_num_entities(cell_type, 1);
     const int facets_per_cell = cell_num_entities(cell_type, tdim - 1);
     _edge_reflections.resize(edges_per_cell, num_cells);
     _edge_reflections = false;
+
     _face_reflections.resize(faces_per_cell, num_cells);
     _face_reflections = false;
+
     _face_rotations.resize(faces_per_cell, num_cells);
     _face_rotations = 0;
     _facet_permutations.resize(facets_per_cell, num_cells);
@@ -599,27 +576,6 @@ void Topology::create_permutations()
     if (tdim == 3)
       _facet_permutations = 2 * rotations + reflections.cast<std::uint8_t>();
   }
-}
-//-----------------------------------------------------------------------------
-void Topology::set_entity_permutation(std::int32_t, int entity_dim, int,
-                                      std::uint8_t, std::uint8_t)
-{
-  if (entity_dim == 2)
-  {
-    // if (dim() == 3)
-    //   _facet_permutations(entity_index, cell) = 2 * rots + refs;
-
-    // _face_reflections(entity_index, cell) = refs;
-    // _face_rotations(entity_index, cell) = rots;
-  }
-  else if (entity_dim == 1)
-  {
-    // if (dim() == 2)
-    //   _facet_permutations(entity_index, cell) = refs;
-    // _edge_reflections(entity_index, cell) = refs;
-  }
-  else
-    throw std::runtime_error("Wong entity dimension.");
 }
 //-----------------------------------------------------------------------------
 mesh::CellType Topology::cell_type() const { return _cell_type; }
