@@ -359,8 +359,7 @@ mesh::create_topology(MPI_Comm comm,
   // Compute the destination rank for cells on this process via graph
   // partitioning
   const graph::AdjacencyList<std::int32_t> dest
-      = Partitioning::partition_cells(comm, size, layout.cell_type(),
-                                         cells_v);
+      = Partitioning::partition_cells(comm, size, layout.cell_type(), cells_v);
 
   // Distribute cells to destination rank
   const auto [my_cells, src, original_cell_index]
@@ -416,9 +415,10 @@ mesh::create_topology(MPI_Comm comm,
 
   // Build distributed cell-vertex AdjacencyList, IndexMap for
   // vertices, and map from local index to old global index
-  auto [cells_d, vertex_map]
-      = Partitioning::create_distributed_adjacency_list(
-          comm, topology_local, local_to_global_vertices);
+  const std::vector<bool>& exterior_vertices
+      = Partitioning::compute_vertex_exterior_markers(topology_local);
+  auto [cells_d, vertex_map] = Partitioning::create_distributed_adjacency_list(
+      comm, *_cells_local, local_to_global_vertices, exterior_vertices);
 
   Topology topology(layout.cell_type());
 

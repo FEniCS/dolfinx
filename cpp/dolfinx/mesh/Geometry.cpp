@@ -74,10 +74,7 @@ const std::vector<std::int64_t>& Geometry::global_indices() const
   return _global_indices;
 }
 //-----------------------------------------------------------------------------
-const fem::ElementDofLayout& Geometry::dof_layout() const
-{
-  return _layout;
-}
+const fem::ElementDofLayout& Geometry::dof_layout() const { return _layout; }
 //-----------------------------------------------------------------------------
 std::size_t Geometry::hash() const
 {
@@ -154,7 +151,7 @@ mesh::Geometry mesh::create_geometry(
   //  Fetch node coordinates by global index from other ranks. Order of
   //  coords matches order of the indices in 'indices'
   Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor> coords
-      = Partitioning::fetch_data(comm, indices, x);
+      = Partitioning::distribute_data(comm, indices, x);
 
   // Compute local-to-global map from local indices in dofmap to the
   // corresponding global indices in cell_nodes
