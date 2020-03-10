@@ -300,10 +300,11 @@ get_tetrahedra(const std::vector<bool>& marked_edges,
 std::pair<std::vector<std::int32_t>, std::vector<bool>>
 face_long_edge(const mesh::Mesh& mesh)
 {
-  const std::int32_t tdim = mesh.topology().dim();
+  const int tdim = mesh.topology().dim();
   mesh.create_entities(1);
   mesh.create_entities(2);
   mesh.create_connectivity(2, 1);
+  mesh.create_connectivity(1, tdim);
 
   // Storage for face-local index of longest edge
   std::vector<std::int32_t> long_edge(mesh.num_entities(2));
@@ -315,13 +316,44 @@ face_long_edge(const mesh::Mesh& mesh)
   if (tdim == 2)
     edge_ratio_ok.resize(mesh.num_entities(2));
 
+  const Eigen::Array<double, Eigen::Dynamic, 3, Eigen::RowMajor>& x
+      = mesh.geometry().x();
+  const graph::AdjacencyList<std::int32_t>& x_dofmap = mesh.geometry().dofmap();
+
+  auto c_to_v = mesh.topology().connectivity(tdim, 0);
+  assert(c_to_v);
+  auto e_to_c = mesh.topology().connectivity(1, tdim);
+  assert(e_to_c);
+  auto e_to_v = mesh.topology().connectivity(1, 0);
+  assert(e_to_v);
+
   // Store all edge lengths in Mesh to save recalculating for each Face
-  const mesh::Geometry& geometry = mesh.geometry();
+  auto map_e = mesh.topology().index_map(1);
+  assert(map_e);
   std::vector<double> edge_length(mesh.num_entities(1));
-  for (const auto& e : mesh::MeshRange(mesh, 1, mesh::MeshRangeType::ALL))
+  for (int e = 0; e < map_e->size_local() + map_e->num_ghosts(); ++e)
   {
-    auto v = e.entities(0);
-    edge_length[e.index()] = (geometry.x(v[0]) - geometry.x(v[1])).norm();
+    // Get first attached cell
+    assert(e_to_c->num_links(e) > 0);
+    const std::int32_t c = e_to_c->links(e)[0];
+    auto cell_vertices = c_to_v->links(c);
+    auto edge_vertices = e_to_v->links(e);
+
+    // Find local index of edge vertices in the cell geometry map
+    auto it0 = std::find(cell_vertices.data(),
+                         cell_vertices.data() + cell_vertices.rows(),
+                         edge_vertices[0]);
+    assert(it0 != (cell_vertices.data() + cell_vertices.rows()));
+    const int local0 = std::distance(cell_vertices.data(), it0);
+
+    auto it1 = std::find(cell_vertices.data(),
+                         cell_vertices.data() + cell_vertices.rows(),
+                         edge_vertices[1]);
+    assert(it1 != (cell_vertices.data() + cell_vertices.rows()));
+    const int local1 = std::distance(cell_vertices.data(), it1);
+
+    auto x_dofs = x_dofmap.links(c);
+    edge_length[e] = (x.row(x_dofs[local0]) - x.row(x_dofs[local1])).matrix().norm();
   }
 
   // Get longest edge of each face
@@ -338,9 +370,7 @@ face_long_edge(const mesh::Mesh& mesh)
     for (int i = 0; i < 3; ++i)
     {
       const double e_len = edge_length[face_edges[i]];
-
       min_len = std::min(e_len, min_len);
-
       if (e_len > max_len)
       {
         max_len = e_len;
@@ -428,9 +458,6 @@ PlazaRefinementND::get_simplices(const std::vector<bool>& marked_edges,
     return get_tetrahedra(marked_edges, longest_edge);
   }
   else
-  {
     throw std::runtime_error("Topological dimension not supported");
-    return std::vector<std::int32_t>();
-  }
 }
 //-----------------------------------------------------------------------------
