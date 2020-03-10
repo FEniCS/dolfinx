@@ -547,9 +547,62 @@ std::int32_t Topology::entity_reflection_size() const
   return _edge_reflections.rows();
 }
 //-----------------------------------------------------------------------------
-void Topology::set_entity_permutation(std::int32_t, int entity_dim,
-                                      int, std::uint8_t,
-                                      std::uint8_t)
+void Topology::create_permutations()
+{
+  if (_edge_reflections.size() != 0)
+  {
+    assert(_face_reflections.size() != 0);
+    assert(_face_rotations.size() != 0);
+    assert(_facet_permutations.size() != 0);
+    return;
+  }
+
+  const int tdim = this->dim();
+  const CellType cell_type = this->cell_type();
+  assert(_connectivity(tdim, 0));
+  const std::int32_t num_cells = _connectivity(tdim, 0)->num_nodes();
+  const int faces_per_cell = cell_num_entities(cell_type, 2);
+
+  if (tdim <= 1)
+  {
+    const int edges_per_cell = cell_num_entities(cell_type, 1);
+    const int facets_per_cell = cell_num_entities(cell_type, tdim - 1);
+    _edge_reflections.resize(edges_per_cell, num_cells);
+    _edge_reflections = false;
+    _face_reflections.resize(faces_per_cell, num_cells);
+    _face_reflections = false;
+    _face_rotations.resize(faces_per_cell, num_cells);
+    _face_rotations = 0;
+    _facet_permutations.resize(facets_per_cell, num_cells);
+    _facet_permutations = 0;
+  }
+
+  if (tdim > 1)
+  {
+    _face_reflections.resize(faces_per_cell, num_cells);
+    _face_reflections = false;
+    _face_rotations.resize(faces_per_cell, num_cells);
+    _face_rotations = 0;
+
+    Eigen::Array<bool, Eigen::Dynamic, Eigen::Dynamic> reflections
+        = mesh::compute_edge_reflections(*this);
+    _edge_reflections = reflections;
+    if (tdim == 2)
+      _facet_permutations = reflections.cast<std::uint8_t>();
+  }
+
+  if (tdim > 2)
+  {
+    auto [reflections, rotations] = mesh::compute_face_permutations(*this);
+    _face_reflections = reflections;
+    _face_rotations = rotations;
+    if (tdim == 3)
+      _facet_permutations = 2 * rotations + reflections.cast<std::uint8_t>();
+  }
+}
+//-----------------------------------------------------------------------------
+void Topology::set_entity_permutation(std::int32_t, int entity_dim, int,
+                                      std::uint8_t, std::uint8_t)
 {
   if (entity_dim == 2)
   {

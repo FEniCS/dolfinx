@@ -209,6 +209,10 @@ public:
                               int entity_index, std::uint8_t rots,
                               std::uint8_t refs);
 
+
+  /// TODO
+  void create_permutations();
+
   /// TODO
   void set_edge_reflections(
       Eigen::Array<bool, Eigen::Dynamic, Eigen::Dynamic>& reflections);

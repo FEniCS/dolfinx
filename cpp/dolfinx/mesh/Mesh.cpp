@@ -270,19 +270,7 @@ void Mesh::create_entity_permutations() const
 {
   // FIXME: This should be moved to topology or a TopologyPermutation class
 
-  assert(_topology);
-  if (_topology->entity_reflection_size() > 0)
-    return;
-
   const int tdim = _topology->dim();
-
-  auto c_to_v = _topology->connectivity(tdim, 0);
-  assert(c_to_v);
-  const int num_cells = c_to_v->num_nodes();
-
-  _topology->resize_entity_permutations(
-      num_cells, cell_num_entities(_topology->cell_type(), 1),
-      cell_num_entities(_topology->cell_type(), 2));
 
   // FIXME: Is this always required? Could it be made cheaper by doing a
   // local version? This call does quite a lot of parallel work
@@ -290,20 +278,8 @@ void Mesh::create_entity_permutations() const
   for (int d = 0; d < tdim; ++d)
     this->create_entities(d);
 
-  if (tdim > 1)
-  {
-    Eigen::Array<bool, Eigen::Dynamic, Eigen::Dynamic> edge_reflections
-        = mesh::compute_edge_reflections(*_topology);
-    _topology->set_edge_reflections(edge_reflections);
-  }
-
-  if (tdim > 2)
-  {
-    auto [reflections, rotations] = mesh::compute_face_permutations(*_topology);
-    _topology->set_face_permutations(reflections, rotations);
-  }
+  _topology->create_permutations();
 }
-
 //-----------------------------------------------------------------------------
 void Mesh::create_connectivity_all() const
 {
