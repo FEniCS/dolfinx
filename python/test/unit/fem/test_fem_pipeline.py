@@ -187,7 +187,7 @@ def test_manufactured_vector1(family, degree, filename, datadir):
 @skip_in_parallel
 @pytest.mark.parametrize("filename", [
     "UnitSquareMesh_triangle.xdmf",
-    # "UnitCubeMesh_tetra.xdmf",
+    "UnitCubeMesh_tetra.xdmf",
     # "UnitSquareMesh_quad.xdmf",
     # "UnitCubeMesh_hexahedron.xdmf"
 ])
