@@ -5,10 +5,8 @@
 // SPDX-License-Identifier:    LGPL-3.0-or-later
 
 #include <dolfinx/graph/AdjacencyList.h>
-#include <dolfinx/graph/Graph.h>
-#include <dolfinx/graph/GraphBuilder.h>
-#include <dolfinx/mesh/Mesh.h>
 #include <pybind11/eigen.h>
+#include <pybind11/operators.h>
 #include <pybind11/pybind11.h>
 #include <pybind11/stl.h>
 #include <vector>
@@ -19,8 +17,7 @@ namespace dolfinx_wrappers
 {
 void graph(py::module& m)
 {
-  // dolfinx::Set
-  py::class_<dolfinx::common::Set<int>>(m, "DOLFINIntSet");
+  // TODO: Use macro to handle different types
 
   // dolfinx::graph::AdjacencyList class
   py::class_<dolfinx::graph::AdjacencyList<std::int64_t>,
@@ -39,7 +36,11 @@ void graph(py::module& m)
           py::return_value_policy::reference_internal)
       .def("array", &dolfinx::graph::AdjacencyList<std::int64_t>::array)
       .def_property_readonly(
-          "num_nodes", &dolfinx::graph::AdjacencyList<std::int64_t>::num_nodes);
+          "num_nodes", &dolfinx::graph::AdjacencyList<std::int64_t>::num_nodes)
+      .def("__eq__", &dolfinx::graph::AdjacencyList<std::int64_t>::operator==,
+           py::is_operator())
+      .def("__repr__", &dolfinx::graph::AdjacencyList<std::int64_t>::str)
+      .def("__len__", &dolfinx::graph::AdjacencyList<std::int64_t>::num_nodes);
 
   // dolfinx::graph::AdjacencyList class
   py::class_<dolfinx::graph::AdjacencyList<std::int32_t>,
@@ -62,22 +63,10 @@ void graph(py::module& m)
            "Index to each node in the links array",
            py::return_value_policy::reference_internal)
       .def_property_readonly(
-          "num_nodes", &dolfinx::graph::AdjacencyList<std::int32_t>::num_nodes);
-
-  // dolfinx::Graph
-  py::class_<dolfinx::graph::Graph>(m, "Graph");
-
-  // dolfinx::GraphBuilder
-  py::class_<dolfinx::graph::GraphBuilder>(m, "GraphBuilder")
-      .def_static("local_graph",
-                  [](const dolfinx::mesh::Mesh& mesh,
-                     const std::vector<std::size_t>& coloring) {
-                    return dolfinx::graph::GraphBuilder::local_graph(mesh,
-                                                                     coloring);
-                  })
-      .def_static("local_graph", [](const dolfinx::mesh::Mesh& mesh,
-                                    std::size_t dim0, std::size_t dim1) {
-        return dolfinx::graph::GraphBuilder::local_graph(mesh, dim0, dim1);
-      });
+          "num_nodes", &dolfinx::graph::AdjacencyList<std::int32_t>::num_nodes)
+      .def("__eq__", &dolfinx::graph::AdjacencyList<std::int32_t>::operator==,
+           py::is_operator())
+      .def("__repr__", &dolfinx::graph::AdjacencyList<std::int32_t>::str)
+      .def("__len__", &dolfinx::graph::AdjacencyList<std::int32_t>::num_nodes);
 }
 } // namespace dolfinx_wrappers

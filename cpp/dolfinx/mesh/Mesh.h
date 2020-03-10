@@ -7,6 +7,7 @@
 #pragma once
 
 #include "cell_types.h"
+#include <Eigen/Dense>
 #include <dolfinx/common/MPI.h>
 #include <dolfinx/common/UniqueIdGenerator.h>
 #include <dolfinx/common/types.h>
@@ -17,19 +18,35 @@
 namespace dolfinx
 {
 
+namespace fem
+{
+class ElementDofLayout;
+}
+
 namespace function
 {
 class Function;
 }
 
+namespace graph
+{
+template <typename T>
+class AdjacencyList;
+}
+
 namespace mesh
 {
-class CoordinateDofs;
 class Geometry;
-enum class GhostMode : int;
 class MeshEntity;
 class Topology;
 
+/// Enum for different partitioning ghost modes
+enum class GhostMode : int
+{
+  none,
+  shared_facet,
+  shared_vertex
+};
 /// A _Mesh_ consists of a set of connected and numbered mesh entities.
 ///
 /// Both the representation and the interface are
@@ -60,50 +77,45 @@ class Topology;
 class Mesh
 {
 public:
-  // FIXME: What about global vertex indices?
-  // FIXME: Be explicit in passing geometry degree/type
+  /// Create a mesh
+  /// @param[in] comm MPI Communicator
+  /// @param[in] topology Mesh topology
+  /// @param[in] geometry Mesh geometry
+  Mesh(MPI_Comm comm, const Topology& topology, const Geometry& geometry);
+
+  /// @todo Remove this constructor once the creation of
+  /// ElementDofLayout and coordinate maps is make straightforward
+  ///
   /// Construct a Mesh from topological and geometric data.
-  ///
-  /// In parallel, geometric points must be arranged in global index
-  /// order across processes, starting from 0 on process 0, and must not
-  /// be duplicated. The points will be redistributed to the processes
-  /// that need them.
-  ///
-  /// Cells should be listed only on the processes they appear on, i.e.
-  /// mesh partitioning should be performed on the topology data before
-  /// calling the Mesh constructor. Ghost cells, if present, must be at
-  /// the end of the list of cells, and the number of ghost cells must
-  /// be provided.
   ///
   /// @param[in] comm MPI Communicator
   /// @param[in] type Cell type
-  /// @param[in] points Array of geometric points, arranged in global
-  ///                   index order
+  /// @param[in] x Array of geometric points, arranged in global index
+  ///   order
   /// @param[in] cells Array of cells (containing the global point
-  ///                  indices for each cell)
+  ///   indices for each cell)
   /// @param[in] global_cell_indices Array of global cell indices. If
-  ///                                not empty, this must be same size
-  ///                                as the number of rows in cells. If
-  ///                                empty, global cell indices will be
-  ///                                constructed, beginning from 0 on
-  ///                                process 0.
+  ///   not empty, this must be same size as the number of rows in
+  ///   cells. If empty, global cell indices will be constructed,
+  ///   beginning from 0 on process 0.
   /// @param[in] ghost_mode The ghost mode
   /// @param[in] num_ghost_cells Number of ghost cells on this process
-  ///                            (must be at end of list of cells)
-  Mesh(MPI_Comm comm, mesh::CellType type,
-       const Eigen::Ref<const Eigen::Array<
-           double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>>& points,
-       const Eigen::Ref<const Eigen::Array<std::int64_t, Eigen::Dynamic,
-                                           Eigen::Dynamic, Eigen::RowMajor>>&
-           cells,
-       const std::vector<std::int64_t>& global_cell_indices,
-       const GhostMode ghost_mode, std::int32_t num_ghost_cells = 0);
+  ///   (must be at end of list of cells)
+  [[deprecated]] Mesh(
+      MPI_Comm comm, mesh::CellType type,
+      const Eigen::Ref<const Eigen::Array<double, Eigen::Dynamic,
+                                          Eigen::Dynamic, Eigen::RowMajor>>& x,
+      const Eigen::Ref<const Eigen::Array<std::int64_t, Eigen::Dynamic,
+                                          Eigen::Dynamic, Eigen::RowMajor>>&
+          cells,
+      const std::vector<std::int64_t>& global_cell_indices,
+      const GhostMode ghost_mode, std::int32_t num_ghost_cells = 0);
 
   /// Copy constructor
   /// @param[in] mesh Mesh to be copied
   Mesh(const Mesh& mesh);
 
-  /// Move constructor.
+  /// Move constructor
   /// @param mesh Mesh to be moved.
   Mesh(Mesh&& mesh);
 
@@ -115,15 +127,17 @@ public:
 
   /// Assignment move operator
   /// @param mesh Another Mesh object
-  Mesh& operator=(Mesh&& mesh) = default;
+  Mesh& operator=(Mesh&& mesh);
 
   /// @todo Remove and work via Topology
+  ///
   /// Get number of entities of given topological dimension
   /// @param[in] d Topological dimension.
   /// @return Number of entities of topological dimension d
   std::int32_t num_entities(int d) const;
 
   /// @todo Remove and work via Topology
+  ///
   /// Get global number of entities of given topological dimension
   /// @param[in] dim Topological dimension.
   /// @return Global number of entities of topological dimension d
@@ -146,6 +160,7 @@ public:
   const Geometry& geometry() const;
 
   /// @todo Remove and work via Topology
+  ///
   /// Create entities of given topological dimension.
   /// @param[in] dim Topological dimension
   /// @return Number of newly created entities, returns -1 if entities
@@ -153,15 +168,19 @@ public:
   std::int32_t create_entities(int dim) const;
 
   /// @todo Remove and work via Topology
+  ///
   /// Create connectivity between given pair of dimensions, d0 -> d1
   /// @param[in] d0 Topological dimension
   /// @param[in] d1 Topological dimension
   void create_connectivity(int d0, int d1) const;
 
   /// @todo Remove and work via Topology
+  ///
   /// Compute all entities and connectivity
   void create_connectivity_all() const;
 
+  /// @todo Remove and work via Topology
+  ///
   /// Compute entity permutations and reflections
   void create_entity_permutations() const;
 
@@ -185,6 +204,8 @@ public:
   /// @return The maximum of cells' inscribed sphere radii
   double rmax() const;
 
+  /// @todo Remove and work via Topology
+  ///
   /// Compute hash of mesh, currently based on the has of the mesh
   /// geometry and mesh topology
   /// @return A tree-hashed value of the coordinates over all MPI
@@ -204,24 +225,6 @@ public:
   /// @return The communicator on which the mesh is distributed
   MPI_Comm mpi_comm() const;
 
-  /// Ghost mode used for partitioning. Possible values are same as
-  /// `parameters["ghost_mode"]`.
-  /// @warning The interface may change in future without deprecation;
-  ///          the method is now intended for internal library use.
-  mesh::GhostMode get_ghost_mode() const;
-
-  /// @todo This should be part of Geometry
-  /// Get coordinate dofs for all local cells
-  CoordinateDofs& coordinate_dofs();
-
-  /// @todo This should be part of Geometry
-  /// Get coordinate dofs for all local cells (const version)
-  const CoordinateDofs& coordinate_dofs() const;
-
-  /// FIXME: This should be with Geometry
-  /// Polynomial degree of the mesh geometry
-  std::int32_t degree() const;
-
 private:
   // Mesh topology
   std::unique_ptr<Topology> _topology;
@@ -229,23 +232,18 @@ private:
   // Mesh geometry
   std::unique_ptr<Geometry> _geometry;
 
-  // FIXME: This should be in geometry!
-  // Coordinate dofs
-  std::unique_ptr<CoordinateDofs> _coordinate_dofs;
-
-  // FIXME: This shouldn't be here
-  // Mesh geometric degree (in Lagrange basis) describing coordinate
-  // dofs
-  std::int32_t _degree;
-
   // MPI communicator
   dolfinx::MPI::Comm _mpi_comm;
-
-  // Ghost mode used for partitioning
-  GhostMode _ghost_mode;
 
   // Unique identifier
   std::size_t _unique_id;
 };
+
+/// Create a mesh
+Mesh create(MPI_Comm comm, const graph::AdjacencyList<std::int64_t>& cells,
+            const fem::ElementDofLayout& layout,
+            const Eigen::Ref<const Eigen::Array<
+                double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>>& x);
+
 } // namespace mesh
 } // namespace dolfinx

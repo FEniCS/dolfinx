@@ -5,12 +5,12 @@
 # <blechta@karlin.mff.cuni.cz>
 #
 # All layers are built nightly on CircleCI and pushed to
-# https://quay.io/repository/fenicsproject/dolfinx
+# https://hub.docker.com/orgs/dolfinx
 #
 # To run a nightly build:
 #
-#    docker run -ti quay.io/fenicsproject/dolfinx:real
-#    docker run -ti quay.io/fenicsproject/dolfinx:complex
+#    docker run -ti dolfinx/real
+#    docker run -ti dolfinx/complex
 #
 # To build a new FEniCS-X image from master (real or complex version):
 #
@@ -19,11 +19,11 @@
 #
 # To run a notebook:
 #
-#    docker run -p 8888:8888 quay.io/fenicsproject/dolfinx:notebook
+#    docker run -p 8888:8888 dolfinx/notebook
 #
 # To run and share the current host directory with the container:
 #
-#    docker run -p 8888:8888 -v "$(pwd)":/tmp quay.io/fenicsproject/dolfinx:notebook
+#    docker run -p 8888:8888 -v "$(pwd)":/tmp dolfinx/notebook
 #
 
 ARG TINI_VERSION=v0.18.0
@@ -190,7 +190,7 @@ RUN apt-get -qq update && \
     make install && \
     export PETSC_DIR=/usr/local/petsc && \
     cd /tmp && \
-    wget -nc --quiet http://slepc.upv.es/download/distrib/slepc-${SLEPC_VERSION}.tar.gz -O slepc-${SLEPC_VERSION}.tar.gz && \
+    wget -nc --quiet https://slepc.upv.es/download/distrib/slepc-${SLEPC_VERSION}.tar.gz -O slepc-${SLEPC_VERSION}.tar.gz && \
     mkdir -p slepc-src && tar -xf slepc-${SLEPC_VERSION}.tar.gz -C slepc-src --strip-components 1 && \
     cd slepc-src && \
     ./configure --prefix=/usr/local/slepc && \
@@ -251,7 +251,7 @@ RUN apt-get -qq update && \
     make install && \
     export PETSC_DIR=/usr/local/petsc && \
     cd /tmp && \
-    wget -nc --quiet http://slepc.upv.es/download/distrib/slepc-${SLEPC_VERSION}.tar.gz -O slepc-${SLEPC_VERSION}.tar.gz && \
+    wget -nc --quiet https://slepc.upv.es/download/distrib/slepc-${SLEPC_VERSION}.tar.gz -O slepc-${SLEPC_VERSION}.tar.gz && \
     mkdir -p slepc-src && tar -xf slepc-${SLEPC_VERSION}.tar.gz -C slepc-src --strip-components 1 && \
     cd slepc-src && \
     ./configure --prefix=/usr/local/slepc && \

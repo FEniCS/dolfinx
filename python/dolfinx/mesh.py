@@ -87,8 +87,9 @@ def ufl_coordinate_element(self):
     domain.
 
     """
+    # FIXME: This is all too implicit
     cell = self.ufl_cell()
-    degree = self.degree()
+    degree = self.geometry.dof_layout().degree()
     return ufl.VectorElement(
         "Lagrange", cell, degree, dim=cell.geometric_dimension())
 

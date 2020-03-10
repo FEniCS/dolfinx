@@ -2,7 +2,6 @@ set(HEADERS_graph
   ${CMAKE_CURRENT_SOURCE_DIR}/AdjacencyList.h
   ${CMAKE_CURRENT_SOURCE_DIR}/BoostGraphColoring.h
   ${CMAKE_CURRENT_SOURCE_DIR}/BoostGraphOrdering.h
-  ${CMAKE_CURRENT_SOURCE_DIR}/CSRGraph.h
   ${CMAKE_CURRENT_SOURCE_DIR}/dolfin_graph.h
   ${CMAKE_CURRENT_SOURCE_DIR}/GraphBuilder.h
   ${CMAKE_CURRENT_SOURCE_DIR}/Graph.h

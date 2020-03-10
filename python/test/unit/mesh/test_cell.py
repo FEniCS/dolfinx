@@ -40,10 +40,12 @@ def test_distance_tetrahedron():
 
 
 @pytest.mark.parametrize(
-    'mesh', [UnitIntervalMesh(MPI.comm_world, 8),
-             UnitSquareMesh(MPI.comm_world, 8, 9, CellType.triangle),
-             UnitSquareMesh(MPI.comm_world, 8, 9, CellType.quadrilateral),
-             UnitCubeMesh(MPI.comm_world, 8, 9, 5, CellType.tetrahedron)])
+    'mesh', [
+        UnitIntervalMesh(MPI.comm_world, 8),
+        UnitSquareMesh(MPI.comm_world, 8, 9, CellType.triangle),
+        UnitSquareMesh(MPI.comm_world, 8, 9, CellType.quadrilateral),
+        UnitCubeMesh(MPI.comm_world, 8, 9, 5, CellType.tetrahedron)
+    ])
 def test_volume_cells(mesh):
     num_cells = mesh.num_entities(mesh.topology.dim)
     v = cpp.mesh.volume_entities(mesh, range(num_cells), mesh.topology.dim)

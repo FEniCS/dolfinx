@@ -5,6 +5,7 @@
 // SPDX-License-Identifier:    LGPL-3.0-or-later
 
 #include "GraphBuilder.h"
+#include "AdjacencyList.h"
 #include <algorithm>
 #include <boost/unordered_map.hpp>
 #include <dolfinx/common/IndexMap.h>
@@ -13,7 +14,8 @@
 #include <dolfinx/common/log.h>
 #include <dolfinx/common/types.h>
 #include <dolfinx/fem/DofMap.h>
-#include <dolfinx/mesh/MeshIterator.h>
+#include <dolfinx/mesh/Mesh.h>
+#include <dolfinx/mesh/Topology.h>
 #include <dolfinx/mesh/cell_types.h>
 #include <numeric>
 #include <set>
@@ -205,8 +207,8 @@ std::pair<std::int32_t, std::int32_t> compute_nonlocal_dual_graph(
     //        skewed towards low values - may not be important
 
     // Use first vertex of facet to partition into blocks
-    const int dest_proc = dolfinx::MPI::index_owner(mpi_comm, (it.first)[0],
-                                                    num_global_vertices);
+    const int dest_proc = dolfinx::MPI::index_owner(
+        num_processes, (it.first)[0], num_global_vertices);
 
     // Pack map into vectors to send
     send_buffer[dest_proc].insert(send_buffer[dest_proc].end(),
@@ -299,7 +301,7 @@ std::pair<std::int32_t, std::int32_t> compute_nonlocal_dual_graph(
 
 //-----------------------------------------------------------------------------
 dolfinx::graph::Graph
-dolfinx::graph::GraphBuilder::local_graph(const mesh::Mesh& mesh,
+dolfinx::graph::GraphBuilder::local_graph(const mesh::Topology& topology,
                                           const fem::DofMap& dofmap0,
                                           const fem::DofMap& dofmap1)
 {
@@ -320,8 +322,8 @@ dolfinx::graph::GraphBuilder::local_graph(const mesh::Mesh& mesh,
   Graph graph(n);
 
   // Build graph
-  const int tdim = mesh.topology().dim();
-  auto map = mesh.topology().index_map(tdim);
+  const int tdim = topology.dim();
+  auto map = topology.index_map(tdim);
   assert(map);
   assert(map->block_size() == 1);
   const int num_cells = map->size_local() + map->num_ghosts();

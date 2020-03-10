@@ -12,6 +12,7 @@
 #include <dolfinx/common/IndexMap.h>
 #include <dolfinx/common/MPI.h>
 #include <dolfinx/common/types.h>
+#include <dolfinx/graph/AdjacencyList.h>
 #include <dolfinx/mesh/Topology.h>
 
 using namespace dolfinx;
@@ -138,19 +139,27 @@ fem::DofMap build_collapsed_dofmap(MPI_Comm comm, const DofMap& dofmap_view,
   assert(dofmap.rows()
          == (cells->num_nodes() * element_dof_layout->num_dofs()));
 
-  return fem::DofMap(element_dof_layout, index_map, dofmap);
+  const int cell_dimension = element_dof_layout->num_dofs();
+  assert(dofmap.rows() % cell_dimension == 0);
+  Eigen::Map<Eigen::Array<std::int32_t, Eigen::Dynamic, Eigen::Dynamic,
+                          Eigen::RowMajor>>
+      _dofmap(dofmap.data(), dofmap.rows() / cell_dimension, cell_dimension);
+
+  return fem::DofMap(element_dof_layout, index_map,
+                     graph::AdjacencyList<std::int32_t>(_dofmap));
 }
 } // namespace
 
 //-----------------------------------------------------------------------------
 DofMap::DofMap(std::shared_ptr<const ElementDofLayout> element_dof_layout,
                std::shared_ptr<const common::IndexMap> index_map,
-               const Eigen::Array<std::int32_t, Eigen::Dynamic, 1>& dofmap)
+               const graph::AdjacencyList<std::int32_t>& dofmap)
     : element_dof_layout(element_dof_layout), index_map(index_map),
-      _dofmap(dofmap.rows())
+      _dofmap(dofmap.array().rows())
 {
   // Copy the dofmap data as the types for dofmap and _dofmap may differ
-  std::copy(dofmap.data(), dofmap.data() + dofmap.rows(), _dofmap.data());
+  const Eigen::Array<std::int32_t, Eigen::Dynamic, 1>& dmap = dofmap.array();
+  std::copy(dmap.data(), dmap.data() + dmap.rows(), _dofmap.data());
 }
 //-----------------------------------------------------------------------------
 DofMap DofMap::extract_sub_dofmap(const std::vector<int>& component,

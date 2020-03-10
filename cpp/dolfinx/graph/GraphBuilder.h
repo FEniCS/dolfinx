@@ -25,6 +25,7 @@ class DofMap;
 namespace mesh
 {
 class Mesh;
+class Topology;
 } // namespace mesh
 
 namespace graph
@@ -36,13 +37,14 @@ class GraphBuilder
 {
 
 public:
-  /// AdjacencyList from facets (defined by their global vertex indices) to
-  /// cells
+  /// AdjacencyList from facets (defined by their global vertex indices)
+  /// to cells
   typedef std::vector<std::pair<std::vector<std::size_t>, std::int32_t>>
       FacetCellMap;
 
   /// Build local graph from dofmap
-  static Graph local_graph(const mesh::Mesh& mesh, const fem::DofMap& dofmap0,
+  static Graph local_graph(const mesh::Topology& topology,
+                           const fem::DofMap& dofmap0,
                            const fem::DofMap& dofmap1);
 
   /// Build local graph from mesh (general version)
@@ -53,8 +55,8 @@ public:
   static Graph local_graph(const mesh::Mesh& mesh, std::size_t dim0,
                            std::size_t dim1);
 
-  /// Build distributed dual graph (cell-cell connections) from
-  /// minimal mesh data, and return (graph, ghost_vertices, [num local edges,
+  /// Build distributed dual graph (cell-cell connections) from minimal
+  /// mesh data, and return (graph, ghost_vertices, [num local edges,
   /// num non-local edges])
   static std::pair<std::vector<std::vector<std::size_t>>,
                    std::array<std::int32_t, 3>>

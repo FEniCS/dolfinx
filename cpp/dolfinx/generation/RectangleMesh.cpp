@@ -9,7 +9,8 @@
 #include <cfloat>
 #include <cmath>
 #include <dolfinx/common/MPI.h>
-#include <dolfinx/mesh/Partitioning.h>
+#include <dolfinx/fem/ElementDofLayout.h>
+#include <dolfinx/graph/AdjacencyList.h>
 
 using namespace dolfinx;
 using namespace dolfinx::generation;
@@ -18,16 +19,18 @@ namespace
 {
 //-----------------------------------------------------------------------------
 mesh::Mesh build_tri(MPI_Comm comm, const std::array<Eigen::Vector3d, 2>& p,
-                     std::array<std::size_t, 2> n,
-                     const mesh::GhostMode ghost_mode, std::string diagonal)
+                     std::array<std::size_t, 2> n, const mesh::GhostMode,
+                     std::string diagonal)
 {
   // Receive mesh if not rank 0
   if (dolfinx::MPI::rank(comm) != 0)
   {
     Eigen::Array<double, 0, 2, Eigen::RowMajor> geom(0, 2);
     Eigen::Array<std::int64_t, 0, 3, Eigen::RowMajor> topo(0, 3);
-    return mesh::Partitioning::build_distributed_mesh(
-        comm, mesh::CellType::triangle, geom, topo, {}, ghost_mode);
+    const fem::ElementDofLayout layout
+        = fem::geometry_layout(mesh::CellType::triangle, topo.cols());
+    return mesh::create(comm, graph::AdjacencyList<std::int64_t>(topo), layout,
+                        geom);
   }
 
   // Check options
@@ -190,21 +193,26 @@ mesh::Mesh build_tri(MPI_Comm comm, const std::array<Eigen::Vector3d, 2>& p,
     }
   }
 
-  return mesh::Partitioning::build_distributed_mesh(
-      comm, mesh::CellType::triangle, geom, topo, {}, ghost_mode);
+  const fem::ElementDofLayout layout
+      = fem::geometry_layout(mesh::CellType::triangle, topo.cols());
+  return mesh::create(comm, graph::AdjacencyList<std::int64_t>(topo), layout,
+                      geom);
 }
+
+} // namespace
 //-----------------------------------------------------------------------------
 mesh::Mesh build_quad(MPI_Comm comm, const std::array<Eigen::Vector3d, 2>& p,
-                      std::array<std::size_t, 2> n,
-                      const mesh::GhostMode ghost_mode)
+                      std::array<std::size_t, 2> n, const mesh::GhostMode)
 {
   // Receive mesh if not rank 0
   if (dolfinx::MPI::rank(comm) != 0)
   {
     Eigen::Array<double, 0, 2, Eigen::RowMajor> geom(0, 2);
     Eigen::Array<std::int64_t, Eigen::Dynamic, 4, Eigen::RowMajor> topo(0, 4);
-    return mesh::Partitioning::build_distributed_mesh(
-        comm, mesh::CellType::quadrilateral, geom, topo, {}, ghost_mode);
+    const fem::ElementDofLayout layout
+        = fem::geometry_layout(mesh::CellType::quadrilateral, topo.cols());
+    return mesh::create(comm, graph::AdjacencyList<std::int64_t>(topo), layout,
+                        geom);
   }
 
   const std::size_t nx = n[0];
@@ -248,12 +256,11 @@ mesh::Mesh build_quad(MPI_Comm comm, const std::array<Eigen::Vector3d, 2>& p,
       ++cell;
     }
 
-  return mesh::Partitioning::build_distributed_mesh(
-      comm, mesh::CellType::quadrilateral, geom, topo, {}, ghost_mode);
+  const fem::ElementDofLayout layout
+      = fem::geometry_layout(mesh::CellType::quadrilateral, topo.cols());
+  return mesh::create(comm, graph::AdjacencyList<std::int64_t>(topo), layout,
+                      geom);
 }
-//-----------------------------------------------------------------------------
-} // namespace
-
 //-----------------------------------------------------------------------------
 mesh::Mesh
 RectangleMesh::create(MPI_Comm comm, const std::array<Eigen::Vector3d, 2>& p,
@@ -266,8 +273,5 @@ RectangleMesh::create(MPI_Comm comm, const std::array<Eigen::Vector3d, 2>& p,
     return build_quad(comm, p, n, ghost_mode);
   else
     throw std::runtime_error("Generate rectangle mesh. Wrong cell type");
-
-  // Will never reach this point
-  return build_quad(comm, p, n, ghost_mode);
 }
 //-----------------------------------------------------------------------------

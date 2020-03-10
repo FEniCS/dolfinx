@@ -15,6 +15,7 @@
 #include <dolfinx/fem/DofMapBuilder.h>
 #include <dolfinx/fem/Form.h>
 #include <dolfinx/fem/SparsityPatternBuilder.h>
+#include <dolfinx/function/Constant.h>
 #include <dolfinx/function/Function.h>
 #include <dolfinx/function/FunctionSpace.h>
 #include <dolfinx/la/PETScMatrix.h>
@@ -24,6 +25,7 @@
 #include <dolfinx/mesh/Topology.h>
 #include <dolfinx/mesh/TopologyComputation.h>
 #include <memory>
+#include <petscsys.h>
 #include <string>
 #include <ufc.h>
 
@@ -545,8 +547,7 @@ fem::get_coeffs_from_ufc_form(const ufc_form& ufc_form)
   for (int i = 0; i < ufc_form.num_coefficients; ++i)
   {
     coeffs.push_back(
-        std::tuple<int, std::string, std::shared_ptr<function::Function>>(
-            ufc_form.original_coefficient_position(i), names[i], nullptr));
+        {ufc_form.original_coefficient_position(i), names[i], nullptr});
   }
   return coeffs;
 }
@@ -558,11 +559,7 @@ fem::get_constants_from_ufc_form(const ufc_form& ufc_form)
       constants;
   const char** names = ufc_form.constant_name_map();
   for (int i = 0; i < ufc_form.num_constants; ++i)
-  {
-    constants.push_back(
-        std::pair<std::string, std::shared_ptr<const function::Constant>>(
-            names[i], nullptr));
-  }
+    constants.push_back({names[i], nullptr});
   return constants;
 }
 //-----------------------------------------------------------------------------
@@ -664,8 +661,8 @@ fem::Form fem::create_form(
 
   // Create CoordinateElement
   ufc_coordinate_mapping* cmap = ufc_form.create_coordinate_mapping();
-  std::shared_ptr<const fem::CoordinateElement> coord_mapping
-      = fem::get_cmap_from_ufc_cmap(*cmap);
+  auto coord_mapping = std::make_shared<const fem::CoordinateElement>(
+      create_coordinate_map(*cmap));
   std::free(cmap);
 
   return fem::Form(spaces, integrals,
@@ -673,8 +670,8 @@ fem::Form fem::create_form(
                    fem::get_constants_from_ufc_form(ufc_form), coord_mapping);
 }
 //-----------------------------------------------------------------------------
-std::shared_ptr<const fem::CoordinateElement>
-fem::get_cmap_from_ufc_cmap(const ufc_coordinate_mapping& ufc_cmap)
+fem::CoordinateElement
+fem::create_coordinate_map(const ufc_coordinate_mapping& ufc_cmap)
 {
   static const std::map<ufc_shape, mesh::CellType> ufc_to_cell
       = {{vertex, mesh::CellType::point},
@@ -687,7 +684,7 @@ fem::get_cmap_from_ufc_cmap(const ufc_coordinate_mapping& ufc_cmap)
   const mesh::CellType cell_type = ufc_to_cell.at(ufc_cmap.cell_shape);
   assert(ufc_cmap.topological_dimension == mesh::cell_dim(cell_type));
 
-  return std::make_shared<fem::CoordinateElement>(
+  return fem::CoordinateElement(
       cell_type, ufc_cmap.topological_dimension, ufc_cmap.geometric_dimension,
       ufc_cmap.signature, ufc_cmap.compute_physical_coordinates,
       ufc_cmap.compute_reference_geometry);
@@ -761,5 +758,23 @@ fem::pack_coefficients(const fem::Form& form)
   }
 
   return c;
+}
+//-----------------------------------------------------------------------------
+Eigen::Array<PetscScalar, Eigen::Dynamic, 1>
+fem::pack_constants(const fem::Form& form)
+{
+  const std::vector<
+      std::pair<std::string, std::shared_ptr<const function::Constant>>>
+      constants = form.constants();
+  std::vector<PetscScalar> constant_values;
+  for (auto& constant : constants)
+  {
+    const std::vector<PetscScalar>& array = constant.second->value;
+    constant_values.insert(constant_values.end(), array.data(),
+                           array.data() + array.size());
+  }
+  Eigen::Map<const Eigen::Array<PetscScalar, Eigen::Dynamic, 1>> constant_array(
+      constant_values.data(), constant_values.size(), 1);
+  return constant_array;
 }
 //-----------------------------------------------------------------------------

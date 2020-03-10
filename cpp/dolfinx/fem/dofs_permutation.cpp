@@ -8,6 +8,7 @@
 #include "ElementDofLayout.h"
 #include <dolfinx/common/IndexMap.h>
 #include <dolfinx/common/log.h>
+#include <dolfinx/graph/AdjacencyList.h>
 #include <dolfinx/mesh/Topology.h>
 
 using namespace dolfinx;
