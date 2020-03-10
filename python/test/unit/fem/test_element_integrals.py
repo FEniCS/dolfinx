@@ -280,7 +280,6 @@ def test_plus_minus_simple_vector(cell_type, pm):
         for cell in range(2):
             cell0_points = dofmap0.links(cell)
             cell1_points = dofmap1.links(cell)
-            midp0 = sum(space0.mesh.geometry.point(i) for i in cell0_points) / len(cell0_points)
 
             # For each point in cell in the the first mesh
             for i0, point0 in enumerate(cell0_points):
@@ -343,7 +342,6 @@ def test_plus_minus_vector(cell_type, pm1, pm2):
         for cell in range(2):
             cell0_points = dofmap0.links(cell)
             cell1_points = dofmap1.links(cell)
-            midp0 = sum(space0.mesh.geometry.point(i) for i in cell0_points) / len(cell0_points)
 
             # For each point in cell in the the first mesh
             for i0, point0 in enumerate(cell0_points):
@@ -403,7 +401,6 @@ def test_plus_minus_matrix(cell_type, pm1, pm2):
         for cell in range(2):
             cell0_points = dofmap0.links(cell)
             cell1_points = dofmap1.links(cell)
-            midp0 = sum(space0.mesh.geometry.point(i) for i in cell0_points) / len(cell0_points)
 
             # For each point in cell in the the first mesh
             for i0, point0 in enumerate(cell0_points):
@@ -423,4 +420,3 @@ def test_plus_minus_matrix(cell_type, pm1, pm2):
         for a, b in dof_order:
             for c, d in dof_order:
                 assert np.isclose(results[i][a, c], results[j][b, d])
-
