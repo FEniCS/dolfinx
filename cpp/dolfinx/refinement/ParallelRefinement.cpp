@@ -208,10 +208,6 @@ void ParallelRefinement::create_new_vertices()
       _new_vertex_coordinates[3 * v + i] = _x[i];
   }
 
-  // _new_vertex_coordinates = std::vector<double>(
-  //     _mesh.geometry().x().data(),
-  //     _mesh.geometry().x().data() + _mesh.geometry().x().size());
-
   // Compute all edge mid-points
   Eigen::Array<int, Eigen::Dynamic, 1> edges(_mesh.num_entities(1));
   std::iota(edges.data(), edges.data() + edges.rows(), 0);
