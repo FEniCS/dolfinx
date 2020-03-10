@@ -45,6 +45,21 @@ class Topology;
 ///   the domain.
 std::vector<bool> compute_interior_facets(const Topology& topology);
 
+/// Compute the edge reflection array for consistent edge orientation
+/// @param[in] topology The object topology
+/// @return the Reflection array for each edge
+Eigen::Array<bool, Eigen::Dynamic, Eigen::Dynamic>
+compute_edge_reflections(const Topology& topology);
+
+/// Compute the face reflection and rotation arrays for consistent face
+/// orientation
+/// @param[in] topology The object topology
+/// @return the Reflection array for each face and the rotation array
+///  for each face
+std::pair<Eigen::Array<bool, Eigen::Dynamic, Eigen::Dynamic>,
+          Eigen::Array<std::uint8_t, Eigen::Dynamic, Eigen::Dynamic>>
+compute_face_permutations(const Topology& topology);
+
 /// Topology stores the topology of a mesh, consisting of mesh entities
 /// and connectivity (incidence relations for the mesh entities). Note
 /// that the mesh entities don't need to be stored, only the number of
@@ -141,9 +156,6 @@ public:
   /// @return Cell type that th topology is for
   mesh::CellType cell_type() const;
 
-  /// Return informal string representation (pretty-print)
-  std::string str(bool verbose) const;
-
   /// @todo Use std::vector<int32_t> to store 1/0 marker for each edge/face
   /// Get an array of bools that say whether each edge needs to be
   /// reflected to match the low->high ordering of the cell.
@@ -180,25 +192,8 @@ public:
   const Eigen::Array<std::uint8_t, Eigen::Dynamic, Eigen::Dynamic>&
   get_facet_permutations() const;
 
-  /// Resize the arrays of permutations and reflections
-  /// @param[in] cell_count The number of cells in the mesh
-  /// @param[in] edges_per_cell The number of edges per mesh cell
-  /// @param[in] faces_per_cell The number of faces per mesh cell
-  void resize_entity_permutations(std::int32_t cell_count, int edges_per_cell,
-                                  int faces_per_cell);
-
-  /// Retuns the number of rows in the entity_permutations array
-  std::int32_t entity_reflection_size() const;
-
-  /// Set the entity permutations array
-  /// @param[in] cell The cell index
-  /// @param[in] entity_dim The topological dimension of the entity
-  /// @param[in] entity_index The entity number
-  /// @param[in] rots The number of rotations to be applied
-  /// @param[in] refs The number of reflections to be applied
-  void set_entity_permutation(std::int32_t cell, int entity_dim,
-                              int entity_index, std::uint8_t rots,
-                              std::uint8_t refs);
+  /// Compute entity permutations and reflections used in assembly
+  void create_entity_permutations();
 
 private:
   // Cell type
