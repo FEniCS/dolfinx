@@ -105,6 +105,8 @@ void fem::impl::assemble_cells(
 
   // Prepare cell geometry
   const graph::AdjacencyList<std::int32_t>& x_dofmap = mesh.geometry().dofmap();
+
+  // FIXME: Add proper interface for num coordinate dofs
   const int num_dofs_g = x_dofmap.num_links(0);
   const Eigen::Array<double, Eigen::Dynamic, 3, Eigen::RowMajor>& x_g
       = mesh.geometry().x();
@@ -115,6 +117,7 @@ void fem::impl::assemble_cells(
   Eigen::Matrix<PetscScalar, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
       Ae;
 
+  // Get permutation data
   const Eigen::Array<bool, Eigen::Dynamic, Eigen::Dynamic>&
       cell_edge_reflections
       = mesh.topology().get_edge_reflections();
@@ -127,33 +130,28 @@ void fem::impl::assemble_cells(
 
   // Iterate over active cells
   PetscErrorCode ierr;
-  for (std::int32_t cell_index : active_cells)
+  for (std::int32_t c : active_cells)
   {
     // Get cell coordinates/geometry
-    auto x_dofs = x_dofmap.links(cell_index);
+    auto x_dofs = x_dofmap.links(c);
     for (int i = 0; i < x_dofs.rows(); ++i)
-      for (int j = 0; j < gdim; ++j)
-        coordinate_dofs(i, j) = x_g(x_dofs[i], j);
+      coordinate_dofs.row(i) = x_g.row(x_dofs[i]).head(gdim);
 
     // Tabulate tensor
-    auto coeff_cell = coeffs.row(cell_index);
-    const Eigen::Array<bool, Eigen::Dynamic, 1>& e_ref_cell
-        = cell_edge_reflections.col(cell_index);
-    const Eigen::Array<bool, Eigen::Dynamic, 1>& f_ref_cell
-        = cell_face_reflections.col(cell_index);
-    const Eigen::Array<uint8_t, Eigen::Dynamic, 1>& f_rot_cell
-        = cell_face_rotations.col(cell_index);
+    auto coeff_cell = coeffs.row(c);
     Ae.setZero(num_dofs_per_cell0, num_dofs_per_cell1);
     kernel(Ae.data(), coeff_cell.data(), constant_values.data(),
-           coordinate_dofs.data(), nullptr, nullptr, e_ref_cell.data(),
-           f_ref_cell.data(), f_rot_cell.data());
+           coordinate_dofs.data(), nullptr, nullptr,
+           cell_edge_reflections.col(c).data(),
+           cell_face_reflections.col(c).data(),
+           cell_face_rotations.col(c).data());
 
     // Zero rows/columns for essential bcs
     if (!bc0.empty())
     {
       for (Eigen::Index i = 0; i < Ae.rows(); ++i)
       {
-        const std::int32_t dof = dofmap0[cell_index * num_dofs_per_cell0 + i];
+        const std::int32_t dof = dofmap0[c * num_dofs_per_cell0 + i];
         if (bc0[dof])
           Ae.row(i).setZero();
       }
@@ -162,16 +160,16 @@ void fem::impl::assemble_cells(
     {
       for (Eigen::Index j = 0; j < Ae.cols(); ++j)
       {
-        const std::int32_t dof = dofmap1[cell_index * num_dofs_per_cell1 + j];
+        const std::int32_t dof = dofmap1[c * num_dofs_per_cell1 + j];
         if (bc1[dof])
           Ae.col(j).setZero();
       }
     }
 
     ierr = MatSetValuesLocal(
-        A, num_dofs_per_cell0, dofmap0.data() + cell_index * num_dofs_per_cell0,
-        num_dofs_per_cell1, dofmap1.data() + cell_index * num_dofs_per_cell1,
-        Ae.data(), ADD_VALUES);
+        A, num_dofs_per_cell0, dofmap0.data() + c * num_dofs_per_cell0,
+        num_dofs_per_cell1, dofmap1.data() + c * num_dofs_per_cell1, Ae.data(),
+        ADD_VALUES);
 #ifdef DEBUG
     if (ierr != 0)
       la::petsc_error(ierr, __FILE__, "MatSetValuesLocal");
@@ -187,7 +185,7 @@ void fem::impl::assemble_exterior_facets(
     const std::function<void(PetscScalar*, const PetscScalar*,
                              const PetscScalar*, const double*, const int*,
                              const std::uint8_t*, const bool*, const bool*,
-                             const std::uint8_t*)>& fn,
+                             const std::uint8_t*)>& kernel,
     const Eigen::Array<PetscScalar, Eigen::Dynamic, Eigen::Dynamic,
                        Eigen::RowMajor>& coeffs,
     const Eigen::Array<PetscScalar, Eigen::Dynamic, 1> constant_values)
@@ -199,14 +197,10 @@ void fem::impl::assemble_exterior_facets(
   mesh.create_entity_permutations();
 
   // Prepare cell geometry
-  const graph::AdjacencyList<std::int32_t>& connectivity_g
-      = mesh.geometry().dofmap();
-  const Eigen::Array<std::int32_t, Eigen::Dynamic, 1>& pos_g
-      = connectivity_g.offsets();
-  const Eigen::Array<std::int32_t, Eigen::Dynamic, 1>& cell_g
-      = connectivity_g.array();
+  const graph::AdjacencyList<std::int32_t>& x_dofmap = mesh.geometry().dofmap();
+
   // FIXME: Add proper interface for num coordinate dofs
-  const int num_dofs_g = connectivity_g.num_links(0);
+  const int num_dofs_g = x_dofmap.num_links(0);
   const Eigen::Array<double, Eigen::Dynamic, 3, Eigen::RowMajor>& x_g
       = mesh.geometry().x();
 
@@ -247,9 +241,9 @@ void fem::impl::assemble_exterior_facets(
     const int local_facet = std::distance(facets.data(), it);
 
     // Get cell vertex coordinates
+    auto x_dofs = x_dofmap.links(cells[0]);
     for (int i = 0; i < num_dofs_g; ++i)
-      for (int j = 0; j < gdim; ++j)
-        coordinate_dofs(i, j) = x_g(cell_g[pos_g[cells[0]] + i], j);
+      coordinate_dofs.row(i) = x_g.row(x_dofs[i]).head(gdim);
 
     // Get dof maps for cell
     auto dmap0 = dofmap0.cell_dofs(cells[0]);
@@ -257,17 +251,13 @@ void fem::impl::assemble_exterior_facets(
 
     // Tabulate tensor
     auto coeff_cell = coeffs.row(cells[0]);
-    const Eigen::Array<bool, Eigen::Dynamic, 1>& e_ref_cell
-        = cell_edge_reflections.col(cells[0]);
-    const Eigen::Array<bool, Eigen::Dynamic, 1>& f_ref_cell
-        = cell_face_reflections.col(cells[0]);
-    const Eigen::Array<uint8_t, Eigen::Dynamic, 1>& f_rot_cell
-        = cell_face_rotations.col(cells[0]);
     const std::uint8_t perm = perms(local_facet, cells[0]);
     Ae.setZero(dmap0.size(), dmap1.size());
-    fn(Ae.data(), coeff_cell.data(), constant_values.data(),
-       coordinate_dofs.data(), &local_facet, &perm, e_ref_cell.data(),
-       f_ref_cell.data(), f_rot_cell.data());
+    kernel(Ae.data(), coeff_cell.data(), constant_values.data(),
+           coordinate_dofs.data(), &local_facet, &perm,
+           cell_edge_reflections.col(cells[0]).data(),
+           cell_face_reflections.col(cells[0]).data(),
+           cell_face_rotations.col(cells[0]).data());
 
     // Zero rows/columns for essential bcs
     if (!bc0.empty())
@@ -317,14 +307,11 @@ void fem::impl::assemble_interior_facets(
   mesh.create_entity_permutations();
 
   // Prepare cell geometry
-  const graph::AdjacencyList<std::int32_t>& connectivity_g
-      = mesh.geometry().dofmap();
-  const Eigen::Array<std::int32_t, Eigen::Dynamic, 1>& pos_g
-      = connectivity_g.offsets();
-  const Eigen::Array<std::int32_t, Eigen::Dynamic, 1>& cell_g
-      = connectivity_g.array();
+  const graph::AdjacencyList<std::int32_t>& x_dofmap = mesh.geometry().dofmap();
+
   // FIXME: Add proper interface for num coordinate dofs
-  const int num_dofs_g = connectivity_g.num_links(0);
+  const int num_dofs_g = x_dofmap.num_links(0);
+
   const Eigen::Array<double, Eigen::Dynamic, 3, Eigen::RowMajor>& x_g
       = mesh.geometry().x();
 
@@ -384,14 +371,12 @@ void fem::impl::assemble_interior_facets(
     const std::array<std::uint8_t, 2> perm
         = {perms(local_facet[0], cells[0]), perms(local_facet[1], cells[1])};
 
+    auto x_dofs0 = x_dofmap.links(cells[0]);
+    auto x_dofs1 = x_dofmap.links(cells[1]);
     for (int i = 0; i < num_dofs_g; ++i)
     {
-      for (int j = 0; j < gdim; ++j)
-      {
-        coordinate_dofs(i, j) = x_g(cell_g[pos_g[cells[0]] + i], j);
-        coordinate_dofs(i + num_dofs_g, j)
-            = x_g(cell_g[pos_g[cells[1]] + i], j);
-      }
+      coordinate_dofs.row(i) = x_g.row(x_dofs0[i]).head(gdim);
+      coordinate_dofs.row(i + num_dofs_g) = x_g.row(x_dofs1[i]).head(gdim);
     }
 
     // Get dof maps for cells and pack
@@ -434,16 +419,12 @@ void fem::impl::assemble_interior_facets(
     }
 
     // Tabulate tensor
-    const Eigen::Array<bool, Eigen::Dynamic, 1>& e_ref_cell
-        = cell_edge_reflections.col(cells[0]);
-    const Eigen::Array<bool, Eigen::Dynamic, 1>& f_ref_cell
-        = cell_face_reflections.col(cells[0]);
-    const Eigen::Array<uint8_t, Eigen::Dynamic, 1>& f_rot_cell
-        = cell_face_rotations.col(cells[0]);
     Ae.setZero(dmapjoint0.size(), dmapjoint1.size());
     fn(Ae.data(), coeff_array.data(), constant_values.data(),
        coordinate_dofs.data(), local_facet.data(), perm.data(),
-       e_ref_cell.data(), f_ref_cell.data(), f_rot_cell.data());
+       cell_edge_reflections.col(cells[0]).data(),
+       cell_face_reflections.col(cells[0]).data(),
+       cell_face_rotations.col(cells[0]).data());
 
     // Zero rows/columns for essential bcs
     if (!bc0.empty())
