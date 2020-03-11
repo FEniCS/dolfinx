@@ -127,18 +127,12 @@ void _lift_bc_cells(
     // Size data structure for assembly
     auto dmap0 = dofmap0.cell_dofs(c);
 
-    const Eigen::Array<bool, Eigen::Dynamic, 1>& e_ref_cell
-        = cell_edge_reflections.col(c);
-    const Eigen::Array<bool, Eigen::Dynamic, 1>& f_ref_cell
-        = cell_face_reflections.col(c);
-    const Eigen::Array<uint8_t, Eigen::Dynamic, 1>& f_rot_cell
-        = cell_face_rotations.col(c);
-
     auto coeff_array = coeffs.row(c);
     Ae.setZero(dmap0.size(), dmap1.size());
     fn(Ae.data(), coeff_array.data(), constant_values.data(),
-       coordinate_dofs.data(), nullptr, nullptr, e_ref_cell.data(),
-       f_ref_cell.data(), f_rot_cell.data());
+       coordinate_dofs.data(), nullptr, nullptr,
+       cell_edge_reflections.col(c).data(), cell_face_reflections.col(c).data(),
+       cell_face_rotations.col(c).data());
 
     // Size data structure for assembly
     be.setZero(dmap0.size());
@@ -293,17 +287,13 @@ void _lift_bc_exterior_facets(
     // TODO: Move gathering of coefficients outside of main assembly
     // loop
 
-    const Eigen::Array<bool, Eigen::Dynamic, 1>& e_ref_cell
-        = cell_edge_reflections.col(cell);
-    const Eigen::Array<bool, Eigen::Dynamic, 1>& f_ref_cell
-        = cell_face_reflections.col(cell);
-    const Eigen::Array<uint8_t, Eigen::Dynamic, 1>& f_rot_cell
-        = cell_face_rotations.col(cell);
     auto coeff_array = coeffs.row(cell);
     Ae.setZero(dmap0.size(), dmap1.size());
     fn(Ae.data(), coeff_array.data(), constant_values.data(),
-       coordinate_dofs.data(), &local_facet, &perm, e_ref_cell.data(),
-       f_ref_cell.data(), f_rot_cell.data());
+       coordinate_dofs.data(), &local_facet, &perm,
+       cell_edge_reflections.col(cell).data(),
+       cell_face_reflections.col(cell).data(),
+       cell_face_rotations.col(cell).data());
 
     // Size data structure for assembly
     be.setZero(dmap0.size());
@@ -439,16 +429,12 @@ void fem::impl::assemble_cells(
 
     // Tabulate vector for cell
     auto coeff_cell = coeffs.row(cell_index);
-    const Eigen::Array<bool, Eigen::Dynamic, 1>& e_ref_cell
-        = cell_edge_reflections.col(cell_index);
-    const Eigen::Array<bool, Eigen::Dynamic, 1>& f_ref_cell
-        = cell_face_reflections.col(cell_index);
-    const Eigen::Array<uint8_t, Eigen::Dynamic, 1>& f_rot_cell
-        = cell_face_rotations.col(cell_index);
     be.setZero();
     kernel(be.data(), coeff_cell.data(), constant_values.data(),
-           coordinate_dofs.data(), nullptr, nullptr, e_ref_cell.data(),
-           f_ref_cell.data(), f_rot_cell.data());
+           coordinate_dofs.data(), nullptr, nullptr,
+           cell_edge_reflections.col(cell_index).data(),
+           cell_face_reflections.col(cell_index).data(),
+           cell_face_rotations.col(cell_index).data());
 
     // Scatter cell vector to 'global' vector array
     for (Eigen::Index i = 0; i < num_dofs_per_cell; ++i)
@@ -530,19 +516,13 @@ void fem::impl::assemble_exterior_facets(
     auto dmap = dofmap.cell_dofs(cell);
 
     // Tabulate element vector
-    const Eigen::Array<bool, Eigen::Dynamic, 1>& e_ref_cell
-        = cell_edge_reflections.col(cell);
-    const Eigen::Array<bool, Eigen::Dynamic, 1>& f_ref_cell
-        = cell_face_reflections.col(cell);
-    const Eigen::Array<uint8_t, Eigen::Dynamic, 1>& f_rot_cell
-        = cell_face_rotations.col(cell);
-
     auto coeff_cell = coeffs.row(cell);
     be.setZero(dmap.size());
-
     fn(be.data(), coeff_cell.data(), constant_values.data(),
-       coordinate_dofs.data(), &local_facet, &perm, e_ref_cell.data(),
-       f_ref_cell.data(), f_rot_cell.data());
+       coordinate_dofs.data(), &local_facet, &perm,
+       cell_edge_reflections.col(cell).data(),
+       cell_face_reflections.col(cell).data(),
+       cell_face_rotations.col(cell).data());
 
     // Add element vector to global vector
     for (Eigen::Index i = 0; i < dmap.size(); ++i)

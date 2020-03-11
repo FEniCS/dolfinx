@@ -115,6 +115,7 @@ void fem::impl::assemble_cells(
   Eigen::Matrix<PetscScalar, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
       Ae;
 
+  // Get permutation data
   const Eigen::Array<bool, Eigen::Dynamic, Eigen::Dynamic>&
       cell_edge_reflections
       = mesh.topology().get_edge_reflections();
@@ -137,16 +138,12 @@ void fem::impl::assemble_cells(
 
     // Tabulate tensor
     auto coeff_cell = coeffs.row(cell_index);
-    const Eigen::Array<bool, Eigen::Dynamic, 1>& e_ref_cell
-        = cell_edge_reflections.col(cell_index);
-    const Eigen::Array<bool, Eigen::Dynamic, 1>& f_ref_cell
-        = cell_face_reflections.col(cell_index);
-    const Eigen::Array<uint8_t, Eigen::Dynamic, 1>& f_rot_cell
-        = cell_face_rotations.col(cell_index);
     Ae.setZero(num_dofs_per_cell0, num_dofs_per_cell1);
     kernel(Ae.data(), coeff_cell.data(), constant_values.data(),
-           coordinate_dofs.data(), nullptr, nullptr, e_ref_cell.data(),
-           f_ref_cell.data(), f_rot_cell.data());
+           coordinate_dofs.data(), nullptr, nullptr,
+           cell_edge_reflections.col(cell_index).data(),
+           cell_face_reflections.col(cell_index).data(),
+           cell_face_rotations.col(cell_index).data());
 
     // Zero rows/columns for essential bcs
     if (!bc0.empty())
@@ -187,7 +184,7 @@ void fem::impl::assemble_exterior_facets(
     const std::function<void(PetscScalar*, const PetscScalar*,
                              const PetscScalar*, const double*, const int*,
                              const std::uint8_t*, const bool*, const bool*,
-                             const std::uint8_t*)>& fn,
+                             const std::uint8_t*)>& kernel,
     const Eigen::Array<PetscScalar, Eigen::Dynamic, Eigen::Dynamic,
                        Eigen::RowMajor>& coeffs,
     const Eigen::Array<PetscScalar, Eigen::Dynamic, 1> constant_values)
@@ -257,17 +254,13 @@ void fem::impl::assemble_exterior_facets(
 
     // Tabulate tensor
     auto coeff_cell = coeffs.row(cells[0]);
-    const Eigen::Array<bool, Eigen::Dynamic, 1>& e_ref_cell
-        = cell_edge_reflections.col(cells[0]);
-    const Eigen::Array<bool, Eigen::Dynamic, 1>& f_ref_cell
-        = cell_face_reflections.col(cells[0]);
-    const Eigen::Array<uint8_t, Eigen::Dynamic, 1>& f_rot_cell
-        = cell_face_rotations.col(cells[0]);
     const std::uint8_t perm = perms(local_facet, cells[0]);
     Ae.setZero(dmap0.size(), dmap1.size());
-    fn(Ae.data(), coeff_cell.data(), constant_values.data(),
-       coordinate_dofs.data(), &local_facet, &perm, e_ref_cell.data(),
-       f_ref_cell.data(), f_rot_cell.data());
+    kernel(Ae.data(), coeff_cell.data(), constant_values.data(),
+           coordinate_dofs.data(), &local_facet, &perm,
+           cell_edge_reflections.col(cells[0]).data(),
+           cell_face_reflections.col(cells[0]).data(),
+           cell_face_rotations.col(cells[0]).data());
 
     // Zero rows/columns for essential bcs
     if (!bc0.empty())

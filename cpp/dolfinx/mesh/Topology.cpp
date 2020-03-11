@@ -467,6 +467,8 @@ Topology::get_facet_permutations() const
 //-----------------------------------------------------------------------------
 void Topology::create_entity_permutations()
 {
+  std::cout << "*** Create perms" << std::endl;
+
   if (_edge_reflections.rows() > 0)
   {
     // assert(_face_reflections.size() != 0);
@@ -474,6 +476,8 @@ void Topology::create_entity_permutations()
     // assert(_facet_permutations.size() != 0);
     return;
   }
+
+  std::cout << "*** comp Create perms" << std::endl;
 
   const int tdim = this->dim();
   const CellType cell_type = this->cell_type();
