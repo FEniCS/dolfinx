@@ -173,7 +173,7 @@ def get_dof_layout(shape, order):
     cpp.mesh.CellType.tetrahedron,
     cpp.mesh.CellType.hexahedron
 ])
-def test_topology_partition(tempdir, shape, order):
+def xtest_topology_partition(tempdir, shape, order):
     """Test partitioning and creation of meshes"""
 
     pytest.importorskip("pygmsh")
