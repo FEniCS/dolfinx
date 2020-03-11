@@ -24,7 +24,7 @@ jobs:
       - uses: actions/checkout@v2
       - name: Test MPI
         run: |
-          mpiexec -np 3 ls
+          mpiexec --oversubscribe -np 3 ls
       - name: Install FEniCS Python components
         run: |
           apt-get -qq update
@@ -58,7 +58,7 @@ jobs:
           cd build
           ninja unittests
           ctest --output-on-failure -R unittests
-          mpiexec -np 3 --host node0 ctest --output-on-failure -R unittests
+          mpiexec --oversubscribe -np 3 --host node0 ctest --output-on-failure -R unittests
       - name: Build and run C++ regression tests (serial)
         run: |
           cd build
