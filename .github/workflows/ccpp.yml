@@ -25,9 +25,9 @@ jobs:
           rm -rf /usr/local/include/dolfin /usr/local/include/dolfin.h
 
       - name: Configure DOLFINX C++ with CMake
-        # env:
-        #   CC: clang
-        #   CXX: clang++
+        env:
+          CC: clang
+          CXX: clang++
         run: |
           mkdir build
           cd build
