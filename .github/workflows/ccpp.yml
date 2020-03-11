@@ -26,8 +26,8 @@ jobs:
 
       - name: Configure DOLFINX C++ with CMake
         env:
-          CC: clang
-          CXX: clang++
+          CC: clang-9
+          CXX: clang++-9
         run: |
           mkdir build
           cd build
@@ -56,8 +56,8 @@ jobs:
 
       - name: Build Python interface
         env:
-          CC: clang
-          CXX: clang++
+          CC: clang-9
+          CXX: clang++-9
         run: |
           cd python
           pip3 -v install . --user
