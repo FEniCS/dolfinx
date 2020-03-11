@@ -69,8 +69,16 @@ void mesh(py::module& m)
   m.def("radius_ratio", &dolfinx::mesh::radius_ratio);
   m.def("midpoints", &dolfinx::mesh::midpoints);
 
-  m.def("create", &dolfinx::mesh::create,
-        "Helper function for creating meshes.");
+  m.def(
+      "create",
+      [](const MPICommWrapper comm,
+         const dolfinx::graph::AdjacencyList<std::int64_t>& cells,
+         const dolfinx::fem::ElementDofLayout& layout,
+         const Eigen::Ref<const Eigen::Array<
+             double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>>& x) {
+        return dolfinx::mesh::create(comm.get(), cells, layout, x);
+      },
+      "Helper function for creating meshes.");
 
   // dolfinx::mesh::GhostMode enums
   py::enum_<dolfinx::mesh::GhostMode>(m, "GhostMode")
@@ -143,10 +151,9 @@ void mesh(py::module& m)
       .def("on_boundary", &dolfinx::mesh::Topology::on_boundary)
       .def("index_map", &dolfinx::mesh::Topology::index_map)
       .def_property_readonly("cell_type", &dolfinx::mesh::Topology::cell_type)
-      .def("cell_name",
-           [](const dolfinx::mesh::Topology& self) {
-             return dolfinx::mesh::to_string(self.cell_type());
-           });
+      .def("cell_name", [](const dolfinx::mesh::Topology& self) {
+        return dolfinx::mesh::to_string(self.cell_type());
+      });
 
   // dolfinx::mesh::Mesh
   py::class_<dolfinx::mesh::Mesh, std::shared_ptr<dolfinx::mesh::Mesh>>(
