@@ -58,7 +58,7 @@ jobs:
           cd build
           ninja unittests
           ctest --output-on-failure -R unittests
-          mpiexec --oversubscribe -np 3 --host node0 ctest --output-on-failure -R unittests
+          mpiexec --oversubscribe -np 3 ctest --output-on-failure -R unittests
       - name: Build and run C++ regression tests (serial)
         run: |
           cd build
