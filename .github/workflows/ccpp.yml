@@ -20,7 +20,7 @@ jobs:
           apt-get -qq update
           apt install -y software-properties-common
           add-apt-repository "deb http://apt.llvm.org/eoan/ llvm-toolchain-eoan-9 main"
-          add-apt-repository "deb-src http://apt.llvm.org/eoan/ llvm-toolchain-eoan-9 main"
+          # add-apt-repository "deb-src http://apt.llvm.org/eoan/ llvm-toolchain-eoan-9 main"
           # wget -O - https://apt.llvm.org/llvm-snapshot.gpg.key|apt-key add -
           wget -O - https://apt.llvm.org/llvm-snapshot.gpg.key|sudo apt-key add -
           apt-get -qq update
