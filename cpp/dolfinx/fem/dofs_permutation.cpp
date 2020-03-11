@@ -81,6 +81,18 @@ std::array<std::int8_t, 2> calculate_quadrilateral_orders(T v1, T v2, T v3,
 }
 //-----------------------------------------------------------------------------
 Eigen::Array<std::int8_t, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
+empty_ordering(const mesh::Topology& topology)
+{
+  const int D = topology.dim();
+  auto cells = topology.connectivity(D, 0);
+  assert(cells);
+  const int num_cells = cells->num_nodes();
+  Eigen::Array<std::int8_t, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
+      cell_orders(num_cells, 0);
+  return cell_orders;
+}
+//-----------------------------------------------------------------------------
+Eigen::Array<std::int8_t, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
 compute_ordering_triangle(const mesh::Topology& topology)
 {
   const int D = topology.dim();
@@ -284,23 +296,11 @@ fem::compute_dof_permutations(const mesh::Topology& topology,
   switch (topology.cell_type())
   {
   case (mesh::CellType::point):
-  {
-    auto map = topology.index_map(0);
-    assert(map);
-    const int num_vertices = map->size_local() + map->num_ghosts();
-    // FIXME: This looks wrong
-    cell_ordering.resize(num_vertices, 0);
+    cell_ordering = empty_ordering(topology);
     break;
-  }
   case (mesh::CellType::interval):
-  {
-    auto map = topology.index_map(0);
-    assert(map);
-    const int num_vertices = map->size_local() + map->num_ghosts();
-    // FIXME: This looks wrong
-    cell_ordering.resize(num_vertices, 0);
+    cell_ordering = empty_ordering(topology);
     break;
-  }
   case (mesh::CellType::triangle):
     cell_ordering = compute_ordering_triangle(topology);
     break;
