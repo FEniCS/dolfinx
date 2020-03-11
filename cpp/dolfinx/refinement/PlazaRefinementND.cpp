@@ -43,7 +43,6 @@ void enforce_rules(ParallelRefinement& p_ref, const mesh::Mesh& mesh,
   {
     update_count = 0;
     p_ref.update_logical_edgefunction();
-    // for (const auto& f : mesh::MeshRange(mesh, 2, mesh::MeshRangeType::ALL))
     for (int f = 0; f < num_faces; ++f)
     {
       const std::int32_t long_e = long_edge[f];
@@ -51,8 +50,6 @@ void enforce_rules(ParallelRefinement& p_ref, const mesh::Mesh& mesh,
         continue;
 
       bool any_marked = false;
-      // for (const auto& e : mesh::EntityRange(f, 1))
-      //   any_marked |= p_ref.is_marked(e.index());
       auto edges = f_to_e->links(f);
       for (int i = 0; i < edges.rows(); ++i)
         any_marked |= p_ref.is_marked(edges[i]);
