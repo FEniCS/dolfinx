@@ -61,14 +61,10 @@ void _lift_bc_cells(
 
   // Prepare cell geometry
   const int gdim = mesh.geometry().dim();
-  const graph::AdjacencyList<std::int32_t>& connectivity_g
-      = mesh.geometry().dofmap();
-  const Eigen::Array<std::int32_t, Eigen::Dynamic, 1>& pos_g
-      = connectivity_g.offsets();
-  const Eigen::Array<std::int32_t, Eigen::Dynamic, 1>& cell_g
-      = connectivity_g.array();
+  const graph::AdjacencyList<std::int32_t>& x_dofmap = mesh.geometry().dofmap();
+
   // FIXME: Add proper interface for num coordinate dofs
-  const int num_dofs_g = connectivity_g.num_links(0);
+  const int num_dofs_g = x_dofmap.num_links(0);
   const Eigen::Array<double, Eigen::Dynamic, 3, Eigen::RowMajor>& x_g
       = mesh.geometry().x();
 
@@ -120,25 +116,19 @@ void _lift_bc_cells(
       continue;
 
     // Get cell vertex coordinates
+    auto x_dofs = x_dofmap.links(c);
     for (int i = 0; i < num_dofs_g; ++i)
-      for (int j = 0; j < gdim; ++j)
-        coordinate_dofs(i, j) = x_g(cell_g[pos_g[c] + i], j);
+      coordinate_dofs.row(i) = x_g.row(x_dofs[i]).head(gdim);
 
     // Size data structure for assembly
     auto dmap0 = dofmap0.cell_dofs(c);
 
-    const Eigen::Array<bool, Eigen::Dynamic, 1>& e_ref_cell
-        = cell_edge_reflections.col(c);
-    const Eigen::Array<bool, Eigen::Dynamic, 1>& f_ref_cell
-        = cell_face_reflections.col(c);
-    const Eigen::Array<uint8_t, Eigen::Dynamic, 1>& f_rot_cell
-        = cell_face_rotations.col(c);
-
     auto coeff_array = coeffs.row(c);
     Ae.setZero(dmap0.size(), dmap1.size());
     fn(Ae.data(), coeff_array.data(), constant_values.data(),
-       coordinate_dofs.data(), nullptr, nullptr, e_ref_cell.data(),
-       f_ref_cell.data(), f_rot_cell.data());
+       coordinate_dofs.data(), nullptr, nullptr,
+       cell_edge_reflections.col(c).data(), cell_face_reflections.col(c).data(),
+       cell_face_rotations.col(c).data());
 
     // Size data structure for assembly
     be.setZero(dmap0.size());
@@ -201,14 +191,9 @@ void _lift_bc_exterior_facets(
                                           0);
 
   // Prepare cell geometry
-  const graph::AdjacencyList<std::int32_t>& connectivity_g
-      = mesh.geometry().dofmap();
-  const Eigen::Array<std::int32_t, Eigen::Dynamic, 1>& pos_g
-      = connectivity_g.offsets();
-  const Eigen::Array<std::int32_t, Eigen::Dynamic, 1>& cell_g
-      = connectivity_g.array();
+  const graph::AdjacencyList<std::int32_t>& x_dofmap = mesh.geometry().dofmap();
   // FIXME: Add proper interface for num coordinate dofs
-  const int num_dofs_g = connectivity_g.num_links(0);
+  const int num_dofs_g = x_dofmap.num_links(0);
   const Eigen::Array<double, Eigen::Dynamic, 3, Eigen::RowMajor>& x_g
       = mesh.geometry().x();
 
@@ -283,9 +268,9 @@ void _lift_bc_exterior_facets(
       continue;
 
     // Get cell vertex coordinates
+    auto x_dofs = x_dofmap.links(cell);
     for (int i = 0; i < num_dofs_g; ++i)
-      for (int j = 0; j < gdim; ++j)
-        coordinate_dofs(i, j) = x_g(cell_g[pos_g[cell] + i], j);
+      coordinate_dofs.row(i) = x_g.row(x_dofs[i]).head(gdim);
 
     // Size data structure for assembly
     auto dmap0 = dofmap0.cell_dofs(cell);
@@ -293,17 +278,13 @@ void _lift_bc_exterior_facets(
     // TODO: Move gathering of coefficients outside of main assembly
     // loop
 
-    const Eigen::Array<bool, Eigen::Dynamic, 1>& e_ref_cell
-        = cell_edge_reflections.col(cell);
-    const Eigen::Array<bool, Eigen::Dynamic, 1>& f_ref_cell
-        = cell_face_reflections.col(cell);
-    const Eigen::Array<uint8_t, Eigen::Dynamic, 1>& f_rot_cell
-        = cell_face_rotations.col(cell);
     auto coeff_array = coeffs.row(cell);
     Ae.setZero(dmap0.size(), dmap1.size());
     fn(Ae.data(), coeff_array.data(), constant_values.data(),
-       coordinate_dofs.data(), &local_facet, &perm, e_ref_cell.data(),
-       f_ref_cell.data(), f_rot_cell.data());
+       coordinate_dofs.data(), &local_facet, &perm,
+       cell_edge_reflections.col(cell).data(),
+       cell_face_reflections.col(cell).data(),
+       cell_face_rotations.col(cell).data());
 
     // Size data structure for assembly
     be.setZero(dmap0.size());
@@ -403,14 +384,10 @@ void fem::impl::assemble_cells(
   mesh.create_entity_permutations();
 
   // Prepare cell geometry
-  const graph::AdjacencyList<std::int32_t>& connectivity_g
-      = mesh.geometry().dofmap();
-  const Eigen::Array<std::int32_t, Eigen::Dynamic, 1>& pos_g
-      = connectivity_g.offsets();
-  const Eigen::Array<std::int32_t, Eigen::Dynamic, 1>& cell_g
-      = connectivity_g.array();
+  const graph::AdjacencyList<std::int32_t>& x_dofmap = mesh.geometry().dofmap();
+
   // FIXME: Add proper interface for num coordinate dofs
-  const int num_dofs_g = connectivity_g.num_links(0);
+  const int num_dofs_g = x_dofmap.num_links(0);
   const Eigen::Array<double, Eigen::Dynamic, 3, Eigen::RowMajor>& x_g
       = mesh.geometry().x();
 
@@ -430,29 +407,25 @@ void fem::impl::assemble_cells(
       = mesh.topology().get_face_rotations();
 
   // Iterate over active cells
-  for (std::int32_t cell_index : active_cells)
+  for (std::int32_t c : active_cells)
   {
     // Get cell coordinates/geometry
+    auto x_dofs = x_dofmap.links(c);
     for (int i = 0; i < num_dofs_g; ++i)
-      for (int j = 0; j < gdim; ++j)
-        coordinate_dofs(i, j) = x_g(cell_g[pos_g[cell_index] + i], j);
+      coordinate_dofs.row(i) = x_g.row(x_dofs[i]).head(gdim);
 
     // Tabulate vector for cell
-    auto coeff_cell = coeffs.row(cell_index);
-    const Eigen::Array<bool, Eigen::Dynamic, 1>& e_ref_cell
-        = cell_edge_reflections.col(cell_index);
-    const Eigen::Array<bool, Eigen::Dynamic, 1>& f_ref_cell
-        = cell_face_reflections.col(cell_index);
-    const Eigen::Array<uint8_t, Eigen::Dynamic, 1>& f_rot_cell
-        = cell_face_rotations.col(cell_index);
+    auto coeff_cell = coeffs.row(c);
     be.setZero();
     kernel(be.data(), coeff_cell.data(), constant_values.data(),
-           coordinate_dofs.data(), nullptr, nullptr, e_ref_cell.data(),
-           f_ref_cell.data(), f_rot_cell.data());
+           coordinate_dofs.data(), nullptr, nullptr,
+           cell_edge_reflections.col(c).data(),
+           cell_face_reflections.col(c).data(),
+           cell_face_rotations.col(c).data());
 
     // Scatter cell vector to 'global' vector array
     for (Eigen::Index i = 0; i < num_dofs_per_cell; ++i)
-      b[dofmap[cell_index * num_dofs_per_cell + i]] += be[i];
+      b[dofmap[c * num_dofs_per_cell + i]] += be[i];
   }
 }
 //-----------------------------------------------------------------------------
@@ -475,14 +448,10 @@ void fem::impl::assemble_exterior_facets(
   mesh.create_entity_permutations();
 
   // Prepare cell geometry
-  const graph::AdjacencyList<std::int32_t>& connectivity_g
-      = mesh.geometry().dofmap();
-  const Eigen::Array<std::int32_t, Eigen::Dynamic, 1>& pos_g
-      = connectivity_g.offsets();
-  const Eigen::Array<std::int32_t, Eigen::Dynamic, 1>& cell_g
-      = connectivity_g.array();
+  const graph::AdjacencyList<std::int32_t>& x_dofmap = mesh.geometry().dofmap();
+
   // FIXME: Add proper interface for num coordinate dofs
-  const int num_dofs_g = connectivity_g.num_links(0);
+  const int num_dofs_g = x_dofmap.num_links(0);
   const Eigen::Array<double, Eigen::Dynamic, 3, Eigen::RowMajor>& x_g
       = mesh.geometry().x();
 
@@ -522,27 +491,21 @@ void fem::impl::assemble_exterior_facets(
     const std::uint8_t perm = perms(local_facet, cell);
 
     // Get cell vertex coordinates
+    auto x_dofs = x_dofmap.links(cell);
     for (int i = 0; i < num_dofs_g; ++i)
-      for (int j = 0; j < gdim; ++j)
-        coordinate_dofs(i, j) = x_g(cell_g[pos_g[cell] + i], j);
+      coordinate_dofs.row(i) = x_g.row(x_dofs[i]).head(gdim);
 
     // Get dof map for cell
     auto dmap = dofmap.cell_dofs(cell);
 
     // Tabulate element vector
-    const Eigen::Array<bool, Eigen::Dynamic, 1>& e_ref_cell
-        = cell_edge_reflections.col(cell);
-    const Eigen::Array<bool, Eigen::Dynamic, 1>& f_ref_cell
-        = cell_face_reflections.col(cell);
-    const Eigen::Array<uint8_t, Eigen::Dynamic, 1>& f_rot_cell
-        = cell_face_rotations.col(cell);
-
     auto coeff_cell = coeffs.row(cell);
     be.setZero(dmap.size());
-
     fn(be.data(), coeff_cell.data(), constant_values.data(),
-       coordinate_dofs.data(), &local_facet, &perm, e_ref_cell.data(),
-       f_ref_cell.data(), f_rot_cell.data());
+       coordinate_dofs.data(), &local_facet, &perm,
+       cell_edge_reflections.col(cell).data(),
+       cell_face_reflections.col(cell).data(),
+       cell_face_rotations.col(cell).data());
 
     // Add element vector to global vector
     for (Eigen::Index i = 0; i < dmap.size(); ++i)
@@ -570,14 +533,10 @@ void fem::impl::assemble_interior_facets(
   mesh.create_entity_permutations();
 
   // Prepare cell geometry
-  const graph::AdjacencyList<std::int32_t>& connectivity_g
-      = mesh.geometry().dofmap();
-  const Eigen::Array<std::int32_t, Eigen::Dynamic, 1>& pos_g
-      = connectivity_g.offsets();
-  const Eigen::Array<std::int32_t, Eigen::Dynamic, 1>& cell_g
-      = connectivity_g.array();
+  const graph::AdjacencyList<std::int32_t>& x_dofmap = mesh.geometry().dofmap();
   // FIXME: Add proper interface for num coordinate dofs
-  const int num_dofs_g = connectivity_g.num_links(0);
+
+  const int num_dofs_g = x_dofmap.num_links(0);
   const Eigen::Array<double, Eigen::Dynamic, 3, Eigen::RowMajor>& x_g
       = mesh.geometry().x();
 
@@ -626,14 +585,12 @@ void fem::impl::assemble_interior_facets(
         = {perms(local_facet[0], cells[0]), perms(local_facet[1], cells[1])};
 
     // Get cell vertex coordinates
+    auto x_dofs0 = x_dofmap.links(cells[0]);
+    auto x_dofs1 = x_dofmap.links(cells[1]);
     for (int i = 0; i < num_dofs_g; ++i)
     {
-      for (int j = 0; j < gdim; ++j)
-      {
-        coordinate_dofs(i, j) = x_g(cell_g[pos_g[cells[0]] + i], j);
-        coordinate_dofs(i + num_dofs_g, j)
-            = x_g(cell_g[pos_g[cells[1]] + i], j);
-      }
+      coordinate_dofs.row(i) = x_g.row(x_dofs0[i]).head(gdim);
+      coordinate_dofs.row(i + num_dofs_g) = x_g.row(x_dofs1[i]).head(gdim);
     }
 
     // Get dofmaps for cell
@@ -654,12 +611,7 @@ void fem::impl::assemble_interior_facets(
     // w[coefficient][restriction][dof]
     auto coeff_cell0 = coeffs.row(cells[0]);
     auto coeff_cell1 = coeffs.row(cells[1]);
-    const Eigen::Array<bool, Eigen::Dynamic, 1>& e_ref_cell
-        = cell_edge_reflections.col(cells[0]);
-    const Eigen::Array<bool, Eigen::Dynamic, 1>& f_ref_cell
-        = cell_face_reflections.col(cells[0]);
-    const Eigen::Array<uint8_t, Eigen::Dynamic, 1>& f_rot_cell
-        = cell_face_rotations.col(cells[0]);
+
     // Loop over coefficients
     for (std::size_t i = 0; i < offsets.size() - 1; ++i)
     {
@@ -675,7 +627,9 @@ void fem::impl::assemble_interior_facets(
     be.setZero(dmap0.size() + dmap1.size());
     fn(be.data(), coeff_array.data(), constant_values.data(),
        coordinate_dofs.data(), local_facet.data(), perm.data(),
-       e_ref_cell.data(), f_ref_cell.data(), f_rot_cell.data());
+       cell_edge_reflections.col(cells[0]).data(),
+       cell_face_reflections.col(cells[0]).data(),
+       cell_face_rotations.col(cells[0]).data());
 
     // Add element vector to global vector
     for (Eigen::Index i = 0; i < dmap0.size(); ++i)
