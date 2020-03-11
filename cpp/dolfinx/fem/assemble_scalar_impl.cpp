@@ -126,24 +126,18 @@ PetscScalar fem::impl::assemble_cells(
 
   // Iterate over all cells
   PetscScalar value(0);
-  for (auto& cell : active_cells)
+  for (auto& c : active_cells)
   {
     // Get cell coordinates/geometry
     for (int i = 0; i < num_dofs_g; ++i)
       for (int j = 0; j < gdim; ++j)
-        coordinate_dofs(i, j) = x_g(cell_g[pos_g[cell] + i], j);
+        coordinate_dofs(i, j) = x_g(cell_g[pos_g[c] + i], j);
 
-    auto coeff_cell = coeffs.row(cell);
-    const Eigen::Array<bool, Eigen::Dynamic, 1>& e_ref_cell
-        = cell_edge_reflections.col(cell);
-    const Eigen::Array<bool, Eigen::Dynamic, 1>& f_ref_cell
-        = cell_face_reflections.col(cell);
-    const Eigen::Array<uint8_t, Eigen::Dynamic, 1>& f_rot_cell
-        = cell_face_rotations.col(cell);
-
+    auto coeff_cell = coeffs.row(c);
     fn(&value, coeff_cell.data(), constant_values.data(),
-       coordinate_dofs.data(), nullptr, nullptr, e_ref_cell.data(),
-       f_ref_cell.data(), f_rot_cell.data());
+       coordinate_dofs.data(), nullptr, nullptr,
+       cell_edge_reflections.col(c).data(), cell_face_reflections.col(c).data(),
+       cell_face_rotations.col(c).data());
   }
 
   return value;
@@ -217,17 +211,12 @@ PetscScalar fem::impl::assemble_exterior_facets(
         coordinate_dofs(i, j) = x_g(cell_g[pos_g[cell] + i], j);
 
     auto coeff_cell = coeffs.row(cell);
-    const Eigen::Array<bool, Eigen::Dynamic, 1>& e_ref_cell
-        = cell_edge_reflections.col(cell);
-    const Eigen::Array<bool, Eigen::Dynamic, 1>& f_ref_cell
-        = cell_face_reflections.col(cell);
-    const Eigen::Array<uint8_t, Eigen::Dynamic, 1>& f_rot_cell
-        = cell_face_rotations.col(cell);
     const std::uint8_t perm = perms(local_facet, cell);
-
     fn(&value, coeff_cell.data(), constant_values.data(),
-       coordinate_dofs.data(), &local_facet, &perm, e_ref_cell.data(),
-       f_ref_cell.data(), f_rot_cell.data());
+       coordinate_dofs.data(), &local_facet, &perm,
+       cell_edge_reflections.col(cell).data(),
+       cell_face_reflections.col(cell).data(),
+       cell_face_rotations.col(cell).data());
   }
 
   return value;
@@ -331,12 +320,6 @@ PetscScalar fem::impl::assemble_interior_facets(
     // w[coefficient][restriction][dof]
     auto coeff_cell0 = coeffs.row(cells[0]);
     auto coeff_cell1 = coeffs.row(cells[1]);
-    const Eigen::Array<bool, Eigen::Dynamic, 1>& e_ref_cell
-        = cell_edge_reflections.col(cells[0]);
-    const Eigen::Array<bool, Eigen::Dynamic, 1>& f_ref_cell
-        = cell_face_reflections.col(cells[0]);
-    const Eigen::Array<uint8_t, Eigen::Dynamic, 1>& f_rot_cell
-        = cell_face_rotations.col(cells[0]);
 
     // Loop over coefficients
     for (std::size_t i = 0; i < offsets.size() - 1; ++i)
@@ -350,7 +333,9 @@ PetscScalar fem::impl::assemble_interior_facets(
     }
     fn(&value, coeff_array.data(), constant_values.data(),
        coordinate_dofs.data(), local_facet.data(), perm.data(),
-       e_ref_cell.data(), f_ref_cell.data(), f_rot_cell.data());
+       cell_edge_reflections.col(cells[0]).data(),
+       cell_face_reflections.col(cells[0]).data(),
+       cell_face_rotations.col(cells[0]).data());
   }
 
   return value;

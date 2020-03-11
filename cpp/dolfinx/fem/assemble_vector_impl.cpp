@@ -420,25 +420,25 @@ void fem::impl::assemble_cells(
       = mesh.topology().get_face_rotations();
 
   // Iterate over active cells
-  for (std::int32_t cell_index : active_cells)
+  for (std::int32_t c : active_cells)
   {
     // Get cell coordinates/geometry
     for (int i = 0; i < num_dofs_g; ++i)
       for (int j = 0; j < gdim; ++j)
-        coordinate_dofs(i, j) = x_g(cell_g[pos_g[cell_index] + i], j);
+        coordinate_dofs(i, j) = x_g(cell_g[pos_g[c] + i], j);
 
     // Tabulate vector for cell
-    auto coeff_cell = coeffs.row(cell_index);
+    auto coeff_cell = coeffs.row(c);
     be.setZero();
     kernel(be.data(), coeff_cell.data(), constant_values.data(),
            coordinate_dofs.data(), nullptr, nullptr,
-           cell_edge_reflections.col(cell_index).data(),
-           cell_face_reflections.col(cell_index).data(),
-           cell_face_rotations.col(cell_index).data());
+           cell_edge_reflections.col(c).data(),
+           cell_face_reflections.col(c).data(),
+           cell_face_rotations.col(c).data());
 
     // Scatter cell vector to 'global' vector array
     for (Eigen::Index i = 0; i < num_dofs_per_cell; ++i)
-      b[dofmap[cell_index * num_dofs_per_cell + i]] += be[i];
+      b[dofmap[c * num_dofs_per_cell + i]] += be[i];
   }
 }
 //-----------------------------------------------------------------------------
@@ -634,12 +634,7 @@ void fem::impl::assemble_interior_facets(
     // w[coefficient][restriction][dof]
     auto coeff_cell0 = coeffs.row(cells[0]);
     auto coeff_cell1 = coeffs.row(cells[1]);
-    const Eigen::Array<bool, Eigen::Dynamic, 1>& e_ref_cell
-        = cell_edge_reflections.col(cells[0]);
-    const Eigen::Array<bool, Eigen::Dynamic, 1>& f_ref_cell
-        = cell_face_reflections.col(cells[0]);
-    const Eigen::Array<uint8_t, Eigen::Dynamic, 1>& f_rot_cell
-        = cell_face_rotations.col(cells[0]);
+
     // Loop over coefficients
     for (std::size_t i = 0; i < offsets.size() - 1; ++i)
     {
@@ -655,7 +650,9 @@ void fem::impl::assemble_interior_facets(
     be.setZero(dmap0.size() + dmap1.size());
     fn(be.data(), coeff_array.data(), constant_values.data(),
        coordinate_dofs.data(), local_facet.data(), perm.data(),
-       e_ref_cell.data(), f_ref_cell.data(), f_rot_cell.data());
+       cell_edge_reflections.col(cells[0]).data(),
+       cell_face_reflections.col(cells[0]).data(),
+       cell_face_rotations.col(cells[0]).data());
 
     // Add element vector to global vector
     for (Eigen::Index i = 0; i < dmap0.size(); ++i)

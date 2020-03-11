@@ -128,29 +128,29 @@ void fem::impl::assemble_cells(
 
   // Iterate over active cells
   PetscErrorCode ierr;
-  for (std::int32_t cell_index : active_cells)
+  for (std::int32_t c : active_cells)
   {
     // Get cell coordinates/geometry
-    auto x_dofs = x_dofmap.links(cell_index);
+    auto x_dofs = x_dofmap.links(c);
     for (int i = 0; i < x_dofs.rows(); ++i)
       for (int j = 0; j < gdim; ++j)
         coordinate_dofs(i, j) = x_g(x_dofs[i], j);
 
     // Tabulate tensor
-    auto coeff_cell = coeffs.row(cell_index);
+    auto coeff_cell = coeffs.row(c);
     Ae.setZero(num_dofs_per_cell0, num_dofs_per_cell1);
     kernel(Ae.data(), coeff_cell.data(), constant_values.data(),
            coordinate_dofs.data(), nullptr, nullptr,
-           cell_edge_reflections.col(cell_index).data(),
-           cell_face_reflections.col(cell_index).data(),
-           cell_face_rotations.col(cell_index).data());
+           cell_edge_reflections.col(c).data(),
+           cell_face_reflections.col(c).data(),
+           cell_face_rotations.col(c).data());
 
     // Zero rows/columns for essential bcs
     if (!bc0.empty())
     {
       for (Eigen::Index i = 0; i < Ae.rows(); ++i)
       {
-        const std::int32_t dof = dofmap0[cell_index * num_dofs_per_cell0 + i];
+        const std::int32_t dof = dofmap0[c * num_dofs_per_cell0 + i];
         if (bc0[dof])
           Ae.row(i).setZero();
       }
@@ -159,16 +159,16 @@ void fem::impl::assemble_cells(
     {
       for (Eigen::Index j = 0; j < Ae.cols(); ++j)
       {
-        const std::int32_t dof = dofmap1[cell_index * num_dofs_per_cell1 + j];
+        const std::int32_t dof = dofmap1[c * num_dofs_per_cell1 + j];
         if (bc1[dof])
           Ae.col(j).setZero();
       }
     }
 
     ierr = MatSetValuesLocal(
-        A, num_dofs_per_cell0, dofmap0.data() + cell_index * num_dofs_per_cell0,
-        num_dofs_per_cell1, dofmap1.data() + cell_index * num_dofs_per_cell1,
-        Ae.data(), ADD_VALUES);
+        A, num_dofs_per_cell0, dofmap0.data() + c * num_dofs_per_cell0,
+        num_dofs_per_cell1, dofmap1.data() + c * num_dofs_per_cell1, Ae.data(),
+        ADD_VALUES);
 #ifdef DEBUG
     if (ierr != 0)
       la::petsc_error(ierr, __FILE__, "MatSetValuesLocal");
@@ -427,16 +427,12 @@ void fem::impl::assemble_interior_facets(
     }
 
     // Tabulate tensor
-    const Eigen::Array<bool, Eigen::Dynamic, 1>& e_ref_cell
-        = cell_edge_reflections.col(cells[0]);
-    const Eigen::Array<bool, Eigen::Dynamic, 1>& f_ref_cell
-        = cell_face_reflections.col(cells[0]);
-    const Eigen::Array<uint8_t, Eigen::Dynamic, 1>& f_rot_cell
-        = cell_face_rotations.col(cells[0]);
     Ae.setZero(dmapjoint0.size(), dmapjoint1.size());
     fn(Ae.data(), coeff_array.data(), constant_values.data(),
        coordinate_dofs.data(), local_facet.data(), perm.data(),
-       e_ref_cell.data(), f_ref_cell.data(), f_rot_cell.data());
+       cell_edge_reflections.col(cells[0]).data(),
+       cell_face_reflections.col(cells[0]).data(),
+       cell_face_rotations.col(cells[0]).data());
 
     // Zero rows/columns for essential bcs
     if (!bc0.empty())
