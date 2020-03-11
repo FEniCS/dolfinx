@@ -17,7 +17,6 @@
 #include <dolfinx/mesh/MeshIterator.h>
 #include <dolfinx/mesh/MeshQuality.h>
 #include <dolfinx/mesh/MeshValueCollection.h>
-#include <dolfinx/mesh/Ordering.h>
 #include <dolfinx/mesh/Partitioning.h>
 #include <dolfinx/mesh/Topology.h>
 #include <dolfinx/mesh/TopologyComputation.h>
@@ -317,11 +316,6 @@ void mesh(py::module& m)
                   py::arg("mesh"), py::arg("num_bins") = 50)
       .def_static("dihedral_angles_min_max",
                   &dolfinx::mesh::MeshQuality::dihedral_angles_min_max);
-
-  py::class_<dolfinx::mesh::Ordering>(m, "Ordering", "Order mesh cell entities")
-      .def_static("order_simplex", &dolfinx::mesh::Ordering::order_simplex)
-      .def_static("is_ordered_simplex",
-                  &dolfinx::mesh::Ordering::is_ordered_simplex);
 
   // New Partition interface
 
