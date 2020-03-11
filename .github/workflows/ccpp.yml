@@ -17,9 +17,11 @@ jobs:
       - uses: actions/checkout@v2
       - name: Install FEniCS Python components
         run: |
+          add-apt-repository "deb http://apt.llvm.org/eoan/ llvm-toolchain-eoan-9 main"
+          add-apt-repository "deb-src http://apt.llvm.org/eoan/ llvm-toolchain-eoan-9 main"
           apt-get -qq update
-          apt-get -y install clang
-          wget https://bootstrap.pypa.io/get-pip.py
+          # apt-get -y install clang
+          apt-get install clang-format clang-tidy clang-tools clang clangd libc++-dev libc++1 libc++abi-dev libc++abi1 libclang-dev libclang1 liblldb-dev libllvm-ocaml-dev libomp-dev libomp5 lld lldb llvm-dev llvm-runtime llvm python-clang          wget https://bootstrap.pypa.io/get-pip.py
           python3 get-pip.py
           pip3 install git+https://github.com/FEniCS/fiat.git --upgrade
           pip3 install git+https://github.com/FEniCS/ufl.git --upgrade
@@ -57,9 +59,9 @@ jobs:
           ctest -j3 -R demo -R mpi
 
       - name: Build Python interface
-        # env:
-        #   CC: clang
-        #   CXX: clang++
+        env:
+          CC: clang
+          CXX: clang++
         run: |
           cd python
           pip3 -v install . --user
