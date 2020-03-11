@@ -124,15 +124,6 @@ public:
   std::shared_ptr<const graph::AdjacencyList<std::int32_t>>
   connectivity(int d0, int d1) const;
 
-  /// Return connectivity from entities of dimension d0 to entities of
-  /// dimension d1
-  /// @param[in] d0
-  /// @param[in] d1
-  /// @return The adjacency list that for each entity of dimension d0
-  ///   gives the list of incident entities of dimension d1
-  std::shared_ptr<graph::AdjacencyList<std::int32_t>> connectivity(int d0,
-                                                                   int d1);
-
   /// @todo Merge with set_index_map
   /// Set connectivity for given pair of topological dimensions
   void set_connectivity(std::shared_ptr<graph::AdjacencyList<std::int32_t>> c,
