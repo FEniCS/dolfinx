@@ -66,11 +66,11 @@ jobs:
           cd build
           ninja demos
           ctest -j3 -R demo -R serial
-      - name: Build and run C++ regression tests (MPI)
-        run: |
-          cd build
-          ninja demos
-          ctest -j3 -R demo -R mpi
+      # - name: Build and run C++ regression tests (MPI)
+      #   run: |
+      #     cd build
+      #     ninja demos
+      #     ctest -j3 -R demo -R mpi
 
       - name: Build Python interface
         # env:
@@ -93,7 +93,7 @@ jobs:
         run: |
           mkdir -p ~/junit
           cd python/test/unit
-          mpiexec -np 3 python3 -m pytest .
+          mpiexec --oversubscribe -np 3 python3 -m pytest .
       - name: Run demos (Python, serial)
         env:
           DOLFINX_JIT_CFLAGS: -g0 -O0
