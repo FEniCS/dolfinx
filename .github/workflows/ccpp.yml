@@ -27,9 +27,9 @@ jobs:
           rm -rf /usr/local/include/dolfin /usr/local/include/dolfin.h
 
       - name: Configure DOLFINX C++ with CMake
-        env:
-          CC: clang
-          CXX: clang++
+        # env:
+        #   CC: clang
+        #   CXX: clang++
         run: |
           mkdir build
           cd build
@@ -63,3 +63,33 @@ jobs:
         run: |
           cd python
           pip3 -v install . --user
+
+      - name: Run unit tests (Python, serial)
+        env:
+          DOLFINX_JIT_CFLAGS: -g0 -O0
+        run: |
+          mkdir -p ~/junit
+          cd python/test/unit
+          python3 -m pytest -n=4 --durations=50 --junitxml=~/junit/test-results.xml .
+      - name: Run unit tests (Python, MPI)
+        env:
+          DOLFINX_JIT_CFLAGS: -g0 -O0
+        run: |
+          mkdir -p ~/junit
+          cd python/test/unit
+          mpirun -np 3 python3 -m pytest .
+      - name: Run demos (Python, serial)
+        env:
+          DOLFINX_JIT_CFLAGS: -g0 -O0
+        run: |
+          mkdir -p ~/junit
+          cd python/demo
+          python3 ./generate-demo-files.py
+          python3 -m pytest -n=4 -v -m serial --durations=10 --junitxml=~/junit/demo-results.xml test.py
+      - name: Run demos (Python, MPI)
+        env:
+          DOLFINX_JIT_CFLAGS: -g0 -O0
+        run: |
+          cd python/demo
+          python3 ./generate-demo-files.py
+          python3 -m pytest -n=2 -v -m mpi test.py --num-proc=3
