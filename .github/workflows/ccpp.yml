@@ -53,7 +53,7 @@ jobs:
           cd build
           ninja unittests
           ctest --output-on-failure -R unittests
-          mpirun -np 3 ctest --output-on-failure -R unittests
+          mpiexec -np 3 ctest --output-on-failure -R unittests
       - name: Build and run C++ regression tests (serial)
         run: |
           cd build
@@ -86,7 +86,7 @@ jobs:
         run: |
           mkdir -p ~/junit
           cd python/test/unit
-          mpirun -np 3 python3 -m pytest .
+          mpiexec -np 3 python3 -m pytest .
       - name: Run demos (Python, serial)
         env:
           DOLFINX_JIT_CFLAGS: -g0 -O0
