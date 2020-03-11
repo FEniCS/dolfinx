@@ -35,11 +35,6 @@ if (HAVE_PEDANTIC)
   target_compile_options(cpp PRIVATE -Wall;-Werror;-pedantic)
 endif()
 
-CHECK_CXX_COMPILER_FLAG("-fiszed-deallocation" HAVE_FIXED_DEALLOCATION)
-if (HAVE_FIXED_DEALLOCATION)
-  target_compile_options(cpp PRIVATE -fiszed-deallocation)
-endif()
-
 # Add DOLFINX libraries and other config
 target_link_libraries(cpp PRIVATE pybind11::module dolfinx)
 
