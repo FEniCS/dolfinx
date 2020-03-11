@@ -36,4 +36,4 @@ jobs:
       - name: Build DOLFINX C++
         run: |
           cd build
-          ninja -j3 install
+          ninja install
