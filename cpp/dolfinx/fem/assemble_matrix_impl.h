@@ -56,7 +56,7 @@ void assemble_cells(
                              const std::uint8_t*)>& kernel,
     const Eigen::Array<PetscScalar, Eigen::Dynamic, Eigen::Dynamic,
                        Eigen::RowMajor>& coeffs,
-    const std::vector<PetscScalar>& constant_values);
+    const Eigen::Array<PetscScalar, Eigen::Dynamic, 1>& constant_values);
 
 /// Execute kernel over exterior facets and  accumulate result in Mat
 void assemble_exterior_facets(
@@ -70,7 +70,7 @@ void assemble_exterior_facets(
                              const std::uint8_t*)>& fn,
     const Eigen::Array<PetscScalar, Eigen::Dynamic, Eigen::Dynamic,
                        Eigen::RowMajor>& coeffs,
-    const std::vector<PetscScalar> constant_values);
+    const Eigen::Array<PetscScalar, Eigen::Dynamic, 1> constant_values);
 
 /// Execute kernel over interior facets and  accumulate result in Mat
 void assemble_interior_facets(
@@ -81,11 +81,11 @@ void assemble_interior_facets(
     const std::function<void(PetscScalar*, const PetscScalar*,
                              const PetscScalar*, const double*, const int*,
                              const std::uint8_t*, const bool*, const bool*,
-                             const std::uint8_t*)>& fn,
+                             const std::uint8_t*)>& kernel,
     const Eigen::Array<PetscScalar, Eigen::Dynamic, Eigen::Dynamic,
                        Eigen::RowMajor>& coeffs,
     const std::vector<int>& offsets,
-    const std::vector<PetscScalar>& constant_values);
+    const Eigen::Array<PetscScalar, Eigen::Dynamic, 1>& constant_values);
 
 } // namespace impl
 } // namespace fem

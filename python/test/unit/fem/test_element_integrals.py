@@ -182,16 +182,16 @@ def test_facet_normals(cell_type):
         # is positive
         for i in range(num_facets):
             if cell_type == CellType.interval:
-                co = mesh.geometry.points[i]
+                co = mesh.geometry.x[i]
                 v.interpolate(lambda x: x[0] - co[0])
             if cell_type == CellType.triangle:
-                co = mesh.geometry.points[i]
+                co = mesh.geometry.x[i]
                 # Vector function that is zero at `co` and points away from `co`
                 # so that there is no normal component on two edges and the integral
                 # over the other edge is 1
                 v.interpolate(lambda x: ((x[0] - co[0]) / 2, (x[1] - co[1]) / 2))
             elif cell_type == CellType.tetrahedron:
-                co = mesh.geometry.points[i]
+                co = mesh.geometry.x[i]
                 # Vector function that is zero at `co` and points away from `co`
                 # so that there is no normal component on three faces and the integral
                 # over the other edge is 1
@@ -249,12 +249,14 @@ def test_plus_minus_simple_vector(cell_type, pm):
     spaces = []
     for count in range(3):
         for agree in [True, False]:
+            # Two cell mesh with randomly numbered points
             mesh, order = two_unit_cells(cell_type, agree, return_order=True)
-
             if cell_type in [CellType.interval, CellType.triangle, CellType.tetrahedron]:
                 V = FunctionSpace(mesh, ("DG", 1))
             else:
                 V = FunctionSpace(mesh, ("DQ", 1))
+
+            # Assemble vectors v['+'] * dS and v['-'] * dS for a few different numberings
             v = TestFunction(V)
             a = inner(1, v(pm)) * dS
             result = fem.assemble_vector(a)
@@ -263,35 +265,27 @@ def test_plus_minus_simple_vector(cell_type, pm):
             results.append(result)
             orders.append(order)
 
-    for i, j in combinations(zip(results, spaces, orders), 2):
-        dof_order = []
+    # Check that the above vectors all have the same values as the first one,
+    # but permuted due to differently ordered dofs
+    dofmap0 = spaces[0].mesh.geometry.dofmap()
+    for result, space in zip(results[1:], spaces[1:]):
+        # Get the data relating to two results
+        dofmap1 = space.mesh.geometry.dofmap()
+
+        # For each cell
         for cell in range(2):
-            for point in range(len(mesh.geometry.points)):
-                point_n = j[2][point]
-                cell_points = list(j[1].mesh.cells()[cell])
-                if point_n in cell_points:
-                    point_n_in_cell = cell_points.index(point_n)
-                    dofmap = j[1].dofmap.cell_dofs(cell)
-                    j_dof_n = dofmap[point_n_in_cell]
+            # For each point in cell 0 in the the first mesh
+            for dof0, point0 in zip(spaces[0].dofmap.cell_dofs(cell), dofmap0.links(cell)):
+                # Find the point in the cell 0 in the second mesh
+                for dof1, point1 in zip(space.dofmap.cell_dofs(cell), dofmap1.links(cell)):
+                    if np.allclose(spaces[0].mesh.geometry.point(point0),
+                                   space.mesh.geometry.point(point1)):
+                        break
                 else:
-                    j_dof_n = None
+                    # If no matching point found, fail
+                    assert False
 
-                point_n = i[2][point]
-                cell_points = list(i[1].mesh.cells()[cell])
-                if point_n in cell_points:
-                    point_n_in_cell = cell_points.index(point_n)
-                    dofmap = i[1].dofmap.cell_dofs(cell)
-                    i_dof_n = dofmap[point_n_in_cell]
-                else:
-                    i_dof_n = None
-
-                if i_dof_n is None:
-                    assert j_dof_n is None
-                else:
-                    dof_order.append((i_dof_n, j_dof_n))
-
-        for a, b in dof_order:
-            assert np.isclose(i[0][a], j[0][b])
+                assert np.isclose(results[0][dof0], result[dof1])
 
 
 @skip_in_parallel
@@ -305,12 +299,15 @@ def test_plus_minus_vector(cell_type, pm1, pm2):
     spaces = []
     for count in range(3):
         for agree in [True, False]:
+            # Two cell mesh with randomly numbered points
             mesh, order = two_unit_cells(cell_type, agree, return_order=True)
 
             if cell_type in [CellType.interval, CellType.triangle, CellType.tetrahedron]:
                 V = FunctionSpace(mesh, ("DG", 1))
             else:
                 V = FunctionSpace(mesh, ("DQ", 1))
+
+            # Assemble vectors with combinations of + and - for a few different numberings
             f = Function(V)
             f.interpolate(lambda x: x[0] - 2 * x[1])
             v = TestFunction(V)
@@ -321,35 +318,27 @@ def test_plus_minus_vector(cell_type, pm1, pm2):
             results.append(result)
             orders.append(order)
 
-    for i, j in combinations(zip(results, spaces, orders), 2):
-        dof_order = []
+    # Check that the above vectors all have the same values as the first one,
+    # but permuted due to differently ordered dofs
+    dofmap0 = spaces[0].mesh.geometry.dofmap()
+    for result, space in zip(results[1:], spaces[1:]):
+        # Get the data relating to two results
+        dofmap1 = space.mesh.geometry.dofmap()
+
+        # For each cell
         for cell in range(2):
-            for point in range(len(mesh.geometry.points)):
-                point_n = j[2][point]
-                cell_points = list(j[1].mesh.cells()[cell])
-                if point_n in cell_points:
-                    point_n_in_cell = cell_points.index(point_n)
-                    dofmap = j[1].dofmap.cell_dofs(cell)
-                    j_dof_n = dofmap[point_n_in_cell]
+            # For each point in cell 0 in the the first mesh
+            for dof0, point0 in zip(spaces[0].dofmap.cell_dofs(cell), dofmap0.links(cell)):
+                # Find the point in the cell 0 in the second mesh
+                for dof1, point1 in zip(space.dofmap.cell_dofs(cell), dofmap1.links(cell)):
+                    if np.allclose(spaces[0].mesh.geometry.point(point0),
+                                   space.mesh.geometry.point(point1)):
+                        break
                 else:
-                    j_dof_n = None
+                    # If no matching point found, fail
+                    assert False
 
-                point_n = i[2][point]
-                cell_points = list(i[1].mesh.cells()[cell])
-                if point_n in cell_points:
-                    point_n_in_cell = cell_points.index(point_n)
-                    dofmap = i[1].dofmap.cell_dofs(cell)
-                    i_dof_n = dofmap[point_n_in_cell]
-                else:
-                    i_dof_n = None
-
-                if i_dof_n is None:
-                    assert j_dof_n is None
-                else:
-                    dof_order.append((i_dof_n, j_dof_n))
-
-        for a, b in dof_order:
-            assert np.isclose(i[0][a], j[0][b])
+                assert np.isclose(results[0][dof0], result[dof1])
 
 
 @skip_in_parallel
@@ -363,10 +352,13 @@ def test_plus_minus_matrix(cell_type, pm1, pm2):
     orders = []
     for count in range(3):
         for agree in [True, False]:
+            # Two cell mesh with randomly numbered points
             mesh, order = two_unit_cells(cell_type, agree, return_order=True)
 
             V = FunctionSpace(mesh, ("DG", 1))
             u, v = TrialFunction(V), TestFunction(V)
+
+            # Assemble matrices with combinations of + and - for a few different numberings
             a = inner(u(pm1), v(pm2)) * dS
             result = fem.assemble_matrix(a, [])
             result.assemble()
@@ -374,33 +366,31 @@ def test_plus_minus_matrix(cell_type, pm1, pm2):
             results.append(result)
             orders.append(order)
 
-    for i, j in combinations(zip(results, spaces, orders), 2):
+    # Check that the above matrices all have the same values, but permuted due to differently
+    # ordered dofs
+    dofmap0 = spaces[0].mesh.geometry.dofmap()
+    for result, space in zip(results[1:], spaces[1:]):
+        # Get the data relating to two results
+        dofmap1 = space.mesh.geometry.dofmap()
+
         dof_order = []
+
+        # For each cell
         for cell in range(2):
-            for point in range(len(mesh.geometry.points)):
-                point_n = j[2][point]
-                cell_points = list(j[1].mesh.cells()[cell])
-                if point_n in cell_points:
-                    point_n_in_cell = cell_points.index(point_n)
-                    dofmap = j[1].dofmap.cell_dofs(cell)
-                    j_dof_n = dofmap[point_n_in_cell]
+            # For each point in cell 0 in the the first mesh
+            for dof0, point0 in zip(spaces[0].dofmap.cell_dofs(cell), dofmap0.links(cell)):
+                # Find the point in the cell 0 in the second mesh
+                for dof1, point1 in zip(space.dofmap.cell_dofs(cell), dofmap1.links(cell)):
+                    if np.allclose(spaces[0].mesh.geometry.point(point0),
+                                   space.mesh.geometry.point(point1)):
+                        break
                 else:
-                    j_dof_n = None
+                    # If no matching point found, fail
+                    assert False
 
-                point_n = i[2][point]
-                cell_points = list(i[1].mesh.cells()[cell])
-                if point_n in cell_points:
-                    point_n_in_cell = cell_points.index(point_n)
-                    dofmap = i[1].dofmap.cell_dofs(cell)
-                    i_dof_n = dofmap[point_n_in_cell]
-                else:
-                    i_dof_n = None
+                dof_order.append((dof0, dof1))
 
-                if i_dof_n is None:
-                    assert j_dof_n is None
-                else:
-                    dof_order.append((i_dof_n, j_dof_n))
-
+        # For all dof pairs, check that entries in the matrix agree
         for a, b in dof_order:
             for c, d in dof_order:
-                assert np.isclose(i[0][a, c], j[0][b, d])
+                assert np.isclose(results[0][a, c], result[b, d])

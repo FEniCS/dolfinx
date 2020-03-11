@@ -115,7 +115,7 @@ void fem(py::module& m)
       [](std::uintptr_t e) {
         ufc_coordinate_mapping* p
             = reinterpret_cast<ufc_coordinate_mapping*>(e);
-        return dolfinx::fem::get_cmap_from_ufc_cmap(*p);
+        return dolfinx::fem::create_coordinate_map(*p);
       },
       "Create a CoordinateElement object from a pointer to a "
       "ufc_coordinate_map.");
@@ -148,6 +148,10 @@ void fem(py::module& m)
 
   m.def("create_sparsity_pattern", &dolfinx::fem::create_sparsity_pattern,
         "Create a sparsity pattern for bilinear form.");
+  m.def("pack_coefficients", &dolfinx::fem::pack_coefficients,
+        "Pack coefficients for a UFL form.");
+  m.def("pack_constants", &dolfinx::fem::pack_constants,
+        "Pack constants for a UFL form.");
   m.def(
       "create_matrix",
       [](const dolfinx::fem::Form& a) {
@@ -202,16 +206,20 @@ void fem(py::module& m)
          std::shared_ptr<const dolfinx::fem::ElementDofLayout>
              element_dof_layout) {
         return dolfinx::fem::DofMapBuilder::build(
-            mesh.mpi_comm(), mesh.topology(), mesh.topology().cell_type(),
-            element_dof_layout);
+            mesh.mpi_comm(), mesh.topology(), element_dof_layout);
       },
       "Build and dofmap on a mesh.");
   m.def(
       "build_dofmap",
       [](const MPICommWrapper comm, const dolfinx::mesh::Topology& topology,
          const dolfinx::fem::ElementDofLayout& element_dof_layout, int bs) {
-        return dolfinx::fem::DofMapBuilder::build(
-            comm.get(), topology, topology.cell_type(), element_dof_layout, bs);
+        // See https://github.com/pybind/pybind11/issues/1138 on why we need to
+        // convert from a std::unique_ptr to a std::shard_ptr
+        auto [map, dofmap] = dolfinx::fem::DofMapBuilder::build(
+            comm.get(), topology, element_dof_layout, bs);
+        return std::pair(
+            std::shared_ptr<const dolfinx::common::IndexMap>(std::move(map)),
+            std::move(dofmap));
       },
       "Build and dofmap on a mesh.");
 
@@ -247,14 +255,15 @@ void fem(py::module& m)
            &dolfinx::fem::ElementDofLayout::num_entity_closure_dofs)
       .def("entity_dofs", &dolfinx::fem::ElementDofLayout::entity_dofs)
       .def("entity_closure_dofs",
-           &dolfinx::fem::ElementDofLayout::entity_closure_dofs);
+           &dolfinx::fem::ElementDofLayout::entity_closure_dofs)
+      .def("degree", &dolfinx::fem::ElementDofLayout::degree);
 
   // dolfinx::fem::DofMap
   py::class_<dolfinx::fem::DofMap, std::shared_ptr<dolfinx::fem::DofMap>>(
       m, "DofMap", "DofMap object")
       .def(py::init<std::shared_ptr<const dolfinx::fem::ElementDofLayout>,
                     std::shared_ptr<const dolfinx::common::IndexMap>,
-                    const Eigen::Array<std::int32_t, Eigen::Dynamic, 1>&>(),
+                    dolfinx::graph::AdjacencyList<std::int32_t>&>(),
            py::arg("element_dof_layout"), py::arg("index_map"),
            py::arg("dofmap"))
       .def_readonly("index_map", &dolfinx::fem::DofMap::index_map)

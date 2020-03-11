@@ -6,11 +6,11 @@
 
 #include "SCOTCH.h"
 #include "AdjacencyList.h"
-#include "CSRGraph.h"
 #include <algorithm>
 #include <dolfinx/common/MPI.h>
 #include <dolfinx/common/Timer.h>
 #include <dolfinx/common/log.h>
+#include <dolfinx/graph/AdjacencyList.h>
 #include <map>
 #include <numeric>
 #include <set>
@@ -122,11 +122,11 @@ dolfinx::graph::SCOTCH::compute_reordering(
   return std::pair(std::move(permutation), std::move(inverse_permutation));
 }
 //-----------------------------------------------------------------------------
-std::pair<std::vector<int>, std::map<std::int64_t, std::vector<int>>>
+graph::AdjacencyList<std::int32_t>
 dolfinx::graph::SCOTCH::partition(const MPI_Comm mpi_comm, const int nparts,
-                                  const CSRGraph<SCOTCH_Num>& local_graph,
+                                  const AdjacencyList<SCOTCH_Num>& local_graph,
                                   const std::vector<std::size_t>& node_weights,
-                                  std::int32_t num_ghost_nodes)
+                                  std::int32_t num_ghost_nodes, bool ghosting)
 {
   LOG(INFO) << "Compute graph partition using PT-SCOTCH";
   common::Timer timer("Compute graph partition (SCOTCH)");
@@ -143,21 +143,22 @@ dolfinx::graph::SCOTCH::partition(const MPI_Comm mpi_comm, const int nparts,
   // Local data ---------------------------------
 
   // Number of local graph vertices (cells)
-  const SCOTCH_Num vertlocnbr = local_graph.size();
+  const SCOTCH_Num vertlocnbr = local_graph.num_nodes();
   const std::size_t vertgstnbr = vertlocnbr + num_ghost_nodes;
 
-  // Get graph data
-  const std::vector<SCOTCH_Num>& edgeloctab = local_graph.edges();
-  const std::vector<SCOTCH_Num>& vertloctab = local_graph.nodes();
+  // Get graph data. vertloctab needs to be copied to match the
+  // SCOTCH_Num type.
+  const SCOTCH_Num* edgeloctab = local_graph.array().data();
+  const std::int32_t edgeloctab_size = local_graph.array().size();
+  std::vector<SCOTCH_Num> vertloctab(local_graph.offsets().data(),
+                                     local_graph.offsets().data()
+                                         + local_graph.offsets().rows());
 
   // Global data ---------------------------------
 
   // Number of local vertices (cells) on each process
   std::vector<SCOTCH_Num> proccnttab(num_processes);
-  const std::vector<SCOTCH_Num>& graph_distribution
-      = local_graph.node_distribution();
-  for (std::size_t i = 0; i < num_processes; ++i)
-    proccnttab[i] = graph_distribution[i + 1] - graph_distribution[i];
+  MPI::all_gather(mpi_comm, vertlocnbr, proccnttab);
 
 #ifdef DEBUG
   // FIXME: explain this test
@@ -189,11 +190,10 @@ dolfinx::graph::SCOTCH::partition(const MPI_Comm mpi_comm, const int nparts,
   // Build SCOTCH distributed graph. SCOTCH is not const-correct, so we throw
   // away constness and trust SCOTCH.
   common::Timer timer1("SCOTCH: call SCOTCH_dgraphBuild");
-  if (SCOTCH_dgraphBuild(
-          &dgrafdat, baseval, vertlocnbr, vertlocnbr,
-          const_cast<SCOTCH_Num*>(vertloctab.data()), nullptr, vload.data(),
-          nullptr, edgeloctab.size(), edgeloctab.size(),
-          const_cast<SCOTCH_Num*>(edgeloctab.data()), nullptr, nullptr))
+  if (SCOTCH_dgraphBuild(&dgrafdat, baseval, vertlocnbr, vertlocnbr,
+                         vertloctab.data(), nullptr, vload.data(), nullptr,
+                         edgeloctab_size, edgeloctab_size,
+                         const_cast<SCOTCH_Num*>(edgeloctab), nullptr, nullptr))
   {
     throw std::runtime_error("Error building SCOTCH graph");
   }
@@ -235,82 +235,85 @@ dolfinx::graph::SCOTCH::partition(const MPI_Comm mpi_comm, const int nparts,
     throw std::runtime_error("Error during SCOTCH partitioning");
   timer2.stop();
 
-  // Exchange halo with cell_partition data for ghosts
-  // FIXME: check MPI type compatibility with SCOTCH_Num. Getting this
-  //        wrong will cause a SEGV
-  // FIXME: is there a better way to do this?
-  MPI_Datatype MPI_SCOTCH_Num;
-  if (sizeof(SCOTCH_Num) == 4)
-    MPI_SCOTCH_Num = MPI_INT;
-  else if (sizeof(SCOTCH_Num) == 8)
-    MPI_SCOTCH_Num = MPI_LONG_LONG_INT;
+  // Create a map of local nodes to their additional destination processes,
+  // due to ghosting. If no ghosting, this will remain empty.
+  std::map<std::int32_t, std::set<std::int32_t>> local_node_to_dests;
 
-  // Double check size is correct
-  int tsize;
-  MPI_Type_size(MPI_SCOTCH_Num, &tsize);
-  assert(tsize == sizeof(SCOTCH_Num));
-
-  common::Timer timer3("SCOTCH: call SCOTCH_dgraphHalo");
-  if (SCOTCH_dgraphHalo(&dgrafdat, (void*)_cell_partition.data(),
-                        MPI_SCOTCH_Num))
+  if (ghosting)
   {
-    throw std::runtime_error("Error during SCOTCH halo exchange");
-  }
-  timer3.stop();
+    // Exchange halo with cell_partition data for ghosts
+    // FIXME: check MPI type compatibility with SCOTCH_Num. Getting this
+    //        wrong will cause a SEGV
+    // FIXME: is there a better way to do this?
+    MPI_Datatype MPI_SCOTCH_Num;
+    if (sizeof(SCOTCH_Num) == 4)
+      MPI_SCOTCH_Num = MPI_INT;
+    else if (sizeof(SCOTCH_Num) == 8)
+      MPI_SCOTCH_Num = MPI_LONG_LONG_INT;
 
-  // Get SCOTCH's locally indexed graph
-  common::Timer timer4("Get SCOTCH graph data");
-  SCOTCH_Num* edge_ghost_tab;
-  SCOTCH_dgraphData(&dgrafdat, nullptr, nullptr, nullptr, nullptr, nullptr,
-                    nullptr, nullptr, nullptr, nullptr, nullptr, nullptr,
-                    nullptr, nullptr, &edge_ghost_tab, nullptr,
-                    (MPI_Comm*)&mpi_comm);
-  timer4.stop();
+    // Double check size is correct
+    int tsize;
+    MPI_Type_size(MPI_SCOTCH_Num, &tsize);
+    assert(tsize == sizeof(SCOTCH_Num));
 
-  // Iterate through SCOTCH's local compact graph to find partition
-  // boundaries and save to map
-  common::Timer timer5("Extract partition boundaries from SCOTCH graph");
-  std::map<std::int64_t, std::vector<int>> ghost_procs;
-  for (SCOTCH_Num i = 0; i < vertlocnbr; ++i)
-  {
-    const std::size_t proc_this = _cell_partition[i];
-    for (SCOTCH_Num j = vertloctab[i]; j < vertloctab[i + 1]; ++j)
+    common::Timer timer3("SCOTCH: call SCOTCH_dgraphHalo");
+    if (SCOTCH_dgraphHalo(&dgrafdat, (void*)_cell_partition.data(),
+                          MPI_SCOTCH_Num))
     {
-      const std::size_t proc_other = _cell_partition[edge_ghost_tab[j]];
-      if (proc_this != proc_other)
-      {
-        auto map_it = ghost_procs.find(i);
-        if (map_it == ghost_procs.end())
-        {
-          std::vector<int> sharing_processes;
+      throw std::runtime_error("Error during SCOTCH halo exchange");
+    }
+    timer3.stop();
 
-          // Owning process always goes in first to vector
-          sharing_processes.push_back(proc_this);
-          sharing_processes.push_back(proc_other);
-          ghost_procs.insert(std::pair(i, sharing_processes));
-        }
-        else
-        {
-          // Add to vector if not already there
-          auto it = std::find(map_it->second.begin(), map_it->second.end(),
-                              proc_other);
-          if (it == map_it->second.end())
-            map_it->second.push_back(proc_other);
-        }
+    // Get SCOTCH's locally indexed graph
+    common::Timer timer4("Get SCOTCH graph data");
+    SCOTCH_Num* edge_ghost_tab;
+    SCOTCH_dgraphData(&dgrafdat, nullptr, nullptr, nullptr, nullptr, nullptr,
+                      nullptr, nullptr, nullptr, nullptr, nullptr, nullptr,
+                      nullptr, nullptr, &edge_ghost_tab, nullptr,
+                      (MPI_Comm*)&mpi_comm);
+    timer4.stop();
+
+    // Iterate through SCOTCH's local compact graph to find partition
+    // boundaries and save to map
+    common::Timer timer5("Extract partition boundaries from SCOTCH graph");
+
+    // Create a map of local nodes to their additional destination processes,
+    // due to ghosting. If no ghosting, this can be skipped.
+    for (SCOTCH_Num i = 0; i < vertlocnbr; ++i)
+    {
+      const std::int32_t proc_this = _cell_partition[i];
+
+      // Get all edges outward from node i
+      for (SCOTCH_Num j = vertloctab[i]; j < vertloctab[i + 1]; ++j)
+      {
+        // Any edge which connects to a different partition will be a ghost
+        const std::int32_t proc_other = _cell_partition[edge_ghost_tab[j]];
+        if (proc_this != proc_other)
+          local_node_to_dests[i].insert(proc_other);
       }
     }
+
+    timer5.stop();
   }
-  timer5.stop();
+
+  // Convert to offset format for AdjacencyList
+  std::vector<std::int32_t> dests;
+  std::vector<std::int32_t> offsets = {0};
+  for (SCOTCH_Num i = 0; i < vertlocnbr; ++i)
+  {
+    dests.push_back(_cell_partition[i]);
+    const auto it = local_node_to_dests.find(i);
+    if (it != local_node_to_dests.end())
+      dests.insert(dests.end(), it->second.begin(), it->second.end());
+    offsets.push_back(dests.size());
+  }
 
   // Clean up SCOTCH objects
   SCOTCH_dgraphExit(&dgrafdat);
   SCOTCH_stratExit(&strat);
 
-  // Only copy the local nodes partition information. Ghost process
-  // data is already in the ghost_procs map
+  graph::AdjacencyList<std::int32_t> adj(dests, offsets);
 
-  return std::pair(std::vector<int>(_cell_partition.begin(),
-                                    _cell_partition.begin() + vertlocnbr),
-                   std::move(ghost_procs));
+  return adj;
 }
 //-----------------------------------------------------------------------------

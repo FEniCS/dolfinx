@@ -6,9 +6,12 @@
 
 from math import pi
 
+import pytest
+
 from dolfinx import MPI, MeshQuality, UnitCubeMesh
 
 
+@pytest.mark.skip(reason="Needs updating for geometry")
 def test_dihedral_angles_min_max():
     # Create 3D mesh with regular tetrahedron
     mesh = UnitCubeMesh(MPI.comm_world, 2, 2, 2)

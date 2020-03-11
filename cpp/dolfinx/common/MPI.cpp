@@ -28,7 +28,7 @@ dolfinx::MPI::Comm::Comm(MPI_Comm comm)
 //-----------------------------------------------------------------------------
 dolfinx::MPI::Comm::Comm(const Comm& comm) : Comm(comm._comm)
 {
-  // Do nothing
+  // FIXME: should probably duplicate the comm here
 }
 //-----------------------------------------------------------------------------
 dolfinx::MPI::Comm::Comm(Comm&& comm)
@@ -70,7 +70,7 @@ std::uint32_t dolfinx::MPI::size(const MPI_Comm comm)
 void dolfinx::MPI::barrier(const MPI_Comm comm) { MPI_Barrier(comm); }
 //-----------------------------------------------------------------------------
 std::size_t dolfinx::MPI::global_offset(const MPI_Comm comm, std::size_t range,
-                                       bool exclusive)
+                                        bool exclusive)
 {
   // Compute inclusive or exclusive partial reduction
   std::size_t offset = 0;
@@ -81,7 +81,7 @@ std::size_t dolfinx::MPI::global_offset(const MPI_Comm comm, std::size_t range,
 }
 //-----------------------------------------------------------------------------
 std::array<std::int64_t, 2> dolfinx::MPI::local_range(const MPI_Comm comm,
-                                                     std::int64_t N)
+                                                      std::int64_t N)
 {
   return local_range(comm, rank(comm), N);
 }
@@ -110,17 +110,14 @@ dolfinx::MPI::compute_local_range(int process, std::int64_t N, int size)
     return {{process * n + r, process * n + r + n}};
 }
 //-----------------------------------------------------------------------------
-std::uint32_t dolfinx::MPI::index_owner(const MPI_Comm comm, std::size_t index,
-                                       std::size_t N)
+std::uint32_t dolfinx::MPI::index_owner(int size, std::size_t index,
+                                        std::size_t N)
 {
   assert(index < N);
 
-  // Get number of processes
-  const std::uint32_t _size = size(comm);
-
   // Compute number of items per process and remainder
-  const std::size_t n = N / _size;
-  const std::size_t r = N % _size;
+  const std::size_t n = N / size;
+  const std::size_t r = N % size;
 
   // First r processes own n + 1 indices
   if (index < r * (n + 1))

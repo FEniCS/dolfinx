@@ -83,9 +83,9 @@ import ufl
 from dolfinx import (MPI, DirichletBC, Function, FunctionSpace, RectangleMesh,
                      solve)
 from dolfinx.cpp.mesh import CellType
+from dolfinx.fem import locate_dofs_topological
 from dolfinx.io import XDMFFile
 from dolfinx.mesh import compute_marked_boundary_entities
-from dolfinx.fem import locate_dofs_topological
 from dolfinx.specialfunctions import SpatialCoordinate
 from ufl import ds, dx, grad, inner
 
@@ -101,10 +101,6 @@ mesh = RectangleMesh(
     MPI.comm_world,
     [np.array([0, 0, 0]), np.array([1, 1, 0])], [32, 32],
     CellType.triangle, dolfinx.cpp.mesh.GhostMode.none)
-m = mesh.topology.index_map(0)
-
-print(m.ghost_owners)
-exit(0)
 
 V = FunctionSpace(mesh, ("Lagrange", 1))
 
@@ -201,10 +197,9 @@ solve(a == L, u, bc, petsc_options={"ksp_type": "preonly", "pc_type": "lu"})
 # for later visualization and also plot it using
 # the :py:func:`plot <dolfinx.common.plot.plot>` command: ::
 
+
 # Save solution in XDMF format
-with XDMFFile(
-        MPI.comm_world, "poisson.xdmf",
-        encoding=XDMFFile.Encoding.HDF5) as file:
+with XDMFFile(MPI.comm_world, "poisson.xdmf") as file:
     file.write(u)
 
 # Plot solution

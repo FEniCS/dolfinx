@@ -15,7 +15,6 @@
 #include <dolfinx/graph/AdjacencyList.h>
 #include <dolfinx/la/PETScVector.h>
 #include <dolfinx/la/utils.h>
-#include <dolfinx/mesh/CoordinateDofs.h>
 #include <dolfinx/mesh/Mesh.h>
 #include <dolfinx/mesh/MeshEntity.h>
 #include <dolfinx/mesh/MeshFunction.h>
@@ -140,7 +139,7 @@ void write_ascii_mesh(const mesh::Mesh& mesh, int cell_dim,
                       std::string filename)
 {
   const int num_cells = mesh.topology().index_map(cell_dim)->size_local();
-  const int element_degree = mesh.degree();
+  const int element_degree = mesh.geometry().dof_layout().degree();
 
   // Get VTK cell type
   const std::int8_t vtk_cell_type
@@ -160,14 +159,14 @@ void write_ascii_mesh(const mesh::Mesh& mesh, int cell_dim,
        << "ascii"
        << "\">";
   const Eigen::Array<double, Eigen::Dynamic, 3, Eigen::RowMajor> points
-      = mesh.geometry().points();
+      = mesh.geometry().x();
   for (int i = 0; i < points.rows(); ++i)
     file << points(i, 0) << " " << points(i, 1) << " " << points(i, 2) << "  ";
   file << "</DataArray>" << std::endl << "</Points>" << std::endl;
 
   // Write cell connectivity
   file << "<Cells>" << std::endl;
-  file << "<DataArray  type=\"UInt32\"  Name=\"connectivity\"  format=\""
+  file << "<DataArray  type=\"Int32\"  Name=\"connectivity\"  format=\""
        << "ascii"
        << "\">";
 
@@ -186,7 +185,7 @@ void write_ascii_mesh(const mesh::Mesh& mesh, int cell_dim,
     // Special case where the cells are visualized (Supports higher order
     // elements)
     const graph::AdjacencyList<std::int32_t>& connectivity_g
-        = mesh.coordinate_dofs().entity_points();
+        = mesh.geometry().dofmap();
     const Eigen::Array<std::int32_t, Eigen::Dynamic, 1>& cell_connections
         = connectivity_g.array();
     const Eigen::Array<std::int32_t, Eigen::Dynamic, 1>& pos_g
@@ -194,7 +193,7 @@ void write_ascii_mesh(const mesh::Mesh& mesh, int cell_dim,
     num_nodes = connectivity_g.num_links(0);
 
     const std::vector<std::uint8_t> perm
-        = io::cells::dolfin_to_vtk(mesh.topology().cell_type(), num_nodes);
+        = io::cells::vtk_to_dolfin(mesh.topology().cell_type(), num_nodes);
     for (int j = 0; j < mesh.num_entities(mesh.topology().dim()); ++j)
     {
       for (int i = 0; i < num_nodes; ++i)
@@ -205,7 +204,7 @@ void write_ascii_mesh(const mesh::Mesh& mesh, int cell_dim,
   }
   else
   {
-    const int degree = mesh.degree();
+    const int degree = mesh.geometry().dof_layout().degree();
     if (degree > 1)
     {
       throw std::runtime_error("MeshFunction of lower degree than the "
@@ -218,7 +217,7 @@ void write_ascii_mesh(const mesh::Mesh& mesh, int cell_dim,
     // extended to have connections to facets.
     const int num_vertices = mesh::num_cell_vertices(e_type);
     const std::vector<std::uint8_t> perm
-        = io::cells::dolfin_to_vtk(e_type, num_vertices);
+        = io::cells::vtk_to_dolfin(e_type, num_vertices);
     auto vertex_connectivity = mesh.topology().connectivity(cell_dim, 0);
     const Eigen::Array<std::int32_t, Eigen::Dynamic, 1>& vertex_connections
         = vertex_connectivity->array();
@@ -236,7 +235,7 @@ void write_ascii_mesh(const mesh::Mesh& mesh, int cell_dim,
   }
 
   // Write offset into connectivity array for the end of each cell
-  file << "<DataArray  type=\"UInt32\"  Name=\"offsets\"  format=\""
+  file << "<DataArray  type=\"Int32\"  Name=\"offsets\"  format=\""
        << "ascii"
        << "\">";
   for (int offsets = 1; offsets <= num_cells; offsets++)
@@ -244,7 +243,7 @@ void write_ascii_mesh(const mesh::Mesh& mesh, int cell_dim,
   file << "</DataArray>" << std::endl;
 
   // Write cell type
-  file << "<DataArray  type=\"UInt8\"  Name=\"types\"  format=\""
+  file << "<DataArray  type=\"Int8\"  Name=\"types\"  format=\""
        << "ascii"
        << "\">";
   for (int types = 0; types < num_cells; types++)

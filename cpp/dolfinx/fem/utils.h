@@ -1,4 +1,4 @@
-// Copyright (C) 2013, 2015, 2016 Johan Hake, Jan Blechta
+// Copyright (C) 2013-2020 Johan Hake, Jan Blechta and Garth N. Wells
 //
 // This file is part of DOLFINX (https://www.fenicsproject.org)
 //
@@ -10,9 +10,11 @@
 #include "DofMap.h"
 #include "ElementDofLayout.h"
 #include <dolfinx/common/types.h>
+#include <dolfinx/la/PETScMatrix.h>
 #include <dolfinx/la/PETScVector.h>
 #include <dolfinx/mesh/cell_types.h>
 #include <memory>
+#include <string>
 #include <vector>
 
 struct ufc_dofmap;
@@ -27,11 +29,6 @@ namespace common
 class IndexMap;
 }
 
-namespace la
-{
-class PETScMatrix;
-class PETScVector;
-} // namespace la
 namespace function
 {
 class Constant;
@@ -42,6 +39,7 @@ class FunctionSpace;
 namespace mesh
 {
 class Mesh;
+class Topology;
 } // namespace mesh
 
 namespace fem
@@ -61,7 +59,7 @@ block_function_spaces(
     const Eigen::Ref<const Eigen::Array<const fem::Form*, Eigen::Dynamic,
                                         Eigen::Dynamic, Eigen::RowMajor>>& a);
 
-/// Create a matrix.
+/// Create a matrix
 /// @param[in] a  A bilinear form
 /// @return A matrix. The matrix is not zeroed.
 la::PETScMatrix create_matrix(const Form& a);
@@ -93,6 +91,7 @@ la::PETScVector
 create_vector_nest(const std::vector<const common::IndexMap*>& maps);
 
 /// @todo Update name an check efficiency
+///
 /// Get new global offset in 'spliced' indices
 std::int64_t get_global_offset(const std::vector<const common::IndexMap*>& maps,
                                const int field, const std::int64_t index);
@@ -111,8 +110,7 @@ DofMap create_dofmap(MPI_Comm comm, const ufc_dofmap& dofmap,
                      mesh::Topology& topology);
 
 /// Create a form from a form_create function returning a pointer to a
-/// ufc_form, taking care of memory allocation.
-///
+/// ufc_form, taking care of memory allocation
 /// @param[in] fptr pointer to a function returning a pointer to
 ///     ufc_form
 /// @param[in] spaces function spaces
@@ -121,28 +119,34 @@ std::shared_ptr<Form> create_form(
     ufc_form* (*fptr)(void),
     const std::vector<std::shared_ptr<const function::FunctionSpace>>& spaces);
 
-/// Create form (shared data)
-/// @param[in] ufc_form The UFC form.
-/// @param[in] spaces Vector of function spaces.
+/// Create a Form from UFC input
+/// @param[in] ufc_form The UFC form
+/// @param[in] spaces Vector of function spaces
 Form create_form(
     const ufc_form& ufc_form,
     const std::vector<std::shared_ptr<const function::FunctionSpace>>& spaces);
 
-/// Extract coefficients from UFC form
+/// Extract coefficients from a UFC form
 std::vector<std::tuple<int, std::string, std::shared_ptr<function::Function>>>
 get_coeffs_from_ufc_form(const ufc_form& ufc_form);
 
-/// Extract coefficients from UFC form
+/// Extract coefficients from a UFC form
 std::vector<std::pair<std::string, std::shared_ptr<const function::Constant>>>
 get_constants_from_ufc_form(const ufc_form& ufc_form);
 
-/// Get dolfinx::fem::CoordinateElement from ufc
-std::shared_ptr<const fem::CoordinateElement>
-get_cmap_from_ufc_cmap(const ufc_coordinate_mapping& ufc_cmap);
+/// Create a CoordinateElement from ufc
+/// @param[in] ufc_cmap UFC coordinate mapping
+/// @return A DOLFINX coordinate map
+fem::CoordinateElement
+create_coordinate_map(const ufc_coordinate_mapping& ufc_cmap);
 
 /// Create FunctionSpace from UFC
-/// @param[in] fptr Function Pointer to a ufc_function_space_create function
-/// @param[in] function_name Name of a function as defined in UFL file
+/// @param[in] fptr Function Pointer to a ufc_function_space_create
+///     function
+/// @param[in] function_name Name of a function whose function space to
+///     create. Function name is the name of Python variable for
+///     ufl.Coefficient, ufl.TrialFunction or ufl.TestFunction as
+///     defined in the UFL file.
 /// @param[in] mesh Mesh
 /// @return The created FunctionSpace
 std::shared_ptr<function::FunctionSpace>
@@ -154,6 +158,11 @@ create_functionspace(ufc_function_space* (*fptr)(const char*),
 /// Pack form coefficients ready for assembly
 Eigen::Array<PetscScalar, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
 pack_coefficients(const fem::Form& form);
+
+// NOTE: This is subject to change
+/// Pack form constants ready for assembly
+Eigen::Array<PetscScalar, Eigen::Dynamic, 1>
+pack_constants(const fem::Form& form);
 
 } // namespace fem
 } // namespace dolfinx

@@ -9,15 +9,14 @@ import time
 
 import numpy as np
 import pytest
+from dolfinx_utils.test.skips import skip_if_complex, skip_in_parallel
+from petsc4py import PETSc
 
 import ufl
 from dolfinx import MPI, DirichletBC, Function, FunctionSpace, fem, geometry
-from dolfinx.cpp.mesh import GhostMode, Ordering
 from dolfinx.fem import (apply_lifting, assemble_matrix, assemble_scalar,
                          assemble_vector, locate_dofs_topological, set_bc)
 from dolfinx.io import XDMFFile
-from dolfinx_utils.test.skips import skip_if_complex, skip_in_parallel
-from petsc4py import PETSc
 from ufl import (SpatialCoordinate, TestFunction, TrialFunction, div, dx, grad,
                  inner)
 
@@ -36,7 +35,7 @@ def test_manufactured_poisson(degree, filename, datadir):
     """
 
     with XDMFFile(MPI.comm_world, os.path.join(datadir, filename)) as xdmf:
-        mesh = xdmf.read_mesh(GhostMode.none)
+        mesh = xdmf.read_mesh()
 
     V = FunctionSpace(mesh, ("Lagrange", degree))
     u, v = TrialFunction(V), TestFunction(V)
@@ -131,30 +130,19 @@ def test_manufactured_poisson(degree, filename, datadir):
 ])
 @pytest.mark.parametrize("family",
                          [
-                             ("BDM", 0),
-                             ("RT", 1),
-                             ("N2curl", 0),
-                             ("N1curl", 1),
+                             "BDM",
+                             "N2curl"
                          ])
-@pytest.mark.parametrize("degree", [1, 2])
+@pytest.mark.parametrize("degree", [1, 2, 3])
 def test_manufactured_vector1(family, degree, filename, datadir):
     """Projection into H(div/curl) spaces"""
 
     with XDMFFile(MPI.comm_world, os.path.join(datadir, filename)) as xdmf:
-        mesh = xdmf.read_mesh(GhostMode.none)
+        mesh = xdmf.read_mesh()
 
-    # FIXME: these test are currently failing on unordered meshes
-    if "tetra" in filename:
-        if family[0] == "N1curl":
-            Ordering.order_simplex(mesh)
-
-    V = FunctionSpace(mesh, (family[0], degree + family[1]))
+    V = FunctionSpace(mesh, (family, degree))
     u, v = ufl.TrialFunction(V), ufl.TestFunction(V)
     a = inner(u, v) * dx
-
-    xp = np.array([0.33, 0.33, 0.0])
-    tree = geometry.BoundingBoxTree(mesh, mesh.geometry.dim)
-    cells = geometry.compute_first_entity_collision(tree, mesh, xp)
 
     # Source term
     x = SpatialCoordinate(mesh)
@@ -179,6 +167,10 @@ def test_manufactured_vector1(family, degree, filename, datadir):
     uh = Function(V)
     solver.solve(b, uh.vector)
     uh.vector.ghostUpdate(addv=PETSc.InsertMode.INSERT, mode=PETSc.ScatterMode.FORWARD)
+
+    xp = np.array([0.33, 0.33, 0.0])
+    tree = geometry.BoundingBoxTree(mesh, mesh.geometry.dim)
+    cells = geometry.compute_first_entity_collision(tree, mesh, xp)
 
     up = uh.eval(xp, cells[0])
     print("test0:", up)
@@ -191,39 +183,27 @@ def test_manufactured_vector1(family, degree, filename, datadir):
 
 @skip_if_complex
 @skip_in_parallel
-@pytest.mark.parametrize("filename", ["UnitSquareMesh_triangle.xdmf",
-                                      "UnitCubeMesh_tetra.xdmf",
-                                      # "UnitSquareMesh_quad.xdmf",
-                                      # "UnitCubeMesh_hexahedron.xdmf"
-                                      ])
+@pytest.mark.parametrize("filename", [
+    "UnitSquareMesh_triangle.xdmf",
+    "UnitCubeMesh_tetra.xdmf",
+    # "UnitSquareMesh_quad.xdmf",
+    # "UnitCubeMesh_hexahedron.xdmf"
+])
 @pytest.mark.parametrize("family",
                          [
                              "RT",
                              "N1curl",
                          ])
-@pytest.mark.parametrize("degree", [1, 2, 3])
+@pytest.mark.parametrize("degree", [1, 2])
 def test_manufactured_vector2(family, degree, filename, datadir):
     """Projection into H(div/curl) spaces"""
 
-    # Skip slowest tests
-    if "tetra" in filename and degree > 2:
-        return
-
     with XDMFFile(MPI.comm_world, os.path.join(datadir, filename)) as xdmf:
-        mesh = xdmf.read_mesh(GhostMode.none)
-
-    # FIXME: these test are currently failing on unordered meshes
-    if "tetra" in filename:
-        if family == "N1curl":
-            Ordering.order_simplex(mesh)
+        mesh = xdmf.read_mesh()
 
     V = FunctionSpace(mesh, (family, degree + 1))
     u, v = ufl.TrialFunction(V), ufl.TestFunction(V)
     a = inner(u, v) * dx
-
-    xp = np.array([0.33, 0.33, 0.0])
-    tree = geometry.BoundingBoxTree(mesh, mesh.geometry.dim)
-    cells = geometry.compute_first_entity_collision(tree, mesh, xp)
 
     # Source term
     x = SpatialCoordinate(mesh)
@@ -249,6 +229,9 @@ def test_manufactured_vector2(family, degree, filename, datadir):
     solver.solve(b, uh.vector)
     uh.vector.ghostUpdate(addv=PETSc.InsertMode.INSERT, mode=PETSc.ScatterMode.FORWARD)
 
+    xp = np.array([0.33, 0.33, 0.0])
+    tree = geometry.BoundingBoxTree(mesh, mesh.geometry.dim)
+    cells = geometry.compute_first_entity_collision(tree, mesh, xp)
     up = uh.eval(xp, cells[0])
     print("test0:", up)
     print("test1:", xp[0]**degree)

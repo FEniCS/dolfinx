@@ -26,8 +26,8 @@ import ufl
 filedir = os.path.dirname(__file__)
 infile = dolfinx.io.XDMFFile(dolfinx.MPI.comm_world,
                              os.path.join(filedir, "cooks_tri_mesh.xdmf"),
-                             encoding=dolfinx.cpp.io.XDMFFile.Encoding.ASCII)
-mesh = infile.read_mesh(dolfinx.cpp.mesh.GhostMode.none)
+                             encoding=dolfinx.cpp.io.XDMFFile.Encoding.HDF5)
+mesh = infile.read_mesh()
 infile.close()
 
 # Stress (Se) and displacement (Ue) elements
@@ -153,9 +153,6 @@ dolfinx.fem.set_bc(b, [bc])
 
 uc = dolfinx.Function(U)
 dolfinx.la.solve(A_cond, uc.vector, b)
-
-with dolfinx.io.XDMFFile(dolfinx.MPI.comm_world, "uc.xdmf") as outfile:
-    outfile.write_checkpoint(uc, "uc")
 
 # Pure displacement based formulation
 a = - ufl.inner(sigma_u(u), ufl.grad(v)) * ufl.dx

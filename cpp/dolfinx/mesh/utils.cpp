@@ -26,18 +26,15 @@ T volume_interval(const mesh::Mesh& mesh,
                   const Eigen::Ref<const Eigen::ArrayXi>& entities)
 {
   const mesh::Geometry& geometry = mesh.geometry();
-  const mesh::Topology& topology = mesh.topology();
-  assert(topology.connectivity(1, 0));
-  const graph::AdjacencyList<std::int32_t>& connectivity
-      = *topology.connectivity(1, 0);
+  const graph::AdjacencyList<std::int32_t>& x_dofs = geometry.dofmap();
 
   T v(entities.rows());
   for (Eigen::Index i = 0; i < entities.rows(); ++i)
   {
     // Get the coordinates of the two vertices
-    auto vertices = connectivity.links(entities[i]);
-    const Eigen::Vector3d x0 = geometry.x(vertices[0]);
-    const Eigen::Vector3d x1 = geometry.x(vertices[1]);
+    auto dofs = x_dofs.links(entities[i]);
+    const Eigen::Vector3d x0 = geometry.x(dofs[0]);
+    const Eigen::Vector3d x1 = geometry.x(dofs[1]);
     v[i] = (x1 - x0).norm();
   }
 
@@ -49,22 +46,19 @@ T volume_triangle(const mesh::Mesh& mesh,
                   const Eigen::Ref<const Eigen::ArrayXi>& entities)
 {
   const mesh::Geometry& geometry = mesh.geometry();
-  const mesh::Topology& topology = mesh.topology();
-  assert(topology.connectivity(2, 0));
-  const graph::AdjacencyList<std::int32_t>& connectivity
-      = *topology.connectivity(2, 0);
-
   const int gdim = geometry.dim();
   assert(gdim == 2 or gdim == 3);
+  const graph::AdjacencyList<std::int32_t>& x_dofs = geometry.dofmap();
+
   T v(entities.rows());
   if (gdim == 2)
   {
     for (Eigen::Index i = 0; i < entities.rows(); ++i)
     {
-      auto vertices = connectivity.links(entities[i]);
-      const Eigen::Vector3d x0 = geometry.x(vertices[0]);
-      const Eigen::Vector3d x1 = geometry.x(vertices[1]);
-      const Eigen::Vector3d x2 = geometry.x(vertices[2]);
+      auto dofs = x_dofs.links(entities[i]);
+      const Eigen::Vector3d x0 = geometry.x(dofs[0]);
+      const Eigen::Vector3d x1 = geometry.x(dofs[1]);
+      const Eigen::Vector3d x2 = geometry.x(dofs[2]);
 
       // Compute area of triangle embedded in R^2
       double v2 = (x0[0] * x1[1] + x0[1] * x2[0] + x1[0] * x2[1])
@@ -78,10 +72,10 @@ T volume_triangle(const mesh::Mesh& mesh,
   {
     for (Eigen::Index i = 0; i < entities.rows(); ++i)
     {
-      auto vertices = connectivity.links(entities[i]);
-      const Eigen::Vector3d x0 = geometry.x(vertices[0]);
-      const Eigen::Vector3d x1 = geometry.x(vertices[1]);
-      const Eigen::Vector3d x2 = geometry.x(vertices[2]);
+      auto dofs = x_dofs.links(entities[i]);
+      const Eigen::Vector3d x0 = geometry.x(dofs[0]);
+      const Eigen::Vector3d x1 = geometry.x(dofs[1]);
+      const Eigen::Vector3d x2 = geometry.x(dofs[2]);
 
       // Compute area of triangle embedded in R^3
       const double v0 = (x0[1] * x1[2] + x0[2] * x2[1] + x1[1] * x2[2])
@@ -106,20 +100,16 @@ T volume_tetrahedron(const mesh::Mesh& mesh,
                      const Eigen::Ref<const Eigen::ArrayXi>& entities)
 {
   const mesh::Geometry& geometry = mesh.geometry();
-  const mesh::Topology& topology = mesh.topology();
-  assert(topology.connectivity(3, 0));
-  const graph::AdjacencyList<std::int32_t>& connectivity
-      = *topology.connectivity(3, 0);
+  const graph::AdjacencyList<std::int32_t>& x_dofs = geometry.dofmap();
 
   Eigen::ArrayXd v(entities.rows());
   for (Eigen::Index i = 0; i < entities.rows(); ++i)
   {
-    // Get the coordinates of the four vertices
-    auto vertices = connectivity.links(entities[i]);
-    const Eigen::Vector3d x0 = geometry.x(vertices[0]);
-    const Eigen::Vector3d x1 = geometry.x(vertices[1]);
-    const Eigen::Vector3d x2 = geometry.x(vertices[2]);
-    const Eigen::Vector3d x3 = geometry.x(vertices[3]);
+    auto dofs = x_dofs.links(entities[i]);
+    const Eigen::Vector3d x0 = geometry.x(dofs[0]);
+    const Eigen::Vector3d x1 = geometry.x(dofs[1]);
+    const Eigen::Vector3d x2 = geometry.x(dofs[2]);
+    const Eigen::Vector3d x3 = geometry.x(dofs[3]);
 
     // Formula for volume from http://mathworld.wolfram.com
     const double v_tmp
@@ -147,21 +137,18 @@ T volume_quadrilateral(const mesh::Mesh& mesh,
                        const Eigen::Ref<const Eigen::ArrayXi>& entities)
 {
   const mesh::Geometry& geometry = mesh.geometry();
-  const mesh::Topology& topology = mesh.topology();
-  assert(topology.connectivity(2, 0));
-  const graph::AdjacencyList<std::int32_t>& connectivity
-      = *topology.connectivity(2, 0);
-
   const int gdim = geometry.dim();
   T v(entities.rows());
-  for (Eigen::Index i = 0; i < entities.rows(); ++i)
+  const graph::AdjacencyList<std::int32_t>& x_dofs = geometry.dofmap();
+
+  for (Eigen::Index e = 0; e < entities.rows(); ++e)
   {
     // Get the coordinates of the four vertices
-    auto vertices = connectivity.links(entities[i]);
-    const Eigen::Vector3d p0 = geometry.x(vertices[0]);
-    const Eigen::Vector3d p1 = geometry.x(vertices[1]);
-    const Eigen::Vector3d p2 = geometry.x(vertices[2]);
-    const Eigen::Vector3d p3 = geometry.x(vertices[3]);
+    auto dofs = x_dofs.links(entities[e]);
+    const Eigen::Vector3d p0 = geometry.x(dofs[0]);
+    const Eigen::Vector3d p1 = geometry.x(dofs[1]);
+    const Eigen::Vector3d p2 = geometry.x(dofs[2]);
+    const Eigen::Vector3d p3 = geometry.x(dofs[3]);
 
     const Eigen::Vector3d c = (p0 - p3).cross(p1 - p2);
     const double volume = 0.5 * c.norm();
@@ -181,7 +168,7 @@ T volume_quadrilateral(const mesh::Mesh& mesh,
         throw std::runtime_error("Not coplanar");
     }
 
-    v[i] = volume;
+    v[e] = volume;
   }
   return v;
 }
@@ -209,10 +196,12 @@ T volume_entities_tmpl(const mesh::Mesh& mesh,
   case mesh::CellType::interval:
     return volume_interval<T>(mesh, entities);
   case mesh::CellType::triangle:
+    assert(mesh.topology().dim() == dim);
     return volume_triangle<T>(mesh, entities);
   case mesh::CellType::tetrahedron:
     return volume_tetrahedron<T>(mesh, entities);
   case mesh::CellType::quadrilateral:
+    assert(mesh.topology().dim() == dim);
     return volume_quadrilateral<T>(mesh, entities);
   case mesh::CellType::hexahedron:
     throw std::runtime_error(
@@ -229,20 +218,16 @@ T circumradius_triangle(const mesh::Mesh& mesh,
 {
   // Get mesh geometry
   const mesh::Geometry& geometry = mesh.geometry();
-  const mesh::Topology& topology = mesh.topology();
-  assert(topology.connectivity(2, 0));
-  const graph::AdjacencyList<std::int32_t>& connectivity
-      = *topology.connectivity(2, 0);
+  const graph::AdjacencyList<std::int32_t>& x_dofs = geometry.dofmap();
 
   T volumes = volume_entities_tmpl<T>(mesh, entities, 2);
-
   T cr(entities.rows());
   for (Eigen::Index e = 0; e < entities.rows(); ++e)
   {
-    auto vertices = connectivity.links(entities[e]);
-    const Eigen::Vector3d p0 = geometry.x(vertices[0]);
-    const Eigen::Vector3d p1 = geometry.x(vertices[1]);
-    const Eigen::Vector3d p2 = geometry.x(vertices[2]);
+    auto dofs = x_dofs.links(entities[e]);
+    const Eigen::Vector3d p0 = geometry.x(dofs[0]);
+    const Eigen::Vector3d p1 = geometry.x(dofs[1]);
+    const Eigen::Vector3d p2 = geometry.x(dofs[2]);
 
     // Compute side lengths
     const double a = (p1 - p2).norm();
@@ -262,21 +247,17 @@ T circumradius_tetrahedron(const mesh::Mesh& mesh,
 {
   // Get mesh geometry
   const mesh::Geometry& geometry = mesh.geometry();
-  const mesh::Topology& topology = mesh.topology();
-  assert(topology.connectivity(3, 0));
-  const graph::AdjacencyList<std::int32_t>& connectivity
-      = *topology.connectivity(3, 0);
-
+  const graph::AdjacencyList<std::int32_t>& x_dofs = geometry.dofmap();
   T volumes = volume_entities_tmpl<T>(mesh, entities, 3);
 
   T cr(entities.rows());
   for (Eigen::Index e = 0; e < entities.rows(); ++e)
   {
-    auto vertices = connectivity.links(entities[e]);
-    const Eigen::Vector3d p0 = geometry.x(vertices[0]);
-    const Eigen::Vector3d p1 = geometry.x(vertices[1]);
-    const Eigen::Vector3d p2 = geometry.x(vertices[2]);
-    const Eigen::Vector3d p3 = geometry.x(vertices[3]);
+    auto dofs = x_dofs.links(entities[e]);
+    const Eigen::Vector3d p0 = geometry.x(dofs[0]);
+    const Eigen::Vector3d p1 = geometry.x(dofs[1]);
+    const Eigen::Vector3d p2 = geometry.x(dofs[2]);
+    const Eigen::Vector3d p3 = geometry.x(dofs[3]);
 
     // Compute side lengths
     const double a = (p1 - p2).norm();
@@ -350,6 +331,7 @@ mesh::extract_topology(const fem::ElementDofLayout& layout,
     local_vertices[i] = local_index[0];
   }
 
+  // Extract vertices
   Eigen::Array<std::int64_t, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
       topology(cells.num_nodes(), num_vertices_per_cell);
   for (int i = 0; i < cells.num_nodes(); ++i)
@@ -373,16 +355,16 @@ Eigen::ArrayXd mesh::h(const Mesh& mesh,
                        const Eigen::Ref<const Eigen::ArrayXi>& entities,
                        int dim)
 {
+  if (dim != mesh.topology().dim())
+    throw std::runtime_error("Cell size when dim ne tdim  requires updating.");
+
   // Get number of cell vertices
   const mesh::CellType type
       = cell_entity_type(mesh.topology().cell_type(), dim);
   const int num_vertices = num_cell_vertices(type);
 
   const mesh::Geometry& geometry = mesh.geometry();
-  const mesh::Topology& topology = mesh.topology();
-  assert(topology.connectivity(dim, 0));
-  const graph::AdjacencyList<std::int32_t>& connectivity
-      = *topology.connectivity(dim, 0);
+  const graph::AdjacencyList<std::int32_t>& x_dofs = geometry.dofmap();
 
   Eigen::ArrayXd h_cells = Eigen::ArrayXd::Zero(entities.rows());
   assert(num_vertices <= 8);
@@ -390,9 +372,9 @@ Eigen::ArrayXd mesh::h(const Mesh& mesh,
   for (Eigen::Index e = 0; e < entities.rows(); ++e)
   {
     // Get the coordinates  of the vertices
-    auto vertices = connectivity.links(entities[e]);
+    auto dofs = x_dofs.links(entities[e]);
     for (int i = 0; i < num_vertices; ++i)
-      points[i] = geometry.x(vertices[i]);
+      points[i] = geometry.x(dofs[i]);
 
     // Get maximum edge length
     for (int i = 0; i < num_vertices; ++i)
@@ -676,38 +658,62 @@ Eigen::Array<double, Eigen::Dynamic, 3, Eigen::RowMajor> mesh::midpoints(
     const mesh::Mesh& mesh, int dim,
     const Eigen::Ref<const Eigen::Array<int, Eigen::Dynamic, 1>>& entities)
 {
+  const mesh::Topology& topology = mesh.topology();
   const mesh::Geometry& geometry = mesh.geometry();
-  const Eigen::Array<double, Eigen::Dynamic, 3, Eigen::RowMajor>& points
-      = geometry.points();
+  const Eigen::Array<double, Eigen::Dynamic, 3, Eigen::RowMajor>& x
+      = geometry.x();
 
-  Eigen::Array<double, Eigen::Dynamic, 3, Eigen::RowMajor> x(entities.rows(),
-                                                             3);
+  const int tdim = topology.dim();
+
+  // Get geometry dofmap
+  const graph::AdjacencyList<std::int32_t>& x_dofmap = mesh.geometry().dofmap();
+
+  // Build map from vertex -> geometry dof
+  auto c_to_v = topology.connectivity(tdim, 0);
+  assert(c_to_v);
+  auto map_v = topology.index_map(0);
+  assert(map_v);
+  const std::int32_t num_vertices = map_v->size_local() + map_v->num_ghosts();
+  std::vector<std::int32_t> vertex_to_x(num_vertices);
+  auto map_c = topology.index_map(tdim);
+  assert(map_c);
+  for (int c = 0; c < map_c->size_local() + map_c->num_ghosts(); ++c)
+  {
+    auto vertices = c_to_v->links(c);
+    auto dofs = x_dofmap.links(c);
+    for (int i = 0; i < vertices.rows(); ++i)
+    {
+      // FIXME: We are making an assumption here on the
+      // ElementDofLayout. We should use an ElementDofLayout to map
+      // between local vertex index an x dof index.
+      vertex_to_x[vertices[i]] = dofs(i);
+    }
+  }
+
+  Eigen::Array<double, Eigen::Dynamic, 3, Eigen::RowMajor> x_mid(
+      entities.rows(), 3);
 
   // Special case: a vertex is its own midpoint
   if (dim == 0)
   {
     for (Eigen::Index e = 0; e < entities.rows(); ++e)
-      x.row(e) = points.row(entities[e]);
+      x_mid.row(e) = x.row(vertex_to_x[e]);
   }
   else
   {
-    const mesh::Topology& topology = mesh.topology();
-    assert(topology.connectivity(dim, 0));
-    std::shared_ptr<const graph::AdjacencyList<std::int32_t>> connectivity
-        = topology.connectivity(dim, 0);
-    const int num_vertices = mesh::cell_num_entities(
-        cell_entity_type(mesh.topology().cell_type(), dim), 0);
+    auto e_to_v = topology.connectivity(dim, 0);
+    assert(e_to_v);
     for (Eigen::Index e = 0; e < entities.rows(); ++e)
     {
-      auto vertices = connectivity->links(entities[e]);
-      x.row(e) = 0.0;
-      for (int i = 0; i < num_vertices; ++i)
-        x.row(e) += points.row(vertices[i]);
+      auto vertices = e_to_v->links(entities[e]);
+      x_mid.row(e) = 0.0;
+      for (int i = 0; i < vertices.rows(); ++i)
+        x_mid.row(e) += x.row(vertex_to_x[vertices[i]]);
+      x_mid.row(e) /= vertices.rows();
     }
-    x /= num_vertices;
   }
 
-  return x;
+  return x_mid;
 }
 //-----------------------------------------------------------------------------
 Eigen::Array<std::int32_t, Eigen::Dynamic, 1>
@@ -728,6 +734,7 @@ mesh::compute_marked_boundary_entities(
   {
     mesh.create_entities(dim);
     mesh.create_connectivity(tdim - 1, tdim);
+    mesh.create_connectivity(0, tdim);
   }
 
   // Find all vertices on boundary. Set all to -1 (interior) to start
@@ -744,15 +751,31 @@ mesh::compute_marked_boundary_entities(
 
   // FIXME: Does this make sense for non-affine elements?
   // Get all points
+  const graph::AdjacencyList<std::int32_t>& x_dofmap = mesh.geometry().dofmap();
   const Eigen::Array<double, Eigen::Dynamic, 3, Eigen::RowMajor>& x_all
-      = mesh.geometry().points();
+      = mesh.geometry().x();
+  auto v_to_c = mesh.topology().connectivity(0, tdim);
+  assert(v_to_c);
+  auto c_to_v = mesh.topology().connectivity(tdim, 0);
+  assert(c_to_v);
 
   // Pack coordinates of all boundary vertices
   Eigen::Array<double, 3, Eigen::Dynamic, Eigen::RowMajor> x_boundary(3, count);
   for (std::int32_t i = 0; i < mesh.num_entities(0); ++i)
   {
     if (boundary_vertex[i] != -1)
-      x_boundary.col(boundary_vertex[i]) = x_all.row(i);
+    {
+      // Get first cell and find position
+      int c = v_to_c->links(i)[0];
+      auto vertices = c_to_v->links(c);
+      auto it
+          = std::find(vertices.data(), vertices.data() + vertices.rows(), i);
+      assert(it != (vertices.data() + vertices.rows()));
+      const int local_pos = std::distance(vertices.data(), it);
+
+      auto dofs = x_dofmap.links(c);
+      x_boundary.col(boundary_vertex[i]) = x_all.row(dofs[local_pos]);
+    }
   }
 
   // Run marker function on boundary vertices

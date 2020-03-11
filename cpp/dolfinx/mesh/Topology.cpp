@@ -5,14 +5,175 @@
 // SPDX-License-Identifier:    LGPL-3.0-or-later
 
 #include "Topology.h"
+#include "Partitioning.h"
+#include "TopologyComputation.h"
+#include "utils.h"
 #include <dolfinx/common/IndexMap.h>
 #include <dolfinx/common/utils.h>
+#include <dolfinx/fem/ElementDofLayout.h>
 #include <dolfinx/graph/AdjacencyList.h>
 #include <numeric>
 #include <sstream>
 
 using namespace dolfinx;
 using namespace dolfinx::mesh;
+
+namespace
+{
+std::pair<Eigen::Array<bool, Eigen::Dynamic, Eigen::Dynamic>,
+          Eigen::Array<std::uint8_t, Eigen::Dynamic, Eigen::Dynamic>>
+compute_face_permutations_simplex(
+    const graph::AdjacencyList<std::int32_t>& c_to_v,
+    const graph::AdjacencyList<std::int32_t>& c_to_f,
+    const graph::AdjacencyList<std::int32_t>& f_to_v, int faces_per_cell)
+{
+  Eigen::Array<bool, Eigen::Dynamic, Eigen::Dynamic> reflections(
+      faces_per_cell, c_to_v.num_nodes());
+  Eigen::Array<std::uint8_t, Eigen::Dynamic, Eigen::Dynamic> rotations(
+      faces_per_cell, c_to_v.num_nodes());
+  for (int c = 0; c < c_to_v.num_nodes(); ++c)
+  {
+    auto cell_vertices = c_to_v.links(c);
+    auto cell_faces = c_to_f.links(c);
+    for (int i = 0; i < faces_per_cell; ++i)
+    {
+      // Get the face
+      const int face = cell_faces[i];
+      auto vertices = f_to_v.links(face);
+
+      // Orient that triangle so the the lowest numbered vertex is
+      // the origin, and the next vertex anticlockwise from the
+      // lowest has a lower number than the next vertex clockwise.
+      // Find the index of the lowest numbered vertex
+
+      // Store local vertex indices here
+      std::array<std::size_t, 3> e_vertices;
+
+      // Find iterators pointing to cell vertex given a vertex on
+      // facet
+      for (int j = 0; j < 3; ++j)
+      {
+        const auto it = std::find(cell_vertices.data(),
+                                  cell_vertices.data() + cell_vertices.size(),
+                                  vertices[j]);
+        // Get the actual local vertex indices
+        e_vertices[j] = it - cell_vertices.data();
+      }
+
+      // Number of rotations
+      std::uint8_t rots = 0;
+      for (int v = 1; v < 3; ++v)
+        if (e_vertices[v] < e_vertices[rots])
+          rots = v;
+
+      // pre is the number of the next vertex clockwise from the
+      // lowest numbered vertex
+      const int pre = rots == 0 ? e_vertices[3 - 1] : e_vertices[rots - 1];
+
+      // post is the number of the next vertex anticlockwise from
+      // the lowest numbered vertex
+      const int post = rots == 3 - 1 ? e_vertices[0] : e_vertices[rots + 1];
+
+      // The number of reflections
+      const std::uint8_t refs = post > pre;
+
+      reflections(i, c) = refs;
+      rotations(i, c) = rots;
+    }
+  }
+
+  return {std::move(reflections), std::move(rotations)};
+}
+//-----------------------------------------------------------------------------
+std::pair<Eigen::Array<bool, Eigen::Dynamic, Eigen::Dynamic>,
+          Eigen::Array<std::uint8_t, Eigen::Dynamic, Eigen::Dynamic>>
+compute_face_permutations_tp(const graph::AdjacencyList<std::int32_t>& c_to_v,
+                             const graph::AdjacencyList<std::int32_t>& c_to_f,
+                             const graph::AdjacencyList<std::int32_t>& f_to_v,
+                             int faces_per_cell)
+{
+  Eigen::Array<bool, Eigen::Dynamic, Eigen::Dynamic> reflections(
+      faces_per_cell, c_to_v.num_nodes());
+  Eigen::Array<std::uint8_t, Eigen::Dynamic, Eigen::Dynamic> rotations(
+      faces_per_cell, c_to_v.num_nodes());
+  for (int c = 0; c < c_to_v.num_nodes(); ++c)
+  {
+    auto cell_vertices = c_to_v.links(c);
+    auto cell_faces = c_to_f.links(c);
+    for (int i = 0; i < faces_per_cell; ++i)
+    {
+      const int face = cell_faces[i];
+      auto vertices = f_to_v.links(face);
+
+      // quadrilateral
+      // Orient that quad so the the lowest numbered vertex is the origin,
+      // and the next vertex anticlockwise from the lowest has a lower
+      // number than the next vertex clockwise. Find the index of the
+      // lowest numbered vertex
+      int num_min = -1;
+
+      // Store local vertex indices here
+      std::array<std::size_t, 4> e_vertices;
+      // Find iterators pointing to cell vertex given a vertex on facet
+      for (int j = 0; j < 4; ++j)
+      {
+        const auto it = std::find(cell_vertices.data(),
+                                  cell_vertices.data() + cell_vertices.size(),
+                                  vertices[j]);
+        // Get the actual local vertex indices
+        e_vertices[j] = it - cell_vertices.data();
+      }
+
+      for (int v = 0; v < 4; ++v)
+      {
+        if (num_min == -1 or e_vertices[v] < e_vertices[num_min])
+          num_min = v;
+      }
+
+      // rots is the number of rotations to get the lowest numbered vertex
+      // to the origin
+      std::uint8_t rots = num_min;
+
+      // pre is the (local) number of the next vertex clockwise from the
+      // lowest numbered vertex
+      int pre = 2;
+
+      // post is the (local) number of the next vertex anticlockwise from
+      // the lowest numbered vertex
+      int post = 1;
+
+      // The tensor product ordering of quads must be taken into account
+      assert(num_min < 4);
+      switch (num_min)
+      {
+      case 1:
+        pre = 0;
+        post = 3;
+        break;
+      case 2:
+        pre = 3;
+        post = 0;
+        rots = 3;
+        break;
+      case 3:
+        pre = 1;
+        post = 2;
+        rots = 2;
+        break;
+      }
+
+      // The number of reflections
+      const std::uint8_t refs = (e_vertices[post] > e_vertices[pre]);
+
+      reflections(i, c) = refs;
+      rotations(i, c) = rots;
+    }
+  }
+
+  return {std::move(reflections), std::move(rotations)};
+}
+//-----------------------------------------------------------------------------
+} // namespace
 
 //-----------------------------------------------------------------------------
 std::vector<bool> mesh::compute_interior_facets(const Topology& topology)
@@ -71,24 +232,93 @@ std::vector<bool> mesh::compute_interior_facets(const Topology& topology)
   return interior_facet;
 }
 //-----------------------------------------------------------------------------
+Eigen::Array<bool, Eigen::Dynamic, Eigen::Dynamic>
+mesh::compute_edge_reflections(const Topology& topology)
+{
+  const int tdim = topology.dim();
+  const CellType cell_type = topology.cell_type();
+  const int edges_per_cell = cell_num_entities(cell_type, 1);
+
+  auto c_to_v = topology.connectivity(tdim, 0);
+  assert(c_to_v);
+  auto c_to_e = topology.connectivity(tdim, 1);
+  assert(c_to_e);
+  auto e_to_v = topology.connectivity(1, 0);
+  assert(e_to_v);
+
+  Eigen::Array<bool, Eigen::Dynamic, Eigen::Dynamic> reflections(
+      edges_per_cell, c_to_v->num_nodes());
+  for (int c = 0; c < c_to_v->num_nodes(); ++c)
+  {
+    auto cell_vertices = c_to_v->links(c);
+    auto cell_edges = c_to_e->links(c);
+    for (int i = 0; i < edges_per_cell; ++i)
+    {
+      auto vertices = e_to_v->links(cell_edges[i]);
+
+      // If the entity is an interval, it should be oriented pointing
+      // from the lowest numbered vertex to the highest numbered vertex.
+
+      // Find iterators pointing to cell vertex given a vertex on facet
+      const auto it0
+          = std::find(cell_vertices.data(),
+                      cell_vertices.data() + cell_vertices.size(), vertices[0]);
+      const auto it1
+          = std::find(cell_vertices.data(),
+                      cell_vertices.data() + cell_vertices.size(), vertices[1]);
+
+      // The number of reflections. Comparing iterators directly instead
+      // of values they point to is sufficient here.
+      reflections(i, c) = (it1 < it0);
+    }
+  }
+
+  return reflections;
+}
+//-----------------------------------------------------------------------------
+std::pair<Eigen::Array<bool, Eigen::Dynamic, Eigen::Dynamic>,
+          Eigen::Array<std::uint8_t, Eigen::Dynamic, Eigen::Dynamic>>
+mesh::compute_face_permutations(const Topology& topology)
+{
+  const int tdim = topology.dim();
+  assert(tdim > 2);
+  if (!topology.index_map(2))
+    throw std::runtime_error("Faces have not been computed");
+
+  // If faces have been computed, the below should exist
+  auto c_to_v = topology.connectivity(tdim, 0);
+  assert(c_to_v);
+  auto c_to_f = topology.connectivity(tdim, 2);
+  assert(c_to_f);
+  auto f_to_v = topology.connectivity(2, 0);
+  assert(f_to_v);
+
+  const CellType cell_type = topology.cell_type();
+  const int faces_per_cell = cell_num_entities(cell_type, 2);
+  if (cell_type == CellType::triangle or cell_type == CellType::tetrahedron)
+  {
+    return compute_face_permutations_simplex(*c_to_v, *c_to_f, *f_to_v,
+                                             faces_per_cell);
+  }
+  else
+  {
+    return compute_face_permutations_tp(*c_to_v, *c_to_f, *f_to_v,
+                                        faces_per_cell);
+  }
+}
+//-----------------------------------------------------------------------------
 
 //-----------------------------------------------------------------------------
 Topology::Topology(mesh::CellType type)
     : _cell_type(type),
       _connectivity(mesh::cell_dim(type) + 1, mesh::cell_dim(type) + 1),
       _edge_reflections(0, 0), _face_reflections(0, 0), _face_rotations(0, 0),
-      _face_permutations(0, 0)
+      _facet_permutations(0, 0)
 {
   // Do nothing
 }
 //-----------------------------------------------------------------------------
 int Topology::dim() const { return _connectivity.rows() - 1; }
-//-----------------------------------------------------------------------------
-void Topology::set_global_user_vertices(
-    const std::vector<std::int64_t>& vertex_indices)
-{
-  _global_user_vertices = vertex_indices;
-}
 //-----------------------------------------------------------------------------
 void Topology::set_index_map(int dim,
                              std::shared_ptr<const common::IndexMap> index_map)
@@ -101,11 +331,6 @@ std::shared_ptr<const common::IndexMap> Topology::index_map(int dim) const
 {
   assert(dim < (int)_index_map.size());
   return _index_map[dim];
-}
-//-----------------------------------------------------------------------------
-const std::vector<std::int64_t>& Topology::get_global_user_vertices() const
-{
-  return _global_user_vertices;
 }
 //-----------------------------------------------------------------------------
 std::vector<bool> Topology::on_boundary(int dim) const
@@ -173,16 +398,16 @@ std::vector<bool> Topology::on_boundary(int dim) const
   return marker;
 }
 //-----------------------------------------------------------------------------
-std::shared_ptr<graph::AdjacencyList<std::int32_t>>
-Topology::connectivity(int d0, int d1)
+std::shared_ptr<const graph::AdjacencyList<std::int32_t>>
+Topology::connectivity(int d0, int d1) const
 {
   assert(d0 < _connectivity.rows());
   assert(d1 < _connectivity.cols());
   return _connectivity(d0, d1);
 }
 //-----------------------------------------------------------------------------
-std::shared_ptr<const graph::AdjacencyList<std::int32_t>>
-Topology::connectivity(int d0, int d1) const
+std::shared_ptr<graph::AdjacencyList<std::int32_t>>
+Topology::connectivity(int d0, int d1)
 {
   assert(d0 < _connectivity.rows());
   assert(d1 < _connectivity.cols());
@@ -216,122 +441,188 @@ size_t Topology::hash() const
   return this->connectivity(dim(), 0)->hash();
 }
 //-----------------------------------------------------------------------------
-std::string Topology::str(bool verbose) const
+const Eigen::Array<bool, Eigen::Dynamic, Eigen::Dynamic>&
+Topology::get_edge_reflections() const
 {
-  const int _dim = _connectivity.rows() - 1;
-  std::stringstream s;
-  if (verbose)
+  return _edge_reflections;
+}
+//-----------------------------------------------------------------------------
+const Eigen::Array<bool, Eigen::Dynamic, Eigen::Dynamic>&
+Topology::get_face_reflections() const
+{
+  return _face_reflections;
+}
+//-----------------------------------------------------------------------------
+const Eigen::Array<std::uint8_t, Eigen::Dynamic, Eigen::Dynamic>&
+Topology::get_face_rotations() const
+{
+  return _face_rotations;
+}
+//-----------------------------------------------------------------------------
+const Eigen::Array<std::uint8_t, Eigen::Dynamic, Eigen::Dynamic>&
+Topology::get_facet_permutations() const
+{
+  return _facet_permutations;
+}
+//-----------------------------------------------------------------------------
+void Topology::create_entity_permutations()
+{
+  if (_edge_reflections.rows() > 0)
   {
-    s << str(false) << std::endl << std::endl;
-    s << "  Number of entities:" << std::endl << std::endl;
-    for (int d = 0; d <= _dim; d++)
-    {
-      if (_index_map[d])
-      {
-        const int size
-            = _index_map[d]->size_local() + _index_map[d]->num_ghosts();
-        s << "    dim = " << d << ": " << size << std::endl;
-      }
-    }
-    s << std::endl;
-
-    s << "  Connectivity matrix:" << std::endl << std::endl;
-    s << "     ";
-    for (int d1 = 0; d1 <= _dim; d1++)
-      s << " " << d1;
-    s << std::endl;
-    for (int d0 = 0; d0 <= _dim; d0++)
-    {
-      s << "    " << d0;
-      for (int d1 = 0; d1 <= _dim; d1++)
-      {
-        if (_connectivity(d0, d1))
-          s << " x";
-        else
-          s << " -";
-      }
-      s << std::endl;
-    }
-    s << std::endl;
-
-    for (int d0 = 0; d0 <= _dim; d0++)
-    {
-      for (int d1 = 0; d1 <= _dim; d1++)
-      {
-        if (!_connectivity(d0, d1))
-          continue;
-        s << common::indent(_connectivity(d0, d1)->str(true));
-        s << std::endl;
-      }
-    }
+    // assert(_face_reflections.size() != 0);
+    // assert(_face_rotations.size() != 0);
+    // assert(_facet_permutations.size() != 0);
+    return;
   }
-  else
-    s << "<Topology of dimension " << _dim << ">";
 
-  return s.str();
-}
-//-----------------------------------------------------------------------------
-Eigen::Ref<const Eigen::Array<bool, 1, Eigen::Dynamic>>
-Topology::get_edge_reflections(const std::int32_t cell_n) const
-{
-  return _edge_reflections.row(cell_n);
-}
-//-----------------------------------------------------------------------------
-Eigen::Ref<const Eigen::Array<bool, 1, Eigen::Dynamic>>
-Topology::get_face_reflections(const std::int32_t cell_n) const
-{
-  return _face_reflections.row(cell_n);
-}
-//-----------------------------------------------------------------------------
-Eigen::Ref<const Eigen::Array<std::uint8_t, 1, Eigen::Dynamic>>
-Topology::get_face_rotations(const std::int32_t cell_n) const
-{
-  return _face_rotations.row(cell_n);
-}
-//-----------------------------------------------------------------------------
-std::uint8_t Topology::get_facet_permutation(const std::int32_t cell_n,
-                                             const int dim,
-                                             const int facet_index) const
-{
-  if (dim == 1)
-    return _edge_reflections(cell_n, facet_index);
-  if (dim == 2)
-    return _face_permutations(cell_n, facet_index);
-  return 0;
-}
-//-----------------------------------------------------------------------------
-void Topology::resize_entity_permutations(std::size_t cell_count,
-                                          int edges_per_cell,
-                                          int faces_per_cell)
-{
-  _face_permutations.resize(cell_count, faces_per_cell);
-  _face_permutations.fill(0);
-  _edge_reflections.resize(cell_count, edges_per_cell);
-  _edge_reflections.fill(false);
-  _face_reflections.resize(cell_count, faces_per_cell);
-  _face_reflections.fill(false);
-  _face_rotations.resize(cell_count, faces_per_cell);
-  _face_rotations.fill(false);
-}
-//-----------------------------------------------------------------------------
-std::size_t Topology::entity_reflection_size() const
-{
-  return _edge_reflections.rows();
-}
-//-----------------------------------------------------------------------------
-void Topology::set_entity_permutation(std::size_t cell_n, int entity_dim,
-                                      std::size_t entity_index,
-                                      std::uint8_t rots, std::uint8_t refs)
-{
-  if (entity_dim == 2)
+  const int tdim = this->dim();
+  const CellType cell_type = this->cell_type();
+  assert(_connectivity(tdim, 0));
+  const std::int32_t num_cells = _connectivity(tdim, 0)->num_nodes();
+  const int faces_per_cell = cell_num_entities(cell_type, 2);
+
+  // FIXME: Avoid create 'identity' reflections/rotations
+
+  if (tdim <= 1)
   {
-    _face_permutations(cell_n, entity_index) = 2 * rots + refs;
-    _face_reflections(cell_n, entity_index) = refs;
-    _face_rotations(cell_n, entity_index) = rots;
+    const int edges_per_cell = cell_num_entities(cell_type, 1);
+    const int facets_per_cell = cell_num_entities(cell_type, tdim - 1);
+    _edge_reflections.resize(edges_per_cell, num_cells);
+    _edge_reflections = false;
+
+    _face_reflections.resize(faces_per_cell, num_cells);
+    _face_reflections = false;
+
+    _face_rotations.resize(faces_per_cell, num_cells);
+    _face_rotations = 0;
+    _facet_permutations.resize(facets_per_cell, num_cells);
+    _facet_permutations = 0;
   }
-  else if (entity_dim == 1)
-    _edge_reflections(cell_n, entity_index) = refs;
+
+  if (tdim > 1)
+  {
+    _face_reflections.resize(faces_per_cell, num_cells);
+    _face_reflections = false;
+    _face_rotations.resize(faces_per_cell, num_cells);
+    _face_rotations = 0;
+
+    Eigen::Array<bool, Eigen::Dynamic, Eigen::Dynamic> reflections
+        = mesh::compute_edge_reflections(*this);
+    _edge_reflections = reflections;
+    if (tdim == 2)
+      _facet_permutations = reflections.cast<std::uint8_t>();
+  }
+
+  if (tdim > 2)
+  {
+    auto [reflections, rotations] = mesh::compute_face_permutations(*this);
+    _face_reflections = reflections;
+    _face_rotations = rotations;
+    if (tdim == 3)
+      _facet_permutations = 2 * rotations + reflections.cast<std::uint8_t>();
+  }
 }
 //-----------------------------------------------------------------------------
 mesh::CellType Topology::cell_type() const { return _cell_type; }
+//-----------------------------------------------------------------------------
+
+//-----------------------------------------------------------------------------
+std::tuple<Topology, std::vector<int>, graph::AdjacencyList<std::int32_t>>
+mesh::create_topology(MPI_Comm comm,
+                      const graph::AdjacencyList<std::int64_t>& cells,
+                      const fem::ElementDofLayout& layout)
+{
+  const int size = dolfinx::MPI::size(comm);
+
+  // TODO: This step can be skipped for 'P1' elements
+
+  // Extract topology data, e.g.just the vertices. For P1 geometry this
+  // should just be the identity operator.For other elements the
+  // filtered lists may have 'gaps', i.e.the indices might not be
+  // contiguous.
+  const graph::AdjacencyList<std::int64_t> cells_v
+      = mesh::extract_topology(layout, cells);
+
+  // Compute the destination rank for cells on this process via graph
+  // partitioning
+  const graph::AdjacencyList<std::int32_t> dest
+      = Partitioning::partition_cells(comm, size, layout.cell_type(), cells_v);
+
+  // Distribute cells to destination rank
+  const auto [my_cells, src, original_cell_index]
+      = Partitioning::distribute(comm, cells_v, dest);
+
+  // Build local cell-vertex connectivity, with local vertex indices
+  // [0, 1, 2, ..., n), from cell-vertex connectivity using global
+  // indices and get map from global vertex indices in 'cells' to the
+  // local vertex indices
+  auto [cells_local, local_to_global_vertices]
+      = Partitioning::create_local_adjacency_list(my_cells);
+
+  // Create (i) local topology object and (ii) IndexMap for cells, and
+  // set cell-vertex topology
+  Topology topology_local(layout.cell_type());
+  const int tdim = topology_local.dim();
+  auto map = std::make_shared<common::IndexMap>(comm, cells_local.num_nodes(),
+                                                std::vector<std::int64_t>(), 1);
+  topology_local.set_index_map(tdim, map);
+  auto _cells_local
+      = std::make_shared<graph::AdjacencyList<std::int32_t>>(cells_local);
+  topology_local.set_connectivity(_cells_local, tdim, 0);
+
+  const int n = local_to_global_vertices.size();
+  map = std::make_shared<common::IndexMap>(comm, n, std::vector<std::int64_t>(),
+                                           1);
+  topology_local.set_index_map(0, map);
+  auto _vertices_local
+      = std::make_shared<graph::AdjacencyList<std::int32_t>>(n);
+  topology_local.set_connectivity(_vertices_local, 0, 0);
+
+  // Create facets for local topology, and attach to the topology
+  // object. This will be used to find possibly shared cells
+  auto [cf, fv, map0]
+      = TopologyComputation::compute_entities(comm, topology_local, tdim - 1);
+  if (cf)
+    topology_local.set_connectivity(cf, tdim, tdim - 1);
+  if (map0)
+    topology_local.set_index_map(tdim - 1, map0);
+  if (fv)
+    topology_local.set_connectivity(fv, tdim - 1, 0);
+  auto [fc, ignore] = TopologyComputation::compute_connectivity(topology_local,
+                                                                tdim - 1, tdim);
+  if (fc)
+    topology_local.set_connectivity(fc, tdim - 1, tdim);
+
+  // FIXME: This looks weird. Revise.
+  // Get facets that are on the boundary of the local topology, i.e
+  // are connect to one cell only
+  std::vector<bool> boundary = compute_interior_facets(topology_local);
+  topology_local.set_interior_facets(boundary);
+  boundary = topology_local.on_boundary(tdim - 1);
+
+  // Build distributed cell-vertex AdjacencyList, IndexMap for
+  // vertices, and map from local index to old global index
+  const std::vector<bool>& exterior_vertices
+      = Partitioning::compute_vertex_exterior_markers(topology_local);
+  auto [cells_d, vertex_map] = Partitioning::create_distributed_adjacency_list(
+      comm, *_cells_local, local_to_global_vertices, exterior_vertices);
+
+  Topology topology(layout.cell_type());
+
+  // Set vertex IndexMap, and vertex-vertex connectivity
+  auto _vertex_map = std::make_shared<common::IndexMap>(std::move(vertex_map));
+  topology.set_index_map(0, _vertex_map);
+  auto c0 = std::make_shared<graph::AdjacencyList<std::int32_t>>(
+      _vertex_map->size_local() + _vertex_map->num_ghosts());
+  topology.set_connectivity(c0, 0, 0);
+
+  // Set cell IndexMap and cell-vertex connectivity
+  auto index_map_c = std::make_shared<common::IndexMap>(
+      comm, cells_d.num_nodes(), std::vector<std::int64_t>(), 1);
+  topology.set_index_map(tdim, index_map_c);
+  auto _cells_d = std::make_shared<graph::AdjacencyList<std::int32_t>>(cells_d);
+  topology.set_connectivity(_cells_d, tdim, 0);
+
+  return {topology, src, dest};
+}
 //-----------------------------------------------------------------------------

@@ -10,7 +10,6 @@
 #include <dolfinx/common/types.h>
 #include <dolfinx/fem/CoordinateElement.h>
 #include <dolfinx/fem/ElementDofLayout.h>
-#include <dolfinx/mesh/CoordinateDofs.h>
 #include <dolfinx/mesh/Geometry.h>
 #include <dolfinx/mesh/Mesh.h>
 #include <dolfinx/mesh/MeshEntity.h>
@@ -18,10 +17,7 @@
 #include <dolfinx/mesh/MeshIterator.h>
 #include <dolfinx/mesh/MeshQuality.h>
 #include <dolfinx/mesh/MeshValueCollection.h>
-#include <dolfinx/mesh/Ordering.h>
-#include <dolfinx/mesh/PartitionData.h>
 #include <dolfinx/mesh/Partitioning.h>
-#include <dolfinx/mesh/PartitioningNew.h>
 #include <dolfinx/mesh/Topology.h>
 #include <dolfinx/mesh/TopologyComputation.h>
 #include <dolfinx/mesh/cell_types.h>
@@ -54,8 +50,10 @@ void mesh(py::module& m)
   m.def("to_type", &dolfinx::mesh::to_type);
   m.def("is_simplex", &dolfinx::mesh::is_simplex);
 
+  m.def("cell_dim", &dolfinx::mesh::cell_dim);
   m.def("cell_num_entities", &dolfinx::mesh::cell_num_entities);
   m.def("cell_num_vertices", &dolfinx::mesh::num_cell_vertices);
+  m.def("get_entity_vertices", &dolfinx::mesh::get_entity_vertices);
 
   m.def("extract_topology", &dolfinx::mesh::extract_topology);
 
@@ -71,64 +69,42 @@ void mesh(py::module& m)
   m.def("radius_ratio", &dolfinx::mesh::radius_ratio);
   m.def("midpoints", &dolfinx::mesh::midpoints);
 
+  m.def("create", &dolfinx::mesh::create,
+        "Helper function for creating meshes.");
+
   // dolfinx::mesh::GhostMode enums
   py::enum_<dolfinx::mesh::GhostMode>(m, "GhostMode")
       .value("none", dolfinx::mesh::GhostMode::none)
       .value("shared_facet", dolfinx::mesh::GhostMode::shared_facet)
       .value("shared_vertex", dolfinx::mesh::GhostMode::shared_vertex);
 
-  // dolfinx::mesh::Partitioner enums
-  py::enum_<dolfinx::mesh::Partitioner>(m, "Partitioner")
-      .value("scotch", dolfinx::mesh::Partitioner::scotch)
-      .value("kahip", dolfinx::mesh::Partitioner::kahip)
-      .value("parmetis", dolfinx::mesh::Partitioner::parmetis);
-
-  // dolfinx::mesh::CoordinateDofs class
-  py::class_<dolfinx::mesh::CoordinateDofs,
-             std::shared_ptr<dolfinx::mesh::CoordinateDofs>>(
-      m, "CoordinateDofs", "CoordinateDofs object")
-      .def(
-          "entity_points",
-          [](const dolfinx::mesh::CoordinateDofs& self) {
-            const dolfinx::graph::AdjacencyList<std::int32_t>& connectivity
-                = self.entity_points();
-            Eigen::Ref<const Eigen::Array<std::int32_t, Eigen::Dynamic, 1>>
-                connections = connectivity.array();
-            const int num_entities = connectivity.offsets().size() - 1;
-
-            // FIXME: mesh::CoordinateDofs should know its dimension
-            // (entity_size) to handle empty case on a process.
-            int entity_size = 0;
-            if (num_entities > 0)
-            {
-              assert(connections.size() % num_entities == 0);
-              entity_size = connections.size() / num_entities;
-            }
-            return py::array({num_entities, entity_size}, connections.data(),
-                             py::none());
-          },
-          py::return_value_policy::reference_internal);
-
   // dolfinx::mesh::Geometry class
   py::class_<dolfinx::mesh::Geometry, std::shared_ptr<dolfinx::mesh::Geometry>>(
       m, "Geometry", "Geometry object")
+      .def(py::init<std::shared_ptr<const dolfinx::common::IndexMap>,
+                    const dolfinx::graph::AdjacencyList<std::int32_t>&,
+                    const dolfinx::fem::ElementDofLayout&,
+                    const Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic,
+                                       Eigen::RowMajor>&,
+                    const std::vector<std::int64_t>&>())
       .def_property_readonly("dim", &dolfinx::mesh::Geometry::dim,
                              "Geometric dimension")
-      .def("num_points", &dolfinx::mesh::Geometry::num_points)
-      .def("num_points_global", &dolfinx::mesh::Geometry::num_points_global)
+      .def("dofmap",
+           py::overload_cast<>(&dolfinx::mesh::Geometry::dofmap, py::const_))
+      .def("dof_layout", &dolfinx::mesh::Geometry::dof_layout)
+      .def("index_map", &dolfinx::mesh::Geometry::index_map)
       .def("global_indices", &dolfinx::mesh::Geometry::global_indices)
-      .def("x", &dolfinx::mesh::Geometry::x,
-           py::return_value_policy::reference_internal,
-           "Return coordinates of a point")
+      .def("point",
+           py::overload_cast<int>(&dolfinx::mesh::Geometry::x, py::const_))
       .def_property(
-          "points",
+          "x",
           // Get
-          py::overload_cast<>(&dolfinx::mesh::Geometry::points),
+          py::overload_cast<>(&dolfinx::mesh::Geometry::x),
           // Set
           [](dolfinx::mesh::Geometry& self,
              const Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic,
                                 Eigen::RowMajor>& values) {
-            self.points() = values;
+            self.x() = values;
           },
           py::return_value_policy::reference_internal,
           "Return coordinates of all points")
@@ -151,6 +127,13 @@ void mesh(py::module& m)
       .def("set_connectivity", &dolfinx::mesh::Topology::set_connectivity)
       .def("set_index_map", &dolfinx::mesh::Topology::set_index_map)
       .def("set_interior_facets", &dolfinx::mesh::Topology::set_interior_facets)
+      .def("get_facet_permutations",
+           &dolfinx::mesh::Topology::get_facet_permutations)
+      .def("get_edge_reflections",
+           &dolfinx::mesh::Topology::get_edge_reflections)
+      .def("get_face_reflections",
+           &dolfinx::mesh::Topology::get_face_reflections)
+      .def("get_face_rotations", &dolfinx::mesh::Topology::get_face_rotations)
       .def_property_readonly("dim", &dolfinx::mesh::Topology::dim,
                              "Topological dimension")
       .def("connectivity",
@@ -163,46 +146,49 @@ void mesh(py::module& m)
       .def("cell_name",
            [](const dolfinx::mesh::Topology& self) {
              return dolfinx::mesh::to_string(self.cell_type());
-           })
-      .def("str", &dolfinx::mesh::Topology::str);
+           });
 
   // dolfinx::mesh::Mesh
   py::class_<dolfinx::mesh::Mesh, std::shared_ptr<dolfinx::mesh::Mesh>>(
       m, "Mesh", py::dynamic_attr(), "Mesh object")
-      .def(py::init(
-          [](const MPICommWrapper comm, dolfinx::mesh::CellType type,
-             const Eigen::Ref<const Eigen::Array<
-                 double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>>&
-                 geometry,
-             const Eigen::Ref<
-                 const Eigen::Array<std::int64_t, Eigen::Dynamic,
-                                    Eigen::Dynamic, Eigen::RowMajor>>& topology,
-             const std::vector<std::int64_t>& global_cell_indices,
-             const dolfinx::mesh::GhostMode ghost_mode) {
-            return std::make_unique<dolfinx::mesh::Mesh>(
-                comm.get(), type, geometry, topology, global_cell_indices,
-                ghost_mode);
-          }))
-      .def("cells",
-           [](const dolfinx::mesh::Mesh& self) {
-             const int tdim = self.topology().dim();
-             auto map = self.topology().index_map(tdim);
-             assert(map);
-             const std::int32_t size = map->size_local() + map->num_ghosts();
-             return py::array(
-                 {size, (std::int32_t)dolfinx::mesh::num_cell_vertices(
-                            self.topology().cell_type())},
-                 self.topology().connectivity(tdim, 0)->array().data(),
-                 py::none());
-           },
-           py::return_value_policy::reference_internal)
+      .def(py::init([](const MPICommWrapper comm,
+                       const dolfinx::mesh::Topology& topology,
+                       dolfinx::mesh::Geometry& geometry) {
+        return std::make_unique<dolfinx::mesh::Mesh>(comm.get(), topology,
+                                                     geometry);
+      }))
+        .def(py::init(
+            [](const MPICommWrapper comm, dolfinx::mesh::CellType type,
+               const Eigen::Ref<const Eigen::Array<
+                   double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>>&
+                   geometry,
+               const Eigen::Ref<
+                   const Eigen::Array<std::int64_t, Eigen::Dynamic,
+                                      Eigen::Dynamic, Eigen::RowMajor>>&
+                                      topology,
+               const std::vector<std::int64_t>& global_cell_indices,
+               const dolfinx::mesh::GhostMode ghost_mode) {
+              return std::make_unique<dolfinx::mesh::Mesh>(
+                  comm.get(), type, geometry, topology, global_cell_indices,
+                  ghost_mode);
+            }))
+      .def(
+          "cells",
+          [](const dolfinx::mesh::Mesh& self) {
+            const int tdim = self.topology().dim();
+            auto map = self.topology().index_map(tdim);
+            assert(map);
+            const std::int32_t size = map->size_local() + map->num_ghosts();
+            return py::array(
+                {size, (std::int32_t)dolfinx::mesh::num_cell_vertices(
+                           self.topology().cell_type())},
+                self.topology().connectivity(tdim, 0)->array().data(),
+                py::none());
+          },
+          py::return_value_policy::reference_internal)
       .def_property_readonly(
           "geometry", py::overload_cast<>(&dolfinx::mesh::Mesh::geometry),
           "Mesh geometry")
-      .def("coordinate_dofs",
-           py::overload_cast<>(&dolfinx::mesh::Mesh::coordinate_dofs,
-                               py::const_))
-      .def("degree", &dolfinx::mesh::Mesh::degree)
       .def("hash", &dolfinx::mesh::Mesh::hash)
       .def("hmax", &dolfinx::mesh::Mesh::hmax)
       .def("hmin", &dolfinx::mesh::Mesh::hmin)
@@ -332,109 +318,63 @@ void mesh(py::module& m)
       .def_static("dihedral_angles_min_max",
                   &dolfinx::mesh::MeshQuality::dihedral_angles_min_max);
 
-  py::class_<dolfinx::mesh::Ordering>(m, "Ordering", "Order mesh cell entities")
-      .def_static("order_simplex", &dolfinx::mesh::Ordering::order_simplex)
-      .def_static("is_ordered_simplex",
-                  &dolfinx::mesh::Ordering::is_ordered_simplex);
-
-  // dolfinx::mesh::PartitionData class
-  py::class_<dolfinx::mesh::PartitionData,
-             std::shared_ptr<dolfinx::mesh::PartitionData>>(
-      m, "PartitionData", "PartitionData object")
-      .def(py::init(
-          [](const std::vector<int>& cell_partition,
-             const std::map<std::int64_t, std::vector<int>>& ghost_procs) {
-            return dolfinx::mesh::PartitionData(cell_partition, ghost_procs);
-          }))
-      .def("num_procs", &dolfinx::mesh::PartitionData::num_procs)
-      .def("size", &dolfinx::mesh::PartitionData::num_ghosts)
-      .def("num_ghosts", &dolfinx::mesh::PartitionData::num_ghosts);
-
-  // dolfinx::mesh::Partitioning::partition_cells
+  // New Partition interface
 
   m.def("create_local_adjacency_list",
-        &dolfinx::mesh::PartitioningNew::create_local_adjacency_list);
+        &dolfinx::mesh::Partitioning::create_local_adjacency_list);
   m.def("create_distributed_adjacency_list",
         [](const MPICommWrapper comm,
-           const dolfinx::mesh::Topology& topology_local,
-           const std::map<std::int64_t, std::int32_t>& global_to_local) {
-          return dolfinx::mesh::PartitioningNew::create_distributed_adjacency_list(
-              comm.get(), topology_local, global_to_local);
+           const dolfinx::graph::AdjacencyList<std::int32_t>& list_local,
+           const std::vector<std::int64_t>& global_links,
+           const std::vector<bool>& exterior_links) {
+          return dolfinx::mesh::Partitioning::create_distributed_adjacency_list(
+              comm.get(), list_local, global_links, exterior_links);
         });
-  m.def(
-      "distribute", [](const MPICommWrapper comm,
-                       const dolfinx::graph::AdjacencyList<std::int64_t>& list,
-                       const std::vector<int>& owner) {
-        return dolfinx::mesh::PartitioningNew::distribute(comm.get(), list, owner);
-      });
+  m.def("distribute",
+        [](const MPICommWrapper comm,
+           const dolfinx::graph::AdjacencyList<std::int64_t>& list,
+           const dolfinx::graph::AdjacencyList<std::int32_t>& destinations) {
+          return dolfinx::mesh::Partitioning::distribute(comm.get(), list,
+                                                         destinations);
+        });
+
+  m.def("exchange",
+        [](const MPICommWrapper comm,
+           const dolfinx::graph::AdjacencyList<std::int64_t>& list,
+           const dolfinx::graph::AdjacencyList<std::int32_t>& destinations,
+           const std::set<int>& sources) {
+          return dolfinx::mesh::Partitioning::exchange(comm.get(), list,
+                                                       destinations, sources);
+        });
 
   m.def("partition_cells",
         [](const MPICommWrapper comm, int nparts,
            dolfinx::mesh::CellType cell_type,
            const dolfinx::graph::AdjacencyList<std::int64_t>& cells) {
-          return dolfinx::mesh::PartitioningNew::partition_cells(
+          return dolfinx::mesh::Partitioning::partition_cells(
               comm.get(), nparts, cell_type, cells);
         });
 
+  m.def("distribute_data",
+        [](const MPICommWrapper comm, const std::vector<std::int64_t>& indices,
+           const Eigen::Ref<const Eigen::Array<
+               double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>>& x) {
+          return dolfinx::mesh::Partitioning::distribute_data(comm.get(),
+                                                              indices, x);
+        });
 
-  m.def(
-      "partition_cells",
-      [](const MPICommWrapper comm, int nparts,
-         dolfinx::mesh::CellType cell_type,
-         const Eigen::Ref<const Eigen::Array<std::int64_t, Eigen::Dynamic,
-                                             Eigen::Dynamic, Eigen::RowMajor>>&
-             cells,
-         dolfinx::mesh::Partitioner partitioner) {
-        return dolfinx::mesh::Partitioning::partition_cells(
-            comm.get(), nparts, cell_type, cells, partitioner);
-      });
+  m.def("compute_local_to_global_links",
+        &dolfinx::mesh::Partitioning::compute_local_to_global_links);
 
-  m.def(
-      "build_distributed_mesh",
-      [](const MPICommWrapper comm, dolfinx::mesh::CellType cell_type,
-         const Eigen::Ref<const Eigen::Array<
-             double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>>& points,
-         const Eigen::Ref<const Eigen::Array<std::int64_t, Eigen::Dynamic,
-                                             Eigen::Dynamic, Eigen::RowMajor>>&
-             cells,
-         const std::vector<std::int64_t>& global_cell_indices,
-         const dolfinx::mesh::GhostMode ghost_mode,
-         const dolfinx::mesh::Partitioner graph_partitioner) {
-        return dolfinx::mesh::Partitioning::build_distributed_mesh(
-            comm.get(), cell_type, points, cells, global_cell_indices,
-            ghost_mode, graph_partitioner);
-      });
-
-  m.def(
-      "build_from_partition",
-      [](const MPICommWrapper comm, dolfinx::mesh::CellType cell_type,
-         const Eigen::Ref<const Eigen::Array<
-             double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>>& points,
-         const Eigen::Ref<const Eigen::Array<std::int64_t, Eigen::Dynamic,
-                                             Eigen::Dynamic, Eigen::RowMajor>>&
-             cells,
-         const std::vector<std::int64_t>& global_cell_indices,
-         const dolfinx::mesh::GhostMode ghost_mode,
-         const dolfinx::mesh::PartitionData& cell_partition) {
-        return dolfinx::mesh::Partitioning::build_from_partition(
-            comm.get(), cell_type, points, cells, global_cell_indices,
-            ghost_mode, cell_partition);
-      });
-
-  m.def(
-      "ghost_cell_mapping",
-      [](const MPICommWrapper comm, py::array_t<int> parttition,
-         dolfinx::mesh::CellType cell_type,
-         const Eigen::Ref<const Eigen::Array<std::int64_t, Eigen::Dynamic,
-                                             Eigen::Dynamic, Eigen::RowMajor>>&
-             cells) {
-        std::vector<int> part(parttition.data(),
-                              parttition.data() + parttition.size());
-        return dolfinx::mesh::Partitioning::compute_halo_cells(
-            comm.get(), part, cell_type, cells);
-      });
+  m.def("compute_local_to_local",
+        &dolfinx::mesh::Partitioning::compute_local_to_local);
 
   m.def("compute_marked_boundary_entities",
         &dolfinx::mesh::compute_marked_boundary_entities);
+
+  // TODO Remove
+  m.def("compute_vertex_exterior_markers",
+        &dolfinx::mesh::Partitioning::compute_vertex_exterior_markers);
+
 } // namespace dolfinx_wrappers
 } // namespace dolfinx_wrappers
