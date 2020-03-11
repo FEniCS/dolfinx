@@ -13,10 +13,11 @@ jobs:
     runs-on: ubuntu-latest
     container: dolfinx/dev-env-real:latest
 
+    env:
+      CC: clang-9
+      CXX: clang++-9
+
     steps:
-      env:
-        CC: clang-9
-        CXX: clang++-9
       - uses: actions/checkout@v2
       - name: Install FEniCS Python components
         run: |
