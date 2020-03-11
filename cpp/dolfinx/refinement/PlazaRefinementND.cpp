@@ -340,6 +340,8 @@ face_long_edge(const mesh::Mesh& mesh)
   mesh.create_entities(2);
   mesh.create_connectivity(2, 1);
   mesh.create_connectivity(1, tdim);
+  mesh.create_connectivity(tdim, 2);
+
 
   // Storage for face-local index of longest edge
   std::vector<std::int32_t> long_edge(mesh.num_entities(2));
