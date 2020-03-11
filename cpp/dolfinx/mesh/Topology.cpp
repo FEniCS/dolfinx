@@ -13,7 +13,6 @@
 #include <dolfinx/fem/ElementDofLayout.h>
 #include <dolfinx/graph/AdjacencyList.h>
 #include <numeric>
-#include <sstream>
 
 using namespace dolfinx;
 using namespace dolfinx::mesh;
@@ -400,14 +399,6 @@ std::vector<bool> Topology::on_boundary(int dim) const
 //-----------------------------------------------------------------------------
 std::shared_ptr<const graph::AdjacencyList<std::int32_t>>
 Topology::connectivity(int d0, int d1) const
-{
-  assert(d0 < _connectivity.rows());
-  assert(d1 < _connectivity.cols());
-  return _connectivity(d0, d1);
-}
-//-----------------------------------------------------------------------------
-std::shared_ptr<graph::AdjacencyList<std::int32_t>>
-Topology::connectivity(int d0, int d1)
 {
   assert(d0 < _connectivity.rows());
   assert(d1 < _connectivity.cols());
