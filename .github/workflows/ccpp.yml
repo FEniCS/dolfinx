@@ -16,6 +16,7 @@ jobs:
     env:
       CC: clang-9
       CXX: clang++-9
+      DOLFINX_JIT_CFLAGS: -g0 -O0
 
     steps:
       - uses: actions/checkout@v2
