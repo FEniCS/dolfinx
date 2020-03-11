@@ -14,6 +14,9 @@ jobs:
     container: dolfinx/dev-env-real:latest
 
     steps:
+      - env:
+        CC: clang-9
+        CXX: clang++-9
       - uses: actions/checkout@v2
       - name: Install FEniCS Python components
         run: |
@@ -34,9 +37,6 @@ jobs:
           make install
 
       - name: Configure DOLFINX C++ with CMake
-        env:
-          CC: clang-9
-          CXX: clang++-9
         run: |
           mkdir build
           cd build
@@ -64,9 +64,9 @@ jobs:
           ctest -j3 -R demo -R mpi
 
       - name: Build Python interface
-        env:
-          CC: clang-9
-          CXX: clang++-9
+        # env:
+        #   CC: clang-9
+        #   CXX: clang++-9
         run: |
           cd python
           pip3 -v install . --user
