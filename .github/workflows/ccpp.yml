@@ -20,6 +20,7 @@ jobs:
       DOLFINX_JIT_CFLAGS: -g0 -O0
       OMPI_ALLOW_RUN_AS_ROOT: 1
       OMPI_ALLOW_RUN_AS_ROOT_CONFIRM: 1
+      OMPI_MCA_rmaps_base_oversubscribe: 1
 
     steps:
       - uses: actions/checkout@v2
@@ -66,11 +67,11 @@ jobs:
           cd build
           ninja demos
           ctest -j3 -R demo -R serial
-      # - name: Build and run C++ regression tests (MPI)
-      #   run: |
-      #     cd build
-      #     ninja demos
-      #     ctest -j3 -R demo -R mpi
+      - name: Build and run C++ regression tests (MPI)
+        run: |
+          cd build
+          ninja demos
+          ctest -j3 -R demo -R mpi
 
       - name: Build Python interface
         # env:
