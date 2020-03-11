@@ -95,8 +95,7 @@ void mesh(py::module& m)
       .def("dof_layout", &dolfinx::mesh::Geometry::dof_layout)
       .def("index_map", &dolfinx::mesh::Geometry::index_map)
       .def("global_indices", &dolfinx::mesh::Geometry::global_indices)
-      .def("point",
-           py::overload_cast<int>(&dolfinx::mesh::Geometry::x, py::const_))
+      .def("point", &dolfinx::mesh::Geometry::node)
       .def_property(
           "x",
           // Get
