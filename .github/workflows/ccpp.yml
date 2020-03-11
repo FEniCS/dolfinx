@@ -57,9 +57,9 @@ jobs:
           ctest -j3 -R demo -R mpi
 
       - name: Build Python interface
-        env:
-          CC: clang
-          CXX: clang++
+        # env:
+        #   CC: clang
+        #   CXX: clang++
         run: |
           cd python
           pip3 -v install . --user
