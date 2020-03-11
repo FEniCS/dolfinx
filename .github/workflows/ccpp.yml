@@ -11,7 +11,7 @@ on:
 jobs:
   build:
     runs-on: ubuntu-latest
-    container: wells/dolfinx-dev-env:latest
+    container: wells/dolfinx-dev-env:openmpi
 
     env:
       CC: clang-9
