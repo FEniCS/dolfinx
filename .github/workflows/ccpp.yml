@@ -18,18 +18,16 @@ jobs:
       - name: Install FEniCS Python components
         run: |
           apt-get -qq update
-          apt-get -y install clang-9
-          apt-get install clang-format clang-tidy clang-tools clang clangd libc++-dev libc++1 libc++abi-dev libc++abi1 libclang-dev libclang1 liblldb-dev libllvm-ocaml-dev libomp-dev libomp5 lld lldb llvm-dev llvm-runtime llvm python-clang          wget https://bootstrap.pypa.io/get-pip.py
-          python3 get-pip.py
+          apt-get -y install clang-9 python3-pip
           pip3 install git+https://github.com/FEniCS/fiat.git --upgrade
           pip3 install git+https://github.com/FEniCS/ufl.git --upgrade
           pip3 install git+https://github.com/FEniCS/ffcx --upgrade
           rm -rf /usr/local/include/dolfin /usr/local/include/dolfin.h
 
       - name: Configure DOLFINX C++ with CMake
-        env:
-          CC: clang-9
-          CXX: clang++-9
+        # env:
+        #   CC: clang
+        #   CXX: clang++
         run: |
           mkdir build
           cd build
@@ -58,8 +56,8 @@ jobs:
 
       - name: Build Python interface
         env:
-          CC: clang-9
-          CXX: clang++-9
+          CC: clang
+          CXX: clang++
         run: |
           cd python
           pip3 -v install . --user
