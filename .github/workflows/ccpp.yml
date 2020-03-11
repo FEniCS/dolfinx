@@ -17,6 +17,8 @@ jobs:
       CC: clang-9
       CXX: clang++-9
       DOLFINX_JIT_CFLAGS: -g0 -O0
+      OMPI_ALLOW_RUN_AS_ROOT: 1
+      OMPI_ALLOW_RUN_AS_ROOT_CONFIRM: 1
 
     steps:
       - uses: actions/checkout@v2
