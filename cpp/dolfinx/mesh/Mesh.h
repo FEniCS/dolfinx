@@ -204,8 +204,6 @@ public:
   /// @return The maximum of cells' inscribed sphere radii
   double rmax() const;
 
-  /// @todo Remove and work via Topology
-  ///
   /// Compute hash of mesh, currently based on the has of the mesh
   /// geometry and mesh topology
   /// @return A tree-hashed value of the coordinates over all MPI
