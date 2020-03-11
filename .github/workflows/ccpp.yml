@@ -33,7 +33,7 @@ jobs:
           cmake -DPYBIND11_TEST=False ../
           make install
 
-          - name: Configure DOLFINX C++ with CMake
+      - name: Configure DOLFINX C++ with CMake
         env:
           CC: clang-9
           CXX: clang++-9
