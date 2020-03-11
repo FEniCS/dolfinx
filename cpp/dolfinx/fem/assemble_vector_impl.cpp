@@ -61,14 +61,10 @@ void _lift_bc_cells(
 
   // Prepare cell geometry
   const int gdim = mesh.geometry().dim();
-  const graph::AdjacencyList<std::int32_t>& connectivity_g
-      = mesh.geometry().dofmap();
-  const Eigen::Array<std::int32_t, Eigen::Dynamic, 1>& pos_g
-      = connectivity_g.offsets();
-  const Eigen::Array<std::int32_t, Eigen::Dynamic, 1>& cell_g
-      = connectivity_g.array();
+  const graph::AdjacencyList<std::int32_t>& x_dofmap = mesh.geometry().dofmap();
+
   // FIXME: Add proper interface for num coordinate dofs
-  const int num_dofs_g = connectivity_g.num_links(0);
+  const int num_dofs_g = x_dofmap.num_links(0);
   const Eigen::Array<double, Eigen::Dynamic, 3, Eigen::RowMajor>& x_g
       = mesh.geometry().x();
 
@@ -120,9 +116,10 @@ void _lift_bc_cells(
       continue;
 
     // Get cell vertex coordinates
+    auto x_dofs = x_dofmap.links(c);
     for (int i = 0; i < num_dofs_g; ++i)
       for (int j = 0; j < gdim; ++j)
-        coordinate_dofs(i, j) = x_g(cell_g[pos_g[c] + i], j);
+        coordinate_dofs(i, j) = x_g(x_dofs[i], j);
 
     // Size data structure for assembly
     auto dmap0 = dofmap0.cell_dofs(c);
@@ -195,14 +192,9 @@ void _lift_bc_exterior_facets(
                                           0);
 
   // Prepare cell geometry
-  const graph::AdjacencyList<std::int32_t>& connectivity_g
-      = mesh.geometry().dofmap();
-  const Eigen::Array<std::int32_t, Eigen::Dynamic, 1>& pos_g
-      = connectivity_g.offsets();
-  const Eigen::Array<std::int32_t, Eigen::Dynamic, 1>& cell_g
-      = connectivity_g.array();
+  const graph::AdjacencyList<std::int32_t>& x_dofmap = mesh.geometry().dofmap();
   // FIXME: Add proper interface for num coordinate dofs
-  const int num_dofs_g = connectivity_g.num_links(0);
+  const int num_dofs_g = x_dofmap.num_links(0);
   const Eigen::Array<double, Eigen::Dynamic, 3, Eigen::RowMajor>& x_g
       = mesh.geometry().x();
 
@@ -277,9 +269,10 @@ void _lift_bc_exterior_facets(
       continue;
 
     // Get cell vertex coordinates
+    auto x_dofs = x_dofmap.links(cell);
     for (int i = 0; i < num_dofs_g; ++i)
       for (int j = 0; j < gdim; ++j)
-        coordinate_dofs(i, j) = x_g(cell_g[pos_g[cell] + i], j);
+        coordinate_dofs(i, j) = x_g(x_dofs[i], j);
 
     // Size data structure for assembly
     auto dmap0 = dofmap0.cell_dofs(cell);
@@ -393,14 +386,10 @@ void fem::impl::assemble_cells(
   mesh.create_entity_permutations();
 
   // Prepare cell geometry
-  const graph::AdjacencyList<std::int32_t>& connectivity_g
-      = mesh.geometry().dofmap();
-  const Eigen::Array<std::int32_t, Eigen::Dynamic, 1>& pos_g
-      = connectivity_g.offsets();
-  const Eigen::Array<std::int32_t, Eigen::Dynamic, 1>& cell_g
-      = connectivity_g.array();
+  const graph::AdjacencyList<std::int32_t>& x_dofmap = mesh.geometry().dofmap();
+
   // FIXME: Add proper interface for num coordinate dofs
-  const int num_dofs_g = connectivity_g.num_links(0);
+  const int num_dofs_g = x_dofmap.num_links(0);
   const Eigen::Array<double, Eigen::Dynamic, 3, Eigen::RowMajor>& x_g
       = mesh.geometry().x();
 
@@ -423,9 +412,10 @@ void fem::impl::assemble_cells(
   for (std::int32_t c : active_cells)
   {
     // Get cell coordinates/geometry
+    auto x_dofs = x_dofmap.links(c);
     for (int i = 0; i < num_dofs_g; ++i)
       for (int j = 0; j < gdim; ++j)
-        coordinate_dofs(i, j) = x_g(cell_g[pos_g[c] + i], j);
+        coordinate_dofs(i, j) = x_g(x_dofs[i], j);
 
     // Tabulate vector for cell
     auto coeff_cell = coeffs.row(c);
@@ -461,14 +451,10 @@ void fem::impl::assemble_exterior_facets(
   mesh.create_entity_permutations();
 
   // Prepare cell geometry
-  const graph::AdjacencyList<std::int32_t>& connectivity_g
-      = mesh.geometry().dofmap();
-  const Eigen::Array<std::int32_t, Eigen::Dynamic, 1>& pos_g
-      = connectivity_g.offsets();
-  const Eigen::Array<std::int32_t, Eigen::Dynamic, 1>& cell_g
-      = connectivity_g.array();
+  const graph::AdjacencyList<std::int32_t>& x_dofmap = mesh.geometry().dofmap();
+
   // FIXME: Add proper interface for num coordinate dofs
-  const int num_dofs_g = connectivity_g.num_links(0);
+  const int num_dofs_g = x_dofmap.num_links(0);
   const Eigen::Array<double, Eigen::Dynamic, 3, Eigen::RowMajor>& x_g
       = mesh.geometry().x();
 
@@ -508,9 +494,10 @@ void fem::impl::assemble_exterior_facets(
     const std::uint8_t perm = perms(local_facet, cell);
 
     // Get cell vertex coordinates
+    auto x_dofs = x_dofmap.links(cell);
     for (int i = 0; i < num_dofs_g; ++i)
       for (int j = 0; j < gdim; ++j)
-        coordinate_dofs(i, j) = x_g(cell_g[pos_g[cell] + i], j);
+        coordinate_dofs(i, j) = x_g(x_dofs[i], j);
 
     // Get dof map for cell
     auto dmap = dofmap.cell_dofs(cell);
@@ -550,14 +537,10 @@ void fem::impl::assemble_interior_facets(
   mesh.create_entity_permutations();
 
   // Prepare cell geometry
-  const graph::AdjacencyList<std::int32_t>& connectivity_g
-      = mesh.geometry().dofmap();
-  const Eigen::Array<std::int32_t, Eigen::Dynamic, 1>& pos_g
-      = connectivity_g.offsets();
-  const Eigen::Array<std::int32_t, Eigen::Dynamic, 1>& cell_g
-      = connectivity_g.array();
+  const graph::AdjacencyList<std::int32_t>& x_dofmap = mesh.geometry().dofmap();
   // FIXME: Add proper interface for num coordinate dofs
-  const int num_dofs_g = connectivity_g.num_links(0);
+
+  const int num_dofs_g = x_dofmap.num_links(0);
   const Eigen::Array<double, Eigen::Dynamic, 3, Eigen::RowMajor>& x_g
       = mesh.geometry().x();
 
@@ -606,13 +589,14 @@ void fem::impl::assemble_interior_facets(
         = {perms(local_facet[0], cells[0]), perms(local_facet[1], cells[1])};
 
     // Get cell vertex coordinates
+    auto x_dofs0 = x_dofmap.links(cells[0]);
+    auto x_dofs1 = x_dofmap.links(cells[1]);
     for (int i = 0; i < num_dofs_g; ++i)
     {
       for (int j = 0; j < gdim; ++j)
       {
-        coordinate_dofs(i, j) = x_g(cell_g[pos_g[cells[0]] + i], j);
-        coordinate_dofs(i + num_dofs_g, j)
-            = x_g(cell_g[pos_g[cells[1]] + i], j);
+        coordinate_dofs(i, j) = x_g(x_dofs0[i], j);
+        coordinate_dofs(i + num_dofs_g, j) = x_g(x_dofs1[i], j);
       }
     }
 
