@@ -248,8 +248,7 @@ void Function::eval(
     // Get cell geometry (coordinate dofs)
     auto x_dofs = x_dofmap.links(cell_index);
     for (int i = 0; i < num_dofs_g; ++i)
-      for (int j = 0; j < gdim; ++j)
-        coordinate_dofs(i, j) = x_g(x_dofs[i], j);
+      coordinate_dofs.row(i) = x_g.row(x_dofs[i]).head(gdim);
 
     // Compute reference coordinates X, and J, detJ and K
     cmap->compute_reference_geometry(X, J, detJ, K, x.row(p).head(gdim),

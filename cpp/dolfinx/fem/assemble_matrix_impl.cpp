@@ -135,8 +135,7 @@ void fem::impl::assemble_cells(
     // Get cell coordinates/geometry
     auto x_dofs = x_dofmap.links(c);
     for (int i = 0; i < x_dofs.rows(); ++i)
-      for (int j = 0; j < gdim; ++j)
-        coordinate_dofs(i, j) = x_g(x_dofs[i], j);
+      coordinate_dofs.row(i) = x_g.row(x_dofs[i]).head(gdim);
 
     // Tabulate tensor
     auto coeff_cell = coeffs.row(c);
@@ -244,8 +243,7 @@ void fem::impl::assemble_exterior_facets(
     // Get cell vertex coordinates
     auto x_dofs = x_dofmap.links(cells[0]);
     for (int i = 0; i < num_dofs_g; ++i)
-      for (int j = 0; j < gdim; ++j)
-        coordinate_dofs(i, j) = x_g(x_dofs[i], j);
+      coordinate_dofs.row(i) = x_g.row(x_dofs[i]).head(gdim);
 
     // Get dof maps for cell
     auto dmap0 = dofmap0.cell_dofs(cells[0]);
@@ -377,11 +375,8 @@ void fem::impl::assemble_interior_facets(
     auto x_dofs1 = x_dofmap.links(cells[1]);
     for (int i = 0; i < num_dofs_g; ++i)
     {
-      for (int j = 0; j < gdim; ++j)
-      {
-        coordinate_dofs(i, j) = x_g(x_dofs0[i], j);
-        coordinate_dofs(i + num_dofs_g, j) = x_g(x_dofs1[i], j);
-      }
+      coordinate_dofs.row(i) = x_g.row(x_dofs0[i]).head(gdim);
+      coordinate_dofs.row(i + num_dofs_g) = x_g.row(x_dofs1[i]).head(gdim);
     }
 
     // Get dof maps for cells and pack

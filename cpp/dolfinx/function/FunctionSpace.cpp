@@ -402,8 +402,7 @@ void FunctionSpace::set_x(
     // Update UFC cell
     auto x_dofs = x_dofmap.links(c);
     for (int i = 0; i < num_dofs_g; ++i)
-      for (int j = 0; j < gdim; ++j)
-        coordinate_dofs(i, j) = x_g(x_dofs[i], j);
+      coordinate_dofs.row(i) = x_g.row(x_dofs[i]).head(gdim);
 
     // Get cell local-to-global map
     auto dofs = _dofmap->cell_dofs(c);

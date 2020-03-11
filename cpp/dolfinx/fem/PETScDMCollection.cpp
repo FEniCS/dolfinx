@@ -115,8 +115,7 @@ tabulate_coordinates_to_dofs(const function::FunctionSpace& V)
     // Get cell coordinates
     auto x_dofs = x_dofmap.links(cell_index);
     for (int i = 0; i < num_dofs_g; ++i)
-      for (int j = 0; j < gdim; ++j)
-        coordinate_dofs(i, j) = x_g(x_dofs[i], j);
+      coordinate_dofs.row(i) = x_g.row(x_dofs[i]).head(gdim);
 
     // Get local-to-global map
     auto dofs = dofmap.cell_dofs(cell.index());
