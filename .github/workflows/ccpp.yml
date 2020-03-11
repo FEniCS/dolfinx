@@ -18,6 +18,7 @@ jobs:
       - name: Install FEniCS Python components
         run: |
           apt-get -qq update
+          apt-get -qq upgrade
           apt-get -y install clang-9 python3-pip
           pip3 install git+https://github.com/FEniCS/fiat.git --upgrade
           pip3 install git+https://github.com/FEniCS/ufl.git --upgrade
