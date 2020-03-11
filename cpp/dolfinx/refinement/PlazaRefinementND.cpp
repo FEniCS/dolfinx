@@ -6,12 +6,12 @@
 
 #include "PlazaRefinementND.h"
 #include "ParallelRefinement.h"
+#include <dolfinx/common/IndexMap.h>
 #include <dolfinx/common/Timer.h>
 #include <dolfinx/mesh/Geometry.h>
 #include <dolfinx/mesh/Mesh.h>
+#include <dolfinx/mesh/MeshEntity.h>
 #include <dolfinx/mesh/Topology.h>
-#include <dolfinx/common/IndexMap.h>
-#include <dolfinx/mesh/MeshIterator.h>
 #include <limits>
 #include <map>
 #include <vector>
@@ -84,27 +84,46 @@ mesh::Mesh compute_refinement(const mesh::Mesh& mesh, ParallelRefinement& p_ref,
   std::vector<std::size_t> marked_edge_list;
   std::vector<std::int32_t> simplex_set;
 
-  // const std::vector<std::int64_t>& global_indices
-  //     = mesh.topology().global_indices(0);
+  auto map_c = mesh.topology().index_map(tdim);
+  assert(map_c);
+  const int num_cells = map_c->size_local() + map_c->num_ghosts();
+
+  auto c_to_v = mesh.topology().connectivity(tdim, 0);
+  assert(c_to_v);
+  auto c_to_f = mesh.topology().connectivity(tdim, 2);
+  assert(c_to_f);
+  auto c_to_e = mesh.topology().connectivity(tdim, 1);
+  assert(c_to_e);
+
+  assert(mesh.topology().index_map(0));
   const std::vector<std::int64_t> global_indices
       = mesh.topology().index_map(0)->global_indices(true);
-  for (const auto& cell : mesh::MeshRange(mesh, tdim))
+  for (int c = 0; c < num_cells; ++c)
+  // for (const auto& cell : mesh::MeshRange(mesh, tdim))
   {
     // Create vector of indices in the order [vertices][edges], 3+3 in
     // 2D, 4+6 in 3D
     std::int32_t j = 0;
-    for (const auto& v : mesh::EntityRange(cell, 0))
-      indices[j++] = global_indices[v.index()];
 
+    auto vertices = c_to_v->links(c);
+    for (int v = 0; v < vertices.rows(); ++v)
+      indices[j++] = global_indices[vertices[v]];
+    // for (const auto& v : mesh::EntityRange(cell, 0))
+    //   indices[j++] = global_indices[v.index()];
+
+    // TODO: remove MeshEntity
+    mesh::MeshEntity cell(mesh, tdim, c);
     marked_edge_list = p_ref.marked_edge_list(cell);
     if (marked_edge_list.size() == 0)
     {
       // Copy over existing Cell to new topology
       std::vector<std::int64_t> cell_topology;
-      for (const auto& v : mesh::EntityRange(cell, 0))
-        cell_topology.push_back(global_indices[v.index()]);
+      for (int v = 0; v < vertices.rows(); ++v)
+        cell_topology.push_back(global_indices[vertices[v]]);
+      // for (const auto& v : mesh::EntityRange(cell, 0))
+      //   cell_topology.push_back(global_indices[v.index()]);
       p_ref.new_cells(cell_topology);
-      parent_cell.push_back(cell.index());
+      parent_cell.push_back(c);
     }
     else
     {
@@ -123,16 +142,21 @@ mesh::Mesh compute_refinement(const mesh::Mesh& mesh, ParallelRefinement& p_ref,
 
       // Need longest edges of each facet in cell local indexing
       std::vector<std::int32_t> longest_edge;
-      for (const auto& f : mesh::EntityRange(cell, 2))
-        longest_edge.push_back(long_edge[f.index()]);
+      auto faces = c_to_f->links(c);
+      for (int f = 0; f < faces.rows(); ++f)
+        longest_edge.push_back(long_edge[ faces(f)]);
+      // for (const auto& f : mesh::EntityRange(cell, 2))
+      //   longest_edge.push_back(long_edge[f.index()]);
 
       // Convert to cell local index
       for (auto& p : longest_edge)
       {
         int i = 0;
-        for (const auto& ej : mesh::EntityRange(cell, 1))
+        // for (const auto& ej : mesh::EntityRange(cell, 1))
+        auto edges = c_to_e->links(c);
+        for (int ej = 0; ej < edges.rows(); ++ej)
         {
-          if (p == ej.index())
+          if (p == edges[ej])
           {
             p = i;
             break;
@@ -369,11 +393,17 @@ face_long_edge(const mesh::Mesh& mesh)
   }
 
   // Get longest edge of each face
+  auto f_to_v = mesh.topology().connectivity(2, 0);
+  assert(f_to_v);
+  auto f_to_e = mesh.topology().connectivity(2, 1);
+  assert(f_to_e);
   const std::vector<std::int64_t> global_indices
       = mesh.topology().index_map(0)->global_indices(true);
-  for (const auto& f : mesh::MeshRange(mesh, 2, mesh::MeshRangeType::ALL))
+  // for (const auto& f : mesh::MeshRange(mesh, 2, mesh::MeshRangeType::ALL))
+  for (int f = 0; f < f_to_v->num_nodes(); ++f)
   {
-    auto face_edges = f.entities(1);
+    auto face_edges = f_to_e->links(f);
+    // f.entities(1);
 
     std::int32_t imax = 0;
     double max_len = 0.0;
@@ -393,8 +423,11 @@ face_long_edge(const mesh::Mesh& mesh)
         // If edges are the same length, compare global index of
         // opposite vertex.  Only important so that tetrahedral faces
         // have a matching refinement pattern across processes.
-        const int vmax = f.entities(0)[imax];
-        const int vi = f.entities(0)[i];
+        auto vertices = f_to_v->links(f);
+        const int vmax = vertices[imax];
+        const int vi = vertices[i];
+        // const int vmax = f.entities(0)[imax];
+        // const int vi = f.entities(0)[i];
         if (global_indices[vi] > global_indices[vmax])
           imax = i;
       }
@@ -402,9 +435,9 @@ face_long_edge(const mesh::Mesh& mesh)
 
     // Only save edge ratio in 2D
     if (tdim == 2)
-      edge_ratio_ok[f.index()] = (min_len / max_len >= min_ratio);
+      edge_ratio_ok[f] = (min_len / max_len >= min_ratio);
 
-    long_edge[f.index()] = face_edges[imax];
+    long_edge[f] = face_edges[imax];
   }
 
   return std::pair(std::move(long_edge), std::move(edge_ratio_ok));
