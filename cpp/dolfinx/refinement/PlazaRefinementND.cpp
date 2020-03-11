@@ -99,7 +99,6 @@ mesh::Mesh compute_refinement(const mesh::Mesh& mesh, ParallelRefinement& p_ref,
   const std::vector<std::int64_t> global_indices
       = mesh.topology().index_map(0)->global_indices(true);
   for (int c = 0; c < num_cells; ++c)
-  // for (const auto& cell : mesh::MeshRange(mesh, tdim))
   {
     // Create vector of indices in the order [vertices][edges], 3+3 in
     // 2D, 4+6 in 3D
@@ -108,8 +107,6 @@ mesh::Mesh compute_refinement(const mesh::Mesh& mesh, ParallelRefinement& p_ref,
     auto vertices = c_to_v->links(c);
     for (int v = 0; v < vertices.rows(); ++v)
       indices[j++] = global_indices[vertices[v]];
-    // for (const auto& v : mesh::EntityRange(cell, 0))
-    //   indices[j++] = global_indices[v.index()];
 
     // TODO: remove MeshEntity
     mesh::MeshEntity cell(mesh, tdim, c);
@@ -120,8 +117,6 @@ mesh::Mesh compute_refinement(const mesh::Mesh& mesh, ParallelRefinement& p_ref,
       std::vector<std::int64_t> cell_topology;
       for (int v = 0; v < vertices.rows(); ++v)
         cell_topology.push_back(global_indices[vertices[v]]);
-      // for (const auto& v : mesh::EntityRange(cell, 0))
-      //   cell_topology.push_back(global_indices[v.index()]);
       p_ref.new_cells(cell_topology);
       parent_cell.push_back(c);
     }
@@ -144,9 +139,7 @@ mesh::Mesh compute_refinement(const mesh::Mesh& mesh, ParallelRefinement& p_ref,
       std::vector<std::int32_t> longest_edge;
       auto faces = c_to_f->links(c);
       for (int f = 0; f < faces.rows(); ++f)
-        longest_edge.push_back(long_edge[ faces(f)]);
-      // for (const auto& f : mesh::EntityRange(cell, 2))
-      //   longest_edge.push_back(long_edge[f.index()]);
+        longest_edge.push_back(long_edge[faces(f)]);
 
       // Convert to cell local index
       for (auto& p : longest_edge)
@@ -342,7 +335,6 @@ face_long_edge(const mesh::Mesh& mesh)
   mesh.create_connectivity(1, tdim);
   mesh.create_connectivity(tdim, 2);
 
-
   // Storage for face-local index of longest edge
   std::vector<std::int32_t> long_edge(mesh.num_entities(2));
   std::vector<bool> edge_ratio_ok;
@@ -401,11 +393,9 @@ face_long_edge(const mesh::Mesh& mesh)
   assert(f_to_e);
   const std::vector<std::int64_t> global_indices
       = mesh.topology().index_map(0)->global_indices(true);
-  // for (const auto& f : mesh::MeshRange(mesh, 2, mesh::MeshRangeType::ALL))
   for (int f = 0; f < f_to_v->num_nodes(); ++f)
   {
     auto face_edges = f_to_e->links(f);
-    // f.entities(1);
 
     std::int32_t imax = 0;
     double max_len = 0.0;
@@ -428,8 +418,6 @@ face_long_edge(const mesh::Mesh& mesh)
         auto vertices = f_to_v->links(f);
         const int vmax = vertices[imax];
         const int vi = vertices[i];
-        // const int vmax = f.entities(0)[imax];
-        // const int vi = f.entities(0)[i];
         if (global_indices[vi] > global_indices[vmax])
           imax = i;
       }
