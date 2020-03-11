@@ -155,7 +155,7 @@ public:
   /// @param [in] node Node index
   /// @return Array of outgoing links for the node. The length will be
   ///   AdjacencyList:num_links(node).
-  auto links(int node)
+  typename Eigen::Array<T, Eigen::Dynamic, 1>::SegmentReturnType links(int node)
   {
     return _array.segment(_offsets[node], _offsets[node + 1] - _offsets[node]);
   }
@@ -164,7 +164,8 @@ public:
   /// @param [in] node Node index
   /// @return Array of outgoing links for the node. The length will be
   ///   AdjacencyList:num_links(node).
-  auto links(int node) const
+  typename Eigen::Array<T, Eigen::Dynamic, 1>::ConstSegmentReturnType
+  links(int node) const
   {
     return _array.segment(_offsets[node], _offsets[node + 1] - _offsets[node]);
   }
