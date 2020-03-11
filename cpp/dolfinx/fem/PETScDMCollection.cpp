@@ -531,7 +531,8 @@ la::PETScMatrix PETScDMCollection::create_transfer_matrix(
   Eigen::Tensor<double, 3, Eigen::RowMajor> K(1, tdim, gdim);
 
   // Prepare cell geometry
-  const graph::AdjacencyList<std::int32_t>& x_dofmap = meshc.geometry().dofmap();
+  const graph::AdjacencyList<std::int32_t>& x_dofmap
+      = meshc.geometry().dofmap();
 
   // FIXME: Add proper interface for num coordinate dofs
   const int num_dofs_g = x_dofmap.num_links(0);
@@ -553,8 +554,7 @@ la::PETScMatrix PETScDMCollection::create_transfer_matrix(
     const int cell_index = coarse_cell.index();
     auto x_dofs = x_dofmap.links(cell_index);
     for (int j = 0; j < num_dofs_g; ++j)
-      for (int k = 0; k < gdim; ++k)
-        coordinate_dofs(j, k) = x_g(x_dofs[i], j);
+      coordinate_dofs.row(j) = x_g.row(x_dofs[j]).head(gdim);
 
     // Evaluate the basis functions of the coarse cells at the fine
     // point and store the values into temp_values
