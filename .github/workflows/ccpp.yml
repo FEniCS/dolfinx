@@ -11,7 +11,8 @@ on:
 jobs:
   build:
     runs-on: ubuntu-latest
-    container: wells/dolfinx-dev-env:openmpi
+    container: wells/dolfinx-dev-env:latest
+    # container: wells/dolfinx-dev-env:openmpi
 
     env:
       CC: clang-9
@@ -22,9 +23,9 @@ jobs:
 
     steps:
       - uses: actions/checkout@v2
-      - name: Test MPI
-        run: |
-          mpiexec --oversubscribe -np 3 ls
+      # - name: Test MPI
+      #   run: |
+      #     mpiexec --oversubscribe -np 3 ls
       - name: Install FEniCS Python components
         run: |
           apt-get -qq update
@@ -58,7 +59,9 @@ jobs:
           cd build
           ninja unittests
           ctest --output-on-failure -R unittests
-          mpiexec --oversubscribe -np 3 ctest --output-on-failure -R unittests
+          # mpiexec --oversubscribe -np 3 ctest --output-on-failure -R unittests
+          mpiexec  --with-device=ch3:sock -np 3 ctest --output-on-failure -R unittests
+          --with-device=ch3:sock
       - name: Build and run C++ regression tests (serial)
         run: |
           cd build
