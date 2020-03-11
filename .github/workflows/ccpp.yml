@@ -15,8 +15,8 @@ jobs:
     container: wells/dolfinx-dev-env:openmpi
 
     env:
-      CC: clang-9
-      CXX: clang++-9
+      # CC: clang-9
+      # CXX: clang++-9
       DOLFINX_JIT_CFLAGS: -g0 -O0
       OMPI_ALLOW_RUN_AS_ROOT: 1
       OMPI_ALLOW_RUN_AS_ROOT_CONFIRM: 1
@@ -60,7 +60,7 @@ jobs:
           cd build
           ninja unittests
           # ctest --output-on-failure -R unittests
-          mpiexec --oversubscribe -np 3 ctest --output-on-failure -R unittests
+          mpiexec -np 3 ctest --output-on-failure -R unittests
           # mpiexec  --with-device=ch3:sock -np 3 ctest --output-on-failure -R unittests
       - name: Build and run C++ regression tests (serial)
         run: |
@@ -92,9 +92,8 @@ jobs:
         env:
           DOLFINX_JIT_CFLAGS: -g0 -O0
         run: |
-          mkdir -p ~/junit
           cd python/test/unit
-          mpiexec --oversubscribe -np 3 python3 -m pytest .
+          mpiexec -np 3 python3 -m pytest .
       - name: Run demos (Python, serial)
         env:
           DOLFINX_JIT_CFLAGS: -g0 -O0
