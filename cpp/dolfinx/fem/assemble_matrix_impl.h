@@ -95,7 +95,7 @@ void assemble_interior_facets(
     const std::function<void(ScalarType*, const ScalarType*, const ScalarType*,
                              const double*, const int*, const std::uint8_t*,
                              const bool*, const bool*, const std::uint8_t*)>&
-        fn,
+        kernel,
     const Eigen::Array<ScalarType, Eigen::Dynamic, Eigen::Dynamic,
                        Eigen::RowMajor>& coeffs,
     const std::vector<int>& offsets,

@@ -268,210 +268,18 @@ void Mesh::create_connectivity(int d0, int d1) const
 //-----------------------------------------------------------------------------
 void Mesh::create_entity_permutations() const
 {
-  // FIXME: This should probably be moved to topology.
-
-  assert(_topology);
-  if (_topology->entity_reflection_size() > 0)
-    return;
+  // FIXME: This should be moved to topology or a TopologyPermutation class
 
   const int tdim = _topology->dim();
-  assert(_topology->connectivity(tdim, 0));
-  const int num_cells = _topology->connectivity(tdim, 0)->num_nodes();
 
-  _topology->resize_entity_permutations(
-      num_cells, cell_num_entities(_topology->cell_type(), 1),
-      cell_num_entities(_topology->cell_type(), 2));
-
+  // FIXME: Is this always required? Could it be made cheaper by doing a
+  // local version? This call does quite a lot of parallel work
+  // Create all mesh entities
   for (int d = 0; d < tdim; ++d)
     this->create_entities(d);
 
-  // If the cell is a triangle or tetrahedron
-  if (_topology->cell_type() == CellType::triangle
-      or _topology->cell_type() == CellType::tetrahedron)
-  {
-    for (int cell_n = 0; cell_n < num_cells; ++cell_n)
-    {
-      auto cell_vertices = _topology->connectivity(tdim, 0)->links(cell_n);
-      for (int d = 1; d < tdim; ++d)
-      {
-        assert(_topology->connectivity(d, 0));
-        assert(_topology->connectivity(tdim, d));
-        auto cell_entities = _topology->connectivity(tdim, d)->links(cell_n);
-        for (int i = 0; i < cell_num_entities(_topology->cell_type(), d); ++i)
-        {
-          // Get the facet
-          const int sub_e_n = cell_entities[i];
-
-          // Number of rotations and reflections to apply to the facet
-          std::uint8_t rots = 0;
-          std::uint8_t refs = 0;
-
-          auto vertices = _topology->connectivity(d, 0)->links(sub_e_n);
-
-          // If the entity is an interval, it should be oriented pointing from
-          // the lowest numbered vertex to the highest numbered vertex
-          if (d == 1)
-          {
-            // Find iterators pointing to cell vertex given a vertex on facet
-            const auto it0 = std::find(
-                cell_vertices.data(),
-                cell_vertices.data() + cell_vertices.size(), vertices[0]);
-            const auto it1 = std::find(
-                cell_vertices.data(),
-                cell_vertices.data() + cell_vertices.size(), vertices[1]);
-
-            // The number of reflections
-            // Comparing iterators directly instead of values they point to
-            // is sufficient here
-            refs = it1 < it0;
-          }
-          else if (d == 2)
-          {
-            // Orient that triangle so the the lowest numbered vertex is the
-            // origin, and the next vertex anticlockwise from the lowest has a
-            // lower number than the next vertex clockwise. Find the index of
-            // the lowest numbered vertex
-            rots = 0;
-
-            // Store local vertex indices here
-            std::array<std::size_t, 3> e_vertices;
-            // Find iterators pointing to cell vertex given a vertex on facet
-            for (int j = 0; j < 3; ++j)
-            {
-              const auto it = std::find(
-                  cell_vertices.data(),
-                  cell_vertices.data() + cell_vertices.size(), vertices[j]);
-              // Get the actual local vertex indices
-              e_vertices[j] = it - cell_vertices.data();
-            }
-
-            for (int v = 1; v < 3; ++v)
-              if (e_vertices[v] < e_vertices[rots])
-                rots = v;
-            // pre is the number of the next vertex clockwise from the lowest
-            // numbered vertex
-            const int pre
-                = rots == 0 ? e_vertices[3 - 1] : e_vertices[rots - 1];
-            // post is the number of the next vertex anticlockwise from the
-            // lowest numbered vertex
-            const int post
-                = rots == 3 - 1 ? e_vertices[0] : e_vertices[rots + 1];
-            // The number of reflections
-            refs = post > pre;
-          }
-
-          _topology->set_entity_permutation(cell_n, d, i, rots, refs);
-        }
-      }
-    }
-  }
-  // If the cell is a quad, hex or interval
-  else
-  {
-    for (int cell_n = 0; cell_n < num_cells; ++cell_n)
-    {
-      auto cell_vertices
-          = this->topology().connectivity(tdim, 0)->links(cell_n);
-      for (int d = 1; d < tdim; ++d)
-      {
-        assert(_topology->connectivity(d, 0));
-        assert(_topology->connectivity(tdim, d));
-        auto cell_entities = _topology->connectivity(tdim, d)->links(cell_n);
-        for (int i = 0; i < cell_num_entities(_topology->cell_type(), d); ++i)
-        {
-          // Get the facet
-          const int sub_e_n = cell_entities[i];
-
-          // Number of rotations and reflections to apply to the facet
-          std::uint8_t rots = 0;
-          std::uint8_t refs = 0;
-
-          auto vertices = _topology->connectivity(d, 0)->links(sub_e_n);
-
-          // If the entity is an interval, it should be oriented pointing from
-          // the lowest numbered vertex to the highest numbered vertex
-          if (d == 1)
-          {
-            // Find iterators pointing to cell vertex given a vertex on facet
-            const auto it0 = std::find(
-                cell_vertices.data(),
-                cell_vertices.data() + cell_vertices.size(), vertices[0]);
-            const auto it1 = std::find(
-                cell_vertices.data(),
-                cell_vertices.data() + cell_vertices.size(), vertices[1]);
-
-            // The number of reflections
-            refs = it1 < it0;
-          }
-          // Triangles and quadrilaterals
-          else if (d == 2)
-          {
-            // quadrilateral
-            // Orient that quad so the the lowest numbered vertex is the origin,
-            // and the next vertex anticlockwise from the lowest has a lower
-            // number than the next vertex clockwise. Find the index of the
-            // lowest numbered vertex
-            int num_min = -1;
-
-            // Store local vertex indices here
-            std::array<std::size_t, 4> e_vertices;
-            // Find iterators pointing to cell vertex given a vertex on facet
-            for (int j = 0; j < 4; ++j)
-            {
-              const auto it = std::find(
-                  cell_vertices.data(),
-                  cell_vertices.data() + cell_vertices.size(), vertices[j]);
-              // Get the actual local vertex indices
-              e_vertices[j] = it - cell_vertices.data();
-            }
-
-            for (int v = 0; v < 4; ++v)
-            {
-              if (num_min == -1 || e_vertices[v] < e_vertices[num_min])
-                num_min = v;
-            }
-
-            // rots is the number of rotations to get the lowest numbered vertex
-            // to the origin
-            rots = num_min;
-
-            // pre is the (local) number of the next vertex clockwise from the
-            // lowest numbered vertex
-            int pre = 2;
-
-            // post is the (local) number of the next vertex anticlockwise from
-            // the lowest numbered vertex
-            int post = 1;
-
-            // The tensor product ordering of quads must be taken into account
-            if (num_min == 1)
-            {
-              pre = 0;
-              post = 3;
-            }
-            else if (num_min == 2)
-            {
-              pre = 3;
-              post = 0;
-              rots = 3;
-            }
-            else if (num_min == 3)
-            {
-              pre = 1;
-              post = 2;
-              rots = 2;
-            }
-            // The number of reflections
-            refs = (e_vertices[post] > e_vertices[pre]);
-          }
-
-          _topology->set_entity_permutation(cell_n, d, i, rots, refs);
-        }
-      }
-    }
-  }
+  _topology->create_entity_permutations();
 }
-
 //-----------------------------------------------------------------------------
 void Mesh::create_connectivity_all() const
 {
@@ -519,7 +327,6 @@ std::string Mesh::str(bool verbose) const
   {
     s << str(false) << std::endl << std::endl;
     s << common::indent(_geometry->str(true));
-    s << common::indent(_topology->str(true));
   }
   else
   {

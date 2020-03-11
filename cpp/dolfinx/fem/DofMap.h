@@ -75,7 +75,8 @@ public:
   /// @param[in] cell_index The cell index.
   /// @return  Local-global map for cell (used process-local global
   ///           index)
-  auto cell_dofs(int cell_index) const
+  Eigen::Array<PetscInt, Eigen::Dynamic, 1>::ConstSegmentReturnType
+  cell_dofs(int cell_index) const
   {
     assert(element_dof_layout);
     const int cell_dimension = element_dof_layout->num_dofs();

@@ -18,7 +18,6 @@
 #include <dolfinx/function/FunctionSpace.h>
 #include <dolfinx/la/PETScMatrix.h>
 #include <dolfinx/mesh/Mesh.h>
-#include <dolfinx/mesh/MeshIterator.h>
 
 using namespace dolfinx;
 using namespace dolfinx::fem;
@@ -157,8 +156,7 @@ void fem::add_diagonal(
     assert(bc);
     if (V.contains(*bc->function_space()))
     {
-      const Eigen::Ref<const Eigen::Array<std::int32_t, Eigen::Dynamic, 1>>&
-          owned_dofs
+      const Eigen::Array<std::int32_t, Eigen::Dynamic, 1>& owned_dofs
           = bc->dofs_owned().col(0);
       add_diagonal(A, owned_dofs, diagonal);
     }
