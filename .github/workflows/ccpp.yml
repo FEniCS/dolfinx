@@ -22,6 +22,7 @@ jobs:
           add-apt-repository "deb http://apt.llvm.org/eoan/ llvm-toolchain-eoan-9 main"
           add-apt-repository "deb-src http://apt.llvm.org/eoan/ llvm-toolchain-eoan-9 main"
           wget -O - https://apt.llvm.org/llvm-snapshot.gpg.key|apt-key add -
+          wget -O - https://apt.llvm.org/llvm-snapshot.gpg.key|sudo apt-key add -
           apt-get -qq update
           # apt-get -y install clang
           apt-get install clang-format clang-tidy clang-tools clang clangd libc++-dev libc++1 libc++abi-dev libc++abi1 libclang-dev libclang1 liblldb-dev libllvm-ocaml-dev libomp-dev libomp5 lld lldb llvm-dev llvm-runtime llvm python-clang          wget https://bootstrap.pypa.io/get-pip.py
