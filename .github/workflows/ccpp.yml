@@ -17,6 +17,8 @@ jobs:
       - uses: actions/checkout@v2
       - name: Install FEniCS Python components
         run: |
+          apt-get -qq update
+          apt install -y software-properties-common
           add-apt-repository "deb http://apt.llvm.org/eoan/ llvm-toolchain-eoan-9 main"
           add-apt-repository "deb-src http://apt.llvm.org/eoan/ llvm-toolchain-eoan-9 main"
           apt-get -qq update
