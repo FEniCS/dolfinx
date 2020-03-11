@@ -25,6 +25,7 @@ jobs:
           pip3 install git+https://github.com/FEniCS/ufl.git --upgrade
           pip3 install git+https://github.com/FEniCS/ffcx --upgrade
           rm -rf /usr/local/include/dolfin /usr/local/include/dolfin.h
+
       - name: Configure DOLFINX C++ with CMake
         env:
           CC: clang
@@ -37,3 +38,28 @@ jobs:
         run: |
           cd build
           ninja install
+
+      - name: Build and run C++ unit tests
+        run: |
+          cd build
+          ninja unittests
+          ctest --output-on-failure -R unittests
+          mpirun -np 3 ctest --output-on-failure -R unittests
+      - name: Build and run C++ regression tests (serial)
+        run: |
+          cd build
+          ninja demos
+          ctest -j3 -R demo -R serial
+      - name: Build and run C++ regression tests (MPI)
+        run: |
+          cd build
+          ninja demos
+          ctest -j3 -R demo -R mpi
+
+      - name: Build Python interface
+        env:
+          CC: clang
+          CXX: clang++
+        run: |
+          cd python
+          pip3 -v install . --user
