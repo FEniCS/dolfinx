@@ -18,7 +18,6 @@ namespace dolfinx
 namespace mesh
 {
 class Mesh;
-class MeshEntity;
 template <typename T>
 class MeshFunction;
 } // namespace mesh

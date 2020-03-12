@@ -1,4 +1,4 @@
-// Copyright (C) 2013-2018 Chris Richardson
+// Copyright (C) 2013-2020 Chris Richardson
 //
 // This file is part of DOLFINX (https://www.fenicsproject.org)
 //
@@ -80,7 +80,8 @@ void ParallelRefinement::mark(std::int32_t edge_index)
 //-----------------------------------------------------------------------------
 void ParallelRefinement::mark_all()
 {
-  _marked_edges.assign(_mesh.num_entities(1), true);
+  auto edge_im = _mesh.topology().index_map(1);
+  _marked_edges.assign(edge_im->size_local() + edge_im->num_ghosts(), true);
 }
 //-----------------------------------------------------------------------------
 const std::map<std::int32_t, std::int64_t>&
@@ -204,36 +205,15 @@ void ParallelRefinement::create_new_vertices()
 
   // Tally up unshared marked edges, and shared marked edges which are
   // owned on this process. Index them sequentially from zero.
-  std::size_t n = 0;
-  const std::int32_t num_edges
-      = edge_index_map->size_local() + edge_index_map->num_ghosts();
-  for (int local_i = 0; local_i < num_edges; ++local_i)
+  // Locally owned edges
+  std::int64_t n = 0;
+  for (int local_i = 0; local_i < edge_index_map->size_local(); ++local_i)
   {
     if (_marked_edges[local_i] == true)
     {
-      // Assume this edge is owned locally
-      bool owner = true;
-
-      // If shared, check that this is true
-      auto shared_edge_i = _shared_edges.find(local_i);
-      if (shared_edge_i != _shared_edges.end())
-      {
-        // check if any other sharing process has a lower rank
-        for (auto proc_edge : shared_edge_i->second)
-        {
-          if (proc_edge < mpi_rank)
-            owner = false;
-        }
-      }
-
-      // If it is still believed to be owned on this process, add to
-      // list
-      if (owner)
-      {
-        for (std::size_t j = 0; j < 3; ++j)
-          _new_vertex_coordinates.push_back(midpoints(local_i, j));
-        _local_edge_to_new_vertex[local_i] = n++;
-      }
+      for (std::size_t j = 0; j < 3; ++j)
+        _new_vertex_coordinates.push_back(midpoints(local_i, j));
+      _local_edge_to_new_vertex[local_i] = n++;
     }
   }
 
