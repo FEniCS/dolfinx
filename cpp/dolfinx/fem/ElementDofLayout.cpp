@@ -247,7 +247,7 @@ ElementDofLayout fem::geometry_layout(mesh::CellType cell, int num_nodes)
   const int dim = mesh::cell_dim(cell);
   int num_perms = 0;
   const std::array<int, 4> p_per_dim = {0, 1, 2, 4};
-  for (int d = 1; d <= dim; ++d)
+  for (int d = 1; d < dim; ++d)
     num_perms += p_per_dim[d] * mesh::cell_num_entities(cell, d);
 
   Eigen::Array<int, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor> perm(
