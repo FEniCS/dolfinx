@@ -82,7 +82,7 @@ ElementDofLayout::ElementDofLayout(
   // Check that base_permutations has the correct shape
   int perm_count = 0;
   const std::array<int, 4> perms_per_dim = {0, 1, 2, 4};
-  for (std::size_t dim = 0; dim < entity_dofs.size(); ++dim)
+  for (std::size_t dim = 0; dim < entity_dofs.size() - 1; ++dim)
   {
     assert(dim < perms_per_dim.size());
     assert(dim < entity_dofs.size());
