@@ -172,20 +172,6 @@ void mesh(py::module& m)
                   comm.get(), type, geometry, topology, global_cell_indices,
                   ghost_mode);
             }))
-      .def(
-          "cells",
-          [](const dolfinx::mesh::Mesh& self) {
-            const int tdim = self.topology().dim();
-            auto map = self.topology().index_map(tdim);
-            assert(map);
-            const std::int32_t size = map->size_local() + map->num_ghosts();
-            return py::array(
-                {size, (std::int32_t)dolfinx::mesh::num_cell_vertices(
-                           self.topology().cell_type())},
-                self.topology().connectivity(tdim, 0)->array().data(),
-                py::none());
-          },
-          py::return_value_policy::reference_internal)
       .def_property_readonly(
           "geometry", py::overload_cast<>(&dolfinx::mesh::Mesh::geometry),
           "Mesh geometry")
