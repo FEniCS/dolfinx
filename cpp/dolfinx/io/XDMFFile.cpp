@@ -44,8 +44,7 @@ std::string get_hdf5_filename(std::string filename)
 } // namespace
 
 //-----------------------------------------------------------------------------
-XDMFFile::XDMFFile(MPI_Comm comm, const std::string filename,
-                         Encoding encoding)
+XDMFFile::XDMFFile(MPI_Comm comm, const std::string filename, Encoding encoding)
     : _mpi_comm(comm), _filename(filename), _xml_doc(new pugi::xml_document),
       _encoding(encoding)
 {
@@ -208,7 +207,7 @@ void XDMFFile::write(const mesh::MeshFunction<int>& meshfunction)
 //-----------------------------------------------------------------------------
 mesh::MeshFunction<int>
 XDMFFile::read_mf_int(std::shared_ptr<const mesh::Mesh> mesh,
-                         std::string name) const
+                      std::string name) const
 {
   // Load XML doc from file
   pugi::xml_document xml_doc;
@@ -270,6 +269,7 @@ void XDMFFile::write(const function::Function& u, double t)
   }
 
   xdmf_function::write(u, t, _counter, *_xml_doc, h5_id);
+  _counter++;
 
   // Save XML file (on process 0 only)
   if (MPI::rank(_mpi_comm.comm()) == 0)
@@ -281,7 +281,5 @@ void XDMFFile::write(const function::Function& u, double t)
   //   assert(_hdf5_file);
   //   _hdf5_file.reset();
   // }
-
-  ++_counter;
 }
 //-----------------------------------------------------------------------------
