@@ -66,10 +66,6 @@ public:
   ///   value means "do not refine"
   void mark(const mesh::MeshFunction<int>& refinement_marker);
 
-  /// Mark all incident edges of an entity
-  /// @param[in] cell
-  void mark(const mesh::MeshEntity& cell);
-
   /// Transfer marked edges between processes
   void update_logical_edgefunction();
 

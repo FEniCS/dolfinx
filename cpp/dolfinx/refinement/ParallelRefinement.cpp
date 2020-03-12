@@ -89,12 +89,6 @@ ParallelRefinement::edge_to_new_vertex() const
   return _local_edge_to_new_vertex;
 }
 //-----------------------------------------------------------------------------
-void ParallelRefinement::mark(const mesh::MeshEntity& entity)
-{
-  for (const auto& edge : mesh::EntityRange(entity, 1))
-    mark(edge.index());
-}
-//-----------------------------------------------------------------------------
 void ParallelRefinement::mark(const mesh::MeshFunction<int>& refinement_marker)
 {
   const std::size_t entity_dim = refinement_marker.dim();
@@ -103,13 +97,22 @@ void ParallelRefinement::mark(const mesh::MeshFunction<int>& refinement_marker)
   const Eigen::Array<int, Eigen::Dynamic, 1>& mf_values
       = refinement_marker.values();
 
-  for (const auto& entity :
-       mesh::MeshRange(_mesh, entity_dim, mesh::MeshRangeType::ALL))
+  std::shared_ptr<const mesh::Mesh> mesh = refinement_marker.mesh();
+  auto map_ent = mesh->topology().index_map(entity_dim);
+  assert(map_ent);
+  const int num_entities = map_ent->size_local() + map_ent->num_ghosts();
+
+  auto ent_to_edge = mesh->topology().connectivity(entity_dim, 1);
+  if (!ent_to_edge)
+    throw std::runtime_error("Connectivity missing");
+
+  for (int i = 0; i < num_entities; ++i)
   {
-    if (mf_values[entity.index()] == 1)
+    if (mf_values[i] == 1)
     {
-      for (const auto& edge : mesh::EntityRange(entity, 1))
-        mark(edge.index());
+      auto edges = ent_to_edge->links(i);
+      for (int j = 0; j < edges.rows(); ++j)
+        mark(edges[j]);
     }
   }
 }

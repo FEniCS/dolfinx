@@ -10,7 +10,6 @@
 #include <dolfinx/common/Timer.h>
 #include <dolfinx/mesh/Geometry.h>
 #include <dolfinx/mesh/Mesh.h>
-#include <dolfinx/mesh/MeshEntity.h>
 #include <dolfinx/mesh/Topology.h>
 #include <limits>
 #include <map>
@@ -90,7 +89,7 @@ mesh::Mesh compute_refinement(const mesh::Mesh& mesh, ParallelRefinement& p_ref,
 
   auto c_to_v = mesh.topology().connectivity(tdim, 0);
   assert(c_to_v);
-  auto c_to_f = mesh.topology().connectivity(tdim, 2);
+  auto c_to_f = mesh.topology().connectivity(tdim, tdim - 1);
   assert(c_to_f);
   auto c_to_e = mesh.topology().connectivity(tdim, 1);
   assert(c_to_e);
@@ -102,11 +101,11 @@ mesh::Mesh compute_refinement(const mesh::Mesh& mesh, ParallelRefinement& p_ref,
   {
     // Create vector of indices in the order [vertices][edges], 3+3 in
     // 2D, 4+6 in 3D
-    std::int32_t j = 0;
 
+    // Copy vertices
     auto vertices = c_to_v->links(c);
     for (int v = 0; v < vertices.rows(); ++v)
-      indices[j++] = global_indices[vertices[v]];
+      indices[v] = global_indices[vertices[v]];
 
     // Get cell-local indices of marked edges
     marked_edge_list.clear();
@@ -139,24 +138,21 @@ mesh::Mesh compute_refinement(const mesh::Mesh& mesh, ParallelRefinement& p_ref,
 
       // Need longest edges of each facet in cell local indexing
       std::vector<std::int32_t> longest_edge;
-      auto faces = c_to_f->links(c);
-      for (int f = 0; f < faces.rows(); ++f)
-        longest_edge.push_back(long_edge[faces(f)]);
+      auto facets = c_to_f->links(c);
+      for (int f = 0; f < facets.rows(); ++f)
+        longest_edge.push_back(long_edge[facets(f)]);
 
       // Convert to cell local index
+      auto edges = c_to_e->links(c);
       for (auto& p : longest_edge)
       {
-        int i = 0;
-        // for (const auto& ej : mesh::EntityRange(cell, 1))
-        auto edges = c_to_e->links(c);
         for (int ej = 0; ej < edges.rows(); ++ej)
         {
           if (p == edges[ej])
           {
-            p = i;
+            p = ej;
             break;
           }
-          ++i;
         }
       }
 
@@ -168,7 +164,7 @@ mesh::Mesh compute_refinement(const mesh::Mesh& mesh, ParallelRefinement& p_ref,
 
       // Save parent index
       const std::int32_t ncells = simplex_set.size() / num_cell_vertices;
-      for (std::int32_t i = 0; i != ncells; ++i)
+      for (std::int32_t i = 0; i < ncells; ++i)
         parent_cell.push_back(c);
 
       // Convert from cell local index to mesh index and add to cells
@@ -230,7 +226,7 @@ std::vector<std::int32_t>
 get_tetrahedra(const std::vector<bool>& marked_edges,
                const std::vector<std::int32_t>& longest_edge)
 {
-  // AdjacencyList matrix for ten possible points (4 vertices + 6 edge
+  // Connectivity matrix for ten possible points (4 vertices + 6 edge
   // midpoints) ordered {v0, v1, v2, v3, e0, e1, e2, e3, e4, e5} Only need upper
   // triangle, but sometimes it is easier just to insert both entries (j,i) and
   // (i,j).
@@ -310,7 +306,7 @@ get_tetrahedra(const std::vector<bool>& marked_edges,
         facet_set.clear();
         for (std::int32_t k = j + 1; k < 10; ++k)
         {
-          if (conn[i][k] && conn[j][k])
+          if (conn[i][k] and conn[j][k])
           {
             // Note that i < j < m < k
             for (const std::int32_t& m : facet_set)
