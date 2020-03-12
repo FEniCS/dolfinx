@@ -583,7 +583,7 @@ void fem::impl::assemble_interior_facets(
     const std::array<std::uint8_t, 2> perm
         = {perms(local_facet[0], cells[0]), perms(local_facet[1], cells[1])};
 
-    // Get cell vertex coordinates
+    // Get cell geometry
     auto x_dofs0 = x_dofmap.links(cells[0]);
     auto x_dofs1 = x_dofmap.links(cells[1]);
     for (int i = 0; i < num_dofs_g; ++i)
@@ -595,16 +595,6 @@ void fem::impl::assemble_interior_facets(
     // Get dofmaps for cell
     auto dmap0 = dofmap.cell_dofs(cells[0]);
     auto dmap1 = dofmap.cell_dofs(cells[1]);
-
-    // Get cell geometry
-    Eigen::Map<const Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic,
-                                  Eigen::RowMajor>>
-        coordinate_dofs0(coordinate_dofs.data(), num_dofs_g, gdim);
-
-    Eigen::Map<const Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic,
-                                  Eigen::RowMajor>>
-        coordinate_dofs1(coordinate_dofs.data() + num_dofs_g * gdim, num_dofs_g,
-                         gdim);
 
     // Layout for the restricted coefficients is flattened
     // w[coefficient][restriction][dof]

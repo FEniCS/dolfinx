@@ -39,7 +39,6 @@ PetscScalar dolfinx::fem::impl::assemble_scalar(const dolfinx::fem::Form& M)
   {
     // Get underlying data array of this Constant
     const std::vector<PetscScalar>& array = constant.second->value;
-
     constant_values.insert(constant_values.end(), array.data(),
                            array.data() + array.size());
   }
@@ -122,7 +121,7 @@ PetscScalar fem::impl::assemble_cells(
 
   // Iterate over all cells
   PetscScalar value(0);
-  for (auto& c : active_cells)
+  for (std::int32_t c : active_cells)
   {
     // Get cell coordinates/geometry
     auto x_dofs = x_dofmap.links(c);
@@ -179,6 +178,7 @@ PetscScalar fem::impl::assemble_exterior_facets(
   const Eigen::Array<std::uint8_t, Eigen::Dynamic, Eigen::Dynamic>&
       cell_face_rotations
       = mesh.topology().get_face_rotations();
+
   auto f_to_c = mesh.topology().connectivity(tdim - 1, tdim);
   assert(f_to_c);
   auto c_to_f = mesh.topology().connectivity(tdim, tdim - 1);
@@ -186,7 +186,7 @@ PetscScalar fem::impl::assemble_exterior_facets(
 
   // Iterate over all facets
   PetscScalar value(0);
-  for (const auto& facet : active_facets)
+  for (std::int32_t facet : active_facets)
   {
     // Create attached cell
     assert(f_to_c->num_links(facet) == 1);
@@ -265,7 +265,7 @@ PetscScalar fem::impl::assemble_interior_facets(
 
   // Iterate over all facets
   PetscScalar value(0);
-  for (const auto& f : active_facets)
+  for (std::int32_t f : active_facets)
   {
     // Create attached cell
     auto cells = f_to_c->links(f);
@@ -284,6 +284,7 @@ PetscScalar fem::impl::assemble_interior_facets(
     const std::array<std::uint8_t, 2> perm
         = {perms(local_facet[0], cells[0]), perms(local_facet[1], cells[1])};
 
+    // Get cell geometry
     auto x_dofs0 = x_dofmap.links(cells[0]);
     auto x_dofs1 = x_dofmap.links(cells[1]);
     for (int i = 0; i < num_dofs_g; ++i)
@@ -291,16 +292,6 @@ PetscScalar fem::impl::assemble_interior_facets(
       coordinate_dofs.row(i) = x_g.row(x_dofs0[i]).head(gdim);
       coordinate_dofs.row(i + num_dofs_g) = x_g.row(x_dofs1[i]).head(gdim);
     }
-
-    // Get cell geometry
-    Eigen::Map<const Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic,
-                                  Eigen::RowMajor>>
-        coordinate_dofs0(coordinate_dofs.data(), num_dofs_g, gdim);
-
-    Eigen::Map<const Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic,
-                                  Eigen::RowMajor>>
-        coordinate_dofs1(coordinate_dofs.data() + num_dofs_g * gdim, num_dofs_g,
-                         gdim);
 
     // Layout for the restricted coefficients is flattened
     // w[coefficient][restriction][dof]
