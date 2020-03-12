@@ -133,7 +133,8 @@ IndexMap::IndexMap(
   {
     std::vector<int> sources(num_neighbours), dests(num_neighbours);
     MPI_Dist_graph_neighbors(neighbour_comm, num_neighbours, sources.data(),
-                             NULL, num_neighbours, dests.data(), NULL);
+                             MPI_UNWEIGHTED, num_neighbours, dests.data(),
+                             MPI_UNWEIGHTED);
     assert(sources == dests);
     assert(sources == _neighbours);
   }
@@ -310,12 +311,11 @@ Eigen::Array<std::int32_t, Eigen::Dynamic, 1> IndexMap::ghost_owners() const
   MPI_Dist_graph_neighbors_count(neighbour_comm, &indegree, &outdegree,
                                  &weighted);
   assert(indegree == outdegree);
-  std::vector<int> neighbours(indegree), neighbours1(indegree),
-      weights(indegree), weights1(indegree);
+  std::vector<int> neighbours(indegree), neighbours1(indegree);
 
   MPI_Dist_graph_neighbors(neighbour_comm, indegree, neighbours.data(),
-                           weights.data(), outdegree, neighbours1.data(),
-                           weights1.data());
+                           MPI_UNWEIGHTED, outdegree, neighbours1.data(),
+                           MPI_UNWEIGHTED);
 
   Eigen::Array<std::int32_t, Eigen::Dynamic, 1> proc_owners(
       _ghost_owners.size());
@@ -368,12 +368,11 @@ std::map<int, std::set<int>> IndexMap::compute_shared_indices() const
   MPI_Dist_graph_neighbors_count(neighbour_comm, &indegree, &outdegree,
                                  &weighted);
   assert(indegree == outdegree);
-  std::vector<int> neighbours(indegree), neighbours1(indegree),
-      weights(indegree), weights1(indegree);
+  std::vector<int> neighbours(indegree), neighbours1(indegree);
 
   MPI_Dist_graph_neighbors(neighbour_comm, indegree, neighbours.data(),
-                           weights.data(), outdegree, neighbours1.data(),
-                           weights1.data());
+                           MPI_UNWEIGHTED, outdegree, neighbours1.data(),
+                           MPI_UNWEIGHTED);
 
   assert(neighbours.size() == _forward_sizes.size());
 
