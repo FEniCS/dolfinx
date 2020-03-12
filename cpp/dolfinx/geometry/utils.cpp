@@ -576,8 +576,8 @@ double geometry::squared_distance(const mesh::MeshEntity& entity,
     assert(it1 != (cell_vertices.data() + cell_vertices.rows()));
     const int local_vertex1 = std::distance(cell_vertices.data(), it1);
 
-    const Eigen::Vector3d a = geometry.x(dofs(local_vertex0));
-    const Eigen::Vector3d b = geometry.x(dofs(local_vertex1));
+    const Eigen::Vector3d a = geometry.node(dofs(local_vertex0));
+    const Eigen::Vector3d b = geometry.node(dofs(local_vertex1));
     return geometry::squared_distance_interval(p, a, b);
   }
   case (mesh::CellType::triangle):
@@ -598,9 +598,9 @@ double geometry::squared_distance(const mesh::MeshEntity& entity,
     assert(it2 != (cell_vertices.data() + cell_vertices.rows()));
     const int local_vertex2 = std::distance(cell_vertices.data(), it2);
 
-    const Eigen::Vector3d a = geometry.x(dofs(local_vertex0));
-    const Eigen::Vector3d b = geometry.x(dofs(local_vertex1));
-    const Eigen::Vector3d c = geometry.x(dofs(local_vertex2));
+    const Eigen::Vector3d a = geometry.node(dofs(local_vertex0));
+    const Eigen::Vector3d b = geometry.node(dofs(local_vertex1));
+    const Eigen::Vector3d c = geometry.node(dofs(local_vertex2));
     return geometry::squared_distance_triangle(p, a, b, c);
   }
   case (mesh::CellType::tetrahedron):
@@ -633,10 +633,10 @@ double geometry::squared_distance(const mesh::MeshEntity& entity,
     // only return the distance to that point.
 
     // Get the vertices as points
-    const Eigen::Vector3d a = geometry.x(dofs(local_vertex0));
-    const Eigen::Vector3d b = geometry.x(dofs(local_vertex1));
-    const Eigen::Vector3d c = geometry.x(dofs(local_vertex2));
-    const Eigen::Vector3d d = geometry.x(dofs(local_vertex3));
+    const Eigen::Vector3d a = geometry.node(dofs(local_vertex0));
+    const Eigen::Vector3d b = geometry.node(dofs(local_vertex1));
+    const Eigen::Vector3d c = geometry.node(dofs(local_vertex2));
+    const Eigen::Vector3d d = geometry.node(dofs(local_vertex3));
 
     // Initialize squared distance
     double r2 = std::numeric_limits<double>::max();
