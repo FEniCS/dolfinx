@@ -318,26 +318,5 @@ std::size_t Mesh::hash() const
   return (kt + kg) * (kt + kg + 1) / 2 + kg;
 }
 //-----------------------------------------------------------------------------
-std::string Mesh::str(bool verbose) const
-{
-  assert(_geometry);
-  assert(_topology);
-  std::stringstream s;
-  if (verbose)
-  {
-    s << str(false) << std::endl << std::endl;
-    s << common::indent(_geometry->str(true));
-  }
-  else
-  {
-    const int tdim = _topology->dim();
-    s << "<Mesh of topological dimension " << tdim << " ("
-      << mesh::to_string(_topology->cell_type()) << ") with " << num_entities(0)
-      << " vertices and " << num_entities(tdim) << " cells >";
-  }
-
-  return s.str();
-}
-//-----------------------------------------------------------------------------
 MPI_Comm Mesh::mpi_comm() const { return _mpi_comm.comm(); }
 //-----------------------------------------------------------------------------

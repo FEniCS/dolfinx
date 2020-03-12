@@ -214,11 +214,6 @@ public:
   /// @returns The unique identifier associated with the object
   std::size_t id() const { return _unique_id; }
 
-  /// Informal string representation
-  /// @param[in] verbose Flag to turn on additional output
-  /// @return An informal representation of the mesh.
-  std::string str(bool verbose) const;
-
   /// Mesh MPI communicator
   /// @return The communicator on which the mesh is distributed
   MPI_Comm mpi_comm() const;
