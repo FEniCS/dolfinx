@@ -213,7 +213,11 @@ void write_ascii_mesh(const mesh::Mesh& mesh, int cell_dim,
 
     // Build a map from topology to geometry
     auto cell_connectivity = mesh.topology().connectivity(tdim, 0);
-    const std::int32_t num_mesh_vertices = mesh.num_entities(0);
+
+    auto map = mesh.topology().index_map(0);
+    const std::int32_t num_mesh_vertices
+        = map->size_local() + map->num_ghosts();
+
     std::vector<std::int32_t> topology_to_geometry(num_mesh_vertices);
     auto x_dofs = mesh.geometry().dofmap();
     for (int j = 0; j < cell_connectivity->num_nodes(); ++j)
