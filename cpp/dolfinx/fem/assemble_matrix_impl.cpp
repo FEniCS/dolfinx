@@ -89,12 +89,14 @@ void fem::impl::assemble_matrix(
   }
 }
 //-----------------------------------------------------------------------------
+// \cond doxygen should ignore
 // Explicit instantiation with PetscInt and PetscScalar
 template void fem::impl::assemble_matrix<PetscInt, PetscScalar>(
     const std::function<int(PetscInt, const PetscInt*, PetscInt,
                             const PetscInt*, const PetscScalar*)>&
         mat_set_values_local,
     const Form& a, const std::vector<bool>& bc0, const std::vector<bool>& bc1);
+// \endcond
 //-----------------------------------------------------------------------------
 template <typename IndexType, typename ScalarType>
 void fem::impl::assemble_cells(
