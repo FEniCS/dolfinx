@@ -64,7 +64,7 @@ Geometry::x() const
   return _x;
 }
 //-----------------------------------------------------------------------------
-Eigen::Ref<const Eigen::Vector3d> Geometry::x(int n) const
+Eigen::Ref<const Eigen::Vector3d> Geometry::node(int n) const
 {
   return _x.row(n).matrix().transpose();
 }
