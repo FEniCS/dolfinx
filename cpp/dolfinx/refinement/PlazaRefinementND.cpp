@@ -89,7 +89,7 @@ mesh::Mesh compute_refinement(const mesh::Mesh& mesh, ParallelRefinement& p_ref,
 
   auto c_to_v = mesh.topology().connectivity(tdim, 0);
   assert(c_to_v);
-  auto c_to_f = mesh.topology().connectivity(tdim, tdim - 1);
+  auto c_to_f = mesh.topology().connectivity(tdim, 2);
   assert(c_to_f);
   auto c_to_e = mesh.topology().connectivity(tdim, 1);
   assert(c_to_e);
@@ -136,15 +136,16 @@ mesh::Mesh compute_refinement(const mesh::Mesh& mesh, ParallelRefinement& p_ref,
         indices[num_cell_vertices + p] = it->second;
       }
 
-      // Need longest edges of each facet in cell local indexing
+      // Need longest edges of each face in cell local indexing
+      // NB in 2D the face is the cell itself, and there is just one entry
       std::vector<std::int32_t> longest_edge;
-      auto facets = c_to_f->links(c);
-      for (int f = 0; f < facets.rows(); ++f)
-        longest_edge.push_back(long_edge[facets(f)]);
+      auto faces = c_to_f->links(c);
+      for (int f = 0; f < faces.rows(); ++f)
+        longest_edge.push_back(long_edge[faces(f)]);
 
       // Convert to cell local index
       auto edges = c_to_e->links(c);
-      for (auto& p : longest_edge)
+      for (std::int32_t& p : longest_edge)
       {
         for (int ej = 0; ej < edges.rows(); ++ej)
         {
