@@ -33,8 +33,10 @@ void fem::impl::assemble_matrix(
   // Get dofmap data
   const fem::DofMap& dofmap0 = *a.function_space(0)->dofmap();
   const fem::DofMap& dofmap1 = *a.function_space(1)->dofmap();
-  auto& dof_array0 = dofmap0.dof_array();
-  auto& dof_array1 = dofmap1.dof_array();
+  const Eigen::Array<PetscInt, Eigen::Dynamic, 1>& dof_array0
+      = dofmap0.dof_array();
+  const Eigen::Array<PetscInt, Eigen::Dynamic, 1>& dof_array1
+      = dofmap1.dof_array();
 
   assert(dofmap0.element_dof_layout);
   assert(dofmap1.element_dof_layout);
@@ -236,7 +238,7 @@ void fem::impl::assemble_exterior_facets(
   assert(f_to_c);
   auto c_to_f = mesh.topology().connectivity(tdim, tdim - 1);
   assert(c_to_f);
-  for (const auto& f : active_facets)
+  for (std::int32_t f : active_facets)
   {
     auto cells = f_to_c->links(f);
     assert(cells.rows() == 1);
@@ -333,14 +335,12 @@ void fem::impl::assemble_interior_facets(
 
   const Eigen::Array<std::uint8_t, Eigen::Dynamic, Eigen::Dynamic>& perms
       = mesh.topology().get_facet_permutations();
-
   const Eigen::Array<bool, Eigen::Dynamic, Eigen::Dynamic>&
       cell_edge_reflections
       = mesh.topology().get_edge_reflections();
   const Eigen::Array<bool, Eigen::Dynamic, Eigen::Dynamic>&
       cell_face_reflections
       = mesh.topology().get_face_reflections();
-
   const Eigen::Array<std::uint8_t, Eigen::Dynamic, Eigen::Dynamic>&
       cell_face_rotations
       = mesh.topology().get_face_rotations();
@@ -350,7 +350,7 @@ void fem::impl::assemble_interior_facets(
   assert(c);
   auto c_to_f = mesh.topology().connectivity(tdim, tdim - 1);
   assert(c_to_f);
-  for (const auto& facet_index : active_facets)
+  for (std::int32_t facet_index : active_facets)
   {
     assert(mesh.topology().interior_facets()[facet_index]);
 
@@ -375,6 +375,7 @@ void fem::impl::assemble_interior_facets(
     const std::array<std::uint8_t, 2> perm
         = {perms(local_facet[0], cells[0]), perms(local_facet[1], cells[1])};
 
+    // Get cell geometry
     auto x_dofs0 = x_dofmap.links(cells[0]);
     auto x_dofs1 = x_dofmap.links(cells[1]);
     for (int i = 0; i < num_dofs_g; ++i)
@@ -395,16 +396,6 @@ void fem::impl::assemble_interior_facets(
     dmapjoint1.resize(dmap1_cell0.size() + dmap1_cell1.size());
     dmapjoint1.head(dmap1_cell0.size()) = dmap1_cell0;
     dmapjoint1.tail(dmap1_cell1.size()) = dmap1_cell1;
-
-    // Get cell geometry
-    Eigen::Map<const Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic,
-                                  Eigen::RowMajor>>
-        coordinate_dofs0(coordinate_dofs.data(), num_dofs_g, gdim);
-
-    Eigen::Map<const Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic,
-                                  Eigen::RowMajor>>
-        coordinate_dofs1(coordinate_dofs.data() + num_dofs_g * gdim, num_dofs_g,
-                         gdim);
 
     // Layout for the restricted coefficients is flattened
     // w[coefficient][restriction][dof]
