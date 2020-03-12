@@ -134,7 +134,7 @@ IndexMap::IndexMap(
     std::vector<int> sources(num_neighbours), dests(num_neighbours);
     MPI_Dist_graph_neighbors(neighbour_comm, num_neighbours, sources.data(),
                              MPI_UNWEIGHTED, num_neighbours, dests.data(),
-                             MPI_UNWEIGHTED;
+                             MPI_UNWEIGHTED);
     assert(sources == dests);
     assert(sources == _neighbours);
   }
