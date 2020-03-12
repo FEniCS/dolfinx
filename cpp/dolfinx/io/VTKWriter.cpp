@@ -216,7 +216,7 @@ void write_ascii_mesh(const mesh::Mesh& mesh, int cell_dim,
     const std::int32_t num_mesh_vertices = mesh.num_entities(0);
     std::vector<std::int32_t> topology_to_geometry(num_mesh_vertices);
     auto x_dofs = mesh.geometry().dofmap();
-    for (int j = 0; j < mesh.num_entities(tdim); ++j)
+    for (int j = 0; j < cell_connectivity->num_nodes(); ++j)
     {
       auto cell_vertices = cell_connectivity->links(j);
       const int num_cell_vertices = cell_vertices.size();
@@ -239,7 +239,7 @@ void write_ascii_mesh(const mesh::Mesh& mesh, int cell_dim,
         = vertex_connectivity->array();
     const Eigen::Array<std::int32_t, Eigen::Dynamic, 1>& pos_vertex
         = vertex_connectivity->offsets();
-    for (int j = 0; j < mesh.num_entities(cell_dim); ++j)
+    for (int j = 0; j < vertex_connectivity->num_nodes(); ++j)
     {
       for (int i = 0; i < num_vertices; ++i)
       {
