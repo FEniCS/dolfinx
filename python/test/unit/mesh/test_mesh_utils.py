@@ -21,7 +21,7 @@ def xtest_extract_topology():
     of cell vertices for 'higher-order' topologies"""
 
     # FIXME: make creating the ElementDofLayout simpler and clear
-    perms = np.zeros([5, 3], dtype=np.int8)
+    perms = np.zeros([3, 3], dtype=np.int8)
     perms[:] = [0, 1, 2]
     entity_dofs = [[set([0]), set([1]), set([2])], [set(), set(),
                                                     set()], [set()]]
@@ -40,7 +40,7 @@ def xtest_extract_topology():
     assert np.array_equal(cells.array(), cells_filtered.array())
 
     # Create element dof layout for P2 element
-    perms = np.zeros([5, 6], dtype=np.int8)
+    perms = np.zeros([3, 6], dtype=np.int8)
     perms[:] = [0, 1, 2, 3, 4, 5]
     entity_dofs = [[set([0]), set([1]), set([2])], [set([3]), set([4]), set([5])], [set()]]
     layout = cpp.fem.ElementDofLayout(1, entity_dofs, [], [],
@@ -105,43 +105,43 @@ def create_mesh_gmsh(shape, order):
 def get_dof_layout(shape, order):
     """Create ElementDofLayouts for a range of Lagrange element types"""
     if shape == cpp.mesh.CellType.triangle and order == 1:
-        perms = np.zeros([5, 3], dtype=np.int8)
+        perms = np.zeros([3, 3], dtype=np.int8)
         perms[:] = range(3)
         entity_dofs = [[set([0]), set([1]), set([2])], 3 * [set()], [set()]]
         return cpp.fem.ElementDofLayout(1, entity_dofs, [], [], shape, perms)
     elif shape == cpp.mesh.CellType.triangle and order == 2:
-        perms = np.zeros([5, 6], dtype=np.int8)
+        perms = np.zeros([3, 6], dtype=np.int8)
         perms[:] = range(6)
         entity_dofs = [[set([0]), set([1]), set([2])], [set([3]), set([4]), set([5])], [set()]]
         return cpp.fem.ElementDofLayout(1, entity_dofs, [], [], shape, perms)
     elif shape == cpp.mesh.CellType.quadrilateral and order == 1:
-        perms = np.zeros([6, 4], dtype=np.int8)
+        perms = np.zeros([4, 4], dtype=np.int8)
         perms[:] = range(4)
         entity_dofs = [[set([0]), set([1]), set([2]), set([3])],
                        4 * [set()], [set()]]
         return cpp.fem.ElementDofLayout(1, entity_dofs, [], [], shape, perms)
     elif shape == cpp.mesh.CellType.quadrilateral and order == 2:
-        perms = np.zeros([6, 9], dtype=np.int8)
+        perms = np.zeros([4, 9], dtype=np.int8)
         perms[:] = range(9)
         entity_dofs = [[set([0]), set([1]), set([3]), set([4])],
                        [set([2]), set([5]), set([6]), set([7])],
                        [set([8])]]
         return cpp.fem.ElementDofLayout(1, entity_dofs, [], [], shape, perms)
     elif shape == cpp.mesh.CellType.tetrahedron and order == 1:
-        perms = np.zeros([18, 4], dtype=np.int8)
+        perms = np.zeros([14, 4], dtype=np.int8)
         perms[:] = range(4)
         entity_dofs = [[set([0]), set([1]), set([2]), set([3])],
                        6 * [set()], 4 * [set()], [set()]]
         return cpp.fem.ElementDofLayout(1, entity_dofs, [], [], shape, perms)
     elif shape == cpp.mesh.CellType.tetrahedron and order == 2:
-        perms = np.zeros([18, 10], dtype=np.int8)
+        perms = np.zeros([14, 10], dtype=np.int8)
         perms[:] = range(10)
         entity_dofs = [[set([0]), set([1]), set([2]), set([3])],
                        [set([4]), set([5]), set([6]), set([7]), set([8]), set([9])],
                        4 * [set()], [set()]]
         return cpp.fem.ElementDofLayout(1, entity_dofs, [], [], shape, perms)
     elif shape == cpp.mesh.CellType.hexahedron and order == 1:
-        perms = np.zeros([28, 8], dtype=np.int8)
+        perms = np.zeros([24, 8], dtype=np.int8)
         perms[:] = range(8)
         entity_dofs = [
             [set([0]), set([1]), set([2]), set([3]), set([4]), set([5]), set([6]), set([7])],
@@ -149,7 +149,7 @@ def get_dof_layout(shape, order):
         ]
         return cpp.fem.ElementDofLayout(1, entity_dofs, [], [], shape, perms)
     elif shape == cpp.mesh.CellType.hexahedron and order == 2:
-        perms = np.zeros([28, 27], dtype=np.int8)
+        perms = np.zeros([24, 27], dtype=np.int8)
         perms[:] = range(27)
         entity_dofs = [
             [set([0]), set([1]), set([3]), set([4]), set([9]), set([10]), set([12]), set([13])],
