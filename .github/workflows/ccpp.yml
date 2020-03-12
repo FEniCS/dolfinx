@@ -85,11 +85,11 @@ jobs:
         run: |
           mkdir -p ~/junit
           cd python/test/unit
-          python3 -m pytest -n=4 --durations=50 --junitxml=~/junit/test-results.xml .
+          python3 -m pytest -n=2 --durations=50 --junitxml=~/junit/test-results.xml .
       - name: Run unit tests (Python, MPI)
         run: |
           cd python/test/unit
-          mpiexec -np 3 python3 -m pytest -n2 .
+          mpiexec -np 3 python3 -m pytest .
       - name: Run demos (Python, serial)
         run: |
           mkdir -p ~/junit
