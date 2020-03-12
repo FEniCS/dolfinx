@@ -714,14 +714,14 @@ fem::pack_coefficients(const fem::Form& form)
 {
   // Get form coefficient offsets amd dofmaps
   const fem::FormCoefficients& coefficients = form.coefficients();
-  const std::vector<int> offsets = coefficients.offsets();
+  const std::vector<int>& offsets = coefficients.offsets();
   std::vector<const fem::DofMap*> dofmaps(coefficients.size());
   for (int i = 0; i < coefficients.size(); ++i)
     dofmaps[i] = coefficients.get(i)->function_space()->dofmap().get();
 
   // Get mesh
   assert(form.mesh());
-  const mesh::Mesh mesh = *form.mesh();
+  const mesh::Mesh& mesh = *form.mesh();
   const int tdim = mesh.topology().dim();
 
   // Unwrap PETSc vectors
@@ -757,7 +757,7 @@ fem::pack_coefficients(const fem::Form& form)
     VecGhostRestoreLocalForm(x[i], &x_local[i]);
   }
 
-  return c;
+  return std::move(c);
 }
 //-----------------------------------------------------------------------------
 Eigen::Array<PetscScalar, Eigen::Dynamic, 1>
@@ -773,8 +773,8 @@ fem::pack_constants(const fem::Form& form)
     constant_values.insert(constant_values.end(), array.data(),
                            array.data() + array.size());
   }
-  Eigen::Map<const Eigen::Array<PetscScalar, Eigen::Dynamic, 1>> constant_array(
+
+  return Eigen::Map<const Eigen::Array<PetscScalar, Eigen::Dynamic, 1>>(
       constant_values.data(), constant_values.size(), 1);
-  return constant_array;
 }
 //-----------------------------------------------------------------------------

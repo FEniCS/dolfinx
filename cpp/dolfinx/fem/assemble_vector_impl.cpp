@@ -221,7 +221,6 @@ void _lift_bc_exterior_facets(
 
   const Eigen::Array<std::uint8_t, Eigen::Dynamic, Eigen::Dynamic>& perms
       = mesh.topology().get_facet_permutations();
-
   const Eigen::Array<bool, Eigen::Dynamic, Eigen::Dynamic>&
       cell_edge_reflections
       = mesh.topology().get_edge_reflections();
