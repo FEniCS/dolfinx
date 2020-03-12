@@ -18,7 +18,6 @@
 #include <dolfinx/function/FunctionSpace.h>
 #include <dolfinx/la/PETScMatrix.h>
 #include <dolfinx/mesh/Mesh.h>
-#include <dolfinx/mesh/MeshIterator.h>
 
 using namespace dolfinx;
 using namespace dolfinx::fem;

@@ -12,8 +12,7 @@
 #include <dolfinx/la/PETScVector.h>
 #include <dolfinx/la/utils.h>
 #include <dolfinx/mesh/Mesh.h>
-#include <dolfinx/mesh/MeshEntity.h>
-#include <dolfinx/mesh/MeshIterator.h>
+#include <dolfinx/mesh/Topology.h>
 #include <iostream>
 #include <petscvec.h>
 
@@ -244,14 +243,14 @@ void HDF5Utility::cell_owners_in_range(
   const std::vector<std::int64_t> global_indices = map->global_indices(false);
 
   std::vector<std::vector<std::size_t>> send_owned_global(num_processes);
-  for (auto& mesh_cell : mesh::MeshRange(mesh, tdim))
+  // for (auto& mesh_cell : mesh::MeshRange(mesh, tdim))
+  for (int c = 0; c < map->size_local() + map->num_ghosts(); ++c)
   {
-    const std::size_t global_i = global_indices[mesh_cell.index()];
-    const std::size_t local_i = mesh_cell.index();
+    const std::size_t global_i = global_indices[c];
     const std::size_t po_proc
         = MPI::index_owner(num_processes, global_i, n_global_cells);
     send_owned_global[po_proc].push_back(global_i);
-    send_owned_global[po_proc].push_back(local_i);
+    send_owned_global[po_proc].push_back(c);
   }
 
   std::vector<std::vector<std::size_t>> owned_global(num_processes);

@@ -308,14 +308,11 @@ FunctionSpace::tabulate_dof_coordinates() const
   const fem::CoordinateElement& cmap = *_mesh->geometry().coord_mapping;
 
   // Prepare cell geometry
-  const graph::AdjacencyList<std::int32_t>& connectivity_g
+  const graph::AdjacencyList<std::int32_t>& x_dofmap
       = _mesh->geometry().dofmap();
-  const Eigen::Array<std::int32_t, Eigen::Dynamic, 1>& pos_g
-      = connectivity_g.offsets();
-  const Eigen::Array<std::int32_t, Eigen::Dynamic, 1>& cell_g
-      = connectivity_g.array();
+
   // FIXME: Add proper interface for num coordinate dofs
-  const int num_dofs_g = connectivity_g.num_links(0);
+  const int num_dofs_g = x_dofmap.num_links(0);
   const Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>&
       x_g
       = _mesh->geometry().x();
@@ -337,8 +334,9 @@ FunctionSpace::tabulate_dof_coordinates() const
   for (int c = 0; c < num_cells; ++c)
   {
     // Update cell
+    auto x_dofs = x_dofmap.links(c);
     for (int i = 0; i < num_dofs_g; ++i)
-      coordinate_dofs.row(i) = x_g.row(cell_g[pos_g[c] + i]).head(gdim);
+      coordinate_dofs.row(i) = x_g.row(x_dofs[i]).head(gdim);
 
     // Get local-to-global map
     auto dofs = _dofmap->cell_dofs(c);
@@ -370,14 +368,11 @@ void FunctionSpace::set_x(
   std::vector<PetscScalar> x_values;
 
   // Prepare cell geometry
-  const graph::AdjacencyList<std::int32_t>& connectivity_g
+  const graph::AdjacencyList<std::int32_t>& x_dofmap
       = _mesh->geometry().dofmap();
-  const Eigen::Array<std::int32_t, Eigen::Dynamic, 1>& pos_g
-      = connectivity_g.offsets();
-  const Eigen::Array<std::int32_t, Eigen::Dynamic, 1>& cell_g
-      = connectivity_g.array();
+
   // FIXME: Add proper interface for num coordinate dofs
-  const int num_dofs_g = connectivity_g.num_links(0);
+  const int num_dofs_g = x_dofmap.num_links(0);
   const Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>&
       x_g
       = _mesh->geometry().x();
@@ -405,9 +400,9 @@ void FunctionSpace::set_x(
   for (int c = 0; c < num_cells; ++c)
   {
     // Update UFC cell
+    auto x_dofs = x_dofmap.links(c);
     for (int i = 0; i < num_dofs_g; ++i)
-      for (int j = 0; j < gdim; ++j)
-        coordinate_dofs(i, j) = x_g(cell_g[pos_g[c] + i], j);
+      coordinate_dofs.row(i) = x_g.row(x_dofs[i]).head(gdim);
 
     // Get cell local-to-global map
     auto dofs = _dofmap->cell_dofs(c);

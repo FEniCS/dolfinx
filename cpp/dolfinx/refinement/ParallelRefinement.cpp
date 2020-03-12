@@ -11,7 +11,6 @@
 #include <dolfinx/mesh/DistributedMeshTools.h>
 #include <dolfinx/mesh/Geometry.h>
 #include <dolfinx/mesh/Mesh.h>
-#include <dolfinx/mesh/MeshEntity.h>
 #include <dolfinx/mesh/MeshFunction.h>
 #include <dolfinx/mesh/MeshIterator.h>
 #include <dolfinx/mesh/Partitioning.h>
@@ -172,10 +171,42 @@ void ParallelRefinement::create_new_vertices()
   const std::shared_ptr<const common::IndexMap> edge_index_map
       = _mesh.topology().index_map(1);
 
+  // Build map from vertex -> geometry dof
+  const graph::AdjacencyList<std::int32_t>& x_dofmap
+      = _mesh.geometry().dofmap();
+  const int tdim = _mesh.topology().dim();
+  auto c_to_v = _mesh.topology().connectivity(tdim, 0);
+  assert(c_to_v);
+  auto map_v = _mesh.topology().index_map(0);
+  assert(map_v);
+  const std::int32_t num_vertices = map_v->size_local() + map_v->num_ghosts();
+  std::vector<std::int32_t> vertex_to_x(num_vertices);
+  auto map_c = _mesh.topology().index_map(tdim);
+  assert(map_c);
+  for (int c = 0; c < map_c->size_local() + map_c->num_ghosts(); ++c)
+  {
+    auto vertices = c_to_v->links(c);
+    auto dofs = x_dofmap.links(c);
+    for (int i = 0; i < vertices.rows(); ++i)
+    {
+      // FIXME: We are making an assumption here on the
+      // ElementDofLayout. We should use an ElementDofLayout to map
+      // between local vertex index an x dof index.
+      vertex_to_x[vertices[i]] = dofs(i);
+    }
+  }
+
   // Copy over existing mesh vertices
-  _new_vertex_coordinates = std::vector<double>(
-      _mesh.geometry().x().data(),
-      _mesh.geometry().x().data() + _mesh.geometry().x().size());
+  const Eigen::Array<double, Eigen::Dynamic, 3, Eigen::RowMajor>& x_g
+      = _mesh.geometry().x();
+
+  _new_vertex_coordinates = std::vector<double>(3 * num_vertices);
+  for (int v = 0; v < num_vertices; ++v)
+  {
+    auto _x = x_g.row(vertex_to_x[v]);
+    for (int i = 0; i < 3; ++i)
+      _new_vertex_coordinates[3 * v + i] = _x[i];
+  }
 
   // Compute all edge mid-points
   Eigen::Array<int, Eigen::Dynamic, 1> edges(_mesh.num_entities(1));
@@ -184,9 +215,11 @@ void ParallelRefinement::create_new_vertices()
       = mesh::midpoints(_mesh, 1, edges);
 
   // Tally up unshared marked edges, and shared marked edges which are
-  // owned on this process.  Index them sequentially from zero.
+  // owned on this process. Index them sequentially from zero.
   std::size_t n = 0;
-  for (std::int32_t local_i = 0; local_i < _mesh.num_entities(1); ++local_i)
+  const std::int32_t num_edges
+      = edge_index_map->size_local() + edge_index_map->num_ghosts();
+  for (int local_i = 0; local_i < num_edges; ++local_i)
   {
     if (_marked_edges[local_i] == true)
     {
@@ -231,7 +264,6 @@ void ParallelRefinement::create_new_vertices()
   std::map<int, int> proc_to_neighbour;
   for (std::size_t i = 0; i < neighbours.size(); ++i)
     proc_to_neighbour.insert({neighbours[i], i});
-
   for (auto& local_edge : _local_edge_to_new_vertex)
   {
     // Add global_offset to map, to get new global index of new
