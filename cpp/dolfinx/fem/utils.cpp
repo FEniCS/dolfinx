@@ -42,15 +42,15 @@ int get_num_permutations(const mesh::CellType cell_type)
   case (mesh::CellType::point):
     return 0;
   case (mesh::CellType::interval):
-    return 1;
+    return 0;
   case (mesh::CellType::triangle):
-    return 5;
+    return 3;
   case (mesh::CellType::tetrahedron):
-    return 18;
+    return 14;
   case (mesh::CellType::quadrilateral):
-    return 6;
+    return 4;
   case (mesh::CellType::hexahedron):
-    return 28;
+    return 24;
   default:
     LOG(WARNING) << "Dof permutations are not defined for this cell type. High "
                     "order elements may be incorrect.";
