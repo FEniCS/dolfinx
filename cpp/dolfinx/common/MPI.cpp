@@ -51,6 +51,26 @@ dolfinx::MPI::Comm::~Comm()
   }
 }
 //-----------------------------------------------------------------------------
+dolfinx::MPI::Comm&
+dolfinx::MPI::Comm::operator=(dolfinx::MPI::Comm&& comm)
+{
+  // Free the currently held comm
+  if (this->_comm != MPI_COMM_NULL)
+  {
+    int err = MPI_Comm_free(&this->_comm);
+    if (err != MPI_SUCCESS)
+    {
+      std::cout << "Error when destroying communicator (MPI_Comm_free)."
+                << std::endl;
+    }
+  }
+  // Move comm from other object
+  this->_comm = comm._comm;
+  comm._comm = MPI_COMM_NULL;
+  // Return
+  return *this;
+}
+//-----------------------------------------------------------------------------
 MPI_Comm dolfinx::MPI::Comm::comm() const { return _comm; }
 //-----------------------------------------------------------------------------
 std::uint32_t dolfinx::MPI::rank(const MPI_Comm comm)
