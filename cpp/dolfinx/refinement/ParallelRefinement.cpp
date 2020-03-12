@@ -84,7 +84,7 @@ void ParallelRefinement::mark(std::int32_t edge_index)
 
   _marked_edges[edge_index] = true;
 
-  // If it is a shared edge, add all sharing procs to update set
+  // If it is a shared edge, add all sharing neighbours to update set
   auto map_it = _shared_edges.find(edge_index);
   if (map_it != _shared_edges.end())
   {
@@ -239,9 +239,6 @@ void ParallelRefinement::create_new_vertices()
 
   std::vector<int> neighbours = MPI::neighbors(_neighbour_comm);
   std::vector<std::vector<std::int64_t>> values_to_send(neighbours.size());
-  std::map<int, int> proc_to_neighbour;
-  for (std::size_t i = 0; i < neighbours.size(); ++i)
-    proc_to_neighbour.insert({neighbours[i], i});
   for (auto& local_edge : _local_edge_to_new_vertex)
   {
     // Add global_offset to map, to get new global index of new
@@ -327,10 +324,6 @@ mesh::Mesh ParallelRefinement::build_local() const
   mesh::Mesh mesh = mesh::create(
       _mesh.mpi_comm(), graph::AdjacencyList<std::int64_t>(cells), layout, x);
 
-  // mesh::Mesh mesh(_mesh.mpi_comm(), _mesh.topology().cell_type(),
-  //                 geometry.leftCols(_mesh.geometry().dim()), topology, {},
-  //                 _mesh.get_ghost_mode());
-
   return mesh;
 }
 //-----------------------------------------------------------------------------
@@ -339,7 +332,6 @@ mesh::Mesh ParallelRefinement::partition(bool redistribute) const
   const int num_vertices_per_cell
       = mesh::cell_num_entities(_mesh.topology().cell_type(), 0);
 
-  // Copy data to mesh::LocalMeshData structures
   const std::int32_t num_local_cells
       = _new_cell_topology.size() / num_vertices_per_cell;
   std::vector<std::int64_t> global_cell_indices(num_local_cells);
@@ -365,10 +357,6 @@ mesh::Mesh ParallelRefinement::partition(bool redistribute) const
   {
     return mesh::create(_mesh.mpi_comm(),
                         graph::AdjacencyList<std::int64_t>(cells), layout, x);
-    // return mesh::Partitioning::build_distributed_mesh(
-    //     _mesh.mpi_comm(), _mesh.topology().cell_type(),
-    //     points.leftCols(_mesh.geometry().dim()), cells, global_cell_indices,
-    //     _mesh.get_ghost_mode());
   }
 
   MPI_Comm comm = _mesh.mpi_comm();
@@ -452,15 +440,6 @@ mesh::Mesh ParallelRefinement::partition(bool redistribute) const
       = mesh::create_geometry(comm, topology, layout, my_cells, dest, src, x);
 
   return mesh::Mesh(comm, topology, geometry);
-
-  // NEW
-  // return mesh::create(_mesh.mpi_comm(),
-  //                     graph::AdjacencyList<std::int64_t>(cells), layout, x);
-
-  // OLD
-  // return mesh::Mesh(_mesh.mpi_comm(), _mesh.topology().cell_type(),
-  //                   points.leftCols(_mesh.geometry().dim()), cells,
-  //                   global_cell_indices, _mesh.get_ghost_mode());
 }
 //-----------------------------------------------------------------------------
 void ParallelRefinement::new_cells(const std::vector<std::int64_t>& idx)
