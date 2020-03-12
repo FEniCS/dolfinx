@@ -290,12 +290,6 @@ def test_GetCoordinates():
     assert len(mesh.geometry.x) == 36
 
 
-def test_GetCells():
-    """Get cells of mesh"""
-    mesh = UnitSquareMesh(MPI.comm_world, 5, 5)
-    assert MPI.sum(mesh.mpi_comm(), len(mesh.cells())) == 50
-
-
 @skip_in_parallel
 def xtest_cell_inradius(c0, c1, c5):
     assert cpp.mesh.inradius(c0.mesh(), [c0.index()]) == pytest.approx((3.0 - math.sqrt(3.0)) / 6.0)
