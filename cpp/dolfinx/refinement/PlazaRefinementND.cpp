@@ -1,4 +1,4 @@
-// Copyright (C) 2014-2018 Chris Richardson
+// Copyright (C) 2014-2020 Chris Richardson
 //
 // This file is part of DOLFINX (https://www.fenicsproject.org)
 //
@@ -52,7 +52,7 @@ void enforce_rules(ParallelRefinement& p_ref, const mesh::Mesh& mesh,
       bool any_marked = false;
       auto edges = f_to_e->links(f);
       for (int i = 0; i < edges.rows(); ++i)
-        any_marked |= p_ref.is_marked(edges[i]);
+        any_marked = any_marked or p_ref.is_marked(edges[i]);
 
       if (any_marked)
       {
@@ -81,7 +81,7 @@ mesh::Mesh compute_refinement(const mesh::Mesh& mesh, ParallelRefinement& p_ref,
 
   std::vector<std::size_t> parent_cell;
   std::vector<std::int64_t> indices(num_cell_vertices + num_cell_edges);
-  std::vector<std::size_t> marked_edge_list;
+  std::vector<int> marked_edge_list;
   std::vector<std::int32_t> simplex_set;
 
   auto map_c = mesh.topology().index_map(tdim);
@@ -108,9 +108,13 @@ mesh::Mesh compute_refinement(const mesh::Mesh& mesh, ParallelRefinement& p_ref,
     for (int v = 0; v < vertices.rows(); ++v)
       indices[j++] = global_indices[vertices[v]];
 
-    // TODO: remove MeshEntity
-    mesh::MeshEntity cell(mesh, tdim, c);
-    marked_edge_list = p_ref.marked_edge_list(cell);
+    // Get cell-local indices of marked edges
+    marked_edge_list.clear();
+    auto edges = c_to_e->links(c);
+    for (int ei = 0; ei < edges.rows(); ++ei)
+      if (p_ref.is_marked(edges[ei]))
+        marked_edge_list.push_back(ei);
+
     if (marked_edge_list.size() == 0)
     {
       // Copy over existing Cell to new topology
@@ -125,12 +129,10 @@ mesh::Mesh compute_refinement(const mesh::Mesh& mesh, ParallelRefinement& p_ref,
       // Get the marked edge indices for new vertices and make bool
       // vector of marked edges
       std::vector<bool> markers(num_cell_edges, false);
-      for (auto& p : marked_edge_list)
+      for (int p : marked_edge_list)
       {
         markers[p] = true;
-        const std::int32_t edge_index = cell.entities(1)[p];
-
-        auto it = new_vertex_map.find(edge_index);
+        auto it = new_vertex_map.find(edges[p]);
         assert(it != new_vertex_map.end());
         indices[num_cell_vertices + p] = it->second;
       }
@@ -158,7 +160,7 @@ mesh::Mesh compute_refinement(const mesh::Mesh& mesh, ParallelRefinement& p_ref,
         }
       }
 
-      const bool uniform = (tdim == 2) ? edge_ratio_ok[cell.index()] : false;
+      const bool uniform = (tdim == 2) ? edge_ratio_ok[c] : false;
 
       // FIXME: this has an expensive dynamic memory allocation
       simplex_set = PlazaRefinementND::get_simplices(markers, longest_edge,
@@ -167,7 +169,7 @@ mesh::Mesh compute_refinement(const mesh::Mesh& mesh, ParallelRefinement& p_ref,
       // Save parent index
       const std::int32_t ncells = simplex_set.size() / num_cell_vertices;
       for (std::int32_t i = 0; i != ncells; ++i)
-        parent_cell.push_back(cell.index());
+        parent_cell.push_back(c);
 
       // Convert from cell local index to mesh index and add to cells
       std::vector<std::int64_t> simplex_set_global(simplex_set.size());

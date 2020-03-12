@@ -70,11 +70,6 @@ public:
   /// @param[in] cell
   void mark(const mesh::MeshEntity& cell);
 
-  /// Return list of marked edges incident on this mesh::MeshEntity -
-  /// usually a cell
-  /// @param[in] cell
-  std::vector<std::size_t> marked_edge_list(const mesh::MeshEntity& cell) const;
-
   /// Transfer marked edges between processes
   void update_logical_edgefunction();
 

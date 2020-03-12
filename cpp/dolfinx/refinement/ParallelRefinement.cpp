@@ -114,20 +114,6 @@ void ParallelRefinement::mark(const mesh::MeshFunction<int>& refinement_marker)
   }
 }
 //-----------------------------------------------------------------------------
-std::vector<std::size_t>
-ParallelRefinement::marked_edge_list(const mesh::MeshEntity& cell) const
-{
-  std::vector<std::size_t> result;
-  std::size_t i = 0;
-  for (const auto& edge : mesh::EntityRange(cell, 1))
-  {
-    if (_marked_edges[edge.index()])
-      result.push_back(i);
-    ++i;
-  }
-  return result;
-}
-//-----------------------------------------------------------------------------
 void ParallelRefinement::update_logical_edgefunction()
 {
   const std::size_t mpi_size = MPI::size(_mesh.mpi_comm());
