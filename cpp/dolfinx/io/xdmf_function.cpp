@@ -264,11 +264,11 @@ void xdmf_function::write(const function::Function& u, double t, int counter,
       else if (component == "imag")
         component_data_values[i] = local_data[i].imag();
     }
-    const std::size_t offset = MPI::global_offset(
+    const std::size_t value_offset = MPI::global_offset(
         mesh->mpi_comm(), component_data_values.size(), true);
     xdmf_utils::add_data_item(
         fe_attribute_node, h5_id, h5_path + "/vector", component_data_values,
-        offset{(std::int64_t)u_vector.size(), 1}, "Float", use_mpi_io);
+        value_offset, {(std::int64_t)u_vector.size(), 1}, "Float", use_mpi_io);
 #else
     const std::size_t offset_data
         = MPI::global_offset(mesh->mpi_comm(), local_data.size(), true);
