@@ -94,17 +94,16 @@ void mesh(py::module& m)
       .def("dof_layout", &dolfinx::mesh::Geometry::dof_layout)
       .def("index_map", &dolfinx::mesh::Geometry::index_map)
       .def("global_indices", &dolfinx::mesh::Geometry::global_indices)
-      .def("point", &dolfinx::mesh::Geometry::node)
       .def_property(
-          "x",
-          py::overload_cast<>(&dolfinx::mesh::Geometry::x),
+          "x", py::overload_cast<>(&dolfinx::mesh::Geometry::x),
           [](dolfinx::mesh::Geometry& self,
              const Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic,
                                 Eigen::RowMajor>& values) {
             self.x() = values;
           },
           py::return_value_policy::reference_internal,
-          "Return coordinates of all geometry points")
+          "Return coordinates of all geometry points. Each row is the "
+          "coordinate of a point.")
       .def_readwrite("coord_mapping", &dolfinx::mesh::Geometry::coord_mapping);
 
   // dolfinx::mesh::TopologyComputation
@@ -140,10 +139,9 @@ void mesh(py::module& m)
       .def("on_boundary", &dolfinx::mesh::Topology::on_boundary)
       .def("index_map", &dolfinx::mesh::Topology::index_map)
       .def_property_readonly("cell_type", &dolfinx::mesh::Topology::cell_type)
-      .def("cell_name",
-           [](const dolfinx::mesh::Topology& self) {
-             return dolfinx::mesh::to_string(self.cell_type());
-           });
+      .def("cell_name", [](const dolfinx::mesh::Topology& self) {
+        return dolfinx::mesh::to_string(self.cell_type());
+      });
 
   // dolfinx::mesh::Mesh
   py::class_<dolfinx::mesh::Mesh, std::shared_ptr<dolfinx::mesh::Mesh>>(
@@ -154,21 +152,20 @@ void mesh(py::module& m)
         return std::make_unique<dolfinx::mesh::Mesh>(comm.get(), topology,
                                                      geometry);
       }))
-        .def(py::init(
-            [](const MPICommWrapper comm, dolfinx::mesh::CellType type,
-               const Eigen::Ref<const Eigen::Array<
-                   double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>>&
-                   geometry,
-               const Eigen::Ref<
-                   const Eigen::Array<std::int64_t, Eigen::Dynamic,
-                                      Eigen::Dynamic, Eigen::RowMajor>>&
-                                      topology,
-               const std::vector<std::int64_t>& global_cell_indices,
-               const dolfinx::mesh::GhostMode ghost_mode) {
-              return std::make_unique<dolfinx::mesh::Mesh>(
-                  comm.get(), type, geometry, topology, global_cell_indices,
-                  ghost_mode);
-            }))
+      .def(py::init(
+          [](const MPICommWrapper comm, dolfinx::mesh::CellType type,
+             const Eigen::Ref<const Eigen::Array<
+                 double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>>&
+                 geometry,
+             const Eigen::Ref<
+                 const Eigen::Array<std::int64_t, Eigen::Dynamic,
+                                    Eigen::Dynamic, Eigen::RowMajor>>& topology,
+             const std::vector<std::int64_t>& global_cell_indices,
+             const dolfinx::mesh::GhostMode ghost_mode) {
+            return std::make_unique<dolfinx::mesh::Mesh>(
+                comm.get(), type, geometry, topology, global_cell_indices,
+                ghost_mode);
+          }))
       .def_property_readonly(
           "geometry", py::overload_cast<>(&dolfinx::mesh::Mesh::geometry),
           "Mesh geometry")
@@ -207,7 +204,6 @@ void mesh(py::module& m)
            "Entity index")
       .def("entities", &dolfinx::mesh::MeshEntity::entities,
            py::return_value_policy::reference_internal);
-
 
 // dolfinx::mesh::MeshFunction
 #define MESHFUNCTION_MACRO(SCALAR, SCALAR_NAME)                                \
