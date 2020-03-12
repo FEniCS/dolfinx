@@ -210,6 +210,22 @@ void write_ascii_mesh(const mesh::Mesh& mesh, int cell_dim,
       throw std::runtime_error("MeshFunction of lower degree than the "
                                "topological dimension is not implemented");
     }
+
+    // Build a map from topology to geometry
+    auto cell_connectivity = mesh.topology().connectivity(tdim, 0);
+    const std::int32_t num_mesh_vertices = mesh.num_entities(0);
+    std::vector<std::int32_t> topology_to_geometry(num_mesh_vertices);
+    auto x_dofs = mesh.geometry().dofmap();
+    for (int j = 0; j < mesh.num_entities(tdim); ++j)
+    {
+      auto cell_vertices = cell_connectivity->links(j);
+      const int num_cell_vertices = cell_vertices.size();
+      for (int i = 0; i < num_cell_vertices; ++i)
+      {
+        topology_to_geometry[cell_vertices[i]] = x_dofs.links(j)[i];
+      }
+    }
+
     mesh::CellType e_type
         = mesh::cell_entity_type(mesh.topology().cell_type(), cell_dim);
     // FIXME : Need to implement permutations for higher order
@@ -226,7 +242,12 @@ void write_ascii_mesh(const mesh::Mesh& mesh, int cell_dim,
     for (int j = 0; j < mesh.num_entities(cell_dim); ++j)
     {
       for (int i = 0; i < num_vertices; ++i)
-        file << vertex_connections(pos_vertex(j) + perm[i]) << " ";
+      {
+
+        file
+            << topology_to_geometry[vertex_connections(pos_vertex(j) + perm[i])]
+            << " ";
+      }
       file << " ";
     }
     file << "</DataArray>" << std::endl;
