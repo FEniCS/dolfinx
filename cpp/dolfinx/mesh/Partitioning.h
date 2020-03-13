@@ -24,6 +24,7 @@ namespace mesh
 {
 
 class Topology;
+enum class GhostMode : int;
 
 /// New tools for partitioning meshes/graphs
 ///
@@ -85,7 +86,8 @@ public:
   /// @return Destination processes for each cell on this process
   static graph::AdjacencyList<std::int32_t>
   partition_cells(MPI_Comm comm, int n, const mesh::CellType cell_type,
-                  const graph::AdjacencyList<std::int64_t>& cells);
+                  const graph::AdjacencyList<std::int64_t>& cells,
+                  mesh::GhostMode ghost_mode);
 
   /// Compute a local AdjacencyList list with contiguous indices from an
   /// AdjacencyList that may have non-contiguous data

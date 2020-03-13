@@ -241,7 +241,8 @@ private:
 Mesh create(MPI_Comm comm, const graph::AdjacencyList<std::int64_t>& cells,
             const fem::ElementDofLayout& layout,
             const Eigen::Ref<const Eigen::Array<
-                double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>>& x);
+                double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>>& x,
+            GhostMode ghost_mode);
 
 } // namespace mesh
 } // namespace dolfinx

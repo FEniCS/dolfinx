@@ -521,7 +521,8 @@ mesh::CellType Topology::cell_type() const { return _cell_type; }
 std::tuple<Topology, std::vector<int>, graph::AdjacencyList<std::int32_t>>
 mesh::create_topology(MPI_Comm comm,
                       const graph::AdjacencyList<std::int64_t>& cells,
-                      const fem::ElementDofLayout& layout)
+                      const fem::ElementDofLayout& layout,
+                      mesh::GhostMode ghost_mode)
 {
   const int size = dolfinx::MPI::size(comm);
 
@@ -536,8 +537,8 @@ mesh::create_topology(MPI_Comm comm,
 
   // Compute the destination rank for cells on this process via graph
   // partitioning
-  const graph::AdjacencyList<std::int32_t> dest
-      = Partitioning::partition_cells(comm, size, layout.cell_type(), cells_v);
+  const graph::AdjacencyList<std::int32_t> dest = Partitioning::partition_cells(
+      comm, size, layout.cell_type(), cells_v, ghost_mode);
 
   // Distribute cells to destination rank
   const auto [my_cells, src, original_cell_index]

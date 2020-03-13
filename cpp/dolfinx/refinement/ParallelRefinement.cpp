@@ -308,9 +308,9 @@ mesh::Mesh ParallelRefinement::build_local() const
 
   const fem::ElementDofLayout layout
       = fem::geometry_layout(_mesh.topology().cell_type(), cells.cols());
-  mesh::Mesh mesh = mesh::create(_mesh.mpi_comm(),
-                                 graph::AdjacencyList<std::int64_t>(cells),
-                                 layout, _new_vertex_coordinates);
+  mesh::Mesh mesh = mesh::create(
+      _mesh.mpi_comm(), graph::AdjacencyList<std::int64_t>(cells), layout,
+      _new_vertex_coordinates, mesh::GhostMode::none);
 
   return mesh;
 }
@@ -340,7 +340,7 @@ mesh::Mesh ParallelRefinement::partition(bool redistribute) const
   {
     return mesh::create(_mesh.mpi_comm(),
                         graph::AdjacencyList<std::int64_t>(cells), layout,
-                        _new_vertex_coordinates);
+                        _new_vertex_coordinates, mesh::GhostMode::none);
   }
 
   MPI_Comm comm = _mesh.mpi_comm();

@@ -44,8 +44,7 @@ std::string get_hdf5_filename(std::string filename)
 } // namespace
 
 //-----------------------------------------------------------------------------
-XDMFFile::XDMFFile(MPI_Comm comm, const std::string filename,
-                         Encoding encoding)
+XDMFFile::XDMFFile(MPI_Comm comm, const std::string filename, Encoding encoding)
     : _mpi_comm(comm), _filename(filename), _xml_doc(new pugi::xml_document),
       _encoding(encoding)
 {
@@ -119,8 +118,8 @@ mesh::Mesh XDMFFile::read_mesh() const
 
   // Create Topology
   graph::AdjacencyList<std::int64_t> _cells(cells);
-  auto [topology, src, dest]
-      = mesh::create_topology(_mpi_comm.comm(), _cells, layout);
+  auto [topology, src, dest] = mesh::create_topology(
+      _mpi_comm.comm(), _cells, layout, mesh::GhostMode::none);
 
   // FIXME: Figure out how to check which entities are required
   // Initialise facet for P2
@@ -208,7 +207,7 @@ void XDMFFile::write(const mesh::MeshFunction<int>& meshfunction)
 //-----------------------------------------------------------------------------
 mesh::MeshFunction<int>
 XDMFFile::read_mf_int(std::shared_ptr<const mesh::Mesh> mesh,
-                         std::string name) const
+                      std::string name) const
 {
   // Load XML doc from file
   pugi::xml_document xml_doc;

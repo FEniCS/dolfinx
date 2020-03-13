@@ -15,7 +15,8 @@ using namespace dolfinx;
 using namespace dolfinx::generation;
 
 //-----------------------------------------------------------------------------
-mesh::Mesh UnitDiscMesh::create(MPI_Comm comm, int n, const mesh::GhostMode)
+mesh::Mesh UnitDiscMesh::create(MPI_Comm comm, int n,
+                                const mesh::GhostMode ghost_mode)
 {
   assert(n > 0);
   // Receive mesh if not rank 0
@@ -26,7 +27,7 @@ mesh::Mesh UnitDiscMesh::create(MPI_Comm comm, int n, const mesh::GhostMode)
     const fem::ElementDofLayout layout
         = fem::geometry_layout(mesh::CellType::triangle, topo.cols());
     return mesh::create(comm, graph::AdjacencyList<std::int64_t>(topo), layout,
-                        geom);
+                        geom, ghost_mode);
   }
 
   Eigen::Array<double, Eigen::Dynamic, 2, Eigen::RowMajor> points(
@@ -103,7 +104,7 @@ mesh::Mesh UnitDiscMesh::create(MPI_Comm comm, int n, const mesh::GhostMode)
   const fem::ElementDofLayout layout
       = fem::geometry_layout(mesh::CellType::triangle, cells_reordered.cols());
   return mesh::create(comm, graph::AdjacencyList<std::int64_t>(cells_reordered),
-                      layout, points);
+                      layout, points, ghost_mode);
 }
 
 //-----------------------------------------------------------------------------
