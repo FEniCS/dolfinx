@@ -81,7 +81,7 @@ std::int64_t PETScVector::size() const
   return n;
 }
 //-----------------------------------------------------------------------------
-std::size_t PETScVector::local_size() const
+std::int32_t PETScVector::local_size() const
 {
   assert(_x);
   PetscInt n = 0;

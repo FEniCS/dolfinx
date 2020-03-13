@@ -445,9 +445,6 @@ mesh::MeshFunction<T> read_mesh_function(std::shared_ptr<const mesh::Mesh> mesh,
   const std::int64_t num_entities_global
       = xdmf_utils::get_num_cells(topology_node);
 
-  // std::cout << "Testing: " << mesh->topology().index_map(dim)->size_global()
-  //           << ", " << num_entities_global << std::endl;
-
   mesh->create_entities(dim);
   assert(mesh->topology().index_map(dim));
   assert(mesh->topology().index_map(dim)->size_global() == num_entities_global);

@@ -136,13 +136,6 @@ public:
   /// @return Number of entities of topological dimension d
   std::int32_t num_entities(int d) const;
 
-  /// @todo Remove and work via Topology
-  ///
-  /// Get global number of entities of given topological dimension
-  /// @param[in] dim Topological dimension.
-  /// @return Global number of entities of topological dimension d
-  std::int64_t num_entities_global(int dim) const;
-
   /// Get mesh topology
   /// @return The topology object associated with the mesh.
   Topology& topology();

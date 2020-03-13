@@ -122,12 +122,10 @@ void VectorSpaceBasis::orthogonalize(PETScVector& x) const
   }
 }
 //-----------------------------------------------------------------------------
-std::size_t VectorSpaceBasis::dim() const { return _basis.size(); }
+int VectorSpaceBasis::dim() const { return _basis.size(); }
 //-----------------------------------------------------------------------------
-std::shared_ptr<const la::PETScVector> VectorSpaceBasis::
-operator[](std::size_t i) const
+std::shared_ptr<const la::PETScVector> VectorSpaceBasis::operator[](int i) const
 {
-  assert(i < _basis.size());
-  return _basis[i];
+  return _basis.at(i);
 }
 //-----------------------------------------------------------------------------

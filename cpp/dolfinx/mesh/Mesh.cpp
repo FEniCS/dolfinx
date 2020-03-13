@@ -164,14 +164,6 @@ std::int32_t Mesh::num_entities(int d) const
   return map->size_local() + map->num_ghosts();
 }
 //-----------------------------------------------------------------------------
-std::int64_t Mesh::num_entities_global(int dim) const
-{
-  assert(_topology);
-  assert(_topology->index_map(dim));
-  assert(_topology->index_map(dim)->block_size() == 1);
-  return _topology->index_map(dim)->size_global();
-}
-//-----------------------------------------------------------------------------
 Topology& Mesh::topology()
 {
   assert(_topology);

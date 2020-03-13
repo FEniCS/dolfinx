@@ -63,7 +63,7 @@ public:
   // FIXME: Is this well-defined? What does it do on non-simplex
   // elements?
   /// Return the maximum polynomial degree
-  std::size_t degree() const;
+  int degree() const;
 
   /// The finite element family
   /// @return The string of the finite element family
