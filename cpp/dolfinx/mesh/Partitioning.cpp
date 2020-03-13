@@ -497,7 +497,7 @@ Partitioning::distribute(MPI_Comm comm,
   {
     const auto& dests = destinations.links(i);
     for (int j = 0; j < destinations.num_links(i); ++j)
-      num_per_dest_send[dests[j]] += list.num_links(i) + 2;
+      num_per_dest_send[dests[j]] += list.num_links(i) + 3;
   }
 
   // Compute send array displacements
@@ -526,6 +526,7 @@ Partitioning::distribute(MPI_Comm comm,
       std::int32_t dest = dests[j];
       auto links = list.links(i);
       data_send[offset[dest]++] = i + offset_global;
+      data_send[offset[dest]++] = dests[0];
       data_send[offset[dest]++] = links.rows();
       for (int k = 0; k < links.rows(); ++k)
         data_send[offset[dest]++] = links(k);
@@ -540,6 +541,7 @@ Partitioning::distribute(MPI_Comm comm,
 
   // Unpack receive buffer
   std::vector<std::int64_t> array, global_indices;
+  std::vector<int> index_owner;
   std::vector<std::int32_t> list_offset(1, 0);
   std::vector<int> src;
   for (std::size_t p = 0; p < disp_recv.size() - 1; ++p)
@@ -548,12 +550,20 @@ Partitioning::distribute(MPI_Comm comm,
     {
       src.push_back(p);
       global_indices.push_back(data_recv[i++]);
+      index_owner.push_back(data_recv[i++]);
       const std::int64_t num_links = data_recv[i++];
       for (int j = 0; j < num_links; ++j)
         array.push_back(data_recv[i++]);
       list_offset.push_back(list_offset.back() + num_links);
     }
   }
+
+  std::stringstream s;
+  s << "index_owner:";
+  for (auto i : index_owner)
+    s << i << " ";
+  s << "\n";
+  std::cout << s.str();
 
   return {graph::AdjacencyList<std::int64_t>(array, list_offset),
           std::move(src), std::move(global_indices)};
