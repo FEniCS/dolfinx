@@ -701,6 +701,7 @@ Eigen::Array<double, Eigen::Dynamic, 3, Eigen::RowMajor> mesh::midpoints(
   }
   else
   {
+    // FIXME: This assumes a linear geometry.
     auto e_to_v = topology.connectivity(dim, 0);
     assert(e_to_v);
     for (Eigen::Index e = 0; e < entities.rows(); ++e)
