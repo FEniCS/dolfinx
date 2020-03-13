@@ -68,10 +68,9 @@ ParallelRefinement::~ParallelRefinement() { MPI_Comm_free(&_neighbour_comm); }
 //-----------------------------------------------------------------------------
 const mesh::Mesh& ParallelRefinement::mesh() const { return _mesh; }
 //-----------------------------------------------------------------------------
-bool ParallelRefinement::is_marked(std::int32_t edge_index) const
+const std::vector<bool>& ParallelRefinement::marked_edges() const
 {
-  assert(edge_index < _mesh.num_entities(1));
-  return _marked_edges[edge_index];
+  return _marked_edges;
 }
 //-----------------------------------------------------------------------------
 void ParallelRefinement::mark(std::int32_t edge_index)

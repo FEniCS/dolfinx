@@ -49,9 +49,9 @@ public:
   /// Original mesh associated with this refinement
   const mesh::Mesh& mesh() const;
 
-  /// Return marked status of edge
-  /// @param[in] edge_index
-  bool is_marked(std::int32_t edge_index) const;
+  /// Return markers for all edges
+  /// @returns array of markers
+  const std::vector<bool>& marked_edges() const;
 
   /// Mark edge by index
   /// @param[in] edge_index Index of edge to mark

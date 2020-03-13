@@ -37,6 +37,8 @@ void enforce_rules(ParallelRefinement& p_ref, const mesh::Mesh& mesh,
   auto f_to_e = mesh.topology().connectivity(2, 1);
   assert(f_to_e);
 
+  const std::vector<bool>& marked_edges = p_ref.marked_edges();
+
   std::int32_t update_count = 1;
   while (update_count != 0)
   {
@@ -45,13 +47,13 @@ void enforce_rules(ParallelRefinement& p_ref, const mesh::Mesh& mesh,
     for (int f = 0; f < num_faces; ++f)
     {
       const std::int32_t long_e = long_edge[f];
-      if (p_ref.is_marked(long_e))
+      if (marked_edges[long_e])
         continue;
 
       bool any_marked = false;
       auto edges = f_to_e->links(f);
       for (int i = 0; i < edges.rows(); ++i)
-        any_marked = any_marked or p_ref.is_marked(edges[i]);
+        any_marked = any_marked or marked_edges[edges[i]];
 
       if (any_marked)
       {
@@ -97,6 +99,7 @@ mesh::Mesh compute_refinement(const mesh::Mesh& mesh, ParallelRefinement& p_ref,
   assert(mesh.topology().index_map(0));
   const std::vector<std::int64_t> global_indices
       = mesh.topology().index_map(0)->global_indices(true);
+  const std::vector<bool>& marked_edges = p_ref.marked_edges();
   for (int c = 0; c < num_cells; ++c)
   {
     // Create vector of indices in the order [vertices][edges], 3+3 in
@@ -111,7 +114,7 @@ mesh::Mesh compute_refinement(const mesh::Mesh& mesh, ParallelRefinement& p_ref,
     marked_edge_list.clear();
     auto edges = c_to_e->links(c);
     for (int ei = 0; ei < edges.rows(); ++ei)
-      if (p_ref.is_marked(edges[ei]))
+      if (marked_edges[edges[ei]])
         marked_edge_list.push_back(ei);
 
     if (marked_edge_list.size() == 0)
@@ -334,15 +337,18 @@ face_long_edge(const mesh::Mesh& mesh)
   mesh.create_connectivity(1, tdim);
   mesh.create_connectivity(tdim, 2);
 
+  std::int64_t num_faces = mesh.topology().index_map(2)->size_local()
+                           + mesh.topology().index_map(2)->num_ghosts();
+
   // Storage for face-local index of longest edge
-  std::vector<std::int32_t> long_edge(mesh.num_entities(2));
+  std::vector<std::int32_t> long_edge(num_faces);
   std::vector<bool> edge_ratio_ok;
 
   // Check mesh face quality (may be used in 2D to switch to "uniform"
   // refinement)
   const double min_ratio = sqrt(2.0) / 2.0;
   if (tdim == 2)
-    edge_ratio_ok.resize(mesh.num_entities(2));
+    edge_ratio_ok.resize(num_faces);
 
   const Eigen::Array<double, Eigen::Dynamic, 3, Eigen::RowMajor>& x
       = mesh.geometry().x();
@@ -358,8 +364,8 @@ face_long_edge(const mesh::Mesh& mesh)
   // Store all edge lengths in Mesh to save recalculating for each Face
   auto map_e = mesh.topology().index_map(1);
   assert(map_e);
-  std::vector<double> edge_length(mesh.num_entities(1));
-  for (int e = 0; e < map_e->size_local() + map_e->num_ghosts(); ++e)
+  std::vector<double> edge_length(map_e->size_local() + map_e->num_ghosts());
+  for (std::size_t e = 0; e < edge_length.size(); ++e)
   {
     // Get first attached cell
     assert(e_to_c->num_links(e) > 0);
