@@ -121,7 +121,8 @@ void ParallelRefinement::mark(const mesh::MeshFunction<int>& refinement_marker)
 
   auto ent_to_edge = mesh->topology().connectivity(entity_dim, 1);
   if (!ent_to_edge)
-    throw std::runtime_error("Connectivity missing");
+    throw std::runtime_error("Connectivity missing: ("
+                             + std::to_string(entity_dim) + ", 1)");
 
   for (int i = 0; i < num_entities; ++i)
   {
