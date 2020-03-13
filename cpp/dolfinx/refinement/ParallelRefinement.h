@@ -11,6 +11,7 @@
 #include <map>
 #include <set>
 #include <vector>
+#include <Eigen/Dense>
 
 namespace dolfinx
 {
@@ -99,7 +100,7 @@ private:
   std::map<std::int32_t, std::int64_t> _local_edge_to_new_vertex;
 
   // New storage for all coordinates when creating new vertices
-  std::vector<double> _new_vertex_coordinates;
+  Eigen::Array<double, Eigen::Dynamic, 3, Eigen::RowMajor> _new_vertex_coordinates;
 
   // New storage for all cells when creating new topology
   std::vector<std::int64_t> _new_cell_topology;

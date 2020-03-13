@@ -144,6 +144,7 @@ void ParallelRefinement::update_logical_edgefunction()
   {
     data_to_send.insert(data_to_send.end(), _marked_for_update[i].begin(),
                         _marked_for_update[i].end());
+    _marked_for_update[i].clear();
     send_offsets.push_back(data_to_send.size());
   }
 
@@ -152,11 +153,7 @@ void ParallelRefinement::update_logical_edgefunction()
   MPI::neighbor_all_to_all(_neighbour_comm, send_offsets, data_to_send,
                            recv_offsets, data_to_recv);
 
-  // Clear marked_for_update vectors
-  _marked_for_update = std::vector<std::vector<std::int64_t>>(num_neighbours);
-
-  // Flatten received values and set edges mesh::MeshFunction true at
-  // each index received
+  // Flatten received values and set _marked_edges at each index received
   std::vector<std::int32_t> local_indices
       = _mesh.topology().index_map(1)->global_to_local(data_to_recv);
   for (std::int32_t local_index : local_indices)
@@ -198,13 +195,13 @@ void ParallelRefinement::create_new_vertices()
   const Eigen::Array<double, Eigen::Dynamic, 3, Eigen::RowMajor>& x_g
       = _mesh.geometry().x();
 
-  _new_vertex_coordinates = std::vector<double>(3 * num_vertices);
+  std::int32_t num_new_vertices
+      = std::count(_marked_edges.begin(), _marked_edges.end(), true);
+
+  _new_vertex_coordinates.resize(num_vertices + num_new_vertices, 3);
+
   for (int v = 0; v < num_vertices; ++v)
-  {
-    auto _x = x_g.row(vertex_to_x[v]);
-    for (int i = 0; i < 3; ++i)
-      _new_vertex_coordinates[3 * v + i] = _x[i];
-  }
+    _new_vertex_coordinates.row(v) = x_g.row(vertex_to_x[v]);
 
   // Compute all edge mid-points
   Eigen::Array<int, Eigen::Dynamic, 1> edges(_mesh.num_entities(1));
@@ -215,19 +212,19 @@ void ParallelRefinement::create_new_vertices()
   // Tally up unshared marked edges, and shared marked edges which are
   // owned on this process. Index them sequentially from zero.
   // Locally owned edges
+
   std::int64_t n = 0;
   for (int local_i = 0; local_i < edge_index_map->size_local(); ++local_i)
   {
     if (_marked_edges[local_i] == true)
     {
-      for (std::size_t j = 0; j < 3; ++j)
-        _new_vertex_coordinates.push_back(midpoints(local_i, j));
-      _local_edge_to_new_vertex[local_i] = n++;
+      _new_vertex_coordinates.row(n + num_vertices) = midpoints.row(local_i);
+      _local_edge_to_new_vertex[local_i] = n;
+      ++n;
     }
   }
 
   // Calculate global range for new local vertices
-  const std::size_t num_new_vertices = n;
   const std::size_t global_offset
       = MPI::global_offset(_mesh.mpi_comm(), num_new_vertices, true)
         + _mesh.num_entities_global(0);
@@ -236,8 +233,8 @@ void ParallelRefinement::create_new_vertices()
   // sent off-process.  Add offset to map, and collect up any shared
   // new vertices that need to send the new index off-process
 
-  std::vector<int> neighbours = MPI::neighbors(_neighbour_comm);
-  std::vector<std::vector<std::int64_t>> values_to_send(neighbours.size());
+  int num_neighbours = _marked_for_update.size();
+  std::vector<std::vector<std::int64_t>> values_to_send(num_neighbours);
   for (auto& local_edge : _local_edge_to_new_vertex)
   {
     // Add global_offset to map, to get new global index of new
@@ -260,15 +257,17 @@ void ParallelRefinement::create_new_vertices()
   }
 
   // Send new vertex indices to edge neighbours and receive
-  std::vector<std::int64_t> send_values, received_values;
-  std::vector<int> send_offsets(1, 0), recv_offsets;
-  for (std::size_t i = 0; i < neighbours.size(); ++i)
+  std::vector<std::int64_t> send_values;
+  std::vector<int> send_offsets = {0};
+  for (int i = 0; i < num_neighbours; ++i)
   {
     send_values.insert(send_values.end(), values_to_send[i].begin(),
                        values_to_send[i].end());
     send_offsets.push_back(send_values.size());
   }
 
+  std::vector<int> recv_offsets;
+  std::vector<std::int64_t> received_values;
   MPI::neighbor_all_to_all(_neighbour_comm, send_offsets, send_values,
                            recv_offsets, received_values);
 
@@ -286,42 +285,32 @@ void ParallelRefinement::create_new_vertices()
   // them across processes into this order
   std::vector<std::int64_t> global_indices
       = _mesh.topology().index_map(0)->global_indices(false);
-  for (std::size_t i = 0; i < num_new_vertices; i++)
+  for (std::int32_t i = 0; i < num_new_vertices; i++)
     global_indices.push_back(i + global_offset);
 
-  Eigen::Map<
-      Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>>
-      old_tmp(_new_vertex_coordinates.data(),
-              _new_vertex_coordinates.size() / 3, 3);
   Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor> tmp
       = mesh::DistributedMeshTools::reorder_by_global_indices(
-          _mesh.mpi_comm(), old_tmp, global_indices);
+          _mesh.mpi_comm(), _new_vertex_coordinates, global_indices);
 
-  _new_vertex_coordinates
-      = std::vector<double>(tmp.data(), tmp.data() + tmp.size());
+  _new_vertex_coordinates = tmp;
 }
 //-----------------------------------------------------------------------------
 mesh::Mesh ParallelRefinement::build_local() const
 {
   const std::size_t tdim = _mesh.topology().dim();
-  assert(_new_vertex_coordinates.size() % 3 == 0);
-  const std::size_t num_vertices = _new_vertex_coordinates.size() / 3;
-
   const std::size_t num_cell_vertices = tdim + 1;
   assert(_new_cell_topology.size() % num_cell_vertices == 0);
   const std::size_t num_cells = _new_cell_topology.size() / num_cell_vertices;
 
-  Eigen::Map<const Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic,
-                                Eigen::RowMajor>>
-      x(_new_vertex_coordinates.data(), num_vertices, 3);
   Eigen::Map<const Eigen::Array<std::int64_t, Eigen::Dynamic, Eigen::Dynamic,
                                 Eigen::RowMajor>>
       cells(_new_cell_topology.data(), num_cells, num_cell_vertices);
 
   const fem::ElementDofLayout layout
       = fem::geometry_layout(_mesh.topology().cell_type(), cells.cols());
-  mesh::Mesh mesh = mesh::create(
-      _mesh.mpi_comm(), graph::AdjacencyList<std::int64_t>(cells), layout, x);
+  mesh::Mesh mesh = mesh::create(_mesh.mpi_comm(),
+                                 graph::AdjacencyList<std::int64_t>(cells),
+                                 layout, _new_vertex_coordinates);
 
   return mesh;
 }
@@ -343,11 +332,6 @@ mesh::Mesh ParallelRefinement::partition(bool redistribute) const
                                 Eigen::RowMajor>>
       cells(_new_cell_topology.data(), num_local_cells, num_vertices_per_cell);
 
-  const std::size_t num_local_vertices = _new_vertex_coordinates.size() / 3;
-  Eigen::Map<const Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic,
-                                Eigen::RowMajor>>
-      x(_new_vertex_coordinates.data(), num_local_vertices, 3);
-
   // Build mesh
 
   const fem::ElementDofLayout layout
@@ -355,7 +339,8 @@ mesh::Mesh ParallelRefinement::partition(bool redistribute) const
   if (redistribute)
   {
     return mesh::create(_mesh.mpi_comm(),
-                        graph::AdjacencyList<std::int64_t>(cells), layout, x);
+                        graph::AdjacencyList<std::int64_t>(cells), layout,
+                        _new_vertex_coordinates);
   }
 
   MPI_Comm comm = _mesh.mpi_comm();
@@ -435,8 +420,8 @@ mesh::Mesh ParallelRefinement::partition(bool redistribute) const
   Eigen::Array<int, Eigen::Dynamic, 1> _dest(my_cells.num_nodes(), 1);
   _dest = dolfinx::MPI::rank(comm);
   const graph::AdjacencyList<std::int32_t> dest(_dest);
-  const mesh::Geometry geometry
-      = mesh::create_geometry(comm, topology, layout, my_cells, dest, src, x);
+  const mesh::Geometry geometry = mesh::create_geometry(
+      comm, topology, layout, my_cells, dest, src, _new_vertex_coordinates);
 
   return mesh::Mesh(comm, topology, geometry);
 }
