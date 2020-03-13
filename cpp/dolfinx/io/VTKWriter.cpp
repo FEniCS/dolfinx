@@ -184,20 +184,18 @@ void write_ascii_mesh(const mesh::Mesh& mesh, int cell_dim,
   {
     // Special case where the cells are visualized (Supports higher order
     // elements)
-    const graph::AdjacencyList<std::int32_t>& connectivity_g
+    const graph::AdjacencyList<std::int32_t>& x_dofmap
         = mesh.geometry().dofmap();
-    const Eigen::Array<std::int32_t, Eigen::Dynamic, 1>& cell_connections
-        = connectivity_g.array();
-    const Eigen::Array<std::int32_t, Eigen::Dynamic, 1>& pos_g
-        = connectivity_g.offsets();
-    num_nodes = connectivity_g.num_links(0);
+    // FIXME: USe better way to get number of nods
+    num_nodes = x_dofmap.num_links(0);
 
     const std::vector<std::uint8_t> perm
         = io::cells::vtk_to_dolfin(mesh.topology().cell_type(), num_nodes);
-    for (int j = 0; j < mesh.num_entities(mesh.topology().dim()); ++j)
+    for (int c = 0; c < x_dofmap.num_nodes(); ++c)
     {
-      for (int i = 0; i < num_nodes; ++i)
-        file << cell_connections(pos_g(j) + perm[i]) << " ";
+      auto x_dofs = x_dofmap.links(c);
+      for (int i = 0; i < x_dofs.rows(); ++i)
+        file << x_dofs(perm[i]) << " ";
       file << " ";
     }
     file << "</DataArray>" << std::endl;
@@ -212,22 +210,22 @@ void write_ascii_mesh(const mesh::Mesh& mesh, int cell_dim,
     }
 
     // Build a map from topology to geometry
-    auto cell_connectivity = mesh.topology().connectivity(tdim, 0);
+    auto c_to_v = mesh.topology().connectivity(tdim, 0);
+    assert(c_to_v);
 
     auto map = mesh.topology().index_map(0);
+    assert(map);
     const std::int32_t num_mesh_vertices
         = map->size_local() + map->num_ghosts();
 
-    std::vector<std::int32_t> topology_to_geometry(num_mesh_vertices);
-    auto x_dofs = mesh.geometry().dofmap();
-    for (int j = 0; j < cell_connectivity->num_nodes(); ++j)
+    std::vector<std::int32_t> vertex_to_node(num_mesh_vertices);
+    auto x_dofmap = mesh.geometry().dofmap();
+    for (int c = 0; c < c_to_v->num_nodes(); ++c)
     {
-      auto cell_vertices = cell_connectivity->links(j);
-      const int num_cell_vertices = cell_vertices.size();
-      for (int i = 0; i < num_cell_vertices; ++i)
-      {
-        topology_to_geometry[cell_vertices[i]] = x_dofs.links(j)[i];
-      }
+      auto vertices = c_to_v->links(c);
+      auto x_dofs = x_dofmap.links(c);
+      for (int i = 0; i < vertices.rows(); ++i)
+        vertex_to_node[vertices[i]] = x_dofs(i);
     }
 
     mesh::CellType e_type
@@ -238,20 +236,13 @@ void write_ascii_mesh(const mesh::Mesh& mesh, int cell_dim,
     const int num_vertices = mesh::num_cell_vertices(e_type);
     const std::vector<std::uint8_t> perm
         = io::cells::vtk_to_dolfin(e_type, num_vertices);
-    auto vertex_connectivity = mesh.topology().connectivity(cell_dim, 0);
-    const Eigen::Array<std::int32_t, Eigen::Dynamic, 1>& vertex_connections
-        = vertex_connectivity->array();
-    const Eigen::Array<std::int32_t, Eigen::Dynamic, 1>& pos_vertex
-        = vertex_connectivity->offsets();
-    for (int j = 0; j < vertex_connectivity->num_nodes(); ++j)
+    auto e_to_v = mesh.topology().connectivity(cell_dim, 0);
+    assert(e_to_v);
+    for (int e = 0; e < e_to_v->num_nodes(); ++e)
     {
+      auto vertices = e_to_v->links(e);
       for (int i = 0; i < num_vertices; ++i)
-      {
-
-        file
-            << topology_to_geometry[vertex_connections(pos_vertex(j) + perm[i])]
-            << " ";
-      }
+        file << vertex_to_node[vertices(perm[i])] << " ";
       file << " ";
     }
     file << "</DataArray>" << std::endl;
@@ -298,13 +289,12 @@ void VTKWriter::write_cell_data(const function::Function& u,
   assert(u.function_space()->dofmap());
   const mesh::Mesh& mesh = *u.function_space()->mesh();
   const fem::DofMap& dofmap = *u.function_space()->dofmap();
-  const std::size_t tdim = mesh.topology().dim();
-  const std::size_t num_cells = mesh.topology().index_map(tdim)->size_local();
-
+  const int tdim = mesh.topology().dim();
+  const std::int32_t num_cells = mesh.topology().index_map(tdim)->size_local();
   std::string encode_string = "ascii";
 
   // Get rank of function::Function
-  const std::size_t rank = u.value_rank();
+  const int rank = u.value_rank();
   if (rank > 2)
   {
     throw std::runtime_error("Don't know how to handle vector function with "
@@ -312,7 +302,7 @@ void VTKWriter::write_cell_data(const function::Function& u,
   }
 
   // Get number of components
-  const std::size_t data_dim = u.value_size();
+  const int data_dim = u.value_size();
 
   // Open file
   std::ofstream fp(filename.c_str(), std::ios_base::app);
