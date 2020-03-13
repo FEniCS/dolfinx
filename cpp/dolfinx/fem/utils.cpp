@@ -735,14 +735,17 @@ fem::pack_coefficients(const fem::Form& form)
     VecGetArrayRead(x_local[i], &v[i]);
   }
 
+  const int num_cells = mesh.topology().index_map(tdim)->size_local()
+                        + mesh.topology().index_map(tdim)->num_ghosts();
+
   // Copy data into coefficient array
   Eigen::Array<PetscScalar, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor> c(
-      mesh.num_entities(tdim), offsets.back());
+      num_cells, offsets.back());
   if (coefficients.size() > 0)
   {
-    for (int cell = 0; cell < mesh.num_entities(tdim); ++cell)
+    for (int cell = 0; cell < num_cells; ++cell)
     {
-      for (std::size_t coeff = 0; coeff < dofmaps.size(); ++coeff)
+      for (int coeff = 0; coeff < dofmaps.size(); ++coeff)
       {
         auto dofs = dofmaps[coeff]->cell_dofs(cell);
         const PetscScalar* _v = v[coeff];
