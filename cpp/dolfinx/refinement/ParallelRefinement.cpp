@@ -118,7 +118,6 @@ std::vector<std::size_t>
 ParallelRefinement::marked_edge_list(const mesh::MeshEntity& cell) const
 {
   std::vector<std::size_t> result;
-
   std::size_t i = 0;
   for (const auto& edge : mesh::EntityRange(cell, 1))
   {
