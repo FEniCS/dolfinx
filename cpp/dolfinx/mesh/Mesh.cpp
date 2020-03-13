@@ -164,14 +164,6 @@ std::int32_t Mesh::num_entities(int d) const
   return map->size_local() + map->num_ghosts();
 }
 //-----------------------------------------------------------------------------
-std::int64_t Mesh::num_entities_global(int dim) const
-{
-  assert(_topology);
-  assert(_topology->index_map(dim));
-  assert(_topology->index_map(dim)->block_size() == 1);
-  return _topology->index_map(dim)->size_global();
-}
-//-----------------------------------------------------------------------------
 Topology& Mesh::topology()
 {
   assert(_topology);
@@ -316,27 +308,6 @@ std::size_t Mesh::hash() const
 
   // Compute hash based on the Cantor pairing function
   return (kt + kg) * (kt + kg + 1) / 2 + kg;
-}
-//-----------------------------------------------------------------------------
-std::string Mesh::str(bool verbose) const
-{
-  assert(_geometry);
-  assert(_topology);
-  std::stringstream s;
-  if (verbose)
-  {
-    s << str(false) << std::endl << std::endl;
-    s << common::indent(_geometry->str(true));
-  }
-  else
-  {
-    const int tdim = _topology->dim();
-    s << "<Mesh of topological dimension " << tdim << " ("
-      << mesh::to_string(_topology->cell_type()) << ") with " << num_entities(0)
-      << " vertices and " << num_entities(tdim) << " cells >";
-  }
-
-  return s.str();
 }
 //-----------------------------------------------------------------------------
 MPI_Comm Mesh::mpi_comm() const { return _mpi_comm.comm(); }
