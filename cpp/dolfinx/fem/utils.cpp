@@ -745,7 +745,7 @@ fem::pack_coefficients(const fem::Form& form)
   {
     for (int cell = 0; cell < num_cells; ++cell)
     {
-      for (int coeff = 0; coeff < dofmaps.size(); ++coeff)
+      for (std::size_t coeff = 0; coeff < dofmaps.size(); ++coeff)
       {
         auto dofs = dofmaps[coeff]->cell_dofs(cell);
         const PetscScalar* _v = v[coeff];
