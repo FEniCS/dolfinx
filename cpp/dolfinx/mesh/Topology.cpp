@@ -555,8 +555,11 @@ mesh::create_topology(MPI_Comm comm,
   // set cell-vertex topology
   Topology topology_local(layout.cell_type());
   const int tdim = topology_local.dim();
+
+  // FIXME: need to fill in ghosts here
+  std::vector<std::int64_t> ghosts;
   auto map = std::make_shared<common::IndexMap>(comm, cells_local.num_nodes(),
-                                                std::vector<std::int64_t>(), 1);
+                                                ghosts, 1);
   topology_local.set_index_map(tdim, map);
   auto _cells_local
       = std::make_shared<graph::AdjacencyList<std::int32_t>>(cells_local);
