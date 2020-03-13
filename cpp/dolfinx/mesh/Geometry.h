@@ -81,8 +81,8 @@ public:
   /// Geometry degrees-of-freedom
   const Eigen::Array<double, Eigen::Dynamic, 3, Eigen::RowMajor>& x() const;
 
-  /// Return coordinate array for point with local index n
-  Eigen::Ref<const Eigen::Vector3d> x(int n) const;
+  /// Return coordinate array for node n (index is local to the process)
+  Eigen::Ref<const Eigen::Vector3d> node(int n) const;
 
   /// Global input indices for points (const)
   const std::vector<std::int64_t>& global_indices() const;
