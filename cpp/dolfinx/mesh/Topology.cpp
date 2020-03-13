@@ -46,7 +46,7 @@ compute_face_permutations_simplex(
       // Find the index of the lowest numbered vertex
 
       // Store local vertex indices here
-      std::array<std::size_t, 3> e_vertices;
+      std::array<std::int32_t, 3> e_vertices;
 
       // Find iterators pointing to cell vertex given a vertex on
       // facet
@@ -112,7 +112,7 @@ compute_face_permutations_tp(const graph::AdjacencyList<std::int32_t>& c_to_v,
       int num_min = -1;
 
       // Store local vertex indices here
-      std::array<std::size_t, 4> e_vertices;
+      std::array<std::int32_t, 4> e_vertices;
       // Find iterators pointing to cell vertex given a vertex on facet
       for (int j = 0; j < 4; ++j)
       {

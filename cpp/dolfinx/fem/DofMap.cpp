@@ -269,7 +269,7 @@ std::string DofMap::str(bool verbose) const
 }
 //-----------------------------------------------------------------------------
 Eigen::Array<std::int32_t, Eigen::Dynamic, 1>
-DofMap::dofs(const mesh::Topology& topology, std::size_t dim) const
+DofMap::dofs(const mesh::Topology& topology, int dim) const
 {
   assert(element_dof_layout);
 

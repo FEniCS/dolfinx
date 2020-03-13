@@ -103,7 +103,7 @@ int FiniteElement::value_dimension(int i) const
   return _value_dimension.at(i);
 }
 //-----------------------------------------------------------------------------
-std::size_t FiniteElement::degree() const { return _degree; }
+int FiniteElement::degree() const { return _degree; }
 //-----------------------------------------------------------------------------
 std::string FiniteElement::family() const { return _family; }
 //-----------------------------------------------------------------------------

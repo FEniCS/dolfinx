@@ -64,7 +64,7 @@ Geometry::x() const
   return _x;
 }
 //-----------------------------------------------------------------------------
-Eigen::Ref<const Eigen::Vector3d> Geometry::node(int n) const
+Eigen::Vector3d Geometry::node(int n) const
 {
   return _x.row(n).matrix().transpose();
 }
@@ -84,30 +84,6 @@ std::size_t Geometry::hash() const
   std::vector<double> data(_x.data(), _x.data() + _x.size());
   const std::size_t local_hash = dhash(data);
   return local_hash;
-}
-//-----------------------------------------------------------------------------
-std::string Geometry::str(bool verbose) const
-{
-  std::stringstream s;
-  if (verbose)
-  {
-    s << str(false) << std::endl << std::endl;
-    for (Eigen::Index i = 0; i < _x.rows(); i++)
-    {
-      s << "  " << i << ":";
-      for (Eigen::Index d = 0; d < _x.cols(); d++)
-        s << " " << _x(i, d);
-      s << std::endl;
-    }
-    s << std::endl;
-  }
-  else
-  {
-    s << "<Geometry of dimension " << _x.cols() << " and size " << _x.rows()
-      << ">";
-  }
-
-  return s.str();
 }
 //-----------------------------------------------------------------------------
 
