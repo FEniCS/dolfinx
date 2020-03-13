@@ -66,20 +66,18 @@ ParallelRefinement::ParallelRefinement(const mesh::Mesh& mesh)
 //-----------------------------------------------------------------------------
 ParallelRefinement::~ParallelRefinement() { MPI_Comm_free(&_neighbour_comm); }
 //-----------------------------------------------------------------------------
-const mesh::Mesh& ParallelRefinement::mesh() const { return _mesh; }
-//-----------------------------------------------------------------------------
 const std::vector<bool>& ParallelRefinement::marked_edges() const
 {
   return _marked_edges;
 }
 //-----------------------------------------------------------------------------
-void ParallelRefinement::mark(std::int32_t edge_index)
+bool ParallelRefinement::mark(std::int32_t edge_index)
 {
   assert(edge_index < _mesh.num_entities(1));
 
   // Already marked, so nothing to do
   if (_marked_edges[edge_index])
-    return;
+    return false;
 
   _marked_edges[edge_index] = true;
 
@@ -92,6 +90,7 @@ void ParallelRefinement::mark(std::int32_t edge_index)
     for (int p : map_it->second)
       _marked_for_update[p].push_back(global_index);
   }
+  return true;
 }
 //-----------------------------------------------------------------------------
 void ParallelRefinement::mark_all()
@@ -220,7 +219,8 @@ void ParallelRefinement::create_new_vertices()
     if (_marked_edges[local_i] == true)
     {
       _new_vertex_coordinates.row(n + num_vertices) = midpoints.row(local_i);
-      _local_edge_to_new_vertex[local_i] = n;
+      auto it = _local_edge_to_new_vertex.insert({local_i, n});
+      assert(it.second);
       ++n;
     }
   }
@@ -280,7 +280,11 @@ void ParallelRefinement::create_new_vertices()
   std::vector<std::int32_t> recv_local_edge
       = _mesh.topology().index_map(1)->global_to_local(recv_global_edge);
   for (std::size_t i = 0; i < received_values.size() / 2; ++i)
-    _local_edge_to_new_vertex[recv_local_edge[i]] = received_values[i * 2 + 1];
+  {
+    auto it = _local_edge_to_new_vertex.insert(
+        {recv_local_edge[i], received_values[i * 2 + 1]});
+    assert(it.second);
+  }
 
   // Attach global indices to each vertex, old and new, and sort
   // them across processes into this order
@@ -289,11 +293,9 @@ void ParallelRefinement::create_new_vertices()
   for (std::int32_t i = 0; i < num_new_vertices; i++)
     global_indices.push_back(i + global_offset);
 
-  Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor> tmp
+  _new_vertex_coordinates
       = mesh::DistributedMeshTools::reorder_by_global_indices(
           _mesh.mpi_comm(), _new_vertex_coordinates, global_indices);
-
-  _new_vertex_coordinates = tmp;
 }
 //-----------------------------------------------------------------------------
 mesh::Mesh ParallelRefinement::build_local() const
