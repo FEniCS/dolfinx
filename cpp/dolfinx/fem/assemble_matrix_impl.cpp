@@ -30,10 +30,8 @@ void fem::impl::assemble_matrix(Mat A, const Form& a,
   // Get dofmap data
   const fem::DofMap& dofmap0 = *a.function_space(0)->dofmap();
   const fem::DofMap& dofmap1 = *a.function_space(1)->dofmap();
-  const Eigen::Array<PetscInt, Eigen::Dynamic, 1>& dof_array0
-      = dofmap0.dof_array();
-  const Eigen::Array<PetscInt, Eigen::Dynamic, 1>& dof_array1
-      = dofmap1.dof_array();
+  const graph::AdjacencyList<PetscInt>& dofs0 = dofmap0.dof_array();
+  const graph::AdjacencyList<PetscInt>& dofs1 = dofmap1.dof_array();
 
   assert(dofmap0.element_dof_layout);
   assert(dofmap1.element_dof_layout);
@@ -58,9 +56,9 @@ void fem::impl::assemble_matrix(Mat A, const Form& a,
     auto& fn = integrals.get_tabulate_tensor(type::cell, i);
     const std::vector<std::int32_t>& active_cells
         = integrals.integral_domains(type::cell, i);
-    fem::impl::assemble_cells(
-        A, mesh, active_cells, dof_array0, num_dofs_per_cell0, dof_array1,
-        num_dofs_per_cell1, bc0, bc1, fn, coeffs, constant_values);
+    fem::impl::assemble_cells(A, mesh, active_cells, dofs0, num_dofs_per_cell0,
+                              dofs1, num_dofs_per_cell1, bc0, bc1, fn, coeffs,
+                              constant_values);
   }
 
   for (int i = 0; i < integrals.num_integrals(type::exterior_facet); ++i)
@@ -88,11 +86,9 @@ void fem::impl::assemble_matrix(Mat A, const Form& a,
 void fem::impl::assemble_cells(
     Mat A, const mesh::Mesh& mesh,
     const std::vector<std::int32_t>& active_cells,
-    const Eigen::Ref<const Eigen::Array<PetscInt, Eigen::Dynamic, 1>>& dofmap0,
-    int num_dofs_per_cell0,
-    const Eigen::Ref<const Eigen::Array<PetscInt, Eigen::Dynamic, 1>>& dofmap1,
-    int num_dofs_per_cell1, const std::vector<bool>& bc0,
-    const std::vector<bool>& bc1,
+    const graph::AdjacencyList<PetscInt>& dofmap0, int num_dofs_per_cell0,
+    const graph::AdjacencyList<PetscInt>& dofmap1, int num_dofs_per_cell1,
+    const std::vector<bool>& bc0, const std::vector<bool>& bc1,
     const std::function<void(PetscScalar*, const PetscScalar*,
                              const PetscScalar*, const double*, const int*,
                              const std::uint8_t*, const bool*, const bool*,
@@ -148,12 +144,15 @@ void fem::impl::assemble_cells(
            cell_face_reflections.col(c).data(),
            cell_face_rotations.col(c).data());
 
+    auto dofs0 = dofmap0.links(c);
+    auto dofs1 = dofmap1.links(c);
+
     // Zero rows/columns for essential bcs
     if (!bc0.empty())
     {
       for (Eigen::Index i = 0; i < Ae.rows(); ++i)
       {
-        const std::int32_t dof = dofmap0[c * num_dofs_per_cell0 + i];
+        const std::int32_t dof = dofs0[i];
         if (bc0[dof])
           Ae.row(i).setZero();
       }
@@ -162,16 +161,15 @@ void fem::impl::assemble_cells(
     {
       for (Eigen::Index j = 0; j < Ae.cols(); ++j)
       {
-        const std::int32_t dof = dofmap1[c * num_dofs_per_cell1 + j];
+        const std::int32_t dof = dofs1[j];
         if (bc1[dof])
           Ae.col(j).setZero();
       }
     }
 
-    ierr = MatSetValuesLocal(
-        A, num_dofs_per_cell0, dofmap0.data() + c * num_dofs_per_cell0,
-        num_dofs_per_cell1, dofmap1.data() + c * num_dofs_per_cell1, Ae.data(),
-        ADD_VALUES);
+    ierr = MatSetValuesLocal(A, num_dofs_per_cell0, dofs0.data(),
+                             num_dofs_per_cell1, dofs1.data(), Ae.data(),
+                             ADD_VALUES);
 #ifdef DEBUG
     if (ierr != 0)
       la::petsc_error(ierr, __FILE__, "MatSetValuesLocal");

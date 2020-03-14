@@ -10,7 +10,6 @@
 #include <array>
 #include <cstdint>
 #include <dolfinx/common/MPI.h>
-#include <dolfinx/mesh/cell_types.h>
 #include <tuple>
 #include <utility>
 #include <vector>
@@ -24,6 +23,7 @@ class DofMap;
 
 namespace mesh
 {
+enum class CellType;
 class Mesh;
 class Topology;
 } // namespace mesh
@@ -66,7 +66,7 @@ public:
       const Eigen::Ref<const Eigen::Array<std::int64_t, Eigen::Dynamic,
                                           Eigen::Dynamic, Eigen::RowMajor>>&
           cell_vertices,
-      const mesh::CellType cell_type);
+      const mesh::CellType& cell_type);
 
   /// Compute local part of the dual graph, and return (local_graph,
   /// facet_cell_map, number of local edges in the graph (undirected)
@@ -79,7 +79,7 @@ public:
       const Eigen::Ref<const Eigen::Array<std::int64_t, Eigen::Dynamic,
                                           Eigen::Dynamic, Eigen::RowMajor>>&
           cell_vertices,
-      const mesh::CellType cell_type);
+      const mesh::CellType& cell_type);
 };
 } // namespace graph
 } // namespace dolfinx

@@ -274,7 +274,7 @@ def test_custom_mesh_loop_rank1():
     pos = mesh.geometry.dofmap().offsets()
     x_dofs = mesh.geometry.dofmap().array()
     x = mesh.geometry.x
-    dofs = V.dofmap.dof_array
+    dofs = V.dofmap.dof_array.array()
 
     # Assemble with pure Numba function (two passes, first will include JIT overhead)
     b0 = dolfinx.Function(V)
@@ -339,7 +339,7 @@ def test_custom_mesh_loop_ctypes_rank2():
     pos = mesh.geometry.dofmap().offsets()
     x_dofs = mesh.geometry.dofmap().array()
     x = mesh.geometry.x
-    dofs = V.dofmap.dof_array
+    dofs = V.dofmap.dof_array.array()
 
     # Generated case with general assembler
     u, v = ufl.TrialFunction(V), ufl.TestFunction(V)
@@ -392,7 +392,7 @@ def test_custom_mesh_loop_cffi_rank2(set_vals):
     pos = mesh.geometry.dofmap().offsets()
     x_dofs = mesh.geometry.dofmap().array()
     x = mesh.geometry.x
-    dofs = V.dofmap.dof_array
+    dofs = V.dofmap.dof_array.array()
 
     A1 = A0.copy()
     for i in range(2):

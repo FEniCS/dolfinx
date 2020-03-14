@@ -15,6 +15,8 @@
 #include <set>
 #include <utility>
 #include <vector>
+#include <dolfinx/graph/AdjacencyList.h>
+
 
 namespace dolfinx
 {
@@ -78,11 +80,7 @@ public:
   Eigen::Array<PetscInt, Eigen::Dynamic, 1>::ConstSegmentReturnType
   cell_dofs(int cell_index) const
   {
-    assert(element_dof_layout);
-    const int cell_dimension = element_dof_layout->num_dofs();
-    const int index = cell_index * cell_dimension;
-    assert(index + cell_dimension <= _dofmap.size());
-    return _dofmap.segment(index, cell_dimension);
+    return _dofmap.links(cell_index);
   }
 
   /// Extract subdofmap component
@@ -114,8 +112,8 @@ public:
   /// @return An informal representation of the function space.
   std::string str(bool verbose) const;
 
-  /// Get dofmap array
-  const Eigen::Array<PetscInt, Eigen::Dynamic, 1>& dof_array() const
+  /// Get dofmap data
+  const graph::AdjacencyList<PetscInt>& dof_array() const
   {
     return _dofmap;
   }
@@ -135,7 +133,8 @@ public:
 
 private:
   // Cell-local-to-dof map (dofs for cell dofmap[i])
-  Eigen::Array<PetscInt, Eigen::Dynamic, 1> _dofmap;
+  // Eigen::Array<PetscInt, Eigen::Dynamic, 1> _dofmap;
+  graph::AdjacencyList<PetscInt> _dofmap;
 };
 } // namespace fem
 } // namespace dolfinx
