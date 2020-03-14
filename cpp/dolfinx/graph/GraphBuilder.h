@@ -55,7 +55,6 @@ public:
       std::vector<std::pair<std::vector<std::size_t>, std::int32_t>>,
       std::int32_t>
   compute_local_dual_graph(
-      const MPI_Comm mpi_comm,
       const Eigen::Ref<const Eigen::Array<std::int64_t, Eigen::Dynamic,
                                           Eigen::Dynamic, Eigen::RowMajor>>&
           cell_vertices,

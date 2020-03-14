@@ -40,18 +40,16 @@ std::tuple<std::vector<std::vector<std::size_t>>,
            std::vector<std::pair<std::vector<std::size_t>, std::int32_t>>,
            std::int32_t>
 compute_local_dual_graph_keyed(
-    const MPI_Comm mpi_comm,
     const Eigen::Array<std::int64_t, Eigen::Dynamic, Eigen::Dynamic,
                        Eigen::RowMajor>& cell_vertices,
     const mesh::CellType& cell_type)
 {
   common::Timer timer("Compute local part of mesh dual graph");
 
-  const std::int8_t tdim = mesh::cell_dim(cell_type);
+  const int tdim = mesh::cell_dim(cell_type);
   const std::int32_t num_local_cells = cell_vertices.rows();
-  const std::int8_t num_facets_per_cell
-      = mesh::cell_num_entities(cell_type, tdim - 1);
-  const std::int8_t num_vertices_per_facet
+  const int num_facets_per_cell = mesh::cell_num_entities(cell_type, tdim - 1);
+  const int num_vertices_per_facet
       = mesh::num_cell_vertices(mesh::cell_entity_type(cell_type, tdim - 1));
 
   assert(N == num_vertices_per_facet);
@@ -63,10 +61,6 @@ compute_local_dual_graph_keyed(
 
   // Compute local edges (cell-cell connections) using global (internal
   // to this function, not the user numbering) numbering
-
-  // Get offset for this process
-  const std::int64_t cell_offset
-      = dolfinx::MPI::global_offset(mpi_comm, num_local_cells, true);
 
   // Create map from cell vertices to entity vertices
   const Eigen::Array<int, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
@@ -118,8 +112,8 @@ compute_local_dual_graph_keyed(
     {
       // Add edges (directed graph, so add both ways)
       const int cell_index1 = facets[ii].second;
-      local_graph[cell_index0].push_back(cell_index1 + cell_offset);
-      local_graph[cell_index1].push_back(cell_index0 + cell_offset);
+      local_graph[cell_index0].push_back(cell_index1);
+      local_graph[cell_index1].push_back(cell_index0);
 
       // Since we've just found a matching pair, the next pair cannot be
       // matching, so advance 1
@@ -313,8 +307,16 @@ graph::GraphBuilder::compute_dual_graph(
 
   // Compute local part of dual graph
   auto [local_graph, facet_cell_map, num_local_edges]
-      = graph::GraphBuilder::compute_local_dual_graph(mpi_comm, cell_vertices,
-                                                      cell_type);
+      = graph::GraphBuilder::compute_local_dual_graph(cell_vertices, cell_type);
+
+  // Get offset for this process
+  const std::int64_t cell_offset
+      = dolfinx::MPI::global_offset(mpi_comm, cell_vertices.rows(), true);
+  for (std::size_t i = 0; i < local_graph.size(); ++i)
+  {
+    std::for_each(local_graph[i].begin(), local_graph[i].end(),
+                  [cell_offset](auto& n) { n += cell_offset; });
+  }
 
   // Compute nonlocal part
   const auto [num_ghost_nodes, num_nonlocal_edges]
@@ -329,7 +331,6 @@ std::tuple<std::vector<std::vector<std::size_t>>,
            std::vector<std::pair<std::vector<std::size_t>, std::int32_t>>,
            std::int32_t>
 dolfinx::graph::GraphBuilder::compute_local_dual_graph(
-    const MPI_Comm mpi_comm,
     const Eigen::Ref<const Eigen::Array<std::int64_t, Eigen::Dynamic,
                                         Eigen::Dynamic, Eigen::RowMajor>>&
         cell_vertices,
@@ -337,24 +338,20 @@ dolfinx::graph::GraphBuilder::compute_local_dual_graph(
 {
   LOG(INFO) << "Build local part of mesh dual graph";
 
-  const std::int8_t tdim = mesh::cell_dim(cell_type);
-  const std::int8_t num_entity_vertices
+  const int tdim = mesh::cell_dim(cell_type);
+  const int num_entity_vertices
       = mesh::num_cell_vertices(mesh::cell_entity_type(cell_type, tdim - 1));
 
   switch (num_entity_vertices)
   {
   case 1:
-    return compute_local_dual_graph_keyed<1>(mpi_comm, cell_vertices,
-                                             cell_type);
+    return compute_local_dual_graph_keyed<1>(cell_vertices, cell_type);
   case 2:
-    return compute_local_dual_graph_keyed<2>(mpi_comm, cell_vertices,
-                                             cell_type);
+    return compute_local_dual_graph_keyed<2>(cell_vertices, cell_type);
   case 3:
-    return compute_local_dual_graph_keyed<3>(mpi_comm, cell_vertices,
-                                             cell_type);
+    return compute_local_dual_graph_keyed<3>(cell_vertices, cell_type);
   case 4:
-    return compute_local_dual_graph_keyed<4>(mpi_comm, cell_vertices,
-                                             cell_type);
+    return compute_local_dual_graph_keyed<4>(cell_vertices, cell_type);
   default:
     throw std::runtime_error(
         "Cannot compute local part of dual graph. Entities with "
