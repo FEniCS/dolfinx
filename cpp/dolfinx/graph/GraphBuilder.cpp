@@ -56,8 +56,7 @@ compute_local_dual_graph_keyed(
   std::vector<std::pair<std::vector<std::int32_t>, std::int32_t>>
       facet_cell_map;
 
-  // Compute local edges (cell-cell connections) using global (internal
-  // to this function, not the user numbering) numbering
+  // Compute edges (cell-cell connections) using local numbering
 
   // Create map from cell vertices to entity vertices
   const Eigen::Array<int, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
@@ -319,15 +318,6 @@ graph::GraphBuilder::compute_dual_graph(
   // Compute local part of dual graph
   auto [local_graph, facet_cell_map, num_local_edges]
       = graph::GraphBuilder::compute_local_dual_graph(cell_vertices, cell_type);
-
-  // Get offset for this process
-  // const std::int64_t cell_offset
-  //     = dolfinx::MPI::global_offset(mpi_comm, cell_vertices.rows(), true);
-  // for (std::size_t i = 0; i < local_graph.size(); ++i)
-  // {
-  //   std::for_each(local_graph[i].begin(), local_graph[i].end(),
-  //                 [cell_offset](auto& n) { n += cell_offset; });
-  // }
 
   // Compute nonlocal part
   const auto [graph, num_ghost_nodes, num_nonlocal_edges]
