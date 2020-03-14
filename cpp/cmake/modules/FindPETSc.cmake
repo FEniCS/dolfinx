@@ -235,5 +235,5 @@ if (PETSC_FOUND)
 else()
   find_package_handle_standard_args(PETSc
     REQUIRED_VARS PETSC_FOUND
-    FAIL_MESSAGE "PETSc could not be found. Be sure to set PETSC_DIR.")
+    FAIL_MESSAGE "PETSc could not be found. Be sure to set PETSC_DIR as an environment variable.")
 endif()

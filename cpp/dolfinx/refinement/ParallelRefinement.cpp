@@ -228,7 +228,7 @@ void ParallelRefinement::create_new_vertices()
   // Calculate global range for new local vertices
   const std::size_t global_offset
       = MPI::global_offset(_mesh.mpi_comm(), num_new_vertices, true)
-        + _mesh.num_entities_global(0);
+        + _mesh.topology().index_map(0)->size_global();
 
   // If they are shared, then the new global vertex index needs to be
   // sent off-process.  Add offset to map, and collect up any shared

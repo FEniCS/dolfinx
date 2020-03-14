@@ -194,5 +194,5 @@ if (SLEPC_FOUND)
 else()
   find_package_handle_standard_args(SLEPc
     REQUIRED_VARS SLEPC_FOUND
-    FAIL_MESSAGE "SLEPc could not be found. Be sure to set SLEPC_DIR.")
+    FAIL_MESSAGE "SLEPc could not be found. Be sure to set SLEPC_DIR as an environment variable.")
 endif()

@@ -82,7 +82,7 @@ public:
   const Eigen::Array<double, Eigen::Dynamic, 3, Eigen::RowMajor>& x() const;
 
   /// Return coordinate array for node n (index is local to the process)
-  Eigen::Ref<const Eigen::Vector3d> node(int n) const;
+  Eigen::Vector3d node(int n) const;
 
   /// Global input indices for points (const)
   const std::vector<std::int64_t>& global_indices() const;
@@ -91,14 +91,11 @@ public:
   ///
   /// Put ElementDofLayout here for now
   const fem::ElementDofLayout& dof_layout() const;
-  /// Hash of coordinate values
 
+  /// Hash of coordinate values
   /// @return A tree-hashed value of the coordinates over all MPI
   ///   processes
   std::size_t hash() const;
-
-  /// Return informal string representation (pretty-print)
-  std::string str(bool verbose) const;
 
   /// @warning Experimental. Needs revision
   ///
