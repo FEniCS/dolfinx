@@ -4,7 +4,9 @@
 //
 // SPDX-License-Identifier:    LGPL-3.0-or-later
 
+#include "caster_mpi.h"
 #include <dolfinx/graph/AdjacencyList.h>
+#include <dolfinx/graph/Partitioning.h>
 #include <pybind11/eigen.h>
 #include <pybind11/operators.h>
 #include <pybind11/pybind11.h>
@@ -17,6 +19,45 @@ namespace dolfinx_wrappers
 {
 void graph(py::module& m)
 {
+
+  m.def("create_local_adjacency_list",
+        &dolfinx::graph::Partitioning::create_local_adjacency_list);
+  m.def(
+      "create_distributed_adjacency_list",
+      [](const MPICommWrapper comm,
+         const dolfinx::graph::AdjacencyList<std::int32_t>& list_local,
+         const std::vector<std::int64_t>& global_links,
+         const std::vector<bool>& exterior_links) {
+        return dolfinx::graph::Partitioning::create_distributed_adjacency_list(
+            comm.get(), list_local, global_links, exterior_links);
+      });
+  m.def("distribute",
+        [](const MPICommWrapper comm,
+           const dolfinx::graph::AdjacencyList<std::int64_t>& list,
+           const dolfinx::graph::AdjacencyList<std::int32_t>& destinations) {
+          return dolfinx::graph::Partitioning::distribute(comm.get(), list,
+                                                          destinations);
+        });
+  m.def("exchange",
+        [](const MPICommWrapper comm,
+           const dolfinx::graph::AdjacencyList<std::int64_t>& list,
+           const dolfinx::graph::AdjacencyList<std::int32_t>& destinations,
+           const std::set<int>& sources) {
+          return dolfinx::graph::Partitioning::exchange(comm.get(), list,
+                                                        destinations, sources);
+        });
+  m.def("distribute_data",
+        [](const MPICommWrapper comm, const std::vector<std::int64_t>& indices,
+           const Eigen::Ref<const Eigen::Array<
+               double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>>& x) {
+          return dolfinx::graph::Partitioning::distribute_data(comm.get(),
+                                                               indices, x);
+        });
+  m.def("compute_local_to_global_links",
+        &dolfinx::graph::Partitioning::compute_local_to_global_links);
+  m.def("compute_local_to_local",
+        &dolfinx::graph::Partitioning::compute_local_to_local);
+
   // TODO: Use macro to handle different types
 
   // dolfinx::graph::AdjacencyList class
