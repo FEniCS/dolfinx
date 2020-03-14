@@ -650,10 +650,28 @@ Partitioning::distribute(MPI_Comm comm,
     r = it->second;
   }
 
+  std::vector<std::int64_t> new_recv(send_data.size());
   MPI_Neighbor_alltoallv(recv_data.data(), recv_sizes.data(),
-                         recv_offsets.data(), MPI_INT64_T, send_data.data(),
+                         recv_offsets.data(), MPI_INT64_T, new_recv.data(),
                          send_sizes.data(), send_offsets.data(), MPI_INT64_T,
                          neighbour_comm);
+
+  // Update map
+  for (std::size_t i = 0; i < send_data.size(); ++i)
+  {
+    std::int64_t old_idx = send_data[i];
+    std::int64_t new_idx = new_recv[i];
+    auto it = old_to_new.find(old_idx);
+    assert(it != old_to_new.end());
+    assert(it->second == -1);
+    it->second = new_idx;
+  }
+  for (std::int64_t& q : global_indices)
+  {
+    const auto it = old_to_new.find(q);
+    assert(it != old_to_new.end());
+    q = it->second;
+  }
 
   MPI_Comm_free(&neighbour_comm);
 
