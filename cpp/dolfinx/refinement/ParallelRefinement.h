@@ -47,16 +47,14 @@ public:
   /// Destructor
   ~ParallelRefinement();
 
-  /// Original mesh associated with this refinement
-  const mesh::Mesh& mesh() const;
-
   /// Return markers for all edges
   /// @returns array of markers
   const std::vector<bool>& marked_edges() const;
 
   /// Mark edge by index
   /// @param[in] edge_index Index of edge to mark
-  void mark(std::int32_t edge_index);
+  /// @return false if marker was already set, otherwise true
+  bool mark(std::int32_t edge_index);
 
   /// Mark all edges in mesh
   void mark_all();
