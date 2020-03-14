@@ -6,7 +6,6 @@
 
 #pragma once
 
-#include "cell_types.h"
 #include <cstdint>
 #include <dolfinx/common/MPI.h>
 #include <dolfinx/graph/AdjacencyList.h>
@@ -18,15 +17,10 @@ namespace dolfinx
 namespace mesh
 {
 
+enum class CellType;
 class Topology;
 
-/// New tools for partitioning meshes/graphs
-///
-/// @todo Split into functions that (i) are aware of Mesh concepts (and
-/// leave in the mesh namespace) and (ii) are independent of Mesh
-/// concepts (and move into the graph namespace)
-///
-/// TODO: Add a function that sends data (Eigen arrays) to the 'owner'
+/// Tools for partitioning meshes
 
 class Partitioning
 {
@@ -53,7 +47,7 @@ public:
   ///   across all processes can be greater than the number of vertices.
   /// @return Destination processes for each cell on this process
   static graph::AdjacencyList<std::int32_t>
-  partition_cells(MPI_Comm comm, int n, const mesh::CellType cell_type,
+  partition_cells(MPI_Comm comm, int n, const mesh::CellType& cell_type,
                   const graph::AdjacencyList<std::int64_t>& cells);
 };
 } // namespace mesh

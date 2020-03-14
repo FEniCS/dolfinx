@@ -6,6 +6,7 @@
 
 #include "Partitioning.h"
 #include "Topology.h"
+#include "cell_types.h"
 #include <dolfinx/common/IndexMap.h>
 #include <dolfinx/common/Timer.h>
 #include <dolfinx/common/log.h>
@@ -57,7 +58,7 @@ std::vector<bool> Partitioning::compute_vertex_exterior_markers(
 //-----------------------------------------------------------------------------
 graph::AdjacencyList<std::int32_t>
 Partitioning::partition_cells(MPI_Comm comm, int n,
-                              const mesh::CellType cell_type,
+                              const mesh::CellType& cell_type,
                               const graph::AdjacencyList<std::int64_t>& cells)
 {
   common::Timer timer("Partition cells across processes");

@@ -6,12 +6,10 @@
 
 #pragma once
 
-#include <array>
 #include <cstdint>
 #include <dolfinx/common/IndexMap.h>
 #include <dolfinx/common/MPI.h>
 #include <dolfinx/graph/AdjacencyList.h>
-#include <map>
 #include <set>
 #include <utility>
 #include <vector>
@@ -22,11 +20,7 @@ namespace dolfinx
 namespace graph
 {
 
-/// New tools for partitioning meshes/graphs
-///
-/// @todo Split into functions that (i) are aware of Mesh concepts (and
-/// leave in the mesh namespace) and (ii) are independent of Mesh
-/// concepts (and move into the graph namespace)
+/// Tools for distributred graphs
 ///
 /// TODO: Add a function that sends data (Eigen arrays) to the 'owner'
 
@@ -173,5 +167,5 @@ public:
   compute_local_to_local(const std::vector<std::int64_t>& local0_to_global,
                          const std::vector<std::int64_t>& local1_to_global);
 };
-} // namespace mesh
+} // namespace graph
 } // namespace dolfinx

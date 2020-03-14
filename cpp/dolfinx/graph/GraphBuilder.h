@@ -6,7 +6,7 @@
 
 #pragma once
 
-#include "Graph.h"
+#include "AdjacencyList.h"
 #include <array>
 #include <cstdint>
 #include <dolfinx/common/MPI.h>
@@ -43,17 +43,18 @@ public:
       FacetCellMap;
 
   /// Build local graph from dofmap
-  static Graph local_graph(const mesh::Topology& topology,
-                           const fem::DofMap& dofmap0,
-                           const fem::DofMap& dofmap1);
+  static AdjacencyList<int> local_graph(const mesh::Topology& topology,
+                                        const fem::DofMap& dofmap0,
+                                        const fem::DofMap& dofmap1);
 
   /// Build local graph from mesh (general version)
-  static Graph local_graph(const mesh::Mesh& mesh,
-                           const std::vector<std::size_t>& coloring_type);
+  static AdjacencyList<int>
+  local_graph(const mesh::Mesh& mesh,
+              const std::vector<std::size_t>& coloring_type);
 
   /// Build local graph (specialized version)
-  static Graph local_graph(const mesh::Mesh& mesh, std::size_t dim0,
-                           std::size_t dim1);
+  static AdjacencyList<int> local_graph(const mesh::Mesh& mesh,
+                                        std::size_t dim0, std::size_t dim1);
 
   /// Build distributed dual graph (cell-cell connections) from minimal
   /// mesh data, and return (graph, ghost_vertices, [num local edges,
