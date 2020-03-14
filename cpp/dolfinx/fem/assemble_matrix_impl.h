@@ -20,6 +20,12 @@ namespace function
 class Function;
 }
 
+namespace graph
+{
+template <typename T>
+class AdjacencyList;
+}
+
 namespace mesh
 {
 class Mesh;
@@ -45,11 +51,9 @@ void assemble_matrix(Mat A, const Form& a, const std::vector<bool>& bc0,
 void assemble_cells(
     Mat A, const mesh::Mesh& mesh,
     const std::vector<std::int32_t>& active_cells,
-    const Eigen::Ref<const Eigen::Array<PetscInt, Eigen::Dynamic, 1>>& dofmap0,
-    int num_dofs_per_cell0,
-    const Eigen::Ref<const Eigen::Array<PetscInt, Eigen::Dynamic, 1>>& dofmap1,
-    int num_dofs_per_cell1, const std::vector<bool>& bc0,
-    const std::vector<bool>& bc1,
+    const graph::AdjacencyList<PetscInt>& dofmap0, int num_dofs_per_cell0,
+    const graph::AdjacencyList<PetscInt>& dofmap1, int num_dofs_per_cell1,
+    const std::vector<bool>& bc0, const std::vector<bool>& bc1,
     const std::function<void(PetscScalar*, const PetscScalar*,
                              const PetscScalar*, const double*, const int*,
                              const std::uint8_t*, const bool*, const bool*,

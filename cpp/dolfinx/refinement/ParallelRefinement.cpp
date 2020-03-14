@@ -8,6 +8,7 @@
 #include <dolfinx/common/MPI.h>
 #include <dolfinx/common/types.h>
 #include <dolfinx/fem/ElementDofLayout.h>
+#include <dolfinx/graph/Partitioning.h>
 #include <dolfinx/mesh/DistributedMeshTools.h>
 #include <dolfinx/mesh/Geometry.h>
 #include <dolfinx/mesh/Mesh.h>
@@ -351,7 +352,7 @@ mesh::Mesh ParallelRefinement::partition(bool redistribute) const
   const graph::AdjacencyList<std::int64_t> my_cells(cells);
   {
     auto [cells_local, local_to_global_vertices]
-        = mesh::Partitioning::create_local_adjacency_list(my_cells);
+        = graph::Partitioning::create_local_adjacency_list(my_cells);
 
     // Create (i) local topology object and (ii) IndexMap for cells, and
     // set cell-vertex topology
@@ -399,7 +400,7 @@ mesh::Mesh ParallelRefinement::partition(bool redistribute) const
     const std::vector<bool>& exterior_vertices
         = mesh::Partitioning::compute_vertex_exterior_markers(topology_local);
     auto [cells_d, vertex_map]
-        = mesh::Partitioning::create_distributed_adjacency_list(
+        = graph::Partitioning::create_distributed_adjacency_list(
             comm, *_cells_local, local_to_global_vertices, exterior_vertices);
 
     // Set vertex IndexMap, and vertex-vertex connectivity

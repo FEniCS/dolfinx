@@ -56,5 +56,5 @@ class DofMap:
         return self._cpp_object.index_map
 
     @property
-    def dof_array(self):
-        return self._cpp_object.dof_array()
+    def list(self):
+        return self._cpp_object.list()

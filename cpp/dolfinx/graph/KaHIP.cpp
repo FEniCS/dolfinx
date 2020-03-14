@@ -8,6 +8,7 @@
 #include "GraphBuilder.h"
 #include <dolfinx/common/MPI.h>
 #include <dolfinx/common/Timer.h>
+#include <map>
 
 #ifdef HAS_KAHIP
 #include <parhip_interface.h>

@@ -14,6 +14,7 @@
 #include <dolfinx/function/Constant.h>
 #include <dolfinx/function/Function.h>
 #include <dolfinx/function/FunctionSpace.h>
+#include <dolfinx/graph/AdjacencyList.h>
 #include <dolfinx/mesh/Geometry.h>
 #include <dolfinx/mesh/Mesh.h>
 #include <dolfinx/mesh/Topology.h>
@@ -315,8 +316,7 @@ void fem::impl::assemble_vector(
 
   // Get dofmap data
   const fem::DofMap& dofmap = *L.function_space(0)->dofmap();
-  const Eigen::Array<PetscInt, Eigen::Dynamic, 1>& dof_array
-      = dofmap.dof_array();
+  const graph::AdjacencyList<PetscInt>& dofs = dofmap.list();
 
   assert(dofmap.element_dof_layout);
   const int num_dofs_per_cell = dofmap.element_dof_layout->num_dofs();
@@ -339,8 +339,8 @@ void fem::impl::assemble_vector(
     auto& fn = integrals.get_tabulate_tensor(FormIntegrals::Type::cell, i);
     const std::vector<std::int32_t>& active_cells
         = integrals.integral_domains(type::cell, i);
-    fem::impl::assemble_cells(b, mesh, active_cells, dof_array,
-                              num_dofs_per_cell, fn, coeffs, constant_values);
+    fem::impl::assemble_cells(b, mesh, active_cells, dofs, num_dofs_per_cell,
+                              fn, coeffs, constant_values);
   }
 
   for (int i = 0; i < integrals.num_integrals(type::exterior_facet); ++i)
@@ -368,8 +368,7 @@ void fem::impl::assemble_vector(
 void fem::impl::assemble_cells(
     Eigen::Ref<Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1>> b,
     const mesh::Mesh& mesh, const std::vector<std::int32_t>& active_cells,
-    const Eigen::Ref<const Eigen::Array<PetscInt, Eigen::Dynamic, 1>>& dofmap,
-    int num_dofs_per_cell,
+    const graph::AdjacencyList<PetscInt>& dofmap, int num_dofs_per_cell,
     const std::function<void(PetscScalar*, const PetscScalar*,
                              const PetscScalar*, const double*, const int*,
                              const std::uint8_t*, const bool*, const bool*,
@@ -423,8 +422,9 @@ void fem::impl::assemble_cells(
            cell_face_rotations.col(c).data());
 
     // Scatter cell vector to 'global' vector array
+    auto dofs = dofmap.links(c);
     for (Eigen::Index i = 0; i < num_dofs_per_cell; ++i)
-      b[dofmap[c * num_dofs_per_cell + i]] += be[i];
+      b[dofs[i]] += be[i];
   }
 }
 //-----------------------------------------------------------------------------
