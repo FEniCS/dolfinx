@@ -180,22 +180,22 @@ public:
 
   /// Set cell domains
   /// @param[in] cell_domains The cell domains
-  void set_cell_domains(const mesh::MeshFunction<std::size_t>& cell_domains);
+  void set_cell_domains(const mesh::MeshFunction<int>& cell_domains);
 
   /// Set exterior facet domains
   /// @param[in] exterior_facet_domains The exterior facet domains
   void set_exterior_facet_domains(
-      const mesh::MeshFunction<std::size_t>& exterior_facet_domains);
+      const mesh::MeshFunction<int>& exterior_facet_domains);
 
   /// Set interior facet domains
   /// @param[in] interior_facet_domains The interior facet domains
   void set_interior_facet_domains(
-      const mesh::MeshFunction<std::size_t>& interior_facet_domains);
+      const mesh::MeshFunction<int>& interior_facet_domains);
 
   /// Set vertex domains
   /// @param[in] vertex_domains The vertex domains.
   void
-  set_vertex_domains(const mesh::MeshFunction<std::size_t>& vertex_domains);
+  set_vertex_domains(const mesh::MeshFunction<int>& vertex_domains);
 
   /// Access coefficients
   FormCoefficients& coefficients();

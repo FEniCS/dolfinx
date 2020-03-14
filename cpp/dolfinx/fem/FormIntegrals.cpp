@@ -85,7 +85,7 @@ FormIntegrals::integral_domains(FormIntegrals::Type type, int i) const
 }
 //-----------------------------------------------------------------------------
 void FormIntegrals::set_domains(FormIntegrals::Type type,
-                                const mesh::MeshFunction<std::size_t>& marker)
+                                const mesh::MeshFunction<int>& marker)
 {
   int type_index = static_cast<int>(type);
   std::vector<struct FormIntegrals::Integral>& integrals
@@ -123,7 +123,7 @@ void FormIntegrals::set_domains(FormIntegrals::Type type,
   }
 
   // Get  mesh function data array
-  const Eigen::Array<std::size_t, Eigen::Dynamic, 1>& mf_values
+  const Eigen::Array<int, Eigen::Dynamic, 1>& mf_values
       = marker.values();
 
   // Get number of mesh entities of dimension d owned by this process

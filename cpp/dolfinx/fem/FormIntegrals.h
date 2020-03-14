@@ -95,7 +95,7 @@ public:
   /// @param[in] type Integral type
   /// @param[in] marker Meshfunction mapping entities to integrals
   void set_domains(FormIntegrals::Type type,
-                   const mesh::MeshFunction<std::size_t>& marker);
+                   const mesh::MeshFunction<int>& marker);
 
   /// If there exists a default integral of any type, set the list of
   /// entities for those integrals from the mesh topology. For cell
