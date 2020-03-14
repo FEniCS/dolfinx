@@ -30,8 +30,8 @@ void fem::impl::assemble_matrix(Mat A, const Form& a,
   // Get dofmap data
   const fem::DofMap& dofmap0 = *a.function_space(0)->dofmap();
   const fem::DofMap& dofmap1 = *a.function_space(1)->dofmap();
-  const graph::AdjacencyList<PetscInt>& dofs0 = dofmap0.dof_array();
-  const graph::AdjacencyList<PetscInt>& dofs1 = dofmap1.dof_array();
+  const graph::AdjacencyList<PetscInt>& dofs0 = dofmap0.list();
+  const graph::AdjacencyList<PetscInt>& dofs1 = dofmap1.list();
 
   assert(dofmap0.element_dof_layout);
   assert(dofmap1.element_dof_layout);

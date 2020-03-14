@@ -316,7 +316,7 @@ void fem::impl::assemble_vector(
 
   // Get dofmap data
   const fem::DofMap& dofmap = *L.function_space(0)->dofmap();
-  const graph::AdjacencyList<PetscInt>& dofs = dofmap.dof_array();
+  const graph::AdjacencyList<PetscInt>& dofs = dofmap.list();
 
   assert(dofmap.element_dof_layout);
   const int num_dofs_per_cell = dofmap.element_dof_layout->num_dofs();

@@ -76,8 +76,8 @@ def test_rank0():
     pos = mesh.geometry.dofmap().offsets()
     x_dofs = mesh.geometry.dofmap().array()
     x = mesh.geometry.x
-    coeff_dofmap = P2.dofmap.dof_array
-    dofmap = vP1.dofmap.dof_array
+    coeff_dofmap = P2.dofmap.list.array()
+    dofmap = vP1.dofmap.list.array()
 
     # Data structure for the result
     b = dolfinx.Function(vP1)

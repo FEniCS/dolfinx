@@ -130,8 +130,7 @@ fem::DofMap build_collapsed_dofmap(MPI_Comm comm, const DofMap& dofmap_view,
     old_to_new[dof] = count++;
 
   // Build new dofmap
-  const graph::AdjacencyList<PetscInt>& dof_array_view
-      = dofmap_view.dof_array();
+  const graph::AdjacencyList<PetscInt>& dof_array_view = dofmap_view.list();
   Eigen::Array<std::int32_t, Eigen::Dynamic, 1> dofmap
       = remap_dofs(old_to_new, dof_array_view);
 
@@ -151,15 +150,6 @@ fem::DofMap build_collapsed_dofmap(MPI_Comm comm, const DofMap& dofmap_view,
 }
 } // namespace
 
-//-----------------------------------------------------------------------------
-DofMap::DofMap(std::shared_ptr<const ElementDofLayout> element_dof_layout,
-               std::shared_ptr<const common::IndexMap> index_map,
-               const graph::AdjacencyList<std::int32_t>& dofmap)
-    : element_dof_layout(element_dof_layout), index_map(index_map),
-      _dofmap(dofmap)
-{
-  // Do nothing
-}
 //-----------------------------------------------------------------------------
 DofMap DofMap::extract_sub_dofmap(const std::vector<int>& component,
                                   const mesh::Topology& topology) const
@@ -209,7 +199,6 @@ DofMap::collapse(MPI_Comm comm, const mesh::Topology& topology) const
     auto view_cell_dofs = this->cell_dofs(c);
     auto cell_dofs = dofmap_new->cell_dofs(c);
     assert(view_cell_dofs.size() == cell_dofs.size());
-
     for (Eigen::Index j = 0; j < cell_dofs.size(); ++j)
     {
       assert(cell_dofs[j] < (int)collapsed_map.size());
@@ -226,46 +215,6 @@ void DofMap::set(Eigen::Ref<Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1>> x,
   const Eigen::Array<PetscInt, Eigen::Dynamic, 1>& dmap = _dofmap.array();
   for (Eigen::Index i = 0; i < dmap.rows(); ++i)
     x[dmap[i]] = value;
-}
-//-----------------------------------------------------------------------------
-std::string DofMap::str(bool verbose) const
-{
-  assert(element_dof_layout);
-
-  std::stringstream s;
-  if (element_dof_layout->is_view())
-    s << "<DofMap view>" << std::endl;
-  else
-  {
-    assert(index_map);
-    s << "<DofMap of global dimension "
-      << index_map->size_global() * index_map->block_size() << ">" << std::endl;
-  }
-
-  if (verbose)
-  {
-    // Cell loop
-    assert(element_dof_layout);
-    const int cell_dimension = element_dof_layout->num_dofs();
-
-    // const std::int32_t ncells = _dofmap.num_nodes();
-    for (std::int32_t i = 0; i < _dofmap.num_nodes(); ++i)
-    {
-      auto dofs = _dofmap.links(i);
-      s << "Local cell index, cell dofmap dimension: " << i << ", "
-        << dofs.rows() << std::endl;
-
-      // Local dof loop
-      for (int j = 0; j < cell_dimension; ++j)
-      {
-        s << "  "
-          << "Local, global dof indices: " << j << ", "
-          << dofs.transpose() << std::endl;
-      }
-    }
-  }
-
-  return s.str();
 }
 //-----------------------------------------------------------------------------
 Eigen::Array<std::int32_t, Eigen::Dynamic, 1>

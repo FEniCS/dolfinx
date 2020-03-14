@@ -485,13 +485,15 @@ DofMapBuilder::build(MPI_Comm comm, const mesh::Topology& topology,
   {
     auto [index_map, dofmap]
         = DofMapBuilder::build(comm, topology, *element_dof_layout, 1);
-    return fem::DofMap(element_dof_layout, index_map, dofmap);
+    std::cout << "*** Create dmap" << std::endl;
+    return fem::DofMap(element_dof_layout, index_map, std::move(dofmap));
   }
   else
   {
     auto [index_map, dofmap] = DofMapBuilder::build(
         comm, topology, *element_dof_layout->sub_dofmap({0}), bs);
-    return fem::DofMap(element_dof_layout, index_map, dofmap);
+    std::cout << "*** Create dmap" << std::endl;
+    return fem::DofMap(element_dof_layout, index_map, std::move(dofmap));
   }
 }
 //-----------------------------------------------------------------------------
