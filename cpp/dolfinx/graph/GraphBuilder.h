@@ -6,10 +6,11 @@
 
 #pragma once
 
-#include "AdjacencyList.h"
+#include <Eigen/Dense>
 #include <array>
 #include <cstdint>
 #include <dolfinx/common/MPI.h>
+#include <dolfinx/common/types.h>
 #include <tuple>
 #include <utility>
 #include <vector>
@@ -24,8 +25,6 @@ class DofMap;
 namespace mesh
 {
 enum class CellType;
-class Mesh;
-class Topology;
 } // namespace mesh
 
 namespace graph
@@ -37,25 +36,6 @@ class GraphBuilder
 {
 
 public:
-  /// AdjacencyList from facets (defined by their global vertex indices)
-  /// to cells
-  typedef std::vector<std::pair<std::vector<std::size_t>, std::int32_t>>
-      FacetCellMap;
-
-  /// Build local graph from dofmap
-  static AdjacencyList<int> local_graph(const mesh::Topology& topology,
-                                        const fem::DofMap& dofmap0,
-                                        const fem::DofMap& dofmap1);
-
-  /// Build local graph from mesh (general version)
-  static AdjacencyList<int>
-  local_graph(const mesh::Mesh& mesh,
-              const std::vector<std::size_t>& coloring_type);
-
-  /// Build local graph (specialized version)
-  static AdjacencyList<int> local_graph(const mesh::Mesh& mesh,
-                                        std::size_t dim0, std::size_t dim1);
-
   /// Build distributed dual graph (cell-cell connections) from minimal
   /// mesh data, and return (graph, ghost_vertices, [num local edges,
   /// num non-local edges])
