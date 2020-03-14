@@ -539,69 +539,84 @@ Partitioning::distribute(MPI_Comm comm,
                 disp_recv.data(), MPI_INT64_T, comm);
 
   // Unpack receive buffer
-  std::vector<std::int64_t> array, global_indices;
-  std::vector<int> index_owner;
-  std::vector<std::int32_t> list_offset(1, 0);
+  int mpi_rank = MPI::rank(comm);
+  std::vector<std::int64_t> array;
+  std::vector<std::int64_t> ghost_array;
+  std::vector<std::int64_t> global_indices;
+  std::vector<std::int64_t> ghost_global_indices;
+  std::vector<std::int32_t> list_offset = {0};
+  std::vector<std::int32_t> ghost_list_offset = {0};
   std::vector<int> src;
+  std::vector<int> ghost_src;
+  std::vector<int> ghost_index_owner;
+
   for (std::size_t p = 0; p < disp_recv.size() - 1; ++p)
   {
     for (int i = disp_recv[p]; i < disp_recv[p + 1];)
     {
-      src.push_back(p);
-      global_indices.push_back(data_recv[i++]);
-      index_owner.push_back(data_recv[i++]);
-      const std::int64_t num_links = data_recv[i++];
-      for (int j = 0; j < num_links; ++j)
-        array.push_back(data_recv[i++]);
-      list_offset.push_back(list_offset.back() + num_links);
+      if (data_recv[i + 1] == mpi_rank)
+      {
+        src.push_back(p);
+        global_indices.push_back(data_recv[i++]);
+        i++; // index_owner.push_back(data_recv[i++]);
+        const std::int64_t num_links = data_recv[i++];
+        for (int j = 0; j < num_links; ++j)
+          array.push_back(data_recv[i++]);
+        list_offset.push_back(list_offset.back() + num_links);
+      }
+      else
+      {
+        ghost_src.push_back(p);
+        ghost_global_indices.push_back(data_recv[i++]);
+        ghost_index_owner.push_back(data_recv[i++]);
+        const std::int64_t num_links = data_recv[i++];
+        for (int j = 0; j < num_links; ++j)
+          ghost_array.push_back(data_recv[i++]);
+        ghost_list_offset.push_back(ghost_list_offset.back() + num_links);
+      }
     }
   }
+  // Get number of local cells and global offset
+  int num_local_cells = global_indices.size();
+  const std::int64_t offset_local_cells
+      = dolfinx::MPI::global_offset(comm, num_local_cells, true);
 
-  // Get ghost cell indexing from owner processes
-  int mpi_rank = MPI::rank(comm);
-  // Stack up indices which we need to resolve
-  std::vector<std::vector<std::int64_t>> ghost_indices;
+  // Attach all ghost cells at the end of the list
+  src.insert(src.end(), ghost_src.begin(), ghost_src.end());
+  global_indices.insert(global_indices.end(), ghost_global_indices.begin(),
+                        ghost_global_indices.end());
+  array.insert(array.end(), ghost_array.begin(), ghost_array.end());
+  int ghost_offset = list_offset.back();
+  list_offset.pop_back();
+  for (int& offset : ghost_list_offset)
+    offset += ghost_offset;
+  list_offset.insert(list_offset.end(), ghost_list_offset.begin(),
+                     ghost_list_offset.end());
+
+  // Find out how many ghosts are on each neighbouring process
+  std::vector<int> ghost_index_count;
+  std::vector<int> neighbours;
   std::map<int, int> proc_to_neighbour;
   int np = 0;
-
-  // Create a new global index based on ownership
-  std::int64_t local_index = 0;
-  std::vector<std::int64_t> new_index(global_indices.size(), -1);
-  std::vector<int> neighbours;
-  for (std::size_t i = 0; i < global_indices.size(); ++i)
+  for (int p : ghost_index_owner)
   {
-    int p = index_owner[i];
-    if (p == mpi_rank)
-    {
-      new_index[i] = local_index;
-      ++local_index;
-      continue;
-    }
+    assert(p != mpi_rank);
 
-    const auto it = proc_to_neighbour.insert({p, np});
-    if (it.second)
+    const auto [it, insert] = proc_to_neighbour.insert({p, np});
+    if (insert)
     {
       // New neighbour found
       neighbours.push_back(p);
-      ghost_indices.push_back(std::vector<std::int64_t>());
+      ghost_index_count.push_back(0);
       ++np;
     }
-    // Send this index to this neighbour
-    ghost_indices[it.first->second].push_back(global_indices[i]);
+    ++ghost_index_count[it->second];
   }
-  assert(ghost_indices.size() == neighbours.size());
-
-  // Update new global index with offset from locally owned cells
-  const std::int64_t offset_new_index
-      = dolfinx::MPI::global_offset(comm, local_index, true);
-  for (std::int64_t& q : new_index)
-    if (q != -1)
-      q += offset_new_index;
 
   std::stringstream s;
   s << "neighbours:";
-  for (auto i : neighbours)
-    s << i << " ";
+  for (std::size_t i = 0; i < neighbours.size(); ++i)
+    s << neighbours[i] << ":" << ghost_index_count[i] << " ";
   s << "\n";
 
   std::cout << s.str();
@@ -612,59 +627,65 @@ Partitioning::distribute(MPI_Comm comm,
                                  neighbours.data(), MPI_UNWEIGHTED,
                                  MPI_INFO_NULL, false, &neighbour_comm);
 
-  std::vector<std::int64_t> send_data;
   std::vector<int> send_offsets = {0};
-  std::vector<int> send_sizes(neighbours.size());
-  for (std::size_t i = 0; i < neighbours.size(); ++i)
+  for (std::size_t i = 0; i < ghost_index_count.size(); ++i)
+    send_offsets.push_back(send_offsets.back() + ghost_index_count[i]);
+  std::vector<std::int64_t> send_data(send_offsets.back());
+
+  // Copy offsets to help fill array
+  std::vector<int> ghost_index_offset(send_offsets.begin(), send_offsets.end());
+
+  for (std::size_t i = 0; i < ghost_global_indices.size(); ++i)
   {
-    send_data.insert(send_data.end(), ghost_indices[i].begin(),
-                     ghost_indices[i].end());
-    send_sizes[i] = ghost_indices[i].size();
-    send_offsets.push_back(send_data.size());
+    // Owning process
+    int p = ghost_index_owner[i];
+    // Owning neighbour
+    int np = proc_to_neighbour[p];
+    // Send data location
+    int pos = ghost_index_offset[np];
+    send_data[pos] = ghost_global_indices[i];
+    ++ghost_index_offset[np];
   }
 
   std::vector<int> recv_sizes(neighbours.size());
-  MPI_Neighbor_alltoall(send_sizes.data(), 1, MPI_INT, recv_sizes.data(), 1,
-                        MPI_INT, neighbour_comm);
+  MPI_Neighbor_alltoall(ghost_index_count.data(), 1, MPI_INT, recv_sizes.data(),
+                        1, MPI_INT, neighbour_comm);
   std::vector<int> recv_offsets = {0};
   for (int q : recv_sizes)
     recv_offsets.push_back(recv_offsets.back() + q);
   std::vector<std::int64_t> recv_data(recv_offsets.back());
 
-  MPI_Neighbor_alltoallv(send_data.data(), send_sizes.data(),
+  MPI_Neighbor_alltoallv(send_data.data(), ghost_index_count.data(),
                          send_offsets.data(), MPI_INT64_T, recv_data.data(),
                          recv_sizes.data(), recv_offsets.data(), MPI_INT64_T,
                          neighbour_comm);
 
   // Replace values in recv_data with new_index and send back
   std::unordered_map<std::int64_t, std::int64_t> old_to_new;
-  for (std::size_t i = 0; i < global_indices.size(); ++i)
-    old_to_new.insert({global_indices[i], new_index[i]});
+  for (int i = 0; i < num_local_cells; ++i)
+    old_to_new.insert({global_indices[i], offset_local_cells + i});
 
   for (std::int64_t& r : recv_data)
   {
     auto it = old_to_new.find(r);
     // Must exist on this process!
     assert(it != old_to_new.end());
-    assert(it->second != -1);
     r = it->second;
   }
 
   std::vector<std::int64_t> new_recv(send_data.size());
   MPI_Neighbor_alltoallv(recv_data.data(), recv_sizes.data(),
                          recv_offsets.data(), MPI_INT64_T, new_recv.data(),
-                         send_sizes.data(), send_offsets.data(), MPI_INT64_T,
-                         neighbour_comm);
+                         ghost_index_count.data(), send_offsets.data(),
+                         MPI_INT64_T, neighbour_comm);
 
-  // Update map
+  // Add to map
   for (std::size_t i = 0; i < send_data.size(); ++i)
   {
     std::int64_t old_idx = send_data[i];
     std::int64_t new_idx = new_recv[i];
-    auto it = old_to_new.find(old_idx);
-    assert(it != old_to_new.end());
-    assert(it->second == -1);
-    it->second = new_idx;
+    auto [it, insert] = old_to_new.insert({old_idx, new_idx});
+    assert(insert);
   }
   for (std::int64_t& q : global_indices)
   {
