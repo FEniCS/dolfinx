@@ -50,7 +50,7 @@ with u_bc.vector.localForm() as loc:
     loc.set(0.0)
 
 facetdim = mesh.topology.dim - 1
-mf = dolfinx.MeshFunction("size_t", mesh, facetdim, 0)
+mf = dolfinx.MeshFunction("int", mesh, facetdim, 0)
 mf.mark(lambda x: numpy.isclose(x[0], 0.0), 1)
 bndry_facets = numpy.where(mf.values == 1)[0]
 
@@ -65,7 +65,7 @@ def free_end(x):
 
 
 # Mark free end facets as 1
-mf = dolfinx.mesh.MeshFunction("size_t", mesh, 1, 0)
+mf = dolfinx.mesh.MeshFunction("int", mesh, 1, 0)
 mf.mark(free_end, 1)
 
 ds = ufl.Measure("ds", subdomain_data=mf)

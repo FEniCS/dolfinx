@@ -100,7 +100,7 @@ def test_krylov_samg_solver_elasticity():
             return np.full(x.shape[1], True)
 
         facetdim = mesh.topology.dim - 1
-        mf = MeshFunction("size_t", mesh, facetdim, 0)
+        mf = MeshFunction("int", mesh, facetdim, 0)
         mf.mark(boundary, 1)
         bndry_facets = np.where(mf.values == 1)[0]
 

@@ -34,7 +34,7 @@ def test_assembly_dx_domains(mesh):
     V = dolfinx.FunctionSpace(mesh, ("CG", 1))
     u, v = ufl.TrialFunction(V), ufl.TestFunction(V)
 
-    marker = dolfinx.MeshFunction("size_t", mesh, mesh.topology.dim, 0)
+    marker = dolfinx.MeshFunction("int", mesh, mesh.topology.dim, 0)
     values = marker.values
     # Mark first, second and all other
     # Their union is the whole domain
@@ -99,7 +99,7 @@ def test_assembly_ds_domains(mesh):
     V = dolfinx.FunctionSpace(mesh, ("CG", 1))
     u, v = ufl.TrialFunction(V), ufl.TestFunction(V)
 
-    marker = dolfinx.MeshFunction("size_t", mesh, mesh.topology.dim - 1, 0)
+    marker = dolfinx.MeshFunction("int", mesh, mesh.topology.dim - 1, 0)
 
     def bottom(x):
         return numpy.isclose(x[1], 0.0)

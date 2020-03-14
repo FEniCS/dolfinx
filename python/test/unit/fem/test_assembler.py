@@ -219,7 +219,7 @@ def test_matrix_assembly_block():
 
     # Prepare a MeshFunction used for boundary conditions
     facetdim = mesh.topology.dim - 1
-    mf = dolfinx.MeshFunction("size_t", mesh, facetdim, 0)
+    mf = dolfinx.MeshFunction("int", mesh, facetdim, 0)
     mf.mark(boundary, 1)
     bndry_facets = numpy.where(mf.values == 1)[0]
 
@@ -309,7 +309,7 @@ def test_assembly_solve_block():
         return numpy.logical_or(x[0] < 1.0e-6, x[0] > 1.0 - 1.0e-6)
 
     facetdim = mesh.topology.dim - 1
-    mf = dolfinx.MeshFunction("size_t", mesh, facetdim, 0)
+    mf = dolfinx.MeshFunction("int", mesh, facetdim, 0)
     mf.mark(boundary, 1)
     bndry_facets = numpy.where(mf.values == 1)[0]
 
@@ -460,7 +460,7 @@ def test_assembly_solve_taylor_hood(mesh):
         return x[0] > (1.0 - 10 * numpy.finfo(float).eps)
 
     facetdim = mesh.topology.dim - 1
-    mf = dolfinx.MeshFunction("size_t", mesh, facetdim, 0)
+    mf = dolfinx.MeshFunction("int", mesh, facetdim, 0)
     mf.mark(boundary0, 1)
     mf.mark(boundary1, 2)
     bndry_facets0 = numpy.where(mf.values == 1)[0]

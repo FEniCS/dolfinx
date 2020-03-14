@@ -21,7 +21,7 @@ def dx_from_ufl(mesh):
 
 
 def dx_from_measure(mesh):
-    subdomains = MeshFunction("size_t", mesh, mesh.topology.dim, 1)
+    subdomains = MeshFunction("int", mesh, mesh.topology.dim, 1)
     dx = Measure("dx")(subdomain_data=subdomains, domain=mesh)
     dx = dx(1)
     return dx
@@ -37,7 +37,7 @@ def ds_from_ufl(mesh):
 
 
 def ds_from_measure(mesh):
-    boundaries = MeshFunction("size_t", mesh, mesh.topology.dim - 1, 1)
+    boundaries = MeshFunction("int", mesh, mesh.topology.dim - 1, 1)
     ds = Measure("ds")(subdomain_data=boundaries, domain=mesh)
     return ds
 
@@ -52,7 +52,7 @@ def dS_from_ufl(mesh):
 
 
 def dS_from_measure(mesh):
-    boundaries = MeshFunction("size_t", mesh, mesh.topology.dim - 1, 1)
+    boundaries = MeshFunction("int", mesh, mesh.topology.dim - 1, 1)
     dS = Measure("dS")(subdomain_data=boundaries, domain=mesh)
     return dS
 

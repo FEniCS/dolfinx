@@ -136,7 +136,7 @@ def test_facet_integral(cell_type):
         num_facets = mesh.num_entities(mesh.topology.dim - 1)
 
         v = Function(V)
-        facet_function = MeshFunction("size_t", mesh, mesh.topology.dim - 1, 1)
+        facet_function = MeshFunction("int", mesh, mesh.topology.dim - 1, 1)
         facet_function.values[:] = range(num_facets)
 
         # Functions that will have the same integral over each facet
@@ -174,7 +174,7 @@ def test_facet_normals(cell_type):
         num_facets = mesh.num_entities(mesh.topology.dim - 1)
 
         v = Function(V)
-        facet_function = MeshFunction("size_t", mesh, mesh.topology.dim - 1, 1)
+        facet_function = MeshFunction("int", mesh, mesh.topology.dim - 1, 1)
         facet_function.values[:] = range(num_facets)
 
         # For each facet, check that the inner product of the normal and
