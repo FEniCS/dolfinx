@@ -342,7 +342,7 @@ Partitioning::reorder_global_indices(
     }
   }
 
-  return {local_to_local_new, ghosts};
+  return {std::move(local_to_local_new), std::move(ghosts)};
 }
 //-----------------------------------------------------------------------------
 std::pair<graph::AdjacencyList<std::int32_t>, std::vector<std::int64_t>>

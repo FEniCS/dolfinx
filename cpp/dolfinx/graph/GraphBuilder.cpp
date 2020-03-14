@@ -294,7 +294,7 @@ std::pair<std::int32_t, std::int32_t> compute_nonlocal_dual_graph(
     ghost_nodes.insert(cell_list[i + 1]);
   }
 
-  return std::pair(ghost_nodes.size(), num_nonlocal_edges);
+  return {ghost_nodes.size(), num_nonlocal_edges};
 }
 //-----------------------------------------------------------------------------
 

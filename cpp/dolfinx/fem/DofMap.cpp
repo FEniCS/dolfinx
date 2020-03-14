@@ -206,7 +206,7 @@ DofMap::collapse(MPI_Comm comm, const mesh::Topology& topology) const
     }
   }
 
-  return std::pair(std::move(dofmap_new), std::move(collapsed_map));
+  return {std::move(dofmap_new), std::move(collapsed_map)};
 }
 //-----------------------------------------------------------------------------
 void DofMap::set(Eigen::Ref<Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1>> x,
