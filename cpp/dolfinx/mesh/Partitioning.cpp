@@ -490,7 +490,6 @@ Partitioning::distribute(MPI_Comm comm,
       = dolfinx::MPI::global_offset(comm, list.num_nodes(), true);
 
   const int size = dolfinx::MPI::size(comm);
-
   // Compute number of links to send to each process
   std::vector<int> num_per_dest_send(size, 0);
   for (int i = 0; i < destinations.num_nodes(); ++i)
@@ -558,12 +557,105 @@ Partitioning::distribute(MPI_Comm comm,
     }
   }
 
+  // Get ghost cell indexing from owner processes
+  int mpi_rank = MPI::rank(comm);
+  // Stack up indices which we need to resolve
+  std::vector<std::vector<std::int64_t>> ghost_indices;
+  std::map<int, int> proc_to_neighbour;
+  int np = 0;
+
+  // Create a new global index based on ownership
+  std::int64_t local_index = 0;
+  std::vector<std::int64_t> new_index(global_indices.size(), -1);
+  std::vector<int> neighbours;
+  for (std::size_t i = 0; i < global_indices.size(); ++i)
+  {
+    int p = index_owner[i];
+    if (p == mpi_rank)
+    {
+      new_index[i] = local_index;
+      ++local_index;
+      continue;
+    }
+
+    const auto it = proc_to_neighbour.insert({p, np});
+    if (it.second)
+    {
+      // New neighbour found
+      neighbours.push_back(p);
+      ghost_indices.push_back(std::vector<std::int64_t>());
+      ++np;
+    }
+    // Send this index to this neighbour
+    ghost_indices[it.first->second].push_back(global_indices[i]);
+  }
+  assert(ghost_indices.size() == neighbours.size());
+
+  // Update new global index with offset from locally owned cells
+  const std::int64_t offset_new_index
+      = dolfinx::MPI::global_offset(comm, local_index, true);
+  for (std::int64_t& q : new_index)
+    if (q != -1)
+      q += offset_new_index;
+
   std::stringstream s;
-  s << "index_owner:";
-  for (auto i : index_owner)
+  s << "neighbours:";
+  for (auto i : neighbours)
     s << i << " ";
   s << "\n";
+
   std::cout << s.str();
+
+  MPI_Comm neighbour_comm;
+  MPI_Dist_graph_create_adjacent(comm, neighbours.size(), neighbours.data(),
+                                 MPI_UNWEIGHTED, neighbours.size(),
+                                 neighbours.data(), MPI_UNWEIGHTED,
+                                 MPI_INFO_NULL, false, &neighbour_comm);
+
+  std::vector<std::int64_t> send_data;
+  std::vector<int> send_offsets = {0};
+  std::vector<int> send_sizes(neighbours.size());
+  for (std::size_t i = 0; i < neighbours.size(); ++i)
+  {
+    send_data.insert(send_data.end(), ghost_indices[i].begin(),
+                     ghost_indices[i].end());
+    send_sizes[i] = ghost_indices[i].size();
+    send_offsets.push_back(send_data.size());
+  }
+
+  std::vector<int> recv_sizes(neighbours.size());
+  MPI_Neighbor_alltoall(send_sizes.data(), 1, MPI_INT, recv_sizes.data(), 1,
+                        MPI_INT, neighbour_comm);
+  std::vector<int> recv_offsets = {0};
+  for (int q : recv_sizes)
+    recv_offsets.push_back(recv_offsets.back() + q);
+  std::vector<std::int64_t> recv_data(recv_offsets.back());
+
+  MPI_Neighbor_alltoallv(send_data.data(), send_sizes.data(),
+                         send_offsets.data(), MPI_INT64_T, recv_data.data(),
+                         recv_sizes.data(), recv_offsets.data(), MPI_INT64_T,
+                         neighbour_comm);
+
+  // Replace values in recv_data with new_index and send back
+  std::unordered_map<std::int64_t, std::int64_t> old_to_new;
+  for (std::size_t i = 0; i < global_indices.size(); ++i)
+    old_to_new.insert({global_indices[i], new_index[i]});
+
+  for (std::int64_t& r : recv_data)
+  {
+    auto it = old_to_new.find(r);
+    // Must exist on this process!
+    assert(it != old_to_new.end());
+    assert(it->second != -1);
+    r = it->second;
+  }
+
+  MPI_Neighbor_alltoallv(recv_data.data(), recv_sizes.data(),
+                         recv_offsets.data(), MPI_INT64_T, send_data.data(),
+                         send_sizes.data(), send_offsets.data(), MPI_INT64_T,
+                         neighbour_comm);
+
+  MPI_Comm_free(&neighbour_comm);
 
   return {graph::AdjacencyList<std::int64_t>(array, list_offset),
           std::move(src), std::move(global_indices)};
