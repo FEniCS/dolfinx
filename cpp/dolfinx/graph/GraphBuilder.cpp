@@ -27,17 +27,13 @@ using namespace dolfinx;
 
 namespace
 {
-// AdjacencyList from facets (defined by their global vertex indices)
-// to cells
-typedef std::vector<std::pair<std::vector<std::size_t>, std::int32_t>>
-    FacetCellMap;
 
 //-----------------------------------------------------------------------------
 // Compute local part of the dual graph, and return return (local_graph,
 // facet_cell_map, number of local edges in the graph (undirected)
 template <int N>
-std::tuple<std::vector<std::vector<std::size_t>>,
-           std::vector<std::pair<std::vector<std::size_t>, std::int32_t>>,
+std::tuple<std::vector<std::vector<std::int32_t>>,
+           std::vector<std::pair<std::vector<std::int32_t>, std::int32_t>>,
            std::int32_t>
 compute_local_dual_graph_keyed(
     const Eigen::Array<std::int64_t, Eigen::Dynamic, Eigen::Dynamic,
@@ -56,8 +52,9 @@ compute_local_dual_graph_keyed(
   assert(num_local_cells == (int)cell_vertices.rows());
   //  assert(num_vertices_per_cell == (int)cell_vertices.cols());
 
-  std::vector<std::vector<std::size_t>> local_graph(num_local_cells);
-  std::vector<std::pair<std::vector<std::size_t>, std::int32_t>> facet_cell_map;
+  std::vector<std::vector<std::int32_t>> local_graph(num_local_cells);
+  std::vector<std::pair<std::vector<std::int32_t>, std::int32_t>>
+      facet_cell_map;
 
   // Compute local edges (cell-cell connections) using global (internal
   // to this function, not the user numbering) numbering
@@ -77,11 +74,11 @@ compute_local_dual_graph_keyed(
   for (std::int32_t i = 0; i < num_local_cells; ++i)
   {
     // Iterate over facets of cell
-    for (std::int8_t j = 0; j < num_facets_per_cell; ++j)
+    for (int j = 0; j < num_facets_per_cell; ++j)
     {
       // Get list of facet vertices
       auto& facet = facets[counter].first;
-      for (std::int8_t k = 0; k < N; ++k)
+      for (int k = 0; k < N; ++k)
         facet[k] = cell_vertices(i, facet_vertices(j, k));
 
       // Sort facet vertices
@@ -126,7 +123,7 @@ compute_local_dual_graph_keyed(
     {
       // No match, so add facet0 to map
       facet_cell_map.push_back(
-          {std::vector<std::size_t>(facet0.begin(), facet0.end()),
+          {std::vector<std::int32_t>(facet0.begin(), facet0.end()),
            cell_index0});
     }
   }
@@ -138,8 +135,8 @@ compute_local_dual_graph_keyed(
   {
     const int k = facets.size() - 1;
     const int cell_index = facets[k].second;
-    facet_cell_map.push_back({std::vector<std::size_t>(facets[k].first.begin(),
-                                                       facets[k].first.end()),
+    facet_cell_map.push_back({std::vector<std::int32_t>(facets[k].first.begin(),
+                                                        facets[k].first.end()),
                               cell_index});
   }
 
@@ -150,21 +147,39 @@ compute_local_dual_graph_keyed(
 // non-local edges. Note: GraphBuilder::compute_local_dual_graph should
 // be called before this function is called. Returns (ghost vertices,
 // num_nonlocal_edges)
-std::pair<std::int32_t, std::int32_t> compute_nonlocal_dual_graph(
+std::tuple<std::vector<std::vector<std::int64_t>>, std::int32_t, std::int32_t>
+compute_nonlocal_dual_graph(
     const MPI_Comm mpi_comm,
     const Eigen::Ref<const Eigen::Array<std::int64_t, Eigen::Dynamic,
                                         Eigen::Dynamic, Eigen::RowMajor>>&
         cell_vertices,
-    const mesh::CellType& cell_type, const FacetCellMap& facet_cell_map,
-    std::vector<std::vector<std::size_t>>& local_graph)
+    const mesh::CellType& cell_type,
+    const std::vector<std::pair<std::vector<std::int32_t>, std::int32_t>>&
+        facet_cell_map,
+    const std::vector<std::vector<std::int32_t>>& local_graph)
 {
   LOG(INFO) << "Build nonlocal part of mesh dual graph";
   common::Timer timer("Compute non-local part of mesh dual graph");
 
+  const std::int32_t num_local_cells = cell_vertices.rows();
+
+  // Get offset for this process
+  const std::int64_t offset
+      = dolfinx::MPI::global_offset(mpi_comm, num_local_cells, true);
+
+  std::vector<std::vector<std::int64_t>> graph(local_graph.size());
+  for (std::size_t i = 0; i < local_graph.size(); ++i)
+  {
+    graph[i] = std::vector<std::int64_t>(local_graph[i].begin(),
+                                         local_graph[i].end());
+    std::for_each(graph[i].begin(), graph[i].end(),
+                  [offset](auto& n) { n += offset; });
+  }
+
   // Get number of MPI processes, and return if mesh is not distributed
   const int num_processes = dolfinx::MPI::size(mpi_comm);
   if (num_processes == 1)
-    return std::pair(0, 0);
+    return {graph, 0, 0};
 
   // At this stage facet_cell map only contains facets->cells with edge
   // facets either interprocess or external boundaries
@@ -172,8 +187,7 @@ std::pair<std::int32_t, std::int32_t> compute_nonlocal_dual_graph(
   const int tdim = mesh::cell_dim(cell_type);
 
   // List of cell vertices
-  const std::int32_t num_local_cells = cell_vertices.rows();
-  const std::int8_t num_vertices_per_facet
+  const int num_vertices_per_facet
       = mesh::num_cell_vertices(mesh::cell_entity_type(cell_type, tdim - 1));
 
   assert(num_local_cells == (int)cell_vertices.rows());
@@ -182,10 +196,6 @@ std::pair<std::int32_t, std::int32_t> compute_nonlocal_dual_graph(
   // Compute local edges (cell-cell connections) using global (internal
   // to this function, not the user numbering) numbering
 
-  // Get offset for this process
-  const std::int64_t offset
-      = dolfinx::MPI::global_offset(mpi_comm, num_local_cells, true);
-
   // Get global range of vertex indices
   const std::int64_t num_global_vertices
       = dolfinx::MPI::max(
@@ -193,8 +203,8 @@ std::pair<std::int32_t, std::int32_t> compute_nonlocal_dual_graph(
         + 1;
 
   // Send facet-cell map to intermediary match-making processes
-  std::vector<std::vector<std::size_t>> send_buffer(num_processes);
-  std::vector<std::vector<std::size_t>> received_buffer(num_processes);
+  std::vector<std::vector<std::int64_t>> send_buffer(num_processes);
+  std::vector<std::vector<std::int64_t>> received_buffer(num_processes);
 
   // Pack map data and send to match-maker process
   for (auto& it : facet_cell_map)
@@ -218,21 +228,22 @@ std::pair<std::int32_t, std::int32_t> compute_nonlocal_dual_graph(
   dolfinx::MPI::all_to_all(mpi_comm, send_buffer, received_buffer);
 
   // Clear send buffer
-  send_buffer = std::vector<std::vector<std::size_t>>(num_processes);
+  send_buffer = std::vector<std::vector<std::int64_t>>(num_processes);
 
   // Map to connect processes and cells, using facet as key
-  typedef boost::unordered_map<std::vector<std::size_t>,
-                               std::pair<std::size_t, std::size_t>>
+  typedef boost::unordered_map<std::vector<std::int64_t>,
+                               std::pair<std::int64_t, std::int64_t>>
       MatchMap;
   MatchMap matchmap;
 
   // Look for matches to send back to other processes
-  std::pair<std::vector<std::size_t>, std::pair<std::size_t, std::size_t>> key;
+  std::pair<std::vector<std::int64_t>, std::pair<std::int64_t, std::int64_t>>
+      key;
   key.first.resize(num_vertices_per_facet);
   for (int p = 0; p < num_processes; ++p)
   {
     // Unpack into map
-    const std::vector<std::size_t>& data_p = received_buffer[p];
+    const std::vector<std::int64_t>& data_p = received_buffer[p];
     for (auto it = data_p.begin(); it != data_p.end();
          it += (num_vertices_per_facet + 1))
     {
@@ -264,7 +275,7 @@ std::pair<std::int32_t, std::int32_t> compute_nonlocal_dual_graph(
   }
 
   // Send matches to other processes
-  std::vector<std::size_t> cell_list;
+  std::vector<std::int64_t> cell_list;
   dolfinx::MPI::all_to_all(mpi_comm, send_buffer, cell_list);
 
   // Ghost nodes
@@ -278,9 +289,9 @@ std::pair<std::int32_t, std::int32_t> compute_nonlocal_dual_graph(
     assert((std::int64_t)(cell_list[i] - offset)
            < (std::int64_t)local_graph.size());
 
-    auto& edges = local_graph[cell_list[i] - offset];
+    auto& edges = graph[cell_list[i] - offset];
     auto it = std::find(edges.begin(), edges.end(), cell_list[i + 1]);
-    if (it == local_graph[cell_list[i] - offset].end())
+    if (it == graph[cell_list[i] - offset].end())
     {
       edges.push_back(cell_list[i + 1]);
       ++num_nonlocal_edges;
@@ -288,14 +299,14 @@ std::pair<std::int32_t, std::int32_t> compute_nonlocal_dual_graph(
     ghost_nodes.insert(cell_list[i + 1]);
   }
 
-  return {ghost_nodes.size(), num_nonlocal_edges};
+  return {std::move(graph), ghost_nodes.size(), num_nonlocal_edges};
 }
 //-----------------------------------------------------------------------------
 
 } // namespace
 
 //-----------------------------------------------------------------------------
-std::pair<std::vector<std::vector<std::size_t>>, std::array<std::int32_t, 3>>
+std::pair<std::vector<std::vector<std::int64_t>>, std::array<std::int32_t, 3>>
 graph::GraphBuilder::compute_dual_graph(
     const MPI_Comm mpi_comm,
     const Eigen::Ref<const Eigen::Array<std::int64_t, Eigen::Dynamic,
@@ -310,25 +321,25 @@ graph::GraphBuilder::compute_dual_graph(
       = graph::GraphBuilder::compute_local_dual_graph(cell_vertices, cell_type);
 
   // Get offset for this process
-  const std::int64_t cell_offset
-      = dolfinx::MPI::global_offset(mpi_comm, cell_vertices.rows(), true);
-  for (std::size_t i = 0; i < local_graph.size(); ++i)
-  {
-    std::for_each(local_graph[i].begin(), local_graph[i].end(),
-                  [cell_offset](auto& n) { n += cell_offset; });
-  }
+  // const std::int64_t cell_offset
+  //     = dolfinx::MPI::global_offset(mpi_comm, cell_vertices.rows(), true);
+  // for (std::size_t i = 0; i < local_graph.size(); ++i)
+  // {
+  //   std::for_each(local_graph[i].begin(), local_graph[i].end(),
+  //                 [cell_offset](auto& n) { n += cell_offset; });
+  // }
 
   // Compute nonlocal part
-  const auto [num_ghost_nodes, num_nonlocal_edges]
+  const auto [graph, num_ghost_nodes, num_nonlocal_edges]
       = compute_nonlocal_dual_graph(mpi_comm, cell_vertices, cell_type,
                                     facet_cell_map, local_graph);
 
-  return {std::move(local_graph),
+  return {std::move(graph),
           {num_ghost_nodes, num_local_edges, num_nonlocal_edges}};
 }
 //-----------------------------------------------------------------------------
-std::tuple<std::vector<std::vector<std::size_t>>,
-           std::vector<std::pair<std::vector<std::size_t>, std::int32_t>>,
+std::tuple<std::vector<std::vector<std::int32_t>>,
+           std::vector<std::pair<std::vector<std::int32_t>, std::int32_t>>,
            std::int32_t>
 dolfinx::graph::GraphBuilder::compute_local_dual_graph(
     const Eigen::Ref<const Eigen::Array<std::int64_t, Eigen::Dynamic,

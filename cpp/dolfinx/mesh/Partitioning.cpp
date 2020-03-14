@@ -73,14 +73,14 @@ Partitioning::partition_cells(MPI_Comm comm, int n,
              mesh::num_cell_vertices(cell_type));
 
   // Compute distributed dual graph (for the cells on this process)
-  const auto [local_graph, graph_info]
+  const auto [dual_graph, graph_info]
       = graph::GraphBuilder::compute_dual_graph(comm, _cells, cell_type);
 
   // Extract data from graph_info
   const auto [num_ghost_nodes, num_local_edges, num_nonlocal_edges]
       = graph_info;
 
-  graph::AdjacencyList<SCOTCH_Num> adj_graph(local_graph);
+  graph::AdjacencyList<SCOTCH_Num> adj_graph(dual_graph);
   std::vector<std::size_t> weights;
 
   // Call partitioner
