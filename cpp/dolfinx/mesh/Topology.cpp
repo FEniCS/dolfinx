@@ -12,6 +12,7 @@
 #include <dolfinx/common/utils.h>
 #include <dolfinx/fem/ElementDofLayout.h>
 #include <dolfinx/graph/AdjacencyList.h>
+#include <dolfinx/graph/Partitioning.h>
 #include <numeric>
 
 using namespace dolfinx;
@@ -46,7 +47,7 @@ compute_face_permutations_simplex(
       // Find the index of the lowest numbered vertex
 
       // Store local vertex indices here
-      std::array<std::size_t, 3> e_vertices;
+      std::array<std::int32_t, 3> e_vertices;
 
       // Find iterators pointing to cell vertex given a vertex on
       // facet
@@ -112,7 +113,7 @@ compute_face_permutations_tp(const graph::AdjacencyList<std::int32_t>& c_to_v,
       int num_min = -1;
 
       // Store local vertex indices here
-      std::array<std::size_t, 4> e_vertices;
+      std::array<std::int32_t, 4> e_vertices;
       // Find iterators pointing to cell vertex given a vertex on facet
       for (int j = 0; j < 4; ++j)
       {
@@ -541,15 +542,16 @@ mesh::create_topology(MPI_Comm comm,
       comm, size, layout.cell_type(), cells_v, ghost_mode);
 
   // Distribute cells to destination rank
+
   const auto [my_cells, src, original_cell_index, ghost_indices]
-      = Partitioning::distribute(comm, cells_v, dest);
+      = graph::Partitioning::distribute(comm, cells_v, dest);
 
   // Build local cell-vertex connectivity, with local vertex indices
   // [0, 1, 2, ..., n), from cell-vertex connectivity using global
   // indices and get map from global vertex indices in 'cells' to the
   // local vertex indices
   auto [cells_local, local_to_global_vertices]
-      = Partitioning::create_local_adjacency_list(my_cells);
+      = graph::Partitioning::create_local_adjacency_list(my_cells);
 
   // Create (i) local topology object and (ii) IndexMap for cells, and
   // set cell-vertex topology
@@ -597,8 +599,9 @@ mesh::create_topology(MPI_Comm comm,
   // vertices, and map from local index to old global index
   const std::vector<bool>& exterior_vertices
       = Partitioning::compute_vertex_exterior_markers(topology_local);
-  auto [cells_d, vertex_map] = Partitioning::create_distributed_adjacency_list(
-      comm, *_cells_local, local_to_global_vertices, exterior_vertices);
+  auto [cells_d, vertex_map]
+      = graph::Partitioning::create_distributed_adjacency_list(
+          comm, *_cells_local, local_to_global_vertices, exterior_vertices);
 
   Topology topology(layout.cell_type());
 

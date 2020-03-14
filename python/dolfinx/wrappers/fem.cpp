@@ -271,7 +271,7 @@ void fem(py::module& m)
       .def("cell_dofs", &dolfinx::fem::DofMap::cell_dofs)
       .def("dofs", &dolfinx::fem::DofMap::dofs)
       .def("set", &dolfinx::fem::DofMap::set)
-      .def("dof_array", &dolfinx::fem::DofMap::dof_array);
+      .def("list", &dolfinx::fem::DofMap::list);
 
   // dolfinx::fem::CoordinateElement
   py::class_<dolfinx::fem::CoordinateElement,

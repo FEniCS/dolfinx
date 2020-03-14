@@ -8,6 +8,7 @@
 #include <dolfinx/common/MPI.h>
 #include <dolfinx/common/types.h>
 #include <dolfinx/fem/ElementDofLayout.h>
+#include <dolfinx/graph/Partitioning.h>
 #include <dolfinx/mesh/DistributedMeshTools.h>
 #include <dolfinx/mesh/Geometry.h>
 #include <dolfinx/mesh/Mesh.h>
@@ -66,20 +67,18 @@ ParallelRefinement::ParallelRefinement(const mesh::Mesh& mesh)
 //-----------------------------------------------------------------------------
 ParallelRefinement::~ParallelRefinement() { MPI_Comm_free(&_neighbour_comm); }
 //-----------------------------------------------------------------------------
-const mesh::Mesh& ParallelRefinement::mesh() const { return _mesh; }
-//-----------------------------------------------------------------------------
 const std::vector<bool>& ParallelRefinement::marked_edges() const
 {
   return _marked_edges;
 }
 //-----------------------------------------------------------------------------
-void ParallelRefinement::mark(std::int32_t edge_index)
+bool ParallelRefinement::mark(std::int32_t edge_index)
 {
   assert(edge_index < _mesh.num_entities(1));
 
   // Already marked, so nothing to do
   if (_marked_edges[edge_index])
-    return;
+    return false;
 
   _marked_edges[edge_index] = true;
 
@@ -92,6 +91,7 @@ void ParallelRefinement::mark(std::int32_t edge_index)
     for (int p : map_it->second)
       _marked_for_update[p].push_back(global_index);
   }
+  return true;
 }
 //-----------------------------------------------------------------------------
 void ParallelRefinement::mark_all()
@@ -121,7 +121,8 @@ void ParallelRefinement::mark(const mesh::MeshFunction<int>& refinement_marker)
 
   auto ent_to_edge = mesh->topology().connectivity(entity_dim, 1);
   if (!ent_to_edge)
-    throw std::runtime_error("Connectivity missing");
+    throw std::runtime_error("Connectivity missing: ("
+                             + std::to_string(entity_dim) + ", 1)");
 
   for (int i = 0; i < num_entities; ++i)
   {
@@ -219,7 +220,8 @@ void ParallelRefinement::create_new_vertices()
     if (_marked_edges[local_i] == true)
     {
       _new_vertex_coordinates.row(n + num_vertices) = midpoints.row(local_i);
-      _local_edge_to_new_vertex[local_i] = n;
+      auto it = _local_edge_to_new_vertex.insert({local_i, n});
+      assert(it.second);
       ++n;
     }
   }
@@ -227,7 +229,7 @@ void ParallelRefinement::create_new_vertices()
   // Calculate global range for new local vertices
   const std::size_t global_offset
       = MPI::global_offset(_mesh.mpi_comm(), num_new_vertices, true)
-        + _mesh.num_entities_global(0);
+        + _mesh.topology().index_map(0)->size_global();
 
   // If they are shared, then the new global vertex index needs to be
   // sent off-process.  Add offset to map, and collect up any shared
@@ -279,7 +281,11 @@ void ParallelRefinement::create_new_vertices()
   std::vector<std::int32_t> recv_local_edge
       = _mesh.topology().index_map(1)->global_to_local(recv_global_edge);
   for (std::size_t i = 0; i < received_values.size() / 2; ++i)
-    _local_edge_to_new_vertex[recv_local_edge[i]] = received_values[i * 2 + 1];
+  {
+    auto it = _local_edge_to_new_vertex.insert(
+        {recv_local_edge[i], received_values[i * 2 + 1]});
+    assert(it.second);
+  }
 
   // Attach global indices to each vertex, old and new, and sort
   // them across processes into this order
@@ -288,11 +294,9 @@ void ParallelRefinement::create_new_vertices()
   for (std::int32_t i = 0; i < num_new_vertices; i++)
     global_indices.push_back(i + global_offset);
 
-  Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor> tmp
+  _new_vertex_coordinates
       = mesh::DistributedMeshTools::reorder_by_global_indices(
           _mesh.mpi_comm(), _new_vertex_coordinates, global_indices);
-
-  _new_vertex_coordinates = tmp;
 }
 //-----------------------------------------------------------------------------
 mesh::Mesh ParallelRefinement::build_local() const
@@ -348,7 +352,7 @@ mesh::Mesh ParallelRefinement::partition(bool redistribute) const
   const graph::AdjacencyList<std::int64_t> my_cells(cells);
   {
     auto [cells_local, local_to_global_vertices]
-        = mesh::Partitioning::create_local_adjacency_list(my_cells);
+        = graph::Partitioning::create_local_adjacency_list(my_cells);
 
     // Create (i) local topology object and (ii) IndexMap for cells, and
     // set cell-vertex topology
@@ -396,7 +400,7 @@ mesh::Mesh ParallelRefinement::partition(bool redistribute) const
     const std::vector<bool>& exterior_vertices
         = mesh::Partitioning::compute_vertex_exterior_markers(topology_local);
     auto [cells_d, vertex_map]
-        = mesh::Partitioning::create_distributed_adjacency_list(
+        = graph::Partitioning::create_distributed_adjacency_list(
             comm, *_cells_local, local_to_global_vertices, exterior_vertices);
 
     // Set vertex IndexMap, and vertex-vertex connectivity

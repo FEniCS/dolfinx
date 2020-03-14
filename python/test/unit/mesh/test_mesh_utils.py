@@ -234,14 +234,14 @@ def test_topology_partition(tempdir, shape, order):
     assert len(dest) == cells_global_v.num_nodes
 
     # Distribute cells to destination rank
-    cells, src, original_cell_index = cpp.mesh.distribute(cpp.MPI.comm_world,
-                                                          cells_global_v, dest)
+    cells, src, original_cell_index = cpp.graph.distribute(cpp.MPI.comm_world,
+                                                           cells_global_v, dest)
 
     # Build local cell-vertex connectivity, with local vertex indices
     # [0, 1, 2, ..., n), from cell-vertex connectivity using global
     # indices and get map from global vertex indices in 'cells' to the
     # local vertex indices
-    cells_local, local_to_global_vertices = cpp.mesh.create_local_adjacency_list(cells)
+    cells_local, local_to_global_vertices = cpp.graph.create_local_adjacency_list(cells)
     assert len(local_to_global_vertices) == len(np.unique(cells.array()))
     assert len(local_to_global_vertices) == len(np.unique(cells_local.array()))
     assert np.unique(cells_local.array())[-1] == len(local_to_global_vertices) - 1
@@ -278,8 +278,8 @@ def test_topology_partition(tempdir, shape, order):
     # Build distributed cell-vertex AdjacencyList, IndexMap for
     # vertices, and map from local index to old global index
     exterior_vertices = cpp.mesh.compute_vertex_exterior_markers(topology_local)
-    cells, vertex_map = cpp.mesh.create_distributed_adjacency_list(cpp.MPI.comm_world, cells_local,
-                                                                   local_to_global_vertices, exterior_vertices)
+    cells, vertex_map = cpp.graph.create_distributed_adjacency_list(cpp.MPI.comm_world, cells_local,
+                                                                    local_to_global_vertices, exterior_vertices)
 
     # --- Create distributed topology
     topology = cpp.mesh.Topology(layout.cell_type)
@@ -332,8 +332,8 @@ def test_topology_partition(tempdir, shape, order):
     #
     # NOTE: This could be optimised as we have earlier computed which
     # processes own the cells this process needs.
-    cell_nodes, global_index_cell = cpp.mesh.exchange(cpp.MPI.comm_world,
-                                                      cells_global, dest, set(src))
+    cell_nodes, global_index_cell = cpp.graph.exchange(cpp.MPI.comm_world,
+                                                       cells_global, dest, set(src))
     assert cell_nodes.num_nodes == cells.num_nodes
     assert global_index_cell == original_cell_index
 
@@ -347,16 +347,16 @@ def test_topology_partition(tempdir, shape, order):
 
     # Fetch node coordinates by global index from other ranks. Order of
     # coords matches order of the indices in 'indices'
-    coords = cpp.mesh.distribute_data(cpp.MPI.comm_world, indices, x)
+    coords = cpp.graph.distribute_data(cpp.MPI.comm_world, indices, x)
 
     # Compute local-to-global map from local indices in dofmap to the
     # corresponding global indices in cell_nodes
-    l2g = cpp.mesh.compute_local_to_global_links(cell_nodes, dofmap)
+    l2g = cpp.graph.compute_local_to_global_links(cell_nodes, dofmap)
 
     # Compute local (dof) to local (position in coords) map from (i)
     # local-to-global for dofs and (ii) local-to-global for entries in
     # coords
-    l2l = cpp.mesh.compute_local_to_local(l2g, indices)
+    l2l = cpp.graph.compute_local_to_local(l2g, indices)
 
     # Build coordinate dof array
     x_g = coords[l2l]

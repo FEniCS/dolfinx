@@ -10,6 +10,7 @@
 #include <boost/unordered_map.hpp>
 #include <dolfinx/common/IndexMap.h>
 #include <dolfinx/common/MPI.h>
+#include <dolfinx/common/Set.h>
 #include <dolfinx/common/Timer.h>
 #include <dolfinx/common/log.h>
 #include <dolfinx/common/types.h>
@@ -22,6 +23,7 @@
 #include <unordered_set>
 #include <utility>
 #include <vector>
+#include <dolfinx/mesh/cell_types.h>
 
 using namespace dolfinx;
 
@@ -39,7 +41,7 @@ compute_local_dual_graph_keyed(
     const MPI_Comm mpi_comm,
     const Eigen::Array<std::int64_t, Eigen::Dynamic, Eigen::Dynamic,
                        Eigen::RowMajor>& cell_vertices,
-    const mesh::CellType cell_type)
+    const mesh::CellType& cell_type)
 {
   common::Timer timer("Compute local part of mesh dual graph");
 
@@ -145,8 +147,7 @@ compute_local_dual_graph_keyed(
                               cell_index});
   }
 
-  return std::tuple(std::move(local_graph), std::move(facet_cell_map),
-                    num_local_edges);
+  return {std::move(local_graph), std::move(facet_cell_map), num_local_edges};
 }
 //-----------------------------------------------------------------------------
 // Build nonlocal part of dual graph for mesh and return number of
@@ -158,7 +159,7 @@ std::pair<std::int32_t, std::int32_t> compute_nonlocal_dual_graph(
     const Eigen::Ref<const Eigen::Array<std::int64_t, Eigen::Dynamic,
                                         Eigen::Dynamic, Eigen::RowMajor>>&
         cell_vertices,
-    const mesh::CellType cell_type,
+    const mesh::CellType& cell_type,
     const graph::GraphBuilder::FacetCellMap& facet_cell_map,
     std::vector<std::vector<std::size_t>>& local_graph)
 {
@@ -293,14 +294,14 @@ std::pair<std::int32_t, std::int32_t> compute_nonlocal_dual_graph(
     ghost_nodes.insert(cell_list[i + 1]);
   }
 
-  return std::pair(ghost_nodes.size(), num_nonlocal_edges);
+  return {ghost_nodes.size(), num_nonlocal_edges};
 }
 //-----------------------------------------------------------------------------
 
 } // namespace
 
 //-----------------------------------------------------------------------------
-dolfinx::graph::Graph
+dolfinx::graph::AdjacencyList<int>
 dolfinx::graph::GraphBuilder::local_graph(const mesh::Topology& topology,
                                           const fem::DofMap& dofmap0,
                                           const fem::DofMap& dofmap1)
@@ -319,7 +320,7 @@ dolfinx::graph::GraphBuilder::local_graph(const mesh::Topology& topology,
   assert(dofmap0.index_map);
   const std::int32_t n
       = dofmap0.index_map->size_local() + dofmap0.index_map->num_ghosts();
-  Graph graph(n);
+  std::vector<dolfinx::common::Set<int>> graph(n);
 
   // Build graph
   const int tdim = topology.dim();
@@ -339,10 +340,10 @@ dolfinx::graph::GraphBuilder::local_graph(const mesh::Topology& topology,
     }
   }
 
-  return graph;
+  return AdjacencyList<int>(graph);
 }
 //-----------------------------------------------------------------------------
-dolfinx::graph::Graph dolfinx::graph::GraphBuilder::local_graph(
+dolfinx::graph::AdjacencyList<int> dolfinx::graph::GraphBuilder::local_graph(
     const mesh::Mesh& mesh, const std::vector<std::size_t>& coloring_type)
 {
   // Initialise mesh
@@ -357,7 +358,8 @@ dolfinx::graph::Graph dolfinx::graph::GraphBuilder::local_graph(
 
   // Create graph
   const std::size_t num_vertices = mesh.num_entities(coloring_type[0]);
-  Graph graph(num_vertices);
+  std::vector<dolfinx::common::Set<int>> graph(num_vertices);
+  // Graph graph(num_vertices);
 
   // Build graph
   auto map = mesh.topology().index_map(coloring_type[0]);
@@ -390,10 +392,10 @@ dolfinx::graph::Graph dolfinx::graph::GraphBuilder::local_graph(
     graph[e].insert(entity_list0.begin(), entity_list0.end());
   }
 
-  return graph;
+  return AdjacencyList<int>(graph);
 }
 //-----------------------------------------------------------------------------
-dolfinx::graph::Graph
+dolfinx::graph::AdjacencyList<int>
 dolfinx::graph::GraphBuilder::local_graph(const mesh::Mesh& mesh,
                                           std::size_t dim0, std::size_t dim1)
 {
@@ -404,7 +406,8 @@ dolfinx::graph::GraphBuilder::local_graph(const mesh::Mesh& mesh,
 
   // Create graph
   const std::size_t num_vertices = mesh.num_entities(dim0);
-  Graph graph(num_vertices);
+  // Graph graph(num_vertices);
+  std::vector<dolfinx::common::Set<int>> graph(num_vertices);
 
   auto e0_to_e1 = mesh.topology().connectivity(dim0, dim1);
   assert(e0_to_e1);
@@ -430,7 +433,7 @@ dolfinx::graph::GraphBuilder::local_graph(const mesh::Mesh& mesh,
     }
   }
 
-  return graph;
+  return AdjacencyList<int>(graph);
 }
 //-----------------------------------------------------------------------------
 std::pair<std::vector<std::vector<std::size_t>>, std::array<std::int32_t, 3>>
@@ -439,7 +442,7 @@ graph::GraphBuilder::compute_dual_graph(
     const Eigen::Ref<const Eigen::Array<std::int64_t, Eigen::Dynamic,
                                         Eigen::Dynamic, Eigen::RowMajor>>&
         cell_vertices,
-    const mesh::CellType cell_type)
+    const mesh::CellType& cell_type)
 {
   LOG(INFO) << "Build mesh dual graph";
 
@@ -468,7 +471,7 @@ dolfinx::graph::GraphBuilder::compute_local_dual_graph(
     const Eigen::Ref<const Eigen::Array<std::int64_t, Eigen::Dynamic,
                                         Eigen::Dynamic, Eigen::RowMajor>>&
         cell_vertices,
-    const mesh::CellType cell_type)
+    const mesh::CellType& cell_type)
 {
   LOG(INFO) << "Build local part of mesh dual graph";
 

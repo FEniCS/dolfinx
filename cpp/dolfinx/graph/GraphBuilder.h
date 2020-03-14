@@ -6,11 +6,10 @@
 
 #pragma once
 
-#include "Graph.h"
+#include "AdjacencyList.h"
 #include <array>
 #include <cstdint>
 #include <dolfinx/common/MPI.h>
-#include <dolfinx/mesh/cell_types.h>
 #include <tuple>
 #include <utility>
 #include <vector>
@@ -24,6 +23,7 @@ class DofMap;
 
 namespace mesh
 {
+enum class CellType;
 class Mesh;
 class Topology;
 } // namespace mesh
@@ -43,17 +43,18 @@ public:
       FacetCellMap;
 
   /// Build local graph from dofmap
-  static Graph local_graph(const mesh::Topology& topology,
-                           const fem::DofMap& dofmap0,
-                           const fem::DofMap& dofmap1);
+  static AdjacencyList<int> local_graph(const mesh::Topology& topology,
+                                        const fem::DofMap& dofmap0,
+                                        const fem::DofMap& dofmap1);
 
   /// Build local graph from mesh (general version)
-  static Graph local_graph(const mesh::Mesh& mesh,
-                           const std::vector<std::size_t>& coloring_type);
+  static AdjacencyList<int>
+  local_graph(const mesh::Mesh& mesh,
+              const std::vector<std::size_t>& coloring_type);
 
   /// Build local graph (specialized version)
-  static Graph local_graph(const mesh::Mesh& mesh, std::size_t dim0,
-                           std::size_t dim1);
+  static AdjacencyList<int> local_graph(const mesh::Mesh& mesh,
+                                        std::size_t dim0, std::size_t dim1);
 
   /// Build distributed dual graph (cell-cell connections) from minimal
   /// mesh data, and return (graph, ghost_vertices, [num local edges,
@@ -65,7 +66,7 @@ public:
       const Eigen::Ref<const Eigen::Array<std::int64_t, Eigen::Dynamic,
                                           Eigen::Dynamic, Eigen::RowMajor>>&
           cell_vertices,
-      const mesh::CellType cell_type);
+      const mesh::CellType& cell_type);
 
   /// Compute local part of the dual graph, and return (local_graph,
   /// facet_cell_map, number of local edges in the graph (undirected)
@@ -78,7 +79,7 @@ public:
       const Eigen::Ref<const Eigen::Array<std::int64_t, Eigen::Dynamic,
                                           Eigen::Dynamic, Eigen::RowMajor>>&
           cell_vertices,
-      const mesh::CellType cell_type);
+      const mesh::CellType& cell_type);
 };
 } // namespace graph
 } // namespace dolfinx
