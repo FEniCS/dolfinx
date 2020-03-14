@@ -478,7 +478,7 @@ Partitioning::create_distributed_adjacency_list(
 }
 //-----------------------------------------------------------------------------
 std::tuple<graph::AdjacencyList<std::int64_t>, std::vector<int>,
-           std::vector<std::int64_t>>
+           std::vector<std::int64_t>, std::vector<std::int64_t>>
 Partitioning::distribute(MPI_Comm comm,
                          const graph::AdjacencyList<std::int64_t>& list,
                          const graph::AdjacencyList<std::int32_t>& destinations)
@@ -613,14 +613,6 @@ Partitioning::distribute(MPI_Comm comm,
     ++ghost_index_count[it->second];
   }
 
-  std::stringstream s;
-  s << "neighbours:";
-  for (std::size_t i = 0; i < neighbours.size(); ++i)
-    s << neighbours[i] << ":" << ghost_index_count[i] << " ";
-  s << "\n";
-
-  std::cout << s.str();
-
   MPI_Comm neighbour_comm;
   MPI_Dist_graph_create_adjacent(comm, neighbours.size(), neighbours.data(),
                                  MPI_UNWEIGHTED, neighbours.size(),
@@ -687,7 +679,7 @@ Partitioning::distribute(MPI_Comm comm,
     auto [it, insert] = old_to_new.insert({old_idx, new_idx});
     assert(insert);
   }
-  for (std::int64_t& q : global_indices)
+  for (std::int64_t& q : ghost_global_indices)
   {
     const auto it = old_to_new.find(q);
     assert(it != old_to_new.end());
@@ -696,8 +688,21 @@ Partitioning::distribute(MPI_Comm comm,
 
   MPI_Comm_free(&neighbour_comm);
 
+  std::stringstream s;
+  s << mpi_rank << ") neighbours:";
+  for (std::size_t i = 0; i < neighbours.size(); ++i)
+    s << neighbours[i] << ":" << ghost_index_count[i] << " ";
+  s << "\n " << offset_local_cells << "-"
+    << offset_local_cells + num_local_cells << " {";
+  for (auto q : ghost_global_indices)
+    s << q << " ";
+  s << "}\n";
+
+  std::cout << s.str();
+
   return {graph::AdjacencyList<std::int64_t>(array, list_offset),
-          std::move(src), std::move(global_indices)};
+          std::move(src), std::move(global_indices),
+          std::move(ghost_global_indices)};
 }
 //-----------------------------------------------------------------------------
 std::pair<graph::AdjacencyList<std::int64_t>, std::vector<std::int64_t>>

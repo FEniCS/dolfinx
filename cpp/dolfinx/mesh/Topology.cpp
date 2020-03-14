@@ -541,7 +541,7 @@ mesh::create_topology(MPI_Comm comm,
       comm, size, layout.cell_type(), cells_v, ghost_mode);
 
   // Distribute cells to destination rank
-  const auto [my_cells, src, original_cell_index]
+  const auto [my_cells, src, original_cell_index, ghost_indices]
       = Partitioning::distribute(comm, cells_v, dest);
 
   // Build local cell-vertex connectivity, with local vertex indices
@@ -556,10 +556,8 @@ mesh::create_topology(MPI_Comm comm,
   Topology topology_local(layout.cell_type());
   const int tdim = topology_local.dim();
 
-  // FIXME: need to fill in ghosts here
-  std::vector<std::int64_t> ghosts;
-  auto map = std::make_shared<common::IndexMap>(comm, cells_local.num_nodes(),
-                                                ghosts, 1);
+  auto map = std::make_shared<common::IndexMap>(
+      comm, cells_local.num_nodes() - ghost_indices.size(), ghost_indices, 1);
   topology_local.set_index_map(tdim, map);
   auto _cells_local
       = std::make_shared<graph::AdjacencyList<std::int32_t>>(cells_local);
