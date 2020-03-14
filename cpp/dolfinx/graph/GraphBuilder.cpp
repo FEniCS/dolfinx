@@ -321,9 +321,6 @@ graph::GraphBuilder::compute_dual_graph(
       = compute_nonlocal_dual_graph(mpi_comm, cell_vertices, cell_type,
                                     facet_cell_map, local_graph);
 
-  // Shrink to fit
-  local_graph.shrink_to_fit();
-
   return {std::move(local_graph),
           {num_ghost_nodes, num_local_edges, num_nonlocal_edges}};
 }
