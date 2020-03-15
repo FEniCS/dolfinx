@@ -7,6 +7,7 @@
 #include "utils.h"
 #include "Geometry.h"
 #include "MeshEntity.h"
+#include "MeshTags.h"
 #include "cell_types.h"
 #include <Eigen/Dense>
 #include <algorithm>
@@ -718,11 +719,12 @@ Eigen::Array<double, Eigen::Dynamic, 3, Eigen::RowMajor> mesh::midpoints(
 }
 //-----------------------------------------------------------------------------
 Eigen::Array<std::int32_t, Eigen::Dynamic, 1>
-mesh::compute_marked_boundary_entities(
+mesh::locate_entities_geometrical(
     const mesh::Mesh& mesh, const int dim,
     const std::function<Eigen::Array<bool, Eigen::Dynamic, 1>(
         const Eigen::Ref<const Eigen::Array<double, 3, Eigen::Dynamic,
-                                            Eigen::RowMajor>>&)>& marker)
+                                            Eigen::RowMajor>>&)>& marker,
+    const bool boundary_only)
 {
   const int tdim = mesh.topology().dim();
 
@@ -738,20 +740,36 @@ mesh::compute_marked_boundary_entities(
     mesh.create_connectivity(0, tdim);
   }
 
-  // Find all vertices on boundary. Set all to -1 (interior) to start
-  // with. If a vertex is on the boundary, give it an index from [0,
+  const int num_vertices = mesh.topology().index_map(0)->size_local()
+                           + mesh.topology().index_map(0)->num_ghosts();
+
+  // Find all active vertices. Set all to -1 (inactive) to start
+  // with. If a vertex is active, give it an index from [0,
   // count)
-  const std::vector<bool> on_boundary0 = mesh.topology().on_boundary(0);
-  std::vector<std::int32_t> boundary_vertex(mesh.num_entities(0), -1);
+  std::vector<std::int32_t> active_vertex(num_vertices, -1);
+
   int count = 0;
-  for (std::size_t i = 0; i < on_boundary0.size(); ++i)
+  if (boundary_only)
   {
-    if (on_boundary0[i])
-      boundary_vertex[i] = count++;
+    // If marking only boundary vertices, make active_vertex > -1
+    // only for those
+    const std::vector<bool> on_boundary0 = mesh.topology().on_boundary(0);
+    for (std::size_t i = 0; i < on_boundary0.size(); ++i)
+    {
+      if (on_boundary0[i])
+        active_vertex[i] = count++;
+    }
+  }
+  else
+  {
+    // Otherwise all vertices are active (will be checked with marking
+    // function)
+    std::iota(active_vertex.begin(), active_vertex.end(), 0);
+    count = num_vertices;
   }
 
   // FIXME: Does this make sense for non-affine elements?
-  // Get all points
+  // Get all nodes
   const graph::AdjacencyList<std::int32_t>& x_dofmap = mesh.geometry().dofmap();
   const Eigen::Array<double, Eigen::Dynamic, 3, Eigen::RowMajor>& x_all
       = mesh.geometry().x();
@@ -760,56 +778,61 @@ mesh::compute_marked_boundary_entities(
   auto c_to_v = mesh.topology().connectivity(tdim, 0);
   assert(c_to_v);
 
-  // Pack coordinates of all boundary vertices
-  Eigen::Array<double, 3, Eigen::Dynamic, Eigen::RowMajor> x_boundary(3, count);
-  for (std::int32_t i = 0; i < mesh.num_entities(0); ++i)
+  // Pack coordinates of all active vertices
+  Eigen::Array<double, 3, Eigen::Dynamic, Eigen::RowMajor> x_active(3, count);
+
+  for (std::int32_t i = 0; i < num_vertices; ++i)
   {
-    if (boundary_vertex[i] != -1)
+    if (active_vertex[i] != -1)
     {
       // Get first cell and find position
-      int c = v_to_c->links(i)[0];
+      const int c = v_to_c->links(i)[0];
       auto vertices = c_to_v->links(c);
-      auto it
+      const auto it
           = std::find(vertices.data(), vertices.data() + vertices.rows(), i);
       assert(it != (vertices.data() + vertices.rows()));
       const int local_pos = std::distance(vertices.data(), it);
 
       auto dofs = x_dofmap.links(c);
-      x_boundary.col(boundary_vertex[i]) = x_all.row(dofs[local_pos]);
+      x_active.col(active_vertex[i]) = x_all.row(dofs[local_pos]);
     }
   }
 
   // Run marker function on boundary vertices
-  const Eigen::Array<bool, Eigen::Dynamic, 1> boundary_marked
-      = marker(x_boundary);
-  if (boundary_marked.rows() != x_boundary.cols())
-    throw std::runtime_error("Length of array of boundary markers is wrong.");
+  const Eigen::Array<bool, Eigen::Dynamic, 1> active_marked = marker(x_active);
+  if (active_marked.rows() != x_active.cols())
+    throw std::runtime_error("Length of array of markers is wrong.");
 
   auto e_to_v = mesh.topology().connectivity(dim, 0);
   assert(e_to_v);
 
   // Iterate over entities and build vector of marked entities
   std::vector<std::int32_t> entities;
-  const std::vector<bool> boundary_entity = mesh.topology().on_boundary(dim);
+
   auto map = mesh.topology().index_map(dim);
   assert(map);
   const int num_entities = map->size_local() + map->num_ghosts();
+
+  std::vector<bool> active_entity(num_entities, false);
+  if (boundary_only)
+    active_entity = mesh.topology().on_boundary(dim);
+
   for (int e = 0; e < num_entities; ++e)
   {
     // Consider boundary entities only
-    if (boundary_entity[e])
+    if (active_entity[e])
     {
       // Assume all vertices on this facet are marked
       bool all_vertices_marked = true;
 
-      // Iterate over facet vertices
+      // Iterate over entity vertices
       auto vertices = e_to_v->links(e);
       for (int i = 0; i < vertices.rows(); ++i)
       {
         const std::int32_t idx = vertices[i];
-        assert(boundary_vertex[idx] < boundary_marked.rows());
-        assert(boundary_vertex[idx] != -1);
-        if (!boundary_marked[boundary_vertex[idx]])
+        assert(active_vertex[idx] < active_marked.rows());
+        assert(active_vertex[idx] != -1);
+        if (!active_marked[active_vertex[idx]])
         {
           all_vertices_marked = false;
           break;

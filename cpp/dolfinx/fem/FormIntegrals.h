@@ -18,7 +18,7 @@ namespace mesh
 {
 class Mesh;
 template <typename T>
-class MeshFunction;
+class MeshTags;
 } // namespace mesh
 
 namespace fem
@@ -88,14 +88,12 @@ public:
                                                     int i) const;
 
   /// Set the valid domains for the integrals of a given type from a
-  /// MeshFunction "marker". The MeshFunction should have a value for
-  /// each cell (entity) which corresponds to an integral ID. Note the
-  /// MeshFunction is not stored, so if there any changes to the
-  /// integration domain this must be called again.
+  /// MeshTags "marker". Note the MeshTags is not stored, so if there
+  /// any changes to the integration domain this must be called again.
   /// @param[in] type Integral type
-  /// @param[in] marker Meshfunction mapping entities to integrals
+  /// @param[in] marker MeshTags mapping entities to integrals
   void set_domains(FormIntegrals::Type type,
-                   const mesh::MeshFunction<std::size_t>& marker);
+                   const mesh::MeshTags<int>& marker);
 
   /// If there exists a default integral of any type, set the list of
   /// entities for those integrals from the mesh topology. For cell

@@ -6,8 +6,10 @@
 
 #include "FormIntegrals.h"
 #include <cstdlib>
+#include <dolfinx/common/IndexMap.h>
 #include <dolfinx/common/types.h>
-#include <dolfinx/mesh/MeshFunction.h>
+#include <dolfinx/graph/AdjacencyList.h>
+#include <dolfinx/mesh/MeshTags.h>
 
 using namespace dolfinx;
 using namespace dolfinx::fem;
@@ -85,7 +87,7 @@ FormIntegrals::integral_domains(FormIntegrals::Type type, int i) const
 }
 //-----------------------------------------------------------------------------
 void FormIntegrals::set_domains(FormIntegrals::Type type,
-                                const mesh::MeshFunction<std::size_t>& marker)
+                                const mesh::MeshTags<int>& marker)
 {
   int type_index = static_cast<int>(type);
   std::vector<struct FormIntegrals::Integral>& integrals
@@ -94,7 +96,7 @@ void FormIntegrals::set_domains(FormIntegrals::Type type,
   if (integrals.size() == 0)
     return;
 
-  std::shared_ptr<const mesh::Mesh> mesh = marker.mesh();
+  std::shared_ptr<const mesh::Mesh> mesh = marker.mesh;
 
   const mesh::Topology& topology = mesh->topology();
   const int tdim = topology.dim();
@@ -105,10 +107,10 @@ void FormIntegrals::set_domains(FormIntegrals::Type type,
   else if (type == Type::vertex)
     dim = 0;
 
-  if (dim != marker.dim())
+  if (dim != marker.dim)
   {
-    throw std::runtime_error("Invalid MeshFunction dimension:"
-                             + std::to_string(marker.dim()));
+    throw std::runtime_error("Invalid MeshTags dimension:"
+                             + std::to_string(marker.dim));
   }
 
   // Create a reverse map
@@ -122,27 +124,25 @@ void FormIntegrals::set_domains(FormIntegrals::Type type,
     }
   }
 
-  // Get  mesh function data array
-  const Eigen::Array<std::size_t, Eigen::Dynamic, 1>& mf_values
-      = marker.values();
-
-  // Get number of mesh entities of dimension d owned by this process
-  assert(topology.index_map(dim));
-  const int num_entities = topology.index_map(dim)->size_local();
+  // Get mesh function data array
+  const Eigen::Array<int, Eigen::Dynamic, 1>& values = marker.values();
+  const Eigen::Array<std::int32_t, Eigen::Dynamic, 1>& tagged_entities
+      = marker.indices();
 
   if (type == Type::exterior_facet)
   {
     mesh->create_connectivity(tdim - 1, tdim);
     const std::vector<bool>& interior_facets = topology.interior_facets();
-    for (Eigen::Index i = 0; i < num_entities; ++i)
+    for (int i = 0; i < tagged_entities.size(); ++i)
     {
+      const std::int32_t facet_index = tagged_entities[i];
       // Check that facet is an exterior facet (and not just on a
       // process boundary)
-      if (!interior_facets[i])
+      if (!interior_facets[facet_index])
       {
-        auto it = id_to_integral.find(mf_values[i]);
+        const auto it = id_to_integral.find(values[i]);
         if (it != id_to_integral.end())
-          integrals[it->second].active_entities.push_back(i);
+          integrals[it->second].active_entities.push_back(facet_index);
       }
     }
   }
@@ -152,13 +152,14 @@ void FormIntegrals::set_domains(FormIntegrals::Type type,
     std::shared_ptr<const graph::AdjacencyList<std::int32_t>> connectivity
         = topology.connectivity(tdim - 1, tdim);
     assert(connectivity);
-    for (Eigen::Index i = 0; i < num_entities; ++i)
+    for (int i = 0; i < tagged_entities.size(); ++i)
     {
-      if (connectivity->num_links(i) == 2)
+      const std::int32_t facet_index = tagged_entities[i];
+      if (connectivity->num_links(facet_index) == 2)
       {
-        auto it = id_to_integral.find(mf_values[i]);
+        const auto it = id_to_integral.find(values[i]);
         if (it != id_to_integral.end())
-          integrals[it->second].active_entities.push_back(i);
+          integrals[it->second].active_entities.push_back(facet_index);
       }
     }
   }
@@ -166,11 +167,12 @@ void FormIntegrals::set_domains(FormIntegrals::Type type,
   {
     // For cell and vertex integrals use all markers (but not on ghost
     // entities)
-    for (Eigen::Index i = 0; i < num_entities; ++i)
+    for (int i = 0; i < tagged_entities.size(); ++i)
     {
-      auto it = id_to_integral.find(mf_values[i]);
+      const std::int32_t entity_index = tagged_entities[i];
+      const auto it = id_to_integral.find(values[i]);
       if (it != id_to_integral.end())
-        integrals[it->second].active_entities.push_back(i);
+        integrals[it->second].active_entities.push_back(entity_index);
     }
   }
 }

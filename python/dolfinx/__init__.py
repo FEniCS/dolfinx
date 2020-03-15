@@ -55,7 +55,6 @@ from .specialfunctions import (FacetNormal, CellVolume, CellNormal,
                                CellDiameter, Circumradius)
 
 from .mesh import MeshFunction
-from .mesh import MeshValueCollection
 
 # Initialise PETSc
 from dolfinx import cpp

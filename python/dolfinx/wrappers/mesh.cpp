@@ -15,6 +15,7 @@
 #include <dolfinx/mesh/MeshEntity.h>
 #include <dolfinx/mesh/MeshFunction.h>
 #include <dolfinx/mesh/MeshIterator.h>
+#include <dolfinx/mesh/MeshTags.h>
 #include <dolfinx/mesh/MeshQuality.h>
 #include <dolfinx/mesh/MeshValueCollection.h>
 #include <dolfinx/mesh/Partitioning.h>
@@ -282,6 +283,26 @@ void mesh(py::module& m)
   MESHVALUECOLLECTION_MACRO(std::size_t, sizet);
 #undef MESHVALUECOLLECTION_MACRO
 
+// dolfinx::mesh::MeshTags
+#define MESHTAGS_MACRO(SCALAR, SCALAR_NAME)                                    \
+  py::class_<dolfinx::mesh::MeshTags<SCALAR>,                                  \
+             std::shared_ptr<dolfinx::mesh::MeshTags<SCALAR>>>(                \
+      m, "MeshTags_" #SCALAR_NAME, "DOLFIN MeshTags object")                   \
+      .def(py::init<std::shared_ptr<const dolfinx::mesh::Mesh>, int,           \
+                    const Eigen::Array<std::int32_t, Eigen::Dynamic, 1>&,      \
+                    const Eigen::Array<SCALAR, Eigen::Dynamic, 1>&>())         \
+      .def_readwrite("name", &dolfinx::mesh::MeshTags<SCALAR>::name)           \
+      .def_readonly("dim", &dolfinx::mesh::MeshTags<SCALAR>::dim)              \
+      .def_property_readonly(                                                  \
+          "values",                                                            \
+          py::overload_cast<>(&dolfinx::mesh::MeshTags<SCALAR>::values));
+
+  MESHTAGS_MACRO(std::int8_t, int8);
+  MESHTAGS_MACRO(int, int);
+  MESHTAGS_MACRO(double, double);
+  MESHTAGS_MACRO(std::int64_t, int64);
+#undef MESHTAGS_MACRO
+
   // dolfinx::mesh::MeshQuality
   py::class_<dolfinx::mesh::MeshQuality>(m, "MeshQuality", "MeshQuality class")
       .def_static("dihedral_angle_histogram_data",
@@ -341,8 +362,8 @@ void mesh(py::module& m)
   m.def("compute_local_to_local",
         &dolfinx::mesh::Partitioning::compute_local_to_local);
 
-  m.def("compute_marked_boundary_entities",
-        &dolfinx::mesh::compute_marked_boundary_entities);
+  m.def("locate_entities_geometrical",
+        &dolfinx::mesh::locate_entities_geometrical);
 
   // TODO Remove
   m.def("compute_vertex_exterior_markers",

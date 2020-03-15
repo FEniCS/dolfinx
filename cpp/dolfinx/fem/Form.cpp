@@ -15,7 +15,7 @@
 #include <dolfinx/function/FunctionSpace.h>
 #include <dolfinx/mesh/Mesh.h>
 #include <dolfinx/mesh/MeshEntity.h>
-#include <dolfinx/mesh/MeshFunction.h>
+#include <dolfinx/mesh/MeshTags.h>
 #include <memory>
 #include <string>
 #include <ufc.h>
@@ -168,27 +168,26 @@ void Form::set_tabulate_tensor(
     _integrals.set_default_domains(*_mesh);
 }
 //-----------------------------------------------------------------------------
-void Form::set_cell_domains(const mesh::MeshFunction<std::size_t>& cell_domains)
+void Form::set_cell_domains(const mesh::MeshTags<int>& cell_domains)
 {
   _integrals.set_domains(FormIntegrals::Type::cell, cell_domains);
 }
 //-----------------------------------------------------------------------------
 void Form::set_exterior_facet_domains(
-    const mesh::MeshFunction<std::size_t>& exterior_facet_domains)
+    const mesh::MeshTags<int>& exterior_facet_domains)
 {
   _integrals.set_domains(FormIntegrals::Type::exterior_facet,
                          exterior_facet_domains);
 }
 //-----------------------------------------------------------------------------
 void Form::set_interior_facet_domains(
-    const mesh::MeshFunction<std::size_t>& interior_facet_domains)
+    const mesh::MeshTags<int>& interior_facet_domains)
 {
   _integrals.set_domains(FormIntegrals::Type::interior_facet,
                          interior_facet_domains);
 }
 //-----------------------------------------------------------------------------
-void Form::set_vertex_domains(
-    const mesh::MeshFunction<std::size_t>& vertex_domains)
+void Form::set_vertex_domains(const mesh::MeshTags<int>& vertex_domains)
 {
   _integrals.set_domains(FormIntegrals::Type::vertex, vertex_domains);
 }
