@@ -33,10 +33,8 @@ void fem::impl::assemble_matrix(
   // Get dofmap data
   const fem::DofMap& dofmap0 = *a.function_space(0)->dofmap();
   const fem::DofMap& dofmap1 = *a.function_space(1)->dofmap();
-  const Eigen::Array<PetscInt, Eigen::Dynamic, 1>& dof_array0
-      = dofmap0.dof_array();
-  const Eigen::Array<PetscInt, Eigen::Dynamic, 1>& dof_array1
-      = dofmap1.dof_array();
+  const graph::AdjacencyList<PetscInt>& dofs0 = dofmap0.list();
+  const graph::AdjacencyList<PetscInt>& dofs1 = dofmap1.list();
 
   assert(dofmap0.element_dof_layout);
   assert(dofmap1.element_dof_layout);
@@ -61,10 +59,10 @@ void fem::impl::assemble_matrix(
     auto& fn = integrals.get_tabulate_tensor(type::cell, i);
     const std::vector<std::int32_t>& active_cells
         = integrals.integral_domains(type::cell, i);
+
     fem::impl::assemble_cells<IndexType, ScalarType>(
-        mat_set_values_local, mesh, active_cells, dof_array0,
-        num_dofs_per_cell0, dof_array1, num_dofs_per_cell1, bc0, bc1, fn,
-        coeffs, constant_values);
+        mat_set_values_local, mesh, active_cells, dofs0, num_dofs_per_cell0,
+        dofs1, num_dofs_per_cell1, bc0, bc1, fn, coeffs, constant_values);
   }
 
   for (int i = 0; i < integrals.num_integrals(type::exterior_facet); ++i)
@@ -104,11 +102,9 @@ void fem::impl::assemble_cells(
                             const IndexType*, const ScalarType*)>&
         mat_set_values_local,
     const mesh::Mesh& mesh, const std::vector<std::int32_t>& active_cells,
-    const Eigen::Ref<const Eigen::Array<IndexType, Eigen::Dynamic, 1>>& dofmap0,
-    int num_dofs_per_cell0,
-    const Eigen::Ref<const Eigen::Array<IndexType, Eigen::Dynamic, 1>>& dofmap1,
-    int num_dofs_per_cell1, const std::vector<bool>& bc0,
-    const std::vector<bool>& bc1,
+    const graph::AdjacencyList<IndexType>& dofmap0, int num_dofs_per_cell0,
+    const graph::AdjacencyList<IndexType>& dofmap1, int num_dofs_per_cell1,
+    const std::vector<bool>& bc0, const std::vector<bool>& bc1,
     const std::function<void(ScalarType*, const ScalarType*, const ScalarType*,
                              const double*, const int*, const std::uint8_t*,
                              const bool*, const bool*, const std::uint8_t*)>&
@@ -161,12 +157,15 @@ void fem::impl::assemble_cells(
            cell_face_reflections.col(c).data(),
            cell_face_rotations.col(c).data());
 
+    auto dofs0 = dofmap0.links(c);
+    auto dofs1 = dofmap1.links(c);
+
     // Zero rows/columns for essential bcs
     if (!bc0.empty())
     {
       for (Eigen::Index i = 0; i < Ae.rows(); ++i)
       {
-        const std::int32_t dof = dofmap0[c * num_dofs_per_cell0 + i];
+        const std::int32_t dof = dofs0[i];
         if (bc0[dof])
           Ae.row(i).setZero();
       }
@@ -175,15 +174,14 @@ void fem::impl::assemble_cells(
     {
       for (Eigen::Index j = 0; j < Ae.cols(); ++j)
       {
-        const std::int32_t dof = dofmap1[c * num_dofs_per_cell1 + j];
+        const std::int32_t dof = dofs1[j];
         if (bc1[dof])
           Ae.col(j).setZero();
       }
     }
 
-    mat_set_values_local(
-        num_dofs_per_cell0, dofmap0.data() + c * num_dofs_per_cell0,
-        num_dofs_per_cell1, dofmap1.data() + c * num_dofs_per_cell1, Ae.data());
+    mat_set_values_local(num_dofs_per_cell0, dofs0.data(), num_dofs_per_cell1,
+                         dofs1.data(), Ae.data());
   }
 }
 //-----------------------------------------------------------------------------

@@ -703,6 +703,7 @@ fem::create_functionspace(ufc_function_space* (*fptr)(const char*),
           mesh, std::make_shared<fem::FiniteElement>(*ufc_element),
           std::make_shared<fem::DofMap>(fem::create_dofmap(
               mesh->mpi_comm(), *ufc_map, mesh->topology())));
+  std::cout << "Post create" << std::endl;
   std::free(ufc_element);
   std::free(ufc_map);
   std::free(space);
@@ -735,18 +736,23 @@ fem::pack_coefficients(const fem::Form& form)
     VecGetArrayRead(x_local[i], &v[i]);
   }
 
+  const int num_cells = mesh.topology().index_map(tdim)->size_local()
+                        + mesh.topology().index_map(tdim)->num_ghosts();
+
   // Copy data into coefficient array
   Eigen::Array<PetscScalar, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor> c(
-      mesh.num_entities(tdim), offsets.back());
-  for (int cell = 0; cell < mesh.num_entities(tdim); ++cell)
+      num_cells, offsets.back());
+  if (coefficients.size() > 0)
   {
-    auto c_cell = c.row(cell);
-    for (std::size_t coeff = 0; coeff < dofmaps.size(); ++coeff)
+    for (int cell = 0; cell < num_cells; ++cell)
     {
-      auto dofs = dofmaps[coeff]->cell_dofs(cell);
-      const PetscScalar* _v = v[coeff];
-      for (Eigen::Index k = 0; k < dofs.size(); ++k)
-        c_cell(k + offsets[coeff]) = _v[dofs[k]];
+      for (std::size_t coeff = 0; coeff < dofmaps.size(); ++coeff)
+      {
+        auto dofs = dofmaps[coeff]->cell_dofs(cell);
+        const PetscScalar* _v = v[coeff];
+        for (Eigen::Index k = 0; k < dofs.size(); ++k)
+          c(cell, k + offsets[coeff]) = _v[dofs[k]];
+      }
     }
   }
 

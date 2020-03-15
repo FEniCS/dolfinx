@@ -11,6 +11,7 @@
 #include <map>
 #include <set>
 #include <vector>
+#include <Eigen/Dense>
 
 namespace dolfinx
 {
@@ -18,7 +19,6 @@ namespace dolfinx
 namespace mesh
 {
 class Mesh;
-class MeshEntity;
 template <typename T>
 class MeshFunction;
 } // namespace mesh
@@ -47,16 +47,14 @@ public:
   /// Destructor
   ~ParallelRefinement();
 
-  /// Original mesh associated with this refinement
-  const mesh::Mesh& mesh() const;
-
-  /// Return marked status of edge
-  /// @param[in] edge_index
-  bool is_marked(std::int32_t edge_index) const;
+  /// Return markers for all edges
+  /// @returns array of markers
+  const std::vector<bool>& marked_edges() const;
 
   /// Mark edge by index
   /// @param[in] edge_index Index of edge to mark
-  void mark(std::int32_t edge_index);
+  /// @return false if marker was already set, otherwise true
+  bool mark(std::int32_t edge_index);
 
   /// Mark all edges in mesh
   void mark_all();
@@ -65,15 +63,6 @@ public:
   /// @param[in] refinement_marker Value 1 means "refine", any other
   ///   value means "do not refine"
   void mark(const mesh::MeshFunction<int>& refinement_marker);
-
-  /// Mark all incident edges of an entity
-  /// @param[in] cell
-  void mark(const mesh::MeshEntity& cell);
-
-  /// Return list of marked edges incident on this mesh::MeshEntity -
-  /// usually a cell
-  /// @param[in] cell
-  std::vector<std::size_t> marked_edge_list(const mesh::MeshEntity& cell) const;
 
   /// Transfer marked edges between processes
   void update_logical_edgefunction();
@@ -109,7 +98,7 @@ private:
   std::map<std::int32_t, std::int64_t> _local_edge_to_new_vertex;
 
   // New storage for all coordinates when creating new vertices
-  std::vector<double> _new_vertex_coordinates;
+  Eigen::Array<double, Eigen::Dynamic, 3, Eigen::RowMajor> _new_vertex_coordinates;
 
   // New storage for all cells when creating new topology
   std::vector<std::int64_t> _new_cell_topology;
