@@ -230,12 +230,12 @@ def test_topology_partition(tempdir, shape, order):
     # Compute the destination rank for cells on this process via graph
     # partitioning
     dest = cpp.mesh.partition_cells(cpp.MPI.comm_world, size, layout.cell_type,
-                                    cells_global_v)
+                                    cells_global_v, cpp.mesh.GhostMode.none)
     assert len(dest) == cells_global_v.num_nodes
 
     # Distribute cells to destination rank
-    cells, src, original_cell_index = cpp.graph.distribute(cpp.MPI.comm_world,
-                                                           cells_global_v, dest)
+    cells, src, original_cell_index, ghost_index = cpp.graph.distribute(cpp.MPI.comm_world,
+                                                                        cells_global_v, dest)
 
     # Build local cell-vertex connectivity, with local vertex indices
     # [0, 1, 2, ..., n), from cell-vertex connectivity using global
