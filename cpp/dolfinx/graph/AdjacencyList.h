@@ -119,10 +119,10 @@ public:
   }
 
   /// Copy constructor
-  AdjacencyList(const AdjacencyList& connectivity) = default;
+  AdjacencyList(const AdjacencyList& list) = default;
 
   /// Move constructor
-  AdjacencyList(AdjacencyList&& connectivity) = default;
+  AdjacencyList(AdjacencyList&& list) = default;
 
   /// Destructor
   ~AdjacencyList() = default;
@@ -201,7 +201,6 @@ public:
       << std::endl;
     for (Eigen::Index e = 0; e < _offsets.size() - 1; e++)
       s << "  " << e << ": " << this->links(e).transpose() << std::endl;
-
     return s.str();
   }
 
