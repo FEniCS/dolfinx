@@ -39,7 +39,8 @@ def build_elastic_nullspace(V):
 
         # Build translational null space basis
         for i in range(gdim):
-            V.sub(i).dofmap.set(basis[i], 1.0)
+            dofs = V.sub(i).dofmap.list
+            basis[i][dofs.array()] = 1.0
 
         # Build rotational null space basis
         if gdim == 2:
@@ -69,8 +70,8 @@ def build_broken_elastic_nullspace(V):
         basis = [np.asarray(x) for x in vec_local]
 
         # Build translational null space basis
-        V.sub(0).dofmap.set(basis[0], 1.0)
-        V.sub(1).dofmap.set(basis[1], 1.0)
+        basis[0][V.sub(0).dofmap.list.array()] = 1.0
+        basis[1][V.sub(1).dofmap.list.array()] = 1.0
 
         # Build rotational null space basis
         V.sub(0).set_x(basis[2], -1.0, 1)
