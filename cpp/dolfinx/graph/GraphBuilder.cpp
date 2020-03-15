@@ -91,8 +91,8 @@ compute_local_dual_graph_keyed(
 
   // Find maching facets by comparing facet i and facet i -1
   std::size_t num_local_edges = 0;
-  std::vector<std::array<std::int32_t, N>> local_graph(num_local_cells);
-  std::vector<std::pair<std::array<std::int32_t, N>, std::int32_t>>
+  std::vector<std::vector<std::int32_t>> local_graph(num_local_cells);
+  std::vector<std::pair<std::vector<std::int32_t>, std::int32_t>>
       facet_cell_map;
   for (std::size_t i = 1; i < facets.size(); ++i)
   {
@@ -339,9 +339,6 @@ dolfinx::graph::GraphBuilder::compute_local_dual_graph(
   const int tdim = mesh::cell_dim(cell_type);
   const int num_entity_vertices
       = mesh::num_cell_vertices(mesh::cell_entity_type(cell_type, tdim - 1));
-
-
-  mesh::Topology topology
 
   switch (num_entity_vertices)
   {
