@@ -59,8 +59,8 @@ void assemble_cells(
                             const IndexType*, const ScalarType*)>&
         mat_set_values_local,
     const mesh::Mesh& mesh, const std::vector<std::int32_t>& active_cells,
-    const graph::AdjacencyList<PetscInt>& dofmap0, int num_dofs_per_cell0,
-    const graph::AdjacencyList<PetscInt>& dofmap1, int num_dofs_per_cell1,
+    const graph::AdjacencyList<IndexType>& dofmap0, int num_dofs_per_cell0,
+    const graph::AdjacencyList<IndexType>& dofmap1, int num_dofs_per_cell1,
     const std::vector<bool>& bc0, const std::vector<bool>& bc1,
     const std::function<void(ScalarType*, const ScalarType*, const ScalarType*,
                              const double*, const int*, const std::uint8_t*,
