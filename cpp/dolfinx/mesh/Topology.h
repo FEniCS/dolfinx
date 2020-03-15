@@ -227,13 +227,14 @@ private:
 ///   distributed
 /// @param[in] cells The cell topology (list of cell 'nodes') in DOLFIN
 ///   ordering and using global indices for the nodes. It contains cells
-///   that extist only on this this rank and which which have not yet
+///   that exist only on this this rank and which which have not yet
 ///   been distributed via a graph partitioner. The input is typically
 ///   direct from a mesh generator or from file. Cells will be
 ///   distributed to other ranks.
 /// @param[in] layout Describe the association between 'nodes' in @p
 ///   cells and geometry degrees-of-freedom on the element. It is used
 ///   to extract the vertex entries in @p cells.
+/// @param[in] ghost_mode How to partition the cell overlap: none, shared_facet or shared_vertex
 /// @return A distributed Topology, the source rank for each cell in the
 ///   new topology, and the destination ranks for each cell in @p cells.
 std::tuple<Topology, std::vector<int>, graph::AdjacencyList<std::int32_t>>

@@ -543,8 +543,12 @@ mesh::create_topology(MPI_Comm comm,
 
   // Distribute cells to destination rank
 
-  const auto [my_cells, src, original_cell_index, ghost_indices]
+  const auto [my_cells, src, original_cell_index, ghost_owners]
       = graph::Partitioning::distribute(comm, cells_v, dest);
+
+  const std::vector<std::int64_t> ghost_indices
+      = graph::Partitioning::compute_ghost_indices(comm, original_cell_index,
+                                                   ghost_owners);
 
   // Build local cell-vertex connectivity, with local vertex indices
   // [0, 1, 2, ..., n), from cell-vertex connectivity using global

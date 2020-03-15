@@ -95,11 +95,22 @@ public:
   /// @return Adjacency list for this process, array of source ranks for
   ///   each node in the adjacency list, and the original global index
   ///   for each node.
-static std::tuple<graph::AdjacencyList<std::int64_t>, std::vector<int>,
-           std::vector<std::int64_t>, std::vector<std::int64_t>>
-distribute(MPI_Comm comm,
-                         const graph::AdjacencyList<std::int64_t>& list,
-                         const graph::AdjacencyList<std::int32_t>& destinations);
+  static std::tuple<graph::AdjacencyList<std::int64_t>, std::vector<int>,
+                    std::vector<std::int64_t>, std::vector<int>>
+  distribute(MPI_Comm comm, const graph::AdjacencyList<std::int64_t>& list,
+             const graph::AdjacencyList<std::int32_t>& destinations);
+
+  /// Compute ghost indices in a global IndexMap space, from a list of arbitrary
+  /// global indices, where the ghosts are at the end of the list, and their
+  /// owning processes are known.
+  /// @param[in] comm MPI communicator
+  /// @param[in] global_indices List of arbitrary global indices, ghosts at end
+  /// @param[in] ghost_owners List of owning processes of the ghost indices
+  /// @return Indexing of ghosts in a global space starting from 0 on process 0
+  static std::vector<std::int64_t>
+  compute_ghost_indices(MPI_Comm comm,
+                        const std::vector<std::int64_t>& global_indices,
+                        const std::vector<int>& ghost_owners);
 
   /// @todo Is the original global index of each node required?
   /// @todo Can this be merged with Partitioning::distribute?
