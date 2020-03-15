@@ -209,11 +209,3 @@ DofMap::collapse(MPI_Comm comm, const mesh::Topology& topology) const
   return {std::move(dofmap_new), std::move(collapsed_map)};
 }
 //-----------------------------------------------------------------------------
-void DofMap::set(Eigen::Ref<Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1>> x,
-                 PetscScalar value) const
-{
-  const Eigen::Array<PetscInt, Eigen::Dynamic, 1>& dmap = _dofmap.array();
-  for (Eigen::Index i = 0; i < dmap.rows(); ++i)
-    x[dmap[i]] = value;
-}
-//-----------------------------------------------------------------------------
