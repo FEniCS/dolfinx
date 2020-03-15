@@ -105,12 +105,6 @@ public:
   /// @return The adjacency list with dof indices for each cell
   const graph::AdjacencyList<PetscInt>& list() const { return _dofmap; }
 
-  // FIXME: can this be removed?
-  /// Return list of dof indices on this process that belong to mesh
-  /// entities of dimension dim
-  Eigen::Array<std::int32_t, Eigen::Dynamic, 1>
-  dofs(const mesh::Topology& topology, int dim) const;
-
   /// Layout of dofs on an element
   std::shared_ptr<const ElementDofLayout> element_dof_layout;
 
