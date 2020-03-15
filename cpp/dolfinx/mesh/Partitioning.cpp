@@ -12,8 +12,8 @@
 #include <dolfinx/common/Timer.h>
 #include <dolfinx/common/log.h>
 #include <dolfinx/graph/AdjacencyList.h>
-#include <dolfinx/graph/GraphBuilder.h>
 #include <dolfinx/graph/SCOTCH.h>
+#include <dolfinx/mesh/GraphBuilder.h>
 
 using namespace dolfinx;
 using namespace dolfinx::mesh;
@@ -73,14 +73,14 @@ graph::AdjacencyList<std::int32_t> Partitioning::partition_cells(
              mesh::num_cell_vertices(cell_type));
 
   // Compute distributed dual graph (for the cells on this process)
-  const auto [local_graph, graph_info]
-      = graph::GraphBuilder::compute_dual_graph(comm, _cells, cell_type);
+  const auto [dual_graph, graph_info]
+      = mesh::GraphBuilder::compute_dual_graph(comm, _cells, cell_type);
 
   // Extract data from graph_info
   const auto [num_ghost_nodes, num_local_edges, num_nonlocal_edges]
       = graph_info;
 
-  graph::AdjacencyList<SCOTCH_Num> adj_graph(local_graph);
+  graph::AdjacencyList<SCOTCH_Num> adj_graph(dual_graph);
   std::vector<std::size_t> weights;
 
   // Just flag any kind of ghosting for now
@@ -88,7 +88,7 @@ graph::AdjacencyList<std::int32_t> Partitioning::partition_cells(
 
   // Call partitioner
   graph::AdjacencyList<std::int32_t> partition = graph::SCOTCH::partition(
-      comm, (SCOTCH_Num)n, adj_graph, weights, num_ghost_nodes, ghosting);
+      comm, n, adj_graph, weights, num_ghost_nodes, ghosting);
 
   return partition;
 }

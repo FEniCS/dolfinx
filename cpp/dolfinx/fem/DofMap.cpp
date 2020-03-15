@@ -151,6 +151,16 @@ fem::DofMap build_collapsed_dofmap(MPI_Comm comm, const DofMap& dofmap_view,
 } // namespace
 
 //-----------------------------------------------------------------------------
+DofMap::DofMap(std::shared_ptr<const ElementDofLayout> element_dof_layout,
+               std::shared_ptr<const common::IndexMap> index_map,
+               const graph::AdjacencyList<std::int32_t>& dofmap)
+    : element_dof_layout(element_dof_layout), index_map(index_map),
+      _dofmap(dofmap.array().cast<PetscInt>(), dofmap.offsets())
+{
+  // Dofmap data is copied as the types for dofmap and _dofmap may
+  // differ, typically 32- vs 64-bit integers
+}
+//-----------------------------------------------------------------------------
 DofMap DofMap::extract_sub_dofmap(const std::vector<int>& component,
                                   const mesh::Topology& topology) const
 {
@@ -207,74 +217,5 @@ DofMap::collapse(MPI_Comm comm, const mesh::Topology& topology) const
   }
 
   return {std::move(dofmap_new), std::move(collapsed_map)};
-}
-//-----------------------------------------------------------------------------
-void DofMap::set(Eigen::Ref<Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1>> x,
-                 PetscScalar value) const
-{
-  const Eigen::Array<PetscInt, Eigen::Dynamic, 1>& dmap = _dofmap.array();
-  for (Eigen::Index i = 0; i < dmap.rows(); ++i)
-    x[dmap[i]] = value;
-}
-//-----------------------------------------------------------------------------
-Eigen::Array<std::int32_t, Eigen::Dynamic, 1>
-DofMap::dofs(const mesh::Topology& topology, int dim) const
-{
-  assert(element_dof_layout);
-
-  // Check number of dofs per entity (on each cell)
-  const int num_dofs_per_entity = element_dof_layout->num_entity_dofs(dim);
-
-  // Return empty vector if not dofs on requested entity
-  if (num_dofs_per_entity == 0)
-    return Eigen::Array<std::int32_t, Eigen::Dynamic, 1>();
-
-  const int tdim = topology.dim();
-  auto c_dim_0 = topology.connectivity(dim, 0);
-  assert(c_dim_0);
-  const int num_entities = c_dim_0->num_nodes();
-
-  // Vector to hold list of dofs
-  Eigen::Array<std::int32_t, Eigen::Dynamic, 1> dof_list(num_entities
-                                                         * num_dofs_per_entity);
-
-  // Build local dofs for each entity of dimension dim
-  const int num_entities_per_cell
-      = mesh::cell_num_entities(element_dof_layout->cell_type(), dim);
-  std::vector<Eigen::Array<int, Eigen::Dynamic, 1>> entity_dofs_local;
-  for (int i = 0; i < num_entities_per_cell; ++i)
-    entity_dofs_local.push_back(element_dof_layout->entity_dofs(dim, i));
-
-  // Get cell-to-entity connectivity
-  auto c_tdim_dim = topology.connectivity(tdim, dim);
-  assert(c_tdim_dim);
-
-  // Iterate over cells
-  auto c_tdim_0 = topology.connectivity(tdim, 0);
-  assert(c_tdim_0);
-  for (int c = 0; c < c_tdim_0->num_nodes(); ++c)
-  {
-    // Get local-to-global dofmap for cell
-    auto cell_dof_list = this->cell_dofs(c);
-
-    // Loop over all entities of dimension dim belonging to cell
-    int local_index = 0;
-    auto entities = c_tdim_dim->links(c);
-    for (int e = 0; e < entities.rows(); ++e)
-    {
-      // Get dof index and add to list
-      const std::int32_t entity_index = entities[e];
-      for (Eigen::Index i = 0; i < entity_dofs_local[local_index].size(); ++i)
-      {
-        const int entity_dof_local = entity_dofs_local[local_index][i];
-        assert((entity_index * num_dofs_per_entity + i) < dof_list.size());
-        dof_list[entity_index * num_dofs_per_entity + i]
-            = cell_dof_list[entity_dof_local];
-      }
-      ++local_index;
-    }
-  }
-
-  return dof_list;
 }
 //-----------------------------------------------------------------------------

@@ -1,6 +1,7 @@
 set(HEADERS_mesh
   ${CMAKE_CURRENT_SOURCE_DIR}/DistributedMeshTools.h
   ${CMAKE_CURRENT_SOURCE_DIR}/dolfin_mesh.h
+  ${CMAKE_CURRENT_SOURCE_DIR}/GraphBuilder.h
   ${CMAKE_CURRENT_SOURCE_DIR}/Mesh.h
   ${CMAKE_CURRENT_SOURCE_DIR}/MeshEntity.h
   ${CMAKE_CURRENT_SOURCE_DIR}/MeshFunction.h
@@ -17,6 +18,7 @@ set(HEADERS_mesh
 
 target_sources(dolfinx PRIVATE
   ${CMAKE_CURRENT_SOURCE_DIR}/DistributedMeshTools.cpp
+  ${CMAKE_CURRENT_SOURCE_DIR}/GraphBuilder.cpp
   ${CMAKE_CURRENT_SOURCE_DIR}/Mesh.cpp
   ${CMAKE_CURRENT_SOURCE_DIR}/Geometry.cpp
   ${CMAKE_CURRENT_SOURCE_DIR}/Partitioning.cpp
