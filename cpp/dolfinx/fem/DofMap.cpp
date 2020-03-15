@@ -151,6 +151,16 @@ fem::DofMap build_collapsed_dofmap(MPI_Comm comm, const DofMap& dofmap_view,
 } // namespace
 
 //-----------------------------------------------------------------------------
+DofMap::DofMap(std::shared_ptr<const ElementDofLayout> element_dof_layout,
+               std::shared_ptr<const common::IndexMap> index_map,
+               const graph::AdjacencyList<std::int32_t>& dofmap)
+    : element_dof_layout(element_dof_layout), index_map(index_map),
+      _dofmap(dofmap.array().cast<PetscInt>(), dofmap.offsets())
+{
+  // Dofmap data is copied as the types for dofmap and _dofmap may
+  // differ, typically 32- vs 64-bit integers
+}
+//-----------------------------------------------------------------------------
 DofMap DofMap::extract_sub_dofmap(const std::vector<int>& component,
                                   const mesh::Topology& topology) const
 {

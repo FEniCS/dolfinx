@@ -52,6 +52,13 @@ public:
     std::copy(offsets.begin(), offsets.end(), _offsets.data());
   }
 
+  // template <typename U, typename V>
+  // AdjacencyList(U&& data, V&& offsets)
+  //     : _array(std::forward<U>(data)), _offsets(std::forward<V>(offsets))
+  // {
+  //   // Do nothing
+  // }
+
   /// Construct adjacency list from array of data
   /// @param [in] data Adjacency array
   /// @param [in] offsets The index to the adjacency list in the data
@@ -119,10 +126,10 @@ public:
   }
 
   /// Copy constructor
-  AdjacencyList(const AdjacencyList& connectivity) = default;
+  AdjacencyList(const AdjacencyList& list) = default;
 
   /// Move constructor
-  AdjacencyList(AdjacencyList&& connectivity) = default;
+  AdjacencyList(AdjacencyList&& list) = default;
 
   /// Destructor
   ~AdjacencyList() = default;
@@ -201,7 +208,6 @@ public:
       << std::endl;
     for (Eigen::Index e = 0; e < _offsets.size() - 1; e++)
       s << "  " << e << ": " << this->links(e).transpose() << std::endl;
-
     return s.str();
   }
 
