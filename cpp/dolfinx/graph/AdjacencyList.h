@@ -52,13 +52,6 @@ public:
     std::copy(offsets.begin(), offsets.end(), _offsets.data());
   }
 
-  // template <typename U, typename V>
-  // AdjacencyList(U&& data, V&& offsets)
-  //     : _array(std::forward<U>(data)), _offsets(std::forward<V>(offsets))
-  // {
-  //   // Do nothing
-  // }
-
   /// Construct adjacency list from array of data
   /// @param [in] data Adjacency array
   /// @param [in] offsets The index to the adjacency list in the data

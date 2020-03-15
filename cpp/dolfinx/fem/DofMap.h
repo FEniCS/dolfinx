@@ -43,10 +43,22 @@ class DofMap
 public:
   /// Create a DofMap from the layout of dofs on a reference element, an
   /// IndexMap defining the distribution of dofs across processes and a
-  /// vector of indices.
+  /// vector of indices
   DofMap(std::shared_ptr<const ElementDofLayout> element_dof_layout,
          std::shared_ptr<const common::IndexMap> index_map,
          const graph::AdjacencyList<std::int32_t>& dofmap);
+
+  /// Create a DofMap from the layout of dofs on a reference element, an
+  /// IndexMap defining the distribution of dofs across processes and a
+  /// vector of indices
+  template <typename T>
+  DofMap(std::shared_ptr<const ElementDofLayout> element_dof_layout,
+         std::shared_ptr<const common::IndexMap> index_map, T&& dofmap)
+      : element_dof_layout(element_dof_layout), index_map(index_map),
+        _dofmap(std::forward<T>(dofmap))
+  {
+    // Do nothing
+  }
 
   // Copy constructor
   DofMap(const DofMap& dofmap) = delete;
