@@ -5,19 +5,12 @@
 // SPDX-License-Identifier:    LGPL-3.0-or-later
 
 #include "GraphBuilder.h"
-#include "AdjacencyList.h"
 #include <algorithm>
 #include <boost/unordered_map.hpp>
-#include <dolfinx/common/IndexMap.h>
 #include <dolfinx/common/MPI.h>
 #include <dolfinx/common/Timer.h>
 #include <dolfinx/common/log.h>
-#include <dolfinx/common/types.h>
-#include <dolfinx/fem/DofMap.h>
-#include <dolfinx/mesh/Mesh.h>
-#include <dolfinx/mesh/Topology.h>
 #include <dolfinx/mesh/cell_types.h>
-#include <numeric>
 #include <set>
 #include <unordered_set>
 #include <utility>
@@ -303,7 +296,7 @@ compute_nonlocal_dual_graph(
 
 //-----------------------------------------------------------------------------
 std::pair<std::vector<std::vector<std::int64_t>>, std::array<std::int32_t, 3>>
-graph::GraphBuilder::compute_dual_graph(
+mesh::GraphBuilder::compute_dual_graph(
     const MPI_Comm mpi_comm,
     const Eigen::Ref<const Eigen::Array<std::int64_t, Eigen::Dynamic,
                                         Eigen::Dynamic, Eigen::RowMajor>>&
@@ -314,7 +307,7 @@ graph::GraphBuilder::compute_dual_graph(
 
   // Compute local part of dual graph
   auto [local_graph, facet_cell_map, num_local_edges]
-      = graph::GraphBuilder::compute_local_dual_graph(cell_vertices, cell_type);
+      = mesh::GraphBuilder::compute_local_dual_graph(cell_vertices, cell_type);
 
   // Compute nonlocal part
   const auto [graph, num_ghost_nodes, num_nonlocal_edges]
@@ -328,7 +321,7 @@ graph::GraphBuilder::compute_dual_graph(
 std::tuple<std::vector<std::vector<std::int32_t>>,
            std::vector<std::pair<std::vector<std::int32_t>, std::int32_t>>,
            std::int32_t>
-dolfinx::graph::GraphBuilder::compute_local_dual_graph(
+dolfinx::mesh::GraphBuilder::compute_local_dual_graph(
     const Eigen::Ref<const Eigen::Array<std::int64_t, Eigen::Dynamic,
                                         Eigen::Dynamic, Eigen::RowMajor>>&
         cell_vertices,

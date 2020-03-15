@@ -17,18 +17,11 @@
 
 namespace dolfinx
 {
-namespace fem
-{
-class DofMap;
-}
 
 namespace mesh
 {
-enum class CellType;
-} // namespace mesh
 
-namespace graph
-{
+enum class CellType;
 
 /// This class builds a Graph corresponding to various objects
 
@@ -60,5 +53,5 @@ public:
           cell_vertices,
       const mesh::CellType& cell_type);
 };
-} // namespace graph
+} // namespace mesh
 } // namespace dolfinx

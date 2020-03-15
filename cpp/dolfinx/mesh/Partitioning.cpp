@@ -11,8 +11,8 @@
 #include <dolfinx/common/Timer.h>
 #include <dolfinx/common/log.h>
 #include <dolfinx/graph/AdjacencyList.h>
-#include <dolfinx/graph/GraphBuilder.h>
 #include <dolfinx/graph/SCOTCH.h>
+#include <dolfinx/mesh/GraphBuilder.h>
 
 using namespace dolfinx;
 using namespace dolfinx::mesh;
@@ -74,7 +74,7 @@ Partitioning::partition_cells(MPI_Comm comm, int n,
 
   // Compute distributed dual graph (for the cells on this process)
   const auto [dual_graph, graph_info]
-      = graph::GraphBuilder::compute_dual_graph(comm, _cells, cell_type);
+      = mesh::GraphBuilder::compute_dual_graph(comm, _cells, cell_type);
 
   // Extract data from graph_info
   const auto [num_ghost_nodes, num_local_edges, num_nonlocal_edges]
@@ -85,7 +85,7 @@ Partitioning::partition_cells(MPI_Comm comm, int n,
 
   // Call partitioner
   graph::AdjacencyList<std::int32_t> partition = graph::SCOTCH::partition(
-      comm, (SCOTCH_Num)n, adj_graph, weights, num_ghost_nodes, false);
+      comm, n, adj_graph, weights, num_ghost_nodes, false);
 
   return partition;
 }
