@@ -35,6 +35,8 @@ std::pair<Eigen::Array<bool, Eigen::Dynamic, Eigen::Dynamic>,
           Eigen::Array<std::uint8_t, Eigen::Dynamic, Eigen::Dynamic>>
 compute_face_permutations(const Topology& topology);
 
+/// Information about how the entities of each cell should be permuted to get to a
+/// low-to-high ordering
 class PermutationInfo
 {
 public:
