@@ -114,6 +114,7 @@ public:
   void set_connectivity(std::shared_ptr<graph::AdjacencyList<std::int32_t>> c,
                         int d0, int d1);
 
+  /// Returns the permutation information
   const PermutationInfo& get_permutation_info() const;
 
   /// Gets markers for owned facets that are interior, i.e. are
