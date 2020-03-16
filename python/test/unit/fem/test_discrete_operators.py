@@ -26,10 +26,10 @@
 #         W = FunctionSpace(mesh, ("Nedelec 1st kind H(curl)", 1))
 #         G = DiscreteOperators.build_gradient(W._cpp_object, V._cpp_object)
 #         assert G.getRefCount() == 1
-#         num_edges = mesh.num_entities_global(1)
+#         num_edges = mesh.topology.index_map(1).size_global
 #         m, n = G.getSize()
 #         assert m == num_edges
-#         assert n == mesh.num_entities_global(0)
+#         assert n == mesh.topology.index_map(0).size_global
 #         assert round(
 #             G.norm(PETSc.NormType.FROBENIUS) - sqrt(2.0 * num_edges),
 #             8) == 0.0

@@ -40,7 +40,7 @@ void enforce_rules(ParallelRefinement& p_ref, const mesh::Mesh& mesh,
   const std::vector<bool>& marked_edges = p_ref.marked_edges();
 
   std::int32_t update_count = 1;
-  while (update_count != 0)
+  while (update_count > 0)
   {
     update_count = 0;
     p_ref.update_logical_edgefunction();
@@ -91,10 +91,10 @@ mesh::Mesh compute_refinement(const mesh::Mesh& mesh, ParallelRefinement& p_ref,
 
   auto c_to_v = mesh.topology().connectivity(tdim, 0);
   assert(c_to_v);
-  auto c_to_f = mesh.topology().connectivity(tdim, 2);
-  assert(c_to_f);
   auto c_to_e = mesh.topology().connectivity(tdim, 1);
   assert(c_to_e);
+  auto c_to_f = mesh.topology().connectivity(tdim, 2);
+  assert(c_to_f);
 
   assert(mesh.topology().index_map(0));
   const std::vector<std::int64_t> global_indices

@@ -136,13 +136,6 @@ public:
   /// @return Number of entities of topological dimension d
   std::int32_t num_entities(int d) const;
 
-  /// @todo Remove and work via Topology
-  ///
-  /// Get global number of entities of given topological dimension
-  /// @param[in] dim Topological dimension.
-  /// @return Global number of entities of topological dimension d
-  std::int64_t num_entities_global(int dim) const;
-
   /// Get mesh topology
   /// @return The topology object associated with the mesh.
   Topology& topology();
@@ -213,11 +206,6 @@ public:
   /// Get unique identifier for the mesh
   /// @returns The unique identifier associated with the object
   std::size_t id() const { return _unique_id; }
-
-  /// Informal string representation
-  /// @param[in] verbose Flag to turn on additional output
-  /// @return An informal representation of the mesh.
-  std::string str(bool verbose) const;
 
   /// Mesh MPI communicator
   /// @return The communicator on which the mesh is distributed

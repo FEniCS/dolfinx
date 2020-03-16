@@ -15,7 +15,6 @@
 #include <dolfinx/fem/dofs_permutation.h>
 #include <dolfinx/graph/AdjacencyList.h>
 #include <dolfinx/graph/BoostGraphOrdering.h>
-#include <dolfinx/graph/GraphBuilder.h>
 #include <dolfinx/graph/SCOTCH.h>
 #include <dolfinx/mesh/Topology.h>
 #include <memory>
@@ -193,8 +192,8 @@ build_basic_dofmap(const mesh::Topology& topology,
     }
   }
 
-  return {graph::AdjacencyList<std::int32_t>(dofs, cell_ptr), local_to_global,
-          dof_entity};
+  return {graph::AdjacencyList<std::int32_t>(dofs, cell_ptr),
+          std::move(local_to_global), std::move(dof_entity)};
 }
 //-----------------------------------------------------------------------------
 
@@ -317,7 +316,7 @@ std::pair<std::vector<std::int32_t>, std::int32_t> compute_reordering_map(
       old_to_new[i] = unowned_pos++;
   }
 
-  return {old_to_new, owned_size};
+  return {std::move(old_to_new), std::move(owned_size)};
 }
 //-----------------------------------------------------------------------------
 
@@ -485,13 +484,13 @@ DofMapBuilder::build(MPI_Comm comm, const mesh::Topology& topology,
   {
     auto [index_map, dofmap]
         = DofMapBuilder::build(comm, topology, *element_dof_layout, 1);
-    return fem::DofMap(element_dof_layout, index_map, dofmap);
+    return fem::DofMap(element_dof_layout, index_map, std::move(dofmap));
   }
   else
   {
     auto [index_map, dofmap] = DofMapBuilder::build(
         comm, topology, *element_dof_layout->sub_dofmap({0}), bs);
-    return fem::DofMap(element_dof_layout, index_map, dofmap);
+    return fem::DofMap(element_dof_layout, index_map, std::move(dofmap));
   }
 }
 //-----------------------------------------------------------------------------

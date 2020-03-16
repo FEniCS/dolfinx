@@ -6,7 +6,6 @@
 
 #include "HDF5File.h"
 #include "HDF5Interface.h"
-#include "HDF5Utility.h"
 #include <Eigen/Dense>
 #include <boost/filesystem.hpp>
 #include <fstream>
