@@ -18,6 +18,11 @@ namespace dolfinx
 namespace mesh
 {
 
+/// A MeshTags is a class used to tag mesh entities using their
+/// local-to-process index and an attached value.
+/// MeshTags is a sparse data storage class, since it allows to
+/// tag only few mesh entities.
+/// @tparam Type
 template <typename T>
 class MeshTags
 {
@@ -26,9 +31,14 @@ public:
   /// @param[in] mesh The mesh associated with the tags
   /// @param[in] dim Topological dimension of mesh entities
   ///    to tag.
+  /// @param[in] indices Array of indices, will be copied.
+  ///    Local-to-process.
+  /// @param[in] values Array of values attached to indices,
+  ///    will be copied.
   MeshTags(std::shared_ptr<const Mesh> mesh, int dim,
            const Eigen::Array<std::int32_t, Eigen::Dynamic, 1>& indices,
            const Eigen::Array<T, Eigen::Dynamic, 1>& values);
+
   /// Destructor
   ~MeshTags() = default;
 
@@ -41,19 +51,25 @@ public:
   /// Indices of tagged mesh entities, local-to-process
   Eigen::Array<std::int32_t, Eigen::Dynamic, 1>& indices();
 
+  /// Indices of tagged mesh entities, local-to-process (const.)
   const Eigen::Array<std::int32_t, Eigen::Dynamic, 1>& indices() const;
 
   /// Values attached to mesh entities
   Eigen::Array<T, Eigen::Dynamic, 1>& values();
 
+  /// Values attached to mesh entities (const.)
   const Eigen::Array<T, Eigen::Dynamic, 1>& values() const;
 
   /// Append new indices with their values
+  /// @param[in] indices
+  /// @param[in] values
   void append(const Eigen::Array<std::int32_t, Eigen::Dynamic, 1>& indices,
               const Eigen::Array<T, Eigen::Dynamic, 1>& values);
 
   /// Append new indices with their values, appends only indices not already
   /// present
+  /// @param[in] indices
+  /// @param[in] values
   void
   append_unique(const Eigen::Array<std::int32_t, Eigen::Dynamic, 1>& indices,
                 const Eigen::Array<T, Eigen::Dynamic, 1>& values);
