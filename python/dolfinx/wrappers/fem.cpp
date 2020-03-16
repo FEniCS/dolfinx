@@ -27,7 +27,7 @@
 #include <dolfinx/la/PETScVector.h>
 #include <dolfinx/la/SparsityPattern.h>
 #include <dolfinx/mesh/Mesh.h>
-#include <dolfinx/mesh/MeshFunction.h>
+#include <dolfinx/mesh/MeshTags.h>
 #include <memory>
 #include <petsc4py/petsc4py.h>
 #include <pybind11/eigen.h>

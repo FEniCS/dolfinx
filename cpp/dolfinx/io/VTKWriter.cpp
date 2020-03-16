@@ -15,9 +15,9 @@
 #include <dolfinx/graph/AdjacencyList.h>
 #include <dolfinx/la/PETScVector.h>
 #include <dolfinx/la/utils.h>
+#include <dolfinx/mesh/Geometry.h>
 #include <dolfinx/mesh/Mesh.h>
 #include <dolfinx/mesh/MeshEntity.h>
-#include <dolfinx/mesh/MeshFunction.h>
 #include <dolfinx/mesh/MeshIterator.h>
 #include <fstream>
 #include <iomanip>
@@ -205,11 +205,10 @@ void write_ascii_mesh(const mesh::Mesh& mesh, int cell_dim,
   else
   {
     const int degree = mesh.geometry().dof_layout().degree();
+
     if (degree > 1)
-    {
-      throw std::runtime_error("MeshFunction of lower degree than the "
-                               "topological dimension is not implemented");
-    }
+      throw std::runtime_error("Higher order mesh entities not implemented.");
+
     mesh::CellType e_type
         = mesh::cell_entity_type(mesh.topology().cell_type(), cell_dim);
     // FIXME : Need to implement permutations for higher order

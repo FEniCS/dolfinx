@@ -293,9 +293,17 @@ void mesh(py::module& m)
                     const Eigen::Array<SCALAR, Eigen::Dynamic, 1>&>())         \
       .def_readwrite("name", &dolfinx::mesh::MeshTags<SCALAR>::name)           \
       .def_readonly("dim", &dolfinx::mesh::MeshTags<SCALAR>::dim)              \
+      .def(                                                                    \
+          "ufl_id",                                                            \
+          [](const dolfinx::mesh::MeshTags<SCALAR>& self) { return self.id; }) \
       .def_property_readonly(                                                  \
           "values",                                                            \
-          py::overload_cast<>(&dolfinx::mesh::MeshTags<SCALAR>::values));
+          py::overload_cast<>(&dolfinx::mesh::MeshTags<SCALAR>::values))       \
+      .def_property_readonly(                                                  \
+          "indices",                                                           \
+          py::overload_cast<>(&dolfinx::mesh::MeshTags<SCALAR>::indices))      \
+      .def("append", &dolfinx::mesh::MeshTags<SCALAR>::append)                 \
+      .def("append_unique", &dolfinx::mesh::MeshTags<SCALAR>::append_unique);
 
   MESHTAGS_MACRO(std::int8_t, int8);
   MESHTAGS_MACRO(int, int);

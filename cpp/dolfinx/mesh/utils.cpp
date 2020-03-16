@@ -814,8 +814,13 @@ mesh::locate_entities_geometrical(
   const int num_entities = map->size_local() + map->num_ghosts();
 
   std::vector<bool> active_entity(num_entities, false);
+
+  // For boundary marking make active only boundary entities
+  // for all flip all false to true
   if (boundary_only)
     active_entity = mesh.topology().on_boundary(dim);
+  else
+    active_entity.flip();
 
   for (int e = 0; e < num_entities; ++e)
   {

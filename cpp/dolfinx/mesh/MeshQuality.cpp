@@ -7,8 +7,8 @@
 #include "MeshQuality.h"
 #include "Mesh.h"
 #include "MeshEntity.h"
-#include "MeshFunction.h"
 #include "MeshIterator.h"
+#include "Geometry.h"
 #include <dolfinx/common/MPI.h>
 #include <math.h>
 #include <sstream>

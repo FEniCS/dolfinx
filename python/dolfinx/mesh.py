@@ -6,6 +6,8 @@
 
 import types
 
+import numpy
+
 import ufl
 from dolfinx import cpp
 
@@ -13,7 +15,7 @@ from dolfinx import cpp
 def locate_entities_geometrical(mesh: cpp.mesh.Mesh,
                                 dim: int,
                                 marker: types.FunctionType,
-                                boundary_only: bool):
+                                boundary_only: bool = False):
     """Compute list of mesh entities satisfying a geometric marking function.
 
     Parameters
@@ -22,7 +24,7 @@ def locate_entities_geometrical(mesh: cpp.mesh.Mesh,
         The mesh
     dim
         The topological dimension of the mesh entities to consider
-    marker 
+    marker
         A function that takes an array of points `x` with shape
         ``(gdim, num_points)`` and returns an array of booleans of
         length ``num_points``, evaluating to `True` for entities whose
@@ -38,8 +40,12 @@ def locate_entities_geometrical(mesh: cpp.mesh.Mesh,
     return cpp.mesh.locate_entities_geometrical(mesh, dim, marker, boundary_only)
 
 
-# __all__ = ["MeshFunction", "MeshValueCollection"]
-
+_meshtags_types = {
+    numpy.int8: cpp.mesh.MeshTags_int8,
+    numpy.intc: cpp.mesh.MeshTags_int,
+    numpy.int64: cpp.mesh.MeshTags_int64,
+    numpy.double: cpp.mesh.MeshTags_int64
+}
 
 _meshfunction_types = {
     "size_t": cpp.mesh.MeshFunctionSizet,
@@ -52,6 +58,22 @@ _meshvaluecollection_types = {
     "int": cpp.mesh.MeshValueCollection_int,
     "double": cpp.mesh.MeshValueCollection_double
 }
+
+
+def MeshTags(mesh, dim, indices, values):
+
+    if isinstance(values, int):
+        values = numpy.full(indices.shape, values, dtype=numpy.intc)
+    elif isinstance(values, float):
+        values = numpy.full(indices.shape, values, dtype=numpy.double)
+
+    dtype = values.dtype.type
+
+    if dtype not in _meshtags_types.keys():
+        raise KeyError("Datatype {} of values array not recognised".format(dtype))
+
+    fn = _meshtags_types[dtype]
+    return fn(mesh, dim, indices, values)
 
 
 def MeshFunction(value_type, mesh, dim, value):

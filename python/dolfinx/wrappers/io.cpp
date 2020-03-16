@@ -99,39 +99,6 @@ void io(py::module& m)
       .def("write",
            py::overload_cast<const dolfinx::mesh::Mesh&>(
                &dolfinx::io::VTKFile::write),
-           py::arg("mesh"))
-      .def("write",
-           py::overload_cast<const dolfinx::mesh::MeshFunction<std::size_t>&>(
-               &dolfinx::io::VTKFile::write),
-           py::arg("mf"))
-      .def("write",
-           py::overload_cast<const dolfinx::mesh::MeshFunction<std::size_t>&,
-                             double>(&dolfinx::io::VTKFile::write),
-           py::arg("mf"), py::arg("t"))
-      .def("write",
-           py::overload_cast<const dolfinx::mesh::MeshFunction<bool>&>(
-               &dolfinx::io::VTKFile::write),
-           py::arg("mf"))
-      .def("write",
-           py::overload_cast<const dolfinx::mesh::MeshFunction<bool>&, double>(
-               &dolfinx::io::VTKFile::write),
-           py::arg("mf"), py::arg("t"))
-      .def("write",
-           py::overload_cast<const dolfinx::mesh::MeshFunction<double>&>(
-               &dolfinx::io::VTKFile::write),
-           py::arg("mf"))
-      .def(
-          "write",
-          py::overload_cast<const dolfinx::mesh::MeshFunction<double>&, double>(
-              &dolfinx::io::VTKFile::write),
-          py::arg("mf"), py::arg("t"))
-      .def("write",
-           py::overload_cast<const dolfinx::mesh::MeshFunction<int>&>(
-               &dolfinx::io::VTKFile::write),
-           py::arg("mf"))
-      .def("write",
-           py::overload_cast<const dolfinx::mesh::MeshFunction<int>&, double>(
-               &dolfinx::io::VTKFile::write),
-           py::arg("mf"), py::arg("t"));
+           py::arg("mesh"));
 }
 } // namespace dolfinx_wrappers

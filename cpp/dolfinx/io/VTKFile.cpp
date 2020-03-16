@@ -16,9 +16,9 @@
 #include <dolfinx/function/Function.h>
 #include <dolfinx/function/FunctionSpace.h>
 #include <dolfinx/la/PETScVector.h>
+#include <dolfinx/mesh/Geometry.h>
 #include <dolfinx/mesh/Mesh.h>
 #include <dolfinx/mesh/MeshEntity.h>
-#include <dolfinx/mesh/MeshFunction.h>
 #include <dolfinx/mesh/MeshIterator.h>
 #include <iomanip>
 #include <ostream>
@@ -58,9 +58,6 @@ std::string vtu_name(const int process, const int num_processes,
                      const int counter, const std::string filename,
                      const std::string ext);
 void clear_file(std::string file);
-template <typename T>
-void mesh_function_write(T& meshfunction, const std::string filename,
-                         const std::size_t counter, double time);
 std::string strip_path(const std::string filename, const std::string file);
 void pvtu_write_mesh(pugi::xml_node xml_node);
 
@@ -170,59 +167,6 @@ std::string init(const mesh::Mesh& mesh, const std::string filename,
   vtk_header_open(num_nodes, num_cells, vtu_filename);
 
   return vtu_filename;
-}
-//----------------------------------------------------------------------------
-template <typename T>
-void mesh_function_write(T& meshfunction, const std::string filename,
-                         const std::size_t counter, double time)
-{
-  const mesh::Mesh& mesh = *meshfunction.mesh();
-  const std::size_t cell_dim = meshfunction.dim();
-
-  // Update vtu file name and clear file
-  std::string vtu_filename = init(mesh, filename, counter, cell_dim);
-
-  // Write mesh
-  VTKWriter::write_mesh(mesh, cell_dim, vtu_filename);
-
-  // Open file to write data
-  std::ofstream fp(vtu_filename.c_str(), std::ios_base::app);
-  fp.precision(16);
-  if (cell_dim == 0)
-    fp << "<PointData  Scalars=\"" << meshfunction.name << "\">" << std::endl;
-  else
-    fp << "<CellData  Scalars=\"" << meshfunction.name << "\">" << std::endl;
-  fp << "<DataArray  type=\"Float64\"  Name=\"" << meshfunction.name
-     << "\"  format=\"ascii\">";
-
-  // Write data
-  fp << meshfunction.values();
-
-  // Write footers
-  fp << "</DataArray>" << std::endl;
-  if (cell_dim == 0)
-    fp << "</PointData>" << std::endl;
-  else
-    fp << "</CellData>" << std::endl;
-
-  // Close file
-  fp.close();
-
-  // Parallel-specific files
-  const std::size_t num_processes = MPI::size(mesh.mpi_comm());
-  const std::size_t process_number = MPI::rank(mesh.mpi_comm());
-  if (num_processes > 1 && process_number == 0)
-  {
-    std::string pvtu_filename = vtu_name(0, 0, counter, filename, ".pvtu");
-    pvtu_write_function(1, 0, "cell", meshfunction.name, filename,
-                        pvtu_filename, counter, num_processes);
-    pvd_file_write(counter, time, filename, pvtu_filename);
-  }
-  else if (num_processes == 1)
-    pvd_file_write(counter, time, filename, vtu_filename);
-
-  // Write pvd files
-  vtk_header_close(vtu_filename);
 }
 //----------------------------------------------------------------------------
 void write_function(const function::Function& u, const std::string filename,
@@ -659,30 +603,6 @@ void VTKFile::write(const mesh::Mesh& mesh)
   ++_counter;
 }
 //----------------------------------------------------------------------------
-void VTKFile::write(const mesh::MeshFunction<bool>& meshfunction)
-{
-  mesh_function_write(meshfunction, _filename, _counter, _counter);
-  ++_counter;
-}
-//----------------------------------------------------------------------------
-void VTKFile::write(const mesh::MeshFunction<std::size_t>& meshfunction)
-{
-  mesh_function_write(meshfunction, _filename, _counter, _counter);
-  ++_counter;
-}
-//----------------------------------------------------------------------------
-void VTKFile::write(const mesh::MeshFunction<int>& meshfunction)
-{
-  mesh_function_write(meshfunction, _filename, _counter, _counter);
-  ++_counter;
-}
-//----------------------------------------------------------------------------
-void VTKFile::write(const mesh::MeshFunction<double>& meshfunction)
-{
-  mesh_function_write(meshfunction, _filename, _counter, _counter);
-  ++_counter;
-}
-//----------------------------------------------------------------------------
 void VTKFile::write(const function::Function& u)
 {
   write_function(u, _filename, _counter, _counter);
@@ -692,30 +612,6 @@ void VTKFile::write(const function::Function& u)
 void VTKFile::write(const mesh::Mesh& mesh, double time)
 {
   write_mesh(mesh, _filename, _counter, time);
-  ++_counter;
-}
-//----------------------------------------------------------------------------
-void VTKFile::write(const mesh::MeshFunction<int>& mf, double time)
-{
-  mesh_function_write(mf, _filename, _counter, time);
-  ++_counter;
-}
-//----------------------------------------------------------------------------
-void VTKFile::write(const mesh::MeshFunction<std::size_t>& mf, double time)
-{
-  mesh_function_write(mf, _filename, _counter, time);
-  ++_counter;
-}
-//----------------------------------------------------------------------------
-void VTKFile::write(const mesh::MeshFunction<double>& mf, double time)
-{
-  mesh_function_write(mf, _filename, _counter, time);
-  ++_counter;
-}
-//----------------------------------------------------------------------------
-void VTKFile::write(const mesh::MeshFunction<bool>& mf, double time)
-{
-  mesh_function_write(mf, _filename, _counter, time);
   ++_counter;
 }
 //----------------------------------------------------------------------------
