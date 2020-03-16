@@ -117,7 +117,6 @@ void ParallelRefinement::mark(
   std::shared_ptr<const mesh::Mesh> mesh = refinement_marker.mesh;
   auto map_ent = mesh->topology().index_map(entity_dim);
   assert(map_ent);
-  const int num_entities = map_ent->size_local() + map_ent->num_ghosts();
 
   auto ent_to_edge = mesh->topology().connectivity(entity_dim, 1);
   if (!ent_to_edge)
