@@ -21,8 +21,8 @@ import dolfinx
 import dolfinx.cpp
 import dolfinx.io
 import dolfinx.la
-from dolfin.mesh import locate_entities_geometrical
-from dolfin.fem import locate_dofs_topological
+from dolfinx.mesh import locate_entities_geometrical
+from dolfinx.fem import locate_dofs_topological
 import ufl
 
 filedir = os.path.dirname(__file__)
