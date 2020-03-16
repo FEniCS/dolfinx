@@ -187,17 +187,20 @@ def _(b: PETSc.Vec,
 
 # -- Matrix assembly ---------------------------------------------------------
 
-
-@functools.singledispatch
-def assemble_eigen_matrix(a: typing.Union[Form, cpp.fem.Form],
-                          bcs: typing.List[DirichletBC] = [],
-                          diagonal: float = 1.0) -> PETSc.Mat:
-    """Assemble bilinear form into an Scipy CSR matrix.
+def assemble_csr_matrix(a: typing.Union[Form, cpp.fem.Form],
+                        bcs: typing.List[DirichletBC] = [],
+                        diagonal: float = 1.0) -> PETSc.Mat:
+    """Assemble bilinear form into an Scipy CSR matrix, in serial.
     """
     _a = _create_cpp_form(a)
     A = cpp.fem.assemble_matrix_eigen(_a, bcs)
+
     if _a.function_space(0).id == _a.function_space(1).id:
-        A = cpp.fem.add_diagonal(A, _a.function_space(0), bcs, diagonal)
+        for bc in bcs:
+            if _a.function_space(0).contains(bc.function_space):
+                 bc_dofs = bc.dof_indices[:,0]
+                 for i in bc_dofs:
+                     A[i, i] = 1.0
     return A
 
 

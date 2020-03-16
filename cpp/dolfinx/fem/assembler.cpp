@@ -209,35 +209,6 @@ void fem::assemble_matrix(Mat A, const Form& a, const std::vector<bool>& bc0,
 }
 //-----------------------------------------------------------------------------
 void fem::add_diagonal(
-    Eigen::SparseMatrix<double, Eigen::RowMajor>& A,
-    const function::FunctionSpace& V,
-    const std::vector<std::shared_ptr<const DirichletBC>>& bcs, double diagonal)
-{
-  for (const auto& bc : bcs)
-  {
-    assert(bc);
-    if (V.contains(*bc->function_space()))
-    {
-      const Eigen::Array<std::int32_t, Eigen::Dynamic, 1>& owned_dofs
-          = bc->dofs_owned().col(0);
-      add_diagonal(A, owned_dofs, diagonal);
-    }
-  }
-}
-//-----------------------------------------------------------------------------
-void fem::add_diagonal(
-    Eigen::SparseMatrix<double, Eigen::RowMajor>& A,
-    const Eigen::Ref<const Eigen::Array<std::int32_t, Eigen::Dynamic, 1>>& rows,
-    double diagonal)
-{
-  for (Eigen::Index i = 0; i < rows.size(); ++i)
-  {
-    const std::int32_t row = rows(i);
-    A.coeffRef(row, row) = diagonal;
-  }
-}
-//-----------------------------------------------------------------------------
-void fem::add_diagonal(
     Mat A, const function::FunctionSpace& V,
     const std::vector<std::shared_ptr<const DirichletBC>>& bcs,
     PetscScalar diagonal)

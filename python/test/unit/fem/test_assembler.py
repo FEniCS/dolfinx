@@ -14,7 +14,6 @@ from petsc4py import PETSc
 
 import dolfinx
 import ufl
-import time
 from dolfinx import function
 from dolfinx.specialfunctions import SpatialCoordinate
 from ufl import derivative, ds, dx, inner
@@ -97,17 +96,12 @@ def test_eigen_assembly():
         u_local.set(1.0)
     bc = dolfinx.fem.dirichletbc.DirichletBC(u_bc, bdofsQ)
 
-    start = time.time()
     A1 = dolfinx.fem.assemble_matrix(a, [bc])
-    end = time.time()
-    print("PETSc assembly: {0:.2e}".format(end - start))
     A1.assemble()
+
     cpp_form = dolfinx.Form(a)._cpp_object
-    start = time.time()
-    A4 = dolfinx.fem.assemble_eigen_matrix(cpp_form, [bc])
-    end = time.time()
-    print("Eigen assembly: {0:.2e}".format(end - start))
-    assert numpy.isclose(A1.norm(), scipy.sparse.linalg.norm(A4))
+    A2 = dolfinx.fem.assemble_csr_matrix(cpp_form, [bc])
+    assert numpy.isclose(A1.norm(), scipy.sparse.linalg.norm(A2))
 
 
 def test_basic_assembly():
