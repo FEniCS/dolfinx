@@ -597,9 +597,24 @@ mesh::create_topology(MPI_Comm comm,
             = dolfinx::MPI::index_owner(mpi_size, global_i, global_vector_size);
         send_vertices[index_owner].push_back(global_i);
       }
-
     std::vector<std::vector<std::int64_t>> recv_vertices(mpi_size);
     MPI::all_to_all(comm, send_vertices, recv_vertices);
+
+    // Get ownership (lowest rank wins, since it inserts first)
+    std::unordered_map<std::int64_t, int> vertex_to_owner;
+    std::vector<std::vector<int>> send_owner(mpi_size);
+    std::vector<std::vector<int>> recv_owner(mpi_size);
+    for (int p = 0; p < mpi_size; ++p)
+    {
+      const std::vector<std::int64_t>& recv_p = recv_vertices[p];
+      for (std::size_t j = 0; j < recv_p.size(); ++j)
+      {
+        const auto [it, insert] = vertex_to_owner.insert({recv_p[j], p});
+        send_owner[p].push_back(it->second);
+      }
+    }
+    MPI::all_to_all(comm, send_owner, recv_owner);
+    // Now have map from send_vertices to recv_owner
   }
 
   // Create (i) local topology object and (ii) IndexMap for cells, and
