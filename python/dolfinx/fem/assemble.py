@@ -189,6 +189,19 @@ def _(b: PETSc.Vec,
 
 
 @functools.singledispatch
+def assemble_eigen_matrix(a: typing.Union[Form, cpp.fem.Form],
+                          bcs: typing.List[DirichletBC] = [],
+                          diagonal: float = 1.0) -> PETSc.Mat:
+    """Assemble bilinear form into an Scipy CSR matrix.
+    """
+    _a = _create_cpp_form(a)
+    A = cpp.fem.assemble_matrix_eigen(_a, bcs)
+    if _a.function_space(0).id == _a.function_space(1).id:
+        A = cpp.fem.add_diagonal(A, _a.function_space(0), bcs, diagonal)
+    return A
+
+
+@functools.singledispatch
 def assemble_matrix(a: typing.Union[Form, cpp.fem.Form],
                     bcs: typing.List[DirichletBC] = [],
                     diagonal: float = 1.0) -> PETSc.Mat:

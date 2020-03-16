@@ -10,7 +10,7 @@ from dolfinx.fem.assemble import (create_vector, create_vector_block, create_vec
                                   create_matrix, create_matrix_block, create_matrix_nest,
                                   assemble_scalar,
                                   assemble_vector, assemble_vector_nest, assemble_vector_block,
-                                  assemble_matrix, assemble_matrix_nest, assemble_matrix_block,
+                                  assemble_matrix, assemble_matrix_nest, assemble_matrix_block, assemble_eigen_matrix,
                                   set_bc, set_bc_nest,
                                   apply_lifting, apply_lifting_nest)
 from dolfinx.fem.coordinatemapping import create_coordinate_map

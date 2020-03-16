@@ -102,8 +102,13 @@ void apply_lifting(
 // -- Matrices ---------------------------------------------------------------
 
 // Experimental
+/// Assemble bilinear form into an Eigen Sparse matrix.
+/// @param[in] a The bilinear from to assemble
+/// @param[in] bcs Boundary conditions to apply. For boundary condition
+///                dofs the row and column are zeroed. The diagonal
+///                entry is not set.
 Eigen::SparseMatrix<double, Eigen::RowMajor>
-assemble_matrix(const Form& a,
+assemble_matrix_eigen(const Form& a,
                 const std::vector<std::shared_ptr<const DirichletBC>>& bcs);
 
 /// Assemble bilinear form into a matrix. Matrix must already be
@@ -154,6 +159,43 @@ void assemble_matrix(Mat A, const Form& a, const std::vector<bool>& bc0,
 void add_diagonal(Mat A, const function::FunctionSpace& V,
                   const std::vector<std::shared_ptr<const DirichletBC>>& bcs,
                   PetscScalar diagonal = 1.0);
+
+// Experimental
+/// Adds a value to the diagonal of the matrix for rows with a Dirichlet
+/// boundary conditions applied. This function is typically called after
+/// assembly. The assembly function zeroes Dirichlet rows and columns.
+/// This function adds the value only to rows that are locally owned,
+/// and therefore does not create a need for parallel communication. For
+/// block matrices, this function should normally be called only on the
+/// diagonal blocks, i.e. blocks for which the test and trial spaces are
+/// the same.
+/// @param[in,out] A The matrix to add diagonal values to
+/// @param[in] V The function space for the rows and columns of the
+///              matrix. It is used to extract only the Dirichlet
+///              boundary conditions that are define on V or subspaces
+///              of V.
+/// @param[in] bcs The Dirichlet boundary condtions
+/// @param[in] diagonal The value to add to the diagonal for rows with a
+///                     boundary condition applied
+void add_diagonal(Eigen::SparseMatrix<double, Eigen::RowMajor>& A,
+				  const function::FunctionSpace& V,
+                  const std::vector<std::shared_ptr<const DirichletBC>>& bcs,
+                  double diagonal = 1.0);
+// Experimental
+/// Adds a value to the diagonal of a matrix for specified rows. It is
+/// typically called after assembly. The assembly function zeroes
+/// Dirichlet rows and columns. For block matrices, this function should
+/// normally be called only on the diagonal blocks, i.e. blocks for
+/// which the test and trial spaces are the same.
+/// @param[in,out] A The matrix to add diagonal values to
+/// @param[in] rows The rows, in local indices, for which to add a value
+///                 to the diagonal
+/// @param[in] diagonal The value to add to the diagonal for the
+///                     specified rows
+void add_diagonal(Eigen::SparseMatrix<double, Eigen::RowMajor>& A,
+				  const Eigen::Ref<const Eigen::Array<std::int32_t,
+				  Eigen::Dynamic, 1>>& rows,
+				  double diagonal = 1.0);
 
 // Developer note: This function calls MatSetValuesLocal and not
 // MatZeroRowsLocal

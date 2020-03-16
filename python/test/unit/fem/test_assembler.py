@@ -9,10 +9,12 @@ import math
 
 import numpy
 import pytest
+import scipy.sparse.linalg
 from petsc4py import PETSc
 
 import dolfinx
 import ufl
+import time
 from dolfinx import function
 from dolfinx.specialfunctions import SpatialCoordinate
 from ufl import derivative, ds, dx, inner
@@ -65,6 +67,7 @@ def test_assemble_derivatives():
     # derivative eliminates 'u' and 'c1'
     L = ufl.inner(c1, c1) * v * dx + c2 * b * inner(u, v) * dx
     a = derivative(L, u, du)
+
     A1 = dolfinx.fem.assemble_matrix(a)
     A1.assemble()
 
@@ -73,6 +76,38 @@ def test_assemble_derivatives():
     A2.assemble()
 
     assert (A1 - A2).norm() == pytest.approx(0.0, rel=1e-12, abs=1e-12)
+
+
+@skip_in_parallel
+def test_eigen_assembly():
+    """Compare assembly into scipy.CSR matrix with PETSc assembly"""
+    mesh = dolfinx.generation.UnitSquareMesh(dolfinx.MPI.comm_world, 12, 12)
+    Q = dolfinx.FunctionSpace(mesh, ("Lagrange", 1))
+    u = ufl.TrialFunction(Q)
+    v = ufl.TestFunction(Q)
+    a = ufl.inner(ufl.grad(u), ufl.grad(v)) * ufl.dx
+
+    def boundary(x):
+        return numpy.logical_or(x[0] < 1.0e-6, x[0] > 1.0 - 1.0e-6)
+
+    bdofsQ = dolfinx.fem.locate_dofs_geometrical(Q, boundary)
+
+    u_bc = dolfinx.function.Function(Q)
+    with u_bc.vector.localForm() as u_local:
+        u_local.set(1.0)
+    bc = dolfinx.fem.dirichletbc.DirichletBC(u_bc, bdofsQ)
+
+    start = time.time()
+    A1 = dolfinx.fem.assemble_matrix(a, [bc])
+    end = time.time()
+    print("PETSc assembly: {0:.2e}".format(end - start))
+    A1.assemble()
+    cpp_form = dolfinx.Form(a)._cpp_object
+    start = time.time()
+    A4 = dolfinx.fem.assemble_eigen_matrix(cpp_form, [bc])
+    end = time.time()
+    print("Eigen assembly: {0:.2e}".format(end - start))
+    assert numpy.isclose(A1.norm(), scipy.sparse.linalg.norm(A4))
 
 
 def test_basic_assembly():
