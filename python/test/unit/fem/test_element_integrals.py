@@ -139,7 +139,7 @@ def test_facet_integral(cell_type):
         v = Function(V)
 
         indices = np.arange(0, num_facets)
-        values = np.arange(0, num_facets)
+        values = np.arange(0, num_facets, dtype=np.intc)
         marker = MeshTags(mesh, mesh.topology.dim - 1, indices, values)
 
         # Functions that will have the same integral over each facet
@@ -179,7 +179,7 @@ def test_facet_normals(cell_type):
         v = Function(V)
 
         indices = np.arange(0, num_facets)
-        values = np.arange(0, num_facets)
+        values = np.arange(0, num_facets, dtype=np.intc)
         marker = MeshTags(mesh, mesh.topology.dim - 1, indices, values)
 
         # For each facet, check that the inner product of the normal and
