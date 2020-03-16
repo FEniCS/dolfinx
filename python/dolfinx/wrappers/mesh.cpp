@@ -14,11 +14,7 @@
 #include <dolfinx/mesh/Mesh.h>
 #include <dolfinx/mesh/MeshEntity.h>
 #include <dolfinx/mesh/MeshFunction.h>
-<<<<<<< HEAD
-#include <dolfinx/mesh/MeshIterator.h>
 #include <dolfinx/mesh/MeshTags.h>
-=======
->>>>>>> master
 #include <dolfinx/mesh/MeshQuality.h>
 #include <dolfinx/mesh/MeshValueCollection.h>
 #include <dolfinx/mesh/Partitioning.h>
