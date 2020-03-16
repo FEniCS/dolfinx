@@ -11,6 +11,7 @@
 #include <array>
 #include <cstdint>
 #include <dolfinx/common/MPI.h>
+#include <dolfinx/mesh/PermutationInfo.h>
 #include <memory>
 #include <vector>
 
@@ -45,21 +46,6 @@ class Topology;
 ///   the domain.
 std::vector<bool> compute_interior_facets(const Topology& topology);
 
-/// Compute the edge reflection array for consistent edge orientation
-/// @param[in] topology The object topology
-/// @return the Reflection array for each edge
-Eigen::Array<bool, Eigen::Dynamic, Eigen::Dynamic>
-compute_edge_reflections(const Topology& topology);
-
-/// Compute the face reflection and rotation arrays for consistent face
-/// orientation
-/// @param[in] topology The object topology
-/// @return the Reflection array for each face and the rotation array
-///  for each face
-std::pair<Eigen::Array<bool, Eigen::Dynamic, Eigen::Dynamic>,
-          Eigen::Array<std::uint8_t, Eigen::Dynamic, Eigen::Dynamic>>
-compute_face_permutations(const Topology& topology);
-
 /// Topology stores the topology of a mesh, consisting of mesh entities
 /// and connectivity (incidence relations for the mesh entities). Note
 /// that the mesh entities don't need to be stored, only the number of
@@ -69,7 +55,6 @@ compute_face_permutations(const Topology& topology);
 /// A mesh entity e may be identified globally as a pair e = (dim, i),
 /// where dim is the topological dimension and i is the index of the
 /// entity within that topological dimension.
-
 class Topology
 {
 public:
@@ -128,6 +113,8 @@ public:
   /// Set connectivity for given pair of topological dimensions
   void set_connectivity(std::shared_ptr<graph::AdjacencyList<std::int32_t>> c,
                         int d0, int d1);
+
+  const PermutationInfo& get_permutation_info() const;
 
   /// Gets markers for owned facets that are interior, i.e. are
   /// connected to two cells, one of which might be on a remote process
@@ -198,20 +185,8 @@ private:
                Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
       _connectivity;
 
-  // TODO: Use std::vector<int32_t> to store 1/0 marker for each edge/face
-  // The entity reflections of edges
-  Eigen::Array<bool, Eigen::Dynamic, Eigen::Dynamic> _edge_reflections;
-
-  // TODO: Use std::vector<int32_t> to store 1/0 marker for each edge/face
-  // The entity reflections of faces
-  Eigen::Array<bool, Eigen::Dynamic, Eigen::Dynamic> _face_reflections;
-
-  // The entity reflections of faces
-  Eigen::Array<std::uint8_t, Eigen::Dynamic, Eigen::Dynamic> _face_rotations;
-
-  // The facet permutations
-  Eigen::Array<std::uint8_t, Eigen::Dynamic, Eigen::Dynamic>
-      _facet_permutations;
+  // Stores the permutation information
+  PermutationInfo _pinfo;
 
   // Marker for owned facets, which evaluates to True for facets that
   // are interior to the domain
