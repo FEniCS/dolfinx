@@ -5,7 +5,6 @@
 // SPDX-License-Identifier:    LGPL-3.0-or-later
 
 #include "ParMETIS.h"
-#include "GraphBuilder.h"
 #include <dolfinx/common/MPI.h>
 #include <dolfinx/common/Timer.h>
 
@@ -16,6 +15,112 @@
 using namespace dolfinx;
 
 #ifdef HAS_PARMETIS
+namespace
+{
+//-----------------------------------------------------------------------------
+template <typename T>
+std::vector<int> adaptive_repartition(MPI_Comm mpi_comm,
+                                      const graph::AdjacencyList<T>& adj_graph,
+                                      double weight)
+{
+  common::Timer timer(
+      "Compute graph partition (ParMETIS Adaptive Repartition)");
+
+  // Options for ParMETIS
+  idx_t options[4];
+  options[0] = 1;
+  options[1] = 0;
+  options[2] = 15;
+  options[3] = PARMETIS_PSR_UNCOUPLED;
+  // For repartition, PARMETIS_PSR_COUPLED seems to suppress all
+  // migration if already balanced.  Try PARMETIS_PSR_UNCOUPLED for
+  // better edge cut.
+
+  common::Timer timer1("ParMETIS: call ParMETIS_V3_AdaptiveRepart");
+  real_t _itr = weight;
+  std::vector<idx_t> part(adj_graph.num_nodes());
+  std::vector<idx_t> vsize(part.size(), 1);
+  assert(!part.empty());
+
+  // Number of partitions (one for each process)
+  idx_t nparts = dolfinx::MPI::size(mpi_comm);
+
+  // Remaining ParMETIS parameters
+  idx_t ncon = 1;
+  idx_t* elmwgt = nullptr;
+  idx_t wgtflag = 0;
+  idx_t edgecut = 0;
+  idx_t numflag = 0;
+  std::vector<real_t> tpwgts(ncon * nparts, 1.0 / static_cast<real_t>(nparts));
+  std::vector<real_t> ubvec(ncon, 1.05);
+
+  // Call ParMETIS to repartition graph
+  int err = ParMETIS_V3_AdaptiveRepart(
+      adj_graph.node_distribution().data(), adj_graph.nodes().data(),
+      adj_graph.edges().data(), elmwgt, nullptr, vsize.data(), &wgtflag,
+      &numflag, &ncon, &nparts, tpwgts.data(), ubvec.data(), &_itr, options,
+      &edgecut, part.data(), &mpi_comm);
+  assert(err == METIS_OK);
+  timer1.stop();
+
+  // Copy cell partition data and return
+  return std::vector<int>(part.begin(), part.end());
+}
+//-----------------------------------------------------------------------------
+template <typename T>
+std::vector<int> refine(MPI_Comm mpi_comm,
+                        const graph::AdjacencyList<T>& adj_graph)
+{
+  common::Timer timer("Compute graph partition (ParMETIS Refine)");
+
+  // Get some MPI data
+  const std::int32_t process_number = dolfinx::MPI::rank(mpi_comm);
+
+  // Options for ParMETIS
+  idx_t options[4];
+  options[0] = 1;
+  options[1] = 0;
+  options[2] = 15;
+  // options[3] = PARMETIS_PSR_UNCOUPLED;
+
+  // For repartition, PARMETIS_PSR_COUPLED seems to suppress all
+  // migration if already balanced.  Try PARMETIS_PSR_UNCOUPLED for
+  // better edge cut.
+
+  // Partitioning array to be computed by ParMETIS. Prefill with
+  // process_number.
+  const std::int32_t num_local_cells = adj_graph.num_nodes();
+  std::vector<idx_t> part(num_local_cells, process_number);
+  assert(!part.empty());
+
+  // Number of partitions (one for each process)
+  idx_t nparts = dolfinx::MPI::size(mpi_comm);
+  // Remaining ParMETIS parameters
+  idx_t ncon = 1;
+  idx_t* elmwgt = nullptr;
+  idx_t wgtflag = 0;
+  idx_t edgecut = 0;
+  idx_t numflag = 0;
+  std::vector<real_t> tpwgts(ncon * nparts, 1.0 / static_cast<real_t>(nparts));
+  std::vector<real_t> ubvec(ncon, 1.05);
+
+  // Call ParMETIS to partition graph
+  common::Timer timer1("ParMETIS: call ParMETIS_V3_RefineKway");
+  int err = ParMETIS_V3_RefineKway(
+      adj_graph.node_distribution().data(), adj_graph.nodes().data(),
+      adj_graph.edges().data(), elmwgt, nullptr, &wgtflag, &numflag, &ncon,
+      &nparts, tpwgts.data(), ubvec.data(), options, &edgecut, part.data(),
+      &mpi_comm);
+  assert(err == METIS_OK);
+  timer1.stop();
+
+  // Copy cell partition data
+  return std::vector<int>(part.begin(), part.end());
+  //-----------------------------------------------------------------------------
+}
+
+} // namespace
+
 //-----------------------------------------------------------------------------
 graph::AdjacencyList<std::int32_t> dolfinx::graph::ParMETIS::partition(
     MPI_Comm mpi_comm, idx_t nparts,
@@ -179,106 +284,6 @@ graph::AdjacencyList<std::int32_t> dolfinx::graph::ParMETIS::partition(
   graph::AdjacencyList<std::int32_t> partition_adj(dests, offsets);
 
   return partition_adj;
-}
-//-----------------------------------------------------------------------------
-template <typename T>
-std::vector<int> dolfinx::graph::ParMETIS::adaptive_repartition(
-    MPI_Comm mpi_comm, const graph::AdjacencyList<T>& adj_graph, double weight)
-{
-  common::Timer timer(
-      "Compute graph partition (ParMETIS Adaptive Repartition)");
-
-  // Options for ParMETIS
-  idx_t options[4];
-  options[0] = 1;
-  options[1] = 0;
-  options[2] = 15;
-  options[3] = PARMETIS_PSR_UNCOUPLED;
-  // For repartition, PARMETIS_PSR_COUPLED seems to suppress all
-  // migration if already balanced.  Try PARMETIS_PSR_UNCOUPLED for
-  // better edge cut.
-
-  common::Timer timer1("ParMETIS: call ParMETIS_V3_AdaptiveRepart");
-  real_t _itr = weight;
-  std::vector<idx_t> part(adj_graph.num_nodes());
-  std::vector<idx_t> vsize(part.size(), 1);
-  assert(!part.empty());
-
-  // Number of partitions (one for each process)
-  idx_t nparts = dolfinx::MPI::size(mpi_comm);
-
-  // Remaining ParMETIS parameters
-  idx_t ncon = 1;
-  idx_t* elmwgt = nullptr;
-  idx_t wgtflag = 0;
-  idx_t edgecut = 0;
-  idx_t numflag = 0;
-  std::vector<real_t> tpwgts(ncon * nparts, 1.0 / static_cast<real_t>(nparts));
-  std::vector<real_t> ubvec(ncon, 1.05);
-
-  // Call ParMETIS to repartition graph
-  int err = ParMETIS_V3_AdaptiveRepart(
-      adj_graph.node_distribution().data(), adj_graph.nodes().data(),
-      adj_graph.edges().data(), elmwgt, nullptr, vsize.data(), &wgtflag,
-      &numflag, &ncon, &nparts, tpwgts.data(), ubvec.data(), &_itr, options,
-      &edgecut, part.data(), &mpi_comm);
-  assert(err == METIS_OK);
-  timer1.stop();
-
-  // Copy cell partition data and return
-  return std::vector<int>(part.begin(), part.end());
-}
-//-----------------------------------------------------------------------------
-template <typename T>
-std::vector<int>
-dolfinx::graph::ParMETIS::refine(MPI_Comm mpi_comm,
-                                 const graph::AdjacencyList<T>& adj_graph)
-{
-  common::Timer timer("Compute graph partition (ParMETIS Refine)");
-
-  // Get some MPI data
-  const std::int32_t process_number = dolfinx::MPI::rank(mpi_comm);
-
-  // Options for ParMETIS
-  idx_t options[4];
-  options[0] = 1;
-  options[1] = 0;
-  options[2] = 15;
-  // options[3] = PARMETIS_PSR_UNCOUPLED;
-
-  // For repartition, PARMETIS_PSR_COUPLED seems to suppress all
-  // migration if already balanced.  Try PARMETIS_PSR_UNCOUPLED for
-  // better edge cut.
-
-  // Partitioning array to be computed by ParMETIS. Prefill with
-  // process_number.
-  const std::int32_t num_local_cells = adj_graph.num_nodes();
-  std::vector<idx_t> part(num_local_cells, process_number);
-  assert(!part.empty());
-
-  // Number of partitions (one for each process)
-  idx_t nparts = dolfinx::MPI::size(mpi_comm);
-  // Remaining ParMETIS parameters
-  idx_t ncon = 1;
-  idx_t* elmwgt = nullptr;
-  idx_t wgtflag = 0;
-  idx_t edgecut = 0;
-  idx_t numflag = 0;
-  std::vector<real_t> tpwgts(ncon * nparts, 1.0 / static_cast<real_t>(nparts));
-  std::vector<real_t> ubvec(ncon, 1.05);
-
-  // Call ParMETIS to partition graph
-  common::Timer timer1("ParMETIS: call ParMETIS_V3_RefineKway");
-  int err = ParMETIS_V3_RefineKway(
-      adj_graph.node_distribution().data(), adj_graph.nodes().data(),
-      adj_graph.edges().data(), elmwgt, nullptr, &wgtflag, &numflag, &ncon,
-      &nparts, tpwgts.data(), ubvec.data(), options, &edgecut, part.data(),
-      &mpi_comm);
-  assert(err == METIS_OK);
-  timer1.stop();
-
-  // Copy cell partition data
-  return std::vector<int>(part.begin(), part.end());
 }
 //-----------------------------------------------------------------------------
 #endif

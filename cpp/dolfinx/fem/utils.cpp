@@ -42,15 +42,15 @@ int get_num_permutations(const mesh::CellType cell_type)
   case (mesh::CellType::point):
     return 0;
   case (mesh::CellType::interval):
-    return 1;
+    return 0;
   case (mesh::CellType::triangle):
-    return 5;
+    return 3;
   case (mesh::CellType::tetrahedron):
-    return 18;
+    return 14;
   case (mesh::CellType::quadrilateral):
-    return 6;
+    return 4;
   case (mesh::CellType::hexahedron):
-    return 28;
+    return 24;
   default:
     LOG(WARNING) << "Dof permutations are not defined for this cell type. High "
                     "order elements may be incorrect.";
@@ -703,6 +703,7 @@ fem::create_functionspace(ufc_function_space* (*fptr)(const char*),
           mesh, std::make_shared<fem::FiniteElement>(*ufc_element),
           std::make_shared<fem::DofMap>(fem::create_dofmap(
               mesh->mpi_comm(), *ufc_map, mesh->topology())));
+  std::cout << "Post create" << std::endl;
   std::free(ufc_element);
   std::free(ufc_map);
   std::free(space);
@@ -714,14 +715,14 @@ fem::pack_coefficients(const fem::Form& form)
 {
   // Get form coefficient offsets amd dofmaps
   const fem::FormCoefficients& coefficients = form.coefficients();
-  const std::vector<int> offsets = coefficients.offsets();
+  const std::vector<int>& offsets = coefficients.offsets();
   std::vector<const fem::DofMap*> dofmaps(coefficients.size());
   for (int i = 0; i < coefficients.size(); ++i)
     dofmaps[i] = coefficients.get(i)->function_space()->dofmap().get();
 
   // Get mesh
   assert(form.mesh());
-  const mesh::Mesh mesh = *form.mesh();
+  const mesh::Mesh& mesh = *form.mesh();
   const int tdim = mesh.topology().dim();
 
   // Unwrap PETSc vectors
@@ -735,18 +736,23 @@ fem::pack_coefficients(const fem::Form& form)
     VecGetArrayRead(x_local[i], &v[i]);
   }
 
+  const int num_cells = mesh.topology().index_map(tdim)->size_local()
+                        + mesh.topology().index_map(tdim)->num_ghosts();
+
   // Copy data into coefficient array
   Eigen::Array<PetscScalar, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor> c(
-      mesh.num_entities(tdim), offsets.back());
-  for (int cell = 0; cell < mesh.num_entities(tdim); ++cell)
+      num_cells, offsets.back());
+  if (coefficients.size() > 0)
   {
-    auto c_cell = c.row(cell);
-    for (std::size_t coeff = 0; coeff < dofmaps.size(); ++coeff)
+    for (int cell = 0; cell < num_cells; ++cell)
     {
-      auto dofs = dofmaps[coeff]->cell_dofs(cell);
-      const PetscScalar* _v = v[coeff];
-      for (Eigen::Index k = 0; k < dofs.size(); ++k)
-        c_cell(k + offsets[coeff]) = _v[dofs[k]];
+      for (std::size_t coeff = 0; coeff < dofmaps.size(); ++coeff)
+      {
+        auto dofs = dofmaps[coeff]->cell_dofs(cell);
+        const PetscScalar* _v = v[coeff];
+        for (Eigen::Index k = 0; k < dofs.size(); ++k)
+          c(cell, k + offsets[coeff]) = _v[dofs[k]];
+      }
     }
   }
 
@@ -773,8 +779,8 @@ fem::pack_constants(const fem::Form& form)
     constant_values.insert(constant_values.end(), array.data(),
                            array.data() + array.size());
   }
-  Eigen::Map<const Eigen::Array<PetscScalar, Eigen::Dynamic, 1>> constant_array(
+
+  return Eigen::Map<const Eigen::Array<PetscScalar, Eigen::Dynamic, 1>>(
       constant_values.data(), constant_values.size(), 1);
-  return constant_array;
 }
 //-----------------------------------------------------------------------------

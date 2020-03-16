@@ -105,7 +105,7 @@ def test_mesh_function_assign_2D_cells():
     h = MeshValueCollection("int", mesh, 2)
     global_indices = mesh.topology.index_map(2).global_indices(True)
 
-    ncells_global = mesh.num_entities_global(2)
+    ncells_global = mesh.topology.index_map(2).size_global
     for c in range(mesh.num_cells()):
         if global_indices[c] in [5, 8, 10]:
             continue

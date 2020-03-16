@@ -14,6 +14,7 @@
 #include <dolfinx/function/Constant.h>
 #include <dolfinx/function/Function.h>
 #include <dolfinx/function/FunctionSpace.h>
+#include <dolfinx/graph/AdjacencyList.h>
 #include <dolfinx/mesh/Geometry.h>
 #include <dolfinx/mesh/Mesh.h>
 #include <dolfinx/mesh/Topology.h>
@@ -221,7 +222,6 @@ void _lift_bc_exterior_facets(
 
   const Eigen::Array<std::uint8_t, Eigen::Dynamic, Eigen::Dynamic>& perms
       = mesh.topology().get_facet_permutations();
-
   const Eigen::Array<bool, Eigen::Dynamic, Eigen::Dynamic>&
       cell_edge_reflections
       = mesh.topology().get_edge_reflections();
@@ -316,8 +316,7 @@ void fem::impl::assemble_vector(
 
   // Get dofmap data
   const fem::DofMap& dofmap = *L.function_space(0)->dofmap();
-  const Eigen::Array<PetscInt, Eigen::Dynamic, 1>& dof_array
-      = dofmap.dof_array();
+  const graph::AdjacencyList<PetscInt>& dofs = dofmap.list();
 
   assert(dofmap.element_dof_layout);
   const int num_dofs_per_cell = dofmap.element_dof_layout->num_dofs();
@@ -340,8 +339,8 @@ void fem::impl::assemble_vector(
     auto& fn = integrals.get_tabulate_tensor(FormIntegrals::Type::cell, i);
     const std::vector<std::int32_t>& active_cells
         = integrals.integral_domains(type::cell, i);
-    fem::impl::assemble_cells(b, mesh, active_cells, dof_array,
-                              num_dofs_per_cell, fn, coeffs, constant_values);
+    fem::impl::assemble_cells(b, mesh, active_cells, dofs, num_dofs_per_cell,
+                              fn, coeffs, constant_values);
   }
 
   for (int i = 0; i < integrals.num_integrals(type::exterior_facet); ++i)
@@ -369,8 +368,7 @@ void fem::impl::assemble_vector(
 void fem::impl::assemble_cells(
     Eigen::Ref<Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1>> b,
     const mesh::Mesh& mesh, const std::vector<std::int32_t>& active_cells,
-    const Eigen::Ref<const Eigen::Array<PetscInt, Eigen::Dynamic, 1>>& dofmap,
-    int num_dofs_per_cell,
+    const graph::AdjacencyList<PetscInt>& dofmap, int num_dofs_per_cell,
     const std::function<void(PetscScalar*, const PetscScalar*,
                              const PetscScalar*, const double*, const int*,
                              const std::uint8_t*, const bool*, const bool*,
@@ -424,8 +422,9 @@ void fem::impl::assemble_cells(
            cell_face_rotations.col(c).data());
 
     // Scatter cell vector to 'global' vector array
+    auto dofs = dofmap.links(c);
     for (Eigen::Index i = 0; i < num_dofs_per_cell; ++i)
-      b[dofmap[c * num_dofs_per_cell + i]] += be[i];
+      b[dofs[i]] += be[i];
   }
 }
 //-----------------------------------------------------------------------------
@@ -584,7 +583,7 @@ void fem::impl::assemble_interior_facets(
     const std::array<std::uint8_t, 2> perm
         = {perms(local_facet[0], cells[0]), perms(local_facet[1], cells[1])};
 
-    // Get cell vertex coordinates
+    // Get cell geometry
     auto x_dofs0 = x_dofmap.links(cells[0]);
     auto x_dofs1 = x_dofmap.links(cells[1]);
     for (int i = 0; i < num_dofs_g; ++i)
@@ -596,16 +595,6 @@ void fem::impl::assemble_interior_facets(
     // Get dofmaps for cell
     auto dmap0 = dofmap.cell_dofs(cells[0]);
     auto dmap1 = dofmap.cell_dofs(cells[1]);
-
-    // Get cell geometry
-    Eigen::Map<const Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic,
-                                  Eigen::RowMajor>>
-        coordinate_dofs0(coordinate_dofs.data(), num_dofs_g, gdim);
-
-    Eigen::Map<const Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic,
-                                  Eigen::RowMajor>>
-        coordinate_dofs1(coordinate_dofs.data() + num_dofs_g * gdim, num_dofs_g,
-                         gdim);
 
     // Layout for the restricted coefficients is flattened
     // w[coefficient][restriction][dof]
