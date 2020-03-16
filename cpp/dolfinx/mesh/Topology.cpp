@@ -557,21 +557,64 @@ mesh::create_topology(MPI_Comm comm,
   auto [cells_local, local_to_global_vertices]
       = graph::Partitioning::create_local_adjacency_list(my_cells);
 
+  // Cell IndexMap
+  const int num_local_cells = cells_local.num_nodes() - ghost_indices.size();
+  auto index_map_c = std::make_shared<common::IndexMap>(comm, num_local_cells,
+                                                        ghost_indices, 1);
+
+  if (ghost_indices.size() > 0)
+  {
+    std::cout << "Ghosted mesh...\n";
+
+    // Find out which vertices are shared, and assign ownership
+    Eigen::Array<std::int32_t, Eigen::Dynamic, 1> ghost_cell_owners
+        = index_map_c->ghost_owners();
+
+    // Set all vertices to true
+    std::vector<bool> vertex_owned(local_to_global_vertices.size(), true);
+    // Any vertices which are in ghost cells set to "false" since we need to
+    // determine ownership
+    for (std::size_t i = 0; i < ghost_indices.size(); ++i)
+    {
+      auto v = cells_local.links(num_local_cells + i);
+      for (int j = 0; j < v.size(); ++j)
+        vertex_owned[v[j]] = false;
+    }
+
+    const int mpi_size = MPI::size(comm);
+    const std::int64_t global_vector_size
+        = dolfinx::MPI::max(comm,
+                            *std::max_element(local_to_global_vertices.begin(),
+                                              local_to_global_vertices.end()))
+          + 1;
+
+    std::vector<std::vector<std::int64_t>> send_vertices(mpi_size);
+    for (std::size_t i = 0; i < vertex_owned.size(); ++i)
+      if (vertex_owned[i] == false)
+      {
+        std::int64_t global_i = local_to_global_vertices[i];
+        const int index_owner
+            = dolfinx::MPI::index_owner(mpi_size, global_i, global_vector_size);
+        send_vertices[index_owner].push_back(global_i);
+      }
+
+    std::vector<std::vector<std::int64_t>> recv_vertices(mpi_size);
+    MPI::all_to_all(comm, send_vertices, recv_vertices);
+  }
+
   // Create (i) local topology object and (ii) IndexMap for cells, and
   // set cell-vertex topology
   Topology topology_local(layout.cell_type());
   const int tdim = topology_local.dim();
+  topology_local.set_index_map(tdim, index_map_c);
 
-  auto map = std::make_shared<common::IndexMap>(
-      comm, cells_local.num_nodes() - ghost_indices.size(), ghost_indices, 1);
-  topology_local.set_index_map(tdim, map);
   auto _cells_local
       = std::make_shared<graph::AdjacencyList<std::int32_t>>(cells_local);
   topology_local.set_connectivity(_cells_local, tdim, 0);
 
   const int n = local_to_global_vertices.size();
-  map = std::make_shared<common::IndexMap>(comm, n, std::vector<std::int64_t>(),
-                                           1);
+  auto map = std::make_shared<common::IndexMap>(comm, n,
+                                                std::vector<std::int64_t>(), 1);
   topology_local.set_index_map(0, map);
   auto _vertices_local
       = std::make_shared<graph::AdjacencyList<std::int32_t>>(n);
@@ -617,8 +660,8 @@ mesh::create_topology(MPI_Comm comm,
   topology.set_connectivity(c0, 0, 0);
 
   // Set cell IndexMap and cell-vertex connectivity
-  auto index_map_c = std::make_shared<common::IndexMap>(
-      comm, cells_d.num_nodes(), std::vector<std::int64_t>(), 1);
+  //  auto index_map_c = std::make_shared<common::IndexMap>(
+  //      comm, cells_d.num_nodes(), std::vector<std::int64_t>(), 1);
   topology.set_index_map(tdim, index_map_c);
   auto _cells_d = std::make_shared<graph::AdjacencyList<std::int32_t>>(cells_d);
   topology.set_connectivity(_cells_d, tdim, 0);
