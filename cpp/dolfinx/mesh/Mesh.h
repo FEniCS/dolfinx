@@ -92,7 +92,7 @@ public:
 
   /// Move constructor
   /// @param mesh Mesh to be moved.
-  Mesh(Mesh&& mesh);
+  Mesh(Mesh&& mesh) = default;
 
   /// Destructor
   ~Mesh();
