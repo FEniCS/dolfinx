@@ -272,7 +272,7 @@ void PermutationInfo::create_entity_permutations(mesh::Topology& topology)
     const int faces_per_cell = cell_num_entities(cell_type, 2);
     std::vector<std::bitset<BITSETSIZE>> face_data
         = compute_face_permutations(topology);
-    for (int i = 0; i < faces_per_cell; ++i)
+    for (int i = 0; i < num_cells; ++i)
       _cell_data[i] += face_data[i].to_ulong();
     // Currently, 3 bits are used for each face. If faces with more than 4 sides
     // are implemented, this will need to be increased.
@@ -289,10 +289,10 @@ void PermutationInfo::create_entity_permutations(mesh::Topology& topology)
 
   if (tdim > 1)
   {
-    const int edges_per_cell = cell_num_entities(cell_type, 2);
+    const int edges_per_cell = cell_num_entities(cell_type, 1);
     std::vector<std::bitset<BITSETSIZE>> edge_data
         = compute_edge_reflections(topology);
-    for (int i = 0; i < edges_per_cell; ++i)
+    for (int i = 0; i < num_cells; ++i)
       _cell_data[i] += edge_data[i].to_ulong() * (1 << used_bits);
     used_bits += edges_per_cell;
     if (tdim == 2)
@@ -300,6 +300,7 @@ void PermutationInfo::create_entity_permutations(mesh::Topology& topology)
         for (int i = 0; i < facets_per_cell; ++i)
           _facet_permutations(i, c) = edge_data[c][i];
   }
+
   assert(used_bits < BITSETSIZE);
 }
 //-----------------------------------------------------------------------------
