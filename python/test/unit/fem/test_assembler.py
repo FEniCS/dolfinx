@@ -17,7 +17,7 @@ import ufl
 from dolfinx import function
 from dolfinx.specialfunctions import SpatialCoordinate
 from ufl import derivative, ds, dx, inner
-from dolfinx_utils.test.skips import skip_in_parallel
+from dolfinx_utils.test.skips import skip_in_parallel, skip_if_complex
 
 
 def nest_matrix_norm(A):
