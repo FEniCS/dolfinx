@@ -567,8 +567,8 @@ mesh::create_topology(MPI_Comm comm,
     std::cout << "Ghosted mesh...\n";
 
     // Find out which vertices are shared, and assign ownership
-    Eigen::Array<std::int32_t, Eigen::Dynamic, 1> ghost_cell_owners
-        = index_map_c->ghost_owners();
+    //    Eigen::Array<std::int32_t, Eigen::Dynamic, 1> ghost_cell_owners
+    //  = index_map_c->ghost_owners();
 
     // Set all vertices to true
     std::vector<bool> vertex_owned(local_to_global_vertices.size(), true);
@@ -614,7 +614,48 @@ mesh::create_topology(MPI_Comm comm,
       }
     }
     MPI::all_to_all(comm, send_owner, recv_owner);
+
     // Now have map from send_vertices to recv_owner
+    vertex_to_owner.clear();
+    for (int p = 0; p < mpi_size; ++p)
+    {
+      const std::vector<int>& r_owner = recv_owner[p];
+      const std::vector<std::int64_t>& s_vert = send_vertices[p];
+      assert(s_vert.size() == r_owner.size());
+      for (std::size_t j = 0; j < s_vert.size(); ++j)
+        vertex_to_owner.insert({s_vert[j], r_owner[j]});
+    }
+
+    int nlocal = 0;
+    for (std::int64_t idx : local_to_global_vertices)
+    {
+      auto it = vertex_to_owner.find(idx);
+      int owner;
+      if (it == vertex_to_owner.end())
+      {
+        ++nlocal;
+        owner = mpi_rank;
+      }
+      else
+        owner = it->second;
+    }
+
+    std::int64_t offset = MPI::global_offset(mpi_size, nlocal, true);
+
+    std::vector<std::int64_t> new_global_index(local_to_global_vertices.size(),
+                                               -1);
+    std::int64_t gi = offset;
+    for (std::size_t i = 0; i < local_to_global_vertices.size(); ++i)
+    {
+      const std::int64_t idx = local_to_global_vertices[i];
+      auto it = vertex_to_owner.find(idx);
+      if (it == vertex_to_owner.end())
+      {
+        new_global_index[i] = gi;
+        ++gi;
+      }
+    }
+    // Communicate new global index to neighbours
   }
 
   // Create (i) local topology object and (ii) IndexMap for cells, and
