@@ -1,4 +1,4 @@
-// Copyright (C) 2012-2016 Chris N. Richardson and Garth N. Wells
+// Copyright (C) 2012-2020 Chris N. Richardson, Garth N. Wells and Michal Habera
 //
 // This file is part of DOLFINX (https://www.fenicsproject.org)
 //
@@ -10,11 +10,12 @@
 #include "pugixml.hpp"
 #include "xdmf_function.h"
 #include "xdmf_mesh.h"
-#include "xdmf_mf.h"
 #include "xdmf_utils.h"
 #include <boost/filesystem.hpp>
 #include <dolfinx/common/utils.h>
 #include <dolfinx/fem/ElementDofLayout.h>
+#include <dolfinx/graph/AdjacencyList.h>
+#include <dolfinx/mesh/Geometry.h>
 #include <dolfinx/mesh/Mesh.h>
 #include <dolfinx/mesh/Topology.h>
 #include <dolfinx/mesh/TopologyComputation.h>
@@ -45,17 +46,102 @@ std::string get_hdf5_filename(std::string filename)
 
 //-----------------------------------------------------------------------------
 XDMFFile::XDMFFile(MPI_Comm comm, const std::string filename,
-                         Encoding encoding)
-    : _mpi_comm(comm), _filename(filename), _xml_doc(new pugi::xml_document),
-      _encoding(encoding)
+                   const std::string file_mode, const Encoding encoding)
+    : _mpi_comm(comm), _filename(filename), _file_mode(file_mode),
+      _xml_doc(new pugi::xml_document), _encoding(encoding)
 {
-  // Open files here?
-
-  // Check that encoding
+  // Check encoding
   if (_encoding == Encoding::ASCII and MPI::size(_mpi_comm.comm()) != 1)
   {
     throw std::runtime_error(
         "Cannot write ASCII XDMF in parallel (use HDF5 encoding).");
+  }
+
+  // Handle HDF5 and XDMF files with the file mode
+  // At the end of this we will have _hdf5_file and _xml_doc
+  // both pointing to a valid and opened file handles
+
+  if (_encoding == Encoding::HDF5)
+  {
+    // See https://www.hdfgroup.org/hdf5-quest.html#gzero on zero for
+    // _hdf5_file_id(0)
+
+    const std::string hdf5_filename = get_hdf5_filename(_filename);
+
+    // Open HDF5 file
+    const bool mpi_io = MPI::size(_mpi_comm.comm()) > 1 ? true : false;
+#ifndef H5_HAVE_PARALLEL
+    if (mpi_io)
+    {
+      throw std::runtime_error(
+          "Cannot open file. HDF5 has not been compiled with support for MPI");
+    }
+#endif
+    _h5_id
+        = HDF5Interface::open_file(_mpi_comm.comm(), hdf5_filename, file_mode, mpi_io);
+    assert(_h5_id > 0);
+    LOG(INFO) << "Opened HDF5 file with id \"" << _h5_id << "\"";
+  }
+  else
+    _h5_id = -1;
+
+  if (_file_mode == "r")
+  {
+    // Load XML doc from file
+    pugi::xml_parse_result result = _xml_doc->load_file(_filename.c_str());
+    assert(result);
+
+    if (_xml_doc->child("Xdmf").empty())
+      throw std::runtime_error("Empty <Xdmf> root node.");
+
+    if (_xml_doc->child("Xdmf").child("Domain").empty())
+      throw std::runtime_error("Empty <Domain> node.");
+  }
+  else if (_file_mode == "w")
+  {
+    _xml_doc->reset();
+
+    // Add XDMF node and version attribute
+    _xml_doc->append_child(pugi::node_doctype)
+        .set_value("Xdmf SYSTEM \"Xdmf.dtd\" []");
+    pugi::xml_node xdmf_node = _xml_doc->append_child("Xdmf");
+    assert(xdmf_node);
+    xdmf_node.append_attribute("Version") = "3.0";
+    xdmf_node.append_attribute("xmlns:xi") = "http://www.w3.org/2001/XInclude";
+
+    pugi::xml_node domain_node = xdmf_node.append_child("Domain");
+    assert(domain_node);
+  }
+  else if (_file_mode == "a")
+  {
+    if (boost::filesystem::exists(_filename))
+    {
+      // Load XML doc from file
+      pugi::xml_parse_result result = _xml_doc->load_file(_filename.c_str());
+      assert(result);
+
+      if (_xml_doc->child("Xdmf").empty())
+        throw std::runtime_error("Empty <Xdmf> root node.");
+
+      if (_xml_doc->child("Xdmf").child("Domain").empty())
+        throw std::runtime_error("Empty <Domain> node.");
+    }
+    else
+    {
+      _xml_doc->reset();
+
+      // Add XDMF node and version attribute
+      _xml_doc->append_child(pugi::node_doctype)
+          .set_value("Xdmf SYSTEM \"Xdmf.dtd\" []");
+      pugi::xml_node xdmf_node = _xml_doc->append_child("Xdmf");
+      assert(xdmf_node);
+      xdmf_node.append_attribute("Version") = "3.0";
+      xdmf_node.append_attribute("xmlns:xi")
+          = "http://www.w3.org/2001/XInclude";
+
+      pugi::xml_node domain_node = xdmf_node.append_child("Domain");
+      assert(domain_node);
+    }
   }
 }
 //-----------------------------------------------------------------------------
@@ -63,54 +149,34 @@ XDMFFile::~XDMFFile() { close(); }
 //-----------------------------------------------------------------------------
 void XDMFFile::close()
 {
-  // Close the HDF5 file
-  _hdf5_file.reset();
+  if (_h5_id > 0)
+    HDF5Interface::close_file(_h5_id);
+  _h5_id = -1;
 }
 //-----------------------------------------------------------------------------
-void XDMFFile::write(const mesh::Mesh& mesh)
+void XDMFFile::write_mesh(const mesh::Mesh& mesh, const std::string name,
+                          const std::string xpath)
 {
-  // Open a HDF5 file if using HDF5 encoding (truncate)
-  hid_t h5_id = -1;
-  std::unique_ptr<HDF5File> h5_file;
-  if (_encoding == Encoding::HDF5)
-  {
-    // Open file
-    h5_file = std::make_unique<HDF5File>(mesh.mpi_comm(),
-                                         get_hdf5_filename(_filename), "w");
-    assert(h5_file);
-
-    // Get file handle
-    h5_id = h5_file->h5_id();
-  }
-
-  // Reset pugi doc
-  _xml_doc->reset();
-
-  // Add XDMF node and version attribute
-  _xml_doc->append_child(pugi::node_doctype)
-      .set_value("Xdmf SYSTEM \"Xdmf.dtd\" []");
-  pugi::xml_node xdmf_node = _xml_doc->append_child("Xdmf");
-  assert(xdmf_node);
-  xdmf_node.append_attribute("Version") = "3.0";
-  xdmf_node.append_attribute("xmlns:xi") = "http://www.w3.org/2001/XInclude";
-
-  // Add domain node and add name attribute
-  pugi::xml_node domain_node = xdmf_node.append_child("Domain");
-  assert(domain_node);
+  pugi::xml_node node = _xml_doc->select_node(xpath.c_str()).node();
 
   // Add the mesh Grid to the domain
-  xdmf_mesh::add_mesh(_mpi_comm.comm(), domain_node, h5_id, mesh, "/Mesh");
+  xdmf_mesh::add_mesh(_mpi_comm.comm(), node, _h5_id, mesh, name);
 
   // Save XML file (on process 0 only)
   if (MPI::rank(_mpi_comm.comm()) == 0)
     _xml_doc->save_file(_filename.c_str(), "  ");
 }
 //-----------------------------------------------------------------------------
-mesh::Mesh XDMFFile::read_mesh() const
+mesh::Mesh XDMFFile::read_mesh(const std::string name,
+                               const std::string xpath) const
 {
+  pugi::xml_node node = _xml_doc->select_node(xpath.c_str()).node();
+  pugi::xml_node grid_node
+      = node.select_node(("Grid[@Name='" + name + "']").c_str()).node();
+
   // Read mesh data
   auto [cell_type, x, cells]
-      = xdmf_mesh::read_mesh_data(_mpi_comm.comm(), _filename);
+      = xdmf_mesh::read_mesh_data(_mpi_comm.comm(), _h5_id, grid_node);
 
   // TODO: create outside
   // Create a layout
@@ -147,141 +213,11 @@ std::tuple<
     mesh::CellType,
     Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>,
     Eigen::Array<std::int64_t, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>>
-XDMFFile::read_mesh_data() const
+XDMFFile::read_mesh_data(const std::string name, const std::string xpath) const
 {
-  return xdmf_mesh::read_mesh_data(_mpi_comm.comm(), _filename);
+  pugi::xml_node node = _xml_doc->select_node(xpath.c_str()).node();
+  pugi::xml_node grid_node
+      = node.select_node(("Grid[@Name='" + name + "']").c_str()).node();
+
+  return xdmf_mesh::read_mesh_data(_mpi_comm.comm(), _h5_id, grid_node);
 }
-//-----------------------------------------------------------------------------
-void XDMFFile::write(const mesh::MeshFunction<int>& meshfunction)
-{
-  // Check if _xml_doc already has data. If not, create an outer structure
-  // If it already has data, then we may append to it.
-
-  pugi::xml_node domain_node;
-  std::string hdf_filemode = "a";
-  if (_xml_doc->child("Xdmf").empty())
-  {
-    // Reset pugi
-    _xml_doc->reset();
-
-    // Add XDMF node and version attribute
-    _xml_doc->append_child(pugi::node_doctype)
-        .set_value("Xdmf SYSTEM \"Xdmf.dtd\" []");
-    pugi::xml_node xdmf_node = _xml_doc->append_child("Xdmf");
-    assert(xdmf_node);
-    xdmf_node.append_attribute("Version") = "3.0";
-    xdmf_node.append_attribute("xmlns:xi") = "http://www.w3.org/2001/XInclude";
-
-    // Add domain node and add name attribute
-    domain_node = xdmf_node.append_child("Domain");
-    hdf_filemode = "w";
-  }
-  else
-    domain_node = _xml_doc->child("Xdmf").child("Domain");
-
-  // Open a HDF5 file if using HDF5 encoding
-  hid_t h5_id = -1;
-  std::unique_ptr<HDF5File> h5_file;
-  if (_encoding == Encoding::HDF5)
-  {
-    // Open file
-    h5_file = std::make_unique<HDF5File>(
-        _mpi_comm.comm(), xdmf_utils::get_hdf5_filename(_filename),
-        hdf_filemode);
-    assert(h5_file);
-
-    // Get file handle
-    h5_id = h5_file->h5_id();
-  }
-
-  xdmf_mf::write_mesh_function(_mpi_comm.comm(), meshfunction, domain_node,
-                               h5_id, _counter);
-
-  // Save XML file (on process 0 only)
-  if (MPI::rank(_mpi_comm.comm()) == 0)
-    _xml_doc->save_file(_filename.c_str(), "  ");
-
-  // Increment the counter, so we can save multiple mesh::MeshFunctions in one
-  // file
-  ++_counter;
-}
-//-----------------------------------------------------------------------------
-mesh::MeshFunction<int>
-XDMFFile::read_mf_int(std::shared_ptr<const mesh::Mesh> mesh,
-                         std::string name) const
-{
-  // Load XML doc from file
-  pugi::xml_document xml_doc;
-  pugi::xml_parse_result result = xml_doc.load_file(_filename.c_str());
-  assert(result);
-
-  // Get XDMF node
-  pugi::xml_node xdmf_node = xml_doc.child("Xdmf");
-  assert(xdmf_node);
-
-  // Get domain node
-  pugi::xml_node domain_node = xdmf_node.child("Domain");
-  assert(domain_node);
-
-  return xdmf_mf::read_mesh_function<int>(mesh, name, _filename, domain_node);
-}
-//-----------------------------------------------------------------------------
-void XDMFFile::write(const function::Function& u, double t)
-{
-  // Clear the pugi doc the first time
-  if (_counter == 0)
-  {
-    _xml_doc->reset();
-
-    // Create XDMF header
-    _xml_doc->append_child(pugi::node_doctype)
-        .set_value("Xdmf SYSTEM \"Xdmf.dtd\" []");
-    pugi::xml_node xdmf_node = _xml_doc->append_child("Xdmf");
-    assert(xdmf_node);
-    xdmf_node.append_attribute("Version") = "3.0";
-    xdmf_node.append_attribute("xmlns:xi") = "http://www.w3.org/2001/XInclude";
-    pugi::xml_node domain_node = xdmf_node.append_child("Domain");
-    assert(domain_node);
-  }
-
-  hid_t h5_id = -1;
-  // Open the HDF5 file for first time, if using HDF5 encoding
-  if (_encoding == Encoding::HDF5)
-  {
-    // Truncate the file the first time
-    if (_counter == 0)
-      _hdf5_file = std::make_unique<HDF5File>(
-          _mpi_comm.comm(), xdmf_utils::get_hdf5_filename(_filename), "w");
-    // else if (flush_output)
-    // {
-    //   // Append to existing HDF5 file
-    //   assert(!_hdf5_file);
-    //   _hdf5_file = std::make_unique<HDF5File>(
-    //       _mpi_comm.comm(), xdmf_utils::get_hdf5_filename(_filename), "a");
-    // }
-    else if (_counter != 0 and !_hdf5_file)
-    {
-      // The XDMFFile was previously closed, and now must be reopened
-      _hdf5_file = std::make_unique<HDF5File>(
-          _mpi_comm.comm(), xdmf_utils::get_hdf5_filename(_filename), "a");
-    }
-    assert(_hdf5_file);
-    h5_id = _hdf5_file->h5_id();
-  }
-
-  xdmf_function::write(u, t, _counter, *_xml_doc, h5_id);
-
-  // Save XML file (on process 0 only)
-  if (MPI::rank(_mpi_comm.comm()) == 0)
-    _xml_doc->save_file(_filename.c_str(), "  ");
-
-  // Close the HDF5 file if in "flush" mode
-  // if (_encoding == Encoding::HDF5 and flush_output)
-  // {
-  //   assert(_hdf5_file);
-  //   _hdf5_file.reset();
-  // }
-
-  ++_counter;
-}
-//-----------------------------------------------------------------------------

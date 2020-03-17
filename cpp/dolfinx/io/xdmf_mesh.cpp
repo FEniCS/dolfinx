@@ -17,10 +17,14 @@ using namespace dolfinx::io;
 
 //-----------------------------------------------------------------------------
 void xdmf_mesh::add_topology_data(MPI_Comm comm, pugi::xml_node& xml_node,
-                                  hid_t& h5_id, const std::string path_prefix,
+                                  const hid_t h5_id,
+                                  const std::string path_prefix,
                                   const mesh::Topology& topology,
-                                  const mesh::Geometry& geometry, int dim)
+                                  const mesh::Geometry& geometry, const int dim)
 {
+
+  LOG(INFO) << "Adding topology data to node \"" << xml_node.path('/') << "\"";
+
   const int tdim = topology.dim();
 
   // Get number of cells (global) and vertices per cell from mesh
@@ -121,8 +125,7 @@ void xdmf_mesh::add_topology_data(MPI_Comm comm, pugi::xml_node& xml_node,
   topology_node.append_attribute("NodesPerElement") = num_nodes_per_cell;
 
   // Add topology DataItem node
-  const std::string group_name = path_prefix + "/" + "mesh";
-  const std::string h5_path = group_name + "/topology";
+  const std::string h5_path = path_prefix + "/topology";
   const std::vector<std::int64_t> shape
       = {num_entities_global, num_nodes_per_cell};
   const std::string number_type = "Int";
@@ -136,9 +139,13 @@ void xdmf_mesh::add_topology_data(MPI_Comm comm, pugi::xml_node& xml_node,
 }
 //-----------------------------------------------------------------------------
 void xdmf_mesh::add_geometry_data(MPI_Comm comm, pugi::xml_node& xml_node,
-                                  hid_t h5_id, const std::string path_prefix,
+                                  const hid_t h5_id,
+                                  const std::string path_prefix,
                                   const mesh::Geometry& geometry)
 {
+
+  LOG(INFO) << "Adding geometry data to node \"" << xml_node.path('/') << "\"";
+
   auto map = geometry.index_map();
   assert(map);
 
@@ -174,8 +181,7 @@ void xdmf_mesh::add_geometry_data(MPI_Comm comm, pugi::xml_node& xml_node,
   }
 
   // Add geometry DataItem node
-  const std::string group_name = path_prefix + "/" + "mesh";
-  const std::string h5_path = group_name + "/geometry";
+  const std::string h5_path = path_prefix + "/geometry";
   const std::vector<std::int64_t> shape = {num_points, width};
 
   const std::int64_t offset
@@ -185,19 +191,20 @@ void xdmf_mesh::add_geometry_data(MPI_Comm comm, pugi::xml_node& xml_node,
                             use_mpi_io);
 }
 //----------------------------------------------------------------------------
-void xdmf_mesh::add_mesh(MPI_Comm comm, pugi::xml_node& xml_node, hid_t& h5_id,
-                         const mesh::Mesh& mesh, const std::string path_prefix)
+void xdmf_mesh::add_mesh(MPI_Comm comm, pugi::xml_node& xml_node,
+                         const hid_t h5_id, const mesh::Mesh& mesh,
+                         const std::string name)
 {
   LOG(INFO) << "Adding mesh to node \"" << xml_node.path('/') << "\"";
 
   // Add grid node and attributes
   pugi::xml_node grid_node = xml_node.append_child("Grid");
   assert(grid_node);
-  grid_node.append_attribute("Name") = "mesh";
+  grid_node.append_attribute("Name") = name.c_str();
   grid_node.append_attribute("GridType") = "Uniform";
 
   // Add topology node and attributes (including writing data)
-
+  const std::string path_prefix = "/Mesh/" + name;
   const int tdim = mesh.topology().dim();
   add_topology_data(comm, grid_node, h5_id, path_prefix, mesh.topology(),
                     mesh.geometry(), tdim);
@@ -210,36 +217,11 @@ std::tuple<
     mesh::CellType,
     Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>,
     Eigen::Array<std::int64_t, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>>
-xdmf_mesh::read_mesh_data(MPI_Comm comm, std::string filename)
+xdmf_mesh::read_mesh_data(MPI_Comm comm, const hid_t h5_id,
+                          const pugi::xml_node& node)
 {
-  // Extract parent filepath (required by HDF5 when XDMF stores relative
-  // path of the HDF5 files(s) and the XDMF is not opened from its own
-  // directory)
-  boost::filesystem::path xdmf_filename(filename);
-  const boost::filesystem::path parent_path = xdmf_filename.parent_path();
-
-  if (!boost::filesystem::exists(xdmf_filename))
-    throw std::runtime_error("Cannot open XDMF file. File does not exists.");
-
-  // Load XML doc from file
-  pugi::xml_document xml_doc;
-  pugi::xml_parse_result result = xml_doc.load_file(filename.c_str());
-  assert(result);
-
-  // Get XDMF node
-  pugi::xml_node xdmf_node = xml_doc.child("Xdmf");
-  assert(xdmf_node);
-
-  // Get domain node
-  pugi::xml_node domain_node = xdmf_node.child("Domain");
-  assert(domain_node);
-
-  // Get grid node
-  pugi::xml_node grid_node = domain_node.child("Grid");
-  assert(grid_node);
-
   // Get topology node
-  pugi::xml_node topology_node = grid_node.child("Topology");
+  pugi::xml_node topology_node = node.child("Topology");
   assert(topology_node);
 
   // Get cell type
@@ -249,7 +231,7 @@ xdmf_mesh::read_mesh_data(MPI_Comm comm, std::string filename)
   mesh::CellType cell_type = mesh::to_type(cell_type_str.first);
 
   // Get geometry node
-  pugi::xml_node geometry_node = grid_node.child("Geometry");
+  pugi::xml_node geometry_node = node.child("Geometry");
   assert(geometry_node);
 
   // Determine geometric dimension
@@ -279,7 +261,7 @@ xdmf_mesh::read_mesh_data(MPI_Comm comm, std::string filename)
 
   // Read geometry data
   const std::vector<double> geometry_data
-      = xdmf_read::get_dataset<double>(comm, geometry_data_node, parent_path);
+      = xdmf_read::get_dataset<double>(comm, geometry_data_node, h5_id);
   const std::size_t num_local_points = geometry_data.size() / gdim;
   Eigen::Map<const Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic,
                                 Eigen::RowMajor>>
@@ -295,7 +277,7 @@ xdmf_mesh::read_mesh_data(MPI_Comm comm, std::string filename)
   // Read topology data
   const std::vector<std::int64_t> topology_data
       = xdmf_read::get_dataset<std::int64_t>(comm, topology_data_node,
-                                             parent_path);
+                                             h5_id);
   const int num_local_cells = topology_data.size() / npoint_per_cell;
   Eigen::Map<const Eigen::Array<std::int64_t, Eigen::Dynamic, Eigen::Dynamic,
                                 Eigen::RowMajor>>

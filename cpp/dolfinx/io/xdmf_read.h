@@ -30,7 +30,7 @@ namespace xdmf_read
 /// Return data associated with a data set node
 template <typename T>
 std::vector<T> get_dataset(MPI_Comm comm, const pugi::xml_node& dataset_node,
-                           const boost::filesystem::path& parent_path,
+                           const hid_t h5_id,
                            std::array<std::int64_t, 2> range = {{0, 0}})
 {
   // FIXME: Need to sort out datasset dimensions - can't depend on
@@ -80,17 +80,9 @@ std::vector<T> get_dataset(MPI_Comm comm, const pugi::xml_node& dataset_node,
     // Get file and data path
     auto paths = xdmf_utils::get_hdf5_paths(dataset_node);
 
-    // Handle cases where file path is (a) absolute or (b) relative
-    boost::filesystem::path h5_filepath(paths[0]);
-    if (!h5_filepath.is_absolute())
-      h5_filepath = parent_path / h5_filepath;
-
-    // Open HDF5 for reading
-    HDF5File h5_file(comm, h5_filepath.string(), "r");
-
     // Get data shape from HDF5 file
     const std::vector<std::int64_t> shape_hdf5
-        = HDF5Interface::get_dataset_shape(h5_file.h5_id(), paths[1]);
+        = HDF5Interface::get_dataset_shape(h5_id, paths[1]);
 
     // FIXME: should we support empty data sets?
     // Check that data set is not empty
@@ -111,9 +103,8 @@ std::vector<T> get_dataset(MPI_Comm comm, const pugi::xml_node& dataset_node,
       else if (!shape_xml.empty() and shape_hdf5.size() == 1)
       {
         // Size of dims > 0
-        std::int64_t d = 1;
-        for (std::size_t i = 1; i < shape_xml.size(); ++i)
-          d *= shape_xml[i];
+        std::int64_t d = std::accumulate(shape_xml.begin(), shape_xml.end(), 1,
+                                         std::multiplies<std::int64_t>());
 
         // Check for data size consistency
         if (d * shape_xml[0] != shape_hdf5[0])
@@ -137,7 +128,7 @@ std::vector<T> get_dataset(MPI_Comm comm, const pugi::xml_node& dataset_node,
 
     // Retrieve data
     data_vector
-        = HDF5Interface::read_dataset<T>(h5_file.h5_id(), paths[1], range);
+        = HDF5Interface::read_dataset<T>(h5_id, paths[1], range);
   }
   else
     throw std::runtime_error("Storage format \"" + format + "\" is unknown");

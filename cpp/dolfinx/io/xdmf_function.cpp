@@ -73,8 +73,9 @@ int get_padded_width(const function::Function& u)
 } // namespace
 
 //-----------------------------------------------------------------------------
-void xdmf_function::write(const function::Function& u, double t, int counter,
-                          pugi::xml_document& xml_doc, hid_t h5_id)
+void xdmf_function::write(const function::Function& u, const double t,
+                          const int counter, pugi::xml_document& xml_doc,
+                          const hid_t h5_id)
 {
   assert(u.function_space());
   auto mesh = u.function_space()->mesh();
