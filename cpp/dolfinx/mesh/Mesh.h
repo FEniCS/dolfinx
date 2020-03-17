@@ -27,6 +27,12 @@ namespace function
 class Function;
 }
 
+namespace graph
+{
+template <typename T>
+class AdjacencyList;
+}
+
 namespace mesh
 {
 class Geometry;
