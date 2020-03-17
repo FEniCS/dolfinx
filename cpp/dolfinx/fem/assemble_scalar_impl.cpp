@@ -155,6 +155,8 @@ PetscScalar fem::impl::assemble_exterior_facets(
 
   const Eigen::Array<std::uint8_t, Eigen::Dynamic, Eigen::Dynamic>& perms
       = mesh.topology().get_facet_permutations();
+  const std::vector<std::uint32_t>& cell_info
+      = mesh.topology().get_permutation_info();
 
   auto f_to_c = mesh.topology().connectivity(tdim - 1, tdim);
   assert(f_to_c);
@@ -182,8 +184,7 @@ PetscScalar fem::impl::assemble_exterior_facets(
     auto coeff_cell = coeffs.row(cell);
     const std::uint8_t perm = perms(local_facet, cell);
     fn(&value, coeff_cell.data(), constant_values.data(),
-       coordinate_dofs.data(), &local_facet, &perm,
-       mesh.topology().get_permutation_info()[cell]);
+       coordinate_dofs.data(), &local_facet, &perm, cell_info[cell]);
   }
 
   return value;

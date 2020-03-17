@@ -62,8 +62,9 @@ std::vector<std::bitset<BITSETSIZE>> compute_face_permutations_simplex(
       // the lowest numbered vertex
       const int post = rots == 3 - 1 ? e_vertices[0] : e_vertices[rots + 1];
 
-      face_data[c][3 * i] = rots;
-      face_data[c][3 * i + 2] = (post > pre);
+      face_data[c][3 * i] = (post > pre);
+      face_data[c][3 * i + 1] = rots % 2;
+      face_data[c][3 * i + 2] = rots / 2;
     }
   }
   return face_data;
@@ -142,8 +143,9 @@ compute_face_permutations_tp(const graph::AdjacencyList<std::int32_t>& c_to_v,
         break;
       }
 
-      face_data[c][3 * i] = rots;
-      face_data[c][3 * i + 2] = (e_vertices[post] > e_vertices[pre]);
+      face_data[c][3 * i] = (e_vertices[post] > e_vertices[pre]);
+      face_data[c][3 * i + 1] = rots % 2;
+      face_data[c][3 * i + 2] = rots / 2;
     }
   }
   return face_data;
@@ -262,7 +264,7 @@ void PermutationInfo::create_entity_permutations(mesh::Topology& topology)
   const int facets_per_cell = cell_num_entities(cell_type, tdim - 1);
 
   _cell_data.resize(num_cells, 0);
-  _facet_permutations.resize(num_cells, facets_per_cell);
+  _facet_permutations.resize(facets_per_cell, num_cells);
 
   int32_t used_bits = 0;
   if (tdim > 2)
@@ -279,7 +281,7 @@ void PermutationInfo::create_entity_permutations(mesh::Topology& topology)
     assert(tdim == 3);
     for (int c = 0; c < num_cells; ++c)
       for (int i = 0; i < facets_per_cell; ++i)
-        _facet_permutations(c, i) = 4 * face_data[c][3 * i + 2]
+        _facet_permutations(i, c) = 4 * face_data[c][3 * i + 2]
                                     + 2 * face_data[c][3 * i + 1]
                                     + face_data[c][3 * i];
     // TODO: Use some form of cast to make this neater
@@ -296,7 +298,7 @@ void PermutationInfo::create_entity_permutations(mesh::Topology& topology)
     if (tdim == 2)
       for (int c = 0; c < num_cells; ++c)
         for (int i = 0; i < facets_per_cell; ++i)
-          _facet_permutations(c, i) = edge_data[c][i];
+          _facet_permutations(i, c) = edge_data[c][i];
   }
   assert(used_bits < BITSETSIZE);
 }
