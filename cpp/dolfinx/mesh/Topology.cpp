@@ -173,6 +173,78 @@ compute_face_permutations_tp(const graph::AdjacencyList<std::int32_t>& c_to_v,
   return {std::move(reflections), std::move(rotations)};
 }
 //-----------------------------------------------------------------------------
+std::unordered_map<std::int64_t, std::vector<int>>
+compute_sharing(MPI_Comm comm, std::vector<std::int64_t>& unknown_indices)
+{
+  const int mpi_size = dolfinx::MPI::size(comm);
+  const std::int64_t global_space
+      = dolfinx::MPI::max(comm, *std::max_element(unknown_indices.begin(),
+                                                  unknown_indices.end()))
+        + 1;
+
+  std::vector<std::vector<std::int64_t>> send_indices(mpi_size);
+  for (std::int64_t global_i : unknown_indices)
+  {
+    const int index_owner
+        = dolfinx::MPI::index_owner(mpi_size, global_i, global_space);
+    send_indices[index_owner].push_back(global_i);
+  }
+
+  std::vector<std::vector<std::int64_t>> recv_indices(mpi_size);
+  dolfinx::MPI::all_to_all(comm, send_indices, recv_indices);
+
+  // Get index sharing - first vector entry (lowest) is owner.
+  std::unordered_map<std::int64_t, std::vector<int>> index_to_owner;
+  for (int p = 0; p < mpi_size; ++p)
+  {
+    const std::vector<std::int64_t>& recv_p = recv_indices[p];
+    for (std::size_t j = 0; j < recv_p.size(); ++j)
+      index_to_owner[recv_p[j]].push_back(p);
+  }
+
+  // Send index ownership data back to all sharing processes
+  std::vector<std::vector<int>> send_owner(mpi_size);
+  for (int p = 0; p < mpi_size; ++p)
+  {
+    const std::vector<std::int64_t>& recv_p = recv_indices[p];
+    for (std::size_t j = 0; j < recv_p.size(); ++j)
+    {
+      const auto it = index_to_owner.find(recv_p[j]);
+      assert(it != index_to_owner.end());
+      const std::vector<int>& sharing_procs = it->second;
+      send_owner[p].push_back(sharing_procs.size());
+      for (int sp : sharing_procs)
+        send_owner[p].push_back(sp);
+    }
+  }
+
+  std::vector<std::vector<int>> recv_owner(mpi_size);
+  dolfinx::MPI::all_to_all(comm, send_owner, recv_owner);
+
+  // Now fill index_to_owner with locally needed indices
+  index_to_owner.clear();
+  for (int p = 0; p < mpi_size; ++p)
+  {
+    const std::vector<std::int64_t>& send_v = send_indices[p];
+    const std::vector<int>& r_owner = recv_owner[p];
+    int c = 0;
+    int i = 0;
+    while (c < (int)r_owner.size())
+    {
+      int count = r_owner[c];
+      ++c;
+      for (int j = 0; j < count; ++j)
+      {
+        index_to_owner[send_v[i]].push_back(r_owner[c]);
+        ++c;
+      }
+      ++i;
+    }
+  }
+
+  return index_to_owner;
+}
+
 } // namespace
 
 //-----------------------------------------------------------------------------
@@ -566,96 +638,71 @@ mesh::create_topology(MPI_Comm comm,
   {
     std::cout << "Ghosted mesh...\n";
 
-    // Find out which vertices are shared, and assign ownership
-    //    Eigen::Array<std::int32_t, Eigen::Dynamic, 1> ghost_cell_owners
-    //  = index_map_c->ghost_owners();
-
-    // Set all vertices to true
-    std::vector<bool> vertex_owned(local_to_global_vertices.size(), true);
-    // Any vertices which are in ghost cells set to "false" since we need to
+    // Initial renumbering of global vertex indices
+    std::vector<std::int64_t> new_global_index(local_to_global_vertices.size(),
+                                               0);
+    // Any vertices which are in ghost cells set to -1 since we need to
     // determine ownership
     for (std::size_t i = 0; i < ghost_indices.size(); ++i)
     {
       auto v = cells_local.links(num_local_cells + i);
       for (int j = 0; j < v.size(); ++j)
-        vertex_owned[v[j]] = false;
+        new_global_index[v[j]] = -1;
     }
-
-    const int mpi_size = MPI::size(comm);
-    const std::int64_t global_vector_size
-        = dolfinx::MPI::max(comm,
-                            *std::max_element(local_to_global_vertices.begin(),
-                                              local_to_global_vertices.end()))
-          + 1;
-
-    std::vector<std::vector<std::int64_t>> send_vertices(mpi_size);
-    for (std::size_t i = 0; i < vertex_owned.size(); ++i)
-      if (vertex_owned[i] == false)
-      {
-        std::int64_t global_i = local_to_global_vertices[i];
-        const int index_owner
-            = dolfinx::MPI::index_owner(mpi_size, global_i, global_vector_size);
-        send_vertices[index_owner].push_back(global_i);
-      }
-    std::vector<std::vector<std::int64_t>> recv_vertices(mpi_size);
-    MPI::all_to_all(comm, send_vertices, recv_vertices);
-
-    // Get ownership (lowest rank wins, since it inserts first)
-    std::unordered_map<std::int64_t, int> vertex_to_owner;
-    std::vector<std::vector<int>> send_owner(mpi_size);
-    std::vector<std::vector<int>> recv_owner(mpi_size);
-    for (int p = 0; p < mpi_size; ++p)
+    // Make a list of all vertex indices whose ownership needs determining
+    std::vector<std::int64_t> unknown_indices;
+    for (std::size_t i = 0; i < new_global_index.size(); ++i)
     {
-      const std::vector<std::int64_t>& recv_p = recv_vertices[p];
-      for (std::size_t j = 0; j < recv_p.size(); ++j)
+      if (new_global_index[i] == -1)
+        unknown_indices.push_back(local_to_global_vertices[i]);
+    }
+    std::unordered_map<std::int64_t, std::vector<int>> global_to_procs
+        = compute_sharing(comm, unknown_indices);
+
+    // Number all indices which this process now owns
+    int mpi_rank = MPI::rank(comm);
+    std::int64_t c = 0;
+    for (std::size_t i = 0; i < new_global_index.size(); ++i)
+    {
+      const auto it = global_to_procs.find(local_to_global_vertices[i]);
+      if (it != global_to_procs.end() and it->second[0] == mpi_rank)
+        new_global_index[i] = 0;
+      if (new_global_index[i] == 0)
       {
-        const auto [it, insert] = vertex_to_owner.insert({recv_p[j], p});
-        send_owner[p].push_back(it->second);
+        new_global_index[i] = c;
+        ++c;
       }
     }
-    MPI::all_to_all(comm, send_owner, recv_owner);
+    std::int64_t nlocal = c;
 
-    // Now have map from send_vertices to recv_owner
-    vertex_to_owner.clear();
-    for (int p = 0; p < mpi_size; ++p)
+    // Add global offset on to all local indices
+    std::int64_t global_offset
+        = dolfinx::MPI::global_offset(comm, nlocal, true);
+    for (auto& q : new_global_index)
     {
-      const std::vector<int>& r_owner = recv_owner[p];
-      const std::vector<std::int64_t>& s_vert = send_vertices[p];
-      assert(s_vert.size() == r_owner.size());
-      for (std::size_t j = 0; j < s_vert.size(); ++j)
-        vertex_to_owner.insert({s_vert[j], r_owner[j]});
+      if (q != -1)
+        q += global_offset;
     }
 
-    int nlocal = 0;
-    for (std::int64_t idx : local_to_global_vertices)
-    {
-      auto it = vertex_to_owner.find(idx);
-      int owner;
-      if (it == vertex_to_owner.end())
-      {
-        ++nlocal;
-        owner = mpi_rank;
-      }
-      else
-        owner = it->second;
-    }
+    // Find all vertex-sharing neighbours, and process-to-neighbour map
+    std::set<int> vertex_neighbours;
+    for (const auto q : global_to_procs)
+      vertex_neighbours.insert(q.second.begin(), q.second.end());
+    vertex_neighbours.erase(mpi_rank);
+    std::vector<int> neighbours(vertex_neighbours.begin(),
+                                vertex_neighbours.end());
+    std::unordered_map<int, int> proc_to_neighbours;
+    for (std::size_t i = 0; i < neighbours.size(); ++i)
+      proc_to_neighbours.insert({neighbours[i], i});
 
-    std::int64_t offset = MPI::global_offset(mpi_size, nlocal, true);
-
-    std::vector<std::int64_t> new_global_index(local_to_global_vertices.size(),
-                                               -1);
-    std::int64_t gi = offset;
-    for (std::size_t i = 0; i < local_to_global_vertices.size(); ++i)
-    {
-      const std::int64_t idx = local_to_global_vertices[i];
-      auto it = vertex_to_owner.find(idx);
-      if (it == vertex_to_owner.end())
-      {
-        new_global_index[i] = gi;
-        ++gi;
-      }
-    }
     // Communicate new global index to neighbours
+    MPI_Comm neighbour_comm;
+    MPI_Dist_graph_create_adjacent(comm, neighbours.size(), neighbours.data(),
+                                   MPI_UNWEIGHTED, neighbours.size(),
+                                   neighbours.data(), MPI_UNWEIGHTED,
+                                   MPI_INFO_NULL, false, &neighbour_comm);
+
+    MPI_Comm_free(&neighbour_comm);
   }
 
   // Create (i) local topology object and (ii) IndexMap for cells, and
