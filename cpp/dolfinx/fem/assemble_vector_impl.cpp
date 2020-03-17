@@ -57,7 +57,7 @@ void _lift_bc_cells(
 
   const std::function<void(PetscScalar*, const PetscScalar*, const PetscScalar*,
                            const double*, const int*, const std::uint8_t*,
-                           const bool*, const bool*, const std::uint8_t*)>& fn
+                           const std::uint32_t)>& fn
       = a.integrals().get_tabulate_tensor(FormIntegrals::Type::cell, 0);
 
   // Prepare cell geometry
@@ -81,16 +81,6 @@ void _lift_bc_cells(
     throw std::runtime_error("Unset constant in Form");
   const Eigen::Array<PetscScalar, Eigen::Dynamic, 1> constant_values
       = pack_constants(a);
-
-  const Eigen::Array<bool, Eigen::Dynamic, Eigen::Dynamic>&
-      cell_edge_reflections
-      = mesh.topology().get_edge_reflections();
-  const Eigen::Array<bool, Eigen::Dynamic, Eigen::Dynamic>&
-      cell_face_reflections
-      = mesh.topology().get_face_reflections();
-  const Eigen::Array<std::uint8_t, Eigen::Dynamic, Eigen::Dynamic>&
-      cell_face_rotations
-      = mesh.topology().get_face_rotations();
 
   // Iterate over all cells
   const int tdim = mesh.topology().dim();
@@ -128,8 +118,7 @@ void _lift_bc_cells(
     Ae.setZero(dmap0.size(), dmap1.size());
     fn(Ae.data(), coeff_array.data(), constant_values.data(),
        coordinate_dofs.data(), nullptr, nullptr,
-       cell_edge_reflections.col(c).data(), cell_face_reflections.col(c).data(),
-       cell_face_rotations.col(c).data());
+       mesh.topology().get_permutation_info()[c]);
 
     // Size data structure for assembly
     be.setZero(dmap0.size());
@@ -187,7 +176,7 @@ void _lift_bc_exterior_facets(
 
   const std::function<void(PetscScalar*, const PetscScalar*, const PetscScalar*,
                            const double*, const int*, const std::uint8_t*,
-                           const bool*, const bool*, const std::uint8_t*)>& fn
+                           const std::uint32_t)>& fn
       = a.integrals().get_tabulate_tensor(FormIntegrals::Type::exterior_facet,
                                           0);
 
@@ -222,15 +211,6 @@ void _lift_bc_exterior_facets(
 
   const Eigen::Array<std::uint8_t, Eigen::Dynamic, Eigen::Dynamic>& perms
       = mesh.topology().get_facet_permutations();
-  const Eigen::Array<bool, Eigen::Dynamic, Eigen::Dynamic>&
-      cell_edge_reflections
-      = mesh.topology().get_edge_reflections();
-  const Eigen::Array<bool, Eigen::Dynamic, Eigen::Dynamic>&
-      cell_face_reflections
-      = mesh.topology().get_face_reflections();
-  const Eigen::Array<std::uint8_t, Eigen::Dynamic, Eigen::Dynamic>&
-      cell_face_rotations
-      = mesh.topology().get_face_rotations();
 
   for (int f = 0; f < map->size_local(); ++f)
   {
@@ -282,9 +262,7 @@ void _lift_bc_exterior_facets(
     Ae.setZero(dmap0.size(), dmap1.size());
     fn(Ae.data(), coeff_array.data(), constant_values.data(),
        coordinate_dofs.data(), &local_facet, &perm,
-       cell_edge_reflections.col(cell).data(),
-       cell_face_reflections.col(cell).data(),
-       cell_face_rotations.col(cell).data());
+       mesh.topology().get_permutation_info()[cell]);
 
     // Size data structure for assembly
     be.setZero(dmap0.size());
@@ -371,8 +349,7 @@ void fem::impl::assemble_cells(
     const graph::AdjacencyList<PetscInt>& dofmap, int num_dofs_per_cell,
     const std::function<void(PetscScalar*, const PetscScalar*,
                              const PetscScalar*, const double*, const int*,
-                             const std::uint8_t*, const bool*, const bool*,
-                             const std::uint8_t*)>& kernel,
+                             const std::uint8_t*, const std::uint32_t)>& kernel,
     const Eigen::Array<PetscScalar, Eigen::Dynamic, Eigen::Dynamic,
                        Eigen::RowMajor>& coeffs,
     const Eigen::Array<PetscScalar, Eigen::Dynamic, 1>& constant_values)
@@ -394,16 +371,6 @@ void fem::impl::assemble_cells(
       coordinate_dofs(num_dofs_g, gdim);
   Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1> be(num_dofs_per_cell);
 
-  const Eigen::Array<bool, Eigen::Dynamic, Eigen::Dynamic>&
-      cell_edge_reflections
-      = mesh.topology().get_edge_reflections();
-  const Eigen::Array<bool, Eigen::Dynamic, Eigen::Dynamic>&
-      cell_face_reflections
-      = mesh.topology().get_face_reflections();
-  const Eigen::Array<std::uint8_t, Eigen::Dynamic, Eigen::Dynamic>&
-      cell_face_rotations
-      = mesh.topology().get_face_rotations();
-
   // Iterate over active cells
   for (std::int32_t c : active_cells)
   {
@@ -417,9 +384,7 @@ void fem::impl::assemble_cells(
     be.setZero();
     kernel(be.data(), coeff_cell.data(), constant_values.data(),
            coordinate_dofs.data(), nullptr, nullptr,
-           cell_edge_reflections.col(c).data(),
-           cell_face_reflections.col(c).data(),
-           cell_face_rotations.col(c).data());
+           mesh.topology().get_permutation_info()[c]);
 
     // Scatter cell vector to 'global' vector array
     auto dofs = dofmap.links(c);
@@ -434,8 +399,7 @@ void fem::impl::assemble_exterior_facets(
     const fem::DofMap& dofmap,
     const std::function<void(PetscScalar*, const PetscScalar*,
                              const PetscScalar*, const double*, const int*,
-                             const std::uint8_t*, const bool*, const bool*,
-                             const std::uint8_t*)>& fn,
+                             const std::uint8_t*, const std::uint32_t)>& fn,
     const Eigen::Array<PetscScalar, Eigen::Dynamic, Eigen::Dynamic,
                        Eigen::RowMajor>& coeffs,
     const Eigen::Array<PetscScalar, Eigen::Dynamic, 1>& constant_values)
@@ -461,16 +425,6 @@ void fem::impl::assemble_exterior_facets(
 
   const Eigen::Array<std::uint8_t, Eigen::Dynamic, Eigen::Dynamic>& perms
       = mesh.topology().get_facet_permutations();
-
-  const Eigen::Array<bool, Eigen::Dynamic, Eigen::Dynamic>&
-      cell_edge_reflections
-      = mesh.topology().get_edge_reflections();
-  const Eigen::Array<bool, Eigen::Dynamic, Eigen::Dynamic>&
-      cell_face_reflections
-      = mesh.topology().get_face_reflections();
-  const Eigen::Array<std::uint8_t, Eigen::Dynamic, Eigen::Dynamic>&
-      cell_face_rotations
-      = mesh.topology().get_face_rotations();
 
   auto f_to_c = mesh.topology().connectivity(tdim - 1, tdim);
   assert(f_to_c);
@@ -502,9 +456,7 @@ void fem::impl::assemble_exterior_facets(
     be.setZero(dmap.size());
     fn(be.data(), coeff_cell.data(), constant_values.data(),
        coordinate_dofs.data(), &local_facet, &perm,
-       cell_edge_reflections.col(cell).data(),
-       cell_face_reflections.col(cell).data(),
-       cell_face_rotations.col(cell).data());
+       mesh.topology().get_permutation_info()[cell]);
 
     // Add element vector to global vector
     for (Eigen::Index i = 0; i < dmap.size(); ++i)
@@ -518,8 +470,7 @@ void fem::impl::assemble_interior_facets(
     const fem::DofMap& dofmap,
     const std::function<void(PetscScalar*, const PetscScalar*,
                              const PetscScalar*, const double*, const int*,
-                             const std::uint8_t*, const bool*, const bool*,
-                             const std::uint8_t*)>& fn,
+                             const std::uint8_t*, const std::uint32_t)>& fn,
     const Eigen::Array<PetscScalar, Eigen::Dynamic, Eigen::Dynamic,
                        Eigen::RowMajor>& coeffs,
     const std::vector<int>& offsets,
@@ -548,16 +499,6 @@ void fem::impl::assemble_interior_facets(
 
   const Eigen::Array<std::uint8_t, Eigen::Dynamic, Eigen::Dynamic>& perms
       = mesh.topology().get_facet_permutations();
-
-  const Eigen::Array<bool, Eigen::Dynamic, Eigen::Dynamic>&
-      cell_edge_reflections
-      = mesh.topology().get_edge_reflections();
-  const Eigen::Array<bool, Eigen::Dynamic, Eigen::Dynamic>&
-      cell_face_reflections
-      = mesh.topology().get_face_reflections();
-  const Eigen::Array<std::uint8_t, Eigen::Dynamic, Eigen::Dynamic>&
-      cell_face_rotations
-      = mesh.topology().get_face_rotations();
 
   auto f_to_c = mesh.topology().connectivity(tdim - 1, tdim);
   assert(f_to_c);
@@ -616,9 +557,7 @@ void fem::impl::assemble_interior_facets(
     be.setZero(dmap0.size() + dmap1.size());
     fn(be.data(), coeff_array.data(), constant_values.data(),
        coordinate_dofs.data(), local_facet.data(), perm.data(),
-       cell_edge_reflections.col(cells[0]).data(),
-       cell_face_reflections.col(cells[0]).data(),
-       cell_face_rotations.col(cells[0]).data());
+       mesh.topology().get_permutation_info()[cells[0]]);
 
     // Add element vector to global vector
     for (Eigen::Index i = 0; i < dmap0.size(); ++i)

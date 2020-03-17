@@ -440,10 +440,10 @@ void fem(py::module& m)
       .def("set_tabulate_tensor",
            [](dolfinx::fem::Form& self, dolfinx::fem::FormIntegrals::Type type,
               int i, std::intptr_t addr) {
-             auto tabulate_tensor_ptr = (void (*)(
-                 PetscScalar*, const PetscScalar*, const PetscScalar*,
-                 const double*, const int*, const std::uint8_t*, const bool*,
-                 const bool*, const std::uint8_t*))addr;
+             auto tabulate_tensor_ptr
+                 = (void (*)(PetscScalar*, const PetscScalar*,
+                             const PetscScalar*, const double*, const int*,
+                             const std::uint8_t*, const std::uint32_t))addr;
              self.set_tabulate_tensor(type, i, tabulate_tensor_ptr);
            })
       .def_property_readonly("rank", &dolfinx::fem::Form::rank)

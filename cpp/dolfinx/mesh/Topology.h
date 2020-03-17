@@ -115,7 +115,7 @@ public:
                         int d0, int d1);
 
   /// Returns the permutation information
-  const PermutationInfo& get_permutation_info() const;
+  std::vector<std::uint32_t> get_permutation_info() const;
 
   /// Gets markers for owned facets that are interior, i.e. are
   /// connected to two cells, one of which might be on a remote process
@@ -134,32 +134,6 @@ public:
   /// Cell type
   /// @return Cell type that th topology is for
   mesh::CellType cell_type() const;
-
-  /// @todo Use std::vector<int32_t> to store 1/0 marker for each edge/face
-  /// Get an array of bools that say whether each edge needs to be
-  /// reflected to match the low->high ordering of the cell.
-  /// Each column of the returned array represents a cell, and each row an
-  /// edge of that cell.
-  /// @return An Eigen::Array of bools
-  const Eigen::Array<bool, Eigen::Dynamic, Eigen::Dynamic>&
-  get_edge_reflections() const;
-
-  /// @todo Use std::vector<int32_t> to store 1/0 marker for each edge/face
-  /// Get an array of bools that say whether each face needs to be
-  /// reflected to match the low->high ordering of the cell.
-  /// Each column of the returned array represents a cell, and each row a
-  /// face of that cell.
-  /// @return An Eigen::Array of bools
-  const Eigen::Array<bool, Eigen::Dynamic, Eigen::Dynamic>&
-  get_face_reflections() const;
-
-  /// Get an array of numbers that say how many times each face needs to be
-  /// rotated to match the low->high ordering of the cell.
-  /// Each column of the returned array represents a cell, and each row a
-  /// face of that cell.
-  /// @return An Eigen::Array of uint8_ts
-  const Eigen::Array<std::uint8_t, Eigen::Dynamic, Eigen::Dynamic>&
-  get_face_rotations() const;
 
   /// Get the permutation number to apply to a facet.
   /// The permutations are numbered so that:

@@ -5,8 +5,6 @@
 // SPDX-License-Identifier:    LGPL-3.0-or-later
 
 #include "PermutationInfo.h"
-#include <dolfinx/graph/AdjacencyList.h>
-#include <dolfinx/graph/Partitioning.h>
 #include <dolfinx/mesh/Topology.h>
 
 using namespace dolfinx;
@@ -14,17 +12,13 @@ using namespace dolfinx::mesh;
 
 namespace
 {
-std::pair<Eigen::Array<bool, Eigen::Dynamic, Eigen::Dynamic>,
-          Eigen::Array<std::uint8_t, Eigen::Dynamic, Eigen::Dynamic>>
-compute_face_permutations_simplex(
+std::vector<std::bitset<BITSETSIZE>> compute_face_permutations_simplex(
     const graph::AdjacencyList<std::int32_t>& c_to_v,
     const graph::AdjacencyList<std::int32_t>& c_to_f,
-    const graph::AdjacencyList<std::int32_t>& f_to_v, int faces_per_cell)
+    const graph::AdjacencyList<std::int32_t>& f_to_v, int faces_per_cell,
+    const std::int32_t num_cells)
 {
-  Eigen::Array<bool, Eigen::Dynamic, Eigen::Dynamic> reflections(
-      faces_per_cell, c_to_v.num_nodes());
-  Eigen::Array<std::uint8_t, Eigen::Dynamic, Eigen::Dynamic> rotations(
-      faces_per_cell, c_to_v.num_nodes());
+  std::vector<std::bitset<BITSETSIZE>> face_data(num_cells);
   for (int c = 0; c < c_to_v.num_nodes(); ++c)
   {
     auto cell_vertices = c_to_v.links(c);
@@ -68,28 +62,20 @@ compute_face_permutations_simplex(
       // the lowest numbered vertex
       const int post = rots == 3 - 1 ? e_vertices[0] : e_vertices[rots + 1];
 
-      // The number of reflections
-      const std::uint8_t refs = post > pre;
-
-      reflections(i, c) = refs;
-      rotations(i, c) = rots;
+      face_data[c][3 * i] = rots;
+      face_data[c][3 * i + 2] = (post > pre);
     }
   }
-
-  return {std::move(reflections), std::move(rotations)};
+  return face_data;
 }
 //-----------------------------------------------------------------------------
-std::pair<Eigen::Array<bool, Eigen::Dynamic, Eigen::Dynamic>,
-          Eigen::Array<std::uint8_t, Eigen::Dynamic, Eigen::Dynamic>>
+std::vector<std::bitset<BITSETSIZE>>
 compute_face_permutations_tp(const graph::AdjacencyList<std::int32_t>& c_to_v,
                              const graph::AdjacencyList<std::int32_t>& c_to_f,
                              const graph::AdjacencyList<std::int32_t>& f_to_v,
-                             int faces_per_cell)
+                             int faces_per_cell, const std::int32_t num_cells)
 {
-  Eigen::Array<bool, Eigen::Dynamic, Eigen::Dynamic> reflections(
-      faces_per_cell, c_to_v.num_nodes());
-  Eigen::Array<std::uint8_t, Eigen::Dynamic, Eigen::Dynamic> rotations(
-      faces_per_cell, c_to_v.num_nodes());
+  std::vector<std::bitset<BITSETSIZE>> face_data(num_cells);
   for (int c = 0; c < c_to_v.num_nodes(); ++c)
   {
     auto cell_vertices = c_to_v.links(c);
@@ -156,26 +142,23 @@ compute_face_permutations_tp(const graph::AdjacencyList<std::int32_t>& c_to_v,
         break;
       }
 
-      // The number of reflections
-      const std::uint8_t refs = (e_vertices[post] > e_vertices[pre]);
-
-      reflections(i, c) = refs;
-      rotations(i, c) = rots;
+      face_data[c][3 * i] = rots;
+      face_data[c][3 * i + 2] = (e_vertices[post] > e_vertices[pre]);
     }
   }
-
-  return {std::move(reflections), std::move(rotations)};
+  return face_data;
 }
 //-----------------------------------------------------------------------------
-} // namespace
-
-//-----------------------------------------------------------------------------
-Eigen::Array<bool, Eigen::Dynamic, Eigen::Dynamic>
-mesh::compute_edge_reflections(const Topology& topology)
+std::vector<std::bitset<BITSETSIZE>>
+compute_edge_reflections(const mesh::Topology& topology)
 {
   const int tdim = topology.dim();
   const CellType cell_type = topology.cell_type();
   const int edges_per_cell = cell_num_entities(cell_type, 1);
+
+  const std::int32_t num_cells = topology.connectivity(tdim, 0)->num_nodes();
+
+  std::vector<std::bitset<BITSETSIZE>> edge_data(num_cells);
 
   auto c_to_v = topology.connectivity(tdim, 0);
   assert(c_to_v);
@@ -208,20 +191,21 @@ mesh::compute_edge_reflections(const Topology& topology)
       // The number of reflections. Comparing iterators directly instead
       // of values they point to is sufficient here.
       reflections(i, c) = (it1 < it0);
+      edge_data[c][i] = (it1 < it0);
     }
   }
-
-  return reflections;
+  return edge_data;
 }
 //-----------------------------------------------------------------------------
-std::pair<Eigen::Array<bool, Eigen::Dynamic, Eigen::Dynamic>,
-          Eigen::Array<std::uint8_t, Eigen::Dynamic, Eigen::Dynamic>>
-mesh::compute_face_permutations(const Topology& topology)
+std::vector<std::bitset<BITSETSIZE>>
+compute_face_permutations(const mesh::Topology& topology)
 {
   const int tdim = topology.dim();
   assert(tdim > 2);
   if (!topology.index_map(2))
     throw std::runtime_error("Faces have not been computed");
+
+  const std::int32_t num_cells = topology.connectivity(tdim, 0)->num_nodes();
 
   // If faces have been computed, the below should exist
   auto c_to_v = topology.connectivity(tdim, 0);
@@ -236,40 +220,20 @@ mesh::compute_face_permutations(const Topology& topology)
   if (cell_type == CellType::triangle or cell_type == CellType::tetrahedron)
   {
     return compute_face_permutations_simplex(*c_to_v, *c_to_f, *f_to_v,
-                                             faces_per_cell);
+                                             faces_per_cell, num_cells);
   }
   else
   {
     return compute_face_permutations_tp(*c_to_v, *c_to_f, *f_to_v,
-                                        faces_per_cell);
+                                        faces_per_cell, num_cells);
   }
 }
 //-----------------------------------------------------------------------------
-
+} // namespace
 //-----------------------------------------------------------------------------
 PermutationInfo::PermutationInfo()
-    : _edge_reflections(0, 0), _face_reflections(0, 0), _face_rotations(0, 0),
-      _facet_permutations(0, 0)
 {
   // Do nothing
-}
-//-----------------------------------------------------------------------------
-const Eigen::Array<bool, Eigen::Dynamic, Eigen::Dynamic>&
-PermutationInfo::get_edge_reflections() const
-{
-  return _edge_reflections;
-}
-//-----------------------------------------------------------------------------
-const Eigen::Array<bool, Eigen::Dynamic, Eigen::Dynamic>&
-PermutationInfo::get_face_reflections() const
-{
-  return _face_reflections;
-}
-//-----------------------------------------------------------------------------
-const Eigen::Array<std::uint8_t, Eigen::Dynamic, Eigen::Dynamic>&
-PermutationInfo::get_face_rotations() const
-{
-  return _face_rotations;
 }
 //-----------------------------------------------------------------------------
 const Eigen::Array<std::uint8_t, Eigen::Dynamic, Eigen::Dynamic>&
@@ -278,13 +242,15 @@ PermutationInfo::get_facet_permutations() const
   return _facet_permutations;
 }
 //-----------------------------------------------------------------------------
+const std::vector<std::uint32_t>& PermutationInfo::get_cell_data() const
+{
+  return _cell_data;
+}
+//-----------------------------------------------------------------------------
 void PermutationInfo::create_entity_permutations(mesh::Topology& topology)
 {
-  if (_edge_reflections.rows() > 0)
+  if (_cell_data.size() > 0)
   {
-    // assert(_face_reflections.size() != 0);
-    // assert(_face_rotations.size() != 0);
-    // assert(_facet_permutations.size() != 0);
     return;
   }
 
@@ -292,47 +258,46 @@ void PermutationInfo::create_entity_permutations(mesh::Topology& topology)
   const CellType cell_type = topology.cell_type();
   assert(topology.connectivity(tdim, 0));
   const std::int32_t num_cells = topology.connectivity(tdim, 0)->num_nodes();
-  const int faces_per_cell = cell_num_entities(cell_type, 2);
 
-  // FIXME: Avoid create 'identity' reflections/rotations
+  const int facets_per_cell = cell_num_entities(cell_type, tdim - 1);
 
-  if (tdim <= 1)
+  _cell_data.resize(num_cells, 0);
+  _facet_permutations.resize(num_cells, facets_per_cell);
+
+  int32_t used_bits = 0;
+  if (tdim > 2)
   {
-    const int edges_per_cell = cell_num_entities(cell_type, 1);
-    const int facets_per_cell = cell_num_entities(cell_type, tdim - 1);
-    _edge_reflections.resize(edges_per_cell, num_cells);
-    _edge_reflections = false;
-
-    _face_reflections.resize(faces_per_cell, num_cells);
-    _face_reflections = false;
-
-    _face_rotations.resize(faces_per_cell, num_cells);
-    _face_rotations = 0;
-    _facet_permutations.resize(facets_per_cell, num_cells);
-    _facet_permutations = 0;
+    const int faces_per_cell = cell_num_entities(cell_type, 2);
+    std::vector<std::bitset<BITSETSIZE>> face_data
+        = compute_face_permutations(topology);
+    for (int i = 0; i < faces_per_cell; ++i)
+      _cell_data[i] += face_data[i].to_ulong();
+    // Currently, 3 bits are used for each face. If faces with more than 4 sides
+    // are implemented, this will need to be increased.
+    used_bits += faces_per_cell * 3;
+    assert(1 << 3 == 2 * 2 * 2);
+    assert(tdim == 3);
+    for (int c = 0; c < num_cells; ++c)
+      for (int i = 0; i < facets_per_cell; ++i)
+        _facet_permutations(c, i) = 4 * face_data[c][3 * i + 2]
+                                    + 2 * face_data[c][3 * i + 1]
+                                    + face_data[c][3 * i];
+    // TODO: Use some form of cast to make this neater
   }
 
   if (tdim > 1)
   {
-    _face_reflections.resize(faces_per_cell, num_cells);
-    _face_reflections = false;
-    _face_rotations.resize(faces_per_cell, num_cells);
-    _face_rotations = 0;
-
-    Eigen::Array<bool, Eigen::Dynamic, Eigen::Dynamic> reflections
-        = mesh::compute_edge_reflections(topology);
-    _edge_reflections = reflections;
+    const int edges_per_cell = cell_num_entities(cell_type, 2);
+    std::vector<std::bitset<BITSETSIZE>> edge_data
+        = compute_edge_reflections(topology);
+    for (int i = 0; i < edges_per_cell; ++i)
+      _cell_data[i] += edge_data[i].to_ulong() * (1 << used_bits);
+    used_bits += edges_per_cell;
     if (tdim == 2)
-      _facet_permutations = reflections.cast<std::uint8_t>();
+      for (int c = 0; c < num_cells; ++c)
+        for (int i = 0; i < facets_per_cell; ++i)
+          _facet_permutations(c, i) = edge_data[c][i];
   }
-
-  if (tdim > 2)
-  {
-    auto [reflections, rotations] = mesh::compute_face_permutations(topology);
-    _face_reflections = reflections;
-    _face_rotations = rotations;
-    if (tdim == 3)
-      _facet_permutations = 2 * rotations + reflections.cast<std::uint8_t>();
-  }
+  assert(used_bits < BITSETSIZE);
 }
 //-----------------------------------------------------------------------------

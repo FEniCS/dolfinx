@@ -197,7 +197,10 @@ size_t Topology::hash() const
   return this->connectivity(dim(), 0)->hash();
 }
 //-----------------------------------------------------------------------------
-const PermutationInfo& Topology::get_permutation_info() const { return _pinfo; }
+std::vector<std::uint32_t> Topology::get_permutation_info() const
+{
+  return _pinfo.get_cell_data();
+}
 //-----------------------------------------------------------------------------
 void Topology::create_entity_permutations()
 {
@@ -205,24 +208,6 @@ void Topology::create_entity_permutations()
 }
 //-----------------------------------------------------------------------------
 mesh::CellType Topology::cell_type() const { return _cell_type; }
-//-----------------------------------------------------------------------------
-const Eigen::Array<bool, Eigen::Dynamic, Eigen::Dynamic>&
-Topology::get_edge_reflections() const
-{
-  return _pinfo.get_edge_reflections();
-}
-//-----------------------------------------------------------------------------
-const Eigen::Array<bool, Eigen::Dynamic, Eigen::Dynamic>&
-Topology::get_face_reflections() const
-{
-  return _pinfo.get_face_reflections();
-}
-//-----------------------------------------------------------------------------
-const Eigen::Array<std::uint8_t, Eigen::Dynamic, Eigen::Dynamic>&
-Topology::get_face_rotations() const
-{
-  return _pinfo.get_face_rotations();
-}
 //-----------------------------------------------------------------------------
 const Eigen::Array<std::uint8_t, Eigen::Dynamic, Eigen::Dynamic>&
 Topology::get_facet_permutations() const
