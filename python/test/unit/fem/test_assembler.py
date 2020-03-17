@@ -78,6 +78,7 @@ def test_assemble_derivatives():
 
 
 @skip_in_parallel
+@skip_if_complex
 def test_eigen_assembly():
     """Compare assembly into scipy.CSR matrix with PETSc assembly"""
     mesh = dolfinx.generation.UnitSquareMesh(dolfinx.MPI.comm_world, 12, 12)
