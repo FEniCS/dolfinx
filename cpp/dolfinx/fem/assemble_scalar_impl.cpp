@@ -108,6 +108,9 @@ PetscScalar fem::impl::assemble_cells(
   Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
       coordinate_dofs(num_dofs_g, gdim);
 
+  const std::vector<std::uint32_t>& cell_info
+      = mesh.topology().get_permutation_info();
+
   // Iterate over all cells
   PetscScalar value(0);
   for (std::int32_t c : active_cells)
@@ -119,8 +122,7 @@ PetscScalar fem::impl::assemble_cells(
 
     auto coeff_cell = coeffs.row(c);
     fn(&value, coeff_cell.data(), constant_values.data(),
-       coordinate_dofs.data(), nullptr, nullptr,
-       mesh.topology().get_permutation_info()[c]);
+       coordinate_dofs.data(), nullptr, nullptr, cell_info[c]);
   }
 
   return value;
@@ -222,6 +224,8 @@ PetscScalar fem::impl::assemble_interior_facets(
 
   const Eigen::Array<std::uint8_t, Eigen::Dynamic, Eigen::Dynamic>& perms
       = mesh.topology().get_facet_permutations();
+  const std::vector<std::uint32_t>& cell_info
+      = mesh.topology().get_permutation_info();
 
   auto f_to_c = mesh.topology().connectivity(tdim - 1, tdim);
   assert(f_to_c);
@@ -275,7 +279,7 @@ PetscScalar fem::impl::assemble_interior_facets(
     }
     fn(&value, coeff_array.data(), constant_values.data(),
        coordinate_dofs.data(), local_facet.data(), perm.data(),
-       mesh.topology().get_permutation_info()[cells[0]]);
+       cell_info[cells[0]]);
   }
 
   return value;

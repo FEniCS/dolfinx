@@ -114,6 +114,9 @@ void fem::impl::assemble_cells(
   Eigen::Matrix<PetscScalar, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
       Ae;
 
+  const std::vector<std::uint32_t>& cell_info
+      = mesh.topology().get_permutation_info();
+
   // Iterate over active cells
   PetscErrorCode ierr;
   for (std::int32_t c : active_cells)
@@ -127,8 +130,7 @@ void fem::impl::assemble_cells(
     auto coeff_cell = coeffs.row(c);
     Ae.setZero(num_dofs_per_cell0, num_dofs_per_cell1);
     kernel(Ae.data(), coeff_cell.data(), constant_values.data(),
-           coordinate_dofs.data(), nullptr, nullptr,
-           mesh.topology().get_permutation_info()[c]);
+           coordinate_dofs.data(), nullptr, nullptr, cell_info[c]);
 
     auto dofs0 = dofmap0.links(c);
     auto dofs1 = dofmap1.links(c);
@@ -197,6 +199,8 @@ void fem::impl::assemble_exterior_facets(
 
   const Eigen::Array<std::uint8_t, Eigen::Dynamic, Eigen::Dynamic>& perms
       = mesh.topology().get_facet_permutations();
+  const std::vector<std::uint32_t>& cell_info
+      = mesh.topology().get_permutation_info();
 
   // Iterate over all facets
   PetscErrorCode ierr;
@@ -229,8 +233,7 @@ void fem::impl::assemble_exterior_facets(
     const std::uint8_t perm = perms(local_facet, cells[0]);
     Ae.setZero(dmap0.size(), dmap1.size());
     kernel(Ae.data(), coeff_cell.data(), constant_values.data(),
-           coordinate_dofs.data(), &local_facet, &perm,
-           mesh.topology().get_permutation_info()[cells[0]]);
+           coordinate_dofs.data(), &local_facet, &perm, cell_info[cells[0]]);
 
     // Zero rows/columns for essential bcs
     if (!bc0.empty())
@@ -300,6 +303,8 @@ void fem::impl::assemble_interior_facets(
 
   const Eigen::Array<std::uint8_t, Eigen::Dynamic, Eigen::Dynamic>& perms
       = mesh.topology().get_facet_permutations();
+  const std::vector<std::uint32_t>& cell_info
+      = mesh.topology().get_permutation_info();
 
   // Iterate over all facets
   PetscErrorCode ierr;
@@ -374,7 +379,7 @@ void fem::impl::assemble_interior_facets(
     Ae.setZero(dmapjoint0.size(), dmapjoint1.size());
     fn(Ae.data(), coeff_array.data(), constant_values.data(),
        coordinate_dofs.data(), local_facet.data(), perm.data(),
-       mesh.topology().get_permutation_info()[cells[0]]);
+       cell_info[cells[0]]);
 
     // Zero rows/columns for essential bcs
     if (!bc0.empty())

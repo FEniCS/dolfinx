@@ -82,6 +82,9 @@ void _lift_bc_cells(
   const Eigen::Array<PetscScalar, Eigen::Dynamic, 1> constant_values
       = pack_constants(a);
 
+  const std::vector<std::uint32_t>& cell_info
+      = mesh.topology().get_permutation_info();
+
   // Iterate over all cells
   const int tdim = mesh.topology().dim();
   auto map = mesh.topology().index_map(tdim);
@@ -117,8 +120,7 @@ void _lift_bc_cells(
     auto coeff_array = coeffs.row(c);
     Ae.setZero(dmap0.size(), dmap1.size());
     fn(Ae.data(), coeff_array.data(), constant_values.data(),
-       coordinate_dofs.data(), nullptr, nullptr,
-       mesh.topology().get_permutation_info()[c]);
+       coordinate_dofs.data(), nullptr, nullptr, cell_info[c]);
 
     // Size data structure for assembly
     be.setZero(dmap0.size());
@@ -211,6 +213,8 @@ void _lift_bc_exterior_facets(
 
   const Eigen::Array<std::uint8_t, Eigen::Dynamic, Eigen::Dynamic>& perms
       = mesh.topology().get_facet_permutations();
+  const std::vector<std::uint32_t>& cell_info
+      = mesh.topology().get_permutation_info();
 
   for (int f = 0; f < map->size_local(); ++f)
   {
@@ -261,8 +265,7 @@ void _lift_bc_exterior_facets(
     auto coeff_array = coeffs.row(cell);
     Ae.setZero(dmap0.size(), dmap1.size());
     fn(Ae.data(), coeff_array.data(), constant_values.data(),
-       coordinate_dofs.data(), &local_facet, &perm,
-       mesh.topology().get_permutation_info()[cell]);
+       coordinate_dofs.data(), &local_facet, &perm, cell_info[cell]);
 
     // Size data structure for assembly
     be.setZero(dmap0.size());
@@ -371,6 +374,9 @@ void fem::impl::assemble_cells(
       coordinate_dofs(num_dofs_g, gdim);
   Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1> be(num_dofs_per_cell);
 
+  const std::vector<std::uint32_t>& cell_info
+      = mesh.topology().get_permutation_info();
+
   // Iterate over active cells
   for (std::int32_t c : active_cells)
   {
@@ -383,8 +389,7 @@ void fem::impl::assemble_cells(
     auto coeff_cell = coeffs.row(c);
     be.setZero();
     kernel(be.data(), coeff_cell.data(), constant_values.data(),
-           coordinate_dofs.data(), nullptr, nullptr,
-           mesh.topology().get_permutation_info()[c]);
+           coordinate_dofs.data(), nullptr, nullptr, cell_info[c]);
 
     // Scatter cell vector to 'global' vector array
     auto dofs = dofmap.links(c);
@@ -425,6 +430,8 @@ void fem::impl::assemble_exterior_facets(
 
   const Eigen::Array<std::uint8_t, Eigen::Dynamic, Eigen::Dynamic>& perms
       = mesh.topology().get_facet_permutations();
+  const std::vector<std::uint32_t>& cell_info
+      = mesh.topology().get_permutation_info();
 
   auto f_to_c = mesh.topology().connectivity(tdim - 1, tdim);
   assert(f_to_c);
@@ -455,8 +462,7 @@ void fem::impl::assemble_exterior_facets(
     auto coeff_cell = coeffs.row(cell);
     be.setZero(dmap.size());
     fn(be.data(), coeff_cell.data(), constant_values.data(),
-       coordinate_dofs.data(), &local_facet, &perm,
-       mesh.topology().get_permutation_info()[cell]);
+       coordinate_dofs.data(), &local_facet, &perm, cell_info[cell]);
 
     // Add element vector to global vector
     for (Eigen::Index i = 0; i < dmap.size(); ++i)
@@ -499,6 +505,8 @@ void fem::impl::assemble_interior_facets(
 
   const Eigen::Array<std::uint8_t, Eigen::Dynamic, Eigen::Dynamic>& perms
       = mesh.topology().get_facet_permutations();
+  const std::vector<std::uint32_t>& cell_info
+      = mesh.topology().get_permutation_info();
 
   auto f_to_c = mesh.topology().connectivity(tdim - 1, tdim);
   assert(f_to_c);
@@ -557,7 +565,7 @@ void fem::impl::assemble_interior_facets(
     be.setZero(dmap0.size() + dmap1.size());
     fn(be.data(), coeff_array.data(), constant_values.data(),
        coordinate_dofs.data(), local_facet.data(), perm.data(),
-       mesh.topology().get_permutation_info()[cells[0]]);
+       cell_info[cells[0]]);
 
     // Add element vector to global vector
     for (Eigen::Index i = 0; i < dmap0.size(); ++i)
