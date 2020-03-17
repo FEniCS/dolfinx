@@ -12,13 +12,13 @@ using namespace dolfinx::mesh;
 
 namespace
 {
-std::vector<std::bitset<BITSETSIZE>> compute_face_permutations_simplex(
+std::vector<std::uint32_t> compute_face_permutations_simplex(
     const graph::AdjacencyList<std::int32_t>& c_to_v,
     const graph::AdjacencyList<std::int32_t>& c_to_f,
     const graph::AdjacencyList<std::int32_t>& f_to_v, int faces_per_cell,
     const std::int32_t num_cells)
 {
-  std::vector<std::bitset<BITSETSIZE>> face_data(num_cells);
+  std::vector<std::uint32_t> face_data(num_cells, 0);
   for (int c = 0; c < c_to_v.num_nodes(); ++c)
   {
     auto cell_vertices = c_to_v.links(c);
@@ -62,21 +62,20 @@ std::vector<std::bitset<BITSETSIZE>> compute_face_permutations_simplex(
       // the lowest numbered vertex
       const int post = rots == 3 - 1 ? e_vertices[0] : e_vertices[rots + 1];
 
-      face_data[c][3 * i] = (post > pre);
-      face_data[c][3 * i + 1] = rots % 2;
-      face_data[c][3 * i + 2] = rots / 2;
+      face_data[c] |= (post > pre) << (3 * i);
+      face_data[c] |= rots << (3 * i + 1);
     }
   }
   return face_data;
 }
 //-----------------------------------------------------------------------------
-std::vector<std::bitset<BITSETSIZE>>
+std::vector<std::uint32_t>
 compute_face_permutations_tp(const graph::AdjacencyList<std::int32_t>& c_to_v,
                              const graph::AdjacencyList<std::int32_t>& c_to_f,
                              const graph::AdjacencyList<std::int32_t>& f_to_v,
                              int faces_per_cell, const std::int32_t num_cells)
 {
-  std::vector<std::bitset<BITSETSIZE>> face_data(num_cells);
+  std::vector<std::uint32_t> face_data(num_cells, 0);
   for (int c = 0; c < c_to_v.num_nodes(); ++c)
   {
     auto cell_vertices = c_to_v.links(c);
@@ -143,15 +142,14 @@ compute_face_permutations_tp(const graph::AdjacencyList<std::int32_t>& c_to_v,
         break;
       }
 
-      face_data[c][3 * i] = (e_vertices[post] > e_vertices[pre]);
-      face_data[c][3 * i + 1] = rots % 2;
-      face_data[c][3 * i + 2] = rots / 2;
+      face_data[c] |= (post > pre) << (3 * i);
+      face_data[c] |= rots << (3 * i + 1);
     }
   }
   return face_data;
 }
 //-----------------------------------------------------------------------------
-std::vector<std::bitset<BITSETSIZE>>
+std::vector<std::uint32_t>
 compute_edge_reflections(const mesh::Topology& topology)
 {
   const int tdim = topology.dim();
@@ -160,7 +158,7 @@ compute_edge_reflections(const mesh::Topology& topology)
 
   const std::int32_t num_cells = topology.connectivity(tdim, 0)->num_nodes();
 
-  std::vector<std::bitset<BITSETSIZE>> edge_data(num_cells);
+  std::vector<std::uint32_t> edge_data(num_cells);
 
   auto c_to_v = topology.connectivity(tdim, 0);
   assert(c_to_v);
@@ -192,14 +190,13 @@ compute_edge_reflections(const mesh::Topology& topology)
 
       // The number of reflections. Comparing iterators directly instead
       // of values they point to is sufficient here.
-      reflections(i, c) = (it1 < it0);
-      edge_data[c][i] = (it1 < it0);
+      edge_data[c] |= (it1 < it0) << i;
     }
   }
   return edge_data;
 }
 //-----------------------------------------------------------------------------
-std::vector<std::bitset<BITSETSIZE>>
+std::vector<std::uint32_t>
 compute_face_permutations(const mesh::Topology& topology)
 {
   const int tdim = topology.dim();
@@ -270,37 +267,32 @@ void PermutationInfo::create_entity_permutations(mesh::Topology& topology)
   if (tdim > 2)
   {
     const int faces_per_cell = cell_num_entities(cell_type, 2);
-    std::vector<std::bitset<BITSETSIZE>> face_data
-        = compute_face_permutations(topology);
+    std::vector<std::uint32_t> face_data = compute_face_permutations(topology);
     for (int i = 0; i < num_cells; ++i)
-      _cell_data[i] += face_data[i].to_ulong();
+      _cell_data[i] |= face_data[i];
     // Currently, 3 bits are used for each face. If faces with more than 4 sides
     // are implemented, this will need to be increased.
     used_bits += faces_per_cell * 3;
-    assert(1 << 3 == 2 * 2 * 2);
     assert(tdim == 3);
     for (int c = 0; c < num_cells; ++c)
       for (int i = 0; i < facets_per_cell; ++i)
-        _facet_permutations(i, c) = 4 * face_data[c][3 * i + 2]
-                                    + 2 * face_data[c][3 * i + 1]
-                                    + face_data[c][3 * i];
+        _facet_permutations(i, c) = (face_data[c] << (3 * i)) & 3;
     // TODO: Use some form of cast to make this neater
   }
 
   if (tdim > 1)
   {
     const int edges_per_cell = cell_num_entities(cell_type, 1);
-    std::vector<std::bitset<BITSETSIZE>> edge_data
-        = compute_edge_reflections(topology);
+    std::vector<std::uint32_t> edge_data = compute_edge_reflections(topology);
     for (int i = 0; i < num_cells; ++i)
-      _cell_data[i] += edge_data[i].to_ulong() * (1 << used_bits);
+      _cell_data[i] |= edge_data[i] << used_bits;
     used_bits += edges_per_cell;
     if (tdim == 2)
       for (int c = 0; c < num_cells; ++c)
         for (int i = 0; i < facets_per_cell; ++i)
-          _facet_permutations(i, c) = edge_data[c][i];
+          _facet_permutations(i, c) = (edge_data[c] << i) & 1;
   }
 
-  assert(used_bits < BITSETSIZE);
+  assert(used_bits < 32);
 }
 //-----------------------------------------------------------------------------

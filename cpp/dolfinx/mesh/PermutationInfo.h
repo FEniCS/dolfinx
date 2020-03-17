@@ -8,15 +8,11 @@
 
 #include <Eigen/Dense>
 #include <array>
-#include <bitset>
 #include <cstdint>
 #include <dolfinx/graph/AdjacencyList.h>
 #include <dolfinx/graph/Partitioning.h>
 #include <memory>
 #include <vector>
-
-// Define the size of the bitset
-#define BITSETSIZE 32
 
 namespace dolfinx
 {
