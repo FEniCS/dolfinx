@@ -96,13 +96,6 @@ template void fem::impl::assemble_matrix<PetscInt, PetscScalar>(
         mat_set_values_local,
     const Form& a, const std::vector<bool>& bc0, const std::vector<bool>& bc1);
 
-// Explicit instantiation with int32_t and double
-template void fem::impl::assemble_matrix<std::int32_t, double>(
-    const std::function<int(std::int32_t, const std::int32_t*, std::int32_t,
-                            const std::int32_t*, const double*)>&
-        mat_set_values_local,
-    const Form& a, const std::vector<bool>& bc0, const std::vector<bool>& bc1);
-
 // \endcond
 //-----------------------------------------------------------------------------
 template <typename IndexType, typename ScalarType>
