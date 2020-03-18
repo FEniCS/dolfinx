@@ -20,7 +20,8 @@ compute_face_permutations_simplex(
     const std::int32_t num_cells)
 {
   Eigen::Array<std::uint32_t, Eigen::Dynamic, 1> face_permutation_info(
-      num_cells, 0);
+      num_cells);
+  face_permutation_info.fill(0);
   for (int c = 0; c < c_to_v.num_nodes(); ++c)
   {
     auto cell_vertices = c_to_v.links(c);
@@ -78,7 +79,8 @@ compute_face_permutations_tp(const graph::AdjacencyList<std::int32_t>& c_to_v,
                              int faces_per_cell, const std::int32_t num_cells)
 {
   Eigen::Array<std::uint32_t, Eigen::Dynamic, 1> face_permutation_info(
-      num_cells, 0);
+      num_cells);
+  face_permutation_info.fill(0);
   for (int c = 0; c < c_to_v.num_nodes(); ++c)
   {
     auto cell_vertices = c_to_v.links(c);
@@ -163,6 +165,7 @@ compute_edge_reflections(const mesh::Topology& topology)
 
   Eigen::Array<std::uint32_t, Eigen::Dynamic, 1> edge_permutation_info(
       num_cells);
+  edge_permutation_info.fill(0);
 
   auto c_to_v = topology.connectivity(tdim, 0);
   assert(c_to_v);
@@ -265,7 +268,8 @@ void PermutationInfo::create_entity_permutations(mesh::Topology& topology)
 
   const int facets_per_cell = cell_num_entities(cell_type, tdim - 1);
 
-  _cell_permutation_info.resize(num_cells, 0);
+  _cell_permutation_info.resize(num_cells);
+  _cell_permutation_info.fill(0);
   _facet_permutations.resize(facets_per_cell, num_cells);
 
   int32_t used_bits = 0;
