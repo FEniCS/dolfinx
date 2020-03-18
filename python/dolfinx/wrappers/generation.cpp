@@ -11,6 +11,8 @@
 #include <dolfinx/generation/IntervalMesh.h>
 #include <dolfinx/generation/RectangleMesh.h>
 #include <dolfinx/generation/UnitDiscMesh.h>
+#include <dolfinx/mesh/Geometry.h>
+#include <dolfinx/mesh/Topology.h>
 #include <iostream>
 #include <memory>
 #include <pybind11/eigen.h>
