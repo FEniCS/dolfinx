@@ -30,7 +30,7 @@ namespace mesh
 {
 class Mesh;
 template <typename T>
-class MeshFunction;
+class MeshTags;
 } // namespace mesh
 
 namespace io
@@ -88,10 +88,13 @@ public:
   /// function space
   /// @param[in] mesh
   /// @param[in] name
+  /// @param[in] xpath XPath where Mesh Grid will be written
   void write_mesh(const mesh::Mesh& mesh, const std::string name = "mesh",
                   const std::string xpath = "/Xdmf/Domain");
 
   /// Read in the first Mesh in XDMF file
+  /// @param[in] name
+  /// @param[in] xpath XPath where Mesh Grid is located
   /// @return A Mesh distributed on the same communicator as the
   ///   XDMFFile
   mesh::Mesh read_mesh(const std::string name = "mesh",
