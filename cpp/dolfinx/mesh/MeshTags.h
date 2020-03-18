@@ -7,6 +7,7 @@
 #pragma once
 
 #include <dolfinx/common/IndexMap.h>
+#include <dolfinx/common/UniqueIdGenerator.h>
 #include "Mesh.h"
 #include "Topology.h"
 #include <map>
