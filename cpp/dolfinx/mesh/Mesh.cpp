@@ -65,11 +65,32 @@ Mesh mesh::create(
   auto [topology, src, dest]
       = mesh::create_topology(comm, cells, layout, ghost_mode);
 
+  std::stringstream s;
+  auto topo_c = topology.connectivity(topology.dim(), 0);
+  s << "[";
+  for (int i = 0; i < topo_c->num_nodes(); ++i)
+  {
+    s << "[";
+    for (int j = 0; j < topo_c->num_links(i); ++j)
+      s << topo_c->links(i)[j] << " ";
+    s << "]\n";
+  }
+  s << "]\n im0 = [";
+  for (std::int64_t gi : topology.index_map(0)->global_indices(false))
+    s << gi << " ";
+  s << "]\n";
+  s << "]\n im2 = [";
+  for (std::int64_t gi : topology.index_map(2)->global_indices(false))
+    s << gi << " ";
+  s << "]\n";
+  std::cout << s.str() << "\n";
+
   // FIXME: Figure out how to check which entities are required
   // Initialise facet for P2
   // Create local entities
   if (topology.dim() > 1)
   {
+    std::cout << "Create edges\n";
     auto [cell_entity, entity_vertex, index_map]
         = mesh::TopologyComputation::compute_entities(comm, topology, 1);
     if (cell_entity)
@@ -79,6 +100,7 @@ Mesh mesh::create(
     if (index_map)
       topology.set_index_map(1, index_map);
 
+    std::cout << "Create facets\n";
     auto [cell_facet, facet_vertex, index_map1]
         = mesh::TopologyComputation::compute_entities(comm, topology,
                                                       topology.dim() - 1);
@@ -90,6 +112,7 @@ Mesh mesh::create(
       topology.set_index_map(topology.dim() - 1, index_map1);
   }
 
+  std::cout << "Create Geometry\n";
   const Geometry geometry
       = mesh::create_geometry(comm, topology, layout, cells, dest, src, x);
 

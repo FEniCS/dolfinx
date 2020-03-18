@@ -718,8 +718,8 @@ mesh::create_topology(MPI_Comm comm,
         my_cells_array.size());
     for (int i = 0; i < my_local_cells_array.size(); ++i)
       my_local_cells_array[i] = global_to_local_index[my_cells_array[i]];
-    graph::AdjacencyList<std::int32_t> my_local_cells(my_local_cells_array,
-                                                      my_cells.offsets());
+    auto my_local_cells = std::make_shared<graph::AdjacencyList<std::int32_t>>(
+        my_local_cells_array, my_cells.offsets());
 
     // Find all vertex-sharing neighbours, and process-to-neighbour map
     std::set<int> vertex_neighbours;
@@ -797,7 +797,6 @@ mesh::create_topology(MPI_Comm comm,
       std::int64_t gi = recv_data[i];
       const auto it = global_to_local_index.find(gi);
       assert(it != global_to_local_index.end());
-      assert(it->second == -1);
       ghost_vertices[it->second - nlocal] = recv_data[i + 1];
     }
     // Check all ghosts are filled
@@ -807,6 +806,7 @@ mesh::create_topology(MPI_Comm comm,
     Topology topology(layout.cell_type());
     const int tdim = topology.dim();
 
+    // Vertex IndexMap
     auto index_map_v
         = std::make_shared<common::IndexMap>(comm, nlocal, ghost_vertices, 1);
     topology.set_index_map(0, index_map_v);
@@ -814,11 +814,9 @@ mesh::create_topology(MPI_Comm comm,
         index_map_v->size_local() + index_map_v->num_ghosts());
     topology.set_connectivity(c0, 0, 0);
 
-    // FIXME: cells needs to be corrected/reordered
+    // Cell IndexMap
     topology.set_index_map(tdim, index_map_c);
-    auto cells_d_adj
-        = std::make_shared<graph::AdjacencyList<std::int32_t>>(my_local_cells);
-    topology.set_connectivity(cells_d_adj, tdim, 0);
+    topology.set_connectivity(my_local_cells, tdim, 0);
 
     return {topology, src, dest};
   }
