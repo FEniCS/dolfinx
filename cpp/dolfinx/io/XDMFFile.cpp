@@ -12,8 +12,10 @@
 #include "xdmf_mesh.h"
 #include "xdmf_utils.h"
 #include <boost/filesystem.hpp>
+#include <boost/lexical_cast.hpp>
 #include <dolfinx/common/utils.h>
 #include <dolfinx/fem/ElementDofLayout.h>
+#include <dolfinx/function/Function.h>
 #include <dolfinx/graph/AdjacencyList.h>
 #include <dolfinx/mesh/Geometry.h>
 #include <dolfinx/mesh/Mesh.h>
@@ -220,4 +222,48 @@ XDMFFile::read_mesh_data(const std::string name, const std::string xpath) const
       = node.select_node(("Grid[@Name='" + name + "']").c_str()).node();
 
   return xdmf_mesh::read_mesh_data(_mpi_comm.comm(), _h5_id, grid_node);
+}
+//-----------------------------------------------------------------------------
+void XDMFFile::write_function(const function::Function& function,
+                              const double t, const std::string mesh_xpath)
+{
+  const std::string timegrid_xpath
+      = "/Xdmf/Domain/Grid[@GridType='Collection'][@Name='" + function.name
+        + "']";
+  pugi::xml_node timegrid_node
+      = _xml_doc->select_node(timegrid_xpath.c_str()).node();
+
+  if (!timegrid_node)
+  {
+    pugi::xml_node domain_node = _xml_doc->select_node("/Xdmf/Domain").node();
+    timegrid_node = domain_node.append_child("Grid");
+    timegrid_node.append_attribute("Name") = function.name.c_str();
+    timegrid_node.append_attribute("GridType") = "Collection";
+    timegrid_node.append_attribute("CollectionType") = "Temporal";
+  }
+
+  pugi::xml_node grid_node = timegrid_node.append_child("Grid");
+  grid_node.append_attribute("Name") = function.name.c_str();
+  grid_node.append_attribute("GridType") = "Uniform";
+  assert(grid_node);
+
+  const std::string ref_path
+      = "xpointer(" + mesh_xpath + "/*[self::Topology or self::Geometry])";
+
+  pugi::xml_node topo_geo_ref = grid_node.append_child("xi:include");
+  topo_geo_ref.append_attribute("xpointer") = ref_path.c_str();
+  assert(topo_geo_ref);
+
+  std::string t_str = boost::lexical_cast<std::string>(t);
+  pugi::xml_node time_node = grid_node.append_child("Time");
+  time_node.append_attribute("Value") = t_str.c_str();
+  assert(time_node);
+
+  // Add the mesh Grid to the domain
+  xdmf_function::add_function(_mpi_comm.comm(), function, t, grid_node,
+                              _h5_id);
+
+  // Save XML file (on process 0 only)
+  if (MPI::rank(_mpi_comm.comm()) == 0)
+    _xml_doc->save_file(_filename.c_str(), "  ");
 }

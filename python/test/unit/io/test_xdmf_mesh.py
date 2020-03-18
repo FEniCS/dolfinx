@@ -12,7 +12,6 @@ from dolfinx import MPI, UnitCubeMesh, UnitIntervalMesh, UnitSquareMesh, cpp
 from dolfinx.cpp.mesh import CellType
 from dolfinx.io import XDMFFile
 from dolfinx_utils.test.fixtures import tempdir
-import dolfinx
 
 assert (tempdir)
 

@@ -5,13 +5,7 @@
 # SPDX-License-Identifier:    LGPL-3.0-or-later
 """IO module for input data, post-processing and checkpointing"""
 
-import typing
-
-import numpy
-
-from dolfinx import cpp, fem, function
-
-from dolfinx.cpp.io import XDMFFile
+from dolfinx import cpp
 
 
 class VTKFile:
@@ -38,3 +32,9 @@ class VTKFile:
             self._cpp_object.write(o_cpp)
         else:
             self._cpp_object.write(o_cpp, t)
+
+
+class XDMFFile(cpp.io.XDMFFile):
+    def write_function(self, u, t=0.0, mesh_xpath="/Xdmf/Domain/Grid[@GridType='Uniform'][1]"):
+        u_cpp = getattr(u, "_cpp_object", u)
+        super().write_function(u_cpp, t, mesh_xpath)

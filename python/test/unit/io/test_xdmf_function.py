@@ -50,95 +50,105 @@ def worker_id(request):
 
 
 @pytest.mark.parametrize("encoding", encodings)
-def xtest_save_1d_scalar(tempdir, encoding):
+def test_save_1d_scalar(tempdir, encoding):
     filename2 = os.path.join(tempdir, "u1_.xdmf")
     mesh = UnitIntervalMesh(MPI.comm_world, 32)
     V = FunctionSpace(mesh, ("Lagrange", 2))
     u = Function(V)
     u.vector.set(1.0 + (1j if has_petsc_complex else 0))
-    with XDMFFile(mesh.mpi_comm(), filename2, encoding=encoding) as file:
-        file.write(u)
+    with XDMFFile(mesh.mpi_comm(), filename2, "w", encoding=encoding) as file:
+        file.write_mesh(mesh)
+        file.write_function(u)
 
 
 @pytest.mark.parametrize("cell_type", celltypes_2D)
 @pytest.mark.parametrize("encoding", encodings)
-def xtest_save_2d_scalar(tempdir, encoding, cell_type):
+def test_save_2d_scalar(tempdir, encoding, cell_type):
     filename = os.path.join(tempdir, "u2.xdmf")
     mesh = UnitSquareMesh(MPI.comm_world, 12, 12, cell_type)
     V = FunctionSpace(mesh, ("Lagrange", 2))
     u = Function(V)
     u.vector.set(1.0)
-    with XDMFFile(mesh.mpi_comm(), filename, encoding=encoding) as file:
-        file.write(u)
+    with XDMFFile(mesh.mpi_comm(), filename, "w", encoding=encoding) as file:
+        file.write_mesh(mesh)
+        file.write_function(u)
 
 
 @pytest.mark.parametrize("cell_type", celltypes_3D)
 @pytest.mark.parametrize("encoding", encodings)
-def xtest_save_3d_scalar(tempdir, encoding, cell_type):
+def test_save_3d_scalar(tempdir, encoding, cell_type):
     filename = os.path.join(tempdir, "u3.xdmf")
     mesh = UnitCubeMesh(MPI.comm_world, 4, 3, 4, cell_type)
     V = FunctionSpace(mesh, ("Lagrange", 2))
     u = Function(V)
     u.vector.set(1.0)
-    with XDMFFile(mesh.mpi_comm(), filename, encoding=encoding) as file:
-        file.write(u)
+    with XDMFFile(mesh.mpi_comm(), filename, "w", encoding=encoding) as file:
+        file.write_mesh(mesh)
+        file.write_function(u)
 
 
 @pytest.mark.parametrize("cell_type", celltypes_2D)
 @pytest.mark.parametrize("encoding", encodings)
-def xtest_save_2d_vector(tempdir, encoding, cell_type):
+def test_save_2d_vector(tempdir, encoding, cell_type):
     filename = os.path.join(tempdir, "u_2dv.xdmf")
     mesh = UnitSquareMesh(MPI.comm_world, 12, 13, cell_type)
     V = VectorFunctionSpace(mesh, ("Lagrange", 2))
     u = Function(V)
     u.vector.set(1.0 + (1j if has_petsc_complex else 0))
-    with XDMFFile(mesh.mpi_comm(), filename, encoding=encoding) as file:
-        file.write(u)
+    with XDMFFile(mesh.mpi_comm(), filename, "w", encoding=encoding) as file:
+        file.write_mesh(mesh)
+        file.write_function(u)
 
 
 @pytest.mark.parametrize("cell_type", celltypes_3D)
 @pytest.mark.parametrize("encoding", encodings)
-def xtest_save_3d_vector(tempdir, encoding, cell_type):
+def test_save_3d_vector(tempdir, encoding, cell_type):
     filename = os.path.join(tempdir, "u_3Dv.xdmf")
     mesh = UnitCubeMesh(MPI.comm_world, 2, 2, 2, cell_type)
     u = Function(VectorFunctionSpace(mesh, ("Lagrange", 1)))
     u.vector.set(1.0 + (1j if has_petsc_complex else 0))
-    with XDMFFile(mesh.mpi_comm(), filename, encoding=encoding) as file:
-        file.write(u)
+    with XDMFFile(mesh.mpi_comm(), filename, "w", encoding=encoding) as file:
+        file.write_mesh(mesh)
+        file.write_function(u)
 
 
 @pytest.mark.parametrize("cell_type", celltypes_2D)
 @pytest.mark.parametrize("encoding", encodings)
-def xtest_save_2d_tensor(tempdir, encoding, cell_type):
+def test_save_2d_tensor(tempdir, encoding, cell_type):
     filename = os.path.join(tempdir, "tensor.xdmf")
     mesh = UnitSquareMesh(MPI.comm_world, 16, 16, cell_type)
     u = Function(TensorFunctionSpace(mesh, ("Lagrange", 2)))
     u.vector.set(1.0 + (1j if has_petsc_complex else 0))
-    with XDMFFile(mesh.mpi_comm(), filename, encoding=encoding) as file:
-        file.write(u)
+    with XDMFFile(mesh.mpi_comm(), filename, "w", encoding=encoding) as file:
+        file.write_mesh(mesh)
+        file.write_function(u)
 
 
 @pytest.mark.parametrize("cell_type", celltypes_3D)
 @pytest.mark.parametrize("encoding", encodings)
-def xtest_save_3d_tensor(tempdir, encoding, cell_type):
+def test_save_3d_tensor(tempdir, encoding, cell_type):
     filename = os.path.join(tempdir, "u3t.xdmf")
     mesh = UnitCubeMesh(MPI.comm_world, 4, 4, 4, cell_type)
     u = Function(TensorFunctionSpace(mesh, ("Lagrange", 2)))
     u.vector.set(1.0 + (1j if has_petsc_complex else 0))
-    with XDMFFile(mesh.mpi_comm(), filename, encoding=encoding) as file:
-        file.write(u)
+    with XDMFFile(mesh.mpi_comm(), filename, "w", encoding=encoding) as file:
+        file.write_mesh(mesh)
+        file.write_function(u)
 
 
 @pytest.mark.parametrize("cell_type", celltypes_3D)
 @pytest.mark.parametrize("encoding", encodings)
-def xtest_save_3d_vector_series(tempdir, encoding, cell_type):
+def test_save_3d_vector_series(tempdir, encoding, cell_type):
     filename = os.path.join(tempdir, "u_3D.xdmf")
     mesh = UnitCubeMesh(MPI.comm_world, 2, 2, 2, cell_type)
     u = Function(VectorFunctionSpace(mesh, ("Lagrange", 2)))
-    with XDMFFile(mesh.mpi_comm(), filename, encoding=encoding) as file:
+    with XDMFFile(mesh.mpi_comm(), filename, "w", encoding=encoding) as file:
+        file.write_mesh(mesh)
         u.vector.set(1.0 + (1j if has_petsc_complex else 0))
-        file.write(u, 0.1)
+        file.write_function(u, 0.1)
         u.vector.set(2.0 + (2j if has_petsc_complex else 0))
-        file.write(u, 0.2)
+        file.write_function(u, 0.2)
+
+    with XDMFFile(mesh.mpi_comm(), filename, "a", encoding=encoding) as file:
         u.vector.set(3.0 + (3j if has_petsc_complex else 0))
-        file.write(u, 0.3)
+        file.write_function(u, 0.3)

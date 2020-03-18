@@ -108,9 +108,10 @@ public:
   read_mesh_data(const std::string name = "mesh",
                  const std::string xpath = "/Xdmf/Domain") const;
 
-
   /// Write Function
-  void write_function(const function::Function& function, const double time, const std::string xpath = "/Xdmf/Domain/");
+  void write_function(const function::Function& function, const double t,
+                      const std::string mesh_xpath
+                      = "/Xdmf/Domain/Grid[@GridType='Uniform'][1]");
 
 private:
   // MPI communicator

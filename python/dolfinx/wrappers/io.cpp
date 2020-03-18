@@ -67,7 +67,10 @@ void io(py::module& m)
       .def("read_mesh", &dolfinx::io::XDMFFile::read_mesh,
            py::arg("name") = "mesh", py::arg("xpath") = "/Xdmf/Domain")
       .def("read_mesh_data", &dolfinx::io::XDMFFile::read_mesh_data,
-           py::arg("name") = "mesh", py::arg("xpath") = "/Xdmf/Domain");
+           py::arg("name") = "mesh", py::arg("xpath") = "/Xdmf/Domain")
+      .def("write_function", &dolfinx::io::XDMFFile::write_function,
+           py::arg("function"), py::arg("t"),
+           py::arg("mesh_xpath") = "/Xdmf/Domain/Grid[@GridType='Uniform'][1]");
 
   // dolfinx::io::VTKFile
   py::class_<dolfinx::io::VTKFile, std::shared_ptr<dolfinx::io::VTKFile>>

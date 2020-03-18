@@ -10,7 +10,7 @@
 
 namespace pugi
 {
-class xml_document;
+class xml_node;
 } // namespace pugi
 
 namespace dolfinx
@@ -27,8 +27,8 @@ namespace xdmf_function
 {
 
 /// TODO
-void write(const function::Function& u, double t, int counter,
-           pugi::xml_document& xml_doc, hid_t h5_id);
+void add_function(MPI_Comm comm, const function::Function& u, const double t,
+                  pugi::xml_node& xml_node, const hid_t h5_id);
 
 } // namespace xdmf_function
 } // namespace io
