@@ -56,7 +56,7 @@ XDMFFile::XDMFFile(MPI_Comm comm, const std::string filename,
   if (_encoding == Encoding::ASCII and MPI::size(_mpi_comm.comm()) != 1)
   {
     throw std::runtime_error(
-        "Cannot write ASCII XDMF in parallel (use HDF5 encoding).");
+        "Cannot read/write ASCII XDMF in parallel (use HDF5 encoding).");
   }
 
   // Handle HDF5 and XDMF files with the file mode
