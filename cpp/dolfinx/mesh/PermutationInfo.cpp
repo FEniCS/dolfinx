@@ -12,13 +12,15 @@ using namespace dolfinx::mesh;
 
 namespace
 {
-std::vector<std::uint32_t> compute_face_permutations_simplex(
+Eigen::Array<std::uint32_t, Eigen::Dynamic, 1>
+compute_face_permutations_simplex(
     const graph::AdjacencyList<std::int32_t>& c_to_v,
     const graph::AdjacencyList<std::int32_t>& c_to_f,
     const graph::AdjacencyList<std::int32_t>& f_to_v, int faces_per_cell,
     const std::int32_t num_cells)
 {
-  std::vector<std::uint32_t> face_permutation_info(num_cells, 0);
+  Eigen::Array<std::uint32_t, Eigen::Dynamic, 1> face_permutation_info(
+      num_cells, 0);
   for (int c = 0; c < c_to_v.num_nodes(); ++c)
   {
     auto cell_vertices = c_to_v.links(c);
@@ -69,13 +71,14 @@ std::vector<std::uint32_t> compute_face_permutations_simplex(
   return face_permutation_info;
 }
 //-----------------------------------------------------------------------------
-std::vector<std::uint32_t>
+Eigen::Array<std::uint32_t, Eigen::Dynamic, 1>
 compute_face_permutations_tp(const graph::AdjacencyList<std::int32_t>& c_to_v,
                              const graph::AdjacencyList<std::int32_t>& c_to_f,
                              const graph::AdjacencyList<std::int32_t>& f_to_v,
                              int faces_per_cell, const std::int32_t num_cells)
 {
-  std::vector<std::uint32_t> face_permutation_info(num_cells, 0);
+  Eigen::Array<std::uint32_t, Eigen::Dynamic, 1> face_permutation_info(
+      num_cells, 0);
   for (int c = 0; c < c_to_v.num_nodes(); ++c)
   {
     auto cell_vertices = c_to_v.links(c);
@@ -149,7 +152,7 @@ compute_face_permutations_tp(const graph::AdjacencyList<std::int32_t>& c_to_v,
   return face_permutation_info;
 }
 //-----------------------------------------------------------------------------
-std::vector<std::uint32_t>
+Eigen::Array<std::uint32_t, Eigen::Dynamic, 1>
 compute_edge_reflections(const mesh::Topology& topology)
 {
   const int tdim = topology.dim();
@@ -158,7 +161,8 @@ compute_edge_reflections(const mesh::Topology& topology)
 
   const std::int32_t num_cells = topology.connectivity(tdim, 0)->num_nodes();
 
-  std::vector<std::uint32_t> edge_permutation_info(num_cells);
+  Eigen::Array<std::uint32_t, Eigen::Dynamic, 1> edge_permutation_info(
+      num_cells);
 
   auto c_to_v = topology.connectivity(tdim, 0);
   assert(c_to_v);
@@ -196,7 +200,7 @@ compute_edge_reflections(const mesh::Topology& topology)
   return edge_permutation_info;
 }
 //-----------------------------------------------------------------------------
-std::vector<std::uint32_t>
+Eigen::Array<std::uint32_t, Eigen::Dynamic, 1>
 compute_face_permutations(const mesh::Topology& topology)
 {
   const int tdim = topology.dim();
@@ -241,7 +245,7 @@ PermutationInfo::get_facet_permutations() const
   return _facet_permutations;
 }
 //-----------------------------------------------------------------------------
-const std::vector<std::uint32_t>&
+const Eigen::Array<std::uint32_t, Eigen::Dynamic, 1>&
 PermutationInfo::get_cell_permutation_info() const
 {
   return _cell_permutation_info;
@@ -268,7 +272,7 @@ void PermutationInfo::create_entity_permutations(mesh::Topology& topology)
   if (tdim > 2)
   {
     const int faces_per_cell = cell_num_entities(cell_type, 2);
-    std::vector<std::uint32_t> face_permutation_info
+    Eigen::Array<std::uint32_t, Eigen::Dynamic, 1> face_permutation_info
         = compute_face_permutations(topology);
     for (int i = 0; i < num_cells; ++i)
       _cell_permutation_info[i] |= face_permutation_info[i];
@@ -286,7 +290,7 @@ void PermutationInfo::create_entity_permutations(mesh::Topology& topology)
   if (tdim > 1)
   {
     const int edges_per_cell = cell_num_entities(cell_type, 1);
-    std::vector<std::uint32_t> edge_permutation_info
+    Eigen::Array<std::uint32_t, Eigen::Dynamic, 1> edge_permutation_info
         = compute_edge_reflections(topology);
     for (int i = 0; i < num_cells; ++i)
       _cell_permutation_info[i] |= (edge_permutation_info[i] << used_bits);

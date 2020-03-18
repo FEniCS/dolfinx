@@ -87,7 +87,8 @@ public:
   /// This data is used to correct the direction of vector function on permuted
   /// facets.
   /// @return A vector of cell permutation info ints.
-  const std::vector<std::uint32_t>& get_cell_permutation_info() const;
+  const Eigen::Array<std::uint32_t, Eigen::Dynamic, 1>&
+  get_cell_permutation_info() const;
 
   /// Compute entity permutations and reflections used in assembly
   void create_entity_permutations(Topology& topology);
@@ -100,7 +101,7 @@ private:
   // Cell permutation info
   // See the documentation for get_cell_permutation_info for documentation of
   // how this is encoded.
-  std::vector<std::uint32_t> _cell_permutation_info;
+  Eigen::Array<std::uint32_t, Eigen::Dynamic, 1> _cell_permutation_info;
 };
 
 } // namespace mesh

@@ -197,7 +197,8 @@ size_t Topology::hash() const
   return this->connectivity(dim(), 0)->hash();
 }
 //-----------------------------------------------------------------------------
-std::vector<std::uint32_t> Topology::get_cell_permutation_info() const
+Eigen::Array<std::uint32_t, Eigen::Dynamic, 1>
+Topology::get_cell_permutation_info() const
 {
   return _pinfo.get_cell_permutation_info();
 }
