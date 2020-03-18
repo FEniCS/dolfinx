@@ -275,9 +275,10 @@ void PermutationInfo::create_entity_permutations(mesh::Topology& topology)
     used_bits += faces_per_cell * 3;
     assert(tdim == 3);
     for (int c = 0; c < num_cells; ++c)
+    {
       for (int i = 0; i < facets_per_cell; ++i)
-        _facet_permutations(i, c) = (face_data[c] << (3 * i)) & 3;
-    // TODO: Use some form of cast to make this neater
+        _facet_permutations(i, c) = ((face_data[c] >> (3 * i)) & 7);
+    }
   }
 
   if (tdim > 1)
@@ -285,12 +286,14 @@ void PermutationInfo::create_entity_permutations(mesh::Topology& topology)
     const int edges_per_cell = cell_num_entities(cell_type, 1);
     std::vector<std::uint32_t> edge_data = compute_edge_reflections(topology);
     for (int i = 0; i < num_cells; ++i)
-      _cell_data[i] |= edge_data[i] << used_bits;
+      _cell_data[i] |= (edge_data[i] << used_bits);
     used_bits += edges_per_cell;
     if (tdim == 2)
+    {
       for (int c = 0; c < num_cells; ++c)
         for (int i = 0; i < facets_per_cell; ++i)
-          _facet_permutations(i, c) = (edge_data[c] << i) & 1;
+          _facet_permutations(i, c) = (edge_data[c] >> i) & 1;
+    }
   }
 
   assert(used_bits < 32);
