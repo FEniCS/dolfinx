@@ -5,7 +5,7 @@
 # SPDX-License-Identifier:    LGPL-3.0-or-later
 """IO module for input data, post-processing and checkpointing"""
 
-from dolfinx import cpp
+from dolfinx import cpp, fem
 
 
 class VTKFile:
@@ -38,3 +38,8 @@ class XDMFFile(cpp.io.XDMFFile):
     def write_function(self, u, t=0.0, mesh_xpath="/Xdmf/Domain/Grid[@GridType='Uniform'][1]"):
         u_cpp = getattr(u, "_cpp_object", u)
         super().write_function(u_cpp, t, mesh_xpath)
+
+    def read_mesh(self, name="mesh", xpath="/Xdmf/Domain"):
+        mesh = super().read_mesh(name, xpath)
+        mesh.geometry.coord_mapping = fem.create_coordinate_map(mesh)
+        return mesh
