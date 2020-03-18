@@ -96,7 +96,7 @@ void FormIntegrals::set_domains(FormIntegrals::Type type,
   if (integrals.size() == 0)
     return;
 
-  std::shared_ptr<const mesh::Mesh> mesh = marker.mesh;
+  std::shared_ptr<const mesh::Mesh> mesh = marker.mesh();
 
   const mesh::Topology& topology = mesh->topology();
   const int tdim = topology.dim();
@@ -107,10 +107,10 @@ void FormIntegrals::set_domains(FormIntegrals::Type type,
   else if (type == Type::vertex)
     dim = 0;
 
-  if (dim != marker.dim)
+  if (dim != marker.dim())
   {
     throw std::runtime_error("Invalid MeshTags dimension:"
-                             + std::to_string(marker.dim));
+                             + std::to_string(marker.dim()));
   }
 
   // Create a reverse map
