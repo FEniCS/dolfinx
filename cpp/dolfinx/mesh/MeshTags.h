@@ -42,12 +42,6 @@ public:
   /// Destructor
   ~MeshTags() = default;
 
-  /// Associated mesh
-  const std::shared_ptr<const Mesh> mesh;
-
-  /// Topological dimension of tagged mesh entities
-  const int dim;
-
   /// Indices of tagged mesh entities, local-to-process
   Eigen::Array<std::int32_t, Eigen::Dynamic, 1>& indices();
 
@@ -74,6 +68,12 @@ public:
   append_unique(const Eigen::Array<std::int32_t, Eigen::Dynamic, 1>& indices,
                 const Eigen::Array<T, Eigen::Dynamic, 1>& values);
 
+  /// Return topological dimension of tagged entities
+  int dim() const;
+
+  /// Return mesh
+  std::shared_ptr<const Mesh> mesh() const;
+
   /// Name
   std::string name = "mesh_tags";
 
@@ -86,6 +86,12 @@ private:
 
   // Values attached to entities
   Eigen::Array<T, Eigen::Dynamic, 1> _values;
+
+  /// Associated mesh
+  std::shared_ptr<const Mesh> _mesh;
+
+  /// Topological dimension of tagged mesh entities
+  const int _dim;
 };
 
 //---------------------------------------------------------------------------
@@ -96,7 +102,7 @@ MeshTags<T>::MeshTags(
     std::shared_ptr<const Mesh> mesh, int dim,
     const Eigen::Array<std::int32_t, Eigen::Dynamic, 1>& indices,
     const Eigen::Array<T, Eigen::Dynamic, 1>& values)
-    : mesh(mesh), dim(dim), _indices(indices), _values(values)
+    : _mesh(mesh), _dim(dim), _indices(indices), _values(values)
 {
   if (indices.rows() != values.rows())
     throw std::runtime_error("Indices and values arrays must match in size.");
@@ -132,6 +138,18 @@ MeshTags<T>::indices() const
 }
 //---------------------------------------------------------------------------
 template <typename T>
+int MeshTags<T>::dim() const
+{
+  return _dim;
+}
+//---------------------------------------------------------------------------
+template <typename T>
+std::shared_ptr<const Mesh> MeshTags<T>::mesh() const
+{
+  return _mesh;
+}
+//---------------------------------------------------------------------------
+template <typename T>
 void MeshTags<T>::append(
     const Eigen::Array<std::int32_t, Eigen::Dynamic, 1>& indices,
     const Eigen::Array<T, Eigen::Dynamic, 1>& values)
@@ -159,8 +177,8 @@ void MeshTags<T>::append_unique(
   if (indices.rows() != values.rows())
     throw std::runtime_error("Indices and values arrays must match in size.");
 
-  const int num_entities = mesh->topology().index_map(dim)->size_local()
-                           + mesh->topology().index_map(dim)->num_ghosts();
+  const int num_entities = _mesh->topology().index_map(_dim)->size_local()
+                           + _mesh->topology().index_map(_dim)->num_ghosts();
 
   // Prepare a large vector which says if an enitty index was already inserted
   // Trading time complexity for memory cost

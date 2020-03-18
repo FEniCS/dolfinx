@@ -108,12 +108,12 @@ ParallelRefinement::edge_to_new_vertex() const
 void ParallelRefinement::mark(
     const mesh::MeshTags<std::int8_t>& refinement_marker)
 {
-  const std::size_t entity_dim = refinement_marker.dim;
+  const std::size_t entity_dim = refinement_marker.dim();
 
   const Eigen::Array<std::int32_t, Eigen::Dynamic, 1>& marker_indices
       = refinement_marker.indices();
 
-  std::shared_ptr<const mesh::Mesh> mesh = refinement_marker.mesh;
+  std::shared_ptr<const mesh::Mesh> mesh = refinement_marker.mesh();
   auto map_ent = mesh->topology().index_map(entity_dim);
   assert(map_ent);
 

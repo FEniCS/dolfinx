@@ -44,7 +44,7 @@ _meshtags_types = {
     numpy.int8: cpp.mesh.MeshTags_int8,
     numpy.intc: cpp.mesh.MeshTags_int,
     numpy.int64: cpp.mesh.MeshTags_int64,
-    numpy.double: cpp.mesh.MeshTags_int64
+    numpy.double: cpp.mesh.MeshTags_double
 }
 
 _meshfunction_types = {
