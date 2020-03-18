@@ -12,6 +12,7 @@
 #include <dolfinx/common/IndexMap.h>
 #include <dolfinx/common/MPI.h>
 #include <dolfinx/common/Timer.h>
+#include <dolfinx/common/UniqueIdGenerator.h>
 #include <dolfinx/common/log.h>
 #include <dolfinx/common/utils.h>
 #include <dolfinx/fem/DofMapBuilder.h>
@@ -125,29 +126,9 @@ Mesh::Mesh(const Mesh& mesh)
   // Do nothing
 }
 //-----------------------------------------------------------------------------
-Mesh::Mesh(Mesh&& mesh)
-    : _topology(std::move(mesh._topology)),
-      _geometry(std::move(mesh._geometry)),
-      _mpi_comm(std::move(mesh._mpi_comm)),
-      _unique_id(std::move(mesh._unique_id))
-{
-  // Do nothing
-}
-//-----------------------------------------------------------------------------
 Mesh::~Mesh()
 {
   // Do nothing
-}
-//-----------------------------------------------------------------------------
-Mesh& Mesh::operator=(Mesh&& mesh)
-{
-  _topology = std::move(mesh._topology);
-  _geometry = std::move(mesh._geometry);
-  this->_mpi_comm = MPI_COMM_NULL;
-  std::swap(this->_mpi_comm, mesh._mpi_comm);
-  _unique_id = std::move(mesh._unique_id);
-
-  return *this;
 }
 //-----------------------------------------------------------------------------
 std::int32_t Mesh::num_entities(int d) const
