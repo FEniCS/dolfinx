@@ -34,7 +34,7 @@ def test_manufactured_poisson(degree, filename, datadir):
 
     """
 
-    with XDMFFile(MPI.comm_world, os.path.join(datadir, filename)) as xdmf:
+    with XDMFFile(MPI.comm_world, os.path.join(datadir, filename), "r") as xdmf:
         mesh = xdmf.read_mesh()
 
     V = FunctionSpace(mesh, ("Lagrange", degree))
@@ -137,7 +137,7 @@ def test_manufactured_poisson(degree, filename, datadir):
 def test_manufactured_vector1(family, degree, filename, datadir):
     """Projection into H(div/curl) spaces"""
 
-    with XDMFFile(MPI.comm_world, os.path.join(datadir, filename)) as xdmf:
+    with XDMFFile(MPI.comm_world, os.path.join(datadir, filename), "r") as xdmf:
         mesh = xdmf.read_mesh()
 
     V = FunctionSpace(mesh, (family, degree))
@@ -198,7 +198,7 @@ def test_manufactured_vector1(family, degree, filename, datadir):
 def test_manufactured_vector2(family, degree, filename, datadir):
     """Projection into H(div/curl) spaces"""
 
-    with XDMFFile(MPI.comm_world, os.path.join(datadir, filename)) as xdmf:
+    with XDMFFile(MPI.comm_world, os.path.join(datadir, filename), "r") as xdmf:
         mesh = xdmf.read_mesh()
 
     V = FunctionSpace(mesh, (family, degree + 1))

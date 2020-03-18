@@ -28,6 +28,7 @@ import ufl
 filedir = os.path.dirname(__file__)
 infile = dolfinx.io.XDMFFile(dolfinx.MPI.comm_world,
                              os.path.join(filedir, "cooks_tri_mesh.xdmf"),
+                             "r",
                              encoding=dolfinx.cpp.io.XDMFFile.Encoding.HDF5)
 mesh = infile.read_mesh()
 infile.close()

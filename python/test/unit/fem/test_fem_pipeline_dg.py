@@ -33,7 +33,7 @@ def test_manufactured_poisson_dg(degree, filename, datadir):
     degree of the Lagrange function space.
 
     """
-    with XDMFFile(MPI.comm_world, os.path.join(datadir, filename)) as xdmf:
+    with XDMFFile(MPI.comm_world, os.path.join(datadir, filename), "r") as xdmf:
         if MPI.size(MPI.comm_world) == 1:  # Serial
             mesh = xdmf.read_mesh()
         else:
