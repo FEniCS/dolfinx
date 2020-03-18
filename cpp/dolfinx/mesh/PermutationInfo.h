@@ -45,6 +45,7 @@ public:
   ///   n//2 gives the number of rotations to apply
   /// Each column of the returned array represents a cell, and each row a
   /// facet of that cell.
+  /// This data is used to permute the quadrature point on facet integrals when data from the cells on both sides of the facet is used.
   /// @return An array of permutation numbers.
   const Eigen::Array<std::uint8_t, Eigen::Dynamic, Eigen::Dynamic>&
   get_facet_permutations() const;
@@ -82,6 +83,7 @@ public:
   ///   - edge 4 is reflected (1)
   ///   - edge 5 is not permuted (0)
   ///
+  /// This data is used to correct the direction of vector function on permuted facets.
   /// @return A vector of cell permutation info ints.
   const std::vector<std::uint32_t>& get_cell_permutation_info() const;
 
