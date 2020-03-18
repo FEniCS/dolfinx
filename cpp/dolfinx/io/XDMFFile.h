@@ -108,6 +108,10 @@ public:
   read_mesh_data(const std::string name = "mesh",
                  const std::string xpath = "/Xdmf/Domain") const;
 
+
+  /// Write Function
+  void write_function(const function::Function& function, const double time);
+
 private:
   // MPI communicator
   dolfinx::MPI::Comm _mpi_comm;
