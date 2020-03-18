@@ -110,7 +110,7 @@ public:
 
 
   /// Write Function
-  void write_function(const function::Function& function, const double time);
+  void write_function(const function::Function& function, const double time, const std::string xpath = "/Xdmf/Domain/");
 
 private:
   // MPI communicator
