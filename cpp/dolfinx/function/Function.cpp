@@ -222,6 +222,8 @@ void Function::eval(
   const fem::DofMap& dofmap = *_function_space->dofmap();
 
   mesh.create_entity_permutations();
+  std::vector<std::uint32_t> cell_info
+      = mesh.topology().get_cell_permutation_info();
 
   // Loop over points
   u.setZero();
@@ -248,9 +250,8 @@ void Function::eval(
     element.evaluate_reference_basis(basis_reference_values, X);
 
     // Push basis forward to physical element
-    element.transform_reference_basis(
-        basis_values, basis_reference_values, X, J, detJ, K,
-        mesh.topology().get_permutation_info()[cell_index]);
+    element.transform_reference_basis(basis_values, basis_reference_values, X,
+                                      J, detJ, K, cell_info[cell_index]);
 
     // Get degrees of freedom for current cell
     auto dofs = dofmap.cell_dofs(cell_index);

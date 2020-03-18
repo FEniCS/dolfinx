@@ -18,7 +18,7 @@ std::vector<std::uint32_t> compute_face_permutations_simplex(
     const graph::AdjacencyList<std::int32_t>& f_to_v, int faces_per_cell,
     const std::int32_t num_cells)
 {
-  std::vector<std::uint32_t> face_data(num_cells, 0);
+  std::vector<std::uint32_t> face_permutation_info(num_cells, 0);
   for (int c = 0; c < c_to_v.num_nodes(); ++c)
   {
     auto cell_vertices = c_to_v.links(c);
@@ -62,11 +62,11 @@ std::vector<std::uint32_t> compute_face_permutations_simplex(
       // the lowest numbered vertex
       const int post = rots == 3 - 1 ? e_vertices[0] : e_vertices[rots + 1];
 
-      face_data[c] |= (post > pre) << (3 * i);
-      face_data[c] |= rots << (3 * i + 1);
+      face_permutation_info[c] |= (post > pre) << (3 * i);
+      face_permutation_info[c] |= rots << (3 * i + 1);
     }
   }
-  return face_data;
+  return face_permutation_info;
 }
 //-----------------------------------------------------------------------------
 std::vector<std::uint32_t>
@@ -75,7 +75,7 @@ compute_face_permutations_tp(const graph::AdjacencyList<std::int32_t>& c_to_v,
                              const graph::AdjacencyList<std::int32_t>& f_to_v,
                              int faces_per_cell, const std::int32_t num_cells)
 {
-  std::vector<std::uint32_t> face_data(num_cells, 0);
+  std::vector<std::uint32_t> face_permutation_info(num_cells, 0);
   for (int c = 0; c < c_to_v.num_nodes(); ++c)
   {
     auto cell_vertices = c_to_v.links(c);
@@ -142,11 +142,11 @@ compute_face_permutations_tp(const graph::AdjacencyList<std::int32_t>& c_to_v,
         break;
       }
 
-      face_data[c] |= (post > pre) << (3 * i);
-      face_data[c] |= rots << (3 * i + 1);
+      face_permutation_info[c] |= (post > pre) << (3 * i);
+      face_permutation_info[c] |= rots << (3 * i + 1);
     }
   }
-  return face_data;
+  return face_permutation_info;
 }
 //-----------------------------------------------------------------------------
 std::vector<std::uint32_t>
@@ -158,7 +158,7 @@ compute_edge_reflections(const mesh::Topology& topology)
 
   const std::int32_t num_cells = topology.connectivity(tdim, 0)->num_nodes();
 
-  std::vector<std::uint32_t> edge_data(num_cells);
+  std::vector<std::uint32_t> edge_permutation_info(num_cells);
 
   auto c_to_v = topology.connectivity(tdim, 0);
   assert(c_to_v);
@@ -190,10 +190,10 @@ compute_edge_reflections(const mesh::Topology& topology)
 
       // The number of reflections. Comparing iterators directly instead
       // of values they point to is sufficient here.
-      edge_data[c] |= (it1 < it0) << i;
+      edge_permutation_info[c] |= (it1 < it0) << i;
     }
   }
-  return edge_data;
+  return edge_permutation_info;
 }
 //-----------------------------------------------------------------------------
 std::vector<std::uint32_t>
@@ -241,14 +241,15 @@ PermutationInfo::get_facet_permutations() const
   return _facet_permutations;
 }
 //-----------------------------------------------------------------------------
-const std::vector<std::uint32_t>& PermutationInfo::get_cell_data() const
+const std::vector<std::uint32_t>&
+PermutationInfo::get_cell_permutation_info() const
 {
-  return _cell_data;
+  return _cell_permutation_info;
 }
 //-----------------------------------------------------------------------------
 void PermutationInfo::create_entity_permutations(mesh::Topology& topology)
 {
-  if (_cell_data.size() > 0)
+  if (_cell_permutation_info.size() > 0)
   {
     return;
   }
@@ -260,16 +261,17 @@ void PermutationInfo::create_entity_permutations(mesh::Topology& topology)
 
   const int facets_per_cell = cell_num_entities(cell_type, tdim - 1);
 
-  _cell_data.resize(num_cells, 0);
+  _cell_permutation_info.resize(num_cells, 0);
   _facet_permutations.resize(facets_per_cell, num_cells);
 
   int32_t used_bits = 0;
   if (tdim > 2)
   {
     const int faces_per_cell = cell_num_entities(cell_type, 2);
-    std::vector<std::uint32_t> face_data = compute_face_permutations(topology);
+    std::vector<std::uint32_t> face_permutation_info
+        = compute_face_permutations(topology);
     for (int i = 0; i < num_cells; ++i)
-      _cell_data[i] |= face_data[i];
+      _cell_permutation_info[i] |= face_permutation_info[i];
     // Currently, 3 bits are used for each face. If faces with more than 4 sides
     // are implemented, this will need to be increased.
     used_bits += faces_per_cell * 3;
@@ -277,22 +279,23 @@ void PermutationInfo::create_entity_permutations(mesh::Topology& topology)
     for (int c = 0; c < num_cells; ++c)
     {
       for (int i = 0; i < facets_per_cell; ++i)
-        _facet_permutations(i, c) = ((face_data[c] >> (3 * i)) & 7);
+        _facet_permutations(i, c) = ((face_permutation_info[c] >> (3 * i)) & 7);
     }
   }
 
   if (tdim > 1)
   {
     const int edges_per_cell = cell_num_entities(cell_type, 1);
-    std::vector<std::uint32_t> edge_data = compute_edge_reflections(topology);
+    std::vector<std::uint32_t> edge_permutation_info
+        = compute_edge_reflections(topology);
     for (int i = 0; i < num_cells; ++i)
-      _cell_data[i] |= (edge_data[i] << used_bits);
+      _cell_permutation_info[i] |= (edge_permutation_info[i] << used_bits);
     used_bits += edges_per_cell;
     if (tdim == 2)
     {
       for (int c = 0; c < num_cells; ++c)
         for (int i = 0; i < facets_per_cell; ++i)
-          _facet_permutations(i, c) = (edge_data[c] >> i) & 1;
+          _facet_permutations(i, c) = (edge_permutation_info[c] >> i) & 1;
     }
   }
 

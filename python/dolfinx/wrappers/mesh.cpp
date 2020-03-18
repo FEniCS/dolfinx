@@ -124,8 +124,8 @@ void mesh(py::module& m)
       .def("set_interior_facets", &dolfinx::mesh::Topology::set_interior_facets)
       .def("get_facet_permutations",
            &dolfinx::mesh::Topology::get_facet_permutations)
-      .def("get_permutation_info",
-           &dolfinx::mesh::Topology::get_permutation_info)
+      .def("get_cell_permutation_info",
+           &dolfinx::mesh::Topology::get_cell_permutation_info)
       .def_property_readonly("dim", &dolfinx::mesh::Topology::dim,
                              "Topological dimension")
       .def("connectivity",

@@ -115,7 +115,7 @@ public:
                         int d0, int d1);
 
   /// Returns the permutation information
-  std::vector<std::uint32_t> get_permutation_info() const;
+  std::vector<std::uint32_t> get_cell_permutation_info() const;
 
   /// Gets markers for owned facets that are interior, i.e. are
   /// connected to two cells, one of which might be on a remote process

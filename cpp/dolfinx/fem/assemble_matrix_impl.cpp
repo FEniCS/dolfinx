@@ -115,7 +115,7 @@ void fem::impl::assemble_cells(
       Ae;
 
   const std::vector<std::uint32_t>& cell_info
-      = mesh.topology().get_permutation_info();
+      = mesh.topology().get_cell_permutation_info();
 
   // Iterate over active cells
   PetscErrorCode ierr;
@@ -200,7 +200,7 @@ void fem::impl::assemble_exterior_facets(
   const Eigen::Array<std::uint8_t, Eigen::Dynamic, Eigen::Dynamic>& perms
       = mesh.topology().get_facet_permutations();
   const std::vector<std::uint32_t>& cell_info
-      = mesh.topology().get_permutation_info();
+      = mesh.topology().get_cell_permutation_info();
 
   // Iterate over all facets
   PetscErrorCode ierr;
@@ -304,7 +304,7 @@ void fem::impl::assemble_interior_facets(
   const Eigen::Array<std::uint8_t, Eigen::Dynamic, Eigen::Dynamic>& perms
       = mesh.topology().get_facet_permutations();
   const std::vector<std::uint32_t>& cell_info
-      = mesh.topology().get_permutation_info();
+      = mesh.topology().get_cell_permutation_info();
 
   // Iterate over all facets
   PetscErrorCode ierr;

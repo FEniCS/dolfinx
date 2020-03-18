@@ -56,7 +56,7 @@ public:
   /// Each column of the returned array represents a cell, and each row a
   /// facet of that cell.
   /// @return The permutation number
-  const std::vector<std::uint32_t>& get_cell_data() const;
+  const std::vector<std::uint32_t>& get_cell_permutation_info() const;
 
   /// Compute entity permutations and reflections used in assembly
   void create_entity_permutations(Topology& topology);
@@ -66,8 +66,8 @@ private:
   Eigen::Array<std::uint8_t, Eigen::Dynamic, Eigen::Dynamic>
       _facet_permutations;
 
-  // Cell data
-  std::vector<std::uint32_t> _cell_data;
+  // Cell permutation info
+  std::vector<std::uint32_t> _cell_permutation_info;
 };
 
 } // namespace mesh
