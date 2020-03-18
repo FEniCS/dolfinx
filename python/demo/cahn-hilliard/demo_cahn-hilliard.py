@@ -309,7 +309,8 @@ solver.rtol = 1e-6
 # :math:`t_{n+1}` until a terminal time :math:`T` is reached::
 
 # Output file
-file = XDMFFile(MPI.comm_world, "output.xdmf")
+file = XDMFFile(MPI.comm_world, "output.xdmf", "w")
+file.write_mesh(mesh)
 
 # Step in time
 t = 0.0
@@ -328,7 +329,9 @@ while (t < T):
     r = solver.solve(problem, u.vector)
     print("Step, num iterations:", int(t / dt), r[0])
     u.vector.copy(result=u0.vector)
-    file.write(u.sub(0), t)
+    file.write_function(u.sub(0), t)
+
+file.close()
 
 # Within the time stepping loop, the nonlinear problem is solved by
 # calling :py:func:`solver.solve(problem,u.vector)<dolfinx.cpp.NewtonSolver.solve>`,

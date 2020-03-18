@@ -371,5 +371,5 @@ def test_topology_partition(tempdir, shape, order):
     filename = os.path.join(tempdir, "mesh_{}_{}.xdmf".format(cpp.mesh.to_string(shape), order))
     # print(filename)
     encoding = XDMFFile.Encoding.HDF5
-    with XDMFFile(mesh.mpi_comm(), filename, encoding=encoding) as file:
-        file.write(mesh)
+    with XDMFFile(mesh.mpi_comm(), filename, "w", encoding=encoding) as file:
+        file.write_mesh(mesh)
