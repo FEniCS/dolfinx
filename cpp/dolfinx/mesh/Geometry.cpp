@@ -93,7 +93,7 @@ mesh::Geometry mesh::create_geometry(
     MPI_Comm comm, const Topology& topology,
     const fem::ElementDofLayout& layout,
     const graph::AdjacencyList<std::int64_t>& cells,
-    const graph::AdjacencyList<std::int32_t>& dest, const std::vector<int>& src,
+    const graph::AdjacencyList<std::int32_t>& dest, const std::vector<int>&,
     const Eigen::Ref<const Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic,
                                         Eigen::RowMajor>>& x)
 {
@@ -113,9 +113,18 @@ mesh::Geometry mesh::create_geometry(
   //
   //  NOTE: This could be optimised as we have earlier computed which
   //  processes own the cells this process needs.
-  std::set<int> _src(src.begin(), src.end());
-  auto [cell_nodes, global_index_cell]
-      = graph::Partitioning::exchange(comm, cells, dest, _src);
+
+  // std::set<int> _src(src.begin(), src.end());
+  // auto [cell_nodes, global_index_cell]
+  //     = graph::Partitioning::exchange(comm, cells, dest, _src);
+
+  // Distribute cells to destination rank
+  const auto [cell_nodes, src, global_cell_index, ghost_owners]
+      = graph::Partitioning::distribute(comm, cells, dest);
+
+  std::stringstream s;
+  s << "cell_nodes = \n" << cell_nodes.str() << "\n";
+  s << "dofmap = \n" << dofmap.str() << "\n";
 
   // Build list of unique (global) node indices from adjacency list
   // (geometry nodes)
@@ -129,6 +138,9 @@ mesh::Geometry mesh::create_geometry(
   //  coords matches order of the indices in 'indices'
   Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor> coords
       = graph::Partitioning::distribute_data(comm, indices, x);
+
+  s << "coords=\n[" << coords << "]\n\n";
+  std::cout << s.str();
 
   // Compute local-to-global map from local indices in dofmap to the
   // corresponding global indices in cell_nodes

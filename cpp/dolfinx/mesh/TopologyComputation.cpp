@@ -131,10 +131,27 @@ get_local_indexing(
     }
   }
 
+  std::stringstream s;
+  s << "ghost status = [";
+  for (auto gs : ghost_status)
+    s << (int)gs << " ";
+  s << "]\n";
+
   //---------
   // Create an expanded neighbour_comm from shared_vertices
   std::map<std::int32_t, std::set<std::int32_t>> shared_vertices
       = vertex_indexmap->compute_shared_indices();
+
+  s << "shared_vertices=";
+  for (auto q : shared_vertices)
+  {
+    s << q.first << ": ";
+    for (auto w : q.second)
+      s << w << " ";
+    s << "\n";
+  }
+  std::cout << s.str();
+
   std::set<std::int32_t> neighbour_set;
   for (auto q : shared_vertices)
     neighbour_set.insert(q.second.begin(), q.second.end());
@@ -303,8 +320,7 @@ get_local_indexing(
 
   //---------
   // Communicate global indices to other processes
-  Eigen::Array<std::int64_t, Eigen::Dynamic, 1> ghost_indices(entity_count
-                                                              - num_local);
+  std::vector<std::int64_t> ghost_indices(entity_count - num_local, -1);
   {
     const std::int64_t local_offset
         = dolfinx::MPI::global_offset(comm, num_local, true);
@@ -349,6 +365,8 @@ get_local_indexing(
         ghost_indices[local_index[idx] - num_local] = gi;
       }
     }
+    for (std::int64_t idx : ghost_indices)
+      assert(idx != -1);
   }
 
   MPI_Comm_free(&neighbour_comm);
@@ -437,6 +455,9 @@ compute_entities_by_key_matching(
               entity_list_sorted.row(i).data() + num_vertices_per_entity);
   }
 
+  std::stringstream s;
+  s << "Entity list = [" << entity_list << "]\n";
+
   // Sort the list and label uniquely
   std::vector<std::int32_t> sort_order
       = sort_by_perm<std::int32_t>(entity_list_sorted);
@@ -451,6 +472,14 @@ compute_entities_by_key_matching(
     last = j;
   }
   ++entity_count;
+
+  s << "entity_index = {";
+  for (int i : entity_index)
+    s << i << " ";
+  s << "}\n";
+  s << "entity_count = " << entity_count << "\n";
+
+  std::cout << s.str();
 
   // Communicate with other processes to find out which entities are
   // ghosted and shared. Remap the numbering so that ghosts are at the

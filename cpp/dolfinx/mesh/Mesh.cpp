@@ -62,23 +62,42 @@ Mesh mesh::create(
                                         Eigen::RowMajor>>& x,
     mesh::GhostMode ghost_mode)
 {
+  std::stringstream s;
+  s << "cells:[";
+  for (int i = 0; i < cells.num_nodes(); ++i)
+  {
+    s << "[";
+    for (int j = 0; j < cells.num_links(i); ++j)
+      s << cells.links(i)[j] << " ";
+    s << "]\n";
+  }
+  s << "]\n\n";
+
   auto [topology, src, dest]
       = mesh::create_topology(comm, cells, layout, ghost_mode);
 
-  std::stringstream s;
   auto topo_c = topology.connectivity(topology.dim(), 0);
-  s << "[";
+
+  auto im0 = topology.index_map(0)->global_indices(false);
+  s << "gv:[";
   for (int i = 0; i < topo_c->num_nodes(); ++i)
   {
     s << "[";
     for (int j = 0; j < topo_c->num_links(i); ++j)
-      s << topo_c->links(i)[j] << " ";
+      s << im0[topo_c->links(i)[j]] << " ";
     s << "]\n";
   }
+
   s << "]\n im0 = [";
-  for (std::int64_t gi : topology.index_map(0)->global_indices(false))
+  for (std::int64_t gi : im0)
     s << gi << " ";
   s << "]\n";
+
+  s << "im0(fw):";
+  for (int i : topology.index_map(0)->forward_indices())
+    s << i << " ";
+  s << "\n im0(gh):" << topology.index_map(0)->ghosts() << "\n";
+
   s << "]\n im2 = [";
   for (std::int64_t gi : topology.index_map(2)->global_indices(false))
     s << gi << " ";
@@ -88,7 +107,7 @@ Mesh mesh::create(
   // FIXME: Figure out how to check which entities are required
   // Initialise facet for P2
   // Create local entities
-  if (topology.dim() > 1)
+  if (false) // topology.dim() > 1)
   {
     std::cout << "Create edges\n";
     auto [cell_entity, entity_vertex, index_map]

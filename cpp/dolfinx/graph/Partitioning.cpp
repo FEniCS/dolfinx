@@ -680,7 +680,7 @@ Partitioning::exchange(MPI_Comm comm,
   MPI_Alltoall(num_per_dest_send.data(), 1, MPI_INT, num_per_dest_recv.data(),
                1, MPI_INT, comm);
 
-  // Compite receive array displacements
+  // Compute receive array displacements
   std::vector<int> disp_recv(size + 1, 0);
   std::partial_sum(num_per_dest_recv.begin(), num_per_dest_recv.end(),
                    disp_recv.begin() + 1);
