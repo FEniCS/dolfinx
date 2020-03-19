@@ -6,7 +6,6 @@
 
 #include "IndexMap.h"
 #include <algorithm>
-#include <iostream>
 #include <numeric>
 
 using namespace dolfinx;
@@ -75,13 +74,6 @@ IndexMap::IndexMap(
       _myrank(MPI::rank(mpi_comm)), _ghosts(ghosts),
       _ghost_owners(ghosts.size())
 {
-  std::stringstream s;
-  s << "ghosts = ";
-  for (int i = 0; i < _ghosts.size(); ++i)
-    s << _ghosts[i] << " ";
-  s << "\n";
-  std::cout << s.str();
-
   // Calculate offsets
   int mpi_size = -1;
   MPI_Comm_size(mpi_comm, &mpi_size);
@@ -102,10 +94,11 @@ IndexMap::IndexMap(
     const int p = owner(ghosts[i]);
     ghost_owner_global[i] = p;
     if (ghost_owner_global[i] == _myrank)
-      throw std::runtime_error("owner = "
-                               + std::to_string(ghost_owner_global[i])
-                               + " ghost = " + std::to_string(ghosts[i]));
-    assert(ghost_owner_global[i] != _myrank);
+    {
+      throw std::runtime_error("IndexMap Error: Ghost in local range. Rank = "
+                               + std::to_string(_myrank)
+                               + ", ghost = " + std::to_string(ghosts[i]));
+    }
     num_edges_out_per_proc[p] += 1;
   }
 
