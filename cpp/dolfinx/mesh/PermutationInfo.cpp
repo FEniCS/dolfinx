@@ -5,24 +5,27 @@
 // SPDX-License-Identifier:    LGPL-3.0-or-later
 
 #include "PermutationInfo.h"
+#include <bitset>
 #include <dolfinx/mesh/Topology.h>
+
+#define BITSETSIZE 32
 
 using namespace dolfinx;
 using namespace dolfinx::mesh;
 
 namespace
 {
-Eigen::Array<std::uint32_t, Eigen::Dynamic, 1>
+Eigen::Array<std::bitset<BITSETSIZE>, Eigen::Dynamic, 1>
 compute_face_permutations_simplex(
     const graph::AdjacencyList<std::int32_t>& c_to_v,
     const graph::AdjacencyList<std::int32_t>& c_to_f,
-    const graph::AdjacencyList<std::int32_t>& f_to_v, int faces_per_cell,
-    const std::int32_t num_cells)
+    const graph::AdjacencyList<std::int32_t>& f_to_v, int faces_per_cell)
 {
-  Eigen::Array<std::uint32_t, Eigen::Dynamic, 1> face_permutation_info(
-      num_cells);
-  face_permutation_info.fill(0);
-  for (int c = 0; c < c_to_v.num_nodes(); ++c)
+  const std::int32_t num_cells = c_to_v.num_nodes();
+  Eigen::Array<std::bitset<BITSETSIZE>, Eigen::Dynamic, 1> face_perm(num_cells);
+  face_perm.fill(0);
+
+  for (int c = 0; c < num_cells; ++c)
   {
     auto cell_vertices = c_to_v.links(c);
     auto cell_faces = c_to_f.links(c);
@@ -65,23 +68,24 @@ compute_face_permutations_simplex(
       // the lowest numbered vertex
       const int post = rots == 3 - 1 ? e_vertices[0] : e_vertices[rots + 1];
 
-      face_permutation_info[c] |= (post > pre) << (3 * i);
-      face_permutation_info[c] |= rots << (3 * i + 1);
+      face_perm[c][3 * i] = (post > pre);
+      face_perm[c][3 * i + 1] = rots % 2;
+      face_perm[c][3 * i + 2] = rots / 2;
     }
   }
-  return face_permutation_info;
+  return face_perm;
 }
 //-----------------------------------------------------------------------------
-Eigen::Array<std::uint32_t, Eigen::Dynamic, 1>
+Eigen::Array<std::bitset<BITSETSIZE>, Eigen::Dynamic, 1>
 compute_face_permutations_tp(const graph::AdjacencyList<std::int32_t>& c_to_v,
                              const graph::AdjacencyList<std::int32_t>& c_to_f,
                              const graph::AdjacencyList<std::int32_t>& f_to_v,
-                             int faces_per_cell, const std::int32_t num_cells)
+                             int faces_per_cell)
 {
-  Eigen::Array<std::uint32_t, Eigen::Dynamic, 1> face_permutation_info(
-      num_cells);
-  face_permutation_info.fill(0);
-  for (int c = 0; c < c_to_v.num_nodes(); ++c)
+  const std::int32_t num_cells = c_to_v.num_nodes();
+  Eigen::Array<std::bitset<BITSETSIZE>, Eigen::Dynamic, 1> face_perm(num_cells);
+  face_perm.fill(0);
+  for (int c = 0; c < num_cells; ++c)
   {
     auto cell_vertices = c_to_v.links(c);
     auto cell_faces = c_to_f.links(c);
@@ -147,14 +151,15 @@ compute_face_permutations_tp(const graph::AdjacencyList<std::int32_t>& c_to_v,
         break;
       }
 
-      face_permutation_info[c] |= (post > pre) << (3 * i);
-      face_permutation_info[c] |= rots << (3 * i + 1);
+      face_perm[c][3 * i] = (post > pre);
+      face_perm[c][3 * i + 1] = rots % 2;
+      face_perm[c][3 * i + 2] = rots / 2;
     }
   }
-  return face_permutation_info;
+  return face_perm;
 }
 //-----------------------------------------------------------------------------
-Eigen::Array<std::uint32_t, Eigen::Dynamic, 1>
+Eigen::Array<std::bitset<BITSETSIZE>, Eigen::Dynamic, 1>
 compute_edge_reflections(const mesh::Topology& topology)
 {
   const int tdim = topology.dim();
@@ -163,9 +168,8 @@ compute_edge_reflections(const mesh::Topology& topology)
 
   const std::int32_t num_cells = topology.connectivity(tdim, 0)->num_nodes();
 
-  Eigen::Array<std::uint32_t, Eigen::Dynamic, 1> edge_permutation_info(
-      num_cells);
-  edge_permutation_info.fill(0);
+  Eigen::Array<std::bitset<BITSETSIZE>, Eigen::Dynamic, 1> edge_perm(num_cells);
+  edge_perm.fill(0);
 
   auto c_to_v = topology.connectivity(tdim, 0);
   assert(c_to_v);
@@ -197,21 +201,19 @@ compute_edge_reflections(const mesh::Topology& topology)
 
       // The number of reflections. Comparing iterators directly instead
       // of values they point to is sufficient here.
-      edge_permutation_info[c] |= (it1 < it0) << i;
+      edge_perm[c][i] = (it1 < it0);
     }
   }
-  return edge_permutation_info;
+  return edge_perm;
 }
 //-----------------------------------------------------------------------------
-Eigen::Array<std::uint32_t, Eigen::Dynamic, 1>
+Eigen::Array<std::bitset<BITSETSIZE>, Eigen::Dynamic, 1>
 compute_face_permutations(const mesh::Topology& topology)
 {
   const int tdim = topology.dim();
   assert(tdim > 2);
   if (!topology.index_map(2))
     throw std::runtime_error("Faces have not been computed");
-
-  const std::int32_t num_cells = topology.connectivity(tdim, 0)->num_nodes();
 
   // If faces have been computed, the below should exist
   auto c_to_v = topology.connectivity(tdim, 0);
@@ -226,12 +228,12 @@ compute_face_permutations(const mesh::Topology& topology)
   if (cell_type == CellType::triangle or cell_type == CellType::tetrahedron)
   {
     return compute_face_permutations_simplex(*c_to_v, *c_to_f, *f_to_v,
-                                             faces_per_cell, num_cells);
+                                             faces_per_cell);
   }
   else
   {
     return compute_face_permutations_tp(*c_to_v, *c_to_f, *f_to_v,
-                                        faces_per_cell, num_cells);
+                                        faces_per_cell);
   }
 }
 //-----------------------------------------------------------------------------
@@ -265,7 +267,6 @@ void PermutationInfo::create_entity_permutations(mesh::Topology& topology)
   const CellType cell_type = topology.cell_type();
   assert(topology.connectivity(tdim, 0));
   const std::int32_t num_cells = topology.connectivity(tdim, 0)->num_nodes();
-
   const int facets_per_cell = cell_num_entities(cell_type, tdim - 1);
 
   _cell_permutation_info.resize(num_cells);
@@ -276,10 +277,10 @@ void PermutationInfo::create_entity_permutations(mesh::Topology& topology)
   if (tdim > 2)
   {
     const int faces_per_cell = cell_num_entities(cell_type, 2);
-    Eigen::Array<std::uint32_t, Eigen::Dynamic, 1> face_permutation_info
+    Eigen::Array<std::bitset<BITSETSIZE>, Eigen::Dynamic, 1> face_perm
         = compute_face_permutations(topology);
-    for (int i = 0; i < num_cells; ++i)
-      _cell_permutation_info[i] |= face_permutation_info[i];
+    for (int c = 0; c < num_cells; ++c)
+      _cell_permutation_info[c] = face_perm[c].to_ulong();
     // Currently, 3 bits are used for each face. If faces with more than 4 sides
     // are implemented, this will need to be increased.
     used_bits += faces_per_cell * 3;
@@ -287,26 +288,26 @@ void PermutationInfo::create_entity_permutations(mesh::Topology& topology)
     for (int c = 0; c < num_cells; ++c)
     {
       for (int i = 0; i < facets_per_cell; ++i)
-        _facet_permutations(i, c) = ((face_permutation_info[c] >> (3 * i)) & 7);
+        _facet_permutations(i, c) = (_cell_permutation_info[c] >> (3 * i)) & 7;
     }
   }
 
   if (tdim > 1)
   {
     const int edges_per_cell = cell_num_entities(cell_type, 1);
-    Eigen::Array<std::uint32_t, Eigen::Dynamic, 1> edge_permutation_info
+    Eigen::Array<std::bitset<BITSETSIZE>, Eigen::Dynamic, 1> edge_perm
         = compute_edge_reflections(topology);
-    for (int i = 0; i < num_cells; ++i)
-      _cell_permutation_info[i] |= (edge_permutation_info[i] << used_bits);
+    for (int c = 0; c < num_cells; ++c)
+      _cell_permutation_info[c] |= edge_perm[c].to_ulong() << used_bits;
     used_bits += edges_per_cell;
     if (tdim == 2)
     {
       for (int c = 0; c < num_cells; ++c)
         for (int i = 0; i < facets_per_cell; ++i)
-          _facet_permutations(i, c) = (edge_permutation_info[c] >> i) & 1;
+          _facet_permutations(i, c) = edge_perm[c][i];
     }
   }
 
-  assert(used_bits < 32);
+  assert(used_bits < BITSETSIZE);
 }
 //-----------------------------------------------------------------------------
