@@ -644,25 +644,13 @@ mesh::create_topology(MPI_Comm comm,
       = graph::Partitioning::compute_ghost_indices(comm, original_cell_index,
                                                    ghost_owners);
 
-  // Build local cell-vertex connectivity, with local vertex indices
-  // [0, 1, 2, ..., n), from cell-vertex connectivity using global
-  // indices and get map from global vertex indices in 'cells' to the
-  // local vertex indices
-  auto [cells_local, local_to_global_vertices]
-      = graph::Partitioning::create_local_adjacency_list(my_cells);
-
   // Cell IndexMap
-  const int num_local_cells
-      = cells_local.num_nodes() - cell_ghost_indices.size();
+  const int num_local_cells = my_cells.num_nodes() - cell_ghost_indices.size();
   auto index_map_c = std::make_shared<common::IndexMap>(comm, num_local_cells,
                                                         cell_ghost_indices, 1);
 
   if (cell_ghost_indices.size() > 0)
   {
-    std::cout << "Ghosted mesh...\n";
-
-    std::stringstream s;
-
     // Map from existing global vertex index to local index
     // putting ghost indices last
     std::unordered_map<std::int64_t, std::int32_t> global_to_local_index;
@@ -695,31 +683,11 @@ mesh::create_topology(MPI_Comm comm,
 
     int mpi_rank = MPI::rank(comm);
 
-    s << "** RANK  = " << mpi_rank << "\n";
-    s << "Identified " << ghost_boundary_vertices.size()
-      << " boundary verts and " << local_vertex_set.size() << " internal.\n";
-
     // Make a list of all vertex indices whose ownership needs determining
     std::vector<std::int64_t> unknown_indices(ghost_boundary_vertices.begin(),
                                               ghost_boundary_vertices.end());
-
-    s << "unknowns:[";
-    for (std::int64_t q : unknown_indices)
-      s << q << " ";
-    s << "]\n";
-
     std::unordered_map<std::int64_t, std::vector<int>> global_to_procs
         = compute_sharing(comm, unknown_indices);
-
-    s << "global_to_procs = ";
-    for (auto q : global_to_procs)
-    {
-      s << q.first << ":";
-
-      for (int w : q.second)
-        s << w << " ";
-      s << "\n";
-    }
 
     // Number all indices which this process now owns
     std::int32_t c = 0;
@@ -897,6 +865,13 @@ mesh::create_topology(MPI_Comm comm,
 
     return {topology, src, dest};
   }
+
+  // Build local cell-vertex connectivity, with local vertex indices
+  // [0, 1, 2, ..., n), from cell-vertex connectivity using global
+  // indices and get map from global vertex indices in 'cells' to the
+  // local vertex indices
+  auto [cells_local, local_to_global_vertices]
+      = graph::Partitioning::create_local_adjacency_list(my_cells);
 
   // Create (i) local topology object and (ii) IndexMap for cells, and
   // set cell-vertex topology
