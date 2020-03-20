@@ -112,30 +112,6 @@ public:
                         const std::vector<std::int64_t>& global_indices,
                         const std::vector<int>& ghost_owners);
 
-  /// @todo Is the original global index of each node required?
-  /// @todo Can this be merged with Partitioning::distribute?
-  ///
-  /// Distribute adjacency list nodes to destination ranks. The global
-  /// index of each node is assumed to be the local index plus the
-  /// offset for this rank.
-  ///
-  /// \see Partitioning::distribute for the case where the source ranks
-  /// are not known.
-  ///
-  /// @param[in] comm MPI communicator
-  /// @param[in] list An adjacency list. Each node is associated with a
-  ///   global index (index_local + process global offset)
-  /// @param[in] destinations The destination ranks for each node in @p
-  ///   list
-  /// @param[in] sources Ranks that will send nodes data to this process
-  /// @return Re-distributed adjacency list and the original global
-  ///   index of each node
-  static std::pair<graph::AdjacencyList<std::int64_t>,
-                   std::vector<std::int64_t>>
-  exchange(MPI_Comm comm, const graph::AdjacencyList<std::int64_t>& list,
-           const graph::AdjacencyList<std::int32_t>& destinations,
-           const std::set<int>& sources);
-
   /// Distribute data to process ranks where it it required
   ///
   /// @param[in] comm The MPI communicator
