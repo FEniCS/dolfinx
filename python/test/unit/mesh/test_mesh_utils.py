@@ -332,8 +332,9 @@ def test_topology_partition(tempdir, shape, order):
     #
     # NOTE: This could be optimised as we have earlier computed which
     # processes own the cells this process needs.
-    cell_nodes, global_index_cell = cpp.graph.exchange(cpp.MPI.comm_world,
-                                                       cells_global, dest, set(src))
+    cell_nodes, src, global_index_cell, ghost_owners = \
+        cpp.graph.distribute(cpp.MPI.comm_world,
+                             cells_global, dest)
     assert cell_nodes.num_nodes == cells.num_nodes
     assert global_index_cell == original_cell_index
 
