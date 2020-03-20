@@ -198,9 +198,9 @@ def assemble_csr_matrix(a: typing.Union[Form, cpp.fem.Form],
     if _a.function_space(0).id == _a.function_space(1).id:
         for bc in bcs:
             if _a.function_space(0).contains(bc.function_space):
-                 bc_dofs = bc.dof_indices[:,0]
-                 for i in bc_dofs:
-                     A[i, i] = 1.0
+                bc_dofs = bc.dof_indices[:, 0]
+                for i in bc_dofs:
+                    A[i, i] = 1.0
     return A
 
 
