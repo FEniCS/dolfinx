@@ -12,6 +12,7 @@
 #include "assemble_scalar_impl.h"
 #include "assemble_vector_impl.h"
 #include "utils.h"
+#include <Eigen/Sparse>
 #include <dolfinx/common/IndexMap.h>
 #include <dolfinx/common/types.h>
 #include <dolfinx/function/Function.h>
@@ -78,6 +79,69 @@ void fem::apply_lifting(
   fem::impl::apply_lifting(b, a, bcs1, x0, scale);
 }
 //-----------------------------------------------------------------------------
+#ifndef PETSC_USE_COMPLEX
+Eigen::SparseMatrix<double, Eigen::RowMajor> fem::assemble_matrix_eigen(
+    const Form& a, const std::vector<std::shared_ptr<const DirichletBC>>& bcs)
+{
+  // Index maps for dof ranges
+  auto map0 = a.function_space(0)->dofmap()->index_map;
+  auto map1 = a.function_space(1)->dofmap()->index_map;
+
+  // Build dof markers
+  std::vector<bool> dof_marker0, dof_marker1;
+  std::int32_t dim0
+      = map0->block_size() * (map0->size_local() + map0->num_ghosts());
+  std::int32_t dim1
+      = map1->block_size() * (map1->size_local() + map1->num_ghosts());
+  for (std::size_t k = 0; k < bcs.size(); ++k)
+  {
+    assert(bcs[k]);
+    assert(bcs[k]->function_space());
+    if (a.function_space(0)->contains(*bcs[k]->function_space()))
+    {
+      dof_marker0.resize(dim0, false);
+      bcs[k]->mark_dofs(dof_marker0);
+    }
+    if (a.function_space(1)->contains(*bcs[k]->function_space()))
+    {
+      dof_marker1.resize(dim1, false);
+      bcs[k]->mark_dofs(dof_marker1);
+    }
+  }
+
+  std::vector<Eigen::Triplet<double>> triplets;
+
+  // Lambda function creating Eigen::Triplet array
+  const std::function<int(std::int32_t, const std::int32_t*, std::int32_t,
+                          const std::int32_t*, const double*)>
+      mat_set_values_local
+      = [&triplets](std::int32_t nrow, const std::int32_t* rows,
+                    std::int32_t ncol, const std::int32_t* cols,
+                    const double* y) {
+          for (int i = 0; i < nrow; ++i)
+          {
+            int row = rows[i];
+            for (int j = 0; j < ncol; ++j)
+            {
+              int col = cols[j];
+              triplets.push_back(
+                  Eigen::Triplet<double>(row, col, y[i * ncol + j]));
+            }
+          }
+          return 0;
+        };
+
+  // Assemble
+  impl::assemble_matrix(mat_set_values_local, a, dof_marker0, dof_marker1);
+
+  Eigen::SparseMatrix<double, Eigen::RowMajor> mat(
+      map0->block_size() * (map0->size_local() + map0->num_ghosts()),
+      map1->block_size() * (map1->size_local() + map1->num_ghosts()));
+  mat.setFromTriplets(triplets.begin(), triplets.end());
+  return mat;
+}
+#endif
+//-----------------------------------------------------------------------------
 void fem::assemble_matrix(
     Mat A, const Form& a,
     const std::vector<std::shared_ptr<const DirichletBC>>& bcs)
@@ -108,14 +172,42 @@ void fem::assemble_matrix(
     }
   }
 
+  const std::function<int(PetscInt, const PetscInt*, PetscInt, const PetscInt*,
+                          const PetscScalar*)>
+      mat_set_values_local
+      = [&A](PetscInt nrow, const PetscInt* rows, PetscInt ncol,
+             const PetscInt* cols, const PetscScalar* y) {
+          PetscErrorCode ierr
+              = MatSetValuesLocal(A, nrow, rows, ncol, cols, y, ADD_VALUES);
+#ifdef DEBUG
+          if (ierr != 0)
+            la::petsc_error(ierr, __FILE__, "MatSetValuesLocal");
+#endif
+          return 0;
+        };
+
   // Assemble
-  impl::assemble_matrix(A, a, dof_marker0, dof_marker1);
+  impl::assemble_matrix(mat_set_values_local, a, dof_marker0, dof_marker1);
 }
 //-----------------------------------------------------------------------------
 void fem::assemble_matrix(Mat A, const Form& a, const std::vector<bool>& bc0,
                           const std::vector<bool>& bc1)
 {
-  impl::assemble_matrix(A, a, bc0, bc1);
+  const std::function<int(PetscInt, const PetscInt*, PetscInt, const PetscInt*,
+                          const PetscScalar*)>
+      mat_set_values_local
+      = [&A](PetscInt nrow, const PetscInt* rows, PetscInt ncol,
+             const PetscInt* cols, const PetscScalar* y) {
+          PetscErrorCode ierr
+              = MatSetValuesLocal(A, nrow, rows, ncol, cols, y, ADD_VALUES);
+#ifdef DEBUG
+          if (ierr != 0)
+            la::petsc_error(ierr, __FILE__, "MatSetValuesLocal");
+#endif
+          return 0;
+        };
+
+  impl::assemble_matrix(mat_set_values_local, a, bc0, bc1);
 }
 //-----------------------------------------------------------------------------
 void fem::add_diagonal(
@@ -147,10 +239,24 @@ void fem::add_diagonal(
   // NOTE: MatSetValuesLocal uses ADD_VALUES, hence it requires that the
   //       diagonal is zero before this function is called.
 
+  const std::function<int(PetscInt, const PetscInt*, PetscInt, const PetscInt*,
+                          const PetscScalar*)>
+      mat_set_values_local
+      = [&A](PetscInt nrow, const PetscInt* rows, PetscInt ncol,
+             const PetscInt* cols, const PetscScalar* y) {
+          PetscErrorCode ierr
+              = MatSetValuesLocal(A, nrow, rows, ncol, cols, y, ADD_VALUES);
+#ifdef DEBUG
+          if (ierr != 0)
+            la::petsc_error(ierr, __FILE__, "MatSetValuesLocal");
+#endif
+          return 0;
+        };
+
   for (Eigen::Index i = 0; i < rows.size(); ++i)
   {
     const PetscInt row = rows(i);
-    MatSetValuesLocal(A, 1, &row, 1, &row, &diagonal, ADD_VALUES);
+    mat_set_values_local(1, &row, 1, &row, &diagonal);
   }
 }
 //-----------------------------------------------------------------------------
