@@ -30,7 +30,7 @@ __all__ = [
     "apply_lifting", "apply_lifting_nest", "assemble_scalar", "assemble_vector",
     "assemble_vector_block", "assemble_vector_nest",
     "assemble_matrix_block", "assemble_matrix_nest",
-    "assemble_matrix", "set_bc", "set_bc_nest", "create_coordinate_map",
+    "assemble_matrix", "assemble_csr_matrix", "set_bc", "set_bc_nest", "create_coordinate_map",
     "DirichletBC", "DofMap", "Form", "FormIntegrals",
     "derivative", "adjoint", "increase_order",
     "tear", "project", "solve", "locate_dofs_geometrical", "locate_dofs_topological"
