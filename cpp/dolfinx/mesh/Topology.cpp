@@ -244,6 +244,28 @@ compute_sharing(MPI_Comm comm, std::vector<std::int64_t>& unknown_indices)
 
   return index_to_owner;
 }
+//----------------------------------------------------------------------------------------------
+std::vector<std::int64_t>
+send_to_neighbours(MPI_Comm neighbour_comm,
+                   const std::vector<std::vector<std::int64_t>>& send_data)
+{
+  std::vector<int> neighbours = dolfinx::MPI::neighbors(neighbour_comm);
+  assert(neighbours.size() == send_data.size());
+
+  std::vector<int> qsend_offsets = {0};
+  std::vector<std::int64_t> qsend_data;
+  for (const std::vector<std::int64_t>& q : send_data)
+  {
+    qsend_data.insert(qsend_data.end(), q.begin(), q.end());
+    qsend_offsets.push_back(qsend_data.size());
+  }
+
+  std::vector<std::int64_t> qrecv_data;
+  std::vector<int> qrecv_offsets;
+  dolfinx::MPI::neighbor_all_to_all(neighbour_comm, qsend_offsets, qsend_data,
+                                    qrecv_offsets, qrecv_data);
+  return qrecv_data;
+}
 
 } // namespace
 
@@ -671,36 +693,6 @@ mesh::create_topology(MPI_Comm comm,
       }
     }
 
-    // Get local vertices that are shared forward
-    std::map<std::int32_t, std::set<std::int32_t>> shared_cells
-        = index_map_c->compute_shared_indices();
-    std::map<std::int64_t, std::set<std::int32_t>> fwd_shared_vertices;
-    for (int i = 0; i < index_map_c->size_local(); ++i)
-    {
-      auto it = shared_cells.find(i);
-      if (it != shared_cells.end())
-      {
-        auto v = my_cells.links(i);
-        for (int j = 0; j < v.size(); ++j)
-        {
-          auto vit = fwd_shared_vertices.find(v[j]);
-          if (vit == fwd_shared_vertices.end())
-            fwd_shared_vertices.insert({v[j], it->second});
-          else
-            vit->second.insert(it->second.begin(), it->second.end());
-        }
-      }
-    }
-
-    for (auto q : fwd_shared_vertices)
-    {
-      s << q.first << ":(";
-      for (auto w : q.second)
-        s << w << " ";
-      s << "), ";
-    }
-    s << "\n";
-
     int mpi_rank = MPI::rank(comm);
 
     s << "** RANK  = " << mpi_rank << "\n";
@@ -761,13 +753,6 @@ mesh::create_topology(MPI_Comm comm,
     std::int64_t global_offset
         = dolfinx::MPI::global_offset(comm, nlocal, true);
 
-    s << "nlocal = " << nlocal << " and nghosts = " << nghosts << "\n";
-
-    s << "global_to_local=";
-    for (auto q : global_to_local_index)
-      s << "(" << q.first << ", " << q.second << ")";
-    s << "\n";
-
     // Find all vertex-sharing neighbours, and process-to-neighbour map
     std::set<int> vertex_neighbours;
     for (const auto q : global_to_procs)
@@ -786,28 +771,7 @@ mesh::create_topology(MPI_Comm comm,
                                    neighbours.data(), MPI_UNWEIGHTED,
                                    MPI_INFO_NULL, false, &neighbour_comm);
 
-    // Get count and offset for each neighbour
-    std::vector<int> send_counts(neighbours.size());
-    for (auto q : global_to_procs)
-    {
-      const std::vector<int>& procs = q.second;
-      if (procs[0] == mpi_rank)
-      {
-        for (std::size_t j = 1; j < procs.size(); ++j)
-        {
-          const int p = procs[j];
-          const int np = proc_to_neighbours[p];
-          send_counts[np] += 2;
-        }
-      }
-    }
-
-    std::vector<int> send_offsets = {0};
-    for (int c : send_counts)
-      send_offsets.push_back(send_offsets.back() + c);
-    std::vector<int> temp_offsets(send_offsets.begin(), send_offsets.end());
-    std::vector<std::int64_t> send_data(send_offsets.back());
-
+    std::vector<std::vector<std::int64_t>> send_pairs(neighbours.size());
     for (auto q : global_to_procs)
     {
       const std::vector<int>& procs = q.second;
@@ -822,57 +786,53 @@ mesh::create_topology(MPI_Comm comm,
         for (std::size_t j = 1; j < procs.size(); ++j)
         {
           int np = proc_to_neighbours[procs[j]];
-          int& pos = temp_offsets[np];
-          send_data[pos] = it->first;
-          ++pos;
-          send_data[pos] = it->second + global_offset;
-          ++pos;
+          send_pairs[np].push_back(it->first);
+          send_pairs[np].push_back(it->second + global_offset);
         }
       }
     }
-
-    for (std::size_t i = 0; i < neighbours.size(); ++i)
-      assert(send_offsets[i + 1] == temp_offsets[i]);
-
-    std::vector<std::int64_t> recv_data;
-    std::vector<int> recv_offsets;
-    dolfinx::MPI::neighbor_all_to_all(neighbour_comm, send_offsets, send_data,
-                                      recv_offsets, recv_data);
+    std::vector<std::int64_t> recv_pairs
+        = send_to_neighbours(neighbour_comm, send_pairs);
 
     std::vector<std::int64_t> ghost_vertices(nghosts, -1);
     // Unpack received data and make list of ghosts
-    for (std::size_t i = 0; i < recv_data.size(); i += 2)
+    for (std::size_t i = 0; i < recv_pairs.size(); i += 2)
     {
-      std::int64_t gi = recv_data[i];
+      std::int64_t gi = recv_pairs[i];
       const auto it = global_to_local_index.find(gi);
       assert(it != global_to_local_index.end());
       assert(it->second == -1);
       it->second = c;
       ++c;
-      ghost_vertices[it->second - nlocal] = recv_data[i + 1];
+      ghost_vertices[it->second - nlocal] = recv_pairs[i + 1];
     }
 
-    send_counts = std::vector<int>(neighbours.size());
-    // Also send indices of forward shared vertices
-    for (auto q : fwd_shared_vertices)
+    // At this point, this process should have indexed all "local" vertices.
+    // Send out to processes which share them.
+    std::map<std::int32_t, std::set<std::int32_t>> shared_cells
+        = index_map_c->compute_shared_indices();
+    std::map<std::int64_t, std::set<std::int32_t>> fwd_shared_vertices;
+    for (int i = 0; i < index_map_c->size_local(); ++i)
     {
-      for (int p : q.second)
+      auto it = shared_cells.find(i);
+      if (it != shared_cells.end())
       {
-        const int np = proc_to_neighbours[p];
-        send_counts[np] += 2;
+        auto v = my_cells.links(i);
+        for (int j = 0; j < v.size(); ++j)
+        {
+          auto vit = fwd_shared_vertices.find(v[j]);
+          if (vit == fwd_shared_vertices.end())
+            fwd_shared_vertices.insert({v[j], it->second});
+          else
+            vit->second.insert(it->second.begin(), it->second.end());
+        }
       }
     }
-    send_offsets = {0};
-    for (int c : send_counts)
-      send_offsets.push_back(send_offsets.back() + c);
-    temp_offsets.assign(send_offsets.begin(), send_offsets.end());
-    send_data.resize(send_offsets.back());
-
+    send_pairs = std::vector<std::vector<std::int64_t>>(neighbours.size());
     for (auto q : fwd_shared_vertices)
     {
       auto it = global_to_local_index.find(q.first);
       assert(it != global_to_local_index.end());
-
       assert(it->second != -1);
 
       std::int64_t gi;
@@ -884,45 +844,29 @@ mesh::create_topology(MPI_Comm comm,
       for (int p : q.second)
       {
         const int np = proc_to_neighbours[p];
-        int& pos = temp_offsets[np];
-        send_data[pos] = q.first;
-        ++pos;
-        send_data[pos] = gi;
-        ++pos;
+        send_pairs[np].push_back(q.first);
+        send_pairs[np].push_back(gi);
       }
     }
+    recv_pairs = send_to_neighbours(neighbour_comm, send_pairs);
 
-    for (std::size_t i = 0; i < neighbours.size(); ++i)
-      assert(send_offsets[i + 1] == temp_offsets[i]);
-
-    recv_data.clear();
-    recv_offsets.clear();
-    dolfinx::MPI::neighbor_all_to_all(neighbour_comm, send_offsets, send_data,
-                                      recv_offsets, recv_data);
-    // Unpack received data and make list of ghosts
-    for (std::size_t i = 0; i < recv_data.size(); i += 2)
+    // Unpack received data and add to ghosts
+    for (std::size_t i = 0; i < recv_pairs.size(); i += 2)
     {
-      std::int64_t gi = recv_data[i];
+      std::int64_t gi = recv_pairs[i];
       const auto it = global_to_local_index.find(gi);
       assert(it != global_to_local_index.end());
       if (it->second == -1)
       {
         it->second = c;
         ++c;
-        ghost_vertices[it->second - nlocal] = recv_data[i + 1];
+        ghost_vertices[it->second - nlocal] = recv_pairs[i + 1];
       }
     }
-
-    s << "ghosts=(";
-    for (auto q : ghost_vertices)
-      s << q << " ";
-    s << ")\n";
-
-    std::cout << s.str();
-
     MPI_Comm_free(&neighbour_comm);
 
     // Check all ghosts are filled
+    assert(c = (nghosts + nlocal));
     for (std::int64_t v : ghost_vertices)
       assert(v != -1);
 
