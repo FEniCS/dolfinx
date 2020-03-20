@@ -108,9 +108,8 @@ void apply_lifting(
 /// @param[in] bcs Boundary conditions to apply. For boundary condition
 ///                dofs the row and column are zeroed. The diagonal
 ///                entry is not set.
-Eigen::SparseMatrix<double, Eigen::RowMajor>
-assemble_matrix_eigen(const Form& a,
-                const std::vector<std::shared_ptr<const DirichletBC>>& bcs);
+Eigen::SparseMatrix<double, Eigen::RowMajor> assemble_matrix_eigen(
+    const Form& a, const std::vector<std::shared_ptr<const DirichletBC>>& bcs);
 #endif
 
 /// Assemble bilinear form into a matrix. Matrix must already be
