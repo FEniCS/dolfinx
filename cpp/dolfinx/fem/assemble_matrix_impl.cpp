@@ -109,8 +109,7 @@ void fem::impl::assemble_cells(
     const std::vector<bool>& bc0, const std::vector<bool>& bc1,
     const std::function<void(ScalarType*, const ScalarType*, const ScalarType*,
                              const double*, const int*, const std::uint8_t*,
-                             const bool*, const bool*, const std::uint8_t*)>&
-        kernel,
+                             const std::uint32_t)>& kernel,
     const Eigen::Array<ScalarType, Eigen::Dynamic, Eigen::Dynamic,
                        Eigen::RowMajor>& coeffs,
     const Eigen::Array<ScalarType, Eigen::Dynamic, 1>& constant_values)
@@ -131,16 +130,8 @@ void fem::impl::assemble_cells(
       coordinate_dofs(num_dofs_g, gdim);
   Eigen::Matrix<ScalarType, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor> Ae;
 
-  // Get permutation data
-  const Eigen::Array<bool, Eigen::Dynamic, Eigen::Dynamic>&
-      cell_edge_reflections
-      = mesh.topology().get_edge_reflections();
-  const Eigen::Array<bool, Eigen::Dynamic, Eigen::Dynamic>&
-      cell_face_reflections
-      = mesh.topology().get_face_reflections();
-  const Eigen::Array<std::uint8_t, Eigen::Dynamic, Eigen::Dynamic>&
-      cell_face_rotations
-      = mesh.topology().get_face_rotations();
+  const Eigen::Array<std::uint32_t, Eigen::Dynamic, 1>& cell_info
+      = mesh.topology().get_cell_permutation_info();
 
   // Iterate over active cells
   for (std::int32_t c : active_cells)
@@ -154,10 +145,7 @@ void fem::impl::assemble_cells(
     auto coeff_cell = coeffs.row(c);
     Ae.setZero(num_dofs_per_cell0, num_dofs_per_cell1);
     kernel(Ae.data(), coeff_cell.data(), constant_values.data(),
-           coordinate_dofs.data(), nullptr, nullptr,
-           cell_edge_reflections.col(c).data(),
-           cell_face_reflections.col(c).data(),
-           cell_face_rotations.col(c).data());
+           coordinate_dofs.data(), nullptr, nullptr, cell_info[c]);
 
     auto dofs0 = dofmap0.links(c);
     auto dofs1 = dofmap1.links(c);
@@ -197,8 +185,7 @@ void fem::impl::assemble_exterior_facets(
     const std::vector<bool>& bc1,
     const std::function<void(ScalarType*, const ScalarType*, const ScalarType*,
                              const double*, const int*, const std::uint8_t*,
-                             const bool*, const bool*, const std::uint8_t*)>&
-        kernel,
+                             const std::uint32_t)>& kernel,
     const Eigen::Array<ScalarType, Eigen::Dynamic, Eigen::Dynamic,
                        Eigen::RowMajor>& coeffs,
     const Eigen::Array<ScalarType, Eigen::Dynamic, 1> constant_values)
@@ -224,16 +211,8 @@ void fem::impl::assemble_exterior_facets(
 
   const Eigen::Array<std::uint8_t, Eigen::Dynamic, Eigen::Dynamic>& perms
       = mesh.topology().get_facet_permutations();
-
-  const Eigen::Array<bool, Eigen::Dynamic, Eigen::Dynamic>&
-      cell_edge_reflections
-      = mesh.topology().get_edge_reflections();
-  const Eigen::Array<bool, Eigen::Dynamic, Eigen::Dynamic>&
-      cell_face_reflections
-      = mesh.topology().get_face_reflections();
-  const Eigen::Array<std::uint8_t, Eigen::Dynamic, Eigen::Dynamic>&
-      cell_face_rotations
-      = mesh.topology().get_face_rotations();
+  const Eigen::Array<std::uint32_t, Eigen::Dynamic, 1>& cell_info
+      = mesh.topology().get_cell_permutation_info();
 
   // Iterate over all facets
   auto f_to_c = mesh.topology().connectivity(tdim - 1, tdim);
@@ -265,10 +244,7 @@ void fem::impl::assemble_exterior_facets(
     const std::uint8_t perm = perms(local_facet, cells[0]);
     Ae.setZero(dmap0.size(), dmap1.size());
     kernel(Ae.data(), coeff_cell.data(), constant_values.data(),
-           coordinate_dofs.data(), &local_facet, &perm,
-           cell_edge_reflections.col(cells[0]).data(),
-           cell_face_reflections.col(cells[0]).data(),
-           cell_face_rotations.col(cells[0]).data());
+           coordinate_dofs.data(), &local_facet, &perm, cell_info[cells[0]]);
 
     // Zero rows/columns for essential bcs
     if (!bc0.empty())
@@ -303,8 +279,7 @@ void fem::impl::assemble_interior_facets(
     const std::vector<bool>& bc1,
     const std::function<void(ScalarType*, const ScalarType*, const ScalarType*,
                              const double*, const int*, const std::uint8_t*,
-                             const bool*, const bool*, const std::uint8_t*)>&
-        fn,
+                             const std::uint32_t)>& fn,
     const Eigen::Array<ScalarType, Eigen::Dynamic, Eigen::Dynamic,
                        Eigen::RowMajor>& coeffs,
     const std::vector<int>& offsets,
@@ -337,15 +312,8 @@ void fem::impl::assemble_interior_facets(
 
   const Eigen::Array<std::uint8_t, Eigen::Dynamic, Eigen::Dynamic>& perms
       = mesh.topology().get_facet_permutations();
-  const Eigen::Array<bool, Eigen::Dynamic, Eigen::Dynamic>&
-      cell_edge_reflections
-      = mesh.topology().get_edge_reflections();
-  const Eigen::Array<bool, Eigen::Dynamic, Eigen::Dynamic>&
-      cell_face_reflections
-      = mesh.topology().get_face_reflections();
-  const Eigen::Array<std::uint8_t, Eigen::Dynamic, Eigen::Dynamic>&
-      cell_face_rotations
-      = mesh.topology().get_face_rotations();
+  const Eigen::Array<std::uint32_t, Eigen::Dynamic, 1>& cell_info
+      = mesh.topology().get_cell_permutation_info();
 
   // Iterate over all facets
   auto c = mesh.topology().connectivity(tdim - 1, tdim);
@@ -419,9 +387,7 @@ void fem::impl::assemble_interior_facets(
     Ae.setZero(dmapjoint0.size(), dmapjoint1.size());
     fn(Ae.data(), coeff_array.data(), constant_values.data(),
        coordinate_dofs.data(), local_facet.data(), perm.data(),
-       cell_edge_reflections.col(cells[0]).data(),
-       cell_face_reflections.col(cells[0]).data(),
-       cell_face_rotations.col(cells[0]).data());
+       cell_info[cells[0]]);
 
     // Zero rows/columns for essential bcs
     if (!bc0.empty())

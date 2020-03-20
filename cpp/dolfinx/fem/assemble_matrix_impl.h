@@ -64,8 +64,7 @@ void assemble_cells(
     const std::vector<bool>& bc0, const std::vector<bool>& bc1,
     const std::function<void(ScalarType*, const ScalarType*, const ScalarType*,
                              const double*, const int*, const std::uint8_t*,
-                             const bool*, const bool*, const std::uint8_t*)>&
-        kernel,
+                             const std::uint32_t)>& kernel,
     const Eigen::Array<ScalarType, Eigen::Dynamic, Eigen::Dynamic,
                        Eigen::RowMajor>& coeffs,
     const Eigen::Array<ScalarType, Eigen::Dynamic, 1>& constant_values);
@@ -81,8 +80,7 @@ void assemble_exterior_facets(
     const std::vector<bool>& bc1,
     const std::function<void(ScalarType*, const ScalarType*, const ScalarType*,
                              const double*, const int*, const std::uint8_t*,
-                             const bool*, const bool*, const std::uint8_t*)>&
-        fn,
+                             const std::uint32_t)>& fn,
     const Eigen::Array<ScalarType, Eigen::Dynamic, Eigen::Dynamic,
                        Eigen::RowMajor>& coeffs,
     const Eigen::Array<ScalarType, Eigen::Dynamic, 1> constant_values);
@@ -98,8 +96,7 @@ void assemble_interior_facets(
     const std::vector<bool>& bc1,
     const std::function<void(ScalarType*, const ScalarType*, const ScalarType*,
                              const double*, const int*, const std::uint8_t*,
-                             const bool*, const bool*, const std::uint8_t*)>&
-        kernel,
+                             const std::uint32_t)>& kernel,
     const Eigen::Array<ScalarType, Eigen::Dynamic, Eigen::Dynamic,
                        Eigen::RowMajor>& coeffs,
     const std::vector<int>& offsets,
