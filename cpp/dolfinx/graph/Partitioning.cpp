@@ -554,8 +554,8 @@ std::vector<std::int64_t> Partitioning::compute_ghost_indices(
   }
 
   // NB - this assumes a symmetry, i.e. that if one process shares an index
-  // owned another process, then the same is true vice versa. This assumption is
-  // valid for meshes with cells shared via facet or vertex.
+  // owned by another process, then the same is true vice versa. This assumption
+  // is valid for meshes with cells shared via facet or vertex.
   MPI_Comm neighbour_comm;
   MPI_Dist_graph_create_adjacent(comm, neighbours.size(), neighbours.data(),
                                  MPI_UNWEIGHTED, neighbours.size(),
@@ -631,18 +631,6 @@ std::vector<std::int64_t> Partitioning::compute_ghost_indices(
   }
 
   MPI_Comm_free(&neighbour_comm);
-
-  std::stringstream s;
-  s << mpi_rank << ") neighbours:";
-  for (std::size_t i = 0; i < neighbours.size(); ++i)
-    s << neighbours[i] << ":" << ghost_index_count[i] << " ";
-  s << "\n " << offset_local << "-" << offset_local + num_local << " {";
-  for (auto q : ghost_global_indices)
-    s << q << " ";
-  s << "}\n";
-
-  std::cout << s.str();
-
   return ghost_global_indices;
 }
 //-----------------------------------------------------------------------------
