@@ -131,26 +131,10 @@ get_local_indexing(
     }
   }
 
-  std::stringstream s;
-  s << "ghost status = [";
-  for (auto gs : ghost_status)
-    s << (int)gs << " ";
-  s << "]\n";
-
   //---------
   // Create an expanded neighbour_comm from shared_vertices
   std::map<std::int32_t, std::set<std::int32_t>> shared_vertices
       = vertex_indexmap->compute_shared_indices();
-
-  s << "shared_vertices=";
-  for (auto q : shared_vertices)
-  {
-    s << q.first << ": ";
-    for (auto w : q.second)
-      s << w << " ";
-    s << "\n";
-  }
-  std::cout << s.str();
 
   std::set<std::int32_t> neighbour_set;
   for (auto q : shared_vertices)
@@ -455,9 +439,6 @@ compute_entities_by_key_matching(
               entity_list_sorted.row(i).data() + num_vertices_per_entity);
   }
 
-  std::stringstream s;
-  s << "Entity list = [" << entity_list << "]\n";
-
   // Sort the list and label uniquely
   std::vector<std::int32_t> sort_order
       = sort_by_perm<std::int32_t>(entity_list_sorted);
@@ -472,14 +453,6 @@ compute_entities_by_key_matching(
     last = j;
   }
   ++entity_count;
-
-  s << "entity_index = {";
-  for (int i : entity_index)
-    s << i << " ";
-  s << "}\n";
-  s << "entity_count = " << entity_count << "\n";
-
-  std::cout << s.str();
 
   // Communicate with other processes to find out which entities are
   // ghosted and shared. Remap the numbering so that ghosts are at the
