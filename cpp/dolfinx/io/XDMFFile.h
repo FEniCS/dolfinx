@@ -29,6 +29,7 @@ class Function;
 namespace mesh
 {
 class Mesh;
+class Geometry;
 template <typename T>
 class MeshTags;
 } // namespace mesh
@@ -92,6 +93,10 @@ public:
   void write_mesh(const mesh::Mesh& mesh, const std::string name = "mesh",
                   const std::string xpath = "/Xdmf/Domain");
 
+  void write_geometry(const mesh::Geometry& geometry,
+                      const std::string name = "geometry",
+                      const std::string xpath = "/Xdmf/Domain");
+
   /// Read in the first Mesh in XDMF file
   /// @param[in] name
   /// @param[in] xpath XPath where Mesh Grid is located
@@ -115,6 +120,16 @@ public:
   void write_function(const function::Function& function, const double t,
                       const std::string mesh_xpath
                       = "/Xdmf/Domain/Grid[@GridType='Uniform'][1]");
+
+  /// Write MeshTags
+  void write_meshtags(const mesh::MeshTags<int>& meshtags,
+                      const std::string geometry_xpath
+                      = "/Xdmf/Domain/Geometry",
+                      const std::string xpath = "/Xdmf/Domain");
+
+  mesh::MeshTags<int> read_meshtags(std::shared_ptr<const mesh::Mesh> mesh,
+                                    const std::string name,
+                                    const std::string xpath = "/Xdmf/Domain");
 
 private:
   // MPI communicator

@@ -10,6 +10,8 @@
 #include "pugixml.hpp"
 #include "xdmf_function.h"
 #include "xdmf_mesh.h"
+#include "xdmf_meshtags.h"
+#include "xdmf_read.h"
 #include "xdmf_utils.h"
 #include <boost/filesystem.hpp>
 #include <boost/lexical_cast.hpp>
@@ -19,6 +21,7 @@
 #include <dolfinx/graph/AdjacencyList.h>
 #include <dolfinx/mesh/Geometry.h>
 #include <dolfinx/mesh/Mesh.h>
+#include <dolfinx/mesh/MeshTags.h>
 #include <dolfinx/mesh/Topology.h>
 #include <dolfinx/mesh/TopologyComputation.h>
 
@@ -169,6 +172,26 @@ void XDMFFile::write_mesh(const mesh::Mesh& mesh, const std::string name,
     _xml_doc->save_file(_filename.c_str(), "  ");
 }
 //-----------------------------------------------------------------------------
+void XDMFFile::write_geometry(const mesh::Geometry& geometry,
+                              const std::string name, const std::string xpath)
+{
+  pugi::xml_node node = _xml_doc->select_node(xpath.c_str()).node();
+
+  // Prepare a Grid for Geometry only
+  pugi::xml_node grid_node = node.append_child("Grid");
+  grid_node.append_attribute("Name") = name.c_str();
+  grid_node.append_attribute("GridType") = "Uniform";
+  assert(grid_node);
+
+  const std::string path_prefix = "/Geometry/" + name;
+  xdmf_mesh::add_geometry_data(_mpi_comm.comm(), grid_node,
+                               _h5_id, path_prefix, geometry);
+
+  // Save XML file (on process 0 only)
+  if (MPI::rank(_mpi_comm.comm()) == 0)
+    _xml_doc->save_file(_filename.c_str(), "  ");
+}
+//-----------------------------------------------------------------------------
 mesh::Mesh XDMFFile::read_mesh(const std::string name,
                                const std::string xpath) const
 {
@@ -179,6 +202,9 @@ mesh::Mesh XDMFFile::read_mesh(const std::string name,
   // Read mesh data
   auto [cell_type, x, cells]
       = xdmf_mesh::read_mesh_data(_mpi_comm.comm(), _h5_id, grid_node);
+
+  const std::vector<std::int64_t> flags
+      = xdmf_mesh::read_flags(_mpi_comm.comm(), _h5_id, grid_node);
 
   // TODO: create outside
   // Create a layout
@@ -205,7 +231,7 @@ mesh::Mesh XDMFFile::read_mesh(const std::string name,
 
   // Create Geometry
   const mesh::Geometry geometry = mesh::create_geometry(
-      _mpi_comm.comm(), topology, layout, _cells, dest, src, x);
+      _mpi_comm.comm(), topology, layout, _cells, dest, src, x, flags);
 
   // Return Mesh
   return mesh::Mesh(_mpi_comm.comm(), topology, geometry);
@@ -266,4 +292,162 @@ void XDMFFile::write_function(const function::Function& function,
   // Save XML file (on process 0 only)
   if (MPI::rank(_mpi_comm.comm()) == 0)
     _xml_doc->save_file(_filename.c_str(), "  ");
+}
+//-----------------------------------------------------------------------------
+void XDMFFile::write_meshtags(const mesh::MeshTags<int>& meshtags,
+                              const std::string geometry_xpath,
+                              const std::string xpath)
+{
+  pugi::xml_node node = _xml_doc->select_node(xpath.c_str()).node();
+
+  pugi::xml_node grid_node = node.append_child("Grid");
+  grid_node.append_attribute("Name") = meshtags.name.c_str();
+  grid_node.append_attribute("GridType") = "Uniform";
+  assert(grid_node);
+
+  const std::string geo_ref_path = "xpointer(" + geometry_xpath + ")";
+
+  pugi::xml_node geo_ref_node = grid_node.append_child("xi:include");
+  geo_ref_node.append_attribute("xpointer") = geo_ref_path.c_str();
+  assert(geo_ref_node);
+
+  xdmf_meshtags::add_meshtags(_mpi_comm.comm(), meshtags, grid_node, _h5_id,
+                              meshtags.name);
+
+  // Save XML file (on process 0 only)
+  if (MPI::rank(_mpi_comm.comm()) == 0)
+    _xml_doc->save_file(_filename.c_str(), "  ");
+}
+//-----------------------------------------------------------------------------
+mesh::MeshTags<int> XDMFFile::read_meshtags(std::shared_ptr<const mesh::Mesh> mesh,
+                                            const std::string name,
+                                            const std::string xpath)
+{
+  pugi::xml_node node = _xml_doc->select_node(xpath.c_str()).node();
+  pugi::xml_node grid_node
+      = node.select_node(("Grid[@Name='" + name + "']").c_str()).node();
+
+  pugi::xml_node topology_node = grid_node.child("Topology");
+
+  // Get topology dataset node
+  pugi::xml_node topology_data_node = topology_node.child("DataItem");
+  const std::vector<std::int64_t> tdims
+      = xdmf_utils::get_dataset_shape(topology_data_node);
+  const int nnodes_per_entity = tdims[1];
+
+  // Read topology data
+  const std::vector<std::int64_t> topology_data
+      = xdmf_read::get_dataset<std::int64_t>(_mpi_comm.comm(), topology_data_node,
+                                             _h5_id);
+  const std::int32_t num_local_entities = topology_data.size() / nnodes_per_entity;
+
+  const auto cell_type_str = xdmf_utils::get_cell_type(topology_node);
+  const mesh::CellType cell_type = mesh::to_type(cell_type_str.first);
+  const int e_dim = mesh::cell_dim(cell_type);
+
+  auto map_g = mesh->geometry().index_map();
+  std::vector<std::int32_t> local_topology_data
+      = map_g->global_to_local(topology_data);
+
+  Eigen::Map<const Eigen::Array<std::int32_t, Eigen::Dynamic, Eigen::Dynamic,
+                                Eigen::RowMajor>>
+      entities(local_topology_data.data(), num_local_entities, nnodes_per_entity);
+
+  pugi::xml_node values_data_node
+      = grid_node.child("Attribute").child("DataItem");
+
+  const std::vector<int> values
+      = xdmf_read::get_dataset<int>(_mpi_comm.comm(), values_data_node, _h5_id);
+
+  assert(values.size() == (std::size_t)num_local_entities);
+
+  auto map_e = mesh->topology().index_map(e_dim);
+  assert(map_e);
+
+  const int dim = mesh->topology().dim();
+  const std::int32_t num_entities = map_e->size_local() + map_e->num_ghosts();
+
+  const graph::AdjacencyList<std::int32_t>& cells_g = mesh->geometry().dofmap();
+
+  auto e_to_v = mesh->topology().connectivity(e_dim, 0);
+  assert(e_to_v);
+
+  auto e_to_c = mesh->topology().connectivity(e_dim, dim);
+  if (!e_to_c)
+  {
+    mesh->create_connectivity(e_dim, dim);
+    e_to_c = mesh->topology().connectivity(e_dim, dim);
+    assert(e_to_c);
+  }
+
+  auto c_to_v = mesh->topology().connectivity(dim, 0);
+  assert(c_to_v);
+
+  std::vector<std::int32_t> indices(num_local_entities);
+  std::vector<std::int32_t> entity_nodes(nnodes_per_entity);
+
+  const std::vector<std::uint8_t> perm
+      = cells::vtk_to_dolfin(cell_type, nnodes_per_entity);
+
+  // Prepare a mapping from *ordered* nodes of entity to entity index
+  std::map<std::vector<std::int32_t>, std::int32_t> entities_nodes;
+
+  for (std::int32_t e = 0; e < num_entities; ++e)
+  {
+    // Iterate over all entities of the mesh
+    // Find attached cell attached to entity
+    std::int32_t c = e_to_c->links(e)[0];
+    auto cell_nodes = cells_g.links(c);
+    auto cell_vertices = c_to_v->links(c);
+    auto entity_vertices = e_to_v->links(e);
+
+    for (int v = 0; v < entity_vertices.rows(); ++v)
+    {
+      // Find local index of vertex wrt. cell
+      const int vertex = entity_vertices[v];
+      auto it = std::find(cell_vertices.data(),
+                          cell_vertices.data() + cell_vertices.rows(), vertex);
+      assert(it != (cell_vertices.data() + cell_vertices.rows()));
+      const int local_cell_vertex = std::distance(cell_vertices.data(), it);
+
+      entity_nodes[v] = cell_nodes[local_cell_vertex];
+    }
+    std::sort(entity_nodes.begin(), entity_nodes.end());
+    entities_nodes.insert({entity_nodes, e});
+
+    for (int i =0; i<nnodes_per_entity; ++i)
+    {
+      std::cout << entity_nodes[i] << ", ";
+    }
+    std::cout << std::endl;
+  }
+
+  for (Eigen::Index e = 0; e < entities.rows(); ++e)
+  {
+    std::vector<std::int32_t> e_nodes(entities.row(e).data(),
+                                            entities.row(e).data()
+                                                + nnodes_per_entity);
+    std::sort(e_nodes.begin(), e_nodes.end());
+
+    std::cout << "Reading entity " << e << std::endl;
+
+    for (int i =0; i<nnodes_per_entity; ++i)
+    {
+      std::cout << e_nodes[i] << ", ";
+    }
+    std::cout << std::endl;
+
+    const auto it = entities_nodes.find(e_nodes);
+    if (it != entities_nodes.end())
+      indices[e] = it->second;
+    else
+      throw std::runtime_error("Entity "+ std::to_string(e) +" not found in mesh.");
+  }
+
+  Eigen::Map<const Eigen::Array<std::int32_t, Eigen::Dynamic, 1>> indices_eig(
+      indices.data(), indices.size());
+  Eigen::Map<const Eigen::Array<int, Eigen::Dynamic, 1>> values_eig(
+      values.data(), values.size());
+
+  return mesh::MeshTags<int>(mesh, e_dim, indices_eig, values_eig);
 }

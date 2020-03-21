@@ -86,6 +86,7 @@ void mesh(py::module& m)
                     const dolfinx::fem::ElementDofLayout&,
                     const Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic,
                                        Eigen::RowMajor>&,
+                    const std::vector<std::int64_t>&,
                     const std::vector<std::int64_t>&>())
       .def_property_readonly("dim", &dolfinx::mesh::Geometry::dim,
                              "Geometric dimension")

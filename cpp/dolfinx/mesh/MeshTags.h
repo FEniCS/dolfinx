@@ -83,17 +83,17 @@ public:
   const std::size_t id = common::UniqueIdGenerator::id();
 
 private:
-  // Local-to-process indices of tagged entities
-  Eigen::Array<std::int32_t, Eigen::Dynamic, 1> _indices;
-
-  // Values attached to entities
-  Eigen::Array<T, Eigen::Dynamic, 1> _values;
-
   /// Associated mesh
   std::shared_ptr<const Mesh> _mesh;
 
   /// Topological dimension of tagged mesh entities
   const int _dim;
+
+  // Local-to-process indices of tagged entities
+  Eigen::Array<std::int32_t, Eigen::Dynamic, 1> _indices;
+
+  // Values attached to entities
+  Eigen::Array<T, Eigen::Dynamic, 1> _values;
 };
 
 //---------------------------------------------------------------------------

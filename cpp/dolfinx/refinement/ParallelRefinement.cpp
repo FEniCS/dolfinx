@@ -419,8 +419,10 @@ mesh::Mesh ParallelRefinement::partition(bool redistribute) const
   Eigen::Array<int, Eigen::Dynamic, 1> _dest(my_cells.num_nodes(), 1);
   _dest = dolfinx::MPI::rank(comm);
   const graph::AdjacencyList<std::int32_t> dest(_dest);
-  const mesh::Geometry geometry = mesh::create_geometry(
-      comm, topology, layout, my_cells, dest, src, _new_vertex_coordinates);
+
+  const mesh::Geometry geometry
+      = mesh::create_geometry(comm, topology, layout, my_cells, dest, src,
+                              _new_vertex_coordinates, {});
 
   return mesh::Mesh(comm, topology, geometry);
 }

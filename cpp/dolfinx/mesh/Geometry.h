@@ -44,7 +44,8 @@ public:
            const fem::ElementDofLayout& layout,
            const Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic,
                               Eigen::RowMajor>& x,
-           const std::vector<std::int64_t>& global_indices);
+           const std::vector<std::int64_t>& global_indices,
+           const std::vector<std::int64_t>& flags);
 
   /// Copy constructor
   Geometry(const Geometry&) = default;
@@ -87,6 +88,9 @@ public:
   /// Global input indices for points (const)
   const std::vector<std::int64_t>& global_indices() const;
 
+  /// Flags (const)
+  const std::vector<std::int64_t>& flags() const;
+
   /// @warning Experimental. Needs revision
   ///
   /// Put ElementDofLayout here for now
@@ -120,6 +124,10 @@ private:
 
   // Global indices for points
   std::vector<std::int64_t> _global_indices;
+
+  // Persistent global indices for points, i.e. a global indices
+  // which doesn't change when repartitioning
+  std::vector<std::int64_t> _flags;
 };
 
 /// Build Geometry
@@ -130,7 +138,8 @@ mesh::Geometry create_geometry(
     const graph::AdjacencyList<std::int64_t>& cells,
     const graph::AdjacencyList<std::int32_t>& dest, const std::vector<int>& src,
     const Eigen::Ref<const Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic,
-                                        Eigen::RowMajor>>& x);
+                                        Eigen::RowMajor>>& x,
+    const std::vector<std::int64_t>& flags);
 
 } // namespace mesh
 } // namespace dolfinx

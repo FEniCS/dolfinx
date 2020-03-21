@@ -18,6 +18,7 @@
 #include <dolfinx/fem/DofMapBuilder.h>
 #include <dolfinx/fem/ElementDofLayout.h>
 #include <dolfinx/graph/AdjacencyList.h>
+#include <dolfinx/graph/Partitioning.h>
 #include <dolfinx/io/cells.h>
 #include <dolfinx/mesh/cell_types.h>
 #include <memory>
@@ -88,8 +89,15 @@ Mesh mesh::create(
       topology.set_index_map(topology.dim() - 1, index_map1);
   }
 
-  const Geometry geometry
-      = mesh::create_geometry(comm, topology, layout, cells, dest, src, x);
+  // const std::int32_t num_nodes = x.rows() * x.cols();
+  // const std::int64_t num_nodes_global = MPI::sum(comm, (std::int64_t)num_nodes);
+  // const std::size_t offset = MPI::global_offset(comm, num_nodes_global, true);
+
+  // std::vector<std::int64_t> flags(num_nodes);
+  // std::iota(flags.begin(), flags.end(), offset);
+
+  const Geometry geometry = mesh::create_geometry(comm, topology, layout, cells,
+                                                  dest, src, x, {});
 
   return Mesh(comm, topology, geometry);
 }

@@ -15,6 +15,7 @@
 #include <dolfinx/la/PETScVector.h>
 #include <dolfinx/mesh/Mesh.h>
 #include <dolfinx/mesh/MeshFunction.h>
+#include <dolfinx/mesh/MeshTags.h>
 #include <dolfinx/mesh/MeshValueCollection.h>
 #include <memory>
 #include <pybind11/eigen.h>
@@ -64,12 +65,21 @@ void io(py::module& m)
       .def("close", &dolfinx::io::XDMFFile::close)
       .def("write_mesh", &dolfinx::io::XDMFFile::write_mesh, py::arg("mesh"),
            py::arg("name") = "mesh", py::arg("xpath") = "/Xdmf/Domain")
+      .def("write_geometry", &dolfinx::io::XDMFFile::write_geometry,
+           py::arg("geometry"), py::arg("name") = "geometry",
+           py::arg("xpath") = "/Xdmf/Domain")
       .def("read_mesh", &dolfinx::io::XDMFFile::read_mesh, py::arg("name"),
            py::arg("xpath"))
       .def("read_mesh_data", &dolfinx::io::XDMFFile::read_mesh_data,
            py::arg("name") = "mesh", py::arg("xpath") = "/Xdmf/Domain")
       .def("write_function", &dolfinx::io::XDMFFile::write_function,
-           py::arg("function"), py::arg("t"), py::arg("mesh_xpath"));
+           py::arg("function"), py::arg("t"), py::arg("mesh_xpath"))
+      .def("write_meshtags", &dolfinx::io::XDMFFile::write_meshtags,
+           py::arg("meshtags"),
+           py::arg("geometry_xpath") = "/Xdmf/Domain/Grid/Geometry",
+           py::arg("xpath") = "/Xdmf/Domain")
+      .def("read_meshtags", &dolfinx::io::XDMFFile::read_meshtags,
+           py::arg("mesh"), py::arg("name"), py::arg("xpath") = "/Xdmf/Domain");
 
   // dolfinx::io::VTKFile
   py::class_<dolfinx::io::VTKFile, std::shared_ptr<dolfinx::io::VTKFile>>

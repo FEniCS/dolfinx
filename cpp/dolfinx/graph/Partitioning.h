@@ -140,6 +140,22 @@ public:
       const Eigen::Ref<const Eigen::Array<double, Eigen::Dynamic,
                                           Eigen::Dynamic, Eigen::RowMajor>>& x);
 
+  /// Distribute data to process ranks where it it required
+  ///
+  /// @param[in] comm The MPI communicator
+  /// @param[in] indices Global indices of the data required by this
+  ///   process
+  /// @param[in] x Data on this process which may be distributed (by
+  ///   row). The global index for the [0, ..., n) rows on this process
+  ///   is assumed to be the local index plus the offset for this
+  ///   process
+  /// @return The data for each index in @p indices
+  static Eigen::Array<std::int64_t, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
+  distribute_data(
+      MPI_Comm comm, const std::vector<std::int64_t>& indices,
+      const Eigen::Ref<const Eigen::Array<std::int64_t, Eigen::Dynamic,
+                                          Eigen::Dynamic, Eigen::RowMajor>>& x);
+
   /// Given an adjacency list with global, possibly non-contiguous, link
   /// indices and a local adjacency list with contiguous link indices
   /// starting from zero, compute a local-to-global map for the links.

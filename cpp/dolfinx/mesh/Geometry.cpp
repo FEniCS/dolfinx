@@ -22,9 +22,11 @@ Geometry::Geometry(std::shared_ptr<const common::IndexMap> index_map,
                    const fem::ElementDofLayout& layout,
                    const Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic,
                                       Eigen::RowMajor>& x,
-                   const std::vector<std::int64_t>& global_indices)
+                   const std::vector<std::int64_t>& global_indices,
+                   const std::vector<std::int64_t>& flags)
     : _dim(x.cols()), _dofmap(dofmap), _index_map(index_map), _layout(layout),
-      _global_indices(global_indices)
+      _global_indices(global_indices),
+      _flags(flags)
 {
   if (x.rows() != (int)global_indices.size())
     throw std::runtime_error("Size mis-match");
@@ -75,6 +77,11 @@ const std::vector<std::int64_t>& Geometry::global_indices() const
   return _global_indices;
 }
 //-----------------------------------------------------------------------------
+const std::vector<std::int64_t>& Geometry::flags() const
+{
+  return _flags;
+}
+//-----------------------------------------------------------------------------
 const fem::ElementDofLayout& Geometry::dof_layout() const { return _layout; }
 //-----------------------------------------------------------------------------
 std::size_t Geometry::hash() const
@@ -95,13 +102,14 @@ mesh::Geometry mesh::create_geometry(
     const graph::AdjacencyList<std::int64_t>& cells,
     const graph::AdjacencyList<std::int32_t>& dest, const std::vector<int>& src,
     const Eigen::Ref<const Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic,
-                                        Eigen::RowMajor>>& x)
+                                        Eigen::RowMajor>>& x,
+    const std::vector<std::int64_t>& flags)
 {
   // TODO: make sure required entities are initialised, or extend
   // fem::DofMapBuilder::build to take connectivities
 
   //  Build 'geometry' dofmap on the topology
-  auto [dof_index_map, dofmap]
+  auto[dof_index_map, dofmap]
       = fem::DofMapBuilder::build(comm, topology, layout, 1);
 
   // Send/receive the 'cell nodes' (includes high-order geometry
@@ -114,7 +122,7 @@ mesh::Geometry mesh::create_geometry(
   //  NOTE: This could be optimised as we have earlier computed which
   //  processes own the cells this process needs.
   std::set<int> _src(src.begin(), src.end());
-  auto [cell_nodes, global_index_cell]
+  auto[cell_nodes, global_index_cell]
       = graph::Partitioning::exchange(comm, cells, dest, _src);
 
   // Build list of unique (global) node indices from adjacency list
@@ -130,6 +138,26 @@ mesh::Geometry mesh::create_geometry(
   Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor> coords
       = graph::Partitioning::distribute_data(comm, indices, x);
 
+  std::vector<int64_t> flags2;
+  if (flags.size() > 0)
+    flags2 = flags;
+  else
+    flags2 = indices;
+
+  std::cout << "x rows size " << x.rows()<< std::endl;
+  std::cout << "global_index_cell size " << flags2.size() << std::endl;
+  std::cout << "indices size " << indices.size() << std::endl;
+
+  // assert(flags2.size() == (std::size_t)x.rows());
+
+  Eigen::Map<const Eigen::Array<std::int64_t, Eigen::Dynamic, Eigen::Dynamic,
+                                Eigen::RowMajor>>
+      flags_arr(flags2.data(), x.rows(), 1);
+
+  Eigen::Array<std::int64_t, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
+      dist_flags_arr
+      = graph::Partitioning::distribute_data(comm, indices, flags_arr);
+
   // Compute local-to-global map from local indices in dofmap to the
   // corresponding global indices in cell_nodes
   std::vector<std::int64_t> l2g
@@ -144,9 +172,20 @@ mesh::Geometry mesh::create_geometry(
   // Build coordinate dof array
   Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor> xg(
       coords.rows(), coords.cols());
-  for (int i = 0; i < coords.rows(); ++i)
-    xg.row(i) = coords.row(l2l[i]);
 
-  return Geometry(dof_index_map, dofmap, layout, xg, l2g);
+  Eigen::Array<std::int64_t, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor> flags_g(
+      dist_flags_arr.rows(), dist_flags_arr.cols());
+  
+  for (int i = 0; i < coords.rows(); ++i)
+  {
+    xg.row(i) = coords.row(l2l[i]);
+    flags_g.row(i) = dist_flags_arr.row(l2l[i]);
+  }
+
+  std::vector<std::int64_t> dist_flags(
+      flags_g.data(),
+      flags_g.data() + flags_g.rows() * flags_g.cols());
+
+  return Geometry(dof_index_map, dofmap, layout, xg, l2g, dist_flags);
 }
 //-----------------------------------------------------------------------------
