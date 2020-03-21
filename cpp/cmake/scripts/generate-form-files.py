@@ -24,11 +24,6 @@ import ffcx
 # Call with "./generate-form-files.py 1" for PETSc complex mode
 complex_mode = (sys.argv[-1] == "1")
 
-# UFL files to skip
-skip = set()
-if complex_mode is True:
-    skip.update(["hyperelasticity.ufl"])
-
 # Directories to scan
 subdirs = ["demo", "test"]
 
@@ -45,7 +40,7 @@ for subdir in subdirs:
         # Compile files
         os.chdir(root)
         print("Compiling %d forms in %s..." % (len(formfiles), root))
-        for f in set(formfiles) - skip:
+        for f in set(formfiles):
             args = []
             if complex_mode:
                 args += ["--scalar_type", "double complex"]
