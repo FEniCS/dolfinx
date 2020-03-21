@@ -112,31 +112,27 @@ c_signature = numba.types.void(
     numba.types.CPointer(numba.typeof(PETSc.ScalarType())),
     numba.types.CPointer(numba.types.double),
     numba.types.CPointer(numba.types.int32),
-    numba.types.CPointer(numba.types.uint8),
-    numba.types.CPointer(numba.types.boolean),
-    numba.types.CPointer(numba.types.boolean),
-    numba.types.CPointer(numba.types.uint8))
+    numba.types.CPointer(numba.types.uint8), numba.types.uint32)
 
 
 @numba.cfunc(c_signature, nopython=True)
 def tabulate_condensed_tensor_A(A_, w_, c_, coords_, entity_local_index, permutation=ffi.NULL,
-                                edge_reflections=ffi.NULL, face_reflections=ffi.NULL,
-                                face_rotations=ffi.NULL):
+                                cell_permutation_info=0):
     # Prepare target condensed local elem tensor
     A = numba.carray(A_, (Usize, Usize), dtype=PETSc.ScalarType)
 
     # Tabulate all sub blocks locally
     A00 = numpy.zeros((Ssize, Ssize), dtype=PETSc.ScalarType)
     kernel00(ffi.from_buffer(A00), w_, c_, coords_, entity_local_index, permutation,
-             edge_reflections, face_reflections, face_rotations)
+             cell_permutation_info)
 
     A01 = numpy.zeros((Ssize, Usize), dtype=PETSc.ScalarType)
     kernel01(ffi.from_buffer(A01), w_, c_, coords_, entity_local_index, permutation,
-             edge_reflections, face_reflections, face_rotations)
+             cell_permutation_info)
 
     A10 = numpy.zeros((Usize, Ssize), dtype=PETSc.ScalarType)
     kernel10(ffi.from_buffer(A10), w_, c_, coords_, entity_local_index, permutation,
-             edge_reflections, face_reflections, face_rotations)
+             cell_permutation_info)
 
     # A = - A10 * A00^{-1} * A01
     A[:, :] = - A10 @ numpy.linalg.solve(A00, A01)
