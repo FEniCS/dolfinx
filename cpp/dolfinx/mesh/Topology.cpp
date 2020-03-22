@@ -6,6 +6,7 @@
 
 #include "Topology.h"
 #include "Partitioning.h"
+#include "PermutationComputation.h"
 #include "TopologyComputation.h"
 #include "utils.h"
 #include <dolfinx/common/IndexMap.h>
@@ -13,7 +14,6 @@
 #include <dolfinx/fem/ElementDofLayout.h>
 #include <dolfinx/graph/AdjacencyList.h>
 #include <dolfinx/graph/Partitioning.h>
-#include <dolfinx/mesh/PermutationInfo.h>
 #include <numeric>
 
 using namespace dolfinx;
@@ -204,25 +204,24 @@ Topology::get_cell_permutation_info() const
   return _cell_permutations;
 }
 //-----------------------------------------------------------------------------
+const Eigen::Array<std::uint8_t, Eigen::Dynamic, Eigen::Dynamic>&
+Topology::get_facet_permutations() const
+{
+  return _facet_permutations;
+}
+//-----------------------------------------------------------------------------
 void Topology::create_entity_permutations()
 {
   if (_cell_permutations.size() > 0)
     return;
 
   auto [facet_permutations, cell_permutations]
-      = PermutationInfo::compute_entity_permutations(*this);
+      = PermutationComputation::compute_entity_permutations(*this);
   _facet_permutations = std::move(facet_permutations);
   _cell_permutations = std::move(cell_permutations);
-  // _pinfo.create_entity_permutations(*this);
 }
 //-----------------------------------------------------------------------------
 mesh::CellType Topology::cell_type() const { return _cell_type; }
-//-----------------------------------------------------------------------------
-const Eigen::Array<std::uint8_t, Eigen::Dynamic, Eigen::Dynamic>&
-Topology::get_facet_permutations() const
-{
-  return _facet_permutations;
-}
 //-----------------------------------------------------------------------------
 std::tuple<Topology, std::vector<int>, graph::AdjacencyList<std::int32_t>>
 mesh::create_topology(MPI_Comm comm,
