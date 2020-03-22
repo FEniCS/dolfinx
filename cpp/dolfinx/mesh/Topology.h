@@ -80,13 +80,14 @@ public:
   /// Return topological dimension
   int dim() const;
 
-  /// @todo Merge withset_connectivity
+  /// @todo Merge with set_connectivity
+  ///
   /// Set the IndexMap for dimension dim
   /// @warning This is experimental and likely to change
   void set_index_map(int dim,
                      std::shared_ptr<const common::IndexMap> index_map);
 
-  /// Get the IndexMap that described the parallel distrubtion of the
+  /// Get the IndexMap that described the parallel distribution of the
   /// mesh entities
   /// @param[in] dim Topological dimension
   /// @return Index map for the entities of dimension @p dim
@@ -137,12 +138,15 @@ public:
   /// @return Cell type that th topology is for
   mesh::CellType cell_type() const;
 
-  /// Get the permutation number to apply to a facet.
-  /// The permutations are numbered so that:
-  ///   n%2 gives the number of reflections to apply
-  ///   n//2 gives the number of rotations to apply
-  /// Each column of the returned array represents a cell, and each row a
-  /// facet of that cell.
+  /// Get the permutation number to apply to a facet. The permutations
+  /// are numbered so that:
+  ///
+  ///   n % 2 gives the number of reflections to apply
+  ///
+  ///   n // 2 gives the number of rotations to apply
+  ///
+  /// Each column of the returned array represents a cell, and each row
+  /// a facet of that cell.
   /// @return The permutation number
   const Eigen::Array<std::uint8_t, Eigen::Dynamic, Eigen::Dynamic>&
   get_facet_permutations() const;
