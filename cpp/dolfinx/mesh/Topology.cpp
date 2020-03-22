@@ -22,8 +22,11 @@ using namespace dolfinx::mesh;
 namespace
 {
 //-----------------------------------------------------------------------------
+// Given a list of indices (unknown_indices) on each process,
+// return a map to sharing processes for each index, taking the owner as the
+// first in the list
 std::unordered_map<std::int64_t, std::vector<int>>
-compute_sharing(MPI_Comm comm, std::vector<std::int64_t>& unknown_indices)
+compute_index_sharing(MPI_Comm comm, std::vector<std::int64_t>& unknown_indices)
 {
   const int mpi_size = dolfinx::MPI::size(comm);
   const std::int64_t global_space
@@ -67,6 +70,8 @@ compute_sharing(MPI_Comm comm, std::vector<std::int64_t>& unknown_indices)
     }
   }
 
+  // Alltoall is necessary because cells which are shared by vertex are not yet
+  // known to this process
   std::vector<std::vector<int>> recv_owner(mpi_size);
   dolfinx::MPI::all_to_all(comm, send_owner, recv_owner);
 
@@ -80,13 +85,9 @@ compute_sharing(MPI_Comm comm, std::vector<std::int64_t>& unknown_indices)
     int i = 0;
     while (c < (int)r_owner.size())
     {
-      int count = r_owner[c];
-      ++c;
+      int count = r_owner[c++];
       for (int j = 0; j < count; ++j)
-      {
-        index_to_owner[send_v[i]].push_back(r_owner[c]);
-        ++c;
-      }
+        index_to_owner[send_v[i]].push_back(r_owner[c++]);
       ++i;
     }
   }
@@ -94,13 +95,11 @@ compute_sharing(MPI_Comm comm, std::vector<std::int64_t>& unknown_indices)
   return index_to_owner;
 }
 //----------------------------------------------------------------------------------------------
+// Wrapper around neighbor_all_to_all for vector<vector> style input
 std::vector<std::int64_t>
 send_to_neighbours(MPI_Comm neighbour_comm,
                    const std::vector<std::vector<std::int64_t>>& send_data)
 {
-  std::vector<int> neighbours = dolfinx::MPI::neighbors(neighbour_comm);
-  assert(neighbours.size() == send_data.size());
-
   std::vector<int> qsend_offsets = {0};
   std::vector<std::int64_t> qsend_data;
   for (const std::vector<std::int64_t>& q : send_data)
@@ -396,16 +395,15 @@ mesh::create_topology(MPI_Comm comm,
     std::vector<std::int64_t> unknown_indices(ghost_boundary_vertices.begin(),
                                               ghost_boundary_vertices.end());
     std::unordered_map<std::int64_t, std::vector<int>> global_to_procs
-        = compute_sharing(comm, unknown_indices);
+        = compute_index_sharing(comm, unknown_indices);
 
     // Number all indices which this process now owns
     std::int32_t c = 0;
     for (std::int64_t gi : local_vertex_set)
     {
       // Locally owned
-      auto [it_ignore, insert] = global_to_local_index.insert({gi, c});
+      auto [it_ignore, insert] = global_to_local_index.insert({gi, c++});
       assert(insert);
-      ++c;
     }
     for (std::int64_t gi : ghost_boundary_vertices)
     {
@@ -419,8 +417,7 @@ mesh::create_topology(MPI_Comm comm,
         auto it_gi = global_to_local_index.find(gi);
         assert(it_gi != global_to_local_index.end());
         assert(it_gi->second == -1);
-        it_gi->second = c;
-        ++c;
+        it_gi->second = c++;
       }
     }
     std::int32_t nlocal = c;
@@ -479,8 +476,7 @@ mesh::create_topology(MPI_Comm comm,
       const auto it = global_to_local_index.find(gi);
       assert(it != global_to_local_index.end());
       assert(it->second == -1);
-      it->second = c;
-      ++c;
+      it->second = c++;
       ghost_vertices[it->second - nlocal] = recv_pairs[i + 1];
     }
 
@@ -535,8 +531,7 @@ mesh::create_topology(MPI_Comm comm,
       assert(it != global_to_local_index.end());
       if (it->second == -1)
       {
-        it->second = c;
-        ++c;
+        it->second = c++;
         ghost_vertices[it->second - nlocal] = recv_pairs[i + 1];
       }
     }
@@ -640,8 +635,6 @@ mesh::create_topology(MPI_Comm comm,
   topology.set_connectivity(c0, 0, 0);
 
   // Set cell IndexMap and cell-vertex connectivity
-  //  auto index_map_c = std::make_shared<common::IndexMap>(
-  //      comm, cells_d.num_nodes(), std::vector<std::int64_t>(), 1);
   topology.set_index_map(tdim, index_map_c);
   auto _cells_d = std::make_shared<graph::AdjacencyList<std::int32_t>>(cells_d);
   topology.set_connectivity(_cells_d, tdim, 0);

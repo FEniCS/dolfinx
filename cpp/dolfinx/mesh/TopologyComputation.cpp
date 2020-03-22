@@ -137,7 +137,7 @@ get_local_indexing(
       = vertex_indexmap->compute_shared_indices();
 
   std::set<std::int32_t> neighbour_set;
-  for (auto q : shared_vertices)
+  for (auto& q : shared_vertices)
     neighbour_set.insert(q.second.begin(), q.second.end());
   std::vector<std::int32_t> neighbours(neighbour_set.begin(),
                                        neighbour_set.end());

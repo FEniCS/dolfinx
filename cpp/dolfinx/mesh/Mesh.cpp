@@ -70,7 +70,7 @@ Mesh mesh::create(
   // Create local entities
   if (topology.dim() > 1)
   {
-    std::cout << "Create edges\n";
+    // Create edges
     auto [cell_entity, entity_vertex, index_map]
         = mesh::TopologyComputation::compute_entities(comm, topology, 1);
     if (cell_entity)
@@ -80,7 +80,7 @@ Mesh mesh::create(
     if (index_map)
       topology.set_index_map(1, index_map);
 
-    std::cout << "Create facets\n";
+    // Create facets
     auto [cell_facet, facet_vertex, index_map1]
         = mesh::TopologyComputation::compute_entities(comm, topology,
                                                       topology.dim() - 1);
@@ -92,7 +92,6 @@ Mesh mesh::create(
       topology.set_index_map(topology.dim() - 1, index_map1);
   }
 
-  std::cout << "Create Geometry\n";
   const Geometry geometry
       = mesh::create_geometry(comm, topology, layout, cells, dest, src, x);
 
