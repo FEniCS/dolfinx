@@ -18,7 +18,7 @@ using namespace dolfinx::generation;
 namespace
 {
 mesh::Mesh build(MPI_Comm comm, std::size_t nx, std::array<double, 2> x,
-                 const mesh::GhostMode)
+                 const mesh::GhostMode ghost_mode)
 {
   // Receive mesh according to parallel policy
   if (dolfinx::MPI::rank(comm) != 0)
@@ -28,7 +28,7 @@ mesh::Mesh build(MPI_Comm comm, std::size_t nx, std::array<double, 2> x,
     const fem::ElementDofLayout layout
         = fem::geometry_layout(mesh::CellType::interval, topo.cols());
     return mesh::create(comm, graph::AdjacencyList<std::int64_t>(topo), layout,
-                        geom);
+                        geom, ghost_mode);
   }
 
   const double a = x[0];
@@ -63,7 +63,7 @@ mesh::Mesh build(MPI_Comm comm, std::size_t nx, std::array<double, 2> x,
   const fem::ElementDofLayout layout
       = fem::geometry_layout(mesh::CellType::interval, topo.cols());
   return mesh::create(comm, graph::AdjacencyList<std::int64_t>(topo), layout,
-                      geom);
+                      geom, ghost_mode);
 }
 } // namespace
 

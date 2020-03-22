@@ -19,6 +19,7 @@ namespace mesh
 
 enum class CellType;
 class Topology;
+enum class GhostMode : int;
 
 /// Tools for partitioning meshes
 
@@ -45,10 +46,13 @@ public:
   ///   appear only once across all processes. The cell vertex indices
   ///   are not necessarily contiguous globally, i.e. the maximum index
   ///   across all processes can be greater than the number of vertices.
+  /// @param[in] ghost_mode How to overlap the cell partitioning: none,
+  ///            shared_facet or shared_vertex
   /// @return Destination processes for each cell on this process
   static graph::AdjacencyList<std::int32_t>
-  partition_cells(MPI_Comm comm, int n, const mesh::CellType& cell_type,
-                  const graph::AdjacencyList<std::int64_t>& cells);
+  partition_cells(MPI_Comm comm, int n, const mesh::CellType cell_type,
+                  const graph::AdjacencyList<std::int64_t>& cells,
+                  mesh::GhostMode ghost_mode);
 };
 } // namespace mesh
 } // namespace dolfinx

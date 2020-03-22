@@ -8,12 +8,10 @@ import pytest
 
 from dolfinx import MPI, UnitCubeMesh, UnitIntervalMesh, UnitSquareMesh, cpp
 
-# See https://bitbucket.org/fenics-project/dolfin/issues/579
-
 
 @pytest.mark.xfail(condition=MPI.size(MPI.comm_world) == 1,
                    reason="Shared ghost modes fail in serial")
-def xtest_ghost_vertex_1d():
+def test_ghost_vertex_1d():
     mesh = UnitIntervalMesh(MPI.comm_world, 20,
                             ghost_mode=cpp.mesh.GhostMode.shared_vertex)
     assert mesh.topology.index_map(0).size_global == 21
@@ -22,7 +20,7 @@ def xtest_ghost_vertex_1d():
 
 @pytest.mark.xfail(condition=MPI.size(MPI.comm_world) == 1,
                    reason="Shared ghost modes fail in serial")
-def xtest_ghost_facet_1d():
+def test_ghost_facet_1d():
     mesh = UnitIntervalMesh(MPI.comm_world, 20,
                             ghost_mode=cpp.mesh.GhostMode.shared_facet)
     assert mesh.topology.index_map(0).size_global == 21
@@ -35,7 +33,7 @@ def xtest_ghost_facet_1d():
                                   pytest.param(cpp.mesh.GhostMode.shared_facet,
                                                marks=pytest.mark.xfail(condition=MPI.size(MPI.comm_world) == 1,
                                                                        reason="Shared ghost modes fail in serial"))])
-def xtest_ghost_2d(mode):
+def test_ghost_2d(mode):
     N = 8
     num_cells = N * N * 2
 
@@ -53,7 +51,7 @@ def xtest_ghost_2d(mode):
                                   pytest.param(cpp.mesh.GhostMode.shared_facet,
                                                marks=pytest.mark.xfail(condition=MPI.size(MPI.comm_world) == 1,
                                                                        reason="Shared ghost modes fail in serial"))])
-def xtest_ghost_3d(mode):
+def test_ghost_3d(mode):
     N = 2
     num_cells = N * N * N * 6
 
@@ -72,7 +70,7 @@ def xtest_ghost_3d(mode):
                                   pytest.param(cpp.mesh.GhostMode.shared_facet,
                                                marks=pytest.mark.xfail(condition=MPI.size(MPI.comm_world) == 1,
                                                                        reason="Shared ghost modes fail in serial"))])
-def xtest_ghost_connectivities(mode):
+def test_ghost_connectivities(mode):
     # Ghosted mesh
     meshG = UnitSquareMesh(MPI.comm_world, 4, 4, ghost_mode=mode)
     meshG.create_connectivity(1, 2)

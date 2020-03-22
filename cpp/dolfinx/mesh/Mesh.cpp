@@ -59,15 +59,18 @@ Mesh mesh::create(
     MPI_Comm comm, const graph::AdjacencyList<std::int64_t>& cells,
     const fem::ElementDofLayout& layout,
     const Eigen::Ref<const Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic,
-                                        Eigen::RowMajor>>& x)
+                                        Eigen::RowMajor>>& x,
+    mesh::GhostMode ghost_mode)
 {
-  auto [topology, src, dest] = mesh::create_topology(comm, cells, layout);
+  auto [topology, src, dest]
+      = mesh::create_topology(comm, cells, layout, ghost_mode);
 
   // FIXME: Figure out how to check which entities are required
   // Initialise facet for P2
   // Create local entities
   if (topology.dim() > 1)
   {
+    // Create edges
     auto [cell_entity, entity_vertex, index_map]
         = mesh::TopologyComputation::compute_entities(comm, topology, 1);
     if (cell_entity)
@@ -77,6 +80,7 @@ Mesh mesh::create(
     if (index_map)
       topology.set_index_map(1, index_map);
 
+    // Create facets
     auto [cell_facet, facet_vertex, index_map1]
         = mesh::TopologyComputation::compute_entities(comm, topology,
                                                       topology.dim() - 1);
@@ -109,13 +113,13 @@ Mesh::Mesh(
                                         Eigen::RowMajor>>& x,
     const Eigen::Ref<const Eigen::Array<
         std::int64_t, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>>& cells,
-    const std::vector<std::int64_t>&, const GhostMode, std::int32_t)
+    const std::vector<std::int64_t>&, const GhostMode ghost_mode, std::int32_t)
     : _mpi_comm(comm), _unique_id(common::UniqueIdGenerator::id())
 {
   assert(cells.cols() > 0);
   const fem::ElementDofLayout layout = fem::geometry_layout(type, cells.cols());
   *this = mesh::create(comm, graph::AdjacencyList<std::int64_t>(cells), layout,
-                       x);
+                       x, ghost_mode);
 }
 //-----------------------------------------------------------------------------
 Mesh::Mesh(const Mesh& mesh)

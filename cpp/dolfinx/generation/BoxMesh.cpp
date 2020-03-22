@@ -87,7 +87,8 @@ create_geom(MPI_Comm comm, const std::array<Eigen::Vector3d, 2>& p,
 }
 //-----------------------------------------------------------------------------
 mesh::Mesh build_tet(MPI_Comm comm, const std::array<Eigen::Vector3d, 2>& p,
-                     std::array<std::size_t, 3> n, const mesh::GhostMode)
+                     std::array<std::size_t, 3> n,
+                     const mesh::GhostMode ghost_mode)
 {
   common::Timer timer("Build BoxMesh");
 
@@ -139,11 +140,12 @@ mesh::Mesh build_tet(MPI_Comm comm, const std::array<Eigen::Vector3d, 2>& p,
   const fem::ElementDofLayout layout
       = fem::geometry_layout(mesh::CellType::tetrahedron, topo.cols());
   return mesh::create(comm, graph::AdjacencyList<std::int64_t>(topo), layout,
-                      geom);
+                      geom, ghost_mode);
 }
 //-----------------------------------------------------------------------------
 mesh::Mesh build_hex(MPI_Comm comm, const std::array<Eigen::Vector3d, 2>& p,
-                     std::array<std::size_t, 3> n, const mesh::GhostMode)
+                     std::array<std::size_t, 3> n,
+                     const mesh::GhostMode ghost_mode)
 {
   Eigen::Array<double, Eigen::Dynamic, 3, Eigen::RowMajor> geom
       = create_geom(comm, p, n);
@@ -181,7 +183,7 @@ mesh::Mesh build_hex(MPI_Comm comm, const std::array<Eigen::Vector3d, 2>& p,
   const fem::ElementDofLayout layout
       = fem::geometry_layout(mesh::CellType::hexahedron, topo.cols());
   return mesh::create(comm, graph::AdjacencyList<std::int64_t>(topo), layout,
-                      geom);
+                      geom, ghost_mode);
 }
 //-----------------------------------------------------------------------------
 
