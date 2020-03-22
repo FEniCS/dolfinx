@@ -6,6 +6,7 @@
 
 #include "PermutationInfo.h"
 #include <bitset>
+#include <dolfinx/graph/AdjacencyList.h>
 #include <dolfinx/mesh/Topology.h>
 
 #define BITSETSIZE 32
@@ -259,9 +260,7 @@ PermutationInfo::get_cell_permutation_info() const
 void PermutationInfo::create_entity_permutations(mesh::Topology& topology)
 {
   if (_cell_permutation_info.size() > 0)
-  {
     return;
-  }
 
   const int tdim = topology.dim();
   const CellType cell_type = topology.cell_type();
