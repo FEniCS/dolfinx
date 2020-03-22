@@ -121,8 +121,8 @@ public:
   /// Get the permutation number to apply to a facet. The permutations
   /// are numbered so that:
   ///
-  ///   - n % 2 gives the number of reflections to apply
-  ///   - n // 2 gives the number of rotations to apply
+  ///   - `n % 2` gives the number of reflections to apply
+  ///   - `n // 2` gives the number of rotations to apply
   ///
   /// Each column of the returned array represents a cell, and each row
   /// a facet of that cell.

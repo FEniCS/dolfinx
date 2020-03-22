@@ -18,6 +18,8 @@ namespace mesh
 
 class Topology;
 
+
+/// Tools for computing mesh entity permutations
 class PermutationComputation
 {
 public:
@@ -26,9 +28,8 @@ public:
   /// 1. Get the permutation numbers to apply to facets. The
   ///    permutations are numbered so that:
   ///
-  ///     n % 2 gives the number of reflections to apply
-  ///
-  ///     n // 2 gives the number of rotations to apply
+  ///     - `n % 2` gives the number of reflections to apply
+  ///     - `n // 2` gives the number of rotations to apply
   ///
   ///    Each column of the returned array represents a cell, and each
   ///    row a facet of that cell. This data is used to permute the
@@ -48,7 +49,7 @@ public:
   ///    each edge to say whether or not they are reversed.
   ///
   ///    For example, if a quadrilateral has cell permutation info
-  ///    ....0111 then (from right to left):
+  ///    `....0111` then (from right to left):
   ///
   ///      - edge 0 is reflected (1)
   ///      - edge 1 is reflected (1)
@@ -56,7 +57,7 @@ public:
   ///      - edge 3 is not permuted (0)
   ///
   ///    and if a tetrahedron has cell permutation info
-  ///    ....011010010101001000 then (from right to left):
+  ///    `....011010010101001000` then (from right to left):
   ///
   ///      - face 0 is not permuted (000)
   ///      - face 1 is reflected (001)
