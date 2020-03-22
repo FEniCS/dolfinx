@@ -12,18 +12,18 @@
 
 namespace dolfinx
 {
-
 namespace mesh
 {
-
 class Topology;
 
-
 /// Tools for computing mesh entity permutations
+
 class PermutationComputation
 {
 public:
-  /// Compute entity permutations and reflections used in assembly.
+  /// Compute (1) facet rotation and reflection data, and (2) cell
+  /// permutation data. This information is used assemble of (1) facet
+  /// inetgrals and (2) vector elements.
   ///
   /// 1. Get the permutation numbers to apply to facets. The
   ///    permutations are numbered so that:
