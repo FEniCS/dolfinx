@@ -4,7 +4,7 @@
 //
 // SPDX-License-Identifier:    LGPL-3.0-or-later
 
-#include "PermutationInfo.h"
+#include "PermutationComputation.h"
 #include <bitset>
 #include <dolfinx/graph/AdjacencyList.h>
 #include <dolfinx/mesh/Topology.h>
@@ -214,7 +214,7 @@ compute_face_permutations(const mesh::Topology& topology)
   const int tdim = topology.dim();
   assert(tdim > 2);
   if (!topology.index_map(2))
-    throw std::runtime_error("Faces have not been computed");
+    throw std::runtime_error("Faces have not been computed.");
 
   // If faces have been computed, the below should exist
   auto c_to_v = topology.connectivity(tdim, 0);
@@ -239,38 +239,23 @@ compute_face_permutations(const mesh::Topology& topology)
 }
 //-----------------------------------------------------------------------------
 } // namespace
-//-----------------------------------------------------------------------------
-PermutationInfo::PermutationInfo()
-{
-  // Do nothing
-}
-//-----------------------------------------------------------------------------
-const Eigen::Array<std::uint8_t, Eigen::Dynamic, Eigen::Dynamic>&
-PermutationInfo::get_facet_permutations() const
-{
-  return _facet_permutations;
-}
-//-----------------------------------------------------------------------------
-const Eigen::Array<std::uint32_t, Eigen::Dynamic, 1>&
-PermutationInfo::get_cell_permutation_info() const
-{
-  return _cell_permutation_info;
-}
-//-----------------------------------------------------------------------------
-void PermutationInfo::create_entity_permutations(mesh::Topology& topology)
-{
-  if (_cell_permutation_info.size() > 0)
-    return;
 
+//-----------------------------------------------------------------------------
+std::pair<Eigen::Array<std::uint8_t, Eigen::Dynamic, Eigen::Dynamic>,
+          Eigen::Array<std::uint32_t, Eigen::Dynamic, 1>>
+PermutationComputation::compute_entity_permutations(
+    const mesh::Topology& topology)
+{
   const int tdim = topology.dim();
   const CellType cell_type = topology.cell_type();
   assert(topology.connectivity(tdim, 0));
   const std::int32_t num_cells = topology.connectivity(tdim, 0)->num_nodes();
   const int facets_per_cell = cell_num_entities(cell_type, tdim - 1);
 
-  _cell_permutation_info.resize(num_cells);
-  _cell_permutation_info.fill(0);
-  _facet_permutations.resize(facets_per_cell, num_cells);
+  Eigen::Array<std::uint32_t, Eigen::Dynamic, 1> cell_permutation_info
+      = Eigen::Array<std::uint32_t, Eigen::Dynamic, 1>::Zero(num_cells);
+  Eigen::Array<std::uint8_t, Eigen::Dynamic, Eigen::Dynamic> facet_permutations(
+      facets_per_cell, num_cells);
 
   std::int32_t used_bits = 0;
   if (tdim > 2)
@@ -279,7 +264,7 @@ void PermutationInfo::create_entity_permutations(mesh::Topology& topology)
     Eigen::Array<std::bitset<BITSETSIZE>, Eigen::Dynamic, 1> face_perm
         = compute_face_permutations(topology);
     for (int c = 0; c < num_cells; ++c)
-      _cell_permutation_info[c] = face_perm[c].to_ulong();
+      cell_permutation_info[c] = face_perm[c].to_ulong();
 
     // Currently, 3 bits are used for each face. If faces with more than
     // 4 sides are implemented, this will need to be increased.
@@ -288,7 +273,7 @@ void PermutationInfo::create_entity_permutations(mesh::Topology& topology)
     for (int c = 0; c < num_cells; ++c)
     {
       for (int i = 0; i < facets_per_cell; ++i)
-        _facet_permutations(i, c) = (_cell_permutation_info[c] >> (3 * i)) & 7;
+        facet_permutations(i, c) = (cell_permutation_info[c] >> (3 * i)) & 7;
     }
   }
 
@@ -298,16 +283,19 @@ void PermutationInfo::create_entity_permutations(mesh::Topology& topology)
     Eigen::Array<std::bitset<BITSETSIZE>, Eigen::Dynamic, 1> edge_perm
         = compute_edge_reflections(topology);
     for (int c = 0; c < num_cells; ++c)
-      _cell_permutation_info[c] |= edge_perm[c].to_ulong() << used_bits;
+      cell_permutation_info[c] |= edge_perm[c].to_ulong() << used_bits;
+
     used_bits += edges_per_cell;
     if (tdim == 2)
     {
       for (int c = 0; c < num_cells; ++c)
         for (int i = 0; i < facets_per_cell; ++i)
-          _facet_permutations(i, c) = edge_perm[c][i];
+          facet_permutations(i, c) = edge_perm[c][i];
     }
   }
 
   assert(used_bits < BITSETSIZE);
+
+  return {std::move(facet_permutations), std::move(cell_permutation_info)};
 }
 //-----------------------------------------------------------------------------

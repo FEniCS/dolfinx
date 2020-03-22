@@ -11,7 +11,6 @@
 #include <array>
 #include <cstdint>
 #include <dolfinx/common/MPI.h>
-#include <dolfinx/mesh/PermutationInfo.h>
 #include <memory>
 #include <vector>
 
@@ -117,8 +116,23 @@ public:
                         int d0, int d1);
 
   /// Returns the permutation information
-  Eigen::Array<std::uint32_t, Eigen::Dynamic, 1>
+  const Eigen::Array<std::uint32_t, Eigen::Dynamic, 1>&
   get_cell_permutation_info() const;
+
+  /// Get the permutation number to apply to a facet. The permutations
+  /// are numbered so that:
+  ///
+  ///   - `n % 2` gives the number of reflections to apply
+  ///   - `n // 2` gives the number of rotations to apply
+  ///
+  /// Each column of the returned array represents a cell, and each row
+  /// a facet of that cell.
+  /// @return The permutation number
+  const Eigen::Array<std::uint8_t, Eigen::Dynamic, Eigen::Dynamic>&
+  get_facet_permutations() const;
+
+  /// Compute entity permutations and reflections used in assembly
+  void create_entity_permutations();
 
   /// Gets markers for owned facets that are interior, i.e. are
   /// connected to two cells, one of which might be on a remote process
@@ -138,22 +152,6 @@ public:
   /// @return Cell type that th topology is for
   mesh::CellType cell_type() const;
 
-  /// Get the permutation number to apply to a facet. The permutations
-  /// are numbered so that:
-  ///
-  ///   n % 2 gives the number of reflections to apply
-  ///
-  ///   n // 2 gives the number of rotations to apply
-  ///
-  /// Each column of the returned array represents a cell, and each row
-  /// a facet of that cell.
-  /// @return The permutation number
-  const Eigen::Array<std::uint8_t, Eigen::Dynamic, Eigen::Dynamic>&
-  get_facet_permutations() const;
-
-  /// Compute entity permutations and reflections used in assembly
-  void create_entity_permutations();
-
 private:
   // Cell type
   mesh::CellType _cell_type;
@@ -166,8 +164,13 @@ private:
                Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
       _connectivity;
 
-  // Stores the permutation information
-  PermutationInfo _pinfo;
+  // The facet permutations
+  Eigen::Array<std::uint8_t, Eigen::Dynamic, Eigen::Dynamic>
+      _facet_permutations;
+
+  // Cell permutation info. See the documentation for
+  // get_cell_permutation_info for documentation of how this is encoded.
+  Eigen::Array<std::uint32_t, Eigen::Dynamic, 1> _cell_permutations;
 
   // Marker for owned facets, which evaluates to True for facets that
   // are interior to the domain
