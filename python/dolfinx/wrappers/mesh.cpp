@@ -290,9 +290,10 @@ void mesh(py::module& m)
   m.def("partition_cells",
         [](const MPICommWrapper comm, int nparts,
            dolfinx::mesh::CellType cell_type,
-           const dolfinx::graph::AdjacencyList<std::int64_t>& cells) {
+           const dolfinx::graph::AdjacencyList<std::int64_t>& cells,
+           dolfinx::mesh::GhostMode ghost_mode) {
           return dolfinx::mesh::Partitioning::partition_cells(
-              comm.get(), nparts, cell_type, cells);
+              comm.get(), nparts, cell_type, cells, ghost_mode);
         });
 
   m.def("compute_marked_boundary_entities",

@@ -5,6 +5,7 @@
 // SPDX-License-Identifier:    LGPL-3.0-or-later
 
 #include "Partitioning.h"
+#include "Mesh.h"
 #include "Topology.h"
 #include "cell_types.h"
 #include <dolfinx/common/IndexMap.h>
@@ -55,11 +56,10 @@ std::vector<bool> Partitioning::compute_vertex_exterior_markers(
 
   return exterior_vertex;
 }
-//-----------------------------------------------------------------------------
-graph::AdjacencyList<std::int32_t>
-Partitioning::partition_cells(MPI_Comm comm, int n,
-                              const mesh::CellType& cell_type,
-                              const graph::AdjacencyList<std::int64_t>& cells)
+//-------------------------------------------------------------
+graph::AdjacencyList<std::int32_t> Partitioning::partition_cells(
+    MPI_Comm comm, int n, const mesh::CellType cell_type,
+    const graph::AdjacencyList<std::int64_t>& cells, mesh::GhostMode ghost_mode)
 {
   common::Timer timer("Partition cells across processes");
 
@@ -83,9 +83,12 @@ Partitioning::partition_cells(MPI_Comm comm, int n,
   graph::AdjacencyList<SCOTCH_Num> adj_graph(dual_graph);
   std::vector<std::size_t> weights;
 
+  // Just flag any kind of ghosting for now
+  bool ghosting = (ghost_mode != mesh::GhostMode::none);
+
   // Call partitioner
   graph::AdjacencyList<std::int32_t> partition = graph::SCOTCH::partition(
-      comm, n, adj_graph, weights, num_ghost_nodes, false);
+      comm, n, adj_graph, weights, num_ghost_nodes, ghosting);
 
   return partition;
 }

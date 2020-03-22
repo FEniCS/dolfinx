@@ -38,14 +38,6 @@ void graph(py::module& m)
           return dolfinx::graph::Partitioning::distribute(comm.get(), list,
                                                           destinations);
         });
-  m.def("exchange",
-        [](const MPICommWrapper comm,
-           const dolfinx::graph::AdjacencyList<std::int64_t>& list,
-           const dolfinx::graph::AdjacencyList<std::int32_t>& destinations,
-           const std::set<int>& sources) {
-          return dolfinx::graph::Partitioning::exchange(comm.get(), list,
-                                                        destinations, sources);
-        });
   m.def("distribute_data",
         [](const MPICommWrapper comm, const std::vector<std::int64_t>& indices,
            const Eigen::Ref<const Eigen::Array<

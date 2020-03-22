@@ -93,7 +93,12 @@ IndexMap::IndexMap(
   {
     const int p = owner(ghosts[i]);
     ghost_owner_global[i] = p;
-    assert(ghost_owner_global[i] != _myrank);
+    if (ghost_owner_global[i] == _myrank)
+    {
+      throw std::runtime_error("IndexMap Error: Ghost in local range. Rank = "
+                               + std::to_string(_myrank)
+                               + ", ghost = " + std::to_string(ghosts[i]));
+    }
     num_edges_out_per_proc[p] += 1;
   }
 

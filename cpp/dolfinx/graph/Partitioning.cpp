@@ -401,7 +401,7 @@ Partitioning::create_distributed_adjacency_list(
 }
 //-----------------------------------------------------------------------------
 std::tuple<graph::AdjacencyList<std::int64_t>, std::vector<int>,
-           std::vector<std::int64_t>>
+           std::vector<std::int64_t>, std::vector<int>>
 Partitioning::distribute(MPI_Comm comm,
                          const graph::AdjacencyList<std::int64_t>& list,
                          const graph::AdjacencyList<std::int32_t>& destinations)
@@ -413,14 +413,13 @@ Partitioning::distribute(MPI_Comm comm,
       = dolfinx::MPI::global_offset(comm, list.num_nodes(), true);
 
   const int size = dolfinx::MPI::size(comm);
-
   // Compute number of links to send to each process
   std::vector<int> num_per_dest_send(size, 0);
   for (int i = 0; i < destinations.num_nodes(); ++i)
   {
     const auto& dests = destinations.links(i);
     for (int j = 0; j < destinations.num_links(i); ++j)
-      num_per_dest_send[dests[j]] += list.num_links(i) + 2;
+      num_per_dest_send[dests[j]] += list.num_links(i) + 3;
   }
 
   // Compute send array displacements
@@ -448,6 +447,7 @@ Partitioning::distribute(MPI_Comm comm,
     {
       std::int32_t dest = dests[j];
       auto links = list.links(i);
+      data_send[offset[dest]++] = dests[0];
       data_send[offset[dest]++] = i + offset_global;
       data_send[offset[dest]++] = links.rows();
       for (int k = 0; k < links.rows(); ++k)
@@ -462,105 +462,176 @@ Partitioning::distribute(MPI_Comm comm,
                 disp_recv.data(), MPI_INT64_T, comm);
 
   // Unpack receive buffer
-  std::vector<std::int64_t> array, global_indices;
-  std::vector<std::int32_t> list_offset(1, 0);
+  int mpi_rank = MPI::rank(comm);
+  std::vector<std::int64_t> array;
+  std::vector<std::int64_t> ghost_array;
+  std::vector<std::int64_t> global_indices;
+  std::vector<std::int64_t> ghost_global_indices;
+  std::vector<std::int32_t> list_offset = {0};
+  std::vector<std::int32_t> ghost_list_offset = {0};
   std::vector<int> src;
+  std::vector<int> ghost_src;
+  std::vector<int> ghost_index_owner;
+
   for (std::size_t p = 0; p < disp_recv.size() - 1; ++p)
   {
     for (int i = disp_recv[p]; i < disp_recv[p + 1];)
     {
-      src.push_back(p);
-      global_indices.push_back(data_recv[i++]);
-      const std::int64_t num_links = data_recv[i++];
-      for (int j = 0; j < num_links; ++j)
-        array.push_back(data_recv[i++]);
-      list_offset.push_back(list_offset.back() + num_links);
+      if (data_recv[i] == mpi_rank)
+      {
+        src.push_back(p);
+        i++; // index_owner.push_back(data_recv[i++]);
+        global_indices.push_back(data_recv[i++]);
+        const std::int64_t num_links = data_recv[i++];
+        for (int j = 0; j < num_links; ++j)
+          array.push_back(data_recv[i++]);
+        list_offset.push_back(list_offset.back() + num_links);
+      }
+      else
+      {
+        ghost_src.push_back(p);
+        ghost_index_owner.push_back(data_recv[i++]);
+        ghost_global_indices.push_back(data_recv[i++]);
+        const std::int64_t num_links = data_recv[i++];
+        for (int j = 0; j < num_links; ++j)
+          ghost_array.push_back(data_recv[i++]);
+        ghost_list_offset.push_back(ghost_list_offset.back() + num_links);
+      }
     }
   }
 
+  // Attach all ghost cells at the end of the list
+  src.insert(src.end(), ghost_src.begin(), ghost_src.end());
+  global_indices.insert(global_indices.end(), ghost_global_indices.begin(),
+                        ghost_global_indices.end());
+  array.insert(array.end(), ghost_array.begin(), ghost_array.end());
+  int ghost_offset = list_offset.back();
+  list_offset.pop_back();
+  for (int& offset : ghost_list_offset)
+    offset += ghost_offset;
+  list_offset.insert(list_offset.end(), ghost_list_offset.begin(),
+                     ghost_list_offset.end());
+
   return {graph::AdjacencyList<std::int64_t>(array, list_offset),
-          std::move(src), std::move(global_indices)};
+          std::move(src), std::move(global_indices),
+          std::move(ghost_index_owner)};
 }
 //-----------------------------------------------------------------------------
-std::pair<graph::AdjacencyList<std::int64_t>, std::vector<std::int64_t>>
-Partitioning::exchange(MPI_Comm comm,
-                       const graph::AdjacencyList<std::int64_t>& list,
-                       const graph::AdjacencyList<std::int32_t>& destinations,
-                       const std::set<int>&)
+std::vector<std::int64_t> Partitioning::compute_ghost_indices(
+    MPI_Comm comm, const std::vector<std::int64_t>& global_indices,
+    const std::vector<int>& ghost_owners)
 {
-  // TODO: This can be significantly optimised (avoiding all-to-all) by
-  // sending in more information on source/dest ranks
+  if (ghost_owners.size() == 0)
+    return std::vector<std::int64_t>();
 
-  assert(list.num_nodes() == (int)destinations.num_nodes());
-  const std::int64_t offset_global
-      = dolfinx::MPI::global_offset(comm, list.num_nodes(), true);
+  // Get number of local cells and global offset
+  int num_local = global_indices.size() - ghost_owners.size();
+  std::vector<std::int64_t> ghost_global_indices(
+      global_indices.begin() + num_local, global_indices.end());
 
-  const int size = dolfinx::MPI::size(comm);
+  const std::int64_t offset_local
+      = dolfinx::MPI::global_offset(comm, num_local, true);
 
-  // Compute number of links to send to each process
-  std::vector<int> num_per_dest_send(size, 0);
-  for (int i = 0; i < destinations.num_nodes(); ++i)
+  // Find out how many ghosts are on each neighbouring process
+  std::vector<int> ghost_index_count;
+  std::vector<int> neighbours;
+  std::map<int, int> proc_to_neighbour;
+  int np = 0;
+  int mpi_rank = MPI::rank(comm);
+  for (int p : ghost_owners)
   {
-    const auto& dests = destinations.links(i);
-    for (int j = 0; j < destinations.num_links(i); ++j)
-      num_per_dest_send[dests[j]] += list.num_links(i) + 2;
-  }
+    assert(p != mpi_rank);
 
-  // Compute send array displacements
-  std::vector<int> disp_send(size + 1, 0);
-  std::partial_sum(num_per_dest_send.begin(), num_per_dest_send.end(),
-                   disp_send.begin() + 1);
-
-  // Send/receive number of items to communicate
-  std::vector<int> num_per_dest_recv(size, 0);
-  MPI_Alltoall(num_per_dest_send.data(), 1, MPI_INT, num_per_dest_recv.data(),
-               1, MPI_INT, comm);
-
-  // Compite receive array displacements
-  std::vector<int> disp_recv(size + 1, 0);
-  std::partial_sum(num_per_dest_recv.begin(), num_per_dest_recv.end(),
-                   disp_recv.begin() + 1);
-
-  // Prepare send buffer
-  std::vector<int> offset = disp_send;
-  std::vector<std::int64_t> data_send(disp_send.back());
-  for (int i = 0; i < list.num_nodes(); ++i)
-  {
-    const auto& dests = destinations.links(i);
-    for (int j = 0; j < destinations.num_links(i); ++j)
+    const auto [it, insert] = proc_to_neighbour.insert({p, np});
+    if (insert)
     {
-      const int dest = dests[j];
-      auto links = list.links(i);
-      data_send[offset[dest]++] = i + offset_global;
-      data_send[offset[dest]++] = links.rows();
-      for (int k = 0; k < links.rows(); ++k)
-        data_send[offset[dest]++] = links(k);
+      // New neighbour found
+      neighbours.push_back(p);
+      ghost_index_count.push_back(0);
+      ++np;
     }
+    ++ghost_index_count[it->second];
   }
 
-  // Send/receive data
-  std::vector<std::int64_t> data_recv(disp_recv.back());
-  MPI_Alltoallv(data_send.data(), num_per_dest_send.data(), disp_send.data(),
-                MPI_INT64_T, data_recv.data(), num_per_dest_recv.data(),
-                disp_recv.data(), MPI_INT64_T, comm);
+  // NB - this assumes a symmetry, i.e. that if one process shares an index
+  // owned by another process, then the same is true vice versa. This assumption
+  // is valid for meshes with cells shared via facet or vertex.
+  MPI_Comm neighbour_comm;
+  MPI_Dist_graph_create_adjacent(comm, neighbours.size(), neighbours.data(),
+                                 MPI_UNWEIGHTED, neighbours.size(),
+                                 neighbours.data(), MPI_UNWEIGHTED,
+                                 MPI_INFO_NULL, false, &neighbour_comm);
 
-  // Unpack receive buffer
-  std::vector<std::int64_t> array, global_indices;
-  std::vector<std::int32_t> list_offset(1, 0);
-  for (std::size_t p = 0; p < disp_recv.size() - 1; ++p)
+  std::vector<int> send_offsets = {0};
+  for (std::size_t i = 0; i < ghost_index_count.size(); ++i)
+    send_offsets.push_back(send_offsets.back() + ghost_index_count[i]);
+  std::vector<std::int64_t> send_data(send_offsets.back());
+
+  // Copy offsets to help fill array
+  std::vector<int> ghost_index_offset(send_offsets.begin(), send_offsets.end());
+
+  for (std::size_t i = 0; i < ghost_owners.size(); ++i)
   {
-    for (int i = disp_recv[p]; i < disp_recv[p + 1];)
-    {
-      global_indices.push_back(data_recv[i++]);
-      const std::int64_t num_links = data_recv[i++];
-      for (int j = 0; j < num_links; ++j)
-        array.push_back(data_recv[i++]);
-      list_offset.push_back(list_offset.back() + num_links);
-    }
+    // Owning process
+    int p = ghost_owners[i];
+    // Owning neighbour
+    int np = proc_to_neighbour[p];
+    // Send data location
+    int pos = ghost_index_offset[np];
+    send_data[pos] = global_indices[num_local + i];
+    ++ghost_index_offset[np];
   }
 
-  return {graph::AdjacencyList<std::int64_t>(array, list_offset),
-          std::move(global_indices)};
+  std::vector<int> recv_sizes(neighbours.size());
+  MPI_Neighbor_alltoall(ghost_index_count.data(), 1, MPI_INT, recv_sizes.data(),
+                        1, MPI_INT, neighbour_comm);
+  std::vector<int> recv_offsets = {0};
+  for (int q : recv_sizes)
+    recv_offsets.push_back(recv_offsets.back() + q);
+  std::vector<std::int64_t> recv_data(recv_offsets.back());
+
+  MPI_Neighbor_alltoallv(send_data.data(), ghost_index_count.data(),
+                         send_offsets.data(), MPI_INT64_T, recv_data.data(),
+                         recv_sizes.data(), recv_offsets.data(), MPI_INT64_T,
+                         neighbour_comm);
+
+  // Replace values in recv_data with new_index and send back
+  std::unordered_map<std::int64_t, std::int64_t> old_to_new;
+  for (int i = 0; i < num_local; ++i)
+    old_to_new.insert({global_indices[i], offset_local + i});
+
+  for (std::int64_t& r : recv_data)
+  {
+    auto it = old_to_new.find(r);
+    // Must exist on this process!
+    assert(it != old_to_new.end());
+    r = it->second;
+  }
+
+  std::vector<std::int64_t> new_recv(send_data.size());
+  MPI_Neighbor_alltoallv(recv_data.data(), recv_sizes.data(),
+                         recv_offsets.data(), MPI_INT64_T, new_recv.data(),
+                         ghost_index_count.data(), send_offsets.data(),
+                         MPI_INT64_T, neighbour_comm);
+
+  // Add to map
+  for (std::size_t i = 0; i < send_data.size(); ++i)
+  {
+    std::int64_t old_idx = send_data[i];
+    std::int64_t new_idx = new_recv[i];
+    auto [it, insert] = old_to_new.insert({old_idx, new_idx});
+    assert(insert);
+  }
+
+  for (std::int64_t& q : ghost_global_indices)
+  {
+    const auto it = old_to_new.find(q);
+    assert(it != old_to_new.end());
+    q = it->second;
+  }
+
+  MPI_Comm_free(&neighbour_comm);
+  return ghost_global_indices;
 }
 //-----------------------------------------------------------------------------
 Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
