@@ -36,16 +36,15 @@ compute_face_permutations_simplex(
       const int face = cell_faces[i];
       auto vertices = f_to_v.links(face);
 
-      // Orient that triangle so the the lowest numbered vertex is
-      // the origin, and the next vertex anticlockwise from the
-      // lowest has a lower number than the next vertex clockwise.
-      // Find the index of the lowest numbered vertex
+      // Orient that triangle so the the lowest numbered vertex is the
+      // origin, and the next vertex anticlockwise from the lowest has a
+      // lower number than the next vertex clockwise. Find the index of
+      // the lowest numbered vertex
 
       // Store local vertex indices here
       std::array<std::int32_t, 3> e_vertices;
 
-      // Find iterators pointing to cell vertex given a vertex on
-      // facet
+      // Find iterators pointing to cell vertex given a vertex on facet
       for (int j = 0; j < 3; ++j)
       {
         const auto it = std::find(cell_vertices.data(),
@@ -61,12 +60,12 @@ compute_face_permutations_simplex(
         if (e_vertices[v] < e_vertices[rots])
           rots = v;
 
-      // pre is the number of the next vertex clockwise from the
-      // lowest numbered vertex
+      // pre is the number of the next vertex clockwise from the lowest
+      // numbered vertex
       const int pre = rots == 0 ? e_vertices[3 - 1] : e_vertices[rots - 1];
 
-      // post is the number of the next vertex anticlockwise from
-      // the lowest numbered vertex
+      // post is the number of the next vertex anticlockwise from the
+      // lowest numbered vertex
       const int post = rots == 3 - 1 ? e_vertices[0] : e_vertices[rots + 1];
 
       face_perm[c][3 * i] = (post > pre);
@@ -96,14 +95,15 @@ compute_face_permutations_tp(const graph::AdjacencyList<std::int32_t>& c_to_v,
       auto vertices = f_to_v.links(face);
 
       // quadrilateral
-      // Orient that quad so the the lowest numbered vertex is the origin,
-      // and the next vertex anticlockwise from the lowest has a lower
-      // number than the next vertex clockwise. Find the index of the
-      // lowest numbered vertex
+      // Orient that quad so the the lowest numbered vertex is the
+      // origin, and the next vertex anticlockwise from the lowest has a
+      // lower number than the next vertex clockwise. Find the index of
+      // the lowest numbered vertex
       int num_min = -1;
 
       // Store local vertex indices here
       std::array<std::int32_t, 4> e_vertices;
+
       // Find iterators pointing to cell vertex given a vertex on facet
       for (int j = 0; j < 4; ++j)
       {
@@ -120,16 +120,16 @@ compute_face_permutations_tp(const graph::AdjacencyList<std::int32_t>& c_to_v,
           num_min = v;
       }
 
-      // rots is the number of rotations to get the lowest numbered vertex
-      // to the origin
+      // rots is the number of rotations to get the lowest numbered
+      // vertex to the origin
       std::uint8_t rots = num_min;
 
       // pre is the (local) number of the next vertex clockwise from the
       // lowest numbered vertex
       int pre = 2;
 
-      // post is the (local) number of the next vertex anticlockwise from
-      // the lowest numbered vertex
+      // post is the (local) number of the next vertex anticlockwise
+      // from the lowest numbered vertex
       int post = 1;
 
       // The tensor product ordering of quads must be taken into account
@@ -272,7 +272,7 @@ void PermutationInfo::create_entity_permutations(mesh::Topology& topology)
   _cell_permutation_info.fill(0);
   _facet_permutations.resize(facets_per_cell, num_cells);
 
-  int32_t used_bits = 0;
+  std::int32_t used_bits = 0;
   if (tdim > 2)
   {
     const int faces_per_cell = cell_num_entities(cell_type, 2);
@@ -280,8 +280,9 @@ void PermutationInfo::create_entity_permutations(mesh::Topology& topology)
         = compute_face_permutations(topology);
     for (int c = 0; c < num_cells; ++c)
       _cell_permutation_info[c] = face_perm[c].to_ulong();
-    // Currently, 3 bits are used for each face. If faces with more than 4 sides
-    // are implemented, this will need to be increased.
+
+    // Currently, 3 bits are used for each face. If faces with more than
+    // 4 sides are implemented, this will need to be increased.
     used_bits += faces_per_cell * 3;
     assert(tdim == 3);
     for (int c = 0; c < num_cells; ++c)
