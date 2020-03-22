@@ -24,23 +24,6 @@ class Topology;
 class PermutationInfo
 {
 public:
-  // /// Create empty mesh topology
-  // PermutationInfo();
-
-  // /// Copy constructor
-  // PermutationInfo(const PermutationInfo& info) = default;
-
-  // /// Move constructor
-  // PermutationInfo(PermutationInfo&& info) = default;
-
-  // /// Destructor
-  // ~PermutationInfo() = default;
-
-  // /// Assignment
-  // PermutationInfo& operator=(const PermutationInfo& info) = default;
-
-  // /// Assignment
-  // PermutationInfo& operator=(PermutationInfo&& info) = default;
 
   /// Get the permutation numbers to apply to facets. The permutations
   /// are numbered so that:
@@ -104,14 +87,6 @@ public:
                    Eigen::Array<std::uint32_t, Eigen::Dynamic, 1>>
   create_entity_permutations(const Topology& topology);
 
-  // private:
-  //   // The facet permutations
-  //   Eigen::Array<std::uint8_t, Eigen::Dynamic, Eigen::Dynamic>
-  //       _facet_permutations;
-
-  //   // Cell permutation info. See the documentation for
-  //   // get_cell_permutation_info for documentation of how this is encoded.
-  //   Eigen::Array<std::uint32_t, Eigen::Dynamic, 1> _cell_permutation_info;
 };
 
 } // namespace mesh

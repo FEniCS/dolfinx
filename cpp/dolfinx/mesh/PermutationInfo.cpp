@@ -239,23 +239,7 @@ compute_face_permutations(const mesh::Topology& topology)
 }
 //-----------------------------------------------------------------------------
 } // namespace
-//-----------------------------------------------------------------------------
-// PermutationInfo::PermutationInfo()
-// {
-//   // Do nothing
-// }
-//-----------------------------------------------------------------------------
-// const Eigen::Array<std::uint8_t, Eigen::Dynamic, Eigen::Dynamic>&
-// PermutationInfo::get_facet_permutations() const
-// {
-//   return _facet_permutations;
-// }
-// //-----------------------------------------------------------------------------
-// const Eigen::Array<std::uint32_t, Eigen::Dynamic, 1>&
-// PermutationInfo::get_cell_permutation_info() const
-// {
-//   return _cell_permutation_info;
-// }
+
 //-----------------------------------------------------------------------------
 std::pair<Eigen::Array<std::uint8_t, Eigen::Dynamic, Eigen::Dynamic>,
           Eigen::Array<std::uint32_t, Eigen::Dynamic, 1>>
@@ -269,9 +253,6 @@ PermutationInfo::create_entity_permutations(const mesh::Topology& topology)
 
   Eigen::Array<std::uint32_t, Eigen::Dynamic, 1> cell_permutation_info
       = Eigen::Array<std::uint32_t, Eigen::Dynamic, 1>::Zero(num_cells);
-  // _cell_permutation_info.resize(num_cells);
-  // _cell_permutation_info.fill(0);
-  // _facet_permutations.resize(facets_per_cell, num_cells);
   Eigen::Array<std::uint8_t, Eigen::Dynamic, Eigen::Dynamic> facet_permutations(
       facets_per_cell, num_cells);
 
@@ -314,6 +295,6 @@ PermutationInfo::create_entity_permutations(const mesh::Topology& topology)
 
   assert(used_bits < BITSETSIZE);
 
-  return {facet_permutations, cell_permutation_info};
+  return {std::move(facet_permutations), std::move(cell_permutation_info)};
 }
 //-----------------------------------------------------------------------------

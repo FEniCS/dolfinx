@@ -222,7 +222,7 @@ void Function::eval(
   const fem::DofMap& dofmap = *_function_space->dofmap();
 
   mesh.create_entity_permutations();
-  Eigen::Array<std::uint32_t, Eigen::Dynamic, 1> cell_info
+  const Eigen::Array<std::uint32_t, Eigen::Dynamic, 1>& cell_info
       = mesh.topology().get_cell_permutation_info();
 
   // Loop over points
