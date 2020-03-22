@@ -68,8 +68,17 @@ void mesh(py::module& m)
   m.def("radius_ratio", &dolfinx::mesh::radius_ratio);
   m.def("midpoints", &dolfinx::mesh::midpoints);
 
-  m.def("create", &dolfinx::mesh::create,
-        "Helper function for creating meshes.");
+  m.def(
+      "create",
+      [](const MPICommWrapper comm,
+         const dolfinx::graph::AdjacencyList<std::int64_t>& cells,
+         const dolfinx::fem::ElementDofLayout& layout,
+         const Eigen::Ref<const Eigen::Array<
+             double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>>& x,
+         dolfinx::mesh::GhostMode ghost_mode) {
+        return dolfinx::mesh::create(comm.get(), cells, layout, x, ghost_mode);
+      },
+      "Helper function for creating meshes.");
 
   // dolfinx::mesh::GhostMode enums
   py::enum_<dolfinx::mesh::GhostMode>(m, "GhostMode")
