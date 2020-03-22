@@ -13,6 +13,7 @@
 #include <dolfinx/fem/ElementDofLayout.h>
 #include <dolfinx/graph/AdjacencyList.h>
 #include <dolfinx/graph/Partitioning.h>
+#include <dolfinx/mesh/PermutationInfo.h>
 #include <numeric>
 
 using namespace dolfinx;
@@ -197,15 +198,22 @@ size_t Topology::hash() const
   return this->connectivity(dim(), 0)->hash();
 }
 //-----------------------------------------------------------------------------
-Eigen::Array<std::uint32_t, Eigen::Dynamic, 1>
+const Eigen::Array<std::uint32_t, Eigen::Dynamic, 1>&
 Topology::get_cell_permutation_info() const
 {
-  return _pinfo.get_cell_permutation_info();
+  return _cell_permutations;
 }
 //-----------------------------------------------------------------------------
 void Topology::create_entity_permutations()
 {
-  _pinfo.create_entity_permutations(*this);
+  if (_facet_permutations.size() == 0 and _facet_permutations.size() == 0)
+    return;
+
+  auto [facet_permutations, cell_permutations]
+      = PermutationInfo::create_entity_permutations(*this);
+  _facet_permutations = std::move(facet_permutations);
+  _cell_permutations = std::move(cell_permutations);
+  // _pinfo.create_entity_permutations(*this);
 }
 //-----------------------------------------------------------------------------
 mesh::CellType Topology::cell_type() const { return _cell_type; }
@@ -213,7 +221,7 @@ mesh::CellType Topology::cell_type() const { return _cell_type; }
 const Eigen::Array<std::uint8_t, Eigen::Dynamic, Eigen::Dynamic>&
 Topology::get_facet_permutations() const
 {
-  return _pinfo.get_facet_permutations();
+  return _facet_permutations;
 }
 //-----------------------------------------------------------------------------
 std::tuple<Topology, std::vector<int>, graph::AdjacencyList<std::int32_t>>

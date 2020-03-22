@@ -8,6 +8,7 @@
 
 #include <Eigen/Dense>
 #include <cstdint>
+#include <utility>
 
 namespace dolfinx
 {
@@ -23,23 +24,23 @@ class Topology;
 class PermutationInfo
 {
 public:
-  /// Create empty mesh topology
-  PermutationInfo();
+  // /// Create empty mesh topology
+  // PermutationInfo();
 
-  /// Copy constructor
-  PermutationInfo(const PermutationInfo& info) = default;
+  // /// Copy constructor
+  // PermutationInfo(const PermutationInfo& info) = default;
 
-  /// Move constructor
-  PermutationInfo(PermutationInfo&& info) = default;
+  // /// Move constructor
+  // PermutationInfo(PermutationInfo&& info) = default;
 
-  /// Destructor
-  ~PermutationInfo() = default;
+  // /// Destructor
+  // ~PermutationInfo() = default;
 
-  /// Assignment
-  PermutationInfo& operator=(const PermutationInfo& info) = default;
+  // /// Assignment
+  // PermutationInfo& operator=(const PermutationInfo& info) = default;
 
-  /// Assignment
-  PermutationInfo& operator=(PermutationInfo&& info) = default;
+  // /// Assignment
+  // PermutationInfo& operator=(PermutationInfo&& info) = default;
 
   /// Get the permutation numbers to apply to facets. The permutations
   /// are numbered so that:
@@ -53,8 +54,8 @@ public:
   /// point on facet integrals when data from the cells on both sides of
   /// the facet is used.
   /// @return An array of permutation numbers.
-  const Eigen::Array<std::uint8_t, Eigen::Dynamic, Eigen::Dynamic>&
-  get_facet_permutations() const;
+  // const Eigen::Array<std::uint8_t, Eigen::Dynamic, Eigen::Dynamic>&
+  // get_facet_permutations() const;
 
   /// Get the permutation information about the entities of each cell,
   /// relative to a low-to-high ordering. This data is packed so that a
@@ -93,22 +94,24 @@ public:
   /// This data is used to correct the direction of vector function on
   /// permuted facets.
   /// @return A vector of cell permutation info ints
-  const Eigen::Array<std::uint32_t, Eigen::Dynamic, 1>&
-  get_cell_permutation_info() const;
+  // const Eigen::Array<std::uint32_t, Eigen::Dynamic, 1>&
+  // get_cell_permutation_info() const;
 
   /// @todo Avoid in/out argument
   ///
   /// Compute entity permutations and reflections used in assembly
-  void create_entity_permutations(Topology& topology);
+  static std::pair<Eigen::Array<std::uint8_t, Eigen::Dynamic, Eigen::Dynamic>,
+                   Eigen::Array<std::uint32_t, Eigen::Dynamic, 1>>
+  create_entity_permutations(const Topology& topology);
 
-private:
-  // The facet permutations
-  Eigen::Array<std::uint8_t, Eigen::Dynamic, Eigen::Dynamic>
-      _facet_permutations;
+  // private:
+  //   // The facet permutations
+  //   Eigen::Array<std::uint8_t, Eigen::Dynamic, Eigen::Dynamic>
+  //       _facet_permutations;
 
-  // Cell permutation info. See the documentation for
-  // get_cell_permutation_info for documentation of how this is encoded.
-  Eigen::Array<std::uint32_t, Eigen::Dynamic, 1> _cell_permutation_info;
+  //   // Cell permutation info. See the documentation for
+  //   // get_cell_permutation_info for documentation of how this is encoded.
+  //   Eigen::Array<std::uint32_t, Eigen::Dynamic, 1> _cell_permutation_info;
 };
 
 } // namespace mesh

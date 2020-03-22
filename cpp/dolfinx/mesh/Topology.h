@@ -11,7 +11,6 @@
 #include <array>
 #include <cstdint>
 #include <dolfinx/common/MPI.h>
-#include <dolfinx/mesh/PermutationInfo.h>
 #include <memory>
 #include <vector>
 
@@ -116,7 +115,7 @@ public:
                         int d0, int d1);
 
   /// Returns the permutation information
-  Eigen::Array<std::uint32_t, Eigen::Dynamic, 1>
+  const Eigen::Array<std::uint32_t, Eigen::Dynamic, 1>&
   get_cell_permutation_info() const;
 
   /// Gets markers for owned facets that are interior, i.e. are
@@ -166,7 +165,15 @@ private:
       _connectivity;
 
   // Stores the permutation information
-  PermutationInfo _pinfo;
+  // PermutationInfo _pinfo;
+
+  // The facet permutations
+  Eigen::Array<std::uint8_t, Eigen::Dynamic, Eigen::Dynamic>
+      _facet_permutations;
+
+  // Cell permutation info. See the documentation for
+  // get_cell_permutation_info for documentation of how this is encoded.
+  Eigen::Array<std::uint32_t, Eigen::Dynamic, 1> _cell_permutations;
 
   // Marker for owned facets, which evaluates to True for facets that
   // are interior to the domain
