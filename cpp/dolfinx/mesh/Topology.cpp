@@ -206,11 +206,11 @@ Topology::get_cell_permutation_info() const
 //-----------------------------------------------------------------------------
 void Topology::create_entity_permutations()
 {
-  if (_facet_permutations.size() == 0 and _facet_permutations.size() == 0)
+  if (_cell_permutations.size() > 0)
     return;
 
   auto [facet_permutations, cell_permutations]
-      = PermutationInfo::create_entity_permutations(*this);
+      = PermutationInfo::compute_entity_permutations(*this);
   _facet_permutations = std::move(facet_permutations);
   _cell_permutations = std::move(cell_permutations);
   // _pinfo.create_entity_permutations(*this);

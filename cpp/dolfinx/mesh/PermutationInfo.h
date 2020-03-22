@@ -24,7 +24,6 @@ class Topology;
 class PermutationInfo
 {
 public:
-
   /// Get the permutation numbers to apply to facets. The permutations
   /// are numbered so that:
   ///
@@ -85,8 +84,7 @@ public:
   /// Compute entity permutations and reflections used in assembly
   static std::pair<Eigen::Array<std::uint8_t, Eigen::Dynamic, Eigen::Dynamic>,
                    Eigen::Array<std::uint32_t, Eigen::Dynamic, 1>>
-  create_entity_permutations(const Topology& topology);
-
+  compute_entity_permutations(const Topology& topology);
 };
 
 } // namespace mesh

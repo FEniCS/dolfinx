@@ -243,7 +243,7 @@ compute_face_permutations(const mesh::Topology& topology)
 //-----------------------------------------------------------------------------
 std::pair<Eigen::Array<std::uint8_t, Eigen::Dynamic, Eigen::Dynamic>,
           Eigen::Array<std::uint32_t, Eigen::Dynamic, 1>>
-PermutationInfo::create_entity_permutations(const mesh::Topology& topology)
+PermutationInfo::compute_entity_permutations(const mesh::Topology& topology)
 {
   const int tdim = topology.dim();
   const CellType cell_type = topology.cell_type();
