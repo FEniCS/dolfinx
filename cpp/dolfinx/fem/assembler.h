@@ -7,6 +7,7 @@
 #pragma once
 
 #include <Eigen/Dense>
+#include <Eigen/Sparse>
 #include <dolfinx/common/types.h>
 #include <memory>
 #include <petscmat.h>
@@ -99,6 +100,17 @@ void apply_lifting(
     double scale);
 
 // -- Matrices ---------------------------------------------------------------
+
+#ifndef PETSC_USE_COMPLEX
+// Experimental
+/// Assemble bilinear form into an Eigen Sparse matrix.
+/// @param[in] a The bilinear from to assemble
+/// @param[in] bcs Boundary conditions to apply. For boundary condition
+///                dofs the row and column are zeroed. The diagonal
+///                entry is not set.
+Eigen::SparseMatrix<double, Eigen::RowMajor> assemble_matrix_eigen(
+    const Form& a, const std::vector<std::shared_ptr<const DirichletBC>>& bcs);
+#endif
 
 /// Assemble bilinear form into a matrix. Matrix must already be
 /// initialised. Does not zero or finalise the matrix.

@@ -199,7 +199,7 @@ MatNullSpace dolfinx::la::create_petsc_nullspace(
 
   // Copy vectors in vector space object
   std::vector<Vec> _nullspace;
-  for (std::size_t i = 0; i < nullspace.dim(); ++i)
+  for (int i = 0; i < nullspace.dim(); ++i)
   {
     assert(nullspace[i]);
     auto x = nullspace[i]->vec();

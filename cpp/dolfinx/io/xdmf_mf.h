@@ -143,10 +143,13 @@ remap_meshfunction_data(const mesh::Mesh& mesh, const int dim,
   }
   else
   {
+    mesh.create_connectivity(dim, tdim);
     auto e_to_c = mesh.topology().connectivity(dim, tdim);
     assert(e_to_c);
+    mesh.create_connectivity(dim, 0);
     auto e_to_v = mesh.topology().connectivity(dim, 0);
     assert(e_to_v);
+    mesh.create_connectivity(tdim, 0);
     auto c_to_v = mesh.topology().connectivity(tdim, 0);
     assert(c_to_v);
 
@@ -444,9 +447,6 @@ mesh::MeshFunction<T> read_mesh_function(std::shared_ptr<const mesh::Mesh> mesh,
 
   const std::int64_t num_entities_global
       = xdmf_utils::get_num_cells(topology_node);
-
-  // std::cout << "Testing: " << mesh->topology().index_map(dim)->size_global()
-  //           << ", " << num_entities_global << std::endl;
 
   mesh->create_entities(dim);
   assert(mesh->topology().index_map(dim));

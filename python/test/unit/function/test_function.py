@@ -166,7 +166,7 @@ def test_eval(R, V, W, Q, mesh):
     u2.interpolate(e2)
     u3.interpolate(e3)
 
-    x0 = (mesh.geometry.point(0) + mesh.geometry.point(1)) / 2.0
+    x0 = (mesh.geometry.x[0] + mesh.geometry.x[1]) / 2.0
     tree = geometry.BoundingBoxTree(mesh, mesh.geometry.dim)
     cells = geometry.compute_first_entity_collision(tree, mesh, x0)
     assert np.allclose(u3.eval(x0, cells)[:3], u2.eval(x0, cells), rtol=1e-15, atol=1e-15)
@@ -180,7 +180,7 @@ def test_eval_multiple(W):
     u = Function(W)
     u.vector.set(1.0)
     mesh = W.mesh
-    x0 = (mesh.geometry.point(0) + mesh.geometry.point(1)) / 2.0
+    x0 = (mesh.geometry.x[0] + mesh.geometry.x[1]) / 2.0
     x = np.array([x0, x0 + 1.0e8])
     tree = geometry.BoundingBoxTree(mesh, W.mesh.geometry.dim)
     cells = geometry.compute_first_entity_collision(tree, mesh, x)

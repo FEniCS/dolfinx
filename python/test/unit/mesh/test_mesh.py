@@ -228,8 +228,8 @@ def test_mesh_construction_pygmsh():
 def test_UnitSquareMeshDistributed():
     """Create mesh of unit square."""
     mesh = UnitSquareMesh(MPI.comm_world, 5, 7)
-    assert mesh.num_entities_global(0) == 48
-    assert mesh.num_entities_global(2) == 70
+    assert mesh.topology.index_map(0).size_global == 48
+    assert mesh.topology.index_map(2).size_global == 70
     assert mesh.geometry.dim == 2
     assert MPI.sum(mesh.mpi_comm(), mesh.topology.index_map(0).size_local) == 48
 
@@ -245,8 +245,8 @@ def test_UnitSquareMeshLocal():
 def test_UnitCubeMeshDistributed():
     """Create mesh of unit cube."""
     mesh = UnitCubeMesh(MPI.comm_world, 5, 7, 9)
-    assert mesh.num_entities_global(0) == 480
-    assert mesh.num_entities_global(3) == 1890
+    assert mesh.topology.index_map(0).size_global == 480
+    assert mesh.topology.index_map(3).size_global == 1890
     assert mesh.geometry.dim == 3
     assert MPI.sum(mesh.mpi_comm(), mesh.topology.index_map(0).size_local) == 480
 
@@ -261,16 +261,16 @@ def test_UnitCubeMeshLocal():
 
 def test_UnitQuadMesh():
     mesh = UnitSquareMesh(MPI.comm_world, 5, 7, CellType.quadrilateral)
-    assert mesh.num_entities_global(0) == 48
-    assert mesh.num_entities_global(2) == 35
+    assert mesh.topology.index_map(0).size_global == 48
+    assert mesh.topology.index_map(2).size_global == 35
     assert mesh.geometry.dim == 2
     assert MPI.sum(mesh.mpi_comm(), mesh.topology.index_map(0).size_local) == 48
 
 
 def test_UnitHexMesh():
     mesh = UnitCubeMesh(MPI.comm_world, 5, 7, 9, CellType.hexahedron)
-    assert mesh.num_entities_global(0) == 480
-    assert mesh.num_entities_global(3) == 315
+    assert mesh.topology.index_map(0).size_global == 480
+    assert mesh.topology.index_map(3).size_global == 315
     assert mesh.geometry.dim == 3
     assert MPI.sum(mesh.mpi_comm(), mesh.topology.index_map(0).size_local) == 480
 
@@ -288,12 +288,6 @@ def test_GetCoordinates():
     """Get coordinates of vertices"""
     mesh = UnitSquareMesh(MPI.comm_world, 5, 5)
     assert len(mesh.geometry.x) == 36
-
-
-def test_GetCells():
-    """Get cells of mesh"""
-    mesh = UnitSquareMesh(MPI.comm_world, 5, 5)
-    assert MPI.sum(mesh.mpi_comm(), len(mesh.cells())) == 50
 
 
 @skip_in_parallel
@@ -424,15 +418,15 @@ def test_mesh_topology_lifetime():
 def test_small_mesh():
     mesh3d = UnitCubeMesh(MPI.comm_world, 1, 1, 1)
     gdim = mesh3d.geometry.dim
-    assert mesh3d.num_entities_global(gdim) == 6
+    assert mesh3d.topology.index_map(gdim).size_global == 6
 
     mesh2d = UnitSquareMesh(MPI.comm_world, 1, 1)
     gdim = mesh2d.geometry.dim
-    assert mesh2d.num_entities_global(gdim) == 2
+    assert mesh2d.topology.index_map(gdim).size_global == 2
 
     mesh1d = UnitIntervalMesh(MPI.comm_world, 2)
     gdim = mesh1d.geometry.dim
-    assert mesh1d.num_entities_global(gdim) == 2
+    assert mesh1d.topology.index_map(gdim).size_global == 2
 
 
 def test_topology_surface(cube):
