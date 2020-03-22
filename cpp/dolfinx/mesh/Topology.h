@@ -118,6 +118,21 @@ public:
   const Eigen::Array<std::uint32_t, Eigen::Dynamic, 1>&
   get_cell_permutation_info() const;
 
+  /// Get the permutation number to apply to a facet. The permutations
+  /// are numbered so that:
+  ///
+  ///   - n % 2 gives the number of reflections to apply
+  ///   - n // 2 gives the number of rotations to apply
+  ///
+  /// Each column of the returned array represents a cell, and each row
+  /// a facet of that cell.
+  /// @return The permutation number
+  const Eigen::Array<std::uint8_t, Eigen::Dynamic, Eigen::Dynamic>&
+  get_facet_permutations() const;
+
+  /// Compute entity permutations and reflections used in assembly
+  void create_entity_permutations();
+
   /// Gets markers for owned facets that are interior, i.e. are
   /// connected to two cells, one of which might be on a remote process
   /// @return Vector with length equal to the number of facets owned by
@@ -136,22 +151,6 @@ public:
   /// @return Cell type that th topology is for
   mesh::CellType cell_type() const;
 
-  /// Get the permutation number to apply to a facet. The permutations
-  /// are numbered so that:
-  ///
-  ///   n % 2 gives the number of reflections to apply
-  ///
-  ///   n // 2 gives the number of rotations to apply
-  ///
-  /// Each column of the returned array represents a cell, and each row
-  /// a facet of that cell.
-  /// @return The permutation number
-  const Eigen::Array<std::uint8_t, Eigen::Dynamic, Eigen::Dynamic>&
-  get_facet_permutations() const;
-
-  /// Compute entity permutations and reflections used in assembly
-  void create_entity_permutations();
-
 private:
   // Cell type
   mesh::CellType _cell_type;
@@ -163,9 +162,6 @@ private:
   Eigen::Array<std::shared_ptr<graph::AdjacencyList<std::int32_t>>,
                Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
       _connectivity;
-
-  // Stores the permutation information
-  // PermutationInfo _pinfo;
 
   // The facet permutations
   Eigen::Array<std::uint8_t, Eigen::Dynamic, Eigen::Dynamic>
