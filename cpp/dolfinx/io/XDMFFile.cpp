@@ -15,7 +15,9 @@
 #include <boost/filesystem.hpp>
 #include <dolfinx/common/utils.h>
 #include <dolfinx/fem/ElementDofLayout.h>
+#include <dolfinx/graph/Partitioning.h>
 #include <dolfinx/mesh/Mesh.h>
+#include <dolfinx/mesh/Partitioning.h>
 #include <dolfinx/mesh/Topology.h>
 #include <dolfinx/mesh/TopologyComputation.h>
 
@@ -111,15 +113,30 @@ mesh::Mesh XDMFFile::read_mesh() const
   auto [cell_type, x, cells]
       = xdmf_mesh::read_mesh_data(_mpi_comm.comm(), _filename);
 
+  graph::AdjacencyList<std::int64_t> cells_adj(cells);
+
   // TODO: create outside
   // Create a layout
   const fem::ElementDofLayout layout
       = fem::geometry_layout(cell_type, cells.cols());
 
+  // Compute the destination rank for cells on this process via graph
+  // partitioning
+  const int size = dolfinx::MPI::size(_mpi_comm.comm());
+  const graph::AdjacencyList<std::int32_t> dest
+      = mesh::Partitioning::partition_cells(_mpi_comm.comm(), size,
+                                            layout.cell_type(), cells_adj,
+                                            mesh::GhostMode::none);
+
+  // Distribute cells to destination rank
+  const auto [cell_nodes, src, original_cell_index, ghost_owners]
+      = graph::Partitioning::distribute(_mpi_comm.comm(), cells_adj, dest);
+
   // Create Topology
   graph::AdjacencyList<std::int64_t> _cells(cells);
-  auto [topology, src, dest] = mesh::create_topology(
-      _mpi_comm.comm(), _cells, layout, mesh::GhostMode::none);
+  mesh::Topology topology
+      = mesh::create_topology(_mpi_comm.comm(), cell_nodes, original_cell_index,
+                              ghost_owners, layout, mesh::GhostMode::none);
 
   // FIXME: Figure out how to check which entities are required
   // Initialise facet for P2
@@ -136,7 +153,7 @@ mesh::Mesh XDMFFile::read_mesh() const
 
   // Create Geometry
   const mesh::Geometry geometry = mesh::create_geometry(
-      _mpi_comm.comm(), topology, layout, _cells, dest, src, x);
+      _mpi_comm.comm(), topology, layout, cell_nodes, dest, src, x);
 
   // Return Mesh
   return mesh::Mesh(_mpi_comm.comm(), topology, geometry);

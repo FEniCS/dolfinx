@@ -5,6 +5,7 @@
 // SPDX-License-Identifier:    LGPL-3.0-or-later
 
 #include "Topology.h"
+
 #include "Partitioning.h"
 #include "PermutationComputation.h"
 #include "TopologyComputation.h"
@@ -322,31 +323,20 @@ void Topology::create_entity_permutations()
 //-----------------------------------------------------------------------------
 mesh::CellType Topology::cell_type() const { return _cell_type; }
 //-----------------------------------------------------------------------------
-std::tuple<Topology, std::vector<int>, graph::AdjacencyList<std::int32_t>>
+Topology
 mesh::create_topology(MPI_Comm comm,
-                      const graph::AdjacencyList<std::int64_t>& cells,
-                      const fem::ElementDofLayout& layout,
-                      mesh::GhostMode ghost_mode)
+                      const graph::AdjacencyList<std::int64_t>& cell_nodes,
+                      const std::vector<std::int64_t>& original_cell_index,
+                      const std::vector<int>& ghost_owners,
+                      const fem::ElementDofLayout& layout, mesh::GhostMode)
 {
-  const int size = dolfinx::MPI::size(comm);
-
   // TODO: This step can be skipped for 'P1' elements
-
   // Extract topology data, e.g.just the vertices. For P1 geometry this
   // should just be the identity operator.For other elements the
   // filtered lists may have 'gaps', i.e.the indices might not be
   // contiguous.
-  const graph::AdjacencyList<std::int64_t> cells_v
-      = mesh::extract_topology(layout, cells);
-
-  // Compute the destination rank for cells on this process via graph
-  // partitioning
-  const graph::AdjacencyList<std::int32_t> dest = Partitioning::partition_cells(
-      comm, size, layout.cell_type(), cells_v, ghost_mode);
-
-  // Distribute cells to destination rank
-  const auto [my_cells, src, original_cell_index, ghost_owners]
-      = graph::Partitioning::distribute(comm, cells_v, dest);
+  const graph::AdjacencyList<std::int64_t> my_cells
+      = mesh::extract_topology(layout, cell_nodes);
 
   // Get indices of ghost cells, if any
   const std::vector<std::int64_t> cell_ghost_indices
@@ -568,7 +558,7 @@ mesh::create_topology(MPI_Comm comm,
     topology.set_index_map(tdim, index_map_c);
     topology.set_connectivity(my_local_cells, tdim, 0);
 
-    return {topology, src, dest};
+    return topology;
   }
 
   // Build local cell-vertex connectivity, with local vertex indices
@@ -640,6 +630,6 @@ mesh::create_topology(MPI_Comm comm,
   auto _cells_d = std::make_shared<graph::AdjacencyList<std::int32_t>>(cells_d);
   topology.set_connectivity(_cells_d, tdim, 0);
 
-  return {topology, src, dest};
+  return topology;
 }
 //-----------------------------------------------------------------------------

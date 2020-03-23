@@ -192,12 +192,15 @@ private:
 /// @param[in] layout Describe the association between 'nodes' in @p
 ///   cells and geometry degrees-of-freedom on the element. It is used
 ///   to extract the vertex entries in @p cells.
-/// @param[in] ghost_mode How to partition the cell overlap: none, shared_facet or shared_vertex
+/// @param[in] ghost_mode How to partition the cell overlap: none, shared_facet
+/// or shared_vertex
 /// @return A distributed Topology, the source rank for each cell in the
 ///   new topology, and the destination ranks for each cell in @p cells.
-std::tuple<Topology, std::vector<int>, graph::AdjacencyList<std::int32_t>>
-create_topology(MPI_Comm comm, const graph::AdjacencyList<std::int64_t>& cells,
-                const fem::ElementDofLayout& layout,
-                mesh::GhostMode ghost_mode);
+Topology create_topology(MPI_Comm comm,
+                         const graph::AdjacencyList<std::int64_t>& cells,
+                         const std::vector<std::int64_t>& original_cell_index,
+                         const std::vector<int>& ghost_owners,
+                         const fem::ElementDofLayout& layout,
+                         mesh::GhostMode ghost_mode);
 } // namespace mesh
 } // namespace dolfinx
