@@ -15,6 +15,7 @@
 #include <dolfinx/graph/AdjacencyList.h>
 #include <dolfinx/graph/Partitioning.h>
 #include <numeric>
+#include <unordered_map>
 
 using namespace dolfinx;
 using namespace dolfinx::mesh;
