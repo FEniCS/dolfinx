@@ -23,9 +23,6 @@
 using namespace dolfinx;
 using namespace dolfinx::fem;
 
-using MatArray
-    = Eigen::Array<Mat, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>;
-
 //-----------------------------------------------------------------------------
 PetscScalar fem::assemble_scalar(const Form& M)
 {
@@ -80,6 +77,8 @@ void fem::apply_lifting(
 }
 //-----------------------------------------------------------------------------
 #ifndef PETSC_USE_COMPLEX
+#ifndef PETSC_USE_64BIT_INDICES
+
 Eigen::SparseMatrix<double, Eigen::RowMajor> fem::assemble_matrix_eigen(
     const Form& a, const std::vector<std::shared_ptr<const DirichletBC>>& bcs)
 {
@@ -140,6 +139,7 @@ Eigen::SparseMatrix<double, Eigen::RowMajor> fem::assemble_matrix_eigen(
   mat.setFromTriplets(triplets.begin(), triplets.end());
   return mat;
 }
+#endif
 #endif
 //-----------------------------------------------------------------------------
 void fem::assemble_matrix(

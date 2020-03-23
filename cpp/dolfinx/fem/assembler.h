@@ -102,6 +102,8 @@ void apply_lifting(
 // -- Matrices ---------------------------------------------------------------
 
 #ifndef PETSC_USE_COMPLEX
+#ifndef PETSC_USE_64BIT_INDICES
+
 // Experimental
 /// Assemble bilinear form into an Eigen Sparse matrix.
 /// @param[in] a The bilinear from to assemble
@@ -110,6 +112,7 @@ void apply_lifting(
 ///                entry is not set.
 Eigen::SparseMatrix<double, Eigen::RowMajor> assemble_matrix_eigen(
     const Form& a, const std::vector<std::shared_ptr<const DirichletBC>>& bcs);
+#endif
 #endif
 
 /// Assemble bilinear form into a matrix. Matrix must already be
