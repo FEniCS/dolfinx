@@ -153,7 +153,7 @@ mesh::Mesh XDMFFile::read_mesh() const
 
   // Create Geometry
   const mesh::Geometry geometry = mesh::create_geometry(
-      _mpi_comm.comm(), topology, layout, cell_nodes, dest, src, x);
+      _mpi_comm.comm(), topology, layout, cell_nodes, x);
 
   // Return Mesh
   return mesh::Mesh(_mpi_comm.comm(), topology, geometry);

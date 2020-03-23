@@ -93,7 +93,6 @@ mesh::Geometry mesh::create_geometry(
     MPI_Comm comm, const Topology& topology,
     const fem::ElementDofLayout& layout,
     const graph::AdjacencyList<std::int64_t>& cell_nodes,
-    const graph::AdjacencyList<std::int32_t>&, const std::vector<int>&,
     const Eigen::Ref<const Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic,
                                         Eigen::RowMajor>>& x)
 {

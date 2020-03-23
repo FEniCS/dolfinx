@@ -106,7 +106,7 @@ Mesh mesh::create(
   }
 
   const Geometry geometry
-      = mesh::create_geometry(comm, topology, layout, cell_nodes, dest, src, x);
+      = mesh::create_geometry(comm, topology, layout, cell_nodes, x);
 
   return Mesh(comm, topology, geometry);
 }
