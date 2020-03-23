@@ -41,12 +41,6 @@ class DofMap:
     def cell_dofs(self, cell_index: int):
         return self._cpp_object.cell_dofs(cell_index)
 
-    def dofs(self, mesh, entity_dim: int):
-        return self._cpp_object.dofs(mesh, entity_dim)
-
-    def set(self, x, value):
-        self._cpp_object.set(x, value)
-
     @property
     def dof_layout(self):
         return self._cpp_object.dof_layout
@@ -56,5 +50,5 @@ class DofMap:
         return self._cpp_object.index_map
 
     @property
-    def dof_array(self):
-        return self._cpp_object.dof_array()
+    def list(self):
+        return self._cpp_object.list()

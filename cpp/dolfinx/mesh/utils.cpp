@@ -33,8 +33,8 @@ T volume_interval(const mesh::Mesh& mesh,
   {
     // Get the coordinates of the two vertices
     auto dofs = x_dofs.links(entities[i]);
-    const Eigen::Vector3d x0 = geometry.x(dofs[0]);
-    const Eigen::Vector3d x1 = geometry.x(dofs[1]);
+    const Eigen::Vector3d x0 = geometry.node(dofs[0]);
+    const Eigen::Vector3d x1 = geometry.node(dofs[1]);
     v[i] = (x1 - x0).norm();
   }
 
@@ -56,9 +56,9 @@ T volume_triangle(const mesh::Mesh& mesh,
     for (Eigen::Index i = 0; i < entities.rows(); ++i)
     {
       auto dofs = x_dofs.links(entities[i]);
-      const Eigen::Vector3d x0 = geometry.x(dofs[0]);
-      const Eigen::Vector3d x1 = geometry.x(dofs[1]);
-      const Eigen::Vector3d x2 = geometry.x(dofs[2]);
+      const Eigen::Vector3d x0 = geometry.node(dofs[0]);
+      const Eigen::Vector3d x1 = geometry.node(dofs[1]);
+      const Eigen::Vector3d x2 = geometry.node(dofs[2]);
 
       // Compute area of triangle embedded in R^2
       double v2 = (x0[0] * x1[1] + x0[1] * x2[0] + x1[0] * x2[1])
@@ -73,9 +73,9 @@ T volume_triangle(const mesh::Mesh& mesh,
     for (Eigen::Index i = 0; i < entities.rows(); ++i)
     {
       auto dofs = x_dofs.links(entities[i]);
-      const Eigen::Vector3d x0 = geometry.x(dofs[0]);
-      const Eigen::Vector3d x1 = geometry.x(dofs[1]);
-      const Eigen::Vector3d x2 = geometry.x(dofs[2]);
+      const Eigen::Vector3d x0 = geometry.node(dofs[0]);
+      const Eigen::Vector3d x1 = geometry.node(dofs[1]);
+      const Eigen::Vector3d x2 = geometry.node(dofs[2]);
 
       // Compute area of triangle embedded in R^3
       const double v0 = (x0[1] * x1[2] + x0[2] * x2[1] + x1[1] * x2[2])
@@ -106,10 +106,10 @@ T volume_tetrahedron(const mesh::Mesh& mesh,
   for (Eigen::Index i = 0; i < entities.rows(); ++i)
   {
     auto dofs = x_dofs.links(entities[i]);
-    const Eigen::Vector3d x0 = geometry.x(dofs[0]);
-    const Eigen::Vector3d x1 = geometry.x(dofs[1]);
-    const Eigen::Vector3d x2 = geometry.x(dofs[2]);
-    const Eigen::Vector3d x3 = geometry.x(dofs[3]);
+    const Eigen::Vector3d x0 = geometry.node(dofs[0]);
+    const Eigen::Vector3d x1 = geometry.node(dofs[1]);
+    const Eigen::Vector3d x2 = geometry.node(dofs[2]);
+    const Eigen::Vector3d x3 = geometry.node(dofs[3]);
 
     // Formula for volume from http://mathworld.wolfram.com
     const double v_tmp
@@ -145,10 +145,10 @@ T volume_quadrilateral(const mesh::Mesh& mesh,
   {
     // Get the coordinates of the four vertices
     auto dofs = x_dofs.links(entities[e]);
-    const Eigen::Vector3d p0 = geometry.x(dofs[0]);
-    const Eigen::Vector3d p1 = geometry.x(dofs[1]);
-    const Eigen::Vector3d p2 = geometry.x(dofs[2]);
-    const Eigen::Vector3d p3 = geometry.x(dofs[3]);
+    const Eigen::Vector3d p0 = geometry.node(dofs[0]);
+    const Eigen::Vector3d p1 = geometry.node(dofs[1]);
+    const Eigen::Vector3d p2 = geometry.node(dofs[2]);
+    const Eigen::Vector3d p3 = geometry.node(dofs[3]);
 
     const Eigen::Vector3d c = (p0 - p3).cross(p1 - p2);
     const double volume = 0.5 * c.norm();
@@ -225,9 +225,9 @@ T circumradius_triangle(const mesh::Mesh& mesh,
   for (Eigen::Index e = 0; e < entities.rows(); ++e)
   {
     auto dofs = x_dofs.links(entities[e]);
-    const Eigen::Vector3d p0 = geometry.x(dofs[0]);
-    const Eigen::Vector3d p1 = geometry.x(dofs[1]);
-    const Eigen::Vector3d p2 = geometry.x(dofs[2]);
+    const Eigen::Vector3d p0 = geometry.node(dofs[0]);
+    const Eigen::Vector3d p1 = geometry.node(dofs[1]);
+    const Eigen::Vector3d p2 = geometry.node(dofs[2]);
 
     // Compute side lengths
     const double a = (p1 - p2).norm();
@@ -254,10 +254,10 @@ T circumradius_tetrahedron(const mesh::Mesh& mesh,
   for (Eigen::Index e = 0; e < entities.rows(); ++e)
   {
     auto dofs = x_dofs.links(entities[e]);
-    const Eigen::Vector3d p0 = geometry.x(dofs[0]);
-    const Eigen::Vector3d p1 = geometry.x(dofs[1]);
-    const Eigen::Vector3d p2 = geometry.x(dofs[2]);
-    const Eigen::Vector3d p3 = geometry.x(dofs[3]);
+    const Eigen::Vector3d p0 = geometry.node(dofs[0]);
+    const Eigen::Vector3d p1 = geometry.node(dofs[1]);
+    const Eigen::Vector3d p2 = geometry.node(dofs[2]);
+    const Eigen::Vector3d p3 = geometry.node(dofs[3]);
 
     // Compute side lengths
     const double a = (p1 - p2).norm();
@@ -374,7 +374,7 @@ Eigen::ArrayXd mesh::h(const Mesh& mesh,
     // Get the coordinates  of the vertices
     auto dofs = x_dofs.links(entities[e]);
     for (int i = 0; i < num_vertices; ++i)
-      points[i] = geometry.x(dofs[i]);
+      points[i] = geometry.node(dofs[i]);
 
     // Get maximum edge length
     for (int i = 0; i < num_vertices; ++i)
@@ -477,8 +477,8 @@ mesh::cell_normals(const mesh::Mesh& mesh, int dim)
       // Get the two vertices as points
       const mesh::MeshEntity e(mesh, 1, i);
       auto vertices = e.entities(0);
-      Eigen::Vector3d p0 = geometry.x(vertices[0]);
-      Eigen::Vector3d p1 = geometry.x(vertices[1]);
+      Eigen::Vector3d p0 = geometry.node(vertices[0]);
+      Eigen::Vector3d p1 = geometry.node(vertices[1]);
 
       // Define normal by rotating tangent counter-clockwise
       Eigen::Vector3d t = p1 - p0;
@@ -495,9 +495,9 @@ mesh::cell_normals(const mesh::Mesh& mesh, int dim)
       // Get the three vertices as points
       const mesh::MeshEntity e(mesh, 2, i);
       auto vertices = e.entities(0);
-      const Eigen::Vector3d p0 = geometry.x(vertices[0]);
-      const Eigen::Vector3d p1 = geometry.x(vertices[1]);
-      const Eigen::Vector3d p2 = geometry.x(vertices[2]);
+      const Eigen::Vector3d p0 = geometry.node(vertices[0]);
+      const Eigen::Vector3d p1 = geometry.node(vertices[1]);
+      const Eigen::Vector3d p2 = geometry.node(vertices[2]);
 
       // Define cell normal via cross product of first two edges
       n.row(i) = ((p1 - p0).cross(p2 - p0)).normalized();
@@ -514,9 +514,9 @@ mesh::cell_normals(const mesh::Mesh& mesh, int dim)
       // Get three vertices as points
       const mesh::MeshEntity e(mesh, 2, i);
       auto vertices = e.entities(0);
-      const Eigen::Vector3d p0 = geometry.x(vertices[0]);
-      const Eigen::Vector3d p1 = geometry.x(vertices[1]);
-      const Eigen::Vector3d p2 = geometry.x(vertices[2]);
+      const Eigen::Vector3d p0 = geometry.node(vertices[0]);
+      const Eigen::Vector3d p1 = geometry.node(vertices[1]);
+      const Eigen::Vector3d p2 = geometry.node(vertices[2]);
 
       // Defined cell normal via cross product of first two edges:
       n.row(i) = ((p1 - p0).cross(p2 - p0)).normalized();
@@ -542,7 +542,7 @@ Eigen::Vector3d mesh::normal(const mesh::MeshEntity& cell, int facet_local)
   case (mesh::CellType::interval):
   {
     auto vertices = cell.entities(0);
-    Eigen::Vector3d n = geometry.x(vertices[0]) - geometry.x(vertices[1]);
+    Eigen::Vector3d n = geometry.node(vertices[0]) - geometry.node(vertices[1]);
     n.normalize();
     if (facet_local == 1)
       return -1.0 * n;
@@ -568,9 +568,9 @@ Eigen::Vector3d mesh::normal(const mesh::MeshEntity& cell, int facet_local)
     const std::int32_t v2 = f.entities(0)[1];
 
     // Get the coordinates of the three vertices
-    const Eigen::Vector3d p0 = geometry.x(v0);
-    const Eigen::Vector3d p1 = geometry.x(v1);
-    const Eigen::Vector3d p2 = geometry.x(v2);
+    const Eigen::Vector3d p0 = geometry.node(v0);
+    const Eigen::Vector3d p1 = geometry.node(v1);
+    const Eigen::Vector3d p2 = geometry.node(v2);
 
     // Subtract projection of p2 - p0 onto p2 - p1
     Eigen::Vector3d t = p2 - p1;
@@ -600,9 +600,9 @@ Eigen::Vector3d mesh::normal(const mesh::MeshEntity& cell, int facet_local)
     const std::int32_t v2 = f.entities(0)[1];
 
     // Get the coordinates of the three vertices
-    const Eigen::Vector3d p0 = geometry.x(v0);
-    const Eigen::Vector3d p1 = geometry.x(v1);
-    const Eigen::Vector3d p2 = geometry.x(v2);
+    const Eigen::Vector3d p0 = geometry.node(v0);
+    const Eigen::Vector3d p1 = geometry.node(v1);
+    const Eigen::Vector3d p2 = geometry.node(v2);
 
     // Subtract projection of p2 - p0 onto p2 - p1
     Eigen::Vector3d t = p2 - p1;
@@ -629,10 +629,10 @@ Eigen::Vector3d mesh::normal(const mesh::MeshEntity& cell, int facet_local)
     const std::int32_t v3 = f.entities(0)[2];
 
     // Get the coordinates of the four vertices
-    const Eigen::Vector3d p0 = geometry.x(v0);
-    const Eigen::Vector3d p1 = geometry.x(v1);
-    const Eigen::Vector3d p2 = geometry.x(v2);
-    const Eigen::Vector3d p3 = geometry.x(v3);
+    const Eigen::Vector3d p0 = geometry.node(v0);
+    const Eigen::Vector3d p1 = geometry.node(v1);
+    const Eigen::Vector3d p2 = geometry.node(v2);
+    const Eigen::Vector3d p3 = geometry.node(v3);
 
     // Compute normal vector
     Eigen::Vector3d n = (p2 - p1).cross(p3 - p1);
@@ -701,6 +701,7 @@ Eigen::Array<double, Eigen::Dynamic, 3, Eigen::RowMajor> mesh::midpoints(
   }
   else
   {
+    // FIXME: This assumes a linear geometry.
     auto e_to_v = topology.connectivity(dim, 0);
     assert(e_to_v);
     for (Eigen::Index e = 0; e < entities.rows(); ++e)

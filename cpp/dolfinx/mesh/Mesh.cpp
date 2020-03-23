@@ -12,6 +12,7 @@
 #include <dolfinx/common/IndexMap.h>
 #include <dolfinx/common/MPI.h>
 #include <dolfinx/common/Timer.h>
+#include <dolfinx/common/UniqueIdGenerator.h>
 #include <dolfinx/common/log.h>
 #include <dolfinx/common/utils.h>
 #include <dolfinx/fem/DofMapBuilder.h>
@@ -58,15 +59,18 @@ Mesh mesh::create(
     MPI_Comm comm, const graph::AdjacencyList<std::int64_t>& cells,
     const fem::ElementDofLayout& layout,
     const Eigen::Ref<const Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic,
-                                        Eigen::RowMajor>>& x)
+                                        Eigen::RowMajor>>& x,
+    mesh::GhostMode ghost_mode)
 {
-  auto [topology, src, dest] = mesh::create_topology(comm, cells, layout);
+  auto [topology, src, dest]
+      = mesh::create_topology(comm, cells, layout, ghost_mode);
 
   // FIXME: Figure out how to check which entities are required
   // Initialise facet for P2
   // Create local entities
   if (topology.dim() > 1)
   {
+    // Create edges
     auto [cell_entity, entity_vertex, index_map]
         = mesh::TopologyComputation::compute_entities(comm, topology, 1);
     if (cell_entity)
@@ -76,6 +80,7 @@ Mesh mesh::create(
     if (index_map)
       topology.set_index_map(1, index_map);
 
+    // Create facets
     auto [cell_facet, facet_vertex, index_map1]
         = mesh::TopologyComputation::compute_entities(comm, topology,
                                                       topology.dim() - 1);
@@ -108,13 +113,13 @@ Mesh::Mesh(
                                         Eigen::RowMajor>>& x,
     const Eigen::Ref<const Eigen::Array<
         std::int64_t, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>>& cells,
-    const std::vector<std::int64_t>&, const GhostMode, std::int32_t)
+    const std::vector<std::int64_t>&, const GhostMode ghost_mode, std::int32_t)
     : _mpi_comm(comm), _unique_id(common::UniqueIdGenerator::id())
 {
   assert(cells.cols() > 0);
   const fem::ElementDofLayout layout = fem::geometry_layout(type, cells.cols());
   *this = mesh::create(comm, graph::AdjacencyList<std::int64_t>(cells), layout,
-                       x);
+                       x, ghost_mode);
 }
 //-----------------------------------------------------------------------------
 Mesh::Mesh(const Mesh& mesh)
@@ -125,29 +130,9 @@ Mesh::Mesh(const Mesh& mesh)
   // Do nothing
 }
 //-----------------------------------------------------------------------------
-Mesh::Mesh(Mesh&& mesh)
-    : _topology(std::move(mesh._topology)),
-      _geometry(std::move(mesh._geometry)),
-      _mpi_comm(std::move(mesh._mpi_comm)),
-      _unique_id(std::move(mesh._unique_id))
-{
-  // Do nothing
-}
-//-----------------------------------------------------------------------------
 Mesh::~Mesh()
 {
   // Do nothing
-}
-//-----------------------------------------------------------------------------
-Mesh& Mesh::operator=(Mesh&& mesh)
-{
-  _topology = std::move(mesh._topology);
-  _geometry = std::move(mesh._geometry);
-  this->_mpi_comm = MPI_COMM_NULL;
-  std::swap(this->_mpi_comm, mesh._mpi_comm);
-  _unique_id = std::move(mesh._unique_id);
-
-  return *this;
 }
 //-----------------------------------------------------------------------------
 std::int32_t Mesh::num_entities(int d) const
@@ -162,14 +147,6 @@ std::int32_t Mesh::num_entities(int d) const
   }
   assert(map->block_size() == 1);
   return map->size_local() + map->num_ghosts();
-}
-//-----------------------------------------------------------------------------
-std::int64_t Mesh::num_entities_global(int dim) const
-{
-  assert(_topology);
-  assert(_topology->index_map(dim));
-  assert(_topology->index_map(dim)->block_size() == 1);
-  return _topology->index_map(dim)->size_global();
 }
 //-----------------------------------------------------------------------------
 Topology& Mesh::topology()
@@ -316,27 +293,6 @@ std::size_t Mesh::hash() const
 
   // Compute hash based on the Cantor pairing function
   return (kt + kg) * (kt + kg + 1) / 2 + kg;
-}
-//-----------------------------------------------------------------------------
-std::string Mesh::str(bool verbose) const
-{
-  assert(_geometry);
-  assert(_topology);
-  std::stringstream s;
-  if (verbose)
-  {
-    s << str(false) << std::endl << std::endl;
-    s << common::indent(_geometry->str(true));
-  }
-  else
-  {
-    const int tdim = _topology->dim();
-    s << "<Mesh of topological dimension " << tdim << " ("
-      << mesh::to_string(_topology->cell_type()) << ") with " << num_entities(0)
-      << " vertices and " << num_entities(tdim) << " cells >";
-  }
-
-  return s.str();
 }
 //-----------------------------------------------------------------------------
 MPI_Comm Mesh::mpi_comm() const { return _mpi_comm.comm(); }

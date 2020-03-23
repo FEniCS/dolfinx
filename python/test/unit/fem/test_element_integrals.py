@@ -278,8 +278,8 @@ def test_plus_minus_simple_vector(cell_type, pm):
             for dof0, point0 in zip(spaces[0].dofmap.cell_dofs(cell), dofmap0.links(cell)):
                 # Find the point in the cell 0 in the second mesh
                 for dof1, point1 in zip(space.dofmap.cell_dofs(cell), dofmap1.links(cell)):
-                    if np.allclose(spaces[0].mesh.geometry.point(point0),
-                                   space.mesh.geometry.point(point1)):
+                    if np.allclose(spaces[0].mesh.geometry.x[point0],
+                                   space.mesh.geometry.x[point1]):
                         break
                 else:
                     # If no matching point found, fail
@@ -331,8 +331,8 @@ def test_plus_minus_vector(cell_type, pm1, pm2):
             for dof0, point0 in zip(spaces[0].dofmap.cell_dofs(cell), dofmap0.links(cell)):
                 # Find the point in the cell 0 in the second mesh
                 for dof1, point1 in zip(space.dofmap.cell_dofs(cell), dofmap1.links(cell)):
-                    if np.allclose(spaces[0].mesh.geometry.point(point0),
-                                   space.mesh.geometry.point(point1)):
+                    if np.allclose(spaces[0].mesh.geometry.x[point0],
+                                   space.mesh.geometry.x[point1]):
                         break
                 else:
                     # If no matching point found, fail
@@ -381,8 +381,8 @@ def test_plus_minus_matrix(cell_type, pm1, pm2):
             for dof0, point0 in zip(spaces[0].dofmap.cell_dofs(cell), dofmap0.links(cell)):
                 # Find the point in the cell 0 in the second mesh
                 for dof1, point1 in zip(space.dofmap.cell_dofs(cell), dofmap1.links(cell)):
-                    if np.allclose(spaces[0].mesh.geometry.point(point0),
-                                   space.mesh.geometry.point(point1)):
+                    if np.allclose(spaces[0].mesh.geometry.x[point0],
+                                   space.mesh.geometry.x[point1]):
                         break
                 else:
                     # If no matching point found, fail

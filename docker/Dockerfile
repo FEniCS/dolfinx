@@ -27,7 +27,7 @@
 #
 
 ARG TINI_VERSION=v0.18.0
-ARG GMSH_VERSION=4.5.1
+ARG GMSH_VERSION=4.5.5
 ARG PYBIND11_VERSION=2.4.3
 ARG PETSC_VERSION=3.12.4
 ARG SLEPC_VERSION=3.12.2
@@ -40,7 +40,7 @@ ARG MAKEFLAGS
 ARG PETSC_SLEPC_OPTFLAGS="-02 -g"
 ARG PETSC_SLEPC_DEBUGGING="yes"
 
-FROM ubuntu:19.10 as base
+FROM ubuntu:20.04 as base
 LABEL maintainer="fenics-project <fenics-support@googlegroups.org>"
 LABEL description="Base image for real and complex FEniCS test environments"
 
@@ -105,15 +105,6 @@ RUN export DEBIAN_FRONTEND=noninteractive && \
     apt-get clean && \
     rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
 
-# Download Install Gmsh SDK
-RUN cd /usr/local && \
-    wget -nc --quiet http://gmsh.info/bin/Linux/gmsh-${GMSH_VERSION}-Linux64-sdk.tgz && \
-    tar -xf gmsh-${GMSH_VERSION}-Linux64-sdk.tgz
-ENV PATH=/usr/local/gmsh-${GMSH_VERSION}-Linux64-sdk/bin:$PATH
-
-# Add gmsh python API
-ENV PYTHONPATH=/usr/local/gmsh-${GMSH_VERSION}-Linux64-sdk/lib
-
 # Install Python packages (via pip)
 # - First set of packages are required to build and run FEniCS.
 # - Second set of packages are recommended and/or required to build
@@ -144,6 +135,17 @@ RUN cd /usr/local && \
 
 ENV KAHIP_ROOT=/usr/local/KaHIP
 
+# Download Install Gmsh SDK
+RUN cd /usr/local && \
+    wget -nc --quiet http://gmsh.info/bin/Linux/gmsh-${GMSH_VERSION}-Linux64-sdk.tgz && \
+    tar -xf gmsh-${GMSH_VERSION}-Linux64-sdk.tgz && \
+    rm gmsh-${GMSH_VERSION}-Linux64-sdk.tgz
+
+ENV PATH=/usr/local/gmsh-${GMSH_VERSION}-Linux64-sdk/bin:$PATH
+
+# Add gmsh python API
+ENV PYTHONPATH=/usr/local/gmsh-${GMSH_VERSION}-Linux64-sdk/lib:$PYTHONPATH
+
 WORKDIR /root
 
 ########################################
@@ -165,11 +167,11 @@ WORKDIR /tmp
 
 # Install PETSc and SLEPc with real types.
 RUN apt-get -qq update && \
-    apt-get -y install bison flex python && \
+    apt-get -y install bison flex && \
     wget -nc --quiet http://ftp.mcs.anl.gov/pub/petsc/release-snapshots/petsc-lite-${PETSC_VERSION}.tar.gz -O petsc-${PETSC_VERSION}.tar.gz && \
     mkdir -p petsc-src && tar -xf petsc-${PETSC_VERSION}.tar.gz -C petsc-src --strip-components 1 && \
     cd petsc-src && \
-    ./configure \
+    python3 ./configure \
     --COPTFLAGS=${PETSC_SLEPC_OPTFLAGS} \
     --CXXOPTFLAGS=${PETSC_SLEPC_OPTFLAGS} \
     --FOPTFLAGS=${PETSC_SLEPC_OPTFLAGS} \
@@ -193,7 +195,7 @@ RUN apt-get -qq update && \
     wget -nc --quiet https://slepc.upv.es/download/distrib/slepc-${SLEPC_VERSION}.tar.gz -O slepc-${SLEPC_VERSION}.tar.gz && \
     mkdir -p slepc-src && tar -xf slepc-${SLEPC_VERSION}.tar.gz -C slepc-src --strip-components 1 && \
     cd slepc-src && \
-    ./configure --prefix=/usr/local/slepc && \
+    python3 ./configure --prefix=/usr/local/slepc && \
     make ${MAKEFLAGS} && \
     make install && \
     apt-get -y purge bison flex python && \
@@ -228,11 +230,11 @@ WORKDIR /tmp
 
 # Install PETSc and SLEPc with complex scalar types
 RUN apt-get -qq update && \
-    apt-get -y install bison flex python && \
+    apt-get -y install bison flex && \
     wget -nc --quiet http://ftp.mcs.anl.gov/pub/petsc/release-snapshots/petsc-lite-${PETSC_VERSION}.tar.gz -O petsc-${PETSC_VERSION}.tar.gz && \
     mkdir -p petsc-src && tar -xf petsc-${PETSC_VERSION}.tar.gz -C petsc-src --strip-components 1 && \
     cd petsc-src && \
-    ./configure \
+    python3 ./configure \
     --COPTFLAGS=${PETSC_SLEPC_OPTFLAGS} \
     --CXXOPTFLAGS=${PETSC_SLEPC_OPTFLAGS} \
     --FOPTFLAGS=${PETSC_SLEPC_OPTFLAGS} \
@@ -254,7 +256,7 @@ RUN apt-get -qq update && \
     wget -nc --quiet https://slepc.upv.es/download/distrib/slepc-${SLEPC_VERSION}.tar.gz -O slepc-${SLEPC_VERSION}.tar.gz && \
     mkdir -p slepc-src && tar -xf slepc-${SLEPC_VERSION}.tar.gz -C slepc-src --strip-components 1 && \
     cd slepc-src && \
-    ./configure --prefix=/usr/local/slepc && \
+    python3  ./configure --prefix=/usr/local/slepc && \
     make ${MAKEFLAGS} && \
     make install && \
     apt-get -y purge bison flex python && \

@@ -37,9 +37,8 @@ def build_nullspace(V):
         basis = [np.asarray(x) for x in vec_local]
 
         # Build translational null space basis
-        V.sub(0).dofmap.set(basis[0], 1.0)
-        V.sub(1).dofmap.set(basis[1], 1.0)
-        V.sub(2).dofmap.set(basis[2], 1.0)
+        for i in range(3):
+            basis[i][V.sub(i).dofmap.list.array()] = 1.0
 
         # Build rotational null space basis
         V.sub(0).set_x(basis[3], -1.0, 1)

@@ -5,9 +5,9 @@
 // SPDX-License-Identifier:    LGPL-3.0-or-later
 
 #include "KaHIP.h"
-#include "GraphBuilder.h"
 #include <dolfinx/common/MPI.h>
 #include <dolfinx/common/Timer.h>
+#include <map>
 
 #ifdef HAS_KAHIP
 #include <parhip_interface.h>

@@ -13,7 +13,6 @@ namespace dolfinx
 // DOLFINX common
 
 #include <dolfinx/common/MPI.h>
-#include <dolfinx/common/Set.h>
 #include <dolfinx/common/SubSystemsManager.h>
 #include <dolfinx/common/Table.h>
 #include <dolfinx/common/Timer.h>

@@ -19,8 +19,8 @@ namespace
 {
 //-----------------------------------------------------------------------------
 mesh::Mesh build_tri(MPI_Comm comm, const std::array<Eigen::Vector3d, 2>& p,
-                     std::array<std::size_t, 2> n, const mesh::GhostMode,
-                     std::string diagonal)
+                     std::array<std::size_t, 2> n,
+                     const mesh::GhostMode ghost_mode, std::string diagonal)
 {
   // Receive mesh if not rank 0
   if (dolfinx::MPI::rank(comm) != 0)
@@ -30,7 +30,7 @@ mesh::Mesh build_tri(MPI_Comm comm, const std::array<Eigen::Vector3d, 2>& p,
     const fem::ElementDofLayout layout
         = fem::geometry_layout(mesh::CellType::triangle, topo.cols());
     return mesh::create(comm, graph::AdjacencyList<std::int64_t>(topo), layout,
-                        geom);
+                        geom, ghost_mode);
   }
 
   // Check options
@@ -196,13 +196,14 @@ mesh::Mesh build_tri(MPI_Comm comm, const std::array<Eigen::Vector3d, 2>& p,
   const fem::ElementDofLayout layout
       = fem::geometry_layout(mesh::CellType::triangle, topo.cols());
   return mesh::create(comm, graph::AdjacencyList<std::int64_t>(topo), layout,
-                      geom);
+                      geom, ghost_mode);
 }
 
 } // namespace
 //-----------------------------------------------------------------------------
 mesh::Mesh build_quad(MPI_Comm comm, const std::array<Eigen::Vector3d, 2>& p,
-                      std::array<std::size_t, 2> n, const mesh::GhostMode)
+                      std::array<std::size_t, 2> n,
+                      const mesh::GhostMode ghost_mode)
 {
   // Receive mesh if not rank 0
   if (dolfinx::MPI::rank(comm) != 0)
@@ -212,7 +213,7 @@ mesh::Mesh build_quad(MPI_Comm comm, const std::array<Eigen::Vector3d, 2>& p,
     const fem::ElementDofLayout layout
         = fem::geometry_layout(mesh::CellType::quadrilateral, topo.cols());
     return mesh::create(comm, graph::AdjacencyList<std::int64_t>(topo), layout,
-                        geom);
+                        geom, ghost_mode);
   }
 
   const std::size_t nx = n[0];
@@ -259,7 +260,7 @@ mesh::Mesh build_quad(MPI_Comm comm, const std::array<Eigen::Vector3d, 2>& p,
   const fem::ElementDofLayout layout
       = fem::geometry_layout(mesh::CellType::quadrilateral, topo.cols());
   return mesh::create(comm, graph::AdjacencyList<std::int64_t>(topo), layout,
-                      geom);
+                      geom, ghost_mode);
 }
 //-----------------------------------------------------------------------------
 mesh::Mesh

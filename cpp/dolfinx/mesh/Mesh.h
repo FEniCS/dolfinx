@@ -9,7 +9,6 @@
 #include "cell_types.h"
 #include <Eigen/Dense>
 #include <dolfinx/common/MPI.h>
-#include <dolfinx/common/UniqueIdGenerator.h>
 #include <dolfinx/common/types.h>
 #include <memory>
 #include <string>
@@ -37,7 +36,6 @@ class AdjacencyList;
 namespace mesh
 {
 class Geometry;
-class MeshEntity;
 class Topology;
 
 /// Enum for different partitioning ghost modes
@@ -47,32 +45,9 @@ enum class GhostMode : int
   shared_facet,
   shared_vertex
 };
-/// A _Mesh_ consists of a set of connected and numbered mesh entities.
-///
-/// Both the representation and the interface are
-/// dimension-independent, but a concrete interface is also provided
-/// for standard named mesh entities:
-///
-/// | Entity | Dimension | Codimension  |
-/// | ------ | --------- | ------------ |
-/// | Vertex |  0        |              |
-/// | Edge   |  1        |              |
-/// | Face   |  2        |              |
-/// | Facet  |           |      1       |
-/// | Cell   |           |      0       |
-///
-/// When working with mesh iterators, all entities and connectivity
-/// are precomputed automatically the first time an iterator is
-/// created over any given topological dimension or connectivity.
-///
-/// Note that for efficiency, only entities of dimension zero
-/// (vertices) and entities of the maximal dimension (cells) exist
-/// when creating a _Mesh_. Other entities must be explicitly created
-/// by calling init(). For example, all edges in a mesh may be
-/// created by a call to mesh.init(1). Similarly, connectivities
-/// such as all edges connected to a given vertex must also be
-/// explicitly created (in this case by a call to mesh.create_connectivity(0,
-/// 1)).
+
+/// A Mesh consists of a set of connected and numbered mesh topological
+/// entities, and geometry data
 
 class Mesh
 {
@@ -117,7 +92,7 @@ public:
 
   /// Move constructor
   /// @param mesh Mesh to be moved.
-  Mesh(Mesh&& mesh);
+  Mesh(Mesh&& mesh) = default;
 
   /// Destructor
   ~Mesh();
@@ -127,7 +102,7 @@ public:
 
   /// Assignment move operator
   /// @param mesh Another Mesh object
-  Mesh& operator=(Mesh&& mesh);
+  Mesh& operator=(Mesh&& mesh) = default;
 
   /// @todo Remove and work via Topology
   ///
@@ -135,13 +110,6 @@ public:
   /// @param[in] d Topological dimension.
   /// @return Number of entities of topological dimension d
   std::int32_t num_entities(int d) const;
-
-  /// @todo Remove and work via Topology
-  ///
-  /// Get global number of entities of given topological dimension
-  /// @param[in] dim Topological dimension.
-  /// @return Global number of entities of topological dimension d
-  std::int64_t num_entities_global(int dim) const;
 
   /// Get mesh topology
   /// @return The topology object associated with the mesh.
@@ -214,11 +182,6 @@ public:
   /// @returns The unique identifier associated with the object
   std::size_t id() const { return _unique_id; }
 
-  /// Informal string representation
-  /// @param[in] verbose Flag to turn on additional output
-  /// @return An informal representation of the mesh.
-  std::string str(bool verbose) const;
-
   /// Mesh MPI communicator
   /// @return The communicator on which the mesh is distributed
   MPI_Comm mpi_comm() const;
@@ -241,7 +204,8 @@ private:
 Mesh create(MPI_Comm comm, const graph::AdjacencyList<std::int64_t>& cells,
             const fem::ElementDofLayout& layout,
             const Eigen::Ref<const Eigen::Array<
-                double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>>& x);
+                double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>>& x,
+            GhostMode ghost_mode);
 
 } // namespace mesh
 } // namespace dolfinx

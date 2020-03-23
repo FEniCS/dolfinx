@@ -60,6 +60,7 @@ sort_by_perm(const Eigen::Array<T, Eigen::Dynamic, Eigen::Dynamic,
   return index;
 }
 //-----------------------------------------------------------------------------
+
 /// Communicate with sharing processes to find out which entities are
 /// ghosts and return a mapping vector to move these local indices to
 /// the end of the local range. Also returns the index map, and shared
@@ -96,13 +97,13 @@ get_local_indexing(
   }
   unique_row.resize(entity_count);
 
+  //---------
   // Set ghost status array values
   // 1 = entities that are only in local cells (i.e. owned)
   // 2 = entities that are only in ghost cells (i.e. not owned)
   // 3 = entities with ownership that needs deciding (used also for unghosted
   // case)
   std::vector<std::int8_t> ghost_status(entity_count, 0);
-  //---------------------------------------------------------------
   {
     if (cell_indexmap->num_ghosts() == 0)
       std::fill(ghost_status.begin(), ghost_status.end(), 3);
@@ -129,13 +130,14 @@ get_local_indexing(
       }
     }
   }
-  //---------------------------------------------------------------
 
+  //---------
   // Create an expanded neighbour_comm from shared_vertices
   std::map<std::int32_t, std::set<std::int32_t>> shared_vertices
       = vertex_indexmap->compute_shared_indices();
+
   std::set<std::int32_t> neighbour_set;
-  for (auto q : shared_vertices)
+  for (auto& q : shared_vertices)
     neighbour_set.insert(q.second.begin(), q.second.end());
   std::vector<std::int32_t> neighbours(neighbour_set.begin(),
                                        neighbour_set.end());
@@ -178,6 +180,7 @@ get_local_indexing(
           ++procs[p];
       }
     }
+
     for (const auto& q : procs)
     {
       // If any process shares all vertices, then add to list
@@ -253,8 +256,8 @@ get_local_indexing(
     }
   }
 
+  //---------
   // Determine ownership
-  //------------------------------------------------------------------
   std::vector<std::int32_t> local_index(entity_count, -1);
   std::int32_t num_local;
   {
@@ -299,10 +302,9 @@ get_local_indexing(
     assert(c == entity_count);
   }
 
+  //---------
   // Communicate global indices to other processes
-  //------------------------------------------------------------------
-  Eigen::Array<std::int64_t, Eigen::Dynamic, 1> ghost_indices(entity_count
-                                                              - num_local);
+  std::vector<std::int64_t> ghost_indices(entity_count - num_local, -1);
   {
     const std::int64_t local_offset
         = dolfinx::MPI::global_offset(comm, num_local, true);
@@ -347,6 +349,8 @@ get_local_indexing(
         ghost_indices[local_index[idx] - num_local] = gi;
       }
     }
+    for (std::int64_t idx : ghost_indices)
+      assert(idx != -1);
   }
 
   MPI_Comm_free(&neighbour_comm);
@@ -360,8 +364,9 @@ get_local_indexing(
     new_entity_index[i] = local_index[entity_index[i]];
 
   return {std::move(new_entity_index), index_map};
-} // namespace
+}
 //-----------------------------------------------------------------------------
+
 /// Compute entities of dimension d
 /// @param[in] comm MPI communicator (TODO: full or neighbour hood?)
 /// @param[in] cells Adjacency list for cell-vertex connectivity
@@ -452,7 +457,6 @@ compute_entities_by_key_matching(
   // Communicate with other processes to find out which entities are
   // ghosted and shared. Remap the numbering so that ghosts are at the
   // end.
-
   auto [local_index, index_map] = get_local_indexing(
       comm, cell_index_map, vertex_index_map, entity_list, entity_index);
 
@@ -581,6 +585,7 @@ compute_from_map(const graph::AdjacencyList<std::int32_t>& c_d0_0,
 
   return graph::AdjacencyList<std::int32_t>(connections);
 }
+//-----------------------------------------------------------------------------
 } // namespace
 
 //-----------------------------------------------------------------------------
