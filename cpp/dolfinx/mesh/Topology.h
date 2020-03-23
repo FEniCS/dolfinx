@@ -185,17 +185,17 @@ private:
 ///   distributed
 /// @param[in] cells The cell topology (list of cell 'nodes') in DOLFIN
 ///   ordering and using global indices for the nodes. It contains cells
-///   that exist only on this this rank and which which have not yet
-///   been distributed via a graph partitioner. The input is typically
-///   direct from a mesh generator or from file. Cells will be
-///   distributed to other ranks.
+///   that have been distributed to this rank via a graph partitioner.
+/// @param[in] original_cell_index The original global index associated
+///   with each cell.
+/// @param[in] ghost_owners The ownership of any ghost cells (ghost cells
+///   are always at the end of the list of cells, above)
 /// @param[in] layout Describe the association between 'nodes' in @p
 ///   cells and geometry degrees-of-freedom on the element. It is used
 ///   to extract the vertex entries in @p cells.
 /// @param[in] ghost_mode How to partition the cell overlap: none, shared_facet
 /// or shared_vertex
-/// @return A distributed Topology, the source rank for each cell in the
-///   new topology, and the destination ranks for each cell in @p cells.
+/// @return A distributed Topology.
 Topology create_topology(MPI_Comm comm,
                          const graph::AdjacencyList<std::int64_t>& cells,
                          const std::vector<std::int64_t>& original_cell_index,
