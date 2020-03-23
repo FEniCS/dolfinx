@@ -10,6 +10,7 @@ import ctypes.util
 import importlib
 import math
 import os
+import pathlib
 import time
 
 import cffi
@@ -130,7 +131,10 @@ if dolfinx.MPI.comm_world.Get_rank() == 0:
                           include_dirs=[os.path.join(petsc_dir, 'include')],
                           library_dirs=[os.path.join(petsc_dir, 'lib')],
                           extra_compile_args=[])
-    ffibuilder.compile(verbose=False)
+
+    # Build module in same directory as test file
+    path = pathlib.Path(__file__).parent.absolute()
+    ffibuilder.compile(tmpdir=path, verbose=False)
 
 dolfinx.MPI.comm_world.barrier()
 
