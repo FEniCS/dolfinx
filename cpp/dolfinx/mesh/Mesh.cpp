@@ -66,7 +66,7 @@ Mesh mesh::create(
 {
   // TODO: This step can be skipped for 'P1' elements
   //
-  // Extract topology data, e.g.just the vertices. For P1 geometry this
+  // Extract topology data, e.g. just the vertices. For P1 geometry this
   // should just be the identity operator. For other elements the
   // filtered lists may have 'gaps', i.e. the indices might not be
   // contiguous.

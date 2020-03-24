@@ -20,6 +20,7 @@
 #include <dolfinx/mesh/Partitioning.h>
 #include <dolfinx/mesh/Topology.h>
 #include <dolfinx/mesh/TopologyComputation.h>
+#include <dolfinx/mesh/utils.h>
 
 using namespace dolfinx;
 using namespace dolfinx::io;
@@ -120,12 +121,21 @@ mesh::Mesh XDMFFile::read_mesh() const
   const fem::ElementDofLayout layout
       = fem::geometry_layout(cell_type, cells.cols());
 
+  // TODO: This step can be skipped for 'P1' elements
+  //
+  // Extract topology data, e.g. just the vertices. For P1 geometry this
+  // should just be the identity operator. For other elements the
+  // filtered lists may have 'gaps', i.e. the indices might not be
+  // contiguous.
+  const graph::AdjacencyList<std::int64_t> cells_topology
+      = mesh::extract_topology(layout, cells_adj);
+
   // Compute the destination rank for cells on this process via graph
   // partitioning
   const int size = dolfinx::MPI::size(_mpi_comm.comm());
   const graph::AdjacencyList<std::int32_t> dest
       = mesh::Partitioning::partition_cells(_mpi_comm.comm(), size,
-                                            layout.cell_type(), cells_adj,
+                                            layout.cell_type(), cells_topology,
                                             mesh::GhostMode::none);
 
   // Distribute cells to destination rank
@@ -134,9 +144,9 @@ mesh::Mesh XDMFFile::read_mesh() const
 
   // Create Topology
   graph::AdjacencyList<std::int64_t> _cells(cells);
-  mesh::Topology topology
-      = mesh::create_topology(_mpi_comm.comm(), cell_nodes, original_cell_index,
-                              ghost_owners, layout, mesh::GhostMode::none);
+  mesh::Topology topology = mesh::create_topology(
+      _mpi_comm.comm(), cells_topology, original_cell_index, ghost_owners,
+      layout, mesh::GhostMode::none);
 
   // FIXME: Figure out how to check which entities are required
   // Initialise facet for P2
