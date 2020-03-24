@@ -83,9 +83,9 @@ Mesh mesh::create(
   const auto [cell_nodes, src, original_cell_index, ghost_owners]
       = graph::Partitioning::distribute(comm, cells, dest);
 
-  Topology topology
-      = mesh::create_topology(comm, cells_topology, original_cell_index,
-                              ghost_owners, layout, ghost_mode);
+  Topology topology = mesh::create_topology(
+      comm, mesh::extract_topology(layout, cell_nodes), original_cell_index,
+      ghost_owners, layout, ghost_mode);
 
   // FIXME: Figure out how to check which entities are required
   // Initialise facet for P2
