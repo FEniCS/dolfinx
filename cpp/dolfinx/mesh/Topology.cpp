@@ -333,7 +333,12 @@ mesh::create_topology(MPI_Comm comm,
   if (cells.num_nodes() > 0)
   {
     if (cells.num_links(0) != mesh::num_cell_vertices(layout.cell_type()))
-      throw std::runtime_error("Inconsistent number of cell vertices");
+    {
+      throw std::runtime_error(
+          "Inconsistent number of cell vertices. Got "
+          + std::to_string(cells.num_links(0)) + ", expected "
+          + std::to_string(mesh::num_cell_vertices(layout.cell_type())) + ".");
+    }
   }
 
   // // TODO: This step can be skipped for 'P1' elements

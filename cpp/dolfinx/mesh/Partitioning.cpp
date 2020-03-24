@@ -68,7 +68,12 @@ graph::AdjacencyList<std::int32_t> Partitioning::partition_cells(
   if (cells.num_nodes() > 0)
   {
     if (cells.num_links(0) != mesh::num_cell_vertices(cell_type))
-      throw std::runtime_error("Inconsistent number of cell vertices");
+    {
+      throw std::runtime_error(
+          "Inconsistent number of cell vertices. Got "
+          + std::to_string(cells.num_links(0)) + ", expected "
+          + std::to_string(mesh::num_cell_vertices(cell_type)) + ".");
+    }
   }
 
   // FIXME: Update GraphBuilder to use AdjacencyList
