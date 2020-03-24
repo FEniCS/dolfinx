@@ -5,7 +5,6 @@
 // SPDX-License-Identifier:    LGPL-3.0-or-later
 
 #include "Function.h"
-#include <algorithm>
 #include <cfloat>
 #include <dolfinx/common/IndexMap.h>
 #include <dolfinx/common/Timer.h>
@@ -16,13 +15,12 @@
 #include <dolfinx/fem/FiniteElement.h>
 #include <dolfinx/geometry/BoundingBoxTree.h>
 #include <dolfinx/geometry/utils.h>
+#include <dolfinx/graph/AdjacencyList.h>
 #include <dolfinx/la/PETScVector.h>
 #include <dolfinx/la/utils.h>
-#include <dolfinx/mesh/CoordinateDofs.h>
 #include <dolfinx/mesh/Geometry.h>
 #include <dolfinx/mesh/Mesh.h>
-#include <dolfinx/mesh/MeshEntity.h>
-#include <dolfinx/mesh/MeshIterator.h>
+#include <dolfinx/mesh/Topology.h>
 #include <unsupported/Eigen/CXX11/Tensor>
 #include <utility>
 #include <vector>
@@ -83,7 +81,7 @@ Function::Function(std::shared_ptr<const FunctionSpace> V, Vec x)
   // Assertion uses '<=' to deal with sub-functions
   assert(V->dofmap());
   assert(V->dofmap()->index_map->size_global()
-             * V->dofmap()->index_map->block_size
+             * V->dofmap()->index_map->block_size()
          <= _vector.size());
 }
 //-----------------------------------------------------------------------------
@@ -136,7 +134,7 @@ la::PETScVector& Function::vector()
   assert(_function_space->dofmap()->index_map);
   if (_vector.size()
       != _function_space->dofmap()->index_map->size_global()
-             * _function_space->dofmap()->index_map->block_size)
+             * _function_space->dofmap()->index_map->block_size())
   {
     throw std::runtime_error(
         "Cannot access a non-const vector from a subfunction");
@@ -177,17 +175,12 @@ void Function::eval(
   const int tdim = mesh.topology().dim();
 
   // Get geometry data
-  const graph::AdjacencyList<std::int32_t>& connectivity_g
-      = mesh.coordinate_dofs().entity_points();
-  const Eigen::Array<std::int32_t, Eigen::Dynamic, 1>& pos_g
-      = connectivity_g.offsets();
-  const Eigen::Array<std::int32_t, Eigen::Dynamic, 1>& cell_g
-      = connectivity_g.array();
+  const graph::AdjacencyList<std::int32_t>& x_dofmap = mesh.geometry().dofmap();
 
   // FIXME: Add proper interface for num coordinate dofs
-  const int num_dofs_g = connectivity_g.num_links(0);
+  const int num_dofs_g = x_dofmap.num_links(0);
   const Eigen::Array<double, Eigen::Dynamic, 3, Eigen::RowMajor>& x_g
-      = mesh.geometry().points();
+      = mesh.geometry().x();
   Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
       coordinate_dofs(num_dofs_g, gdim);
 
@@ -228,6 +221,10 @@ void Function::eval(
   assert(_function_space->dofmap());
   const fem::DofMap& dofmap = *_function_space->dofmap();
 
+  mesh.create_entity_permutations();
+  const Eigen::Array<std::uint32_t, Eigen::Dynamic, 1>& cell_info
+      = mesh.topology().get_cell_permutation_info();
+
   // Loop over points
   u.setZero();
   la::VecReadWrapper v(_vector.vec());
@@ -238,12 +235,12 @@ void Function::eval(
 
     // Skip negative cell indices
     if (cell_index < 0)
-      break;
+      continue;
 
     // Get cell geometry (coordinate dofs)
+    auto x_dofs = x_dofmap.links(cell_index);
     for (int i = 0; i < num_dofs_g; ++i)
-      for (int j = 0; j < gdim; ++j)
-        coordinate_dofs(i, j) = x_g(cell_g[pos_g[cell_index] + i], j);
+      coordinate_dofs.row(i) = x_g.row(x_dofs[i]).head(gdim);
 
     // Compute reference coordinates X, and J, detJ and K
     cmap->compute_reference_geometry(X, J, detJ, K, x.row(p).head(gdim),
@@ -254,7 +251,7 @@ void Function::eval(
 
     // Push basis forward to physical element
     element.transform_reference_basis(basis_values, basis_reference_values, X,
-                                      J, detJ, K);
+                                      J, detJ, K, cell_info[cell_index]);
 
     // Get degrees of freedom for current cell
     auto dofs = dofmap.cell_dofs(cell_index);
@@ -340,43 +337,39 @@ Function::compute_point_values() const
 
   // Resize Array for holding point values
   Eigen::Array<PetscScalar, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
-      point_values(mesh.geometry().num_points(), value_size_loc);
-
-  const graph::AdjacencyList<std::int32_t>& cell_dofs = mesh.coordinate_dofs().entity_points();
+      point_values(mesh.geometry().x().rows(), value_size_loc);
 
   // Prepare cell geometry
-  const graph::AdjacencyList<std::int32_t>& connectivity_g
-      = mesh.coordinate_dofs().entity_points();
-  const Eigen::Array<std::int32_t, Eigen::Dynamic, 1>& pos_g
-      = connectivity_g.offsets();
-  const Eigen::Array<std::int32_t, Eigen::Dynamic, 1>& cell_g
-      = connectivity_g.array();
+  const graph::AdjacencyList<std::int32_t>& x_dofmap = mesh.geometry().dofmap();
+
   // FIXME: Add proper interface for num coordinate dofs
-  const int num_dofs_g = connectivity_g.num_links(0);
+  const int num_dofs_g = x_dofmap.num_links(0);
   const Eigen::Array<double, Eigen::Dynamic, 3, Eigen::RowMajor>& x_g
-      = mesh.geometry().points();
+      = mesh.geometry().x();
 
   // Interpolate point values on each cell (using last computed value if
   // not continuous, e.g. discontinuous Galerkin methods)
   Eigen::Array<double, Eigen::Dynamic, 3, Eigen::RowMajor> x(num_dofs_g, 3);
   Eigen::Array<PetscScalar, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
       values(num_dofs_g, value_size_loc);
-  for (auto& cell : mesh::MeshRange(mesh, tdim, mesh::MeshRangeType::ALL))
+  auto map = mesh.topology().index_map(tdim);
+  assert(map);
+  const int num_cells = map->size_local() + map->num_ghosts();
+  for (int c = 0; c < num_cells; ++c)
   {
     // Get coordinates for all points in cell
-    const int cell_index = cell.index();
+    auto dofs = x_dofmap.links(c);
     for (int i = 0; i < num_dofs_g; ++i)
-      x.row(i) = x_g.row(cell_g[pos_g[cell_index] + i]);
+      x.row(i) = x_g.row(dofs[i]);
 
     values.resize(x.rows(), value_size_loc);
 
     // Call evaluate function
     Eigen::Array<int, Eigen::Dynamic, 1> cells(x.rows());
-    cells = cell.index();
+    cells = c;
     eval(x, cells, values);
 
     // Copy values to array of point values
-    auto dofs = cell_dofs.links(cell.index());
     for (int i = 0; i < x.rows(); ++i)
       point_values.row(dofs[i]) = values.row(i);
   }

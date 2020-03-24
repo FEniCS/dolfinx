@@ -49,7 +49,7 @@ public:
   }
 
   /// Compute J = F' at current point x
-  Mat J(const Vec x) final
+  Mat J(const Vec) final
   {
     MatZeroEntries(_matA.mat());
     assemble_matrix(_matA.mat(), *_j, _bcs);
@@ -90,16 +90,16 @@ int main(int argc, char* argv[])
       mesh::GhostMode::none));
 
   auto V
-      = fem::create_functionspace(hyperelasticity_functionspace_create, mesh);
+      = fem::create_functionspace(create_functionspace_form_hyperelasticity_F, "u", mesh);
 
   // Define solution function
   auto u = std::make_shared<function::Function>(V);
 
   std::shared_ptr<fem::Form> a
-      = fem::create_form(hyperelasticity_bilinearform_create, {V, V});
+      = fem::create_form(create_form_hyperelasticity_J, {V, V});
 
   std::shared_ptr<fem::Form> L
-      = fem::create_form(hyperelasticity_linearform_create, {V});
+      = fem::create_form(create_form_hyperelasticity_F, {V});
 
   // Attach 'coordinate mapping' to mesh
   auto cmap = a->coordinate_mapping();
@@ -147,11 +147,11 @@ int main(int argc, char* argv[])
 
   const Eigen::Array<std::int32_t, Eigen::Dynamic, 1> bdofs_left
       = fem::locate_dofs_geometrical(
-          *V, [](auto x) { return x.row(0) < DBL_EPSILON; });
+          {*V}, [](auto x) { return x.row(0) < DBL_EPSILON; });
 
   const Eigen::Array<std::int32_t, Eigen::Dynamic, 1> bdofs_right
       = fem::locate_dofs_geometrical(
-          *V, [](auto& x) { return (x.row(0) - 1.0).abs() < DBL_EPSILON; });
+          {*V}, [](auto& x) { return (x.row(0) - 1.0).abs() < DBL_EPSILON; });
 
   std::vector<std::shared_ptr<const fem::DirichletBC>> bcs
       = {std::make_shared<fem::DirichletBC>(u_clamp, bdofs_left),

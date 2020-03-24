@@ -11,8 +11,7 @@ import numpy
 
 from dolfinx import cpp, fem, function
 
-
-__all__ = ["HDF5File", "XDMFFile"]
+__all__ = ["HDF5File"]
 
 
 class HDF5File:
@@ -87,8 +86,8 @@ class HDF5File:
         return self._cpp_object.read_vector(mpi_comm, data_path,
                                             use_partition_from_file)
 
-    def read_mesh(self, data_path: str,
-                  use_partition_from_file: bool, ghost_mode):
+    def read_mesh(self, data_path: str, use_partition_from_file: bool,
+                  ghost_mode):
         mesh = self._cpp_object.read_mesh(data_path, use_partition_from_file,
                                           ghost_mode)
         mesh.geometry.coord_mapping = fem.create_coordinate_map(mesh)
@@ -198,51 +197,12 @@ class XDMFFile:
         else:
             self._cpp_object.write(o_cpp, t)
 
-    # ----------------------------------------------------------
-
-    # FIXME: implement a common function for multiple types
-
-    # def read_mvc_size_t(self, mesh, name: str = ""):
-    #     """Read MeshValueCollection of type size_t"""
-    #     return self._cpp_object.read_mvc_size_t(mesh, name)
-
-    def read_mvc_bool(self, mesh, name: str = ""):
-        """Read MeshValueCollection of type bool"""
-        return self._cpp_object.read_mvc_bool(mesh, name)
-
-    def read_mvc_int(self, mesh, name: str = ""):
-        """Read MeshValueCollection of type int"""
-        return self._cpp_object.read_mvc_int(mesh, name)
-
-    def read_mvc_size_t(self, mesh, name: str = ""):
-        """Read MeshValueCollection of type size_t"""
-        return self._cpp_object.read_mvc_size_t(mesh, name)
-
-    def read_mvc_double(self, mesh, name: str = ""):
-        """Read MeshValueCollection of type float"""
-        return self._cpp_object.read_mvc_double(mesh, name)
-
-    def read_mf_int(self, mesh, name: str = ""):
-        """Read MeshFunction of type int"""
-        return self._cpp_object.read_mf_int(mesh, name)
-
-    def read_mf_size_t(self, mesh, name: str = ""):
-        """Read MeshFunction of type size_t"""
-        return self._cpp_object.read_mf_size_t(mesh, name)
-
-    def read_mf_double(self, mesh, name: str = ""):
-        """Read MeshFunction of type double"""
-        return self._cpp_object.read_mf_double(mesh, name)
-
-    # ----------------------------------------------------------
-
-    def read_mesh(self, ghost_mode):
-        mesh = self._cpp_object.read_mesh(ghost_mode)
+    def read_mesh(self):
+        mesh = self._cpp_object.read_mesh()
         mesh.geometry.coord_mapping = fem.create_coordinate_map(mesh)
         return mesh
 
-    def read_mesh_data(self, mpi_comm) -> typing.Tuple[cpp.mesh.CellType, numpy.ndarray,
-                                                       numpy.ndarray, typing.List[int]]:
+    def read_mesh_data(self) -> typing.Tuple[cpp.mesh.CellType, numpy.ndarray, numpy.ndarray]:
         """Read in mesh data
 
         Parameters
@@ -253,48 +213,17 @@ class XDMFFile:
         -------
         cell_type
             Cell type
-        points
+        x
             Geometric points on each process
         cells
             Topological cells with global vertex indexing
-        global_cell_indices
-            List of global cell indices
         """
-        return self._cpp_object.read_mesh_data(mpi_comm)
+        return self._cpp_object.read_mesh_data()
 
-    def read_checkpoint(self, V, name: str,
-                        counter: int = -1) -> function.Function:
-        """Read finite element Function from checkpointing format
+    def read_mf_int(self, mesh, name: str = ""):
+        """Read MeshFunction of type int"""
+        return self._cpp_object.read_mf_int(mesh, name)
 
-        Parameters
-        ----------
-        V
-            Function space of saved function.
-        name
-            Name of function as saved into XDMF file.
-        counter : optional
-            Position of function in the file within functions of the same
-            name. Counter is used to read function saved as time series.
-            To get last saved function use counter=-1, or counter=-2 for
-            one before last, etc.
-        Note
-        ----
-        Parameter `V: Function space` must be the same as saved function space
-        except for ordering of mesh entities.
-        Returns
-        -------
-        dolfinx.function.function.Function
-            The finite element Function read from checkpoint file
-        """
-
-        V_cpp = getattr(V, "_cpp_object", V)
-        u_cpp = self._cpp_object.read_checkpoint(V_cpp, name, counter)
-        return function.Function(V, u_cpp.vector)
-
-    def write_checkpoint(self, u, name: str, time_step: float = 0.0) -> None:
-        """Write finite element Function in checkpointing format
-
-        """
-
-        o_cpp = getattr(u, "_cpp_object", u)
-        self._cpp_object.write_checkpoint(o_cpp, name, time_step)
+    def read_mvc_int(self, mesh, name: str = ""):
+        """Read MeshFunction of type int"""
+        return self._cpp_object.read_mvc_int(mesh, name)

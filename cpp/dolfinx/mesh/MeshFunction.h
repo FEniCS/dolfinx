@@ -6,14 +6,13 @@
 
 #pragma once
 
-#include <dolfinx/graph/AdjacencyList.h>
 #include "Geometry.h"
 #include "Mesh.h"
-#include "MeshEntity.h"
-#include "MeshIterator.h"
 #include "Topology.h"
+#include <dolfinx/common/IndexMap.h>
 #include <dolfinx/common/MPI.h>
 #include <dolfinx/common/UniqueIdGenerator.h>
+#include <dolfinx/graph/AdjacencyList.h>
 #include <map>
 #include <memory>
 #include <unordered_set>
@@ -22,7 +21,6 @@ namespace dolfinx
 {
 namespace mesh
 {
-class MeshEntity;
 
 template <typename T>
 class MeshValueCollection;
@@ -153,14 +151,14 @@ MeshFunction<T>::MeshFunction(std::shared_ptr<const Mesh> mesh,
   // Generate connectivity if it does not exist
   _mesh->create_connectivity(D, d);
   assert(_mesh->topology().connectivity(D, d));
-  const graph::AdjacencyList<std::int32_t>& connectivity = *_mesh->topology().connectivity(D, d);
+  const graph::AdjacencyList<std::int32_t>& connectivity
+      = *_mesh->topology().connectivity(D, d);
 
   // Iterate over all values
   std::unordered_set<std::size_t> entities_values_set;
-  typename std::map<std::pair<std::size_t, std::size_t>, T>::const_iterator it;
   const std::map<std::pair<std::size_t, std::size_t>, T>& values
       = value_collection.values();
-  for (it = values.begin(); it != values.end(); ++it)
+  for (auto it = values.begin(); it != values.end(); ++it)
   {
     // Get value collection entry data
     const std::size_t cell_index = it->first.first;
@@ -221,33 +219,68 @@ void MeshFunction<T>::mark(
                                             Eigen::RowMajor>>& x)>& mark,
     T value)
 {
-  // Get all vertices of the mesh
-  const Eigen::Array<double, 3, Eigen::Dynamic, Eigen::RowMajor>& x
-      = _mesh->geometry().points().transpose();
+  assert(_mesh);
+  const int tdim = _mesh->topology().dim();
 
-  // Evaluate the marker function at each vertex
+  // FIXME: This should be at vertices only
+  // Get all nodes of the mesh and  evaluate the marker function at each
+  // node
+  const Eigen::Array<double, 3, Eigen::Dynamic, Eigen::RowMajor>& x
+      = _mesh->geometry().x().transpose();
   Eigen::Array<bool, Eigen::Dynamic, 1> marked = mark(x);
+
+  // Get connectivities
+  auto e_to_v = _mesh->topology().connectivity(_dim, 0);
+  assert(e_to_v);
+  auto c_to_v = _mesh->topology().connectivity(tdim, 0);
+  assert(c_to_v);
+
+  // Get geometry dofmap
+  const graph::AdjacencyList<std::int32_t>& x_dofmap
+      = _mesh->geometry().dofmap();
+
+  // Build map from vertex -> geometry dof
+  auto map_v = _mesh->topology().index_map(0);
+  assert(map_v);
+  std::vector<std::int32_t> vertex_to_x(map_v->size_local()
+                                        + map_v->num_ghosts());
+  auto map_c = _mesh->topology().index_map(tdim);
+  assert(map_c);
+  for (int c = 0; c < map_c->size_local() + map_c->num_ghosts(); ++c)
+  {
+    auto vertices = c_to_v->links(c);
+    auto dofs = x_dofmap.links(c);
+    for (int i = 0; i < vertices.rows(); ++i)
+    {
+      // FIXME: We are making an assumption here on the
+      // ElementDofLayout. We should use an ElementDofLayout to map
+      // between local vertex index an x dof index.
+      vertex_to_x[vertices[i]] = dofs(i);
+    }
+  }
 
   // Iterate over all mesh entities of the dimension of this
   // MeshFunction
-  for (const auto& entity :
-       mesh::MeshRange(*_mesh.get(), _dim, mesh::MeshRangeType::ALL))
+  auto map = _mesh->topology().index_map(_dim);
+  assert(map);
+  const int num_entities = map->size_local() + map->num_ghosts();
+  for (int e = 0; e < num_entities; ++e)
   {
-
     // By default, assume maker is 'true' at all vertices of this entity
     bool all_marked = true;
 
     // Iterate over all vertices of this mesh entity
-    for (const auto& v : mesh::EntityRange(entity, 0))
+    auto vertices = e_to_v->links(e);
+    for (int i = 0; i < vertices.rows(); ++i)
     {
-      const std::int32_t idx = v.index();
-      all_marked = (marked[idx] && all_marked);
+      const std::int32_t idx = vertex_to_x[vertices[i]];
+      all_marked = (marked[idx] and all_marked);
     }
 
     // If all vertices belonging to this mesh entity are marked, then
     // mark this mesh entity
     if (all_marked)
-      _values[entity.index()] = value;
+      _values[e] = value;
   }
 }
 //---------------------------------------------------------------------------

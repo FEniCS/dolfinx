@@ -43,7 +43,7 @@ def test_scalar_p1():
 def test_scalar_p1_scaled_mesh():
     # Make coarse mesh smaller than fine mesh
     meshc = UnitCubeMesh(MPI.comm_world, 2, 2, 2)
-    meshc.geometry.points *= 0.9
+    meshc.geometry.x *= 0.9
 
     meshf = UnitCubeMesh(MPI.comm_world, 3, 4, 5)
 
@@ -67,7 +67,7 @@ def test_scalar_p1_scaled_mesh():
     assert diff.norm() < 1.0e-12
 
     # Now make coarse mesh larger than fine mesh
-    meshc.geometry.points *= 1.5
+    meshc.geometry.x *= 1.5
     uc.interpolate(u)
 
     mat = PETScDMCollection.create_transfer_matrix(Vc._cpp_object,

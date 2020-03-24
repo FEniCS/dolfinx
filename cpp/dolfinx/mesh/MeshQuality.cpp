@@ -19,6 +19,9 @@ using namespace dolfinx::mesh;
 //-----------------------------------------------------------------------------
 std::array<double, 6> MeshQuality::dihedral_angles(const MeshEntity& cell)
 {
+  throw std::runtime_error("MeshQuality::dihedral_angles requires updating for "
+                           "proper geometry handling");
+
   if (cell.dim() != 3)
   {
     throw std::runtime_error(
@@ -37,10 +40,10 @@ std::array<double, 6> MeshQuality::dihedral_angles(const MeshEntity& cell)
     const std::size_t i2 = cell.entities(0)[edges[5 - i][0]];
     const std::size_t i3 = cell.entities(0)[edges[5 - i][1]];
 
-    const Eigen::Vector3d p0 = mesh.geometry().x(i0);
-    Eigen::Vector3d v1 = mesh.geometry().x(i1) - p0;
-    Eigen::Vector3d v2 = mesh.geometry().x(i2) - p0;
-    Eigen::Vector3d v3 = mesh.geometry().x(i3) - p0;
+    const Eigen::Vector3d p0 = mesh.geometry().node(i0);
+    Eigen::Vector3d v1 = mesh.geometry().node(i1) - p0;
+    Eigen::Vector3d v2 = mesh.geometry().node(i2) - p0;
+    Eigen::Vector3d v3 = mesh.geometry().node(i3) - p0;
 
     v1 /= v1.norm();
     v2 /= v2.norm();

@@ -26,8 +26,8 @@ import ufl
 filedir = os.path.dirname(__file__)
 infile = dolfinx.io.XDMFFile(dolfinx.MPI.comm_world,
                              os.path.join(filedir, "cooks_tri_mesh.xdmf"),
-                             encoding=dolfinx.cpp.io.XDMFFile.Encoding.ASCII)
-mesh = infile.read_mesh(dolfinx.cpp.mesh.GhostMode.none)
+                             encoding=dolfinx.cpp.io.XDMFFile.Encoding.HDF5)
+mesh = infile.read_mesh()
 infile.close()
 
 # Stress (Se) and displacement (Ue) elements
@@ -109,23 +109,27 @@ c_signature = numba.types.void(
     numba.types.CPointer(numba.typeof(PETSc.ScalarType())),
     numba.types.CPointer(numba.types.double),
     numba.types.CPointer(numba.types.int32),
-    numba.types.CPointer(numba.types.int32))
+    numba.types.CPointer(numba.types.uint8), numba.types.uint32)
 
 
 @numba.cfunc(c_signature, nopython=True)
-def tabulate_condensed_tensor_A(A_, w_, c_, coords_, entity_local_index, cell_orientation):
+def tabulate_condensed_tensor_A(A_, w_, c_, coords_, entity_local_index, permutation=ffi.NULL,
+                                cell_permutation_info=0):
     # Prepare target condensed local elem tensor
     A = numba.carray(A_, (Usize, Usize), dtype=PETSc.ScalarType)
 
     # Tabulate all sub blocks locally
     A00 = numpy.zeros((Ssize, Ssize), dtype=PETSc.ScalarType)
-    kernel00(ffi.from_buffer(A00), w_, c_, coords_, entity_local_index, cell_orientation)
+    kernel00(ffi.from_buffer(A00), w_, c_, coords_, entity_local_index, permutation,
+             cell_permutation_info)
 
     A01 = numpy.zeros((Ssize, Usize), dtype=PETSc.ScalarType)
-    kernel01(ffi.from_buffer(A01), w_, c_, coords_, entity_local_index, cell_orientation)
+    kernel01(ffi.from_buffer(A01), w_, c_, coords_, entity_local_index, permutation,
+             cell_permutation_info)
 
     A10 = numpy.zeros((Usize, Ssize), dtype=PETSc.ScalarType)
-    kernel10(ffi.from_buffer(A10), w_, c_, coords_, entity_local_index, cell_orientation)
+    kernel10(ffi.from_buffer(A10), w_, c_, coords_, entity_local_index, permutation,
+             cell_permutation_info)
 
     # A = - A10 * A00^{-1} * A01
     A[:, :] = - A10 @ numpy.linalg.solve(A00, A01)
@@ -145,9 +149,6 @@ dolfinx.fem.set_bc(b, [bc])
 
 uc = dolfinx.Function(U)
 dolfinx.la.solve(A_cond, uc.vector, b)
-
-with dolfinx.io.XDMFFile(dolfinx.MPI.comm_world, "uc.xdmf") as outfile:
-    outfile.write_checkpoint(uc, "uc")
 
 # Pure displacement based formulation
 a = - ufl.inner(sigma_u(u), ufl.grad(v)) * ufl.dx

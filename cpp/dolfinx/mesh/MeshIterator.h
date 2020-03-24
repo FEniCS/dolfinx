@@ -6,11 +6,11 @@
 
 #pragma once
 
-#include <dolfinx/graph/AdjacencyList.h>
 #include "Mesh.h"
 #include "MeshEntity.h"
 #include "Topology.h"
 #include "dolfinx/common/IndexMap.h"
+#include <dolfinx/graph/AdjacencyList.h>
 #include <iterator>
 
 namespace dolfinx

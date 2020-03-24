@@ -43,12 +43,15 @@ Eigen::Vector3d cross_product(const Eigen::Vector3d& a,
 bool CollisionPredicates::collides(const mesh::MeshEntity& entity,
                                    const Eigen::Vector3d& point)
 {
+  mesh::CellType cell_type = entity.mesh().topology().cell_type();
+
   // Intersection is only implemented for simplex meshes
-  if (!mesh::is_simplex(entity.mesh().cell_type()))
+  if (!mesh::is_simplex(cell_type)
+      and !(cell_type == mesh::CellType::quadrilateral))
   {
     throw std::runtime_error(
         "Cannot intersect cell and point. "
-        "Intersection is only implemented for simplex meshes");
+        "Intersection is only implemented for simplex meshes and quads");
   }
 
   // Get data
@@ -57,21 +60,75 @@ bool CollisionPredicates::collides(const mesh::MeshEntity& entity,
   const int tdim = entity.mesh().topology().dim();
   const int gdim = entity.mesh().geometry().dim();
 
+  // Hack to get correct indices
+  auto comp_vertices = [&v](const mesh::MeshEntity& entity, int n) {
+    std::array<int, 4> idx;
+    for (int i = 0; i < n; ++i)
+    {
+      const graph::AdjacencyList<std::int32_t>& x_dofmap
+          = entity.mesh().geometry().dofmap();
+      const int tdim = entity.mesh().topology().dim();
+
+      // Find attached cell
+      auto e_to_c = entity.mesh().topology().connectivity(entity.dim(), tdim);
+      assert(e_to_c);
+      assert(e_to_c->num_links(entity.index()) > 0);
+      const std::int32_t c = e_to_c->links(entity.index())[0];
+
+      auto dofs = x_dofmap.links(c);
+      auto c_to_v = entity.mesh().topology().connectivity(tdim, 0);
+      assert(c_to_v);
+      auto cell_vertices = c_to_v->links(c);
+
+      auto it = std::find(cell_vertices.data(),
+                          cell_vertices.data() + cell_vertices.rows(), v[i]);
+      assert(it != (cell_vertices.data() + cell_vertices.rows()));
+      const int local_vertex = std::distance(cell_vertices.data(), it);
+      idx[i] = dofs(local_vertex);
+    }
+    return idx;
+  };
+
   // Pick correct specialized implementation
-  if (tdim == 1 and gdim == 1)
-    return collides_segment_point_1d(g.x(v[0])[0], g.x(v[1])[0], point[0]);
+  if (cell_type == mesh::CellType::quadrilateral)
+  {
+    std::array<int, 4> _v = comp_vertices(entity, 4);
+    return collides_quad_point_2d(g.node(_v[0]), g.node(_v[1]), g.node(_v[2]),
+                                  g.node(_v[3]), point);
+  }
+  else if (tdim == 1 and gdim == 1)
+  {
+    std::array<int, 4> _v = comp_vertices(entity, 2);
+    return collides_segment_point_1d(g.node(_v[0])[0], g.node(_v[1])[0],
+                                     point[0]);
+  }
   else if (tdim == 1 and gdim == 2)
-    return collides_segment_point_2d(g.x(v[0]), g.x(v[1]), point);
+  {
+    std::array<int, 4> _v = comp_vertices(entity, 2);
+    return collides_segment_point_2d(g.node(_v[0]), g.node(_v[1]), point);
+  }
   else if (tdim == 1 and gdim == 3)
-    return collides_segment_point_3d(g.x(v[0]), g.x(v[1]), point);
+  {
+    std::array<int, 4> _v = comp_vertices(entity, 2);
+    return collides_segment_point_3d(g.node(_v[0]), g.node(_v[1]), point);
+  }
   else if (tdim == 2 and gdim == 2)
-    return collides_triangle_point_2d(g.x(v[0]), g.x(v[1]), g.x(v[2]), point);
+  {
+    std::array<int, 4> _v = comp_vertices(entity, 3);
+    return collides_triangle_point_2d(g.node(_v[0]), g.node(_v[1]),
+                                      g.node(_v[2]), point);
+  }
   else if (tdim == 2 and gdim == 3)
-    return collides_triangle_point_3d(g.x(v[0]), g.x(v[1]), g.x(v[2]), point);
+  {
+    std::array<int, 4> _v = comp_vertices(entity, 3);
+    return collides_triangle_point_3d(g.node(_v[0]), g.node(_v[1]),
+                                      g.node(_v[2]), point);
+  }
   else if (tdim == 3)
   {
-    return collides_tetrahedron_point_3d(g.x(v[0]), g.x(v[1]), g.x(v[2]),
-                                         g.x(v[3]), point);
+    std::array<int, 4> _v = comp_vertices(entity, 4);
+    return collides_tetrahedron_point_3d(g.node(_v[0]), g.node(_v[1]),
+                                         g.node(_v[2]), g.node(_v[3]), point);
   }
   else
   {
@@ -87,8 +144,8 @@ bool CollisionPredicates::collides(const mesh::MeshEntity& entity_0,
                                    const mesh::MeshEntity& entity_1)
 {
   // Intersection is only implemented for simplex meshes
-  if (!mesh::is_simplex(entity_0.mesh().cell_type())
-      or !mesh::is_simplex(entity_1.mesh().cell_type()))
+  if (!mesh::is_simplex(entity_0.mesh().topology().cell_type())
+      or !mesh::is_simplex(entity_1.mesh().topology().cell_type()))
   {
     throw std::runtime_error(
         "Cannot intersect cell and point. "
@@ -98,52 +155,96 @@ bool CollisionPredicates::collides(const mesh::MeshEntity& entity_0,
   // Get data
   const mesh::Geometry& g0 = entity_0.mesh().geometry();
   const mesh::Geometry& g1 = entity_1.mesh().geometry();
-  auto v0 = entity_0.entities(0);
-  auto v1 = entity_1.entities(0);
   const std::size_t d0 = entity_0.dim();
   const std::size_t d1 = entity_1.dim();
   const int gdim = g0.dim();
   assert(gdim == g1.dim());
 
+  // Hack to get correct indices
+  auto comp_vertices = [](const mesh::MeshEntity& entity, int n) {
+    std::array<int, 4> idx;
+    auto v = entity.entities(0);
+    for (int i = 0; i < n; ++i)
+    {
+      const graph::AdjacencyList<std::int32_t>& x_dofmap
+          = entity.mesh().geometry().dofmap();
+      const int tdim = entity.mesh().topology().dim();
+
+      // Find attached cell
+      auto e_to_c = entity.mesh().topology().connectivity(entity.dim(), tdim);
+      assert(e_to_c);
+      assert(e_to_c->num_links(entity.index()) > 0);
+      const std::int32_t c = e_to_c->links(entity.index())[0];
+
+      auto dofs = x_dofmap.links(c);
+      auto c_to_v = entity.mesh().topology().connectivity(tdim, 0);
+      assert(c_to_v);
+      auto cell_vertices = c_to_v->links(c);
+
+      auto it = std::find(cell_vertices.data(),
+                          cell_vertices.data() + cell_vertices.rows(), v[i]);
+      assert(it != (cell_vertices.data() + cell_vertices.rows()));
+      const int local_vertex = std::distance(cell_vertices.data(), it);
+      idx[i] = dofs(local_vertex);
+    }
+    return idx;
+  };
+
   // Pick correct specialized implementation
   if (d0 == 1 && d1 == 1)
   {
-    return collides_segment_segment(g0.x(v0[0]), g0.x(v0[1]), g1.x(v1[0]),
-                                    g1.x(v1[1]), gdim);
+    std::array<int, 4> _v0 = comp_vertices(entity_0, 2);
+    std::array<int, 4> _v1 = comp_vertices(entity_1, 2);
+    return collides_segment_segment(g0.node(_v0[0]), g0.node(_v0[1]),
+                                    g1.node(_v1[0]), g1.node(_v1[1]), gdim);
   }
   else if (d0 == 1 && d1 == 2)
   {
-    return collides_triangle_segment(g1.x(v1[0]), g1.x(v1[1]), g1.x(v1[2]),
-                                     g0.x(v0[0]), g0.x(v0[1]), gdim);
+    std::array<int, 4> _v0 = comp_vertices(entity_0, 2);
+    std::array<int, 4> _v1 = comp_vertices(entity_1, 3);
+    return collides_triangle_segment(g1.node(_v1[0]), g1.node(_v1[1]),
+                                     g1.node(_v1[2]), g0.node(_v0[0]),
+                                     g0.node(_v0[1]), gdim);
   }
   else if (d0 == 2 && d1 == 1)
   {
-    return collides_triangle_segment(g0.x(v0[0]), g0.x(v0[1]), g0.x(v0[2]),
-                                     g1.x(v1[0]), g1.x(v1[1]), gdim);
+    std::array<int, 4> _v0 = comp_vertices(entity_0, 3);
+    std::array<int, 4> _v1 = comp_vertices(entity_1, 2);
+    return collides_triangle_segment(g0.node(_v0[0]), g0.node(_v0[1]),
+                                     g0.node(_v0[2]), g1.node(_v1[0]),
+                                     g1.node(_v1[1]), gdim);
   }
   else if (d0 == 2 && d1 == 2)
   {
-    return collides_triangle_triangle(g0.x(v0[0]), g0.x(v0[1]), g0.x(v0[2]),
-                                      g1.x(v1[0]), g1.x(v1[1]), g1.x(v1[2]),
-                                      gdim);
+    std::array<int, 4> _v0 = comp_vertices(entity_0, 3);
+    std::array<int, 4> _v1 = comp_vertices(entity_1, 3);
+    return collides_triangle_triangle(g0.node(_v0[0]), g0.node(_v0[1]),
+                                      g0.node(_v0[2]), g1.node(_v1[0]),
+                                      g1.node(_v1[1]), g1.node(_v1[2]), gdim);
   }
   else if (d0 == 2 && d1 == 3)
   {
+    std::array<int, 4> _v0 = comp_vertices(entity_0, 2);
+    std::array<int, 4> _v1 = comp_vertices(entity_1, 4);
     return collides_tetrahedron_triangle_3d(
-        g1.x(v1[0]), g1.x(v1[1]), g1.x(v1[2]), g1.x(v1[3]), g0.x(v0[0]),
-        g0.x(v0[1]), g0.x(v0[2]));
+        g1.node(_v1[0]), g1.node(_v1[1]), g1.node(_v1[2]), g1.node(_v1[3]),
+        g0.node(_v0[0]), g0.node(_v0[1]), g0.node(_v0[2]));
   }
   else if (d0 == 3 && d1 == 2)
   {
+    std::array<int, 4> _v0 = comp_vertices(entity_0, 4);
+    std::array<int, 4> _v1 = comp_vertices(entity_1, 3);
     return collides_tetrahedron_triangle_3d(
-        g0.x(v0[0]), g0.x(v0[1]), g0.x(v0[2]), g0.x(v0[3]), g1.x(v1[0]),
-        g1.x(v1[1]), g1.x(v1[2]));
+        g0.node(_v0[0]), g0.node(_v0[1]), g0.node(_v0[2]), g0.node(_v0[3]),
+        g1.node(_v1[0]), g1.node(_v1[1]), g1.node(_v1[2]));
   }
   else if (d0 == 3 && d1 == 3)
   {
+    std::array<int, 4> _v0 = comp_vertices(entity_0, 4);
+    std::array<int, 4> _v1 = comp_vertices(entity_1, 4);
     return collides_tetrahedron_tetrahedron_3d(
-        g0.x(v0[0]), g0.x(v0[1]), g0.x(v0[2]), g0.x(v0[3]), g1.x(v1[0]),
-        g1.x(v1[1]), g1.x(v1[2]), g1.x(v1[3]));
+        g0.node(_v0[0]), g0.node(_v0[1]), g0.node(_v0[2]), g0.node(_v0[3]),
+        g1.node(_v1[0]), g1.node(_v1[1]), g1.node(_v1[2]), g1.node(_v1[3]));
   }
   else
   {
@@ -464,6 +565,32 @@ bool CollisionPredicates::collides_triangle_point_2d(
             or (orient2d(p2, p0, point) == 0.0
                 and collides_segment_point_1d(p2[0], p0[0], point[0])
                 and collides_segment_point_1d(p2[1], p0[1], point[1])));
+  }
+}
+//-----------------------------------------------------------------------------
+bool CollisionPredicates::collides_quad_point_2d(const Eigen::Vector3d& p0,
+                                                 const Eigen::Vector3d& p1,
+                                                 const Eigen::Vector3d& p2,
+                                                 const Eigen::Vector3d& p3,
+                                                 const Eigen::Vector3d& point)
+{
+  const double ref0 = orient2d(p0, p1, p2);
+  const double ref1 = orient2d(p3, p2, p1);
+
+  if (ref0 * ref1 <= 0.0)
+    throw std::runtime_error("Badly formed quadrilateral");
+
+  if (ref0 > 0.0)
+  {
+    return (orient2d(p1, p3, point) >= 0.0 and orient2d(p3, p2, point) >= 0.0
+            and orient2d(p2, p0, point) >= 0.0
+            and orient2d(p0, p1, point) >= 0.0);
+  }
+  else
+  {
+    return (orient2d(p1, p3, point) <= 0.0 and orient2d(p3, p2, point) <= 0.0
+            and orient2d(p2, p0, point) <= 0.0
+            and orient2d(p0, p1, point) <= 0.0);
   }
 }
 //-----------------------------------------------------------------------------

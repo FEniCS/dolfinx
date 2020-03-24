@@ -15,7 +15,6 @@
 #include <dolfinx/geometry/BoundingBoxTree.h>
 #include <dolfinx/geometry/utils.h>
 #include <dolfinx/la/PETScMatrix.h>
-#include <dolfinx/mesh/CoordinateDofs.h>
 #include <dolfinx/mesh/Geometry.h>
 #include <dolfinx/mesh/MeshEntity.h>
 #include <dolfinx/mesh/MeshIterator.h>
@@ -90,16 +89,12 @@ tabulate_coordinates_to_dofs(const function::FunctionSpace& V)
   const CoordinateElement& cmap = *mesh.geometry().coord_mapping;
 
   // Prepare cell geometry
-  const graph::AdjacencyList<std::int32_t>& connectivity_g
-      = mesh.coordinate_dofs().entity_points();
-  const Eigen::Array<std::int32_t, Eigen::Dynamic, 1>& pos_g
-      = connectivity_g.offsets();
-  const Eigen::Array<std::int32_t, Eigen::Dynamic, 1>& cell_g
-      = connectivity_g.array();
+  const graph::AdjacencyList<std::int32_t>& x_dofmap = mesh.geometry().dofmap();
+
   // FIXME: Add proper interface for num coordinate dofs
-  const int num_dofs_g = connectivity_g.num_links(0);
+  const int num_dofs_g = x_dofmap.num_links(0);
   const Eigen::Array<double, Eigen::Dynamic, 3, Eigen::RowMajor>& x_g
-      = mesh.geometry().points();
+      = mesh.geometry().x();
 
   // Loop over cells and tabulate dofs
   Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
@@ -110,16 +105,17 @@ tabulate_coordinates_to_dofs(const function::FunctionSpace& V)
 
   // Speed up the computations by only visiting (most) dofs once
   const std::int64_t local_size
-      = dofmap.index_map->size_local() * dofmap.index_map->block_size;
+      = dofmap.index_map->size_local() * dofmap.index_map->block_size();
   std::vector<bool> already_visited(local_size, false);
 
   for (auto& cell : mesh::MeshRange(mesh, tdim))
   {
-    // Get cell coordinates
     const int cell_index = cell.index();
+
+    // Get cell coordinates
+    auto x_dofs = x_dofmap.links(cell_index);
     for (int i = 0; i < num_dofs_g; ++i)
-      for (int j = 0; j < gdim; ++j)
-        coordinate_dofs(i, j) = x_g(cell_g[pos_g[cell_index] + i], j);
+      coordinate_dofs.row(i) = x_g.row(x_dofs[i]).head(gdim);
 
     // Get local-to-global map
     auto dofs = dofmap.cell_dofs(cell.index());
@@ -266,10 +262,10 @@ la::PETScMatrix PETScDMCollection::create_transfer_matrix(
   // Local dimension of the dofs and of the transfer matrix
   std::array<std::int64_t, 2> m = finemap->index_map->local_range();
   std::array<std::int64_t, 2> n = coarsemap->index_map->local_range();
-  m[0] *= finemap->index_map->block_size;
-  m[1] *= finemap->index_map->block_size;
-  n[0] *= coarsemap->index_map->block_size;
-  n[1] *= coarsemap->index_map->block_size;
+  m[0] *= finemap->index_map->block_size();
+  m[1] *= finemap->index_map->block_size();
+  n[0] *= coarsemap->index_map->block_size();
+  n[1] *= coarsemap->index_map->block_size();
 
   // Get finite element for the coarse space. This will be needed to
   // evaluate the basis functions for each cell.
@@ -534,16 +530,13 @@ la::PETScMatrix PETScDMCollection::create_transfer_matrix(
   Eigen::Tensor<double, 3, Eigen::RowMajor> K(1, tdim, gdim);
 
   // Prepare cell geometry
-  const graph::AdjacencyList<std::int32_t>& connectivity_g
-      = meshc.coordinate_dofs().entity_points();
-  const Eigen::Array<std::int32_t, Eigen::Dynamic, 1>& pos_g
-      = connectivity_g.offsets();
-  const Eigen::Array<std::int32_t, Eigen::Dynamic, 1>& cell_g
-      = connectivity_g.array();
+  const graph::AdjacencyList<std::int32_t>& x_dofmap
+      = meshc.geometry().dofmap();
+
   // FIXME: Add proper interface for num coordinate dofs
-  const int num_dofs_g = connectivity_g.num_links(0);
+  const int num_dofs_g = x_dofmap.num_links(0);
   const Eigen::Array<double, Eigen::Dynamic, 3, Eigen::RowMajor>& x_g
-      = meshc.geometry().points();
+      = meshc.geometry().x();
   Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
       coordinate_dofs(num_dofs_g, gdim);
   ; // cell dofs coordinates vector
@@ -558,9 +551,9 @@ la::PETScMatrix PETScDMCollection::create_transfer_matrix(
 
     // Get dofs coordinates of the coarse cell
     const int cell_index = coarse_cell.index();
+    auto x_dofs = x_dofmap.links(cell_index);
     for (int j = 0; j < num_dofs_g; ++j)
-      for (int k = 0; k < gdim; ++k)
-        coordinate_dofs(j, k) = x_g(cell_g[pos_g[cell_index] + j], k);
+      coordinate_dofs.row(j) = x_g.row(x_dofs[j]).head(gdim);
 
     // Evaluate the basis functions of the coarse cells at the fine
     // point and store the values into temp_values
@@ -812,13 +805,13 @@ PetscErrorCode PETScDMCollection::create_interpolation(DM dmc, DM dmf, Mat* mat,
   return 0;
 }
 //-----------------------------------------------------------------------------
-PetscErrorCode PETScDMCollection::coarsen(DM dmf, MPI_Comm comm, DM* dmc)
+PetscErrorCode PETScDMCollection::coarsen(DM dmf, MPI_Comm, DM* dmc)
 {
   // Get the coarse DM from the fine DM
   return DMGetCoarseDM(dmf, dmc);
 }
 //-----------------------------------------------------------------------------
-PetscErrorCode PETScDMCollection::refine(DM dmc, MPI_Comm comm, DM* dmf)
+PetscErrorCode PETScDMCollection::refine(DM dmc, MPI_Comm, DM* dmf)
 {
   // Get the fine DM from the coarse DM
   return DMGetFineDM(dmc, dmf);

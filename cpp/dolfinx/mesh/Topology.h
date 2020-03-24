@@ -6,21 +6,24 @@
 
 #pragma once
 
+#include "cell_types.h"
 #include <Eigen/Dense>
 #include <array>
 #include <cstdint>
-#include <map>
+#include <dolfinx/common/MPI.h>
 #include <memory>
-#include <set>
 #include <vector>
-
-#include <dolfinx/graph/AdjacencyList.h>
 
 namespace dolfinx
 {
 namespace common
 {
 class IndexMap;
+}
+
+namespace fem
+{
+class ElementDofLayout;
 }
 
 namespace graph
@@ -31,6 +34,17 @@ class AdjacencyList;
 
 namespace mesh
 {
+enum class GhostMode : int;
+
+class Topology;
+
+/// Compute marker for owned facets that are interior, i.e. are
+/// connected to two cells, one of which might be on a remote process
+/// @param[in] topology The topology
+/// @return Vector with length equal to the number of facets on this
+///   this process. True if the ith facet (local index) is interior to
+///   the domain.
+std::vector<bool> compute_interior_facets(const Topology& topology);
 
 /// Topology stores the topology of a mesh, consisting of mesh entities
 /// and connectivity (incidence relations for the mesh entities). Note
@@ -41,12 +55,11 @@ namespace mesh
 /// A mesh entity e may be identified globally as a pair e = (dim, i),
 /// where dim is the topological dimension and i is the index of the
 /// entity within that topological dimension.
-
 class Topology
 {
 public:
   /// Create empty mesh topology
-  Topology(int dim);
+  Topology(mesh::CellType type);
 
   /// Copy constructor
   Topology(const Topology& topology) = default;
@@ -60,94 +73,88 @@ public:
   /// Assignment
   Topology& operator=(const Topology& topology) = default;
 
+  /// Assignment
+  Topology& operator=(Topology&& topology) = default;
+
   /// Return topological dimension
   int dim() const;
 
-  /// @todo Remove this function. Use IndexMap instead
-  /// Set the global indices for entities of dimension dim
-  void set_global_indices(int dim,
-                          const std::vector<std::int64_t>& global_indices);
-
+  /// @todo Merge with set_connectivity
+  ///
   /// Set the IndexMap for dimension dim
   /// @warning This is experimental and likely to change
   void set_index_map(int dim,
                      std::shared_ptr<const common::IndexMap> index_map);
 
-  /// Get the IndexMap for dimension dim
-  /// (Currently partially working)
+  /// Get the IndexMap that described the parallel distribution of the
+  /// mesh entities
+  /// @param[in] dim Topological dimension
+  /// @return Index map for the entities of dimension @p dim
   std::shared_ptr<const common::IndexMap> index_map(int dim) const;
 
-  /// @todo Remove this function. Use IndexMap instead
-  /// Get local-to-global index map for entities of topological
-  /// dimension d
-  const std::vector<std::int64_t>& global_indices(int d) const;
-
-  /// Set the map from shared entities (local index) to processes that
-  /// share the entity
-  void set_shared_entities(
-      int dim, const std::map<std::int32_t, std::set<std::int32_t>>& entities);
-
-  /// @todo Remove this function
-  /// Return map from shared entities (local index) to process that
-  /// share the entity (const version)
-  const std::map<std::int32_t, std::set<std::int32_t>>&
-  shared_entities(int dim) const;
-
   /// Marker for entities of dimension dim on the boundary. An entity of
-  /// co-dimension < 0 is on the boundary if it is connected to a boundary
-  /// facet. It is not defined for codimension 0.
+  /// co-dimension < 0 is on the boundary if it is connected to a
+  /// boundary facet. It is not defined for codimension 0.
   /// @param[in] dim Toplogical dimension of the entities to check. It
-  /// must be less than the topological dimension.
+  ///   must be less than the topological dimension.
   /// @return Vector of length equal to number of local entities, with
-  ///          'true' for entities on the boundary and otherwise 'false'.
+  ///   'true' for entities on the boundary and otherwise 'false'.
   std::vector<bool> on_boundary(int dim) const;
 
-  /// Return connectivity for given pair of topological dimensions
-  std::shared_ptr<graph::AdjacencyList<std::int32_t>> connectivity(int d0,
-                                                                   int d1);
-
-  /// Return connectivity for given pair of topological dimensions
+  /// Return connectivity from entities of dimension d0 to entities of
+  /// dimension d1
+  /// @param[in] d0
+  /// @param[in] d1
+  /// @return The adjacency list that for each entity of dimension d0
+  ///   gives the list of incident entities of dimension d1
   std::shared_ptr<const graph::AdjacencyList<std::int32_t>>
   connectivity(int d0, int d1) const;
 
+  /// @todo Merge with set_index_map
   /// Set connectivity for given pair of topological dimensions
   void set_connectivity(std::shared_ptr<graph::AdjacencyList<std::int32_t>> c,
                         int d0, int d1);
 
+  /// Returns the permutation information
+  const Eigen::Array<std::uint32_t, Eigen::Dynamic, 1>&
+  get_cell_permutation_info() const;
+
+  /// Get the permutation number to apply to a facet. The permutations
+  /// are numbered so that:
+  ///
+  ///   - `n % 2` gives the number of reflections to apply
+  ///   - `n // 2` gives the number of rotations to apply
+  ///
+  /// Each column of the returned array represents a cell, and each row
+  /// a facet of that cell.
+  /// @return The permutation number
+  const Eigen::Array<std::uint8_t, Eigen::Dynamic, Eigen::Dynamic>&
+  get_facet_permutations() const;
+
+  /// Compute entity permutations and reflections used in assembly
+  void create_entity_permutations();
+
+  /// Gets markers for owned facets that are interior, i.e. are
+  /// connected to two cells, one of which might be on a remote process
+  /// @return Vector with length equal to the number of facets owned by
+  ///   this process. True if the ith facet (local index) is interior to
+  ///   the domain.
+  const std::vector<bool>& interior_facets() const;
+
+  /// Set markers for owned facets that are interior
+  /// @param[in] interior_facets The marker vector
+  void set_interior_facets(const std::vector<bool>& interior_facets);
+
   /// Return hash based on the hash of cell-vertex connectivity
   size_t hash() const;
 
-  /// Return informal string representation (pretty-print)
-  std::string str(bool verbose) const;
-
-  /// @todo Move this outside of this class
-  /// Set global number of connections for each local entities
-  void set_global_size(std::array<int, 2> d,
-                       const Eigen::Array<std::int32_t, Eigen::Dynamic, 1>&
-                           num_global_connections)
-  {
-    // assert(num_global_connections.size() == _offsets.size() - 1);
-    _num_global_connections(d[0], d[1]) = num_global_connections;
-  }
-
-  /// @todo Can this be removed?
-  /// Return global number of connections for given entity
-  int size_global(std::array<int, 2> d, std::int32_t entity) const
-  {
-    if (_num_global_connections(d[0], d[1]).size() == 0)
-      return _connectivity(d[0], d[1])->num_links(entity);
-    else
-      return _num_global_connections(d[0], d[1])[entity];
-  }
+  /// Cell type
+  /// @return Cell type that th topology is for
+  mesh::CellType cell_type() const;
 
 private:
-  // Global indices for mesh entities
-  std::vector<std::vector<std::int64_t>> _global_indices;
-
-  // TODO: Could IndexMap be used here in place of std::map?
-  // For entities of a given dimension d, maps each shared entity
-  // (local index) to a list of the processes sharing the vertex
-  std::vector<std::map<std::int32_t, std::set<std::int32_t>>> _shared_entities;
+  // Cell type
+  mesh::CellType _cell_type;
 
   // IndexMap to store ghosting for each entity dimension
   std::array<std::shared_ptr<const common::IndexMap>, 4> _index_map;
@@ -157,11 +164,40 @@ private:
                Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
       _connectivity;
 
-  // TODO: revise
-  // Global number of connections for each entity (possibly not
-  // computed)
-  Eigen::Array<Eigen::Array<std::int32_t, Eigen::Dynamic, 1>, 4, 4>
-      _num_global_connections;
+  // The facet permutations
+  Eigen::Array<std::uint8_t, Eigen::Dynamic, Eigen::Dynamic>
+      _facet_permutations;
+
+  // Cell permutation info. See the documentation for
+  // get_cell_permutation_info for documentation of how this is encoded.
+  Eigen::Array<std::uint32_t, Eigen::Dynamic, 1> _cell_permutations;
+
+  // Marker for owned facets, which evaluates to True for facets that
+  // are interior to the domain
+  std::shared_ptr<const std::vector<bool>> _interior_facets;
 };
+
+/// @todo Avoid passing ElementDofLayout. All we need is way to extract
+/// the vertices from cells, and the CellType
+///
+/// Create distributed topology
+/// @param[in] comm MPI communicator across which the topology is
+///   distributed
+/// @param[in] cells The cell topology (list of cell 'nodes') in DOLFIN
+///   ordering and using global indices for the nodes. It contains cells
+///   that exist only on this this rank and which which have not yet
+///   been distributed via a graph partitioner. The input is typically
+///   direct from a mesh generator or from file. Cells will be
+///   distributed to other ranks.
+/// @param[in] layout Describe the association between 'nodes' in @p
+///   cells and geometry degrees-of-freedom on the element. It is used
+///   to extract the vertex entries in @p cells.
+/// @param[in] ghost_mode How to partition the cell overlap: none, shared_facet or shared_vertex
+/// @return A distributed Topology, the source rank for each cell in the
+///   new topology, and the destination ranks for each cell in @p cells.
+std::tuple<Topology, std::vector<int>, graph::AdjacencyList<std::int32_t>>
+create_topology(MPI_Comm comm, const graph::AdjacencyList<std::int64_t>& cells,
+                const fem::ElementDofLayout& layout,
+                mesh::GhostMode ghost_mode);
 } // namespace mesh
 } // namespace dolfinx

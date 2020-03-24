@@ -8,16 +8,14 @@ import pytest
 
 from dolfinx import MPI, UnitCubeMesh, UnitIntervalMesh, UnitSquareMesh, cpp
 
-# See https://bitbucket.org/fenics-project/dolfin/issues/579
-
 
 @pytest.mark.xfail(condition=MPI.size(MPI.comm_world) == 1,
                    reason="Shared ghost modes fail in serial")
 def test_ghost_vertex_1d():
     mesh = UnitIntervalMesh(MPI.comm_world, 20,
                             ghost_mode=cpp.mesh.GhostMode.shared_vertex)
-    assert mesh.num_entities_global(0) == 21
-    assert mesh.num_entities_global(1) == 20
+    assert mesh.topology.index_map(0).size_global == 21
+    assert mesh.topology.index_map(1).size_global == 20
 
 
 @pytest.mark.xfail(condition=MPI.size(MPI.comm_world) == 1,
@@ -25,8 +23,8 @@ def test_ghost_vertex_1d():
 def test_ghost_facet_1d():
     mesh = UnitIntervalMesh(MPI.comm_world, 20,
                             ghost_mode=cpp.mesh.GhostMode.shared_facet)
-    assert mesh.num_entities_global(0) == 21
-    assert mesh.num_entities_global(1) == 20
+    assert mesh.topology.index_map(0).size_global == 21
+    assert mesh.topology.index_map(1).size_global == 20
 
 
 @pytest.mark.parametrize("mode", [pytest.param(cpp.mesh.GhostMode.shared_vertex,
@@ -43,8 +41,8 @@ def test_ghost_2d(mode):
     if MPI.size(mesh.mpi_comm()) > 1:
         assert MPI.sum(mesh.mpi_comm(), mesh.num_cells()) > num_cells
 
-    assert mesh.num_entities_global(0) == 81
-    assert mesh.num_entities_global(2) == num_cells
+    assert mesh.topology.index_map(0).size_global == 81
+    assert mesh.topology.index_map(2).size_global == num_cells
 
 
 @pytest.mark.parametrize("mode", [pytest.param(cpp.mesh.GhostMode.shared_vertex,
@@ -61,8 +59,8 @@ def test_ghost_3d(mode):
     if MPI.size(mesh.mpi_comm()) > 1:
         assert MPI.sum(mesh.mpi_comm(), mesh.num_cells()) > num_cells
 
-    assert mesh.num_entities_global(0) == 27
-    assert mesh.num_entities_global(3) == num_cells
+    assert mesh.topology.index_map(0).size_global == 27
+    assert mesh.topology.index_map(3).size_global == num_cells
 
 
 @pytest.mark.parametrize("mode", [cpp.mesh.GhostMode.none,
@@ -93,7 +91,7 @@ def test_ghost_connectivities(mode):
 
     # Loop through ghosted mesh and check connectivities
     tdim = meshG.topology.dim
-    num_facets = meshG.num_entities(tdim - 1) - meshG.topology.ghost_offset(tdim - 1)
+    num_facets = meshG.num_entities(tdim - 1) - meshG.topology.index_map(tdim - 1).size_local
     allowable_cell_indices = range(meshG.num_cells())
     facet_mp = cpp.mesh.midpoints(meshG, tdim - 1, range(meshG.num_entities(tdim - 1)))
     cell_mp = cpp.mesh.midpoints(meshG, tdim, range(meshG.num_entities(tdim)))

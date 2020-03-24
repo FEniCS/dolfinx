@@ -174,7 +174,8 @@ public:
   void set_tabulate_tensor(
       FormIntegrals::Type type, int i,
       std::function<void(PetscScalar*, const PetscScalar*, const PetscScalar*,
-                         const double*, const int*, const int*)>
+                         const double*, const int*, const std::uint8_t*,
+                         const std::uint32_t)>
           fn);
 
   /// Set cell domains

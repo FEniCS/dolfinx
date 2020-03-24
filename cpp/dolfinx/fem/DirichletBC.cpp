@@ -13,9 +13,9 @@
 #include <dolfinx/fem/CoordinateElement.h>
 #include <dolfinx/function/Function.h>
 #include <dolfinx/function/FunctionSpace.h>
+#include <dolfinx/graph/AdjacencyList.h>
 #include <dolfinx/mesh/Mesh.h>
-#include <dolfinx/mesh/MeshEntity.h>
-#include <dolfinx/mesh/MeshIterator.h>
+#include <dolfinx/mesh/Topology.h>
 #include <dolfinx/mesh/cell_types.h>
 #include <map>
 #include <numeric>
@@ -38,8 +38,14 @@ std::vector<std::int32_t>
 get_remote_bcs1(const common::IndexMap& map,
                 const std::vector<std::int32_t>& dofs_local)
 {
+  const std::vector<std::int32_t>& neighbours = map.neighbours();
+  MPI_Comm comm;
+  MPI_Dist_graph_create_adjacent(map.mpi_comm(), neighbours.size(),
+                                 neighbours.data(), MPI_UNWEIGHTED,
+                                 neighbours.size(), neighbours.data(),
+                                 MPI_UNWEIGHTED, MPI_INFO_NULL, false, &comm);
+
   // Get number of processes in neighbourhood
-  MPI_Comm comm = map.mpi_comm_neighborhood();
   int num_neighbours(-1), outdegree(-2), weighted(-1);
   MPI_Dist_graph_neighbors_count(comm, &num_neighbours, &outdegree, &weighted);
   assert(num_neighbours == outdegree);
@@ -61,8 +67,7 @@ get_remote_bcs1(const common::IndexMap& map,
 
   // Compute displacements for data to receive. Last entry has total
   // number of received items.
-  // Note: std::inclusive_scan would be better, but gcc 7.4.0 (Ubuntu
-  // 18.04) does not have full C++17 support
+  // Note: std::inclusive_scan would be better, but requires gcc >= 9.2.1
   std::vector<int> disp(num_neighbours + 1, 0);
   std::partial_sum(num_dofs_recv.begin(), num_dofs_recv.end(),
                    disp.begin() + 1);
@@ -78,14 +83,18 @@ get_remote_bcs1(const common::IndexMap& map,
                           dofs_received.data(), num_dofs_recv.data(),
                           disp.data(), MPI_INT64_T, comm);
 
+  // FIXME: check that dofs is sorted
   // Build vector of local dof indicies that have been marked by another
   // process
-  std::vector<std::int32_t> dofs = map.global_to_local(dofs_global, false);
+  std::vector<std::int32_t> dofs = map.global_to_local(dofs_received, false);
   dofs.erase(std::remove(dofs.begin(), dofs.end(), -1), dofs.end());
+
+  MPI_Comm_free(&comm);
 
   return dofs;
 }
 //-----------------------------------------------------------------------------
+
 /// Find DOFs on this processes that are constrained by a Dirichlet
 /// condition detected by another process
 ///
@@ -94,13 +103,18 @@ get_remote_bcs1(const common::IndexMap& map,
 /// @param[in] dofs_local The IndexMap with the dof layout
 /// @return List of local dofs with boundary conditions applied but
 ///   detected by other processes. It may contain duplicate entries.
-// TODO: add some docs
 std::vector<std::array<std::int32_t, 2>>
 get_remote_bcs2(const common::IndexMap& map0, const common::IndexMap& map1,
                 const std::vector<std::array<std::int32_t, 2>>& dofs_local)
 {
   // Get number of processes in neighbourhood
-  MPI_Comm comm0 = map0.mpi_comm_neighborhood();
+  const std::vector<std::int32_t>& neighbours = map0.neighbours();
+  MPI_Comm comm0;
+  MPI_Dist_graph_create_adjacent(map0.mpi_comm(), neighbours.size(),
+                                 neighbours.data(), MPI_UNWEIGHTED,
+                                 neighbours.size(), neighbours.data(),
+                                 MPI_UNWEIGHTED, MPI_INFO_NULL, false, &comm0);
+
   int num_neighbours(-1), outdegree(-2), weighted(-1);
   MPI_Dist_graph_neighbors_count(comm0, &num_neighbours, &outdegree, &weighted);
   assert(num_neighbours == outdegree);
@@ -132,8 +146,7 @@ get_remote_bcs2(const common::IndexMap& map0, const common::IndexMap& map1,
 
   // Compute displacements for data to receive. Last entry has total
   // number of received items.
-  // Note: std::inclusive_scan would be better, but gcc 7.4.0 (Ubuntu
-  // 18.04) does not have full C++17 support
+  // Note: std::inclusive_scan would be better, but requires gcc >= 9.2.1
   std::vector<int> disp(num_neighbours + 1, 0);
   std::partial_sum(num_dofs_recv.begin(), num_dofs_recv.end(),
                    disp.begin() + 1);
@@ -163,6 +176,7 @@ get_remote_bcs2(const common::IndexMap& map0, const common::IndexMap& map1,
   std::vector<std::int32_t> dofs0 = map0.global_to_local(dofs_received0, false);
   std::vector<std::int32_t> dofs1 = map1.global_to_local(dofs_received1, false);
 
+  // FIXME: check that dofs is sorted
   dofs0.erase(std::remove(dofs0.begin(), dofs0.end(), -1), dofs0.end());
   dofs1.erase(std::remove(dofs1.begin(), dofs1.end(), -1), dofs1.end());
 
@@ -170,6 +184,8 @@ get_remote_bcs2(const common::IndexMap& map0, const common::IndexMap& map1,
   dofs.reserve(dofs0.size());
   for (std::size_t i = 0; i < dofs0.size(); ++i)
     dofs.push_back({dofs0[i], dofs1[i]});
+
+  MPI_Comm_free(&comm0);
 
   return dofs;
 }
@@ -215,27 +231,37 @@ Eigen::Array<std::int32_t, Eigen::Dynamic, 2> _locate_dofs_topological(
 
   // Build vector local dofs for each cell facet
   std::vector<Eigen::Array<int, Eigen::Dynamic, 1>> entity_dofs;
-  for (int i = 0; i < mesh::cell_num_entities(mesh.cell_type(), dim); ++i)
+  for (int i = 0; i < mesh::cell_num_entities(mesh.topology().cell_type(), dim);
+       ++i)
   {
     entity_dofs.push_back(
         dofmap0.element_dof_layout->entity_closure_dofs(dim, i));
   }
+  auto e_to_c = mesh.topology().connectivity(dim, tdim);
+  assert(e_to_c);
+  auto c_to_e = mesh.topology().connectivity(tdim, dim);
+  assert(c_to_e);
 
   // Iterate over marked facets
   std::vector<std::array<std::int32_t, 2>> bc_dofs;
   for (Eigen::Index e = 0; e < entities.rows(); ++e)
   {
-    // Create facet and attached cell
-    const mesh::MeshEntity entity(mesh, dim, entities[e]);
-    const std::size_t cell_index = entity.entities(tdim)[0];
-    const mesh::MeshEntity cell(mesh, tdim, cell_index);
+    // Get first attached cell
+    assert(e_to_c->num_links(entities[e]) > 0);
+    const int cell = e_to_c->links(entities[e])[0];
+
+    // Get local index of facet with respect to the cell
+    auto entities_d = c_to_e->links(cell);
+    auto it = std::find(entities_d.data(),
+                        entities_d.data() + entities_d.rows(), entities[e]);
+    assert(it != (entities_d.data() + entities_d.rows()));
+    const int entity_local_index = std::distance(entities_d.data(), it);
 
     // Get cell dofmap
-    auto cell_dofs0 = dofmap0.cell_dofs(cell.index());
-    auto cell_dofs1 = dofmap1.cell_dofs(cell.index());
+    auto cell_dofs0 = dofmap0.cell_dofs(cell);
+    auto cell_dofs1 = dofmap1.cell_dofs(cell);
 
     // Loop over facet dofs
-    const int entity_local_index = cell.index(entity);
     for (int i = 0; i < num_entity_dofs; ++i)
     {
       const int index = entity_dofs[entity_local_index][i];
@@ -276,6 +302,8 @@ Eigen::Array<std::int32_t, Eigen::Dynamic, 2> _locate_dofs_topological(
   return dofs;
 }
 //-----------------------------------------------------------------------------
+
+/// TODO: Add doc
 Eigen::Array<std::int32_t, Eigen::Dynamic, 1>
 _locate_dofs_topological(const function::FunctionSpace& V, const int entity_dim,
                          const Eigen::Ref<const Eigen::ArrayXi>& entities,
@@ -295,7 +323,7 @@ _locate_dofs_topological(const function::FunctionSpace& V, const int entity_dim,
   // Prepare an element - local dof layout for dofs on entities of the
   // entity_dim
   const int num_cell_entities
-      = mesh::cell_num_entities(mesh.cell_type(), entity_dim);
+      = mesh::cell_num_entities(mesh.topology().cell_type(), entity_dim);
   std::vector<Eigen::Array<int, Eigen::Dynamic, 1>> entity_dofs;
   for (int i = 0; i < num_cell_entities; ++i)
   {
@@ -303,21 +331,31 @@ _locate_dofs_topological(const function::FunctionSpace& V, const int entity_dim,
         dofmap.element_dof_layout->entity_closure_dofs(entity_dim, i));
   }
 
+  auto e_to_c = mesh.topology().connectivity(entity_dim, tdim);
+  assert(e_to_c);
+  auto c_to_e = mesh.topology().connectivity(tdim, entity_dim);
+  assert(c_to_e);
+
   const int num_entity_closure_dofs
       = dofmap.element_dof_layout->num_entity_closure_dofs(entity_dim);
   std::vector<std::int32_t> dofs;
   for (Eigen::Index i = 0; i < entities.rows(); ++i)
   {
-    // Create entity and attached cell
-    const mesh::MeshEntity entity(mesh, entity_dim, entities[i]);
-    const int cell_index = entity.entities(tdim)[0];
-    const mesh::MeshEntity cell(mesh, tdim, cell_index);
+    // Get first attached cell
+    assert(e_to_c->num_links(entities[i]) > 0);
+    const int cell = e_to_c->links(entities[i])[0];
+
+    // Get local index of facet with respect to the cell
+    auto entities_d = c_to_e->links(cell);
+    auto it = std::find(entities_d.data(),
+                        entities_d.data() + entities_d.rows(), entities[i]);
+    assert(it != (entities_d.data() + entities_d.rows()));
+    const int entity_local_index = std::distance(entities_d.data(), it);
 
     // Get cell dofmap
-    auto cell_dofs = dofmap.cell_dofs(cell_index);
+    auto cell_dofs = dofmap.cell_dofs(cell);
 
     // Loop over entity dofs
-    const int entity_local_index = cell.index(entity);
     for (int j = 0; j < num_entity_closure_dofs; j++)
     {
       const int index = entity_dofs[entity_local_index][j];
@@ -350,25 +388,87 @@ _locate_dofs_topological(const function::FunctionSpace& V, const int entity_dim,
 
   return _dofs;
 }
-} // namespace
 //-----------------------------------------------------------------------------
-Eigen::Array<std::int32_t, Eigen::Dynamic, Eigen::Dynamic>
-fem::locate_dofs_topological(
+Eigen::Array<std::int32_t, Eigen::Dynamic, 2> _locate_dofs_geometrical(
     const std::vector<std::reference_wrapper<function::FunctionSpace>>& V,
-    const int dim, const Eigen::Ref<const Eigen::ArrayXi>& entities,
-    bool remote)
+    marking_function marker)
 {
-  if (V.size() == 2)
-    return _locate_dofs_topological(V, dim, entities, remote);
-  else if (V.size() == 1)
-    return _locate_dofs_topological(V[0].get(), dim, entities, remote);
-  else
-    throw std::runtime_error("Expected only 1 or 2 function spaces.");
+  // FIXME: Calling V.tabulate_dof_coordinates() is very expensive,
+  // especially when we usually want the boundary dofs only. Add
+  // interface that computes dofs coordinates only for specified cell.
+
+  // Get function spaces
+  const function::FunctionSpace& V0 = V.at(0).get();
+  const function::FunctionSpace& V1 = V.at(1).get();
+
+  // Get mesh
+  assert(V0.mesh());
+  assert(V1.mesh());
+  if (V0.mesh() != V1.mesh())
+    throw std::runtime_error("Meshes are not the same.");
+  const mesh::Mesh& mesh = *V1.mesh();
+  const std::size_t tdim = mesh.topology().dim();
+
+  assert(V0.element());
+  assert(V1.element());
+  if (!V0.has_element(*V1.element()))
+  {
+    throw std::runtime_error("Function spaces must have the same elements or "
+                             "one be a subelement of another.");
+  }
+
+  // Compute dof coordinates
+  const Eigen::Array<double, 3, Eigen::Dynamic, Eigen::RowMajor> dof_coordinates
+      = V1.tabulate_dof_coordinates().transpose();
+
+  // Evaluate marker for each dof coordinate
+  const Eigen::Array<bool, Eigen::Dynamic, 1> marked_dofs
+      = marker(dof_coordinates);
+
+  // Get dofmaps
+  assert(V0.dofmap());
+  assert(V1.dofmap());
+  const DofMap& dofmap0 = *V0.dofmap();
+  const DofMap& dofmap1 = *V1.dofmap();
+
+  // Iterate over cells
+  const mesh::Topology& topology = mesh.topology();
+  std::vector<std::array<std::int32_t, 2>> bc_dofs;
+  for (int c = 0; c < topology.connectivity(tdim, 0)->num_nodes(); ++c)
+  {
+    // Get cell dofmap
+    auto cell_dofs0 = dofmap0.cell_dofs(c);
+    auto cell_dofs1 = dofmap1.cell_dofs(c);
+
+    // Loop over cell dofs and add to bc_dofs if marked.
+    for (Eigen::Index i = 0; i < cell_dofs1.rows(); ++i)
+    {
+      if (marked_dofs[cell_dofs1[i]])
+      {
+        bc_dofs.push_back(
+            {(std::int32_t)cell_dofs0[i], (std::int32_t)cell_dofs1[i]});
+      }
+    }
+  }
+
+  // Remove duplicates
+  std::sort(bc_dofs.begin(), bc_dofs.end());
+  bc_dofs.erase(std::unique(bc_dofs.begin(), bc_dofs.end()), bc_dofs.end());
+
+  // Copy to Eigen array
+  Eigen::Array<std::int32_t, Eigen::Dynamic, 2> dofs(bc_dofs.size(), 2);
+  for (std::size_t i = 0; i < bc_dofs.size(); ++i)
+  {
+    dofs(i, 0) = bc_dofs[i][0];
+    dofs(i, 1) = bc_dofs[i][1];
+  }
+
+  return dofs;
 }
 //-----------------------------------------------------------------------------
 Eigen::Array<std::int32_t, Eigen::Dynamic, 1>
-fem::locate_dofs_geometrical(const function::FunctionSpace& V,
-                             marking_function marker)
+_locate_dofs_geometrical(const function::FunctionSpace& V,
+                         marking_function marker)
 {
   // FIXME: Calling V.tabulate_dof_coordinates() is very expensive,
   // especially when we usually want the boundary dofs only. Add
@@ -393,7 +493,37 @@ fem::locate_dofs_geometrical(const function::FunctionSpace& V,
   return Eigen::Map<Eigen::Array<std::int32_t, Eigen::Dynamic, 1>>(dofs.data(),
                                                                    dofs.size());
 }
+} // namespace
+
 //-----------------------------------------------------------------------------
+Eigen::Array<std::int32_t, Eigen::Dynamic, Eigen::Dynamic>
+fem::locate_dofs_topological(
+    const std::vector<std::reference_wrapper<function::FunctionSpace>>& V,
+    const int dim, const Eigen::Ref<const Eigen::ArrayXi>& entities,
+    bool remote)
+{
+  if (V.size() == 2)
+    return _locate_dofs_topological(V, dim, entities, remote);
+  else if (V.size() == 1)
+    return _locate_dofs_topological(V[0].get(), dim, entities, remote);
+  else
+    throw std::runtime_error("Expected only 1 or 2 function spaces.");
+}
+//-----------------------------------------------------------------------------
+Eigen::Array<std::int32_t, Eigen::Dynamic, Eigen::Dynamic>
+fem::locate_dofs_geometrical(
+    const std::vector<std::reference_wrapper<function::FunctionSpace>>& V,
+    marking_function marker)
+{
+  if (V.size() == 2)
+    return _locate_dofs_geometrical(V, marker);
+  else if (V.size() == 1)
+    return _locate_dofs_geometrical(V[0].get(), marker);
+  else
+    throw std::runtime_error("Expected only 1 or 2 function spaces.");
+}
+//-----------------------------------------------------------------------------
+
 //-----------------------------------------------------------------------------
 DirichletBC::DirichletBC(
     std::shared_ptr<const function::Function> g,
@@ -405,7 +535,7 @@ DirichletBC::DirichletBC(
   _dofs.col(0) = V_dofs;
   _dofs.col(1) = V_dofs;
 
-  const int owned_size = _function_space->dofmap()->index_map->block_size
+  const int owned_size = _function_space->dofmap()->index_map->block_size()
                          * _function_space->dofmap()->index_map->size_local();
   auto it = std::lower_bound(_dofs.col(0).data(),
                              _dofs.col(0).data() + _dofs.rows(), owned_size);
@@ -419,7 +549,7 @@ DirichletBC::DirichletBC(
     std::shared_ptr<const function::FunctionSpace> V)
     : _function_space(V), _g(g), _dofs(V_g_dofs)
 {
-  const int owned_size = _function_space->dofmap()->index_map->block_size
+  const int owned_size = _function_space->dofmap()->index_map->block_size()
                          * _function_space->dofmap()->index_map->size_local();
   auto it = std::lower_bound(_dofs.col(0).data(),
                              _dofs.col(0).data() + _dofs.rows(), owned_size);

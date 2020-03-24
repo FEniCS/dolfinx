@@ -40,10 +40,12 @@ def test_distance_tetrahedron():
 
 
 @pytest.mark.parametrize(
-    'mesh', [UnitIntervalMesh(MPI.comm_world, 8),
-             UnitSquareMesh(MPI.comm_world, 8, 9, CellType.triangle),
-             UnitSquareMesh(MPI.comm_world, 8, 9, CellType.quadrilateral),
-             UnitCubeMesh(MPI.comm_world, 8, 9, 5, CellType.tetrahedron)])
+    'mesh', [
+        UnitIntervalMesh(MPI.comm_world, 8),
+        UnitSquareMesh(MPI.comm_world, 8, 9, CellType.triangle),
+        UnitSquareMesh(MPI.comm_world, 8, 9, CellType.quadrilateral),
+        UnitCubeMesh(MPI.comm_world, 8, 9, 5, CellType.tetrahedron)
+    ])
 def test_volume_cells(mesh):
     num_cells = mesh.num_entities(mesh.topology.dim)
     v = cpp.mesh.volume_entities(mesh, range(num_cells), mesh.topology.dim)
@@ -61,7 +63,7 @@ def test_volume_quadrilateralR2():
     [[[0.0, 0.0, 0.0], [0.0, 1.0, 0.0], [1.0, 0.0, 0.0], [1.0, 1.0, 0.0]],
      [[0.0, 0.0, 0.0], [0.0, 0.0, 1.0], [0.0, 1.0, 0.0], [0.0, 1.0, 1.0]]])
 def test_volume_quadrilateralR3(coordinates):
-    mesh = Mesh(MPI.comm_world, CellType.quadrilateral,
+    mesh = Mesh(MPI.comm_self, CellType.quadrilateral,
                 numpy.array(coordinates, dtype=numpy.float64),
                 numpy.array([[0, 1, 2, 3]], dtype=numpy.int32), [],
                 cpp.mesh.GhostMode.none)
@@ -77,7 +79,7 @@ def test_volume_quadrilateral_coplanarity_check_1(scaling):
         # Unit square cell scaled down by 'scaling' and the first vertex
         # is distorted so that the vertices are clearly non coplanar
         mesh = Mesh(
-            MPI.comm_world, CellType.quadrilateral,
+            MPI.comm_self, CellType.quadrilateral,
             numpy.array(
                 [[scaling, 0.5 * scaling, 0.6 * scaling], [0.0, scaling, 0.0],
                  [0.0, 0.0, scaling], [0.0, scaling, scaling]],
@@ -98,7 +100,7 @@ def test_volume_quadrilateral_coplanarity_check_2(scaling):
     with pytest.raises(RuntimeError) as error:
         # Unit square cell scaled down by 'scaling' and the first vertex
         # is distorted so that the vertices are clearly non coplanar
-        mesh = Mesh(MPI.comm_world, CellType.quadrilateral,
+        mesh = Mesh(MPI.comm_self, CellType.quadrilateral,
                     numpy.array(
                         [[1.0, 0.5, 0.6], [0.0, scaling, 0.0],
                          [0.0, 0.0, scaling], [0.0, 1.0, 1.0]],

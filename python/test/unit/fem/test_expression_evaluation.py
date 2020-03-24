@@ -47,8 +47,8 @@ def test_rank0():
     ffi = cffi.FFI()
 
     @numba.njit
-    def assemble_expression(b, kernel, mesh, x, dofmap, coeff, coeff_dofmap):
-        connections, pos = mesh
+    def assemble_expression(b, kernel, mesh, dofmap, coeff, coeff_dofmap):
+        pos, x_dofmap, x = mesh
         geometry = np.zeros((3, 2))
         w = np.zeros(6, dtype=PETSc.ScalarType)
         constants = np.zeros(1, dtype=PETSc.ScalarType)
@@ -56,7 +56,7 @@ def test_rank0():
 
         for i, cell in enumerate(pos[:-1]):
             num_vertices = pos[i + 1] - pos[i]
-            c = connections[cell:cell + num_vertices]
+            c = x_dofmap[cell:cell + num_vertices]
             for j in range(3):
                 for k in range(2):
                     geometry[j, k] = x[c[j], k]
@@ -73,17 +73,17 @@ def test_rank0():
                 b[dofmap[i * 6 + j]] = b_local[j]
 
     # Prepare mesh and dofmap data
-    c = mesh.topology.connectivity(2, 0).array()
-    pos = mesh.topology.connectivity(2, 0).offsets()
-    geom = mesh.geometry.points
-    coeff_dofmap = P2.dofmap.dof_array
-    dofmap = vP1.dofmap.dof_array
+    pos = mesh.geometry.dofmap().offsets()
+    x_dofs = mesh.geometry.dofmap().array()
+    x = mesh.geometry.x
+    coeff_dofmap = P2.dofmap.list.array()
+    dofmap = vP1.dofmap.list.array()
 
     # Data structure for the result
     b = dolfinx.Function(vP1)
 
     assemble_expression(b.vector.array, compiled_expr.tabulate_expression,
-                        (c, pos), geom, dofmap, f.vector.array, coeff_dofmap)
+                        (pos, x_dofs, x), dofmap, f.vector.array, coeff_dofmap)
 
     def grad_expr1(x):
         values = np.empty((2, x.shape[1]))

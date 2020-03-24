@@ -8,6 +8,7 @@
 #include <dolfinx/common/log.h>
 #include <dolfinx/mesh/utils.h>
 #include <functional>
+#include <iostream>
 #include <memory>
 #include <ufc.h>
 
@@ -102,7 +103,7 @@ int FiniteElement::value_dimension(int i) const
   return _value_dimension.at(i);
 }
 //-----------------------------------------------------------------------------
-std::size_t FiniteElement::degree() const { return _degree; }
+int FiniteElement::degree() const { return _degree; }
 //-----------------------------------------------------------------------------
 std::string FiniteElement::family() const { return _family; }
 //-----------------------------------------------------------------------------
@@ -129,13 +130,14 @@ void FiniteElement::transform_reference_basis(
                                         Eigen::RowMajor>>& X,
     const Eigen::Tensor<double, 3, Eigen::RowMajor>& J,
     const Eigen::Ref<const Eigen::Array<double, Eigen::Dynamic, 1>>& detJ,
-    const Eigen::Tensor<double, 3, Eigen::RowMajor>& K) const
+    const Eigen::Tensor<double, 3, Eigen::RowMajor>& K,
+    const std::uint32_t permutation_info) const
 {
   assert(_transform_reference_basis_derivatives);
   const int num_points = X.rows();
   int ret = _transform_reference_basis_derivatives(
       values.data(), 0, num_points, reference_values.data(), X.data(), J.data(),
-      detJ.data(), K.data(), 1);
+      detJ.data(), K.data(), permutation_info);
   if (ret == -1)
   {
     throw std::runtime_error("Generated code returned error "
@@ -150,13 +152,14 @@ void FiniteElement::transform_reference_basis_derivatives(
                                         Eigen::RowMajor>>& X,
     const Eigen::Tensor<double, 3, Eigen::RowMajor>& J,
     const Eigen::Ref<const Eigen::Array<double, Eigen::Dynamic, 1>>& detJ,
-    const Eigen::Tensor<double, 3, Eigen::RowMajor>& K) const
+    const Eigen::Tensor<double, 3, Eigen::RowMajor>& K,
+    const std::uint32_t permutation_info) const
 {
   assert(_transform_reference_basis_derivatives);
   const int num_points = X.rows();
   int ret = _transform_reference_basis_derivatives(
       values.data(), order, num_points, reference_values.data(), X.data(),
-      J.data(), detJ.data(), K.data(), 1);
+      J.data(), detJ.data(), K.data(), permutation_info);
   if (ret == -1)
   {
     throw std::runtime_error("Generated code returned error "
@@ -192,7 +195,7 @@ void FiniteElement::transform_values(
 {
   assert(_transform_values);
   _transform_values(reference_values, physical_values.data(),
-                    coordinate_dofs.data(), 1, nullptr);
+                    coordinate_dofs.data(), nullptr);
 }
 
 //-----------------------------------------------------------------------------

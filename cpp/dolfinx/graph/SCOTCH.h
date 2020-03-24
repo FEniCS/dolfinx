@@ -6,10 +6,9 @@
 
 #pragma once
 
-#include "Graph.h"
+#include "AdjacencyList.h"
 #include <cstdint>
 #include <dolfinx/common/MPI.h>
-#include <map>
 #include <string>
 #include <utility>
 #include <vector>
@@ -28,21 +27,25 @@ namespace dolfinx
 namespace graph
 {
 
-template <typename T>
-class CSRGraph;
-
 /// This class provides an interface to SCOTCH-PT (parallel version)
 
 class SCOTCH
 {
 public:
-  /// Compute cell partitions from distributed dual graph. Returns
-  /// (partition, ghost_proc)
-  static std::pair<std::vector<int>, std::map<std::int64_t, std::vector<int>>>
-  partition(const MPI_Comm mpi_comm, const SCOTCH_Num nparts,
-            const CSRGraph<SCOTCH_Num>& local_graph,
+  /// Compute cell partitions from distributed dual graph.
+  /// @param mpi_comm MPI Communicator
+  /// @param nparts Number of partitions to divide the graph into
+  /// @param local_graph Node connectivity graph
+  /// @param node_weights Weight of each node (optional)
+  /// @param num_ghost_nodes Number of graph nodes which are owned on other
+  /// processes
+  /// @param ghosting Flag to enable ghosting of the output node distribution
+  /// @return List of node destinations
+  static AdjacencyList<std::int32_t>
+  partition(const MPI_Comm mpi_comm, const int nparts,
+            const AdjacencyList<SCOTCH_Num>& local_graph,
             const std::vector<std::size_t>& node_weights,
-            std::int32_t num_ghost_nodes);
+            std::int32_t num_ghost_nodes, bool ghosting);
 
   /// Compute reordering (map[old] -> new) using Gibbs-Poole-Stockmeyer
   /// (GPS) re-ordering
@@ -51,7 +54,8 @@ public:
   /// @return (mapping from old to new nodes, mapping from new to old
   ///          nodes (inverse map))
   static std::pair<std::vector<int>, std::vector<int>>
-  compute_gps(const Graph& graph, std::size_t num_passes = 5);
+  compute_gps(const AdjacencyList<std::int32_t>& graph,
+              std::size_t num_passes = 5);
 
   /// Compute graph re-ordering
   /// @param[in] graph Input graph
@@ -59,7 +63,8 @@ public:
   /// @return (mapping from old to new nodes, mapping from new to old
   ///          nodes (inverse map))
   static std::pair<std::vector<int>, std::vector<int>>
-  compute_reordering(const Graph& graph, std::string scotch_strategy = "");
+  compute_reordering(const AdjacencyList<std::int32_t>& graph,
+                     std::string scotch_strategy = "");
 };
 } // namespace graph
 } // namespace dolfinx

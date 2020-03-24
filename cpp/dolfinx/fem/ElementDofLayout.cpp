@@ -11,6 +11,8 @@
 #include <numeric>
 #include <set>
 
+#include <iostream>
+
 using namespace dolfinx;
 using namespace dolfinx::fem;
 
@@ -18,12 +20,18 @@ using namespace dolfinx::fem;
 ElementDofLayout::ElementDofLayout(
     int block_size, const std::vector<std::vector<std::set<int>>>& entity_dofs,
     const std::vector<int>& parent_map,
-    const std::vector<std::shared_ptr<const ElementDofLayout>> sub_dofmaps,
-    const mesh::CellType cell_type, const std::array<int, 4> entity_block_size)
+    const std::vector<std::shared_ptr<const ElementDofLayout>>& sub_dofmaps,
+    const mesh::CellType cell_type,
+    const Eigen::Array<int, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>&
+        base_permutations)
     : _block_size(block_size), _cell_type(cell_type), _parent_map(parent_map),
       _num_dofs(0), _entity_dofs(entity_dofs), _sub_dofmaps(sub_dofmaps),
-      _entity_block_size(entity_block_size)
+      _base_permutations(base_permutations)
 {
+  // TODO: Add size check on base_permutations. Size should be:
+  // number of rows = num_edges + 2*num_faces + 4*num_volumes
+  // number of columns = number of dofs
+
   // TODO: Handle global support dofs
 
   // Compute closure entities
@@ -37,11 +45,15 @@ ElementDofLayout::ElementDofLayout(
   {
     const int dim = entity.first[0];
     const int index = entity.first[1];
+    assert(dim < (int)entity_dofs.size());
+    assert(index < (int)entity_dofs[dim].size());
     int subdim = 0;
     for (auto sub_entity : entity.second)
     {
+      assert(subdim < (int)entity_dofs.size());
       for (auto sub_index : sub_entity)
       {
+        assert(sub_index < (int)entity_dofs[subdim].size());
         _entity_closure_dofs[dim][index].insert(
             entity_dofs[subdim][sub_index].begin(),
             entity_dofs[subdim][sub_index].end());
@@ -66,13 +78,32 @@ ElementDofLayout::ElementDofLayout(
       _num_dofs += entity_dofs[dim][entity_index].size();
     }
   }
+
+  // Check that base_permutations has the correct shape
+  int perm_count = 0;
+  const std::array<int, 4> perms_per_dim = {0, 1, 2, 4};
+  for (std::size_t dim = 0; dim < entity_dofs.size() - 1; ++dim)
+  {
+    assert(dim < perms_per_dim.size());
+    assert(dim < entity_dofs.size());
+    perm_count += perms_per_dim[dim] * entity_dofs[dim].size();
+  }
+  if (base_permutations.rows() != perm_count
+      or _base_permutations.cols() != _num_dofs)
+  {
+    throw std::runtime_error("Permutation array has wrong shape. Expected "
+                             + std::to_string(perm_count) + " x "
+                             + std::to_string(_num_dofs) + " but got "
+                             + std::to_string(_base_permutations.rows()) + " x "
+                             + std::to_string(_base_permutations.cols()) + ".");
+  }
 }
 //-----------------------------------------------------------------------------
-ElementDofLayout::ElementDofLayout(const ElementDofLayout& element_dof_layout,
-                                   bool reset_parent)
-    : ElementDofLayout(element_dof_layout)
+ElementDofLayout ElementDofLayout::copy() const
 {
-  _parent_map.clear();
+  ElementDofLayout layout(*this);
+  layout._parent_map.clear();
+  return layout;
 }
 //-----------------------------------------------------------------------------
 mesh::CellType ElementDofLayout::cell_type() const { return _cell_type; }
@@ -166,10 +197,83 @@ ElementDofLayout::sub_view(const std::vector<int>& component) const
 //-----------------------------------------------------------------------------
 int ElementDofLayout::block_size() const { return _block_size; }
 //-----------------------------------------------------------------------------
-int ElementDofLayout::entity_block_size(const int dim) const
+bool ElementDofLayout::is_view() const { return !_parent_map.empty(); }
+//-----------------------------------------------------------------------------
+int ElementDofLayout::degree() const
 {
-  return _entity_block_size[dim] * _block_size;
+  switch (_cell_type)
+  {
+  case mesh::CellType::interval:
+    if (num_dofs() == 2)
+      return 1;
+    else if (num_dofs() == 3)
+      return 2;
+    break;
+  case mesh::CellType::triangle:
+    if (num_dofs() == 3)
+      return 1;
+    else if (num_dofs() == 6)
+      return 2;
+    break;
+  case mesh::CellType::quadrilateral:
+    if (num_dofs() == 4)
+      return 1;
+    else if (num_dofs() == 9)
+      return 2;
+    break;
+  case mesh::CellType::tetrahedron:
+    if (num_dofs() == 4)
+      return 1;
+    else if (num_dofs() == 10)
+      return 2;
+    break;
+  case mesh::CellType::hexahedron:
+    if (num_dofs() == 8)
+      return 1;
+    else if (num_dofs() == 27)
+      return 2;
+    break;
+  default:
+    throw std::runtime_error("Unknown cell type");
+  }
+
+  throw std::runtime_error("Cannot determine degree");
 }
 //-----------------------------------------------------------------------------
-bool ElementDofLayout::is_view() const { return !_parent_map.empty(); }
+ElementDofLayout fem::geometry_layout(mesh::CellType cell, int num_nodes)
+{
+  // TODO: Fix for degree > 2
+
+  const int dim = mesh::cell_dim(cell);
+  int num_perms = 0;
+  const std::array<int, 4> p_per_dim = {0, 1, 2, 4};
+  for (int d = 1; d < dim; ++d)
+    num_perms += p_per_dim[d] * mesh::cell_num_entities(cell, d);
+
+  Eigen::Array<int, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor> perm(
+      num_perms, num_nodes);
+  for (int i = 0; i < perm.rows(); ++i)
+    for (int j = 0; j < perm.cols(); ++j)
+      perm(i, j) = j;
+
+  // entity_dofs = [[set([0]), set([1]), set([2])], 3 * [set()], [set()]]
+  int dof = 0;
+  std::vector<std::vector<std::set<int>>> entity_dofs(dim + 1);
+  for (int d = 0; d <= dim; ++d)
+  {
+    const int num_entities = mesh::cell_num_entities(cell, d);
+    if (dof < num_nodes)
+    {
+      for (int e = 0; e < num_entities; ++e)
+        entity_dofs[d].push_back({dof++});
+    }
+    else
+    {
+      for (int e = 0; e < num_entities; ++e)
+        entity_dofs[d].push_back({});
+    }
+  }
+
+  return fem::ElementDofLayout(1, entity_dofs, {}, {}, cell, perm);
+}
 //-----------------------------------------------------------------------------

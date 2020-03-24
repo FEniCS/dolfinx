@@ -45,7 +45,7 @@ public:
     Comm& operator=(const Comm& comm) = delete;
 
     /// Move assignment operator
-    Comm& operator=(Comm&& comm) = default;
+    Comm& operator=(Comm&& comm);
 
     /// Destructor (frees wrapped communicator)
     ~Comm();
@@ -210,8 +210,11 @@ public:
   compute_local_range(int process, std::int64_t N, int size);
 
   /// Return which process owns index (inverse of local_range)
-  static std::uint32_t index_owner(MPI_Comm comm, std::size_t index,
-                                   std::size_t N);
+  /// @param[in] size Number of MPI ranks
+  /// @param[in] index The index to determine owning rank
+  /// @param[in] N Total number of indices
+  /// @return The rank of the owning process
+  static std::uint32_t index_owner(int size, std::size_t index, std::size_t N);
 
   template <typename T>
   struct dependent_false : std::false_type

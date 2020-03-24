@@ -28,7 +28,7 @@ dolfinx::MPI::Comm::Comm(MPI_Comm comm)
 //-----------------------------------------------------------------------------
 dolfinx::MPI::Comm::Comm(const Comm& comm) : Comm(comm._comm)
 {
-  // Do nothing
+  // FIXME: should probably duplicate the comm here
 }
 //-----------------------------------------------------------------------------
 dolfinx::MPI::Comm::Comm(Comm&& comm)
@@ -51,6 +51,26 @@ dolfinx::MPI::Comm::~Comm()
   }
 }
 //-----------------------------------------------------------------------------
+dolfinx::MPI::Comm&
+dolfinx::MPI::Comm::operator=(dolfinx::MPI::Comm&& comm)
+{
+  // Free the currently held comm
+  if (this->_comm != MPI_COMM_NULL)
+  {
+    int err = MPI_Comm_free(&this->_comm);
+    if (err != MPI_SUCCESS)
+    {
+      std::cout << "Error when destroying communicator (MPI_Comm_free)."
+                << std::endl;
+    }
+  }
+  // Move comm from other object
+  this->_comm = comm._comm;
+  comm._comm = MPI_COMM_NULL;
+  // Return
+  return *this;
+}
+//-----------------------------------------------------------------------------
 MPI_Comm dolfinx::MPI::Comm::comm() const { return _comm; }
 //-----------------------------------------------------------------------------
 std::uint32_t dolfinx::MPI::rank(const MPI_Comm comm)
@@ -70,7 +90,7 @@ std::uint32_t dolfinx::MPI::size(const MPI_Comm comm)
 void dolfinx::MPI::barrier(const MPI_Comm comm) { MPI_Barrier(comm); }
 //-----------------------------------------------------------------------------
 std::size_t dolfinx::MPI::global_offset(const MPI_Comm comm, std::size_t range,
-                                       bool exclusive)
+                                        bool exclusive)
 {
   // Compute inclusive or exclusive partial reduction
   std::size_t offset = 0;
@@ -81,7 +101,7 @@ std::size_t dolfinx::MPI::global_offset(const MPI_Comm comm, std::size_t range,
 }
 //-----------------------------------------------------------------------------
 std::array<std::int64_t, 2> dolfinx::MPI::local_range(const MPI_Comm comm,
-                                                     std::int64_t N)
+                                                      std::int64_t N)
 {
   return local_range(comm, rank(comm), N);
 }
@@ -110,17 +130,14 @@ dolfinx::MPI::compute_local_range(int process, std::int64_t N, int size)
     return {{process * n + r, process * n + r + n}};
 }
 //-----------------------------------------------------------------------------
-std::uint32_t dolfinx::MPI::index_owner(const MPI_Comm comm, std::size_t index,
-                                       std::size_t N)
+std::uint32_t dolfinx::MPI::index_owner(int size, std::size_t index,
+                                        std::size_t N)
 {
   assert(index < N);
 
-  // Get number of processes
-  const std::uint32_t _size = size(comm);
-
   // Compute number of items per process and remainder
-  const std::size_t n = N / _size;
-  const std::size_t r = N % _size;
+  const std::size_t n = N / size;
+  const std::size_t r = N % size;
 
   // First r processes own n + 1 indices
   if (index < r * (n + 1))
@@ -197,12 +214,11 @@ std::vector<int> dolfinx::MPI::neighbors(MPI_Comm neighbor_comm)
   MPI_Dist_graph_neighbors_count(neighbor_comm, &indegree, &outdegree,
                                  &weighted);
   assert(indegree == outdegree);
-  std::vector<int> neighbors(indegree), neighbors1(indegree), weights(indegree),
-      weights1(indegree);
+  std::vector<int> neighbors(indegree), neighbors1(indegree);
 
   MPI_Dist_graph_neighbors(neighbor_comm, indegree, neighbors.data(),
-                           weights.data(), outdegree, neighbors1.data(),
-                           weights1.data());
+                           MPI_UNWEIGHTED, outdegree, neighbors1.data(),
+                           MPI_UNWEIGHTED);
   return neighbors;
 }
 //-----------------------------------------------------------------------------

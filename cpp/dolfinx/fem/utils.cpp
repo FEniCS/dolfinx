@@ -9,20 +9,23 @@
 #include <array>
 #include <dolfinx/common/IndexMap.h>
 #include <dolfinx/common/Timer.h>
+#include <dolfinx/common/log.h>
 #include <dolfinx/common/types.h>
 #include <dolfinx/fem/DofMap.h>
 #include <dolfinx/fem/DofMapBuilder.h>
 #include <dolfinx/fem/Form.h>
 #include <dolfinx/fem/SparsityPatternBuilder.h>
+#include <dolfinx/function/Constant.h>
 #include <dolfinx/function/Function.h>
 #include <dolfinx/function/FunctionSpace.h>
 #include <dolfinx/la/PETScMatrix.h>
 #include <dolfinx/la/PETScVector.h>
 #include <dolfinx/la/SparsityPattern.h>
 #include <dolfinx/mesh/Mesh.h>
-#include <dolfinx/mesh/MeshEntity.h>
-#include <dolfinx/mesh/MeshIterator.h>
+#include <dolfinx/mesh/Topology.h>
+#include <dolfinx/mesh/TopologyComputation.h>
 #include <memory>
+#include <petscsys.h>
 #include <string>
 #include <ufc.h>
 
@@ -30,6 +33,30 @@ using namespace dolfinx;
 
 namespace
 {
+//-----------------------------------------------------------------------------
+int get_num_permutations(const mesh::CellType cell_type)
+{
+  // In general, this will return num_edges + 2*num_faces + 4*num_volumes
+  switch (cell_type)
+  {
+  case (mesh::CellType::point):
+    return 0;
+  case (mesh::CellType::interval):
+    return 0;
+  case (mesh::CellType::triangle):
+    return 3;
+  case (mesh::CellType::tetrahedron):
+    return 14;
+  case (mesh::CellType::quadrilateral):
+    return 4;
+  case (mesh::CellType::hexahedron):
+    return 24;
+  default:
+    LOG(WARNING) << "Dof permutations are not defined for this cell type. High "
+                    "order elements may be incorrect.";
+    return 0;
+  }
+}
 // Try to figure out block size. FIXME - replace elsewhere
 int analyse_block_structure(
     const std::vector<std::shared_ptr<const fem::ElementDofLayout>>&
@@ -146,6 +173,7 @@ la::SparsityPattern dolfinx::fem::create_sparsity_pattern(const Form& a)
   {
 
     mesh.create_entities(mesh.topology().dim() - 1);
+    mesh.create_connectivity(mesh.topology().dim() - 1, mesh.topology().dim());
     SparsityPatternBuilder::interior_facets(pattern, mesh.topology(),
                                             {{dofmaps[0], dofmaps[1]}});
   }
@@ -153,6 +181,7 @@ la::SparsityPattern dolfinx::fem::create_sparsity_pattern(const Form& a)
   if (a.integrals().num_integrals(fem::FormIntegrals::Type::exterior_facet) > 0)
   {
     mesh.create_entities(mesh.topology().dim() - 1);
+    mesh.create_connectivity(mesh.topology().dim() - 1, mesh.topology().dim());
     SparsityPatternBuilder::exterior_facets(pattern, mesh.topology(),
                                             {{dofmaps[0], dofmaps[1]}});
   }
@@ -163,8 +192,6 @@ la::SparsityPattern dolfinx::fem::create_sparsity_pattern(const Form& a)
 //-----------------------------------------------------------------------------
 la::PETScMatrix dolfinx::fem::create_matrix(const Form& a)
 {
-  bool keep_diagonal = false;
-
   // Build sparsitypattern
   la::SparsityPattern pattern = fem::create_sparsity_pattern(a);
 
@@ -175,25 +202,6 @@ la::PETScMatrix dolfinx::fem::create_matrix(const Form& a)
   common::Timer t1("Init tensor");
   la::PETScMatrix A(a.mesh()->mpi_comm(), pattern);
   t1.stop();
-
-  // FIXME: Check if there is a PETSc function for this
-  // Insert zeros on the diagonal as diagonal entries may be optimised
-  // away, e.g. when calling PETScMatrix::apply.
-  if (keep_diagonal)
-  {
-    // Loop over rows and insert 0.0 on the diagonal
-    const PetscScalar block = 0.0;
-    std::array<PetscInt, 2> row_range;
-    MatGetOwnershipRange(A.mat(), &row_range[0], &row_range[1]);
-    const std::int64_t range = std::min(row_range[1], (PetscInt)A.size()[1]);
-    for (std::int64_t i = row_range[0]; i < range; i++)
-    {
-      const PetscInt _i = i;
-      A.set(&block, 1, &_i, 1, &_i);
-    }
-
-    A.apply(la::PETScMatrix::AssemblyType::FLUSH);
-  }
 
   return A;
 }
@@ -247,6 +255,7 @@ la::PETScMatrix fem::create_matrix_block(
       {
         patterns[row].push_back(
             std::make_unique<la::SparsityPattern>(mesh.mpi_comm(), index_maps));
+        patterns[row].back()->assemble();
       }
     }
   }
@@ -275,10 +284,11 @@ la::PETScMatrix fem::create_matrix_block(
     {
       auto map = V[d][i]->dofmap()->index_map;
       const std::vector<std::int64_t> global = map->global_indices(false);
-      for (auto global_index : global)
+      for (std::int64_t global_index : global)
       {
-        std::int64_t index = get_global_index(index_maps[d], i, global_index);
-        _maps[d].push_back(index);
+        const std::int64_t offset
+            = get_global_offset(index_maps[d], i, global_index);
+        _maps[d].push_back(global_index + offset);
       }
     }
   }
@@ -349,7 +359,7 @@ fem::create_vector_block(const std::vector<const common::IndexMap*>& maps)
   std::vector<std::int64_t> ghosts;
   for (std::size_t i = 0; i < maps.size(); ++i)
   {
-    const int bs = maps[i]->block_size;
+    const int bs = maps[i]->block_size();
     local_size += maps[i]->size_local() * bs;
 
     const Eigen::Array<std::int64_t, Eigen::Dynamic, 1>& field_ghosts
@@ -358,9 +368,9 @@ fem::create_vector_block(const std::vector<const common::IndexMap*>& maps)
     {
       for (int k = 0; k < bs; ++k)
       {
-        std::int64_t global_index
-            = get_global_index(maps, i, bs * field_ghosts[j] + k);
-        ghosts.push_back(global_index);
+        const std::int64_t offset
+            = get_global_offset(maps, i, bs * field_ghosts[j] + k);
+        ghosts.push_back(bs * field_ghosts[j] + k + offset);
       }
     }
   }
@@ -398,15 +408,15 @@ fem::create_vector_nest(const std::vector<const common::IndexMap*>& maps)
   return la::PETScVector(y, false);
 }
 //-----------------------------------------------------------------------------
-std::int64_t
-dolfinx::fem::get_global_index(const std::vector<const common::IndexMap*>& maps,
-                               const int field, const int index)
+std::int64_t dolfinx::fem::get_global_offset(
+    const std::vector<const common::IndexMap*>& maps, const int field,
+    const std::int64_t index)
 {
   // FIXME: handle/check block size > 1
 
   // Get process that owns global index
-  const int bs = maps[field]->block_size;
-  int owner = maps[field]->owner(index / bs);
+  const int bs = maps[field]->block_size();
+  const int owner = maps[field]->owner(index / bs);
 
   // Offset from lower rank processes
   std::size_t offset = 0;
@@ -415,7 +425,7 @@ dolfinx::fem::get_global_index(const std::vector<const common::IndexMap*>& maps,
     for (std::size_t j = 0; j < maps.size(); ++j)
     {
       if ((int)j != field)
-        offset += maps[j]->_all_ranges[owner] * maps[j]->block_size;
+        offset += maps[j]->_all_ranges[owner] * maps[j]->block_size();
     }
   }
 
@@ -423,10 +433,10 @@ dolfinx::fem::get_global_index(const std::vector<const common::IndexMap*>& maps,
   for (int i = 0; i < field; ++i)
   {
     offset += (maps[i]->_all_ranges[owner + 1] - maps[i]->_all_ranges[owner])
-              * maps[i]->block_size;
+              * maps[i]->block_size();
   }
 
-  return index + offset;
+  return offset;
 }
 //-----------------------------------------------------------------------------
 fem::ElementDofLayout
@@ -438,6 +448,8 @@ fem::create_element_dof_layout(const ufc_dofmap& dofmap,
   std::array<int, 4> num_entity_dofs;
   std::copy(dofmap.num_entity_dofs, dofmap.num_entity_dofs + 4,
             num_entity_dofs.data());
+
+  int dof_count = 0;
 
   // Fill entity dof indices
   const int tdim = mesh::cell_dim(cell_type);
@@ -452,6 +464,7 @@ fem::create_element_dof_layout(const ufc_dofmap& dofmap,
       work_array.resize(num_entity_dofs[dim]);
       dofmap.tabulate_entity_dofs(work_array.data(), dim, i);
       entity_dofs[dim][i] = std::set<int>(work_array.begin(), work_array.end());
+      dof_count += num_entity_dofs[dim];
     }
   }
 
@@ -488,31 +501,41 @@ fem::create_element_dof_layout(const ufc_dofmap& dofmap,
   // but keep for now to mimic existing code
   const int block_size = analyse_block_structure(sub_dofmaps);
 
-  std::array<int, 4> entity_block_size;
-  for (int i = 0; i < 4; ++i)
-    entity_block_size[i] = dofmap.entity_block_size[i];
-
+  const int num_base_permutations = get_num_permutations(cell_type);
+  const Eigen::Map<
+      const Eigen::Array<int, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>>
+      base_permutations(dofmap.base_permutations, num_base_permutations,
+                        dof_count);
   return fem::ElementDofLayout(block_size, entity_dofs, parent_map, sub_dofmaps,
-                               cell_type, entity_block_size);
+                               cell_type, base_permutations);
 }
 //-----------------------------------------------------------------------------
-fem::DofMap fem::create_dofmap(const ufc_dofmap& ufc_dofmap,
-                               const mesh::Mesh& mesh)
+fem::DofMap fem::create_dofmap(MPI_Comm comm, const ufc_dofmap& ufc_dofmap,
+                               mesh::Topology& topology)
 {
   auto element_dof_layout = std::make_shared<ElementDofLayout>(
-      create_element_dof_layout(ufc_dofmap, mesh.cell_type()));
+      create_element_dof_layout(ufc_dofmap, topology.cell_type()));
   assert(element_dof_layout);
 
   // Create required mesh entities
-  const int D = mesh.topology().dim();
-  for (int d = 0; d <= D; ++d)
+  const int D = topology.dim();
+  for (int d = 0; d < D; ++d)
   {
     if (element_dof_layout->num_entity_dofs(d) > 0)
-      mesh.create_entities(d);
+    {
+      // Create local entities
+      const auto [cell_entity, entity_vertex, index_map]
+          = mesh::TopologyComputation::compute_entities(comm, topology, d);
+      if (cell_entity)
+        topology.set_connectivity(cell_entity, topology.dim(), d);
+      if (entity_vertex)
+        topology.set_connectivity(entity_vertex, d, 0);
+      if (index_map)
+        topology.set_index_map(d, index_map);
+    }
   }
 
-  return DofMapBuilder::build(mesh.mpi_comm(), mesh.topology(),
-                              mesh.cell_type(), element_dof_layout);
+  return DofMapBuilder::build(comm, topology, element_dof_layout);
 }
 //-----------------------------------------------------------------------------
 std::vector<std::tuple<int, std::string, std::shared_ptr<function::Function>>>
@@ -524,8 +547,7 @@ fem::get_coeffs_from_ufc_form(const ufc_form& ufc_form)
   for (int i = 0; i < ufc_form.num_coefficients; ++i)
   {
     coeffs.push_back(
-        std::tuple<int, std::string, std::shared_ptr<function::Function>>(
-            ufc_form.original_coefficient_position(i), names[i], nullptr));
+        {ufc_form.original_coefficient_position(i), names[i], nullptr});
   }
   return coeffs;
 }
@@ -537,11 +559,7 @@ fem::get_constants_from_ufc_form(const ufc_form& ufc_form)
       constants;
   const char** names = ufc_form.constant_name_map();
   for (int i = 0; i < ufc_form.num_constants; ++i)
-  {
-    constants.push_back(
-        std::pair<std::string, std::shared_ptr<const function::Constant>>(
-            names[i], nullptr));
-  }
+    constants.push_back({names[i], nullptr});
   return constants;
 }
 //-----------------------------------------------------------------------------
@@ -569,7 +587,6 @@ fem::Form fem::create_form(
     assert(spaces[i]->element());
     std::unique_ptr<ufc_finite_element, decltype(free)*> ufc_element(
         ufc_form.create_finite_element(i), free);
-
     assert(ufc_element);
     if (std::string(ufc_element->signature)
         != spaces[i]->element()->signature())
@@ -581,6 +598,7 @@ fem::Form fem::create_form(
 
   // Get list of integral IDs, and load tabulate tensor into memory for each
   FormIntegrals integrals;
+
   std::vector<int> cell_integral_ids(ufc_form.num_cell_integrals);
   ufc_form.get_cell_integral_ids(cell_integral_ids.data());
   for (int id : cell_integral_ids)
@@ -590,6 +608,19 @@ fem::Form fem::create_form(
     integrals.set_tabulate_tensor(FormIntegrals::Type::cell, id,
                                   cell_integral->tabulate_tensor);
     std::free(cell_integral);
+  }
+
+  // FIXME: Can this be handled better?
+  // FIXME: Handle forms with no space
+  if (ufc_form.num_exterior_facet_integrals > 0
+      or ufc_form.num_interior_facet_integrals > 0)
+  {
+    if (!spaces.empty())
+    {
+      auto mesh = spaces[0]->mesh();
+      const int tdim = mesh->topology().dim();
+      spaces[0]->mesh()->create_entities(tdim - 1);
+    }
   }
 
   std::vector<int> exterior_facet_integral_ids(
@@ -615,6 +646,7 @@ fem::Form fem::create_form(
     assert(interior_facet_integral);
     integrals.set_tabulate_tensor(FormIntegrals::Type::interior_facet, id,
                                   interior_facet_integral->tabulate_tensor);
+
     std::free(interior_facet_integral);
   }
 
@@ -629,8 +661,8 @@ fem::Form fem::create_form(
 
   // Create CoordinateElement
   ufc_coordinate_mapping* cmap = ufc_form.create_coordinate_mapping();
-  std::shared_ptr<const fem::CoordinateElement> coord_mapping
-      = fem::get_cmap_from_ufc_cmap(*cmap);
+  auto coord_mapping = std::make_shared<const fem::CoordinateElement>(
+      create_coordinate_map(*cmap));
   std::free(cmap);
 
   return fem::Form(spaces, integrals,
@@ -638,8 +670,8 @@ fem::Form fem::create_form(
                    fem::get_constants_from_ufc_form(ufc_form), coord_mapping);
 }
 //-----------------------------------------------------------------------------
-std::shared_ptr<const fem::CoordinateElement>
-fem::get_cmap_from_ufc_cmap(const ufc_coordinate_mapping& ufc_cmap)
+fem::CoordinateElement
+fem::create_coordinate_map(const ufc_coordinate_mapping& ufc_cmap)
 {
   static const std::map<ufc_shape, mesh::CellType> ufc_to_cell
       = {{vertex, mesh::CellType::point},
@@ -648,29 +680,29 @@ fem::get_cmap_from_ufc_cmap(const ufc_coordinate_mapping& ufc_cmap)
          {tetrahedron, mesh::CellType::tetrahedron},
          {quadrilateral, mesh::CellType::quadrilateral},
          {hexahedron, mesh::CellType::hexahedron}};
-  const auto it = ufc_to_cell.find(ufc_cmap.cell_shape);
-  assert(it != ufc_to_cell.end());
 
-  mesh::CellType cell_type = it->second;
+  const mesh::CellType cell_type = ufc_to_cell.at(ufc_cmap.cell_shape);
   assert(ufc_cmap.topological_dimension == mesh::cell_dim(cell_type));
 
-  return std::make_shared<fem::CoordinateElement>(
+  return fem::CoordinateElement(
       cell_type, ufc_cmap.topological_dimension, ufc_cmap.geometric_dimension,
       ufc_cmap.signature, ufc_cmap.compute_physical_coordinates,
       ufc_cmap.compute_reference_geometry);
 }
 //-----------------------------------------------------------------------------
 std::shared_ptr<function::FunctionSpace>
-fem::create_functionspace(ufc_function_space* (*fptr)(void),
+fem::create_functionspace(ufc_function_space* (*fptr)(const char*),
+                          const std::string function_name,
                           std::shared_ptr<mesh::Mesh> mesh)
 {
-  ufc_function_space* space = fptr();
+  ufc_function_space* space = fptr(function_name.c_str());
   ufc_dofmap* ufc_map = space->create_dofmap();
   ufc_finite_element* ufc_element = space->create_element();
   std::shared_ptr<function::FunctionSpace> V
       = std::make_shared<function::FunctionSpace>(
           mesh, std::make_shared<fem::FiniteElement>(*ufc_element),
-          std::make_shared<fem::DofMap>(fem::create_dofmap(*ufc_map, *mesh)));
+          std::make_shared<fem::DofMap>(fem::create_dofmap(
+              mesh->mpi_comm(), *ufc_map, mesh->topology())));
   std::free(ufc_element);
   std::free(ufc_map);
   std::free(space);
@@ -682,14 +714,14 @@ fem::pack_coefficients(const fem::Form& form)
 {
   // Get form coefficient offsets amd dofmaps
   const fem::FormCoefficients& coefficients = form.coefficients();
-  const std::vector<int> offsets = coefficients.offsets();
+  const std::vector<int>& offsets = coefficients.offsets();
   std::vector<const fem::DofMap*> dofmaps(coefficients.size());
   for (int i = 0; i < coefficients.size(); ++i)
     dofmaps[i] = coefficients.get(i)->function_space()->dofmap().get();
 
   // Get mesh
   assert(form.mesh());
-  const mesh::Mesh mesh = *form.mesh();
+  const mesh::Mesh& mesh = *form.mesh();
   const int tdim = mesh.topology().dim();
 
   // Unwrap PETSc vectors
@@ -703,18 +735,23 @@ fem::pack_coefficients(const fem::Form& form)
     VecGetArrayRead(x_local[i], &v[i]);
   }
 
+  const int num_cells = mesh.topology().index_map(tdim)->size_local()
+                        + mesh.topology().index_map(tdim)->num_ghosts();
+
   // Copy data into coefficient array
   Eigen::Array<PetscScalar, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor> c(
-      mesh.num_entities(tdim), offsets.back());
-  for (int cell = 0; cell < mesh.num_entities(tdim); ++cell)
+      num_cells, offsets.back());
+  if (coefficients.size() > 0)
   {
-    auto c_cell = c.row(cell);
-    for (std::size_t coeff = 0; coeff < dofmaps.size(); ++coeff)
+    for (int cell = 0; cell < num_cells; ++cell)
     {
-      auto dofs = dofmaps[coeff]->cell_dofs(cell);
-      const PetscScalar* _v = v[coeff];
-      for (Eigen::Index k = 0; k < dofs.size(); ++k)
-        c_cell(k + offsets[coeff]) = _v[dofs[k]];
+      for (std::size_t coeff = 0; coeff < dofmaps.size(); ++coeff)
+      {
+        auto dofs = dofmaps[coeff]->cell_dofs(cell);
+        const PetscScalar* _v = v[coeff];
+        for (Eigen::Index k = 0; k < dofs.size(); ++k)
+          c(cell, k + offsets[coeff]) = _v[dofs[k]];
+      }
     }
   }
 
@@ -726,5 +763,23 @@ fem::pack_coefficients(const fem::Form& form)
   }
 
   return c;
+}
+//-----------------------------------------------------------------------------
+Eigen::Array<PetscScalar, Eigen::Dynamic, 1>
+fem::pack_constants(const fem::Form& form)
+{
+  const std::vector<
+      std::pair<std::string, std::shared_ptr<const function::Constant>>>
+      constants = form.constants();
+  std::vector<PetscScalar> constant_values;
+  for (auto& constant : constants)
+  {
+    const std::vector<PetscScalar>& array = constant.second->value;
+    constant_values.insert(constant_values.end(), array.data(),
+                           array.data() + array.size());
+  }
+
+  return Eigen::Map<const Eigen::Array<PetscScalar, Eigen::Dynamic, 1>>(
+      constant_values.data(), constant_values.size(), 1);
 }
 //-----------------------------------------------------------------------------

@@ -31,18 +31,16 @@ public:
   /// @param[in] geometric_dimension
   /// @param[in] signature
   /// @param[in] compute_physical_coordinates Push-forward function from
-  ///                                         reference to physical
-  ///                                         coordinates
+  ///   reference to physical coordinates
   /// @param[in] compute_reference_geometry Pull-back function from
-  ///                                       physical coordinates to
-  ///                                       reference coordinates
+  ///   physical coordinates to reference coordinates
   CoordinateElement(
       mesh::CellType cell_type, int topological_dimension,
       int geometric_dimension, std::string signature,
       std::function<void(double*, int, const double*, const double*)>
           compute_physical_coordinates,
       std::function<void(double*, double*, double*, double*, int, const double*,
-                         const double*, int)>
+                         const double*)>
           compute_reference_geometry);
 
   /// Destructor
@@ -101,7 +99,7 @@ private:
       _compute_physical_coordinates;
 
   std::function<void(double*, double*, double*, double*, int, const double*,
-                     const double*, int)>
+                     const double*)>
       _compute_reference_geometry;
 };
 } // namespace fem

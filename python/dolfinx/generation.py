@@ -11,9 +11,10 @@ import numpy
 
 from dolfinx import cpp, fem
 
-__all__ = ["IntervalMesh", "UnitIntervalMesh",
-           "RectangleMesh", "UnitSquareMesh",
-           "BoxMesh", "UnitCubeMesh"]
+__all__ = [
+    "IntervalMesh", "UnitIntervalMesh", "RectangleMesh", "UnitSquareMesh",
+    "BoxMesh", "UnitCubeMesh"
+]
 
 
 def IntervalMesh(comm,
@@ -39,7 +40,9 @@ def IntervalMesh(comm,
     return cpp.generation.IntervalMesh.create(comm, nx, points, ghost_mode)
 
 
-def UnitIntervalMesh(comm, nx, ghost_mode=cpp.mesh.GhostMode.none):
+def UnitIntervalMesh(comm,
+                     nx,
+                     ghost_mode=cpp.mesh.GhostMode.none):
     """Create a mesh on the unit interval with coordinate mapping attached
 
     Parameters
@@ -79,7 +82,8 @@ def RectangleMesh(comm,
     Coordinate mapping is not attached
 
     """
-    return cpp.generation.RectangleMesh.create(comm, points, n, cell_type, ghost_mode, diagonal)
+    return cpp.generation.RectangleMesh.create(comm, points, n, cell_type,
+                                               ghost_mode, diagonal)
 
 
 def UnitSquareMesh(comm,
@@ -102,9 +106,10 @@ def UnitSquareMesh(comm,
         Direction of diagonal
 
     """
-    mesh = RectangleMesh(comm, [numpy.array([0.0, 0.0, 0.0]),
-                                numpy.array([1.0, 1.0, 0.0])],
-                         [nx, ny], cell_type, ghost_mode, diagonal)
+    mesh = RectangleMesh(
+        comm, [numpy.array([0.0, 0.0, 0.0]),
+               numpy.array([1.0, 1.0, 0.0])], [nx, ny], cell_type, ghost_mode,
+        diagonal)
     mesh.geometry.coord_mapping = fem.create_coordinate_map(mesh)
     return mesh
 
@@ -129,7 +134,8 @@ def BoxMesh(comm,
     ----
     Coordinate mapping is not attached
     """
-    return cpp.generation.BoxMesh.create(comm, points, n, cell_type, ghost_mode)
+    return cpp.generation.BoxMesh.create(comm, points, n, cell_type,
+                                         ghost_mode)
 
 
 def UnitCubeMesh(comm,
@@ -152,8 +158,9 @@ def UnitCubeMesh(comm,
         Number of cells in "z" direction
 
     """
-    mesh = BoxMesh(comm, [numpy.array([0.0, 0.0, 0.0]),
-                          numpy.array([1.0, 1.0, 1.0])],
-                   [nx, ny, nz], cell_type, ghost_mode)
+    mesh = BoxMesh(
+        comm, [numpy.array([0.0, 0.0, 0.0]),
+               numpy.array([1.0, 1.0, 1.0])], [nx, ny, nz], cell_type,
+        ghost_mode)
     mesh.geometry.coord_mapping = fem.create_coordinate_map(mesh)
     return mesh

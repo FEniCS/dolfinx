@@ -9,18 +9,18 @@ parameters:
 install-python-components: &install-python-components
   name: Install FEniCS Python components
   command: |
-            pip3 install git+https://github.com/FEniCS/fiat.git --upgrade
-            pip3 install git+https://github.com/FEniCS/ufl.git --upgrade
-            pip3 install git+https://github.com/FEniCS/ffcx.git --upgrade
-            rm -rf /usr/local/include/dolfin /usr/local/include/dolfin.h
+    pip3 install git+https://github.com/FEniCS/fiat.git --upgrade
+    pip3 install git+https://github.com/FEniCS/ufl.git --upgrade
+    pip3 install git+https://github.com/FEniCS/ffcx.git --upgrade
+    rm -rf /usr/local/include/dolfin /usr/local/include/dolfin.h
 
 flake8-python-code: &flake8-python-code
   name: Flake8 checks on Python code
   command: |
-            python3 -m flake8 python/dolfin
-            python3 -m flake8 python/dolfin_utils
-            python3 -m flake8 python/demo
-            python3 -m flake8 python/test
+    python3 -m flake8 python/dolfinx
+    python3 -m flake8 python/dolfinx_utils
+    python3 -m flake8 python/demo
+    python3 -m flake8 python/test
 
 build-documentation-cpp: &build-documentation-cpp
   name: Build documentation (C++)
@@ -71,7 +71,7 @@ build-documentation-python: &build-documentation-python
 unit-tests-python: &unit-tests-python
   name: Run unit tests (Python, serial)
   environment:
-      DOLFINX_JIT_CFLAGS: -g0 -O0
+    DOLFINX_JIT_CFLAGS: -g0 -O0
   command: |
     mkdir -p ~/junit
     cd python/test/unit
@@ -80,7 +80,7 @@ unit-tests-python: &unit-tests-python
 unit-tests-python-mpi: &unit-tests-python-mpi
   name: Run unit tests (Python, MPI)
   environment:
-      DOLFINX_JIT_CFLAGS: -g0 -O0
+    DOLFINX_JIT_CFLAGS: -g0 -O0
   command: |
     cd python/test/unit
     mpirun -np 3 python3 -m pytest .
@@ -88,7 +88,7 @@ unit-tests-python-mpi: &unit-tests-python-mpi
 demos-python: &demos-python
   name: Run demos (Python, serial)
   environment:
-      DOLFINX_JIT_CFLAGS: -g0 -O2
+    DOLFINX_JIT_CFLAGS: -g0 -O2
   command: |
     mkdir -p ~/junit
     cd python/demo
@@ -98,12 +98,11 @@ demos-python: &demos-python
 demos-python-mpi: &demos-python-mpi
   name: Run demos (Python, MPI)
   environment:
-      DOLFINX_JIT_CFLAGS: -g0 -O2
+    DOLFINX_JIT_CFLAGS: -g0 -O2
   command: |
     cd python/demo
     python3 ./generate-demo-files.py
     python3 -m pytest -n=2 -v -m mpi test.py --num-proc=3
-
 
 commands:
   build-and-push-target:
@@ -126,13 +125,13 @@ commands:
           --build-arg PETSC_SLEPC_OPTFLAGS='-O3'
           --target << parameters.docker-target >>
           --file << parameters.dockerfile >> << parameters.extra-args >>
-          --tag quay.io/fenicsproject/dolfinx:<< parameters.docker-target >> . &&
-          sudo docker push quay.io/fenicsproject/dolfinx:<< parameters.docker-target >>
+          --tag dolfinx/<< parameters.docker-target >>:latest . &&
+          sudo docker push dolfinx/<< parameters.docker-target >>:latest
 
 jobs:
   build-real:
     docker:
-      - image: quay.io/fenicsproject/dolfinx:dev-env-real
+      - image: dolfinx/dev-env-real:latest
     environment:
       MPLBACKEND: "agg"
       DEBIAN_FRONTEND: "noninteractive"
@@ -161,13 +160,13 @@ jobs:
             - python/doc/build/html/
             - cpp/doc/html/
       - store_test_results:
-         path: ~/junit
+          path: ~/junit
       - store_artifacts:
-         path: ~/junit
+          path: ~/junit
 
   build-complex:
     docker:
-      - image: quay.io/fenicsproject/dolfinx:dev-env-complex
+      - image: dolfinx/dev-env-complex:latest
     environment:
       MPLBACKEND: "agg"
       DEBIAN_FRONTEND: "noninteractive"
@@ -190,9 +189,9 @@ jobs:
       - run: *demos-python
       - run: *demos-python-mpi
       - store_test_results:
-         path: ~/junit
+          path: ~/junit
       - store_artifacts:
-         path: ~/junit
+          path: ~/junit
 
   pushdoc:
     docker:
@@ -227,8 +226,8 @@ jobs:
             sudo apt-get -y install docker-ce docker-ce-cli containerd.io
             sudo docker run hello-world
       - run:
-          name: Login to quay.io
-          command: echo ${QUAYIO_TOKEN} | sudo docker login -u ${QUAYIO_USERNAME} --password-stdin quay.io
+          name: Login to Dockerhub
+          command: echo ${DH_TOKEN} | sudo docker login -u ${DH_USERNAME} --password-stdin
       - build-and-push-target:
           docker-target: "base"
       - build-and-push-target:
@@ -276,7 +275,7 @@ workflows:
                 - master
     jobs:
       - build-and-push-complete-build-docker-images:
-          context: quay.io
+          context: dockerhub
 
   build-and-push-docker-images:
     when: << pipeline.parameters.build-and-push-docker-images >>
@@ -286,4 +285,4 @@ workflows:
             branches:
               only:
                 - master
-          context: quay.io
+          context: dockerhub

@@ -17,8 +17,8 @@ import dolfinx
 from dolfinx import (MPI, BoxMesh, DirichletBC, Function, VectorFunctionSpace,
                      cpp)
 from dolfinx.cpp.mesh import CellType
-from dolfinx.fem import (apply_lifting, assemble_matrix, assemble_vector, set_bc,
-                         locate_dofs_geometrical)
+from dolfinx.fem import (apply_lifting, assemble_matrix, assemble_vector,
+                         locate_dofs_geometrical, set_bc)
 from dolfinx.io import XDMFFile
 from dolfinx.la import VectorSpaceBasis
 from ufl import (Identity, SpatialCoordinate, TestFunction, TrialFunction,
@@ -37,9 +37,8 @@ def build_nullspace(V):
         basis = [np.asarray(x) for x in vec_local]
 
         # Build translational null space basis
-        V.sub(0).dofmap.set(basis[0], 1.0)
-        V.sub(1).dofmap.set(basis[1], 1.0)
-        V.sub(2).dofmap.set(basis[2], 1.0)
+        for i in range(3):
+            basis[i][V.sub(i).dofmap.list.array()] = 1.0
 
         # Build rotational null space basis
         V.sub(0).set_x(basis[3], -1.0, 1)

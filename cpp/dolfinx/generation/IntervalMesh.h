@@ -27,10 +27,7 @@ public:
   /// @param[in] n The number of cells.
   /// @param[in] x The end points
   /// @param[in] ghost_mode Ghosting mode
-  /// @code{.cpp}
-  ///         // Create a mesh of 25 cells in the interval [-1,1]
-  ///         IntervalMesh mesh(MPI_COMM_WORLD, 25, {-1.0, 1.0});
-  /// @endcode
+  /// @return A mesh
   static mesh::Mesh create(MPI_Comm comm, std::size_t n,
                            std::array<double, 2> x,
                            const mesh::GhostMode ghost_mode);

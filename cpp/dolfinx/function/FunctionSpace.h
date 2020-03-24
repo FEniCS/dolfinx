@@ -9,7 +9,6 @@
 #include <Eigen/Dense>
 #include <cstddef>
 #include <dolfinx/fem/FiniteElement.h>
-#include <dolfinx/mesh/MeshEntity.h>
 #include <functional>
 #include <map>
 #include <memory>
@@ -138,14 +137,6 @@ public:
   /// @return The new function space and a map rom new to old dofs
   std::pair<std::shared_ptr<FunctionSpace>, std::vector<std::int32_t>>
   collapse() const;
-
-  /// Check if function space has given cell
-  /// @param[in] cell A cell
-  /// @return True if the function space has the given cell
-  bool has_cell(const mesh::MeshEntity& cell) const
-  {
-    return &cell.mesh() == _mesh.get();
-  }
 
   /// Check if function space has given element
   /// @param[in] element The finite element
