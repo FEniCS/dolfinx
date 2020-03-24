@@ -474,7 +474,9 @@ std::vector<std::int64_t> get_global_indices(
 } // namespace
 
 //-----------------------------------------------------------------------------
-fem::DofMap
+std::tuple<std::shared_ptr<const ElementDofLayout>,
+           std::shared_ptr<const common::IndexMap>,
+           graph::AdjacencyList<std::int32_t>>
 DofMapBuilder::build(MPI_Comm comm, const mesh::Topology& topology,
                      std::shared_ptr<const ElementDofLayout> element_dof_layout)
 {
@@ -484,13 +486,15 @@ DofMapBuilder::build(MPI_Comm comm, const mesh::Topology& topology,
   {
     auto [index_map, dofmap]
         = DofMapBuilder::build(comm, topology, *element_dof_layout, 1);
-    return fem::DofMap(element_dof_layout, index_map, std::move(dofmap));
+    return {element_dof_layout, index_map, std::move(dofmap)};
+    // return fem::DofMap(element_dof_layout, index_map, std::move(dofmap));
   }
   else
   {
     auto [index_map, dofmap] = DofMapBuilder::build(
         comm, topology, *element_dof_layout->sub_dofmap({0}), bs);
-    return fem::DofMap(element_dof_layout, index_map, std::move(dofmap));
+    return {element_dof_layout, index_map, std::move(dofmap)};
+    // return fem::DofMap(element_dof_layout, index_map, std::move(dofmap));
   }
 }
 //-----------------------------------------------------------------------------

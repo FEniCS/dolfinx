@@ -38,7 +38,9 @@ class DofMapBuilder
 
 public:
   /// Build dofmap
-  static DofMap
+  static std::tuple<std::shared_ptr<const ElementDofLayout>,
+                    std::shared_ptr<const common::IndexMap>,
+                    graph::AdjacencyList<std::int32_t>>
   build(MPI_Comm comm, const mesh::Topology& topology,
         std::shared_ptr<const ElementDofLayout> element_dof_layout);
 
