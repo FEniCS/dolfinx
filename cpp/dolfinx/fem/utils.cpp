@@ -703,7 +703,6 @@ fem::create_functionspace(ufc_function_space* (*fptr)(const char*),
           mesh, std::make_shared<fem::FiniteElement>(*ufc_element),
           std::make_shared<fem::DofMap>(fem::create_dofmap(
               mesh->mpi_comm(), *ufc_map, mesh->topology())));
-  std::cout << "Post create" << std::endl;
   std::free(ufc_element);
   std::free(ufc_map);
   std::free(space);

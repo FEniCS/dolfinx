@@ -213,8 +213,8 @@ void fem(py::module& m)
       "build_dofmap",
       [](const MPICommWrapper comm, const dolfinx::mesh::Topology& topology,
          const dolfinx::fem::ElementDofLayout& element_dof_layout, int bs) {
-        // See https://github.com/pybind/pybind11/issues/1138 on why we need to
-        // convert from a std::unique_ptr to a std::shard_ptr
+        // See https://github.com/pybind/pybind11/issues/1138 on why we need
+        // to convert from a std::unique_ptr to a std::shard_ptr
         auto [map, dofmap] = dolfinx::fem::DofMapBuilder::build(
             comm.get(), topology, element_dof_layout, bs);
         return std::pair(
@@ -332,6 +332,43 @@ void fem(py::module& m)
           Mat, const dolfinx::function::FunctionSpace&,
           const std::vector<std::shared_ptr<const dolfinx::fem::DirichletBC>>&,
           PetscScalar>(&dolfinx::fem::add_diagonal));
+
+  m.def("assemble_scalar", &dolfinx::fem::assemble_scalar,
+        "Assemble functional over mesh");
+  // Vectors (single)
+  m.def("assemble_vector",
+        py::overload_cast<Vec, const dolfinx::fem::Form&>(
+            &dolfinx::fem::assemble_vector),
+        py::arg("b"), py::arg("L"),
+        "Assemble linear form into an existing vector");
+  m.def("assemble_vector",
+        py::overload_cast<
+            Eigen::Ref<Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1>>,
+            const dolfinx::fem::Form&>(&dolfinx::fem::assemble_vector),
+        py::arg("b"), py::arg("L"),
+        "Assemble linear form into an existing Eigen vector");
+  // Matrices
+  m.def(
+      "assemble_matrix",
+      py::overload_cast<
+          Mat, const dolfinx::fem::Form&,
+          const std::vector<std::shared_ptr<const dolfinx::fem::DirichletBC>>&>(
+          &dolfinx::fem::assemble_matrix));
+  m.def("assemble_matrix",
+        py::overload_cast<Mat, const dolfinx::fem::Form&,
+                          const std::vector<bool>&, const std::vector<bool>&>(
+            &dolfinx::fem::assemble_matrix));
+  m.def(
+      "add_diagonal",
+      py::overload_cast<
+          Mat, const dolfinx::function::FunctionSpace&,
+          const std::vector<std::shared_ptr<const dolfinx::fem::DirichletBC>>&,
+          PetscScalar>(&dolfinx::fem::add_diagonal));
+
+#ifndef PETSC_USE_COMPLEX
+  m.def("assemble_matrix_eigen", &dolfinx::fem::assemble_matrix_eigen);
+#endif
+
   // BC modifiers
   m.def("apply_lifting",
         py::overload_cast<
@@ -440,10 +477,10 @@ void fem(py::module& m)
       .def("set_tabulate_tensor",
            [](dolfinx::fem::Form& self, dolfinx::fem::FormIntegrals::Type type,
               int i, std::intptr_t addr) {
-             auto tabulate_tensor_ptr = (void (*)(
-                 PetscScalar*, const PetscScalar*, const PetscScalar*,
-                 const double*, const int*, const std::uint8_t*, const bool*,
-                 const bool*, const std::uint8_t*))addr;
+             auto tabulate_tensor_ptr
+                 = (void (*)(PetscScalar*, const PetscScalar*,
+                             const PetscScalar*, const double*, const int*,
+                             const std::uint8_t*, const std::uint32_t))addr;
              self.set_tabulate_tensor(type, i, tabulate_tensor_ptr);
            })
       .def_property_readonly("rank", &dolfinx::fem::Form::rank)

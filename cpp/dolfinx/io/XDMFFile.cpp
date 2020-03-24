@@ -211,8 +211,8 @@ mesh::Mesh XDMFFile::read_mesh(const std::string name,
 
   // Create Topology
   graph::AdjacencyList<std::int64_t> _cells(cells);
-  auto [topology, src, dest]
-      = mesh::create_topology(_mpi_comm.comm(), _cells, layout);
+  auto [topology, src, dest] = mesh::create_topology(
+      _mpi_comm.comm(), _cells, layout, mesh::GhostMode::none);
 
   // FIXME: Figure out how to check which entities are required
   // Initialise facet for P2

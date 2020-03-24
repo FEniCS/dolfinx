@@ -69,8 +69,17 @@ void mesh(py::module& m)
   m.def("radius_ratio", &dolfinx::mesh::radius_ratio);
   m.def("midpoints", &dolfinx::mesh::midpoints);
 
-  m.def("create", &dolfinx::mesh::create,
-        "Helper function for creating meshes.");
+  m.def(
+      "create",
+      [](const MPICommWrapper comm,
+         const dolfinx::graph::AdjacencyList<std::int64_t>& cells,
+         const dolfinx::fem::ElementDofLayout& layout,
+         const Eigen::Ref<const Eigen::Array<
+             double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>>& x,
+         dolfinx::mesh::GhostMode ghost_mode) {
+        return dolfinx::mesh::create(comm.get(), cells, layout, x, ghost_mode);
+      },
+      "Helper function for creating meshes.");
 
   // dolfinx::mesh::GhostMode enums
   py::enum_<dolfinx::mesh::GhostMode>(m, "GhostMode")
@@ -127,11 +136,8 @@ void mesh(py::module& m)
       .def("set_interior_facets", &dolfinx::mesh::Topology::set_interior_facets)
       .def("get_facet_permutations",
            &dolfinx::mesh::Topology::get_facet_permutations)
-      .def("get_edge_reflections",
-           &dolfinx::mesh::Topology::get_edge_reflections)
-      .def("get_face_reflections",
-           &dolfinx::mesh::Topology::get_face_reflections)
-      .def("get_face_rotations", &dolfinx::mesh::Topology::get_face_rotations)
+      .def("get_cell_permutation_info",
+           &dolfinx::mesh::Topology::get_cell_permutation_info)
       .def_property_readonly("dim", &dolfinx::mesh::Topology::dim,
                              "Topological dimension")
       .def("connectivity",
@@ -324,9 +330,10 @@ void mesh(py::module& m)
   m.def("partition_cells",
         [](const MPICommWrapper comm, int nparts,
            dolfinx::mesh::CellType cell_type,
-           const dolfinx::graph::AdjacencyList<std::int64_t>& cells) {
+           const dolfinx::graph::AdjacencyList<std::int64_t>& cells,
+           dolfinx::mesh::GhostMode ghost_mode) {
           return dolfinx::mesh::Partitioning::partition_cells(
-              comm.get(), nparts, cell_type, cells);
+              comm.get(), nparts, cell_type, cells, ghost_mode);
         });
 
   m.def("locate_entities_geometrical",
