@@ -138,26 +138,6 @@ mesh::Geometry mesh::create_geometry(
   Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor> coords
       = graph::Partitioning::distribute_data(comm, indices, x);
 
-  std::vector<int64_t> flags2;
-  if (flags.size() > 0)
-    flags2 = flags;
-  else
-    flags2 = indices;
-
-  std::cout << "x rows size " << x.rows()<< std::endl;
-  std::cout << "global_index_cell size " << flags2.size() << std::endl;
-  std::cout << "indices size " << indices.size() << std::endl;
-
-  // assert(flags2.size() == (std::size_t)x.rows());
-
-  Eigen::Map<const Eigen::Array<std::int64_t, Eigen::Dynamic, Eigen::Dynamic,
-                                Eigen::RowMajor>>
-      flags_arr(flags2.data(), x.rows(), 1);
-
-  Eigen::Array<std::int64_t, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
-      dist_flags_arr
-      = graph::Partitioning::distribute_data(comm, indices, flags_arr);
-
   // Compute local-to-global map from local indices in dofmap to the
   // corresponding global indices in cell_nodes
   std::vector<std::int64_t> l2g
@@ -173,18 +153,29 @@ mesh::Geometry mesh::create_geometry(
   Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor> xg(
       coords.rows(), coords.cols());
 
-  Eigen::Array<std::int64_t, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor> flags_g(
-      dist_flags_arr.rows(), dist_flags_arr.cols());
-  
   for (int i = 0; i < coords.rows(); ++i)
-  {
     xg.row(i) = coords.row(l2l[i]);
-    flags_g.row(i) = dist_flags_arr.row(l2l[i]);
-  }
 
-  std::vector<std::int64_t> dist_flags(
-      flags_g.data(),
-      flags_g.data() + flags_g.rows() * flags_g.cols());
+  std::vector<std::int64_t> dist_flags;
+  if (flags.size() > 0)
+  {
+    if (flags.size() != (std::size_t)x.rows())
+      throw std::runtime_error("Number of flags must match number of nodes.");
+
+    // Map flags into Eigen array
+    Eigen::Map<const Eigen::Array<std::int64_t, Eigen::Dynamic, Eigen::Dynamic,
+                                  Eigen::RowMajor>>
+        flags_arr(flags.data(), flags.size(), 1);
+
+    Eigen::Array<std::int64_t, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
+        dist_flags_arr
+        = graph::Partitioning::distribute_data(comm, indices, flags_arr);
+
+    for (Eigen::Index i = 0; i < dist_flags_arr.rows(); ++i)
+      dist_flags.push_back(dist_flags_arr(l2l[i], 0));
+  }
+  else
+    dist_flags = indices;
 
   return Geometry(dof_index_map, dofmap, layout, xg, l2g, dist_flags);
 }

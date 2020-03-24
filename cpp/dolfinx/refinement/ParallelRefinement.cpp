@@ -422,7 +422,7 @@ mesh::Mesh ParallelRefinement::partition(bool redistribute) const
 
   const mesh::Geometry geometry
       = mesh::create_geometry(comm, topology, layout, my_cells, dest, src,
-                              _new_vertex_coordinates, {});
+                              _new_vertex_coordinates);
 
   return mesh::Mesh(comm, topology, geometry);
 }

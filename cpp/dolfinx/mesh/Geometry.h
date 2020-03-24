@@ -139,7 +139,7 @@ mesh::Geometry create_geometry(
     const graph::AdjacencyList<std::int32_t>& dest, const std::vector<int>& src,
     const Eigen::Ref<const Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic,
                                         Eigen::RowMajor>>& x,
-    const std::vector<std::int64_t>& flags);
+    const std::vector<std::int64_t>& flags = {});
 
 } // namespace mesh
 } // namespace dolfinx

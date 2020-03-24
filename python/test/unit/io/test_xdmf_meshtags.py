@@ -22,7 +22,7 @@ else:
     encodings = (XDMFFile.Encoding.HDF5, XDMFFile.Encoding.ASCII)
     encodings = (XDMFFile.Encoding.HDF5, )
 
-celltypes_3D = [CellType.tetrahedron, CellType.hexahedron]
+celltypes_3D = [CellType.tetrahedron]#, CellType.hexahedron]
 
 
 @pytest.mark.parametrize("cell_type", celltypes_3D)
@@ -39,6 +39,7 @@ def test_3d(tempdir, cell_type, encoding):
 
     mt = MeshTags(mesh, 2, bottom_facets, bottom_values)
     mt.append(left_facets, left_values)
+    mt.name = "mt_facets"
 
     top_lines = locate_entities_geometrical(mesh, 1, lambda x: numpy.isclose(x[2], 1.0))
     right_lines = locate_entities_geometrical(mesh, 1, lambda x: numpy.isclose(x[0], 1.0))
@@ -54,15 +55,23 @@ def test_3d(tempdir, cell_type, encoding):
         file.write_mesh(mesh)
         file.write_meshtags(mt)
 
+    mesh.mpi_comm().barrier()
+
     # with XDMFFile(mesh.mpi_comm(), filename, "a", encoding=encoding) as file:
     #     file.write_meshtags(mt_lines)
 
-    # with XDMFFile(mesh.mpi_comm(), filename, "r", encoding=encoding) as file:
-    #     mesh_in = file.read_mesh()
-    #     mt_lines_in = file.read_meshtags(mesh, "mt_lines")
+    with XDMFFile(mesh.mpi_comm(), filename, "r", encoding=encoding) as file:
+        mesh_in = file.read_mesh()
+        print("mesh flags", mesh.geometry.flags)
+        print("mesh in flags", mesh_in.geometry.flags)
+        mt_lines_in = file.read_meshtags(mesh_in, "mt_facets")
+
+    mesh.mpi_comm().barrier()
 
     # with XDMFFile(mesh.mpi_comm(), os.path.join(tempdir, "out_meshtags_3d.xdmf"), "w", encoding=encoding) as file:
-    #     file.write_geometry(mesh_in.geometry)
+    #     file.write_mesh(mesh_in)
+
+    # with XDMFFile(mesh.mpi_comm(), os.path.join(tempdir, "out_meshtags_3d.xdmf"), "a", encoding=encoding) as file:
     #     file.write_meshtags(mt_lines_in)
 
     # assert numpy.allclose(mt_lines_in.indices, mt_lines.indices)

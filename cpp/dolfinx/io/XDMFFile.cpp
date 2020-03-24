@@ -19,6 +19,7 @@
 #include <dolfinx/fem/ElementDofLayout.h>
 #include <dolfinx/function/Function.h>
 #include <dolfinx/graph/AdjacencyList.h>
+#include <dolfinx/graph/Partitioning.h>
 #include <dolfinx/mesh/Geometry.h>
 #include <dolfinx/mesh/Mesh.h>
 #include <dolfinx/mesh/MeshTags.h>
@@ -203,9 +204,6 @@ mesh::Mesh XDMFFile::read_mesh(const std::string name,
   auto [cell_type, x, cells]
       = xdmf_mesh::read_mesh_data(_mpi_comm.comm(), _h5_id, grid_node);
 
-  const std::vector<std::int64_t> flags
-      = xdmf_mesh::read_flags(_mpi_comm.comm(), _h5_id, grid_node);
-
   // TODO: create outside
   // Create a layout
   const fem::ElementDofLayout layout
@@ -228,6 +226,9 @@ mesh::Mesh XDMFFile::read_mesh(const std::string name,
     topology.set_connectivity(entity_vertex, 1, 0);
   if (index_map)
     topology.set_index_map(1, index_map);
+
+  const std::vector<std::int64_t> flags
+      = xdmf_mesh::read_flags(_mpi_comm.comm(), _h5_id, grid_node);
 
   // Create Geometry
   const mesh::Geometry geometry = mesh::create_geometry(
@@ -319,14 +320,16 @@ void XDMFFile::write_meshtags(const mesh::MeshTags<int>& meshtags,
     _xml_doc->save_file(_filename.c_str(), "  ");
 }
 //-----------------------------------------------------------------------------
-mesh::MeshTags<int> XDMFFile::read_meshtags(std::shared_ptr<const mesh::Mesh> mesh,
-                                            const std::string name,
-                                            const std::string xpath)
+mesh::MeshTags<int>
+XDMFFile::read_meshtags(std::shared_ptr<const mesh::Mesh> mesh,
+                        const std::string name, const std::string xpath,
+                        const std::string flags_xpath)
 {
   pugi::xml_node node = _xml_doc->select_node(xpath.c_str()).node();
   pugi::xml_node grid_node
       = node.select_node(("Grid[@Name='" + name + "']").c_str()).node();
 
+  pugi::xml_node flags_node = _xml_doc->select_node(flags_xpath.c_str()).node();
   pugi::xml_node topology_node = grid_node.child("Topology");
 
   // Get topology dataset node
@@ -341,17 +344,54 @@ mesh::MeshTags<int> XDMFFile::read_meshtags(std::shared_ptr<const mesh::Mesh> me
                                              _h5_id);
   const std::int32_t num_local_entities = topology_data.size() / nnodes_per_entity;
 
+  std::cout << "Topo data on process " << MPI::rank(_mpi_comm.comm()) << std::endl;
+  for (std::size_t i = 0; i < topology_data.size(); ++i)
+  {
+    std::cout << topology_data[i] << ", ";
+  }
+  std::cout << std::endl;
+
   const auto cell_type_str = xdmf_utils::get_cell_type(topology_node);
   const mesh::CellType cell_type = mesh::to_type(cell_type_str.first);
   const int e_dim = mesh::cell_dim(cell_type);
 
-  auto map_g = mesh->geometry().index_map();
-  std::vector<std::int32_t> local_topology_data
-      = map_g->global_to_local(topology_data);
+  const std::vector<std::int64_t> flags
+      = xdmf_mesh::read_flags(_mpi_comm.comm(), _h5_id, flags_node);
 
-  Eigen::Map<const Eigen::Array<std::int32_t, Eigen::Dynamic, Eigen::Dynamic,
-                                Eigen::RowMajor>>
-      entities(local_topology_data.data(), num_local_entities, nnodes_per_entity);
+  std::cout << "Flags on process " << MPI::rank(_mpi_comm.comm()) << std::endl;
+  for (std::size_t i = 0; i < flags.size(); ++i)
+  {
+    std::cout << flags[i] << ", ";
+  }
+  std::cout << std::endl;
+
+  Eigen::Map<const Eigen::Array<std::int64_t, Eigen::Dynamic, 1>> flags_arr(
+      flags.data(), flags.size(), 1);
+
+  // Extract only unique topology nodes
+  std::vector<std::int64_t> topo_unique;
+  topo_unique = topology_data;
+
+  std::sort(topo_unique.begin(), topo_unique.end());
+  topo_unique.erase(std::unique(topo_unique.begin(), topo_unique.end()),
+                    topo_unique.end());
+
+  // Distribute flags according to unique topology nodes
+  const Eigen::Array<std::int64_t, Eigen::Dynamic, 1> dist_flags_arr
+      = graph::Partitioning::distribute_data(_mpi_comm.comm(), topo_unique,
+                                             flags_arr);
+
+  assert((std::size_t)dist_flags_arr.rows() == topo_unique.size());
+
+  // const std::vector<std::int32_t>& l2l
+  //     = graph::Partitioning::compute_local_to_local(l2g, topo_unique);
+
+  std::cout << "Dist flags on process " << MPI::rank(_mpi_comm.comm()) << std::endl;
+  for (std::size_t i = 0; i < (std::size_t)dist_flags_arr.rows(); ++i)
+  {
+    std::cout << dist_flags_arr(i, 0) << ", ";
+  }
+  std::cout << std::endl;
 
   pugi::xml_node values_data_node
       = grid_node.child("Attribute").child("DataItem");
@@ -362,6 +402,11 @@ mesh::MeshTags<int> XDMFFile::read_meshtags(std::shared_ptr<const mesh::Mesh> me
   assert(values.size() == (std::size_t)num_local_entities);
 
   auto map_e = mesh->topology().index_map(e_dim);
+  if (!map_e)
+  {
+    mesh->create_entities(e_dim);
+    map_e = mesh->topology().index_map(e_dim);
+  }
   assert(map_e);
 
   const int dim = mesh->topology().dim();
@@ -384,18 +429,19 @@ mesh::MeshTags<int> XDMFFile::read_meshtags(std::shared_ptr<const mesh::Mesh> me
   assert(c_to_v);
 
   std::vector<std::int32_t> indices(num_local_entities);
-  std::vector<std::int32_t> entity_nodes(nnodes_per_entity);
+  std::vector<std::int64_t> entity_flags(nnodes_per_entity);
 
   const std::vector<std::uint8_t> perm
       = cells::vtk_to_dolfin(cell_type, nnodes_per_entity);
 
   // Prepare a mapping from *ordered* nodes of entity to entity index
-  std::map<std::vector<std::int32_t>, std::int32_t> entities_nodes;
+  std::map<std::vector<std::int64_t>, std::int32_t> entities_flags;
+  const std::vector<std::int64_t>& geom_flags = mesh->geometry().flags();
 
   for (std::int32_t e = 0; e < num_entities; ++e)
   {
     // Iterate over all entities of the mesh
-    // Find attached cell attached to entity
+    // Find cell attached to the entity
     std::int32_t c = e_to_c->links(e)[0];
     auto cell_nodes = cells_g.links(c);
     auto cell_vertices = c_to_v->links(c);
@@ -404,41 +450,52 @@ mesh::MeshTags<int> XDMFFile::read_meshtags(std::shared_ptr<const mesh::Mesh> me
     for (int v = 0; v < entity_vertices.rows(); ++v)
     {
       // Find local index of vertex wrt. cell
-      const int vertex = entity_vertices[v];
+      const int vertex = entity_vertices[perm[v]];
       auto it = std::find(cell_vertices.data(),
                           cell_vertices.data() + cell_vertices.rows(), vertex);
       assert(it != (cell_vertices.data() + cell_vertices.rows()));
       const int local_cell_vertex = std::distance(cell_vertices.data(), it);
 
-      entity_nodes[v] = cell_nodes[local_cell_vertex];
+      entity_flags[v] = geom_flags[cell_nodes[local_cell_vertex]];
     }
-    std::sort(entity_nodes.begin(), entity_nodes.end());
-    entities_nodes.insert({entity_nodes, e});
+    std::sort(entity_flags.begin(), entity_flags.end());
 
-    for (int i =0; i<nnodes_per_entity; ++i)
-    {
-      std::cout << entity_nodes[i] << ", ";
-    }
+    std::cout << "Mesh e " << std::endl;
+    for (int i = 0; i < entity_vertices.rows(); ++i)
+      std::cout << entity_flags[i] << ", ";
     std::cout << std::endl;
+
+    entities_flags.insert({entity_flags, e});
   }
+
+  std::vector<std::int64_t> e_nodes(nnodes_per_entity);
+
+  Eigen::Map<const Eigen::Array<std::int64_t, Eigen::Dynamic, Eigen::Dynamic,
+                                Eigen::RowMajor>>
+      entities(topology_data.data(), num_local_entities, nnodes_per_entity);
+
+  std::unordered_map<std::int64_t, std::int64_t> topo_to_flags;
+  for (std::size_t i = 0; i < topo_unique.size(); ++i)
+    topo_to_flags[topo_unique[i]] = dist_flags_arr(i, 0);
+
+  // const std::vector<std::int64_t>& l2g = mesh->geometry().global_indices();
+  // const std::vector<std::int32_t> l2l
+  //     = graph::Partitioning::compute_local_to_local(l2g, topo_unique);
 
   for (Eigen::Index e = 0; e < entities.rows(); ++e)
   {
-    std::vector<std::int32_t> e_nodes(entities.row(e).data(),
-                                            entities.row(e).data()
-                                                + nnodes_per_entity);
+    // Iterate over all entities as read from file
+    for (int i = 0; i < nnodes_per_entity; ++i)
+      e_nodes[i] = topo_to_flags[entities(e, i)];
     std::sort(e_nodes.begin(), e_nodes.end());
 
-    std::cout << "Reading entity " << e << std::endl;
-
-    for (int i =0; i<nnodes_per_entity; ++i)
-    {
+    std::cout << "Infile e " << std::endl;
+    for (std::size_t i = 0; i < e_nodes.size(); ++i)
       std::cout << e_nodes[i] << ", ";
-    }
     std::cout << std::endl;
 
-    const auto it = entities_nodes.find(e_nodes);
-    if (it != entities_nodes.end())
+    const auto it = entities_flags.find(e_nodes);
+    if (it != entities_flags.end())
       indices[e] = it->second;
     else
       throw std::runtime_error("Entity "+ std::to_string(e) +" not found in mesh.");

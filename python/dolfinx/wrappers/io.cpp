@@ -79,7 +79,8 @@ void io(py::module& m)
            py::arg("geometry_xpath") = "/Xdmf/Domain/Grid/Geometry",
            py::arg("xpath") = "/Xdmf/Domain")
       .def("read_meshtags", &dolfinx::io::XDMFFile::read_meshtags,
-           py::arg("mesh"), py::arg("name"), py::arg("xpath") = "/Xdmf/Domain");
+           py::arg("mesh"), py::arg("name"), py::arg("xpath") = "/Xdmf/Domain",
+           py::arg("flags_xpath") = "/Xdmf/Domain/Grid");
 
   // dolfinx::io::VTKFile
   py::class_<dolfinx::io::VTKFile, std::shared_ptr<dolfinx::io::VTKFile>>

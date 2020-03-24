@@ -105,7 +105,8 @@ void mesh(py::module& m)
           py::return_value_policy::reference_internal,
           "Return coordinates of all geometry points. Each row is the "
           "coordinate of a point.")
-      .def_readwrite("coord_mapping", &dolfinx::mesh::Geometry::coord_mapping);
+      .def_readwrite("coord_mapping", &dolfinx::mesh::Geometry::coord_mapping)
+      .def_property_readonly("flags", &dolfinx::mesh::Geometry::flags);
 
   // dolfinx::mesh::TopologyComputation
   m.def("compute_entities", [](const MPICommWrapper comm,
