@@ -498,12 +498,12 @@ DofMapBuilder::build(MPI_Comm comm, const mesh::Topology& topology,
   }
 }
 //-----------------------------------------------------------------------------
-fem::DofMap DofMapBuilder::build_submap(const DofMap& dofmap_parent,
-                                        const std::vector<int>& component,
-                                        const mesh::Topology& topology)
+std::tuple<std::shared_ptr<const ElementDofLayout>,
+           graph::AdjacencyList<std::int32_t>>
+DofMapBuilder::build_submap(const DofMap& dofmap_parent,
+                            const std::vector<int>& component)
 {
   assert(!component.empty());
-  const int D = topology.dim();
 
   // Set element dof layout and cell dimension
   std::shared_ptr<const ElementDofLayout> element_dof_layout
@@ -514,30 +514,19 @@ fem::DofMap DofMapBuilder::build_submap(const DofMap& dofmap_parent,
   const std::vector<int> element_map_view
       = dofmap_parent.element_dof_layout->sub_view(component);
 
-  auto map = topology.index_map(D);
-  if (!map)
-    throw std::runtime_error("Cannot use cell index map.");
-  assert(map->block_size() == 1);
-  const int num_cells = map->size_local() + map->num_ghosts();
-
   // Build dofmap by extracting from parent
+  const int num_cells = dofmap_parent.list().num_nodes();
   const std::int32_t dofs_per_cell = element_map_view.size();
-  Eigen::Array<std::int32_t, Eigen::Dynamic, 1> dofmap(dofs_per_cell
-                                                       * num_cells);
-
+  Eigen::Array<std::int32_t, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
+      dofmap(num_cells, dofs_per_cell);
   for (int c = 0; c < num_cells; ++c)
   {
     auto cell_dmap_parent = dofmap_parent.cell_dofs(c);
     for (std::int32_t i = 0; i < dofs_per_cell; ++i)
-      dofmap[c * dofs_per_cell + i] = cell_dmap_parent[element_map_view[i]];
+      dofmap(c, i) = cell_dmap_parent[element_map_view[i]];
   }
 
-  Eigen::Map<Eigen::Array<std::int32_t, Eigen::Dynamic, Eigen::Dynamic,
-                          Eigen::RowMajor>>
-      _dofmap(dofmap.data(), num_cells, dofs_per_cell);
-
-  return DofMap(element_dof_layout, dofmap_parent.index_map,
-                graph::AdjacencyList<std::int32_t>(_dofmap));
+  return {element_dof_layout, graph::AdjacencyList<std::int32_t>(dofmap)};
 }
 //-----------------------------------------------------------------------------
 std::pair<std::shared_ptr<common::IndexMap>, graph::AdjacencyList<std::int32_t>>

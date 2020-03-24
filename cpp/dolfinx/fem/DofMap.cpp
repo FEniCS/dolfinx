@@ -161,10 +161,11 @@ DofMap::DofMap(std::shared_ptr<const ElementDofLayout> element_dof_layout,
   // differ, typically 32- vs 64-bit integers
 }
 //-----------------------------------------------------------------------------
-DofMap DofMap::extract_sub_dofmap(const std::vector<int>& component,
-                                  const mesh::Topology& topology) const
+DofMap DofMap::extract_sub_dofmap(const std::vector<int>& component) const
 {
-  return DofMapBuilder::build_submap(*this, component, topology);
+  auto [element_dof_layout, dofmap]
+      = DofMapBuilder::build_submap(*this, component);
+  return DofMap(element_dof_layout, this->index_map, std::move(dofmap));
 }
 //-----------------------------------------------------------------------------
 std::pair<std::unique_ptr<DofMap>, std::vector<std::int32_t>>

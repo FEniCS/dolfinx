@@ -45,9 +45,9 @@ public:
         std::shared_ptr<const ElementDofLayout> element_dof_layout);
 
   /// Build sub-dofmap view
-  static DofMap build_submap(const DofMap& dofmap_parent,
-                             const std::vector<int>& component,
-                             const mesh::Topology& topology);
+  static std::tuple<std::shared_ptr<const ElementDofLayout>,
+                    graph::AdjacencyList<std::int32_t>>
+  build_submap(const DofMap& dofmap_parent, const std::vector<int>& component);
 
   /// Build dofmap
   static std::pair<std::shared_ptr<common::IndexMap>,
