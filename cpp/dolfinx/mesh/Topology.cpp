@@ -341,14 +341,6 @@ mesh::create_topology(MPI_Comm comm,
     }
   }
 
-  // // TODO: This step can be skipped for 'P1' elements
-  // // Extract topology data, e.g.just the vertices. For P1 geometry this
-  // // should just be the identity operator.For other elements the
-  // // filtered lists may have 'gaps', i.e.the indices might not be
-  // // contiguous.
-  // const graph::AdjacencyList<std::int64_t> my_cells
-  //     = mesh::extract_topology(layout, cell_nodes);
-
   // Get indices of ghost cells, if any
   const std::vector<std::int64_t> cell_ghost_indices
       = graph::Partitioning::compute_ghost_indices(comm, original_cell_index,

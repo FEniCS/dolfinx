@@ -185,7 +185,7 @@ private:
 ///   distributed
 /// @param[in] cells The cell topology (list of cell vertices) using
 ///   global indices for the vertices. It contains cells that have been
-///   distributed to this rank via a graph partitioner.
+///   distributed to this rank, e.g. via a graph partitioner.
 /// @param[in] original_cell_index The original global index associated
 ///   with each cell.
 /// @param[in] ghost_owners The ownership of any ghost cells (ghost
