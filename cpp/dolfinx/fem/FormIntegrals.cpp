@@ -229,11 +229,23 @@ void FormIntegrals::set_default_domains(const mesh::Mesh& mesh)
     const int num_facets = topology.index_map(tdim - 1)->size_local();
     const std::vector<bool>& interior_facets = topology.interior_facets();
 
-    // Loop over owned facets
-    for (int f = 0; f < num_facets; ++f)
+    if (topology.index_map(tdim)->num_ghosts() > 0)
     {
-      if (interior_facets[f])
-        inf_integrals[0].active_entities.push_back(f);
+      auto f_to_c = topology.connectivity(tdim - 1, tdim);
+      for (int f = 0; f < num_facets; ++f)
+      {
+        if (f_to_c->num_links(f) == 2)
+          inf_integrals[0].active_entities.push_back(f);
+      }
+    }
+    else
+    {
+      // Loop over owned facets
+      for (int f = 0; f < num_facets; ++f)
+      {
+        if (interior_facets[f])
+          inf_integrals[0].active_entities.push_back(f);
+      }
     }
   }
 }
