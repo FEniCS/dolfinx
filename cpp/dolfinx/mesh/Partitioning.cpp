@@ -65,6 +65,12 @@ graph::AdjacencyList<std::int32_t> Partitioning::partition_cells(
 
   LOG(INFO) << "Compute partition of cells across processes";
 
+  if (cells.num_nodes() > 0)
+  {
+    if (cells.num_links(0) != mesh::num_cell_vertices(cell_type))
+      throw std::runtime_error("Inconsistent number of cell vertices");
+  }
+
   // FIXME: Update GraphBuilder to use AdjacencyList
   // Wrap AdjacencyList
   const Eigen::Map<const Eigen::Array<std::int64_t, Eigen::Dynamic,

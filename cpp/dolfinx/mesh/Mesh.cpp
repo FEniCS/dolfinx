@@ -64,12 +64,20 @@ Mesh mesh::create(
                                         Eigen::RowMajor>>& x,
     mesh::GhostMode ghost_mode)
 {
+  // TODO: This step can be skipped for 'P1' elements
+  //
+  // Extract topology data, e.g.just the vertices. For P1 geometry this
+  // should just be the identity operator. For other elements the
+  // filtered lists may have 'gaps', i.e. the indices might not be
+  // contiguous.
+  const graph::AdjacencyList<std::int64_t> cells_topology
+      = mesh::extract_topology(layout, cells);
 
   // Compute the destination rank for cells on this process via graph
   // partitioning
   const int size = dolfinx::MPI::size(comm);
   const graph::AdjacencyList<std::int32_t> dest = Partitioning::partition_cells(
-      comm, size, layout.cell_type(), cells, ghost_mode);
+      comm, size, layout.cell_type(), cells_topology, ghost_mode);
 
   // Distribute cells to destination rank
   const auto [cell_nodes, src, original_cell_index, ghost_owners]
