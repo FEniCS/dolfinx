@@ -11,8 +11,9 @@ on:
 jobs:
   build:
     runs-on: ubuntu-latest
-    # container: wells/dolfinx-dev-env:latest
-    container: wells/dolfinx-dev-env:openmpi
+    container: wells/dolfinx-dev-env:latest
+    # container: wells/dolfinx-dev-env:openmpi
+    # dolfinx/dev-env-real:latest
 
     env:
       # CC: clang-9
@@ -55,7 +56,7 @@ jobs:
       - name: Build DOLFINX C++
         run: |
           cd build
-          ninja install
+          ninja -j3 install
 
       - name: Build and run C++ unit tests
         run: |
