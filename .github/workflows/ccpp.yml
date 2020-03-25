@@ -100,4 +100,4 @@ jobs:
         run: |
           cd python/demo
           python3 ./generate-demo-files.py
-          python3 -m pytest -n=3 -v -m mpi test.py --num-proc=3
+          python3 -m pytest -v -m mpi test.py --num-proc=3
