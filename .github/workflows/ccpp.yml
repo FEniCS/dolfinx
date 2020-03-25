@@ -56,7 +56,7 @@ jobs:
       - name: Build DOLFINX C++
         run: |
           cd build
-          ninja install
+          ninja -j4 install
 
       - name: Build and run C++ unit tests
         run: |
