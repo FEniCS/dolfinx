@@ -27,6 +27,7 @@ jobs:
       OMPI_MCA_hwloc_base_binding_policy: none
       OMP_NUM_THREADS: 1
       OPENBLAS_NUM_THREADS: 1
+      FENICS_CACHE_DIR: .
 
     steps:
       - uses: actions/checkout@v2
@@ -88,11 +89,11 @@ jobs:
         run: |
           mkdir -p ~/junit
           cd python/test/unit
-          python3 -m pytest --durations=50 --junitxml=~/junit/test-results.xml .
+          python3 -m pytest -n=3 --durations=50 --junitxml=~/junit/test-results.xml .
       - name: Run unit tests (Python, MPI)
         run: |
           cd python/test/unit
-          mpirun -np 3 python3 -m pytest -n=3 .
+          mpirun -np 3 python3 -m pytest .
       # - name: Run demos (Python, serial)
       #   run: |
       #     mkdir -p ~/junit
