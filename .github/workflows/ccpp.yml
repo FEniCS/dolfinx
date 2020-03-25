@@ -12,8 +12,8 @@ jobs:
   build:
     runs-on: ubuntu-latest
     # container: wells/dolfinx-dev-env:latest
-    # container: wells/dolfinx-dev-env:openmpi
-    container: dolfinx/dev-env-real:latest
+    container: wells/dolfinx-dev-env:openmpi
+    # dolfinx/dev-env-real:latest
 
     env:
       # CC: clang-9
@@ -93,7 +93,7 @@ jobs:
       - name: Run unit tests (Python, MPI)
         run: |
           cd python/test/unit
-          mpiexec -np 3 python3 -m pytest .
+          mpiexec --map-by node -np 3 python3 -m pytest .
       - name: Run demos (Python, serial)
         run: |
           mkdir -p ~/junit
