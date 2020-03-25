@@ -476,11 +476,11 @@ void fem(py::module& m)
       .def("set_vertex_domains", &dolfinx::fem::Form::set_vertex_domains)
       .def("set_tabulate_tensor",
            [](dolfinx::fem::Form& self, dolfinx::fem::FormIntegrals::Type type,
-              int i, std::intptr_t addr) {
-             auto tabulate_tensor_ptr
-                 = (void (*)(PetscScalar*, const PetscScalar*,
-                             const PetscScalar*, const double*, const int*,
-                             const std::uint8_t*, const std::uint32_t))addr;
+              int i, py::object addr) {
+             auto tabulate_tensor_ptr = (void (*)(
+                 PetscScalar*, const PetscScalar*, const PetscScalar*,
+                 const double*, const int*, const std::uint8_t*,
+                 const std::uint32_t))addr.cast<std::intptr_t>();
              self.set_tabulate_tensor(type, i, tabulate_tensor_ptr);
            })
       .def_property_readonly("rank", &dolfinx::fem::Form::rank)
