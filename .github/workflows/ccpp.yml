@@ -26,6 +26,7 @@ jobs:
       OMPI_MCA_plm: isolated
       OMPI_MCA_btl_vader_single_copy_mechanism: none
       OMP_NUM_THREADS: 1
+      OPENBLAS_NUM_THREADS: 1
 
     steps:
       - uses: actions/checkout@v2
