@@ -28,6 +28,7 @@ jobs:
       # OMP_NUM_THREADS: 1
       # OPENBLAS_NUM_THREADS: 1
       # FENICS_CACHE_DIR: .
+      MPLBACKEND: agg
 
     steps:
       - uses: actions/checkout@v2
@@ -69,16 +70,16 @@ jobs:
         run: |
           cd build
           ninja demos
-          ./demo/poisson/demo_poisson
-          ./demo/hyperelasticity/demo_hyperelasticity
-          # ctest -R demo -R serial
+          # ./demo/poisson/demo_poisson
+          # ./demo/hyperelasticity/demo_hyperelasticity
+          ctest -R demo -R serial
       - name: Build and run C++ regression tests (MPI)
         run: |
           cd build
           ninja demos
-          mpirun -np 3 ./demo/poisson/demo_poisson
-          mpirun -np 3 ./demo/hyperelasticity/demo_hyperelasticity
-          # ctest -R demo -R mpi
+          # mpirun -np 3 ./demo/poisson/demo_poisson
+          # mpirun -np 3 ./demo/hyperelasticity/demo_hyperelasticity
+          ctest -R demo -R mpi
 
       - name: Build Python interface
         run: |
