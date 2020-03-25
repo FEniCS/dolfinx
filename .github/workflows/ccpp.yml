@@ -19,6 +19,7 @@ jobs:
       # CC: clang-9
       # CXX: clang++-9
       DOLFINX_JIT_CFLAGS: -g0 -O0
+      HYDRA_LAUNCHER: fork
       OMPI_ALLOW_RUN_AS_ROOT: 1
       OMPI_ALLOW_RUN_AS_ROOT_CONFIRM: 1
       OMPI_MCA_rmaps_base_oversubscribe: 1
