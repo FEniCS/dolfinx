@@ -92,7 +92,7 @@ jobs:
       - name: Run unit tests (Python, MPI)
         run: |
           cd python/test/unit
-          mpirun -np 3 python3 -m -n=3 pytest .
+          mpirun -np 3 python3 -m pytest -n=3 .
       # - name: Run demos (Python, serial)
       #   run: |
       #     mkdir -p ~/junit
