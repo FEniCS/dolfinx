@@ -108,12 +108,12 @@ jobs:
       - name: Run unit tests (Python, MPI)
         run: |
           cd python/test/unit/fem
-          mpirun -np 2 python3 -m pytest -vs .
+          mpirun -np 3 python3 -m pytest -vs .
       - name: Run unit tests (Python, serial)
         run: |
           mkdir -p ~/junit
           cd python/test/unit/fem
-          python3 -m pytest -vs --durations=50 --junitxml=~/junit/test-results.xml .
+          python3 -m pytest -n=3 -vs --durations=50 --junitxml=~/junit/test-results.xml .
 
       # - name: Run demos (Python, serial)
       #   run: |
