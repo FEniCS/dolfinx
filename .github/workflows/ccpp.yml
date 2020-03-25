@@ -104,11 +104,12 @@ jobs:
           # python3 ./generate-demo-files.py
           mpirun -np 3 python3 ./cahn-hilliard/demo_cahn-hilliard.py
           # python3 -m pytest -v -m mpi test.py --num-proc=3
+
       - name: Run unit tests (Python, serial)
         run: |
           mkdir -p ~/junit
           cd python/test/unit/fem
-          python3 -m pytest -s -n=3 --durations=50 --junitxml=~/junit/test-results.xml .
+          python3 -m pytest -s --durations=50 --junitxml=~/junit/test-results.xml .
       - name: Run unit tests (Python, MPI)
         run: |
           cd python/test/unit/fem
