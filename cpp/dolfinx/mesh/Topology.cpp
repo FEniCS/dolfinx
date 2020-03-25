@@ -5,6 +5,7 @@
 // SPDX-License-Identifier:    LGPL-3.0-or-later
 
 #include "Topology.h"
+
 #include "Partitioning.h"
 #include "PermutationComputation.h"
 #include "TopologyComputation.h"
@@ -322,31 +323,23 @@ void Topology::create_entity_permutations()
 //-----------------------------------------------------------------------------
 mesh::CellType Topology::cell_type() const { return _cell_type; }
 //-----------------------------------------------------------------------------
-std::tuple<Topology, std::vector<int>, graph::AdjacencyList<std::int32_t>>
+Topology
 mesh::create_topology(MPI_Comm comm,
                       const graph::AdjacencyList<std::int64_t>& cells,
-                      const fem::ElementDofLayout& layout,
-                      mesh::GhostMode ghost_mode)
+                      const std::vector<std::int64_t>& original_cell_index,
+                      const std::vector<int>& ghost_owners,
+                      const fem::ElementDofLayout& layout, mesh::GhostMode)
 {
-  const int size = dolfinx::MPI::size(comm);
-
-  // TODO: This step can be skipped for 'P1' elements
-
-  // Extract topology data, e.g.just the vertices. For P1 geometry this
-  // should just be the identity operator.For other elements the
-  // filtered lists may have 'gaps', i.e.the indices might not be
-  // contiguous.
-  const graph::AdjacencyList<std::int64_t> cells_v
-      = mesh::extract_topology(layout, cells);
-
-  // Compute the destination rank for cells on this process via graph
-  // partitioning
-  const graph::AdjacencyList<std::int32_t> dest = Partitioning::partition_cells(
-      comm, size, layout.cell_type(), cells_v, ghost_mode);
-
-  // Distribute cells to destination rank
-  const auto [my_cells, src, original_cell_index, ghost_owners]
-      = graph::Partitioning::distribute(comm, cells_v, dest);
+  if (cells.num_nodes() > 0)
+  {
+    if (cells.num_links(0) != mesh::num_cell_vertices(layout.cell_type()))
+    {
+      throw std::runtime_error(
+          "Inconsistent number of cell vertices. Got "
+          + std::to_string(cells.num_links(0)) + ", expected "
+          + std::to_string(mesh::num_cell_vertices(layout.cell_type())) + ".");
+    }
+  }
 
   // Get indices of ghost cells, if any
   const std::vector<std::int64_t> cell_ghost_indices
@@ -354,7 +347,7 @@ mesh::create_topology(MPI_Comm comm,
                                                    ghost_owners);
 
   // Cell IndexMap
-  const int num_local_cells = my_cells.num_nodes() - cell_ghost_indices.size();
+  const int num_local_cells = cells.num_nodes() - cell_ghost_indices.size();
   auto index_map_c = std::make_shared<common::IndexMap>(comm, num_local_cells,
                                                         cell_ghost_indices, 1);
 
@@ -368,7 +361,7 @@ mesh::create_topology(MPI_Comm comm,
     // determine ownership
     for (std::size_t i = 0; i < cell_ghost_indices.size(); ++i)
     {
-      auto v = my_cells.links(num_local_cells + i);
+      auto v = cells.links(num_local_cells + i);
       for (int j = 0; j < v.size(); ++j)
         global_to_local_index.insert({v[j], -1});
     }
@@ -379,7 +372,7 @@ mesh::create_topology(MPI_Comm comm,
     std::set<std::int64_t> local_vertex_set;
     for (int i = 0; i < num_local_cells; ++i)
     {
-      auto v = my_cells.links(i);
+      auto v = cells.links(i);
       for (int j = 0; j < v.size(); ++j)
       {
         auto it = global_to_local_index.find(v[j]);
@@ -491,7 +484,7 @@ mesh::create_topology(MPI_Comm comm,
       auto it = shared_cells.find(i);
       if (it != shared_cells.end())
       {
-        auto v = my_cells.links(i);
+        auto v = cells.links(i);
         for (int j = 0; j < v.size(); ++j)
         {
           auto vit = fwd_shared_vertices.find(v[j]);
@@ -544,14 +537,14 @@ mesh::create_topology(MPI_Comm comm,
       assert(v != -1);
 
     // Convert my_cells (global indexing) to my_local_cells (local indexing)
-    const Eigen::Array<std::int64_t, Eigen::Dynamic, 1>& my_cells_array
-        = my_cells.array();
+    const Eigen::Array<std::int64_t, Eigen::Dynamic, 1>& cells_array
+        = cells.array();
     Eigen::Array<std::int32_t, Eigen::Dynamic, 1> my_local_cells_array(
-        my_cells_array.size());
+        cells_array.size());
     for (int i = 0; i < my_local_cells_array.size(); ++i)
-      my_local_cells_array[i] = global_to_local_index[my_cells_array[i]];
+      my_local_cells_array[i] = global_to_local_index[cells_array[i]];
     auto my_local_cells = std::make_shared<graph::AdjacencyList<std::int32_t>>(
-        my_local_cells_array, my_cells.offsets());
+        my_local_cells_array, cells.offsets());
 
     Topology topology(layout.cell_type());
     const int tdim = topology.dim();
@@ -568,7 +561,7 @@ mesh::create_topology(MPI_Comm comm,
     topology.set_index_map(tdim, index_map_c);
     topology.set_connectivity(my_local_cells, tdim, 0);
 
-    return {topology, src, dest};
+    return topology;
   }
 
   // Build local cell-vertex connectivity, with local vertex indices
@@ -576,7 +569,7 @@ mesh::create_topology(MPI_Comm comm,
   // indices and get map from global vertex indices in 'cells' to the
   // local vertex indices
   auto [cells_local, local_to_global_vertices]
-      = graph::Partitioning::create_local_adjacency_list(my_cells);
+      = graph::Partitioning::create_local_adjacency_list(cells);
 
   // Create (i) local topology object and (ii) IndexMap for cells, and
   // set cell-vertex topology
@@ -640,6 +633,6 @@ mesh::create_topology(MPI_Comm comm,
   auto _cells_d = std::make_shared<graph::AdjacencyList<std::int32_t>>(cells_d);
   topology.set_connectivity(_cells_d, tdim, 0);
 
-  return {topology, src, dest};
+  return topology;
 }
 //-----------------------------------------------------------------------------
