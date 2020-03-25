@@ -5,7 +5,6 @@
 // SPDX-License-Identifier:    LGPL-3.0-or-later
 
 #include "DofMapBuilder.h"
-#include "DofMap.h"
 #include "ElementDofLayout.h"
 #include <cstdlib>
 #include <dolfinx/common/IndexMap.h>
@@ -500,28 +499,28 @@ DofMapBuilder::build(MPI_Comm comm, const mesh::Topology& topology,
 //-----------------------------------------------------------------------------
 std::tuple<std::shared_ptr<const ElementDofLayout>,
            graph::AdjacencyList<std::int32_t>>
-DofMapBuilder::build_submap(const DofMap& dofmap_parent,
+DofMapBuilder::build_submap(const ElementDofLayout& dof_layout_parent,
+                            const graph::AdjacencyList<PetscInt>& dofmap_parent,
                             const std::vector<int>& component)
 {
   assert(!component.empty());
 
   // Set element dof layout and cell dimension
   std::shared_ptr<const ElementDofLayout> element_dof_layout
-      = dofmap_parent.element_dof_layout->sub_dofmap(component);
+      = dof_layout_parent.sub_dofmap(component);
 
   // Get components in parent map that correspond to sub-dofs
-  assert(dofmap_parent.element_dof_layout);
   const std::vector<int> element_map_view
-      = dofmap_parent.element_dof_layout->sub_view(component);
+      = dof_layout_parent.sub_view(component);
 
   // Build dofmap by extracting from parent
-  const int num_cells = dofmap_parent.list().num_nodes();
+  const int num_cells = dofmap_parent.num_nodes();
   const std::int32_t dofs_per_cell = element_map_view.size();
   Eigen::Array<std::int32_t, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
       dofmap(num_cells, dofs_per_cell);
   for (int c = 0; c < num_cells; ++c)
   {
-    auto cell_dmap_parent = dofmap_parent.cell_dofs(c);
+    auto cell_dmap_parent = dofmap_parent.links(c);
     for (std::int32_t i = 0; i < dofs_per_cell; ++i)
       dofmap(c, i) = cell_dmap_parent[element_map_view[i]];
   }

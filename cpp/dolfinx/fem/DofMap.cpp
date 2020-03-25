@@ -163,8 +163,8 @@ DofMap::DofMap(std::shared_ptr<const ElementDofLayout> element_dof_layout,
 //-----------------------------------------------------------------------------
 DofMap DofMap::extract_sub_dofmap(const std::vector<int>& component) const
 {
-  auto [element_dof_layout, dofmap]
-      = DofMapBuilder::build_submap(*this, component);
+  auto [element_dof_layout, dofmap] = DofMapBuilder::build_submap(
+      *this->element_dof_layout, this->_dofmap, component);
   return DofMap(element_dof_layout, this->index_map, std::move(dofmap));
 }
 //-----------------------------------------------------------------------------

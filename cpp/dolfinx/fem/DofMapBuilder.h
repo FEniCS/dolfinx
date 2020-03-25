@@ -6,6 +6,7 @@
 
 #pragma once
 
+#include "petscsys.h"
 #include <dolfinx/fem/DofMap.h>
 #include <dolfinx/graph/AdjacencyList.h>
 #include <dolfinx/mesh/cell_types.h>
@@ -28,7 +29,6 @@ class Topology;
 
 namespace fem
 {
-class DofMap;
 class ElementDofLayout;
 
 /// Builds a DofMap on a mesh::Mesh
@@ -47,7 +47,9 @@ public:
   /// Build sub-dofmap view
   static std::tuple<std::shared_ptr<const ElementDofLayout>,
                     graph::AdjacencyList<std::int32_t>>
-  build_submap(const DofMap& dofmap_parent, const std::vector<int>& component);
+  build_submap(const ElementDofLayout& dof_layout_parent,
+               const graph::AdjacencyList<PetscInt>& dofmap_parent,
+               const std::vector<int>& component);
 
   /// Build dofmap
   static std::pair<std::shared_ptr<common::IndexMap>,
