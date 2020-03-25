@@ -79,20 +79,20 @@ jobs:
           mpirun -np 3 ./demo/hyperelasticity/demo_hyperelasticity
           # ctest -R demo -R mpi
 
-      # - name: Build Python interface
-      #   run: |
-      #     cd python
-      #     pip3 -v install . --user
+      - name: Build Python interface
+        run: |
+          cd python
+          pip3 -v install . --user
 
-      # - name: Run unit tests (Python, serial)
-      #   run: |
-      #     mkdir -p ~/junit
-      #     cd python/test/unit
-      #     python3 -m pytest -n=3 --durations=50 --junitxml=~/junit/test-results.xml .
-      # - name: Run unit tests (Python, MPI)
-      #   run: |
-      #     cd python/test/unit
-      #     mpiexec -np 3 python3 -m pytest .
+      - name: Run unit tests (Python, serial)
+        run: |
+          mkdir -p ~/junit
+          cd python/test/unit
+          python3 -m pytest --durations=50 --junitxml=~/junit/test-results.xml .
+      - name: Run unit tests (Python, MPI)
+        run: |
+          cd python/test/unit
+          mpiexec -np 3 python3 -m pytest .
       # - name: Run demos (Python, serial)
       #   run: |
       #     mkdir -p ~/junit
