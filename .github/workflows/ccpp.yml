@@ -18,7 +18,6 @@ jobs:
       # CC: clang-9
       # CXX: clang++-9
       DOLFINX_JIT_CFLAGS: -g0 -O0
-      HYDRA_LAUNCHER: fork
       OMPI_ALLOW_RUN_AS_ROOT: 1
       OMPI_ALLOW_RUN_AS_ROOT_CONFIRM: 1
       OMPI_MCA_rmaps_base_oversubscribe: 1
@@ -57,7 +56,7 @@ jobs:
       - name: Build DOLFINX C++
         run: |
           cd build
-          ninja -j3 install
+          ninja install
 
       - name: Build and run C++ unit tests
         run: |
@@ -76,28 +75,28 @@ jobs:
           ninja demos
           ctest -j3 -R demo -R mpi
 
-      - name: Build Python interface
-        run: |
-          cd python
-          pip3 -v install . --user
+      # - name: Build Python interface
+      #   run: |
+      #     cd python
+      #     pip3 -v install . --user
 
-      - name: Run unit tests (Python, serial)
-        run: |
-          mkdir -p ~/junit
-          cd python/test/unit
-          python3 -m pytest -n=3 --durations=50 --junitxml=~/junit/test-results.xml .
-      - name: Run unit tests (Python, MPI)
-        run: |
-          cd python/test/unit
-          mpiexec -np 3 python3 -m pytest .
-      - name: Run demos (Python, serial)
-        run: |
-          mkdir -p ~/junit
-          cd python/demo
-          python3 ./generate-demo-files.py
-          python3 -m pytest -n=3 -v -m serial --durations=10 --junitxml=~/junit/demo-results.xml test.py
-      - name: Run demos (Python, MPI)
-        run: |
-          cd python/demo
-          python3 ./generate-demo-files.py
-          python3 -m pytest -v -m mpi test.py --num-proc=3
+      # - name: Run unit tests (Python, serial)
+      #   run: |
+      #     mkdir -p ~/junit
+      #     cd python/test/unit
+      #     python3 -m pytest -n=3 --durations=50 --junitxml=~/junit/test-results.xml .
+      # - name: Run unit tests (Python, MPI)
+      #   run: |
+      #     cd python/test/unit
+      #     mpiexec -np 3 python3 -m pytest .
+      # - name: Run demos (Python, serial)
+      #   run: |
+      #     mkdir -p ~/junit
+      #     cd python/demo
+      #     python3 ./generate-demo-files.py
+      #     python3 -m pytest -n=3 -v -m serial --durations=10 --junitxml=~/junit/demo-results.xml test.py
+      # - name: Run demos (Python, MPI)
+      #   run: |
+      #     cd python/demo
+      #     python3 ./generate-demo-files.py
+      #     python3 -m pytest -v -m mpi test.py --num-proc=3
