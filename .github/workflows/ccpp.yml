@@ -68,12 +68,16 @@ jobs:
         run: |
           cd build
           ninja demos
-          ctest -R demo -R serial
+          ./demo/poisson/demo_poisson
+          ./demo/hyperelasticity/demo_hyperelasticity
+          # ctest -R demo -R serial
       - name: Build and run C++ regression tests (MPI)
         run: |
           cd build
           ninja demos
-          ctest -R demo -R mpi
+          mpirun -np 3 ./demo/poisson/demo_poisson
+          mpirun -np 3 ./demo/hyperelasticity/demo_hyperelasticity
+          # ctest -R demo -R mpi
 
       # - name: Build Python interface
       #   run: |
