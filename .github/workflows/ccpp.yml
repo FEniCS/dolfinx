@@ -23,7 +23,7 @@ jobs:
       OMPI_ALLOW_RUN_AS_ROOT: 1
       OMPI_ALLOW_RUN_AS_ROOT_CONFIRM: 1
       OMPI_MCA_rmaps_base_oversubscribe: 1
-      OMPI_MCA_plm: isolated
+      OMPI_MCA_plm: ucx
       OMPI_MCA_btl_vader_single_copy_mechanism: none
 
     steps:
@@ -59,23 +59,23 @@ jobs:
           cd build
           ninja -j3 install
 
-      - name: Build and run C++ unit tests
-        run: |
-          cd build
-          ninja unittests
-          # ctest --output-on-failure -R unittests
-          mpiexec -np 3 ctest --output-on-failure -R unittests
-          # mpiexec  --with-device=ch3:sock -np 3 ctest --output-on-failure -R unittests
-      - name: Build and run C++ regression tests (serial)
-        run: |
-          cd build
-          ninja demos
-          ctest -j3 -R demo -R serial
-      - name: Build and run C++ regression tests (MPI)
-        run: |
-          cd build
-          ninja demos
-          ctest -j3 -R demo -R mpi
+      # - name: Build and run C++ unit tests
+      #   run: |
+      #     cd build
+      #     ninja unittests
+      #     # ctest --output-on-failure -R unittests
+      #     mpiexec -np 3 ctest --output-on-failure -R unittests
+      #     # mpiexec  --with-device=ch3:sock -np 3 ctest --output-on-failure -R unittests
+      # - name: Build and run C++ regression tests (serial)
+      #   run: |
+      #     cd build
+      #     ninja demos
+      #     ctest -j3 -R demo -R serial
+      # - name: Build and run C++ regression tests (MPI)
+      #   run: |
+      #     cd build
+      #     ninja demos
+      #     ctest -j3 -R demo -R mpi
 
       - name: Build Python interface
         # env:
@@ -85,11 +85,11 @@ jobs:
           cd python
           pip3 -v install . --user
 
-      - name: Run unit tests (Python, serial)
-        run: |
-          mkdir -p ~/junit
-          cd python/test/unit
-          python3 -m pytest -n=2 --durations=50 --junitxml=~/junit/test-results.xml .
+      # - name: Run unit tests (Python, serial)
+      #   run: |
+      #     mkdir -p ~/junit
+      #     cd python/test/unit
+      #     python3 -m pytest -n=2 --durations=50 --junitxml=~/junit/test-results.xml .
       - name: Run unit tests (Python, MPI)
         run: |
           cd python/test/unit
