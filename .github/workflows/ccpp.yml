@@ -90,19 +90,19 @@ jobs:
         run: |
           mkdir -p ~/junit
           cd python/demo
-          python3 ./generate-demo-files.py
-          python3 ./elasticity/demo_elasticity.py
+          # python3 ./generate-demo-files.py
+          python3 ./cahn-hilliard/demo_cahn-hilliard.py
           # python3 -m pytest -n=3 -v -m serial --durations=10 --junitxml=~/junit/demo-results.xml test.py
       - name: Run demos (Python, MPI (2))
         run: |
           cd python/demo
-          python3 ./generate-demo-files.py
-          mpirun -np 2 python3 ./elasticity/demo_elasticity.py
-      - name: Run demos (Python, MPI)
+          # python3 ./generate-demo-files.py
+          mpirun -np 2 python3 ./cahn-hilliard/demo_cahn-hilliard.py
+      - name: Run demos (Python, MPI, (3))
         run: |
           cd python/demo
-          python3 ./generate-demo-files.py
-          mpirun -np 3 python3 ./elasticity/demo_elasticity.py
+          # python3 ./generate-demo-files.py
+          mpirun -np 3 python3 ./cahn-hilliard/demo_cahn-hilliard.py
           # python3 -m pytest -v -m mpi test.py --num-proc=3
       - name: Run unit tests (Python, serial)
         run: |
