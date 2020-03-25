@@ -24,7 +24,7 @@ jobs:
       # OMPI_MCA_plm: isolated
       OMPI_MCA_btl_vader_single_copy_mechanism: none
       OMPI_MCA_mpi_yield_when_idle: 1
-      # OMPI_MCA_hwloc_base_binding_policy: none
+      OMPI_MCA_hwloc_base_binding_policy: none
       # OMP_NUM_THREADS: 1
       # OPENBLAS_NUM_THREADS: 1
       # FENICS_CACHE_DIR: .
@@ -86,24 +86,24 @@ jobs:
           cd python
           pip3 -v install . --user
 
-      # - name: Run demos (Python, serial)
-      #   run: |
-      #     mkdir -p ~/junit
-      #     cd python/demo
-      #     # python3 ./generate-demo-files.py
-      #     python3 ./cahn-hilliard/demo_cahn-hilliard.py
-      #     # python3 -m pytest -n=3 -v -m serial --durations=10 --junitxml=~/junit/demo-results.xml test.py
-      # - name: Run demos (Python, MPI (2))
-      #   run: |
-      #     cd python/demo
-      #     # python3 ./generate-demo-files.py
-      #     mpirun -np 2 python3 ./cahn-hilliard/demo_cahn-hilliard.py
-      # - name: Run demos (Python, MPI, (3))
-      #   run: |
-      #     cd python/demo
-      #     # python3 ./generate-demo-files.py
-      #     mpirun -np 3 python3 ./cahn-hilliard/demo_cahn-hilliard.py
-      #     # python3 -m pytest -v -m mpi test.py --num-proc=3
+      - name: Run demos (Python, serial)
+        run: |
+          mkdir -p ~/junit
+          cd python/demo
+          # python3 ./generate-demo-files.py
+          python3 ./cahn-hilliard/demo_cahn-hilliard.py
+          # python3 -m pytest -n=3 -v -m serial --durations=10 --junitxml=~/junit/demo-results.xml test.py
+      - name: Run demos (Python, MPI (2))
+        run: |
+          cd python/demo
+          # python3 ./generate-demo-files.py
+          mpirun -np 2 python3 ./cahn-hilliard/demo_cahn-hilliard.py
+      - name: Run demos (Python, MPI, (3))
+        run: |
+          cd python/demo
+          # python3 ./generate-demo-files.py
+          mpirun -np 3 python3 ./cahn-hilliard/demo_cahn-hilliard.py
+          # python3 -m pytest -v -m mpi test.py --num-proc=3
 
       - name: Run unit tests (Python, MPI)
         run: |
