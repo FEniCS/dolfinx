@@ -63,17 +63,17 @@ jobs:
           cd build
           ninja unittests
           ctest --output-on-failure -R unittests
-          mpiexec -np 3 ctest --output-on-failure -R unittests
+          mpiexec -np 2 ctest --output-on-failure -R unittests
       - name: Build and run C++ regression tests (serial)
         run: |
           cd build
           ninja demos
-          ctest -j3 -R demo -R serial
+          ctest -R demo -R serial
       - name: Build and run C++ regression tests (MPI)
         run: |
           cd build
           ninja demos
-          ctest -j3 -R demo -R mpi
+          ctest -R demo -R mpi
 
       # - name: Build Python interface
       #   run: |
