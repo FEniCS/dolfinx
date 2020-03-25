@@ -13,7 +13,6 @@ jobs:
     runs-on: ubuntu-latest
     # container: wells/dolfinx-dev-env:latest
     container: wells/dolfinx-dev-env:openmpi
-    # dolfinx/dev-env-real:latest
 
     env:
       # CC: clang-9
@@ -30,9 +29,6 @@ jobs:
 
     steps:
       - uses: actions/checkout@v2
-      # - name: Test MPI
-      #   run: |
-      #     mpiexec --oversubscribe -np 3 ls
       - name: Install FEniCS Python components
         run: |
           apt-get -qq update
@@ -80,9 +76,6 @@ jobs:
       #     ctest -j3 -R demo -R mpi
 
       - name: Build Python interface
-        # env:
-        #   CC: clang-9
-        #   CXX: clang++-9
         run: |
           cd python
           pip3 -v install . --user
@@ -95,15 +88,15 @@ jobs:
       - name: Run unit tests (Python, MPI)
         run: |
           cd python/test/unit
-          mpiexec --map-by node -np 3 python3 -m pytest .
+          mpiexec -np 2 python3 -m pytest .
       - name: Run demos (Python, serial)
         run: |
           mkdir -p ~/junit
           cd python/demo
           python3 ./generate-demo-files.py
-          python3 -m pytest -n=4 -v -m serial --durations=10 --junitxml=~/junit/demo-results.xml test.py
+          python3 -m pytest -n=2 -v -m serial --durations=10 --junitxml=~/junit/demo-results.xml test.py
       - name: Run demos (Python, MPI)
         run: |
           cd python/demo
           python3 ./generate-demo-files.py
-          python3 -m pytest -n=2 -v -m mpi test.py --num-proc=3
+          python3 -m pytest -v -m mpi test.py --num-proc=3
