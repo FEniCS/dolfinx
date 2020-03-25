@@ -419,12 +419,8 @@ mesh::Mesh ParallelRefinement::partition(bool redistribute) const
     topology.set_connectivity(_cells_d, tdim, 0);
   }
 
-  std::vector<int> src(my_cells.num_nodes(), dolfinx::MPI::rank(comm));
-  Eigen::Array<int, Eigen::Dynamic, 1> _dest(my_cells.num_nodes(), 1);
-  _dest = dolfinx::MPI::rank(comm);
-  const graph::AdjacencyList<std::int32_t> dest(_dest);
   const mesh::Geometry geometry = mesh::create_geometry(
-      comm, topology, layout, my_cells, dest, src, _new_vertex_coordinates);
+      comm, topology, layout, my_cells, _new_vertex_coordinates);
 
   return mesh::Mesh(comm, topology, geometry);
 }
