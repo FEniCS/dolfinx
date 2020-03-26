@@ -50,17 +50,28 @@ jobs:
           cmake -DPYBIND11_TEST=False ../
           make install
 
-      - name: Configure DOLFINX C++ with CMake
+      - name: Flake8 checks
+        run: |
+          python3 -m flake8 python/dolfinx
+          python3 -m flake8 python/dolfinx_utils
+          python3 -m flake8 python/demo
+          python3 -m flake8 python/test
+      - name: Build C++ documentation
+        run: |
+          cd cpp/doc
+          doxygen
+
+      - name: Configure C++
         run: |
           mkdir build
           cd build
           cmake -G Ninja -DCMAKE_BUILD_TYPE=Developer ../cpp/
-      - name: Build DOLFINX C++
+      - name: Build C++
         run: |
           cd build
           ninja install
 
-      - name: Build and run C++ unit tests
+      - name: Build and run C++ unit tests (serial and MPI)
         run: |
           cd build
           ninja unittests
@@ -70,8 +81,6 @@ jobs:
         run: |
           cd build
           ninja demos
-          # ./demo/poisson/demo_poisson
-          # ./demo/hyperelasticity/demo_hyperelasticity
           ctest -R demo -R serial
       - name: Build and run C++ regression tests (MPI, 2)
         run: |
@@ -99,47 +108,19 @@ jobs:
       - name: Run demos (Python, MPI (2))
         run: |
           cd python/demo
-          # python3 ./generate-demo-files.py
           mpirun -np 2 python3 ./cahn-hilliard/demo_cahn-hilliard.py
       - name: Run demos (Python, MPI, (3))
         run: |
           cd python/demo
-          # python3 ./generate-demo-files.py
           mpirun -np 3 python3 ./cahn-hilliard/demo_cahn-hilliard.py
           # python3 -m pytest -v -m mpi test.py --num-proc=3
 
-      - name: Run unit tests (Python, MPI (2))
-        run: |
-          cd python/test/unit/fem
-          mpirun -np 2 python3 -m pytest -vs .
-      - name: Run unit tests (Python, MPI (3))
-        run: |
-          cd python/test/unit/fem
-          mpirun -np 3 python3 -m pytest -vs .
-      - name: Run unit tests (Python, serial (n=3))
-        run: |
-          mkdir -p ~/junit
-          cd python/test/unit/fem
-          python3 -m pytest -n=3 -vs --durations=50 --junitxml=~/junit/test-results.xml .
-      - name: Run unit tests (Python, serial (n=1))
-        run: |
-          mkdir -p ~/junit
-          cd python/test/unit/fem
-          python3 -m pytest -n=1 -vs --durations=50 --junitxml=~/junit/test-results.xml .
-      - name: Run unit tests (Python, serial (n=2))
+      - name: Run Python unit tests (serial)
         run: |
           mkdir -p ~/junit
           cd python/test/unit/fem
           python3 -m pytest -n=2 -vs --durations=50 --junitxml=~/junit/test-results.xml .
-
-      # - name: Run demos (Python, serial)
-      #   run: |
-      #     mkdir -p ~/junit
-      #     cd python/demo
-      #     python3 ./generate-demo-files.py
-      #     python3 -m pytest -n=3 -v -m serial --durations=10 --junitxml=~/junit/demo-results.xml test.py
-      # - name: Run demos (Python, MPI)
-      #   run: |
-      #     cd python/demo
-      #     python3 ./generate-demo-files.py
-      #     python3 -m pytest -v -m mpi test.py --num-proc=3
+      - name: Run Python unit tests (MPI)
+        run: |
+          cd python/test/unit/fem
+          mpirun -np 2 python3 -m pytest .
