@@ -113,7 +113,7 @@ import os
 import numpy as np
 from petsc4py import PETSc
 
-from dolfinx import (MPI, Function, FunctionSpace, NewtonSolver,
+from dolfinx import (MPI, Form, Function, FunctionSpace, NewtonSolver,
                      NonlinearProblem, UnitSquareMesh, log)
 from dolfinx.cpp.mesh import CellType
 from dolfinx.fem.assemble import assemble_matrix, assemble_vector
@@ -136,9 +136,9 @@ log.set_output_file("log.txt")
 
 class CahnHilliardEquation(NonlinearProblem):
     def __init__(self, a, L):
-        NonlinearProblem.__init__(self)
-        self.L = L
-        self.a = a
+        super().__init__()
+        self.L = Form(L)
+        self.a = Form(a)
         self._F = None
         self._J = None
 
@@ -315,7 +315,7 @@ file = XDMFFile(MPI.comm_world, "output.xdmf")
 t = 0.0
 
 # Check if we are running on CI server and reduce run time
-if "CI" in os.environ.keys():
+if "CI" in os.environ.keys() or "GITHUB_ACTIONS" in os.environ.keys():
     T = 3 * dt
 else:
     T = 50 * dt
