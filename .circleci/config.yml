@@ -9,6 +9,7 @@ parameters:
 install-python-components: &install-python-components
   name: Install FEniCS Python components
   command: |
+    cat /proc/cpuinfo
     pip3 install git+https://github.com/FEniCS/fiat.git --upgrade
     pip3 install git+https://github.com/FEniCS/ufl.git --upgrade
     pip3 install git+https://github.com/FEniCS/ffcx.git --upgrade
