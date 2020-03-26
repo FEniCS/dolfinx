@@ -10,6 +10,68 @@ ARG PETSC_VERSION=3.12.4
 ARG SLEPC_VERSION=3.12.2
 ARG PETSC4PY_VERSION=3.12.0
 ARG SLEPC4PY_VERSION=3.12.0
+
+WORKDIR /root
+
+# ########################################
+
+# FROM base as test-complex
+# LABEL description="FEniCS development environment with PETSc complex mode"
+
+# ARG PETSC_VERSION
+# ARG PETSC4PY_VERSION
+# ARG SLEPC_VERSION
+# ARG SLEPC4PY_VERSION
+
+# ARG MAKEFLAGS
+# ARG PETSC_SLEPC_OPTFLAGS
+# ARG PETSC_SLEPC_DEBUGGING
+
+# WORKDIR /tmp
+
+# # Install PETSc and SLEPc with complex scalar types
+# RUN apt-get -qq update && \
+#     apt-get -y install bison flex && \
+#     wget -nc --quiet http://ftp.mcs.anl.gov/pub/petsc/release-snapshots/petsc-lite-${PETSC_VERSION}.tar.gz -O petsc-${PETSC_VERSION}.tar.gz && \
+#     mkdir -p petsc-src && tar -xf petsc-${PETSC_VERSION}.tar.gz -C petsc-src --strip-components 1 && \
+#     cd petsc-src && \
+#     python3 ./configure \
+#     --COPTFLAGS=${PETSC_SLEPC_OPTFLAGS} \
+#     --CXXOPTFLAGS=${PETSC_SLEPC_OPTFLAGS} \
+#     --FOPTFLAGS=${PETSC_SLEPC_OPTFLAGS} \
+#     --with-debugging=${PETSC_SLEPC_DEBUGGING} \
+#     --with-fortran-bindings=no \
+#     --download-blacs \
+#     --download-metis \
+#     --download-mumps \
+#     --download-ptscotch \
+#     --download-scalapack \
+#     --download-suitesparse \
+#     --download-superlu \
+#     --with-scalar-type=complex \
+#     --prefix=/usr/local/petsc && \
+#     make ${MAKEFLAGS} && \
+#     make install && \
+#     export PETSC_DIR=/usr/local/petsc && \
+#     cd /tmp && \
+#     wget -nc --quiet https://slepc.upv.es/download/distrib/slepc-${SLEPC_VERSION}.tar.gz -O slepc-${SLEPC_VERSION}.tar.gz && \
+#     mkdir -p slepc-src && tar -xf slepc-${SLEPC_VERSION}.tar.gz -C slepc-src --strip-components 1 && \
+#     cd slepc-src && \
+#     python3  ./configure --prefix=/usr/local/slepc && \
+#     make ${MAKEFLAGS} && \
+#     make install && \
+#     apt-get -y purge bison flex && \
+#     apt-get -y autoremove && \
+#     apt-get clean && \
+#     rm -rf /tmp/* && \
+#     rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
+
+# ENV PETSC_DIR=/usr/local/petsc SLEPC_DIR=/usr/local/slepc
+
+# # Install complex petsc4py and slepc4py
+# RUN pip3 install --no-cache-dir petsc4py==${PETSC4PY_VERSION} && \
+#     pip3 install --no-cache-dir slepc4py==${SLEPC4PY_VERSION}
+C4PY_VERSION=3.12.0
 # Should be updated upon a new KaHIP release
 ARG KAHIP_VERSION=14be06c
 
