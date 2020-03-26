@@ -17,22 +17,19 @@ from dolfinx import common, cpp
 if dolfinx.pkgconfig.exists("dolfinx"):
     dolfinx_pc = dolfinx.pkgconfig.parse("dolfinx")
 else:
-    raise RuntimeError(
-        "Could not find DOLFINX pkg-config file. Make sure appropriate paths are set."
-    )
+    raise RuntimeError("Could not find DOLFINX pkg-config file. Make sure appropriate paths are set.")
 
 
 def mpi_jit_decorator(local_jit, *args, **kwargs):
     """A decorator for jit compilation
 
-    Use this function as a decorator to any jit compiler function.  In
-    a parallel run, this function will first call the jit compilation
-    function on the first process. When this is done, and the module
-    is in the cache, it will call the jit compiler on the remaining
+    Use this function as a decorator to any jit compiler function. In a
+    parallel run, this function will first call the jit compilation
+    function on the first process. When this is done, and the module is
+    in the cache, it will call the jit compiler on the remaining
     processes, which will then use the cached module.
 
-    *Example*
-        .. code-block:: python
+    *Example* .. code-block:: python
 
             def jit_something(something):
                 ....
