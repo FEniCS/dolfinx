@@ -41,6 +41,7 @@ RUN export DEBIAN_FRONTEND=noninteractive && \
     apt-get -qq update && \
     apt-get -yq --with-new-pkgs -o Dpkg::Options::="--force-confold" upgrade && \
     apt-get -y install \
+    clang-10 \
     cmake \
     g++ \
     gfortran \
@@ -70,7 +71,6 @@ RUN export DEBIAN_FRONTEND=noninteractive && \
     apt-get -y install \
     doxygen \
     git \
-    graphviz \
     sudo \
     valgrind \
     wget && \
@@ -168,7 +168,7 @@ RUN apt-get -qq update && \
     make && \
     make install && \
     #
-    # git clean -fdx . && \
+    git clean -ffdx . && \
     python3 ./configure \
     --with-64-bit-indices=1 \
     --COPTFLAGS=${PETSC_SLEPC_OPTFLAGS} \
@@ -185,7 +185,7 @@ RUN apt-get -qq update && \
     make && \
     make install && \
     #
-    git clean -fdx . && \
+    git clean -ffdx . && \
     python3 ./configure \
     --with-scalar-type=complex \
     --COPTFLAGS=${PETSC_SLEPC_OPTFLAGS} \
@@ -205,7 +205,7 @@ RUN apt-get -qq update && \
     make ${MAKEFLAGS} && \
     make install && \
     #
-    # git clean -fdx . && \
+    git clean -ffdx . && \
     python3 ./configure \
     --with-scalar-type=complex \
     --with-64-bit-indices=1 \
@@ -256,75 +256,36 @@ RUN wget -nc --quiet https://slepc.upv.es/download/distrib/slepc-${SLEPC_VERSION
     make && \
     make install && \
     #
-    rm -rf /tmp/* && \
+    rm -rf /tmp/*
+
+########################################
 
 FROM test-base as test-real
 LABEL description="FEniCS development environment with PETSc complex mode"
-
 ENV PETSC_DIR=/usr/local/petsc SLEPC_DIR=/usr/local/slepc
+RUN pip3 install --no-cache-dir petsc4py==${PETSC4PY_VERSION} && \
+    pip3 install --no-cache-dir slepc4py==${SLEPC4PY_VERSION}
 
-# Install petsc4py and slepc4py
-RUN pip3 install --no-cache-dir petsc4py==${PETSC4PY_VERSION}
-# RUN pip3 install --no-cache-dir petsc4py==${PETSC4PY_VERSION} && \
-#     pip3 install --no-cache-dir slepc4py==${SLEPC4PY_VERSION}
+########################################
 
-# WORKDIR /root
+FROM test-base as test-real-64
+LABEL description="FEniCS development environment with PETSc complex mode"
+ENV PETSC_DIR=/usr/local/petsc-64 SLEPC_DIR=/usr/local/slepc-64
+RUN pip3 install --no-cache-dir petsc4py==${PETSC4PY_VERSION} && \
+    pip3 install --no-cache-dir slepc4py==${SLEPC4PY_VERSION}
 
-# ########################################
+########################################
 
-# FROM base as test-complex
-# LABEL description="FEniCS development environment with PETSc complex mode"
+FROM test-base as test-complex
+LABEL description="FEniCS development environment with PETSc complex mode"
+ENV PETSC_DIR=/usr/local/petsc-complex SLEPC_DIR=/usr/local/slepc-complex
+RUN pip3 install --no-cache-dir petsc4py==${PETSC4PY_VERSION} && \
+    pip3 install --no-cache-dir slepc4py==${SLEPC4PY_VERSION}
 
-# ARG PETSC_VERSION
-# ARG PETSC4PY_VERSION
-# ARG SLEPC_VERSION
-# ARG SLEPC4PY_VERSION
+########################################
 
-# ARG MAKEFLAGS
-# ARG PETSC_SLEPC_OPTFLAGS
-# ARG PETSC_SLEPC_DEBUGGING
-
-# WORKDIR /tmp
-
-# # Install PETSc and SLEPc with complex scalar types
-# RUN apt-get -qq update && \
-#     apt-get -y install bison flex && \
-#     wget -nc --quiet http://ftp.mcs.anl.gov/pub/petsc/release-snapshots/petsc-lite-${PETSC_VERSION}.tar.gz -O petsc-${PETSC_VERSION}.tar.gz && \
-#     mkdir -p petsc-src && tar -xf petsc-${PETSC_VERSION}.tar.gz -C petsc-src --strip-components 1 && \
-#     cd petsc-src && \
-#     python3 ./configure \
-#     --COPTFLAGS=${PETSC_SLEPC_OPTFLAGS} \
-#     --CXXOPTFLAGS=${PETSC_SLEPC_OPTFLAGS} \
-#     --FOPTFLAGS=${PETSC_SLEPC_OPTFLAGS} \
-#     --with-debugging=${PETSC_SLEPC_DEBUGGING} \
-#     --with-fortran-bindings=no \
-#     --download-blacs \
-#     --download-metis \
-#     --download-mumps \
-#     --download-ptscotch \
-#     --download-scalapack \
-#     --download-suitesparse \
-#     --download-superlu \
-#     --with-scalar-type=complex \
-#     --prefix=/usr/local/petsc && \
-#     make ${MAKEFLAGS} && \
-#     make install && \
-#     export PETSC_DIR=/usr/local/petsc && \
-#     cd /tmp && \
-#     wget -nc --quiet https://slepc.upv.es/download/distrib/slepc-${SLEPC_VERSION}.tar.gz -O slepc-${SLEPC_VERSION}.tar.gz && \
-#     mkdir -p slepc-src && tar -xf slepc-${SLEPC_VERSION}.tar.gz -C slepc-src --strip-components 1 && \
-#     cd slepc-src && \
-#     python3  ./configure --prefix=/usr/local/slepc && \
-#     make ${MAKEFLAGS} && \
-#     make install && \
-#     apt-get -y purge bison flex && \
-#     apt-get -y autoremove && \
-#     apt-get clean && \
-#     rm -rf /tmp/* && \
-#     rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
-
-# ENV PETSC_DIR=/usr/local/petsc SLEPC_DIR=/usr/local/slepc
-
-# # Install complex petsc4py and slepc4py
-# RUN pip3 install --no-cache-dir petsc4py==${PETSC4PY_VERSION} && \
-#     pip3 install --no-cache-dir slepc4py==${SLEPC4PY_VERSION}
+FROM test-base as test-complex-64
+LABEL description="FEniCS development environment with PETSc complex mode"
+ENV PETSC_DIR=/usr/local/petsc-complex-64 SLEPC_DIR=/usr/local/slepc-complex-64
+RUN pip3 install --no-cache-dir petsc4py==${PETSC4PY_VERSION} && \
+    pip3 install --no-cache-dir slepc4py==${SLEPC4PY_VERSION}
