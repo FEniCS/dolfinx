@@ -180,13 +180,12 @@ RUN apt-get -qq update && \
     --download-hypre \
     --download-ptscotch \
     --download-suitesparse \
-    --download-superlu \
     --download-superlu_dist \
     --prefix=/usr/local/petsc-64 && \
     make && \
     make install && \
     #
-    # git clean -fdx . && \
+    git clean -fdx . && \
     python3 ./configure \
     --with-scalar-type=complex \
     --COPTFLAGS=${PETSC_SLEPC_OPTFLAGS} \
@@ -219,7 +218,6 @@ RUN apt-get -qq update && \
     --download-hypre \
     --download-ptscotch \
     --download-suitesparse \
-    --download-superlu \
     --download-superlu_dist \
     --prefix=/usr/local/petsc-complex-64 && \
     make && \
