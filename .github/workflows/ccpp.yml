@@ -105,7 +105,11 @@ jobs:
           mpirun -np 3 python3 ./cahn-hilliard/demo_cahn-hilliard.py
           # python3 -m pytest -v -m mpi test.py --num-proc=3
 
-      - name: Run unit tests (Python, MPI)
+      - name: Run unit tests (Python, MPI (2))
+        run: |
+          cd python/test/unit/fem
+          mpirun -np 2 python3 -m pytest -vs .
+      - name: Run unit tests (Python, MPI (3))
         run: |
           cd python/test/unit/fem
           mpirun -np 3 python3 -m pytest -vs .
