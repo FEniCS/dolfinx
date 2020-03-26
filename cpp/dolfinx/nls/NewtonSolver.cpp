@@ -26,8 +26,7 @@ nls::NewtonSolver::NewtonSolver(MPI_Comm comm)
   la::PETScOptions::set("nls_solve_ksp_type", "preonly");
   la::PETScOptions::set("nls_solve_pc_type", "lu");
 #if PETSC_HAVE_MUMPS
-  // la::PETScOptions::set("nls_solve_pc_factor_mat_solver_type", "mumps");
-  la::PETScOptions::set("nls_solve_pc_factor_mat_solver_type", "superlu_dist");
+  la::PETScOptions::set("nls_solve_pc_factor_mat_solver_type", "mumps");
 #endif
   _solver.set_from_options();
 }
