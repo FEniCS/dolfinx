@@ -131,9 +131,7 @@ LABEL maintainer="fenics-project <fenics-support@googlegroups.org>"
 LABEL description="FEniCS development environment"
 
 ARG PETSC_VERSION
-ARG PETSC4PY_VERSION
 ARG SLEPC_VERSION
-ARG SLEPC4PY_VERSION
 
 ARG MAKEFLAGS
 ARG PETSC_SLEPC_OPTFLAGS
@@ -263,6 +261,8 @@ RUN wget -nc --quiet https://slepc.upv.es/download/distrib/slepc-${SLEPC_VERSION
 
 FROM test-base as test-real
 LABEL description="FEniCS development environment with PETSc complex mode"
+ARG PETSC4PY_VERSION
+ARG SLEPC4PY_VERSION
 ENV PETSC_DIR=/usr/local/petsc SLEPC_DIR=/usr/local/slepc
 RUN pip3 install --no-cache-dir petsc4py==${PETSC4PY_VERSION} && \
     pip3 install --no-cache-dir slepc4py==${SLEPC4PY_VERSION}
@@ -271,6 +271,8 @@ RUN pip3 install --no-cache-dir petsc4py==${PETSC4PY_VERSION} && \
 
 FROM test-base as test-real-64
 LABEL description="FEniCS development environment with PETSc complex mode"
+ARG PETSC4PY_VERSION
+ARG SLEPC4PY_VERSION
 ENV PETSC_DIR=/usr/local/petsc-64 SLEPC_DIR=/usr/local/slepc-64
 RUN pip3 install --no-cache-dir petsc4py==${PETSC4PY_VERSION} && \
     pip3 install --no-cache-dir slepc4py==${SLEPC4PY_VERSION}
@@ -279,6 +281,8 @@ RUN pip3 install --no-cache-dir petsc4py==${PETSC4PY_VERSION} && \
 
 FROM test-base as test-complex
 LABEL description="FEniCS development environment with PETSc complex mode"
+ARG PETSC4PY_VERSION
+ARG SLEPC4PY_VERSION
 ENV PETSC_DIR=/usr/local/petsc-complex SLEPC_DIR=/usr/local/slepc-complex
 RUN pip3 install --no-cache-dir petsc4py==${PETSC4PY_VERSION} && \
     pip3 install --no-cache-dir slepc4py==${SLEPC4PY_VERSION}
@@ -287,6 +291,8 @@ RUN pip3 install --no-cache-dir petsc4py==${PETSC4PY_VERSION} && \
 
 FROM test-base as test-complex-64
 LABEL description="FEniCS development environment with PETSc complex mode"
+ARG PETSC4PY_VERSION
+ARG SLEPC4PY_VERSION
 ENV PETSC_DIR=/usr/local/petsc-complex-64 SLEPC_DIR=/usr/local/slepc-complex-64
 RUN pip3 install --no-cache-dir petsc4py==${PETSC4PY_VERSION} && \
     pip3 install --no-cache-dir slepc4py==${SLEPC4PY_VERSION}
