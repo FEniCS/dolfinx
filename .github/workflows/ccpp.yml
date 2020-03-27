@@ -11,12 +11,11 @@ on:
 jobs:
   build:
     runs-on: ubuntu-latest
-    # container: wells/dolfinx-dev-env:latest
-    container: wells/dolfinx-dev-env:openmpi
+    container: fenicsproject/test-env
 
     env:
-      CC: clang-9
-      CXX: clang++-9
+      CC: clang-10
+      CXX: clang++-10
       DOLFINX_JIT_CFLAGS: -g0 -O0
       OMPI_ALLOW_RUN_AS_ROOT: 1
       OMPI_ALLOW_RUN_AS_ROOT_CONFIRM: 1
