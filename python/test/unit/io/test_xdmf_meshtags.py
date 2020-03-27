@@ -31,14 +31,20 @@ def test_3d(tempdir, cell_type, encoding):
     filename = os.path.join(tempdir, "meshtags_3d.xdmf")
     mesh = UnitCubeMesh(MPI.comm_world, 2, 2, 2, cell_type)
 
+    rank = MPI.rank(MPI.comm_world)
+
     bottom_facets = locate_entities_geometrical(mesh, 2, lambda x: numpy.isclose(x[2], 0.0))
-    left_facets = locate_entities_geometrical(mesh, 2, lambda x: numpy.isclose(x[0], 0.0))
+    # left_facets = locate_entities_geometrical(mesh, 2, lambda x: numpy.isclose(x[0], 0.0))
+
+    # print(rank, bottom_facets)
+    # print(rank, mesh.topology.index_map(2).size_local)
+    # exit()
 
     bottom_values = numpy.full(bottom_facets.shape, 1, dtype=numpy.intc)
-    left_values = numpy.full(left_facets.shape, 2, dtype=numpy.intc)
+    # left_values = numpy.full(left_facets.shape, 2, dtype=numpy.intc)
 
     mt = MeshTags(mesh, 2, bottom_facets, bottom_values)
-    mt.append(left_facets, left_values)
+    # mt.append(left_facets, left_values)
     mt.name = "mt_facets"
 
     top_lines = locate_entities_geometrical(mesh, 1, lambda x: numpy.isclose(x[2], 1.0))
@@ -51,7 +57,7 @@ def test_3d(tempdir, cell_type, encoding):
     mt_lines.append_unique(right_lines, right_values)
     mt_lines.name = "mt_lines"
 
-    with XDMFFile(mesh.mpi_comm(), filename, "w", encoding=encoding) as file:
+    with XDMFFile(MPI.comm_world, filename, "w", encoding=encoding) as file:
         file.write_mesh(mesh)
         file.write_meshtags(mt)
 
@@ -60,18 +66,17 @@ def test_3d(tempdir, cell_type, encoding):
     # with XDMFFile(mesh.mpi_comm(), filename, "a", encoding=encoding) as file:
     #     file.write_meshtags(mt_lines)
 
-    with XDMFFile(mesh.mpi_comm(), filename, "r", encoding=encoding) as file:
+    with XDMFFile(MPI.comm_world, filename, "r", encoding=encoding) as file:
         mesh_in = file.read_mesh()
-        print("mesh flags", mesh.geometry.flags)
-        print("mesh in flags", mesh_in.geometry.flags)
-        mt_lines_in = file.read_meshtags(mesh_in, "mt_facets")
+        # print(MPI.rank(MPI.comm_world), numpy.max(mesh_in.geometry.flags),
+        #       mesh_in.geometry.index_map().size_local + mesh_in.geometry.index_map().num_ghosts, len(mesh_in.geometry.flags))
+        print(rank, mesh_in.geometry.global_indices())
+        print(rank, mesh_in.geometry.flags)
+        # exit()
+        mt_in = file.read_meshtags(mesh_in, "mt_facets")
 
-    mesh.mpi_comm().barrier()
-
-    # with XDMFFile(mesh.mpi_comm(), os.path.join(tempdir, "out_meshtags_3d.xdmf"), "w", encoding=encoding) as file:
+    # with XDMFFile(MPI.comm_world, os.path.join(tempdir, "out_meshtags_3d.xdmf"), "w", encoding=encoding) as file:
     #     file.write_mesh(mesh_in)
-
-    # with XDMFFile(mesh.mpi_comm(), os.path.join(tempdir, "out_meshtags_3d.xdmf"), "a", encoding=encoding) as file:
-    #     file.write_meshtags(mt_lines_in)
+    #     file.write_meshtags(mt_in)
 
     # assert numpy.allclose(mt_lines_in.indices, mt_lines.indices)

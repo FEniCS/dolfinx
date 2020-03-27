@@ -344,26 +344,12 @@ XDMFFile::read_meshtags(std::shared_ptr<const mesh::Mesh> mesh,
                                              _h5_id);
   const std::int32_t num_local_entities = topology_data.size() / nnodes_per_entity;
 
-  std::cout << "Topo data on process " << MPI::rank(_mpi_comm.comm()) << std::endl;
-  for (std::size_t i = 0; i < topology_data.size(); ++i)
-  {
-    std::cout << topology_data[i] << ", ";
-  }
-  std::cout << std::endl;
-
   const auto cell_type_str = xdmf_utils::get_cell_type(topology_node);
   const mesh::CellType cell_type = mesh::to_type(cell_type_str.first);
   const int e_dim = mesh::cell_dim(cell_type);
 
   const std::vector<std::int64_t> flags
       = xdmf_mesh::read_flags(_mpi_comm.comm(), _h5_id, flags_node);
-
-  std::cout << "Flags on process " << MPI::rank(_mpi_comm.comm()) << std::endl;
-  for (std::size_t i = 0; i < flags.size(); ++i)
-  {
-    std::cout << flags[i] << ", ";
-  }
-  std::cout << std::endl;
 
   Eigen::Map<const Eigen::Array<std::int64_t, Eigen::Dynamic, 1>> flags_arr(
       flags.data(), flags.size(), 1);
@@ -383,16 +369,6 @@ XDMFFile::read_meshtags(std::shared_ptr<const mesh::Mesh> mesh,
 
   assert((std::size_t)dist_flags_arr.rows() == topo_unique.size());
 
-  // const std::vector<std::int32_t>& l2l
-  //     = graph::Partitioning::compute_local_to_local(l2g, topo_unique);
-
-  std::cout << "Dist flags on process " << MPI::rank(_mpi_comm.comm()) << std::endl;
-  for (std::size_t i = 0; i < (std::size_t)dist_flags_arr.rows(); ++i)
-  {
-    std::cout << dist_flags_arr(i, 0) << ", ";
-  }
-  std::cout << std::endl;
-
   pugi::xml_node values_data_node
       = grid_node.child("Attribute").child("DataItem");
 
@@ -410,7 +386,7 @@ XDMFFile::read_meshtags(std::shared_ptr<const mesh::Mesh> mesh,
   assert(map_e);
 
   const int dim = mesh->topology().dim();
-  const std::int32_t num_entities = map_e->size_local() + map_e->num_ghosts();
+  const std::int32_t num_entities = map_e->size_local();// + map_e->num_ghosts();
 
   const graph::AdjacencyList<std::int32_t>& cells_g = mesh->geometry().dofmap();
 
@@ -428,7 +404,6 @@ XDMFFile::read_meshtags(std::shared_ptr<const mesh::Mesh> mesh,
   auto c_to_v = mesh->topology().connectivity(dim, 0);
   assert(c_to_v);
 
-  std::vector<std::int32_t> indices(num_local_entities);
   std::vector<std::int64_t> entity_flags(nnodes_per_entity);
 
   const std::vector<std::uint8_t> perm
@@ -436,7 +411,28 @@ XDMFFile::read_meshtags(std::shared_ptr<const mesh::Mesh> mesh,
 
   // Prepare a mapping from *ordered* nodes of entity to entity index
   std::map<std::vector<std::int64_t>, std::int32_t> entities_flags;
-  const std::vector<std::int64_t>& geom_flags = mesh->geometry().flags();
+  auto map_g = mesh->geometry().index_map();
+
+  // const std::int32_t size_local = map_g->size_local();
+  const int size_local_ghosts = map_g->size_local() + map_g->num_ghosts();
+
+  const int rank = MPI::rank(_mpi_comm.comm());
+
+  // const std::vector<std::int64_t>& global_indices = mesh->geometry().global_indices();
+
+  assert(mesh->geometry().flags().size() == (std::size_t)size_local_ghosts);
+
+  const std::vector<std::int64_t> geom_flags(
+      mesh->geometry().flags().data(), mesh->geometry().flags().data() + size_local_ghosts);
+
+  // const std::int64_t num_flags_global
+  //     = MPI::sum(_mpi_comm.comm(), (std::int64_t)size_local_ghosts);
+
+  const auto ghost_owners = map_g->ghost_owners();
+  // Prepare an array of owners of indices to which flags refer by value
+  // const int comm_size = MPI::size(_mpi_comm.comm());
+  Eigen::Array<std::int64_t, Eigen::Dynamic, 1> flags_owners(size_local_ghosts, 1);
+  flags_owners = 10;
 
   for (std::int32_t e = 0; e < num_entities; ++e)
   {
@@ -457,54 +453,131 @@ XDMFFile::read_meshtags(std::shared_ptr<const mesh::Mesh> mesh,
       const int local_cell_vertex = std::distance(cell_vertices.data(), it);
 
       entity_flags[v] = geom_flags[cell_nodes[local_cell_vertex]];
+      flags_owners(cell_nodes[local_cell_vertex], 0) = rank;
     }
     std::sort(entity_flags.begin(), entity_flags.end());
 
-    std::cout << "Mesh e " << std::endl;
-    for (int i = 0; i < entity_vertices.rows(); ++i)
-      std::cout << entity_flags[i] << ", ";
+    for (int i = 0; i < nnodes_per_entity; ++i)
+      std::cout << "proc " << rank << " flag " << entity_flags[i] << std::endl;
     std::cout << std::endl;
 
     entities_flags.insert({entity_flags, e});
   }
 
-  std::vector<std::int64_t> e_nodes(nnodes_per_entity);
+  // std::cout << "proc" << rank << ": " << flags_owners << std::endl;
+
+  // for (int i = 0; i < flags_owners.rows(); ++i)
+  // {
+  //   // flags_owners(i, 0) = MPI::index_owner(comm_size, geom_flags[i], num_flags_global);
+  //   if (i < size_local)
+  //     flags_owners(i, 0) = rank;
+  //   else
+  //     flags_owners(i, 0) = ghost_owners[i - size_local];
+  // }
+
+  const Eigen::Array<std::int64_t, Eigen::Dynamic, 1> dist_flags_owners_arr
+      = graph::Partitioning::distribute_data(_mpi_comm.comm(), geom_flags,
+                                             flags_owners);
+
+  const Eigen::Array<std::int64_t, Eigen::Dynamic, 1> col_flags_owners_arr
+      = graph::Partitioning::distribute_data(_mpi_comm.comm(), geom_flags,
+                                             dist_flags_owners_arr);
+
+  const std::vector<std::int64_t> dist_flags(dist_flags_arr.data(),
+                                             dist_flags_arr.data() + dist_flags_arr.rows());
+
+  const Eigen::Array<std::int64_t, Eigen::Dynamic, 1> dist_read_flags_owners_arr
+      = graph::Partitioning::distribute_data(_mpi_comm.comm(), dist_flags,
+                                             col_flags_owners_arr);
+
 
   Eigen::Map<const Eigen::Array<std::int64_t, Eigen::Dynamic, Eigen::Dynamic,
                                 Eigen::RowMajor>>
       entities(topology_data.data(), num_local_entities, nnodes_per_entity);
 
-  std::unordered_map<std::int64_t, std::int64_t> topo_to_flags;
+  std::unordered_map<std::int64_t, std::pair<std::int64_t, std::int64_t>> topo_to_flags;
   for (std::size_t i = 0; i < topo_unique.size(); ++i)
-    topo_to_flags[topo_unique[i]] = dist_flags_arr(i, 0);
+    topo_to_flags[topo_unique[i]] = {dist_flags_arr(i, 0), dist_read_flags_owners_arr(i, 0)};
 
-  // const std::vector<std::int64_t>& l2g = mesh->geometry().global_indices();
-  // const std::vector<std::int32_t> l2l
-  //     = graph::Partitioning::compute_local_to_local(l2g, topo_unique);
+  // Prepare an array from sorted flags defining the entities
+  Eigen::Array<std::int64_t, Eigen::Dynamic, Eigen::Dynamic>
+      _read_entities(entities.rows(), entities.cols());
+
+  Eigen::Array<std::int64_t, Eigen::Dynamic, Eigen::Dynamic>
+      _read_values(entities.rows(), 1);
+
+  Eigen::Array<std::int32_t, Eigen::Dynamic, Eigen::Dynamic>
+      _read_entities_dest(entities.rows(), 1);
 
   for (Eigen::Index e = 0; e < entities.rows(); ++e)
   {
-    // Iterate over all entities as read from file
+    std::cout << "e " << e << " [";
     for (int i = 0; i < nnodes_per_entity; ++i)
-      e_nodes[i] = topo_to_flags[entities(e, i)];
-    std::sort(e_nodes.begin(), e_nodes.end());
+    {
+      _read_entities(e, i) = topo_to_flags[entities(e, i)].first;
+      // _read_entities_dest(e, 0) = (std::int32_t)flag_owner[0].second;
+      // if (flag_owner[i].second != flag_owner[0].second)
+      //   std::cout << "e:" << e << "i:" << i << std::endl;
+      // assert(flag_owner[i].second == flag_owner[0].second);
+      std::cout << ", (" << topo_to_flags[entities(e, i)].second << ", "<< topo_to_flags[entities(e, i)].first << ")";
+    }
+    std::cout << "]" << std::endl;
 
-    std::cout << "Infile e " << std::endl;
-    for (std::size_t i = 0; i < e_nodes.size(); ++i)
-      std::cout << e_nodes[i] << ", ";
-    std::cout << std::endl;
+    _read_values(e, 0) = values[e];
+    _read_entities_dest(e, 0) = (std::int32_t)topo_to_flags[entities(e, 0)].second;
+  }
 
-    const auto it = entities_flags.find(e_nodes);
+  const graph::AdjacencyList<std::int64_t> read_entities(_read_entities);
+  const graph::AdjacencyList<std::int64_t> read_values(_read_values);
+
+  const graph::AdjacencyList<std::int32_t> read_entities_dest(_read_entities_dest);
+
+  const auto [dist_read_entities, src, original_glob_index, ghost_owners2] =
+  graph::Partitioning::distribute(_mpi_comm.comm(), read_entities, read_entities_dest);
+
+  const auto [dist_read_values, src2, original_glob_index2, ghost_owners3] =
+  graph::Partitioning::distribute(_mpi_comm.comm(), read_values, read_entities_dest);
+
+  std::vector<std::int32_t> indices;
+  std::vector<int> values_fin;
+
+  const Eigen::Array<int, Eigen::Dynamic, 1>& _values
+    = dist_read_values.array().cast<int>();
+
+  // const std::vector<int> values2(_values.data(),
+  //                                _values.data() + _values.rows());
+
+  for (int e = 0; e < dist_read_entities.num_nodes(); ++e)
+  {
+    const Eigen::Array<std::int64_t, Eigen::Dynamic, 1> _flags_arr
+        = dist_read_entities.links(e);
+
+    std::vector<std::int64_t> flags(_flags_arr.data(),
+                                    _flags_arr.data() + _flags_arr.rows());
+
+    std::sort(flags.begin(), flags.end());
+
+    // std::cout << "Entity on proc " << rank << " " << _flags_arr << std::endl;
+
+    const auto it = entities_flags.find(flags);
     if (it != entities_flags.end())
-      indices[e] = it->second;
+    {
+      indices.push_back(it->second);
+      values_fin.push_back(_values[e]);
+    }
     else
-      throw std::runtime_error("Entity "+ std::to_string(e) +" not found in mesh.");
+    {
+      std::cout << "e nf proc " << rank << std::endl << _flags_arr << std::endl;
+      // throw std::runtime_error("Entity "+ std::to_string(e) +" not found in
+      // mesh.");
+    }
   }
 
   Eigen::Map<const Eigen::Array<std::int32_t, Eigen::Dynamic, 1>> indices_eig(
       indices.data(), indices.size());
-  Eigen::Map<const Eigen::Array<int, Eigen::Dynamic, 1>> values_eig(
-      values.data(), values.size());
+
+  Eigen::Map<const Eigen::Array<std::int32_t, Eigen::Dynamic, 1>> values_eig(
+      values_fin.data(), values_fin.size());
 
   return mesh::MeshTags<int>(mesh, e_dim, indices_eig, values_eig);
 }

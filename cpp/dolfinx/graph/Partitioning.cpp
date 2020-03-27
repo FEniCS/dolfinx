@@ -784,12 +784,16 @@ Partitioning::distribute_data(
   // Get ownership range for this rank, and compute offset
   const std::array<std::int64_t, 2> range
       = dolfinx::MPI::local_range(comm, num_points);
-  const std::int64_t offset_x
+  const std::int64_t offset_part
       = dolfinx::MPI::global_offset(comm, range[1] - range[0], true);
+  const std::int64_t offset_x
+      = dolfinx::MPI::global_offset(comm, x.rows(), true);
 
   const int gdim = x.cols();
   assert(gdim != 0);
   const int size = dolfinx::MPI::size(comm);
+
+  std::cout << "xrows+off " << x.rows() + offset_x << std::endl;
 
   // Determine number of points to send to owner
   std::vector<int> number_send(size, 0);
@@ -816,6 +820,8 @@ Partitioning::distribute_data(
     const int owner = dolfinx::MPI::index_owner(size, index_global, num_points);
     x_send.row(disp_tmp[owner]++) = x.row(i);
   }
+
+  std::cout << "Part num points2: " << num_points << std::endl;
 
   // Send/receive number of points to communicate to each process
   std::vector<int> number_recv(size);
@@ -889,7 +895,7 @@ Partitioning::distribute_data(
     for (int i = disp_index_recv[p]; i < disp_index_recv[p + 1]; ++i)
     {
       const std::int64_t index = indices_recv[i];
-      const std::int32_t index_local = index - offset_x;
+      const std::int32_t index_local = index - offset_part;
       assert(index_local >= 0);
       x_return.row(i) = x_recv.row(index_local);
     }

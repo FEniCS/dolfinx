@@ -180,7 +180,10 @@ mesh::Geometry mesh::create_geometry(
       dist_flags.push_back(dist_flags_arr(l2l[i], 0));
   }
   else
-    dist_flags = indices;
+  {
+    for (std::size_t i = 0; i < indices.size(); ++i)
+      dist_flags.push_back(indices[l2l[i]]);
+  }
 
   return Geometry(dof_index_map, dofmap, layout, xg, l2g, dist_flags);
 }

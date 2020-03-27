@@ -110,8 +110,6 @@ MeshTags<T>::MeshTags(
     throw std::runtime_error("Indices and values arrays must match in size.");
 
   assert(mesh);
-  const int D = mesh->topology().dim();
-  mesh->create_connectivity(dim, D);
 }
 //---------------------------------------------------------------------------
 template <typename T>

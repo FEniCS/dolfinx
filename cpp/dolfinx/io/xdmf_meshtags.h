@@ -31,24 +31,9 @@ void add_meshtags(MPI_Comm comm, const mesh::MeshTags<T>& meshtags,
   std::shared_ptr<const mesh::Mesh> mesh = meshtags.mesh();
   const int dim = meshtags.dim();
 
-  // Prepare an array of active entities
-  auto map_e = mesh->topology().index_map(dim);
-  assert(map_e);
-  const int size_local = map_e->size_local();
-  std::vector<std::int32_t> active_entities;
-  std::vector<T> active_values;
-
-  for (int i = 0; i < meshtags.indices().rows(); ++i)
-  {
-    if (meshtags.indices()[i] < size_local)
-    {
-      active_entities.push_back(meshtags.indices()[i]);
-      active_values.push_back(meshtags.values()[i]);
-    }
-  }
-  // std::vector<std::int32_t> active_entities(meshtags.indices().data(),
-  //                                           meshtags.indices().data()
-  //                                               + meshtags.indices().rows());
+  std::vector<std::int32_t> active_entities(meshtags.indices().data(),
+                                            meshtags.indices().data()
+                                                + meshtags.indices().rows());
 
   const std::string path_prefix = "/MeshTags/" + name;
   xdmf_mesh::add_topology_data(comm, xml_node, h5_id, path_prefix,
@@ -63,17 +48,17 @@ void add_meshtags(MPI_Comm comm, const mesh::MeshTags<T>& meshtags,
   attribute_node.append_attribute("Center") = "Cell";
 
   const std::int64_t global_num_values
-      = dolfinx::MPI::sum(comm, (std::int64_t)active_values.size());
+      = dolfinx::MPI::sum(comm, (std::int64_t)active_entities.size());
 
   const std::int64_t offset
-      = dolfinx::MPI::global_offset(comm, active_values.size(), true);
+      = dolfinx::MPI::global_offset(comm, active_entities.size(), true);
   const bool use_mpi_io = (dolfinx::MPI::size(comm) > 1);
 
-  // const std::vector<T> values(meshtags.values().data(),
-  //                             meshtags.values().data()
-  //                                 + meshtags.values().rows());
+  const std::vector<T> values(meshtags.values().data(),
+                              meshtags.values().data()
+                                  + meshtags.values().rows());
   xdmf_utils::add_data_item(attribute_node, h5_id, path_prefix + "/Values",
-                            active_values, offset, {global_num_values, 1}, "",
+                            values, offset, {global_num_values, 1}, "",
                             use_mpi_io);
 }
 
