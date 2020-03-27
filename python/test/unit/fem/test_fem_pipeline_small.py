@@ -35,6 +35,12 @@ parametrize_meshes_tp = pytest.mark.parametrize(
     "mesh", [UnitSquareMesh(MPI.comm_world, 2, 1, CellType.quadrilateral),
              UnitCubeMesh(MPI.comm_world, 2, 1, 1, CellType.hexahedron)])
 
+parametrize_meshes_quad = pytest.mark.parametrize(
+    "mesh", [UnitSquareMesh(MPI.comm_world, 2, 1, CellType.quadrilateral)])
+
+parametrize_meshes_hex = pytest.mark.parametrize(
+    "mesh", [UnitCubeMesh(MPI.comm_world, 2, 1, 1, CellType.hexahedron)])
+
 
 def run_scalar_test(mesh, V, degree):
     """ Manufactured Poisson problem, solving u = x[1]**p, where p is the
@@ -295,18 +301,36 @@ def test_dP_tp(family, degree, mesh):
 
 
 @skip_in_parallel
-@parametrize_meshes_tp
-@pytest.mark.parametrize("family", ["RTC", "NCE"])
+@parametrize_meshes_quad
+@pytest.mark.parametrize("family", ["RTCE", "RTCF"])
 @pytest.mark.parametrize("degree", [1, 2, 3])
-def test_RTC_NCE_tp(family, degree, mesh):
+def test_RTC_quad(family, degree, mesh):
     V = FunctionSpace(mesh, (family, degree + 1))
     run_vector_test(mesh, V, degree)
 
 
 @skip_in_parallel
-@parametrize_meshes_tp
-@pytest.mark.parametrize("family", ["BDMC", "AAE"])
+@parametrize_meshes_hex
+@pytest.mark.parametrize("family", ["NCE", "NCF"])
 @pytest.mark.parametrize("degree", [1, 2, 3])
-def test_BDMC_AAE_tp(family, degree, mesh):
+def test_NC_hex(family, degree, mesh):
+    V = FunctionSpace(mesh, (family, degree + 1))
+    run_vector_test(mesh, V, degree)
+
+
+@skip_in_parallel
+@parametrize_meshes_quad
+@pytest.mark.parametrize("family", ["BDMCE", "BDMCF"])
+@pytest.mark.parametrize("degree", [1, 2, 3])
+def test_BDM_quad(family, degree, mesh):
+    V = FunctionSpace(mesh, (family, degree))
+    run_vector_test(mesh, V, degree)
+
+
+@skip_in_parallel
+@parametrize_meshes_hex
+@pytest.mark.parametrize("family", ["AAE", "AAF"])
+@pytest.mark.parametrize("degree", [1, 2, 3])
+def test_AA_hex(family, degree, mesh):
     V = FunctionSpace(mesh, (family, degree))
     run_vector_test(mesh, V, degree)
