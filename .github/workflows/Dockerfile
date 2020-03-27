@@ -65,7 +65,7 @@ RUN export DEBIAN_FRONTEND=noninteractive && \
     python3-dev \
     python3-h5py \
     python3-matplotlib \
-    python3-numpy \
+    # python3-numpy \
     python3-pip \
     python3-scipy \
     python3-setuptools && \
@@ -90,7 +90,7 @@ RUN export DEBIAN_FRONTEND=noninteractive && \
 #   documentation or run tests.
 # - Third set of packages are optional but required for
 #   pygmsh/meshio/DOLFINX mesh pipeline.
-RUN python3 -m pip install --no-cache-dir mpi4py numba && \
+RUN python3 -m pip install --no-cache-dir mpi4py numba numpy && \
     python3 -m pip install --no-cache-dir cffi cppimport flake8 pytest pytest-xdist sphinx sphinx_rtd_theme && \
     python3 -m pip install --no-cache-dir meshio pygmsh
 
@@ -140,8 +140,6 @@ WORKDIR /tmp
 # Install PETSc with real and complex types, and 32 and 64 bit int
 RUN apt-get -qq update && \
     apt-get -y install bison flex && \
-    # wget -nc --quiet http://ftp.mcs.anl.gov/pub/petsc/release-snapshots/petsc-lite-${PETSC_VERSION}.tar.gz -O petsc-${PETSC_VERSION}.tar.gz && \
-    # mkdir -p petsc-src && tar -xf petsc-${PETSC_VERSION}.tar.gz -C petsc-src --strip-components 1 && \
     git clone --depth 1 --branch v${PETSC_VERSION} https://gitlab.com/petsc/petsc.git && \
     cd petsc && \
     # Real, 32-bit int
@@ -229,7 +227,7 @@ RUN apt-get -qq update && \
 
 # Install SLEPc with real and complex types, and 32 and 64 bit int
 RUN git clone --depth 1 --branch v${SLEPC_VERSION} https://gitlab.com/slepc/slepc.git && \
-    cd slepc \
+    cd slepc && \
     #
     export PETSC_DIR=/usr/local/petsc && \
     git clean -ffdx && \
@@ -250,49 +248,25 @@ RUN git clone --depth 1 --branch v${SLEPC_VERSION} https://gitlab.com/slepc/slep
     make install && \
     #
     export PETSC_DIR=/usr/local/petsc-complex-64 && \
-    git clean -ffdx & \
+    git clean -ffdx && \
     python3 ./configure --prefix=/usr/local/slepc-complex-64 && \
     make && \
     make install && \
     #
     rm -rf /tmp/*
 
-########################################
+RUN PETSC_DIR=/usr/local/petsc python3 -m pip install -t ${PETSC_DIR} petsc4py==${PETSC4PY_VERSION} && \
+    SLEPC_DIR=/usr/local/slepc python3 -m pip install -t ${SLEPC_DIR} slepc4py==${SLEPC4PY_VERSION} && \
+    #
+    PETSC_DIR=/usr/local/petsc-64 python3 -m pip install -t ${PETSC_DIR} petsc4py==${PETSC4PY_VERSION} && \
+    SLEPC_DIR=/usr/local/slepc-64 python3 -m pip install -t ${SLEPC_DIR} slepc4py==${SLEPC4PY_VERSION} && \
+    #
+    PETSC_DIR=/usr/local/petsc-complex python3 -m pip install -t ${PETSC_DIR} petsc4py==${PETSC4PY_VERSION} && \
+    SLEPC_DIR=/usr/local/slepc-complex python3 -m pip install -t ${SLEPC_DIR} slepc4py==${SLEPC4PY_VERSION} && \
+    #
+    PETSC_DIR=/usr/local/petsc-complex-64 python3 -m pip install -t ${PETSC_DIR} petsc4py==${PETSC4PY_VERSION} && \
+    SLEPC_DIR=/usr/local/slepc-complex-64 python3 -m pip install -t ${SLEPC_DIR} slepc4py==${SLEPC4PY_VERSION} && \
+    #
+    rm -rf ~/.cache && \
+    ls /tmp
 
-FROM test as py-test-real
-LABEL description="FEniCS development environment with PETSc complex mode"
-ARG PETSC4PY_VERSION
-ARG SLEPC4PY_VERSION
-ENV PETSC_DIR=/usr/local/petsc SLEPC_DIR=/usr/local/slepc
-RUN python3 -m pip install --no-cache-dir petsc4py==${PETSC4PY_VERSION} && \
-    python3 -m pip install --no-cache-dir slepc4py==${SLEPC4PY_VERSION}
-
-########################################
-
-FROM test as py-test-real-64
-LABEL description="FEniCS development environment with PETSc complex mode"
-ARG PETSC4PY_VERSION
-ARG SLEPC4PY_VERSION
-ENV PETSC_DIR=/usr/local/petsc-64 SLEPC_DIR=/usr/local/slepc-64
-RUN python3 -m pip install --no-cache-dir petsc4py==${PETSC4PY_VERSION} && \
-    python3 -m pip install --no-cache-dir slepc4py==${SLEPC4PY_VERSION}
-
-########################################
-
-FROM test as py-test-complex
-LABEL description="FEniCS development environment with PETSc complex mode"
-ARG PETSC4PY_VERSION
-ARG SLEPC4PY_VERSION
-ENV PETSC_DIR=/usr/local/petsc-complex SLEPC_DIR=/usr/local/slepc-complex
-RUN python3 -m pip install --no-cache-dir petsc4py==${PETSC4PY_VERSION} && \
-    python3 -m pip install --no-cache-dir slepc4py==${SLEPC4PY_VERSION}
-
-########################################
-
-FROM test as py-test-complex-64
-LABEL description="FEniCS development environment with PETSc complex mode"
-ARG PETSC4PY_VERSION
-ARG SLEPC4PY_VERSION
-ENV PETSC_DIR=/usr/local/petsc-complex-64 SLEPC_DIR=/usr/local/slepc-complex-64
-RUN python3 -m pip install --no-cache-dir petsc4py==${PETSC4PY_VERSION} && \
-    python3 -m pip install --no-cache-dir slepc4py==${SLEPC4PY_VERSION}
