@@ -183,7 +183,7 @@ void xdmf_function::write(const function::Function& u, double t, int counter,
   std::vector<std::string> components = {""};
 #endif
 
-  for (const std::string component : components)
+  for (std::string component : components)
   {
     std::string attr_name;
     std::string dataset_name;
