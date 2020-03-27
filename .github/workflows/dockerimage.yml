@@ -16,7 +16,5 @@ jobs:
     - name: Build the Docker images
       run: |
         docker build --file .github/workflows/Dockerfile --target test --tag test .
-        docker build --file .github/workflows/Dockerfile --target py-test-real --tag test:py-real-py .
-        docker build --file .github/workflows/Dockerfile --target py-test-real-64 --tag test:py-real-64 .
-        docker build --file .github/workflows/Dockerfile --target py-test-complex --tag test:py-complex .
-        docker build --file .github/workflows/Dockerfile --target py-test-complex-64 --tag test:py-complex-64 .
+    # - name: Login to DockerHub Registry
+    #   run: echo ${{ secrets.DOCKERHUB_PASSWORD }} | docker login -u ${{ secrets.DOCKERHUB_USERNAME }} --password-stdin

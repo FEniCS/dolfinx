@@ -65,7 +65,7 @@ RUN export DEBIAN_FRONTEND=noninteractive && \
     python3-dev \
     python3-h5py \
     python3-matplotlib \
-    # python3-numpy \
+    python3-numpy \
     python3-pip \
     python3-scipy \
     python3-setuptools && \
@@ -90,7 +90,7 @@ RUN export DEBIAN_FRONTEND=noninteractive && \
 #   documentation or run tests.
 # - Third set of packages are optional but required for
 #   pygmsh/meshio/DOLFINX mesh pipeline.
-RUN python3 -m pip install --no-cache-dir mpi4py numba numpy && \
+RUN python3 -m pip install --no-cache-dir mpi4py numba && \
     python3 -m pip install --no-cache-dir cffi cppimport flake8 pytest pytest-xdist sphinx sphinx_rtd_theme && \
     python3 -m pip install --no-cache-dir meshio pygmsh
 
@@ -231,42 +231,51 @@ RUN git clone --depth 1 --branch v${SLEPC_VERSION} https://gitlab.com/slepc/slep
     #
     export PETSC_DIR=/usr/local/petsc && \
     git clean -ffdx && \
-    python3 ./configure --prefix=/usr/local/slepc && \
+    python3 ./configure --prefix=/usr/local/petsc && \
     make && \
     make install && \
     #
     export PETSC_DIR=/usr/local/petsc-64 && \
     git clean -ffdx && \
-    python3 ./configure --prefix=/usr/local/slepc-64 && \
+    python3 ./configure --prefix=/usr/local/petsc-64 && \
     make && \
     make install && \
     #
     export PETSC_DIR=/usr/local/petsc-complex && \
     git clean -ffdx && \
-    python3 ./configure --prefix=/usr/local/slepc-complex && \
+    python3 ./configure --prefix=/usr/local/petsc-complex && \
     make && \
     make install && \
     #
     export PETSC_DIR=/usr/local/petsc-complex-64 && \
     git clean -ffdx && \
-    python3 ./configure --prefix=/usr/local/slepc-complex-64 && \
+    python3 ./configure --prefix=/usr/local/petsc-complex-64 && \
     make && \
     make install && \
     #
     rm -rf /tmp/*
 
-RUN PETSC_DIR=/usr/local/petsc python3 -m pip install -t ${PETSC_DIR} petsc4py==${PETSC4PY_VERSION} && \
-    SLEPC_DIR=/usr/local/slepc python3 -m pip install -t ${SLEPC_DIR} slepc4py==${SLEPC4PY_VERSION} && \
+ARG PETSC4PY_VERSION
+ARG SLEPC4PY_VERSION
+RUN export PETSC_DIR=/usr/local/petsc && \
+    export SLEPC_DIR=/usr/local/petsc && \
+    python3 -m pip install --no-deps -t ${PETSC_DIR}/python petsc4py==${PETSC4PY_VERSION} && \
+    python3 -m pip install --no-deps -t ${PETSC_DIR}/python slepc4py==${SLEPC4PY_VERSION} && \
     #
-    PETSC_DIR=/usr/local/petsc-64 python3 -m pip install -t ${PETSC_DIR} petsc4py==${PETSC4PY_VERSION} && \
-    SLEPC_DIR=/usr/local/slepc-64 python3 -m pip install -t ${SLEPC_DIR} slepc4py==${SLEPC4PY_VERSION} && \
+    export PETSC_DIR=/usr/local/petsc-64 && \
+    export SLEPC_DIR=/usr/local/petsc-64 && \
+    python3 -m pip install --no-deps -t ${PETSC_DIR}/python petsc4py==${PETSC4PY_VERSION} && \
+    python3 -m pip install --no-deps -t ${PETSC_DIR}/python slepc4py==${SLEPC4PY_VERSION} && \
     #
-    PETSC_DIR=/usr/local/petsc-complex python3 -m pip install -t ${PETSC_DIR} petsc4py==${PETSC4PY_VERSION} && \
-    SLEPC_DIR=/usr/local/slepc-complex python3 -m pip install -t ${SLEPC_DIR} slepc4py==${SLEPC4PY_VERSION} && \
+    export PETSC_DIR=/usr/local/petsc-64 && \
+    export SLEPC_DIR=/usr/local/petsc-64 && \
+    python3 -m pip install --no-deps -t ${PETSC_DIR} petsc4py==${PETSC4PY_VERSION} && \
+    python3 -m pip install --no-deps -t ${PETSC_DIR} slepc4py==${SLEPC4PY_VERSION} && \
     #
-    PETSC_DIR=/usr/local/petsc-complex-64 python3 -m pip install -t ${PETSC_DIR} petsc4py==${PETSC4PY_VERSION} && \
-    SLEPC_DIR=/usr/local/slepc-complex-64 python3 -m pip install -t ${SLEPC_DIR} slepc4py==${SLEPC4PY_VERSION} && \
+    export PETSC_DIR=/usr/local/petsc-complex-64 && \
+    export SLEPC_DIR=/usr/local/petsc-complex-64 && \
+    python3 -m pip install --no-deps -t ${PETSC_DIR} petsc4py==${PETSC4PY_VERSION} && \
+    python3 -m pip install --no-deps -t ${PETSC_DIR} slepc4py==${SLEPC4PY_VERSION} && \
     #
     rm -rf ~/.cache && \
-    ls /tmp
 
