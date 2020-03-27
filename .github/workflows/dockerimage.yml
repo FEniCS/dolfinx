@@ -13,5 +13,10 @@ jobs:
     runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@v2
-    - name: Build the Docker image
-      run: docker build --file .github/workflows/Dockerfile . --tag my-image-name:$(date +%s)
+    - name: Build the Docker images
+      run: |
+        docker build --file .github/workflows/Dockerfile --target test --tag test .
+        docker build --file .github/workflows/Dockerfile --target py-test-real --tag test:py-real-py .
+        docker build --file .github/workflows/Dockerfile --target py-test-real-64 --tag test:py-real-64 .
+        docker build --file .github/workflows/Dockerfile --target py-test-complex --tag test:py-complex .
+        docker build --file .github/workflows/Dockerfile --target py-test-complex-64 --tag test:py-complex-64 .
