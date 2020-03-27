@@ -73,8 +73,8 @@ RUN export DEBIAN_FRONTEND=noninteractive && \
     doxygen \
     git \
     # sudo \
-    valgrind && \
-    # wget && \
+    valgrind \
+    wget && \
     # apt-get -y install \
     # libglu1 \
     # libxcursor-dev \
