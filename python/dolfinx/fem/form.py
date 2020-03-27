@@ -11,7 +11,7 @@ import ufl
 from dolfinx import cpp, fem, jit
 
 
-class Form(ufl.Form):
+class Form:
     def __init__(self, form: ufl.Form, form_compiler_parameters: dict = None):
         """Create dolfinx Form
 
@@ -55,7 +55,7 @@ class Form(ufl.Form):
         self._cpp_object = cpp.fem.create_form(ufc_form, function_spaces)
 
         # Need to fill the form with coefficients data
-        # For every coefficient in form take its CPP object
+        # For every coefficient in form take its C++ object
         original_coefficients = form.coefficients()
         for i in range(self._cpp_object.num_coefficients()):
             j = self._cpp_object.original_coefficient_position(i)
