@@ -48,10 +48,10 @@ RUN export DEBIAN_FRONTEND=noninteractive && \
     libboost-dev \
     libboost-filesystem-dev \
     libboost-iostreams-dev \
-    libboost-math-dev \
+    # libboost-math-dev \
     libboost-program-options-dev \
-    libboost-system-dev \
-    libboost-thread-dev \
+    # libboost-system-dev \
+    # libboost-thread-dev \
     libboost-timer-dev \
     libeigen3-dev \
     libhdf5-openmpi-dev \
@@ -72,13 +72,13 @@ RUN export DEBIAN_FRONTEND=noninteractive && \
     apt-get -y install \
     doxygen \
     git \
-    sudo \
-    valgrind \
-    wget && \
-    apt-get -y install \
-    libglu1 \
-    libxcursor-dev \
-    libxinerama1 && \
+    # sudo \
+    valgrind && \
+    # wget && \
+    # apt-get -y install \
+    # libglu1 \
+    # libxcursor-dev \
+    # libxinerama1 && \
     apt-get -y install \
     python3-lxml && \
     apt-get clean && \
