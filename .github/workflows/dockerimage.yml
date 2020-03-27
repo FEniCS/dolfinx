@@ -1,0 +1,19 @@
+name: Docker CI test image
+on:
+  push:
+    branches:
+      - "*"
+    # branches: [ master ]
+  pull_request:
+    branches: [ master ]
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v2
+    - name: Build the Docker images
+      run: docker build --file .github/workflows/Dockerfile --target test --tag fenicsproject/test-env .
+    - name: Login to DockerHub Registry
+      run: echo ${{ secrets.DOCKERHUB_PASSWORD }} | docker login -u ${{ secrets.DOCKERHUB_USERNAME }} --password-stdin
+    - name: Push DockerHub Registry
+      run: docker push fenicsproject/test-env
