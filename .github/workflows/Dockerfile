@@ -277,5 +277,5 @@ RUN export PETSC_DIR=/usr/local/petsc && \
     python3 -m pip install --no-deps -t ${PETSC_DIR} petsc4py==${PETSC4PY_VERSION} && \
     python3 -m pip install --no-deps -t ${PETSC_DIR} slepc4py==${SLEPC4PY_VERSION} && \
     #
-    rm -rf ~/.cache && \
+    rm -rf ~/.cache
 
