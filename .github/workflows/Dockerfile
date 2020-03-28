@@ -1,4 +1,4 @@
-# Dockerfile describing development builds of FEniCS-X
+# Dockerfile for DOLFINX-X CI testing
 #
 # Authors: Jack S. Hale <jack.hale@uni.lu> Lizao Li
 # <lzlarryli@gmail.com> Garth N. Wells <gnw20@cam.ac.uk> Jan Blechta
