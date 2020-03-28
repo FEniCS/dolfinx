@@ -58,9 +58,12 @@ jobs:
           python3 -m flake8 python/demo
           python3 -m flake8 python/test
       - name: Build C++ documentation
-        run: |
-          cd cpp/doc
-          doxygen
+        # run: |
+        #   cd cpp/doc
+        #   doxygen
+        uses: mattnotmitt/doxygen-action@v1
+        with:
+          doxyfile-path: 'cpp/doc'
 
       - name: Configure C++
         run: |
