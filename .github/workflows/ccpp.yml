@@ -1,4 +1,4 @@
-name: DOLFINX CI
+name: DOLFINX CI tests
 
 on:
   push:
@@ -31,6 +31,10 @@ jobs:
       PETSC_DIR: /usr/local/petsc
       SLEPC_DIR: /usr/local/slepc
       PYTHONPATH: /usr/local/petsc/python:$PYTHONPATH
+
+    strategy:
+      matrix:
+        float_type: [real]
 
     steps:
       - uses: actions/checkout@v2
@@ -90,6 +94,10 @@ jobs:
         run: |
           cd python
           pip3 -v install .
+      - name: Build Python docs interface
+        run: |
+          cd python/demo && python3 ./generate-demo-files.py
+          cd ../doc && make html
 
       - name: Run demos (Python, serial)
         run: python3 -m pytest -n=3 -v -m serial --durations=10 python/demo/test.py
@@ -104,3 +112,14 @@ jobs:
         run: mpirun -np 2 python3 -m pytest python/test/unit/
       - name: Run Python unit tests (MPI, np=3)
         run: mpirun -np 3 python3 -m pytest python/test/unit/
+
+      - name: Push C++ documentation
+          if: github.ref == 'master'
+          run: |
+          cd cpp/doc
+          # Upload to server
+      - name: Push Python documentation
+          if: github.ref == 'master'
+          run: |
+          cd python/doc
+          # Upload to server
