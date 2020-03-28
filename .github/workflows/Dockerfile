@@ -159,8 +159,6 @@ RUN apt-get -qq update && \
     --with-scalar-type=real \
     --with-64-bit-indices=0 && \
     make && \
-    make deletemods deletemanualpages && \
-
     # Real, 64-bit int
     python3 ./configure \
     PETSC_ARCH=linux-gnu-real-64 \
