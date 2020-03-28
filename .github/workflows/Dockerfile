@@ -159,7 +159,7 @@ RUN apt-get -qq update && \
     --with-scalapack=1 \
     --with-scalapack-lib=-lscalapack-openmpi \
     --with-scalar-type=real \
-    --prefix=/usr/local/petsc && \
+    --prefix=/usr/local/petsc-real && \
     make && \
     make install && \
     # Real, 64-bit int
@@ -177,7 +177,7 @@ RUN apt-get -qq update && \
     --download-superlu_dist \
     --with-scalar-type=real \
     --with-64-bit-indices=1 \
-    --prefix=/usr/local/petsc-64 && \
+    --prefix=/usr/local/petsc-real-64 && \
     make && \
     make install && \
     # Complex, 32-bit int
@@ -229,15 +229,15 @@ RUN apt-get -qq update && \
 RUN git clone --depth 1 --branch v${SLEPC_VERSION} https://gitlab.com/slepc/slepc.git && \
     cd slepc && \
     #
-    export PETSC_DIR=/usr/local/petsc && \
+    export PETSC_DIR=/usr/local/petsc-real && \
     git clean -ffdx && \
-    python3 ./configure --prefix=/usr/local/petsc && \
+    python3 ./configure --prefix=/usr/local/petsc-real && \
     make && \
     make install && \
     #
-    export PETSC_DIR=/usr/local/petsc-64 && \
+    export PETSC_DIR=/usr/local/petsc-real-64 && \
     git clean -ffdx && \
-    python3 ./configure --prefix=/usr/local/petsc-64 && \
+    python3 ./configure --prefix=/usr/local/petsc-real-64 && \
     make && \
     make install && \
     #
@@ -257,18 +257,18 @@ RUN git clone --depth 1 --branch v${SLEPC_VERSION} https://gitlab.com/slepc/slep
 
 ARG PETSC4PY_VERSION
 ARG SLEPC4PY_VERSION
-RUN export PETSC_DIR=/usr/local/petsc && \
-    export SLEPC_DIR=/usr/local/petsc && \
+RUN export PETSC_DIR=/usr/local/petsc-real && \
+    export SLEPC_DIR=/usr/local/petsc-real && \
     python3 -m pip install --no-deps -t ${PETSC_DIR}/python petsc4py==${PETSC4PY_VERSION} && \
     python3 -m pip install --no-deps -t ${PETSC_DIR}/python slepc4py==${SLEPC4PY_VERSION} && \
     #
-    export PETSC_DIR=/usr/local/petsc-64 && \
-    export SLEPC_DIR=/usr/local/petsc-64 && \
+    export PETSC_DIR=/usr/local/petsc-real-64 && \
+    export SLEPC_DIR=/usr/local/petsc-real-64 && \
     python3 -m pip install --no-deps -t ${PETSC_DIR}/python petsc4py==${PETSC4PY_VERSION} && \
     python3 -m pip install --no-deps -t ${PETSC_DIR}/python slepc4py==${SLEPC4PY_VERSION} && \
     #
-    export PETSC_DIR=/usr/local/petsc-64 && \
-    export SLEPC_DIR=/usr/local/petsc-64 && \
+    export PETSC_DIR=/usr/local/petsc-complex && \
+    export SLEPC_DIR=/usr/local/petsc-complex && \
     python3 -m pip install --no-deps -t ${PETSC_DIR} petsc4py==${PETSC4PY_VERSION} && \
     python3 -m pip install --no-deps -t ${PETSC_DIR} slepc4py==${SLEPC4PY_VERSION} && \
     #
