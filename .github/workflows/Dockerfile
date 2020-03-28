@@ -137,13 +137,18 @@ ARG PETSC_SLEPC_DEBUGGING
 
 WORKDIR /tmp
 
-# Install PETSc with real and complex types, and 32 and 64 bit int
+# Install PETSc with real and complex types, and 32 and 64 bit integers
 RUN apt-get -qq update && \
     apt-get -y install bison flex && \
-    git clone --depth 1 --branch v${PETSC_VERSION} https://gitlab.com/petsc/petsc.git && \
+    # git clone --depth 1 --branch v${PETSC_VERSION} https://gitlab.com/petsc/petsc.git && \
+    # cd petsc && \
+    cd /usr/local/ && \
+    wget -nc --quiet http://ftp.mcs.anl.gov/pub/petsc/release-snapshots/petsc-lite-${PETSC_VERSION}.tar.gz -O petsc-${PETSC_VERSION}.tar.gz && \
+    mkdir -p petsc && tar -xf petsc-${PETSC_VERSION}.tar.gz -C petsc --strip-components 1 && \
     cd petsc && \
     # Real, 32-bit int
     python3 ./configure \
+    PETSC_ARCH=linux-gnu-real-32 \
     --COPTFLAGS=${PETSC_SLEPC_OPTFLAGS} \
     --CXXOPTFLAGS=${PETSC_SLEPC_OPTFLAGS} \
     --FOPTFLAGS=${PETSC_SLEPC_OPTFLAGS} \
@@ -158,31 +163,29 @@ RUN apt-get -qq update && \
     --download-superlu_dist \
     --with-scalapack=1 \
     --with-scalapack-lib=-lscalapack-openmpi \
+    --with-shared-libraries \
     --with-scalar-type=real \
-    --prefix=/usr/local/petsc-real && \
+    --with-64-bit-indices=0 && \
     make && \
-    make install && \
     # Real, 64-bit int
-    git clean -ffdx . && \
     python3 ./configure \
+    PETSC_ARCH=linux-gnu-real-64 \
     --COPTFLAGS=${PETSC_SLEPC_OPTFLAGS} \
     --CXXOPTFLAGS=${PETSC_SLEPC_OPTFLAGS} \
     --FOPTFLAGS=${PETSC_SLEPC_OPTFLAGS} \
     --with-debugging=${PETSC_SLEPC_DEBUGGING} \
     --with-fortran-bindings=no \
-    --with-shared-libraries \
     --download-hypre \
     --download-ptscotch \
     --download-suitesparse \
     --download-superlu_dist \
+    --with-shared-libraries \
     --with-scalar-type=real \
-    --with-64-bit-indices=1 \
-    --prefix=/usr/local/petsc-real-64 && \
+    --with-64-bit-indices=1 && \
     make && \
-    make install && \
     # Complex, 32-bit int
-    git clean -ffdx . && \
     python3 ./configure \
+    PETSC_ARCH=linux-gnu-complex-32 \
     --COPTFLAGS=${PETSC_SLEPC_OPTFLAGS} \
     --CXXOPTFLAGS=${PETSC_SLEPC_OPTFLAGS} \
     --FOPTFLAGS=${PETSC_SLEPC_OPTFLAGS} \
@@ -194,30 +197,28 @@ RUN apt-get -qq update && \
     --download-suitesparse \
     --download-superlu \
     --download-superlu_dist \
-    --with-scalar-type=complex \
     --with-scalapack=1 \
-    --with-scalapack-lib=-lscalapack-openmpi \
-    --prefix=/usr/local/petsc-complex && \
+    --with-scalapack-lib=-lscalapack-openmpi && \
+    --with-shared-libraries \
+    --with-scalar-type=complex \
+    --with-64-bit-indices=0 && \
     make && \
-    make install && \
     # Complex, 64-bit int
-    git clean -ffdx . && \
     python3 ./configure \
+    PETSC_ARCH=linux-gnu-complex-64 \
     --COPTFLAGS=${PETSC_SLEPC_OPTFLAGS} \
     --CXXOPTFLAGS=${PETSC_SLEPC_OPTFLAGS} \
     --FOPTFLAGS=${PETSC_SLEPC_OPTFLAGS} \
     --with-debugging=${PETSC_SLEPC_DEBUGGING} \
     --with-fortran-bindings=no \
-    --with-shared-libraries \
     --download-hypre \
     --download-ptscotch \
     --download-suitesparse \
     --download-superlu_dist \
+    --with-shared-libraries \
     --with-scalar-type=complex \
-    --with-64-bit-indices=1 \
-    --prefix=/usr/local/petsc-complex-64 && \
+    --with-64-bit-indices=1 && \
     make && \
-    make install && \
     # Cleanup
     apt-get -y purge bison flex  && \
     apt-get -y autoremove && \
@@ -225,57 +226,34 @@ RUN apt-get -qq update && \
     rm -rf /tmp/* && \
     rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
 
+ENV PETSC_DIR=/usr/local/petsc
+
 # Install SLEPc with real and complex types, and 32 and 64 bit int
-RUN git clone --depth 1 --branch v${SLEPC_VERSION} https://gitlab.com/slepc/slepc.git && \
+RUN cd /usr/local/ && \
+    wget -nc --quiet https://slepc.upv.es/download/distrib/slepc-${SLEPC_VERSION}.tar.gz -O slepc-${SLEPC_VERSION}.tar.gz && \
+    mkdir -p slepc && tar -xf slepc-${SLEPC_VERSION}.tar.gz -C slepc --strip-components 1 && \
+    # git clone --depth 1 --branch v${SLEPC_VERSION} https://gitlab.com/slepc/slepc.git && \
     cd slepc && \
+    # export PETSC_DIR=/usr/local/petsc && \
     #
-    export PETSC_DIR=/usr/local/petsc-real && \
-    git clean -ffdx && \
-    python3 ./configure --prefix=/usr/local/petsc-real && \
-    make && \
-    make install && \
+    PETSC_ARCH=linux-gnu-real-32 python3 ./configure && \
+    make SLEPC_DIR=/usr/local/slepc PETSC_DIR=/usr/local/petsc PETSC_ARCH=linux-gnu-real-32 && \
+    # #
+    PETSC_ARCH=linux-gnu-real-64 python3 ./configure && \
+    make SLEPC_DIR=/usr/local/slepc PETSC_DIR=/usr/local/petsc PETSC_ARCH=linux-gnu-real-64 && \
     #
-    export PETSC_DIR=/usr/local/petsc-real-64 && \
-    git clean -ffdx && \
-    python3 ./configure --prefix=/usr/local/petsc-real-64 && \
-    make && \
-    make install && \
+    PETSC_ARCH=linux-gnu-complex-32 python3 ./configure && \
+    make SLEPC_DIR=/usr/local/slepc PETSC_DIR=/usr/local/petsc PETSC_ARCH=linux-gnu-complex-32 && \
     #
-    export PETSC_DIR=/usr/local/petsc-complex && \
-    git clean -ffdx && \
-    python3 ./configure --prefix=/usr/local/petsc-complex && \
-    make && \
-    make install && \
-    #
-    export PETSC_DIR=/usr/local/petsc-complex-64 && \
-    git clean -ffdx && \
-    python3 ./configure --prefix=/usr/local/petsc-complex-64 && \
-    make && \
-    make install && \
-    #
+    PETSC_ARCH=linux-gnu-complex-64 python3 ./configure && \
+    make SLEPC_DIR=/usr/local/slepc PETSC_DIR=/usr/local/petsc PETSC_ARCH=linux-gnu-complex-64 && \
     rm -rf /tmp/*
+
+ENV SLEPC_DIR=/usr/local/slepc
 
 ARG PETSC4PY_VERSION
 ARG SLEPC4PY_VERSION
-RUN export PETSC_DIR=/usr/local/petsc-real && \
-    export SLEPC_DIR=/usr/local/petsc-real && \
-    python3 -m pip install --no-deps -t ${PETSC_DIR}/python petsc4py==${PETSC4PY_VERSION} && \
-    python3 -m pip install --no-deps -t ${PETSC_DIR}/python slepc4py==${SLEPC4PY_VERSION} && \
-    #
-    export PETSC_DIR=/usr/local/petsc-real-64 && \
-    export SLEPC_DIR=/usr/local/petsc-real-64 && \
-    python3 -m pip install --no-deps -t ${PETSC_DIR}/python petsc4py==${PETSC4PY_VERSION} && \
-    python3 -m pip install --no-deps -t ${PETSC_DIR}/python slepc4py==${SLEPC4PY_VERSION} && \
-    #
-    export PETSC_DIR=/usr/local/petsc-complex && \
-    export SLEPC_DIR=/usr/local/petsc-complex && \
-    python3 -m pip install --no-deps -t ${PETSC_DIR} petsc4py==${PETSC4PY_VERSION} && \
-    python3 -m pip install --no-deps -t ${PETSC_DIR} slepc4py==${SLEPC4PY_VERSION} && \
-    #
-    export PETSC_DIR=/usr/local/petsc-complex-64 && \
-    export SLEPC_DIR=/usr/local/petsc-complex-64 && \
-    python3 -m pip install --no-deps -t ${PETSC_DIR} petsc4py==${PETSC4PY_VERSION} && \
-    python3 -m pip install --no-deps -t ${PETSC_DIR} slepc4py==${SLEPC4PY_VERSION} && \
-    #
-    rm -rf ~/.cache
+RUN export PETSC_ARCH=linux-gnu-real-32:linux-gnu-real-64:linux-gnu-complex-32:linux-gnu-complex-64 && \
+    python3 -m pip install --no-cache petsc4py==${PETSC4PY_VERSION} && \
+    python3 -m pip install --no-cache  slepc4py==${SLEPC4PY_VERSION}
 
