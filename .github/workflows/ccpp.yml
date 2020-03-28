@@ -99,7 +99,7 @@ jobs:
           cd ../doc && make html
 
       - name: Run demos (Python, serial)
-        run: python3 -m pytest -n=3 -v -m serial --durations=10 python/demo/test.py
+        run: python3 -m pytest -n=2 -v -m serial --durations=10 python/demo/test.py
       - name: Run demos (Python, MPI (np=2))
         run: python3 -m pytest -v -m mpi --num-proc=2 python/demo/test.py
       - name: Run demos (Python, MPI (np=3))

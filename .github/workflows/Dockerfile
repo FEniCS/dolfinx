@@ -48,10 +48,7 @@ RUN export DEBIAN_FRONTEND=noninteractive && \
     libboost-dev \
     libboost-filesystem-dev \
     libboost-iostreams-dev \
-    # libboost-math-dev \
     libboost-program-options-dev \
-    # libboost-system-dev \
-    # libboost-thread-dev \
     libboost-timer-dev \
     libeigen3-dev \
     libhdf5-openmpi-dev \
@@ -72,13 +69,8 @@ RUN export DEBIAN_FRONTEND=noninteractive && \
     apt-get -y install \
     doxygen \
     git \
-    # sudo \
     valgrind \
     wget && \
-    # apt-get -y install \
-    # libglu1 \
-    # libxcursor-dev \
-    # libxinerama1 && \
     apt-get -y install \
     python3-lxml && \
     apt-get clean && \
@@ -223,6 +215,8 @@ RUN apt-get -qq update && \
     apt-get -y purge bison flex  && \
     apt-get -y autoremove && \
     apt-get clean && \
+    rm -rf docs/ src/ CTAGS RDict.log share/ && \
+    rm ../petsc-${PETSC_VERSION}.tar.gz && \
     rm -rf /tmp/* && \
     rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
 
@@ -247,6 +241,9 @@ RUN cd /usr/local/ && \
     #
     PETSC_ARCH=linux-gnu-complex-64 python3 ./configure && \
     make SLEPC_DIR=/usr/local/slepc PETSC_DIR=/usr/local/petsc PETSC_ARCH=linux-gnu-complex-64 && \
+    #
+    rm -rf docs/ src/ CTAGS && \
+    rm ../slepc-${SLEPC_VERSION}.tar.gz && \
     rm -rf /tmp/*
 
 ENV SLEPC_DIR=/usr/local/slepc
