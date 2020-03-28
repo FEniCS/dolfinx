@@ -114,12 +114,12 @@ jobs:
         run: mpirun -np 3 python3 -m pytest python/test/unit/
 
       - name: Push C++ documentation
-          if: github.ref == 'master'
-          run: |
-            cd cpp/doc
-            # Upload to server
+        if: github.ref == 'master'
+        run: |
+          cd cpp/doc
+          # Upload to server
       # - name: Push Python documentation
       #     if: github.ref == 'master'
       #     run: |
       #     cd python/doc
-          # Upload to server
+      # Upload to server
