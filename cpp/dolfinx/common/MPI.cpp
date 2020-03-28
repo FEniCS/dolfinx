@@ -147,6 +147,28 @@ std::uint32_t dolfinx::MPI::index_owner(int size, std::size_t index,
   return r + (index - r * (n + 1)) / n;
 }
 //-----------------------------------------------------------------------------
+int dolfinx::MPI::index_owner(int size, std::size_t index,
+                              std::vector<std::vector<int>> sizes)
+{
+
+  assert(sizes.size() == (std::size_t)size);
+
+  std::int64_t sz = 0;
+  int owner = -1;
+  for (int i = 0; i < size; ++i)
+  {
+    sz += sizes[i][0];
+    if (index < (std::size_t)sz)
+    {
+      owner = i;
+      break;
+    }
+  }
+  assert(owner >= 0);
+
+  return owner;
+}
+//-----------------------------------------------------------------------------
 MPI_Comm dolfinx::MPI::SubsetComm(MPI_Comm comm, int num_processes)
 {
 

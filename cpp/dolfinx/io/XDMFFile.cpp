@@ -386,7 +386,7 @@ XDMFFile::read_meshtags(std::shared_ptr<const mesh::Mesh> mesh,
   assert(map_e);
 
   const int dim = mesh->topology().dim();
-  const std::int32_t num_entities = map_e->size_local();// + map_e->num_ghosts();
+  const std::int32_t num_entities = map_e->size_local() + map_e->num_ghosts();
 
   const graph::AdjacencyList<std::int32_t>& cells_g = mesh->geometry().dofmap();
 
@@ -425,14 +425,51 @@ XDMFFile::read_meshtags(std::shared_ptr<const mesh::Mesh> mesh,
   const std::vector<std::int64_t> geom_flags(
       mesh->geometry().flags().data(), mesh->geometry().flags().data() + size_local_ghosts);
 
+  const auto ghost_owners = map_g->ghost_owners();
+  // Prepare an array of owners of indices to which flags refer by value
+  const int comm_size = MPI::size(_mpi_comm.comm());
+
+  // Find the maximum values of flags across all processes
+  // Here, must make sure, that a "global" array is accessible with the
+  // values of any flag as index
   // const std::int64_t num_flags_global
   //     = MPI::sum(_mpi_comm.comm(), (std::int64_t)size_local_ghosts);
 
-  const auto ghost_owners = map_g->ghost_owners();
-  // Prepare an array of owners of indices to which flags refer by value
-  // const int comm_size = MPI::size(_mpi_comm.comm());
-  Eigen::Array<std::int64_t, Eigen::Dynamic, 1> flags_owners(size_local_ghosts, 1);
-  flags_owners = 10;
+  // Split global array size and retrieve a range that this process is
+  // responsible for
+  // std::array<std::int64_t, 2> range
+  //     = MPI::local_range(_mpi_comm.comm(), num_flags_global);
+
+  std::vector<std::vector<std::int64_t>> send_flags(comm_size);
+  std::vector<std::vector<std::int64_t>> recv_flags(comm_size);
+
+  std::vector<std::vector<int>> send_sizes(comm_size);
+  std::vector<std::vector<int>> recv_sizes(comm_size);
+
+  for (int i = 0; i < comm_size; ++i)
+  {
+    send_sizes[i].push_back(size_local_ghosts);
+  }
+
+  MPI::all_to_all(_mpi_comm.comm(), send_sizes, recv_sizes);
+
+  for (auto flag : geom_flags)
+  {
+    // std::int64_t sz = 0;
+    // int owner = -1;
+    // for (int i = 0; i < comm_size; ++i)
+    // {
+    //   sz += recv_sizes[i][0];
+    //   if (flag < sz)
+    //   {
+    //     owner = i;
+    //     break;
+    //   }
+    // }
+    // const int owner = MPI::index_owner(comm_size, flag, num_flags_global);
+    const int owner = MPI::index_owner(comm_size, flag, recv_sizes);
+    send_flags[owner].push_back(flag);
+  }
 
   for (std::int32_t e = 0; e < num_entities; ++e)
   {
@@ -453,7 +490,10 @@ XDMFFile::read_meshtags(std::shared_ptr<const mesh::Mesh> mesh,
       const int local_cell_vertex = std::distance(cell_vertices.data(), it);
 
       entity_flags[v] = geom_flags[cell_nodes[local_cell_vertex]];
-      flags_owners(cell_nodes[local_cell_vertex], 0) = rank;
+
+      // const int owner = MPI::index_owner(comm_size, entity_flags[v], num_flags_global);
+      // send_flags[owner].push_back(entity_flags[v]);
+
     }
     std::sort(entity_flags.begin(), entity_flags.end());
 
@@ -462,6 +502,47 @@ XDMFFile::read_meshtags(std::shared_ptr<const mesh::Mesh> mesh,
     std::cout << std::endl;
 
     entities_flags.insert({entity_flags, e});
+  }
+
+  MPI::all_to_all(_mpi_comm.comm(), send_flags, recv_flags);
+
+  // const int local_size = range[1] - range[0];
+  // assert(local_size == size_local_ghosts);
+
+  std::vector<std::int64_t> owners(size_local_ghosts, -1);
+
+  const std::size_t offset
+      = MPI::global_offset(_mpi_comm.comm(), size_local_ghosts, true);
+
+  // Iterate over received flags and put owner at the position of the value of flag
+  for (int i = 0; i < comm_size; ++i)
+  {
+    const int num_recv_flags = (int)recv_flags[i].size();
+    for (int j = 0; j < num_recv_flags; ++j)
+    {
+      const int local_index = recv_flags[i][j] - offset;
+      assert(size_local_ghosts > local_index);
+      assert(local_index >= 0);
+      std::cout << "flag " << recv_flags[i][j] << " owner " << i << " loc " << local_index << std::endl;
+
+      owners[local_index] = i;
+    }
+  }
+
+  const std::vector<std::int64_t> dist_flags(dist_flags_arr.data(),
+                                             dist_flags_arr.data() + dist_flags_arr.rows());
+
+  Eigen::Map<Eigen::Array<std::int64_t, Eigen::Dynamic, 1>> owners_arr(
+      owners.data(), size_local_ghosts);
+
+  const Eigen::Array<std::int64_t, Eigen::Dynamic, 1> dist_read_flags_owners_arr
+      = graph::Partitioning::distribute_data(_mpi_comm.comm(), dist_flags,
+                                             owners_arr);
+
+  for (int i = 0; i < (int)dist_flags.size(); ++i)
+  {
+    std::cout << "proc " << rank << " (" << dist_flags[i] << ", "
+              << dist_read_flags_owners_arr(i, 0) << ")" << std::endl;
   }
 
   // std::cout << "proc" << rank << ": " << flags_owners << std::endl;
@@ -475,20 +556,17 @@ XDMFFile::read_meshtags(std::shared_ptr<const mesh::Mesh> mesh,
   //     flags_owners(i, 0) = ghost_owners[i - size_local];
   // }
 
-  const Eigen::Array<std::int64_t, Eigen::Dynamic, 1> dist_flags_owners_arr
-      = graph::Partitioning::distribute_data(_mpi_comm.comm(), geom_flags,
-                                             flags_owners);
+  // const Eigen::Array<std::int64_t, Eigen::Dynamic, 1> dist_flags_owners_arr
+  //     = graph::Partitioning::distribute_data(_mpi_comm.comm(), geom_flags,
+  //                                            flags_owners);
 
-  const Eigen::Array<std::int64_t, Eigen::Dynamic, 1> col_flags_owners_arr
-      = graph::Partitioning::distribute_data(_mpi_comm.comm(), geom_flags,
-                                             dist_flags_owners_arr);
+  // const Eigen::Array<std::int64_t, Eigen::Dynamic, 1> col_flags_owners_arr
+  //     = graph::Partitioning::distribute_data(_mpi_comm.comm(), geom_flags,
+  //                                            flags_owners);
 
-  const std::vector<std::int64_t> dist_flags(dist_flags_arr.data(),
-                                             dist_flags_arr.data() + dist_flags_arr.rows());
-
-  const Eigen::Array<std::int64_t, Eigen::Dynamic, 1> dist_read_flags_owners_arr
-      = graph::Partitioning::distribute_data(_mpi_comm.comm(), dist_flags,
-                                             col_flags_owners_arr);
+  // const Eigen::Array<std::int64_t, Eigen::Dynamic, 1> dist_read_flags_owners_arr
+  //     = graph::Partitioning::distribute_data(_mpi_comm.comm(), dist_flags,
+  //                                            col_flags_owners_arr);
 
 
   Eigen::Map<const Eigen::Array<std::int64_t, Eigen::Dynamic, Eigen::Dynamic,
@@ -499,79 +577,115 @@ XDMFFile::read_meshtags(std::shared_ptr<const mesh::Mesh> mesh,
   for (std::size_t i = 0; i < topo_unique.size(); ++i)
     topo_to_flags[topo_unique[i]] = {dist_flags_arr(i, 0), dist_read_flags_owners_arr(i, 0)};
 
-  // Prepare an array from sorted flags defining the entities
-  Eigen::Array<std::int64_t, Eigen::Dynamic, Eigen::Dynamic>
-      _read_entities(entities.rows(), entities.cols());
+  std::vector<std::vector<std::int64_t>> send_ents(comm_size);
+  std::vector<std::vector<std::int64_t>> recv_ents(comm_size);
 
-  Eigen::Array<std::int64_t, Eigen::Dynamic, Eigen::Dynamic>
-      _read_values(entities.rows(), 1);
+  std::vector<std::vector<int>> send_vals(comm_size);
+  std::vector<std::vector<int>> recv_vals(comm_size);
 
-  Eigen::Array<std::int32_t, Eigen::Dynamic, Eigen::Dynamic>
-      _read_entities_dest(entities.rows(), 1);
+  std::vector<std::int64_t> ents(nnodes_per_entity);
+  std::vector<int> ents_owners(nnodes_per_entity);
 
+  // Parse entities read from file
   for (Eigen::Index e = 0; e < entities.rows(); ++e)
   {
-    std::cout << "e " << e << " [";
+    std::vector<bool> sent(comm_size, false);
+
+    std::cout << "e " << e << " proc" << rank << " [";
     for (int i = 0; i < nnodes_per_entity; ++i)
     {
-      _read_entities(e, i) = topo_to_flags[entities(e, i)].first;
-      // _read_entities_dest(e, 0) = (std::int32_t)flag_owner[0].second;
-      // if (flag_owner[i].second != flag_owner[0].second)
-      //   std::cout << "e:" << e << "i:" << i << std::endl;
-      // assert(flag_owner[i].second == flag_owner[0].second);
-      std::cout << ", (" << topo_to_flags[entities(e, i)].second << ", "<< topo_to_flags[entities(e, i)].first << ")";
+      ents[i] = topo_to_flags[entities(e, i)].first;
+      ents_owners[i] = (int)topo_to_flags[entities(e, i)].second;
+      std::cout << ", (" << ents[i] << ", "<< ents_owners[i] << ")";
     }
     std::cout << "]" << std::endl;
 
-    _read_values(e, 0) = values[e];
-    _read_entities_dest(e, 0) = (std::int32_t)topo_to_flags[entities(e, 0)].second;
+    for (int i = 0; i < nnodes_per_entity; ++i)
+    {
+      const int send_to = ents_owners[i];
+      assert(send_to >= 0);
+      if (!sent[send_to])
+      {
+        send_ents[send_to].insert(send_ents[send_to].end(), ents.begin(), ents.end());
+        send_vals[send_to].push_back(values[e]);
+        sent[send_to] = true;
+      }
+    }
+
+
   }
 
-  const graph::AdjacencyList<std::int64_t> read_entities(_read_entities);
-  const graph::AdjacencyList<std::int64_t> read_values(_read_values);
-
-  const graph::AdjacencyList<std::int32_t> read_entities_dest(_read_entities_dest);
-
-  const auto [dist_read_entities, src, original_glob_index, ghost_owners2] =
-  graph::Partitioning::distribute(_mpi_comm.comm(), read_entities, read_entities_dest);
-
-  const auto [dist_read_values, src2, original_glob_index2, ghost_owners3] =
-  graph::Partitioning::distribute(_mpi_comm.comm(), read_values, read_entities_dest);
+  MPI::all_to_all(_mpi_comm.comm(), send_ents, recv_ents);
+  MPI::all_to_all(_mpi_comm.comm(), send_vals, recv_vals);
 
   std::vector<std::int32_t> indices;
   std::vector<int> values_fin;
 
-  const Eigen::Array<int, Eigen::Dynamic, 1>& _values
-    = dist_read_values.array().cast<int>();
+  // recv_ents[rank].insert(recv_ents[rank].end(), send_ents[rank].begin(), send_ents[rank].end());
 
-  // const std::vector<int> values2(_values.data(),
-  //                                _values.data() + _values.rows());
-
-  for (int e = 0; e < dist_read_entities.num_nodes(); ++e)
+  for (int i = 0; i < comm_size; ++i)
   {
-    const Eigen::Array<std::int64_t, Eigen::Dynamic, 1> _flags_arr
-        = dist_read_entities.links(e);
+    const int num_recv_ents = (int)(recv_ents[i].size() / nnodes_per_entity);
+    std::cout << "num recv " << num_recv_ents << " on proc " << rank << "from proc " << i << std::endl;
 
-    std::vector<std::int64_t> flags(_flags_arr.data(),
-                                    _flags_arr.data() + _flags_arr.rows());
+    for (auto recv : recv_ents[i])
+      std::cout << "recv i=" << i << " proc="<<rank<<" val="<<recv<<std::endl;
 
-    std::sort(flags.begin(), flags.end());
-
-    // std::cout << "Entity on proc " << rank << " " << _flags_arr << std::endl;
-
-    const auto it = entities_flags.find(flags);
-    if (it != entities_flags.end())
+    for (int e = 0; e < num_recv_ents; ++e)
     {
-      indices.push_back(it->second);
-      values_fin.push_back(_values[e]);
-    }
-    else
-    {
-      std::cout << "e nf proc " << rank << std::endl << _flags_arr << std::endl;
-      // throw std::runtime_error("Entity "+ std::to_string(e) +" not found in
-      // mesh.");
+      std::vector<std::int64_t> flags(&recv_ents[i][nnodes_per_entity * e],
+                                      &recv_ents[i][nnodes_per_entity * e]
+                                          + nnodes_per_entity);
+      int value = recv_vals[i][e];
+
+      std::sort(flags.begin(), flags.end());
+
+      // for (int j = 0; i<nnodes_per_entity;++j)
+      // {
+      //   std::cout << "proc " << rank << " from " << i <<
+      // }
+
+      const auto it = entities_flags.find(flags);
+      if (it != entities_flags.end())
+      {
+        indices.push_back(it->second);
+        values_fin.push_back(value);
+      }
+      else
+      {
+        for (int j = 0; j < nnodes_per_entity; ++j)
+          std::cout << "nf on proc " << rank << ", " << flags[j] << ", ";
+        // // std::cout << "proc " << rank << " nf " <<
+        // throw std::runtime_error("Entity " + std::to_string(e)
+        //                          + " not found in mesh.");
+      }
     }
   }
+
+  // for (int e = 0; e < dist_read_entities.num_nodes(); ++e)
+  // {
+  //   const Eigen::Array<std::int64_t, Eigen::Dynamic, 1> _flags_arr
+  //       = dist_read_entities.links(e);
+
+  //   std::vector<std::int64_t> flags(_flags_arr.data(),
+  //                                   _flags_arr.data() + _flags_arr.rows());
+
+  //   std::sort(flags.begin(), flags.end());
+
+  //   // std::cout << "Entity on proc " << rank << " " << _flags_arr << std::endl;
+
+  //   const auto it = entities_flags.find(flags);
+  //   if (it != entities_flags.end())
+  //   {
+  //     indices.push_back(it->second);
+  //     values_fin.push_back(_values[e]);
+  //   }
+  //   else
+  //   {
+  //     std::cout << "e nf proc " << rank << std::endl << _flags_arr << std::endl;
+  //     throw std::runtime_error("Entity "+ std::to_string(e) +" not found in mesh.");
+  //   }
+  // }
 
   Eigen::Map<const Eigen::Array<std::int32_t, Eigen::Dynamic, 1>> indices_eig(
       indices.data(), indices.size());
