@@ -89,7 +89,7 @@ jobs:
       - name: Build Python interface
         run: |
           cd python
-          pip3 -v install . --user
+          pip3 -v install .
 
       - name: Run demos (Python, serial)
         run: python3 -m pytest -n=3 -v -m serial --durations=10 python/demo/test.py
