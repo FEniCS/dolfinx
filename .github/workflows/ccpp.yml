@@ -24,9 +24,6 @@ jobs:
       OMPI_MCA_btl_vader_single_copy_mechanism: none
       OMPI_MCA_mpi_yield_when_idle: 1
       OMPI_MCA_hwloc_base_binding_policy: none
-      # OMP_NUM_THREADS: 1
-      # OPENBLAS_NUM_THREADS: 1
-      # FENICS_CACHE_DIR: .
       MPLBACKEND: agg
       PETSC_ARCH: linux-gnu-${{ matrix.petsc_arch }}-${{ matrix.petsc_int_type }}
 
@@ -58,12 +55,7 @@ jobs:
           python3 -m flake8 python/demo
           python3 -m flake8 python/test
       - name: Build C++ documentation
-        # run: |
-        #   cd cpp/doc
-        #   doxygen
-        uses: mattnotmitt/doxygen-action@v1
-        with:
-          doxyfile-path: 'cpp/doc/Doxyfile'
+        run: cd cpp/doc && doxygen
 
       - name: Configure C++
         run: |
