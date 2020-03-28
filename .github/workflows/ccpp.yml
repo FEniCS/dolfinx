@@ -97,14 +97,14 @@ jobs:
 
       - name: Run demos (Python, serial)
         run: |
-          mkdir -p junit
+          mkdir -p ~/junit
           cd python/demo
-          python3 -m pytest -n=3 -v -m serial --durations=10 --junitxml=junit/demo-results.xml test.py
+          python3 -m pytest -n=3 -v -m serial --durations=10 --junitxml=~/junit/demo-results.xml test.py
       - name: Upload pytest demo results
         uses: actions/upload-artifact@master
         with:
           name: pytest-results-demo
-          path: junit/demo-results.xml
+          path: ~/junit/demo-results.xml
         # Use always() to always run this step to publish test results
         # when there are test failures
         if: always()
@@ -119,13 +119,13 @@ jobs:
 
       - name: Run Python unit tests (serial)
         run: |
-          mkdir -p junit
-          python3 -m pytest -n=2 -vs --durations=50 --junitxml=junit/test-results.xml .
+          mkdir -p ~/junit
+          python3 -m pytest -n=2 -vs --durations=50 --junitxml=~/junit/test-results.xml .
       - name: Upload pytest test results
         uses: actions/upload-artifact@master
         with:
           name: pytest-results-test
-          path: junit/test-results.xml
+          path: ~/junit/test-results.xml
         # Use always() to always run this step to publish test results
         # when there are test failures
         if: always()
