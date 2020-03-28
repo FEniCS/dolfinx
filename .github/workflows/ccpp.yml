@@ -97,7 +97,7 @@ jobs:
 
       - name: Run demos (Python, serial)
         run: |
-          mkdir -p ~/junit
+          mkdir -p junit
           cd python/demo
           python3 -m pytest -n=3 -v -m serial --durations=10 --junitxml=junit/demo-results.xml test.py
       - name: Upload pytest demo results
@@ -119,8 +119,7 @@ jobs:
 
       - name: Run Python unit tests (serial)
         run: |
-          mkdir -p ~/junit
-          cd python/test/unit/fem
+          mkdir -p junit
           python3 -m pytest -n=2 -vs --durations=50 --junitxml=junit/test-results.xml .
       - name: Upload pytest test results
         uses: actions/upload-artifact@master
@@ -132,9 +131,7 @@ jobs:
         if: always()
       - name: Run Python unit tests (MPI, np=1)
         run: |
-          cd python/test/unit/fem
           mpirun -np 2 python3 -m pytest .
       - name: Run Python unit tests (MPI, np=3)
         run: |
-          cd python/test/unit/fem
           mpirun -np 3 python3 -m pytest .
