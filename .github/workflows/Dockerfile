@@ -198,7 +198,7 @@ RUN apt-get -qq update && \
     --download-superlu \
     --download-superlu_dist \
     --with-scalapack=1 \
-    --with-scalapack-lib=-lscalapack-openmpi && \
+    --with-scalapack-lib=-lscalapack-openmpi \
     --with-shared-libraries \
     --with-scalar-type=complex \
     --with-64-bit-indices=0 && \

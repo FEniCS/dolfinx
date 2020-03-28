@@ -28,15 +28,12 @@ jobs:
       # OPENBLAS_NUM_THREADS: 1
       # FENICS_CACHE_DIR: .
       MPLBACKEND: agg
-
-    env:
-      PETSC_DIR: /usr/local/petsc
-      SLEPC_DIR: /usr/local/slepc
-      PYTHONPATH: /usr/local/petsc/python:$PYTHONPATH
+      PETSC_ARCH: linux-gnu-${{ matrix.petsc_arch }}-${{ matrix.petsc_int_type }}
 
     strategy:
       matrix:
-        float_type: [real]
+        petsc_arch: [real, complex]
+        python_int_type: [32]
 
     steps:
       - uses: actions/checkout@v2
