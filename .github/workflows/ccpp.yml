@@ -66,14 +66,14 @@ jobs:
 
       - name: Build and run C++ unit tests (serial and MPI)
         run: |
-          cd build
-          ninja unittests
+          cmake --build ./build -t unittests
+          cd build/
           ctest --output-on-failure -R unittests
           mpiexec -np 2 ctest --output-on-failure -R unittests
       - name: Build and run C++ regression tests (serial and MPI (np=2))
         run: |
-          cd build
-          ninja demos
+          cmake --build ./build -t demos
+          cd build/
           ctest -R demo -R serial
           ctest -R demo -R mpi_2
 
