@@ -106,7 +106,7 @@ Table Table::reduce(MPI_Comm comm, Table::Reduction reduction) const
   std::vector<double> values;
   for (const auto& it : _values)
   {
-    if (auto pval = std::get_if<double>(&it.second))
+    if (const auto *const pval = std::get_if<double>(&it.second))
     {
       keys += it.first.first + '\0' + it.first.second + '\0';
       values.push_back(*pval);

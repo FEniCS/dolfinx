@@ -56,7 +56,7 @@ void fem::impl::assemble_matrix(
   using type = fem::FormIntegrals::Type;
   for (int i = 0; i < integrals.num_integrals(type::cell); ++i)
   {
-    auto& fn = integrals.get_tabulate_tensor(type::cell, i);
+    const auto & fn = integrals.get_tabulate_tensor(type::cell, i);
     const std::vector<std::int32_t>& active_cells
         = integrals.integral_domains(type::cell, i);
 
@@ -67,7 +67,7 @@ void fem::impl::assemble_matrix(
 
   for (int i = 0; i < integrals.num_integrals(type::exterior_facet); ++i)
   {
-    auto& fn = integrals.get_tabulate_tensor(type::exterior_facet, i);
+    const auto & fn = integrals.get_tabulate_tensor(type::exterior_facet, i);
     const std::vector<std::int32_t>& active_facets
         = integrals.integral_domains(type::exterior_facet, i);
     fem::impl::assemble_exterior_facets<IndexType, ScalarType>(
@@ -78,7 +78,7 @@ void fem::impl::assemble_matrix(
   for (int i = 0; i < integrals.num_integrals(type::interior_facet); ++i)
   {
     const std::vector<int> c_offsets = a.coefficients().offsets();
-    auto& fn = integrals.get_tabulate_tensor(type::interior_facet, i);
+    const auto & fn = integrals.get_tabulate_tensor(type::interior_facet, i);
     const std::vector<std::int32_t>& active_facets
         = integrals.integral_domains(type::interior_facet, i);
     fem::impl::assemble_interior_facets<IndexType, ScalarType>(
@@ -226,7 +226,7 @@ void fem::impl::assemble_exterior_facets(
 
     // Get local index of facet with respect to the cell
     auto facets = c_to_f->links(cells[0]);
-    auto it = std::find(facets.data(), facets.data() + facets.rows(), f);
+    const auto *it = std::find(facets.data(), facets.data() + facets.rows(), f);
     assert(it != (facets.data() + facets.rows()));
     const int local_facet = std::distance(facets.data(), it);
 
@@ -330,12 +330,12 @@ void fem::impl::assemble_interior_facets(
 
     // Get local index of facet with respect to the cell
     auto facets0 = c_to_f->links(cells[0]);
-    auto it0 = std::find(facets0.data(), facets0.data() + facets0.rows(),
+    const auto *it0 = std::find(facets0.data(), facets0.data() + facets0.rows(),
                          facet_index);
     assert(it0 != (facets0.data() + facets0.rows()));
     const int local_facet0 = std::distance(facets0.data(), it0);
     auto facets1 = c_to_f->links(cells[1]);
-    auto it1 = std::find(facets1.data(), facets1.data() + facets1.rows(),
+    const auto *it1 = std::find(facets1.data(), facets1.data() + facets1.rows(),
                          facet_index);
     assert(it1 != (facets1.data() + facets1.rows()));
     const int local_facet1 = std::distance(facets1.data(), it1);

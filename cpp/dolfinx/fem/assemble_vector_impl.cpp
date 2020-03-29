@@ -228,7 +228,7 @@ void _lift_bc_exterior_facets(
 
     // Get local index of facet with respect to the cell
     auto facets = c_to_f->links(cell);
-    auto it = std::find(facets.data(), facets.data() + facets.rows(), f);
+    const auto *it = std::find(facets.data(), facets.data() + facets.rows(), f);
     assert(it != (facets.data() + facets.rows()));
     const int local_facet = std::distance(facets.data(), it);
 
@@ -317,7 +317,7 @@ void fem::impl::assemble_vector(
   using type = fem::FormIntegrals::Type;
   for (int i = 0; i < integrals.num_integrals(type::cell); ++i)
   {
-    auto& fn = integrals.get_tabulate_tensor(FormIntegrals::Type::cell, i);
+    const auto & fn = integrals.get_tabulate_tensor(FormIntegrals::Type::cell, i);
     const std::vector<std::int32_t>& active_cells
         = integrals.integral_domains(type::cell, i);
     fem::impl::assemble_cells(b, mesh, active_cells, dofs, num_dofs_per_cell,
@@ -445,7 +445,7 @@ void fem::impl::assemble_exterior_facets(
 
     // Get local index of facet with respect to the cell
     auto facets = c_to_f->links(cell);
-    auto it = std::find(facets.data(), facets.data() + facets.rows(), f);
+    const auto *it = std::find(facets.data(), facets.data() + facets.rows(), f);
     assert(it != (facets.data() + facets.rows()));
     const int local_facet = std::distance(facets.data(), it);
     const std::uint8_t perm = perms(local_facet, cell);
@@ -523,7 +523,7 @@ void fem::impl::assemble_interior_facets(
     for (int i = 0; i < 2; ++i)
     {
       auto facets = c_to_f->links(cells[i]);
-      auto it = std::find(facets.data(), facets.data() + facets.rows(), f);
+      const auto *it = std::find(facets.data(), facets.data() + facets.rows(), f);
       assert(it != (facets.data() + facets.rows()));
       local_facet[i] = std::distance(facets.data(), it);
     }

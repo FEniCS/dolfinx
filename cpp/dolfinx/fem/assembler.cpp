@@ -283,7 +283,7 @@ void fem::set_bc(
 {
   if (b.rows() > x0.rows())
     throw std::runtime_error("Size mismatch between b and x0 vectors.");
-  for (auto bc : bcs)
+  for (const auto& bc : bcs)
   {
     assert(bc);
     bc->set(b, x0, scale);
@@ -294,7 +294,7 @@ void fem::set_bc(Eigen::Ref<Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1>> b,
                  const std::vector<std::shared_ptr<const DirichletBC>>& bcs,
                  double scale)
 {
-  for (auto bc : bcs)
+  for (const auto& bc : bcs)
   {
     assert(bc);
     bc->set(b, scale);
@@ -309,7 +309,7 @@ fem::bcs_rows(const std::vector<const Form*>& L,
   std::vector<std::vector<std::shared_ptr<const fem::DirichletBC>>> bcs0(
       L.size());
   for (std::size_t i = 0; i < L.size(); ++i)
-    for (std::shared_ptr<const DirichletBC> bc : bcs)
+    for (const std::shared_ptr<const DirichletBC>& bc : bcs)
       if (L[i]->function_space(0)->contains(*bc->function_space()))
         bcs0[i].push_back(bc);
 
@@ -328,7 +328,7 @@ fem::bcs_cols(const std::vector<std::vector<std::shared_ptr<const Form>>>& a,
     for (std::size_t j = 0; j < a[i].size(); ++j)
     {
       bcs1[i].resize(a[j].size());
-      for (std::shared_ptr<const DirichletBC> bc : bcs)
+      for (const std::shared_ptr<const DirichletBC>& bc : bcs)
       {
         // FIXME: handle case where a[i][j] is null
         if (a[i][j])

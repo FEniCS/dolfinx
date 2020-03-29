@@ -2579,4 +2579,4 @@ namespace dolfinx::geometry
 {
 /// Initialize the predicate
 PredicateInitialization predicate_initialization;
-} // namespace dolfinx
+} // namespace dolfinx::geometry

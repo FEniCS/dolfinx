@@ -38,7 +38,7 @@ ParallelRefinement::ParallelRefinement(const mesh::Mesh& mesh)
   // Compute a slightly wider neighbourhood for direct communication of shared
   // edges
   std::set<int> all_neighbour_set;
-  for (auto q : shared_edges)
+  for (const auto& q : shared_edges)
     all_neighbour_set.insert(q.second.begin(), q.second.end());
   std::vector<int> neighbours(all_neighbour_set.begin(),
                               all_neighbour_set.end());

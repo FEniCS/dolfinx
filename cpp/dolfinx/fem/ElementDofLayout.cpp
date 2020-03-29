@@ -41,14 +41,14 @@ ElementDofLayout::ElementDofLayout(
 
   // dof = _entity_dofs[dim][entity_index][i]
   _entity_closure_dofs = entity_dofs;
-  for (auto entity : entity_closure)
+  for (const auto& entity : entity_closure)
   {
     const int dim = entity.first[0];
     const int index = entity.first[1];
     assert(dim < (int)entity_dofs.size());
     assert(index < (int)entity_dofs[dim].size());
     int subdim = 0;
-    for (auto sub_entity : entity.second)
+    for (const auto& sub_entity : entity.second)
     {
       assert(subdim < (int)entity_dofs.size());
       for (auto sub_index : sub_entity)

@@ -31,7 +31,7 @@ dolfinx::MPI::Comm::Comm(const Comm& comm) : Comm(comm._comm)
   // FIXME: should probably duplicate the comm here
 }
 //-----------------------------------------------------------------------------
-dolfinx::MPI::Comm::Comm(Comm&& comm)
+dolfinx::MPI::Comm::Comm(Comm&& comm) noexcept
 {
   this->_comm = comm._comm;
   comm._comm = MPI_COMM_NULL;

@@ -11,24 +11,24 @@
  * Copyright (C) 2003, by Kristen Wegner (kristen@tima.net)
  */
 
-#ifndef SOURCE_PUGIXML_CPP
-#define SOURCE_PUGIXML_CPP
+#ifndef _HOME_GARTH_CODE_FENICS_DOLFINX_CPP_DOLFINX_IO_PUGIXML_CPP
+#define _HOME_GARTH_CODE_FENICS_DOLFINX_CPP_DOLFINX_IO_PUGIXML_CPP
 
 #include "pugixml.hpp"
 
-#include <stdlib.h>
-#include <stdio.h>
-#include <string.h>
 #include <assert.h>
 #include <limits.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
 
 #ifdef PUGIXML_WCHAR_MODE
 #	include <wchar.h>
 #endif
 
 #ifndef PUGIXML_NO_XPATH
-#	include <math.h>
 #	include <float.h>
+#	include <math.h>
 #endif
 
 #ifndef PUGIXML_NO_STL
@@ -1128,7 +1128,7 @@ namespace pugi
 
 		xml_attribute_struct* first_attribute;
 	};
-}
+} // namespace pugi
 #endif
 
 PUGI__NS_BEGIN
@@ -7252,7 +7252,7 @@ namespace pugi
 	{
 		return impl::xml_memory::deallocate;
 	}
-}
+} // namespace pugi
 
 #if !defined(PUGIXML_NO_STL) && (defined(_MSC_VER) || defined(__ICC))
 namespace std
@@ -12719,7 +12719,7 @@ namespace pugi
 	{
 		return query.evaluate_node(*this);
 	}
-}
+} // namespace pugi
 
 #endif
 

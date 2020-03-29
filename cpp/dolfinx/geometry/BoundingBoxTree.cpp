@@ -45,7 +45,7 @@ compute_bbox_of_entity(const mesh::MeshEntity& entity)
 
   auto vertices = entity.entities(0);
   assert(vertices.rows() >= 2);
-  auto it = std::find(cell_vertices.data(),
+  const auto *it = std::find(cell_vertices.data(),
                       cell_vertices.data() + cell_vertices.rows(), vertices[0]);
   assert(it != (cell_vertices.data() + cell_vertices.rows()));
   const int local_vertex = std::distance(cell_vertices.data(), it);
@@ -58,7 +58,7 @@ compute_bbox_of_entity(const mesh::MeshEntity& entity)
   // Compute min and max over remaining vertices
   for (int i = 1; i < vertices.rows(); ++i)
   {
-    auto it
+    const auto *it
         = std::find(cell_vertices.data(),
                     cell_vertices.data() + cell_vertices.rows(), vertices[i]);
     assert(it != (cell_vertices.data() + cell_vertices.rows()));

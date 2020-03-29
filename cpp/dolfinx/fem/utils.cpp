@@ -66,7 +66,7 @@ int analyse_block_structure(
   if (sub_dofmaps.size() < 2)
     return 1;
 
-  for (auto dmap : sub_dofmaps)
+  for (const auto& dmap : sub_dofmaps)
   {
     assert(dmap);
 
@@ -771,7 +771,7 @@ fem::pack_constants(const fem::Form& form)
       std::pair<std::string, std::shared_ptr<const function::Constant>>>
       constants = form.constants();
   std::vector<PetscScalar> constant_values;
-  for (auto& constant : constants)
+  for (const auto & constant : constants)
   {
     const std::vector<PetscScalar>& array = constant.second->value;
     constant_values.insert(constant_values.end(), array.data(),

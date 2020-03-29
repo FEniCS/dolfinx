@@ -196,7 +196,7 @@ compute_nonlocal_dual_graph(
   std::vector<std::vector<std::int64_t>> received_buffer(num_processes);
 
   // Pack map data and send to match-maker process
-  for (auto& it : facet_cell_map)
+  for (const auto & it : facet_cell_map)
   {
     // FIXME: Could use a better index? First vertex is slightly
     //        skewed towards low values - may not be important
@@ -310,7 +310,7 @@ mesh::GraphBuilder::compute_dual_graph(
       = mesh::GraphBuilder::compute_local_dual_graph(cell_vertices, cell_type);
 
   // Compute nonlocal part
-  const auto [graph, num_ghost_nodes, num_nonlocal_edges]
+  auto [graph, num_ghost_nodes, num_nonlocal_edges]
       = compute_nonlocal_dual_graph(mpi_comm, cell_vertices, cell_type,
                                     facet_cell_map, local_graph);
 

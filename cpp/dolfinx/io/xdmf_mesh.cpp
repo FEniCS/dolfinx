@@ -101,7 +101,7 @@ void xdmf_mesh::add_topology_data(MPI_Comm comm, pugi::xml_node& xml_node,
       {
         const int v_index = perm[v];
         const int vertex = vertices[v_index];
-        auto it
+        const auto *it
             = std::find(cell_vertices.data(),
                         cell_vertices.data() + cell_vertices.rows(), vertex);
         assert(it != (cell_vertices.data() + cell_vertices.rows()));
