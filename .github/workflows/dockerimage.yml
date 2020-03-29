@@ -17,6 +17,6 @@ jobs:
     - name: Build the Docker images
       run: docker build --file .github/workflows/Dockerfile --target test --tag fenicsproject/test-env .
     - name: Login to DockerHub registry
-      run: echo ${{ secrets.DOCKERHUB_PASSWORD }} | docker login -u ${{ secrets.DOCKERHUB_USERNAME }} --password-stdin
+      run: echo ${{ secrets.DOCKERHUB_TOKEN }} | docker login -u ${{ secrets.DOCKERHUB_USERNAME }} --password-stdin
     - name: Push DockerHub registry
       run: docker push fenicsproject/test-env
