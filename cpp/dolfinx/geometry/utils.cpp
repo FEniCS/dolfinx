@@ -565,12 +565,12 @@ double geometry::squared_distance(const mesh::MeshEntity& entity,
   {
   case (mesh::CellType::interval):
   {
-    auto it0
+    const auto *it0
         = std::find(cell_vertices.data(),
                     cell_vertices.data() + cell_vertices.rows(), vertices[0]);
     assert(it0 != (cell_vertices.data() + cell_vertices.rows()));
     const int local_vertex0 = std::distance(cell_vertices.data(), it0);
-    auto it1
+    const auto *it1
         = std::find(cell_vertices.data(),
                     cell_vertices.data() + cell_vertices.rows(), vertices[1]);
     assert(it1 != (cell_vertices.data() + cell_vertices.rows()));
@@ -582,17 +582,17 @@ double geometry::squared_distance(const mesh::MeshEntity& entity,
   }
   case (mesh::CellType::triangle):
   {
-    auto it0
+    const auto *it0
         = std::find(cell_vertices.data(),
                     cell_vertices.data() + cell_vertices.rows(), vertices[0]);
     assert(it0 != (cell_vertices.data() + cell_vertices.rows()));
     const int local_vertex0 = std::distance(cell_vertices.data(), it0);
-    auto it1
+    const auto *it1
         = std::find(cell_vertices.data(),
                     cell_vertices.data() + cell_vertices.rows(), vertices[1]);
     assert(it1 != (cell_vertices.data() + cell_vertices.rows()));
     const int local_vertex1 = std::distance(cell_vertices.data(), it1);
-    auto it2
+    const auto *it2
         = std::find(cell_vertices.data(),
                     cell_vertices.data() + cell_vertices.rows(), vertices[2]);
     assert(it2 != (cell_vertices.data() + cell_vertices.rows()));
@@ -605,22 +605,22 @@ double geometry::squared_distance(const mesh::MeshEntity& entity,
   }
   case (mesh::CellType::tetrahedron):
   {
-    auto it0
+    const auto *it0
         = std::find(cell_vertices.data(),
                     cell_vertices.data() + cell_vertices.rows(), vertices[0]);
     assert(it0 != (cell_vertices.data() + cell_vertices.rows()));
     const int local_vertex0 = std::distance(cell_vertices.data(), it0);
-    auto it1
+    const auto *it1
         = std::find(cell_vertices.data(),
                     cell_vertices.data() + cell_vertices.rows(), vertices[1]);
     assert(it1 != (cell_vertices.data() + cell_vertices.rows()));
     const int local_vertex1 = std::distance(cell_vertices.data(), it1);
-    auto it2
+    const auto *it2
         = std::find(cell_vertices.data(),
                     cell_vertices.data() + cell_vertices.rows(), vertices[2]);
     assert(it2 != (cell_vertices.data() + cell_vertices.rows()));
     const int local_vertex2 = std::distance(cell_vertices.data(), it2);
-    auto it3
+    const auto *it3
         = std::find(cell_vertices.data(),
                     cell_vertices.data() + cell_vertices.rows(), vertices[3]);
     assert(it2 != (cell_vertices.data() + cell_vertices.rows()));

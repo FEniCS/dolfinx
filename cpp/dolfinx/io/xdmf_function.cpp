@@ -92,7 +92,7 @@ void xdmf_function::write(const function::Function& u, double t, int counter,
 
   // Look for existing time series grid node with Name == tg_name
   bool new_timegrid = false;
-  std::string time_step_str = boost::lexical_cast<std::string>(t);
+  auto time_step_str = boost::lexical_cast<std::string>(t);
   pugi::xml_node timegrid_node, mesh_node;
   timegrid_node
       = domain_node.find_child_by_attribute("Grid", "Name", tg_name.c_str());
@@ -183,7 +183,7 @@ void xdmf_function::write(const function::Function& u, double t, int counter,
   std::vector<std::string> components = {""};
 #endif
 
-  for (const std::string component : components)
+  for (const std::string& component : components)
   {
     std::string attr_name;
     std::string dataset_name;

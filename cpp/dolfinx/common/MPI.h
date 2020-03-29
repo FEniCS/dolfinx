@@ -39,7 +39,7 @@ public:
     Comm(const Comm& comm);
 
     /// Move constructor
-    Comm(Comm&& comm);
+    Comm(Comm&& comm) noexcept;
 
     // Disable copy assignment operator
     Comm& operator=(const Comm& comm) = delete;

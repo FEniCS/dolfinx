@@ -116,7 +116,7 @@ DofMap create_dofmap(MPI_Comm comm, const ufc_dofmap& dofmap,
 /// @param[in] spaces function spaces
 /// @return Form
 std::shared_ptr<Form> create_form(
-    ufc_form* (*fptr)(void),
+    ufc_form* (*fptr)(),
     const std::vector<std::shared_ptr<const function::FunctionSpace>>& spaces);
 
 /// Create a Form from UFC input

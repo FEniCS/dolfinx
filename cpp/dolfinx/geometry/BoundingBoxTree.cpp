@@ -45,7 +45,7 @@ compute_bbox_of_entity(const mesh::MeshEntity& entity)
 
   auto vertices = entity.entities(0);
   assert(vertices.rows() >= 2);
-  auto it = std::find(cell_vertices.data(),
+  const auto *it = std::find(cell_vertices.data(),
                       cell_vertices.data() + cell_vertices.rows(), vertices[0]);
   assert(it != (cell_vertices.data() + cell_vertices.rows()));
   const int local_vertex = std::distance(cell_vertices.data(), it);
@@ -58,7 +58,7 @@ compute_bbox_of_entity(const mesh::MeshEntity& entity)
   // Compute min and max over remaining vertices
   for (int i = 1; i < vertices.rows(); ++i)
   {
-    auto it
+    const auto *it
         = std::find(cell_vertices.data(),
                     cell_vertices.data() + cell_vertices.rows(), vertices[i]);
     assert(it != (cell_vertices.data() + cell_vertices.rows()));
@@ -167,7 +167,7 @@ int _build_from_leaf(const std::vector<double>& leaf_bboxes,
     // Sort bounding boxes along longest axis
     Eigen::Array<double, 2, 3, Eigen::RowMajor>::Index axis;
     (b.row(1) - b.row(0)).maxCoeff(&axis);
-    std::vector<int>::iterator partition_middle
+    auto partition_middle
         = partition_begin + (partition_end - partition_begin) / 2;
     std::nth_element(partition_begin, partition_middle, partition_end,
                      [&leaf_bboxes, axis](int i, int j) -> bool {
@@ -219,7 +219,7 @@ int _build_from_point(const std::vector<Eigen::Vector3d>& points,
       = compute_bbox_of_points(points, begin, end);
 
   // Sort bounding boxes along longest axis
-  std::vector<int>::iterator middle = begin + (end - begin) / 2;
+  auto middle = begin + (end - begin) / 2;
   Eigen::Array<double, 2, 3, Eigen::RowMajor>::Index axis;
   (b.row(1) - b.row(0)).maxCoeff(&axis);
   std::nth_element(begin, middle, end, [&points, &axis](int i, int j) -> bool {

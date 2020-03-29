@@ -15,28 +15,17 @@
 
 namespace
 {
-template <class T>
-struct always_false : std::false_type
-{
-};
-
 std::string to_str(std::variant<std::string, int, double> value)
 {
-  return std::visit(
-      [](auto&& arg) -> std::string {
-        using T = std::decay_t<decltype(arg)>;
-        if constexpr (std::is_same_v<T, int>)
-          return std::to_string(arg);
-        else if constexpr (std::is_same_v<T, double>)
-          return std::to_string(arg);
-        else if constexpr (std::is_same_v<T, std::string>)
-          return arg;
-        else
-          static_assert(always_false<T>::value, "non-exhaustive visitor!");
-      },
-      value);
+  if (std::holds_alternative<int>(value))
+    return std::to_string(std::get<int>(value));
+  else if (std::holds_alternative<double>(value))
+    return std::to_string(std::get<double>(value));
+  else if (std::holds_alternative<std::string>(value))
+    return std::get<std::string>(value);
+  else
+    throw std::runtime_error("Variant incorrect");
 }
-
 } // namespace
 
 using namespace dolfinx;
@@ -117,7 +106,7 @@ Table Table::reduce(MPI_Comm comm, Table::Reduction reduction) const
   std::vector<double> values;
   for (const auto& it : _values)
   {
-    if (auto pval = std::get_if<double>(&it.second))
+    if (const auto *const pval = std::get_if<double>(&it.second))
     {
       keys += it.first.first + '\0' + it.first.second + '\0';
       values.push_back(*pval);
@@ -165,11 +154,14 @@ Table Table::reduce(MPI_Comm comm, Table::Reduction reduction) const
   Table table_all(new_title);
   for (const auto& it : _values)
   {
-    if (auto pval = std::get_if<int>(&it.second))
-      table_all.set(it.first.first, it.first.second, *pval);
+    if (std::holds_alternative<int>(it.second))
+      table_all.set(it.first.first, it.first.second, it.second);
   }
+  // NB - the cast to std::variant should not be needed: needed by Intel
+  // compiler.
   for (const auto& it : dvalues_all)
-    table_all.set(it.first[0], it.first[1], it.second);
+    table_all.set(it.first[0], it.first[1],
+                  std::variant<std::string, int, double>(it.second));
 
   return table_all;
 }
@@ -186,7 +178,7 @@ std::string Table::str() const
     col_sizes.push_back(_cols[j].size());
   for (std::size_t i = 0; i < _rows.size(); i++)
   {
-    tvalues.push_back(std::vector<std::string>());
+    tvalues.emplace_back();
     col_sizes[0] = std::max(col_sizes[0], _rows[i].size());
     for (std::size_t j = 0; j < _cols.size(); j++)
     {

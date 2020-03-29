@@ -17,7 +17,7 @@ using namespace dolfinx;
 using namespace dolfinx::mesh;
 
 //-----------------------------------------------------------------------------
-Geometry::Geometry(std::shared_ptr<const common::IndexMap> index_map,
+Geometry::Geometry(const std::shared_ptr<const common::IndexMap>& index_map,
                    const graph::AdjacencyList<std::int32_t>& dofmap,
                    const fem::ElementDofLayout& layout,
                    const Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic,

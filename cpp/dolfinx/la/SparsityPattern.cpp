@@ -103,7 +103,7 @@ SparsityPattern::SparsityPattern(
     for (std::size_t col = 0; col < patterns[row].size(); ++col)
     {
       // Get pattern for this block
-      auto p = patterns[row][col];
+      const auto *p = patterns[row][col];
       assert(p);
 
       // Check that
@@ -160,7 +160,7 @@ SparsityPattern::SparsityPattern(
   // FIXME: Need to add unowned entries?
 
   // Initialise common::IndexMaps for merged pattern
-  auto p00 = patterns[0][0];
+  const auto *p00 = patterns[0][0];
   assert(p00);
   Eigen::Array<std::int64_t, Eigen::Dynamic, 1> ghosts;
   _index_maps[0] = std::make_shared<common::IndexMap>(

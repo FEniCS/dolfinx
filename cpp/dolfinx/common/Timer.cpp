@@ -16,7 +16,7 @@ Timer::Timer() : Timer::Timer("")
   // Do nothing
 }
 //-----------------------------------------------------------------------------
-Timer::Timer(std::string task) : _task(task)
+Timer::Timer(const std::string& task) : _task(task)
 {
   // Do nothing
 }
