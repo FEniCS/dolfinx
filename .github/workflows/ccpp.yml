@@ -88,8 +88,6 @@ jobs:
         run: python3 -m pytest -n=2 -v -m serial --durations=10 python/demo/test.py
       - name: Run demos (Python, MPI (np=2))
         run: python3 -m pytest -v -m mpi --num-proc=2 python/demo/test.py
-      - name: Run demos (Python, MPI (np=3))
-        run: python3 -m pytest -v -m mpi --num-proc=3 python/demo/test.py
 
       - name: Run Python unit tests (serial)
         run: python3 -m pytest -n=2 -vs --durations=50 python/test/unit/
