@@ -16,7 +16,7 @@ from dolfinx.io import XDMFFile
 assert (tempdir)
 
 
-def test_extract_topology():
+def xtest_extract_topology():
     """Test creation of topology adjacency lists, with extraction
     of cell vertices for 'higher-order' topologies"""
 
@@ -173,7 +173,7 @@ def get_dof_layout(shape, order):
     cpp.mesh.CellType.tetrahedron,
     cpp.mesh.CellType.hexahedron
 ])
-def xtest_topology_partition(tempdir, shape, order):
+def test_topology_partition(tempdir, shape, order):
     """Test partitioning and creation of meshes"""
 
     pytest.importorskip("pygmsh")
