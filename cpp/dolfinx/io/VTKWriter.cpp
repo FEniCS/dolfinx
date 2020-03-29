@@ -6,7 +6,6 @@
 
 #include "VTKWriter.h"
 #include "cells.h"
-#include <boost/detail/endian.hpp>
 #include <cstdint>
 #include <dolfinx/fem/DofMap.h>
 #include <dolfinx/fem/FiniteElement.h>

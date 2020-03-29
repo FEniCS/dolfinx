@@ -66,11 +66,18 @@ RUN export DEBIAN_FRONTEND=noninteractive && \
     python3-pip \
     python3-scipy \
     python3-setuptools && \
+    #
     apt-get -y install \
     doxygen \
     git \
     valgrind \
     wget && \
+    #
+    apt-get -y install \
+    libglu1 \
+    libxcursor1 \
+    libxinerama1 && \
+    #
     apt-get -y install \
     python3-lxml && \
     apt-get clean && \
