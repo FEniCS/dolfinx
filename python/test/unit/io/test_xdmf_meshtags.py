@@ -30,7 +30,7 @@ celltypes_2D = [CellType.triangle]
 @pytest.mark.parametrize("encoding", encodings)
 def test_3d(tempdir, cell_type, encoding):
     filename = os.path.join(tempdir, "meshtags_2d.xdmf")
-    mesh = UnitSquareMesh(MPI.comm_world, 6, 6, cell_type)
+    mesh = UnitSquareMesh(MPI.comm_world, 10, 10, cell_type)
 
     rank = MPI.rank(MPI.comm_world)
 

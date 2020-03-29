@@ -779,27 +779,17 @@ Partitioning::distribute_data(
   common::Timer timer("Fetch float data from remote processes");
 
   // Get number of points globally
-  // const std::int64_t num_points = dolfinx::MPI::sum(comm, x.rows());
+  const std::int64_t num_points = dolfinx::MPI::sum(comm, x.rows());
 
   // Get ownership range for this rank, and compute offset
-  // const std::array<std::int64_t, 2> range
-  //     = dolfinx::MPI::local_range(comm, num_points);
-  // const std::int64_t offset_x
-  //     = dolfinx::MPI::global_offset(comm, range[1] - range[0], true);
+  const std::array<std::int64_t, 2> range
+      = dolfinx::MPI::local_range(comm, num_points);
   const std::int64_t offset_x
-      = dolfinx::MPI::global_offset(comm, x.rows(), true);
+      = dolfinx::MPI::global_offset(comm, range[1] - range[0], true);
 
   const int gdim = x.cols();
   assert(gdim != 0);
   const int size = dolfinx::MPI::size(comm);
-
-  std::vector<std::vector<int>> send_sizes(size);
-  std::vector<std::vector<int>> recv_sizes(size);
-
-  for (int i = 0; i < size; ++i)
-    send_sizes[i].push_back(x.rows());
-
-  MPI::all_to_all(comm, send_sizes, recv_sizes);
 
   // Determine number of points to send to owner
   std::vector<int> number_send(size, 0);
@@ -807,7 +797,7 @@ Partitioning::distribute_data(
   {
     // TODO: optimise this call
     const std::int64_t index_global = i + offset_x;
-    const int owner = dolfinx::MPI::index_owner(size, index_global, recv_sizes);
+    const int owner = dolfinx::MPI::index_owner(size, index_global, num_points);
     number_send[owner] += 1;
   }
 
@@ -823,7 +813,7 @@ Partitioning::distribute_data(
   for (int i = 0; i < x.rows(); ++i)
   {
     const std::int64_t index_global = i + offset_x;
-    const int owner = dolfinx::MPI::index_owner(size, index_global, recv_sizes);
+    const int owner = dolfinx::MPI::index_owner(size, index_global, num_points);
     x_send.row(disp_tmp[owner]++) = x.row(i);
   }
 
@@ -855,7 +845,7 @@ Partitioning::distribute_data(
   for (std::int64_t index : indices)
   {
     // TODO: optimise this call
-    const int owner = dolfinx::MPI::index_owner(size, index, recv_sizes);
+    const int owner = dolfinx::MPI::index_owner(size, index, num_points);
     number_index_send[owner] += 1;
   }
 
@@ -870,7 +860,7 @@ Partitioning::distribute_data(
   for (std::int64_t index : indices)
   {
     // TODO: optimise this call
-    const int owner = dolfinx::MPI::index_owner(size, index, recv_sizes);
+    const int owner = dolfinx::MPI::index_owner(size, index, num_points);
     indices_send[disp_tmp[owner]++] = index;
   }
 
