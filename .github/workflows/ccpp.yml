@@ -58,7 +58,7 @@ jobs:
         run: cd cpp/doc && doxygen
 
       - name: Configure C++
-        run: cmake -G Ninja -DCMAKE_BUILD_TYPE=Developer -B build -S ../cpp/
+        run: cmake -G Ninja -DCMAKE_BUILD_TYPE=Developer -B build -S cpp/
       - name: Build and install C++ library
         run: |
           cmake --build build
