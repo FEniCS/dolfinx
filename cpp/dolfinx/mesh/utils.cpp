@@ -769,7 +769,7 @@ mesh::compute_marked_boundary_entities(
       // Get first cell and find position
       int c = v_to_c->links(i)[0];
       auto vertices = c_to_v->links(c);
-      auto it
+      const auto *it
           = std::find(vertices.data(), vertices.data() + vertices.rows(), i);
       assert(it != (vertices.data() + vertices.rows()));
       const int local_pos = std::distance(vertices.data(), it);

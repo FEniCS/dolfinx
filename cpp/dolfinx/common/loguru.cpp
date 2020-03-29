@@ -1,4 +1,3 @@
-#ifndef _WIN32
 // Disable all warnings from gcc/clang:
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wpragmas"
@@ -16,12 +15,6 @@
 #pragma GCC diagnostic ignored "-Wunknown-pragmas"
 #pragma GCC diagnostic ignored "-Wunused-macros"
 #pragma GCC diagnostic ignored "-Wzero-as-null-pointer-constant"
-#else
-#ifdef _MSC_VER
-#pragma warning(push)
-#pragma warning(disable:4018)
-#endif // _MSC_VER
-#endif
 
 #include "loguru.hpp"
 
@@ -78,7 +71,7 @@
 	#ifndef LOGURU_STACKTRACES
 		#define LOGURU_STACKTRACES 0
 	#endif
-#elif defined(__rtems__) || defined(__ANDROID__)
+#elif defined(__rtems__)
 	#define LOGURU_PTHREADS    1
 	#define LOGURU_WINTHREADS  0
 	#ifndef LOGURU_STACKTRACES
@@ -129,7 +122,6 @@
    #define LOGURU_PTLS_NAMES 0
 #endif
 
-
 namespace loguru
 {
 	using namespace std::chrono;
@@ -171,8 +163,6 @@ namespace loguru
 	bool      g_colorlogtostderr  = true;
 	unsigned  g_flush_interval_ms = 0;
 	bool      g_preamble          = true;
-
-	Verbosity g_internal_verbosity = Verbosity_0;
 
 	// Preamble details
 	bool      g_preamble_date     = true;
@@ -221,7 +211,6 @@ namespace loguru
 					|| 0 == strcmp(term, "rxvt-unicode-256color")
 					|| 0 == strcmp(term, "screen")
 					|| 0 == strcmp(term, "screen-256color")
-					|| 0 == strcmp(term, "screen.xterm-256color")
 					|| 0 == strcmp(term, "tmux-256color")
 					|| 0 == strcmp(term, "xterm")
 					|| 0 == strcmp(term, "xterm-256color")
@@ -343,21 +332,21 @@ namespace loguru
 				fclose(file_abs->fp);
 			}
 			if (!file_abs->fp) {
-				VLOG_F(g_internal_verbosity, "Reopening file '" LOGURU_FMT(s) "' due to previous error", file_abs->path);
+				LOG_F(INFO, "Reopening file '%s' due to previous error", file_abs->path);
 			}
 			else if (ret < 0) {
 				const auto why = errno_as_text();
-				VLOG_F(g_internal_verbosity, "Reopening file '" LOGURU_FMT(s) "' due to '" LOGURU_FMT(s) "'", file_abs->path, why.c_str());
+				LOG_F(INFO, "Reopening file '%s' due to '%s'", file_abs->path, why.c_str());
 			} else {
-				VLOG_F(g_internal_verbosity, "Reopening file '" LOGURU_FMT(s) "' due to file changed", file_abs->path);
+				LOG_F(INFO, "Reopening file '%s' due to file changed", file_abs->path);
 			}
 			// try reopen current file.
 			if (!create_directories(file_abs->path)) {
-				LOG_F(ERROR, "Failed to create directories to '" LOGURU_FMT(s) "'", file_abs->path);
+				LOG_F(ERROR, "Failed to create directories to '%s'", file_abs->path);
 			}
 			file_abs->fp = fopen(file_abs->path, file_abs->mode_str);
 			if (!file_abs->fp) {
-				LOG_F(ERROR, "Failed to open '" LOGURU_FMT(s) "'", file_abs->path);
+				LOG_F(ERROR, "Failed to open '%s'", file_abs->path);
 			} else {
 				stat(file_abs->path, &file_abs->st);
 			}
@@ -371,12 +360,6 @@ namespace loguru
 
 	Text::~Text() { free(_str); }
 
-#if LOGURU_USE_FMTLIB
-	Text vtextprintf(const char* format, fmt::format_args args)
-	{
-		return Text(STRDUP(fmt::vformat(format, args).c_str()));
-	}
-#else
 	LOGURU_PRINTF_LIKE(1, 0)
 	static Text vtextprintf(const char* format, va_list vlist)
 	{
@@ -389,7 +372,7 @@ namespace loguru
 #else
 		char* buff = nullptr;
 		int result = vasprintf(&buff, format, vlist);
-		CHECK_F(result >= 0, "Bad string format: '" LOGURU_FMT(s) "'", format);
+		CHECK_F(result >= 0, "Bad string format: '%s'", format);
 		return Text(buff);
 #endif
 	}
@@ -402,7 +385,6 @@ namespace loguru
 		va_end(vlist);
 		return result;
 	}
-#endif
 
 	// Overloaded for variadic template matching.
 	Text textprintf()
@@ -438,7 +420,7 @@ namespace loguru
 				if (value_str[0] == '\0') {
 					// Value in separate argument
 					arg_it += 1;
-					CHECK_LT_F(arg_it, argc, "Missing verbosiy level after " LOGURU_FMT(s) "", verbosity_flag);
+					CHECK_LT_F(arg_it, argc, "Missing verbosiy level after %s", verbosity_flag);
 					value_str = argv[arg_it];
 					out_argc -= 1;
 				}
@@ -451,7 +433,7 @@ namespace loguru
 					char* end = 0;
 					g_stderr_verbosity = static_cast<int>(strtol(value_str, &end, 10));
 					CHECK_F(end && *end == '\0',
-						"Invalid verbosity. Expected integer, INFO, WARNING, ERROR or OFF, got '" LOGURU_FMT(s) "'", value_str);
+						"Invalid verbosity. Expected integer, INFO, WARNING, ERROR or OFF, got '%s'", value_str);
 				}
 			} else {
 				argv[arg_dest++] = argv[arg_it];
@@ -482,11 +464,11 @@ namespace loguru
 
 	static void on_atexit()
 	{
-		VLOG_F(g_internal_verbosity, "atexit");
+		LOG_F(INFO, "atexit");
 		flush();
 	}
 
-	static void install_signal_handlers(bool unsafe_signal_handler);
+	static void install_signal_handlers();
 
 	static void write_hex_digit(std::string& out, unsigned num)
 	{
@@ -528,21 +510,21 @@ namespace loguru
 		char buff[256];
 	#if defined(__GLIBC__) && defined(_GNU_SOURCE)
 		// GNU Version
-		return Text(STRDUP(strerror_r(errno, buff, sizeof(buff))));
+		return Text(strdup(strerror_r(errno, buff, sizeof(buff))));
 	#elif defined(__APPLE__) || _POSIX_C_SOURCE >= 200112L
 		// XSI Version
 		strerror_r(errno, buff, sizeof(buff));
 		return Text(strdup(buff));
 	#elif defined(_WIN32)
 		strerror_s(buff, sizeof(buff), errno);
-		return Text(STRDUP(buff));
+		return Text(strdup(buff));
 	#else
 		// Not thread-safe.
-		return Text(STRDUP(strerror(errno)));
+		return Text(strdup(strerror(errno)));
 	#endif
 	}
 
-	void init(int& argc, char* argv[], const Options& options)
+	void init(int& argc, char* argv[], const char* verbosity_flag)
 	{
 		CHECK_GT_F(argc,       0,       "Expected proper argc/argv");
 		CHECK_EQ_F(argv[argc], nullptr, "Expected proper argc/argv");
@@ -553,9 +535,10 @@ namespace loguru
 			#define getcwd _getcwd
 		#endif
 
-		if (!getcwd(s_current_dir, sizeof(s_current_dir))) {
+		if (!getcwd(s_current_dir, sizeof(s_current_dir)))
+		{
 			const auto error_text = errno_as_text();
-			LOG_F(WARNING, "Failed to get current working directory: " LOGURU_FMT(s) "", error_text.c_str());
+			LOG_F(WARNING, "Failed to get current working directory: %s", error_text.c_str());
 		}
 
 		s_arguments = "";
@@ -566,30 +549,28 @@ namespace loguru
 			}
 		}
 
-		if (options.verbosity_flag) {
-			parse_args(argc, argv, options.verbosity_flag);
+		if (verbosity_flag) {
+			parse_args(argc, argv, verbosity_flag);
 		}
 
-		if (const auto main_thread_name = options.main_thread_name) {
-			#if LOGURU_PTLS_NAMES || LOGURU_WINTHREADS
-				set_thread_name(main_thread_name);
-			#elif LOGURU_PTHREADS
-				char old_thread_name[16] = {0};
-				auto this_thread = pthread_self();
-				#if defined(__APPLE__) || defined(__linux__)
-					pthread_getname_np(this_thread, old_thread_name, sizeof(old_thread_name));
+		#if LOGURU_PTLS_NAMES || LOGURU_WINTHREADS
+			set_thread_name("main thread");
+		#elif LOGURU_PTHREADS
+			char old_thread_name[16] = {0};
+			auto this_thread = pthread_self();
+			#if defined(__APPLE__) || defined(__linux__)
+				pthread_getname_np(this_thread, old_thread_name, sizeof(old_thread_name));
+			#endif
+			if (old_thread_name[0] == 0) {
+				#ifdef __APPLE__
+					pthread_setname_np("main thread");
+				#elif defined(__FreeBSD__) || defined(__OpenBSD__)
+					pthread_set_name_np(this_thread, "main thread");
+				#elif defined(__linux__)
+					pthread_setname_np(this_thread, "main thread");
 				#endif
-				if (old_thread_name[0] == 0) {
-					#ifdef __APPLE__
-						pthread_setname_np(main_thread_name);
-					#elif defined(__FreeBSD__) || defined(__OpenBSD__)
-						pthread_set_name_np(this_thread, main_thread_name);
-					#elif defined(__linux__)
-						pthread_setname_np(this_thread, main_thread_name);
-					#endif
-				}
-			#endif // LOGURU_PTHREADS
-		}
+			}
+		#endif // LOGURU_PTHREADS
 
 		if (g_stderr_verbosity >= Verbosity_INFO) {
 			if (g_preamble) {
@@ -603,22 +584,22 @@ namespace loguru
 			}
 			fflush(stderr);
 		}
-		VLOG_F(g_internal_verbosity, "arguments: " LOGURU_FMT(s) "", s_arguments.c_str());
+		LOG_F(INFO, "arguments: %s", s_arguments.c_str());
 		if (strlen(s_current_dir) != 0)
 		{
-			VLOG_F(g_internal_verbosity, "Current dir: " LOGURU_FMT(s) "", s_current_dir);
+			LOG_F(INFO, "Current dir: %s", s_current_dir);
 		}
-		VLOG_F(g_internal_verbosity, "stderr verbosity: " LOGURU_FMT(d) "", g_stderr_verbosity);
-		VLOG_F(g_internal_verbosity, "-----------------------------------");
+		LOG_F(INFO, "stderr verbosity: %d", g_stderr_verbosity);
+		LOG_F(INFO, "-----------------------------------");
 
-		install_signal_handlers(options.unsafe_signal_handler);
+		install_signal_handlers();
 
 		atexit(on_atexit);
 	}
 
 	void shutdown()
 	{
-		VLOG_F(g_internal_verbosity, "loguru::shutdown()");
+		LOG_F(INFO, "loguru::shutdown()");
 		remove_all_callbacks();
 		set_fatal_handler(nullptr);
 		set_verbosity_to_name_callback(nullptr);
@@ -692,7 +673,7 @@ namespace loguru
 	bool create_directories(const char* file_path_const)
 	{
 		CHECK_F(file_path_const && *file_path_const);
-		char* file_path = STRDUP(file_path_const);
+		char* file_path = strdup(file_path_const);
 		for (char* p = strchr(file_path + 1, '/'); p; p = strchr(p + 1, '/')) {
 			*p = '\0';
 
@@ -702,7 +683,7 @@ namespace loguru
 			if (mkdir(file_path, 0755) == -1) {
 	#endif
 				if (errno != EEXIST) {
-					LOG_F(ERROR, "Failed to create directory '" LOGURU_FMT(s) "'", file_path);
+					LOG_F(ERROR, "Failed to create directory '%s'", file_path);
 					LOG_IF_F(ERROR, errno == EACCES,       "EACCES");
 					LOG_IF_F(ERROR, errno == ENAMETOOLONG, "ENAMETOOLONG");
 					LOG_IF_F(ERROR, errno == ENOENT,       "ENOENT");
@@ -729,13 +710,13 @@ namespace loguru
 		}
 
 		if (!create_directories(path)) {
-			LOG_F(ERROR, "Failed to create directories to '" LOGURU_FMT(s) "'", path);
+			LOG_F(ERROR, "Failed to create directories to '%s'", path);
 		}
 
 		const char* mode_str = (mode == FileMode::Truncate ? "w" : "a");
 		auto file = fopen(path, mode_str);
 		if (!file) {
-			LOG_F(ERROR, "Failed to open '" LOGURU_FMT(s) "'", path);
+			LOG_F(ERROR, "Failed to open '%s'", path);
 			return false;
 		}
 #if LOGURU_WITH_FILEABS
@@ -767,7 +748,7 @@ namespace loguru
 		}
 		fflush(file);
 
-		VLOG_F(g_internal_verbosity, "Logging to '" LOGURU_FMT(s) "', mode: '" LOGURU_FMT(s) "', verbosity: " LOGURU_FMT(d) "", path, mode_str, verbosity);
+		LOG_F(INFO, "Logging to '%s', mode: '%s', verbosity: %d", path, mode_str, verbosity);
 		return true;
 	}
 
@@ -884,7 +865,7 @@ namespace loguru
 			on_callback_change();
 			return true;
 		} else {
-			LOG_F(ERROR, "Failed to locate callback with id '" LOGURU_FMT(s) "'", id);
+			LOG_F(ERROR, "Failed to locate callback with id '%s'", id);
 			return false;
 		}
 	}
@@ -920,7 +901,7 @@ namespace loguru
 	{
 		#if LOGURU_PTLS_NAMES
 			(void)pthread_once(&s_pthread_key_once, make_pthread_key_name);
-			(void)pthread_setspecific(s_pthread_key_name, STRDUP(name));
+			(void)pthread_setspecific(s_pthread_key_name, strdup(name));
 
 		#elif LOGURU_PTHREADS
 			#ifdef __APPLE__
@@ -947,9 +928,6 @@ namespace loguru
 
 	void get_thread_name(char* buffer, unsigned long long length, bool right_align_hext_id)
 	{
-#ifdef _WIN32
-		(void)right_align_hext_id;
-#endif
 		CHECK_NE_F(length, 0u, "Zero length buffer in get_thread_name");
 		CHECK_NOTNULL_F(buffer, "nullptr in get_thread_name");
 #if LOGURU_PTHREADS
@@ -1004,7 +982,7 @@ namespace loguru
 	{
 		int status = -1;
 		char* demangled = abi::__cxa_demangle(name, 0, 0, &status);
-		Text result{status == 0 ? demangled : STRDUP(name)};
+		Text result{status == 0 ? demangled : strdup(name)};
 		return result;
 	}
 
@@ -1112,7 +1090,7 @@ namespace loguru
 #else // LOGURU_STACKTRACES
 	Text demangle(const char* name)
 	{
-		return Text(STRDUP(name));
+		return Text(strdup(name));
 	}
 
 	std::string stacktrace_as_stdstring(int)
@@ -1126,7 +1104,7 @@ namespace loguru
 	Text stacktrace(int skip)
 	{
 		auto str = stacktrace_as_stdstring(skip + 1);
-		return Text(STRDUP(str.c_str()));
+		return Text(strdup(str.c_str()));
 	}
 
 	// ------------------------------------------------------------------------
@@ -1229,12 +1207,12 @@ namespace loguru
 		if (message.verbosity == Verbosity_FATAL) {
 			auto st = loguru::stacktrace(stack_trace_skip + 2);
 			if (!st.empty()) {
-				RAW_LOG_F(ERROR, "Stack trace:\n" LOGURU_FMT(s) "", st.c_str());
+				RAW_LOG_F(ERROR, "Stack trace:\n%s", st.c_str());
 			}
 
 			auto ec = loguru::get_error_context();
 			if (!ec.empty()) {
-				RAW_LOG_F(ERROR, "" LOGURU_FMT(s) "", ec.c_str());
+				RAW_LOG_F(ERROR, "%s", ec.c_str());
 			}
 		}
 
@@ -1331,18 +1309,19 @@ namespace loguru
 	}
 
 #if LOGURU_USE_FMTLIB
-	void vlog(Verbosity verbosity, const char* file, unsigned line, const char* format, fmt::format_args args)
+	void log(Verbosity verbosity, const char* file, unsigned line, const char* format, fmt::ArgList args)
 	{
-		auto formatted = fmt::vformat(format, args);
+		auto formatted = fmt::format(format, args);
 		log_to_everywhere(1, verbosity, file, line, "", formatted.c_str());
 	}
 
-	void raw_vlog(Verbosity verbosity, const char* file, unsigned line, const char* format, fmt::format_args args)
+	void raw_log(Verbosity verbosity, const char* file, unsigned line, const char* format, fmt::ArgList args)
 	{
-		auto formatted = fmt::vformat(format, args);
+		auto formatted = fmt::format(format, args);
 		auto message = Message{verbosity, file, line, "", "", "", formatted.c_str()};
 		log_message(1, message, false, true);
 	}
+
 #else
 	void log(Verbosity verbosity, const char* file, unsigned line, const char* format, ...)
 	{
@@ -1422,11 +1401,7 @@ namespace loguru
 			}
 #if LOGURU_VERBOSE_SCOPE_ENDINGS
 			auto duration_sec = (now_ns() - _start_time_ns) / 1e9;
-#if LOGURU_USE_FMTLIB
-			auto buff = textprintf("{:.{}f} s: {:s}", duration_sec, LOGURU_SCOPE_TIME_PRECISION, _name);
-#else
 			auto buff = textprintf("%.*f s: %s", LOGURU_SCOPE_TIME_PRECISION, duration_sec, _name);
-#endif
 			log_to_everywhere(1, _verbosity, _file, _line, "} ", buff.c_str());
 #else
 			log_to_everywhere(1, _verbosity, _file, _line, "}", "");
@@ -1434,14 +1409,6 @@ namespace loguru
 		}
 	}
 
-#if LOGURU_USE_FMTLIB
-	void vlog_and_abort(int stack_trace_skip, const char* expr, const char* file, unsigned line, const char* format, fmt::format_args args)
-	{
-		auto formatted = fmt::vformat(format, args);
-		log_to_everywhere(stack_trace_skip + 1, Verbosity_FATAL, file, line, expr, formatted.c_str());
-		abort(); // log_to_everywhere already does this, but this makes the analyzer happy.
-	}
-#else
 	void log_and_abort(int stack_trace_skip, const char* expr, const char* file, unsigned line, const char* format, ...)
 	{
 		va_list vlist;
@@ -1451,7 +1418,6 @@ namespace loguru
 		va_end(vlist);
 		abort(); // log_to_everywhere already does this, but this makes the analyzer happy.
 	}
-#endif
 
 	void log_and_abort(int stack_trace_skip, const char* expr, const char* file, unsigned line)
 	{
@@ -1461,21 +1427,6 @@ namespace loguru
 	// ----------------------------------------------------------------------------
 	// Streams:
 
-#if LOGURU_USE_FMTLIB
-	template<typename... Args>
-	std::string vstrprintf(const char* format, const Args&... args)
-	{
-		auto text = textprintf(format, args...);
-		std::string result = text.c_str();
-		return result;
-	}
-
-	template<typename... Args>
-	std::string strprintf(const char* format, const Args&... args)
-	{
-		return vstrprintf(format, args...);
-	}
-#else
 	std::string vstrprintf(const char* format, va_list vlist)
 	{
 		auto text = vtextprintf(format, vlist);
@@ -1491,20 +1442,19 @@ namespace loguru
 		va_end(vlist);
 		return result;
 	}
-#endif
 
 	#if LOGURU_WITH_STREAMS
 
 	StreamLogger::~StreamLogger() noexcept(false)
 	{
 		auto message = _ss.str();
-		log(_verbosity, _file, _line, LOGURU_FMT(s), message.c_str());
+		log(_verbosity, _file, _line, "%s", message.c_str());
 	}
 
 	AbortLogger::~AbortLogger() noexcept(false)
 	{
 		auto message = _ss.str();
-		loguru::log_and_abort(1, _expr, _file, _line, LOGURU_FMT(s), message.c_str());
+		loguru::log_and_abort(1, _expr, _file, _line, "%s", message.c_str());
 	}
 
 	#endif // LOGURU_WITH_STREAMS
@@ -1595,20 +1545,15 @@ namespace loguru
 			result.str += "------------------------------------------------\n";
 			for (auto entry : stack) {
 				const auto description = std::string(entry->_descr) + ":";
-#if LOGURU_USE_FMTLIB
-				auto prefix = textprintf("[ErrorContext] {.{}s}:{:-5u} {:-20s} ",
-					filename(entry->_file), LOGURU_FILENAME_WIDTH, entry->_line, description.c_str());
-#else
 				auto prefix = textprintf("[ErrorContext] %*s:%-5u %-20s ",
 					LOGURU_FILENAME_WIDTH, filename(entry->_file), entry->_line, description.c_str());
-#endif
 				result.str += prefix.c_str();
 				entry->print_value(result);
 				result.str += "\n";
 			}
 			result.str += "------------------------------------------------";
 		}
-		return Text(STRDUP(result.str.c_str()));
+		return Text(strdup(result.str.c_str()));
 	}
 
 	EcEntryBase::EcEntryBase(const char* file, unsigned line, const char* descr)
@@ -1631,7 +1576,7 @@ namespace loguru
 		// Add quotes around the string to make it obvious where it begin and ends.
 		// This is great for detecting erroneous leading or trailing spaces in e.g. an identifier.
 		auto str = "\"" + std::string(value) + "\"";
-		return Text{STRDUP(str.c_str())};
+		return Text{strdup(str.c_str())};
 	}
 
 	Text ec_to_text(char c)
@@ -1669,14 +1614,14 @@ namespace loguru
 
 		str += "'";
 
-		return Text{STRDUP(str.c_str())};
+		return Text{strdup(str.c_str())};
 	}
 
 	#define DEFINE_EC(Type)                        \
 		Text ec_to_text(Type value)                \
 		{                                          \
 			auto str = std::to_string(value);      \
-			return Text{STRDUP(str.c_str())};      \
+			return Text{strdup(str.c_str())};      \
 		}
 
 	DEFINE_EC(int)
@@ -1713,10 +1658,13 @@ namespace loguru
 
 #ifdef _WIN32
 namespace loguru {
-	void install_signal_handlers(bool unsafe_signal_handler)
+	void install_signal_handlers()
 	{
-		(void)unsafe_signal_handler;
-		// TODO: implement signal handlers on windows
+		#if defined(_MSC_VER)
+		#pragma message ( "No signal handlers on Win32" )
+		#else
+		#warning "No signal handlers on Win32"
+		#endif
 	}
 } // namespace loguru
 
@@ -1762,8 +1710,6 @@ namespace loguru
 		kill(getpid(), signal_number);
 	}
 
-	static bool s_unsafe_signal_handler = false;
-
 	void signal_handler(int signal_number, siginfo_t*, void*)
 	{
 		const char* signal_name = "UNKNOWN SIGNAL";
@@ -1797,35 +1743,33 @@ namespace loguru
 
 		// --------------------------------------------------------------------
 
-		if (s_unsafe_signal_handler) {
-			// --------------------------------------------------------------------
-			/* Now we do unsafe things. This can for example lead to deadlocks if
-			   the signal was triggered from the system's memory management functions
-			   and the code below tries to do allocations.
-			*/
+#if LOGURU_UNSAFE_SIGNAL_HANDLER
+		// --------------------------------------------------------------------
+		/* Now we do unsafe things. This can for example lead to deadlocks if
+		   the signal was triggered from the system's memory management functions
+		   and the code below tries to do allocations.
+		*/
 
-			flush();
-			char preamble_buff[LOGURU_PREAMBLE_WIDTH];
-			print_preamble(preamble_buff, sizeof(preamble_buff), Verbosity_FATAL, "", 0);
-			auto message = Message{Verbosity_FATAL, "", 0, preamble_buff, "", "Signal: ", signal_name};
-			try {
-				log_message(1, message, false, false);
-			} catch (...) {
-				// This can happed due to s_fatal_handler.
-				write_to_stderr("Exception caught and ignored by Loguru signal handler.\n");
-			}
-			flush();
-
-			// --------------------------------------------------------------------
+		flush();
+		char preamble_buff[LOGURU_PREAMBLE_WIDTH];
+		print_preamble(preamble_buff, sizeof(preamble_buff), Verbosity_FATAL, "", 0);
+		auto message = Message{Verbosity_FATAL, "", 0, preamble_buff, "", "Signal: ", signal_name};
+		try {
+			log_message(1, message, false, false);
+		} catch (...) {
+			// This can happed due to s_fatal_handler.
+			write_to_stderr("Exception caught and ignored by Loguru signal handler.\n");
 		}
+		flush();
+
+		// --------------------------------------------------------------------
+#endif // LOGURU_UNSAFE_SIGNAL_HANDLER
 
 		call_default_signal_handler(signal_number);
 	}
 
-	void install_signal_handlers(bool unsafe_signal_handler)
+	void install_signal_handlers()
 	{
-		s_unsafe_signal_handler = unsafe_signal_handler;
-
 		struct sigaction sig_action;
 		memset(&sig_action, 0, sizeof(sig_action));
 		sigemptyset(&sig_action.sa_mask);
@@ -1833,17 +1777,11 @@ namespace loguru
 		sig_action.sa_sigaction = &signal_handler;
 		for (const auto& s : ALL_SIGNALS) {
 			CHECK_F(sigaction(s.number, &sig_action, NULL) != -1,
-				"Failed to install handler for " LOGURU_FMT(s) "", s.name);
+				"Failed to install handler for %s", s.name);
 		}
 	}
 } // namespace loguru
 
-#endif // _WIN32
-
-#ifdef _WIN32
-#ifdef _MSC_VER
-#pragma warning(pop)
-#endif // _MSC_VER
 #endif // _WIN32
 
 #endif // LOGURU_IMPLEMENTATION

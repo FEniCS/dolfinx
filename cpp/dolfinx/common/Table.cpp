@@ -106,7 +106,7 @@ Table Table::reduce(MPI_Comm comm, Table::Reduction reduction) const
   std::vector<double> values;
   for (const auto& it : _values)
   {
-    if (auto pval = std::get_if<double>(&it.second))
+    if (const auto *const pval = std::get_if<double>(&it.second))
     {
       keys += it.first.first + '\0' + it.first.second + '\0';
       values.push_back(*pval);
@@ -178,7 +178,7 @@ std::string Table::str() const
     col_sizes.push_back(_cols[j].size());
   for (std::size_t i = 0; i < _rows.size(); i++)
   {
-    tvalues.push_back(std::vector<std::string>());
+    tvalues.emplace_back();
     col_sizes[0] = std::max(col_sizes[0], _rows[i].size());
     for (std::size_t j = 0; j < _cols.size(); j++)
     {

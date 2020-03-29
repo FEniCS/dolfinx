@@ -17,6 +17,7 @@ import cffi
 import numba
 import numba.cffi_support
 import numpy as np
+import petsc4py.lib
 import pytest
 from petsc4py import PETSc
 from petsc4py import get_config as PETSc_get_config
@@ -25,7 +26,10 @@ import dolfinx
 import ufl
 from ufl import dx, inner
 
+# Get details of PETSc install
 petsc_dir = PETSc_get_config()['PETSC_DIR']
+petsc_arch = petsc4py.lib.getPathArchPETSc()[1]
+
 
 # Get PETSc int and scalar types
 if np.dtype(PETSc.ScalarType).kind == 'c':
@@ -68,9 +72,9 @@ if petsc_lib_name is not None:
     petsc_lib_ctypes = ctypes.CDLL(petsc_lib_name)
 else:
     try:
-        petsc_lib_ctypes = ctypes.CDLL(os.path.join(petsc_dir, "lib", "libpetsc.so"))
+        petsc_lib_ctypes = ctypes.CDLL(os.path.join(petsc_dir, petsc_arch, "lib", "libpetsc.so"))
     except OSError:
-        petsc_lib_ctypes = ctypes.CDLL(os.path.join(petsc_dir, "lib", "libpetsc.dylib"))
+        petsc_lib_ctypes = ctypes.CDLL(os.path.join(petsc_dir, petsc_arch, "lib", "libpetsc.dylib"))
     except OSError:
         print("Could not load PETSc library for CFFI (ABI mode).")
         raise
@@ -87,24 +91,22 @@ ADD_VALUES = PETSc.InsertMode.ADD_VALUES
 
 # CFFI - register complex types
 ffi = cffi.FFI()
-numba.cffi_support.register_type(ffi.typeof('double _Complex'),
-                                 numba.types.complex128)
-numba.cffi_support.register_type(ffi.typeof('float _Complex'),
-                                 numba.types.complex64)
-
+numba.cffi_support.register_type(ffi.typeof('double _Complex'), numba.types.complex128)
+numba.cffi_support.register_type(ffi.typeof('float _Complex'), numba.types.complex64)
 
 # Get MatSetValuesLocal from PETSc available via cffi in ABI mode
 ffi.cdef("""int MatSetValuesLocal(void* mat, {0} nrow, const {0}* irow,
                                   {0} ncol, const {0}* icol, const {1}* y, int addv);
 """.format(c_int_t, c_scalar_t))
 
+
 if petsc_lib_name is not None:
     petsc_lib_cffi = ffi.dlopen(petsc_lib_name)
 else:
     try:
-        petsc_lib_cffi = ffi.dlopen(os.path.join(petsc_dir, "lib", "libpetsc.so"))
+        petsc_lib_cffi = ffi.dlopen(os.path.join(petsc_dir, petsc_arch, "lib", "libpetsc.so"))
     except OSError:
-        petsc_lib_cffi = ffi.dlopen(os.path.join(petsc_dir, "lib", "libpetsc.dylib"))
+        petsc_lib_cffi = ffi.dlopen(os.path.join(petsc_dir, petsc_arch, "lib", "libpetsc.dylib"))
     except OSError:
         print("Could not load PETSc library for CFFI (ABI mode).")
         raise
@@ -128,8 +130,9 @@ if dolfinx.MPI.comm_world.Get_rank() == 0:
         # include "petscmat.h"
     """,
                           libraries=['petsc'],
-                          include_dirs=[os.path.join(petsc_dir, 'include')],
-                          library_dirs=[os.path.join(petsc_dir, 'lib')],
+                          include_dirs=[os.path.join(petsc_dir, petsc_arch, 'include'),
+                                        os.path.join(petsc_dir, 'include')],
+                          library_dirs=[os.path.join(petsc_dir, petsc_arch, 'lib')],
                           extra_compile_args=[])
 
     # Build module in same directory as test file

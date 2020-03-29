@@ -124,9 +124,9 @@ compute_local_dual_graph_keyed(
   {
     const int k = facets.size() - 1;
     const int cell_index = facets[k].second;
-    facet_cell_map.push_back({std::vector<std::int32_t>(facets[k].first.begin(),
+    facet_cell_map.emplace_back(std::vector<std::int32_t>(facets[k].first.begin(),
                                                         facets[k].first.end()),
-                              cell_index});
+                              cell_index);
   }
 
   return {std::move(local_graph), std::move(facet_cell_map), num_local_edges};
@@ -196,7 +196,7 @@ compute_nonlocal_dual_graph(
   std::vector<std::vector<std::int64_t>> received_buffer(num_processes);
 
   // Pack map data and send to match-maker process
-  for (auto& it : facet_cell_map)
+  for (const auto & it : facet_cell_map)
   {
     // FIXME: Could use a better index? First vertex is slightly
     //        skewed towards low values - may not be important
@@ -310,7 +310,7 @@ mesh::GraphBuilder::compute_dual_graph(
       = mesh::GraphBuilder::compute_local_dual_graph(cell_vertices, cell_type);
 
   // Compute nonlocal part
-  const auto [graph, num_ghost_nodes, num_nonlocal_edges]
+  auto [graph, num_ghost_nodes, num_nonlocal_edges]
       = compute_nonlocal_dual_graph(mpi_comm, cell_vertices, cell_type,
                                     facet_cell_map, local_graph);
 

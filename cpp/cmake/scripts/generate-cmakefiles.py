@@ -39,8 +39,10 @@ CHECK_CXX_COMPILER_FLAG("-Wno-comment" HAVE_NO_MULTLINE)
 set_source_files_properties(main.cpp PROPERTIES COMPILE_FLAGS "$<$<BOOL:${{HAVE_NO_MULTLINE}}>:-Wno-comment -Wall -Wextra -pedantic -Werror>")
 
 # Test targets
-set(TEST_PARAMETERS -np 3 ${{MPIEXEC_PARAMS}} "./${{PROJECT_NAME}}")
-add_test(NAME ${{PROJECT_NAME}}_mpi COMMAND "mpirun" ${{TEST_PARAMETERS}})
+set(TEST_PARAMETERS2 -np 2 ${{MPIEXEC_PARAMS}} "./${{PROJECT_NAME}}")
+set(TEST_PARAMETERS3 -np 3 ${{MPIEXEC_PARAMS}} "./${{PROJECT_NAME}}")
+add_test(NAME ${{PROJECT_NAME}}_mpi_2 COMMAND "mpirun" ${{TEST_PARAMETERS2}})
+add_test(NAME ${{PROJECT_NAME}}_mpi_3 COMMAND "mpirun" ${{TEST_PARAMETERS3}})
 add_test(NAME ${{PROJECT_NAME}}_serial COMMAND ${{PROJECT_NAME}})
 """
 

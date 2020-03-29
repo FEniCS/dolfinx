@@ -252,7 +252,7 @@ Eigen::Array<std::int32_t, Eigen::Dynamic, 2> _locate_dofs_topological(
 
     // Get local index of facet with respect to the cell
     auto entities_d = c_to_e->links(cell);
-    auto it = std::find(entities_d.data(),
+    const auto *it = std::find(entities_d.data(),
                         entities_d.data() + entities_d.rows(), entities[e]);
     assert(it != (entities_d.data() + entities_d.rows()));
     const int entity_local_index = std::distance(entities_d.data(), it);
@@ -347,7 +347,7 @@ _locate_dofs_topological(const function::FunctionSpace& V, const int entity_dim,
 
     // Get local index of facet with respect to the cell
     auto entities_d = c_to_e->links(cell);
-    auto it = std::find(entities_d.data(),
+    const auto *it = std::find(entities_d.data(),
                         entities_d.data() + entities_d.rows(), entities[i]);
     assert(it != (entities_d.data() + entities_d.rows()));
     const int entity_local_index = std::distance(entities_d.data(), it);
@@ -391,7 +391,9 @@ _locate_dofs_topological(const function::FunctionSpace& V, const int entity_dim,
 //-----------------------------------------------------------------------------
 Eigen::Array<std::int32_t, Eigen::Dynamic, 2> _locate_dofs_geometrical(
     const std::vector<std::reference_wrapper<function::FunctionSpace>>& V,
-    marking_function marker)
+    const std::function<Eigen::Array<bool, Eigen::Dynamic, 1>(
+        const Eigen::Ref<const Eigen::Array<double, 3, Eigen::Dynamic,
+                                            Eigen::RowMajor>>&)>& marker)
 {
   // FIXME: Calling V.tabulate_dof_coordinates() is very expensive,
   // especially when we usually want the boundary dofs only. Add
@@ -466,9 +468,11 @@ Eigen::Array<std::int32_t, Eigen::Dynamic, 2> _locate_dofs_geometrical(
   return dofs;
 }
 //-----------------------------------------------------------------------------
-Eigen::Array<std::int32_t, Eigen::Dynamic, 1>
-_locate_dofs_geometrical(const function::FunctionSpace& V,
-                         marking_function marker)
+Eigen::Array<std::int32_t, Eigen::Dynamic, 1> _locate_dofs_geometrical(
+    const function::FunctionSpace& V,
+    const std::function<Eigen::Array<bool, Eigen::Dynamic, 1>(
+        const Eigen::Ref<const Eigen::Array<double, 3, Eigen::Dynamic,
+                                            Eigen::RowMajor>>&)>& marker)
 {
   // FIXME: Calling V.tabulate_dof_coordinates() is very expensive,
   // especially when we usually want the boundary dofs only. Add
@@ -513,7 +517,9 @@ fem::locate_dofs_topological(
 Eigen::Array<std::int32_t, Eigen::Dynamic, Eigen::Dynamic>
 fem::locate_dofs_geometrical(
     const std::vector<std::reference_wrapper<function::FunctionSpace>>& V,
-    marking_function marker)
+    const std::function<Eigen::Array<bool, Eigen::Dynamic, 1>(
+        const Eigen::Ref<const Eigen::Array<double, 3, Eigen::Dynamic,
+                                            Eigen::RowMajor>>&)>& marker)
 {
   if (V.size() == 2)
     return _locate_dofs_geometrical(V, marker);
@@ -526,7 +532,7 @@ fem::locate_dofs_geometrical(
 
 //-----------------------------------------------------------------------------
 DirichletBC::DirichletBC(
-    std::shared_ptr<const function::Function> g,
+    const std::shared_ptr<const function::Function>& g,
     const Eigen::Ref<const Eigen::Array<std::int32_t, Eigen::Dynamic, 1>>&
         V_dofs)
     : _function_space(g->function_space()), _g(g), _dofs(V_dofs.rows(), 2)
@@ -537,13 +543,13 @@ DirichletBC::DirichletBC(
 
   const int owned_size = _function_space->dofmap()->index_map->block_size()
                          * _function_space->dofmap()->index_map->size_local();
-  auto it = std::lower_bound(_dofs.col(0).data(),
+  auto *it = std::lower_bound(_dofs.col(0).data(),
                              _dofs.col(0).data() + _dofs.rows(), owned_size);
   _owned_indices = std::distance(_dofs.col(0).data(), it);
 }
 //-----------------------------------------------------------------------------
 DirichletBC::DirichletBC(
-    std::shared_ptr<const function::Function> g,
+    const std::shared_ptr<const function::Function>& g,
     const Eigen::Ref<const Eigen::Array<std::int32_t, Eigen::Dynamic, 2>>&
         V_g_dofs,
     std::shared_ptr<const function::FunctionSpace> V)
@@ -551,7 +557,7 @@ DirichletBC::DirichletBC(
 {
   const int owned_size = _function_space->dofmap()->index_map->block_size()
                          * _function_space->dofmap()->index_map->size_local();
-  auto it = std::lower_bound(_dofs.col(0).data(),
+  auto *it = std::lower_bound(_dofs.col(0).data(),
                              _dofs.col(0).data() + _dofs.rows(), owned_size);
   _owned_indices = std::distance(_dofs.col(0).data(), it);
 }

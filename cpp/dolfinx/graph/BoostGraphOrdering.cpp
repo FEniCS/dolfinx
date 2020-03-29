@@ -59,7 +59,7 @@ std::vector<int> dolfinx::graph::BoostGraphOrdering::compute_cuthill_mckee(
   typedef boost::compressed_sparse_row_graph<boost::directedS> BoostGraph;
 
   // Build Boost graph
-  const BoostGraph boost_graph = build_csr_directed_graph<BoostGraph>(graph);
+  const auto boost_graph = build_csr_directed_graph<BoostGraph>(graph);
 
   // Check if graph has no edges
   std::vector<int> map(n);
@@ -97,7 +97,7 @@ std::vector<int> dolfinx::graph::BoostGraphOrdering::compute_cuthill_mckee(
   common::Timer timer("Boost Cuthill-McKee graph ordering");
 
   // Typedef for Boost compressed sparse row graph
-  typedef boost::compressed_sparse_row_graph<boost::directedS> BoostGraph;
+  using BoostGraph = boost::compressed_sparse_row_graph<boost::directedS>;
 
   // Build Boost graph
   const BoostGraph boost_graph(boost::edges_are_unsorted_multi_pass,

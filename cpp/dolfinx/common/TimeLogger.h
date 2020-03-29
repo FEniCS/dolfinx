@@ -29,7 +29,7 @@ class TimeLogger
 {
 public:
   /// Constructor
-  TimeLogger();
+  TimeLogger() = default;
 
   /// Destructor
   ~TimeLogger() = default;
