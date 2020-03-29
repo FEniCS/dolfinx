@@ -9,8 +9,8 @@
 #include "MeshEntity.h"
 #include "MeshFunction.h"
 #include "MeshIterator.h"
+#include <cmath>
 #include <dolfinx/common/MPI.h>
-#include <math.h>
 #include <sstream>
 
 using namespace dolfinx;

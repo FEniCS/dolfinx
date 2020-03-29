@@ -274,7 +274,7 @@ void dolfinx::la::petsc_error(int error_code, std::string filename,
 }
 //-----------------------------------------------------------------------------
 dolfinx::la::VecWrapper::VecWrapper(Vec y, bool ghosted)
-    : x(nullptr, 0), _y(y), _y_local(nullptr), _ghosted(ghosted)
+    : x(nullptr, 0), _y(y),  _ghosted(ghosted)
 {
   assert(_y);
   if (ghosted)
@@ -331,7 +331,7 @@ void dolfinx::la::VecWrapper::restore()
 }
 //-----------------------------------------------------------------------------
 dolfinx::la::VecReadWrapper::VecReadWrapper(const Vec y, bool ghosted)
-    : x(nullptr, 0), _y(y), _y_local(nullptr), _ghosted(ghosted)
+    : x(nullptr, 0), _y(y),  _ghosted(ghosted)
 {
   assert(_y);
   if (ghosted)

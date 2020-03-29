@@ -81,7 +81,7 @@ xdmf_utils::get_hdf5_paths(const pugi::xml_node& dataitem_node)
   {
     throw std::runtime_error("Node name is \""
                              + std::string(dataitem_node.name())
-                             + "\", expecting \"DataItem\"");
+                             + R"(", expecting "DataItem")");
   }
 
   // Check that format is HDF
@@ -91,7 +91,7 @@ xdmf_utils::get_hdf5_paths(const pugi::xml_node& dataitem_node)
   if (format.compare("HDF") != 0)
   {
     throw std::runtime_error("DataItem format \"" + format
-                             + "\" is not \"HDF\"");
+                             + R"(" is not "HDF")");
   }
 
   // Get path data

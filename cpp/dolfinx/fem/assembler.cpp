@@ -57,8 +57,8 @@ void fem::apply_lifting(
     for (std::size_t i = 0; i < a.size(); ++i)
     {
       assert(x0[i]);
-      x0_wrapper.push_back(la::VecReadWrapper(x0[i]));
-      x0_ref.push_back(x0_wrapper.back().x);
+      x0_wrapper.emplace_back(x0[i]);
+      x0_ref.emplace_back(x0_wrapper.back().x);
     }
 
     fem::impl::apply_lifting(_b.x, a, bcs1, x0_ref, scale);
@@ -123,8 +123,7 @@ Eigen::SparseMatrix<double, Eigen::RowMajor> fem::assemble_matrix_eigen(
             for (int j = 0; j < ncol; ++j)
             {
               int col = cols[j];
-              triplets.push_back(
-                  Eigen::Triplet<double>(row, col, y[i * ncol + j]));
+              triplets.emplace_back(row, col, y[i * ncol + j]);
             }
           }
           return 0;

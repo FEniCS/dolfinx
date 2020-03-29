@@ -124,9 +124,9 @@ compute_local_dual_graph_keyed(
   {
     const int k = facets.size() - 1;
     const int cell_index = facets[k].second;
-    facet_cell_map.push_back({std::vector<std::int32_t>(facets[k].first.begin(),
+    facet_cell_map.emplace_back(std::vector<std::int32_t>(facets[k].first.begin(),
                                                         facets[k].first.end()),
-                              cell_index});
+                              cell_index);
   }
 
   return {std::move(local_graph), std::move(facet_cell_map), num_local_edges};
