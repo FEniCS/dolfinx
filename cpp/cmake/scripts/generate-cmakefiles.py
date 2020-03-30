@@ -47,13 +47,12 @@ add_test(NAME ${{PROJECT_NAME}}_serial COMMAND ${{PROJECT_NAME}})
 """
 
 # Subdirectories
-sub_directories = ['demo', 'bench']
+sub_directories = ["demo"]
 # Prefix map for subdirectories
-executable_prefixes = dict(demo="demo_", bench="bench_")
+executable_prefixes = dict(demo="demo_")
 
 # Main file name map for subdirectories
-main_file_names = dict(
-    demo=set(["main.cpp", "main.cpp.rst"]), bench=set(["main.cpp"]))
+main_file_names = dict(demo=set(["main.cpp"]))
 
 # Projects that use custom CMakeLists.txt (shouldn't overwrite)
 exclude_projects = []

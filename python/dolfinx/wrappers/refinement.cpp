@@ -5,7 +5,7 @@
 // SPDX-License-Identifier:    LGPL-3.0-or-later
 
 #include <dolfinx/mesh/Mesh.h>
-#include <dolfinx/mesh/MeshFunction.h>
+#include <dolfinx/mesh/MeshTags.h>
 #include <dolfinx/refinement/refine.h>
 #include <pybind11/pybind11.h>
 
@@ -25,7 +25,7 @@ void refinement(py::module& m)
 
   m.def("refine",
         py::overload_cast<const dolfinx::mesh::Mesh&,
-                          const dolfinx::mesh::MeshFunction<int>&, bool>(
+                          const dolfinx::mesh::MeshTags<std::int8_t>&, bool>(
             &dolfinx::refinement::refine),
         py::arg("mesh"), py::arg("marker"), py::arg("redistribute") = true);
 }

@@ -461,7 +461,7 @@ mesh::Mesh PlazaRefinementND::refine(const mesh::Mesh& mesh, bool redistribute)
 //-----------------------------------------------------------------------------
 mesh::Mesh
 PlazaRefinementND::refine(const mesh::Mesh& mesh,
-                          const mesh::MeshFunction<int>& refinement_marker,
+                          const mesh::MeshTags<std::int8_t>& refinement_marker,
                           bool redistribute)
 {
   if (mesh.topology().cell_type() != mesh::CellType::triangle

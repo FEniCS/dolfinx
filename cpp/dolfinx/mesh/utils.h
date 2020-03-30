@@ -79,11 +79,12 @@ Eigen::Array<double, Eigen::Dynamic, 3, Eigen::RowMajor> midpoints(
 /// @returns List of marked entity indices (indices local to the
 /// process)
 /// @endcond
-Eigen::Array<std::int32_t, Eigen::Dynamic, 1> compute_marked_boundary_entities(
+Eigen::Array<std::int32_t, Eigen::Dynamic, 1> locate_entities_geometrical(
     const mesh::Mesh& mesh, const int dim,
     const std::function<Eigen::Array<bool, Eigen::Dynamic, 1>(
         const Eigen::Ref<const Eigen::Array<double, 3, Eigen::Dynamic,
-                                            Eigen::RowMajor>>&)>& marker);
+                                            Eigen::RowMajor>>&)>& marker,
+    const bool boundary_only);
 
 } // namespace mesh
 } // namespace dolfinx

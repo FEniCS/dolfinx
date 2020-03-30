@@ -8,7 +8,7 @@ import os
 
 import pytest
 
-from dolfinx import (MPI, Function, FunctionSpace, MeshFunction,
+from dolfinx import (MPI, Function, FunctionSpace,
                      TensorFunctionSpace, UnitCubeMesh, UnitIntervalMesh,
                      UnitSquareMesh, VectorFunctionSpace)
 from dolfinx.cpp.mesh import CellType
@@ -47,48 +47,6 @@ def type_conv():
 @pytest.fixture(scope="function")
 def tempfile(tempdir, request):
     return os.path.join(tempdir, request.function.__name__)
-
-
-def test_save_1d_meshfunctions(tempfile, mesh_function_types, file_options,
-                               type_conv):
-    mesh = UnitIntervalMesh(MPI.comm_world, 32)
-    for d in range(mesh.topology.dim + 1):
-        for t in mesh_function_types:
-            mf = MeshFunction(t, mesh, mesh.topology.dim - d, type_conv[t](1))
-            VTKFile(tempfile + "mf.pvd").write(mf)
-            f = VTKFile(tempfile + "mf.pvd")
-            f.write(mf, 0.)
-            f.write(mf, 1.)
-
-
-def test_save_2d_meshfunctions(tempfile, mesh_function_types, file_options,
-                               type_conv, cell_types_2D):
-    mesh = UnitSquareMesh(MPI.comm_world, 5, 5)
-    for d in range(mesh.topology.dim + 1):
-        for t in mesh_function_types:
-            for cell_type in cell_types_2D:
-                mf = MeshFunction(t, mesh, mesh.topology.dim - d, type_conv[t](1))
-                VTKFile(tempfile + "mf_{0:d}_{1:s}.pvd".format(mesh.topology.dim - d,
-                                                               str(cell_type).split(".")[-1])).write(mf)
-                f = VTKFile(tempfile + "mf{0:d}_{1:s}.pvd".format(mesh.topology.dim - d,
-                                                                  str(cell_type).split(".")[-1]))
-                f.write(mf, 0.)
-                f.write(mf, 1.)
-
-
-def test_save_3d_meshfunctions(tempfile, mesh_function_types, file_options,
-                               type_conv, cell_types_3D):
-    mesh = UnitCubeMesh(MPI.comm_world, 8, 8, 8)
-    for d in range(mesh.topology.dim + 1):
-        for t in mesh_function_types:
-            for cell_type in cell_types_3D:
-                mf = MeshFunction(t, mesh, mesh.topology.dim - d, type_conv[t](1))
-                VTKFile(tempfile + "mf_{0:d}_{1:s}.pvd".format(mesh.topology.dim - d,
-                                                               str(cell_type).split(".")[-1])).write(mf)
-                f = VTKFile(tempfile + "mf{0:d}_{1:s}.pvd".format(mesh.topology.dim - d,
-                                                                  str(cell_type).split(".")[-1]))
-                f.write(mf, 0.)
-                f.write(mf, 1.)
 
 
 @pytest.mark.xfail(reason="file_option not added to VTK initializer")
