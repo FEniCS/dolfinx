@@ -62,7 +62,7 @@ from dolfinx import cpp
 import sys
 # FIXME: We're not passing command link argument here because some
 # pytest arg crash loguru
-cpp.common.SubSystemsManager.init_logging()
+cpp.common.SubSystemsManager.init_logging([""])
 # cpp.common.SubSystemsManager.init_logging(sys.argv)
 del sys
 cpp.common.SubSystemsManager.init_petsc()
