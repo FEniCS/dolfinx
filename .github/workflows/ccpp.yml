@@ -40,7 +40,7 @@ jobs:
           python3 -m pip install git+https://github.com/FEniCS/ufl.git
           python3 -m pip install git+https://github.com/FEniCS/ffcx.git
           # See https://github.com/pytest-dev/pytest/issues/6925
-          python3 -m pip install "pytest<5.4.0"
+          python3 -m pip install pytest --upgrade
       - name: Install pybind11 (development branch)
         run: |
           git clone --depth=1 -b master https://github.com/pybind/pybind11.git
@@ -87,7 +87,7 @@ jobs:
           cd ../doc && make html
 
       - name: Run demos (Python, serial)
-        run: python3 -m pytest -n=2 -v -m serial --durations=10 python/demo/test.py
+        run: python3 -m pytest -n=2 -vs -m serial --durations=10 python/demo/test.py
       - name: Run demos (Python, MPI (np=2))
         run: python3 -m pytest -v -m mpi --num-proc=2 python/demo/test.py
 
