@@ -14,11 +14,6 @@ using namespace dolfinx;
 using namespace dolfinx::common;
 
 //-----------------------------------------------------------------------------
-TimeLogger::TimeLogger()
-{
-  // Do nothing
-}
-//-----------------------------------------------------------------------------
 void TimeLogger::register_timing(std::string task, double wall, double user,
                                  double system)
 {

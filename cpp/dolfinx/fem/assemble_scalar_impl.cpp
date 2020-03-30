@@ -31,7 +31,7 @@ PetscScalar dolfinx::fem::impl::assemble_scalar(const dolfinx::fem::Form& M)
   if (!M.all_constants_set())
     throw std::runtime_error("Unset constant in Form");
   const std::vector<
-      std::pair<std::string, std::shared_ptr<const function::Constant>>>
+      std::pair<std::string, std::shared_ptr<const function::Constant>>>&
       constants = M.constants();
 
   std::vector<PetscScalar> constant_values;
@@ -53,7 +53,7 @@ PetscScalar dolfinx::fem::impl::assemble_scalar(const dolfinx::fem::Form& M)
   PetscScalar value = 0.0;
   for (int i = 0; i < integrals.num_integrals(type::cell); ++i)
   {
-    auto& fn = integrals.get_tabulate_tensor(type::cell, i);
+    const auto & fn = integrals.get_tabulate_tensor(type::cell, i);
     const std::vector<std::int32_t>& active_cells
         = integrals.integral_domains(type::cell, i);
     value += fem::impl::assemble_cells(mesh, active_cells, fn, coeffs,
@@ -62,7 +62,7 @@ PetscScalar dolfinx::fem::impl::assemble_scalar(const dolfinx::fem::Form& M)
 
   for (int i = 0; i < integrals.num_integrals(type::exterior_facet); ++i)
   {
-    auto& fn = integrals.get_tabulate_tensor(type::exterior_facet, i);
+    const auto & fn = integrals.get_tabulate_tensor(type::exterior_facet, i);
     const std::vector<std::int32_t>& active_facets
         = integrals.integral_domains(type::exterior_facet, i);
     value += fem::impl::assemble_exterior_facets(mesh, active_facets, fn,
@@ -72,7 +72,7 @@ PetscScalar dolfinx::fem::impl::assemble_scalar(const dolfinx::fem::Form& M)
   for (int i = 0; i < integrals.num_integrals(type::interior_facet); ++i)
   {
     const std::vector<int> c_offsets = M.coefficients().offsets();
-    auto& fn = integrals.get_tabulate_tensor(type::interior_facet, i);
+    const auto & fn = integrals.get_tabulate_tensor(type::interior_facet, i);
     const std::vector<std::int32_t>& active_facets
         = integrals.integral_domains(type::interior_facet, i);
     value += fem::impl::assemble_interior_facets(
@@ -175,7 +175,7 @@ PetscScalar fem::impl::assemble_exterior_facets(
 
     // Get local index of facet with respect to the cell
     auto facets = c_to_f->links(cell);
-    auto it = std::find(facets.data(), facets.data() + facets.rows(), facet);
+    const auto *it = std::find(facets.data(), facets.data() + facets.rows(), facet);
     assert(it != (facets.data() + facets.rows()));
     const int local_facet = std::distance(facets.data(), it);
 
@@ -245,7 +245,7 @@ PetscScalar fem::impl::assemble_interior_facets(
     for (int i = 0; i < 2; ++i)
     {
       auto facets = c_to_f->links(cells[i]);
-      auto it = std::find(facets.data(), facets.data() + facets.rows(), f);
+      const auto *it = std::find(facets.data(), facets.data() + facets.rows(), f);
       assert(it != (facets.data() + facets.rows()));
       local_facet[i] = std::distance(facets.data(), it);
     }

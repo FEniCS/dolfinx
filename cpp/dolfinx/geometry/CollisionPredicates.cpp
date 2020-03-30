@@ -80,7 +80,7 @@ bool CollisionPredicates::collides(const mesh::MeshEntity& entity,
       assert(c_to_v);
       auto cell_vertices = c_to_v->links(c);
 
-      auto it = std::find(cell_vertices.data(),
+      const auto *it = std::find(cell_vertices.data(),
                           cell_vertices.data() + cell_vertices.rows(), v[i]);
       assert(it != (cell_vertices.data() + cell_vertices.rows()));
       const int local_vertex = std::distance(cell_vertices.data(), it);
@@ -181,7 +181,7 @@ bool CollisionPredicates::collides(const mesh::MeshEntity& entity_0,
       assert(c_to_v);
       auto cell_vertices = c_to_v->links(c);
 
-      auto it = std::find(cell_vertices.data(),
+      const auto *it = std::find(cell_vertices.data(),
                           cell_vertices.data() + cell_vertices.rows(), v[i]);
       assert(it != (cell_vertices.data() + cell_vertices.rows()));
       const int local_vertex = std::distance(cell_vertices.data(), it);

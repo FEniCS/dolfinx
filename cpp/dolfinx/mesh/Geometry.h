@@ -39,7 +39,7 @@ class Geometry
 {
 public:
   /// Constructor
-  Geometry(std::shared_ptr<const common::IndexMap> index_map,
+  Geometry(const std::shared_ptr<const common::IndexMap>& index_map,
            const graph::AdjacencyList<std::int32_t>& dofmap,
            const fem::ElementDofLayout& layout,
            const Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic,

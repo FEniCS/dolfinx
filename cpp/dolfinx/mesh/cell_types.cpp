@@ -225,7 +225,7 @@ std::string mesh::to_string(mesh::CellType type)
   }
 }
 //-----------------------------------------------------------------------------
-mesh::CellType mesh::to_type(std::string type)
+mesh::CellType mesh::to_type(const std::string& type)
 {
   if (type == "point")
     return mesh::CellType::point;

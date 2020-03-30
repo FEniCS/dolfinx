@@ -71,7 +71,7 @@ std::vector<int> FormIntegrals::integral_ids(FormIntegrals::Type type) const
 {
   std::vector<int> ids;
   int type_index = static_cast<int>(type);
-  for (auto& integral : _integrals[type_index])
+  for (const auto & integral : _integrals[type_index])
     ids.push_back(integral.id);
 
   return ids;

@@ -76,8 +76,8 @@ sort_by_perm(const Eigen::Array<T, Eigen::Dynamic, Eigen::Dynamic,
 /// @returns Tuple of (local_indices, index map, shared entities)
 std::tuple<std::vector<int>, std::shared_ptr<common::IndexMap>>
 get_local_indexing(
-    MPI_Comm comm, const std::shared_ptr<const common::IndexMap> cell_indexmap,
-    const std::shared_ptr<const common::IndexMap> vertex_indexmap,
+    MPI_Comm comm, const std::shared_ptr<const common::IndexMap>& cell_indexmap,
+    const std::shared_ptr<const common::IndexMap>& vertex_indexmap,
     const Eigen::Ref<const Eigen::Array<std::int32_t, Eigen::Dynamic,
                                         Eigen::Dynamic, Eigen::RowMajor>>&
         entity_list,
@@ -381,8 +381,8 @@ std::tuple<std::shared_ptr<graph::AdjacencyList<std::int32_t>>,
            std::shared_ptr<common::IndexMap>>
 compute_entities_by_key_matching(
     MPI_Comm comm, const graph::AdjacencyList<std::int32_t>& cells,
-    const std::shared_ptr<const common::IndexMap> vertex_index_map,
-    const std::shared_ptr<const common::IndexMap> cell_index_map,
+    const std::shared_ptr<const common::IndexMap>& vertex_index_map,
+    const std::shared_ptr<const common::IndexMap>& cell_index_map,
     mesh::CellType cell_type, int dim)
 {
   if (dim == 0)
