@@ -10,12 +10,14 @@ import ctypes.util
 import importlib
 import math
 import os
+import pathlib
 import time
 
 import cffi
 import numba
 import numba.cffi_support
 import numpy as np
+import petsc4py.lib
 import pytest
 from petsc4py import PETSc
 from petsc4py import get_config as PETSc_get_config
@@ -24,7 +26,10 @@ import dolfinx
 import ufl
 from ufl import dx, inner
 
+# Get details of PETSc install
 petsc_dir = PETSc_get_config()['PETSC_DIR']
+petsc_arch = petsc4py.lib.getPathArchPETSc()[1]
+
 
 # Get PETSc int and scalar types
 if np.dtype(PETSc.ScalarType).kind == 'c':
@@ -67,9 +72,9 @@ if petsc_lib_name is not None:
     petsc_lib_ctypes = ctypes.CDLL(petsc_lib_name)
 else:
     try:
-        petsc_lib_ctypes = ctypes.CDLL(os.path.join(petsc_dir, "lib", "libpetsc.so"))
+        petsc_lib_ctypes = ctypes.CDLL(os.path.join(petsc_dir, petsc_arch, "lib", "libpetsc.so"))
     except OSError:
-        petsc_lib_ctypes = ctypes.CDLL(os.path.join(petsc_dir, "lib", "libpetsc.dylib"))
+        petsc_lib_ctypes = ctypes.CDLL(os.path.join(petsc_dir, petsc_arch, "lib", "libpetsc.dylib"))
     except OSError:
         print("Could not load PETSc library for CFFI (ABI mode).")
         raise
@@ -86,24 +91,22 @@ ADD_VALUES = PETSc.InsertMode.ADD_VALUES
 
 # CFFI - register complex types
 ffi = cffi.FFI()
-numba.cffi_support.register_type(ffi.typeof('double _Complex'),
-                                 numba.types.complex128)
-numba.cffi_support.register_type(ffi.typeof('float _Complex'),
-                                 numba.types.complex64)
-
+numba.cffi_support.register_type(ffi.typeof('double _Complex'), numba.types.complex128)
+numba.cffi_support.register_type(ffi.typeof('float _Complex'), numba.types.complex64)
 
 # Get MatSetValuesLocal from PETSc available via cffi in ABI mode
 ffi.cdef("""int MatSetValuesLocal(void* mat, {0} nrow, const {0}* irow,
                                   {0} ncol, const {0}* icol, const {1}* y, int addv);
 """.format(c_int_t, c_scalar_t))
 
+
 if petsc_lib_name is not None:
     petsc_lib_cffi = ffi.dlopen(petsc_lib_name)
 else:
     try:
-        petsc_lib_cffi = ffi.dlopen(os.path.join(petsc_dir, "lib", "libpetsc.so"))
+        petsc_lib_cffi = ffi.dlopen(os.path.join(petsc_dir, petsc_arch, "lib", "libpetsc.so"))
     except OSError:
-        petsc_lib_cffi = ffi.dlopen(os.path.join(petsc_dir, "lib", "libpetsc.dylib"))
+        petsc_lib_cffi = ffi.dlopen(os.path.join(petsc_dir, petsc_arch, "lib", "libpetsc.dylib"))
     except OSError:
         print("Could not load PETSc library for CFFI (ABI mode).")
         raise
@@ -127,10 +130,14 @@ if dolfinx.MPI.comm_world.Get_rank() == 0:
         # include "petscmat.h"
     """,
                           libraries=['petsc'],
-                          include_dirs=[os.path.join(petsc_dir, 'include')],
-                          library_dirs=[os.path.join(petsc_dir, 'lib')],
+                          include_dirs=[os.path.join(petsc_dir, petsc_arch, 'include'),
+                                        os.path.join(petsc_dir, 'include')],
+                          library_dirs=[os.path.join(petsc_dir, petsc_arch, 'lib')],
                           extra_compile_args=[])
-    ffibuilder.compile(verbose=False)
+
+    # Build module in same directory as test file
+    path = pathlib.Path(__file__).parent.absolute()
+    ffibuilder.compile(tmpdir=path, verbose=False)
 
 dolfinx.MPI.comm_world.barrier()
 
@@ -175,7 +182,7 @@ def assemble_vector(b, mesh, dofmap):
 
 
 @numba.njit
-def assemble_vector_ufc(b, kernel, mesh, dofmap, edge_ref, face_ref, face_rot):
+def assemble_vector_ufc(b, kernel, mesh, dofmap):
     """Assemble provided FFCX/UFC kernel over a mesh into the array b"""
     pos, x_dofmap, x = mesh
     entity_local_index = np.array([0], dtype=np.int32)
@@ -196,9 +203,7 @@ def assemble_vector_ufc(b, kernel, mesh, dofmap, edge_ref, face_ref, face_rot):
         kernel(ffi.from_buffer(b_local), ffi.from_buffer(coeffs),
                ffi.from_buffer(constants),
                ffi.from_buffer(geometry), ffi.from_buffer(entity_local_index),
-               ffi.from_buffer(perm),
-               ffi.from_buffer(edge_ref), ffi.from_buffer(face_ref),
-               ffi.from_buffer(face_rot))
+               ffi.from_buffer(perm), 0)
         for j in range(3):
             b[dofmap[i * 3 + j]] += b_local[j]
 
@@ -308,10 +313,6 @@ def test_custom_mesh_loop_rank1():
     b1.ghostUpdate(addv=PETSc.InsertMode.ADD, mode=PETSc.ScatterMode.REVERSE)
     assert((b1 - b0.vector).norm() == pytest.approx(0.0))
 
-    e_ = np.array([], dtype=np.bool_)
-    f_ = np.array([], dtype=np.bool_)
-    f2_ = np.array([], dtype=np.uint8)
-
     # Assemble using generated tabulate_tensor kernel and Numba assembler
     b3 = dolfinx.Function(V)
     ufc_form = dolfinx.jit.ffcx_jit(L)
@@ -320,7 +321,7 @@ def test_custom_mesh_loop_rank1():
         with b3.vector.localForm() as b:
             b.set(0.0)
             start = time.time()
-            assemble_vector_ufc(np.asarray(b), kernel, (pos, x_dofs, x), dofs, e_, f_, f2_)
+            assemble_vector_ufc(np.asarray(b), kernel, (pos, x_dofs, x), dofs)
             end = time.time()
             print("Time (numba/cffi, pass {}): {}".format(i, end - start))
 

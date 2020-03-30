@@ -222,16 +222,8 @@ void Function::eval(
   const fem::DofMap& dofmap = *_function_space->dofmap();
 
   mesh.create_entity_permutations();
-
-  const Eigen::Array<bool, Eigen::Dynamic, Eigen::Dynamic>&
-      cell_edge_reflections
-      = mesh.topology().get_edge_reflections();
-  const Eigen::Array<bool, Eigen::Dynamic, Eigen::Dynamic>&
-      cell_face_reflections
-      = mesh.topology().get_face_reflections();
-  const Eigen::Array<std::uint8_t, Eigen::Dynamic, Eigen::Dynamic>&
-      cell_face_rotations
-      = mesh.topology().get_face_rotations();
+  const Eigen::Array<std::uint32_t, Eigen::Dynamic, 1>& cell_info
+      = mesh.topology().get_cell_permutation_info();
 
   // Loop over points
   u.setZero();
@@ -257,17 +249,9 @@ void Function::eval(
     // Compute basis on reference element
     element.evaluate_reference_basis(basis_reference_values, X);
 
-    const Eigen::Array<bool, Eigen::Dynamic, 1>& e_ref_cell
-        = cell_edge_reflections.col(cell_index);
-    const Eigen::Array<bool, Eigen::Dynamic, 1>& f_ref_cell
-        = cell_face_reflections.col(cell_index);
-    const Eigen::Array<std::uint8_t, Eigen::Dynamic, 1>& f_rot_cell
-        = cell_face_rotations.col(cell_index);
-
     // Push basis forward to physical element
     element.transform_reference_basis(basis_values, basis_reference_values, X,
-                                      J, detJ, K, e_ref_cell.data(),
-                                      f_ref_cell.data(), f_rot_cell.data());
+                                      J, detJ, K, cell_info[cell_index]);
 
     // Get degrees of freedom for current cell
     auto dofs = dofmap.cell_dofs(cell_index);

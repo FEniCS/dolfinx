@@ -76,8 +76,8 @@ sort_by_perm(const Eigen::Array<T, Eigen::Dynamic, Eigen::Dynamic,
 /// @returns Tuple of (local_indices, index map, shared entities)
 std::tuple<std::vector<int>, std::shared_ptr<common::IndexMap>>
 get_local_indexing(
-    MPI_Comm comm, const std::shared_ptr<const common::IndexMap> cell_indexmap,
-    const std::shared_ptr<const common::IndexMap> vertex_indexmap,
+    MPI_Comm comm, const std::shared_ptr<const common::IndexMap>& cell_indexmap,
+    const std::shared_ptr<const common::IndexMap>& vertex_indexmap,
     const Eigen::Ref<const Eigen::Array<std::int32_t, Eigen::Dynamic,
                                         Eigen::Dynamic, Eigen::RowMajor>>&
         entity_list,
@@ -135,8 +135,9 @@ get_local_indexing(
   // Create an expanded neighbour_comm from shared_vertices
   std::map<std::int32_t, std::set<std::int32_t>> shared_vertices
       = vertex_indexmap->compute_shared_indices();
+
   std::set<std::int32_t> neighbour_set;
-  for (auto q : shared_vertices)
+  for (auto& q : shared_vertices)
     neighbour_set.insert(q.second.begin(), q.second.end());
   std::vector<std::int32_t> neighbours(neighbour_set.begin(),
                                        neighbour_set.end());
@@ -303,8 +304,7 @@ get_local_indexing(
 
   //---------
   // Communicate global indices to other processes
-  Eigen::Array<std::int64_t, Eigen::Dynamic, 1> ghost_indices(entity_count
-                                                              - num_local);
+  std::vector<std::int64_t> ghost_indices(entity_count - num_local, -1);
   {
     const std::int64_t local_offset
         = dolfinx::MPI::global_offset(comm, num_local, true);
@@ -349,6 +349,8 @@ get_local_indexing(
         ghost_indices[local_index[idx] - num_local] = gi;
       }
     }
+    for (std::int64_t idx : ghost_indices)
+      assert(idx != -1);
   }
 
   MPI_Comm_free(&neighbour_comm);
@@ -379,8 +381,8 @@ std::tuple<std::shared_ptr<graph::AdjacencyList<std::int32_t>>,
            std::shared_ptr<common::IndexMap>>
 compute_entities_by_key_matching(
     MPI_Comm comm, const graph::AdjacencyList<std::int32_t>& cells,
-    const std::shared_ptr<const common::IndexMap> vertex_index_map,
-    const std::shared_ptr<const common::IndexMap> cell_index_map,
+    const std::shared_ptr<const common::IndexMap>& vertex_index_map,
+    const std::shared_ptr<const common::IndexMap>& cell_index_map,
     mesh::CellType cell_type, int dim)
 {
   if (dim == 0)

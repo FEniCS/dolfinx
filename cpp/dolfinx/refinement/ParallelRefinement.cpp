@@ -38,7 +38,7 @@ ParallelRefinement::ParallelRefinement(const mesh::Mesh& mesh)
   // Compute a slightly wider neighbourhood for direct communication of shared
   // edges
   std::set<int> all_neighbour_set;
-  for (auto q : shared_edges)
+  for (const auto& q : shared_edges)
     all_neighbour_set.insert(q.second.begin(), q.second.end());
   std::vector<int> neighbours(all_neighbour_set.begin(),
                               all_neighbour_set.end());
@@ -307,9 +307,9 @@ mesh::Mesh ParallelRefinement::build_local() const
 
   const fem::ElementDofLayout layout
       = fem::geometry_layout(_mesh.topology().cell_type(), cells.cols());
-  mesh::Mesh mesh = mesh::create(_mesh.mpi_comm(),
-                                 graph::AdjacencyList<std::int64_t>(cells),
-                                 layout, _new_vertex_coordinates);
+  mesh::Mesh mesh = mesh::create(
+      _mesh.mpi_comm(), graph::AdjacencyList<std::int64_t>(cells), layout,
+      _new_vertex_coordinates, mesh::GhostMode::none);
 
   return mesh;
 }
@@ -339,7 +339,7 @@ mesh::Mesh ParallelRefinement::partition(bool redistribute) const
   {
     return mesh::create(_mesh.mpi_comm(),
                         graph::AdjacencyList<std::int64_t>(cells), layout,
-                        _new_vertex_coordinates);
+                        _new_vertex_coordinates, mesh::GhostMode::none);
   }
 
   MPI_Comm comm = _mesh.mpi_comm();
@@ -415,12 +415,8 @@ mesh::Mesh ParallelRefinement::partition(bool redistribute) const
     topology.set_connectivity(_cells_d, tdim, 0);
   }
 
-  std::vector<int> src(my_cells.num_nodes(), dolfinx::MPI::rank(comm));
-  Eigen::Array<int, Eigen::Dynamic, 1> _dest(my_cells.num_nodes(), 1);
-  _dest = dolfinx::MPI::rank(comm);
-  const graph::AdjacencyList<std::int32_t> dest(_dest);
   const mesh::Geometry geometry = mesh::create_geometry(
-      comm, topology, layout, my_cells, dest, src, _new_vertex_coordinates);
+      comm, topology, layout, my_cells, _new_vertex_coordinates);
 
   return mesh::Mesh(comm, topology, geometry);
 }

@@ -93,7 +93,7 @@ bool VectorSpaceBasis::in_nullspace(const Mat A, double tol) const
   MatCreateVecs(A, nullptr, &y);
 
   bool in_space = true;
-  for (auto x : _basis)
+  for (const auto& x : _basis)
   {
     assert(x);
     assert(x->vec());

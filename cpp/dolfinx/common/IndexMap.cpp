@@ -93,7 +93,12 @@ IndexMap::IndexMap(
   {
     const int p = owner(ghosts[i]);
     ghost_owner_global[i] = p;
-    assert(ghost_owner_global[i] != _myrank);
+    if (ghost_owner_global[i] == _myrank)
+    {
+      throw std::runtime_error("IndexMap Error: Ghost in local range. Rank = "
+                               + std::to_string(_myrank)
+                               + ", ghost = " + std::to_string(ghosts[i]));
+    }
     num_edges_out_per_proc[p] += 1;
   }
 
@@ -266,7 +271,7 @@ IndexMap::global_to_local(const std::vector<std::int64_t>& indices,
 
   std::vector<std::pair<std::int64_t, std::int32_t>> global_local_ghosts;
   for (Eigen::Index i = 0; i < _ghosts.rows(); ++i)
-    global_local_ghosts.push_back({_ghosts[i], i + local_size});
+    global_local_ghosts.emplace_back(_ghosts[i], i + local_size);
   std::map<std::int64_t, std::int32_t> global_to_local(
       global_local_ghosts.begin(), global_local_ghosts.end());
 

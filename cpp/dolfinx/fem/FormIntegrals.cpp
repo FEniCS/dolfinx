@@ -22,7 +22,7 @@ FormIntegrals::FormIntegrals()
 //-----------------------------------------------------------------------------
 const std::function<void(PetscScalar*, const PetscScalar*, const PetscScalar*,
                          const double*, const int*, const std::uint8_t*,
-                         const bool*, const bool*, const std::uint8_t*)>&
+                         const std::uint32_t)>&
 FormIntegrals::get_tabulate_tensor(FormIntegrals::Type type, int i) const
 {
   int type_index = static_cast<int>(type);
@@ -35,7 +35,7 @@ void FormIntegrals::set_tabulate_tensor(
     FormIntegrals::Type type, int i,
     std::function<void(PetscScalar*, const PetscScalar*, const PetscScalar*,
                        const double*, const int*, const std::uint8_t*,
-                       const bool*, const bool*, const std::uint8_t*)>
+                       const std::uint32_t)>
         fn)
 
 {
@@ -73,7 +73,7 @@ std::vector<int> FormIntegrals::integral_ids(FormIntegrals::Type type) const
 {
   std::vector<int> ids;
   int type_index = static_cast<int>(type);
-  for (auto& integral : _integrals[type_index])
+  for (const auto & integral : _integrals[type_index])
     ids.push_back(integral.id);
 
   return ids;
@@ -228,13 +228,12 @@ void FormIntegrals::set_default_domains(const mesh::Mesh& mesh)
     // Get number of facets owned by this process
     mesh.create_connectivity(tdim - 1, tdim);
     assert(topology.index_map(tdim - 1));
-    const int num_facets = topology.index_map(tdim - 1)->size_local();
-    const std::vector<bool>& interior_facets = topology.interior_facets();
 
-    // Loop over owned facets
+    const int num_facets = topology.index_map(tdim - 1)->size_local();
+    auto f_to_c = topology.connectivity(tdim - 1, tdim);
     for (int f = 0; f < num_facets; ++f)
     {
-      if (interior_facets[f])
+      if (f_to_c->num_links(f) == 2)
         inf_integrals[0].active_entities.push_back(f);
     }
   }

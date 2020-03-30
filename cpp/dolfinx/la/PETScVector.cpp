@@ -45,7 +45,7 @@ PETScVector::PETScVector(Vec x, bool inc_ref_count) : _x(x)
     PetscObjectReference((PetscObject)_x);
 }
 //-----------------------------------------------------------------------------
-PETScVector::PETScVector(PETScVector&& v) : _x(v._x) { v._x = nullptr; }
+PETScVector::PETScVector(PETScVector&& v) noexcept : _x(v._x) { v._x = nullptr; }
 //-----------------------------------------------------------------------------
 PETScVector::~PETScVector()
 {

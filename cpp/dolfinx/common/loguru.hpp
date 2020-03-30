@@ -8,8 +8,8 @@ Website: www.ilikebigbits.com
 
 # License
 	This software is in the public domain. Where that dedication is not
-	recognized, you are granted a perpetual, irrevocable license to
-	copy, modify and distribute it as you see fit.
+	recognized, you are granted a perpetual, irrevocable license to copy
+	and modify this file as you see fit.
 
 # Inspiration
 	Much of Loguru was inspired by GLOG, https://code.google.com/p/google-glog/.
@@ -232,12 +232,6 @@ Website: www.ilikebigbits.com
 	#include <fmt/format.h>
 #endif
 
-#ifdef _WIN32
-	#define STRDUP(str) _strdup(str)
-#else
-	#define STRDUP(str) strdup(str)
-#endif
-
 // --------------------------------------------------------------------
 
 namespace loguru
@@ -343,11 +337,6 @@ namespace loguru
 	LOGURU_EXPORT extern bool      g_colorlogtostderr; // True by default.
 	LOGURU_EXPORT extern unsigned  g_flush_interval_ms; // 0 (unbuffered) by default.
 	LOGURU_EXPORT extern bool      g_preamble; // Prefix each log line with date, time etc? True by default.
-
-	/* Specify the verbosity used by loguru to log its info messages including the header
-	logged when logged::init() is called or on exit. Default is 0 (INFO).
-	*/
-	LOGURU_EXPORT extern Verbosity g_internal_verbosity;
 
 	// Turn off individual parts of the preamble
 	LOGURU_EXPORT extern bool      g_preamble_date; // The date field
@@ -889,14 +878,14 @@ namespace loguru
 			{
 				// Called only when needed, i.e. on a crash.
 				std::string str = small_value.as_string(); // Format 'small_value' here somehow.
-				return Text{STRDUP(str.c_str())};
+				return Text{strdup(str.c_str())};
 			}
 
 			Text ec_to_text(const MyBigType* big_value)
 			{
 				// Called only when needed, i.e. on a crash.
 				std::string str = big_value->as_string(); // Format 'big_value' here somehow.
-				return Text{STRDUP(str.c_str())};
+				return Text{strdup(str.c_str())};
 			}
 		} // namespace loguru
 

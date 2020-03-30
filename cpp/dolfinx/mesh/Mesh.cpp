@@ -6,6 +6,7 @@
 
 #include "Mesh.h"
 #include "Geometry.h"
+#include "Partitioning.h"
 #include "Topology.h"
 #include "TopologyComputation.h"
 #include "utils.h"
@@ -18,6 +19,7 @@
 #include <dolfinx/fem/DofMapBuilder.h>
 #include <dolfinx/fem/ElementDofLayout.h>
 #include <dolfinx/graph/AdjacencyList.h>
+#include <dolfinx/graph/Partitioning.h>
 #include <dolfinx/io/cells.h>
 #include <dolfinx/mesh/cell_types.h>
 #include <memory>
@@ -59,15 +61,38 @@ Mesh mesh::create(
     MPI_Comm comm, const graph::AdjacencyList<std::int64_t>& cells,
     const fem::ElementDofLayout& layout,
     const Eigen::Ref<const Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic,
-                                        Eigen::RowMajor>>& x)
+                                        Eigen::RowMajor>>& x,
+    mesh::GhostMode ghost_mode)
 {
-  auto [topology, src, dest] = mesh::create_topology(comm, cells, layout);
+  // TODO: This step can be skipped for 'P1' elements
+  //
+  // Extract topology data, e.g. just the vertices. For P1 geometry this
+  // should just be the identity operator. For other elements the
+  // filtered lists may have 'gaps', i.e. the indices might not be
+  // contiguous.
+  const graph::AdjacencyList<std::int64_t> cells_topology
+      = mesh::extract_topology(layout, cells);
+
+  // Compute the destination rank for cells on this process via graph
+  // partitioning
+  const int size = dolfinx::MPI::size(comm);
+  const graph::AdjacencyList<std::int32_t> dest = Partitioning::partition_cells(
+      comm, size, layout.cell_type(), cells_topology, ghost_mode);
+
+  // Distribute cells to destination rank
+  const auto [cell_nodes, src, original_cell_index, ghost_owners]
+      = graph::Partitioning::distribute(comm, cells, dest);
+
+  Topology topology = mesh::create_topology(
+      comm, mesh::extract_topology(layout, cell_nodes), original_cell_index,
+      ghost_owners, layout, ghost_mode);
 
   // FIXME: Figure out how to check which entities are required
   // Initialise facet for P2
   // Create local entities
   if (topology.dim() > 1)
   {
+    // Create edges
     auto [cell_entity, entity_vertex, index_map]
         = mesh::TopologyComputation::compute_entities(comm, topology, 1);
     if (cell_entity)
@@ -77,6 +102,7 @@ Mesh mesh::create(
     if (index_map)
       topology.set_index_map(1, index_map);
 
+    // Create facets
     auto [cell_facet, facet_vertex, index_map1]
         = mesh::TopologyComputation::compute_entities(comm, topology,
                                                       topology.dim() - 1);
@@ -89,7 +115,7 @@ Mesh mesh::create(
   }
 
   const Geometry geometry
-      = mesh::create_geometry(comm, topology, layout, cells, dest, src, x);
+      = mesh::create_geometry(comm, topology, layout, cell_nodes, x);
 
   return Mesh(comm, topology, geometry);
 }
@@ -109,13 +135,13 @@ Mesh::Mesh(
                                         Eigen::RowMajor>>& x,
     const Eigen::Ref<const Eigen::Array<
         std::int64_t, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>>& cells,
-    const std::vector<std::int64_t>&, const GhostMode, std::int32_t)
+    const std::vector<std::int64_t>&, const GhostMode ghost_mode, std::int32_t)
     : _mpi_comm(comm), _unique_id(common::UniqueIdGenerator::id())
 {
   assert(cells.cols() > 0);
   const fem::ElementDofLayout layout = fem::geometry_layout(type, cells.cols());
   *this = mesh::create(comm, graph::AdjacencyList<std::int64_t>(cells), layout,
-                       x);
+                       x, ghost_mode);
 }
 //-----------------------------------------------------------------------------
 Mesh::Mesh(const Mesh& mesh)

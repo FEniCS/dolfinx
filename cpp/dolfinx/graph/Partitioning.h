@@ -20,7 +20,7 @@ namespace dolfinx
 namespace graph
 {
 
-/// Tools for distributred graphs
+/// Tools for distributed graphs
 ///
 /// TODO: Add a function that sends data (Eigen arrays) to the 'owner'
 
@@ -85,9 +85,6 @@ public:
   /// index of each node is assumed to be the local index plus the
   /// offset for this rank.
   ///
-  /// \see Partitioning::exchange for the case where the source ranks
-  /// are known.
-  ///
   /// @param[in] comm MPI Communicator
   /// @param[in] list The adjacency list to distribute
   /// @param[in] destinations Destination ranks for the ith node in the
@@ -96,33 +93,21 @@ public:
   ///   each node in the adjacency list, and the original global index
   ///   for each node.
   static std::tuple<graph::AdjacencyList<std::int64_t>, std::vector<int>,
-                    std::vector<std::int64_t>>
+                    std::vector<std::int64_t>, std::vector<int>>
   distribute(MPI_Comm comm, const graph::AdjacencyList<std::int64_t>& list,
              const graph::AdjacencyList<std::int32_t>& destinations);
 
-  /// @todo Is the original global index of each node required?
-  /// @todo Can this be merged with Partitioning::distribute?
-  ///
-  /// Distribute adjacency list nodes to destination ranks. The global
-  /// index of each node is assumed to be the local index plus the
-  /// offset for this rank.
-  ///
-  /// \see Partitioning::distribute for the case where the source ranks
-  /// are not known.
-  ///
+  /// Compute ghost indices in a global IndexMap space, from a list of arbitrary
+  /// global indices, where the ghosts are at the end of the list, and their
+  /// owning processes are known.
   /// @param[in] comm MPI communicator
-  /// @param[in] list An adjacency list. Each node is associated with a
-  ///   global index (index_local + process global offset)
-  /// @param[in] destinations The destination ranks for each node in @p
-  ///   list
-  /// @param[in] sources Ranks that will send nodes data to this process
-  /// @return Re-distributed adjacency list and the original global
-  ///   index of each node
-  static std::pair<graph::AdjacencyList<std::int64_t>,
-                   std::vector<std::int64_t>>
-  exchange(MPI_Comm comm, const graph::AdjacencyList<std::int64_t>& list,
-           const graph::AdjacencyList<std::int32_t>& destinations,
-           const std::set<int>& sources);
+  /// @param[in] global_indices List of arbitrary global indices, ghosts at end
+  /// @param[in] ghost_owners List of owning processes of the ghost indices
+  /// @return Indexing of ghosts in a global space starting from 0 on process 0
+  static std::vector<std::int64_t>
+  compute_ghost_indices(MPI_Comm comm,
+                        const std::vector<std::int64_t>& global_indices,
+                        const std::vector<int>& ghost_owners);
 
   /// Distribute data to process ranks where it it required
   ///
@@ -130,9 +115,8 @@ public:
   /// @param[in] indices Global indices of the data required by this
   ///   process
   /// @param[in] x Data on this process which may be distributed (by
-  ///   row). The global index for the [0, ..., n) rows on this process
-  ///   is assumed to be the local index plus the offset for this
-  ///   process
+  ///   row). The global index for the [0, ..., n) local rows is assumed
+  ///   to be the local index plus the offset for this process
   /// @return The data for each index in @p indices
   static Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
   distribute_data(

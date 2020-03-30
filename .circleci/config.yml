@@ -17,8 +17,8 @@ install-python-components: &install-python-components
 flake8-python-code: &flake8-python-code
   name: Flake8 checks on Python code
   command: |
-    python3 -m flake8 python/dolfin
-    python3 -m flake8 python/dolfin_utils
+    python3 -m flake8 python/dolfinx
+    python3 -m flake8 python/dolfinx_utils
     python3 -m flake8 python/demo
     python3 -m flake8 python/test
 
@@ -54,7 +54,7 @@ regression-tests-cpp-mpi: &regression-tests-cpp-mpi
   command: |
     cd build
     ninja -j3 demos
-    ctest --verbose -R demo -R mpi
+    ctest --verbose -R demo -R mpi_3
 
 build-python-interface: &build-python-interface
   name: Build Python/pybind11 interface

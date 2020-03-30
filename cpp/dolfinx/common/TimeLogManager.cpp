@@ -14,6 +14,6 @@
 dolfinx::common::TimeLogger& dolfinx::common::TimeLogManager::logger()
 {
   // NB static - this only allocates a new Logger on the first call to logger()
-  static dolfinx::common::TimeLogger* lg = new (dolfinx::common::TimeLogger);
+  static auto* lg = new (dolfinx::common::TimeLogger);
   return *lg;
 }

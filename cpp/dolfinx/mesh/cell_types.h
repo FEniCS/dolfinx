@@ -34,7 +34,7 @@ enum class CellType : int
 std::string to_string(CellType type);
 
 /// Convert from string to cell type
-CellType to_type(std::string type);
+CellType to_type(const std::string& type);
 
 /// Return type of cell for entity of dimension d
 CellType cell_entity_type(CellType type, int d);

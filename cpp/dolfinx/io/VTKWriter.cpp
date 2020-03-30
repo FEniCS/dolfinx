@@ -6,7 +6,6 @@
 
 #include "VTKWriter.h"
 #include "cells.h"
-#include <boost/detail/endian.hpp>
 #include <cstdint>
 #include <dolfinx/fem/DofMap.h>
 #include <dolfinx/fem/FiniteElement.h>
@@ -98,7 +97,7 @@ std::string ascii_cell_data(const mesh::Mesh& mesh,
   std::ostringstream ss;
   ss << std::scientific;
   ss << std::setprecision(16);
-  std::vector<std::size_t>::const_iterator cell_offset = offset.begin();
+  auto cell_offset = offset.begin();
   for (int i = 0;
        i < mesh.topology().index_map(mesh.topology().dim())->size_local(); ++i)
   {
@@ -155,7 +154,7 @@ void write_ascii_mesh(const mesh::Mesh& mesh, int cell_dim,
 
   // Write vertex positions
   file << "<Points>" << std::endl;
-  file << "<DataArray  type=\"Float64\"  NumberOfComponents=\"3\"  format=\""
+  file << R"(<DataArray  type="Float64"  NumberOfComponents="3"  format=")"
        << "ascii"
        << "\">";
   const Eigen::Array<double, Eigen::Dynamic, 3, Eigen::RowMajor> points
@@ -166,7 +165,7 @@ void write_ascii_mesh(const mesh::Mesh& mesh, int cell_dim,
 
   // Write cell connectivity
   file << "<Cells>" << std::endl;
-  file << "<DataArray  type=\"Int32\"  Name=\"connectivity\"  format=\""
+  file << R"(<DataArray  type="Int32"  Name="connectivity"  format=")"
        << "ascii"
        << "\">";
 
@@ -249,7 +248,7 @@ void write_ascii_mesh(const mesh::Mesh& mesh, int cell_dim,
   }
 
   // Write offset into connectivity array for the end of each cell
-  file << "<DataArray  type=\"Int32\"  Name=\"offsets\"  format=\""
+  file << R"(<DataArray  type="Int32"  Name="offsets"  format=")"
        << "ascii"
        << "\">";
   for (int offsets = 1; offsets <= num_cells; offsets++)
@@ -257,7 +256,7 @@ void write_ascii_mesh(const mesh::Mesh& mesh, int cell_dim,
   file << "</DataArray>" << std::endl;
 
   // Write cell type
-  file << "<DataArray  type=\"Int8\"  Name=\"types\"  format=\""
+  file << R"(<DataArray  type="Int8"  Name="types"  format=")"
        << "ascii"
        << "\">";
   for (int types = 0; types < num_cells; types++)
@@ -312,7 +311,7 @@ void VTKWriter::write_cell_data(const function::Function& u,
     fp << "<CellData  Scalars=\""
        << "u"
        << "\"> " << std::endl;
-    fp << "<DataArray  type=\"Float64\"  Name=\""
+    fp << R"(<DataArray  type="Float64"  Name=")"
        << "u"
        << "\"  format=\"" << encode_string << "\">";
   }
@@ -327,9 +326,9 @@ void VTKWriter::write_cell_data(const function::Function& u,
     fp << "<CellData  Vectors=\""
        << "u"
        << "\"> " << std::endl;
-    fp << "<DataArray  type=\"Float64\"  Name=\""
+    fp << R"(<DataArray  type="Float64"  Name=")"
        << "u"
-       << "\"  NumberOfComponents=\"3\" format=\"" << encode_string << "\">";
+       << R"("  NumberOfComponents="3" format=")" << encode_string << "\">";
   }
   else if (rank == 2)
   {
@@ -341,9 +340,9 @@ void VTKWriter::write_cell_data(const function::Function& u,
     fp << "<CellData  Tensors=\""
        << "u"
        << "\"> " << std::endl;
-    fp << "<DataArray  type=\"Float64\"  Name=\""
+    fp << R"(<DataArray  type="Float64"  Name=")"
        << "u"
-       << "\"  NumberOfComponents=\"9\" format=\"" << encode_string << "\">";
+       << R"("  NumberOfComponents="9" format=")" << encode_string << "\">";
   }
 
   // Allocate memory for function values at cell centres
@@ -352,7 +351,7 @@ void VTKWriter::write_cell_data(const function::Function& u,
   // Build lists of dofs and create map
   std::vector<std::int32_t> dof_set;
   std::vector<std::size_t> offset(size + 1);
-  std::vector<std::size_t>::iterator cell_offset = offset.begin();
+  auto cell_offset = offset.begin();
   assert(dofmap.element_dof_layout);
   const int num_dofs_cell = dofmap.element_dof_layout->num_dofs();
   for (auto& cell : mesh::MeshRange(mesh, tdim))

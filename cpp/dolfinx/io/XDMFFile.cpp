@@ -15,9 +15,12 @@
 #include <boost/filesystem.hpp>
 #include <dolfinx/common/utils.h>
 #include <dolfinx/fem/ElementDofLayout.h>
+#include <dolfinx/graph/Partitioning.h>
 #include <dolfinx/mesh/Mesh.h>
+#include <dolfinx/mesh/Partitioning.h>
 #include <dolfinx/mesh/Topology.h>
 #include <dolfinx/mesh/TopologyComputation.h>
+#include <dolfinx/mesh/utils.h>
 
 using namespace dolfinx;
 using namespace dolfinx::io;
@@ -44,8 +47,7 @@ std::string get_hdf5_filename(std::string filename)
 } // namespace
 
 //-----------------------------------------------------------------------------
-XDMFFile::XDMFFile(MPI_Comm comm, const std::string filename,
-                         Encoding encoding)
+XDMFFile::XDMFFile(MPI_Comm comm, const std::string filename, Encoding encoding)
     : _mpi_comm(comm), _filename(filename), _xml_doc(new pugi::xml_document),
       _encoding(encoding)
 {
@@ -112,15 +114,39 @@ mesh::Mesh XDMFFile::read_mesh() const
   auto [cell_type, x, cells]
       = xdmf_mesh::read_mesh_data(_mpi_comm.comm(), _filename);
 
+  graph::AdjacencyList<std::int64_t> cells_adj(cells);
+
   // TODO: create outside
   // Create a layout
   const fem::ElementDofLayout layout
       = fem::geometry_layout(cell_type, cells.cols());
 
+  // TODO: This step can be skipped for 'P1' elements
+  //
+  // Extract topology data, e.g. just the vertices. For P1 geometry this
+  // should just be the identity operator. For other elements the
+  // filtered lists may have 'gaps', i.e. the indices might not be
+  // contiguous.
+  const graph::AdjacencyList<std::int64_t> cells_topology
+      = mesh::extract_topology(layout, cells_adj);
+
+  // Compute the destination rank for cells on this process via graph
+  // partitioning
+  const int size = dolfinx::MPI::size(_mpi_comm.comm());
+  const graph::AdjacencyList<std::int32_t> dest
+      = mesh::Partitioning::partition_cells(_mpi_comm.comm(), size,
+                                            layout.cell_type(), cells_topology,
+                                            mesh::GhostMode::none);
+
+  // Distribute cells to destination rank
+  const auto [cell_nodes, src, original_cell_index, ghost_owners]
+      = graph::Partitioning::distribute(_mpi_comm.comm(), cells_adj, dest);
+
   // Create Topology
   graph::AdjacencyList<std::int64_t> _cells(cells);
-  auto [topology, src, dest]
-      = mesh::create_topology(_mpi_comm.comm(), _cells, layout);
+  mesh::Topology topology = mesh::create_topology(
+      _mpi_comm.comm(), mesh::extract_topology(layout, cell_nodes),
+      original_cell_index, ghost_owners, layout, mesh::GhostMode::none);
 
   // FIXME: Figure out how to check which entities are required
   // Initialise facet for P2
@@ -137,7 +163,7 @@ mesh::Mesh XDMFFile::read_mesh() const
 
   // Create Geometry
   const mesh::Geometry geometry = mesh::create_geometry(
-      _mpi_comm.comm(), topology, layout, _cells, dest, src, x);
+      _mpi_comm.comm(), topology, layout, cell_nodes, x);
 
   // Return Mesh
   return mesh::Mesh(_mpi_comm.comm(), topology, geometry);
@@ -208,7 +234,7 @@ void XDMFFile::write(const mesh::MeshFunction<int>& meshfunction)
 //-----------------------------------------------------------------------------
 mesh::MeshFunction<int>
 XDMFFile::read_mf_int(std::shared_ptr<const mesh::Mesh> mesh,
-                         std::string name) const
+                      std::string name) const
 {
   // Load XML doc from file
   pugi::xml_document xml_doc;

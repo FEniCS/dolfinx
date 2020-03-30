@@ -32,7 +32,7 @@ int FormCoefficients::size() const { return _coefficients.size(); }
 std::vector<int> FormCoefficients::offsets() const
 {
   std::vector<int> n = {0};
-  for (auto& c : _coefficients)
+  for (const auto & c : _coefficients)
   {
     if (!c)
       throw std::runtime_error("Not all form coefficients have been set.");

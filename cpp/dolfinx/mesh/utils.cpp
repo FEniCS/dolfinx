@@ -788,7 +788,7 @@ mesh::locate_entities_geometrical(
       // Get first cell and find position
       const int c = v_to_c->links(i)[0];
       auto vertices = c_to_v->links(c);
-      const auto it
+      const auto *it
           = std::find(vertices.data(), vertices.data() + vertices.rows(), i);
       assert(it != (vertices.data() + vertices.rows()));
       const int local_pos = std::distance(vertices.data(), it);
