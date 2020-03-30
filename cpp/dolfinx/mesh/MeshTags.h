@@ -207,6 +207,10 @@ void MeshTags<T>::sort()
 template <typename T>
 void MeshTags<T>::remove_duplicates()
 {
+  // Algorithm would fail for empty vector
+  if (_indices.size() == 0)
+    return;
+
   std::size_t last_unique = 0;
   for (std::size_t i = 0; i < _indices.size(); ++i)
   {
