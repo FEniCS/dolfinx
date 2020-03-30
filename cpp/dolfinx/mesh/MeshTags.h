@@ -38,7 +38,8 @@ public:
   /// @param[in] values Array of values attached to indices,
   ///    will be copied, sorted and duplicates removed according
   ///    to indices array.
-  /// @param[in] sort Sort arrays according to indices array.
+  /// @param[in] sorted True for already sorted indices.
+  /// @param[in] unique True for unique indices.
   MeshTags(const std::shared_ptr<const Mesh>& mesh, int dim,
            const std::vector<std::int32_t>& indices,
            const std::vector<T>& values, const bool sorted = false,
@@ -53,7 +54,8 @@ public:
   /// @param[in] values Array of values attached to indices,
   ///    will be copied, sorted and duplicates removed according
   ///    to indices array.
-  /// @param[in] sort Sort arrays according to indices array.
+  /// @param[in] sorted True for already sorted indices.
+  /// @param[in] unique True for unique indices.
   MeshTags(const std::shared_ptr<const Mesh>& mesh, int dim,
            std::vector<std::int32_t>&& indices, std::vector<T>&& values,
            const bool sorted = false, const bool unique = false);
