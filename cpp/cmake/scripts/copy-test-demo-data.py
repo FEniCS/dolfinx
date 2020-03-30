@@ -24,12 +24,10 @@ import shutil
 import sys
 
 # Subdirectories
-sub_directories = ['demo', 'test', 'bench']
+sub_directories = ["demo", "test"]
 
 # Copy all files with the following suffixes
-suffix_patterns = ["py", "h", "cpp", "cpp.rst", "ufl", "ufl.rst", "xdmf",
-                   "xml", "xml.gz", "off", "inp", "msh", "supp", "rst",
-                   "py.rst", "ele", "node", "grid", "edge", "sh"]
+suffix_patterns = ["txt", "h", "hpp", "c", "cpp", "ufl", "xdmf", "h5"]
 
 suffix_pattern = re.compile("(%s)," % ("|".join("[\w-]+\.%s" % pattern
                                                 for pattern in suffix_patterns)))
@@ -39,9 +37,7 @@ script_rel_path = script_rel_path or "."
 dolfinx_dir = os.path.abspath(os.path.join(
     script_rel_path, os.pardir, os.pardir))
 
-
-def copy_data(top_destdir):
-
+def copy_data(top_destdir, complex_mode):
     abs_destdir = top_destdir if os.path.isabs(
         top_destdir) else os.path.join(dolfinx_dir, top_destdir)
 
@@ -52,22 +48,32 @@ def copy_data(top_destdir):
     if not os.path.isdir(abs_destdir):
         raise RuntimeError("%s is not a directory." % abs_destdir)
 
-    for subdir in sub_directories:
+    skip = set()
+    if complex_mode is True:
+        skip.update(["demo/hyperelasticity"])
+    skip = {os.path.join(dolfinx_dir, skip_) for skip_ in skip}
 
+    for subdir in sub_directories:
         top_dir = os.path.join(dolfinx_dir, subdir)
         for dirpath, dirnames, filenames in os.walk(top_dir):
-            destdir = dirpath.replace(dolfinx_dir, abs_destdir)
-            if not os.path.isdir(destdir):
-                os.makedirs(destdir)
-            for f in re.findall(suffix_pattern, " ".join("%s," % f for f in filenames)):
-                srcfile = os.path.join(dirpath, f)
-                shutil.copy(srcfile, destdir)
+            if not dirpath in skip:
+                destdir = dirpath.replace(dolfinx_dir, abs_destdir)
+                if not os.path.isdir(destdir):
+                    os.makedirs(destdir)
+                for f in re.findall(suffix_pattern, " ".join("%s," % f for f in filenames)):
+                    srcfile = os.path.join(dirpath, f)
+                    shutil.copy(srcfile, destdir)
 
 
 if __name__ == "__main__":
     # Expecting a destination argument
-    if len(sys.argv) != 2:
+    if len(sys.argv) == 2:
+        # Call with "./copy-test-demo-data.py dest_dir" for PETSc real mode
+        copy_data(sys.argv[-1], False)
+    elif len(sys.argv) == 3:
+        # Call with "./copy-test-demo-data.py dest_dir 1" for PETSc complex mode
+        copy_data(sys.argv[-2], sys.argv[-1] == "1")
+    else:
         raise RuntimeError(
-            "Expecting 1 argument with the destination directory")
+            "Expecting either one or two arguments")
 
-    copy_data(sys.argv[-1])
