@@ -23,7 +23,8 @@ namespace mesh
 /// A MeshTags is a class used to tag mesh entities using their
 /// local-to-process index and an attached value.
 /// MeshTags is a sparse data storage class, since it allows to
-/// tag only few mesh entities.
+/// tag only few mesh entities. This class sorts and removes duplicates
+/// in indices on construction.
 /// @tparam Type
 template <typename T>
 class MeshTags
@@ -33,10 +34,11 @@ public:
   /// @param[in] mesh The mesh associated with the tags
   /// @param[in] dim Topological dimension of mesh entities
   ///    to tag.
-  /// @param[in] indices Array of indices, will be copied.
-  ///    Local-to-process.
+  /// @param[in] indices Array of indices, will be copied, sorted
+  ///    with duplicates removed. Local-to-process.
   /// @param[in] values Array of values attached to indices,
-  ///    will be copied.
+  ///    will be copied, sorted and duplicates removed according
+  ///    to indices array.
   MeshTags(const std::shared_ptr<const Mesh>& mesh, int dim,
            const std::vector<std::int32_t>& indices,
            const std::vector<T>& values);
@@ -55,12 +57,6 @@ public:
 
   /// Values attached to mesh entities (const.)
   const std::vector<T>& values() const;
-
-  /// Append new indices with their values
-  /// @param[in] indices
-  /// @param[in] values
-  void append(const std::vector<std::int32_t>& indices,
-              const std::vector<T>& values);
 
   /// Return topological dimension of tagged entities
   int dim() const;
