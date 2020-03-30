@@ -20,7 +20,7 @@ namespace dolfinx
 namespace graph
 {
 
-/// Tools for distributred graphs
+/// Tools for distributed graphs
 ///
 /// TODO: Add a function that sends data (Eigen arrays) to the 'owner'
 
@@ -85,9 +85,6 @@ public:
   /// index of each node is assumed to be the local index plus the
   /// offset for this rank.
   ///
-  /// \see Partitioning::exchange for the case where the source ranks
-  /// are known.
-  ///
   /// @param[in] comm MPI Communicator
   /// @param[in] list The adjacency list to distribute
   /// @param[in] destinations Destination ranks for the ith node in the
@@ -118,9 +115,8 @@ public:
   /// @param[in] indices Global indices of the data required by this
   ///   process
   /// @param[in] x Data on this process which may be distributed (by
-  ///   row). The global index for the [0, ..., n) rows on this process
-  ///   is assumed to be the local index plus the offset for this
-  ///   process
+  ///   row). The global index for the [0, ..., n) local rows is assumed
+  ///   to be the local index plus the offset for this process
   /// @return The data for each index in @p indices
   template <typename T>
   static Eigen::Array<T, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>

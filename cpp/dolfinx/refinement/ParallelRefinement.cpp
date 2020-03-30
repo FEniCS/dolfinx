@@ -38,7 +38,7 @@ ParallelRefinement::ParallelRefinement(const mesh::Mesh& mesh)
   // Compute a slightly wider neighbourhood for direct communication of shared
   // edges
   std::set<int> all_neighbour_set;
-  for (auto q : shared_edges)
+  for (const auto& q : shared_edges)
     all_neighbour_set.insert(q.second.begin(), q.second.end());
   std::vector<int> neighbours(all_neighbour_set.begin(),
                               all_neighbour_set.end());
@@ -110,8 +110,7 @@ void ParallelRefinement::mark(
 {
   const std::size_t entity_dim = refinement_marker.dim();
 
-  const Eigen::Array<std::int32_t, Eigen::Dynamic, 1>& marker_indices
-      = refinement_marker.indices();
+  const std::vector<std::int32_t>& marker_indices = refinement_marker.indices();
 
   std::shared_ptr<const mesh::Mesh> mesh = refinement_marker.mesh();
   auto map_ent = mesh->topology().index_map(entity_dim);
@@ -122,9 +121,9 @@ void ParallelRefinement::mark(
     throw std::runtime_error("Connectivity missing: ("
                              + std::to_string(entity_dim) + ", 1)");
 
-  for (Eigen::Index i = 0; i < marker_indices.rows(); ++i)
+  for (const auto& i : marker_indices)
   {
-    auto edges = ent_to_edge->links(marker_indices[i]);
+    const auto edges = ent_to_edge->links(i);
     for (int j = 0; j < edges.rows(); ++j)
       mark(edges[j]);
   }
@@ -415,14 +414,8 @@ mesh::Mesh ParallelRefinement::partition(bool redistribute) const
     topology.set_connectivity(_cells_d, tdim, 0);
   }
 
-  std::vector<int> src(my_cells.num_nodes(), dolfinx::MPI::rank(comm));
-  Eigen::Array<int, Eigen::Dynamic, 1> _dest(my_cells.num_nodes(), 1);
-  _dest = dolfinx::MPI::rank(comm);
-  const graph::AdjacencyList<std::int32_t> dest(_dest);
-
-  const mesh::Geometry geometry
-      = mesh::create_geometry(comm, topology, layout, my_cells, dest, src,
-                              _new_vertex_coordinates);
+  const mesh::Geometry geometry = mesh::create_geometry(
+      comm, topology, layout, my_cells, _new_vertex_coordinates);
 
   return mesh::Mesh(comm, topology, geometry);
 }

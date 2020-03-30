@@ -7,11 +7,10 @@
 #pragma once
 
 #include "HDF5Interface.h"
+#include "pugixml.hpp"
 #include "xdmf_mesh.h"
 #include "xdmf_utils.h"
 #include <dolfinx/mesh/MeshTags.h>
-#include "pugixml.hpp"
-
 
 namespace dolfinx
 {
@@ -31,9 +30,7 @@ void add_meshtags(MPI_Comm comm, const mesh::MeshTags<T>& meshtags,
   std::shared_ptr<const mesh::Mesh> mesh = meshtags.mesh();
   const int dim = meshtags.dim();
 
-  std::vector<std::int32_t> active_entities(meshtags.indices().data(),
-                                            meshtags.indices().data()
-                                                + meshtags.indices().rows());
+  const std::vector<std::int32_t>& active_entities = meshtags.indices();
 
   const std::string path_prefix = "/MeshTags/" + name;
   xdmf_mesh::add_topology_data(comm, xml_node, h5_id, path_prefix,
@@ -54,12 +51,9 @@ void add_meshtags(MPI_Comm comm, const mesh::MeshTags<T>& meshtags,
       = dolfinx::MPI::global_offset(comm, active_entities.size(), true);
   const bool use_mpi_io = (dolfinx::MPI::size(comm) > 1);
 
-  const std::vector<T> values(meshtags.values().data(),
-                              meshtags.values().data()
-                                  + meshtags.values().rows());
   xdmf_utils::add_data_item(attribute_node, h5_id, path_prefix + "/Values",
-                            values, offset, {global_num_values, 1}, "",
-                            use_mpi_io);
+                            meshtags.values(), offset, {global_num_values, 1},
+                            "", use_mpi_io);
 }
 
 } // namespace xdmf_meshtags

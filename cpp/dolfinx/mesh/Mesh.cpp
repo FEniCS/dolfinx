@@ -6,6 +6,7 @@
 
 #include "Mesh.h"
 #include "Geometry.h"
+#include "Partitioning.h"
 #include "Topology.h"
 #include "TopologyComputation.h"
 #include "utils.h"
@@ -63,8 +64,28 @@ Mesh mesh::create(MPI_Comm comm,
                                      Eigen::RowMajor>& x,
                   mesh::GhostMode ghost_mode)
 {
-  auto [topology, src, dest]
-      = mesh::create_topology(comm, cells, layout, ghost_mode);
+  // TODO: This step can be skipped for 'P1' elements
+  //
+  // Extract topology data, e.g. just the vertices. For P1 geometry this
+  // should just be the identity operator. For other elements the
+  // filtered lists may have 'gaps', i.e. the indices might not be
+  // contiguous.
+  const graph::AdjacencyList<std::int64_t> cells_topology
+      = mesh::extract_topology(layout, cells);
+
+  // Compute the destination rank for cells on this process via graph
+  // partitioning
+  const int size = dolfinx::MPI::size(comm);
+  const graph::AdjacencyList<std::int32_t> dest = Partitioning::partition_cells(
+      comm, size, layout.cell_type(), cells_topology, ghost_mode);
+
+  // Distribute cells to destination rank
+  const auto [cell_nodes, src, original_cell_index, ghost_owners]
+      = graph::Partitioning::distribute(comm, cells, dest);
+
+  Topology topology = mesh::create_topology(
+      comm, mesh::extract_topology(layout, cell_nodes), original_cell_index,
+      ghost_owners, layout, ghost_mode);
 
   // FIXME: Figure out how to check which entities are required
   // Initialise facet for P2
@@ -93,8 +114,8 @@ Mesh mesh::create(MPI_Comm comm,
       topology.set_index_map(topology.dim() - 1, index_map1);
   }
 
-  const Geometry geometry = mesh::create_geometry(comm, topology, layout, cells,
-                                                  dest, src, x);
+  const Geometry geometry
+      = mesh::create_geometry(comm, topology, layout, cell_nodes, x);
 
   return Mesh(comm, topology, geometry);
 }

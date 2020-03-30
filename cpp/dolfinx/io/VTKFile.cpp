@@ -73,7 +73,7 @@ void vtk_header_open(std::size_t num_vertices, std::size_t num_cells,
 
   // Write headers
   file << "<?xml version=\"1.0\"?>" << std::endl;
-  file << "<VTKFile type=\"UnstructuredGrid\"  version=\"0.1\" "
+  file << R"(<VTKFile type="UnstructuredGrid"  version="0.1" )"
        << ">" << std::endl;
   file << "<UnstructuredGrid>" << std::endl;
   file << "<Piece  NumberOfPoints=\"" << num_vertices << "\" NumberOfCells=\""
@@ -112,8 +112,8 @@ std::string vtu_name(const int process, const int num_processes,
   fileid.fill('0');
   fileid.width(6);
 
-  filestart.assign(filename, 0, filename.find_last_of("."));
-  extension.assign(filename, filename.find_last_of("."), filename.size());
+  filestart.assign(filename, 0, filename.find_last_of('.'));
+  extension.assign(filename, filename.find_last_of('.'), filename.size());
 
   fileid << counter;
 
@@ -141,7 +141,7 @@ void clear_file(std::string file)
 std::string strip_path(const std::string filename, const std::string file)
 {
   std::string fname;
-  fname.assign(file, filename.find_last_of("/") + 1, file.size());
+  fname.assign(file, filename.find_last_of('/') + 1, file.size());
   return fname;
 }
 //----------------------------------------------------------------------------
@@ -311,7 +311,7 @@ void write_point_data(const function::Function& u, const mesh::Mesh& mesh,
     fp << "<PointData  Scalars=\""
        << "u"
        << "\"> " << std::endl;
-    fp << "<DataArray  type=\"Float64\"  Name=\""
+    fp << R"(<DataArray  type="Float64"  Name=")"
        << "u"
        << "\"  format=\""
        << "ascii"
@@ -322,9 +322,9 @@ void write_point_data(const function::Function& u, const mesh::Mesh& mesh,
     fp << "<PointData  Vectors=\""
        << "u"
        << "\"> " << std::endl;
-    fp << "<DataArray  type=\"Float64\"  Name=\""
+    fp << R"(<DataArray  type="Float64"  Name=")"
        << "u"
-       << "\"  NumberOfComponents=\"3\" format=\""
+       << R"("  NumberOfComponents="3" format=")"
        << "ascii"
        << "\">";
   }
@@ -333,9 +333,9 @@ void write_point_data(const function::Function& u, const mesh::Mesh& mesh,
     fp << "<PointData  Tensors=\""
        << "u"
        << "\"> " << std::endl;
-    fp << "<DataArray  type=\"Float64\"  Name=\""
+    fp << R"(<DataArray  type="Float64"  Name=")"
        << "u"
-       << "\"  NumberOfComponents=\"9\" format=\""
+       << R"("  NumberOfComponents="9" format=")"
        << "ascii"
        << "\">";
   }

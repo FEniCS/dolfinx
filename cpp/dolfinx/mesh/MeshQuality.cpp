@@ -10,7 +10,6 @@
 #include "MeshIterator.h"
 #include "Geometry.h"
 #include <dolfinx/common/MPI.h>
-#include <math.h>
 #include <sstream>
 
 using namespace dolfinx;

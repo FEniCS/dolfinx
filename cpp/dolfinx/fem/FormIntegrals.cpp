@@ -73,7 +73,7 @@ std::vector<int> FormIntegrals::integral_ids(FormIntegrals::Type type) const
 {
   std::vector<int> ids;
   int type_index = static_cast<int>(type);
-  for (auto& integral : _integrals[type_index])
+  for (const auto& integral : _integrals[type_index])
     ids.push_back(integral.id);
 
   return ids;
@@ -125,15 +125,14 @@ void FormIntegrals::set_domains(FormIntegrals::Type type,
   }
 
   // Get mesh function data array
-  const Eigen::Array<int, Eigen::Dynamic, 1>& values = marker.values();
-  const Eigen::Array<std::int32_t, Eigen::Dynamic, 1>& tagged_entities
-      = marker.indices();
+  const std::vector<int>& values = marker.values();
+  const std::vector<std::int32_t>& tagged_entities = marker.indices();
 
   if (type == Type::exterior_facet)
   {
     mesh->create_connectivity(tdim - 1, tdim);
     const std::vector<bool>& interior_facets = topology.interior_facets();
-    for (int i = 0; i < tagged_entities.size(); ++i)
+    for (std::size_t i = 0; i < tagged_entities.size(); ++i)
     {
       const std::int32_t facet_index = tagged_entities[i];
       // Check that facet is an exterior facet (and not just on a
@@ -152,7 +151,7 @@ void FormIntegrals::set_domains(FormIntegrals::Type type,
     std::shared_ptr<const graph::AdjacencyList<std::int32_t>> connectivity
         = topology.connectivity(tdim - 1, tdim);
     assert(connectivity);
-    for (int i = 0; i < tagged_entities.size(); ++i)
+    for (std::size_t i = 0; i < tagged_entities.size(); ++i)
     {
       const std::int32_t facet_index = tagged_entities[i];
       if (connectivity->num_links(facet_index) == 2)
@@ -167,7 +166,7 @@ void FormIntegrals::set_domains(FormIntegrals::Type type,
   {
     // For cell and vertex integrals use all markers (but not on ghost
     // entities)
-    for (int i = 0; i < tagged_entities.size(); ++i)
+    for (std::size_t i = 0; i < tagged_entities.size(); ++i)
     {
       const std::int32_t entity_index = tagged_entities[i];
       const auto it = id_to_integral.find(values[i]);
@@ -228,13 +227,12 @@ void FormIntegrals::set_default_domains(const mesh::Mesh& mesh)
     // Get number of facets owned by this process
     mesh.create_connectivity(tdim - 1, tdim);
     assert(topology.index_map(tdim - 1));
-    const int num_facets = topology.index_map(tdim - 1)->size_local();
-    const std::vector<bool>& interior_facets = topology.interior_facets();
 
-    // Loop over owned facets
+    const int num_facets = topology.index_map(tdim - 1)->size_local();
+    auto f_to_c = topology.connectivity(tdim - 1, tdim);
     for (int f = 0; f < num_facets; ++f)
     {
-      if (interior_facets[f])
+      if (f_to_c->num_links(f) == 2)
         inf_integrals[0].active_entities.push_back(f);
     }
   }

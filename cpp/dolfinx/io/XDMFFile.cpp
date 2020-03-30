@@ -23,8 +23,10 @@
 #include <dolfinx/mesh/Geometry.h>
 #include <dolfinx/mesh/Mesh.h>
 #include <dolfinx/mesh/MeshTags.h>
+#include <dolfinx/mesh/Partitioning.h>
 #include <dolfinx/mesh/Topology.h>
 #include <dolfinx/mesh/TopologyComputation.h>
+#include <dolfinx/mesh/utils.h>
 
 using namespace dolfinx;
 using namespace dolfinx::io;
@@ -83,8 +85,8 @@ XDMFFile::XDMFFile(MPI_Comm comm, const std::string filename,
           "Cannot open file. HDF5 has not been compiled with support for MPI");
     }
 #endif
-    _h5_id
-        = HDF5Interface::open_file(_mpi_comm.comm(), hdf5_filename, file_mode, mpi_io);
+    _h5_id = HDF5Interface::open_file(_mpi_comm.comm(), hdf5_filename,
+                                      file_mode, mpi_io);
     assert(_h5_id > 0);
     LOG(INFO) << "Opened HDF5 file with id \"" << _h5_id << "\"";
   }
@@ -185,8 +187,8 @@ void XDMFFile::write_geometry(const mesh::Geometry& geometry,
   assert(grid_node);
 
   const std::string path_prefix = "/Geometry/" + name;
-  xdmf_mesh::add_geometry_data(_mpi_comm.comm(), grid_node,
-                               _h5_id, path_prefix, geometry);
+  xdmf_mesh::add_geometry_data(_mpi_comm.comm(), grid_node, _h5_id, path_prefix,
+                               geometry);
 
   // Save XML file (on process 0 only)
   if (MPI::rank(_mpi_comm.comm()) == 0)
@@ -204,15 +206,39 @@ mesh::Mesh XDMFFile::read_mesh(const std::string name,
   auto [cell_type, x, cells]
       = xdmf_mesh::read_mesh_data(_mpi_comm.comm(), _h5_id, grid_node);
 
+  graph::AdjacencyList<std::int64_t> cells_adj(cells);
+
   // TODO: create outside
   // Create a layout
   const fem::ElementDofLayout layout
       = fem::geometry_layout(cell_type, cells.cols());
 
+  // TODO: This step can be skipped for 'P1' elements
+  //
+  // Extract topology data, e.g. just the vertices. For P1 geometry this
+  // should just be the identity operator. For other elements the
+  // filtered lists may have 'gaps', i.e. the indices might not be
+  // contiguous.
+  const graph::AdjacencyList<std::int64_t> cells_topology
+      = mesh::extract_topology(layout, cells_adj);
+
+  // Compute the destination rank for cells on this process via graph
+  // partitioning
+  const int size = dolfinx::MPI::size(_mpi_comm.comm());
+  const graph::AdjacencyList<std::int32_t> dest
+      = mesh::Partitioning::partition_cells(_mpi_comm.comm(), size,
+                                            layout.cell_type(), cells_topology,
+                                            mesh::GhostMode::none);
+
+  // Distribute cells to destination rank
+  const auto [cell_nodes, src, original_cell_index, ghost_owners]
+      = graph::Partitioning::distribute(_mpi_comm.comm(), cells_adj, dest);
+
   // Create Topology
   graph::AdjacencyList<std::int64_t> _cells(cells);
-  auto [topology, src, dest] = mesh::create_topology(
-      _mpi_comm.comm(), _cells, layout, mesh::GhostMode::none);
+  mesh::Topology topology = mesh::create_topology(
+      _mpi_comm.comm(), mesh::extract_topology(layout, cell_nodes),
+      original_cell_index, ghost_owners, layout, mesh::GhostMode::none);
 
   // FIXME: Figure out how to check which entities are required
   // Initialise facet for P2
@@ -232,7 +258,7 @@ mesh::Mesh XDMFFile::read_mesh(const std::string name,
 
   // Create Geometry
   const mesh::Geometry geometry = mesh::create_geometry(
-      _mpi_comm.comm(), topology, layout, _cells, dest, src, x, flags);
+      _mpi_comm.comm(), topology, layout, _cells, x, flags);
 
   // Return Mesh
   return mesh::Mesh(_mpi_comm.comm(), topology, geometry);
@@ -287,8 +313,7 @@ void XDMFFile::write_function(const function::Function& function,
   assert(time_node);
 
   // Add the mesh Grid to the domain
-  xdmf_function::add_function(_mpi_comm.comm(), function, t, grid_node,
-                              _h5_id);
+  xdmf_function::add_function(_mpi_comm.comm(), function, t, grid_node, _h5_id);
 
   // Save XML file (on process 0 only)
   if (MPI::rank(_mpi_comm.comm()) == 0)
@@ -350,8 +375,8 @@ XDMFFile::read_meshtags(const std::shared_ptr<const mesh::Mesh>& mesh,
       = xdmf_mesh::read_flags(_mpi_comm.comm(), _h5_id, flags_node);
 
   // Map flags vector into Eigen array for the use in distribute_data
-  const Eigen::Map<const Eigen::Array<std::int64_t, Eigen::Dynamic, 1>> file_flags_arr(
-      file_flags.data(), file_flags.size());
+  const Eigen::Map<const Eigen::Array<std::int64_t, Eigen::Dynamic, 1>>
+      file_flags_arr(file_flags.data(), file_flags.size());
 
   // Extract only unique and sorted topology nodes
   std::vector<std::int64_t> topo_unique = topology_data;
@@ -433,7 +458,7 @@ XDMFFile::read_meshtags(const std::shared_ptr<const mesh::Mesh>& mesh,
 
   std::vector<std::int64_t> dist_file_flags(dist_file_flags_arr.data(),
                                             dist_file_flags_arr.data()
-                                             + dist_file_flags_arr.rows());
+                                                + dist_file_flags_arr.rows());
 
   // Need to sort dist_file_flags and store sorting permutation for later
   // Sort identity permutation according to dist_file_flags
@@ -488,7 +513,8 @@ XDMFFile::read_meshtags(const std::shared_ptr<const mesh::Mesh>& mesh,
     for (int i = 0; i < nnodes_per_entity; ++i)
     {
       entity[i] = topo_to_flags[topology_data[e * nnodes_per_entity + i]].first;
-      entity_owners[i] = (int)topo_to_flags[topology_data[e * nnodes_per_entity + i]].second;
+      entity_owners[i]
+          = (int)topo_to_flags[topology_data[e * nnodes_per_entity + i]].second;
     }
 
     for (int i = 0; i < nnodes_per_entity; ++i)
@@ -499,7 +525,8 @@ XDMFFile::read_meshtags(const std::shared_ptr<const mesh::Mesh>& mesh,
       assert(send_to >= 0);
       if (!sent[send_to])
       {
-        send_ents[send_to].insert(send_ents[send_to].end(), ents.begin(), ents.end());
+        send_ents[send_to].insert(send_ents[send_to].end(), entity.begin(),
+                                  entity.end());
         send_vals[send_to].push_back(values[e]);
         sent[send_to] = true;
       }
@@ -510,7 +537,7 @@ XDMFFile::read_meshtags(const std::shared_ptr<const mesh::Mesh>& mesh,
   MPI::all_to_all(_mpi_comm.comm(), send_vals, recv_vals);
 
   //
-  // Using just the information on current local mesh partition 
+  // Using just the information on current local mesh partition
   // prepare a mapping from *ordered* nodes of entity flags to entity local
   // index
   //
@@ -582,11 +609,5 @@ XDMFFile::read_meshtags(const std::shared_ptr<const mesh::Mesh>& mesh,
     }
   }
 
-  Eigen::Map<const Eigen::Array<std::int32_t, Eigen::Dynamic, 1>> indices_eig(
-      indices.data(), indices.size());
-
-  Eigen::Map<const Eigen::Array<std::int32_t, Eigen::Dynamic, 1>> values_eig(
-      values_fin.data(), values_fin.size());
-
-  return mesh::MeshTags<int>(mesh, e_dim, indices_eig, values_eig);
+  return mesh::MeshTags<int>(mesh, e_dim, indices, values_fin);
 }

@@ -73,8 +73,9 @@ int get_padded_width(const function::Function& u)
 } // namespace
 
 //-----------------------------------------------------------------------------
-void xdmf_function::add_function(MPI_Comm comm, const function::Function& u, const double t,
-                                 pugi::xml_node& xml_node, const hid_t h5_id)
+void xdmf_function::add_function(MPI_Comm comm, const function::Function& u,
+                                 const double t, pugi::xml_node& xml_node,
+                                 const hid_t h5_id)
 {
   LOG(INFO) << "Adding function to node \"" << xml_node.path('/') << "\"";
 
@@ -157,8 +158,8 @@ void xdmf_function::add_function(MPI_Comm comm, const function::Function& u, con
                               {num_values, width}, "", use_mpi_io);
 #else
     // Add data item
-    const std::int64_t offset = dolfinx::MPI::global_offset(
-        comm, data_values.size() / width, true);
+    const std::int64_t offset
+        = dolfinx::MPI::global_offset(comm, data_values.size() / width, true);
     xdmf_utils::add_data_item(attribute_node, h5_id, dataset_name, data_values,
                               offset, {num_values, width}, "", use_mpi_io);
 #endif

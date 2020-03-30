@@ -47,7 +47,7 @@ compute_face_permutations_simplex(
       // Find iterators pointing to cell vertex given a vertex on facet
       for (int j = 0; j < 3; ++j)
       {
-        const auto it = std::find(cell_vertices.data(),
+        const auto *const it = std::find(cell_vertices.data(),
                                   cell_vertices.data() + cell_vertices.size(),
                                   vertices[j]);
         // Get the actual local vertex indices
@@ -107,7 +107,7 @@ compute_face_permutations_tp(const graph::AdjacencyList<std::int32_t>& c_to_v,
       // Find iterators pointing to cell vertex given a vertex on facet
       for (int j = 0; j < 4; ++j)
       {
-        const auto it = std::find(cell_vertices.data(),
+        const auto *const it = std::find(cell_vertices.data(),
                                   cell_vertices.data() + cell_vertices.size(),
                                   vertices[j]);
         // Get the actual local vertex indices
@@ -193,10 +193,10 @@ compute_edge_reflections(const mesh::Topology& topology)
       // from the lowest numbered vertex to the highest numbered vertex.
 
       // Find iterators pointing to cell vertex given a vertex on facet
-      const auto it0
+      const auto *const it0
           = std::find(cell_vertices.data(),
                       cell_vertices.data() + cell_vertices.size(), vertices[0]);
-      const auto it1
+      const auto *const it1
           = std::find(cell_vertices.data(),
                       cell_vertices.data() + cell_vertices.size(), vertices[1]);
 

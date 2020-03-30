@@ -141,9 +141,9 @@ double dolfinx::geometry::orient3d(const Eigen::Vector3d& a,
 /*                                                                           */
 /*****************************************************************************/
 
-#include <math.h>
-#include <stdio.h>
-#include <stdlib.h>
+#include <cmath>
+#include <cstdio>
+#include <cstdlib>
 #include <sys/time.h>
 
 /* On some machines, the exact arithmetic routines might be defeated by the  */
@@ -2575,11 +2575,8 @@ double dolfinx::geometry::_orient3d(const double* pa, const double* pb,
 
 #include "predicates.h"
 
-namespace dolfinx
-{
-namespace geometry
+namespace dolfinx::geometry
 {
 /// Initialize the predicate
 PredicateInitialization predicate_initialization;
-} // namespace geometry
-} // namespace dolfinx
+} // namespace dolfinx::geometry

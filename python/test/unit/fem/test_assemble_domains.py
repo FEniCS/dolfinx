@@ -117,14 +117,21 @@ def test_assembly_ds_domains(mesh):
         return numpy.isclose(x[0], 1.0)
 
     bottom_facets = locate_entities_geometrical(mesh, mesh.topology.dim - 1, bottom, boundary_only=True)
-    top_facets = locate_entities_geometrical(mesh, mesh.topology.dim - 1, top, boundary_only=True)
-    left_facets = locate_entities_geometrical(mesh, mesh.topology.dim - 1, left, boundary_only=True)
-    right_facets = locate_entities_geometrical(mesh, mesh.topology.dim - 1, right, boundary_only=True)
+    bottom_vals = numpy.full(bottom_facets.shape, 1, numpy.intc)
 
-    marker = dolfinx.mesh.MeshTags(mesh, mesh.topology.dim - 1, bottom_facets, 1)
-    marker.append_unique(top_facets, numpy.full(top_facets.shape, 2))
-    marker.append_unique(left_facets, numpy.full(left_facets.shape, 3))
-    marker.append_unique(right_facets, numpy.full(right_facets.shape, 6))
+    top_facets = locate_entities_geometrical(mesh, mesh.topology.dim - 1, top, boundary_only=True)
+    top_vals = numpy.full(top_facets.shape, 2, numpy.intc)
+
+    left_facets = locate_entities_geometrical(mesh, mesh.topology.dim - 1, left, boundary_only=True)
+    left_vals = numpy.full(left_facets.shape, 3, numpy.intc)
+
+    right_facets = locate_entities_geometrical(mesh, mesh.topology.dim - 1, right, boundary_only=True)
+    right_vals = numpy.full(right_facets.shape, 6, numpy.intc)
+
+    indices = numpy.hstack((bottom_facets, top_facets, left_facets, right_facets))
+    values = numpy.hstack((bottom_vals, top_vals, left_vals, right_vals))
+
+    marker = dolfinx.mesh.MeshTags(mesh, mesh.topology.dim - 1, indices, values)
 
     ds = ufl.Measure('ds', subdomain_data=marker, domain=mesh)
 

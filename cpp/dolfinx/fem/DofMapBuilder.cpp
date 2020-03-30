@@ -316,7 +316,7 @@ std::pair<std::vector<std::int32_t>, std::int32_t> compute_reordering_map(
       old_to_new[i] = unowned_pos++;
   }
 
-  return {std::move(old_to_new), std::move(owned_size)};
+  return {std::move(old_to_new), owned_size};
 }
 //-----------------------------------------------------------------------------
 

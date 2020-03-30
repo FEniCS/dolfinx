@@ -295,22 +295,25 @@ void mesh(py::module& m)
              std::shared_ptr<dolfinx::mesh::MeshTags<SCALAR>>>(                \
       m, "MeshTags_" #SCALAR_NAME, "DOLFIN MeshTags object")                   \
       .def(py::init<std::shared_ptr<const dolfinx::mesh::Mesh>, int,           \
-                    const Eigen::Array<std::int32_t, Eigen::Dynamic, 1>&,      \
-                    const Eigen::Array<SCALAR, Eigen::Dynamic, 1>&>())         \
+                    const std::vector<std::int32_t>&,                          \
+                    const std::vector<SCALAR>&>())                             \
       .def_readwrite("name", &dolfinx::mesh::MeshTags<SCALAR>::name)           \
       .def_property_readonly("dim", &dolfinx::mesh::MeshTags<SCALAR>::dim)     \
       .def_property_readonly("mesh", &dolfinx::mesh::MeshTags<SCALAR>::mesh)   \
       .def(                                                                    \
           "ufl_id",                                                            \
           [](const dolfinx::mesh::MeshTags<SCALAR>& self) { return self.id; }) \
+      .def_property_readonly("values",                                         \
+                             [](dolfinx::mesh::MeshTags<SCALAR>& self) {       \
+                               return py::array_t<SCALAR>(                     \
+                                   self.values().size(), self.values().data(), \
+                                   py::none());                                \
+                             })                                                \
       .def_property_readonly(                                                  \
-          "values",                                                            \
-          py::overload_cast<>(&dolfinx::mesh::MeshTags<SCALAR>::values))       \
-      .def_property_readonly(                                                  \
-          "indices",                                                           \
-          py::overload_cast<>(&dolfinx::mesh::MeshTags<SCALAR>::indices))      \
-      .def("append", &dolfinx::mesh::MeshTags<SCALAR>::append)                 \
-      .def("append_unique", &dolfinx::mesh::MeshTags<SCALAR>::append_unique);
+          "indices", [](dolfinx::mesh::MeshTags<SCALAR>& self) {               \
+            return py::array_t<std::int32_t>(                                  \
+                self.indices().size(), self.indices().data(), py::none());     \
+          })
 
   MESHTAGS_MACRO(std::int8_t, int8);
   MESHTAGS_MACRO(int, int);
