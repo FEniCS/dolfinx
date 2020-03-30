@@ -23,8 +23,7 @@ namespace mesh
 /// A MeshTags is a class used to tag mesh entities using their
 /// local-to-process index and an attached value.
 /// MeshTags is a sparse data storage class, since it allows to
-/// tag only few mesh entities. This class sorts and removes duplicates
-/// in indices on construction.
+/// tag only few mesh entities. This class always removes duplicates.
 /// @tparam Type
 template <typename T>
 class MeshTags
@@ -39,9 +38,25 @@ public:
   /// @param[in] values Array of values attached to indices,
   ///    will be copied, sorted and duplicates removed according
   ///    to indices array.
+  /// @param[in] sort Sort arrays according to indices array.
   MeshTags(const std::shared_ptr<const Mesh>& mesh, int dim,
            const std::vector<std::int32_t>& indices,
-           const std::vector<T>& values);
+           const std::vector<T>& values, const bool sorted = false,
+           const bool unique = false);
+
+  /// Create from entities of given dimension on a mesh
+  /// @param[in] mesh The mesh associated with the tags
+  /// @param[in] dim Topological dimension of mesh entities
+  ///    to tag.
+  /// @param[in] indices Array of indices, will be copied, sorted
+  ///    with duplicates removed. Local-to-process.
+  /// @param[in] values Array of values attached to indices,
+  ///    will be copied, sorted and duplicates removed according
+  ///    to indices array.
+  /// @param[in] sort Sort arrays according to indices array.
+  MeshTags(const std::shared_ptr<const Mesh>& mesh, int dim,
+           std::vector<std::int32_t>&& indices, std::vector<T>&& values,
+           const bool sorted = false, const bool unique = false);
 
   /// Move constructor
   MeshTags(MeshTags&& mt) = default;
@@ -68,20 +83,29 @@ public:
   std::string name = "mesh_tags";
 
   /// Unique ID
-  std::size_t id = common::UniqueIdGenerator::id();
+  std::size_t id() const { return _unique_id; }
 
 private:
-  // Local-to-process indices of tagged entities
-  std::vector<std::int32_t> _indices;
-
-  // Values attached to entities
-  std::vector<T> _values;
+  // Unique identifier
+  std::size_t _unique_id;
 
   /// Associated mesh
   std::shared_ptr<const Mesh> _mesh;
 
   /// Topological dimension of tagged mesh entities
   int _dim;
+
+  // Local-to-process indices of tagged entities
+  std::vector<std::int32_t> _indices;
+
+  // Values attached to entities
+  std::vector<T> _values;
+
+  // Sort indices and values according to indices
+  void sort();
+
+  // Remove duplicates in indices and values according to indices
+  void remove_duplicates();
 };
 
 //---------------------------------------------------------------------------
@@ -90,37 +114,37 @@ private:
 template <typename T>
 MeshTags<T>::MeshTags(const std::shared_ptr<const Mesh>& mesh, int dim,
                       const std::vector<std::int32_t>& indices,
-                      const std::vector<T>& values)
-    : _mesh(mesh), _dim(dim), _indices(indices.size()), _values(values.size())
+                      const std::vector<T>& values, const bool sorted,
+                      const bool unique)
+    : _unique_id(common::UniqueIdGenerator::id()), _mesh(mesh), _dim(dim),
+      _indices(indices), _values(values)
 {
   if (indices.size() != values.size())
     throw std::runtime_error("Indices and values arrays must match in size.");
 
-  //
-  // Sort indices and values according to indices and remove duplicates
-  //
+  if (!sorted)
+    sort();
 
-  // Prepare the sorting permutation
-  std::vector<int> perm(indices.size());
-  std::iota(perm.begin(), perm.end(), 0);
+  if (!unique)
+    remove_duplicates();
+}
+//---------------------------------------------------------------------------
+template <typename T>
+MeshTags<T>::MeshTags(const std::shared_ptr<const Mesh>& mesh, int dim,
+                      std::vector<std::int32_t>&& indices,
+                      std::vector<T>&& values, const bool sorted,
+                      const bool unique)
+    : _unique_id(common::UniqueIdGenerator::id()), _mesh(mesh), _dim(dim),
+      _indices(std::move(indices)), _values(std::move(values))
+{
+  if (indices.size() != values.size())
+    throw std::runtime_error("Indices and values arrays must match in size.");
 
-  std::sort(perm.begin(), perm.end(), [&](const int& a, const int& b) {
-    return (indices[a] < indices[b]);
-  });
+  if (!sorted)
+    sort();
 
-  // Apply sorting and insert
-  for (std::size_t i = 0; i < indices.size(); ++i)
-  {
-    _indices[i] = indices[perm[i]];
-    _values[i] = values[perm[i]];
-  }
-
-  // Remove duplicates
-  const auto it = std::unique(_indices.begin(), _indices.end());
-  const int unique_size = std::distance(_indices.begin(), it);
-
-  _indices.erase(it, _indices.end());
-  _values.erase(_values.begin(), _values.begin() + unique_size);
+  if (!unique)
+    remove_duplicates();
 }
 //---------------------------------------------------------------------------
 template <typename T>
@@ -147,5 +171,51 @@ std::shared_ptr<const Mesh> MeshTags<T>::mesh() const
   return _mesh;
 }
 //---------------------------------------------------------------------------
+template <typename T>
+void MeshTags<T>::sort()
+{
+  // Prepare the sorting permutation
+  std::vector<int> perm(_indices.size());
+  std::iota(perm.begin(), perm.end(), 0);
+
+  // Swap into a temporaries
+  std::vector<std::int32_t> indices;
+  indices.swap(_indices);
+  std::vector<T> values;
+  values.swap(_values);
+
+  std::sort(perm.begin(), perm.end(), [&indices](const int a, const int b) {
+    return (indices[a] < indices[b]);
+  });
+
+  // Make sure vectors are empty and preallocate space
+  _indices.clear();
+  _values.clear();
+  _indices.reserve(indices.size());
+  _values.reserve(values.size());
+
+  // Apply sorting and insert
+  for (std::size_t i = 0; i < indices.size(); ++i)
+  {
+    _indices.push_back(indices[perm[i]]);
+    _values.push_back(values[perm[i]]);
+  }
+}
+//---------------------------------------------------------------------------
+template <typename T>
+void MeshTags<T>::remove_duplicates()
+{
+  std::size_t last_unique = 0;
+  for (std::size_t i = 0; i < _indices.size(); ++i)
+  {
+    if (_indices[i] > _indices[last_unique])
+    {
+      _indices[++last_unique] = _indices[i];
+      _values[last_unique] = _values[i];
+    }
+  }
+  _indices.erase(_indices.begin() + last_unique + 1, _indices.end());
+  _values.erase(_values.begin() + last_unique + 1, _values.end());
+}
 } // namespace mesh
 } // namespace dolfinx

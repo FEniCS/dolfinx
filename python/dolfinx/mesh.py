@@ -60,7 +60,7 @@ _meshvaluecollection_types = {
 }
 
 
-def MeshTags(mesh, dim, indices, values):
+def MeshTags(mesh, dim, indices, values, sorted=False, unique=False):
 
     if isinstance(values, int):
         values = numpy.full(indices.shape, values, dtype=numpy.intc)
@@ -73,7 +73,7 @@ def MeshTags(mesh, dim, indices, values):
         raise KeyError("Datatype {} of values array not recognised".format(dtype))
 
     fn = _meshtags_types[dtype]
-    return fn(mesh, dim, indices, values)
+    return fn(mesh, dim, indices, values, sorted, unique)
 
 
 def MeshFunction(value_type, mesh, dim, value):

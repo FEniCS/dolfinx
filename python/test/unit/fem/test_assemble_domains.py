@@ -45,7 +45,7 @@ def test_assembly_dx_domains(mesh):
     values[0] = 1
     values[1] = 2
 
-    marker = dolfinx.mesh.MeshTags(mesh, mesh.topology.dim, indices, values)
+    marker = dolfinx.mesh.MeshTags(mesh, mesh.topology.dim, indices, values, sorted=True, unique=True)
 
     dx = ufl.Measure('dx', subdomain_data=marker, domain=mesh)
 
