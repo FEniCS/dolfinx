@@ -321,7 +321,7 @@ void XDMFFile::write_meshtags(const mesh::MeshTags<int>& meshtags,
 }
 //-----------------------------------------------------------------------------
 mesh::MeshTags<int>
-XDMFFile::read_meshtags(std::shared_ptr<const mesh::Mesh> mesh,
+XDMFFile::read_meshtags(const std::shared_ptr<const mesh::Mesh>& mesh,
                         const std::string name, const std::string xpath,
                         const std::string flags_xpath)
 {
@@ -350,8 +350,8 @@ XDMFFile::read_meshtags(std::shared_ptr<const mesh::Mesh> mesh,
       = xdmf_mesh::read_flags(_mpi_comm.comm(), _h5_id, flags_node);
 
   // Map flags vector into Eigen array for the use in distribute_data
-  Eigen::Map<const Eigen::Array<std::int64_t, Eigen::Dynamic, 1>> file_flags_arr(
-      file_flags.data(), file_flags.size(), 1);
+  const Eigen::Map<const Eigen::Array<std::int64_t, Eigen::Dynamic, 1>> file_flags_arr(
+      file_flags.data(), file_flags.size());
 
   // Extract only unique and sorted topology nodes
   std::vector<std::int64_t> topo_unique = topology_data;
@@ -361,8 +361,8 @@ XDMFFile::read_meshtags(std::shared_ptr<const mesh::Mesh> mesh,
 
   // Distribute flags according to unique topology nodes
   const Eigen::Array<std::int64_t, Eigen::Dynamic, 1> dist_file_flags_arr
-      = graph::Partitioning::distribute_data(_mpi_comm.comm(), topo_unique,
-                                             file_flags_arr);
+      = graph::Partitioning::distribute_data<std::int64_t>(
+          _mpi_comm.comm(), topo_unique, file_flags_arr);
 
   // Fetch cell type of meshtags and deduce its dimension
   const auto cell_type_str = xdmf_utils::get_cell_type(topology_node);
@@ -454,8 +454,8 @@ XDMFFile::read_meshtags(std::shared_ptr<const mesh::Mesh> mesh,
 
   // Distribute owners and fetch owners for the flags read from file
   const Eigen::Array<std::int64_t, Eigen::Dynamic, 1> dist_read_flags_owners_arr
-      = graph::Partitioning::distribute_data(_mpi_comm.comm(),
-                                             dist_flags_sorted, owners_arr);
+      = graph::Partitioning::distribute_data<std::int64_t>(
+          _mpi_comm.comm(), dist_flags_sorted, owners_arr);
 
   //
   // Figure out which process needs flags read from file
@@ -481,21 +481,21 @@ XDMFFile::read_meshtags(std::shared_ptr<const mesh::Mesh> mesh,
 
   for (Eigen::Index e = 0; e < num_local_file_entities; ++e)
   {
-    std::vector<std::int64_t> ents(nnodes_per_entity);
-    std::vector<int> ents_owners(nnodes_per_entity);
+    std::vector<std::int64_t> entity(nnodes_per_entity);
+    std::vector<int> entity_owners(nnodes_per_entity);
     std::vector<bool> sent(comm_size, false);
 
     for (int i = 0; i < nnodes_per_entity; ++i)
     {
-      ents[i] = topo_to_flags[topology_data[e * nnodes_per_entity + i]].first;
-      ents_owners[i] = (int)topo_to_flags[topology_data[e * nnodes_per_entity + i]].second;
+      entity[i] = topo_to_flags[topology_data[e * nnodes_per_entity + i]].first;
+      entity_owners[i] = (int)topo_to_flags[topology_data[e * nnodes_per_entity + i]].second;
     }
 
     for (int i = 0; i < nnodes_per_entity; ++i)
     {
       // Entity could have as many owners as there are owners
       // of its flags
-      const int send_to = ents_owners[i];
+      const int send_to = entity_owners[i];
       assert(send_to >= 0);
       if (!sent[send_to])
       {
@@ -565,13 +565,11 @@ XDMFFile::read_meshtags(std::shared_ptr<const mesh::Mesh> mesh,
   for (int i = 0; i < comm_size; ++i)
   {
     const int num_recv_ents = (int)(recv_ents[i].size() / nnodes_per_entity);
-
     for (int e = 0; e < num_recv_ents; ++e)
     {
       std::vector<std::int64_t> flags(&recv_ents[i][nnodes_per_entity * e],
                                       &recv_ents[i][nnodes_per_entity * e]
                                           + nnodes_per_entity);
-      int value = recv_vals[i][e];
 
       std::sort(flags.begin(), flags.end());
 
@@ -579,7 +577,7 @@ XDMFFile::read_meshtags(std::shared_ptr<const mesh::Mesh> mesh,
       if (it != entities_flags.end())
       {
         indices.push_back(it->second);
-        values_fin.push_back(value);
+        values_fin.push_back(recv_vals[i][e]);
       }
     }
   }

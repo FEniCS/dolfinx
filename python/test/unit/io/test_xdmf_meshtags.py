@@ -31,7 +31,7 @@ celltypes_2D = [CellType.triangle]
 def test_3d(tempdir, cell_type, encoding):
     filename = os.path.join(tempdir, "meshtags_2d.xdmf")
     mesh = UnitSquareMesh(MPI.comm_world, 10, 10, cell_type)
-
+    mesh.create_connectivity_all()
     rank = MPI.rank(MPI.comm_world)
 
     bottom_facets = locate_entities_geometrical(mesh, 1, lambda x: numpy.isclose(x[1], 0.0))
@@ -76,13 +76,9 @@ def test_3d(tempdir, cell_type, encoding):
 
     with XDMFFile(MPI.comm_world, filename, "r", encoding=encoding) as file:
         mesh_in = file.read_mesh()
-        # print(MPI.rank(MPI.comm_world), numpy.max(mesh_in.geometry.flags),
-        #       mesh_in.geometry.index_map().size_local + mesh_in.geometry.index_map().num_ghosts, len(mesh_in.geometry.flags))
-        # print(rank, mesh_in.geometry.global_indices())
-        # print(rank, mesh_in.geometry.flags)
-        # exit()
+        mesh_in.create_connectivity_all()
         mt_in = file.read_meshtags(mesh_in, "mt_facets")
-        print(mt_in.indices)
+        mt_part_in = file.read_meshtags(mesh_in, "part")
 
     num_cells = mesh_in.topology.index_map(mesh_in.topology.dim).size_local
     partition = numpy.arange(0, num_cells)
@@ -93,6 +89,7 @@ def test_3d(tempdir, cell_type, encoding):
     with XDMFFile(MPI.comm_world, os.path.join(tempdir, "out_meshtags_2d.xdmf"), "w", encoding=encoding) as file:
         file.write_mesh(mesh_in)
         file.write_meshtags(mt_in_part)
-        file.write_meshtags(mt_in)
+        file.write_meshtags(mt_part_in)
+    #     file.write_meshtags(mt_in)
 
     # assert numpy.allclose(mt_lines_in.indices, mt_lines.indices)

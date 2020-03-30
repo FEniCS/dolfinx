@@ -634,10 +634,11 @@ std::vector<std::int64_t> Partitioning::compute_ghost_indices(
   return ghost_global_indices;
 }
 //-----------------------------------------------------------------------------
-Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
+template <typename T>
+Eigen::Array<T, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
 Partitioning::distribute_data(
     MPI_Comm comm, const std::vector<std::int64_t>& indices,
-    const Eigen::Ref<const Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic,
+    const Eigen::Ref<const Eigen::Array<T, Eigen::Dynamic, Eigen::Dynamic,
                                         Eigen::RowMajor>>& x)
 {
   common::Timer timer("Fetch float data from remote processes");
@@ -671,7 +672,7 @@ Partitioning::distribute_data(
                    disp_send.begin() + 1);
 
   // Pack x data
-  Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor> x_send(
+  Eigen::Array<T, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor> x_send(
       disp_send.back(), gdim);
   std::vector<int> disp_tmp = disp_send;
   for (int i = 0; i < x.rows(); ++i)
@@ -694,11 +695,11 @@ Partitioning::distribute_data(
   // Build compound data type. This will allow us to re-use send/receive
   // displacements for indices and point data
   MPI_Datatype compound_type;
-  MPI_Type_contiguous(gdim, MPI_DOUBLE, &compound_type);
+  MPI_Type_contiguous(gdim, MPI::mpi_type<T>(), &compound_type);
   MPI_Type_commit(&compound_type);
 
   // Send/receive points
-  Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor> x_recv(
+  Eigen::Array<T, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor> x_recv(
       disp_recv.back(), gdim);
   MPI_Alltoallv(x_send.data(), number_send.data(), disp_send.data(),
                 compound_type, x_recv.data(), number_recv.data(),
@@ -746,7 +747,7 @@ Partitioning::distribute_data(
                 comm);
 
   // Pack point data to send back (transpose)
-  Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor> x_return(
+  Eigen::Array<T, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor> x_return(
       indices_recv.size(), gdim);
   for (int p = 0; p < size; ++p)
   {
@@ -760,7 +761,7 @@ Partitioning::distribute_data(
   }
 
   // Send back point data
-  Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor> my_x(
+  Eigen::Array<T, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor> my_x(
       disp_index_send.back(), gdim);
   MPI_Alltoallv(x_return.data(), number_index_recv.data(),
                 disp_index_recv.data(), compound_type, my_x.data(),
@@ -770,141 +771,20 @@ Partitioning::distribute_data(
   return my_x;
 }
 //-----------------------------------------------------------------------------
-Eigen::Array<std::int64_t, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
+// Explixit instantiation for double
+template Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
 Partitioning::distribute_data(
     MPI_Comm comm, const std::vector<std::int64_t>& indices,
-    const Eigen::Ref<const Eigen::Array<std::int64_t, Eigen::Dynamic, Eigen::Dynamic,
-                                        Eigen::RowMajor>>& x)
-{
-  common::Timer timer("Fetch float data from remote processes");
-
-  // Get number of points globally
-  const std::int64_t num_points = dolfinx::MPI::sum(comm, x.rows());
-
-  // Get ownership range for this rank, and compute offset
-  const std::array<std::int64_t, 2> range
-      = dolfinx::MPI::local_range(comm, num_points);
-  const std::int64_t offset_x
-      = dolfinx::MPI::global_offset(comm, range[1] - range[0], true);
-
-  const int gdim = x.cols();
-  assert(gdim != 0);
-  const int size = dolfinx::MPI::size(comm);
-
-  // Determine number of points to send to owner
-  std::vector<int> number_send(size, 0);
-  for (int i = 0; i < x.rows(); ++i)
-  {
-    // TODO: optimise this call
-    const std::int64_t index_global = i + offset_x;
-    const int owner = dolfinx::MPI::index_owner(size, index_global, num_points);
-    number_send[owner] += 1;
-  }
-
-  // Compute send displacements
-  std::vector<int> disp_send(size + 1, 0);
-  std::partial_sum(number_send.begin(), number_send.end(),
-                   disp_send.begin() + 1);
-
-  // Pack x data
-  Eigen::Array<std::int64_t, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor> x_send(
-      disp_send.back(), gdim);
-  std::vector<int> disp_tmp = disp_send;
-  for (int i = 0; i < x.rows(); ++i)
-  {
-    const std::int64_t index_global = i + offset_x;
-    const int owner = dolfinx::MPI::index_owner(size, index_global, num_points);
-    x_send.row(disp_tmp[owner]++) = x.row(i);
-  }
-
-  // Send/receive number of points to communicate to each process
-  std::vector<int> number_recv(size);
-  MPI_Alltoall(number_send.data(), 1, MPI_INT, number_recv.data(), 1, MPI_INT,
-               comm);
-
-  // Compute receive displacements
-  std::vector<int> disp_recv(size + 1, 0);
-  std::partial_sum(number_recv.begin(), number_recv.end(),
-                   disp_recv.begin() + 1);
-
-  // Build compound data type. This will allow us to re-use send/receive
-  // displacements for indices and point data
-  MPI_Datatype compound_type;
-  MPI_Type_contiguous(gdim, MPI_LONG_LONG, &compound_type);
-  MPI_Type_commit(&compound_type);
-
-  // Send/receive points
-  Eigen::Array<std::int64_t, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor> x_recv(
-      disp_recv.back(), gdim);
-  MPI_Alltoallv(x_send.data(), number_send.data(), disp_send.data(),
-                compound_type, x_recv.data(), number_recv.data(),
-                disp_recv.data(), compound_type, comm);
-
-  // Build index data requests
-  std::vector<int> number_index_send(size, 0);
-  for (std::int64_t index : indices)
-  {
-    // TODO: optimise this call
-    const int owner = dolfinx::MPI::index_owner(size, index, num_points);
-    number_index_send[owner] += 1;
-  }
-
-  // Compute send displacements
-  std::vector<int> disp_index_send(size + 1, 0);
-  std::partial_sum(number_index_send.begin(), number_index_send.end(),
-                   disp_index_send.begin() + 1);
-
-  // Pack global index send data
-  std::vector<std::int64_t> indices_send(disp_index_send.back());
-  disp_tmp = disp_index_send;
-  for (std::int64_t index : indices)
-  {
-    // TODO: optimise this call
-    const int owner = dolfinx::MPI::index_owner(size, index, num_points);
-    indices_send[disp_tmp[owner]++] = index;
-  }
-
-  // Send/receive number of indices to communicate to each process
-  std::vector<int> number_index_recv(size);
-  MPI_Alltoall(number_index_send.data(), 1, MPI_INT, number_index_recv.data(),
-               1, MPI_INT, comm);
-
-  // Compute receive displacements
-  std::vector<int> disp_index_recv(size + 1, 0);
-  std::partial_sum(number_index_recv.begin(), number_index_recv.end(),
-                   disp_index_recv.begin() + 1);
-
-  // Send/receive global indices
-  std::vector<std::int64_t> indices_recv(disp_index_recv.back());
-  MPI_Alltoallv(indices_send.data(), number_index_send.data(),
-                disp_index_send.data(), MPI_INT64_T, indices_recv.data(),
-                number_index_recv.data(), disp_index_recv.data(), MPI_INT64_T,
-                comm);
-
-  // Pack point data to send back (transpose)
-  Eigen::Array<std::int64_t, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor> x_return(
-      indices_recv.size(), gdim);
-  for (int p = 0; p < size; ++p)
-  {
-    for (int i = disp_index_recv[p]; i < disp_index_recv[p + 1]; ++i)
-    {
-      const std::int64_t index = indices_recv[i];
-      const std::int32_t index_local = index - offset_x;
-      assert(index_local >= 0);
-      x_return.row(i) = x_recv.row(index_local);
-    }
-  }
-
-  // Send back point data
-  Eigen::Array<std::int64_t, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor> my_x(
-      disp_index_send.back(), gdim);
-  MPI_Alltoallv(x_return.data(), number_index_recv.data(),
-                disp_index_recv.data(), compound_type, my_x.data(),
-                number_index_send.data(), disp_index_send.data(), compound_type,
-                comm);
-
-  return my_x;
-}
+    const Eigen::Ref<const Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic,
+                                        Eigen::RowMajor>>& x);
+//-----------------------------------------------------------------------------
+// Explixit instantiation for int64_t
+template Eigen::Array<std::int64_t, Eigen::Dynamic, Eigen::Dynamic,
+                      Eigen::RowMajor>
+Partitioning::distribute_data(
+    MPI_Comm comm, const std::vector<std::int64_t>& indices,
+    const Eigen::Ref<const Eigen::Array<std::int64_t, Eigen::Dynamic,
+                                        Eigen::Dynamic, Eigen::RowMajor>>& x);
 //-----------------------------------------------------------------------------
 std::vector<std::int64_t> Partitioning::compute_local_to_global_links(
     const graph::AdjacencyList<std::int64_t>& global,

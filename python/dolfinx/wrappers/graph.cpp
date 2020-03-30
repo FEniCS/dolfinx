@@ -42,8 +42,8 @@ void graph(py::module& m)
         [](const MPICommWrapper comm, const std::vector<std::int64_t>& indices,
            const Eigen::Ref<const Eigen::Array<
                double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>>& x) {
-          return dolfinx::graph::Partitioning::distribute_data(comm.get(),
-                                                               indices, x);
+          return dolfinx::graph::Partitioning::distribute_data<double>(
+              comm.get(), indices, x);
         });
   m.def("compute_local_to_global_links",
         &dolfinx::graph::Partitioning::compute_local_to_global_links);

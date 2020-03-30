@@ -141,7 +141,7 @@ mesh::Geometry mesh::create_geometry(
   //  Fetch node coordinates by global index from other ranks. Order of
   //  coords matches order of the indices in 'indices'
   Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor> coords
-      = graph::Partitioning::distribute_data(comm, indices, x);
+      = graph::Partitioning::distribute_data<double>(comm, indices, x);
 
   // Compute local-to-global map from local indices in dofmap to the
   // corresponding global indices in cell_nodes
@@ -168,13 +168,12 @@ mesh::Geometry mesh::create_geometry(
       throw std::runtime_error("Number of flags must match number of nodes.");
 
     // Map flags into Eigen array
-    Eigen::Map<const Eigen::Array<std::int64_t, Eigen::Dynamic, Eigen::Dynamic,
-                                  Eigen::RowMajor>>
-        flags_arr(flags.data(), flags.size(), 1);
+    const Eigen::Map<const Eigen::Array<std::int64_t, Eigen::Dynamic, 1>>
+        flags_arr(flags.data(), flags.size());
 
     Eigen::Array<std::int64_t, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
-        dist_flags_arr
-        = graph::Partitioning::distribute_data(comm, indices, flags_arr);
+        dist_flags_arr = graph::Partitioning::distribute_data<std::int64_t>(
+            comm, indices, flags_arr);
 
     for (Eigen::Index i = 0; i < dist_flags_arr.rows(); ++i)
       dist_flags.push_back(dist_flags_arr(l2l[i], 0));

@@ -128,7 +128,7 @@ public:
                       const std::string xpath = "/Xdmf/Domain");
 
   mesh::MeshTags<int>
-  read_meshtags(std::shared_ptr<const mesh::Mesh> mesh, const std::string name,
+  read_meshtags(const std::shared_ptr<const mesh::Mesh>& mesh, const std::string name,
                 const std::string xpath = "/Xdmf/Domain",
                 const std::string flags_xpath
                 = "/Xdmf/Domain/Grid");
