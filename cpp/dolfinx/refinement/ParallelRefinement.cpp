@@ -110,8 +110,7 @@ void ParallelRefinement::mark(
 {
   const std::size_t entity_dim = refinement_marker.dim();
 
-  const Eigen::Array<std::int32_t, Eigen::Dynamic, 1>& marker_indices
-      = refinement_marker.indices();
+  const std::vector<std::int32_t>& marker_indices = refinement_marker.indices();
 
   std::shared_ptr<const mesh::Mesh> mesh = refinement_marker.mesh();
   auto map_ent = mesh->topology().index_map(entity_dim);
@@ -122,9 +121,9 @@ void ParallelRefinement::mark(
     throw std::runtime_error("Connectivity missing: ("
                              + std::to_string(entity_dim) + ", 1)");
 
-  for (Eigen::Index i = 0; i < marker_indices.rows(); ++i)
+  for (const auto& i : marker_indices)
   {
-    auto edges = ent_to_edge->links(marker_indices[i]);
+    const auto edges = ent_to_edge->links(i);
     for (int j = 0; j < edges.rows(); ++j)
       mark(edges[j]);
   }
