@@ -170,19 +170,3 @@ file.write(u)
 unorm = u.vector.norm()
 if MPI.rank(mesh.mpi_comm()) == 0:
     print("Solution vector norm:", unorm)
-
-# Save colored mesh partitions in VTK format if running in parallel
-# if MPI.size(mesh.mpi_comm()) > 1:
-#    File("partitions.pvd") << MeshFunction("size_t", mesh, mesh.topology.dim, \
-#                                           MPI.rank(mesh.mpi_comm()))
-
-# Project and write stress field to post-processing file
-# W = TensorFunctionSpace(mesh, "Discontinuous Lagrange", 0)
-# stress = project(sigma(u), V=W)
-# File("stress.pvd") << stress
-
-# Plot solution
-# import matplotlib.pyplot as plt
-# import dolfinx.plotting
-# dolfinx.plotting.plot(u)
-# plt.show()

@@ -12,7 +12,8 @@ import numpy as np
 import pytest
 from dolfinx_utils.test.skips import skip_in_parallel
 
-from dolfinx import MPI, cpp, fem, Mesh, FunctionSpace, VectorFunctionSpace, FacetNormal, Function, MeshFunction
+from dolfinx import MPI, cpp, fem, Mesh, FunctionSpace, VectorFunctionSpace, FacetNormal, Function
+from dolfinx.mesh import MeshTags
 from ufl import inner, ds, dS, TestFunction, TrialFunction
 from dolfinx.cpp.mesh import CellType
 
@@ -136,8 +137,10 @@ def test_facet_integral(cell_type):
         num_facets = mesh.num_entities(mesh.topology.dim - 1)
 
         v = Function(V)
-        facet_function = MeshFunction("size_t", mesh, mesh.topology.dim - 1, 1)
-        facet_function.values[:] = range(num_facets)
+
+        indices = np.arange(0, num_facets)
+        values = np.arange(0, num_facets, dtype=np.intc)
+        marker = MeshTags(mesh, mesh.topology.dim - 1, indices, values, sorted=True, unique=True)
 
         # Functions that will have the same integral over each facet
         if cell_type == CellType.triangle:
@@ -155,7 +158,7 @@ def test_facet_integral(cell_type):
         # assert that the integral of these functions over each face are equal
         out = []
         for j in range(num_facets):
-            a = v * ds(subdomain_data=facet_function, subdomain_id=j)
+            a = v * ds(subdomain_data=marker, subdomain_id=j)
             result = fem.assemble_scalar(a)
             out.append(result)
             assert np.isclose(result, out[0])
@@ -174,8 +177,10 @@ def test_facet_normals(cell_type):
         num_facets = mesh.num_entities(mesh.topology.dim - 1)
 
         v = Function(V)
-        facet_function = MeshFunction("size_t", mesh, mesh.topology.dim - 1, 1)
-        facet_function.values[:] = range(num_facets)
+
+        indices = np.arange(0, num_facets)
+        values = np.arange(0, num_facets, dtype=np.intc)
+        marker = MeshTags(mesh, mesh.topology.dim - 1, indices, values)
 
         # For each facet, check that the inner product of the normal and
         # the vector that has a positive normal component on only that facet
@@ -209,7 +214,7 @@ def test_facet_normals(cell_type):
             # is 1 on one face and 0 on the others
             ones = 0
             for j in range(num_facets):
-                a = inner(v, normal) * ds(subdomain_data=facet_function, subdomain_id=j)
+                a = inner(v, normal) * ds(subdomain_data=marker, subdomain_id=j)
                 result = fem.assemble_scalar(a)
                 if np.isclose(result, 1):
                     ones += 1

@@ -20,7 +20,7 @@ namespace mesh
 {
 class Mesh;
 template <typename T>
-class MeshFunction;
+class MeshTags;
 } // namespace mesh
 
 namespace refinement
@@ -28,7 +28,7 @@ namespace refinement
 /// Data structure and methods for refining meshes in parallel
 
 /// ParallelRefinement encapsulates two main features: a distributed
-/// MeshFunction defined over the mesh edges, which can be updated
+/// MeshTags defined over the mesh edges, which can be updated
 /// across processes, and storage for local mesh data, which can be used
 /// to construct the new Mesh
 
@@ -62,7 +62,7 @@ public:
   /// Mark all edges incident on entities indicated by refinement marker
   /// @param[in] refinement_marker Value 1 means "refine", any other
   ///   value means "do not refine"
-  void mark(const mesh::MeshFunction<int>& refinement_marker);
+  void mark(const mesh::MeshTags<std::int8_t>& refinement_marker);
 
   /// Transfer marked edges between processes
   void update_logical_edgefunction();

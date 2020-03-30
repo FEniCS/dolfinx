@@ -12,6 +12,7 @@ import pytest
 from petsc4py import PETSc
 
 import dolfinx
+from dolfinx.mesh import locate_entities_geometrical
 import ufl
 from ufl import derivative, dx, inner
 
@@ -57,9 +58,7 @@ def test_matrix_assembly_block():
         return numpy.cos(x[0]) * numpy.cos(x[1])
 
     facetdim = mesh.topology.dim - 1
-    mf = dolfinx.MeshFunction("size_t", mesh, facetdim, 0)
-    mf.mark(boundary, 1)
-    bndry_facets = numpy.where(mf.values == 1)[0]
+    bndry_facets = locate_entities_geometrical(mesh, facetdim, boundary, boundary_only=True)
 
     u_bc = dolfinx.function.Function(V1)
     u_bc.interpolate(bc_value)
@@ -266,9 +265,7 @@ def test_assembly_solve_block():
         return numpy.logical_or(x[0] < 1.0e-6, x[0] > 1.0 - 1.0e-6)
 
     facetdim = mesh.topology.dim - 1
-    mf = dolfinx.MeshFunction("size_t", mesh, facetdim, 0)
-    mf.mark(boundary, 1)
-    bndry_facets = numpy.where(mf.values == 1)[0]
+    bndry_facets = locate_entities_geometrical(mesh, facetdim, boundary, boundary_only=True)
 
     u_bc0 = dolfinx.function.Function(V0)
     u_bc0.interpolate(bc_val_0)
@@ -472,11 +469,8 @@ def test_assembly_solve_taylor_hood(mesh):
     u_bc_1.interpolate(lambda x: numpy.row_stack(tuple(numpy.sin(x[j]) for j in range(gdim))))
 
     facetdim = mesh.topology.dim - 1
-    mf = dolfinx.MeshFunction("size_t", mesh, facetdim, 0)
-    mf.mark(boundary0, 1)
-    mf.mark(boundary1, 2)
-    bndry_facets0 = numpy.where(mf.values == 1)[0]
-    bndry_facets1 = numpy.where(mf.values == 2)[0]
+    bndry_facets0 = locate_entities_geometrical(mesh, facetdim, boundary0, boundary_only=True)
+    bndry_facets1 = locate_entities_geometrical(mesh, facetdim, boundary1, boundary_only=True)
 
     bdofs0 = dolfinx.fem.locate_dofs_topological(P2, facetdim, bndry_facets0)
     bdofs1 = dolfinx.fem.locate_dofs_topological(P2, facetdim, bndry_facets1)
