@@ -216,8 +216,6 @@ public:
   /// @return The rank of the owning process
   static std::uint32_t index_owner(int size, std::size_t index, std::size_t N);
 
-  static int index_owner(int size, std::size_t index, std::vector<std::vector<int>> sizes);
-
   template <typename T>
   struct dependent_false : std::false_type
   {
