@@ -485,21 +485,18 @@ DofMapBuilder::build(MPI_Comm comm, const mesh::Topology& topology,
     auto [index_map, dofmap]
         = DofMapBuilder::build(comm, topology, *element_dof_layout, 1);
     return {element_dof_layout, index_map, std::move(dofmap)};
-    // return fem::DofMap(element_dof_layout, index_map, std::move(dofmap));
   }
   else
   {
     auto [index_map, dofmap] = DofMapBuilder::build(
         comm, topology, *element_dof_layout->sub_dofmap({0}), bs);
     return {element_dof_layout, index_map, std::move(dofmap)};
-    // return fem::DofMap(element_dof_layout, index_map, std::move(dofmap));
   }
 }
 //-----------------------------------------------------------------------------
 std::pair<std::shared_ptr<common::IndexMap>, graph::AdjacencyList<std::int32_t>>
 DofMapBuilder::build(MPI_Comm comm, const mesh::Topology& topology,
-                     const ElementDofLayout& element_dof_layout,
-                     const std::int32_t block_size)
+                     const ElementDofLayout& element_dof_layout, int block_size)
 {
   common::Timer t0("Init dofmap");
 
