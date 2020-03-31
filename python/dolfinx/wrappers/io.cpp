@@ -39,8 +39,7 @@ void io(py::module& m)
   m.def("permute_cell_ordering", &dolfinx::io::cells::permute_ordering);
 
   // dolfinx::io::XDMFFile
-  py::class_<dolfinx::io::XDMFFile,
-             std::shared_ptr<dolfinx::io::XDMFFile>>
+  py::class_<dolfinx::io::XDMFFile, std::shared_ptr<dolfinx::io::XDMFFile>>
       xdmf_file(m, "XDMFFile");
 
   // dolfinx::io::XDMFFile::Encoding enums
@@ -64,14 +63,14 @@ void io(py::module& m)
               py::object exc_value, py::object traceback) { self.close(); })
       .def("close", &dolfinx::io::XDMFFile::close)
       .def("write_mesh", &dolfinx::io::XDMFFile::write_mesh, py::arg("mesh"),
-           py::arg("name") = "mesh", py::arg("xpath") = "/Xdmf/Domain")
+           py::arg("xpath") = "/Xdmf/Domain")
       .def("write_geometry", &dolfinx::io::XDMFFile::write_geometry,
            py::arg("geometry"), py::arg("name") = "geometry",
            py::arg("xpath") = "/Xdmf/Domain")
       .def("read_mesh", &dolfinx::io::XDMFFile::read_mesh, py::arg("name"),
            py::arg("xpath"))
       .def("read_mesh_data", &dolfinx::io::XDMFFile::read_mesh_data,
-           py::arg("name") = "mesh", py::arg("xpath") = "/Xdmf/Domain")
+           py::arg("name"), py::arg("xpath") = "/Xdmf/Domain")
       .def("write_function", &dolfinx::io::XDMFFile::write_function,
            py::arg("function"), py::arg("t"), py::arg("mesh_xpath"))
       .def("write_meshtags", &dolfinx::io::XDMFFile::write_meshtags,

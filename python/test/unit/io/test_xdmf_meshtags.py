@@ -22,74 +22,43 @@ else:
     encodings = (XDMFFile.Encoding.HDF5, XDMFFile.Encoding.ASCII)
     encodings = (XDMFFile.Encoding.HDF5, )
 
-celltypes_3D = [CellType.tetrahedron]#, CellType.hexahedron]
-celltypes_2D = [CellType.triangle]
+celltypes_3D = [CellType.tetrahedron, CellType.hexahedron]
 
 
-@pytest.mark.parametrize("cell_type", celltypes_2D)
+@pytest.mark.parametrize("cell_type", celltypes_3D)
 @pytest.mark.parametrize("encoding", encodings)
 def test_3d(tempdir, cell_type, encoding):
-    filename = os.path.join(tempdir, "meshtags_2d.xdmf")
-    mesh = UnitSquareMesh(MPI.comm_world, 10, 10, cell_type)
+    filename = os.path.join(tempdir, "meshtags_3d.xdmf")
+    comm = MPI.comm_world
+    mesh = UnitCubeMesh(comm, 10, 10, 10, cell_type)
     mesh.create_connectivity_all()
-    rank = MPI.rank(MPI.comm_world)
 
-    bottom_facets = locate_entities_geometrical(mesh, 1, lambda x: numpy.isclose(x[1], 0.0))
-    left_facets = locate_entities_geometrical(mesh, 1, lambda x: numpy.isclose(x[0], 0.0))
-
-    # print(rank, bottom_facets)
-    # print(rank, mesh.topology.index_map(2).size_local)
-    # exit()
+    bottom_facets = locate_entities_geometrical(mesh, 2, lambda x: numpy.isclose(x[1], 0.0))
+    left_facets = locate_entities_geometrical(mesh, 2, lambda x: numpy.isclose(x[0], 0.0))
 
     bottom_values = numpy.full(bottom_facets.shape, 1, dtype=numpy.intc)
     left_values = numpy.full(left_facets.shape, 2, dtype=numpy.intc)
 
-    mt = MeshTags(mesh, 1, bottom_facets, bottom_values)
-    mt.append(left_facets, left_values)
-    mt.name = "mt_facets"
+    mt = MeshTags(mesh, 2, numpy.hstack((bottom_facets, left_facets)), numpy.hstack((bottom_values, left_values)))
+    mt.name = "facets"
 
-    num_cells = mesh.topology.index_map(mesh.topology.dim).size_local
-    partition = numpy.arange(0, num_cells)
+    top_lines = locate_entities_geometrical(mesh, 1, lambda x: numpy.isclose(x[2], 1.0))
+    right_lines = locate_entities_geometrical(mesh, 1, lambda x: numpy.isclose(x[0], 1.0))
 
-    mt_part = MeshTags(mesh, 2, partition, numpy.full(partition.shape, rank, dtype=numpy.intc))
-    mt_part.name = "part"
+    top_values = numpy.full(top_lines.shape, 3, dtype=numpy.intc)
+    right_values = numpy.full(right_lines.shape, 4, dtype=numpy.intc)
 
-    # top_lines = locate_entities_geometrical(mesh, 1, lambda x: numpy.isclose(x[2], 1.0))
-    # right_lines = locate_entities_geometrical(mesh, 1, lambda x: numpy.isclose(x[0], 1.0))
+    mt_lines = MeshTags(mesh, 1, numpy.hstack((top_lines, right_lines)), numpy.hstack((top_values, right_values)))
+    mt_lines.name = "lines"
 
-    # top_values = numpy.full(top_lines.shape, 3, dtype=numpy.intc)
-    # right_values = numpy.full(right_lines.shape, 4, dtype=numpy.intc)
-
-    # mt_lines = MeshTags(mesh, 1, top_lines, top_values)
-    # mt_lines.append_unique(right_lines, right_values)
-    # mt_lines.name = "mt_lines"
-
-    with XDMFFile(MPI.comm_world, filename, "w", encoding=encoding) as file:
+    with XDMFFile(comm, filename, "w", encoding=encoding) as file:
         file.write_mesh(mesh)
         file.write_meshtags(mt)
-        file.write_meshtags(mt_part)
+        file.write_meshtags(mt_lines)
 
-    mesh.mpi_comm().barrier()
-
-    # with XDMFFile(mesh.mpi_comm(), filename, "a", encoding=encoding) as file:
-    #     file.write_meshtags(mt_lines)
-
-    with XDMFFile(MPI.comm_world, filename, "r", encoding=encoding) as file:
+    with XDMFFile(comm, filename, "r", encoding=encoding) as file:
         mesh_in = file.read_mesh()
         mesh_in.create_connectivity_all()
-        mt_in = file.read_meshtags(mesh_in, "mt_facets")
-        mt_part_in = file.read_meshtags(mesh_in, "part")
 
-    num_cells = mesh_in.topology.index_map(mesh_in.topology.dim).size_local
-    partition = numpy.arange(0, num_cells)
-
-    mt_in_part = MeshTags(mesh_in, 2, partition, numpy.full(partition.shape, rank, dtype=numpy.intc))
-    mt_in_part.name = "part_in"
-
-    with XDMFFile(MPI.comm_world, os.path.join(tempdir, "out_meshtags_2d.xdmf"), "w", encoding=encoding) as file:
-        file.write_mesh(mesh_in)
-        file.write_meshtags(mt_in_part)
-        file.write_meshtags(mt_part_in)
-    #     file.write_meshtags(mt_in)
-
-    # assert numpy.allclose(mt_lines_in.indices, mt_lines.indices)
+        mt_in = file.read_meshtags(mesh_in, "facets")
+        mt_lines_in = file.read_meshtags(mesh_in, "lines")

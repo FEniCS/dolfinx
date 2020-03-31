@@ -186,6 +186,9 @@ public:
   /// @return The communicator on which the mesh is distributed
   MPI_Comm mpi_comm() const;
 
+  /// Name
+  std::string name = "mesh";
+
 private:
   // Mesh topology
   std::unique_ptr<Topology> _topology;

@@ -6,9 +6,9 @@
 
 #pragma once
 
+#include "HDF5Interface.h"
 #include <dolfinx/common/MPI.h>
 #include <dolfinx/mesh/cell_types.h>
-#include "HDF5Interface.h"
 #include <memory>
 #include <string>
 
@@ -90,7 +90,7 @@ public:
   /// @param[in] mesh
   /// @param[in] name
   /// @param[in] xpath XPath where Mesh Grid will be written
-  void write_mesh(const mesh::Mesh& mesh, const std::string name = "mesh",
+  void write_mesh(const mesh::Mesh& mesh,
                   const std::string xpath = "/Xdmf/Domain");
 
   void write_geometry(const mesh::Geometry& geometry,
@@ -102,7 +102,7 @@ public:
   /// @param[in] xpath XPath where Mesh Grid is located
   /// @return A Mesh distributed on the same communicator as the
   ///   XDMFFile
-  mesh::Mesh read_mesh(const std::string name = "mesh",
+  mesh::Mesh read_mesh(const std::string name,
                        const std::string xpath = "/Xdmf/Domain") const;
 
   /// Read in the data from the first mesh in XDMF file
@@ -113,7 +113,7 @@ public:
       Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>,
       Eigen::Array<std::int64_t, Eigen::Dynamic, Eigen::Dynamic,
                    Eigen::RowMajor>>
-  read_mesh_data(const std::string name = "mesh",
+  read_mesh_data(const std::string name,
                  const std::string xpath = "/Xdmf/Domain") const;
 
   /// Write Function
@@ -128,10 +128,10 @@ public:
                       const std::string xpath = "/Xdmf/Domain");
 
   mesh::MeshTags<int>
-  read_meshtags(const std::shared_ptr<const mesh::Mesh>& mesh, const std::string name,
+  read_meshtags(const std::shared_ptr<const mesh::Mesh>& mesh,
+                const std::string name,
                 const std::string xpath = "/Xdmf/Domain",
-                const std::string flags_xpath
-                = "/Xdmf/Domain/Grid");
+                const std::string flags_xpath = "/Xdmf/Domain/Grid");
 
 private:
   // MPI communicator

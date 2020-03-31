@@ -258,7 +258,7 @@ Partitioning::reorder_global_indices(
     for (int j = 0; j < sharing_processes->num_nodes(); ++j)
     {
       auto p = sharing_processes->links(j);
-      const auto *it = std::find(p.data(), p.data() + p.rows(), neighbours[i]);
+      const auto* it = std::find(p.data(), p.data() + p.rows(), neighbours[i]);
       if (it != (p.data() + p.rows()))
         number_send_neigh[i] += 2;
     }
@@ -785,6 +785,13 @@ Partitioning::distribute_data(
     MPI_Comm comm, const std::vector<std::int64_t>& indices,
     const Eigen::Ref<const Eigen::Array<std::int64_t, Eigen::Dynamic,
                                         Eigen::Dynamic, Eigen::RowMajor>>& x);
+//-----------------------------------------------------------------------------
+// Explixit instantiation for int
+template Eigen::Array<int, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
+Partitioning::distribute_data(
+    MPI_Comm comm, const std::vector<std::int64_t>& indices,
+    const Eigen::Ref<const Eigen::Array<int, Eigen::Dynamic, Eigen::Dynamic,
+                                        Eigen::RowMajor>>& x);
 //-----------------------------------------------------------------------------
 std::vector<std::int64_t> Partitioning::compute_local_to_global_links(
     const graph::AdjacencyList<std::int64_t>& global,
