@@ -68,7 +68,7 @@ void io(py::module& m)
       .def("read_mesh", &dolfinx::io::XDMFFile::read_mesh, py::arg("name"),
            py::arg("xpath"), py::arg("flags"))
       .def("read_mesh_data", &dolfinx::io::XDMFFile::read_mesh_data,
-           py::arg("name"), py::arg("xpath") = "/Xdmf/Domain")
+           py::arg("name") = "mesh", py::arg("xpath") = "/Xdmf/Domain")
       .def("write_function", &dolfinx::io::XDMFFile::write_function,
            py::arg("function"), py::arg("t"), py::arg("mesh_xpath"))
       .def("write_meshtags", &dolfinx::io::XDMFFile::write_meshtags,

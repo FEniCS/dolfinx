@@ -128,7 +128,7 @@ public:
       Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>,
       Eigen::Array<std::int64_t, Eigen::Dynamic, Eigen::Dynamic,
                    Eigen::RowMajor>>
-  read_mesh_data(const std::string name,
+  read_mesh_data(const std::string name = "mesh",
                  const std::string xpath = "/Xdmf/Domain") const;
 
   /// Write Function
