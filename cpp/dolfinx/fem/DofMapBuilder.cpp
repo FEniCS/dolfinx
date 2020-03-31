@@ -17,7 +17,6 @@
 #include <dolfinx/graph/SCOTCH.h>
 #include <dolfinx/mesh/Topology.h>
 #include <memory>
-#include <numeric>
 #include <random>
 #include <unordered_map>
 #include <utility>

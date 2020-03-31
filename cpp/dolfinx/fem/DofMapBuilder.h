@@ -6,10 +6,9 @@
 
 #pragma once
 
-#include "petscsys.h"
 #include <dolfinx/graph/AdjacencyList.h>
-#include <dolfinx/mesh/cell_types.h>
 #include <memory>
+#include <mpi.h>
 #include <tuple>
 #include <vector>
 
