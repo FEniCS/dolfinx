@@ -58,16 +58,11 @@ XDMFFile::XDMFFile(MPI_Comm comm, const std::string filename,
     : _mpi_comm(comm), _filename(filename), _file_mode(file_mode),
       _xml_doc(new pugi::xml_document), _encoding(encoding)
 {
-  // Check encoding
-  if (_encoding == Encoding::ASCII and MPI::size(_mpi_comm.comm()) != 1)
-  {
-    throw std::runtime_error(
-        "Cannot read/write ASCII XDMF in parallel (use HDF5 encoding).");
-  }
-
+  //
   // Handle HDF5 and XDMF files with the file mode
   // At the end of this we will have _hdf5_file and _xml_doc
   // both pointing to a valid and opened file handles
+  //
 
   if (_encoding == Encoding::HDF5)
   {
@@ -91,7 +86,10 @@ XDMFFile::XDMFFile(MPI_Comm comm, const std::string filename,
     LOG(INFO) << "Opened HDF5 file with id \"" << _h5_id << "\"";
   }
   else
+  {
+    // HDF handle be -1 to avoid closing a HDF file on destruction
     _h5_id = -1;
+  }
 
   if (_file_mode == "r")
   {
