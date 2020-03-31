@@ -363,7 +363,7 @@ def test_topology_partition(tempdir, shape, order):
     x_g = coords[l2l]
 
     # Create Geometry
-    geometry = cpp.mesh.Geometry(dof_index_map, dofmap, layout, x_g, l2g)
+    geometry = cpp.mesh.Geometry(dof_index_map, dofmap, layout, x_g, l2g, indices)
 
     # Create mesh
     mesh = cpp.mesh.Mesh(cpp.MPI.comm_world, topology, geometry)
