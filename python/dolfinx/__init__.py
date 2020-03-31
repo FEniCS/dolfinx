@@ -8,25 +8,6 @@
 # flake8: noqa
 
 # Store dl open flags to restore them after import
-from dolfinx import cpp
-from .mesh import MeshTags
-from .specialfunctions import (FacetNormal, CellVolume, CellNormal,
-                               CellDiameter, Circumradius)
-from .function import (FunctionSpace, VectorFunctionSpace,
-                       TensorFunctionSpace, Constant, Function)
-from .fem.solving import solve
-from .fem.dirichletbc import DirichletBC
-from .fem.form import Form
-from .cpp.nls import (NonlinearProblem, NewtonSolver)
-from .cpp.mesh import Mesh, Topology, Geometry, MeshEntity, MeshQuality
-from dolfinx.generation import (IntervalMesh, BoxMesh, RectangleMesh,
-                                UnitIntervalMesh, UnitSquareMesh, UnitCubeMesh)
-import dolfinx.log
-import dolfinx.MPI
-from dolfinx.common import (has_debug, has_petsc_complex, has_kahip,
-                            has_parmetis, git_commit_hash, TimingType, timing,
-                            timings, list_timings)
-from .cpp import __version__
 import sys
 stored_dlopen_flags = sys.getdlopenflags()
 
@@ -47,13 +28,43 @@ del sys
 # del sys
 
 # Import cpp modules
+from .cpp import __version__
 
 
-# Initialise PETSc
-cpp.common.SubSystemsManager.init_logging(sys.argv)
+from dolfinx.common import (has_debug, has_petsc_complex, has_kahip,
+                           has_parmetis, git_commit_hash, TimingType, timing,
+                           timings, list_timings)
+
+import dolfinx.MPI
+import dolfinx.log
+
+from dolfinx.generation import (IntervalMesh, BoxMesh, RectangleMesh,
+                               UnitIntervalMesh, UnitSquareMesh, UnitCubeMesh)
+
+from .cpp.mesh import Mesh, Topology, Geometry, MeshEntity, MeshQuality
+
+from .cpp.nls import (NonlinearProblem, NewtonSolver)
+
+from .fem.form import Form
+from .fem.dirichletbc import DirichletBC
+from .fem.solving import solve
+
+from .function import (FunctionSpace, VectorFunctionSpace,
+                       TensorFunctionSpace, Constant, Function)
+from .specialfunctions import (FacetNormal, CellVolume, CellNormal,
+                               CellDiameter, Circumradius)
+
+from .mesh import MeshTags
+
+# Initialise PETSc and logging
+from dolfinx import cpp
+import sys
+# FIXME: We're not passing command link argument here because some
+# pytest arg crash loguru
+cpp.common.SubSystemsManager.init_logging([""])
+# cpp.common.SubSystemsManager.init_logging(sys.argv)
 del sys
 cpp.common.SubSystemsManager.init_petsc()
-
 
 def get_include(user=False):
     import os
