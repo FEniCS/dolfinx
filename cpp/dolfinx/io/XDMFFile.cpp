@@ -162,12 +162,13 @@ void XDMFFile::close()
   _h5_id = -1;
 }
 //-----------------------------------------------------------------------------
-void XDMFFile::write_mesh(const mesh::Mesh& mesh, const std::string xpath)
+void XDMFFile::write_mesh(const mesh::Mesh& mesh, const std::string xpath,
+                          const bool flags)
 {
   pugi::xml_node node = _xml_doc->select_node(xpath.c_str()).node();
 
   // Add the mesh Grid to the domain
-  xdmf_mesh::add_mesh(_mpi_comm.comm(), node, _h5_id, mesh, mesh.name);
+  xdmf_mesh::add_mesh(_mpi_comm.comm(), node, _h5_id, mesh, mesh.name, flags);
 
   // Save XML file (on process 0 only)
   if (MPI::rank(_mpi_comm.comm()) == 0)
@@ -175,7 +176,8 @@ void XDMFFile::write_mesh(const mesh::Mesh& mesh, const std::string xpath)
 }
 //-----------------------------------------------------------------------------
 void XDMFFile::write_geometry(const mesh::Geometry& geometry,
-                              const std::string name, const std::string xpath)
+                              const std::string name, const std::string xpath,
+                              const bool flags)
 {
   pugi::xml_node node = _xml_doc->select_node(xpath.c_str()).node();
 
@@ -189,13 +191,17 @@ void XDMFFile::write_geometry(const mesh::Geometry& geometry,
   xdmf_mesh::add_geometry_data(_mpi_comm.comm(), grid_node, _h5_id, path_prefix,
                                geometry);
 
+  if (flags)
+    xdmf_mesh::add_flags(_mpi_comm.comm(), grid_node, _h5_id, path_prefix,
+                         geometry);
+
   // Save XML file (on process 0 only)
   if (MPI::rank(_mpi_comm.comm()) == 0)
     _xml_doc->save_file(_filename.c_str(), "  ");
 }
 //-----------------------------------------------------------------------------
-mesh::Mesh XDMFFile::read_mesh(const std::string name,
-                               const std::string xpath) const
+mesh::Mesh XDMFFile::read_mesh(const std::string name, const std::string xpath,
+                               const bool flags) const
 {
   pugi::xml_node node = _xml_doc->select_node(xpath.c_str()).node();
   pugi::xml_node grid_node
@@ -252,12 +258,13 @@ mesh::Mesh XDMFFile::read_mesh(const std::string name,
   if (index_map)
     topology.set_index_map(1, index_map);
 
-  const std::vector<std::int64_t> flags
-      = xdmf_mesh::read_flags(_mpi_comm.comm(), _h5_id, grid_node);
+  std::vector<std::int64_t> _flags;
+  if (flags)
+    _flags = xdmf_mesh::read_flags(_mpi_comm.comm(), _h5_id, grid_node);
 
   // Create Geometry
   const mesh::Geometry geometry = mesh::create_geometry(
-      _mpi_comm.comm(), topology, layout, cell_nodes, x, flags);
+      _mpi_comm.comm(), topology, layout, cell_nodes, x, _flags);
 
   // Return Mesh
   return mesh::Mesh(_mpi_comm.comm(), topology, geometry);

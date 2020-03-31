@@ -39,7 +39,7 @@ class XDMFFile(cpp.io.XDMFFile):
         u_cpp = getattr(u, "_cpp_object", u)
         super().write_function(u_cpp, t, mesh_xpath)
 
-    def read_mesh(self, name="mesh", xpath="/Xdmf/Domain"):
-        mesh = super().read_mesh(name, xpath)
+    def read_mesh(self, name="mesh", xpath="/Xdmf/Domain", flags=True):
+        mesh = super().read_mesh(name, xpath, flags)
         mesh.geometry.coord_mapping = fem.create_coordinate_map(mesh)
         return mesh

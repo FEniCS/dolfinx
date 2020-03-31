@@ -100,7 +100,7 @@ void xdmf_mesh::add_topology_data(
       {
         const int v_index = perm[v];
         const int vertex = vertices[v_index];
-        const auto *it
+        const auto* it
             = std::find(cell_vertices.data(),
                         cell_vertices.data() + cell_vertices.rows(), vertex);
         assert(it != (cell_vertices.data() + cell_vertices.rows()));
@@ -120,7 +120,6 @@ void xdmf_mesh::add_topology_data(
   assert(topology_data.size() % num_nodes_per_entity == 0);
   const std::int32_t num_entities_local
       = (std::int32_t)(topology_data.size() / num_nodes_per_entity);
-  assert((std::size_t)num_entities_local == active_entities.size());
 
   const std::int64_t num_entities_global
       = dolfinx::MPI::sum(comm, (std::int64_t)num_entities_local);
@@ -224,7 +223,7 @@ void xdmf_mesh::add_flags(MPI_Comm comm, pugi::xml_node& xml_node,
 //----------------------------------------------------------------------------
 void xdmf_mesh::add_mesh(MPI_Comm comm, pugi::xml_node& xml_node,
                          const hid_t h5_id, const mesh::Mesh& mesh,
-                         const std::string name)
+                         const std::string name, const bool flags)
 {
   LOG(INFO) << "Adding mesh to node \"" << xml_node.path('/') << "\"";
 
@@ -252,7 +251,8 @@ void xdmf_mesh::add_mesh(MPI_Comm comm, pugi::xml_node& xml_node,
   // Add geometry node and attributes (including writing data)
   add_geometry_data(comm, grid_node, h5_id, path_prefix, mesh.geometry());
 
-  add_flags(comm, grid_node, h5_id, path_prefix, mesh.geometry());
+  if (flags)
+    add_flags(comm, grid_node, h5_id, path_prefix, mesh.geometry());
 }
 //----------------------------------------------------------------------------
 std::tuple<
@@ -318,8 +318,7 @@ xdmf_mesh::read_mesh_data(MPI_Comm comm, const hid_t h5_id,
 
   // Read topology data
   const std::vector<std::int64_t> topology_data
-      = xdmf_read::get_dataset<std::int64_t>(comm, topology_data_node,
-                                             h5_id);
+      = xdmf_read::get_dataset<std::int64_t>(comm, topology_data_node, h5_id);
   const int num_local_cells = topology_data.size() / npoint_per_cell;
   Eigen::Map<const Eigen::Array<std::int64_t, Eigen::Dynamic, Eigen::Dynamic,
                                 Eigen::RowMajor>>
@@ -351,4 +350,3 @@ std::vector<std::int64_t> xdmf_mesh::read_flags(MPI_Comm comm,
   return x_flags;
 }
 //----------------------------------------------------------------------------
-

@@ -14,9 +14,7 @@
 #include <dolfinx/io/cells.h>
 #include <dolfinx/la/PETScVector.h>
 #include <dolfinx/mesh/Mesh.h>
-#include <dolfinx/mesh/MeshFunction.h>
 #include <dolfinx/mesh/MeshTags.h>
-#include <dolfinx/mesh/MeshValueCollection.h>
 #include <memory>
 #include <pybind11/eigen.h>
 #include <pybind11/numpy.h>
@@ -63,12 +61,12 @@ void io(py::module& m)
               py::object exc_value, py::object traceback) { self.close(); })
       .def("close", &dolfinx::io::XDMFFile::close)
       .def("write_mesh", &dolfinx::io::XDMFFile::write_mesh, py::arg("mesh"),
-           py::arg("xpath") = "/Xdmf/Domain")
+           py::arg("xpath") = "/Xdmf/Domain", py::arg("flags") = true)
       .def("write_geometry", &dolfinx::io::XDMFFile::write_geometry,
            py::arg("geometry"), py::arg("name") = "geometry",
-           py::arg("xpath") = "/Xdmf/Domain")
+           py::arg("xpath") = "/Xdmf/Domain", py::arg("flags") = true)
       .def("read_mesh", &dolfinx::io::XDMFFile::read_mesh, py::arg("name"),
-           py::arg("xpath"))
+           py::arg("xpath"), py::arg("flags"))
       .def("read_mesh_data", &dolfinx::io::XDMFFile::read_mesh_data,
            py::arg("name"), py::arg("xpath") = "/Xdmf/Domain")
       .def("write_function", &dolfinx::io::XDMFFile::write_function,
