@@ -64,7 +64,7 @@ def test_3d(tempdir, cell_type, encoding):
         mt_in = file.read_meshtags(mesh_in, "facets")
         mt_lines_in = file.read_meshtags(mesh_in, "lines")
         assert mt_in.name == "facets"
-        assert mt_lines_in == "lines"
+        assert mt_lines_in.name == "lines"
 
     with XDMFFile(comm, os.path.join(tempdir, "meshtags_3d_out.xdmf"), "w", encoding=encoding) as file:
         file.write_mesh(mesh_in)
