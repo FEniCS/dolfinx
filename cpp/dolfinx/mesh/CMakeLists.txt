@@ -12,6 +12,7 @@ set(HEADERS_mesh
   ${CMAKE_CURRENT_SOURCE_DIR}/MeshQuality.h
   ${CMAKE_CURRENT_SOURCE_DIR}/Topology.h
   ${CMAKE_CURRENT_SOURCE_DIR}/MeshValueCollection.h
+  ${CMAKE_CURRENT_SOURCE_DIR}/MeshTags.h
   ${CMAKE_CURRENT_SOURCE_DIR}/TopologyComputation.h
   ${CMAKE_CURRENT_SOURCE_DIR}/cell_types.h
   ${CMAKE_CURRENT_SOURCE_DIR}/utils.h

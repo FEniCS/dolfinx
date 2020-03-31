@@ -54,13 +54,15 @@ from .function import (FunctionSpace, VectorFunctionSpace,
 from .specialfunctions import (FacetNormal, CellVolume, CellNormal,
                                CellDiameter, Circumradius)
 
-from .mesh import MeshFunction
-from .mesh import MeshValueCollection
+from .mesh import MeshFunction, MeshValueCollection
 
-# Initialise PETSc
+# Initialise PETSc and logging
 from dolfinx import cpp
 import sys
-cpp.common.SubSystemsManager.init_logging(sys.argv)
+# FIXME: We're not passing command link argument here because some
+# pytest arg crash loguru
+cpp.common.SubSystemsManager.init_logging([""])
+# cpp.common.SubSystemsManager.init_logging(sys.argv)
 del sys
 cpp.common.SubSystemsManager.init_petsc()
 

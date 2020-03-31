@@ -6,6 +6,8 @@
 
 #pragma once
 
+#include <cstdint>
+
 namespace dolfinx
 {
 
@@ -14,7 +16,7 @@ namespace mesh
 // Forward declarations
 class Mesh;
 template <typename T>
-class MeshFunction;
+class MeshTags;
 } // namespace mesh
 
 namespace refinement
@@ -38,7 +40,7 @@ mesh::Mesh refine(const mesh::Mesh& mesh, bool redistribute = true);
 ///     refined mesh if mesh is a distributed mesh.
 /// @return A locally refined mesh
 mesh::Mesh refine(const mesh::Mesh& mesh,
-                  const mesh::MeshFunction<int>& cell_markers,
+                  const mesh::MeshTags<std::int8_t>& cell_markers,
                   bool redistribute = true);
 
 } // namespace refinement

@@ -12,7 +12,7 @@
 #include <dolfinx/mesh/DistributedMeshTools.h>
 #include <dolfinx/mesh/Geometry.h>
 #include <dolfinx/mesh/Mesh.h>
-#include <dolfinx/mesh/MeshFunction.h>
+#include <dolfinx/mesh/MeshTags.h>
 #include <dolfinx/mesh/Partitioning.h>
 #include <dolfinx/mesh/Topology.h>
 #include <dolfinx/mesh/TopologyComputation.h>
@@ -105,32 +105,27 @@ ParallelRefinement::edge_to_new_vertex() const
   return _local_edge_to_new_vertex;
 }
 //-----------------------------------------------------------------------------
-void ParallelRefinement::mark(const mesh::MeshFunction<int>& refinement_marker)
+void ParallelRefinement::mark(
+    const mesh::MeshTags<std::int8_t>& refinement_marker)
 {
   const std::size_t entity_dim = refinement_marker.dim();
 
-  // Get reference to mesh function data array
-  const Eigen::Array<int, Eigen::Dynamic, 1>& mf_values
-      = refinement_marker.values();
+  const std::vector<std::int32_t>& marker_indices = refinement_marker.indices();
 
   std::shared_ptr<const mesh::Mesh> mesh = refinement_marker.mesh();
   auto map_ent = mesh->topology().index_map(entity_dim);
   assert(map_ent);
-  const int num_entities = map_ent->size_local() + map_ent->num_ghosts();
 
   auto ent_to_edge = mesh->topology().connectivity(entity_dim, 1);
   if (!ent_to_edge)
     throw std::runtime_error("Connectivity missing: ("
                              + std::to_string(entity_dim) + ", 1)");
 
-  for (int i = 0; i < num_entities; ++i)
+  for (const auto& i : marker_indices)
   {
-    if (mf_values[i] == 1)
-    {
-      auto edges = ent_to_edge->links(i);
-      for (int j = 0; j < edges.rows(); ++j)
-        mark(edges[j]);
-    }
+    const auto edges = ent_to_edge->links(i);
+    for (int j = 0; j < edges.rows(); ++j)
+      mark(edges[j]);
   }
 }
 //-----------------------------------------------------------------------------

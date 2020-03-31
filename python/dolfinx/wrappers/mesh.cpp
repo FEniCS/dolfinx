@@ -14,6 +14,7 @@
 #include <dolfinx/mesh/Mesh.h>
 #include <dolfinx/mesh/MeshEntity.h>
 #include <dolfinx/mesh/MeshFunction.h>
+#include <dolfinx/mesh/MeshTags.h>
 #include <dolfinx/mesh/MeshQuality.h>
 #include <dolfinx/mesh/MeshValueCollection.h>
 #include <dolfinx/mesh/Partitioning.h>
@@ -286,6 +287,48 @@ void mesh(py::module& m)
   MESHVALUECOLLECTION_MACRO(std::size_t, sizet);
 #undef MESHVALUECOLLECTION_MACRO
 
+// dolfinx::mesh::MeshTags
+#define MESHTAGS_MACRO(SCALAR, SCALAR_NAME)                                    \
+  py::class_<dolfinx::mesh::MeshTags<SCALAR>,                                  \
+             std::shared_ptr<dolfinx::mesh::MeshTags<SCALAR>>>(                \
+      m, "MeshTags_" #SCALAR_NAME, "DOLFIN MeshTags object")                   \
+      .def(py::init([](const std::shared_ptr<const dolfinx::mesh::Mesh>& mesh, \
+                       int dim, const py::array_t<std::int32_t>& indices,      \
+                       const py::array_t<SCALAR>& values, bool sorted,         \
+                       bool unique) {                                          \
+        std::vector<std::int32_t> indices_vec(                                 \
+            indices.data(), indices.data() + indices.size());                  \
+        std::vector<SCALAR> values_vec(values.data(),                          \
+                                       values.data() + values.size());         \
+        return std::make_unique<dolfinx::mesh::MeshTags<SCALAR>>(              \
+            mesh, dim, std::move(indices_vec), std::move(values_vec), sorted,  \
+            unique);                                                           \
+      }))                                                                      \
+      .def_readwrite("name", &dolfinx::mesh::MeshTags<SCALAR>::name)           \
+      .def_property_readonly("dim", &dolfinx::mesh::MeshTags<SCALAR>::dim)     \
+      .def_property_readonly("mesh", &dolfinx::mesh::MeshTags<SCALAR>::mesh)   \
+      .def("ufl_id",                                                           \
+           [](const dolfinx::mesh::MeshTags<SCALAR>& self) {                   \
+             return self.id();                                                 \
+           })                                                                  \
+      .def_property_readonly("values",                                         \
+                             [](dolfinx::mesh::MeshTags<SCALAR>& self) {       \
+                               return py::array_t<SCALAR>(                     \
+                                   self.values().size(), self.values().data(), \
+                                   py::none());                                \
+                             })                                                \
+      .def_property_readonly(                                                  \
+          "indices", [](dolfinx::mesh::MeshTags<SCALAR>& self) {               \
+            return py::array_t<std::int32_t>(                                  \
+                self.indices().size(), self.indices().data(), py::none());     \
+          });
+
+  MESHTAGS_MACRO(std::int8_t, int8);
+  MESHTAGS_MACRO(int, int);
+  MESHTAGS_MACRO(double, double);
+  MESHTAGS_MACRO(std::int64_t, int64);
+#undef MESHTAGS_MACRO
+
   // dolfinx::mesh::MeshQuality
   py::class_<dolfinx::mesh::MeshQuality>(m, "MeshQuality", "MeshQuality class")
       .def_static("dihedral_angle_histogram_data",
@@ -295,7 +338,6 @@ void mesh(py::module& m)
                   &dolfinx::mesh::MeshQuality::dihedral_angles_min_max);
 
   // Partitioning interface
-
   m.def("partition_cells",
         [](const MPICommWrapper comm, int nparts,
            dolfinx::mesh::CellType cell_type,
@@ -305,8 +347,8 @@ void mesh(py::module& m)
               comm.get(), nparts, cell_type, cells, ghost_mode);
         });
 
-  m.def("compute_marked_boundary_entities",
-        &dolfinx::mesh::compute_marked_boundary_entities);
+  m.def("locate_entities_geometrical",
+        &dolfinx::mesh::locate_entities_geometrical);
 
   // TODO Remove
   m.def("compute_vertex_exterior_markers",
