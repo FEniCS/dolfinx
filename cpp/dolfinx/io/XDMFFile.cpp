@@ -355,6 +355,9 @@ XDMFFile::read_meshtags(const std::shared_ptr<const mesh::Mesh>& mesh,
 
   pugi::xml_node flags_node = _xml_doc->select_node(flags_xpath.c_str()).node();
 
-  return xdmf_meshtags::read_meshtags<int>(_mpi_comm.comm(), mesh, grid_node,
-                                           flags_node, _h5_id);
+  mesh::MeshTags<int> meshtags = xdmf_meshtags::read_meshtags<int>(
+      _mpi_comm.comm(), mesh, grid_node, flags_node, _h5_id);
+  meshtags.name = name;
+
+  return meshtags;
 }

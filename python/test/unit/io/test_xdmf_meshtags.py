@@ -6,14 +6,15 @@
 
 import numpy
 import os
-import dolfinx
-from dolfinx.generation import UnitCubeMesh, UnitSquareMesh
+from dolfinx.generation import UnitCubeMesh
 from dolfinx import MPI
 from dolfinx.io import XDMFFile
 from dolfinx.cpp.mesh import CellType
 from dolfinx.mesh import locate_entities_geometrical, MeshTags
 import pytest
 from dolfinx_utils.test.fixtures import tempdir
+
+assert (tempdir)
 
 # Supported XDMF file encoding
 if MPI.size(MPI.comm_world) > 1:
@@ -62,3 +63,10 @@ def test_3d(tempdir, cell_type, encoding):
 
         mt_in = file.read_meshtags(mesh_in, "facets")
         mt_lines_in = file.read_meshtags(mesh_in, "lines")
+        assert mt_in.name == "facets"
+        assert mt_lines_in == "lines"
+
+    with XDMFFile(comm, os.path.join(tempdir, "meshtags_3d_out.xdmf"), "w", encoding=encoding) as file:
+        file.write_mesh(mesh_in)
+        file.write_meshtags(mt_lines_in)
+        file.write_meshtags(mt_in)
