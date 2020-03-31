@@ -88,11 +88,14 @@ public:
   /// or storing the data inline as XML Create function on given
   /// function space
   /// @param[in] mesh
-  /// @param[in] name
   /// @param[in] xpath XPath where Mesh Grid will be written
   void write_mesh(const mesh::Mesh& mesh,
                   const std::string xpath = "/Xdmf/Domain");
 
+  /// Save geometry to file
+  /// @param[in] geometry
+  /// @param[in] name
+  /// @param[in] xpath XPath of a node where Geometry will be inserted
   void write_geometry(const mesh::Geometry& geometry,
                       const std::string name = "geometry",
                       const std::string xpath = "/Xdmf/Domain");
@@ -106,6 +109,8 @@ public:
                        const std::string xpath = "/Xdmf/Domain") const;
 
   /// Read in the data from the first mesh in XDMF file
+  /// @param[in] name
+  /// @param[in] xpath XPath where Mesh Grid data is located
   /// @return Points on each process, cells topology (global node
   ///         indexing), and the cell type
   std::tuple<
@@ -117,16 +122,28 @@ public:
                  const std::string xpath = "/Xdmf/Domain") const;
 
   /// Write Function
+  /// @param[in] function
+  /// @param[in] t Time
+  /// @param[in] mesh_xpath XPath for a Grid under which Function will be
+  ///   inserted
   void write_function(const function::Function& function, const double t,
                       const std::string mesh_xpath
                       = "/Xdmf/Domain/Grid[@GridType='Uniform'][1]");
 
   /// Write MeshTags
+  /// @param[in] meshtags
+  /// @param[in] geometry_xpath XPath where Geometry is already stored in file
+  /// @param[in] xpath XPath where MeshTags Grid will be inserted
   void write_meshtags(const mesh::MeshTags<int>& meshtags,
                       const std::string geometry_xpath
                       = "/Xdmf/Domain/Geometry",
                       const std::string xpath = "/Xdmf/Domain");
 
+  /// Read MeshTags
+  /// @param[in] mesh
+  /// @param[in] name
+  /// @param[in] xpath XPath where MeshTags Grid is stored in file
+  /// @param[in] flags_xpath XPath where flags for Mesh are stored in file
   mesh::MeshTags<int>
   read_meshtags(const std::shared_ptr<const mesh::Mesh>& mesh,
                 const std::string name,
