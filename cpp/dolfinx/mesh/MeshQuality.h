@@ -6,7 +6,6 @@
 
 #pragma once
 
-#include "MeshFunction.h"
 #include <array>
 #include <memory>
 #include <string>

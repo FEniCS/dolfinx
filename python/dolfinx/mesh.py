@@ -6,27 +6,29 @@
 
 import types
 
+import numpy
+
 import ufl
 from dolfinx import cpp
 
 
-def compute_marked_boundary_entities(mesh: cpp.mesh.Mesh,
-                                     dim: int,
-                                     marker: types.FunctionType):
-    """Compute list of boundary mesh entities satisfying a geometric marking function.
+def locate_entities_geometrical(mesh: cpp.mesh.Mesh,
+                                dim: int,
+                                marker: types.FunctionType,
+                                boundary_only: bool = False):
+    """Compute list of mesh entities satisfying a geometric marking function.
 
     Parameters
     ----------
     mesh
         The mesh
-
     dim
         The topological dimension of the mesh entities to consider
-
-    marker A function that takes an array of points `x` with shape
-           ``(gdim, num_points)`` and returns an array of booleans of
-           length ``num_points``, evaluating to `True` for entities whose
-           degree-of-freedom should be returned.
+    marker
+        A function that takes an array of points `x` with shape
+        ``(gdim, num_points)`` and returns an array of booleans of
+        length ``num_points``, evaluating to `True` for entities whose
+        degree-of-freedom should be returned.
 
     Returns
     -------
@@ -35,11 +37,15 @@ def compute_marked_boundary_entities(mesh: cpp.mesh.Mesh,
 
     """
 
-    return cpp.mesh.compute_marked_boundary_entities(mesh, dim, marker)
+    return cpp.mesh.locate_entities_geometrical(mesh, dim, marker, boundary_only)
 
 
-# __all__ = ["MeshFunction", "MeshValueCollection"]
-
+_meshtags_types = {
+    numpy.int8: cpp.mesh.MeshTags_int8,
+    numpy.intc: cpp.mesh.MeshTags_int,
+    numpy.int64: cpp.mesh.MeshTags_int64,
+    numpy.double: cpp.mesh.MeshTags_double
+}
 
 _meshfunction_types = {
     "size_t": cpp.mesh.MeshFunctionSizet,
@@ -52,6 +58,22 @@ _meshvaluecollection_types = {
     "int": cpp.mesh.MeshValueCollection_int,
     "double": cpp.mesh.MeshValueCollection_double
 }
+
+
+def MeshTags(mesh, dim, indices, values, sorted=False, unique=False):
+
+    if isinstance(values, int):
+        values = numpy.full(indices.shape, values, dtype=numpy.intc)
+    elif isinstance(values, float):
+        values = numpy.full(indices.shape, values, dtype=numpy.double)
+
+    dtype = values.dtype.type
+
+    if dtype not in _meshtags_types.keys():
+        raise KeyError("Datatype {} of values array not recognised".format(dtype))
+
+    fn = _meshtags_types[dtype]
+    return fn(mesh, dim, indices, values, sorted, unique)
 
 
 def MeshFunction(value_type, mesh, dim, value):

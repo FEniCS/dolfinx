@@ -6,60 +6,25 @@
 """Unit tests for assembly"""
 
 import pytest
-from petsc4py import PETSc
-
 import ufl
-from dolfinx import MPI, MeshFunction, fem
+from dolfinx import MPI, fem
 from dolfinx.cpp.mesh import GhostMode
 from dolfinx.function import Function, FunctionSpace
 from dolfinx.generation import UnitSquareMesh
-from ufl import Measure, avg, inner
+from petsc4py import PETSc
+from ufl import avg, inner
 
 
 def dx_from_ufl(mesh):
     return ufl.dx
 
 
-def dx_from_measure(mesh):
-    subdomains = MeshFunction("size_t", mesh, mesh.topology.dim, 1)
-    dx = Measure("dx")(subdomain_data=subdomains, domain=mesh)
-    dx = dx(1)
-    return dx
-
-
-def dx_from_measure_and_subdomain(mesh):
-    dx = dx_from_measure(mesh)
-    return dx(1)
-
-
 def ds_from_ufl(mesh):
     return ufl.ds
 
 
-def ds_from_measure(mesh):
-    boundaries = MeshFunction("size_t", mesh, mesh.topology.dim - 1, 1)
-    ds = Measure("ds")(subdomain_data=boundaries, domain=mesh)
-    return ds
-
-
-def ds_from_measure_and_subdomain(mesh):
-    ds = ds_from_measure(mesh)
-    return ds(1)
-
-
 def dS_from_ufl(mesh):
     return ufl.dS
-
-
-def dS_from_measure(mesh):
-    boundaries = MeshFunction("size_t", mesh, mesh.topology.dim - 1, 1)
-    dS = Measure("dS")(subdomain_data=boundaries, domain=mesh)
-    return dS
-
-
-def dS_from_measure_and_subdomain(mesh):
-    dS = dS_from_measure(mesh)
-    return dS(1)
 
 
 @pytest.mark.parametrize("mode",
@@ -70,10 +35,8 @@ def dS_from_measure_and_subdomain(mesh):
                           pytest.param(GhostMode.shared_vertex,
                                        marks=pytest.mark.xfail(condition=MPI.size(MPI.comm_world) == 1,
                                                                reason="Shared ghost modes fail in serial"))])
-@pytest.mark.parametrize("dx",
-                         [dx_from_ufl, dx_from_measure, dx_from_measure_and_subdomain])
-@pytest.mark.parametrize("ds",
-                         [ds_from_ufl, ds_from_measure, ds_from_measure_and_subdomain])
+@pytest.mark.parametrize("dx", [dx_from_ufl])
+@pytest.mark.parametrize("ds", [ds_from_ufl])
 def test_ghost_mesh_assembly(mode, dx, ds):
     mesh = UnitSquareMesh(MPI.comm_world, 12, 12, ghost_mode=mode)
     V = FunctionSpace(mesh, ("Lagrange", 1))
@@ -113,8 +76,7 @@ def test_ghost_mesh_assembly(mode, dx, ds):
                           pytest.param(GhostMode.shared_vertex,
                                        marks=pytest.mark.xfail(condition=MPI.size(MPI.comm_world) == 1,
                                                                reason="Shared ghost modes fail in serial"))])
-@pytest.mark.parametrize("dS",
-                         [dS_from_ufl, dS_from_measure, dS_from_measure_and_subdomain])
+@pytest.mark.parametrize("dS", [dS_from_ufl])
 def test_ghost_mesh_dS_assembly(mode, dS):
     mesh = UnitSquareMesh(MPI.comm_world, 12, 12, ghost_mode=mode)
     V = FunctionSpace(mesh, ("Lagrange", 1))

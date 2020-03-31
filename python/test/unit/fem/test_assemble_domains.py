@@ -10,6 +10,7 @@ import pytest
 from petsc4py import PETSc
 
 import dolfinx
+from dolfinx.mesh import locate_entities_geometrical
 import ufl
 
 
@@ -34,13 +35,17 @@ def test_assembly_dx_domains(mesh):
     V = dolfinx.FunctionSpace(mesh, ("CG", 1))
     u, v = ufl.TrialFunction(V), ufl.TestFunction(V)
 
-    marker = dolfinx.MeshFunction("size_t", mesh, mesh.topology.dim, 0)
-    values = marker.values
-    # Mark first, second and all other
-    # Their union is the whole domain
-    values[0] = 111
-    values[1] = 222
-    values[2:] = 333
+    # Prepare a marking structures
+    # indices cover all cells
+    # values are [1, 2, 3, 3, ...]
+    imap = mesh.topology.index_map(mesh.topology.dim)
+    num_cells = imap.size_local + imap.num_ghosts
+    indices = numpy.arange(0, num_cells)
+    values = numpy.full(indices.shape, 3, dtype=numpy.intc)
+    values[0] = 1
+    values[1] = 2
+
+    marker = dolfinx.mesh.MeshTags(mesh, mesh.topology.dim, indices, values, sorted=True, unique=True)
 
     dx = ufl.Measure('dx', subdomain_data=marker, domain=mesh)
 
@@ -52,7 +57,7 @@ def test_assembly_dx_domains(mesh):
     # Assemble matrix
     #
 
-    a = w * ufl.inner(u, v) * (dx(111) + dx(222) + dx(333))
+    a = w * ufl.inner(u, v) * (dx(1) + dx(2) + dx(3))
 
     A = dolfinx.fem.assemble_matrix(a)
     A.assemble()
@@ -70,7 +75,7 @@ def test_assembly_dx_domains(mesh):
     # Assemble vector
     #
 
-    L = ufl.inner(w, v) * (dx(111) + dx(222) + dx(333))
+    L = ufl.inner(w, v) * (dx(1) + dx(2) + dx(3))
     b = dolfinx.fem.assemble_vector(L)
     b.ghostUpdate(addv=PETSc.InsertMode.ADD, mode=PETSc.ScatterMode.REVERSE)
 
@@ -84,7 +89,7 @@ def test_assembly_dx_domains(mesh):
     # Assemble scalar
     #
 
-    L = w * (dx(111) + dx(222) + dx(333))
+    L = w * (dx(1) + dx(2) + dx(3))
     s = dolfinx.fem.assemble_scalar(L)
     s = dolfinx.MPI.sum(mesh.mpi_comm(), s)
 
@@ -99,8 +104,6 @@ def test_assembly_ds_domains(mesh):
     V = dolfinx.FunctionSpace(mesh, ("CG", 1))
     u, v = ufl.TrialFunction(V), ufl.TestFunction(V)
 
-    marker = dolfinx.MeshFunction("size_t", mesh, mesh.topology.dim - 1, 0)
-
     def bottom(x):
         return numpy.isclose(x[1], 0.0)
 
@@ -113,10 +116,22 @@ def test_assembly_ds_domains(mesh):
     def right(x):
         return numpy.isclose(x[0], 1.0)
 
-    marker.mark(bottom, 111)
-    marker.mark(top, 222)
-    marker.mark(left, 333)
-    marker.mark(right, 444)
+    bottom_facets = locate_entities_geometrical(mesh, mesh.topology.dim - 1, bottom, boundary_only=True)
+    bottom_vals = numpy.full(bottom_facets.shape, 1, numpy.intc)
+
+    top_facets = locate_entities_geometrical(mesh, mesh.topology.dim - 1, top, boundary_only=True)
+    top_vals = numpy.full(top_facets.shape, 2, numpy.intc)
+
+    left_facets = locate_entities_geometrical(mesh, mesh.topology.dim - 1, left, boundary_only=True)
+    left_vals = numpy.full(left_facets.shape, 3, numpy.intc)
+
+    right_facets = locate_entities_geometrical(mesh, mesh.topology.dim - 1, right, boundary_only=True)
+    right_vals = numpy.full(right_facets.shape, 6, numpy.intc)
+
+    indices = numpy.hstack((bottom_facets, top_facets, left_facets, right_facets))
+    values = numpy.hstack((bottom_vals, top_vals, left_vals, right_vals))
+
+    marker = dolfinx.mesh.MeshTags(mesh, mesh.topology.dim - 1, indices, values)
 
     ds = ufl.Measure('ds', subdomain_data=marker, domain=mesh)
 
@@ -125,7 +140,7 @@ def test_assembly_ds_domains(mesh):
         w_local.set(0.5)
 
     # Assemble matrix
-    a = w * ufl.inner(u, v) * (ds(111) + ds(222) + ds(333) + ds(444))
+    a = w * ufl.inner(u, v) * (ds(1) + ds(2) + ds(3) + ds(6))
     A = dolfinx.fem.assemble_matrix(a)
     A.assemble()
     norm1 = A.norm()
@@ -136,7 +151,7 @@ def test_assembly_ds_domains(mesh):
     assert norm1 == pytest.approx(norm2, 1.0e-12)
 
     # Assemble vector
-    L = ufl.inner(w, v) * (ds(111) + ds(222) + ds(333) + ds(444))
+    L = ufl.inner(w, v) * (ds(1) + ds(2) + ds(3) + ds(6))
     b = dolfinx.fem.assemble_vector(L)
     b.ghostUpdate(addv=PETSc.InsertMode.ADD, mode=PETSc.ScatterMode.REVERSE)
     L2 = ufl.inner(w, v) * ds
@@ -145,7 +160,7 @@ def test_assembly_ds_domains(mesh):
     assert b.norm() == pytest.approx(b2.norm(), 1.0e-12)
 
     # Assemble scalar
-    L = w * (ds(111) + ds(222) + ds(333) + ds(444))
+    L = w * (ds(1) + ds(2) + ds(3) + ds(6))
     s = dolfinx.fem.assemble_scalar(L)
     s = dolfinx.MPI.sum(mesh.mpi_comm(), s)
     L2 = w * ds

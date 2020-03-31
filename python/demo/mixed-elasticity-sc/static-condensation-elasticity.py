@@ -21,6 +21,8 @@ import dolfinx
 import dolfinx.cpp
 import dolfinx.io
 import dolfinx.la
+from dolfinx.mesh import locate_entities_geometrical
+from dolfinx.fem import locate_dofs_topological
 import ufl
 
 filedir = os.path.dirname(__file__)
@@ -44,31 +46,32 @@ Usize = U.dolfin_element().space_dimension()
 sigma, tau = ufl.TrialFunction(S), ufl.TestFunction(S)
 u, v = ufl.TrialFunction(U), ufl.TestFunction(U)
 
-# Homogeneous boundary condition in displacement
-u_bc = dolfinx.Function(U)
-with u_bc.vector.localForm() as loc:
-    loc.set(0.0)
-
-facetdim = mesh.topology.dim - 1
-mf = dolfinx.MeshFunction("size_t", mesh, facetdim, 0)
-mf.mark(lambda x: numpy.isclose(x[0], 0.0), 1)
-bndry_facets = numpy.where(mf.values == 1)[0]
-
-# Displacement BC is applied to the right side
-bdofs = dolfinx.fem.locate_dofs_topological(U, facetdim, bndry_facets)
-bc = dolfinx.fem.DirichletBC(u_bc, bdofs)
-
 
 def free_end(x):
     """Marks the leftmost points of the cantilever"""
     return numpy.isclose(x[0], 48.0)
 
 
-# Mark free end facets as 1
-mf = dolfinx.mesh.MeshFunction("size_t", mesh, 1, 0)
-mf.mark(free_end, 1)
+def left(x):
+    """Marks left part of boundary, where cantilever is attached to wall"""
+    return numpy.isclose(x[0], 0.0)
 
-ds = ufl.Measure("ds", subdomain_data=mf)
+
+# Locate all facets at the free end and assign them value 1
+free_end_facets = locate_entities_geometrical(mesh, 1, free_end, boundary_only=True)
+mt = dolfinx.mesh.MeshTags(mesh, 1, free_end_facets, 1)
+
+ds = ufl.Measure("ds", subdomain_data=mt)
+
+# Homogeneous boundary condition in displacement
+u_bc = dolfinx.Function(U)
+with u_bc.vector.localForm() as loc:
+    loc.set(0.0)
+
+# Displacement BC is applied to the left side
+left_facets = locate_entities_geometrical(mesh, 1, left, boundary_only=True)
+bdofs = locate_dofs_topological(U, 1, left_facets)
+bc = dolfinx.fem.DirichletBC(u_bc, bdofs)
 
 # Elastic stiffness tensor and Poisson ratio
 E, nu = 1.0, 1.0 / 3.0
@@ -163,6 +166,7 @@ p = [48.0, 52.0, 0.0]
 cell = dolfinx.cpp.geometry.compute_first_collision(bb_tree, p)
 if cell >= 0:
     value = uc.eval(p, numpy.asarray(cell))
+    print(value[1])
     assert numpy.isclose(value[1], 23.95, rtol=1.e-2)
 
 # Check the equality of displacement based and mixed condensed global

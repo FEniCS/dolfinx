@@ -8,7 +8,7 @@
 #include "PlazaRefinementND.h"
 #include <dolfinx/common/log.h>
 #include <dolfinx/mesh/Mesh.h>
-#include <dolfinx/mesh/MeshFunction.h>
+#include <dolfinx/mesh/MeshTags.h>
 
 using namespace dolfinx;
 using namespace refinement;
@@ -38,7 +38,7 @@ mesh::Mesh dolfinx::refinement::refine(const mesh::Mesh& mesh,
 //-----------------------------------------------------------------------------
 mesh::Mesh
 dolfinx::refinement::refine(const mesh::Mesh& mesh,
-                            const mesh::MeshFunction<int>& cell_markers,
+                            const mesh::MeshTags<std::int8_t>& cell_markers,
                             bool redistribute)
 {
   if (mesh.topology().cell_type() != mesh::CellType::triangle

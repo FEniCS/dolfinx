@@ -247,11 +247,9 @@ def test_matrix_assembly_block():
     def boundary(x):
         return numpy.logical_or(x[0] < 1.0e-6, x[0] > 1.0 - 1.0e-6)
 
-    # Prepare a MeshFunction used for boundary conditions
+    # Locate facets on boundary
     facetdim = mesh.topology.dim - 1
-    mf = dolfinx.MeshFunction("size_t", mesh, facetdim, 0)
-    mf.mark(boundary, 1)
-    bndry_facets = numpy.where(mf.values == 1)[0]
+    bndry_facets = dolfinx.mesh.locate_entities_geometrical(mesh, facetdim, boundary, boundary_only=True)
 
     bdofsV1 = dolfinx.fem.locate_dofs_topological(V1, facetdim, bndry_facets)
 
@@ -338,10 +336,9 @@ def test_assembly_solve_block():
     def boundary(x):
         return numpy.logical_or(x[0] < 1.0e-6, x[0] > 1.0 - 1.0e-6)
 
+    # Locate facets on boundary
     facetdim = mesh.topology.dim - 1
-    mf = dolfinx.MeshFunction("size_t", mesh, facetdim, 0)
-    mf.mark(boundary, 1)
-    bndry_facets = numpy.where(mf.values == 1)[0]
+    bndry_facets = dolfinx.mesh.locate_entities_geometrical(mesh, facetdim, boundary, boundary_only=True)
 
     bdofsV0 = dolfinx.fem.locate_dofs_topological(V0, facetdim, bndry_facets)
     bdofsV1 = dolfinx.fem.locate_dofs_topological(V1, facetdim, bndry_facets)
@@ -489,12 +486,10 @@ def test_assembly_solve_taylor_hood(mesh):
         """Define boundary x = 1"""
         return x[0] > (1.0 - 10 * numpy.finfo(float).eps)
 
+    # Locate facets on boundaries
     facetdim = mesh.topology.dim - 1
-    mf = dolfinx.MeshFunction("size_t", mesh, facetdim, 0)
-    mf.mark(boundary0, 1)
-    mf.mark(boundary1, 2)
-    bndry_facets0 = numpy.where(mf.values == 1)[0]
-    bndry_facets1 = numpy.where(mf.values == 2)[0]
+    bndry_facets0 = dolfinx.mesh.locate_entities_geometrical(mesh, facetdim, boundary0, boundary_only=True)
+    bndry_facets1 = dolfinx.mesh.locate_entities_geometrical(mesh, facetdim, boundary1, boundary_only=True)
 
     bdofs0 = dolfinx.fem.locate_dofs_topological(P2, facetdim, bndry_facets0)
     bdofs1 = dolfinx.fem.locate_dofs_topological(P2, facetdim, bndry_facets1)
