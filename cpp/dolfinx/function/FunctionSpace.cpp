@@ -232,8 +232,8 @@ FunctionSpace::sub(const std::vector<int>& component) const
       = this->_element->extract_sub_element(component);
 
   // Extract sub dofmap
-  auto dofmap = std::make_shared<fem::DofMap>(
-      _dofmap->extract_sub_dofmap(component, _mesh->topology()));
+  auto dofmap
+      = std::make_shared<fem::DofMap>(_dofmap->extract_sub_dofmap(component));
 
   // Create new sub space
   auto sub_space = std::make_shared<FunctionSpace>(_mesh, element, dofmap);

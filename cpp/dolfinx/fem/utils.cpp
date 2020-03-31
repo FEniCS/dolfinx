@@ -535,7 +535,9 @@ fem::DofMap fem::create_dofmap(MPI_Comm comm, const ufc_dofmap& ufc_dofmap,
     }
   }
 
-  return DofMapBuilder::build(comm, topology, element_dof_layout);
+  auto [dof_layout, index_map, dofmap]
+      = DofMapBuilder::build(comm, topology, element_dof_layout);
+  return DofMap(dof_layout, index_map, std::move(dofmap));
 }
 //-----------------------------------------------------------------------------
 std::vector<std::tuple<int, std::string, std::shared_ptr<function::Function>>>
