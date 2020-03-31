@@ -163,9 +163,31 @@ DofMap::DofMap(std::shared_ptr<const ElementDofLayout> element_dof_layout,
 //-----------------------------------------------------------------------------
 DofMap DofMap::extract_sub_dofmap(const std::vector<int>& component) const
 {
-  auto [element_dof_layout, dofmap] = DofMapBuilder::build_submap(
-      *this->element_dof_layout, this->_dofmap, component);
-  return DofMap(element_dof_layout, this->index_map, std::move(dofmap));
+  assert(!component.empty());
+
+  // Set element dof layout and cell dimension
+  assert(element_dof_layout);
+  std::shared_ptr<const ElementDofLayout> sub_element_dof_layout
+      = this->element_dof_layout->sub_dofmap(component);
+
+  // Get components in parent map that correspond to sub-dofs
+  const std::vector<int> sub_element_map_view
+      = this->element_dof_layout->sub_view(component);
+
+  // Build dofmap by extracting from parent
+  const int num_cells = this->_dofmap.num_nodes();
+  const std::int32_t dofs_per_cell = sub_element_map_view.size();
+  Eigen::Array<std::int32_t, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
+      dofmap(num_cells, dofs_per_cell);
+  for (int c = 0; c < num_cells; ++c)
+  {
+    auto cell_dmap_parent = this->_dofmap.links(c);
+    for (std::int32_t i = 0; i < dofs_per_cell; ++i)
+      dofmap(c, i) = cell_dmap_parent[sub_element_map_view[i]];
+  }
+
+  return DofMap(sub_element_dof_layout, this->index_map,
+                graph::AdjacencyList<std::int32_t>(dofmap));
 }
 //-----------------------------------------------------------------------------
 std::pair<std::unique_ptr<DofMap>, std::vector<std::int32_t>>

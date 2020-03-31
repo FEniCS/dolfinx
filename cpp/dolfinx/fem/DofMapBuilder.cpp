@@ -497,37 +497,6 @@ DofMapBuilder::build(MPI_Comm comm, const mesh::Topology& topology,
   }
 }
 //-----------------------------------------------------------------------------
-std::tuple<std::shared_ptr<const ElementDofLayout>,
-           graph::AdjacencyList<std::int32_t>>
-DofMapBuilder::build_submap(const ElementDofLayout& dof_layout_parent,
-                            const graph::AdjacencyList<PetscInt>& dofmap_parent,
-                            const std::vector<int>& component)
-{
-  assert(!component.empty());
-
-  // Set element dof layout and cell dimension
-  std::shared_ptr<const ElementDofLayout> element_dof_layout
-      = dof_layout_parent.sub_dofmap(component);
-
-  // Get components in parent map that correspond to sub-dofs
-  const std::vector<int> element_map_view
-      = dof_layout_parent.sub_view(component);
-
-  // Build dofmap by extracting from parent
-  const int num_cells = dofmap_parent.num_nodes();
-  const std::int32_t dofs_per_cell = element_map_view.size();
-  Eigen::Array<std::int32_t, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
-      dofmap(num_cells, dofs_per_cell);
-  for (int c = 0; c < num_cells; ++c)
-  {
-    auto cell_dmap_parent = dofmap_parent.links(c);
-    for (std::int32_t i = 0; i < dofs_per_cell; ++i)
-      dofmap(c, i) = cell_dmap_parent[element_map_view[i]];
-  }
-
-  return {element_dof_layout, graph::AdjacencyList<std::int32_t>(dofmap)};
-}
-//-----------------------------------------------------------------------------
 std::pair<std::shared_ptr<common::IndexMap>, graph::AdjacencyList<std::int32_t>>
 DofMapBuilder::build(MPI_Comm comm, const mesh::Topology& topology,
                      const ElementDofLayout& element_dof_layout,

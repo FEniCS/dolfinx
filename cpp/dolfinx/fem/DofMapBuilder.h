@@ -7,7 +7,6 @@
 #pragma once
 
 #include "petscsys.h"
-#include <dolfinx/fem/DofMap.h>
 #include <dolfinx/graph/AdjacencyList.h>
 #include <dolfinx/mesh/cell_types.h>
 #include <memory>
@@ -43,13 +42,6 @@ public:
                     graph::AdjacencyList<std::int32_t>>
   build(MPI_Comm comm, const mesh::Topology& topology,
         std::shared_ptr<const ElementDofLayout> element_dof_layout);
-
-  /// Build sub-dofmap view
-  static std::tuple<std::shared_ptr<const ElementDofLayout>,
-                    graph::AdjacencyList<std::int32_t>>
-  build_submap(const ElementDofLayout& dof_layout_parent,
-               const graph::AdjacencyList<PetscInt>& dofmap_parent,
-               const std::vector<int>& component);
 
   /// Build dofmap
   static std::pair<std::shared_ptr<common::IndexMap>,
