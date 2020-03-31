@@ -113,7 +113,7 @@ void xdmf_function::add_function(MPI_Comm comm, const function::Function& u,
   std::string t_str = boost::lexical_cast<std::string>(t);
   std::replace(t_str.begin(), t_str.end(), '.', '_');
 
-  for (const std::string component : components)
+  for (const auto& component : components)
   {
     std::string attr_name;
     std::string dataset_name;
