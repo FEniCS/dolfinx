@@ -167,7 +167,7 @@ mesh::MeshTags<T> read_meshtags(MPI_Comm comm,
   //
 
   // Prepare an array where on n-th position is the owner of n-th node
-  std::vector<int> topo_owners(topology_data.size());
+  std::unordered_map<std::int64_t, int> topo_owners;
   for (std::size_t i = 0; i < topo_unique.size(); ++i)
     topo_owners[topo_unique[i]] = dist_owners_arr(i, 0);
 

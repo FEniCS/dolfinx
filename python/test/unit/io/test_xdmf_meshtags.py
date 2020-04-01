@@ -28,9 +28,6 @@ else:
 celltypes_3D = [CellType.tetrahedron, CellType.hexahedron]
 
 
-dolfinx.cpp.log.set_log_level(dolfinx.cpp.log.LogLevel.INFO)
-
-
 @pytest.mark.parametrize("cell_type", celltypes_3D)
 @pytest.mark.parametrize("encoding", encodings)
 def test_3d(tempdir, cell_type, encoding):
