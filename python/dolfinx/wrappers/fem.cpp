@@ -439,6 +439,7 @@ void fem(py::module& m)
              std::shared_ptr<dolfinx::fem::FormIntegrals>>
       formintegrals(m, "FormIntegrals",
                     "Holder for integral kernels and domains");
+  formintegrals.def("integral_ids", &dolfinx::fem::FormIntegrals::integral_ids);
 
   py::enum_<dolfinx::fem::FormIntegrals::Type>(formintegrals, "Type")
       .value("cell", dolfinx::fem::FormIntegrals::Type::cell)
@@ -452,6 +453,7 @@ void fem(py::module& m)
       m, "Form", "Variational form object")
       .def(py::init<std::vector<
                std::shared_ptr<const dolfinx::function::FunctionSpace>>>())
+      .def("integrals", &dolfinx::fem::Form::integrals)
       .def(
           "num_coefficients",
           [](const dolfinx::fem::Form& self) {

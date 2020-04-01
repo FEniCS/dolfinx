@@ -811,11 +811,11 @@ fem::pack_exterior_facets(const fem::Form& form, std::int64_t i)
       facet_info(active_facets.size(), 2);
 
   // Find cell index and local facet index for each facet
-  for (std::size_t i = 0; i < active_facets.size(); i++)
+  for (std::size_t j = 0; j < active_facets.size(); j++)
   {
     // Get index of first attached cell
-    std::int32_t f = active_facets[i];
-    assert(f_to_c->num_links(active_facets[i]) > 0);
+    std::int32_t f = active_facets[j];
+    assert(f_to_c->num_links(active_facets[j]) > 0);
     const std::int32_t cell = f_to_c->links(f)[0];
 
     // Get local index of facet with respect to the cell
@@ -823,8 +823,8 @@ fem::pack_exterior_facets(const fem::Form& form, std::int64_t i)
     const auto* it = std::find(facets.data(), facets.data() + facets.rows(), f);
     assert(it != (facets.data() + facets.rows()));
     const int local_facet = std::distance(facets.data(), it);
-    facet_info(i, 0) = cell;
-    facet_info(i, 1) = local_facet;
+    facet_info(j, 0) = cell;
+    facet_info(j, 1) = local_facet;
   }
   return facet_info;
 }

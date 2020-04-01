@@ -269,6 +269,54 @@ def assemble_matrix_ctypes(A, mesh, dofmap, set_vals, mode):
         set_vals(A, 3, rows.ctypes, 3, cols.ctypes, A_local.ctypes, mode)
 
 
+@numba.njit
+def assemble_exterior_facets_cffi(A, kernel, mesh, coeffs, consts, perm, dofmap,
+                                  num_dofs_per_element, gdim, facet_info, set_vals, mode):
+    """Assemble exterior facet integral into a PETSc matrix A"""
+
+    # Mesh data
+    pos, x_dofmap, x = mesh
+    geometry = np.zeros((pos[1] - pos[0], gdim))
+
+    facet_index = np.zeros(1, dtype=np.int32)
+    facet_perm = np.zeros(1, dtype=np.uint8)
+
+    A_local = np.zeros((num_dofs_per_element, num_dofs_per_element),
+                       dtype=PETSc.ScalarType)
+    # Permutation info
+    cell_perms, facet_perms = perm
+    for i in range(facet_info.shape[0]):
+        cell_index, local_facet = facet_info[i]
+        cell = pos[cell_index]
+        facet_index[0] = local_facet
+        num_vertices = pos[cell_index + 1] - pos[cell_index]
+        # FIXME: This assumes a particular geometry dof layout
+        c = x_dofmap[cell:cell + num_vertices]
+        for j in range(num_vertices):
+            for k in range(gdim):
+                geometry[j, k] = x[c[j], k]
+        A_local.fill(0.0)
+        facet_perm[0] = facet_perms[local_facet, cell_index]
+        kernel(ffi.from_buffer(A_local),
+               ffi.from_buffer(coeffs[cell_index, :]),
+               ffi.from_buffer(consts),
+               ffi.from_buffer(geometry),
+               ffi.from_buffer(facet_index),
+               ffi.from_buffer(facet_perm),
+               cell_perms[cell_index])
+
+        local_pos = dofmap[num_dofs_per_element * cell_index:
+                           num_dofs_per_element * cell_index
+                           + num_dofs_per_element]
+
+        ierr_loc = set_vals(A, num_dofs_per_element, ffi.from_buffer(local_pos),
+                            num_dofs_per_element, ffi.from_buffer(local_pos),
+                            ffi.from_buffer(A_local), mode)
+        if ierr_loc != 0:
+            raise ValueError("Assembly failed")
+    sink(A_local, local_pos)
+
+
 def test_custom_mesh_loop_rank1():
 
     # Create mesh and function space
@@ -400,6 +448,86 @@ def test_custom_mesh_loop_cffi_rank2(set_vals):
         A1.zeroEntries()
         start = time.time()
         assemble_matrix_cffi(A1.handle, (pos, x_dofs, x), dofs, set_vals, PETSc.InsertMode.ADD_VALUES)
+        end = time.time()
+        print("Time (Numba, pass {}): {}".format(i, end - start))
+        A1.assemble()
+
+    assert (A1 - A0).norm() == pytest.approx(0.0)
+
+
+@pytest.mark.parametrize("set_vals", [MatSetValues_abi, MatSetValues_api])
+def test_exterior_facet_cffi(set_vals):
+    """Test numba assembler for bilinear form"""
+
+    mesh = dolfinx.generation.UnitSquareMesh(dolfinx.MPI.comm_world, 64, 64)
+    V = dolfinx.FunctionSpace(mesh, ("Lagrange", 1))
+
+    def top(x):
+        return np.isclose(x[1], 1)
+    fdim = mesh.topology.dim - 1
+    top_facets = dolfinx.mesh.locate_entities_geometrical(mesh, 1, top,
+                                                          boundary_only=True)
+    mt = dolfinx.mesh.MeshTags(mesh, fdim, top_facets, 3)
+
+    ds = ufl.Measure("ds", domain=mesh, subdomain_data=mt, subdomain_id=3)
+
+    # Test against generated code and general assembler
+    u, v = ufl.TrialFunction(V), ufl.TestFunction(V)
+    a1 = -3 * inner(u, v) * ds
+    a2 = dolfinx.Constant(mesh, 2) * inner(u, v) * ufl.ds
+    a = a1 + a2
+    A0 = dolfinx.fem.assemble_matrix(a)
+    A0.assemble()
+    A0.zeroEntries()
+
+    start = time.time()
+    dolfinx.fem.assemble_matrix(A0, a)
+    end = time.time()
+    print("Time (C++, pass 2):", end - start)
+    A0.assemble()
+
+    # Unpack mesh and dofmap data
+    pos = V.mesh.geometry.dofmap().offsets()
+    x_dofs = V.mesh.geometry.dofmap().array()
+    x = V.mesh.geometry.x
+    dofs = V.dofmap.list.array()
+    num_dofs_per_element = V.dofmap.dof_layout.num_dofs
+    gdim = mesh.geometry.dim
+
+    # Get cell orientation data
+    permutation_info = V.mesh.topology.get_cell_permutation_info()
+    facet_permutation_info = V.mesh.topology.get_facet_permutations()
+    perm = (permutation_info, facet_permutation_info)
+
+    # Create various forms
+    cpp_form = dolfinx.Form(a)._cpp_object
+    ufc_form = dolfinx.jit.ffcx_jit(a)
+
+    # Get coefficients and constants
+    form_coeffs = dolfinx.cpp.fem.pack_coefficients(cpp_form)
+    form_consts = dolfinx.cpp.fem.pack_constants(cpp_form)
+
+    # Get subdomain ids for the exterior facet integrals
+    formintegral = cpp_form.integrals()
+    subdomain_ids = formintegral.integral_ids(dolfinx.cpp.fem.FormIntegrals.Type.exterior_facet)
+    num_exterior_integrals = len(subdomain_ids)
+
+    A1 = A0.copy()
+    for i in range(2):
+        A1.zeroEntries()
+        start = time.time()
+        for j in range(num_exterior_integrals):
+            facet_info = dolfinx.cpp.fem.pack_exterior_facets(cpp_form, j)
+            subdomain_id = subdomain_ids[j]
+            facet_kernel = ufc_form.create_exterior_facet_integral(
+                subdomain_id).tabulate_tensor
+
+            assemble_exterior_facets_cffi(A1.handle, facet_kernel,
+                                          (pos, x_dofs, x), form_coeffs, form_consts,
+                                          perm, dofs, num_dofs_per_element, gdim, facet_info,
+                                          set_vals, PETSc.InsertMode.ADD_VALUES)
+            A1.assemble()
+
         end = time.time()
         print("Time (Numba, pass {}): {}".format(i, end - start))
         A1.assemble()
