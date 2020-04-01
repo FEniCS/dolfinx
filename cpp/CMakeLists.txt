@@ -304,8 +304,9 @@ endif()
 
 if (GENERATE_DEMO_TEST_DATA)
   message(STATUS "")
-  message(STATUS "Generating CMakeLists.txt files in demo and test directories")
+  message(STATUS "Generating CMakeLists.txt files in demo directory")
   message(STATUS "-------------------------------------------------------------------")
+  # Generate CMakeLists.txt files in build directory
   execute_process(
     COMMAND ${PYTHON_EXECUTABLE} ${DOLFINX_SOURCE_DIR}/cmake/scripts/generate-cmakefiles.py
     WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
@@ -316,7 +317,20 @@ if (GENERATE_DEMO_TEST_DATA)
   if (CMAKE_GENERATION_RESULT)
     # Cleanup so FFCX rebuild is triggered next time we run cmake
     file(REMOVE_RECURSE ${CMAKE_CURRENT_BINARY_DIR}/demo ${CMAKE_CURRENT_BINARY_DIR}/test)
-    message(FATAL_ERROR "Generation of CMakeLists.txt files failed: \n${CMAKE_GENERATION_OUTPUT}")
+    message(FATAL_ERROR "Generation of CMakeLists.txt files in build directory failed: \n${CMAKE_GENERATION_OUTPUT}")
+  else()
+    # Generate CMakeLists.txt files in source directory as well, as developers might find it
+    # easier to run in-place demo builds while preparing new demos or modifying existing ones
+    execute_process(
+      COMMAND ${PYTHON_EXECUTABLE} ${DOLFINX_SOURCE_DIR}/cmake/scripts/generate-cmakefiles.py
+      WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
+      RESULT_VARIABLE CMAKE_GENERATION_RESULT
+      OUTPUT_VARIABLE CMAKE_GENERATION_OUTPUT
+      ERROR_VARIABLE CMAKE_GENERATION_OUTPUT
+      )
+    if (CMAKE_GENERATION_RESULT)
+      message(FATAL_ERROR "Generation of CMakeLists.txt files in source directory failed: \n${CMAKE_GENERATION_OUTPUT}")
+    endif()
   endif()
 endif()
 

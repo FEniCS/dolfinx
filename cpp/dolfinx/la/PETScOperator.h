@@ -53,9 +53,6 @@ public:
   ///                --> z = x
   PETScVector create_vector(std::size_t dim) const;
 
-  /// Return the MPI communicator
-  MPI_Comm mpi_comm() const;
-
   /// Return PETSc Mat pointer
   Mat mat() const;
 

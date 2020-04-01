@@ -59,9 +59,6 @@ public:
   /// Set options from PETSc options database
   void set_from_options() const;
 
-  /// Return MPI communicator
-  MPI_Comm mpi_comm() const;
-
   /// Return PETSc KSP pointer
   KSP ksp() const;
 
@@ -72,9 +69,6 @@ public:
   void set_dm_active(bool val);
 
 private:
-  // Report the number of iterations
-  void write_report(int num_iterations, KSPConvergedReason reason) const;
-
   // PETSc solver pointer
   KSP _ksp;
 };
