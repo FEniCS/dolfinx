@@ -238,24 +238,10 @@ void fem::add_diagonal(
   // NOTE: MatSetValuesLocal uses ADD_VALUES, hence it requires that the
   //       diagonal is zero before this function is called.
 
-  const std::function<int(PetscInt, const PetscInt*, PetscInt, const PetscInt*,
-                          const PetscScalar*)>
-      mat_set_values_local
-      = [&A](PetscInt nrow, const PetscInt* rows, PetscInt ncol,
-             const PetscInt* cols, const PetscScalar* y) {
-          PetscErrorCode ierr
-              = MatSetValuesLocal(A, nrow, rows, ncol, cols, y, ADD_VALUES);
-#ifdef DEBUG
-          if (ierr != 0)
-            la::petsc_error(ierr, __FILE__, "MatSetValuesLocal");
-#endif
-          return 0;
-        };
-
   for (Eigen::Index i = 0; i < rows.size(); ++i)
   {
     const PetscInt row = rows(i);
-    mat_set_values_local(1, &row, 1, &row, &diagonal);
+    MatSetValuesLocal(A, 1, &row, 1, &row, &diagonal, ADD_VALUES);
   }
 }
 //-----------------------------------------------------------------------------
