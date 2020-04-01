@@ -74,10 +74,8 @@ public:
 
   /// Extract subdofmap component
   /// @param[in] component The component indices
-  /// @param[in] topology The mesh topology the the dofmap is defined on
   /// @return The dofmap for the component
-  DofMap extract_sub_dofmap(const std::vector<int>& component,
-                            const mesh::Topology& topology) const;
+  DofMap extract_sub_dofmap(const std::vector<int>& component) const;
 
   /// Create a "collapsed" dofmap (collapses a sub-dofmap)
   /// @param[in] comm MPI Communicator
