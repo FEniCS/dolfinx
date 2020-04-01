@@ -34,7 +34,7 @@ def test_manufactured_poisson_dg(degree, filename, datadir):
 
     """
     with XDMFFile(MPI.comm_world, os.path.join(datadir, filename), "r", encoding=XDMFFile.Encoding.ASCII) as xdmf:
-        mesh = xdmf.read_mesh(name="Grid", flags=False)
+        mesh = xdmf.read_mesh(name="Grid")
 
     V = FunctionSpace(mesh, ("DG", degree))
     u, v = TrialFunction(V), TestFunction(V)

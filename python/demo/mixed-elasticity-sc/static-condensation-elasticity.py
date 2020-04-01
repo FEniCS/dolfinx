@@ -30,7 +30,7 @@ infile = dolfinx.io.XDMFFile(dolfinx.MPI.comm_world,
                              os.path.join(filedir, "cooks_tri_mesh.xdmf"),
                              "r",
                              encoding=dolfinx.cpp.io.XDMFFile.Encoding.ASCII)
-mesh = infile.read_mesh("Grid", flags=False)
+mesh = infile.read_mesh("Grid")
 infile.close()
 
 # Stress (Se) and displacement (Ue) elements

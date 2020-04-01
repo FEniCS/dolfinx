@@ -23,10 +23,10 @@ Geometry::Geometry(const std::shared_ptr<const common::IndexMap>& index_map,
                    const Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic,
                                       Eigen::RowMajor>& x,
                    const std::vector<std::int64_t>& global_indices,
-                   const std::vector<std::int64_t>& flags)
+                   const std::vector<std::int64_t>& input_global_indices)
     : _dim(x.cols()), _dofmap(dofmap), _index_map(index_map), _layout(layout),
       _global_indices(global_indices),
-      _flags(flags)
+      _input_global_indices(input_global_indices)
 {
   if (x.rows() != (int)global_indices.size())
     throw std::runtime_error("Size mis-match");
@@ -77,9 +77,9 @@ const std::vector<std::int64_t>& Geometry::global_indices() const
   return _global_indices;
 }
 //-----------------------------------------------------------------------------
-const std::vector<std::int64_t>& Geometry::flags() const
+const std::vector<std::int64_t>& Geometry::input_global_indices() const
 {
-  return _flags;
+  return _input_global_indices;
 }
 //-----------------------------------------------------------------------------
 const fem::ElementDofLayout& Geometry::dof_layout() const { return _layout; }
@@ -101,14 +101,13 @@ mesh::Geometry mesh::create_geometry(
     const fem::ElementDofLayout& layout,
     const graph::AdjacencyList<std::int64_t>& cell_nodes,
     const Eigen::Ref<const Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic,
-                                        Eigen::RowMajor>>& x,
-    const std::vector<std::int64_t>& flags)
+                                        Eigen::RowMajor>>& x)
 {
   // TODO: make sure required entities are initialised, or extend
   // fem::DofMapBuilder::build to take connectivities
 
   //  Build 'geometry' dofmap on the topology
-  auto[dof_index_map, dofmap]
+  auto [dof_index_map, dofmap]
       = fem::DofMapBuilder::build(comm, topology, layout, 1);
 
   // Build list of unique (global) node indices from adjacency list
@@ -139,32 +138,15 @@ mesh::Geometry mesh::create_geometry(
   Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor> xg(
       coords.rows(), coords.cols());
 
+  // Allocate space for input global indices
+  std::vector<std::int64_t> igi(indices.size());
+
   for (int i = 0; i < coords.rows(); ++i)
+  {
     xg.row(i) = coords.row(l2l[i]);
-
-  std::vector<std::int64_t> dist_flags;
-  if (flags.size() > 0)
-  {
-    if (flags.size() != (std::size_t)x.rows())
-      throw std::runtime_error("Number of flags must match number of nodes.");
-
-    // Map flags into Eigen array
-    const Eigen::Map<const Eigen::Array<std::int64_t, Eigen::Dynamic, 1>>
-        flags_arr(flags.data(), flags.size());
-
-    Eigen::Array<std::int64_t, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
-        dist_flags_arr = graph::Partitioning::distribute_data<std::int64_t>(
-            comm, indices, flags_arr);
-
-    for (Eigen::Index i = 0; i < dist_flags_arr.rows(); ++i)
-      dist_flags.push_back(dist_flags_arr(l2l[i], 0));
-  }
-  else
-  {
-    for (std::size_t i = 0; i < indices.size(); ++i)
-      dist_flags.push_back(indices[l2l[i]]);
+    igi[i] = indices[l2l[i]];
   }
 
-  return Geometry(dof_index_map, dofmap, layout, xg, l2g, dist_flags);
+  return Geometry(dof_index_map, dofmap, layout, xg, l2g, igi);
 }
 //-----------------------------------------------------------------------------

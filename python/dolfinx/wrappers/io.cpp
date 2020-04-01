@@ -61,12 +61,12 @@ void io(py::module& m)
               py::object exc_value, py::object traceback) { self.close(); })
       .def("close", &dolfinx::io::XDMFFile::close)
       .def("write_mesh", &dolfinx::io::XDMFFile::write_mesh, py::arg("mesh"),
-           py::arg("xpath") = "/Xdmf/Domain", py::arg("flags") = true)
+           py::arg("xpath") = "/Xdmf/Domain")
       .def("write_geometry", &dolfinx::io::XDMFFile::write_geometry,
            py::arg("geometry"), py::arg("name") = "geometry",
-           py::arg("xpath") = "/Xdmf/Domain", py::arg("flags") = true)
+           py::arg("xpath") = "/Xdmf/Domain")
       .def("read_mesh", &dolfinx::io::XDMFFile::read_mesh, py::arg("name"),
-           py::arg("xpath"), py::arg("flags"))
+           py::arg("xpath"))
       .def("read_mesh_data", &dolfinx::io::XDMFFile::read_mesh_data,
            py::arg("name") = "mesh", py::arg("xpath") = "/Xdmf/Domain")
       .def("write_function", &dolfinx::io::XDMFFile::write_function,
@@ -76,8 +76,7 @@ void io(py::module& m)
            py::arg("geometry_xpath") = "/Xdmf/Domain/Grid/Geometry",
            py::arg("xpath") = "/Xdmf/Domain")
       .def("read_meshtags", &dolfinx::io::XDMFFile::read_meshtags,
-           py::arg("mesh"), py::arg("name"), py::arg("xpath") = "/Xdmf/Domain",
-           py::arg("flags_xpath") = "/Xdmf/Domain/Grid");
+           py::arg("mesh"), py::arg("name"), py::arg("xpath") = "/Xdmf/Domain");
 
   // dolfinx::io::VTKFile
   py::class_<dolfinx::io::VTKFile, std::shared_ptr<dolfinx::io::VTKFile>>

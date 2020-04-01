@@ -37,8 +37,7 @@ namespace xdmf_mesh
 
 /// TODO
 void add_mesh(MPI_Comm comm, pugi::xml_node& xml_node, const hid_t h5_id,
-              const mesh::Mesh& mesh, const std::string path_prefix,
-              const bool flags = true);
+              const mesh::Mesh& mesh, const std::string path_prefix);
 
 /// TODO: Document
 void add_topology_data(MPI_Comm comm, pugi::xml_node& xml_node,
@@ -53,19 +52,11 @@ void add_geometry_data(MPI_Comm comm, pugi::xml_node& xml_node,
                        const mesh::Geometry& geometry);
 
 /// TODO
-void add_flags(MPI_Comm comm, pugi::xml_node& xml_node, const hid_t h5_id,
-               const std::string path_prefix, const mesh::Geometry& geometry);
-
-/// TODO
 std::tuple<
     mesh::CellType,
     Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>,
     Eigen::Array<std::int64_t, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>>
 read_mesh_data(MPI_Comm comm, const hid_t h5_id, const pugi::xml_node& node);
-
-/// TODO
-std::vector<std::int64_t> read_flags(MPI_Comm comm, const hid_t h5_id,
-                                     const pugi::xml_node& geometry_node);
 
 } // namespace xdmf_mesh
 } // namespace io

@@ -89,34 +89,24 @@ public:
   /// function space
   /// @param[in] mesh
   /// @param[in] xpath XPath where Mesh Grid will be written
-  /// @param[in] flags True to store flags for Geometry. This is required
-  ///   for parallel IO.
   void write_mesh(const mesh::Mesh& mesh,
-                  const std::string xpath = "/Xdmf/Domain",
-                  const bool flags = true);
+                  const std::string xpath = "/Xdmf/Domain");
 
   /// Save geometry to file
   /// @param[in] geometry
   /// @param[in] name
   /// @param[in] xpath XPath of a node where Geometry will be inserted
-  /// @param[in] flags True to store flags. This is required for
-  ///   parallel IO.
   void write_geometry(const mesh::Geometry& geometry,
                       const std::string name = "geometry",
-                      const std::string xpath = "/Xdmf/Domain",
-                      const bool flags = true);
+                      const std::string xpath = "/Xdmf/Domain");
 
   /// Read in the first Mesh in XDMF file
   /// @param[in] name
   /// @param[in] xpath XPath where Mesh Grid is located
-  /// @param[in] flags True to read and apply also the flags stored in file.
-  ///   This uses flags attached to the Geometry which is refered with xpath
-  ///   argument. If False, use position of nodes in file as flags.
   /// @return A Mesh distributed on the same communicator as the
   ///   XDMFFile
   mesh::Mesh read_mesh(const std::string name,
-                       const std::string xpath = "/Xdmf/Domain",
-                       const bool flags = true) const;
+                       const std::string xpath = "/Xdmf/Domain") const;
 
   /// Read in the data from the first mesh in XDMF file
   /// @param[in] name
@@ -153,12 +143,10 @@ public:
   /// @param[in] mesh
   /// @param[in] name
   /// @param[in] xpath XPath where MeshTags Grid is stored in file
-  /// @param[in] flags_xpath XPath where flags for Mesh are stored in file
   mesh::MeshTags<int>
   read_meshtags(const std::shared_ptr<const mesh::Mesh>& mesh,
                 const std::string name,
-                const std::string xpath = "/Xdmf/Domain",
-                const std::string flags_xpath = "/Xdmf/Domain/Grid");
+                const std::string xpath = "/Xdmf/Domain");
 
 private:
   // MPI communicator

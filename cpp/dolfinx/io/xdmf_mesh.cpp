@@ -194,36 +194,10 @@ void xdmf_mesh::add_geometry_data(MPI_Comm comm, pugi::xml_node& xml_node,
   xdmf_utils::add_data_item(geometry_node, h5_id, h5_path, x, offset, shape, "",
                             use_mpi_io);
 }
-//-----------------------------------------------------------------------------
-void xdmf_mesh::add_flags(MPI_Comm comm, pugi::xml_node& xml_node,
-                          const hid_t h5_id, const std::string path_prefix,
-                          const mesh::Geometry& geometry)
-{
-  pugi::xml_node attr_node = xml_node.append_child("Attribute");
-  attr_node.append_attribute("Name") = "flags";
-  attr_node.append_attribute("AttributeType") = "Scalar";
-  attr_node.append_attribute("Center") = "Node";
-
-  const std::int32_t size_local = geometry.index_map()->size_local();
-
-  const std::vector<std::int64_t> flags(geometry.flags().data(),
-                                        geometry.flags().data() + size_local);
-
-  const std::string h5_path = path_prefix + "/flags";
-  const std::int64_t num_flags_global
-      = MPI::sum(comm, (std::int64_t)flags.size());
-  const std::int64_t offset
-      = dolfinx::MPI::global_offset(comm, flags.size(), true);
-
-  const std::vector<std::int64_t> shape = {num_flags_global, 1};
-  const bool use_mpi_io = (dolfinx::MPI::size(comm) > 1);
-  xdmf_utils::add_data_item(attr_node, h5_id, h5_path, flags, offset, shape, "",
-                            use_mpi_io);
-}
 //----------------------------------------------------------------------------
 void xdmf_mesh::add_mesh(MPI_Comm comm, pugi::xml_node& xml_node,
                          const hid_t h5_id, const mesh::Mesh& mesh,
-                         const std::string name, const bool flags)
+                         const std::string name)
 {
   LOG(INFO) << "Adding mesh to node \"" << xml_node.path('/') << "\"";
 
@@ -250,9 +224,6 @@ void xdmf_mesh::add_mesh(MPI_Comm comm, pugi::xml_node& xml_node,
 
   // Add geometry node and attributes (including writing data)
   add_geometry_data(comm, grid_node, h5_id, path_prefix, mesh.geometry());
-
-  if (flags)
-    add_flags(comm, grid_node, h5_id, path_prefix, mesh.geometry());
 }
 //----------------------------------------------------------------------------
 std::tuple<
@@ -330,23 +301,5 @@ xdmf_mesh::read_mesh_data(MPI_Comm comm, const hid_t h5_id,
           cells, io::cells::vtk_to_dolfin(cell_type, cells.cols()));
 
   return {cell_type, std::move(points), std::move(cells1)};
-}
-//----------------------------------------------------------------------------
-std::vector<std::int64_t> xdmf_mesh::read_flags(MPI_Comm comm,
-                                                const hid_t h5_id,
-                                                const pugi::xml_node& node)
-{
-  pugi::xml_node attr_node
-      = node.select_node("Attribute[@Name='flags']").node();
-  assert(attr_node);
-
-  pugi::xml_node data_node = attr_node.child("DataItem");
-  assert(data_node);
-
-  // Read geometry flags
-  const std::vector<std::int64_t> x_flags
-      = xdmf_read::get_dataset<std::int64_t>(comm, data_node, h5_id);
-
-  return x_flags;
 }
 //----------------------------------------------------------------------------

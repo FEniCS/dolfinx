@@ -63,8 +63,7 @@ void add_meshtags(MPI_Comm comm, const mesh::MeshTags<T>& meshtags,
 template <typename T>
 mesh::MeshTags<T> read_meshtags(MPI_Comm comm,
                                 const std::shared_ptr<const mesh::Mesh>& mesh,
-                                pugi::xml_node& grid_node,
-                                pugi::xml_node& flags_node, const hid_t h5_id)
+                                pugi::xml_node& grid_node, const hid_t h5_id)
 {
 
   pugi::xml_node topology_node = grid_node.child("Topology");
@@ -81,26 +80,12 @@ mesh::MeshTags<T> read_meshtags(MPI_Comm comm,
   const std::int32_t num_local_file_entities
       = topology_data.size() / nnodes_per_entity;
 
-  // Read flags
-  const std::vector<std::int64_t> file_flags
-      = xdmf_mesh::read_flags(comm, h5_id, flags_node);
+  std::vector<std::int64_t> topo_unique;
+  topo_unique.assign(topology_data.begin(), topology_data.end());
 
-  // Map flags vector into Eigen array for the use in distribute_data
-  const Eigen::Map<const Eigen::Array<std::int64_t, Eigen::Dynamic, 1>>
-      file_flags_arr(file_flags.data(), file_flags.size());
-
-  // Extract only unique and sorted topology nodes
-  // Sorting is needed for call to distribute_data
-  // Uniqueness is to reduce the amount of data communicated
-  std::vector<std::int64_t> topo_unique = topology_data;
   std::sort(topo_unique.begin(), topo_unique.end());
   topo_unique.erase(std::unique(topo_unique.begin(), topo_unique.end()),
                     topo_unique.end());
-
-  // Distribute flags according to unique topology nodes
-  const Eigen::Array<std::int64_t, Eigen::Dynamic, 1> dist_file_flags
-      = graph::Partitioning::distribute_data<std::int64_t>(comm, topo_unique,
-                                                           file_flags_arr);
 
   // Fetch cell type of meshtags and deduce its dimension
   const auto cell_type_str = xdmf_utils::get_cell_type(topology_node);
@@ -115,48 +100,48 @@ mesh::MeshTags<T> read_meshtags(MPI_Comm comm,
   auto c_to_v = mesh->topology().connectivity(dim, 0);
   assert(c_to_v);
 
-  const std::vector<std::int64_t>& geom_flags = mesh->geometry().flags();
+  const std::vector<std::int64_t>& igi
+      = mesh->geometry().input_global_indices();
 
   //
-  // Send flags to officers, based on flag's value
+  // Send input global indices to officers, based on input global index value
   //
 
-  const std::int64_t num_flags_global
-      = MPI::sum(comm, (std::int64_t)geom_flags.size());
+  const std::int64_t num_igi_global = MPI::sum(comm, (std::int64_t)igi.size());
 
   // Split global array size and retrieve a range that this process/officer is
   // responsible for
-  std::array<std::int64_t, 2> range = MPI::local_range(comm, num_flags_global);
+  std::array<std::int64_t, 2> range = MPI::local_range(comm, num_igi_global);
   const int local_size = range[1] - range[0];
 
   const int comm_size = MPI::size(comm);
-  std::vector<std::vector<std::int64_t>> send_flags(comm_size);
-  std::vector<std::vector<std::int64_t>> recv_flags(comm_size);
+  std::vector<std::vector<std::int64_t>> send_igi(comm_size);
+  std::vector<std::vector<std::int64_t>> recv_igi(comm_size);
 
-  for (auto flag : geom_flags)
+  for (const auto gi : igi)
   {
     // TODO: Optimise this call
-    // Figure out which process responsible for the flag
-    const int officer = MPI::index_owner(comm_size, flag, num_flags_global);
-    send_flags[officer].push_back(flag);
+    // Figure out which process responsible for the input global index
+    const int officer = MPI::index_owner(comm_size, gi, num_igi_global);
+    send_igi[officer].push_back(gi);
   }
 
-  MPI::all_to_all(comm, send_flags, recv_flags);
+  MPI::all_to_all(comm, send_igi, recv_igi);
 
   //
-  // Handle received flags, i.e. put the owner of the flag to
-  // a global position, which is the value of the flag
+  // Handle received input global indices, i.e. put the owner of it to
+  // a global position, which is its value
   //
 
-  std::vector<int> owners(local_size, -1);
+  std::vector<int> owners(local_size, 0);
   const std::size_t offset = MPI::global_offset(comm, local_size, true);
 
   for (int i = 0; i < comm_size; ++i)
   {
-    const int num_recv_flags = (int)recv_flags[i].size();
-    for (int j = 0; j < num_recv_flags; ++j)
+    const int num_recv_igi = (int)recv_igi[i].size();
+    for (int j = 0; j < num_recv_igi; ++j)
     {
-      const int local_index = recv_flags[i][j] - offset;
+      const int local_index = recv_igi[i][j] - offset;
       assert(local_size > local_index);
       assert(local_index >= 0);
       owners[local_index] = i;
@@ -164,44 +149,27 @@ mesh::MeshTags<T> read_meshtags(MPI_Comm comm,
   }
 
   //
-  // Distribute the owners of flags
+  // Distribute the owners of input global indices
   //
-
-  // Need to sort flags for the call to distribute_data
-  // Store sorting permutation for later use on unique topology data
-  std::vector<int> perm(dist_file_flags.rows());
-  std::iota(perm.begin(), perm.end(), 0);
-  std::sort(perm.begin(), perm.end(), [&](const int& a, const int& b) {
-    return (dist_file_flags(a, 0) < dist_file_flags(b, 0));
-  });
-
-  // Apply the sorting permutation
-  std::vector<std::int64_t> dist_flags_sorted;
-  dist_flags_sorted.reserve(dist_file_flags.rows());
-
-  for (int i = 0; i < dist_file_flags.rows(); ++i)
-    dist_flags_sorted.push_back(dist_file_flags(perm[i], 0));
 
   Eigen::Map<Eigen::Array<int, Eigen::Dynamic, 1>> owners_arr(owners.data(),
                                                               owners.size());
 
-  // Distribute owners and fetch owners for the flags read from file
-  const Eigen::Array<int, Eigen::Dynamic, 1> dist_read_flags_owners_arr
-      = graph::Partitioning::distribute_data<int>(comm, dist_flags_sorted,
+  // Distribute owners and fetch owners for the input global indices read from
+  // file, i.e. for the unique topology data in file
+  const Eigen::Array<int, Eigen::Dynamic, 1> dist_owners_arr
+      = graph::Partitioning::distribute_data<int>(comm, topo_unique,
                                                   owners_arr);
 
   //
-  // Figure out which process needs flags read from file
+  // Figure out which process needs input global indices read from file
   // and send to it
   //
 
-  // Prepare a mapping (topology number in file: (flag, flag owner))
-  std::unordered_map<std::int64_t, std::pair<std::int64_t, int>> topo_to_flags;
+  // Prepare an array where on n-th position is the owner of n-th node
+  std::vector<int> topo_owners(topology_data.size());
   for (std::size_t i = 0; i < topo_unique.size(); ++i)
-  {
-    topo_to_flags[topo_unique[perm[i]]]
-        = {dist_flags_sorted[i], dist_read_flags_owners_arr(i, 0)};
-  }
+    topo_owners[topo_unique[i]] = dist_owners_arr(i, 0);
 
   std::vector<std::vector<std::int64_t>> send_ents(comm_size);
   std::vector<std::vector<std::int64_t>> recv_ents(comm_size);
@@ -217,18 +185,16 @@ mesh::MeshTags<T> read_meshtags(MPI_Comm comm,
   for (Eigen::Index e = 0; e < num_local_file_entities; ++e)
   {
     std::vector<std::int64_t> entity(nnodes_per_entity);
-    std::vector<int> entity_owners(nnodes_per_entity);
     std::vector<bool> sent(comm_size, false);
 
     for (int i = 0; i < nnodes_per_entity; ++i)
-      entity[i] = topo_to_flags[topology_data[e * nnodes_per_entity + i]].first;
+      entity[i] = topology_data[e * nnodes_per_entity + i];
 
     for (int i = 0; i < nnodes_per_entity; ++i)
     {
       // Entity could have as many owners as there are owners
-      // of its flags
-      const int send_to
-          = topo_to_flags[topology_data[e * nnodes_per_entity + i]].second;
+      // of its nodes
+      const int send_to = topo_owners[entity[i]];
       assert(send_to >= 0);
       if (!sent[send_to])
       {
@@ -245,11 +211,11 @@ mesh::MeshTags<T> read_meshtags(MPI_Comm comm,
 
   //
   // Using just the information on current local mesh partition
-  // prepare a mapping from *ordered* nodes of entity flags to entity local
-  // index
+  // prepare a mapping from *ordered* nodes of entity input global indices to
+  // entity local index
   //
 
-  std::map<std::vector<std::int64_t>, std::int32_t> entities_flags;
+  std::map<std::vector<std::int64_t>, std::int32_t> entities_igi;
 
   auto map_e = mesh->topology().index_map(e_dim);
   assert(map_e);
@@ -261,7 +227,7 @@ mesh::MeshTags<T> read_meshtags(MPI_Comm comm,
 
   for (std::int32_t e = 0; e < num_entities; ++e)
   {
-    std::vector<std::int64_t> entity_flags(nnodes_per_entity);
+    std::vector<std::int64_t> entity_igi(nnodes_per_entity);
 
     // Iterate over all entities of the mesh
     // Find cell attached to the entity
@@ -279,13 +245,13 @@ mesh::MeshTags<T> read_meshtags(MPI_Comm comm,
       assert(it != (cell_vertices.data() + cell_vertices.rows()));
       const int local_cell_vertex = std::distance(cell_vertices.data(), it);
 
-      // Insert flag for the node of the entitity
-      entity_flags[v] = geom_flags[cell_nodes[local_cell_vertex]];
+      // Insert input global index for the node of the entitity
+      entity_igi[v] = igi[cell_nodes[local_cell_vertex]];
     }
 
     // Sorting is needed to match with entities stored in file
-    std::sort(entity_flags.begin(), entity_flags.end());
-    entities_flags.insert({entity_flags, e});
+    std::sort(entity_igi.begin(), entity_igi.end());
+    entities_igi.insert({entity_igi, e});
   }
 
   //
@@ -301,14 +267,14 @@ mesh::MeshTags<T> read_meshtags(MPI_Comm comm,
     const int num_recv_ents = (int)(recv_ents[i].size() / nnodes_per_entity);
     for (int e = 0; e < num_recv_ents; ++e)
     {
-      std::vector<std::int64_t> flags(&recv_ents[i][nnodes_per_entity * e],
-                                      &recv_ents[i][nnodes_per_entity * e]
-                                          + nnodes_per_entity);
+      std::vector<std::int64_t> _entity(&recv_ents[i][nnodes_per_entity * e],
+                                        &recv_ents[i][nnodes_per_entity * e]
+                                            + nnodes_per_entity);
 
-      std::sort(flags.begin(), flags.end());
+      std::sort(_entity.begin(), _entity.end());
 
-      const auto it = entities_flags.find(flags);
-      if (it != entities_flags.end())
+      const auto it = entities_igi.find(_entity);
+      if (it != entities_igi.end())
       {
         indices.push_back(it->second);
         values.push_back(recv_vals[i][e]);

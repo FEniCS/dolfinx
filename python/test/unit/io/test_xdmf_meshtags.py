@@ -5,9 +5,11 @@
 # SPDX-License-Identifier:    LGPL-3.0-or-later
 
 import numpy
+import time
 import os
 from dolfinx.generation import UnitCubeMesh
 from dolfinx import MPI
+import dolfinx
 from dolfinx.io import XDMFFile
 from dolfinx.cpp.mesh import CellType
 from dolfinx.mesh import locate_entities_geometrical, MeshTags
@@ -20,10 +22,12 @@ assert (tempdir)
 if MPI.size(MPI.comm_world) > 1:
     encodings = (XDMFFile.Encoding.HDF5, )
 else:
-    encodings = (XDMFFile.Encoding.HDF5, XDMFFile.Encoding.ASCII)
-    encodings = (XDMFFile.Encoding.HDF5, )
+    encodings = (XDMFFile.Encoding.ASCII, XDMFFile.Encoding.HDF5)
 
 celltypes_3D = [CellType.tetrahedron, CellType.hexahedron]
+
+
+dolfinx.cpp.log.set_log_level(dolfinx.cpp.log.LogLevel.INFO)
 
 
 @pytest.mark.parametrize("cell_type", celltypes_3D)
@@ -31,7 +35,7 @@ celltypes_3D = [CellType.tetrahedron, CellType.hexahedron]
 def test_3d(tempdir, cell_type, encoding):
     filename = os.path.join(tempdir, "meshtags_3d.xdmf")
     comm = MPI.comm_world
-    mesh = UnitCubeMesh(comm, 10, 10, 10, cell_type)
+    mesh = UnitCubeMesh(comm, 2, 2, 2, cell_type)
     mesh.create_connectivity_all()
 
     bottom_facets = locate_entities_geometrical(mesh, 2, lambda x: numpy.isclose(x[1], 0.0))
@@ -60,13 +64,14 @@ def test_3d(tempdir, cell_type, encoding):
     with XDMFFile(comm, filename, "r", encoding=encoding) as file:
         mesh_in = file.read_mesh()
         mesh_in.create_connectivity_all()
-
+        print(mesh_in.geometry.input_global_indices)
         mt_in = file.read_meshtags(mesh_in, "facets")
-        mt_lines_in = file.read_meshtags(mesh_in, "lines")
-        assert mt_in.name == "facets"
-        assert mt_lines_in.name == "lines"
 
-    with XDMFFile(comm, os.path.join(tempdir, "meshtags_3d_out.xdmf"), "w", encoding=encoding) as file:
-        file.write_mesh(mesh_in)
-        file.write_meshtags(mt_lines_in)
-        file.write_meshtags(mt_in)
+    #     mt_lines_in = file.read_meshtags(mesh_in, "lines")
+        assert mt_in.name == "facets"
+    #     assert mt_lines_in.name == "lines"
+
+    # with XDMFFile(comm, os.path.join(tempdir, "meshtags_3d_out.xdmf"), "w", encoding=encoding) as file:
+    #     file.write_mesh(mesh_in)
+    #     file.write_meshtags(mt_lines_in)
+    #     file.write_meshtags(mt_in)
