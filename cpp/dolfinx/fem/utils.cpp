@@ -18,6 +18,7 @@
 #include <dolfinx/function/Constant.h>
 #include <dolfinx/function/Function.h>
 #include <dolfinx/function/FunctionSpace.h>
+#include <dolfinx/graph/AdjacencyList.h>
 #include <dolfinx/la/PETScMatrix.h>
 #include <dolfinx/la/PETScVector.h>
 #include <dolfinx/la/SparsityPattern.h>
@@ -548,7 +549,8 @@ fem::get_coeffs_from_ufc_form(const ufc_form& ufc_form)
   const char** names = ufc_form.coefficient_name_map();
   for (int i = 0; i < ufc_form.num_coefficients; ++i)
   {
-    coeffs.emplace_back(ufc_form.original_coefficient_position(i), names[i], nullptr);
+    coeffs.emplace_back(ufc_form.original_coefficient_position(i), names[i],
+                        nullptr);
   }
   return coeffs;
 }
@@ -773,7 +775,7 @@ fem::pack_constants(const fem::Form& form)
       std::pair<std::string, std::shared_ptr<const function::Constant>>>
       constants = form.constants();
   std::vector<PetscScalar> constant_values;
-  for (const auto & constant : constants)
+  for (const auto& constant : constants)
   {
     const std::vector<PetscScalar>& array = constant.second->value;
     constant_values.insert(constant_values.end(), array.data(),
@@ -782,5 +784,48 @@ fem::pack_constants(const fem::Form& form)
 
   return Eigen::Map<const Eigen::Array<PetscScalar, Eigen::Dynamic, 1>>(
       constant_values.data(), constant_values.size(), 1);
+}
+//-----------------------------------------------------------------------------
+Eigen::Array<std::int64_t, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
+fem::pack_exterior_facets(const fem::Form& form, std::int64_t i)
+{
+  assert(form.mesh());
+
+  // Retrieve facet->cell and cell->facet connectivity
+  const mesh::Mesh& mesh = *form.mesh();
+  const int tdim = mesh.topology().dim();
+  auto c_to_f = mesh.topology().connectivity(tdim, tdim - 1);
+  assert(c_to_f);
+  auto f_to_c = mesh.topology().connectivity(tdim - 1, tdim);
+  assert(f_to_c);
+
+  // Check that user input is valid
+  const fem::FormIntegrals& integrals = form.integrals();
+  using type = fem::FormIntegrals::Type;
+  const int num_integrals = integrals.num_integrals(type::exterior_facet);
+  assert(i < num_integrals);
+  const std::vector<std::int32_t>& active_facets
+      = integrals.integral_domains(type::exterior_facet, i);
+
+  Eigen::Array<std::int64_t, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
+      facet_info(active_facets.size(), 2);
+
+  // Find cell index and local facet index for each facet
+  for (std::size_t i = 0; i < active_facets.size(); i++)
+  {
+    // Get index of first attached cell
+    std::int32_t f = active_facets[i];
+    assert(f_to_c->num_links(active_facets[i]) > 0);
+    const std::int32_t cell = f_to_c->links(f)[0];
+
+    // Get local index of facet with respect to the cell
+    auto facets = c_to_f->links(cell);
+    const auto* it = std::find(facets.data(), facets.data() + facets.rows(), f);
+    assert(it != (facets.data() + facets.rows()));
+    const int local_facet = std::distance(facets.data(), it);
+    facet_info(i, 0) = cell;
+    facet_info(i, 1) = local_facet;
+  }
+  return facet_info;
 }
 //-----------------------------------------------------------------------------

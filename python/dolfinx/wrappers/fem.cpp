@@ -152,6 +152,8 @@ void fem(py::module& m)
         "Pack coefficients for a UFL form.");
   m.def("pack_constants", &dolfinx::fem::pack_constants,
         "Pack constants for a UFL form.");
+  m.def("pack_exterior_facets", &dolfinx::fem::pack_exterior_facets,
+        "Pack facet information for exterior facet assembly.");
   m.def(
       "create_matrix",
       [](const dolfinx::fem::Form& a) {

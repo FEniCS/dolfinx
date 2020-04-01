@@ -164,5 +164,14 @@ pack_coefficients(const fem::Form& form);
 Eigen::Array<PetscScalar, Eigen::Dynamic, 1>
 pack_constants(const fem::Form& form);
 
+// NOTE: This is subject to change
+/// Pack form information regarding exterior facets.
+// @param[in] The form
+// @param[in] The index of the exterior facet integral
+// @return Eigen array, where first column is the cell index for the given
+// facet, and the second column is the local facet index
+Eigen::Array<std::int64_t, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
+pack_exterior_facets(const fem::Form& form, std::int64_t i);
+
 } // namespace fem
 } // namespace dolfinx
