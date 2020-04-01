@@ -165,7 +165,7 @@ ARG PETSC_SLEPC_DEBUGGING
 
 WORKDIR /tmp
 
-# Install PETSc and SLEPc with real types.
+# Install PETSc and SLEPc with real types
 RUN apt-get -qq update && \
     apt-get -y install bison flex && \
     wget -nc --quiet http://ftp.mcs.anl.gov/pub/petsc/release-snapshots/petsc-lite-${PETSC_VERSION}.tar.gz -O petsc-${PETSC_VERSION}.tar.gz && \
@@ -186,6 +186,7 @@ RUN apt-get -qq update && \
     --download-spai \
     --download-suitesparse \
     --download-superlu \
+    --download-superlu_dist \
     --with-scalar-type=real \
     --prefix=/usr/local/petsc && \
     make ${MAKEFLAGS} && \
@@ -247,6 +248,7 @@ RUN apt-get -qq update && \
     --download-scalapack \
     --download-suitesparse \
     --download-superlu \
+    --download-superlu_dist \
     --with-scalar-type=complex \
     --prefix=/usr/local/petsc && \
     make ${MAKEFLAGS} && \
