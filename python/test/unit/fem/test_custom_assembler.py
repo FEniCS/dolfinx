@@ -492,6 +492,7 @@ def test_exterior_facet_cffi(set_vals):
     x = V.mesh.geometry.x
     dofs = V.dofmap.list.array()
     num_dofs_per_element = V.dofmap.dof_layout.num_dofs
+    tdim = mesh.topology.dim
     gdim = mesh.geometry.dim
 
     # Get cell orientation data
@@ -511,7 +512,13 @@ def test_exterior_facet_cffi(set_vals):
     formintegral = cpp_form.integrals()
     subdomain_ids = formintegral.integral_ids(dolfinx.cpp.fem.FormIntegrals.Type.exterior_facet)
     num_exterior_integrals = len(subdomain_ids)
-
+    # Get updated cell orientation data
+    if num_exterior_integrals > 0:
+        V.mesh.create_entities(tdim - 1)
+        V.mesh.create_connectivity(tdim - 1, tdim)
+        permutation_info = V.mesh.topology.get_cell_permutation_info()
+        facet_permutation_info = V.mesh.topology.get_facet_permutations()
+        perm = (permutation_info, facet_permutation_info)
     A1 = A0.copy()
     for i in range(2):
         A1.zeroEntries()
