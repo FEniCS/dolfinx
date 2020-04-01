@@ -4,16 +4,17 @@
 #
 # SPDX-License-Identifier:    LGPL-3.0-or-later
 
-import numpy
-import time
 import os
-from dolfinx.generation import UnitCubeMesh
-from dolfinx import MPI
+
+import numpy
+
 import dolfinx
-from dolfinx.io import XDMFFile
-from dolfinx.cpp.mesh import CellType
-from dolfinx.mesh import locate_entities_geometrical, MeshTags
 import pytest
+from dolfinx import MPI
+from dolfinx.cpp.mesh import CellType
+from dolfinx.generation import UnitCubeMesh
+from dolfinx.io import XDMFFile
+from dolfinx.mesh import MeshTags, locate_entities_geometrical
 from dolfinx_utils.test.fixtures import tempdir
 
 assert (tempdir)
@@ -64,14 +65,13 @@ def test_3d(tempdir, cell_type, encoding):
     with XDMFFile(comm, filename, "r", encoding=encoding) as file:
         mesh_in = file.read_mesh()
         mesh_in.create_connectivity_all()
-        print(mesh_in.geometry.input_global_indices)
         mt_in = file.read_meshtags(mesh_in, "facets")
+        mt_lines_in = file.read_meshtags(mesh_in, "lines")
 
-    #     mt_lines_in = file.read_meshtags(mesh_in, "lines")
         assert mt_in.name == "facets"
-    #     assert mt_lines_in.name == "lines"
+        assert mt_lines_in.name == "lines"
 
-    # with XDMFFile(comm, os.path.join(tempdir, "meshtags_3d_out.xdmf"), "w", encoding=encoding) as file:
-    #     file.write_mesh(mesh_in)
-    #     file.write_meshtags(mt_lines_in)
-    #     file.write_meshtags(mt_in)
+    with XDMFFile(comm, os.path.join(tempdir, "meshtags_3d_out.xdmf"), "w", encoding=encoding) as file:
+        file.write_mesh(mesh_in)
+        file.write_meshtags(mt_lines_in)
+        file.write_meshtags(mt_in)
