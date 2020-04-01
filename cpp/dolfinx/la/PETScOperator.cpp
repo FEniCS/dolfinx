@@ -82,13 +82,5 @@ PETScVector PETScOperator::create_vector(std::size_t dim) const
   return PETScVector(x, false);
 }
 //-----------------------------------------------------------------------------
-MPI_Comm PETScOperator::mpi_comm() const
-{
-  assert(_matA);
-  MPI_Comm mpi_comm = MPI_COMM_NULL;
-  PetscObjectGetComm((PetscObject)_matA, &mpi_comm);
-  return mpi_comm;
-}
-//-----------------------------------------------------------------------------
 Mat PETScOperator::mat() const { return _matA; }
 //-----------------------------------------------------------------------------

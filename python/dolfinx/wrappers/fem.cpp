@@ -365,9 +365,7 @@ void fem(py::module& m)
           const std::vector<std::shared_ptr<const dolfinx::fem::DirichletBC>>&,
           PetscScalar>(&dolfinx::fem::add_diagonal));
 
-#ifndef PETSC_USE_COMPLEX
   m.def("assemble_matrix_eigen", &dolfinx::fem::assemble_matrix_eigen);
-#endif
 
   // BC modifiers
   m.def("apply_lifting",
