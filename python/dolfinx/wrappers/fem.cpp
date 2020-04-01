@@ -437,7 +437,8 @@ void fem(py::module& m)
              std::shared_ptr<dolfinx::fem::FormIntegrals>>
       formintegrals(m, "FormIntegrals",
                     "Holder for integral kernels and domains");
-  formintegrals.def("integral_ids", &dolfinx::fem::FormIntegrals::integral_ids);
+  formintegrals.def("integral_ids", &dolfinx::fem::FormIntegrals::integral_ids)
+      .def("integral_domains", &dolfinx::fem::FormIntegrals::integral_domains);
 
   py::enum_<dolfinx::fem::FormIntegrals::Type>(formintegrals, "Type")
       .value("cell", dolfinx::fem::FormIntegrals::Type::cell)
