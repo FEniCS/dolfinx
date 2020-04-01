@@ -76,10 +76,7 @@ void fem::apply_lifting(
   fem::impl::apply_lifting(b, a, bcs1, x0, scale);
 }
 //-----------------------------------------------------------------------------
-#ifndef PETSC_USE_COMPLEX
-#ifndef PETSC_USE_64BIT_INDICES
-
-Eigen::SparseMatrix<double, Eigen::RowMajor> fem::assemble_matrix_eigen(
+Eigen::SparseMatrix<PetscScalar, Eigen::RowMajor> fem::assemble_matrix_eigen(
     const Form& a, const std::vector<std::shared_ptr<const DirichletBC>>& bcs)
 {
   // Index maps for dof ranges
@@ -108,15 +105,14 @@ Eigen::SparseMatrix<double, Eigen::RowMajor> fem::assemble_matrix_eigen(
     }
   }
 
-  std::vector<Eigen::Triplet<double>> triplets;
+  std::vector<Eigen::Triplet<PetscScalar>> triplets;
 
   // Lambda function creating Eigen::Triplet array
-  const std::function<int(std::int32_t, const std::int32_t*, std::int32_t,
-                          const std::int32_t*, const double*)>
+  const std::function<int(PetscInt, const PetscInt*, PetscInt, const PetscInt*,
+                          const PetscScalar*)>
       mat_set_values_local
-      = [&triplets](std::int32_t nrow, const std::int32_t* rows,
-                    std::int32_t ncol, const std::int32_t* cols,
-                    const double* y) {
+      = [&triplets](PetscInt nrow, const PetscInt* rows, PetscInt ncol,
+                    const PetscInt* cols, const PetscScalar* y) {
           for (int i = 0; i < nrow; ++i)
           {
             int row = rows[i];
@@ -132,14 +128,12 @@ Eigen::SparseMatrix<double, Eigen::RowMajor> fem::assemble_matrix_eigen(
   // Assemble
   impl::assemble_matrix(mat_set_values_local, a, dof_marker0, dof_marker1);
 
-  Eigen::SparseMatrix<double, Eigen::RowMajor> mat(
+  Eigen::SparseMatrix<PetscScalar, Eigen::RowMajor> mat(
       map0->block_size() * (map0->size_local() + map0->num_ghosts()),
       map1->block_size() * (map1->size_local() + map1->num_ghosts()));
   mat.setFromTriplets(triplets.begin(), triplets.end());
   return mat;
 }
-#endif
-#endif
 //-----------------------------------------------------------------------------
 void fem::assemble_matrix(
     Mat A, const Form& a,
