@@ -8,7 +8,6 @@ import os
 
 import numpy
 
-import dolfinx
 import pytest
 from dolfinx import MPI
 from dolfinx.cpp.mesh import CellType
