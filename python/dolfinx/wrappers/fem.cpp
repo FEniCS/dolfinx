@@ -446,6 +446,7 @@ void fem(py::module& m)
             return py::array_t<std::int32_t>(domains.size(), domains.data(),
                                              py::none());
           },
+          py::return_value_policy::reference_internal,
           "Return active domains for given integral");
 
   py::enum_<dolfinx::fem::FormIntegrals::Type>(formintegrals, "Type")
