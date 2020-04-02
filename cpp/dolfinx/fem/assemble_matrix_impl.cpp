@@ -87,7 +87,8 @@ void fem::impl::assemble_matrix(
   }
 }
 //-----------------------------------------------------------------------------
-// @cond - protect from Doxygen
+// @cond
+// protect from Doxygen
 // Explicit instantiation with PetscScalar
 template void fem::impl::assemble_matrix<PetscScalar>(
     const std::function<int(std::int32_t, const std::int32_t*, std::int32_t,
