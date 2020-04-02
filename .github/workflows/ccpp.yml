@@ -29,7 +29,7 @@ jobs:
 
     strategy:
       matrix:
-        petsc_arch: [real]
+        petsc_arch: [real, complex]
         petsc_int_type: [32, 64]
 
     steps:
