@@ -108,11 +108,12 @@ Eigen::SparseMatrix<PetscScalar, Eigen::RowMajor> fem::assemble_matrix_eigen(
   std::vector<Eigen::Triplet<PetscScalar>> triplets;
 
   // Lambda function creating Eigen::Triplet array
-  const std::function<int(PetscInt, const PetscInt*, PetscInt, const PetscInt*,
-                          const PetscScalar*)>
+  const std::function<int(std::int32_t, const std::int32_t*, std::int32_t,
+                          const std::int32_t*, const PetscScalar*)>
       mat_set_values_local
-      = [&triplets](PetscInt nrow, const PetscInt* rows, PetscInt ncol,
-                    const PetscInt* cols, const PetscScalar* y) {
+      = [&triplets](std::int32_t nrow, const std::int32_t* rows,
+                    std::int32_t ncol, const std::int32_t* cols,
+                    const PetscScalar* y) {
           for (int i = 0; i < nrow; ++i)
           {
             int row = rows[i];
@@ -165,13 +166,22 @@ void fem::assemble_matrix(
     }
   }
 
-  const std::function<int(PetscInt, const PetscInt*, PetscInt, const PetscInt*,
-                          const PetscScalar*)>
+  const std::function<int(std::int32_t, const std::int32_t*, std::int32_t,
+                          const std::int32_t*, const PetscScalar*)>
       mat_set_values_local
-      = [&A](PetscInt nrow, const PetscInt* rows, PetscInt ncol,
-             const PetscInt* cols, const PetscScalar* y) {
+      = [&A](std::int32_t nrow, const std::int32_t* rows, std::int32_t ncol,
+             const std::int32_t* cols, const PetscScalar* y) {
+#ifdef PETSC_USE_64BIT_INDICES
+          PetscInt rows1[nrow];
+          PetscInt cols1[ncol];
+          std::copy(rows, rows + nrow, rows1);
+          std::copy(cols, cols + ncol, cols1);
+#else
+          const PetscInt *rows1 = rows, *cols1 = cols;
+#endif
+
           PetscErrorCode ierr
-              = MatSetValuesLocal(A, nrow, rows, ncol, cols, y, ADD_VALUES);
+              = MatSetValuesLocal(A, nrow, rows1, ncol, cols1, y, ADD_VALUES);
 #ifdef DEBUG
           if (ierr != 0)
             la::petsc_error(ierr, __FILE__, "MatSetValuesLocal");
@@ -186,13 +196,21 @@ void fem::assemble_matrix(
 void fem::assemble_matrix(Mat A, const Form& a, const std::vector<bool>& bc0,
                           const std::vector<bool>& bc1)
 {
-  const std::function<int(PetscInt, const PetscInt*, PetscInt, const PetscInt*,
-                          const PetscScalar*)>
+  const std::function<int(std::int32_t, const std::int32_t*, std::int32_t,
+                          const std::int32_t*, const PetscScalar*)>
       mat_set_values_local
-      = [&A](PetscInt nrow, const PetscInt* rows, PetscInt ncol,
-             const PetscInt* cols, const PetscScalar* y) {
+      = [&A](std::int32_t nrow, const std::int32_t* rows, std::int32_t ncol,
+             const std::int32_t* cols, const PetscScalar* y) {
+#ifdef PETSC_USE_64BIT_INDICES
+          PetscInt rows1[nrow];
+          PetscInt cols1[ncol];
+          std::copy(rows, rows + nrow, rows1);
+          std::copy(cols, cols + ncol, cols1);
+#else
+          const PetscInt *rows1 = rows, *cols1 = cols;
+#endif
           PetscErrorCode ierr
-              = MatSetValuesLocal(A, nrow, rows, ncol, cols, y, ADD_VALUES);
+              = MatSetValuesLocal(A, nrow, rows1, ncol, cols1, y, ADD_VALUES);
 #ifdef DEBUG
           if (ierr != 0)
             la::petsc_error(ierr, __FILE__, "MatSetValuesLocal");
@@ -232,13 +250,21 @@ void fem::add_diagonal(
   // NOTE: MatSetValuesLocal uses ADD_VALUES, hence it requires that the
   //       diagonal is zero before this function is called.
 
-  const std::function<int(PetscInt, const PetscInt*, PetscInt, const PetscInt*,
-                          const PetscScalar*)>
+  const std::function<int(std::int32_t, const std::int32_t*, std::int32_t,
+                          const std::int32_t*, const PetscScalar*)>
       mat_set_values_local
-      = [&A](PetscInt nrow, const PetscInt* rows, PetscInt ncol,
-             const PetscInt* cols, const PetscScalar* y) {
+      = [&A](std::int32_t nrow, const std::int32_t* rows, std::int32_t ncol,
+             const std::int32_t* cols, const PetscScalar* y) {
+#ifdef PETSC_USE_64BIT_INDICES
+          PetscInt rows1[nrow];
+          PetscInt cols1[ncol];
+          std::copy(rows, rows + nrow, rows1);
+          std::copy(cols, cols + ncol, cols1);
+#else
+          const PetscInt *rows1 = rows, *cols1 = cols;
+#endif
           PetscErrorCode ierr
-              = MatSetValuesLocal(A, nrow, rows, ncol, cols, y, ADD_VALUES);
+              = MatSetValuesLocal(A, nrow, rows1, ncol, cols1, y, ADD_VALUES);
 #ifdef DEBUG
           if (ierr != 0)
             la::petsc_error(ierr, __FILE__, "MatSetValuesLocal");
@@ -248,7 +274,7 @@ void fem::add_diagonal(
 
   for (Eigen::Index i = 0; i < rows.size(); ++i)
   {
-    const PetscInt row = rows(i);
+    const std::int32_t row = rows(i);
     mat_set_values_local(1, &row, 1, &row, &diagonal);
   }
 }

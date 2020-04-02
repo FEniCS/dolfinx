@@ -68,9 +68,11 @@ public:
   std::shared_ptr<const common::IndexMap> index_map(int dim) const;
 
   /// Insert non-zero locations using local (process-wise) indices
-  void insert(
-      const Eigen::Ref<const Eigen::Array<PetscInt, Eigen::Dynamic, 1>>& rows,
-      const Eigen::Ref<const Eigen::Array<PetscInt, Eigen::Dynamic, 1>>& cols);
+  void
+  insert(const Eigen::Ref<const Eigen::Array<std::int32_t, Eigen::Dynamic, 1>>&
+             rows,
+         const Eigen::Ref<const Eigen::Array<std::int32_t, Eigen::Dynamic, 1>>&
+             cols);
 
   /// Insert non-zero locations on the diagonal
   /// @param[in] rows The rows in local (process-wise) indices. The
