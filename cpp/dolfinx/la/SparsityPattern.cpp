@@ -242,7 +242,7 @@ void SparsityPattern::insert(
 }
 //-----------------------------------------------------------------------------
 void SparsityPattern::insert_diagonal(
-    const Eigen::Ref<const Eigen::Array<PetscInt, Eigen::Dynamic, 1>>& rows)
+    const Eigen::Ref<const Eigen::Array<std::int32_t, Eigen::Dynamic, 1>>& rows)
 {
   if (_diagonal)
   {

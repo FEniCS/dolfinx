@@ -78,7 +78,8 @@ public:
   /// @param[in] rows The rows in local (process-wise) indices. The
   ///   indices must exist in the row IndexMap.
   void insert_diagonal(
-      const Eigen::Ref<const Eigen::Array<PetscInt, Eigen::Dynamic, 1>>& rows);
+      const Eigen::Ref<const Eigen::Array<std::int32_t, Eigen::Dynamic, 1>>&
+          rows);
 
   /// Finalize sparsity pattern and communicate off-process entries
   void assemble();
