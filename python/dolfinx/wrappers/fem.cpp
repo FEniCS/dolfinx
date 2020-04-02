@@ -152,8 +152,6 @@ void fem(py::module& m)
         "Pack coefficients for a UFL form.");
   m.def("pack_constants", &dolfinx::fem::pack_constants,
         "Pack constants for a UFL form.");
-  m.def("pack_exterior_facets", &dolfinx::fem::pack_exterior_facets,
-        "Pack facet information for exterior facet assembly.");
   m.def(
       "create_matrix",
       [](const dolfinx::fem::Form& a) {
@@ -438,7 +436,17 @@ void fem(py::module& m)
       formintegrals(m, "FormIntegrals",
                     "Holder for integral kernels and domains");
   formintegrals.def("integral_ids", &dolfinx::fem::FormIntegrals::integral_ids)
-      .def("integral_domains", &dolfinx::fem::FormIntegrals::integral_domains);
+      .def(
+          "integral_domains",
+          [](dolfinx::fem::FormIntegrals& self,
+             dolfinx::fem::FormIntegrals::Type type, int i) {
+            const std::vector<std::int32_t>& domains
+                = self.integral_domains(type, i);
+
+            return py::array_t<std::int32_t>(domains.size(), domains.data(),
+                                             py::none());
+          },
+          "Return active domains for given integral");
 
   py::enum_<dolfinx::fem::FormIntegrals::Type>(formintegrals, "Type")
       .value("cell", dolfinx::fem::FormIntegrals::Type::cell)
