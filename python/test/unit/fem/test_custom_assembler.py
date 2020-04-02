@@ -340,7 +340,7 @@ def test_custom_mesh_loop_ctypes_rank2():
     pos = mesh.geometry.dofmap().offsets()
     x_dofs = mesh.geometry.dofmap().array()
     x = mesh.geometry.x
-    dofs = V.dofmap.list.array()
+    dofs = np.array(V.dofmap.list.array(), dtype=np.dtype(PETSc.IntType))
 
     # Generated case with general assembler
     u, v = ufl.TrialFunction(V), ufl.TestFunction(V)
@@ -393,7 +393,7 @@ def test_custom_mesh_loop_cffi_rank2(set_vals):
     pos = mesh.geometry.dofmap().offsets()
     x_dofs = mesh.geometry.dofmap().array()
     x = mesh.geometry.x
-    dofs = V.dofmap.list.array()
+    dofs = np.array(V.dofmap.list.array(), dtype=np.dtype(PETSc.IntType))
 
     A1 = A0.copy()
     for i in range(2):
