@@ -87,12 +87,14 @@ void fem::impl::assemble_matrix(
   }
 }
 //-----------------------------------------------------------------------------
+// @cond - protect from Doxygen
 // Explicit instantiation with PetscScalar
 template void fem::impl::assemble_matrix<PetscScalar>(
     const std::function<int(std::int32_t, const std::int32_t*, std::int32_t,
                             const std::int32_t*, const PetscScalar*)>&
         mat_set_values_local,
     const Form& a, const std::vector<bool>& bc0, const std::vector<bool>& bc1);
+// @endcond
 //-----------------------------------------------------------------------------
 template <typename ScalarType>
 void fem::impl::assemble_cells(
