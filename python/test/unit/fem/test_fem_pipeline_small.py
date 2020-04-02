@@ -21,25 +21,21 @@ from ufl import (SpatialCoordinate, TestFunction, TrialFunction, div, dx, grad,
                  inner, ds, dS, avg, jump)
 
 
+meshes = [UnitSquareMesh(MPI.comm_world, 2, 1, CellType.triangle),
+          UnitCubeMesh(MPI.comm_world, 2, 1, 1, CellType.tetrahedron),
+          UnitSquareMesh(MPI.comm_world, 2, 1, CellType.quadrilateral),
+          UnitCubeMesh(MPI.comm_world, 2, 1, 1, CellType.hexahedron)]
+
 parametrize_meshes = pytest.mark.parametrize(
-    "mesh", [UnitSquareMesh(MPI.comm_world, 2, 1, CellType.triangle),
-             UnitCubeMesh(MPI.comm_world, 2, 1, 1, CellType.tetrahedron),
-             UnitSquareMesh(MPI.comm_world, 2, 1, CellType.quadrilateral),
-             UnitCubeMesh(MPI.comm_world, 2, 1, 1, CellType.hexahedron)])
-
+    "mesh", meshes)
 parametrize_meshes_simplex = pytest.mark.parametrize(
-    "mesh", [UnitSquareMesh(MPI.comm_world, 2, 1, CellType.triangle),
-             UnitCubeMesh(MPI.comm_world, 2, 1, 1, CellType.tetrahedron)])
-
+    "mesh", [m for m in meshes if m.ufl_cell().is_simplex()])
 parametrize_meshes_tp = pytest.mark.parametrize(
-    "mesh", [UnitSquareMesh(MPI.comm_world, 2, 1, CellType.quadrilateral),
-             UnitCubeMesh(MPI.comm_world, 2, 1, 1, CellType.hexahedron)])
-
+    "mesh", [m for m in meshes if not m.ufl_cell().is_simplex()])
 parametrize_meshes_quad = pytest.mark.parametrize(
-    "mesh", [UnitSquareMesh(MPI.comm_world, 2, 1, CellType.quadrilateral)])
-
+    "mesh", [m for m in meshes if m.ufl_cell().cellname() == "quadrilateral"])
 parametrize_meshes_hex = pytest.mark.parametrize(
-    "mesh", [UnitCubeMesh(MPI.comm_world, 2, 1, 1, CellType.hexahedron)])
+    "mesh", [m for m in meshes if m.ufl_cell().cellname() == "hexahedron"])
 
 
 def run_scalar_test(mesh, V, degree):
