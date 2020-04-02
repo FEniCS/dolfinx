@@ -166,16 +166,17 @@ void fem::assemble_matrix(
     }
   }
 
+  std::array<std::vector<PetscInt>, 2> sp;
   const std::function<int(std::int32_t, const std::int32_t*, std::int32_t,
                           const std::int32_t*, const PetscScalar*)>
       mat_set_values_local
-      = [&A](std::int32_t nrow, const std::int32_t* rows, std::int32_t ncol,
-             const std::int32_t* cols, const PetscScalar* y) {
+      = [&A, &sp](std::int32_t nrow, const std::int32_t* rows,
+                  std::int32_t ncol, const std::int32_t* cols,
+                  const PetscScalar* y) {
 #ifdef PETSC_USE_64BIT_INDICES
-          PetscInt rows1[nrow];
-          PetscInt cols1[ncol];
-          std::copy(rows, rows + nrow, rows1);
-          std::copy(cols, cols + ncol, cols1);
+          sp[0].assign(rows, rows + nrow);
+          sp[1].assign(cols, cols + ncol);
+          const PetscInt *rows1 = sp[0].data(), *cols1 = sp[1].data();
 #else
           const PetscInt *rows1 = rows, *cols1 = cols;
 #endif
@@ -196,16 +197,17 @@ void fem::assemble_matrix(
 void fem::assemble_matrix(Mat A, const Form& a, const std::vector<bool>& bc0,
                           const std::vector<bool>& bc1)
 {
+  std::array<std::vector<PetscInt>, 2> sp;
   const std::function<int(std::int32_t, const std::int32_t*, std::int32_t,
                           const std::int32_t*, const PetscScalar*)>
       mat_set_values_local
-      = [&A](std::int32_t nrow, const std::int32_t* rows, std::int32_t ncol,
-             const std::int32_t* cols, const PetscScalar* y) {
+      = [&A, &sp](std::int32_t nrow, const std::int32_t* rows,
+                  std::int32_t ncol, const std::int32_t* cols,
+                  const PetscScalar* y) {
 #ifdef PETSC_USE_64BIT_INDICES
-          PetscInt rows1[nrow];
-          PetscInt cols1[ncol];
-          std::copy(rows, rows + nrow, rows1);
-          std::copy(cols, cols + ncol, cols1);
+          sp[0].assign(rows, rows + nrow);
+          sp[1].assign(cols, cols + ncol);
+          const PetscInt *rows1 = sp[0].data(), *cols1 = sp[1].data();
 #else
           const PetscInt *rows1 = rows, *cols1 = cols;
 #endif
@@ -250,16 +252,17 @@ void fem::add_diagonal(
   // NOTE: MatSetValuesLocal uses ADD_VALUES, hence it requires that the
   //       diagonal is zero before this function is called.
 
+  std::array<std::vector<PetscInt>, 2> sp;
   const std::function<int(std::int32_t, const std::int32_t*, std::int32_t,
                           const std::int32_t*, const PetscScalar*)>
       mat_set_values_local
-      = [&A](std::int32_t nrow, const std::int32_t* rows, std::int32_t ncol,
-             const std::int32_t* cols, const PetscScalar* y) {
+      = [&A, &sp](std::int32_t nrow, const std::int32_t* rows,
+                  std::int32_t ncol, const std::int32_t* cols,
+                  const PetscScalar* y) {
 #ifdef PETSC_USE_64BIT_INDICES
-          PetscInt rows1[nrow];
-          PetscInt cols1[ncol];
-          std::copy(rows, rows + nrow, rows1);
-          std::copy(cols, cols + ncol, cols1);
+          sp[0].assign(rows, rows + nrow);
+          sp[1].assign(cols, cols + ncol);
+          const PetscInt *rows1 = sp[0].data(), *cols1 = sp[1].data();
 #else
           const PetscInt *rows1 = rows, *cols1 = cols;
 #endif
