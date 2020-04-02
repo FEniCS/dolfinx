@@ -567,7 +567,7 @@ def test_exterior_facet_cffi(set_vals):
         A1.zeroEntries()
         start = time.time()
         for j in range(num_exterior_integrals):
-            facet_info = pack_facet_info(V.mesh, formintegral, j)  # dolfinx.cpp.fem.pack_exterior_facets(cpp_form, j)
+            facet_info = pack_facet_info(V.mesh, formintegral, j)
             subdomain_id = subdomain_ids[j]
             facet_kernel = ufc_form.create_exterior_facet_integral(
                 subdomain_id).tabulate_tensor
