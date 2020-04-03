@@ -45,22 +45,22 @@ namespace impl
 /// conditions are zeroed. Markers (bc0 and bc1) can be empty if not bcs
 /// are applied. Matrix is not finalised.
 
-template <typename IndexType, typename ScalarType>
+template <typename ScalarType>
 void assemble_matrix(
-    const std::function<int(IndexType, const IndexType*, IndexType,
-                            const IndexType*, const ScalarType*)>&
+    const std::function<int(std::int32_t, const std::int32_t*, std::int32_t,
+                            const std::int32_t*, const ScalarType*)>&
         mat_set_values_local,
     const Form& a, const std::vector<bool>& bc0, const std::vector<bool>& bc1);
 
 /// Execute kernel over cells and accumulate result in Mat
-template <typename IndexType, typename ScalarType>
+template <typename ScalarType>
 void assemble_cells(
-    const std::function<int(IndexType, const IndexType*, IndexType,
-                            const IndexType*, const ScalarType*)>&
+    const std::function<int(std::int32_t, const std::int32_t*, std::int32_t,
+                            const std::int32_t*, const ScalarType*)>&
         mat_set_values_local,
     const mesh::Mesh& mesh, const std::vector<std::int32_t>& active_cells,
-    const graph::AdjacencyList<IndexType>& dofmap0, int num_dofs_per_cell0,
-    const graph::AdjacencyList<IndexType>& dofmap1, int num_dofs_per_cell1,
+    const graph::AdjacencyList<std::int32_t>& dofmap0, int num_dofs_per_cell0,
+    const graph::AdjacencyList<std::int32_t>& dofmap1, int num_dofs_per_cell1,
     const std::vector<bool>& bc0, const std::vector<bool>& bc1,
     const std::function<void(ScalarType*, const ScalarType*, const ScalarType*,
                              const double*, const int*, const std::uint8_t*,
@@ -70,10 +70,10 @@ void assemble_cells(
     const Eigen::Array<ScalarType, Eigen::Dynamic, 1>& constant_values);
 
 /// Execute kernel over exterior facets and  accumulate result in Mat
-template <typename IndexType, typename ScalarType>
+template <typename ScalarType>
 void assemble_exterior_facets(
-    const std::function<int(IndexType, const IndexType*, IndexType,
-                            const IndexType*, const ScalarType*)>&
+    const std::function<int(std::int32_t, const std::int32_t*, std::int32_t,
+                            const std::int32_t*, const ScalarType*)>&
         mat_set_values_local,
     const mesh::Mesh& mesh, const std::vector<std::int32_t>& active_facets,
     const DofMap& dofmap0, const DofMap& dofmap1, const std::vector<bool>& bc0,
@@ -86,10 +86,10 @@ void assemble_exterior_facets(
     const Eigen::Array<ScalarType, Eigen::Dynamic, 1> constant_values);
 
 /// Execute kernel over interior facets and  accumulate result in Mat
-template <typename IndexType, typename ScalarType>
+template <typename ScalarType>
 void assemble_interior_facets(
-    const std::function<int(IndexType, const IndexType*, IndexType,
-                            const IndexType*, const ScalarType*)>&
+    const std::function<int(std::int32_t, const std::int32_t*, std::int32_t,
+                            const std::int32_t*, const ScalarType*)>&
         mat_set_values_local,
     const mesh::Mesh& mesh, const std::vector<std::int32_t>& active_facets,
     const DofMap& dofmap0, const DofMap& dofmap1, const std::vector<bool>& bc0,

@@ -301,7 +301,7 @@ def test_assembly_solve_block():
 
     snes.getKSP().setType("preonly")
     snes.getKSP().getPC().setType("lu")
-    snes.getKSP().getPC().setFactorSolverType("mumps")
+    snes.getKSP().getPC().setFactorSolverType("superlu_dist")
 
     problem = NonlinearPDE_SNESProblem(F, J, [u, p], bcs)
     snes.setFunction(problem.F_block, Fvec0)
@@ -342,10 +342,10 @@ def test_assembly_solve_block():
     ksp_u, ksp_p = snes.getKSP().getPC().getFieldSplitSubKSP()
     ksp_u.setType("preonly")
     ksp_u.getPC().setType('lu')
-    ksp_u.getPC().setFactorSolverType('mumps')
+    ksp_u.getPC().setFactorSolverType('superlu_dist')
     ksp_p.setType("preonly")
     ksp_p.getPC().setType('lu')
-    ksp_p.getPC().setFactorSolverType('mumps')
+    ksp_p.getPC().setFactorSolverType('superlu_dist')
 
     problem = NonlinearPDE_SNESProblem(F, J, [u, p], bcs)
     snes.setFunction(problem.F_nest, Fvec1)
@@ -409,7 +409,7 @@ def test_assembly_solve_block():
 
     snes.getKSP().setType("preonly")
     snes.getKSP().getPC().setType("lu")
-    snes.getKSP().getPC().setFactorSolverType("mumps")
+    snes.getKSP().getPC().setFactorSolverType("superlu_dist")
 
     problem = NonlinearPDE_SNESProblem(F, J, U, bcs)
     snes.setFunction(problem.F_mono, Fvec2)
@@ -500,7 +500,7 @@ def test_assembly_solve_taylor_hood(mesh):
 
     snes.getKSP().setType("minres")
     snes.getKSP().getPC().setType("lu")
-    snes.getKSP().getPC().setFactorSolverType("mumps")
+    snes.getKSP().getPC().setFactorSolverType("superlu_dist")
 
     problem = NonlinearPDE_SNESProblem(F, J, [u, p], bcs, P=P)
     snes.setFunction(problem.F_block, Fvec0)
@@ -539,10 +539,10 @@ def test_assembly_solve_taylor_hood(mesh):
     ksp_u, ksp_p = snes.getKSP().getPC().getFieldSplitSubKSP()
     ksp_u.setType("preonly")
     ksp_u.getPC().setType('lu')
-    ksp_u.getPC().setFactorSolverType('mumps')
+    ksp_u.getPC().setFactorSolverType('superlu_dist')
     ksp_p.setType("preonly")
     ksp_p.getPC().setType('lu')
-    ksp_p.getPC().setFactorSolverType('mumps')
+    ksp_p.getPC().setFactorSolverType('superlu_dist')
 
     problem = NonlinearPDE_SNESProblem(F, J, [u, p], bcs, P=P)
     snes.setFunction(problem.F_nest, Fvec1)
@@ -598,7 +598,7 @@ def test_assembly_solve_taylor_hood(mesh):
 
     snes.getKSP().setType("minres")
     snes.getKSP().getPC().setType("lu")
-    snes.getKSP().getPC().setFactorSolverType("mumps")
+    snes.getKSP().getPC().setFactorSolverType("superlu_dist")
 
     problem = NonlinearPDE_SNESProblem(F, J, U, bcs, P=P)
     snes.setFunction(problem.F_mono, Fvec2)
