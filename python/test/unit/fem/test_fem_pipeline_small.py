@@ -24,7 +24,7 @@ from ufl import (SpatialCoordinate, TestFunction, TrialFunction, div, dx, grad,
 meshes = [UnitSquareMesh(MPI.comm_world, 2, 1, CellType.triangle),
           UnitCubeMesh(MPI.comm_world, 2, 1, 1, CellType.tetrahedron),
           UnitSquareMesh(MPI.comm_world, 2, 1, CellType.quadrilateral),
-          UnitCubeMesh(MPI.comm_world, 2, 1, 1, CellType.hexahedron)]
+          UnitCubeMesh(MPI.comm_world, 3, 3, 1, CellType.hexahedron)]
 
 parametrize_meshes = pytest.mark.parametrize(
     "mesh", meshes)
@@ -53,7 +53,7 @@ def run_scalar_test(mesh, V, degree):
 
     # Source term
     x = SpatialCoordinate(mesh)
-    u_exact = x[1]**degree
+    u_exact = x[1] ** degree
     f = - div(grad(u_exact))
 
     # Set quadrature degree for linear form integrand (ignores effect of
@@ -67,7 +67,7 @@ def run_scalar_test(mesh, V, degree):
     print("Linear form compile time:", t1 - t0)
 
     u_bc = Function(V)
-    u_bc.interpolate(lambda x: x[1]**degree)
+    u_bc.interpolate(lambda x: x[1] ** degree)
 
     # Create Dirichlet boundary condition
     mesh.create_connectivity_all()
@@ -111,7 +111,7 @@ def run_scalar_test(mesh, V, degree):
     t1 = time.time()
     print("Linear solver time:", t1 - t0)
 
-    M = (u_exact - uh)**2 * dx
+    M = (u_exact - uh) ** 2 * dx
     t0 = time.time()
     M = fem.Form(M)
     t1 = time.time()
@@ -133,7 +133,7 @@ def run_vector_test(mesh, V, degree):
 
     # Source term
     x = SpatialCoordinate(mesh)
-    u_ref = x[0]**degree
+    u_ref = x[0] ** degree
     L = inner(u_ref, v[0]) * dx
 
     b = assemble_vector(L)
@@ -161,10 +161,10 @@ def run_vector_test(mesh, V, degree):
 
     up = uh.eval(xp, cells[0])
     print("test0:", up)
-    print("test1:", xp[0]**degree)
+    print("test1:", xp[0] ** degree)
 
     u_exact = np.zeros(mesh.geometry.dim)
-    u_exact[0] = xp[0]**degree
+    u_exact[0] = xp[0] ** degree
     assert np.allclose(up, u_exact)
 
 
@@ -232,7 +232,7 @@ def run_dg_test(mesh, V, degree):
     uh.vector.ghostUpdate(addv=PETSc.InsertMode.INSERT,
                           mode=PETSc.ScatterMode.FORWARD)
 
-    error = assemble_scalar((u_exact - uh)**2 * dx)
+    error = assemble_scalar((u_exact - uh) ** 2 * dx)
     error = MPI.sum(mesh.mpi_comm(), error)
 
     assert np.absolute(error) < 1.0e-14
