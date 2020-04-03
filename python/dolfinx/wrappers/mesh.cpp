@@ -14,8 +14,8 @@
 #include <dolfinx/mesh/Mesh.h>
 #include <dolfinx/mesh/MeshEntity.h>
 #include <dolfinx/mesh/MeshFunction.h>
-#include <dolfinx/mesh/MeshTags.h>
 #include <dolfinx/mesh/MeshQuality.h>
+#include <dolfinx/mesh/MeshTags.h>
 #include <dolfinx/mesh/MeshValueCollection.h>
 #include <dolfinx/mesh/Partitioning.h>
 #include <dolfinx/mesh/Topology.h>
@@ -179,6 +179,8 @@ void mesh(py::module& m)
       .def("hmax", &dolfinx::mesh::Mesh::hmax)
       .def("hmin", &dolfinx::mesh::Mesh::hmin)
       .def("create_entities", &dolfinx::mesh::Mesh::create_entities)
+      .def("create_entity_permutations",
+           &dolfinx::mesh::Mesh::create_entity_permutations)
       .def("create_connectivity", &dolfinx::mesh::Mesh::create_connectivity)
       .def("create_connectivity_all",
            &dolfinx::mesh::Mesh::create_connectivity_all)
