@@ -148,18 +148,22 @@ mesh::Mesh XDMFFile::read_mesh() const
       _mpi_comm.comm(), mesh::extract_topology(layout, cell_nodes),
       original_cell_index, ghost_owners, layout, mesh::GhostMode::none);
 
-  // FIXME: Figure out how to check which entities are required
-  // Initialise facet for P2
-  // Create local entities
-  auto [cell_entity, entity_vertex, index_map]
-      = mesh::TopologyComputation::compute_entities(_mpi_comm.comm(), topology,
-                                                    1);
-  if (cell_entity)
-    topology.set_connectivity(cell_entity, topology.dim(), 1);
-  if (entity_vertex)
-    topology.set_connectivity(entity_vertex, 1, 0);
-  if (index_map)
-    topology.set_index_map(1, index_map);
+  if (topology.dim() > 1)
+  {
+    // FIXME: This is duplicate code from Mesh.cpp and should be removed
+    // FIXME: Figure out how to check which entities are required
+    // Initialise facet for P2
+    // Create local entities
+    auto [cell_entity, entity_vertex, index_map]
+        = mesh::TopologyComputation::compute_entities(_mpi_comm.comm(),
+                                                      topology, 1);
+    if (cell_entity)
+      topology.set_connectivity(cell_entity, topology.dim(), 1);
+    if (entity_vertex)
+      topology.set_connectivity(entity_vertex, 1, 0);
+    if (index_map)
+      topology.set_index_map(1, index_map);
+  }
 
   // Create Geometry
   const mesh::Geometry geometry = mesh::create_geometry(
