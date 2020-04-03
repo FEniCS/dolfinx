@@ -52,13 +52,6 @@ XDMFFile::XDMFFile(MPI_Comm comm, const std::string filename,
 
     // Open HDF5 file
     const bool mpi_io = MPI::size(_mpi_comm.comm()) > 1 ? true : false;
-#ifndef H5_HAVE_PARALLEL
-    if (mpi_io)
-    {
-      throw std::runtime_error(
-          "Cannot open file. HDF5 has not been compiled with support for MPI");
-    }
-#endif
     _h5_id = HDF5Interface::open_file(_mpi_comm.comm(), hdf5_filename,
                                       file_mode, mpi_io);
     assert(_h5_id > 0);
