@@ -9,7 +9,6 @@
 #include "pugixml.hpp"
 #include "xdmf_read.h"
 #include "xdmf_utils.h"
-#include <boost/filesystem.hpp>
 #include <dolfinx/fem/ElementDofLayout.h>
 
 using namespace dolfinx;

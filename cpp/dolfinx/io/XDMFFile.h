@@ -75,24 +75,15 @@ public:
   /// This closes open underlying HDF5 file. In ASCII mode the XML file is
   /// closed each time it is written to or read from, so close() has
   /// no effect.
-  ///
-  /// From Python you can also use XDMFFile as a context manager:
-  ///
-  ///     with XDMFFile(comm_world, "name.xdmf", "w") as xdmf:
-  ///         xdmf.write(mesh)
-  ///
-  /// The file is automatically closed at the end of the with block
   void close();
 
-  /// Save a mesh to XDMF format, either using an associated HDF5 file,
-  /// or storing the data inline as XML Create function on given
-  /// function space
+  /// Save Mesh
   /// @param[in] mesh
   /// @param[in] xpath XPath where Mesh Grid will be written
   void write_mesh(const mesh::Mesh& mesh,
                   const std::string xpath = "/Xdmf/Domain");
 
-  /// Save geometry to file
+  /// Save Geometry
   /// @param[in] geometry
   /// @param[in] name
   /// @param[in] xpath XPath of a node where Geometry will be inserted
@@ -100,7 +91,7 @@ public:
                       const std::string name = "geometry",
                       const std::string xpath = "/Xdmf/Domain");
 
-  /// Read in the first Mesh in XDMF file
+  /// Read in Mesh
   /// @param[in] name
   /// @param[in] xpath XPath where Mesh Grid is located
   /// @return A Mesh distributed on the same communicator as the
@@ -108,7 +99,7 @@ public:
   mesh::Mesh read_mesh(const std::string name,
                        const std::string xpath = "/Xdmf/Domain") const;
 
-  /// Read in the data from the first mesh in XDMF file
+  /// Read in the data for Mesh
   /// @param[in] name
   /// @param[in] xpath XPath where Mesh Grid data is located
   /// @return Points on each process, cells topology (global node
@@ -153,10 +144,10 @@ private:
   dolfinx::MPI::Comm _mpi_comm;
 
   // Cached filename
-  const std::string _filename;
+  std::string _filename;
 
   // File mode
-  const std::string _file_mode;
+  std::string _file_mode;
 
   // HDF5 file handle
   hid_t _h5_id;
@@ -165,7 +156,7 @@ private:
   // kept open for time series etc.
   std::unique_ptr<pugi::xml_document> _xml_doc;
 
-  const Encoding _encoding;
+  Encoding _encoding;
 };
 
 } // namespace io

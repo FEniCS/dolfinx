@@ -11,7 +11,6 @@
 #include "xdmf_utils.h"
 #include <Eigen/Dense>
 #include <boost/algorithm/string.hpp>
-#include <boost/filesystem.hpp>
 #include <boost/lexical_cast.hpp>
 #include <dolfinx/common/IndexMap.h>
 #include <dolfinx/mesh/Geometry.h>
@@ -127,8 +126,7 @@ std::vector<T> get_dataset(MPI_Comm comm, const pugi::xml_node& dataset_node,
     }
 
     // Retrieve data
-    data_vector
-        = HDF5Interface::read_dataset<T>(h5_id, paths[1], range);
+    data_vector = HDF5Interface::read_dataset<T>(h5_id, paths[1], range);
   }
   else
     throw std::runtime_error("Storage format \"" + format + "\" is unknown");
