@@ -20,10 +20,10 @@
 using namespace dolfinx;
 
 //-----------------------------------------------------------------------------
-template <typename IndexType, typename ScalarType>
+template <typename ScalarType>
 void fem::impl::assemble_matrix(
-    const std::function<int(IndexType, const IndexType*, IndexType,
-                            const IndexType*, const ScalarType*)>&
+    const std::function<int(std::int32_t, const std::int32_t*, std::int32_t,
+                            const std::int32_t*, const ScalarType*)>&
         mat_set_values_local,
     const Form& a, const std::vector<bool>& bc0, const std::vector<bool>& bc1)
 {
@@ -33,8 +33,8 @@ void fem::impl::assemble_matrix(
   // Get dofmap data
   const fem::DofMap& dofmap0 = *a.function_space(0)->dofmap();
   const fem::DofMap& dofmap1 = *a.function_space(1)->dofmap();
-  const graph::AdjacencyList<PetscInt>& dofs0 = dofmap0.list();
-  const graph::AdjacencyList<PetscInt>& dofs1 = dofmap1.list();
+  const graph::AdjacencyList<std::int32_t>& dofs0 = dofmap0.list();
+  const graph::AdjacencyList<std::int32_t>& dofs1 = dofmap1.list();
 
   assert(dofmap0.element_dof_layout);
   assert(dofmap1.element_dof_layout);
@@ -56,21 +56,21 @@ void fem::impl::assemble_matrix(
   using type = fem::FormIntegrals::Type;
   for (int i = 0; i < integrals.num_integrals(type::cell); ++i)
   {
-    const auto & fn = integrals.get_tabulate_tensor(type::cell, i);
+    const auto& fn = integrals.get_tabulate_tensor(type::cell, i);
     const std::vector<std::int32_t>& active_cells
         = integrals.integral_domains(type::cell, i);
 
-    fem::impl::assemble_cells<IndexType, ScalarType>(
+    fem::impl::assemble_cells<ScalarType>(
         mat_set_values_local, mesh, active_cells, dofs0, num_dofs_per_cell0,
         dofs1, num_dofs_per_cell1, bc0, bc1, fn, coeffs, constant_values);
   }
 
   for (int i = 0; i < integrals.num_integrals(type::exterior_facet); ++i)
   {
-    const auto & fn = integrals.get_tabulate_tensor(type::exterior_facet, i);
+    const auto& fn = integrals.get_tabulate_tensor(type::exterior_facet, i);
     const std::vector<std::int32_t>& active_facets
         = integrals.integral_domains(type::exterior_facet, i);
-    fem::impl::assemble_exterior_facets<IndexType, ScalarType>(
+    fem::impl::assemble_exterior_facets<ScalarType>(
         mat_set_values_local, mesh, active_facets, dofmap0, dofmap1, bc0, bc1,
         fn, coeffs, constant_values);
   }
@@ -78,34 +78,33 @@ void fem::impl::assemble_matrix(
   for (int i = 0; i < integrals.num_integrals(type::interior_facet); ++i)
   {
     const std::vector<int> c_offsets = a.coefficients().offsets();
-    const auto & fn = integrals.get_tabulate_tensor(type::interior_facet, i);
+    const auto& fn = integrals.get_tabulate_tensor(type::interior_facet, i);
     const std::vector<std::int32_t>& active_facets
         = integrals.integral_domains(type::interior_facet, i);
-    fem::impl::assemble_interior_facets<IndexType, ScalarType>(
+    fem::impl::assemble_interior_facets<ScalarType>(
         mat_set_values_local, mesh, active_facets, dofmap0, dofmap1, bc0, bc1,
         fn, coeffs, c_offsets, constant_values);
   }
 }
 //-----------------------------------------------------------------------------
-// \cond doxygen should ignore
-
-// Explicit instantiation with PetscInt and PetscScalar
-template void fem::impl::assemble_matrix<PetscInt, PetscScalar>(
-    const std::function<int(PetscInt, const PetscInt*, PetscInt,
-                            const PetscInt*, const PetscScalar*)>&
+// @cond
+// protect from Doxygen
+// Explicit instantiation with PetscScalar
+template void fem::impl::assemble_matrix<PetscScalar>(
+    const std::function<int(std::int32_t, const std::int32_t*, std::int32_t,
+                            const std::int32_t*, const PetscScalar*)>&
         mat_set_values_local,
     const Form& a, const std::vector<bool>& bc0, const std::vector<bool>& bc1);
-
-// \endcond
+// @endcond
 //-----------------------------------------------------------------------------
-template <typename IndexType, typename ScalarType>
+template <typename ScalarType>
 void fem::impl::assemble_cells(
-    const std::function<int(IndexType, const IndexType*, IndexType,
-                            const IndexType*, const ScalarType*)>&
+    const std::function<int(std::int32_t, const std::int32_t*, std::int32_t,
+                            const std::int32_t*, const ScalarType*)>&
         mat_set_values_local,
     const mesh::Mesh& mesh, const std::vector<std::int32_t>& active_cells,
-    const graph::AdjacencyList<IndexType>& dofmap0, int num_dofs_per_cell0,
-    const graph::AdjacencyList<IndexType>& dofmap1, int num_dofs_per_cell1,
+    const graph::AdjacencyList<std::int32_t>& dofmap0, int num_dofs_per_cell0,
+    const graph::AdjacencyList<std::int32_t>& dofmap1, int num_dofs_per_cell1,
     const std::vector<bool>& bc0, const std::vector<bool>& bc1,
     const std::function<void(ScalarType*, const ScalarType*, const ScalarType*,
                              const double*, const int*, const std::uint8_t*,
@@ -175,10 +174,10 @@ void fem::impl::assemble_cells(
   }
 }
 //-----------------------------------------------------------------------------
-template <typename IndexType, typename ScalarType>
+template <typename ScalarType>
 void fem::impl::assemble_exterior_facets(
-    const std::function<int(IndexType, const IndexType*, IndexType,
-                            const IndexType*, const ScalarType*)>&
+    const std::function<int(std::int32_t, const std::int32_t*, std::int32_t,
+                            const std::int32_t*, const ScalarType*)>&
         mat_set_values_local,
     const mesh::Mesh& mesh, const std::vector<std::int32_t>& active_facets,
     const DofMap& dofmap0, const DofMap& dofmap1, const std::vector<bool>& bc0,
@@ -226,7 +225,7 @@ void fem::impl::assemble_exterior_facets(
 
     // Get local index of facet with respect to the cell
     auto facets = c_to_f->links(cells[0]);
-    const auto *it = std::find(facets.data(), facets.data() + facets.rows(), f);
+    const auto* it = std::find(facets.data(), facets.data() + facets.rows(), f);
     assert(it != (facets.data() + facets.rows()));
     const int local_facet = std::distance(facets.data(), it);
 
@@ -269,10 +268,10 @@ void fem::impl::assemble_exterior_facets(
   }
 }
 //-----------------------------------------------------------------------------
-template <typename IndexType, typename ScalarType>
+template <typename ScalarType>
 void fem::impl::assemble_interior_facets(
-    const std::function<int(IndexType, const IndexType*, IndexType,
-                            const IndexType*, const ScalarType*)>&
+    const std::function<int(std::int32_t, const std::int32_t*, std::int32_t,
+                            const std::int32_t*, const ScalarType*)>&
         mat_set_values_local,
     const mesh::Mesh& mesh, const std::vector<std::int32_t>& active_facets,
     const DofMap& dofmap0, const DofMap& dofmap1, const std::vector<bool>& bc0,
@@ -308,7 +307,7 @@ void fem::impl::assemble_interior_facets(
   assert(offsets.back() == coeffs.cols());
 
   // Temporaries for joint dofmaps
-  Eigen::Array<IndexType, Eigen::Dynamic, 1> dmapjoint0, dmapjoint1;
+  Eigen::Array<std::int32_t, Eigen::Dynamic, 1> dmapjoint0, dmapjoint1;
 
   const Eigen::Array<std::uint8_t, Eigen::Dynamic, Eigen::Dynamic>& perms
       = mesh.topology().get_facet_permutations();
@@ -330,13 +329,13 @@ void fem::impl::assemble_interior_facets(
 
     // Get local index of facet with respect to the cell
     auto facets0 = c_to_f->links(cells[0]);
-    const auto *it0 = std::find(facets0.data(), facets0.data() + facets0.rows(),
-                         facet_index);
+    const auto* it0 = std::find(facets0.data(), facets0.data() + facets0.rows(),
+                                facet_index);
     assert(it0 != (facets0.data() + facets0.rows()));
     const int local_facet0 = std::distance(facets0.data(), it0);
     auto facets1 = c_to_f->links(cells[1]);
-    const auto *it1 = std::find(facets1.data(), facets1.data() + facets1.rows(),
-                         facet_index);
+    const auto* it1 = std::find(facets1.data(), facets1.data() + facets1.rows(),
+                                facet_index);
     assert(it1 != (facets1.data() + facets1.rows()));
     const int local_facet1 = std::distance(facets1.data(), it1);
 

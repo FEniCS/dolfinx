@@ -362,7 +362,7 @@ ksp = PETSc.KSP().create(mesh.mpi_comm())
 ksp.setOperators(A)
 ksp.setType("preonly")
 ksp.getPC().setType("lu")
-ksp.getPC().setFactorSolverType("mumps")
+ksp.getPC().setFactorSolverType("superlu_dist")
 
 # We also need to create a block vector,``x``, to store the (full)
 # solution, which we initialize using the block RHS form ``L``.
@@ -447,7 +447,7 @@ ksp = PETSc.KSP().create(mesh.mpi_comm())
 ksp.setOperators(A)
 ksp.setType("preonly")
 ksp.getPC().setType("lu")
-ksp.getPC().setFactorSolverType("mumps")
+ksp.getPC().setFactorSolverType("superlu_dist")
 
 # Compute the solution
 U = Function(W)

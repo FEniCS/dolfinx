@@ -228,7 +228,7 @@ void _lift_bc_exterior_facets(
 
     // Get local index of facet with respect to the cell
     auto facets = c_to_f->links(cell);
-    const auto *it = std::find(facets.data(), facets.data() + facets.rows(), f);
+    const auto* it = std::find(facets.data(), facets.data() + facets.rows(), f);
     assert(it != (facets.data() + facets.rows()));
     const int local_facet = std::distance(facets.data(), it);
 
@@ -297,7 +297,7 @@ void fem::impl::assemble_vector(
 
   // Get dofmap data
   const fem::DofMap& dofmap = *L.function_space(0)->dofmap();
-  const graph::AdjacencyList<PetscInt>& dofs = dofmap.list();
+  const graph::AdjacencyList<std::int32_t>& dofs = dofmap.list();
 
   assert(dofmap.element_dof_layout);
   const int num_dofs_per_cell = dofmap.element_dof_layout->num_dofs();
@@ -317,7 +317,8 @@ void fem::impl::assemble_vector(
   using type = fem::FormIntegrals::Type;
   for (int i = 0; i < integrals.num_integrals(type::cell); ++i)
   {
-    const auto & fn = integrals.get_tabulate_tensor(FormIntegrals::Type::cell, i);
+    const auto& fn
+        = integrals.get_tabulate_tensor(FormIntegrals::Type::cell, i);
     const std::vector<std::int32_t>& active_cells
         = integrals.integral_domains(type::cell, i);
     fem::impl::assemble_cells(b, mesh, active_cells, dofs, num_dofs_per_cell,
@@ -349,7 +350,7 @@ void fem::impl::assemble_vector(
 void fem::impl::assemble_cells(
     Eigen::Ref<Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1>> b,
     const mesh::Mesh& mesh, const std::vector<std::int32_t>& active_cells,
-    const graph::AdjacencyList<PetscInt>& dofmap, int num_dofs_per_cell,
+    const graph::AdjacencyList<std::int32_t>& dofmap, int num_dofs_per_cell,
     const std::function<void(PetscScalar*, const PetscScalar*,
                              const PetscScalar*, const double*, const int*,
                              const std::uint8_t*, const std::uint32_t)>& kernel,
@@ -445,7 +446,7 @@ void fem::impl::assemble_exterior_facets(
 
     // Get local index of facet with respect to the cell
     auto facets = c_to_f->links(cell);
-    const auto *it = std::find(facets.data(), facets.data() + facets.rows(), f);
+    const auto* it = std::find(facets.data(), facets.data() + facets.rows(), f);
     assert(it != (facets.data() + facets.rows()));
     const int local_facet = std::distance(facets.data(), it);
     const std::uint8_t perm = perms(local_facet, cell);
@@ -523,7 +524,8 @@ void fem::impl::assemble_interior_facets(
     for (int i = 0; i < 2; ++i)
     {
       auto facets = c_to_f->links(cells[i]);
-      const auto *it = std::find(facets.data(), facets.data() + facets.rows(), f);
+      const auto* it
+          = std::find(facets.data(), facets.data() + facets.rows(), f);
       assert(it != (facets.data() + facets.rows()));
       local_facet[i] = std::distance(facets.data(), it);
     }

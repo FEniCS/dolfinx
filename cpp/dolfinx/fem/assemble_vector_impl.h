@@ -53,7 +53,7 @@ void assemble_vector(
 void assemble_cells(
     Eigen::Ref<Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1>> b,
     const mesh::Mesh& mesh, const std::vector<std::int32_t>& active_cells,
-    const graph::AdjacencyList<PetscInt>& dofmap, int num_dofs_per_cell,
+    const graph::AdjacencyList<std::int32_t>& dofmap, int num_dofs_per_cell,
     const std::function<void(PetscScalar*, const PetscScalar*,
                              const PetscScalar*, const double*, const int*,
                              const std::uint8_t*, const std::uint32_t)>& kernel,
