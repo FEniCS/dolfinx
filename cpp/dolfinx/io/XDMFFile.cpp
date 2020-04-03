@@ -364,9 +364,12 @@ XDMFFile::read_meshtags(const std::shared_ptr<const mesh::Mesh>& mesh,
       = xdmf_read::get_dataset<std::int64_t>(_mpi_comm.comm(),
                                              topology_data_node, _h5_id);
 
+  const std::int32_t num_local_entities
+      = (std::int32_t)topology_data.size() / tdims[1];
+
   Eigen::Map<const Eigen::Array<std::int64_t, Eigen::Dynamic, Eigen::Dynamic,
                                 Eigen::RowMajor>>
-      topology(topology_data.data(), tdims[0], tdims[1]);
+      topology(topology_data.data(), num_local_entities, tdims[1]);
 
   // Fetch cell type of meshtags and deduce its dimension
   const auto cell_type_str = xdmf_utils::get_cell_type(topology_node);
