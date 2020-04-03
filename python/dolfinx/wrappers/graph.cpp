@@ -67,7 +67,8 @@ void graph(py::module& m)
           },
           "Links (edges) of a node",
           py::return_value_policy::reference_internal)
-      .def("array", &dolfinx::graph::AdjacencyList<std::int64_t>::array)
+      .def("array", &dolfinx::graph::AdjacencyList<std::int64_t>::array,
+           py::return_value_policy::reference_internal)
       .def("offsets", &dolfinx::graph::AdjacencyList<std::int64_t>::offsets,
            "Index to each node in the links array",
            py::return_value_policy::reference_internal)
