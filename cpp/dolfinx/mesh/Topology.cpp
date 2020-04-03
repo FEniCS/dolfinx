@@ -302,7 +302,7 @@ const Eigen::Array<std::uint32_t, Eigen::Dynamic, 1>&
 Topology::get_cell_permutation_info() const
 {
   if (_cell_permutations.size() == 0)
-    create_entity_permutations();
+    throw std::runtime_error("create_entity_permutations must be called before using this data.");
   return _cell_permutations;
 }
 //-----------------------------------------------------------------------------
@@ -310,7 +310,7 @@ const Eigen::Array<std::uint8_t, Eigen::Dynamic, Eigen::Dynamic>&
 Topology::get_facet_permutations() const
 {
   if (_cell_permutations.size() == 0)
-    create_entity_permutations();
+    throw std::runtime_error("create_entity_permutations must be called before using this data.");
   return _facet_permutations;
 }
 //-----------------------------------------------------------------------------
