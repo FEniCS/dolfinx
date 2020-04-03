@@ -301,12 +301,14 @@ size_t Topology::hash() const
 const Eigen::Array<std::uint32_t, Eigen::Dynamic, 1>&
 Topology::get_cell_permutation_info() const
 {
+  assert(_cell_permutations.size() > 0);
   return _cell_permutations;
 }
 //-----------------------------------------------------------------------------
 const Eigen::Array<std::uint8_t, Eigen::Dynamic, Eigen::Dynamic>&
 Topology::get_facet_permutations() const
 {
+  assert(_cell_permutations.size() > 0);
   return _facet_permutations;
 }
 //-----------------------------------------------------------------------------
