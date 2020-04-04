@@ -198,8 +198,8 @@ MeshTags<T>::MeshTags(const std::shared_ptr<const Mesh>& mesh, int dim,
                       std::vector<std::int32_t>&& indices,
                       std::vector<T>&& values, const bool sorted,
                       const bool unique)
-    : _unique_id(common::UniqueIdGenerator::id()), _mesh(mesh), _dim(dim),
-      _indices(std::move(indices)), _values(std::move(values))
+    : _mesh(mesh), _dim(dim), _indices(std::move(indices)),
+      _values(std::move(values))
 {
   if (indices.size() != values.size())
     throw std::runtime_error("Indices and values arrays must match in size.");
