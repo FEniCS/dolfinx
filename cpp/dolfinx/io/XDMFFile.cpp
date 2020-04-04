@@ -121,52 +121,9 @@ mesh::Mesh XDMFFile::read_mesh() const
   const fem::ElementDofLayout layout
       = fem::geometry_layout(cell_type, cells.cols());
 
-  // TODO: This step can be skipped for 'P1' elements
-  //
-  // Extract topology data, e.g. just the vertices. For P1 geometry this
-  // should just be the identity operator. For other elements the
-  // filtered lists may have 'gaps', i.e. the indices might not be
-  // contiguous.
-  const graph::AdjacencyList<std::int64_t> cells_topology
-      = mesh::extract_topology(layout, cells_adj);
-
-  // Compute the destination rank for cells on this process via graph
-  // partitioning
-  const int size = dolfinx::MPI::size(_mpi_comm.comm());
-  const graph::AdjacencyList<std::int32_t> dest
-      = mesh::Partitioning::partition_cells(_mpi_comm.comm(), size,
-                                            layout.cell_type(), cells_topology,
-                                            mesh::GhostMode::none);
-
-  // Distribute cells to destination rank
-  const auto [cell_nodes, src, original_cell_index, ghost_owners]
-      = graph::Partitioning::distribute(_mpi_comm.comm(), cells_adj, dest);
-
-  // Create Topology
-  graph::AdjacencyList<std::int64_t> _cells(cells);
-  mesh::Topology topology = mesh::create_topology(
-      _mpi_comm.comm(), mesh::extract_topology(layout, cell_nodes),
-      original_cell_index, ghost_owners, layout, mesh::GhostMode::none);
-
-  // FIXME: Figure out how to check which entities are required
-  // Initialise facet for P2
-  // Create local entities
-  auto [cell_entity, entity_vertex, index_map]
-      = mesh::TopologyComputation::compute_entities(_mpi_comm.comm(), topology,
-                                                    1);
-  if (cell_entity)
-    topology.set_connectivity(cell_entity, topology.dim(), 1);
-  if (entity_vertex)
-    topology.set_connectivity(entity_vertex, 1, 0);
-  if (index_map)
-    topology.set_index_map(1, index_map);
-
-  // Create Geometry
-  const mesh::Geometry geometry = mesh::create_geometry(
-      _mpi_comm.comm(), topology, layout, cell_nodes, x);
-
-  // Return Mesh
-  return mesh::Mesh(_mpi_comm.comm(), topology, geometry);
+  // FIXME: Add ghostmode
+  return dolfinx::mesh::create(_mpi_comm.comm(), cells_adj, layout, x,
+                               mesh::GhostMode::none);
 }
 //-----------------------------------------------------------------------------
 std::tuple<
