@@ -118,19 +118,16 @@ private:
     // Compute the sorting permutation
     std::vector<int> perm(_indices.size());
     std::iota(perm.begin(), perm.end(), 0);
-
     std::sort(perm.begin(), perm.end(),
               [& indices = std::as_const(_indices)](const int a, const int b) {
                 return (indices[a] < indices[b]);
               });
 
-    // Swap into a temporaries
-    std::vector<std::int32_t> indices_tmp = std::move(_indices);
-    std::vector<T> values_tmp = std::move(_values);
+    // Copy data
+    const std::vector<std::int32_t> indices_tmp = _indices;
+    const std::vector<T> values_tmp = _values;
 
     // Apply sorting and insert
-    _indices.resize(indices_tmp.size());
-    _values.resize(values_tmp.size());
     for (std::size_t i = 0; i < indices_tmp.size(); ++i)
     {
       _indices[i] = indices_tmp[perm[i]];
