@@ -37,31 +37,28 @@ public:
   /// Create from entities of given dimension on a mesh
   /// @param[in] mesh The mesh associated with the tags
   /// @param[in] dim Topological dimension of mesh entities to tag
-  /// @param[in] indices Array of indices, will be copied, sorted with
-  ///    duplicates removed. Local-to-process.
-  /// @param[in] values Array of values attached to indices, will be
-  ///    copied, sorted and duplicates removed according to indices
-  ///    array
+  /// @param[in] indices std::vector<std::int32> of entity indices
+  ///   (indices local to the process)
+  /// @param[in] values std::vector<T> of values for each index in
+  ///   indices
   /// @param[in] sorted True for already sorted indices
   /// @param[in] unique True for unique indices
-  MeshTags(const std::shared_ptr<const Mesh>& mesh, int dim,
-           const std::vector<std::int32_t>& indices,
-           const std::vector<T>& values, const bool sorted = false,
-           const bool unique = false);
-
-  /// Create from entities of given dimension on a mesh
-  /// @param[in] mesh The mesh associated with the tags
-  /// @param[in] dim Topological dimension of mesh entities to tag
-  /// @param[in] indices Array of indices, will be copied, sorted with
-  ///    duplicates removed. Local-to-process.
-  /// @param[in] values Array of values attached to indices, will be
-  ///    copied, sorted and duplicates removed according to indices
-  ///    array
-  /// @param[in] sorted True for already sorted indices
-  /// @param[in] unique True for unique indices
-  MeshTags(const std::shared_ptr<const Mesh>& mesh, int dim,
-           std::vector<std::int32_t>&& indices, std::vector<T>&& values,
-           const bool sorted = false, const bool unique = false);
+  template <typename U, typename V>
+  MeshTags(const std::shared_ptr<const Mesh>& mesh, int dim, U&& indices,
+           V&& values, const bool sorted = false, const bool unique = false)
+      : _mesh(mesh), _dim(dim), _indices(std::forward<U>(indices)),
+        _values(std::forward<V>(values))
+  {
+    if (indices.size() != values.size())
+    {
+      throw std::runtime_error(
+          "Indices and values arrays must have same size.");
+    }
+    if (!sorted)
+      sort();
+    if (!unique)
+      remove_duplicates();
+  }
 
   /// Copy constructor
   MeshTags(const MeshTags& tags) = default;
@@ -160,57 +157,11 @@ private:
 /// @param[in] comm
 /// @param[in] mesh
 /// @param[in] entity_cell_type Cell type of entities which MeshTags are
-///   tagging.
+///   tagging
 /// @param[in] topology Array describing topology of tagged mesh
 ///   entities. This array must be using input_global_indices from the
 ///   mesh.
-/// @param[in] values Array of values to attach to mesh entities.
-template <typename T>
-MeshTags<T>
-create_meshtags(MPI_Comm comm, const std::shared_ptr<const mesh::Mesh>& mesh,
-                const mesh::CellType& entity_cell_type,
-                const Eigen::Array<std::int64_t, Eigen::Dynamic, Eigen::Dynamic,
-                                   Eigen::RowMajor>& topology,
-                std::vector<T>& values);
-
-//---------------------------------------------------------------------------
-// Implementation
-//---------------------------------------------------------------------------
-template <typename T>
-MeshTags<T>::MeshTags(const std::shared_ptr<const Mesh>& mesh, int dim,
-                      const std::vector<std::int32_t>& indices,
-                      const std::vector<T>& values, const bool sorted,
-                      const bool unique)
-    : _mesh(mesh), _dim(dim), _indices(indices), _values(values)
-{
-  if (indices.size() != values.size())
-    throw std::runtime_error("Indices and values arrays must match in size.");
-
-  if (!sorted)
-    sort();
-
-  if (!unique)
-    remove_duplicates();
-}
-//---------------------------------------------------------------------------
-template <typename T>
-MeshTags<T>::MeshTags(const std::shared_ptr<const Mesh>& mesh, int dim,
-                      std::vector<std::int32_t>&& indices,
-                      std::vector<T>&& values, const bool sorted,
-                      const bool unique)
-    : _mesh(mesh), _dim(dim), _indices(std::move(indices)),
-      _values(std::move(values))
-{
-  if (indices.size() != values.size())
-    throw std::runtime_error("Indices and values arrays must match in size.");
-
-  if (!sorted)
-    sort();
-
-  if (!unique)
-    remove_duplicates();
-}
-//---------------------------------------------------------------------------
+/// @param[in] values Array of values to attach to mesh entities
 template <typename T>
 mesh::MeshTags<T>
 create_meshtags(MPI_Comm comm, const std::shared_ptr<const mesh::Mesh>& mesh,
@@ -389,7 +340,6 @@ create_meshtags(MPI_Comm comm, const std::shared_ptr<const mesh::Mesh>& mesh,
 
   std::vector<std::int32_t> indices;
   values.clear();
-
   for (std::int32_t i = 0; i < comm_size; ++i)
   {
     const std::int32_t num_recv_ents
@@ -409,8 +359,7 @@ create_meshtags(MPI_Comm comm, const std::shared_ptr<const mesh::Mesh>& mesh,
     }
   }
 
-  return mesh::MeshTags<T>(mesh, e_dim, indices, values);
+  return mesh::MeshTags<T>(mesh, e_dim, std::move(indices), std::move(values));
 }
-//---------------------------------------------------------------------------
 } // namespace mesh
 } // namespace dolfinx
