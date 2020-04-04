@@ -36,8 +36,9 @@ namespace xdmf_mesh
 {
 
 /// Add Mesh to xml node
-/// Creates new Grid with Topology and Geometry xml nodes for mesh.
-/// In HDF file data is stored under path prefix.
+///
+/// Creates new Grid with Topology and Geometry xml nodes for mesh. In
+/// HDF file data is stored under path prefix.
 void add_mesh(MPI_Comm comm, pugi::xml_node& xml_node, const hid_t h5_id,
               const mesh::Mesh& mesh, const std::string path_prefix);
 
@@ -49,8 +50,9 @@ void add_mesh(MPI_Comm comm, pugi::xml_node& xml_node, const hid_t h5_id,
 /// @param[in] topology
 /// @param[in] geometry
 /// @param[in] cell_dim Dimension of mesh entities to save
-/// @param[in] active_entities Local-to-process indices of mesh entities whose
-///   topology will be saved. This is used to save subsets of Mesh.
+/// @param[in] active_entities Local-to-process indices of mesh entities
+///   whose topology will be saved. This is used to save subsets of
+///   Mesh.
 void add_topology_data(MPI_Comm comm, pugi::xml_node& xml_node,
                        const hid_t h5_id, const std::string path_prefix,
                        const mesh::Topology& topology,

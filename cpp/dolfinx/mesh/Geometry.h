@@ -85,10 +85,10 @@ public:
   /// Return coordinate array for node n (index is local to the process)
   Eigen::Vector3d node(int n) const;
 
-  /// Global input indices for points (const)
+  /// Global input indices for points
   const std::vector<std::int64_t>& global_indices() const;
 
-  /// Global user indices (const)
+  /// Global user indices
   const std::vector<std::int64_t>& input_global_indices() const;
 
   /// @warning Experimental. Needs revision

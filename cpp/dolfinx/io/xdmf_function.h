@@ -22,7 +22,7 @@ class Function;
 
 namespace io
 {
-/// Low-level methods for reading XDMF files
+/// Low-level methods for reading/writing XDMF files
 namespace xdmf_function
 {
 

@@ -60,7 +60,7 @@ void xdmf_mesh::add_topology_data(
 
   if (dim == tdim)
   {
-    for (const auto c : active_entities)
+    for (std::int32_t c : active_entities)
     {
       assert(c < cells_g.num_nodes());
       auto nodes = cells_g.links(c);
@@ -91,13 +91,12 @@ void xdmf_mesh::add_topology_data(
 
     // FIXME: This will not work for higher-order cells. Need to use
     // ElementDofLayout to loop over all nodes
-    for (const auto e : active_entities)
+    for (std::int32_t e : active_entities)
     {
       // Get first attached cell
       std::int32_t c = e_to_c->links(e)[0];
       auto cell_vertices = c_to_v->links(c);
       auto nodes = cells_g.links(c);
-
       auto vertices = e_to_v->links(e);
       for (int v = 0; v < vertices.rows(); ++v)
       {

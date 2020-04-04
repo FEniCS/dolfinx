@@ -38,8 +38,8 @@ namespace io
 {
 class HDF5File;
 
-/// Read and write mesh::Mesh, function::Function
-/// and other objects in XDMF.
+/// Read and write mesh::Mesh, function::Function and other objects in
+/// XDMF.
 
 /// This class supports the output of meshes and functions in XDMF
 /// (http://www.xdmf.org) format. It creates an XML file that describes
@@ -72,8 +72,8 @@ public:
 
   /// Close the file
   ///
-  /// This closes open underlying HDF5 file. In ASCII mode the XML file is
-  /// closed each time it is written to or read from, so close() has
+  /// This closes open underlying HDF5 file. In ASCII mode the XML file
+  /// is closed each time it is written to or read from, so close() has
   /// no effect.
   void close();
 
@@ -103,7 +103,7 @@ public:
   /// @param[in] name
   /// @param[in] xpath XPath where Mesh Grid data is located
   /// @return Points on each process, cells topology (global node
-  ///         indexing), and the cell type
+  ///   indexing), and the cell type
   std::tuple<
       mesh::CellType,
       Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>,
@@ -115,15 +115,16 @@ public:
   /// Write Function
   /// @param[in] function
   /// @param[in] t Time
-  /// @param[in] mesh_xpath XPath for a Grid under which Function will be
-  ///   inserted
+  /// @param[in] mesh_xpath XPath for a Grid under which Function will
+  ///   be inserted
   void write_function(const function::Function& function, const double t,
                       const std::string mesh_xpath
                       = "/Xdmf/Domain/Grid[@GridType='Uniform'][1]");
 
   /// Write MeshTags
   /// @param[in] meshtags
-  /// @param[in] geometry_xpath XPath where Geometry is already stored in file
+  /// @param[in] geometry_xpath XPath where Geometry is already stored
+  ///   in file
   /// @param[in] xpath XPath where MeshTags Grid will be inserted
   void write_meshtags(const mesh::MeshTags<std::int32_t>& meshtags,
                       const std::string geometry_xpath

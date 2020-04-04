@@ -8,9 +8,9 @@
 
 #include <cstdint>
 #include <dolfinx/common/IndexMap.h>
-#include <dolfinx/common/MPI.h>
 #include <dolfinx/common/Timer.h>
 #include <dolfinx/graph/AdjacencyList.h>
+#include <mpi.h>
 #include <set>
 #include <utility>
 #include <vector>
@@ -110,7 +110,7 @@ public:
                         const std::vector<std::int64_t>& global_indices,
                         const std::vector<int>& ghost_owners);
 
-  /// Distribute data to process ranks where it it required (double)
+  /// Distribute data to process ranks where it it required
   ///
   /// @param[in] comm The MPI communicator
   /// @param[in] indices Global indices of the data required by this
@@ -156,7 +156,6 @@ public:
 //---------------------------------------------------------------------------
 // Implementation
 //---------------------------------------------------------------------------
-
 template <typename T>
 Eigen::Array<T, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
 Partitioning::distribute_data(

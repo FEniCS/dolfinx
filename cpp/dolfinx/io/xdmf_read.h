@@ -32,11 +32,11 @@ std::vector<T> get_dataset(MPI_Comm comm, const pugi::xml_node& dataset_node,
                            const hid_t h5_id,
                            std::array<std::int64_t, 2> range = {{0, 0}})
 {
-  // FIXME: Need to sort out datasset dimensions - can't depend on
-  // HDF5 shape, and a Topology data item is not required to have a
-  // 'Dimensions' attribute since the dimensions can be determined
-  // from the number of cells and the cell type (for topology, one
-  // must supply cell type + (number of cells or dimensions).
+  // FIXME: Need to sort out datasset dimensions - can't depend on HDF5
+  // shape, and a Topology data item is not required to have a
+  // 'Dimensions' attribute since the dimensions can be determined from
+  // the number of cells and the cell type (for topology, one must
+  // supply cell type + (number of cells or dimensions).
   //
   // A geometry data item must have 'Dimensions' attribute.
 
@@ -44,7 +44,8 @@ std::vector<T> get_dataset(MPI_Comm comm, const pugi::xml_node& dataset_node,
   pugi::xml_attribute format_attr = dataset_node.attribute("Format");
   assert(format_attr);
 
-  // Get data set shape from 'Dimensions' attribute (empty if not available)
+  // Get data set shape from 'Dimensions' attribute (empty if not
+  // available)
   const std::vector<std::int64_t> shape_xml
       = xdmf_utils::get_dataset_shape(dataset_node);
 
@@ -90,11 +91,11 @@ std::vector<T> get_dataset(MPI_Comm comm, const pugi::xml_node& dataset_node,
 
     // Determine range of data to read from HDF5 file. This is
     // complicated by the XML Dimension attribute and the HDF5 storage
-    // possibly having different shapes, e.g. the HDF5 storgae may be a
+    // possibly having different shapes, e.g. the HDF5 storage may be a
     // flat array.
 
-    // If range = {0, 0} then no range is supplied
-    // and we must determine the range
+    // If range = {0, 0} then no range is supplied and we must determine
+    // the range
     if (range[0] == 0 and range[1] == 0)
     {
       if (shape_xml == shape_hdf5)

@@ -37,20 +37,17 @@ XDMFFile::XDMFFile(MPI_Comm comm, const std::string filename,
     : _mpi_comm(comm), _filename(filename), _file_mode(file_mode),
       _xml_doc(new pugi::xml_document), _encoding(encoding)
 {
-  //
-  // Handle HDF5 and XDMF files with the file mode
-  // At the end of this we will have _hdf5_file and _xml_doc
-  // both pointing to a valid and opened file handles
-  //
+  // Handle HDF5 and XDMF files with the file mode. At the end of this
+  // we will have _hdf5_file and _xml_doc both pointing to a valid and
+  // opened file handles.
 
   if (_encoding == Encoding::HDF5)
   {
     // See https://www.hdfgroup.org/hdf5-quest.html#gzero on zero for
     // _hdf5_file_id(0)
 
-    const std::string hdf5_filename = xdmf_utils::get_hdf5_filename(_filename);
-
     // Open HDF5 file
+    const std::string hdf5_filename = xdmf_utils::get_hdf5_filename(_filename);
     const bool mpi_io = MPI::size(_mpi_comm.comm()) > 1 ? true : false;
     _h5_id = HDF5Interface::open_file(_mpi_comm.comm(), hdf5_filename,
                                       file_mode, mpi_io);
@@ -193,8 +190,8 @@ mesh::Mesh XDMFFile::read_mesh(const std::string name,
       = fem::geometry_layout(cell_type, cells.cols());
 
   // FIXME: Add ghostmode
-  return dolfinx::mesh::create(_mpi_comm.comm(), cells_adj, layout, x,
-                               mesh::GhostMode::none);
+  return mesh::create(_mpi_comm.comm(), cells_adj, layout, x,
+                      mesh::GhostMode::none);
 }
 //-----------------------------------------------------------------------------
 std::tuple<
@@ -316,7 +313,6 @@ XDMFFile::read_meshtags(const std::shared_ptr<const mesh::Mesh>& mesh,
 
   const std::int32_t num_local_entities
       = (std::int32_t)topology_data.size() / tdims[1];
-
   Eigen::Map<const Eigen::Array<std::int64_t, Eigen::Dynamic, Eigen::Dynamic,
                                 Eigen::RowMajor>>
       topology(topology_data.data(), num_local_entities, tdims[1]);
@@ -337,3 +333,4 @@ XDMFFile::read_meshtags(const std::shared_ptr<const mesh::Mesh>& mesh,
 
   return meshtags;
 }
+//-----------------------------------------------------------------------------

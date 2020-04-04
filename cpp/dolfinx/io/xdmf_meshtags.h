@@ -22,7 +22,7 @@ namespace io
 namespace xdmf_meshtags
 {
 
-/// TODO
+/// Add mesh tags to XDMF file
 template <typename T>
 void add_meshtags(MPI_Comm comm, const mesh::MeshTags<T>& meshtags,
                   pugi::xml_node& xml_node, const hid_t h5_id,
@@ -32,9 +32,7 @@ void add_meshtags(MPI_Comm comm, const mesh::MeshTags<T>& meshtags,
   assert(meshtags.mesh());
   std::shared_ptr<const mesh::Mesh> mesh = meshtags.mesh();
   const int dim = meshtags.dim();
-
   const std::vector<std::int32_t>& active_entities = meshtags.indices();
-
   const std::string path_prefix = "/MeshTags/" + name;
   xdmf_mesh::add_topology_data(comm, xml_node, h5_id, path_prefix,
                                mesh->topology(), mesh->geometry(), dim,
@@ -49,11 +47,9 @@ void add_meshtags(MPI_Comm comm, const mesh::MeshTags<T>& meshtags,
 
   const std::int64_t global_num_values
       = dolfinx::MPI::sum(comm, (std::int64_t)active_entities.size());
-
   const std::int64_t offset
       = dolfinx::MPI::global_offset(comm, active_entities.size(), true);
   const bool use_mpi_io = (dolfinx::MPI::size(comm) > 1);
-
   xdmf_utils::add_data_item(attribute_node, h5_id, path_prefix + "/Values",
                             meshtags.values(), offset, {global_num_values, 1},
                             "", use_mpi_io);

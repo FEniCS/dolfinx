@@ -15,7 +15,9 @@
 #include <dolfinx/io/cells.h>
 #include <map>
 #include <memory>
+#include <unordered_map>
 #include <utility>
+#include <vector>
 
 namespace dolfinx
 {
@@ -23,10 +25,9 @@ namespace mesh
 {
 
 /// A MeshTags is a class used to tag mesh entities using their
-/// local-to-process index and an attached value.
-/// MeshTags is a sparse data storage class, since it allows to
-/// tag only few mesh entities. This class stores sorted and
-/// unique indices.
+/// local-to-process index and an attached value. MeshTags is a sparse
+/// data storage class, since it allows to tag only few mesh entities.
+/// This class stores sorted and unique indices.
 /// @tparam Type
 template <typename T>
 class MeshTags
@@ -34,13 +35,12 @@ class MeshTags
 public:
   /// Create from entities of given dimension on a mesh
   /// @param[in] mesh The mesh associated with the tags
-  /// @param[in] dim Topological dimension of mesh entities
-  ///    to tag.
-  /// @param[in] indices Array of indices, will be copied, sorted
-  ///    with duplicates removed. Local-to-process.
-  /// @param[in] values Array of values attached to indices,
-  ///    will be copied, sorted and duplicates removed according
-  ///    to indices array.
+  /// @param[in] dim Topological dimension of mesh entities to tag.
+  /// @param[in] indices Array of indices, will be copied, sorted with
+  ///    duplicates removed. Local-to-process.
+  /// @param[in] values Array of values attached to indices, will be
+  ///    copied, sorted and duplicates removed according to indices
+  ///    array.
   /// @param[in] sorted True for already sorted indices.
   /// @param[in] unique True for unique indices.
   MeshTags(const std::shared_ptr<const Mesh>& mesh, int dim,
@@ -50,13 +50,12 @@ public:
 
   /// Create from entities of given dimension on a mesh
   /// @param[in] mesh The mesh associated with the tags
-  /// @param[in] dim Topological dimension of mesh entities
-  ///    to tag.
-  /// @param[in] indices Array of indices, will be copied, sorted
-  ///    with duplicates removed. Local-to-process.
-  /// @param[in] values Array of values attached to indices,
-  ///    will be copied, sorted and duplicates removed according
-  ///    to indices array.
+  /// @param[in] dim Topological dimension of mesh entities to tag.
+  /// @param[in] indices Array of indices, will be copied, sorted with
+  ///    duplicates removed. Local-to-process.
+  /// @param[in] values Array of values attached to indices, will be
+  ///    copied, sorted and duplicates removed according to indices
+  ///    array.
   /// @param[in] sorted True for already sorted indices.
   /// @param[in] unique True for unique indices.
   MeshTags(const std::shared_ptr<const Mesh>& mesh, int dim,
@@ -72,7 +71,7 @@ public:
   /// Move assignment
   MeshTags& operator=(MeshTags&&) = default;
 
-  /// Indices of tagged mesh entities, local-to-process (const.)
+  /// Indices of tagged mesh entities, local-to-process (const version)
   const std::vector<std::int32_t>& indices() const;
 
   /// Values attached to mesh entities (const.)
@@ -118,8 +117,9 @@ private:
 /// @param[in] mesh
 /// @param[in] entity_cell_type Cell type of entities which MeshTags are
 ///   tagging.
-/// @param[in] topology Array describing topology of tagged mesh entities.
-///   This array must be using input_global_indices from the mesh.
+/// @param[in] topology Array describing topology of tagged mesh
+///   entities. This array must be using input_global_indices from the
+///   mesh.
 /// @param[in] values Array of values to attach to mesh entities.
 template <typename T>
 MeshTags<T>
@@ -263,7 +263,6 @@ create_meshtags(MPI_Comm comm, const std::shared_ptr<const mesh::Mesh>& mesh,
                     topo_unique.end());
 
   const int e_dim = mesh::cell_dim(entity_cell_type);
-
   const int dim = mesh->topology().dim();
 
   auto e_to_v = mesh->topology().connectivity(e_dim, 0);
@@ -281,15 +280,13 @@ create_meshtags(MPI_Comm comm, const std::shared_ptr<const mesh::Mesh>& mesh,
   const std::vector<std::int64_t>& igi
       = mesh->geometry().input_global_indices();
 
-  //
-  // Send input global indices to process responsible for it, based on input
-  // global index value
-  //
+  // Send input global indices to process responsible for it, based on
+  // input global index value
 
   const std::int64_t num_igi_global = MPI::sum(comm, (std::int64_t)igi.size());
 
-  // Split global array size and retrieve a range that this process/officer is
-  // responsible for
+  // Split global array size and retrieve a range that this
+  // process/officer is responsible for
   std::array<std::int64_t, 2> range = MPI::local_range(comm, num_igi_global);
   const int local_size = range[1] - range[0];
 
@@ -310,10 +307,8 @@ create_meshtags(MPI_Comm comm, const std::shared_ptr<const mesh::Mesh>& mesh,
 
   MPI::all_to_all(comm, send_igi, recv_igi);
 
-  //
   // Handle received input global indices, i.e. put the owners of it to
   // a global position, which is its value
-  //
 
   Eigen::Array<bool, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor> owners(
       local_size, comm_size);
@@ -331,23 +326,19 @@ create_meshtags(MPI_Comm comm, const std::shared_ptr<const mesh::Mesh>& mesh,
     }
   }
 
-  //
   // Distribute the owners of input global indices
-  //
 
-  // Distribute owners and fetch owners for the input global indices read from
-  // file, i.e. for the unique topology data in file
+  // Distribute owners and fetch owners for the input global indices
+  // read from file, i.e. for the unique topology data in file
   const Eigen::Array<bool, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
       dist_owners
       = graph::Partitioning::distribute_data<bool>(comm, topo_unique, owners);
 
-  //
   // Figure out which process needs input global indices read from file
   // and send to it
-  //
 
-  // Mapping from global topology number to its ownership (bools saying if
-  // the process is owner)
+  // Mapping from global topology number to its ownership (bools saying
+  // if the process is owner)
   std::unordered_map<std::int64_t, Eigen::Array<bool, Eigen::Dynamic, 1>>
       topo_owners;
   for (std::size_t i = 0; i < topo_unique.size(); ++i)
@@ -357,21 +348,17 @@ create_meshtags(MPI_Comm comm, const std::shared_ptr<const mesh::Mesh>& mesh,
   std::vector<std::vector<std::int64_t>> recv_ents(comm_size);
   std::vector<std::vector<T>> send_vals(comm_size);
   std::vector<std::vector<T>> recv_vals(comm_size);
-
   const int nnodes_per_entity = topology.cols();
-
   for (Eigen::Index e = 0; e < topology.rows(); ++e)
   {
     std::vector<std::int64_t> entity(nnodes_per_entity);
     std::vector<bool> sent(comm_size, false);
-
     for (int i = 0; i < nnodes_per_entity; ++i)
       entity[i] = topology(e, i);
 
-    // Figure out owners of this entity
-    // Entity has several nodes and each node can have
-    // up to comm_size owners, need to send the entity to
-    // each owner
+    // Figure out owners of this entity. Entity has several nodes and
+    // each node can have up to comm_size owners, need to send the
+    // entity to each owner.
     for (int i = 0; i < nnodes_per_entity; ++i)
     {
       for (int j = 0; j < comm_size; ++j)
@@ -389,28 +376,23 @@ create_meshtags(MPI_Comm comm, const std::shared_ptr<const mesh::Mesh>& mesh,
   MPI::all_to_all(comm, send_ents, recv_ents);
   MPI::all_to_all(comm, send_vals, recv_vals);
 
-  //
-  // Using just the information on current local mesh partition
-  // prepare a mapping from *ordered* nodes of entity input global indices to
+  // Using just the information on current local mesh partition prepare
+  // a mapping from *ordered* nodes of entity input global indices to
   // entity local index
-  //
 
   std::map<std::vector<std::int64_t>, std::int32_t> entities_igi;
-
   auto map_e = mesh->topology().index_map(e_dim);
   assert(map_e);
   const std::int32_t num_entities = map_e->size_local() + map_e->num_ghosts();
-
   const graph::AdjacencyList<std::int32_t>& cells_g = mesh->geometry().dofmap();
   const std::vector<std::uint8_t> vtk_perm
       = io::cells::vtk_to_dolfin(entity_cell_type, nnodes_per_entity);
-
   for (std::int32_t e = 0; e < num_entities; ++e)
   {
     std::vector<std::int64_t> entity_igi(nnodes_per_entity);
 
-    // Iterate over all entities of the mesh
-    // Find cell attached to the entity
+    // Iterate over all entities of the mesh. Find cell attached to the
+    // entity.
     std::int32_t c = e_to_c->links(e)[0];
     auto cell_nodes = cells_g.links(c);
     auto cell_vertices = c_to_v->links(c);
@@ -425,7 +407,7 @@ create_meshtags(MPI_Comm comm, const std::shared_ptr<const mesh::Mesh>& mesh,
       assert(it != (cell_vertices.data() + cell_vertices.rows()));
       const int local_cell_vertex = std::distance(cell_vertices.data(), it);
 
-      // Insert input global index for the node of the entitity
+      // Insert input global index for the node of the entity
       entity_igi[v] = igi[cell_nodes[local_cell_vertex]];
     }
 
@@ -434,10 +416,8 @@ create_meshtags(MPI_Comm comm, const std::shared_ptr<const mesh::Mesh>& mesh,
     entities_igi.insert({entity_igi, e});
   }
 
-  //
-  // Iterate over all received entities and find it in entities of
-  // the mesh
-  //
+  // Iterate over all received entities and find it in entities of the
+  // mesh
 
   std::vector<std::int32_t> indices;
   values.clear();
@@ -451,9 +431,7 @@ create_meshtags(MPI_Comm comm, const std::shared_ptr<const mesh::Mesh>& mesh,
       std::vector<std::int64_t> _entity(&recv_ents[i][nnodes_per_entity * e],
                                         &recv_ents[i][nnodes_per_entity * e]
                                             + nnodes_per_entity);
-
       std::sort(_entity.begin(), _entity.end());
-
       const auto it = entities_igi.find(_entity);
       if (it != entities_igi.end())
       {
@@ -465,5 +443,6 @@ create_meshtags(MPI_Comm comm, const std::shared_ptr<const mesh::Mesh>& mesh,
 
   return mesh::MeshTags<T>(mesh, e_dim, indices, values);
 }
+//---------------------------------------------------------------------------
 } // namespace mesh
 } // namespace dolfinx
