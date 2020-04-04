@@ -265,12 +265,18 @@ create_meshtags(MPI_Comm comm, const std::shared_ptr<const mesh::Mesh>& mesh,
   const int e_dim = mesh::cell_dim(entity_cell_type);
 
   const int dim = mesh->topology().dim();
+
   auto e_to_v = mesh->topology().connectivity(e_dim, 0);
-  assert(e_to_v);
+  if (!e_to_v)
+    throw std::runtime_error("Mesh is missing entitiy-vertex connectivity.");
+
   auto e_to_c = mesh->topology().connectivity(e_dim, dim);
-  assert(e_to_c);
+  if (!e_to_c)
+    throw std::runtime_error("Mesh is missing entitiy-cell connectivity.");
+
   auto c_to_v = mesh->topology().connectivity(dim, 0);
-  assert(c_to_v);
+  if (!c_to_v)
+    throw std::runtime_error("Mesh is missing cell-vertex connectivity.");
 
   const std::vector<std::int64_t>& igi
       = mesh->geometry().input_global_indices();

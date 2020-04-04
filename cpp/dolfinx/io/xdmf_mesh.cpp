@@ -77,16 +77,20 @@ void xdmf_mesh::add_topology_data(
   }
   else
   {
-    // FIXME: This will not work for higher-order cells. Need to use
-    // ElementDofLayout to loop over all nodes
     auto e_to_v = topology.connectivity(dim, 0);
-    assert(e_to_v);
+    if (!e_to_v)
+      throw std::runtime_error("Mesh is missing entitiy-vertex connectivity.");
 
     auto e_to_c = topology.connectivity(dim, tdim);
-    assert(e_to_c);
+    if (!e_to_c)
+      throw std::runtime_error("Mesh is missing entitiy-cell connectivity.");
 
     auto c_to_v = topology.connectivity(tdim, 0);
-    assert(c_to_v);
+    if (!c_to_v)
+      throw std::runtime_error("Mesh is missing cell-vertex connectivity.");
+
+    // FIXME: This will not work for higher-order cells. Need to use
+    // ElementDofLayout to loop over all nodes
     for (const auto e : active_entities)
     {
       // Get first attached cell

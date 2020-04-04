@@ -33,7 +33,6 @@ def test_3d(tempdir, cell_type, encoding):
     filename = os.path.join(tempdir, "meshtags_3d.xdmf")
     comm = MPI.comm_world
     mesh = UnitCubeMesh(comm, 2, 2, 2, cell_type)
-    mesh.create_connectivity_all()
 
     bottom_facets = locate_entities_geometrical(mesh, 2, lambda x: numpy.isclose(x[1], 0.0))
     left_facets = locate_entities_geometrical(mesh, 2, lambda x: numpy.isclose(x[0], 0.0))
@@ -54,6 +53,7 @@ def test_3d(tempdir, cell_type, encoding):
     mt_lines.name = "lines"
 
     with XDMFFile(comm, filename, "w", encoding=encoding) as file:
+        mesh.create_connectivity_all()
         file.write_mesh(mesh)
         file.write_meshtags(mt)
         file.write_meshtags(mt_lines)
