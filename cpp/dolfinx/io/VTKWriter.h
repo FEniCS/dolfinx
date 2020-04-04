@@ -7,7 +7,6 @@
 #pragma once
 
 #include <cstdint>
-#include <petscsys.h>
 #include <string>
 #include <vector>
 
