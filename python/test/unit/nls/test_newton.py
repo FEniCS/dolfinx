@@ -198,7 +198,7 @@ def test_nonlinear_pde_snes():
     snes.getKSP().setTolerances(rtol=1.0e-9)
 
     snes.getKSP().getPC().setType("lu")
-    snes.getKSP().getPC().setFactorSolverType("mumps")
+    snes.getKSP().getPC().setFactorSolverType("superlu_dist")
 
     snes.solve(None, u.vector)
     assert snes.getConvergedReason() > 0

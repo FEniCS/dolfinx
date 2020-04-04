@@ -130,7 +130,7 @@ fem::DofMap build_collapsed_dofmap(MPI_Comm comm, const DofMap& dofmap_view,
     old_to_new[dof] = count++;
 
   // Build new dofmap
-  const graph::AdjacencyList<PetscInt>& dof_array_view = dofmap_view.list();
+  const graph::AdjacencyList<std::int32_t>& dof_array_view = dofmap_view.list();
   Eigen::Array<std::int32_t, Eigen::Dynamic, 1> dofmap
       = remap_dofs(old_to_new, dof_array_view);
 
@@ -155,7 +155,7 @@ DofMap::DofMap(std::shared_ptr<const ElementDofLayout> element_dof_layout,
                std::shared_ptr<const common::IndexMap> index_map,
                const graph::AdjacencyList<std::int32_t>& dofmap)
     : element_dof_layout(element_dof_layout), index_map(index_map),
-      _dofmap(dofmap.array().cast<PetscInt>(), dofmap.offsets())
+      _dofmap(dofmap)
 {
   // Dofmap data is copied as the types for dofmap and _dofmap may
   // differ, typically 32- vs 64-bit integers
