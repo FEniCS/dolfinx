@@ -304,7 +304,7 @@ void XDMFFile::write_function(const function::Function& function,
     _xml_doc->save_file(_filename.c_str(), "  ");
 }
 //-----------------------------------------------------------------------------
-void XDMFFile::write_meshtags(const mesh::MeshTags<int>& meshtags,
+void XDMFFile::write_meshtags(const mesh::MeshTags<std::int32_t>& meshtags,
                               const std::string geometry_xpath,
                               const std::string xpath)
 {
@@ -331,7 +331,7 @@ void XDMFFile::write_meshtags(const mesh::MeshTags<int>& meshtags,
     _xml_doc->save_file(_filename.c_str(), "  ");
 }
 //-----------------------------------------------------------------------------
-mesh::MeshTags<int>
+mesh::MeshTags<std::int32_t>
 XDMFFile::read_meshtags(const std::shared_ptr<const mesh::Mesh>& mesh,
                         const std::string name, const std::string xpath)
 {
@@ -371,10 +371,10 @@ XDMFFile::read_meshtags(const std::shared_ptr<const mesh::Mesh>& mesh,
   pugi::xml_node values_data_node
       = grid_node.child("Attribute").child("DataItem");
 
-  std::vector<int> values
-      = xdmf_read::get_dataset<int>(_mpi_comm.comm(), values_data_node, _h5_id);
+  std::vector<std::int32_t> values = xdmf_read::get_dataset<std::int32_t>(
+      _mpi_comm.comm(), values_data_node, _h5_id);
 
-  mesh::MeshTags<int> meshtags = mesh::create_meshtags(
+  mesh::MeshTags<std::int32_t> meshtags = mesh::create_meshtags(
       _mpi_comm.comm(), mesh, cell_type, topology, values);
   meshtags.name = name;
 

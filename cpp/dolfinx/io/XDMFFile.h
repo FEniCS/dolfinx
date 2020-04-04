@@ -125,7 +125,7 @@ public:
   /// @param[in] meshtags
   /// @param[in] geometry_xpath XPath where Geometry is already stored in file
   /// @param[in] xpath XPath where MeshTags Grid will be inserted
-  void write_meshtags(const mesh::MeshTags<int>& meshtags,
+  void write_meshtags(const mesh::MeshTags<std::int32_t>& meshtags,
                       const std::string geometry_xpath
                       = "/Xdmf/Domain/Geometry",
                       const std::string xpath = "/Xdmf/Domain");
@@ -134,7 +134,7 @@ public:
   /// @param[in] mesh
   /// @param[in] name
   /// @param[in] xpath XPath where MeshTags Grid is stored in file
-  mesh::MeshTags<int>
+  mesh::MeshTags<std::int32_t>
   read_meshtags(const std::shared_ptr<const mesh::Mesh>& mesh,
                 const std::string name,
                 const std::string xpath = "/Xdmf/Domain");
