@@ -7,7 +7,6 @@
 #include "xdmf_utils.h"
 #include "pugixml.hpp"
 #include <boost/algorithm/string.hpp>
-#include <boost/filesystem.hpp>
 #include <boost/lexical_cast.hpp>
 #include <dolfinx/common/IndexMap.h>
 #include <dolfinx/fem/DofMap.h>
@@ -17,6 +16,7 @@
 #include <dolfinx/mesh/Mesh.h>
 #include <dolfinx/mesh/Topology.h>
 #include <dolfinx/mesh/cell_types.h>
+#include <filesystem>
 #include <map>
 
 using namespace dolfinx;
@@ -112,7 +112,7 @@ xdmf_utils::get_hdf5_paths(const pugi::xml_node& dataitem_node)
 //-----------------------------------------------------------------------------
 std::string xdmf_utils::get_hdf5_filename(std::string xdmf_filename)
 {
-  boost::filesystem::path p(xdmf_filename);
+  std::filesystem::path p(xdmf_filename);
   p.replace_extension(".h5");
   if (p.string() == xdmf_filename)
   {

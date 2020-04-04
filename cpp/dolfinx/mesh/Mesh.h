@@ -186,6 +186,9 @@ public:
   /// @return The communicator on which the mesh is distributed
   MPI_Comm mpi_comm() const;
 
+  /// Name
+  std::string name = "mesh";
+
 private:
   // Mesh topology
   std::unique_ptr<Topology> _topology;
@@ -203,8 +206,8 @@ private:
 /// Create a mesh
 Mesh create(MPI_Comm comm, const graph::AdjacencyList<std::int64_t>& cells,
             const fem::ElementDofLayout& layout,
-            const Eigen::Ref<const Eigen::Array<
-                double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>>& x,
+            const Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic,
+                               Eigen::RowMajor>& x,
             GhostMode ghost_mode);
 
 } // namespace mesh

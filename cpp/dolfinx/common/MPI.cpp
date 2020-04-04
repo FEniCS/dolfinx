@@ -51,8 +51,7 @@ dolfinx::MPI::Comm::~Comm()
   }
 }
 //-----------------------------------------------------------------------------
-dolfinx::MPI::Comm&
-dolfinx::MPI::Comm::operator=(dolfinx::MPI::Comm&& comm)
+dolfinx::MPI::Comm& dolfinx::MPI::Comm::operator=(dolfinx::MPI::Comm&& comm)
 {
   // Free the currently held comm
   if (this->_comm != MPI_COMM_NULL)

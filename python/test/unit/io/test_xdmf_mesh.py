@@ -48,10 +48,12 @@ def worker_id(request):
 # def test_save_and_load_1d_mesh(tempdir, encoding):
 #     filename = os.path.join(tempdir, "mesh.xdmf")
 #     mesh = UnitIntervalMesh(MPI.comm_world, 32)
-#     with XDMFFile(mesh.mpi_comm(), filename, encoding=encoding) as file:
-#         file.write(mesh)
-#     with XDMFFile(MPI.comm_world, filename) as file:
+#     with XDMFFile(mesh.mpi_comm(), filename, "w", encoding=encoding) as file:
+#         file.write_mesh(mesh)
+
+#     with XDMFFile(MPI.comm_world, filename, "r") as file:
 #         mesh2 = file.read_mesh()
+
 #     assert mesh.topology.index_map(0).size_global == mesh2.topology.index_map(0).size_global
 #     dim = mesh.topology.dim
 #     assert mesh.topology.index_map(dim).size_global == mesh2.topology.index_map(dim).size_global
@@ -62,11 +64,12 @@ def worker_id(request):
 def test_save_and_load_mesh2D(tempdir, encoding, cell_type):
     filename = os.path.join(tempdir, "mesh.xdmf")
     mesh = UnitSquareMesh(MPI.comm_world, 12, 12, cell_type)
-    with XDMFFile(mesh.mpi_comm(), filename, encoding=encoding) as file:
-        file.write(mesh)
+    with XDMFFile(mesh.mpi_comm(), filename, "w", encoding=encoding) as file:
+        file.write_mesh(mesh)
 
-    with XDMFFile(MPI.comm_world, filename) as file:
+    with XDMFFile(MPI.comm_world, filename, "r") as file:
         mesh2 = file.read_mesh()
+
     assert mesh.topology.index_map(0).size_global == mesh2.topology.index_map(0).size_global
     dim = mesh.topology.dim
     assert mesh.topology.index_map(dim).size_global == mesh2.topology.index_map(dim).size_global
@@ -77,11 +80,12 @@ def test_save_and_load_mesh2D(tempdir, encoding, cell_type):
 def test_save_and_load_mesh3D(tempdir, encoding, cell_type):
     filename = os.path.join(tempdir, "mesh.xdmf")
     mesh = UnitCubeMesh(MPI.comm_world, 12, 12, 8, cell_type)
-    with XDMFFile(mesh.mpi_comm(), filename, encoding=encoding) as file:
-        file.write(mesh)
+    with XDMFFile(mesh.mpi_comm(), filename, "w", encoding=encoding) as file:
+        file.write_mesh(mesh)
 
-    with XDMFFile(MPI.comm_world, filename) as file:
+    with XDMFFile(MPI.comm_world, filename, "r") as file:
         mesh2 = file.read_mesh()
+
     assert mesh.topology.index_map(0).size_global == mesh2.topology.index_map(
         0).size_global
     dim = mesh.topology.dim
@@ -96,10 +100,10 @@ def test_read_write_p2_mesh(tempdir, encoding):
                                               cpp.mesh.GhostMode.none)
 
     filename = os.path.join(tempdir, "tri6_mesh.xdmf")
-    with XDMFFile(mesh.mpi_comm(), filename, encoding=encoding) as xdmf:
-        xdmf.write(mesh)
+    with XDMFFile(mesh.mpi_comm(), filename, "w", encoding=encoding) as xdmf:
+        xdmf.write_mesh(mesh)
 
-    with XDMFFile(mesh.mpi_comm(), filename) as xdmf:
+    with XDMFFile(mesh.mpi_comm(), filename, "r") as xdmf:
         mesh2 = xdmf.read_mesh()
 
     assert mesh.topology.index_map(0).size_global == mesh2.topology.index_map(

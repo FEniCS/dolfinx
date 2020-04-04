@@ -62,7 +62,7 @@ std::string vtk_cell_type_str(mesh::CellType cell_type, int num_nodes);
 
 /// TODO: Document
 template <typename T>
-void add_data_item(pugi::xml_node& xml_node, hid_t h5_id,
+void add_data_item(pugi::xml_node& xml_node, const hid_t h5_id,
                    const std::string h5_path, const T& x,
                    const std::int64_t offset,
                    const std::vector<std::int64_t> shape,
@@ -110,11 +110,6 @@ void add_data_item(pugi::xml_node& xml_node, hid_t h5_id,
     std::int64_t num_items_total = 1;
     for (auto n : shape)
       num_items_total *= n;
-
-    // std::cout << "Testing: " << num_items_total << ", "
-    //           << dolfinx::MPI::sum(comm, x.size()) << std::endl;
-    // assert(num_items_total == (std::int64_t)dolfinx::MPI::sum(MPI_COMM_WORLD,
-    // x.size()));
 
     // Compute data offset and range of values
     std::int64_t local_shape0 = x.size();
