@@ -32,7 +32,7 @@ celltypes_3D = [CellType.tetrahedron, CellType.hexahedron]
 def test_3d(tempdir, cell_type, encoding):
     filename = os.path.join(tempdir, "meshtags_3d.xdmf")
     comm = MPI.comm_world
-    mesh = UnitCubeMesh(comm, 2, 2, 2, cell_type)
+    mesh = UnitCubeMesh(comm, 4, 4, 4, cell_type)
 
     bottom_facets = locate_entities_geometrical(mesh, 2, lambda x: numpy.isclose(x[1], 0.0))
     left_facets = locate_entities_geometrical(mesh, 2, lambda x: numpy.isclose(x[0], 0.0))
@@ -71,3 +71,8 @@ def test_3d(tempdir, cell_type, encoding):
         file.write_mesh(mesh_in)
         file.write_meshtags(mt_lines_in)
         file.write_meshtags(mt_in)
+
+    # Check number of owned and marked entities
+    lines_local = MPI.sum(comm, (mt_lines.indices < mesh.topology.index_map(1).size_local).sum())
+    lines_local_in = MPI.sum(comm, (mt_lines_in.indices < mesh_in.topology.index_map(1).size_local).sum())
+    assert lines_local == lines_local_in

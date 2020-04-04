@@ -297,22 +297,26 @@ create_meshtags(MPI_Comm comm, const std::shared_ptr<const mesh::Mesh>& mesh,
   std::vector<std::vector<std::int64_t>> send_igi(comm_size);
   std::vector<std::vector<std::int64_t>> recv_igi(comm_size);
 
-  for (const std::int64_t& gi : igi)
+  const std::int32_t size_local = mesh->geometry().index_map()->size_local()
+                                  + mesh->geometry().index_map()->num_ghosts();
+  assert((std::size_t)size_local == igi.size());
+  for (std::int32_t i = 0; i < size_local; ++i)
   {
     // TODO: Optimise this call
     // Figure out which process responsible for the input global index
-    const int officer = MPI::index_owner(comm_size, gi, num_igi_global);
-    send_igi[officer].push_back(gi);
+    const int officer = MPI::index_owner(comm_size, igi[i], num_igi_global);
+    send_igi[officer].push_back(igi[i]);
   }
 
   MPI::all_to_all(comm, send_igi, recv_igi);
 
   //
-  // Handle received input global indices, i.e. put the owner of it to
+  // Handle received input global indices, i.e. put the owners of it to
   // a global position, which is its value
   //
 
-  std::vector<std::int32_t> owners(local_size, 0);
+  Eigen::Array<bool, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor> owners(
+      local_size, comm_size);
   const std::size_t offset = MPI::global_offset(comm, local_size, true);
 
   for (std::int32_t i = 0; i < comm_size; ++i)
@@ -323,7 +327,7 @@ create_meshtags(MPI_Comm comm, const std::shared_ptr<const mesh::Mesh>& mesh,
       const std::int32_t local_index = recv_igi[i][j] - offset;
       assert(local_size > local_index);
       assert(local_index >= 0);
-      owners[local_index] = i;
+      owners(local_index, i) = true;
     }
   }
 
@@ -331,24 +335,23 @@ create_meshtags(MPI_Comm comm, const std::shared_ptr<const mesh::Mesh>& mesh,
   // Distribute the owners of input global indices
   //
 
-  Eigen::Map<Eigen::Array<std::int32_t, Eigen::Dynamic, 1>> owners_arr(
-      owners.data(), owners.size());
-
   // Distribute owners and fetch owners for the input global indices read from
   // file, i.e. for the unique topology data in file
-  const Eigen::Array<std::int32_t, Eigen::Dynamic, 1> dist_owners_arr
-      = graph::Partitioning::distribute_data<std::int32_t>(comm, topo_unique,
-                                                           owners_arr);
+  const Eigen::Array<bool, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
+      dist_owners
+      = graph::Partitioning::distribute_data<bool>(comm, topo_unique, owners);
 
   //
   // Figure out which process needs input global indices read from file
   // and send to it
   //
 
-  // Prepare an array where on n-th position is the owner of n-th node
-  std::unordered_map<std::int64_t, int> topo_owners;
+  // Mapping from global topology number to its ownership (bools saying if
+  // the process is owner)
+  std::unordered_map<std::int64_t, Eigen::Array<bool, Eigen::Dynamic, 1>>
+      topo_owners;
   for (std::size_t i = 0; i < topo_unique.size(); ++i)
-    topo_owners[topo_unique[i]] = dist_owners_arr(i, 0);
+    topo_owners[topo_unique[i]] = dist_owners.row(i);
 
   std::vector<std::vector<std::int64_t>> send_ents(comm_size);
   std::vector<std::vector<std::int64_t>> recv_ents(comm_size);
@@ -365,18 +368,20 @@ create_meshtags(MPI_Comm comm, const std::shared_ptr<const mesh::Mesh>& mesh,
     for (int i = 0; i < nnodes_per_entity; ++i)
       entity[i] = topology(e, i);
 
+    // Figure out owners of this entity
+    // Entity has several nodes and each node can have
+    // up to comm_size owners, need to send the entity to
+    // each owner
     for (int i = 0; i < nnodes_per_entity; ++i)
     {
-      // Entity could have as many owners as there are owners
-      // of its nodes
-      const int send_to = topo_owners[entity[i]];
-      assert(send_to >= 0);
-      if (!sent[send_to])
+      for (int j = 0; j < comm_size; ++j)
       {
-        send_ents[send_to].insert(send_ents[send_to].end(), entity.begin(),
-                                  entity.end());
-        send_vals[send_to].push_back(values[e]);
-        sent[send_to] = true;
+        if (topo_owners[entity[i]][j] && !sent[j])
+        {
+          send_ents[j].insert(send_ents[j].end(), entity.begin(), entity.end());
+          send_vals[j].push_back(values[e]);
+          sent[j] = true;
+        }
       }
     }
   }
