@@ -9,7 +9,6 @@
 #include <Eigen/Dense>
 #include <dolfinx/common/MPI.h>
 #include <memory>
-#include <petscsys.h>
 #include <string>
 #include <utility>
 #include <vector>
