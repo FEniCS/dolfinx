@@ -242,9 +242,7 @@ xdmf_utils::get_cell_data_values(const function::Function& u)
   assert(dofmap->element_dof_layout);
   const int ndofs = dofmap->element_dof_layout->num_dofs();
 
-  auto map_c = mesh->topology().index_map(0);
-  assert(map_c);
-  for (int cell = 0; map_c->size_local(); ++cell)
+  for (int cell = 0; cell < num_local_cells; ++cell)
   {
     // Tabulate dofs
     auto dofs = dofmap->cell_dofs(cell);
@@ -253,7 +251,7 @@ xdmf_utils::get_cell_data_values(const function::Function& u)
       dof_set.push_back(dofs[i]);
   }
 
-  // Get  values
+  // Get values
   std::vector<PetscScalar> data_values(dof_set.size());
   {
     la::VecReadWrapper u_wrapper(u.vector().vec());
