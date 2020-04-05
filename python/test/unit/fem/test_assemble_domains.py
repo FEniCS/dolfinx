@@ -5,6 +5,7 @@
 # SPDX-License-Identifier:    LGPL-3.0-or-later
 """Unit tests for assembly over domains"""
 
+import mpi4py
 import numpy
 import pytest
 from petsc4py import PETSc
