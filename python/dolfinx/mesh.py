@@ -96,6 +96,5 @@ def ufl_domain(self):
 cpp.mesh.Mesh.ufl_cell = ufl_cell
 cpp.mesh.Mesh.ufl_coordinate_element = ufl_coordinate_element
 cpp.mesh.Mesh.ufl_domain = ufl_domain
-cpp.mesh.Mesh.num_cells = num_cells
 
-del ufl_cell, ufl_coordinate_element, ufl_domain, num_cells
+del ufl_cell, ufl_coordinate_element, ufl_domain
