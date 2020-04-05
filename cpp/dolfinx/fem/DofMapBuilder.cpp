@@ -99,8 +99,10 @@ build_basic_dofmap(const mesh::Topology& topology,
   const int num_cells = topology.connectivity(D, 0)->num_nodes();
   Eigen::Array<std::int32_t, Eigen::Dynamic, 1> dofs(num_cells * local_dim);
   Eigen::Array<std::int32_t, Eigen::Dynamic, 1> cell_ptr(num_cells + 1);
+  cell_ptr = local_dim;
   cell_ptr[0] = 0;
-  std::iota(cell_ptr.data() + 1, cell_ptr.data() + cell_ptr.rows(), local_dim);
+  std::partial_sum(cell_ptr.data() + 1, cell_ptr.data() + cell_ptr.rows(),
+                   cell_ptr.data() + 1);
 
   // Allocate entity indices array
   std::vector<std::vector<int32_t>> entity_indices_local(D + 1);
@@ -190,7 +192,7 @@ build_basic_dofmap(const mesh::Topology& topology,
     }
   }
 
-  return {graph::AdjacencyList<std::int32_t>(dofs, cell_ptr),
+  return {graph::AdjacencyList(std::move(dofs), std::move(cell_ptr)),
           std::move(local_to_global), std::move(dof_entity)};
 }
 //-----------------------------------------------------------------------------
