@@ -10,6 +10,7 @@ import numpy as np
 import pytest
 from dolfinx_utils.test.fixtures import tempdir
 
+import dolfinx
 from dolfinx import cpp
 from dolfinx.io import XDMFFile
 
