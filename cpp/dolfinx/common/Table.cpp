@@ -5,11 +5,14 @@
 // SPDX-License-Identifier:    LGPL-3.0-or-later
 
 #include "Table.h"
+#include <array>
 #include <cfloat>
 #include <cmath>
+#include <dolfinx/common/MPI.h>
 #include <functional>
 #include <iomanip>
 #include <iostream>
+#include <map>
 #include <sstream>
 #include <variant>
 
@@ -106,7 +109,7 @@ Table Table::reduce(MPI_Comm comm, Table::Reduction reduction) const
   std::vector<double> values;
   for (const auto& it : _values)
   {
-    if (const auto *const pval = std::get_if<double>(&it.second))
+    if (const auto* const pval = std::get_if<double>(&it.second))
     {
       keys += it.first.first + '\0' + it.first.second + '\0';
       values.push_back(*pval);
@@ -114,10 +117,8 @@ Table Table::reduce(MPI_Comm comm, Table::Reduction reduction) const
   }
 
   // Gather to rank zero
-  std::vector<std::string> keys_all;
-  std::vector<double> values_all;
-  MPI::gather(comm, keys, keys_all, 0);
-  MPI::gather(comm, values, values_all, 0);
+  const std::vector<std::string> keys_all = MPI::gather(comm, keys, 0);
+  const std::vector<double> values_all = MPI::gather(comm, values, 0);
 
   // Return empty table on rank > 0
   if (MPI::rank(comm) > 0)
@@ -126,8 +127,8 @@ Table Table::reduce(MPI_Comm comm, Table::Reduction reduction) const
   // Construct dvalues map from obtained data
   std::map<std::array<std::string, 2>, double> dvalues_all;
   std::array<std::string, 2> key;
-  double* values_ptr = values_all.data();
-  for (std::size_t i = 0; i < MPI::size(comm); ++i)
+  const double* values_ptr = values_all.data();
+  for (int i = 0; i < MPI::size(comm); ++i)
   {
     std::stringstream keys_stream(keys_all[i]);
     while (std::getline(keys_stream, key[0], '\0'),

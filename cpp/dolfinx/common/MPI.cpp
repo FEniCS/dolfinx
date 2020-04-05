@@ -72,14 +72,14 @@ dolfinx::MPI::Comm& dolfinx::MPI::Comm::operator=(dolfinx::MPI::Comm&& comm)
 //-----------------------------------------------------------------------------
 MPI_Comm dolfinx::MPI::Comm::comm() const { return _comm; }
 //-----------------------------------------------------------------------------
-std::uint32_t dolfinx::MPI::rank(const MPI_Comm comm)
+int dolfinx::MPI::rank(const MPI_Comm comm)
 {
   int rank;
   MPI_Comm_rank(comm, &rank);
   return rank;
 }
 //-----------------------------------------------------------------------------
-std::uint32_t dolfinx::MPI::size(const MPI_Comm comm)
+int dolfinx::MPI::size(const MPI_Comm comm)
 {
   int size;
   MPI_Comm_size(comm, &size);
@@ -117,8 +117,7 @@ std::array<std::int64_t, 2> dolfinx::MPI::local_range(int process,
     return {{process * n + r, process * n + r + n}};
 }
 //-----------------------------------------------------------------------------
-std::uint32_t dolfinx::MPI::index_owner(int size, std::size_t index,
-                                        std::size_t N)
+int dolfinx::MPI::index_owner(int size, std::size_t index, std::size_t N)
 {
   assert(index < N);
 
