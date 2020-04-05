@@ -370,9 +370,8 @@ Partitioning::create_local_adjacency_list(
   for (const auto& e : global_to_local)
     local_to_global[e.second] = e.first;
 
-  const Eigen::Array<std::int32_t, Eigen::Dynamic, 1>& offsets
-      = cells.offsets();
-  return {graph::AdjacencyList<std::int32_t>(array_local, offsets),
+  return {graph::AdjacencyList<std::int32_t>(std::move(array_local),
+                                             cells.offsets()),
           std::move(local_to_global)};
 }
 //-----------------------------------------------------------------------------
@@ -395,7 +394,8 @@ Partitioning::create_distributed_adjacency_list(
     data_new[i] = local_to_local_new[data_old[i]];
 
   const int num_owned_vertices = local_to_local_new.size() - ghosts.size();
-  return {graph::AdjacencyList<std::int32_t>(data_new, list_local.offsets()),
+  return {graph::AdjacencyList<std::int32_t>(std::move(data_new),
+                                             list_local.offsets()),
           common::IndexMap(comm, num_owned_vertices, ghosts, 1)};
 }
 //-----------------------------------------------------------------------------
