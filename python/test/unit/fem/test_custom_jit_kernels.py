@@ -216,7 +216,7 @@ def test_cffi_assembly():
 
         ffibuilder.compile(verbose=True)
 
-    MPI.barrier(mesh.mpi_comm())
+    mesh.mpi_comm().barrier()
     from _cffi_kernelA import ffi, lib
 
     a = cpp.fem.Form([V._cpp_object, V._cpp_object])

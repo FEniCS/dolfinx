@@ -36,10 +36,6 @@ def finalized():
     return cpp.MPI.finalized()
 
 
-def barrier(comm):
-    return cpp.MPI.barrier(comm)
-
-
 def rank(comm):
     return cpp.MPI.rank(comm)
 

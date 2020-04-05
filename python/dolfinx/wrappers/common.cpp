@@ -190,10 +190,6 @@ void mpi(py::module& m)
       .def_static("finalized",
                   &dolfinx::common::SubSystemsManager::mpi_finalized,
                   "Check if MPI has been finalized")
-      .def_static("barrier",
-                  [](const MPICommWrapper comm) {
-                    return dolfinx::MPI::barrier(comm.get());
-                  })
       .def_static("rank",
                   [](const MPICommWrapper comm) {
                     return dolfinx::MPI::rank(comm.get());
