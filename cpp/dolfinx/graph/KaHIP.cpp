@@ -44,9 +44,15 @@ graph::AdjacencyList<std::int32_t> dolfinx::graph::KaHIP::partition(
   // Call KaHIP to partition graph
   common::Timer timer1("KaHIP: call ParHIPPartitionKWay");
 
-  std::vector<unsigned long long> node_distribution;
+  // std::vector<unsigned long long> node_distribution;
+  // const unsigned long long num_local_cells = adj_graph.num_nodes();
+  // MPI::all_gather(mpi_comm, num_local_cells, node_distribution);
+  std::vector<unsigned long long> node_distribution(num_processes);
   const unsigned long long num_local_cells = adj_graph.num_nodes();
-  MPI::all_gather(mpi_comm, num_local_cells, node_distribution);
+  MPI_Allgather(&num_local_cells, 1, MPI::mpi_type<unsigned long long>(),
+                node_distribution.data(), 1,
+                MPI::mpi_type<unsigned long long>(), mpi_comm);
+
   node_distribution.insert(node_distribution.begin(), 0);
   for (std::size_t i = 1; i != node_distribution.size(); ++i)
     node_distribution[i] += node_distribution[i - 1];

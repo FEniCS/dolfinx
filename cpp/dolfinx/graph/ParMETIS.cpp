@@ -126,9 +126,11 @@ graph::AdjacencyList<std::int32_t> dolfinx::graph::ParMETIS::partition(
     MPI_Comm mpi_comm, idx_t nparts,
     const graph::AdjacencyList<idx_t>& adj_graph, bool ghosting)
 {
-  std::map<std::int64_t, std::vector<int>> ghost_procs;
-
   common::Timer timer("Compute graph partition (ParMETIS)");
+
+  std::map<std::int64_t, std::vector<int>> ghost_procs;
+  const int rank = dolfinx::MPI::rank(mpi_comm);
+  const int size = dolfinx::MPI::size(mpi_comm);
 
   // Options for ParMETIS
   idx_t options[3];
@@ -148,9 +150,11 @@ graph::AdjacencyList<std::int32_t> dolfinx::graph::ParMETIS::partition(
   std::vector<real_t> ubvec(ncon, 1.05);
 
   // Communicate number of nodes between all processors
-  std::vector<idx_t> node_distribution;
+  std::vector<idx_t> node_distribution(size);
   const idx_t num_local_cells = adj_graph.num_nodes();
-  MPI::all_gather(mpi_comm, num_local_cells, node_distribution);
+  MPI_Allgather(&num_local_cells, 1, MPI::mpi_type<idx_t>(),
+                node_distribution.data(), 1, MPI::mpi_type<idx_t>(), mpi_comm);
+
   node_distribution.insert(node_distribution.begin(), 0);
   for (std::size_t i = 1; i != node_distribution.size(); ++i)
     node_distribution[i] += node_distribution[i - 1];
@@ -170,9 +174,6 @@ graph::AdjacencyList<std::int32_t> dolfinx::graph::ParMETIS::partition(
                                  &edgecut, part.data(), &mpi_comm);
   assert(err == METIS_OK);
   timer1.stop();
-
-  const int rank = dolfinx::MPI::rank(mpi_comm);
-  const int size = dolfinx::MPI::size(mpi_comm);
 
   const unsigned long long elm_begin = node_distribution[rank];
   const unsigned long long elm_end = node_distribution[rank + 1];

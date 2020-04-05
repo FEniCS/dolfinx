@@ -130,11 +130,6 @@ public:
   static void all_gather(MPI_Comm comm, const std::vector<T>& in_values,
                          std::vector<std::vector<T>>& out_values);
 
-  /// Gather values, one primitive from each process (MPI_Allgather)
-  template <typename T>
-  static void all_gather(MPI_Comm comm, const T in_value,
-                         std::vector<T>& out_values);
-
   /// Return global max value
   template <typename T>
   static T max(MPI_Comm comm, const T& value);
@@ -464,10 +459,9 @@ void dolfinx::MPI::all_gather(MPI_Comm comm, const std::vector<T>& in_values,
   const std::size_t comm_size = MPI::size(comm);
 
   // Get data size on each process
-  std::vector<int> pcounts;
+  std::vector<int> pcounts(comm_size);
   const int local_size = in_values.size();
-  MPI::all_gather(comm, local_size, pcounts);
-  assert(pcounts.size() == comm_size);
+  MPI_Allgather(&local_size, 1, MPI_INT, pcounts.data(), 1, MPI_INT, comm);
 
   // Build offsets
   std::vector<int> offsets(comm_size + 1, 0);
@@ -489,15 +483,6 @@ void dolfinx::MPI::all_gather(MPI_Comm comm, const std::vector<T>& in_values,
     for (int i = 0; i < pcounts[p]; ++i)
       out_values[p][i] = recvbuf[offsets[p] + i];
   }
-}
-//---------------------------------------------------------------------------
-template <typename T>
-void dolfinx::MPI::all_gather(MPI_Comm comm, const T in_value,
-                              std::vector<T>& out_values)
-{
-  out_values.resize(MPI::size(comm));
-  MPI_Allgather(const_cast<T*>(&in_value), 1, mpi_type<T>(), out_values.data(),
-                1, mpi_type<T>(), comm);
 }
 //---------------------------------------------------------------------------
 template <typename T, typename X>
