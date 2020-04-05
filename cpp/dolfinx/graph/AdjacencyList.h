@@ -13,8 +13,6 @@
 #include <sstream>
 #include <vector>
 
-#include <iostream>
-
 namespace dolfinx
 {
 namespace graph
@@ -43,35 +41,30 @@ public:
   /// @param [in] data Adjacency array
   /// @param [in] offsets The index to the adjacency list in the data
   ///   array for node i
-  AdjacencyList(const std::vector<T>& data,
-                const std::vector<std::int32_t>& offsets)
+  template <typename U, typename V,
+            std::enable_if_t<!std::is_same<std::decay_t<V>,
+                                           std::vector<std::int32_t>>::value,
+                             int> = 0>
+  AdjacencyList(U&& data, V&& offsets)
+      : _array(std::forward<U>(data)), _offsets(std::forward<V>(offsets))
+  {
+    // Do nothing
+  }
+
+  /// Construct adjacency list from array of data
+  /// @param [in] data Adjacency array (std::vector<T>)
+  /// @param [in] offsets The index to the adjacency list in the data
+  ///   array for node i (std::vector<std::int32_t>)
+  template <typename U, typename V,
+            std::enable_if_t<
+                std::is_same<std::decay_t<V>, std::vector<std::int32_t>>::value,
+                int> = 0>
+  AdjacencyList(U&& data, V&& offsets)
       : _array(data.size()), _offsets(offsets.size())
   {
     assert(offsets.back() == (std::int32_t)data.size());
     std::copy(data.begin(), data.end(), _array.data());
     std::copy(offsets.begin(), offsets.end(), _offsets.data());
-  }
-
-  /// Construct adjacency list from array of data
-  /// @param [in] data Adjacency array
-  /// @param [in] offsets The index to the adjacency list in the data
-  ///   array for node i
-  AdjacencyList(const Eigen::Array<T, Eigen::Dynamic, 1>& data,
-                const Eigen::Array<std::int32_t, Eigen::Dynamic, 1>& offsets)
-      : _array(data), _offsets(offsets)
-  {
-    // Do nothing
-  }
-
-  /// Construct adjacency list from array of data
-  /// @param [in] data Adjacency array
-  /// @param [in] offsets The index to the adjacency list in the data
-  ///   array for node i
-  AdjacencyList(Eigen::Array<T, Eigen::Dynamic, 1>&& data,
-                Eigen::Array<std::int32_t, Eigen::Dynamic, 1>&& offsets)
-      : _array(std::move(data)), _offsets(std::move(offsets))
-  {
-    // Do nothing
   }
 
   /// Construct adjacency list for a problem with a fixed number of
