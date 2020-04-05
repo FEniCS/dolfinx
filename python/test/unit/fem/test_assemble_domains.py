@@ -92,7 +92,6 @@ def test_assembly_dx_domains(mesh):
 
     L2 = w * dx
     s2 = dolfinx.fem.assemble_scalar(L2)
-    s2 = dolfinx.MPI.sum(mesh.mpi_comm(), s2)
     s2 = mesh.mpi_comm().allreduce(s2, op=mpi4py.MPI.SUM)
     assert (s == pytest.approx(s2, 1.0e-12) and 0.5 == pytest.approx(s, 1.0e-12))
 
