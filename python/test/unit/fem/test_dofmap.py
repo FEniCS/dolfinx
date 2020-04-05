@@ -67,7 +67,9 @@ def test_tabulate_all_coordinates(mesh_factory):
     checked_W = [False] * local_size_W
 
     # Check that all coordinates are within the cell it should be
-    for i in range(mesh.num_cells()):
+    map = mesh.topology.index_map(mesh.topology.dim)
+    num_cells = map.size_local + map.num_ghosts
+    for i in range(num_cells):
         cell = MeshEntity(mesh, mesh.topology.dim, i)
         dofs_V = V_dofmap.cell_dofs(i)
         for di in dofs_V:
@@ -105,7 +107,9 @@ def test_tabulate_dofs(mesh_factory):
     L01 = L1.sub(0)
     L11 = L1.sub(1)
 
-    for i in range(mesh.num_cells()):
+    map = mesh.topology.index_map(mesh.topology.dim)
+    num_cells = map.size_local + map.num_ghosts
+    for i in range(num_cells):
         dofs0 = L0.dofmap.cell_dofs(i)
         dofs1 = L01.dofmap.cell_dofs(i)
         dofs2 = L11.dofmap.cell_dofs(i)
@@ -146,7 +150,9 @@ def test_tabulate_coord_periodic(mesh_factory):
     coord2 = np.zeros((sdim, 2), dtype="d")
     coord3 = np.zeros((sdim, 2), dtype="d")
 
-    for i in range(mesh.num_cells()):
+    map = mesh.topology.index_map(mesh.topology.dim)
+    num_cells = map.size_local + map.num_ghosts
+    for i in range(num_cells):
         cell = MeshEntity(mesh, mesh.topology.dim, i)
         coord0 = V.element.tabulate_dof_coordinates(cell)
         coord1 = L0.element.tabulate_dof_coordinates(cell)

@@ -36,11 +36,11 @@ def test_ghost_facet_1d():
 def test_ghost_2d(mode):
     N = 8
     num_cells = N * N * 2
-
     mesh = UnitSquareMesh(MPI.comm_world, N, N, ghost_mode=mode)
     if MPI.size(mesh.mpi_comm()) > 1:
-        assert MPI.sum(mesh.mpi_comm(), mesh.num_cells()) > num_cells
-
+        map = mesh.topology.index_map(2)
+        num_cells_local = map.size_local + map.num_ghosts
+        assert MPI.sum(mesh.mpi_comm(), num_cells_local) > num_cells
     assert mesh.topology.index_map(0).size_global == 81
     assert mesh.topology.index_map(2).size_global == num_cells
 
@@ -54,11 +54,11 @@ def test_ghost_2d(mode):
 def test_ghost_3d(mode):
     N = 2
     num_cells = N * N * N * 6
-
     mesh = UnitCubeMesh(MPI.comm_world, N, N, N, ghost_mode=mode)
     if MPI.size(mesh.mpi_comm()) > 1:
-        assert MPI.sum(mesh.mpi_comm(), mesh.num_cells()) > num_cells
-
+        map = mesh.topology.index_map(3)
+        num_cells_local = map.size_local + map.num_ghosts
+        assert MPI.sum(mesh.mpi_comm(), num_cells_local) > num_cells
     assert mesh.topology.index_map(0).size_global == 27
     assert mesh.topology.index_map(3).size_global == num_cells
 
