@@ -81,21 +81,34 @@ def test_ghost_connectivities(mode):
     tdim = meshR.topology.dim
 
     # Create reference mapping from facet midpoint to cell midpoint
+    topology = meshR.topology
+    map_c = topology.index_map(tdim)
+    num_cells = map_c.size_local + map_c.num_ghosts
+    map_f = topology.index_map(tdim - 1)
+    num_facets = map_f.size_local + map_f.num_ghosts
+
     reference = {}
-    facet_mp = cpp.mesh.midpoints(meshR, tdim - 1, range(meshR.num_entities(tdim - 1)))
-    cell_mp = cpp.mesh.midpoints(meshR, tdim, range(meshR.num_entities(tdim)))
+    facet_mp = cpp.mesh.midpoints(meshR, tdim - 1, range(num_facets))
+    cell_mp = cpp.mesh.midpoints(meshR, tdim, range(num_cells))
     reference = dict.fromkeys([tuple(row) for row in facet_mp], [])
-    for i in range(meshR.num_entities(tdim - 1)):
+    for i in range(num_facets):
         for cidx in meshR.topology.connectivity(1, 2).links(i):
             reference[tuple(facet_mp[i])].append(cell_mp[cidx].tolist())
 
     # Loop through ghosted mesh and check connectivities
     tdim = meshG.topology.dim
-    num_facets = meshG.num_entities(tdim - 1) - meshG.topology.index_map(tdim - 1).size_local
-    allowable_cell_indices = range(meshG.num_cells())
-    facet_mp = cpp.mesh.midpoints(meshG, tdim - 1, range(meshG.num_entities(tdim - 1)))
-    cell_mp = cpp.mesh.midpoints(meshG, tdim, range(meshG.num_entities(tdim)))
-    for i in range(num_facets):
+
+    topology = meshG.topology
+    map_c = topology.index_map(tdim)
+    num_cells = map_c.size_local + map_c.num_ghosts
+    map_f = topology.index_map(tdim - 1)
+    num_facets = map_f.size_local + map_f.num_ghosts
+
+    num_facets_ghost = map_f.num_ghosts
+    allowable_cell_indices = range(num_cells)
+    facet_mp = cpp.mesh.midpoints(meshG, tdim - 1, range(num_facets))
+    cell_mp = cpp.mesh.midpoints(meshG, tdim, range(num_cells))
+    for i in range(num_facets_ghost):
         assert tuple(facet_mp[i]) in reference
         for cidx in meshG.topology.connectivity(1, 2).links(i):
             assert cidx in allowable_cell_indices

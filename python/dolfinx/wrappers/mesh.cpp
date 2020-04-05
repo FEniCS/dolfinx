@@ -189,8 +189,6 @@ void mesh(py::module& m)
            [](dolfinx::mesh::Mesh& self) {
              return MPICommWrapper(self.mpi_comm());
            })
-      .def("num_entities", &dolfinx::mesh::Mesh::num_entities,
-           "Number of mesh entities")
       .def("rmax", &dolfinx::mesh::Mesh::rmax)
       .def("rmin", &dolfinx::mesh::Mesh::rmin)
       .def_property_readonly(

@@ -94,7 +94,8 @@ def ufl_domain(self):
 
 def num_cells(self):
     """Return number of mesh cells"""
-    return self.num_entities(self.topology.dim)
+    map = self.topology.index_map(self.topology.dim)
+    return map.size_local + map.num_ghosts
 
 
 # Extend cpp.mesh.Mesh class, and clean-up

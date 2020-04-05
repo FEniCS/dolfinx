@@ -33,7 +33,9 @@ namespace
 Eigen::ArrayXd cell_h(const mesh::Mesh& mesh)
 {
   const int dim = mesh.topology().dim();
-  const int num_cells = mesh.num_entities(dim);
+  auto map = mesh.topology().index_map(dim);
+  assert(map);
+  const std::int32_t num_cells = map->size_local() + map->num_ghosts();
   if (num_cells == 0)
     throw std::runtime_error("Cannot compute h min/max. No cells.");
 
@@ -45,7 +47,9 @@ Eigen::ArrayXd cell_h(const mesh::Mesh& mesh)
 Eigen::ArrayXd cell_r(const mesh::Mesh& mesh)
 {
   const int dim = mesh.topology().dim();
-  const int num_cells = mesh.num_entities(dim);
+  auto map = mesh.topology().index_map(dim);
+  assert(map);
+  const std::int32_t num_cells = map->size_local() + map->num_ghosts();
   if (num_cells == 0)
     throw std::runtime_error("Cannnot compute inradius min/max. No cells.");
 
@@ -155,20 +159,6 @@ Mesh::Mesh(const Mesh& mesh)
 Mesh::~Mesh()
 {
   // Do nothing
-}
-//-----------------------------------------------------------------------------
-std::int32_t Mesh::num_entities(int d) const
-{
-  assert(_topology);
-  auto map = _topology->index_map(d);
-  if (!map)
-  {
-    throw std::runtime_error("Cannot get number of mesh entities. Have not "
-                             "been created for dimension "
-                             + std::to_string(d) + ".");
-  }
-  assert(map->block_size() == 1);
-  return map->size_local() + map->num_ghosts();
 }
 //-----------------------------------------------------------------------------
 Topology& Mesh::topology()

@@ -237,18 +237,17 @@ def test_entity_closure_dofs(mesh_factory):
     for degree in (1, 2, 3):
         V = FunctionSpace(mesh, ("CG", degree))
         for d in range(tdim + 1):
+            map = mesh.topology.index_map(d)
+            num_entities = map.size_local + map.num_ghosts
             covered = set()
             covered2 = set()
-            all_entities = np.array(
-                [entity for entity in range(mesh.num_entities(d))],
-                dtype=np.uintp)
+            all_entities = np.array([entity for entity in range(num_entities)], dtype=np.uintp)
             for entity in all_entities:
                 entities = np.array([entity], dtype=np.uintp)
                 dofs_on_this_entity = V.dofmap.entity_dofs(mesh, d, entities)
                 closure_dofs = V.dofmap.entity_closure_dofs(
                     mesh, d, entities)
-                assert len(dofs_on_this_entity) == V.dofmap.dof_layout.num_entity_dofs(
-                    d)
+                assert len(dofs_on_this_entity) == V.dofmap.dof_layout.num_entity_dofs(d)
                 assert len(dofs_on_this_entity) <= len(closure_dofs)
                 covered.update(dofs_on_this_entity)
                 covered2.update(closure_dofs)
@@ -256,15 +255,15 @@ def test_entity_closure_dofs(mesh_factory):
                 mesh, d, all_entities)
             closure_dofs_on_all_entities = V.dofmap.entity_closure_dofs(
                 mesh, d, all_entities)
-            assert len(dofs_on_all_entities) == V.dofmap.dof_layout.num_entity_dofs(
-                d) * mesh.num_entities(d)
+            assert len(dofs_on_all_entities) == V.dofmap.dof_layout.num_entity_dofs(d) * num_entities
             assert covered == set(dofs_on_all_entities)
             assert covered2 == set(closure_dofs_on_all_entities)
+
         d = tdim
-        all_cells = np.array(
-            [entity for entity in range(mesh.num_entities(d))], dtype=np.uintp)
-        assert set(V.dofmap.entity_closure_dofs(mesh, d, all_cells)) == set(
-            range(V.dim))
+        map = mesh.topology.index_map(d)
+        num_entities = map.size_local + map.num_ghosts
+        all_cells = np.array([entity for entity in range(num_entities)], dtype=np.uintp)
+        assert set(V.dofmap.entity_closure_dofs(mesh, d, all_cells)) == set(range(V.dim))
 
 
 @pytest.mark.skip
