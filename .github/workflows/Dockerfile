@@ -179,6 +179,8 @@ RUN apt-get -qq update && \
     --with-64-bit-indices=yes \
     --with-debugging=yes \
     --with-fortran-bindings=no \
+    --with-scalapack=yes \
+    --with-scalapack-lib=-lscalapack-openmpi \
     --with-scalar-type=real \
     --with-shared-libraries && \
     make && \
@@ -216,6 +218,8 @@ RUN apt-get -qq update && \
     --with-64-bit-indices=yes \
     --with-debugging=yes \
     --with-fortran-bindings=no \
+    --with-scalapack=yes \
+    --with-scalapack-lib=-lscalapack-openmpi \
     --with-scalar-type=complex \
     --with-shared-libraries && \
     make && \
