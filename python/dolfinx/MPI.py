@@ -48,8 +48,8 @@ def size(comm):
     return cpp.MPI.size(comm)
 
 
-def local_range(comm, N: int):
-    return cpp.MPI.local_range(comm, N)
+def local_range(rank: int, N: int, size: int):
+    return cpp.MPI.local_range(rank, N, size)
 
 
 def max(comm, value: float):

@@ -206,10 +206,11 @@ create_meshtags(MPI_Comm comm, const std::shared_ptr<const mesh::Mesh>& mesh,
 
   // Split global array size and retrieve a range that this
   // process/officer is responsible for
-  std::array<std::int64_t, 2> range = MPI::local_range(comm, num_igi_global);
+  const int comm_size = MPI::size(comm);
+  std::array<std::int64_t, 2> range
+      = MPI::local_range(MPI::rank(comm), num_igi_global, comm_size);
   const int local_size = range[1] - range[0];
 
-  const int comm_size = MPI::size(comm);
   std::vector<std::vector<std::int64_t>> send_igi(comm_size);
   std::vector<std::vector<std::int64_t>> recv_igi(comm_size);
 

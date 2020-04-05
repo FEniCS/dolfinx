@@ -99,20 +99,8 @@ std::size_t dolfinx::MPI::global_offset(const MPI_Comm comm, std::size_t range,
   return offset;
 }
 //-----------------------------------------------------------------------------
-std::array<std::int64_t, 2> dolfinx::MPI::local_range(const MPI_Comm comm,
-                                                      std::int64_t N)
-{
-  return local_range(comm, rank(comm), N);
-}
-//-----------------------------------------------------------------------------
-std::array<std::int64_t, 2>
-dolfinx::MPI::local_range(const MPI_Comm comm, int process, std::int64_t N)
-{
-  return compute_local_range(process, N, size(comm));
-}
-//-----------------------------------------------------------------------------
-std::array<std::int64_t, 2>
-dolfinx::MPI::compute_local_range(int process, std::int64_t N, int size)
+std::array<std::int64_t, 2> dolfinx::MPI::local_range(int process,
+                                                      std::int64_t N, int size)
 {
   assert(process >= 0);
   assert(N >= 0);

@@ -169,14 +169,14 @@ Partitioning::distribute_data(
   const std::int64_t num_points = dolfinx::MPI::sum(comm, x.rows());
 
   // Get ownership range for this rank, and compute offset
+  const int size = dolfinx::MPI::size(comm);
   const std::array<std::int64_t, 2> range
-      = dolfinx::MPI::local_range(comm, num_points);
+      = dolfinx::MPI::local_range(dolfinx::MPI::rank(comm), num_points, size);
   const std::int64_t offset_x
       = dolfinx::MPI::global_offset(comm, range[1] - range[0], true);
 
   const int gdim = x.cols();
   assert(gdim != 0);
-  const int size = dolfinx::MPI::size(comm);
 
   // Determine number of points to send to owner
   std::vector<int> number_send(size, 0);

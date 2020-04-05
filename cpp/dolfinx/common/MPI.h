@@ -195,19 +195,10 @@ public:
                         std::uint32_t dest, std::vector<T>& recv_value,
                         std::uint32_t source);
 
-  /// Return local range for local process, splitting [0, N - 1] into
-  /// size() portions of almost equal size
-  static std::array<std::int64_t, 2> local_range(MPI_Comm comm, std::int64_t N);
-
   /// Return local range for given process, splitting [0, N - 1] into
   /// size() portions of almost equal size
-  static std::array<std::int64_t, 2> local_range(MPI_Comm comm, int process,
-                                                 std::int64_t N);
-
-  /// Return local range for given process, splitting [0, N - 1] into
-  /// size() portions of almost equal size
-  static std::array<std::int64_t, 2>
-  compute_local_range(int process, std::int64_t N, int size);
+  static std::array<std::int64_t, 2> local_range(int process, std::int64_t N,
+                                                 int size);
 
   /// Return which process owns index (inverse of local_range)
   /// @param[in] size Number of MPI ranks

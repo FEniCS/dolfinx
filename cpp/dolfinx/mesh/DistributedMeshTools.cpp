@@ -70,8 +70,9 @@ reorder_values_by_global_indices(
 
   // Create array for new data. Note that any indices which are not
   // received will be uninitialised.
-  const std::array<std::int64_t, 2> range
-      = dolfinx::MPI::local_range(mpi_comm, global_vector_size);
+  const std::array<std::int64_t, 2> range = dolfinx::MPI::local_range(
+      dolfinx::MPI::rank(mpi_comm), global_vector_size,
+      dolfinx::MPI::size(mpi_comm));
   Eigen::Array<T, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor> new_values(
       range[1] - range[0], values.cols());
 
