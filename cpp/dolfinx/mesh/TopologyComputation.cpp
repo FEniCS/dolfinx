@@ -505,15 +505,15 @@ compute_from_transpose(const graph::AdjacencyList<std::int32_t>& c_d1_d0,
   }
 
   // Compute offsets
-  Eigen::Array<std::int32_t, Eigen::Dynamic, 1> offsets(num_connections.size()
-                                                        + 1);
+  Eigen::Array<std::int32_t, Eigen::Dynamic, 1> offsets
+      = Eigen::Array<std::int32_t, Eigen::Dynamic, 1>::Zero(
+          num_connections.size() + 1);
   std::partial_sum(num_connections.begin(), num_connections.end(),
                    offsets.data() + 1);
 
   std::vector<std::int32_t> counter(num_connections.size(), 0);
-  // Eigen::Array<std::int32_t, Eigen::Dynamic, 1> connections(offsets.back());
   Eigen::Array<std::int32_t, Eigen::Dynamic, 1> connections(
-      offsets[offsets.rows()]);
+      offsets[offsets.rows() - 1]);
   for (int e1 = 0; e1 < c_d1_d0.num_nodes(); ++e1)
   {
     auto e = c_d1_d0.links(e1);
