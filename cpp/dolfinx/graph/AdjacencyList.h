@@ -28,8 +28,8 @@ template <typename T>
 class AdjacencyList
 {
 public:
-  /// Construct trivial adjacency list where each of the n nodes is connected to
-  /// itself
+  /// Construct trivial adjacency list where each of the n nodes is
+  /// connected to itself
   /// @param [in] n Number of nodes
   explicit AdjacencyList(const std::int32_t n) : _array(n), _offsets(n + 1)
   {
@@ -37,13 +37,13 @@ public:
     std::iota(_offsets.data(), _offsets.data() + n + 1, 0);
   }
 
-  /// Construct adjacency list from array of data
+  /// Construct adjacency list from arrays of data (Eigen data types)
   /// @param [in] data Adjacency array
   /// @param [in] offsets The index to the adjacency list in the data
   ///   array for node i
   template <typename U, typename V,
-            std::enable_if_t<!std::is_same<std::decay_t<V>,
-                                           std::vector<std::int32_t>>::value,
+            std::enable_if_t<std::is_base_of<Eigen::EigenBase<std::decay_t<V>>,
+                                             std::decay_t<V>>::value,
                              int> = 0>
   AdjacencyList(U&& data, V&& offsets)
       : _array(std::forward<U>(data)), _offsets(std::forward<V>(offsets))
@@ -51,14 +51,15 @@ public:
     // Do nothing
   }
 
-  /// Construct adjacency list from array of data
-  /// @param [in] data Adjacency array (std::vector<T>)
+  /// Construct adjacency list from arrays of data  (non-Eigen data
+  /// types)
+  /// @param [in] data Adjacency array
   /// @param [in] offsets The index to the adjacency list in the data
-  ///   array for node i (std::vector<std::int32_t>)
+  ///   array for node i
   template <typename U, typename V,
-            std::enable_if_t<
-                std::is_same<std::decay_t<V>, std::vector<std::int32_t>>::value,
-                int> = 0>
+            std::enable_if_t<!std::is_base_of<Eigen::EigenBase<std::decay_t<V>>,
+                                              std::decay_t<V>>::value,
+                             int> = 0>
   AdjacencyList(U&& data, V&& offsets)
       : _array(data.size()), _offsets(offsets.size())
   {
