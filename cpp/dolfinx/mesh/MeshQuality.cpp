@@ -73,10 +73,6 @@ std::array<double, 2> MeshQuality::dihedral_angles_min_max(const Mesh& mesh)
     d_ang_max
         = std::max(d_ang_max, *std::max_element(angles.begin(), angles.end()));
   }
-
-  d_ang_min = MPI::min(mesh.mpi_comm(), d_ang_min);
-  d_ang_max = MPI::max(mesh.mpi_comm(), d_ang_max);
-
   return {{d_ang_min, d_ang_max}};
 }
 //-----------------------------------------------------------------------------

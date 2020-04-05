@@ -24,17 +24,24 @@ using namespace dolfinx::mesh;
 namespace
 {
 //-----------------------------------------------------------------------------
-// Given a list of indices (unknown_indices) on each process,
-// return a map to sharing processes for each index, taking the owner as the
+// Given a list of indices (unknown_indices) on each process, return a
+// map to sharing processes for each index, taking the owner as the
 // first in the list
 std::unordered_map<std::int64_t, std::vector<int>>
 compute_index_sharing(MPI_Comm comm, std::vector<std::int64_t>& unknown_indices)
 {
   const int mpi_size = dolfinx::MPI::size(comm);
-  const std::int64_t global_space
-      = dolfinx::MPI::max(comm, *std::max_element(unknown_indices.begin(),
-                                                  unknown_indices.end()))
-        + 1;
+
+  // const std::int64_t global_space
+  //     = dolfinx::MPI::max(comm, *std::max_element(unknown_indices.begin(),
+  //                                                 unknown_indices.end()))
+  //       + 1;
+
+  std::int64_t global_space = 0;
+  const std::int64_t max_index
+      = *std::max_element(unknown_indices.begin(), unknown_indices.end());
+  MPI_Allreduce(&max_index, &global_space, 1, MPI_INT64_T, MPI_SUM, comm);
+  global_space += 1;
 
   std::vector<std::vector<std::int64_t>> send_indices(mpi_size);
   for (std::int64_t global_i : unknown_indices)

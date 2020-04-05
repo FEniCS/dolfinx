@@ -31,10 +31,12 @@ reorder_values_by_global_indices(
 
   // Calculate size of overall global vector by finding max index value
   // anywhere
-  const std::size_t global_vector_size
-      = dolfinx::MPI::max(mpi_comm, *std::max_element(global_indices.begin(),
-                                                      global_indices.end()))
-        + 1;
+   std::int64_t global_vector_size = 0;
+  const std::int64_t max_index
+      = *std::max_element(global_indices.begin(), global_indices.end());
+  MPI_Allreduce(&max_index, &global_vector_size, 1, MPI_INT64_T, MPI_SUM,
+                mpi_comm);
+  global_vector_size += 1;
 
   // Send unwanted values off process
   const std::size_t mpi_size = dolfinx::MPI::size(mpi_comm);

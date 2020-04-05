@@ -124,18 +124,6 @@ public:
   static void all_gather(MPI_Comm comm, const std::vector<T>& in_values,
                          std::vector<std::vector<T>>& out_values);
 
-  /// Return global max value
-  template <typename T>
-  static T max(MPI_Comm comm, const T& value);
-
-  /// Return global min value
-  template <typename T>
-  static T min(MPI_Comm comm, const T& value);
-
-  /// Sum values and return sum
-  // template <typename T>
-  // static T sum(MPI_Comm comm, const T& value);
-
   /// All reduce
   template <typename T, typename X>
   static T all_reduce(MPI_Comm comm, const T& value, X op);
@@ -477,33 +465,6 @@ T dolfinx::MPI::all_reduce(MPI_Comm comm, const T& value, X op)
   return out;
 }
 //-----------------------------------------------------------------------------
-template <typename T>
-T dolfinx::MPI::max(MPI_Comm comm, const T& value)
-{
-  // Enforce cast to MPI_Op; this is needed because template dispatch may
-  // not recognize this is possible, e.g. C-enum to int in SGI MPT
-  MPI_Op op = static_cast<MPI_Op>(MPI_MAX);
-  return all_reduce(comm, value, op);
-}
-//---------------------------------------------------------------------------
-template <typename T>
-T dolfinx::MPI::min(MPI_Comm comm, const T& value)
-{
-  // Enforce cast to MPI_Op; this is needed because template dispatch may
-  // not recognize this is possible, e.g. C-enum to int in SGI MPT
-  MPI_Op op = static_cast<MPI_Op>(MPI_MIN);
-  return all_reduce(comm, value, op);
-}
-//---------------------------------------------------------------------------
-// template <typename T>
-// T dolfinx::MPI::sum(MPI_Comm comm, const T& value)
-// {
-//   // Enforce cast to MPI_Op; this is needed because template dispatch may
-//   // not recognize this is possible, e.g. C-enum to int in SGI MPT
-//   MPI_Op op = static_cast<MPI_Op>(MPI_SUM);
-//   return all_reduce(comm, value, op);
-// }
-//---------------------------------------------------------------------------
 template <typename T>
 void dolfinx::MPI::neighbor_all_to_all(MPI_Comm neighbor_comm,
                                        const std::vector<int>& send_offsets,

@@ -4,6 +4,7 @@
 #
 # SPDX-License-Identifier:    LGPL-3.0-or-later
 
+import mpi4py
 import numpy
 import pytest
 from dolfinx_utils.test.skips import skip_in_parallel
@@ -49,8 +50,7 @@ def test_distance_tetrahedron():
 def test_volume_cells(mesh):
     num_cells = mesh.num_entities(mesh.topology.dim)
     v = cpp.mesh.volume_entities(mesh, range(num_cells), mesh.topology.dim)
-    v = MPI.sum(mesh.mpi_comm(), v.sum())
-    assert v == pytest.approx(1.0, rel=1e-9)
+    assert mesh.mpi_comm().allreduce(v.sum(), mpi4py.MPI.SUM) == pytest.approx(1.0, rel=1e-9)
 
 
 def test_volume_quadrilateralR2():

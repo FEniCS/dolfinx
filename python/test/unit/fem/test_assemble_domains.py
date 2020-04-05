@@ -71,9 +71,7 @@ def test_assembly_dx_domains(mesh):
 
     assert norm1 == pytest.approx(norm2, 1.0e-12)
 
-    #
     # Assemble vector
-    #
 
     L = ufl.inner(w, v) * (dx(1) + dx(2) + dx(3))
     b = dolfinx.fem.assemble_vector(L)
@@ -85,18 +83,16 @@ def test_assembly_dx_domains(mesh):
 
     assert b.norm() == pytest.approx(b2.norm(), 1.0e-12)
 
-    #
     # Assemble scalar
-    #
 
     L = w * (dx(1) + dx(2) + dx(3))
     s = dolfinx.fem.assemble_scalar(L)
-    s = dolfinx.MPI.sum(mesh.mpi_comm(), s)
+    s = mesh.mpi_comm().allreduce(s, op=mpi4py.MPI.SUM)
 
     L2 = w * dx
     s2 = dolfinx.fem.assemble_scalar(L2)
     s2 = dolfinx.MPI.sum(mesh.mpi_comm(), s2)
-
+    s2 = mesh.mpi_comm().allreduce(s2, op=mpi4py.MPI.SUM)
     assert (s == pytest.approx(s2, 1.0e-12) and 0.5 == pytest.approx(s, 1.0e-12))
 
 
@@ -162,10 +158,10 @@ def test_assembly_ds_domains(mesh):
     # Assemble scalar
     L = w * (ds(1) + ds(2) + ds(3) + ds(6))
     s = dolfinx.fem.assemble_scalar(L)
-    s = dolfinx.MPI.sum(mesh.mpi_comm(), s)
+    s = mesh.mpi_comm().allreduce(s, op=mpi4py.MPI.SUM)
     L2 = w * ds
     s2 = dolfinx.fem.assemble_scalar(L2)
-    s2 = dolfinx.MPI.sum(mesh.mpi_comm(), s2)
+    s2 = mesh.mpi_comm().allreduce(s2, op=mpi4py.MPI.SUM)
     assert (s == pytest.approx(s2, 1.0e-12) and 2.0 == pytest.approx(s, 1.0e-12))
 
 
@@ -175,7 +171,7 @@ def xtest_assembly_dS_domains(mode):
     mesh = dolfinx.UnitSquareMesh(dolfinx.MPI.comm_world, N, N, ghost_mode=mode)
     one = dolfinx.Constant(mesh, 1)
     val = dolfinx.fem.assemble_scalar(one * ufl.dS)
-    val = dolfinx.MPI.sum(mesh.mpi_comm(), val)
+    val = mesh.mpi_comm().allreduce(val, op=mpi4py.MPI.SUM)
     assert val == pytest.approx(2 * (N - 1) + N * numpy.sqrt(2), 1.0e-7)
 
 
@@ -198,15 +194,15 @@ def xtest_additivity(mode):
     j3 = ufl.inner(ufl.avg(f3), ufl.avg(f3)) * ufl.dS(mesh)
 
     # Assemble each scalar form separately
-    J1 = dolfinx.MPI.sum(mesh.mpi_comm(), dolfinx.fem.assemble_scalar(j1))
-    J2 = dolfinx.MPI.sum(mesh.mpi_comm(), dolfinx.fem.assemble_scalar(j2))
-    J3 = dolfinx.MPI.sum(mesh.mpi_comm(), dolfinx.fem.assemble_scalar(j3))
+    J1 = mesh.mpi_comm().allreduce(dolfinx.fem.assemble_scalar(j1), op=mpi4py.MPI.SUM)
+    J2 = mesh.mpi_comm().allreduce(dolfinx.fem.assemble_scalar(j2), op=mpi4py.MPI.SUM)
+    J3 = mesh.mpi_comm().allreduce(dolfinx.fem.assemble_scalar(j3), op=mpi4py.MPI.SUM)
 
     # Sum forms and assemble the result
-    J12 = dolfinx.MPI.sum(mesh.mpi_comm(), dolfinx.fem.assemble_scalar(j1 + j2))
-    J13 = dolfinx.MPI.sum(mesh.mpi_comm(), dolfinx.fem.assemble_scalar(j1 + j3))
-    J23 = dolfinx.MPI.sum(mesh.mpi_comm(), dolfinx.fem.assemble_scalar(j2 + j3))
-    J123 = dolfinx.MPI.sum(mesh.mpi_comm(), dolfinx.fem.assemble_scalar(j1 + j2 + j3))
+    J12 = mesh.mpi_comm().allreduce(dolfinx.fem.assemble_scalar(j1 + j2), op=mpi4py.MPI.SUM)
+    J13 = mesh.mpi_comm().allreduce(dolfinx.fem.assemble_scalar(j1 + j3), op=mpi4py.MPI.SUM)
+    J23 = mesh.mpi_comm().allreduce(dolfinx.fem.assemble_scalar(j2 + j3), op=mpi4py.MPI.SUM)
+    J123 = mesh.mpi_comm().allreduce(dolfinx.fem.assemble_scalar(j1 + j2 + j3), op=mpi4py.MPI.SUM)
 
     # Compare assembled values
     assert (J1 + J2) == pytest.approx(J12)

@@ -202,17 +202,8 @@ void mpi(py::module& m)
                   [](const MPICommWrapper comm) {
                     return dolfinx::MPI::size(comm.get());
                   })
-      .def_static("local_range",
-                  [](int rank, std::int64_t N, int size) {
-                    return dolfinx::MPI::local_range(rank, N, size);
-                  })
-      // templated for double
-      .def_static("max",
-                  [](const MPICommWrapper comm, double value) {
-                    return dolfinx::MPI::max(comm.get(), value);
-                  })
-      .def_static("min", [](const MPICommWrapper comm, double value) {
-        return dolfinx::MPI::min(comm.get(), value);
+      .def_static("local_range", [](int rank, std::int64_t N, int size) {
+        return dolfinx::MPI::local_range(rank, N, size);
       });
 }
 } // namespace dolfinx_wrappers

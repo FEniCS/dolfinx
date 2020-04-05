@@ -7,9 +7,11 @@
 
 import math
 
+import mpi4py
 import numpy
 import pytest
 import scipy.sparse.linalg
+from dolfinx_utils.test.skips import skip_if_complex, skip_in_parallel
 from petsc4py import PETSc
 
 import dolfinx
@@ -17,7 +19,6 @@ import ufl
 from dolfinx import function
 from dolfinx.specialfunctions import SpatialCoordinate
 from ufl import derivative, ds, dx, inner
-from dolfinx_utils.test.skips import skip_in_parallel, skip_if_complex
 
 
 def nest_matrix_norm(A):
@@ -38,12 +39,12 @@ def test_assemble_functional():
     mesh = dolfinx.generation.UnitSquareMesh(dolfinx.MPI.comm_world, 12, 12)
     M = 1.0 * dx(domain=mesh)
     value = dolfinx.fem.assemble_scalar(M)
-    value = dolfinx.MPI.sum(mesh.mpi_comm(), value)
+    value = mesh.mpi_comm().allreduce(value, op=mpi4py.MPI.SUM)
     assert value == pytest.approx(1.0, 1e-12)
     x = SpatialCoordinate(mesh)
     M = x[0] * dx(domain=mesh)
     value = dolfinx.fem.assemble_scalar(M)
-    value = dolfinx.MPI.sum(mesh.mpi_comm(), value)
+    value = mesh.mpi_comm().allreduce(value, op=mpi4py.MPI.SUM)
     assert value == pytest.approx(0.5, 1e-12)
 
 

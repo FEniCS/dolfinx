@@ -4,12 +4,13 @@
 #
 # SPDX-License-Identifier:    LGPL-3.0-or-later
 
+import mpi4py
 import pytest
 
 from dolfinx import MPI, UnitCubeMesh, UnitIntervalMesh, UnitSquareMesh, cpp
 
 
-@pytest.mark.xfail(condition=MPI.size(MPI.comm_world) == 1,
+@pytest.mark.xfail(condition=MPI.comm_world.size == 1,
                    reason="Shared ghost modes fail in serial")
 def test_ghost_vertex_1d():
     mesh = UnitIntervalMesh(MPI.comm_world, 20,
@@ -18,7 +19,7 @@ def test_ghost_vertex_1d():
     assert mesh.topology.index_map(1).size_global == 20
 
 
-@pytest.mark.xfail(condition=MPI.size(MPI.comm_world) == 1,
+@pytest.mark.xfail(condition=MPI.comm_world.size == 1,
                    reason="Shared ghost modes fail in serial")
 def test_ghost_facet_1d():
     mesh = UnitIntervalMesh(MPI.comm_world, 20,
@@ -36,11 +37,9 @@ def test_ghost_facet_1d():
 def test_ghost_2d(mode):
     N = 8
     num_cells = N * N * 2
-
     mesh = UnitSquareMesh(MPI.comm_world, N, N, ghost_mode=mode)
-    if MPI.size(mesh.mpi_comm()) > 1:
-        assert MPI.sum(mesh.mpi_comm(), mesh.num_cells()) > num_cells
-
+    if mesh.mpi_comm().size > 1:
+        assert mesh.mpi_comm().allreduce(mesh.num_cells(), op=mpi4py.MPI.SUM) > num_cells
     assert mesh.topology.index_map(0).size_global == 81
     assert mesh.topology.index_map(2).size_global == num_cells
 
@@ -52,12 +51,13 @@ def test_ghost_2d(mode):
                                                marks=pytest.mark.xfail(condition=MPI.size(MPI.comm_world) == 1,
                                                                        reason="Shared ghost modes fail in serial"))])
 def test_ghost_3d(mode):
-    N = 2
-    num_cells = N * N * N * 6
+    N=2
+    num_cells=N * N * N * 6
 
-    mesh = UnitCubeMesh(MPI.comm_world, N, N, N, ghost_mode=mode)
-    if MPI.size(mesh.mpi_comm()) > 1:
-        assert MPI.sum(mesh.mpi_comm(), mesh.num_cells()) > num_cells
+    mesh=UnitCubeMesh(MPI.comm_world, N, N, N, ghost_mode = mode)
+    if mesh.mpi_comm().size > 1:
+        # assert MPI.sum(mesh.mpi_comm(), mesh.num_cells()) > num_cells
+        assert mesh.mpi_comm().allreduce(mesh.num_cells(), op=mpi4py.MPI.SUM) > num_cells
 
     assert mesh.topology.index_map(0).size_global == 27
     assert mesh.topology.index_map(3).size_global == num_cells
@@ -72,29 +72,29 @@ def test_ghost_3d(mode):
                                                                        reason="Shared ghost modes fail in serial"))])
 def test_ghost_connectivities(mode):
     # Ghosted mesh
-    meshG = UnitSquareMesh(MPI.comm_world, 4, 4, ghost_mode=mode)
+    meshG=UnitSquareMesh(MPI.comm_world, 4, 4, ghost_mode = mode)
     meshG.create_connectivity(1, 2)
 
     # Reference mesh, not ghosted, not parallel
-    meshR = UnitSquareMesh(MPI.comm_self, 4, 4, ghost_mode=cpp.mesh.GhostMode.none)
+    meshR=UnitSquareMesh(MPI.comm_self, 4, 4, ghost_mode = cpp.mesh.GhostMode.none)
     meshR.create_connectivity(1, 2)
-    tdim = meshR.topology.dim
+    tdim=meshR.topology.dim
 
     # Create reference mapping from facet midpoint to cell midpoint
-    reference = {}
-    facet_mp = cpp.mesh.midpoints(meshR, tdim - 1, range(meshR.num_entities(tdim - 1)))
-    cell_mp = cpp.mesh.midpoints(meshR, tdim, range(meshR.num_entities(tdim)))
-    reference = dict.fromkeys([tuple(row) for row in facet_mp], [])
+    reference={}
+    facet_mp=cpp.mesh.midpoints(meshR, tdim - 1, range(meshR.num_entities(tdim - 1)))
+    cell_mp=cpp.mesh.midpoints(meshR, tdim, range(meshR.num_entities(tdim)))
+    reference=dict.fromkeys([tuple(row) for row in facet_mp], [])
     for i in range(meshR.num_entities(tdim - 1)):
         for cidx in meshR.topology.connectivity(1, 2).links(i):
             reference[tuple(facet_mp[i])].append(cell_mp[cidx].tolist())
 
     # Loop through ghosted mesh and check connectivities
-    tdim = meshG.topology.dim
-    num_facets = meshG.num_entities(tdim - 1) - meshG.topology.index_map(tdim - 1).size_local
-    allowable_cell_indices = range(meshG.num_cells())
-    facet_mp = cpp.mesh.midpoints(meshG, tdim - 1, range(meshG.num_entities(tdim - 1)))
-    cell_mp = cpp.mesh.midpoints(meshG, tdim, range(meshG.num_entities(tdim)))
+    tdim=meshG.topology.dim
+    num_facets=meshG.num_entities(tdim - 1) - meshG.topology.index_map(tdim - 1).size_local
+    allowable_cell_indices=range(meshG.num_cells())
+    facet_mp=cpp.mesh.midpoints(meshG, tdim - 1, range(meshG.num_entities(tdim - 1)))
+    cell_mp=cpp.mesh.midpoints(meshG, tdim, range(meshG.num_entities(tdim)))
     for i in range(num_facets):
         assert tuple(facet_mp[i]) in reference
         for cidx in meshG.topology.connectivity(1, 2).links(i):

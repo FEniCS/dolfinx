@@ -50,15 +50,3 @@ def size(comm):
 
 def local_range(rank: int, N: int, size: int):
     return cpp.MPI.local_range(rank, N, size)
-
-
-def max(comm, value: float):
-    return cpp.MPI.max(comm, value)
-
-
-def min(comm, value: float):
-    return cpp.MPI.min(comm, value)
-
-
-def avg(comm, value):
-    return cpp.MPI.avs(comm, value)

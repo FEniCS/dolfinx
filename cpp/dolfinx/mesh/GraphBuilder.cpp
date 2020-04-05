@@ -124,9 +124,10 @@ compute_local_dual_graph_keyed(
   {
     const int k = facets.size() - 1;
     const int cell_index = facets[k].second;
-    facet_cell_map.emplace_back(std::vector<std::int32_t>(facets[k].first.begin(),
-                                                        facets[k].first.end()),
-                              cell_index);
+    facet_cell_map.emplace_back(
+        std::vector<std::int32_t>(facets[k].first.begin(),
+                                  facets[k].first.end()),
+        cell_index);
   }
 
   return {std::move(local_graph), std::move(facet_cell_map), num_local_edges};
@@ -186,17 +187,19 @@ compute_nonlocal_dual_graph(
   // to this function, not the user numbering) numbering
 
   // Get global range of vertex indices
-  const std::int64_t num_global_vertices
-      = dolfinx::MPI::max(
-            mpi_comm, (cell_vertices.rows() > 0) ? cell_vertices.maxCoeff() : 0)
-        + 1;
+  std::int64_t num_global_vertices = 0;
+  const std::int64_t max_vertex
+      = (cell_vertices.rows() > 0) ? cell_vertices.maxCoeff() : 0;
+  MPI_Allreduce(&max_vertex, &num_global_vertices, 1, MPI_INT64_T, MPI_SUM,
+                mpi_comm);
+  num_global_vertices += 1;
 
   // Send facet-cell map to intermediary match-making processes
   std::vector<std::vector<std::int64_t>> send_buffer(num_processes);
   std::vector<std::vector<std::int64_t>> received_buffer(num_processes);
 
   // Pack map data and send to match-maker process
-  for (const auto & it : facet_cell_map)
+  for (const auto& it : facet_cell_map)
   {
     // FIXME: Could use a better index? First vertex is slightly
     //        skewed towards low values - may not be important

@@ -22,8 +22,8 @@ class MeshEntity;
 class MeshQuality
 {
 public:
-  /// Compute the minimum and maximum radius ratio of cells (across all
-  /// processes)
+  /// Compute the minimum and maximum radius ratio of cells (for local
+  /// rank only )
   /// @param[in] mesh The mesh
   /// @return The [minimum, maximum] cell radii ratio
   ///         (geometric_dimension * * inradius / circumradius,
