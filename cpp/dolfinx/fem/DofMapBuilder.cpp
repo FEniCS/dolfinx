@@ -190,9 +190,8 @@ build_basic_dofmap(const mesh::Topology& topology,
     }
   }
 
-  return {
-      graph::AdjacencyList<std::int32_t>(std::move(dofs), std::move(cell_ptr)),
-      std::move(local_to_global), std::move(dof_entity)};
+  return {graph::AdjacencyList<std::int32_t>(dofs, cell_ptr),
+          std::move(local_to_global), std::move(dof_entity)};
 }
 //-----------------------------------------------------------------------------
 
