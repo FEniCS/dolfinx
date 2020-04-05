@@ -45,8 +45,9 @@ compute_bbox_of_entity(const mesh::MeshEntity& entity)
 
   auto vertices = entity.entities(0);
   assert(vertices.rows() >= 2);
-  const auto *it = std::find(cell_vertices.data(),
-                      cell_vertices.data() + cell_vertices.rows(), vertices[0]);
+  const auto* it
+      = std::find(cell_vertices.data(),
+                  cell_vertices.data() + cell_vertices.rows(), vertices[0]);
   assert(it != (cell_vertices.data() + cell_vertices.rows()));
   const int local_vertex = std::distance(cell_vertices.data(), it);
 
@@ -58,7 +59,7 @@ compute_bbox_of_entity(const mesh::MeshEntity& entity)
   // Compute min and max over remaining vertices
   for (int i = 1; i < vertices.rows(); ++i)
   {
-    const auto *it
+    const auto* it
         = std::find(cell_vertices.data(),
                     cell_vertices.data() + cell_vertices.rows(), vertices[i]);
     assert(it != (cell_vertices.data() + cell_vertices.rows()));
@@ -298,14 +299,17 @@ BoundingBoxTree::BoundingBoxTree(const mesh::Mesh& mesh, int tdim) : _tdim(tdim)
             << " nodes for " << num_leaves << " entities.";
 
   // Build tree for each process
-  const int mpi_size = MPI::size(mesh.mpi_comm());
+  MPI_Comm comm = mesh.mpi_comm();
+  const int mpi_size = MPI::size(comm);
   if (mpi_size > 1)
   {
     // Send root node coordinates to all processes
     std::vector<double> send_bbox(bbox_coordinates.end() - 6,
                                   bbox_coordinates.end());
-    std::vector<double> recv_bbox;
-    MPI::all_gather(mesh.mpi_comm(), send_bbox, recv_bbox);
+    std::vector<double> recv_bbox(send_bbox.size() * mpi_size);
+    MPI_Allgather(send_bbox.data(), send_bbox.size(), MPI_DOUBLE,
+                  recv_bbox.data(), send_bbox.size(), MPI_DOUBLE, comm);
+
     std::vector<int> global_leaves(mpi_size);
     std::iota(global_leaves.begin(), global_leaves.end(), 0);
     global_tree.reset(new BoundingBoxTree(recv_bbox, global_leaves.begin(),

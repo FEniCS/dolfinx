@@ -712,7 +712,10 @@ void PETScDMCollection::find_exterior_points(
 
   // All processes get the same distance information
   std::vector<double> recv_distance(num_recv_points * mpi_size);
-  MPI::all_gather(mpi_comm, send_distance, recv_distance);
+  MPI_Allgather(send_distance.data(), send_distance.size(), MPI_DOUBLE,
+                recv_distance.data(), send_distance.size(), MPI_DOUBLE,
+                mpi_comm);
+
 
   // Determine which process has closest cell for each point, and send
   // the global indices to that process

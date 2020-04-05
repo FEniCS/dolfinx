@@ -119,12 +119,6 @@ public:
                                          const std::string& in_values,
                                          int receiving_process = 0);
 
-  /// Gather values from all processes. Same data count from each
-  /// process (wrapper for MPI_Allgather)
-  template <typename T>
-  static void all_gather(MPI_Comm comm, const std::vector<T>& in_values,
-                         std::vector<T>& out_values);
-
   /// Gather values from each process (variable count per process)
   template <typename T>
   static void all_gather(MPI_Comm comm, const std::vector<T>& in_values,
@@ -139,8 +133,8 @@ public:
   static T min(MPI_Comm comm, const T& value);
 
   /// Sum values and return sum
-  template <typename T>
-  static T sum(MPI_Comm comm, const T& value);
+  // template <typename T>
+  // static T sum(MPI_Comm comm, const T& value);
 
   /// All reduce
   template <typename T, typename X>
@@ -444,16 +438,6 @@ dolfinx::MPI::gather(MPI_Comm comm, const std::string& in_values,
 //---------------------------------------------------------------------------
 template <typename T>
 void dolfinx::MPI::all_gather(MPI_Comm comm, const std::vector<T>& in_values,
-                              std::vector<T>& out_values)
-{
-  out_values.resize(in_values.size() * MPI::size(comm));
-  MPI_Allgather(const_cast<T*>(in_values.data()), in_values.size(),
-                mpi_type<T>(), out_values.data(), in_values.size(),
-                mpi_type<T>(), comm);
-}
-//---------------------------------------------------------------------------
-template <typename T>
-void dolfinx::MPI::all_gather(MPI_Comm comm, const std::vector<T>& in_values,
                               std::vector<std::vector<T>>& out_values)
 {
   const std::size_t comm_size = MPI::size(comm);
@@ -511,14 +495,14 @@ T dolfinx::MPI::min(MPI_Comm comm, const T& value)
   return all_reduce(comm, value, op);
 }
 //---------------------------------------------------------------------------
-template <typename T>
-T dolfinx::MPI::sum(MPI_Comm comm, const T& value)
-{
-  // Enforce cast to MPI_Op; this is needed because template dispatch may
-  // not recognize this is possible, e.g. C-enum to int in SGI MPT
-  MPI_Op op = static_cast<MPI_Op>(MPI_SUM);
-  return all_reduce(comm, value, op);
-}
+// template <typename T>
+// T dolfinx::MPI::sum(MPI_Comm comm, const T& value)
+// {
+//   // Enforce cast to MPI_Op; this is needed because template dispatch may
+//   // not recognize this is possible, e.g. C-enum to int in SGI MPT
+//   MPI_Op op = static_cast<MPI_Op>(MPI_SUM);
+//   return all_reduce(comm, value, op);
+// }
 //---------------------------------------------------------------------------
 template <typename T>
 void dolfinx::MPI::neighbor_all_to_all(MPI_Comm neighbor_comm,

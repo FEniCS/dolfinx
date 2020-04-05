@@ -166,7 +166,9 @@ Partitioning::distribute_data(
   common::Timer timer("Fetch float data from remote processes");
 
   // Get number of points globally
-  const std::int64_t num_points = dolfinx::MPI::sum(comm, x.rows());
+  std::int64_t num_points = 0;
+  const std::int64_t num_points_local = x.rows();
+  MPI_Allreduce(&num_points_local, &num_points, 1, MPI_INT64_T, MPI_SUM, comm);
 
   // Get ownership range for this rank, and compute offset
   const int size = dolfinx::MPI::size(comm);

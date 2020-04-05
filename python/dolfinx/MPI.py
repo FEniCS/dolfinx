@@ -60,9 +60,5 @@ def min(comm, value: float):
     return cpp.MPI.min(comm, value)
 
 
-def sum(comm, value: float):
-    return cpp.MPI.sum(comm, value)
-
-
 def avg(comm, value):
     return cpp.MPI.avs(comm, value)

@@ -202,7 +202,10 @@ create_meshtags(MPI_Comm comm, const std::shared_ptr<const mesh::Mesh>& mesh,
   // Send input global indices to process responsible for it, based on
   // input global index value
 
-  const std::int64_t num_igi_global = MPI::sum(comm, (std::int64_t)igi.size());
+  // const std::int64_t num_igi_global = MPI::sum(comm, (std::int64_t)igi.size());
+  std::int64_t num_igi_global = 0;
+  const std::int64_t igi_size = igi.size();
+  MPI_Allreduce(&igi_size, &num_igi_global, 1, MPI_INT64_T, MPI_SUM, comm);
 
   // Split global array size and retrieve a range that this
   // process/officer is responsible for

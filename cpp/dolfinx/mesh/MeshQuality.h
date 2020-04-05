@@ -7,8 +7,6 @@
 #pragma once
 
 #include <array>
-#include <memory>
-#include <string>
 #include <utility>
 #include <vector>
 
@@ -41,8 +39,8 @@ public:
 
   /// Create (dihedral angles, number of cells) data for creating a
   /// histogram of dihedral
-  static std::pair<std::vector<double>, std::vector<std::size_t>>
-  dihedral_angle_histogram_data(const Mesh& mesh, std::size_t num_bins);
+  static std::pair<std::vector<double>, std::vector<std::int64_t>>
+  dihedral_angle_histogram_data(const Mesh& mesh, int num_bins);
 };
 } // namespace mesh
 } // namespace dolfinx
