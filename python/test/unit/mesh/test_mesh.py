@@ -231,8 +231,8 @@ def test_UnitSquareMeshDistributed():
 def test_UnitSquareMeshLocal():
     """Create mesh of unit square."""
     mesh = UnitSquareMesh(MPI.comm_self, 5, 7)
-    assert mesh.num_entities(0) == 48
-    assert mesh.num_cells() == 70
+    assert mesh.topology.index_map(0).size_global == 48
+    assert mesh.topology.index_map(2).size_global == 70
     assert mesh.geometry.dim == 2
 
 
@@ -248,8 +248,10 @@ def test_UnitCubeMeshDistributed():
 def test_UnitCubeMeshLocal():
     """Create mesh of unit cube."""
     mesh = UnitCubeMesh(MPI.comm_self, 5, 7, 9)
-    assert mesh.num_entities(0) == 480
-    assert mesh.num_cells() == 1890
+    assert mesh.topology.index_map(0).size_global == 480
+    assert mesh.topology.index_map(0).size_local == 480
+    assert mesh.topology.index_map(3).size_global == 1890
+    assert mesh.topology.index_map(3).size_local == 1890
     assert mesh.geometry.dim == 3
 
 
@@ -375,7 +377,9 @@ def test_mesh_topology_against_fiat(mesh_factory, ghost_mode=cpp.mesh.GhostMode.
     # Initialize all mesh entities and connectivities
     mesh.create_connectivity_all()
 
-    for i in range(mesh.num_cells()):
+    map = mesh.topology.index_map(mesh.topology.dim)
+    num_cells = map.size_local + map.num_ghosts
+    for i in range(num_cells):
         cell = MeshEntity(mesh, mesh.topology.dim, i)
         # Get mesh-global (MPI-local) indices of cell vertices
         vertex_global_indices = cell.entities(0)

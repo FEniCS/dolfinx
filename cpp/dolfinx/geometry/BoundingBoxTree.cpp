@@ -45,8 +45,9 @@ compute_bbox_of_entity(const mesh::MeshEntity& entity)
 
   auto vertices = entity.entities(0);
   assert(vertices.rows() >= 2);
-  const auto *it = std::find(cell_vertices.data(),
-                      cell_vertices.data() + cell_vertices.rows(), vertices[0]);
+  const auto* it
+      = std::find(cell_vertices.data(),
+                  cell_vertices.data() + cell_vertices.rows(), vertices[0]);
   assert(it != (cell_vertices.data() + cell_vertices.rows()));
   const int local_vertex = std::distance(cell_vertices.data(), it);
 
@@ -58,7 +59,7 @@ compute_bbox_of_entity(const mesh::MeshEntity& entity)
   // Compute min and max over remaining vertices
   for (int i = 1; i < vertices.rows(); ++i)
   {
-    const auto *it
+    const auto* it
         = std::find(cell_vertices.data(),
                     cell_vertices.data() + cell_vertices.rows(), vertices[i]);
     assert(it != (cell_vertices.data() + cell_vertices.rows()));
@@ -277,7 +278,9 @@ BoundingBoxTree::BoundingBoxTree(const mesh::Mesh& mesh, int tdim) : _tdim(tdim)
   mesh.create_entities(tdim);
 
   // Create bounding boxes for all mesh entities (leaves)
-  const int num_leaves = mesh.num_entities(tdim);
+  auto map = mesh.topology().index_map(tdim);
+  assert(map);
+  const std::int32_t num_leaves = map->size_local() + map->num_ghosts();
   std::vector<double> leaf_bboxes(6 * num_leaves);
   Eigen::Map<Eigen::Array<double, Eigen::Dynamic, 3, Eigen::RowMajor>>
       _leaf_bboxes(leaf_bboxes.data(), 2 * num_leaves, 3);
