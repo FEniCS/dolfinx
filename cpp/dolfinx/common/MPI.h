@@ -214,8 +214,8 @@ dolfinx::MPI::all_to_all(MPI_Comm comm,
                1, mpi_type<int>(), comm);
 
   // Pack data and build receive offset
-  Eigen::Array<std::int32_t, Eigen::Dynamic, 1> data_offset_recv(comm_size + 1,
-                                                                 0);
+  Eigen::Array<std::int32_t, Eigen::Dynamic, 1> data_offset_recv(comm_size + 1);
+  data_offset_recv(0) = 0;
   std::vector<T> data_send(data_offset_send.back());
   for (int p = 0; p < comm_size; ++p)
   {
