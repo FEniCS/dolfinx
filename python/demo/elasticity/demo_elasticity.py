@@ -164,8 +164,9 @@ solver.solve(b, u.vector)
 solver.view()
 
 # Save solution to XDMF format
-file = XDMFFile(MPI.comm_world, "elasticity.xdmf")
-file.write(u)
+with XDMFFile(MPI.comm_world, "elasticity.xdmf", "w") as file:
+    file.write_mesh(mesh)
+    file.write_function(u)
 
 unorm = u.vector.norm()
 if MPI.rank(mesh.mpi_comm()) == 0:

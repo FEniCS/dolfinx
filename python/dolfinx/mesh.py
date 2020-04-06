@@ -47,18 +47,6 @@ _meshtags_types = {
     numpy.double: cpp.mesh.MeshTags_double
 }
 
-_meshfunction_types = {
-    "size_t": cpp.mesh.MeshFunctionSizet,
-    "int": cpp.mesh.MeshFunctionInt,
-    "double": cpp.mesh.MeshFunctionDouble
-}
-
-_meshvaluecollection_types = {
-    "size_t": cpp.mesh.MeshValueCollection_sizet,
-    "int": cpp.mesh.MeshValueCollection_int,
-    "double": cpp.mesh.MeshValueCollection_double
-}
-
 
 def MeshTags(mesh, dim, indices, values, sorted=False, unique=False):
 
@@ -74,27 +62,6 @@ def MeshTags(mesh, dim, indices, values, sorted=False, unique=False):
 
     fn = _meshtags_types[dtype]
     return fn(mesh, dim, indices, values, sorted, unique)
-
-
-def MeshFunction(value_type, mesh, dim, value):
-    if value_type not in _meshfunction_types.keys():
-        raise KeyError("MeshFunction type not recognised")
-    fn = _meshfunction_types[value_type]
-    return fn(mesh, dim, value)
-
-
-def MeshValueCollection(value_type, mesh, dim=None, topology_data=None, value_data=None):
-    if value_type not in _meshvaluecollection_types.keys():
-        raise KeyError("MeshValueCollection type not recognised")
-    mvc = _meshvaluecollection_types[value_type]
-
-    if topology_data is not None:
-        return mvc(mesh, dim, topology_data, value_data)
-
-    if dim is not None:
-        return mvc(mesh, dim)
-    else:
-        return mvc(mesh)
 
 
 # Functions to extend cpp.mesh.Mesh with

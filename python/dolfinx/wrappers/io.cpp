@@ -14,8 +14,7 @@
 #include <dolfinx/io/cells.h>
 #include <dolfinx/la/PETScVector.h>
 #include <dolfinx/mesh/Mesh.h>
-#include <dolfinx/mesh/MeshFunction.h>
-#include <dolfinx/mesh/MeshValueCollection.h>
+#include <dolfinx/mesh/MeshTags.h>
 #include <memory>
 #include <pybind11/eigen.h>
 #include <pybind11/numpy.h>
@@ -37,51 +36,47 @@ void io(py::module& m)
   m.def("permutation_dolfin_to_vtk", &dolfinx::io::cells::dolfin_to_vtk);
   m.def("permute_cell_ordering", &dolfinx::io::cells::permute_ordering);
 
-  // dolfinx::io::HDF5File
-  py::class_<dolfinx::io::HDF5File, std::shared_ptr<dolfinx::io::HDF5File>>(
-      m, "HDF5File", py::dynamic_attr())
-      .def(py::init([](const MPICommWrapper comm, const std::string filename,
-                       const std::string file_mode) {
-             return std::make_unique<dolfinx::io::HDF5File>(
-                 comm.get(), filename, file_mode);
-           }),
-           py::arg("comm"), py::arg("filename"), py::arg("file_mode"))
-      .def("close", &dolfinx::io::HDF5File::close)
-      .def("flush", &dolfinx::io::HDF5File::flush)
-      .def("set_mpi_atomicity", &dolfinx::io::HDF5File::set_mpi_atomicity)
-      .def("get_mpi_atomicity", &dolfinx::io::HDF5File::get_mpi_atomicity)
-      .def_readwrite("chunking", &dolfinx::io::HDF5File::chunking)
-      .def("has_dataset", &dolfinx::io::HDF5File::has_dataset);
-
   // dolfinx::io::XDMFFile
-  py::class_<dolfinx::io::XDMFFile,
-             std::shared_ptr<dolfinx::io::XDMFFile>>
-      xdmf_file_new(m, "XDMFFile");
-
-  xdmf_file_new
-      .def(py::init([](const MPICommWrapper comm, std::string filename,
-                       dolfinx::io::XDMFFile::Encoding encoding) {
-             return std::make_unique<dolfinx::io::XDMFFile>(
-                 comm.get(), filename, encoding);
-           }),
-           py::arg("comm"), py::arg("filename"), py::arg("encoding"))
-      .def("close", &dolfinx::io::XDMFFile::close)
-      .def("write",
-           py::overload_cast<const dolfinx::mesh::Mesh&>(
-               &dolfinx::io::XDMFFile::write),
-           py::arg("mesh"))
-      .def("write",
-           py::overload_cast<const dolfinx::function::Function&, double>(
-               &dolfinx::io::XDMFFile::write),
-           py::arg("u"), py::arg("t") = 0.0)
-      .def("read_mesh", &dolfinx::io::XDMFFile::read_mesh)
-      .def("read_mesh_data", &dolfinx::io::XDMFFile::read_mesh_data)
-      .def("read_mf_int", &dolfinx::io::XDMFFile::read_mf_int);
+  py::class_<dolfinx::io::XDMFFile, std::shared_ptr<dolfinx::io::XDMFFile>>
+      xdmf_file(m, "XDMFFile");
 
   // dolfinx::io::XDMFFile::Encoding enums
-  py::enum_<dolfinx::io::XDMFFile::Encoding>(xdmf_file_new, "Encoding")
+  py::enum_<dolfinx::io::XDMFFile::Encoding>(xdmf_file, "Encoding")
       .value("HDF5", dolfinx::io::XDMFFile::Encoding::HDF5)
       .value("ASCII", dolfinx::io::XDMFFile::Encoding::ASCII);
+
+  xdmf_file
+      .def(py::init([](const MPICommWrapper comm, const std::string filename,
+                       const std::string file_mode,
+                       dolfinx::io::XDMFFile::Encoding encoding) {
+             return std::make_unique<dolfinx::io::XDMFFile>(
+                 comm.get(), filename, file_mode, encoding);
+           }),
+           py::arg("comm"), py::arg("filename"), py::arg("file_mode"),
+           py::arg("encoding") = dolfinx::io::XDMFFile::Encoding::HDF5)
+      .def("__enter__",
+           [](std::shared_ptr<dolfinx::io::XDMFFile>& self) { return self; })
+      .def("__exit__",
+           [](dolfinx::io::XDMFFile& self, py::object exc_type,
+              py::object exc_value, py::object traceback) { self.close(); })
+      .def("close", &dolfinx::io::XDMFFile::close)
+      .def("write_mesh", &dolfinx::io::XDMFFile::write_mesh, py::arg("mesh"),
+           py::arg("xpath") = "/Xdmf/Domain")
+      .def("write_geometry", &dolfinx::io::XDMFFile::write_geometry,
+           py::arg("geometry"), py::arg("name") = "geometry",
+           py::arg("xpath") = "/Xdmf/Domain")
+      .def("read_mesh", &dolfinx::io::XDMFFile::read_mesh, py::arg("name"),
+           py::arg("xpath"))
+      .def("read_mesh_data", &dolfinx::io::XDMFFile::read_mesh_data,
+           py::arg("name") = "mesh", py::arg("xpath") = "/Xdmf/Domain")
+      .def("write_function", &dolfinx::io::XDMFFile::write_function,
+           py::arg("function"), py::arg("t"), py::arg("mesh_xpath"))
+      .def("write_meshtags", &dolfinx::io::XDMFFile::write_meshtags,
+           py::arg("meshtags"),
+           py::arg("geometry_xpath") = "/Xdmf/Domain/Grid/Geometry",
+           py::arg("xpath") = "/Xdmf/Domain")
+      .def("read_meshtags", &dolfinx::io::XDMFFile::read_meshtags,
+           py::arg("mesh"), py::arg("name"), py::arg("xpath") = "/Xdmf/Domain");
 
   // dolfinx::io::VTKFile
   py::class_<dolfinx::io::VTKFile, std::shared_ptr<dolfinx::io::VTKFile>>

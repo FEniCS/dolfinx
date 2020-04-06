@@ -44,7 +44,8 @@ public:
            const fem::ElementDofLayout& layout,
            const Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic,
                               Eigen::RowMajor>& x,
-           const std::vector<std::int64_t>& global_indices);
+           const std::vector<std::int64_t>& global_indices,
+           const std::vector<std::int64_t>& input_global_indices);
 
   /// Copy constructor
   Geometry(const Geometry&) = default;
@@ -84,8 +85,11 @@ public:
   /// Return coordinate array for node n (index is local to the process)
   Eigen::Vector3d node(int n) const;
 
-  /// Global input indices for points (const)
+  /// Global input indices for points
   const std::vector<std::int64_t>& global_indices() const;
+
+  /// Global user indices
+  const std::vector<std::int64_t>& input_global_indices() const;
 
   /// @warning Experimental. Needs revision
   ///
@@ -120,6 +124,9 @@ private:
 
   // Global indices for points
   std::vector<std::int64_t> _global_indices;
+
+  // Global indices as provided on Geometry creation
+  std::vector<std::int64_t> _input_global_indices;
 };
 
 /// Build Geometry

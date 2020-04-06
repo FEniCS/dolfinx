@@ -201,8 +201,9 @@ solve(a == L, u, bc, petsc_options={"ksp_type": "preonly", "pc_type": "lu"})
 
 
 # Save solution in XDMF format
-with XDMFFile(MPI.comm_world, "poisson.xdmf") as file:
-    file.write(u)
+with XDMFFile(MPI.comm_world, "poisson.xdmf", "w") as file:
+    file.write_mesh(mesh)
+    file.write_function(u)
 
 # Plot solution
 dolfinx.plotting.plot(u)

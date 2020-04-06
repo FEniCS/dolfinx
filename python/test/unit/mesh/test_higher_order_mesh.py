@@ -387,8 +387,8 @@ def test_nth_order_triangle(order):
 @skip_in_parallel
 def test_xdmf_input_tri(datadir):
     # pass
-    with XDMFFile(MPI.comm_world, os.path.join(datadir, "mesh.xdmf")) as xdmf:
-        mesh = xdmf.read_mesh()
+    with XDMFFile(MPI.comm_world, os.path.join(datadir, "mesh.xdmf"), "r", encoding=XDMFFile.Encoding.ASCII) as xdmf:
+        mesh = xdmf.read_mesh(name="Grid")
     surface = assemble_scalar(1 * dx(mesh))
     assert MPI.sum(mesh.mpi_comm(), surface) == pytest.approx(4 * np.pi, rel=1e-4)
 

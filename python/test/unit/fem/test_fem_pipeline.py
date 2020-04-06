@@ -34,8 +34,8 @@ def test_manufactured_poisson(degree, filename, datadir):
 
     """
 
-    with XDMFFile(MPI.comm_world, os.path.join(datadir, filename)) as xdmf:
-        mesh = xdmf.read_mesh()
+    with XDMFFile(MPI.comm_world, os.path.join(datadir, filename), "r", encoding=XDMFFile.Encoding.ASCII) as xdmf:
+        mesh = xdmf.read_mesh(name="Grid")
 
     V = FunctionSpace(mesh, ("Lagrange", degree))
     u, v = TrialFunction(V), TestFunction(V)
@@ -137,8 +137,8 @@ def test_manufactured_poisson(degree, filename, datadir):
 def test_manufactured_vector1(family, degree, filename, datadir):
     """Projection into H(div/curl) spaces"""
 
-    with XDMFFile(MPI.comm_world, os.path.join(datadir, filename)) as xdmf:
-        mesh = xdmf.read_mesh()
+    with XDMFFile(MPI.comm_world, os.path.join(datadir, filename), "r", encoding=XDMFFile.Encoding.ASCII) as xdmf:
+        mesh = xdmf.read_mesh(name="Grid")
 
     V = FunctionSpace(mesh, (family, degree))
     u, v = ufl.TrialFunction(V), ufl.TestFunction(V)
@@ -198,8 +198,8 @@ def test_manufactured_vector1(family, degree, filename, datadir):
 def test_manufactured_vector2(family, degree, filename, datadir):
     """Projection into H(div/curl) spaces"""
 
-    with XDMFFile(MPI.comm_world, os.path.join(datadir, filename)) as xdmf:
-        mesh = xdmf.read_mesh()
+    with XDMFFile(MPI.comm_world, os.path.join(datadir, filename), "r", XDMFFile.Encoding.ASCII) as xdmf:
+        mesh = xdmf.read_mesh(name="Grid")
 
     V = FunctionSpace(mesh, (family, degree + 1))
     u, v = ufl.TrialFunction(V), ufl.TestFunction(V)

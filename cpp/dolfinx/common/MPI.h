@@ -284,6 +284,11 @@ inline MPI_Datatype MPI::mpi_type<unsigned long long>()
 {
   return MPI_UNSIGNED_LONG_LONG;
 }
+template <>
+inline MPI_Datatype MPI::mpi_type<bool>()
+{
+  return MPI_C_BOOL;
+}
 /// @endcond
 //---------------------------------------------------------------------------
 template <typename T>

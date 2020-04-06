@@ -50,10 +50,10 @@ def test_read_mesh_data(tempdir, tdim, n):
     filename = os.path.join(tempdir, "mesh.xdmf")
     mesh = mesh_factory(tdim, n)
     encoding = XDMFFile.Encoding.HDF5
-    with XDMFFile(mesh.mpi_comm(), filename, encoding) as file:
-        file.write(mesh)
+    with XDMFFile(mesh.mpi_comm(), filename, "w", encoding) as file:
+        file.write_mesh(mesh)
 
-    with XDMFFile(MPI.comm_world, filename) as file:
+    with XDMFFile(MPI.comm_world, filename, "r") as file:
         cell_type, x, cells = file.read_mesh_data()
 
     assert cell_type == mesh.topology.cell_type
