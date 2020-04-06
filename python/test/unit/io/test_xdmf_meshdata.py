@@ -6,12 +6,13 @@
 
 import os
 
+import mpi4py
 import pytest
+from dolfinx_utils.test.fixtures import tempdir
 
 from dolfinx import MPI, UnitCubeMesh, UnitIntervalMesh, UnitSquareMesh
 from dolfinx.cpp.mesh import CellType
 from dolfinx.io import XDMFFile
-from dolfinx_utils.test.fixtures import tempdir
 
 assert (tempdir)
 
@@ -57,5 +58,5 @@ def test_read_mesh_data(tempdir, tdim, n):
         cell_type, x, cells = file.read_mesh_data()
 
     assert cell_type == mesh.topology.cell_type
-    assert mesh.topology.index_map(tdim).size_global == MPI.sum(mesh.mpi_comm(), cells.shape[0])
-    assert mesh.geometry.index_map().size_global == MPI.sum(mesh.mpi_comm(), x.shape[0])
+    assert mesh.topology.index_map(tdim).size_global == mesh.mpi_comm().allreduce(cells.shape[0], op=mpi4py.MPI.SUM)
+    assert mesh.geometry.index_map().size_global == mesh.mpi_comm().allreduce(x.shape[0], op=mpi4py.MPI.SUM)

@@ -47,8 +47,10 @@ def test_distance_tetrahedron():
         UnitCubeMesh(MPI.comm_world, 8, 9, 5, CellType.tetrahedron)
     ])
 def test_volume_cells(mesh):
-    num_cells = mesh.num_entities(mesh.topology.dim)
-    v = cpp.mesh.volume_entities(mesh, range(num_cells), mesh.topology.dim)
+    tdim = mesh.topology.dim
+    map = mesh.topology.index_map(tdim)
+    num_cells = map.size_local + map.num_ghosts
+    v = cpp.mesh.volume_entities(mesh, range(num_cells), tdim)
     v = MPI.sum(mesh.mpi_comm(), v.sum())
     assert v == pytest.approx(1.0, rel=1e-9)
 

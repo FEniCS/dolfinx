@@ -470,10 +470,11 @@ mesh::cell_normals(const mesh::Mesh& mesh, int dim)
   {
     if (gdim > 2)
       throw std::invalid_argument("Interval cell normal undefined in 3D");
-
-    Eigen::Array<double, Eigen::Dynamic, 3, Eigen::RowMajor> n(
-        mesh.num_entities(1), 3);
-    for (int i = 0; i < mesh.num_entities(1); ++i)
+    auto map = mesh.topology().index_map(1);
+    assert(map);
+    const std::int32_t num_cells = map->size_local() + map->num_ghosts();
+    Eigen::Array<double, Eigen::Dynamic, 3, Eigen::RowMajor> n(num_cells, 3);
+    for (int i = 0; i < num_cells; ++i)
     {
       // Get the two vertices as points
       const mesh::MeshEntity e(mesh, 1, i);
@@ -489,9 +490,11 @@ mesh::cell_normals(const mesh::Mesh& mesh, int dim)
   }
   case (mesh::CellType::triangle):
   {
-    Eigen::Array<double, Eigen::Dynamic, 3, Eigen::RowMajor> n(
-        mesh.num_entities(2), 3);
-    for (int i = 0; i < mesh.num_entities(2); ++i)
+    auto map = mesh.topology().index_map(2);
+    assert(map);
+    const std::int32_t num_cells = map->size_local() + map->num_ghosts();
+    Eigen::Array<double, Eigen::Dynamic, 3, Eigen::RowMajor> n(num_cells, 3);
+    for (int i = 0; i < num_cells; ++i)
     {
       // Get the three vertices as points
       const mesh::MeshEntity e(mesh, 2, i);
@@ -508,9 +511,11 @@ mesh::cell_normals(const mesh::Mesh& mesh, int dim)
   case (mesh::CellType::quadrilateral):
   {
     // TODO: check
-    Eigen::Array<double, Eigen::Dynamic, 3, Eigen::RowMajor> n(
-        mesh.num_entities(2), 3);
-    for (int i = 0; i < mesh.num_entities(2); ++i)
+    auto map = mesh.topology().index_map(2);
+    assert(map);
+    const std::int32_t num_cells = map->size_local() + map->num_ghosts();
+    Eigen::Array<double, Eigen::Dynamic, 3, Eigen::RowMajor> n(num_cells, 3);
+    for (int i = 0; i < num_cells; ++i)
     {
       // Get three vertices as points
       const mesh::MeshEntity e(mesh, 2, i);
@@ -718,8 +723,7 @@ Eigen::Array<double, Eigen::Dynamic, 3, Eigen::RowMajor> mesh::midpoints(
   return x_mid;
 }
 //-----------------------------------------------------------------------------
-Eigen::Array<std::int32_t, Eigen::Dynamic, 1>
-mesh::locate_entities_geometrical(
+Eigen::Array<std::int32_t, Eigen::Dynamic, 1> mesh::locate_entities_geometrical(
     const mesh::Mesh& mesh, const int dim,
     const std::function<Eigen::Array<bool, Eigen::Dynamic, 1>(
         const Eigen::Ref<const Eigen::Array<double, 3, Eigen::Dynamic,
@@ -788,7 +792,7 @@ mesh::locate_entities_geometrical(
       // Get first cell and find position
       const int c = v_to_c->links(i)[0];
       auto vertices = c_to_v->links(c);
-      const auto *it
+      const auto* it
           = std::find(vertices.data(), vertices.data() + vertices.rows(), i);
       assert(it != (vertices.data() + vertices.rows()));
       const int local_pos = std::distance(vertices.data(), it);
