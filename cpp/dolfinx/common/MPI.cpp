@@ -86,8 +86,6 @@ int dolfinx::MPI::size(const MPI_Comm comm)
   return size;
 }
 //-----------------------------------------------------------------------------
-void dolfinx::MPI::barrier(const MPI_Comm comm) { MPI_Barrier(comm); }
-//-----------------------------------------------------------------------------
 std::size_t dolfinx::MPI::global_offset(const MPI_Comm comm, std::size_t range,
                                         bool exclusive)
 {

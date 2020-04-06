@@ -32,12 +32,12 @@ Partitioning::reorder_global_indices(
   const int size = dolfinx::MPI::size(comm);
 
   // Get maximum global index across all processes
-  std::int64_t my_max_global_index = 0;
   auto it_max = std::max_element(global_indices.begin(), global_indices.end());
-  if (it_max != global_indices.end())
-    my_max_global_index = *it_max;
-  const std::int64_t max_global_index
-      = dolfinx::MPI::all_reduce(comm, my_max_global_index, MPI_MAX);
+  const std::int64_t my_max_global_index
+      = (it_max != global_indices.end()) ? *it_max : 0;
+  std::int64_t max_global_index = 0;
+  MPI_Allreduce(&my_max_global_index, &max_global_index, 1, MPI_INT64_T,
+                MPI_MAX, comm);
 
   // Create global ->local map
   std::unordered_map<std::int64_t, std::int32_t> global_to_local;
