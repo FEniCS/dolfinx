@@ -10,6 +10,7 @@
 #include <cassert>
 #include <complex>
 #include <cstdint>
+#include <dolfinx/graph/AdjacencyList.h>
 #include <iostream>
 #include <numeric>
 #include <type_traits>
@@ -81,9 +82,8 @@ public:
   /// Send in_values[p0] to process p0 and receive values from process
   /// p1 in out_values[p1]
   template <typename T>
-  static void all_to_all(MPI_Comm comm,
-                         const std::vector<std::vector<T>>& in_values,
-                         std::vector<std::vector<T>>& out_values);
+  static graph::AdjacencyList<T>
+  all_to_all(MPI_Comm comm, const std::vector<std::vector<T>>& in_values);
 
   /// Send in_values[p0] to process p0 and receive values from all
   /// processes in out_values
@@ -239,20 +239,14 @@ void dolfinx::MPI::all_to_all_common(
 }
 //-----------------------------------------------------------------------------
 template <typename T>
-void dolfinx::MPI::all_to_all(MPI_Comm comm,
-                              const std::vector<std::vector<T>>& in_values,
-                              std::vector<std::vector<T>>& out_values)
+graph::AdjacencyList<T>
+dolfinx::MPI::all_to_all(MPI_Comm comm,
+                         const std::vector<std::vector<T>>& in_values)
 {
   std::vector<T> out_vec;
   std::vector<std::int32_t> offsets;
   all_to_all_common(comm, in_values, out_vec, offsets);
-  const int mpi_size = MPI::size(comm);
-  out_values.resize(mpi_size);
-  for (int i = 0; i < mpi_size; ++i)
-  {
-    out_values[i].assign(out_vec.data() + offsets[i],
-                         out_vec.data() + offsets[i + 1]);
-  }
+  return graph::AdjacencyList<T>(out_vec, offsets);
 }
 //---------------------------------------------------------------------------
 template <typename T>

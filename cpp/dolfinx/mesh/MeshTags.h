@@ -11,6 +11,7 @@
 #include "Topology.h"
 #include <dolfinx/common/IndexMap.h>
 #include <dolfinx/common/UniqueIdGenerator.h>
+#include <dolfinx/graph/AdjacencyList.h>
 #include <dolfinx/graph/Partitioning.h>
 #include <dolfinx/io/cells.h>
 #include <map>
@@ -202,7 +203,8 @@ create_meshtags(MPI_Comm comm, const std::shared_ptr<const mesh::Mesh>& mesh,
   // Send input global indices to process responsible for it, based on
   // input global index value
 
-  // const std::int64_t num_igi_global = MPI::sum(comm, (std::int64_t)igi.size());
+  // const std::int64_t num_igi_global = MPI::sum(comm,
+  // (std::int64_t)igi.size());
   std::int64_t num_igi_global = 0;
   const std::int64_t igi_size = igi.size();
   MPI_Allreduce(&igi_size, &num_igi_global, 1, MPI_INT64_T, MPI_SUM, comm);
@@ -215,7 +217,6 @@ create_meshtags(MPI_Comm comm, const std::shared_ptr<const mesh::Mesh>& mesh,
   const int local_size = range[1] - range[0];
 
   std::vector<std::vector<std::int64_t>> send_igi(comm_size);
-  std::vector<std::vector<std::int64_t>> recv_igi(comm_size);
 
   const std::int32_t size_local = mesh->geometry().index_map()->size_local()
                                   + mesh->geometry().index_map()->num_ghosts();
@@ -228,7 +229,8 @@ create_meshtags(MPI_Comm comm, const std::shared_ptr<const mesh::Mesh>& mesh,
     send_igi[officer].push_back(igi[i]);
   }
 
-  MPI::all_to_all(comm, send_igi, recv_igi);
+  const graph::AdjacencyList<std::int64_t> recv_igi
+      = MPI::all_to_all(comm, send_igi);
 
   // Handle received input global indices, i.e. put the owners of it to
   // a global position, which is its value
@@ -237,12 +239,12 @@ create_meshtags(MPI_Comm comm, const std::shared_ptr<const mesh::Mesh>& mesh,
       local_size, comm_size);
   const std::size_t offset = MPI::global_offset(comm, local_size, true);
 
-  for (std::int32_t i = 0; i < comm_size; ++i)
+  for (std::int32_t i = 0; i < recv_igi.num_nodes(); ++i)
   {
-    const std::int32_t num_recv_igi = (std::int32_t)recv_igi[i].size();
-    for (std::int32_t j = 0; j < num_recv_igi; ++j)
+    auto data = recv_igi.links(i);
+    for (std::int32_t j = 0; j < data.rows(); ++j)
     {
-      const std::int32_t local_index = recv_igi[i][j] - offset;
+      const std::int32_t local_index = data[j] - offset;
       assert(local_size > local_index);
       assert(local_index >= 0);
       owners(local_index, i) = true;
@@ -294,10 +296,9 @@ create_meshtags(MPI_Comm comm, const std::shared_ptr<const mesh::Mesh>& mesh,
     }
   }
 
-  std::vector<std::vector<T>> recv_vals(comm_size);
-  std::vector<std::vector<std::int64_t>> recv_ents(comm_size);
-  MPI::all_to_all(comm, send_ents, recv_ents);
-  MPI::all_to_all(comm, send_vals, recv_vals);
+  const graph::AdjacencyList<std::int64_t> recv_ents
+      = MPI::all_to_all(comm, send_ents);
+  const graph::AdjacencyList<T> recv_vals = MPI::all_to_all(comm, send_vals);
 
   // Using just the information on current local mesh partition prepare
   // a mapping from *ordered* nodes of entity input global indices to
@@ -346,21 +347,21 @@ create_meshtags(MPI_Comm comm, const std::shared_ptr<const mesh::Mesh>& mesh,
 
   std::vector<std::int32_t> indices_new;
   std::vector<T> values_new;
-  for (std::int32_t i = 0; i < comm_size; ++i)
+  for (std::int32_t i = 0; i < recv_ents.num_nodes(); ++i)
   {
-    const std::int32_t num_recv_ents
-        = (std::int32_t)(recv_ents[i].size() / nnodes_per_entity);
-    for (std::int32_t e = 0; e < num_recv_ents; ++e)
+    auto recv_ents_p = recv_ents.links(i);
+    auto recv_vals_p = recv_vals.links(i);
+    for (std::int32_t e = 0; e < recv_ents_p.rows(); ++e)
     {
-      std::vector<std::int64_t> _entity(&recv_ents[i][nnodes_per_entity * e],
-                                        &recv_ents[i][nnodes_per_entity * e]
-                                            + nnodes_per_entity);
+      std::vector<std::int64_t> _entity(
+          recv_ents_p.data() + nnodes_per_entity * e,
+          recv_ents_p.data() + nnodes_per_entity * e + nnodes_per_entity);
       std::sort(_entity.begin(), _entity.end());
       const auto it = entities_igi.find(_entity);
       if (it != entities_igi.end())
       {
         indices_new.push_back(it->second);
-        values_new.push_back(recv_vals[i][e]);
+        values_new.push_back(recv_vals_p[e]);
       }
     }
   }

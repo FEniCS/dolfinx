@@ -10,6 +10,7 @@
 #include <dolfinx/common/MPI.h>
 #include <dolfinx/common/Timer.h>
 #include <dolfinx/common/log.h>
+#include <dolfinx/graph/AdjacencyList.h>
 #include <dolfinx/mesh/cell_types.h>
 #include <set>
 #include <unordered_set>
@@ -197,7 +198,7 @@ compute_nonlocal_dual_graph(
 
   // Send facet-cell map to intermediary match-making processes
   std::vector<std::vector<std::int64_t>> send_buffer(num_processes);
-  std::vector<std::vector<std::int64_t>> received_buffer(num_processes);
+  // std::vector<std::vector<std::int64_t>> received_buffer(num_processes);
 
   // Pack map data and send to match-maker process
   for (const auto& it : facet_cell_map)
@@ -218,7 +219,8 @@ compute_nonlocal_dual_graph(
   }
 
   // Send data
-  dolfinx::MPI::all_to_all(mpi_comm, send_buffer, received_buffer);
+  const graph::AdjacencyList<std::int64_t> received_buffer
+      = dolfinx::MPI::all_to_all(mpi_comm, send_buffer);
 
   // Clear send buffer
   send_buffer = std::vector<std::vector<std::int64_t>>(num_processes);
@@ -236,14 +238,17 @@ compute_nonlocal_dual_graph(
   for (int p = 0; p < num_processes; ++p)
   {
     // Unpack into map
-    const std::vector<std::int64_t>& data_p = received_buffer[p];
-    for (auto it = data_p.begin(); it != data_p.end();
-         it += (num_vertices_per_facet + 1))
+    auto data_p = received_buffer.links(p);
+    // for (auto it = data_p.begin(); it != data_p.end();
+    //      it += (num_vertices_per_facet + 1))
+    for (int i = 0; i < data_p.rows(); i += (num_vertices_per_facet + 1))
     {
       // Build map key
-      std::copy(it, it + num_vertices_per_facet, key.first.begin());
+      std::copy(data_p.data() + i, data_p.data() + i + num_vertices_per_facet,
+                key.first.begin());
       key.second.first = p;
-      key.second.second = *(it + num_vertices_per_facet);
+      key.second.second = data_p[i + num_vertices_per_facet];
+      // key.second.second = *(it + num_vertices_per_facet);
 
       // Perform map insertion/look-up
       std::pair<MatchMap::iterator, bool> data = matchmap.insert(key);
