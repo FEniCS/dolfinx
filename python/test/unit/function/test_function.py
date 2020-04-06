@@ -292,15 +292,17 @@ def test_interpolation_old(V, W, mesh):
     def f1(x):
         return np.ones((mesh.geometry.dim, x.shape[1]))
 
+    num_vertices = mesh.topology.index_map(0).size_local
+
     # Scalar interpolation
     f = Function(V)
     f.interpolate(f0)
-    assert round(f.vector.norm(PETSc.NormType.N1) - mesh.num_entities(0), 7) == 0
+    assert round(f.vector.norm(PETSc.NormType.N1) - num_vertices, 7) == 0
 
     # Vector interpolation
     f = Function(W)
     f.interpolate(f1)
-    assert round(f.vector.norm(PETSc.NormType.N1) - 3 * mesh.num_entities(0), 7) == 0
+    assert round(f.vector.norm(PETSc.NormType.N1) - 3 * num_vertices, 7) == 0
 
 
 @skip_if_complex

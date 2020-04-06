@@ -67,7 +67,9 @@ def test_tabulate_all_coordinates(mesh_factory):
     checked_W = [False] * local_size_W
 
     # Check that all coordinates are within the cell it should be
-    for i in range(mesh.num_cells()):
+    map = mesh.topology.index_map(mesh.topology.dim)
+    num_cells = map.size_local + map.num_ghosts
+    for i in range(num_cells):
         cell = MeshEntity(mesh, mesh.topology.dim, i)
         dofs_V = V_dofmap.cell_dofs(i)
         for di in dofs_V:
@@ -105,7 +107,9 @@ def test_tabulate_dofs(mesh_factory):
     L01 = L1.sub(0)
     L11 = L1.sub(1)
 
-    for i in range(mesh.num_cells()):
+    map = mesh.topology.index_map(mesh.topology.dim)
+    num_cells = map.size_local + map.num_ghosts
+    for i in range(num_cells):
         dofs0 = L0.dofmap.cell_dofs(i)
         dofs1 = L01.dofmap.cell_dofs(i)
         dofs2 = L11.dofmap.cell_dofs(i)
@@ -146,7 +150,9 @@ def test_tabulate_coord_periodic(mesh_factory):
     coord2 = np.zeros((sdim, 2), dtype="d")
     coord3 = np.zeros((sdim, 2), dtype="d")
 
-    for i in range(mesh.num_cells()):
+    map = mesh.topology.index_map(mesh.topology.dim)
+    num_cells = map.size_local + map.num_ghosts
+    for i in range(num_cells):
         cell = MeshEntity(mesh, mesh.topology.dim, i)
         coord0 = V.element.tabulate_dof_coordinates(cell)
         coord1 = L0.element.tabulate_dof_coordinates(cell)
@@ -237,18 +243,17 @@ def test_entity_closure_dofs(mesh_factory):
     for degree in (1, 2, 3):
         V = FunctionSpace(mesh, ("CG", degree))
         for d in range(tdim + 1):
+            map = mesh.topology.index_map(d)
+            num_entities = map.size_local + map.num_ghosts
             covered = set()
             covered2 = set()
-            all_entities = np.array(
-                [entity for entity in range(mesh.num_entities(d))],
-                dtype=np.uintp)
+            all_entities = np.array([entity for entity in range(num_entities)], dtype=np.uintp)
             for entity in all_entities:
                 entities = np.array([entity], dtype=np.uintp)
                 dofs_on_this_entity = V.dofmap.entity_dofs(mesh, d, entities)
                 closure_dofs = V.dofmap.entity_closure_dofs(
                     mesh, d, entities)
-                assert len(dofs_on_this_entity) == V.dofmap.dof_layout.num_entity_dofs(
-                    d)
+                assert len(dofs_on_this_entity) == V.dofmap.dof_layout.num_entity_dofs(d)
                 assert len(dofs_on_this_entity) <= len(closure_dofs)
                 covered.update(dofs_on_this_entity)
                 covered2.update(closure_dofs)
@@ -256,15 +261,15 @@ def test_entity_closure_dofs(mesh_factory):
                 mesh, d, all_entities)
             closure_dofs_on_all_entities = V.dofmap.entity_closure_dofs(
                 mesh, d, all_entities)
-            assert len(dofs_on_all_entities) == V.dofmap.dof_layout.num_entity_dofs(
-                d) * mesh.num_entities(d)
+            assert len(dofs_on_all_entities) == V.dofmap.dof_layout.num_entity_dofs(d) * num_entities
             assert covered == set(dofs_on_all_entities)
             assert covered2 == set(closure_dofs_on_all_entities)
+
         d = tdim
-        all_cells = np.array(
-            [entity for entity in range(mesh.num_entities(d))], dtype=np.uintp)
-        assert set(V.dofmap.entity_closure_dofs(mesh, d, all_cells)) == set(
-            range(V.dim))
+        map = mesh.topology.index_map(d)
+        num_entities = map.size_local + map.num_ghosts
+        all_cells = np.array([entity for entity in range(num_entities)], dtype=np.uintp)
+        assert set(V.dofmap.entity_closure_dofs(mesh, d, all_cells)) == set(range(V.dim))
 
 
 @pytest.mark.skip
