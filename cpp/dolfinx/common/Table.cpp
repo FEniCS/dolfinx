@@ -186,8 +186,10 @@ Table Table::reduce(MPI_Comm comm, Table::Reduction reduction) const
   // NB - the cast to std::variant should not be needed: needed by Intel
   // compiler.
   for (const auto& it : dvalues_all)
+  {
     table_all.set(it.first[0], it.first[1],
                   std::variant<std::string, int, double>(it.second));
+  }
 
   return table_all;
 }
