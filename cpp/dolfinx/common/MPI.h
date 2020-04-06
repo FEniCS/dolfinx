@@ -289,16 +289,14 @@ std::vector<T> dolfinx::MPI::gather(MPI_Comm comm,
   // Get data size on each process
   std::vector<int> pcounts(comm_size);
   const int local_size = in_values.size();
-  MPI_Gather(const_cast<int*>(&local_size), 1, mpi_type<int>(), pcounts.data(),
-             1, mpi_type<int>(), receiving_process, comm);
+  MPI_Gather(&local_size, 1, mpi_type<int>(), pcounts.data(), 1,
+             mpi_type<int>(), receiving_process, comm);
 
   // Build offsets
   std::vector<int> offsets(comm_size + 1, 0);
-  for (int i = 1; i <= comm_size; ++i)
-    offsets[i] = offsets[i - 1] + pcounts[i - 1];
+  std::partial_sum(pcounts.begin(), pcounts.end(), offsets.begin() + 1);
 
-  const std::size_t n = std::accumulate(pcounts.begin(), pcounts.end(), 0);
-  std::vector<T> out_values(n);
+  std::vector<T> out_values(offsets.back());
   MPI_Gatherv(in_values.data(), in_values.size(), mpi_type<T>(),
               out_values.data(), pcounts.data(), offsets.data(), mpi_type<T>(),
               receiving_process, comm);
@@ -313,21 +311,19 @@ dolfinx::MPI::gather(MPI_Comm comm, const std::string& in_values,
 
   // Get data size on each process
   std::vector<int> pcounts(comm_size);
-  int local_size = in_values.size();
+  const int local_size = in_values.size();
   MPI_Gather(&local_size, 1, MPI_INT, pcounts.data(), 1, MPI_INT,
              receiving_process, comm);
 
   // Build offsets
   std::vector<int> offsets(comm_size + 1, 0);
-  for (int i = 1; i <= comm_size; ++i)
-    offsets[i] = offsets[i - 1] + pcounts[i - 1];
+  std::partial_sum(pcounts.begin(), pcounts.end(), offsets.begin() + 1);
 
   // Gather
-  const std::size_t n = std::accumulate(pcounts.begin(), pcounts.end(), 0);
-  std::vector<char> _out(n);
-  MPI_Gatherv(const_cast<char*>(in_values.data()), in_values.size(), MPI_CHAR,
-              _out.data(), pcounts.data(), offsets.data(), MPI_CHAR,
-              receiving_process, comm);
+  std::vector<char> _out(offsets.back());
+  MPI_Gatherv(in_values.data(), in_values.size(), MPI_CHAR, _out.data(),
+              pcounts.data(), offsets.data(), MPI_CHAR, receiving_process,
+              comm);
 
   // Rebuild
   std::vector<std::string> out_values(comm_size);
@@ -352,15 +348,13 @@ void dolfinx::MPI::all_gather(MPI_Comm comm, const std::vector<T>& in_values,
 
   // Build offsets
   std::vector<int> offsets(comm_size + 1, 0);
-  for (int i = 1; i <= comm_size; ++i)
-    offsets[i] = offsets[i - 1] + pcounts[i - 1];
+  std::partial_sum(pcounts.begin(), pcounts.end(), offsets.begin() + 1);
 
   // Gather data
-  const std::size_t n = std::accumulate(pcounts.begin(), pcounts.end(), 0);
-  std::vector<T> recvbuf(n);
-  MPI_Allgatherv(const_cast<T*>(in_values.data()), in_values.size(),
-                 mpi_type<T>(), recvbuf.data(), pcounts.data(), offsets.data(),
-                 mpi_type<T>(), comm);
+  std::vector<T> recvbuf(offsets.back());
+  MPI_Allgatherv(in_values.data(), in_values.size(), mpi_type<T>(),
+                 recvbuf.data(), pcounts.data(), offsets.data(), mpi_type<T>(),
+                 comm);
 
   // Repack data
   out_values.resize(comm_size);
@@ -395,8 +389,8 @@ void dolfinx::MPI::neighbor_all_to_all(MPI_Comm neighbor_comm,
   recv_offsets.resize(recv_sizes.size() + 1, 0);
   std::partial_sum(recv_sizes.begin(), recv_sizes.end(),
                    recv_offsets.begin() + 1);
-  recv_data.resize(recv_offsets.back());
 
+  recv_data.resize(recv_offsets.back());
   MPI_Neighbor_alltoallv(
       send_data.data(), send_sizes.data(), send_offsets.data(),
       MPI::mpi_type<T>(), recv_data.data(), recv_sizes.data(),
