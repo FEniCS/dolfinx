@@ -189,9 +189,10 @@ mesh::Mesh XDMFFile::read_mesh(const std::string name,
   const fem::ElementDofLayout layout
       = fem::geometry_layout(cell_type, cells.cols());
 
-  // FIXME: Add ghostmode
-  return mesh::create(_mpi_comm.comm(), cells_adj, layout, x,
-                      mesh::GhostMode::none);
+  mesh::Mesh mesh = mesh::create(_mpi_comm.comm(), cells_adj, layout, x,
+                                 mesh::GhostMode::none);
+  mesh.name = name;
+  return mesh;
 }
 //-----------------------------------------------------------------------------
 std::tuple<

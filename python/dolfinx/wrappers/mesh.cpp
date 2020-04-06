@@ -197,6 +197,7 @@ void mesh(py::module& m)
           "topology", py::overload_cast<>(&dolfinx::mesh::Mesh::topology),
           "Mesh topology", py::return_value_policy::reference_internal)
       .def("ufl_id", &dolfinx::mesh::Mesh::id)
+      .def_readwrite("name", &dolfinx::mesh::Mesh::name)
       .def_property_readonly("id", &dolfinx::mesh::Mesh::id);
 
   // dolfinx::mesh::MeshEntity class
