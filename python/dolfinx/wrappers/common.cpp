@@ -20,7 +20,6 @@
 #include <pybind11/eigen.h>
 #include <pybind11/pybind11.h>
 #include <pybind11/stl.h>
-#include <set>
 #include <string>
 #include <vector>
 
@@ -141,20 +140,6 @@ void common(py::module& m)
 // Interface for MPI
 void mpi(py::module& m)
 {
-
-  // Expose the MPICommWrapper directly since we cannot cast it to
-  // mpi4py
-  py::class_<MPICommWrapper>(
-      m, "MPICommWrapper",
-      "DOLFIN is compiled without support for mpi4py. This object can be "
-      "passed into DOLFIN as an MPI communicator, but is not an mpi4py comm.")
-      .def(
-          "underlying_comm",
-          [](MPICommWrapper self) { return (std::uintptr_t)self.get(); },
-          "Return the underlying MPI_Comm cast to std::uintptr_t. "
-          "The return value may or may not make sense depending on the MPI "
-          "implementation.");
-
   // dolfinx::MPI
   py::class_<dolfinx::MPI>(m, "MPI", "MPI utilities")
       .def_property_readonly_static(
