@@ -106,11 +106,6 @@ public:
   /// @param neighbor_comm
   static std::vector<int> neighbors(MPI_Comm neighbor_comm);
 
-  /// Gather strings on one process
-  static std::vector<std::string> gather(MPI_Comm comm,
-                                         const std::string& in_values,
-                                         int receiving_process = 0);
-
   /// Find global offset (index) (wrapper for MPI_(Ex)Scan with
   /// MPI_SUM as reduction op)
   static std::size_t global_offset(MPI_Comm comm, std::size_t range,
@@ -267,38 +262,6 @@ void dolfinx::MPI::all_to_all(MPI_Comm comm,
 {
   std::vector<std::int32_t> offsets;
   all_to_all_common(comm, in_values, out_values, offsets);
-}
-//---------------------------------------------------------------------------
-inline std::vector<std::string>
-dolfinx::MPI::gather(MPI_Comm comm, const std::string& in_values,
-                     int receiving_process)
-{
-  const int comm_size = MPI::size(comm);
-
-  // Get data size on each process
-  std::vector<int> pcounts(comm_size);
-  const int local_size = in_values.size();
-  MPI_Gather(&local_size, 1, MPI_INT, pcounts.data(), 1, MPI_INT,
-             receiving_process, comm);
-
-  // Build offsets
-  std::vector<int> offsets(comm_size + 1, 0);
-  std::partial_sum(pcounts.begin(), pcounts.end(), offsets.begin() + 1);
-
-  // Gather
-  std::vector<char> _out(offsets.back());
-  MPI_Gatherv(in_values.data(), in_values.size(), MPI_CHAR, _out.data(),
-              pcounts.data(), offsets.data(), MPI_CHAR, receiving_process,
-              comm);
-
-  // Rebuild
-  std::vector<std::string> out_values(comm_size);
-  for (int p = 0; p < comm_size; ++p)
-  {
-    out_values[p]
-        = std::string(_out.begin() + offsets[p], _out.begin() + offsets[p + 1]);
-  }
-  return out_values;
 }
 //---------------------------------------------------------------------------
 template <typename T>

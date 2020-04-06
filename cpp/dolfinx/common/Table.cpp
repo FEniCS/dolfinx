@@ -119,10 +119,25 @@ Table Table::reduce(MPI_Comm comm, Table::Reduction reduction) const
   }
 
   // Gather to rank zero
-  const std::vector<std::string> keys_all = MPI::gather(comm, keys, 0);
 
-  // Get data size on each process
+  // Get string data size on each process
   std::vector<int> pcounts(mpi_size), offsets(mpi_size + 1, 0);
+  const int local_size_str = keys.size();
+  MPI_Gather(&local_size_str, 1, MPI_INT, pcounts.data(), 1, MPI_INT, 0, comm);
+  std::partial_sum(pcounts.begin(), pcounts.end(), offsets.begin() + 1);
+  std::vector<char> out_str(offsets.back());
+  MPI_Gatherv(keys.data(), keys.size(), MPI_CHAR, out_str.data(),
+              pcounts.data(), offsets.data(), MPI_CHAR, 0, comm);
+
+  // Rebuild string
+  std::vector<std::string> keys_all(mpi_size);
+  for (int p = 0; p < mpi_size; ++p)
+  {
+    keys_all[p] = std::string(out_str.begin() + offsets[p],
+                              out_str.begin() + offsets[p + 1]);
+  }
+
+  // Get value data size on each process
   const int local_size = values.size();
   MPI_Gather(&local_size, 1, MPI_INT, pcounts.data(), 1, MPI_INT, 0, comm);
   std::partial_sum(pcounts.begin(), pcounts.end(), offsets.begin() + 1);
