@@ -113,7 +113,8 @@ compute_local_dual_graph_keyed(
     {
       // No match, so add facet0 to map
       facet_cell_map.push_back(
-          {std::vector(facet0.begin(), facet0.end()), cell_index0});
+          {std::vector<std::int32_t>(facet0.begin(), facet0.end()),
+           cell_index0});
     }
   }
 
@@ -124,9 +125,10 @@ compute_local_dual_graph_keyed(
   {
     const int k = facets.size() - 1;
     const int cell_index = facets[k].second;
-    facet_cell_map.emplace_back(std::vector<std::int32_t>(facets[k].first.begin(),
-                                                        facets[k].first.end()),
-                              cell_index);
+    facet_cell_map.emplace_back(
+        std::vector<std::int32_t>(facets[k].first.begin(),
+                                  facets[k].first.end()),
+        cell_index);
   }
 
   return {std::move(local_graph), std::move(facet_cell_map), num_local_edges};
@@ -196,7 +198,7 @@ compute_nonlocal_dual_graph(
   std::vector<std::vector<std::int64_t>> received_buffer(num_processes);
 
   // Pack map data and send to match-maker process
-  for (const auto & it : facet_cell_map)
+  for (const auto& it : facet_cell_map)
   {
     // FIXME: Could use a better index? First vertex is slightly
     //        skewed towards low values - may not be important

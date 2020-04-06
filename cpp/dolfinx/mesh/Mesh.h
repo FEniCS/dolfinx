@@ -104,13 +104,6 @@ public:
   /// @param mesh Another Mesh object
   Mesh& operator=(Mesh&& mesh) = default;
 
-  /// @todo Remove and work via Topology
-  ///
-  /// Get number of entities of given topological dimension
-  /// @param[in] d Topological dimension.
-  /// @return Number of entities of topological dimension d
-  std::int32_t num_entities(int d) const;
-
   /// Get mesh topology
   /// @return The topology object associated with the mesh.
   Topology& topology();

@@ -92,15 +92,9 @@ def ufl_domain(self):
     return self._ufl_domain
 
 
-def num_cells(self):
-    """Return number of mesh cells"""
-    return self.num_entities(self.topology.dim)
-
-
 # Extend cpp.mesh.Mesh class, and clean-up
 cpp.mesh.Mesh.ufl_cell = ufl_cell
 cpp.mesh.Mesh.ufl_coordinate_element = ufl_coordinate_element
 cpp.mesh.Mesh.ufl_domain = ufl_domain
-cpp.mesh.Mesh.num_cells = num_cells
 
-del ufl_cell, ufl_coordinate_element, ufl_domain, num_cells
+del ufl_cell, ufl_coordinate_element, ufl_domain
