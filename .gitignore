@@ -128,3 +128,4 @@ dist/
 .pytest_cache
 .*.swp
 *_tempdir_*
+_petsc_*

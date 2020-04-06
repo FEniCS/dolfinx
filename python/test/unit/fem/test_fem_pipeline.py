@@ -9,35 +9,55 @@ import time
 
 import numpy as np
 import pytest
-from dolfinx_utils.test.skips import skip_if_complex, skip_in_parallel
+from dolfinx_utils.test.skips import skip_in_parallel, skip_in_serial
 from petsc4py import PETSc
 
 import ufl
-from dolfinx import MPI, DirichletBC, Function, FunctionSpace, fem, geometry
+from dolfinx import (MPI, DirichletBC, Function, FunctionSpace, fem, geometry,
+                     FacetNormal, CellDiameter, UnitSquareMesh, UnitCubeMesh)
 from dolfinx.fem import (apply_lifting, assemble_matrix, assemble_scalar,
                          assemble_vector, locate_dofs_topological, set_bc)
 from dolfinx.io import XDMFFile
+from dolfinx.cpp.mesh import CellType
 from ufl import (SpatialCoordinate, TestFunction, TrialFunction, div, dx, grad,
-                 inner)
+                 inner, ds, dS, avg, jump)
+
+# Small meshes for running these tests in serial
+meshes = [UnitSquareMesh(MPI.comm_world, 2, 1, CellType.triangle),
+          UnitCubeMesh(MPI.comm_world, 2, 1, 1, CellType.tetrahedron),
+          UnitSquareMesh(MPI.comm_world, 2, 1, CellType.quadrilateral),
+          UnitCubeMesh(MPI.comm_world, 3, 3, 1, CellType.hexahedron)]
+parametrize_meshes = pytest.mark.parametrize("mesh", meshes)
+parametrize_meshes_simplex = pytest.mark.parametrize(
+    "mesh", [m for m in meshes if m.ufl_cell().is_simplex()])
+parametrize_meshes_tp = pytest.mark.parametrize(
+    "mesh", [m for m in meshes if not m.ufl_cell().is_simplex()])
+parametrize_meshes_quad = pytest.mark.parametrize(
+    "mesh", [m for m in meshes if m.ufl_cell().cellname() == "quadrilateral"])
+parametrize_meshes_hex = pytest.mark.parametrize(
+    "mesh", [m for m in meshes if m.ufl_cell().cellname() == "hexahedron"])
+
+# Filenames of large meshes for running these tests in parallel
+filenames = ["UnitSquareMesh_triangle.xdmf",
+             "UnitSquareMesh_quad.xdmf",
+             "UnitCubeMesh_tetra.xdmf",
+             "UnitCubeMesh_hexahedron.xdmf"]
+parametrize_filenames = pytest.mark.parametrize("filename", filenames)
+parametrize_filenames_simplex = pytest.mark.parametrize(
+    "filename", [m for m in filenames if "tetra" in m or "triangle" in m])
+parametrize_filenames_tp = pytest.mark.parametrize(
+    "filename", [m for m in filenames if "quad" in m or "hexa" in m])
+parametrize_filenames_quad = pytest.mark.parametrize(
+    "filename", [m for m in filenames if "quad" in m])
+parametrize_filenames_hex = pytest.mark.parametrize(
+    "filename", [m for m in filenames if "hex" in m])
 
 
-@pytest.mark.parametrize("filename", [
-    "UnitCubeMesh_hexahedron.xdmf",
-    "UnitCubeMesh_tetra.xdmf",
-    "UnitSquareMesh_quad.xdmf",
-    "UnitSquareMesh_triangle.xdmf"
-])
-@pytest.mark.parametrize("degree", [2, 3, 4])
-def test_manufactured_poisson(degree, filename, datadir):
+def run_scalar_test(mesh, V, degree):
     """ Manufactured Poisson problem, solving u = x[1]**p, where p is the
     degree of the Lagrange function space.
 
     """
-
-    with XDMFFile(MPI.comm_world, os.path.join(datadir, filename), "r", encoding=XDMFFile.Encoding.ASCII) as xdmf:
-        mesh = xdmf.read_mesh(name="Grid")
-
-    V = FunctionSpace(mesh, ("Lagrange", degree))
     u, v = TrialFunction(V), TestFunction(V)
     a = inner(grad(u), grad(v)) * dx
 
@@ -48,7 +68,7 @@ def test_manufactured_poisson(degree, filename, datadir):
 
     # Source term
     x = SpatialCoordinate(mesh)
-    u_exact = x[1]**degree
+    u_exact = x[1] ** degree
     f = - div(grad(u_exact))
 
     # Set quadrature degree for linear form integrand (ignores effect of
@@ -62,7 +82,7 @@ def test_manufactured_poisson(degree, filename, datadir):
     print("Linear form compile time:", t1 - t0)
 
     u_bc = Function(V)
-    u_bc.interpolate(lambda x: x[1]**degree)
+    u_bc.interpolate(lambda x: x[1] ** degree)
 
     # Create Dirichlet boundary condition
     mesh.create_connectivity_all()
@@ -106,7 +126,7 @@ def test_manufactured_poisson(degree, filename, datadir):
     t1 = time.time()
     print("Linear solver time:", t1 - t0)
 
-    M = (u_exact - uh)**2 * dx
+    M = (u_exact - uh) ** 2 * dx
     t0 = time.time()
     M = fem.Form(M)
     t1 = time.time()
@@ -121,121 +141,320 @@ def test_manufactured_poisson(degree, filename, datadir):
     assert np.absolute(error) < 1.0e-14
 
 
-@skip_in_parallel
-@pytest.mark.parametrize("filename", [
-    "UnitSquareMesh_triangle.xdmf",
-    "UnitCubeMesh_tetra.xdmf",
-    # "UnitSquareMesh_quad.xdmf",
-    # "UnitCubeMesh_hexahedron.xdmf"
-])
-@pytest.mark.parametrize("family",
-                         [
-                             "BDM",
-                             "N2curl"
-                         ])
-@pytest.mark.parametrize("degree", [1, 2, 3])
-def test_manufactured_vector1(family, degree, filename, datadir):
+def run_vector_test(mesh, V, degree):
     """Projection into H(div/curl) spaces"""
+    u, v = ufl.TrialFunction(V), ufl.TestFunction(V)
+    a = inner(u, v) * dx
 
+    # Source term
+    x = SpatialCoordinate(mesh)
+    u_ref = x[0] ** degree
+    L = inner(u_ref, v[0]) * dx
+
+    b = assemble_vector(L)
+    b.ghostUpdate(addv=PETSc.InsertMode.ADD, mode=PETSc.ScatterMode.REVERSE)
+
+    A = assemble_matrix(a)
+    A.assemble()
+
+    print(degree)
+    print(A[:, :])
+    print(b[:])
+
+    # Create LU linear solver (Note: need to use a solver that
+    # re-orders to handle pivots, e.g. not the PETSc built-in LU
+    # solver)
+    solver = PETSc.KSP().create(MPI.comm_world)
+    solver.setType("preonly")
+    solver.getPC().setType('lu')
+    solver.setOperators(A)
+
+    # Solve
+    uh = Function(V)
+    solver.solve(b, uh.vector)
+    uh.vector.ghostUpdate(addv=PETSc.InsertMode.INSERT, mode=PETSc.ScatterMode.FORWARD)
+
+    xp = np.array([0.33, 0.33, 0.0])
+    tree = geometry.BoundingBoxTree(mesh, mesh.geometry.dim)
+    cells = geometry.compute_first_entity_collision(tree, mesh, xp)
+
+    up = uh.eval(xp, cells[0])
+    print("test0:", up)
+    print("test1:", xp[0] ** degree)
+
+    u_exact = np.zeros(mesh.geometry.dim)
+    u_exact[0] = xp[0] ** degree
+    assert np.allclose(up, u_exact)
+
+
+def run_dg_test(mesh, V, degree):
+    """ Manufactured Poisson problem, solving u = x[component]**n, where n is the
+    degree of the Lagrange function space.
+
+    """
+    u, v = TrialFunction(V), TestFunction(V)
+
+    # Exact solution
+    x = SpatialCoordinate(mesh)
+    u_exact = x[1] ** degree
+
+    # Coefficient
+    k = Function(V)
+    k.vector.set(2.0)
+    k.vector.ghostUpdate(addv=PETSc.InsertMode.INSERT, mode=PETSc.ScatterMode.FORWARD)
+
+    # Source term
+    f = - div(k * grad(u_exact))
+
+    # Mesh normals and element size
+    n = FacetNormal(mesh)
+    h = CellDiameter(mesh)
+    h_avg = (h("+") + h("-")) / 2.0
+
+    # Penalty parameter
+    alpha = 32
+
+    dx_ = dx(metadata={"quadrature_degree": -1})
+    ds_ = ds(metadata={"quadrature_degree": -1})
+    dS_ = dS(metadata={"quadrature_degree": -1})
+
+    a = inner(k * grad(u), grad(v)) * dx_ \
+        - k("+") * inner(avg(grad(u)), jump(v, n)) * dS_ \
+        - k("+") * inner(jump(u, n), avg(grad(v))) * dS_ \
+        + k("+") * (alpha / h_avg) * inner(jump(u, n), jump(v, n)) * dS_ \
+        - inner(k * grad(u), v * n) * ds_ \
+        - inner(u * n, k * grad(v)) * ds_ \
+        + (alpha / h) * inner(k * u, v) * ds_
+    L = inner(f, v) * dx_ - inner(k * u_exact * n, grad(v)) * ds_ \
+        + (alpha / h) * inner(k * u_exact, v) * ds_
+
+    for integral in a.integrals():
+        integral.metadata()["quadrature_degree"] = ufl.algorithms.estimate_total_polynomial_degree(a)
+    for integral in L.integrals():
+        integral.metadata()["quadrature_degree"] = ufl.algorithms.estimate_total_polynomial_degree(L)
+
+    b = assemble_vector(L)
+    b.ghostUpdate(addv=PETSc.InsertMode.ADD, mode=PETSc.ScatterMode.REVERSE)
+
+    A = assemble_matrix(a, [])
+    A.assemble()
+
+    # Create LU linear solver
+    solver = PETSc.KSP().create(MPI.comm_world)
+    solver.setType(PETSc.KSP.Type.PREONLY)
+    solver.getPC().setType(PETSc.PC.Type.LU)
+    solver.setOperators(A)
+
+    # Solve
+    uh = Function(V)
+    solver.solve(b, uh.vector)
+    uh.vector.ghostUpdate(addv=PETSc.InsertMode.INSERT,
+                          mode=PETSc.ScatterMode.FORWARD)
+
+    error = assemble_scalar((u_exact - uh) ** 2 * dx)
+    error = MPI.sum(mesh.mpi_comm(), error)
+
+    assert np.absolute(error) < 1.0e-14
+
+
+# Run tests on all spaces in periodic table on triangles and tetrahedra
+@skip_in_parallel
+@parametrize_meshes_simplex
+@pytest.mark.parametrize("family", ["Lagrange"])
+@pytest.mark.parametrize("degree", [2, 3, 4])
+def test_P_simplex(family, degree, mesh):
+    V = FunctionSpace(mesh, (family, degree))
+    run_scalar_test(mesh, V, degree)
+
+
+@skip_in_parallel
+@parametrize_meshes_simplex
+@pytest.mark.parametrize("family", ["DG"])
+@pytest.mark.parametrize("degree", [2, 3, 4])
+def test_dP_simplex(family, degree, mesh):
+    V = FunctionSpace(mesh, (family, degree))
+    run_dg_test(mesh, V, degree)
+
+
+@skip_in_parallel
+@parametrize_meshes_simplex
+@pytest.mark.parametrize("family", ["RT", "N1curl"])
+@pytest.mark.parametrize("degree", [1, 2, 3])
+def test_RT_N1curl_simplex(family, degree, mesh):
+    V = FunctionSpace(mesh, (family, degree + 1))
+    run_vector_test(mesh, V, degree)
+
+
+@skip_in_parallel
+@parametrize_meshes_simplex
+@pytest.mark.parametrize("family", ["BDM", "N2curl"])
+@pytest.mark.parametrize("degree", [1, 2, 3])
+def test_BDM_N2curl_simplex(family, degree, mesh):
+    V = FunctionSpace(mesh, (family, degree))
+    run_vector_test(mesh, V, degree)
+
+
+# Run tests on all spaces in periodic table on quadrilaterals and hexahedra
+@skip_in_parallel
+@parametrize_meshes_tp
+@pytest.mark.parametrize("family", ["Q"])
+@pytest.mark.parametrize("degree", [2, 3, 4])
+def test_P_tp(family, degree, mesh):
+    V = FunctionSpace(mesh, (family, degree))
+    run_scalar_test(mesh, V, degree)
+
+
+@skip_in_parallel
+@parametrize_meshes_tp
+@pytest.mark.parametrize("family", ["DQ", "DPC"])
+@pytest.mark.parametrize("degree", [2, 3, 4])
+def test_dP_tp(family, degree, mesh):
+    V = FunctionSpace(mesh, (family, degree))
+    run_dg_test(mesh, V, degree)
+
+
+@skip_in_parallel
+@parametrize_meshes_quad
+@pytest.mark.parametrize("family", ["RTCE", "RTCF"])
+@pytest.mark.parametrize("degree", [1, 2, 3])
+def test_RTC_quad(family, degree, mesh):
+    V = FunctionSpace(mesh, (family, degree))
+    run_vector_test(mesh, V, degree)
+
+
+@skip_in_parallel
+@parametrize_meshes_hex
+@pytest.mark.parametrize("family", ["NCE", "NCF"])
+@pytest.mark.parametrize("degree", [1, 2, 3])
+def test_NC_hex(family, degree, mesh):
+    V = FunctionSpace(mesh, (family, degree + 1))
+    run_vector_test(mesh, V, degree)
+
+
+@skip_in_parallel
+@parametrize_meshes_quad
+@pytest.mark.parametrize("family", ["BDMCE", "BDMCF"])
+@pytest.mark.parametrize("degree", [1, 2, 3])
+def test_BDM_quad(family, degree, mesh):
+    V = FunctionSpace(mesh, (family, degree))
+    run_vector_test(mesh, V, degree)
+
+
+@skip_in_parallel
+@parametrize_meshes_hex
+@pytest.mark.parametrize("family", ["AAE", "AAF"])
+@pytest.mark.parametrize("degree", [1, 2, 3])
+def test_AA_hex(family, degree, mesh):
+    V = FunctionSpace(mesh, (family, degree))
+    run_vector_test(mesh, V, degree)
+
+
+# Run tests on larger meshes in parallel
+@skip_in_serial
+@parametrize_filenames_simplex
+@pytest.mark.parametrize("family", ["Lagrange"])
+@pytest.mark.parametrize("degree", [2, 3, 4])
+def test_P_simplex_par(family, degree, filename, datadir):
     with XDMFFile(MPI.comm_world, os.path.join(datadir, filename), "r", encoding=XDMFFile.Encoding.ASCII) as xdmf:
         mesh = xdmf.read_mesh(name="Grid")
-
     V = FunctionSpace(mesh, (family, degree))
-    u, v = ufl.TrialFunction(V), ufl.TestFunction(V)
-    a = inner(u, v) * dx
-
-    # Source term
-    x = SpatialCoordinate(mesh)
-    u_ref = x[0]**degree
-    L = inner(u_ref, v[0]) * dx
-
-    b = assemble_vector(L)
-    b.ghostUpdate(addv=PETSc.InsertMode.ADD, mode=PETSc.ScatterMode.REVERSE)
-
-    A = assemble_matrix(a)
-    A.assemble()
-
-    # Create LU linear solver (Note: need to use a solver that
-    # re-orders to handle pivots, e.g. not the PETSc built-in LU
-    # solver)
-    solver = PETSc.KSP().create(MPI.comm_world)
-    solver.setType("preonly")
-    solver.getPC().setType('lu')
-    solver.setOperators(A)
-
-    # Solve
-    uh = Function(V)
-    solver.solve(b, uh.vector)
-    uh.vector.ghostUpdate(addv=PETSc.InsertMode.INSERT, mode=PETSc.ScatterMode.FORWARD)
-
-    xp = np.array([0.33, 0.33, 0.0])
-    tree = geometry.BoundingBoxTree(mesh, mesh.geometry.dim)
-    cells = geometry.compute_first_entity_collision(tree, mesh, xp)
-
-    up = uh.eval(xp, cells[0])
-    print("test0:", up)
-    print("test1:", xp[0]**degree)
-
-    u_exact = np.zeros(mesh.geometry.dim)
-    u_exact[0] = xp[0]**degree
-    assert np.allclose(up, u_exact)
+    run_scalar_test(mesh, V, degree)
 
 
-@skip_if_complex
-@skip_in_parallel
-@pytest.mark.parametrize("filename", [
-    "UnitSquareMesh_triangle.xdmf",
-    "UnitCubeMesh_tetra.xdmf",
-    # "UnitSquareMesh_quad.xdmf",
-    # "UnitCubeMesh_hexahedron.xdmf"
-])
-@pytest.mark.parametrize("family",
-                         [
-                             "RT",
-                             "N1curl",
-                         ])
-@pytest.mark.parametrize("degree", [1, 2])
-def test_manufactured_vector2(family, degree, filename, datadir):
-    """Projection into H(div/curl) spaces"""
-
-    with XDMFFile(MPI.comm_world, os.path.join(datadir, filename), "r", XDMFFile.Encoding.ASCII) as xdmf:
+@skip_in_serial
+@parametrize_filenames_simplex
+@pytest.mark.parametrize("family", ["DG"])
+@pytest.mark.parametrize("degree", [2, 3, 4])
+def test_dP_simplex_par(family, degree, filename, datadir):
+    with XDMFFile(MPI.comm_world, os.path.join(datadir, filename), "r", encoding=XDMFFile.Encoding.ASCII) as xdmf:
         mesh = xdmf.read_mesh(name="Grid")
+    V = FunctionSpace(mesh, (family, degree))
+    run_dg_test(mesh, V, degree)
 
+
+@skip_in_serial
+@parametrize_filenames_simplex
+@pytest.mark.parametrize("family", ["RT", "N1curl"])
+@pytest.mark.parametrize("degree", [1, 2, 3])
+def test_RT_N1curl_simplex_par(family, degree, filename, datadir):
+    with XDMFFile(MPI.comm_world, os.path.join(datadir, filename), "r", encoding=XDMFFile.Encoding.ASCII) as xdmf:
+        mesh = xdmf.read_mesh(name="Grid")
     V = FunctionSpace(mesh, (family, degree + 1))
-    u, v = ufl.TrialFunction(V), ufl.TestFunction(V)
-    a = inner(u, v) * dx
+    run_vector_test(mesh, V, degree)
 
-    # Source term
-    x = SpatialCoordinate(mesh)
-    u_ref = x[0]**degree
-    L = inner(u_ref, v[0]) * dx
 
-    b = assemble_vector(L)
-    b.ghostUpdate(addv=PETSc.InsertMode.ADD, mode=PETSc.ScatterMode.REVERSE)
+@skip_in_serial
+@parametrize_filenames_simplex
+@pytest.mark.parametrize("family", ["BDM", "N2curl"])
+@pytest.mark.parametrize("degree", [1, 2, 3])
+def test_BDM_N2curl_simplex_par(family, degree, filename, datadir):
+    with XDMFFile(MPI.comm_world, os.path.join(datadir, filename), "r", encoding=XDMFFile.Encoding.ASCII) as xdmf:
+        mesh = xdmf.read_mesh(name="Grid")
+    V = FunctionSpace(mesh, (family, degree))
+    run_vector_test(mesh, V, degree)
 
-    A = assemble_matrix(a)
-    A.assemble()
 
-    # Create LU linear solver (Note: need to use a solver that
-    # re-orders to handle pivots, e.g. not the PETSc built-in LU
-    # solver)
-    solver = PETSc.KSP().create(MPI.comm_world)
-    solver.setType("preonly")
-    solver.getPC().setType('lu')
-    solver.setOperators(A)
+@skip_in_serial
+@parametrize_filenames_tp
+@pytest.mark.parametrize("family", ["Q"])
+@pytest.mark.parametrize("degree", [2, 3, 4])
+def test_P_tp_par(family, degree, filename, datadir):
+    with XDMFFile(MPI.comm_world, os.path.join(datadir, filename), "r", encoding=XDMFFile.Encoding.ASCII) as xdmf:
+        mesh = xdmf.read_mesh(name="Grid")
+    V = FunctionSpace(mesh, (family, degree))
+    run_scalar_test(mesh, V, degree)
 
-    # Solve
-    uh = Function(V)
-    solver.solve(b, uh.vector)
-    uh.vector.ghostUpdate(addv=PETSc.InsertMode.INSERT, mode=PETSc.ScatterMode.FORWARD)
 
-    xp = np.array([0.33, 0.33, 0.0])
-    tree = geometry.BoundingBoxTree(mesh, mesh.geometry.dim)
-    cells = geometry.compute_first_entity_collision(tree, mesh, xp)
-    up = uh.eval(xp, cells[0])
-    print("test0:", up)
-    print("test1:", xp[0]**degree)
+@skip_in_serial
+@parametrize_filenames_tp
+@pytest.mark.parametrize("family", ["DQ", "DPC"])
+@pytest.mark.parametrize("degree", [2, 3, 4])
+def test_dP_tp_par(family, degree, filename, datadir):
+    with XDMFFile(MPI.comm_world, os.path.join(datadir, filename), "r", encoding=XDMFFile.Encoding.ASCII) as xdmf:
+        mesh = xdmf.read_mesh(name="Grid")
+    V = FunctionSpace(mesh, (family, degree))
+    run_dg_test(mesh, V, degree)
 
-    u_exact = np.zeros(mesh.geometry.dim)
-    u_exact[0] = xp[0]**degree
-    assert np.allclose(up, u_exact)
+
+@skip_in_serial
+@parametrize_filenames_quad
+@pytest.mark.parametrize("family", ["RTCE", "RTCF"])
+@pytest.mark.parametrize("degree", [1, 2, 3])
+def test_RTC_quad_par(family, degree, filename, datadir):
+    with XDMFFile(MPI.comm_world, os.path.join(datadir, filename), "r", encoding=XDMFFile.Encoding.ASCII) as xdmf:
+        mesh = xdmf.read_mesh(name="Grid")
+    V = FunctionSpace(mesh, (family, degree))
+    run_vector_test(mesh, V, degree)
+
+
+@skip_in_serial
+@parametrize_filenames_hex
+@pytest.mark.parametrize("family", ["NCE", "NCF"])
+@pytest.mark.parametrize("degree", [1, 2, 3])
+def test_NC_hex_par(family, degree, filename, datadir):
+    with XDMFFile(MPI.comm_world, os.path.join(datadir, filename), "r", encoding=XDMFFile.Encoding.ASCII) as xdmf:
+        mesh = xdmf.read_mesh(name="Grid")
+    V = FunctionSpace(mesh, (family, degree + 1))
+    run_vector_test(mesh, V, degree)
+
+
+@skip_in_serial
+@parametrize_filenames_quad
+@pytest.mark.parametrize("family", ["BDMCE", "BDMCF"])
+@pytest.mark.parametrize("degree", [1, 2, 3])
+def test_BDM_quad_par(family, degree, filename, datadir):
+    with XDMFFile(MPI.comm_world, os.path.join(datadir, filename), "r", encoding=XDMFFile.Encoding.ASCII) as xdmf:
+        mesh = xdmf.read_mesh(name="Grid")
+    V = FunctionSpace(mesh, (family, degree))
+    run_vector_test(mesh, V, degree)
+
+
+@skip_in_serial
+@parametrize_filenames_hex
+@pytest.mark.parametrize("family", ["AAE", "AAF"])
+@pytest.mark.parametrize("degree", [1, 2, 3])
+def test_AA_hex_par(family, degree, filename, datadir):
+    with XDMFFile(MPI.comm_world, os.path.join(datadir, filename), "r", encoding=XDMFFile.Encoding.ASCII) as xdmf:
+        mesh = xdmf.read_mesh(name="Grid")
+    V = FunctionSpace(mesh, (family, degree))
+    run_vector_test(mesh, V, degree)
