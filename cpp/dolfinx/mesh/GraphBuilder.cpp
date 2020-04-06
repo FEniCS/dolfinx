@@ -113,7 +113,8 @@ compute_local_dual_graph_keyed(
     {
       // No match, so add facet0 to map
       facet_cell_map.push_back(
-          {std::vector(facet0.begin(), facet0.end()), cell_index0});
+          {std::vector<std::int32_t>(facet0.begin(), facet0.end()),
+           cell_index0});
     }
   }
 
