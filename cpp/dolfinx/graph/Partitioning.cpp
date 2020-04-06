@@ -8,7 +8,6 @@
 #include <Eigen/Dense>
 #include <algorithm>
 #include <dolfinx/common/IndexMap.h>
-#include <dolfinx/common/Timer.h>
 #include <dolfinx/common/log.h>
 #include <dolfinx/graph/AdjacencyList.h>
 #include <dolfinx/graph/SCOTCH.h>
@@ -258,7 +257,7 @@ Partitioning::reorder_global_indices(
     for (int j = 0; j < sharing_processes->num_nodes(); ++j)
     {
       auto p = sharing_processes->links(j);
-      const auto *it = std::find(p.data(), p.data() + p.rows(), neighbours[i]);
+      const auto* it = std::find(p.data(), p.data() + p.rows(), neighbours[i]);
       if (it != (p.data() + p.rows()))
         number_send_neigh[i] += 2;
     }
@@ -371,9 +370,8 @@ Partitioning::create_local_adjacency_list(
   for (const auto& e : global_to_local)
     local_to_global[e.second] = e.first;
 
-  const Eigen::Array<std::int32_t, Eigen::Dynamic, 1>& offsets
-      = cells.offsets();
-  return {graph::AdjacencyList<std::int32_t>(array_local, offsets),
+  return {graph::AdjacencyList<std::int32_t>(std::move(array_local),
+                                             cells.offsets()),
           std::move(local_to_global)};
 }
 //-----------------------------------------------------------------------------
@@ -396,7 +394,8 @@ Partitioning::create_distributed_adjacency_list(
     data_new[i] = local_to_local_new[data_old[i]];
 
   const int num_owned_vertices = local_to_local_new.size() - ghosts.size();
-  return {graph::AdjacencyList<std::int32_t>(data_new, list_local.offsets()),
+  return {graph::AdjacencyList<std::int32_t>(std::move(data_new),
+                                             list_local.offsets()),
           common::IndexMap(comm, num_owned_vertices, ghosts, 1)};
 }
 //-----------------------------------------------------------------------------
@@ -632,142 +631,6 @@ std::vector<std::int64_t> Partitioning::compute_ghost_indices(
 
   MPI_Comm_free(&neighbour_comm);
   return ghost_global_indices;
-}
-//-----------------------------------------------------------------------------
-Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
-Partitioning::distribute_data(
-    MPI_Comm comm, const std::vector<std::int64_t>& indices,
-    const Eigen::Ref<const Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic,
-                                        Eigen::RowMajor>>& x)
-{
-  common::Timer timer("Fetch float data from remote processes");
-
-  // Get number of points globally
-  const std::int64_t num_points = dolfinx::MPI::sum(comm, x.rows());
-
-  // Get ownership range for this rank, and compute offset
-  const std::array<std::int64_t, 2> range
-      = dolfinx::MPI::local_range(comm, num_points);
-  const std::int64_t offset_x
-      = dolfinx::MPI::global_offset(comm, range[1] - range[0], true);
-
-  const int gdim = x.cols();
-  assert(gdim != 0);
-  const int size = dolfinx::MPI::size(comm);
-
-  // Determine number of points to send to owner
-  std::vector<int> number_send(size, 0);
-  for (int i = 0; i < x.rows(); ++i)
-  {
-    // TODO: optimise this call
-    const std::int64_t index_global = i + offset_x;
-    const int owner = dolfinx::MPI::index_owner(size, index_global, num_points);
-    number_send[owner] += 1;
-  }
-
-  // Compute send displacements
-  std::vector<int> disp_send(size + 1, 0);
-  std::partial_sum(number_send.begin(), number_send.end(),
-                   disp_send.begin() + 1);
-
-  // Pack x data
-  Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor> x_send(
-      disp_send.back(), gdim);
-  std::vector<int> disp_tmp = disp_send;
-  for (int i = 0; i < x.rows(); ++i)
-  {
-    const std::int64_t index_global = i + offset_x;
-    const int owner = dolfinx::MPI::index_owner(size, index_global, num_points);
-    x_send.row(disp_tmp[owner]++) = x.row(i);
-  }
-
-  // Send/receive number of points to communicate to each process
-  std::vector<int> number_recv(size);
-  MPI_Alltoall(number_send.data(), 1, MPI_INT, number_recv.data(), 1, MPI_INT,
-               comm);
-
-  // Compute receive displacements
-  std::vector<int> disp_recv(size + 1, 0);
-  std::partial_sum(number_recv.begin(), number_recv.end(),
-                   disp_recv.begin() + 1);
-
-  // Build compound data type. This will allow us to re-use send/receive
-  // displacements for indices and point data
-  MPI_Datatype compound_f64;
-  MPI_Type_contiguous(gdim, MPI_DOUBLE, &compound_f64);
-  MPI_Type_commit(&compound_f64);
-
-  // Send/receive points
-  Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor> x_recv(
-      disp_recv.back(), gdim);
-  MPI_Alltoallv(x_send.data(), number_send.data(), disp_send.data(),
-                compound_f64, x_recv.data(), number_recv.data(),
-                disp_recv.data(), compound_f64, comm);
-
-  // Build index data requests
-  std::vector<int> number_index_send(size, 0);
-  for (std::int64_t index : indices)
-  {
-    // TODO: optimise this call
-    const int owner = dolfinx::MPI::index_owner(size, index, num_points);
-    number_index_send[owner] += 1;
-  }
-
-  // Compute send displacements
-  std::vector<int> disp_index_send(size + 1, 0);
-  std::partial_sum(number_index_send.begin(), number_index_send.end(),
-                   disp_index_send.begin() + 1);
-
-  // Pack global index send data
-  std::vector<std::int64_t> indices_send(disp_index_send.back());
-  disp_tmp = disp_index_send;
-  for (std::int64_t index : indices)
-  {
-    // TODO: optimise this call
-    const int owner = dolfinx::MPI::index_owner(size, index, num_points);
-    indices_send[disp_tmp[owner]++] = index;
-  }
-
-  // Send/receive number of indices to communicate to each process
-  std::vector<int> number_index_recv(size);
-  MPI_Alltoall(number_index_send.data(), 1, MPI_INT, number_index_recv.data(),
-               1, MPI_INT, comm);
-
-  // Compute receive displacements
-  std::vector<int> disp_index_recv(size + 1, 0);
-  std::partial_sum(number_index_recv.begin(), number_index_recv.end(),
-                   disp_index_recv.begin() + 1);
-
-  // Send/receive global indices
-  std::vector<std::int64_t> indices_recv(disp_index_recv.back());
-  MPI_Alltoallv(indices_send.data(), number_index_send.data(),
-                disp_index_send.data(), MPI_INT64_T, indices_recv.data(),
-                number_index_recv.data(), disp_index_recv.data(), MPI_INT64_T,
-                comm);
-
-  // Pack point data to send back (transpose)
-  Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
-      x_return(indices_recv.size(), gdim);
-  for (int p = 0; p < size; ++p)
-  {
-    for (int i = disp_index_recv[p]; i < disp_index_recv[p + 1]; ++i)
-    {
-      const std::int64_t index = indices_recv[i];
-      const std::int32_t index_local = index - offset_x;
-      assert(index_local >= 0);
-      x_return.row(i) = x_recv.row(index_local);
-    }
-  }
-
-  // Send back point data
-  Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor> my_x(
-      disp_index_send.back(), gdim);
-  MPI_Alltoallv(x_return.data(), number_index_recv.data(),
-                disp_index_recv.data(), compound_f64, my_x.data(),
-                number_index_send.data(), disp_index_send.data(), compound_f64,
-                comm);
-
-  return my_x;
 }
 //-----------------------------------------------------------------------------
 std::vector<std::int64_t> Partitioning::compute_local_to_global_links(

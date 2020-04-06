@@ -9,13 +9,12 @@ import math
 import sys
 
 import numpy as np
-import pytest
 
 import dolfinx
 import FIAT
-from dolfinx import (MPI, BoxMesh, Mesh, MeshEntity, MeshFunction,
-                     RectangleMesh, UnitCubeMesh, UnitIntervalMesh,
-                     UnitSquareMesh, cpp)
+import pytest
+from dolfinx import (MPI, BoxMesh, Mesh, MeshEntity, RectangleMesh,
+                     UnitCubeMesh, UnitIntervalMesh, UnitSquareMesh, cpp)
 from dolfinx.cpp.mesh import CellType, is_simplex
 from dolfinx.fem import assemble_scalar
 # from dolfinx.io import XDMFFile
@@ -117,11 +116,6 @@ def box():
 @pytest.fixture
 def mesh():
     return UnitSquareMesh(MPI.comm_world, 3, 3)
-
-
-@pytest.fixture
-def f(mesh):
-    return MeshFunction('int', mesh, 0, 0)
 
 
 def new_comm(comm):

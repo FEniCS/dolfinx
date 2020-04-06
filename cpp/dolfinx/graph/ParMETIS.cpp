@@ -281,9 +281,7 @@ graph::AdjacencyList<std::int32_t> dolfinx::graph::ParMETIS::partition(
     offsets.push_back(dests.size());
   }
 
-  graph::AdjacencyList<std::int32_t> partition_adj(dests, offsets);
-
-  return partition_adj;
+  return graph::AdjacencyList<std::int32_t>(dests, offsets);
 }
 //-----------------------------------------------------------------------------
 #endif

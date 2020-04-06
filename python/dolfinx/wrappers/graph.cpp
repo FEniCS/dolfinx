@@ -42,8 +42,8 @@ void graph(py::module& m)
         [](const MPICommWrapper comm, const std::vector<std::int64_t>& indices,
            const Eigen::Ref<const Eigen::Array<
                double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>>& x) {
-          return dolfinx::graph::Partitioning::distribute_data(comm.get(),
-                                                               indices, x);
+          return dolfinx::graph::Partitioning::distribute_data<double>(
+              comm.get(), indices, x);
         });
   m.def("compute_local_to_global_links",
         &dolfinx::graph::Partitioning::compute_local_to_global_links);
@@ -67,7 +67,11 @@ void graph(py::module& m)
           },
           "Links (edges) of a node",
           py::return_value_policy::reference_internal)
-      .def("array", &dolfinx::graph::AdjacencyList<std::int64_t>::array)
+      .def("array", &dolfinx::graph::AdjacencyList<std::int64_t>::array,
+           py::return_value_policy::reference_internal)
+      .def("offsets", &dolfinx::graph::AdjacencyList<std::int64_t>::offsets,
+           "Index to each node in the links array",
+           py::return_value_policy::reference_internal)
       .def_property_readonly(
           "num_nodes", &dolfinx::graph::AdjacencyList<std::int64_t>::num_nodes)
       .def("__eq__", &dolfinx::graph::AdjacencyList<std::int64_t>::operator==,

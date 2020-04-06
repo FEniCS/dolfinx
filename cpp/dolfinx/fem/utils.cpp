@@ -548,7 +548,8 @@ fem::get_coeffs_from_ufc_form(const ufc_form& ufc_form)
   const char** names = ufc_form.coefficient_name_map();
   for (int i = 0; i < ufc_form.num_coefficients; ++i)
   {
-    coeffs.emplace_back(ufc_form.original_coefficient_position(i), names[i], nullptr);
+    coeffs.emplace_back(ufc_form.original_coefficient_position(i), names[i],
+                        nullptr);
   }
   return coeffs;
 }
@@ -773,7 +774,7 @@ fem::pack_constants(const fem::Form& form)
       std::pair<std::string, std::shared_ptr<const function::Constant>>>
       constants = form.constants();
   std::vector<PetscScalar> constant_values;
-  for (const auto & constant : constants)
+  for (const auto& constant : constants)
   {
     const std::vector<PetscScalar>& array = constant.second->value;
     constant_values.insert(constant_values.end(), array.data(),

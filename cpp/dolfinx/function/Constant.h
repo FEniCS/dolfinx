@@ -7,7 +7,7 @@
 #pragma once
 
 #include <Eigen/Dense>
-#include <dolfinx/common/types.h>
+#include <petscsys.h>
 #include <vector>
 
 namespace dolfinx

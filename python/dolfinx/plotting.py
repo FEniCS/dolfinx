@@ -13,11 +13,9 @@ from dolfinx import cpp, fem, function
 
 __all__ = ["plot"]
 
-_meshfunction_types = (cpp.mesh.MeshFunctionInt, cpp.mesh.MeshFunctionDouble,
-                       cpp.mesh.MeshFunctionSizet)
 _matplotlib_plottable_types = (cpp.function.Function,
                                cpp.mesh.Mesh,
-                               cpp.fem.DirichletBC) + _meshfunction_types
+                               cpp.fem.DirichletBC)
 _all_plottable_types = tuple(set.union(set(_matplotlib_plottable_types)))
 
 
@@ -242,23 +240,6 @@ def mplot_function(ax, f, **kwargs):
                 return
 
 
-def mplot_meshfunction(ax, obj, **kwargs):
-    mesh = obj.mesh
-    tdim = mesh.topology.dim
-    d = obj.dim
-    if tdim == 2 and d == 2:
-        C = obj.array()
-        triang = mesh2triang(mesh)
-        assert not kwargs.pop("facecolors",
-                              None), "Not expecting 'facecolors' in kwargs"
-        return ax.tripcolor(triang, facecolors=C, **kwargs)
-    else:
-        # Return gracefully to make regression test pass without vtk
-        cpp.warning('Matplotlib plotting backend does not support mesh '
-                    'function of dim %d. Continuing without plotting...' % d)
-        return
-
-
 def mplot_dirichletbc(ax, obj, **kwargs):
     raise AttributeError(
         "Matplotlib plotting backend doesn't handle DirichletBC.")
@@ -322,8 +303,6 @@ def _plot_matplotlib(obj, mesh, kwargs):
         return mplot_mesh(ax, obj, **kwargs)
     elif isinstance(obj, cpp.fem.DirichletBC):
         return mplot_dirichletbc(ax, obj, **kwargs)
-    elif isinstance(obj, _meshfunction_types):
-        return mplot_meshfunction(ax, obj, **kwargs)
     else:
         raise AttributeError('Failed to plot %s' % type(obj))
 
@@ -334,8 +313,7 @@ def plot(object, *args, **kwargs):
 
     *Arguments*
         object
-            a :py:class:`Mesh <dolfinx.cpp.Mesh>`, a :py:class:`MeshFunction
-            <dolfinx.cpp.MeshFunction>`, a :py:class:`Function
+            a :py:class:`Mesh <dolfinx.cpp.Mesh>`, a :py:class:`Function
             <dolfinx.functions.function.Function>`, a :py:class:`Expression`
             <dolfinx.Expression>, a :py:class:`DirichletBC`
             <dolfinx.cpp.DirichletBC>, a :py:class:`FiniteElement

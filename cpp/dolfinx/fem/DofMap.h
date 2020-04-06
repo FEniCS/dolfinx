@@ -7,7 +7,6 @@
 #pragma once
 
 #include "ElementDofLayout.h"
-#include "petscsys.h"
 #include <Eigen/Dense>
 #include <cstdlib>
 #include <dolfinx/graph/AdjacencyList.h>

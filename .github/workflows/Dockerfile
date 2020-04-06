@@ -6,16 +6,15 @@
 
 ARG GMSH_VERSION=4.5.6
 ARG PYBIND11_VERSION=2.5.0
-ARG PETSC_VERSION=3.12.5
-ARG SLEPC_VERSION=3.12.2
-ARG PETSC4PY_VERSION=3.12.0
-ARG SLEPC4PY_VERSION=3.12.0
+ARG PETSC_VERSION=3.13.0
+ARG SLEPC_VERSION=3.13.0
+ARG PETSC4PY_VERSION=3.13.0
+ARG SLEPC4PY_VERSION=3.13.0
 
 # Should be updated upon a new KaHIP release
 ARG KAHIP_VERSION=14be06c
 
 ARG PETSC_SLEPC_OPTFLAGS="-02 -g"
-ARG PETSC_SLEPC_DEBUGGING="yes"
 
 FROM ubuntu:20.04 as base
 LABEL maintainer="fenics-project <fenics-support@googlegroups.org>"
@@ -151,8 +150,6 @@ RUN apt-get -qq update && \
     --COPTFLAGS=${PETSC_SLEPC_OPTFLAGS} \
     --CXXOPTFLAGS=${PETSC_SLEPC_OPTFLAGS} \
     --FOPTFLAGS=${PETSC_SLEPC_OPTFLAGS} \
-    --with-debugging=${PETSC_SLEPC_DEBUGGING} \
-    --with-fortran-bindings=no \
     --download-hypre \
     --download-metis \
     --download-mumps \
@@ -160,11 +157,13 @@ RUN apt-get -qq update && \
     --download-suitesparse \
     --download-superlu \
     --download-superlu_dist \
-    --with-scalapack=1 \
+    --with-64-bit-indices=no \
+    --with-debugging=yes \
+    --with-fortran-bindings=no \
+    --with-scalapack=yes \
     --with-scalapack-lib=-lscalapack-openmpi \
-    --with-shared-libraries \
     --with-scalar-type=real \
-    --with-64-bit-indices=0 && \
+    --with-shared-libraries && \
     make && \
     # Real, 64-bit int
     python3 ./configure \
@@ -172,15 +171,18 @@ RUN apt-get -qq update && \
     --COPTFLAGS=${PETSC_SLEPC_OPTFLAGS} \
     --CXXOPTFLAGS=${PETSC_SLEPC_OPTFLAGS} \
     --FOPTFLAGS=${PETSC_SLEPC_OPTFLAGS} \
-    --with-debugging=${PETSC_SLEPC_DEBUGGING} \
-    --with-fortran-bindings=no \
     --download-hypre \
+    --download-mumps \
     --download-ptscotch \
     --download-suitesparse \
     --download-superlu_dist \
-    --with-shared-libraries \
+    --with-64-bit-indices=yes \
+    --with-debugging=yes \
+    --with-fortran-bindings=no \
+    --with-scalapack=yes \
+    --with-scalapack-lib=-lscalapack-openmpi \
     --with-scalar-type=real \
-    --with-64-bit-indices=1 && \
+    --with-shared-libraries && \
     make && \
     # Complex, 32-bit int
     python3 ./configure \
@@ -188,19 +190,19 @@ RUN apt-get -qq update && \
     --COPTFLAGS=${PETSC_SLEPC_OPTFLAGS} \
     --CXXOPTFLAGS=${PETSC_SLEPC_OPTFLAGS} \
     --FOPTFLAGS=${PETSC_SLEPC_OPTFLAGS} \
-    --with-debugging=${PETSC_SLEPC_DEBUGGING} \
-    --with-fortran-bindings=no \
     --download-metis \
     --download-mumps \
     --download-ptscotch \
     --download-suitesparse \
     --download-superlu \
     --download-superlu_dist \
-    --with-scalapack=1 \
+    --with-64-bit-indices=no \
+    --with-debugging=yes \
+    --with-fortran-bindings=no \
+    --with-scalapack=yes \
     --with-scalapack-lib=-lscalapack-openmpi \
-    --with-shared-libraries \
     --with-scalar-type=complex \
-    --with-64-bit-indices=0 && \
+    --with-shared-libraries && \
     make && \
     # Complex, 64-bit int
     python3 ./configure \
@@ -208,15 +210,18 @@ RUN apt-get -qq update && \
     --COPTFLAGS=${PETSC_SLEPC_OPTFLAGS} \
     --CXXOPTFLAGS=${PETSC_SLEPC_OPTFLAGS} \
     --FOPTFLAGS=${PETSC_SLEPC_OPTFLAGS} \
-    --with-debugging=${PETSC_SLEPC_DEBUGGING} \
-    --with-fortran-bindings=no \
     --download-hypre \
+    --download-mumps \
     --download-ptscotch \
     --download-suitesparse \
     --download-superlu_dist \
-    --with-shared-libraries \
+    --with-64-bit-indices=yes \
+    --with-debugging=yes \
+    --with-fortran-bindings=no \
+    --with-scalapack=yes \
+    --with-scalapack-lib=-lscalapack-openmpi \
     --with-scalar-type=complex \
-    --with-64-bit-indices=1 && \
+    --with-shared-libraries && \
     make && \
     # Cleanup
     apt-get -y purge bison flex  && \

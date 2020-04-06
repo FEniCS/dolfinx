@@ -22,9 +22,11 @@ Geometry::Geometry(const std::shared_ptr<const common::IndexMap>& index_map,
                    const fem::ElementDofLayout& layout,
                    const Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic,
                                       Eigen::RowMajor>& x,
-                   const std::vector<std::int64_t>& global_indices)
+                   const std::vector<std::int64_t>& global_indices,
+                   const std::vector<std::int64_t>& input_global_indices)
     : _dim(x.cols()), _dofmap(dofmap), _index_map(index_map), _layout(layout),
-      _global_indices(global_indices)
+      _global_indices(global_indices),
+      _input_global_indices(input_global_indices)
 {
   if (x.rows() != (int)global_indices.size())
     throw std::runtime_error("Size mis-match");
@@ -75,6 +77,11 @@ const std::vector<std::int64_t>& Geometry::global_indices() const
   return _global_indices;
 }
 //-----------------------------------------------------------------------------
+const std::vector<std::int64_t>& Geometry::input_global_indices() const
+{
+  return _input_global_indices;
+}
+//-----------------------------------------------------------------------------
 const fem::ElementDofLayout& Geometry::dof_layout() const { return _layout; }
 //-----------------------------------------------------------------------------
 std::size_t Geometry::hash() const
@@ -114,7 +121,7 @@ mesh::Geometry mesh::create_geometry(
   //  Fetch node coordinates by global index from other ranks. Order of
   //  coords matches order of the indices in 'indices'
   Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor> coords
-      = graph::Partitioning::distribute_data(comm, indices, x);
+      = graph::Partitioning::distribute_data<double>(comm, indices, x);
 
   // Compute local-to-global map from local indices in dofmap to the
   // corresponding global indices in cell_nodes
@@ -130,9 +137,16 @@ mesh::Geometry mesh::create_geometry(
   // Build coordinate dof array
   Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor> xg(
       coords.rows(), coords.cols());
-  for (int i = 0; i < coords.rows(); ++i)
-    xg.row(i) = coords.row(l2l[i]);
 
-  return Geometry(dof_index_map, dofmap, layout, xg, l2g);
+  // Allocate space for input global indices
+  std::vector<std::int64_t> igi(indices.size());
+
+  for (int i = 0; i < coords.rows(); ++i)
+  {
+    xg.row(i) = coords.row(l2l[i]);
+    igi[i] = indices[l2l[i]];
+  }
+
+  return Geometry(dof_index_map, dofmap, layout, xg, l2g, igi);
 }
 //-----------------------------------------------------------------------------
