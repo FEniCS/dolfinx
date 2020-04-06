@@ -27,6 +27,10 @@ meshes = [UnitSquareMesh(MPI.comm_world, 2, 1, CellType.triangle),
           UnitCubeMesh(MPI.comm_world, 2, 1, 1, CellType.tetrahedron),
           UnitSquareMesh(MPI.comm_world, 2, 1, CellType.quadrilateral),
           UnitCubeMesh(MPI.comm_world, 3, 3, 1, CellType.hexahedron)]
+for m in meshes:
+    m.geometry.coord_mapping = fem.create_coordinate_map(m)
+    m.create_connectivity_all()
+
 parametrize_meshes = pytest.mark.parametrize("mesh", meshes)
 parametrize_meshes_simplex = pytest.mark.parametrize(
     "mesh", [m for m in meshes if m.ufl_cell().is_simplex()])
