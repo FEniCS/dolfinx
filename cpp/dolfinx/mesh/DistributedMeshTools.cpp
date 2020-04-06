@@ -8,6 +8,7 @@
 #include "dolfinx/common/MPI.h"
 #include "dolfinx/common/Timer.h"
 #include <Eigen/Dense>
+#include <dolfinx/graph/AdjacencyList.h>
 
 using namespace dolfinx;
 using namespace dolfinx::mesh;
@@ -31,7 +32,7 @@ reorder_values_by_global_indices(
 
   // Calculate size of overall global vector by finding max index value
   // anywhere
-   std::int64_t global_vector_size = 0;
+  std::int64_t global_vector_size = 0;
   const std::int64_t max_index
       = *std::max_element(global_indices.begin(), global_indices.end());
   MPI_Allreduce(&max_index, &global_vector_size, 1, MPI_INT64_T, MPI_SUM,
@@ -59,15 +60,16 @@ reorder_values_by_global_indices(
   // Redistribute the values to the appropriate process - including
   // self. All values are "in the air" at this point. Receive into flat
   // arrays.
-  std::vector<std::size_t> received_indices;
-  std::vector<T> received_values;
-  dolfinx::MPI::all_to_all(mpi_comm, indices_to_send, received_indices);
-  dolfinx::MPI::all_to_all(mpi_comm, values_to_send, received_values);
+  const Eigen::Array<std::size_t, Eigen::Dynamic, 1> received_indices
+      = dolfinx::MPI::all_to_all(mpi_comm, indices_to_send).array();
+  const Eigen::Array<T, Eigen::Dynamic, 1> received_values
+      = dolfinx::MPI::all_to_all(mpi_comm, values_to_send).array();
 
   // Map over received values as Eigen array
   assert(received_indices.size() * values.cols() == received_values.size());
-  Eigen::Map<Eigen::Array<T, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>>
-      received_values_array(received_values.data(), received_indices.size(),
+  Eigen::Map<
+      const Eigen::Array<T, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>>
+      received_values_array(received_values.data(), received_indices.rows(),
                             values.cols());
 
   // Create array for new data. Note that any indices which are not

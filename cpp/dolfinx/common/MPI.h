@@ -85,13 +85,6 @@ public:
   static graph::AdjacencyList<T>
   all_to_all(MPI_Comm comm, const std::vector<std::vector<T>>& in_values);
 
-  /// Send in_values[p0] to process p0 and receive values from all
-  /// processes in out_values
-  template <typename T>
-  static void all_to_all(MPI_Comm comm,
-                         const std::vector<std::vector<T>>& in_values,
-                         std::vector<T>& out_values);
-
   /// Neighbourhood all-to-all. Send data to neighbours using offsets into
   /// contiguous data array. Offset array should contain (num_neighbours + 1)
   /// entries, starting from zero.
@@ -247,15 +240,6 @@ dolfinx::MPI::all_to_all(MPI_Comm comm,
   std::vector<std::int32_t> offsets;
   all_to_all_common(comm, in_values, out_vec, offsets);
   return graph::AdjacencyList<T>(out_vec, offsets);
-}
-//---------------------------------------------------------------------------
-template <typename T>
-void dolfinx::MPI::all_to_all(MPI_Comm comm,
-                              const std::vector<std::vector<T>>& in_values,
-                              std::vector<T>& out_values)
-{
-  std::vector<std::int32_t> offsets;
-  all_to_all_common(comm, in_values, out_values, offsets);
 }
 //---------------------------------------------------------------------------
 template <typename T>

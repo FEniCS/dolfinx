@@ -198,7 +198,6 @@ compute_nonlocal_dual_graph(
 
   // Send facet-cell map to intermediary match-making processes
   std::vector<std::vector<std::int64_t>> send_buffer(num_processes);
-  // std::vector<std::vector<std::int64_t>> received_buffer(num_processes);
 
   // Pack map data and send to match-maker process
   for (const auto& it : facet_cell_map)
@@ -273,15 +272,15 @@ compute_nonlocal_dual_graph(
   }
 
   // Send matches to other processes
-  std::vector<std::int64_t> cell_list;
-  dolfinx::MPI::all_to_all(mpi_comm, send_buffer, cell_list);
+  const Eigen::Array<std::int64_t, Eigen::Dynamic, 1> cell_list
+      = dolfinx::MPI::all_to_all(mpi_comm, send_buffer).array();
 
   // Ghost nodes
   std::set<std::int64_t> ghost_nodes;
 
   // Insert connected cells into local map
   std::int32_t num_nonlocal_edges = 0;
-  for (std::size_t i = 0; i < cell_list.size(); i += 2)
+  for (int i = 0; i < cell_list.rows(); i += 2)
   {
     assert((std::int64_t)cell_list[i] >= offset);
     assert((std::int64_t)(cell_list[i] - offset)
