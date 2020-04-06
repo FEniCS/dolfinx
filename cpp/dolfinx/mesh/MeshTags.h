@@ -338,7 +338,7 @@ create_meshtags(MPI_Comm comm, const std::shared_ptr<const mesh::Mesh>& mesh,
   // Iterate over all received entities and find it in entities of the
   // mesh
 
-  // FIXME: Avoid creating dtd::vector<std::int64_t> the loop below
+  // FIXME: Avoid creating std::vector<std::int64_t> the loop below
 
   std::vector<std::int32_t> indices_new;
   std::vector<T> values_new;

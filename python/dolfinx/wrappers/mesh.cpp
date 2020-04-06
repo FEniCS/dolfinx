@@ -189,15 +189,14 @@ void mesh(py::module& m)
            [](dolfinx::mesh::Mesh& self) {
              return MPICommWrapper(self.mpi_comm());
            })
-      .def("num_entities", &dolfinx::mesh::Mesh::num_entities,
-           "Number of mesh entities")
       .def("rmax", &dolfinx::mesh::Mesh::rmax)
       .def("rmin", &dolfinx::mesh::Mesh::rmin)
       .def_property_readonly(
           "topology", py::overload_cast<>(&dolfinx::mesh::Mesh::topology),
           "Mesh topology", py::return_value_policy::reference_internal)
       .def("ufl_id", &dolfinx::mesh::Mesh::id)
-      .def_property_readonly("id", &dolfinx::mesh::Mesh::id);
+      .def_property_readonly("id", &dolfinx::mesh::Mesh::id)
+      .def_readwrite("name", &dolfinx::mesh::Mesh::name);
 
   // dolfinx::mesh::MeshEntity class
   py::class_<dolfinx::mesh::MeshEntity,

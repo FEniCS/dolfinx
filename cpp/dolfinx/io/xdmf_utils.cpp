@@ -7,6 +7,7 @@
 #include "xdmf_utils.h"
 #include "pugixml.hpp"
 #include <boost/algorithm/string.hpp>
+#include <boost/filesystem.hpp>
 #include <boost/lexical_cast.hpp>
 #include <dolfinx/common/IndexMap.h>
 #include <dolfinx/fem/DofMap.h>
@@ -16,7 +17,6 @@
 #include <dolfinx/mesh/Mesh.h>
 #include <dolfinx/mesh/Topology.h>
 #include <dolfinx/mesh/cell_types.h>
-#include <filesystem>
 #include <map>
 
 using namespace dolfinx;
@@ -112,7 +112,7 @@ xdmf_utils::get_hdf5_paths(const pugi::xml_node& dataitem_node)
 //-----------------------------------------------------------------------------
 std::string xdmf_utils::get_hdf5_filename(std::string xdmf_filename)
 {
-  std::filesystem::path p(xdmf_filename);
+  boost::filesystem::path p(xdmf_filename);
   p.replace_extension(".h5");
   if (p.string() == xdmf_filename)
   {
@@ -242,9 +242,7 @@ xdmf_utils::get_cell_data_values(const function::Function& u)
   assert(dofmap->element_dof_layout);
   const int ndofs = dofmap->element_dof_layout->num_dofs();
 
-  auto map_c = mesh->topology().index_map(0);
-  assert(map_c);
-  for (int cell = 0; map_c->size_local(); ++cell)
+  for (int cell = 0; cell < num_local_cells; ++cell)
   {
     // Tabulate dofs
     auto dofs = dofmap->cell_dofs(cell);
@@ -253,7 +251,7 @@ xdmf_utils::get_cell_data_values(const function::Function& u)
       dof_set.push_back(dofs[i]);
   }
 
-  // Get  values
+  // Get values
   std::vector<PetscScalar> data_values(dof_set.size());
   {
     la::VecReadWrapper u_wrapper(u.vector().vec());
