@@ -189,9 +189,10 @@ mesh::Mesh XDMFFile::read_mesh(const std::string name,
   const fem::ElementDofLayout layout
       = fem::geometry_layout(cell_type, cells.cols());
 
-  // FIXME: Add ghostmode
-  return mesh::create(_mpi_comm.comm(), cells_adj, layout, x,
-                      mesh::GhostMode::none);
+  mesh::Mesh mesh = mesh::create(_mpi_comm.comm(), cells_adj, layout, x,
+                                 mesh::GhostMode::none);
+  mesh.name = name;
+  return mesh;
 }
 //-----------------------------------------------------------------------------
 std::tuple<
@@ -237,6 +238,11 @@ void XDMFFile::write_function(const function::Function& function,
   assert(grid_node);
   grid_node.append_attribute("Name") = function.name.c_str();
   grid_node.append_attribute("GridType") = "Uniform";
+
+  pugi::xml_node mesh_node = _xml_doc->select_node(mesh_xpath.c_str()).node();
+  if (!mesh_node)
+    LOG(WARNING) << "No mesh found at '" << mesh_xpath
+                 << "'. Write mesh before function!";
 
   const std::string ref_path
       = "xpointer(" + mesh_xpath + "/*[self::Topology or self::Geometry])";
