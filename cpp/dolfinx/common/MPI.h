@@ -440,8 +440,10 @@ void dolfinx::MPI::all_to_all(MPI_Comm comm,
   const std::size_t mpi_size = MPI::size(comm);
   out_values.resize(mpi_size);
   for (std::size_t i = 0; i < mpi_size; ++i)
+  {
     out_values[i].assign(out_vec.data() + offsets[i],
                          out_vec.data() + offsets[i + 1]);
+  }
 }
 //---------------------------------------------------------------------------
 template <typename T>
