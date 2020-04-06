@@ -31,7 +31,6 @@ dolfinx::graph::SCOTCH::compute_gps(const AdjacencyList<std::int32_t>& graph,
 {
   // Create strategy string for Gibbs-Poole-Stockmeyer ordering
   std::string strategy = "g{pass= " + std::to_string(num_passes) + "}";
-
   return compute_reordering(graph, strategy);
 }
 //-----------------------------------------------------------------------------
@@ -142,7 +141,7 @@ dolfinx::graph::SCOTCH::partition(const MPI_Comm mpi_comm, const int nparts,
 
   // Local data ---------------------------------
 
-  // Number of local graph vertices (cells)
+  // Number of local graph vertices (typically cells)
   const SCOTCH_Num vertlocnbr = local_graph.num_nodes();
   const std::size_t vertgstnbr = vertlocnbr + num_ghost_nodes;
 
@@ -156,12 +155,12 @@ dolfinx::graph::SCOTCH::partition(const MPI_Comm mpi_comm, const int nparts,
 
   // Global data ---------------------------------
 
-  // Number of local vertices (cells) on each process
+#ifdef DEBUG
+  // FIXME: explain this test
+  // Number of local graph vertices on each process
   std::vector<SCOTCH_Num> proccnttab(num_processes);
   MPI::all_gather(mpi_comm, vertlocnbr, proccnttab);
 
-#ifdef DEBUG
-  // FIXME: explain this test
   // Array containing . . . . (some sanity checks)
   std::vector<std::size_t> procvrttab(num_processes + 1);
   for (std::size_t i = 0; i < num_processes; ++i)
@@ -222,8 +221,8 @@ dolfinx::graph::SCOTCH::partition(const MPI_Comm mpi_comm, const int nparts,
   // space for ghost cell partition information too. When there are no
   // nodes, vertgstnbr may be zero, and at least one dummy location
   // must be created.
-  std::vector<SCOTCH_Num> _cell_partition(std::max((std::size_t)1, vertgstnbr),
-                                          0);
+  std::vector<SCOTCH_Num> cell_partition(std::max((std::size_t)1, vertgstnbr),
+                                         0);
 
   // Reset SCOTCH random number generator to produce deterministic
   // partitions
@@ -231,14 +230,13 @@ dolfinx::graph::SCOTCH::partition(const MPI_Comm mpi_comm, const int nparts,
 
   // Partition graph
   common::Timer timer2("SCOTCH: call SCOTCH_dgraphPart");
-  if (SCOTCH_dgraphPart(&dgrafdat, nparts, &strat, _cell_partition.data()))
+  if (SCOTCH_dgraphPart(&dgrafdat, nparts, &strat, cell_partition.data()))
     throw std::runtime_error("Error during SCOTCH partitioning");
   timer2.stop();
 
   // Create a map of local nodes to their additional destination processes,
   // due to ghosting. If no ghosting, this will remain empty.
   std::map<std::int32_t, std::set<std::int32_t>> local_node_to_dests;
-
   if (ghosting)
   {
     // Exchange halo with cell_partition data for ghosts
@@ -257,7 +255,7 @@ dolfinx::graph::SCOTCH::partition(const MPI_Comm mpi_comm, const int nparts,
     assert(tsize == sizeof(SCOTCH_Num));
 
     common::Timer timer3("SCOTCH: call SCOTCH_dgraphHalo");
-    if (SCOTCH_dgraphHalo(&dgrafdat, (void*)_cell_partition.data(),
+    if (SCOTCH_dgraphHalo(&dgrafdat, (void*)cell_partition.data(),
                           MPI_SCOTCH_Num))
     {
       throw std::runtime_error("Error during SCOTCH halo exchange");
@@ -281,13 +279,13 @@ dolfinx::graph::SCOTCH::partition(const MPI_Comm mpi_comm, const int nparts,
     // due to ghosting. If no ghosting, this can be skipped.
     for (SCOTCH_Num i = 0; i < vertlocnbr; ++i)
     {
-      const std::int32_t proc_this = _cell_partition[i];
+      const std::int32_t proc_this = cell_partition[i];
 
       // Get all edges outward from node i
       for (SCOTCH_Num j = vertloctab[i]; j < vertloctab[i + 1]; ++j)
       {
         // Any edge which connects to a different partition will be a ghost
-        const std::int32_t proc_other = _cell_partition[edge_ghost_tab[j]];
+        const std::int32_t proc_other = cell_partition[edge_ghost_tab[j]];
         if (proc_this != proc_other)
           local_node_to_dests[i].insert(proc_other);
       }
@@ -301,7 +299,7 @@ dolfinx::graph::SCOTCH::partition(const MPI_Comm mpi_comm, const int nparts,
   std::vector<std::int32_t> offsets = {0};
   for (SCOTCH_Num i = 0; i < vertlocnbr; ++i)
   {
-    dests.push_back(_cell_partition[i]);
+    dests.push_back(cell_partition[i]);
     const auto it = local_node_to_dests.find(i);
     if (it != local_node_to_dests.end())
       dests.insert(dests.end(), it->second.begin(), it->second.end());
@@ -312,8 +310,6 @@ dolfinx::graph::SCOTCH::partition(const MPI_Comm mpi_comm, const int nparts,
   SCOTCH_dgraphExit(&dgrafdat);
   SCOTCH_stratExit(&strat);
 
-  graph::AdjacencyList<std::int32_t> adj(dests, offsets);
-
-  return adj;
+  return graph::AdjacencyList<std::int32_t>(dests, offsets);
 }
 //-----------------------------------------------------------------------------
