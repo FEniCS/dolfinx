@@ -239,6 +239,11 @@ void XDMFFile::write_function(const function::Function& function,
   grid_node.append_attribute("Name") = function.name.c_str();
   grid_node.append_attribute("GridType") = "Uniform";
 
+  pugi::xml_node mesh_node = _xml_doc->select_node(mesh_xpath.c_str()).node();
+  if (!mesh_node)
+    LOG(WARNING) << "No mesh found at '" << mesh_xpath
+                 << "'. Write mesh before function!";
+
   const std::string ref_path
       = "xpointer(" + mesh_xpath + "/*[self::Topology or self::Geometry])";
 
