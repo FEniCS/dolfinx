@@ -7,6 +7,7 @@
 #include "KaHIP.h"
 #include <dolfinx/common/MPI.h>
 #include <dolfinx/common/Timer.h>
+#include <dolfinx/graph/AdjacencyList.h>
 #include <map>
 
 #ifdef HAS_KAHIP
@@ -103,7 +104,6 @@ graph::AdjacencyList<std::int32_t> dolfinx::graph::KaHIP::partition(
 
     // Do halo exchange of cell partition data
     std::vector<std::vector<std::int64_t>> send_cell_partition(num_processes);
-    std::vector<std::int64_t> recv_cell_partition;
     for (const auto& hcell : halo_cell_to_remotes)
     {
       for (auto proc : hcell.second)
@@ -119,17 +119,14 @@ graph::AdjacencyList<std::int32_t> dolfinx::graph::KaHIP::partition(
     }
 
     // Actual halo exchange
-    dolfinx::MPI::all_to_all(mpi_comm, send_cell_partition,
-                             recv_cell_partition);
+    const Eigen::Array<std::int64_t, Eigen::Dynamic, 1> recv_cell_partition
+        = dolfinx::MPI::all_to_all(mpi_comm, send_cell_partition).array();
 
     // Construct a map from all currently foreign cells to their new
     // partition number
     std::map<std::int64_t, std::int32_t> cell_ownership;
-    for (auto p = recv_cell_partition.begin(); p != recv_cell_partition.end();
-         p += 2)
-    {
-      cell_ownership[*p] = *(p + 1);
-    }
+    for (int p = 0; p < recv_cell_partition.rows(); p += 2)
+      cell_ownership[recv_cell_partition[p]] = recv_cell_partition[p + 1];
 
     const Eigen::Array<std::int32_t, Eigen::Dynamic, 1>& xadj
         = adj_graph.offsets();
