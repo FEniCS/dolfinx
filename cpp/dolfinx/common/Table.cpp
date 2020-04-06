@@ -96,8 +96,10 @@ Table Table::reduce(MPI_Comm comm, Table::Reduction reduction) const
   }
   new_title += name;
 
+  const int mpi_size = MPI::size(comm);
+
   // Handle trivial reduction
-  if (MPI::size(comm) == 1)
+  if (mpi_size == 1)
   {
     Table table_all(*this);
     table_all.name = new_title;
@@ -118,7 +120,15 @@ Table Table::reduce(MPI_Comm comm, Table::Reduction reduction) const
 
   // Gather to rank zero
   const std::vector<std::string> keys_all = MPI::gather(comm, keys, 0);
-  const std::vector<double> values_all = MPI::gather(comm, values, 0);
+
+  // Get data size on each process
+  std::vector<int> pcounts(mpi_size), offsets(mpi_size + 1, 0);
+  const int local_size = values.size();
+  MPI_Gather(&local_size, 1, MPI_INT, pcounts.data(), 1, MPI_INT, 0, comm);
+  std::partial_sum(pcounts.begin(), pcounts.end(), offsets.begin() + 1);
+  std::vector<double> values_all(offsets.back());
+  MPI_Gatherv(values.data(), values.size(), MPI_DOUBLE, values_all.data(),
+              pcounts.data(), offsets.data(), MPI_DOUBLE, 0, comm);
 
   // Return empty table on rank > 0
   if (MPI::rank(comm) > 0)
