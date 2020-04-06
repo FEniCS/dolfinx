@@ -222,7 +222,6 @@ void FormIntegrals::set_default_domains(const mesh::Mesh& mesh)
   {
     // If there is a default integral, define it only on interior facets
     inf_integrals[0].active_entities.clear();
-    inf_integrals[0].active_entities.reserve(mesh.num_entities(tdim - 1));
 
     // Get number of facets owned by this process
     mesh.create_connectivity(tdim - 1, tdim);
@@ -230,6 +229,7 @@ void FormIntegrals::set_default_domains(const mesh::Mesh& mesh)
 
     const int num_facets = topology.index_map(tdim - 1)->size_local();
     auto f_to_c = topology.connectivity(tdim - 1, tdim);
+    inf_integrals[0].active_entities.reserve(num_facets);
     for (int f = 0; f < num_facets; ++f)
     {
       if (f_to_c->num_links(f) == 2)

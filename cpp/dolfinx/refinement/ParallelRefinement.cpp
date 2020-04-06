@@ -24,11 +24,15 @@ using namespace dolfinx;
 using namespace dolfinx::refinement;
 
 //-----------------------------------------------------------------------------
-ParallelRefinement::ParallelRefinement(const mesh::Mesh& mesh)
-    : _mesh(mesh), _marked_edges(mesh.num_entities(1), false)
+ParallelRefinement::ParallelRefinement(const mesh::Mesh& mesh) : _mesh(mesh)
 {
   if (!_mesh.topology().connectivity(1, 0))
     throw std::runtime_error("Edges must be initialised");
+
+  auto map_e = mesh.topology().index_map(1);
+  assert(map_e);
+  const std::int32_t num_edges = map_e->size_local() + map_e->num_ghosts();
+  _marked_edges = std::vector<bool>(num_edges, false);
 
   // Create shared edges, for both owned and ghost indices
   // returning edge -> set(global process numbers)
@@ -73,7 +77,9 @@ const std::vector<bool>& ParallelRefinement::marked_edges() const
 //-----------------------------------------------------------------------------
 bool ParallelRefinement::mark(std::int32_t edge_index)
 {
-  assert(edge_index < _mesh.num_entities(1));
+  auto map1 = _mesh.topology().index_map(1);
+  assert(map1);
+  assert(edge_index < (map1->size_local() + map1->num_ghosts()));
 
   // Already marked, so nothing to do
   if (_marked_edges[edge_index])
@@ -85,8 +91,7 @@ bool ParallelRefinement::mark(std::int32_t edge_index)
   auto map_it = _shared_edges.find(edge_index);
   if (map_it != _shared_edges.end())
   {
-    const std::int64_t global_index
-        = _mesh.topology().index_map(1)->local_to_global(edge_index);
+    const std::int64_t global_index = map1->local_to_global(edge_index);
     for (int p : map_it->second)
       _marked_for_update[p].push_back(global_index);
   }
@@ -199,7 +204,10 @@ void ParallelRefinement::create_new_vertices()
     _new_vertex_coordinates.row(v) = x_g.row(vertex_to_x[v]);
 
   // Compute all edge mid-points
-  Eigen::Array<int, Eigen::Dynamic, 1> edges(_mesh.num_entities(1));
+  auto map_e = _mesh.topology().index_map(1);
+  assert(map_e);
+  const std::int32_t num_edges = map_e->size_local() + map_e->num_ghosts();
+  Eigen::Array<int, Eigen::Dynamic, 1> edges(num_edges);
   std::iota(edges.data(), edges.data() + edges.rows(), 0);
   const Eigen::Array<double, Eigen::Dynamic, 3, Eigen::RowMajor> midpoints
       = mesh::midpoints(_mesh, 1, edges);

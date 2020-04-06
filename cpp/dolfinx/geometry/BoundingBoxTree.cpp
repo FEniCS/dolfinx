@@ -278,7 +278,9 @@ BoundingBoxTree::BoundingBoxTree(const mesh::Mesh& mesh, int tdim) : _tdim(tdim)
   mesh.create_entities(tdim);
 
   // Create bounding boxes for all mesh entities (leaves)
-  const int num_leaves = mesh.num_entities(tdim);
+  auto map = mesh.topology().index_map(tdim);
+  assert(map);
+  const std::int32_t num_leaves = map->size_local() + map->num_ghosts();
   std::vector<double> leaf_bboxes(6 * num_leaves);
   Eigen::Map<Eigen::Array<double, Eigen::Dynamic, 3, Eigen::RowMajor>>
       _leaf_bboxes(leaf_bboxes.data(), 2 * num_leaves, 3);
