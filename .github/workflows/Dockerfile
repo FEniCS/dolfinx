@@ -6,10 +6,10 @@
 
 ARG GMSH_VERSION=4.5.6
 ARG PYBIND11_VERSION=2.5.0
-ARG PETSC_VERSION=3.12.5
-ARG SLEPC_VERSION=3.12.2
-ARG PETSC4PY_VERSION=3.12.0
-ARG SLEPC4PY_VERSION=3.12.0
+ARG PETSC_VERSION=3.13.0
+ARG SLEPC_VERSION=3.13.0
+ARG PETSC4PY_VERSION=3.13.0
+ARG SLEPC4PY_VERSION=3.13.0
 
 # Should be updated upon a new KaHIP release
 ARG KAHIP_VERSION=14be06c
@@ -172,12 +172,15 @@ RUN apt-get -qq update && \
     --CXXOPTFLAGS=${PETSC_SLEPC_OPTFLAGS} \
     --FOPTFLAGS=${PETSC_SLEPC_OPTFLAGS} \
     --download-hypre \
+    --download-mumps \
     --download-ptscotch \
     --download-suitesparse \
     --download-superlu_dist \
     --with-64-bit-indices=yes \
     --with-debugging=yes \
     --with-fortran-bindings=no \
+    --with-scalapack=yes \
+    --with-scalapack-lib=-lscalapack-openmpi \
     --with-scalar-type=real \
     --with-shared-libraries && \
     make && \
@@ -208,12 +211,15 @@ RUN apt-get -qq update && \
     --CXXOPTFLAGS=${PETSC_SLEPC_OPTFLAGS} \
     --FOPTFLAGS=${PETSC_SLEPC_OPTFLAGS} \
     --download-hypre \
+    --download-mumps \
     --download-ptscotch \
     --download-suitesparse \
     --download-superlu_dist \
     --with-64-bit-indices=yes \
     --with-debugging=yes \
     --with-fortran-bindings=no \
+    --with-scalapack=yes \
+    --with-scalapack-lib=-lscalapack-openmpi \
     --with-scalar-type=complex \
     --with-shared-libraries && \
     make && \
