@@ -192,9 +192,9 @@ inline MPI_Datatype MPI::mpi_type<bool>()
 /// @endcond
 //---------------------------------------------------------------------------
 template <typename T>
-void dolfinx::MPI::all_to_all_common(
-    MPI_Comm comm, const std::vector<std::vector<T>>& in_values,
-    std::vector<T>& out_values, std::vector<std::int32_t>& data_offset_recv)
+graph::AdjacencyList<T>
+dolfinx::MPI::all_to_all(MPI_Comm comm,
+                         const std::vector<std::vector<T>>& in_values)
 {
   const int comm_size = MPI::size(comm);
 
@@ -214,8 +214,9 @@ void dolfinx::MPI::all_to_all_common(
                1, mpi_type<int>(), comm);
 
   // Pack data and build receive offset
-  data_offset_recv.resize(comm_size + 1, 0);
-  std::vector<T> data_send(data_offset_send[comm_size]);
+  Eigen::Array<std::int32_t, Eigen::Dynamic, 1> data_offset_recv(comm_size + 1,
+                                                                 0);
+  std::vector<T> data_send(data_offset_send.back());
   for (int p = 0; p < comm_size; ++p)
   {
     data_offset_recv[p + 1] = data_offset_recv[p] + data_size_recv[p];
@@ -224,24 +225,16 @@ void dolfinx::MPI::all_to_all_common(
   }
 
   // Send/receive data
-  out_values.resize(data_offset_recv[comm_size]);
+  Eigen::Array<T, Eigen::Dynamic, 1> out_values(data_offset_recv(comm_size));
   MPI_Alltoallv(data_send.data(), data_size_send.data(),
                 data_offset_send.data(), mpi_type<T>(), out_values.data(),
                 data_size_recv.data(), data_offset_recv.data(), mpi_type<T>(),
                 comm);
+
+  return graph::AdjacencyList<T>(std::move(out_values),
+                                 std::move(data_offset_recv));
 }
 //-----------------------------------------------------------------------------
-template <typename T>
-graph::AdjacencyList<T>
-dolfinx::MPI::all_to_all(MPI_Comm comm,
-                         const std::vector<std::vector<T>>& in_values)
-{
-  std::vector<T> out_vec;
-  std::vector<std::int32_t> offsets;
-  all_to_all_common(comm, in_values, out_vec, offsets);
-  return graph::AdjacencyList<T>(out_vec, offsets);
-}
-//---------------------------------------------------------------------------
 template <typename T>
 void dolfinx::MPI::neighbor_all_to_all(MPI_Comm neighbor_comm,
                                        const std::vector<int>& send_offsets,
