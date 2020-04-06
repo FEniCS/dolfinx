@@ -310,9 +310,11 @@ def test_P_tp(family, degree, mesh):
     run_scalar_test(mesh, V, degree)
 
 
+# TODO: Implement DPC spaces
 @skip_in_parallel
 @parametrize_meshes_tp
-@pytest.mark.parametrize("family", ["DQ", "DPC"])
+@pytest.mark.parametrize("family", ["DQ"])
+# @pytest.mark.parametrize("family", ["DQ", "DPC"])
 @pytest.mark.parametrize("degree", [2, 3, 4])
 def test_dP_tp(family, degree, mesh):
     V = FunctionSpace(mesh, (family, degree))
@@ -417,9 +419,11 @@ def test_P_tp_par(family, degree, filename, datadir):
     run_scalar_test(mesh, V, degree)
 
 
+# TODO: Implement DPC spaces
 @skip_in_serial
 @parametrize_filenames_tp
-@pytest.mark.parametrize("family", ["DQ", "DPC"])
+@pytest.mark.parametrize("family", ["DQ"])
+# @pytest.mark.parametrize("family", ["DQ", "DPC"])
 @pytest.mark.parametrize("degree", [2, 3, 4])
 def test_dP_tp_par(family, degree, filename, datadir):
     with XDMFFile(MPI.comm_world, os.path.join(datadir, filename), "r", encoding=XDMFFile.Encoding.ASCII) as xdmf:
