@@ -203,8 +203,6 @@ create_meshtags(MPI_Comm comm, const std::shared_ptr<const mesh::Mesh>& mesh,
   // Send input global indices to process responsible for it, based on
   // input global index value
 
-  // const std::int64_t num_igi_global = MPI::sum(comm,
-  // (std::int64_t)igi.size());
   std::int64_t num_igi_global = 0;
   const std::int64_t igi_size = igi.size();
   MPI_Allreduce(&igi_size, &num_igi_global, 1, MPI_INT64_T, MPI_SUM, comm);
@@ -238,7 +236,6 @@ create_meshtags(MPI_Comm comm, const std::shared_ptr<const mesh::Mesh>& mesh,
   Eigen::Array<bool, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor> owners(
       local_size, comm_size);
   const std::size_t offset = MPI::global_offset(comm, local_size, true);
-
   for (std::int32_t i = 0; i < recv_igi.num_nodes(); ++i)
   {
     auto data = recv_igi.links(i);
@@ -296,10 +293,6 @@ create_meshtags(MPI_Comm comm, const std::shared_ptr<const mesh::Mesh>& mesh,
     }
   }
 
-  const graph::AdjacencyList<std::int64_t> recv_ents
-      = MPI::all_to_all(comm, send_ents);
-  const graph::AdjacencyList<T> recv_vals = MPI::all_to_all(comm, send_vals);
-
   // Using just the information on current local mesh partition prepare
   // a mapping from *ordered* nodes of entity input global indices to
   // entity local index
@@ -340,6 +333,10 @@ create_meshtags(MPI_Comm comm, const std::shared_ptr<const mesh::Mesh>& mesh,
     entities_igi.insert({entity_igi, e});
   }
 
+  const graph::AdjacencyList<std::int64_t> recv_ents
+      = MPI::all_to_all(comm, send_ents);
+  const graph::AdjacencyList<T> recv_vals = MPI::all_to_all(comm, send_vals);
+
   // Iterate over all received entities and find it in entities of the
   // mesh
 
@@ -351,7 +348,7 @@ create_meshtags(MPI_Comm comm, const std::shared_ptr<const mesh::Mesh>& mesh,
   {
     auto recv_ents_p = recv_ents.links(i);
     auto recv_vals_p = recv_vals.links(i);
-    for (std::int32_t e = 0; e < recv_ents_p.rows(); ++e)
+    for (std::int32_t e = 0; e < recv_ents_p.rows() / nnodes_per_entity; ++e)
     {
       std::vector<std::int64_t> _entity(
           recv_ents_p.data() + nnodes_per_entity * e,
