@@ -46,7 +46,8 @@ compute_index_sharing(MPI_Comm comm, std::vector<std::int64_t>& unknown_indices)
   }
 
   const graph::AdjacencyList<std::int64_t> recv_indices
-      = dolfinx::MPI::all_to_all(comm, send_indices);
+      = dolfinx::MPI::all_to_all(
+          comm, graph::AdjacencyList<std::int64_t>(send_indices));
 
   // Get index sharing - first vector entry (lowest) is owner.
   std::unordered_map<std::int64_t, std::vector<int>> index_to_owner;
@@ -76,7 +77,7 @@ compute_index_sharing(MPI_Comm comm, std::vector<std::int64_t>& unknown_indices)
   // Alltoall is necessary because cells which are shared by vertex are not yet
   // known to this process
   const graph::AdjacencyList<int> recv_owner
-      = dolfinx::MPI::all_to_all(comm, send_owner);
+      = dolfinx::MPI::all_to_all(comm, graph::AdjacencyList<int>(send_owner));
 
   // Now fill index_to_owner with locally needed indices
   index_to_owner.clear();

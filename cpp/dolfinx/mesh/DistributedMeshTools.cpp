@@ -61,9 +61,13 @@ reorder_values_by_global_indices(
   // self. All values are "in the air" at this point. Receive into flat
   // arrays.
   const Eigen::Array<std::size_t, Eigen::Dynamic, 1> received_indices
-      = dolfinx::MPI::all_to_all(mpi_comm, indices_to_send).array();
+      = dolfinx::MPI::all_to_all(
+            mpi_comm, graph::AdjacencyList<std::size_t>(indices_to_send))
+            .array();
   const Eigen::Array<T, Eigen::Dynamic, 1> received_values
-      = dolfinx::MPI::all_to_all(mpi_comm, values_to_send).array();
+      = dolfinx::MPI::all_to_all(mpi_comm,
+                                 graph::AdjacencyList<T>(values_to_send))
+            .array();
 
   // Map over received values as Eigen array
   assert(received_indices.size() * values.cols() == received_values.size());

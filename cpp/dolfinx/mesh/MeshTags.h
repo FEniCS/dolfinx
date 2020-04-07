@@ -117,7 +117,7 @@ private:
     std::vector<int> perm(_indices.size());
     std::iota(perm.begin(), perm.end(), 0);
     std::sort(perm.begin(), perm.end(),
-              [& indices = std::as_const(_indices)](const int a, const int b) {
+              [&indices = std::as_const(_indices)](const int a, const int b) {
                 return (indices[a] < indices[b]);
               });
 
@@ -228,7 +228,7 @@ create_meshtags(MPI_Comm comm, const std::shared_ptr<const mesh::Mesh>& mesh,
   }
 
   const graph::AdjacencyList<std::int64_t> recv_igi
-      = MPI::all_to_all(comm, send_igi);
+      = MPI::all_to_all(comm, graph::AdjacencyList<std::int64_t>(send_igi));
 
   // Handle received input global indices, i.e. put the owners of it to
   // a global position, which is its value
@@ -334,8 +334,9 @@ create_meshtags(MPI_Comm comm, const std::shared_ptr<const mesh::Mesh>& mesh,
   }
 
   const graph::AdjacencyList<std::int64_t> recv_ents
-      = MPI::all_to_all(comm, send_ents);
-  const graph::AdjacencyList<T> recv_vals = MPI::all_to_all(comm, send_vals);
+      = MPI::all_to_all(comm, graph::AdjacencyList<std::int64_t>(send_ents));
+  const graph::AdjacencyList<T> recv_vals
+      = MPI::all_to_all(comm, graph::AdjacencyList<T>(send_vals));
 
   // Iterate over all received entities and find it in entities of the
   // mesh

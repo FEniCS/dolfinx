@@ -219,7 +219,8 @@ compute_nonlocal_dual_graph(
 
   // Send data
   const graph::AdjacencyList<std::int64_t> received_buffer
-      = dolfinx::MPI::all_to_all(mpi_comm, send_buffer);
+      = dolfinx::MPI::all_to_all(
+          mpi_comm, graph::AdjacencyList<std::int64_t>(send_buffer));
 
   // Clear send buffer
   send_buffer = std::vector<std::vector<std::int64_t>>(num_processes);
@@ -273,7 +274,9 @@ compute_nonlocal_dual_graph(
 
   // Send matches to other processes
   const Eigen::Array<std::int64_t, Eigen::Dynamic, 1> cell_list
-      = dolfinx::MPI::all_to_all(mpi_comm, send_buffer).array();
+      = dolfinx::MPI::all_to_all(
+            mpi_comm, graph::AdjacencyList<std::int64_t>(send_buffer))
+            .array();
 
   // Ghost nodes
   std::set<std::int64_t> ghost_nodes;

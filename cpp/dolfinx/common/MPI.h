@@ -69,21 +69,12 @@ public:
   /// communicator
   static int size(MPI_Comm comm);
 
-private:
-  // Implementation of all_to_all, common for both cases, whether
-  // returning a flat array, or in separate vectors by sending process.
-  template <typename T>
-  static void all_to_all_common(MPI_Comm comm,
-                                const std::vector<std::vector<T>>& in_values,
-                                std::vector<T>& out_values,
-                                std::vector<std::int32_t>& offsets);
-
 public:
   /// Send in_values[p0] to process p0 and receive values from process
   /// p1 in out_values[p1]
   template <typename T>
   static graph::AdjacencyList<T>
-  all_to_all(MPI_Comm comm, const std::vector<std::vector<T>>& in_values);
+  all_to_all(MPI_Comm comm, const graph::AdjacencyList<T>& in_values);
 
   /// Neighbourhood all-to-all. Send data to neighbours using offsets into
   /// contiguous data array. Offset array should contain (num_neighbours + 1)
@@ -194,19 +185,27 @@ inline MPI_Datatype MPI::mpi_type<bool>()
 template <typename T>
 graph::AdjacencyList<T>
 dolfinx::MPI::all_to_all(MPI_Comm comm,
-                         const std::vector<std::vector<T>>& in_values)
+                         const graph::AdjacencyList<T>& in_values)
 {
   const int comm_size = MPI::size(comm);
 
+  const Eigen::Array<std::int32_t, Eigen::Dynamic, 1>& offsets_in
+      = in_values.offsets();
+  const Eigen::Array<T, Eigen::Dynamic, 1>& values_in = in_values.array();
+
   // Data size per destination
-  assert((int)in_values.size() == comm_size);
+  assert(in_values.num_nodes() == comm_size);
   std::vector<int> data_size_send(comm_size);
-  std::vector<int> data_offset_send(comm_size + 1, 0);
-  for (int p = 0; p < comm_size; ++p)
-  {
-    data_size_send[p] = in_values[p].size();
-    data_offset_send[p + 1] = data_offset_send[p] + data_size_send[p];
-  }
+  // std::vector<int> data_offset_send(comm_size + 1, 0);
+  std::adjacent_difference(offsets_in.data() + 1,
+                           offsets_in.data() + offsets_in.rows(),
+                           data_size_send.begin());
+  // for (int p = 0; p < comm_size; ++p)
+  // {
+  //   data_size_send[p] = offsets_in[p + 1] - offsets_in[p];
+  //   // data_size_send[p] = in_values[p].size();
+  //   // data_offset_send[p + 1] = data_offset_send[p] + data_size_send[p];
+  // }
 
   // Get received data sizes
   std::vector<int> data_size_recv(comm_size);
@@ -216,20 +215,19 @@ dolfinx::MPI::all_to_all(MPI_Comm comm,
   // Pack data and build receive offset
   Eigen::Array<std::int32_t, Eigen::Dynamic, 1> data_offset_recv(comm_size + 1);
   data_offset_recv(0) = 0;
-  std::vector<T> data_send(data_offset_send.back());
+  // std::vector<T> data_send(data_offset_send.back());
   for (int p = 0; p < comm_size; ++p)
   {
     data_offset_recv[p + 1] = data_offset_recv[p] + data_size_recv[p];
-    std::copy(in_values[p].begin(), in_values[p].end(),
-              data_send.begin() + data_offset_send[p]);
+    // std::copy(in_values[p].begin(), in_values[p].end(),
+    //           data_send.begin() + data_offset_send[p]);
   }
 
   // Send/receive data
   Eigen::Array<T, Eigen::Dynamic, 1> out_values(data_offset_recv(comm_size));
-  MPI_Alltoallv(data_send.data(), data_size_send.data(),
-                data_offset_send.data(), mpi_type<T>(), out_values.data(),
-                data_size_recv.data(), data_offset_recv.data(), mpi_type<T>(),
-                comm);
+  MPI_Alltoallv(values_in.data(), data_size_send.data(), offsets_in.data(),
+                mpi_type<T>(), out_values.data(), data_size_recv.data(),
+                data_offset_recv.data(), mpi_type<T>(), comm);
 
   return graph::AdjacencyList<T>(std::move(out_values),
                                  std::move(data_offset_recv));
