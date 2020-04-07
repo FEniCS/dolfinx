@@ -11,7 +11,6 @@
 #include <dolfinx/common/MPI.h>
 #include <dolfinx/common/Timer.h>
 #include <dolfinx/common/log.h>
-#include <dolfinx/fem/PETScDMCollection.h>
 #include <petsclog.h>
 
 using namespace dolfinx;

@@ -168,7 +168,7 @@ create_meshtags(MPI_Comm comm, const std::shared_ptr<const mesh::Mesh>& mesh,
                 const mesh::CellType& entity_cell_type,
                 const Eigen::Array<std::int64_t, Eigen::Dynamic, Eigen::Dynamic,
                                    Eigen::RowMajor>& topology,
-                std::vector<T>& values)
+                const std::vector<T>& values)
 {
   if ((std::size_t)topology.rows() != values.size())
     throw std::runtime_error("Number of entities and values must match");
@@ -186,11 +186,11 @@ create_meshtags(MPI_Comm comm, const std::shared_ptr<const mesh::Mesh>& mesh,
 
   auto e_to_v = mesh->topology().connectivity(e_dim, 0);
   if (!e_to_v)
-    throw std::runtime_error("Mesh is missing entitiy-vertex connectivity.");
+    throw std::runtime_error("Mesh is missing entity-vertex connectivity.");
 
   auto e_to_c = mesh->topology().connectivity(e_dim, dim);
   if (!e_to_c)
-    throw std::runtime_error("Mesh is missing entitiy-cell connectivity.");
+    throw std::runtime_error("Mesh is missing entity-cell connectivity.");
 
   auto c_to_v = mesh->topology().connectivity(dim, 0);
   if (!c_to_v)
@@ -264,9 +264,7 @@ create_meshtags(MPI_Comm comm, const std::shared_ptr<const mesh::Mesh>& mesh,
     topo_owners[topo_unique[i]] = dist_owners.row(i);
 
   std::vector<std::vector<std::int64_t>> send_ents(comm_size);
-  std::vector<std::vector<std::int64_t>> recv_ents(comm_size);
   std::vector<std::vector<T>> send_vals(comm_size);
-  std::vector<std::vector<T>> recv_vals(comm_size);
   const int nnodes_per_entity = topology.cols();
   for (Eigen::Index e = 0; e < topology.rows(); ++e)
   {
@@ -292,6 +290,8 @@ create_meshtags(MPI_Comm comm, const std::shared_ptr<const mesh::Mesh>& mesh,
     }
   }
 
+  std::vector<std::vector<T>> recv_vals(comm_size);
+  std::vector<std::vector<std::int64_t>> recv_ents(comm_size);
   MPI::all_to_all(comm, send_ents, recv_ents);
   MPI::all_to_all(comm, send_vals, recv_vals);
 
@@ -338,8 +338,10 @@ create_meshtags(MPI_Comm comm, const std::shared_ptr<const mesh::Mesh>& mesh,
   // Iterate over all received entities and find it in entities of the
   // mesh
 
-  std::vector<std::int32_t> indices;
-  values.clear();
+  // FIXME: Avoid creating std::vector<std::int64_t> the loop below
+
+  std::vector<std::int32_t> indices_new;
+  std::vector<T> values_new;
   for (std::int32_t i = 0; i < comm_size; ++i)
   {
     const std::int32_t num_recv_ents
@@ -353,13 +355,14 @@ create_meshtags(MPI_Comm comm, const std::shared_ptr<const mesh::Mesh>& mesh,
       const auto it = entities_igi.find(_entity);
       if (it != entities_igi.end())
       {
-        indices.push_back(it->second);
-        values.push_back(recv_vals[i][e]);
+        indices_new.push_back(it->second);
+        values_new.push_back(recv_vals[i][e]);
       }
     }
   }
 
-  return mesh::MeshTags<T>(mesh, e_dim, std::move(indices), std::move(values));
+  return mesh::MeshTags<T>(mesh, e_dim, std::move(indices_new),
+                           std::move(values_new));
 }
 } // namespace mesh
 } // namespace dolfinx
