@@ -31,6 +31,7 @@ public:
   /// @param[in] topological_dimension
   /// @param[in] geometric_dimension
   /// @param[in] signature
+  /// @param[in] dof_layout Layout of the geometry degrees-of-freedom
   /// @param[in] compute_physical_coordinates Push-forward function from
   ///   reference to physical coordinates
   /// @param[in] compute_reference_geometry Pull-back function from
