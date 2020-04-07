@@ -144,6 +144,8 @@ Topology& Mesh::topology() { return _topology; }
 //-----------------------------------------------------------------------------
 const Topology& Mesh::topology() const { return _topology; }
 //-----------------------------------------------------------------------------
+Topology& Mesh::topology_mutable() const { return _topology; }
+//-----------------------------------------------------------------------------
 Geometry& Mesh::geometry() { return _geometry; }
 //-----------------------------------------------------------------------------
 const Geometry& Mesh::geometry() const { return _geometry; }
@@ -164,14 +166,14 @@ std::int32_t Mesh::create_entities(int dim) const
   const auto [cell_entity, entity_vertex, index_map]
       = TopologyComputation::compute_entities(_mpi_comm.comm(), _topology, dim);
 
-  Topology& topology = const_cast<Topology&>(_topology);
+//  Topology& topology = const_cast<Topology&>(_topology);
   if (cell_entity)
-    topology.set_connectivity(cell_entity, _topology.dim(), dim);
+    _topology.set_connectivity(cell_entity, _topology.dim(), dim);
   if (entity_vertex)
-    topology.set_connectivity(entity_vertex, dim, 0);
+    _topology.set_connectivity(entity_vertex, dim, 0);
 
   assert(index_map);
-  topology.set_index_map(dim, index_map);
+  _topology.set_index_map(dim, index_map);
 
   return index_map->size_local();
 }
@@ -201,17 +203,17 @@ void Mesh::create_connectivity(int d0, int d1) const
   // connectivities are needed.
 
   // Attach connectivities
-  Topology& topology = const_cast<Topology&>(_topology);
+//  Topology& topology = const_cast<Topology&>(_topology);
   if (c_d0_d1)
-    topology.set_connectivity(c_d0_d1, d0, d1);
+    _topology.set_connectivity(c_d0_d1, d0, d1);
   if (c_d1_d0)
-    topology.set_connectivity(c_d1_d0, d1, d0);
+    _topology.set_connectivity(c_d1_d0, d1, d0);
 
   // Special facet handing
   if (d0 == (_topology.dim() - 1) and d1 == _topology.dim())
   {
     std::vector<bool> f = compute_interior_facets(_topology);
-    topology.set_interior_facets(f);
+    _topology.set_interior_facets(f);
   }
 }
 //-----------------------------------------------------------------------------
@@ -227,8 +229,8 @@ void Mesh::create_entity_permutations() const
   for (int d = 0; d < tdim; ++d)
     this->create_entities(d);
 
-  Topology& topology = const_cast<Topology&>(_topology);
-  topology.create_entity_permutations();
+//  Topology& topology = const_cast<Topology&>(_topology);
+  _topology.create_entity_permutations();
 }
 //-----------------------------------------------------------------------------
 void Mesh::create_connectivity_all() const

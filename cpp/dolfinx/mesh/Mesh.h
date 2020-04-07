@@ -112,6 +112,10 @@ public:
   /// @return The topology object associated with the mesh.
   const Topology& topology() const;
 
+  /// Get mutable mesh topology (internal library use)
+  /// @return The topology object associated with the mesh.
+  Topology& topology_mutable() const;
+
   /// Get mesh geometry
   /// @return The geometry object associated with the mesh
   Geometry& geometry();
@@ -184,7 +188,7 @@ public:
 
 private:
   // Mesh topology
-  Topology _topology;
+  mutable Topology _topology;
 
   // Mesh geometry
   Geometry _geometry;
