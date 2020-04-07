@@ -6,6 +6,7 @@
 
 #pragma once
 
+#include "ElementDofLayout.h"
 #include <Eigen/Dense>
 #include <cstdint>
 #include <dolfinx/mesh/cell_types.h>
@@ -37,6 +38,7 @@ public:
   CoordinateElement(
       mesh::CellType cell_type, int topological_dimension,
       int geometric_dimension, const std::string& signature,
+      const ElementDofLayout& dof_layout,
       std::function<void(double*, int, const double*, const double*)>
           compute_physical_coordinates,
       std::function<void(double*, double*, double*, double*, int, const double*,
@@ -94,6 +96,8 @@ private:
   mesh::CellType _cell;
 
   std::string _signature;
+
+  ElementDofLayout _dof_layout;
 
   std::function<void(double*, int, const double*, const double*)>
       _compute_physical_coordinates;
