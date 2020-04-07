@@ -38,7 +38,7 @@ def IntervalMesh(comm,
     ----
     Coordinate mapping is not attached
     """
-    element = ufl.VectorElement("Lagrange", cpp.mesh.to_string(cell_type), 1, 1)
+    element = ufl.VectorElement("Lagrange", "interval", 1, 1)
     domain = ufl.Mesh(element)
     cmap = fem.create_coordinate_map(domain)
     return cpp.generation.IntervalMesh.create(comm, nx, points, cmap, ghost_mode)
