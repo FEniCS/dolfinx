@@ -239,8 +239,6 @@ compute_nonlocal_dual_graph(
   {
     // Unpack into map
     auto data_p = received_buffer.links(p);
-    // for (auto it = data_p.begin(); it != data_p.end();
-    //      it += (num_vertices_per_facet + 1))
     for (int i = 0; i < data_p.rows(); i += (num_vertices_per_facet + 1))
     {
       // Build map key
@@ -248,7 +246,6 @@ compute_nonlocal_dual_graph(
                 key.first.begin());
       key.second.first = p;
       key.second.second = data_p[i + num_vertices_per_facet];
-      // key.second.second = *(it + num_vertices_per_facet);
 
       // Perform map insertion/look-up
       std::pair<MatchMap::iterator, bool> data = matchmap.insert(key);
