@@ -18,6 +18,7 @@ from dolfinx.fem import (apply_lifting, assemble_matrix, assemble_scalar,
                          assemble_vector, locate_dofs_topological, set_bc)
 from dolfinx.io import XDMFFile
 from dolfinx.cpp.mesh import CellType
+from dolfinx_utils.test.skips import skip_in_parallel
 from ufl import (SpatialCoordinate, TestFunction, TrialFunction, div, dx, grad,
                  inner, ds, dS, avg, jump)
 
@@ -267,6 +268,8 @@ def test_P_simplex(family, degree, cell_type, datadir):
     run_scalar_test(mesh, V, degree)
 
 
+# TODO: fix DG in parallel once ghosting is fixed
+@skip_in_parallel
 @parametrize_cell_types_simplex
 @pytest.mark.parametrize("family", ["DG"])
 @pytest.mark.parametrize("degree", [2, 3, 4])
@@ -304,6 +307,8 @@ def test_P_tp(family, degree, cell_type, datadir):
     run_scalar_test(mesh, V, degree)
 
 
+# TODO: fix DG in parallel once ghosting is fixed
+@skip_in_parallel
 # TODO: Implement DPC spaces
 @parametrize_cell_types_tp
 @pytest.mark.parametrize("family", ["DQ"])
