@@ -23,15 +23,18 @@ from ufl import (SpatialCoordinate, TestFunction, TrialFunction, div, dx, grad,
                  inner, ds, dS, avg, jump)
 
 # Small meshes for running these tests in serial
-meshes = [UnitSquareMesh(MPI.comm_world, 2, 1, CellType.triangle),
-          UnitCubeMesh(MPI.comm_world, 2, 1, 1, CellType.tetrahedron),
-          UnitSquareMesh(MPI.comm_world, 2, 1, CellType.quadrilateral),
-          UnitSquareMesh(MPI.comm_world, 3, 3, CellType.quadrilateral),
-          UnitCubeMesh(MPI.comm_world, 2, 1, 1, CellType.hexahedron),
-          UnitCubeMesh(MPI.comm_world, 3, 3, 1, CellType.hexahedron)]
-for m in meshes:
-    m.geometry.coord_mapping = fem.create_coordinate_map(m)
-    m.create_connectivity_all()
+if MPI.size(MPI.comm_world) == 1:
+    meshes = [UnitSquareMesh(MPI.comm_world, 2, 1, CellType.triangle),
+              UnitCubeMesh(MPI.comm_world, 2, 1, 1, CellType.tetrahedron),
+              UnitSquareMesh(MPI.comm_world, 2, 1, CellType.quadrilateral),
+              UnitSquareMesh(MPI.comm_world, 3, 3, CellType.quadrilateral),
+              UnitCubeMesh(MPI.comm_world, 2, 1, 1, CellType.hexahedron),
+              UnitCubeMesh(MPI.comm_world, 3, 3, 1, CellType.hexahedron)]
+    for m in meshes:
+        m.geometry.coord_mapping = fem.create_coordinate_map(m)
+        m.create_connectivity_all()
+else:
+    meshes = []
 
 parametrize_meshes = pytest.mark.parametrize("mesh", meshes)
 parametrize_meshes_simplex = pytest.mark.parametrize(
