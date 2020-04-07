@@ -426,7 +426,7 @@ mesh::Mesh ParallelRefinement::partition(bool redistribute) const
       = mesh::create_geometry(comm, topology, _mesh.geometry().coord_mapping(),
                               my_cells, _new_vertex_coordinates);
 
-  return mesh::Mesh(comm, topology, geometry);
+  return mesh::Mesh(comm, std::move(topology), std::move(geometry));
 }
 //-----------------------------------------------------------------------------
 void ParallelRefinement::new_cells(const std::vector<std::int64_t>& idx)

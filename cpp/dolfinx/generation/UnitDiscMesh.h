@@ -28,6 +28,7 @@ public:
   /// Create mesh of unit disc for testing quadratic geometry
   /// @param[in] comm MPI communicator to build the mesh on
   /// @param[in] n Number of layers
+  /// @param[in] element Element that describes the geometry of a cell
   /// @param[in] ghost_mode Mesh ghosting mode
   static mesh::Mesh create(MPI_Comm comm, int n,
                            const fem::CoordinateElement& element,

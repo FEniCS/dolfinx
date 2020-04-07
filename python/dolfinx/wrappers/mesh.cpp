@@ -71,11 +71,11 @@ void mesh(py::module& m)
       "create",
       [](const MPICommWrapper comm,
          const dolfinx::graph::AdjacencyList<std::int64_t>& cells,
-         const dolfinx::fem::ElementDofLayout& layout,
+         const dolfinx::fem::CoordinateElement& element,
          const Eigen::Ref<const Eigen::Array<
              double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>>& x,
          dolfinx::mesh::GhostMode ghost_mode) {
-        return dolfinx::mesh::create(comm.get(), cells, layout, x, ghost_mode);
+        return dolfinx::mesh::create(comm.get(), cells, element, x, ghost_mode);
       },
       "Helper function for creating meshes.");
 
@@ -90,7 +90,7 @@ void mesh(py::module& m)
       m, "Geometry", "Geometry object")
       .def(py::init<std::shared_ptr<const dolfinx::common::IndexMap>,
                     const dolfinx::graph::AdjacencyList<std::int32_t>&,
-                    const dolfinx::fem::ElementDofLayout&,
+                    const dolfinx::fem::CoordinateElement&,
                     const Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic,
                                        Eigen::RowMajor>&,
                     const std::vector<std::int64_t>&,
@@ -99,7 +99,6 @@ void mesh(py::module& m)
                              "Geometric dimension")
       .def("dofmap",
            py::overload_cast<>(&dolfinx::mesh::Geometry::dofmap, py::const_))
-      .def("dof_layout", &dolfinx::mesh::Geometry::dof_layout)
       .def("index_map", &dolfinx::mesh::Geometry::index_map)
       .def("global_indices", &dolfinx::mesh::Geometry::global_indices)
       .def_property(
@@ -112,7 +111,8 @@ void mesh(py::module& m)
           py::return_value_policy::reference_internal,
           "Return coordinates of all geometry points. Each row is the "
           "coordinate of a point.")
-      .def_readwrite("coord_mapping", &dolfinx::mesh::Geometry::coord_mapping)
+      .def_property_readonly("coord_mapping",
+                             &dolfinx::mesh::Geometry::coord_mapping)
       .def_property_readonly("input_global_indices",
                              &dolfinx::mesh::Geometry::input_global_indices);
 
@@ -167,11 +167,12 @@ void mesh(py::module& m)
              const Eigen::Ref<
                  const Eigen::Array<std::int64_t, Eigen::Dynamic,
                                     Eigen::Dynamic, Eigen::RowMajor>>& topology,
+             const dolfinx::fem::CoordinateElement& element,
              const std::vector<std::int64_t>& global_cell_indices,
              const dolfinx::mesh::GhostMode ghost_mode) {
             return std::make_unique<dolfinx::mesh::Mesh>(
-                comm.get(), type, geometry, topology, global_cell_indices,
-                ghost_mode);
+                comm.get(), type, geometry, topology, element,
+                global_cell_indices, ghost_mode);
           }))
       .def_property_readonly(
           "geometry", py::overload_cast<>(&dolfinx::mesh::Mesh::geometry),
@@ -216,7 +217,7 @@ void mesh(py::module& m)
 #define MESHTAGS_MACRO(SCALAR, SCALAR_NAME)                                    \
   py::class_<dolfinx::mesh::MeshTags<SCALAR>,                                  \
              std::shared_ptr<dolfinx::mesh::MeshTags<SCALAR>>>(                \
-      m, "MeshTags_" #SCALAR_NAME, "MeshTags object")                   \
+      m, "MeshTags_" #SCALAR_NAME, "MeshTags object")                          \
       .def(py::init([](const std::shared_ptr<const dolfinx::mesh::Mesh>& mesh, \
                        int dim, const py::array_t<std::int32_t>& indices,      \
                        const py::array_t<SCALAR>& values, bool sorted,         \

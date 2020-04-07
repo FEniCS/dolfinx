@@ -31,6 +31,7 @@ public:
   /// @param[in] comm MPI communicator to build the mesh on
   /// @param[in] n The number of cells.
   /// @param[in] x The end points
+  /// @param[in] element Element that describes the geometry of a cell
   /// @param[in] ghost_mode Ghosting mode
   /// @return A mesh
   static mesh::Mesh create(MPI_Comm comm, std::size_t n,

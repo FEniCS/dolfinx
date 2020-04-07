@@ -39,6 +39,7 @@ public:
   /// @param[in] p Points of box
   /// @param[in] n Number of cells in each direction.
   /// @param[in] cell_type Tetrahedron or hexahedron
+  /// @param[in] element Element that describes the geometry of a cell
   /// @param[in] ghost_mode Ghost mode
   /// @return Mesh
   static mesh::Mesh create(MPI_Comm comm,

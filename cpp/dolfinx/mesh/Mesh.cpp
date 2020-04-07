@@ -1,4 +1,5 @@
-// Copyright (C) 2006-2019 Anders Logg, Chris Richardson, Jorgen S. Dokken
+// Copyright (C) 2006-2020 Anders Logg, Chris Richardson, Jorgen S.
+// Dokken and Garth N. Wells
 //
 // This file is part of DOLFINX (https://www.fenicsproject.org)
 //
@@ -117,20 +118,13 @@ Mesh mesh::create(MPI_Comm comm,
       topology.set_index_map(topology.dim() - 1, index_map1);
   }
 
-  const Geometry geometry
+  Geometry geometry
       = mesh::create_geometry(comm, topology, element, cell_nodes, x);
 
-  return Mesh(comm, topology, geometry);
+  return Mesh(comm, std::move(topology), std::move(geometry));
 }
 //-----------------------------------------------------------------------------
 
-//-----------------------------------------------------------------------------
-Mesh::Mesh(MPI_Comm comm, const Topology& topology, const Geometry& geometry)
-    : _mpi_comm(comm)
-{
-  _topology = std::make_unique<Topology>(topology);
-  _geometry = std::make_unique<Geometry>(geometry);
-}
 //-----------------------------------------------------------------------------
 Mesh::Mesh(
     MPI_Comm comm, mesh::CellType,
@@ -140,48 +134,19 @@ Mesh::Mesh(
         std::int64_t, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>>& cells,
     const fem::CoordinateElement& element, const std::vector<std::int64_t>&,
     const GhostMode ghost_mode, std::int32_t)
-    : _mpi_comm(comm)
-{
-  assert(cells.cols() > 0);
-  *this = mesh::create(comm, graph::AdjacencyList<std::int64_t>(cells), element,
-                       x, ghost_mode);
-}
-//-----------------------------------------------------------------------------
-Mesh::Mesh(const Mesh& mesh)
-    : _topology(new Topology(*mesh._topology)),
-      _geometry(new Geometry(*mesh._geometry)), _mpi_comm(mesh.mpi_comm())
+    : Mesh(mesh::create(comm, graph::AdjacencyList<std::int64_t>(cells),
+                        element, x, ghost_mode))
 {
   // Do nothing
 }
 //-----------------------------------------------------------------------------
-Mesh::~Mesh()
-{
-  // Do nothing
-}
+Topology& Mesh::topology() { return _topology; }
 //-----------------------------------------------------------------------------
-Topology& Mesh::topology()
-{
-  assert(_topology);
-  return *_topology;
-}
+const Topology& Mesh::topology() const { return _topology; }
 //-----------------------------------------------------------------------------
-const Topology& Mesh::topology() const
-{
-  assert(_topology);
-  return *_topology;
-}
+Geometry& Mesh::geometry() { return _geometry; }
 //-----------------------------------------------------------------------------
-Geometry& Mesh::geometry()
-{
-  assert(_geometry);
-  return *_geometry;
-}
-//-----------------------------------------------------------------------------
-const Geometry& Mesh::geometry() const
-{
-  assert(_geometry);
-  return *_geometry;
-}
+const Geometry& Mesh::geometry() const { return _geometry; }
 //-----------------------------------------------------------------------------
 std::int32_t Mesh::create_entities(int dim) const
 {
@@ -191,24 +156,22 @@ std::int32_t Mesh::create_entities(int dim) const
   // const_cast is also needed to allow iterators over a const Mesh to
   // create new connectivity.
 
-  assert(_topology);
-
   // Skip if already computed (vertices (dim=0) should always exist)
-  if (_topology->connectivity(dim, 0))
+  if (_topology.connectivity(dim, 0))
     return -1;
 
   // Create local entities
   const auto [cell_entity, entity_vertex, index_map]
-      = TopologyComputation::compute_entities(_mpi_comm.comm(), *_topology,
-                                              dim);
+      = TopologyComputation::compute_entities(_mpi_comm.comm(), _topology, dim);
 
+  Topology& topology = const_cast<Topology&>(_topology);
   if (cell_entity)
-    _topology->set_connectivity(cell_entity, _topology->dim(), dim);
+    topology.set_connectivity(cell_entity, _topology.dim(), dim);
   if (entity_vertex)
-    _topology->set_connectivity(entity_vertex, dim, 0);
+    topology.set_connectivity(entity_vertex, dim, 0);
 
-  if (index_map)
-    _topology->set_index_map(dim, index_map);
+  assert(index_map);
+  topology.set_index_map(dim, index_map);
 
   return index_map->size_local();
 }
@@ -226,9 +189,8 @@ void Mesh::create_connectivity(int d0, int d1) const
   create_entities(d1);
 
   // Compute connectivity
-  assert(_topology);
   const auto [c_d0_d1, c_d1_d0]
-      = TopologyComputation::compute_connectivity(*_topology, d0, d1);
+      = TopologyComputation::compute_connectivity(_topology, d0, d1);
 
   // NOTE: that to compute the (d0, d1) connections is it sometimes
   // necessary to compute the (d1, d0) connections. We store the (d1,
@@ -239,17 +201,17 @@ void Mesh::create_connectivity(int d0, int d1) const
   // connectivities are needed.
 
   // Attach connectivities
-  Mesh* mesh = const_cast<Mesh*>(this);
+  Topology& topology = const_cast<Topology&>(_topology);
   if (c_d0_d1)
-    mesh->topology().set_connectivity(c_d0_d1, d0, d1);
+    topology.set_connectivity(c_d0_d1, d0, d1);
   if (c_d1_d0)
-    mesh->topology().set_connectivity(c_d1_d0, d1, d0);
+    topology.set_connectivity(c_d1_d0, d1, d0);
 
   // Special facet handing
-  if (d0 == (_topology->dim() - 1) and d1 == _topology->dim())
+  if (d0 == (_topology.dim() - 1) and d1 == _topology.dim())
   {
-    std::vector<bool> f = compute_interior_facets(*_topology);
-    _topology->set_interior_facets(f);
+    std::vector<bool> f = compute_interior_facets(_topology);
+    topology.set_interior_facets(f);
   }
 }
 //-----------------------------------------------------------------------------
@@ -257,7 +219,7 @@ void Mesh::create_entity_permutations() const
 {
   // FIXME: This should be moved to topology or a TopologyPermutation class
 
-  const int tdim = _topology->dim();
+  const int tdim = _topology.dim();
 
   // FIXME: Is this always required? Could it be made cheaper by doing a
   // local version? This call does quite a lot of parallel work
@@ -265,18 +227,19 @@ void Mesh::create_entity_permutations() const
   for (int d = 0; d < tdim; ++d)
     this->create_entities(d);
 
-  _topology->create_entity_permutations();
+  Topology& topology = const_cast<Topology&>(_topology);
+  topology.create_entity_permutations();
 }
 //-----------------------------------------------------------------------------
 void Mesh::create_connectivity_all() const
 {
   // Compute all entities
-  for (int d = 0; d <= _topology->dim(); d++)
+  for (int d = 0; d <= _topology.dim(); d++)
     create_entities(d);
 
   // Compute all connectivity
-  for (int d0 = 0; d0 <= _topology->dim(); d0++)
-    for (int d1 = 0; d1 <= _topology->dim(); d1++)
+  for (int d0 = 0; d0 <= _topology.dim(); d0++)
+    for (int d1 = 0; d1 <= _topology.dim(); d1++)
       create_connectivity(d0, d1);
 }
 //-----------------------------------------------------------------------------
@@ -290,12 +253,9 @@ double Mesh::rmax() const { return cell_r(*this).maxCoeff(); }
 //-----------------------------------------------------------------------------
 std::size_t Mesh::hash() const
 {
-  assert(_topology);
-  assert(_geometry);
-
   // Get local hashes
-  const std::size_t kt_local = _topology->hash();
-  const std::size_t kg_local = _geometry->hash();
+  const std::size_t kt_local = _topology.hash();
+  const std::size_t kg_local = _geometry.hash();
 
   // Compute global hash
   const std::size_t kt = common::hash_global(_mpi_comm.comm(), kt_local);

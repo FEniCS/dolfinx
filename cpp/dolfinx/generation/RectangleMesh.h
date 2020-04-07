@@ -33,6 +33,7 @@ public:
   /// @param[in] p Two corner points
   /// @param[in] n Number of cells in each direction
   /// @param[in] cell_type The mesh cell type
+  /// @param[in] element Element that describes the geometry of a cell
   /// @param[in] ghost_mode Mesh ghosting mode
   /// @param[in] diagonal Direction of diagonals: "left", "right",
   ///   "left/right", "crossed"

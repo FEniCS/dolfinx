@@ -1,4 +1,4 @@
-// Copyright (C) 2006-2019 Anders Logg, Chris Richardson
+// Copyright (C) 2006-2020 Anders Logg, Chris Richardson and Garth N. Wells
 //
 // This file is part of DOLFINX (https://www.fenicsproject.org)
 //
@@ -6,12 +6,12 @@
 
 #pragma once
 
+#include "Geometry.h"
+#include "Topology.h"
 #include "cell_types.h"
 #include <Eigen/Dense>
 #include <dolfinx/common/MPI.h>
 #include <dolfinx/common/UniqueIdGenerator.h>
-#include <dolfinx/common/types.h>
-#include <memory>
 #include <string>
 #include <utility>
 
@@ -23,11 +23,6 @@ namespace fem
 class CoordinateElement;
 }
 
-namespace function
-{
-class Function;
-}
-
 namespace graph
 {
 template <typename T>
@@ -36,8 +31,6 @@ class AdjacencyList;
 
 namespace mesh
 {
-class Geometry;
-class Topology;
 
 /// Enum for different partitioning ghost modes
 enum class GhostMode : int
@@ -57,7 +50,13 @@ public:
   /// @param[in] comm MPI Communicator
   /// @param[in] topology Mesh topology
   /// @param[in] geometry Mesh geometry
-  Mesh(MPI_Comm comm, const Topology& topology, const Geometry& geometry);
+  template <typename Topology, typename Geometry>
+  Mesh(MPI_Comm comm, Topology&& topology, Geometry&& geometry)
+      : _topology(std::forward<Topology>(topology)),
+        _geometry(std::forward<Geometry>(geometry)), _mpi_comm(comm)
+  {
+    // Do nothing
+  }
 
   /// @todo Remove this constructor once the creation of
   /// ElementDofLayout and coordinate maps is make straightforward
@@ -70,6 +69,7 @@ public:
   ///   order
   /// @param[in] cells Array of cells (containing the global point
   ///   indices for each cell)
+  /// @param[in] element Element that describes the geometry of a cell
   /// @param[in] global_cell_indices Array of global cell indices. If
   ///   not empty, this must be same size as the number of rows in
   ///   cells. If empty, global cell indices will be constructed,
@@ -90,14 +90,14 @@ public:
 
   /// Copy constructor
   /// @param[in] mesh Mesh to be copied
-  Mesh(const Mesh& mesh);
+  Mesh(const Mesh& mesh) = default;
 
   /// Move constructor
   /// @param mesh Mesh to be moved.
   Mesh(Mesh&& mesh) = default;
 
   /// Destructor
-  ~Mesh();
+  ~Mesh() = default;
 
   // Assignment operator
   Mesh& operator=(const Mesh& mesh) = delete;
@@ -186,10 +186,10 @@ public:
 
 private:
   // Mesh topology
-  std::unique_ptr<Topology> _topology;
+  Topology _topology;
 
   // Mesh geometry
-  std::unique_ptr<Geometry> _geometry;
+  Geometry _geometry;
 
   // MPI communicator
   dolfinx::MPI::Comm _mpi_comm;

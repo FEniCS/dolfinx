@@ -96,6 +96,7 @@ public:
                       const std::string xpath = "/Xdmf/Domain");
 
   /// Read in Mesh
+  /// @param[in] element Element that describes the geometry of a cell
   /// @param[in] name
   /// @param[in] xpath XPath where Mesh Grid is located
   /// @return A Mesh distributed on the same communicator as the

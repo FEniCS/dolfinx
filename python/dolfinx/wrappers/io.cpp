@@ -65,8 +65,8 @@ void io(py::module& m)
       .def("write_geometry", &dolfinx::io::XDMFFile::write_geometry,
            py::arg("geometry"), py::arg("name") = "geometry",
            py::arg("xpath") = "/Xdmf/Domain")
-      .def("read_mesh", &dolfinx::io::XDMFFile::read_mesh, py::arg("name"),
-           py::arg("xpath"))
+      .def("read_mesh", &dolfinx::io::XDMFFile::read_mesh, py::arg("element"),
+           py::arg("name"), py::arg("xpath"))
       .def("read_mesh_data", &dolfinx::io::XDMFFile::read_mesh_data,
            py::arg("name") = "mesh", py::arg("xpath") = "/Xdmf/Domain")
       .def("write_function", &dolfinx::io::XDMFFile::write_function,
