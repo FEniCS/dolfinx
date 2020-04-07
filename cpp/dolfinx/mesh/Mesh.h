@@ -12,8 +12,6 @@
 #include <Eigen/Dense>
 #include <dolfinx/common/MPI.h>
 #include <dolfinx/common/UniqueIdGenerator.h>
-#include <dolfinx/common/types.h>
-#include <memory>
 #include <string>
 #include <utility>
 
@@ -25,11 +23,6 @@ namespace fem
 class ElementDofLayout;
 }
 
-namespace function
-{
-class Function;
-}
-
 namespace graph
 {
 template <typename T>
@@ -38,8 +31,6 @@ class AdjacencyList;
 
 namespace mesh
 {
-class Geometry;
-class Topology;
 
 /// Enum for different partitioning ghost modes
 enum class GhostMode : int
@@ -59,7 +50,13 @@ public:
   /// @param[in] comm MPI Communicator
   /// @param[in] topology Mesh topology
   /// @param[in] geometry Mesh geometry
-  Mesh(MPI_Comm comm, const Topology& topology, const Geometry& geometry);
+  template <typename Topology, typename Geometry>
+  Mesh(MPI_Comm comm, Topology&& topology, Geometry&& geometry)
+      : _topology(std::forward<Topology>(topology)),
+        _geometry(std::forward<Geometry>(geometry)), _mpi_comm(comm)
+  {
+    // Do nothing
+  }
 
   /// @todo Remove this constructor once the creation of
   /// ElementDofLayout and coordinate maps is make straightforward
@@ -91,14 +88,14 @@ public:
 
   /// Copy constructor
   /// @param[in] mesh Mesh to be copied
-  Mesh(const Mesh& mesh);
+  Mesh(const Mesh& mesh) = default;
 
   /// Move constructor
   /// @param mesh Mesh to be moved.
   Mesh(Mesh&& mesh) = default;
 
   /// Destructor
-  ~Mesh();
+  ~Mesh() = default;
 
   // Assignment operator
   Mesh& operator=(const Mesh& mesh) = delete;

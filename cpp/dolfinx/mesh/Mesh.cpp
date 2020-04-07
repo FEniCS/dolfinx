@@ -117,19 +117,13 @@ Mesh mesh::create(MPI_Comm comm,
       topology.set_index_map(topology.dim() - 1, index_map1);
   }
 
-  const Geometry geometry
+  Geometry geometry
       = mesh::create_geometry(comm, topology, layout, cell_nodes, x);
 
-  return Mesh(comm, topology, geometry);
+  return Mesh(comm, std::move(topology), std::move(geometry));
 }
 //-----------------------------------------------------------------------------
 
-//-----------------------------------------------------------------------------
-Mesh::Mesh(MPI_Comm comm, const Topology& topology, const Geometry& geometry)
-    : _topology(topology), _geometry(geometry), _mpi_comm(comm)
-{
-  // Do nothing
-}
 //-----------------------------------------------------------------------------
 Mesh::Mesh(
     MPI_Comm comm, mesh::CellType type,
@@ -141,21 +135,6 @@ Mesh::Mesh(
     : Mesh(mesh::create(comm, graph::AdjacencyList<std::int64_t>(cells),
                         fem::geometry_layout(type, cells.cols()), x,
                         ghost_mode))
-{
-  // assert(cells.cols() > 0);
-  // *this = mesh::create(comm, graph::AdjacencyList<std::int64_t>(cells),
-  //                      fem::geometry_layout(type, cells.cols()), x,
-  //                      ghost_mode);
-}
-//-----------------------------------------------------------------------------
-Mesh::Mesh(const Mesh& mesh)
-    : _topology(mesh._topology), _geometry(mesh._geometry),
-      _mpi_comm(mesh.mpi_comm())
-{
-  // Do nothing
-}
-//-----------------------------------------------------------------------------
-Mesh::~Mesh()
 {
   // Do nothing
 }
