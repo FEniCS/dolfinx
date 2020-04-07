@@ -231,8 +231,8 @@ dolfinx::MPI::neighbor_all_to_all(MPI_Comm neighbor_comm,
   // Get receive sizes
   std::vector<int> send_sizes(send_offsets.size() - 1, 0);
   std::vector<int> recv_sizes(send_sizes.size());
-  for (std::size_t i = 0; i < send_sizes.size(); ++i)
-    send_sizes[i] = send_offsets[i + 1] - send_offsets[i];
+  std::adjacent_difference(send_offsets.begin() + 1, send_offsets.end(),
+                           send_sizes.begin());
   MPI_Neighbor_alltoall(send_sizes.data(), 1, MPI::mpi_type<int>(),
                         recv_sizes.data(), 1, MPI::mpi_type<int>(),
                         neighbor_comm);
