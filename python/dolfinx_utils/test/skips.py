@@ -17,9 +17,6 @@ xfail_in_parallel = pytest.mark.xfail(
 skip_in_parallel = pytest.mark.skipif(
     MPI.size(MPI.comm_world) > 1,
     reason="This test should only be run in serial.")
-skip_in_serial = pytest.mark.skipif(
-    MPI.size(MPI.comm_world) == 1,
-    reason="This test should only be run in parallel.")
 
 # Skips with respect to the scalar type
 skip_if_complex = pytest.mark.skipif(
