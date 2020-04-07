@@ -13,7 +13,6 @@
 #include <dolfinx/common/IndexMap.h>
 #include <dolfinx/common/MPI.h>
 #include <dolfinx/common/Timer.h>
-#include <dolfinx/common/UniqueIdGenerator.h>
 #include <dolfinx/common/log.h>
 #include <dolfinx/common/utils.h>
 #include <dolfinx/fem/DofMapBuilder.h>
@@ -140,7 +139,7 @@ Mesh::Mesh(
     const Eigen::Ref<const Eigen::Array<
         std::int64_t, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>>& cells,
     const std::vector<std::int64_t>&, const GhostMode ghost_mode, std::int32_t)
-    : _mpi_comm(comm), _unique_id(common::UniqueIdGenerator::id())
+    : _mpi_comm(comm)
 {
   assert(cells.cols() > 0);
   const fem::ElementDofLayout layout = fem::geometry_layout(type, cells.cols());
@@ -150,8 +149,7 @@ Mesh::Mesh(
 //-----------------------------------------------------------------------------
 Mesh::Mesh(const Mesh& mesh)
     : _topology(new Topology(*mesh._topology)),
-      _geometry(new Geometry(*mesh._geometry)), _mpi_comm(mesh.mpi_comm()),
-      _unique_id(common::UniqueIdGenerator::id())
+      _geometry(new Geometry(*mesh._geometry)), _mpi_comm(mesh.mpi_comm())
 {
   // Do nothing
 }
