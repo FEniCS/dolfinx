@@ -274,6 +274,8 @@ void fem(py::module& m)
   py::class_<dolfinx::fem::CoordinateElement,
              std::shared_ptr<dolfinx::fem::CoordinateElement>>(
       m, "CoordinateElement", "Coordinate mapping object")
+      .def_property_readonly("dof_layout",
+                             &dolfinx::fem::CoordinateElement::dof_layout)
       .def("push_forward", &dolfinx::fem::CoordinateElement::push_forward);
 
   // dolfinx::fem::DirichletBC

@@ -9,6 +9,7 @@ import typing
 
 import numpy
 
+import ufl
 from dolfinx import cpp, fem
 
 __all__ = [
@@ -37,7 +38,10 @@ def IntervalMesh(comm,
     ----
     Coordinate mapping is not attached
     """
-    return cpp.generation.IntervalMesh.create(comm, nx, points, ghost_mode)
+    element = ufl.VectorElement("Lagrange", cpp.mesh.to_string(cell_type), 1, 1)
+    domain = ufl.Mesh(element)
+    cmap = fem.create_coordinate_map(domain)
+    return cpp.generation.IntervalMesh.create(comm, nx, points, cmap, ghost_mode)
 
 
 def UnitIntervalMesh(comm,
@@ -54,7 +58,6 @@ def UnitIntervalMesh(comm,
 
     """
     mesh = IntervalMesh(comm, nx, [0.0, 1.0], ghost_mode)
-    mesh.geometry.coord_mapping = fem.create_coordinate_map(mesh)
     return mesh
 
 
@@ -82,7 +85,10 @@ def RectangleMesh(comm,
     Coordinate mapping is not attached
 
     """
-    return cpp.generation.RectangleMesh.create(comm, points, n, cell_type,
+    element = ufl.VectorElement("Lagrange", cpp.mesh.to_string(cell_type), 1, 2)
+    domain = ufl.Mesh(element)
+    cmap = fem.create_coordinate_map(domain)
+    return cpp.generation.RectangleMesh.create(comm, points, n, cell_type, cmap,
                                                ghost_mode, diagonal)
 
 
@@ -110,7 +116,6 @@ def UnitSquareMesh(comm,
         comm, [numpy.array([0.0, 0.0, 0.0]),
                numpy.array([1.0, 1.0, 0.0])], [nx, ny], cell_type, ghost_mode,
         diagonal)
-    mesh.geometry.coord_mapping = fem.create_coordinate_map(mesh)
     return mesh
 
 
@@ -158,9 +163,11 @@ def UnitCubeMesh(comm,
         Number of cells in "z" direction
 
     """
+    element = ufl.VectorElement("Lagrange", cpp.mesh.to_string(cell_type), 1, 3)
+    domain = ufl.Mesh(element)
+    cmap = fem.create_coordinate_map(domain)
     mesh = BoxMesh(
         comm, [numpy.array([0.0, 0.0, 0.0]),
-               numpy.array([1.0, 1.0, 1.0])], [nx, ny, nz], cell_type,
+               numpy.array([1.0, 1.0, 1.0])], [nx, ny, nz], cell_type, cmap,
         ghost_mode)
-    mesh.geometry.coord_mapping = fem.create_coordinate_map(mesh)
     return mesh
