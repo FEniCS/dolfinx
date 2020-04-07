@@ -80,11 +80,10 @@ public:
   /// contiguous data array. Offset array should contain (num_neighbours + 1)
   /// entries, starting from zero.
   template <typename T>
-  static void neighbor_all_to_all(MPI_Comm neighbor_comm,
-                                  const std::vector<int>& send_offsets,
-                                  const std::vector<T>& send_data,
-                                  std::vector<int>& recv_offsets,
-                                  std::vector<T>& recv_data);
+  static graph::AdjacencyList<T>
+  neighbor_all_to_all(MPI_Comm neighbor_comm,
+                      const std::vector<int>& send_offsets,
+                      const std::vector<T>& send_data);
 
   /// Return list of neighbours for a neighbourhood communicator
   /// @param[in] neighbor_comm Neighborhood communicator
@@ -221,11 +220,10 @@ dolfinx::MPI::all_to_all(MPI_Comm comm,
 }
 //-----------------------------------------------------------------------------
 template <typename T>
-void dolfinx::MPI::neighbor_all_to_all(MPI_Comm neighbor_comm,
-                                       const std::vector<int>& send_offsets,
-                                       const std::vector<T>& send_data,
-                                       std::vector<int>& recv_offsets,
-                                       std::vector<T>& recv_data)
+graph::AdjacencyList<T>
+dolfinx::MPI::neighbor_all_to_all(MPI_Comm neighbor_comm,
+                                  const std::vector<int>& send_offsets,
+                                  const std::vector<T>& send_data)
 {
   assert((int)send_data.size() == send_offsets.back());
   assert(send_offsets[0] == 0);
@@ -240,15 +238,19 @@ void dolfinx::MPI::neighbor_all_to_all(MPI_Comm neighbor_comm,
                         neighbor_comm);
 
   // Work out recv offsets
-  recv_offsets.resize(recv_sizes.size() + 1, 0);
+  Eigen::Array<int, Eigen::Dynamic, 1> recv_offsets(recv_sizes.size() + 1);
+  recv_offsets(0) = 0;
   std::partial_sum(recv_sizes.begin(), recv_sizes.end(),
-                   recv_offsets.begin() + 1);
+                   recv_offsets.data() + 1);
 
-  recv_data.resize(recv_offsets.back());
+  Eigen::Array<T, Eigen::Dynamic, 1> recv_data(
+      recv_offsets(recv_offsets.rows() - 1));
   MPI_Neighbor_alltoallv(
       send_data.data(), send_sizes.data(), send_offsets.data(),
       MPI::mpi_type<T>(), recv_data.data(), recv_sizes.data(),
       recv_offsets.data(), MPI::mpi_type<T>(), neighbor_comm);
+
+  return graph::AdjacencyList<T>(std::move(recv_data), std::move(recv_offsets));
 }
 //---------------------------------------------------------------------------
 

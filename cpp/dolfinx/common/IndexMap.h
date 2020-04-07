@@ -123,6 +123,17 @@ public:
   global_to_local(const std::vector<std::int64_t>& indices,
                   bool blocked = true) const;
 
+  /// Compute local indices for array of global indices
+  /// @param[in] indices Global indices
+  /// @param[in] blocked If true work with blocked indices. If false the
+  ///   input indices are not block-wise.
+  /// @return The local of the corresponding global index in indices.
+  ///   Return -1 if the local index does not exist on this process.
+  std::vector<std::int32_t> global_to_local(
+      const Eigen::Ref<const Eigen::Array<std::int64_t, Eigen::Dynamic, 1>>&
+          indices,
+      bool blocked = true) const;
+
   /// Global indices
   /// @return The global index for all local indices (0, 1, 2, ...) on this
   /// process, including ghosts

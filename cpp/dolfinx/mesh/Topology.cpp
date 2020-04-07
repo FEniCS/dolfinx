@@ -99,7 +99,7 @@ compute_index_sharing(MPI_Comm comm, std::vector<std::int64_t>& unknown_indices)
 }
 //----------------------------------------------------------------------------------------------
 // Wrapper around neighbor_all_to_all for vector<vector> style input
-std::vector<std::int64_t>
+Eigen::Array<std::int64_t, Eigen::Dynamic, 1>
 send_to_neighbours(MPI_Comm neighbour_comm,
                    const std::vector<std::vector<std::int64_t>>& send_data)
 {
@@ -111,11 +111,10 @@ send_to_neighbours(MPI_Comm neighbour_comm,
     qsend_offsets.push_back(qsend_data.size());
   }
 
-  std::vector<std::int64_t> qrecv_data;
-  std::vector<int> qrecv_offsets;
-  dolfinx::MPI::neighbor_all_to_all(neighbour_comm, qsend_offsets, qsend_data,
-                                    qrecv_offsets, qrecv_data);
-  return qrecv_data;
+  const graph::AdjacencyList<std::int64_t> recv_data
+      = dolfinx::MPI::neighbor_all_to_all(neighbour_comm, qsend_offsets,
+                                          qsend_data);
+  return recv_data.array();
 }
 
 } // namespace
@@ -470,12 +469,14 @@ mesh::create_topology(MPI_Comm comm,
         }
       }
     }
-    std::vector<std::int64_t> recv_pairs
+
+    // FIXME: make const
+    Eigen::Array<std::int64_t, Eigen::Dynamic, 1> recv_pairs
         = send_to_neighbours(neighbour_comm, send_pairs);
 
     std::vector<std::int64_t> ghost_vertices(nghosts, -1);
     // Unpack received data and make list of ghosts
-    for (std::size_t i = 0; i < recv_pairs.size(); i += 2)
+    for (int i = 0; i < recv_pairs.rows(); i += 2)
     {
       std::int64_t gi = recv_pairs[i];
       const auto it = global_to_local_index.find(gi);
@@ -529,7 +530,7 @@ mesh::create_topology(MPI_Comm comm,
     recv_pairs = send_to_neighbours(neighbour_comm, send_pairs);
 
     // Unpack received data and add to ghosts
-    for (std::size_t i = 0; i < recv_pairs.size(); i += 2)
+    for (int i = 0; i < recv_pairs.rows(); i += 2)
     {
       std::int64_t gi = recv_pairs[i];
       const auto it = global_to_local_index.find(gi);

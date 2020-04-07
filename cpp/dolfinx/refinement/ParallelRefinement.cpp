@@ -137,8 +137,7 @@ void ParallelRefinement::mark(
 void ParallelRefinement::update_logical_edgefunction()
 {
   std::vector<std::int32_t> send_offsets = {0};
-  std::vector<std::int32_t> recv_offsets;
-  std::vector<std::int64_t> data_to_send, data_to_recv;
+  std::vector<std::int64_t> data_to_send;
   int num_neighbours = _marked_for_update.size();
   for (int i = 0; i < num_neighbours; ++i)
   {
@@ -150,8 +149,10 @@ void ParallelRefinement::update_logical_edgefunction()
 
   // Send all shared edges marked for update and receive from other
   // processes
-  MPI::neighbor_all_to_all(_neighbour_comm, send_offsets, data_to_send,
-                           recv_offsets, data_to_recv);
+  const graph::AdjacencyList<std::int64_t> recv_data
+      = MPI::neighbor_all_to_all(_neighbour_comm, send_offsets, data_to_send);
+  const Eigen::Array<std::int64_t, Eigen::Dynamic, 1>& data_to_recv
+      = recv_data.array();
 
   // Flatten received values and set _marked_edges at each index received
   std::vector<std::int32_t> local_indices
@@ -234,15 +235,14 @@ void ParallelRefinement::create_new_vertices()
         + _mesh.topology().index_map(0)->size_global();
 
   // If they are shared, then the new global vertex index needs to be
-  // sent off-process.  Add offset to map, and collect up any shared
-  // new vertices that need to send the new index off-process
+  // sent off-process.  Add offset to map, and collect up any shared new
+  // vertices that need to send the new index off-process
 
   int num_neighbours = _marked_for_update.size();
   std::vector<std::vector<std::int64_t>> values_to_send(num_neighbours);
   for (auto& local_edge : _local_edge_to_new_vertex)
   {
-    // Add global_offset to map, to get new global index of new
-    // vertices
+    // Add global_offset to map, to get new global index of new vertices
     local_edge.second += global_offset;
 
     const std::size_t local_i = local_edge.first;
@@ -270,27 +270,27 @@ void ParallelRefinement::create_new_vertices()
     send_offsets.push_back(send_values.size());
   }
 
-  std::vector<int> recv_offsets;
-  std::vector<std::int64_t> received_values;
-  MPI::neighbor_all_to_all(_neighbour_comm, send_offsets, send_values,
-                           recv_offsets, received_values);
+  const graph::AdjacencyList<std::int64_t> recv_data
+      = MPI::neighbor_all_to_all(_neighbour_comm, send_offsets, send_values);
+  const Eigen::Array<std::int64_t, Eigen::Dynamic, 1>& received_values
+      = recv_data.array();
 
   // Add received remote global vertex indices to map
   std::vector<std::int64_t> recv_global_edge;
   assert(received_values.size() % 2 == 0);
-  for (std::size_t i = 0; i < received_values.size() / 2; ++i)
+  for (int i = 0; i < received_values.size() / 2; ++i)
     recv_global_edge.push_back(received_values[i * 2]);
   std::vector<std::int32_t> recv_local_edge
       = _mesh.topology().index_map(1)->global_to_local(recv_global_edge);
-  for (std::size_t i = 0; i < received_values.size() / 2; ++i)
+  for (int i = 0; i < received_values.size() / 2; ++i)
   {
     auto it = _local_edge_to_new_vertex.insert(
         {recv_local_edge[i], received_values[i * 2 + 1]});
     assert(it.second);
   }
 
-  // Attach global indices to each vertex, old and new, and sort
-  // them across processes into this order
+  // Attach global indices to each vertex, old and new, and sort them
+  // across processes into this order
   std::vector<std::int64_t> global_indices
       = _mesh.topology().index_map(0)->global_indices(false);
   for (std::int32_t i = 0; i < num_new_vertices; i++)
