@@ -268,7 +268,7 @@ def test_P_simplex(family, degree, cell_type, datadir):
     run_scalar_test(mesh, V, degree)
 
 
-# TODO: fix DG in parallel once ghosting is fixed
+# TODO: turn this test back on in parallel once ghosting is fixed
 @skip_in_parallel
 @parametrize_cell_types_simplex
 @pytest.mark.parametrize("family", ["DG"])
@@ -279,6 +279,8 @@ def test_dP_simplex(family, degree, cell_type, datadir):
     run_dg_test(mesh, V, degree)
 
 
+# TODO: turn this test back on in parallel once ghosting is fixed
+@skip_in_parallel
 @parametrize_cell_types_simplex
 @pytest.mark.parametrize("family", ["RT", "N1curl"])
 @pytest.mark.parametrize("degree", [1, 2, 3])
@@ -288,6 +290,8 @@ def test_RT_N1curl_simplex(family, degree, cell_type, datadir):
     run_vector_test(mesh, V, degree)
 
 
+# TODO: turn this test back on in parallel once ghosting is fixed
+@skip_in_parallel
 @parametrize_cell_types_simplex
 @pytest.mark.parametrize("family", ["BDM", "N2curl"])
 @pytest.mark.parametrize("degree", [1, 2, 3])
@@ -307,7 +311,7 @@ def test_P_tp(family, degree, cell_type, datadir):
     run_scalar_test(mesh, V, degree)
 
 
-# TODO: fix DG in parallel once ghosting is fixed
+# TODO: turn this test back on in parallel once ghosting is fixed
 @skip_in_parallel
 # TODO: Implement DPC spaces
 @parametrize_cell_types_tp
@@ -320,6 +324,8 @@ def test_dP_tp(family, degree, cell_type, datadir):
     run_dg_test(mesh, V, degree)
 
 
+# TODO: turn this test back on in parallel once ghosting is fixed
+@skip_in_parallel
 # TODO: Implement RTCE and higher order RTCE spaces
 @parametrize_cell_types_quad
 # @pytest.mark.parametrize("family", ["RTCE", "RTCF"])
