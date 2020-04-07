@@ -9,6 +9,7 @@
 #include "cell_types.h"
 #include <Eigen/Dense>
 #include <dolfinx/common/MPI.h>
+#include <dolfinx/common/UniqueIdGenerator.h>
 #include <dolfinx/common/types.h>
 #include <memory>
 #include <string>
@@ -193,7 +194,7 @@ private:
   dolfinx::MPI::Comm _mpi_comm;
 
   // Unique identifier
-  std::size_t _unique_id;
+  std::size_t _unique_id = common::UniqueIdGenerator::id();
 };
 
 /// Create a mesh
