@@ -9,7 +9,6 @@ import time
 
 import numpy as np
 import pytest
-from dolfinx_utils.test.skips import skip_in_parallel, skip_in_serial
 from petsc4py import PETSc
 
 import ufl
@@ -22,44 +21,37 @@ from dolfinx.cpp.mesh import CellType
 from ufl import (SpatialCoordinate, TestFunction, TrialFunction, div, dx, grad,
                  inner, ds, dS, avg, jump)
 
-# Small meshes for running these tests in serial
-if MPI.size(MPI.comm_world) == 1:
-    meshes = [UnitSquareMesh(MPI.comm_world, 2, 1, CellType.triangle),
-              UnitCubeMesh(MPI.comm_world, 2, 1, 1, CellType.tetrahedron),
-              UnitSquareMesh(MPI.comm_world, 2, 1, CellType.quadrilateral),
-              UnitSquareMesh(MPI.comm_world, 3, 3, CellType.quadrilateral),
-              UnitCubeMesh(MPI.comm_world, 2, 1, 1, CellType.hexahedron),
-              UnitCubeMesh(MPI.comm_world, 3, 3, 1, CellType.hexahedron)]
-    for m in meshes:
-        m.geometry.coord_mapping = fem.create_coordinate_map(m)
-        m.create_connectivity_all()
-else:
-    meshes = []
 
-parametrize_meshes = pytest.mark.parametrize("mesh", meshes)
-parametrize_meshes_simplex = pytest.mark.parametrize(
-    "mesh", [m for m in meshes if m.ufl_cell().is_simplex()])
-parametrize_meshes_tp = pytest.mark.parametrize(
-    "mesh", [m for m in meshes if not m.ufl_cell().is_simplex()])
-parametrize_meshes_quad = pytest.mark.parametrize(
-    "mesh", [m for m in meshes if m.ufl_cell().cellname() == "quadrilateral"])
-parametrize_meshes_hex = pytest.mark.parametrize(
-    "mesh", [m for m in meshes if m.ufl_cell().cellname() == "hexahedron"])
+def get_mesh(cell_type, datadir):
+    if MPI.size(MPI.comm_world) == 1:
+        if cell_type == CellType.triangle or cell_type == CellType.quadrilateral:
+            return UnitSquareMesh(MPI.comm_world, 2, 1, cell_type)
+        else:
+            return UnitCubeMesh(MPI.comm_world, 2, 1, 1, cell_type)
+    else:
+        if cell_type == CellType.triangle:
+            filename = "UnitSquareMesh_triangle.xdmf"
+        elif cell_type == CellType.quadrilateral:
+            filename = "UnitSquareMesh_quad.xdmf"
+        elif cell_type == CellType.tetrahedron:
+            filename = "UnitCubeMesh_tetra.xdmf"
+        elif cell_type == CellType.hexahedron:
+            filename = "UnitCubeMesh_hexahedron.xdmf"
+        with XDMFFile(MPI.comm_world, os.path.join(datadir, filename), "r", encoding=XDMFFile.Encoding.ASCII) as xdmf:
+            return xdmf.read_mesh(name="Grid")
 
-# Filenames of large meshes for running these tests in parallel
-filenames = ["UnitSquareMesh_triangle.xdmf",
-             "UnitSquareMesh_quad.xdmf",
-             "UnitCubeMesh_tetra.xdmf",
-             "UnitCubeMesh_hexahedron.xdmf"]
-parametrize_filenames = pytest.mark.parametrize("filename", filenames)
-parametrize_filenames_simplex = pytest.mark.parametrize(
-    "filename", [m for m in filenames if "tetra" in m or "triangle" in m])
-parametrize_filenames_tp = pytest.mark.parametrize(
-    "filename", [m for m in filenames if "quad" in m or "hexa" in m])
-parametrize_filenames_quad = pytest.mark.parametrize(
-    "filename", [m for m in filenames if "quad" in m])
-parametrize_filenames_hex = pytest.mark.parametrize(
-    "filename", [m for m in filenames if "hex" in m])
+
+parametrize_cell_types = pytest.mark.parametrize(
+    "cell_type", [CellType.triangle, CellType.quadrilateral,
+                  CellType.tetrahedron, CellType.hexahedron])
+parametrize_cell_types_simplex = pytest.mark.parametrize(
+    "cell_type", [CellType.triangle, CellType.tetrahedron])
+parametrize_cell_types_tp = pytest.mark.parametrize(
+    "cell_type", [CellType.quadrilateral, CellType.hexahedron])
+parametrize_cell_types_quad = pytest.mark.parametrize(
+    "cell_type", [CellType.quadrilateral])
+parametrize_cell_types_hex = pytest.mark.parametrize(
+    "cell_type", [CellType.hexahedron])
 
 
 def run_scalar_test(mesh, V, degree):
@@ -267,219 +259,100 @@ def run_dg_test(mesh, V, degree):
 
 
 # Run tests on all spaces in periodic table on triangles and tetrahedra
-@skip_in_parallel
-@parametrize_meshes_simplex
+@parametrize_cell_types_simplex
 @pytest.mark.parametrize("family", ["Lagrange"])
 @pytest.mark.parametrize("degree", [2, 3, 4])
-def test_P_simplex(family, degree, mesh):
+def test_P_simplex(family, degree, cell_type, datadir):
+    mesh = get_mesh(cell_type, datadir)
     V = FunctionSpace(mesh, (family, degree))
     run_scalar_test(mesh, V, degree)
 
 
-@skip_in_parallel
-@parametrize_meshes_simplex
+@parametrize_cell_types_simplex
 @pytest.mark.parametrize("family", ["DG"])
 @pytest.mark.parametrize("degree", [2, 3, 4])
-def test_dP_simplex(family, degree, mesh):
+def test_dP_simplex(family, degree, cell_type, datadir):
+    mesh = get_mesh(cell_type, datadir)
     V = FunctionSpace(mesh, (family, degree))
     run_dg_test(mesh, V, degree)
 
 
-@skip_in_parallel
-@parametrize_meshes_simplex
+@parametrize_cell_types_simplex
 @pytest.mark.parametrize("family", ["RT", "N1curl"])
 @pytest.mark.parametrize("degree", [1, 2, 3])
-def test_RT_N1curl_simplex(family, degree, mesh):
+def test_RT_N1curl_simplex(family, degree, cell_type, datadir):
+    mesh = get_mesh(cell_type, datadir)
     V = FunctionSpace(mesh, (family, degree + 1))
     run_vector_test(mesh, V, degree)
 
 
-@skip_in_parallel
-@parametrize_meshes_simplex
+@parametrize_cell_types_simplex
 @pytest.mark.parametrize("family", ["BDM", "N2curl"])
 @pytest.mark.parametrize("degree", [1, 2, 3])
-def test_BDM_N2curl_simplex(family, degree, mesh):
+def test_BDM_N2curl_simplex(family, degree, cell_type, datadir):
+    mesh = get_mesh(cell_type, datadir)
     V = FunctionSpace(mesh, (family, degree))
     run_vector_test(mesh, V, degree)
 
 
 # Run tests on all spaces in periodic table on quadrilaterals and hexahedra
-@skip_in_parallel
-@parametrize_meshes_tp
+@parametrize_cell_types_tp
 @pytest.mark.parametrize("family", ["Q"])
 @pytest.mark.parametrize("degree", [2, 3, 4])
-def test_P_tp(family, degree, mesh):
+def test_P_tp(family, degree, cell_type, datadir):
+    mesh = get_mesh(cell_type, datadir)
     V = FunctionSpace(mesh, (family, degree))
     run_scalar_test(mesh, V, degree)
 
 
 # TODO: Implement DPC spaces
-@skip_in_parallel
-@parametrize_meshes_tp
+@parametrize_cell_types_tp
 @pytest.mark.parametrize("family", ["DQ"])
 # @pytest.mark.parametrize("family", ["DQ", "DPC"])
 @pytest.mark.parametrize("degree", [2, 3, 4])
-def test_dP_tp(family, degree, mesh):
+def test_dP_tp(family, degree, cell_type, datadir):
+    mesh = get_mesh(cell_type, datadir)
     V = FunctionSpace(mesh, (family, degree))
     run_dg_test(mesh, V, degree)
 
 
 # TODO: Implement RTCE and higher order RTCE spaces
-@skip_in_parallel
-@parametrize_meshes_quad
+@parametrize_cell_types_quad
 # @pytest.mark.parametrize("family", ["RTCE", "RTCF"])
 # @pytest.mark.parametrize("degree", [1, 2, 3])
 @pytest.mark.parametrize("family", ["RTCF"])
 @pytest.mark.parametrize("degree", [1])
-def test_RTC_quad(family, degree, mesh):
+def test_RTC_quad(family, degree, cell_type, datadir):
+    mesh = get_mesh(cell_type, datadir)
     V = FunctionSpace(mesh, (family, degree))
     run_vector_test(mesh, V, degree)
 
 
 # TODO: Implement NC spaces
-@skip_in_parallel
-@parametrize_meshes_hex
+@parametrize_cell_types_hex
 @pytest.mark.parametrize("family", ["NCE", "NCF"])
 @pytest.mark.parametrize("degree", [1, 2, 3])
-def xtest_NC_hex(family, degree, mesh):
+def xtest_NC_hex(family, degree, cell_type, datadir):
+    mesh = get_mesh(cell_type, datadir)
     V = FunctionSpace(mesh, (family, degree + 1))
     run_vector_test(mesh, V, degree)
 
 
 # TODO: Implement BDMC spaces
-@skip_in_parallel
-@parametrize_meshes_quad
+@parametrize_cell_types_quad
 @pytest.mark.parametrize("family", ["BDMCE", "BDMCF"])
 @pytest.mark.parametrize("degree", [1, 2, 3])
-def xtest_BDM_quad(family, degree, mesh):
+def xtest_BDM_quad(family, degree, cell_type, datadir):
+    mesh = get_mesh(cell_type, datadir)
     V = FunctionSpace(mesh, (family, degree))
     run_vector_test(mesh, V, degree)
 
 
 # TODO: Implement AA spaces
-@skip_in_parallel
-@parametrize_meshes_hex
+@parametrize_cell_types_hex
 @pytest.mark.parametrize("family", ["AAE", "AAF"])
 @pytest.mark.parametrize("degree", [1, 2, 3])
-def xtest_AA_hex(family, degree, mesh):
-    V = FunctionSpace(mesh, (family, degree))
-    run_vector_test(mesh, V, degree)
-
-
-# Run tests on larger meshes in parallel
-@skip_in_serial
-@parametrize_filenames_simplex
-@pytest.mark.parametrize("family", ["Lagrange"])
-@pytest.mark.parametrize("degree", [2, 3, 4])
-def test_P_simplex_par(family, degree, filename, datadir):
-    with XDMFFile(MPI.comm_world, os.path.join(datadir, filename), "r", encoding=XDMFFile.Encoding.ASCII) as xdmf:
-        mesh = xdmf.read_mesh(name="Grid")
-    V = FunctionSpace(mesh, (family, degree))
-    run_scalar_test(mesh, V, degree)
-
-
-@skip_in_serial
-@parametrize_filenames_simplex
-@pytest.mark.parametrize("family", ["DG"])
-@pytest.mark.parametrize("degree", [2, 3, 4])
-def test_dP_simplex_par(family, degree, filename, datadir):
-    with XDMFFile(MPI.comm_world, os.path.join(datadir, filename), "r", encoding=XDMFFile.Encoding.ASCII) as xdmf:
-        mesh = xdmf.read_mesh(name="Grid")
-    V = FunctionSpace(mesh, (family, degree))
-    run_dg_test(mesh, V, degree)
-
-
-@skip_in_serial
-@parametrize_filenames_simplex
-@pytest.mark.parametrize("family", ["RT", "N1curl"])
-@pytest.mark.parametrize("degree", [1, 2, 3])
-def test_RT_N1curl_simplex_par(family, degree, filename, datadir):
-    with XDMFFile(MPI.comm_world, os.path.join(datadir, filename), "r", encoding=XDMFFile.Encoding.ASCII) as xdmf:
-        mesh = xdmf.read_mesh(name="Grid")
-    V = FunctionSpace(mesh, (family, degree + 1))
-    run_vector_test(mesh, V, degree)
-
-
-@skip_in_serial
-@parametrize_filenames_simplex
-@pytest.mark.parametrize("family", ["BDM", "N2curl"])
-@pytest.mark.parametrize("degree", [1, 2, 3])
-def test_BDM_N2curl_simplex_par(family, degree, filename, datadir):
-    with XDMFFile(MPI.comm_world, os.path.join(datadir, filename), "r", encoding=XDMFFile.Encoding.ASCII) as xdmf:
-        mesh = xdmf.read_mesh(name="Grid")
-    V = FunctionSpace(mesh, (family, degree))
-    run_vector_test(mesh, V, degree)
-
-
-@skip_in_serial
-@parametrize_filenames_tp
-@pytest.mark.parametrize("family", ["Q"])
-@pytest.mark.parametrize("degree", [2, 3, 4])
-def test_P_tp_par(family, degree, filename, datadir):
-    with XDMFFile(MPI.comm_world, os.path.join(datadir, filename), "r", encoding=XDMFFile.Encoding.ASCII) as xdmf:
-        mesh = xdmf.read_mesh(name="Grid")
-    V = FunctionSpace(mesh, (family, degree))
-    run_scalar_test(mesh, V, degree)
-
-
-# TODO: Implement DPC spaces
-@skip_in_serial
-@parametrize_filenames_tp
-@pytest.mark.parametrize("family", ["DQ"])
-# @pytest.mark.parametrize("family", ["DQ", "DPC"])
-@pytest.mark.parametrize("degree", [2, 3, 4])
-def test_dP_tp_par(family, degree, filename, datadir):
-    with XDMFFile(MPI.comm_world, os.path.join(datadir, filename), "r", encoding=XDMFFile.Encoding.ASCII) as xdmf:
-        mesh = xdmf.read_mesh(name="Grid")
-    V = FunctionSpace(mesh, (family, degree))
-    run_dg_test(mesh, V, degree)
-
-
-# TODO: Implement RTCE and higher order RTCF spaces
-@skip_in_serial
-@parametrize_filenames_quad
-# @pytest.mark.parametrize("family", ["RTCE", "RTCF"])
-# @pytest.mark.parametrize("degree", [1, 2, 3])
-@pytest.mark.parametrize("family", ["RTCF"])
-@pytest.mark.parametrize("degree", [1])
-def test_RTC_quad_par(family, degree, filename, datadir):
-    with XDMFFile(MPI.comm_world, os.path.join(datadir, filename), "r", encoding=XDMFFile.Encoding.ASCII) as xdmf:
-        mesh = xdmf.read_mesh(name="Grid")
-    V = FunctionSpace(mesh, (family, degree))
-    run_vector_test(mesh, V, degree)
-
-
-# TODO: Implement NC spaces
-@skip_in_serial
-@parametrize_filenames_hex
-@pytest.mark.parametrize("family", ["NCE", "NCF"])
-@pytest.mark.parametrize("degree", [1, 2, 3])
-def xtest_NC_hex_par(family, degree, filename, datadir):
-    with XDMFFile(MPI.comm_world, os.path.join(datadir, filename), "r", encoding=XDMFFile.Encoding.ASCII) as xdmf:
-        mesh = xdmf.read_mesh(name="Grid")
-    V = FunctionSpace(mesh, (family, degree + 1))
-    run_vector_test(mesh, V, degree)
-
-
-# TODO: Implement BDMC spaces
-@skip_in_serial
-@parametrize_filenames_quad
-@pytest.mark.parametrize("family", ["BDMCE", "BDMCF"])
-@pytest.mark.parametrize("degree", [1, 2, 3])
-def xtest_BDM_quad_par(family, degree, filename, datadir):
-    with XDMFFile(MPI.comm_world, os.path.join(datadir, filename), "r", encoding=XDMFFile.Encoding.ASCII) as xdmf:
-        mesh = xdmf.read_mesh(name="Grid")
-    V = FunctionSpace(mesh, (family, degree))
-    run_vector_test(mesh, V, degree)
-
-
-# TODO: Implement AA spaces
-@skip_in_serial
-@parametrize_filenames_hex
-@pytest.mark.parametrize("family", ["AAE", "AAF"])
-@pytest.mark.parametrize("degree", [1, 2, 3])
-def xtest_AA_hex_par(family, degree, filename, datadir):
-    with XDMFFile(MPI.comm_world, os.path.join(datadir, filename), "r", encoding=XDMFFile.Encoding.ASCII) as xdmf:
-        mesh = xdmf.read_mesh(name="Grid")
+def xtest_AA_hex(family, degree, cell_type, datadir):
+    mesh = get_mesh(cell_type, datadir)
     V = FunctionSpace(mesh, (family, degree))
     run_vector_test(mesh, V, degree)
