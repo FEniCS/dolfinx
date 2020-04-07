@@ -1,4 +1,4 @@
-// Copyright (C) 2006-2019 Anders Logg, Chris Richardson
+// Copyright (C) 2006-2020 Anders Logg, Chris Richardson and Garth N. Wells
 //
 // This file is part of DOLFINX (https://www.fenicsproject.org)
 //

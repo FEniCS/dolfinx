@@ -1,4 +1,5 @@
-// Copyright (C) 2006-2019 Anders Logg, Chris Richardson, Jorgen S. Dokken
+// Copyright (C) 2006-2020 Anders Logg, Chris Richardson, Jorgen S.
+// Dokken and Garth N. Wells
 //
 // This file is part of DOLFINX (https://www.fenicsproject.org)
 //
