@@ -735,13 +735,15 @@ Eigen::Array<std::int32_t, Eigen::Dynamic, 1> mesh::locate_entities_geometrical(
   // Create entities
   mesh.create_entities(dim);
 
-  // Compute connectivities for boundary detection
-  // (Topology::on_boundary())
+  // Compute connectivities
+  mesh.create_connectivity(0, tdim);
+  mesh.create_connectivity(tdim, 0);
   if (dim < tdim)
   {
-    mesh.create_entities(dim);
+    mesh.create_connectivity(dim, 0);
+    // Additional connectivity for boundary detection
+    // (Topology::on_boundary())
     mesh.create_connectivity(tdim - 1, tdim);
-    mesh.create_connectivity(0, tdim);
   }
 
   const int num_vertices = mesh.topology().index_map(0)->size_local()
