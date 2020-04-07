@@ -701,6 +701,18 @@ fem::create_coordinate_map(const ufc_coordinate_mapping& ufc_cmap)
       ufc_cmap.compute_reference_geometry);
 }
 //-----------------------------------------------------------------------------
+fem::CoordinateElement
+fem::create_coordinate_map(ufc_function_space* (*fptr)(const char*),
+                           const std::string function_name)
+{
+  ufc_function_space* space = fptr(function_name.c_str());
+  ufc_coordinate_mapping* cmap = space->create_coordinate_mapping();
+  fem::CoordinateElement element = create_coordinate_map(*cmap);
+  std::free(cmap);
+  std::free(space);
+  return element;
+}
+//-----------------------------------------------------------------------------
 std::shared_ptr<function::FunctionSpace>
 fem::create_functionspace(ufc_function_space* (*fptr)(const char*),
                           const std::string function_name,

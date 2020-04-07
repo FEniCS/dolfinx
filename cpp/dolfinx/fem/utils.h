@@ -140,6 +140,18 @@ get_constants_from_ufc_form(const ufc_form& ufc_form);
 fem::CoordinateElement
 create_coordinate_map(const ufc_coordinate_mapping& ufc_cmap);
 
+/// Create a CoordinateElement from ufc
+/// @param[in] fptr Function Pointer to a ufc_function_space_create
+///     function
+/// @param[in] function_name Name of a function whose function space to
+///     create. Function name is the name of Python variable for
+///     ufl.Coefficient, ufl.TrialFunction or ufl.TestFunction as
+///     defined in the UFL file.
+/// @return A DOLFINX coordinate map
+fem::CoordinateElement
+create_coordinate_map(ufc_function_space* (*fptr)(const char*),
+                      const std::string function_name);
+
 /// Create FunctionSpace from UFC
 /// @param[in] fptr Function Pointer to a ufc_function_space_create
 ///     function
