@@ -17,7 +17,6 @@
 #include <dolfinx/fem/ElementDofLayout.h>
 #include <dolfinx/fem/FiniteElement.h>
 #include <dolfinx/fem/Form.h>
-#include <dolfinx/fem/PETScDMCollection.h>
 #include <dolfinx/fem/assembler.h>
 #include <dolfinx/fem/utils.h>
 #include <dolfinx/function/Constant.h>
@@ -499,26 +498,6 @@ void fem(py::module& m)
       .def("mesh", &dolfinx::fem::Form::mesh)
       .def("function_space", &dolfinx::fem::Form::function_space)
       .def("coordinate_mapping", &dolfinx::fem::Form::coordinate_mapping);
-
-  // dolfinx::fem::PETScDMCollection
-  py::class_<dolfinx::fem::PETScDMCollection,
-             std::shared_ptr<dolfinx::fem::PETScDMCollection>>(
-      m, "PETScDMCollection")
-      .def(py::init<std::vector<
-               std::shared_ptr<const dolfinx::function::FunctionSpace>>>())
-      .def_static(
-          "create_transfer_matrix",
-          [](const dolfinx::function::FunctionSpace& V0,
-             const dolfinx::function::FunctionSpace& V1) {
-            auto A = dolfinx::fem::PETScDMCollection::create_transfer_matrix(
-                V0, V1);
-            Mat _A = A.mat();
-            PetscObjectReference((PetscObject)_A);
-            return _A;
-          },
-          py::return_value_policy::take_ownership)
-      .def("check_ref_count", &dolfinx::fem::PETScDMCollection::check_ref_count)
-      .def("get_dm", &dolfinx::fem::PETScDMCollection::get_dm);
 
   m.def("locate_dofs_topological", &dolfinx::fem::locate_dofs_topological,
         py::arg("V"), py::arg("dim"), py::arg("entities"),

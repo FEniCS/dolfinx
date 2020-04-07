@@ -13,6 +13,7 @@
 #include "xdmf_meshtags.h"
 #include "xdmf_read.h"
 #include "xdmf_utils.h"
+#include <boost/filesystem.hpp>
 #include <boost/lexical_cast.hpp>
 #include <dolfinx/common/utils.h>
 #include <dolfinx/fem/ElementDofLayout.h>
@@ -26,7 +27,6 @@
 #include <dolfinx/mesh/Topology.h>
 #include <dolfinx/mesh/TopologyComputation.h>
 #include <dolfinx/mesh/utils.h>
-#include <filesystem>
 
 using namespace dolfinx;
 using namespace dolfinx::io;
@@ -89,7 +89,7 @@ XDMFFile::XDMFFile(MPI_Comm comm, const std::string filename,
   }
   else if (_file_mode == "a")
   {
-    if (std::filesystem::exists(_filename))
+    if (boost::filesystem::exists(_filename))
     {
       // Load XML doc from file
       pugi::xml_parse_result result = _xml_doc->load_file(_filename.c_str());
@@ -333,8 +333,8 @@ XDMFFile::read_meshtags(const std::shared_ptr<const mesh::Mesh>& mesh,
   std::vector<std::int32_t> values = xdmf_read::get_dataset<std::int32_t>(
       _mpi_comm.comm(), values_data_node, _h5_id);
 
-  mesh::MeshTags<std::int32_t> meshtags = mesh::create_meshtags(
-      _mpi_comm.comm(), mesh, cell_type, topology, values);
+  mesh::MeshTags meshtags = mesh::create_meshtags(
+      _mpi_comm.comm(), mesh, cell_type, topology, std::move(values));
   meshtags.name = name;
 
   return meshtags;
