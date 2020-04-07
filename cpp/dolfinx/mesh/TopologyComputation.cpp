@@ -332,11 +332,10 @@ get_local_indexing(
       send_global_index_offsets.push_back(send_global_index_data.size());
     }
 
-    const graph::AdjacencyList<std::int64_t> recv_data
+    const Eigen::Array<std::int64_t, Eigen::Dynamic, 1> recv_global_index_data
         = dolfinx::MPI::neighbor_all_to_all(
-            neighbour_comm, send_global_index_offsets, send_global_index_data);
-    const Eigen::Array<std::int64_t, Eigen::Dynamic, 1>& recv_global_index_data
-        = recv_data.array();
+              neighbour_comm, send_global_index_offsets, send_global_index_data)
+              .array();
 
     assert(recv_global_index_data.size() == (int)recv_index.size());
 

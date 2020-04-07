@@ -149,10 +149,9 @@ void ParallelRefinement::update_logical_edgefunction()
 
   // Send all shared edges marked for update and receive from other
   // processes
-  const graph::AdjacencyList<std::int64_t> recv_data
-      = MPI::neighbor_all_to_all(_neighbour_comm, send_offsets, data_to_send);
-  const Eigen::Array<std::int64_t, Eigen::Dynamic, 1>& data_to_recv
-      = recv_data.array();
+  const Eigen::Array<std::int64_t, Eigen::Dynamic, 1> data_to_recv
+      = MPI::neighbor_all_to_all(_neighbour_comm, send_offsets, data_to_send)
+            .array();
 
   // Flatten received values and set _marked_edges at each index received
   std::vector<std::int32_t> local_indices
@@ -270,10 +269,9 @@ void ParallelRefinement::create_new_vertices()
     send_offsets.push_back(send_values.size());
   }
 
-  const graph::AdjacencyList<std::int64_t> recv_data
-      = MPI::neighbor_all_to_all(_neighbour_comm, send_offsets, send_values);
-  const Eigen::Array<std::int64_t, Eigen::Dynamic, 1>& received_values
-      = recv_data.array();
+  const Eigen::Array<std::int64_t, Eigen::Dynamic, 1> received_values
+      = MPI::neighbor_all_to_all(_neighbour_comm, send_offsets, send_values)
+            .array();
 
   // Add received remote global vertex indices to map
   std::vector<std::int64_t> recv_global_edge;

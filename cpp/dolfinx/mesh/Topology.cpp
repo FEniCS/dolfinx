@@ -111,10 +111,10 @@ send_to_neighbours(MPI_Comm neighbour_comm,
     qsend_offsets.push_back(qsend_data.size());
   }
 
-  const graph::AdjacencyList<std::int64_t> recv_data
-      = dolfinx::MPI::neighbor_all_to_all(neighbour_comm, qsend_offsets,
-                                          qsend_data);
-  return recv_data.array();
+  return dolfinx::MPI::neighbor_all_to_all(neighbour_comm, qsend_offsets,
+                                           qsend_data)
+      .array();
+  //----------------------------------------------------------------------------------------------
 }
 
 } // namespace
