@@ -161,10 +161,6 @@ def run_vector_test(mesh, V, degree):
     A = assemble_matrix(a)
     A.assemble()
 
-    print(degree)
-    print(A[:, :])
-    print(b[:])
-
     # Create LU linear solver (Note: need to use a solver that
     # re-orders to handle pivots, e.g. not the PETSc built-in LU
     # solver)
