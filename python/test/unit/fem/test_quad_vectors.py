@@ -50,7 +50,7 @@ def test_components_Hdiv(degree, space_type):
 @skip_in_parallel
 @pytest.mark.parametrize('space_type', ["RTCE"])
 @pytest.mark.parametrize('degree', [1, 2, 3])
-def test_components_Hcurl(mesh, degree, space_type):
+def test_components_Hcurl(degree, space_type):
     """Test that the two components of the vector are correct."""
     mesh = UnitSquareMesh(MPI.comm_world, 1, 1, CellType.quadrilateral)
     mesh.geometry.coord_mapping = fem.create_coordinate_map(mesh)
