@@ -216,7 +216,7 @@ void mesh(py::module& m)
 #define MESHTAGS_MACRO(SCALAR, SCALAR_NAME)                                    \
   py::class_<dolfinx::mesh::MeshTags<SCALAR>,                                  \
              std::shared_ptr<dolfinx::mesh::MeshTags<SCALAR>>>(                \
-      m, "MeshTags_" #SCALAR_NAME, "MeshTags object")                   \
+      m, "MeshTags_" #SCALAR_NAME, "MeshTags object")                          \
       .def(py::init([](const std::shared_ptr<const dolfinx::mesh::Mesh>& mesh, \
                        int dim, const py::array_t<std::int32_t>& indices,      \
                        const py::array_t<SCALAR>& values, bool sorted,         \
