@@ -6,6 +6,8 @@
 
 #pragma once
 
+#include "Geometry.h"
+#include "Topology.h"
 #include "cell_types.h"
 #include <Eigen/Dense>
 #include <dolfinx/common/MPI.h>
@@ -185,10 +187,10 @@ public:
 
 private:
   // Mesh topology
-  std::unique_ptr<Topology> _topology;
+  Topology _topology;
 
   // Mesh geometry
-  std::unique_ptr<Geometry> _geometry;
+  Geometry _geometry;
 
   // MPI communicator
   dolfinx::MPI::Comm _mpi_comm;
