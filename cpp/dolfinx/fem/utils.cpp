@@ -685,9 +685,11 @@ fem::create_coordinate_map(const ufc_coordinate_mapping& ufc_cmap)
          {quadrilateral, mesh::CellType::quadrilateral},
          {hexahedron, mesh::CellType::hexahedron}};
 
+  // Map cell tyee
   const mesh::CellType cell_type = ufc_to_cell.at(ufc_cmap.cell_shape);
   assert(ufc_cmap.topological_dimension == mesh::cell_dim(cell_type));
 
+  // Get scalar dof layout for geometry
   ufc_dofmap* dmap = ufc_cmap.create_scalar_dofmap();
   assert(dmap);
   ElementDofLayout dof_layout = create_element_dof_layout(*dmap, cell_type);
