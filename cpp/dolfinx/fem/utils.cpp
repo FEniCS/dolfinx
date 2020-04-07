@@ -702,14 +702,11 @@ fem::create_coordinate_map(const ufc_coordinate_mapping& ufc_cmap)
 }
 //-----------------------------------------------------------------------------
 fem::CoordinateElement
-fem::create_coordinate_map(ufc_function_space* (*fptr)(const char*),
-                           const std::string function_name)
+fem::create_coordinate_map(ufc_coordinate_mapping* (*fptr)())
 {
-  ufc_function_space* space = fptr(function_name.c_str());
-  ufc_coordinate_mapping* cmap = space->create_coordinate_mapping();
+  ufc_coordinate_mapping* cmap = fptr();
   fem::CoordinateElement element = create_coordinate_map(*cmap);
   std::free(cmap);
-  std::free(space);
   return element;
 }
 //-----------------------------------------------------------------------------

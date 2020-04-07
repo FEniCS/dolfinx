@@ -85,8 +85,8 @@ int main(int argc, char* argv[])
   std::array<Eigen::Vector3d, 2> pt
       = {Eigen::Vector3d(0, 0, 0), Eigen::Vector3d(1, 1, 1)};
 
-  auto geometry = fem::create_coordinate_map(
-      create_functionspace_form_hyperelasticity_F, "u");
+  auto geometry
+      = fem::create_coordinate_map(create_coordinate_map_hyperelasticity);
   auto mesh = std::make_shared<mesh::Mesh>(generation::BoxMesh::create(
       MPI_COMM_WORLD, pt, {{10, 10, 10}}, mesh::CellType::tetrahedron, geometry,
       mesh::GhostMode::none));
