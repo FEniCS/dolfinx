@@ -63,6 +63,9 @@ public:
   /// Return the geometric dimension of the cell shape
   int geometric_dimension() const;
 
+  /// Return the dof layout
+  const ElementDofLayout& dof_layout() const;
+
   /// Compute physical coordinates x for points X  in the reference
   /// configuration
   /// @param[in,out] x The physical coordinates of the reference points X

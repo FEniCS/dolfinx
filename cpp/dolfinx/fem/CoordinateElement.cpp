@@ -35,6 +35,11 @@ int CoordinateElement::topological_dimension() const { return _tdim; }
 //-----------------------------------------------------------------------------
 int CoordinateElement::geometric_dimension() const { return _gdim; }
 //-----------------------------------------------------------------------------
+const ElementDofLayout& CoordinateElement::dof_layout() const
+{
+  return _dof_layout;
+}
+//-----------------------------------------------------------------------------
 void CoordinateElement::push_forward(
     Eigen::Ref<
         Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>>
