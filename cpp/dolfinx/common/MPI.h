@@ -35,7 +35,7 @@ public:
   {
   public:
     /// Duplicate communicator and wrap duplicate
-    Comm(MPI_Comm comm);
+    explicit Comm(MPI_Comm comm);
 
     /// Copy constructor
     Comm(const Comm& comm);
@@ -60,9 +60,6 @@ public:
     MPI_Comm _comm;
   };
 
-  /// Create a new comm with a subset of processes
-  static MPI_Comm SubsetComm(MPI_Comm comm, int num_processes);
-
   /// Return process rank for the communicator
   static int rank(MPI_Comm comm);
 
@@ -76,9 +73,9 @@ public:
   static graph::AdjacencyList<T>
   all_to_all(MPI_Comm comm, const graph::AdjacencyList<T>& send_data);
 
-  /// Neighbourhood all-to-all. Send data to neighbours using offsets into
-  /// contiguous data array. Offset array should contain (num_neighbours + 1)
-  /// entries, starting from zero.
+  /// Neighbourhood all-to-all. Send data to neighbours using offsets
+  /// into contiguous data array. Offset array should contain
+  /// (num_neighbours + 1) entries, starting from zero.
   template <typename T>
   static graph::AdjacencyList<T>
   neighbor_all_to_all(MPI_Comm neighbor_comm,
