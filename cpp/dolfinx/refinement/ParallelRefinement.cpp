@@ -312,11 +312,10 @@ mesh::Mesh ParallelRefinement::build_local() const
                                 Eigen::RowMajor>>
       cells(_new_cell_topology.data(), num_cells, num_cell_vertices);
 
-  const fem::ElementDofLayout layout
-      = fem::geometry_layout(_mesh.topology().cell_type(), cells.cols());
   mesh::Mesh mesh = mesh::create(
-      _mesh.mpi_comm(), graph::AdjacencyList<std::int64_t>(cells), layout,
-      _new_vertex_coordinates, mesh::GhostMode::none);
+      _mesh.mpi_comm(), graph::AdjacencyList<std::int64_t>(cells),
+      _mesh.geometry().coord_mapping(), _new_vertex_coordinates,
+      mesh::GhostMode::none);
 
   return mesh;
 }
@@ -340,12 +339,13 @@ mesh::Mesh ParallelRefinement::partition(bool redistribute) const
 
   // Build mesh
 
-  const fem::ElementDofLayout layout
-      = fem::geometry_layout(_mesh.topology().cell_type(), cells.cols());
+  const fem::ElementDofLayout& layout
+      = _mesh.geometry().coord_mapping().dof_layout();
   if (redistribute)
   {
     return mesh::create(_mesh.mpi_comm(),
-                        graph::AdjacencyList<std::int64_t>(cells), layout,
+                        graph::AdjacencyList<std::int64_t>(cells),
+                        _mesh.geometry().coord_mapping(),
                         _new_vertex_coordinates, mesh::GhostMode::none);
   }
 
@@ -422,8 +422,9 @@ mesh::Mesh ParallelRefinement::partition(bool redistribute) const
     topology.set_connectivity(_cells_d, tdim, 0);
   }
 
-  const mesh::Geometry geometry = mesh::create_geometry(
-      comm, topology, layout, my_cells, _new_vertex_coordinates);
+  const mesh::Geometry geometry
+      = mesh::create_geometry(comm, topology, _mesh.geometry().coord_mapping(),
+                              my_cells, _new_vertex_coordinates);
 
   return mesh::Mesh(comm, topology, geometry);
 }

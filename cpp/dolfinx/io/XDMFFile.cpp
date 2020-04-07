@@ -165,7 +165,8 @@ void XDMFFile::write_geometry(const mesh::Geometry& geometry,
     _xml_doc->save_file(_filename.c_str(), "  ");
 }
 //-----------------------------------------------------------------------------
-mesh::Mesh XDMFFile::read_mesh(const std::string name,
+mesh::Mesh XDMFFile::read_mesh(const fem::CoordinateElement& element,
+                               const std::string name,
                                const std::string xpath) const
 {
   pugi::xml_node node = _xml_doc->select_node(xpath.c_str()).node();
@@ -184,12 +185,7 @@ mesh::Mesh XDMFFile::read_mesh(const std::string name,
 
   graph::AdjacencyList<std::int64_t> cells_adj(cells);
 
-  // TODO: create outside
-  // Create a layout
-  const fem::ElementDofLayout layout
-      = fem::geometry_layout(cell_type, cells.cols());
-
-  mesh::Mesh mesh = mesh::create(_mpi_comm.comm(), cells_adj, layout, x,
+  mesh::Mesh mesh = mesh::create(_mpi_comm.comm(), cells_adj, element, x,
                                  mesh::GhostMode::none);
   mesh.name = name;
   return mesh;

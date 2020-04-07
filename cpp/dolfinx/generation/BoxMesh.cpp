@@ -88,6 +88,7 @@ create_geom(MPI_Comm comm, const std::array<Eigen::Vector3d, 2>& p,
 //-----------------------------------------------------------------------------
 mesh::Mesh build_tet(MPI_Comm comm, const std::array<Eigen::Vector3d, 2>& p,
                      std::array<std::size_t, 3> n,
+                     const fem::CoordinateElement& element,
                      const mesh::GhostMode ghost_mode)
 {
   common::Timer timer("Build BoxMesh");
@@ -137,14 +138,13 @@ mesh::Mesh build_tet(MPI_Comm comm, const std::array<Eigen::Vector3d, 2>& p,
     ++cell;
   }
 
-  const fem::ElementDofLayout layout
-      = fem::geometry_layout(mesh::CellType::tetrahedron, topo.cols());
-  return mesh::create(comm, graph::AdjacencyList<std::int64_t>(topo), layout,
+  return mesh::create(comm, graph::AdjacencyList<std::int64_t>(topo), element,
                       geom, ghost_mode);
 }
 //-----------------------------------------------------------------------------
 mesh::Mesh build_hex(MPI_Comm comm, const std::array<Eigen::Vector3d, 2>& p,
                      std::array<std::size_t, 3> n,
+                     const fem::CoordinateElement& element,
                      const mesh::GhostMode ghost_mode)
 {
   Eigen::Array<double, Eigen::Dynamic, 3, Eigen::RowMajor> geom
@@ -180,9 +180,7 @@ mesh::Mesh build_hex(MPI_Comm comm, const std::array<Eigen::Vector3d, 2>& p,
     ++cell;
   }
 
-  const fem::ElementDofLayout layout
-      = fem::geometry_layout(mesh::CellType::hexahedron, topo.cols());
-  return mesh::create(comm, graph::AdjacencyList<std::int64_t>(topo), layout,
+  return mesh::create(comm, graph::AdjacencyList<std::int64_t>(topo), element,
                       geom, ghost_mode);
 }
 //-----------------------------------------------------------------------------
@@ -194,12 +192,13 @@ mesh::Mesh BoxMesh::create(MPI_Comm comm,
                            const std::array<Eigen::Vector3d, 2>& p,
                            std::array<std::size_t, 3> n,
                            mesh::CellType cell_type,
+                           const fem::CoordinateElement& element,
                            const mesh::GhostMode ghost_mode)
 {
   if (cell_type == mesh::CellType::tetrahedron)
-    return build_tet(comm, p, n, ghost_mode);
+    return build_tet(comm, p, n, element, ghost_mode);
   else if (cell_type == mesh::CellType::hexahedron)
-    return build_hex(comm, p, n, ghost_mode);
+    return build_hex(comm, p, n, element, ghost_mode);
   else
     throw std::runtime_error("Generate rectangle mesh. Wrong cell type");
 }

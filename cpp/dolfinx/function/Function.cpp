@@ -185,13 +185,7 @@ void Function::eval(
       coordinate_dofs(num_dofs_g, gdim);
 
   // Get coordinate mapping
-  std::shared_ptr<const fem::CoordinateElement> cmap
-      = mesh.geometry().coord_mapping;
-  if (!cmap)
-  {
-    throw std::runtime_error(
-        "fem::CoordinateElement has not been attached to mesh.");
-  }
+  const fem::CoordinateElement& cmap = mesh.geometry().coord_mapping();
 
   // Get element
   assert(_function_space->element());
@@ -243,7 +237,7 @@ void Function::eval(
       coordinate_dofs.row(i) = x_g.row(x_dofs[i]).head(gdim);
 
     // Compute reference coordinates X, and J, detJ and K
-    cmap->compute_reference_geometry(X, J, detJ, K, x.row(p).head(gdim),
+    cmap.compute_reference_geometry(X, J, detJ, K, x.row(p).head(gdim),
                                      coordinate_dofs);
 
     // Compute basis on reference element

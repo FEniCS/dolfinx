@@ -13,6 +13,10 @@
 
 namespace dolfinx
 {
+namespace fem
+{
+class CoordinateElement;
+}
 
 namespace generation
 {
@@ -36,6 +40,7 @@ public:
   static mesh::Mesh
   create(MPI_Comm comm, const std::array<Eigen::Vector3d, 2>& p,
          std::array<std::size_t, 2> n, mesh::CellType cell_type,
+         const fem::CoordinateElement& element,
          const mesh::GhostMode ghost_mode, std::string diagonal = "right");
 };
 } // namespace generation

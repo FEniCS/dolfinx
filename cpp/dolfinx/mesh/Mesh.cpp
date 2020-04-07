@@ -15,8 +15,8 @@
 #include <dolfinx/common/Timer.h>
 #include <dolfinx/common/log.h>
 #include <dolfinx/common/utils.h>
+#include <dolfinx/fem/CoordinateElement.h>
 #include <dolfinx/fem/DofMapBuilder.h>
-#include <dolfinx/fem/ElementDofLayout.h>
 #include <dolfinx/graph/AdjacencyList.h>
 #include <dolfinx/graph/Partitioning.h>
 #include <dolfinx/io/cells.h>
@@ -62,7 +62,7 @@ Eigen::ArrayXd cell_r(const mesh::Mesh& mesh)
 //-----------------------------------------------------------------------------
 Mesh mesh::create(MPI_Comm comm,
                   const graph::AdjacencyList<std::int64_t>& cells,
-                  const fem::ElementDofLayout& layout,
+                  const fem::CoordinateElement& element,
                   const Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic,
                                      Eigen::RowMajor>& x,
                   mesh::GhostMode ghost_mode)
@@ -74,21 +74,21 @@ Mesh mesh::create(MPI_Comm comm,
   // filtered lists may have 'gaps', i.e. the indices might not be
   // contiguous.
   const graph::AdjacencyList<std::int64_t> cells_topology
-      = mesh::extract_topology(layout, cells);
+      = mesh::extract_topology(element.dof_layout(), cells);
 
   // Compute the destination rank for cells on this process via graph
   // partitioning
   const int size = dolfinx::MPI::size(comm);
   const graph::AdjacencyList<std::int32_t> dest = Partitioning::partition_cells(
-      comm, size, layout.cell_type(), cells_topology, ghost_mode);
+      comm, size, element.dof_layout().cell_type(), cells_topology, ghost_mode);
 
   // Distribute cells to destination rank
   const auto [cell_nodes, src, original_cell_index, ghost_owners]
       = graph::Partitioning::distribute(comm, cells, dest);
 
   Topology topology = mesh::create_topology(
-      comm, mesh::extract_topology(layout, cell_nodes), original_cell_index,
-      ghost_owners, layout, ghost_mode);
+      comm, mesh::extract_topology(element.dof_layout(), cell_nodes),
+      original_cell_index, ghost_owners, element.dof_layout(), ghost_mode);
 
   // FIXME: Figure out how to check which entities are required
   // Initialise facet for P2
@@ -118,7 +118,7 @@ Mesh mesh::create(MPI_Comm comm,
   }
 
   const Geometry geometry
-      = mesh::create_geometry(comm, topology, layout, cell_nodes, x);
+      = mesh::create_geometry(comm, topology, element, cell_nodes, x);
 
   return Mesh(comm, topology, geometry);
 }
@@ -133,17 +133,17 @@ Mesh::Mesh(MPI_Comm comm, const Topology& topology, const Geometry& geometry)
 }
 //-----------------------------------------------------------------------------
 Mesh::Mesh(
-    MPI_Comm comm, mesh::CellType type,
+    MPI_Comm comm, mesh::CellType,
     const Eigen::Ref<const Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic,
                                         Eigen::RowMajor>>& x,
     const Eigen::Ref<const Eigen::Array<
         std::int64_t, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>>& cells,
-    const std::vector<std::int64_t>&, const GhostMode ghost_mode, std::int32_t)
+    const fem::CoordinateElement& element, const std::vector<std::int64_t>&,
+    const GhostMode ghost_mode, std::int32_t)
     : _mpi_comm(comm)
 {
   assert(cells.cols() > 0);
-  const fem::ElementDofLayout layout = fem::geometry_layout(type, cells.cols());
-  *this = mesh::create(comm, graph::AdjacencyList<std::int64_t>(cells), layout,
+  *this = mesh::create(comm, graph::AdjacencyList<std::int64_t>(cells), element,
                        x, ghost_mode);
 }
 //-----------------------------------------------------------------------------

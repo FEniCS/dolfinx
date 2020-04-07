@@ -300,12 +300,7 @@ FunctionSpace::tabulate_dof_coordinates() const
       = _element->dof_reference_coordinates();
 
   // Get coordinate mapping
-  if (!_mesh->geometry().coord_mapping)
-  {
-    throw std::runtime_error(
-        "CoordinateElement has not been attached to mesh.");
-  }
-  const fem::CoordinateElement& cmap = *_mesh->geometry().coord_mapping;
+  const fem::CoordinateElement& cmap = _mesh->geometry().coord_mapping();
 
   // Prepare cell geometry
   const graph::AdjacencyList<std::int32_t>& x_dofmap
@@ -382,12 +377,7 @@ void FunctionSpace::set_x(
       = _element->dof_reference_coordinates();
 
   // Get coordinate mapping
-  if (!_mesh->geometry().coord_mapping)
-  {
-    throw std::runtime_error(
-        "CoordinateElement has not been attached to mesh.");
-  }
-  const fem::CoordinateElement& cmap = *_mesh->geometry().coord_mapping;
+  const fem::CoordinateElement& cmap = _mesh->geometry().coord_mapping();
 
   Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
       coordinates(_element->space_dimension(), _mesh->geometry().dim());

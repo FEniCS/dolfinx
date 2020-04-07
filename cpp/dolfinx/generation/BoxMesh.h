@@ -14,6 +14,11 @@
 namespace dolfinx
 {
 
+namespace fem
+{
+class CoordinateElement;
+}
+
 namespace generation
 {
 
@@ -40,6 +45,7 @@ public:
                            const std::array<Eigen::Vector3d, 2>& p,
                            std::array<std::size_t, 3> n,
                            mesh::CellType cell_type,
+                           const fem::CoordinateElement& element,
                            const mesh::GhostMode ghost_mode);
 };
 } // namespace generation

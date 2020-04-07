@@ -138,7 +138,8 @@ void write_ascii_mesh(const mesh::Mesh& mesh, int cell_dim,
                       std::string filename)
 {
   const int num_cells = mesh.topology().index_map(cell_dim)->size_local();
-  const int element_degree = mesh.geometry().dof_layout().degree();
+  const int element_degree
+      = mesh.geometry().coord_mapping().dof_layout().degree();
 
   // Get VTK cell type
   const std::int8_t vtk_cell_type
@@ -201,7 +202,7 @@ void write_ascii_mesh(const mesh::Mesh& mesh, int cell_dim,
   }
   else
   {
-    const int degree = mesh.geometry().dof_layout().degree();
+    const int degree = mesh.geometry().coord_mapping().dof_layout().degree();
 
     if (degree > 1)
       throw std::runtime_error("Higher order mesh entities not implemented.");

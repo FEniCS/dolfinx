@@ -11,6 +11,11 @@
 
 namespace dolfinx
 {
+namespace fem
+{
+class CoordinateElement;
+}
+
 namespace generation
 {
 
@@ -25,6 +30,7 @@ public:
   /// @param[in] n Number of layers
   /// @param[in] ghost_mode Mesh ghosting mode
   static mesh::Mesh create(MPI_Comm comm, int n,
+                           const fem::CoordinateElement& element,
                            const mesh::GhostMode ghost_mode);
 };
 } // namespace generation

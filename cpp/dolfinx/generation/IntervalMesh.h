@@ -12,6 +12,11 @@
 
 namespace dolfinx
 {
+namespace fem
+{
+class CoordinateElement;
+}
+
 namespace generation
 {
 
@@ -30,6 +35,7 @@ public:
   /// @return A mesh
   static mesh::Mesh create(MPI_Comm comm, std::size_t n,
                            std::array<double, 2> x,
+                           const fem::CoordinateElement& element,
                            const mesh::GhostMode ghost_mode);
 };
 } // namespace generation

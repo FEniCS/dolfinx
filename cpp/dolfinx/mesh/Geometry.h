@@ -8,7 +8,7 @@
 
 #include <Eigen/Dense>
 #include <dolfinx/common/MPI.h>
-#include <dolfinx/fem/ElementDofLayout.h>
+#include <dolfinx/fem/CoordinateElement.h>
 #include <dolfinx/graph/AdjacencyList.h>
 #include <memory>
 #include <string>
@@ -41,7 +41,7 @@ public:
   /// Constructor
   Geometry(const std::shared_ptr<const common::IndexMap>& index_map,
            const graph::AdjacencyList<std::int32_t>& dofmap,
-           const fem::ElementDofLayout& layout,
+           const fem::CoordinateElement& coordinate_element,
            const Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic,
                               Eigen::RowMajor>& x,
            const std::vector<std::int64_t>& global_indices,
@@ -94,7 +94,7 @@ public:
   /// @warning Experimental. Needs revision
   ///
   /// Put ElementDofLayout here for now
-  const fem::ElementDofLayout& dof_layout() const;
+  // const fem::ElementDofLayout& dof_layout() const;
 
   /// Hash of coordinate values
   /// @return A tree-hashed value of the coordinates over all MPI
@@ -104,7 +104,8 @@ public:
   /// @warning Experimental. Needs revision
   ///
   /// Put CoordinateElement here for now
-  std::shared_ptr<const fem::CoordinateElement> coord_mapping;
+  // std::shared_ptr<const fem::CoordinateElement> coord_mapping;
+  const fem::CoordinateElement& coord_mapping() const { return _coord_mapping; }
 
 private:
   // Geometric dimension
@@ -117,7 +118,8 @@ private:
   std::shared_ptr<const common::IndexMap> _index_map;
 
   // The dof layout on the cell
-  fem::ElementDofLayout _layout;
+  // fem::ElementDofLayout _layout;
+  fem::CoordinateElement _coord_mapping;
 
   // Coordinates for all points stored as a contiguous array
   Eigen::Array<double, Eigen::Dynamic, 3, Eigen::RowMajor> _x;
@@ -133,7 +135,7 @@ private:
 /// FIXME: document
 mesh::Geometry create_geometry(
     MPI_Comm comm, const Topology& topology,
-    const fem::ElementDofLayout& layout,
+    const fem::CoordinateElement& coordinate_element,
     const graph::AdjacencyList<std::int64_t>& cells,
     const Eigen::Ref<const Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic,
                                         Eigen::RowMajor>>& x);

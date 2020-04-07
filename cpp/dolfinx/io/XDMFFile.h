@@ -20,6 +20,10 @@ class xml_document;
 
 namespace dolfinx
 {
+namespace fem
+{
+class CoordinateElement;
+}
 
 namespace function
 {
@@ -96,7 +100,8 @@ public:
   /// @param[in] xpath XPath where Mesh Grid is located
   /// @return A Mesh distributed on the same communicator as the
   ///   XDMFFile
-  mesh::Mesh read_mesh(const std::string name,
+  mesh::Mesh read_mesh(const fem::CoordinateElement& element,
+                       const std::string name,
                        const std::string xpath = "/Xdmf/Domain") const;
 
   /// Read in the data for Mesh

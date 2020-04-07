@@ -31,7 +31,7 @@ void xdmf_mesh::add_topology_data(
 
   // Get number of nodes per entity
   const int num_nodes_per_entity
-      = geometry.dof_layout().num_entity_closure_dofs(dim);
+      = geometry.coord_mapping().dof_layout().num_entity_closure_dofs(dim);
 
   // FIXME: sort out degree/cell type
   // Get VTK string for cell type
