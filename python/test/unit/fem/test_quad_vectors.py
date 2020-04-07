@@ -16,20 +16,16 @@ from dolfinx.cpp.mesh import CellType
 from dolfinx import UnitSquareMesh
 from dolfinx.fem import assemble_vector
 
-meshes = [UnitSquareMesh(MPI.comm_world, 1, 1, CellType.quadrilateral)]
-for m in meshes:
-    m.geometry.coord_mapping = fem.create_coordinate_map(m)
-    m.create_connectivity_all()
-
-parametrize_meshes = pytest.mark.parametrize("mesh", meshes)
-
 
 @skip_in_parallel
-@parametrize_meshes
 @pytest.mark.parametrize('space_type', ["RTCF"])
 @pytest.mark.parametrize('degree', [1, 2, 3])
-def test_components_Hdiv(mesh, degree, space_type):
+def test_components_Hdiv(degree, space_type):
     """Test that the two components of the vector are correct."""
+    mesh = UnitSquareMesh(MPI.comm_world, 1, 1, CellType.quadrilateral)
+    mesh.geometry.coord_mapping = fem.create_coordinate_map(mesh)
+    mesh.create_connectivity_all()
+
     V = FunctionSpace(mesh, (space_type, degree))
 
     v = TestFunction(V)
@@ -52,11 +48,14 @@ def test_components_Hdiv(mesh, degree, space_type):
 
 
 @skip_in_parallel
-@parametrize_meshes
 @pytest.mark.parametrize('space_type', ["RTCE"])
 @pytest.mark.parametrize('degree', [1, 2, 3])
 def test_components_Hcurl(mesh, degree, space_type):
     """Test that the two components of the vector are correct."""
+    mesh = UnitSquareMesh(MPI.comm_world, 1, 1, CellType.quadrilateral)
+    mesh.geometry.coord_mapping = fem.create_coordinate_map(mesh)
+    mesh.create_connectivity_all()
+
     V = FunctionSpace(mesh, (space_type, degree))
 
     v = TestFunction(V)

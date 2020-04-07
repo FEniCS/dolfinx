@@ -25,9 +25,12 @@ from ufl import (SpatialCoordinate, TestFunction, TrialFunction, div, dx, grad,
 def get_mesh(cell_type, datadir):
     if MPI.size(MPI.comm_world) == 1:
         if cell_type == CellType.triangle or cell_type == CellType.quadrilateral:
-            return UnitSquareMesh(MPI.comm_world, 2, 1, cell_type)
+            mesh = UnitSquareMesh(MPI.comm_world, 2, 1, cell_type)
         else:
-            return UnitCubeMesh(MPI.comm_world, 2, 1, 1, cell_type)
+            mesh = UnitCubeMesh(MPI.comm_world, 2, 1, 1, cell_type)
+        mesh.geometry.coord_mapping = fem.create_coordinate_map(mesh)
+        mesh.create_connectivity_all()
+        return mesh
     else:
         if cell_type == CellType.triangle:
             filename = "UnitSquareMesh_triangle.xdmf"
