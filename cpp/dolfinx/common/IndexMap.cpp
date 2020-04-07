@@ -6,6 +6,7 @@
 
 #include "IndexMap.h"
 #include <algorithm>
+#include <dolfinx/common/Timer.h>
 #include <numeric>
 
 using namespace dolfinx;
@@ -74,6 +75,9 @@ IndexMap::IndexMap(
       _myrank(MPI::rank(mpi_comm)), _ghosts(ghosts),
       _ghost_owners(ghosts.size())
 {
+
+  common::Timer timer("Init Index Map from ghost data");
+
   // Calculate offsets
   int mpi_size = -1;
   MPI_Comm_size(mpi_comm, &mpi_size);
@@ -186,6 +190,8 @@ IndexMap::IndexMap(
   _forward_sizes = std::move(in_edges_num);
 
   MPI_Comm_free(&neighbour_comm);
+
+  timer.stop();
 }
 //-----------------------------------------------------------------------------
 std::array<std::int64_t, 2> IndexMap::local_range() const
