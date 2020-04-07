@@ -120,7 +120,9 @@ graph::AdjacencyList<std::int32_t> dolfinx::graph::KaHIP::partition(
 
     // Actual halo exchange
     const Eigen::Array<std::int64_t, Eigen::Dynamic, 1> recv_cell_partition
-        = dolfinx::MPI::all_to_all(mpi_comm, send_cell_partition).array();
+        = dolfinx::MPI::all_to_all(
+              mpi_comm, graph::AdjacencyList<std::int64_t>(send_cell_partition))
+              .array();
 
     // Construct a map from all currently foreign cells to their new
     // partition number
