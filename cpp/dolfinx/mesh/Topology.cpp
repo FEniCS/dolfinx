@@ -176,13 +176,6 @@ std::vector<bool> mesh::compute_interior_facets(const Topology& topology)
   return interior_facet;
 }
 //-----------------------------------------------------------------------------
-Topology::Topology(MPI_Comm comm, mesh::CellType type)
-    : _mpi_comm(comm), _cell_type(type),
-      _connectivity(mesh::cell_dim(type) + 1, mesh::cell_dim(type) + 1)
-{
-  // Do nothing
-}
-//-----------------------------------------------------------------------------
 int Topology::dim() const { return _connectivity.rows() - 1; }
 //-----------------------------------------------------------------------------
 void Topology::set_index_map(int dim,

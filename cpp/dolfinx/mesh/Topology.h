@@ -58,7 +58,12 @@ class Topology
 {
 public:
   /// Create empty mesh topology
-  Topology(MPI_Comm comm, mesh::CellType type);
+  Topology(MPI_Comm comm, mesh::CellType type)
+      : _mpi_comm(comm), _cell_type(type),
+        _connectivity(mesh::cell_dim(type) + 1, mesh::cell_dim(type) + 1)
+  {
+    // Do nothing
+  }
 
   /// Copy constructor
   Topology(const Topology& topology) = default;
