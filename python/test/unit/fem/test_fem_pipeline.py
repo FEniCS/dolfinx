@@ -29,8 +29,6 @@ def get_mesh(cell_type, datadir):
             mesh = UnitSquareMesh(MPI.comm_world, 2, 1, cell_type)
         else:
             mesh = UnitCubeMesh(MPI.comm_world, 2, 1, 1, cell_type)
-        mesh.geometry.coord_mapping = fem.create_coordinate_map(mesh)
-        mesh.create_connectivity_all()
         return mesh
     else:
         if cell_type == CellType.triangle:
