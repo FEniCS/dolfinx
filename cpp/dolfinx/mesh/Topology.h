@@ -70,7 +70,7 @@ public:
   ~Topology() = default;
 
   /// Assignment
-  Topology& operator=(const Topology& topology) = default;
+  Topology& operator=(const Topology& topology) = delete;
 
   /// Assignment
   Topology& operator=(Topology&& topology) = default;
