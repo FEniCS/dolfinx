@@ -11,7 +11,7 @@ import numpy as np
 import pytest
 
 from dolfinx.mesh import Mesh
-from dolfinx import MPI, FunctionSpace, cpp, fem
+from dolfinx import MPI, FunctionSpace, fem
 from dolfinx.cpp.mesh import CellType
 
 xfail = pytest.mark.xfail(strict=True)
