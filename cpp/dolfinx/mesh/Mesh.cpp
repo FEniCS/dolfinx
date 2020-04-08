@@ -150,40 +150,6 @@ Geometry& Mesh::geometry() { return _geometry; }
 //-----------------------------------------------------------------------------
 const Geometry& Mesh::geometry() const { return _geometry; }
 //-----------------------------------------------------------------------------
-std::int32_t Mesh::create_entities(int dim) const
-{
-  // This function is obviously not const since it may potentially
-  // compute new connectivity. However, in a sense all connectivity of a
-  // mesh always exists, it just hasn't been computed yet. The
-  // const_cast is also needed to allow iterators over a const Mesh to
-  // create new connectivity.
-  return _topology.create_entities(dim);
-}
-//-----------------------------------------------------------------------------
-void Mesh::create_connectivity(int d0, int d1) const
-{
-  // This function is obviously not const since it may potentially
-  // compute new connectivity. However, in a sense all connectivity of a
-  // mesh always exists, it just hasn't been computed yet. The
-  // const_cast is also needed to allow iterators over a const Mesh to
-  // create new connectivity.
-
-  // TODO: This should go away
-  _topology.create_connectivity(d0, d1);
-}
-//-----------------------------------------------------------------------------
-void Mesh::create_entity_permutations() const
-{
-  // TODO: This should go away
-  _topology.create_entity_permutations();
-}
-//-----------------------------------------------------------------------------
-void Mesh::create_connectivity_all() const
-{
-  // TODO: This should go away
-  _topology.create_connectivity_all();
-}
-//-----------------------------------------------------------------------------
 double Mesh::hmin() const { return cell_h(*this).minCoeff(); }
 //-----------------------------------------------------------------------------
 double Mesh::hmax() const { return cell_h(*this).maxCoeff(); }
