@@ -75,7 +75,9 @@ public:
   /// Move assignment
   MeshTags& operator=(MeshTags&& tags) = default;
 
-  // Return all indices of a given value, local-to-process
+  /// Find all MeshTag indices of a given value, local-to-process
+  /// @param[in] i The value
+  /// @return The indices
   std::vector<std::int32_t> find_indices(T i) const
   {
     int n = std::count(_values.begin(), _values.end(), i);
