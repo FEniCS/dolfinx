@@ -87,7 +87,8 @@ def RectangleMesh(comm, points: typing.List[numpy.array], n: list, cell_type=cpp
     return cpp.generation.RectangleMesh.create(comm, points, n, cell_type, cmap, ghost_mode, diagonal)
 
 
-def UnitSquareMesh(comm, nx, ny, cell_type=cpp.mesh.CellType.triangle, ghost_mode=cpp.mesh.GhostMode.none, diagonal="right"):
+def UnitSquareMesh(comm, nx, ny, cell_type=cpp.mesh.CellType.triangle,
+                   ghost_mode=cpp.mesh.GhostMode.none, diagonal="right"):
     """Create a mesh of a unit square with coordinate mapping attached
 
     Parameters

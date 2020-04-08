@@ -203,7 +203,6 @@ def xtest_assemble_manifold():
     mesh = dolfinx.Mesh(dolfinx.MPI.comm_world,
                         dolfinx.cpp.mesh.CellType.interval,
                         points, cells, [], dolfinx.cpp.mesh.GhostMode.none)
-    # mesh.geometry.coord_mapping = dolfinx.fem.create_coordinate_map(mesh)
 
     assert mesh.geometry.dim == 2
     assert mesh.topology.dim == 1

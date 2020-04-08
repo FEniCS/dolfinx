@@ -114,8 +114,6 @@ def test_nullspace_check(mesh, degree):
     V = VectorFunctionSpace(mesh, ('Lagrange', degree))
     u, v = TrialFunction(V), TestFunction(V)
 
-    mesh.geometry.coord_mapping = fem.create_coordinate_map(mesh)
-
     E, nu = 2.0e2, 0.3
     mu = E / (2.0 * (1.0 + nu))
     lmbda = E * nu / ((1.0 + nu) * (1.0 - 2.0 * nu))

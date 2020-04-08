@@ -7,10 +7,11 @@
 
 import numpy as np
 import pytest
-from dolfinx_utils.test.skips import skip_in_parallel
 
 from dolfinx import MPI, Function, FunctionSpace, cpp, fem
 from dolfinx.cpp.mesh import CellType
+from dolfinx.mesh import Mesh
+from dolfinx_utils.test.skips import skip_in_parallel
 
 
 @skip_in_parallel
@@ -20,9 +21,8 @@ def test_div_conforming_triangle(space_type, order):
     """Checks that the vectors in div conforming spaces on a triangle are correctly oriented"""
     # Create simple triangle mesh
     def perform_test(points, cells):
-        mesh = cpp.mesh.Mesh(MPI.comm_world, CellType.triangle, points,
-                             np.array(cells), [], cpp.mesh.GhostMode.none)
-        mesh.geometry.coord_mapping = fem.create_coordinate_map(mesh)
+        mesh = Mesh(MPI.comm_world, CellType.triangle, points,
+                    np.array(cells), [], cpp.mesh.GhostMode.none)
         V = FunctionSpace(mesh, (space_type, order))
         f = Function(V)
         output = []
@@ -51,9 +51,8 @@ def test_div_conforming_tetrahedron(space_type, order):
     """Checks that the vectors in div conforming spaces on a tetrahedron are correctly oriented"""
     # Create simple tetrahedron mesh
     def perform_test(points, cells):
-        mesh = cpp.mesh.Mesh(MPI.comm_world, CellType.tetrahedron, points,
-                             np.array(cells), [], cpp.mesh.GhostMode.none)
-        mesh.geometry.coord_mapping = fem.create_coordinate_map(mesh)
+        mesh = Mesh(MPI.comm_world, CellType.tetrahedron, points,
+                    np.array(cells), [], cpp.mesh.GhostMode.none)
         V = FunctionSpace(mesh, (space_type, order))
         f = Function(V)
         output = []

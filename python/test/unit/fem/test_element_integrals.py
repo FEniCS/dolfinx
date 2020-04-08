@@ -10,12 +10,12 @@ from random import shuffle
 
 import numpy as np
 import pytest
-from dolfinx_utils.test.skips import skip_in_parallel
 
 from dolfinx import (MPI, FacetNormal, Function, FunctionSpace, Mesh,
                      VectorFunctionSpace, cpp, fem)
 from dolfinx.cpp.mesh import CellType
 from dolfinx.mesh import MeshTags
+from dolfinx_utils.test.skips import skip_in_parallel
 from ufl import TestFunction, TrialFunction, ds, dS, inner
 
 parametrize_cell_types = pytest.mark.parametrize(
@@ -57,7 +57,6 @@ def unit_cell(cell_type, random_order=True):
     cells = np.array([order])
     mesh = Mesh(MPI.comm_world, cell_type, ordered_points, cells,
                 [], cpp.mesh.GhostMode.none)
-    mesh.geometry.coord_mapping = fem.create_coordinate_map(mesh)
     mesh.create_connectivity_all()
     return mesh
 
@@ -118,7 +117,6 @@ def two_unit_cells(cell_type, agree=False, random_order=True, return_order=False
     ordered_cells = np.array([[order[i] for i in c] for c in cells])
     mesh = Mesh(MPI.comm_world, cell_type, ordered_points, ordered_cells,
                 [], cpp.mesh.GhostMode.none)
-    mesh.geometry.coord_mapping = fem.create_coordinate_map(mesh)
     mesh.create_connectivity_all()
     if return_order:
         return mesh, order
