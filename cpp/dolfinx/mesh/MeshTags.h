@@ -75,24 +75,24 @@ public:
   /// Move assignment
   MeshTags& operator=(MeshTags&& tags) = default;
 
-  /// Find all MeshTag indices of a given value, local-to-process
-  /// @param[in] i The value
-  /// @return The indices
-  std::vector<std::int32_t> find_indices(T i) const
+  /// Find all MeshTags for a list of values and return the corresponding
+  /// indices per value, local-to-process
+  /// @param[in] values A list values
+  /// @return The correspodning indices
+  std::vector<std::vector<std::int32_t>> indices(std::vector<T> values) const
   {
-    int n = std::count(_values.begin(), _values.end(), i);
-
-    std::vector<std::int32_t> indices_i(n, 0);
-    std::int32_t iter = 0;
-    for (std::int32_t j = 0; j < _values.size(); j++)
+    std::vector<std::vector<std::int32_t>> indices;
+    for (std::int32_t i = 0; i < values.size(); ++i)
     {
-      if (_values[j] == i)
-      {
-        indices_i[iter] = _indices[j];
-        iter++;
-      }
+      std::vector<std::int32_t> indices_i;
+      int n = std::count(_values.begin(), _values.end(), values[i]);
+      indices_i.reserve(n);
+      for (std::int32_t j = 0; j < _values.size(); ++j)
+        if (_values[j] == values[i])
+          indices_i.push_back(_indices[j]);
+      indices.push_back(indices_i);
     }
-    return indices_i;
+    return indices;
   }
 
   /// Indices of tagged mesh entities, local-to-process (const version)
