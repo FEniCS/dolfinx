@@ -191,7 +191,7 @@ mesh::Mesh XDMFFile::read_mesh(const fem::CoordinateElement& element,
 }
 //-----------------------------------------------------------------------------
 std::tuple<
-    mesh::CellType,
+    std::pair<mesh::CellType, int>,
     Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>,
     Eigen::Array<std::int64_t, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>>
 XDMFFile::read_mesh_data(const std::string name, const std::string xpath) const

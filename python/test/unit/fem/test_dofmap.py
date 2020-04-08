@@ -399,13 +399,13 @@ def test_readonly_view_local_to_global_unwoned(mesh):
 
 
 @skip_in_parallel
-@pytest.mark.parametrize("points, celltype", [
+@pytest.mark.parametrize("points, celltype, order", [
     (np.array([[0, 0], [0, 2], [1, 0], [1, 2]]),
-     CellType.quadrilateral),
+     CellType.quadrilateral, 1),
     (np.array([[0, 0], [0, 2], [0, 1],
                [1, 0], [1, 2], [1, 1],
                [0.5, 0], [0.5, 2], [0.5, 1]]),
-     CellType.quadrilateral),
+     CellType.quadrilateral, 2),
     # (np.array([[0, 0], [0, 2], [0, 2 / 3], [0, 4 / 3],
     #            [1, 0], [1, 2], [1, 2 / 3], [1, 4 / 3],
     #            [1 / 3, 0], [1 / 3, 2], [1 / 3, 2 / 3], [1 / 3, 4 / 3],
@@ -421,14 +421,14 @@ def test_readonly_view_local_to_global_unwoned(mesh):
     #            [3 / 4, 3 / 2]]),
     #  CellType.quadrilateral),
     (np.array([[0, 0], [1, 0], [0, 2], [0.5, 1], [0, 1], [0.5, 0]]),
-     CellType.triangle),
+     CellType.triangle, 2),
     # (np.array([[0, 0], [1, 0], [0, 2], [2 / 3, 2 / 3], [1 / 3, 4 / 3],
     #            [0, 2 / 3], [0, 4 / 3], [1 / 3, 0], [2 / 3, 0],
     #            [1 / 3, 2 / 3]]),
     #  CellType.triangle),
     (np.array([[0, 0, 0], [0, 0, 3], [0, 2, 0], [0, 2, 3],
                [1, 0, 0], [1, 0, 3], [1, 2, 0], [1, 2, 3]]),
-     CellType.hexahedron),
+     CellType.hexahedron, 1),
     (np.array([[0, 0, 0], [0, 0, 3], [0, 0, 1.5],
                [0, 2, 0], [0, 2, 3], [0, 2, 1.5],
                [0, 1, 0], [0, 1, 3], [0, 1, 1.5],
@@ -438,17 +438,14 @@ def test_readonly_view_local_to_global_unwoned(mesh):
                [0.5, 0, 0], [0.5, 0, 3], [0.5, 0, 1.5],
                [0.5, 2, 0], [0.5, 2, 3], [0.5, 2, 1.5],
                [0.5, 1, 0], [0.5, 1, 3], [0.5, 1, 1.5]]),
-     CellType.hexahedron)
+     CellType.hexahedron, 2)
 ])
-def test_higher_order_coordinate_map(points, celltype):
-    """
-    Computes physical coordinates of a cell, based on the coordinate map.
-    """
+def test_higher_order_coordinate_map(points, celltype, order):
+    """Computes physical coordinates of a cell, based on the coordinate map."""
     cells = np.array([range(len(points))])
-    mesh = Mesh(MPI.comm_world, celltype, points, cells, [], GhostMode.none)
+    mesh = Mesh(MPI.comm_world, celltype, points, cells, [], degree=order, ghost_mode=GhostMode.none)
 
     V = FunctionSpace(mesh, ("Lagrange", 2))
-
     X = V.element.dof_reference_coordinates()
     coord_dofs = mesh.geometry.dofmap()
     x_g = mesh.geometry.x
@@ -495,7 +492,7 @@ def test_higher_order_tetra_coordinate_map(order):
                            [0, 1, 3 / 2], [1 / 2, 0, 3 / 2], [1 / 2, 1, 0], [0, 0, 3 / 2],
                            [0, 1, 0], [1 / 2, 0, 0]])
     cells = np.array([range(len(points))])
-    mesh = Mesh(MPI.comm_world, celltype, points, cells, [], GhostMode.none)
+    mesh = Mesh(MPI.comm_world, celltype, points, cells, [], degree=order, ghost_mode=GhostMode.none)
     V = FunctionSpace(mesh, ("Lagrange", order))
     X = V.element.dof_reference_coordinates()
     coord_dofs = mesh.geometry.dofmap()

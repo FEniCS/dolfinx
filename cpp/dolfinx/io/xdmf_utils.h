@@ -36,6 +36,7 @@ namespace xdmf_utils
 {
 
 // Get DOLFINX cell type string from XML topology node
+// @return DOLFINX cell type and polynomial degree
 std::pair<std::string, int> get_cell_type(const pugi::xml_node& topology_node);
 
 // Return (0) HDF5 filename and (1) path in HDF5 file from a DataItem

@@ -44,9 +44,8 @@ class XDMFFile(cpp.io.XDMFFile):
         # Read mesh data from file
         cell_type, x, cells = super().read_mesh_data(name, xpath)
 
-        # TODO: handle high-order geometries here
         # Construct the geometry map
-        element = ufl.VectorElement("Lagrange", cpp.mesh.to_string(cell_type), 1)
+        element = ufl.VectorElement("Lagrange", cpp.mesh.to_string(cell_type[0]), cell_type[1])
         domain = ufl.Mesh(element)
         cmap = fem.create_coordinate_map(domain)
 

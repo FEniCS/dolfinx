@@ -229,7 +229,7 @@ void xdmf_mesh::add_mesh(MPI_Comm comm, pugi::xml_node& xml_node,
 }
 //----------------------------------------------------------------------------
 std::tuple<
-    mesh::CellType,
+    std::pair<mesh::CellType, int>,
     Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>,
     Eigen::Array<std::int64_t, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>>
 xdmf_mesh::read_mesh_data(MPI_Comm comm, const hid_t h5_id,
@@ -240,7 +240,8 @@ xdmf_mesh::read_mesh_data(MPI_Comm comm, const hid_t h5_id,
   assert(topology_node);
 
   // Get cell type
-  const auto cell_type_str = xdmf_utils::get_cell_type(topology_node);
+  const std::pair<std::string, int> cell_type_str
+      = xdmf_utils::get_cell_type(topology_node);
 
   // Get toplogical dimensions
   mesh::CellType cell_type = mesh::to_type(cell_type_str.first);
@@ -302,6 +303,7 @@ xdmf_mesh::read_mesh_data(MPI_Comm comm, const hid_t h5_id,
       cells1 = io::cells::permute_ordering(
           cells, io::cells::vtk_to_dolfin(cell_type, cells.cols()));
 
-  return {cell_type, std::move(points), std::move(cells1)};
+  return {
+      {cell_type, cell_type_str.second}, std::move(points), std::move(cells1)};
 }
 //----------------------------------------------------------------------------

@@ -108,10 +108,10 @@ public:
   /// Read in the data for Mesh
   /// @param[in] name
   /// @param[in] xpath XPath where Mesh Grid data is located
-  /// @return Cell type, points on each process, and cells topology
-  ///   (global node indexing)
+  /// @return (Cell type, degree), points on each process, and cells
+  ///   topology (global node indexing)
   std::tuple<
-      mesh::CellType,
+      std::pair<mesh::CellType, int>,
       Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>,
       Eigen::Array<std::int64_t, Eigen::Dynamic, Eigen::Dynamic,
                    Eigen::RowMajor>>
