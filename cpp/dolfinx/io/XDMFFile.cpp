@@ -175,7 +175,6 @@ mesh::Mesh XDMFFile::read_mesh(const fem::CoordinateElement& element,
 
   pugi::xml_node grid_node
       = node.select_node(("Grid[@Name='" + name + "']").c_str()).node();
-
   if (!grid_node)
     throw std::runtime_error("<Grid> with name '" + name + "' not found.");
 
@@ -183,8 +182,8 @@ mesh::Mesh XDMFFile::read_mesh(const fem::CoordinateElement& element,
   auto [cell_type, x, cells]
       = xdmf_mesh::read_mesh_data(_mpi_comm.comm(), _h5_id, grid_node);
 
+  // Create mesh
   graph::AdjacencyList<std::int64_t> cells_adj(cells);
-
   mesh::Mesh mesh = mesh::create(_mpi_comm.comm(), cells_adj, element, x,
                                  mesh::GhostMode::none);
   mesh.name = name;
@@ -203,7 +202,6 @@ XDMFFile::read_mesh_data(const std::string name, const std::string xpath) const
 
   pugi::xml_node grid_node
       = node.select_node(("Grid[@Name='" + name + "']").c_str()).node();
-
   if (!grid_node)
     throw std::runtime_error("<Grid> with name '" + name + "' not found.");
 
@@ -335,4 +333,6 @@ XDMFFile::read_meshtags(const std::shared_ptr<const mesh::Mesh>& mesh,
 
   return meshtags;
 }
+//-----------------------------------------------------------------------------
+MPI_Comm XDMFFile::comm() const { return _mpi_comm.comm(); }
 //-----------------------------------------------------------------------------

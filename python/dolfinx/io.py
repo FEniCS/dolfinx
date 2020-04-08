@@ -5,6 +5,7 @@
 # SPDX-License-Identifier:    LGPL-3.0-or-later
 """IO module for input data, post-processing and checkpointing"""
 
+import ufl
 from dolfinx import cpp, fem
 
 
@@ -40,6 +41,15 @@ class XDMFFile(cpp.io.XDMFFile):
         super().write_function(u_cpp, t, mesh_xpath)
 
     def read_mesh(self, name="mesh", xpath="/Xdmf/Domain"):
-        mesh = super().read_mesh(name, xpath)
-        mesh.geometry.coord_mapping = fem.create_coordinate_map(mesh)
+        # Read mesh data from file
+        cell_type, x, cells = super().read_mesh_data(name, xpath)
+
+        # Construct the geomtry map
+        element = ufl.VectorElement("Lagrange", cpp.mesh.to_string(cell_type), 1)
+        domain = ufl.Mesh(element)
+        cmap = fem.create_coordinate_map(domain)
+
+        # Build the mesh
+        mesh = cpp.mesh.create(self.comm(), cpp.graph.AdjacencyList64(cells), cmap, x, cpp.mesh.GhostMode.none)
+        mesh.name = name
         return mesh

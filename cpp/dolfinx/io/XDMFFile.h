@@ -108,8 +108,8 @@ public:
   /// Read in the data for Mesh
   /// @param[in] name
   /// @param[in] xpath XPath where Mesh Grid data is located
-  /// @return Points on each process, cells topology (global node
-  ///   indexing), and the cell type
+  /// @return Cell type, points on each process, and cells topology
+  ///   (global node indexing)
   std::tuple<
       mesh::CellType,
       Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>,
@@ -145,6 +145,10 @@ public:
   read_meshtags(const std::shared_ptr<const mesh::Mesh>& mesh,
                 const std::string name,
                 const std::string xpath = "/Xdmf/Domain");
+
+  /// Get the MPI communicator
+  /// @return The MPI communicator for the file object
+  MPI_Comm comm() const;
 
 private:
   // MPI communicator

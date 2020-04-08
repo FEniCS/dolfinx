@@ -67,8 +67,6 @@ mesh = BoxMesh(
     MPI.comm_world, [np.array([0.0, 0.0, 0.0]),
                      np.array([2.0, 1.0, 1.0])], [12, 12, 12],
     CellType.tetrahedron, dolfinx.cpp.mesh.GhostMode.none)
-cmap = dolfinx.fem.create_coordinate_map(mesh.ufl_domain())
-mesh.geometry.coord_mapping = cmap
 
 # Function to mark inner surface of pulley
 # def inner_surface(x, on_boundary):
