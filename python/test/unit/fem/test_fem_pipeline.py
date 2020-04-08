@@ -13,11 +13,12 @@ from petsc4py import PETSc
 
 import ufl
 from dolfinx import (MPI, DirichletBC, Function, FunctionSpace, fem, geometry,
-                     FacetNormal, CellDiameter, UnitSquareMesh, UnitCubeMesh)
+                     FacetNormal, CellDiameter, UnitSquareMesh, UnitCubeMesh,
+                     Mesh)
 from dolfinx.fem import (apply_lifting, assemble_matrix, assemble_scalar,
                          assemble_vector, locate_dofs_topological, set_bc)
 from dolfinx.io import XDMFFile
-from dolfinx.cpp.mesh import CellType
+from dolfinx.cpp.mesh import CellType, GhostMode
 from dolfinx_utils.test.skips import skip_in_parallel
 from ufl import (SpatialCoordinate, TestFunction, TrialFunction, div, dx, grad,
                  inner, ds, dS, avg, jump)
@@ -25,11 +26,20 @@ from ufl import (SpatialCoordinate, TestFunction, TrialFunction, div, dx, grad,
 
 def get_mesh(cell_type, datadir):
     if MPI.size(MPI.comm_world) == 1:
-        if cell_type == CellType.triangle or cell_type == CellType.quadrilateral:
-            mesh = UnitSquareMesh(MPI.comm_world, 2, 1, cell_type)
+        if cell_type == CellType.triangle:
+            return UnitSquareMesh(MPI.comm_world, 2, 1, cell_type)
+        elif cell_type == CellType.quadrilateral:
+            points = np.array([[0., 0.], [0.5, 0.], [1., 0.],
+                               [0., .5], [0.5, .5], [1., .5],
+                               [0., 1.], [0.5, 1.], [1., 1.]])
+            cells = [[0, 1, 3, 4], [4, 1, 5, 2], [3, 4, 6, 7], [4, 5, 7, 8]]
+            mesh = Mesh(MPI.comm_world, cell_type, points, cells,
+                        [], GhostMode.none)
+            mesh.geometry.coord_mapping = fem.create_coordinate_map(mesh)
+            mesh.create_connectivity_all()
+            return mesh
         else:
-            mesh = UnitCubeMesh(MPI.comm_world, 2, 1, 1, cell_type)
-        return mesh
+            return UnitCubeMesh(MPI.comm_world, 2, 1, 1, cell_type)
     else:
         if cell_type == CellType.triangle:
             filename = "UnitSquareMesh_triangle.xdmf"
