@@ -148,10 +148,32 @@ public:
   size_t hash() const;
 
   /// Cell type
-  /// @return Cell type that th topology is for
+  /// @return Cell type that the topology is for
   mesh::CellType cell_type() const;
 
+  //TODO: Check whether the functions below can be made private through
+  // and called on demand by to create data by some auto-detection.
+
+  // creation of entities
+  /// Create entities of given topological dimension.
+  /// @param[in] dim Topological dimension
+  /// @return Number of newly created entities, returns -1 if entities
+  ///   already existed
+  std::int32_t create_entities(MPI_Comm comm, int dim);
+
+  /// Create connectivity between given pair of dimensions, d0 -> d1
+  /// @param[in] d0 Topological dimension
+  /// @param[in] d1 Topological dimension
+  void create_connectivity(MPI_Comm comm, int d0, int d1);
+
+  /// Compute entity permutations and reflections
+  void create_entity_permutations(MPI_Comm comm);
+
+  /// Compute all entities and connectivity
+  void create_connectivity_all(MPI_Comm comm);
+
 private:
+
   // Cell type
   mesh::CellType _cell_type;
 

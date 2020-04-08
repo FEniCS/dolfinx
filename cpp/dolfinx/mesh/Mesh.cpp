@@ -155,25 +155,7 @@ std::int32_t Mesh::create_entities(int dim) const
   // mesh always exists, it just hasn't been computed yet. The
   // const_cast is also needed to allow iterators over a const Mesh to
   // create new connectivity.
-
-  // Skip if already computed (vertices (dim=0) should always exist)
-  if (_topology.connectivity(dim, 0))
-    return -1;
-
-  // Create local entities
-  const auto [cell_entity, entity_vertex, index_map]
-      = TopologyComputation::compute_entities(_mpi_comm.comm(), _topology, dim);
-
-  Topology& topology = const_cast<Topology&>(_topology);
-  if (cell_entity)
-    topology.set_connectivity(cell_entity, _topology.dim(), dim);
-  if (entity_vertex)
-    topology.set_connectivity(entity_vertex, dim, 0);
-
-  assert(index_map);
-  topology.set_index_map(dim, index_map);
-
-  return index_map->size_local();
+  return _topology.create_entities(_mpi_comm.comm(), dim);
 }
 //-----------------------------------------------------------------------------
 void Mesh::create_connectivity(int d0, int d1) const
@@ -184,63 +166,20 @@ void Mesh::create_connectivity(int d0, int d1) const
   // const_cast is also needed to allow iterators over a const Mesh to
   // create new connectivity.
 
-  // Make sure entities exist
-  create_entities(d0);
-  create_entities(d1);
-
-  // Compute connectivity
-  const auto [c_d0_d1, c_d1_d0]
-      = TopologyComputation::compute_connectivity(_topology, d0, d1);
-
-  // NOTE: that to compute the (d0, d1) connections is it sometimes
-  // necessary to compute the (d1, d0) connections. We store the (d1,
-  // d0) for possible later use, but there is a memory overhead if they
-  // are not required. It may be better to not automatically store
-  // connectivity that was not requested, but advise in a docstring the
-  // most efficient order in which to call this function if several
-  // connectivities are needed.
-
-  // Attach connectivities
-  Topology& topology = const_cast<Topology&>(_topology);
-  if (c_d0_d1)
-    topology.set_connectivity(c_d0_d1, d0, d1);
-  if (c_d1_d0)
-    topology.set_connectivity(c_d1_d0, d1, d0);
-
-  // Special facet handing
-  if (d0 == (_topology.dim() - 1) and d1 == _topology.dim())
-  {
-    std::vector<bool> f = compute_interior_facets(_topology);
-    topology.set_interior_facets(f);
-  }
+  // TODO: This should go away
+  _topology.create_connectivity(_mpi_comm.comm(), d0, d1);
 }
 //-----------------------------------------------------------------------------
 void Mesh::create_entity_permutations() const
 {
-  // FIXME: This should be moved to topology or a TopologyPermutation class
-
-  const int tdim = _topology.dim();
-
-  // FIXME: Is this always required? Could it be made cheaper by doing a
-  // local version? This call does quite a lot of parallel work
-  // Create all mesh entities
-  for (int d = 0; d < tdim; ++d)
-    this->create_entities(d);
-
-  Topology& topology = const_cast<Topology&>(_topology);
-  topology.create_entity_permutations();
+  // TODO: This should go away
+  _topology.create_entity_permutations(_mpi_comm.comm());
 }
 //-----------------------------------------------------------------------------
 void Mesh::create_connectivity_all() const
 {
-  // Compute all entities
-  for (int d = 0; d <= _topology.dim(); d++)
-    create_entities(d);
-
-  // Compute all connectivity
-  for (int d0 = 0; d0 <= _topology.dim(); d0++)
-    for (int d1 = 0; d1 <= _topology.dim(); d1++)
-      create_connectivity(d0, d1);
+  // TODO: This should go away
+  _topology.create_connectivity_all(_mpi_comm.comm());
 }
 //-----------------------------------------------------------------------------
 double Mesh::hmin() const { return cell_h(*this).minCoeff(); }

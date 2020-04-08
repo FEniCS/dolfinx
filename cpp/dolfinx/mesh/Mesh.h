@@ -183,8 +183,10 @@ public:
   std::string name = "mesh";
 
 private:
-  // Mesh topology
-  Topology _topology;
+  // Mesh topology:
+  // TODO: This is mutable since topology might have to change
+  // (partitioning etc) even for a "constant" mesh. Better solution?
+  mutable Topology _topology;
 
   // Mesh geometry
   Geometry _geometry;

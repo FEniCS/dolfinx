@@ -263,6 +263,113 @@ std::vector<bool> Topology::on_boundary(int dim) const
   return marker;
 }
 //-----------------------------------------------------------------------------
+std::int32_t Topology::create_entities(MPI_Comm comm, int dim)
+{
+  // FIXME: update docstring after it has been decided whether this is const or
+  //  not
+  // This function is obviously not const since it may potentially
+  // compute new connectivity. However, in a sense all connectivity of a
+  // mesh always exists, it just hasn't been computed yet. The
+  // const_cast is also needed to allow iterators over a const Mesh to
+  // create new connectivity.
+  // TODO: when would one need such connectivity change over a const mesh?
+  //  Partitioning?
+
+  // TODO: is this check sufficient/correct? Does not catch the cell_entity
+  //  entity case. Should there also be a check for
+  //  connectivity(this->dim(), dim) ?
+  // Skip if already computed (vertices (dim=0) should always exist)
+  if (connectivity(dim, 0))
+    return -1;
+
+  // Create local entities
+  const auto [cell_entity, entity_vertex, index_map]
+  = TopologyComputation::compute_entities(comm, *this, dim);
+
+  if (cell_entity)
+    set_connectivity(cell_entity, this->dim(), dim);
+
+  //TODO: is this check necessary? Seems redundant after to the "skip check"
+  if (entity_vertex)
+    set_connectivity(entity_vertex, dim, 0);
+
+  assert(index_map);
+  set_index_map(dim, index_map);
+
+  return index_map->size_local();
+}
+//-----------------------------------------------------------------------------
+void Topology::create_connectivity(MPI_Comm comm, int d0, int d1)
+{
+  // FIXME: update docstring after it has been decided whether this is const or
+  //  not
+  // This function is obviously not const since it may potentially
+  // compute new connectivity. However, in a sense all connectivity of a
+  // mesh always exists, it just hasn't been computed yet. The
+  // const_cast is also needed to allow iterators over a const Mesh to
+  // create new connectivity.
+
+  // Make sure entities exist
+  create_entities(comm, d0);
+  create_entities(comm, d1);
+
+  // Compute connectivity
+  const auto [c_d0_d1, c_d1_d0]
+  = TopologyComputation::compute_connectivity(*this, d0, d1);
+
+  // NOTE: that to compute the (d0, d1) connections is it sometimes
+  // necessary to compute the (d1, d0) connections. We store the (d1,
+  // d0) for possible later use, but there is a memory overhead if they
+  // are not required. It may be better to not automatically store
+  // connectivity that was not requested, but advise in a docstring the
+  // most efficient order in which to call this function if several
+  // connectivities are needed.
+
+  // Attach connectivities
+  if (c_d0_d1)
+    set_connectivity(c_d0_d1, d0, d1);
+  if (c_d1_d0)
+    set_connectivity(c_d1_d0, d1, d0);
+
+  // Special facet handing
+  if (d0 == (this->dim() - 1) and d1 == this->dim())
+  {
+    std::vector<bool> f = compute_interior_facets(*this);
+    set_interior_facets(f);
+  }
+}
+//-----------------------------------------------------------------------------
+void Topology::create_entity_permutations(MPI_Comm comm)
+{
+  if (_cell_permutations.size() > 0)
+    return;
+
+  const int tdim = this->dim();
+
+  // FIXME: Is this always required? Could it be made cheaper by doing a
+  // local version? This call does quite a lot of parallel work
+  // Create all mesh entities
+  for (int d = 0; d < tdim; ++d)
+    create_entities(comm, d);
+
+  auto [facet_permutations, cell_permutations]
+  = PermutationComputation::compute_entity_permutations(*this);
+  _facet_permutations = std::move(facet_permutations);
+  _cell_permutations = std::move(cell_permutations);
+}
+//-----------------------------------------------------------------------------
+void Topology::create_connectivity_all(MPI_Comm comm)
+{
+  // Compute all entities
+  for (int d = 0; d <= dim(); d++)
+    create_entities(comm, d);
+
+  // Compute all connectivity
+  for (int d0 = 0; d0 <= dim(); d0++)
+    for (int d1 = 0; d1 <= dim(); d1++)
+      create_connectivity(comm, d0, d1);
+}
+//-----------------------------------------------------------------------------
 std::shared_ptr<const graph::AdjacencyList<std::int32_t>>
 Topology::connectivity(int d0, int d1) const
 {
@@ -318,17 +425,6 @@ Topology::get_facet_permutations() const
         "create_entity_permutations must be called before using this data.");
   }
   return _facet_permutations;
-}
-//-----------------------------------------------------------------------------
-void Topology::create_entity_permutations()
-{
-  if (_cell_permutations.size() > 0)
-    return;
-
-  auto [facet_permutations, cell_permutations]
-      = PermutationComputation::compute_entity_permutations(*this);
-  _facet_permutations = std::move(facet_permutations);
-  _cell_permutations = std::move(cell_permutations);
 }
 //-----------------------------------------------------------------------------
 mesh::CellType Topology::cell_type() const { return _cell_type; }
