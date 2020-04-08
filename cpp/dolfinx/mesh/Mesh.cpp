@@ -154,9 +154,8 @@ std::int32_t Mesh::create_entities(int dim) const
 {
   // This function is obviously not const since it may potentially
   // compute new connectivity. However, in a sense all connectivity of a
-  // mesh always exists, it just hasn't been computed yet. The
-  // const_cast is also needed to allow iterators over a const Mesh to
-  // create new connectivity.
+  // mesh always exists, it just hasn't been computed yet. This resembles the
+  // notion of a cache or lazy construction.
 
   // Skip if already computed (vertices (dim=0) should always exist)
   if (_topology.connectivity(dim, 0))
@@ -166,7 +165,6 @@ std::int32_t Mesh::create_entities(int dim) const
   const auto [cell_entity, entity_vertex, index_map]
       = TopologyComputation::compute_entities(_mpi_comm.comm(), _topology, dim);
 
-//  Topology& topology = const_cast<Topology&>(_topology);
   if (cell_entity)
     _topology.set_connectivity(cell_entity, _topology.dim(), dim);
   if (entity_vertex)
@@ -182,9 +180,8 @@ void Mesh::create_connectivity(int d0, int d1) const
 {
   // This function is obviously not const since it may potentially
   // compute new connectivity. However, in a sense all connectivity of a
-  // mesh always exists, it just hasn't been computed yet. The
-  // const_cast is also needed to allow iterators over a const Mesh to
-  // create new connectivity.
+  // mesh always exists, it just hasn't been computed yet. This resembles the
+  // notion of a cache or lazy construction.
 
   // Make sure entities exist
   create_entities(d0);
@@ -203,7 +200,6 @@ void Mesh::create_connectivity(int d0, int d1) const
   // connectivities are needed.
 
   // Attach connectivities
-//  Topology& topology = const_cast<Topology&>(_topology);
   if (c_d0_d1)
     _topology.set_connectivity(c_d0_d1, d0, d1);
   if (c_d1_d0)
@@ -229,7 +225,6 @@ void Mesh::create_entity_permutations() const
   for (int d = 0; d < tdim; ++d)
     this->create_entities(d);
 
-//  Topology& topology = const_cast<Topology&>(_topology);
   _topology.create_entity_permutations();
 }
 //-----------------------------------------------------------------------------
