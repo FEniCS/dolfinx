@@ -176,6 +176,14 @@ std::vector<bool> mesh::compute_interior_facets(const Topology& topology)
   return interior_facet;
 }
 //-----------------------------------------------------------------------------
+Topology::Topology(MPI_Comm comm, mesh::CellType type)
+    : _mpi_comm_ptr{std::make_shared<dolfinx::MPI::Comm>(comm)},
+      _cell_type(type),
+      _connectivity(mesh::cell_dim(type) + 1, mesh::cell_dim(type) + 1)
+{
+  // Do nothing
+}
+//-----------------------------------------------------------------------------
 int Topology::dim() const { return _connectivity.rows() - 1; }
 //-----------------------------------------------------------------------------
 void Topology::set_index_map(int dim,
@@ -277,12 +285,13 @@ std::int32_t Topology::create_entities(int dim)
 
   // Create local entities
   const auto [cell_entity, entity_vertex, index_map]
-  = TopologyComputation::compute_entities(_mpi_comm.comm(), *this, dim);
+      = TopologyComputation::compute_entities(_mpi_comm_ptr->comm(), *this,
+                                              dim);
 
   if (cell_entity)
     set_connectivity(cell_entity, this->dim(), dim);
 
-  //TODO: is this check necessary? Seems redundant after to the "skip check"
+  // TODO: is this check necessary? Seems redundant after to the "skip check"
   if (entity_vertex)
     set_connectivity(entity_vertex, dim, 0);
 
@@ -308,7 +317,7 @@ void Topology::create_connectivity(int d0, int d1)
 
   // Compute connectivity
   const auto [c_d0_d1, c_d1_d0]
-  = TopologyComputation::compute_connectivity(*this, d0, d1);
+      = TopologyComputation::compute_connectivity(*this, d0, d1);
 
   // NOTE: that to compute the (d0, d1) connections is it sometimes
   // necessary to compute the (d1, d0) connections. We store the (d1,
@@ -346,7 +355,7 @@ void Topology::create_entity_permutations()
     create_entities(d);
 
   auto [facet_permutations, cell_permutations]
-  = PermutationComputation::compute_entity_permutations(*this);
+      = PermutationComputation::compute_entity_permutations(*this);
   _facet_permutations = std::move(facet_permutations);
   _cell_permutations = std::move(cell_permutations);
 }
@@ -422,7 +431,7 @@ Topology::get_facet_permutations() const
 //-----------------------------------------------------------------------------
 mesh::CellType Topology::cell_type() const { return _cell_type; }
 //-----------------------------------------------------------------------------
-MPI_Comm Topology::mpi_comm() const { return _mpi_comm.comm(); }
+MPI_Comm Topology::mpi_comm() const { return _mpi_comm_ptr->comm(); }
 //-----------------------------------------------------------------------------
 Topology
 mesh::create_topology(MPI_Comm comm,
