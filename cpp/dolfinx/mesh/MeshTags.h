@@ -75,6 +75,24 @@ public:
   /// Move assignment
   MeshTags& operator=(MeshTags&& tags) = default;
 
+  // Return all indices of a given value, local-to-process
+  std::vector<std::int32_t> find_indices(T i) const
+  {
+    int n = std::count(_values.begin(), _values.end(), i);
+
+    std::vector<std::int32_t> indices_i(n, 0);
+    std::int32_t iter = 0;
+    for (std::int32_t j = 0; j < _values.size(); j++)
+    {
+      if (_values[j] == i)
+      {
+        indices_i[iter] = _indices[j];
+        iter++;
+      }
+    }
+    return indices_i;
+  }
+
   /// Indices of tagged mesh entities, local-to-process (const version)
   const std::vector<std::int32_t>& indices() const { return _indices; }
 
@@ -116,7 +134,7 @@ private:
     std::vector<int> perm(_indices.size());
     std::iota(perm.begin(), perm.end(), 0);
     std::sort(perm.begin(), perm.end(),
-              [& indices = std::as_const(_indices)](const int a, const int b) {
+              [&indices = std::as_const(_indices)](const int a, const int b) {
                 return (indices[a] < indices[b]);
               });
 

@@ -242,6 +242,15 @@ void mesh(py::module& m)
                                    self.values().size(), self.values().data(), \
                                    py::none());                                \
                              })                                                \
+      .def(                                                                    \
+          "find_indices",                                                      \
+          [](dolfinx::mesh::MeshTags<SCALAR>& self, SCALAR i) {                \
+            std::vector<std::int32_t> indices_i = self.find_indices(i);        \
+            return py::array_t<std::int32_t>(indices_i.size(),                 \
+                                             indices_i.data());                \
+          },                                                                   \
+          "Return MeshTag indices having value i",                             \
+          py::return_value_policy::reference)                                  \
       .def_property_readonly(                                                  \
           "indices", [](dolfinx::mesh::MeshTags<SCALAR>& self) {               \
             return py::array_t<std::int32_t>(                                  \
