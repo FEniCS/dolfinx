@@ -9,7 +9,7 @@ import types
 import numpy
 
 import ufl
-from dolfinx import cpp
+from dolfinx import cpp, fem
 
 
 def locate_entities_geometrical(mesh: cpp.mesh.Mesh,
@@ -46,6 +46,17 @@ _meshtags_types = {
     numpy.int64: cpp.mesh.MeshTags_int64,
     numpy.double: cpp.mesh.MeshTags_double
 }
+
+
+def Mesh(comm, cell_type, x, cells, ghosts, ghost_mode=cpp.mesh.GhostMode.none):
+    element = ufl.VectorElement("Lagrange", cpp.mesh.to_string(cell_type), 1, x.shape[1])
+    # element = ufl.VectorElement("Lagrange", cpp.mesh.to_string(cell_type), 1, 1)
+    domain = ufl.Mesh(element)
+    # gdim, = element.value_shape()
+    # tdim = element.cell().topological_dimension()
+    # print("*****:", gdim, tdim)
+    cmap = fem.create_coordinate_map(domain)
+    return cpp.mesh.Mesh(comm, cell_type, x, cells, cmap, ghosts, ghost_mode)
 
 
 def MeshTags(mesh, dim, indices, values, sorted=False, unique=False):
