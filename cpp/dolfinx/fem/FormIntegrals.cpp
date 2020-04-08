@@ -130,7 +130,7 @@ void FormIntegrals::set_domains(FormIntegrals::Type type,
 
   if (type == Type::exterior_facet)
   {
-    mesh->create_connectivity(tdim - 1, tdim);
+    mesh->topology_mutable().create_connectivity(tdim - 1, tdim);
     const std::vector<bool>& interior_facets = topology.interior_facets();
     for (std::size_t i = 0; i < tagged_entities.size(); ++i)
     {
@@ -147,7 +147,7 @@ void FormIntegrals::set_domains(FormIntegrals::Type type,
   }
   else if (type == Type::interior_facet)
   {
-    mesh->create_connectivity(tdim - 1, tdim);
+    mesh->topology_mutable().create_connectivity(tdim - 1, tdim);
     std::shared_ptr<const graph::AdjacencyList<std::int32_t>> connectivity
         = topology.connectivity(tdim - 1, tdim);
     assert(connectivity);
@@ -203,7 +203,7 @@ void FormIntegrals::set_default_domains(const mesh::Mesh& mesh)
     exf_integrals[0].active_entities.clear();
 
     // Get number of facets owned by this process
-    mesh.create_connectivity(tdim - 1, tdim);
+    mesh.topology_mutable().create_connectivity(tdim - 1, tdim);
     assert(topology.index_map(tdim - 1));
     const int num_facets = topology.index_map(tdim - 1)->size_local();
     const std::vector<bool>& interior_facets = topology.interior_facets();
@@ -224,7 +224,7 @@ void FormIntegrals::set_default_domains(const mesh::Mesh& mesh)
     inf_integrals[0].active_entities.clear();
 
     // Get number of facets owned by this process
-    mesh.create_connectivity(tdim - 1, tdim);
+    mesh.topology_mutable().create_connectivity(tdim - 1, tdim);
     assert(topology.index_map(tdim - 1));
 
     const int num_facets = topology.index_map(tdim - 1)->size_local();

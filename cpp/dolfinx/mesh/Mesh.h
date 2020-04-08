@@ -112,6 +112,10 @@ public:
   /// @return The topology object associated with the mesh.
   const Topology& topology() const;
 
+  /// Get mesh topology if one really needs the mutable version
+  /// @return The topology object associated with the mesh.
+  Topology& topology_mutable() const;
+
   /// Get mesh geometry
   /// @return The geometry object associated with the mesh
   Geometry& geometry();
@@ -119,31 +123,6 @@ public:
   /// Get mesh geometry (const version)
   /// @return The geometry object associated with the mesh
   const Geometry& geometry() const;
-
-  /// @todo Remove and work via Topology
-  ///
-  /// Create entities of given topological dimension.
-  /// @param[in] dim Topological dimension
-  /// @return Number of newly created entities, returns -1 if entities
-  ///   already existed
-  std::int32_t create_entities(int dim) const;
-
-  /// @todo Remove and work via Topology
-  ///
-  /// Create connectivity between given pair of dimensions, d0 -> d1
-  /// @param[in] d0 Topological dimension
-  /// @param[in] d1 Topological dimension
-  void create_connectivity(int d0, int d1) const;
-
-  /// @todo Remove and work via Topology
-  ///
-  /// Compute all entities and connectivity
-  void create_connectivity_all() const;
-
-  /// @todo Remove and work via Topology
-  ///
-  /// Compute entity permutations and reflections
-  void create_entity_permutations() const;
 
   /// Compute minimum cell size in mesh, measured greatest distance
   /// between any two vertices of a cell.

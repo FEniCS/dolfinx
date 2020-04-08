@@ -144,6 +144,8 @@ Topology& Mesh::topology() { return _topology; }
 //-----------------------------------------------------------------------------
 const Topology& Mesh::topology() const { return _topology; }
 //-----------------------------------------------------------------------------
+Topology& Mesh::topology_mutable() const { return _topology; }
+//-----------------------------------------------------------------------------
 Geometry& Mesh::geometry() { return _geometry; }
 //-----------------------------------------------------------------------------
 const Geometry& Mesh::geometry() const { return _geometry; }
@@ -155,7 +157,7 @@ std::int32_t Mesh::create_entities(int dim) const
   // mesh always exists, it just hasn't been computed yet. The
   // const_cast is also needed to allow iterators over a const Mesh to
   // create new connectivity.
-  return _topology.create_entities(_mpi_comm.comm(), dim);
+  return _topology.create_entities(dim);
 }
 //-----------------------------------------------------------------------------
 void Mesh::create_connectivity(int d0, int d1) const
@@ -167,19 +169,19 @@ void Mesh::create_connectivity(int d0, int d1) const
   // create new connectivity.
 
   // TODO: This should go away
-  _topology.create_connectivity(_mpi_comm.comm(), d0, d1);
+  _topology.create_connectivity(d0, d1);
 }
 //-----------------------------------------------------------------------------
 void Mesh::create_entity_permutations() const
 {
   // TODO: This should go away
-  _topology.create_entity_permutations(_mpi_comm.comm());
+  _topology.create_entity_permutations();
 }
 //-----------------------------------------------------------------------------
 void Mesh::create_connectivity_all() const
 {
   // TODO: This should go away
-  _topology.create_connectivity_all(_mpi_comm.comm());
+  _topology.create_connectivity_all();
 }
 //-----------------------------------------------------------------------------
 double Mesh::hmin() const { return cell_h(*this).minCoeff(); }

@@ -221,8 +221,9 @@ Eigen::Array<std::int32_t, Eigen::Dynamic, 2> _locate_dofs_topological(
   const DofMap& dofmap1 = *V1.dofmap();
 
   // Initialise entity-cell connectivity
-  mesh.create_entities(tdim);
-  mesh.create_connectivity(dim, tdim);
+  // FIXME: cleanup these calls? Some of the happen internally again.
+  mesh.topology_mutable().create_entities(tdim);
+  mesh.topology_mutable().create_connectivity(dim, tdim);
 
   // Allocate space
   assert(dofmap0.element_dof_layout);
@@ -317,8 +318,9 @@ _locate_dofs_topological(const function::FunctionSpace& V, const int entity_dim,
   const int tdim = mesh.topology().dim();
 
   // Initialise entity-cell connectivity
-  mesh.create_entities(tdim);
-  mesh.create_connectivity(entity_dim, tdim);
+  // FIXME: cleanup these calls? Some of the happen internally again.
+  mesh.topology_mutable().create_entities(tdim);
+  mesh.topology_mutable().create_connectivity(entity_dim, tdim);
 
   // Prepare an element - local dof layout for dofs on entities of the
   // entity_dim

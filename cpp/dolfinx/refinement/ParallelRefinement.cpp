@@ -350,7 +350,7 @@ mesh::Mesh ParallelRefinement::partition(bool redistribute) const
   }
 
   MPI_Comm comm = _mesh.mpi_comm();
-  mesh::Topology topology(layout.cell_type());
+  mesh::Topology topology(comm, layout.cell_type());
   const graph::AdjacencyList<std::int64_t> my_cells(cells);
   {
     auto [cells_local, local_to_global_vertices]
@@ -358,7 +358,7 @@ mesh::Mesh ParallelRefinement::partition(bool redistribute) const
 
     // Create (i) local topology object and (ii) IndexMap for cells, and
     // set cell-vertex topology
-    mesh::Topology topology_local(layout.cell_type());
+    mesh::Topology topology_local(comm, layout.cell_type());
     const int tdim = topology_local.dim();
     auto map = std::make_shared<common::IndexMap>(
         comm, cells_local.num_nodes(), std::vector<std::int64_t>(), 1);

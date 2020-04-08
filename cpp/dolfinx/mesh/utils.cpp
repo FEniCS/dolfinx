@@ -411,7 +411,8 @@ Eigen::ArrayXd mesh::inradius(const mesh::Mesh& mesh,
   // Get cell dimension
   const int d = mesh::cell_dim(type);
   const mesh::Topology& topology = mesh.topology();
-  mesh.create_entities(d - 1);
+  // FIXME: cleanup these calls? Some of the happen internally again.
+  mesh.topology_mutable().create_entities(d - 1);
   auto connectivity = topology.connectivity(d, d - 1);
   assert(connectivity);
 
@@ -563,7 +564,7 @@ Eigen::Vector3d mesh::normal(const mesh::MeshEntity& cell, int facet_local)
     if (geometry.dim() != 2)
       throw std::runtime_error("Illegal geometric dimension");
 
-    cell.mesh().create_connectivity(2, 1);
+    cell.mesh().topology_mutable().create_connectivity(2, 1);
     mesh::MeshEntity f(cell.mesh(), tdim - 1, cell.entities(1)[facet_local]);
 
     // Get global index of opposite vertex
@@ -593,7 +594,7 @@ Eigen::Vector3d mesh::normal(const mesh::MeshEntity& cell, int facet_local)
       throw std::runtime_error("Illegal geometric dimension");
 
     // Make sure we have facets
-    cell.mesh().create_connectivity(2, 1);
+    cell.mesh().topology_mutable().create_connectivity(2, 1);
 
     // Create facet from the mesh and local facet number
     MeshEntity f(cell.mesh(), tdim - 1, cell.entities(1)[facet_local]);
@@ -621,7 +622,7 @@ Eigen::Vector3d mesh::normal(const mesh::MeshEntity& cell, int facet_local)
   case (mesh::CellType::tetrahedron):
   {
     // Make sure we have facets
-    cell.mesh().create_connectivity(3, 2);
+    cell.mesh().topology_mutable().create_connectivity(3, 2);
 
     // Create facet from the mesh and local facet number
     MeshEntity f(cell.mesh(), tdim - 1, cell.entities(2)[facet_local]);
@@ -733,15 +734,16 @@ Eigen::Array<std::int32_t, Eigen::Dynamic, 1> mesh::locate_entities_geometrical(
   const int tdim = mesh.topology().dim();
 
   // Create entities
-  mesh.create_entities(dim);
+  mesh.topology_mutable().create_entities(dim);
 
   // Compute connectivities for boundary detection
   // (Topology::on_boundary())
   if (dim < tdim)
   {
-    mesh.create_entities(dim);
-    mesh.create_connectivity(tdim - 1, tdim);
-    mesh.create_connectivity(0, tdim);
+    // FIXME: cleanup these calls? Some of the happen internally again.
+    mesh.topology_mutable().create_entities(dim);
+    mesh.topology_mutable().create_connectivity(tdim - 1, tdim);
+    mesh.topology_mutable().create_connectivity(0, tdim);
   }
 
   const int num_vertices = mesh.topology().index_map(0)->size_local()

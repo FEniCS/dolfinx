@@ -176,8 +176,8 @@ std::vector<bool> mesh::compute_interior_facets(const Topology& topology)
   return interior_facet;
 }
 //-----------------------------------------------------------------------------
-Topology::Topology(mesh::CellType type)
-    : _cell_type(type),
+Topology::Topology(MPI_Comm comm, mesh::CellType type)
+    : _mpi_comm(comm), _cell_type(type),
       _connectivity(mesh::cell_dim(type) + 1, mesh::cell_dim(type) + 1)
 {
   // Do nothing
@@ -263,7 +263,7 @@ std::vector<bool> Topology::on_boundary(int dim) const
   return marker;
 }
 //-----------------------------------------------------------------------------
-std::int32_t Topology::create_entities(MPI_Comm comm, int dim)
+std::int32_t Topology::create_entities(int dim)
 {
   // FIXME: update docstring after it has been decided whether this is const or
   //  not
@@ -284,7 +284,7 @@ std::int32_t Topology::create_entities(MPI_Comm comm, int dim)
 
   // Create local entities
   const auto [cell_entity, entity_vertex, index_map]
-  = TopologyComputation::compute_entities(comm, *this, dim);
+  = TopologyComputation::compute_entities(_mpi_comm.comm(), *this, dim);
 
   if (cell_entity)
     set_connectivity(cell_entity, this->dim(), dim);
@@ -299,7 +299,7 @@ std::int32_t Topology::create_entities(MPI_Comm comm, int dim)
   return index_map->size_local();
 }
 //-----------------------------------------------------------------------------
-void Topology::create_connectivity(MPI_Comm comm, int d0, int d1)
+void Topology::create_connectivity(int d0, int d1)
 {
   // FIXME: update docstring after it has been decided whether this is const or
   //  not
@@ -310,8 +310,8 @@ void Topology::create_connectivity(MPI_Comm comm, int d0, int d1)
   // create new connectivity.
 
   // Make sure entities exist
-  create_entities(comm, d0);
-  create_entities(comm, d1);
+  create_entities(d0);
+  create_entities(d1);
 
   // Compute connectivity
   const auto [c_d0_d1, c_d1_d0]
@@ -339,7 +339,7 @@ void Topology::create_connectivity(MPI_Comm comm, int d0, int d1)
   }
 }
 //-----------------------------------------------------------------------------
-void Topology::create_entity_permutations(MPI_Comm comm)
+void Topology::create_entity_permutations()
 {
   if (_cell_permutations.size() > 0)
     return;
@@ -350,7 +350,7 @@ void Topology::create_entity_permutations(MPI_Comm comm)
   // local version? This call does quite a lot of parallel work
   // Create all mesh entities
   for (int d = 0; d < tdim; ++d)
-    create_entities(comm, d);
+    create_entities(d);
 
   auto [facet_permutations, cell_permutations]
   = PermutationComputation::compute_entity_permutations(*this);
@@ -358,16 +358,16 @@ void Topology::create_entity_permutations(MPI_Comm comm)
   _cell_permutations = std::move(cell_permutations);
 }
 //-----------------------------------------------------------------------------
-void Topology::create_connectivity_all(MPI_Comm comm)
+void Topology::create_connectivity_all()
 {
   // Compute all entities
   for (int d = 0; d <= dim(); d++)
-    create_entities(comm, d);
+    create_entities(d);
 
   // Compute all connectivity
   for (int d0 = 0; d0 <= dim(); d0++)
     for (int d1 = 0; d1 <= dim(); d1++)
-      create_connectivity(comm, d0, d1);
+      create_connectivity(d0, d1);
 }
 //-----------------------------------------------------------------------------
 std::shared_ptr<const graph::AdjacencyList<std::int32_t>>
@@ -428,6 +428,8 @@ Topology::get_facet_permutations() const
 }
 //-----------------------------------------------------------------------------
 mesh::CellType Topology::cell_type() const { return _cell_type; }
+//-----------------------------------------------------------------------------
+MPI_Comm Topology::mpi_comm() const { return _mpi_comm.comm(); }
 //-----------------------------------------------------------------------------
 Topology
 mesh::create_topology(MPI_Comm comm,
@@ -652,7 +654,7 @@ mesh::create_topology(MPI_Comm comm,
     auto my_local_cells = std::make_shared<graph::AdjacencyList<std::int32_t>>(
         my_local_cells_array, cells.offsets());
 
-    Topology topology(layout.cell_type());
+    Topology topology(comm, layout.cell_type());
     const int tdim = topology.dim();
 
     // Vertex IndexMap
@@ -679,7 +681,7 @@ mesh::create_topology(MPI_Comm comm,
 
   // Create (i) local topology object and (ii) IndexMap for cells, and
   // set cell-vertex topology
-  Topology topology_local(layout.cell_type());
+  Topology topology_local(comm, layout.cell_type());
   const int tdim = topology_local.dim();
   topology_local.set_index_map(tdim, index_map_c);
 
@@ -725,7 +727,7 @@ mesh::create_topology(MPI_Comm comm,
       = graph::Partitioning::create_distributed_adjacency_list(
           comm, *_cells_local, local_to_global_vertices, exterior_vertices);
 
-  Topology topology(layout.cell_type());
+  Topology topology(comm, layout.cell_type());
 
   // Set vertex IndexMap, and vertex-vertex connectivity
   auto _vertex_map = std::make_shared<common::IndexMap>(std::move(vertex_map));

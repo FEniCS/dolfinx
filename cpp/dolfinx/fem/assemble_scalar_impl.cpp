@@ -93,8 +93,8 @@ PetscScalar fem::impl::assemble_cells(
 {
   const int gdim = mesh.geometry().dim();
   const int tdim = mesh.topology().dim();
-  mesh.create_entities(tdim);
-  mesh.create_entity_permutations();
+  mesh.topology_mutable().create_entities(tdim);
+  mesh.topology_mutable().create_entity_permutations();
 
   // Prepare cell geometry
   const graph::AdjacencyList<std::int32_t>& x_dofmap = mesh.geometry().dofmap();
@@ -139,9 +139,11 @@ PetscScalar fem::impl::assemble_exterior_facets(
 {
   const int gdim = mesh.geometry().dim();
   const int tdim = mesh.topology().dim();
-  mesh.create_entities(tdim - 1);
-  mesh.create_connectivity(tdim - 1, tdim);
-  mesh.create_entity_permutations();
+
+  // FIXME: cleanup these calls? Some of the happen internally again.
+  mesh.topology_mutable().create_entities(tdim - 1);
+  mesh.topology_mutable().create_connectivity(tdim - 1, tdim);
+  mesh.topology_mutable().create_entity_permutations();
 
   // Prepare cell geometry
   const graph::AdjacencyList<std::int32_t>& x_dofmap = mesh.geometry().dofmap();
@@ -204,9 +206,11 @@ PetscScalar fem::impl::assemble_interior_facets(
 {
   const int gdim = mesh.geometry().dim();
   const int tdim = mesh.topology().dim();
-  mesh.create_entities(tdim - 1);
-  mesh.create_connectivity(tdim - 1, tdim);
-  mesh.create_entity_permutations();
+
+  // FIXME: cleanup these calls? Some of the happen internally again.
+  mesh.topology_mutable().create_entities(tdim - 1);
+  mesh.topology_mutable().create_connectivity(tdim - 1, tdim);
+  mesh.topology_mutable().create_entity_permutations();
 
   // Prepare cell geometry
   const graph::AdjacencyList<std::int32_t>& x_dofmap = mesh.geometry().dofmap();

@@ -30,7 +30,7 @@ compute_bbox_of_entity(const mesh::MeshEntity& entity)
   const mesh::Geometry& geometry = entity.mesh().geometry();
   const graph::AdjacencyList<std::int32_t>& x_dofmap = geometry.dofmap();
 
-  entity.mesh().create_connectivity(dim, tdim);
+  entity.mesh().topology_mutable().create_connectivity(dim, tdim);
 
   // Find attached cell
   auto e_to_c = entity.mesh().topology().connectivity(dim, tdim);
@@ -275,7 +275,7 @@ BoundingBoxTree::BoundingBoxTree(const mesh::Mesh& mesh, int tdim) : _tdim(tdim)
   }
 
   // Initialize entities of given dimension if they don't exist
-  mesh.create_entities(tdim);
+  mesh.topology_mutable().create_entities(tdim);
 
   // Create bounding boxes for all mesh entities (leaves)
   auto map = mesh.topology().index_map(tdim);

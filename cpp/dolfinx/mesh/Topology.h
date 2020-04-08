@@ -58,7 +58,7 @@ class Topology
 {
 public:
   /// Create empty mesh topology
-  Topology(mesh::CellType type);
+  Topology(MPI_Comm comm, mesh::CellType type);
 
   /// Copy constructor
   Topology(const Topology& topology) = default;
@@ -130,9 +130,6 @@ public:
   const Eigen::Array<std::uint8_t, Eigen::Dynamic, Eigen::Dynamic>&
   get_facet_permutations() const;
 
-  /// Compute entity permutations and reflections used in assembly
-  void create_entity_permutations();
-
   /// Gets markers for owned facets that are interior, i.e. are
   /// connected to two cells, one of which might be on a remote process
   /// @return Vector with length equal to the number of facets owned by
@@ -159,20 +156,27 @@ public:
   /// @param[in] dim Topological dimension
   /// @return Number of newly created entities, returns -1 if entities
   ///   already existed
-  std::int32_t create_entities(MPI_Comm comm, int dim);
+  std::int32_t create_entities(int dim);
 
   /// Create connectivity between given pair of dimensions, d0 -> d1
   /// @param[in] d0 Topological dimension
   /// @param[in] d1 Topological dimension
-  void create_connectivity(MPI_Comm comm, int d0, int d1);
+  void create_connectivity(int d0, int d1);
 
   /// Compute entity permutations and reflections
-  void create_entity_permutations(MPI_Comm comm);
+  void create_entity_permutations();
 
   /// Compute all entities and connectivity
-  void create_connectivity_all(MPI_Comm comm);
+  void create_connectivity_all();
+
+  /// Mesh MPI communicator
+  /// @return The communicator on which the mesh is distributed
+  MPI_Comm mpi_comm() const;
 
 private:
+
+  // MPI communicator
+  dolfinx::MPI::Comm _mpi_comm;
 
   // Cell type
   mesh::CellType _cell_type;
