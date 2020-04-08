@@ -88,8 +88,10 @@ public:
       int n = std::count(_values.begin(), _values.end(), values[i]);
       indices_i.reserve(n);
       for (std::int32_t j = 0; j < _values.size(); ++j)
+      {
         if (_values[j] == values[i])
           indices_i.push_back(_indices[j]);
+      }
       indices.push_back(indices_i);
     }
     return indices;
