@@ -8,7 +8,7 @@
 import numpy as np
 import pytest
 
-from dolfinx import MPI, Function, FunctionSpace, cpp
+from dolfinx import MPI, Function, FunctionSpace
 from dolfinx.cpp.mesh import CellType
 from dolfinx.mesh import Mesh
 from dolfinx_utils.test.skips import skip_in_parallel

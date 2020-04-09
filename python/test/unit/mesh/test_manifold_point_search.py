@@ -1,6 +1,6 @@
 import numpy
 
-from dolfinx import MPI, Mesh, cpp, geometry
+from dolfinx import MPI, Mesh, geometry
 from dolfinx.cpp.mesh import CellType
 from dolfinx.geometry import BoundingBoxTree
 from dolfinx_utils.test.skips import skip_in_parallel

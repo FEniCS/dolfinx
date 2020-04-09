@@ -13,7 +13,7 @@ import scipy.integrate
 import sympy as sp
 from sympy.vector import CoordSys3D, matrix_to_vector
 
-from dolfinx import MPI, Function, FunctionSpace, fem
+from dolfinx import MPI, Function, FunctionSpace
 from dolfinx.cpp.io import (permutation_dolfin_to_vtk,
                             permutation_vtk_to_dolfin, permute_cell_ordering)
 from dolfinx.cpp.mesh import CellType, GhostMode
@@ -114,8 +114,6 @@ def test_second_order_tri():
             # Interpolate function
             V = FunctionSpace(mesh, ("CG", degree))
             u = Function(V)
-            cmap = fem.create_coordinate_map(mesh.ufl_domain())
-
             u.interpolate(e2)
 
             intu = assemble_scalar(u * dx(mesh, metadata={"quadrature_degree": 20}))
@@ -157,7 +155,6 @@ def xtest_third_order_tri():
             # Interpolate function
             V = FunctionSpace(mesh, ("CG", degree))
             u = Function(V)
-            cmap = fem.create_coordinate_map(mesh.ufl_domain())
             u.interpolate(e2)
 
             intu = assemble_scalar(u * dx(metadata={"quadrature_degree": 40}))
@@ -207,7 +204,6 @@ def xtest_fourth_order_tri():
             # Interpolate function
             V = FunctionSpace(mesh, ("CG", degree))
             u = Function(V)
-            cmap = fem.create_coordinate_map(mesh.ufl_domain())
             u.interpolate(e2)
 
             intu = assemble_scalar(u * dx(metadata={"quadrature_degree": 50}))
@@ -368,7 +364,6 @@ def test_nth_order_triangle(order):
     # For solution to be in functionspace
     V = FunctionSpace(mesh, ("CG", max(2, order)))
     u = Function(V)
-    cmap = fem.create_coordinate_map(mesh.ufl_domain())
     u.interpolate(e2)
 
     quad_order = 30
@@ -420,8 +415,6 @@ def test_second_order_quad(L, H, Z):
     # Interpolate function
     V = FunctionSpace(mesh, ("CG", 2))
     u = Function(V)
-    cmap = fem.create_coordinate_map(mesh.ufl_domain())
-
     u.interpolate(e2)
 
     intu = assemble_scalar(u * dx(mesh))
@@ -476,8 +469,6 @@ def xtest_third_order_quad(L, H, Z):
     # Interpolate function
     V = FunctionSpace(mesh, ("CG", 3))
     u = Function(V)
-    cmap = fem.create_coordinate_map(mesh.ufl_domain())
-
     u.interpolate(e2)
 
     intu = assemble_scalar(u * dx(mesh))
@@ -543,8 +534,6 @@ def xtest_fourth_order_quad(L, H, Z):
 
     V = FunctionSpace(mesh, ("CG", 4))
     u = Function(V)
-    cmap = fem.create_coordinate_map(mesh.ufl_domain())
-
     u.interpolate(e2)
 
     intu = assemble_scalar(u * dx(mesh))
