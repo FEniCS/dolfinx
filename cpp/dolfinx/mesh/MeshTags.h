@@ -177,32 +177,29 @@ create_meshtags(MPI_Comm comm, const std::shared_ptr<const mesh::Mesh>& mesh,
   // Copy topology array into flattened vector
   std::vector<std::int64_t> topo_unique(
       topology.data(), topology.data() + topology.rows() * topology.cols());
-
   std::sort(topo_unique.begin(), topo_unique.end());
   topo_unique.erase(std::unique(topo_unique.begin(), topo_unique.end()),
                     topo_unique.end());
 
   const int e_dim = mesh::cell_dim(entity_cell_type);
   const int dim = mesh->topology().dim();
-
   auto e_to_v = mesh->topology().connectivity(e_dim, 0);
   if (!e_to_v)
-    throw std::runtime_error("Mesh is missing entity-vertex connectivity.");
-
+    throw std::runtime_error("Missing entity-vertex connectivity.");
   auto e_to_c = mesh->topology().connectivity(e_dim, dim);
   if (!e_to_c)
-    throw std::runtime_error("Mesh is missing entity-cell connectivity.");
-
+    throw std::runtime_error("Missing entity-cell connectivity.");
   auto c_to_v = mesh->topology().connectivity(dim, 0);
   if (!c_to_v)
-    throw std::runtime_error("Mesh is missing cell-vertex connectivity.");
+    throw std::runtime_error("missing cell-vertex connectivity.");
 
+  // Inout global node indices (as in the input file before any
+  // re-ordering)
   const std::vector<std::int64_t>& igi
       = mesh->geometry().input_global_indices();
 
   // Send input global indices to process responsible for it, based on
   // input global index value
-
   std::int64_t num_igi_global = 0;
   const std::int64_t igi_size = igi.size();
   MPI_Allreduce(&igi_size, &num_igi_global, 1, MPI_INT64_T, MPI_SUM, comm);
@@ -232,7 +229,6 @@ create_meshtags(MPI_Comm comm, const std::shared_ptr<const mesh::Mesh>& mesh,
 
   // Handle received input global indices, i.e. put the owners of it to
   // a global position, which is its value
-
   Eigen::Array<bool, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor> owners(
       local_size, comm_size);
   const std::size_t offset = MPI::global_offset(comm, local_size, true);
@@ -296,7 +292,6 @@ create_meshtags(MPI_Comm comm, const std::shared_ptr<const mesh::Mesh>& mesh,
   // Using just the information on current local mesh partition prepare
   // a mapping from *ordered* nodes of entity input global indices to
   // entity local index
-
   std::map<std::vector<std::int64_t>, std::int32_t> entities_igi;
   auto map_e = mesh->topology().index_map(e_dim);
   assert(map_e);
@@ -314,7 +309,6 @@ create_meshtags(MPI_Comm comm, const std::shared_ptr<const mesh::Mesh>& mesh,
     auto cell_nodes = cells_g.links(c);
     auto cell_vertices = c_to_v->links(c);
     auto entity_vertices = e_to_v->links(e);
-
     for (int v = 0; v < entity_vertices.rows(); ++v)
     {
       // Find local index of vertex wrt. cell
@@ -340,22 +334,19 @@ create_meshtags(MPI_Comm comm, const std::shared_ptr<const mesh::Mesh>& mesh,
 
   // Iterate over all received entities and find it in entities of the
   // mesh
-
-  // FIXME: Avoid creating std::vector<std::int64_t> the loop below
-
   std::vector<std::int32_t> indices_new;
   std::vector<T> values_new;
   const Eigen::Map<const Eigen::Array<std::int64_t, Eigen::Dynamic,
                                       Eigen::Dynamic, Eigen::RowMajor>>
       entities(recv_ents.array().data(),
                recv_ents.array().rows() / nnodes_per_entity, nnodes_per_entity);
+  std::vector<std::int64_t> entity(nnodes_per_entity);
   for (Eigen::Index e = 0; e < entities.rows(); ++e)
   {
-    std::vector<std::int64_t> _entity(entities.row(e).data(),
-                                      entities.row(e).data() + nnodes_per_entity);
-    std::sort(_entity.begin(), _entity.end());
-    const auto it = entities_igi.find(_entity);
-    if (it != entities_igi.end())
+    std::copy(entities.row(e).data(),
+              entities.row(e).data() + nnodes_per_entity, entity.begin());
+    std::sort(entity.begin(), entity.end());
+    if (const auto it = entities_igi.find(entity); it != entities_igi.end())
     {
       indices_new.push_back(it->second);
       values_new.push_back(recv_vals.array()[e]);
