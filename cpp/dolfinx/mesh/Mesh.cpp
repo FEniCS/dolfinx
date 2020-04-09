@@ -91,31 +91,22 @@ Mesh mesh::create(MPI_Comm comm,
       comm, mesh::extract_topology(element.dof_layout(), cell_nodes),
       original_cell_index, ghost_owners, element.dof_layout(), ghost_mode);
 
-  // FIXME: Figure out how to check which entities are required
-  // Initialise facet for P2
-  // Create local entities
-  if (topology.dim() > 1)
+  // Create connectivity require to compute the Geometry (extra
+  // connectivities for higher-order geometries)
+  const int tdim = topology.dim();
+  for (int e = 1; e < tdim; ++e)
   {
-    // Create edges
-    auto [cell_entity, entity_vertex, index_map]
-        = mesh::TopologyComputation::compute_entities(comm, topology, 1);
-    if (cell_entity)
-      topology.set_connectivity(cell_entity, topology.dim(), 1);
-    if (entity_vertex)
-      topology.set_connectivity(entity_vertex, 1, 0);
-    if (index_map)
-      topology.set_index_map(1, index_map);
-
-    // Create facets
-    auto [cell_facet, facet_vertex, index_map1]
-        = mesh::TopologyComputation::compute_entities(comm, topology,
-                                                      topology.dim() - 1);
-    if (cell_facet)
-      topology.set_connectivity(cell_facet, topology.dim(), topology.dim() - 1);
-    if (facet_vertex)
-      topology.set_connectivity(facet_vertex, topology.dim() - 1, 0);
-    if (index_map1)
-      topology.set_index_map(topology.dim() - 1, index_map1);
+    if (element.dof_layout().num_entity_dofs(e) > 0)
+    {
+      auto [cell_entity, entity_vertex, index_map]
+          = mesh::TopologyComputation::compute_entities(comm, topology, e);
+      if (cell_entity)
+        topology.set_connectivity(cell_entity, tdim, e);
+      if (entity_vertex)
+        topology.set_connectivity(entity_vertex, e, 0);
+      if (index_map)
+        topology.set_index_map(e, index_map);
+    }
   }
 
   Geometry geometry

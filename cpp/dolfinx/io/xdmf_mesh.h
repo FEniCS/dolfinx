@@ -6,10 +6,10 @@
 
 #pragma once
 
-#include "HDF5File.h"
 #include <Eigen/Dense>
-#include <dolfinx/common/MPI.h>
 #include <dolfinx/mesh/cell_types.h>
+#include <hdf5.h>
+#include <mpi.h>
 #include <string>
 #include <tuple>
 #include <vector>

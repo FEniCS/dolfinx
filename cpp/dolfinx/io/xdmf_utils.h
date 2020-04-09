@@ -6,7 +6,7 @@
 
 #pragma once
 
-#include "HDF5File.h"
+#include "HDF5Interface.h"
 #include "pugixml.hpp"
 #include <array>
 #include <boost/filesystem.hpp>
