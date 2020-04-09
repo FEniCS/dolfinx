@@ -370,7 +370,7 @@ def test_topology_partition(tempdir, shape, order):
     element = ufl.VectorElement("Lagrange", cell, order)
     domain = ufl.Mesh(element)
     cmap = fem.create_coordinate_map(domain)
-    geometry = cpp.mesh.Geometry(dof_index_map, dofmap, cmap, x_g, l2g, indices)
+    geometry = cpp.mesh.Geometry(dof_index_map, dofmap, cmap, x_g, indices)
 
     # Create mesh
     mesh = cpp.mesh.Mesh(cpp.MPI.comm_world, topology, geometry)
