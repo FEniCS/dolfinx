@@ -78,21 +78,25 @@ public:
   /// Find all MeshTags for a list of values and return the corresponding
   /// indices per value, local-to-process
   /// @param[in] values A list values
-  /// @return The correspodning indices
-  std::vector<std::vector<std::int32_t>> indices(std::vector<T> values) const
+  /// @return The corresponding indices
+  const std::vector<std::vector<std::int32_t>>&
+  findices(std::vector<T> values) const
   {
-    std::vector<std::vector<std::int32_t>> indices;
+    std::vector<std::vector<std::int32_t>> indices(values.size());
+    // Reserve space
     for (std::int32_t i = 0; i < values.size(); ++i)
     {
-      std::vector<std::int32_t> indices_i;
       int n = std::count(_values.begin(), _values.end(), values[i]);
-      indices_i.reserve(n);
-      for (std::int32_t j = 0; j < _values.size(); ++j)
+      indices[i].reserve(n);
+    }
+    // Find values
+    for (std::int32_t i = 0; i < _values.size(); ++i)
+    {
+      for (std::int32_t j = 0; j < values.size(); ++j)
       {
-        if (_values[j] == values[i])
-          indices_i.push_back(_indices[j]);
+        if (_values[i] == values[j])
+          indices[j].push_back(_indices[i]);
       }
-      indices.push_back(indices_i);
     }
     return indices;
   }
