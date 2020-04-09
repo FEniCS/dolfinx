@@ -103,6 +103,9 @@ public:
           indices,
       bool blocked = true) const;
 
+  /// @todo Consider removing this function in favour of the version
+  /// that accepts an Eigen array.
+  ///
   /// Compute global indices for array of local indices
   /// @param[in] indices Local indices
   /// @param[in] blocked If true work with blocked indices. If false the
