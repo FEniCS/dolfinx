@@ -15,6 +15,7 @@ import cffi
 import numba
 import numba.cffi_support
 import numpy
+from mpi4py import MPI
 from petsc4py import PETSc
 
 import dolfinx
@@ -26,7 +27,7 @@ from dolfinx.fem import locate_dofs_topological
 import ufl
 
 filedir = os.path.dirname(__file__)
-infile = dolfinx.io.XDMFFile(dolfinx.MPI.comm_world,
+infile = dolfinx.io.XDMFFile(MPI.COMM_WORLD,
                              os.path.join(filedir, "cooks_tri_mesh.xdmf"),
                              "r",
                              encoding=dolfinx.cpp.io.XDMFFile.Encoding.ASCII)
