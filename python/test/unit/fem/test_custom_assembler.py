@@ -276,8 +276,8 @@ def test_custom_mesh_loop_rank1():
     V = dolfinx.FunctionSpace(mesh, ("Lagrange", 1))
 
     # Unpack mesh and dofmap data
-    pos = mesh.geometry.dofmap().offsets()
-    x_dofs = mesh.geometry.dofmap().array()
+    pos = mesh.geometry.dofmap.offsets()
+    x_dofs = mesh.geometry.dofmap.array()
     x = mesh.geometry.x
     dofs = V.dofmap.list.array()
 
@@ -337,8 +337,8 @@ def test_custom_mesh_loop_ctypes_rank2():
     V = dolfinx.FunctionSpace(mesh, ("Lagrange", 1))
 
     # Extract mesh and dofmap data
-    pos = mesh.geometry.dofmap().offsets()
-    x_dofs = mesh.geometry.dofmap().array()
+    pos = mesh.geometry.dofmap.offsets()
+    x_dofs = mesh.geometry.dofmap.array()
     x = mesh.geometry.x
     dofs = np.array(V.dofmap.list.array(), dtype=np.dtype(PETSc.IntType))
 
@@ -390,8 +390,8 @@ def test_custom_mesh_loop_cffi_rank2(set_vals):
     A0.assemble()
 
     # Unpack mesh and dofmap data
-    pos = mesh.geometry.dofmap().offsets()
-    x_dofs = mesh.geometry.dofmap().array()
+    pos = mesh.geometry.dofmap.offsets()
+    x_dofs = mesh.geometry.dofmap.array()
     x = mesh.geometry.x
     dofs = np.array(V.dofmap.list.array(), dtype=np.dtype(PETSc.IntType))
 

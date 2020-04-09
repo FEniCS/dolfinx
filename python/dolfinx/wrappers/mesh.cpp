@@ -96,8 +96,7 @@ void mesh(py::module& m)
                     const std::vector<std::int64_t>&>())
       .def_property_readonly("dim", &dolfinx::mesh::Geometry::dim,
                              "Geometric dimension")
-      .def("dofmap",
-           py::overload_cast<>(&dolfinx::mesh::Geometry::dofmap, py::const_))
+      .def_property_readonly("dofmap", &dolfinx::mesh::Geometry::dofmap)
       .def("index_map", &dolfinx::mesh::Geometry::index_map)
       .def_property(
           "x", py::overload_cast<>(&dolfinx::mesh::Geometry::x),

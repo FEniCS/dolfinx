@@ -447,7 +447,7 @@ def test_higher_order_coordinate_map(points, celltype, order):
 
     V = FunctionSpace(mesh, ("Lagrange", 2))
     X = V.element.dof_reference_coordinates()
-    coord_dofs = mesh.geometry.dofmap()
+    coord_dofs = mesh.geometry.dofmap
     x_g = mesh.geometry.x
 
     cmap = fem.create_coordinate_map(mesh.ufl_domain())
@@ -495,7 +495,7 @@ def test_higher_order_tetra_coordinate_map(order):
     mesh = Mesh(MPI.comm_world, celltype, points, cells, [], degree=order, ghost_mode=GhostMode.none)
     V = FunctionSpace(mesh, ("Lagrange", order))
     X = V.element.dof_reference_coordinates()
-    coord_dofs = mesh.geometry.dofmap()
+    coord_dofs = mesh.geometry.dofmap
     x_g = mesh.geometry.x
 
     cmap = fem.create_coordinate_map(mesh.ufl_domain())

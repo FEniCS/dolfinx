@@ -67,7 +67,7 @@ def test_triangle_dof_ordering(space_type):
     # Get coordinates of dofs and edges and check that they are the same
     # for each global dof number
     X = V.element.dof_reference_coordinates()
-    coord_dofs = mesh.geometry.dofmap()
+    coord_dofs = mesh.geometry.dofmap
     x_g = mesh.geometry.x
     cmap = fem.create_coordinate_map(mesh.ufl_domain())
     for cell_n in range(coord_dofs.num_nodes):
@@ -139,7 +139,7 @@ def test_tetrahedron_dof_ordering(space_type):
     # Get coordinates of dofs and edges and check that they are the same
     # for each global dof number
     X = V.element.dof_reference_coordinates()
-    coord_dofs = mesh.geometry.dofmap()
+    coord_dofs = mesh.geometry.dofmap
     x_g = mesh.geometry.x
     cmap = fem.create_coordinate_map(mesh.ufl_domain())
     for cell_n in range(coord_dofs.num_nodes):
@@ -210,7 +210,7 @@ def test_quadrilateral_dof_ordering(space_type):
     # Get coordinates of dofs and edges and check that they are the same
     # for each global dof number
     X = V.element.dof_reference_coordinates()
-    coord_dofs = mesh.geometry.dofmap()
+    coord_dofs = mesh.geometry.dofmap
     x_g = mesh.geometry.x
     cmap = fem.create_coordinate_map(mesh.ufl_domain())
     for cell_n in range(coord_dofs.num_nodes):
@@ -275,7 +275,7 @@ def test_hexahedron_dof_ordering(space_type):
     # Get coordinates of dofs and edges and check that they are the same
     # for each global dof number
     X = V.element.dof_reference_coordinates()
-    coord_dofs = mesh.geometry.dofmap()
+    coord_dofs = mesh.geometry.dofmap
     x_g = mesh.geometry.x
     cmap = fem.create_coordinate_map(mesh.ufl_domain())
     for cell_n in range(coord_dofs.num_nodes):

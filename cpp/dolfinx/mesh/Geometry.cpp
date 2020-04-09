@@ -19,8 +19,6 @@ using namespace dolfinx::mesh;
 //-----------------------------------------------------------------------------
 int Geometry::dim() const { return _dim; }
 //-----------------------------------------------------------------------------
-graph::AdjacencyList<std::int32_t>& Geometry::dofmap() { return _dofmap; }
-//-----------------------------------------------------------------------------
 const graph::AdjacencyList<std::int32_t>& Geometry::dofmap() const
 {
   return _dofmap;
@@ -41,6 +39,8 @@ Geometry::x() const
 {
   return _x;
 }
+//-----------------------------------------------------------------------------
+const fem::CoordinateElement& Geometry::cmap() const { return _cmap; }
 //-----------------------------------------------------------------------------
 Eigen::Vector3d Geometry::node(int n) const
 {

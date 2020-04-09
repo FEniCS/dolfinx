@@ -268,10 +268,10 @@ def test_plus_minus_simple_vector(cell_type, pm):
 
     # Check that the above vectors all have the same values as the first one,
     # but permuted due to differently ordered dofs
-    dofmap0 = spaces[0].mesh.geometry.dofmap()
+    dofmap0 = spaces[0].mesh.geometry.dofmap
     for result, space in zip(results[1:], spaces[1:]):
         # Get the data relating to two results
-        dofmap1 = space.mesh.geometry.dofmap()
+        dofmap1 = space.mesh.geometry.dofmap
 
         # For each cell
         for cell in range(2):
@@ -321,10 +321,10 @@ def test_plus_minus_vector(cell_type, pm1, pm2):
 
     # Check that the above vectors all have the same values as the first one,
     # but permuted due to differently ordered dofs
-    dofmap0 = spaces[0].mesh.geometry.dofmap()
+    dofmap0 = spaces[0].mesh.geometry.dofmap
     for result, space in zip(results[1:], spaces[1:]):
         # Get the data relating to two results
-        dofmap1 = space.mesh.geometry.dofmap()
+        dofmap1 = space.mesh.geometry.dofmap
 
         # For each cell
         for cell in range(2):
@@ -369,10 +369,10 @@ def test_plus_minus_matrix(cell_type, pm1, pm2):
 
     # Check that the above matrices all have the same values, but permuted due to differently
     # ordered dofs
-    dofmap0 = spaces[0].mesh.geometry.dofmap()
+    dofmap0 = spaces[0].mesh.geometry.dofmap
     for result, space in zip(results[1:], spaces[1:]):
         # Get the data relating to two results
-        dofmap1 = space.mesh.geometry.dofmap()
+        dofmap1 = space.mesh.geometry.dofmap
 
         dof_order = []
 

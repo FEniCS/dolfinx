@@ -39,24 +39,27 @@ class Geometry
 {
 public:
   /// Constructor
-  template <typename AdjacencyList32, typename ArrayXd, typename Vector64>
+  template <typename AdjacencyList32, typename Vector64>
   Geometry(const std::shared_ptr<const common::IndexMap>& index_map,
            AdjacencyList32&& dofmap, const fem::CoordinateElement& element,
-           ArrayXd&& x, Vector64&& input_global_indices)
+           const Eigen::Ref<const Eigen::Array<
+               double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>>& x,
+           Vector64&& input_global_indices)
       : _dim(x.cols()), _dofmap(std::forward<AdjacencyList32>(dofmap)),
-        _index_map(index_map), _cmap(element), _x(std::forward<ArrayXd>(x)),
+        _index_map(index_map), _cmap(element),
         _input_global_indices(std::forward<Vector64>(input_global_indices))
   {
-    if (_x.rows() != (int)_input_global_indices.size())
+    if (x.rows() != (int)_input_global_indices.size())
       throw std::runtime_error("Size mis-match");
 
     // Make all geometry 3D
-    if (_dim != 3)
+    if (_dim == 3)
+      _x = x;
+    else if (_dim != 3)
     {
-      Eigen::Array<double, Eigen::Dynamic, 3, Eigen::RowMajor> x_tmp = _x;
-      _x.resize(_x.rows(), 3);
+      _x.resize(x.rows(), 3);
       _x.setZero();
-      _x.block(0, 0, _x.rows(), _x.cols()) = x_tmp;
+      _x.block(0, 0, x.rows(), x.cols()) = x;
     }
   }
 
@@ -78,11 +81,6 @@ public:
   /// Return Euclidean dimension of coordinate system
   int dim() const;
 
-  /// @todo Remove this non-const version. Just here for mesh::Ordering
-  ///
-  /// DOF map
-  graph::AdjacencyList<std::int32_t>& dofmap();
-
   /// DOF map
   const graph::AdjacencyList<std::int32_t>& dofmap() const;
 
@@ -95,6 +93,10 @@ public:
   /// Geometry degrees-of-freedom
   const Eigen::Array<double, Eigen::Dynamic, 3, Eigen::RowMajor>& x() const;
 
+  /// The element that describes the geometry map
+  /// @return The coordinate/geometry element
+  const fem::CoordinateElement& cmap() const;
+
   /// Return coordinate array for node n (index is local to the process)
   Eigen::Vector3d node(int n) const;
 
@@ -105,10 +107,6 @@ public:
   /// @return A tree-hashed value of the coordinates over all MPI
   ///   processes
   std::size_t hash() const;
-
-  /// The element hat described the geometry map
-  /// @return The coordinate/geometry element
-  const fem::CoordinateElement& cmap() const { return _cmap; }
 
 private:
   // Geometric dimension
