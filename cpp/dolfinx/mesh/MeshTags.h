@@ -83,7 +83,7 @@ public:
   std::vector<std::vector<std::int32_t>>
   indices(const std::vector<T>& values) const
   {
-    std::vector<std::vector<std::int32_t>>& indices(values.size());
+    std::vector<std::vector<std::int32_t>> indices(values.size());
     // Reserve space
     for (std::int32_t i = 0; i < values.size(); ++i)
     {
