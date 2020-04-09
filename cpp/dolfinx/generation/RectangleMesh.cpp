@@ -192,8 +192,6 @@ mesh::Mesh build_tri(MPI_Comm comm, const std::array<Eigen::Vector3d, 2>& p,
     }
   }
 
-  const fem::ElementDofLayout layout
-      = fem::geometry_layout(mesh::CellType::triangle, topo.cols());
   return mesh::create(comm, graph::AdjacencyList<std::int64_t>(topo), element,
                       geom, ghost_mode);
 }
@@ -255,8 +253,6 @@ mesh::Mesh build_quad(MPI_Comm comm, const std::array<Eigen::Vector3d, 2>& p,
       ++cell;
     }
 
-  const fem::ElementDofLayout layout
-      = fem::geometry_layout(mesh::CellType::quadrilateral, topo.cols());
   return mesh::create(comm, graph::AdjacencyList<std::int64_t>(topo), element,
                       geom, ghost_mode);
 }
