@@ -312,8 +312,7 @@ mesh::Mesh ParallelRefinement::build_local() const
 
   mesh::Mesh mesh = mesh::create(
       _mesh.mpi_comm(), graph::AdjacencyList<std::int64_t>(cells),
-      _mesh.geometry().coord_mapping(), _new_vertex_coordinates,
-      mesh::GhostMode::none);
+      _mesh.geometry().cmap(), _new_vertex_coordinates, mesh::GhostMode::none);
 
   return mesh;
 }
@@ -337,14 +336,13 @@ mesh::Mesh ParallelRefinement::partition(bool redistribute) const
 
   // Build mesh
 
-  const fem::ElementDofLayout& layout
-      = _mesh.geometry().coord_mapping().dof_layout();
+  const fem::ElementDofLayout& layout = _mesh.geometry().cmap().dof_layout();
   if (redistribute)
   {
     return mesh::create(_mesh.mpi_comm(),
                         graph::AdjacencyList<std::int64_t>(cells),
-                        _mesh.geometry().coord_mapping(),
-                        _new_vertex_coordinates, mesh::GhostMode::none);
+                        _mesh.geometry().cmap(), _new_vertex_coordinates,
+                        mesh::GhostMode::none);
   }
 
   MPI_Comm comm = _mesh.mpi_comm();
@@ -421,8 +419,8 @@ mesh::Mesh ParallelRefinement::partition(bool redistribute) const
   }
 
   const mesh::Geometry geometry
-      = mesh::create_geometry(comm, topology, _mesh.geometry().coord_mapping(),
-                              my_cells, _new_vertex_coordinates);
+      = mesh::create_geometry(comm, topology, _mesh.geometry().cmap(), my_cells,
+                              _new_vertex_coordinates);
 
   return mesh::Mesh(comm, std::move(topology), std::move(geometry));
 }

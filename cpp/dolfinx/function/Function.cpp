@@ -185,7 +185,7 @@ void Function::eval(
       coordinate_dofs(num_dofs_g, gdim);
 
   // Get coordinate mapping
-  const fem::CoordinateElement& cmap = mesh.geometry().coord_mapping();
+  const fem::CoordinateElement& cmap = mesh.geometry().cmap();
 
   // Get element
   assert(_function_space->element());

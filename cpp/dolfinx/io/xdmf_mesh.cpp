@@ -31,7 +31,7 @@ void xdmf_mesh::add_topology_data(
 
   // Get number of nodes per entity
   const int num_nodes_per_entity
-      = geometry.coord_mapping().dof_layout().num_entity_closure_dofs(dim);
+      = geometry.cmap().dof_layout().num_entity_closure_dofs(dim);
 
   // FIXME: sort out degree/cell type
   // Get VTK string for cell type
@@ -123,8 +123,8 @@ void xdmf_mesh::add_topology_data(
   const std::int64_t num_entities_local
       = topology_data.size() / num_nodes_per_entity;
   std::int64_t num_entities_global = 0;
-  MPI_Allreduce(&num_entities_local, &num_entities_global, 1, MPI_INT64_T, MPI_SUM,
-                comm);
+  MPI_Allreduce(&num_entities_local, &num_entities_global, 1, MPI_INT64_T,
+                MPI_SUM, comm);
   topology_node.append_attribute("NumberOfElements")
       = std::to_string(num_entities_global).c_str();
   topology_node.append_attribute("NodesPerElement") = num_nodes_per_entity;

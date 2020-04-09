@@ -91,21 +91,14 @@ public:
   /// Global user indices
   const std::vector<std::int64_t>& input_global_indices() const;
 
-  /// @warning Experimental. Needs revision
-  ///
-  /// Put ElementDofLayout here for now
-  // const fem::ElementDofLayout& dof_layout() const;
-
   /// Hash of coordinate values
   /// @return A tree-hashed value of the coordinates over all MPI
   ///   processes
   std::size_t hash() const;
 
-  /// @warning Experimental. Needs revision
-  ///
-  /// Put CoordinateElement here for now
-  // std::shared_ptr<const fem::CoordinateElement> coord_mapping;
-  const fem::CoordinateElement& coord_mapping() const { return _coord_mapping; }
+  /// The element hat described the geometry map
+  /// @return The coordinate/geometry element
+  const fem::CoordinateElement& cmap() const { return _cmap; }
 
 private:
   // Geometric dimension
@@ -119,7 +112,7 @@ private:
 
   // The dof layout on the cell
   // fem::ElementDofLayout _layout;
-  fem::CoordinateElement _coord_mapping;
+  fem::CoordinateElement _cmap;
 
   // Coordinates for all points stored as a contiguous array
   Eigen::Array<double, Eigen::Dynamic, 3, Eigen::RowMajor> _x;

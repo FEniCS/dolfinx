@@ -31,14 +31,14 @@ Form::Form(
     const std::vector<
         std::pair<std::string, std::shared_ptr<const function::Constant>>>
         constants,
-    std::shared_ptr<const CoordinateElement> coord_mapping)
+    std::shared_ptr<const CoordinateElement> cmap)
     : _integrals(integrals), _coefficients(coefficients), _constants(constants),
-      _function_spaces(function_spaces), _coord_mapping(coord_mapping)
+      _function_spaces(function_spaces), _coord_mapping(cmap)
 {
   // Set _mesh from function::FunctionSpace, and check they are the same
   if (!function_spaces.empty())
     _mesh = function_spaces[0]->mesh();
-  for (const auto & V : function_spaces)
+  for (const auto& V : function_spaces)
   {
     if (_mesh != V->mesh())
       throw std::runtime_error("Incompatible mesh");
@@ -120,7 +120,7 @@ void Form::set_constants(
 //-----------------------------------------------------------------------------
 bool Form::all_constants_set() const
 {
-  for (const auto & constant : _constants)
+  for (const auto& constant : _constants)
     if (!constant.second)
       return false;
 
@@ -130,7 +130,7 @@ bool Form::all_constants_set() const
 std::set<std::string> Form::get_unset_constants() const
 {
   std::set<std::string> unset;
-  for (const auto & constant : _constants)
+  for (const auto& constant : _constants)
   {
     if (!constant.second)
       unset.insert(constant.first);

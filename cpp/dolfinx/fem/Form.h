@@ -86,7 +86,7 @@ public:
        const std::vector<
            std::pair<std::string, std::shared_ptr<const function::Constant>>>
            constants,
-       std::shared_ptr<const CoordinateElement> coord_mapping);
+       std::shared_ptr<const CoordinateElement> cmap);
 
   /// Create form (no UFC integrals). Integrals can be attached later
   /// using FormIntegrals::set_cell_tabulate_tensor.

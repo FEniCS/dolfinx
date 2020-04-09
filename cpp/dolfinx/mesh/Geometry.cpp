@@ -19,14 +19,13 @@ using namespace dolfinx::mesh;
 //-----------------------------------------------------------------------------
 Geometry::Geometry(const std::shared_ptr<const common::IndexMap>& index_map,
                    const graph::AdjacencyList<std::int32_t>& dofmap,
-                   const fem::CoordinateElement& coordinate_element,
-                   //  const fem::ElementDofLayout& layout,
+                   const fem::CoordinateElement& element,
                    const Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic,
                                       Eigen::RowMajor>& x,
                    const std::vector<std::int64_t>& global_indices,
                    const std::vector<std::int64_t>& input_global_indices)
-    : _dim(x.cols()), _dofmap(dofmap), _index_map(index_map),
-      _coord_mapping(coordinate_element), _global_indices(global_indices),
+    : _dim(x.cols()), _dofmap(dofmap), _index_map(index_map), _cmap(element),
+      _global_indices(global_indices),
       _input_global_indices(input_global_indices)
 {
   if (x.rows() != (int)global_indices.size())
