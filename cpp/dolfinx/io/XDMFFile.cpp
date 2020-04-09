@@ -164,18 +164,8 @@ mesh::Mesh XDMFFile::read_mesh(const fem::CoordinateElement& element,
                                const std::string name,
                                const std::string xpath) const
 {
-  pugi::xml_node node = _xml_doc->select_node(xpath.c_str()).node();
-  if (!node)
-    throw std::runtime_error("XML node '" + xpath + "' not found.");
-
-  pugi::xml_node grid_node
-      = node.select_node(("Grid[@Name='" + name + "']").c_str()).node();
-  if (!grid_node)
-    throw std::runtime_error("<Grid> with name '" + name + "' not found.");
-
   // Read mesh data
-  auto [cell_type, x, cells]
-      = xdmf_mesh::read_mesh_data(_mpi_comm.comm(), _h5_id, grid_node);
+  auto [cell_type, x, cells] = XDMFFile::read_mesh_data(name, xpath);
 
   // Create mesh
   graph::AdjacencyList<std::int64_t> cells_adj(cells);
