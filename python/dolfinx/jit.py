@@ -14,7 +14,7 @@ import dolfinx.pkgconfig
 import ffcx
 import ffcx.codegeneration.jit
 import ufl
-from dolfinx import common, cpp
+from dolfinx import common
 
 if dolfinx.pkgconfig.exists("dolfinx"):
     dolfinx_pc = dolfinx.pkgconfig.parse("dolfinx")
