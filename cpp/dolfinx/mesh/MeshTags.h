@@ -117,7 +117,7 @@ private:
     std::vector<int> perm(_indices.size());
     std::iota(perm.begin(), perm.end(), 0);
     std::sort(perm.begin(), perm.end(),
-              [&indices = std::as_const(_indices)](const int a, const int b) {
+              [& indices = std::as_const(_indices)](const int a, const int b) {
                 return (indices[a] < indices[b]);
               });
 
@@ -220,75 +220,66 @@ create_meshtags(MPI_Comm comm, const std::shared_ptr<const mesh::Mesh>& mesh,
   const graph::AdjacencyList<std::int64_t> recv_igi
       = MPI::all_to_all(comm, graph::AdjacencyList<std::int64_t>(send_igi));
 
-  // Handle received input global indices, i.e. put the owners of it to
-  // a global position, which is its value
-  const std::array<std::int64_t, 2> range
-      = MPI::local_range(MPI::rank(comm), num_igi_global, comm_size);
-  const int local_size = range[1] - range[0];
-  Eigen::Array<bool, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor> owners(
-      local_size, comm_size);
-  const std::size_t offset = MPI::global_offset(comm, local_size, true);
-  for (std::int32_t p = 0; p < recv_igi.num_nodes(); ++p)
+  std::vector<std::vector<std::int64_t>> send_nodes(comm_size);
+  std::vector<std::vector<T>> send_values(comm_size);
+
+  for (std::int32_t e = 0; e < topology.rows(); ++e)
   {
-    auto nodes = recv_igi.links(p);
-    for (std::int32_t j = 0; j < nodes.rows(); ++j)
-    {
-      const std::int32_t local_index = nodes[j] - offset;
-      assert(local_size > local_index);
-      assert(local_index >= 0);
-      owners(local_index, p) = true;
-    }
+    // Copy nodes for entity
+    std::vector<std::int64_t> entity(topology.row(e).data(),
+                                     topology.row(e).data() + topology.cols());
+    std::sort(entity.begin(), entity.end());
+
+    // Determine post-master based on lowest entity node
+    const std::int32_t p
+        = dolfinx::MPI::index_owner(comm_size, entity[0], num_igi_global);
+    send_nodes[p].insert(send_nodes[p].end(), entity.begin(), entity.end());
+    send_values[p].push_back(values[e]);
   }
 
-  // Distribute the owners of input global indices
+  // FIXME: Pack calls
+  const graph::AdjacencyList<std::int64_t> recv_nodes
+      = MPI::all_to_all(comm, graph::AdjacencyList<std::int64_t>(send_nodes));
+  const graph::AdjacencyList<T> recv_values
+      = MPI::all_to_all(comm, graph::AdjacencyList<T>(send_values));
 
-  // Distribute owners and fetch owners for the input global indices
-  // read from file, i.e. for the unique topology data in file
-  const Eigen::Array<bool, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
-      dist_owners
-      = graph::Partitioning::distribute_data<bool>(comm, nodes, owners);
+  std::vector<std::vector<std::int64_t>> send_nodes_owned(comm_size);
+  std::vector<std::vector<T>> send_vals_owned(comm_size);
 
-  // Figure out which process needs input global indices read from file
-  // and send to it
-
-  // Mapping from global topology number to its ownership (bools saying
-  // if the process is owner)
-  std::unordered_map<std::int64_t, Eigen::Array<bool, Eigen::Dynamic, 1>>
-      node_owners;
-  for (std::size_t i = 0; i < nodes.size(); ++i)
-    node_owners[nodes[i]] = dist_owners.row(i);
-
-  std::vector<std::vector<std::int64_t>> send_ents(comm_size);
-  std::vector<std::vector<T>> send_vals(comm_size);
   const int nnodes_per_entity = topology.cols();
-  for (Eigen::Index e = 0; e < topology.rows(); ++e)
+  // Figure out which processes are owners of received nodes
+  for (int p = 0; p < recv_nodes.num_nodes(); ++p)
   {
-    std::vector<std::int64_t> entity(nnodes_per_entity);
-    std::vector<bool> sent(comm_size, false);
-    for (int i = 0; i < nnodes_per_entity; ++i)
-      entity[i] = topology(e, i);
+    auto nodes = recv_nodes.links(p);
+    auto vals = recv_values.links(p);
 
-    // Figure out owners of this entity. Entity has several nodes and
-    // each node can have up to comm_size owners, need to send the
-    // entity to each owner.
-    for (int i = 0; i < nnodes_per_entity; ++i)
+    for (int e = 0; e < nodes.size() / nnodes_per_entity; ++e)
     {
-      for (int j = 0; j < comm_size; ++j)
+      std::vector<std::int64_t> entity(nodes.data() + e * nnodes_per_entity,
+                                       nodes.data() + e * nnodes_per_entity
+                                           + nnodes_per_entity);
+
+      for (int q = 0; q < recv_igi.num_nodes(); ++q)
       {
-        if (node_owners[entity[i]][j] and !sent[j])
+        auto igi = recv_igi.links(q);
+        for (int j = 0; j < igi.size(); ++j)
         {
-          send_ents[j].insert(send_ents[j].end(), entity.begin(), entity.end());
-          send_vals[j].push_back(values[e]);
-          sent[j] = true;
+          if (igi[j] == entity[0])
+          {
+            send_nodes_owned[q].insert(send_nodes_owned[q].end(),
+                                       entity.begin(), entity.end());
+            send_vals_owned[q].push_back(vals(e));
+          }
         }
       }
     }
   }
 
-  const graph::AdjacencyList<std::int64_t> recv_ents
-      = MPI::all_to_all(comm, graph::AdjacencyList<std::int64_t>(send_ents));
+  // FIXME: Pack calls
+  const graph::AdjacencyList<std::int64_t> recv_ents = MPI::all_to_all(
+      comm, graph::AdjacencyList<std::int64_t>(send_nodes_owned));
   const graph::AdjacencyList<T> recv_vals
-      = MPI::all_to_all(comm, graph::AdjacencyList<T>(send_vals));
+      = MPI::all_to_all(comm, graph::AdjacencyList<T>(send_vals_owned));
 
   // Using just the information on current local mesh partition prepare
   // a mapping from *ordered* nodes of entity input global indices to
