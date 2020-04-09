@@ -191,13 +191,12 @@ mesh::Mesh build_hex(MPI_Comm comm, const std::array<Eigen::Vector3d, 2>& p,
 mesh::Mesh BoxMesh::create(MPI_Comm comm,
                            const std::array<Eigen::Vector3d, 2>& p,
                            std::array<std::size_t, 3> n,
-                           mesh::CellType cell_type,
                            const fem::CoordinateElement& element,
                            const mesh::GhostMode ghost_mode)
 {
-  if (cell_type == mesh::CellType::tetrahedron)
+  if (element.cell_shape() == mesh::CellType::tetrahedron)
     return build_tet(comm, p, n, element, ghost_mode);
-  else if (cell_type == mesh::CellType::hexahedron)
+  else if (element.cell_shape() == mesh::CellType::hexahedron)
     return build_hex(comm, p, n, element, ghost_mode);
   else
     throw std::runtime_error("Generate rectangle mesh. Wrong cell type");

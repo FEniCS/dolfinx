@@ -84,7 +84,7 @@ def RectangleMesh(comm, points: typing.List[numpy.array], n: list, cell_type=cpp
     element = ufl.VectorElement("Lagrange", cpp.mesh.to_string(cell_type), 1, 2)
     domain = ufl.Mesh(element)
     cmap = fem.create_coordinate_map(domain)
-    return cpp.generation.RectangleMesh.create(comm, points, n, cell_type, cmap, ghost_mode, diagonal)
+    return cpp.generation.RectangleMesh.create(comm, points, n, cmap, ghost_mode, diagonal)
 
 
 def UnitSquareMesh(comm, nx, ny, cell_type=cpp.mesh.CellType.triangle,
@@ -132,7 +132,7 @@ def BoxMesh(comm,
     element = ufl.VectorElement("Lagrange", cpp.mesh.to_string(cell_type), 1, 3)
     domain = ufl.Mesh(element)
     cmap = fem.create_coordinate_map(domain)
-    return cpp.generation.BoxMesh.create(comm, points, n, cell_type, cmap, ghost_mode)
+    return cpp.generation.BoxMesh.create(comm, points, n, cmap, ghost_mode)
 
 
 def UnitCubeMesh(comm,

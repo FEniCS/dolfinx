@@ -261,15 +261,16 @@ mesh::Mesh build_quad(MPI_Comm comm, const std::array<Eigen::Vector3d, 2>& p,
                       geom, ghost_mode);
 }
 //-----------------------------------------------------------------------------
-mesh::Mesh
-RectangleMesh::create(MPI_Comm comm, const std::array<Eigen::Vector3d, 2>& p,
-                      std::array<std::size_t, 2> n, mesh::CellType cell_type,
-                      const fem::CoordinateElement& element,
-                      const mesh::GhostMode ghost_mode, std::string diagonal)
+mesh::Mesh RectangleMesh::create(MPI_Comm comm,
+                                 const std::array<Eigen::Vector3d, 2>& p,
+                                 std::array<std::size_t, 2> n,
+                                 const fem::CoordinateElement& element,
+                                 const mesh::GhostMode ghost_mode,
+                                 std::string diagonal)
 {
-  if (cell_type == mesh::CellType::triangle)
+  if (element.cell_shape() == mesh::CellType::triangle)
     return build_tri(comm, p, n, element, ghost_mode, diagonal);
-  else if (cell_type == mesh::CellType::quadrilateral)
+  else if (element.cell_shape() == mesh::CellType::quadrilateral)
     return build_quad(comm, p, n, element, ghost_mode);
   else
     throw std::runtime_error("Generate rectangle mesh. Wrong cell type");
