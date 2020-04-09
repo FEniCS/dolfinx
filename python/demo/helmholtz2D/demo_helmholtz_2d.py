@@ -11,7 +11,7 @@ book \"Finite Element Analysis of Acoustic Scattering\" p138-139.
 In real mode, the Method of Manufactured Solutions is used to produce the exact
 solution and source term."""
 
-
+import mpi4py
 import numpy as np
 
 from dolfinx import (MPI, FacetNormal, Function, FunctionSpace, UnitSquareMesh,
@@ -80,16 +80,11 @@ u_exact.interpolate(lambda x: A * np.cos(k0 * x[0]) * np.cos(k0 * x[1]))
 
 # H1 errors
 diff = u - u_exact
-# diff_BA = u_BA - u_exact
-H1_diff = MPI.sum(mesh.mpi_comm(), assemble_scalar(inner(grad(diff), grad(diff)) * dx))
-# H1_BA = MPI.sum(mesh.mpi_comm(), assemble_scalar(inner(grad(diff_BA), grad(diff_BA)) * dx))
-H1_exact = MPI.sum(mesh.mpi_comm(), assemble_scalar(inner(grad(u_exact), grad(u_exact)) * dx))
-# print("Relative H1 error of best approximation:", abs(np.sqrt(H1_BA) / np.sqrt(H1_exact)))
+H1_diff = mesh.mpi_comm().allreduce(assemble_scalar(inner(grad(diff), grad(diff)) * dx), op=mpi4py.MPI.SUM)
+H1_exact = mesh.mpi_comm().allreduce(assemble_scalar(inner(grad(u_exact), grad(u_exact)) * dx), op=mpi4py.MPI.SUM)
 print("Relative H1 error of FEM solution:", abs(np.sqrt(H1_diff) / np.sqrt(H1_exact)))
 
 # L2 errors
-L2_diff = MPI.sum(mesh.mpi_comm(), assemble_scalar(inner(diff, diff) * dx))
-# L2_BA = MPI.sum(mesh.mpi_comm(), assemble_scalar(inner(diff_BA, diff_BA) * dx))
-L2_exact = MPI.sum(mesh.mpi_comm(), assemble_scalar(inner(u_exact, u_exact) * dx))
-# print("Relative L2 error  of best approximation:", abs(np.sqrt(L2_BA) / np.sqrt(L2_exact)))
+L2_diff = mesh.mpi_comm().allreduce(assemble_scalar(inner(diff, diff) * dx), op=mpi4py.MPI.SUM)
+L2_exact = mesh.mpi_comm().allreduce(assemble_scalar(inner(u_exact, u_exact) * dx), op=mpi4py.MPI.SUM)
 print("Relative L2 error of FEM solution:", abs(np.sqrt(L2_diff) / np.sqrt(L2_exact)))

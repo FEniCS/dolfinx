@@ -5,11 +5,14 @@
 // SPDX-License-Identifier:    LGPL-3.0-or-later
 
 #include "Table.h"
+#include <array>
 #include <cfloat>
 #include <cmath>
+#include <dolfinx/common/MPI.h>
 #include <functional>
 #include <iomanip>
 #include <iostream>
+#include <map>
 #include <sstream>
 #include <variant>
 
@@ -93,8 +96,10 @@ Table Table::reduce(MPI_Comm comm, Table::Reduction reduction) const
   }
   new_title += name;
 
+  const int mpi_size = MPI::size(comm);
+
   // Handle trivial reduction
-  if (MPI::size(comm) == 1)
+  if (mpi_size == 1)
   {
     Table table_all(*this);
     table_all.name = new_title;
@@ -106,7 +111,7 @@ Table Table::reduce(MPI_Comm comm, Table::Reduction reduction) const
   std::vector<double> values;
   for (const auto& it : _values)
   {
-    if (const auto *const pval = std::get_if<double>(&it.second))
+    if (const auto* const pval = std::get_if<double>(&it.second))
     {
       keys += it.first.first + '\0' + it.first.second + '\0';
       values.push_back(*pval);
@@ -114,10 +119,31 @@ Table Table::reduce(MPI_Comm comm, Table::Reduction reduction) const
   }
 
   // Gather to rank zero
-  std::vector<std::string> keys_all;
-  std::vector<double> values_all;
-  MPI::gather(comm, keys, keys_all, 0);
-  MPI::gather(comm, values, values_all, 0);
+
+  // Get string data size on each process
+  std::vector<int> pcounts(mpi_size), offsets(mpi_size + 1, 0);
+  const int local_size_str = keys.size();
+  MPI_Gather(&local_size_str, 1, MPI_INT, pcounts.data(), 1, MPI_INT, 0, comm);
+  std::partial_sum(pcounts.begin(), pcounts.end(), offsets.begin() + 1);
+  std::vector<char> out_str(offsets.back());
+  MPI_Gatherv(keys.data(), keys.size(), MPI_CHAR, out_str.data(),
+              pcounts.data(), offsets.data(), MPI_CHAR, 0, comm);
+
+  // Rebuild string
+  std::vector<std::string> keys_all(mpi_size);
+  for (int p = 0; p < mpi_size; ++p)
+  {
+    keys_all[p] = std::string(out_str.begin() + offsets[p],
+                              out_str.begin() + offsets[p + 1]);
+  }
+
+  // Get value data size on each process
+  const int local_size = values.size();
+  MPI_Gather(&local_size, 1, MPI_INT, pcounts.data(), 1, MPI_INT, 0, comm);
+  std::partial_sum(pcounts.begin(), pcounts.end(), offsets.begin() + 1);
+  std::vector<double> values_all(offsets.back());
+  MPI_Gatherv(values.data(), values.size(), MPI_DOUBLE, values_all.data(),
+              pcounts.data(), offsets.data(), MPI_DOUBLE, 0, comm);
 
   // Return empty table on rank > 0
   if (MPI::rank(comm) > 0)
@@ -126,8 +152,8 @@ Table Table::reduce(MPI_Comm comm, Table::Reduction reduction) const
   // Construct dvalues map from obtained data
   std::map<std::array<std::string, 2>, double> dvalues_all;
   std::array<std::string, 2> key;
-  double* values_ptr = values_all.data();
-  for (std::size_t i = 0; i < MPI::size(comm); ++i)
+  const double* values_ptr = values_all.data();
+  for (int i = 0; i < MPI::size(comm); ++i)
   {
     std::stringstream keys_stream(keys_all[i]);
     while (std::getline(keys_stream, key[0], '\0'),
@@ -160,8 +186,10 @@ Table Table::reduce(MPI_Comm comm, Table::Reduction reduction) const
   // NB - the cast to std::variant should not be needed: needed by Intel
   // compiler.
   for (const auto& it : dvalues_all)
+  {
     table_all.set(it.first[0], it.first[1],
                   std::variant<std::string, int, double>(it.second));
+  }
 
   return table_all;
 }

@@ -218,9 +218,7 @@ get_local_indexing(
 
   // Prepare data for neighbour all to all
   std::vector<std::int64_t> send_entities_data;
-  std::vector<std::int64_t> recv_entities_data;
   std::vector<int> send_offsets = {0};
-  std::vector<int> recv_offsets;
   for (std::size_t i = 0; i < send_entities.size(); ++i)
   {
     send_entities_data.insert(send_entities_data.end(),
@@ -228,9 +226,13 @@ get_local_indexing(
     send_offsets.push_back(send_entities_data.size());
   }
 
-  dolfinx::MPI::neighbor_all_to_all(neighbour_comm, send_offsets,
-                                    send_entities_data, recv_offsets,
-                                    recv_entities_data);
+  const graph::AdjacencyList<std::int64_t> recv_data
+      = dolfinx::MPI::neighbor_all_to_all(neighbour_comm, send_offsets,
+                                          send_entities_data);
+  const Eigen::Array<std::int64_t, Eigen::Dynamic, 1>& recv_entities_data
+      = recv_data.array();
+  const Eigen::Array<std::int32_t, Eigen::Dynamic, 1>& recv_offsets
+      = recv_data.offsets();
 
   // Compare received with sent for each process
   // Any which are not found will have -1 in recv_index
@@ -311,12 +313,10 @@ get_local_indexing(
 
     std::vector<std::int64_t> send_global_index_data;
     std::vector<int> send_global_index_offsets = {0};
-    std::vector<std::int64_t> recv_global_index_data;
-    std::vector<int> recv_global_index_offsets;
 
-    // Send global indices for same entities that we sent before
-    // This uses the same pattern as before, so we can match up
-    // the received data to the indices in recv_index
+    // Send global indices for same entities that we sent before. This
+    // uses the same pattern as before, so we can match up the received
+    // data to the indices in recv_index
     for (int np = 0; np < neighbour_size; ++np)
     {
       for (std::int32_t index : send_index[np])
@@ -332,14 +332,15 @@ get_local_indexing(
       send_global_index_offsets.push_back(send_global_index_data.size());
     }
 
-    dolfinx::MPI::neighbor_all_to_all(
-        neighbour_comm, send_global_index_offsets, send_global_index_data,
-        recv_global_index_offsets, recv_global_index_data);
+    const Eigen::Array<std::int64_t, Eigen::Dynamic, 1> recv_global_index_data
+        = dolfinx::MPI::neighbor_all_to_all(
+              neighbour_comm, send_global_index_offsets, send_global_index_data)
+              .array();
 
-    assert(recv_global_index_data.size() == recv_index.size());
+    assert(recv_global_index_data.size() == (int)recv_index.size());
 
     // Map back received indices
-    for (std::size_t j = 0; j < recv_global_index_data.size(); ++j)
+    for (int j = 0; j < recv_global_index_data.size(); ++j)
     {
       const std::int64_t gi = recv_global_index_data[j];
       const std::int32_t idx = recv_index[j];

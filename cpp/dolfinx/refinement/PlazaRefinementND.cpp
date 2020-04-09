@@ -38,7 +38,6 @@ void enforce_rules(ParallelRefinement& p_ref, const mesh::Mesh& mesh,
   assert(f_to_e);
 
   const std::vector<bool>& marked_edges = p_ref.marked_edges();
-
   std::int32_t update_count = 1;
   while (update_count > 0)
   {
@@ -61,7 +60,11 @@ void enforce_rules(ParallelRefinement& p_ref, const mesh::Mesh& mesh,
         ++update_count;
       }
     }
-    update_count = dolfinx::MPI::sum(mesh.mpi_comm(), update_count);
+
+    // FIXME: MPI call inside loop is bad. How big can loop be?
+    const std::int32_t update_count_old = update_count;
+    MPI_Allreduce(&update_count_old, &update_count, 1, MPI_INT32_T, MPI_SUM,
+                  mesh.mpi_comm());
   }
 }
 //-----------------------------------------------------------------------------
@@ -374,15 +377,15 @@ face_long_edge(const mesh::Mesh& mesh)
     auto edge_vertices = e_to_v->links(e);
 
     // Find local index of edge vertices in the cell geometry map
-    const auto *it0 = std::find(cell_vertices.data(),
-                         cell_vertices.data() + cell_vertices.rows(),
-                         edge_vertices[0]);
+    const auto* it0 = std::find(cell_vertices.data(),
+                                cell_vertices.data() + cell_vertices.rows(),
+                                edge_vertices[0]);
     assert(it0 != (cell_vertices.data() + cell_vertices.rows()));
     const int local0 = std::distance(cell_vertices.data(), it0);
 
-    const auto *it1 = std::find(cell_vertices.data(),
-                         cell_vertices.data() + cell_vertices.rows(),
-                         edge_vertices[1]);
+    const auto* it1 = std::find(cell_vertices.data(),
+                                cell_vertices.data() + cell_vertices.rows(),
+                                edge_vertices[1]);
     assert(it1 != (cell_vertices.data() + cell_vertices.rows()));
     const int local1 = std::distance(cell_vertices.data(), it1);
 

@@ -28,13 +28,16 @@ Partitioning::reorder_global_indices(
 
   assert(global_indices.size() == shared_indices.size());
 
+  const int rank = dolfinx::MPI::rank(comm);
+  const int size = dolfinx::MPI::size(comm);
+
   // Get maximum global index across all processes
-  std::int64_t my_max_global_index = 0;
   auto it_max = std::max_element(global_indices.begin(), global_indices.end());
-  if (it_max != global_indices.end())
-    my_max_global_index = *it_max;
-  const std::int64_t max_global_index
-      = dolfinx::MPI::all_reduce(comm, my_max_global_index, MPI_MAX);
+  const std::int64_t my_max_global_index
+      = (it_max != global_indices.end()) ? *it_max : 0;
+  std::int64_t max_global_index = 0;
+  MPI_Allreduce(&my_max_global_index, &max_global_index, 1, MPI_INT64_T,
+                MPI_MAX, comm);
 
   // Create global ->local map
   std::unordered_map<std::int64_t, std::int32_t> global_to_local;
@@ -43,7 +46,6 @@ Partitioning::reorder_global_indices(
 
   // Compute number of possibly shared vertices to send to each process,
   // considering only vertices that are possibly shared
-  const int size = dolfinx::MPI::size(comm);
   std::vector<int> number_send(size, 0);
   for (auto& vertex : global_to_local)
   {
@@ -92,7 +94,7 @@ Partitioning::reorder_global_indices(
 
   // Build list of sharing processes for each vertex
   const std::array<std::int64_t, 2> range
-      = dolfinx::MPI::local_range(comm, max_global_index + 1);
+      = dolfinx::MPI::local_range(rank, max_global_index + 1, size);
   std::vector<std::set<int>> owners(range[1] - range[0]);
   for (int i = 0; i < size; ++i)
   {
@@ -179,7 +181,6 @@ Partitioning::reorder_global_indices(
   // 1. Add 'exterior' but non-shared indices to global_to_local_owned0
   // 2. Add shared and owned indices to global_to_local_owned1
   // 3. Add non owned indices to global_to_local_unowned
-  const int rank = dolfinx::MPI::rank(comm);
   std::unordered_map<std::int64_t, std::int32_t> global_to_local_owned1,
       global_to_local_unowned;
   for (int i = 0; i < sharing_processes->num_nodes(); ++i)
