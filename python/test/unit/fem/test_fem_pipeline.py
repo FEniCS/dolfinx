@@ -66,7 +66,7 @@ def test_manufactured_poisson(degree, filename, datadir):
     u_bc.interpolate(lambda x: x[1]**degree)
 
     # Create Dirichlet boundary condition
-    mesh.create_connectivity_all()
+    mesh.topology.create_connectivity_all()
     facetdim = mesh.topology.dim - 1
     bndry_facets = np.where(np.array(
         mesh.topology.on_boundary(facetdim)) == 1)[0]

@@ -58,7 +58,7 @@ def unit_cell(cell_type, random_order=True):
     mesh = Mesh(MPI.comm_world, cell_type, ordered_points, cells,
                 [], cpp.mesh.GhostMode.none)
     mesh.geometry.coord_mapping = fem.create_coordinate_map(mesh)
-    mesh.create_connectivity_all()
+    mesh.topology.create_connectivity_all()
     return mesh
 
 
@@ -119,7 +119,7 @@ def two_unit_cells(cell_type, agree=False, random_order=True, return_order=False
     mesh = Mesh(MPI.comm_world, cell_type, ordered_points, ordered_cells,
                 [], cpp.mesh.GhostMode.none)
     mesh.geometry.coord_mapping = fem.create_coordinate_map(mesh)
-    mesh.create_connectivity_all()
+    mesh.topology.create_connectivity_all()
     if return_order:
         return mesh, order
     return mesh

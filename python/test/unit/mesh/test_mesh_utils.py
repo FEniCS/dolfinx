@@ -249,7 +249,7 @@ def test_topology_partition(tempdir, shape, order):
 
     # Create (i) local topology object and (ii) IndexMap for cells, and
     # set cell-vertex topology
-    topology_local = cpp.mesh.Topology(layout.cell_type)
+    topology_local = cpp.mesh.Topology(cpp.MPI.comm_self, layout.cell_type)
     tdim = topology_local.dim
     map = cpp.common.IndexMap(cpp.MPI.comm_self, cells_local.num_nodes, [], 1)
     topology_local.set_index_map(tdim, map)
@@ -283,7 +283,7 @@ def test_topology_partition(tempdir, shape, order):
                                                                     local_to_global_vertices, exterior_vertices)
 
     # --- Create distributed topology
-    topology = cpp.mesh.Topology(layout.cell_type)
+    topology = cpp.mesh.Topology(cpp.MPI.comm_world, layout.cell_type)
 
     # Set vertex IndexMap, and vertex-vertex connectivity
     topology.set_index_map(0, vertex_map)
