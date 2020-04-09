@@ -1,9 +1,9 @@
-# Copyright (C) 2017-2019 Chris N. Richardson and Michal Habera
+# Copyright (C) 2017-2020 Chris N. Richardson, Michal Habera and Garth N. Wells
 #
 # This file is part of DOLFINX (https://www.fenicsproject.org)
 #
 # SPDX-License-Identifier:    LGPL-3.0-or-later
-"""Simple mesh generation module"""
+"""Simple built-in mesh generation module"""
 
 import typing
 
@@ -18,10 +18,7 @@ __all__ = [
 ]
 
 
-def IntervalMesh(comm,
-                 nx: int,
-                 points: list,
-                 ghost_mode=cpp.mesh.GhostMode.none):
+def IntervalMesh(comm, nx: int, points: list, ghost_mode=cpp.mesh.GhostMode.none):
     """Create an interval mesh
 
     Parameters
@@ -34,19 +31,16 @@ def IntervalMesh(comm,
         Coordinates of the end points
     ghost_mode
 
-    Note
-    ----
-    Coordinate mapping is not attached
     """
-    element = ufl.VectorElement("Lagrange", "interval", 1, 1)
-    domain = ufl.Mesh(element)
+    domain = ufl.Mesh(ufl.VectorElement("Lagrange", "interval", 1))
     cmap = fem.create_coordinate_map(domain)
-    return cpp.generation.IntervalMesh.create(comm, nx, points, cmap, ghost_mode)
+    mesh = cpp.generation.IntervalMesh.create(comm, nx, points, cmap, ghost_mode)
+    domain._ufl_cargo = mesh
+    mesh._ufl_domain = domain
+    return mesh
 
 
-def UnitIntervalMesh(comm,
-                     nx,
-                     ghost_mode=cpp.mesh.GhostMode.none):
+def UnitIntervalMesh(comm, nx, ghost_mode=cpp.mesh.GhostMode.none):
     """Create a mesh on the unit interval with coordinate mapping attached
 
     Parameters
@@ -57,8 +51,7 @@ def UnitIntervalMesh(comm,
         Number of cells
 
     """
-    mesh = IntervalMesh(comm, nx, [0.0, 1.0], ghost_mode)
-    return mesh
+    return IntervalMesh(comm, nx, [0.0, 1.0], ghost_mode)
 
 
 def RectangleMesh(comm, points: typing.List[numpy.array], n: list, cell_type=cpp.mesh.CellType.triangle,
@@ -76,15 +69,13 @@ def RectangleMesh(comm, points: typing.List[numpy.array], n: list, cell_type=cpp
     diagonal
         Direction of diagonal
 
-    Note
-    ----
-    Coordinate mapping is not attached
-
     """
-    element = ufl.VectorElement("Lagrange", cpp.mesh.to_string(cell_type), 1, 2)
-    domain = ufl.Mesh(element)
+    domain = ufl.Mesh(ufl.VectorElement("Lagrange", cpp.mesh.to_string(cell_type), 1))
     cmap = fem.create_coordinate_map(domain)
-    return cpp.generation.RectangleMesh.create(comm, points, n, cmap, ghost_mode, diagonal)
+    mesh = cpp.generation.RectangleMesh.create(comm, points, n, cmap, ghost_mode, diagonal)
+    domain._ufl_cargo = mesh
+    mesh._ufl_domain = domain
+    return mesh
 
 
 def UnitSquareMesh(comm, nx, ny, cell_type=cpp.mesh.CellType.triangle,
@@ -103,10 +94,9 @@ def UnitSquareMesh(comm, nx, ny, cell_type=cpp.mesh.CellType.triangle,
         Direction of diagonal
 
     """
-    mesh = RectangleMesh(comm, [numpy.array([0.0, 0.0, 0.0]),
+    return RectangleMesh(comm, [numpy.array([0.0, 0.0, 0.0]),
                                 numpy.array([1.0, 1.0, 0.0])], [nx, ny], cell_type, ghost_mode,
                          diagonal)
-    return mesh
 
 
 def BoxMesh(comm,
@@ -125,21 +115,16 @@ def BoxMesh(comm,
     n
         List of cells in each direction
 
-    Note
-    ----
-    Coordinate mapping is not attached
     """
-    element = ufl.VectorElement("Lagrange", cpp.mesh.to_string(cell_type), 1, 3)
-    domain = ufl.Mesh(element)
+    domain = ufl.Mesh(ufl.VectorElement("Lagrange", cpp.mesh.to_string(cell_type), 1))
     cmap = fem.create_coordinate_map(domain)
-    return cpp.generation.BoxMesh.create(comm, points, n, cmap, ghost_mode)
+    mesh = cpp.generation.BoxMesh.create(comm, points, n, cmap, ghost_mode)
+    domain._ufl_cargo = mesh
+    mesh._ufl_domain = domain
+    return mesh
 
 
-def UnitCubeMesh(comm,
-                 nx,
-                 ny,
-                 nz,
-                 cell_type=cpp.mesh.CellType.tetrahedron,
+def UnitCubeMesh(comm, nx, ny, nz, cell_type=cpp.mesh.CellType.tetrahedron,
                  ghost_mode=cpp.mesh.GhostMode.none):
     """Create a mesh of a unit cube with coordinate mapping attached
 
@@ -155,6 +140,5 @@ def UnitCubeMesh(comm,
         Number of cells in "z" direction
 
     """
-    mesh = BoxMesh(comm, [numpy.array([0.0, 0.0, 0.0]), numpy.array(
+    return BoxMesh(comm, [numpy.array([0.0, 0.0, 0.0]), numpy.array(
         [1.0, 1.0, 1.0])], [nx, ny, nz], cell_type, ghost_mode)
-    return mesh
