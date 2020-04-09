@@ -11,15 +11,16 @@ import numpy as np
 import pytest
 import scipy.integrate
 import sympy as sp
-from dolfinx_utils.test.skips import skip_in_parallel
 from sympy.vector import CoordSys3D, matrix_to_vector
 
-from dolfinx import MPI, Function, FunctionSpace, Mesh, fem
+from dolfinx import MPI, Function, FunctionSpace, fem
 from dolfinx.cpp.io import (permutation_dolfin_to_vtk,
                             permutation_vtk_to_dolfin, permute_cell_ordering)
 from dolfinx.cpp.mesh import CellType, GhostMode
 from dolfinx.fem import assemble_scalar
 from dolfinx.io import XDMFFile
+from dolfinx.mesh import Mesh
+from dolfinx_utils.test.skips import skip_in_parallel
 from ufl import dx
 
 
@@ -105,7 +106,7 @@ def test_second_order_tri():
             cells = np.array([[0, 1, 3, 4, 8, 7],
                               [1, 2, 3, 5, 6, 8]])
             cells = permute_cell_ordering(cells, permutation_vtk_to_dolfin(CellType.triangle, cells.shape[1]))
-            mesh = Mesh(MPI.comm_world, CellType.triangle, points, cells, [], GhostMode.none)
+            mesh = Mesh(MPI.comm_world, CellType.triangle, points, cells, [], degree=2)
 
             def e2(x):
                 return x[2] + x[0] * x[1]
@@ -115,7 +116,6 @@ def test_second_order_tri():
             u = Function(V)
             cmap = fem.create_coordinate_map(mesh.ufl_domain())
 
-            mesh.geometry.coord_mapping = cmap
             u.interpolate(e2)
 
             intu = assemble_scalar(u * dx(mesh, metadata={"quadrature_degree": 20}))
@@ -149,8 +149,7 @@ def xtest_third_order_tri():
             cells = np.array([[0, 1, 3, 4, 5, 6, 7, 8, 9, 14],
                               [1, 2, 3, 12, 13, 10, 11, 7, 6, 15]])
             cells = permute_cell_ordering(cells, permutation_vtk_to_dolfin(CellType.triangle, cells.shape[1]))
-            mesh = Mesh(MPI.comm_world, CellType.triangle, points, cells,
-                        [], GhostMode.none)
+            mesh = Mesh(MPI.comm_world, CellType.triangle, points, cells, [], degree=3)
 
             def e2(x):
                 return x[2] + x[0] * x[1]
@@ -159,7 +158,6 @@ def xtest_third_order_tri():
             V = FunctionSpace(mesh, ("CG", degree))
             u = Function(V)
             cmap = fem.create_coordinate_map(mesh.ufl_domain())
-            mesh.geometry.coord_mapping = cmap
             u.interpolate(e2)
 
             intu = assemble_scalar(u * dx(metadata={"quadrature_degree": 40}))
@@ -201,8 +199,7 @@ def xtest_fourth_order_tri():
                               [1, 2, 3, 16, 17, 18, 19, 20, 21, 9, 8, 7, 22, 23, 24]])
             cells = permute_cell_ordering(cells, permutation_vtk_to_dolfin(CellType.triangle, cells.shape[1]))
 
-            mesh = Mesh(MPI.comm_world, CellType.triangle, points, cells,
-                        [], GhostMode.none)
+            mesh = Mesh(MPI.comm_world, CellType.triangle, points, cells, [], degree=4)
 
             def e2(x):
                 return x[2] + x[0] * x[1]
@@ -211,7 +208,6 @@ def xtest_fourth_order_tri():
             V = FunctionSpace(mesh, ("CG", degree))
             u = Function(V)
             cmap = fem.create_coordinate_map(mesh.ufl_domain())
-            mesh.geometry.coord_mapping = cmap
             u.interpolate(e2)
 
             intu = assemble_scalar(u * dx(metadata={"quadrature_degree": 50}))
@@ -373,7 +369,6 @@ def test_nth_order_triangle(order):
     V = FunctionSpace(mesh, ("CG", max(2, order)))
     u = Function(V)
     cmap = fem.create_coordinate_map(mesh.ufl_domain())
-    mesh.geometry.coord_mapping = cmap
     u.interpolate(e2)
 
     quad_order = 30
@@ -417,8 +412,7 @@ def test_second_order_quad(L, H, Z):
     cells = np.array([[0, 1, 2, 3, 4, 5, 6, 7, 8]])
     cells = permute_cell_ordering(cells, permutation_vtk_to_dolfin(CellType.quadrilateral, cells.shape[1]))
 
-    mesh = Mesh(MPI.comm_world, CellType.quadrilateral, points, cells,
-                [], GhostMode.none)
+    mesh = Mesh(MPI.comm_world, CellType.quadrilateral, points, cells, [], degree=2)
 
     def e2(x):
         return x[2] + x[0] * x[1]
@@ -427,8 +421,6 @@ def test_second_order_quad(L, H, Z):
     V = FunctionSpace(mesh, ("CG", 2))
     u = Function(V)
     cmap = fem.create_coordinate_map(mesh.ufl_domain())
-
-    mesh.geometry.coord_mapping = cmap
 
     u.interpolate(e2)
 
@@ -486,8 +478,6 @@ def xtest_third_order_quad(L, H, Z):
     V = FunctionSpace(mesh, ("CG", 3))
     u = Function(V)
     cmap = fem.create_coordinate_map(mesh.ufl_domain())
-
-    mesh.geometry.coord_mapping = cmap
 
     u.interpolate(e2)
 
@@ -555,8 +545,6 @@ def xtest_fourth_order_quad(L, H, Z):
     V = FunctionSpace(mesh, ("CG", 4))
     u = Function(V)
     cmap = fem.create_coordinate_map(mesh.ufl_domain())
-
-    mesh.geometry.coord_mapping = cmap
 
     u.interpolate(e2)
 
