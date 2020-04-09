@@ -8,10 +8,11 @@ import os
 
 import numpy as np
 import pytest
-from dolfinx_utils.test.fixtures import tempdir
 
-from dolfinx import cpp
+import ufl
+from dolfinx import cpp, fem
 from dolfinx.io import XDMFFile
+from dolfinx_utils.test.fixtures import tempdir
 
 assert (tempdir)
 
@@ -363,7 +364,12 @@ def test_topology_partition(tempdir, shape, order):
     x_g = coords[l2l]
 
     # Create Geometry
-    geometry = cpp.mesh.Geometry(dof_index_map, dofmap, layout, x_g, l2g, indices)
+    cell_str = cpp.mesh.to_string(shape)
+    cell = ufl.Cell(cell_str, geometric_dimension=x_g.shape[1])
+    element = ufl.VectorElement("Lagrange", cell, order)
+    domain = ufl.Mesh(element)
+    cmap = fem.create_coordinate_map(domain)
+    geometry = cpp.mesh.Geometry(dof_index_map, dofmap, cmap, x_g, l2g, indices)
 
     # Create mesh
     mesh = cpp.mesh.Mesh(cpp.MPI.comm_world, topology, geometry)

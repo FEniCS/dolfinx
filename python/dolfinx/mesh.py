@@ -49,11 +49,9 @@ _meshtags_types = {
 
 
 def Mesh(comm, cell_type, x, cells, ghosts, degree=1, ghost_mode=cpp.mesh.GhostMode.none):
-    element = ufl.VectorElement("Lagrange", cpp.mesh.to_string(cell_type), degree, x.shape[1])
-    # element = ufl.VectorElement("Lagrange", cpp.mesh.to_string(cell_type), degree, 2)
+    cell = ufl.Cell(cpp.mesh.to_string(cell_type), geometric_dimension=x.shape[1])
+    element = ufl.VectorElement("Lagrange", cell, degree)
     domain = ufl.Mesh(element)
-    gdim, = element.value_shape()
-    tdim = element.cell().topological_dimension()
     cmap = fem.create_coordinate_map(domain)
     return cpp.mesh.Mesh(comm, cell_type, x, cells, cmap, ghosts, ghost_mode)
 

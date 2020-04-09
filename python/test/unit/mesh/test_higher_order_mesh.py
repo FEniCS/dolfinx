@@ -110,7 +110,7 @@ def test_second_order_tri():
 
             def e2(x):
                 return x[2] + x[0] * x[1]
-            degree = mesh.geometry.dof_layout().degree()
+            degree = mesh.geometry.coord_mapping.dof_layout.degree()
             # Interpolate function
             V = FunctionSpace(mesh, ("CG", degree))
             u = Function(V)
@@ -354,7 +354,7 @@ def test_nth_order_triangle(order):
                            [0.37500, 0.25000, 0.00195], [0.37500, 0.37500, -0.00195],
                            [0.25000, 0.37500, -0.00195]])
 
-    mesh = Mesh(MPI.comm_world, CellType.triangle, points, cells, [], GhostMode.none)
+    mesh = Mesh(MPI.comm_world, CellType.triangle, points, cells, [])
 
     # Find nodes corresponding to y axis
     nodes = []
@@ -468,8 +468,7 @@ def xtest_third_order_quad(L, H, Z):
                       [1, 16, 17, 2, 18, 19, 20, 21, 22, 23, 6, 7, 24, 25, 26, 27]])
 
     cells = permute_cell_ordering(cells, permutation_vtk_to_dolfin(CellType.quadrilateral, cells.shape[1]))
-    mesh = Mesh(MPI.comm_world, CellType.quadrilateral, points, cells,
-                [], GhostMode.none)
+    mesh = Mesh(MPI.comm_world, CellType.quadrilateral, points, cells, [])
 
     def e2(x):
         return x[2] + x[0] * x[1]
