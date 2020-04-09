@@ -79,7 +79,7 @@ public:
   ///            Vector of pairs (name, constant). The index in the vector
   ///            is the position of the constant in the original
   ///            (nonsimplified) form.
-  /// @param[in] coord_mapping Coordinate mapping
+  /// @param[in] cmap Coordinate mapping
   Form(const std::vector<std::shared_ptr<const function::FunctionSpace>>&
            function_spaces,
        const FormIntegrals& integrals, const FormCoefficients& coefficients,
