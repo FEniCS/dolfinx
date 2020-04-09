@@ -81,7 +81,7 @@ public:
   /// @param[in] values A list values
   /// @return The corresponding indices
   const std::vector<std::vector<std::int32_t>>&
-  findices(std::vector<T> values) const
+  indices(std::vector<T> values) const
   {
     std::vector<std::vector<std::int32_t>> indices(values.size());
     // Reserve space
