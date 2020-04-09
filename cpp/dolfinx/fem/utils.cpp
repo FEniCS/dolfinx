@@ -661,17 +661,9 @@ fem::Form fem::create_form(
         "Vertex integrals not supported. Under development.");
   }
 
-  // FIXME: The CoordinateElement does really belong to the Mesh
-
-  // Create CoordinateElement
-  ufc_coordinate_mapping* ufc_cmap = ufc_form.create_coordinate_mapping();
-  auto cmap = std::make_shared<const fem::CoordinateElement>(
-      create_coordinate_map(*ufc_cmap));
-  std::free(ufc_cmap);
-
   return fem::Form(spaces, integrals,
                    FormCoefficients(fem::get_coeffs_from_ufc_form(ufc_form)),
-                   fem::get_constants_from_ufc_form(ufc_form), cmap);
+                   fem::get_constants_from_ufc_form(ufc_form));
 }
 //-----------------------------------------------------------------------------
 fem::CoordinateElement

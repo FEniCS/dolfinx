@@ -273,7 +273,7 @@ void fem(py::module& m)
   // dolfinx::fem::CoordinateElement
   py::class_<dolfinx::fem::CoordinateElement,
              std::shared_ptr<dolfinx::fem::CoordinateElement>>(
-      m, "CoordinateElement", "Coordinate mapping object")
+      m, "CoordinateElement", "Coordinate map element")
       .def_property_readonly("dof_layout",
                              &dolfinx::fem::CoordinateElement::dof_layout)
       .def("push_forward", &dolfinx::fem::CoordinateElement::push_forward);
@@ -498,8 +498,7 @@ void fem(py::module& m)
            })
       .def_property_readonly("rank", &dolfinx::fem::Form::rank)
       .def("mesh", &dolfinx::fem::Form::mesh)
-      .def("function_space", &dolfinx::fem::Form::function_space)
-      .def("coordinate_mapping", &dolfinx::fem::Form::coordinate_mapping);
+      .def("function_space", &dolfinx::fem::Form::function_space);
 
   m.def("locate_dofs_topological", &dolfinx::fem::locate_dofs_topological,
         py::arg("V"), py::arg("dim"), py::arg("entities"),
