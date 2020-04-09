@@ -11,7 +11,7 @@ from collections import defaultdict
 
 import pytest
 
-from dolfinx import MPI
+import mpi4py
 
 # --- Test fixtures (use as is or as examples): ---
 
@@ -41,18 +41,19 @@ def _create_tempdir(request):
     basepath = os.path.join(testfiledir, outputname)
     path = os.path.join(basepath, function)
 
-    # Add a sequence number to avoid collisions when tests are
-    # otherwise parameterized
-    if MPI.rank(MPI.comm_world) == 0:
+    # Add a sequence number to avoid collisions when tests are otherwise
+    # parameterized
+    comm = mpi4py.MPI.COMM_WORLD
+    if comm.rank == 0:
         _create_tempdir._sequencenumber[path] += 1
         sequencenumber = _create_tempdir._sequencenumber[path]
-        sequencenumber = MPI.sum(MPI.comm_world, sequencenumber)
+        sequencenumber = comm.allreduce(sequencenumber, op=mpi4py.MPI.SUM)
     else:
-        sequencenumber = MPI.sum(MPI.comm_world, 0)
+        sequencenumber = comm.allreduce(0, op=mpi4py.MPI.SUM)
     path += "__" + str(sequencenumber)
 
     # Delete and re-create directory on root node
-    if MPI.rank(MPI.comm_world) == 0:
+    if comm.rank == 0:
         # First time visiting this basepath, delete the old and create
         # a new
         if basepath not in _create_tempdir._basepaths:
@@ -71,7 +72,7 @@ def _create_tempdir(request):
         # e.g. test_foo_tempdir/test_something__3
         if not os.path.exists(path):
             os.mkdir(path)
-    MPI.barrier(MPI.comm_world)
+    comm.Barrier()
 
     return path
 

@@ -52,9 +52,10 @@ std::vector<T> get_dataset(MPI_Comm comm, const pugi::xml_node& dataset_node,
   const std::string format = format_attr.as_string();
   std::vector<T> data_vector;
   // Only read ASCII on process 0
+  const int rank = dolfinx::MPI::rank(comm);
   if (format == "XML")
   {
-    if (dolfinx::MPI::rank(comm) == 0)
+    if (rank == 0)
     {
       // Read data and trim any leading/trailing whitespace
       pugi::xml_node data_node = dataset_node.first_child();
@@ -99,7 +100,10 @@ std::vector<T> get_dataset(MPI_Comm comm, const pugi::xml_node& dataset_node,
     if (range[0] == 0 and range[1] == 0)
     {
       if (shape_xml == shape_hdf5)
-        range = dolfinx::MPI::local_range(comm, shape_hdf5[0]);
+      {
+        range = dolfinx::MPI::local_range(rank, shape_hdf5[0],
+                                          dolfinx::MPI::size(comm));
+      }
       else if (!shape_xml.empty() and shape_hdf5.size() == 1)
       {
         // Size of dims > 0
@@ -114,7 +118,8 @@ std::vector<T> get_dataset(MPI_Comm comm, const pugi::xml_node& dataset_node,
         }
 
         // Compute data range to read
-        range = dolfinx::MPI::local_range(comm, shape_xml[0]);
+        range = dolfinx::MPI::local_range(rank, shape_xml[0],
+                                          dolfinx::MPI::rank(comm));
         range[0] *= d;
         range[1] *= d;
       }
@@ -139,7 +144,10 @@ std::vector<T> get_dataset(MPI_Comm comm, const pugi::xml_node& dataset_node,
     for (auto dim : shape_xml)
       size *= dim;
 
-    if (size != (std::int64_t)dolfinx::MPI::sum(comm, data_vector.size()))
+    std::int64_t size_global = 0;
+    const std::int64_t size_local = data_vector.size();
+    MPI_Allreduce(&size_local, &size_global, 1, MPI_INT64_T, MPI_SUM, comm);
+    if (size != size_global)
     {
       throw std::runtime_error(
           "Data sizes in attribute and size of data read are inconsistent");

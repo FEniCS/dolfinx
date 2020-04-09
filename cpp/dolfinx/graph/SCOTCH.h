@@ -8,7 +8,7 @@
 
 #include "AdjacencyList.h"
 #include <cstdint>
-#include <dolfinx/common/MPI.h>
+#include <mpi.h>
 #include <string>
 #include <utility>
 #include <vector>

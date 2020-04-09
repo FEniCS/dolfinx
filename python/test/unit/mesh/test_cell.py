@@ -4,6 +4,7 @@
 #
 # SPDX-License-Identifier:    LGPL-3.0-or-later
 
+import mpi4py
 import numpy
 import pytest
 from dolfinx_utils.test.skips import skip_in_parallel
@@ -50,9 +51,8 @@ def test_volume_cells(mesh):
     tdim = mesh.topology.dim
     map = mesh.topology.index_map(tdim)
     num_cells = map.size_local + map.num_ghosts
-    v = cpp.mesh.volume_entities(mesh, range(num_cells), tdim)
-    v = MPI.sum(mesh.mpi_comm(), v.sum())
-    assert v == pytest.approx(1.0, rel=1e-9)
+    v = cpp.mesh.volume_entities(mesh, range(num_cells), mesh.topology.dim)
+    assert mesh.mpi_comm().allreduce(v.sum(), mpi4py.MPI.SUM) == pytest.approx(1.0, rel=1e-9)
 
 
 def test_volume_quadrilateralR2():

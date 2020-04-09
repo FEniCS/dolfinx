@@ -8,8 +8,8 @@
 
 #include <array>
 #include <cstddef>
-#include <dolfinx/common/MPI.h>
 #include <dolfinx/mesh/Mesh.h>
+#include <mpi.h>
 
 namespace dolfinx
 {

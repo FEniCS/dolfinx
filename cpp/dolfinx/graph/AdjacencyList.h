@@ -11,6 +11,7 @@
 #include <cassert>
 #include <numeric>
 #include <sstream>
+#include <type_traits>
 #include <vector>
 
 namespace dolfinx

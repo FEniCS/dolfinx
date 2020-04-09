@@ -10,6 +10,7 @@
 #include <cstring>
 #include <dolfinx/common/MPI.h>
 #include <limits>
+#include <mpi.h>
 #include <sstream>
 #include <string>
 #include <vector>
@@ -64,22 +65,23 @@ std::size_t hash_local(const T& x)
 /// each process, and the hash of the std::vector of all local hash keys
 /// is returned. This function is collective.
 template <class T>
-std::size_t hash_global(const MPI_Comm mpi_comm, const T& x)
+std::int64_t hash_global(const MPI_Comm comm, const T& x)
 {
   // Compute local hash
-  std::size_t local_hash = hash_local(x);
+  int64_t local_hash = hash_local(x);
 
   // Gather hash keys on root process
-  std::vector<std::size_t> all_hashes;
-  std::vector<std::size_t> local_hash_tmp(1, local_hash);
-  MPI::gather(mpi_comm, local_hash_tmp, all_hashes);
+  std::vector<int64_t> all_hashes(dolfinx::MPI::size(comm));
+  MPI_Gather(&local_hash, 1, MPI_INT64_T, all_hashes.data(), 1, MPI_INT64_T, 0,
+             comm);
 
   // Hash the received hash keys
-  boost::hash<std::vector<std::size_t>> hash;
-  std::size_t global_hash = hash(all_hashes);
+  boost::hash<std::vector<int64_t>> hash;
+  int64_t global_hash = hash(all_hashes);
 
   // Broadcast hash key to all processes
-  MPI::broadcast(mpi_comm, global_hash);
+  MPI_Bcast(&global_hash, 1, MPI_INT64_T, 0, comm);
+
   return global_hash;
 }
 } // namespace common

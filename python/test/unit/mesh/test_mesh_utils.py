@@ -9,6 +9,7 @@ import os
 import numpy as np
 import pytest
 
+import dolfinx
 import ufl
 from dolfinx import cpp, fem
 from dolfinx.io import XDMFFile
@@ -209,10 +210,10 @@ def test_topology_partition(tempdir, shape, order):
     # Create mesh data
     cells, x = create_mesh_gmsh(shape, order)
 
-    # Divide data amongst ranks (for testing). Possible to start will
-    # all data on a single rank.
-    range_c = cpp.MPI.local_range(cpp.MPI.comm_world, len(cells))
-    range_v = cpp.MPI.local_range(cpp.MPI.comm_world, len(x))
+    # Divide data amongst ranks (for testing). Also possible to start
+    # with all data on a single rank.
+    range_c = cpp.MPI.local_range(dolfinx.MPI.comm_world.rank, len(cells), dolfinx.MPI.comm_world.size)
+    range_v = cpp.MPI.local_range(dolfinx.MPI.comm_world.rank, len(x), dolfinx.MPI.comm_world.size)
     cells = cells[range_c[0]:range_c[1]]
     x = np.array(x[range_v[0]:range_v[1], : dim])
 
