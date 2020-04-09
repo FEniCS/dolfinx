@@ -91,7 +91,7 @@ Mesh mesh::create(MPI_Comm comm,
       comm, mesh::extract_topology(element.dof_layout(), cell_nodes),
       original_cell_index, ghost_owners, element.dof_layout(), ghost_mode);
 
-  // Create connectivity require to compute the Geometry (extra
+  // Create connectivity required to compute the Geometry (extra
   // connectivities for higher-order geometries)
   const int tdim = topology.dim();
   for (int e = 1; e < tdim; ++e)
