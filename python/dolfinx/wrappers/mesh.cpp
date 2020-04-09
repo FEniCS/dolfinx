@@ -93,14 +93,12 @@ void mesh(py::module& m)
                     const dolfinx::fem::CoordinateElement&,
                     const Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic,
                                        Eigen::RowMajor>&,
-                    const std::vector<std::int64_t>&,
                     const std::vector<std::int64_t>&>())
       .def_property_readonly("dim", &dolfinx::mesh::Geometry::dim,
                              "Geometric dimension")
       .def("dofmap",
            py::overload_cast<>(&dolfinx::mesh::Geometry::dofmap, py::const_))
       .def("index_map", &dolfinx::mesh::Geometry::index_map)
-      .def("global_indices", &dolfinx::mesh::Geometry::global_indices)
       .def_property(
           "x", py::overload_cast<>(&dolfinx::mesh::Geometry::x),
           [](dolfinx::mesh::Geometry& self,

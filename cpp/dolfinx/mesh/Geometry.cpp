@@ -17,29 +17,6 @@ using namespace dolfinx;
 using namespace dolfinx::mesh;
 
 //-----------------------------------------------------------------------------
-Geometry::Geometry(const std::shared_ptr<const common::IndexMap>& index_map,
-                   const graph::AdjacencyList<std::int32_t>& dofmap,
-                   const fem::CoordinateElement& element,
-                   const Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic,
-                                      Eigen::RowMajor>& x,
-                   const std::vector<std::int64_t>& input_global_indices)
-    : _dim(x.cols()), _dofmap(dofmap), _index_map(index_map), _cmap(element),
-      _input_global_indices(input_global_indices)
-{
-  if (x.rows() != (int)input_global_indices.size())
-    throw std::runtime_error("Size mis-match");
-
-  // Make all geometry 3D
-  if (_dim == 3)
-    _x = x;
-  else
-  {
-    _x.resize(x.rows(), 3);
-    _x.setZero();
-    _x.block(0, 0, x.rows(), x.cols()) = x;
-  }
-}
-//-----------------------------------------------------------------------------
 int Geometry::dim() const { return _dim; }
 //-----------------------------------------------------------------------------
 graph::AdjacencyList<std::int32_t>& Geometry::dofmap() { return _dofmap; }
@@ -138,6 +115,7 @@ mesh::Geometry mesh::create_geometry(
     igi[i] = indices[l2l[i]];
   }
 
-  return Geometry(dof_index_map, dofmap, coordinate_element, xg, igi);
+  return Geometry(dof_index_map, std::move(dofmap), coordinate_element,
+                  std::move(xg), std::move(igi));
 }
 //-----------------------------------------------------------------------------

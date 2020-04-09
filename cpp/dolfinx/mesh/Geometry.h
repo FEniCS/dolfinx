@@ -39,12 +39,26 @@ class Geometry
 {
 public:
   /// Constructor
+  template <typename AdjacencyList32, typename ArrayXd, typename Vector64>
   Geometry(const std::shared_ptr<const common::IndexMap>& index_map,
-           const graph::AdjacencyList<std::int32_t>& dofmap,
-           const fem::CoordinateElement& coordinate_element,
-           const Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic,
-                              Eigen::RowMajor>& x,
-           const std::vector<std::int64_t>& input_global_indices);
+           AdjacencyList32&& dofmap, const fem::CoordinateElement& element,
+           ArrayXd&& x, Vector64&& input_global_indices)
+      : _dim(x.cols()), _dofmap(std::forward<AdjacencyList32>(dofmap)),
+        _index_map(index_map), _cmap(element), _x(std::forward<ArrayXd>(x)),
+        _input_global_indices(std::forward<Vector64>(input_global_indices))
+  {
+    if (_x.rows() != (int)_input_global_indices.size())
+      throw std::runtime_error("Size mis-match");
+
+    // Make all geometry 3D
+    if (_dim != 3)
+    {
+      Eigen::Array<double, Eigen::Dynamic, 3, Eigen::RowMajor> x_tmp = _x;
+      _x.resize(_x.rows(), 3);
+      _x.setZero();
+      _x.block(0, 0, _x.rows(), _x.cols()) = x_tmp;
+    }
+  }
 
   /// Copy constructor
   Geometry(const Geometry&) = default;
