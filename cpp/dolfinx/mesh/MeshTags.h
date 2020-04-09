@@ -171,15 +171,15 @@ create_meshtags(MPI_Comm comm, const std::shared_ptr<const mesh::Mesh>& mesh,
                                    Eigen::RowMajor>& topology,
                 const std::vector<T>& values)
 {
+  assert(mesh);
   if ((std::size_t)topology.rows() != values.size())
     throw std::runtime_error("Number of entities and values must match");
 
   // Build array of topology node indices
-  std::vector<std::int64_t> topo_unique(
+  std::vector<std::int64_t> nodes(
       topology.data(), topology.data() + topology.rows() * topology.cols());
-  std::sort(topo_unique.begin(), topo_unique.end());
-  topo_unique.erase(std::unique(topo_unique.begin(), topo_unique.end()),
-                    topo_unique.end());
+  std::sort(nodes.begin(), nodes.end());
+  nodes.erase(std::unique(nodes.begin(), nodes.end()), nodes.end());
 
   const int e_dim = mesh::cell_dim(entity_cell_type);
   const int dim = mesh->topology().dim();
@@ -200,9 +200,8 @@ create_meshtags(MPI_Comm comm, const std::shared_ptr<const mesh::Mesh>& mesh,
 
   // Send input global indices to process responsible for it, based on
   // input global index value
-  std::int64_t num_igi_global = 0;
-  const std::int64_t igi_size = igi.size();
-  MPI_Allreduce(&igi_size, &num_igi_global, 1, MPI_INT64_T, MPI_SUM, comm);
+  const std::int64_t num_igi_global
+      = mesh->geometry().index_map()->size_global();
 
   // Split global array size and retrieve a range that this
   // process/officer is responsible for
@@ -211,15 +210,12 @@ create_meshtags(MPI_Comm comm, const std::shared_ptr<const mesh::Mesh>& mesh,
       = MPI::local_range(MPI::rank(comm), num_igi_global, comm_size);
   const int local_size = range[1] - range[0];
   std::vector<std::vector<std::int64_t>> send_igi(comm_size);
-  const std::int32_t size_local = mesh->geometry().index_map()->size_local()
-                                  + mesh->geometry().index_map()->num_ghosts();
-  assert((std::size_t)size_local == igi.size());
-  for (std::int32_t i = 0; i < size_local; ++i)
+  for (std::size_t i = 0; i < igi.size(); ++i)
   {
     // TODO: Optimise this call
     // Figure out which process responsible for the input global index
-    const int officer = MPI::index_owner(comm_size, igi[i], num_igi_global);
-    send_igi[officer].push_back(igi[i]);
+    const std::int32_t p = MPI::index_owner(comm_size, igi[i], num_igi_global);
+    send_igi[p].push_back(igi[i]);
   }
 
   const graph::AdjacencyList<std::int64_t> recv_igi
@@ -248,7 +244,7 @@ create_meshtags(MPI_Comm comm, const std::shared_ptr<const mesh::Mesh>& mesh,
   // read from file, i.e. for the unique topology data in file
   const Eigen::Array<bool, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
       dist_owners
-      = graph::Partitioning::distribute_data<bool>(comm, topo_unique, owners);
+      = graph::Partitioning::distribute_data<bool>(comm, nodes, owners);
 
   // Figure out which process needs input global indices read from file
   // and send to it
@@ -256,9 +252,9 @@ create_meshtags(MPI_Comm comm, const std::shared_ptr<const mesh::Mesh>& mesh,
   // Mapping from global topology number to its ownership (bools saying
   // if the process is owner)
   std::unordered_map<std::int64_t, Eigen::Array<bool, Eigen::Dynamic, 1>>
-      topo_owners;
-  for (std::size_t i = 0; i < topo_unique.size(); ++i)
-    topo_owners[topo_unique[i]] = dist_owners.row(i);
+      node_owners;
+  for (std::size_t i = 0; i < nodes.size(); ++i)
+    node_owners[nodes[i]] = dist_owners.row(i);
 
   std::vector<std::vector<std::int64_t>> send_ents(comm_size);
   std::vector<std::vector<T>> send_vals(comm_size);
@@ -277,7 +273,7 @@ create_meshtags(MPI_Comm comm, const std::shared_ptr<const mesh::Mesh>& mesh,
     {
       for (int j = 0; j < comm_size; ++j)
       {
-        if (topo_owners[entity[i]][j] && !sent[j])
+        if (node_owners[entity[i]][j] and !sent[j])
         {
           send_ents[j].insert(send_ents[j].end(), entity.begin(), entity.end());
           send_vals[j].push_back(values[e]);
