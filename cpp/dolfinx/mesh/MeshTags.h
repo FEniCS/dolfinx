@@ -175,12 +175,13 @@ create_meshtags(MPI_Comm comm, const std::shared_ptr<const mesh::Mesh>& mesh,
   if ((std::size_t)topology.rows() != values.size())
     throw std::runtime_error("Number of entities and values must match");
 
-  // Build array of topology node indices
+  // Build sorted array of topology node indices
   std::vector<std::int64_t> nodes(
       topology.data(), topology.data() + topology.rows() * topology.cols());
   std::sort(nodes.begin(), nodes.end());
   nodes.erase(std::unique(nodes.begin(), nodes.end()), nodes.end());
 
+  // Get mesh connectivity
   const int e_dim = mesh::cell_dim(entity_cell_type);
   const int dim = mesh->topology().dim();
   auto e_to_v = mesh->topology().connectivity(e_dim, 0);
@@ -195,46 +196,47 @@ create_meshtags(MPI_Comm comm, const std::shared_ptr<const mesh::Mesh>& mesh,
 
   // Get "input" global node indices (as in the input file before any
   // internal re-ordering)
-  const std::vector<std::int64_t>& igi
+  const std::vector<std::int64_t>& nodes_g
       = mesh->geometry().input_global_indices();
 
-  // Send input global indices to process responsible for it, based on
-  // input global index value
+  // Send input global indices to 'post master' rank, based on input
+  // global index value
   const std::int64_t num_igi_global
       = mesh->geometry().index_map()->size_global();
-
-  // Split global array size and retrieve a range that this
-  // process/officer is responsible for
   const int comm_size = MPI::size(comm);
-  std::array<std::int64_t, 2> range
-      = MPI::local_range(MPI::rank(comm), num_igi_global, comm_size);
-  const int local_size = range[1] - range[0];
+  // NOTE: could make this int32_t be sending: index <- index - dest_rank_offset
   std::vector<std::vector<std::int64_t>> send_igi(comm_size);
-  for (std::size_t i = 0; i < igi.size(); ++i)
+  for (std::int64_t node : nodes_g)
   {
     // TODO: Optimise this call
     // Figure out which process responsible for the input global index
-    const std::int32_t p = MPI::index_owner(comm_size, igi[i], num_igi_global);
-    send_igi[p].push_back(igi[i]);
+    const std::int32_t p
+        = dolfinx::MPI::index_owner(comm_size, node, num_igi_global);
+    send_igi[p].push_back(node);
   }
 
+  // Send global node indices to post-master rank, and receive back from
+  // other ranks indices for which this rank is the post-master
   const graph::AdjacencyList<std::int64_t> recv_igi
       = MPI::all_to_all(comm, graph::AdjacencyList<std::int64_t>(send_igi));
 
   // Handle received input global indices, i.e. put the owners of it to
   // a global position, which is its value
+  const std::array<std::int64_t, 2> range
+      = MPI::local_range(MPI::rank(comm), num_igi_global, comm_size);
+  const int local_size = range[1] - range[0];
   Eigen::Array<bool, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor> owners(
       local_size, comm_size);
   const std::size_t offset = MPI::global_offset(comm, local_size, true);
-  for (std::int32_t i = 0; i < recv_igi.num_nodes(); ++i)
+  for (std::int32_t p = 0; p < recv_igi.num_nodes(); ++p)
   {
-    auto data = recv_igi.links(i);
-    for (std::int32_t j = 0; j < data.rows(); ++j)
+    auto nodes = recv_igi.links(p);
+    for (std::int32_t j = 0; j < nodes.rows(); ++j)
     {
-      const std::int32_t local_index = data[j] - offset;
+      const std::int32_t local_index = nodes[j] - offset;
       assert(local_size > local_index);
       assert(local_index >= 0);
-      owners(local_index, i) = true;
+      owners(local_index, p) = true;
     }
   }
 
@@ -283,6 +285,11 @@ create_meshtags(MPI_Comm comm, const std::shared_ptr<const mesh::Mesh>& mesh,
     }
   }
 
+  const graph::AdjacencyList<std::int64_t> recv_ents
+      = MPI::all_to_all(comm, graph::AdjacencyList<std::int64_t>(send_ents));
+  const graph::AdjacencyList<T> recv_vals
+      = MPI::all_to_all(comm, graph::AdjacencyList<T>(send_vals));
+
   // Using just the information on current local mesh partition prepare
   // a mapping from *ordered* nodes of entity input global indices to
   // entity local index
@@ -297,34 +304,28 @@ create_meshtags(MPI_Comm comm, const std::shared_ptr<const mesh::Mesh>& mesh,
   {
     std::vector<std::int64_t> entity_igi(nnodes_per_entity);
 
-    // Iterate over all entities of the mesh. Find cell attached to the
-    // entity.
+    // Find cell attached to the entity
     std::int32_t c = e_to_c->links(e)[0];
     auto cell_nodes = cells_g.links(c);
     auto cell_vertices = c_to_v->links(c);
     auto entity_vertices = e_to_v->links(e);
     for (int v = 0; v < entity_vertices.rows(); ++v)
     {
-      // Find local index of vertex wrt. cell
+      // Find local index of vertex wrt cell
       const std::int32_t vertex = entity_vertices[vtk_perm[v]];
       auto it = std::find(cell_vertices.data(),
                           cell_vertices.data() + cell_vertices.rows(), vertex);
       assert(it != (cell_vertices.data() + cell_vertices.rows()));
       const int local_cell_vertex = std::distance(cell_vertices.data(), it);
 
-      // Insert input global index for the node of the entity
-      entity_igi[v] = igi[cell_nodes[local_cell_vertex]];
+      // Insert "input" global index for the node of the entity
+      entity_igi[v] = nodes_g[cell_nodes[local_cell_vertex]];
     }
 
     // Sorting is needed to match with entities stored in file
     std::sort(entity_igi.begin(), entity_igi.end());
     entities_igi.insert({entity_igi, e});
   }
-
-  const graph::AdjacencyList<std::int64_t> recv_ents
-      = MPI::all_to_all(comm, graph::AdjacencyList<std::int64_t>(send_ents));
-  const graph::AdjacencyList<T> recv_vals
-      = MPI::all_to_all(comm, graph::AdjacencyList<T>(send_vals));
 
   // Iterate over all received entities and find it in entities of the
   // mesh
