@@ -7,6 +7,7 @@
 from math import pi
 
 import pytest
+from mpi4py import MPI
 
 from dolfinx import MeshQuality, UnitCubeMesh
 

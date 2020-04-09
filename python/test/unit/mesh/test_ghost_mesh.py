@@ -4,8 +4,8 @@
 #
 # SPDX-License-Identifier:    LGPL-3.0-or-later
 
-from mpi4py import MPI
 import pytest
+from mpi4py import MPI
 
 from dolfinx import UnitCubeMesh, UnitIntervalMesh, UnitSquareMesh, cpp
 
@@ -41,7 +41,7 @@ def test_ghost_2d(mode):
     if mesh.mpi_comm().size > 1:
         map = mesh.topology.index_map(2)
         num_cells_local = map.size_local + map.num_ghosts
-        assert mesh.mpi_comm().allreduce(num_cells_local, op=mpi4py.MPI.SUM) > num_cells
+        assert mesh.mpi_comm().allreduce(num_cells_local, op=MPI.SUM) > num_cells
     assert mesh.topology.index_map(0).size_global == 81
     assert mesh.topology.index_map(2).size_global == num_cells
 
@@ -59,7 +59,7 @@ def test_ghost_3d(mode):
     if mesh.mpi_comm().size > 1:
         map = mesh.topology.index_map(3)
         num_cells_local = map.size_local + map.num_ghosts
-        assert mesh.mpi_comm().allreduce(num_cells_local, op=mpi4py.MPI.SUM) > num_cells
+        assert mesh.mpi_comm().allreduce(num_cells_local, op=MPI.SUM) > num_cells
     assert mesh.topology.index_map(0).size_global == 27
     assert mesh.topology.index_map(3).size_global == num_cells
 

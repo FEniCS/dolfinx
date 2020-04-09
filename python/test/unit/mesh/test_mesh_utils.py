@@ -67,6 +67,7 @@ def local_range(process, N, size):
         local_range = [process * n + r, process * n + r + n]
     return local_range
 
+
 def create_mesh_gmsh(shape, order):
     """Compute cell topology and geometric points for a range of cells types
     and geometric orders

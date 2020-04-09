@@ -114,7 +114,7 @@ def test_manufactured_poisson(degree, filename, datadir):
     print("Error functional compile time:", t1 - t0)
 
     t0 = time.time()
-    error = mesh.mpi_comm().allreduce(assemble_scalar(M), op=mpi4py.MPI.SUM)
+    error = mesh.mpi_comm().allreduce(assemble_scalar(M), op=MPI.SUM)
 
     t1 = time.time()
 
