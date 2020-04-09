@@ -80,8 +80,8 @@ public:
   /// indices per value, local-to-process
   /// @param[in] values A list values
   /// @return The corresponding indices
-  const std::vector<std::vector<std::int32_t>>&
-  indices(std::vector<T> values) const
+  std::vector<std::vector<std::int32_t>>
+  indices(const std::vector<T>& values) const
   {
     std::vector<std::vector<std::int32_t>>& indices(values.size());
     // Reserve space
