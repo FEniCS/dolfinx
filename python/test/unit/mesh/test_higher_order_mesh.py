@@ -7,11 +7,11 @@
 
 import os
 
-import mpi4py
 import numpy as np
 import pytest
 import scipy.integrate
 import sympy as sp
+from mpi4py import MPI
 from dolfinx_utils.test.skips import skip_in_parallel
 from sympy.vector import CoordSys3D, matrix_to_vector
 
@@ -120,7 +120,7 @@ def test_second_order_tri():
             u.interpolate(e2)
 
             intu = assemble_scalar(u * dx(mesh, metadata={"quadrature_degree": 20}))
-            intu = mesh.mpi_comm().allreduce(intu, op=mpi4py.MPI.SUM)
+            intu = mesh.mpi_comm().allreduce(intu, op=MPI.SUM)
 
             nodes = [0, 3, 7]
             ref = sympy_scipy(points, nodes, L, H)
@@ -164,7 +164,7 @@ def xtest_third_order_tri():
             u.interpolate(e2)
 
             intu = assemble_scalar(u * dx(metadata={"quadrature_degree": 40}))
-            intu = mesh.mpi_comm().allreduce(intu, op=mpi4py.MPI.SUM)
+            intu = mesh.mpi_comm().allreduce(intu, op=MPI.SUM)
 
             nodes = [0, 9, 8, 3]
             ref = sympy_scipy(points, nodes, L, H)
@@ -216,7 +216,7 @@ def xtest_fourth_order_tri():
             u.interpolate(e2)
 
             intu = assemble_scalar(u * dx(metadata={"quadrature_degree": 50}))
-            intu = mesh.mpi_comm().allreduce(intu, op=mpi4py.MPI.SUM)
+            intu = mesh.mpi_comm().allreduce(intu, op=MPI.SUM)
             nodes = [0, 3, 10, 11, 12]
             ref = sympy_scipy(points, nodes, L, H)
             assert ref == pytest.approx(intu, rel=1e-4)
@@ -379,7 +379,7 @@ def test_nth_order_triangle(order):
 
     quad_order = 30
     intu = assemble_scalar(u * dx(metadata={"quadrature_degree": quad_order}))
-    intu = mesh.mpi_comm().allreduce(intu, op=mpi4py.MPI.SUM)
+    intu = mesh.mpi_comm().allreduce(intu, op=MPI.SUM)
 
     ref = scipy_one_cell(points, nodes)
     assert ref == pytest.approx(intu, rel=3e-3)
@@ -391,7 +391,7 @@ def test_xdmf_input_tri(datadir):
     with XDMFFile(MPI.COMM_WORLD, os.path.join(datadir, "mesh.xdmf"), "r", encoding=XDMFFile.Encoding.ASCII) as xdmf:
         mesh = xdmf.read_mesh(name="Grid")
     surface = assemble_scalar(1 * dx(mesh))
-    assert mesh.mpi_comm().allreduce(surface, op=mpi4py.MPI.SUM) == pytest.approx(4 * np.pi, rel=1e-4)
+    assert mesh.mpi_comm().allreduce(surface, op=MPI.SUM) == pytest.approx(4 * np.pi, rel=1e-4)
 
 
 @skip_in_parallel
@@ -434,7 +434,7 @@ def test_second_order_quad(L, H, Z):
     u.interpolate(e2)
 
     intu = assemble_scalar(u * dx(mesh))
-    intu = mesh.mpi_comm().allreduce(intu, op=mpi4py.MPI.SUM)
+    intu = mesh.mpi_comm().allreduce(intu, op=MPI.SUM)
 
     nodes = [0, 3, 7]
     ref = sympy_scipy(points, nodes, L, H)
@@ -493,7 +493,7 @@ def xtest_third_order_quad(L, H, Z):
     u.interpolate(e2)
 
     intu = assemble_scalar(u * dx(mesh))
-    intu = mesh.mpi_comm().allreduce(intu, op=mpi4py.MPI.SUM)
+    intu = mesh.mpi_comm().allreduce(intu, op=MPI.SUM)
 
     nodes = [0, 3, 10, 11]
     ref = sympy_scipy(points, nodes, 2 * L, H)
@@ -562,7 +562,7 @@ def xtest_fourth_order_quad(L, H, Z):
     u.interpolate(e2)
 
     intu = assemble_scalar(u * dx(mesh))
-    intu = mesh.mpi_comm().allreduce(intu, op=mpi4py.MPI.SUM)
+    intu = mesh.mpi_comm().allreduce(intu, op=MPI.SUM)
 
     nodes = [0, 5, 10, 15, 20]
     ref = sympy_scipy(points, nodes, 2 * L, H)
@@ -604,7 +604,7 @@ def xtest_gmsh_input_quad(order):
                 [], GhostMode.none)
     surface = assemble_scalar(1 * dx(mesh))
 
-    assert mesh.mpi_comm().allreduce(surface, op=mpi4py.MPI.SUM) == pytest.approx(4 * np.pi * R * R, rel=1e-5)
+    assert mesh.mpi_comm().allreduce(surface, op=MPI.SUM) == pytest.approx(4 * np.pi * R * R, rel=1e-5)
 
     # Bug related to VTK output writing
     # def e2(x):

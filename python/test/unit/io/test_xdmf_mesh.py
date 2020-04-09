@@ -7,6 +7,7 @@
 import os
 
 import pytest
+from mpi4py import MPI
 
 from dolfinx import UnitCubeMesh, UnitIntervalMesh, UnitSquareMesh, cpp
 from dolfinx.cpp.mesh import CellType

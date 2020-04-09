@@ -7,6 +7,7 @@
 import mpi4py
 import numpy
 import pytest
+from mpi4py import MPI
 from dolfinx_utils.test.skips import skip_in_parallel
 
 from dolfinx import (Mesh, MeshEntity, UnitCubeMesh, UnitIntervalMesh,

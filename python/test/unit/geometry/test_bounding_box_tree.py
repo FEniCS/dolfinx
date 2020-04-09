@@ -7,6 +7,7 @@
 
 import numpy
 import pytest
+from mpi4py import MPI
 
 from dolfinx import (UnitCubeMesh, UnitIntervalMesh, UnitSquareMesh, cpp,
                      geometry)

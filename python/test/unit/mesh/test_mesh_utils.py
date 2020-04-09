@@ -58,6 +58,15 @@ def xtest_extract_topology():
     assert np.array_equal(cells_filtered.array(), cells_filtered1.array())
 
 
+def local_range(process, N, size):
+    n = N // size
+    r = N % size
+    if process < r:
+        local_range = [process * (n + 1), process * (n + 1) + n + 1]
+    else:
+        local_range = [process * n + r, process * n + r + n]
+    return local_range
+
 def create_mesh_gmsh(shape, order):
     """Compute cell topology and geometric points for a range of cells types
     and geometric orders
@@ -183,7 +192,7 @@ def test_topology_partition(tempdir, shape, order):
     layout = get_dof_layout(shape, order)
     dim = cpp.mesh.cell_dim(shape)
 
-    # rank = MPI.rank(MPI.COMM_WORLD)
+    # rank = MPI.COMM_WORLD.rank
     # if rank == 0:
     #     # Create mesh data
     #     cells, x = create_mesh_gmsh(shape, order)
@@ -211,8 +220,8 @@ def test_topology_partition(tempdir, shape, order):
 
     # Divide data amongst ranks (for testing). Also possible to start
     # with all data on a single rank.
-    range_c = cpp.MPI.local_range(MPI.COMM_WORLD.rank, len(cells), MPI.COMM_WORLD.size)
-    range_v = cpp.MPI.local_range(MPI.comm_world.rank, len(x), MPI.COMM_WORLD.size)
+    range_c = local_range(MPI.COMM_WORLD.rank, len(cells), MPI.COMM_WORLD.size)
+    range_v = local_range(MPI.COMM_WORLD.rank, len(x), MPI.COMM_WORLD.size)
     cells = cells[range_c[0]:range_c[1]]
     x = np.array(x[range_v[0]:range_v[1], : dim])
 

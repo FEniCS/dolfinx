@@ -58,17 +58,17 @@ def test_insert_local(mesh, V):
     sp.assemble()
 
     sp1 = cpp.la.SparsityPattern(mesh.mpi_comm(), [[sp], [sp]])
-    if (MPI.rank(mesh.mpi_comm()) == 0):
+    if (mesh.mpi_comm().rank == 0):
         print("\nPattern:")
         print(sp1.str(True))
 
     sp1 = cpp.la.SparsityPattern(mesh.mpi_comm(), [[sp, sp]])
-    if (MPI.rank(mesh.mpi_comm()) == 0):
+    if (mesh.mpi_comm().rank == 0):
         print("\nPattern:")
         print(sp1.str(True))
 
     sp1 = cpp.la.SparsityPattern(mesh.mpi_comm(), [[sp, sp], [sp, sp]])
-    if (MPI.rank(mesh.mpi_comm()) == 0):
+    if (mesh.mpi_comm().rank == 0):
         print("\nPattern:")
         print(sp1.str(True))
 
@@ -102,7 +102,7 @@ def xtest_insert_global(mesh, V):
     nnz_d = sp.num_nonzeros_diagonal()
     nnz_od = sp.num_nonzeros_off_diagonal()
 
-    # rank = MPI.rank(mesh.mpi_comm())
+    # rank = mesh.mpi_comm().rank
     # size = mesh.mpi_comm().size
 
     # Tabulate on diagonal and off diagonal nnzs
@@ -150,7 +150,7 @@ def xtest_insert_local_global(mesh, V):
     nnz_d = sp.num_nonzeros_diagonal()
     nnz_od = sp.num_nonzeros_off_diagonal()
 
-    # rank = MPI.rank(mesh.mpi_comm())
+    # rank = mesh.mpi_comm().rank
     # size = mesh.mpi_comm().size
 
     # Tabulate on diagonal and off diagonal nnzs

@@ -1,4 +1,5 @@
 import numpy
+from mpi4py import MPI
 
 from dolfinx import Mesh, cpp, geometry
 from dolfinx.cpp.mesh import CellType

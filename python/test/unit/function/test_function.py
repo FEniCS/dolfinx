@@ -12,6 +12,7 @@ import cffi
 import numpy as np
 import pytest
 from dolfinx_utils.test.skips import skip_if_complex, skip_in_parallel
+from mpi4py import MPI
 from petsc4py import PETSc
 
 import ufl

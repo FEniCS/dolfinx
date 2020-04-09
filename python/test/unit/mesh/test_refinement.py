@@ -4,7 +4,8 @@
 #
 # SPDX-License-Identifier:    LGPL-3.0-or-later
 
-from dolfinx import UnitSquareMesh, UnitCubeMesh, MPI, FunctionSpace
+from mpi4py import MPI
+from dolfinx import UnitSquareMesh, UnitCubeMesh, FunctionSpace
 from dolfinx.cpp.refinement import refine
 
 

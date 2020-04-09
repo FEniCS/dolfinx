@@ -120,7 +120,7 @@ def test_cffi_assembly():
     mesh = UnitSquareMesh(MPI.COMM_WORLD, 13, 13)
     V = FunctionSpace(mesh, ("Lagrange", 1))
 
-    if MPI.rank(mesh.mpi_comm()) == 0:
+    if mesh.mpi_comm().rank == 0:
         from cffi import FFI
         ffibuilder = FFI()
         ffibuilder.set_source("_cffi_kernelA", r"""

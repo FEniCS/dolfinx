@@ -6,6 +6,7 @@
 """Unit tests for the function library"""
 
 import pytest
+from mpi4py import MPI
 
 import dolfinx
 import ufl

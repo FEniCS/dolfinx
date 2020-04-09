@@ -5,6 +5,7 @@
 # SPDX-License-Identifier:    LGPL-3.0-or-later
 
 import pytest
+from mpi4py import MPI
 
 import dolfinx
 from dolfinx import UnitCubeMesh, UnitSquareMesh

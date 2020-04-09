@@ -10,6 +10,7 @@ from contextlib import ExitStack
 
 import numpy as np
 import pytest
+from mpi4py import MPI
 
 import ufl
 from dolfinx import (UnitCubeMesh, UnitSquareMesh, VectorFunctionSpace,

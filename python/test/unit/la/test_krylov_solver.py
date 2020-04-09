@@ -18,6 +18,7 @@ from dolfinx.fem import (apply_lifting, assemble_matrix, assemble_vector,
                          locate_dofs_topological, set_bc)
 from dolfinx.la import VectorSpaceBasis
 from dolfinx.mesh import locate_entities_geometrical
+from mpi4py import MPI
 from petsc4py import PETSc
 from ufl import (Identity, TestFunction, TrialFunction, dot, dx, grad, inner,
                  sym, tr)

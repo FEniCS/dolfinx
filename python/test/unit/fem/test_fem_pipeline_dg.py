@@ -6,7 +6,6 @@
 
 import os
 
-import mpi4py
 import numpy as np
 import pytest
 from dolfinx_utils.test.skips import skip_in_parallel
@@ -98,5 +97,5 @@ def test_manufactured_poisson_dg(degree, filename, datadir):
     solver.solve(b, uh.vector)
     uh.vector.ghostUpdate(addv=PETSc.InsertMode.INSERT,
                           mode=PETSc.ScatterMode.FORWARD)
-    error = mesh.mpi_comm().allreduce(assemble_scalar((u_exact - uh)**2 * dx), op=mpi4py.MPI.SUM)
+    error = mesh.mpi_comm().allreduce(assemble_scalar((u_exact - uh)**2 * dx), op=MPI.SUM)
     assert np.absolute(error) < 1.0e-14

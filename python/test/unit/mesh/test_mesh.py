@@ -159,7 +159,7 @@ def test_mesh_construction_pygmsh():
 
     pygmsh = pytest.importorskip("pygmsh")
 
-    if MPI.rank(MPI.COMM_WORLD) == 0:
+    if MPI.COMM_WORLD.rank == 0:
         geom = pygmsh.opencascade.Geometry()
         geom.add_ball([0.0, 0.0, 0.0], 1.0, char_length=0.2)
         pygmsh_mesh = pygmsh.generate_mesh(geom)
@@ -192,7 +192,7 @@ def test_mesh_construction_pygmsh():
     assert mesh.geometry.dim == 3
     assert mesh.topology.dim == 1
 
-    if MPI.rank(MPI.COMM_WORLD) == 0:
+    if MPI.COMM_WORLD.rank == 0:
         print("Generate mesh")
         geom = pygmsh.opencascade.Geometry()
         geom.add_ball([0.0, 0.0, 0.0], 1.0, char_length=0.2)

@@ -10,6 +10,7 @@ from random import shuffle
 
 import numpy as np
 import pytest
+from mpi4py import MPI
 from dolfinx_utils.test.skips import skip_in_parallel
 
 from dolfinx import (FacetNormal, Function, FunctionSpace, Mesh,

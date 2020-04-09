@@ -8,6 +8,7 @@
 import numpy as np
 import pytest
 
+from mpi4py import MPI
 from dolfinx import Constant, UnitCubeMesh
 
 
