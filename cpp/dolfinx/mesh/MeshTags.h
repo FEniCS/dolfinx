@@ -345,22 +345,20 @@ create_meshtags(MPI_Comm comm, const std::shared_ptr<const mesh::Mesh>& mesh,
 
   std::vector<std::int32_t> indices_new;
   std::vector<T> values_new;
-  for (std::int32_t i = 0; i < recv_ents.num_nodes(); ++i)
+  const Eigen::Map<const Eigen::Array<std::int64_t, Eigen::Dynamic,
+                                      Eigen::Dynamic, Eigen::RowMajor>>
+      entities(recv_ents.array().data(),
+               recv_ents.array().rows() / nnodes_per_entity, nnodes_per_entity);
+  for (Eigen::Index e = 0; e < entities.rows(); ++e)
   {
-    auto recv_ents_p = recv_ents.links(i);
-    auto recv_vals_p = recv_vals.links(i);
-    for (std::int32_t e = 0; e < recv_ents_p.rows() / nnodes_per_entity; ++e)
+    std::vector<std::int64_t> _entity(entities.row(e).data(),
+                                      entities.row(e).data() + nnodes_per_entity);
+    std::sort(_entity.begin(), _entity.end());
+    const auto it = entities_igi.find(_entity);
+    if (it != entities_igi.end())
     {
-      std::vector<std::int64_t> _entity(
-          recv_ents_p.data() + nnodes_per_entity * e,
-          recv_ents_p.data() + nnodes_per_entity * e + nnodes_per_entity);
-      std::sort(_entity.begin(), _entity.end());
-      const auto it = entities_igi.find(_entity);
-      if (it != entities_igi.end())
-      {
-        indices_new.push_back(it->second);
-        values_new.push_back(recv_vals_p[e]);
-      }
+      indices_new.push_back(it->second);
+      values_new.push_back(recv_vals.array()[e]);
     }
   }
 
