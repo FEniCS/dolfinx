@@ -45,8 +45,10 @@ void add_meshtags(MPI_Comm comm, const mesh::MeshTags<T>& meshtags,
   attribute_node.append_attribute("AttributeType") = "Scalar";
   attribute_node.append_attribute("Center") = "Cell";
 
-  const std::int64_t global_num_values
-      = dolfinx::MPI::sum(comm, (std::int64_t)active_entities.size());
+  std::int64_t global_num_values = 0;
+  const std::int64_t local_num_values = active_entities.size();
+  MPI_Allreduce(&local_num_values, &global_num_values, 1, MPI_INT64_T, MPI_SUM,
+                comm);
   const std::int64_t offset
       = dolfinx::MPI::global_offset(comm, active_entities.size(), true);
   const bool use_mpi_io = (dolfinx::MPI::size(comm) > 1);

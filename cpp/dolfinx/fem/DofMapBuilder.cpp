@@ -545,8 +545,6 @@ DofMapBuilder::build(MPI_Comm comm, const mesh::Topology& topology,
   auto index_map = std::make_unique<common::IndexMap>(
       comm, num_owned, local_to_global_unowned, block_size);
   assert(index_map);
-  assert(dolfinx::MPI::sum(comm, (std::int64_t)index_map->size_local())
-         == global_dimension);
 
   // FIXME: There is an assumption here on the dof order for an element.
   //        It should come from the ElementDofLayout.

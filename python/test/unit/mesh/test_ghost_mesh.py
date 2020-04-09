@@ -4,12 +4,13 @@
 #
 # SPDX-License-Identifier:    LGPL-3.0-or-later
 
+import mpi4py
 import pytest
 
 from dolfinx import MPI, UnitCubeMesh, UnitIntervalMesh, UnitSquareMesh, cpp
 
 
-@pytest.mark.xfail(condition=MPI.size(MPI.comm_world) == 1,
+@pytest.mark.xfail(condition=MPI.comm_world.size == 1,
                    reason="Shared ghost modes fail in serial")
 def test_ghost_vertex_1d():
     mesh = UnitIntervalMesh(MPI.comm_world, 20,
@@ -18,7 +19,7 @@ def test_ghost_vertex_1d():
     assert mesh.topology.index_map(1).size_global == 20
 
 
-@pytest.mark.xfail(condition=MPI.size(MPI.comm_world) == 1,
+@pytest.mark.xfail(condition=MPI.comm_world.size == 1,
                    reason="Shared ghost modes fail in serial")
 def test_ghost_facet_1d():
     mesh = UnitIntervalMesh(MPI.comm_world, 20,
@@ -37,10 +38,10 @@ def test_ghost_2d(mode):
     N = 8
     num_cells = N * N * 2
     mesh = UnitSquareMesh(MPI.comm_world, N, N, ghost_mode=mode)
-    if MPI.size(mesh.mpi_comm()) > 1:
+    if mesh.mpi_comm().size > 1:
         map = mesh.topology.index_map(2)
         num_cells_local = map.size_local + map.num_ghosts
-        assert MPI.sum(mesh.mpi_comm(), num_cells_local) > num_cells
+        assert mesh.mpi_comm().allreduce(num_cells_local, op=mpi4py.MPI.SUM) > num_cells
     assert mesh.topology.index_map(0).size_global == 81
     assert mesh.topology.index_map(2).size_global == num_cells
 
@@ -55,10 +56,10 @@ def test_ghost_3d(mode):
     N = 2
     num_cells = N * N * N * 6
     mesh = UnitCubeMesh(MPI.comm_world, N, N, N, ghost_mode=mode)
-    if MPI.size(mesh.mpi_comm()) > 1:
+    if mesh.mpi_comm().size > 1:
         map = mesh.topology.index_map(3)
         num_cells_local = map.size_local + map.num_ghosts
-        assert MPI.sum(mesh.mpi_comm(), num_cells_local) > num_cells
+        assert mesh.mpi_comm().allreduce(num_cells_local, op=mpi4py.MPI.SUM) > num_cells
     assert mesh.topology.index_map(0).size_global == 27
     assert mesh.topology.index_map(3).size_global == num_cells
 
