@@ -44,7 +44,6 @@ public:
            const fem::CoordinateElement& coordinate_element,
            const Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic,
                               Eigen::RowMajor>& x,
-           const std::vector<std::int64_t>& global_indices,
            const std::vector<std::int64_t>& input_global_indices);
 
   /// Copy constructor
@@ -85,9 +84,6 @@ public:
   /// Return coordinate array for node n (index is local to the process)
   Eigen::Vector3d node(int n) const;
 
-  /// Global input indices for points
-  const std::vector<std::int64_t>& global_indices() const;
-
   /// Global user indices
   const std::vector<std::int64_t>& input_global_indices() const;
 
@@ -116,9 +112,6 @@ private:
 
   // Coordinates for all points stored as a contiguous array
   Eigen::Array<double, Eigen::Dynamic, 3, Eigen::RowMajor> _x;
-
-  // Global indices for points
-  std::vector<std::int64_t> _global_indices;
 
   // Global indices as provided on Geometry creation
   std::vector<std::int64_t> _input_global_indices;

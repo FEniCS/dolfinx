@@ -22,13 +22,11 @@ Geometry::Geometry(const std::shared_ptr<const common::IndexMap>& index_map,
                    const fem::CoordinateElement& element,
                    const Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic,
                                       Eigen::RowMajor>& x,
-                   const std::vector<std::int64_t>& global_indices,
                    const std::vector<std::int64_t>& input_global_indices)
     : _dim(x.cols()), _dofmap(dofmap), _index_map(index_map), _cmap(element),
-      _global_indices(global_indices),
       _input_global_indices(input_global_indices)
 {
-  if (x.rows() != (int)global_indices.size())
+  if (x.rows() != (int)input_global_indices.size())
     throw std::runtime_error("Size mis-match");
 
   // Make all geometry 3D
@@ -70,11 +68,6 @@ Geometry::x() const
 Eigen::Vector3d Geometry::node(int n) const
 {
   return _x.row(n).matrix().transpose();
-}
-//-----------------------------------------------------------------------------
-const std::vector<std::int64_t>& Geometry::global_indices() const
-{
-  return _global_indices;
 }
 //-----------------------------------------------------------------------------
 const std::vector<std::int64_t>& Geometry::input_global_indices() const
@@ -145,6 +138,6 @@ mesh::Geometry mesh::create_geometry(
     igi[i] = indices[l2l[i]];
   }
 
-  return Geometry(dof_index_map, dofmap, coordinate_element, xg, l2g, igi);
+  return Geometry(dof_index_map, dofmap, coordinate_element, xg, igi);
 }
 //-----------------------------------------------------------------------------
