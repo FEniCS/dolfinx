@@ -12,7 +12,7 @@ import numpy as np
 import pytest
 
 import ufl
-from dolfinx import (MPI, UnitCubeMesh, UnitSquareMesh, VectorFunctionSpace,
+from dolfinx import (UnitCubeMesh, UnitSquareMesh, VectorFunctionSpace,
                      cpp, fem, la)
 from dolfinx.cpp.mesh import CellType, GhostMode
 from dolfinx.fem import assemble_matrix

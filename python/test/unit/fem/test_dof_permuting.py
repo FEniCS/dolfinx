@@ -6,7 +6,7 @@
 """Unit tests for the fem interface"""
 
 from random import shuffle
-
+from mpi4py import MPI
 import numpy as np
 import pytest
 

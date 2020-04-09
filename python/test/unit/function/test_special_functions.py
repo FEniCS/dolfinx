@@ -9,7 +9,7 @@ import pytest
 
 import dolfinx
 import ufl
-from dolfinx import (MPI, UnitCubeMesh, UnitIntervalMesh,
+from dolfinx import (UnitCubeMesh, UnitIntervalMesh,
                      UnitSquareMesh)
 from dolfinx_utils.test.skips import skip_in_parallel
 

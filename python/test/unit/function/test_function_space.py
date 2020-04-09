@@ -7,7 +7,7 @@
 
 import pytest
 
-from dolfinx import (MPI, Function, FunctionSpace, UnitCubeMesh,
+from dolfinx import (Function, FunctionSpace, UnitCubeMesh,
                      VectorFunctionSpace)
 from ufl import (FiniteElement, TestFunction, TrialFunction, VectorElement,
                  grad, triangle)

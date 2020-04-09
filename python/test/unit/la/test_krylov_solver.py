@@ -12,7 +12,7 @@ import numpy as np
 
 import pytest
 import ufl
-from dolfinx import (MPI, DirichletBC, Function, FunctionSpace,
+from dolfinx import (DirichletBC, Function, FunctionSpace,
                      UnitSquareMesh, VectorFunctionSpace)
 from dolfinx.fem import (apply_lifting, assemble_matrix, assemble_vector,
                          locate_dofs_topological, set_bc)

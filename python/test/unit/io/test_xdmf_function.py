@@ -8,7 +8,7 @@ import os
 
 import pytest
 
-from dolfinx import (MPI, Function, FunctionSpace,
+from dolfinx import (Function, FunctionSpace,
                      TensorFunctionSpace, UnitCubeMesh, UnitIntervalMesh,
                      UnitSquareMesh, VectorFunctionSpace, has_petsc_complex)
 from dolfinx.cpp.mesh import CellType

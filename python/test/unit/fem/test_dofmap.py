@@ -7,11 +7,12 @@
 
 import sys
 
+from mpi4py import MPI
 import numpy as np
 import pytest
 from dolfinx_utils.test.skips import skip_in_parallel
 
-from dolfinx import (MPI, FunctionSpace, Mesh, MeshEntity, UnitCubeMesh,
+from dolfinx import (FunctionSpace, Mesh, MeshEntity, UnitCubeMesh,
                      UnitIntervalMesh, UnitSquareMesh, VectorFunctionSpace, fem)
 from dolfinx.cpp.mesh import CellType, GhostMode
 from ufl import FiniteElement, MixedElement, VectorElement

@@ -12,7 +12,7 @@ import numpy as np
 import pytest
 from dolfinx_utils.test.skips import skip_in_parallel
 
-from dolfinx import (MPI, FacetNormal, Function, FunctionSpace, Mesh,
+from dolfinx import (FacetNormal, Function, FunctionSpace, Mesh,
                      VectorFunctionSpace, cpp, fem)
 from dolfinx.cpp.mesh import CellType
 from dolfinx.mesh import MeshTags

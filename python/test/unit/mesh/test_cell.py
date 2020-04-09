@@ -8,7 +8,7 @@ import numpy
 import pytest
 from dolfinx_utils.test.skips import skip_in_parallel
 
-from dolfinx import (MPI, Mesh, MeshEntity, UnitCubeMesh, UnitIntervalMesh,
+from dolfinx import (Mesh, MeshEntity, UnitCubeMesh, UnitIntervalMesh,
                      UnitSquareMesh, cpp)
 from dolfinx.cpp.mesh import CellType
 
