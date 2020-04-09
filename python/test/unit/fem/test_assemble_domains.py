@@ -7,6 +7,7 @@
 
 import numpy
 import pytest
+from mpi4py import MPI
 from petsc4py import PETSc
 
 import dolfinx
@@ -16,18 +17,18 @@ import ufl
 
 @pytest.fixture
 def mesh():
-    return dolfinx.generation.UnitSquareMesh(dolfinx.MPI.comm_world, 10, 10)
+    return dolfinx.generation.UnitSquareMesh(MPI.COMM_WORLD, 10, 10)
 
 
 parametrize_ghost_mode = pytest.mark.parametrize("mode", [
     pytest.param(dolfinx.cpp.mesh.GhostMode.none,
-                 marks=pytest.mark.skipif(condition=dolfinx.MPI.size(dolfinx.MPI.comm_world) > 1,
+                 marks=pytest.mark.skipif(condition=MPI.COMM_WORLD.size > 1,
                                           reason="Unghosted interior facets fail in parallel")),
     pytest.param(dolfinx.cpp.mesh.GhostMode.shared_facet,
-                 marks=pytest.mark.skipif(condition=dolfinx.MPI.size(dolfinx.MPI.comm_world) == 1,
+                 marks=pytest.mark.skipif(condition=MPI.COMM_WORLD.size == 1,
                                           reason="Shared ghost modes fail in serial")),
     pytest.param(dolfinx.cpp.mesh.GhostMode.shared_vertex,
-                 marks=pytest.mark.skipif(condition=dolfinx.MPI.size(dolfinx.MPI.comm_world) == 1,
+                 marks=pytest.mark.skipif(condition=MPI.COMM_WORLD.size == 1,
                                           reason="Shared ghost modes fail in serial"))])
 
 
@@ -172,7 +173,7 @@ def test_assembly_ds_domains(mesh):
 @parametrize_ghost_mode
 def xtest_assembly_dS_domains(mode):
     N = 10
-    mesh = dolfinx.UnitSquareMesh(dolfinx.MPI.comm_world, N, N, ghost_mode=mode)
+    mesh = dolfinx.UnitSquareMesh(MPI.COMM_WORLD, N, N, ghost_mode=mode)
     one = dolfinx.Constant(mesh, 1)
     val = dolfinx.fem.assemble_scalar(one * ufl.dS)
     val = dolfinx.MPI.sum(mesh.mpi_comm(), val)
@@ -181,7 +182,7 @@ def xtest_assembly_dS_domains(mode):
 
 @parametrize_ghost_mode
 def xtest_additivity(mode):
-    mesh = dolfinx.UnitSquareMesh(dolfinx.MPI.comm_world, 12, 12, ghost_mode=mode)
+    mesh = dolfinx.UnitSquareMesh(MPI.COMM_WORLD, 12, 12, ghost_mode=mode)
     V = dolfinx.FunctionSpace(mesh, ("CG", 1))
 
     f1 = dolfinx.Function(V)

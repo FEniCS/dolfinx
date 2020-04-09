@@ -13,7 +13,7 @@ from dolfinx_utils.test.skips import skip_if_complex, skip_in_parallel
 from petsc4py import PETSc
 
 import ufl
-from dolfinx import MPI, DirichletBC, Function, FunctionSpace, fem, geometry
+from dolfinx import DirichletBC, Function, FunctionSpace, fem, geometry
 from dolfinx.fem import (apply_lifting, assemble_matrix, assemble_scalar,
                          assemble_vector, locate_dofs_topological, set_bc)
 from dolfinx.io import XDMFFile
@@ -34,7 +34,7 @@ def test_manufactured_poisson(degree, filename, datadir):
 
     """
 
-    with XDMFFile(MPI.comm_world, os.path.join(datadir, filename), "r", encoding=XDMFFile.Encoding.ASCII) as xdmf:
+    with XDMFFile(MPI.COMM_WORLD, os.path.join(datadir, filename), "r", encoding=XDMFFile.Encoding.ASCII) as xdmf:
         mesh = xdmf.read_mesh(name="Grid")
 
     V = FunctionSpace(mesh, ("Lagrange", degree))
@@ -93,7 +93,7 @@ def test_manufactured_poisson(degree, filename, datadir):
     print("Matrix assembly time:", t1 - t0)
 
     # Create LU linear solver
-    solver = PETSc.KSP().create(MPI.comm_world)
+    solver = PETSc.KSP().create(MPI.COMM_WORLD)
     solver.setType(PETSc.KSP.Type.PREONLY)
     solver.getPC().setType(PETSc.PC.Type.LU)
     solver.setOperators(A)
@@ -137,7 +137,7 @@ def test_manufactured_poisson(degree, filename, datadir):
 def test_manufactured_vector1(family, degree, filename, datadir):
     """Projection into H(div/curl) spaces"""
 
-    with XDMFFile(MPI.comm_world, os.path.join(datadir, filename), "r", encoding=XDMFFile.Encoding.ASCII) as xdmf:
+    with XDMFFile(MPI.COMM_WORLD, os.path.join(datadir, filename), "r", encoding=XDMFFile.Encoding.ASCII) as xdmf:
         mesh = xdmf.read_mesh(name="Grid")
 
     V = FunctionSpace(mesh, (family, degree))
@@ -158,7 +158,7 @@ def test_manufactured_vector1(family, degree, filename, datadir):
     # Create LU linear solver (Note: need to use a solver that
     # re-orders to handle pivots, e.g. not the PETSc built-in LU
     # solver)
-    solver = PETSc.KSP().create(MPI.comm_world)
+    solver = PETSc.KSP().create(MPI.COMM_WORLD)
     solver.setType("preonly")
     solver.getPC().setType('lu')
     solver.setOperators(A)
@@ -198,7 +198,7 @@ def test_manufactured_vector1(family, degree, filename, datadir):
 def test_manufactured_vector2(family, degree, filename, datadir):
     """Projection into H(div/curl) spaces"""
 
-    with XDMFFile(MPI.comm_world, os.path.join(datadir, filename), "r", XDMFFile.Encoding.ASCII) as xdmf:
+    with XDMFFile(MPI.COMM_WORLD, os.path.join(datadir, filename), "r", XDMFFile.Encoding.ASCII) as xdmf:
         mesh = xdmf.read_mesh(name="Grid")
 
     V = FunctionSpace(mesh, (family, degree + 1))
@@ -219,7 +219,7 @@ def test_manufactured_vector2(family, degree, filename, datadir):
     # Create LU linear solver (Note: need to use a solver that
     # re-orders to handle pivots, e.g. not the PETSc built-in LU
     # solver)
-    solver = PETSc.KSP().create(MPI.comm_world)
+    solver = PETSc.KSP().create(MPI.COMM_WORLD)
     solver.setType("preonly")
     solver.getPC().setType('lu')
     solver.setOperators(A)

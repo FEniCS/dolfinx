@@ -19,6 +19,7 @@ import numba.cffi_support
 import numpy as np
 import petsc4py.lib
 import pytest
+from mpi4py import MPI
 from petsc4py import PETSc
 from petsc4py import get_config as PETSc_get_config
 
@@ -115,7 +116,7 @@ MatSetValues_abi = petsc_lib_cffi.MatSetValuesLocal
 # Make MatSetValuesLocal from PETSc available via cffi in API mode
 worker = os.getenv('PYTEST_XDIST_WORKER', None)
 module_name = "_petsc_cffi_{}".format(worker)
-if dolfinx.MPI.comm_world.Get_rank() == 0:
+if MPI.COMM_WORLD.Get_rank() == 0:
     os.environ["CC"] = "mpicc"
     ffibuilder = cffi.FFI()
     ffibuilder.cdef("""
@@ -139,7 +140,7 @@ if dolfinx.MPI.comm_world.Get_rank() == 0:
     path = pathlib.Path(__file__).parent.absolute()
     ffibuilder.compile(tmpdir=path, verbose=False)
 
-dolfinx.MPI.comm_world.barrier()
+MPI.COMM_WORLD.barrier()
 
 spec = importlib.util.find_spec(module_name)
 if spec is None:
@@ -272,7 +273,7 @@ def assemble_matrix_ctypes(A, mesh, dofmap, set_vals, mode):
 def test_custom_mesh_loop_rank1():
 
     # Create mesh and function space
-    mesh = dolfinx.generation.UnitSquareMesh(dolfinx.MPI.comm_world, 64, 64)
+    mesh = dolfinx.generation.UnitSquareMesh(MPI.COMM_WORLD, 64, 64)
     V = dolfinx.FunctionSpace(mesh, ("Lagrange", 1))
 
     # Unpack mesh and dofmap data
@@ -333,7 +334,7 @@ def test_custom_mesh_loop_ctypes_rank2():
     """Test numba assembler for bilinear form"""
 
     # Create mesh and function space
-    mesh = dolfinx.generation.UnitSquareMesh(dolfinx.MPI.comm_world, 64, 64)
+    mesh = dolfinx.generation.UnitSquareMesh(MPI.COMM_WORLD, 64, 64)
     V = dolfinx.FunctionSpace(mesh, ("Lagrange", 1))
 
     # Extract mesh and dofmap data
@@ -373,7 +374,7 @@ def test_custom_mesh_loop_ctypes_rank2():
 def test_custom_mesh_loop_cffi_rank2(set_vals):
     """Test numba assembler for bilinear form"""
 
-    mesh = dolfinx.generation.UnitSquareMesh(dolfinx.MPI.comm_world, 64, 64)
+    mesh = dolfinx.generation.UnitSquareMesh(MPI.COMM_WORLD, 64, 64)
     V = dolfinx.FunctionSpace(mesh, ("Lagrange", 1))
 
     # Test against generated code and general assembler

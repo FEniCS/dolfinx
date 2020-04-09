@@ -46,7 +46,7 @@ def tempfile(tempdir, request):
 
 @pytest.mark.xfail(reason="file_option not added to VTK initializer")
 def test_save_1d_mesh(tempfile, file_options):
-    mesh = UnitIntervalMesh(MPI.comm_world, 32)
+    mesh = UnitIntervalMesh(MPI.COMM_WORLD, 32)
     VTKFile(tempfile + "mesh.pvd").write(mesh)
     f = VTKFile(tempfile + "mesh.pvd")
     f.write(mesh, 0.)
@@ -57,7 +57,7 @@ def test_save_1d_mesh(tempfile, file_options):
 
 @pytest.mark.xfail(reason="file_option not added to VTK initializer")
 def test_save_2d_mesh(tempfile, file_options):
-    mesh = UnitSquareMesh(MPI.comm_world, 32, 32)
+    mesh = UnitSquareMesh(MPI.COMM_WORLD, 32, 32)
     VTKFile(tempfile + "mesh.pvd").write(mesh)
     f = VTKFile(tempfile + "mesh.pvd")
     f.write(mesh, 0.)
@@ -68,7 +68,7 @@ def test_save_2d_mesh(tempfile, file_options):
 
 @pytest.mark.xfail(reason="file_option not added to VTK initializer")
 def test_save_3d_mesh(tempfile, file_options):
-    mesh = UnitCubeMesh(MPI.comm_world, 8, 8, 8)
+    mesh = UnitCubeMesh(MPI.COMM_WORLD, 8, 8, 8)
     VTKFile(tempfile + "mesh.pvd").write(mesh)
     f = VTKFile(tempfile + "mesh.pvd")
     f.write(mesh, 0.)
@@ -79,7 +79,7 @@ def test_save_3d_mesh(tempfile, file_options):
 
 @pytest.mark.xfail(reason="file_option not added to VTK initializer")
 def test_save_1d_scalar(tempfile, file_options):
-    mesh = UnitIntervalMesh(MPI.comm_world, 32)
+    mesh = UnitIntervalMesh(MPI.COMM_WORLD, 32)
     u = Function(FunctionSpace(mesh, ("Lagrange", 2)))
     u.vector.set(1.0)
     VTKFile(tempfile + "u.pvd").write(u)
@@ -92,7 +92,7 @@ def test_save_1d_scalar(tempfile, file_options):
 
 @pytest.mark.xfail(reason="file_option not added to VTK initializer")
 def test_save_2d_scalar(tempfile, file_options):
-    mesh = UnitSquareMesh(MPI.comm_world, 16, 16)
+    mesh = UnitSquareMesh(MPI.COMM_WORLD, 16, 16)
     u = Function(FunctionSpace(mesh, ("Lagrange", 2)))
     u.vector.set(1.0)
     VTKFile(tempfile + "u.pvd").write(u)
@@ -105,7 +105,7 @@ def test_save_2d_scalar(tempfile, file_options):
 
 @pytest.mark.xfail(reason="file_option not added to VTK initializer")
 def test_save_3d_scalar(tempfile, file_options):
-    mesh = UnitCubeMesh(MPI.comm_world, 8, 8, 8)
+    mesh = UnitCubeMesh(MPI.COMM_WORLD, 8, 8, 8)
     u = Function(FunctionSpace(mesh, ("Lagrange", 2)))
     u.vector.set(1.0)
     VTKFile(tempfile + "u.pvd").write(u)
@@ -119,7 +119,7 @@ def test_save_3d_scalar(tempfile, file_options):
 @pytest.mark.xfail(reason="FFCX fails for tensor spaces in 1D")
 @skip_in_parallel
 def test_save_1d_vector(tempfile, file_options):
-    mesh = UnitIntervalMesh(MPI.comm_world, 32)
+    mesh = UnitIntervalMesh(MPI.COMM_WORLD, 32)
     u = Function(VectorFunctionSpace(mesh, ("Lagrange", 2)))
     u.vector.set(1.0)
     VTKFile(tempfile + "u.pvd").write(u)
@@ -129,7 +129,7 @@ def test_save_1d_vector(tempfile, file_options):
 
 @pytest.mark.xfail(reason="file_option not added to VTK initializer")
 def test_save_2d_vector(tempfile, file_options):
-    mesh = UnitSquareMesh(MPI.comm_world, 16, 16)
+    mesh = UnitSquareMesh(MPI.COMM_WORLD, 16, 16)
     u = Function(VectorFunctionSpace(mesh, "Lagrange", 2))
     u.vector.set(1)
     VTKFile(tempfile + "u.pvd").write(u)
@@ -142,7 +142,7 @@ def test_save_2d_vector(tempfile, file_options):
 
 @pytest.mark.xfail(reason="file_option not added to VTK initializer")
 def test_save_3d_vector(tempfile, file_options):
-    mesh = UnitCubeMesh(MPI.comm_world, 8, 8, 8)
+    mesh = UnitCubeMesh(MPI.COMM_WORLD, 8, 8, 8)
     u = Function(VectorFunctionSpace(mesh, "Lagrange", 2))
     u.vector.set(1)
     VTKFile(tempfile + "u.pvd").write(u)
@@ -156,7 +156,7 @@ def test_save_3d_vector(tempfile, file_options):
 @pytest.mark.xfail(reason="FFCX fails for tensor spaces in 1D")
 @skip_in_parallel
 def test_save_1d_tensor(tempfile, file_options):
-    mesh = UnitIntervalMesh(MPI.comm_world, 32)
+    mesh = UnitIntervalMesh(MPI.COMM_WORLD, 32)
     u = Function(TensorFunctionSpace(mesh, ("Lagrange", 2)))
     u.vector.set(1)
     VTKFile(tempfile + "u.pvd").write(u)
@@ -166,7 +166,7 @@ def test_save_1d_tensor(tempfile, file_options):
 
 @pytest.mark.xfail(reason="file_option not added to VTK initializer")
 def test_save_2d_tensor(tempfile, file_options):
-    mesh = UnitSquareMesh(MPI.comm_world, 16, 16)
+    mesh = UnitSquareMesh(MPI.COMM_WORLD, 16, 16)
     u = Function(TensorFunctionSpace(mesh, ("Lagrange", 2)))
     u.vector.set(1)
     VTKFile(tempfile + "u.pvd").write(u)
@@ -179,7 +179,7 @@ def test_save_2d_tensor(tempfile, file_options):
 
 @pytest.mark.xfail(reason="file_option not added to VTK initializer")
 def test_save_3d_tensor(tempfile, file_options):
-    mesh = UnitCubeMesh(MPI.comm_world, 8, 8, 8)
+    mesh = UnitCubeMesh(MPI.COMM_WORLD, 8, 8, 8)
     u = Function(TensorFunctionSpace(mesh, ("Lagrange", 2)))
     u.vector.set(1)
     VTKFile(tempfile + "u.pvd").write(u)

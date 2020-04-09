@@ -21,7 +21,7 @@ xfail = pytest.mark.xfail(strict=True)
 
 @pytest.fixture
 def mesh():
-    return UnitSquareMesh(MPI.comm_world, 4, 4)
+    return UnitSquareMesh(MPI.COMM_WORLD, 4, 4)
 
 
 @pytest.mark.skip
@@ -29,18 +29,18 @@ def mesh():
     'mesh_factory',
     [
         (UnitIntervalMesh, (
-            MPI.comm_world,
+            MPI.COMM_WORLD,
             8,
         )),
-        (UnitSquareMesh, (MPI.comm_world, 4, 4)),
-        (UnitCubeMesh, (MPI.comm_world, 2, 2, 2)),
+        (UnitSquareMesh, (MPI.COMM_WORLD, 4, 4)),
+        (UnitCubeMesh, (MPI.COMM_WORLD, 2, 2, 2)),
         # cell.contains(Point) does not work correctly
         # for quad/hex cells once it is fixed, this test will pass
         pytest.param((UnitSquareMesh,
-                      (MPI.comm_world, 4, 4, CellType.quadrilateral)),
+                      (MPI.COMM_WORLD, 4, 4, CellType.quadrilateral)),
                      marks=pytest.mark.xfail),
         pytest.param((UnitCubeMesh,
-                      (MPI.comm_world, 2, 2, 2, CellType.hexahedron)),
+                      (MPI.COMM_WORLD, 2, 2, 2, CellType.hexahedron)),
                      marks=pytest.mark.xfail)
     ])
 def test_tabulate_all_coordinates(mesh_factory):
@@ -92,9 +92,9 @@ def test_tabulate_all_coordinates(mesh_factory):
 
 @pytest.mark.skip
 @pytest.mark.parametrize(
-    'mesh_factory', [(UnitSquareMesh, (MPI.comm_world, 4, 4)),
+    'mesh_factory', [(UnitSquareMesh, (MPI.COMM_WORLD, 4, 4)),
                      (UnitSquareMesh,
-                      (MPI.comm_world, 4, 4, CellType.quadrilateral))])
+                      (MPI.COMM_WORLD, 4, 4, CellType.quadrilateral))])
 def test_tabulate_dofs(mesh_factory):
     func, args = mesh_factory
     mesh = func(*args)
@@ -122,9 +122,9 @@ def test_tabulate_dofs(mesh_factory):
 
 @pytest.mark.skip
 @pytest.mark.parametrize(
-    'mesh_factory', [(UnitSquareMesh, (MPI.comm_world, 4, 4)),
+    'mesh_factory', [(UnitSquareMesh, (MPI.COMM_WORLD, 4, 4)),
                      (UnitSquareMesh,
-                      (MPI.comm_world, 4, 4, CellType.quadrilateral))])
+                      (MPI.COMM_WORLD, 4, 4, CellType.quadrilateral))])
 def test_tabulate_coord_periodic(mesh_factory):
     def periodic_boundary(x):
         return x[0] < np.finfo(float).eps
@@ -169,9 +169,9 @@ def test_tabulate_coord_periodic(mesh_factory):
 
 @pytest.mark.skip
 @pytest.mark.parametrize(
-    'mesh_factory', [(UnitSquareMesh, (MPI.comm_world, 3, 3)),
+    'mesh_factory', [(UnitSquareMesh, (MPI.COMM_WORLD, 3, 3)),
                      (UnitSquareMesh,
-                      (MPI.comm_world, 3, 3, CellType.quadrilateral))])
+                      (MPI.COMM_WORLD, 3, 3, CellType.quadrilateral))])
 def test_global_dof_builder(mesh_factory):
     func, args = mesh_factory
     mesh = func(*args)
@@ -232,9 +232,9 @@ def test_entity_dofs(mesh):
 @pytest.mark.skip
 @skip_in_parallel
 @pytest.mark.parametrize(
-    'mesh_factory', [(UnitSquareMesh, (MPI.comm_world, 2, 2)),
+    'mesh_factory', [(UnitSquareMesh, (MPI.COMM_WORLD, 2, 2)),
                      (UnitSquareMesh,
-                      (MPI.comm_world, 2, 2, CellType.quadrilateral))])
+                      (MPI.COMM_WORLD, 2, 2, CellType.quadrilateral))])
 def test_entity_closure_dofs(mesh_factory):
     func, args = mesh_factory
     mesh = func(*args)
@@ -347,9 +347,9 @@ def test_block_size_real(mesh):
 
 @pytest.mark.skip
 @pytest.mark.parametrize(
-    'mesh_factory', [(UnitSquareMesh, (MPI.comm_world, 4, 4)),
+    'mesh_factory', [(UnitSquareMesh, (MPI.COMM_WORLD, 4, 4)),
                      (UnitSquareMesh,
-                      (MPI.comm_world, 4, 4, CellType.quadrilateral))])
+                      (MPI.COMM_WORLD, 4, 4, CellType.quadrilateral))])
 def test_local_dimension(mesh_factory):
     func, args = mesh_factory
     mesh = func(*args)
@@ -445,7 +445,7 @@ def test_higher_order_coordinate_map(points, celltype):
     Computes physical coordinates of a cell, based on the coordinate map.
     """
     cells = np.array([range(len(points))])
-    mesh = Mesh(MPI.comm_world, celltype, points, cells, [], GhostMode.none)
+    mesh = Mesh(MPI.COMM_WORLD, celltype, points, cells, [], GhostMode.none)
 
     V = FunctionSpace(mesh, ("Lagrange", 2))
 
@@ -495,7 +495,7 @@ def test_higher_order_tetra_coordinate_map(order):
                            [0, 1, 3 / 2], [1 / 2, 0, 3 / 2], [1 / 2, 1, 0], [0, 0, 3 / 2],
                            [0, 1, 0], [1 / 2, 0, 0]])
     cells = np.array([range(len(points))])
-    mesh = Mesh(MPI.comm_world, celltype, points, cells, [], GhostMode.none)
+    mesh = Mesh(MPI.COMM_WORLD, celltype, points, cells, [], GhostMode.none)
     V = FunctionSpace(mesh, ("Lagrange", order))
     X = V.element.dof_reference_coordinates()
     coord_dofs = mesh.geometry.dofmap()

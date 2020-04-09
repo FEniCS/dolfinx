@@ -16,7 +16,7 @@ from ufl.log import UFLException
 
 @pytest.fixture
 def mesh():
-    return UnitCubeMesh(MPI.comm_world, 8, 8, 8)
+    return UnitCubeMesh(MPI.COMM_WORLD, 8, 8, 8)
 
 
 @pytest.fixture
@@ -148,7 +148,7 @@ def test_argument_equality(mesh, V, V2, W, W2):
     function spaces.
 
     """
-    mesh2 = UnitCubeMesh(MPI.comm_world, 8, 8, 8)
+    mesh2 = UnitCubeMesh(MPI.COMM_WORLD, 8, 8, 8)
     V3 = FunctionSpace(mesh2, ('CG', 1))
     W3 = VectorFunctionSpace(mesh2, ('CG', 1))
 

@@ -13,6 +13,7 @@ import numpy
 import petsc4py
 import pytest
 from dolfinx_utils.test.fixtures import tempdir  # noqa: F401
+from mpi4py import MPI
 from petsc4py import PETSc
 
 import dolfinx
@@ -63,9 +64,9 @@ def test_petsc_casters_cppimport(tempdir):  # noqa: F811
     module = compile_module()
 
     # Create a PETSc vector
-    local_range = dolfinx.MPI.local_range(dolfinx.MPI.comm_world, 10)
+    local_range = dolfinx.MPI.local_range(MPI.COMM_WORLD, 10)
     x1 = PETSc.Vec()
-    x1.create(dolfinx.MPI.comm_world)
+    x1.create(MPI.COMM_WORLD)
     x1.setSizes((local_range[1] - local_range[0], None))
     x1.setFromOptions()
     x1.setArray(numpy.arange(local_range[0], local_range[1]))

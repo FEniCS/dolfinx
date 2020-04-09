@@ -14,7 +14,7 @@ import sympy as sp
 from dolfinx_utils.test.skips import skip_in_parallel
 from sympy.vector import CoordSys3D, matrix_to_vector
 
-from dolfinx import MPI, Function, FunctionSpace, Mesh, fem
+from dolfinx import Function, FunctionSpace, Mesh, fem
 from dolfinx.cpp.io import (permutation_dolfin_to_vtk,
                             permutation_vtk_to_dolfin, permute_cell_ordering)
 from dolfinx.cpp.mesh import CellType, GhostMode
@@ -105,7 +105,7 @@ def test_second_order_tri():
             cells = np.array([[0, 1, 3, 4, 8, 7],
                               [1, 2, 3, 5, 6, 8]])
             cells = permute_cell_ordering(cells, permutation_vtk_to_dolfin(CellType.triangle, cells.shape[1]))
-            mesh = Mesh(MPI.comm_world, CellType.triangle, points, cells, [], GhostMode.none)
+            mesh = Mesh(MPI.COMM_WORLD, CellType.triangle, points, cells, [], GhostMode.none)
 
             def e2(x):
                 return x[2] + x[0] * x[1]
@@ -149,7 +149,7 @@ def xtest_third_order_tri():
             cells = np.array([[0, 1, 3, 4, 5, 6, 7, 8, 9, 14],
                               [1, 2, 3, 12, 13, 10, 11, 7, 6, 15]])
             cells = permute_cell_ordering(cells, permutation_vtk_to_dolfin(CellType.triangle, cells.shape[1]))
-            mesh = Mesh(MPI.comm_world, CellType.triangle, points, cells,
+            mesh = Mesh(MPI.COMM_WORLD, CellType.triangle, points, cells,
                         [], GhostMode.none)
 
             def e2(x):
@@ -201,7 +201,7 @@ def xtest_fourth_order_tri():
                               [1, 2, 3, 16, 17, 18, 19, 20, 21, 9, 8, 7, 22, 23, 24]])
             cells = permute_cell_ordering(cells, permutation_vtk_to_dolfin(CellType.triangle, cells.shape[1]))
 
-            mesh = Mesh(MPI.comm_world, CellType.triangle, points, cells,
+            mesh = Mesh(MPI.COMM_WORLD, CellType.triangle, points, cells,
                         [], GhostMode.none)
 
             def e2(x):
@@ -358,7 +358,7 @@ def test_nth_order_triangle(order):
                            [0.37500, 0.25000, 0.00195], [0.37500, 0.37500, -0.00195],
                            [0.25000, 0.37500, -0.00195]])
 
-    mesh = Mesh(MPI.comm_world, CellType.triangle, points, cells, [], GhostMode.none)
+    mesh = Mesh(MPI.COMM_WORLD, CellType.triangle, points, cells, [], GhostMode.none)
 
     # Find nodes corresponding to y axis
     nodes = []
@@ -387,7 +387,7 @@ def test_nth_order_triangle(order):
 @skip_in_parallel
 def test_xdmf_input_tri(datadir):
     # pass
-    with XDMFFile(MPI.comm_world, os.path.join(datadir, "mesh.xdmf"), "r", encoding=XDMFFile.Encoding.ASCII) as xdmf:
+    with XDMFFile(MPI.COMM_WORLD, os.path.join(datadir, "mesh.xdmf"), "r", encoding=XDMFFile.Encoding.ASCII) as xdmf:
         mesh = xdmf.read_mesh(name="Grid")
     surface = assemble_scalar(1 * dx(mesh))
     assert MPI.sum(mesh.mpi_comm(), surface) == pytest.approx(4 * np.pi, rel=1e-4)
@@ -417,7 +417,7 @@ def test_second_order_quad(L, H, Z):
     cells = np.array([[0, 1, 2, 3, 4, 5, 6, 7, 8]])
     cells = permute_cell_ordering(cells, permutation_vtk_to_dolfin(CellType.quadrilateral, cells.shape[1]))
 
-    mesh = Mesh(MPI.comm_world, CellType.quadrilateral, points, cells,
+    mesh = Mesh(MPI.COMM_WORLD, CellType.quadrilateral, points, cells,
                 [], GhostMode.none)
 
     def e2(x):
@@ -476,7 +476,7 @@ def xtest_third_order_quad(L, H, Z):
                       [1, 16, 17, 2, 18, 19, 20, 21, 22, 23, 6, 7, 24, 25, 26, 27]])
 
     cells = permute_cell_ordering(cells, permutation_vtk_to_dolfin(CellType.quadrilateral, cells.shape[1]))
-    mesh = Mesh(MPI.comm_world, CellType.quadrilateral, points, cells,
+    mesh = Mesh(MPI.COMM_WORLD, CellType.quadrilateral, points, cells,
                 [], GhostMode.none)
 
     def e2(x):
@@ -546,7 +546,7 @@ def xtest_fourth_order_quad(L, H, Z):
                        29, 30, 31, 33, 34, 35, 37, 38, 39]])
 
     cells = permute_cell_ordering(cells, permutation_vtk_to_dolfin(CellType.quadrilateral, cells.shape[1]))
-    mesh = Mesh(MPI.comm_world, CellType.quadrilateral, points, cells,
+    mesh = Mesh(MPI.COMM_WORLD, CellType.quadrilateral, points, cells,
                 [], GhostMode.none)
 
     def e2(x):
@@ -599,7 +599,7 @@ def xtest_gmsh_input_quad(order):
         cells = permute_cell_ordering(msh.cells_dict[element], permutation_vtk_to_dolfin(
             CellType.quadrilateral, msh.cells_dict[element].shape[1]))
 
-    mesh = Mesh(MPI.comm_world, CellType.quadrilateral, msh.points, cells,
+    mesh = Mesh(MPI.COMM_WORLD, CellType.quadrilateral, msh.points, cells,
                 [], GhostMode.none)
     surface = assemble_scalar(1 * dx(mesh))
 

@@ -55,7 +55,7 @@ def unit_cell(cell_type, random_order=True):
     for i, j in enumerate(order):
         ordered_points[j] = points[i]
     cells = np.array([order])
-    mesh = Mesh(MPI.comm_world, cell_type, ordered_points, cells,
+    mesh = Mesh(MPI.COMM_WORLD, cell_type, ordered_points, cells,
                 [], cpp.mesh.GhostMode.none)
     mesh.geometry.coord_mapping = fem.create_coordinate_map(mesh)
     mesh.create_connectivity_all()
@@ -116,7 +116,7 @@ def two_unit_cells(cell_type, agree=False, random_order=True, return_order=False
     for i, j in enumerate(order):
         ordered_points[j] = points[i]
     ordered_cells = np.array([[order[i] for i in c] for c in cells])
-    mesh = Mesh(MPI.comm_world, cell_type, ordered_points, ordered_cells,
+    mesh = Mesh(MPI.COMM_WORLD, cell_type, ordered_points, ordered_cells,
                 [], cpp.mesh.GhostMode.none)
     mesh.geometry.coord_mapping = fem.create_coordinate_map(mesh)
     mesh.create_connectivity_all()

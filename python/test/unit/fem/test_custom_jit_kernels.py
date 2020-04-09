@@ -71,7 +71,7 @@ def tabulate_tensor_b_coeff(b_, w_, c_, coords_, local_index, orientation):
 
 
 def test_numba_assembly():
-    mesh = UnitSquareMesh(MPI.comm_world, 13, 13)
+    mesh = UnitSquareMesh(MPI.COMM_WORLD, 13, 13)
     V = FunctionSpace(mesh, ("Lagrange", 1))
 
     a = cpp.fem.Form([V._cpp_object, V._cpp_object])
@@ -92,11 +92,11 @@ def test_numba_assembly():
     assert (np.isclose(Anorm, 56.124860801609124))
     assert (np.isclose(bnorm, 0.0739710713711999))
 
-    list_timings(MPI.comm_world, [TimingType.wall])
+    list_timings(MPI.COMM_WORLD, [TimingType.wall])
 
 
 def test_coefficient():
-    mesh = UnitSquareMesh(MPI.comm_world, 13, 13)
+    mesh = UnitSquareMesh(MPI.COMM_WORLD, 13, 13)
     V = FunctionSpace(mesh, ("Lagrange", 1))
     DG0 = FunctionSpace(mesh, ("DG", 0))
     vals = Function(DG0)
@@ -116,7 +116,7 @@ def test_coefficient():
 
 @skip_if_complex
 def test_cffi_assembly():
-    mesh = UnitSquareMesh(MPI.comm_world, 13, 13)
+    mesh = UnitSquareMesh(MPI.COMM_WORLD, 13, 13)
     V = FunctionSpace(mesh, ("Lagrange", 1))
 
     if MPI.rank(mesh.mpi_comm()) == 0:
@@ -237,4 +237,4 @@ def test_cffi_assembly():
     assert (np.isclose(Anorm, 56.124860801609124))
     assert (np.isclose(bnorm, 0.0739710713711999))
 
-    list_timings(MPI.comm_world, [TimingType.wall])
+    list_timings(MPI.COMM_WORLD, [TimingType.wall])

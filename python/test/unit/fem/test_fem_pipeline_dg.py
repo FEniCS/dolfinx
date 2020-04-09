@@ -11,7 +11,7 @@ import pytest
 import ufl
 
 from petsc4py import PETSc
-from dolfinx import MPI, Function, FunctionSpace, FacetNormal, CellDiameter
+from dolfinx import Function, FunctionSpace, FacetNormal, CellDiameter
 # from dolfinx.cpp.mesh import GhostMode
 from dolfinx.fem import assemble_matrix, assemble_scalar, assemble_vector
 from dolfinx.io import XDMFFile
@@ -33,7 +33,7 @@ def test_manufactured_poisson_dg(degree, filename, datadir):
     degree of the Lagrange function space.
 
     """
-    with XDMFFile(MPI.comm_world, os.path.join(datadir, filename), "r", encoding=XDMFFile.Encoding.ASCII) as xdmf:
+    with XDMFFile(MPI.COMM_WORLD, os.path.join(datadir, filename), "r", encoding=XDMFFile.Encoding.ASCII) as xdmf:
         mesh = xdmf.read_mesh(name="Grid")
 
     V = FunctionSpace(mesh, ("DG", degree))
@@ -85,7 +85,7 @@ def test_manufactured_poisson_dg(degree, filename, datadir):
     A.assemble()
 
     # Create LU linear solver
-    solver = PETSc.KSP().create(MPI.comm_world)
+    solver = PETSc.KSP().create(MPI.COMM_WORLD)
     solver.setType(PETSc.KSP.Type.PREONLY)
     solver.getPC().setType(PETSc.PC.Type.LU)
     solver.setOperators(A)

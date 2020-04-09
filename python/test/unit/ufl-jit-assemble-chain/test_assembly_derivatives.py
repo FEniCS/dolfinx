@@ -10,7 +10,7 @@ import math
 import numpy
 import pytest
 
-from dolfinx import MPI, FacetNormal, RectangleMesh, UnitIntervalMesh
+from dolfinx import FacetNormal, RectangleMesh, UnitIntervalMesh
 from dolfinx.specialfunctions import SpatialCoordinate
 from ufl import (acos, as_matrix, as_vector, asin, atan, cos, cross, det, dev,
                  diff, div, dot, ds, dx, elem_div, elem_mult, elem_op,
@@ -23,7 +23,7 @@ def test_diff_then_integrate():
 
     # Define 1D geometry
     n = 21
-    mesh = UnitIntervalMesh(MPI.comm_world, n)
+    mesh = UnitIntervalMesh(MPI.COMM_WORLD, n)
 
     # Shift and scale mesh
     x0, x1 = 1.5, 3.14

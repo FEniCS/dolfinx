@@ -25,7 +25,7 @@ from ufl import (Identity, TestFunction, TrialFunction, dot, dx, grad, inner,
 
 def test_krylov_solver_lu():
 
-    mesh = UnitSquareMesh(MPI.comm_world, 12, 12)
+    mesh = UnitSquareMesh(MPI.COMM_WORLD, 12, 12)
     V = FunctionSpace(mesh, ("Lagrange", 1))
     u, v = TrialFunction(V), TestFunction(V)
 
@@ -91,7 +91,7 @@ def test_krylov_samg_solver_elasticity():
                 grad(v))) * Identity(2)
 
         # Define problem
-        mesh = UnitSquareMesh(MPI.comm_world, N, N)
+        mesh = UnitSquareMesh(MPI.COMM_WORLD, N, N)
         V = VectorFunctionSpace(mesh, 'Lagrange', 1)
         bc0 = Function(V)
         with bc0.vector.localForm() as bc_local:
