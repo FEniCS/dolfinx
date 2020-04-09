@@ -64,7 +64,7 @@ def test_petsc_casters_cppimport(tempdir):  # noqa: F811
     module = compile_module()
 
     # Create a PETSc vector
-    local_range = dolfinx.MPI.local_range(MPI.COMM_WORLD, 10)
+    local_range = dolfinx.MPI.local_range(MPI.COMM_WORLD.rank, 10, MPI.COMM_WORLD.size)
     x1 = PETSc.Vec()
     x1.create(MPI.COMM_WORLD)
     x1.setSizes((local_range[1] - local_range[0], None))

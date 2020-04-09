@@ -159,7 +159,8 @@ dolfinx::graph::SCOTCH::partition(const MPI_Comm mpi_comm, const int nparts,
   // FIXME: explain this test
   // Number of local graph vertices on each process
   std::vector<SCOTCH_Num> proccnttab(num_processes);
-  MPI::all_gather(mpi_comm, vertlocnbr, proccnttab);
+  MPI_Allgather(&vertlocnbr, 1, MPI::mpi_type<SCOTCH_Num>(), proccnttab.data(),
+                1, MPI::mpi_type<SCOTCH_Num>(), mpi_comm);
 
   // Array containing . . . . (some sanity checks)
   std::vector<std::size_t> procvrttab(num_processes + 1);

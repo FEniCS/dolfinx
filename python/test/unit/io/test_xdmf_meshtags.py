@@ -7,14 +7,14 @@
 import os
 
 import numpy
-
 import pytest
-from dolfinx import MPI
+from mpi4py import MPI
+from dolfinx_utils.test.fixtures import tempdir
+
 from dolfinx.cpp.mesh import CellType
 from dolfinx.generation import UnitCubeMesh
 from dolfinx.io import XDMFFile
 from dolfinx.mesh import MeshTags, locate_entities_geometrical
-from dolfinx_utils.test.fixtures import tempdir
 
 assert (tempdir)
 
@@ -73,6 +73,8 @@ def test_3d(tempdir, cell_type, encoding):
         file.write_meshtags(mt_in)
 
     # Check number of owned and marked entities
-    lines_local = MPI.sum(comm, (mt_lines.indices < mesh.topology.index_map(1).size_local).sum())
-    lines_local_in = MPI.sum(comm, (mt_lines_in.indices < mesh_in.topology.index_map(1).size_local).sum())
+    lines_local = comm.allreduce((mt_lines.indices < mesh.topology.index_map(1).size_local).sum(), op=MPI.SUM)
+    lines_local_in = comm.allreduce(
+        (mt_lines_in.indices < mesh_in.topology.index_map(1).size_local).sum(), op=MPI.SUM)
+
     assert lines_local == lines_local_in

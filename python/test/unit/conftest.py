@@ -1,8 +1,8 @@
 import gc
 import os
 
-import pytest
 from mpi4py import MPI
+import pytest
 
 
 def pytest_runtest_teardown(item):
@@ -18,7 +18,8 @@ def pytest_runtest_teardown(item):
     #       to temporaries and someone else does not hold a reference
     #       to 'item'?! Well, it seems that it works...
     gc.collect()
-    MPI.COMM_WORLD.Barrier()
+    comm = MPI.COMM_WORLD
+    comm.Barrier()
 
 
 @pytest.fixture(scope="module")

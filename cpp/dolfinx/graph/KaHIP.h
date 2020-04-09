@@ -7,8 +7,8 @@
 #pragma once
 
 #include <cstdint>
-#include <dolfinx/common/MPI.h>
 #include <dolfinx/graph/AdjacencyList.h>
+#include <mpi.h>
 
 namespace dolfinx
 {

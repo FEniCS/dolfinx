@@ -120,12 +120,11 @@ void xdmf_mesh::add_topology_data(
   }
 
   assert(topology_data.size() % num_nodes_per_entity == 0);
-  const std::int32_t num_entities_local
-      = (std::int32_t)(topology_data.size() / num_nodes_per_entity);
-
-  const std::int64_t num_entities_global
-      = dolfinx::MPI::sum(comm, (std::int64_t)num_entities_local);
-
+  const std::int64_t num_entities_local
+      = topology_data.size() / num_nodes_per_entity;
+  std::int64_t num_entities_global = 0;
+  MPI_Allreduce(&num_entities_local, &num_entities_global, 1, MPI_INT64_T, MPI_SUM,
+                comm);
   topology_node.append_attribute("NumberOfElements")
       = std::to_string(num_entities_global).c_str();
   topology_node.append_attribute("NodesPerElement") = num_nodes_per_entity;

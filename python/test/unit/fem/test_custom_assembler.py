@@ -140,7 +140,7 @@ if MPI.COMM_WORLD.Get_rank() == 0:
     path = pathlib.Path(__file__).parent.absolute()
     ffibuilder.compile(tmpdir=path, verbose=False)
 
-MPI.COMM_WORLD.barrier()
+MPI.COMM_WORLD.Barrier()
 
 spec = importlib.util.find_spec(module_name)
 if spec is None:

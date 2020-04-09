@@ -7,6 +7,7 @@
 import os
 import time
 
+import mpi4py
 import numpy as np
 import pytest
 from dolfinx_utils.test.skips import skip_if_complex, skip_in_parallel
@@ -113,8 +114,8 @@ def test_manufactured_poisson(degree, filename, datadir):
     print("Error functional compile time:", t1 - t0)
 
     t0 = time.time()
-    error = assemble_scalar(M)
-    error = MPI.sum(mesh.mpi_comm(), error)
+    error = mesh.mpi_comm().allreduce(assemble_scalar(M), op=mpi4py.MPI.SUM)
+
     t1 = time.time()
 
     print("Error assembly time:", t1 - t0)
