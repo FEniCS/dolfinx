@@ -174,7 +174,7 @@ create_meshtags(MPI_Comm comm, const std::shared_ptr<const mesh::Mesh>& mesh,
   if ((std::size_t)topology.rows() != values.size())
     throw std::runtime_error("Number of entities and values must match");
 
-  // Copy topology array into flattened vector
+  // Build array of topology node indices
   std::vector<std::int64_t> topo_unique(
       topology.data(), topology.data() + topology.rows() * topology.cols());
   std::sort(topo_unique.begin(), topo_unique.end());
@@ -193,8 +193,8 @@ create_meshtags(MPI_Comm comm, const std::shared_ptr<const mesh::Mesh>& mesh,
   if (!c_to_v)
     throw std::runtime_error("missing cell-vertex connectivity.");
 
-  // Inout global node indices (as in the input file before any
-  // re-ordering)
+  // Get "input" global node indices (as in the input file before any
+  // internal re-ordering)
   const std::vector<std::int64_t>& igi
       = mesh->geometry().input_global_indices();
 
@@ -210,9 +210,7 @@ create_meshtags(MPI_Comm comm, const std::shared_ptr<const mesh::Mesh>& mesh,
   std::array<std::int64_t, 2> range
       = MPI::local_range(MPI::rank(comm), num_igi_global, comm_size);
   const int local_size = range[1] - range[0];
-
   std::vector<std::vector<std::int64_t>> send_igi(comm_size);
-
   const std::int32_t size_local = mesh->geometry().index_map()->size_local()
                                   + mesh->geometry().index_map()->num_ghosts();
   assert((std::size_t)size_local == igi.size());
