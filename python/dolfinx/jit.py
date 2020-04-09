@@ -8,7 +8,7 @@ import functools
 import os
 from pathlib import Path
 
-import mpi4py
+from mpi4py import MPI
 
 import dolfinx.pkgconfig
 import ffcx
@@ -43,7 +43,7 @@ def mpi_jit_decorator(local_jit, *args, **kwargs):
 
         # FIXME: should require mpi_comm to be explicit and not default
         # to comm_world?
-        mpi_comm = kwargs.pop("mpi_comm", cpp.MPI.comm_world)
+        mpi_comm = kwargs.pop("mpi_comm", MPI.COMM_WORLD)
 
         # Just call JIT compiler when running in serial
         if mpi_comm.size == 1:
@@ -71,7 +71,7 @@ def mpi_jit_decorator(local_jit, *args, **kwargs):
         # Wait for the compiling process to finish and get status TODO:
         # Would be better to broadcast the status from root but this
         # works.
-        global_status = mpi_comm.allreduce(status, op=mpi4py.MPI.MAX)
+        global_status = mpi_comm.allreduce(status, op=MPI.MAX)
         if global_status == 0:
             # Success, call jit on all other processes (this should just
             # read the cache)

@@ -40,8 +40,8 @@ def _create_tempdir(request):
     basepath = os.path.join(testfiledir, outputname)
     path = os.path.join(basepath, function)
 
-    # Add a sequence number to avoid collisions when tests are
-    # otherwise parameterized
+    # Add a sequence number to avoid collisions when tests are otherwise
+    # parameterized
     comm = MPI.COMM_WORLD
     if comm.rank == 0:
         _create_tempdir._sequencenumber[path] += 1
