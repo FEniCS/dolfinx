@@ -11,6 +11,7 @@
 #include "Topology.h"
 #include <dolfinx/common/IndexMap.h>
 #include <dolfinx/common/UniqueIdGenerator.h>
+#include <dolfinx/graph/AdjacencyList.h>
 #include <dolfinx/graph/Partitioning.h>
 #include <dolfinx/io/cells.h>
 #include <map>
@@ -116,7 +117,7 @@ private:
     std::vector<int> perm(_indices.size());
     std::iota(perm.begin(), perm.end(), 0);
     std::sort(perm.begin(), perm.end(),
-              [& indices = std::as_const(_indices)](const int a, const int b) {
+              [&indices = std::as_const(_indices)](const int a, const int b) {
                 return (indices[a] < indices[b]);
               });
 
@@ -173,46 +174,43 @@ create_meshtags(MPI_Comm comm, const std::shared_ptr<const mesh::Mesh>& mesh,
   if ((std::size_t)topology.rows() != values.size())
     throw std::runtime_error("Number of entities and values must match");
 
-  // Copy topology array into flattened vector
+  // Build array of topology node indices
   std::vector<std::int64_t> topo_unique(
       topology.data(), topology.data() + topology.rows() * topology.cols());
-
   std::sort(topo_unique.begin(), topo_unique.end());
   topo_unique.erase(std::unique(topo_unique.begin(), topo_unique.end()),
                     topo_unique.end());
 
   const int e_dim = mesh::cell_dim(entity_cell_type);
   const int dim = mesh->topology().dim();
-
   auto e_to_v = mesh->topology().connectivity(e_dim, 0);
   if (!e_to_v)
-    throw std::runtime_error("Mesh is missing entity-vertex connectivity.");
-
+    throw std::runtime_error("Missing entity-vertex connectivity.");
   auto e_to_c = mesh->topology().connectivity(e_dim, dim);
   if (!e_to_c)
-    throw std::runtime_error("Mesh is missing entity-cell connectivity.");
-
+    throw std::runtime_error("Missing entity-cell connectivity.");
   auto c_to_v = mesh->topology().connectivity(dim, 0);
   if (!c_to_v)
-    throw std::runtime_error("Mesh is missing cell-vertex connectivity.");
+    throw std::runtime_error("missing cell-vertex connectivity.");
 
+  // Get "input" global node indices (as in the input file before any
+  // internal re-ordering)
   const std::vector<std::int64_t>& igi
       = mesh->geometry().input_global_indices();
 
   // Send input global indices to process responsible for it, based on
   // input global index value
-
-  const std::int64_t num_igi_global = MPI::sum(comm, (std::int64_t)igi.size());
+  std::int64_t num_igi_global = 0;
+  const std::int64_t igi_size = igi.size();
+  MPI_Allreduce(&igi_size, &num_igi_global, 1, MPI_INT64_T, MPI_SUM, comm);
 
   // Split global array size and retrieve a range that this
   // process/officer is responsible for
-  std::array<std::int64_t, 2> range = MPI::local_range(comm, num_igi_global);
-  const int local_size = range[1] - range[0];
-
   const int comm_size = MPI::size(comm);
+  std::array<std::int64_t, 2> range
+      = MPI::local_range(MPI::rank(comm), num_igi_global, comm_size);
+  const int local_size = range[1] - range[0];
   std::vector<std::vector<std::int64_t>> send_igi(comm_size);
-  std::vector<std::vector<std::int64_t>> recv_igi(comm_size);
-
   const std::int32_t size_local = mesh->geometry().index_map()->size_local()
                                   + mesh->geometry().index_map()->num_ghosts();
   assert((std::size_t)size_local == igi.size());
@@ -224,21 +222,20 @@ create_meshtags(MPI_Comm comm, const std::shared_ptr<const mesh::Mesh>& mesh,
     send_igi[officer].push_back(igi[i]);
   }
 
-  MPI::all_to_all(comm, send_igi, recv_igi);
+  const graph::AdjacencyList<std::int64_t> recv_igi
+      = MPI::all_to_all(comm, graph::AdjacencyList<std::int64_t>(send_igi));
 
   // Handle received input global indices, i.e. put the owners of it to
   // a global position, which is its value
-
   Eigen::Array<bool, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor> owners(
       local_size, comm_size);
   const std::size_t offset = MPI::global_offset(comm, local_size, true);
-
-  for (std::int32_t i = 0; i < comm_size; ++i)
+  for (std::int32_t i = 0; i < recv_igi.num_nodes(); ++i)
   {
-    const std::int32_t num_recv_igi = (std::int32_t)recv_igi[i].size();
-    for (std::int32_t j = 0; j < num_recv_igi; ++j)
+    auto data = recv_igi.links(i);
+    for (std::int32_t j = 0; j < data.rows(); ++j)
     {
-      const std::int32_t local_index = recv_igi[i][j] - offset;
+      const std::int32_t local_index = data[j] - offset;
       assert(local_size > local_index);
       assert(local_index >= 0);
       owners(local_index, i) = true;
@@ -290,15 +287,9 @@ create_meshtags(MPI_Comm comm, const std::shared_ptr<const mesh::Mesh>& mesh,
     }
   }
 
-  std::vector<std::vector<T>> recv_vals(comm_size);
-  std::vector<std::vector<std::int64_t>> recv_ents(comm_size);
-  MPI::all_to_all(comm, send_ents, recv_ents);
-  MPI::all_to_all(comm, send_vals, recv_vals);
-
   // Using just the information on current local mesh partition prepare
   // a mapping from *ordered* nodes of entity input global indices to
   // entity local index
-
   std::map<std::vector<std::int64_t>, std::int32_t> entities_igi;
   auto map_e = mesh->topology().index_map(e_dim);
   assert(map_e);
@@ -316,7 +307,6 @@ create_meshtags(MPI_Comm comm, const std::shared_ptr<const mesh::Mesh>& mesh,
     auto cell_nodes = cells_g.links(c);
     auto cell_vertices = c_to_v->links(c);
     auto entity_vertices = e_to_v->links(e);
-
     for (int v = 0; v < entity_vertices.rows(); ++v)
     {
       // Find local index of vertex wrt. cell
@@ -335,29 +325,29 @@ create_meshtags(MPI_Comm comm, const std::shared_ptr<const mesh::Mesh>& mesh,
     entities_igi.insert({entity_igi, e});
   }
 
+  const graph::AdjacencyList<std::int64_t> recv_ents
+      = MPI::all_to_all(comm, graph::AdjacencyList<std::int64_t>(send_ents));
+  const graph::AdjacencyList<T> recv_vals
+      = MPI::all_to_all(comm, graph::AdjacencyList<T>(send_vals));
+
   // Iterate over all received entities and find it in entities of the
   // mesh
-
-  // FIXME: Avoid creating std::vector<std::int64_t> the loop below
-
   std::vector<std::int32_t> indices_new;
   std::vector<T> values_new;
-  for (std::int32_t i = 0; i < comm_size; ++i)
+  const Eigen::Map<const Eigen::Array<std::int64_t, Eigen::Dynamic,
+                                      Eigen::Dynamic, Eigen::RowMajor>>
+      entities(recv_ents.array().data(),
+               recv_ents.array().rows() / nnodes_per_entity, nnodes_per_entity);
+  std::vector<std::int64_t> entity(nnodes_per_entity);
+  for (Eigen::Index e = 0; e < entities.rows(); ++e)
   {
-    const std::int32_t num_recv_ents
-        = (std::int32_t)(recv_ents[i].size() / nnodes_per_entity);
-    for (std::int32_t e = 0; e < num_recv_ents; ++e)
+    std::copy(entities.row(e).data(),
+              entities.row(e).data() + nnodes_per_entity, entity.begin());
+    std::sort(entity.begin(), entity.end());
+    if (const auto it = entities_igi.find(entity); it != entities_igi.end())
     {
-      std::vector<std::int64_t> _entity(&recv_ents[i][nnodes_per_entity * e],
-                                        &recv_ents[i][nnodes_per_entity * e]
-                                            + nnodes_per_entity);
-      std::sort(_entity.begin(), _entity.end());
-      const auto it = entities_igi.find(_entity);
-      if (it != entities_igi.end())
-      {
-        indices_new.push_back(it->second);
-        values_new.push_back(recv_vals[i][e]);
-      }
+      indices_new.push_back(it->second);
+      values_new.push_back(recv_vals.array()[e]);
     }
   }
 

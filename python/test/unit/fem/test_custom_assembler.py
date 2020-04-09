@@ -139,7 +139,7 @@ if dolfinx.MPI.comm_world.Get_rank() == 0:
     path = pathlib.Path(__file__).parent.absolute()
     ffibuilder.compile(tmpdir=path, verbose=False)
 
-dolfinx.MPI.comm_world.barrier()
+dolfinx.MPI.comm_world.Barrier()
 
 spec = importlib.util.find_spec(module_name)
 if spec is None:

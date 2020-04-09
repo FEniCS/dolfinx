@@ -8,18 +8,19 @@ import math
 # import os
 import sys
 
+import mpi4py
 import numpy as np
+import pytest
+# from dolfinx.io import XDMFFile
+from dolfinx_utils.test.fixtures import tempdir
+from dolfinx_utils.test.skips import skip_in_parallel
 
 import dolfinx
 import FIAT
-import pytest
 from dolfinx import (MPI, BoxMesh, Mesh, MeshEntity, RectangleMesh,
                      UnitCubeMesh, UnitIntervalMesh, UnitSquareMesh, cpp)
 from dolfinx.cpp.mesh import CellType, is_simplex
 from dolfinx.fem import assemble_scalar
-# from dolfinx.io import XDMFFile
-from dolfinx_utils.test.fixtures import tempdir
-from dolfinx_utils.test.skips import skip_in_parallel
 from ufl import dx
 
 assert (tempdir)
@@ -225,7 +226,7 @@ def test_UnitSquareMeshDistributed():
     assert mesh.topology.index_map(0).size_global == 48
     assert mesh.topology.index_map(2).size_global == 70
     assert mesh.geometry.dim == 2
-    assert MPI.sum(mesh.mpi_comm(), mesh.topology.index_map(0).size_local) == 48
+    assert mesh.mpi_comm().allreduce(mesh.topology.index_map(0).size_local, mpi4py.MPI.SUM) == 48
 
 
 def test_UnitSquareMeshLocal():
@@ -242,7 +243,7 @@ def test_UnitCubeMeshDistributed():
     assert mesh.topology.index_map(0).size_global == 480
     assert mesh.topology.index_map(3).size_global == 1890
     assert mesh.geometry.dim == 3
-    assert MPI.sum(mesh.mpi_comm(), mesh.topology.index_map(0).size_local) == 480
+    assert mesh.mpi_comm().allreduce(mesh.topology.index_map(0).size_local, mpi4py.MPI.SUM) == 480
 
 
 def test_UnitCubeMeshLocal():
@@ -260,7 +261,7 @@ def test_UnitQuadMesh():
     assert mesh.topology.index_map(0).size_global == 48
     assert mesh.topology.index_map(2).size_global == 35
     assert mesh.geometry.dim == 2
-    assert MPI.sum(mesh.mpi_comm(), mesh.topology.index_map(0).size_local) == 48
+    assert mesh.mpi_comm().allreduce(mesh.topology.index_map(0).size_local, mpi4py.MPI.SUM) == 48
 
 
 def test_UnitHexMesh():
@@ -268,7 +269,7 @@ def test_UnitHexMesh():
     assert mesh.topology.index_map(0).size_global == 480
     assert mesh.topology.index_map(3).size_global == 315
     assert mesh.geometry.dim == 3
-    assert MPI.sum(mesh.mpi_comm(), mesh.topology.index_map(0).size_local) == 480
+    assert mesh.mpi_comm().allreduce(mesh.topology.index_map(0).size_local, mpi4py.MPI.SUM) == 480
 
 
 def test_hash():
@@ -442,13 +443,13 @@ def test_topology_surface(cube):
     surface_facet_markers = cube.topology.on_boundary(2)
     sf_count = np.count_nonzero(np.array(surface_facet_markers))
     n = 3
-    assert MPI.sum(cube.mpi_comm(), sf_count) == n * n * 12
+    assert cube.mpi_comm().allreduce(sf_count, mpi4py.MPI.SUM) == n * n * 12
 
 
 def test_UnitHexMesh_assemble():
     mesh = UnitCubeMesh(MPI.comm_world, 6, 7, 5, CellType.hexahedron)
     vol = assemble_scalar(1 * dx(mesh))
-    vol = MPI.sum(mesh.mpi_comm(), vol)
+    vol = mesh.mpi_comm().allreduce(vol, mpi4py.MPI.SUM)
     assert(vol == pytest.approx(1, rel=1e-9))
 
 

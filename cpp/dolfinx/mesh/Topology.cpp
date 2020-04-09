@@ -24,17 +24,18 @@ using namespace dolfinx::mesh;
 namespace
 {
 //-----------------------------------------------------------------------------
-// Given a list of indices (unknown_indices) on each process,
-// return a map to sharing processes for each index, taking the owner as the
+// Given a list of indices (unknown_indices) on each process, return a
+// map to sharing processes for each index, taking the owner as the
 // first in the list
 std::unordered_map<std::int64_t, std::vector<int>>
 compute_index_sharing(MPI_Comm comm, std::vector<std::int64_t>& unknown_indices)
 {
   const int mpi_size = dolfinx::MPI::size(comm);
-  const std::int64_t global_space
-      = dolfinx::MPI::max(comm, *std::max_element(unknown_indices.begin(),
-                                                  unknown_indices.end()))
-        + 1;
+  std::int64_t global_space = 0;
+  const std::int64_t max_index
+      = *std::max_element(unknown_indices.begin(), unknown_indices.end());
+  MPI_Allreduce(&max_index, &global_space, 1, MPI_INT64_T, MPI_SUM, comm);
+  global_space += 1;
 
   std::vector<std::vector<std::int64_t>> send_indices(mpi_size);
   for (std::int64_t global_i : unknown_indices)
@@ -44,24 +45,25 @@ compute_index_sharing(MPI_Comm comm, std::vector<std::int64_t>& unknown_indices)
     send_indices[index_owner].push_back(global_i);
   }
 
-  std::vector<std::vector<std::int64_t>> recv_indices(mpi_size);
-  dolfinx::MPI::all_to_all(comm, send_indices, recv_indices);
+  const graph::AdjacencyList<std::int64_t> recv_indices
+      = dolfinx::MPI::all_to_all(
+          comm, graph::AdjacencyList<std::int64_t>(send_indices));
 
   // Get index sharing - first vector entry (lowest) is owner.
   std::unordered_map<std::int64_t, std::vector<int>> index_to_owner;
-  for (int p = 0; p < mpi_size; ++p)
+  for (int p = 0; p < recv_indices.num_nodes(); ++p)
   {
-    const std::vector<std::int64_t>& recv_p = recv_indices[p];
-    for (std::size_t j = 0; j < recv_p.size(); ++j)
+    auto recv_p = recv_indices.links(p);
+    for (int j = 0; j < recv_p.rows(); ++j)
       index_to_owner[recv_p[j]].push_back(p);
   }
 
   // Send index ownership data back to all sharing processes
   std::vector<std::vector<int>> send_owner(mpi_size);
-  for (int p = 0; p < mpi_size; ++p)
+  for (int p = 0; p < recv_indices.num_nodes(); ++p)
   {
-    const std::vector<std::int64_t>& recv_p = recv_indices[p];
-    for (std::size_t j = 0; j < recv_p.size(); ++j)
+    auto recv_p = recv_indices.links(p);
+    for (int j = 0; j < recv_p.rows(); ++j)
     {
       const auto it = index_to_owner.find(recv_p[j]);
       assert(it != index_to_owner.end());
@@ -74,18 +76,17 @@ compute_index_sharing(MPI_Comm comm, std::vector<std::int64_t>& unknown_indices)
 
   // Alltoall is necessary because cells which are shared by vertex are not yet
   // known to this process
-  std::vector<std::vector<int>> recv_owner(mpi_size);
-  dolfinx::MPI::all_to_all(comm, send_owner, recv_owner);
+  const graph::AdjacencyList<int> recv_owner
+      = dolfinx::MPI::all_to_all(comm, graph::AdjacencyList<int>(send_owner));
 
   // Now fill index_to_owner with locally needed indices
   index_to_owner.clear();
   for (int p = 0; p < mpi_size; ++p)
   {
     const std::vector<std::int64_t>& send_v = send_indices[p];
-    const std::vector<int>& r_owner = recv_owner[p];
-    int c = 0;
-    int i = 0;
-    while (c < (int)r_owner.size())
+    auto r_owner = recv_owner.links(p);
+    int c(0), i(0);
+    while (c < r_owner.rows())
     {
       int count = r_owner[c++];
       for (int j = 0; j < count; ++j)
@@ -98,7 +99,7 @@ compute_index_sharing(MPI_Comm comm, std::vector<std::int64_t>& unknown_indices)
 }
 //----------------------------------------------------------------------------------------------
 // Wrapper around neighbor_all_to_all for vector<vector> style input
-std::vector<std::int64_t>
+Eigen::Array<std::int64_t, Eigen::Dynamic, 1>
 send_to_neighbours(MPI_Comm neighbour_comm,
                    const std::vector<std::vector<std::int64_t>>& send_data)
 {
@@ -110,11 +111,10 @@ send_to_neighbours(MPI_Comm neighbour_comm,
     qsend_offsets.push_back(qsend_data.size());
   }
 
-  std::vector<std::int64_t> qrecv_data;
-  std::vector<int> qrecv_offsets;
-  dolfinx::MPI::neighbor_all_to_all(neighbour_comm, qsend_offsets, qsend_data,
-                                    qrecv_offsets, qrecv_data);
-  return qrecv_data;
+  return dolfinx::MPI::neighbor_all_to_all(neighbour_comm, qsend_offsets,
+                                           qsend_data)
+      .array();
+  //----------------------------------------------------------------------------------------------
 }
 
 } // namespace
@@ -560,12 +560,14 @@ mesh::create_topology(MPI_Comm comm,
         }
       }
     }
-    std::vector<std::int64_t> recv_pairs
+
+    // FIXME: make const
+    Eigen::Array<std::int64_t, Eigen::Dynamic, 1> recv_pairs
         = send_to_neighbours(neighbour_comm, send_pairs);
 
     std::vector<std::int64_t> ghost_vertices(nghosts, -1);
     // Unpack received data and make list of ghosts
-    for (std::size_t i = 0; i < recv_pairs.size(); i += 2)
+    for (int i = 0; i < recv_pairs.rows(); i += 2)
     {
       std::int64_t gi = recv_pairs[i];
       const auto it = global_to_local_index.find(gi);
@@ -619,7 +621,7 @@ mesh::create_topology(MPI_Comm comm,
     recv_pairs = send_to_neighbours(neighbour_comm, send_pairs);
 
     // Unpack received data and add to ghosts
-    for (std::size_t i = 0; i < recv_pairs.size(); i += 2)
+    for (int i = 0; i < recv_pairs.rows(); i += 2)
     {
       std::int64_t gi = recv_pairs[i];
       const auto it = global_to_local_index.find(gi);

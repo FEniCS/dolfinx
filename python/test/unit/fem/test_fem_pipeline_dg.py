@@ -6,18 +6,20 @@
 
 import os
 
+import mpi4py
 import numpy as np
 import pytest
-import ufl
-
+from dolfinx_utils.test.skips import skip_in_parallel
 from petsc4py import PETSc
-from dolfinx import MPI, Function, FunctionSpace, FacetNormal, CellDiameter
+
+import ufl
+from dolfinx import MPI, CellDiameter, FacetNormal, Function, FunctionSpace
 # from dolfinx.cpp.mesh import GhostMode
 from dolfinx.fem import assemble_matrix, assemble_scalar, assemble_vector
 from dolfinx.io import XDMFFile
-from ufl import (SpatialCoordinate, div, dx, grad, inner, ds, dS, avg, jump,
-                 TestFunction, TrialFunction)
-from dolfinx_utils.test.skips import skip_in_parallel
+from ufl import (SpatialCoordinate, TestFunction, TrialFunction, avg, div, ds,
+                 dS, dx, grad, inner, jump)
+
 
 # TODO: Remove this skip in parallel once ghosting if fixed
 # (see https://github.com/FEniCS/dolfinx/pull/746)
@@ -95,8 +97,5 @@ def test_manufactured_poisson_dg(degree, filename, datadir):
     solver.solve(b, uh.vector)
     uh.vector.ghostUpdate(addv=PETSc.InsertMode.INSERT,
                           mode=PETSc.ScatterMode.FORWARD)
-
-    error = assemble_scalar((u_exact - uh)**2 * dx)
-    error = MPI.sum(mesh.mpi_comm(), error)
-
+    error = mesh.mpi_comm().allreduce(assemble_scalar((u_exact - uh)**2 * dx), op=mpi4py.MPI.SUM)
     assert np.absolute(error) < 1.0e-14

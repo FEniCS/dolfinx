@@ -5,10 +5,10 @@
 // SPDX-License-Identifier:    LGPL-3.0-or-later
 
 #include "MeshQuality.h"
+#include "Geometry.h"
 #include "Mesh.h"
 #include "MeshEntity.h"
 #include "MeshIterator.h"
-#include "Geometry.h"
 #include <dolfinx/common/MPI.h>
 #include <sstream>
 
@@ -73,24 +73,19 @@ std::array<double, 2> MeshQuality::dihedral_angles_min_max(const Mesh& mesh)
     d_ang_max
         = std::max(d_ang_max, *std::max_element(angles.begin(), angles.end()));
   }
-
-  d_ang_min = MPI::min(mesh.mpi_comm(), d_ang_min);
-  d_ang_max = MPI::max(mesh.mpi_comm(), d_ang_max);
-
   return {{d_ang_min, d_ang_max}};
 }
 //-----------------------------------------------------------------------------
-std::pair<std::vector<double>, std::vector<std::size_t>>
-MeshQuality::dihedral_angle_histogram_data(const Mesh& mesh,
-                                           std::size_t num_bins)
+std::pair<std::vector<double>, std::vector<std::int64_t>>
+MeshQuality::dihedral_angle_histogram_data(const Mesh& mesh, int num_bins)
 {
   std::vector<double> bins(num_bins);
-  std::vector<std::size_t> values(num_bins, 0);
+  std::vector<std::int64_t> values(num_bins, 0);
 
   // Currently min value is 0.0 and max is Pi
   const double interval = M_PI / (static_cast<double>(num_bins));
 
-  for (std::size_t i = 0; i < num_bins; ++i)
+  for (int i = 0; i < num_bins; ++i)
     bins[i] = static_cast<double>(i) * interval + interval / 2.0;
 
   const int tdim = mesh.topology().dim();
@@ -103,16 +98,18 @@ MeshQuality::dihedral_angle_histogram_data(const Mesh& mesh,
     for (std::size_t i = 0; i < angles.size(); i++)
     {
       // Compute 'bin' index, and handle special case that angle = Pi
-      const std::size_t slot = std::min(
-          static_cast<std::size_t>(angles[i] / interval), num_bins - 1);
-
+      const int slot
+          = std::min(static_cast<int>(angles[i] / interval), num_bins - 1);
       values[slot] += 1;
     }
   }
 
   // FIXME: This is terrible. Avoid MPI calls inside loop.
   for (std::size_t i = 0; i < values.size(); ++i)
-    values[i] = MPI::sum(mesh.mpi_comm(), values[i]);
+  {
+    std::int64_t value = values[i];
+    MPI_Allreduce(&values[i], &value, 1, MPI_INT64_T, MPI_SUM, mesh.mpi_comm());
+  }
 
   return {bins, values};
 }
