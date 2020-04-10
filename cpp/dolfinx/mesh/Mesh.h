@@ -20,7 +20,7 @@ namespace dolfinx
 
 namespace fem
 {
-class ElementDofLayout;
+class CoordinateElement;
 }
 
 namespace graph
@@ -69,6 +69,7 @@ public:
   ///   order
   /// @param[in] cells Array of cells (containing the global point
   ///   indices for each cell)
+  /// @param[in] element Element that describes the geometry of a cell
   /// @param[in] global_cell_indices Array of global cell indices. If
   ///   not empty, this must be same size as the number of rows in
   ///   cells. If empty, global cell indices will be constructed,
@@ -83,6 +84,7 @@ public:
       const Eigen::Ref<const Eigen::Array<std::int64_t, Eigen::Dynamic,
                                           Eigen::Dynamic, Eigen::RowMajor>>&
           cells,
+      const fem::CoordinateElement& element,
       const std::vector<std::int64_t>& global_cell_indices,
       const GhostMode ghost_mode, std::int32_t num_ghost_cells = 0);
 
@@ -198,7 +200,7 @@ private:
 
 /// Create a mesh
 Mesh create(MPI_Comm comm, const graph::AdjacencyList<std::int64_t>& cells,
-            const fem::ElementDofLayout& layout,
+            const fem::CoordinateElement& element,
             const Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic,
                                Eigen::RowMajor>& x,
             GhostMode ghost_mode);

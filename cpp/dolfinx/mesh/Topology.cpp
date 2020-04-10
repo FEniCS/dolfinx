@@ -338,16 +338,16 @@ mesh::create_topology(MPI_Comm comm,
                       const graph::AdjacencyList<std::int64_t>& cells,
                       const std::vector<std::int64_t>& original_cell_index,
                       const std::vector<int>& ghost_owners,
-                      const fem::ElementDofLayout& layout, mesh::GhostMode)
+                      const CellType& cell_type, mesh::GhostMode)
 {
   if (cells.num_nodes() > 0)
   {
-    if (cells.num_links(0) != mesh::num_cell_vertices(layout.cell_type()))
+    if (cells.num_links(0) != mesh::num_cell_vertices(cell_type))
     {
       throw std::runtime_error(
           "Inconsistent number of cell vertices. Got "
           + std::to_string(cells.num_links(0)) + ", expected "
-          + std::to_string(mesh::num_cell_vertices(layout.cell_type())) + ".");
+          + std::to_string(mesh::num_cell_vertices(cell_type)) + ".");
     }
   }
 
@@ -558,7 +558,7 @@ mesh::create_topology(MPI_Comm comm,
     auto my_local_cells = std::make_shared<graph::AdjacencyList<std::int32_t>>(
         my_local_cells_array, cells.offsets());
 
-    Topology topology(layout.cell_type());
+    Topology topology(cell_type);
     const int tdim = topology.dim();
 
     // Vertex IndexMap
@@ -576,16 +576,16 @@ mesh::create_topology(MPI_Comm comm,
     return topology;
   }
 
-  // Build local cell-vertex connectivity, with local vertex indices
-  // [0, 1, 2, ..., n), from cell-vertex connectivity using global
-  // indices and get map from global vertex indices in 'cells' to the
-  // local vertex indices
+  // Build local cell-vertex connectivity, with local vertex indices [0,
+  // 1, 2, ..., n), from cell-vertex connectivity using global indices
+  // and get map from global vertex indices in 'cells' to the local
+  // vertex indices
   auto [cells_local, local_to_global_vertices]
       = graph::Partitioning::create_local_adjacency_list(cells);
 
   // Create (i) local topology object and (ii) IndexMap for cells, and
   // set cell-vertex topology
-  Topology topology_local(layout.cell_type());
+  Topology topology_local(cell_type);
   const int tdim = topology_local.dim();
   topology_local.set_index_map(tdim, index_map_c);
 
@@ -623,15 +623,15 @@ mesh::create_topology(MPI_Comm comm,
   topology_local.set_interior_facets(boundary);
   boundary = topology_local.on_boundary(tdim - 1);
 
-  // Build distributed cell-vertex AdjacencyList, IndexMap for
-  // vertices, and map from local index to old global index
+  // Build distributed cell-vertex AdjacencyList, IndexMap for vertices,
+  // and map from local index to old global index
   const std::vector<bool>& exterior_vertices
       = Partitioning::compute_vertex_exterior_markers(topology_local);
   auto [cells_d, vertex_map]
       = graph::Partitioning::create_distributed_adjacency_list(
           comm, *_cells_local, local_to_global_vertices, exterior_vertices);
 
-  Topology topology(layout.cell_type());
+  Topology topology(cell_type);
 
   // Set vertex IndexMap, and vertex-vertex connectivity
   auto _vertex_map = std::make_shared<common::IndexMap>(std::move(vertex_map));

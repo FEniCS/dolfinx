@@ -71,10 +71,11 @@
 # We first import the modules and function that the program uses::
 
 import numpy as np
+from mpi4py import MPI
 from petsc4py import PETSc
 import dolfinx
 import ufl
-from dolfinx import MPI, DirichletBC, Function, FunctionSpace, RectangleMesh
+from dolfinx import DirichletBC, Function, FunctionSpace, RectangleMesh
 from dolfinx.cpp.mesh import CellType
 from dolfinx.fem import locate_dofs_geometrical, locate_dofs_topological
 from dolfinx.io import XDMFFile
@@ -85,12 +86,9 @@ from ufl import div, dx, grad, inner
 
 # Create mesh
 mesh = RectangleMesh(
-    MPI.comm_world,
+    MPI.COMM_WORLD,
     [np.array([0, 0, 0]), np.array([1, 1, 0])], [32, 32],
     CellType.triangle, dolfinx.cpp.mesh.GhostMode.none)
-
-cmap = dolfinx.fem.create_coordinate_map(mesh.ufl_domain())
-mesh.geometry.coord_mapping = cmap
 
 
 # Function to mark x = 0, x = 1 and y = 0
@@ -258,7 +256,7 @@ ksp.solve(b, x)
 
 norm_u_0 = u.vector.norm()
 norm_p_0 = p.vector.norm()
-if MPI.rank(MPI.comm_world) == 0:
+if MPI.COMM_WORLD.rank == 0:
     print("(A) Norm of velocity coefficient vector: {}".format(norm_u_0))
     print("(A) Norm of pressure coefficient vector: {}".format(norm_p_0))
 
@@ -266,12 +264,12 @@ if MPI.rank(MPI.comm_world) == 0:
 # visualization, e.g. with ParView. Before writing to file, ghost values
 # are updated.
 
-with XDMFFile(MPI.comm_world, "velocity.xdmf", "w") as ufile_xdmf:
+with XDMFFile(MPI.COMM_WORLD, "velocity.xdmf", "w") as ufile_xdmf:
     u.vector.ghostUpdate(addv=PETSc.InsertMode.INSERT, mode=PETSc.ScatterMode.FORWARD)
     ufile_xdmf.write_mesh(mesh)
     ufile_xdmf.write_function(u)
 
-with XDMFFile(MPI.comm_world, "pressure.xdmf", "w") as pfile_xdmf:
+with XDMFFile(MPI.COMM_WORLD, "pressure.xdmf", "w") as pfile_xdmf:
     p.vector.ghostUpdate(addv=PETSc.InsertMode.INSERT, mode=PETSc.ScatterMode.FORWARD)
     pfile_xdmf.write_mesh(mesh)
     pfile_xdmf.write_function(p)
@@ -348,7 +346,7 @@ p.vector.array[:] = x.array_r[offset:]
 
 norm_u_1 = u.vector.norm()
 norm_p_1 = p.vector.norm()
-if MPI.rank(MPI.comm_world) == 0:
+if MPI.COMM_WORLD.rank == 0:
     print("(B) Norm of velocity coefficient vector: {}".format(norm_u_1))
     print("(B) Norm of pressure coefficient vector: {}".format(norm_p_1))
 assert np.isclose(norm_u_1, norm_u_0)
@@ -383,7 +381,7 @@ p.vector.array[:] = x.array_r[offset:]
 
 norm_u_2 = u.vector.norm()
 norm_p_2 = p.vector.norm()
-if MPI.rank(MPI.comm_world) == 0:
+if MPI.COMM_WORLD.rank == 0:
     print("(C) Norm of velocity coefficient vector: {}".format(norm_u_2))
     print("(C) Norm of pressure coefficient vector: {}".format(norm_p_2))
 assert np.isclose(norm_u_2, norm_u_0)
@@ -462,18 +460,18 @@ p = U.sub(1).collapse()
 # Compute norms
 norm_u_3 = u.vector.norm()
 norm_p_3 = p.vector.norm()
-if MPI.rank(MPI.comm_world) == 0:
+if MPI.COMM_WORLD.rank == 0:
     print("(D) Norm of velocity coefficient vector: {}".format(norm_u_3))
     print("(D) Norm of pressure coefficient vector: {}".format(norm_p_3))
 assert np.isclose(norm_u_3, norm_u_0)
 
 # Write the solution to file
-with XDMFFile(MPI.comm_world, "new_velocity.xdmf", "w") as ufile_xdmf:
+with XDMFFile(MPI.COMM_WORLD, "new_velocity.xdmf", "w") as ufile_xdmf:
     u.vector.ghostUpdate(addv=PETSc.InsertMode.INSERT, mode=PETSc.ScatterMode.FORWARD)
     ufile_xdmf.write_mesh(mesh)
     ufile_xdmf.write_function(u)
 
-with XDMFFile(MPI.comm_world, "new_pressure.xdmf", "w") as pfile_xdmf:
+with XDMFFile(MPI.COMM_WORLD, "new_pressure.xdmf", "w") as pfile_xdmf:
     p.vector.ghostUpdate(addv=PETSc.InsertMode.INSERT, mode=PETSc.ScatterMode.FORWARD)
     ufile_xdmf.write_mesh(mesh)
     ufile_xdmf.write_function(p)

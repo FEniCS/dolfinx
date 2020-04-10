@@ -11,10 +11,11 @@
 from contextlib import ExitStack
 
 import numpy as np
+from mpi4py import MPI
 from petsc4py import PETSc
 
 import dolfinx
-from dolfinx import (MPI, BoxMesh, DirichletBC, Function, VectorFunctionSpace,
+from dolfinx import (BoxMesh, DirichletBC, Function, VectorFunctionSpace,
                      cpp)
 from dolfinx.cpp.mesh import CellType
 from dolfinx.fem import (apply_lifting, assemble_matrix, assemble_vector,
@@ -59,16 +60,14 @@ def build_nullspace(V):
 
 
 # Load mesh from file
-# mesh = Mesh(MPI.comm_world)
-# XDMFFile(MPI.comm_world, "../pulley.xdmf").read(mesh)
+# mesh = Mesh(MPI.COMM_WORLD)
+# XDMFFile(MPI.COMM_WORLD, "../pulley.xdmf").read(mesh)
 
 # mesh = UnitCubeMesh(2, 2, 2)
 mesh = BoxMesh(
-    MPI.comm_world, [np.array([0.0, 0.0, 0.0]),
+    MPI.COMM_WORLD, [np.array([0.0, 0.0, 0.0]),
                      np.array([2.0, 1.0, 1.0])], [12, 12, 12],
     CellType.tetrahedron, dolfinx.cpp.mesh.GhostMode.none)
-cmap = dolfinx.fem.create_coordinate_map(mesh.ufl_domain())
-mesh.geometry.coord_mapping = cmap
 
 # Function to mark inner surface of pulley
 # def inner_surface(x, on_boundary):
@@ -152,7 +151,7 @@ opts["mg_levels_esteig_ksp_type"] = "cg"
 opts["mg_levels_ksp_chebyshev_esteig_steps"] = 20
 
 # Create CG Krylov solver and turn convergence monitoring on
-solver = PETSc.KSP().create(MPI.comm_world)
+solver = PETSc.KSP().create(MPI.COMM_WORLD)
 solver.setFromOptions()
 
 # Set matrix operator
@@ -164,10 +163,10 @@ solver.solve(b, u.vector)
 solver.view()
 
 # Save solution to XDMF format
-with XDMFFile(MPI.comm_world, "elasticity.xdmf", "w") as file:
+with XDMFFile(MPI.COMM_WORLD, "elasticity.xdmf", "w") as file:
     file.write_mesh(mesh)
     file.write_function(u)
 
 unorm = u.vector.norm()
-if MPI.rank(mesh.mpi_comm()) == 0:
+if mesh.mpi_comm().rank == 0:
     print("Solution vector norm:", unorm)

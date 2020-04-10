@@ -31,7 +31,7 @@ void xdmf_mesh::add_topology_data(
 
   // Get number of nodes per entity
   const int num_nodes_per_entity
-      = geometry.dof_layout().num_entity_closure_dofs(dim);
+      = geometry.cmap().dof_layout().num_entity_closure_dofs(dim);
 
   // FIXME: sort out degree/cell type
   // Get VTK string for cell type
@@ -123,8 +123,8 @@ void xdmf_mesh::add_topology_data(
   const std::int64_t num_entities_local
       = topology_data.size() / num_nodes_per_entity;
   std::int64_t num_entities_global = 0;
-  MPI_Allreduce(&num_entities_local, &num_entities_global, 1, MPI_INT64_T, MPI_SUM,
-                comm);
+  MPI_Allreduce(&num_entities_local, &num_entities_global, 1, MPI_INT64_T,
+                MPI_SUM, comm);
   topology_node.append_attribute("NumberOfElements")
       = std::to_string(num_entities_global).c_str();
   topology_node.append_attribute("NodesPerElement") = num_nodes_per_entity;
@@ -228,7 +228,7 @@ void xdmf_mesh::add_mesh(MPI_Comm comm, pugi::xml_node& xml_node,
 }
 //----------------------------------------------------------------------------
 std::tuple<
-    mesh::CellType,
+    std::pair<mesh::CellType, int>,
     Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>,
     Eigen::Array<std::int64_t, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>>
 xdmf_mesh::read_mesh_data(MPI_Comm comm, const hid_t h5_id,
@@ -239,7 +239,8 @@ xdmf_mesh::read_mesh_data(MPI_Comm comm, const hid_t h5_id,
   assert(topology_node);
 
   // Get cell type
-  const auto cell_type_str = xdmf_utils::get_cell_type(topology_node);
+  const std::pair<std::string, int> cell_type_str
+      = xdmf_utils::get_cell_type(topology_node);
 
   // Get toplogical dimensions
   mesh::CellType cell_type = mesh::to_type(cell_type_str.first);
@@ -301,6 +302,7 @@ xdmf_mesh::read_mesh_data(MPI_Comm comm, const hid_t h5_id,
       cells1 = io::cells::permute_ordering(
           cells, io::cells::vtk_to_dolfin(cell_type, cells.cols()));
 
-  return {cell_type, std::move(points), std::move(cells1)};
+  return {
+      {cell_type, cell_type_str.second}, std::move(points), std::move(cells1)};
 }
 //----------------------------------------------------------------------------

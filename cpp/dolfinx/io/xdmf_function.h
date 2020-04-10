@@ -6,7 +6,8 @@
 
 #pragma once
 
-#include "HDF5File.h"
+#include <hdf5.h>
+#include <mpi.h>
 
 namespace pugi
 {

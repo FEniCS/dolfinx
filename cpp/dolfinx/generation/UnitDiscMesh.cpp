@@ -7,7 +7,6 @@
 #include "UnitDiscMesh.h"
 #include <cmath>
 #include <dolfinx/common/types.h>
-#include <dolfinx/fem/ElementDofLayout.h>
 #include <dolfinx/graph/AdjacencyList.h>
 #include <dolfinx/io/cells.h>
 
@@ -16,6 +15,7 @@ using namespace dolfinx::generation;
 
 //-----------------------------------------------------------------------------
 mesh::Mesh UnitDiscMesh::create(MPI_Comm comm, int n,
+                                const fem::CoordinateElement& element,
                                 const mesh::GhostMode ghost_mode)
 {
   assert(n > 0);
@@ -24,9 +24,7 @@ mesh::Mesh UnitDiscMesh::create(MPI_Comm comm, int n,
   {
     Eigen::Array<double, 0, 2, Eigen::RowMajor> geom(0, 2);
     Eigen::Array<std::int64_t, 0, 6, Eigen::RowMajor> topo(0, 6);
-    const fem::ElementDofLayout layout
-        = fem::geometry_layout(mesh::CellType::triangle, topo.cols());
-    return mesh::create(comm, graph::AdjacencyList<std::int64_t>(topo), layout,
+    return mesh::create(comm, graph::AdjacencyList<std::int64_t>(topo), element,
                         geom, ghost_mode);
   }
 
@@ -101,10 +99,8 @@ mesh::Mesh UnitDiscMesh::create(MPI_Comm comm, int n,
           cells,
           io::cells::vtk_to_dolfin(mesh::CellType::triangle, cells.cols()));
 
-  const fem::ElementDofLayout layout
-      = fem::geometry_layout(mesh::CellType::triangle, cells_reordered.cols());
   return mesh::create(comm, graph::AdjacencyList<std::int64_t>(cells_reordered),
-                      layout, points, ghost_mode);
+                      element, points, ghost_mode);
 }
 
 //-----------------------------------------------------------------------------
