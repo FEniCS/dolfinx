@@ -117,7 +117,7 @@ private:
     std::vector<int> perm(_indices.size());
     std::iota(perm.begin(), perm.end(), 0);
     std::sort(perm.begin(), perm.end(),
-              [& indices = std::as_const(_indices)](const int a, const int b) {
+              [&indices = std::as_const(_indices)](const int a, const int b) {
                 return (indices[a] < indices[b]);
               });
 
@@ -160,11 +160,11 @@ private:
 /// @param[in] tag_cell_type Cell type of entities which are being
 ///   tagged
 /// @param[in] entities 'Node' indices (using the of entities
-///   input_global_indices from the Mesh) for each entity this is tagged
-///   mesh entities. The numbers of rows is equal to the number of
-///   entities.
+///   input_global_indices from the Mesh) fir vertices of for each
+///   entity that is tagged. The numbers of rows is equal to the number
+///   of entities.
 /// @param[in] values Tag values for each entity in @ entities. The
-/// length of @ values  must be equal to number of rows in @ entities.
+///   length of @ values  must be equal to number of rows in @ entities.
 template <typename T>
 mesh::MeshTags<T>
 create_meshtags(MPI_Comm comm, const std::shared_ptr<const mesh::Mesh>& mesh,
@@ -173,6 +173,8 @@ create_meshtags(MPI_Comm comm, const std::shared_ptr<const mesh::Mesh>& mesh,
                                    Eigen::RowMajor>& entities,
                 const std::vector<T>& values)
 {
+  // NOTE: Not yet working for higher-order geometries
+  //
   // TODO: Avoid expensive-to-create std::vector<std::vector>>. Build
   //       AdjacencyList instead.
 
@@ -186,9 +188,8 @@ create_meshtags(MPI_Comm comm, const std::shared_ptr<const mesh::Mesh>& mesh,
   std::sort(nodes.begin(), nodes.end());
   nodes.erase(std::unique(nodes.begin(), nodes.end()), nodes.end());
 
-  // Get mesh connectivity
+  // Tagged entity topological dimension
   const int e_dim = mesh::cell_dim(tag_cell_type);
-  const int dim = mesh->topology().dim();
 
   // -------------------
   // 1. Send this rank's global "input" nodes indices to the
@@ -230,16 +231,17 @@ create_meshtags(MPI_Comm comm, const std::shared_ptr<const mesh::Mesh>& mesh,
 
   std::vector<std::vector<std::int64_t>> entities_send(comm_size);
   std::vector<std::vector<T>> values_send(comm_size);
+  std::vector<std::int64_t> entity(entities.cols());
   for (std::int32_t e = 0; e < entities.rows(); ++e)
   {
-    // Copy nodes for entity
-    std::vector<std::int64_t> entity(entities.row(e).data(),
-                                     entities.row(e).data() + entities.cols());
+    // Copy nodes for entity and sort
+    std::copy(entities.row(e).data(), entities.row(e).data() + entities.cols(),
+              entity.begin());
     std::sort(entity.begin(), entity.end());
 
     // Determine postmaster based on lowest entity node
     const std::int32_t p
-        = dolfinx::MPI::index_owner(comm_size, entity[0], num_nodes_g);
+        = dolfinx::MPI::index_owner(comm_size, entity.front(), num_nodes_g);
     entities_send[p].insert(entities_send[p].end(), entity.begin(),
                             entity.end());
     values_send[p].push_back(values[e]);
@@ -252,16 +254,16 @@ create_meshtags(MPI_Comm comm, const std::shared_ptr<const mesh::Mesh>& mesh,
       = MPI::all_to_all(comm, graph::AdjacencyList<T>(values_send));
 
   // -------------------
-  // 3. As 'postmaster', send back the entity key (node list) and tag
+  // 3. As 'postmaster', send back the entity key (vertex list) and tag
   //    value to ranks that possibly need the data. Do this based on the
   //    first node index in the entity key.
 
   // NOTE: Could: (i) use a std::unordered_multimap, or (ii) only send
   // owned nodes to the postmaster and use map, unordered_map or
-  // std::vector<pair>>, followed by a
-  // neighbourhood all_to_all at the end.
+  // std::vector<pair>>, followed by a neighbourhood all_to_all at the
+  // end.
   //
-  // Build map from global node index to ranks that have it
+  // Build map from global node index to ranks that have the node
   std::multimap<std::int64_t, int> node_to_rank;
   for (int p = 0; p < nodes_g_recv.num_nodes(); ++p)
   {
@@ -274,8 +276,6 @@ create_meshtags(MPI_Comm comm, const std::shared_ptr<const mesh::Mesh>& mesh,
   std::vector<std::vector<std::int64_t>> send_nodes_owned(comm_size);
   std::vector<std::vector<T>> send_vals_owned(comm_size);
   const int nnodes_per_entity = entities.cols();
-
-  // Loop over received entities
   const Eigen::Map<const Eigen::Array<std::int64_t, Eigen::Dynamic,
                                       Eigen::Dynamic, Eigen::RowMajor>>
       _entities_recv(entities_recv.array().data(),
@@ -317,15 +317,15 @@ create_meshtags(MPI_Comm comm, const std::shared_ptr<const mesh::Mesh>& mesh,
   //       the std::map for *all* entities and just for candidate
   //       entities.
 
-  // Build map from vertex indices (local to rank) to global "user" node
-  // indices
+  // Build map from vertex index (local to rank) to global "user" node
+  // index
   auto map_v = mesh->topology().index_map(0);
   assert(map_v);
   const std::int32_t num_vertices = map_v->size_local() + map_v->num_ghosts();
   const graph::AdjacencyList<std::int32_t>& x_dofmap
       = mesh->geometry().dofmap();
   std::vector<std::int64_t> vertex_to_node(num_vertices);
-  auto c_to_v = mesh->topology().connectivity(dim, 0);
+  auto c_to_v = mesh->topology().connectivity(mesh->topology().dim(), 0);
   if (!c_to_v)
     throw std::runtime_error("missing cell-vertex connectivity.");
   for (int c = 0; c < c_to_v->num_nodes(); ++c)
@@ -336,9 +336,8 @@ create_meshtags(MPI_Comm comm, const std::shared_ptr<const mesh::Mesh>& mesh,
       vertex_to_node[vertices[v]] = nodes_g[x_dofs[v]];
   }
 
-  // Using just the information on current local mesh partition prepare
-  // a map from *ordered* nodes of entity input global indices to entity
-  // local index
+  // Build a map from entities on this process (keyed by vertex ordered
+  // entity input global indices) to entity local index
   auto e_to_v = mesh->topology().connectivity(e_dim, 0);
   if (!e_to_v)
     throw std::runtime_error("Missing entity-vertex connectivity.");
@@ -353,8 +352,8 @@ create_meshtags(MPI_Comm comm, const std::shared_ptr<const mesh::Mesh>& mesh,
     entity_key_to_index.insert({key, e});
   }
 
-  // Iterate over all received entities and find it in entities of the
-  // mesh
+  // Iterate over all received entities. If entity is on this rank,
+  // store (local entity index, tag value)
   std::vector<std::int32_t> indices_new;
   std::vector<T> values_new;
   const Eigen::Map<const Eigen::Array<std::int64_t, Eigen::Dynamic,
@@ -362,12 +361,12 @@ create_meshtags(MPI_Comm comm, const std::shared_ptr<const mesh::Mesh>& mesh,
       _entities(recv_ents.array().data(),
                 recv_ents.array().rows() / nnodes_per_entity,
                 nnodes_per_entity);
-  std::vector<std::int64_t> entity(nnodes_per_entity);
+  entity.resize(nnodes_per_entity);
   for (Eigen::Index e = 0; e < _entities.rows(); ++e)
   {
+    // Note: _entities.row(e) was sorted by the sender
     std::copy(_entities.row(e).data(),
               _entities.row(e).data() + nnodes_per_entity, entity.begin());
-    std::sort(entity.begin(), entity.end());
     if (const auto it = entity_key_to_index.find(entity);
         it != entity_key_to_index.end())
     {
