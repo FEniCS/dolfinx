@@ -7,6 +7,7 @@
 
 import numpy as np
 import pytest
+from mpi4py import MPI
 from petsc4py import PETSc
 
 import dolfinx
@@ -21,7 +22,7 @@ pytestmark = pytest.mark.skipif(
 def test_complex_assembly():
     """Test assembly of complex matrices and vectors"""
 
-    mesh = dolfinx.generation.UnitSquareMesh(dolfinx.MPI.comm_world, 10, 10)
+    mesh = dolfinx.generation.UnitSquareMesh(MPI.COMM_WORLD, 10, 10)
     P2 = ufl.FiniteElement("Lagrange", mesh.ufl_cell(), 2)
     V = dolfinx.function.FunctionSpace(mesh, P2)
 
@@ -78,7 +79,7 @@ def test_complex_assembly_solve():
     """
 
     degree = 3
-    mesh = dolfinx.generation.UnitSquareMesh(dolfinx.MPI.comm_world, 20, 20)
+    mesh = dolfinx.generation.UnitSquareMesh(MPI.COMM_WORLD, 20, 20)
     P = ufl.FiniteElement("Lagrange", mesh.ufl_cell(), degree)
     V = dolfinx.function.FunctionSpace(mesh, P)
 

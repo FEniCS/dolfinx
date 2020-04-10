@@ -111,9 +111,10 @@
 import os
 
 import numpy as np
+from mpi4py import MPI
 from petsc4py import PETSc
 
-from dolfinx import (MPI, Form, Function, FunctionSpace, NewtonSolver,
+from dolfinx import (Form, Function, FunctionSpace, NewtonSolver,
                      NonlinearProblem, UnitSquareMesh, log)
 from dolfinx.cpp.mesh import CellType
 from dolfinx.fem.assemble import assemble_matrix, assemble_vector
@@ -186,7 +187,7 @@ theta = 0.5      # time stepping family, e.g. theta=1 -> backward Euler, theta=0
 # ``ME`` is built using a pair of linear Lagrangian elements. ::
 
 # Create mesh and build function space
-mesh = UnitSquareMesh(MPI.comm_world, 96, 96, CellType.triangle)
+mesh = UnitSquareMesh(MPI.COMM_WORLD, 96, 96, CellType.triangle)
 P1 = FiniteElement("Lagrange", mesh.ufl_cell(), 1)
 ME = FunctionSpace(mesh, P1 * P1)
 
@@ -294,7 +295,7 @@ a = derivative(L, u, du)
 
 # Create nonlinear problem and Newton solver
 problem = CahnHilliardEquation(a, L)
-solver = NewtonSolver(MPI.comm_world)
+solver = NewtonSolver(MPI.COMM_WORLD)
 solver.convergence_criterion = "incremental"
 solver.rtol = 1e-6
 
@@ -309,7 +310,7 @@ solver.rtol = 1e-6
 # :math:`t_{n+1}` until a terminal time :math:`T` is reached::
 
 # Output file
-file = XDMFFile(MPI.comm_world, "output.xdmf", "w")
+file = XDMFFile(MPI.COMM_WORLD, "output.xdmf", "w")
 file.write_mesh(mesh)
 
 # Step in time

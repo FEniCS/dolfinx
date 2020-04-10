@@ -5,20 +5,21 @@
 # SPDX-License-Identifier:    LGPL-3.0-or-later
 
 import pytest
+from mpi4py import MPI
 
 import dolfinx
-from dolfinx import MPI, UnitCubeMesh, UnitSquareMesh
+from dolfinx import UnitCubeMesh, UnitSquareMesh
 from dolfinx_utils.test.skips import skip_in_parallel
 
 
 @pytest.fixture
 def cube():
-    return UnitCubeMesh(MPI.comm_world, 5, 5, 5)
+    return UnitCubeMesh(MPI.COMM_WORLD, 5, 5, 5)
 
 
 @pytest.fixture
 def square():
-    return UnitSquareMesh(MPI.comm_world, 5, 5)
+    return UnitSquareMesh(MPI.COMM_WORLD, 5, 5)
 
 
 @skip_in_parallel
