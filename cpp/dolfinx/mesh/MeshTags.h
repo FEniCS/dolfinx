@@ -269,7 +269,7 @@ create_meshtags(MPI_Comm comm, const std::shared_ptr<const mesh::Mesh>& mesh,
   // owned nodes to the postmaster and use map, unordered_map or
   // std::vector<pair>>, followed by a neighbourhood all_to_all at the
   // end.
-
+  //
   // Build map from global node index to ranks that have it
   std::multimap<std::int64_t, int> node_to_rank;
   for (int p = 0; p < nodes_g_recv.num_nodes(); ++p)
@@ -284,58 +284,25 @@ create_meshtags(MPI_Comm comm, const std::shared_ptr<const mesh::Mesh>& mesh,
   std::vector<std::vector<T>> send_vals_owned(comm_size);
   const int nnodes_per_entity = entities.cols();
 
-  // Loop over process ranks
-  for (int p = 0; p < entities_recv.num_nodes(); ++p)
+  // Loop over received entities
+  const Eigen::Map<const Eigen::Array<std::int64_t, Eigen::Dynamic,
+                                      Eigen::Dynamic, Eigen::RowMajor>>
+      _entities_recv(entities_recv.array().data(),
+                     entities_recv.array().rows() / nnodes_per_entity,
+                     nnodes_per_entity);
+  auto _values_recv = values_recv.array();
+  assert(_values_recv.rows() == _entities_recv.rows());
+  for (int e = 0; e < _entities_recv.rows(); ++e)
   {
-    auto nodes = entities_recv.links(p);
-    auto vals = values_recv.links(p);
-
-    // Loop over received entities from rank p
-    for (int e = 0; e < nodes.size() / nnodes_per_entity; ++e)
+    // Find ranks that have node0
+    auto [it0, it1] = node_to_rank.equal_range(_entities_recv(e, 0));
+    for (auto it = it0; it != it1; ++it)
     {
-      std::vector<std::int64_t> entity(nodes.data() + e * nnodes_per_entity,
-                                       nodes.data() + e * nnodes_per_entity
-                                           + nnodes_per_entity);
-
-      // Find ranks that have node0
-      auto [it0, it1] = node_to_rank.equal_range(entity[0]);
-      for (auto it = it0; it != it1; ++it)
-      {
-        const int p1 = it->second;
-        send_nodes_owned[p1].insert(send_nodes_owned[p1].end(), entity.begin(),
-                                    entity.end());
-        send_vals_owned[p1].push_back(vals(e));
-      }
-
-      // // Loop over process ranks
-      // for (int p1 = 0; p1 < nodes_g_recv.num_nodes(); ++p1)
-      // {
-      //   auto igi = nodes_g_recv.links(p1);
-      //   for (int j = 0; j < igi.size(); ++j)
-      //   {
-      //     if (igi[j] == entity[0])
-      //     {
-      //       send_nodes_owned[p1].insert(send_nodes_owned[p1].end(),
-      //                                   entity.begin(), entity.end());
-      //       send_vals_owned[p1].push_back(vals(e));
-      //     }
-      //   }
-      // }
-
-      // // Loop over process ranks
-      // for (int p1 = 0; p1 < nodes_g_recv.num_nodes(); ++p1)
-      // {
-      //   auto igi = nodes_g_recv.links(p1);
-      //   for (int j = 0; j < igi.size(); ++j)
-      //   {
-      //     if (igi[j] == entity[0])
-      //     {
-      //       send_nodes_owned[p1].insert(send_nodes_owned[p1].end(),
-      //                                   entity.begin(), entity.end());
-      //       send_vals_owned[p1].push_back(vals(e));
-      //     }
-      //   }
-      // }
+      const int p1 = it->second;
+      send_nodes_owned[p1].insert(
+          send_nodes_owned[p1].end(), _entities_recv.row(e).data(),
+          _entities_recv.row(e).data() + _entities_recv.cols());
+      send_vals_owned[p1].push_back(_values_recv(e));
     }
   }
 
@@ -413,6 +380,6 @@ create_meshtags(MPI_Comm comm, const std::shared_ptr<const mesh::Mesh>& mesh,
 
   return mesh::MeshTags<T>(mesh, e_dim, std::move(indices_new),
                            std::move(values_new));
-}
+} // namespace mesh
 } // namespace mesh
 } // namespace dolfinx
