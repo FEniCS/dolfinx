@@ -227,11 +227,11 @@ def test_topology_partition(tempdir, shape, order):
     # this should just be the identity operator. For other elements
     # the filtered lists may have 'gaps', i.e. the indices might not
     # be contiguous.
-    cells_global_v = cpp.mesh.extract_topology(layout, cells_global)
+    cells_global_v = cpp.mesh.extract_topology(shape, layout, cells_global)
 
     # Compute the destination rank for cells on this process via graph
     # partitioning
-    dest = cpp.mesh.partition_cells(cpp.MPI.comm_world, size, layout.cell_type,
+    dest = cpp.mesh.partition_cells(cpp.MPI.comm_world, size, shape,
                                     cells_global_v, cpp.mesh.GhostMode.none)
     assert len(dest) == cells_global_v.num_nodes
 
@@ -250,7 +250,7 @@ def test_topology_partition(tempdir, shape, order):
 
     # Create (i) local topology object and (ii) IndexMap for cells, and
     # set cell-vertex topology
-    topology_local = cpp.mesh.Topology(layout.cell_type)
+    topology_local = cpp.mesh.Topology(shape)
     tdim = topology_local.dim
     map = cpp.common.IndexMap(cpp.MPI.comm_self, cells_local.num_nodes, [], 1)
     topology_local.set_index_map(tdim, map)
@@ -284,7 +284,7 @@ def test_topology_partition(tempdir, shape, order):
                                                                     local_to_global_vertices, exterior_vertices)
 
     # --- Create distributed topology
-    topology = cpp.mesh.Topology(layout.cell_type)
+    topology = cpp.mesh.Topology(shape)
 
     # Set vertex IndexMap, and vertex-vertex connectivity
     topology.set_index_map(0, vertex_map)

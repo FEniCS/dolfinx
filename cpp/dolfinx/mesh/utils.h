@@ -18,6 +18,7 @@ class ElementDofLayout;
 
 namespace mesh
 {
+enum class CellType;
 class Mesh;
 class MeshEntity;
 
@@ -30,7 +31,7 @@ class MeshEntity;
 ///     'gaps' due to mid-side and other higher-order nodes being
 ///     removed from the input @p cell.
 graph::AdjacencyList<std::int64_t>
-extract_topology(const fem::ElementDofLayout& layout,
+extract_topology(const CellType& cell_type, const fem::ElementDofLayout& layout,
                  const graph::AdjacencyList<std::int64_t>& cells);
 
 /// Compute (generalized) volume of mesh entities of given dimension

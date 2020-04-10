@@ -247,15 +247,12 @@ void fem(py::module& m)
                                        Eigen::RowMajor>&>())
       .def_property_readonly("num_dofs",
                              &dolfinx::fem::ElementDofLayout::num_dofs)
-      .def_property_readonly("cell_type",
-                             &dolfinx::fem::ElementDofLayout::cell_type)
       .def("num_entity_dofs", &dolfinx::fem::ElementDofLayout::num_entity_dofs)
       .def("num_entity_closure_dofs",
            &dolfinx::fem::ElementDofLayout::num_entity_closure_dofs)
       .def("entity_dofs", &dolfinx::fem::ElementDofLayout::entity_dofs)
       .def("entity_closure_dofs",
-           &dolfinx::fem::ElementDofLayout::entity_closure_dofs)
-      .def("degree", &dolfinx::fem::ElementDofLayout::degree);
+           &dolfinx::fem::ElementDofLayout::entity_closure_dofs);
 
   // dolfinx::fem::DofMap
   py::class_<dolfinx::fem::DofMap, std::shared_ptr<dolfinx::fem::DofMap>>(

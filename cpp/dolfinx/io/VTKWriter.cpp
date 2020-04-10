@@ -30,6 +30,47 @@ using namespace dolfinx::io;
 namespace
 {
 //-----------------------------------------------------------------------------
+int get_degree(const mesh::CellType& cell_type, int num_dofs)
+{
+  switch (cell_type)
+  {
+  case mesh::CellType::interval:
+    if (num_dofs == 2)
+      return 1;
+    else if (num_dofs == 3)
+      return 2;
+    break;
+  case mesh::CellType::triangle:
+    if (num_dofs == 3)
+      return 1;
+    else if (num_dofs == 6)
+      return 2;
+    break;
+  case mesh::CellType::quadrilateral:
+    if (num_dofs == 4)
+      return 1;
+    else if (num_dofs == 9)
+      return 2;
+    break;
+  case mesh::CellType::tetrahedron:
+    if (num_dofs == 4)
+      return 1;
+    else if (num_dofs == 10)
+      return 2;
+    break;
+  case mesh::CellType::hexahedron:
+    if (num_dofs == 8)
+      return 1;
+    else if (num_dofs == 27)
+      return 2;
+    break;
+  default:
+    throw std::runtime_error("Unknown cell type");
+  }
+
+  throw std::runtime_error("Cannot determine degree");
+}
+//-----------------------------------------------------------------------------
 // Get VTK cell type
 std::int8_t get_vtk_cell_type(const mesh::Mesh& mesh, std::size_t cell_dim,
                               std::size_t cell_order)
@@ -138,11 +179,11 @@ void write_ascii_mesh(const mesh::Mesh& mesh, int cell_dim,
                       std::string filename)
 {
   const int num_cells = mesh.topology().index_map(cell_dim)->size_local();
-  const int element_degree = mesh.geometry().cmap().dof_layout().degree();
+  const int degree = get_degree(mesh.geometry().cmap().cell_shape(),
+                                mesh.geometry().cmap().dof_layout().num_dofs());
 
   // Get VTK cell type
-  const std::int8_t vtk_cell_type
-      = get_vtk_cell_type(mesh, cell_dim, element_degree);
+  const std::int8_t vtk_cell_type = get_vtk_cell_type(mesh, cell_dim, degree);
 
   // Open file
   std::ofstream file(filename.c_str(), std::ios::app);
@@ -201,7 +242,7 @@ void write_ascii_mesh(const mesh::Mesh& mesh, int cell_dim,
   }
   else
   {
-    const int degree = mesh.geometry().cmap().dof_layout().degree();
+    // const int degree = mesh.geometry().cmap().dof_layout().degree();
 
     if (degree > 1)
       throw std::runtime_error("Higher order mesh entities not implemented.");

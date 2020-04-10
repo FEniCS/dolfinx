@@ -111,9 +111,8 @@ def test_second_order_tri():
 
             def e2(x):
                 return x[2] + x[0] * x[1]
-            degree = mesh.geometry.cmap.dof_layout.degree()
             # Interpolate function
-            V = FunctionSpace(mesh, ("CG", degree))
+            V = FunctionSpace(mesh, ("CG", 2))
             u = Function(V)
             u.interpolate(e2)
 

@@ -75,21 +75,24 @@ Mesh mesh::create(MPI_Comm comm,
   // filtered lists may have 'gaps', i.e. the indices might not be
   // contiguous.
   const graph::AdjacencyList<std::int64_t> cells_topology
-      = mesh::extract_topology(element.dof_layout(), cells);
+      = mesh::extract_topology(element.cell_shape(), element.dof_layout(),
+                               cells);
 
   // Compute the destination rank for cells on this process via graph
   // partitioning
   const int size = dolfinx::MPI::size(comm);
   const graph::AdjacencyList<std::int32_t> dest = Partitioning::partition_cells(
-      comm, size, element.dof_layout().cell_type(), cells_topology, ghost_mode);
+      comm, size, element.cell_shape(), cells_topology, ghost_mode);
 
   // Distribute cells to destination rank
   const auto [cell_nodes, src, original_cell_index, ghost_owners]
       = graph::Partitioning::distribute(comm, cells, dest);
 
   Topology topology = mesh::create_topology(
-      comm, mesh::extract_topology(element.dof_layout(), cell_nodes),
-      original_cell_index, ghost_owners, element.dof_layout(), ghost_mode);
+      comm,
+      mesh::extract_topology(element.cell_shape(), element.dof_layout(),
+                             cell_nodes),
+      original_cell_index, ghost_owners, element.cell_shape(), ghost_mode);
 
   // Create connectivity required to compute the Geometry (extra
   // connectivities for higher-order geometries)

@@ -7,11 +7,10 @@
 #include "ElementDofLayout.h"
 #include <array>
 #include <dolfinx/common/log.h>
+#include <dolfinx/mesh/cell_types.h>
 #include <map>
 #include <numeric>
 #include <set>
-
-#include <iostream>
 
 using namespace dolfinx;
 using namespace dolfinx::fem;
@@ -24,8 +23,8 @@ ElementDofLayout::ElementDofLayout(
     const mesh::CellType cell_type,
     const Eigen::Array<int, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>&
         base_permutations)
-    : _block_size(block_size), _cell_type(cell_type), _parent_map(parent_map),
-      _num_dofs(0), _entity_dofs(entity_dofs), _sub_dofmaps(sub_dofmaps),
+    : _block_size(block_size), _parent_map(parent_map), _num_dofs(0),
+      _entity_dofs(entity_dofs), _sub_dofmaps(sub_dofmaps),
       _base_permutations(base_permutations)
 {
   // TODO: Add size check on base_permutations. Size should be:
@@ -105,8 +104,6 @@ ElementDofLayout ElementDofLayout::copy() const
   layout._parent_map.clear();
   return layout;
 }
-//-----------------------------------------------------------------------------
-mesh::CellType ElementDofLayout::cell_type() const { return _cell_type; }
 //-----------------------------------------------------------------------------
 int ElementDofLayout::num_dofs() const { return _num_dofs; }
 //-----------------------------------------------------------------------------
@@ -198,45 +195,4 @@ ElementDofLayout::sub_view(const std::vector<int>& component) const
 int ElementDofLayout::block_size() const { return _block_size; }
 //-----------------------------------------------------------------------------
 bool ElementDofLayout::is_view() const { return !_parent_map.empty(); }
-//-----------------------------------------------------------------------------
-int ElementDofLayout::degree() const
-{
-  switch (_cell_type)
-  {
-  case mesh::CellType::interval:
-    if (num_dofs() == 2)
-      return 1;
-    else if (num_dofs() == 3)
-      return 2;
-    break;
-  case mesh::CellType::triangle:
-    if (num_dofs() == 3)
-      return 1;
-    else if (num_dofs() == 6)
-      return 2;
-    break;
-  case mesh::CellType::quadrilateral:
-    if (num_dofs() == 4)
-      return 1;
-    else if (num_dofs() == 9)
-      return 2;
-    break;
-  case mesh::CellType::tetrahedron:
-    if (num_dofs() == 4)
-      return 1;
-    else if (num_dofs() == 10)
-      return 2;
-    break;
-  case mesh::CellType::hexahedron:
-    if (num_dofs() == 8)
-      return 1;
-    else if (num_dofs() == 27)
-      return 2;
-    break;
-  default:
-    throw std::runtime_error("Unknown cell type");
-  }
-
-  throw std::runtime_error("Cannot determine degree");
-}
 //-----------------------------------------------------------------------------
