@@ -168,7 +168,7 @@ private:
 template <typename T>
 mesh::MeshTags<T>
 create_meshtags(MPI_Comm comm, const std::shared_ptr<const mesh::Mesh>& mesh,
-                const mesh::CellType& entity_cell_type,
+                const mesh::CellType& tag_cell_type,
                 const Eigen::Array<std::int64_t, Eigen::Dynamic, Eigen::Dynamic,
                                    Eigen::RowMajor>& entities,
                 const std::vector<T>& values)
@@ -184,7 +184,7 @@ create_meshtags(MPI_Comm comm, const std::shared_ptr<const mesh::Mesh>& mesh,
   nodes.erase(std::unique(nodes.begin(), nodes.end()), nodes.end());
 
   // Get mesh connectivity
-  const int e_dim = mesh::cell_dim(entity_cell_type);
+  const int e_dim = mesh::cell_dim(tag_cell_type);
   const int dim = mesh->topology().dim();
   auto e_to_v = mesh->topology().connectivity(e_dim, 0);
   if (!e_to_v)
@@ -267,7 +267,7 @@ create_meshtags(MPI_Comm comm, const std::shared_ptr<const mesh::Mesh>& mesh,
   std::vector<std::vector<T>> send_vals_owned(comm_size);
   const int nnodes_per_entity = entities.cols();
 
-  // Loop over processes
+  // Loop over process ranks
   for (int p = 0; p < entities_recv.num_nodes(); ++p)
   {
     auto nodes = entities_recv.links(p);
@@ -280,7 +280,7 @@ create_meshtags(MPI_Comm comm, const std::shared_ptr<const mesh::Mesh>& mesh,
                                        nodes.data() + e * nnodes_per_entity
                                            + nnodes_per_entity);
 
-      // Loop over process
+      // Loop over process ranks
       for (int q = 0; q < nodes_g_recv.num_nodes(); ++q)
       {
         auto igi = nodes_g_recv.links(q);
@@ -316,7 +316,7 @@ create_meshtags(MPI_Comm comm, const std::shared_ptr<const mesh::Mesh>& mesh,
   const std::int32_t num_entities = map_e->size_local() + map_e->num_ghosts();
   const graph::AdjacencyList<std::int32_t>& cells_g = mesh->geometry().dofmap();
   const std::vector<std::uint8_t> vtk_perm
-      = io::cells::vtk_to_dolfin(entity_cell_type, nnodes_per_entity);
+      = io::cells::vtk_to_dolfin(tag_cell_type, nnodes_per_entity);
   for (std::int32_t e = 0; e < num_entities; ++e)
   {
     std::vector<std::int64_t> entity_igi(nnodes_per_entity);
