@@ -45,16 +45,6 @@ if(PETSC4PY_INCLUDE_DIRS)
   set(PETSC4PY_FIND_QUIETLY TRUE)
 endif(PETSC4PY_INCLUDE_DIRS)
 
-message(STATUS ${PYTHON_EXECUTABLE})
-
-execute_process(
-        COMMAND ${PYTHON_EXECUTABLE} -c "import petsc4py; print(petsc4py.get_include())"
-        OUTPUT_VARIABLE PETSC4PY_INCLUDE_DIRS
-        RESULT_VARIABLE PETSC4PY_NOT_FOUND
-        ERROR_QUIET
-        OUTPUT_STRIP_TRAILING_WHITESPACE
-)
-
 execute_process(
   COMMAND ${PYTHON_EXECUTABLE} -c "import petsc4py; print(petsc4py.get_include())"
   OUTPUT_VARIABLE PETSC4PY_INCLUDE_DIRS
