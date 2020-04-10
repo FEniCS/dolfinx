@@ -173,6 +173,9 @@ create_meshtags(MPI_Comm comm, const std::shared_ptr<const mesh::Mesh>& mesh,
                                    Eigen::RowMajor>& entities,
                 const std::vector<T>& values)
 {
+  // TODO: Avoid expensive-to-create std::vector<std::vector>>. Build
+  // AdjacencyList instead.
+
   assert(mesh);
   if ((std::size_t)entities.rows() != values.size())
     throw std::runtime_error("Number of entities and values must match");
@@ -262,6 +265,20 @@ create_meshtags(MPI_Comm comm, const std::shared_ptr<const mesh::Mesh>& mesh,
   //    value to ranks that possibly need the data. Do this based on the
   //    first node index in the entity key.
 
+  // NOTE: Could: (i) use a std::unordered_multimap, or (ii) only send
+  // owned nodes to the postmaster and use map, unordered_map or
+  // std::vector<pair>>, followed by a neighbourhood all_to_all at the
+  // end.
+
+  // Build map from global node index to ranks that have it
+  std::multimap<std::int64_t, int> node_to_rank;
+  for (int p = 0; p < nodes_g_recv.num_nodes(); ++p)
+  {
+    auto nodes = nodes_g_recv.links(p);
+    for (int i = 0; i < nodes.rows(); ++i)
+      node_to_rank.insert({nodes(i), p});
+  }
+
   // Figure out which processes are owners of received nodes
   std::vector<std::vector<std::int64_t>> send_nodes_owned(comm_size);
   std::vector<std::vector<T>> send_vals_owned(comm_size);
@@ -273,27 +290,52 @@ create_meshtags(MPI_Comm comm, const std::shared_ptr<const mesh::Mesh>& mesh,
     auto nodes = entities_recv.links(p);
     auto vals = values_recv.links(p);
 
-    // Loop over received entities
+    // Loop over received entities from rank p
     for (int e = 0; e < nodes.size() / nnodes_per_entity; ++e)
     {
       std::vector<std::int64_t> entity(nodes.data() + e * nnodes_per_entity,
                                        nodes.data() + e * nnodes_per_entity
                                            + nnodes_per_entity);
 
-      // Loop over process ranks
-      for (int q = 0; q < nodes_g_recv.num_nodes(); ++q)
+      // Find ranks that have node0
+      auto [it0, it1] = node_to_rank.equal_range(entity[0]);
+      for (auto it = it0; it != it1; ++it)
       {
-        auto igi = nodes_g_recv.links(q);
-        for (int j = 0; j < igi.size(); ++j)
-        {
-          if (igi[j] == entity[0])
-          {
-            send_nodes_owned[q].insert(send_nodes_owned[q].end(),
-                                       entity.begin(), entity.end());
-            send_vals_owned[q].push_back(vals(e));
-          }
-        }
+        const int p1 = it->second;
+        send_nodes_owned[p1].insert(send_nodes_owned[p1].end(), entity.begin(),
+                                    entity.end());
+        send_vals_owned[p1].push_back(vals(e));
       }
+
+      // // Loop over process ranks
+      // for (int p1 = 0; p1 < nodes_g_recv.num_nodes(); ++p1)
+      // {
+      //   auto igi = nodes_g_recv.links(p1);
+      //   for (int j = 0; j < igi.size(); ++j)
+      //   {
+      //     if (igi[j] == entity[0])
+      //     {
+      //       send_nodes_owned[p1].insert(send_nodes_owned[p1].end(),
+      //                                   entity.begin(), entity.end());
+      //       send_vals_owned[p1].push_back(vals(e));
+      //     }
+      //   }
+      // }
+
+      // // Loop over process ranks
+      // for (int p1 = 0; p1 < nodes_g_recv.num_nodes(); ++p1)
+      // {
+      //   auto igi = nodes_g_recv.links(p1);
+      //   for (int j = 0; j < igi.size(); ++j)
+      //   {
+      //     if (igi[j] == entity[0])
+      //     {
+      //       send_nodes_owned[p1].insert(send_nodes_owned[p1].end(),
+      //                                   entity.begin(), entity.end());
+      //       send_vals_owned[p1].push_back(vals(e));
+      //     }
+      //   }
+      // }
     }
   }
 
