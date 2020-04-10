@@ -321,7 +321,7 @@ create_meshtags(MPI_Comm comm, const std::shared_ptr<const mesh::Mesh>& mesh,
   //       cost of std::vector<std::int64_t> allocations, and sort the
   //       Array by row.
   //
-  // TODO: We have received possible tags from other ranks, so we could
+  // TODO: We have received possibly tagged en from other ranks, so we could
   //       avoid creating the std::map for *all* entities and just for
   //       candidate entities.
 
@@ -346,6 +346,8 @@ create_meshtags(MPI_Comm comm, const std::shared_ptr<const mesh::Mesh>& mesh,
     auto entity_vertices = e_to_v->links(e);
     for (int v = 0; v < entity_vertices.rows(); ++v)
     {
+      // FIXME: avoid VTK assumption
+
       // Find local index of vertex wrt cell
       const std::int32_t vertex = entity_vertices[vtk_perm[v]];
       auto it = std::find(cell_vertices.data(),
