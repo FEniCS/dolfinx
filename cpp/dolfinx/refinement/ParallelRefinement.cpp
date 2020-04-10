@@ -251,7 +251,7 @@ void ParallelRefinement::create_new_vertices()
     {
       for (int remote_process : shared_edge_i->second)
       {
-        // send mapping from global edge index to new global vertex index
+        // send map from global edge index to new global vertex index
         values_to_send[remote_process].push_back(
             edge_index_map->local_to_global(local_edge.first));
         values_to_send[remote_process].push_back(local_edge.second);

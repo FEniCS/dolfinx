@@ -81,7 +81,7 @@ def test_ghost_connectivities(mode):
     meshR.create_connectivity(1, 2)
     tdim = meshR.topology.dim
 
-    # Create reference mapping from facet midpoint to cell midpoint
+    # Create reference map from facet midpoint to cell midpoint
     topology = meshR.topology
     map_c = topology.index_map(tdim)
     num_cells = map_c.size_local + map_c.num_ghosts

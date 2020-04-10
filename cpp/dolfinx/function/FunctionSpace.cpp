@@ -299,7 +299,7 @@ FunctionSpace::tabulate_dof_coordinates() const
   const Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>& X
       = _element->dof_reference_coordinates();
 
-  // Get coordinate mapping
+  // Get coordinate map
   const fem::CoordinateElement& cmap = _mesh->geometry().cmap();
 
   // Prepare cell geometry
@@ -376,7 +376,7 @@ void FunctionSpace::set_x(
   const Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>& X
       = _element->dof_reference_coordinates();
 
-  // Get coordinate mapping
+  // Get coordinate map
   const fem::CoordinateElement& cmap = _mesh->geometry().cmap();
 
   Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>

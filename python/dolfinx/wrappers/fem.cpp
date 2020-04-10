@@ -110,7 +110,7 @@ void fem(py::module& m)
       "Create a ufc_form object from a pointer.");
 
   m.def(
-      "make_coordinate_mapping",
+      "make_coordinate_map",
       [](std::uintptr_t e) {
         ufc_coordinate_mapping* p
             = reinterpret_cast<ufc_coordinate_mapping*>(e);

@@ -184,7 +184,7 @@ void Function::eval(
   Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
       coordinate_dofs(num_dofs_g, gdim);
 
-  // Get coordinate mapping
+  // Get coordinate map
   const fem::CoordinateElement& cmap = mesh.geometry().cmap();
 
   // Get element
