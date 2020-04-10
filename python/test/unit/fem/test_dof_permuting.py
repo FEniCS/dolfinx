@@ -6,11 +6,12 @@
 """Unit tests for the fem interface"""
 
 from random import shuffle
-from mpi4py import MPI
+
 import numpy as np
 import pytest
+from mpi4py import MPI
 
-from dolfinx import FunctionSpace, cpp, fem
+from dolfinx import FunctionSpace, Mesh, fem
 from dolfinx.cpp.mesh import CellType
 
 xfail = pytest.mark.xfail(strict=True)
@@ -53,12 +54,10 @@ def test_triangle_dof_ordering(space_type):
 
         # On process 0, input mesh data and distribute to other
         # processes
-        mesh = cpp.mesh.Mesh(MPI.COMM_WORLD, CellType.triangle, points,
-                             np.array(cells), [], cpp.mesh.GhostMode.none)
+        mesh = Mesh(MPI.COMM_WORLD, CellType.triangle, points, np.array(cells), [])
     else:
         # On other processes, accept distributed data
-        mesh = cpp.mesh.Mesh(MPI.COMM_WORLD, CellType.triangle, np.ndarray((0, 2)),
-                             np.ndarray((0, 3)), [], cpp.mesh.GhostMode.none)
+        mesh = Mesh(MPI.COMM_WORLD, CellType.triangle, np.ndarray((0, 2)), np.ndarray((0, 3)), [])
 
     V = FunctionSpace(mesh, space_type)
     dofmap = V.dofmap
@@ -68,7 +67,7 @@ def test_triangle_dof_ordering(space_type):
     # Get coordinates of dofs and edges and check that they are the same
     # for each global dof number
     X = V.element.dof_reference_coordinates()
-    coord_dofs = mesh.geometry.dofmap()
+    coord_dofs = mesh.geometry.dofmap
     x_g = mesh.geometry.x
     cmap = fem.create_coordinate_map(mesh.ufl_domain())
     for cell_n in range(coord_dofs.num_nodes):
@@ -124,14 +123,13 @@ def test_tetrahedron_dof_ordering(space_type):
                               [a + N, a + N ** 2 + 1, a + N ** 2, a]]:
                         cell = [order[i] for i in c]
                         cells.append(cell)
+
         # On process 0, input mesh data and distribute to other
         # processes
-        mesh = cpp.mesh.Mesh(MPI.COMM_WORLD, CellType.tetrahedron, points,
-                             np.array(cells), [], cpp.mesh.GhostMode.none)
+        mesh = Mesh(MPI.COMM_WORLD, CellType.tetrahedron, points, np.array(cells), [])
     else:
         # On other processes, accept distributed data
-        mesh = cpp.mesh.Mesh(MPI.COMM_WORLD, CellType.tetrahedron, np.ndarray((0, 3)),
-                             np.ndarray((0, 4)), [], cpp.mesh.GhostMode.none)
+        mesh = Mesh(MPI.COMM_WORLD, CellType.tetrahedron, np.ndarray((0, 3)), np.ndarray((0, 4)), [])
 
     V = FunctionSpace(mesh, space_type)
     dofmap = V.dofmap
@@ -142,7 +140,7 @@ def test_tetrahedron_dof_ordering(space_type):
     # Get coordinates of dofs and edges and check that they are the same
     # for each global dof number
     X = V.element.dof_reference_coordinates()
-    coord_dofs = mesh.geometry.dofmap()
+    coord_dofs = mesh.geometry.dofmap
     x_g = mesh.geometry.x
     cmap = fem.create_coordinate_map(mesh.ufl_domain())
     for cell_n in range(coord_dofs.num_nodes):
@@ -200,12 +198,10 @@ def test_quadrilateral_dof_ordering(space_type):
 
         # On process 0, input mesh data and distribute to other
         # processes
-        mesh = cpp.mesh.Mesh(MPI.COMM_WORLD, CellType.quadrilateral, points,
-                             np.array(cells), [], cpp.mesh.GhostMode.none)
+        mesh = Mesh(MPI.COMM_WORLD, CellType.quadrilateral, points, np.array(cells), [])
     else:
         # On other processes, accept distributed data
-        mesh = cpp.mesh.Mesh(MPI.COMM_WORLD, CellType.quadrilateral, np.ndarray((0, 2)),
-                             np.ndarray((0, 4)), [], cpp.mesh.GhostMode.none)
+        mesh = Mesh(MPI.COMM_WORLD, CellType.quadrilateral, np.ndarray((0, 2)), np.ndarray((0, 4)), [])
 
     V = FunctionSpace(mesh, space_type)
     dofmap = V.dofmap
@@ -215,7 +211,7 @@ def test_quadrilateral_dof_ordering(space_type):
     # Get coordinates of dofs and edges and check that they are the same
     # for each global dof number
     X = V.element.dof_reference_coordinates()
-    coord_dofs = mesh.geometry.dofmap()
+    coord_dofs = mesh.geometry.dofmap
     x_g = mesh.geometry.x
     cmap = fem.create_coordinate_map(mesh.ufl_domain())
     for cell_n in range(coord_dofs.num_nodes):
@@ -266,12 +262,10 @@ def test_hexahedron_dof_ordering(space_type):
 
         # On process 0, input mesh data and distribute to other
         # processes
-        mesh = cpp.mesh.Mesh(MPI.COMM_WORLD, CellType.hexahedron, points,
-                             np.array(cells), [], cpp.mesh.GhostMode.none)
+        mesh = Mesh(MPI.COMM_WORLD, CellType.hexahedron, points, np.array(cells), [])
     else:
         # On other processes, accept distributed data
-        mesh = cpp.mesh.Mesh(MPI.COMM_WORLD, CellType.hexahedron, np.ndarray((0, 3)),
-                             np.ndarray((0, 8)), [], cpp.mesh.GhostMode.none)
+        mesh = Mesh(MPI.COMM_WORLD, CellType.hexahedron, np.ndarray((0, 3)), np.ndarray((0, 8)), [])
 
     V = FunctionSpace(mesh, space_type)
     dofmap = V.dofmap
@@ -282,7 +276,7 @@ def test_hexahedron_dof_ordering(space_type):
     # Get coordinates of dofs and edges and check that they are the same
     # for each global dof number
     X = V.element.dof_reference_coordinates()
-    coord_dofs = mesh.geometry.dofmap()
+    coord_dofs = mesh.geometry.dofmap
     x_g = mesh.geometry.x
     cmap = fem.create_coordinate_map(mesh.ufl_domain())
     for cell_n in range(coord_dofs.num_nodes):

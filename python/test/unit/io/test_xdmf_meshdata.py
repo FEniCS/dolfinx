@@ -58,6 +58,7 @@ def test_read_mesh_data(tempdir, tdim, n):
     with XDMFFile(MPI.COMM_WORLD, filename, "r") as file:
         cell_type, x, cells = file.read_mesh_data()
 
-    assert cell_type == mesh.topology.cell_type
+    assert cell_type[0] == mesh.topology.cell_type
+    assert cell_type[1] == 1
     assert mesh.topology.index_map(tdim).size_global == mesh.mpi_comm().allreduce(cells.shape[0], op=MPI.SUM)
     assert mesh.geometry.index_map().size_global == mesh.mpi_comm().allreduce(x.shape[0], op=MPI.SUM)

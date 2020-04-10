@@ -288,8 +288,8 @@ create_meshtags(MPI_Comm comm, const std::shared_ptr<const mesh::Mesh>& mesh,
   }
 
   // Using just the information on current local mesh partition prepare
-  // a mapping from *ordered* nodes of entity input global indices to
-  // entity local index
+  // a map from *ordered* nodes of entity input global indices to entity
+  // local index
   std::map<std::vector<std::int64_t>, std::int32_t> entities_igi;
   auto map_e = mesh->topology().index_map(e_dim);
   assert(map_e);

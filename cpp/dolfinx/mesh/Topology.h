@@ -36,6 +36,7 @@ namespace mesh
 {
 enum class GhostMode : int;
 
+enum class CellType;
 class Topology;
 
 /// Compute marker for owned facets that are interior, i.e. are
@@ -176,9 +177,6 @@ private:
   std::shared_ptr<const std::vector<bool>> _interior_facets;
 };
 
-/// @todo Avoid passing ElementDofLayout. All we need is way to extract
-/// the vertices from cells, and the CellType
-///
 /// Create distributed topology
 /// @param[in] comm MPI communicator across which the topology is
 ///   distributed
@@ -189,9 +187,7 @@ private:
 ///   with each cell.
 /// @param[in] ghost_owners The ownership of any ghost cells (ghost
 ///   cells are always at the end of the list of cells, above)
-/// @param[in] layout Describe the association between 'nodes' in @p
-///   cells and geometry degrees-of-freedom on the element. It is used
-///   to extract the vertex entries in @p cells.
+/// @param[in] cell_type The cell shape
 /// @param[in] ghost_mode How to partition the cell overlap: none,
 /// shared_facet or shared_vertex
 /// @return A distributed Topology.
@@ -199,7 +195,6 @@ Topology create_topology(MPI_Comm comm,
                          const graph::AdjacencyList<std::int64_t>& cells,
                          const std::vector<std::int64_t>& original_cell_index,
                          const std::vector<int>& ghost_owners,
-                         const fem::ElementDofLayout& layout,
-                         mesh::GhostMode ghost_mode);
+                         const CellType& cell_type, mesh::GhostMode ghost_mode);
 } // namespace mesh
 } // namespace dolfinx

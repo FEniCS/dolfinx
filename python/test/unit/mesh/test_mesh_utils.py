@@ -9,10 +9,11 @@ import os
 import numpy as np
 import pytest
 from mpi4py import MPI
-from dolfinx_utils.test.fixtures import tempdir
 
-from dolfinx import cpp
+import ufl
+from dolfinx import cpp, fem
 from dolfinx.io import XDMFFile
+from dolfinx_utils.test.fixtures import tempdir
 
 assert (tempdir)
 
@@ -236,11 +237,11 @@ def test_topology_partition(tempdir, shape, order):
     # this should just be the identity operator. For other elements
     # the filtered lists may have 'gaps', i.e. the indices might not
     # be contiguous.
-    cells_global_v = cpp.mesh.extract_topology(layout, cells_global)
+    cells_global_v = cpp.mesh.extract_topology(shape, layout, cells_global)
 
     # Compute the destination rank for cells on this process via graph
     # partitioning
-    dest = cpp.mesh.partition_cells(MPI.COMM_WORLD, size, layout.cell_type,
+    dest = cpp.mesh.partition_cells(MPI.COMM_WORLD, size, shape,
                                     cells_global_v, cpp.mesh.GhostMode.none)
     assert len(dest) == cells_global_v.num_nodes
 
@@ -259,7 +260,7 @@ def test_topology_partition(tempdir, shape, order):
 
     # Create (i) local topology object and (ii) IndexMap for cells, and
     # set cell-vertex topology
-    topology_local = cpp.mesh.Topology(layout.cell_type)
+    topology_local = cpp.mesh.Topology(shape)
     tdim = topology_local.dim
     map = cpp.common.IndexMap(MPI.COMM_SELF, cells_local.num_nodes, [], 1)
     topology_local.set_index_map(tdim, map)
@@ -293,7 +294,7 @@ def test_topology_partition(tempdir, shape, order):
                                                                     local_to_global_vertices, exterior_vertices)
 
     # --- Create distributed topology
-    topology = cpp.mesh.Topology(layout.cell_type)
+    topology = cpp.mesh.Topology(shape)
 
     # Set vertex IndexMap, and vertex-vertex connectivity
     topology.set_index_map(0, vertex_map)
@@ -374,7 +375,12 @@ def test_topology_partition(tempdir, shape, order):
     x_g = coords[l2l]
 
     # Create Geometry
-    geometry = cpp.mesh.Geometry(dof_index_map, dofmap, layout, x_g, l2g, indices)
+    cell_str = cpp.mesh.to_string(shape)
+    cell = ufl.Cell(cell_str, geometric_dimension=x_g.shape[1])
+    element = ufl.VectorElement("Lagrange", cell, order)
+    domain = ufl.Mesh(element)
+    cmap = fem.create_coordinate_map(domain)
+    geometry = cpp.mesh.Geometry(dof_index_map, dofmap, cmap, x_g, indices)
 
     # Create mesh
     mesh = cpp.mesh.Mesh(MPI.COMM_WORLD, topology, geometry)

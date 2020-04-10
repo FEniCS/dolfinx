@@ -201,13 +201,7 @@ def test_assemble_manifold():
     points = numpy.array([[0.0, 0.0], [0.2, 0.0], [0.4, 0.0],
                           [0.6, 0.0], [0.8, 0.0], [1.0, 0.0]], dtype=numpy.float64)
     cells = numpy.array([[0, 1], [1, 2], [2, 3], [3, 4], [4, 5]], dtype=numpy.int32)
-
-    mesh = dolfinx.Mesh(MPI.COMM_WORLD,
-                        dolfinx.cpp.mesh.CellType.interval,
-                        points, cells, [], dolfinx.cpp.mesh.GhostMode.none)
-
-    mesh.geometry.coord_mapping = dolfinx.fem.create_coordinate_map(mesh)
-
+    mesh = dolfinx.Mesh(MPI.COMM_WORLD, dolfinx.cpp.mesh.CellType.interval, points, cells, [])
     assert mesh.geometry.dim == 2
     assert mesh.topology.dim == 1
 

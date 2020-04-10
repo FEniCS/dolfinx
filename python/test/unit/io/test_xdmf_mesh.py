@@ -9,7 +9,8 @@ import os
 import pytest
 from mpi4py import MPI
 
-from dolfinx import UnitCubeMesh, UnitIntervalMesh, UnitSquareMesh, cpp
+import ufl
+from dolfinx import UnitCubeMesh, UnitIntervalMesh, UnitSquareMesh, fem, cpp
 from dolfinx.cpp.mesh import CellType
 from dolfinx.io import XDMFFile
 from dolfinx_utils.test.fixtures import tempdir
@@ -98,9 +99,12 @@ def test_save_and_load_3d_mesh(tempdir, encoding, cell_type):
 
 @pytest.mark.parametrize("encoding", encodings)
 def test_read_write_p2_mesh(tempdir, encoding):
-    mesh = cpp.generation.UnitDiscMesh.create(MPI.COMM_WORLD,
-                                              3,
-                                              cpp.mesh.GhostMode.none)
+    cell = ufl.Cell("triangle", geometric_dimension=2)
+    element = ufl.VectorElement("Lagrange", cell, 2)
+    domain = ufl.Mesh(element)
+    cmap = fem.create_coordinate_map(domain)
+
+    mesh = cpp.generation.UnitDiscMesh.create(MPI.COMM_WORLD, 3, cmap, cpp.mesh.GhostMode.none)
 
     filename = os.path.join(tempdir, "tri6_mesh.xdmf")
     with XDMFFile(mesh.mpi_comm(), filename, "w", encoding=encoding) as xdmf:

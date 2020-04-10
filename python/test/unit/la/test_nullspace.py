@@ -13,8 +13,7 @@ import pytest
 from mpi4py import MPI
 
 import ufl
-from dolfinx import (UnitCubeMesh, UnitSquareMesh, VectorFunctionSpace,
-                     cpp, fem, la)
+from dolfinx import UnitCubeMesh, UnitSquareMesh, VectorFunctionSpace, cpp, la
 from dolfinx.cpp.mesh import CellType, GhostMode
 from dolfinx.fem import assemble_matrix
 from dolfinx.generation import BoxMesh
@@ -114,8 +113,6 @@ def test_nullspace_orthogonal(mesh, degree):
 def test_nullspace_check(mesh, degree):
     V = VectorFunctionSpace(mesh, ('Lagrange', degree))
     u, v = TrialFunction(V), TestFunction(V)
-
-    mesh.geometry.coord_mapping = fem.create_coordinate_map(mesh)
 
     E, nu = 2.0e2, 0.3
     mu = E / (2.0 * (1.0 + nu))

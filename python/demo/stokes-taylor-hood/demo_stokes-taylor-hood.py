@@ -90,9 +90,6 @@ mesh = RectangleMesh(
     [np.array([0, 0, 0]), np.array([1, 1, 0])], [32, 32],
     CellType.triangle, dolfinx.cpp.mesh.GhostMode.none)
 
-cmap = dolfinx.fem.create_coordinate_map(mesh.ufl_domain())
-mesh.geometry.coord_mapping = cmap
-
 
 # Function to mark x = 0, x = 1 and y = 0
 def noslip_boundary(x):

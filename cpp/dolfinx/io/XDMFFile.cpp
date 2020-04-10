@@ -16,16 +16,11 @@
 #include <boost/filesystem.hpp>
 #include <boost/lexical_cast.hpp>
 #include <dolfinx/common/utils.h>
-#include <dolfinx/fem/ElementDofLayout.h>
 #include <dolfinx/function/Function.h>
 #include <dolfinx/graph/AdjacencyList.h>
-#include <dolfinx/graph/Partitioning.h>
 #include <dolfinx/mesh/Geometry.h>
 #include <dolfinx/mesh/Mesh.h>
 #include <dolfinx/mesh/MeshTags.h>
-#include <dolfinx/mesh/Partitioning.h>
-#include <dolfinx/mesh/Topology.h>
-#include <dolfinx/mesh/TopologyComputation.h>
 #include <dolfinx/mesh/utils.h>
 
 using namespace dolfinx;
@@ -165,38 +160,23 @@ void XDMFFile::write_geometry(const mesh::Geometry& geometry,
     _xml_doc->save_file(_filename.c_str(), "  ");
 }
 //-----------------------------------------------------------------------------
-mesh::Mesh XDMFFile::read_mesh(const std::string name,
+mesh::Mesh XDMFFile::read_mesh(const fem::CoordinateElement& element,
+                               const std::string name,
                                const std::string xpath) const
 {
-  pugi::xml_node node = _xml_doc->select_node(xpath.c_str()).node();
-  if (!node)
-    throw std::runtime_error("XML node '" + xpath + "' not found.");
-
-  pugi::xml_node grid_node
-      = node.select_node(("Grid[@Name='" + name + "']").c_str()).node();
-
-  if (!grid_node)
-    throw std::runtime_error("<Grid> with name '" + name + "' not found.");
-
   // Read mesh data
-  auto [cell_type, x, cells]
-      = xdmf_mesh::read_mesh_data(_mpi_comm.comm(), _h5_id, grid_node);
+  auto [cell_type, x, cells] = XDMFFile::read_mesh_data(name, xpath);
 
+  // Create mesh
   graph::AdjacencyList<std::int64_t> cells_adj(cells);
-
-  // TODO: create outside
-  // Create a layout
-  const fem::ElementDofLayout layout
-      = fem::geometry_layout(cell_type, cells.cols());
-
-  mesh::Mesh mesh = mesh::create(_mpi_comm.comm(), cells_adj, layout, x,
+  mesh::Mesh mesh = mesh::create(_mpi_comm.comm(), cells_adj, element, x,
                                  mesh::GhostMode::none);
   mesh.name = name;
   return mesh;
 }
 //-----------------------------------------------------------------------------
 std::tuple<
-    mesh::CellType,
+    std::pair<mesh::CellType, int>,
     Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>,
     Eigen::Array<std::int64_t, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>>
 XDMFFile::read_mesh_data(const std::string name, const std::string xpath) const
@@ -207,7 +187,6 @@ XDMFFile::read_mesh_data(const std::string name, const std::string xpath) const
 
   pugi::xml_node grid_node
       = node.select_node(("Grid[@Name='" + name + "']").c_str()).node();
-
   if (!grid_node)
     throw std::runtime_error("<Grid> with name '" + name + "' not found.");
 
@@ -278,11 +257,9 @@ void XDMFFile::write_meshtags(const mesh::MeshTags<std::int32_t>& meshtags,
   grid_node.append_attribute("GridType") = "Uniform";
 
   const std::string geo_ref_path = "xpointer(" + geometry_xpath + ")";
-
   pugi::xml_node geo_ref_node = grid_node.append_child("xi:include");
   geo_ref_node.append_attribute("xpointer") = geo_ref_path.c_str();
   assert(geo_ref_node);
-
   xdmf_meshtags::add_meshtags(_mpi_comm.comm(), meshtags, grid_node, _h5_id,
                               meshtags.name);
 
@@ -298,10 +275,8 @@ XDMFFile::read_meshtags(const std::shared_ptr<const mesh::Mesh>& mesh,
   pugi::xml_node node = _xml_doc->select_node(xpath.c_str()).node();
   if (!node)
     throw std::runtime_error("XML node '" + xpath + "' not found.");
-
   pugi::xml_node grid_node
       = node.select_node(("Grid[@Name='" + name + "']").c_str()).node();
-
   if (!grid_node)
     throw std::runtime_error("<Grid> with name '" + name + "' not found.");
 
@@ -326,17 +301,16 @@ XDMFFile::read_meshtags(const std::shared_ptr<const mesh::Mesh>& mesh,
   // Fetch cell type of meshtags and deduce its dimension
   const auto cell_type_str = xdmf_utils::get_cell_type(topology_node);
   const mesh::CellType cell_type = mesh::to_type(cell_type_str.first);
-
   pugi::xml_node values_data_node
       = grid_node.child("Attribute").child("DataItem");
-
   std::vector<std::int32_t> values = xdmf_read::get_dataset<std::int32_t>(
       _mpi_comm.comm(), values_data_node, _h5_id);
-
   mesh::MeshTags meshtags = mesh::create_meshtags(
       _mpi_comm.comm(), mesh, cell_type, topology, std::move(values));
   meshtags.name = name;
 
   return meshtags;
 }
+//-----------------------------------------------------------------------------
+MPI_Comm XDMFFile::comm() const { return _mpi_comm.comm(); }
 //-----------------------------------------------------------------------------
