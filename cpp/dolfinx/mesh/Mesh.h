@@ -104,6 +104,9 @@ public:
   /// @param mesh Another Mesh object
   Mesh& operator=(Mesh&& mesh) = default;
 
+  // TODO: Is there any use for this? In many situations one has to get the
+  // topology of a const Mesh, which is done by Mesh::topology_mutable. Note
+  // that the python interface (calls Mesh::topology()) may still rely on it.
   /// Get mesh topology
   /// @return The topology object associated with the mesh.
   Topology& topology();
@@ -163,8 +166,10 @@ public:
 
 private:
   // Mesh topology:
-  // TODO: This is mutable since topology might have to change
-  // (partitioning etc) even for a "constant" mesh. Better solution?
+  // TODO: This is mutable because of the current memory management within
+  // mesh::Topology. It allows to obtain a non-const Topology from a
+  // const mesh (via Mesh::topology_mutable()).
+  //
   mutable Topology _topology;
 
   // Mesh geometry

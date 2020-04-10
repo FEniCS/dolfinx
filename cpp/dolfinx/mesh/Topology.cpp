@@ -123,7 +123,7 @@ send_to_neighbours(MPI_Comm neighbour_comm,
 std::vector<bool> mesh::compute_interior_facets(const Topology& topology)
 {
   // NOTE: Getting markers for owned and unowned facets requires reverse
-  // and forward scatters. It we can work only with owned facets we
+  // and forward scatters. If we can work only with owned facets we
   // would need only a reverse scatter.
 
   const int tdim = topology.dim();
@@ -258,31 +258,21 @@ std::vector<bool> Topology::on_boundary(int dim) const
 //-----------------------------------------------------------------------------
 std::int32_t Topology::create_entities(int dim)
 {
-  // FIXME: update docstring after it has been decided whether this is const or
-  //  not
-  // This function is obviously not const since it may potentially
-  // compute new connectivity. However, in a sense all connectivity of a
-  // mesh always exists, it just hasn't been computed yet. The
-  // const_cast is also needed to allow iterators over a const Mesh to
-  // create new connectivity.
-  // TODO: when would one need such connectivity change over a const mesh?
-  //  Partitioning?
-
   // TODO: is this check sufficient/correct? Does not catch the cell_entity
-  //  entity case. Should there also be a check for
-  //  connectivity(this->dim(), dim) ?
+  // entity case. Should there also be a check for
+  // connectivity(this->dim(), dim) ?
   // Skip if already computed (vertices (dim=0) should always exist)
   if (connectivity(dim, 0))
     return -1;
 
   // Create local entities
   const auto [cell_entity, entity_vertex, index_map]
-  = TopologyComputation::compute_entities(_mpi_comm.comm(), *this, dim);
+      = TopologyComputation::compute_entities(_mpi_comm.comm(), *this, dim);
 
   if (cell_entity)
     set_connectivity(cell_entity, this->dim(), dim);
 
-  //TODO: is this check necessary? Seems redundant after to the "skip check"
+  // TODO: is this check necessary? Seems redundant after to the "skip check"
   if (entity_vertex)
     set_connectivity(entity_vertex, dim, 0);
 
@@ -294,21 +284,13 @@ std::int32_t Topology::create_entities(int dim)
 //-----------------------------------------------------------------------------
 void Topology::create_connectivity(int d0, int d1)
 {
-  // FIXME: update docstring after it has been decided whether this is const or
-  //  not
-  // This function is obviously not const since it may potentially
-  // compute new connectivity. However, in a sense all connectivity of a
-  // mesh always exists, it just hasn't been computed yet. The
-  // const_cast is also needed to allow iterators over a const Mesh to
-  // create new connectivity.
-
   // Make sure entities exist
   create_entities(d0);
   create_entities(d1);
 
   // Compute connectivity
   const auto [c_d0_d1, c_d1_d0]
-  = TopologyComputation::compute_connectivity(*this, d0, d1);
+      = TopologyComputation::compute_connectivity(*this, d0, d1);
 
   // NOTE: that to compute the (d0, d1) connections is it sometimes
   // necessary to compute the (d1, d0) connections. We store the (d1,
@@ -317,6 +299,10 @@ void Topology::create_connectivity(int d0, int d1)
   // connectivity that was not requested, but advise in a docstring the
   // most efficient order in which to call this function if several
   // connectivities are needed.
+
+  // TODO: Caching policy/strategy.
+  // Concerning the note above: Provide an overload
+  // create_connectivity(std::vector<std::pair<int, int>>)?
 
   // Attach connectivities
   if (c_d0_d1)
@@ -346,7 +332,7 @@ void Topology::create_entity_permutations()
     create_entities(d);
 
   auto [facet_permutations, cell_permutations]
-  = PermutationComputation::compute_entity_permutations(*this);
+      = PermutationComputation::compute_entity_permutations(*this);
   _facet_permutations = std::move(facet_permutations);
   _cell_permutations = std::move(cell_permutations);
 }

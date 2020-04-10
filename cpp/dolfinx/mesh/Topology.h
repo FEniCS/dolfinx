@@ -39,8 +39,8 @@ enum class GhostMode : int;
 class Topology;
 
 /// Compute marker for owned facets that are interior, i.e. are
-/// connected to two cells, one of which might be on a remote process
-/// @param[in] topology The topology
+/// connected to two cells, one of which might be on a remote process.
+/// @param[in] topology The topology.
 /// @return Vector with length equal to the number of facets on this
 ///   this process. True if the ith facet (local index) is interior to
 ///   the domain.
@@ -153,8 +153,9 @@ public:
   /// @return Cell type that the topology is for
   mesh::CellType cell_type() const;
 
-  //TODO: Check whether the functions below can be made private through
-  // and called on demand by to create data by some auto-detection.
+  // TODO: Rework memory management and associated API
+  // Currently, there is no clear caching policy implemented and no way of
+  // discarding cached data.
 
   // creation of entities
   /// Create entities of given topological dimension.
