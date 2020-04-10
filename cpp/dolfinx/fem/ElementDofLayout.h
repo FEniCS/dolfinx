@@ -190,10 +190,5 @@ private:
       _base_permutations;
 };
 
-/// @todo Use UFC coordinate dofmap instead?
-///
-/// Create ElementDofLayout for scalar Lagrange elements. Use for meshes.
-// ElementDofLayout geometry_layout(mesh::CellType cell, int num_nodes);
-
 } // namespace fem
 } // namespace dolfinx

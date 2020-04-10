@@ -677,7 +677,7 @@ fem::create_coordinate_map(const ufc_coordinate_mapping& ufc_cmap)
          {quadrilateral, mesh::CellType::quadrilateral},
          {hexahedron, mesh::CellType::hexahedron}};
 
-  // Map cell tyee
+  // Get cell type
   const mesh::CellType cell_type = ufc_to_cell.at(ufc_cmap.cell_shape);
   assert(ufc_cmap.topological_dimension == mesh::cell_dim(cell_type));
 

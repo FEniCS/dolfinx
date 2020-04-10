@@ -118,8 +118,7 @@ private:
   // IndexMap for geometry 'dofmap'
   std::shared_ptr<const common::IndexMap> _index_map;
 
-  // The dof layout on the cell
-  // fem::ElementDofLayout _layout;
+  // The coordinate element
   fem::CoordinateElement _cmap;
 
   // Coordinates for all points stored as a contiguous array

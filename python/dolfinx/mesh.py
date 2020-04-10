@@ -59,6 +59,7 @@ def refine(mesh, cell_markers=None, redistribute=True):
 
 
 def Mesh(comm, cell_type, x, cells, ghosts, degree=1, ghost_mode=cpp.mesh.GhostMode.none):
+    """Crete a mesh from topology and geometry data"""
     cell = ufl.Cell(cpp.mesh.to_string(cell_type), geometric_dimension=x.shape[1])
     domain = ufl.Mesh(ufl.VectorElement("Lagrange", cell, degree))
     cmap = fem.create_coordinate_map(domain)
