@@ -9,7 +9,6 @@
 #include <Eigen/Dense>
 #include <array>
 #include <dolfinx/common/types.h>
-#include <dolfinx/mesh/cell_types.h>
 #include <memory>
 #include <set>
 #include <ufc.h>
@@ -17,6 +16,10 @@
 
 namespace dolfinx
 {
+namespace mesh
+{
+enum class CellType;
+}
 
 namespace fem
 {
@@ -79,10 +82,6 @@ public:
 
   /// Move assignment
   ElementDofLayout& operator=(ElementDofLayout&& dofmap) = default;
-
-  /// Cell type (shape)
-  /// @return The cell type
-  mesh::CellType cell_type() const;
 
   /// Return the dimension of the local finite element function space on
   /// a cell (number of dofs on element)
@@ -150,17 +149,9 @@ public:
     return _base_permutations;
   }
 
-  //@todo Attempt to remove. Should not be here.
-  ///
-  /// Return polynomial degree
-  int degree() const;
-
 private:
   // Block size
   int _block_size;
-
-  // Cell type
-  mesh::CellType _cell_type;
 
   // Mapping of dofs to this ElementDofLayout's immediate parent
   std::vector<int> _parent_map;
@@ -189,11 +180,6 @@ private:
   Eigen::Array<int, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
       _base_permutations;
 };
-
-/// @todo Use UFC coordinate dofmap instead?
-///
-/// Create ElementDofLayout for scalar Lagrange elements. Use for meshes.
-ElementDofLayout geometry_layout(mesh::CellType cell, int num_nodes);
 
 } // namespace fem
 } // namespace dolfinx

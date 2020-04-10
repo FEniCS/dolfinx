@@ -8,6 +8,7 @@
 import cffi
 import numba
 import numpy as np
+from mpi4py import MPI
 from petsc4py import PETSc
 
 import ufl
@@ -28,7 +29,7 @@ def test_rank0():
     gradient grad f(x, y) = [2*x, 4*y].
 
     """
-    mesh = dolfinx.generation.UnitSquareMesh(dolfinx.MPI.comm_world, 5, 5)
+    mesh = dolfinx.generation.UnitSquareMesh(MPI.COMM_WORLD, 5, 5)
     P2 = dolfinx.FunctionSpace(mesh, ("P", 2))
     vP1 = dolfinx.VectorFunctionSpace(mesh, ("P", 1))
 
@@ -73,8 +74,8 @@ def test_rank0():
                 b[dofmap[i * 6 + j]] = b_local[j]
 
     # Prepare mesh and dofmap data
-    pos = mesh.geometry.dofmap().offsets()
-    x_dofs = mesh.geometry.dofmap().array()
+    pos = mesh.geometry.dofmap.offsets()
+    x_dofs = mesh.geometry.dofmap.array()
     x = mesh.geometry.x
     coeff_dofmap = P2.dofmap.list.array()
     dofmap = vP1.dofmap.list.array()

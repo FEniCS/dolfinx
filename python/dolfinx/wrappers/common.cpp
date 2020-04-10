@@ -136,33 +136,4 @@ void common(py::module& m)
       .def_static("mpi_finalized",
                   &dolfinx::common::SubSystemsManager::mpi_finalized);
 }
-
-// Interface for MPI
-void mpi(py::module& m)
-{
-  // dolfinx::MPI
-  py::class_<dolfinx::MPI>(m, "MPI", "MPI utilities")
-      .def_property_readonly_static(
-          "comm_world",
-          [](py::object) { return MPICommWrapper(MPI_COMM_WORLD); })
-      .def_property_readonly_static(
-          "comm_self", [](py::object) { return MPICommWrapper(MPI_COMM_SELF); })
-      .def_property_readonly_static(
-          "comm_null", [](py::object) { return MPICommWrapper(MPI_COMM_NULL); })
-      .def_static("responsible",
-                  &dolfinx::common::SubSystemsManager::responsible_mpi,
-                  "Return true if DOLFIN initialised MPI (and is therefore "
-                  "responsible for finalization)")
-      .def_static("rank",
-                  [](const MPICommWrapper comm) {
-                    return dolfinx::MPI::rank(comm.get());
-                  })
-      .def_static("size",
-                  [](const MPICommWrapper comm) {
-                    return dolfinx::MPI::size(comm.get());
-                  })
-      .def_static("local_range", [](int rank, std::int64_t N, int size) {
-        return dolfinx::MPI::local_range(rank, N, size);
-      });
-}
 } // namespace dolfinx_wrappers

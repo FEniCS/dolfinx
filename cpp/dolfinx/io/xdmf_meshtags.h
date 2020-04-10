@@ -6,17 +6,17 @@
 
 #pragma once
 
-#include "HDF5Interface.h"
 #include "pugixml.hpp"
 #include "xdmf_mesh.h"
-#include "xdmf_read.h"
 #include "xdmf_utils.h"
-#include <dolfinx/graph/Partitioning.h>
+#include <dolfinx/common/MPI.h>
 #include <dolfinx/mesh/MeshTags.h>
+#include <hdf5.h>
+#include <string>
+#include <vector>
 
 namespace dolfinx
 {
-
 namespace io
 {
 namespace xdmf_meshtags

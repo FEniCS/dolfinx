@@ -18,6 +18,7 @@ using namespace dolfinx::generation;
 namespace
 {
 mesh::Mesh build(MPI_Comm comm, std::size_t nx, std::array<double, 2> x,
+                 const fem::CoordinateElement& element,
                  const mesh::GhostMode ghost_mode)
 {
   // Receive mesh according to parallel policy
@@ -25,9 +26,7 @@ mesh::Mesh build(MPI_Comm comm, std::size_t nx, std::array<double, 2> x,
   {
     Eigen::Array<double, 0, 1> geom(0, 1);
     Eigen::Array<std::int64_t, 0, 2, Eigen::RowMajor> topo(0, 2);
-    const fem::ElementDofLayout layout
-        = fem::geometry_layout(mesh::CellType::interval, topo.cols());
-    return mesh::create(comm, graph::AdjacencyList<std::int64_t>(topo), layout,
+    return mesh::create(comm, graph::AdjacencyList<std::int64_t>(topo), element,
                         geom, ghost_mode);
   }
 
@@ -60,9 +59,7 @@ mesh::Mesh build(MPI_Comm comm, std::size_t nx, std::array<double, 2> x,
   for (std::size_t ix = 0; ix < nx; ix++)
     topo.row(ix) << ix, ix + 1;
 
-  const fem::ElementDofLayout layout
-      = fem::geometry_layout(mesh::CellType::interval, topo.cols());
-  return mesh::create(comm, graph::AdjacencyList<std::int64_t>(topo), layout,
+  return mesh::create(comm, graph::AdjacencyList<std::int64_t>(topo), element,
                       geom, ghost_mode);
 }
 } // namespace
@@ -70,8 +67,9 @@ mesh::Mesh build(MPI_Comm comm, std::size_t nx, std::array<double, 2> x,
 //-----------------------------------------------------------------------------
 mesh::Mesh IntervalMesh::create(MPI_Comm comm, std::size_t n,
                                 std::array<double, 2> x,
+                                const fem::CoordinateElement& element,
                                 const mesh::GhostMode ghost_mode)
 {
-  return build(comm, n, x, ghost_mode);
+  return build(comm, n, x, element, ghost_mode);
 }
 //-----------------------------------------------------------------------------

@@ -10,12 +10,13 @@ from random import shuffle
 
 import numpy as np
 import pytest
-from dolfinx_utils.test.skips import skip_in_parallel
+from mpi4py import MPI
 
-from dolfinx import (MPI, FacetNormal, Function, FunctionSpace, Mesh,
-                     VectorFunctionSpace, cpp, fem)
+from dolfinx import (FacetNormal, Function, FunctionSpace, Mesh,
+                     VectorFunctionSpace, fem)
 from dolfinx.cpp.mesh import CellType
 from dolfinx.mesh import MeshTags
+from dolfinx_utils.test.skips import skip_in_parallel
 from ufl import TestFunction, TrialFunction, ds, dS, inner
 
 parametrize_cell_types = pytest.mark.parametrize(
@@ -55,9 +56,7 @@ def unit_cell(cell_type, random_order=True):
     for i, j in enumerate(order):
         ordered_points[j] = points[i]
     cells = np.array([order])
-    mesh = Mesh(MPI.comm_world, cell_type, ordered_points, cells,
-                [], cpp.mesh.GhostMode.none)
-    mesh.geometry.coord_mapping = fem.create_coordinate_map(mesh)
+    mesh = Mesh(MPI.COMM_WORLD, cell_type, ordered_points, cells, [])
     mesh.create_connectivity_all()
     return mesh
 
@@ -116,9 +115,7 @@ def two_unit_cells(cell_type, agree=False, random_order=True, return_order=False
     for i, j in enumerate(order):
         ordered_points[j] = points[i]
     ordered_cells = np.array([[order[i] for i in c] for c in cells])
-    mesh = Mesh(MPI.comm_world, cell_type, ordered_points, ordered_cells,
-                [], cpp.mesh.GhostMode.none)
-    mesh.geometry.coord_mapping = fem.create_coordinate_map(mesh)
+    mesh = Mesh(MPI.COMM_WORLD, cell_type, ordered_points, ordered_cells, [])
     mesh.create_connectivity_all()
     if return_order:
         return mesh, order
@@ -272,10 +269,10 @@ def test_plus_minus_simple_vector(cell_type, pm):
 
     # Check that the above vectors all have the same values as the first one,
     # but permuted due to differently ordered dofs
-    dofmap0 = spaces[0].mesh.geometry.dofmap()
+    dofmap0 = spaces[0].mesh.geometry.dofmap
     for result, space in zip(results[1:], spaces[1:]):
         # Get the data relating to two results
-        dofmap1 = space.mesh.geometry.dofmap()
+        dofmap1 = space.mesh.geometry.dofmap
 
         # For each cell
         for cell in range(2):
@@ -325,10 +322,10 @@ def test_plus_minus_vector(cell_type, pm1, pm2):
 
     # Check that the above vectors all have the same values as the first one,
     # but permuted due to differently ordered dofs
-    dofmap0 = spaces[0].mesh.geometry.dofmap()
+    dofmap0 = spaces[0].mesh.geometry.dofmap
     for result, space in zip(results[1:], spaces[1:]):
         # Get the data relating to two results
-        dofmap1 = space.mesh.geometry.dofmap()
+        dofmap1 = space.mesh.geometry.dofmap
 
         # For each cell
         for cell in range(2):
@@ -373,10 +370,10 @@ def test_plus_minus_matrix(cell_type, pm1, pm2):
 
     # Check that the above matrices all have the same values, but permuted due to differently
     # ordered dofs
-    dofmap0 = spaces[0].mesh.geometry.dofmap()
+    dofmap0 = spaces[0].mesh.geometry.dofmap
     for result, space in zip(results[1:], spaces[1:]):
         # Get the data relating to two results
-        dofmap1 = space.mesh.geometry.dofmap()
+        dofmap1 = space.mesh.geometry.dofmap
 
         dof_order = []
 

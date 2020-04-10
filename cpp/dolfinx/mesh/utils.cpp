@@ -318,11 +318,12 @@ T circumradius_tmpl(const mesh::Mesh& mesh,
 
 //-----------------------------------------------------------------------------
 graph::AdjacencyList<std::int64_t>
-mesh::extract_topology(const fem::ElementDofLayout& layout,
+mesh::extract_topology(const CellType& cell_type,
+                       const fem::ElementDofLayout& layout,
                        const graph::AdjacencyList<std::int64_t>& cells)
 {
   // Use ElementDofLayout to get vertex dof indices (local to a cell)
-  const int num_vertices_per_cell = num_cell_vertices(layout.cell_type());
+  const int num_vertices_per_cell = num_cell_vertices(cell_type);
   std::vector<int> local_vertices(num_vertices_per_cell);
   for (int i = 0; i < num_vertices_per_cell; ++i)
   {

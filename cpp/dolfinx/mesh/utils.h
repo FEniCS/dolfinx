@@ -18,10 +18,12 @@ class ElementDofLayout;
 
 namespace mesh
 {
+enum class CellType;
 class Mesh;
 class MeshEntity;
 
 /// Extract topology from cell data, i.e. extract cell vertices
+/// @param[in] cell_type The cell shape
 /// @param[in] layout The layout of geometry 'degrees-of-freedom' on the
 ///     reference cell
 /// @param[in] cells List of 'nodes' for each cell using global indices.
@@ -30,7 +32,7 @@ class MeshEntity;
 ///     'gaps' due to mid-side and other higher-order nodes being
 ///     removed from the input @p cell.
 graph::AdjacencyList<std::int64_t>
-extract_topology(const fem::ElementDofLayout& layout,
+extract_topology(const CellType& cell_type, const fem::ElementDofLayout& layout,
                  const graph::AdjacencyList<std::int64_t>& cells);
 
 /// Compute (generalized) volume of mesh entities of given dimension
