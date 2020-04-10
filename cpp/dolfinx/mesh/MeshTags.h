@@ -117,7 +117,7 @@ private:
     std::vector<int> perm(_indices.size());
     std::iota(perm.begin(), perm.end(), 0);
     std::sort(perm.begin(), perm.end(),
-              [&indices = std::as_const(_indices)](const int a, const int b) {
+              [& indices = std::as_const(_indices)](const int a, const int b) {
                 return (indices[a] < indices[b]);
               });
 
@@ -174,7 +174,7 @@ create_meshtags(MPI_Comm comm, const std::shared_ptr<const mesh::Mesh>& mesh,
                 const std::vector<T>& values)
 {
   // TODO: Avoid expensive-to-create std::vector<std::vector>>. Build
-  // AdjacencyList instead.
+  //       AdjacencyList instead.
 
   assert(mesh);
   if ((std::size_t)entities.rows() != values.size())
@@ -189,15 +189,6 @@ create_meshtags(MPI_Comm comm, const std::shared_ptr<const mesh::Mesh>& mesh,
   // Get mesh connectivity
   const int e_dim = mesh::cell_dim(tag_cell_type);
   const int dim = mesh->topology().dim();
-  auto e_to_v = mesh->topology().connectivity(e_dim, 0);
-  if (!e_to_v)
-    throw std::runtime_error("Missing entity-vertex connectivity.");
-  auto e_to_c = mesh->topology().connectivity(e_dim, dim);
-  if (!e_to_c)
-    throw std::runtime_error("Missing entity-cell connectivity.");
-  auto c_to_v = mesh->topology().connectivity(dim, 0);
-  if (!c_to_v)
-    throw std::runtime_error("missing cell-vertex connectivity.");
 
   // -------------------
   // 1. Send this rank's global "input" nodes indices to the
@@ -321,47 +312,45 @@ create_meshtags(MPI_Comm comm, const std::shared_ptr<const mesh::Mesh>& mesh,
   //       cost of std::vector<std::int64_t> allocations, and sort the
   //       Array by row.
   //
-  // TODO: We have received possibly tagged en from other ranks, so we could
-  //       avoid creating the std::map for *all* entities and just for
-  //       candidate entities.
+  // TODO: We have already received possibly tagged entities from other
+  //       ranks, so we could use the received data to avoid creating
+  //       the std::map for *all* entities and just for candidate
+  //       entities.
+
+  // Build map from vertex indices (local to rank) to global "user" node
+  // indices
+  auto map_v = mesh->topology().index_map(0);
+  assert(map_v);
+  const std::int32_t num_vertices = map_v->size_local() + map_v->num_ghosts();
+  const graph::AdjacencyList<std::int32_t>& x_dofmap
+      = mesh->geometry().dofmap();
+  std::vector<std::int64_t> vertex_to_node(num_vertices);
+  auto c_to_v = mesh->topology().connectivity(dim, 0);
+  if (!c_to_v)
+    throw std::runtime_error("missing cell-vertex connectivity.");
+  for (int c = 0; c < c_to_v->num_nodes(); ++c)
+  {
+    auto vertices = c_to_v->links(c);
+    auto x_dofs = x_dofmap.links(c);
+    for (int v = 0; v < vertices.rows(); ++v)
+      vertex_to_node[vertices[v]] = nodes_g[x_dofs[v]];
+  }
 
   // Using just the information on current local mesh partition prepare
   // a map from *ordered* nodes of entity input global indices to entity
   // local index
-  std::map<std::vector<std::int64_t>, std::int32_t> entities_igi;
-  auto map_e = mesh->topology().index_map(e_dim);
-  assert(map_e);
-  const std::int32_t num_entities = map_e->size_local() + map_e->num_ghosts();
-  const graph::AdjacencyList<std::int32_t>& cells_g = mesh->geometry().dofmap();
-  const std::vector<std::uint8_t> vtk_perm
-      = io::cells::vtk_to_dolfin(tag_cell_type, nnodes_per_entity);
-  for (std::int32_t e = 0; e < num_entities; ++e)
+  auto e_to_v = mesh->topology().connectivity(e_dim, 0);
+  if (!e_to_v)
+    throw std::runtime_error("Missing entity-vertex connectivity.");
+  std::map<std::vector<std::int64_t>, std::int32_t> entity_key_to_index;
+  std::vector<std::int64_t> key(nnodes_per_entity);
+  for (std::int32_t e = 0; e < e_to_v->num_nodes(); ++e)
   {
-    std::vector<std::int64_t> entity_igi(nnodes_per_entity);
-
-    // Find cell attached to the entity
-    std::int32_t c = e_to_c->links(e)[0];
-    auto cell_nodes = cells_g.links(c);
-    auto cell_vertices = c_to_v->links(c);
-    auto entity_vertices = e_to_v->links(e);
-    for (int v = 0; v < entity_vertices.rows(); ++v)
-    {
-      // FIXME: avoid VTK assumption
-
-      // Find local index of vertex wrt cell
-      const std::int32_t vertex = entity_vertices[vtk_perm[v]];
-      auto it = std::find(cell_vertices.data(),
-                          cell_vertices.data() + cell_vertices.rows(), vertex);
-      assert(it != (cell_vertices.data() + cell_vertices.rows()));
-      const int local_cell_vertex = std::distance(cell_vertices.data(), it);
-
-      // Insert "input" global index for the node of the entity
-      entity_igi[v] = nodes_g[cell_nodes[local_cell_vertex]];
-    }
-
-    // Sorting is needed to match with entities stored in file
-    std::sort(entity_igi.begin(), entity_igi.end());
-    entities_igi.insert({entity_igi, e});
+    auto vertices = e_to_v->links(e);
+    for (int v = 0; v < vertices.rows(); ++v)
+      key[v] = vertex_to_node[vertices(v)];
+    std::sort(key.begin(), key.end());
+    entity_key_to_index.insert({key, e});
   }
 
   // Iterate over all received entities and find it in entities of the
@@ -379,7 +368,8 @@ create_meshtags(MPI_Comm comm, const std::shared_ptr<const mesh::Mesh>& mesh,
     std::copy(_entities.row(e).data(),
               _entities.row(e).data() + nnodes_per_entity, entity.begin());
     std::sort(entity.begin(), entity.end());
-    if (const auto it = entities_igi.find(entity); it != entities_igi.end())
+    if (const auto it = entity_key_to_index.find(entity);
+        it != entity_key_to_index.end())
     {
       indices_new.push_back(it->second);
       values_new.push_back(recv_vals.array()[e]);
