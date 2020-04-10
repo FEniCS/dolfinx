@@ -6,8 +6,9 @@
 """Unit tests for the FunctionSpace class"""
 
 import pytest
+from mpi4py import MPI
 
-from dolfinx import (MPI, Function, FunctionSpace, UnitCubeMesh,
+from dolfinx import (Function, FunctionSpace, UnitCubeMesh,
                      VectorFunctionSpace)
 from ufl import (FiniteElement, TestFunction, TrialFunction, VectorElement,
                  grad, triangle)
@@ -16,7 +17,7 @@ from ufl.log import UFLException
 
 @pytest.fixture
 def mesh():
-    return UnitCubeMesh(MPI.comm_world, 8, 8, 8)
+    return UnitCubeMesh(MPI.COMM_WORLD, 8, 8, 8)
 
 
 @pytest.fixture
@@ -148,7 +149,7 @@ def test_argument_equality(mesh, V, V2, W, W2):
     function spaces.
 
     """
-    mesh2 = UnitCubeMesh(MPI.comm_world, 8, 8, 8)
+    mesh2 = UnitCubeMesh(MPI.COMM_WORLD, 8, 8, 8)
     V3 = FunctionSpace(mesh2, ('CG', 1))
     W3 = VectorFunctionSpace(mesh2, ('CG', 1))
 

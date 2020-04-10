@@ -5,17 +5,17 @@
 # SPDX-License-Identifier:    LGPL-3.0-or-later
 """Shared skips for unit tests involving dolfinx."""
 
+from mpi4py import MPI
 import pytest
 
-from dolfinx import MPI
 from dolfinx.common import has_petsc_complex
 
 # Skips with respect to parallel or serial
 xfail_in_parallel = pytest.mark.xfail(
-    MPI.size(MPI.comm_world) > 1,
+    MPI.COMM_WORLD.size > 1,
     reason="This test does not yet work in parallel.")
 skip_in_parallel = pytest.mark.skipif(
-    MPI.size(MPI.comm_world) > 1,
+    MPI.COMM_WORLD.size > 1,
     reason="This test should only be run in serial.")
 
 # Skips with respect to the scalar type

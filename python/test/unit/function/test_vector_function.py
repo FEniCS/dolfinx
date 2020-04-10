@@ -7,8 +7,9 @@
 
 import numpy as np
 import pytest
+from mpi4py import MPI
 
-from dolfinx import MPI, Function, FunctionSpace
+from dolfinx import Function, FunctionSpace
 from dolfinx.cpp.mesh import CellType
 from dolfinx.mesh import Mesh
 from dolfinx_utils.test.skips import skip_in_parallel
@@ -21,7 +22,7 @@ def test_div_conforming_triangle(space_type, order):
     """Checks that the vectors in div conforming spaces on a triangle are correctly oriented"""
     # Create simple triangle mesh
     def perform_test(points, cells):
-        mesh = Mesh(MPI.comm_world, CellType.triangle, points, np.array(cells), [])
+        mesh = Mesh(MPI.COMM_WORLD, CellType.triangle, points, np.array(cells), [])
         V = FunctionSpace(mesh, (space_type, order))
         f = Function(V)
         output = []
@@ -50,7 +51,7 @@ def test_div_conforming_tetrahedron(space_type, order):
     """Checks that the vectors in div conforming spaces on a tetrahedron are correctly oriented"""
     # Create simple tetrahedron cell mesh
     def perform_test(points, cells):
-        mesh = Mesh(MPI.comm_world, CellType.tetrahedron, points, np.array(cells), [])
+        mesh = Mesh(MPI.COMM_WORLD, CellType.tetrahedron, points, np.array(cells), [])
         V = FunctionSpace(mesh, (space_type, order))
         f = Function(V)
         output = []

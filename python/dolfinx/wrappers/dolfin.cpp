@@ -37,9 +37,6 @@ PYBIND11_MODULE(cpp, m)
   py::module common = m.def_submodule("common", "Common module");
   dolfinx_wrappers::common(common);
 
-  // Create MPI class [common]
-  dolfinx_wrappers::mpi(m);
-
   // Create common submodule [log]
   py::module log = m.def_submodule("log", "Logging module");
   dolfinx_wrappers::log(log);
