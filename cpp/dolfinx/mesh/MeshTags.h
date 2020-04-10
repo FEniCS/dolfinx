@@ -77,7 +77,7 @@ public:
   MeshTags& operator=(MeshTags&& tags) = default;
 
   /// Find all MeshTags local-to-process indices for a given value.
-  /// @param[in] values The value
+  /// @param[in] value The value
   /// @return The corresponding indices
   const Eigen::Array<std::int32_t, Eigen::Dynamic, 1>
   locate_indices(const T value) const
