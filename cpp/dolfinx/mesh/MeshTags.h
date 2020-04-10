@@ -80,23 +80,21 @@ public:
   /// indices per value, local-to-process
   /// @param[in] values A list values
   /// @return The corresponding indices
-  std::vector<std::vector<std::int32_t>>
-  indices(const std::vector<T>& values) const
+  const std::vector<Eigen::Array<std::int32_t, Eigen::Dynamic, 1>>
+  locate_indices(const std::vector<T>& values) const
   {
-    std::vector<std::vector<std::int32_t>> indices(values.size());
-    // Reserve space
-    for (std::int32_t i = 0; i < values.size(); ++i)
-    {
-      int n = std::count(_values.begin(), _values.end(), values[i]);
-      indices[i].reserve(n);
-    }
+    std::vector<Eigen::Array<std::int32_t, Eigen::Dynamic, 1>> indices(
+        values.size());
     // Find values
     for (std::int32_t i = 0; i < _values.size(); ++i)
     {
       for (std::int32_t j = 0; j < values.size(); ++j)
       {
         if (_values[i] == values[j])
-          indices[j].push_back(_indices[i]);
+        {
+          indices[j].conservativeResize(indices[j].size() + 1);
+          indices[j].tail(1) = _indices[i];
+        }
       }
     }
     return indices;
