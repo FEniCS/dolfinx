@@ -7,8 +7,9 @@
 
 import numpy as np
 import pytest
+from mpi4py import MPI
 
-from dolfinx import MPI, FunctionSpace, UnitSquareMesh, cpp
+from dolfinx import FunctionSpace, UnitSquareMesh, cpp
 from dolfinx.cpp.mesh import CellType
 # from dolfinx_utils.test.fixtures import fixture
 
@@ -23,7 +24,7 @@ def count_on_and_off_diagonal_nnz(primary_codim_entries, local_range):
 
 @pytest.fixture
 def mesh():
-    return UnitSquareMesh(MPI.comm_world, 4, 4, CellType.triangle)
+    return UnitSquareMesh(MPI.COMM_WORLD, 4, 4, CellType.triangle)
 
 
 @pytest.fixture
@@ -58,17 +59,17 @@ def test_insert_local(mesh, V):
     sp.assemble()
 
     sp1 = cpp.la.SparsityPattern(mesh.mpi_comm(), [[sp], [sp]])
-    if (MPI.rank(mesh.mpi_comm()) == 0):
+    if (mesh.mpi_comm().rank == 0):
         print("\nPattern:")
         print(sp1.str(True))
 
     sp1 = cpp.la.SparsityPattern(mesh.mpi_comm(), [[sp, sp]])
-    if (MPI.rank(mesh.mpi_comm()) == 0):
+    if (mesh.mpi_comm().rank == 0):
         print("\nPattern:")
         print(sp1.str(True))
 
     sp1 = cpp.la.SparsityPattern(mesh.mpi_comm(), [[sp, sp], [sp, sp]])
-    if (MPI.rank(mesh.mpi_comm()) == 0):
+    if (mesh.mpi_comm().rank == 0):
         print("\nPattern:")
         print(sp1.str(True))
 
@@ -102,8 +103,8 @@ def xtest_insert_global(mesh, V):
     nnz_d = sp.num_nonzeros_diagonal()
     nnz_od = sp.num_nonzeros_off_diagonal()
 
-    # rank = MPI.rank(mesh.mpi_comm())
-    # size = MPI.size(mesh.mpi_comm())
+    # rank = mesh.mpi_comm().rank
+    # size = mesh.mpi_comm().size
 
     # Tabulate on diagonal and off diagonal nnzs
     nnz_on_diagonal, nnz_off_diagonal = count_on_and_off_diagonal_nnz(
@@ -150,8 +151,8 @@ def xtest_insert_local_global(mesh, V):
     nnz_d = sp.num_nonzeros_diagonal()
     nnz_od = sp.num_nonzeros_off_diagonal()
 
-    # rank = MPI.rank(mesh.mpi_comm())
-    # size = MPI.size(mesh.mpi_comm())
+    # rank = mesh.mpi_comm().rank
+    # size = mesh.mpi_comm().size
 
     # Tabulate on diagonal and off diagonal nnzs
     nnz_on_diagonal, nnz_off_diagonal = count_on_and_off_diagonal_nnz(

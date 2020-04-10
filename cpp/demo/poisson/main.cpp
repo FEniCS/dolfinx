@@ -115,11 +115,11 @@ int main(int argc, char* argv[])
   common::SubSystemsManager::init_petsc(argc, argv);
 
   // Create mesh and function space
+  auto cmap = fem::create_coordinate_map(create_coordinate_map_poisson);
   std::array<Eigen::Vector3d, 2> pt{Eigen::Vector3d(0.0, 0.0, 0.0),
                                     Eigen::Vector3d(1.0, 1.0, 0.0)};
   auto mesh = std::make_shared<mesh::Mesh>(generation::RectangleMesh::create(
-      MPI_COMM_WORLD, pt, {{32, 32}}, mesh::CellType::triangle,
-      mesh::GhostMode::none));
+      MPI_COMM_WORLD, pt, {{32, 32}}, cmap, mesh::GhostMode::none));
 
   auto V = fem::create_functionspace(create_functionspace_form_poisson_a, "u",
                                      mesh);
@@ -140,10 +140,6 @@ int main(int argc, char* argv[])
 
   auto f = std::make_shared<function::Function>(V);
   auto g = std::make_shared<function::Function>(V);
-
-  // Attach 'coordinate mapping' to mesh
-  auto cmap = a->coordinate_mapping();
-  mesh->geometry().coord_mapping = cmap;
 
   // Now, the Dirichlet boundary condition (:math:`u = 0`) can be created
   // using the class :cpp:class:`DirichletBC`. A :cpp:class:`DirichletBC`

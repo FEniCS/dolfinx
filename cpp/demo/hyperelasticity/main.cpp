@@ -85,12 +85,12 @@ int main(int argc, char* argv[])
   std::array<Eigen::Vector3d, 2> pt
       = {Eigen::Vector3d(0, 0, 0), Eigen::Vector3d(1, 1, 1)};
 
+  auto cmap = fem::create_coordinate_map(create_coordinate_map_hyperelasticity);
   auto mesh = std::make_shared<mesh::Mesh>(generation::BoxMesh::create(
-      MPI_COMM_WORLD, pt, {{10, 10, 10}}, mesh::CellType::tetrahedron,
-      mesh::GhostMode::none));
+      MPI_COMM_WORLD, pt, {{10, 10, 10}}, cmap, mesh::GhostMode::none));
 
-  auto V
-      = fem::create_functionspace(create_functionspace_form_hyperelasticity_F, "u", mesh);
+  auto V = fem::create_functionspace(
+      create_functionspace_form_hyperelasticity_F, "u", mesh);
 
   // Define solution function
   auto u = std::make_shared<function::Function>(V);
@@ -100,10 +100,6 @@ int main(int argc, char* argv[])
 
   std::shared_ptr<fem::Form> L
       = fem::create_form(create_form_hyperelasticity_F, {V});
-
-  // Attach 'coordinate mapping' to mesh
-  auto cmap = a->coordinate_mapping();
-  mesh->geometry().coord_mapping = cmap;
 
   auto u_rotation = std::make_shared<function::Function>(V);
   u_rotation->interpolate([](auto& x) {

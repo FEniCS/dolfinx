@@ -7,13 +7,14 @@
 import dolfinx
 import ufl
 import numpy as np
+from mpi4py import MPI
 
 
 def test_locate_dofs_geometrical():
     """Test that locate_dofs_geometrical when passed two function
     spaces returns the correct degrees of freedom in each space.
     """
-    mesh = dolfinx.generation.UnitSquareMesh(dolfinx.MPI.comm_world, 4, 8)
+    mesh = dolfinx.generation.UnitSquareMesh(MPI.COMM_WORLD, 4, 8)
     p0, p1 = 1, 2
     P0 = ufl.FiniteElement("Lagrange", mesh.ufl_cell(), p0)
     P1 = ufl.FiniteElement("Lagrange", mesh.ufl_cell(), p1)
@@ -26,7 +27,7 @@ def test_locate_dofs_geometrical():
 
     # Collect dofs from all processes (does not matter that the numbering
     # is local to each process for this test)
-    all_dofs = np.vstack(dolfinx.MPI.comm_world.allgather(dofs))
+    all_dofs = np.vstack(MPI.COMM_WORLD.allgather(dofs))
 
     # Check only one dof pair is returned
     assert len(all_dofs) == 1

@@ -12,16 +12,17 @@ import cffi
 import numpy as np
 import pytest
 from dolfinx_utils.test.skips import skip_if_complex, skip_in_parallel
+from mpi4py import MPI
 from petsc4py import PETSc
 
 import ufl
-from dolfinx import (MPI, Function, FunctionSpace, TensorFunctionSpace,
+from dolfinx import (Function, FunctionSpace, TensorFunctionSpace,
                      UnitCubeMesh, VectorFunctionSpace, cpp, geometry)
 
 
 @pytest.fixture
 def mesh():
-    return UnitCubeMesh(MPI.comm_world, 3, 3, 3)
+    return UnitCubeMesh(MPI.COMM_WORLD, 3, 3, 3)
 
 
 @pytest.fixture
@@ -318,7 +319,7 @@ def test_cffi_expression(V):
         values[i*value_size + 0] = x[i*3 + 0] + x[i*3 + 1];
     }
     """
-    module = "_expr_eval" + str(MPI.comm_world.rank)
+    module = "_expr_eval" + str(MPI.COMM_WORLD.rank)
 
     # Build the kernel
     ffi = cffi.FFI()

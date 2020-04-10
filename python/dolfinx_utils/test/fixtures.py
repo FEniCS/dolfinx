@@ -8,10 +8,9 @@
 import os
 import shutil
 from collections import defaultdict
+from mpi4py import MPI
 
 import pytest
-
-import mpi4py
 
 # --- Test fixtures (use as is or as examples): ---
 
@@ -43,13 +42,14 @@ def _create_tempdir(request):
 
     # Add a sequence number to avoid collisions when tests are otherwise
     # parameterized
-    comm = mpi4py.MPI.COMM_WORLD
+    comm = MPI.COMM_WORLD
     if comm.rank == 0:
         _create_tempdir._sequencenumber[path] += 1
         sequencenumber = _create_tempdir._sequencenumber[path]
-        sequencenumber = comm.allreduce(sequencenumber, op=mpi4py.MPI.SUM)
     else:
-        sequencenumber = comm.allreduce(0, op=mpi4py.MPI.SUM)
+        sequencenumber = None
+
+    sequencenumber = comm.bcast(sequencenumber)
     path += "__" + str(sequencenumber)
 
     # Delete and re-create directory on root node
@@ -93,7 +93,7 @@ def tempdir(request):
 
     Does NOT change the current directory.
 
-    MPI safe (assuming MPI.comm_world context).
+    MPI safe (assuming MPI.COMM_WORLD context).
 
     """
     return _create_tempdir(request)
@@ -112,7 +112,7 @@ def tempdir(request):
 #     Changes the current directory to the tempdir and resets cwd
 #     afterwards.
 
-#     MPI safe (assuming MPI.comm_world context).
+#     MPI safe (assuming MPI.COMM_WORLD context).
 
 #     """
 #     cwd = os.getcwd()

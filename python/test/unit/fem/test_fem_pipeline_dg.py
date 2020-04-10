@@ -6,14 +6,14 @@
 
 import os
 
-import mpi4py
 import numpy as np
 import pytest
 from dolfinx_utils.test.skips import skip_in_parallel
+from mpi4py import MPI
 from petsc4py import PETSc
 
 import ufl
-from dolfinx import MPI, CellDiameter, FacetNormal, Function, FunctionSpace
+from dolfinx import CellDiameter, FacetNormal, Function, FunctionSpace
 # from dolfinx.cpp.mesh import GhostMode
 from dolfinx.fem import assemble_matrix, assemble_scalar, assemble_vector
 from dolfinx.io import XDMFFile
@@ -35,7 +35,7 @@ def test_manufactured_poisson_dg(degree, filename, datadir):
     degree of the Lagrange function space.
 
     """
-    with XDMFFile(MPI.comm_world, os.path.join(datadir, filename), "r", encoding=XDMFFile.Encoding.ASCII) as xdmf:
+    with XDMFFile(MPI.COMM_WORLD, os.path.join(datadir, filename), "r", encoding=XDMFFile.Encoding.ASCII) as xdmf:
         mesh = xdmf.read_mesh(name="Grid")
 
     V = FunctionSpace(mesh, ("DG", degree))
@@ -87,7 +87,7 @@ def test_manufactured_poisson_dg(degree, filename, datadir):
     A.assemble()
 
     # Create LU linear solver
-    solver = PETSc.KSP().create(MPI.comm_world)
+    solver = PETSc.KSP().create(MPI.COMM_WORLD)
     solver.setType(PETSc.KSP.Type.PREONLY)
     solver.getPC().setType(PETSc.PC.Type.LU)
     solver.setOperators(A)
@@ -97,5 +97,5 @@ def test_manufactured_poisson_dg(degree, filename, datadir):
     solver.solve(b, uh.vector)
     uh.vector.ghostUpdate(addv=PETSc.InsertMode.INSERT,
                           mode=PETSc.ScatterMode.FORWARD)
-    error = mesh.mpi_comm().allreduce(assemble_scalar((u_exact - uh)**2 * dx), op=mpi4py.MPI.SUM)
+    error = mesh.mpi_comm().allreduce(assemble_scalar((u_exact - uh)**2 * dx), op=MPI.SUM)
     assert np.absolute(error) < 1.0e-14

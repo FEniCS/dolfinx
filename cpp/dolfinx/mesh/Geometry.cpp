@@ -17,34 +17,7 @@ using namespace dolfinx;
 using namespace dolfinx::mesh;
 
 //-----------------------------------------------------------------------------
-Geometry::Geometry(const std::shared_ptr<const common::IndexMap>& index_map,
-                   const graph::AdjacencyList<std::int32_t>& dofmap,
-                   const fem::ElementDofLayout& layout,
-                   const Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic,
-                                      Eigen::RowMajor>& x,
-                   const std::vector<std::int64_t>& global_indices,
-                   const std::vector<std::int64_t>& input_global_indices)
-    : _dim(x.cols()), _dofmap(dofmap), _index_map(index_map), _layout(layout),
-      _global_indices(global_indices),
-      _input_global_indices(input_global_indices)
-{
-  if (x.rows() != (int)global_indices.size())
-    throw std::runtime_error("Size mis-match");
-
-  // Make all geometry 3D
-  if (_dim == 3)
-    _x = x;
-  else
-  {
-    _x.resize(x.rows(), 3);
-    _x.setZero();
-    _x.block(0, 0, x.rows(), x.cols()) = x;
-  }
-}
-//-----------------------------------------------------------------------------
 int Geometry::dim() const { return _dim; }
-//-----------------------------------------------------------------------------
-graph::AdjacencyList<std::int32_t>& Geometry::dofmap() { return _dofmap; }
 //-----------------------------------------------------------------------------
 const graph::AdjacencyList<std::int32_t>& Geometry::dofmap() const
 {
@@ -67,22 +40,17 @@ Geometry::x() const
   return _x;
 }
 //-----------------------------------------------------------------------------
+const fem::CoordinateElement& Geometry::cmap() const { return _cmap; }
+//-----------------------------------------------------------------------------
 Eigen::Vector3d Geometry::node(int n) const
 {
   return _x.row(n).matrix().transpose();
-}
-//-----------------------------------------------------------------------------
-const std::vector<std::int64_t>& Geometry::global_indices() const
-{
-  return _global_indices;
 }
 //-----------------------------------------------------------------------------
 const std::vector<std::int64_t>& Geometry::input_global_indices() const
 {
   return _input_global_indices;
 }
-//-----------------------------------------------------------------------------
-const fem::ElementDofLayout& Geometry::dof_layout() const { return _layout; }
 //-----------------------------------------------------------------------------
 std::size_t Geometry::hash() const
 {
@@ -98,7 +66,7 @@ std::size_t Geometry::hash() const
 //-----------------------------------------------------------------------------
 mesh::Geometry mesh::create_geometry(
     MPI_Comm comm, const Topology& topology,
-    const fem::ElementDofLayout& layout,
+    const fem::CoordinateElement& coordinate_element,
     const graph::AdjacencyList<std::int64_t>& cell_nodes,
     const Eigen::Ref<const Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic,
                                         Eigen::RowMajor>>& x)
@@ -107,8 +75,8 @@ mesh::Geometry mesh::create_geometry(
   // fem::DofMapBuilder::build to take connectivities
 
   //  Build 'geometry' dofmap on the topology
-  auto [dof_index_map, dofmap]
-      = fem::DofMapBuilder::build(comm, topology, layout, 1);
+  auto [dof_index_map, dofmap] = fem::DofMapBuilder::build(
+      comm, topology, coordinate_element.dof_layout(), 1);
 
   // Build list of unique (global) node indices from adjacency list
   // (geometry nodes)
@@ -147,6 +115,7 @@ mesh::Geometry mesh::create_geometry(
     igi[i] = indices[l2l[i]];
   }
 
-  return Geometry(dof_index_map, dofmap, layout, xg, l2g, igi);
+  return Geometry(dof_index_map, std::move(dofmap), coordinate_element,
+                  std::move(xg), std::move(igi));
 }
 //-----------------------------------------------------------------------------

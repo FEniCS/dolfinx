@@ -76,11 +76,12 @@
 
 import matplotlib.pyplot as plt
 import numpy as np
+from mpi4py import MPI
 
 import dolfinx
 import dolfinx.plotting
 import ufl
-from dolfinx import (MPI, DirichletBC, Function, FunctionSpace, RectangleMesh,
+from dolfinx import (DirichletBC, Function, FunctionSpace, RectangleMesh,
                      solve)
 from dolfinx.cpp.mesh import CellType
 from dolfinx.fem import locate_dofs_topological
@@ -98,14 +99,11 @@ from ufl import ds, dx, grad, inner
 
 # Create mesh and define function space
 mesh = RectangleMesh(
-    MPI.comm_world,
+    MPI.COMM_WORLD,
     [np.array([0, 0, 0]), np.array([1, 1, 0])], [32, 32],
     CellType.triangle, dolfinx.cpp.mesh.GhostMode.none)
 
 V = FunctionSpace(mesh, ("Lagrange", 1))
-
-cmap = dolfinx.fem.create_coordinate_map(mesh.ufl_domain())
-mesh.geometry.coord_mapping = cmap
 
 # The second argument to :py:class:`FunctionSpace
 # <dolfinx.function.FunctionSpace>` is the finite element
@@ -201,7 +199,7 @@ solve(a == L, u, bc, petsc_options={"ksp_type": "preonly", "pc_type": "lu"})
 
 
 # Save solution in XDMF format
-with XDMFFile(MPI.comm_world, "poisson.xdmf", "w") as file:
+with XDMFFile(MPI.COMM_WORLD, "poisson.xdmf", "w") as file:
     file.write_mesh(mesh)
     file.write_function(u)
 

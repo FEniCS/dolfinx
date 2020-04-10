@@ -7,11 +7,10 @@
 #include "ElementDofLayout.h"
 #include <array>
 #include <dolfinx/common/log.h>
+#include <dolfinx/mesh/cell_types.h>
 #include <map>
 #include <numeric>
 #include <set>
-
-#include <iostream>
 
 using namespace dolfinx;
 using namespace dolfinx::fem;
@@ -24,8 +23,8 @@ ElementDofLayout::ElementDofLayout(
     const mesh::CellType cell_type,
     const Eigen::Array<int, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>&
         base_permutations)
-    : _block_size(block_size), _cell_type(cell_type), _parent_map(parent_map),
-      _num_dofs(0), _entity_dofs(entity_dofs), _sub_dofmaps(sub_dofmaps),
+    : _block_size(block_size), _parent_map(parent_map), _num_dofs(0),
+      _entity_dofs(entity_dofs), _sub_dofmaps(sub_dofmaps),
       _base_permutations(base_permutations)
 {
   // TODO: Add size check on base_permutations. Size should be:
@@ -105,8 +104,6 @@ ElementDofLayout ElementDofLayout::copy() const
   layout._parent_map.clear();
   return layout;
 }
-//-----------------------------------------------------------------------------
-mesh::CellType ElementDofLayout::cell_type() const { return _cell_type; }
 //-----------------------------------------------------------------------------
 int ElementDofLayout::num_dofs() const { return _num_dofs; }
 //-----------------------------------------------------------------------------
@@ -198,82 +195,4 @@ ElementDofLayout::sub_view(const std::vector<int>& component) const
 int ElementDofLayout::block_size() const { return _block_size; }
 //-----------------------------------------------------------------------------
 bool ElementDofLayout::is_view() const { return !_parent_map.empty(); }
-//-----------------------------------------------------------------------------
-int ElementDofLayout::degree() const
-{
-  switch (_cell_type)
-  {
-  case mesh::CellType::interval:
-    if (num_dofs() == 2)
-      return 1;
-    else if (num_dofs() == 3)
-      return 2;
-    break;
-  case mesh::CellType::triangle:
-    if (num_dofs() == 3)
-      return 1;
-    else if (num_dofs() == 6)
-      return 2;
-    break;
-  case mesh::CellType::quadrilateral:
-    if (num_dofs() == 4)
-      return 1;
-    else if (num_dofs() == 9)
-      return 2;
-    break;
-  case mesh::CellType::tetrahedron:
-    if (num_dofs() == 4)
-      return 1;
-    else if (num_dofs() == 10)
-      return 2;
-    break;
-  case mesh::CellType::hexahedron:
-    if (num_dofs() == 8)
-      return 1;
-    else if (num_dofs() == 27)
-      return 2;
-    break;
-  default:
-    throw std::runtime_error("Unknown cell type");
-  }
-
-  throw std::runtime_error("Cannot determine degree");
-}
-//-----------------------------------------------------------------------------
-ElementDofLayout fem::geometry_layout(mesh::CellType cell, int num_nodes)
-{
-  // TODO: Fix for degree > 2
-
-  const int dim = mesh::cell_dim(cell);
-  int num_perms = 0;
-  const std::array<int, 4> p_per_dim = {0, 1, 2, 4};
-  for (int d = 1; d < dim; ++d)
-    num_perms += p_per_dim[d] * mesh::cell_num_entities(cell, d);
-
-  Eigen::Array<int, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor> perm(
-      num_perms, num_nodes);
-  for (int i = 0; i < perm.rows(); ++i)
-    for (int j = 0; j < perm.cols(); ++j)
-      perm(i, j) = j;
-
-  // entity_dofs = [[set([0]), set([1]), set([2])], 3 * [set()], [set()]]
-  int dof = 0;
-  std::vector<std::vector<std::set<int>>> entity_dofs(dim + 1);
-  for (int d = 0; d <= dim; ++d)
-  {
-    const int num_entities = mesh::cell_num_entities(cell, d);
-    if (dof < num_nodes)
-    {
-      for (int e = 0; e < num_entities; ++e)
-        entity_dofs[d].push_back({dof++});
-    }
-    else
-    {
-      for (int e = 0; e < num_entities; ++e)
-        entity_dofs[d].push_back({});
-    }
-  }
-
-  return fem::ElementDofLayout(1, entity_dofs, {}, {}, cell, perm);
-}
 //-----------------------------------------------------------------------------

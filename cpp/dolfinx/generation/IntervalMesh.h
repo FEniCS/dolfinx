@@ -12,6 +12,11 @@
 
 namespace dolfinx
 {
+namespace fem
+{
+class CoordinateElement;
+}
+
 namespace generation
 {
 
@@ -26,10 +31,12 @@ public:
   /// @param[in] comm MPI communicator to build the mesh on
   /// @param[in] n The number of cells.
   /// @param[in] x The end points
+  /// @param[in] element Element that describes the geometry of a cell
   /// @param[in] ghost_mode Ghosting mode
   /// @return A mesh
   static mesh::Mesh create(MPI_Comm comm, std::size_t n,
                            std::array<double, 2> x,
+                           const fem::CoordinateElement& element,
                            const mesh::GhostMode ghost_mode);
 };
 } // namespace generation

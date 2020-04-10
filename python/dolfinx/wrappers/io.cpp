@@ -65,8 +65,6 @@ void io(py::module& m)
       .def("write_geometry", &dolfinx::io::XDMFFile::write_geometry,
            py::arg("geometry"), py::arg("name") = "geometry",
            py::arg("xpath") = "/Xdmf/Domain")
-      .def("read_mesh", &dolfinx::io::XDMFFile::read_mesh, py::arg("name"),
-           py::arg("xpath"))
       .def("read_mesh_data", &dolfinx::io::XDMFFile::read_mesh_data,
            py::arg("name") = "mesh", py::arg("xpath") = "/Xdmf/Domain")
       .def("write_function", &dolfinx::io::XDMFFile::write_function,
@@ -76,7 +74,10 @@ void io(py::module& m)
            py::arg("geometry_xpath") = "/Xdmf/Domain/Grid/Geometry",
            py::arg("xpath") = "/Xdmf/Domain")
       .def("read_meshtags", &dolfinx::io::XDMFFile::read_meshtags,
-           py::arg("mesh"), py::arg("name"), py::arg("xpath") = "/Xdmf/Domain");
+           py::arg("mesh"), py::arg("name"), py::arg("xpath") = "/Xdmf/Domain")
+      .def("comm", [](dolfinx::io::XDMFFile& self) {
+        return MPICommWrapper(self.comm());
+      });
 
   // dolfinx::io::VTKFile
   py::class_<dolfinx::io::VTKFile, std::shared_ptr<dolfinx::io::VTKFile>>
